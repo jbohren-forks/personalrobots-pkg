@@ -100,11 +100,14 @@ public:
 };
 
 
+const int MAX_MATCHES = 10;
+
 /**
  * Used to represent a matching result.
  */
 class ChamferMatch
 {
+
 	class ChamferMatchInstance {
 	public:
 		float cost;
@@ -112,9 +115,24 @@ class ChamferMatch
 		const ChamferTemplate* tpl;
 	};
 
+	int count;
 	vector<ChamferMatchInstance> matches;
 
+
+	struct MatchCenter {
+		float x;
+		float y;
+		int count;
+		float cost;
+		const ChamferTemplate* tpl;
+	};
+	vector<MatchCenter> centers;
+
 public:
+	ChamferMatch() : count(0)
+	{
+		matches.resize(MAX_MATCHES);
+	}
 
 	void addMatch(float cost, CvPoint offset, const ChamferTemplate& tpl);
 	void show(IplImage* img);
@@ -244,6 +262,8 @@ private:
      */
     void matchTemplates(IplImage* dist_img, IplImage* orientation_img, ChamferMatch& cm);
 
+
+//    void getMatches();
 
 
 };

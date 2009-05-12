@@ -634,55 +634,65 @@ void ChamferMatching::matchTemplates(IplImage* dist_img, IplImage* orientation_i
 }
 
 
+int CLUSTER_SIZE = 40;
+
+
 
 void ChamferMatch::addMatch(float cost, CvPoint offset, const ChamferTemplate& tpl)
 {
-	if (cost<0.5) {
-		ChamferMatchInstance cmi;
-		cmi.cost = cost;
-		cmi.offset = offset;
-		cmi.tpl = &tpl;
-		matches.push_back(cmi);
+	bool new_match = true;
+
+	for (size_t i= 0; i<matches.size(); ++i) {
+		if (abs(matches[i].offset.x-offset.x)+abs(matches[i].offset.y-offset.y)<CLUSTER_SIZE) {
+			new_match = false;
+			if (cost<matches[i].cost) {
+				matches[i].cost = cost;
+				matches[i].offset = offset;
+				matches[i].tpl = &tpl;
+			}
+		}
+	}
+
+	if (new_match) {
+		// if we don't have enough matches yet, add it to the array
+		if (count<MAX_MATCHES) {
+			matches[count].cost = cost;
+			matches[count].offset = offset;
+			matches[count].tpl = &tpl;
+			count++;
+		}
+		// otherwise find the right position to insert it
+		else {
+			// if higher cost than the worst current match, just ignore it
+			if (matches[count-1].cost<cost) {
+				return;
+			}
+
+			int j = 0;
+			// skip all matches better that current one
+			while (matches[j].cost<cost) j++;
+
+			// shift matches one position
+			int k = count-2;
+			while (k>=j) {
+				matches[k+1] = matches[k];
+				k--;
+			}
+
+			matches[j].cost = cost;
+			matches[j].offset = offset;
+			matches[j].tpl = &tpl;
+		}
 	}
 }
 
-
-template<typename T>
-class CostComparator
-{
-public:
-	bool operator()(const T& a, const T& b)
-	{
-		return a.cost<b.cost;
-	}
-};
-
-
-struct MatchCenter {
-	int x;
-	int y;
-	int count;
-};
-
-
-//void ChamferMatch::getMatches()
-//{
-//	vector<MatchCenter> centers;
-//
-//	for (size_t i=0;i<matches.size();++i) {
-//		for (size_t j=0;j<matches.size();++j) {
-//
-//		}
-//	}
-//}
-
 void ChamferMatch::show(IplImage* img)
 {
-	CostComparator<ChamferMatchInstance> less;
-	sort(matches.begin(), matches.end(), less);
+	printf("I have found %d matches.\n",count);
 
-	for (size_t i=0;i<2;++i) {
+	for (int i=0;i<count;++i) {
 		ChamferMatchInstance match = matches[i];
+		printf("Cost: %f\n", match.cost);
 		const template_coords_t& templ_coords = match.tpl->coords;
 		for (size_t i=0;i<templ_coords.size();++i) {
 			int x = match.offset.x + templ_coords[i].first;
