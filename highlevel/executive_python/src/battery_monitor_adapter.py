@@ -40,11 +40,16 @@ import rospy
 from robot_msgs.msg import BatteryState
 
 class BatteryMonitorAdapter:
-  def __init__(self, discharge_limit, state_topic):
+  def __init__(self, discharge_limit, charge_limit, state_topic, email_addresses, robot_name, mail_program):
     self.discharge_limit = discharge_limit
+    self.charge_limit = charge_limit
     rospy.Subscriber(state_topic, BatteryState, self.update)
     self.state = None
     self.state_topic = state_topic
+    self.email_addresses = email_addresses
+    self.mail_program = mail_program
+    self.robot_name = robot_name
+    self.mail_sent = False
 
   def legalState(self):
     return self.state != None
@@ -54,6 +59,33 @@ class BatteryMonitorAdapter:
 
   def chargeNeeded(self):
     return (self.state.energy_remaining / self.state.energy_capacity) < self.discharge_limit
+
+  def chargeDone(self):
+    return (self.state.energy_remaining / self.state.energy_capacity) > self.charge_limit
+
+  def sendPlugEmail(self):
+    mail_string = "To: "
+    for address in self.email_addresses: mail_string += address + ", "
+    mail_string += "\nFrom: %s@willowgarage.com" % self.robot_name
+    mail_string += "\nSubject: Battery level on robot below %.2f" % self.notify_limit
+    mail_string += "\n\nMy battery level has fallen below the notification level. You should probably think about plugging me in. \n\nThanks much,\n%s" % self.robot_name
+
+    #since the robot's have mail servers installed on them... we'll just pipe out our e-mail
+    pipe = os.popen("%s -t" % self.mail_program, 'w')
+    pipe.write(mail_string)
+    pipe.close()
+
+  def sendUnPlugEmail(self):
+    mail_string = "To: "
+    for address in self.email_addresses: mail_string += address + ", "
+    mail_string += "\nFrom: %s@willowgarage.com" % self.robot_name
+    mail_string += "\nSubject: Battery level on robot above %.2f" % self.notify_limit
+    mail_string += "\n\nMy battery level is above the desired charge level. You should probably think about unplugging me. \n\nThanks much,\n%s" % self.robot_name
+
+    #since the robot's have mail servers installed on them... we'll just pipe out our e-mail
+    pipe = os.popen("%s -t" % self.mail_program, 'w')
+    pipe.write(mail_string)
+    pipe.close()
 
   def pluggedIn(self):
     return self.state.power_consumption >= 0.0

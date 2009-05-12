@@ -42,23 +42,22 @@ from std_msgs.msg import *
 from robot_msgs.msg import *
 from highlevel_controllers.msg import *
 from battery_monitor_adapter import *
-from recharge_adapter import *
 from navigation_adapter import *
 
 class Executive:
-  def __init__(self, goals, chrg_stations, navigator, batt_monitor, recharger, cycle_time):
+  def __init__(self, goals, chrg_stations, navigator, batt_monitor, cycle_time):
     rospy.init_node("Executive", anonymous=True)
     self.goals = goals
     self.chrg_stations = chrg_stations
     self.navigator = navigator
     self.batt_monitor = batt_monitor
-    self.recharger = recharger
     self.cycle_time = cycle_time
     self.state = "nav"
     self.current_goal = self.goals[0]
+    self.email_sent = False
 
   def legalStates(self):
-    return self.navigator.legalState() and self.batt_monitor.legalState() and self.recharger.legalState()
+    return self.navigator.legalState() and self.batt_monitor.legalState()
 
   def doCycle(self):
     #make sure that all adapters have legal states
@@ -72,7 +71,6 @@ class Executive:
             4) nav --- robot is inactive and should be pursuing the current goal (move_base crashed) ---> nav
         """
         if self.batt_monitor.pluggedIn():
-          self.recharger.charge(0, self.navigator.currentPosition())
           self.state = "recharge"
           print "nav --> recharge"
         elif self.batt_monitor.chargeNeeded():
@@ -92,11 +90,17 @@ class Executive:
           State Transitions from recharge:
             1) recharge --- robot is done charging ---> nav
         """
-        if self.recharger.doneCharging():
-          #resume the current goal
-          self.navigator.sendGoal(self.current_goal, "map")
-          self.state = "nav"
-          print "recharge --> nav"
+        if self.batt_monitor.chargeDone():
+          if(self.batt_monitor.pluggedIn()):
+            if not self.email_sent:
+              self.batt_monitor.sendUnPlugEmail()
+              self.email_sent = True
+          else:
+            self.email_sent = False
+            #resume the current goal
+            self.navigator.sendGoal(self.current_goal, "map")
+            self.state = "nav"
+            print "recharge --> nav"
       elif self.state == "nav_charge":
         """
           State Transitions from nav_charge
@@ -104,7 +108,7 @@ class Executive:
           2) nav_charge --- robot is inactive or timeout is reached --> nav_charge
         """
         if self.navigator.goalReached():
-          self.recharger.charge(1, self.navigator.currentPosition())
+          self.batt_monitor.sendPlugEmail()
           self.state = "recharge"
           print "nav_charge --> recharge"
         elif not self.navigator.active() or self.navigator.timeUp():
@@ -120,10 +124,6 @@ class Executive:
         print("Waiting on %s to be published" % (self.batt_monitor.state_topic))
         rospy.logout("Waiting on %s to be published" % (self.batt_monitor.state_topic))
 
-      if not self.recharger.legalState():
-        print("Waiting on %s to be published" % (self.recharger.state_topic))
-        rospy.logout("Waiting on %s to be published" % (self.recharger.state_topic))
-
   def run(self):
     while not rospy.is_shutdown():
       start = rospy.get_time()
@@ -138,21 +138,20 @@ class Executive:
 
 if __name__ == '__main__':
   try:
-    batt_monitor = BatteryMonitorAdapter(.7, "bogus_battery_state")
-    recharger = RechargeAdapter(.8, "recharge_state", "recharge_goal")
-    navigator = NavigationAdapter(30, 300, "/move_base_node/feedback", "/move_base_node/activate")
+    batt_monitor = BatteryMonitorAdapter(.25, .85, "battery_state", ["watts@willowgarage.com", "eitan@willowgarage.com"], "pre", "/usr/sbin/sendmail")
+    navigator = NavigationAdapter(30, 300, "/move_base/feedback", "/move_base/activate")
 
     goals = [
-     [50.250, 6.863, 3.083], 
-     [18.550, 11.762, 2.554],
-     [53.550, 20.163, 0.00],
-     [18.850, 28.862, 0.00],
-     [47.250, 39.162, 1.571],
-     [11.450, 39.662, 0.00]
+     [[18.912, 28.568, 0.000], [0.000, 0.000, 0.000, 1.000]],
+     [[12.118, 39.812, 0.000], [0.000, 0.000, 0.000, 1.000]],
+     [[47.350, 40.655, 0.000], [0.000, 0.000, -0.707, 0.707]],
+     [[54.162, 20.087, 0.000], [0.000, 0.000, -0.160, 0.987]],
+     [[50.659, 6.916, 0.000], [0.000, 0.000, 0.924, -0.383]],
+     [[18.542, 12.301, 0.000], [0.000, 0.000, 0.906, -0.424]]
      ]
 
     chrg_stations = [
-     [33.844, 36.379, -1.571]
+    [[18.098, 21.015, 0.000], [0.000, 0.000, 0.713, 0.701]]
     ]
 
     executive = Executive(goals, chrg_stations, navigator, batt_monitor, recharger, 1.0)
