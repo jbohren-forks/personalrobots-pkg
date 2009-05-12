@@ -1,5 +1,6 @@
 <launch>
   <master auto="start"/>
-  <param name="/trex/start_dir" value="$(find executive_trex_pr2)/test/plugs/recharge.0"/>
+  <param name="/trex/start_dir" value="$(find executive_trex_pr2)/test/plugs/recharge.1"/>
   <include file="$(find executive_trex_pr2)/test/plugs/stubs.launch" />
-</launch>
+  <node pkg="tf" type="transform_sender" args="0 0 0 0 0 0 base_footprint map  10"/>	
+</launch> 
