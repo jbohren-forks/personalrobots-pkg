@@ -45,7 +45,8 @@ namespace nav {
   MoveBase::MoveBase(ros::Node& ros_node, tf::TransformListener& tf) : 
     Action<robot_msgs::PoseStamped, robot_msgs::PoseStamped>(ros_node.getName()), ros_node_(ros_node), tf_(tf),
     run_planner_(true), tc_(NULL), planner_costmap_ros_(NULL), controller_costmap_ros_(NULL), 
-    planner_(NULL), valid_plan_(false), new_plan_(false), attempted_rotation_(false), attempted_costmap_reset_(false) {
+    planner_(NULL), valid_plan_(false), new_plan_(false), attempted_rotation_(false), attempted_costmap_reset_(false),
+    done_half_rotation_(false), done_full_rotation_(false) {
 
     //get some parameters that will be global to the move base node
     ros_node_.param("~navfn/robot_base_frame", robot_base_frame_, std::string("base_link"));
@@ -258,8 +259,16 @@ namespace nav {
 
         //check for success
         if(tc_->goalReached()){
-          if(attempted_rotation_)
+          ROS_INFO("%d - %d", attempted_rotation_, done_half_rotation_);
+          if(attempted_rotation_){
             valid_control = false;
+            if(done_half_rotation_){
+              done_full_rotation_ = true;
+            }
+            else{
+              done_half_rotation_ = true;
+            }
+          }
           else
             return robot_actions::SUCCESS;
         }
@@ -280,17 +289,20 @@ namespace nav {
       //if we don't have a valid control... we need to re-plan explicitly
       if(!valid_control){
         //try to make a plan
-        if(!tryPlan(goal_)){
+        if(done_half_rotation_ && !done_full_rotation_ || !tryPlan(goal_)){
           //if we've tried to reset our map and to rotate in place, to no avail, we'll abort the goal
-          if(attempted_costmap_reset_ && attempted_rotation_)
+          if(attempted_costmap_reset_ && done_full_rotation_)
             return robot_actions::ABORTED;
 
-          if(attempted_rotation_){
+          if(done_full_rotation_){
             resetCostmaps();
             attempted_rotation_ = false;
+            done_half_rotation_ = false;
+            done_full_rotation_ = false;
             attempted_costmap_reset_ = true;
           }
           else{
+            ROS_INFO("new rot goal");
             //if planning fails... we'll try rotating in place to clear things out
             double angle = M_PI; //rotate 180 degrees
             tf::Stamped<tf::Pose> rotate_goal = tf::Stamped<tf::Pose>(tf::Pose(tf::Quaternion(angle, 0.0, 0.0), tf::Point(0.0, 0.0, 0.0)), ros::Time::now(), robot_base_frame_);

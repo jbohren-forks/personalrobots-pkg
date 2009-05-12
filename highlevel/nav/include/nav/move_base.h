@@ -125,6 +125,7 @@ namespace nav {
       tf::Stamped<tf::Pose> global_pose_;
       double controller_frequency_, inscribed_radius_, circumscribed_radius_, planner_patience_;
       bool attempted_rotation_, attempted_costmap_reset_;
+      bool done_half_rotation_, done_full_rotation_;
 
   };
 };
