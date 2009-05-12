@@ -53,7 +53,7 @@ namespace base_local_planner {
     point_grid_(NULL), voxel_grid_(NULL), rot_stopped_velocity_(1e-2), trans_stopped_velocity_(1e-2), goal_reached_(true), costmap_publisher_(NULL){
     double acc_lim_x, acc_lim_y, acc_lim_theta, sim_time, sim_granularity;
     int vx_samples, vtheta_samples;
-    double pdist_scale, gdist_scale, occdist_scale, heading_lookahead, oscillation_reset_dist;
+    double pdist_scale, gdist_scale, occdist_scale, heading_lookahead, oscillation_reset_dist, escape_reset_dist, escape_reset_theta;
     bool holonomic_robot, dwa, simple_attractor, heading_scoring;
     double heading_scoring_timestep;
     double max_vel_x, min_vel_x, max_vel_th, min_vel_th;
@@ -114,6 +114,8 @@ namespace base_local_planner {
     ros_node.param("~base_local_planner/occdist_scale", occdist_scale, 0.2);
     ros_node.param("~base_local_planner/heading_lookahead", heading_lookahead, 0.325);
     ros_node.param("~base_local_planner/oscillation_reset_dist", oscillation_reset_dist, 0.05);
+    ros_node.param("~base_local_planner/escape_reset_dist", escape_reset_dist, 0.10);
+    ros_node.param("~base_local_planner/escape_reset_theta", escape_reset_theta, M_PI_2);
     ros_node.param("~base_local_planner/holonomic_robot", holonomic_robot, true);
     ros_node.param("~base_local_planner/max_vel_x", max_vel_x, 0.5);
     ros_node.param("~base_local_planner/min_vel_x", min_vel_x, 0.1);
@@ -171,7 +173,7 @@ namespace base_local_planner {
 
     tc_ = new TrajectoryPlanner(*world_model_, costmap, footprint_spec, inscribed_radius_, circumscribed_radius_,
         acc_lim_x, acc_lim_y, acc_lim_theta, sim_time, sim_granularity, vx_samples, vtheta_samples, pdist_scale,
-        gdist_scale, occdist_scale, heading_lookahead, oscillation_reset_dist, holonomic_robot,
+        gdist_scale, occdist_scale, heading_lookahead, oscillation_reset_dist, escape_reset_dist, escape_reset_theta, holonomic_robot,
         max_vel_x, min_vel_x, max_vel_th, min_vel_th, min_in_place_vel_th_,
         dwa, heading_scoring, heading_scoring_timestep, simple_attractor);
   }

@@ -51,6 +51,7 @@ namespace base_local_planner{
       int vx_samples, int vtheta_samples,
       double pdist_scale, double gdist_scale, double occdist_scale,
       double heading_lookahead, double oscillation_reset_dist,
+      double escape_reset_dist, double escape_reset_theta,
       bool holonomic_robot,
       double max_vel_x, double min_vel_x,
       double max_vel_th, double min_vel_th, double min_in_place_vel_th,
@@ -64,8 +65,9 @@ namespace base_local_planner{
     vx_samples_(vx_samples), vtheta_samples_(vtheta_samples),
     pdist_scale_(pdist_scale), gdist_scale_(gdist_scale), occdist_scale_(occdist_scale),
     acc_lim_x_(acc_lim_x), acc_lim_y_(acc_lim_y), acc_lim_theta_(acc_lim_theta),
-    prev_x_(0), prev_y_(0), heading_lookahead_(heading_lookahead), 
-    oscillation_reset_dist_(oscillation_reset_dist), holonomic_robot_(holonomic_robot),
+    prev_x_(0), prev_y_(0), escape_x_(0), escape_y_(0), escape_theta_(0), heading_lookahead_(heading_lookahead), 
+    oscillation_reset_dist_(oscillation_reset_dist), escape_reset_dist_(escape_reset_dist), 
+    escape_reset_theta_(escape_reset_theta), holonomic_robot_(holonomic_robot),
     max_vel_x_(max_vel_x), min_vel_x_(min_vel_x), 
     max_vel_th_(max_vel_th), min_vel_th_(min_vel_th), min_in_place_vel_th_(min_in_place_vel_th),
     dwa_(dwa), heading_scoring_(heading_scoring), heading_scoring_timestep_(heading_scoring_timestep),
@@ -81,12 +83,14 @@ namespace base_local_planner{
     strafe_left = false;
     strafe_right = false;
 
+    escaping_ = false;
+
     //if no y velocities are specified... we'll fill in default values
     if(y_vels_.empty()){
-      y_vels.push_back(-0.3);
-      y_vels.push_back(-0.1);
-      y_vels.push_back(0.1);
-      y_vels.push_back(0.3);
+      y_vels_.push_back(-0.3);
+      y_vels_.push_back(-0.1);
+      y_vels_.push_back(0.1);
+      y_vels_.push_back(0.3);
     }
   }
 
@@ -503,22 +507,12 @@ namespace base_local_planner{
     //any cell with a cost greater than the size of the map is impossible
     double impossible_cost = map_.map_.size();
 
-    //loop through all x velocities
-    for(int i = 0; i < vx_samples_; ++i){
-      vtheta_samp = 0;
-      //first sample the straight trajectory
-      generateTrajectory(x, y, theta, vx, vy, vtheta, vx_samp, vy_samp, vtheta_samp, acc_x, acc_y, acc_theta, impossible_cost, *comp_traj);
-
-      //if the new trajectory is better... let's take it
-      if(comp_traj->cost_ >= 0 && (comp_traj->cost_ < best_traj->cost_ || best_traj->cost_ < 0)){
-        swap = best_traj;
-        best_traj = comp_traj;
-        comp_traj = swap;
-      }
-
-      vtheta_samp = min_vel_theta;
-      //next sample all theta trajectories
-      for(int j = 0; j < vtheta_samples_ - 1; ++j){
+    //if we're performing an escape we won't allow moving forward
+    if(!escaping_){
+      //loop through all x velocities
+      for(int i = 0; i < vx_samples_; ++i){
+        vtheta_samp = 0;
+        //first sample the straight trajectory
         generateTrajectory(x, y, theta, vx, vy, vtheta, vx_samp, vy_samp, vtheta_samp, acc_x, acc_y, acc_theta, impossible_cost, *comp_traj);
 
         //if the new trajectory is better... let's take it
@@ -527,36 +521,49 @@ namespace base_local_planner{
           best_traj = comp_traj;
           comp_traj = swap;
         }
-        vtheta_samp += dvtheta;
-      }
-      vx_samp += dvx;
-    }
 
-    //only explore y velocities with holonomic robots
-    if(holonomic_robot_){
-      //explore trajectories that move forward but also strafe slightly
-      vx_samp = 0.1;
-      vy_samp = 0.1;
-      vtheta_samp = 0.0;
-      generateTrajectory(x, y, theta, vx, vy, vtheta, vx_samp, vy_samp, vtheta_samp, acc_x, acc_y, acc_theta, impossible_cost, *comp_traj);
+        vtheta_samp = min_vel_theta;
+        //next sample all theta trajectories
+        for(int j = 0; j < vtheta_samples_ - 1; ++j){
+          generateTrajectory(x, y, theta, vx, vy, vtheta, vx_samp, vy_samp, vtheta_samp, acc_x, acc_y, acc_theta, impossible_cost, *comp_traj);
 
-      //if the new trajectory is better... let's take it
-      if(comp_traj->cost_ >= 0 && (comp_traj->cost_ < best_traj->cost_ || best_traj->cost_ < 0)){
-        swap = best_traj;
-        best_traj = comp_traj;
-        comp_traj = swap;
+          //if the new trajectory is better... let's take it
+          if(comp_traj->cost_ >= 0 && (comp_traj->cost_ < best_traj->cost_ || best_traj->cost_ < 0)){
+            swap = best_traj;
+            best_traj = comp_traj;
+            comp_traj = swap;
+          }
+          vtheta_samp += dvtheta;
+        }
+        vx_samp += dvx;
       }
 
-      vx_samp = 0.1;
-      vy_samp = -0.1;
-      vtheta_samp = 0.0;
-      generateTrajectory(x, y, theta, vx, vy, vtheta, vx_samp, vy_samp, vtheta_samp, acc_x, acc_y, acc_theta, impossible_cost, *comp_traj);
+      //only explore y velocities with holonomic robots
+      if(holonomic_robot_){
+        //explore trajectories that move forward but also strafe slightly
+        vx_samp = 0.1;
+        vy_samp = 0.1;
+        vtheta_samp = 0.0;
+        generateTrajectory(x, y, theta, vx, vy, vtheta, vx_samp, vy_samp, vtheta_samp, acc_x, acc_y, acc_theta, impossible_cost, *comp_traj);
 
-      //if the new trajectory is better... let's take it
-      if(comp_traj->cost_ >= 0 && (comp_traj->cost_ < best_traj->cost_ || best_traj->cost_ < 0)){
-        swap = best_traj;
-        best_traj = comp_traj;
-        comp_traj = swap;
+        //if the new trajectory is better... let's take it
+        if(comp_traj->cost_ >= 0 && (comp_traj->cost_ < best_traj->cost_ || best_traj->cost_ < 0)){
+          swap = best_traj;
+          best_traj = comp_traj;
+          comp_traj = swap;
+        }
+
+        vx_samp = 0.1;
+        vy_samp = -0.1;
+        vtheta_samp = 0.0;
+        generateTrajectory(x, y, theta, vx, vy, vtheta, vx_samp, vy_samp, vtheta_samp, acc_x, acc_y, acc_theta, impossible_cost, *comp_traj);
+
+        //if the new trajectory is better... let's take it
+        if(comp_traj->cost_ >= 0 && (comp_traj->cost_ < best_traj->cost_ || best_traj->cost_ < 0)){
+          swap = best_traj;
+          best_traj = comp_traj;
+          comp_traj = swap;
+        }
       }
     }
 
@@ -607,7 +614,6 @@ namespace base_local_planner{
       vtheta_samp += dvtheta;
     }
 
-
     //do we have a legal trajectory
     if(best_traj->cost_ >= 0){
       if(!(best_traj->xv_ > 0)){
@@ -635,6 +641,10 @@ namespace base_local_planner{
           }
           strafe_right = true;
         }
+
+        //set the position we must move a certain distance away from
+        prev_x_ = x;
+        prev_y_ = y;
       }
 
       double dist = sqrt((x - prev_x_) * (x - prev_x_) + (y - prev_y_) * (y - prev_y_));
@@ -649,8 +659,9 @@ namespace base_local_planner{
         stuck_right_strafe = false;
       }
 
-      prev_x_ = x;
-      prev_y_ = y;
+      if(dist > escape_reset_dist_ || fabs(angles::shortest_angular_distance(escape_theta_, theta)) > escape_reset_theta_){
+        escaping_ = false;
+      }
 
       return *best_traj;
     }
@@ -729,6 +740,11 @@ namespace base_local_planner{
           }
           strafe_right = true;
         }
+
+        //set the position we must move a certain distance away from
+        prev_x_ = x;
+        prev_y_ = y;
+
       }
 
       double dist = sqrt((x - prev_x_) * (x - prev_x_) + (y - prev_y_) * (y - prev_y_));
@@ -743,8 +759,9 @@ namespace base_local_planner{
         stuck_right_strafe = false;
       }
 
-      prev_x_ = x;
-      prev_y_ = y;
+      if(dist > escape_reset_dist_ || fabs(angles::shortest_angular_distance(escape_theta_, theta)) > escape_reset_theta_){
+        escaping_ = false;
+      }
 
       return *best_traj;
     }
@@ -769,14 +786,28 @@ namespace base_local_planner{
     best_traj = comp_traj;
     comp_traj = swap;
     
-    strafe_left = false;
-    strafe_right = false;
-    stuck_left_strafe = false;
-    stuck_right_strafe = false;
-    rotating_left = false;
-    rotating_right = false;
-    stuck_left = false;
-    stuck_right = false;
+    double dist = sqrt((x - prev_x_) * (x - prev_x_) + (y - prev_y_) * (y - prev_y_));
+    if(dist > oscillation_reset_dist_){
+      rotating_left = false;
+      rotating_right = false;
+      strafe_left = false;
+      strafe_right = false;
+      stuck_left = false;
+      stuck_right = false;
+      stuck_left_strafe = false;
+      stuck_right_strafe = false;
+    }
+
+    if(dist > escape_reset_dist_ || fabs(angles::shortest_angular_distance(escape_theta_, theta)) > escape_reset_theta_){
+      escaping_ = false;
+    }
+
+    if(!escaping_){
+      escape_x_ = x;
+      escape_y_ = y;
+      escape_theta_ = theta;
+      escaping_ = true;
+    }
 
     //if the trajectory failed because the footprint hits something, we're still going to back up
     if(best_traj->cost_ == -1.0)

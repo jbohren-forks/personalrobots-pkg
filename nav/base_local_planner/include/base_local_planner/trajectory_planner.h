@@ -40,6 +40,7 @@
 #include <vector>
 #include <math.h>
 #include <ros/console.h>
+#include <angles/angles.h>
 
 //for creating a local cost grid
 #include <base_local_planner/map_cell.h>
@@ -89,6 +90,8 @@ namespace base_local_planner {
        * @param occdist_scale A scaling factor for how much the robot should prefer to stay away from obstacles
        * @param heading_lookahead How far the robot should look ahead of itself when differentiating between different rotational velocities
        * @param oscillation_reset_dist The distance the robot must travel before it can explore rotational velocities that were unsuccessful in the past
+       * @param escape_reset_dist The distance the robot must travel before it can exit escape mode
+       * @param escape_reset_theta The distance the robot must rotate before it can exit escape mode
        * @param holonomic_robot Set this to true if the robot being controlled can take y velocities and false otherwise
        * @param max_vel_x The maximum x velocity the controller will explore
        * @param min_vel_x The minimum x velocity the controller will explore
@@ -110,12 +113,13 @@ namespace base_local_planner {
           int vx_samples = 20, int vtheta_samples = 20,
           double pdist_scale = 0.6, double gdist_scale = 0.8, double occdist_scale = 0.2,
           double heading_lookahead = 0.325, double oscillation_reset_dist = 0.05, 
+          double escape_reset_dist = 0.10, double escape_reset_theta = M_PI_2,
           bool holonomic_robot = true,
           double max_vel_x = 0.5, double min_vel_x = 0.1, 
           double max_vel_th = 1.0, double min_vel_th = -1.0, double min_in_place_vel_th = 0.4,
           bool dwa = false, bool heading_scoring = false, double heading_scoring_timestep = 0.1,
           bool simple_attractor = false,
-          std::vector<double> y_vels = std::vector<double>(4));
+          std::vector<double> y_vels = std::vector<double>(0));
 
       /**
        * @brief  Destructs a trajectory controller
@@ -264,6 +268,8 @@ namespace base_local_planner {
       bool stuck_left_strafe, stuck_right_strafe; ///< @brief Booleans to keep the robot from oscillating during strafing
       bool strafe_right, strafe_left; ///< @brief Booleans to keep track of strafe direction for the robot
 
+      bool escaping_; ///< @brief Boolean to keep track of whether we're in escape mode
+
       double goal_x_,goal_y_; ///< @brief Storage for the local goal the robot is pursuing
 
 
@@ -277,11 +283,13 @@ namespace base_local_planner {
       double acc_lim_x_, acc_lim_y_, acc_lim_theta_; ///< @brief The acceleration limits of the robot
 
       double prev_x_, prev_y_; ///< @brief Used to calculate the distance the robot has traveled before reseting oscillation booleans
+      double escape_x_, escape_y_, escape_theta_; ///< @brief Used to calculate the distance the robot has traveled before reseting escape booleans
 
       Trajectory traj_one, traj_two; ///< @brief Used for scoring trajectories
 
       double heading_lookahead_; ///< @brief How far the robot should look ahead of itself when differentiating between different rotational velocities
       double oscillation_reset_dist_; ///< @brief The distance the robot must travel before it can explore rotational velocities that were unsuccessful in the past
+      double escape_reset_dist_, escape_reset_theta_; ///< @brief The distance the robot must travel before it can leave escape mode
       bool holonomic_robot_; ///< @brief Is the robot holonomic or not? 
       
       double max_vel_x_, min_vel_x_, max_vel_th_, min_vel_th_, min_in_place_vel_th_; ///< @brief Velocity limits for the controller
