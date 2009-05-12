@@ -44,7 +44,7 @@ int main(int argc, char ** argv)
   while(node.ok())//Check if a Ctrl-C or other shutdown command has been recieved
   {
     //The shuttle sees something off to the side of it parallel
-    tf::Stamped<tf::Pose> object_pose = tf::Stamped<tf::Pose>(tf::Pose(tf::Quaternion(0,0,0), tf::Point(2,2,0)), ros::Time::now(), "shuttle");
+    tf::Stamped<tf::Pose> object_pose = tf::Stamped<tf::Pose>(tf::Pose(tf::Quaternion(0,0,0), tf::Point(2,2,0)), ros::Time::now(), "space_shuttle");
     robot_msgs::PoseStamped object_pose_msg;
     tf::PoseStampedTFToMsg(object_pose, object_pose_msg);  //This could be constructed directly but the tf/bullet helper functions are easier
     //And reports it
