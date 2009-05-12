@@ -56,7 +56,7 @@ int main(int argc, char** argv)
 {
   ros::init(argc,argv);
 
-  ros::Node node("safety_core_actions");
+  ros::Node node("detect_plug_on_base");
   DetectPlugOnBaseAction detect(node);
 
   robot_actions::ActionRunner runner(10.0);

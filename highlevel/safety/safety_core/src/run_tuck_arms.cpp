@@ -55,7 +55,7 @@ int main(int argc, char** argv)
 {
   ros::init(argc,argv);
 
-  ros::Node node("safety_core_actions");
+  ros::Node node("tuck_arms");
   TuckArmsAction tuck_arms;
 
   robot_actions::ActionRunner runner(10.0);
