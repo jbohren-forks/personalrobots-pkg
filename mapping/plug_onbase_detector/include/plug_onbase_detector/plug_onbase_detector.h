@@ -212,10 +212,15 @@ class PlugOnBaseDetector
       vector<int> inliers;
       vector<double> coeff;
       fitSACPlane (cloud_tr_, indices_in_bounds, inliers, coeff, viewpoint_cloud_, sac_distance_threshold_, 100);
+      if (coeff.size() != 4) {
+        ROS_ERROR("fitSACPlane didn't return coefficients! %d", coeff.size());
+        return;
+      }
 
       // Remove points below the plane
       for (unsigned int i = 0; i < indices_in_bounds.size (); i++)
       {
+        assert(cloud_tr_.pts.size() > indices_in_bounds[i]);
         if (cloud_geometry::distances::pointToPlaneDistanceSigned (cloud_tr_.pts[indices_in_bounds.at (i)], coeff) < 0)
           inliers.push_back (indices_in_bounds.at (i));
       }
