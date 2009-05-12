@@ -164,24 +164,24 @@ void RosSimIface::UpdateObjectPose()
 
   //simIface->data->reset = 1;
 
-  for (int i=0; i< 10; i++)
-  {
-    simIface->Lock(1);
+  simIface->Lock(1);
 
-    gazebo::SimulationRequestData *request = &(simIface->data->requests[simIface->data->requestCount++]);
+  gazebo::SimulationRequestData *request = &(simIface->data->requests[simIface->data->requestCount++]);
+  request->type = gazebo::SimulationRequestData::SET_POSE3D;
+  memcpy(request->modelName, this->modelName.c_str(), this->modelName.size());
+  request->modelPose.pos.x = this->poseMsg.pos.position.x;
+  request->modelPose.pos.y = this->poseMsg.pos.position.y;
+  request->modelPose.pos.z = this->poseMsg.pos.position.z;
+  Quatern quat = Quatern(this->poseMsg.pos.orientation.w,
+                         this->poseMsg.pos.orientation.x,
+                         this->poseMsg.pos.orientation.y,
+                         this->poseMsg.pos.orientation.z);
+  Vector3 euler = quat.GetAsEuler();
+  request->modelPose.roll  = euler.x;
+  request->modelPose.pitch = euler.y;
+  request->modelPose.yaw   = euler.z;
 
-    request->type = gazebo::SimulationRequestData::SET_POSE3D;
-    memcpy(request->modelName, this->modelName.c_str(), this->modelName.size());
-
-    request->modelPose.pos.x = this->poseMsg.pos.position.x;
-    request->modelPose.pos.y = this->poseMsg.pos.position.y;
-    request->modelPose.pos.z = this->poseMsg.pos.position.z;
-
-    simIface->Unlock();
-
-    usleep(100000);
-  }
-
+  simIface->Unlock();
 
   // Example of resetting the simulator
   /*simIface->Lock(1);
