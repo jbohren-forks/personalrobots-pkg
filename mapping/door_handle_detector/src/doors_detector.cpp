@@ -141,8 +141,8 @@ bool
 
   // transform the PCD (Point Cloud Data) into the parameter_frame, and work there
   if (!tf_.canTransform(parameter_frame_, pointcloud.header.frame_id, pointcloud.header.stamp, timeout)){
-    ROS_ERROR ("Could not transform point cloud from frame '%s' to frame '%s'.",
-               pointcloud.header.frame_id.c_str (), parameter_frame_.c_str ());
+    ROS_ERROR ("Could not transform point cloud from frame '%s' to frame '%s' at time %f.",
+               pointcloud.header.frame_id.c_str (), parameter_frame_.c_str (), pointcloud.header.stamp.toSec());
     return false;
   }
   tf_.transformPointCloud (parameter_frame_, pointcloud, pointcloud);
