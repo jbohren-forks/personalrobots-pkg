@@ -169,6 +169,7 @@ public:
 	int frames_number_;
 	string target_frame_;
 	string base_scan_topic_;
+	string head_controller_;
 
 	OutletSpotting() : ros::Node("stereo_view"),left(NULL), disp(NULL), disp_clone(NULL),
 		sync(this, &OutletSpotting::image_cb_all, ros::Duration().fromSec(0.1), &OutletSpotting::image_cb_timeout), have_cloud_point_(false)
@@ -178,9 +179,10 @@ public:
 
 		param ("~display", display, false);
 		param ("~save_patches", save_patches, false);
-		param ("~frames_number", frames_number_, 7);
+		param ("~frames_number", frames_number_, 5);
 		param<string> ("~target_frame", target_frame_, "odom_combined");
 		param<string> ("~base_scan_topic", base_scan_topic_, "base_scan_filtered");
+		param<string>("~head_controller", head_controller_, "head_controller");
 
 		if (display) {
 			ROS_INFO("Displaying images\n");
@@ -191,7 +193,9 @@ public:
 		}
 
         advertise<visualization_msgs::Marker>("visualization_marker", 1);
+    	advertise<robot_msgs::PointStamped>(head_controller_ + "/head_track_point",10);
         advertiseService("~coarse_outlet_detect", &OutletSpotting::outletSpottingService, this);
+
 	}
 
 	~OutletSpotting()
@@ -1192,12 +1196,33 @@ public:
 	}
 
 
+	void turnHead(float horizontalAngle, float verticalAngle)
+	{
+
+		if (horizontalAngle==0 && verticalAngle==0) return;
+		PointStamped point;
+
+		point.header.stamp = ros::Time::now();
+		point.header.frame_id = "head_pan_link";
+
+		point.point.x = 1;
+		point.point.y = tan(M_PI*horizontalAngle/180);
+		point.point.z = tan(M_PI*horizontalAngle/180)*tan(M_PI*verticalAngle/180);
+
+		publish(head_controller_ + "/head_track_point", point);
+	}
+
+
 	bool runOutletSpotter(const robot_msgs::PointStamped& request, robot_msgs::PoseStamped& pose)
 	{
 		bool found = false;
         subscribeToData();
 
+        float directions[][2] = { {0,0}, {-5,0}, {10,0} };
+
+        for (size_t k=0; k<sizeof(directions)/sizeof(directions[0]); ++k)
         {
+        	turnHead(directions[k][0],directions[k][1]);
         	boost::unique_lock<boost::mutex> images_lock(cv_mutex);
         	for (int i=0;i<frames_number_;++i) {
         		ROS_INFO("OutletSpotter: waiting for images");
