@@ -19,14 +19,14 @@
   <include file="$(find doors_core)/launch/door_actions.xml" />  
 
 <!-- plug domain -->
-  <include file="$(find outlet_detection)/launch/plug.launch" />
+  <!--<include file="$(find outlet_detection)/launch/plug.launch" /> -->
   <include file="$(find outlet_detection)/launch/outlet_coarse_detection/outlet_coarse_detection.launch" />
   <node machine = "four" pkg="plug_in" type="outlet_pose_filter.py"/>
   <node machine="two" pkg="plugs_core" type="action_runner" output="screen" />
 
   
 <!-- Safety -->
-  <node machine="four" pkg="safety_core" type="action_runner" output="screen" />
+  <node machine="four" pkg="safety_core" type="action_runner" output="screen" respawn="true" />
 
 
 <!-- joystick -->
