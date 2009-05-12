@@ -38,8 +38,6 @@
 
 // Actions
 #include <safety_core/action_detect_plug_on_base.h>
-#include <safety_core/action_tuck_arms.h>
-#include <safety_core/action_doors_tuck_arms.h>
 
 // State Msgs
 #include <robot_actions/NoArgumentsActionState.h>
@@ -59,21 +57,12 @@ int main(int argc, char** argv)
   ros::init(argc,argv);
 
   ros::Node node("safety_core_actions");
-  std_msgs::Empty empty;
   DetectPlugOnBaseAction detect(node);
-  TuckArmsAction tuck_arms;
-  DoorsTuckArmsAction doors_tuck_arms;
 
   robot_actions::ActionRunner runner(10.0);
   runner.connect<std_msgs::Empty, pr2_robot_actions::DetectPlugOnBaseState, robot_msgs::PlugStow>(detect);
-  runner.connect<std_msgs::Empty, robot_actions::NoArgumentsActionState, std_msgs::Empty>(tuck_arms);
-  runner.connect<std_msgs::Empty, robot_actions::NoArgumentsActionState, std_msgs::Empty>(doors_tuck_arms);
-
   runner.run();
 
-  //robot_msgs::PlugStow feedback;
-  //detect.execute(empty, feedback);
-  //tuck_arms.execute(empty, empty);
   node.spin();
   return 0;
 }
