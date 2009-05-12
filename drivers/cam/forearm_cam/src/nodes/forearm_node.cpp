@@ -398,6 +398,12 @@ public:
     {
       ROS_WARN("Unable to set rp_filter to 0 on interface. Camera discovery is likely to fail.");
     }
+    
+    retval = system("sysctl net.core.rmem_max=16000000");
+    if (retval == -1 || !WIFEXITED(retval) || WEXITSTATUS(retval))
+    {
+      ROS_WARN("Unable to set net.core.rmem_max. Buffer overflows and packet loss is likely.");
+    }
 
 #ifndef SIM_TEST
     // Discover any connected cameras, wait for 0.5 second for replies
@@ -553,7 +559,7 @@ public:
 
     node_.param("~first_packet_offset", first_packet_offset_, 0.0025);
     if (!node_.hasParam("~first_packet_offset") && trig_controller_.empty())
-      ROS_WARN("first_packet_offset not specified. Using default value of %f ms.", first_packet_offset_);
+      ROS_INFO("first_packet_offset not specified. Using default value of %f ms.", first_packet_offset_);
 
     // Select a video mode
     if ( pr2ImagerModeSelect( camera_, video_mode_ ) != 0) {
