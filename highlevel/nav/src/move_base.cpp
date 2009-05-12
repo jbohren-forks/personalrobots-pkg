@@ -318,6 +318,9 @@ namespace nav {
             attempted_rotation_ = true;
           }
         }
+
+        //we don't want to sleep because we've been planning for awhile
+        continue;
       }
 
       gettimeofday(&end, NULL);
