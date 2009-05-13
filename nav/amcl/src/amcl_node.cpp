@@ -89,10 +89,14 @@ Offers services (name type):
   - @b "~transform_tolerance" (double) : Time with which to post-date the transform that is published, to indicate that this transform is valid into the future, default: 0.1 seconds
   - @b "~recovery_alpha_slow" (double) : Exponential decay rate for the slow average weight filter, used in deciding when to recover by adding random poses, default: 0.0, which means disabled (a good value might be 0.001)
   - @b "~recovery_alpha_fast" (double) : Exponential decay rate for the fast average weight filter, used in deciding when to recover by adding random poses, default: 0.0, which means disabled (a good value might be 0.1)
-  - @b "~initial_pose_x" (double) : Initial pose estimate (x), used to initialize filter with Gaussian distribution, default: 0.0 meters
-  - @b "~initial_pose_y" (double) : Initial pose estimate (y), used to initialize filter with Gaussian distribution, default: 0.0 meters
-  - @b "~initial_pose_a" (double) : Initial pose estimate (yaw), used to initialize filter with Gaussian distribution, default: 0.0 radians
+  - @b "~initial_pose_x" (double) : Initial pose mean (x), used to initialize filter with Gaussian distribution, default: 0.0 meters
+  - @b "~initial_pose_y" (double) : Initial pose mean (y), used to initialize filter with Gaussian distribution, default: 0.0 meters
+  - @b "~initial_pose_a" (double) : Initial pose mean (yaw), used to initialize filter with Gaussian distribution, default: 0.0 radians
+  - @b "~initial_cov_xx" (double) : Initial pose covariance (x*x), used to initialize filter with Gaussian distribution, default: 0.5*0.5 meters
+  - @b "~initial_cov_yy" (double) : Initial pose covariance (y*y), used to initialize filter with Gaussian distribution, default: 0.5*0.5 meters
+  - @b "~initial_cov_aa" (double) : Initial pose covariance (yaw*yaw), used to initialize filter with Gaussian distribution, default: (pi/12)*(pi/12) radians
   - @b "~gui_publish_rate" (double) : Maximum rate at which scans and paths are published for visualization, -1.0 to disable, default: -1.0 Hz
+  - @b "~save_pose_rate" (double) : Maximum rate at which to store the last estimated pose and covariance to the parameter server, in the variables ~initial_pose_* and ~initial_cov_*.  This saved pose will be used on subsequent runs to initialize the filter. -1.0 to disable, default: 0.5 Hz
 
 @subsection laser_params Laser model parameters
 Note that whichever mixture weights are in use should sum to 1.  The beam
@@ -113,9 +117,19 @@ model uses only 2: z_hit and z_rand.
 
 @subsection odom_params Odometery model parameters
 If odom_model_type is "diff", then we use the @b
-sample_motion_model_odometry algorithm from Probabilistic Robotics, p136.
-If it's "omni", then we use a custom model for an omni-directional base.
-  - @b "~odom_model_type" (string) : Which model to use, either "diff" or "omni," default: "omni"
+sample_motion_model_odometry algorithm from Probabilistic Robotics, p136;
+this model uses the noise parameters odom_alpha_1 through odom_alpha4,
+as defined in the book.  
+
+If odom_model_type is "omni", then we use a custom model for an
+omni-directional base, which uses odom_alpha_1 through odom_alpha_5.
+The meaning of the first four parameters is similar to that for the "diff"
+model.  The fifth parameter capture the tendency of the robot to translate
+(without rotating) perpendicular to the observed direction of travel.
+
+@todo Document the "omni" model in more detail.
+
+  - @b "~odom_model_type" (string) : Which model to use, either "diff" or "omni," default: "diff"
   - @b "~odom_alpha1" (double) : Rotation-related noise parameter, default: 0.2
   - @b "~odom_alpha2" (double) : Translation-related noise parameter, default: 0.2
   - @b "~odom_alpha3" (double) : Translation-related noise parameter, default: 0.2
@@ -228,7 +242,11 @@ class AmclNode
     std::string base_frame_id_;
 
     ros::Time gui_laser_last_publish_time;
-    ros::Duration gui_publish_rate;
+    ros::Duration gui_publish_period;
+    ros::Time save_pose_last_time;
+    ros::Duration save_pose_period;
+
+    robot_msgs::PoseWithCovariance last_published_pose;
 
     map_t* map_;
     char* mapdata;
@@ -259,7 +277,8 @@ class AmclNode
     map_t* requestMap();
 
     // Helper to get odometric pose from transform system
-    bool getOdomPose(double& x, double& y, double& yaw,
+    bool getOdomPose(tf::Stamped<btTransform>& pose,
+                     double& x, double& y, double& yaw,
                      const ros::Time& t, const std::string& f);
 
     //time for tolerance on the published transform,
@@ -300,7 +319,9 @@ AmclNode::AmclNode() :
 
   double tmp;
   ros::Node::instance()->param("~gui_publish_rate", tmp, -1.0);
-  gui_publish_rate = ros::Duration(1.0/tmp);
+  gui_publish_period = ros::Duration(1.0/tmp);
+  ros::Node::instance()->param("~save_pose_rate", tmp, 0.5);
+  save_pose_period = ros::Duration(1.0/tmp);
 
   ros::Node::instance()->param("~laser_min_range", laser_min_range_, -1.0);
   ros::Node::instance()->param("~laser_max_range", laser_max_range_, -1.0);
@@ -364,10 +385,15 @@ AmclNode::AmclNode() :
 
   transform_tolerance_.fromSec(tmp_tol);
 
-  double startX, startY, startTH;
-  ros::Node::instance()->param("~initial_pose_x", startX, 0.0);
-  ros::Node::instance()->param("~initial_pose_y", startY, 0.0);
-  ros::Node::instance()->param("~initial_pose_a", startTH, 0.0);
+  double init_pose[3];
+  ros::Node::instance()->param("~initial_pose_x", init_pose[0], 0.0);
+  ros::Node::instance()->param("~initial_pose_y", init_pose[1], 0.0);
+  ros::Node::instance()->param("~initial_pose_a", init_pose[2], 0.0);
+  double init_cov[3];
+  ros::Node::instance()->param("~initial_cov_xx", init_cov[0], 0.5 * 0.5);
+  ros::Node::instance()->param("~initial_cov_yy", init_cov[1], 0.5 * 0.5);
+  ros::Node::instance()->param("~initial_cov_aa", init_cov[2], 
+                               (M_PI/12.0) * (M_PI/12.0));
 
   cloud_pub_interval.fromSec(1.0);
   tfb_ = new tf::TransformBroadcaster(*ros::Node::instance());
@@ -385,13 +411,13 @@ AmclNode::AmclNode() :
 
   // Initialize the filter
   pf_vector_t pf_init_pose_mean = pf_vector_zero();
-  pf_init_pose_mean.v[0] = startX;
-  pf_init_pose_mean.v[1] = startY;
-  pf_init_pose_mean.v[2] = startTH;
+  pf_init_pose_mean.v[0] = init_pose[0];
+  pf_init_pose_mean.v[1] = init_pose[1];
+  pf_init_pose_mean.v[2] = init_pose[2];
   pf_matrix_t pf_init_pose_cov = pf_matrix_zero();
-  pf_init_pose_cov.m[0][0] = 0.5 * 0.5;
-  pf_init_pose_cov.m[1][1] = 0.5 * 0.5;
-  pf_init_pose_cov.m[2][2] = M_PI/12.0 * M_PI/12.0;
+  pf_init_pose_cov.m[0][0] = init_cov[0];
+  pf_init_pose_cov.m[1][1] = init_cov[1];
+  pf_init_pose_cov.m[2][2] = init_cov[2];
   pf_init(pf_, pf_init_pose_mean, pf_init_pose_cov);
   pf_init_ = false;
 
@@ -483,13 +509,13 @@ AmclNode::~AmclNode()
 }
 
 bool
-AmclNode::getOdomPose(double& x, double& y, double& yaw,
+AmclNode::getOdomPose(tf::Stamped<btTransform>& odom_pose,
+                      double& x, double& y, double& yaw,
                       const ros::Time& t, const std::string& f)
 {
   // Get the robot's pose
   tf::Stamped<tf::Pose> ident (btTransform(btQuaternion(0,0,0),
                                            btVector3(0,0,0)), t, f);
-  tf::Stamped<btTransform> odom_pose;
   try
   {
     this->tf_->transformPose(odom_frame_id_, ident, odom_pose);
@@ -588,8 +614,9 @@ AmclNode::laserReceived(const tf::MessageNotifier<laser_scan::LaserScan>::Messag
   }
 
   // Where was the robot when this scan was taken?
+  tf::Stamped<btTransform> odom_pose;
   pf_vector_t pose;
-  if(!getOdomPose(pose.v[0], pose.v[1], pose.v[2],
+  if(!getOdomPose(odom_pose, pose.v[0], pose.v[1], pose.v[2],
                   laser_scan->header.stamp, "base_footprint"))
   {
     ROS_ERROR("Couldn't determine robot's pose associated with laser scan");
@@ -792,10 +819,11 @@ AmclNode::laserReceived(const tf::MessageNotifier<laser_scan::LaserScan>::Messag
        */
 
       ros::Node::instance()->publish("amcl_pose", p);
+      last_published_pose = p;
       // Publish the laser scan from the most likely pose
       ros::Time now = ros::Time::now();
-      if((gui_publish_rate.toSec() > 0.0) &&
-         (now - gui_laser_last_publish_time) >= gui_publish_rate)
+      if((gui_publish_period.toSec() > 0.0) &&
+         (now - gui_laser_last_publish_time) >= gui_publish_period)
       {
         visualization_msgs::Polyline point_cloud;
         point_cloud.header = laser_scan->header;
@@ -885,12 +913,39 @@ AmclNode::laserReceived(const tf::MessageNotifier<laser_scan::LaserScan>::Messag
   }
   else if(latest_tf_valid_)
   {
+    // Nothing changed, so we'll just republish the last transform, to keep
+    // everybody happy.
     ros::Time transform_expiration = (laser_scan->header.stamp +
                                       transform_tolerance_);
     tf::Stamped<tf::Transform> tmp_tf_stamped(latest_tf_.inverse(),
                                               transform_expiration,
                                               odom_frame_id_, "map");
     this->tfb_->sendTransform(tmp_tf_stamped);
+
+
+    // Is it time to save our last pose to the param server
+    ros::Time now = ros::Time::now();
+    if((save_pose_period.toSec() > 0.0) &&
+       (now - save_pose_last_time) >= save_pose_period)
+    {
+      // We need to apply the last transform to the latest odom pose to get
+      // the latest map pose to store.  We'll take the covariance from
+      // last_published_pose.
+      tf::Pose map_pose = latest_tf_.inverse() * odom_pose;
+      double yaw,pitch,roll;
+      map_pose.getBasis().getEulerZYX(yaw, pitch, roll);
+
+      ros::Node::instance()->setParam("~initial_pose_x", map_pose.getOrigin().x());
+      ros::Node::instance()->setParam("~initial_pose_y", map_pose.getOrigin().y());
+      ros::Node::instance()->setParam("~initial_pose_a", yaw);
+      ros::Node::instance()->setParam("~initial_cov_xx", 
+                                      last_published_pose.covariance[6*0+0]);
+      ros::Node::instance()->setParam("~initial_cov_yy", 
+                                      last_published_pose.covariance[6*1+1]);
+      ros::Node::instance()->setParam("~initial_cov_aa", 
+                                      last_published_pose.covariance[6*3+3]);
+      save_pose_last_time = now;
+    }
   }
 
   pf_mutex_.unlock();
