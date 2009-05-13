@@ -284,14 +284,28 @@ namespace base_local_planner {
     return fabs(angles::shortest_angular_distance(yaw, goal_th)) <= yaw_goal_tolerance_;
   }
 
-  void TrajectoryPlannerROS::rotateToGoal(const tf::Stamped<tf::Pose>& global_pose, double goal_th, robot_msgs::PoseDot& cmd_vel){
-    double uselessPitch, uselessRoll, yaw;
+  bool TrajectoryPlannerROS::rotateToGoal(const tf::Stamped<tf::Pose>& global_pose, const tf::Stamped<tf::Pose>& robot_vel, double goal_th, robot_msgs::PoseDot& cmd_vel){
+    double uselessPitch, uselessRoll, yaw, vel_yaw;
     global_pose.getBasis().getEulerZYX(yaw, uselessPitch, uselessRoll);
+    robot_vel.getBasis().getEulerZYX(vel_yaw, uselessPitch, uselessRoll);
     ROS_DEBUG("Moving to desired goal orientation\n");
     cmd_vel.vel.vx = 0;
     cmd_vel.vel.vy = 0;
     double ang_diff = angles::shortest_angular_distance(yaw, goal_th);
-    cmd_vel.ang_vel.vz = ang_diff > 0.0 ? std::max(min_in_place_vel_th_, ang_diff) : std::min(-1.0 * min_in_place_vel_th_, ang_diff);
+    double v_theta_samp = ang_diff > 0.0 ? std::max(min_in_place_vel_th_, ang_diff) : std::min(-1.0 * min_in_place_vel_th_, ang_diff);
+
+    //we still want to lay down the footprint of the robot and check if the action is legal
+    bool valid_cmd = tc_->checkTrajectory(global_pose.getOrigin().getX(), global_pose.getOrigin().getY(), yaw, 
+        robot_vel.getOrigin().getX(), robot_vel.getOrigin().getY(), vel_yaw, v_theta_samp, 0.0, 0.0);
+
+    if(valid_cmd){
+      cmd_vel.ang_vel.vz = v_theta_samp;
+      return true;
+    }
+
+    cmd_vel.ang_vel.vz = 0.0;
+    return false;
+
   }
 
   void TrajectoryPlannerROS::odomCallback(){
@@ -457,7 +471,8 @@ namespace base_local_planner {
       }
       else {
         //otherwise we need to rotate to the goal... compute the next velocity we should take
-        rotateToGoal(global_pose, goal_th, cmd_vel);
+        if(!rotateToGoal(global_pose, robot_vel, goal_th, cmd_vel))
+          return false;
       }
 
       //publish the robot footprint and an empty plan because we've reached our goal position

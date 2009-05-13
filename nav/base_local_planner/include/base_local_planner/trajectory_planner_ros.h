@@ -161,10 +161,12 @@ namespace base_local_planner {
       /**
        * @brief Once a goal position is reached... rotate to the goal orientation
        * @param  global_pose The pose of the robot in the global frame
+       * @param  robot_vel The velocity of the robot
        * @param  goal_th The desired th value for the goal
        * @param  cmd_vel The velocity commands to be filled
+       * @return  True if a valid trajectory was found, false otherwise
        */
-      void rotateToGoal(const tf::Stamped<tf::Pose>& global_pose, double goal_th, robot_msgs::PoseDot& cmd_vel);
+      bool rotateToGoal(const tf::Stamped<tf::Pose>& global_pose, const tf::Stamped<tf::Pose>& robot_vel, double goal_th, robot_msgs::PoseDot& cmd_vel);
 
       /**
        * @brief  Compute the distance between two points
