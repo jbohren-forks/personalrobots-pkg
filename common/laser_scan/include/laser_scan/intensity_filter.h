@@ -36,8 +36,7 @@
 #define LASER_SCAN_INTENSITY_FILTER_H
 /**
 \author Vijay Pradeep
-@b ScanIntensityFilter takes input scans and fiters out that are not within the specified range. The filtered out readings are set at >max_range \
-in order to invalidate them.
+@b ScanIntensityFilter takes input scans and fiters out that are not within the specified range. The filtered out readings are set at >max_range in order to invalidate them.
 
 **/
 
