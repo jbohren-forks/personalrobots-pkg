@@ -8,6 +8,7 @@
 #include "Constraints.hh"
 #include "Timeline.hh"
 #include "Agent.hh"
+#include "Utilities.hh"
 #include "executive_trex_pr2/calc_angle_diff_constraint.h"
 #include "executive_trex_pr2/calc_distance_constraint.h"
 #include "plugs_functions/plugs_functions.h"
@@ -216,7 +217,7 @@ namespace TREX{
 
   private:
     virtual void handleExecute(){
-      debugMsg("trex:debug:propagation:tf_get_robot_pose",  "BEFORE: " << toString());
+      debugMsg("trex:debug:propagation:tf_get_robot_pose",  "BEFORE: " << TREX::timeString() << toString());
 
       // Obtain pose if not already called
       if(!_propagated){
@@ -241,7 +242,7 @@ namespace TREX{
       getCurrentDomain(getScope()[5]).set(_pose.getRotation().z());
       getCurrentDomain(getScope()[6]).set(_pose.getRotation().w());
 
-      debugMsg("trex:debug:propagation:tf_get_robot_pose",  "AFTER: " << toString());
+      debugMsg("trex:debug:propagation:tf_get_robot_pose",  "AFTER: " << TREX::timeString() << toString());
     }
 
     virtual void setSource(const ConstraintId& sourceConstraint) {
@@ -255,10 +256,14 @@ namespace TREX{
       tf::Stamped<tf::Pose> robot_pose;
       robot_pose.setIdentity();
       robot_pose.frame_id_ = "base_footprint";
-      robot_pose.stamp_ = ros::Time();
 
       try{
-	getTransformListener().transformPose(_frame, robot_pose, pose);
+	debugMsg("trex:debug:timing:get_pose",  "A: " << TREX::timeString());
+	tf::TransformListener& tfl = getTransformListener();
+	debugMsg("trex:debug:timing:get_pose",  "B: " << TREX::timeString());
+	robot_pose.stamp_ = ros::Time();
+	tfl.transformPose(_frame, robot_pose, pose);
+	debugMsg("trex:debug:timing:get_pose",  "C: " << TREX::timeString());
       }
       catch(tf::LookupException& ex) {
 	ROS_ERROR("No Transform available Error: %s\n", ex.what());

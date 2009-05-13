@@ -7,6 +7,7 @@
 #include "Utilities.hh"
 #include "Token.hh"
 #include "Domains.hh"
+#include "Utilities.hh"
 
 using namespace EUROPA;
 using namespace TREX;
@@ -95,7 +96,7 @@ namespace executive_trex_pr2 {
     if(!_x.isSingleton() || !_y.isSingleton())
       return;
 
-    debugMsg("map:get_nearest_outlet",  "BEFORE: " << toString());
+    debugMsg("map:get_nearest_outlet",  "BEFORE: "  << TREX::timeString() << toString());
 
     double x = _x.getSingletonValue();
     double y = _y.getSingletonValue();
@@ -105,7 +106,7 @@ namespace executive_trex_pr2 {
 
     _outlet.set(outlet_id);
 
-    debugMsg("map:get_nearest_outlet",  "AFTER: " << toString());
+    debugMsg("map:get_nearest_outlet",  "AFTER: "  << TREX::timeString() << toString());
   }
 
   //*******************************************************************************************
@@ -135,7 +136,7 @@ namespace executive_trex_pr2 {
     if(!_outlet.isSingleton())
       return;
 
-    debugMsg("map:get_outlet_state",  "BEFORE: " << toString());
+    debugMsg("map:get_outlet_state",  "BEFORE: "  << TREX::timeString() << toString());
     robot_msgs::Pose outlet_pose;
     TopologicalMapAdapter::instance()->getOutletState(_outlet.getSingletonValue(), outlet_pose);
     _x.set(outlet_pose.position.x);
@@ -146,7 +147,7 @@ namespace executive_trex_pr2 {
     _qz.set(outlet_pose.orientation.z);
     _qw.set(outlet_pose.orientation.w);
 
-    debugMsg("map:get_outlet_state",  "AFTER: " << toString());
+    debugMsg("map:get_outlet_state",  "AFTER: "  << TREX::timeString() << toString());
   }
 
   //*******************************************************************************************
@@ -177,7 +178,7 @@ namespace executive_trex_pr2 {
     if(!_current_x.isSingleton() || !_current_x.isSingleton() || !_target_x.isSingleton() || !_target_y.isSingleton()) 
       return;
 
-    debugMsg("map:get_next_move",  "BEFORE: " << toString());
+    debugMsg("map:get_next_move",  "BEFORE: "  << TREX::timeString() << toString());
 
     // Get next move by evaluating all options
     double lowest_cost = PLUS_INFINITY;
@@ -244,7 +245,7 @@ namespace executive_trex_pr2 {
 
     _thru_doorway.set(is_doorway);
 
-    debugMsg("map:get_next_move",  "AFTER: " << toString());
+    debugMsg("map:get_next_move",  "AFTER: "  << TREX::timeString() << toString());
   }
 
   //*******************************************************************************************
@@ -265,7 +266,7 @@ namespace executive_trex_pr2 {
    * We can also bind the value for the connector id based on x and y inputs. This enforces the full relation.
    */
   void MapConnectorConstraint::handleExecute(){
-    debugMsg("map:connector",  "BEFORE: " << toString());
+    debugMsg("map:connector",  "BEFORE: "  << TREX::timeString() << toString());
     if(_connector.isSingleton()){
       unsigned int connector_id = (unsigned int) _connector.getSingletonValue();
       double x, y;
@@ -284,7 +285,7 @@ namespace executive_trex_pr2 {
       unsigned int connector_id = TopologicalMapAdapter::instance()->getConnector(_x.getSingletonValue(), _y.getSingletonValue());
       _connector.set(connector_id);
     }
-    debugMsg("map:get_connector",  "AFTER: " << toString());
+    debugMsg("map:get_connector",  "AFTER: " << TREX::timeString()  << toString());
   }
 
   //*******************************************************************************************
@@ -307,7 +308,7 @@ namespace executive_trex_pr2 {
     if(!_x.isSingleton() || !_y.isSingleton())
       return;
 
-    debugMsg("map:get_region_from_position",  "BEFORE: " << toString());
+    debugMsg("map:get_region_from_position",  "BEFORE: "  << TREX::timeString() << toString());
 
     double x = _x.getSingletonValue();
     double y = _y.getSingletonValue();
@@ -315,7 +316,7 @@ namespace executive_trex_pr2 {
     unsigned int region_id = TopologicalMapAdapter::instance()->getRegion(x, y);
     _region.set(region_id);
 
-    debugMsg("map:get_region_from_position",  "AFTER: " << toString());
+    debugMsg("map:get_region_from_position",  "AFTER: " << TREX::timeString()  << toString());
 
     condDebugMsg(_region.isEmpty(), "map:get_region_from_position", 
 		 "isObstacle(" << x << ", " << y << ") == " << (TopologicalMapAdapter::instance()->isObstacle(x, y) ? "TRUE" : "FALSE"));
@@ -345,14 +346,14 @@ namespace executive_trex_pr2 {
     if(!_x1.isSingleton() || !_y1.isSingleton() || !_x2.isSingleton() || !_y2.isSingleton())
       return;
 
-    debugMsg("map:get_doorway_from_points",  "BEFORE: " << toString());
+    debugMsg("map:get_doorway_from_points",  "BEFORE: "  << TREX::timeString() << toString());
 
     unsigned int region_id = TopologicalMapAdapter::instance()->getNearestDoorway(_x2.getSingletonValue(), _y2.getSingletonValue());
 
     // If it is not a doorway, then set to zero
     getCurrentDomain(getScope()[0]).set(region_id);
 
-    debugMsg("map:get_doorway_from_points",  "AFTER: " << toString());
+    debugMsg("map:get_doorway_from_points",  "AFTER: "  << TREX::timeString() << toString());
   }
     
   //*******************************************************************************************
@@ -372,7 +373,7 @@ namespace executive_trex_pr2 {
     if(!_region.isSingleton())
       return;
 
-    debugMsg("map:is_doorway",  "BEFORE: " << toString());
+    debugMsg("map:is_doorway",  "BEFORE: " << TREX::timeString()  << toString());
 
     unsigned int region_id = _region.getSingletonValue();
     bool is_doorway(true);
@@ -380,7 +381,7 @@ namespace executive_trex_pr2 {
     TopologicalMapAdapter::instance()->isDoorway(region_id, is_doorway);
     _result.set(is_doorway);
 
-    debugMsg("map:is_doorway",  "AFTER: " << toString());
+    debugMsg("map:is_doorway",  "AFTER: " << TREX::timeString()  << toString());
   }
 
   //*******************************************************************************************
@@ -399,7 +400,7 @@ namespace executive_trex_pr2 {
     if(!_door_id.isSingleton())
       return;
 
-    debugMsg("map:get_door_state",  "BEFORE: " << toString());
+    debugMsg("map:get_door_state",  "BEFORE: " << TREX::timeString()  << toString());
 
     unsigned int id = (unsigned int)_door_id.getSingletonValue();
 
@@ -433,7 +434,7 @@ namespace executive_trex_pr2 {
       }
     }
       
-    debugMsg("map:get_door_state",  "AFTER: " << toString());
+    debugMsg("map:get_door_state",  "AFTER: " << TREX::timeString()  << toString());
   }
   
   std::string MapGetDoorStateConstraint::toString() const {
@@ -643,6 +644,7 @@ namespace executive_trex_pr2 {
   }
 
   unsigned int TopologicalMapAdapter::getNearestDoorway(double x, double y){
+    debugMsg("trex:timing:getNearestDoorway", "BEFORE:"  << TREX::timeString());
     const topological_map::RegionIdSet& all_regions = _map->allRegions();
     double distance = PLUS_INFINITY;
     unsigned int nearest_doorway = 0;
@@ -662,6 +664,8 @@ namespace executive_trex_pr2 {
 	}
       }
     }
+
+    debugMsg("trex:timing:getNearestDoorway", "AFTER:"  << TREX::timeString());
 
     debugMsg("map:getNearestDoorway", 
 	     "Found doorway " << nearest_doorway << " within " << distance << " meters from <" << x << ", " << y << ">");
