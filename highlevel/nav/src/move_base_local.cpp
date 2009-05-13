@@ -79,6 +79,8 @@ namespace nav {
     controller_costmap_ros_ = new Costmap2DROS(ros_node_, tf_, std::string("base_local_planner"));
     controller_costmap_ros_->getCostmapCopy(controller_costmap_);
 
+    controller_costmap_ros_->clearNonLethalWindow(circumscribed_radius * 2, circumscribed_radius * 2);
+
     //initially we'll stop all updates on the costmap
     controller_costmap_ros_->stop();
 
