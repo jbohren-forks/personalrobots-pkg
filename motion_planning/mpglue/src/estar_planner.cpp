@@ -148,10 +148,11 @@ namespace mpglue {
     }
     
     if (goal_pose_changed_) {
+      double lx, ly, lth;
+      itransform_->globalToLocal(stats_.goal_x, stats_.goal_y, stats_.goal_th, &lx, &ly, &lth);
       estar::Region const goalregion(stats_.goal_tol_distance,
 				     itransform_->getResolution(),
-				     stats_.goal_x,
-				     stats_.goal_y,
+				     lx, ly,
 				     costmap_->getXBegin(), costmap_->getXEnd(),
 				     costmap_->getYBegin(), costmap_->getYEnd());
       if (goalregion.GetArea().empty()) {
@@ -228,7 +229,9 @@ namespace mpglue {
       static double const lookahead(30); // XXXX hardcoded
       double const stepsize(0.5 * itransform_->getResolution()); // XXXX hardcoded
       static size_t const maxnsteps(1000); // XXXX hardcoded
-      int const retval(planner_->TraceCarrot(stats_.start_x, stats_.start_y,
+      double lx, ly, lth;
+      itransform_->globalToLocal(stats_.start_x, stats_.start_y, stats_.start_th, &lx, &ly, &lth);
+      int const retval(planner_->TraceCarrot(lx, ly,
 					     lookahead, stepsize, maxnsteps,
 					     carrot, erros_));
       if (0 > retval) {
@@ -240,8 +243,11 @@ namespace mpglue {
       
       plan.reset(new waypoint_plan_t());
       PlanConverter pc(plan.get());
-      for (carrot_trace::const_iterator ic(carrot.begin()); ic != carrot.end(); ++ic)
-	pc.addWaypoint(ic->cx, ic->cy, 0);
+      for (carrot_trace::const_iterator ic(carrot.begin()); ic != carrot.end(); ++ic) {
+	double gx, gy, gth;
+	itransform_->localToGlobal(ic->cx, ic->cy, 0, &gx, &gy, &gth);
+	pc.addWaypoint(gx, gy, gth);
+      }
       stats_.plan_length = pc.plan_length;
       stats_.plan_angle_change = pc.tangent_change;
     }

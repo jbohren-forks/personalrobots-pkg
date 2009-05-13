@@ -132,6 +132,34 @@ namespace mpglue {
     virtual void indexToGlobal(index_t index_x, index_t index_y,
 			       double * global_x, double * global_y) const = 0;
     
+    /**
+       Compute the costmap-relative (x, y, theta) coordinates of a
+       pose given in the global frame. This does NOT involve scaling
+       by the resolution.
+    */
+    virtual void globalToLocal(double global_x, double global_y, double global_th,
+			       double * local_x, double * local_y, double * local_th) const = 0;
+    
+    /**
+       Compute the global (x, y, theta) coordinates of a pose given in
+       the local costmap frame. This does NOT involve scaling by the
+       resolution.
+    */
+    virtual void localToGlobal(double local_x, double local_y, double local_th,
+			       double * global_x, double * global_y, double * global_th) const = 0;
+    
+    /**
+       Get the origin of the costmap grid relative to its containing
+       frame of reference, typically "the global" frame. (ox, oy) is
+       the center of the cell that has the indices [0][0], and oth is
+       the angle from the global X-axis to the grid X-axis
+     */
+    virtual void getOrigin(double * ox, double * oy, double * oth) const = 0;
+    
+    /**
+       Get the resolution of the costmap grid, i.e. the length of one
+       side of a grid cell.
+     */
     virtual double getResolution() const = 0;
     
     template<typename other_index_t>

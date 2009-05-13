@@ -119,45 +119,49 @@ namespace mpglue {
   preCreatePlan() throw(std::exception)
   {
     if (start_changed_) {
-      stats_.start_state = environment_->SetStart(stats_.start_x, stats_.start_y, stats_.start_th);
+      double lx, ly, lth;
+      itransform_->globalToLocal(stats_.start_x, stats_.start_y, stats_.start_th, &lx, &ly, &lth);
+      stats_.start_state = environment_->SetStart(lx, ly, lth);
       if (0 > stats_.start_state) {
 	ostringstream os;
 	os << "mpglue::SBPLPlannerWrap::preCreatePlan(): invalid start\n"
-	   << "  start pose: " << stats_.start_x << " " << stats_.start_y << " "
+	   << "  global frame: " << stats_.start_x << " " << stats_.start_y << " "
 	   << stats_.start_th << "\n"
-	   << "  start index: " << stats_.start_ix << " " << stats_.start_iy << "\n"
-	   << "  start state: " << stats_.start_state << "\n";
+	   << "  local frame: " << lx << " " << ly << " " << lth << "\n"
+	   << "  state: " << stats_.start_state << "\n";
 	throw out_of_range(os.str());
       }
       if (1 != planner_->set_start(stats_.start_state)) {
 	ostringstream os;
 	os << "mpglue::SBPLPlannerWrap::preCreatePlan(): SBPLPlanner::set_start() failed\n"
-	   << "  start pose: " << stats_.start_x << " " << stats_.start_y << " "
+	   << "  global frame: " << stats_.start_x << " " << stats_.start_y << " "
 	   << stats_.start_th << "\n"
-	   << "  start index: " << stats_.start_ix << " " << stats_.start_iy << "\n"
-	   << "  start state: " << stats_.start_state << "\n";
+	   << "  local frame: " << lx << " " << ly << " " << lth << "\n"
+	   << "  state: " << stats_.start_state << "\n";
 	throw runtime_error(os.str());
       }
     }
     
     if (goal_pose_changed_) {
-      stats_.goal_state = environment_->SetGoal(stats_.goal_x, stats_.goal_y, stats_.goal_th);
+      double lx, ly, lth;
+      itransform_->globalToLocal(stats_.goal_x, stats_.goal_y, stats_.goal_th, &lx, &ly, &lth);
+      stats_.goal_state = environment_->SetGoal(lx, ly, lth);
       if (0 > stats_.goal_state) {
 	ostringstream os;
 	os << "mpglue::SBPLPlannerWrap::preCreatePlan(): invalid goal\n"
-	   << "  goal pose: " << stats_.goal_x << " " << stats_.goal_y << " "
+	   << "  global frame: " << stats_.goal_x << " " << stats_.goal_y << " "
 	   << stats_.goal_th << "\n"
-	   << "  goal index: " << stats_.goal_ix << " " << stats_.goal_iy << "\n"
-	   << "  goal state: " << stats_.goal_state << "\n";
+	   << "  local frame: " << lx << " " << ly << " " << lth << "\n"
+	   << "  state: " << stats_.goal_state << "\n";
 	throw out_of_range(os.str());
       }
       if (1 != planner_->set_goal(stats_.goal_state)) {
 	ostringstream os;
 	os << "mpglue::SBPLPlannerWrap::preCreatePlan(): SBPLPlanner::set_goal() failed\n"
-	   << "  goal pose: " << stats_.goal_x << " " << stats_.goal_y << " "
+	   << "  global frame: " << stats_.goal_x << " " << stats_.goal_y << " "
 	   << stats_.goal_th << "\n"
-	   << "  goal index: " << stats_.goal_ix << " " << stats_.goal_iy << "\n"
-	   << "  goal state: " << stats_.goal_state << "\n";
+	   << "  local frame: " << lx << " " << ly << " " << lth << "\n"
+	   << "  state: " << stats_.goal_state << "\n";
 	throw runtime_error(os.str());
       }
     }

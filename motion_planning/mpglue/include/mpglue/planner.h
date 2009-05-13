@@ -56,13 +56,13 @@ namespace mpglue {
     double start_x;	     /**< global X-coordinate of start pose */
     double start_y;	     /**< global Y-coordinate of start pose */
     double start_th;	     /**< global heading of start pose */
-    ssize_t start_ix;	     /**< X-index of the start in the costmap */
-    ssize_t start_iy;	     /**< Y-index of the start in the costmap */
+    ssize_t start_ix;        /**< X-index of the start in the costmap frame */
+    ssize_t start_iy;        /**< Y-index of the start in the costmap frame */
     double goal_x;	     /**< global X-coordinate of goal pose */
     double goal_y;	     /**< global X-coordinate of goal pose */
     double goal_th;	     /**< global heading of goal pose */
-    ssize_t goal_ix;	     /**< X-index of the goal in the costmap */
-    ssize_t goal_iy;	     /**< Y-index of the goal in the costmap */
+    ssize_t goal_ix;	     /**< X-index of the goal in the costmap frame */
+    ssize_t goal_iy;	     /**< Y-index of the goal in the costmap frame */
     double goal_tol_distance;/**< maximum distance at which to stop planning */
     double goal_tol_angle;   /**< maximum heading error at which to stop planning */
     

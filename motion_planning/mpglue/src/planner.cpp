@@ -108,10 +108,10 @@ namespace mpglue {
       os << title << "\n";
     os << prefix << "goal pose:                 " << goal_x << "  " << goal_y << "  " << goal_th
        << "\n"
-       << prefix << "goal grid:                 " << goal_ix << "  " << goal_iy << "\n"
+       << prefix << "goal costmap:                 " << goal_ix << "  " << goal_iy << "\n"
        << prefix << "start pose:                " << start_x << "  " << start_y << "  " << start_th
        << "\n"
-       << prefix << "start grid:                " << start_ix << "  " << start_iy << "\n"
+       << prefix << "start costmap:                " << start_ix << "  " << start_iy << "\n"
        << prefix << "plan_from_scratch:         " << to_string(plan_from_scratch) << "\n"
        << prefix << "flush_cost_changes:        " << to_string(flush_cost_changes) << "\n"
        << prefix << "success:                   " << to_string(success) << "\n"
@@ -128,13 +128,15 @@ namespace mpglue {
   {
     os << prefix << "<mpglue_costmap_planner_stats>\n"
        << prefix << "  <type>" << getClassName() << "</type>\n"
-       << prefix << "  <goal>" << goal_x << "  " << goal_y << "  " << goal_th
-       << "  " << goal_ix << "  " << goal_iy
-       << "  " << goal_tol_distance << "  " << goal_tol_angle
-       << "</goal>\n"
-       << prefix << "  <start>" << start_x << "  " << start_y << "  " << start_th
-       << "  " << start_ix << "  " << start_iy
-       << "</start>\n"
+       << prefix << "  <goal>\n"
+       << prefix << "    <global>" << goal_x << "  " << goal_y << "  " << goal_th << "</global>\n"
+       << prefix << "    <tol>" << goal_tol_distance << "  " << goal_tol_angle << "</tol>\n"
+       << prefix << "    <costmap>" << goal_ix << "  " << goal_iy << "</costmap>\n"
+       << prefix << "  </goal>\n"
+       << prefix << "  <start>\n"
+       << prefix << "    <global>" << start_x << "  " << start_y << "  " << start_th << "</global>\n"
+       << prefix << "    <costmap>" << start_ix << "  " << start_iy << "</costmap>\n"
+       << prefix << "  </start>\n"
        << prefix << "  <plan_from_scratch>" << to_string(plan_from_scratch)
        << "</plan_from_scratch>\n"
        << prefix << "  <flush_cost_changes>" << to_string(flush_cost_changes)

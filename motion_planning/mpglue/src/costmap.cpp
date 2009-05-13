@@ -124,6 +124,27 @@ namespace {
 			       double * global_x, double * global_y) const
     { (*get_costmap_)()->mapToWorld(index_x, index_y, *global_x, *global_y); }
     
+    
+    virtual void globalToLocal(double global_x, double global_y, double global_th,
+			       double * local_x, double * local_y, double * local_th) const {
+      *local_x = global_x - (*get_costmap_)()->originX();
+      *local_y = global_y - (*get_costmap_)()->originY();
+      *local_th = global_th;
+    }
+    
+    virtual void localToGlobal(double local_x, double local_y, double local_th,
+			       double * global_x, double * global_y, double * global_th) const {
+      *global_x = local_x + (*get_costmap_)()->originX();
+      *global_y = local_y + (*get_costmap_)()->originY();
+      *global_th = local_th;
+    }
+    
+    virtual void getOrigin(double * ox, double * oy, double * oth) const {
+      *ox = (*get_costmap_)()->originX();
+      *oy = (*get_costmap_)()->originY();
+      *oth = 0;
+    }
+    
     virtual double getResolution() const { return (*get_costmap_)()->resolution(); }
     
     mpglue::costmap_2d_getter * get_costmap_;
@@ -268,6 +289,28 @@ namespace {
       sfl::GridFrame::position_t const pp(gf_->GlobalPoint(index_x, index_y));
       *global_x = pp.v0;
       *global_y = pp.v1;
+    }
+    
+    virtual void globalToLocal(double global_x, double global_y, double global_th,
+			       double * local_x, double * local_y, double * local_th) const {
+      *local_x = global_x;
+      *local_y = global_y;
+      *local_th = global_th;
+      gf_->From(*local_x, *local_y, *local_th);
+    }
+    
+    virtual void localToGlobal(double local_x, double local_y, double local_th,
+			       double * global_x, double * global_y, double * global_th) const {
+      *global_x = local_x;
+      *global_y = local_y;
+      *global_th = local_th;
+      gf_->To(*global_x, *global_y, *global_th);
+    }
+    
+    virtual void getOrigin(double * ox, double * oy, double * oth) const {
+      *ox = gf_->X();
+      *oy = gf_->Y();
+      *oth = gf_->Theta();
     }
     
     virtual double getResolution() const { return gf_->Delta(); }
