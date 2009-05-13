@@ -189,9 +189,6 @@ namespace nav {
       bool valid_control = false;
       //pass plan to controller
       std::vector<robot_msgs::PoseStamped> global_plan;
-      robot_msgs::PoseStamped robot_start;
-      tf::PoseStampedTFToMsg(global_pose, robot_start);
-      global_plan.push_back(robot_start);
       global_plan.push_back(goal);
       tc_->updatePlan(global_plan);
       //get observations for the non-costmap controllers
