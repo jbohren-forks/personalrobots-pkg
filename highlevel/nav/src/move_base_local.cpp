@@ -194,7 +194,7 @@ namespace nav {
       //get observations for the non-costmap controllers
       std::vector<Observation> observations;
       controller_costmap_ros_->getMarkingObservations(observations);
-      valid_control = tc_->computeVelocityCommands(cmd_vel, observations);
+      valid_control = tc_->computeVelocityCommands(cmd_vel, observations, false);
 
       //give the base the velocity command
       ros_node_.publish("cmd_vel", cmd_vel);
@@ -213,7 +213,7 @@ namespace nav {
         controller_costmap_ros_->stop();
         return robot_actions::ABORTED;
       }
-      else{
+      else if(valid_control){
         last_valid_control = ros::Time::now();
       }
 
