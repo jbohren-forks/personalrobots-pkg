@@ -3,7 +3,7 @@
 
 @htmlinclude manifest.html
 
-@b tf is a library for keeping track of coordinate frames.  There are both python binding and c++ bindings. 
+@b tf is a library for keeping track of coordinate frames.  There are both C++ and Python bindings. 
 
  - @ref overview
  - @ref utilities
@@ -38,40 +38,38 @@ This is a command line tool to send static transforms periodically.
 
 @page overview Overview of Functionality
 @section summary Summary
-The tf library has a core library which keeps track of coordinate frames independent 
-of ROS integration.  The library 
-utilizes the Linear Math libraires from the Bullet Physics engine.  And there are 
-classes which provide simple interfaces to ROS.  
+tf is a software library that keeps track of coordinate frames. 
+The main interface to the tf is through the tf::Transformer class.  This class
+provides all the necessary external interfaces and can be used independently of ROS.  
+For ROS integrations, there are two subclasses of tf::Transformer that assist with
+receiving and publishing transforms.
+The tf::TransformListener class automatically listens for transform messages sent over ROS and updates the Transformer. 
+The tf::TransformBroadcaster class publishes transforms to ROS.
 
-The major interface to the tf library is through the tf::Transformer class.  This class
-provides all the necessary external interfaces.  
-
-However for the common use cases in a distributed ROS environment the Transformer class
-is subclassed to provide automated messaging to keep up to date on transforms.  
-The tf::TransformListener class will automatically listen for transform messages sent over ROS and 
-insert them into the libraries storage.  There is a similar helper class the tf::TransformBroadcaster
-which provides a simple interface for broadcasting transforms onto the ROS network.  
+tf utilizes the Linear Math libraries from the Bullet Physics engine.
 
 @section library Library
-There is a ROS messaging independant library encompased in the tf::Transformer class.  
+The tf::Transformer class is a ROS-indepdent library. Its design, implementation and rationale
+are described below.
 
 @subsection storage Storage
-Transforms are 
-expressed as a combination of a translation and rotation in 3D space, in the form of a tf::Vector3 and a 
-tf::Quaternion.  Each transform has an associated frame id, parent id, and time stamp.  Each transform added
+Transforms are expressed as a combination of a translation and rotation in 3D space, 
+in the form of a tf::Vector3 and a tf::Quaternion.  
+Each transform has an associated frame id, parent id, and time stamp.  Each transform added
 to the library is pushed into a list sorted by time for each frame id.  
 
 @subsection lookup Transform Composition
-To generate a transform between two arbitrary frames the structure of the relationship between the frames is
-assumed to be a tree.  To find the spanning set between any two frames the library will start by recursively finding
+To generate a transform between two arbitrary frames, 
+the structure of the relationship between the frames is assumed to be a tree.  
+To find the spanning set between any two frames, tf starts by recursively finding
 the parent of both the target frame and the source frame.  These will both end at the root of the tree.  
-Then the library will step back down the tree removing all but the closest common parent.  
+tf then steps back down the tree and removes all but the closest common parent.  
 
 @subsection timetransform Transforms in Time
-The above transform often provides adaquate functionality to perform transforms between any two frames at the 
-time the data was collected.  However often it is useful to know where an object is in relation to something 
-at a different time.  However this requires knowldege of which frame the object was stationary compared to during
-the time interval.  A very common example is an object observed as a vehicle is driving.  Two seconds later as the 
+It is often useful to know where an object is in relation to something at a different time.  
+This requires knowledge of which frame the object was stationary compared to during
+the time interval.  
+A very common example is an object observed as a vehicle is driving.  Two seconds later as the 
 vehicle approaches the obstacle where the object is in relation to the vehicle is good to know.  The map or odometery 
 frame use for navigation would be a good fixed frame.  However if say the vehicle had a robotic hand which grabbed the 
 object.  Two seconds later the object would be in the same position with relation to the hand, and and not the vehicle, 
@@ -80,51 +78,53 @@ distance from the hand as observed when picked up, but the position of the hand 
 the two seconds, to which this would be robust.  
 
 @subsection exceptions Exceptions
-Exceptions are thrown for bad lookup requiests and malformed trees.  The exceptions all derive from tf::TransformException
-which is a derivative of std::RuntimeError and have the method what() defined for debugging.  
-The specific exception classes are tf::LookupException tf::MaxDepthException and tf::ConnectivityException.  
+Exceptions are thrown for bad lookup requests and malformed trees.  The exceptions all derive from tf::TransformException,
+which is a subclass of std::RuntimeError and have the method what() defined for debugging.  
+The specific exception classes are tf::LookupException, tf::MaxDepthException and tf::ConnectivityException.  
 
-Due to the importance of timing there is also an tf::ExtrapolationException which is thrown in the case that 
+Timing is also important to tf, so there a tf::ExtrapolationException that is thrown in cases when
 the time requested is too far from data currently stored in the library.  There are two common cases when this would 
-happen.  If requests are made of the transform library faster than new transforms are added it will complain.  And the 
-other case if is the requested time is too far in the past to be in the list of transforms stored.  The amount of extrapolation
-and how long to keep data can be set in the tf::Transformer constructor.  
+happen.  If requests are made of tf faster than new transforms are added, it will complain.  
+The other case is if the requested time is too far in the past to be in the list of transforms stored.  The tf::Transformer constructor allows you to configure the amount of extrapolation
+and how long to keep data.
 
 @subsection computation Computation
-The library does not have any built in processing.  The lists are maintained by the inserting funciton call. 
-The maintenance simply prunes expired transforms from the end of the list.  All transforms are generated 
-when requested.  All interfaces use the std::string form of the frame id, however when storing the transforms 
-the string is mapped to a number to allow internal computations to avoid strings.  
+tf does not do any background processing.  All transforms are generated when requested and 
+transform lists are updated during the inserting function call.  Transform updates
+simply prune expired transforms from the end of the list.
+
+All interfaces use the std::string representation of the frame id, although
+these strings are mapped to numerical ids interally to avoid calculations with strings.
 
 
 @page cpp C++ Usage
 @section usage Common Usage
-For most use cases the basic library will not be used directly.  
+For most ROS use cases, the basic tf::Transformer library is not used directly.  
 
 There are two helper classes to provide sending and recieving of ROS transform
 messages.  tf::TransformBroadcaster and tf::TransformListener. 
 
 @subsection listener TransformListener
 The tf::TransformListener class inherits from tf::Transformer to provide all the functionality of the 
-basic library.  In addition it also provides methods to directly transform ROS messages.  
-And the third part of what it does is to automatically listen for and push transforms broadcast
-on ROS into the library.  
+basic library.  In addition, it provides methods to transform data ROS messages directly and
+it automatically listens for transforms published on ROS. 
 
 @subsection message_notifier MessageNotifier
-The tf::MessageNotifier class is a very useful helper class which will subscribe to any datatype 
-which has a header and only provide callbacks when transform data is available to transform the 
-recieved data into the desired target frame.  This is the recommended method for recieving almost any sensor data.
+The tf::MessageNotifier is the recommended method for receiving almost any sensor data from ROS.
+Data in ROS can be published with respect to any known frame. 
+The tf::MessageNotifier class makes it easy to use this data 
+by providing callbacks only when it is possible to transform it into your desired 
+target frame.
+
+The tf::MessageNotifier class can subscribe to any ROS datatype that has a ROS Header.
 
 @subsection broadcaster TransformBroadcaster
-The tf::TransformBroadcaster class is the complement to the listener class.  The broadcaster class provides a 
-simple API for broadcasting coordinate frame transforms.  
+The tf::TransformBroadcaster class is the complement to the tf::TransformListener class.  The broadcaster class provides a 
+simple API for broadcasting coordinate frame transforms to other ROS nodes.
 
 @subsection send_transform send_transform
-When fixed offsets are built into the system the simplest way to add the 
-transform to the system is to use the command send_transform.  It's a one
-line command which will repeatedly publish the transform over ROS messages.  
-
-
+The send_transform command is the easiest way to report transforms for fixed offsets.
+It is a simple command-line utility that repeatedly publishes the fixed-offset transform to ROS.
 
 @subsection datatypes Data Types used in tf
 - Quaternion typedef of btQuaternion
@@ -151,21 +151,22 @@ line command which will repeatedly publish the transform over ROS messages.
 
  - How can I see what transforms are in the system?
 
-Use the script viewframes.py in the tf package.  Running it without 
-options will listen for tfMessages for 5 seconds and produce frames.pdf
-with a graph of all frames heard from.  If you're having trouble with a 
-specfic node.  The optional argument "--note=NODE_NAME" 
-will query an instance of TransformListener running in the node named 
-NODE_NAME for what it specifically has heard.  This will allow you to see
-exactly what the TransformListener node on that machine is processing.
+Use the script viewframes.py in the tf package.  By default, it listens
+to tf messages for 5 seconds and produces a pdf (frames.pdf) that graphs
+all frames heard from. 
+The "--node=NODE_NAME" option can assist with debugging transform issues with a
+specific node.
+The --node option will query the TransformListener instance in NODE_NAME
+for its transform information.
+This will allow you to see what that TransformListener is processing.
 
  - I'm seeing an ExtrapolationException which is always X seconds in
 the past.  Why?
 
-A constant offset extrapolation error often is caused by a lack of
-syncronization of the clocks between computers.  One computer thinks
-it is ahead of the other and consequently the data recieved on a
-different machine will be off consistently.  As new data comes in the
+A constant offset extrapolation error is often caused by a lack of
+synchronization of the clocks between computers.  One computer thinks
+it is ahead of the other and consequently the data received on a
+different machine will be off consistently.  As new data comes in ,the
 closest data will always be the same distance away resulting in the
 constant ExtrapolationException.
 
@@ -175,9 +176,9 @@ same data type.
 
 Think of it as the difference between time and duration.  Pose is a
 specific location, like time.  You can take the difference between two
-poses, and you get a transform, which is like a duration.  However,
-you can't add two poses.  You can add a duration to a time and get a
-time, likewise you can add a transform to a pose and get a pose.  A
+Poses, and you get a transform, which is like a duration.  However,
+you can't add two Poses.  You can add a duration to a time and get a
+time, likewise you can add a transform to a Pose and get a Pose.  A
 Point is like Pose, while a Vector3 is like a Transform showing the
 difference between two Points.  
 
@@ -190,7 +191,7 @@ usually think of applying a transform to another transform, you chain
 them.  The same goes for vectors.
 
 @section faq_usage Usage Questions
- - How can tf be used in a 3D mapping framework? The
+ - How can tf be used in a 3D-mapping framework? The
 very simple example that I had in mind for the past few days was the
 following: given 4 sensing devices: 1 Hokuyo, 1 SwissRanger SR4000, 1
 Videre STOC and 1 Thermal FLIR camera.  The first 3 produce point
@@ -202,10 +203,10 @@ constantly need to apply these rotation matrices to the point clouds
 generated by some sensors, to annotate your 3D points with texture
 (RGB), thermal information, etc
 
-This is exactly where you want to use TransformListener.  The point
+This is exactly where you want to use tf::TransformListener.  The point
 cloud aggregator will be recieving messages over ROS from all of the
-sensors, in their respective date types.  However for example, say the
-Hokuyo is mounted on the base, and the videre is on the head and the
+sensors, in their respective date types.  However, say the
+Hokuyo is mounted on the base, the Videre stereo camera is on the head, and the
 swiss ranger is on the left arm.  The aggregating process has no idea
 where all these coordinate frames actually are in space.  However the
 mechanims control process knows where the head and arms are in
@@ -260,12 +261,12 @@ btQuaternion and btMatrix3x3 classes.
 specific process? Some transforms seem better suited to be defined as
 parameters independent of a specific node.
 
-There is not a way to define a static transform in tf.  This is a
+There is no way to define a static transform in tf.  This is a
 design decision to make sure that log files retain relevancy.  Since
-nodes can start and stop at any time they must be able to get all
-necessary data starting at any time.  The parameter server could hold
-this data.  However preserving the state of the parameter server
-between sessions, especially when logging is complicated.  Thus the
+nodes can start and stop at any time, they must be able to get all
+necessary data starting at any time.  The ROS Parameter Server could hold
+this data.  However, preserving the state of the Parameter Server
+between sessions, especially when logging, is complicated.  Thus, the
 solution we have chosen is to simply republish static transforms
 periodically.  This make sure that at startup a node knows about all
 transforms, and it also means that logging the topic /tf_message
@@ -295,8 +296,8 @@ can creep up on you and cause unusual behavior which is untraceable.
  After all, I would expect different transforms to update at rates
  that are potentially orders of magnitude different.
 
-For the current implementation it is simply how far you future date
-your data for that transform.  Remember this will cause the transform
+For the current implementation, it is simply how far you future date
+your data for that transform.  Remember, this will cause the transform
 to lag by however much you future date the values.  I do not recommend
 this for any value which is expected to change at a rate more than a
 slight drift correction (ala amcl_player).
