@@ -135,7 +135,7 @@ TEST_F(TestAssembler, test)
 
   usleep(1e6) ;
 
-  ASSERT_EQ(cloud_counter_, (unsigned int)5) ;
+  ASSERT_EQ(cloud_counter_, 5) ;
 
   unsigned int cloud_size ;
   cloud_mutex_.lock() ;
