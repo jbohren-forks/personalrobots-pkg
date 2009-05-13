@@ -494,7 +494,15 @@ void EnvironmentNAVXYTHETADOORLAT::setDoorProperties(const door_msgs::Door &door
   double edge_global_y = door.frame_p2.y;
   double edge_global_z = door.frame_p2.z;
 
-  if(door.hinge == 1)
+  if(door.rot_dir == door.ROT_DIR_CLOCKWISE)
+  {
+    db_.rot_dir_ = -1;
+  }
+  else
+  {
+    db_.rot_dir_ = 1;
+  }
+  if(door.hinge == door.HINGE_P2)
   {
     hinge_global_x = door.frame_p2.x;
     hinge_global_y = door.frame_p2.y;
@@ -522,9 +530,9 @@ void EnvironmentNAVXYTHETADOORLAT::setDoorProperties(const door_msgs::Door &door
 
 
   db_.global_door_closed_angle_ = db_.door_frame_global_yaw_;
-  db_.global_door_open_angle_ = angles::normalize_angle(db_.door_frame_global_yaw_ + door.rot_dir*M_PI/2.0);
+  db_.global_door_open_angle_ = angles::normalize_angle(db_.door_frame_global_yaw_ + db_.rot_dir_*M_PI/2.0);
 
-  db_.rot_dir_ = door.rot_dir;
+//  db_.rot_dir_ = door.rot_dir;
   db_.init();
 
   //Set default desired door angle to door open position
