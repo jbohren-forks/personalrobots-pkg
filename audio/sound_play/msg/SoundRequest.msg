@@ -2,6 +2,8 @@ byte ALL = -1 # Only legal with PLAY_STOP
 byte BACKINGUP = 1
 byte NEEDS_UNPLUGGING = 2
 byte NEEDS_PLUGGING = 3
+byte NEEDS_UNPLUGGING_BADLY = 4
+byte NEEDS_PLUGGING_BADLY = 5
 
 byte sound # Selects which sound to play (see above)
 
