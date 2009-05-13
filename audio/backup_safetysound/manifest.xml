@@ -1,0 +1,12 @@
+<package>
+  <description brief="BackingUpSound">
+        A Python Robot Backing-Up Safety Sound 
+  </description>
+<author>Leila Takayama</author>
+<license>BSD</license>
+<depend package="rospy" />
+<depend package="robot_msgs" />
+<depend package="sound_play" />
+</package>
+
+
