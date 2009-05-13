@@ -112,8 +112,9 @@ namespace base_local_planner {
       /**
        * @brief  Update the plan that the controller is following
        * @param orig_global_plan The plan to pass to the controller
+       * @return True if the plan was updated successfully, false otherwise
        */
-      void updatePlan(const std::vector<robot_msgs::PoseStamped>& orig_global_plan);
+      bool updatePlan(const std::vector<robot_msgs::PoseStamped>& orig_global_plan);
 
       /**
        * @brief  Returns the local goal the robot is pursuing
@@ -229,7 +230,7 @@ namespace base_local_planner {
       bool goal_reached_;
       costmap_2d::Costmap2DPublisher* costmap_publisher_;
       std::vector<robot_msgs::PoseStamped> global_plan_;
-      double transform_tolerance_;
+      double transform_tolerance_, update_plan_tolerance_;
   };
 
 };

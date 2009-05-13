@@ -67,6 +67,7 @@ namespace base_local_planner {
     ros_node.param("~base_local_planner/costmap/global_frame", global_frame_, string("map"));
     ros_node.param("~base_local_planner/costmap/robot_base_frame", robot_base_frame_, string("base_link"));
     ros_node.param("~base_local_planner/transform_tolerance", transform_tolerance_, 0.2);
+    ros_node.param("~base_local_planner/update_plan_tolerance", update_plan_tolerance_, 1.0);
 
     double map_publish_frequency;
     ros_node.param("~base_local_planner/costmap_visualization_rate", map_publish_frequency, 2.0);
@@ -339,7 +340,7 @@ namespace base_local_planner {
     return goal_reached_;
   }
 
-  void TrajectoryPlannerROS::updatePlan(const std::vector<robot_msgs::PoseStamped>& orig_global_plan){
+  bool TrajectoryPlannerROS::updatePlan(const std::vector<robot_msgs::PoseStamped>& orig_global_plan){
     //reset the global plan
     global_plan_.clear();
 
@@ -349,31 +350,35 @@ namespace base_local_planner {
         robot_msgs::PoseStamped new_pose;
         ros::Time current_time = ros::Time::now(); // save time for checking tf delay later
         new_pose = orig_global_plan[i];
-        new_pose.header.stamp = ros::Time();
+        if(!tf_.canTransform(global_frame_, new_pose.header.frame_id, new_pose.header.stamp, ros::Duration(update_plan_tolerance_))){
+          ROS_ERROR("TrajectoryPlannerROS cannot service your goal because the transform is not available, we waited %.4f seconds", update_plan_tolerance_);
+          return false;
+        }
         tf_.transformPose(global_frame_, new_pose, new_pose);
         // check global_pose timeout
         if (current_time.toSec() - new_pose.header.stamp.toSec() > transform_tolerance_) {
           ROS_ERROR("TrajectoryPlannerROS transform timeout updating plan. Current time: %.4f, global_pose stamp: %.4f, tolerance: %.4f",
               current_time.toSec() ,new_pose.header.stamp.toSec() ,transform_tolerance_);
-          return;
+          return false;
         }
         global_plan_.push_back(new_pose);
       }
     }
     catch(tf::LookupException& ex) {
       ROS_ERROR("No Transform available Error: %s\n", ex.what());
-      return;
+      return false;
     }
     catch(tf::ConnectivityException& ex) {
       ROS_ERROR("Connectivity Error: %s\n", ex.what());
-      return;
+      return false;
     }
     catch(tf::ExtrapolationException& ex) {
       ROS_ERROR("Extrapolation Error: %s\n", ex.what());
       if (orig_global_plan.size() > 0)
         ROS_ERROR("Global Frame: %s Plan Frame size %d: %s\n", global_frame_.c_str(),orig_global_plan.size(), orig_global_plan[0].header.frame_id.c_str());
-      return;
+      return false;
     }
+    return true;
   }
 
   bool TrajectoryPlannerROS::computeVelocityCommands(robot_msgs::PoseDot& cmd_vel, 

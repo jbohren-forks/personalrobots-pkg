@@ -190,7 +190,8 @@ namespace nav {
       //pass plan to controller
       std::vector<robot_msgs::PoseStamped> global_plan;
       global_plan.push_back(goal);
-      tc_->updatePlan(global_plan);
+      if(!tc_->updatePlan(global_plan))
+        return robot_actions::ABORTED;
       //get observations for the non-costmap controllers
       std::vector<Observation> observations;
       controller_costmap_ros_->getMarkingObservations(observations);

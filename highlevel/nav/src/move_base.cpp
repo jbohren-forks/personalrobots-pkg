@@ -250,13 +250,15 @@ namespace nav {
 
       bool valid_control = false;
       //pass plan to controller
-      lock_.lock();
+      
       if(valid_plan_){
         //if we have a new plan... we'll update the plan for the controller
         if(new_plan_){
-          tc_->updatePlan(global_plan_);
           new_plan_ = false;
+          if(!tc_->updatePlan(global_plan_))
+            return robot_actions::ABORTED;
         }
+
         //get observations for the non-costmap controllers
         std::vector<Observation> observations;
         controller_costmap_ros_->getMarkingObservations(observations);
@@ -296,8 +298,6 @@ namespace nav {
 
       //give the base the velocity command
       ros_node_.publish("cmd_vel", cmd_vel);
-
-      lock_.unlock();
 
       //if we don't have a valid control... we need to re-plan explicitly
       if(!valid_control){
