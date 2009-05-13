@@ -34,6 +34,7 @@
 #include <tf/transform_broadcaster.h>
 #include <robot_msgs/PointStamped.h>
 #include <boost/bind.hpp>
+#include <boost/scoped_ptr.hpp>
 
 #include <gtest/gtest.h>
 
@@ -57,7 +58,9 @@ public:
 	{
 		if (count_ < expected_count_)
 		{
-		  delete lock_;
+		  boost::timed_mutex::scoped_lock* lock = lock_;
+		  lock_ = 0;
+		  delete lock;
 		}
 	}
 
@@ -69,15 +72,21 @@ public:
 
 		if (count_ == expected_count_)
 		{
-			delete lock_;
+		  boost::timed_mutex::scoped_lock* lock = lock_;
+      lock_ = 0;
+      delete lock;
 		}
 	}
 
 
-  boost::timed_mutex& getMutex() 
+  boost::timed_mutex& getMutex()
   {
     if (count_ == expected_count_) //deal with zero length
-      delete lock_;
+    {
+      boost::timed_mutex::scoped_lock* lock = lock_;
+      lock_ = 0;
+      delete lock;
+    }
     return mutex_;
   };
 	int count_;
@@ -107,7 +116,9 @@ public:
 
 		if (count_ < expected_count_)
 		{
-		  delete lock_;
+		  boost::timed_mutex::scoped_lock* lock = lock_;
+      lock_ = 0;
+      delete lock;
 		}
 	}
 
@@ -119,14 +130,20 @@ public:
 
 		if (count_ == expected_count_)
 		{
-		  delete lock_;
+		  boost::timed_mutex::scoped_lock* lock = lock_;
+      lock_ = 0;
+      delete lock;
 		}
 	}
 
-  boost::timed_mutex& getMutex() 
+  boost::timed_mutex& getMutex()
   {
     if (count_ == expected_count_) //deal with zero length
-      delete lock_;
+    {
+      boost::timed_mutex::scoped_lock* lock = lock_;
+      lock_ = 0;
+      delete lock;
+    }
     return mutex_;
   };
 
@@ -453,14 +470,13 @@ TEST(MessageNotifier, setTolerance)
 	Notification n1(1);
 	Notification n2(1);
 	Counter<tf::tfMessage> c("tf_message", 1);
-	MessageNotifier<robot_msgs::PointStamped>* notifier = new MessageNotifier<robot_msgs::PointStamped>(g_tf, g_node, boost::bind(&Notification::notify, &n, _1), "test_message", "frame1", 1);
-	MessageNotifier<robot_msgs::PointStamped>* notifier1 = new MessageNotifier<robot_msgs::PointStamped>(g_tf, g_node, boost::bind(&Notification::notify, &n1, _1), "test_message", "frame1", 1);
-	MessageNotifier<robot_msgs::PointStamped>* notifier2 = new MessageNotifier<robot_msgs::PointStamped>(g_tf, g_node, boost::bind(&Notification::notify, &n2, _1), "test_message", "frame1", 1);
-	std::auto_ptr<MessageNotifier<robot_msgs::PointStamped> > notifier_ptr(notifier);
+	boost::scoped_ptr<MessageNotifier<robot_msgs::PointStamped> > notifier(new MessageNotifier<robot_msgs::PointStamped>(g_tf, g_node, boost::bind(&Notification::notify, &n, _1), "test_message", "frame1", 1));
+	boost::scoped_ptr<MessageNotifier<robot_msgs::PointStamped> > notifier1(new MessageNotifier<robot_msgs::PointStamped>(g_tf, g_node, boost::bind(&Notification::notify, &n1, _1), "test_message", "frame1", 1));
+	boost::scoped_ptr<MessageNotifier<robot_msgs::PointStamped> > notifier2(new MessageNotifier<robot_msgs::PointStamped>(g_tf, g_node, boost::bind(&Notification::notify, &n2, _1), "test_message", "frame1", 1));
 
-        notifier->setTolerance(offset);
-        notifier1->setTolerance(offset);
-        notifier2->setTolerance(offset);
+  notifier->setTolerance(offset);
+  notifier1->setTolerance(offset);
+  notifier2->setTolerance(offset);
 
 	ros::Duration().fromSec(0.2).sleep();
 
@@ -478,7 +494,7 @@ TEST(MessageNotifier, setTolerance)
 		EXPECT_EQ(true, lock.owns_lock());
 	}
 
-        
+
 	robot_msgs::PointStamped msg;
 	msg.header.stamp = stamp + offset;
 	msg.header.frame_id = "frame2";
