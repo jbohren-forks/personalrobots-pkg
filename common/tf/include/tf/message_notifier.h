@@ -46,7 +46,7 @@
 #include <boost/thread.hpp>
 
 #define NOTIFIER_DEBUG(fmt, ...) \
-  ROS_DEBUG_NAMED("message_notifier", "MessageNotifier [topic=%s, target=%s]: "fmt, topic_.c_str(), getTargetFramesString().c_str(), __VA_ARGS__) 
+  ROS_DEBUG_NAMED("message_notifier", "MessageNotifier [topic=%s, target=%s]: "fmt, topic_.c_str(), getTargetFramesString().c_str(), __VA_ARGS__)
 
 namespace tf
 {
@@ -167,10 +167,9 @@ public:
    */
   void setTargetFrame(const std::string& target_frame)
   {
-    boost::mutex::scoped_lock lock(queue_mutex_);
-    target_frames_.resize(1);
-    target_frames_[0] = target_frame;
-    new_data_.notify_all();
+    std::vector<std::string> frames;
+    frames.push_back(target_frame);
+    setTargetFrame(frames);
   }
 
   /**
@@ -178,23 +177,26 @@ public:
    */
   void setTargetFrame(const std::vector<std::string>& target_frames)
   {
-    boost::mutex::scoped_lock lock(queue_mutex_);
+    boost::mutex::scoped_lock list_lock(list_mutex_);
+    boost::mutex::scoped_lock string_lock(target_frames_string_mutex_);
 
     target_frames_ = target_frames;
     new_data_.notify_all();
-  }
-  /** 
-   * \brief Get the target frames as a string for debugging 
-   */
-  std::string getTargetFramesString()
-  {
-    boost::mutex::scoped_lock lock(queue_mutex_);
+
     std::stringstream ss;
     for (std::vector<std::string>::const_iterator it = target_frames_.begin(); it != target_frames_.end(); ++it)
     {
       ss << *it << " ";
     }
-    return ss.str();
+    target_frames_string_ = ss.str();
+  }
+  /**
+   * \brief Get the target frames as a string for debugging
+   */
+  std::string getTargetFramesString()
+  {
+    boost::mutex::scoped_lock lock(target_frames_string_mutex_);
+    return target_frames_string_;
   };
 
   /**
@@ -316,7 +318,7 @@ private:
           should_step_out = true;
           break;
         }
-        
+
       }
       if (should_step_out) //If we just deleted a message don't try to use it
       {
@@ -337,10 +339,10 @@ private:
         {
           ready = ready && tf_->canTransform(target_frame, message->header.frame_id, message->header.stamp);
         }
-        if (!ready) 
+        if (!ready)
           break;
       }
-      
+
       if (ready)
       {
         // If we get here the transform succeeded, so push the message onto the notify list, and erase it from or message list
@@ -500,6 +502,8 @@ private:
   ros::Node* node_; ///< The node used to subscribe to the topic
   Callback callback_; ///< The callback to call when a message is ready
   std::vector<std::string> target_frames_; ///< The frames we need to be able to transform to before a message is ready
+  std::string target_frames_string_;
+  boost::mutex target_frames_string_mutex_;
   std::string topic_; ///< The topic to listen on
   uint32_t queue_size_; ///< The maximum number of messages we queue up
 
