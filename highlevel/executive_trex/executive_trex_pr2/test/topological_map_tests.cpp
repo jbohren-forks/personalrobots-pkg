@@ -198,12 +198,12 @@ TEST(executive_trex_pr2, map_read_from_file){
   ASSERT_EQ(map.isObstacle(18.542, 12.301), false);
   ASSERT_EQ(map.isObstacle(50.659, 6.916), false);
 
-  // Points that are ligitimately obstacles
-  ASSERT_EQ(map.isObstacle(15.0, 22.05), true);
+  // Points that are legitimately obstacles
+  ASSERT_EQ(map.isObstacle(30.0, 20.05), true);
 
 
   door_msgs::Door door_state;
-  unsigned int door_region_id = TopologicalMapAdapter::instance()->getRegion(50,30);
+  unsigned int door_region_id = TopologicalMapAdapter::instance()->getRegion(14.2,18.5);
   ASSERT_EQ(TopologicalMapAdapter::instance()->getDoorState(door_region_id, door_state), true);
 }
 

@@ -662,7 +662,9 @@ namespace executive_trex_pr2 {
 
     _singleton = this;
 
-    _map = topological_map::TopologicalMapPtr(new topological_map::TopologicalMap(in));
+    // Temporary fix due to mismatch between 5cm map and 2.5cm map
+    tf::Transform trans (tf::Quaternion(.015, 0, 0), tf::Vector3(-0.4, 0, 0));
+    _map = topological_map::TopologicalMapPtr(new topological_map::TopologicalMap(in, 1.0, 1e9, 1e9, trans));
 
     debugMsg("map:initialization", toPPM());
   }
