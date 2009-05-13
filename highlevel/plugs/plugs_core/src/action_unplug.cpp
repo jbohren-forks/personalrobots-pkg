@@ -93,7 +93,26 @@ void  UnplugAction::checkUnplug()
   if (!isActive())
     return;
 
+  if (first_state_.header.seq == 0) {
+    first_state_ = controller_state_msg_;
+    return;
+  }
+
   tff_msg_.header.stamp = ros::Time::now();
+  tff_msg_.header.frame_id = "outlet_pose";
+  tff_msg_.mode.vel.x = 3;
+  tff_msg_.mode.vel.y = 3;
+  tff_msg_.mode.vel.z = 3;
+  tff_msg_.mode.rot.x = 3;
+  tff_msg_.mode.rot.y = 3;
+  tff_msg_.mode.rot.z = 3;
+  tff_msg_.value.vel.x = -0.1;  // backs off 10cm
+  tff_msg_.value.vel.y = first_state_.last_pose_meas.vel.y;
+  tff_msg_.value.vel.z = first_state_.last_pose_meas.vel.z;
+  tff_msg_.value.rot.x = first_state_.last_pose_meas.rot.x;
+  tff_msg_.value.rot.y = first_state_.last_pose_meas.rot.y;
+  tff_msg_.value.rot.z = first_state_.last_pose_meas.rot.z + 0.1 * (2.0*drand48() - 1.0);
+
   node_->publish(arm_controller_ + "/command", tff_msg_);
 
   if(fabs(controller_state_msg_.last_pose_meas.vel.x + 0.1) < 0.02)

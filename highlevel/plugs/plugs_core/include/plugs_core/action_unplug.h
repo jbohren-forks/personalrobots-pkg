@@ -72,14 +72,16 @@ public:
 
   void checkUnplug();
 private:
-  
+
   std::string action_name_;
 
   ros::Node* node_;
 
   std::string arm_controller_;
-  
+
   std_msgs::Empty empty_;
+
+  robot_mechanism_controllers::CartesianHybridState first_state_;
 
   robot_msgs::TaskFrameFormalism tff_msg_;
   robot_mechanism_controllers::CartesianHybridState controller_state_msg_;
