@@ -99,7 +99,17 @@ rospack_add_library(${PROJECT_NAME} src/ogre_tools/point_cloud.cpp
 			      src/ogre_tools/initialization.cpp
 			      src/ogre_tools/orthographic.cpp
 			      src/ogre_tools/stl_loader.cpp)
-target_link_libraries(${PROJECT_NAME} ${wxWidgets_LIBRARIES} ${GTK2_LIBRARIES} ${OPENGL_gl_LIBRARY} ${OGRE_LIBRARIES})
+
+# make sure we set the gl and glu libraries only if they are avilable
+set(OGRE_TOOLS_GL_LIBS "")
+if(OPENGL_gl_LIBRARY)
+  set(OGRE_TOOLS_GL_LIBS ${OGRE_TOOLS_GL_LIBS} ${OPENGL_gl_LIBRARY})
+endif(OPENGL_gl_LIBRARY)
+if(OPENGL_glu_LIBRARY)
+  set(OGRE_TOOLS_GL_LIBS ${OGRE_TOOLS_GL_LIBS} ${OPENGL_glu_LIBRARY})
+endif(OPENGL_glu_LIBRARY)
+
+target_link_libraries(${PROJECT_NAME} ${wxWidgets_LIBRARIES} ${GTK2_LIBRARIES} ${OGRE_TOOLS_GL_LIBS} ${OGRE_LIBRARIES})
 
 # ...and we make another library with just the SWIG wrappers, linked
 # against the C++ lib.
