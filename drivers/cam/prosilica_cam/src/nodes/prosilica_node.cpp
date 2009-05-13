@@ -218,6 +218,9 @@ public:
     node_.advertiseService("~cam_info_service", &ProsilicaNode::camInfoService, this, 0);
 
     diagnostic_.addUpdater( &ProsilicaNode::freqStatus );
+    diagnostic_.addUpdater( &ProsilicaNode::frameStatistics );
+    diagnostic_.addUpdater( &ProsilicaNode::packetStatistics );
+    diagnostic_.addUpdater( &ProsilicaNode::packetErrorStatus );
   }
 
   ~ProsilicaNode()
@@ -281,6 +284,97 @@ public:
     status.values[2].value = freq;
 
     count_ = 0;
+  }
+
+  // TODO: compute error conditions as running totals (over last ~10s)
+  // TODO: set StreamBytesPerSecond adaptively
+  void frameStatistics(robot_msgs::DiagnosticStatus& status)
+  {
+    status.name = "Frame Statistics";
+
+    float frame_rate;
+    unsigned long frames_completed, frames_dropped;
+
+    cam_->getAttribute("StatFrameRate", frame_rate);
+    cam_->getAttribute("StatFramesCompleted", frames_completed);
+    cam_->getAttribute("StatFramesDropped", frames_dropped);
+
+    if (frames_dropped == 0) {
+      status.level = 0;
+      status.message = "No dropped frames";
+    }
+    else if (frames_dropped < frames_completed / 4) {
+      status.level = 1;
+      status.message = "Some dropped frames";
+    }
+    else {
+      status.level = 2;
+      status.message = "Excessive proportion of dropped frames";
+    }
+
+    status.set_values_size(3);
+    status.values[0].label = "Frame Rate";
+    status.values[0].value = frame_rate;
+    status.values[1].label = "Frames Completed";
+    status.values[1].value = frames_completed;
+    status.values[2].label = "Frames Dropped";
+    status.values[2].value = frames_dropped;
+  }
+
+  void packetStatistics(robot_msgs::DiagnosticStatus& status)
+  {
+    status.name = "Packet Statistics";
+
+    unsigned long received, missed, requested, resent;
+
+    cam_->getAttribute("StatPacketsReceived", received);
+    cam_->getAttribute("StatPacketsMissed", missed);
+    cam_->getAttribute("StatPacketsRequested", requested);
+    cam_->getAttribute("StatPacketsResent", resent);
+
+
+    if (missed == 0) {
+      status.level = 0;
+      status.message = "No missed packets";
+    }
+    else if (missed < received / 100) {
+      status.level = 1;
+      status.message = "Some missed packets";
+    }
+    else {
+      status.level = 2;
+      status.message = "Excessive proportion of missed packets";
+    }
+    
+    status.set_values_size(4);
+    status.values[0].label = "Received Packets";
+    status.values[0].value = received;
+    status.values[1].label = "Missed Packets";
+    status.values[1].value = missed;
+    status.values[2].label = "Requested Packets";
+    status.values[2].value = requested;
+    status.values[3].label = "Resent Packets";
+    status.values[3].value = resent;
+  }
+
+  void packetErrorStatus(robot_msgs::DiagnosticStatus& status)
+  {
+    status.name = "Packet Error Status";
+    
+    unsigned long erroneous;
+    cam_->getAttribute("StatPacketsErroneous", erroneous);
+
+    if (erroneous == 0) {
+      status.level = 0;
+      status.message = "No erroneous packets";
+    } else {
+      status.level = 2;
+      status.message = "Possible camera hardware failure";
+    }
+
+    status.set_values_size(1);
+    status.values[0].label = "Erroneous Packets";
+    status.values[0].value = erroneous;
   }
 
   bool spin()

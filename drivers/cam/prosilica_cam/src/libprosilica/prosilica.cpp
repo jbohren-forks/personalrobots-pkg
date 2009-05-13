@@ -356,6 +356,71 @@ void Camera::setBinning(unsigned int binning_x, unsigned int binning_y)
              "Couldn't set vertical binning" );
 }
 
+static void getStringValuedAttribute(std::string &value,
+  boost::function<tPvErr (char*, unsigned long, unsigned long*)> get_fn)
+{
+  if (value.size() == 0)
+    value.resize(32);
+
+  unsigned long actual_size;
+  CHECK_ERR( get_fn(&value[0], value.size(), &actual_size),
+             "Couldn't get attribute" );
+
+  if (actual_size >= value.size()) {
+    value.resize(actual_size + 1);
+    CHECK_ERR( get_fn(&value[0], value.size(), &actual_size),
+               "Couldn't get attribute" );
+  }
+}
+
+void Camera::getAttributeEnum(const std::string &name, std::string &value)
+{
+  getStringValuedAttribute(value,
+    boost::bind(PvAttrEnumGet, handle_, name.c_str(), _1, _2, _3));
+}
+
+void Camera::getAttribute(const std::string &name, tPvUint32 &value)
+{
+  CHECK_ERR( PvAttrUint32Get(handle_, name.c_str(), &value),
+             "Couldn't get attribute" );
+}
+
+void Camera::getAttribute(const std::string &name, tPvFloat32 &value)
+{
+  CHECK_ERR( PvAttrFloat32Get(handle_, name.c_str(), &value),
+             "Couldn't get attribute" );
+}
+
+void Camera::getAttribute(const std::string &name, std::string &value)
+{
+  getStringValuedAttribute(value,
+    boost::bind(PvAttrStringGet, handle_, name.c_str(), _1, _2, _3));
+}
+
+void Camera::setAttributeEnum(const std::string &name, const std::string &value)
+{
+  CHECK_ERR( PvAttrEnumSet(handle_, name.c_str(), value.c_str()),
+             "Couldn't set attribute" );
+}
+
+void Camera::setAttribute(const std::string &name, tPvUint32 value)
+{
+  CHECK_ERR( PvAttrUint32Set(handle_, name.c_str(), value),
+             "Couldn't set attribute" );
+}
+
+void Camera::setAttribute(const std::string &name, tPvFloat32 value)
+{
+  CHECK_ERR( PvAttrFloat32Set(handle_, name.c_str(), value),
+             "Couldn't set attribute" );
+}
+
+void Camera::setAttribute(const std::string &name, const std::string &value)
+{
+  CHECK_ERR( PvAttrStringSet(handle_, name.c_str(), value.c_str()),
+             "Couldn't set attribute" );
+}
+
 unsigned long Camera::guid()
 {
   unsigned long id;
@@ -408,6 +473,11 @@ void Camera::frameDone(tPvFrame* frame)
   }
   
   PvCaptureQueueFrame(camPtr->handle_, frame, Camera::frameDone);
+}
+
+tPvHandle Camera::handle()
+{
+  return handle_;
 }
 
 } // namespace prosilica

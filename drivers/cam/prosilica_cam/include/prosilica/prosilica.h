@@ -36,14 +36,17 @@
 #define PROSILICA_H
 
 #include <stdexcept>
+#include <string>
 #include <boost/function.hpp>
 #include <boost/thread.hpp>
 
-// PvApi.h is blissfully unaware of the usual detection macros
-// TODO: do this properly
+// PvApi.h isn't aware of the usual detection macros
+// TODO: support systems other than x86 linux
 #define _LINUX
 #define _x86
 #include <PvApi.h>
+#undef _LINUX
+#undef _x86
 
 namespace prosilica {
 
@@ -102,7 +105,16 @@ public:
   void setRoiToWholeFrame();
   void setBinning(unsigned int binning_x = 1, unsigned int binning_y = 1);
 
-  // TODO: general get/setAttribute (templates?)
+  //! General get/set attribute functions.
+  void getAttributeEnum(const std::string &name, std::string &value);
+  void getAttribute(const std::string &name, tPvUint32 &value);
+  void getAttribute(const std::string &name, tPvFloat32 &value);
+  void getAttribute(const std::string &name, std::string &value);
+  
+  void setAttributeEnum(const std::string &name, const std::string &value);
+  void setAttribute(const std::string &name, tPvUint32 value);
+  void setAttribute(const std::string &name, tPvFloat32 value);
+  void setAttribute(const std::string &name, const std::string &value);
   
   unsigned long guid();
   
@@ -110,6 +122,9 @@ public:
   static const size_t USER_MEMORY_SIZE = 512;
   void writeUserMemory(const char* data, size_t size);
   void readUserMemory(char* data, size_t size);
+
+  //! Get raw PvApi camera handle.
+  tPvHandle handle();
   
 private:
   tPvHandle handle_; // handle to open camera
