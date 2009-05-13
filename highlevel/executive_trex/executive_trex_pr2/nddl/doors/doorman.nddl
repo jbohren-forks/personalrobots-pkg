@@ -44,5 +44,5 @@ MoveBehavior::Active {
   // Set travel direction based on deltas
   addEq(current_x, ds.travel_dir_x, x);
   addEq(current_y, ds.travel_dir_y, y);
-  eq(current_z, 0.0);
+  eq(ds.travel_dir_z, 0.0);
 }
