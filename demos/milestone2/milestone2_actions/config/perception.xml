@@ -60,7 +60,7 @@
     <param name="target_frame_id" type="str" value="r_gripper_tool_frame" />
     <param name="resize_factor_found" type="double" value="3.0"/>
     <param name="resize_factor_failed" type="double" value="1.2"/>
-    <param name="target_roi_size" type="int" value="600"/>
+    <param name="target_roi_size" type="int" value="800"/>
 
     <!-- Plug checkerboard -->
     <param name="square_size" type="double" value="0.0042"/>
