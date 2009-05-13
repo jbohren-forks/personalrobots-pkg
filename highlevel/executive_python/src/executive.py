@@ -103,6 +103,7 @@ class Executive:
           else:
             self.unplug_email_sent = False
             self.plugged_email_sent = False
+            self.batt_monitor.sendUnpluggedEmail()
             #resume the current goal
             self.navigator.sendGoal(self.current_goal, "map")
             self.state = "nav"
@@ -144,7 +145,7 @@ class Executive:
 
 if __name__ == '__main__':
   try:
-    batt_monitor = BatteryMonitorAdapter(.25, .75, "battery_state", ["watts@willowgarage.com", "eitan@willowgarage.com"], "pre", "/usr/sbin/sendmail")
+    batt_monitor = BatteryMonitorAdapter(.25, .75, "battery_state", ["watts@willowgarage.com", "eitan@willowgarage.com", "pr2-users@lists.willowgarage.com"], "pre", "/usr/sbin/sendmail")
     navigator = NavigationAdapter(30, 300, "/move_base/feedback", "/move_base/activate")
 
     goals = [

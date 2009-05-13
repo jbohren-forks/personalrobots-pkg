@@ -59,9 +59,13 @@ class BatteryMonitorAdapter:
     self.state = state
 
   def chargeNeeded(self):
+    if self.state.energy_capacity == 0.0 or self.state.energy_remaining == 0.0:
+      return False
     return (self.state.energy_remaining / self.state.energy_capacity) < self.discharge_limit
 
   def chargeDone(self):
+    if self.state.energy_capacity == 0.0 or self.state.energy_remaining == 0.0:
+      return False
     return (self.state.energy_remaining / self.state.energy_capacity) > self.charge_limit
 
   def sendPluggedEmail(self):
@@ -70,6 +74,13 @@ class BatteryMonitorAdapter:
     mail_string += "\nFrom: %s@willowgarage.com" % self.robot_name
     mail_string += "\nSubject: Thanks! I've been plugged in."
     mail_string += "\n\nIf you're thinking about plugging me in after my last e-mail, don't bother. Someone else beat you to it. Thanks."
+
+  def sendUnpluggedEmail(self):
+    mail_string = "To: "
+    for address in self.email_addresses: mail_string += address + ", "
+    mail_string += "\nFrom: %s@willowgarage.com" % self.robot_name
+    mail_string += "\nSubject: Thanks! I've been unplugged."
+    mail_string += "\n\nIf you're thinking about unplugging me after my last e-mail, don't bother. Someone else beat you to it. Thanks."
 
     #since the robot's have mail servers installed on them... we'll just pipe out our e-mail
     pipe = os.popen("%s -t" % self.mail_program, 'w')
