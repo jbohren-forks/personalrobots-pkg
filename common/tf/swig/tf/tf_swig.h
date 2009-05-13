@@ -43,37 +43,30 @@ public:
   TransformStamped():
     frame_id("FRAME_ID_UNINITIALIZED"),
     parent_id("PARENT_ID_UNINITIALIZED"),
-    _sec(0), _nsec(0) {transform = new py::Transform();};
+    _sec(0), _nsec(0) {};
   TransformStamped(const py::Transform& t, int sec, int nsec, const std::string& frame_id_in, const std::string& parent_id_in):
+    transform(t),
     frame_id(frame_id_in),
-    parent_id(parent_id_in), _sec(sec), _nsec(nsec)  {transform = new py::Transform(t);};
+    parent_id(parent_id_in), _sec(sec), _nsec(nsec)  {};
   TransformStamped(const TransformStamped& other)
   {
-    transform = new py::Transform(*(other.transform));
+    transform = other.transform;
     frame_id = other.frame_id;
     parent_id = other.parent_id;
     _sec = other._sec;
     _nsec = other._nsec;
   };
-  TransformStamped& copy(const TransformStamped& other)
-  {
-    *transform = *other.transform;
-    frame_id = other.frame_id;
-    _sec = other._sec;
-    _nsec = other._nsec;
-    return *this;
-  };
-  ~TransformStamped(){ delete transform;};
+  ~TransformStamped(){};
   inline bool operator==(const TransformStamped& other) const
   {
     if( _sec != other._sec) return false;
     else if ( _nsec != other._nsec) return false;
     else if ( frame_id != other.frame_id) return false;
     else if ( parent_id != other.parent_id) return false;
-    else if (! (*transform == *(other.transform))) return false;
+    else if (! (transform == other.transform)) return false;
     else return true;
   };
-  py::Transform* transform;
+  py::Transform transform;
   std::string frame_id;
   std::string parent_id;
   int _sec;
@@ -86,29 +79,29 @@ class PoseStamped
 public:
   PoseStamped():
     frame_id("FRAME_ID_UNINITIALIZED"),
-    _sec(0), _nsec(0) {pose = new py::Transform();};
+    _sec(0), _nsec(0) {};
   PoseStamped(const py::Transform& p, int stamp_sec, int stamp_nsec, const std::string& frame_id_in):
+    pose(p),
     frame_id(frame_id_in),
-    _sec(stamp_sec), _nsec(stamp_nsec)  {pose = new py::Transform(p);};
+    _sec(stamp_sec), _nsec(stamp_nsec)  {};
 
-  PoseStamped& copy(const PoseStamped& other)
+  PoseStamped(const PoseStamped& other)
   {
-    *pose = *other.pose;
+    pose = other.pose;
     frame_id = other.frame_id;
     _sec = other._sec;
     _nsec = other._nsec;
-    return *this;
   };
-  ~PoseStamped(){delete pose;};
+  ~PoseStamped(){};
   inline bool operator==(const PoseStamped& other) const
   {
     if( _sec != other._sec) return false;
     else if ( _nsec != other._nsec) return false;
     else if ( frame_id != other.frame_id) return false;
-    else if (! (*pose == *(other.pose))) return false;
+    else if (! (pose == (other.pose))) return false;
     else return true;
   };
-  py::Transform* pose;
+  py::Transform pose;
   std::string frame_id;
   int _sec;
   int _nsec;
@@ -120,30 +113,30 @@ class PointStamped
 public:
   PointStamped():
     frame_id("FRAME_ID_UNINITIALIZED"),
-    _sec(0), _nsec(0) {point = new py::Vector3();};
+    _sec(0), _nsec(0) {};
   PointStamped(const py::Vector3& p, int sec, int nsec, const std::string& frame_id_in):
+    point(p),
     frame_id(frame_id_in),
-    _sec(sec), _nsec(nsec)  {point = new py::Vector3(p);};
+    _sec(sec), _nsec(nsec)  {};
 
-  PointStamped& copy(const PointStamped& other)
+  PointStamped(const PointStamped& other)
   {
-    *point = *other.point;
+    point = other.point;
     frame_id = other.frame_id;
     _sec = other._sec;
     _nsec = other._nsec;
-    return *this;
   };
 
-  ~PointStamped() {delete point;};
+  ~PointStamped() {};
   inline bool operator==(const PointStamped& other) const
   {
     if( _sec != other._sec) return false;
     else if ( _nsec != other._nsec) return false;
     else if ( frame_id != other.frame_id) return false;
-    else if (! (*point == *(other.point))) return false; ///\todo failing one test
+    else if (! (point == other.point)) return false; ///\todo failing one test
     else return true;
   };
-  py::Vector3* point;
+  py::Vector3 point;
   std::string frame_id;
   int _sec;
   int _nsec;
@@ -155,30 +148,30 @@ class VectorStamped
 public:
   VectorStamped():
     frame_id("FRAME_ID_UNINITIALIZED"),
-    _sec(0), _nsec(0) {vector = new py::Vector3();};
+    _sec(0), _nsec(0) {};
   VectorStamped(const py::Vector3& v, int sec, int nsec, const std::string& frame_id_in):
+    vector(v),
     frame_id(frame_id_in),
-    _sec(sec), _nsec(nsec)  {vector = new py::Vector3(v);};
+    _sec(sec), _nsec(nsec)  {};
 
-  VectorStamped& copy(const VectorStamped& other)
+  VectorStamped(const VectorStamped& other)
   {
-    *vector = *other.vector;
+    vector = other.vector;
     frame_id = other.frame_id;
     _sec = other._sec;
     _nsec = other._nsec;
-    return *this;
   };
 
-  ~VectorStamped() { delete vector;};
+  ~VectorStamped() { };
   inline bool operator==(const VectorStamped& other) const
   {
     if( _sec != other._sec) return false;
     else if ( _nsec != other._nsec) return false;
     else if ( frame_id != other.frame_id) return false;
-    else if (! (*vector == *(other.vector))) return false; ///\todo failing one test
+    else if (! (vector == other.vector)) return false; ///\todo failing one test
     else return true;
   };
-  py::Vector3* vector;
+  py::Vector3 vector;
   std::string frame_id;
   int _sec;
   int _nsec;
@@ -190,21 +183,21 @@ class QuaternionStamped
 public:
   QuaternionStamped():
     frame_id("FRAME_ID_UNINITIALIZED"),
-    _sec(0), _nsec(0) {quaternion = new py::Quaternion();};
+    _sec(0), _nsec(0) {};
   QuaternionStamped(const py::Quaternion& q, int sec, int nsec, const std::string& frame_id_in):
+    quaternion(q),
     frame_id(frame_id_in),
-    _sec(sec), _nsec(nsec)  {quaternion = new py::Quaternion(q);};
+    _sec(sec), _nsec(nsec)  {};
 
-  QuaternionStamped& copy(const QuaternionStamped& other)
+  QuaternionStamped(const QuaternionStamped& other)
   {
-    *quaternion = *other.quaternion;
+    quaternion = other.quaternion;
     frame_id = other.frame_id;
     _sec = other._sec;
     _nsec = other._nsec;
-    return *this;
   };
 
-  ~QuaternionStamped(){delete quaternion;};
+  ~QuaternionStamped(){};
   inline bool operator==(const QuaternionStamped& other) const
   {
     if( _sec != other._sec) return false;
@@ -213,7 +206,7 @@ public:
     else if (! (*quaternion == *(other.quaternion))) return false; ///\todo failing one test
     else return true;
   };
-  py::Quaternion* quaternion;
+  py::Quaternion quaternion;
   std::string frame_id;
   int _sec;
   int _nsec;
@@ -366,16 +359,16 @@ public:
     PointStampedBttoPy(temp_output, stamped_out);
   };
   /** \brief Transform a Stamped Pose into the target frame */
-  PoseStamped& transformPose(const std::string& target_frame, const PoseStamped& stamped_in) const
+  PoseStamped transformPose(const std::string& target_frame, const PoseStamped& stamped_in) const
   {
-    PoseStamped* stamped_out = new PoseStamped();
+    PoseStamped stamped_out;// = new PoseStamped();
     tf::Stamped<tf::Pose> temp_output, temp_input;
     PoseStampedPytoBt(stamped_in, temp_input);
     tf_.transformPose(target_frame, 
                             temp_input,
                             temp_output);
-    PoseStampedBttoPy(temp_output, *stamped_out);
-    return *stamped_out;
+    PoseStampedBttoPy(temp_output, stamped_out);
+    return stamped_out;
   };
 
   /** \brief Transform a Stamped Quaternion into the target frame */
@@ -439,7 +432,7 @@ private:
 
 void QuaternionStampedPytoBt(const QuaternionStamped & in, tf::Stamped<tf::Quaternion>& out) const
 {
-  const py::Quaternion & quat_in = *(in.quaternion);
+  const py::Quaternion & quat_in = in.quaternion;
   out = tf::Stamped<tf::Quaternion>(tf::Quaternion(quat_in.x(), quat_in.y(), quat_in.z(), quat_in.w()),
                                     ros::Time(in._sec, in._nsec),
                                     in.frame_id);
@@ -455,7 +448,7 @@ void QuaternionStampedBttoPy(const tf::Stamped<tf::Quaternion>& in, QuaternionSt
 
 void PointStampedPytoBt(const PointStamped & in, tf::Stamped<tf::Point>& out) const
 {
-  const py::Vector3 & point_in = *(in.point);
+  const py::Vector3 & point_in = in.point;
   out = tf::Stamped<tf::Point>(tf::Point(point_in.x(), point_in.y(), point_in.z()),
                                ros::Time(in._sec, in._nsec),
                                in.frame_id);
@@ -471,7 +464,7 @@ void PointStampedBttoPy(const tf::Stamped<tf::Point>& in, PointStamped& out) con
 
 void VectorStampedPytoBt(const VectorStamped & in, tf::Stamped<tf::Vector3>& out) const
 {
-  const py::Vector3 & vector_in = *(in.vector);
+  const py::Vector3 & vector_in = in.vector;
   out = tf::Stamped<tf::Vector3>(tf::Vector3(vector_in.x(), vector_in.y(), vector_in.z()),
                                ros::Time(in._sec, in._nsec),
                                in.frame_id);
@@ -487,8 +480,8 @@ void VectorStampedBttoPy(const tf::Stamped<tf::Vector3>& in, VectorStamped& out)
 
 void PoseStampedPytoBt(const PoseStamped & in, tf::Stamped<tf::Pose>& out) const
 {
-  const py::Vector3 & point_in = in.pose->getOrigin();
-  const py::Quaternion & quat_in = in.pose->getRotation();
+  const py::Vector3 & point_in = in.pose.getOrigin();
+  const py::Quaternion & quat_in = in.pose.getRotation();
   out = tf::Stamped<tf::Pose>(tf::Pose(tf::Quaternion(quat_in.x(), quat_in.y(), quat_in.z(), quat_in.w()),
                                        tf::Point(point_in.x(), point_in.y(), point_in.z())),
                               ros::Time(ros::Time(in._sec, in._nsec)),
@@ -507,8 +500,8 @@ void PoseStampedBttoPy(const tf::Stamped<tf::Pose>& in, PoseStamped& out) const
 
 void TransformStampedPytoBt(const TransformStamped & in, tf::Stamped<tf::Transform>& out) const
 {
-  const py::Vector3 & point_in = in.transform->getOrigin();
-  const py::Quaternion & quat_in = in.transform->getRotation();
+  const py::Vector3 & point_in = in.transform.getOrigin();
+  const py::Quaternion & quat_in = in.transform.getRotation();
   out = tf::Stamped<tf::Transform>(tf::Transform(tf::Quaternion(quat_in.x(), quat_in.y(), quat_in.z(), quat_in.w()),
                                                  tf::Point(point_in.x(), point_in.y(), point_in.z())),
                                    ros::Time(in._sec, in._nsec),

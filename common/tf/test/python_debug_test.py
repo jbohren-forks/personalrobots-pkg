@@ -53,26 +53,27 @@ try:
     po2 = tfl.transform_pose("/map", po)
 
     print "po2.pose.this", po2.pose.this
-    print "po.pose.this", po2.pose.this
+    print "po.pose.this", po.pose.this
 
     # test transforming point
-    print "po"
     po = tf.PointStamped()
     po.frame_id = "base_link"
     po3 = tfl.transform_point("/map", po)
     print "po3"
-    print po3
+    print po3.this
 
     # test transforming vector
     po = tf.VectorStamped()
     po.frame_id = "base_link"
     po4 = tfl.transform_vector("/map", po)
-
+    print po4.this
+    
     # test transforming quaternion
     po = tf.QuaternionStamped()
     po.frame_id = "base_link"
     po5 = tfl.transform_quaternion("/map", po)
-
+    print "po5",  po5.this
+    
     tr = tf.TransformStamped()
 
     lps = tf.PoseStamped()
@@ -121,20 +122,30 @@ try:
     print pointstamped.point
     print transform_stamped.transform * pointstamped.point
 
-    pose_only = bullet.Transform()
-    pose_only.copy(transform_stamped.transform)
+    pose_only = bullet.Transform(transform_stamped.transform)
     print "destructing pose_only", pose_only.this    
     pose_only = []
 
-    po2_copy = tf.PoseStamped()
-    po2_copy.copy(po2)
+    
+    print "Creating copy"
+    po2_copy = tf.PoseStamped(po2)
+    print "po2_copy.pose", po2_copy.pose.this
+    print "po2.pose", po2.pose.this
+
+    print "Creating copy2"
+    po2_copy2 = tf.PoseStamped(po2)
+    print "po2_copy2.pose", po2_copy2.pose.this
+
+
+    print "destructing po2  po2.pose is", po2.pose.this
+    po2 = []
+
+
     print "destructing po2_copy po2_copy.pose is", po2_copy.pose.this
     po2_copy = []    
 
-    print po2.frame_id
-    print "destructing po2  po2.pose is", po2.pose.this
-    po2 = []
-    print "po2 sucessfull reassigned"
+    
+
     
 
 
