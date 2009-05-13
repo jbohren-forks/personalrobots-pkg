@@ -129,7 +129,12 @@ void Transformer::lookupTransform(const std::string& target_frame, const std::st
   if (mapped_source_frame == mapped_target_frame)
   {
     transform.setIdentity();
-    transform.stamp_ = time;
+
+    if (time == ros::Time())
+      transform.stamp_ = ros::Time::now();
+    else
+      transform.stamp_  = time;
+
     transform.frame_id_ = target_frame;
     return;
   }    

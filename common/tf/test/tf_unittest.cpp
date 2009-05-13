@@ -77,7 +77,7 @@ TEST(tf, TransformTransformsCartesian)
   }
 
   //std::cout << mTR.allFramesAsString() << std::endl;
-  //  std::cout << mTR.chainAsString("child", 0, "my_parent2", 0, "my_parent2") << std::endl;
+  //  std::cout << mTR.chainAsString("child", 0, "my_parent2", 0, "my_parent2") << std::endl
 
   for ( uint64_t i = 0; i < runs ; i++ )
 
@@ -1200,6 +1200,12 @@ TEST(tf, getLatestCommonTime)
   EXPECT_EQ(output2.stamp_, ros::Time().fromNSec(3000));
 
 
+  //zero length lookup zero time
+  ros::Time now1 = ros::Time::now();
+  ros::Time time_output;
+  mTR.getLatestCommonTime("a", "a", time_output, NULL);
+  EXPECT_LE(now1.toSec(), time_output.toSec());
+  EXPECT_LE(time_output.toSec(), ros::Time::now().toSec());
 
 
 }
@@ -1522,7 +1528,22 @@ TEST(tf, lookupTransform)
     printf("Exception improperly thrown: %s", ex.what());
     EXPECT_FALSE("Exception improperly thrown");
   }
+  
 
+  //make sure zero goes to now for zero length
+  try
+  {
+    ros::Time now1 = ros::Time::now();
+
+    mTR.lookupTransform("a", "a", ros::Time(),output);
+    EXPECT_LE(now1.toSec(), output.stamp_.toSec());
+    EXPECT_LE(output.stamp_.toSec(), ros::Time::now().toSec());
+  }
+  catch (tf::TransformException &ex)
+  {
+    printf("Exception improperly thrown: %s", ex.what());
+    EXPECT_FALSE("Exception improperly thrown");
+  }
   
 }
 
