@@ -61,6 +61,30 @@ namespace executive_trex_pr2 {
   };
 
   /**
+   * @brief Obtain an approach point for an outlet
+   */
+  class MapGetOutletApproachPoseConstraint : public Constraint {
+  public:
+    
+    MapGetOutletApproachPoseConstraint(const LabelStr& name,
+				       const LabelStr& propagatorName,
+				       const ConstraintEngineId& constraintEngine,
+				       const std::vector<ConstrainedVariableId>& variables);
+    
+    virtual void handleExecute();
+    
+  private:
+    AbstractDomain& _x;
+    AbstractDomain& _y;
+    AbstractDomain& _z;
+    AbstractDomain& _qx;
+    AbstractDomain& _qy;
+    AbstractDomain& _qz;
+    AbstractDomain& _qw;
+    IntervalIntDomain& _outlet;
+  };
+
+  /**
    * @brief Computes inputs for the next move
    */
   class MapGetNextMoveConstraint : public Constraint {
@@ -257,7 +281,7 @@ namespace executive_trex_pr2 {
 				const std::vector<ConstrainedVariableId>& variables);
     virtual void handleExecute();
     
-  private:
+  protected:
     IntervalDomain& _x;
     IntervalDomain& _y;
     IntervalDomain& _z;
@@ -425,6 +449,11 @@ namespace executive_trex_pr2 {
      * @brief Query detailed outlet data. Might want to think about adding and OutletState msg
      */
     virtual void getOutletState(unsigned int outlet_id, robot_msgs::Pose& outlet_pose);
+
+    /**
+     * @brief Get the pose to navigate to in order to begin the recharge process
+     */
+    virtual void getOutletApproachPose(unsigned int outlet_id, robot_msgs::Pose& approach_pose);
 
     /**
      * @brief Outlet blocked

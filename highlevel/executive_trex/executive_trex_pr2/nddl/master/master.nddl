@@ -40,6 +40,7 @@ typedef int [0 5] PRIORITY;
 
 class M2Goals extends Behavior {
   predicate Active{
+    MAP_KEY outlet_id;
     string frame_id;
     float time_stamp;
     float x;
@@ -49,7 +50,10 @@ class M2Goals extends Behavior {
     float qy;
     float qz;
     float qw;
-    bool recharge;
+
+    // Constraint must be defined here to allow x and y values to be accessible for planning.
+    map_get_outlet_approach_pose(x, y, z, qx, qy, qz, qw, outlet_id);
+    defaultonCommit(frame_id, "map");
   }
 
   predicate Inactive{}
@@ -96,7 +100,7 @@ M2Goals::Active{
  */
 M2Controller::Holds{
   if(active == false){
-    contained_by(m2_goals.Inactive);
+    equals(m2_goals.Inactive);
   }
 
   // Default based on predecessors
@@ -115,20 +119,10 @@ M2Controller::Holds{
     bool at_goal;
     testLEQ(at_goal, distance, 1.5);
 
-    if(at_goal == true){
-      bool recharge_required;
-      eq(recharge_required, m2_active.recharge);
-      if(recharge_required == true){
-	contains_start(recharger.Active cmd);
-	concurrent(cmd.end, end);
-	eq_pose_msg(cmd.object, m2_active.object);
-      }
-      else {
-	meets(Holds s);
-	eq(s.active, false);
-	meets(m2_goals.Inactive m2_inactive);
-	eq(m2_inactive.status, SUCCESS);
-      }
+    if(at_goal == true){       
+      contains_start(recharger.Active cmd);
+      concurrent(cmd.end, end);
+      map_get_outlet_state(cmd.outlet_id, m2_active.outlet_id);
     }
     else{
       // Take the next step towards the goal. This will either navigate to the goal, or navigate to the
@@ -140,7 +134,7 @@ M2Controller::Holds{
       // in the domains
       contains_start(MoveBehavior.Active cmd);
       concurrent(cmd.end, end);
-      eq(cmd.frame_id, "map");
+      eq(cmd.frame_id, m2_active.frame_id);
 
       // Determine the next map point to go for. It will either be the outlet
       // or it will be a doorway en-route to the outlet

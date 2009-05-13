@@ -204,10 +204,16 @@ DoorController::Holds {
     }
     else{
       if(check_doorway == true){
-	contains_start(check_path.Active cmd);
-	concurrent(cmd.end, end);
-	eq(cmd.frame_id, ds.frame_id);
-	door_get_robot_pose_for_door(cmd.x, cmd.y, cmd.z, cmd.qx, cmd.qy, cmd.qz, cmd.qw, ds.object, DOORWAY_CLEARANCE_RANGE);
+	if(arms_tucked == true){
+	  contains_start(check_path.Active cmd);
+	  concurrent(cmd.end, end);
+	  eq(cmd.frame_id, ds.frame_id);
+	  door_get_robot_pose_for_door(cmd.x, cmd.y, cmd.z, cmd.qx, cmd.qy, cmd.qz, cmd.qw, ds.object, DOORWAY_CLEARANCE_RANGE);
+	}
+	else {
+	  contains_start(doors_tuck_arms.Active cmd);
+	  concurrent(cmd.end, end);
+	}
       }
       else {
 	if(must_find_handle == false){

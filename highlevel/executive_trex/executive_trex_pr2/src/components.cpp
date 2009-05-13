@@ -397,6 +397,8 @@ namespace TREX{
       REGISTER_CONSTRAINT(constraintEngine->getCESchema(),
 			  executive_trex_pr2::MapGetOutletStateConstraint, "map_get_outlet_state", "Default");
       REGISTER_CONSTRAINT(constraintEngine->getCESchema(),
+			  executive_trex_pr2::MapGetOutletApproachPoseConstraint, "map_get_outlet_approach_pose", "Default");
+      REGISTER_CONSTRAINT(constraintEngine->getCESchema(),
 			  executive_trex_pr2::MapNotifyOutletBlockedConstraint, "map_notify_outlet_blocked", "Default");
 
       REGISTER_CONSTRAINT(constraintEngine->getCESchema(),

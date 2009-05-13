@@ -14,14 +14,8 @@ class Recharger extends Behavior {
    */
   predicate Active {
     string frame_id;
-    float time_stamp;
-    float x;
-    float y;
-    float z;
-    float qx;
-    float qy;
-    float qz;
-    float qw;
+    MAP_KEY outlet_id;
+    neq(outlet_id, NO_KEY);
   }
 
   Recharger(Mode _mode){

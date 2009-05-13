@@ -95,6 +95,50 @@ void pickPointInSpace(unsigned int W, unsigned int H, double& x, double& y){
 
 
 /**
+ * Test the function to get an outlet approach pose
+ */
+TEST(executive_trex_pr2, map_get_outlet_approach_pose){
+  std::ifstream is("test/willow.tmap");
+  TopologicalMapAdapter map(is);
+  Variable<IntervalDomain> x(ce, IntervalDomain());
+  Variable<IntervalDomain> y(ce, IntervalDomain());
+  Variable<IntervalDomain> z(ce, IntervalDomain());
+  Variable<IntervalDomain> qx(ce, IntervalDomain());
+  Variable<IntervalDomain> qy(ce, IntervalDomain());
+  Variable<IntervalDomain> qz(ce, IntervalDomain());
+  Variable<IntervalDomain> qw(ce, IntervalDomain());
+  Variable<IntervalIntDomain> outlet_id(ce, IntervalIntDomain());
+  std::vector<ConstrainedVariableId> scope;
+  scope.push_back(x.getId());
+  scope.push_back(y.getId());
+  scope.push_back(z.getId());
+  scope.push_back(qx.getId());
+  scope.push_back(qy.getId());
+  scope.push_back(qz.getId());
+  scope.push_back(qw.getId());
+  scope.push_back(outlet_id.getId());
+
+  MapGetOutletApproachPoseConstraint::MapGetOutletApproachPoseConstraint map_get_outlet_approach_pose("map_get_outlet_approach_pose", "Default", ce, scope);
+
+  ASSERT_TRUE(ce->propagate());
+
+  // Bind the outlet to 1 and check results
+  outlet_id.specify(1);
+  ASSERT_TRUE(ce->propagate());
+
+  // Bind the outlet to 2 and check results
+  outlet_id.reset();
+  outlet_id.specify(2);
+  ASSERT_TRUE(ce->propagate());
+
+  // Bind the outlet to an invalid id and check results
+  outlet_id.reset();
+  outlet_id.specify(9999);
+  ASSERT_FALSE(ce->propagate());
+}
+
+
+/**
  * Test the function to get the next move
  */
 TEST(executive_trex_pr2, map_get_next_move){
@@ -115,7 +159,7 @@ TEST(executive_trex_pr2, map_get_next_move){
   std::vector<ConstrainedVariableId> scope;
   scope.push_back(next_x.getId());
   scope.push_back(next_y.getId());
-  scope.push_back(next_x.getId());
+  scope.push_back(next_z.getId());
   scope.push_back(next_qx.getId());
   scope.push_back(next_qy.getId());
   scope.push_back(next_qz.getId());

@@ -116,10 +116,18 @@ RechargeController::Holds {
     eq(arms_tucked, mb.arms_tucked);
     meets(Holds s); // Successor
 
+    // Should be active. Get outlet param from it. Only require that for local navigation
+    contained_by(recharger.Active rc_active);
+
+    // Link to plug and outlet state
+    starts_during(outlet_state.Holds os);
+    starts_during(plug_state.Holds ps);
+
     if(recharged == true){
+
       if(plug_is_stowed == yes){
         if (arms_tucked == true) {
-          meets(Recharger.Inactive rc_inactive);
+          meets(recharger.Inactive rc_inactive);
           eq(rc_inactive.status, SUCCESS);
           eq(duration, 1);
           eq(s.active, false);
@@ -157,52 +165,43 @@ RechargeController::Holds {
 	}
 	else {
 	  if(plug_in_hand == true){
-            starts_during(detect_outlet_coarse.Inactive coarse_feedback);
 	    contains_start(detect_outlet_fine.Active cmd);
-            eq(cmd.x, coarse_feedback.x);
-            eq(cmd.y, coarse_feedback.y);
-            eq(cmd.z, coarse_feedback.z);
-            eq(cmd.frame_id, coarse_feedback.frame_id);
+            eq(cmd.x, os.x);
+            eq(cmd.y, os.y);
+            eq(cmd.z, os.z);
+            eq(cmd.frame_id, os.frame_id);
 	    concurrent(cmd.end, end);
             
 	  }
 	  else {
 	    if(outlet_detected_coarse == true){
 	      if(in_position == false){
-		// Here, compute parameters based on the PLUG_IN_RANGE
 		contains_start(move_base_local.Active cmd);
-                starts_during(detect_outlet_coarse.Inactive feedback);
-                plugs_get_offset_pose(feedback.x, feedback.y, 
-                                      feedback.z, feedback.qx, 
-                                      feedback.qy, feedback.qz,
-                                      feedback.qw, 0.5, cmd.x, cmd.y,
-                                      cmd.z, cmd.qx, cmd.qy,
-                                      cmd.qz, cmd.qw);
-                eq(cmd.frame_id, feedback.frame_id);
+		// TODO ; Constraint should have inputs after outputs
+                plugs_get_offset_pose(os.x, os.y, os.z, os.qx, os.qy, os.qz, os.qw, 0.5, 
+				      cmd.x, cmd.y, cmd.z, cmd.qx, cmd.qy,cmd.qz, cmd.qw);
+
+                eq(cmd.frame_id, os.frame_id);
 		concurrent(cmd.end, end);
 	      }
 	      else {
 		if(ready_to_grasp == true){
 		  contains_start(move_and_grasp_plug.Active cmd);
-                  starts_during(detect_plug_on_base.Inactive feedback);
-                  eq(cmd.x, feedback.x);
-                  eq(cmd.y, feedback.y);
-                  eq(cmd.z, feedback.z);
-                  eq(cmd.frame_id, feedback.frame_id);
+                  eq(cmd.x, ps.x);
+                  eq(cmd.y, ps.y);
+                  eq(cmd.z, ps.z);
+                  eq(cmd.frame_id, ps.frame_id);
 		  concurrent(cmd.end, end);
 		}
 		else {
-
-		  //if(plug_is_stowed == maybe){
-		    if(arms_tucked == false){
-		      contains_start(detect_plug_on_base.Active cmd);
-		      concurrent(cmd.end, end);
-		    }
-		    else {
-		      contains_start(plugs_untuck_arms.Active cmd);
-		      concurrent(cmd.end, end);
-		    }
-                    //}
+		  if(arms_tucked == false){
+		    contains_start(detect_plug_on_base.Active cmd);
+		    concurrent(cmd.end, end);
+		  }
+		  else {
+		    contains_start(plugs_untuck_arms.Active cmd);
+		    concurrent(cmd.end, end);
+		  }
 		}
 	      }
 	    }
@@ -213,13 +212,10 @@ RechargeController::Holds {
 	      }
 	      else {
 		if(arms_tucked == true){
-		  // Here, compute parameters based on the DETECTION_RANGE
+		  // Here, derive parameters from the map
 		  contains_start(move_base_local.Active cmd);
-                  starts_during (outlet_state.Holds os);
-                  plugs_get_offset_pose(os.x, os.y, os.z, os.qx, os.qy, os.qz,
-                                        os.qw, 3.0, cmd.x, cmd.y, cmd.z,
-                                        cmd.qx, cmd.qy, cmd.qz, cmd.qw);
-                  eq(cmd.frame_id, os.frame_id);
+                  map_get_outlet_approach_pose(cmd.x, cmd.y, cmd.z, cmd.qx, cmd.qy, cmd.qz, cmd.qw, rc_active.outlet_id);
+                  eq(cmd.frame_id, rc_active.frame_id);
 		  concurrent(cmd.end, end);
 		}
 		else {

@@ -5,3 +5,4 @@ close();
 rejectable(recharge_controller.Holds g);
 g.start = 2;
 g.active = true;
+g.in_position = true;

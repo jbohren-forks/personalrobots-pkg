@@ -8,4 +8,5 @@ map_initialize_from_file("willow.tmap");
 // Generate a goal to recharge using the current position. Note that this requires the robot to be correclty localized!
 // We assume the robot is located near enough to the socket to complete using local navigation only
 rejectable(Recharger.Active g);
-tf_get_robot_pose(g.x, g.y, g.z, g.qx, g.qy, g.qz, g.qw, "map");
+g.frame_id = "map";
+g.outlet_id = 1;

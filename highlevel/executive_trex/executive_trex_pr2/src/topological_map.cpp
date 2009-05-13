@@ -110,6 +110,53 @@ namespace executive_trex_pr2 {
   }
 
   //*******************************************************************************************
+  MapGetOutletApproachPoseConstraint::MapGetOutletApproachPoseConstraint(const LabelStr& name,
+									 const LabelStr& propagatorName,
+									 const ConstraintEngineId& constraintEngine,
+									 const std::vector<ConstrainedVariableId>& variables)
+    :Constraint(name, propagatorName, constraintEngine, variables),
+     _x(static_cast<IntervalDomain&>(getCurrentDomain(variables[0]))),
+     _y(static_cast<IntervalDomain&>(getCurrentDomain(variables[1]))),
+     _z(static_cast<IntervalDomain&>(getCurrentDomain(variables[2]))),
+     _qx(static_cast<IntervalDomain&>(getCurrentDomain(variables[3]))),
+     _qy(static_cast<IntervalDomain&>(getCurrentDomain(variables[4]))),
+     _qz(static_cast<IntervalDomain&>(getCurrentDomain(variables[5]))),
+     _qw(static_cast<IntervalDomain&>(getCurrentDomain(variables[6]))),
+     _outlet(static_cast<IntervalIntDomain&>(getCurrentDomain(variables[7]))){
+    checkError(variables.size() == 8, "Invalid signature for " << name.toString() << ". Check the constraint signature in the model.");
+    checkError(TopologicalMapAdapter::instance() != NULL, "Failed to allocate topological map accessor. Some configuration error.");
+  }
+    
+  /**
+   * If the position is bound, we can make a region query. The result should be intersected on the domain.
+   */
+  void MapGetOutletApproachPoseConstraint::handleExecute(){
+
+    // Wait till inputs are bound.
+    if(!_outlet.isSingleton())
+      return;
+
+    debugMsg("map:get_outlet_appoach_pose",  "BEFORE: "  << TREX::timeString() << toString());
+    try{
+      robot_msgs::Pose outlet_pose;
+      TopologicalMapAdapter::instance()->getOutletApproachPose(_outlet.getSingletonValue(), outlet_pose);
+      _x.set(outlet_pose.position.x);
+      _y.set(outlet_pose.position.y);
+      _z.set(outlet_pose.position.z);
+      _qx.set(outlet_pose.orientation.x);
+      _qy.set(outlet_pose.orientation.y);
+      _qz.set(outlet_pose.orientation.z);
+      _qw.set(outlet_pose.orientation.w);
+    }
+    catch(...){
+      debugMsg("trex:warning", "Invalid outlet id (" << _outlet.getSingletonValue() << ")");
+      _outlet.empty();
+    }
+
+    debugMsg("map:get_outlet_approach_pose",  "AFTER: "  << TREX::timeString() << toString());
+  }
+
+  //*******************************************************************************************
   MapGetOutletStateConstraint::MapGetOutletStateConstraint(const LabelStr& name,
 							    const LabelStr& propagatorName,
 							    const ConstraintEngineId& constraintEngine,
@@ -899,9 +946,6 @@ namespace executive_trex_pr2 {
     return _map->nearestOutlet(p);
   }
 
-  /**
-   * @todo Outlet data should be a pose message
-   */
   void TopologicalMapAdapter::getOutletState(unsigned int outlet_id, robot_msgs::Pose& outlet_pose){
     topological_map::OutletInfo outlet_info = _map->outletInfo(outlet_id);
     outlet_pose.position.x = outlet_info.x;
@@ -911,6 +955,23 @@ namespace executive_trex_pr2 {
     outlet_pose.orientation.y = outlet_info.qy;
     outlet_pose.orientation.z = outlet_info.qz;
     outlet_pose.orientation.w = outlet_info.qw;
+  }
+
+
+  /**
+   * Impementation uses a distance of 1 meter and an error bound of 1 meter. Assume that the outlet pose can subsequently
+   * be used.
+   */
+  void TopologicalMapAdapter::getOutletApproachPose(unsigned int outlet_id, robot_msgs::Pose& approach_pose){
+    topological_map::OutletInfo outlet_info = _map->outletInfo(outlet_id);
+    topological_map::Point2D p = _map->outletApproachPosition (outlet_id, 1.0, 1.0);
+    approach_pose.position.x = p.x;
+    approach_pose.position.y = p.y;
+    approach_pose.position.z = 0;
+    approach_pose.orientation.x = outlet_info.qx;
+    approach_pose.orientation.y = outlet_info.qy;
+    approach_pose.orientation.z = outlet_info.qz;
+    approach_pose.orientation.w = outlet_info.qw;
   }
 
   void TopologicalMapAdapter::observeOutletBlocked(unsigned int outlet_id){
