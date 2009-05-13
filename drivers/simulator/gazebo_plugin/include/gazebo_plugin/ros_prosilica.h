@@ -30,6 +30,7 @@
 #include <ros/node.h>
 #include "boost/thread/mutex.hpp"
 #include <image_msgs/Image.h>
+#include <gazebo/Param.hh>
 #include <gazebo/Controller.hh>
 
 namespace gazebo
@@ -122,9 +123,12 @@ class RosProsilica : public Controller
   /// \brief ROS image message
   private: image_msgs::Image imageMsg;
 
+  /// \brief Parameters
+  private: ParamT<std::string> *topicNameP;
+  private: ParamT<std::string> *frameNameP;
+
   /// \brief ROS image topic name
   private: std::string topicName;
-
   /// \brief ROS frame transform name to use in the image message header.
   ///        This should typically match the link name the sensor is attached.
   private: std::string frameName;

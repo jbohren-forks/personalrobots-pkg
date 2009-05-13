@@ -77,10 +77,10 @@ RosProsilica::RosProsilica(Entity *parent)
   if (!this->myParent)
     gzthrow("RosProsilica controller requires a Camera Sensor as its parent");
 
-
-  // set parent sensor to active automatically
-  this->myParent->SetActive(true);
-
+  Param::Begin(&this->parameters);
+  this->topicNameP = new ParamT<std::string>("topicName","stereo/raw_stereo", 0);
+  this->frameNameP = new ParamT<std::string>("frameName","stereo_link", 0);
+  Param::End();
 
   rosnode = ros::g_node; // comes from where?
   int argc = 0;
@@ -92,28 +92,27 @@ RosProsilica::RosProsilica(Entity *parent)
     ROS_DEBUG("Starting node in prosilica");
   }
 
-  // set buffer size
-  this->width            = this->myParent->GetImageWidth();
-  this->height           = this->myParent->GetImageHeight();
-  this->depth            = 1;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // Destructor
 RosProsilica::~RosProsilica()
 {
-
-
+  delete this->topicNameP;
+  delete this->frameNameP;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // Load the controller
 void RosProsilica::LoadChild(XMLConfigNode *node)
 {
-  this->topicName = node->GetString("topicName","default_ros_prosilica",0); //read from xml file
-  this->frameName = node->GetString("frameName","default_ros_prosilica",0); //read from xml file
+  this->topicNameP->Load(node);
+  this->frameNameP->Load(node);
+  
+  this->topicName = this->topicNameP->GetValue();
+  this->frameName = this->frameNameP->GetValue();
 
-  ROS_DEBUG("================= %s", this->topicName.c_str());
+  ROS_DEBUG("prosilica topic name %s", this->topicName.c_str());
   rosnode->advertise<image_msgs::Image>(this->topicName,1);
 }
 
@@ -122,6 +121,13 @@ void RosProsilica::LoadChild(XMLConfigNode *node)
 void RosProsilica::InitChild()
 {
 
+  // set parent sensor to active automatically
+  this->myParent->SetActive(true);
+
+  // set buffer size
+  this->width            = this->myParent->GetImageWidth();
+  this->height           = this->myParent->GetImageHeight();
+  this->depth            = 1;
 
 }
 
