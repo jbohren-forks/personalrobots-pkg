@@ -48,6 +48,9 @@
 #define NOTIFIER_DEBUG(fmt, ...) \
   ROS_DEBUG_NAMED("message_notifier", "MessageNotifier [topic=%s, target=%s]: "fmt, topic_.c_str(), getTargetFramesString().c_str(), __VA_ARGS__)
 
+#define NOTIFIER_WARN(fmt, ...) \
+  ROS_WARN_NAMED("message_notifier", "MessageNotifier [topic=%s, target=%s]: "fmt, topic_.c_str(), getTargetFramesString().c_str(), __VA_ARGS__)
+
 namespace tf
 {
 
@@ -125,8 +128,10 @@ public:
   , new_transforms_(false)
   , successful_transform_count_(0)
   , failed_transform_count_(0)
+  , failed_out_the_back_count_(0)
   , transform_message_count_(0)
   , incoming_message_count_(0)
+  , dropped_message_count_(0)
   , time_tolerance_(0.0)
   {
     target_frames_.resize(1);
@@ -145,8 +150,8 @@ public:
    */
   ~MessageNotifier()
   {
-    NOTIFIER_DEBUG("Successful Transforms: %d, Failed Transforms: %d, Transform messages received: %d, Messages received: %d",
-                        successful_transform_count_, failed_transform_count_, transform_message_count_, incoming_message_count_);
+    NOTIFIER_DEBUG("Successful Transforms: %llu, Failed Transforms: %llu, Discarded due to age: %llu, Transform messages received: %llu, Messages received: %llu, Total dropped: %llu",
+                        successful_transform_count_, failed_transform_count_, failed_out_the_back_count_, transform_message_count_, incoming_message_count_, dropped_message_count_);
 
     unsubscribeFromMessage();
 
@@ -285,9 +290,9 @@ private:
    */
   void gatherReadyMessages(V_Message& to_notify)
   {
-    if (!messages_.empty() && getTargetFramesString() == " ") //is this useful?
+    if (!messages_.empty() && getTargetFramesString() == " ")
     {
-      ROS_WARN("MessageNotifier [topic=%s]: empty target frame", topic_.c_str());
+      ROS_WARN_NAMED("message_notifier", "MessageNotifier [topic=%s, target=%s]: empty target frame", topic_.c_str(), getTargetFramesString().c_str());
     }
 
     to_notify.reserve(message_count_);
@@ -315,8 +320,12 @@ private:
           if (message->header.stamp + tf_->getCacheLength() < latest_transform_time)
           {
             --message_count_;
-            failed_transform_count_ ++;
+            ++failed_out_the_back_count_;
+            ++dropped_message_count_;
             NOTIFIER_DEBUG("Discarding Message %d , in frame %s, Out of the back of Cache Time(stamp: %.3f + cache_length: %.3f < latest_transform_time %.3f.  Message Count now: %d", i, message->header.frame_id.c_str(), message->header.stamp.toSec(),  tf_->getCacheLength().toSec(), latest_transform_time.toSec(), message_count_);
+
+            last_out_the_back_stamp_ = message->header.stamp;
+            last_out_the_back_frame_ = message->header.frame_id;
             it = messages_.erase(it);
             should_step_out = true;
             break;
@@ -396,6 +405,7 @@ private:
       // If this message is about to push us past our queue size, erase the oldest message
       if (queue_size_ != 0 && message_count_ + 1 > queue_size_)
       {
+        ++dropped_message_count_;
         messages_.pop_front();
         --message_count_;
 
@@ -454,6 +464,8 @@ private:
 
         notify(to_notify);
         to_notify.clear();
+
+        checkFailures();
       }
     }
   }
@@ -501,6 +513,33 @@ private:
     ++transform_message_count_;
   }
 
+  void checkFailures()
+  {
+    if (last_failure_warning_.isZero())
+    {
+      last_failure_warning_ = ros::Time::now() - ros::Duration(45);
+    }
+
+    if (ros::Time::now() - last_failure_warning_ > ros::Duration(60))
+    {
+      if (incoming_message_count_ - message_count_ == 0)
+      {
+        return;
+      }
+
+      double dropped_pct = (double)dropped_message_count_ / (double)(incoming_message_count_ - message_count_);
+      if (dropped_pct > 0.95)
+      {
+        NOTIFIER_WARN("Dropped %.2f%% of messages so far. Please turn the [%s.message_notifier] rosconsole logger to DEBUG for more information.", dropped_pct*100, ROSCONSOLE_DEFAULT_NAME);
+        last_failure_warning_ = ros::Time::now();
+
+        if ((double)failed_out_the_back_count_ / (double)dropped_message_count_ > 0.5)
+        {
+          NOTIFIER_WARN("  The majority of dropped messages were due to messages growing older than the TF cache time.  The last message's timestamp was: %f, and the last frame_id was: %s", last_out_the_back_stamp_.toSec(), last_out_the_back_frame_.c_str());
+        }
+      }
+    }
+  }
 
   Transformer* tf_; ///< The Transformer used to determine if transformation data is available
   ros::Node* node_; ///< The node used to subscribe to the topic
@@ -527,10 +566,17 @@ private:
   V_Message new_message_queue_; ///< Queues messages to later be processed by the worker thread
   boost::mutex queue_mutex_; ///< The mutex used for locking message queue operations
 
-  int successful_transform_count_;
-  int failed_transform_count_;
-  int transform_message_count_;
-  int incoming_message_count_;
+  uint64_t successful_transform_count_;
+  uint64_t failed_transform_count_;
+  uint64_t failed_out_the_back_count_;
+  uint64_t transform_message_count_;
+  uint64_t incoming_message_count_;
+  uint64_t dropped_message_count_;
+
+  ros::Time last_out_the_back_stamp_;
+  std::string last_out_the_back_frame_;
+
+  ros::Time last_failure_warning_;
 
   ros::Duration time_tolerance_; ///< Provide additional tolerance on time for messages which are stamped but can have associated duration
 };
