@@ -1,9 +1,11 @@
 all: installed
 
-TARBALL = build/gmapping_r39.tar.gz
-TARBALL_URL = http://pr.willowgarage.com/downloads/gmapping_r39.tar.gz
+FILENAME = gmapping_r39.tar.gz
+TARBALL = build/$(FILENAME)
+TARBALL_URL = http://pr.willowgarage.com/downloads/$(FILENAME)
 SOURCE_DIR = build/gmapping_export
 UNPACK_CMD = tar xzf
+MD5SUM_FILE = $(FILENAME).md5sum
 include $(shell rospack find mk)/download_unpack_build.mk
 
 PATCH = gmapping-r39.patch
