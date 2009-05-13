@@ -53,7 +53,7 @@ DoorsTuckArmsAction::DoorsTuckArmsAction() :
   node_->param(action_name_ + "/which_arms", which_arms_, which_arms_);
   if(which_arms_ == "")
   {
-    ROS_ERROR("%s: Aborted, which arms param was not set.", action_name_.c_str());
+    ROS_ERROR("Aborted, which arms param was not set.");
     return;
   }
 
@@ -64,7 +64,7 @@ DoorsTuckArmsAction::DoorsTuckArmsAction() :
    
     if(right_arm_controller_ == "")
     {
-      ROS_ERROR("%s: Aborted, right arm controller param was not set.", action_name_.c_str());
+      ROS_ERROR("Aborted, right arm controller param was not set.");
       return;
     }
   }
@@ -75,7 +75,7 @@ DoorsTuckArmsAction::DoorsTuckArmsAction() :
     
     if(left_arm_controller_ == "")
     {
-      ROS_ERROR("%s: Aborted, left arm controller param was not set.", action_name_.c_str());
+      ROS_ERROR("Aborted, left arm controller param was not set.");
       return;
     }
   }
@@ -118,7 +118,7 @@ robot_actions::ResultStatus DoorsTuckArmsAction::execute(const std_msgs::Empty& 
   {
     if(!ros::service::call(right_arm_controller_ + "/TrajectoryStart", right_traj_req_, traj_res_))
     {
-      ROS_ERROR("%s: Aborted, failed to start right trajectory.", action_name_.c_str());
+      ROS_ERROR("Aborted, failed to start right trajectory.");
       return robot_actions::ABORTED;
     }  
 
@@ -129,7 +129,7 @@ robot_actions::ResultStatus DoorsTuckArmsAction::execute(const std_msgs::Empty& 
     {
       if (isPreemptRequested()){
 	cancelTrajectory();
-	ROS_INFO("%s: Preempted.", action_name_.c_str());
+	ROS_INFO("Preempted.");
         return robot_actions::PREEMPTED;
       }
 
@@ -142,7 +142,7 @@ robot_actions::ResultStatus DoorsTuckArmsAction::execute(const std_msgs::Empty& 
   {
     if(!ros::service::call(left_arm_controller_ + "/TrajectoryStart", left_traj_req_, traj_res_))
     {
-      ROS_ERROR("%s: Aborted, failed to start left trajectory.", action_name_.c_str());
+      ROS_ERROR("Aborted, failed to start left trajectory.");
       return robot_actions::ABORTED;
     }  
 
@@ -153,7 +153,7 @@ robot_actions::ResultStatus DoorsTuckArmsAction::execute(const std_msgs::Empty& 
     {
       if (isPreemptRequested()){
 	cancelTrajectory();
-	ROS_INFO("%s: Preempted.", action_name_.c_str());
+	ROS_INFO("Preempted.");
         return robot_actions::PREEMPTED;
       }
 
@@ -163,7 +163,7 @@ robot_actions::ResultStatus DoorsTuckArmsAction::execute(const std_msgs::Empty& 
   
   if(traj_error_)
   {
-    ROS_ERROR("%s: Aborted, trajectory controller failed to reach goal.", action_name_.c_str());
+    ROS_ERROR("Aborted, trajectory controller failed to reach goal.");
     return robot_actions::ABORTED;
   }
 
@@ -181,7 +181,7 @@ bool DoorsTuckArmsAction::isTrajectoryDone()
   
   if(!ros::service::call(current_controller_name_ + "/TrajectoryQuery", req, res))
   {
-    ROS_ERROR("%s: Error, failed to query trajectory completion", action_name_.c_str());
+    ROS_ERROR("Error, failed to query trajectory completion");
     traj_error_ = true;
     return done;
   }   
@@ -191,7 +191,7 @@ bool DoorsTuckArmsAction::isTrajectoryDone()
   }
   else if(res.done == res.State_Failed)
   {
-    ROS_ERROR("%s: Error, failed to complete trajectory", action_name_.c_str());
+    ROS_ERROR("Error, failed to complete trajectory");
     traj_error_ = true;
   }
   
@@ -206,7 +206,7 @@ void DoorsTuckArmsAction::cancelTrajectory()
   
   if(!ros::service::call(current_controller_name_ + "/TrajectoryCancel", cancel, dummy))
   {
-    ROS_ERROR("%s: Error, failed to cancel trajectory", action_name_.c_str());
+    ROS_ERROR("Error, failed to cancel trajectory");
   }
   return;
 
