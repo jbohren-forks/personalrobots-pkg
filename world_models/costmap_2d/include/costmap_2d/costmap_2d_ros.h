@@ -138,6 +138,13 @@ namespace costmap_2d {
       void resetMapOutsideWindow(double size_x, double size_y);
 
       /**
+       * @brief  Clear all non-lethal obstacles outside of a window around the robot... including cells with NO_INFORMATION
+       * @param size_x The x size of the window to keep unchanged 
+       * @param size_y The y size of the window to keep unchanged 
+       */
+      void clearNonLethalWindow(double size_x, double size_y);
+
+      /**
        * @brief  Returns a copy of the underlying costmap
        * @param costmap A reference to the map to populate
        */

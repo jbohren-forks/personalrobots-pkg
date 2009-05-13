@@ -490,7 +490,7 @@ namespace costmap_2d{
     }
   }
 
-  void Costmap2D::clearNonLethal(double wx, double wy, double w_size_x, double w_size_y){
+  void Costmap2D::clearNonLethal(double wx, double wy, double w_size_x, double w_size_y, bool clear_no_info){
     //get the cell coordinates of the center point of the window
     unsigned int mx, my;
     if(!worldToMap(wx, wy, mx, my))
@@ -522,8 +522,10 @@ namespace costmap_2d{
     for(unsigned int j = map_sy; j <= map_ey; ++j){
       for(unsigned int i = map_sx; i <= map_ex; ++i){
         //if the cell is a lethal obstacle... we'll keep it and queue it, otherwise... we'll clear it
-        if(*current != LETHAL_OBSTACLE && *current != NO_INFORMATION)
-          *current = FREE_SPACE;
+        if(*current != LETHAL_OBSTACLE){
+          if(clear_no_info || *current != NO_INFORMATION) 
+            *current = FREE_SPACE;
+        }
         current++;
         index++;
       }

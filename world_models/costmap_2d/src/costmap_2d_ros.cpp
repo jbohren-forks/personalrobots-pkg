@@ -439,6 +439,46 @@ namespace costmap_2d {
 
   }
 
+  void Costmap2DROS::clearNonLethalWindow(double size_x, double size_y){
+    tf::Stamped<tf::Pose> robot_pose, global_pose;
+    global_pose.setIdentity();
+    robot_pose.setIdentity();
+    robot_pose.frame_id_ = robot_base_frame_;
+    ros::Time current_time = ros::Time::now(); // save time for checking tf delay later
+    robot_pose.stamp_ = ros::Time();
+    try{
+      tf_.transformPose(global_frame_, robot_pose, global_pose);
+    }
+    catch(tf::LookupException& ex) {
+      ROS_ERROR("No Transform available Error: %s\n", ex.what());
+      return;
+    }
+    catch(tf::ConnectivityException& ex) {
+      ROS_ERROR("Connectivity Error: %s\n", ex.what());
+      return;
+    }
+    catch(tf::ExtrapolationException& ex) {
+      ROS_ERROR("Extrapolation Error: %s\n", ex.what());
+      return;
+    }
+    // check global_pose timeout
+    if (current_time.toSec() - global_pose.stamp_.toSec() > transform_tolerance_) {
+      ROS_ERROR("Costmap2DROS transform timeout. Current time: %.4f, global_pose stamp: %.4f, tolerance: %.4f",
+          current_time.toSec() ,global_pose.stamp_.toSec() ,transform_tolerance_);
+      return;
+    }
+
+    double wx = global_pose.getOrigin().x();
+    double wy = global_pose.getOrigin().y();
+    costmap_->lock();
+    ROS_DEBUG("Clearing map in window");
+    costmap_->clearNonLethal(wx, wy, size_x, size_y, true);
+    costmap_->unlock();
+
+    //make sure to force an update of the map to take in the latest sensor data
+    updateMap();
+  }
+
   void Costmap2DROS::resetMapOutsideWindow(double size_x, double size_y){
     tf::Stamped<tf::Pose> robot_pose, global_pose;
     global_pose.setIdentity();
