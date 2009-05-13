@@ -55,10 +55,10 @@ namespace executive_trex_pr2 {
   class StubAction: public robot_actions::Action<Goal, Feedback> {
   public:
 
-    StubAction(const std::string& name): robot_actions::Action<Goal, Feedback>(name) {
+    StubAction(const std::string& name): robot_actions::Action<Goal, Feedback>(name), default_status_(robot_actions::SUCCESS) {
     }
-    StubAction(const std::string& name, const Feedback& default_feedback) : 
-      robot_actions::Action<Goal, Feedback>(name), default_feedback_(default_feedback) {
+    StubAction(const std::string& name, const Feedback& default_feedback, robot_actions::ResultStatus default_status = robot_actions::SUCCESS) : 
+      robot_actions::Action<Goal, Feedback>(name), default_feedback_(default_feedback), default_status_(default_status) {
     }
 
   protected:
@@ -66,10 +66,11 @@ namespace executive_trex_pr2 {
     virtual robot_actions::ResultStatus execute(const Goal& goal, Feedback& feedback){
       ROS_DEBUG("Executing %s\n", robot_actions::Action<Goal, Feedback>::getName().c_str());
       feedback = default_feedback_;
-      return robot_actions::SUCCESS;
+      return default_status_;
     }
   private:
     Feedback default_feedback_;
+    robot_actions::ResultStatus default_status_;
   };
 
 

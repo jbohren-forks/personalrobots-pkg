@@ -61,6 +61,7 @@ class RechargeController extends AgentTimeline {
     bool plug_in_hand;
     bool plugged_in;
     bool ready_to_grasp;
+    bool arms_clear;
   }
   
   RechargeController(){ super(Internal, "Holds"); }
@@ -103,6 +104,7 @@ RechargeController::Holds{
   defaultOnCommit(plug_in_hand, p.plug_in_hand);
   defaultOnCommit(plugged_in, p.plugged_in);
   defaultOnCommit(ready_to_grasp, p.ready_to_grasp);
+  defaultOnCommit(arms_clear, p.arms_clear);
 }
 
 /**
@@ -194,7 +196,8 @@ RechargeController::Holds {
 		  concurrent(cmd.end, end);
 		}
 		else {
-		  if(arms_tucked == false){
+
+		  if(arms_clear == true){
 		    contains_start(detect_plug_on_base.Active cmd);
 		    concurrent(cmd.end, end);
 		  }
@@ -238,6 +241,7 @@ RechargeController::Holds {
 SafetyTuckArms::Inactive {
   if(status == SUCCESS){
     starts(RechargeController.Holds rc);
+    eq(rc.arms_clear, true);
   }
 }
 
@@ -263,6 +267,7 @@ DetectPlugOnBase::Inactive{
 PlugsUntuckArms::Inactive{
   if(status == SUCCESS){
     starts(RechargeController.Holds rc);
+    eq(rc.arms_clear, true);
   }
 }
 
@@ -279,6 +284,7 @@ StowPlug::Inactive{
     starts(RechargeController.Holds rc);
     eq(rc.plug_is_stowed, yes);
     eq(rc.plug_in_hand, false);
+    eq(rc.arms_clear, false);
   }
 }
 
@@ -286,6 +292,7 @@ Unplug::Inactive{
   if(status == SUCCESS){
     starts(RechargeController.Holds rc);
     eq(rc.plugged_in, false);
+    eq(rc.arms_clear, false);
   }
 }
 
@@ -294,6 +301,7 @@ PlugIn::Inactive{
     starts(RechargeController.Holds rc);
     eq(rc.plugged_in, true);
     eq(rc.recharged, true);
+    eq(rc.arms_clear, false);
   }
 }
 
@@ -339,6 +347,7 @@ LocalizePlugInGripper::Inactive{
   if(status == SUCCESS){
     starts(RechargeController.Holds rc);
     eq(rc.ready_to_plug_in, true);
+    eq(rc.arms_clear, false);
   }
 }
 
@@ -348,9 +357,11 @@ MoveAndGraspPlug::Inactive{
     eq(rc.plug_in_hand, true);
     eq(rc.ready_to_grasp, false);
     eq(rc.plug_is_stowed, no);
+    eq(rc.arms_clear, false);
   }
   if (status == ABORTED) {
     starts(RechargeController.Holds rc);
     eq(rc.ready_to_grasp, false);
+    eq(rc.arms_clear, false);
   }
 }
