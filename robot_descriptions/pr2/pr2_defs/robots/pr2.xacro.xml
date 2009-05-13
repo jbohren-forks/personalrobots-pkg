@@ -30,7 +30,7 @@
             rpy="${cal_head_roll} ${cal_head_pitch} ${cal_head_yaw}" />
   </pr2_head>
 
-  <!-- Proscilica Camera -->
+  <!-- Prosilica Camera -->
   <prosilica_cam name="high_def" parent="head_plate_frame">
     <origin xyz="0 0.0275 0.025" rpy="0 0 0" />        
   </prosilica_cam>

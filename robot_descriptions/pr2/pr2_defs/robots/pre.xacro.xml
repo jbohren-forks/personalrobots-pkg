@@ -43,7 +43,7 @@
     <origin xyz="0.1 0 0.235" rpy="0 0 0" />
   </pr2_tilting_laser_alpha2>
 
-  <!-- Proscilica Camera -->
+  <!-- Prosilica Camera -->
   <prosilica_cam name="high_def" parent="head_plate_frame">
     <origin xyz="0 0.0275 0.025" rpy="0 0 0" />        
   </prosilica_cam>

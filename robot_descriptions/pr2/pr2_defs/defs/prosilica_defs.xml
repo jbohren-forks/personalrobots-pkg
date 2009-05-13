@@ -47,7 +47,10 @@
           <controller:ros_camera name="${name}_controller" plugin="libros_camera.so">
             <alwaysOn>true</alwaysOn>
             <updateRate>20.0</updateRate>
-            <topicName>${name}/image_raw</topicName>
+            <camInfoTopicName>/prosilica/cam_info</camInfoTopicName>
+            <imageTopicName>/prosilica/image</imageTopicName>
+            <rectTopicName>/prosilica/image_rect</rectTopicName>
+            <topicName>/prosilica/image_rect</topicName>
             <frameName>${name}_link</frameName>
             <interface:camera name="${name}_iface" />
           </controller:ros_camera>
