@@ -52,6 +52,7 @@ namespace nav {
     ros_node_.param("~navfn/robot_base_frame", robot_base_frame_, std::string("base_link"));
     ros_node_.param("~controller_frequency", controller_frequency_, 20.0);
     ros_node_.param("~planner_patience", planner_patience_, 10.0);
+    ros_node_.param("~controller_patience", controller_patience_, 10.0);
 
     //for comanding the base
     ros_node_.advertise<robot_msgs::PoseDot>("cmd_vel", 1);
@@ -97,6 +98,10 @@ namespace nav {
 
     //advertise a service for getting a plan
     ros_node_.advertiseService("~make_plan", &MoveBase::planService, this);
+
+    //initially clear any unknown space around the robot
+    planner_costmap_ros_->clearNonLethalWindow(circumscribed_radius_ * 2, circumscribed_radius_ * 2);
+    controller_costmap_ros_->clearNonLethalWindow(circumscribed_radius_ * 2, circumscribed_radius_ * 2);
 
     //TODO:spawn planning thread here?
   }
@@ -257,6 +262,9 @@ namespace nav {
         controller_costmap_ros_->getMarkingObservations(observations);
         valid_control = tc_->computeVelocityCommands(cmd_vel, observations);
 
+        if(valid_control)
+          last_valid_control_ = ros::Time::now();
+
         //check for success
         if(tc_->goalReached()){
           if(attempted_rotation_){
@@ -270,6 +278,12 @@ namespace nav {
           }
           else
             return robot_actions::SUCCESS;
+        }
+
+        //if we can't rotate to clear out space... just say we've done them and try to reset to the static map
+        if(!valid_control && attempted_rotation_){
+          done_full_rotation_ = true;
+          done_half_rotation_ = true;
         }
 
       }
@@ -287,6 +301,12 @@ namespace nav {
 
       //if we don't have a valid control... we need to re-plan explicitly
       if(!valid_control){
+        ros::Duration patience = ros::Duration(controller_patience_);
+
+        //if we have a valid plan, but can't find a valid control for a certain time... abort
+        if(last_valid_control_ + patience < ros::Time::now())
+          return robot_actions::ABORTED;
+
         //try to make a plan
         if(done_half_rotation_ && !done_full_rotation_ || !tryPlan(goal_)){
           //if we've tried to reset our map and to rotate in place, to no avail, we'll abort the goal
