@@ -373,7 +373,6 @@ void pf_update_resample(pf_t *pf)
     if (set_b->sample_count > pf_resample_limit(pf, set_b->kdtree->leaf_count))
       break;
   }
-  puts("");
   
   // Reset averages, to avoid spiraling off into complete randomness.
   if(w_diff > 0.0)

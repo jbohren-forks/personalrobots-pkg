@@ -112,12 +112,15 @@ model uses only 2: z_hit and z_rand.
   - @b "~laser_model_type" (string) : Which model to use, either "beam" or "likelihood_field," default: "likelihood_field"
 
 @subsection odom_params Odometery model parameters
-We use the @b sample_motion_model_odometry algorithm from Probabilistic
-Robotics, p136.
+If odom_model_type is "diff", then we use the @b
+sample_motion_model_odometry algorithm from Probabilistic Robotics, p136.
+If it's "omni", then we use a custom model for an omni-directional base.
+  - @b "~odom_model_type" (string) : Which model to use, either "diff" or "omni," default: "omni"
   - @b "~odom_alpha1" (double) : Rotation-related noise parameter, default: 0.2
   - @b "~odom_alpha2" (double) : Translation-related noise parameter, default: 0.2
   - @b "~odom_alpha3" (double) : Translation-related noise parameter, default: 0.2
   - @b "~odom_alpha4" (double) : Rotation-related noise parameter, default: 0.2
+  - @b "~odom_alpha5" (double) : Translation-related noise parameter (only used if model is "omni"), default: 0.2
   - @b "~odom_frame_id" (string) : Which frame to use for odometry, default: "odom"
   - @b "~base_frame_id" (string) : Which frame to use for the robot base, default: "base_link"
 
@@ -167,6 +170,27 @@ typedef struct
   pf_matrix_t pf_pose_cov;
 
 } amcl_hyp_t;
+
+static double
+normalize(double z)
+{
+  return atan2(sin(z),cos(z));
+}
+static double
+angle_diff(double a, double b)
+{
+  double d1, d2;
+  a = normalize(a);
+  b = normalize(b);
+  d1 = a-b;
+  d2 = 2*M_PI - fabs(d1);
+  if(d1 > 0)
+    d2 *= -1.0;
+  if(fabs(d1) < fabs(d2))
+    return(d1);
+  else
+    return(d2);
+}
 
 class AmclNode
 {
@@ -269,7 +293,7 @@ AmclNode::AmclNode() :
 {
   // Grab params off the param server
   int max_beams, min_particles, max_particles;
-  double alpha1, alpha2, alpha3, alpha4;
+  double alpha1, alpha2, alpha3, alpha4, alpha5;
   double alpha_slow, alpha_fast;
   double z_hit, z_short, z_max, z_rand, sigma_hit, lambda_short;
   double pf_err, pf_z;
@@ -289,6 +313,7 @@ AmclNode::AmclNode() :
   ros::Node::instance()->param("~odom_alpha2", alpha2, 0.2);
   ros::Node::instance()->param("~odom_alpha3", alpha3, 0.2);
   ros::Node::instance()->param("~odom_alpha4", alpha4, 0.2);
+  ros::Node::instance()->param("~odom_alpha5", alpha5, 0.2);
 
   ros::Node::instance()->param("~laser_z_hit", z_hit, 0.95);
   ros::Node::instance()->param("~laser_z_short", z_short, 0.1);
@@ -311,6 +336,19 @@ AmclNode::AmclNode() :
     ROS_WARN("Unknown laser model type \"%s\"; defaulting to likelihood_field model",
              tmp_model_type.c_str());
     laser_model_type = LASER_MODEL_LIKELIHOOD_FIELD;
+  }
+
+  odom_model_t odom_model_type;
+  ros::Node::instance()->param("~odom_model_type", tmp_model_type, std::string("diff"));
+  if(tmp_model_type == "diff")
+    odom_model_type = ODOM_MODEL_DIFF;
+  else if(tmp_model_type == "omni")
+    odom_model_type = ODOM_MODEL_OMNI;
+  else
+  {
+    ROS_WARN("Unknown odom model type \"%s\"; defaulting to diff model",
+             tmp_model_type.c_str());
+    odom_model_type = ODOM_MODEL_DIFF;
   }
 
   ros::Node::instance()->param("~update_min_d", d_thresh_, 0.2);
@@ -359,8 +397,12 @@ AmclNode::AmclNode() :
 
   // Instantiate the sensor objects
   // Odometry
-  odom_ = new AMCLOdom(alpha1, alpha2, alpha3, alpha4);
+  odom_ = new AMCLOdom();
   ROS_ASSERT(odom_);
+  if(odom_model_type == ODOM_MODEL_OMNI)
+    odom_->SetModelOmni(alpha1, alpha2, alpha3, alpha4, alpha5);
+  else
+    odom_->SetModelDiff(alpha1, alpha2, alpha3, alpha4);
   // Laser
   laser_ = new AMCLLaser(max_beams, map_);
   ROS_ASSERT(laser_);
@@ -562,7 +604,10 @@ AmclNode::laserReceived(const tf::MessageNotifier<laser_scan::LaserScan>::Messag
   if(pf_init_)
   {
     // Compute change in pose
-    delta = pf_vector_coord_sub(pose, pf_odom_pose_);
+    //delta = pf_vector_coord_sub(pose, pf_odom_pose_);
+    delta.v[0] = pose.v[0] - pf_odom_pose_.v[0];
+    delta.v[1] = pose.v[1] - pf_odom_pose_.v[1];
+    delta.v[2] = angle_diff(pose.v[2], pf_odom_pose_.v[2]);
 
     // See if we should update the filter
     update = fabs(delta.v[0]) > d_thresh_ ||
@@ -776,16 +821,15 @@ AmclNode::laserReceived(const tf::MessageNotifier<laser_scan::LaserScan>::Messag
           try
           {
             tf_->transformPoint("map", lp, gp);
+            point_cloud.points[i].x = gp.x();
+            point_cloud.points[i].y = gp.y();
+            point_cloud.points[i].z = gp.z();
           }
           catch(tf::TransformException e)
           {
-            ROS_WARN("Failed to transform laser hitpoint to map frame: %s",
-                     e.what());
+            // oh, well; it's only for visualization anyway
           }
 
-          point_cloud.points[i].x = gp.x();
-          point_cloud.points[i].y = gp.y();
-          point_cloud.points[i].z = gp.z();
         }
 
         ros::Node::instance()->publish("gui_laser", point_cloud);

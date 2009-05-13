@@ -175,7 +175,6 @@ double AMCLLaser::BeamModel(AMCLLaserData *data, pf_sample_set_t* set)
     sample->weight *= p;
     total_weight += sample->weight;
   }
-  puts("");
 
   return(total_weight);
 }
@@ -207,6 +206,10 @@ double AMCLLaser::LikelihoodFieldModel(AMCLLaserData *data, pf_sample_set_t* set
 
     p = 1.0;
 
+    // Pre-compute a couple of things
+    double z_hit_denom = 2 * self->sigma_hit * self->sigma_hit;
+    double z_rand_mult = 1.0/data->range_max;
+
     step = (data->range_count - 1) / (self->max_beams - 1);
     for (i = 0; i < data->range_count; i += step)
     {
@@ -236,9 +239,9 @@ double AMCLLaser::LikelihoodFieldModel(AMCLLaserData *data, pf_sample_set_t* set
         z = self->map->cells[MAP_INDEX(self->map,mi,mj)].occ_dist;
       // Gaussian model
       // NOTE: this should have a normalization of 1/(sqrt(2pi)*sigma)
-      pz += self->z_hit * exp(-(z * z) / (2 * self->sigma_hit * self->sigma_hit));
+      pz += self->z_hit * exp(-(z * z) / z_hit_denom);
       // Part 2: random measurements
-      pz += self->z_rand * 1.0/data->range_max;
+      pz += self->z_rand * z_rand_mult;
 
       // TODO: outlier rejection for short readings
 
