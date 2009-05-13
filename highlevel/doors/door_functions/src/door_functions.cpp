@@ -221,7 +221,7 @@ namespace door_functions{
     door_msgs::Door result = door;
     robot_msgs::Point32 hinge = door.frame_p1;
     robot_msgs::Point32 edge = door.frame_p2;
-    if(door.hinge == 1)
+    if(door.hinge == door.HINGE_P2)
     {
       hinge = door.frame_p2;
       edge = door.frame_p1;
