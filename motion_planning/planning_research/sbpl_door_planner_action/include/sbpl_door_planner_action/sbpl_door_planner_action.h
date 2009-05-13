@@ -157,7 +157,7 @@ class SBPLDoorPlanner : public robot_actions::Action<door_msgs::Door, door_msgs:
 
   double inscribed_radius_;
 
-  void publishFootprint(const pr2_robot_actions::Pose2D &position);
+  void publishFootprint(const pr2_robot_actions::Pose2D &position, std::string topic);
 
   void publishDoor(const door_msgs::Door &door_in, const double &angle);
 
@@ -172,5 +172,13 @@ class SBPLDoorPlanner : public robot_actions::Action<door_msgs::Door, door_msgs:
   tf::Stamped<tf::Pose> getGlobalHandlePosition(const door_msgs::Door &door, const double &local_angle);
 
   double getHandleHingeDistance(const door_msgs::Door &door);
+
+  bool createLinearPath(const pr2_robot_actions::Pose2D &cp,const pr2_robot_actions::Pose2D &fp, std::vector<pr2_robot_actions::Pose2D> &return_path);
+
+  std::string base_control_topic_name_;
+
+  std::string arm_control_topic_name_;
+
+  void dispatchControl(const robot_msgs::JointTraj &path, const door_msgs::Door &door, int index);
 
 };

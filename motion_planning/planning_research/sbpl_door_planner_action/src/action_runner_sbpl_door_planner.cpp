@@ -51,7 +51,7 @@ int main(int argc, char** argv)
 {
   ros::init(argc,argv); 
 
-  ros::Node node("action_runner_sbpl_door_planner");
+  ros::Node node("sbpl_door_planner");
   tf::TransformListener tf(node, true, ros::Duration(10));
 
   SBPLDoorPlanner open(node,tf);
@@ -59,7 +59,7 @@ int main(int argc, char** argv)
   door_msgs::Door door;
   door_msgs::Door feedback;
 
-  double tmp; int tmp2;
+/*  double tmp; int tmp2;
   node.param("~p_door_frame_p1_x", tmp, 0.65); door.frame_p1.x = tmp;
   node.param("~p_door_frame_p1_y", tmp, 0.45); door.frame_p1.y = tmp;
   node.param("~p_door_frame_p2_x", tmp, 0.65); door.frame_p2.x = tmp;
@@ -80,10 +80,10 @@ int main(int argc, char** argv)
   ros::Time my_time = ros::Time::now();
   door.header.stamp = my_time;
   open.execute(door, feedback);
-
-//  robot_actions::ActionRunner runner(10.0);
-//  runner.connect<door_msgs::Door, pr2_robot_actions::DoorActionState, door_msgs::Door>(open);
-//  runner.run();
-//  node.spin();
+*/
+  robot_actions::ActionRunner runner(10.0);
+  runner.connect<door_msgs::Door, pr2_robot_actions::DoorActionState, door_msgs::Door>(open);
+  runner.run();
+  node.spin();
   return 0;
 }
