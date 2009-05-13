@@ -116,6 +116,7 @@ TuckArmsAction::~TuckArmsAction()
 
 robot_actions::ResultStatus TuckArmsAction::execute(const std_msgs::Empty& empty, std_msgs::Empty& feedback)
 { 
+  traj_error_ =false;
   if((which_arms_ == "both") || (which_arms_ == "right"))
   {
     if(!ros::service::call(right_arm_controller_ + "/TrajectoryStart", right_traj_req_, traj_res_))
