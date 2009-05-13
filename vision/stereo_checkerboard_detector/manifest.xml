@@ -1,0 +1,15 @@
+<package>
+  <description brief="Finds a checkerboard's corners and pose from stereocam data">
+  </description>
+  <author>Vijay Pradeep (vpradeep@willowgarage.com)</author>
+  <license>BSD</license>
+  <export>
+    <cpp cflags="-I${prefix}/msg/cpp"/>
+  </export>
+  <depend package="roscpp"/>
+  <depend package="std_msgs"/>
+  <depend package="robot_msgs"/>
+  <depend package="opencv_latest"/>
+  <depend package="image_msgs"/>
+  <depend package="topic_synchronizer"/>
+</package>
