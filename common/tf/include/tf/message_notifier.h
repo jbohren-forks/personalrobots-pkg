@@ -304,19 +304,23 @@ private:
       //! \todo combine getLatestCommonTime call with the canTransform call
       for (std::vector<std::string>::iterator target_it = target_frames_.begin(); target_it != target_frames_.end(); ++target_it)
       {
-        std::string& target_frame = *target_it;
+        const std::string& target_frame = *target_it;
 
-        ros::Time latest_transform_time ;
-        std::string error_string ;
-        tf_->getLatestCommonTime(message->header.frame_id, target_frame, latest_transform_time, &error_string) ;
-        if (message->header.stamp + tf_->getCacheLength() < latest_transform_time)
+        if (target_frame != message->header.frame_id)
         {
-          --message_count_;
-          failed_transform_count_ ++;
-          NOTIFIER_DEBUG("Discarding Message %d , in frame %s, Out of the back of Cache Time(stamp: %.3f + cache_length: %.3f < latest_transform_time %.3f.  Message Count now: %d", i, message->header.frame_id.c_str(), message->header.stamp.toSec(),  tf_->getCacheLength().toSec(), latest_transform_time.toSec(), message_count_);
-          it = messages_.erase(it);
-          should_step_out = true;
-          break;
+          ros::Time latest_transform_time ;
+          std::string error_string ;
+
+          tf_->getLatestCommonTime(message->header.frame_id, target_frame, latest_transform_time, &error_string) ;
+          if (message->header.stamp + tf_->getCacheLength() < latest_transform_time)
+          {
+            --message_count_;
+            failed_transform_count_ ++;
+            NOTIFIER_DEBUG("Discarding Message %d , in frame %s, Out of the back of Cache Time(stamp: %.3f + cache_length: %.3f < latest_transform_time %.3f.  Message Count now: %d", i, message->header.frame_id.c_str(), message->header.stamp.toSec(),  tf_->getCacheLength().toSec(), latest_transform_time.toSec(), message_count_);
+            it = messages_.erase(it);
+            should_step_out = true;
+            break;
+          }
         }
 
       }
