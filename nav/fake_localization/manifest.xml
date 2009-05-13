@@ -1,5 +1,5 @@
 <package>
-  <description>A ROS node that simply forwards odometry information.</description>
+  <description brief="fake localization">A ROS node that simply forwards odometry information.</description>
   <author>Ioan A. Sucan</author>
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
