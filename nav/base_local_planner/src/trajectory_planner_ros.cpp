@@ -376,7 +376,8 @@ namespace base_local_planner {
     }
   }
 
-  bool TrajectoryPlannerROS::computeVelocityCommands(robot_msgs::PoseDot& cmd_vel, bool prune_plan, const std::vector<costmap_2d::Observation>& observations){
+  bool TrajectoryPlannerROS::computeVelocityCommands(robot_msgs::PoseDot& cmd_vel, 
+    const std::vector<costmap_2d::Observation>& observations, bool prune_plan){
     //assume at the beginning of our control cycle that we could have a new goal
     goal_reached_ = false;
 
