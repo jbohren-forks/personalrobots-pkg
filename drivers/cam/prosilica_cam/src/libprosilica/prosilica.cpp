@@ -156,7 +156,6 @@ void Camera::setup()
 {
   // adjust packet size according to the current network capacity
   tPvUint32 maxPacketSize = 8228;
-  PvAttrUint32Get(handle_, "PacketSize", &maxPacketSize);
   PvCaptureAdjustPacketSize(handle_, maxPacketSize);
 
   // capture whole frame by default
@@ -205,6 +204,10 @@ void Camera::start(AcquisitionMode mode)
   // set camera in acquisition mode
   CHECK_ERR( PvCaptureStart(handle_), "Could not start capture");
 
+  if (mode != Triggered)
+    for (unsigned int i = 0; i < bufferSize_; ++i)
+      PvCaptureQueueFrame(handle_, frames_ + i, Camera::frameDone);
+
   // start capture after setting acquisition and trigger modes
   try {
     CHECK_ERR( PvAttrEnumSet(handle_, "AcquisitionMode", "Continuous"),
@@ -217,10 +220,6 @@ void Camera::start(AcquisitionMode mode)
     PvCaptureEnd(handle_); // reset to non capture mode
     throw; // rethrow
   }
-
-  if (mode != Triggered)
-    for (unsigned int i = 0; i < bufferSize_; ++i)
-      PvCaptureQueueFrame(handle_, frames_ + i, Camera::frameDone);
 
   mode_ = mode;
 }
@@ -240,33 +239,46 @@ tPvFrame* Camera::grab(unsigned long timeout_ms)
 {
   assert( mode_ == Triggered );
 
-  tPvFrame* frame = &frames_[0];
-  CHECK_ERR( PvCaptureQueueFrame(handle_, frame, NULL), "Couldn't queue frame" );
-
   unsigned long time_so_far = 0;
   while (time_so_far < timeout_ms)
   {
-    // trigger the camera
+    // Queue up a single frame
+    tPvFrame* frame = &frames_[0];
+    CHECK_ERR( PvCaptureQueueFrame(handle_, frame, NULL), "Couldn't queue frame" );
+    
+    // Trigger the camera
     CHECK_ERR( PvCommandRun(handle_, "FrameStartTriggerSoftware"),
                "Couldn't trigger capture" );
 
-    // TODO: maybe can simplify this (avoid checking ePvErrTimeout?)
-    // try to capture the frame
-    tPvErr e;
+    // Wait for frame capture to finish. The wait call may timeout in less
+    // than the allotted time, so we keep trying until we exceed it.
+    tPvErr e = ePvErrSuccess;
     do
     {
+      if (e != ePvErrSuccess)
+        ROS_DEBUG("Retrying CaptureWait due to error: %s", errorStrings[e]);
       clock_t start_time = clock();
       e = PvCaptureWaitForFrameDone(handle_, frame, timeout_ms - time_so_far);
       if (timeout_ms != PVINFINITE)
-        time_so_far += (clock() - start_time) / (CLOCKS_PER_SEC / 1000);
+        time_so_far += ((clock() - start_time) * 1000) / CLOCKS_PER_SEC;
     } while (e == ePvErrTimeout && time_so_far < timeout_ms);
 
-    if (e == ePvErrSuccess)
-      return frame;
+    if (e != ePvErrSuccess)
+      return NULL; // Something bad happened (camera unplugged?)
+    
+    if (frame->Status == ePvErrSuccess)
+      return frame; // Yay!
 
-    // retry if data missing, probably no hope on other errors
-    if (e != ePvErrDataMissing)
+    ROS_DEBUG("Error in frame: %s", errorStrings[frame->Status]);
+
+    // Retry if data was lost in transmission. Probably no hope on other errors.
+    if (frame->Status != ePvErrDataMissing && frame->Status != ePvErrDataLost)
       return NULL;
+
+    // FIXME: this is a hack, it seems that re-commanding the software trigger
+    // too quickly may cause the Prosilica driver to complain that the sequence
+    // of API calls is incorrect.
+    boost::this_thread::sleep(boost::posix_time::millisec(200));
   }
   
   return NULL;
