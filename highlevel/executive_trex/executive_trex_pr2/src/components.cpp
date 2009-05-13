@@ -222,26 +222,26 @@ namespace TREX{
       // Obtain pose if not already called
       if(!_propagated){
 	getPose(_pose);
-	_propagated = true;
       }
 
-      debugMsg("trex:debug:propagation:tf_get_robot_pose", "Compute pose <" <<
-	       _pose.getOrigin().x() << ", " <<
-	       _pose.getOrigin().y() << ", " <<
-	       _pose.getOrigin().z() << ", " <<
-	       _pose.getRotation().x() << ", " <<
-	       _pose.getRotation().y() << ", " <<
-	       _pose.getRotation().z() << ", " <<
-	       _pose.getRotation().w() << ", >");
+      if(_propagated){
+	debugMsg("trex:debug:propagation:tf_get_robot_pose", "Compute pose <" <<
+		 _pose.getOrigin().x() << ", " <<
+		 _pose.getOrigin().y() << ", " <<
+		 _pose.getOrigin().z() << ", " <<
+		 _pose.getRotation().x() << ", " <<
+		 _pose.getRotation().y() << ", " <<
+		 _pose.getRotation().z() << ", " <<
+		 _pose.getRotation().w() << ", >");
 
-      getCurrentDomain(getScope()[0]).set(_pose.getOrigin().x());
-      getCurrentDomain(getScope()[1]).set(_pose.getOrigin().y());
-      getCurrentDomain(getScope()[2]).set(_pose.getOrigin().z());
-      getCurrentDomain(getScope()[3]).set(_pose.getRotation().x());
-      getCurrentDomain(getScope()[4]).set(_pose.getRotation().y());
-      getCurrentDomain(getScope()[5]).set(_pose.getRotation().z());
-      getCurrentDomain(getScope()[6]).set(_pose.getRotation().w());
-
+	getCurrentDomain(getScope()[0]).set(_pose.getOrigin().x());
+	getCurrentDomain(getScope()[1]).set(_pose.getOrigin().y());
+	getCurrentDomain(getScope()[2]).set(_pose.getOrigin().z());
+	getCurrentDomain(getScope()[3]).set(_pose.getRotation().x());
+	getCurrentDomain(getScope()[4]).set(_pose.getRotation().y());
+	getCurrentDomain(getScope()[5]).set(_pose.getRotation().z());
+	getCurrentDomain(getScope()[6]).set(_pose.getRotation().w());
+      }
       debugMsg("trex:debug:propagation:tf_get_robot_pose",  "AFTER: " << TREX::timeString() << toString());
     }
 
@@ -262,7 +262,9 @@ namespace TREX{
 	tf::TransformListener& tfl = getTransformListener();
 	debugMsg("trex:debug:timing:get_pose",  "B: " << TREX::timeString());
 	robot_pose.stamp_ = ros::Time();
+	tfl.canTransform(_frame, "base_footprint", robot_pose.stamp_, ros::Duration(3.0));
 	tfl.transformPose(_frame, robot_pose, pose);
+	_propagated = true;
 	debugMsg("trex:debug:timing:get_pose",  "C: " << TREX::timeString());
       }
       catch(tf::LookupException& ex) {
