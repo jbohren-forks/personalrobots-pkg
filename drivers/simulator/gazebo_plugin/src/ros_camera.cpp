@@ -59,42 +59,39 @@ RosCamera::RosCamera(Entity *parent)
   if (!this->myParent)
     gzthrow("RosCamera controller requires a Camera Sensor as its parent");
 
+  Param::Begin(&this->parameters);
+  this->topicNameP = new ParamT<std::string>("topicName","stereo/raw_stereo", 0);
+  this->frameNameP = new ParamT<std::string>("frameName","stereo_link", 0);
+  Param::End();
 
-  // set parent sensor to active automatically
-  this->myParent->SetActive(true);
-
-
-  rosnode = ros::g_node; // comes from where?
+  rosnode = ros::g_node; //@todo: change to handles
   int argc = 0;
   char** argv = NULL;
   if (rosnode == NULL)
   {
-    // this only works for a single camera.
     ros::init(argc,argv);
     rosnode = new ros::Node("ros_gazebo",ros::Node::DONT_HANDLE_SIGINT);
     ROS_DEBUG("Starting node in camera");
   }
 
-  // set buffer size
-  this->width            = this->myParent->GetImageWidth();
-  this->height           = this->myParent->GetImageHeight();
-  this->depth            = 1;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // Destructor
 RosCamera::~RosCamera()
 {
-
-
+  delete this->topicNameP;
+  delete this->frameNameP;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // Load the controller
 void RosCamera::LoadChild(XMLConfigNode *node)
 {
-  this->topicName = node->GetString("topicName","default_ros_camera",0); //read from xml file
-  this->frameName = node->GetString("frameName","default_ros_camera",0); //read from xml file
+  this->topicNameP->Load(node);
+  this->frameNameP->Load(node);
+  this->topicName = this->topicNameP->GetValue();
+  this->frameName = this->frameNameP->GetValue();
 
   ROS_DEBUG("================= %s", this->topicName.c_str());
   rosnode->advertise<image_msgs::Image>(this->topicName,1);
@@ -104,7 +101,13 @@ void RosCamera::LoadChild(XMLConfigNode *node)
 // Initialize the controller
 void RosCamera::InitChild()
 {
+  // set parent sensor to active automatically
+  this->myParent->SetActive(true);
 
+  // set buffer size
+  this->width            = this->myParent->GetImageWidth();
+  this->height           = this->myParent->GetImageHeight();
+  this->depth            = 1;
 
 }
 
