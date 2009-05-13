@@ -296,7 +296,7 @@ namespace base_local_planner {
 
     //we still want to lay down the footprint of the robot and check if the action is legal
     bool valid_cmd = tc_->checkTrajectory(global_pose.getOrigin().getX(), global_pose.getOrigin().getY(), yaw, 
-        robot_vel.getOrigin().getX(), robot_vel.getOrigin().getY(), vel_yaw, v_theta_samp, 0.0, 0.0);
+        robot_vel.getOrigin().getX(), robot_vel.getOrigin().getY(), vel_yaw, 0.0, 0.0, v_theta_samp);
 
     if(valid_cmd){
       cmd_vel.ang_vel.vz = v_theta_samp;
@@ -470,7 +470,12 @@ namespace base_local_planner {
           goal_reached_ = true;
       }
       else {
-        //otherwise we need to rotate to the goal... compute the next velocity we should take
+        tc_->updatePlan(global_plan_);
+
+        obs_lock_.lock();
+        //compute what trajectory to drive along
+        Trajectory path = tc_->findBestPath(global_pose, robot_vel, drive_cmds, observations, laser_scans_);
+        obs_lock_.unlock();
         if(!rotateToGoal(global_pose, robot_vel, goal_th, cmd_vel))
           return false;
       }
