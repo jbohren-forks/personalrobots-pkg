@@ -66,14 +66,29 @@ the parent of both the target frame and the source frame.  These will both end a
 tf then steps back down the tree and removes all but the closest common parent.  
 
 @subsection timetransform Transforms in Time
-It is often useful to know where an object is in relation to something at a different time.  
-This requires knowledge of which frame the object was stationary compared to during
-the time interval.  
+It is often useful to know where an object is in relation to something at a different time.  Data is timestamped
+when observed, however it is often used at a non negligable time later than when it was observed.  To handle this the
+tf API provide an advanced form of each method which can transform a Stamped piece of data from it's observed frame and
+time into a different frame at a different time.  This is only possible if there exists a frame in which the object is 
+expected not to move relative to during the period between the starting time and the ending time.  This frame is explicitly
+passed in the function calls for it will vary based on the context.  For example when building a local map using the odometric
+frame as a fixed frame is usually the most accurate, while when working with navigational landmarks and loop closures a map 
+based frame will be more accurate.  Or if an object is currently being held in the gripper the gripper frame is the best frame to 
+declare as the fixed frame.  
+
 A very common example is an object observed as a vehicle is driving.  Two seconds later as the 
-vehicle approaches the obstacle where the object is in relation to the vehicle is good to know.  The map or odometery 
-frame use for navigation would be a good fixed frame.  However if say the vehicle had a robotic hand which grabbed the 
-object.  Two seconds later the object would be in the same position with relation to the hand, and and not the vehicle, 
-so the fixed frame would be hand.  And the lookup would show the position of the object in the body frame the same short 
+vehicle approaches the obstacle, the navigation algorithms would like to know where the object is in relation to the vehicle.  
+To provide this a tf user would call the advanced version of the API with the odometric frame as the fixed frame.  The source frame
+and time would have been set by the data source, and the target frame would be set to the vehicle frame and the time requested could 
+either be "now" or "latest".  Tf's response will be to transform the data at the time it was observed into the fixed frame.  It will 
+then jump the timestamp to the target_time.  After jumping the timestamp to the target time the transform from the fixed frame to the 
+target frame is computed.  Thus tf can effectively transform data in time.  
+
+An accurate choice of the fixed frame is a required for validity of this method.  The above choice of the odometric frame would
+be incorrect if the vehicle had a robotic hand which grabbed the 
+object when it was observed.  Two seconds after grabbing the object, it would be in the same position 
+with relation to the hand, and and not the vehicle, 
+so the fixed frame would be hand.  And the lookup would show the position of the object in the body frame the same  
 distance from the hand as observed when picked up, but the position of the hand may have changed relative to the body in 
 the two seconds, to which this would be robust.  
 
