@@ -66,6 +66,9 @@ class NavigationAdapter:
   def active(self):
     return self.state.status.value == self.state.status.ACTIVE
 
+  def aborted(self):
+    return self.state.status.value == self.state.status.ABORTED
+
   #Have we reached a goal
   def goalReached(self):
     return self.state.status.value == self.state.status.SUCCESS

@@ -80,7 +80,7 @@ class Executive:
           self.navigator.sendGoal(chrg_pts, "map")
           self.state = "nav_charge"
           print "nav --> nav_charge"
-        elif self.navigator.goalReached() or (not self.navigator.active() and self.current_goal == None) or self.navigator.timeUp():
+        elif self.navigator.goalReached() or self.navigator.aborted() or (not self.navigator.active() and self.current_goal == None) or self.navigator.timeUp():
           self.current_goal = self.goals[random.randint(0, len(self.goals) - 1)]
           self.navigator.sendGoal(self.current_goal, "map")
           print "nav --> nav"
