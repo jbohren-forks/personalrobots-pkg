@@ -1,5 +1,5 @@
 <launch>
-  <group name="wg">
+  <group ns="wg">
 
     <!-- load robot -->
     <include file="$(find pr2_prototype1_gazebo)/pr2_prototype1_simple.launch"/>

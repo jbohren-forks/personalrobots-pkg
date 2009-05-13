@@ -1,5 +1,5 @@
 <launch>
-  <group name="wg">
+  <group ns="wg">
     <!-- machine tags for sim, be sure to set environment variable ROBOT to sim -->
     <!--include file="$(find pr2_alpha)/$(env ROBOT).machine" /--> <!-- can't set env for include tags -->
     <include file="$(find pr2_alpha)/sim.machine" />
