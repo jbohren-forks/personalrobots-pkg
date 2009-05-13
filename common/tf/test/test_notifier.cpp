@@ -376,6 +376,54 @@ TEST(MessageNotifier, setTargetFrame)
 	EXPECT_EQ(1, n.count_);
 }
 
+TEST(MessageNotifier, setMultipleTargetFrame)
+{
+	Notification n(1);
+	Counter<tf::tfMessage> c("tf_message", 1); /// \todo Switch this to tf_message once rosTF goes away completely
+	MessageNotifier<robot_msgs::PointStamped>* notifier = new MessageNotifier<robot_msgs::PointStamped>(g_tf, g_node, boost::bind(&Notification::notify, &n, _1), "test_message", "frame9", 1);
+	std::auto_ptr<MessageNotifier<robot_msgs::PointStamped> > notifier_ptr(notifier);
+        std::vector<std::string> target_frames;
+        target_frames.resize(2);
+        target_frames[0] = "frame1000";
+        target_frames[1] = "frame10";
+	notifier->setTargetFrame(target_frames);
+
+
+	ros::Duration().fromSec(0.2).sleep();
+
+	ros::Time stamp = ros::Time::now();
+
+	g_broadcaster->sendTransform(btTransform(btQuaternion(0,0,0), btVector3(1,2,3)), stamp, "frame1000", "frame10");
+
+	{
+		boost::xtime xt;
+		boost::xtime_get(&xt, boost::TIME_UTC);
+		xt.sec += 10;
+
+		boost::timed_mutex::scoped_timed_lock lock(c.mutex_, xt);
+
+		EXPECT_EQ(true, lock.owns_lock());
+	}
+
+	robot_msgs::PointStamped msg;
+	msg.header.stamp = stamp;
+	msg.header.frame_id = "frame10";
+	g_node->publish("test_message", msg);
+
+	{
+		boost::xtime xt;
+		boost::xtime_get(&xt, boost::TIME_UTC);
+		xt.sec += 10;
+
+		boost::timed_mutex::scoped_timed_lock lock(n.mutex_, xt);
+
+		EXPECT_EQ(true, lock.owns_lock());
+	}
+
+	EXPECT_EQ(1, n.count_);
+}
+
+
 TEST(MessageNotifier, setTolerance)
 {
   ros::Duration offset(0.2);

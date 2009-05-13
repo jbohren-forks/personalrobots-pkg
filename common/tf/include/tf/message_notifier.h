@@ -46,7 +46,7 @@
 #include <boost/thread.hpp>
 
 #define NOTIFIER_DEBUG(fmt, ...) \
-  ROS_DEBUG_NAMED("message_notifier", "MessageNotifier [topic=%s, target=%s]: "fmt, topic_.c_str(), target_frame_.c_str(), __VA_ARGS__)
+  ROS_DEBUG_NAMED("message_notifier", "MessageNotifier [topic=%s, target=%s]: "fmt, topic_.c_str(), getTargetFramesString().c_str(), __VA_ARGS__) 
 
 namespace tf
 {
@@ -118,7 +118,6 @@ public:
   : tf_(tf)
   , node_(node)
   , callback_(callback)
-  , target_frame_(target_frame)
   , queue_size_(queue_size)
   , message_count_(0)
   , destructing_(false)
@@ -130,6 +129,9 @@ public:
   , incoming_message_count_(0)
   , time_tolerance_(0.0)
   {
+    target_frames_.resize(1);
+    target_frames_[0] = target_frame;
+
     setTopic(topic);
 
     node_->subscribe("/tf_message", transforms_message_,
@@ -166,10 +168,34 @@ public:
   void setTargetFrame(const std::string& target_frame)
   {
     boost::mutex::scoped_lock lock(queue_mutex_);
-
-    target_frame_ = target_frame;
+    target_frames_.resize(1);
+    target_frames_[0] = target_frame;
     new_data_.notify_all();
   }
+
+  /**
+   * \brief Set the frames you need to be able to transform to before getting a message callback
+   */
+  void setTargetFrame(const std::vector<std::string>& target_frames)
+  {
+    boost::mutex::scoped_lock lock(queue_mutex_);
+
+    target_frames_ = target_frames;
+    new_data_.notify_all();
+  }
+  /** 
+   * \brief Get the target frames as a string for debugging 
+   */
+  std::string getTargetFramesString()
+  {
+    boost::mutex::scoped_lock lock(queue_mutex_);
+    std::stringstream ss;
+    for (std::vector<std::string>::const_iterator it = target_frames_.begin(); it != target_frames_.end(); ++it)
+    {
+      ss << *it << " ";
+    }
+    return ss.str();
+  };
 
   /**
    * \brief Set the topic to listen on
@@ -257,7 +283,7 @@ private:
    */
   void gatherReadyMessages(V_Message& to_notify)
   {
-    if (!messages_.empty() && target_frame_.empty())
+    if (!messages_.empty() && getTargetFramesString() == " ") //is this useful?
     {
       ROS_WARN("MessageNotifier [topic=%s]: empty target frame", topic_.c_str());
     }
@@ -271,32 +297,50 @@ private:
     {
       MessagePtr& message = *it;
 
+      bool should_step_out = false;
       //Throw out messages which are too old
       //! \todo combine getLatestCommonTime call with the canTransform call
-      ros::Time latest_transform_time ;
-      std::string error_string ;
-      tf_->getLatestCommonTime(message->header.frame_id, target_frame_, latest_transform_time, &error_string) ;
-      if (message->header.stamp + tf_->getCacheLength() < latest_transform_time)
+      for (std::vector<std::string>::iterator target_it = target_frames_.begin(); target_it != target_frames_.end(); ++target_it)
       {
-        it = messages_.erase(it);
-	--message_count_;
-        failed_transform_count_ ++;
-        NOTIFIER_DEBUG("Discarding Message %d , in frame %s, Out of the back of Cache Time(stamp: %.3f + cache_length: %.3f < latest_transform_time %.3f.  Message Count now: %d", i, message->header.frame_id.c_str(), message->header.stamp.toSec(),  tf_->getCacheLength().toSec(), latest_transform_time.toSec(), message_count_);
+        std::string& target_frame = *target_it;
+
+        ros::Time latest_transform_time ;
+        std::string error_string ;
+        tf_->getLatestCommonTime(message->header.frame_id, target_frame, latest_transform_time, &error_string) ;
+        if (message->header.stamp + tf_->getCacheLength() < latest_transform_time)
+        {
+          --message_count_;
+          failed_transform_count_ ++;
+          NOTIFIER_DEBUG("Discarding Message %d , in frame %s, Out of the back of Cache Time(stamp: %.3f + cache_length: %.3f < latest_transform_time %.3f.  Message Count now: %d", i, message->header.frame_id.c_str(), message->header.stamp.toSec(),  tf_->getCacheLength().toSec(), latest_transform_time.toSec(), message_count_);
+          it = messages_.erase(it);
+          should_step_out = true;
+          break;
+        }
+        
+      }
+      if (should_step_out) //If we just deleted a message don't try to use it
+      {
+        should_step_out = false;
         continue;
       }
+
+      bool ready = true;
+      for (std::vector<std::string>::iterator target_it = target_frames_.begin(); target_it != target_frames_.end(); ++target_it)
+      {
+        std::string& target_frame = *target_it;
+        if (time_tolerance_ != ros::Duration(0.0))
+        {
+          ready = ready && (tf_->canTransform(target_frame, message->header.frame_id, message->header.stamp) &&
+                            tf_->canTransform(target_frame, message->header.frame_id, message->header.stamp + time_tolerance_) );
+        }
+        else
+        {
+          ready = ready && tf_->canTransform(target_frame, message->header.frame_id, message->header.stamp);
+        }
+        if (!ready) 
+          break;
+      }
       
-
-      bool ready = false;
-      if (time_tolerance_ != ros::Duration(0.0))
-      {
-        ready = (tf_->canTransform(target_frame_, message->header.frame_id, message->header.stamp) &&
-                 tf_->canTransform(target_frame_, message->header.frame_id, message->header.stamp + time_tolerance_) );
-      }
-      else
-      {
-        ready = tf_->canTransform(target_frame_, message->header.frame_id, message->header.stamp);
-      }
-
       if (ready)
       {
         // If we get here the transform succeeded, so push the message onto the notify list, and erase it from or message list
@@ -455,7 +499,7 @@ private:
   Transformer* tf_; ///< The Transformer used to determine if transformation data is available
   ros::Node* node_; ///< The node used to subscribe to the topic
   Callback callback_; ///< The callback to call when a message is ready
-  std::string target_frame_; ///< The frame we need to be able to transform to before a message is ready
+  std::vector<std::string> target_frames_; ///< The frames we need to be able to transform to before a message is ready
   std::string topic_; ///< The topic to listen on
   uint32_t queue_size_; ///< The maximum number of messages we queue up
 
