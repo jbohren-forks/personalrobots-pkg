@@ -1,0 +1,13 @@
+<package>
+  <description brief="Neven vision face detector">
+  Neven vision face detection software, released as part of google android project.
+  </description>
+  <author>Jeremy Leibs</author>
+  <license>Apache 2.0</license>
+
+  <sysdepend os="ubuntu" version="7.04-feisty" package="git"/>
+  <sysdepend os="ubuntu" version="8.04-hardy"  package="git"/>
+
+  <url>http://android.git.kernel.org/?p=platform/external/neven.git;a=summary</url>
+  <versioncontrol type="git" url="git://android.git.kernel.org/platform/external/neven.git"/>
+</package>
