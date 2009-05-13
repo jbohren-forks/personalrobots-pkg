@@ -376,7 +376,7 @@ namespace base_local_planner {
     }
   }
 
-  bool TrajectoryPlannerROS::computeVelocityCommands(robot_msgs::PoseDot& cmd_vel, const std::vector<costmap_2d::Observation>& observations){
+  bool TrajectoryPlannerROS::computeVelocityCommands(robot_msgs::PoseDot& cmd_vel, bool prune_plan, const std::vector<costmap_2d::Observation>& observations){
     //assume at the beginning of our control cycle that we could have a new goal
     goal_reached_ = false;
 
@@ -411,7 +411,8 @@ namespace base_local_planner {
     }
 
     //now we'll prune the plan based on the position of the robot
-    prunePlan(global_pose, global_plan_);
+    if(prune_plan)
+      prunePlan(global_pose, global_plan_);
 
     //we also want to clear the robot footprint from the costmap we're using
     clearRobotFootprint(global_pose, costmap_);

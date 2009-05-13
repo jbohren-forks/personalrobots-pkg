@@ -102,10 +102,11 @@ namespace base_local_planner {
       /**
        * @brief  Given the current position, orientation, and velocity of the robot, compute velocity commands to send to the base
        * @param cmd_vel Will be filled with the velocity command to be passed to the robot base
+       * @param prune_plan Set to true if you would like the plan to be pruned as the robot drives, false to leave the plan as is
        * @param observations A vector of updates from the robot's sensors in world space, is sometimes unused depending on the model
        * @return True if a valid trajectory was found, false otherwise
        */
-      bool computeVelocityCommands(robot_msgs::PoseDot& cmd_vel,
+      bool computeVelocityCommands(robot_msgs::PoseDot& cmd_vel, bool prune_plan = true,
           const std::vector<costmap_2d::Observation>& observations = std::vector<costmap_2d::Observation>(0));
 
       /**
