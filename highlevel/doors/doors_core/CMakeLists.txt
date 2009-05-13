@@ -25,6 +25,12 @@ rospack_add_executable(action_runner_detect_handle
 		       src/action_runner_detect_handle.cpp
                       )
 
+
+rospack_add_executable(action_runner_detect_handle_no_camera
+		       src/action_detect_handle_no_camera.cpp 	     
+		       src/action_runner_detect_handle_no_camera.cpp
+                      )
+
 rospack_add_executable(action_runner_grasp_handle
 		       src/action_grasp_handle.cpp 
 		       src/action_runner_grasp_handle.cpp
@@ -84,6 +90,10 @@ rospack_add_executable(trigger_handle_release
 
 rospack_add_executable(test_executive
 		       test/test_executive.cpp
+                      )
+
+rospack_add_executable(test_planner
+		       test/test_planner.cpp
                       )
 
 rospack_add_executable(move_base_door
