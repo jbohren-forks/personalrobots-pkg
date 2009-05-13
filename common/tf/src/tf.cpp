@@ -578,6 +578,8 @@ bool Transformer::test_extrapolation(const ros::Time& target_time, const Transfo
 {
   bool retval = false;
   std::stringstream ss;
+  ss << std::fixed;
+  ss.precision(3);
   for (unsigned int i = 0; i < lists.inverseTransforms.size(); i++)
     {
       if (lists.inverseTransforms[i].mode_ == ONE_VALUE)
@@ -586,9 +588,10 @@ bool Transformer::test_extrapolation(const ros::Time& target_time, const Transfo
         {
           retval = true;
           if (error_string) {
-            ss << "Extrapolation Too Far from single value: target_time = "<< (target_time).toSec() <<", data at "
-               << lists.inverseTransforms[i].stamp_.toSec()  <<" which are farther away than max_extrapolation_distance "
-               << (max_extrapolation_distance_).toSec() <<" at "<< (target_time - lists.inverseTransforms[i].stamp_).toSec()<<"."; //sign flip since in the past
+            ss << "Extrapolation Too Far from single value: target_time iss "<< (target_time).toSec() <<", data is at"
+               << lists.inverseTransforms[i].stamp_.toSec()  <<" which is "<<(target_time - lists.inverseTransforms[i].stamp_).toSec()
+               << " seconds away.  This is greater than the max_extrapolation_distance of "
+               << (max_extrapolation_distance_).toSec() <<"."; 
           }
         }
       }
@@ -598,9 +601,10 @@ bool Transformer::test_extrapolation(const ros::Time& target_time, const Transfo
         {
           retval = true;
           if (error_string) {
-            ss << "Extrapolation Too Far in the past: target_time = "<< (target_time).toSec() <<", closest data at "
-               << lists.inverseTransforms[i].stamp_.toSec()  <<" which are farther away than max_extrapolation_distance "
-               << (max_extrapolation_distance_).toSec() <<" at "<< (target_time - lists.inverseTransforms[i].stamp_).toSec()<<"."; //sign flip since in the past
+            ss << "Extrapolation Too Far in the past: target_time is "<< (target_time).toSec() <<", but the closest data is at "
+               << lists.inverseTransforms[i].stamp_.toSec()  <<" which is "<< (target_time - lists.inverseTransforms[i].stamp_).toSec()
+               << " seconds away.  This is farther away than max_extrapolation_distance of "
+               << (max_extrapolation_distance_).toSec() <<".";
           }
         }
       }
@@ -610,9 +614,10 @@ bool Transformer::test_extrapolation(const ros::Time& target_time, const Transfo
         {
           retval = true;
           if (error_string)
-            ss << "Extrapolation Too Far in the future: target_time = "<< (target_time).toSec() <<", closest data at "
-               << lists.inverseTransforms[i].stamp_.toSec()  <<" which are farther away than max_extrapolation_distance "
-               << (max_extrapolation_distance_).toSec() <<" at "<< (target_time - lists.inverseTransforms[i].stamp_).toSec()<<"."; //sign flip since in the past
+            ss << "Extrapolation Too Far in the future: target_time is "<< (target_time).toSec() <<", but the closest data is at "
+               << lists.inverseTransforms[i].stamp_.toSec()  <<" which is " << (target_time - lists.inverseTransforms[i].stamp_).toSec()
+               << " seconds away.  This is farther away than max_extrapolation_distance of "
+               << (max_extrapolation_distance_).toSec() <<".";
         }
       }
     }
@@ -625,9 +630,10 @@ bool Transformer::test_extrapolation(const ros::Time& target_time, const Transfo
         {
           retval = true;
           if (error_string) {
-            ss << "Extrapolation Too Far from single value: target_time = "<< (target_time).toSec() <<", data at "
-               << lists.forwardTransforms[i].stamp_.toSec()  <<" which are farther away than max_extrapolation_distance "
-               << (max_extrapolation_distance_).toSec() <<" at "<< (target_time - lists.forwardTransforms[i].stamp_).toSec()<<"."; //sign flip since in the past
+            ss << "Extrapolation Too Far from single value: target_time is "<< (target_time).toSec() <<", but the data is at "
+               << lists.forwardTransforms[i].stamp_.toSec()  <<" which is "<< (target_time - lists.forwardTransforms[i].stamp_).toSec()
+               <<" seconds away.  This is farther away than the max_extrapolation_distance of "
+               << (max_extrapolation_distance_).toSec() <<".";
           }
         }
       }
@@ -637,9 +643,10 @@ bool Transformer::test_extrapolation(const ros::Time& target_time, const Transfo
         {
           retval = true;
           if (error_string)
-            ss << "Extrapolation Too Far in the past: target_time = "<< (target_time).toSec() <<", closest data at "
-               << lists.forwardTransforms[i].stamp_.toSec()  <<" which are farther away than max_extrapolation_distance "
-               << (max_extrapolation_distance_).toSec() <<" at "<< (target_time - lists.forwardTransforms[i].stamp_).toSec()<<"."; //sign flip since in the past
+            ss << "Extrapolation Too Far in the past: target_time is "<< (target_time).toSec() <<", but the closest data is at "
+               << lists.forwardTransforms[i].stamp_.toSec()  <<" which is " << (target_time - lists.forwardTransforms[i].stamp_).toSec()
+               << " seconds away.  This is farther away than max_extrapolation_distance of"
+               << (max_extrapolation_distance_).toSec() <<".";
         }
       }
       else if( lists.forwardTransforms[i].mode_ == EXTRAPOLATE_FORWARD)
@@ -648,9 +655,10 @@ bool Transformer::test_extrapolation(const ros::Time& target_time, const Transfo
         {
           retval = true;
           if (error_string)
-            ss << "Extrapolation Too Far in the future: target_time = "<< (target_time).toSec() <<", closest data at "
-               << lists.forwardTransforms[i].stamp_.toSec()  <<" which are farther away than max_extrapolation_distance "
-               << (max_extrapolation_distance_).toSec() <<" at "<< (target_time - lists.forwardTransforms[i].stamp_).toSec()<<"."; //sign flip since in the past
+            ss << "Extrapolation Too Far in the future: target_time is "<< (target_time).toSec() <<", but the closest data is at "
+               << lists.forwardTransforms[i].stamp_.toSec()  <<" which is "<< (target_time - lists.forwardTransforms[i].stamp_).toSec()
+               << " seconds away.  This is farther away than max_extrapolation_distance of "
+               << (max_extrapolation_distance_).toSec() <<".";
         }
       }
     }
