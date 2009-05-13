@@ -1,10 +1,12 @@
 all: installed
 
 VERSION 	= wxpropgrid-1.4.4
-TARBALL		= $(VERSION)-src.tar.gz
-TARBALL_URL	= http://pr.willowgarage.com/downloads/$(TARBALL)
+FILENAME	= $(VERSION)-src.tar.gz
+TARBALL		= build/$(VERSION)-src.tar.gz
+TARBALL_URL	= http://pr.willowgarage.com/downloads/$(FILENAME)
 UNPACK_CMD	= tar xzf
 SOURCE_DIR	= build/propgrid
+MD5SUM_FILE 	= $(FILENAME).md5sum
 WXPROPGRID_ROOT = $(shell rospack find wxpropgrid)
 
 include $(shell rospack find mk)/download_unpack_build.mk
