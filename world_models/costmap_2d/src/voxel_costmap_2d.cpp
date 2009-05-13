@@ -251,7 +251,7 @@ namespace costmap_2d{
 
       double point_x, point_y, point_z;
       if(worldToMap3DFloat(wpx, wpy, wpz, point_x, point_y, point_z)){
-        unsigned int cell_raytrace_range = cellDistance(raytrace_range_);
+        //unsigned int cell_raytrace_range = cellDistance(raytrace_range_);
         //voxel_grid_.markVoxelLine(sensor_x, sensor_y, sensor_z, point_x, point_y, point_z);
         voxel_grid_.markVoxelLine(point_x, point_y, point_z, sensor_x, sensor_y, sensor_z);
         //voxel_grid_.clearVoxelLineInMap(sensor_x, sensor_y, sensor_z, point_x, point_y, point_z, costmap_, unknown_threshold_, mark_threshold_, cell_raytrace_range);
