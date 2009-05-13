@@ -559,7 +559,7 @@ namespace mpglue {
     env->setDoorProperties(door,door_thickness);
 
   const double arm_min_workspace_radius = 0.0;
-  const double arm_max_workspace_radius = 1.1;
+  const double arm_max_workspace_radius = 0.85;
 
   const double arm_max_workspace_angle = M_PI/2.0;
   const double arm_min_workspace_angle = -M_PI/2.0;
