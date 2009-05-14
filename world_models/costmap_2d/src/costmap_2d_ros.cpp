@@ -246,13 +246,13 @@ namespace costmap_2d {
   }
 
   Costmap2DROS::~Costmap2DROS(){
-    if(costmap_publisher_ != NULL){
-      delete costmap_publisher_;
-    }
-
     if(map_update_thread_ != NULL){
       map_update_thread_->join();
       delete map_update_thread_;
+    }
+
+    if(costmap_publisher_ != NULL){
+      delete costmap_publisher_;
     }
 
     if(costmap_ != NULL)
