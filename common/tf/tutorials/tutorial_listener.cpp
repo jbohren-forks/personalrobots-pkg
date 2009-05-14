@@ -151,6 +151,7 @@ int main(int argc, char ** argv)
 
           
     sleep(10);
+    delete notifier;
     ROS_INFO("RESTARTING");
   }
   return 0;
