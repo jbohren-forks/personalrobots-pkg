@@ -1,0 +1,14 @@
+<package>
+  <description brief="manipulation_msgs">
+     Core messages for manipulation
+  </description>
+  <author>Wim Meeussen</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://pr.willowgarage.com/wiki/</url>
+  <depend package="robot_msgs"/>
+  <export>
+    <cpp cflags="-I${prefix}/msg/cpp"/>
+  </export>
+</package>
+
