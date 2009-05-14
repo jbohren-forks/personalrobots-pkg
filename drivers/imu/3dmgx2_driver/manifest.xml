@@ -8,6 +8,7 @@
   <author>Jeremy Leibs</author>
   <license>LGPL</license>
   <review status="API cleared" notes="2009-03-30"/>
+  <depend package="rosconsole"/>
   <export>
     <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -l3dmgx2"/>
   </export>
