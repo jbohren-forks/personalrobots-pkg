@@ -63,10 +63,6 @@ namespace base_local_planner {
       return 1.0;
     }
 
-    //for non-circular robots... we can still save time by checking if the circumscribed circle is clear of obstacles
-    if(!costmap_.circumscribedCell(cell_x, cell_y))
-      return 1.0;
-
     //now we really have to lay down the footprint in the costmap grid
     unsigned int x0, x1, y0, y1;
     double line_cost = 0.0;
