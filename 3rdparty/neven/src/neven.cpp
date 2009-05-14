@@ -15,9 +15,14 @@
 
 using namespace neven;
 
-FaceDetector::FaceDetector(uint32_t max_width, uint32_t max_height, uint32_t max_faces, ProcessingConfig conf)
+FaceDetector::FaceDetector(uint32_t max_width, uint32_t max_height, uint32_t max_faces,
+                           uint32_t min_face_width, uint32_t max_face_width, ProcessingConfig conf)
 {
 
+  fd_ = NULL;
+  sdk_ = NULL;
+  dcr_ = NULL;
+  
   btk_SDKCreateParam sdkParam = btk_SDK_defaultParam();
   sdkParam.fpMalloc = malloc;
   sdkParam.fpFree = free;
@@ -55,7 +60,7 @@ FaceDetector::FaceDetector(uint32_t max_width, uint32_t max_height, uint32_t max
 
   fdParam.maxDetectableFaces = max_faces;
   status = btk_FaceFinder_create( sdk_, &fdParam, &fd_ );
-  btk_FaceFinder_setRange(fd_, 20, 240/2); /* set eye distance range */
+  btk_FaceFinder_setRange(fd_, min_face_width, max_face_width); /* set eye distance range */
 
   // make sure everything went welln
   if (status != btk_STATUS_OK) {

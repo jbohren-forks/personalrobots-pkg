@@ -45,7 +45,8 @@ namespace neven
     btk_DCR* dcr_;
 
   public:
-    FaceDetector(uint32_t max_width, uint32_t max_height, uint32_t max_faces, ProcessingConfig conf);
+    FaceDetector(uint32_t max_width, uint32_t max_height, uint32_t max_faces,
+                 uint32_t min_face_width, uint32_t max_face_width, ProcessingConfig conf);
     ~FaceDetector();
 
     std::vector<Face> findFaces(char* img, uint32_t width, uint32_t height);
