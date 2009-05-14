@@ -287,8 +287,14 @@ DoorController::Holds {
 		door_get_robot_pose_for_door(cmd.x, cmd.y, cmd.z, cmd.qx, cmd.qy, cmd.qz, cmd.qw, ds.object, DETECTION_RANGE);
 	      }
 	      else {
-		contains_start(doors_tuck_arms.Active cmd);
-		concurrent(cmd.end, end);
+		if(have_handle == true){
+		  contains_start(release_handle.Active cmd);
+		  concurrent(cmd.end, end);
+		}
+		else {
+		  contains_start(doors_tuck_arms.Active cmd);
+		  concurrent(cmd.end, end);
+		}
 	      }
 	    }
 	  }
