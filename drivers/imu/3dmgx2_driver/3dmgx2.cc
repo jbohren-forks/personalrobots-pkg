@@ -32,6 +32,8 @@
 
 #include <sys/time.h>
 
+#include <ros/console.h>
+
 #include "3dmgx2_driver/3dmgx2.h"
 
 #include "poll.h"
@@ -262,7 +264,9 @@ ms_3dmgx2_driver::IMU::receiveAccelAngrateMag(uint64_t *time, double accel[3], d
   uint64_t sys_time;
   uint64_t imu_time;
 
+  ROS_DEBUG("About to do receive.")
   receive(CMD_ACCEL_ANGRATE_MAG, rep, sizeof(rep), 0, &sys_time);
+  ROS_DEBUG("Receive finished.")
 
   // Read the acceleration:
   k = 1;
