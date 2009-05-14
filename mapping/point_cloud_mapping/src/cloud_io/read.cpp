@@ -60,8 +60,6 @@ namespace cloud_io
     // for reading image 2d coordinates if ARRAY is specified
     int array_width = 0;
     int array_height = 0;
-    int x = 0;
-    int y = 0;
 
     int idx = 0;
     // Open file
@@ -149,7 +147,7 @@ namespace cloud_io
       points.pts[idx].x = atof (st.at (0).c_str ());
       points.pts[idx].y = atof (st.at (1).c_str ());
       points.pts[idx].z = atof (st.at (2).c_str ());
-      for (unsigned int i = 0; i < specified_channel_count-3; i++)
+      for (int i = 0; i < specified_channel_count-3; i++)
         points.chan[i].vals[idx] = atof (st.at (i+3).c_str ());
       
       idx++;
