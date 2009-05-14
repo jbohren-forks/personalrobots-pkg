@@ -52,6 +52,8 @@ namespace door_functions{
   KDL::Vector getDoorNormal(const door_msgs::Door& door);
   KDL::Vector getFrameNormal(const door_msgs::Door& door);
   double getFrameAngle(const door_msgs::Door& door);
+  double getDoorDir(const door_msgs::Door& d);
+  double getHandleDir(const door_msgs::Door& d);
 
 
 /// convert door message from its original frame/time, to the goal frame at time::now.

@@ -265,6 +265,42 @@ namespace door_functions{
     return result;
   }
 
+  double getHandleDir(const door_msgs::Door& d)
+  {
+    Vector normal = getDoorNormal(d);
+    Vector frame_vec;
+    if (d.hinge == door_msgs::Door::HINGE_P1)
+      frame_vec = Vector(d.frame_p2.x - d.frame_p1.x, d.frame_p2.y - d.frame_p1.y, d.frame_p2.z - d.frame_p1.z);
+    else if (d.hinge == door_msgs::Door::HINGE_P2)
+      frame_vec = Vector(d.frame_p1.x - d.frame_p2.x, d.frame_p1.y - d.frame_p2.y, d.frame_p1.z - d.frame_p2.z);
+    else
+      ROS_ERROR("Hinge side is not defined");
+
+    Vector rot_vec = frame_vec * normal;
+    if (rot_vec(2) > 0)
+      return -1.0;
+    else
+      return 1.0;
+  }
+
+
+  double getDoorDir(const door_msgs::Door& d)
+  {
+    double rot_dir = 0;
+    if (d.rot_dir == door_msgs::Door::ROT_DIR_CLOCKWISE)
+      rot_dir = -1;
+    else if (d.rot_dir == door_msgs::Door::ROT_DIR_COUNTERCLOCKWISE)
+      rot_dir = 1;
+    else
+      ROS_ERROR("Door rotation direction not specified");
+
+    if (getHandleDir(d) < 0)
+      return rot_dir;
+    else
+      return -rot_dir;
+  }
+
+
   std::ostream& operator<< (std::ostream& os, const door_msgs::Door& d)
   {
     os << "Door message in " << d.header.frame_id << " at time " << d.header.stamp.toSec() << endl;
