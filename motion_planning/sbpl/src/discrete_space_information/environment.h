@@ -35,8 +35,8 @@ class DiscreteSpaceInformation
 
 public:
 
-	//data
-	vector<int*> StateID2IndexMapping;
+  //data
+  std::vector<int*> StateID2IndexMapping;
 	
 #if DEBUG
 	FILE* fDeb;
@@ -51,8 +51,8 @@ public:
 	virtual int  GetStartHeuristic(int stateID) = 0;
 	virtual void SetAllActionsandAllOutcomes(CMDPSTATE* state) = 0;
 	virtual void SetAllPreds(CMDPSTATE* state) = 0;
-	virtual void GetSuccs(int SourceStateID, vector<int>* SuccIDV, vector<int>* CostV) = 0;
-	virtual void GetPreds(int TargetStateID, vector<int>* PredIDV, vector<int>* CostV) = 0;
+	virtual void GetSuccs(int SourceStateID, std::vector<int>* SuccIDV, std::vector<int>* CostV) = 0;
+	virtual void GetPreds(int TargetStateID, std::vector<int>* PredIDV, std::vector<int>* CostV) = 0;
 
 	virtual int	 SizeofCreatedEnv() = 0;
 	virtual void PrintState(int stateID, bool bVerbose, FILE* fOut=NULL) = 0;
