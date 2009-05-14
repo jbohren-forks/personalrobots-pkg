@@ -406,10 +406,11 @@ private:
       if (queue_size_ != 0 && message_count_ + 1 > queue_size_)
       {
         ++dropped_message_count_;
+        NOTIFIER_DEBUG("Removed oldest message because buffer is full, count now %d (frame_id=%s, stamp=%f)", message_count_, messages_.front()->header.frame_id.c_str(), messages_.front()->header.stamp.toSec());
         messages_.pop_front();
         --message_count_;
 
-        NOTIFIER_DEBUG("Removed oldest message because buffer is full, count now %d", message_count_);
+
       }
 
       // Add the message to our list
