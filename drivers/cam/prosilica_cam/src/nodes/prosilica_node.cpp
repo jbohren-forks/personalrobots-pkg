@@ -51,6 +51,7 @@
 #include <string>
 
 #include "prosilica/prosilica.h"
+#include "prosilica/rolling_sum.h"
 #include "prosilica_cam/PolledImage.h"
 #include "prosilica_cam/CamInfo.h"
 
@@ -58,21 +59,21 @@ class ProsilicaNode
 {
 private:
   ros::Node &node_;
-  
+
+  // Camera
   boost::scoped_ptr<prosilica::Camera> cam_;
   prosilica::AcquisitionMode mode_;
+  bool running_;
+
+  // ROS messages
   image_msgs::Image img_, rect_img_;
   image_msgs::CvBridge img_bridge_, rect_img_bridge_;
   image_msgs::CamInfo cam_info_;
-  std::string frame_id_;
-  bool running_;
-  DiagnosticUpdater<ProsilicaNode> diagnostic_;
-  int count_;
-  double desired_freq_;
   image_msgs::Image thumbnail_;
   int thumbnail_size_;
+  std::string frame_id_;
   
-  // calibration matrices
+  // Calibration data
   double D_[5], K_[9], R_[9], P_[12];
   CvMat Dmat_, Kmat_, Rmat_, Pmat_;
   cv::WImageBuffer1_f undistortX_, undistortY_;
@@ -80,9 +81,26 @@ private:
   unsigned int region_x_, region_y_;
   bool calibrated_;
 
+  // Diagnostics
+  DiagnosticUpdater<ProsilicaNode> diagnostic_;
+  int count_;
+  double desired_freq_;
+  static const int WINDOW_SIZE = 5; // remember previous 5s
+  unsigned long frames_dropped_total_, frames_completed_total_;
+  RollingSum<unsigned long> frames_dropped_acc_, frames_completed_acc_;
+  unsigned long packets_missed_total_, packets_received_total_;
+  RollingSum<unsigned long> packets_missed_acc_, packets_received_acc_;
+
 public:
   ProsilicaNode(ros::Node &node)
-    : node_(node), cam_(NULL), running_(false), diagnostic_(this, &node_), count_(0)
+    : node_(node), cam_(NULL), running_(false),
+      diagnostic_(this, &node_), count_(0),
+      frames_dropped_total_(0), frames_completed_total_(0),
+      frames_dropped_acc_(WINDOW_SIZE),
+      frames_completed_acc_(WINDOW_SIZE),
+      packets_missed_total_(0), packets_received_total_(0),
+      packets_missed_acc_(WINDOW_SIZE),
+      packets_received_acc_(WINDOW_SIZE)
   {
     prosilica::init();
 
@@ -100,6 +118,7 @@ public:
     node_.param("~acquisition_mode", mode_str, std::string("Continuous"));
     if (mode_str == std::string("Continuous")) {
       mode_ = prosilica::Continuous;
+      // TODO: tighter bound than this minimal check
       desired_freq_ = 1; // make sure we get _something_
       buffer_size = prosilica::Camera::DEFAULT_BUFFER_SIZE;
     }
@@ -286,24 +305,36 @@ public:
     count_ = 0;
   }
 
-  // TODO: compute error conditions as running totals (over last ~10s)
   // TODO: set StreamBytesPerSecond adaptively
   void frameStatistics(robot_msgs::DiagnosticStatus& status)
   {
     status.name = "Frame Statistics";
 
+    // Get stats from camera driver
     float frame_rate;
-    unsigned long frames_completed, frames_dropped;
-
+    unsigned long completed, dropped;
     cam_->getAttribute("StatFrameRate", frame_rate);
-    cam_->getAttribute("StatFramesCompleted", frames_completed);
-    cam_->getAttribute("StatFramesDropped", frames_dropped);
+    cam_->getAttribute("StatFramesCompleted", completed);
+    cam_->getAttribute("StatFramesDropped", dropped);
 
-    if (frames_dropped == 0) {
+    // Compute rolling totals, percentages
+    frames_completed_acc_.add(completed - frames_completed_total_);
+    frames_completed_total_ = completed;
+    unsigned long completed_recent = frames_completed_acc_.sum();
+    
+    frames_dropped_acc_.add(dropped - frames_dropped_total_);
+    frames_dropped_total_ = dropped;
+    unsigned long dropped_recent = frames_dropped_acc_.sum();
+
+    float recent_ratio = float(completed_recent) / (completed_recent + dropped_recent);
+    float total_ratio = float(completed) / (completed + dropped);
+
+    // Set level based on recent % completed frames
+    if (dropped_recent == 0) {
       status.level = 0;
       status.message = "No dropped frames";
     }
-    else if (frames_dropped < frames_completed / 4) {
+    else if (recent_ratio > 0.8f) {
       status.level = 1;
       status.message = "Some dropped frames";
     }
@@ -312,32 +343,47 @@ public:
       status.message = "Excessive proportion of dropped frames";
     }
 
-    status.set_values_size(3);
-    status.values[0].label = "Frame Rate";
+    status.set_values_size(5);
+    status.values[0].label = "Camera Frame Rate";
     status.values[0].value = frame_rate;
-    status.values[1].label = "Frames Completed";
-    status.values[1].value = frames_completed;
-    status.values[2].label = "Frames Dropped";
-    status.values[2].value = frames_dropped;
+    status.values[1].label = "Recent % Frames Completed";
+    status.values[1].value = recent_ratio * 100.0f;
+    status.values[2].label = "Overall % Frames Completed";
+    status.values[2].value = total_ratio * 100.0f;
+    status.values[3].label = "Frames Completed";
+    status.values[3].value = completed;
+    status.values[4].label = "Frames Dropped";
+    status.values[4].value = dropped;
   }
 
   void packetStatistics(robot_msgs::DiagnosticStatus& status)
   {
     status.name = "Packet Statistics";
 
+    // Get stats from camera driver
     unsigned long received, missed, requested, resent;
-
     cam_->getAttribute("StatPacketsReceived", received);
     cam_->getAttribute("StatPacketsMissed", missed);
     cam_->getAttribute("StatPacketsRequested", requested);
     cam_->getAttribute("StatPacketsResent", resent);
 
+    // Compute rolling totals, percentages
+    packets_received_acc_.add(received - packets_received_total_);
+    packets_received_total_ = received;
+    unsigned long received_recent = packets_received_acc_.sum();
+    
+    packets_missed_acc_.add(missed - packets_missed_total_);
+    packets_missed_total_ = missed;
+    unsigned long missed_recent = packets_missed_acc_.sum();
 
-    if (missed == 0) {
+    float recent_ratio = float(received_recent) / (received_recent + missed_recent);
+    float total_ratio = float(received) / (received + missed);
+
+    if (missed_recent == 0) {
       status.level = 0;
       status.message = "No missed packets";
     }
-    else if (missed < received / 100) {
+    else if (recent_ratio > 0.99f) {
       status.level = 1;
       status.message = "Some missed packets";
     }
@@ -346,15 +392,19 @@ public:
       status.message = "Excessive proportion of missed packets";
     }
     
-    status.set_values_size(4);
-    status.values[0].label = "Received Packets";
-    status.values[0].value = received;
-    status.values[1].label = "Missed Packets";
-    status.values[1].value = missed;
-    status.values[2].label = "Requested Packets";
-    status.values[2].value = requested;
-    status.values[3].label = "Resent Packets";
-    status.values[3].value = resent;
+    status.set_values_size(6);
+    status.values[0].label = "Recent % Packets Received";
+    status.values[0].value = recent_ratio * 100.0f;
+    status.values[1].label = "Overall % Packets Received";
+    status.values[1].value = total_ratio * 100.0f;
+    status.values[2].label = "Received Packets";
+    status.values[2].value = received;
+    status.values[3].label = "Missed Packets";
+    status.values[3].value = missed;
+    status.values[4].label = "Requested Packets";
+    status.values[4].value = requested;
+    status.values[5].label = "Resent Packets";
+    status.values[5].value = resent;
   }
 
   void packetErrorStatus(robot_msgs::DiagnosticStatus& status)
