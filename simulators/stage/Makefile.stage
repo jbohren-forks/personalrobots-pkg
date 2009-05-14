@@ -2,7 +2,7 @@ all: installed
 
 SVN_DIR = stage-svn
 SVN_URL = https://playerstage.svn.sourceforge.net/svnroot/playerstage/code/stage/branches/stage-ros
-SVN_REVISION = -r 7126
+SVN_REVISION = -r 7668
 include $(shell rospack find mk)/svn_checkout.mk
 
 installed: $(SVN_DIR) patched Makefile.stage
