@@ -207,17 +207,9 @@ int main(int argc, char** argv){
   ros::Node node("executive_trex_pr2/action_container");
 
   // Create state publishers, if parameters are set
-  executive_trex_pr2::StatePublisher<deprecated_msgs::RobotBase2DOdom>* base_state_publisher = NULL;
+  executive_trex_pr2::BaseStatePublisher* base_state_publisher = NULL;
   if (getComponentParam("/trex/enable_base_state_publisher"))
-    base_state_publisher = new executive_trex_pr2::StatePublisher<deprecated_msgs::RobotBase2DOdom>(deprecated_msgs::RobotBase2DOdom(), "localizedpose", 10.0);
-
-  executive_trex_pr2::StatePublisher<robot_msgs::BatteryState>* battery_state_publisher = NULL; 
-  if (getComponentParam("/trex/enable_battery_state_publisher"))
-    battery_state_publisher = new executive_trex_pr2::StatePublisher<robot_msgs::BatteryState>(robot_msgs::BatteryState(), "battery_state", 10.0);
-
-  executive_trex_pr2::StatePublisher<robot_msgs::BatteryState>* bogus_battery_state_publisher = NULL; 
-  if (getComponentParam("/trex/enable_bogus_battery_state_publisher"))
-    bogus_battery_state_publisher = new executive_trex_pr2::StatePublisher<robot_msgs::BatteryState>(robot_msgs::BatteryState(), "bogus_battery_state", 10.0);
+    base_state_publisher = new executive_trex_pr2::BaseStatePublisher("localizedpose", 10.0);
 
 
   // Allocate an action runner with an update rate of 10 Hz
@@ -351,10 +343,6 @@ int main(int argc, char** argv){
 
   if (base_state_publisher)
     delete base_state_publisher;
-  if (battery_state_publisher)
-    delete battery_state_publisher;
-  if (bogus_battery_state_publisher)
-    delete bogus_battery_state_publisher;
 
   return 0;
 }
