@@ -44,6 +44,7 @@
 #include <topological_map/door_info.h>
 #include <algorithm>
 #include <cmath>
+#include <queue>
 #include <boost/bind.hpp>
 #include <boost/ref.hpp>
 #include <boost/foreach.hpp>
@@ -78,6 +79,7 @@ using std::set;
 using std::min;
 using std::stringstream;
 using std::max;
+using std::queue;
 using ros::Time;
 using tf::Transform;
 using tf::Vector3;
@@ -494,26 +496,33 @@ ObstacleDistanceArray computeObstacleDistances(GridPtr grid)
   int num_rows = numRows(*grid);
   int num_cols = numCols(*grid);
   ObstacleDistanceArray distances(extents[num_rows][num_cols]);
-  for (int r=0; r<num_rows; ++r) 
-    for (int c=0; c<num_cols; ++c) 
-      distances[r][c] = (*grid)[r][c] ? 0 : (num_rows+1)*(num_cols+1);
-
-  bool done=false;
-  while (!done) {
-    done = true;
-    for (int r=0; r<num_rows; ++r) {
-      for (int c=0; c<num_cols; ++c) {
-        for (uint vertical=0; vertical<2; ++vertical) {
-          for (int mult=-1; mult<=1; mult+=2) {
-            int dr=mult*(vertical ? 1 : 0);
-            int dc=mult*(vertical ? 0 : 1);
-            int r1 = min(num_rows-1, max(0,r+dr));
-            int c1 = min(num_cols-1, max(0,c+dc));
-            if (distances[r1][c1]<distances[r][c]-1) {
-              done=false;
-              distances[r][c] = distances[r1][c1]+1;
-            }
-          }
+  queue<Cell2D> q;
+  
+  for (int r=0; r<num_rows; ++r) {
+    for (int c=0; c<num_cols; ++c) {
+      if ((*grid)[r][c]) {
+        distances[r][c] = 0;
+        Cell2D cell(r,c);
+        q.push(cell);
+      }
+      else {
+        distances[r][c] = (num_rows+1)*(num_cols+1);
+      }
+    }
+  }
+  
+  while (!q.empty()) {
+    Cell2D cell = q.front();
+    q.pop();
+    for (uint vertical=0; vertical<2; ++vertical) {
+      for (int mult=-1; mult<=1; mult+=2) {
+        int dr=mult*(vertical ? 1 : 0);
+        int dc=mult*(vertical ? 0 : 1);
+        int r1 = min(num_rows-1, max(0,cell.r+dr));
+        int c1 = min(num_cols-1, max(0,cell.c+dc));
+        if (distances[r1][c1]>distances[cell.r][cell.c]+1) {
+          distances[r1][c1] = distances[cell.r][cell.c]+1;
+          q.push(Cell2D(r1,c1));
         }
       }
     }
