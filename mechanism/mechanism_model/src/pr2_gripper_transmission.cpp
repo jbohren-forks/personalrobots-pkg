@@ -375,22 +375,24 @@ void PR2GripperTransmission::propagatePositionBackwards(
     if (js[i]->joint_->name_ == gap_joint_)
     {
       gripper_effort = js[i]->commanded_effort_; // added this variable for clarifying things for myself
+      as[0]->state_.position_             = MR                        * gap_mechanical_reduction_ / rad2mr_ ;
+      as[0]->state_.velocity_             = joint_rate   * dMR_dtheta * gap_mechanical_reduction_ / rad2mr_ ;
+      // FIXME: this could potentially come from the tactile sensors
+      // FIXME: is averaging finger torques and transmitting the thing to do?
+      // as[0]->state_.last_measured_effort_ = joint_torque * dMR_dtheta * gap_mechanical_reduction_ / rad2mr_ ;
+      as[0]->state_.last_measured_effort_ = gripper_effort   / dMR_dt * gap_mechanical_reduction_ / rad2mr_ ;
+      //as[0]->state_.last_measured_effort_ = 0.0;
+
+      // std::cout << "propagatePositionBackwards as[0]:"
+      //           << " as_pos:"                  << as[0]->state_.position_
+      //           << " as_vel:"                  << as[0]->state_.velocity_
+      //           << " as_last_measured_effort:" << as[0]->state_.last_measured_effort_
+      //           << std::endl;
+      return;
     }
   }
+  ROS_ERROR("PropagatePositionBackwards for %s failed, actuator states unassigned.\n",gap_joint_.c_str());
 
-  as[0]->state_.position_             = MR                        * gap_mechanical_reduction_ / rad2mr_ ;
-  as[0]->state_.velocity_             = joint_rate   * dMR_dtheta * gap_mechanical_reduction_ / rad2mr_ ;
-  // FIXME: this could potentially come from the tactile sensors
-  // FIXME: is averaging finger torques and transmitting the thing to do?
-  // as[0]->state_.last_measured_effort_ = joint_torque * dMR_dtheta * gap_mechanical_reduction_ / rad2mr_ ;
-  as[0]->state_.last_measured_effort_ = gripper_effort   / dMR_dt * gap_mechanical_reduction_ / rad2mr_ ;
-  //as[0]->state_.last_measured_effort_ = 0.0;
-
-  // std::cout << "propagatePositionBackwards as[0]:"
-  //           << " as_pos:"                  << as[0]->state_.position_
-  //           << " as_vel:"                  << as[0]->state_.velocity_
-  //           << " as_last_measured_effort:" << as[0]->state_.last_measured_effort_
-  //           << std::endl;
 }
 
 void PR2GripperTransmission::propagateEffort(
