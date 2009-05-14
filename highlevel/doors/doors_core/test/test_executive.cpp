@@ -80,11 +80,24 @@ int
   door.door_p2.y = 0.5;
   door.travel_dir.x = 1.0;
   door.travel_dir.y = 0.0;
-  door.travel_dir.z = 0.0;
   door.rot_dir = door_msgs::Door::ROT_DIR_COUNTERCLOCKWISE;
   door.hinge = door_msgs::Door::HINGE_P2;
   door.header.frame_id = "base_footprint";
-    
+  /*
+  door.frame_p1.x = 13.720980644226074;
+  door.frame_p1.y = 21.296588897705078;
+  door.frame_p2.x = 13.784474372863770;
+  door.frame_p2.y = 22.195737838745117;
+  door.door_p1.x = 13.720980644226074;
+  door.door_p1.y = 21.296588897705078;
+  door.door_p2.x = 13.784474372863770;
+  door.door_p2.y = 22.195737838745117;
+  door.travel_dir.x = -1.936123440473645;
+  door.travel_dir.y = 3.251793805466352;
+  door.rot_dir = door_msgs::Door::ROT_DIR_COUNTERCLOCKWISE;
+  door.hinge = door_msgs::Door::HINGE_P1;
+  door.header.frame_id = "map";
+  */    
   pr2_robot_actions::SwitchControllers switchlist;
   std_msgs::Empty empty;
 
