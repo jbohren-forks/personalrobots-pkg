@@ -61,6 +61,7 @@ def detect_door_laser(door_request):
         print "Calling service"
         door_reply = find_door_laser(door_request)
         print "Request finished"
+        print "Door detected by laser at (%f, %f) (%f, %f)"%(door_reply.doors[0].door_p1.x, door_reply.doors[0].door_p1.y, door_reply.doors[0].door_p2.x, door_reply.doors[0].door_p2.y)
         return door_reply
     except rospy.ServiceException, e:
         print "Service call failed: %s"%e
@@ -73,13 +74,16 @@ def detect_handle_laser(door_request):
     rospy.wait_for_service('doors_detector')
     print "Service is available"
     try:
+        print "Getting service proxy"
         find_handle_laser = rospy.ServiceProxy('handle_detector', DoorsDetector)
+        print "Calling service"
         door_reply = find_handle_laser(door_request)
         print "Request finished"
+        print "Handle detected by laser at (%f, %f, %f)"%(door_reply.doors[0].handle.x, door_reply.doors[0].handle.y, door_reply.doors[0].handle.z)
         return door_reply
     except rospy.ServiceException, e:
         print "Service call failed: %s"%e
-    print "handle detected by camera at (%f, %f, %f)"%(door_reply.doors[0].handle.x, door_reply.doors[0].handle.y, door_reply.doors[0].handle.z)
+
 
 
 
@@ -90,13 +94,16 @@ def detect_handle_camera(door_request):
     rospy.wait_for_service('door_handle_vision_detector')
     print "Service is available"
     try:
+        print "Getting service proxy"
         find_handle = rospy.ServiceProxy('door_handle_vision_detector', DoorsDetector)
+        print "Calling service"
         door_reply = find_handle(door_request)
         print "Request finished"
+        print "Handle detected by camera at (%f, %f, %f)"%(door_reply.doors[0].handle.x, door_reply.doors[0].handle.y, door_reply.doors[0].handle.z)
         return door_reply
     except rospy.ServiceException, e:
         print "Service call failed: %s"%e
-    print "handle detected by camera at (%f, %f, %f)"%(door_reply.doors[0].handle.x, door_reply.doors[0].handle.y, door_reply.doors[0].handle.z)
+
 
 
 
@@ -117,5 +124,5 @@ if __name__ == "__main__":
     print "time ",d.header.stamp
     
     resp = detect_door_laser(d)
-#    resp = detect_handle_laser(resp.doors[0])
-
+    resp = detect_handle_laser(resp.doors[0])
+    resp = detect_handle_camera(d)    

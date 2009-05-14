@@ -66,7 +66,7 @@ HandleDetector::HandleDetector (ros::Node* anode) : node_ (anode), tf_ (*anode)
   euclidean_cluster_min_pts_            = 4;                  // 4 points
   euclidean_cluster_distance_tolerance_ = 0.04;               // 4 cm
 
-  node_->param ("~input_cloud_topic", input_cloud_topic_, string ("/snapshot_cloud"));
+  node_->param ("~input_cloud_topic", input_cloud_topic_, string ("/full_cloud"));
   node_->advertiseService ("handle_detector", &HandleDetector::detectHandleSrv, this);
   node_->advertiseService ("handle_detector_cloud", &HandleDetector::detectHandleCloudSrv, this);
   node_->advertise<visualization_msgs::Marker> ("visualization_marker", 100);
