@@ -11,22 +11,18 @@ $(GIT_DIR):
 
 installed: $(GIT_DIR)
 	@mkdir -p build
-	@mkdir -p include/neven
+	@mkdir -p data
 	cd build && cmake -DCMAKE_TOOLCHAIN_FILE=`rospack find rosbuild`/rostoolchain.cmake ..
 	cd build && make $(ROS_PARALLEL_JOBS)
-	cp nevensrc/FaceRecEm/common/src/b_FDSDK/fd_emb_sdk.h include/neven/
-	cp nevensrc/FaceRecEm/common/src/b_FDSDK/DCR.h include/neven/
-	cp nevensrc/FaceRecEm/common/src/b_FDSDK/FaceFinder.h include/neven/
-	cp nevensrc/FaceRecEm/common/src/b_FDSDK/SDK.h include/neven/
-	cp nevensrc/FaceRecEm/common/src/b_FDSDK/Types.h include/neven/
-
 clean:
-	cd build && make clean
-	rm -rf build
-	rm -rf include
+	-cd build && make clean
+	-rm -rf build
+	-rm -rf data
+	-rm .build_version
+	-rm .rosgcov_files
 
 wipe: clean
-	rm -rf nevensrc
+	-rm -rf nevensrc
 
 test: all
 	if cd build && make -k $@; then make test-results; else make test-results && exit 1; fi
@@ -35,7 +31,4 @@ tests: all
 test-future: all
 	cd build && make -k $@
 
-
 .PHONY : clean download
-
-include $(shell rospack find mk)/cmake.mk

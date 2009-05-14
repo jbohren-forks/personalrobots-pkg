@@ -6,9 +6,26 @@ set(ROS_BUILD_TYPE Release)
 
 include_directories(${PROJECT_SOURCE_DIR}/nevensrc/FaceRecEm/common/src/b_FDSDK
         ${PROJECT_SOURCE_DIR}/nevensrc/Embedded/common/conf/b_BasicEm
-        ${PROJECT_SOURCE_DIR}/nevensrc/Embedded/common/src)
+        ${PROJECT_SOURCE_DIR}/nevensrc/Embedded/common/src
+        ${PROJECT_SOURCE_DIR}/include/neven
+        ${PROJECT_SOURCE_DIR}/data)
+
+ADD_CUSTOM_COMMAND(OUTPUT data/RFFspeed_501.i
+                   COMMAND ${PROJECT_SOURCE_DIR}/scripts/bin2c.py  ${PROJECT_SOURCE_DIR}/nevensrc/Embedded/common/data/APIEm/Modules/RFFspeed_501.bmd > ${PROJECT_SOURCE_DIR}/data/RFFspeed_501.i
+                   DEPENDS ${PROJECT_SOURCE_DIR}/scripts/bin2c.py  ${PROJECT_SOURCE_DIR}/nevensrc/Embedded/common/data/APIEm/Modules/RFFspeed_501.bmd)
+
+ADD_CUSTOM_COMMAND(OUTPUT data/RFFstd_501.i
+                   COMMAND ${PROJECT_SOURCE_DIR}/scripts/bin2c.py  ${PROJECT_SOURCE_DIR}/nevensrc/Embedded/common/data/APIEm/Modules/RFFstd_501.bmd > ${PROJECT_SOURCE_DIR}/data/RFFstd_501.i
+                   DEPENDS ${PROJECT_SOURCE_DIR}/scripts/bin2c.py  ${PROJECT_SOURCE_DIR}/nevensrc/Embedded/common/data/APIEm/Modules/RFFstd_501.bmd)
+
+ADD_CUSTOM_COMMAND(OUTPUT data/RFFprec_501.i
+                   COMMAND ${PROJECT_SOURCE_DIR}/scripts/bin2c.py  ${PROJECT_SOURCE_DIR}/nevensrc/Embedded/common/data/APIEm/Modules/RFFprec_501.bmd > ${PROJECT_SOURCE_DIR}/data/RFFprec_501.i
+                   DEPENDS ${PROJECT_SOURCE_DIR}/scripts/bin2c.py  ${PROJECT_SOURCE_DIR}/nevensrc/Embedded/common/data/APIEm/Modules/RFFprec_501.bmd)
+
+ADD_CUSTOM_TARGET(generate_data_includes ALL DEPENDS data/RFFspeed_501.i data/RFFstd_501.i data/RFFprec_501.i)
 
 rospack_add_library(neven 
+       src/neven.cpp
        nevensrc/Embedded/common/src/b_APIEm/DCR.c 
        nevensrc/Embedded/common/src/b_APIEm/BFFaceFinder.c 
        nevensrc/Embedded/common/src/b_APIEm/FaceFinder.c 
@@ -93,5 +110,4 @@ rospack_add_library(neven
        nevensrc/Embedded/common/src/b_TensorEm/VectorMap.c 
        nevensrc/FaceRecEm/common/src/b_FDSDK/DCR.c 
        nevensrc/FaceRecEm/common/src/b_FDSDK/FaceFinder.c
-       nevensrc/FaceRecEm/common/src/b_FDSDK/SDK.c )
-
+       nevensrc/FaceRecEm/common/src/b_FDSDK/SDK.c)
