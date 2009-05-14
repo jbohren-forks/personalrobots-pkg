@@ -35,6 +35,7 @@
 /* Author: Wim Meeussen */
 
 #include "doors_core/action_unlatch_handle.h"
+#include "door_functions/door_functions.h"
 
 
 using namespace tf;
@@ -42,6 +43,7 @@ using namespace KDL;
 using namespace ros;
 using namespace std;
 using namespace door_handle_detector;
+using namespace door_functions;
 
 static const string fixed_frame = "odom_combined";
 
@@ -69,6 +71,10 @@ robot_actions::ResultStatus UnlatchHandleAction::execute(const door_msgs::Door& 
   // default feedback
   feedback = goal;
 
+  // push/pull dir
+  double door_dir = getDoorDir(goal);
+  double handle_dir = getHandleDir(goal);
+
   // stop
   tff_stop_.mode.vel.x = tff_stop_.FORCE;
   tff_stop_.mode.vel.y = tff_stop_.FORCE;
@@ -92,13 +98,14 @@ robot_actions::ResultStatus UnlatchHandleAction::execute(const door_msgs::Door& 
   tff_handle_.mode.rot.y = tff_handle_.FORCE;
   tff_handle_.mode.rot.z = tff_handle_.POSITION;
   
-  tff_handle_.value.vel.x = 20.0;
+  tff_handle_.value.vel.x = 20.0 * door_dir;
   tff_handle_.value.vel.y = 0.0;
   tff_handle_.value.vel.z = 0.0;
   tff_handle_.value.rot.x = 0.0;
   tff_handle_.value.rot.y = 0.0;
   tff_handle_.value.rot.z = 0.0;
   
+
   // start monitoring tf position
   node_.subscribe("r_arm_cartesian_tff_controller/state/position", tff_msg_,  &UnlatchHandleAction::tffCallback, this, 1);
   Duration timeout = Duration().fromSec(3.0);
@@ -125,7 +132,7 @@ robot_actions::ResultStatus UnlatchHandleAction::execute(const door_msgs::Door& 
 
     // increase torque to turn handle until door is open
     if (fabs(tff_state_.vel.x) < 0.05)
-      tff_handle_.value.rot.x += -0.5 * sleep_time; // add 0.5 Nm per second
+      tff_handle_.value.rot.x += handle_dir * 0.5 * sleep_time; // add 0.5 Nm per second
     else{
       tff_handle_.value.rot.x = 0;
       if (time_door_moved == Time())

@@ -34,6 +34,7 @@
 
 /* Author: Wim Meeussen */
 
+#include "door_functions/door_functions.h"
 #include "doors_core/action_open_door.h"
 
 
@@ -42,6 +43,7 @@ using namespace KDL;
 using namespace ros;
 using namespace std;
 using namespace door_handle_detector;
+using namespace door_functions;
 
 static const string fixed_frame = "odom_combined";
 
@@ -66,6 +68,8 @@ robot_actions::ResultStatus OpenDoorAction::execute(const door_msgs::Door& goal,
 { 
   ROS_INFO("OpenDoorAction: execute");
 
+
+
   // open door
   tff_door_.mode.vel.x = tff_door_.VELOCITY;
   tff_door_.mode.vel.y = tff_door_.FORCE;
@@ -74,7 +78,7 @@ robot_actions::ResultStatus OpenDoorAction::execute(const door_msgs::Door& goal,
   tff_door_.mode.rot.y = tff_door_.FORCE;
   tff_door_.mode.rot.z = tff_door_.POSITION;
   
-  tff_door_.value.vel.x = 0.45;
+  tff_door_.value.vel.x = getDoorDir(goal) * 0.45;
   tff_door_.value.vel.y = 0.0;
   tff_door_.value.vel.z = 0.0;
   tff_door_.value.rot.x = 0.0;
