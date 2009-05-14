@@ -52,6 +52,7 @@
 #include <ros/console.h>
 #include <ros/assert.h>
 #include <tinyxml/tinyxml.h>
+#include <tf/transform_datatypes.h>
 #include <topological_map/exception.h>
 
 
@@ -121,9 +122,8 @@ uint numCols(const OccupancyGrid& grid)
 
 bool TopologicalMap::MapImpl::isObstacle (const Point2D& p) const
 {
-  const Point2D p2 = transformPoint(p);
-  if (pointOnMap(p2)) {
-    Cell2D cell = containingCell(p2);
+  if (pointOnMap(p)) {
+    Cell2D cell = containingCell(p);
     return (*grid_)[cell.r][cell.c];
   }
   return false;
@@ -142,52 +142,6 @@ Cell2D TopologicalMap::MapImpl::containingCell (const Point2D& p) const
   return Cell2D(floor((float)p.y/resolution_), floor((float)p.x/resolution_));
 }
 
-
-Point2D TopologicalMap::MapImpl::transformPoint (const Point2D& p) const
-{
-  Vector3 v(p.x, p.y, 0.0);
-  Vector3 w = transform_*v;
-  Point2D p2(w.x(), w.y());
-  ROS_DEBUG_STREAM_NAMED ("transform", "Transformed " << p << " to " << p2);
-  return Point2D(w.getX(), w.getY());
-}
-
-Point2D TopologicalMap::MapImpl::inverseTransformPoint (const Point2D& p) const
-{
-  Vector3 v(p.x, p.y, 0.0);
-  Vector3 w = transform_.inverse()*v;
-  return Point2D(w.getX(), w.getY());
-}  
-
-OutletInfo transformOutlet (const Transform& transform, const OutletInfo& outlet) 
-{
-  Vector3 v(outlet.x, outlet.y, outlet.z);
-  Quaternion q(outlet.qx, outlet.qy, outlet.qz, outlet.qw);
-  Pose p(q,v);
-  Pose p2 = transform*p;
-  OutletInfo o2(outlet);
-  Quaternion q2 = p2.getRotation();
-  Vector3 v2 = p2.getOrigin();
-  o2.x = v2.getX();
-  o2.y = v2.getY();
-  o2.z = v2.getZ();
-  o2.qx = q2.x();
-  o2.qy = q2.y();
-  o2.qz = q2.z();
-  o2.qw = q2.w();
-  return o2;
-}
-
-Point32 transform (const Transform& transform, const Point32& p)
-{
-  Vector3 v(p.x, p.y, p.z);
-  Vector3 v2 = transform*v;
-  Point32 p2;
-  p2.x = v2.x();
-  p2.y = v2.y();
-  p2.z = v2.z();
-  return p2;
-}
 
 RegionPtr TopologicalMap::MapImpl::squareRegion (const Point2D& p, const double radius) const
 {
@@ -415,7 +369,7 @@ void TopologicalMap::MapImpl::writeGridAndOutletData (const string& filename) co
     TiXmlElement* outlet = new TiXmlElement("outlet");
     outlets->LinkEndChild(outlet);
 
-    OutletInfo outlet_info = transformOutlet(transform_, outletInfo(id));
+    OutletInfo outlet_info = outletInfo(id);
     Point2D p(outlet_info.x, outlet_info.y);
     Cell2D cell = containingCell(p);
     outlet->LinkEndChild(makeXmlElt("row", cell.r));
@@ -437,6 +391,8 @@ void TopologicalMap::MapImpl::writeGridAndOutletData (const string& filename) co
   ROS_DEBUG_NAMED ("io", "Done writing gui input data");
 
 }
+
+
 
 
 typedef unsigned char uchar;
@@ -567,22 +523,21 @@ ObstacleDistanceArray computeObstacleDistances(GridPtr grid)
     
 
 TopologicalMap::MapImpl::MapImpl(const OccupancyGrid& grid, double resolution, double door_open_prior_prob, 
-                                 double door_reversion_rate, double locked_door_cost, const Transform& transform) :
+                                 double door_reversion_rate, double locked_door_cost) :
   grid_(new OccupancyGrid(grid)), obstacle_distances_(computeObstacleDistances(grid_)), region_graph_(new RegionGraph), 
   roadmap_(new Roadmap), grid_graph_(new GridGraph(grid_)), door_open_prior_prob_(door_open_prior_prob), 
-  door_reversion_rate_(door_reversion_rate), locked_door_cost_(locked_door_cost), resolution_(resolution),
-  transform_(transform)
+  door_reversion_rate_(door_reversion_rate), locked_door_cost_(locked_door_cost), resolution_(resolution)
 {
 }
 
 TopologicalMap::MapImpl::MapImpl (istream& str, double door_open_prior_prob, double door_reversion_rate,
-                                  double locked_door_cost, const Transform& transform) : 
+                                  double locked_door_cost) :
   grid_(readGrid(str)), obstacle_distances_(computeObstacleDistances(grid_)), region_graph_(readRegionGraph(str)), 
   roadmap_(readRoadmap(str)), grid_graph_(new GridGraph(grid_)),
   region_connector_map_(readRegionConnectorMap(str)), door_open_prior_prob_(door_open_prior_prob),
   door_reversion_rate_(door_reversion_rate), locked_door_cost_(locked_door_cost), 
   region_door_map_(readRegionDoorMap(str, door_open_prior_prob_)), 
-  outlets_(readOutlets(str)), resolution_(readResolution(str)), transform_(transform)
+  outlets_(readOutlets(str)), resolution_(readResolution(str))
 {
 }
 
@@ -635,17 +590,7 @@ Door TopologicalMap::MapImpl::regionDoor (RegionId id) const
   if (iter==region_door_map_.end()) {
     throw NoDoorInRegionException(id);
   }
-  Door door = iter->second->getDoorMessage();
-  
-  Transform inv = transform_.inverse();
-  ROS_DEBUG_STREAM_NAMED ("transform", "door has pts " << door.frame_p1.x << ", " << door.frame_p1.y << " and " << door.frame_p2.x << ", " << door.frame_p2.y);
-  door.frame_p1 = transform(inv,door.frame_p1);
-  door.frame_p2 = transform(inv,door.frame_p2);
-  door.door_p1 = transform(inv,door.door_p1);
-  door.door_p2 = transform(inv,door.door_p2);
-  door.handle = transform(inv, door.handle);
-  ROS_DEBUG_STREAM_NAMED ("transform", "door has pts " << door.frame_p1.x << ", " << door.frame_p1.y << " and " << door.frame_p2.x << ", " << door.frame_p2.y);
-  return door;
+  return iter->second->getDoorMessage();
 }
 
 void TopologicalMap::MapImpl::observeDoorMessage (RegionId id, const Door& msg)
@@ -654,20 +599,13 @@ void TopologicalMap::MapImpl::observeDoorMessage (RegionId id, const Door& msg)
     throw NotDoorwayRegionException(id);
   }
 
-  Door msg2(msg);
-  msg2.frame_p1 = transform(transform_,msg.frame_p1);
-  msg2.frame_p2 = transform(transform_,msg.frame_p2);
-  msg2.door_p1 = transform(transform_,msg.door_p1);
-  msg2.door_p2 = transform(transform_,msg.door_p2);
-  msg2.handle = transform(transform_,msg.handle);
-
   RegionDoorMap::iterator iter = region_door_map_.find(id);
   if (iter==region_door_map_.end()) {
     region_door_map_[id] = DoorInfoPtr(new DoorInfo(door_open_prior_prob_));
-    region_door_map_[id]->observeDoorMessage(msg2);
+    region_door_map_[id]->observeDoorMessage(msg);
   }
   else {
-    iter->second->observeDoorMessage(msg2);
+    iter->second->observeDoorMessage(msg);
   }
 }
 
@@ -724,8 +662,8 @@ void TopologicalMap::MapImpl::setDoorCost (RegionId id, const Time& t)
     for (ConnectorVector::iterator c1=connectors.begin(); c1!=connectors.end(); ++c1) 
       for (ConnectorVector::iterator c2=connectors.begin(); c2!=connectors.end(); ++c2)
         if (*c1!=*c2) {
-          Cell2D cell1 = containingCell(transformPoint(connectorPosition(*c1)));
-          Cell2D cell2 = containingCell(transformPoint(connectorPosition(*c2)));
+          Cell2D cell1 = containingCell(connectorPosition(*c1));
+          Cell2D cell2 = containingCell(connectorPosition(*c2));
           bool found;
           double distance;
           tie (found, distance) = grid_graph_->distanceBetween(cell1, cell2);
@@ -780,12 +718,9 @@ struct CloserTo
 
 OutletId TopologicalMap::MapImpl::nearestOutlet (const Point2D& p) const
 {
-  Point2D p2 = transformPoint(p);
-  //For now, assume outlet data is untransformed
-  //Point2D p2=p;
-  OutletVector::const_iterator pos = min_element(outlets_.begin(), outlets_.end(), CloserTo(p2.x, p2.y));
+  OutletVector::const_iterator pos = min_element(outlets_.begin(), outlets_.end(), CloserTo(p.x, p.y));
   if (pos==outlets_.end()) 
-    throw NoOutletException(p2.x, p2.y);
+    throw NoOutletException(p.x, p.y);
   return 1+(pos-outlets_.begin());
 }
 
@@ -797,7 +732,6 @@ void TopologicalMap::MapImpl::observeOutletBlocked (const OutletId id)
 OutletInfo TopologicalMap::MapImpl::outletInfo (const OutletId id) const
 {
   return getOutletInfo(outlets_,id);
-  //return transformOutlet(transform_.inverse(), getOutletInfo(outlets_,id)); // makes a copy
 }
 
 OutletId TopologicalMap::MapImpl::addOutlet (const OutletInfo& outlet)
@@ -843,14 +777,14 @@ bool closerToObstacles (const ObstacleDistanceArray& distances, const Cell2D& c1
 
 Point2D TopologicalMap::MapImpl::outletApproachPosition (const OutletId id, const double r1, const double r2) const
 {
-  RegionPtr region = squareRegion(outletApproachCenter(transformOutlet(transform_, outletInfo(id)), r1), r2);
+  RegionPtr region = squareRegion(outletApproachCenter(outletInfo(id), r1), r2);
   Region::iterator pos = max_element(region->begin(), region->end(), bind(closerToObstacles, ref(obstacle_distances_), _1, _2));
   
   if (pos==region->end() || obstacle_distances_[pos->r][pos->c]==0) 
     throw NoApproachPositionException(id,r1,r2);
 
   ROS_DEBUG_STREAM_NAMED ("outlet_approach", " closest cell is " << *pos);
-  return inverseTransformPoint(cellCenter(*pos, resolution_));
+  return cellCenter(*pos, resolution_);
 }
   
 
@@ -906,7 +840,7 @@ struct NeighborFinder
   const ObstacleDistanceArray& obstacle_distances;
 };
 
-RegionId TopologicalMap::MapImpl::addRegion (const RegionPtr region, const int type)
+RegionId TopologicalMap::MapImpl::addRegion (const RegionPtr region, const int type, bool update_distances)
 {
   RegionId region_id = region_graph_->addRegion(region, type);
   RegionIdVector neighbors = region_graph_->neighbors(region_id);
@@ -937,6 +871,19 @@ RegionId TopologicalMap::MapImpl::addRegion (const RegionPtr region, const int t
     region_connector_map_[RegionPair(r1,r2)] = make_tuple(connector_id, neighbor_finder.cell1, neighbor_finder.cell2);
   }
 
+  if (update_distances)
+    updateDistances (region_id);
+
+  return region_id;
+}
+
+
+void TopologicalMap::MapImpl::updateDistances (const RegionId region_id)
+{
+  ROS_DEBUG_STREAM_NAMED ("update_distances", "Updating connector distances for region " << region_id);
+  RegionIdVector neighbors = region_graph_->neighbors(region_id);
+
+
   // Compute the distance from the new connector to all connectors touching either of the adjacent regions
   // 1. Loop over neighbors of new region (and corresponding connector)
   for (RegionIdVector::iterator iter=neighbors.begin(); iter!=neighbors.end(); ++iter) {
@@ -949,6 +896,10 @@ RegionId TopologicalMap::MapImpl::addRegion (const RegionPtr region, const int t
     ConnectorId connector_id = rc_pos->second.get<0>();
     Cell2D cell = rc_pos->second.get<1>();
 
+    vector<Cell2D> other_connector_cells;
+    vector<ConnectorId> other_connectors;
+
+
     // 2. Loop over which of the two adjacent regions to consider
     for (char first_region=0; first_region<2; ++first_region) {
       RegionId r = first_region ? r1 : r2;
@@ -958,7 +909,7 @@ RegionId TopologicalMap::MapImpl::addRegion (const RegionPtr region, const int t
       
       RegionIdVector connector_neighbors = region_graph_->neighbors(r);
 
-      // 3. Loop over which of the neighboring regions (and corresponding connectors) to find path to
+      // Loop over which of the neighboring regions (and corresponding connectors) to find path to
       for (RegionIdVector::iterator region_iter=connector_neighbors.begin(); region_iter!=connector_neighbors.end(); ++region_iter) {
 
         // Proceed only if the regions and connectors are different
@@ -970,20 +921,21 @@ RegionId TopologicalMap::MapImpl::addRegion (const RegionPtr region, const int t
           if (other_connector!=connector_id) {
             ROS_DEBUG_STREAM_NAMED("add_region", "Considering other connector " << other_connector << " in region " << *region_iter);
 
-            // Compute shortest path
-            Cell2D other_connector_cell=pos->second.get<1>();
-            bool found;
-            double distance;
-            tie(found, distance) = grid_graph_->distanceBetween(cell, other_connector_cell);
-            if (found) {
-              roadmap_->setCost(other_connector, connector_id, resolution_*distance);
-            }
+            other_connectors.push_back(other_connector);
+            other_connector_cells.push_back(pos->second.get<1>());
           }
         }
       }
     }
+
+    // 3. Do the shortest path computations all at once for the connector in the outer loop
+    vector<pair<bool,double> > costs = grid_graph_->singleSourceCosts(cell, other_connector_cells);
+
+    for (uint i=0; i<other_connectors.size(); i++) 
+      if (costs[i].first) 
+        roadmap_->setCost(other_connectors[i], connector_id, resolution_*costs[i].second);
+
   }
-  return region_id;
 }
 
 
@@ -1010,26 +962,29 @@ Point2D TopologicalMap::MapImpl::findBorderPoint(const Cell2D& cell1, const Cell
 
 RegionId TopologicalMap::MapImpl::containingRegion (const Point2D& p) const
 {
-  Point2D p2 = transformPoint(p);
-  Cell2D c=containingCell(p2);
-  ROS_DEBUG_STREAM_NAMED ("point_cell_map", "point " << p2.x << ", " << p2.y << " maps to cell " << c);
+  Cell2D c=containingCell(p);
   return containingRegion(c);
 }
 
 
 ConnectorId TopologicalMap::MapImpl::pointConnector (const Point2D& p) const
 {
-  return roadmap_->pointId(transformPoint(p));
+  return roadmap_->pointId(p);
 }
 
 
 
 Point2D TopologicalMap::MapImpl::connectorPosition (const ConnectorId id) const
 {
-  return inverseTransformPoint(roadmap_->connectorPoint(id));
+  return roadmap_->connectorPoint(id);
 }
 
-
+void TopologicalMap::MapImpl::recomputeConnectorDistances ()
+{
+  foreach (RegionId id, allRegions()) {
+    updateDistances(id);
+  }
+}
 
 vector<ConnectorId> TopologicalMap::MapImpl::adjacentConnectors (const RegionId id) const
 {
@@ -1130,23 +1085,23 @@ ReachableCost TopologicalMap::MapImpl::goalDistance (ConnectorId id) const
 
 ReachableCost TopologicalMap::MapImpl::getDistance (const Point2D& p1, const Point2D& p2)
 {
-  TemporaryRoadmapNode start(this, transformPoint(p1));
-  TemporaryRoadmapNode goal(this, transformPoint(p2));
+  TemporaryRoadmapNode start(this, p1);
+  TemporaryRoadmapNode goal(this, p2);
   return roadmap_->costBetween(start.id, goal.id);
 }
 
 vector<pair<ConnectorId, double> > TopologicalMap::MapImpl::connectorCosts (const Point2D& p1, const Point2D& p2)
 {
-  TemporaryRoadmapNode start(this, transformPoint(p1));
-  TemporaryRoadmapNode goal(this, transformPoint(p2));
+  TemporaryRoadmapNode start(this, p1);
+  TemporaryRoadmapNode goal(this, p2);
   return roadmap_->connectorCosts(start.id, goal.id);
 }
 
 vector<pair<ConnectorId, double> > TopologicalMap::MapImpl::connectorCosts (const Point2D& p1, const Point2D& p2, const Time& t)
 {
   setDoorCosts(t);
-  TemporaryRoadmapNode start(this, transformPoint(p1));
-  TemporaryRoadmapNode goal(this, transformPoint(p2));
+  TemporaryRoadmapNode start(this, p1);
+  TemporaryRoadmapNode goal(this, p2);
   return roadmap_->connectorCosts(start.id, goal.id);
 }
 
@@ -1202,13 +1157,13 @@ TopologicalMap::MapImpl::TemporaryRoadmapNode::~TemporaryRoadmapNode ()
  ************************************************************/
 
 TopologicalMap::TopologicalMap (const OccupancyGrid& grid, double resolution, double door_open_prior_prob, 
-                                double door_reversion_rate, double locked_door_cost, const Transform& transform) 
-  : map_impl_(new MapImpl(grid, resolution, door_open_prior_prob, door_reversion_rate, locked_door_cost, transform))
+                                double door_reversion_rate, double locked_door_cost)
+  : map_impl_(new MapImpl(grid, resolution, door_open_prior_prob, door_reversion_rate, locked_door_cost))
 {
 }
 
-TopologicalMap::TopologicalMap(istream& str, double door_open_prior_prob, double door_reversion_rate, double locked_door_cost, const Transform& transform) 
-  : map_impl_(new MapImpl(str, door_open_prior_prob, door_reversion_rate, locked_door_cost, transform))
+TopologicalMap::TopologicalMap(istream& str, double door_open_prior_prob, double door_reversion_rate, double locked_door_cost)
+  : map_impl_(new MapImpl(str, door_open_prior_prob, door_reversion_rate, locked_door_cost))
 {
 }
 
@@ -1324,9 +1279,9 @@ vector<pair<ConnectorId, double> > TopologicalMap::connectorCosts (const Point2D
   return map_impl_->connectorCosts(p1, p2, t);
 }
 
-RegionId TopologicalMap::addRegion(const RegionPtr region, const int type) 
+RegionId TopologicalMap::addRegion(const RegionPtr region, const int type, bool recompute_distances) 
 {
-  return map_impl_->addRegion(region, type);
+  return map_impl_->addRegion(region, type, recompute_distances);
 }
 
 void TopologicalMap::removeRegion (const RegionId id)
@@ -1390,7 +1345,10 @@ void TopologicalMap::writeGridAndOutletData (const string& filename) const
   map_impl_->writeGridAndOutletData (filename);
 }
   
-  
+void TopologicalMap::recomputeConnectorDistances ()
+{
+  map_impl_->recomputeConnectorDistances();
+}
 
 
 

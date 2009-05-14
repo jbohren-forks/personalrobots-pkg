@@ -43,6 +43,7 @@
 #include <boost/program_options.hpp>
 #include <boost/tokenizer.hpp>
 #include <boost/bind.hpp>
+#include <boost/ref.hpp>
 #include <cmath>
 #include <iostream>
 #include <fstream>
@@ -221,7 +222,9 @@ typedef vector<DoorFramePoints> DoorFrameVector;
 struct AddRegions
 {
   AddRegions (TopologicalMapPtr map, const DoorRegionVector& door_regions, const DoorFrameVector& door_info) : 
-    map(map), door_regions(door_regions), door_info(door_info) {}
+    map(map), door_regions(door_regions), door_info(door_info), is_copy(false) {}
+
+  AddRegions (const AddRegions& r) : map(r.map), door_regions(r.door_regions), door_info(r.door_info), is_copy(true) {}
 
   void operator() (RegionPtr region)
   {
@@ -229,7 +232,7 @@ struct AddRegions
       Cell2D cell = *(region->begin());
       DoorRegionVector::const_iterator pos = find_if(door_regions.begin(), door_regions.end(), Contains(cell));
       RegionType type = pos==door_regions.end() ? OPEN : DOORWAY;
-      RegionId id = map->addRegion(region, type);
+      RegionId id = map->addRegion(region, type, false);
       if (type == DOORWAY) {
         DoorFramePoints frame_points = door_info[pos-door_regions.begin()];
         map->observeDoorMessage(id, initialDoorEstimate(frame_points));
@@ -240,9 +243,16 @@ struct AddRegions
     }
   }
 
+  ~AddRegions()
+  {
+    //if (!is_copy) 
+      //map->recomputeConnectorDistances();
+  }
+
   TopologicalMapPtr map;
   const DoorRegionVector& door_regions;
   const DoorFrameVector& door_info;
+  bool is_copy;
 };
 
 
@@ -269,6 +279,7 @@ TopologicalMapPtr groundTruthTopologicalMap (const OccupancyGrid& grid, const Do
   for_each (outlets.begin(), outlets.end(), bind(&TopologicalMap::addOutlet, map, _1));
 
   ROS_DEBUG_NAMED("ground_truth_map", "Done creating map from grid.  Adding door regions");
+
   for_each (comps.begin(), comps.end(), AddRegions(map, door_regions, door_info));
 
   return map;
@@ -296,17 +307,17 @@ DoorFrameVector loadDoorsFromFile (const string& filename, const double resoluti
     TiXmlHandle hinge = door_handle.FirstChildElement("hinge");
     TiXmlHandle end = door_handle.FirstChildElement("end");
     TiXmlHandle orientation_node = door_handle.FirstChildElement("orientation");
-    
-    uint c1 = atoi(hinge.FirstChildElement("row").FirstChild().Node()->Value());
-    uint c2 = atoi(end.FirstChildElement("row").FirstChild().Node()->Value());
-    uint r1 = atoi(hinge.FirstChildElement("column").FirstChild().Node()->Value());
-    uint r2 = atoi(end.FirstChildElement("column").FirstChild().Node()->Value());
+
+    double x1=atof(hinge.FirstChildElement("x").FirstChild().Node()->Value());
+    double y1=atof(hinge.FirstChildElement("y").FirstChild().Node()->Value());
+    double x2=atof(end.FirstChildElement("x").FirstChild().Node()->Value());
+    double y2=atof(end.FirstChildElement("y").FirstChild().Node()->Value());
+
+    Point2D p1(x1,y1);
+    Point2D p2(x2,y2);
 
     string orientation = orientation_node.FirstChild().Node()->Value();
     bool clockwise = (orientation=="clockwise");
-    
-    Point2D p1 = cellToPoint(Cell2D(r1,c1), resolution);
-    Point2D p2 = cellToPoint(Cell2D(r2,c2), resolution);
     
     doors.push_back(DoorFramePoints(p1,p2,clockwise));
   }

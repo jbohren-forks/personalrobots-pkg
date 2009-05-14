@@ -89,9 +89,7 @@ int main (int argc, char* argv[])
   }
 
   ifstream str3(top_map_file.c_str());
-  double dx=-.4;
-  tf::Transform trans(tf::Quaternion(.015,0,0), tf::Vector3(dx,0,0));
-  TopologicalMap m3(str3, 1.0, 1e9, 1e9, trans);
+  TopologicalMap m3(str3, 1.0, 1e9, 1e9);
 
   ros::init(argc, argv, "topological_map_visualizer"); 
   tmap::Visualizer v(m3);

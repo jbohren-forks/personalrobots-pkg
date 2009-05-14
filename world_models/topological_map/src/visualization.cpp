@@ -99,9 +99,9 @@ struct DrawDoors
     hinge_marker.type=Marker::SPHERE;
     hinge_marker.action=Marker::ADD;
     hinge_marker.color.a=1.0;
-    hinge_marker.scale.x=0.6;
-    hinge_marker.scale.y=0.6;
-    hinge_marker.scale.z=0.6;
+    hinge_marker.scale.x=0.3;
+    hinge_marker.scale.y=0.3;
+    hinge_marker.scale.z=0.3;
     hinge_marker.pose.orientation.x=1.0;
     hinge_marker.color.r=0;
     hinge_marker.color.g=0;
@@ -175,6 +175,7 @@ void drawOutlet (const OutletId id, const TopologicalMap& m, const Publisher& pu
   pub.publish(marker);
 
   // Approach position
+  try {
   Point2D approach_position = m.outletApproachPosition(id, OUTLET_APPROACH_DISTANCE, OUTLET_APPROACH_DISTANCE/4);
   Marker approach_marker;
   approach_marker.id = id+3000;
@@ -191,7 +192,8 @@ void drawOutlet (const OutletId id, const TopologicalMap& m, const Publisher& pu
   approach_marker.pose.position.x = approach_position.x;
   approach_marker.pose.position.y = approach_position.y;
   pub.publish(approach_marker);
-  
+  }
+  catch (NoApproachPositionException& e) {}
 }
 
 

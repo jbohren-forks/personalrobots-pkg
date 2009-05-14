@@ -66,10 +66,10 @@ class TopologicalMap::MapImpl
 public:
 
   /// Default constructor creates empty graph
-  MapImpl(const OccupancyGrid& grid, double resolution, double door_open_prior_prob, double door_reversion_rate, double locked_door_cost, const tf::Transform& transform);
+  MapImpl(const OccupancyGrid& grid, double resolution, double door_open_prior_prob, double door_reversion_rate, double locked_door_cost);
 
   /// Constructor that reads from a stream
-  MapImpl(istream& stream, double door_open_prior_prob, double door_reversion_rate, double locked_door_cost, const tf::Transform& transform);
+  MapImpl(istream& stream, double door_open_prior_prob, double door_reversion_rate, double locked_door_cost);
 
   /// \return Id of region containing \a p
   /// \throws UnknownCell2DException
@@ -190,9 +190,10 @@ public:
   vector<pair<ConnectorId, double> > connectorCosts (const Point2D& p1, const Point2D& p2, const Time& time);
 
   /// \post New region has been added
+  /// \param update_distances whether to update distances between connectors
   /// \return Id of new region
   /// \throws OverlappingRegionException
-  RegionId addRegion (const RegionPtr region, const int region_type);
+  RegionId addRegion (const RegionPtr region, int region_type, bool update_distances);
 
   /// \post Region no longer exists
   /// \throws UnknownRegionException
@@ -217,6 +218,11 @@ public:
   /// \post Sets the rate at which door states revert to their prior probability after an observation.
   /// \param rate must be > 0.  
   void setDoorReversionRate (double rate) { ROS_ASSERT (rate>0.0); door_reversion_rate_ = rate; }
+
+  /// \post inter-connector distances are correct
+  /// only used internally
+  void recomputeConnectorDistances ();
+
 private: 
 
   // During the lifetime of an instance of this class, a temporary node will exist in the connector graph at point p
@@ -239,9 +245,7 @@ private:
   bool pointOnMap (const Point2D& p) const;
   void setDoorCost (RegionId id, const Time& t);
   void setDoorCosts (const Time& t);
-
-  Point2D transformPoint(const Point2D& p) const;
-  Point2D inverseTransformPoint(const Point2D& p) const;
+  void updateDistances (const RegionId region_id);
 
   RegionPtr squareRegion (const Point2D& p, double radius) const;
 
@@ -266,8 +270,6 @@ private:
   OutletVector outlets_;
  
   const double resolution_;
-
-  const tf::Transform transform_;
 
 };
 

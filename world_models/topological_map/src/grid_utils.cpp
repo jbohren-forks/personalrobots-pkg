@@ -31,6 +31,7 @@
 #include <topological_map/grid_utils.h>
 #include <fstream>
 #include <string>
+#include <sstream>
 #include <algorithm>
 #include <ros/console.h>
 #include <topological_map/exception.h>
@@ -41,22 +42,35 @@ namespace topological_map
 using std::string;
 using std::max;
 using std::min;
+using std::stringstream;
 
 OccupancyGrid loadOccupancyGrid (const string& filename)
 {
   std::ifstream str(filename.c_str());
 
-  string type;
-  str >> type;
+  string type="#";
+  while (type[0]=='#') 
+    getline(str, type);
+
   if (type!="P5") {
     throw GridFileTypeException(type);
   }
 
   uint width, height, maxgrey;
-  str >> width >> height >> maxgrey;
-  char line[100];
-  str.getline(line, 100);
-  
+
+  string line="#";
+  while (line[0]=='#') 
+    getline(str, line);
+  stringstream ss(line);
+  ss >> width >> height;
+
+  line="#";
+  while (line[0]=='#') {
+    getline(str, line);
+  }
+  stringstream ss2(line);
+  ss2 >> maxgrey;
+
   ROS_INFO_STREAM_NAMED ("grid", "Loading " << height << "x" << width << " grid");
   
   char* data = new char[width*height];

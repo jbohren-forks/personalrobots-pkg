@@ -210,6 +210,8 @@ bool operator< (const QueueItem& q1, const QueueItem& q2)
 }
 
 // Homegrown version of dijkstra_shortest_paths for efficiency
+// My guess is that bgl's version is slower because it scales with log(num nodes in entire graph)
+// even though the algorithm only actually needs to touch the nodes in this connected component
 ReachableCostVector GridGraph::singleSourceCosts (const Cell2D& source, const vector<Cell2D>& dests)
 {
   uint n=0;

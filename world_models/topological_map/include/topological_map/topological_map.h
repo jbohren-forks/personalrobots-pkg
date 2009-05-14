@@ -42,7 +42,6 @@
 #include <door_msgs/Door.h>
 #include <topological_map/outlet_info.h>
 #include <ros/time.h>
-#include <tf/transform_datatypes.h>
 
 namespace topological_map
 {
@@ -96,20 +95,18 @@ public:
   /// \param door_open_prior_prob Unobserved doors revert over time to this probability of being open.
   /// \param door_reversion_rate If you don't observe the door for this many seconds, its probability will return about halfway to its prior value
   /// \param locked_door_cost Cost of locked door
-  /// \param transform Transform from the outside world's coordinates to the topological map frame
   /// The default values of the parameters cause doors to start out open for sure, and once observed locked, they stay that way for about 1e8 seconds
   TopologicalMap(const OccupancyGrid&, double resolution=DEFAULT_RESOLUTION, double door_open_prior_prob=DEFAULT_DOOR_OPEN_PRIOR_PROB, 
-                 double door_reversion_rate=DEFAULT_DOOR_REVERSION_RATE, double locked_door_cost=DEFAULT_LOCKED_DOOR_COST, const tf::Transform& transform=tf::Transform::getIdentity());
+                 double door_reversion_rate=DEFAULT_DOOR_REVERSION_RATE, double locked_door_cost=DEFAULT_LOCKED_DOOR_COST);
 
   /// Constructor that reads map from a stream
   /// \todo identify error conditions
   /// \param door_open_prior_prob Unobserved doors revert over time to this probability of being open
   /// \param door_reversion_rate If you don't observe the door for this many seconds, its probability will return about halfway to its prior value
   /// \param locked_door_cost Cost of locked door
-  /// \param transform Transform from the outside world's coordinates to the topological map frame
   /// The default values of the parameters cause doors to start out open for sure, and once observed locked, they stay that way for about 1e8 seconds
   TopologicalMap(istream& stream, double door_open_prior_prob=DEFAULT_DOOR_OPEN_PRIOR_PROB, double door_reversion_rate=DEFAULT_DOOR_REVERSION_RATE, 
-                 double locked_door_cost=DEFAULT_LOCKED_DOOR_COST, const tf::Transform& transform=tf::Transform::getIdentity());
+                 double locked_door_cost=DEFAULT_LOCKED_DOOR_COST);
 
   /// \post Topological map is written to \a stream in format that can be read back using the stream constructor.  All state is saved except for the currently set goal.
   void writeToStream (ostream& stream) const;
@@ -230,10 +227,11 @@ public:
   /// \param time Door costs are measured at this time
   vector<pair<ConnectorId, double> > connectorCosts (const Point2D& p1, const Point2D& p2, const Time& time);
 
+  /// \param recompute_distances If this is false, connector distances won't be updated.  Call recomputeConnectorDistances later if necessary.
   /// \post New region has been added.  Based on cell2d connectivity, the region is connected to existing regions, and connectors are added, as necessary.
   /// \return Id of new region, which will be 1+the highest previously seen region id (or 0)
   /// \throws OverlappingRegionException
-  RegionId addRegion (const RegionPtr region, int region_type);
+  RegionId addRegion (const RegionPtr region, int region_type, bool recompute_distances=true);
 
   /// \post Region no longer exists
   /// \throws UnknownRegionException
@@ -243,6 +241,8 @@ public:
   /// Output a ppm representation of the topological map to \a stream
   void writePpm (ostream& str) const;
 
+  /// \post inter-connector distances are correct
+  void recomputeConnectorDistances ();
 
 private:
 

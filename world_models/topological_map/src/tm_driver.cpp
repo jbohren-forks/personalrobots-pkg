@@ -124,8 +124,7 @@ int main (int argc, char* argv[])
   
   ifstream str3("/u/bhaskara/local/top/willow.tmap");
   double dx=-.4;
-  tf::Transform trans(tf::Quaternion(.015,0,0), tf::Vector3(dx,0,0));
-  TopologicalMap m3(str3, 1.0, 1e9, 1e9, trans);
+  TopologicalMap m3(str3, 1.0, 1e9, 1e9);
 
   cout << "Approach position of outlet 1 at radius 2, .4 is " << m3.outletApproachPosition(1,2,.4) << endl;
   cout << "Approach position of outlet 1 at radius 3, .3 is " << m3.outletApproachPosition(1,3,.3) << endl;
