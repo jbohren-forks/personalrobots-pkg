@@ -515,12 +515,12 @@ private:
 
   void checkFailures()
   {
-    if (last_failure_warning_.isZero())
+    if (next_failure_warning_.isZero())
     {
-      last_failure_warning_ = ros::Time::now() - ros::Duration(45);
+      next_failure_warning_ = ros::Time::now() + ros::Duration(15);
     }
 
-    if (ros::Time::now() - last_failure_warning_ > ros::Duration(60))
+    if (ros::Time::now() >= next_failure_warning_)
     {
       if (incoming_message_count_ - message_count_ == 0)
       {
@@ -531,7 +531,7 @@ private:
       if (dropped_pct > 0.95)
       {
         NOTIFIER_WARN("Dropped %.2f%% of messages so far. Please turn the [%s.message_notifier] rosconsole logger to DEBUG for more information.", dropped_pct*100, ROSCONSOLE_DEFAULT_NAME);
-        last_failure_warning_ = ros::Time::now();
+        next_failure_warning_ = ros::Time::now() + ros::Duration(60);
 
         if ((double)failed_out_the_back_count_ / (double)dropped_message_count_ > 0.5)
         {
@@ -576,7 +576,7 @@ private:
   ros::Time last_out_the_back_stamp_;
   std::string last_out_the_back_frame_;
 
-  ros::Time last_failure_warning_;
+  ros::Time next_failure_warning_;
 
   ros::Duration time_tolerance_; ///< Provide additional tolerance on time for messages which are stamped but can have associated duration
 };
