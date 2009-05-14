@@ -18,7 +18,7 @@
  *
  */
 
-/*! \mainpage
+/* \mainpage hokuyo_node
  *  \htmlinclude manifest.html
  */
 
@@ -133,6 +133,9 @@ namespace hokuyo
      * wraps fopen, with some additional calls to tcsetattr.
      * 
      * \param port_name   A character array containing the name of the port
+     *
+     * \param LaserIsHokuyoModel04LX  Indicates that SCPI1.0 should be used
+     * to communicate with a URG 04LX unit.
      *
      */
     void open(const char * port_name, bool LaserIsHokuyoModel04LX = false);

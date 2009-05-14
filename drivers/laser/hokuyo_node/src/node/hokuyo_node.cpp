@@ -34,13 +34,14 @@
 
 /**
 
-@mainpage
+@mainpage hokuyo_node
 
 @htmlinclude manifest.html
 
 @b hokuyo_node is a driver for SCIP2.0 compliant Hokuyo laser range-finders.
 This driver has been designed, primarliy with the Hokuyo UTM-30LX in mind, also
-known as the Hokuyo Top-URG.
+known as the Hokuyo Top-URG. The driver has been extended to support some SCIP1.0 compliant 
+range-finders such as the URG-04LX.
 
 <hr>
 
