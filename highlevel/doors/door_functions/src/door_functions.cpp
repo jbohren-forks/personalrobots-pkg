@@ -143,7 +143,6 @@ namespace door_functions{
 
     // make normal point in direction we travel through door
     Vector dir(door.travel_dir.x, door.travel_dir.y, door.travel_dir.z);
-    dir.Normalize();
     if (dot(dir, normal) < 0)
       normal = normal * -1.0;
 

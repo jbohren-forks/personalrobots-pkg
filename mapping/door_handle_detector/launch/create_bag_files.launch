@@ -21,7 +21,6 @@
   <node pkg="point_cloud_assembler" type="point_cloud_snapshotter" output="screen" name="point_cloud_snapshotter">
     <remap from="laser_scanner_signal" to="laser_tilt_controller/laser_scanner_signal"/>
     <remap from="build_cloud" to="laser_scan_assembler/build_cloud" />
-    <remap from="full_cloud" to="handle_cloud" />
   </node>
 
 
@@ -29,7 +28,7 @@
   <node pkg="stereo_image_proc" type="stereoproc" respawn="false" machine="four" />
 
 <!-- base -->
-<include file="$(find pr2_alpha)/teleop_joystick.launch" />
+  <include file="$(find pr2_alpha)/teleop_joystick.launch" />
 
 
 </launch>
