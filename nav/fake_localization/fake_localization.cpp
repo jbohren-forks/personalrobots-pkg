@@ -103,7 +103,8 @@ public:
       m_particleCloud.set_particles_size(1);
       notifier = new tf::MessageNotifier<robot_msgs::PoseWithRatesStamped>(m_tfListener, this, 
                                                                            boost::bind(&FakeOdomNode::update, this, _1),
-                                                                           "base_pose_ground_truth_BOGUS(MANUALLY STUFFING)", odom_frame_id_, 100);
+                                                                           "",//empty topic it will be manually stuffed
+                                                                           odom_frame_id_, 100);
       subscribe("base_pose_ground_truth", m_basePosMsg, &FakeOdomNode::basePosReceived,1);
     }
     
