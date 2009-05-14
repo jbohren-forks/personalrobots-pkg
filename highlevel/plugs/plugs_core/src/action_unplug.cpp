@@ -116,7 +116,7 @@ void  UnplugAction::checkUnplug()
 
   node_->publish(arm_controller_ + "/command", tff_msg_);
 
-  if(fabs(controller_state_msg_.last_pose_meas.vel.x + 0.1) < 0.02)
+  if(fabs(controller_state_msg_.last_pose_meas.vel.x + BACKOFF) < 0.02)
   {
     ROS_DEBUG("%s: succeeded.", action_name_.c_str());
     deactivate(robot_actions::SUCCESS, empty_);
