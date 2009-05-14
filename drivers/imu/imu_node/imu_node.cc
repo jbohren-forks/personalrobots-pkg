@@ -235,9 +235,9 @@ public:
       reading.header.stamp = ros::Time().fromNSec(time);
       reading.header.frame_id = frameid_;
 
-      ROS_DEBUG("About to publish imu_data")
+      ROS_DEBUG("About to publish imu_data");
       publish("imu_data", reading);
-      ROS_DEBUG("Done publishing imu_data")
+      ROS_DEBUG("Done publishing imu_data");
         
     } catch (ms_3dmgx2_driver::Exception& e) {
       ROS_INFO("Exception thrown while trying to get the IMU reading.\n%s", e.what());
