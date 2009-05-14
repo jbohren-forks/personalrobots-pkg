@@ -14,7 +14,7 @@
     <include file="$(find 2dnav_gazebo)/2dnav-stack-amcl.launch"/>
 
     <!-- for visualization -->
-    <include file="$(find 2dnav_pr2)/rviz_launch.launch"/>
+    <include file="$(find 2dnav_pr2)/rviz_move_base.launch"/>
 
     <!-- for manual control -->
     <!--node pkg="teleop_base" type="teleop_base_keyboard" respawn="false" output="screen" /-->

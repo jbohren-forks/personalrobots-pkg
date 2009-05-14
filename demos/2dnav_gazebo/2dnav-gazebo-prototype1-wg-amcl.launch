@@ -11,8 +11,12 @@
     <include file="$(find 2dnav_gazebo)/2dnav-stack-amcl.launch"/>
 
     <!-- for visualization -->
-    <!--node pkg="rviz" type="rviz" respawn="false" output="screen" /-->
-    <node pkg="nav_view" type="nav_view" respawn="false" output="screen" />
+    <!--
+    <node pkg="nav_view" type="nav_view" respawn="false" output="screen" >
+      <remap from="goal" to="/move_base/activate" />
+    </node>
+    <include file="$(find 2dnav_pr2)/rviz_move_base.launch"/>
+    -->
 
     <!-- for manual control -->
     <!--node pkg="teleop_base" type="teleop_base_keyboard" respawn="false" output="screen" /-->
