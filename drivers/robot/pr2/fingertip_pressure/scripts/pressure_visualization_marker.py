@@ -42,6 +42,7 @@
 import roslib
 roslib.load_manifest('fingertip_pressure')
 import rospy
+import threading
 
 from fingertip_pressure.msg import PressureInfo, PressureInfoElement
 from ethercat_hardware.msg import PressureState
@@ -54,7 +55,7 @@ from fingertip_pressure.colormap import color
 
 class pressureVisualizer:
     def info_callback(self, info):
-        # @todo add locking here
+        self.lock.acquire()
         self.frame = []
         self.center = []
         self.hside1 = []
@@ -65,21 +66,26 @@ class pressureVisualizer:
             self.hside1.append(info.sensor[i].halfside1)
             self.hside2.append(info.sensor[i].halfside2)
         self.got_info = True
+        self.lock.release()
         #print "callback"
 
     def callback(self, pressurestate):
+        self.lock.acquire()
         #print "callback"
         self.data0 = pressurestate.data0
         self.data1 = pressurestate.data1
         self.datatimestamp = pressurestate.header.stamp
         self.dataready = True
+        self.lock.release()
 
     def publish(self):
         if self.dataready and self.got_info:
+            self.lock.acquire()
             #print 'publish'
             self.dataready = False
             self.makeVisualization(self.data0, 0)
-            self.makeVisualization(self.data0, 1)
+            self.makeVisualization(self.data1, 1)
+            self.lock.release()
 
     def makeVisualization(self, data, tipnum):
         mk = Marker()
@@ -88,7 +94,7 @@ class pressureVisualizer:
         mk.ns = "pressure/" + mk.header.frame_id + "/line"
         mk.type = Marker.LINE_STRIP
         mk.action = Marker.ADD
-        #mk.lifetime = rospy.Duration(1)
+        mk.lifetime = rospy.Duration(1)
         mk.points = []
         for i in range(0,5):
             mk.points.append(Vector3())
@@ -119,6 +125,7 @@ class pressureVisualizer:
     def __init__(self, source):
         self.got_info = False;
         self.dataready = False
+        self.lock = threading.Lock()
 
         self.vis_pub = rospy.Publisher('visualization_marker', Marker)
         rospy.Subscriber(source, PressureState, self.callback)
@@ -129,6 +136,7 @@ class pressureVisualizer:
 if __name__ == '__main__':
     #@todo it would be nice to read an xml configuration file to get these parameters.
     rospy.init_node('pressure_visualization_marker')
+    rospy.sleep(1)
         
     pv1 = pressureVisualizer('pressure/r_gripper_motor')
     pv2 = pressureVisualizer('pressure/l_gripper_motor')

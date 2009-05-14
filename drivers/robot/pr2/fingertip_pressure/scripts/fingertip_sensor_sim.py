@@ -68,6 +68,7 @@ class pressureSimulator:
 
     def __init__(self, dest):
         rospy.init_node('pressureSimulator', anonymous=True)
+        rospy.sleep(1)
         
         self.pub = rospy.Publisher(dest, PressureState)
         

@@ -68,7 +68,7 @@ coordinates = [
         [ 29.3, 11.0,  0.0,   0.0,  0.0, 10.0,   2.8,  0.0,  0.0 ],    # 0
         [ 16.5,  5.2, 11.5,  12.0,  0.0,  0.0,   0.0,  3.0,  0.0 ],    # 1
         [  0.0,  0.0,  0.0,   0.0,  0.0,  0.0,   0.0,  0.0,  0.0 ],    # 2 fused 
-        [ 35.0,  4.7,  7.1,   0.0,  0.0,  7.1,   0.0, -2.5,  0.0 ],    # 3 CHK x
+        [ 35.0,  4.7,  3.5,   0.0,  0.0,  3.5,   0.0, -2.5,  0.0 ],    # 3 CHK x
         [  0.0,  0.0,  0.0,   0.0,  0.0,  0.0,   0.0,  0.0,  0.0 ],    # 4 mirrored 
         [  0.0,  0.0,  0.0,   0.0,  0.0,  0.0,   0.0,  0.0,  0.0 ],    # 5 mirrored 
         [  0.0,  0.0,  0.0,   0.0,  0.0,  0.0,   0.0,  0.0,  0.0 ],    # 6 mirrored 
@@ -92,10 +92,10 @@ coordinates = [
 # Generate #2 to go from #1 to #3
 coordinates[2][0] = (coordinates[1][0] + coordinates[1][3] + coordinates[3][0]) / 2
 coordinates[2][1] = coordinates[3][1]
-coordinates[2][2] = (coordinates[1][2] + coordinates[3][2] + coordinates[3][6]) / 2
+coordinates[2][2] = (coordinates[1][2] + coordinates[3][2] + coordinates[3][5]) / 2
 coordinates[2][3] = (coordinates[1][0] + coordinates[1][3] - coordinates[3][0]) / 2
-coordinates[2][3] = 0
-coordinates[2][3] = -(coordinates[1][2] - coordinates[3][2] - coordinates[3][6]) / 2
+coordinates[2][4] = 0
+coordinates[2][5] = (coordinates[1][2] - coordinates[3][2] - coordinates[3][5]) / 2
 for i in range(6,9):
     coordinates[2][i] = coordinates[3][i]
 
@@ -124,6 +124,11 @@ translate(8, 7, 1, 1)
 translate(8, 9, -1, 1)
 for i in range(10, 22):
    translate(i-3, i, -1, 2)
+
+# Adjust for actual origin
+for i in range(0,22):
+    coordinates[i][0] = coordinates[i][0] - 4
+    coordinates[i][1] = coordinates[i][1] - 15
 
 def multorientation(data, ori):
     for i in range(0, len(data)):
@@ -170,6 +175,8 @@ class pressureInformationPublisher:
 if __name__ == '__main__':
     #@todo it would be nice to read an xml configuration file to get these parameters.
     rospy.init_node('pressure_info')
+    rospy.sleep(1)
+    
     pip1=pressureInformationPublisher('pressure/r_gripper_motor_info', 
             'r_gripper_l_finger_tip_link', 'r_gripper_r_finger_tip_link')
     pip2=pressureInformationPublisher('pressure/l_gripper_motor_info', 
