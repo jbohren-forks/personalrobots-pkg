@@ -14,4 +14,8 @@ eq_map_pose_msg(g0.object, outside_sachins_office);
 rejectable(doorman.Active g1);
 eq_map_pose_msg(g1.object, inside_sachins_office);
 
+rejectable(driver.Active g2);
+eq_map_pose_msg(g2.object, inside_sachins_office);
+
 g0 before g1;
+g1 before g2;
