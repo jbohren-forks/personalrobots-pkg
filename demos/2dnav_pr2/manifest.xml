@@ -12,6 +12,7 @@
   <depend package="semantic_point_annotator"/>
   <depend package="laser_scan"/>
   <depend package="pr2_mechanism_controllers"/>
+  <depend package="pr2_alpha"/>
   <depend package="map_server"/>
   <depend package="willow_maps"/>
   <depend package="nav"/>
