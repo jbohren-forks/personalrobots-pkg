@@ -347,7 +347,6 @@ UnlatchHandle::Inactive{
       eq(dc.must_find_handle, true);
       eq(dc.found_door, false);
       eq(dc.in_position, false);
-      eq(dc.have_handle, false);
     }
   }
 }
