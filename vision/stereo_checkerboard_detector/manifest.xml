@@ -12,4 +12,7 @@
   <depend package="opencv_latest"/>
   <depend package="image_msgs"/>
   <depend package="topic_synchronizer"/>
+
+  <!-- Include tf to use transform_datatypes library calls -->
+  <depend package="tf" />
 </package>

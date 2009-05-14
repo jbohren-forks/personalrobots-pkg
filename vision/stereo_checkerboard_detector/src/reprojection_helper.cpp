@@ -95,8 +95,8 @@ void ReprojectionHelper::reproject(const std::vector<robot_msgs::Point>& ros_uvd
 {
   const unsigned int N = ros_uvd.size() ;
 
-  CvMat* uvd = cvCreateMat(N, 1, CV_64FC3) ;
-  CvMat* xyz = cvCreateMat(N, 1, CV_64FC3) ;
+  CvMat* uvd = cvCreateMat(N, 1, CV_32FC3) ;
+  CvMat* xyz = cvCreateMat(N, 1, CV_32FC3) ;
 
   for (unsigned int i=0; i<N; i++)
   {

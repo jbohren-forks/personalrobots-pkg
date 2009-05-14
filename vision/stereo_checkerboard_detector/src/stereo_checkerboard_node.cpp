@@ -107,24 +107,24 @@ public:
   {
     ROS_WARN("%f - Timeout", t.toSec()) ;
     if (left_image_msg_.header.stamp != t)
-      printf("- left_image\n") ;
+      printf("- left_image  %f\n", left_image_msg_.header.stamp.toSec()) ;
     else
-      printf("+ left_image\n") ;
+      printf("+ left_image  %f\n", left_image_msg_.header.stamp.toSec()) ;
 
     if (left_info_msg_.header.stamp != t)
-      printf("- left info\n") ;
+      printf("- left info   %f\n", left_info_msg_.header.stamp.toSec()) ;
     else
-      printf("+ left info\n") ;
+      printf("+ left info   %f\n", left_info_msg_.header.stamp.toSec()) ;
 
     if (right_image_msg_.header.stamp != t)
-      printf("- right image\n") ;
+      printf("- right image %f\n", right_image_msg_.header.stamp.toSec()) ;
     else
-      printf("+ right image\n") ;
+      printf("+ right image %f\n", right_image_msg_.header.stamp.toSec()) ;
 
     if (right_info_msg_.header.stamp != t)
-      printf("- right info\n") ;
+      printf("- right info  %f\n", right_info_msg_.header.stamp.toSec()) ;
     else
-      printf("+ right info\n") ;
+      printf("+ right info  %f\n", right_info_msg_.header.stamp.toSec()) ;
   }
 
 private :

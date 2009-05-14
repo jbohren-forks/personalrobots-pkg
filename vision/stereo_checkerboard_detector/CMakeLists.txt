@@ -7,7 +7,9 @@ genmsg()
 rospack_add_boost_directories()
 rospack_add_library(stereo_checkerboard_detector src/mono_checkerboard_helper.cpp
                                               	 src/reprojection_helper.cpp
-                                              	 src/stereo_checkerboard_helper.cpp)
+                                              	 src/stereo_checkerboard_helper.cpp
+                                              	 src/checkerboard_pose_helper.cpp
+                                              	 )
 
 rospack_add_executable(stereo_checkerboard_node src/stereo_checkerboard_node.cpp)
 target_link_libraries(stereo_checkerboard_node stereo_checkerboard_detector)
