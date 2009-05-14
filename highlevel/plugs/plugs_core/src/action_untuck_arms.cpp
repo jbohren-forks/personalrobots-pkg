@@ -117,6 +117,7 @@ UntuckArmsAction::~UntuckArmsAction()
 
 robot_actions::ResultStatus UntuckArmsAction::execute(const std_msgs::Empty& empty, std_msgs::Empty& feedback)
 { 
+  traj_error_=false;
   ROS_DEBUG("%s: executing.", action_name_.c_str());
   if(!ros::service::call(right_arm_controller_ + "/TrajectoryStart", right_traj_req_, traj_res_))
     {
