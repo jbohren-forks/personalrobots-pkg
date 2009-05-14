@@ -161,6 +161,7 @@ bool Joint::initXml(TiXmlElement *elt)
     if (type_ == JOINT_ROTARY && min_ret == TIXML_NO_ATTRIBUTE && max_ret == TIXML_NO_ATTRIBUTE)
     {
       type_ = JOINT_CONTINUOUS;
+      has_safety_limits_ = true;
     }
     else if (min_ret == TIXML_NO_ATTRIBUTE || max_ret == TIXML_NO_ATTRIBUTE)
     {
