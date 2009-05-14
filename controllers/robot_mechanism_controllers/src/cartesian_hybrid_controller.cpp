@@ -157,7 +157,7 @@ bool CartesianHybridController::initXml(mechanism::RobotState *robot, TiXmlEleme
   // Initial mode
 
   if (!node->getParam(name + "/initial_mode", initial_mode_))
-    initial_mode_ = robot_msgs::TaskFrameFormalism::FORCE;
+    initial_mode_ = manipulation_msgs::TaskFrameFormalism::FORCE;
 
   // Saturated velocity
 
@@ -241,7 +241,7 @@ void CartesianHybridController::update()
   // Computes the desired pose
   for (int i = 0; i < 6; ++i)
   {
-    if (mode_[i] == robot_msgs::TaskFrameFormalism::POSITION)
+    if (mode_[i] == manipulation_msgs::TaskFrameFormalism::POSITION)
       pose_desi_[i] = setpoint_[i];
     else
       pose_desi_[i] = 0.0;
@@ -251,9 +251,9 @@ void CartesianHybridController::update()
   pose_error_.vel = tool.p.p - pose_desi_.vel;
   pose_error_.rot =
     diff(KDL::Rotation::RPY(
-           mode_[3] == robot_msgs::TaskFrameFormalism::POSITION ? setpoint_[3] : 0.0,
-           mode_[4] == robot_msgs::TaskFrameFormalism::POSITION ? setpoint_[4] : 0.0,
-           mode_[5] == robot_msgs::TaskFrameFormalism::POSITION ? setpoint_[5] : 0.0),
+           mode_[3] == manipulation_msgs::TaskFrameFormalism::POSITION ? setpoint_[3] : 0.0,
+           mode_[4] == manipulation_msgs::TaskFrameFormalism::POSITION ? setpoint_[4] : 0.0,
+           mode_[5] == manipulation_msgs::TaskFrameFormalism::POSITION ? setpoint_[5] : 0.0),
          tool.M.R);
 
   // Computes the desired twist
@@ -261,10 +261,10 @@ void CartesianHybridController::update()
   {
     switch (mode_[i])
     {
-    case robot_msgs::TaskFrameFormalism::POSITION:
+    case manipulation_msgs::TaskFrameFormalism::POSITION:
       twist_desi_[i] = pose_pids_[i].updatePid(pose_error_[i], twist_meas_filtered_[i], dt);
       break;
-    case robot_msgs::TaskFrameFormalism::VELOCITY:
+    case manipulation_msgs::TaskFrameFormalism::VELOCITY:
       twist_desi_[i] = setpoint_[i];
       break;
     }
@@ -296,11 +296,11 @@ void CartesianHybridController::update()
   {
     switch (mode_[i])
     {
-    case robot_msgs::TaskFrameFormalism::POSITION:
-    case robot_msgs::TaskFrameFormalism::VELOCITY:
+    case manipulation_msgs::TaskFrameFormalism::POSITION:
+    case manipulation_msgs::TaskFrameFormalism::VELOCITY:
       wrench_desi_[i] = twist_pids_[i].updatePid(twist_error_[i], dt);
       break;
-    case robot_msgs::TaskFrameFormalism::FORCE:
+    case manipulation_msgs::TaskFrameFormalism::FORCE:
       wrench_desi_[i] = setpoint_[i];
       break;
     default:
@@ -340,7 +340,7 @@ bool CartesianHybridController::starting()
 
   switch(initial_mode_)
   {
-  case robot_msgs::TaskFrameFormalism::POSITION: {
+  case manipulation_msgs::TaskFrameFormalism::POSITION: {
     // Finds the starting pose/twist
     KDL::JntArrayVel jnt_vel(kdl_chain_.getNrOfJoints());
     chain_.getVelocities(robot_->joint_states_, jnt_vel);
@@ -358,13 +358,13 @@ bool CartesianHybridController::starting()
     frame.M.R.GetRPY(setpoint_[3], setpoint_[4], setpoint_[5]);
     break;
   }
-  case robot_msgs::TaskFrameFormalism::VELOCITY:
+  case manipulation_msgs::TaskFrameFormalism::VELOCITY:
     for (size_t i = 0; i < 6; ++i) {
       mode_[i] = initial_mode_;
       setpoint_[i] = 0.0;
     }
     break;
-  case robot_msgs::TaskFrameFormalism::FORCE:
+  case manipulation_msgs::TaskFrameFormalism::FORCE:
     for (size_t i = 0; i < 6; ++i) {
       mode_[i] = initial_mode_;
       setpoint_[i] = 0.0;
@@ -405,7 +405,7 @@ bool CartesianHybridControllerNode::initXml(mechanism::RobotState *robot, TiXmlE
   task_frame_name_ = c_.chain_.getLinkName(0);
 
   //node->subscribe(name_ + "/command", command_msg_, &CartesianHybridControllerNode::command, this, 5);
-  command_notifier_.reset(new tf::MessageNotifier<robot_msgs::TaskFrameFormalism>(
+  command_notifier_.reset(new tf::MessageNotifier<manipulation_msgs::TaskFrameFormalism>(
                             &TF, node,
                             boost::bind(&CartesianHybridControllerNode::command, this, _1),
                                         name_ + "/command", c_.chain_.getLinkName(0), 100));
@@ -467,7 +467,7 @@ void CartesianHybridControllerNode::update()
 }
 
 void CartesianHybridControllerNode::command(
-  const tf::MessageNotifier<robot_msgs::TaskFrameFormalism>::MessagePtr& tff_msg)
+  const tf::MessageNotifier<manipulation_msgs::TaskFrameFormalism>::MessagePtr& tff_msg)
 {
   task_frame_name_ = tff_msg->header.frame_id;
   tf::Stamped<tf::Transform> task_frame;

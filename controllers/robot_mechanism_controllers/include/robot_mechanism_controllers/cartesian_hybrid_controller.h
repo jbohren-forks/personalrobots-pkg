@@ -43,7 +43,7 @@
 #include "filters/filter_chain.h"
 
 #include "robot_srvs/SetPoseStamped.h"
-#include "robot_msgs/TaskFrameFormalism.h"
+#include "manipulation_msgs/TaskFrameFormalism.h"
 #include "robot_mechanism_controllers/CartesianHybridState.h"
 
 namespace controller {
@@ -101,7 +101,7 @@ public:
   virtual void update(void);
   virtual bool starting() { return c_.starting(); }
 
-  void command(const tf::MessageNotifier<robot_msgs::TaskFrameFormalism>::MessagePtr& tff_msg);
+  void command(const tf::MessageNotifier<manipulation_msgs::TaskFrameFormalism>::MessagePtr& tff_msg);
 
   bool setToolFrame(robot_srvs::SetPoseStamped::Request &req,
                     robot_srvs::SetPoseStamped::Response &resp);
@@ -111,8 +111,8 @@ private:
   tf::TransformListener TF;
   CartesianHybridController c_;
   ros::Node *node_;
-  //robot_msgs::TaskFrameFormalism command_msg_;
-  boost::scoped_ptr<tf::MessageNotifier<robot_msgs::TaskFrameFormalism> > command_notifier_;
+  //manipulation_msgs::TaskFrameFormalism command_msg_;
+  boost::scoped_ptr<tf::MessageNotifier<manipulation_msgs::TaskFrameFormalism> > command_notifier_;
 
   std::string task_frame_name_;
 
