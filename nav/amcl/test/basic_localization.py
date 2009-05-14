@@ -40,12 +40,14 @@ class TestBasicLocalization(unittest.TestCase):
     target_time = float(sys.argv[7])
 
     if global_localization == 1:
+      print 'Waiting for service global_localization'
       rospy.wait_for_service('global_localization')
       global_localization = rospy.ServiceProxy('global_localization', Empty)
       resp = global_localization()
 
     rospy.init_node('test', anonymous=True)
     while(rospy.rostime.get_time() == 0.0):
+      print 'Waiting for initial time publication'
       time.sleep(0.1)
     start_time = rospy.rostime.get_time()
     # TODO: This should be replace by a pytf listener
