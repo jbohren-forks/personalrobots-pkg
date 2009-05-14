@@ -39,7 +39,7 @@
 
 #include <ros/node.h>
 #include <door_msgs/Door.h>
-#include <robot_msgs/TaskFrameFormalism.h>
+#include <manipulation_msgs/TaskFrameFormalism.h>
 #include <tf/tf.h>
 #include <tf/transform_listener.h>
 #include <robot_srvs/MoveToPose.h>
@@ -61,7 +61,7 @@ public:
 
 private:
   ros::Node& node_;
-  robot_msgs::TaskFrameFormalism tff_door_;
+  manipulation_msgs::TaskFrameFormalism tff_door_;
 };
 
 }

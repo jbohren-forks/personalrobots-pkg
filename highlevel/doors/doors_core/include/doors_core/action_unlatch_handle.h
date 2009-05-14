@@ -39,7 +39,7 @@
 
 #include <ros/node.h>
 #include <door_msgs/Door.h>
-#include <robot_msgs/TaskFrameFormalism.h>
+#include <manipulation_msgs/TaskFrameFormalism.h>
 #include <tf/tf.h>
 #include <tf/transform_listener.h>
 #include <robot_srvs/MoveToPose.h>
@@ -64,7 +64,7 @@ private:
 
   ros::Node& node_;
 
-  robot_msgs::TaskFrameFormalism tff_stop_, tff_handle_, tff_door_;
+  manipulation_msgs::TaskFrameFormalism tff_stop_, tff_handle_, tff_door_;
 
   robot_msgs::Twist tff_msg_, tff_state_;
   bool tff_state_received_;

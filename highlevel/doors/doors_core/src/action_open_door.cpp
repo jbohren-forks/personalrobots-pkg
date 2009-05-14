@@ -50,7 +50,7 @@ OpenDoorAction::OpenDoorAction(Node& node) :
   robot_actions::Action<door_msgs::Door, door_msgs::Door>("open_door"),
   node_(node)
 {
-  node_.advertise<robot_msgs::TaskFrameFormalism>("r_arm_cartesian_tff_controller/command", 10);
+  node_.advertise<manipulation_msgs::TaskFrameFormalism>("r_arm_cartesian_tff_controller/command", 10);
 };
 
 

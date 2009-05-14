@@ -12,6 +12,7 @@
 
   <depend package="std_msgs" />
   <depend package="robot_msgs" />
+  <depend package="manipulation_msgs" />
   <depend package="door_msgs" />
   <depend package="visualization_msgs"/>
 
