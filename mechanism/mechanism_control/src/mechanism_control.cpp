@@ -196,16 +196,18 @@ void MechanismControl::update()
   {
     // try to start controllers
     switch_success_ = true;
+    int last_started = -1;
     for (unsigned int i=0; i<start_request_.size(); i++){
       if (!start_request_[i]->startRequest()){
         switch_success_ = false;
         break;
+	last_started = i;
       }
     }
 
     // if starting failed, stop them again
     if (!switch_success_){
-      for (unsigned int i=0; i<start_request_.size(); i++){
+      for (unsigned int i=0; i<=last_started; i++){
         start_request_[i]->stopRequest();
       }
     }
