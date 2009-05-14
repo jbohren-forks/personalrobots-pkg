@@ -526,11 +526,20 @@ namespace TREX{
       outletPose.orientation.z=qz.getSingletonValue();
       outletPose.orientation.w=qw.getSingletonValue();
 
-      Pose targetPose = transformOutletPose(outletPose, dist.getSingletonValue());
+
+      // Determines the desired base position
+      tf::Pose outlet_pose_tf;
+      tf::PoseMsgToTF(outletPose, outlet_pose_tf);
+      tf::Pose desi_offset(tf::Quaternion(0,0,0), tf::Vector3(-dist.getSingletonValue(), 0.2, 0.0));
+      tf::Pose target = outlet_pose_tf * desi_offset;
+      Pose targetPose;
+      tf::PoseTFToMsg(target, targetPose);
+
 
       x2.set(targetPose.position.x);
       y2.set(targetPose.position.y);
       z2.set(targetPose.position.z);
+
       qx2.set(targetPose.orientation.x);
       qy2.set(targetPose.orientation.y);
       qz2.set(targetPose.orientation.z);

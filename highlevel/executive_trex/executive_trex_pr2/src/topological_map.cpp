@@ -3,6 +3,7 @@
  */
 #include <executive_trex_pr2/topological_map.h>
 #include <ros/console.h>
+#include <tf/transform_datatypes.h>
 #include "ConstrainedVariable.hh"
 #include "Utilities.hh"
 #include "Token.hh"
@@ -663,8 +664,7 @@ namespace executive_trex_pr2 {
     _singleton = this;
 
     // Temporary fix due to mismatch between 5cm map and 2.5cm map
-    tf::Transform trans (tf::Quaternion(.015, 0, 0), tf::Vector3(-0.4, 0, 0));
-    _map = topological_map::TopologicalMapPtr(new topological_map::TopologicalMap(in, 1.0, 1e9, 1e9, trans));
+    _map = topological_map::TopologicalMapPtr(new topological_map::TopologicalMap(in, 1.0, 1e9, 1e9));
 
     debugMsg("map:initialization", toPPM());
   }
@@ -970,10 +970,12 @@ namespace executive_trex_pr2 {
     approach_pose.position.x = p.x;
     approach_pose.position.y = p.y;
     approach_pose.position.z = 0;
-    approach_pose.orientation.x = outlet_info.qx;
-    approach_pose.orientation.y = outlet_info.qy;
-    approach_pose.orientation.z = outlet_info.qz;
-    approach_pose.orientation.w = outlet_info.qw;
+    tf::Quaternion q(outlet_info.qx, outlet_info.qy, outlet_info.qz, outlet_info.qw);
+    tf::Quaternion q2 = q * tf::Quaternion(M_PI, 0.0, 0.0);
+    approach_pose.orientation.x = q2.x();
+    approach_pose.orientation.y = q2.y();
+    approach_pose.orientation.z = q2.z();
+    approach_pose.orientation.w = q2.w();
   }
 
   void TopologicalMapAdapter::observeOutletBlocked(unsigned int outlet_id){
