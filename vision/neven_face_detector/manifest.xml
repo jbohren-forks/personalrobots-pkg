@@ -1,0 +1,10 @@
+<package>
+  <description>A ROS node to wrap the neven face detector library.</description>
+  <author>Jeremy Leibs</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <depend package="roscpp" />
+  <depend package="neven" />
+  <depend package="opencv_latest"/>
+  <url>http://pr.willowgarage.com/wiki/NevenFaceDetector</url>
+</package>
