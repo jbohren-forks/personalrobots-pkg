@@ -30,7 +30,7 @@
  </outlet>
 
  <outlet id="5">
-   <origin xyz="18.62 18.30 0.3" rpy="0 0 1.57" /> <!-- meters, radians -->
+   <origin xyz="17.45 18.30 0.3" rpy="0 0 1.57" /> <!-- meters, radians -->
    <sockets size="2" color="silver" />
    <room number="green"/>
    <notes description="not well-mapped"/>
@@ -57,7 +57,7 @@
  </outlet>
 
  <outlet id="9">
-   <origin xyz="37.10 32.20 0.3" rpy="0 0 1.57" /> <!-- meters, radians -->
+   <origin xyz="45.60 32.30 0.3" rpy="0 0 1.57" /> <!-- meters, radians -->
    <sockets size="2" color="white" />
    <room number="hall"/>
  </outlet>
