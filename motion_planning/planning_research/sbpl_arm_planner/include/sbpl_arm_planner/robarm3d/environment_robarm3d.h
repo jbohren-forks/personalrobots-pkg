@@ -48,8 +48,6 @@ Motion planner for Robotic Arm based on the SBPL. It is capable of finding the s
 // #include <boost/numeric/ublas/matrix.hpp>
 #include <robot_kinematics/robot_kinematics.h>
 
-using namespace robot_kinematics;
-using namespace KDL;
 
 #ifndef __ENVIRONMENT_ROBARM3D_H_
 #define __ENVIRONMENT_ROBARM3D_H_
@@ -147,9 +145,9 @@ typedef struct ENV_ROBARM_CONFIG
     int anglevals[NUMOFLINKS];
 
     //for kinematic library use
-    RobotKinematics pr2_kin;
-    SerialChain *left_arm;
-    JntArray *pr2_config;
+  robot_kinematics::RobotKinematics pr2_kin;
+  robot_kinematics::SerialChain *left_arm;
+  KDL::JntArray *pr2_config;
 
     //coords of goal - shouldn't be here
     short unsigned int goalcoords[NUMOFLINKS];

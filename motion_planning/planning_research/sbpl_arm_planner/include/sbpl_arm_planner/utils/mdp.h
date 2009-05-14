@@ -38,44 +38,44 @@ class CMDPSTATE;
 class CMDPACTION
 {
 
-//data
+  //data
 public:
-	int ActionID;
-	int SourceStateID;
-	vector<int> SuccsID;
-	vector<int> Costs;
-	vector<float> SuccsProb;
-	void* PlannerSpecificData;
+  int ActionID;
+  int SourceStateID;
+  std::vector<int> SuccsID;
+  std::vector<int> Costs;
+  std::vector<float> SuccsProb;
+  void* PlannerSpecificData;
 
-//constructors
+  //constructors
 public:
-	CMDPACTION(int ID, int sourcestateid) 
-	  {
-		ActionID = ID;
-		SourceStateID = sourcestateid;
-		PlannerSpecificData = NULL;
-	  };
-	~CMDPACTION()
-	{
-		if(PlannerSpecificData != NULL)
-		{
-			fprintf(stderr, "ERROR: state deletion: planner specific data is not deleted\n");
-			exit(1);
-		}
-	};
+  CMDPACTION(int ID, int sourcestateid) 
+  {
+    ActionID = ID;
+    SourceStateID = sourcestateid;
+    PlannerSpecificData = NULL;
+  };
+  ~CMDPACTION()
+  {
+    if(PlannerSpecificData != NULL)
+    {
+      fprintf(stderr, "ERROR: state deletion: planner specific data is not deleted\n");
+      exit(1);
+    }
+  };
 
-//functions
+  //functions
 public:
-	bool Delete();
-	bool IsValid();
-	void AddOutcome(int OutcomeStateID, int OutcomeCost, float OutcomeProb);
-	int GetIndofMostLikelyOutcome();
-	int GetIndofOutcome(int OutcomeID);
-	bool DeleteAllOutcomes();
+  bool Delete();
+  bool IsValid();
+  void AddOutcome(int OutcomeStateID, int OutcomeCost, float OutcomeProb);
+  int GetIndofMostLikelyOutcome();
+  int GetIndofOutcome(int OutcomeID);
+  bool DeleteAllOutcomes();
 
 private:
 
-//operators
+  //operators
 public:
   void operator = (const CMDPACTION& rhsaction);
 
@@ -85,42 +85,42 @@ public:
 
 class CMDPSTATE
 {
-//data
+  //data
 public:
-	int StateID;
-	vector<CMDPACTION*> Actions;
-	vector<int> PredsID;
-	void* PlannerSpecificData;
+  int StateID;
+  std::vector<CMDPACTION*> Actions;
+  std::vector<int> PredsID;
+  void* PlannerSpecificData;
 
-//constructors
+  //constructors
 public:
-	CMDPSTATE(int ID) 
-	  {
-		StateID = ID;
-		PlannerSpecificData = NULL;
-	  };
-	~CMDPSTATE()
-	{
-		if(PlannerSpecificData != NULL)
-		{
-			fprintf(stderr, "ERROR: state deletion: planner specific data is not deleted\n");
-			exit(1);
-		}
-	};
+  CMDPSTATE(int ID) 
+  {
+    StateID = ID;
+    PlannerSpecificData = NULL;
+  };
+  ~CMDPSTATE()
+  {
+    if(PlannerSpecificData != NULL)
+    {
+      fprintf(stderr, "ERROR: state deletion: planner specific data is not deleted\n");
+      exit(1);
+    }
+  };
 
-//functions
+  //functions
 public:
-	bool Delete();
-	CMDPACTION* AddAction(int ID);
-	bool ContainsPred(int stateID);
-	bool AddPred(int stateID);
-	bool RemovePred(int stateID);
-	bool RemoveAllActions();
-	CMDPACTION* GetAction(int actionID);
+  bool Delete();
+  CMDPACTION* AddAction(int ID);
+  bool ContainsPred(int stateID);
+  bool AddPred(int stateID);
+  bool RemovePred(int stateID);
+  bool RemoveAllActions();
+  CMDPACTION* GetAction(int actionID);
 
 private:
 
-//operators
+  //operators
 public:
 
   void operator = (const CMDPSTATE& rhsstate);
@@ -130,20 +130,20 @@ public:
 class CMDP
 {
 
-//data
+  //data
 public:
-	vector<CMDPSTATE*> StateArray;
+  std::vector<CMDPSTATE*> StateArray;
 
-//constructors
+  //constructors
 public:
-	CMDP()
-	  {
-	  };
-	~CMDP()
-	{
-	};
+  CMDP()
+  {
+  };
+  ~CMDP()
+  {
+  };
 
-//functions
+  //functions
 public:
   bool empty();
   bool full();
@@ -159,7 +159,7 @@ private:
 
 
 
-//operators
+  //operators
 public:
 
 

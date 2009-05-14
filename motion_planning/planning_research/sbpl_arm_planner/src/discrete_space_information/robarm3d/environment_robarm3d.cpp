@@ -3372,7 +3372,7 @@ void EnvironmentROBARM3D::GetSuccs(int SourceStateID, vector<int>* SuccIDV, vect
                     exp_weight = exp(-dist_to_goal * EnvROBARMCfg.ExpCoefficient);
 
                     CostV->push_back(cost(HashEntry,OutHashEntry,bSuccisGoal) + //cost from start (g-value)
-                                    GetFromToHeuristic(OutHashEntry->stateID, EnvROBARM.goalHashEntry->stateID) //* (1-exp_weight) * heuristic_weight  //position heuristic
+                                    GetFromToHeuristic(OutHashEntry->stateID, EnvROBARM.goalHashEntry->stateID) // * (1-exp_weight) * heuristic_weight  //position heuristic
                                     EnvROBARMCfg.ActiontoActionCosts[HashEntry->action][OutHashEntry->action] + //smoothing
                                     COSTMULT * min_ang_dist * EnvROBARMCfg.AngularDist_Weight * exp_weight); //angular distance
 #if DEBUG_CHECK_GOALRPY
@@ -4894,7 +4894,7 @@ void EnvironmentROBARM3D::InitializeKinNode() //needed when using kinematic libr
 
     EnvROBARMCfg.left_arm = EnvROBARMCfg.pr2_kin.getSerialChain("right_arm");
     assert(EnvROBARMCfg.left_arm);
-    EnvROBARMCfg.pr2_config = new JntArray(EnvROBARMCfg.left_arm->num_joints_);
+    EnvROBARMCfg.pr2_config = new KDL::JntArray(EnvROBARMCfg.left_arm->num_joints_);
 
     KL_time += clock() - currenttime;
 }
@@ -5090,7 +5090,7 @@ void EnvironmentROBARM3D::ComputeForwardKinematics_DH(double angles[NUMOFLINKS])
 //uses ros's KDL Library
 void EnvironmentROBARM3D::ComputeForwardKinematics_ROS(double *angles, int f_num, double *x, double *y, double*z)
 {
-    Frame f, f2;
+  KDL::Frame f, f2;
     KDL::Vector gripper(0.0, 0.0, EnvROBARMCfg.DH_d[NUMOFLINKS-1]);
 
     for(int i = 0; i < NUMOFLINKS; i++)

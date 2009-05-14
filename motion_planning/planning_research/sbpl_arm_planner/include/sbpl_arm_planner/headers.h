@@ -36,7 +36,6 @@
 #include <vector>
 #include <queue>
 
-using namespace std;
 
 #include "config.h"
 
@@ -68,8 +67,6 @@ using namespace std;
 #include <unistd.h>
 #include <ros/node.h>
 
-using namespace robot_kinematics;
-using namespace KDL;
 
 #endif
 
