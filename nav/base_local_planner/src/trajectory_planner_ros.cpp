@@ -348,19 +348,12 @@ namespace base_local_planner {
     try{
       for(unsigned int i = 0; i < orig_global_plan.size(); ++i){
         robot_msgs::PoseStamped new_pose;
-        ros::Time current_time = ros::Time::now(); // save time for checking tf delay later
         new_pose = orig_global_plan[i];
         if(!tf_.canTransform(global_frame_, new_pose.header.frame_id, new_pose.header.stamp, ros::Duration(update_plan_tolerance_))){
           ROS_ERROR("TrajectoryPlannerROS cannot service your goal because the transform is not available, we waited %.4f seconds", update_plan_tolerance_);
           return false;
         }
         tf_.transformPose(global_frame_, new_pose, new_pose);
-        // check global_pose timeout
-        if (current_time.toSec() - new_pose.header.stamp.toSec() > transform_tolerance_) {
-          ROS_ERROR("TrajectoryPlannerROS transform timeout updating plan. Current time: %.4f, global_pose stamp: %.4f, tolerance: %.4f",
-              current_time.toSec() ,new_pose.header.stamp.toSec() ,transform_tolerance_);
-          return false;
-        }
         global_plan_.push_back(new_pose);
       }
     }
