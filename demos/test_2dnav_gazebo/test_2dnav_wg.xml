@@ -2,7 +2,7 @@
   <master auto="start" />
 
     <!-- load robot -->
-    <include file="$(find pr2_prototype1_gazebo)/pr2_prototype1_wg_no_x.launch"/>
+    <include file="$(find pr2_prototype1_gazebo)/pr2_prototype1_wg.launch"/>
 
     <!-- load map -->
     <node pkg="map_server" type="map_server" args="$(find gazebo_robot_description)/world/Media/materials/textures/willowMap25mm.png 0.025" respawn="false" output="screen" />
@@ -12,12 +12,6 @@
 
     <!-- nav-stack -->
     <include file="$(find 2dnav_gazebo)/2dnav-stack-fake_localization.launch"/>
-
-    <!-- for visualization -->
-    <!--
-    <node pkg="rviz" type="rviz" respawn="false" output="screen" />
-    <node pkg="nav_view" type="nav_view" respawn="false" output="screen" />
-    -->
 
     <!--
     <param name="/trex/ping_frequency" value="1"/>
