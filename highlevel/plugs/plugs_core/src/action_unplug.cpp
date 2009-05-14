@@ -35,6 +35,7 @@
 
 #include <plugs_core/action_unplug.h>
 
+#define BACKOFF 0.06
 
 namespace plugs_core {
 
@@ -76,7 +77,7 @@ robot_actions::ResultStatus UnplugAction::execute(const std_msgs::Empty& empty, 
   tff_msg_.mode.rot.x = 2;
   tff_msg_.mode.rot.y = 2;
   tff_msg_.mode.rot.z = 2;
-  tff_msg_.value.vel.x = -0.1;  // backs off 10cm
+  tff_msg_.value.vel.x = -BACKOFF;
   tff_msg_.value.vel.y = 0.0;
   tff_msg_.value.vel.z = 0.0;
   tff_msg_.value.rot.x = 0.0;
@@ -106,7 +107,7 @@ void  UnplugAction::checkUnplug()
   tff_msg_.mode.rot.x = 3;
   tff_msg_.mode.rot.y = 3;
   tff_msg_.mode.rot.z = 3;
-  tff_msg_.value.vel.x = -0.1;  // backs off 10cm
+  tff_msg_.value.vel.x = -BACKOFF;
   tff_msg_.value.vel.y = first_state_.last_pose_meas.vel.y;
   tff_msg_.value.vel.z = first_state_.last_pose_meas.vel.z;
   tff_msg_.value.rot.x = first_state_.last_pose_meas.rot.x;
