@@ -15,6 +15,10 @@ installed: $(GIT_DIR)
 	cd build && cmake -DCMAKE_TOOLCHAIN_FILE=`rospack find rosbuild`/rostoolchain.cmake ..
 	cd build && make $(ROS_PARALLEL_JOBS)
 	cp nevensrc/FaceRecEm/common/src/b_FDSDK/fd_emb_sdk.h include/neven/
+	cp nevensrc/FaceRecEm/common/src/b_FDSDK/DCR.h include/neven/
+	cp nevensrc/FaceRecEm/common/src/b_FDSDK/FaceFinder.h include/neven/
+	cp nevensrc/FaceRecEm/common/src/b_FDSDK/SDK.h include/neven/
+	cp nevensrc/FaceRecEm/common/src/b_FDSDK/Types.h include/neven/
 
 clean:
 	cd build && make clean
@@ -24,4 +28,14 @@ clean:
 wipe: clean
 	rm -rf nevensrc
 
+test: all
+	if cd build && make -k $@; then make test-results; else make test-results && exit 1; fi
+tests: all
+	cd build && make $@
+test-future: all
+	cd build && make -k $@
+
+
 .PHONY : clean download
+
+include $(shell rospack find mk)/cmake.mk

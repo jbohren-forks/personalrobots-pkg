@@ -5,6 +5,11 @@
   <author>Jeremy Leibs</author>
   <license>Apache 2.0</license>
 
+  <export>
+    <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -Wl,-rpath,${prefix}/lib -lneven"/>
+    <doxymaker external="http://android.git.kernel.org/?p=platform/external/neven.git;a=summary"/>
+  </export>
+
   <sysdepend os="ubuntu" version="7.04-feisty" package="git"/>
   <sysdepend os="ubuntu" version="8.04-hardy"  package="git"/>
 
