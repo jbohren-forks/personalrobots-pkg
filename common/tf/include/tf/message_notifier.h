@@ -339,8 +339,8 @@ private:
         continue;
       }
 
-      bool ready = true;
-      for (std::vector<std::string>::iterator target_it = target_frames_.begin(); target_it != target_frames_.end(); ++target_it)
+      bool ready = !target_frames_.empty();
+      for (std::vector<std::string>::iterator target_it = target_frames_.begin(); ready && target_it != target_frames_.end(); ++target_it)
       {
         std::string& target_frame = *target_it;
         if (time_tolerance_ != ros::Duration(0.0))
@@ -352,8 +352,6 @@ private:
         {
           ready = ready && tf_->canTransform(target_frame, message->header.frame_id, message->header.stamp);
         }
-        if (!ready)
-          break;
       }
 
       if (ready)
