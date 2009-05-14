@@ -28,11 +28,15 @@ if __name__ == '__main__':
     cmd = LaserTrajCmd()
     controller   =    sys.argv[1]
     cmd.header   =    roslib.msg.Header(None, None, None)
-    cmd.profile  = "blended_linear"
-    cmd.pos      = [.4, -.3, .4]
-    cmd.time     = [0.0, 5.0, 7.5]
-    cmd.max_rate =  .4   # Ignores param
-    cmd.max_accel=  .5   # ignores param
+    cmd.profile  = "linear"
+    #cmd.pos      = [1.0, .26, -.26, -.7,   -.7,   -.26,   .26,   1.0, 1.0]
+    d = .025
+    #cmd.time     = [0.0, 0.4,  1.0, 1.1, 1.1+d,  1.2+d, 1.8+d, 2.2+d, 2.2+2*d]
+    
+    cmd.pos = [1.0, -.7, 1.0]
+    cmd.time= [0.0, 1.8, 2.025]
+    cmd.max_rate =  5   # Ignores param
+    cmd.max_accel=  5   # ignores param
 
     print 'Sending Command to %s: ' % controller
     print '  Profile Type: %s' % cmd.profile
