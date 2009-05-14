@@ -237,6 +237,9 @@ bool LaserScannerTrajController::setTrajectory(const std::vector<trajectory::Tra
   vector<double> max_accs ;
   max_accs.push_back(max_acc) ;
 
+
+  traj_.autocalc_timing_ = true;
+
   traj_.setMaxRates(max_rates) ;
   traj_.setMaxAcc(max_accs) ;
   traj_.setInterpolationMethod(interp) ;
@@ -283,7 +286,7 @@ bool LaserScannerTrajController::setPeriodicCmd(const pr2_msgs::PeriodicCmd& cmd
       return false;
     }
     else{
-      ROS_INFO("LaserScannerTrajController: Periodic Command set") ;
+      ROS_INFO("LaserScannerTrajController: Periodic Command set. Duration=%.4f sec", getProfileDuration()) ;
       return true;
     }
   }
@@ -333,7 +336,7 @@ bool LaserScannerTrajController::setTrajCmd(const pr2_mechanism_controllers::Las
     }
     else
     {
-      ROS_INFO("LaserScannerTrajController: Periodic Command set") ;
+      ROS_INFO("LaserScannerTrajController: Trajectory Command set. Duration=%.4f sec", getProfileDuration()) ;
       return true;
     }
   }
