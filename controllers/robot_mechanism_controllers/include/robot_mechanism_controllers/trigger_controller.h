@@ -35,17 +35,6 @@
 #ifndef TRIGGER_CONTROLLER_H
 #define TRIGGER_CONTROLLER_H
 
-/**
- *
- * @mainpage
- *
- * @htmlinclude manifest.html
- *
- * @b Controller to output periodic pulses on the digital output pin of the
- * motor controller boards.
- *
- * **/
-
 #include <ros/node.h>
 #include <mechanism_model/controller.h>
 #include <mechanism_model/robot.h>
