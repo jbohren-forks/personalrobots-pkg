@@ -64,7 +64,7 @@ PlugInAction::PlugInAction(ros::Node& node) :
     return;
   }
 
-  node_.advertise<robot_msgs::TaskFrameFormalism>(arm_controller_ + "/command", 2);
+  node_.advertise<manipulation_msgs::TaskFrameFormalism>(arm_controller_ + "/command", 2);
 
   //detector_ = new PlugTracker::PlugTracker(node);
   //detector_->deactivate();

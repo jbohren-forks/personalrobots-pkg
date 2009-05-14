@@ -55,7 +55,7 @@ UnplugAction::UnplugAction() :
       return;
     }
 
- node_->advertise<robot_msgs::TaskFrameFormalism>(arm_controller_ + "/command", 2);
+ node_->advertise<manipulation_msgs::TaskFrameFormalism>(arm_controller_ + "/command", 2);
 
  node_->subscribe(arm_controller_ + "/state", controller_state_msg_, &UnplugAction::checkUnplug, this, 1);
 

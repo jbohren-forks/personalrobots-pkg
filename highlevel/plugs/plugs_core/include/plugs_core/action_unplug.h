@@ -45,7 +45,7 @@
 #include <std_msgs/Empty.h>
 #include "robot_msgs/PoseStamped.h"
 #include "robot_msgs/CartesianState.h"
-#include "robot_msgs/TaskFrameFormalism.h"
+#include "manipulation_msgs/TaskFrameFormalism.h"
 #include "robot_mechanism_controllers/CartesianHybridState.h"
 
 //TF
@@ -83,7 +83,7 @@ private:
 
   robot_mechanism_controllers::CartesianHybridState first_state_;
 
-  robot_msgs::TaskFrameFormalism tff_msg_;
+  manipulation_msgs::TaskFrameFormalism tff_msg_;
   robot_mechanism_controllers::CartesianHybridState controller_state_msg_;
 
 };

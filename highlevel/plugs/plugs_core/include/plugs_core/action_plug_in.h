@@ -45,7 +45,7 @@
 #include <std_msgs/Empty.h>
 #include "robot_msgs/PoseStamped.h"
 #include "robot_msgs/CartesianState.h"
-#include "robot_msgs/TaskFrameFormalism.h"
+#include "manipulation_msgs/TaskFrameFormalism.h"
 #include "plugs_core/PlugInState.h"
 
 //TF
@@ -101,7 +101,7 @@ private:
 
   tf::Stamped<tf::Transform> mech_offset_;
   tf::Pose mech_offset_desi_;
-  robot_msgs::TaskFrameFormalism tff_msg_;
+  manipulation_msgs::TaskFrameFormalism tff_msg_;
 };
 
 }
