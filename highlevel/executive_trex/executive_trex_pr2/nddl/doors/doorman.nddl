@@ -1,8 +1,11 @@
 /**
  * Provides full functionality of the doorman. Here we integrate with the topological map.
  */
-#include "doors/door_controller.nddl"
 #include "world_model/topological_map.nddl"
+#include "doors/door_controller.nddl"
+
+// Use base state to obtain current pose for computing travel direction
+BaseState base_state = new BaseState(External);
 
 MoveBehavior::Inactive {
   // If it has been aborted, send an update with current the current current and target positions
@@ -10,14 +13,13 @@ MoveBehavior::Inactive {
     met_by(Active p);
     MAP_KEY doorway_id;
     neq(doorway_id, NO_KEY);
-    float current_x, current_y, current_z, current_qx, current_qy, current_qz, current_qw;
-    tf_get_robot_pose(current_x, current_y, current_z, current_qx, current_qy, current_qz, current_qw, "map");
-    map_get_doorway_from_points(doorway_id, current_x, current_y, p.x, p.y);
+    map_get_doorway_from_points(doorway_id, 0.0, 0.0, p.x, p.y);
     map_notify_door_blocked(doorway_id);
   }
 }
 
 MoveBehavior::Active {
+
   starts(DoorController.Holds dc);
 
   // Initialize controller variables. We begin by assuming the worst.
@@ -34,15 +36,22 @@ MoveBehavior::Active {
   // Initialize door message from the topological map
   MAP_KEY doorway_id;
   neq(doorway_id, NO_KEY);
-  float current_x, current_y, current_z, current_qx, current_qy, current_qz, current_qw;
-  tf_get_robot_pose(current_x, current_y, current_z, current_qx, current_qy, current_qz, current_qw, "map");
-  map_get_doorway_from_points(doorway_id, current_x, current_y, x, y);
+
+  /*
+    float current_x, current_y, current_z, current_qx, current_qy, current_qz, current_qw;
+    tf_get_robot_pose(current_x, current_y, current_z, current_qx, current_qy, current_qz, current_qw, "map");
+  */
+
+  map_get_doorway_from_points(doorway_id, 0.0, 0.0, x, y);
   starts(door_state.Holds ds);
   map_get_door_state(ds.object, doorway_id);
   eq(ds.frame_id, frame_id);
 
   // Set travel direction based on deltas
-  addEq(current_x, ds.travel_dir_x, x);
-  addEq(current_y, ds.travel_dir_y, y);
+  any(base_state.Holds bs);
+  temporalDistance(start, [0, +inf], bs.end);
+  precedes(bs.start, start);
+  addEq(bs.x, ds.travel_dir_x, x);
+  addEq(bs.y, ds.travel_dir_y, y);
   eq(ds.travel_dir_z, 0.0);
 }

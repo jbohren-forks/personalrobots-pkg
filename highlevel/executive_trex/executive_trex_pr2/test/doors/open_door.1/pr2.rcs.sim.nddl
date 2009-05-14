@@ -1,5 +1,15 @@
 #include "test/doors/sim.nddl";
 
+// Start with a default position
+fact(base_state.Holds f1);
+f1.x = 0.0;
+f1.y = 0.0;
+f1.z = 0.0;
+f1.qx = 0.0;
+f1.qy = 0.0;
+f1.qz = 1.0;
+f1.qw = 0.0;
+
 // We will make sure that the doorway is not clear until tick 50. This will hold up exit. The default value will kick in to
 // Transition to true.
 fact(doorway_clear_sv.Holds f2);

@@ -20,13 +20,13 @@ rospack_add_nddl("test/nav/pr2.driver.nddl")
 rospack_add_nddl("test/nav/sim/move.0/pr2.rcs.sim.nddl")
 
 # Door Tests
-rospack_add_nddl("test/doors/pr2.rcs.sim.nddl")
 rospack_add_nddl("test/doors/single_action_test/pr2.doorman.nddl")
 rospack_add_nddl("test/doors/without_map/pr2.doorman.nddl")
 rospack_add_nddl("test/doors/with_map/pr2.doorman.nddl")
 rospack_add_nddl("test/doors/open_door.0/pr2.doorman.nddl")
 rospack_add_nddl("test/doors/open_door.0/pr2.rcs.sim.nddl")
 rospack_add_nddl("test/doors/open_door.1/pr2.doorman.nddl")
+rospack_add_nddl("test/doors/open_door.1/pr2.rcs.sim.nddl")
 
 # Plug Tests
 rospack_add_nddl("test/plugs/pr2.rcs.sim.nddl")
@@ -55,11 +55,6 @@ set(TREX_FILES src/executive.cpp
 	       src/calc_angle_diff_constraint.cpp 
 	       src/calc_distance_constraint.cpp 
 	       src/components.cpp
-	       src/base_state_adapter.cpp
-	       src/arm_state_adapter.cpp
-	       src/arm_controller_adapter.cpp
-	       src/end_effector_controller_adapter.cpp
-	       src/battery_state_adapter.cpp
 	       src/topological_map.cpp
 	       src/door_domain_constraints.cpp
 	       src/adapter_utilities.cpp

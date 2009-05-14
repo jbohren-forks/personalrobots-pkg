@@ -39,6 +39,7 @@
  * @author Conor McGann
  */
 #include <executive_trex_pr2/adapters.h>
+#include <tf/transform_listener.h>
 #include <robot_actions/action.h>
 #include <boost/thread.hpp>
 #include <cstdlib>
@@ -122,21 +123,68 @@ namespace executive_trex_pr2 {
       delete _update_thread;
     }
 
+  protected:
+    virtual void update(State& s){}
+
   private:
 
     void updateLoop(){
       ros::Duration sleep_time(1/_update_rate);
       while (!_terminated){
+	update(_state);
 	ros::Node::instance()->publish(_update_topic, _state);
 	sleep_time.sleep();
       }
     }
 
     bool _terminated;
-    const State _state;
+    State _state;
     const std::string _update_topic;
     const double _update_rate;
     boost::thread* _update_thread;
+  };
+
+
+  class BaseStatePublisher: public StatePublisher<robot_msgs::PoseStamped>{
+  public:
+    BaseStatePublisher(const std::string& update_topic, double update_rate)
+      : StatePublisher<robot_msgs::PoseStamped>(robot_msgs::PoseStamped(), update_topic, update_rate), 
+	_tf(*ros::Node::instance(), true, ros::Duration(10)){}
+
+  protected:
+
+    virtual void update(robot_msgs::PoseStamped& s){
+      tf::Stamped<tf::Pose> stamped_pose;
+      tf::Stamped<tf::Pose> robot_pose;
+      robot_pose.setIdentity();
+      robot_pose.frame_id_ = "base_footprint";
+
+      try{
+	robot_pose.stamp_ = ros::Time();
+	_tf.transformPose("map", robot_pose, stamped_pose);
+	s.pose.position.x = stamped_pose.getOrigin().x();
+	s.pose.position.y = stamped_pose.getOrigin().y();
+	s.pose.position.z = stamped_pose.getOrigin().z();
+	s.pose.orientation.x = stamped_pose.getRotation().x();
+	s.pose.orientation.y = stamped_pose.getRotation().y();
+	s.pose.orientation.z = stamped_pose.getRotation().z();
+	s.pose.orientation.w = stamped_pose.getRotation().w();
+      }
+      catch(tf::LookupException& ex) {
+	ROS_ERROR("No Transform available Error: %s\n", ex.what());
+	return;
+      }
+      catch(tf::ConnectivityException& ex) {
+	ROS_ERROR("Connectivity Error: %s\n", ex.what());
+	return;
+      }
+      catch(tf::ExtrapolationException& ex) {
+	ROS_ERROR("Extrapolation Error: %s\n", ex.what());
+      }
+    }
+
+  private:
+    tf::TransformListener _tf;
   };
 
 }

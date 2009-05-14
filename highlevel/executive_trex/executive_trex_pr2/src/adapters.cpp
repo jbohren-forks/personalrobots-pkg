@@ -223,21 +223,21 @@ namespace TREX {
   /***********************************************************************
    * @brief 
    **********************************************************************/
-  class BaseStateAdapter: public ROSStateAdapter<deprecated_msgs::RobotBase2DOdom> {
+  class BaseStateAdapter: public ROSStateAdapter<robot_msgs::PoseStamped> {
   public:
     BaseStateAdapter(const LabelStr& agentName, const TiXmlElement& configData)
-      : ROSStateAdapter<deprecated_msgs::RobotBase2DOdom> ( agentName, configData) {
+      : ROSStateAdapter<robot_msgs::PoseStamped> ( agentName, configData) {
     }
 
   private:
     void fillObservationParameters(ObservationByValue* obs){
       AdapterUtilities::setHeader(stateMsg, *obs);
-      AdapterUtilities::readPose(*obs, stateMsg.pos.x, stateMsg.pos.y, stateMsg.pos.th);
+      AdapterUtilities::read(*obs, stateMsg);
     }
   };
 
   // Allocate a Factory
-  TeleoReactor::ConcreteFactory<BaseStateAdapter> l_NewBaseStateAdapter_Factory("NewBaseStateAdapter");
+  TeleoReactor::ConcreteFactory<BaseStateAdapter> l_BaseStateAdapter_Factory("BaseStateAdapter");
 
   /***********************************************************************
    * @brief DetectPlugOnBase 

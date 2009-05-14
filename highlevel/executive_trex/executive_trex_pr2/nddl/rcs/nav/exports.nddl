@@ -18,9 +18,11 @@ class BaseState extends ROSStateVariable {
     string frame_id;
     float x;
     float y;
-    float th;
-    float accumulatedDistance; // Derived from inputs
-    defaultOnCommit(accumulatedDistance, 0.0);
+    float z;
+    float qx;
+    float qy;
+    float qz;
+    float qw;
   }
 
   BaseState(Mode _mode){

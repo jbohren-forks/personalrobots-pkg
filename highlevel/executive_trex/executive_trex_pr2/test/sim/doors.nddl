@@ -26,12 +26,8 @@ CheckPath check_path = new CheckPath(Internal);
 NotifyDoorBlocked notify_door_blocked = new NotifyDoorBlocked(Internal);
 MoveBase move_base_local = new MoveBase(Internal);
 MoveBaseDoor move_base_door = new MoveBaseDoor(Internal);
-SafetyTuckArms safety_tuck_arms = new SafetyTuckArms(Internal);
-DetectPlugOnBase detect_plug_on_base = new DetectPlugOnBase(Internal);
 DoorsTuckArms doors_tuck_arms = new DoorsTuckArms(Internal);
 StopAction stop_action = new StopAction(Internal);
-
-PlugsUntuckArms plugs_untuck_arms = new PlugsUntuckArms(Internal);
 
 // Simulation Control Variables
 DoorwayClearSV doorway_clear_sv = new DoorwayClearSV();

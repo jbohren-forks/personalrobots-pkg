@@ -10,6 +10,7 @@
 // Tier 2 interface points - other domains
 #include "mechanism_control/exports.nddl"
 #include "safety/exports.nddl"
+
 // Mechanisms used for driving and tucking arms
 HeadMechanism head_mechanism = new HeadMechanism(External);
 TiltLaserMechanism laser_tilt_mechanism = new TiltLaserMechanism(External);
