@@ -39,7 +39,7 @@
       <param name="costmap/tilt_scan/expected_update_rate" value="0.2" />
       <param name="costmap/tilt_scan/data_type" value="LaserScan" />
       <param name="costmap/tilt_scan/clearing" value="true" />
-      <param name="costmap/tilt_scan/marking" value="false" />
+      <param name="costmap/tilt_scan/marking" value="true" />
       <param name="costmap/tilt_scan/min_obstacle_height" value="-20.10" />
       <param name="costmap/tilt_scan/max_obstacle_height" value="30.00" />
 
