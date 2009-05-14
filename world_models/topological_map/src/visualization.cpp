@@ -29,6 +29,7 @@
 
 
 #include <topological_map/visualization.h>
+#include <topological_map/exception.h>
 #include <string>
 #include <set>
 #include <boost/bind.hpp>
