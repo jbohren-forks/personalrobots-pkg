@@ -53,7 +53,7 @@ class M2Goals extends Behavior {
 
     // Constraint must be defined here to allow x and y values to be accessible for planning.
     map_get_outlet_approach_pose(x, y, z, qx, qy, qz, qw, outlet_id);
-    defaultonCommit(frame_id, "map");
+    defaultOnCommit(frame_id, "map");
   }
 
   predicate Inactive{}

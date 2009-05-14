@@ -3,19 +3,20 @@
 
 Recharger::Active{
   // Start the recharge controller
-  starts(RechargeController.Holds dc);
+  starts(RechargeController.Holds rc);
 
   // Initialize control variables
-  eq(dc.active, true);
-  eq(dc.in_position, false);
-  eq(dc.outlet_detected_coarse, false);
-  eq(dc.outlet_detected_fine, false);
-  eq(dc.recharged, false);
-  eq(dc.plug_is_stowed, maybe);
-  eq(dc.ready_to_plug_in, false);
-  eq(dc.plug_in_hand, false);
-  eq(dc.plugged_in, false);
-  eq(dc.ready_to_grasp, false);
+  eq(rc.active, true);
+  eq(rc.in_position, false);
+  eq(rc.outlet_detected_coarse, false);
+  eq(rc.outlet_detected_fine, false);
+  eq(rc.recharged, false);
+  eq(rc.plug_is_stowed, maybe);
+  eq(rc.ready_to_plug_in, false);
+  eq(rc.plug_in_hand, false);
+  eq(rc.plugged_in, false);
+  eq(rc.ready_to_grasp, false);
+  eq(rc.arms_clear, false);
 
   // Initialize outlet state
   starts(outlet_state.Holds os);

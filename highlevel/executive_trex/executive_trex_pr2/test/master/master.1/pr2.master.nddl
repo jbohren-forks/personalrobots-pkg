@@ -1,5 +1,5 @@
 /**
- * Drive to a charging station using the nav stack and then plug in.
+ * Drive to a charging station using the nav stack and then plug in. We use outlet id 1
  */
 
 #include "master/master.nddl"
@@ -10,9 +10,14 @@ close();
 map_initialize_from_file("willow.tmap");
 
 rejectable(driver.Active g0);
-eq_pose_msg(g0.object, map_outlet_1);
+map_get_outlet_approach_pose(g0.x, g0.y, g0.z, g0.qx, g0.qy, g0.qz, g0.qw, 1);
+g0.frame_id = "map";
 
 rejectable(recharger.Active g1);
-eq_pose_msg(g0.object, map_outlet_1);
+g1.outlet_id = 1;
+
+rejectable(driver.Active g2);
+eq_map_pose_msg(g2.object, outside_sachins_office);
 
 g0 before g1;
+g1 before g2;

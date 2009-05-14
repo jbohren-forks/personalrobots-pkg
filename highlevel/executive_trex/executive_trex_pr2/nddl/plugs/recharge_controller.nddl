@@ -236,6 +236,12 @@ MoveBase::Inactive{
   }
 }
 
+SafetyTuckArms::Inactive{
+  if(status == SUCCESS){
+    starts_during(RechargeController.Holds rc);
+    eq(rc.arms_clear, false);
+  }
+}
 DetectPlugOnBase::Inactive{
   if(status == SUCCESS){
     starts_during(RechargeController.Holds rc);

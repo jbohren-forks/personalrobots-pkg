@@ -118,15 +118,6 @@ dc_initial_state.active = false;
 DoorController::Holds{
   // Bind values for inactive case
   if(active == false){
-    // Reset control flags
-    eq(in_position, false);
-    eq(found_door, false);
-    eq(must_find_handle, true);
-    eq(have_handle, false);
-    eq(latch_state, UNKNOWN);
-    eq(doorway_clear, false);
-    eq(check_doorway, true);
-    eq(finishing, false);
     contained_by(doorman.Inactive);
     equals(door_state.Holds);
   }
@@ -148,19 +139,7 @@ DoorController::Holds{
 
 /**
  * This rule fires essentially a TR-style decision tree to select
- * the next action to take. The action choices are(in reverse order):
- * - release_handle
- * - check_path
- * - open_door
- * - push_door
- * - touch_door
- * - move_base_door
- * - unlatch_handle
- * - grasp_handle
- * - detect_handle
- * - move_base_local
- * - detect_door
- * - move_base_local
+ * the next action to take.
  *
  */
 DoorController::Holds {
@@ -315,22 +294,16 @@ DoorManipulationBehavior::Active{
   eq_door_msg(this.object, ds.object);
 }
 
-DoorsTuckArms::Inactive {
-  if(status == SUCCESS){
-    starts(DoorController.Holds dc);
-  }
-}
-
 ReleaseHandle::Inactive{
   if(status == SUCCESS){
-    starts(DoorController.Holds dc);
+    starts_during(door_controller.Holds dc);
     eq(dc.have_handle, false);
   }
 }
 
 MoveBaseDoor::Inactive{
   if(status == SUCCESS){
-    starts(DoorController.Holds dc);
+    starts_during(door_controller.Holds dc);
     eq(dc.doorway_clear, true);
     eq(dc.finishing, true);
   }
@@ -340,7 +313,7 @@ UnlatchHandle::Inactive{
   if(status == SUCCESS){
     starts(DoorState.Holds ds);
     eq_door_msg(ds.object, this.object);
-    starts(DoorController.Holds dc);
+    starts_during(door_controller.Holds dc);
     eq(dc.latch_state, latch_state);
     if(latch_state == LATCH_STATE_LOCKED){
       eq(dc.finishing, true);
@@ -349,7 +322,7 @@ UnlatchHandle::Inactive{
   else{
     if(status == UNDEFINED){}
     else{
-      starts(DoorController.Holds dc);
+      starts_during(door_controller.Holds dc);
       eq(dc.must_find_handle, true);
       eq(dc.found_door, false);
       eq(dc.in_position, false);
@@ -359,14 +332,14 @@ UnlatchHandle::Inactive{
 
 GraspHandle::Inactive{
   if(status == SUCCESS){
-    starts(DoorController.Holds dc);
+    starts_during(door_controller.Holds dc);
     eq(dc.have_handle, true);
   }
 }
 
 DetectHandle::Inactive{
   if(status == SUCCESS){
-    starts(DoorController.Holds dc);
+    starts_during(door_controller.Holds dc);
     eq(dc.must_find_handle, false);
     starts(DoorState.Holds ds);
     eq_door_msg(ds.object, this.object);
@@ -375,7 +348,7 @@ DetectHandle::Inactive{
   else {
     if(status == UNDEFINED){}
     else {
-      starts(DoorController.Holds dc);
+      starts_during(door_controller.Holds dc);
       eq(dc.in_position, false);
       eq(dc.found_door, false);
     }
@@ -384,7 +357,7 @@ DetectHandle::Inactive{
 
 DetectDoor::Inactive{
   if(status == SUCCESS){
-    starts(DoorController.Holds dc);
+    starts_during(door_controller.Holds dc);
     eq(dc.found_door, true);
     eq(dc.in_position, false);
     starts(DoorState.Holds ds);
@@ -403,7 +376,7 @@ DetectDoor::Inactive{
 
 CheckPath::Inactive{
   if(status == SUCCESS){
-    starts(DoorController.Holds dc);
+    starts_during(door_controller.Holds dc);
     eq(dc.doorway_clear, false);
     eq(dc.check_doorway, false);
   }
@@ -411,7 +384,7 @@ CheckPath::Inactive{
 
 MoveBase::Inactive {
   if(status == SUCCESS){
-    starts(DoorController.Holds dc);
+    starts_during(door_controller.Holds dc);
     eq(dc.in_position, true);
   }
 }
