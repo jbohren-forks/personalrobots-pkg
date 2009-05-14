@@ -16,6 +16,10 @@ MoveBehavior driver = new MoveBehavior(Internal, true);
 NavController nav_controller = new NavController();
 MoveBase move_base = new MoveBase(External);
 
+// Initialize
+fact(nav_controller.Holds nc_initial_value);
+nc_initial_value.active = false;
+
 MoveBehavior::Active{
   starts(NavController.Holds nc);
   eq(nc.active, true);

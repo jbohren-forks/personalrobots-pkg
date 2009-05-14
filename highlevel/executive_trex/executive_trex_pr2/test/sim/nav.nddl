@@ -22,11 +22,12 @@ MoveBase::Active{
   eq(duration, 1);
   meets(Inactive s);
   eq(s.status, SUCCESS);
+  eq_pose_msg(s.object, object);
 }
 
 MoveBase::Inactive{
   // BaseState(start) == Holds(x, y, th);
-  starts_during(BaseState.Holds bs);
+  starts(BaseState.Holds bs);
   eq_pose_msg(bs.object, object);
 }
 

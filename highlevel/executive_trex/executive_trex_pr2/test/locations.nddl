@@ -1,5 +1,5 @@
 // Defines useful locations for testing
-Location outside_sachins_office = new Location(13.2, 25.15, 0.0, 0.0, 0.0, 0.0, 1.0);
+Location outside_sachins_office = new Location(14.2, 22.15, 0.0, 0.0, 0.0, 0.0, 1.0);
 Location inside_sachins_office = new Location(12.7, 25.15, 0.0, 0.0, 0.0, 0.0, 1.0);
 
 /* FROM INDEFINITE NAV
