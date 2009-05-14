@@ -190,8 +190,11 @@ namespace nav {
       //pass plan to controller
       std::vector<robot_msgs::PoseStamped> global_plan;
       global_plan.push_back(goal);
-      if(!tc_->updatePlan(global_plan))
+      if(!tc_->updatePlan(global_plan)){
+        ROS_ERROR("Could not update plan... aborting");
+        controller_costmap_ros_->stop();
         return robot_actions::ABORTED;
+      }
       //get observations for the non-costmap controllers
       std::vector<Observation> observations;
       controller_costmap_ros_->getMarkingObservations(observations);
@@ -212,6 +215,8 @@ namespace nav {
       if(!valid_control && (ros::Time::now() - last_valid_control) > controller_patience_){
         //stop costmap updates
         controller_costmap_ros_->stop();
+        ROS_ERROR("No valid control for %.4f seconds... aborting, we have a patience of %.4f seconds", 
+          (ros::Time::now() - last_valid_control).toSec(), controller_patience_.toSec());
         return robot_actions::ABORTED;
       }
       else if(valid_control){
