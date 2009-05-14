@@ -1,0 +1,49 @@
+#!/usr/bin/env python
+
+PKG = "pr2_mechanism_controllers"
+
+import roslib; roslib.load_manifest(PKG) 
+
+import sys
+import os
+import string
+
+import rospy
+from std_msgs import *
+
+from pr2_mechanism_controllers.msg import LaserTrajCmd
+from pr2_mechanism_controllers.srv import *
+from time import sleep
+
+def print_usage(exit_code = 0):
+    print '''Usage:
+    send_periodic_cmd.py [controller]
+'''
+    sys.exit(exit_code)
+
+if __name__ == '__main__':
+    if len(sys.argv) != 2:
+        print_usage()
+
+    cmd = LaserTrajCmd()
+    controller   =    sys.argv[1]
+    cmd.header   =    roslib.msg.Header(None, None, None)
+    cmd.profile  = "blended_linear"
+    cmd.pos      = [.4, -.3, .4]
+    cmd.time     = [0.0, 5.0, 7.5]
+    cmd.max_rate =  .4   # Ignores param
+    cmd.max_accel=  .5   # ignores param
+
+    print 'Sending Command to %s: ' % controller
+    print '  Profile Type: %s' % cmd.profile
+    print '  Pos: %s ' % ','.join(['%.3f' % x for x in cmd.pos])
+    print '  Time: %s' % ','.join(['%.3f' % x for x in cmd.time])
+    print '  MaxRate: %f' % cmd.max_rate
+    print '  MaxAccel: %f' % cmd.max_accel
+
+    rospy.wait_for_service(controller + '/set_traj_cmd')                                        
+    s = rospy.ServiceProxy(controller + '/set_traj_cmd', SetLaserTrajCmd)
+    resp = s.call(SetLaserTrajCmdRequest(cmd))
+
+    print 'Command sent!'
+    print '  Resposne: %f' % resp.start_time.to_seconds()

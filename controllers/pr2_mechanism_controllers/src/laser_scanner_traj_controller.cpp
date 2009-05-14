@@ -294,6 +294,56 @@ bool LaserScannerTrajController::setPeriodicCmd(const pr2_msgs::PeriodicCmd& cmd
   }
 }
 
+bool LaserScannerTrajController::setTrajCmd(const pr2_mechanism_controllers::LaserTrajCmd& traj_cmd)
+{
+  if (traj_cmd.profile == "linear" ||
+      traj_cmd.profile == "blended_linear")
+  {
+    const unsigned int N = traj_cmd.pos.size() ;
+    if (traj_cmd.time.size() != N)
+    {
+      ROS_ERROR("# Times and # Pos must match! pos.size()=%u times.size()=%u", N, traj_cmd.time.size()) ;
+      return false ;
+    }
+
+    // Load up the trajectory data points, 1 point at a time
+    std::vector<trajectory::Trajectory::TPoint> tpoints ;
+    for (unsigned int i=0; i<N; i++)
+    {
+      trajectory::Trajectory::TPoint cur_point(1) ;
+      cur_point.dimension_ = 1 ;
+      cur_point.q_[0] = traj_cmd.pos[i] ;
+      cur_point.time_ = traj_cmd.time[i] ;
+      tpoints.push_back(cur_point) ;
+    }
+
+    double cur_max_rate = max_rate_ ;
+    double cur_max_acc  = max_acc_ ;
+
+    // Overwrite our limits, if they're specified in the msg. Is this maybe too dangerous?
+    if (traj_cmd.max_rate > 0)                  // Only overwrite if a positive val
+      cur_max_rate = traj_cmd.max_rate ;
+    if (traj_cmd.max_accel > 0)
+      cur_max_acc = traj_cmd.max_accel ;
+
+    if (!setTrajectory(tpoints, cur_max_rate, cur_max_acc, traj_cmd.profile))
+    {
+      ROS_ERROR("Failed to set tilt laser scanner trajectory.") ;
+      return false;
+    }
+    else
+    {
+      ROS_INFO("LaserScannerTrajController: Periodic Command set") ;
+      return true;
+    }
+  }
+  else
+  {
+    ROS_WARN("Unknown Periodic Trajectory Type. Not setting command.") ;
+    return false;
+  }
+}
+
 bool LaserScannerTrajController::setTrackLinkCmd(const pr2_mechanism_controllers::TrackLinkCmd& track_link_cmd)
 {
   while (!track_link_lock_.try_lock())
@@ -341,9 +391,12 @@ LaserScannerTrajControllerNode::LaserScannerTrajControllerNode(): node_(ros::Nod
 LaserScannerTrajControllerNode::~LaserScannerTrajControllerNode()
 {
   node_->unsubscribe(service_prefix_ + "/set_periodic_cmd") ;
+  node_->unsubscribe(service_prefix_ + "/set_traj_cmd") ;
   node_->unsubscribe(service_prefix_ + "/set_track_link_cmd") ;
 
   node_->unadvertiseService(service_prefix_ + "/set_periodic_cmd");
+  node_->unadvertiseService(service_prefix_ + "/set_traj_cmd");
+
 
   publisher_->stop() ;
 
@@ -407,9 +460,12 @@ bool LaserScannerTrajControllerNode::initXml(mechanism::RobotState *robot, TiXml
   }
 
   node_->subscribe(service_prefix_ + "/set_periodic_cmd", cmd_, &LaserScannerTrajControllerNode::setPeriodicCmd, this, 1) ;
+  node_->subscribe(service_prefix_ + "/set_traj_cmd", traj_cmd_, &LaserScannerTrajControllerNode::setTrajCmd, this, 1) ;
+
   node_->subscribe(service_prefix_ + "/set_track_link_cmd", track_link_cmd_, &LaserScannerTrajControllerNode::setTrackLinkCmd, this, 1) ;
 
   node_->advertiseService(service_prefix_ + "/set_periodic_cmd", &LaserScannerTrajControllerNode::setPeriodicSrv, this);
+  node_->advertiseService(service_prefix_ + "/set_traj_cmd", &LaserScannerTrajControllerNode::setTrajSrv, this);
 
   if (publisher_ != NULL)               // Make sure that we don't memory leak if initXml gets called twice
     delete publisher_ ;
@@ -422,14 +478,15 @@ bool LaserScannerTrajControllerNode::initXml(mechanism::RobotState *robot, TiXml
   return true ;
 }
 
-bool LaserScannerTrajControllerNode::setPeriodicSrv(pr2_srvs::SetPeriodicCmd::Request &req, 
+bool LaserScannerTrajControllerNode::setPeriodicSrv(pr2_srvs::SetPeriodicCmd::Request &req,
                                                     pr2_srvs::SetPeriodicCmd::Response &res)
 {
   ROS_INFO("LaserScannerTrajControllerNode: set periodic command");
 
   if (!c_.setPeriodicCmd(req.command))
     return false;
-  else{
+  else
+  {
     res.start_time = ros::Time::now();
     return true;
   }
@@ -438,6 +495,26 @@ bool LaserScannerTrajControllerNode::setPeriodicSrv(pr2_srvs::SetPeriodicCmd::Re
 void LaserScannerTrajControllerNode::setPeriodicCmd()
 {
   c_.setPeriodicCmd(cmd_) ;
+}
+
+bool LaserScannerTrajControllerNode::setTrajSrv(pr2_mechanism_controllers::SetLaserTrajCmd::Request &req,
+                                                pr2_mechanism_controllers::SetLaserTrajCmd::Response &res)
+{
+  ROS_INFO("LaserScannerTrajControllerNode: set traj command");
+
+  if (!c_.setTrajCmd(req.command))
+    return false;
+  else
+  {
+    res.start_time = ros::Time::now();
+    return true;
+  }
+}
+
+
+void LaserScannerTrajControllerNode::setTrajCmd()
+{
+  c_.setTrajCmd(traj_cmd_) ;
 }
 
 void LaserScannerTrajControllerNode::setTrackLinkCmd()
