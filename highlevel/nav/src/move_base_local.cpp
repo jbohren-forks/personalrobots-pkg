@@ -50,7 +50,7 @@ namespace nav {
     ros_node_.param(action_name_ + "/laser_tilt_controller", laser_controller_, laser_controller_);
     if(laser_controller_ == "")
     {
-      ROS_ERROR("%s: tilt_laser_controller param was not set.",action_name_.c_str());
+      ROS_ERROR("%s: tilt_laser_controller param was not set.", action_name_.c_str());
       terminate();
       return;
     }
@@ -151,6 +151,15 @@ namespace nav {
     //for keeping track of the last valid control
     ros::Time last_valid_control = ros::Time::now();
 
+    //pass plan to controller
+    std::vector<robot_msgs::PoseStamped> global_plan;
+    global_plan.push_back(goal);
+    if(!tc_->updatePlan(global_plan)){
+      ROS_ERROR("Could not update plan... aborting");
+      controller_costmap_ros_->stop();
+      return robot_actions::ABORTED;
+    }
+
     costmap_2d::Rate r(controller_frequency_);
     while(!isPreemptRequested()){
       struct timeval start, end;
@@ -185,16 +194,7 @@ namespace nav {
         continue;
       }
 
-
       bool valid_control = false;
-      //pass plan to controller
-      std::vector<robot_msgs::PoseStamped> global_plan;
-      global_plan.push_back(goal);
-      if(!tc_->updatePlan(global_plan)){
-        ROS_ERROR("Could not update plan... aborting");
-        controller_costmap_ros_->stop();
-        return robot_actions::ABORTED;
-      }
       //get observations for the non-costmap controllers
       std::vector<Observation> observations;
       controller_costmap_ros_->getMarkingObservations(observations);
