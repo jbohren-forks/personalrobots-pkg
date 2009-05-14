@@ -132,40 +132,25 @@ class TransformListener:
 
     def transform_pose(self, target_frame, pose):
         return self.transformer.transformPose(target_frame, pose)
-
-
+    
     def transform_pose_in_time(self, target_frame, target_time, fixed_frame, pose):
-        pose_out = tf.PoseStamped()
-        self.transformer.transformPose(target_frame, target_time, pose, fixed_frame, pose_out)
-        return pose_out
+        return self.transformer.transformPose(target_frame, target_time, pose, fixed_frame)
 
     def transform_point(self, target_frame, point):
-        point_out = tf.PointStamped()
-        self.transformer.transformPoint(target_frame, point, point_out)
-        return point_out
+        return self.transformer.transformPoint(target_frame, point)
 
     def transform_point_in_time(self, target_frame, target_time, fixed_frame, point):
-        point_out = tf.PointStamped()
-        self.transformer.transformPoint(target_frame, target_time, point, fixed_frame, point_out)
-        return point_out
+        return self.transformer.transformPoint(target_frame, target_time, point, fixed_frame)
 
     def transform_vector(self, target_frame, vector):
-        vector_out = tf.VectorStamped()
-        self.transformer.transformVector(target_frame, vector, vector_out)
-        return vector_out
+        return self.transformer.transformVector(target_frame, vector)
 
     def transform_vector_in_time(self, target_frame, target_time, fixed_frame, vector):
-        vector_out = tf.VectorStamped()
-        self.transformer.transformVector(target_frame, target_time, vector, fixed_frame, vector_out)
-        return vector_out
+        return self.transformer.transformVector(target_frame, target_time, vector, fixed_frame)
 
     def transform_quaternion(self, target_frame, quaternion):
-        quaternion_out = tf.QuaternionStamped()
-        self.transformer.transformQuaternion(target_frame, quaternion, quaternion_out)
-        return quaternion_out
+        return self.transformer.transformQuaternion(target_frame, quaternion)
 
     def transform_quaternion_in_time(self, target_frame, target_time, fixed_frame, quaternion):
-        quaternion_out = tf.QuaternionStamped()
-        self.transformer.transformQuaternion(target_frame, target_time, quaternion, fixed_frame, quaternion_out)
-        return quaternion_out
+        return self.transformer.transformQuaternion(target_frame, target_time, quaternion, fixed_frame)
 
