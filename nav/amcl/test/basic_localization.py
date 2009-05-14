@@ -52,6 +52,7 @@ class TestBasicLocalization(unittest.TestCase):
     rospy.Subscriber('tf_message', tfMessage, self.tf_cb)
 
     while (rospy.rostime.get_time() - start_time) < target_time:
+      print 'Waiting for end time %.6f (current: %.6f)'%(target_time,(rospy.rostime.get_time() - start_time))
       time.sleep(0.1)
     self.assertNotEquals(self.tf, None)
     self.assertTrue(abs(self.tf.translation.x - self.target_x) <= tolerance_d)
