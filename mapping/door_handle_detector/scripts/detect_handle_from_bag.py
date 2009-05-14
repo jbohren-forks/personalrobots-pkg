@@ -102,7 +102,9 @@ def detect_handle_camera(door_request):
 
 
 if __name__ == "__main__":
+    rospy.init_node("handle_tester")
     
+    rospy.sleep(2.0)
     d = Door()
     d.frame_p1.x = 1.0
     d.frame_p1.y = -0.5
