@@ -1,0 +1,77 @@
+Doesn't build if SVN 1.5 is used to check out the code, because setuptools
+tries to parse the .svn/entries file and doesn't understand the format.
+
+---------
+
+mkdir -p src/lib/python2.5/site-packages
+cd python-twitter_svn && python setup.py build &&
+PYTHONPATH=:/home/wgsim/workspace/personalrobots-stable-update-test/ros/core/roslib/src:/home/wgsim/workspace/personalrobots-stable-update-test/personalrobots/3rdparty/python-twitter/src/lib/python2.5/site-packages/
+python setup.py install --prefix ../src
+running build
+running build_py
+running egg_info
+writing requirements to python_twitter.egg-info/requires.txt
+writing python_twitter.egg-info/PKG-INFO
+writing top-level names to python_twitter.egg-info/top_level.txt
+writing dependency_links to python_twitter.egg-info/dependency_links.txt
+Traceback (most recent call last):
+  File "setup.py", line 73, in <module>
+    Main()
+  File "setup.py", line 66, in Main
+    setuptools.setup(**METADATA)
+  File "/usr/lib/python2.5/distutils/core.py", line 151, in setup
+    dist.run_commands()
+  File "/usr/lib/python2.5/distutils/dist.py", line 974, in run_commands
+    self.run_command(cmd)
+  File "/usr/lib/python2.5/distutils/dist.py", line 994, in run_command
+    cmd_obj.run()
+  File "/usr/lib/python2.5/distutils/command/build.py", line 113, in run
+    self.run_command(cmd_name)
+  File "/usr/lib/python2.5/distutils/cmd.py", line 333, in run_command
+    self.distribution.run_command(command)
+  File "/usr/lib/python2.5/distutils/dist.py", line 994, in run_command
+    cmd_obj.run()
+  File "/usr/lib/python2.5/site-packages/setuptools/command/build_py.py",
+line 35, in run
+    self.byte_compile(_build_py.get_outputs(self, include_bytecode=0))
+  File "/usr/lib/python2.5/distutils/command/build_py.py", line 358, in
+get_outputs
+    for package, src_dir, build_dir, filenames in self.data_files
+  File "/usr/lib/python2.5/site-packages/setuptools/command/build_py.py",
+line 39, in __getattr__
+    self.data_files = files = self._get_data_files(); return files
+  File "/usr/lib/python2.5/site-packages/setuptools/command/build_py.py",
+line 44, in _get_data_files
+    self.analyze_manifest()
+  File "/usr/lib/python2.5/site-packages/setuptools/command/build_py.py",
+line 92, in analyze_manifest
+    self.run_command('egg_info')
+  File "/usr/lib/python2.5/distutils/cmd.py", line 333, in run_command
+    self.distribution.run_command(command)
+  File "/usr/lib/python2.5/distutils/dist.py", line 994, in run_command
+    cmd_obj.run()
+  File "/usr/lib/python2.5/site-packages/setuptools/command/egg_info.py",
+line 171, in run
+    self.find_sources()
+  File "/usr/lib/python2.5/site-packages/setuptools/command/egg_info.py",
+line 252, in find_sources
+    mm.run()
+  File "/usr/lib/python2.5/site-packages/setuptools/command/egg_info.py",
+line 306, in run
+    self.add_defaults()
+  File "/usr/lib/python2.5/site-packages/setuptools/command/egg_info.py",
+line 333, in add_defaults
+    rcfiles = list(walk_revctrl())
+  File "/usr/lib/python2.5/site-packages/setuptools/command/sdist.py", line
+45, in walk_revctrl
+    for item in ep.load()(dirname):
+  File "/usr/lib/python2.5/site-packages/setuptools/command/sdist.py", line
+52, in _default_revctrl
+    for path in finder(dirname,path):
+  File "/usr/lib/python2.5/site-packages/setuptools/command/sdist.py", line
+98, in entries_finder
+    log.warn("unrecognized .svn/entries format in %s", dirname)
+NameError: global name 'log' is not defined
+make: *** [python-twitter] Error 1
+[rosmakeall-buildfail] Build of python-twitter failed
+
