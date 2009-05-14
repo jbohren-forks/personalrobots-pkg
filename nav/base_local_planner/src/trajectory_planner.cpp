@@ -1050,12 +1050,14 @@ namespace base_local_planner{
       //find the cell coordinates of the first segment point
       new_x = x_i + (footprint_spec_[i].x * cos_th - footprint_spec_[i].y * sin_th);
       new_y = y_i + (footprint_spec_[i].x * sin_th + footprint_spec_[i].y * cos_th);
-      costmap_.worldToMap(new_x, new_y, x0, y0);
+      if(!costmap_.worldToMap(new_x, new_y, x0, y0))
+        return footprint_cells;
 
       //find the cell coordinates of the second segment point
       new_x = x_i + (footprint_spec_[i + 1].x * cos_th - footprint_spec_[i + 1].y * sin_th);
       new_y = y_i + (footprint_spec_[i + 1].x * sin_th + footprint_spec_[i + 1].y * cos_th);
-      costmap_.worldToMap(new_x, new_y, x1, y1);
+      if(!costmap_.worldToMap(new_x, new_y, x1, y1))
+        return footprint_cells;
 
       getLineCells(x0, x1, y0, y1, footprint_cells);
     }
@@ -1063,11 +1065,13 @@ namespace base_local_planner{
     //we need to close the loop, so we also have to raytrace from the last pt to first pt
     new_x = x_i + (footprint_spec_[last_index].x * cos_th - footprint_spec_[last_index].y * sin_th);
     new_y = y_i + (footprint_spec_[last_index].x * sin_th + footprint_spec_[last_index].y * cos_th);
-    costmap_.worldToMap(new_x, new_y, x0, y0);
+    if(!costmap_.worldToMap(new_x, new_y, x0, y0))
+      return footprint_cells;
 
     new_x = x_i + (footprint_spec_[0].x * cos_th - footprint_spec_[0].y * sin_th);
     new_y = y_i + (footprint_spec_[0].x * sin_th + footprint_spec_[0].y * cos_th);
-    costmap_.worldToMap(new_x, new_y, x1, y1);
+    if(!costmap_.worldToMap(new_x, new_y, x1, y1))
+      return footprint_cells;
 
     getLineCells(x0, x1, y0, y1, footprint_cells);
 
