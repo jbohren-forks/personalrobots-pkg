@@ -148,9 +148,6 @@ namespace nav {
     //start the controller's costmap
     controller_costmap_ros_->start();
 
-    //for keeping track of the last valid control
-    ros::Time last_valid_control = ros::Time::now();
-
     //pass plan to controller
     std::vector<robot_msgs::PoseStamped> global_plan;
     global_plan.push_back(goal);
@@ -159,6 +156,9 @@ namespace nav {
       controller_costmap_ros_->stop();
       return robot_actions::ABORTED;
     }
+
+    //for keeping track of the last valid control
+    ros::Time last_valid_control = ros::Time::now();
 
     costmap_2d::Rate r(controller_frequency_);
     while(!isPreemptRequested()){
