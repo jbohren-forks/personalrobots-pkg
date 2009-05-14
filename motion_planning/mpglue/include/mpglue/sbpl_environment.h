@@ -109,12 +109,14 @@ namespace mpglue {
 						  std::ostream * dbgos) throw(std::exception);
 
     static SBPLEnvironment * createXYThetaDoor(boost::shared_ptr<CostmapAccessor const> cm,
-						  boost::shared_ptr<IndexTransform const> it,
-						  footprint_t const & footprint,
-						  double nominalvel_mpersecs,
-						  double timetoturn45degsinplace_secs,
-						  std::string const & motor_primitive_filename,
-						  std::ostream * dbgos, door_msgs::Door door) throw(std::exception);
+					       boost::shared_ptr<IndexTransform const> it,
+					       footprint_t const & footprint,
+					       double nominalvel_mpersecs,
+					       double timetoturn45degsinplace_secs,
+					       std::string const & motor_primitive_filename,
+					       std::ostream * dbgos,
+					       /** Door specification in global (costmap) frame, will be transformed to the local (planner) frame in this method. */
+					       door_msgs::Door global_door) throw(std::exception);
     
     virtual DiscreteSpaceInformation * getDSI() = 0;
     virtual bool InitializeMDPCfg(MDPConfig *MDPCfg) = 0;

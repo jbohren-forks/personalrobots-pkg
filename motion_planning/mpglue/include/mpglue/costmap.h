@@ -140,6 +140,41 @@ namespace mpglue {
     virtual void globalToLocal(double global_x, double global_y, double global_th,
 			       double * local_x, double * local_y, double * local_th) const = 0;
     
+    template<typename value_t>
+    void globalToLocal(value_t global_x, value_t global_y, value_t global_th,
+		       value_t * local_x, value_t * local_y, value_t * local_th) const
+    {
+      double gx(global_x);
+      double gy(global_y);
+      double gth(global_th);
+      double lx, ly, lth;
+      globalToLocal(gx, gy, gth, &lx, &ly, &lth);
+      *local_x = lx;
+      *local_y = ly;
+      *local_th = lth;
+    }
+    
+    /**
+       Perform only the rotational part of the localToGlobal()
+       transform. Use this for vectors (as opposed to points).
+    */
+    virtual void rotateGlobalToLocal(double global_x, double global_y, double global_th,
+				     double * local_x, double * local_y, double * local_th) const = 0;
+    
+    template<typename value_t>
+    void rotateGlobalToLocal(value_t global_x, value_t global_y, value_t global_th,
+			     value_t * local_x, value_t * local_y, value_t * local_th) const
+    {
+      double gx(global_x);
+      double gy(global_y);
+      double gth(global_th);
+      double lx, ly, lth;
+      rotateGlobalToLocal(gx, gy, gth, &lx, &ly, &lth);
+      *local_x = lx;
+      *local_y = ly;
+      *local_th = lth;
+    }
+    
     /**
        Compute the global (x, y, theta) coordinates of a pose given in
        the local costmap frame. This does NOT involve scaling by the
@@ -147,6 +182,41 @@ namespace mpglue {
     */
     virtual void localToGlobal(double local_x, double local_y, double local_th,
 			       double * global_x, double * global_y, double * global_th) const = 0;
+    
+    template<typename value_t>
+    void localToGlobal(value_t global_x, value_t global_y, value_t global_th,
+		       value_t * local_x, value_t * local_y, value_t * local_th) const
+    {
+      double gx(global_x);
+      double gy(global_y);
+      double gth(global_th);
+      double lx, ly, lth;
+      localToGlobal(gx, gy, gth, &lx, &ly, &lth);
+      *local_x = lx;
+      *local_y = ly;
+      *local_th = lth;
+    }
+    
+    /**
+       Perform only the rotational part of the localToGlobal()
+       transform. Use this for vectors (as opposed to points).
+    */
+    virtual void rotateLocalToGlobal(double global_x, double global_y, double global_th,
+				     double * local_x, double * local_y, double * local_th) const = 0;
+    
+    template<typename value_t>
+    void rotateLocalToGlobal(value_t global_x, value_t global_y, value_t global_th,
+			     value_t * local_x, value_t * local_y, value_t * local_th) const
+    {
+      double gx(global_x);
+      double gy(global_y);
+      double gth(global_th);
+      double lx, ly, lth;
+      rotateLocalToGlobal(gx, gy, gth, &lx, &ly, &lth);
+      *local_x = lx;
+      *local_y = ly;
+      *local_th = lth;
+    }
     
     /**
        Get the origin of the costmap grid relative to its containing

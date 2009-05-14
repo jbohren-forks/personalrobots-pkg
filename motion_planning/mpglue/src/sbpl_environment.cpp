@@ -556,7 +556,16 @@ namespace mpglue {
 	  env->UpdateCost(ix, iy, cost);
       }
     const double door_thickness = 0.05;
-    env->setDoorProperties(door,door_thickness);
+    // transform door from global to local frame
+    float dummy;
+    it->globalToLocal(door.frame_p1.x, door.frame_p1.y, (float) 0.0, &door.frame_p1.x, &door.frame_p1.y, &dummy);
+    it->globalToLocal(door.frame_p2.x, door.frame_p2.y, (float) 0.0, &door.frame_p2.x, &door.frame_p2.y, &dummy);
+    it->globalToLocal(door.door_p1.x, door.door_p1.y, (float) 0.0, &door.door_p1.x, &door.door_p1.y, &dummy);
+    it->globalToLocal(door.door_p2.x, door.door_p2.y, (float) 0.0, &door.door_p2.x, &door.door_p2.y, &dummy);
+    it->globalToLocal(door.handle.x, door.handle.y, (float) 0.0, &door.handle.x, &door.handle.y, &dummy);
+    double dummy2;
+    it->rotateGlobalToLocal(door.travel_dir.x, door.travel_dir.y, 0.0, &door.travel_dir.x, &door.travel_dir.y, &dummy2);
+    env->setDoorProperties(door, door_thickness);
 
   const double arm_min_workspace_radius = 0.0;
   const double arm_max_workspace_radius = 0.85;

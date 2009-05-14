@@ -195,9 +195,7 @@ namespace mpglue {
   boost::shared_ptr<waypoint_plan_t> SBPLPlannerWrap::
   doCreatePlan() throw(std::exception)
   {
-
-
-      vector<int> solution;
+    vector<int> solution;
     stats_.status = planner_->replan(stats_.allocated_time, &solution, &stats_.solution_cost);
     shared_ptr<waypoint_plan_t> plan;
     // using the cell size as waypoint tolerance seems like a good
@@ -209,79 +207,65 @@ namespace mpglue {
       // XXXX to do: can this be generalized?
       EnvironmentNAVXYTHETADOOR *
 	doorenv(dynamic_cast<EnvironmentNAVXYTHETADOOR *>(environment_->getDSI()));
-   
+      
       if (doorenv) {
-
-	//-------------------TODO-debugMax-------------------
-	vector<EnvNAVXYTHETALAT3Dpt_t> xythetaPath;			
+	
+	vector<EnvNAVXYTHETALAT3Dpt_t> localPath;
 	vector<unsigned char> door_intervalindPath;
-	doorenv->ConvertStateIDPathintoXYThetaPath(&solution, &xythetaPath, &door_intervalindPath);
-	for(unsigned int i = 0; i < xythetaPath.size(); i++) {
-	  double door_angle;
-	  double door_angle_cost;
-	  if(!doorenv->GetMinCostDoorAngle(xythetaPath.at(i).x, xythetaPath.at(i).y, 
-							     xythetaPath.at(i).theta, door_intervalindPath.at(i),
-							     door_angle,door_angle_cost))
-	    {
-	      fprintf(stdout, "%.3f %.3f %.3f -- --\n", 
-		      xythetaPath.at(i).x, xythetaPath.at(i).y, xythetaPath.at(i).theta);
-	    }
-	  else
-	    {
-	      fprintf(stdout, "%.3f %.3f %.3f %d %.3f %.3f\n", 
-		      xythetaPath.at(i).x, xythetaPath.at(i).y, xythetaPath.at(i).theta,
-		      door_intervalindPath.at(i), door_angle,door_angle_cost);
-	    }
-	  shared_ptr<door_waypoint_s>
-	    doorwpt(new door_waypoint_s(xythetaPath.at(i).x, xythetaPath.at(i).y, xythetaPath.at(i).theta, 
-					dr, dtheta,
-					door_angle, door_intervalindPath.at(i), door_angle_cost));
-	   plan->push_back(doorwpt);
-	}
-      //-------------------------------------------
-	/*
-	for (size_t ii(0); ii < solution.size(); ++ii) {
-	  int xc, yc, thc;
-	  unsigned char door_interval;
-	  doorenv->GetCoordFromState(solution[ii], xc, yc, thc, door_interval);
-	  double xx, yy, th;
-	  if (doorenv->PoseDiscToCont(xc, yc, thc, xx, yy, th)) { // "always" succeeds
-	    // XXXX to do: should extract angle from state instead of recomputing...
-	    double angle, door_angle_cost;
-	    doorenv->GetMinCostDoorAngle(xx, yy, th, door_interval, angle, door_angle_cost);
-	    shared_ptr<door_waypoint_s>
-	      doorwpt(new door_waypoint_s(xx, yy, th, dr, dtheta,
-					  angle, door_interval, door_angle_cost));
-	    // dbg
-	    EnvNAVXYTHETALAT3Dpt_t wrp;
-	    wrp.x = xx;
-	    wrp.y = yy;
-	    wrp.theta = th;
-	    doorenv->GetValidDoorAngles(wrp, &doorwpt->valid_angle,
-					&doorwpt->valid_cost, &doorwpt->valid_interval);
-	    { // XXXX very quickly hacked overlap detection: these are
-	      // not the codes you are looking for
-	      std::set<int> foo;
-	      for (size_t jj(0); jj < doorwpt->valid_angle.size(); ++jj) {
-		int const angle(doorwpt->valid_angle[jj]);
-		if (foo.end() != foo.find(angle))
-		  doorwpt->overlap_angle.push_back(angle);
-		foo.insert(angle);
-	      }
-	    }
-	    plan->push_back(doorwpt);
-	    
-	    printf("DBG doorwpt (%6.3f %6.3f %6.3f) angle %6.3f int %u (%zu valid %zu overlap)\n",
-		   xx, yy, th, angle, (unsigned int) door_interval,
-		   doorwpt->valid_angle.size(), doorwpt->overlap_angle.size());
-	    
+	doorenv->ConvertStateIDPathintoXYThetaPath(&solution, &localPath, &door_intervalindPath);
+	for (size_t ii(0); ii < localPath.size(); ++ii) {
+	  double const lx(localPath.at(ii).x);
+	  double const ly(localPath.at(ii).y);
+	  double const lth(localPath.at(ii).theta);
+	  unsigned char const doorint(door_intervalindPath.at(ii));
+	  double gx, gy, gth;
+	  itransform_->localToGlobal(lx, ly, lth, &gx, &gy, &gth);
+	  double door_angle, door_angle_cost;
+
+	  static bool const verbose_(true); // XXXX to do: make this a field
+	  if ( ! doorenv->GetMinCostDoorAngle(lx, ly, lth, doorint, door_angle, door_angle_cost)) {
+	    if (verbose_)
+	      fprintf(stdout, "SBPLPlannerWrap: [%zu] l %.3f %.3f %.3f  g %.3f %.3f %.3f  d --\n",
+		      ii, lx, ly, lth, gx, gy, gth);
 	  }
+	  else {
+	    if (verbose_)
+	      fprintf(stdout, "SBPLPlannerWrap: [%zu] l %.3f %.3f %.3f  g %.3f %.3f %.3f  d %d %.3f %.3f\n",
+		      ii, lx, ly, lth, gx, gy, gth, doorint, door_angle, door_angle_cost);
+	  }
+	  shared_ptr<door_waypoint_s> doorwpt(new door_waypoint_s(gx, gy, gth, dr, dtheta,
+								  door_angle, doorint,
+								  door_angle_cost));
+	  plan->push_back(doorwpt);
+	  
+	  // 	EnvNAVXYTHETALAT3Dpt_t wrp;
+	  // 	wrp.x = xx;
+	  // 	wrp.y = yy;
+	  // 	wrp.theta = th;
+	  // 	doorenv->GetValidDoorAngles(wrp, &doorwpt->valid_angle,
+	  // 				    &doorwpt->valid_cost, &doorwpt->valid_interval);
+	  // 	{ // XXXX very quickly hacked overlap detection: these are
+	  // 	  // not the codes you are looking for
+	  // 	  std::set<int> foo;
+	  // 	  for (size_t jj(0); jj < doorwpt->valid_angle.size(); ++jj) {
+	  // 	    int const angle(doorwpt->valid_angle[jj]);
+	  // 	    if (foo.end() != foo.find(angle))
+	  // 	      doorwpt->overlap_angle.push_back(angle);
+	  // 	    foo.insert(angle);
+	  // 	  }
+	  // 	}
+	  // 	plan->push_back(doorwpt);
+	  // 	printf("DBG doorwpt (%6.3f %6.3f %6.3f) angle %6.3f int %u (%zu valid %zu overlap)\n",
+	  // 	       xx, yy, th, angle, (unsigned int) door_interval,
+	  // 	       doorwpt->valid_angle.size(), doorwpt->overlap_angle.size());
 	}
-	*/
       }
-      else {			// not a door environment
+      
+      else {
+	// not a door environment
 	if (1 < solution.size())
-	  PlanConverter::convertSBPL(*environment_,
+	  PlanConverter::convertSBPL(*itransform_,
+				     *environment_,
 				     solution,
 				     dr,
 				     dtheta,
@@ -292,6 +276,7 @@ namespace mpglue {
 				     );
       }
     }
+    
     return plan;
   }
   

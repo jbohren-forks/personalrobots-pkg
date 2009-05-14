@@ -132,6 +132,22 @@ namespace {
       *local_th = global_th;
     }
     
+    virtual void rotateGlobalToLocal(double global_x, double global_y, double global_th,
+				     double * local_x, double * local_y, double * local_th) const
+    {
+      *local_x = global_x;
+      *local_y = global_y;
+      *local_th = global_th;
+    }
+    
+    virtual void rotateLocalToGlobal(double local_x, double local_y, double local_th,
+				     double * global_x, double * global_y, double * global_th) const
+    {
+      *global_x = local_x;
+      *global_y = local_y;
+      *global_th = local_th;
+    }
+    
     virtual void localToGlobal(double local_x, double local_y, double local_th,
 			       double * global_x, double * global_y, double * global_th) const {
       *global_x = local_x + (*get_costmap_)()->originX();
@@ -297,6 +313,26 @@ namespace {
       *local_y = global_y;
       *local_th = global_th;
       gf_->From(*local_x, *local_y, *local_th);
+    }
+    
+    virtual void rotateGlobalToLocal(double global_x, double global_y, double global_th,
+				     double * local_x, double * local_y, double * local_th) const
+    {
+      sfl::Frame foo(global_x, global_y, global_th);
+      gf_->RotateFrom(foo);
+      *local_x = foo.X();
+      *local_y = foo.Y();
+      *local_th = foo.Theta();
+    }
+    
+    virtual void rotateLocalToGlobal(double local_x, double local_y, double local_th,
+				     double * global_x, double * global_y, double * global_th) const
+    {
+      sfl::Frame local(local_x, local_y, local_th);
+      gf_->RotateFrom(local);
+      *global_x = local.X();
+      *global_y = local.Y();
+      *global_th = local.Theta();
     }
     
     virtual void localToGlobal(double local_x, double local_y, double local_th,

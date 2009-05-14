@@ -100,7 +100,9 @@ namespace mpglue {
        understandable. Optionally provides some statistics on the
        plan.
     */
-    static void convertSBPL(/** in: how to translate state IDs to (x, y) or (x, y, theta)  */
+    static void convertSBPL(/** in: how to translate local poses to global poses */
+			    IndexTransform const & itransform,
+			    /** in: how to translate state IDs to local (x, y) or (x, y, theta)  */
 			    SBPLEnvironment const & environment,
 			    /** in: the raw plan */
 			    raw_sbpl_plan_t const & raw,

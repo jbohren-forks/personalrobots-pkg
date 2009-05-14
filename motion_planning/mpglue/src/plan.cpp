@@ -147,7 +147,8 @@ namespace mpglue {
   
   
   void PlanConverter::
-  convertSBPL(SBPLEnvironment const & environment,
+  convertSBPL(IndexTransform const & itransform,
+	      SBPLEnvironment const & environment,
 	      raw_sbpl_plan_t const & raw,
 	      double dr,
 	      double dtheta,
@@ -159,7 +160,9 @@ namespace mpglue {
     PlanConverter pc(plan, dr, dtheta);
     for (raw_sbpl_plan_t::const_iterator it(raw.begin()); it != raw.end(); ++it) {
       rfct_pose pose(environment.GetPoseFromState(*it));
-      pc.addWaypoint(waypoint_s(pose.x, pose.y, pose.th, dr, dtheta));
+      double gx, gy, gth;
+      itransform.localToGlobal(pose.x, pose.y, pose.th, &gx, &gy, &gth);
+      pc.addWaypoint(waypoint_s(gx, gy, gth, dr, dtheta));
     }
     if (optPlanLengthM)
       *optPlanLengthM = pc.plan_length;
