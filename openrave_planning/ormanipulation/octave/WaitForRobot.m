@@ -31,7 +31,7 @@ if( ~exist('timelimit','var') )
     timelimit = 0;
 end
 
-display('waiting for robot');
+disp('waiting for robot');
 success = 1;
 dowait = 1;
 pause(0.5); % always give a little time

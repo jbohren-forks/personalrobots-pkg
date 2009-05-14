@@ -10,7 +10,7 @@ if( ~exist('home','var') )
     if( length(robothome) == robot.dof )
         home = robothome;
     else
-        display('robothome not set');
+        disp('robothome not set');
         home = zeros([robot.dof 1]);
     end
 end
@@ -26,7 +26,7 @@ if( ~success )
     return;
 end
 
-display('moving hand');
+disp('moving hand');
 success = RobotMoveJointValues(robotid, home(handjoints+1),handjoints)
 
 %orRobotSetActiveDOFs(robotid,0:(robot.dof-1));

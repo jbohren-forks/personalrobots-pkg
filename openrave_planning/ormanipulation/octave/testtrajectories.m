@@ -27,7 +27,7 @@ trajectory = [];
 for i = 1:size(Tgrippertraj,2)
     iksol = orProblemSendCommand(['iktest matrix ' sprintf('%f ', Tgrippertraj(:,i))],probs.manip)
     if( isempty(iksol) )
-        display(sprintf('failed to find ik %d/%d', i, size(Tgrippertraj,2)));
+        disp(sprintf('failed to find ik %d/%d', i, size(Tgrippertraj,2)));
         break;
     end
 

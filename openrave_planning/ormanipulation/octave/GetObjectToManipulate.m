@@ -82,7 +82,7 @@ if( isempty(curobj) && ~isempty(outmemory.ignorelist) && ~isempty(orderedtargets
 end
 
 if( isempty(curobj.info) )
-    display('invalid object');
+    disp('invalid object');
     curobj = [];
     return;
 end

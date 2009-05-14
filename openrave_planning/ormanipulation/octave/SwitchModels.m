@@ -54,7 +54,7 @@ for ibody = 1:length(bodies)
                         isempty(strmatch([bodies{ibody}.name 'thin'], bodynames, 'exact')) )
                 % if there are corresponding thin objects, then don't create
                 id = orEnvCreateKinBody([bodies{ibody}.name 'fat'], patterns{ipat}.fatfilename);
-                display(['adding ' bodies{ibody}.name 'fat: ' num2str(id)]);
+                disp(['adding ' bodies{ibody}.name 'fat: ' num2str(id)]);
                 orBodySetTransform(id, [0 100 0], [1 0 0 0]);
             end
             

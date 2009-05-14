@@ -19,14 +19,14 @@ prevprobs = probs;
 setrealsession();
 [out,trajsuc] = orProblemSendCommand(['traj stream ' trajdata],probs.manip);
 if( ~trajsuc )
-    display('trajectory failed');
+    disp('trajectory failed');
     success = 0;
     setclonesession(prevsession);
     probs = prevprobs
     return;
 end
 
-display('waiting for robot');
+disp('waiting for robot');
 success = 1;
 dowait = 1;
 pause(0.3); % pause a little to give a chance for controller to start
@@ -47,7 +47,7 @@ while(dowait == 1 & (orEnvWait(robotid, 0.05) == 0) )
     end
 end
 
-display('wait ended');
+disp('wait ended');
 newjointconfig = orBodyGetJointValues(robotid);
 setclonesession(prevsession);
 probs = prevprobs;

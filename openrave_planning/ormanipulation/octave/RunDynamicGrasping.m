@@ -47,7 +47,7 @@ while(1)
     [curobj,memory] = GetObjectToManipulate(robot,scenedata,memory);
     if( isempty(curobj) )
         if( simulation )
-            display('task done!');
+            disp('task done!');
             return;
         end
 
@@ -66,20 +66,20 @@ while(1)
     curobj.info = orEnvGetBodies(curobj.id);
 
     if( isempty(curobj.info) )
-        display(sprintf('failed to get info for obj %d (might have been deleted)', curobj.id));
+        disp(sprintf('failed to get info for obj %d (might have been deleted)', curobj.id));
         continue;
     end
 
-    display(['Grasping ' curobj.info.name ' numdests: ' num2str(size(curobj.dests,2))]);
+    disp(['Grasping ' curobj.info.name ' numdests: ' num2str(size(curobj.dests,2))]);
         
     %% pick up and place one object
     basetime = toc;
     [success, full_solution_index] = GraspAndPlaceObject(robot, curobj, squeeze, MySwitchModels, scenedata.SwitchModelPatterns);
 
     if( success )
-        display(sprintf('sucessfully manipulated obj %s, total time: %f', curobj.info.name, toc-basetime));
+        disp(sprintf('sucessfully manipulated obj %s, total time: %f', curobj.info.name, toc-basetime));
     else
-        display(sprintf('%s failed, total time: %f', curobj.info.name, toc-basetime));
+        disp(sprintf('%s failed, total time: %f', curobj.info.name, toc-basetime));
     end
 
     % switch back to real

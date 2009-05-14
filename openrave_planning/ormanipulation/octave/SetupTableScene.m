@@ -160,7 +160,7 @@ for i = 1:length(bodies)
 end
 
 if( id == 0 )
-    display(sprintf('no table with pattern %s', tablepattern));
+    disp(sprintf('no table with pattern %s', tablepattern));
     return;
 end
 
@@ -171,7 +171,7 @@ if( isempty(ab) )
 end
 
 if( isempty(ab) )
-    display('missed table, trying again');
+    disp('missed table, trying again');
     dests = GetDests(tablepattern);
     return;
 end

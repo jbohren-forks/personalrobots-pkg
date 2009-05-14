@@ -47,7 +47,7 @@ orBodySetTransform(handrobot.id, [100 0 0], [1 0 0 0]);
 
 full_solution_index = -1;
 
-display(sprintf('picking up object %s', curobj.info.name));
+disp(sprintf('picking up object %s', curobj.info.name));
 
 %switch back to real models
 if( MySwitchModels(0) )
@@ -97,7 +97,7 @@ while(curgrasp < size(grasps,1))
     [response, success] = orProblemSendCommand([cmd sprintf('%f ', g)], probs.task);
         
     if( isempty(response) || ~success )
-	    display(['failed to find grasp for object ' curobj.info.name]);
+	    disp(['failed to find grasp for object ' curobj.info.name]);
         return;
     end
 
@@ -112,7 +112,7 @@ while(curgrasp < size(grasps,1))
 
 	putsuccess=1;
     grasp = grasps(curgrasp,:);
-    display(['grasp: ' sprintf('%d ', [curgrasp order(curgrasp)]) ' time: ' sprintf('%fs', toc-basetime)]);
+    disp(['grasp: ' sprintf('%d ', [curgrasp order(curgrasp)]) ' time: ' sprintf('%fs', toc-basetime)]);
         
     open_config = transpose(grasp(handrobot.grasp.joints));
 
@@ -129,7 +129,7 @@ while(curgrasp < size(grasps,1))
         return;
     end
         
-    display('moving hand');
+    disp('moving hand');
     [trajdata, success] = orProblemSendCommand(['MoveHandStraight execute 0 outputtraj direction ' num2str(grasp(1:3)) ...
                                      ' stepsize 0.001 maxsteps ' num2str(ceil(offset/0.001+10))], probs.manip);
     if( ~success )
@@ -142,7 +142,7 @@ while(curgrasp < size(grasps,1))
     end
 
 %     if( squeeze )
-%         display('squeezing');
+%         disp('squeezing');
 %         orProblemSendCommand('Squeeze');
 %         WaitForRobot(robotid);
 % 
@@ -151,7 +151,7 @@ while(curgrasp < size(grasps,1))
 %         sizeconfig = length(robot.closed_config);
 %         curvalues = orRobotGetDOFValues(robotid,startoffset:(startoffset+sizeconfig-1));
 %         if( all(curvalues > robot.closed_config') )
-%             display(['squeeze failed (' sprintf('%f ', curvalues') ', going home and trying again.. ']);
+%             disp(['squeeze failed (' sprintf('%f ', curvalues') ', going home and trying again.. ']);
 %             orProblemSendCommand('releaseall');
 %             orRobotControllerSend(robotid, 'ignoreproxy');
 %             % first open the fingers
@@ -167,12 +167,12 @@ while(curgrasp < size(grasps,1))
 %             continue;
 %         end
 % 
-%         display('squeeze successful before liftoff');
+%         disp('squeeze successful before liftoff');
 % 
 %         % disable hand joints from listening to anymore commands
 %         orRobotControllerSend(robotid, 'ignoreproxy 1');
 %     else
-        display('closing fingers');
+        disp('closing fingers');
         closeoffset = 0.12;
         [trajdata, success] = orProblemSendCommand(['CloseFingers execute 0 outputtraj offset ' sprintf('%f ', closeoffset*ones(size(handjoints)))] , probs.manip);
         if( ~success )
@@ -213,21 +213,21 @@ while(curgrasp < size(grasps,1))
     squeezesuccess = 1;
 
 %     if( squeezesuccess & squeeze )
-%         display('checking for squeeze failures');
+%         disp('checking for squeeze failures');
 %         
 %         startoffset = robot.totaldof-robot.handdof;
 %         sizeconfig = length(robot.closed_config);
 %         curvalues = orRobotGetDOFValues(robotid,startoffset:(startoffset+sizeconfig-1));
 %         if( all(curvalues > robot.closed_config') )
-%             display(['squeeze failed (' sprintf('%f ', curvalues') ', releasing cup']);
+%             disp(['squeeze failed (' sprintf('%f ', curvalues') ', releasing cup']);
 %             squeezesuccess = 0;
 %         else
-%             display('squeeze successful after liftoff');
+%             disp('squeeze successful after liftoff');
 %         end
 %     end
     
     if( squeezesuccess > 0 )
-        display('planning to destination');
+        disp('planning to destination');
         
         [trajdata,success] = orProblemSendCommand(['MoveToHandPosition maxiter 1000 maxtries 1 seedik 4 execute 0 outputtraj matrices ' sprintf('%d ', size(destgoals,2)) sprintf('%f ', destgoals)], probs.manip);
         if( success )
@@ -245,14 +245,14 @@ while(curgrasp < size(grasps,1))
         % after trajectory is done, check for failure of grasp (could have
         % dropped cup)
 %         if( putsuccess & squeeze )
-%             display('checking for squeeze failures');
+%             disp('checking for squeeze failures');
 % 
 %             startoffset = robot.totaldof-robot.handdof;
 %             sizeconfig = length(robot.closed_config);
 %             curvalues = orRobotGetDOFValues(robotid,startoffset:(startoffset+sizeconfig-1));
 %             if( all(curvalues > robot.closed_config') )
 %                 % completely failed 
-%                 display(['squeeze failed (' sprintf('%f ', curvalues') ', releasing cup']);
+%                 disp(['squeeze failed (' sprintf('%f ', curvalues') ', releasing cup']);
 %                 orProblemSendCommand('releaseall');
 %                 orRobotControllerSend(robotid, 'ignoreproxy');
 %                 % first open the fingers
@@ -267,7 +267,7 @@ while(curgrasp < size(grasps,1))
 %                 pause(0.5);
 %                 return;
 %             else
-%                 display('squeeze successful after liftoff');
+%                 disp('squeeze successful after liftoff');
 %             end
 %         end
     end % squeeze success
@@ -276,7 +276,7 @@ while(curgrasp < size(grasps,1))
     % and lift the arm back up
         
     % move the hand down until collision
-    display('moving hand down');
+    disp('moving hand down');
     [trajdata, success] = orProblemSendCommand(['MoveHandStraight ignorefirstcollision 0 execute 0 ' ...
                                                 ' outputtraj direction ' sprintf('%f ', -updir) ...
                                                 ' maxdist ' sprintf('%f ', 0.3)],probs.manip);
@@ -290,7 +290,7 @@ while(curgrasp < size(grasps,1))
         end
     end
 
-    display('opening hand');
+    disp('opening hand');
 
     % reenable hand joints
     %orRobotControllerSend(robotid, 'ignoreproxy');
@@ -326,7 +326,7 @@ while(curgrasp < size(grasps,1))
     orProblemSendCommand('releaseall', probs.manip);
     
     if( squeezesuccess > 0 && putsuccess > 0 )
-        display('success, putting down');
+        disp('success, putting down');
 
         % only break when succeeded        
         %orProblemSendCommand(['MoveHandStraight stepsize 0.003 minsteps ' sprintf('%f ', 90) ' maxsteps ' sprintf('%f ', 100) ' direction ' sprintf('%f ', updir')]);
@@ -339,7 +339,7 @@ while(curgrasp < size(grasps,1))
         graspsuccess = 1;
         break;
     else
-        display('failed');
+        disp('failed');
         
         % go to initial
         RobotGoInitial(robot);
@@ -351,6 +351,6 @@ while(curgrasp < size(grasps,1))
 end
 
 if(test)
-    display('failed to find successful grasp');
+    disp('failed to find successful grasp');
     return;
 end
