@@ -214,7 +214,11 @@ public:
       double angrate[3];
       double orientation[9];
 
+      double starttime = ros::Time::now().toSec();
       imu.receiveAccelAngrateOrientation(&time, accel, angrate, orientation);
+      double endtime = ros::Time::now().toSec();
+      if (endtime - starttime > 0.015)
+        ROS_WARN("Gathering data took more than 15 ms.");
 
       reading.acc.acc.ax = accel[0];
       reading.acc.acc.ay = accel[1];
@@ -232,12 +236,16 @@ public:
       tf::PoseTFToMsg(pose, reading.pos);
       
       
-      reading.header.stamp = ros::Time().fromNSec(time);
+      reading.header.stamp = ros::Time::now().fromNSec(time);
       reading.header.frame_id = frameid_;
 
-      ROS_DEBUG("About to publish imu_data");
+      starttime = ros::Time::now().toSec();
+      //ROS_DEBUG("About to publish imu_data");
       publish("imu_data", reading);
-      ROS_DEBUG("Done publishing imu_data");
+      //ROS_DEBUG("Done publishing imu_data");
+      endtime = ros::Time::now().toSec();
+      if (endtime - starttime > 0.005)
+        ROS_WARN("Publishing took more than 5 ms.");
         
     } catch (ms_3dmgx2_driver::Exception& e) {
       ROS_INFO("Exception thrown while trying to get the IMU reading.\n%s", e.what());
