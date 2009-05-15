@@ -81,7 +81,7 @@ namespace door_reactive_planner
      * @param start The position from which the robot is starting
      * @param best_path The best path returned by the planner (note this could be a zero length path if no plan is found
      */
-    bool makePlan(const pr2_robot_actions::Pose2D &start, std::vector<pr2_robot_actions::Pose2D> &best_path);
+    bool makePlan(const pr2_robot_actions::Pose2D &start, std::vector<pr2_robot_actions::Pose2D> &best_path, costmap_2d::Costmap2D *cost_map);
 
     /**
      * @brief Set door information for the planner

@@ -160,12 +160,11 @@ namespace nav
     clearRobotFootprint(planner_cost_map_);
 
     std::vector<pr2_robot_actions::Pose2D> global_plan;
-    bool valid_plan = planner_->makePlan(getPose2D(global_pose_), global_plan);//makePlan(current_position, return_path);
+    bool valid_plan = planner_->makePlan(getPose2D(global_pose_), global_plan,&planner_cost_map_);//makePlan(current_position, return_path, &planner_cost_map_);
 
     valid_plan_ = valid_plan;
     global_plan_ = global_plan;
-
-    //    publishPath(global_plan, "~gui_path", 0.0, 1.0, 0.0, 0.0);
+    publishPath(global_plan, "~gui_path", 0.0, 1.0, 0.0, 0.0);
   }
 
   void MoveBaseDoorAction::updateGlobalPose()
@@ -299,8 +298,8 @@ namespace nav
         }
 
         //for visualization purposes
-        //publishPath(global_plan_, "~gui_path", 0.0, 1.0, 0.0, 0.0);
-	//        publishFootprint();
+        publishPath(global_plan_, "~gui_path", 0.0, 1.0, 0.0, 0.0);
+	publishFootprint();
 
       }
       if(!control_rate.sleep())
@@ -308,7 +307,7 @@ namespace nav
         ROS_WARN("Control loop missed its desired cycle frequency of %.4f Hz", controller_frequency_);
         plan_state_ = "Control loop missed cycle time";
       }
-      //publishDiagnostics(false);
+      publishDiagnostics(false);
 
     }
     //make sure to stop the costmap from running on return
@@ -338,10 +337,7 @@ namespace nav
           plan_out.points[0].time = 0.0;        
           ROS_DEBUG("Plan in had %d points, plan out has %d points",(int)plan_in.size(),(int)plan_out.points.size());
     }
-    ros::Time start_test = ros::Time::now();
     ros_node_.publish(control_topic_name_,plan_out);
-    ros::Duration tmp = ros::Time::now()-start_test;
-    ROS_INFO("Publish plan took %f sec ", (tmp).toSec());
   }
 
 
@@ -401,7 +397,7 @@ namespace nav
     std::vector<robot_msgs::DiagnosticStatus> statuses;
 
     robot_msgs::DiagnosticStatus status_planner = planner_->getDiagnostics();
-    status_planner.message = plan_state_;
+    status_planner.message = plan_state_ + " (" + door_.header.frame_id + ")";
 
     statuses.push_back(status_planner);
 
