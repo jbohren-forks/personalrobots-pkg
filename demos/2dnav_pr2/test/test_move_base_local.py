@@ -10,6 +10,8 @@ import math
 import unittest
 import rospy
 import rostest
+import tf
+import bullet
 
 from robot_msgs.msg import PoseStamped
 from nav_robot_actions.msg import MoveBaseState
@@ -18,6 +20,7 @@ class TestGoto(unittest.TestCase):
 
   def setUp(self):
     self.success = False
+    self.current_pose = None
     self.pub = rospy.Publisher('move_base_local/activate', PoseStamped)
     self.sub = rospy.Subscriber('move_base_local/feedback', MoveBaseState, self.cb)
     rospy.init_node('test', anonymous=True)
@@ -38,20 +41,19 @@ class TestGoto(unittest.TestCase):
     self.tolerance_a = float(sys.argv[5])
     target_time = float(sys.argv[6])
 
-    goal = PoseStamped()
-    goal.header.frame_id = 'odom_combined'
-    goal.pose.position.x = self.target_x
-    goal.pose.position.y = self.target_y
-    goal.pose.position.z = 0.0
-    # TODO
-    goal.pose.orientation.x = 0.0
-    goal.pose.orientation.y = 0.0
-    goal.pose.orientation.z = 0.0
-    goal.pose.orientation.w = 1.0
-
-    while(rospy.rostime.get_time() == 0.0):
+    while rospy.rostime.get_time() == 0.0:
       print 'Waiting for initial time publication'
       time.sleep(0.1)
+
+    # Construct goal a robot-centric frame; let move_base_local do the work
+    goal = PoseStamped()
+    goal.header.stamp = rospy.get_rostime()
+    goal.header.frame_id = 'base_link'
+    goal.pose.position.x = self.target_x
+    goal.pose.position.y = self.target_y
+    goal.pose.position.z = 0
+    # Use bullet and tf to build a quaternion from the user-specified yaw
+    goal.pose.orientation = tf.quaternion_bt_to_msg(bullet.Quaternion(self.target_a,0,0))
 
     self.pub.publish(goal)
     start_time = rospy.rostime.get_time()
