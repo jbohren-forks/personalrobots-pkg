@@ -128,15 +128,28 @@ RechargeController::Holds {
           eq(s.arms_clear, false);
         }
         else {
-          if (plugged_in == true) {
-            contains_start(unplug.Active cmd);
-            concurrent(cmd.end, end);
-            eq(s.arms_clear, false);
+          if (plug_is_stowed == maybe) {
+            if (arms_clear == true) {
+              contains_start(detect_plug_on_base.Active cmd);
+              concurrent(cmd.end, end);
+            }
+            else {
+              contains_start(plugs_untuck_arms.Active cmd);
+              concurrent(cmd.end, end);
+            }
           }
           else {
-            contains_start(stow_plug.Active cmd);
-            concurrent(cmd.end, end);
-            eq(s.arms_clear, false);
+            
+            if (plugged_in == true) {
+              contains_start(unplug.Active cmd);
+              concurrent(cmd.end, end);
+              eq(s.arms_clear, false);
+            }
+            else {
+              contains_start(stow_plug.Active cmd);
+              concurrent(cmd.end, end);
+              eq(s.arms_clear, false);
+            }
           }
         }
       }
@@ -167,8 +180,14 @@ RechargeController::Holds {
         // plug not stowed
         else{
           if(plug_is_stowed == maybe){
-            contains_start(detect_plug_on_base.Active cmd);
-            concurrent(cmd.end, end);
+            if (arms_clear == true) {
+              contains_start(detect_plug_on_base.Active cmd);
+              concurrent(cmd.end, end);
+            }
+            else {
+              contains_start(plugs_untuck_arms.Active cmd);
+              concurrent(cmd.end, end);
+            }
           }
           else {
             if(plugged_in == false){
@@ -273,8 +292,15 @@ RechargeController::Holds {
 
                 // coarse hasn't happened
                 else {
-                  contains_start(detect_outlet_coarse.Active cmd);
-                  concurrent(cmd.end, end);
+                  
+                  if (arms_tucked == true) {
+                    contains_start(detect_outlet_coarse.Active cmd);
+                    concurrent(cmd.end, end);
+                  }
+                  else {
+                    contains_start(safety_tuck_arms.Active cmd);
+                    concurrent(cmd.end, end);
+                  }
                 }
               }
             }
@@ -292,9 +318,12 @@ RechargeController::Holds {
  *************************************************/
 
 MoveBase::Inactive{
+  starts_during(RechargeController.Holds rc);
   if(status == SUCCESS){
-    starts_during(RechargeController.Holds rc);
     eq(rc.in_position, true);
+  }
+  else {
+    //eq(rc.finishing, true);
   }
 }
 
