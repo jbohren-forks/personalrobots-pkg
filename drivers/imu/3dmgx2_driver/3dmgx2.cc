@@ -306,7 +306,9 @@ ms_3dmgx2_driver::IMU::receiveAccelAngrateOrientation(uint64_t *time, double acc
   uint64_t sys_time;
   uint64_t imu_time;
 
+  ROS_ERROR("About to do receive.");
   receive(CMD_ACCEL_ANGRATE_ORIENT, rep, sizeof(rep), 0, &sys_time);
+  ROS_ERROR("Finished receive.");
 
   // Read the acceleration:
   k = 1;
