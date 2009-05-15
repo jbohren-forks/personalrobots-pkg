@@ -1,13 +1,15 @@
 <package>
   <description>
-  A generic multiplexer; it can take a bunch of arbitrary-typed nodes and
+  A set of multiplexing tools. mux can take a bunch of arbitrary-typed nodes and
   multiplex between them. Useful anywhere a mux is useful in circuits or HDL...
   as one example, deciding which algorithm gets control of the drive system of
   the robot. You only want one algorithm to drive the robot at any time, and
   need a nice way to switch between who is actually passing messages to
-  the robot and whose messages are getting ignored.
+  the robot and whose messages are getting ignored.  throttle will
+  subscribe to a topic and republish it on another topic, at a maximum
+  rate.
   </description>
-  <author>Morgan Quigley</author>
+  <author>Morgan Quigley, Brian Gerkey</author>
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
   <depend package="roscpp"/>

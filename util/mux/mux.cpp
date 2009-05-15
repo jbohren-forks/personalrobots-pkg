@@ -27,6 +27,11 @@
 // POSSIBILITY OF SUCH DAMAGE.
 /////////////////////////////////////////////////////////////////////////////
 
+/** @defgroup mux mux
+
+  @todo Document mux
+**/
+
 #include "ros/node.h"
 #include "std_msgs/String.h"
 #include "deprecated_srvs/StringString.h"

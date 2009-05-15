@@ -27,6 +27,11 @@
 // POSSIBILITY OF SUCH DAMAGE.
 /////////////////////////////////////////////////////////////////////////////
 
+/** @defgroup switch switch
+
+  @todo Document switch
+**/
+
 #include "ros/node.h"
 #include "deprecated_srvs/StringString.h"
 using namespace std;
