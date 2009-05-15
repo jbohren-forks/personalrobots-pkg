@@ -80,9 +80,9 @@ int
   door.door_p2.y = 0.5;
   door.travel_dir.x = 1.0;
   door.travel_dir.y = 0.0;
-  //door.rot_dir = door_msgs::Door::ROT_DIR_COUNTERCLOCKWISE;
-  door.rot_dir = door_msgs::Door::ROT_DIR_CLOCKWISE;
-  door.hinge = door_msgs::Door::HINGE_P1;
+  door.rot_dir = door_msgs::Door::ROT_DIR_COUNTERCLOCKWISE;
+  //door.rot_dir = door_msgs::Door::ROT_DIR_CLOCKWISE;
+  door.hinge = door_msgs::Door::HINGE_P2;
   door.header.frame_id = "base_footprint";
   /*
   door.frame_p1.x = 13.720980644226074;
