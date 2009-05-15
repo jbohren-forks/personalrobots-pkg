@@ -22,10 +22,9 @@ ADD_CUSTOM_COMMAND(OUTPUT data/RFFprec_501.i
                    COMMAND ${PROJECT_SOURCE_DIR}/scripts/bin2c.py  ${PROJECT_SOURCE_DIR}/nevensrc/Embedded/common/data/APIEm/Modules/RFFprec_501.bmd > ${PROJECT_SOURCE_DIR}/data/RFFprec_501.i
                    DEPENDS ${PROJECT_SOURCE_DIR}/scripts/bin2c.py  ${PROJECT_SOURCE_DIR}/nevensrc/Embedded/common/data/APIEm/Modules/RFFprec_501.bmd)
 
-ADD_CUSTOM_TARGET(generate_data_includes ALL DEPENDS data/RFFspeed_501.i data/RFFstd_501.i data/RFFprec_501.i)
-
 rospack_add_library(neven 
        src/neven.cpp
+       data/RFFspeed_501.i data/RFFstd_501.i data/RFFprec_501.i
        nevensrc/Embedded/common/src/b_APIEm/DCR.c 
        nevensrc/Embedded/common/src/b_APIEm/BFFaceFinder.c 
        nevensrc/Embedded/common/src/b_APIEm/FaceFinder.c 
