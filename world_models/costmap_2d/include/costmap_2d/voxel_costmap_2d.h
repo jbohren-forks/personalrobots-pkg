@@ -112,17 +112,27 @@ namespace costmap_2d {
 
       void getVoxelGridMessage(VoxelGrid& grid);
 
+      static inline void mapToWorld3D(const unsigned int mx, const unsigned int my, const unsigned int mz,
+                                      const double origin_x, const double origin_y, const double origin_z,
+                                      const double x_resolution, const double y_resolution, const double z_resolution,
+                                      double& wx, double& wy, double& wz){
+        //returns the center point of the cell
+        wx = origin_x + (mx + 0.5) * x_resolution;
+        wy = origin_y + (my + 0.5) * y_resolution;
+        wz = origin_z + (mz + 0.5) * z_resolution;
+      }
+
     private:
       /**
        * @brief  Insert new obstacles into the cost map
-       * @param obstacles The point clouds of obstacles to insert into the map 
+       * @param obstacles The point clouds of obstacles to insert into the map
        * @param inflation_queue The queue to place the obstacles into for inflation
        */
       void updateObstacles(const std::vector<Observation>& observations, std::priority_queue<CellData>& inflation_queue);
 
       /**
        * @brief  Clear freespace from an observation
-       * @param clearing_observation The observation used to raytrace 
+       * @param clearing_observation The observation used to raytrace
        */
       void raytraceFreespace(const Observation& clearing_observation);
 
@@ -158,15 +168,6 @@ namespace costmap_2d {
         wx = origin_x_ + (mx + 0.5) * xy_resolution_;
         wy = origin_y_ + (my + 0.5) * xy_resolution_;
         wz = origin_z_ + (mz + 0.5) * z_resolution_;
-      }
-
-      static inline void mapToWorld3D(unsigned int mx, unsigned int my, unsigned int mz, 
-          double origin_x, double origin_y, double origin_z, 
-          double x_resolution, double y_resolution, double z_resolution, double& wx, double& wy, double& wz){
-        //returns the center point of the cell
-        wx = origin_x + (mx + 0.5) * x_resolution;
-        wy = origin_y + (my + 0.5) * y_resolution;
-        wz = origin_z + (mz + 0.5) * z_resolution;
       }
 
       inline double dist(double x0, double y0, double z0, double x1, double y1, double z1){

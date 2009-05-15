@@ -44,7 +44,7 @@ namespace costmap_2d{
       double xy_resolution, double z_resolution, double origin_x, double origin_y, double origin_z, double inscribed_radius,
       double circumscribed_radius, double inflation_radius, double obstacle_range,
       double raytrace_range, double weight,
-      const std::vector<unsigned char>& static_data, unsigned char lethal_threshold, unsigned int unknown_threshold, unsigned int mark_threshold) 
+      const std::vector<unsigned char>& static_data, unsigned char lethal_threshold, unsigned int unknown_threshold, unsigned int mark_threshold)
     : Costmap2D(cells_size_x, cells_size_y, xy_resolution, origin_x, origin_y, inscribed_radius, circumscribed_radius,
         inflation_radius, obstacle_range, (cells_size_z * z_resolution - origin_z), raytrace_range, weight, static_data, lethal_threshold),
     voxel_grid_(cells_size_x, cells_size_y, cells_size_z), xy_resolution_(xy_resolution), z_resolution_(z_resolution),
@@ -180,7 +180,7 @@ namespace costmap_2d{
     double ox = clearing_observation.origin_.x;
     double oy = clearing_observation.origin_.y;
     double oz = clearing_observation.origin_.z;
-    
+
     if(!worldToMap3DFloat(ox, oy, oz, sensor_x, sensor_y, sensor_z))
       return;
 
@@ -346,6 +346,9 @@ namespace costmap_2d{
 
   void VoxelCostmap2D::getVoxelGridMessage(VoxelGrid& grid){
     unsigned int size = voxel_grid_.sizeX() * voxel_grid_.sizeY();
+    grid.size_x = voxel_grid_.sizeX();
+    grid.size_y = voxel_grid_.sizeY();
+    grid.size_z = voxel_grid_.sizeZ();
     grid.data.resize(size);
     memcpy(&grid.data[0], voxel_grid_.getData(), size * sizeof(unsigned int));
 

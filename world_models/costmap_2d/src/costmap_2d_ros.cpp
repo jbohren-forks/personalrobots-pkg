@@ -45,13 +45,13 @@ using namespace robot_msgs;
 
 namespace costmap_2d {
 
-  Costmap2DROS::Costmap2DROS(ros::Node& ros_node, TransformListener& tf, string prefix) : ros_node_(ros_node), 
+  Costmap2DROS::Costmap2DROS(ros::Node& ros_node, TransformListener& tf, string prefix) : ros_node_(ros_node),
   tf_(tf), costmap_(NULL), map_update_thread_(NULL), costmap_publisher_(NULL), stop_updates_(false), initialized_(true), prefix_(prefix){
 
     ros_node_.param("~" + prefix + "/costmap/publish_voxel_map", publish_voxel_, false);
     if(publish_voxel_)
-      ros_node_.advertise<robot_msgs::PointCloud>("/voxel_grid", 1);
-    
+      ros_node_.advertise<costmap_2d::VoxelGrid>("~" + prefix_ + "/costmap/voxel_grid", 1);
+
     string topics_string;
     //get the topics that we'll subscribe to from the parameter server
     ros_node_.param("~" + prefix + "/costmap/observation_topics", topics_string, string(""));
@@ -199,7 +199,7 @@ namespace costmap_2d {
     gettimeofday(&start, NULL);
     if(map_type == "costmap"){
       costmap_ = new Costmap2D(map_width, map_height,
-          map_resolution, map_origin_x, map_origin_y, inscribed_radius, circumscribed_radius, inflation_radius, 
+          map_resolution, map_origin_x, map_origin_y, inscribed_radius, circumscribed_radius, inflation_radius,
           obstacle_range, max_obstacle_height, raytrace_range, cost_scale, input_data, lethal_threshold);
     }
     else if(map_type == "voxel"){
@@ -422,7 +422,7 @@ namespace costmap_2d {
       costmap_->updateOrigin(origin_x, origin_y);
     }
     costmap_->updateWorld(wx, wy, observations, clearing_observations);
-    
+
     //if we have an active publisher... we'll update its costmap data
     if(costmap_publisher_->active())
       costmap_publisher_->updateCostmapData(*costmap_);
