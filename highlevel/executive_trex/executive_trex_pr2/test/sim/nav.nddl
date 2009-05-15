@@ -1,6 +1,11 @@
 float XY_ERROR = 0.1;
 float THETA_ERROR = 0.1;
 
+
+MoveBase move_base = new MoveBase(Internal);
+BaseState base_state = new BaseState(Internal);
+SetLaserTilt set_laser_tilt = new SetLaserTilt(Internal);
+
 /**
  */
 BaseState::Holds{
@@ -31,8 +36,10 @@ MoveBase::Active{
 
 MoveBase::Inactive{
   // BaseState(start) == Holds(x, y, th);
-  starts(BaseState.Holds bs);
-  eq_pose_msg(bs.object, object);
+  if(object == move_base){
+    starts(BaseState.Holds bs);
+    eq_pose_msg(bs.object, object);
+  }
 }
 
 SetLaserTilt::Active{
@@ -40,7 +47,3 @@ SetLaserTilt::Active{
   eq(s.status, SUCCESS);
   eq(duration, 1);
 }
-
-MoveBase move_base = new MoveBase(Internal);
-BaseState base_state = new BaseState(Internal);
-SetLaserTilt set_laser_tilt = new SetLaserTilt(Internal);

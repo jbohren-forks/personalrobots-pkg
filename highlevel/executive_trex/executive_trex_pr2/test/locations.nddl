@@ -25,3 +25,6 @@ ChargingStation milestone_1_charging_station = new ChargingStation(33.844, 36.37
 
 ChargingStation map_outlet_1 = new ChargingStation(9.9, 25.025, 0.3, 0.0, 0.0, 0.0, 1.0);
 ChargingStation map_outlet_2 = new ChargingStation(29.0, 37.575, 0.3, 0.0, 0.0, 0.0, 1.0);
+
+MAP_KEY outlet_in_phase_space = 1;
+MAP_KEY outlet_in_bryans_office = 3;
