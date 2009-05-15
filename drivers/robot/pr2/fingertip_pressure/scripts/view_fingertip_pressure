@@ -44,7 +44,7 @@ import wx
 import fingertip_pressure
 from fingertip_pressure.fingertip_panel import FingertipPressurePanel, GripperPressurePanel
 
-NAME = 'view_fingertips'
+NAME = 'view_fingertip_pressure'
 
 class MainWindow(wx.Frame):
     def __init__(self, parent, id, title):

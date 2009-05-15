@@ -91,7 +91,7 @@ class pressureVisualizer:
         mk = Marker()
         mk.header.frame_id = self.frame[tipnum]
         mk.header.stamp = self.datatimestamp
-        mk.ns = "pressure/" + mk.header.frame_id + "/line"
+        mk.ns = mk.header.frame_id + "/line"
         mk.type = Marker.LINE_STRIP
         mk.action = Marker.ADD
         #mk.lifetime = rospy.Duration(1)
@@ -137,11 +137,11 @@ class pressureVisualizer:
 
 if __name__ == '__main__':
     #@todo it would be nice to read an xml configuration file to get these parameters.
-    rospy.init_node('pressure_visualization_marker')
-    rospy.sleep(1)
+    rospy.init_node('pressure/sphere_viz')
+    rospy.sleep(.2)
         
-    pv1 = pressureVisualizer('pressure/r_gripper_motor')
-    pv2 = pressureVisualizer('pressure/l_gripper_motor')
+    pv1 = pressureVisualizer('r_gripper_motor')
+    pv2 = pressureVisualizer('l_gripper_motor')
     
     while not rospy.is_shutdown():
         rospy.sleep(0.09)
