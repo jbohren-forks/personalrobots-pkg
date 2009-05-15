@@ -324,11 +324,13 @@ namespace estimation
       filter_stamp_ = Time::now();
 
       // check which sensors are still active
+      /*
       if ((odom_active_ || odom_initializing_) && 
 	  (Time::now() - odom_time_).toSec() > timeout_){
 	odom_active_ = false; odom_initializing_ = false;
 	ROS_INFO((node_name_+"  Odom sensor not active any more").c_str());
       }
+      */
       if ((imu_active_ || imu_initializing_) && 
 	  (Time::now() - imu_time_).toSec() > timeout_){
 	imu_active_ = false;  imu_initializing_ = false;
