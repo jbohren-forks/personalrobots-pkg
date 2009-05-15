@@ -70,16 +70,15 @@ namespace nav {
     //for comanding the base
     ros_node_.advertise<robot_msgs::PoseDot>("cmd_vel", 1);
 
-    double inscribed_radius, circumscribed_radius;
+    double inscribed_radius;
     //we'll assume the radius of the robot to be consistent with what's specified for the costmaps
     ros_node_.param("~base_local_planner/costmap/inscribed_radius", inscribed_radius, 0.325);
-    ros_node_.param("~base_local_planner/costmap/circumscribed_radius", circumscribed_radius, 0.46);
+    ros_node_.param("~base_local_planner/costmap/circumscribed_radius", circumscribed_radius_, 0.46);
 
     //create the ros wrapper for the controller's costmap... and initializer a pointer we'll use with the underlying map
     controller_costmap_ros_ = new Costmap2DROS(ros_node_, tf_, std::string("base_local_planner"));
     controller_costmap_ros_->getCostmapCopy(controller_costmap_);
 
-    controller_costmap_ros_->clearNonLethalWindow(circumscribed_radius * 2, circumscribed_radius * 2);
 
     //initially we'll stop all updates on the costmap
     controller_costmap_ros_->stop();
@@ -100,7 +99,7 @@ namespace nav {
     footprint_.push_back(pt);
 
     //give the robot a nose
-    pt.x = circumscribed_radius;
+    pt.x = circumscribed_radius_;
     pt.y = 0;
     footprint_.push_back(pt);
 
@@ -147,6 +146,7 @@ namespace nav {
 
     //start the controller's costmap
     controller_costmap_ros_->start();
+    controller_costmap_ros_->clearNonLethalWindow(circumscribed_radius_ * 2, circumscribed_radius_ * 2);
 
     //pass plan to controller
     std::vector<robot_msgs::PoseStamped> global_plan;

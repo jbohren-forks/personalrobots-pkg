@@ -105,6 +105,7 @@ namespace nav {
       std::string action_name_;
       std::string laser_controller_;
       ros::Duration controller_patience_;
+      double circumscribed_radius_;
 
   };
 };
