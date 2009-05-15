@@ -2,6 +2,8 @@
 import time
 
 def write_goal_file(filename, goals):
+
+  print "Writnig out file %s with goals %s"%(filename, str(goals))
   f = open(filename, 'w')
   f.write('/*\n *Auto-generated goals file, created at %s\n */\n\n'%time.asctime())
   
@@ -13,21 +15,22 @@ def get_goal(current_goals, valid_goals):
     print "Current goals: %s"%str(current_goals)
     print "Available additional goals: %s"%str([x for x in valid_goals if not x in current_goals])
     try:
-      x = raw_input("Please enter a goal from the following list, or just hit enter if you're done.\ngoal_id:");
+      x = raw_input("Please enter a new goal, or just hit enter if you're done.\ngoal_id:");
+      print "\n"
       if(x == ""):
         return None
-      if(x in current_goals):
+      if(int(x) in current_goals):
         print "Goal already in list"
-      elif(x in valid_goals):
-        return x
+      elif(int(x) in valid_goals):
+        return int(x)
       else:
         print "%s not in list of valid goals"%x
     except:
-      print "Error reading goal"
+      print "Error reading goal.  Please type just the number of the goal and press enter."
       
 #Read in topological map
 
-valid_goals = [str(x) for x in range(10)]
+valid_goals = range(1, 10)
 
 #Collect user clicks (for now, just ask user to type in IDs) and validate them
 goals = []
