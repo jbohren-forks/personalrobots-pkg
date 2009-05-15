@@ -94,6 +94,15 @@ LocalizePlugInGripperAction::~LocalizePlugInGripperAction()
 
   moveToStage();
 
+  ros::Time started = ros::Time::now();
+
+  ros::Duration d; d.fromSec(0.001);
+  while (isActive()) {
+    d.sleep();
+    if(ros::Time::now() - started > ros::Duration(15.0))
+      deactivate(robot_actions::ABORTED,feedback);
+  }
+
   return waitForDeactivation(feedback);
 }
 
@@ -155,6 +164,7 @@ void LocalizePlugInGripperAction::moveToStage()
 
   req_pose_.pose.pose.position.x = -0.05;
   req_pose_.pose.header.stamp = ros::Time();
+
   if (!ros::service::call(arm_controller_ + "/move_to", req_pose_, res_pose_))
   {
     ROS_ERROR("%s: Failed to move arm.", action_name_.c_str());

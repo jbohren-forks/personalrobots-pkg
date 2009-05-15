@@ -84,6 +84,15 @@ robot_actions::ResultStatus PlugInAction::execute(const std_msgs::Empty& empty, 
 {
   reset();
 
+  ros::Time started = ros::Time::now();
+
+  ros::Duration d; d.fromSec(0.001);
+  while (isActive()) {
+    d.sleep();
+    if(ros::Time::now() - started > ros::Duration(120.0))
+      deactivate(robot_actions::ABORTED,feedback);
+  }
+
   return waitForDeactivation(feedback);
 }
 
@@ -293,16 +302,23 @@ void PlugInAction::move()
   if (!isActive())
     return;
 
+  tf::Pose target = mech_offset_desi_;
+  const double MAX = 0.02;
+  tf::Vector3 v = target.getOrigin() - mech_offset_.getOrigin();
+  if (v.length() > MAX) {
+    target.setOrigin(mech_offset_.getOrigin() + MAX * v / v.length());
+  }
+
   tff_msg_.mode.vel.x = 3;
   tff_msg_.mode.vel.y = 3;
   tff_msg_.mode.vel.z = 3;
   tff_msg_.mode.rot.x = 3;
   tff_msg_.mode.rot.y = 3;
   tff_msg_.mode.rot.z = 3;
-  tff_msg_.value.vel.x = mech_offset_desi_.getOrigin().x();
-  tff_msg_.value.vel.y = mech_offset_desi_.getOrigin().y();
-  tff_msg_.value.vel.z = mech_offset_desi_.getOrigin().z();
-  mech_offset_desi_.getBasis().getEulerZYX(tff_msg_.value.rot.z, tff_msg_.value.rot.y, tff_msg_.value.rot.x);
+  tff_msg_.value.vel.x = target.getOrigin().x();
+  tff_msg_.value.vel.y = target.getOrigin().y();
+  tff_msg_.value.vel.z = target.getOrigin().z();
+  target.getBasis().getEulerZYX(tff_msg_.value.rot.z, tff_msg_.value.rot.y, tff_msg_.value.rot.x);
   ROS_DEBUG("plublishing command to hybrid controller to move");
   node_.publish(arm_controller_ + "/command", tff_msg_);
   return;

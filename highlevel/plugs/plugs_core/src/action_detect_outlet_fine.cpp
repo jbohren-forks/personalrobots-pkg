@@ -69,12 +69,20 @@ DetectOutletFineAction::~DetectOutletFineAction()
 
 robot_actions::ResultStatus DetectOutletFineAction::execute(const robot_msgs::PointStamped& outlet_estimate, robot_msgs::PoseStamped& feedback)
 {
+  ros::Time started = ros::Time::now();
   ROS_DEBUG("%s: executing.", action_name_.c_str());
   // point the head at the outlet
   node_.publish(head_controller_ + "/head_track_point", outlet_estimate);
   node_.publish(head_controller_ + "/head_track_point", outlet_estimate);
 
   detector_->activate();
+
+  ros::Duration d; d.fromSec(0.001);
+  while (isActive()) {
+    d.sleep();
+    if (ros::Time::now() - started > ros::Duration(15.0))
+      deactivate(robot_actions::ABORTED, feedback);
+  }
   return waitForDeactivation(feedback);
 
 }

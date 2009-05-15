@@ -132,6 +132,7 @@ void MoveAndGraspPlugAction::moveToGrasp()
   node_->publish(gripper_controller_ + "/set_command", gripper_cmd_);
 
   req_pose_.pose.pose.position.z = plug_stow_.plug_centroid.z - 0.1;
+  req_pose_.pose.pose.position.y = plug_stow_.plug_centroid.y - 0.02;
   req_pose_.pose.header.stamp = ros::Time();
   if (!ros::service::call(arm_controller_ + "/move_to", req_pose_, res_pose_))
   {
