@@ -160,6 +160,15 @@ namespace costmap_2d {
         wz = origin_z_ + (mz + 0.5) * z_resolution_;
       }
 
+      static inline void mapToWorld3D(unsigned int mx, unsigned int my, unsigned int mz, 
+          double origin_x, double origin_y, double origin_z, 
+          double x_resolution, double y_resolution, double z_resolution, double& wx, double& wy, double& wz){
+        //returns the center point of the cell
+        wx = origin_x + (mx + 0.5) * x_resolution;
+        wy = origin_y + (my + 0.5) * y_resolution;
+        wz = origin_z + (mz + 0.5) * z_resolution;
+      }
+
       inline double dist(double x0, double y0, double z0, double x1, double y1, double z1){
         return sqrt((x1 - x0) * (x1 - x0) + (y1 - y0) * (y1 - y0) + (z1 - z0) * (z1 - z0));
       }
