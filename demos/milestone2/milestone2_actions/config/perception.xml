@@ -1,6 +1,10 @@
 <launch>
   <include file="$(find pr2_alpha)/$(env ROBOT).machine" />
 
+  <node pkg="mux" type="throttle" args="3.0 base_scan base_scan_throttled" />
+  <node pkg="mux" type="throttle" args="3.0 tilt_scan tilt_scan_throttled" />
+  <node pkg="mux" type="throttle" args="1.0 stereo/cloud stereo/cloud_throttled" />
+
   <!-- Prosilica camera setup -->
   <group ns="prosilica">
     <include file="$(find prosilica_cam)/cam_settings.xml"/>
