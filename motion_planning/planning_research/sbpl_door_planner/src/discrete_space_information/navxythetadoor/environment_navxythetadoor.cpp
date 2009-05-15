@@ -537,8 +537,8 @@ void EnvironmentNAVXYTHETADOORLAT::setDoorProperties(const door_msgs::Door &door
 
   //Set default desired door angle to door open position
   vector<int> desired_door_angles;
-  desired_door_angles.resize(10);
-  for(int i=0; i<10; i++)
+  desired_door_angles.resize(4);
+  for(int i=0; i<4; i++)
     desired_door_angles[i] = angles::to_degrees(angles::normalize_angle(db_.global_door_open_angle_)) - db_.rot_dir_*i;
   SetDesiredDoorAngles(desired_door_angles);
 

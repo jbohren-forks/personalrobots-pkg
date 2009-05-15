@@ -56,16 +56,16 @@ int main(int argc, char** argv)
 
   SBPLDoorPlanner open(node,tf);
 
-  door_msgs::Door door;
+/*  door_msgs::Door door;
   door_msgs::Door feedback;
 
-/*  double tmp; int tmp2;
-  node.param("~p_door_frame_p1_x", tmp, 0.65); door.frame_p1.x = tmp;
+  double tmp; int tmp2;
+  node.param("~p_door_frame_p1_x", tmp, 0.5); door.frame_p1.x = tmp;
   node.param("~p_door_frame_p1_y", tmp, 0.45); door.frame_p1.y = tmp;
-  node.param("~p_door_frame_p2_x", tmp, 0.65); door.frame_p2.x = tmp;
+  node.param("~p_door_frame_p2_x", tmp, 0.5); door.frame_p2.x = tmp;
   node.param("~p_door_frame_p2_y", tmp, -0.45); door.frame_p2.y = tmp;
-  node.param("~p_door_hinge" , tmp2, 0); door.hinge = tmp2;
-  node.param("~p_door_rot_dir" , tmp2, 1); door.rot_dir = tmp2;
+  node.param("~p_door_hinge" , tmp2, door.HINGE_P1); door.hinge = tmp2;
+  node.param("~p_door_rot_dir" , tmp2,door.ROT_DIR_COUNTERCLOCKWISE ); door.rot_dir = tmp2;
   door.header.frame_id = "base_link";
   door.travel_dir.x = 1.0;
   door.travel_dir.y = 0.0;
@@ -73,7 +73,7 @@ int main(int argc, char** argv)
   door.door_p1 = door.frame_p1;
   door.door_p2 = door.frame_p2;
 
-  door.handle.x = 0.60;
+  door.handle.x = 0.50;
   door.handle.y = -0.4;
   door.handle.z = 0.0;
 
@@ -85,5 +85,6 @@ int main(int argc, char** argv)
   runner.connect<door_msgs::Door, pr2_robot_actions::DoorActionState, door_msgs::Door>(open);
   runner.run();
   node.spin();
+
   return 0;
 }

@@ -40,7 +40,7 @@
      <remap from="raw_obstacles" to="~raw_obstacles" />
      <remap from="inflated_obstacles" to="~inflated_obstacles" />
 
-     <param name="sbpl_action_file" textfile="$(find mpbench)/data/pr2.mprim" />
+     <param name="sbpl_action_file" textfile="$(find mpbench)/data/pr2sides.mprim" />
     </node>
   </group>
 </launch>

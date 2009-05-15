@@ -81,6 +81,7 @@ typedef struct
 class SBPLDoorPlanner : public robot_actions::Action<door_msgs::Door, door_msgs::Door>
 {
   public:
+
   SBPLDoorPlanner(ros::Node& ros_node, tf::TransformListener& tf);
 
   virtual ~SBPLDoorPlanner();
@@ -96,23 +97,26 @@ class SBPLDoorPlanner : public robot_actions::Action<door_msgs::Door, door_msgs:
   private:
 
   ros::Node &ros_node_;
-  tf::TransformListener &tf_;
-  
+  tf::TransformListener &tf_;  
   boost::shared_ptr<mpglue::CostmapAccessor> cm_access_;
   boost::shared_ptr<mpglue::IndexTransform> cm_index_;
   boost::shared_ptr<mpglue::SBPLEnvironment> env_;
   boost::shared_ptr<mpglue::SBPLPlannerWrap> pWrap_;
 
   double planner_time_limit_; /* The amount of time given to the planner to find a plan */
+
   double allocated_time_;
 
   bool use_cost_map_;
+
   bool forward_search_;
 
   std::string planner_type_;
+
   std::string plan_stats_file_;
   
   costmap_2d::Costmap2DROS *cost_map_ros_; /**< manages the cost map for us */
+
   costmap_2d::Costmap2D cost_map_;        /**< local copy of the costmap underlying cost_map_ros_ */
   
   friend struct cm_getter;
@@ -157,7 +161,7 @@ class SBPLDoorPlanner : public robot_actions::Action<door_msgs::Door, door_msgs:
 
   double inscribed_radius_;
 
-  void publishFootprint(const pr2_robot_actions::Pose2D &position, std::string topic);
+  void publishFootprint(const pr2_robot_actions::Pose2D &position, std::string topic, double r, double g, double b);
 
   void publishDoor(const door_msgs::Door &door_in, const double &angle);
 
@@ -179,6 +183,16 @@ class SBPLDoorPlanner : public robot_actions::Action<door_msgs::Door, door_msgs:
 
   std::string arm_control_topic_name_;
 
-  void dispatchControl(const robot_msgs::JointTraj &path, const door_msgs::Door &door, int index);
+  void dispatchControl(const robot_msgs::JointTraj &path, const door_msgs::Door &door);
+
+  double distance_goal_;
+
+  double controller_frequency_;
+
+  double animate_frequency_;
+
+  void publishGripper(const double &angle);
+
+  void processPlan(const robot_msgs::JointTraj &path, robot_msgs::JointTraj &return_path);
 
 };

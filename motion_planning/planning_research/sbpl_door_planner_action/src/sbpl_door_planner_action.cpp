@@ -28,10 +28,11 @@
  */
 
 #include <sbpl_door_planner_action/sbpl_door_planner_action.h>
-#include <kdl/frames.hpp>
-#include "door_msgs/Door.h"
-#include <ros/node.h>
 #include <visualization_msgs/Marker.h>
+#include "door_msgs/Door.h"
+#include <kdl/frames.hpp>
+#include <ros/node.h>
+#include <ros/rate.h>
 
 using namespace std;
 using namespace ros;
@@ -59,7 +60,10 @@ SBPLDoorPlanner::SBPLDoorPlanner(ros::Node& ros_node, tf::TransformListener& tf)
   ros_node_.param("~robot_base_frame", robot_base_frame_, std::string("base_link"));
 
   ros_node_.param("~arm_control_topic_name",arm_control_topic_name_,std::string("r_arm_cartesian_pose_controller/command"));
-  ros_node_.param("~base_control_topic_name",base_control_topic_name_, std::string("base/trajectory_controller/command"));
+  ros_node_.param("~base_control_topic_name",base_control_topic_name_,std::string("base/trajectory_controller/command"));
+  ros_node_.param("~distance_goal",distance_goal_,0.4);
+  ros_node_.param("~controller_frequency",controller_frequency_,20.0);
+  ros_node_.param("~animate_frequency",animate_frequency_,10.0);
 
   cost_map_ros_ = new costmap_2d::Costmap2DROS(ros_node_,tf_,std::string(""));
   cost_map_ros_->getCostmapCopy(cost_map_);
@@ -137,14 +141,9 @@ void PrintUsage(char *argv[])
 bool SBPLDoorPlanner::initializePlannerAndEnvironment(const door_msgs::Door &door)
 {
   door_env_.door = door;
-  // First set up the environment
   try 
   {
-    // We're throwing int exit values if something goes wrong, and
-    // clean up any new instances in the catch clause. The sentry
-    // gets destructed when we go out of scope, so unlock() gets
-    // called no matter what.
-    // sentry<SBPLPlannerNode> guard(this);  
+    cost_map_ros_->getCostmapCopy(cost_map_);
     cm_access_.reset(mpglue::createCostmapAccessor(&cm_getter_));
     cm_index_.reset(mpglue::createIndexTransform(&cm_getter_));
     
@@ -156,11 +155,9 @@ bool SBPLDoorPlanner::initializePlannerAndEnvironment(const door_msgs::Door &doo
     action_fp = fopen(filename.c_str(),"wt");
     fprintf(action_fp,"%s",sbpl_action_string.c_str());
     fclose(action_fp);
-
     double nominalvel_mpersecs, timetoturn45degsinplace_secs;
     ros::Node::instance()->param("~nominalvel_mpersecs", nominalvel_mpersecs, 0.4);
     ros::Node::instance()->param("~timetoturn45degsinplace_secs", timetoturn45degsinplace_secs, 0.6);
-    // Could also sanity check the other parameters...
     env_.reset(mpglue::SBPLEnvironment::createXYThetaDoor(cm_access_, cm_index_, footprint_, nominalvel_mpersecs,timetoturn45degsinplace_secs, filename, 0, door));
 	
     boost::shared_ptr<SBPLPlanner> sbplPlanner;
@@ -174,14 +171,14 @@ bool SBPLDoorPlanner::initializePlannerAndEnvironment(const door_msgs::Door &doo
     }
     else 
     {
-      ROS_ERROR("in MoveBaseSBPL ctor: invalid planner_type_ \"%s\",use ARAPlanner or ADPlanner",planner_type_.c_str());
+      ROS_ERROR("in MoveBaseSBPL: invalid planner_type_ \"%s\",use ARAPlanner or ADPlanner",planner_type_.c_str());
       throw int(5);
     }
     pWrap_.reset(new mpglue::SBPLPlannerWrap(env_, sbplPlanner));
   }
   catch (int ii) 
   {
-    exit(ii);
+    return false;
   }
   return true;
 }
@@ -189,14 +186,12 @@ bool SBPLDoorPlanner::initializePlannerAndEnvironment(const door_msgs::Door &doo
 bool SBPLDoorPlanner::removeDoor()
 {
   const std::vector<robot_msgs::Point> door_polygon = door_functions::getPolygon(door_env_.door,door_env_.door_thickness); 
-
   for(int i=0; i < (int) door_polygon.size(); i++)
   {
     ROS_INFO("DOOR POLYGON %d:: %f, %f",i,door_polygon[i].x,door_polygon[i].y);
   }
   if(cost_map_.setConvexPolygonCost(door_polygon,costmap_2d::FREE_SPACE))
     return true;
-
   ROS_INFO("Could not remove door");
   return false;
 }
@@ -205,7 +200,6 @@ bool SBPLDoorPlanner::createLinearPath(const pr2_robot_actions::Pose2D &cp,const
 {
   double dist_waypoints_max = 0.025;
   double dist_rot_waypoints_max = 0.1;
-
   ROS_DEBUG("Creating trajectory from: (%f,%f) to (%f,%f)",cp.x,cp.y,fp.x,fp.y);
   pr2_robot_actions::Pose2D temp;
   double dist_trans = sqrt(pow(cp.x-fp.x,2)+pow(cp.y-fp.y,2));        
@@ -216,10 +210,6 @@ bool SBPLDoorPlanner::createLinearPath(const pr2_robot_actions::Pose2D &cp,const
 
   double delta_x = (fp.x-cp.x)/num_intervals;
   double delta_y = (fp.y-cp.y)/num_intervals;
-//  double delta_theta = angles::normalize_angle(fp.th-cp.th)/num_intervals;
-//  double delta_theta = angles::normalize_angle(fp.th);
-
-
   for(int i=0; i< num_intervals; i++)
   {
     temp.x = cp.x + i * delta_x;
@@ -235,41 +225,31 @@ bool SBPLDoorPlanner::createLinearPath(const pr2_robot_actions::Pose2D &cp,const
   return true;
 }
 
-
 bool SBPLDoorPlanner::makePlan(const pr2_robot_actions::Pose2D &start, const pr2_robot_actions::Pose2D &goal, robot_msgs::JointTraj &path)
 {
   ROS_INFO("[replan] getting fresh copy of costmap");
   lock_.lock();
   cost_map_ros_->getCostmapCopy(cost_map_);
-  ROS_INFO("Getting local cost map copy");
   lock_.unlock();
-  // XXXX this is where we would cut out the doors in our local copy
   clearRobotFootprint(cost_map_);
   if(!removeDoor())
   {
     return false;
   }
-
-  //after clearing the footprint... we want to push the changes to the costmap publisher
   if(costmap_publisher_->active())
   {
-    ROS_INFO("Publish costmap");
     costmap_publisher_->updateCostmapData(cost_map_);
   }
 
-  publishFootprint(start,"~start");
-
-  publishFootprint(goal,"~goal");
-
-  ros::Duration d; // allow the publisher to publish
-  d.fromSec(2.0);
-  d.sleep();
-
+  publishFootprint(start,"~start",0,1.0,0);
+  publishFootprint(goal,"~goal",0,0,1.0);
   ROS_INFO("[replan] replanning...");
   try {
+    int max_cost = costmap_2d::FREE_SPACE;
+    int min_cost = costmap_2d::NO_INFORMATION;
     // Update costs
-    cm_access_.reset(mpglue::createCostmapAccessor(&cm_getter_));
-    cm_index_.reset(mpglue::createIndexTransform(&cm_getter_));
+    //cm_access_.reset(mpglue::createCostmapAccessor(&cm_getter_));
+    //cm_index_.reset(mpglue::createIndexTransform(&cm_getter_));
     for (mpglue::index_t ix(cm_access_->getXBegin()); ix < cm_access_->getXEnd(); ++ix) {
       for (mpglue::index_t iy(cm_access_->getYBegin()); iy < cm_access_->getYEnd(); ++iy) {
 	mpglue::cost_t cost;
@@ -283,10 +263,13 @@ bool SBPLDoorPlanner::makePlan(const pr2_robot_actions::Pose2D &start, const pr2
           if(cost == costmap_2d::NO_INFORMATION)
             cost = costmap_2d::FREE_SPACE;
 	  env_->UpdateCost(ix, iy, cost);
+          max_cost = std::max<int>(cost,max_cost);
+          min_cost = std::min<int>(cost,min_cost);
           ROS_DEBUG("Updated cost");
 	}
       }
     }
+    ROS_DEBUG("Max cost: %d, Min cost: %d",max_cost,min_cost);
     
     // Tell the planner about the changed costs. Again, the called
     // code checks whether anything has really changed before
@@ -370,7 +353,7 @@ robot_actions::ResultStatus SBPLDoorPlanner::execute(const door_msgs::Door& door
   {
     return robot_actions::ABORTED;
   }
-  cout  << door;
+  cout << "SBPLDoorPlanner::Door input" <<  door;
 
   ROS_DEBUG("Initializing planner and environment");
    
@@ -381,11 +364,10 @@ robot_actions::ResultStatus SBPLDoorPlanner::execute(const door_msgs::Door& door
   }
 
   ROS_DEBUG("Door planner and environment initialized");
-  goal_.x = (door.frame_p1.x+door.frame_p2.x)/2.0;
-  goal_.y = (door.frame_p1.y+door.frame_p2.y)/2.0;
-//  goal_.th = atan2(door.normal.y,door.normal.x);
   KDL::Vector door_normal = getFrameNormal(door);
   goal_.th = atan2(door_normal(1),door_normal(0));
+  goal_.x = (door.frame_p1.x+door.frame_p2.x)/2.0 + distance_goal_ * cos(goal_.th);
+  goal_.y = (door.frame_p1.y+door.frame_p2.y)/2.0 + distance_goal_ * sin(goal_.th);
 
   ROS_DEBUG("Goal: %f %f %f",goal_.x,goal_.y,goal_.th);
   if(!isPreemptRequested())
@@ -399,58 +381,125 @@ robot_actions::ResultStatus SBPLDoorPlanner::execute(const door_msgs::Door& door
       ROS_INFO("Found solution");
     }
   }
-
   if(!isPreemptRequested())
-    publishPath(path,"global_plan",0,1,0,0);
-  handle_hinge_distance_ = getHandleHingeDistance(door);
-
-  int plan_count = 0;
-  ros::Duration d; // allow the publisher to publish
-  d.fromSec(0.15);
-  while(!isPreemptRequested() && plan_count < (int) path.get_points_size())
   {
-    dispatchControl(path,door,plan_count);
-    plan_count++;
-    d.sleep();
+    publishPath(path,"global_plan",0,1,0,0);
   }
-  animate(path);
+  if(animate_ && isPreemptRequested())
+  {
+    animate(path);
+  }
+
+  robot_msgs::JointTraj new_path;
+  processPlan(path,new_path);
+
+  dispatchControl(new_path,door);
+
+  ros::Duration d;
+  d.fromSec(20.0);
+  d.sleep();
   return robot_actions::SUCCESS;
 }
 
-void SBPLDoorPlanner::dispatchControl(const robot_msgs::JointTraj &path, const door_msgs::Door &door, int index)
+void SBPLDoorPlanner::dispatchControl(const robot_msgs::JointTraj &path, const door_msgs::Door &door)
 {
-  robot_msgs::JointTraj base_plan;
-  robot_msgs::JointTrajPoint path_point;
-  path_point.positions.push_back(path.points[index].positions[0]);
-  path_point.positions.push_back(path.points[index].positions[1]);
-  path_point.positions.push_back(path.points[index].positions[2]);
-  base_plan.points.push_back(path_point);    
+  int plan_count = 0;
+  ros::Rate control_rate(controller_frequency_);
+  handle_hinge_distance_ = getHandleHingeDistance(door);
+  while(!isPreemptRequested() && plan_count < (int) path.get_points_size())
+  {
+    robot_msgs::JointTraj base_plan;
+    robot_msgs::JointTrajPoint path_point;
+    path_point.positions.push_back(path.points[plan_count].positions[0]);
+    path_point.positions.push_back(path.points[plan_count].positions[1]);
+    path_point.positions.push_back(path.points[plan_count].positions[2]);
+    base_plan.points.push_back(path_point);    
+    tf::Stamped<tf::Pose> gripper_pose = getGlobalHandlePosition(door,angles::normalize_angle(path.points[plan_count].positions[3]-getFrameAngle(door)));
 
-  tf::Stamped<tf::Pose> gripper_pose = getGlobalHandlePosition(door,path.points[index].positions[3]);
-  robot_msgs::PoseStamped gripper_msg;
-  gripper_pose.stamp_ = Time::now();
-  PoseStampedTFToMsg(gripper_pose, gripper_msg);
+    robot_msgs::PoseStamped gripper_msg;
+    gripper_pose.stamp_ = ros::Time::now();
+    PoseStampedTFToMsg(gripper_pose, gripper_msg);
+    ros_node_.publish(base_control_topic_name_,base_plan);
+    ros_node_.publish(arm_control_topic_name_,gripper_msg);
 
-  ros_node_.publish(base_control_topic_name_,base_plan);
-  ros_node_.publish(arm_control_topic_name_,gripper_msg);
+    plan_count++;
+    if (!control_rate.sleep())
+    {
+      ROS_WARN("Control loop missed its desired cycle rate of %.4f Hz", controller_frequency_);
+    }
+  }
+}
+
+void SBPLDoorPlanner::processPlan(const robot_msgs::JointTraj &path, robot_msgs::JointTraj &return_path)
+{
+  return_path = path;
+  double global_yaw = getFrameAngle(door_env_.door);  //Take the plan and add the last few steps to open the door
+  int rot_dir = 1.0;
+  if(door_env_.door.rot_dir == door_env_.door.ROT_DIR_CLOCKWISE)
+    rot_dir = -1.0;
+  double global_open_angle = angles::normalize_angle(global_yaw+rot_dir*M_PI/2.0);
+  double last_plan_angle = path.points.back().positions[3];
+  double additional_open_angle = angles::shortest_angular_distance(last_plan_angle,global_open_angle);
+  double delta_open_angle = 0.05;
+  int num_intervals = fabs(additional_open_angle)/delta_open_angle;
+
+  robot_msgs::JointTrajPoint additional_point = path.points.back();
+  for(int i=0; i<num_intervals; i++)
+  {
+    additional_point.positions[3] = angles::normalize_angle(last_plan_angle + i*additional_open_angle/(double)num_intervals);
+    return_path.points.push_back(additional_point);
+    ROS_INFO("Additional point: %f %f %f %f",additional_point.positions[0],additional_point.positions[1],additional_point.positions[2],additional_point.positions[3]);
+  }
+  for(int i = 0; i < 20; i++)
+  {
+    additional_point.positions[3] = global_open_angle;
+    return_path.points.push_back(additional_point);    
+    ROS_INFO("Additional point: %f %f %f %f",additional_point.positions[0],additional_point.positions[1],additional_point.positions[2],additional_point.positions[3]);
+  }
+
 }
 
 void SBPLDoorPlanner::animate(const robot_msgs::JointTraj &path)
 {
-  if(!animate_)
-  {
-    return;
-  }
+  ros::Rate animate_rate(animate_frequency_);
   for(int i=0; i < (int) path.get_points_size(); i++)
   {
     pr2_robot_actions::Pose2D draw;
     draw.x = path.points[i].positions[0];
     draw.y = path.points[i].positions[1];
     draw.th = path.points[i].positions[2];
-    publishFootprint(draw,"~robot_footprint");
+    publishFootprint(draw,"~robot_footprint",0.5,0.5,0);
     publishDoor(door_env_.door,path.points[i].positions[3]);
-    sleep(1.0);
+    publishGripper(angles::normalize_angle(path.points[i].positions[3]-getFrameAngle(door_env_.door)));
+    if (!animate_rate.sleep())
+    {
+      ROS_WARN("Animate loop missed its desired cycle rate of %.4f Hz", animate_frequency_);
+    }
   }
+}
+
+void SBPLDoorPlanner::publishGripper(const double &angle)
+{
+  tf::Stamped<tf::Pose> gripper_pose = getGlobalHandlePosition(door_env_.door,angle);
+  robot_msgs::PoseStamped gripper_msg;
+  gripper_pose.stamp_ = ros::Time::now();
+  PoseStampedTFToMsg(gripper_pose, gripper_msg);
+  visualization_msgs::Marker marker;
+  marker.header.frame_id = global_frame_;
+  marker.header.stamp = ros::Time();
+  marker.ns = "~";
+  marker.id = 1;
+  marker.type = visualization_msgs::Marker::ARROW;
+  marker.action = visualization_msgs::Marker::ADD;
+  marker.pose = gripper_msg.pose;
+  marker.scale.x = 0.25;
+  marker.scale.y = 0.03;
+  marker.scale.z = 0.03;
+  marker.color.a = 1.0;
+  marker.color.r = 1.0;
+  marker.color.g = 0.0;
+  marker.color.b = 1.0;
+  ros_node_.publish( "visualization_marker", marker );
 }
 
 tf::Stamped<tf::Pose> SBPLDoorPlanner::getGlobalHandlePosition(const door_msgs::Door &door_in, const double &angle)
@@ -551,7 +600,9 @@ bool SBPLDoorPlanner::computeOrientedFootprint(const pr2_robot_actions::Pose2D &
     new_pt.x = position.x + (footprint_spec[i].x * cos_th - footprint_spec[i].y * sin_th);
     new_pt.y = position.y + (footprint_spec[i].x * sin_th + footprint_spec[i].y * cos_th);
     oriented_footprint.push_back(new_pt);
+    ROS_DEBUG("Oriented footprint:: %f, %f",new_pt.x,new_pt.y);
   }
+  ROS_DEBUG("Oriented footprint:: %d, %f",footprint_spec.size(),position.th);
   return true;
 }
 
@@ -563,7 +614,7 @@ bool SBPLDoorPlanner::clearRobotFootprint(costmap_2d::Costmap2D& cost_map)
   //set the associated costs in the cost map to be free
   if(!cost_map_.setConvexPolygonCost(oriented_footprint, costmap_2d::FREE_SPACE))
   {
-    ROS_INFO("Could not clear footprint");
+    ROS_DEBUG("Could not clear footprint");
     return false;
   }
   double max_inflation_dist = inflation_radius_ + inscribed_radius_;
@@ -573,7 +624,7 @@ bool SBPLDoorPlanner::clearRobotFootprint(costmap_2d::Costmap2D& cost_map)
 }
 
 
-void SBPLDoorPlanner::publishFootprint(const pr2_robot_actions::Pose2D &position, std::string topic)
+void SBPLDoorPlanner::publishFootprint(const pr2_robot_actions::Pose2D &position, std::string topic, double r, double g, double b)
 {
   std::vector<robot_msgs::Point> oriented_footprint;
   computeOrientedFootprint(position,footprint_,oriented_footprint);
@@ -594,9 +645,9 @@ void SBPLDoorPlanner::publishFootprint(const pr2_robot_actions::Pose2D &position
     robot_polygon.points[2*i+1].y = oriented_footprint[index_2].y;
     robot_polygon.points[2*i+1].z = oriented_footprint[index_2].z;
   }
-  robot_polygon.color.r = 0.5;
-  robot_polygon.color.g = 0.5;
-  robot_polygon.color.b = 0;
+  robot_polygon.color.r = r;
+  robot_polygon.color.g = g;
+  robot_polygon.color.b = b;
   robot_polygon.color.a = 0;
 
   ros_node_.publish(topic, robot_polygon);
