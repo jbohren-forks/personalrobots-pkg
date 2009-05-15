@@ -170,7 +170,7 @@ ImageData::initRectify(bool force)
 
   // Set up rectification mapping
   rMapxy = cvCreateMat(imHeight, imWidth, CV_16SC2);
-  rMapa  = cvCreateMat(imHeight, imWidth, CV_16SC1);
+  rMapa  = cvCreateMat(imHeight, imWidth, CV_16UC1);//CV_16SC1);
   mx = cvCreateMat(imHeight, imWidth, CV_32FC1);
   my = cvCreateMat(imHeight, imWidth, CV_32FC1);
   cvInitUndistortRectifyMap(rK,rD,rR,rKp,mx,my);
@@ -230,7 +230,7 @@ ImageData::doRectify()
       cvSetData(dstIm, imRect, imWidth);
 
       cvRemap(srcIm,dstIm,rMapxy,rMapa);
-//      cvRemap(srcIm,dstIm,mx,my);
+      //cvRemap(srcIm,dstIm,mx,my);
     }
 
   // rectify color image
@@ -253,7 +253,7 @@ ImageData::doRectify()
       cvSetData(dstIm, imRectColor, imWidth*3);
 
       cvRemap(srcIm,dstIm,rMapxy,rMapa);
-//      cvRemap(srcIm,dstIm,mx,my);
+      //cvRemap(srcIm,dstIm,mx,my);
     }
   return true;
 }
