@@ -107,7 +107,7 @@ class pressureVisualizer:
             #print 'publish'
             self.dataready = False
             self.makeVisualization(self.data0, 0, -1)
-            #self.makeVisualization(self.data1, 1, 1)
+            self.makeVisualization(self.data1, 1, 1)
             self.lock.release()
 
     def makeVisualization(self, data, tipnum, ydir):
@@ -132,7 +132,7 @@ class pressureVisualizer:
             mk.pose.orientation.w = 1.0
             mk.color.a = 1.0
             (mk.color.r, mk.color.g, mk.color.b) = color(data[i] / 6000.)
-            print "%f %f %f"%(mk.color.r, mk.color.g, mk.color.b)
+            #print "%f %f %f"%(mk.color.r, mk.color.g, mk.color.b)
             self.vis_pub.publish(mk)
 
     def __init__(self, source):

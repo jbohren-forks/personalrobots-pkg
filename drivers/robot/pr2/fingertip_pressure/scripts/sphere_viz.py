@@ -84,7 +84,7 @@ class pressureVisualizer:
             #print 'publish'
             self.dataready = False
             self.makeVisualization(self.data0, 0)
-            #self.makeVisualization(self.data1, 1)
+            self.makeVisualization(self.data1, 1)
             self.lock.release()
 
     def makeVisualization(self, data, tipnum):
