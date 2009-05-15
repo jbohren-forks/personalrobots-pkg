@@ -7,7 +7,7 @@
 #include "robot_msgs/JointCmd.h"
 #include "std_msgs/Float64.h"
 
-#define TORSO_TOPIC "/torso_lift_controller/command"
+#define TORSO_TOPIC "/torso_lift_controller/set_command"
 #define HEAD_TOPIC "/head_controller/set_command_array"
 
 using namespace ros;
@@ -16,7 +16,7 @@ class TeleopBase : public Node
 {
    public:
   robot_msgs::PoseDot cmd, cmd_passthrough;
-  std_msgs::Float64 torso_eff;
+  std_msgs::Float64 torso_vel;
   joy::Joy joy;
   double req_vx, req_vy, req_vw, req_torso, req_pan, req_tilt;
   double max_vx, max_vy, max_vw, max_vx_run, max_vy_run, max_vw_run;
@@ -29,7 +29,7 @@ class TeleopBase : public Node
 
   TeleopBase(bool deadman_no_publish = false) : Node("teleop_base"), max_vx(0.6), max_vy(0.6), max_vw(0.8), max_vx_run(0.6), max_vy_run(0.6), max_vw_run(0.8), max_pan(2.7), max_tilt(1.4), min_tilt(-0.4), pan_step(0.1), tilt_step(0.1), deadman_no_publish_(deadman_no_publish)
       {
-        torso_eff.data = 0;
+        torso_vel.data = 0;
         cmd.vel.vx = cmd.vel.vy = cmd.ang_vel.vz = 0;
         req_pan = req_tilt = 0;
         if (!hasParam("max_vx") || !getParam("max_vx", max_vx))
@@ -84,7 +84,6 @@ class TeleopBase : public Node
         printf("tilt step: %.3f rad\n", tilt_step);
         printf("pan step: %.3f rad\n", pan_step);
         
-
         printf("axis_vx: %d\n", axis_vx);
         printf("axis_vy: %d\n", axis_vy);
         printf("axis_vw: %d\n", axis_vw);
@@ -179,9 +178,9 @@ class TeleopBase : public Node
 
          // Bring torso up/down with max effort
          if (down && !up)
-           req_torso = -10000; 
+           req_torso = -0.01;
          else if (up && !down)
-           req_torso = 10000;
+           req_torso = 0.01;
          else
            req_torso = 0;
 
@@ -214,9 +213,9 @@ class TeleopBase : public Node
             publish("cmd_vel", cmd);
             
             // Torso
-            torso_eff.data = req_torso;
+            torso_vel.data = req_torso;
 	    if (torso_dn_button != 0)
-	      publish(TORSO_TOPIC, torso_eff);
+	      publish(TORSO_TOPIC, torso_vel);
 
             // Head
             if (head_button != 0)
@@ -234,19 +233,19 @@ class TeleopBase : public Node
             }
 
             if (req_torso != 0)
-              fprintf(stderr,"teleop_base:: %f, %f, %f. Head:: %f, %f. Torso effort: %f.\n",cmd.vel.vx,cmd.vel.vy,cmd.ang_vel.vz, req_pan, req_tilt, torso_eff.data);
+              fprintf(stderr,"teleop_base:: %f, %f, %f. Head:: %f, %f. Torso effort: %f.\n",cmd.vel.vx,cmd.vel.vy,cmd.ang_vel.vz, req_pan, req_tilt, torso_vel.data);
             else
               fprintf(stderr,"teleop_base:: %f, %f, %f. Head:: %f, %f\n",cmd.vel.vx,cmd.vel.vy,cmd.ang_vel.vz, req_pan, req_tilt);
          }
          else
          {
            cmd.vel.vx = cmd.vel.vy = cmd.ang_vel.vz = 0;
-           torso_eff.data = 0;
+           torso_vel.data = 0;
            if (!deadman_no_publish_)
            {
              publish("cmd_vel", cmd);//Only publish if deadman_no_publish is enabled
 	     if (torso_dn_button != 0)
-	       publish(TORSO_TOPIC, torso_eff);
+	       publish(TORSO_TOPIC, torso_vel);
 
              // Publish head
              if (head_button != 0)
