@@ -201,13 +201,13 @@ void MechanismControl::update()
       if (!start_request_[i]->startRequest()){
         switch_success_ = false;
         break;
-	last_started = i;
       }
+      last_started = i;
     }
 
     // if starting failed, stop them again
     if (!switch_success_){
-      for (unsigned int i=0; i<=last_started; i++){
+      for (int i=0; i<=last_started; i++){
         start_request_[i]->stopRequest();
       }
     }
