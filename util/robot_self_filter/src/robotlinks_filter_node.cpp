@@ -97,7 +97,7 @@ public:
     };
 
     RobotLinksFilter(const string& robotname, dReal convexpadding, bool bAccurateTiming) : _robotname(robotname), _convexpadding(convexpadding), _bAccurateTiming(bAccurateTiming)
-            {
+    {
         if( InitRobotLinksFromOpenRAVE(robotname) ) {
             double tf_cache_time_secs;
             s_pmasternode->param("~tf_cache_time_secs", tf_cache_time_secs, 10.0);
@@ -116,14 +116,10 @@ public:
             extrap_limit.fromSec(tf_extrap_limit_secs);
             _tf->setExtrapolationLimit(extrap_limit);
             ROS_INFO("RobotLinksFilter: tf extrapolation Limit: %f Seconds", tf_extrap_limit_secs);
-            _pointcloudnotifier = 
-                    new tf::MessageNotifier<robot_msgs::PointCloud>
-                    (_tf.get(), ros::Node::instance(),  
-                     boost::bind(&RobotLinksFilter::PointCloudCallback, 
-                                 this, _1), 
-                     "tilt_laser_cloud_filtered", "base_link",
-                     50);
-            ROS_ASSERT(_pointcloudnotifier);
+            _pointcloudnotifier.reset(new tf::MessageNotifier<robot_msgs::PointCloud>
+                                      (_tf.get(), ros::Node::instance(),  
+                                       boost::bind(&RobotLinksFilter::PointCloudCallback, this, _1), 
+                                       "tilt_laser_cloud_filtered", "base_link", 50));
         }
         else
             ROS_ERROR("failed to init robot %s", robotname.c_str());
@@ -138,8 +134,7 @@ public:
             s_pmasternode->unadvertise("robotlinks_cloud_filtered");
         }
 
-        if( _pointcloudnotifier)
-          delete _pointcloudnotifier;
+        _pointcloudnotifier.reset();
     }
 
     bool InitRobotLinksFromOpenRAVE(const string& robotname)
@@ -440,7 +435,7 @@ private:
     string _robotname;
     dReal _convexpadding;
     bool _bAccurateTiming; ///< if true, will interpolate the convex hulls for every time stamp
-    tf::MessageNotifier<robot_msgs::PointCloud>* _pointcloudnotifier;
+    boost::shared_ptr<tf::MessageNotifier<robot_msgs::PointCloud> > _pointcloudnotifier;
 };
 
 int main(int argc, char ** argv)

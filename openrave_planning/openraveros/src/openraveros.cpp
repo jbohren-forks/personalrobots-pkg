@@ -97,11 +97,6 @@ void printinterfaces(EnvironmentBase* penv)
 
 int main(int argc, char ** argv)
 {
-    // Set up the output streams to support wide characters
-    if (fwide(stdout,1) < 0) {
-        printf("Unable to set stdout to wide characters\n");
-    }
-
     signal(SIGINT,sigint_handler); // control C
 
     ros::init(argc,argv);

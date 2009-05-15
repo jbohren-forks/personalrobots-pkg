@@ -359,8 +359,11 @@ private:
         }
 
         int id = rand();
-        while(id == 0 || _mapsessions.find(id) != _mapsessions.end())
-            id = rand();
+        {
+            boost::mutex::scoped_lock lock(_mutexsession);
+            while(id == 0 || _mapsessions.find(id) != _mapsessions.end())
+                id = rand();
+        }
 
         SessionState state;
         
@@ -386,6 +389,8 @@ private:
 
         state._pserver.reset(new ROSServer(id, new SessionSetViewerFunc(this), state._penv.get(), req.physicsengine, req.collisionchecker, req.viewer));
         state._penv->AttachServer(state._pserver.get());
+
+        boost::mutex::scoped_lock lock(_mutexsession);
         _mapsessions[id] = state;
         res.sessionid = id;
 
