@@ -238,6 +238,7 @@ namespace nav
   {
     //we'll start our costmap up now that we're active
     planner_cost_map_ros_->start();
+    planner_cost_map_ros_->clearNonLethalWindow(circumscribed_radius_ * 2, circumscribed_radius_ * 2);
 
     door_ = door;
     planner_->setDoor(door);//set the goal into the planner
