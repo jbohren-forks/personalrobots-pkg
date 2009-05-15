@@ -45,7 +45,7 @@ import rostest
 
 from fingertip_pressure.msg import PressureInfo
 
-## A sample python unit test
+## Tests the PressureInfo message produced by sensor_info.py
 class PressureInfoTest(unittest.TestCase):
     def __init__(self, *args):
         super(PressureInfoTest, self).__init__(*args)
@@ -65,6 +65,12 @@ class PressureInfoTest(unittest.TestCase):
                                     
     def callback(self, msg):
         print 'got message'
+        # Account for offset origin of sensor origin.
+        for i in range(0,2):
+            for j in range(0,22):
+                fact = [1,-1][i]
+                msg.sensor[i].center[j].x = msg.sensor[i].center[j].x + 0.004
+                msg.sensor[i].center[j].y = msg.sensor[i].center[j].y + 0.015 * fact
         self.msg = msg
 
     def test_array_sizes(self):

@@ -30,6 +30,8 @@ List of nodes:
 - \b "fingertip_pressure/sim_sensor" Simulates a pressure sensor for
 	testing purposes.
 
+\image html overview.gif 
+
 <hr>
 
 \subsection sensor_info sensor_info
@@ -47,7 +49,7 @@ Subscribes to:
 - none
 
 Publishes to:
-- \b "/pressure/<gripper_motor_name>_info": [fingertip_pressure/PressureInfo]
+- \b "/pressure/&lt;gripper_motor_name&gt;_info": [fingertip_pressure/PressureInfo]
 	Comprises one [fingertip_pressure/PressureInfoElement] for each of the
 	two fingertips. For each sensor, the tf frame is specified, and for each
 	pressure sensing element, a scaling factor to Newtons, and rectangular
@@ -55,7 +57,7 @@ Publishes to:
 
 \subsubsection parameters ROS parameters
 
-Currently assumes that <gripper_motor_name> is r_gripper_motor and
+Currently assumes that &lt;gripper_motor_name&gt; is r_gripper_motor and
 l_gripper_motor.
 
 Reads the following parameters from the parameter server
@@ -64,9 +66,6 @@ Reads the following parameters from the parameter server
 
 Sets the following parameters on the parameter server
 
-- none
-
-\subsubsection services ROS services
 - none
 
 
@@ -88,17 +87,17 @@ $ view_fingertip_pressure
 \subsubsection topics ROS topics
 
 Subscribes to:
-- \b "/pressure/<gripper_motor_name>" "in": [robot_msgs/PressureState] Raw
+- \b "/pressure/&lt;gripper_motor_name&gt;" "in": [ethercat_hardware/PressureState] Raw
 	data from the pressure sensor
 
-- \b "/pressure/<gripper_motor_name>_info" "in": [fingertip_pressure/PressureInfo] Sensor calibration, geometry and tf frame.
+- \b "/pressure/&lt;gripper_motor_name&gt;_info" "in": [fingertip_pressure/PressureInfo] Sensor calibration, geometry and tf frame.
 
 Publishes to:
 - none
 
 \subsubsection parameters ROS parameters
 
-Currently assumes that <gripper_motor_name> is r_gripper_motor.
+Currently assumes that &lt;gripper_motor_name&gt; is r_gripper_motor.
 
 Reads the following parameters from the parameter server
 
@@ -128,10 +127,10 @@ $ rectangle_viz
 \subsubsection topics ROS topics
 
 Subscribes to:
-- \b "/pressure/<gripper_motor_name>" "in": [robot_msgs/PressureState] Raw
+- \b "/pressure/&lt;gripper_motor_name&gt;" "in": [robot_msgs/PressureState] Raw
 	data from the pressure sensor
 
-- \b "/pressure/<gripper_motor_name>_info" "in": [fingertip_pressure/PressureInfo] Sensor calibration, geometry and tf frame.
+- \b "/pressure/&lt;gripper_motor_name&gt;_info" "in": [fingertip_pressure/PressureInfo] Sensor calibration, geometry and tf frame.
 
 Publishes to:
 - \b "/visualization_marker": [visualization_msgs/Marker] Stream graphical 
@@ -139,7 +138,7 @@ Publishes to:
 
 \subsubsection parameters ROS parameters
 
-Currently assumes that <gripper_motor_name> is r_gripper_motor and
+Currently assumes that &lt;gripper_motor_name&gt; is r_gripper_motor and
 l_gripper_motor.
 
 Reads the following parameters from the parameter server
@@ -171,12 +170,12 @@ Subscribes to:
 - none
 
 Publishes to:
-- \b "pressure/<gripper_motor_name>": [robot_msgs/PressureInfo] Simulated
+- \b "pressure/&lt;gripper_motor_name&gt;": [robot_msgs/PressureInfo] Simulated
 	pressure sensor data.
 
 \subsubsection parameters ROS parameters
 
-Currently assumes that <gripper_motor_name> is r_gripper_motor and
+Currently assumes that &lt;gripper_motor_name&gt; is r_gripper_motor and
 l_gripper_motor.
 
 Reads the following parameters from the parameter server

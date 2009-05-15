@@ -12,5 +12,7 @@ Package for publishing fingertip pressure sensor information.
 <depend package='visualization_msgs' />
 <depend package='rostest' />
 <depend package='wxswig' />
+<depend package='roslaunch' />
+<depend package='pycrypto' />
 <repository>http://pr.willowgarage.com/repos</repository>
 </package>
