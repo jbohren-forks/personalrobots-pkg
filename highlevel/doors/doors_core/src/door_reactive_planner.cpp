@@ -424,10 +424,12 @@ void DoorReactivePlanner::checkPath(const std::vector<pr2_robot_actions::Pose2D>
       }
     else
       {
+	/*
     ROS_ERROR("Point %d: position: %f, %f, %f is in collision",i,out_pose.x,out_pose.y,out_pose.th);
     ROS_ERROR("Radius inscribed: %f, circumscribed: %f",inscribed_radius_, circumscribed_radius_);
     for(int j=0; j < (int) oriented_footprint.size(); j++)
       ROS_ERROR("Footprint point: %d is : %f,%f",j,oriented_footprint[j].x,oriented_footprint[j].y);
+	*/
       }
     break;
   }
