@@ -37,14 +37,28 @@ class AngleConversions(unittest.TestCase):
         for eulers in yprs:
             print eulers
             quat = bullet.Quaternion(eulers[0],eulers[1],eulers[2])
-            yaw = bullet.Matrix3x3(quat).getEulerZYXYaw()
+
+            # check yaw
+            if math.fabs(bullet.Matrix3x3(quat).getEulerZYXYaw(0) - eulers[0]) < math.fabs(bullet.Matrix3x3(quat).getEulerZYXYaw(1) - eulers[0]):
+                yaw = bullet.Matrix3x3(quat).getEulerZYXYaw(0)
+            else:
+                yaw = bullet.Matrix3x3(quat).getEulerZYXYaw(1)
             self.assertAlmostEqual(yaw, eulers[0] , 7, "yaw %f euler to quaternion to euler %f correctness"%(yaw, eulers[0]))
-            
-            # \todo deal with redundancy
-            #pitch = bullet.Matrix3x3(quat).getEulerZYXPitch(0)
-            #self.assertAlmostEqual(pitch, eulers[0] , 7, "pitch %f euler to quaternion to euler %f correctness"%(pitch, eulers[0]))
-            #roll = bullet.Matrix3x3(quat).getEulerZYXRoll(1)
-            #self.assertAlmostEqual(roll, eulers[0] , 7, "roll %f euler to quaternion to euler %f correctness"%(roll, eulers[0]))
+
+            #check pitch
+            if math.fabs(bullet.Matrix3x3(quat).getEulerZYXPitch(0) - eulers[1]) < math.fabs(bullet.Matrix3x3(quat).getEulerZYXPitch(1) - eulers[1]):
+                pitch = bullet.Matrix3x3(quat).getEulerZYXPitch(0)
+            else:
+                pitch = bullet.Matrix3x3(quat).getEulerZYXPitch(1)
+            self.assertAlmostEqual(pitch, eulers[1] , 7, "pitch %f euler to quaternion to euler %f correctness"%(pitch, eulers[1]))
+
+            #check roll
+            if math.fabs(bullet.Matrix3x3(quat).getEulerZYXRoll(0) - eulers[2]) < math.fabs(bullet.Matrix3x3(quat).getEulerZYXRoll(1) - eulers[2]):
+                roll = bullet.Matrix3x3(quat).getEulerZYXRoll(0)
+            else:
+                roll = bullet.Matrix3x3(quat).getEulerZYXRoll(1)
+            self.assertAlmostEqual(roll, eulers[2] , 7, "roll %f euler to quaternion to euler %f correctness"%(roll, eulers[2]))
+
 
     # Test Euler conversions
     def test_quaternion_euler(self):
@@ -57,14 +71,26 @@ class AngleConversions(unittest.TestCase):
         for quattuple, eulers in ground_truth:
             print quattuple
             quat = bullet.Quaternion(quattuple[0],quattuple[1],quattuple[2],quattuple[3])
-            yaw = bullet.Matrix3x3(quat).getEulerZYXYaw()
-            self.assertAlmostEqual(yaw, eulers[0] , 5, "yaw %f quaternion to euler %f correctness"%(yaw, eulers[0])) 
-            
-            # \todo deal with redundancy
-            #pitch = bullet.Matrix3x3(quat).getEulerZYXPitch(0)
-            #self.assertAlmostEqual(pitch, eulers[0] , 5, "pitch %f euler to quaternion to euler %f correctness"%(pitch, eulers[0]))
-            #roll = bullet.Matrix3x3(quat).getEulerZYXRoll(1)
-            #self.assertAlmostEqual(roll, eulers[0] , 5, "roll %f euler to quaternion to euler %f correctness"%(roll, eulers[0]))
+            # check yaw
+            if math.fabs(bullet.Matrix3x3(quat).getEulerZYXYaw(0) - eulers[0]) < math.fabs(bullet.Matrix3x3(quat).getEulerZYXYaw(1) - eulers[0]):
+                yaw = bullet.Matrix3x3(quat).getEulerZYXYaw(0)
+            else:
+                yaw = bullet.Matrix3x3(quat).getEulerZYXYaw(1)
+            self.assertAlmostEqual(yaw, eulers[0] , 5, "yaw %f quaternion to euler %f correctness"%(yaw, eulers[0]))
+
+            #check pitch
+            if math.fabs(bullet.Matrix3x3(quat).getEulerZYXPitch(0) - eulers[1]) < math.fabs(bullet.Matrix3x3(quat).getEulerZYXPitch(1) - eulers[1]):
+                pitch = bullet.Matrix3x3(quat).getEulerZYXPitch(0)
+            else:
+                pitch = bullet.Matrix3x3(quat).getEulerZYXPitch(1)
+            self.assertAlmostEqual(pitch, eulers[1] , 5, "pitch %f quaternion to euler %f correctness"%(pitch, eulers[1]))
+
+            #check roll
+            if math.fabs(bullet.Matrix3x3(quat).getEulerZYXRoll(0) - eulers[2]) < math.fabs(bullet.Matrix3x3(quat).getEulerZYXRoll(1) - eulers[2]):
+                roll = bullet.Matrix3x3(quat).getEulerZYXRoll(0)
+            else:
+                roll = bullet.Matrix3x3(quat).getEulerZYXRoll(1)
+            self.assertAlmostEqual(roll, eulers[2] , 5, "roll %f quaternion to euler %f correctness"%(roll, eulers[2]))
 
 
 if __name__ == '__main__':
