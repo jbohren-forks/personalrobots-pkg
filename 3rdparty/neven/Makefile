@@ -8,12 +8,17 @@ GIT_PATCH = 64bit.patch
 
 $(GIT_DIR):
 	git clone $(GIT_URL) $(GIT_DIR)
-ifneq ($(strip $(GIT_PATCH)),)
-	$(foreach patch,$(GIT_PATCH), patch -d $(GIT_DIR) -p0 < $(patch);)
-endif
 	touch rospack_nosubdirs
 
-installed: $(GIT_DIR)
+patched: $(GIT_PATCH) Makefile
+	cd $(GIT_DIR) && git reset --hard
+ifneq ($(strip $(GIT_PATCH)),)
+	$(foreach PATCH, $(GIT_PATCH), patch -d $(GIT_DIR) -p0 < $(PATCH) && ) echo patched
+	touch rospack_nosubdirs
+	touch patched
+endif   
+
+installed: $(GIT_DIR) patched
 	@mkdir -p build
 	@mkdir -p data
 	cd build && cmake -DCMAKE_TOOLCHAIN_FILE=`rospack find rosbuild`/rostoolchain.cmake ..
