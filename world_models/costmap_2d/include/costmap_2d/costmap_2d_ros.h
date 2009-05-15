@@ -43,6 +43,7 @@
 #include <costmap_2d/costmap_2d_publisher.h>
 #include <costmap_2d/observation_buffer.h>
 #include <costmap_2d/voxel_costmap_2d.h>
+#include <costmap_2d/VoxelGrid.h>
 #include <visualization_msgs/Polyline.h>
 #include <map>
 #include <vector>
@@ -231,6 +232,7 @@ namespace costmap_2d {
       Costmap2DPublisher* costmap_publisher_;
       bool stop_updates_, initialized_;
       bool publish_voxel_;
+      std::string prefix_;
 
   };
 };

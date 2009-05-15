@@ -46,7 +46,7 @@ using namespace robot_msgs;
 namespace costmap_2d {
 
   Costmap2DROS::Costmap2DROS(ros::Node& ros_node, TransformListener& tf, string prefix) : ros_node_(ros_node), 
-  tf_(tf), costmap_(NULL), map_update_thread_(NULL), costmap_publisher_(NULL), stop_updates_(false), initialized_(true){
+  tf_(tf), costmap_(NULL), map_update_thread_(NULL), costmap_publisher_(NULL), stop_updates_(false), initialized_(true), prefix_(prefix){
 
     ros_node_.param("~" + prefix + "/costmap/publish_voxel_map", publish_voxel_, false);
     if(publish_voxel_)
@@ -428,11 +428,11 @@ namespace costmap_2d {
       costmap_publisher_->updateCostmapData(*costmap_);
 
     if(publish_voxel_){
-      robot_msgs::PointCloud voxel_cloud;
-      ((VoxelCostmap2D*)costmap_)->getPoints(voxel_cloud);
-      voxel_cloud.header.frame_id = global_frame_;
-      voxel_cloud.header.stamp = ros::Time::now();
-      ros_node_.publish("/voxel_grid", voxel_cloud);
+      costmap_2d::VoxelGrid voxel_grid;
+      ((VoxelCostmap2D*)costmap_)->getVoxelGridMessage(voxel_grid);
+      voxel_grid.header.frame_id = global_frame_;
+      voxel_grid.header.stamp = ros::Time::now();
+      ros_node_.publish("~" + prefix_ + "/costmap/voxel_grid", voxel_grid);
     }
 
     costmap_->unlock();

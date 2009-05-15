@@ -344,6 +344,20 @@ namespace costmap_2d{
 
   }
 
+  void VoxelCostmap2D::getVoxelGridMessage(VoxelGrid& grid){
+    unsigned int size = voxel_grid_.sizeX() * voxel_grid_.sizeY();
+    grid.data.resize(size);
+    memcpy(&grid.data[0], voxel_grid_.getData(), size * sizeof(unsigned int));
+
+    grid.origin.x = origin_x_;
+    grid.origin.y = origin_y_;
+    grid.origin.z = origin_z_;
+
+    grid.resolutions.x = xy_resolution_;
+    grid.resolutions.y = xy_resolution_;
+    grid.resolutions.z = z_resolution_;
+  }
+
   void VoxelCostmap2D::getPoints(PointCloud& cloud){
     for(unsigned int i = 0; i < voxel_grid_.sizeX(); ++i){
       for(unsigned int j = 0; j < voxel_grid_.sizeY(); ++j){

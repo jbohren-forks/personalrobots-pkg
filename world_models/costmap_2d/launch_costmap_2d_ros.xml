@@ -1,6 +1,7 @@
 <launch>
   <master auto="start"/>
   <group name="wg">
+    <param name="/use_sim_time" value="true" />
     <node pkg="costmap_2d" type="costmap_test" respawn="false" name="costmap_tester" output="screen">
       <param name="costmap/global_frame" value="map" />
       <param name="costmap/robot_base_frame" value="base_link" />
@@ -47,8 +48,8 @@
       <param name="costmap/rolling_window" value="true" />
 
       <!-- begin only used if static map is set to false -->
-      <param name="costmap/width" value="60.0" />
-      <param name="costmap/height" value="60.0" />
+      <param name="costmap/width" value="10.0" />
+      <param name="costmap/height" value="10.0" />
       <param name="costmap/resolution" value="0.025" />
       <param name="costmap/origin_x" value="0.0" />
       <param name="costmap/origin_y" value="0.0" />
