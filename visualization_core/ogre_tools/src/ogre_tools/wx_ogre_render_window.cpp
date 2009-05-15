@@ -163,7 +163,7 @@ void wxOgreRenderWindow::onSize (wxSizeEvent &evt)
     width = size.GetWidth ();
     height = size.GetHeight ();
 
-    render_window_->resize (width, height);
+    //render_window_->resize (width, height);
     // Letting Ogre know the window has been resized;
     render_window_->windowMovedOrResized ();
 
