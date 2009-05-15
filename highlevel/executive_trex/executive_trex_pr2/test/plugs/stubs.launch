@@ -7,6 +7,7 @@
   <param name="/trex/enable_plugs_untuck_arms" value="true"/>
   <param name="/trex/enable_move_and_grasp_plug" value="true"/>
   <param name="/trex/enable_localize_plug_in_gripper" value="true"/>
+  <param name="/trex/enable_doors_tuck_arms" value="true"/>
   <param name="/trex/enable_stow_plug" value="true"/>
   <param name="/trex/enable_unplug" value="true"/>
   <param name="/trex/enable_plug_in" value="true"/>
