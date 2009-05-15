@@ -28,6 +28,8 @@ rospack_add_gtest(bullet_unittest test/bullet_unittest.cpp)
 target_link_libraries(bullet_unittest LinearMath)
 
 
+rospack_add_pyunit(test/bullet_unittest.py)
+
 # Find the combined swig flags for this project
 _rospack_invoke(${PROJECT_NAME} ${PROJECT_NAME} SWIG_FLAGS "export" "--lang=swig" "--attrib=flags")
 set(SWIG_FLAGS ${${PROJECT_NAME}_SWIG_FLAGS})
