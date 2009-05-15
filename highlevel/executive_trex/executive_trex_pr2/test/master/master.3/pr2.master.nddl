@@ -9,5 +9,5 @@ close();
 map_initialize_from_file("willow.tmap");
 
 rejectable(m2_goals.Active g0);
-eq_pose_msg(g0.object, map_outlet_1);
+g0.outlet_id = outlet_in_bryans_office;
 
