@@ -235,8 +235,7 @@ namespace pr2_mechanism_controllers
     {
       current_time_ = ros::Time::now().toSec();
 
-      //publishDiagnostics(false);
-
+      publishDiagnostics(false);
 
       updateGlobalPose();
 
