@@ -62,6 +62,8 @@ class RechargeController extends AgentTimeline {
     bool plugged_in;
     bool ready_to_grasp;
     bool arms_clear;
+    bool finishing;
+    bool restowing_plug;
   }
   
   RechargeController(){ super(Internal, "Holds"); }
@@ -96,6 +98,8 @@ RechargeController::Holds{
   defaultOnCommit(plugged_in, p.plugged_in);
   defaultOnCommit(ready_to_grasp, p.ready_to_grasp);
   defaultOnCommit(arms_clear, p.arms_clear);
+  defaultOnCommit(finishing, p.finishing);
+  defaultOnCommit(restowing_plug, p.restowing_plug);
 }
 
 /**
@@ -116,118 +120,172 @@ RechargeController::Holds {
     starts_during(outlet_state.Holds os);
     starts_during(plug_state.Holds ps);
 
-    if(recharged == true){
-
-      if(plug_is_stowed == yes){
-        if (arms_tucked == true) {
-          meets(recharger.Inactive rc_inactive);
-          eq(rc_inactive.status, SUCCESS);
-          eq(duration, 1);
-          eq(s.active, false);
+    if (finishing == true) {
+      if (arms_tucked == false) {
+        if (plug_is_stowed == yes) {
+          contains_start(safety_tuck_arms.Active cmd);
+          concurrent(cmd.end, end);
+          eq(s.arms_clear, false);
         }
         else {
-          contains_start(safety_tuck_arms.Active cmd);
+          if (plugged_in == true) {
+            contains_start(unplug.Active cmd);
+            concurrent(cmd.end, end);
+            eq(s.arms_clear, false);
+          }
+          else {
+            contains_start(stow_plug.Active cmd);
+            concurrent(cmd.end, end);
+            eq(s.arms_clear, false);
+          }
         }
       }
-      else{
-	if(plug_is_stowed == maybe){
-	  contains_start(detect_plug_on_base.Active cmd);
-	  concurrent(cmd.end, end);
-	}
-	else {
-	  if(plugged_in == false){
-	    contains_start(stow_plug.Active cmd);
-	    concurrent(cmd.end, end);
-            eq(s.arms_clear, false);
-	  }
-	  else {
-	    contains_start(unplug.Active cmd);
-	    concurrent(cmd.end, end);
-            eq(s.arms_clear, false);
-	  }
-	}
+      else {
+        meets(recharger.Inactive rc_inactive);
+        eq(duration, 1);
+        eq(s.active, false);
       }
     }
+
+    // not finishing
     else {
-      if(ready_to_plug_in == true){
-	contains_start(plug_in.Active cmd);
-	concurrent(cmd.end, end);
-        eq(s.arms_clear, false);
+    
+      if(recharged == true){
+
+        if(plug_is_stowed == yes){
+          if (arms_tucked == true) {
+            meets(recharger.Inactive rc_inactive);
+            eq(rc_inactive.status, SUCCESS);
+            eq(duration, 1);
+            eq(s.active, false);
+          }
+          else {
+            contains_start(safety_tuck_arms.Active cmd);
+          }
+        }
+
+        // plug not stowed
+        else{
+          if(plug_is_stowed == maybe){
+            contains_start(detect_plug_on_base.Active cmd);
+            concurrent(cmd.end, end);
+          }
+          else {
+            if(plugged_in == false){
+              contains_start(stow_plug.Active cmd);
+              concurrent(cmd.end, end);
+              eq(s.arms_clear, false);
+            }
+            else {
+              contains_start(unplug.Active cmd);
+              concurrent(cmd.end, end);
+              eq(s.arms_clear, false);
+            }
+          }
+        }
       }
+
+
+      // recharged == false
       else {
-	if(outlet_detected_fine == true){
-	  contains_start(localize_plug_in_gripper.Active cmd);
-	  concurrent(cmd.end, end);
-	}
-	else {
-	  if(plug_in_hand == true){
-	    contains_start(detect_outlet_fine.Active cmd);
-            eq(cmd.x, os.x);
-            eq(cmd.y, os.y);
-            eq(cmd.z, os.z);
-            eq(cmd.frame_id, os.frame_id);
-	    concurrent(cmd.end, end);
+          
+        if (ready_to_plug_in == true){
+          contains_start(plug_in.Active cmd);
+          concurrent(cmd.end, end);
+          eq(s.arms_clear, false);
+        }
+
+        // not ready to plug in
+        else {
+
+          if (plug_in_hand == true) {
+            // Nominal case: localize plug once it's in hand
+            if (restowing_plug == false) {
+              contains_start(localize_plug_in_gripper.Active cmd);
+              concurrent(cmd.end, end);
+            }
+
+            // If localizaion fails, restow and go back
+            else {
+              contains_start(stow_plug.Active cmd);
+              concurrent(cmd.end, end);
+              eq(s.arms_clear, false);
+            }
+          }
             
-	  }
-	  else {
-	    if(outlet_detected_coarse == true){
-	      if(in_position == false){
-		contains_start(move_base_local.Active cmd);
-		// TODO ; Constraint should have inputs after outputs
-                plugs_get_offset_pose(os.x, os.y, os.z, os.qx, os.qy, os.qz, os.qw, 0.5, 
-				      cmd.x, cmd.y, cmd.z, cmd.qx, cmd.qy,cmd.qz, cmd.qw);
+          // plug not in hand
+          else {
 
-                eq(cmd.frame_id, os.frame_id);
-		concurrent(cmd.end, end);
-	      }
-	      else {
-		if(ready_to_grasp == true){
-		  contains_start(move_and_grasp_plug.Active cmd);
-                  eq(cmd.x, ps.x);
-                  eq(cmd.y, ps.y);
-                  eq(cmd.z, ps.z);
-                  eq(cmd.frame_id, ps.frame_id);
-		  concurrent(cmd.end, end);
-                  eq(s.arms_clear, false);
-		}
-		else {
+            if(ready_to_grasp == true){
+              contains_start(move_and_grasp_plug.Active cmd);
+              eq(cmd.x, ps.x);
+              eq(cmd.y, ps.y);
+              eq(cmd.z, ps.z);
+              eq(cmd.frame_id, ps.frame_id);
+              concurrent(cmd.end, end);
+              eq(s.arms_clear, false);
+            }
 
-		  if(arms_clear == true){
-		    contains_start(detect_plug_on_base.Active cmd);
-		    concurrent(cmd.end, end);
-		  }
-		  else {
-		    contains_start(plugs_untuck_arms.Active cmd);
-		    concurrent(cmd.end, end);
-		  }
-		}
-	      }
-	    }
-	    else {
-	      if(in_position == true){
-		contains_start(detect_outlet_coarse.Active cmd);
-		concurrent(cmd.end, end);
-	      }
-	      else {
-		if(arms_tucked == true){
-		  // Here, derive parameters from the map
-		  contains_start(move_base_local.Active cmd);
-                  map_get_outlet_approach_pose(cmd.x, cmd.y, cmd.z, cmd.qx, cmd.qy, cmd.qz, cmd.qw, rc_active.outlet_id);
-                  eq(cmd.frame_id, rc_active.frame_id);
-		  concurrent(cmd.end, end);
-		}
-		else {
-		  contains_start(safety_tuck_arms.Active cmd);
-		  concurrent(cmd.end, end);
-		}
-	      }
-	    }
-	  }
-	}
+            // not ready to grasp plug (not detected)
+            else {
+              
+              if (outlet_detected_fine == true) {
+
+                if(arms_clear == true){
+                  contains_start(detect_plug_on_base.Active cmd);
+                  concurrent(cmd.end, end);
+                }
+
+                // arms not clear: untuck
+                else {
+                  contains_start(plugs_untuck_arms.Active cmd);
+                  concurrent(cmd.end, end);
+                }
+              }
+
+              // outlet fine detection hasn't happened
+              else {
+                
+                // coarse has happened
+                if (outlet_detected_coarse == true) {
+
+                  // we're in position: detect it
+                  if (in_position == true) {
+                    contains_start(detect_outlet_fine.Active cmd);
+                    eq(cmd.x, os.x);
+                    eq(cmd.y, os.y);
+                    eq(cmd.z, os.z);
+                    eq(cmd.frame_id, os.frame_id);
+                    concurrent(cmd.end, end);
+                  }
+
+                  // not in position: move
+                  else {
+                    contains_start(move_base_local.Active cmd);
+                    // TODO ; Constraint should have inputs after outputs
+                    plugs_get_offset_pose(os.x, os.y, os.z, os.qx, os.qy, os.qz, os.qw, 0.5, 
+                                          cmd.x, cmd.y, cmd.z, cmd.qx, cmd.qy,cmd.qz, cmd.qw);
+                    
+                    eq(cmd.frame_id, os.frame_id);
+                    concurrent(cmd.end, end);
+                  }
+                }
+
+                // coarse hasn't happened
+                else {
+                  contains_start(detect_outlet_coarse.Active cmd);
+                  concurrent(cmd.end, end);
+                }
+              }
+            }
+          }
+        }
       }
     }
   }
 }
+
+
 
 /**************************************************
  * Update Rules
@@ -247,8 +305,8 @@ SafetyTuckArms::Inactive{
   }
 }
 DetectPlugOnBase::Inactive{
+  starts_during(RechargeController.Holds rc);
   if(status == SUCCESS){
-    starts_during(RechargeController.Holds rc);
     eq(rc.plug_is_stowed, yes);
     eq(rc.ready_to_grasp, true);
 
@@ -256,12 +314,18 @@ DetectPlugOnBase::Inactive{
     starts(plug_state.Holds ps);
     eq_plug_stow_msg(ps.object, object);
   }
+  else {
+      eq(rc.finishing, true);
+  }
 }
 
 PlugsUntuckArms::Inactive{
+  starts_during(RechargeController.Holds rc);
   if(status == SUCCESS){
-    starts_during(RechargeController.Holds rc);
     eq(rc.arms_clear, true);
+  }
+  else {
+    eq(rc.finishing, true);
   }
 }
 
@@ -274,25 +338,35 @@ StowPlug::Active{
 // If we stow successfully, declare maybe. Requires confirmation!
 // Changing this to yes for now - BMM
 StowPlug::Inactive{
+  starts_during(RechargeController.Holds rc);
   if(status == SUCCESS){
-    starts_during(RechargeController.Holds rc);
-    eq(rc.plug_is_stowed, yes);
+    eq(rc.plug_is_stowed, maybe);
     eq(rc.plug_in_hand, false);
+    eq(rc.restowing_plug, false);
+  }
+  else {
+    eq(rc.finishing, true);
   }
 }
 
 Unplug::Inactive{
+  starts_during(RechargeController.Holds rc);
   if(status == SUCCESS){
-    starts_during(RechargeController.Holds rc);
     eq(rc.plugged_in, false);
+  }
+  else {
+    eq(rc.finishing, true);
   }
 }
 
 PlugIn::Inactive{
+  starts_during(RechargeController.Holds rc);
   if(status == SUCCESS){
-    starts_during(RechargeController.Holds rc);
     eq(rc.plugged_in, true);
     eq(rc.recharged, true);
+  }
+  else {
+    eq(rc.finishing, true);
   }
 }
 
@@ -302,13 +376,16 @@ DetectOutletFine::Active{
 }
 
 DetectOutletFine::Inactive{
+  starts_during(RechargeController.Holds rc);
   if(status == SUCCESS){
-    starts_during(RechargeController.Holds rc);
     eq(rc.outlet_detected_fine, true);
 
     // Update outlet state with feedback
     starts(outlet_state.Holds os);
     eq_pose_msg(os.object, object);
+  }
+  else {
+    eq(rc.finishing, true);
   }
 }
 
@@ -318,14 +395,17 @@ DetectOutletCoarse::Active{
 }
 
 DetectOutletCoarse::Inactive{
+  starts_during(RechargeController.Holds rc);
   if(status == SUCCESS){
-    starts_during(RechargeController.Holds rc);
     eq(rc.outlet_detected_coarse, true);
     eq(rc.in_position, false);
 
     // Update outlet state with feedback
     starts(outlet_state.Holds os);
     eq_pose_msg(os.object, object);
+  }
+  else {
+    eq(rc.finishing, true);
   }
 }
 
@@ -335,9 +415,12 @@ LocalizePlugInGripper::Active{
 }
 
 LocalizePlugInGripper::Inactive{
+  starts_during(RechargeController.Holds rc);
   if(status == SUCCESS){
-    starts_during(RechargeController.Holds rc);
     eq(rc.ready_to_plug_in, true);
+  }
+  else {
+    eq(rc.restowing_plug, true);
   }
 }
 

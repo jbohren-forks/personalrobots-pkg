@@ -17,6 +17,8 @@ Recharger::Active{
   eq(rc.plugged_in, false);
   eq(rc.ready_to_grasp, false);
   eq(rc.arms_clear, false);
+  eq(rc.finishing, false);
+  eq(rc.restowing_plug, false);
 
   // Initialize outlet state
   starts(outlet_state.Holds os);
