@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-import roslib; roslib.update_path('tf')
+import roslib; roslib.load_manifest('tf')
 
 import sys
 import unittest

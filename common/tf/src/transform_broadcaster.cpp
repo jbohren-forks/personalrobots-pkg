@@ -30,41 +30,44 @@
 
 /** \author Tully Foote */
 
-#ifndef TF_TRANSFORMBROADCASTER_H
-#define TF_TRANSFORMBROADCASTER_H
 
-#include "ros/node.h"
-#include "tf/tf.h"
-#include "tf/tfMessage.h"
+#include "tf/transform_broadcaster.h"
 
-namespace tf
+namespace tf {
+
+TransformBroadcaster::TransformBroadcaster(ros::Node& anode):
+  node_(anode)
 {
-
-
-/** \brief This class provides an easy way to publish coordinate frame transform information.  
- * It will handle all the messaging and stuffing of messages.  And the function prototypes lay out all the 
- * necessary data needed for each message.  */
-
-class TransformBroadcaster{
-public:
-  /** \brief Constructor (needs a ros::Node reference) */
-  TransformBroadcaster(ros::Node& anode);
-
-  /** \brief Send a Stamped<Transform> with parent parent_id 
-   * The stamped data structure includes frame_id, and time, and parent_id already.  */
-  void sendTransform(const Stamped<Transform> & transform);
-
-  /** \brief Send a Transform, stamped with time, frame_id and parent_id */
-  void sendTransform(const Transform & transform, const ros::Time& time, const std::string& frame_id, const std::string& parent_id);
-  
-private:
-  /// Internal reference to ros::Node
-  ros::Node & node_;
-
-  std::string tf_prefix_;
-
+  node_.advertise<tfMessage>("/tf_message", 100);
+  node_.param(std::string("~tf_prefix"),tf_prefix_, std::string(""));
 };
+
+void TransformBroadcaster::sendTransform(const Stamped<Transform> & transform)
+{
+  tfMessage message;
+  robot_msgs::TransformStamped msgtf;
+  TransformStampedTFToMsg(transform, msgtf);
+  msgtf.header.frame_id = tf::remap(tf_prefix_, msgtf.header.frame_id);
+  msgtf.parent_id = tf::remap(tf_prefix_, msgtf.parent_id);
+  message.transforms.push_back(msgtf);
+  node_.publish("/tf_message", message);
+} 
+  
+
+void TransformBroadcaster::sendTransform(const Transform & transform, const ros::Time& time, const std::string& frame_id, const std::string& parent_id)
+{
+  tfMessage message;
+  robot_msgs::TransformStamped msgtf;
+  msgtf.header.stamp = time;
+  msgtf.header.frame_id = frame_id;
+  msgtf.header.frame_id = tf::remap(tf_prefix_, msgtf.header.frame_id);
+  msgtf.parent_id = remap(tf_prefix_, parent_id);
+  TransformTFToMsg(transform, msgtf.transform);
+  message.transforms.push_back(msgtf);
+  node_.publish("/tf_message", message);
+}
+
 
 }
 
-#endif //TF_TRANSFORMBROADCASTER_H
+

@@ -8,7 +8,7 @@ rospack_add_boost_directories()
 genmsg()
 gensrv()
 
-rospack_add_library(tf src/tf.cpp src/transform_listener.cpp src/cache.cpp src/message_notifier.cpp)
+rospack_add_library(tf src/tf.cpp src/transform_listener.cpp src/cache.cpp src/message_notifier.cpp src/transform_broadcaster.cpp)
 rospack_link_boost(tf thread)
 
 rospack_add_executable(tf_echo src/tf_echo.cpp)
