@@ -255,12 +255,18 @@ tPvFrame* Camera::grab(unsigned long timeout_ms)
     tPvErr e = ePvErrSuccess;
     do
     {
-      if (e != ePvErrSuccess)
-        ROS_DEBUG("Retrying CaptureWait due to error: %s", errorStrings[e]);
-      clock_t start_time = clock();
-      e = PvCaptureWaitForFrameDone(handle_, frame, timeout_ms - time_so_far);
-      if (timeout_ms != PVINFINITE)
-        time_so_far += ((clock() - start_time) * 1000) / CLOCKS_PER_SEC;
+      try
+      {
+        if (e != ePvErrSuccess)
+          ROS_DEBUG("Retrying CaptureWait due to error: %s", errorStrings[e]);
+        clock_t start_time = clock();
+        e = PvCaptureWaitForFrameDone(handle_, frame, timeout_ms - time_so_far);
+        if (timeout_ms != PVINFINITE)
+          time_so_far += ((clock() - start_time) * 1000) / CLOCKS_PER_SEC;
+      } 
+      catch (prosilica::ProsilicaException &e) {
+        ROS_ERROR("Prosilica exception during grab, will retry: %s\n", e.what());
+      }
     } while (e == ePvErrTimeout && time_so_far < timeout_ms);
 
     if (e != ePvErrSuccess)
