@@ -36,42 +36,47 @@
 *********************************************************************/
 #include <robot_actions/action.h>
 #include <robot_actions/action_runner.h>
-#include <pr2_srvs/SetPeriodicCmd.h>
-#include <pr2_msgs/PeriodicCmd.h>
+#include <pr2_msgs/LaserTrajCmd.h>
+#include <pr2_srvs/SetLaserTrajCmd.h>
 #include <pr2_robot_actions/SetLaserTiltState.h>
+#include <std_msgs/Empty.h>
+#include <robot_actions/NoArgumentsActionState.h>
 #include <string>
 #include <ros/ros.h>
 namespace pr2_robot_actions {
-  class SetLaserTilt : public robot_actions::Action<pr2_msgs::PeriodicCmd, pr2_msgs::PeriodicCmd> {
-    public:
-      SetLaserTilt(std::string laser_controller): robot_actions::Action<pr2_msgs::PeriodicCmd, pr2_msgs::PeriodicCmd>("set_laser_tilt"),
-      laser_controller_(laser_controller){}
+  class SetLaserTilt : public robot_actions::Action<std_msgs::Empty, std_msgs::Empty> {
+  public:
+    SetLaserTilt(std::string laser_controller): robot_actions::Action<std_msgs::Empty, std_msgs::Empty>("set_laser_tilt"),
+						laser_controller_(laser_controller){}
 
-      robot_actions::ResultStatus execute(const pr2_msgs::PeriodicCmd& goal, pr2_msgs::PeriodicCmd& feedback){
-        pr2_srvs::SetPeriodicCmd::Request req_laser;
-        pr2_srvs::SetPeriodicCmd::Response res_laser;
-        req_laser.command = goal;
-
-        if(!ros::service::call(laser_controller_ + "/set_periodic_cmd", req_laser, res_laser)){
-          ROS_ERROR("Failed to start laser.");
-          return robot_actions::ABORTED;
-        }
-
-        return robot_actions::SUCCESS;
-
+    robot_actions::ResultStatus execute(const std_msgs::Empty& empty, std_msgs::Empty& feedback){
+      pr2_srvs::SetLaserTrajCmd::Request req_laser;
+      pr2_srvs::SetLaserTrajCmd::Response res_laser;
+      req_laser.command.profile = "linear";
+      req_laser.command.max_rate = 5;
+      req_laser.command.max_accel = 5;
+      req_laser.command.pos.push_back(1.0);      req_laser.command.pos.push_back(-0.7);      req_laser.command.pos.push_back(1.0);
+      req_laser.command.time.push_back(0.0);     req_laser.command.time.push_back(1.8);      req_laser.command.time.push_back(2.025);
+      if(!ros::service::call(laser_controller_ + "/set_periodic_cmd", req_laser, res_laser)){
+	ROS_ERROR("Failed to start laser.");
+	return robot_actions::ABORTED;
       }
-
-    private:
-      std::string laser_controller_;
+      
+      return robot_actions::SUCCESS;
+      
+      }
+    
+  private:
+    std::string laser_controller_;
   };
-
+  
 };
 
 int main(int argc, char** argv){
   ros::init(argc, argv, "set_laser_tilt");
   pr2_robot_actions::SetLaserTilt setter("laser_tilt_controller");
   robot_actions::ActionRunner runner(20.0);
-  runner.connect<pr2_msgs::PeriodicCmd, pr2_robot_actions::SetLaserTiltState, pr2_msgs::PeriodicCmd>(setter);
+  runner.connect<std_msgs::Empty, robot_actions::NoArgumentsActionState, std_msgs::Empty>(setter);
   runner.run();
 
   ros::spin();

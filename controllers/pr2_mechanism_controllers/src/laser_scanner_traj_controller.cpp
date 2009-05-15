@@ -297,7 +297,7 @@ bool LaserScannerTrajController::setPeriodicCmd(const pr2_msgs::PeriodicCmd& cmd
   }
 }
 
-bool LaserScannerTrajController::setTrajCmd(const pr2_mechanism_controllers::LaserTrajCmd& traj_cmd)
+bool LaserScannerTrajController::setTrajCmd(const pr2_msgs::LaserTrajCmd& traj_cmd)
 {
   if (traj_cmd.profile == "linear" ||
       traj_cmd.profile == "blended_linear")
@@ -500,8 +500,8 @@ void LaserScannerTrajControllerNode::setPeriodicCmd()
   c_.setPeriodicCmd(cmd_) ;
 }
 
-bool LaserScannerTrajControllerNode::setTrajSrv(pr2_mechanism_controllers::SetLaserTrajCmd::Request &req,
-                                                pr2_mechanism_controllers::SetLaserTrajCmd::Response &res)
+bool LaserScannerTrajControllerNode::setTrajSrv(pr2_srvs::SetLaserTrajCmd::Request &req,
+                                                pr2_srvs::SetLaserTrajCmd::Response &res)
 {
   ROS_INFO("LaserScannerTrajControllerNode: set traj command");
 
