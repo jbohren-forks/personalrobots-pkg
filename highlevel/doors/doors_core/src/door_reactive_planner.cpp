@@ -449,7 +449,7 @@ bool DoorReactivePlanner::getPointCost(const robot_msgs::Point &position, const 
 {
   if(cost_map_model_->footprintCost(position,oriented_footprint,inscribed_radius_,circumscribed_radius_) <= 0)
   {
-    ROS_ERROR("Footprint has negative cost with inscribed radius %f, circumscribed radius %f",inscribed_radius_,circumscribed_radius_);
+    ROS_DEBUG("Footprint has negative cost with inscribed radius %f, circumscribed radius %f",inscribed_radius_,circumscribed_radius_);
     return false;
   }
   //used to put things into grid coordinates
