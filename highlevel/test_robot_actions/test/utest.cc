@@ -18,7 +18,9 @@ using namespace std_msgs;
 class MyAction: public robot_actions::Action<Float32, Float32> {
 public:
 
-  MyAction(): robot_actions::Action<Float32, Float32>("my_action") {}
+  MyAction(): robot_actions::Action<Float32, Float32>("my_action"), _use_deactivate_wait(false) {}
+
+  bool _use_deactivate_wait;
 
   const static int FAIL_IF = 30;
 
@@ -39,13 +41,28 @@ private:
     }
 
     if (isPreemptRequested()) {
-      return PREEMPTED;
+      if (_use_deactivate_wait)
+	deactivate(robot_actions::PREEMPTED, feedback);
+      else
+	return PREEMPTED;
     } else if(goal.data >= FAIL_IF){
+      if (_use_deactivate_wait)
+	deactivate(robot_actions::ABORTED, feedback);
+      else
+	return ABORTED;
+    } else {
+      if (_use_deactivate_wait)
+	deactivate(robot_actions::SUCCESS, feedback);
+      else
+	return SUCCESS;
+    }
+    //Error, should not be here unless using waitForDeactivation.
+    if (!_use_deactivate_wait) {
+      ROS_ERROR("Issue in test: see %u in %s.", __LINE__, __FILE__);
       return ABORTED;
     }
-    else {
-      return SUCCESS;
-    }
+
+    return waitForDeactivation(feedback);
   }
 };
 
@@ -149,6 +166,41 @@ TEST(robot_actions, many_goals) {
     }
   }
 
+}
+
+/**
+ * Test - Run give a number of goals. Use waitForDeactivation().
+ */
+TEST(robot_actions, many_goals_wait_for_deactivation) {
+  MyAction a;
+  MySimpleContainer c(a);
+  Float32 g;
+  robot_actions::ActionStatus foo;
+  ros::Duration d;
+  a._use_deactivate_wait = true;
+  for (int i = 1; i <= MyAction::FAIL_IF; i++) {
+    g.data = i;
+    a.activate(g);
+    g.data = 0; // Test if goal copied properly.
+    while(c._status.value == foo.ACTIVE) {
+      d.fromSec(0.0001);
+      d.sleep();
+      if (i == 6) {
+	a.preempt();
+      }
+    }
+
+    d.fromSec(0.002);
+    if (i == 6) {
+      ASSERT_EQ(foo.PREEMPTED == c._status.value, true);
+      ASSERT_EQ(i >= c._value, true);
+    } else if (i >= MyAction::FAIL_IF){
+      ASSERT_EQ(foo.ABORTED == c._status.value, true);
+    } else {
+      ASSERT_EQ(foo.SUCCESS == c._status.value, true);
+      ASSERT_EQ(i < c._value, true);
+    }
+  }
 }
 
 /**
