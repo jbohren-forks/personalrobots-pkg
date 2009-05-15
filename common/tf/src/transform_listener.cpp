@@ -69,6 +69,30 @@ static boost::numeric::ublas::matrix<double> transformAsMatrix(const Transform& 
   return outMat;
 };
 
+TransformListener::TransformListener(ros::Node & rosnode,
+                                     bool interpolating,
+                                     ros::Duration max_cache_time):
+  Transformer(interpolating,
+              max_cache_time),
+  node_(rosnode)
+{
+  //  printf("Constructed rosTF\n");
+  node_.subscribe("/tf_message", msg_in_, &TransformListener::subscription_callback, this,100); ///\todo magic number
+  
+  node_.subscribe("/reset_time", empty_, &TransformListener::reset_callback, this,100); ///\todo magic number
+  
+  node_.advertiseService("~tf_frames", &TransformListener::getFrames, this);
+  node_.param(std::string("~tf_prefix"), tf_prefix_, std::string(""));
+}
+
+TransformListener::~TransformListener()
+{
+  node_.unsubscribe("/tf_message", &TransformListener::subscription_callback, this);
+  node_.unsubscribe("/reset_time", &TransformListener::reset_callback, this);
+}
+
+
+
 
 void TransformListener::transformQuaternion(const std::string& target_frame,
     const robot_msgs::QuaternionStamped& msg_in,

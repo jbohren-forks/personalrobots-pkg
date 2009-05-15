@@ -55,25 +55,10 @@ public:
    * \param max_cache_time How long to store transform information */
   TransformListener(ros::Node & rosnode,
                     bool interpolating = true,
-                    ros::Duration max_cache_time = ros::Duration(DEFAULT_CACHE_TIME)):
-    Transformer(interpolating,
-                max_cache_time),
-    node_(rosnode)
-  {
-    //  printf("Constructed rosTF\n");
-    node_.subscribe("/tf_message", msg_in_, &TransformListener::subscription_callback, this,100); ///\todo magic number
+                    ros::Duration max_cache_time = ros::Duration(DEFAULT_CACHE_TIME));
 
-    node_.subscribe("/reset_time", empty_, &TransformListener::reset_callback, this,100); ///\todo magic number
-
-    node_.advertiseService("~tf_frames", &TransformListener::getFrames, this);
-    node_.param(std::string("~tf_prefix"), tf_prefix_, std::string(""));
-  };
-
-  ~TransformListener()
-  {
-    node_.unsubscribe("/tf_message", &TransformListener::subscription_callback, this);
-    node_.unsubscribe("/reset_time", &TransformListener::reset_callback, this);
-  };
+  
+  ~TransformListener();
 
   /* Methods from transformer unhiding them here */
   using Transformer::transformQuaternion;
