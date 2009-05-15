@@ -42,7 +42,7 @@
 #include "opencv/highgui.h"
 
 
-#include <recognition_lambertian/chamfer_matching.h>
+#include <chamfer_matching/chamfer_matching.h>
 
 
 
@@ -97,17 +97,14 @@ void followContour(IplImage* templ_img, template_coords_t& coords, int direction
 	// mark the current pixel as visited
 	CV_PIXEL(unsigned char, templ_img, crt.first, crt.second)[0] = 0;
 	if (direction==-1) {
-//			printf("Initial point\n");
 		for (int j = 0 ;j<7; ++j) {
 			next.first = crt.first + dir[j][1];
 			next.second = crt.second + dir[j][0];
 			ptr = CV_PIXEL(unsigned char, templ_img, next.first, next.second);
 			if (*ptr!=0) {
-//					*ptr = 0;
 				coords.push_back(next);
 				followContour(templ_img, coords,j);
 				// try to continue contour in the other direction
-//					printf("Reversing direction");
 				reverse(coords.begin(), coords.end());
 				followContour(templ_img, coords, (j+4)%8);
 				break;
@@ -116,15 +113,12 @@ void followContour(IplImage* templ_img, template_coords_t& coords, int direction
 	}
 	else {
 		coordinate_t prev = coords.at(coords.size()-2);
-//			printf("Prev point: (%d,%d)\n", prev.first, prev.second);
 		int k = direction;
-//			printf("Direction %d, offset (%d,%d)\n", k, dir[k][0], dir[k][1]);
 		next.first = crt.first + dir[k][1];
 		next.second = crt.second + dir[k][0];
 		ptr = CV_PIXEL(unsigned char, templ_img, next.first, next.second);
 
 		if (*ptr!=0) {
-//				*ptr = 0;
 			next_temp.first = crt.first + dir[(k+7)%8][1];
 			next_temp.second = crt.second + dir[(k+7)%8][0];
 			ptr_temp = CV_PIXEL(unsigned char, templ_img,  next_temp.first, next_temp.second);
@@ -152,7 +146,6 @@ void followContour(IplImage* templ_img, template_coords_t& coords, int direction
 				next.second = crt.second + dir[p][0];
 				ptr = CV_PIXEL(unsigned char, templ_img, next.first, next.second);
 				if (*ptr!=0) {
-//						*ptr = 0;
 					next_temp.first = crt.first + dir[(p+7)%8][1];
 					next_temp.second = crt.second + dir[(p+7)%8][0];
 					ptr_temp = CV_PIXEL(unsigned char, templ_img,  next_temp.first, next_temp.second);
@@ -168,7 +161,6 @@ void followContour(IplImage* templ_img, template_coords_t& coords, int direction
 				next.second = crt.second + dir[n][0];
 				ptr = CV_PIXEL(unsigned char, templ_img, next.first, next.second);
 				if (*ptr!=0) {
-//						*ptr = 0;
 					next_temp.first = crt.first + dir[(n+1)%8][1];
 					next_temp.second = crt.second + dir[(n+1)%8][0];
 					ptr_temp = CV_PIXEL(unsigned char, templ_img,  next_temp.first, next_temp.second);
@@ -267,15 +259,15 @@ void findContourOrientations(const template_coords_t& coords, template_orientati
 			angles[k++] = getAngle(crt, other, dx, dy);
 		}
 
-		// sort angles
-		sort(angles.begin(), angles.end());
+		// get the middle two angles
+		nth_element(angles.begin(), angles.begin()+M-1,  angles.end());
+		nth_element(angles.begin()+M-1, angles.begin()+M,  angles.end());
+//		sort(angles.begin(), angles.end());
 
 		// average them to compute tangent
 		orientations[i] = (angles[M-1]+angles[M])/2;
 	}
 }
-
-
 
 ChamferTemplate::ChamferTemplate(IplImage* edge_image)
 {
@@ -293,8 +285,26 @@ ChamferTemplate::ChamferTemplate(IplImage* edge_image)
 		local_orientations.clear();
 	}
 
+	computeCenter();
 }
 
+
+void ChamferTemplate::computeCenter()
+{
+	center = cvPoint(0,0);
+	for (size_t i=0;i<coords.size();++i) {
+		center.x += coords[i].first;
+		center.y += coords[i].second;
+	}
+
+	center.x /= coords.size();
+	center.y /= coords.size();
+
+	for (size_t i=0;i<coords.size();++i) {
+		coords[i].first -= center.x;
+		coords[i].second -= center.y;
+	}
+}
 
 /**
  * Resizes a template
@@ -304,6 +314,9 @@ ChamferTemplate::ChamferTemplate(IplImage* edge_image)
 void ChamferTemplate::rescale(float scale)
 {
 	if (scale==1) return;
+
+	center.x = int(center.x*scale+0.5);
+	center.y = int(center.y*scale+0.5);
 
 	size.width = int(size.width*scale+0.5);
 	size.height = int(size.height*scale+0.5);
@@ -323,8 +336,8 @@ void ChamferTemplate::show() const
 
 	for (size_t i=0;i<coords.size();++i) {
 
-		int x = coords[i].first;
-		int y = coords[i].second;
+		int x = center.x+coords[i].first;
+		int y = center.y+coords[i].second;
 		CV_PIXEL(unsigned char, templ_color,x,y)[1] = 255;
 
 		if (i%3==0) {
@@ -342,11 +355,15 @@ void ChamferTemplate::show() const
 		}
 	}
 
+
+	cvCircle(templ_color, center, 1, CV_RGB(0,255,0));
+
 	cvNamedWindow("templ",1);
 	cvShowImage("templ",templ_color);
 
+//	cvWaitKey(0);
+
 	cvReleaseImage(&templ_color);
-//		cvWaitKey(0);
 }
 
 
@@ -368,8 +385,6 @@ void ChamferMatching::addTemplateFromImage(IplImage* templ)
 		cmt_resized->rescale(scale);
 
 		templates.push_back(cmt_resized);
-		cmt_resized->show();
-
 	}
 
 	cmt->show();
@@ -610,16 +625,19 @@ void ChamferMatching::matchTemplate(IplImage* dist_img, IplImage* orientation_im
 	}
 
 
+	int x_start = tpl.center.x;
+	int x_end = dist_img->width - tpl.size.width + tpl.center.x;
+	int y_start = tpl.center.y;
+	int y_end = dist_img->height - tpl.size.height + tpl.center.y;
 	// do sliding window
-	for (int y=0;y<dist_img->height - tpl.size.height; y+=2) {
-		for (int x=0;x<dist_img->width - tpl.size.width; x+=2) {
+	for (int y=y_start ; y< y_end ; y+=5) {
+		for (int x=x_start ; x < x_end ; x+=5) {
 				CvPoint offset;
 				offset.x = x;
 				offset.y = y;
 				float cost = localChamferDistance(dist_img, orientation_img, templ_addr, tpl.orientations, offset);
 
 				cm.addMatch(cost, offset, tpl);
-
 		}
 	}
 
@@ -642,14 +660,26 @@ void ChamferMatch::addMatch(float cost, CvPoint offset, const ChamferTemplate& t
 {
 	bool new_match = true;
 
-	for (size_t i= 0; i<matches.size(); ++i) {
+	for (int i=0; i<count; ++i) {
 		if (abs(matches[i].offset.x-offset.x)+abs(matches[i].offset.y-offset.y)<CLUSTER_SIZE) {
+			// too close, not a new match
 			new_match = false;
+			// if better cost, replace existing match
 			if (cost<matches[i].cost) {
 				matches[i].cost = cost;
 				matches[i].offset = offset;
 				matches[i].tpl = &tpl;
 			}
+			// re-bubble to keep ordered
+			int k = i;
+			while (k>0) {
+				if (matches[k-1].cost>matches[k].cost) {
+					swap(matches[k-1],matches[k]);
+				}
+				k--;
+			}
+
+			break;
 		}
 	}
 
@@ -684,13 +714,21 @@ void ChamferMatch::addMatch(float cost, CvPoint offset, const ChamferTemplate& t
 			matches[j].tpl = &tpl;
 		}
 	}
+
+
+//
+//	for (int i=0;i<count;++i) {
+//		printf("Cost: %f\n", matches[i].cost);
+//	}
+//	printf("------------------------------------------------\n");
+
 }
 
-void ChamferMatch::show(IplImage* img)
+void ChamferMatch::show(IplImage* img, int matches_no)
 {
 	printf("I have found %d matches.\n",count);
 
-	for (int i=0;i<count;++i) {
+	for (int i=0;i<matches_no;++i) {
 		ChamferMatchInstance match = matches[i];
 		printf("Cost: %f\n", match.cost);
 		const template_coords_t& templ_coords = match.tpl->coords;

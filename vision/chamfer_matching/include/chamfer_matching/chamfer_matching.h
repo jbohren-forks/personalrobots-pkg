@@ -80,10 +80,10 @@ public:
 	template_coords_t coords;
 	template_orientations_t orientations;
 	CvSize size;
+	CvPoint center;
 
 	ChamferTemplate()
 	{
-
 	}
 
 	ChamferTemplate(IplImage* edge_image);
@@ -97,16 +97,20 @@ public:
 	void rescale(float scale);
 
 	void show() const;
+
+private:
+	void computeCenter();
 };
 
 
-const int MAX_MATCHES = 10;
+const int MAX_MATCHES = 20;
 
 /**
  * Used to represent a matching result.
  */
 class ChamferMatch
 {
+
 
 	class ChamferMatchInstance {
 	public:
@@ -115,6 +119,7 @@ class ChamferMatch
 		const ChamferTemplate* tpl;
 	};
 
+//	int max_matches;
 	int count;
 	vector<ChamferMatchInstance> matches;
 
@@ -129,13 +134,13 @@ class ChamferMatch
 	vector<MatchCenter> centers;
 
 public:
-	ChamferMatch() : count(0)
+	ChamferMatch() :  count(0)
 	{
 		matches.resize(MAX_MATCHES);
 	}
 
 	void addMatch(float cost, CvPoint offset, const ChamferTemplate& tpl);
-	void show(IplImage* img);
+	void show(IplImage* img, int matches_no);
 };
 
 

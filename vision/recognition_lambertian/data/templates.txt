@@ -1,0 +1,3 @@
+template.png
+template2.png
+template3.png

@@ -1,5 +1,4 @@
 /*********************************************************************
- * Software License Agreement (BSD License)
  *
  *  Copyright (c) 2008, Willow Garage, Inc.
  *  All rights reserved.
@@ -41,6 +40,7 @@
 #include <iostream>
 #include <iomanip>
 #include <queue>
+#include <libgen.h> // for dirname()
 
 
 #include "opencv_latest/CvBridge.h"
@@ -70,12 +70,12 @@
 
 #include <boost/thread.hpp>
 
-#include "recognition_lambertian/chamfer_matching.h"
+#include "chamfer_matching/chamfer_matching.h"
 
 using namespace std;
 
 
-void on_edges_low(int);
+void on_templates_no(int);
 void on_edges_high(int);
 
 
@@ -126,7 +126,7 @@ public:
 	// display stereo images ?
 	bool display;
 
-	int edges_low;
+	int templates_no;
 	int edges_high;
 
 
@@ -145,13 +145,10 @@ public:
 
 
         param("~display", display, false);
-        stringstream ss;
-        ss << getenv("ROS_ROOT") << "/../ros-pkg/vision/recognition_lambertian/data/";
-        string path = ss.str();
         string template_path;
-        param<string>("template_path", template_path, path + "template.png");
+        param<string>("~template_path", template_path,"templates.txt");
 
-        edges_low = 50;
+        templates_no = 3;
         edges_high = 170;
 
         if(display){
@@ -160,7 +157,7 @@ public:
             cvNamedWindow("disparity", CV_WINDOW_AUTOSIZE);
 //            cvNamedWindow("disparity_original", CV_WINDOW_AUTOSIZE);
         	cvNamedWindow("edges",1);
-        	cvCreateTrackbar("edges_low","edges",&edges_low, 500, &on_edges_low);
+        	cvCreateTrackbar("templates","edges",&templates_no, 7, &on_templates_no);
         	cvCreateTrackbar("edges_high","edges",&edges_high, 500, &on_edges_high);
         }
 
@@ -172,7 +169,7 @@ public:
 
         cm = new ChamferMatching();
 
-        loadTemplate(template_path);
+        loadTemplates(template_path);
     }
 
     ~RecognitionLambertian()
@@ -230,22 +227,57 @@ private:
         unsubscribe("stereo/cloud");
     }
 
-
-    void loadTemplate(string path)
+    void trimSpaces( string& str)
     {
-    	IplImage* templ = cvLoadImage(path.c_str(),CV_LOAD_IMAGE_GRAYSCALE);
+    	size_t startpos = str.find_first_not_of(" \t\n"); // Find the first character position after excluding leading blank spaces
+    	size_t endpos = str.find_last_not_of(" \t\n"); // Find the first character position from reverse af
 
-        cm->addTemplateFromImage(templ);
+    	// if all spaces or empty return an empty string
+    	if(( string::npos == startpos ) || ( string::npos == endpos)) {
+    		str = "";
+    	}
+    	else {
+    		str = str.substr( startpos, endpos-startpos+1 );
+    	}
+    }
 
-    	cvReleaseImage(&templ);
+    void loadTemplates(string path)
+    {
+
+    	FILE* fin = fopen(path.c_str(),"r");
+
+    	if (fin==NULL) {
+    		ROS_ERROR("Cannot open template list: %s", path.c_str());
+    		exit(1);
+    	}
+
+    	char* path_ptr = strdup(path.c_str());
+    	string dir_path = dirname(path_ptr);
+
+    	char line[512];
+    	while (fgets(line,512, fin)) {
+
+    		string template_file = line;
+    		trimSpaces(template_file);
+    		printf("template file: %s\n",template_file.c_str());
+    		string template_path = dir_path + "/" + template_file;
+
+    		if (!template_file.empty()) {
+    			IplImage* templ = cvLoadImage(template_path.c_str(),CV_LOAD_IMAGE_GRAYSCALE);
+    			if (!templ) {
+    				ROS_ERROR("Cannot load template image: %s", template_path.c_str());
+    				exit(1);
+    			}
+    			cm->addTemplateFromImage(templ);
+    			cvReleaseImage(&templ);
+    		}
+    	}
+
+    	free(path_ptr);
+    	fclose(fin);
+
 	}
 
-
-
-    void showMatch(IplImage* img, ChamferMatch& match)
-    {
-    	match.show(img);
-    }
 
 
     /**
@@ -265,9 +297,11 @@ private:
 
 
         ChamferMatch match = cm->matchEdgeImage(gray);
-
         IplImage* left_clone = cvCloneImage(left);
-        showMatch(left,match);
+
+        match.show(left, templates_no);
+
+//        showMatch(match);
         if(display){
         	// show filtered disparity
         	cvShowImage("disparity", disp);
@@ -436,9 +470,9 @@ public:
 
 RecognitionLambertian* node;
 
-void on_edges_low(int value)
+void on_templates_no(int value)
 {
-	node->edges_low = value;
+	node->templates_no = value;
 	node->triggerEdgeDetection();
 }
 

@@ -6,8 +6,8 @@
  <node pkg="recognition_lambertian" type="publish_stereo_data.py" respawn="false"/>
  <node pkg="recognition_lambertian" name="recognition_lambertian" type="recognition_lambertian" respawn="false" output="screen">
    <param name="display" type="bool" value="true" />
+   <param name="template_path"  value="$(find recognition_lambertian)/data/templates.txt" />
  </node>
 
-   <param name="/recognition_lambertian/display" type="bool" value="true" />
 </launch>
 
