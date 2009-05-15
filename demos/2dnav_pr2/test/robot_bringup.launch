@@ -1,0 +1,4 @@
+<launch>
+  <!-- Pr2_alpha robot bringup-->
+  <include file="$(find pr2_alpha)/$(env ROBOT).launch" />
+</launch>

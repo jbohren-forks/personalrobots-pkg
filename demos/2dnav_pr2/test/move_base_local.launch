@@ -1,0 +1,4 @@
+<launch>
+  <!-- The naviagtion stack and associated parameters -->
+  <include file="$(find 2dnav_pr2)/move_base_local/2dnav_pr2.launch" />
+</launch>

@@ -12,6 +12,7 @@ import rospy
 import rostest
 import tf
 import bullet
+import time
 
 from robot_msgs.msg import PoseStamped
 from nav_robot_actions.msg import MoveBaseState
@@ -23,15 +24,18 @@ class TestGoto(unittest.TestCase):
     self.current_pose = None
     self.pub = rospy.Publisher('move_base_local/activate', PoseStamped)
     self.sub = rospy.Subscriber('move_base_local/feedback', MoveBaseState, self.cb)
+    self.valid = False
     rospy.init_node('test', anonymous=True)
+    time.sleep(2)
 
   def cb(self, msg):
-    dx = abs(msg.feedback.pose.position.x - self.target_x)
-    dy = abs(msg.feedback.pose.position.y - self.target_y)
-    print 'dx: %.3f dy: %.3f (%.3f)'%(dx,dy,self.tolerance_d)
-    # TODO: compare orientation
-    if dx < self.tolerance_d and dy < self.tolerance_d:
-      self.success = True
+    if self.valid:
+      dx = abs(msg.feedback.pose.position.x - self.target_x)
+      dy = abs(msg.feedback.pose.position.y - self.target_y)
+      print 'dx: %.3f dy: %.3f (%.3f)'%(dx,dy,self.tolerance_d)
+      # TODO: compare orientation
+      if dx < self.tolerance_d and dy < self.tolerance_d:
+        self.success = True
 
   def test_basic_localization(self):
     self.target_x = float(sys.argv[1])
@@ -40,6 +44,7 @@ class TestGoto(unittest.TestCase):
     self.tolerance_d = float(sys.argv[4])
     self.tolerance_a = float(sys.argv[5])
     target_time = float(sys.argv[6])
+    self.valid = True
 
     while rospy.rostime.get_time() == 0.0:
       print 'Waiting for initial time publication'
