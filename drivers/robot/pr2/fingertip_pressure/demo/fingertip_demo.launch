@@ -1,0 +1,8 @@
+<launch>
+  <node pkg="fingertip_pressure" type="sim_sensor.py" respawn="false" output="screen"/>
+  <node pkg="fingertip_pressure" type="sensor_info.py" respawn="false" output="screen"/>
+  <node pkg="fingertip_pressure" type="rectangle_viz.py" respawn="false" output="screen"/>
+  <node pkg="fingertip_pressure" type="sphere_viz.py" respawn="false" output="screen"/>
+  <node pkg="fingertip_pressure" type="view_fingertip" respawn="false" output="screen"/>
+  <node name="rviz" pkg="rviz" type="rviz" respawn="false" output="screen"/>
+</launch>
