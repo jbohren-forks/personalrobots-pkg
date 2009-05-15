@@ -1,0 +1,13 @@
+/**
+
+@mainpage
+
+@htmlinclude manifest.html
+
+This package provides nodes to allow the use of the fingertip pressure
+sensors. The following nodes are currently implemented:
+
+@section topic Fingertip Sensor ROS Topics
+ - sim_sensor.py
+
+*/

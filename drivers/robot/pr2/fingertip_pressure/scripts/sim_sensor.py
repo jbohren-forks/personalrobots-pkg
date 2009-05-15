@@ -61,7 +61,7 @@ class pressureSimulator:
         ps.data1 = []
         t = rospy.get_time()
         for i in range(0,22):
-            ph = t * (i / 22. + 1)
+            ph = .1 * t * (i / 22. + 1)
             ps.data0.append(4000*(1+sin(ph)))
             ps.data1.append(4000*(1+cos(ph)))
         self.pub.publish(ps)

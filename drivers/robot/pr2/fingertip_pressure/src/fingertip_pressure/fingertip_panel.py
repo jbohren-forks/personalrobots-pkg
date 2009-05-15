@@ -42,7 +42,7 @@ import rospy
 from ethercat_hardware.msg import PressureState
 import math
 
-from fingertip_pressure.colormap import color
+from fingertip_pressure.colormap import color255
 from fingertip_pressure.msg import PressureInfo
 from robot_msgs.msg import Vector3
 
@@ -54,7 +54,7 @@ NUMSENSORS = 22
 RATE = 5. #Hz 
 
 def txtcolor(data):
-    (r,g,b)=color(data)
+    (r,g,b)=color255(data)
     if r + g + b < 3 *128:
         (rt,gt,bt) = (255,255,255)
     else:

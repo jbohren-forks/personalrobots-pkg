@@ -15,16 +15,20 @@ def colormap1(data):
 
 def colormap2(data):
     if data < -1:
-        return 0,0,255
+        return 0,0,1
     if data < 0:
         x = data+1
-        return 0,0,255*(1-x)
+        return 0,0,1*(1-x)
     if data < 1:
         x = data
-        return 255*x,0,0
+        return 1*x,0,0
     if data < 3:
         x = data-1
-        return 255,255*x,255*x
-    return 255,255,255
+        return 1,1*x,1*x
+    return 1,1,1
 
 color = colormap2
+
+def color255(data):
+    (r,g,b) = color(data)
+    return (255 * r, 255 * g, 255 * b)

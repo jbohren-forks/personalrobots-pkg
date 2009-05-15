@@ -84,7 +84,7 @@ class pressureVisualizer:
             #print 'publish'
             self.dataready = False
             self.makeVisualization(self.data0, 0)
-            self.makeVisualization(self.data1, 1)
+            #self.makeVisualization(self.data1, 1)
             self.lock.release()
 
     def makeVisualization(self, data, tipnum):
@@ -94,10 +94,11 @@ class pressureVisualizer:
         mk.ns = "pressure/" + mk.header.frame_id + "/line"
         mk.type = Marker.LINE_STRIP
         mk.action = Marker.ADD
-        mk.lifetime = rospy.Duration(1)
+        #mk.lifetime = rospy.Duration(1)
         mk.points = []
         for i in range(0,5):
             mk.points.append(Vector3())
+        #for i in range(0,1):
         for i in range(0,22):
             mk.id = i
             mk.pose.position = self.center[tipnum][i]
@@ -120,6 +121,7 @@ class pressureVisualizer:
             mk.points[4] = mk.points[0]
             mk.color.a = 1.0
             (mk.color.r, mk.color.g, mk.color.b) = color(data[i] / 6000.)
+            #print "%f %f %f"%(mk.color.r, mk.color.g, mk.color.b)
             self.vis_pub.publish(mk)
 
     def __init__(self, source):
