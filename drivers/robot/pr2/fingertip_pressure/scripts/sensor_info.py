@@ -125,10 +125,16 @@ translate(8, 9, -1, 1)
 for i in range(10, 22):
    translate(i-3, i, -1, 2)
 
-# Adjust for actual origin
+# Adjust for actual origin and flip Z
 for i in range(0,22):
+    # Move origin
     coordinates[i][0] = coordinates[i][0] - 4
     coordinates[i][1] = coordinates[i][1] - 15
+    # Flip Z
+    coordinates[i][2] = -coordinates[i][2]
+    coordinates[i][5] = -coordinates[i][5]
+    coordinates[i][6] = -coordinates[i][6]
+    coordinates[i][7] = -coordinates[i][7]
 
 def multorientation(data, ori):
     for i in range(0, len(data)):

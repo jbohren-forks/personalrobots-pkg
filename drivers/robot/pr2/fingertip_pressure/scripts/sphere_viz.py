@@ -47,11 +47,34 @@ import threading
 from fingertip_pressure.msg import PressureInfo, PressureInfoElement
 from ethercat_hardware.msg import PressureState
 from visualization_msgs.msg import Marker
-from robot_msgs.msg import Vector3
 from fingertip_pressure.colormap import color
+from robot_msgs.msg import Vector3
 
-#def norm(v):
-#    return sqrt(v.x * v.x + v.y * v.y + v.z * v.z)
+positions = [ # x, y, z, xscale, yscale, zscale 
+        ( 0.026, 0.007, 0.000, 0.010, 0.010, 0.015),
+        ( 0.010, 0.010,-0.008, 0.030, 0.010, 0.010), 
+        ( 0.025, 0.010,-0.008, 0.010, 0.010, 0.010), 
+        ( 0.030, 0.010,-0.004, 0.010, 0.010, 0.010), 
+        ( 0.030, 0.010, 0.004, 0.010, 0.010, 0.010), 
+        ( 0.025, 0.010, 0.008, 0.010, 0.010, 0.010), 
+        ( 0.010, 0.010, 0.008, 0.030, 0.010, 0.010),
+        ( 0.025, 0.012,-0.006, 0.010, 0.010, 0.010),
+        ( 0.025, 0.012, 0.000, 0.010, 0.010, 0.010),
+        ( 0.025, 0.012, 0.006, 0.010, 0.010, 0.010),
+        ( 0.019, 0.012,-0.006, 0.010, 0.010, 0.010),
+        ( 0.019, 0.012, 0.000, 0.010, 0.010, 0.010),
+        ( 0.019, 0.012, 0.006, 0.010, 0.010, 0.010),
+        ( 0.013, 0.012,-0.006, 0.010, 0.010, 0.010),
+        ( 0.013, 0.012, 0.000, 0.010, 0.010, 0.010),
+        ( 0.013, 0.012, 0.006, 0.010, 0.010, 0.010),
+        ( 0.007, 0.012,-0.006, 0.010, 0.010, 0.010),
+        ( 0.007, 0.012, 0.000, 0.010, 0.010, 0.010),
+        ( 0.007, 0.012, 0.006, 0.010, 0.010, 0.010),
+        ( 0.001, 0.012,-0.006, 0.010, 0.010, 0.010),
+        ( 0.001, 0.012, 0.000, 0.010, 0.010, 0.010),
+        ( 0.001, 0.012, 0.006, 0.010, 0.010, 0.010),
+        ]
+numsensors = len(positions);
 
 class pressureVisualizer:
     def info_callback(self, info):
@@ -83,42 +106,30 @@ class pressureVisualizer:
             self.lock.acquire()
             #print 'publish'
             self.dataready = False
-            self.makeVisualization(self.data0, 0)
-            self.makeVisualization(self.data1, 1)
+            self.makeVisualization(self.data0, 0, -1)
+            self.makeVisualization(self.data1, 1, 1)
             self.lock.release()
 
-    def makeVisualization(self, data, tipnum):
+    def makeVisualization(self, data, tipnum, ydir):
         mk = Marker()
         mk.header.frame_id = self.frame[tipnum]
         mk.header.stamp = self.datatimestamp
-        mk.ns = mk.header.frame_id + "/line"
-        mk.type = Marker.LINE_STRIP
+        mk.ns = mk.header.frame_id + "/sphere"
+        mk.type = Marker.SPHERE
         mk.action = Marker.ADD
         #mk.lifetime = rospy.Duration(1)
         mk.points = []
-        for i in range(0,5):
-            mk.points.append(Vector3())
         #for i in range(0,1):
-        for i in range(0,22):
+        for i in range(0,numsensors):
             mk.id = i
-            mk.pose.position = self.center[tipnum][i]
+            (mk.pose.position.x, mk.pose.position.y, mk.pose.position.z, mk.scale.x, mk.scale.y, mk.scale.z) = positions[i]
+            mk.pose.position.y = mk.pose.position.y * ydir
+            mk.pose.position.z = mk.pose.position.z * ydir
+            #mk.pose.position = Vector3()
+            #mk.pose.position.x = self.center[tipnum][i].x
+            #mk.pose.position.y = self.center[tipnum][i].y
+            #mk.pose.position.z = self.center[tipnum][i].z
             mk.pose.orientation.w = 1.0
-            mk.scale.x = 0.001
-            h1 = self.hside1[tipnum][i]
-            h2 = self.hside2[tipnum][i]
-            mk.points[0].x =  h1.x + h2.x
-            mk.points[1].x =  h1.x - h2.x  
-            mk.points[2].x = -h1.x - h2.x
-            mk.points[3].x = -h1.x + h2.x
-            mk.points[0].y =  h1.y + h2.y
-            mk.points[1].y =  h1.y - h2.y  
-            mk.points[2].y = -h1.y - h2.y
-            mk.points[3].y = -h1.y + h2.y
-            mk.points[0].z =  h1.z + h2.z
-            mk.points[1].z =  h1.z - h2.z  
-            mk.points[2].z = -h1.z - h2.z
-            mk.points[3].z = -h1.z + h2.z
-            mk.points[4] = mk.points[0]
             mk.color.a = 1.0
             (mk.color.r, mk.color.g, mk.color.b) = color(data[i] / 6000.)
             #print "%f %f %f"%(mk.color.r, mk.color.g, mk.color.b)
@@ -137,7 +148,7 @@ class pressureVisualizer:
 
 if __name__ == '__main__':
     #@todo it would be nice to read an xml configuration file to get these parameters.
-    rospy.init_node('pressure/sphere_viz')
+    rospy.init_node('pressure/rectangle_viz')
     rospy.sleep(.2)
         
     pv1 = pressureVisualizer('r_gripper_motor')

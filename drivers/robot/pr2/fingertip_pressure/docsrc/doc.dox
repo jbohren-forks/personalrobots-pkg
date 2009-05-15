@@ -197,7 +197,7 @@ Sets the following parameters on the parameter server
 
 \subsection fingertip_demo fingertip_demo.launch
 
-Runs all the package's nodes, along with ogre (to provide tf data) and rviz
+Runs all the package's nodes, and rviz
 (to view the visualization markers). This should demonstrate all the
 packages capabilities.
 
@@ -205,7 +205,11 @@ packages capabilities.
 \verbatim
 $ roslaunch demo/fingertip_demo.launch
 \endverbatim
-
+and in a separate shell
+\verbatim
+$ roscd pr2_gazebo
+$ roslaunch pr2_empty.launch
+\endverbatim
 
 
 */
