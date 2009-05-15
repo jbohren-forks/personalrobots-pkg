@@ -16,4 +16,5 @@
   <depend package="map_server"/>
   <depend package="willow_maps"/>
   <depend package="nav"/>
+  <depend package="nav_robot_actions"/>
 </package>
