@@ -5,6 +5,10 @@ float THETA_ERROR = 0.1;
  */
 BaseState::Holds{
   met_by(Holds p);
+  defaultOnCommit(frame_id, p.frame_id);
+  float ts;
+  eq(start, ts);
+  defaultOnCommit(time_stamp, ts);
   defaultOnCommit(x, p.x);
   defaultOnCommit(y, p.y);
   defaultOnCommit(z, p.z);

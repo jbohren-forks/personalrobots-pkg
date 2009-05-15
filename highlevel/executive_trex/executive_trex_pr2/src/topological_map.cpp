@@ -2,6 +2,7 @@
  * @author Conor McGann
  */
 #include <executive_trex_pr2/topological_map.h>
+#include <executive_trex_pr2/components.h>
 #include <ros/console.h>
 #include <tf/transform_datatypes.h>
 #include "ConstrainedVariable.hh"
@@ -137,7 +138,14 @@ namespace executive_trex_pr2 {
     if(!_outlet.isSingleton())
       return;
 
+    // If outlet id is 0 then skip.
+    if(_outlet.getSingletonValue() == 0){
+      debugMsg("map:get_outlet_appoach_pose", "Ignoring outlet id since it is a NO_KEY");
+      return;
+    }
+
     debugMsg("map:get_outlet_appoach_pose",  "BEFORE: "  << TREX::timeString() << toString());
+
     try{
       robot_msgs::Pose outlet_pose;
       TopologicalMapAdapter::instance()->getOutletApproachPose(_outlet.getSingletonValue(), outlet_pose);
@@ -226,6 +234,13 @@ namespace executive_trex_pr2 {
     if(!_current_x.isSingleton() || !_current_x.isSingleton() || !_target_x.isSingleton() || !_target_y.isSingleton()) 
       return;
 
+
+
+    // If ouputs are already bound, then do nothing
+    static const std::string OUTPUT_PARAMS(":x:y:z:qx:qy:qz:qw");
+    if(allSingletons(getScope(), OUTPUT_PARAMS))
+      return;
+
     debugMsg("map:get_next_move",  "BEFORE: "  << TREX::timeString() << toString());
 
     // Get next move by evaluating all options
@@ -243,9 +258,13 @@ namespace executive_trex_pr2 {
     unsigned int final_region =  TopologicalMapAdapter::instance()->getRegion(target_x, target_y);
     condDebugMsg(final_region == 0, "map", "No region for <" << target_x << ", " << target_y <<">");
 
+    debugMsg("map:get_next_move", "Current region is " << this_region << " for <" << current_x << ", " << current_y <<">");
+    debugMsg("map:get_next_move", "Target region is " << final_region << " for <" << target_x << ", " << target_y <<">");
+
     // If the final region is bogus, then force a conflict.
     if(final_region == 0 || this_region == 0){
       _thru_doorway.empty();
+      debugMsg("map:get_next_move",  "Exiting due to invalid region points");
       return;
     }
 
@@ -272,10 +291,17 @@ namespace executive_trex_pr2 {
 
     if(lowest_cost == PLUS_INFINITY){
       _thru_doorway.empty();
+      debugMsg("map:get_next_move",  "Exiting since not a doorway");
+      return;
     }
     else {
       _next_x.set(next_x);
       _next_y.set(next_y);
+      _next_z.set(0.0);
+      _next_qx.set(0.0);
+      _next_qy.set(0.0);
+      _next_qz.set(0.0);
+      _next_qw.set(1.0);
     }
 
     // Finally, we have to set the flag for if we are moving thru a doorway
@@ -288,6 +314,8 @@ namespace executive_trex_pr2 {
       unsigned int region_id = TopologicalMapAdapter::instance()->getRegion(mid_x, mid_y);
       if(!TopologicalMapAdapter::instance()->isDoorway(region_id, is_doorway)){
 	_thru_doorway.empty();
+	debugMsg("map:get_next_move",  "Exiting since not a doorway");
+	return;
       }
     }
 
@@ -850,7 +878,15 @@ namespace executive_trex_pr2 {
   void TopologicalMapAdapter::getConnectorCosts(double x0, double y0, double x1, double y1, std::vector< std::pair<topological_map::ConnectorId, double> >& results){
     const topological_map::Point2D source_point(x0, y0);
     const topological_map::Point2D target_point(x1, y1);
-    results = _map->connectorCosts(source_point, target_point);
+    try{
+      results = _map->connectorCosts(source_point, target_point);
+    }
+    catch(std::runtime_error e){
+      ROS_ERROR(e.what()); 
+    }
+    catch(...){
+      debugMsg("map:getConnectorCosts", "failed for <" << x0 << ", " << y0 << "> => <" << x1 << ", " << y1 << ">"); 
+    }
   }
 
   void TopologicalMapAdapter::getLocalConnectionsForGoal(std::list<ConnectionCostPair>& results, double x0, double y0, double x1, double y1){

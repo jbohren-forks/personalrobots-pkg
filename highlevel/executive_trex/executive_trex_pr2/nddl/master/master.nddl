@@ -100,10 +100,10 @@ M2Goals::Active{
     eq(mc.finished, false);
 
     if(outlet_id == NO_KEY){
-      eq(mc.recharge_required, true);
+      eq(mc.recharge_required, false);
     }
     else {
-      eq(mc.recharge_required, false);
+      eq(mc.recharge_required, true);
     }
   }
 }
@@ -133,7 +133,7 @@ M2Controller::Holds{
     float distance;
     calcDistance(distance, bs.x, bs.y, m2_active.x, m2_active.y);
     bool at_goal;
-    testLEQ(at_goal, distance, 1.5);
+    testLEQ(at_goal, distance, 0.2);
 
     if(finished == true){
       meets(m2_goals.Inactive m2_inactive);
@@ -163,7 +163,7 @@ M2Controller::Holds{
 	if(recharge_required == true){ 
 	  contains_start(recharger.Active cmd);
 	  concurrent(cmd.end, end);
-	  map_get_outlet_state(cmd.outlet_id, m2_active.outlet_id);
+	  eq(cmd.outlet_id, m2_active.outlet_id);
 	}
 	else {
 	  meets(m2_goals.Inactive m2_inactive);
@@ -186,7 +186,7 @@ M2Controller::Holds{
 	// Determine the next map point to go for. It will either be the outlet
 	// or it will be a doorway en-route to the outlet
 	bool thru_doorway;
-	map_get_next_move(cmd.x, cmd.y, cmd.y, cmd.qx, cmd.qy, cmd.qz, cmd.qw, thru_doorway, bs.x, bs.y, m2_active.x, m2_active.y);
+	map_get_next_move(cmd.x, cmd.y, cmd.z, cmd.qx, cmd.qy, cmd.qz, cmd.qw, thru_doorway, bs.x, bs.y, m2_active.x, m2_active.y);
 
 	if(thru_doorway == true){
 	  eq(cmd.object, doorman);
