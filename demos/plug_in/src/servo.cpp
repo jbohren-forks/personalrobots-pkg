@@ -34,7 +34,7 @@
 
 #include "robot_msgs/PoseStamped.h"
 #include "robot_msgs/CartesianState.h"
-#include "robot_msgs/TaskFrameFormalism.h"
+#include "manipulation_msgs/TaskFrameFormalism.h"
 
 const double MIN_STANDOFF = 0.035;
 const double SUCCESS_THRESHOLD = 0.025;
@@ -171,7 +171,7 @@ void plug_cb(const tf::MessageNotifier<robot_msgs::PoseStamped>::MessagePtr &msg
       printf("enter MEASURING\n");
       if (prev_state == PUSHING || prev_state == FORCING)
       {
-        robot_msgs::TaskFrameFormalism tff;
+        manipulation_msgs::TaskFrameFormalism tff;
         tff.header.frame_id = "outlet_pose";
         tff.header.stamp = msg->header.stamp;
         tff.mode.vel.x = 3;
@@ -193,7 +193,7 @@ void plug_cb(const tf::MessageNotifier<robot_msgs::PoseStamped>::MessagePtr &msg
 
     case MOVING: {
       printf("enter MOVING\n");
-      robot_msgs::TaskFrameFormalism tff;
+      manipulation_msgs::TaskFrameFormalism tff;
       tff.header.frame_id = "outlet_pose";
       tff.header.stamp = msg->header.stamp;
       tff.mode.vel.x = 3;
@@ -213,7 +213,7 @@ void plug_cb(const tf::MessageNotifier<robot_msgs::PoseStamped>::MessagePtr &msg
     case PUSHING: {
       printf("enter PUSHING\n");
       g_started_pushing = ros::Time::now();
-      robot_msgs::TaskFrameFormalism tff;
+      manipulation_msgs::TaskFrameFormalism tff;
       tff.header.frame_id = "outlet_pose";
       tff.header.stamp = msg->header.stamp;
       tff.mode.vel.x = 2;
@@ -233,7 +233,7 @@ void plug_cb(const tf::MessageNotifier<robot_msgs::PoseStamped>::MessagePtr &msg
     case FORCING: {
       printf("enter FORCING\n");
       g_started_forcing = ros::Time::now();
-      robot_msgs::TaskFrameFormalism tff;
+      manipulation_msgs::TaskFrameFormalism tff;
       tff.header.frame_id = "outlet_pose";
       tff.header.stamp = msg->header.stamp;
       tff.mode.vel.x = 1;
@@ -261,7 +261,7 @@ void plug_cb(const tf::MessageNotifier<robot_msgs::PoseStamped>::MessagePtr &msg
     case HOLDING: {
       printf("enter HOLDING\n");
       g_started_holding = ros::Time::now();
-      robot_msgs::TaskFrameFormalism tff;
+      manipulation_msgs::TaskFrameFormalism tff;
       tff.header.frame_id = "outlet_pose";
       tff.header.stamp = msg->header.stamp;
       tff.mode.vel.x = 1;
@@ -289,7 +289,7 @@ int main(int argc, char** argv)
   ros::init(argc, argv);
   ros::Node node("servo");
 
-  node.advertise<robot_msgs::TaskFrameFormalism>("/arm_hybrid/command", 2);
+  node.advertise<manipulation_msgs::TaskFrameFormalism>("/arm_hybrid/command", 2);
 
   TF.reset(new tf::TransformListener(node));
   g_mn.reset(new tf::MessageNotifier<robot_msgs::PoseStamped>(
