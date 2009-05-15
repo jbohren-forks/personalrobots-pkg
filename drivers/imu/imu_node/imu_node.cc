@@ -217,7 +217,7 @@ public:
       static double prevtime = 0;
       double starttime = ros::Time::now().toSec();
       if (prevtime && prevtime - starttime > 0.014)
-        ROS_WARN("Full IMU loop took %f ms.", 1000 * (endtime - starttime));
+        ROS_WARN("Full IMU loop took %f ms.", 1000 * (prevtime - starttime));
       imu.receiveAccelAngrateOrientation(&time, accel, angrate, orientation);
       double endtime = ros::Time::now().toSec();
       if (endtime - starttime > 0.013)
