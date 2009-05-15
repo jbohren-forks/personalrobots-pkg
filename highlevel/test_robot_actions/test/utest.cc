@@ -199,6 +199,39 @@ TEST(robot_actions, action_client){
   ASSERT_EQ(result, robot_actions::PREEMPTED);
 }
 
+/**
+ * Test - Here is an example using an action runner. 
+ */
+TEST(robot_actions, scalability_test){
+
+  // Now connect actions
+  std::vector<MyAction*> actions;
+  Float32 g;
+  robot_actions::ActionStatus foo;
+
+
+  // First allocate it with an update rate of 10 Hz
+  robot_actions::ActionRunner runner(10.0);
+  for (int i = 0; i < 100; i++) {
+    MyAction* a = new MyAction();
+    actions.push_back(a);
+    runner.connect<Float32, TestState, Float32>(*a);
+  }
+
+
+  // Now run it.
+  runner.run();
+
+  ros::Duration duration(5);
+  duration.sleep();
+
+  while(!actions.size()) {
+    delete actions[0];
+    actions.erase(actions.begin());
+  }
+
+}
+
 int main(int argc, char** argv){  
   ros::init(argc, argv);
   
