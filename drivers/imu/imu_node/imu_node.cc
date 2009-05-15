@@ -214,11 +214,15 @@ public:
       double angrate[3];
       double orientation[9];
 
+      static double prevtime = 0;
       double starttime = ros::Time::now().toSec();
+      if (prevtime && prevtime - starttime > 0.014)
+        ROS_WARN("Full IMU loop took %f ms.", 1000 * (endtime - starttime));
       imu.receiveAccelAngrateOrientation(&time, accel, angrate, orientation);
       double endtime = ros::Time::now().toSec();
-      if (endtime - starttime > 0.015)
-        ROS_WARN("Gathering data took more than 15 ms.");
+      if (endtime - starttime > 0.013)
+        ROS_WARN("Gathering data took %f ms.", 1000 * (endtime - starttime));
+      prevtime = starttime;
 
       reading.acc.acc.ax = accel[0];
       reading.acc.acc.ay = accel[1];
@@ -244,8 +248,8 @@ public:
       publish("imu_data", reading);
       //ROS_DEBUG("Done publishing imu_data");
       endtime = ros::Time::now().toSec();
-      if (endtime - starttime > 0.005)
-        ROS_WARN("Publishing took more than 5 ms.");
+      if (endtime - starttime > 0.003)
+        ROS_WARN("Publishing took %f ms.", 1000 * (endtime - starttime));
         
     } catch (ms_3dmgx2_driver::Exception& e) {
       ROS_INFO("Exception thrown while trying to get the IMU reading.\n%s", e.what());
