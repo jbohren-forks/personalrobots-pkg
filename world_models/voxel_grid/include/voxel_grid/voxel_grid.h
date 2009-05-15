@@ -49,7 +49,7 @@
 
 /**
  * @class VoxelGrid
- * @brief A 3D grid sturcture that stores points as an integer array. X and Y index the array and Z selects which bit of the integer is used giving a limit of 16 vertical cells. 
+ * @brief A 3D grid sturcture that stores points as an integer array. X and Y index the array and Z selects which bit of the integer is used giving a limit of 16 vertical cells.
  */
 namespace voxel_grid {
   enum VoxelStatus {
@@ -62,8 +62,8 @@ namespace voxel_grid {
     public:
       /**
        * @brief  Constructor for a voxel grid
-       * @param size_x The x size of the grid 
-       * @param size_y The y size of the grid 
+       * @param size_x The x size of the grid
+       * @param size_y The y size of the grid
        * @param size_z The z size of the grid, only sizes <= 16 are supported
        */
       VoxelGrid(unsigned int size_x, unsigned int size_y, unsigned int size_z);
@@ -126,18 +126,18 @@ namespace voxel_grid {
           n &= n - 1; //clear the least significant bit set
         }
         return bit_count;
-        
+
       }
 
-      static VoxelStatus getVoxel(unsigned int x, unsigned int y, unsigned int z, 
-          unsigned int size_x, unsigned int size_y, unsigned int size_z, uint32_t* data)
+      static VoxelStatus getVoxel(unsigned int x, unsigned int y, unsigned int z,
+          unsigned int size_x, unsigned int size_y, unsigned int size_z, const uint32_t* data)
       {
         if(x >= size_x || y >= size_y || z >= size_z){
           ROS_INFO("Error, voxel out of bounds. (%d, %d, %d)\n", x, y, z);
           return UNKNOWN;
         }
         uint32_t full_mask = ((uint32_t)1<<z<<16) | (1<<z);
-        uint32_t result = data[y * size_x + x] & full_mask; 
+        uint32_t result = data[y * size_x + x] & full_mask;
         unsigned int bits = numBits(result);
 
         // known marked: 11 = 2 bits, unknown: 01 = 1 bit, known free: 00 = 0 bits
@@ -153,11 +153,11 @@ namespace voxel_grid {
 
       void markVoxelLine(double x0, double y0, double z0, double x1, double y1, double z1, unsigned int max_length = UINT_MAX);
       void clearVoxelLine(double x0, double y0, double z0, double x1, double y1, double z1, unsigned int max_length = UINT_MAX);
-      void clearVoxelLineInMap(double x0, double y0, double z0, double x1, double y1, double z1, unsigned char *map_2d, 
+      void clearVoxelLineInMap(double x0, double y0, double z0, double x1, double y1, double z1, unsigned char *map_2d,
           unsigned int unknown_threshold, unsigned int mark_threshold, unsigned int max_length = UINT_MAX);
 
       VoxelStatus getVoxel(unsigned int x, unsigned int y, unsigned int z);
-      VoxelStatus getVoxelColumn(unsigned int x, unsigned int y, 
+      VoxelStatus getVoxelColumn(unsigned int x, unsigned int y,
           unsigned int unknown_threshold = 0, unsigned int marked_threshold = 0); //Are there any obstacles at that (x, y) location in the grid?
 
       void printVoxelGrid();
@@ -167,7 +167,7 @@ namespace voxel_grid {
       unsigned int sizeZ();
 
       template <class ActionType>
-        inline void raytraceLine(ActionType at, double x0, double y0, double z0, 
+        inline void raytraceLine(ActionType at, double x0, double y0, double z0,
             double x1, double y1, double z1, unsigned int max_length = UINT_MAX){
 
           int dx = (unsigned int)(x1 - x0);
@@ -279,7 +279,7 @@ namespace voxel_grid {
 
       class ClearVoxelInMap {
         public:
-          ClearVoxelInMap(uint32_t* data, unsigned char *costmap, 
+          ClearVoxelInMap(uint32_t* data, unsigned char *costmap,
               unsigned int unknown_clear_threshold, unsigned int marked_clear_threshold): data_(data), costmap_(costmap),
         unknown_clear_threshold_(unknown_clear_threshold), marked_clear_threshold_(marked_clear_threshold){}
           inline void operator()(unsigned int offset, unsigned int z_mask){
