@@ -14,7 +14,6 @@
   <param name="/trex/enable_move_base_local" value="true"/>
   <param name="/trex/enable_detect_outlet_coarse" value="true"/>
   <param name="/trex/enable_detect_outlet_fine" value="true"/>
-  <param name="/trex/enable_doors_tuck_arms" value="true"/>
   <param name="/trex/enable_touch_door" value="true"/>
   <param name="/trex/enable_grasp_handle" value="true"/>
   <node pkg="executive_trex_pr2" type="stub_ros_container" respawn="false" />

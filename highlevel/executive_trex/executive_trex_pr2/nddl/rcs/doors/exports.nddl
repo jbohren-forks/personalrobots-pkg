@@ -36,15 +36,6 @@ class StopAction extends  ROSAction {
   StopAction(Mode _mode){ super(_mode);}
 };
 
-/**
- * @brief 
- */
-class DoorsTuckArms extends ROSAction {
-  predicate Inactive{}
-  predicate Active{}
-  DoorsTuckArms(Mode _mode){super(_mode);}
-};
-
 class DoorManipulationBehavior extends ROSAction {
   bool update_controller; // If true, will force an update on successful termination
 

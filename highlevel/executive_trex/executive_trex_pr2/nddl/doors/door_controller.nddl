@@ -172,7 +172,7 @@ DoorController::Holds {
 	  }
 	}
 	if(arms_tucked == false){
-	  contains_start(doors_tuck_arms.Active cmd);
+	  contains_start(safety_tuck_arms.Active cmd);
 	  concurrent(cmd.end, end);
 	}
       }
@@ -190,7 +190,7 @@ DoorController::Holds {
 	  door_get_robot_pose_for_door(cmd.x, cmd.y, cmd.z, cmd.qx, cmd.qy, cmd.qz, cmd.qw, ds.object, DOORWAY_CLEARANCE_RANGE);
 	}
 	else {
-	  contains_start(doors_tuck_arms.Active cmd);
+	  contains_start(safety_tuck_arms.Active cmd);
 	  concurrent(cmd.end, end);
 	}
       }
@@ -241,7 +241,7 @@ DoorController::Holds {
 	      door_get_robot_pose_for_door(cmd.x, cmd.y, cmd.z, cmd.qx, cmd.qy, cmd.qz, cmd.qw, ds.object, GRASP_RANGE);
 	    }
 	    else {
-	      contains_start(doors_tuck_arms.Active cmd);
+	      contains_start(safety_tuck_arms.Active cmd);
 	      concurrent(cmd.end, end);
 	    }
 	  }
@@ -271,7 +271,7 @@ DoorController::Holds {
 		  concurrent(cmd.end, end);
 		}
 		else {
-		  contains_start(doors_tuck_arms.Active cmd);
+		  contains_start(safety_tuck_arms.Active cmd);
 		  concurrent(cmd.end, end);
 		}
 	      }

@@ -26,7 +26,6 @@ CheckPath check_path = new CheckPath(Internal);
 NotifyDoorBlocked notify_door_blocked = new NotifyDoorBlocked(Internal);
 MoveBase move_base_local = new MoveBase(Internal);
 MoveBaseDoor move_base_door = new MoveBaseDoor(Internal);
-DoorsTuckArms doors_tuck_arms = new DoorsTuckArms(Internal);
 StopAction stop_action = new StopAction(Internal);
 
 // Simulation Control Variables
@@ -62,12 +61,6 @@ DoorManipulationBehavior::Active{
 }
 
 MoveBase::Active{
-  eq(duration, 1);
-  meets(Inactive s);
-  eq(s.status, SUCCESS);
-}
-
-DoorsTuckArms::Active{
   eq(duration, 1);
   meets(Inactive s);
   eq(s.status, SUCCESS);

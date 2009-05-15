@@ -47,21 +47,13 @@ MobilityStatus::Holds{
 // Internal Timelines
 MobilityStatus mobility_status = new MobilityStatus(Internal);
 
-// Actions cauuing arms to be tucked
-DoorsTuckArms doors_tuck_arms = new DoorsTuckArms(External);
+// Actions causing arms to be tucked
 SafetyTuckArms safety_tuck_arms = new SafetyTuckArms(External);
 
 // Actions causing arms to become untucked. Required to be untucked from beginning to end
 TouchDoor touch_door = new TouchDoor(External);
 GraspHandle grasp_handle = new GraspHandle(External);
 PlugsUntuckArms plugs_untuck_arms = new PlugsUntuckArms(External);
-
-DoorsTuckArms::Inactive{
-  if(status == SUCCESS){
-    starts_during(mobility_status.Holds mb);
-    eq(mb.arms_tucked, true);
-  }
-}
 
 SafetyTuckArms::Inactive{
   if(status == SUCCESS){

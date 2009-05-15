@@ -149,7 +149,8 @@ namespace executive_trex_pr2 {
   public:
     BaseStatePublisher(const std::string& update_topic, double update_rate)
       : StatePublisher<robot_msgs::PoseStamped>(robot_msgs::PoseStamped(), update_topic, update_rate), 
-	_tf(*ros::Node::instance(), true, ros::Duration(10)){}
+	_tf(*ros::Node::instance(), true, ros::Duration(10)){
+    }
 
   protected:
 
@@ -158,6 +159,7 @@ namespace executive_trex_pr2 {
       tf::Stamped<tf::Pose> robot_pose;
       robot_pose.setIdentity();
       robot_pose.frame_id_ = "base_footprint";
+      s.header.frame_id = "map";
 
       try{
 	robot_pose.stamp_ = ros::Time();
@@ -169,17 +171,16 @@ namespace executive_trex_pr2 {
 	s.pose.orientation.y = stamped_pose.getRotation().y();
 	s.pose.orientation.z = stamped_pose.getRotation().z();
 	s.pose.orientation.w = stamped_pose.getRotation().w();
+	s.header.stamp = robot_pose.stamp_;
       }
       catch(tf::LookupException& ex) {
-	ROS_ERROR("No Transform available Error: %s\n", ex.what());
-	return;
+	ROS_ERROR("No Transform available Error: %s", ex.what()); 
       }
       catch(tf::ConnectivityException& ex) {
-	ROS_ERROR("Connectivity Error: %s\n", ex.what());
-	return;
+	ROS_ERROR("Connectivity Error: %s", ex.what());
       }
       catch(tf::ExtrapolationException& ex) {
-	ROS_ERROR("Extrapolation Error: %s\n", ex.what());
+	ROS_ERROR("Extrapolation Error: %s", ex.what());
       }
     }
 
@@ -331,10 +332,6 @@ int main(int argc, char** argv){
   executive_trex_pr2::SimpleStubAction<std_msgs::Empty> safety_tuck_arms("safety_tuck_arms");
   if (getComponentParam("/trex/enable_safety_tuck_arms"))
     runner.connect<std_msgs::Empty, robot_actions::NoArgumentsActionState, std_msgs::Empty>(safety_tuck_arms);
-
-  executive_trex_pr2::SimpleStubAction<std_msgs::Empty> doors_tuck_arms("doors_tuck_arms");
-  if (getComponentParam("/trex/enable_doors_tuck_arms"))
-    runner.connect<std_msgs::Empty, robot_actions::NoArgumentsActionState, std_msgs::Empty>(doors_tuck_arms);
 
   // Miscellaneous
   runner.run();
