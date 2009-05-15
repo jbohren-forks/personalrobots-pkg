@@ -7,7 +7,7 @@
   <param name="/trex/enable_safety_tuck_arms" value="false"/>
   <param name="/trex/enable_move_base" value="false"/>
   <param name="/trex/enable_move_base_local" value="false"/>
-  <param name="/trex/enable_set_laser_tilt" value="true"/>
+  <param name="/trex/enable_set_laser_tilt" value="false"/>
   <param name="/trex/enable_base_state_publisher" value="true"/>
 
   <!-- Door Domain Actions -->
