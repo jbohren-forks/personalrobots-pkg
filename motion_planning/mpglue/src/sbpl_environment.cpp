@@ -568,14 +568,14 @@ namespace mpglue {
     env->setDoorProperties(door, door_thickness);
 
   const double arm_min_workspace_radius = 0.0;
-  const double arm_max_workspace_radius = 0.85;
+  const double arm_max_workspace_radius = 0.70;
 
   const double arm_max_workspace_angle = M_PI/2.0;
   const double arm_min_workspace_angle = -M_PI/2.0;
   const double door_angle_discretization_interval = 0.0175;
   robot_msgs::Point32 shoulder;
   shoulder.x = 0.0;
-  shoulder.y = -0.2;
+  shoulder.y = -0.188;
 
   env->setRobotProperties(arm_min_workspace_radius,arm_max_workspace_radius,arm_min_workspace_angle,arm_max_workspace_angle,shoulder);
   env->setDoorDiscretizationAngle(door_angle_discretization_interval);
