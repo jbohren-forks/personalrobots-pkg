@@ -99,15 +99,16 @@ static const int NSEC_PER_SEC = 1e+9;
 
 static struct
 {
-  double ec[1000];
-  double mc[1000];
+  accumulator_set<double, stats<tag::max, tag::mean> > ec_acc;
+  accumulator_set<double, stats<tag::max, tag::mean> > mc_acc;
   int secondary;
-} diagnostics;
+} g_stats;
 
 static void publishDiagnostics(realtime_tools::RealtimePublisher<robot_msgs::DiagnosticMessage> &publisher)
 {
   if (publisher.trylock())
   {
+    accumulator_set<double, stats<tag::max, tag::mean> > zero;
     vector<robot_msgs::DiagnosticStatus> statuses;
     vector<robot_msgs::DiagnosticValue> values;
     vector<robot_msgs::DiagnosticString> strings;
@@ -116,35 +117,37 @@ static void publishDiagnostics(realtime_tools::RealtimePublisher<robot_msgs::Dia
     robot_msgs::DiagnosticString s;
 
     static double max_ec = 0, max_mc = 0;
-    double total_ec = 0, total_mc = 0;
+    double avg_ec, avg_mc;
 
-    for (int i = 0; i < 1000; ++i)
-    {
-      total_ec += diagnostics.ec[i];
-      max_ec = std::max(max_ec, diagnostics.ec[i]);
-      total_mc += diagnostics.mc[i];
-      max_mc = std::max(max_mc, diagnostics.mc[i]);
-    }
+    avg_ec = extract_result<tag::mean>(g_stats.ec_acc);
+    avg_mc = extract_result<tag::mean>(g_stats.mc_acc);
+    max_ec = std::max(max_ec, extract_result<tag::max>(g_stats.ec_acc)); 
+    max_mc = std::max(max_mc, extract_result<tag::max>(g_stats.mc_acc)); 
+    g_stats.ec_acc = zero;
+    g_stats.mc_acc = zero;
 
-#define ADD_VALUE(lab, val)                     \
-    v.label = (lab);                            \
-    v.value = (val);                            \
-    values.push_back(v)
+#define ADD_STRING_FMT(lab, fmt, ...) \
+  s.label = (lab); \
+  { char buf[1024]; \
+    snprintf(buf, sizeof(buf), fmt, ##__VA_ARGS__); \
+    s.value = buf; \
+  } \
+  strings.push_back(s)
 
-    ADD_VALUE("Secondary mode switches", diagnostics.secondary);
-    ADD_VALUE("Max EtherCAT roundtrip (us)", max_ec*1e+6);
-    ADD_VALUE("Avg EtherCAT roundtrip (us)", total_ec*1e+6/1000);
-    ADD_VALUE("Max Mechanism Control roundtrip (us)", max_mc*1e+6);
-    ADD_VALUE("Avg Mechanism Control roundtrip (us)", total_mc*1e+6/1000);
+    ADD_STRING_FMT("Secondary mode switches", "%d", g_stats.secondary);
+    ADD_STRING_FMT("Max EtherCAT roundtrip (us)", "%.2f", max_ec*1e+6);
+    ADD_STRING_FMT("Avg EtherCAT roundtrip (us)", "%.2f", avg_ec*1e+6);
+    ADD_STRING_FMT("Max Mechanism Control roundtrip (us)", "%.2f", max_mc*1e+6);
+    ADD_STRING_FMT("Avg Mechanism Control roundtrip (us)", "%.2f", avg_mc*1e+6);
 
     status.name = "Realtime Control Loop";
     status.level = 0;
     status.message = "OK";
-    if (diagnostics.secondary > 100) {
+    if (g_stats.secondary > 100) {
       status.level = 1;
       status.message = "Too many secondary mode switches";
     }
-    if (diagnostics.secondary > 1000) {
+    if (g_stats.secondary > 1000) {
       status.level = 2;
       status.message = "Too many secondary mode switches";
     }
@@ -231,7 +234,7 @@ void *controlLoop(void *)
   clock_gettime(CLOCK_MONOTONIC, &tick);
   int period = 1e+6; // 1 ms in nanoseconds
 
-  static int count = 0;
+  double last_published = now();
   while (!g_quit)
   {
     double start = now();
@@ -249,15 +252,15 @@ void *controlLoop(void *)
     g_halt_motors = false;
     double after_ec = now();
     mcn.update();
-    double after_mc = now();
+    double end = now();
 
-    diagnostics.ec[count] = after_ec - start;
-    diagnostics.mc[count] = after_mc - after_ec;
+    g_stats.ec_acc(after_ec - start);
+    g_stats.mc_acc(end - after_ec);
 
-    if (++count == 1000)
+    if ((end - last_published) > 1.0)
     {
       publishDiagnostics(publisher);
-      count = 0;
+      last_published = end;
     }
 
     tick.tv_nsec += period;
@@ -327,7 +330,7 @@ void warnOnSecondary(int sig)
   int nentries;
 
   // Increment diagnostic count of secondary mode switches
-  ++diagnostics.secondary;
+  ++g_stats.secondary;
 
   // Dump a backtrace of the frame which caused the switch to
   // secondary mode
