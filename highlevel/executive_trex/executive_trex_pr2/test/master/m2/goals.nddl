@@ -1,0 +1,27 @@
+/**
+ * This file should be auto generated. The checked in version indicates a sample. There are 10 goals. Each is defined by an outlet_id which must be a valid
+ * key in the topological map. No ordering is required. For now we will not order efficiently, but will add that shortly.
+ */
+
+rejectable(m2_goals.Active g_1);
+g_1.outlet_id = 1;
+rejectable(m2_goals.Active g_6);
+g_6.outlet_id = 6;
+rejectable(m2_goals.Active g_9);
+g_9.outlet_id = 9;
+rejectable(m2_goals.Active g_4);
+g_4.outlet_id = 4;
+rejectable(m2_goals.Active g_5);
+g_5.outlet_id = 5;
+rejectable(m2_goals.Active g_2);
+g_2.outlet_id = 2;
+rejectable(m2_goals.Active g_3);
+g_3.outlet_id = 3;
+rejectable(m2_goals.Active g_7);
+g_7.outlet_id = 7;
+rejectable(m2_goals.Active g_10);
+g_10.outlet_id = 10;
+rejectable(m2_goals.Active g_8);
+g_8.outlet_id = 8;
+
+
