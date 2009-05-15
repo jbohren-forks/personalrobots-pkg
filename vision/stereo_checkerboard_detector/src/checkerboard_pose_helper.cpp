@@ -61,22 +61,43 @@ void CheckerboardPoseHelper::setSize(int w, int h, double spacing)
   }
 }
 
-void CheckerboardPoseHelper::getPose(const CvMat* cb_sensed, tf::Pose& pose_tf)
+double CheckerboardPoseHelper::getPose(const CvMat* cb_sensed, tf::Pose& pose_tf)
 {
   float R[9] ;
   float trans[3] ;
   CvMat cv_R = cvMat(3, 3, CV_32FC1, R) ;
   CvMat cv_trans = cvMat(3, 1, CV_32FC1, trans) ;
 
-  getPose(cb_sensed, &cv_R, &cv_trans) ;
+  double rms_err ;
+  rms_err = getPose(cb_sensed, &cv_R, &cv_trans) ;
   btMatrix3x3 rot3x3(R[0], R[1], R[2],
                      R[3], R[4], R[5],
                      R[6], R[7], R[8]);
 
-  pose_tf = tf::Pose(rot3x3, tf::Vector3(trans[0], trans[1], trans[2])) ;
+  printf("R =\n") ;
+  for (int i=0; i<3; i++)
+  {
+    printf("  % .6f, % .6f, % .6f\n", *( (float*) CV_MAT_ELEM_PTR( cv_R, i, 0)),
+                                      *( (float*) CV_MAT_ELEM_PTR( cv_R, i, 1)),
+                                      *( (float*) CV_MAT_ELEM_PTR( cv_R, i, 2)) ) ;
+  }
+
+  tf::Quaternion q ;
+  rot3x3.getRotation(q) ;
+
+  printf("Length=%f\n", q.length()) ;
+  printf("q_raw = [%f, %f, %f, %f]\n", q.x(), q.y(), q.z(), q.w()) ;
+  q.normalize() ;
+  printf("q_norm = [%f, %f, %f, %f]\n", q.x(), q.y(), q.z(), q.w()) ;
+
+  pose_tf = tf::Pose(q, tf::Vector3(trans[0], trans[1], trans[2])) ;
+
+  printf("Trans = (%f,%f,%f)\n", trans[0], trans[1], trans[2]) ;
+
+  return rms_err ;
 }
 
-void CheckerboardPoseHelper::getPose(const CvMat* cb_sensed, CvMat* R, CvMat* trans)
+double CheckerboardPoseHelper::getPose(const CvMat* cb_sensed, CvMat* R, CvMat* trans)
 {
   int N = cb_sensed->height ;
 
@@ -88,6 +109,15 @@ void CheckerboardPoseHelper::getPose(const CvMat* cb_sensed, CvMat* R, CvMat* tr
     ROS_ERROR("Array heights don't match. cb_expected.height=%i cb_sensed.height=%i",
               cb_expected_->height, cb_sensed->height ) ;
   }
+
+  printf("cb_sensed =\n") ;
+  //  for (int i=0; i<N; i++)
+  //  {
+  //    printf("  % .3f, % .3f, % .3f\n", *( (float*) CV_MAT_ELEM_PTR( *cb_sensed, i, 0)),
+  //                                      *( (float*) CV_MAT_ELEM_PTR( *cb_sensed, i, 1)),
+  //                                      *( (float*) CV_MAT_ELEM_PTR( *cb_sensed, i, 2)) ) ;
+  //  }
+
 
   // Build a matrix full of ones
   CvMat* ones_vec = cvCreateMat(N,1, CV_32FC1) ;
@@ -106,10 +136,13 @@ void CheckerboardPoseHelper::getPose(const CvMat* cb_sensed, CvMat* R, CvMat* tr
   CvMat cb_avg_sensed   = cvMat(3,1,CV_32FC1, avg_sensed) ;
   CvMat cb_avg_expected = cvMat(3,1,CV_32FC1, avg_expected) ;
 
+
   // Avg = A'*[1] / N
   cvGEMM(cb_sensed, ones_vec, 1.0/N, NULL, 0.0, &cb_avg_sensed, CV_GEMM_A_T) ;
   cvGEMM(cb_expected_, ones_vec, 1.0/N, NULL, 0.0, &cb_avg_expected, CV_GEMM_A_T) ;
 
+  printf("avg_sensed=%f, %f, %f\n", avg_sensed[0], avg_sensed[1], avg_sensed[2]) ;
+  printf("avg_expected=%f, %f, %f\n", avg_expected[0], avg_expected[1], avg_expected[2]) ;
 
   CvMat* cb_sensed_centered   = cvCreateMat(N, 3, CV_32FC1) ;
   CvMat* cb_expected_centered = cvCreateMat(N, 3, CV_32FC1) ;
@@ -162,27 +195,43 @@ void CheckerboardPoseHelper::getPose(const CvMat* cb_sensed, CvMat* R, CvMat* tr
 
   cvSVD(outer_prod, S, U, V) ;
 
-  //  printf("U =\n") ;
-  //  for (int i=0; i<3; i++)
-  //  {
-  //    printf("  % .3f, % .3f, % .3f\n", *( (float*) CV_MAT_ELEM_PTR( *U, i, 0)),
-  //                                      *( (float*) CV_MAT_ELEM_PTR( *U, i, 1)),
-  //                                      *( (float*) CV_MAT_ELEM_PTR( *U, i, 2)) ) ;
-  //  }
-  //  printf("S =\n") ;
-  //  for (int i=0; i<3; i++)
-  //  {
-  //    printf("  % .3f, % .3f, % .3f\n", *( (float*) CV_MAT_ELEM_PTR( *S, i, 0)),
-  //                                      *( (float*) CV_MAT_ELEM_PTR( *S, i, 1)),
-  //                                      *( (float*) CV_MAT_ELEM_PTR( *S, i, 2)) ) ;
-  //  }
-  //  printf("V =\n") ;
-  //  for (int i=0; i<3; i++)
-  //  {
-  //    printf("  % .3f, % .3f, % .3f\n", *( (float*) CV_MAT_ELEM_PTR( *V, i, 0)),
-  //                                      *( (float*) CV_MAT_ELEM_PTR( *V, i, 1)),
-  //                                      *( (float*) CV_MAT_ELEM_PTR( *V, i, 2)) ) ;
-  //  }
+  printf("U = [\n") ;
+  for (int i=0; i<3; i++)
+  {
+    printf("  % .3f, % .3f, % .3f\n", *( (float*) CV_MAT_ELEM_PTR( *U, i, 0)),
+                                      *( (float*) CV_MAT_ELEM_PTR( *U, i, 1)),
+                                      *( (float*) CV_MAT_ELEM_PTR( *U, i, 2)) ) ;
+  }
+  printf("];\n") ;
+
+  printf("S =[\n") ;
+  for (int i=0; i<3; i++)
+  {
+    printf("  % .3f, % .3f, % .3f\n", *( (float*) CV_MAT_ELEM_PTR( *S, i, 0)),
+                                      *( (float*) CV_MAT_ELEM_PTR( *S, i, 1)),
+                                      *( (float*) CV_MAT_ELEM_PTR( *S, i, 2)) ) ;
+  }
+  printf("];\n") ;
+
+  printf("V =[\n") ;
+  for (int i=0; i<3; i++)
+  {
+    printf("  % .3f, % .3f, % .3f\n", *( (float*) CV_MAT_ELEM_PTR( *V, i, 0)),
+                                      *( (float*) CV_MAT_ELEM_PTR( *V, i, 1)),
+                                      *( (float*) CV_MAT_ELEM_PTR( *V, i, 2)) ) ;
+  }
+  printf("];\n") ;
+
+  double detU = det3x3(U) ;
+  double detV = det3x3(V) ;
+  printf("det(U)=%f\n", detU) ;
+  printf("det(V)=%f\n", detV) ;
+  if (detU*detV < 0)
+  {
+    // Negate the last row of V
+    for (int i=0; i<3; i++)
+      *( (float*) CV_MAT_ELEM_PTR( *V, 2, i)) = -*( (float*) CV_MAT_ELEM_PTR( *V, 2, i)) ;
+  }
 
   // R = U*V'
   cvGEMM(U, V, 1.0, NULL, 0.0, R, CV_GEMM_B_T) ;
@@ -197,4 +246,16 @@ void CheckerboardPoseHelper::getPose(const CvMat* cb_sensed, CvMat* R, CvMat* tr
   cvReleaseMat(&cb_expected_centered) ;
   cvReleaseMat(&cb_sensed_centered) ;
   cvReleaseMat(&ones_vec) ;
+
+  return -1 ;   //! \todo populate this with the RMS distance error for the fitted pose
+}
+
+double CheckerboardPoseHelper::det3x3(const CvMat* A)
+{
+  return (*((float*)CV_MAT_ELEM_PTR( *A, 0, 0)))*(*((float*)CV_MAT_ELEM_PTR( *A, 1, 1)))*(*((float*)CV_MAT_ELEM_PTR( *A, 2, 2)))
+       + (*((float*)CV_MAT_ELEM_PTR( *A, 0, 1)))*(*((float*)CV_MAT_ELEM_PTR( *A, 1, 2)))*(*((float*)CV_MAT_ELEM_PTR( *A, 2, 0)))
+       + (*((float*)CV_MAT_ELEM_PTR( *A, 0, 2)))*(*((float*)CV_MAT_ELEM_PTR( *A, 1, 0)))*(*((float*)CV_MAT_ELEM_PTR( *A, 2, 1)))
+       - (*((float*)CV_MAT_ELEM_PTR( *A, 0, 0)))*(*((float*)CV_MAT_ELEM_PTR( *A, 1, 2)))*(*((float*)CV_MAT_ELEM_PTR( *A, 2, 1)))
+       - (*((float*)CV_MAT_ELEM_PTR( *A, 0, 1)))*(*((float*)CV_MAT_ELEM_PTR( *A, 1, 0)))*(*((float*)CV_MAT_ELEM_PTR( *A, 2, 2)))
+       - (*((float*)CV_MAT_ELEM_PTR( *A, 0, 2)))*(*((float*)CV_MAT_ELEM_PTR( *A, 1, 1)))*(*((float*)CV_MAT_ELEM_PTR( *A, 2, 0))) ;
 }

@@ -84,7 +84,7 @@ bool MonoCheckerboardHelper::getCorners(const IplImage* image, vector<CvPoint2D3
     // Subpixel fine-tuning stuff
     cvFindCornerSubPix(image, &corners[0], num_corners,
                        search_win_size_,
-                       cvSize(-1,-1),
+                       cvSize(2,2),
                        cvTermCriteria(CV_TERMCRIT_ITER,20,1e-2)) ;
     return true ;
   }

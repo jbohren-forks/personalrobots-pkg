@@ -82,8 +82,9 @@ public :
    * \param cb_sensed Nx3 CV_32FC1 matrix storing the sensed xyz locations of the checkerboard corners. These points
    *        must be ordered in the same ordering that cvFindChessboardCorners returns points.
    * \param pose_tf \b Output Checkerboard pose stored as a bullet/tf datatype
+   * \return (not yet implemented). RMS distance error of corners for the fitted pose
    */
-  void getPose(const CvMat* cb_sensed, tf::Pose& pose_tf) ;
+  double getPose(const CvMat* cb_sensed, tf::Pose& pose_tf) ;
 
   /**
    * Compare the sensed cloud and expected cloud to determine the pose of the checkerboard
@@ -91,11 +92,15 @@ public :
    *        must be ordered in the same ordering that cvFindChessboardCorners returns points.
    * \param R \b Output. Preallocated 3x3 CV_32FC1 matrix. Stores the calculated rotation matrix to the checkerboard
    * \param trans \b Output. Preallocated 3x1 CV_32FC1 matrix. Stores the calculated translation to the checkerboard
+   * \return (not yet implemented). RMS distance error of corners for the fitted pose
    */
-  void getPose(const CvMat* cb_sensed, CvMat* R, CvMat* trans) ;
+  double getPose(const CvMat* cb_sensed, CvMat* R, CvMat* trans) ;
 
 
 private :
+
+  double det3x3(const CvMat* A) ;
+
   CvSize board_size_ ;                   //!< Size of the checkboard
   CvMat* cb_expected_ ;
 } ;

@@ -99,6 +99,10 @@ bool StereoCheckerboardHelper::findCheckerboard(image_msgs::Image& left, image_m
       xyz_[i].z = *((float*) CV_MAT_ELEM_PTR(*xyz, i, 0)+2) ;
     }
 
+    // Recast xyz points into a better shape
+    CvMat xyz_Nx3 = cvMat(left_corners.size(), 3, CV_32FC1, CV_MAT_ELEM_PTR( *xyz, 0, 0) ) ;
+    pose_helper_.getPose(&xyz_Nx3, pose_) ;
+
     cvReleaseMat(&uvd) ;
     cvReleaseMat(&xyz) ;
     return true ;

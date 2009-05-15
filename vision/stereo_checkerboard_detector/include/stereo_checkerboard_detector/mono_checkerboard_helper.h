@@ -63,7 +63,7 @@ public :
   MonoCheckerboardHelper(int w=2, int h=2)
   {
     setSize(w,h) ;
-    search_win_size_ = cvSize(5,5) ;            //!< \todo Make this settable
+    search_win_size_ = cvSize(7,7) ;            //!< \todo Make this settable
   }
 
   /**

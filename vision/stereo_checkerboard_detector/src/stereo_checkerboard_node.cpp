@@ -41,6 +41,8 @@
 #include "robot_msgs/PointCloud.h"
 
 #include "topic_synchronizer/topic_synchronizer.h"
+#include "visualization_msgs/Marker.h"
+
 
 using namespace stereo_checkerboard_detector ;
 using namespace std ;
@@ -54,7 +56,7 @@ public:
         ros::Duration().fromSec(0.05),
         &StereoCheckerboardNode::msgTimeout )
   {
-    cb_helper_.setSize(6,8) ;
+    cb_helper_.setSize(6,8, .107) ;
 
     sync_.subscribe("stereo/left/image_rect", left_image_msg_,  1) ;
     sync_.subscribe("stereo/left/cam_info",  left_info_msg_,   1) ;
@@ -62,8 +64,10 @@ public:
     sync_.subscribe("stereo/right/cam_info", right_info_msg_,  1) ;
 
     node_->advertise<robot_msgs::PointCloud>("cb_corners", 1) ;
+    node_->advertise<robot_msgs::PoseStamped>("cb_pose", 1) ;
     node_->advertise<image_msgs::Image>("left_cb_debug",1) ;
     node_->advertise<image_msgs::Image>("right_cb_debug",1) ;
+    node->advertise<visualization_msgs::Marker>( "visualization_marker", 0 );
 
     sync_.ready() ;
   }
@@ -94,6 +98,18 @@ public:
       cloud.header.frame_id = left_image_msg_.header.frame_id ;
       cloud.header.stamp = left_image_msg_.header.stamp ;
       node_->publish("cb_corners", cloud) ;
+
+      // Publish a mini-axes defining the checkerboard
+      tf::Pose pose ;
+      cb_helper_.getPose(pose) ;
+      publishMarker(pose) ;
+
+      robot_msgs::PoseStamped pose_stamped_msg ;
+      tf::PoseTFToMsg(pose, pose_stamped_msg.pose) ;
+      pose_stamped_msg.header.frame_id = left_image_msg_.header.frame_id ;
+      pose_stamped_msg.header.stamp = left_image_msg_.header.stamp ;
+      node_->publish("cb_pose", pose_stamped_msg) ;
+
       printf("Found CB!\n") ;
     }
     else
@@ -101,6 +117,8 @@ public:
 
     node_->publish("left_cb_debug", cb_helper_.getLeftDebug()) ;
     node_->publish("right_cb_debug", cb_helper_.getRightDebug()) ;
+
+
   }
 
   void msgTimeout(ros::Time t)
@@ -125,6 +143,49 @@ public:
       printf("- right info  %f\n", right_info_msg_.header.stamp.toSec()) ;
     else
       printf("+ right info  %f\n", right_info_msg_.header.stamp.toSec()) ;
+  }
+
+  void publishMarker(const tf::Pose& pose)
+  {
+    visualization_msgs::Marker marker ;
+    marker.header.frame_id = left_image_msg_.header.frame_id ;
+    marker.header.stamp = left_image_msg_.header.stamp ;
+    marker.ns = "cb_detector" ;               // Should we querying our name from the node?
+    marker.id = 0 ;
+    marker.type = visualization_msgs::Marker::ARROW ;
+    marker.action = visualization_msgs::Marker::ADD ;
+    tf::PoseTFToMsg(pose, marker.pose) ;
+    marker.scale.x = .2 ;
+    marker.scale.y = .03 ;
+    marker.scale.z = .03 ;
+    marker.color.r = 1.0 ;
+    marker.color.g = 0.0 ;
+    marker.color.b = 0.0 ;
+    marker.color.a = 1.0 ;
+    marker.lifetime = ros::Duration().fromSec(0.0) ;
+    node_->publish("visualization_marker", marker) ;
+
+    btQuaternion x_to_y(btVector3(0.0, 0.0, 1.0), M_PI/2) ;
+    btQuaternion x_to_z(btVector3(0.0,-1.0, 0.0), M_PI/2) ;
+
+    tf::PoseTFToMsg( pose*btTransform(x_to_y), marker.pose) ;
+    marker.id = 1 ;
+    marker.color.r = 0.0 ;
+    marker.color.g = 1.0 ;
+    marker.color.b = 0.0 ;
+    marker.color.a = 1.0 ;
+    node_->publish("visualization_marker", marker) ;
+
+
+    tf::PoseTFToMsg( pose*btTransform(x_to_z), marker.pose) ;
+    marker.id = 2 ;
+    marker.color.r = 0.0 ;
+    marker.color.g = 0.0 ;
+    marker.color.b = 1.0 ;
+    marker.color.a = 1.0 ;
+    node_->publish("visualization_marker", marker) ;
+
+
   }
 
 private :

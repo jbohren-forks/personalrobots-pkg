@@ -61,9 +61,6 @@ void populatePointsEasy(CvMat* pts)
   *( (pt3d*)CV_MAT_ELEM_PTR(*pts, 5, 0) ) = pt3d(1.0,-0.2, 1.9) ;
 }
 
-
-
-
 TEST(CHECKERBOARD_DETECTOR, pose_cv_easy)
 {
   CheckerboardPoseHelper helper ;

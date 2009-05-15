@@ -46,6 +46,7 @@
 
 #include "stereo_checkerboard_detector/mono_checkerboard_helper.h"
 #include "stereo_checkerboard_detector/reprojection_helper.h"
+#include "stereo_checkerboard_detector/checkerboard_pose_helper.h"
 
 namespace stereo_checkerboard_detector
 {
@@ -58,9 +59,9 @@ class StereoCheckerboardHelper
 {
 public:
 
-  StereoCheckerboardHelper(int w=2, int h=2)
+  StereoCheckerboardHelper(int w=2, int h=2, float spacing=.1)
   {
-    setSize(w,h) ;
+    setSize(w,h,spacing) ;
   }
   ~StereoCheckerboardHelper() { }
 
@@ -69,11 +70,12 @@ public:
    * \param w Num checkerboard squares Wide
    * \param h Num checkerboard squares high
    */
-  void setSize(int w, int h)
+  void setSize(int w, int h, float spacing)
   {
     board_size_ = cvSize(w,h) ;
     left_helper_.setSize(w,h) ;
     right_helper_.setSize(w,h) ;
+    pose_helper_.setSize(w,h,spacing) ;
   }
 
   /**
@@ -93,6 +95,11 @@ public:
     xyz = xyz_ ;
   }
 
+  void getPose(tf::Pose& pose)
+  {
+    pose = pose_ ;
+  }
+
   const image_msgs::Image& getLeftDebug()
   {
     return left_ros_debug_ ;
@@ -108,6 +115,8 @@ private:
   MonoCheckerboardHelper left_helper_ ;
   MonoCheckerboardHelper right_helper_ ;
   ReprojectionHelper reproj_helper_ ;
+  CheckerboardPoseHelper pose_helper_ ;
+
   image_msgs::CvBridge left_bridge_ ;
   image_msgs::CvBridge right_bridge_ ;
 
@@ -116,6 +125,9 @@ private:
 
   //! Stores corner locations cartesian coordinates
   std::vector<robot_msgs::Point> xyz_ ;
+
+  //! Stores the calculated pose of the checkerboard
+  tf::Pose pose_ ;
 
   CvSize board_size_ ;                   //!< Size of the checkboard
 } ;
