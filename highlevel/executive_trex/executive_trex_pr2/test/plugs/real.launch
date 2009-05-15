@@ -15,6 +15,7 @@
   <param name="/trex/enable_detect_outlet_fine" value="false"/>
   <param name="/trex/enable_touch_door" value="true"/>
   <param name="/trex/enable_grasp_handle" value="true"/>
+  <param name="/trex/enable_set_laser_tilt" value="true"/>
   <node pkg="executive_trex_pr2" type="stub_ros_container" respawn="false" />
 
   <param name="/trex/update_rate" value="1"/>

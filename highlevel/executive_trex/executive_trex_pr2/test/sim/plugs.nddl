@@ -9,7 +9,8 @@ DetectOutletFine detect_outlet_fine = new DetectOutletFine(Internal);
 DetectOutletCoarse detect_outlet_coarse = new DetectOutletCoarse(Internal);
 PlugsUntuckArms plugs_untuck_arms = new PlugsUntuckArms(Internal);
 
-
-
-
-
+PlugDomainAction::Active{
+  eq(duration, 1);
+  meets(Inactive s);
+  eq(s.status, SUCCESS);
+}

@@ -4,6 +4,7 @@
   <param name="/trex/enable_safety_tuck_arms" value="true"/>
   <param name="/trex/enable_move_base" value="true"/>
   <param name="/trex/enable_move_base_local" value="true"/>
+  <param name="/trex/enable_set_laser_tilt" value="true"/>
 
   <param name="/trex/enable_doors_tuck_arms" value="true"/>
   <param name="/trex/enable_detect_plug_on_base" value="true"/>

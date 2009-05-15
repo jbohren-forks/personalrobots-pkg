@@ -99,3 +99,16 @@ class CheckPath extends ROSAction {
     super(_mode);
   }
 };
+
+/**
+ * Will set the laser tilt to a standard configuration. Eventually we will
+ * add parameters for this.
+ */
+class SetLaserTilt extends ROSAction {
+  predicate Inactive{}
+  predicate Active{}
+
+  SetLaserTilt(Mode _mode){
+    super(_mode);
+  }
+}

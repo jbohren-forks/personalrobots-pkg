@@ -3,10 +3,16 @@
  * @note Detection of the plug on the base is specified in the safety area.
  */
 
+class PlugDomainAction extends ROSAction{
+  predicate Active{}
+  predicate Inactive{}
+  PlugDomainAction(Mode _mode){super(_mode);}
+};
+
 /**
  * @brief 
  */
-class PlugsUntuckArms extends ROSAction {
+class PlugsUntuckArms extends PlugDomainAction {
   predicate Active{}
   predicate Inactive{}
   PlugsUntuckArms(Mode _mode){super(_mode);}
@@ -16,7 +22,7 @@ class PlugsUntuckArms extends ROSAction {
 /**
  * @brief Tuck arms after plugged in
  */
-class PlugsTuckArms extends ROSAction {
+class PlugsTuckArms extends PlugDomainAction {
   predicate Active{}
   predicate Inactive{}
   PlugsTuckArms(Mode _mode){super(_mode);}
@@ -26,7 +32,7 @@ class PlugsTuckArms extends ROSAction {
  * @brief For placing the plug back on the base.
  * Leaves the arm in a free position out of the way so that we can confirm that the plug is stowed
  */
-class StowPlug extends ROSAction {
+class StowPlug extends PlugDomainAction {
   predicate Active{
     float time_stamp;
     string frame_id;
@@ -45,7 +51,7 @@ class StowPlug extends ROSAction {
 /**
  * @brief For unplugging from the socket. Just using a force controller so no args required.
  */
-class Unplug extends ROSAction {
+class Unplug extends PlugDomainAction {
 
   predicate Active{}
   predicate Inactive{}
@@ -57,7 +63,7 @@ class Unplug extends ROSAction {
  * @brief Plug in, assuming we have the plug staged etc
  * @todo Might be a pose message
  */
-class PlugIn extends ROSAction {
+class PlugIn extends PlugDomainAction {
 
   predicate Active{}
 
@@ -69,7 +75,7 @@ class PlugIn extends ROSAction {
 /**
  * @brief Detect the outlet with fine resolution
  */
-class DetectOutletFine extends ROSAction {
+class DetectOutletFine extends PlugDomainAction {
   // Input takes a point
   predicate Active{
     float time_stamp; // A double encoding is reliable
@@ -98,7 +104,7 @@ class DetectOutletFine extends ROSAction {
 /**
  * @brief Detect the outlet with coarse resolution
  */
-class DetectOutletCoarse extends ROSAction {
+class DetectOutletCoarse extends PlugDomainAction {
   // Input takes a point
   predicate Active{
     float time_stamp; // A double encoding is reliable
@@ -128,7 +134,7 @@ class DetectOutletCoarse extends ROSAction {
  * @brief Localize the plug in the gripper
  * @note No args - looking at it.
  */
-class LocalizePlugInGripper extends ROSAction {
+class LocalizePlugInGripper extends PlugDomainAction {
 
   // Goal takes the ouput of outlet detection
   predicate Active{
@@ -151,7 +157,7 @@ class LocalizePlugInGripper extends ROSAction {
 /**
  * @brief Move to a grasp point and grasp.
  */
-class MoveAndGraspPlug extends ROSAction {
+class MoveAndGraspPlug extends PlugDomainAction {
   predicate Active{
     float time_stamp; // A double encoding is reliable
     string frame_id;

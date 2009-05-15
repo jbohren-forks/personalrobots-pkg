@@ -6,18 +6,7 @@
 #include "test/sim/rcs.nddl"
 #include "test/sim/mechanism_control.nddl"
 #include "test/sim/safety.nddl"
+#include "test/sim/nav.nddl"
 #include "test/sim/plugs.nddl"
 #include "test/sim/doors.nddl"
 #include "world_model/topological_map.nddl"
-
-MoveBase move_base = new MoveBase(Internal);
-BaseState base_state = new BaseState(Internal);
-
-Behavior::Active{
-  eq(duration, 1);
-  temporalDistance(dispatch_time, 1, start);
-
-  // Handle always free at the end
-  meets(Inactive s);
-  eq(s.status, SUCCESS);
-}

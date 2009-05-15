@@ -8,8 +8,7 @@
 #include "test/sim/safety.nddl"
 #include "test/sim/plugs.nddl"
 #include "test/sim/doors.nddl"
-
-MoveBase move_base = new MoveBase(Internal);
+#include "test/sim/nav.nddl"
 
 Behavior::Active{
   eq(duration, 1);

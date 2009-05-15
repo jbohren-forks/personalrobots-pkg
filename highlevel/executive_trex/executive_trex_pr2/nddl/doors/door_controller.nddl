@@ -239,6 +239,10 @@ DoorController::Holds {
 	      concurrent(cmd.end, end);
 	      eq(cmd.frame_id, ds.frame_id);
 	      door_get_robot_pose_for_door(cmd.x, cmd.y, cmd.z, cmd.qx, cmd.qy, cmd.qz, cmd.qw, ds.object, GRASP_RANGE);
+
+	      contains_start(set_laser_tilt.Active cmd_set_laser_tilt);
+	      eq(cmd_set_laser_tilt.status, SUCCESS);
+	      cmd_set_laser_tilt before cmd;
 	    }
 	    else {
 	      contains_start(safety_tuck_arms.Active cmd);
@@ -264,6 +268,10 @@ DoorController::Holds {
 		concurrent(cmd.end, end);
 		eq(cmd.frame_id, ds.frame_id);
 		door_get_robot_pose_for_door(cmd.x, cmd.y, cmd.z, cmd.qx, cmd.qy, cmd.qz, cmd.qw, ds.object, DETECTION_RANGE);
+
+		contains_start(set_laser_tilt.Active cmd_set_laser_tilt);
+		eq(cmd_set_laser_tilt.status, SUCCESS);
+		cmd_set_laser_tilt before cmd;
 	      }
 	      else {
 		if(have_handle == true){

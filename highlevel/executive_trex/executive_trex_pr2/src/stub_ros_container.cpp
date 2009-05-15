@@ -333,6 +333,10 @@ int main(int argc, char** argv){
   if (getComponentParam("/trex/enable_safety_tuck_arms"))
     runner.connect<std_msgs::Empty, robot_actions::NoArgumentsActionState, std_msgs::Empty>(safety_tuck_arms);
 
+  executive_trex_pr2::SimpleStubAction<std_msgs::Empty> set_laser_tilt("set_laser_tilt");
+  if (getComponentParam("/trex/enable_set_laser_tilt"))
+    runner.connect<std_msgs::Empty, robot_actions::NoArgumentsActionState, std_msgs::Empty>(set_laser_tilt);
+
   // Miscellaneous
   runner.run();
 

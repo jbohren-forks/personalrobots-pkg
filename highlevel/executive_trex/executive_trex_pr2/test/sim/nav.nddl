@@ -31,5 +31,12 @@ MoveBase::Inactive{
   eq_pose_msg(bs.object, object);
 }
 
+SetLaserTilt::Active{
+  meets(Inactive s);
+  eq(s.status, SUCCESS);
+  eq(duration, 1);
+}
+
 MoveBase move_base = new MoveBase(Internal);
 BaseState base_state = new BaseState(Internal);
+SetLaserTilt set_laser_tilt = new SetLaserTilt(Internal);
