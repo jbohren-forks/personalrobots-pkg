@@ -1,0 +1,5 @@
+<controller name="torso_lift_controller" topic="torso_lift_controller" type="JointVelocityControllerNode">
+  <joint name="torso_lift_joint" >
+    <pid p="2000000.0" d="0" i="1000" iClamp="1200" />
+  </joint>
+</controller>
