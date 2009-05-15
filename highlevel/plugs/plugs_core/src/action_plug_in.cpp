@@ -46,8 +46,7 @@ PlugInAction::PlugInAction(ros::Node& node) :
   robot_actions::Action<std_msgs::Empty, std_msgs::Empty>("plug_in"),
   action_name_("plug_in"),
   node_(node),
-  arm_controller_("r_arm_hybrid_controller"),
-  detector_(NULL)
+  arm_controller_("r_arm_hybrid_controller")
 {
   node_.setParam("~roi_policy", "LastImageLocation");
   node_.setParam("~display", 0);
@@ -66,9 +65,6 @@ PlugInAction::PlugInAction(ros::Node& node) :
 
   node_.advertise<manipulation_msgs::TaskFrameFormalism>(arm_controller_ + "/command", 2);
 
-  //detector_ = new PlugTracker::PlugTracker(node);
-  //detector_->deactivate();
-
   TF_.reset(new tf::TransformListener(node));
   notifier_.reset(new tf::MessageNotifier<robot_msgs::PoseStamped>(
                     TF_.get(), &node,
@@ -82,14 +78,11 @@ PlugInAction::PlugInAction(ros::Node& node) :
 
 PlugInAction::~PlugInAction()
 {
-  if(detector_) delete detector_;
 };
 
 robot_actions::ResultStatus PlugInAction::execute(const std_msgs::Empty& empty, std_msgs::Empty& feedback)
 {
   reset();
-  if (detector_)
-    detector_->activate();
 
   return waitForDeactivation(feedback);
 }
@@ -122,8 +115,6 @@ void PlugInAction::plugMeasurementCallback(const tf::MessageNotifier<robot_msgs:
 
   if (isPreemptRequested()){
     deactivate(robot_actions::PREEMPTED, empty_);
-    if (detector_)
-      detector_->deactivate();
     return;
   }
   tff_msg_.header.stamp = msg->header.stamp;
@@ -202,7 +193,7 @@ void PlugInAction::plugMeasurementCallback(const tf::MessageNotifier<robot_msgs:
     {
       tf::Vector3 offset = viz_offset.getOrigin() - viz_offset_desi.getOrigin();
       ROS_DEBUG("%s: Offset: (% 0.3lf, % 0.3lf, % 0.3lf)", action_name_.c_str(), offset.x(), offset.y(), offset.z());
-      if (g_started_inserting_ + ros::Duration(5.0) < ros::Time::now())
+      if (g_started_inserting_ + ros::Duration(30.0) < ros::Time::now())
       {
         if (offset.x() > SUCCESS_THRESHOLD) // if (in_outlet)
         {
@@ -265,8 +256,6 @@ void PlugInAction::plugMeasurementCallback(const tf::MessageNotifier<robot_msgs:
         ROS_DEBUG("HOLDING");
         hold();
         deactivate(robot_actions::SUCCESS, empty_);
-        if (detector_)
-          detector_->deactivate();
         break;
       }
     }
@@ -332,7 +321,7 @@ void PlugInAction::insert()
   tff_msg_.mode.rot.x = 3;
   tff_msg_.mode.rot.y = 3;
   tff_msg_.mode.rot.z = 3;
-  tff_msg_.value.vel.x = 0.3;
+  tff_msg_.value.vel.x = 0.001;
   tff_msg_.value.vel.y = mech_offset_desi_.getOrigin().y();
   tff_msg_.value.vel.z = mech_offset_desi_.getOrigin().z();
   mech_offset_desi_.getBasis().getEulerZYX(tff_msg_.value.rot.z, tff_msg_.value.rot.y, tff_msg_.value.rot.x);

@@ -1,12 +1,12 @@
 fb_trans:
-  p: 60
-  i: 80
-  d: 0
-  i_clamp: 0.2
+  p: 200
+  i: 100
+  d: 0.15
+  i_clamp: 10
 fb_rot:
-  p: 10
+  p: 15
   i: 0
-  d: 0
-  i_clamp: 0.4
+  d: 0.15
+  i_clamp: 0.0
 ff_trans: 0.0
 ff_rot: 0.0

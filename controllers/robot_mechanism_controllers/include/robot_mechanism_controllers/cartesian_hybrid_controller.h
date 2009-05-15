@@ -41,6 +41,7 @@
 #include <tf/message_notifier.h>
 #include "realtime_tools/realtime_publisher.h"
 #include "filters/filter_chain.h"
+#include "control_toolbox/pid_gains_setter.h"
 
 #include "robot_srvs/SetPoseStamped.h"
 #include "manipulation_msgs/TaskFrameFormalism.h"
@@ -119,6 +120,10 @@ private:
   unsigned int loop_count_;
   boost::scoped_ptr<realtime_tools::RealtimePublisher<robot_mechanism_controllers::CartesianHybridState> > pub_state_;
   boost::scoped_ptr<realtime_tools::RealtimePublisher<tf::tfMessage> > pub_tf_;
+  control_toolbox::PidGainsSetter pose_pid_tuner_;
+  control_toolbox::PidGainsSetter pose_rot_pid_tuner_;
+  control_toolbox::PidGainsSetter twist_pid_tuner_;
+  control_toolbox::PidGainsSetter twist_rot_pid_tuner_;
 };
 
 }

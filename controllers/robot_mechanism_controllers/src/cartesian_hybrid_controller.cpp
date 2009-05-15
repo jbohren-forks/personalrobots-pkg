@@ -243,8 +243,14 @@ void CartesianHybridController::update()
   {
     if (mode_[i] == manipulation_msgs::TaskFrameFormalism::POSITION)
       pose_desi_[i] = setpoint_[i];
+    else// if (mode_[i] == manipulation_msgs::TaskFrameFormalism::VELOCITY)
+    {
+      pose_desi_[i] += setpoint_[i] * dt;
+    }
+    /*
     else
       pose_desi_[i] = 0.0;
+    */
   }
 
   // Computes the pose error
@@ -265,7 +271,8 @@ void CartesianHybridController::update()
       twist_desi_[i] = pose_pids_[i].updatePid(pose_error_[i], twist_meas_filtered_[i], dt);
       break;
     case manipulation_msgs::TaskFrameFormalism::VELOCITY:
-      twist_desi_[i] = setpoint_[i];
+      //twist_desi_[i] = setpoint_[i];
+      twist_desi_[i] = pose_pids_[i].updatePid(pose_error_[i], twist_meas_filtered_[i] - setpoint_[i], dt);
       break;
     }
   }
@@ -297,8 +304,17 @@ void CartesianHybridController::update()
     switch (mode_[i])
     {
     case manipulation_msgs::TaskFrameFormalism::POSITION:
+      /*
+      if (i >= 3) {
+        wrench_desi_[i] = twist_desi_[i];
+        break;
+      }
+      */
+      wrench_desi_[i] = twist_desi_[i];
+      break;
     case manipulation_msgs::TaskFrameFormalism::VELOCITY:
-      wrench_desi_[i] = twist_pids_[i].updatePid(twist_error_[i], dt);
+      //wrench_desi_[i] = twist_pids_[i].updatePid(twist_error_[i], dt);
+      wrench_desi_[i] = twist_desi_[i];
       break;
     case manipulation_msgs::TaskFrameFormalism::FORCE:
       wrench_desi_[i] = setpoint_[i];
@@ -415,6 +431,19 @@ bool CartesianHybridControllerNode::initXml(mechanism::RobotState *robot, TiXmlE
   pub_tf_->msg_.transforms.resize(1);
 
   node->advertiseService(name_ + "/set_tool_frame", &CartesianHybridControllerNode::setToolFrame, this);
+
+  for (int i = 0; i < 3; ++i)
+    pose_pid_tuner_.add(c_.pose_pids_ + i);
+  pose_pid_tuner_.advertise(name_ + "/pose");
+  for (int i = 3; i < 6; ++i)
+    pose_rot_pid_tuner_.add(c_.pose_pids_ + i);
+  pose_rot_pid_tuner_.advertise(name_ + "/pose_rot");
+  for (int i = 0; i < 3; ++i)
+    twist_pid_tuner_.add(c_.twist_pids_ + i);
+  twist_pid_tuner_.advertise(name_ + "/twist");
+  for (int i = 3; i < 6; ++i)
+    twist_rot_pid_tuner_.add(c_.twist_pids_ + i);
+  twist_rot_pid_tuner_.advertise(name_ + "/twist_rot");
 
   return true;
 

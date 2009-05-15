@@ -53,9 +53,6 @@
 #include <tf/message_notifier.h>
 #include "boost/scoped_ptr.hpp"
 
-//detecton
-#include "outlet_detection/plug_tracker.h"
-
 // Robot Action Stuff
 #include <robot_actions/action.h>
 
@@ -87,11 +84,19 @@ private:
 
   std::string arm_controller_;
 
-  PlugTracker::PlugTracker* detector_;
   std_msgs::Empty empty_;
 
   boost::scoped_ptr<tf::MessageNotifier<robot_msgs::PoseStamped> > notifier_;
   boost::scoped_ptr<tf::TransformListener> TF_;
+
+
+  // TODO: mutex
+  ros::Time vision_estimate_time_;
+  tf::Pose outlet_pose_mech_;  // Outlet pose in the mechanism "frame"
+
+
+
+
 
   double last_standoff_;
   ros::Time g_started_inserting_, g_started_forcing_, g_stopped_forcing_;
