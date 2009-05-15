@@ -46,7 +46,6 @@
 #include <base_local_planner/trajectory_planner_ros.h>
 #include <vector>
 #include <string>
-#include <pr2_srvs/SetPeriodicCmd.h>
 
 namespace nav {
   /**
@@ -90,8 +89,6 @@ namespace nav {
       void resetCostmaps();
       ros::Node& ros_node_;
       tf::TransformListener& tf_; 
-      pr2_srvs::SetPeriodicCmd::Request req_laser_;
-      pr2_srvs::SetPeriodicCmd::Response res_laser_;
       
       base_local_planner::TrajectoryPlannerROS* tc_;
       costmap_2d::Costmap2DROS* controller_costmap_ros_;
@@ -103,7 +100,6 @@ namespace nav {
       double controller_frequency_;
 
       std::string action_name_;
-      std::string laser_controller_;
       ros::Duration controller_patience_;
       double circumscribed_radius_;
 
