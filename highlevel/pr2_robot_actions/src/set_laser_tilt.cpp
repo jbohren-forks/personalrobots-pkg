@@ -46,10 +46,12 @@
 namespace pr2_robot_actions {
   class SetLaserTilt : public robot_actions::Action<std_msgs::Empty, std_msgs::Empty> {
   public:
-    SetLaserTilt(std::string laser_controller): robot_actions::Action<std_msgs::Empty, std_msgs::Empty>("set_laser_tilt"),
-						laser_controller_(laser_controller){}
+    SetLaserTilt(std::string laser_controller): 
+      robot_actions::Action<std_msgs::Empty, std_msgs::Empty>("set_laser_tilt"),
+      laser_controller_(laser_controller){};
 
     robot_actions::ResultStatus execute(const std_msgs::Empty& empty, std_msgs::Empty& feedback){
+
       pr2_srvs::SetLaserTrajCmd::Request req_laser;
       pr2_srvs::SetLaserTrajCmd::Response res_laser;
       req_laser.command.profile = "linear";
@@ -73,8 +75,13 @@ namespace pr2_robot_actions {
 };
 
 int main(int argc, char** argv){
-  ros::init(argc, argv, "set_laser_tilt");
+
+  ros::init(argc, argv);
+  ros::Node node("set_tilt_controller_action");
+
+
   pr2_robot_actions::SetLaserTilt setter("laser_tilt_controller");
+
   robot_actions::ActionRunner runner(20.0);
   runner.connect<std_msgs::Empty, robot_actions::NoArgumentsActionState, std_msgs::Empty>(setter);
   runner.run();
