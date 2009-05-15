@@ -48,7 +48,7 @@ namespace image_msgs
     IplImage* rosimg_;
     IplImage* cvtimg_;
 
-    void reallocIfNeeded_(IplImage** img, CvSize sz, int depth, int channels)
+    bool reallocIfNeeded_(IplImage** img, CvSize sz, int depth, int channels)
     {
       if ((*img) != 0)
         if ((*img)->width     != sz.width  ||
@@ -63,7 +63,9 @@ namespace image_msgs
       if (*img == 0)
       {
         *img = cvCreateImage(sz, depth, channels);
+        return true;
       }
+      return false;
     }
 
   public:
@@ -92,18 +94,18 @@ namespace image_msgs
       return img_;
     }
 
-    bool fromImage(Image& rosimg, std::string encoding = "")
+    bool fromImage(const Image& rosimg, std::string encoding = "")
     {
       if (rosimg.depth == "uint8")
       {
         cvInitImageHeader(rosimg_, cvSize(rosimg.uint8_data.layout.dim[1].size, rosimg.uint8_data.layout.dim[0].size),
                           IPL_DEPTH_8U, rosimg.uint8_data.layout.dim[2].size);
-        cvSetData(rosimg_, &(rosimg.uint8_data.data[0]), rosimg.uint8_data.layout.dim[1].stride);
+        cvSetData(rosimg_, const_cast<uint8_t*>(&(rosimg.uint8_data.data[0])), rosimg.uint8_data.layout.dim[1].stride);
         img_ = rosimg_;
       } else if (rosimg.depth == "uint16") {
         cvInitImageHeader(rosimg_, cvSize(rosimg.uint16_data.layout.dim[1].size, rosimg.uint16_data.layout.dim[0].size),
                           IPL_DEPTH_16U, rosimg.uint16_data.layout.dim[2].size);
-        cvSetData(rosimg_, &(rosimg.uint16_data.data[0]), rosimg.uint16_data.layout.dim[1].stride*sizeof(uint16_t));
+        cvSetData(rosimg_, const_cast<uint16_t*>(&(rosimg.uint16_data.data[0])), rosimg.uint16_data.layout.dim[1].stride*sizeof(uint16_t));
         img_ = rosimg_;
       } else {
         return false;
@@ -143,13 +145,13 @@ namespace image_msgs
       return true;
     }
 
-    void reallocIfNeeded(IplImage** img, int depth = -1, int channels = -1)
+    bool reallocIfNeeded(IplImage** img, int depth = -1, int channels = -1)
     {
       if (depth == -1)
         depth = img_->depth;
       if (channels == -1)
         channels = img_->nChannels;
-      reallocIfNeeded_(img, cvGetSize(img_), depth, channels);
+      return reallocIfNeeded_(img, cvGetSize(img_), depth, channels);
     }
 
     /**
