@@ -220,7 +220,7 @@ class PlugOnBaseDetector
       // Remove points below the plane
       for (unsigned int i = 0; i < indices_in_bounds.size (); i++)
       {
-        assert(cloud_tr_.pts.size() > indices_in_bounds[i]);
+        assert(int(cloud_tr_.pts.size()) > indices_in_bounds[i]);
         if (cloud_geometry::distances::pointToPlaneDistanceSigned (cloud_tr_.pts[indices_in_bounds.at (i)], coeff) < 0)
           inliers.push_back (indices_in_bounds.at (i));
       }
