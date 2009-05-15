@@ -245,8 +245,8 @@ struct AddRegions
 
   ~AddRegions()
   {
-    //if (!is_copy) 
-      //map->recomputeConnectorDistances();
+    if (!is_copy) 
+      map->recomputeConnectorDistances();
   }
 
   TopologicalMapPtr map;

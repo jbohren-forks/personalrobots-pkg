@@ -126,6 +126,8 @@ int main (int argc, char* argv[])
   double dx=-.4;
   TopologicalMap m3(str3, 1.0, 1e9, 1e9);
 
+  printConnectorCosts (m3, Point2D(33.844, 36.379), Point2D(12.7, 22.5), 0);
+
   cout << "Approach position of outlet 1 at radius 2, .4 is " << m3.outletApproachPosition(1,2,.4) << endl;
   cout << "Approach position of outlet 1 at radius 3, .3 is " << m3.outletApproachPosition(1,3,.3) << endl;
   cout << "Approach position of outlet 1 at radius 3, .2 is " << m3.outletApproachPosition(1,3,.2) << endl;
