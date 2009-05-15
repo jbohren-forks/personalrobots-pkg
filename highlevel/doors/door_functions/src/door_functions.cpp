@@ -254,7 +254,7 @@ namespace door_functions{
   double getFrameAngle(const door_msgs::Door& door)
   {
     double result;
-    if(door.hinge == 0)
+    if(door.hinge == door.HINGE_P1)
     {   
       result =  atan2(door.frame_p2.y - door.frame_p1.y, door.frame_p2.x - door.frame_p1.x);
     }
