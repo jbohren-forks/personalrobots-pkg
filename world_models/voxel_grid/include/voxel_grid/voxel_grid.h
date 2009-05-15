@@ -44,6 +44,7 @@
 #include <math.h>
 #include <limits.h>
 #include <algorithm>
+#include <ros/console.h>
 
 
 /**
@@ -119,13 +120,35 @@ namespace voxel_grid {
         return true;
       }
 
-      inline unsigned int numBits(unsigned int n){
+      static inline unsigned int numBits(unsigned int n){
         unsigned int bit_count;
         for(bit_count = 0; n; ++bit_count){
           n &= n - 1; //clear the least significant bit set
         }
         return bit_count;
         
+      }
+
+      static VoxelStatus getVoxel(unsigned int x, unsigned int y, unsigned int z, 
+          unsigned int size_x, unsigned int size_y, unsigned int size_z, uint32_t* data)
+      {
+        if(x >= size_x || y >= size_y || z >= size_z){
+          ROS_INFO("Error, voxel out of bounds. (%d, %d, %d)\n", x, y, z);
+          return UNKNOWN;
+        }
+        uint32_t full_mask = ((uint32_t)1<<z<<16) | (1<<z);
+        uint32_t result = data[y * size_x + x] & full_mask; 
+        unsigned int bits = numBits(result);
+
+        // known marked: 11 = 2 bits, unknown: 01 = 1 bit, known free: 00 = 0 bits
+        if(bits < 2){
+          if(bits < 1)
+            return FREE;
+
+          return UNKNOWN;
+        }
+
+        return MARKED;
       }
 
       void markVoxelLine(double x0, double y0, double z0, double x1, double y1, double z1, unsigned int max_length = UINT_MAX);
