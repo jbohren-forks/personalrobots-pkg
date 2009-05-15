@@ -90,7 +90,7 @@ int
 
   Duration timeout_short = Duration().fromSec(2.0);
   Duration timeout_medium = Duration().fromSec(10.0);
-  Duration timeout_long = Duration().fromSec(40.0);
+  Duration timeout_long = Duration().fromSec(1000.0);
 
   robot_actions::ActionClient<std_msgs::Empty, robot_actions::NoArgumentsActionState, std_msgs::Empty> tuck_arm("doors_tuck_arms");
   robot_actions::ActionClient<pr2_robot_actions::SwitchControllers, pr2_robot_actions::SwitchControllersState,  std_msgs::Empty> switch_controllers("switch_controllers");
