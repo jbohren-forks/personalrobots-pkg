@@ -109,14 +109,45 @@ public:
 
     stdata_ = new cam::StereoData;
 
-    stdata_->setUniqueThresh(36);
-    stdata_->setTextureThresh(30);
-    stdata_->setSpeckleRegionSize(100);
-    stdata_->setSpeckleDiff(10);
+    //    stdata_->setUniqueThresh(36);
+    //    stdata_->setTextureThresh(30);
+    //    stdata_->setSpeckleRegionSize(100);
+    //    stdata_->setSpeckleDiff(10);
+
+    int unique_thresh;
+    param(stereo_name_ + "unique_thresh", unique_thresh, 36);
+    stdata_->setTextureThresh(unique_thresh);
+
+    int texture_thresh;
+    param(stereo_name_ + "texture_thresh", texture_thresh, 30);
+    stdata_->setUniqueThresh(texture_thresh);
+
+    int speckle_size;
+    param(stereo_name_ + "speckle_size", speckle_size, 100);
+    stdata_->setSpeckleRegionSize(speckle_size);
+
+    int speckle_diff;
+    param(stereo_name_ + "speckle_diff", speckle_diff, 10);
+    stdata_->setSpeckleDiff(speckle_diff);
+    
+    int smoothness_thresh;
+    if (getParam(stereo_name_ + "smoothness_thresh", smoothness_thresh))
+      stdata_->setSmoothnessThresh(smoothness_thresh);
+
+    int horopter;
+    if (getParam(stereo_name_ + "horopter", horopter))
+      stdata_->setHoropter(horopter);
+
+    int corr_size;
+    if (getParam(stereo_name_ + "corr_size", corr_size))
+      stdata_->setCorrSize(corr_size);
+
+    int num_disp;
+    if (getParam(stereo_name_ + "num_disp", num_disp))
+      stdata_->setNumDisp(num_disp);
 
     subscribe(stereo_name_ + std::string("raw_stereo"), raw_stereo_, &StereoProc::rawCb, 1);
   }
-
 
   ~StereoProc()
   {
