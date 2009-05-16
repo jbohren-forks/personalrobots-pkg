@@ -41,7 +41,7 @@ TrackerBase::TrackerBase(ros::Node &node, std::string prefix)
 
   ROS_ERROR("ROI policy: %d", roi_policy_);
 
-  req_.timeout_ms = 100; // TODO: magic number
+  req_.timeout_ms = 500; // TODO: magic number
 
   node_.param("~resize_factor_found", resize_factor_found_, 1.2);
   node_.param("~resize_factor_failed", resize_factor_failed_, 1.2);
