@@ -207,10 +207,10 @@ int main(int argc, char **argv)
     success = -1;
   }
 
-  g_ros_node->shutdown();
-  delete (ros::Node*) g_ros_node;
   delete (TREX::Executive*) node;
   node = TREX::ExecutiveId::noId();
+  delete (ros::Node*) g_ros_node;
+  g_ros_node->shutdown();
 
 
   // Parse command line arguments to see if we must apply test case validation
