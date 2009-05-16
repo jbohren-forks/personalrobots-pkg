@@ -68,6 +68,7 @@ UnplugAction::~UnplugAction()
 
 robot_actions::ResultStatus UnplugAction::execute(const std_msgs::Empty& empty, std_msgs::Empty& feedback)
 {
+  first_state_.header.seq = 0;
   ROS_DEBUG("%s: executing.", action_name_.c_str());
   tff_msg_.header.frame_id = "outlet_pose";
   tff_msg_.header.stamp = ros::Time::now();
