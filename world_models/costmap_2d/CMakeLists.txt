@@ -10,6 +10,7 @@ rospack_add_library(costmap_2d src/costmap_2d.cpp src/observation_buffer.cpp src
 #rospack_link_boost(costmap_2d thread)
 
 rospack_add_executable(costmap_2d_markers src/costmap_2d_markers.cpp)
+rospack_add_executable(costmap_2d_cloud src/costmap_2d_cloud.cpp)
 
 rospack_add_executable(costmap_test src/costmap_2d_ros.cpp)
 target_link_libraries(costmap_test costmap_2d)
