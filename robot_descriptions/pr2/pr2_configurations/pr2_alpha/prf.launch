@@ -58,7 +58,7 @@
   </group>
   <node machine="three" pkg="dcam" type="stereodcam" respawn="false"/>
   
-<!-- Sound -->
+<!-- Sound  -->
   <node pkg="sound_play" type="soundplay.py" machine="four" />
 
 <!-- Runtime Diagnostics Logging -->
