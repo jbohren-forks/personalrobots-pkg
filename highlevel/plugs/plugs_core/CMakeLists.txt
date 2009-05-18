@@ -18,6 +18,48 @@ rospack_add_executable(action_runner src/action_untuck_arms.cpp
                        src/action_stow_plug.cpp 
 				               src/action_runner.cpp)
 
+rospack_add_executable(run_detect_outlet_fine
+  src/run_detect_outlet_fine.cpp
+  src/action_detect_outlet_fine.cpp
+  )
+
+rospack_add_executable(run_detect_outlet_coarse
+  src/run_detect_outlet_coarse.cpp
+  src/action_detect_outlet_coarse.cpp
+  )
+
+rospack_add_executable(run_plugs_untuck_arms
+  src/run_untuck_arms.cpp
+  src/action_untuck_arms.cpp
+  )
+
+rospack_add_executable(run_move_and_grasp_plug
+  src/run_move_and_grasp_plug.cpp
+  src/action_move_and_grasp_plug.cpp
+  )
+
+rospack_add_executable(run_localize_plug_in_gripper
+  src/run_localize_plug_in_gripper.cpp
+  src/action_localize_plug_in_gripper.cpp
+  )
+
+rospack_add_executable(run_plug_in
+  src/run_plug_in.cpp
+  src/action_plug_in.cpp
+  )
+
+rospack_add_executable(run_unplug
+  src/run_unplug.cpp
+  src/action_unplug.cpp
+  )
+
+rospack_add_executable(run_stow_plug
+  src/run_stow_plug.cpp
+  src/action_stow_plug.cpp
+  )
+
+
+
 # test
 
 rospack_add_executable(test_executive test/test_executive.cpp)
