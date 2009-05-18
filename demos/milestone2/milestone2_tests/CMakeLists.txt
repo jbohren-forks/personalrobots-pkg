@@ -11,5 +11,6 @@ include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
 
 rospack(milestone2_tests)
 
-#rospack_add_gtest(test/test_topological_map test/test_topological_map.cpp)
-#target_link_libraries(test/test_topological_map topological_graph)
+rospack_add_executable(test/test_topological_map test/test_topological_map.cpp)
+rospack_add_gtest_build_flags(test/test_topological_map)
+target_link_libraries(test/test_topological_map topological_graph)
