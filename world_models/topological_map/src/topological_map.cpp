@@ -690,6 +690,39 @@ void TopologicalMap::MapImpl::setDoorCosts (const Time& t)
 }
 
 
+Point2D TopologicalMap::MapImpl::doorApproachPosition (const ConnectorId id, const double r) const
+{
+  // Get door info from map
+  const RegionPair adjacent_regions = adjacentRegions(id);
+  const RegionId doorRegion = regionType(adjacent_regions.first) == DOORWAY ? adjacent_regions.first : adjacent_regions.second;
+  const Door door = regionDoor(doorRegion);
+  const double x1 = door.frame_p1.x;
+  const double x2 = door.frame_p2.x;
+  const double y1 = door.frame_p1.y;
+  const double y2 = door.frame_p2.y;
+
+  // Compute the frame direction and normal
+  const double cx = (x1+x2)/2;
+  const double cy = (y1+y2)/2;
+  const double dx = x2-x1;
+  const double dy = y2-y1;
+  const double nx = -dy;
+  const double ny = dx;
+  const double l = sqrt(nx*nx+ny*ny);
+
+  // Compute connector offset
+  const Point2D connector = connectorPosition(id);
+  const double ox = connector.x-cx;
+  const double oy = connector.y-cy;
+  
+  // Set normal direction depending on whether normal points in same direction as connector
+  const double mult = (nx*ox+ny*oy > 0) ? r/l : -r/l;
+
+  return Point2D(cx+nx*mult, cy+ny*mult);
+}
+
+
+
 /****************************************
  * Outlets
  ****************************************/
@@ -1016,6 +1049,17 @@ vector<ConnectorDesc> TopologicalMap::MapImpl::adjacentConnectorCells (const Reg
   }
   return descs;
 }
+
+set<ConnectorId> TopologicalMap::MapImpl::allConnectors () const
+{
+  set<ConnectorId> connectors;
+  foreach (RegionId region, allRegions()) {
+    foreach (ConnectorId connector, adjacentConnectors(region)) {
+      connectors.insert(connector);
+    }
+  }
+  return connectors;
+}
   
 
 ConnectorId TopologicalMap::MapImpl::connectorBetween (const RegionId r1, const RegionId r2) const
@@ -1216,6 +1260,11 @@ bool TopologicalMap::isDoorOpen (RegionId id, const Time& stamp)
   return map_impl_->isDoorOpen(id, stamp);
 }
 
+Point2D TopologicalMap::doorApproachPosition (const ConnectorId id, const double r) const
+{
+  return map_impl_->doorApproachPosition(id, r);
+}
+
 OutletId TopologicalMap::nearestOutlet (const Point2D& p) const
 {
   return map_impl_->nearestOutlet(p);
@@ -1266,6 +1315,12 @@ vector<ConnectorId> TopologicalMap::adjacentConnectors (const RegionId id) const
 {
   return map_impl_->adjacentConnectors(id);
 }
+
+set<ConnectorId> TopologicalMap::allConnectors () const
+{
+  return map_impl_->allConnectors();
+}
+
 
 RegionPair TopologicalMap::adjacentRegions (const ConnectorId id) const
 {

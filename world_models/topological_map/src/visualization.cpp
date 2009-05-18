@@ -219,11 +219,13 @@ struct DrawConnectors
   }
   void operator() (const ConnectorId id)
   {
+    // Connector point
     Point2D p = tmap.connectorPosition(id);
     Point32 p2;
     p2.x=p.x;
     p2.y=p.y;
     cloud.pts.push_back(p2);
+
   }
   ~DrawConnectors ()
   {
@@ -235,6 +237,27 @@ struct DrawConnectors
   PointCloud cloud;
 };
 
+void drawDoorApproachPosition (const ConnectorId id, const TopologicalMap& tmap, const Publisher& pub)
+{
+    // Approach point
+    Marker approach_marker;
+    approach_marker.id = id + 4000;
+    approach_marker.ns = MARKER_NS;
+    approach_marker.header.frame_id = VISUALIZER_FRAME;
+    approach_marker.type = Marker::SPHERE;
+    approach_marker.action = Marker::ADD;
+    approach_marker.color.a = 1.0;
+    approach_marker.color.r = 0;
+    approach_marker.color.g = .6;
+    approach_marker.color.b = .6;
+    approach_marker.scale.x = .2;
+    approach_marker.scale.y = .2;
+    approach_marker.scale.z = .2;
+    Point2D approach_position = tmap.doorApproachPosition(id, 1.0);
+    approach_marker.pose.position.x = approach_position.x;
+    approach_marker.pose.position.y = approach_position.y;
+    pub.publish(approach_marker);
+}
 
 
 
@@ -252,6 +275,9 @@ void Visualizer::visualize ()
 
   const ConnectorSet connectors = getConnectors(tmap_);
   for_each (connectors.begin(), connectors.end(), DrawConnectors(tmap_, connector_pub_));
+
+  foreach (ConnectorId id, connectors)
+    drawDoorApproachPosition (id, tmap_, marker_pub_);
 }
 
 

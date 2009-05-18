@@ -135,6 +135,9 @@ public:
   /// \throws UnknownOutletException 
   Point2D outletApproachPosition (OutletId id, double r1, double r2) const;
 
+  /// \return Return approach point for the door that \a id refers to.  Approach point is at distance \a r from the center of the door frame along the normal
+  Point2D doorApproachPosition (ConnectorId id, double r) const;
+
   /// \return set of cells in region given id
   /// \throws UnknownRegionException
   RegionPtr regionCells (const RegionId id) const;
@@ -156,6 +159,9 @@ public:
   /// \return vector of adjacent connector ids to region \a id
   /// \throws UnknownRegionException
   vector<ConnectorId> adjacentConnectors (const RegionId id) const;
+
+  /// \return set of all connector ids
+  set<ConnectorId> allConnectors () const;
 
   /// \return vector of descriptions of connector cells adjacent to region \a id
   /// \throws UnknownRegionException

@@ -137,6 +137,9 @@ public:
   /// \throws UnknownRegionException
   vector<ConnectorId> adjacentConnectors (RegionId id) const;
 
+  /// \return set of all connector ids
+  set<ConnectorId> allConnectors () const;
+
   /// \return vector (of length 2) of ids of regions touching the given connector
   /// \throws UnknownConnectorException
   RegionPair adjacentRegions (ConnectorId id) const;
@@ -197,6 +200,9 @@ public:
   /// \throws NoApproachPositionException if there are no free points in the given radius
   /// \throws UnknownOutletException 
   Point2D outletApproachPosition (OutletId id, double r1, double r2) const;
+
+  /// \return Return approach point for the door that \a id refers to.  Approach point is at distance \a r from the center of the door frame along the normal
+  Point2D doorApproachPosition (ConnectorId id, double r) const;
 
   /// \return Is this point in an obstacle cell?
   /// \throws UnknownPointException
