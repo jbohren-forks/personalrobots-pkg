@@ -461,8 +461,6 @@ namespace base_local_planner{
     for(unsigned int i = 0; i < new_plan.size(); ++i){
       global_plan_[i] = new_plan[i];
     }
-    //when we get a new plan... we'll stop any escape behaviors
-    escaping_ = false;
   }
 
   bool TrajectoryPlanner::checkTrajectory(double x, double y, double theta, double vx, double vy, 
@@ -821,7 +819,8 @@ namespace base_local_planner{
       escaping_ = false;
     }
 
-    if(!escaping_){
+    //only enter escape mode when the planner has given a valid goal point
+    if(!escaping_ && best_traj->cost_ > -2.0){
       escape_x_ = x;
       escape_y_ = y;
       escape_theta_ = theta;
