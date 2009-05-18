@@ -2,4 +2,7 @@
   <node pkg="rviz" type="rviz" name="rviz">
     <remap from="goal" to="/move_base/activate" />
   </node>
+  <node pkg="costmap_2d" type="costmap_2d_markers" name="voxel_visualizer">
+    <remap from="voxel_grid" to="/move_base/base_local_planner/costmap/voxel_grid"/>
+  </node>
 </launch>
