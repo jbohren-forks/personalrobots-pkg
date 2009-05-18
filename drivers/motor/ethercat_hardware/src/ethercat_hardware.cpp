@@ -40,10 +40,6 @@
 EthercatHardware::EthercatHardware() :
   hw_(0), ni_(0), current_buffer_(0), last_buffer_(0), buffer_size_(0), halt_motors_(true), reset_state_(0), publisher_("/diagnostics", 1)
 {
-  for (uint32_t i = 0; i < sizeof(diagnostics_.iteration_)/sizeof(diagnostics_.iteration_[0]); ++i)
-  {
-    diagnostics_.iteration_[i].roundtrip_ = 0;
-  }
   diagnostics_.max_roundtrip_ = 0;
   diagnostics_.txandrx_errors_ = 0;
 }
@@ -168,6 +164,7 @@ void EthercatHardware::init(char *interface, bool allow_unprogrammed, bool motor
   // Create HardwareInterface
   hw_ = new HardwareInterface(num_actuators);
   hw_->current_time_ = realtime_gettime();
+  last_published_ = hw_->current_time_;
 
   // Initialize slaves
   set<string> actuator_names;
@@ -238,6 +235,18 @@ void EthercatHardware::initXml(TiXmlElement *config, bool allow_override)
   publishDiagnostics();
 }
 
+#define ADD_STRING_FMT(lab, fmt, ...) \
+  s.label = (lab); \
+  { char buf[1024]; \
+    snprintf(buf, sizeof(buf), fmt, ##__VA_ARGS__); \
+    s.value = buf; \
+  } \
+  strings_.push_back(s)
+#define ADD_STRING(lab, val) \
+  s.label = (lab); \
+  s.value = (val); \
+  strings_.push_back(s)
+
 void EthercatHardware::publishDiagnostics()
 {
   // Publish status of EtherCAT master
@@ -259,44 +268,21 @@ void EthercatHardware::publishDiagnostics()
     status.message = "OK";
   }
 
-  // Motors halted?
-  s.value = halt_motors_ ? "true" : "false";
-  s.label = "Motors halted";
-  strings_.push_back(s);
-
-  // Num devices
-  v.value = num_slaves_;
-  v.label = "EtherCAT devices";
-  values_.push_back(v);
-
-  // Interface
-  s.value = interface_;
-  s.label = "Interface";
-  strings_.push_back(s);
-
-  // Interface
-  v.value = reset_state_;
-  v.label = "Reset state";
-  values_.push_back(v);
+  ADD_STRING("Motors halted", halt_motors_ ? "true" : "false");
+  ADD_STRING_FMT("EtherCAT devices", "%d", num_slaves_); 
+  ADD_STRING("Interface", interface_);
+  ADD_STRING_FMT("Reset state", "%d", reset_state_);
 
   // Roundtrip
-  double total = 0;
-  for (int i = 0; i < 1000; ++i)
-  {
-    total += diagnostics_.iteration_[i].roundtrip_;
-    diagnostics_.max_roundtrip_ = max(diagnostics_.max_roundtrip_, diagnostics_.iteration_[i].roundtrip_);
-  }
-  v.value = total / 1000.0 * 1e6;
-  v.label = "Average roundtrip time";
-  values_.push_back(v);
+  diagnostics_.max_roundtrip_ = std::max(diagnostics_.max_roundtrip_, 
+       extract_result<tag::max>(diagnostics_.acc_));
+  ADD_STRING_FMT("Average roundtrip time (us)", "%.4f", extract_result<tag::mean>(diagnostics_.acc_) * 1e6);
 
-  v.value = diagnostics_.max_roundtrip_ * 1e6;
-  v.label = "Maximum roundtrip time";
-  values_.push_back(v);
+  accumulator_set<double, stats<tag::max, tag::mean> > blank;
+  diagnostics_.acc_ = blank;
 
-  v.value = diagnostics_.txandrx_errors_;
-  v.label = "EtherCAT txandrx errors";
-  values_.push_back(v);
+  ADD_STRING_FMT("Maximum roundtrip time (us)", "%.4f", diagnostics_.max_roundtrip_ * 1e6);
+  ADD_STRING_FMT("EtherCAT txandrx errors", "%d", diagnostics_.txandrx_errors_);
 
   status.set_values_vec(values_);
   status.set_strings_vec(strings_);
@@ -321,8 +307,6 @@ void EthercatHardware::publishDiagnostics()
 void EthercatHardware::update(bool reset, bool halt)
 {
   unsigned char *current, *last;
-
-  static int count = 0;
 
   // Convert HW Interface commands to MCB-specific buffers
   current = current_buffer_;
@@ -367,7 +351,7 @@ void EthercatHardware::update(bool reset, bool halt)
   if (!em_->txandrx_PD(buffer_size_, current_buffer_)) {
     ++diagnostics_.txandrx_errors_;
   }
-  diagnostics_.iteration_[count].roundtrip_ = realtime_gettime() - start;
+  diagnostics_.acc_(realtime_gettime() - start);
 
   // Convert status back to HW Interface
   current = current_buffer_;
@@ -397,10 +381,10 @@ void EthercatHardware::update(bool reset, bool halt)
   current_buffer_ = last_buffer_;
   last_buffer_ = tmp;
 
-  if (++count == 1000)
+  if ((hw_->current_time_ - last_published_) > 1.0)
   {
+    last_published_ = hw_->current_time_;
     publishDiagnostics();
-    count = 0;
   }
 }
 

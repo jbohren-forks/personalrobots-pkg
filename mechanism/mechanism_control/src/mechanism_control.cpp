@@ -47,7 +47,7 @@ MechanismControl::MechanismControl(HardwareInterface *hw) :
   start_request_(0),
   stop_request_(0),
   please_switch_(false),
-  loop_count_(0)
+  last_published_(realtime_gettime())
 {
   model_.hw_ = hw;
   mechanism_control_ = this;
@@ -108,9 +108,9 @@ void MechanismControl::publishDiagnostics()
       if (controllers[i].state != EMPTY)
       {
         ++active;
-        double m = extract_result<tag::max>(controllers[i].diagnostics->acc);
-        controllers[i].diagnostics->max1.push_back(m);
-        controllers[i].diagnostics->max = std::max(m, controllers[i].diagnostics->max);
+        double m = extract_result<tag::max>(controllers[i].stats->acc);
+        controllers[i].stats->max1.push_back(m);
+        controllers[i].stats->max = std::max(m, controllers[i].stats->max);
         std::string state;
         if (controllers[i].c->state_ == RUNNING)
           state = "Running";
@@ -120,26 +120,35 @@ void MechanismControl::publishDiagnostics()
           state = "Unknown";
         ADD_STRING_FMT(controllers[i].name,
                        "%.4f (avg) %.4f (stdev) %.4f (max) %.4f (1-min max) %.4f (life max) %s (state)",
-                       mean(controllers[i].diagnostics->acc)*1e6,
-                       sqrt(variance(controllers[i].diagnostics->acc))*1e6,
+                       mean(controllers[i].stats->acc)*1e6,
+                       sqrt(variance(controllers[i].stats->acc))*1e6,
                        m*1e6,
-                       *std::max_element(controllers[i].diagnostics->max1.begin(), controllers[i].diagnostics->max1.end())*1e6,
-                       controllers[i].diagnostics->max*1e6,
+                       *std::max_element(controllers[i].stats->max1.begin(), controllers[i].stats->max1.end())*1e6,
+                       controllers[i].stats->max*1e6,
                        state.c_str());
 
-        controllers[i].diagnostics->acc = blank_statistics;  // clear
+        controllers[i].stats->acc = blank_statistics;  // clear
       }
     }
 
-    double m = extract_result<tag::max>(diagnostics_.acc);
-    diagnostics_.max1.push_back(m);
-    diagnostics_.max = std::max(m, diagnostics_.max);
-    ADD_STRING_FMT("Overall", "%.4f (avg) %.4f (stdev) %.4f (max) %.4f (1-min max) %.4f (life max)",
-                   mean(diagnostics_.acc)*1e6,
-                   sqrt(variance(diagnostics_.acc))*1e6,
-                   m*1e6,
-                   *std::max_element(diagnostics_.max1.begin(), diagnostics_.max1.end())*1e6,
-                   diagnostics_.max*1e6);
+#define REPORT_STATS(stats_, label) \
+    { \
+    double m = extract_result<tag::max>(stats_.acc); \
+    stats_.max1.push_back(m); \
+    stats_.max = std::max(m, stats_.max); \
+    ADD_STRING_FMT(label, "%.4f (avg) %.4f (stdev) %.4f (max) %.4f (1-min max) %.4f (life max)", \
+                   mean(stats_.acc)*1e6, \
+                   sqrt(variance(stats_.acc))*1e6, \
+                   m*1e6, \
+                   *std::max_element(stats_.max1.begin(), stats_.max1.end())*1e6, \
+                   stats_.max*1e6); \
+    stats_.acc = blank_statistics;  \
+    }
+
+    REPORT_STATS(pre_update_stats_, "Before Update");
+    REPORT_STATS(update_stats_, "Update");
+    REPORT_STATS(post_update_stats_, "After Update");
+
     ADD_STRING_FMT("Active controllers", "%d", active);
 
     status.set_values_vec(values);
@@ -148,7 +157,6 @@ void MechanismControl::publishDiagnostics()
     publisher_.msg_.set_status_vec(statuses);
     publisher_.unlockAndPublish();
 
-    diagnostics_.acc = blank_statistics;  // clear
   }
 }
 
@@ -158,12 +166,14 @@ void MechanismControl::update()
   used_by_realtime_ = current_controllers_list_;
   std::vector<ControllerSpec> &controllers = controllers_lists_[used_by_realtime_];
 
+  double start = realtime_gettime();
   state_->propagateState();
   state_->zeroCommands();
+  double start_update = realtime_gettime();
+  pre_update_stats_.acc(start_update - start);
 
   // Update all controllers
   // Start with controller that was last added
-  double start_update = realtime_gettime();
   for (int i=controllers.size()-1; i>=0; i--)
   {
     if (controllers[i].state != EMPTY)
@@ -176,19 +186,21 @@ void MechanismControl::update()
       double start = realtime_gettime();
       controllers[i].c->updateRequest();
       double end = realtime_gettime();
-      controllers[i].diagnostics->acc(end - start);
+      controllers[i].stats->acc(end - start);
     }
   }
   double end_update = realtime_gettime();
-  diagnostics_.acc(end_update - start_update);
+  update_stats_.acc(end_update - start_update);
 
   state_->enforceSafety();
   state_->propagateEffort();
+  double end = realtime_gettime();
+  post_update_stats_.acc(end - end_update);
 
-  if (++loop_count_ >= 1000)
+  if ((end - last_published_) > 1.0)
   {
-    loop_count_ = 0;
     publishDiagnostics();
+    last_published_ = end;
   }
 
   // there are controllers to start/stop

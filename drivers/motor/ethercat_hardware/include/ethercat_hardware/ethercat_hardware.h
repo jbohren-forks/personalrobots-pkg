@@ -47,6 +47,12 @@
 
 #include <realtime_tools/realtime_publisher.h>
 
+#include <boost/accumulators/accumulators.hpp>
+#include <boost/accumulators/statistics/stats.hpp>
+#include <boost/accumulators/statistics/max.hpp>
+#include <boost/accumulators/statistics/mean.hpp>
+using namespace boost::accumulators;
+
 class EthercatHardware
 {
 public:
@@ -103,12 +109,11 @@ private:
 
   realtime_tools::RealtimePublisher<robot_msgs::DiagnosticMessage> publisher_;
   struct {
-    struct {
-      double roundtrip_;
-    } iteration_[1000];
+    accumulator_set<double, stats<tag::max, tag::mean> > acc_;
     double max_roundtrip_;
     int txandrx_errors_;
   } diagnostics_;
+  double last_published_;
   
   vector<robot_msgs::DiagnosticStatus> statuses_;
   vector<robot_msgs::DiagnosticValue> values_;

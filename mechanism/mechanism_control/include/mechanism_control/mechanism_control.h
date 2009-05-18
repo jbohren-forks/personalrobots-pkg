@@ -130,13 +130,11 @@ private:
     double, boost::accumulators::stats<boost::accumulators::tag::max,
                                        boost::accumulators::tag::mean,
                                        boost::accumulators::tag::variance> > TimeStatistics;
-  struct Diagnostics {
+  struct Statistics {
     TimeStatistics acc;
     double max;
     boost::circular_buffer<double> max1;
-
-
-    Diagnostics() : max(0), max1(60) {}
+    Statistics() : max(0), max1(60) {}
   };
 
   enum {EMPTY, INITIALIZED = 1, RUNNING};
@@ -144,24 +142,26 @@ private:
     std::string name;
     boost::shared_ptr<controller::Controller> c;
     int state;
-    boost::shared_ptr<Diagnostics> diagnostics;
+    boost::shared_ptr<Statistics> stats;
 
-    ControllerSpec() : state(EMPTY), diagnostics(new Diagnostics) {}
+    ControllerSpec() : state(EMPTY), stats(new Statistics) {}
     ControllerSpec(const ControllerSpec &spec)
-      : name(spec.name), c(spec.c), state(spec.state), diagnostics(spec.diagnostics) {}
+      : name(spec.name), c(spec.c), state(spec.state), stats(spec.stats) {}
   };
 
   boost::mutex controllers_lock_;
   std::vector<ControllerSpec> controllers_lists_[2];
   int current_controllers_list_, used_by_realtime_;
 
-  Diagnostics diagnostics_;
+  Statistics pre_update_stats_;
+  Statistics update_stats_;
+  Statistics post_update_stats_;
   realtime_tools::RealtimePublisher<robot_msgs::DiagnosticMessage> publisher_;
   void publishDiagnostics();
   std::vector<controller::Controller*> start_request_, stop_request_;
   bool please_switch_;
 
-  int loop_count_;
+  double last_published_;
 };
 
 /*
