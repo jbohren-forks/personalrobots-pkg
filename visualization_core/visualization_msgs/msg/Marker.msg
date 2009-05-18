@@ -4,6 +4,8 @@ byte SPHERE=2
 byte CYLINDER=3
 byte LINE_STRIP=4
 byte LINE_LIST=5
+byte CUBE_LIST=6
+byte SPHERE_LIST=7
 
 byte ADD=0
 byte MODIFY=0
@@ -19,5 +21,5 @@ robot_msgs/Vector3 scale             # Scale of the object 1,1,1 means default (
 std_msgs/ColorRGBA color             # Color [0.0-1.0]
 duration lifetime                    # How long the object should last before being automatically deleted.  0 means forever
 
-#These are only used if the object type is LINE_STRIP or LINE_LIST
+#Only used if the type specified has some use for them (eg. LINE_STRIP)
 robot_msgs/Point[] points
