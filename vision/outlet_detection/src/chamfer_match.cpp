@@ -7,7 +7,7 @@
  *
  */
 
-#include "chamfer_match.h"
+#include "outlet_detection/chamfer_match.h"
 
 ChamferMatch::ChamferMatch()
 {

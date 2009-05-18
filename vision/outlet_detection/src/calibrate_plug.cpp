@@ -23,9 +23,9 @@ public:
 
     current_target_ = Outlet;
     ROS_INFO("Waiting for outlet...");
-    ros::Node::instance()->subscribe("/plug_detector/pose", plug_msg_,
+    ros::Node::instance()->subscribe("/plug_detector/plug_pose", plug_msg_,
                                      &PoseTracker::plug_cb, this, 1);
-    ros::Node::instance()->subscribe("/outlet_detector/pose", outlet_msg_,
+    ros::Node::instance()->subscribe("/outlet_detector/outlet_pose", outlet_msg_,
                                      &PoseTracker::outlet_cb, this, 1);
   }
 

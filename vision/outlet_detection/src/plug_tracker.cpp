@@ -45,10 +45,15 @@ PlugTracker::PlugTracker(ros::Node &node)
 
   // Set up transforms
   // TODO: set these through parameters?
+  // Rough hand-measured
   //plug_in_board_.getOrigin().setValue(0.003, -0.01, 0.005);
   //plug_in_board_.getBasis().setValue(0, -1, 0, -1, 0, 0, 0, 0, -1);
+  // Pretty accurate numbers for boxy plug
   plug_in_board_.getOrigin().setValue(0.00398, -0.01252, 0.00659);
   plug_in_board_.setRotation(btQuaternion(-0.70607, 0.70787, 0.01876, -0.00651));
+  // (Bad) estimate for new-style plug
+  //plug_in_board_.getOrigin().setValue(0.00315, 0.01542, 0.01255);
+  //plug_in_board_.setRotation(btQuaternion(0.60615, 0.60710, 0.39344, -0.33048));
   camera_in_cvcam_.getOrigin().setValue(0.0, 0.0, 0.0);
   camera_in_cvcam_.getBasis().setValue(0, 0, 1, -1, 0, 0, 0, -1, 0);
 

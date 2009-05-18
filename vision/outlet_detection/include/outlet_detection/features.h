@@ -7,8 +7,8 @@
  *
  */
 
-#if !defined(__FEATURES_H)
-#define __FEATURES_H
+#ifndef _OUTLET_DETECTION_FEATURES_H
+#define _OUTLET_DETECTION_FEATURES_H
 
 #include <vector>
 using namespace std;
