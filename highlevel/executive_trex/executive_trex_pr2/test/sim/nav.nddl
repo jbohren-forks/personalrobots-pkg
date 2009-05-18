@@ -35,7 +35,6 @@ MoveBase::Active{
 }
 
 MoveBase::Inactive{
-  // BaseState(start) == Holds(x, y, th);
   if(object == move_base){
     starts(BaseState.Holds bs);
     eq_pose_msg(bs.object, object);

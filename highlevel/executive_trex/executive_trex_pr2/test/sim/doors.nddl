@@ -70,6 +70,9 @@ CheckPath::Active {
   eq(duration, 1);
   meets(Inactive s);
   eq(s.status, SUCCESS);
+
+  meets(BaseState.Holds bs);
+  eq_pose_msg(bs.object, object);
 }
 
 UnlatchHandle::Inactive{

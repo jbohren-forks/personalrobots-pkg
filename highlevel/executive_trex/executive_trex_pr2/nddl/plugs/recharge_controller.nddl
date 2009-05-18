@@ -82,6 +82,8 @@ rc_initial_state.active = false;
 RechargeController::Holds{
   if(active == false){
     contained_by(recharger.Inactive);
+    // These could be contained_by relations but then we would need a heuristic in the solver to order
+    // open conditions between states and recharge controller slaves.
     equals(outlet_state.Holds);
     equals(plug_state.Holds);
   }
@@ -325,7 +327,7 @@ RechargeController::Holds {
  *************************************************/
 
 MoveBase::Inactive{
-  starts_during(RechargeController.Holds rc);
+  starts(RechargeController.Holds rc);
   if(status == SUCCESS){
     eq(rc.in_position, true);
   }
@@ -345,7 +347,7 @@ SafetyTuckArms::Inactive{
 }
 
 DetectPlugOnBase::Inactive{
-  starts_during(RechargeController.Holds rc);
+  starts(RechargeController.Holds rc);
   if(status == SUCCESS){
     eq(rc.plug_is_stowed, yes);
     eq(rc.ready_to_grasp, true);
@@ -360,7 +362,7 @@ DetectPlugOnBase::Inactive{
 }
 
 PlugsUntuckArms::Inactive{
-  starts_during(RechargeController.Holds rc);
+  starts(RechargeController.Holds rc);
   if(status == SUCCESS){
     eq(rc.arms_clear, true);
   }
@@ -370,14 +372,14 @@ PlugsUntuckArms::Inactive{
 }
 
 StowPlug::Active{
-  starts_during(plug_state.Holds ps);
+  starts(plug_state.Holds ps);
   eq_plug_stow_msg(object, ps.object);
 }
 
 // If we stow successfully, declare maybe. Requires confirmation!
 // Changing this to yes for now - BMM
 StowPlug::Inactive{
-  starts_during(RechargeController.Holds rc);
+  starts(RechargeController.Holds rc);
   if(status == SUCCESS){
     eq(rc.plug_is_stowed, maybe);
     eq(rc.plug_in_hand, false);
@@ -389,7 +391,7 @@ StowPlug::Inactive{
 }
 
 Unplug::Inactive{
-  starts_during(RechargeController.Holds rc);
+  starts(RechargeController.Holds rc);
   if(status == SUCCESS){
     eq(rc.plugged_in, false);
   }
@@ -399,7 +401,7 @@ Unplug::Inactive{
 }
 
 PlugIn::Inactive{
-  starts_during(RechargeController.Holds rc);
+  starts(RechargeController.Holds rc);
   if(status == SUCCESS){
     eq(rc.plugged_in, true);
     eq(rc.recharged, true);
@@ -415,7 +417,7 @@ DetectOutletFine::Active{
 }
 
 DetectOutletFine::Inactive{
-  starts_during(RechargeController.Holds rc);
+  starts(RechargeController.Holds rc);
   if(status == SUCCESS){
     eq(rc.outlet_detected_fine, true);
 
@@ -434,7 +436,7 @@ DetectOutletCoarse::Active{
 }
 
 DetectOutletCoarse::Inactive{
-  starts_during(RechargeController.Holds rc);
+  starts(RechargeController.Holds rc);
   if(status == SUCCESS){
     eq(rc.outlet_detected_coarse, true);
     eq(rc.in_position, false);
@@ -454,7 +456,7 @@ LocalizePlugInGripper::Active{
 }
 
 LocalizePlugInGripper::Inactive{
-  starts_during(RechargeController.Holds rc);
+  starts(RechargeController.Holds rc);
   if(status == SUCCESS){
     eq(rc.ready_to_plug_in, true);
   }
@@ -464,7 +466,7 @@ LocalizePlugInGripper::Inactive{
 }
 
 MoveAndGraspPlug::Inactive{
-  starts_during(RechargeController.Holds rc);
+  starts(RechargeController.Holds rc);
   if(status == SUCCESS){
     eq(rc.plug_in_hand, true);
     eq(rc.ready_to_grasp, false);
