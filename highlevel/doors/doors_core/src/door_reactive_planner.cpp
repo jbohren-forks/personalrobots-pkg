@@ -95,11 +95,12 @@ void DoorReactivePlanner::getParams()
   footprint_.push_back(pt);
 }
 
-void DoorReactivePlanner::setDoor(door_msgs::Door door_msg_in)
+void DoorReactivePlanner::setDoor(door_msgs::Door door_msg_in, const pr2_robot_actions::Pose2D &position)
 {
   //Assumption is that the normal points in the direction we want to travel through the door
   door_msgs::Door door;
-  if (!transformTo(tf_,costmap_frame_id_,door_msg_in,door)){
+  if (!transformTo(tf_,costmap_frame_id_,door_msg_in,door))
+  {
     ROS_ERROR("DoorReactivePlanner: Could not transform door message from %s to %s", door_msg_in.header.frame_id.c_str(), costmap_frame_id_.c_str());
     return;
   }
@@ -107,8 +108,14 @@ void DoorReactivePlanner::setDoor(door_msgs::Door door_msg_in)
   tf::Stamped<tf::Pose> tmp = getRobotPose(door,door_goal_distance_);
   KDL::Vector tmp_normal = getFrameNormal(door);
   
-  centerline_angle_ = atan2(tmp_normal(1),tmp_normal(0));
-  
+  centerline_angle_ = atan2(tmp_normal(1),tmp_normal(0));  
+  double centerline_angle_m_pi = angles::normalize_angle(centerline_angle_ + M_PI);
+
+  if(fabs(angles::shortest_angular_distance(centerline_angle_m_pi,position.th)) < fabs(angles::shortest_angular_distance(centerline_angle_,position.th)))
+  {
+    centerline_angle_ = centerline_angle_m_pi;
+  }
+
   goal_.x = tmp.getOrigin()[0];
   goal_.y = tmp.getOrigin()[1];
   goal_.th = centerline_angle_;
@@ -119,8 +126,8 @@ void DoorReactivePlanner::setDoor(door_msgs::Door door_msg_in)
   carrot_.y = tmp_2.getOrigin()[1];
   carrot_.th = centerline_angle_;
 
-  vector_along_door_.x = tmp_normal(1);
-  vector_along_door_.y = -tmp_normal(0);
+  vector_along_door_.x = sin(centerline_angle_);
+  vector_along_door_.y = -cos(centerline_angle_);
   vector_along_door_.z = 0.0;    
 
   door_information_set_ = true;

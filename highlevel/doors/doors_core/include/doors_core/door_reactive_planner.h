@@ -87,7 +87,7 @@ namespace door_reactive_planner
      * @brief Set door information for the planner
      * @param door_msg_in The door message containing information about the door
      */
-    void setDoor(door_msgs::Door door_msg_in);
+    void setDoor(door_msgs::Door door_msg_in, const pr2_robot_actions::Pose2D &pose);
 
     /**
      * @brief compute the oriented footprint for a particular position of the robot 

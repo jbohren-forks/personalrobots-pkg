@@ -199,6 +199,8 @@ namespace nav {
 
     ros::Time last_diagnostics_publish_time_;
 
+    double action_max_allowed_time_;
+
   };
 };
 #endif

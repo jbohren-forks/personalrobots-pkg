@@ -61,8 +61,10 @@ namespace nav
     ros_node_.param("~controller_frequency", controller_frequency_, 20.0);
     ros_node_.param("~xy_goal_tolerance", xy_goal_tolerance_, 0.05);
     ros_node_.param("~yaw_goal_tolerance", yaw_goal_tolerance_, 0.1);
-    ros_node_.param("diagnostics_expected_publish_time",diagnostics_expected_publish_time_,0.2);
+    ros_node_.param("~diagnostics_expected_publish_time",diagnostics_expected_publish_time_,0.2);
     ros_node_.param("~control_topic_name", control_topic_name_, std::string("/base/trajectory_controller/command"));
+    ros_node_.param("~action_max_allowed_time", action_max_allowed_time_,30.0);
+
     //for display purposes
     ros_node_.advertise<visualization_msgs::Polyline>("~gui_path", 1);
     ros_node_.advertise<visualization_msgs::Polyline>("~local_path", 1);
@@ -236,12 +238,15 @@ namespace nav
 
   robot_actions::ResultStatus MoveBaseDoorAction::execute(const door_msgs::Door& door, door_msgs::Door& feedback)
   {
+    //update the global pose
+    updateGlobalPose();
+
     //we'll start our costmap up now that we're active
     planner_cost_map_ros_->start();
     planner_cost_map_ros_->clearNonLethalWindow(circumscribed_radius_ * 2, circumscribed_radius_ * 2);
 
     door_ = door;
-    planner_->setDoor(door);//set the goal into the planner
+    planner_->setDoor(door,getPose2D(global_pose_));//set the goal into the planner
     if(!planner_->getGoal(goal_)){
       //make sure to stop the costmap from running on return
       planner_cost_map_ros_->stop();
@@ -252,6 +257,11 @@ namespace nav
     makePlan();    //first... make a plan
 
     ros::Rate control_rate(controller_frequency_);
+
+    double abort_action_timeout = 0.0;
+
+    ros::Time last_time = ros::Time::now();
+
     while(!isPreemptRequested())
     {
       //get the start time of the loop
@@ -291,9 +301,11 @@ namespace nav
         {
           plan_state_ = "Plan valid";
           dispatchControl(global_plan_);
+          abort_action_timeout = 0.0; 
         }
         else
         {
+          abort_action_timeout += (start_time - last_time).toSec();
           plan_state_ = "Plan invalid";
           dispatchControl(empty_plan_);
         }
@@ -310,6 +322,13 @@ namespace nav
       }
       publishDiagnostics(false);
 
+      if(abort_action_timeout > action_max_allowed_time_)
+      {
+        ROS_ERROR("Move base door action timing out");
+        planner_cost_map_ros_->stop();
+        return robot_actions::ABORTED;
+      }
+      last_time = start_time;
     }
     //make sure to stop the costmap from running on return
     planner_cost_map_ros_->stop();
@@ -328,19 +347,18 @@ namespace nav
     }
     else
     {
-	  int index_plan = std::max((int) plan_in.size() - 1, 0);
-          plan_size_ = plan_in.size();
-          plan_out.set_points_size(1);
-          plan_out.points[0].set_positions_size(3);
-          plan_out.points[0].positions[0] = plan_in[index_plan].x;
-          plan_out.points[0].positions[1] = plan_in[index_plan].y;
-          plan_out.points[0].positions[2] = plan_in[index_plan].th;
-          plan_out.points[0].time = 0.0;        
-          ROS_DEBUG("Plan in had %d points, plan out has %d points",(int)plan_in.size(),(int)plan_out.points.size());
+      int index_plan = std::max((int) plan_in.size() - 1, 0);
+      plan_size_ = plan_in.size();
+      plan_out.set_points_size(1);
+      plan_out.points[0].set_positions_size(3);
+      plan_out.points[0].positions[0] = plan_in[index_plan].x;
+      plan_out.points[0].positions[1] = plan_in[index_plan].y;
+      plan_out.points[0].positions[2] = plan_in[index_plan].th;
+      plan_out.points[0].time = 0.0;        
+      ROS_DEBUG("Plan in had %d points, plan out has %d points",(int)plan_in.size(),(int)plan_out.points.size());
     }
     ros_node_.publish(control_topic_name_,plan_out);
   }
-
 
   void MoveBaseDoorAction::resetCostmaps(){
     planner_cost_map_ros_->resetMapOutsideWindow(5.0, 5.0);
