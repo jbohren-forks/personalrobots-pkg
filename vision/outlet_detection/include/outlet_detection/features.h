@@ -7,8 +7,8 @@
  *
  */
 
-#if !defined(_FEATURES_H)
-#define _FEATURES_H
+#if !defined(__FEATURES_H)
+#define __FEATURES_H
 
 #include <vector>
 using namespace std;
@@ -18,12 +18,12 @@ using namespace std;
 inline CvPoint operator -(CvPoint p1, CvPoint p2)
 {
     return cvPoint(p1.x - p2.x, p1.y - p2.y);
-}
+};
 
 inline float length(CvPoint p)
 {
     return sqrt(float(p.x*p.x) + p.y*p.y);
-}
+};
 
 
 struct feature_t

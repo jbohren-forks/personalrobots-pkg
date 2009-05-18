@@ -12,10 +12,11 @@
 
 #include <cv.h>
 
+#include <vector>
 #include <string>
 using namespace std;
 
-#include "features.h"
+#include "outlet_detection/features.h"
 
 /*
 inline CvRect fit_rect_roi(CvRect rect, CvRect roi)
@@ -91,8 +92,8 @@ public:
     ~CvOneWayDescriptor();
     
     void Allocate(int num_samples, IplImage* frontal);
-    void CvOneWayDescriptor::GenerateSamples(int num_samples, IplImage* frontal);
-    void CvOneWayDescriptor::CalcInitialPose(CvRect roi);
+    void GenerateSamples(int num_samples, IplImage* frontal);
+    void CalcInitialPose(CvRect roi);
     void Initialize(int num_samples, IplImage* frontal, const char* image_name = 0, CvPoint center = cvPoint(0, 0));
     void ProjectPCASample(IplImage* patch, CvMat* avg, CvMat* eigenvectors, CvMat* pca_coeffs);
     void InitializePCACoeffs(CvMat* avg, CvMat* eigenvectors);
