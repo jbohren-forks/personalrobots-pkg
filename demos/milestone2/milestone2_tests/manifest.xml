@@ -1,0 +1,20 @@
+<package>
+  <description brief="milestone2_tests">
+
+Tests relevant to milestone 2 that are not specific to a single package.
+
+  </description>
+  <author>Bhaskara Marthi</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://pr.willowgarage.com/wiki/milestone2_tests</url>
+  <depend package="topological_map"/>
+  <depend package="nav"/>
+  <depend package="robot_actions"/>
+  <depend package="stage"/>
+  <depend package="roscpp"/>
+  <depend package="roslib"/>
+
+</package>
+
+
