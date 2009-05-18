@@ -1,10 +1,9 @@
 byte ARROW=0
 byte CUBE=1
 byte SPHERE=2
-byte ROBOT=3
-byte CYLINDER=4
-byte LINE_STRIP=5
-byte LINE_LIST=6
+byte CYLINDER=3
+byte LINE_STRIP=4
+byte LINE_LIST=5
 
 byte ADD=0
 byte MODIFY=0
