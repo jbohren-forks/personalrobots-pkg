@@ -4,7 +4,11 @@ import roslib; roslib.load_manifest('sound_play')
 import rospy
 import threading
 from sound_play.msg import SoundRequest
-import pygame.mixer as mixer
+
+try:
+  import pygame.mixer as mixer
+except:
+  print "Error opening pygame.mixer. Is pygame installed? (sudo apt-get install python-pygame)"
 
 import os
 
