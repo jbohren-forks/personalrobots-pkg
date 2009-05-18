@@ -1,0 +1,26 @@
+<launch>
+    <param name="/stereo/videre_mode" type="str" value="none"/>
+    <param name="/stereo/do_colorize" type="bool" value="True"/>
+    <param name="/stereo/do_rectify" type="bool" value="True"/>
+    <param name="/stereo/do_stereo" type="bool" value="True"/>
+    <param name="/stereo/do_calc_points" type="bool" value="True"/>
+    <param name="/stereo/do_keep_coords" type="bool" value="True"/>
+
+    <param name="stereo/horopter"  value="128"/>
+    <param name="stereo/ndisp"  value="128"/>
+    <param name="stereo/gain_auto" type="bool" value="True"/>
+    <param name="stereo/exposure_auto" type="bool" value="True"/>
+    <param name="stereo/brightness_auto" type="bool" value="True"/>
+
+    <!--node pkg="dcam" type="stereodcam" respawn="true"/-->
+
+    <node name="stereoproc" pkg="stereo_image_proc" type="stereoproc" respawn="true" />
+    <node name="periodic_capture" pkg="stereo_capture" type="periodic_capture" respawn="true" output="screen">
+      <param name="display" type="bool" value="True"/>
+      <param name="period" value="1.0"/>
+      <param name="base_scan_topic" value="base_scan_marking"/>
+      <param name="prefix" value="capture"/>
+      <param name="save_directory" value="$(find stereo_capture)/data"/>
+    </node>
+</launch>
+

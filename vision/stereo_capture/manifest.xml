@@ -14,4 +14,6 @@
   <depend package="topic_synchronizer"/>
   <depend package="color_calib"/>
   <depend package="stereo_utils"/>
+  <depend package="tf"/>
+  <depend package="point_cloud_mapping"/>
 </package>
