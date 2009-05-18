@@ -119,7 +119,7 @@ class PlugOnBaseDetector
       // Simple constraints for the robot's base on Z (minimum) and X (maximum) - These should never be changed in theory on the PR2
       // NOTE: All parameters are given in base_link. Use TF to convert them to different frames!
       node_.param ("~base_z_min_abs", base_z_min_, 0.25);                     // ignore all points on Z below this value
-      node_.param ("~base_plane_height_rel", base_plane_height_, 0.20);      // ignore all points on Z above base_z_min_ + this value
+      node_.param ("~base_plane_height_rel", base_plane_height_, 0.10);      // ignore all points on Z above base_z_min_ + this value
 
       node_.param ("~base_xy_max_rel", base_xy_max_, 0.29);                  // specifies the maximum X-Y distance between 0,0,0 and a point
       base_xy_max_ *= base_xy_max_;
