@@ -778,6 +778,9 @@ std::string Transformer::allFramesAsDot() const
 
   ros::Time current_time = ros::Time::now();
   
+  if (frames_.size() ==1)
+    mstream <<"\"no tf data recieved\"";
+
   //  for (std::vector< TimeCache*>::iterator  it = frames_.begin(); it != frames_.end(); ++it)
   for (unsigned int counter = 1; counter < frames_.size(); counter ++)//one referenced for 0 is no frame
   {
@@ -803,11 +806,14 @@ std::string Transformer::allFramesAsDot() const
       mstream << "\"" << frameIDs_reverse[counter]   << "\"" << " -> " 
               << "\"" << frameIDs_reverse[parent_id] << "\"" << "[label=\""
               << "Authority: " << authority << "\\n"
-              << getFrame(counter)->getListLength() << " Readings at average rate " << rate <<" Hz\\n"
-              << " Between " << getFrame(counter)->getLatestTimestamp().toSec() 
-              << " and " << getFrame(counter)->getOldestTimestamp().toSec()
-              << " \\nSeconds in the past: " << (current_time - getFrame(counter)->getLatestTimestamp()).toSec() 
-              << " and " << (current_time - getFrame(counter)->getOldestTimestamp()).toSec()
+              << getFrame(counter)->getListLength() << " Readings averaging " << rate <<" Hz\\n"
+              << " Latest reading: \\n" << getFrame(counter)->getLatestTimestamp().toSec() 
+              << " ( " << (current_time - getFrame(counter)->getLatestTimestamp()).toSec()
+              <<" seconds ago )\\n"
+              << " Oldest reading:\\n" 
+              << getFrame(counter)->getOldestTimestamp().toSec()
+              << " ( " << (current_time - getFrame(counter)->getOldestTimestamp()).toSec() 
+              <<" seconds ago )\\n"
               <<"\"];" <<std::endl;
     }
   }
