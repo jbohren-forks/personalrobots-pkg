@@ -121,6 +121,13 @@ RechargeController::Holds {
     starts_during(plug_state.Holds ps);
 
     if (finishing == true) {
+      if (arms_tucked == true){
+
+	// @todo Should there e a status assignment here? (CMG)
+        meets(recharger.Inactive rc_inactive);
+        eq(duration, 1);
+        eq(s.active, false);
+      }
       if (arms_tucked == false) {
         if (plug_is_stowed == yes) {
           contains_start(safety_tuck_arms.Active cmd);
@@ -152,11 +159,6 @@ RechargeController::Holds {
             }
           }
         }
-      }
-      else {
-        meets(recharger.Inactive rc_inactive);
-        eq(duration, 1);
-        eq(s.active, false);
       }
     }
 
@@ -287,6 +289,11 @@ RechargeController::Holds {
                     
                     eq(cmd.frame_id, os.frame_id);
                     concurrent(cmd.end, end);
+
+		    // Laser tilt action must run first.
+		    contains_start(set_laser_tilt.Active cmd_set_laser_tilt);
+		    cmd_set_laser_tilt before cmd;
+		    eq(cmd_set_laser_tilt.status, SUCCESS);
                   }
                 }
 
@@ -327,12 +334,16 @@ MoveBase::Inactive{
   }
 }
 
+// This is a little tricky. This only alters the arms clear parameter
+// which may me mergeable with the prior state. If we are active, we actually need to impose a
+// re-evaluation. A simpler solution might simply be to impose a starts constraint after all!
 SafetyTuckArms::Inactive{
+  starts(RechargeController.Holds rc);
   if(status == SUCCESS){
-    starts_during(RechargeController.Holds rc);
     eq(rc.arms_clear, false);
   }
 }
+
 DetectPlugOnBase::Inactive{
   starts_during(RechargeController.Holds rc);
   if(status == SUCCESS){
@@ -362,7 +373,6 @@ StowPlug::Active{
   starts_during(plug_state.Holds ps);
   eq_plug_stow_msg(object, ps.object);
 }
-
 
 // If we stow successfully, declare maybe. Requires confirmation!
 // Changing this to yes for now - BMM
@@ -454,14 +464,13 @@ LocalizePlugInGripper::Inactive{
 }
 
 MoveAndGraspPlug::Inactive{
+  starts_during(RechargeController.Holds rc);
   if(status == SUCCESS){
-    starts_during(RechargeController.Holds rc);
     eq(rc.plug_in_hand, true);
     eq(rc.ready_to_grasp, false);
     eq(rc.plug_is_stowed, no);
   }
   if (status == ABORTED) {
-    starts_during(RechargeController.Holds rc);
     eq(rc.ready_to_grasp, false);
   }
 }
