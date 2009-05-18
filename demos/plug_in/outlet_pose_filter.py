@@ -57,7 +57,7 @@ def main():
     # TODO: outlet pose remains stable in the base frame.  Transform
     # to there, and then continuously publish
 
-    track_outlet_pose = Tracker('/plugs_core_actions/outlet_pose', PoseStamped)
+    track_outlet_pose = Tracker('/detect_outlet_fine/outlet_pose', PoseStamped)
 
     def reset():
         track_outlet_pose.msg = None
