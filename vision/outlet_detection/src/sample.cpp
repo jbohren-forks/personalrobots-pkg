@@ -40,43 +40,76 @@ int LoadCameraParams(char* filename, CvMat** intrinsic_matrix, CvMat** distortio
 
 int main(int argc,char** argv)
 {
-	char path[1024], config_filename[1024], camera_filename[1024], output_path[1024];
-	if(argc < 5)
+	char path[1024], config_filename[1024], camera_filename[1024], output_path[1024], 
+        train_path[1024], train_config[1024], pca_config[1024];
+    
+	if(argc != 5 && argc != 6)
 	{
 		printf("Usage: outlet_model <path_to_images> <config_filename> <camera_config> <output_path>\n");
+        printf("Usage: outlet_model <path_to_images> <config_filename> <camera_config> <train_config> <output_path>\n");
 		return(0);
 	}
+    
 	
 	strcpy(path, argv[1]);
 	strcpy(config_filename, argv[2]);
 	strcpy(camera_filename, argv[3]);
-	strcpy(output_path, argv[4]);
-
-	
+    
+    outlet_template_t outlet_template;
+    if(argc == 5)
+    {
+        strcpy(output_path, argv[4]);
+    }
+    else
+    {
+        strcpy(train_config, argv[4]);
+        strcpy(output_path, argv[5]);
+        outlet_template.load(train_config);
+    }
+    
+//    outlet_template.save("outlet_config.yml");
+    
 #if defined(_VERBOSE)
-	char pathname[1024];
-	sprintf(pathname, "mkdir %s", output_path);
-	system(pathname);
-	
-	sprintf(pathname, "mkdir %s/output_filt", output_path);
-	system(pathname);
+    char pathname[1024];
+    sprintf(pathname, "mkdir %s", output_path);
+    system(pathname);
+    
+    if(outlet_template.get_count() == 4 && outlet_template.get_color() == outletOrange)
+    {
+        sprintf(pathname, "mkdir %s/output_filt", output_path);
+        system(pathname);
+        
+        sprintf(pathname, "mkdir %s/output", output_path);
+        system(pathname);
+        
+        sprintf(pathname, "mkdir %s/keyout", output_path);
+        system(pathname);
+        
+        sprintf(pathname, "mkdir %s/holes", output_path);
+        system(pathname);
+        
+        sprintf(pathname, "mkdir %s/warped", output_path);
+        system(pathname);
+    }
+    else
+    {
+        sprintf(pathname, "mkdir %s/output_filt", output_path);
+        system(pathname);
 
-	sprintf(pathname, "mkdir %s/output", output_path);
-	system(pathname);
-	
-	sprintf(pathname, "mkdir %s/keyout", output_path);
-	system(pathname);
-	
-	sprintf(pathname, "mkdir %s/holes", output_path);
-	system(pathname);
-
-	sprintf(pathname, "mkdir %s/warped", output_path);
-	system(pathname);
+        sprintf(pathname, "mkdir %s/outlets", output_path);
+        system(pathname);
+        
+        sprintf(pathname, "mkdir %s/features", output_path);
+        system(pathname);
+        
+        sprintf(pathname, "mkdir %s/features_filtered", output_path);
+        system(pathname);
+    }
 #endif //_VERBOSE
 		
 	printf("Reading config file...\n");
 	
-    for(int iter = 0;; iter++) {
+//    for(int iter = 0;; iter++) {
 	FILE* fp = fopen(config_filename, "rt");
 	if(fp == 0)
 	{
@@ -91,7 +124,7 @@ int main(int argc,char** argv)
 	CvMat* intrinsic_matrix = 0;
 	CvMat* distortion_params = 0; 
 	LoadCameraParams(camera_filename, &intrinsic_matrix, &distortion_params);
-	
+    
 	while((ret=fscanf(fp, "%s\n", buf)) > 0)
 	{
 		char filename[1024];
@@ -103,14 +136,14 @@ int main(int argc,char** argv)
 			printf("File %s not found, skipping...\n", filename);
 			continue;
 		}
-        		
+                		
 		printf("\nImage %s:", buf);
 
 		int64 t1 = cvGetTickCount();
 		
 		vector<outlet_t> outlets;
 		int ret = detect_outlet_tuple(src, intrinsic_matrix, 0/*distortion_params*/, outlets, 
-									  outlet_template_t(), output_path, buf);
+									  outlet_template, output_path, buf);
 		
 #if defined(_VERBOSE)
 		IplImage* temp = cvCloneImage(src);
@@ -161,8 +194,8 @@ int main(int argc,char** argv)
     cvReleaseMat(&distortion_params);
     fclose(fp);
         
-    printf("Finished iteration %d\n", iter);
-    }
+//    printf("Finished iteration %d\n", iter);
+//    }
 		
 	return 0;
 }

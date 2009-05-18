@@ -10,6 +10,8 @@
 #include <stdio.h>
 #include <stdarg.h>
 
+#include "outlet_detection/one_way_outlets.h"
+
 #if defined(_VERBOSE)
 static int PRINTF( const char* fmt, ... )
 {
@@ -33,7 +35,7 @@ static int PRINTF( const char*, ... )
 #include "highgui.h"
 
 int detect_outlet_tuple(IplImage* src, CvMat* intrinsic_matrix, CvMat* distortion_params, 
-	vector<outlet_t>& outlets, outlet_template_t outlet_templ,
+	vector<outlet_t>& outlets, const outlet_template_t& outlet_templ,
 	const char* output_path, const char* filename)
 {
     if (distortion_params) {
@@ -45,7 +47,24 @@ int detect_outlet_tuple(IplImage* src, CvMat* intrinsic_matrix, CvMat* distortio
         //		printf("Undistort time elapsed: %f", double(_t2 - _t1)/cvGetTickFrequency()*1e-6);
         cvReleaseImage(&_img);
     }
+    
+    if(outlet_templ.get_color() == outletOrange && outlet_templ.get_count() == 4)
+    {
+        return detect_outlet_tuple_2x2_orange(src, intrinsic_matrix, distortion_params, outlets, outlet_templ, output_path, filename);
+    }
+    else if(outlet_templ.get_count() == 2)
+    {
+        return detect_outlet_tuple_2x1(src, intrinsic_matrix, distortion_params, outlets, outlet_templ, output_path, filename);
+    }
+    
+    return 0;
+}
 	
+
+int detect_outlet_tuple_2x2_orange(IplImage* src, CvMat* intrinsic_matrix, CvMat* distortion_params, 
+                            vector<outlet_t>& outlets, const outlet_template_t& outlet_templ,
+                            const char* output_path, const char* filename)
+{
 	outlet_tuple_t outlet_tuple;
 	
 	outlet_tuple.tuple_mask = cvCreateImage(cvSize(src->width, src->height), IPL_DEPTH_8U, 1);
@@ -164,4 +183,47 @@ int detect_outlet_tuple(IplImage* src, CvMat* intrinsic_matrix, CvMat* distortio
     cvReleaseMat(&homography);
 	
 	return 1;
+}
+
+int detect_outlet_tuple_2x1(IplImage* src, CvMat* intrinsic_matrix, CvMat* distortion_params, 
+                                   vector<outlet_t>& outlets, const outlet_template_t& outlet_templ,
+                                   const char* output_path, const char* filename)
+{
+    vector<feature_t> holes;
+    IplImage* red = cvCreateImage(cvSize(src->width, src->height), IPL_DEPTH_8U, 1);
+    cvSetImageCOI(src, 3);
+    cvCopy(src, red);
+    cvSetImageCOI(src, 0);
+    
+    IplImage* red2 = cvCreateImage(cvSize(red->width/2, red->height/2), IPL_DEPTH_8U, 1);
+    cvResize(red, red2);
+    cvReleaseImage(&red);
+    red = red2;
+    
+    detect_outlets_2x1_one_way(red, outlet_templ.get_one_way_descriptor_base(), holes, output_path, filename);
+    cvReleaseImage(&red);
+    
+    if(holes.size() == 6)
+    {
+        features2outlets_2x1(holes, outlets);
+        return 1;
+    }
+    else
+    {
+        return 0;
+    }
+}
+
+void features2outlets_2x1(const vector<feature_t>& features, vector<outlet_t>& outlets)
+{
+    outlet_t outlet;
+    outlet.hole1 = features[0].center*2;
+    outlet.hole2 = features[1].center*2;
+    outlet.ground_hole = features[4].center*2;
+    outlets.push_back(outlet);
+    
+    outlet.hole1 = features[2].center*2;
+    outlet.hole2 = features[3].center*2;
+    outlet.ground_hole = features[5].center*2;
+    outlets.push_back(outlet); 
 }

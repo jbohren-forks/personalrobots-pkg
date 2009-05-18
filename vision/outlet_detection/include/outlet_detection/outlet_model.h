@@ -40,6 +40,7 @@ typedef struct
 	CvSeq* outlet;
 	CvPoint hole1;
 	CvPoint hole2;
+    CvPoint ground_hole;
 	outlet_feature_t feature1;
 	outlet_feature_t feature2;
 	CvPoint3D32f coord_hole1;

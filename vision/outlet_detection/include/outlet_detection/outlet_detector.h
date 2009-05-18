@@ -26,7 +26,21 @@ using namespace std;
 //	output_path, filename: optional path and filename for logging the results
 // Return value: 1 in case of success (found 4 outlets), 0 otherwise.
 int detect_outlet_tuple(IplImage* src, CvMat* intrinsic_matrix, CvMat* distortion_params, 
-	vector<outlet_t>& outlets, outlet_template_t outlet_templ = outlet_template_t(), 
+	vector<outlet_t>& outlets, const outlet_template_t& outlet_templ = outlet_template_t(), 
 	const char* output_path = 0, const char* filename = 0);
+
+int detect_outlet_tuple_2x2_orange(IplImage* src, CvMat* intrinsic_matrix, CvMat* distortion_params, 
+                                   vector<outlet_t>& outlets, const outlet_template_t& outlet_templ,
+                                   const char* output_path, const char* filename);
+
+int detect_outlet_tuple_2x1(IplImage* src, CvMat* intrinsic_matrix, CvMat* distortion_params, 
+                                   vector<outlet_t>& outlets, const outlet_template_t& outlet_templ,
+                                   const char* output_path, const char* filename);
+
+int detect_outlet_tuple_2x1_orange(IplImage* src, CvMat* intrinsic_matrix, CvMat* distortion_params, 
+                                   vector<outlet_t>& outlets, const outlet_template_t& outlet_templ,
+                                   const char* output_path, const char* filename);
+
+void features2outlets_2x1(const vector<feature_t>& features, vector<outlet_t>& outlets);
 
 #endif //_OUTLET_DETECTOR_H

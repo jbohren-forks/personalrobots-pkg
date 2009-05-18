@@ -19,6 +19,8 @@
 
 using namespace std;
 
+#include "one_way_descriptor.h"
+
 inline CvPoint cvPoint(CvPoint2D32f point)
 {
 	return cvPoint(int(point.x), int(point.y));
@@ -44,6 +46,11 @@ inline CvPoint3D32f operator -(CvPoint3D32f p1, CvPoint3D32f p2)
 	return cvPoint3D32f(p1.x - p2.x, p1.y - p2.y, p1.z - p2.z);
 }
 
+inline CvPoint operator*(CvPoint pt, float scalar)
+{
+    return cvPoint(pt.x*scalar, pt.y*scalar);
+}
+
 inline float length(const CvPoint2D32f& p)
 {
 	return sqrt(p.x*p.x + p.y*p.y);
@@ -67,6 +74,12 @@ struct outlet_tuple_t
 	}
 };
 
+typedef enum
+{
+    outletWhite = 0,
+    outletOrange = 1
+} outlet_color_t;
+
 class outlet_template_t
 {
 public:
@@ -83,10 +96,14 @@ public:
 	~outlet_template_t() 
 	{
 		delete []centers;
+        if(m_base)
+        {
+            delete m_base;
+        }
 	};
 	
 public:
-	void initialize(int count, const CvPoint2D32f* templ)
+	void initialize(int count, const CvPoint2D32f* templ, outlet_color_t outlet_color = outletOrange)
 	{
 		outlet_count = count;
 		centers = new CvPoint2D32f[count];
@@ -98,6 +115,11 @@ public:
 		{
 			set_default_template();
 		}
+        
+        m_base = 0;
+        m_pose_count = 500;
+        m_patch_size = cvSize(12, 12);
+        m_outlet_color = outlet_color;
 	};
 	
 	int get_count() const
@@ -118,12 +140,39 @@ public:
 		centers[3] = cvPoint2D32f(-0.15f, 38.7f);
 	};
     
+    void load_one_way_descriptor_base(CvSize patch_size, int pose_count, const char* train_path, 
+                                  const char* train_config, const char* pca_config)
+    {
+        m_train_path = string(train_path);
+        m_train_config = string(train_config);
+        m_pca_config = string(pca_config);
+        create_one_way_descriptor_base();
+    }
+
+    void create_one_way_descriptor_base()
+    {
+        m_base = new CvOneWayDescriptorBase(m_patch_size, m_pose_count, m_train_path.c_str(), 
+                                            m_train_config.c_str(), m_pca_config.c_str());
+    }
+
+    const CvOneWayDescriptorBase* get_one_way_descriptor_base() const {return m_base;};
+    
+    outlet_color_t get_color() const {return m_outlet_color;};
+    
     void save(const char* filename);
     int load(const char* filename);
 	
 protected:
 	int outlet_count;
 	CvPoint2D32f* centers;
+    CvOneWayDescriptorBase* m_base;
+    
+    string m_train_path;
+    string m_train_config;
+    string m_pca_config;
+    CvSize m_patch_size;
+    int m_pose_count;
+    outlet_color_t m_outlet_color;
 };
 
 typedef struct 

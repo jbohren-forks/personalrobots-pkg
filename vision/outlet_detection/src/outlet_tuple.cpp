@@ -23,6 +23,8 @@ using namespace std;
 #include <highgui.h>
 #include <cvwimage.h>
 
+#include "outlet_detection/one_way_descriptor.h"
+
 const float pi = 3.1415926f;
 
 CvPoint2D32f calc_center(CvSeq* seq)
@@ -839,6 +841,23 @@ void outlet_template_t::save(const char* filename)
         cvWriteReal(fs, buf, centers[i].y);
     }
     
+    cvWriteString(fs, "train path", m_train_path.c_str());
+    cvWriteString(fs, "train config", m_train_config.c_str());
+    cvWriteString(fs, "pca config", m_pca_config.c_str());
+    cvWriteInt(fs, "patch width", m_patch_size.width);
+    cvWriteInt(fs, "patch height", m_patch_size.height);
+    cvWriteInt(fs, "pose count", m_pose_count);
+    
+    if(m_outlet_color == outletWhite)
+    {
+        cvWriteString(fs, "outlet color", "white");
+    }
+    
+    if(m_outlet_color == outletOrange)
+    {
+        cvWriteString(fs, "outlet color", "orange");
+    }
+    
     cvReleaseFileStorage(&fs);
     cvReleaseMemStorage(&storage);
 }
@@ -873,10 +892,64 @@ int outlet_template_t::load(const char* filename)
         _outlet_centers[i].y = cvReadReal(node);
     }
     
+    node = cvGetFileNodeByName(fs, 0, "train path");
+    if(node)
+    {
+        const char* train_path = cvReadString(node);
+        m_train_path = string(train_path);
+    }
+    
+    node = cvGetFileNodeByName(fs, 0, "train config");
+    if(node)
+    {
+        const char* train_config = cvReadString(node);
+        m_train_config = string(train_config);
+    }
+    
+    node = cvGetFileNodeByName(fs, 0, "pca config");
+    if(node)
+    {
+        const char* pca_config = cvReadString(node);
+        m_pca_config = string(pca_config);
+    }
+    
+    node = cvGetFileNodeByName(fs, 0, "patch width");
+    if(node)
+    {
+        m_patch_size.width = cvReadInt(node);
+    }
+    
+    node = cvGetFileNodeByName(fs, 0, "patch height");
+    if(node)
+    {
+        m_patch_size.height = cvReadInt(node);
+    }
+    
+    node = cvGetFileNodeByName(fs, 0, "pose count");
+    if(node)
+    {
+        m_pose_count = cvReadInt(node);
+    }
+    
+    node =cvGetFileNodeByName(fs, 0, "outlet color");
+    if(node)
+    {
+        const char* outlet_color = cvReadString(node);
+        if(strcmp(outlet_color, "white") == 0)
+        {
+            m_outlet_color = outletWhite;
+        }
+        if(strcmp(outlet_color, "orange") == 0)
+        {
+            m_outlet_color = outletOrange;
+        }
+    }
+    
     cvReleaseFileStorage(&fs);
     cvReleaseMemStorage(&storage);
     
     initialize(_outlet_count, _outlet_centers);
+    create_one_way_descriptor_base();
     
     delete [] _outlet_centers;
     
