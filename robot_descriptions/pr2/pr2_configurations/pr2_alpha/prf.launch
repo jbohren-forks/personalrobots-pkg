@@ -56,7 +56,7 @@
   <node machine="three" pkg="dcam" type="stereodcam" respawn="false"/>
   
 <!-- Sound  -->
-  <node pkg="sound_play" type="soundplay.py" machine="four" />
+  <node pkg="sound_play" type="soundplay_node.py" machine="four" />
 
 <!-- Runtime Diagnostics Logging -->
   <node pkg="rosrecord" type="rosrecord" args="-f /hwlog/prf_runtime_automatic /diagnostics" />
