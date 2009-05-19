@@ -1001,6 +1001,7 @@ namespace executive_trex_pr2 {
     approach_pose.position.x = p.x;
     approach_pose.position.y = p.y;
     approach_pose.position.z = 0;
+
     tf::Quaternion q(outlet_info.qx, outlet_info.qy, outlet_info.qz, outlet_info.qw);
     tf::Quaternion q2 = q * tf::Quaternion(M_PI, 0.0, 0.0);
     approach_pose.orientation.x = q2.x();
@@ -1017,11 +1018,16 @@ namespace executive_trex_pr2 {
     approach_pose.position.x = p.x;
     approach_pose.position.y = p.y;
     approach_pose.position.z = 0;
-    // TO DO - Update the orientation to face the door
-    approach_pose.orientation.x = 0;
-    approach_pose.orientation.y = 0;
-    approach_pose.orientation.z = 0;
-    approach_pose.orientation.w = 1;
+
+
+    // Orientation to face the connector
+    robot_msgs::Vector3 orientation;
+    double x, y;
+    TopologicalMapAdapter::instance()->getConnectorPosition(connector_id, x, y);
+    orientation.x = x - p.x;
+    orientation.y = y - p.y;
+    orientation.z = 0;
+    tf::QuaternionTFToMsg(tf::Quaternion(atan2(orientation.y,orientation.x), 0.0, 0.0), approach_pose.orientation);
   }
 
   void TopologicalMapAdapter::observeOutletBlocked(unsigned int outlet_id){
