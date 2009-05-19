@@ -111,8 +111,33 @@ int
   robot_actions::ActionClient<std_msgs::Empty, robot_actions::NoArgumentsActionState, std_msgs::Empty> unplug("unplug");
   robot_actions::ActionClient< robot_msgs::PlugStow, pr2_robot_actions::StowPlugState, std_msgs::Empty> stow_plug("stow_plug");
 
+  Duration(1.0).sleep();
 
-  timeout_short.sleep();
+  tuck_arm.preempt();
+  switch_controllers.preempt();
+  untuck_arm.preempt();
+  detect_plug_on_base.preempt();
+  move_and_grasp_plug.preempt();
+  detect_outlet_fine.preempt();
+  localize_plug_in_gripper.preempt();
+  plug_in.preempt();
+  unplug.preempt();
+  stow_plug.preempt();
+
+
+  Duration(2.0).sleep();
+
+  switchlist.start_controllers.clear();  switchlist.stop_controllers.clear();
+  switchlist.stop_controllers.push_back("laser_tilt_controller");
+  switchlist.stop_controllers.push_back("r_arm_joint_trajectory_controller");
+  switchlist.stop_controllers.push_back("r_arm_hybrid_controller");
+  switchlist.stop_controllers.push_back("r_arm_cartesian_wrench_controller");
+  switchlist.stop_controllers.push_back("r_arm_cartesian_twist_controller");
+  switchlist.stop_controllers.push_back("r_arm_cartesian_pose_controller");
+  switchlist.stop_controllers.push_back("r_arm_cartesian_trajectory_controller");
+  if (switch_controllers.execute(switchlist, empty, timeout_short) != robot_actions::SUCCESS)
+    printf("Taking down controllers kinda sorta failed\n");
+
 #if 0
   // tuck arm
   //  switchlist.start_controllers.clear();  switchlist.stop_controllers.clear();
