@@ -120,8 +120,8 @@ RechargeController::Holds {
     contained_by(recharger.Active rc_active);
 
     // Link to plug and outlet state
-    starts_during(outlet_state.Holds os);
-    starts_during(plug_state.Holds ps);
+    contained_by(outlet_state.Holds os);
+    contained_by(plug_state.Holds ps);
 
     if (finishing == true) {
       if (arms_tucked == true){
@@ -373,7 +373,7 @@ PlugsUntuckArms::Inactive{
 }
 
 StowPlug::Active{
-  starts(plug_state.Holds ps);
+  starts_during(plug_state.Holds ps);
   eq_plug_stow_msg(object, ps.object);
 }
 
