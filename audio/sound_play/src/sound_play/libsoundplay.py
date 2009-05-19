@@ -36,60 +36,73 @@
 
 # Author: Blaise Gassend
 
-import roslib; roslib.load_manifest('sound_play')
 import rospy
 from sound_play.msg import SoundRequest
 
-from sound_play.libsoundplay import SoundHandle
+class SoundHandle:
+    def __init__(self):
+        self.pub = rospy.Publisher('robotsound', SoundRequest)
 
-if __name__ == '__main__':
-    rospy.init_node('soundplay_test', anonymous = True)
-    soundhandle = SoundHandle()
+    def say(self,text):
+        msg = SoundRequest()
+        msg.sound = SoundRequest.SAY
+        msg.command = SoundRequest.PLAY_ONCE
+        msg.arg=text
+        self.pub.publish(msg)
 
-    rospy.sleep(1)
-    
-    soundhandle.stopall()
+    def repeat(self,text):
+        msg = SoundRequest()
+        msg.sound = SoundRequest.SAY
+        msg.command = SoundRequest.PLAY_START
+        msg.arg=text
+        self.pub.publish(msg)
 
-    while not rospy.is_shutdown():
-        soundhandle.playwave('17')
-        soundhandle.playwave('dummy')
-        
-        print 'say'
-        soundhandle.say('Hello world!')
-        rospy.sleep(3)
-        
-        print 'wave'
-        soundhandle.playwave('/usr/share/xemacs21/xemacs-packages/etc/sounds/cuckoo.wav')
+    def stopsayying(self,text):
+        msg = SoundRequest()
+        msg.sound = SoundRequest.SAY
+        msg.command = SoundRequest.PLAY_STOP
+        msg.arg=text
+        self.pub.publish(msg)
 
-        rospy.sleep(3)
-        
-        print 'wave2'
-        soundhandle.playwave('/usr/share/xemacs21/xemacs-packages/etc/sounds/say-beep.wav')
+    def playwave(self,sound):
+        msg = SoundRequest()
+        msg.sound = SoundRequest.PLAY_FILE
+        msg.command = SoundRequest.PLAY_ONCE
+        msg.arg=sound
+        self.pub.publish(msg)
 
-        rospy.sleep(3)
+    def startwave(self,sound):
+        msg = SoundRequest()
+        msg.sound = SoundRequest.PLAY_FILE
+        msg.command = SoundRequest.PLAY_START
+        msg.arg=sound
+        self.pub.publish(msg)
 
-        print 'plugging'
-        soundhandle.play(SoundRequest.NEEDS_PLUGGING)
-        soundhandle.play(SoundRequest.NEEDS_PLUGGING)
+    def stopwave(self,sound):
+        msg = SoundRequest()
+        msg.sound = SoundRequest.PLAY_FILE
+        msg.command = SoundRequest.PLAY_STOP
+        msg.arg=sound
+        self.pub.publish(msg)
 
-        rospy.sleep(2)
+    def play(self,sound):
+        msg = SoundRequest()
+        msg.sound = sound
+        msg.command = SoundRequest.PLAY_ONCE
+        self.pub.publish(msg)
 
-        #start(SoundRequest.BACKINGUP)
+    def start(self,sound):
+        msg = SoundRequest()
+        msg.sound = sound
+        msg.command = SoundRequest.PLAY_START
+        self.pub.publish(msg)
 
-        rospy.sleep(1)
+    def stop(self,sound):
+        msg = SoundRequest()
+        msg.sound = sound
+        msg.command = SoundRequest.PLAY_STOP
+        self.pub.publish(msg)
 
-        print 'unplugging'
-        soundhandle.play(SoundRequest.NEEDS_UNPLUGGING)
+    def stopall(self):
+        self.stop(SoundRequest.ALL)
 
-        rospy.sleep(1)
-        print 'plugging badly'
-        soundhandle.play(SoundRequest.NEEDS_PLUGGING_BADLY)
-        rospy.sleep(1)
-        #stop(SoundRequest.BACKINGUP)
-
-        rospy.sleep(2)
-        print 'unplugging badly'
-        soundhandle.play(SoundRequest.NEEDS_UNPLUGGING_BADLY)
-
-        rospy.sleep(3)
-        

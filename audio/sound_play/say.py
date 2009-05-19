@@ -37,59 +37,26 @@
 # Author: Blaise Gassend
 
 import roslib; roslib.load_manifest('sound_play')
+
 import rospy
 from sound_play.msg import SoundRequest
+
+import sys
 
 from sound_play.libsoundplay import SoundHandle
 
 if __name__ == '__main__':
-    rospy.init_node('soundplay_test', anonymous = True)
+    rospy.init_node('say', anonymous = True)
+    
     soundhandle = SoundHandle()
-
+    
     rospy.sleep(1)
     
-    soundhandle.stopall()
+    s=''
+    for word in sys.argv[1:]:
+        s=s+' '+word
+    print 'Saying "%s".'%s
 
-    while not rospy.is_shutdown():
-        soundhandle.playwave('17')
-        soundhandle.playwave('dummy')
-        
-        print 'say'
-        soundhandle.say('Hello world!')
-        rospy.sleep(3)
-        
-        print 'wave'
-        soundhandle.playwave('/usr/share/xemacs21/xemacs-packages/etc/sounds/cuckoo.wav')
+    soundhandle.say(s)
 
-        rospy.sleep(3)
-        
-        print 'wave2'
-        soundhandle.playwave('/usr/share/xemacs21/xemacs-packages/etc/sounds/say-beep.wav')
-
-        rospy.sleep(3)
-
-        print 'plugging'
-        soundhandle.play(SoundRequest.NEEDS_PLUGGING)
-        soundhandle.play(SoundRequest.NEEDS_PLUGGING)
-
-        rospy.sleep(2)
-
-        #start(SoundRequest.BACKINGUP)
-
-        rospy.sleep(1)
-
-        print 'unplugging'
-        soundhandle.play(SoundRequest.NEEDS_UNPLUGGING)
-
-        rospy.sleep(1)
-        print 'plugging badly'
-        soundhandle.play(SoundRequest.NEEDS_PLUGGING_BADLY)
-        rospy.sleep(1)
-        #stop(SoundRequest.BACKINGUP)
-
-        rospy.sleep(2)
-        print 'unplugging badly'
-        soundhandle.play(SoundRequest.NEEDS_UNPLUGGING_BADLY)
-
-        rospy.sleep(3)
-        
+    rospy.sleep(1)
