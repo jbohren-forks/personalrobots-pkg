@@ -48,9 +48,15 @@ namespace costmap_2d {
   Costmap2DROS::Costmap2DROS(ros::Node& ros_node, TransformListener& tf, string prefix) : ros_node_(ros_node),
   tf_(tf), costmap_(NULL), map_update_thread_(NULL), costmap_publisher_(NULL), stop_updates_(false), initialized_(true), prefix_(prefix){
 
+    std::string map_type;
+    ros_node_.param("~" + prefix + "/costmap/map_type", map_type, std::string("costmap"));
+
     ros_node_.param("~" + prefix + "/costmap/publish_voxel_map", publish_voxel_, false);
-    if(publish_voxel_)
+
+    if(publish_voxel_ && map_type == "voxel")
       ros_node_.advertise<costmap_2d::VoxelGrid>("~" + prefix_ + "/costmap/voxel_grid", 1);
+    else
+      publish_voxel_ = false;
 
     string topics_string;
     //get the topics that we'll subscribe to from the parameter server
@@ -190,9 +196,6 @@ namespace costmap_2d {
     ros_node_.param("~" + prefix + "/costmap/lethal_cost_threshold", temp_lethal_threshold, int(100));
 
     unsigned char lethal_threshold = max(min(temp_lethal_threshold, 255), 0);
-
-    std::string map_type;
-    ros_node_.param("~" + prefix + "/costmap/map_type", map_type, std::string("costmap"));
 
     struct timeval start, end;
     double start_t, end_t, t_diff;
