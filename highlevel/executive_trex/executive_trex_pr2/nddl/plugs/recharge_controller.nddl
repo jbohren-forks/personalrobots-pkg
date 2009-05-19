@@ -13,11 +13,12 @@ class PlugState extends AgentTimeline {
     float x;
     float y;
     float z;
-    defaultOnCommit(frame_id, "base_footprint");
     defaultOnCommit(stowed, true);
+    /**    defaultOnCommit(frame_id, "base_footprint");
     defaultOnCommit(x, 0.0);
     defaultOnCommit(y, 0.0);
     defaultOnCommit(z, 0.0);
+    */
   }
 
   PlugState(){super(Internal, "Holds");}
@@ -34,14 +35,14 @@ class OutletState extends AgentTimeline {
     float qy;
     float qz;
     float qw;
-    defaultOnCommit(frame_id, "base_footprint");
-    defaultOnCommit(x, 3.0);
-    defaultOnCommit(y, 0.0);
-    defaultOnCommit(z, 0.0);
-    defaultOnCommit(qx, 0.0);
-    defaultOnCommit(qy, 0.0);
-    defaultOnCommit(qz, 0.0);
-    defaultOnCommit(qw, 1.0);
+    /*      defaultOnCommit(frame_id, "base_footprint");
+            defaultOnCommit(x, 3.0);
+            defaultOnCommit(y, 0.0);
+            defaultOnCommit(z, 0.0);
+            defaultOnCommit(qx, 0.0);
+            defaultOnCommit(qy, 0.0);
+            defaultOnCommit(qz, 0.0);
+            defaultOnCommit(qw, 1.0); */
 
   }
 

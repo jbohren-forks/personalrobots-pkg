@@ -529,7 +529,7 @@ namespace TREX{
       // Determines the desired base position
       tf::Pose outlet_pose_tf;
       tf::PoseMsgToTF(outletPose, outlet_pose_tf);
-      tf::Pose desi_offset(tf::Quaternion(0,0,0), tf::Vector3(-dist.getSingletonValue(), 0.2, 0.0));
+      tf::Pose desi_offset(tf::Quaternion(0,0,0), tf::Vector3(-dist.getSingletonValue(), 0.0, 0.0));
       tf::Pose target = outlet_pose_tf * desi_offset;
       Pose targetPose;
       tf::PoseTFToMsg(target, targetPose);
