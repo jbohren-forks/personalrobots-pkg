@@ -30,6 +30,7 @@ void initializeOgre()
     if ( !has_plugin_cfg )
     {
       root->loadPlugin( "RenderSystem_GL" );
+      root->loadPlugin( "Plugin_CgProgramManager" );
       root->loadPlugin( "Plugin_OctreeSceneManager" );
       root->loadPlugin( "Plugin_ParticleFX" );
     }

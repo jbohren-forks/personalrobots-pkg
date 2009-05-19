@@ -99,6 +99,8 @@ PointCloud::~PointCloud()
 
   scene_node_->detachObject(this);
   scene_manager_->destroySceneNode( scene_node_->getName() );
+
+  material_->unload();
 }
 
 const Ogre::AxisAlignedBox& PointCloud::getBoundingBox() const

@@ -103,7 +103,7 @@ Shape::~Shape()
 
   scene_manager_->destroyEntity( entity_ );
 
-  material_.setNull();
+  material_->unload();
 }
 
 void Shape::setColor( float r, float g, float b, float a )
