@@ -1,14 +1,15 @@
 <launch>
 <include file="$(find pr2_alpha)/$(env ROBOT).machine" />
 
+<node pkg="mux" type="throttle" args="3.0 /move_base/base_local_planner/costmap/voxel_grid /move_base/base_local_planner/costmap/voxel_grid_throttled" />
 <node pkg="nav" type="move_base" respawn="true" name="move_base" output="screen" machine="three">
   <!--
   <remap from="cmd_vel" to="/bs" />
   -->
   <param name="controller_frequency" value="10.0" />
 
-  <rosparam file="$(find 2dnav_pr2)/config/costmap_common_params.yaml" command="load" ns="navfn" />
-  <rosparam file="$(find 2dnav_pr2)/config/costmap_common_params.yaml" command="load" ns="base_local_planner" />
+  <rosparam file="$(find 2dnav_pr2)/config/voxel_costmap_common_params.yaml" command="load" ns="navfn" />
+  <rosparam file="$(find 2dnav_pr2)/config/voxel_costmap_common_params.yaml" command="load" ns="base_local_planner" />
   <rosparam file="$(find 2dnav_pr2)/move_base/navfn_params.yaml" command="load" />
   <rosparam file="$(find 2dnav_pr2)/move_base/base_local_planner_params.yaml" command="load" />
 </node>
