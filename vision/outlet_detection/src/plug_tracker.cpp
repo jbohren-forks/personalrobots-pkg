@@ -101,7 +101,9 @@ bool PlugTracker::detectObject(tf::Transform &pose)
   // optimization using our rough estimate as the starting point.
 
   // Find rough checkerboard pose
+  //ROS_WARN("Calculating plug pose");
   cvFindExtrinsicCameraParams2(grid_pts_, &img_pts, K_, &D, &R3, &T3, false);
+  //ROS_WARN("Initial: T = (%f, %f, %f), R = (%f, %f, %f)", trans[0], trans[1], trans[2], rot[0], rot[1], rot[2]);
   
   if (roi_policy_ == TargetFrame) {
     // Use target tool frame to inform initial estimate
@@ -129,6 +131,9 @@ bool PlugTracker::detectObject(tf::Transform &pose)
       for (int j = 0; j < 3; ++j)
         rot3x3_arr[3*i + j] = basis[i][j];
     cvRodrigues2(&rot3x3_cv, &R3);
+    //ROS_WARN("Gripper ori: T = (%f, %f, %f), R = (%f, %f, %f)", trans[0], trans[1], trans[2], rot[0], rot[1], rot[2]);
+  } else {
+    ROS_WARN("Not using target frame info, orientation may be bogus");
   }
 
   //static const int RADIUS = 5;
@@ -138,7 +143,7 @@ bool PlugTracker::detectObject(tf::Transform &pose)
   
   // Refine checkerboard pose
   cvFindExtrinsicCameraParams2(grid_pts_, &img_pts, K_, &D, &R3, &T3, true);
-  //ROS_WARN("T = (%f, %f, %f), R = (%f, %f, %f)", trans[0], trans[1], trans[2], rot[0], rot[1], rot[2]);
+  //ROS_WARN("Refined: T = (%f, %f, %f), R = (%f, %f, %f)", trans[0], trans[1], trans[2], rot[0], rot[1], rot[2]);
 
   // Convert from Rodrigues to quaternion
   cvRodrigues2(&R3, &rot3x3_cv);
