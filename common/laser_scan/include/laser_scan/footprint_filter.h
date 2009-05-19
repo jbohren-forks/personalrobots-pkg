@@ -60,9 +60,7 @@ public:
 
   bool configure()
   {
-    ros::NodeHandle n;
-    n.getParam("~inscribed_radius", inscribed_radius_, 0.325);
-    
+    getDoubleParam("inscribed_radius", inscribed_radius_, 0.325);
     return true;
   }
 
@@ -85,7 +83,14 @@ public:
 
     filtered_scan = input_scan ;
     robot_msgs::PointCloud laser_cloud;
+
+    try{
     projector_.transformLaserScanToPointCloud("base_link", laser_cloud, input_scan, tf_);
+    }
+    catch(tf::TransformException& ex){
+      ROS_ERROR("Transform unavailable %s", ex.what());
+      return false;
+    }
 
     int c_idx = indexChannel(laser_cloud);
 
@@ -96,8 +101,10 @@ public:
     
     for (unsigned int i=0; i < laser_cloud.pts.size(); i++)  
     {
-      if (inFootprint(laser_cloud.pts[i]))
-        filtered_scan.ranges[laser_cloud.chan[c_idx].vals[i]] = -1.0 ; // If so, then make it a value bigger than the max range
+      if (inFootprint(laser_cloud.pts[i])){
+        int index = laser_cloud.chan[c_idx].vals[i];
+        filtered_scan.ranges[index] = -1.0 ; // If so, then make it a value bigger than the max range
+      }
     }
     return true;
   }

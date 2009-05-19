@@ -33,6 +33,7 @@
 #include "laser_scan/intensity_filter.h"
 #include "laser_scan/scan_shadows_filter.h"
 #include "laser_scan/footprint_filter.h"
+#include "tf/message_notifier.h"
 
 static std::string median_filter_xml = "<!-- NO FILTER DEFINED-->";
 
@@ -40,29 +41,40 @@ static std::string median_filter_xml = "<!-- NO FILTER DEFINED-->";
 class GenericLaserScanFilterNode 
 {
 public:
-  laser_scan::LaserScan msg;
-
-
-  GenericLaserScanFilterNode(ros::Node& anode) :  filter_chain_(), node_(anode)
+  GenericLaserScanFilterNode(ros::Node& anode) :  filter_chain_(), node_(anode), tf_(node_), notifier_(NULL)
   {
     node_.advertise<laser_scan::LaserScan>("~output", 1000);
+    notifier_ = new tf::MessageNotifier<laser_scan::LaserScan>(&tf_, &node_, 
+        boost::bind(&GenericLaserScanFilterNode::callback, this, _1), "scan_in", "base_link", 50);
+    notifier_->setTolerance(ros::Duration(0.03));
 
     std::string filter_xml;
     node_.param("~filters", filter_xml, std::string("<filters><!--Filter Parameter Not Set--></filters>"));
     ROS_INFO("Got parameter'~filters' as: %s\n", filter_xml.c_str());
     
     filter_chain_.configureFromXMLString(1, filter_xml);
-    node_.subscribe("scan_in", msg, &GenericLaserScanFilterNode::callback,this, 3);
+    //node_.subscribe("scan_in", msg, &GenericLaserScanFilterNode::callback,this, 3);
   }
-  void callback()
+
+  ~GenericLaserScanFilterNode(){
+    if(notifier_)
+      delete notifier_;
+  }
+
+  void callback(const tf::MessageNotifier<laser_scan::LaserScan>::MessagePtr& msg_in)
   {
-    filter_chain_.update (msg, msg);
+    filter_chain_.update (*msg_in, msg);
     node_.publish("~output", msg);
   }
 
 protected:
   filters::FilterChain<laser_scan::LaserScan> filter_chain_;
   ros::Node& node_;
+  tf::TransformListener tf_;
+  tf::MessageNotifier<laser_scan::LaserScan>* notifier_;
+  laser_scan::LaserScan msg;
+
+
 };
 
 int main(int argc, char **argv)

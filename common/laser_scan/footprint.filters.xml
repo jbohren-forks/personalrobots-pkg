@@ -1,4 +1,5 @@
 <filters>
   <filter type="LaserScanFootprintFilter" name="footprint_filter"> 
+    <params inscribed_radius="0.325" />
   </filter>
 </filters>
