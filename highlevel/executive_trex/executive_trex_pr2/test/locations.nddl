@@ -28,3 +28,4 @@ ChargingStation map_outlet_2 = new ChargingStation(29.0, 37.575, 0.3, 0.0, 0.0, 
 
 MAP_KEY outlet_in_phase_space = 1;
 MAP_KEY outlet_in_bryans_office = 3;
+MAP_KEY outlet_in_melonees_office = 6;

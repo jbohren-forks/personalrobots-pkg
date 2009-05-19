@@ -48,6 +48,7 @@ rospack_add_nddl("test/master/master.0/pr2.master.nddl")
 rospack_add_nddl("test/master/master.1/pr2.master.nddl")
 rospack_add_nddl("test/master/master.2/pr2.master.nddl")
 rospack_add_nddl("test/master/master.3/pr2.master.nddl")
+rospack_add_nddl("test/master/master.4/pr2.master.nddl")
 rospack_add_nddl("test/master/m2/pr2.master.nddl")
 
 set(TREX_FILES src/executive.cpp
