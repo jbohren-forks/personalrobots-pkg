@@ -4,10 +4,12 @@ all: installed
 
 GIT_DIR = nevensrc
 GIT_URL = git://android.git.kernel.org/platform/external/neven.git
+GIT_REVISION = 1d07e4cb6f77c0c1994229aa39e978bd3d64ab71
 GIT_PATCH = 64bit.patch
 
 $(GIT_DIR):
 	git clone $(GIT_URL) $(GIT_DIR)
+	cd $(GIT_DIR) && git checkout $(GIT_REVISION)
 	touch rospack_nosubdirs
 
 patched: $(GIT_PATCH) Makefile
