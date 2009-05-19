@@ -160,8 +160,10 @@ void MoveAndGraspPlugAction::graspPlug()
 
 void MoveAndGraspPlugAction::checkGrasp()
 {
-  if (!isActive())
+  if (!isActive()) {
+    node_->unsubscribe(gripper_controller_ + "/state");
     return;
+  }
 
   node_->publish(gripper_controller_ + "/set_command", gripper_cmd_);
 

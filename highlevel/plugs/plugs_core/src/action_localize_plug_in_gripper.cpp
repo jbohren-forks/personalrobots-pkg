@@ -77,7 +77,6 @@ LocalizePlugInGripperAction::LocalizePlugInGripperAction(ros::Node& node) :
 
   //detector_ = new PlugTracker::PlugTracker(node);
   //detector_->deactivate();
-  node_.subscribe("/plug_detector/plug_pose", plug_pose_msg_, &LocalizePlugInGripperAction::setToolFrame, this, 1);
 };
 
 LocalizePlugInGripperAction::~LocalizePlugInGripperAction()
@@ -87,7 +86,7 @@ LocalizePlugInGripperAction::~LocalizePlugInGripperAction()
 
   robot_actions::ResultStatus LocalizePlugInGripperAction::execute(const std_msgs::Empty& empty, std_msgs::Empty& feedback)
 {
-  ROS_DEBUG("%s: executing.", action_name_.c_str());  
+  ROS_DEBUG("%s: executing.", action_name_.c_str());
   //  outlet_pose_ = outlet_pose;
 
   reset();
@@ -98,9 +97,9 @@ LocalizePlugInGripperAction::~LocalizePlugInGripperAction()
 
   ros::Duration d; d.fromSec(0.001);
   while (isActive()) {
-    d.sleep();
     if(ros::Time::now() - started > ros::Duration(15.0))
       deactivate(robot_actions::ABORTED,feedback);
+    d.sleep();
   }
 
   return waitForDeactivation(feedback);
@@ -126,7 +125,7 @@ void LocalizePlugInGripperAction::moveToStage()
   if (!ros::service::call(arm_controller_ + "/move_to", req_pose_, res_pose_))
   {
     ROS_ERROR("%s: Failed to move arm.", action_name_.c_str());
-    ROS_DEBUG("%s: aborted.", action_name_.c_str());  
+    ROS_DEBUG("%s: aborted.", action_name_.c_str());
     deactivate(robot_actions::ABORTED, empty_);
     return;
   }
@@ -173,6 +172,8 @@ void LocalizePlugInGripperAction::moveToStage()
     return;
   }
 
+  node_.subscribe("/plug_detector/plug_pose", plug_pose_msg_, &LocalizePlugInGripperAction::setToolFrame, this, 1);
+
   if (detector_)
     detector_->activate();
   return;
@@ -182,8 +183,10 @@ void LocalizePlugInGripperAction::moveToStage()
 
 void LocalizePlugInGripperAction::setToolFrame()
 {
-  if (!isActive())
+  if (!isActive()) {
+    node_.unsubscribe("/plug_detector/plug_pose");
     return;
+  }
 
   if (isPreemptRequested())
   {
@@ -191,6 +194,7 @@ void LocalizePlugInGripperAction::setToolFrame()
       detector_->deactivate();
     ROS_DEBUG("%s: prempted.", action_name_.c_str());
     deactivate(robot_actions::PREEMPTED, std_msgs::Empty());
+    node_.unsubscribe("/plug_detector/plug_pose");
     return;
   }
   robot_srvs::SetPoseStamped::Request req_tool;
@@ -201,6 +205,7 @@ void LocalizePlugInGripperAction::setToolFrame()
     ROS_ERROR("%s: Failed to set tool frame.", action_name_.c_str());
     ROS_DEBUG("%s: aborted.", action_name_.c_str());
     deactivate(robot_actions::ABORTED, empty_);
+    node_.unsubscribe("/plug_detector/plug_pose");
     return;
   }
 
@@ -208,5 +213,6 @@ void LocalizePlugInGripperAction::setToolFrame()
     detector_->deactivate();
   ROS_INFO("%s: succeeded.", action_name_.c_str());
   deactivate(robot_actions::SUCCESS, empty_);
+  node_.unsubscribe("/plug_detector/plug_pose");
 }
 }
