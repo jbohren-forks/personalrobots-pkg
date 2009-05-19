@@ -94,7 +94,7 @@ private:
 public:
   ProsilicaNode(ros::Node &node)
     : node_(node), cam_(NULL), running_(false),
-      diagnostic_(this, &node_), count_(0),
+      diagnostic_(this, node_), count_(0),
       frames_dropped_total_(0), frames_completed_total_(0),
       frames_dropped_acc_(WINDOW_SIZE),
       frames_completed_acc_(WINDOW_SIZE),
