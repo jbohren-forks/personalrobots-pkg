@@ -23,6 +23,7 @@
   <depend package="robot_pose_ekf"/>
   <depend package="spacenav_node"/>
   <depend package="runtime_monitor"/>
+  <depend package="sound_play"/>
 
   <!-- For testing -->
   <depend package="std_msgs"/>
