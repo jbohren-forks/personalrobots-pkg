@@ -46,7 +46,6 @@ float g_colors_g[] = { 0.0f, 0.0f, 0.0f };
 float g_colors_b[] = { 0.0f, 1.0f, 0.0f };
 float g_colors_a[] = { 0.0f, 0.5f, 1.0f };
 
-visualization_msgs::MarkerArray g_markers;
 std::string g_marker_ns;
 V_Cell g_cells;
 void voxelCallback(const ros::Publisher& pub, const costmap_2d::VoxelGridConstPtr& grid)
@@ -97,48 +96,32 @@ void voxelCallback(const ros::Publisher& pub, const costmap_2d::VoxelGridConstPt
     }
   }
 
-
-  if (g_markers.markers.size() < num_markers)
-  {
-    g_markers.markers.resize(num_markers);
-  }
+  visualization_msgs::Marker m;
+  m.header.frame_id = frame_id;
+  m.header.stamp = stamp;
+  m.ns = g_marker_ns;
+  m.id = 0;
+  m.type = visualization_msgs::Marker::CUBE_LIST;
+  m.action = visualization_msgs::Marker::ADD;
+  m.pose.orientation.w = 1.0;
+  m.scale.x = x_res;
+  m.scale.y = y_res;
+  m.scale.z = z_res;
+  m.color.r = g_colors_r[voxel_grid::MARKED];
+  m.color.g = g_colors_g[voxel_grid::MARKED];
+  m.color.b = g_colors_b[voxel_grid::MARKED];
+  m.color.a = g_colors_a[voxel_grid::MARKED];
+  m.points.resize(num_markers);
   for (uint32_t i = 0; i < num_markers; ++i)
   {
-    visualization_msgs::Marker& m = g_markers.markers[i];
     Cell& c = g_cells[i];
-    m.header.frame_id = frame_id;
-    m.header.stamp = stamp;
-    m.ns = g_marker_ns;
-    m.id = i;
-    m.type = visualization_msgs::Marker::CUBE;
-    m.action = visualization_msgs::Marker::ADD;
-    m.pose.position.x = c.x;
-    m.pose.position.y = c.y;
-    m.pose.position.z = c.z;
-    m.pose.orientation.x = 0.0;
-    m.pose.orientation.y = 0.0;
-    m.pose.orientation.z = 0.0;
-    m.pose.orientation.w = 1.0;
-    m.scale.x = x_res;
-    m.scale.y = y_res;
-    m.scale.z = z_res;
-
-    m.color.r = g_colors_r[c.status];
-    m.color.g = g_colors_g[c.status];
-    m.color.b = g_colors_b[c.status];
-    m.color.a = g_colors_a[c.status];
+    robot_msgs::Point& p = m.points[i];
+    p.x = c.x;
+    p.y = c.y;
+    p.z = c.z;
   }
 
-  // Delete old markers
-  for (uint32_t i = num_markers; i < g_markers.markers.size(); ++i)
-  {
-    visualization_msgs::Marker& m = g_markers.markers[i];
-    m.action = visualization_msgs::Marker::DELETE;
-  }
-
-  pub.publish(g_markers);
-
-  g_markers.markers.resize(num_markers);
+  pub.publish(m);
 
   ros::WallTime end = ros::WallTime::now();
   ROS_DEBUG("Published %d markers in %f seconds", num_markers, (end - start).toSec());
@@ -151,7 +134,7 @@ int main(int argc, char** argv)
 
   ROS_DEBUG("Startup");
 
-  ros::Publisher pub = n.advertise<visualization_msgs::MarkerArray>("visualization_marker_array", 1);
+  ros::Publisher pub = n.advertise<visualization_msgs::Marker>("visualization_marker", 1);
   ros::Subscriber sub = n.subscribe<costmap_2d::VoxelGrid>("voxel_grid", 1, boost::bind(voxelCallback, pub, _1));
   g_marker_ns = n.mapName("voxel_grid");
 
