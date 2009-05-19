@@ -110,9 +110,9 @@ bool PlugTracker::detectObject(tf::Transform &pose)
     }
     tf::Transform target_tf;
     tf::PoseMsgToTF(target, target_tf);
-
+    
     // Transform to OpenCV coordinate system
-    target_tf *= camera_in_cvcam_.inverse();
+    target_tf = camera_in_cvcam_.inverse() * target_tf * plug_in_board_.inverse();
     trans[0] = target_tf.getOrigin().x();
     trans[1] = target_tf.getOrigin().y();
     trans[2] = target_tf.getOrigin().z();
