@@ -43,6 +43,7 @@
 #include <image_msgs/CamInfo.h>
 #include <image_msgs/FillImage.h>
 #include <diagnostic_updater/diagnostic_updater.h>
+#include <diagnostic_updater/update_functions.h>
 #include <robot_mechanism_controllers/SetWaveform.h>
 #include <robot_mechanism_controllers/trigger_controller.h>
 #include <stdlib.h>
@@ -50,7 +51,6 @@
 #include <math.h>
 
 #include <boost/tokenizer.hpp>
-#include <boost/format.hpp>
 
 #include "pr2lib.h"
 #include "host_netutil.h"
@@ -202,19 +202,19 @@ private:
   
   boost::mutex diagnostics_lock_;
 
-  std::string mac_;
+  unsigned char mac_[6];
   std::string trig_controller_;
   std::string trig_controller_cmd_;
   std::string ip_address_;
   std::string if_name_;
-  std::string serial_number_;
+  int serial_number_;
   std::string hwinfo_;
   std::string mode_name_;
   controller::trigger_configuration trig_req_;
   robot_mechanism_controllers::SetWaveform::Response trig_rsp_;
 
-  DiagnosticUpdater<ForearmNode> diagnostic_;
-  int count_;
+  diagnostic_updater::Updater<ForearmNode> diagnostic_;
+  diagnostic_updater::FrequencyStatus freq_diag_;
 
   FrameTimeFilter frameTimeFilter_;
   
@@ -226,7 +226,7 @@ public:
 
   ForearmNode(ros::Node &node)
     : node_(node), camera_(NULL), started_video_(false),
-      diagnostic_(this, &node_), count_(0)
+      diagnostic_(this, ros::NodeHandle()), freq_diag_(desired_freq_, 0.05)
   {
     exit_status_ = 0;
     misfire_blank_ = 0;
@@ -303,9 +303,9 @@ public:
 
     if (node_.ok())
     {
-      diagnostic_.addUpdater( &ForearmNode::freqStatus );
-      diagnostic_.addUpdater( &ForearmNode::linkStatus );
-
+      freq_diag_.clear(); // Avoids having an error until the window fills up.
+      diagnostic_.add(&ForearmNode::freqStatus );
+      diagnostic_.add(&ForearmNode::linkStatus );
       diagnostic_thread_ = new boost::thread( boost::bind(&ForearmNode::diagnosticsLoop, this) );
     }
   }
@@ -469,11 +469,9 @@ public:
     ROS_INFO("Configured camera, S/N #%u, IP address %s",
              camera_->serial, ip_address.c_str());
       
-    serial_number_ = str(boost::format("%i") % camera_->serial);
+    serial_number_ = camera_->serial;
     hwinfo_ = camera_->hwinfo;
-    mac_ = str(boost::format("%02X:%02X:%02X:%02X:%02X:%02X")% 
-        (int) camera_->mac[0] % (int) camera_->mac[1] % (int) camera_->mac[2]% 
-        (int) camera_->mac[3] % (int) camera_->mac[4] % (int) camera_->mac[5] );
+    memcpy(mac_, camera_->mac, sizeof(mac_));
 
     // We are going to receive the video on this host, so we need our own MAC address
     if ( wgEthGetLocalMac(camera_->ifName, &localMac_) != 0 ) {
@@ -622,80 +620,39 @@ public:
     ROS_DEBUG("Image thread exiting.");
   }
 
-  void freqStatus(robot_msgs::DiagnosticStatus& status)
+  void freqStatus(diagnostic_updater::DiagnosticStatusWrapper& status)
   {
-    status.name = "Frequency Status";
+    freq_diag_.update(status);
 
-    double freq = count_/diagnostic_.getPeriod();
-
-    if (freq < (.9*desired_freq_))
-    {
-      status.level = 2;
-      status.message = "Desired frequency not met";
-    }
-    else
-    {
-      status.level = 0;
-      status.message = "Desired frequency met";
-    }
-
-    status.set_values_size(4);
-    status.values[0].label = "Images in interval";
-    status.values[0].value = count_;
-    status.values[1].label = "Desired frequency";
-    status.values[1].value = desired_freq_;
-    status.values[2].label = "Actual frequency";
-    status.values[2].value = freq;
-    status.values[3].label = "Free-running frequency";
-    status.values[3].value = imager_freq_;
-    status.set_strings_size(2);
-    status.strings[0].label = "External trigger controller";
-    status.strings[0].value = trig_controller_;
-    status.strings[1].label = "Trigger mode";
-    status.strings[1].value = ext_trigger_ ? "external" : "internal";
-
-    count_ = 0;
+    status.addv("Free-running frequency", imager_freq_);
+    status.adds("External trigger controller", trig_controller_);
+    status.adds("Trigger mode", ext_trigger_ ? "external" : "internal");
   }
 
-  void linkStatus(robot_msgs::DiagnosticStatus& status)
+  void linkStatus(diagnostic_updater::DiagnosticStatusWrapper& stat)
   {
-    status.name = "Link Status";
+    stat.name = "Link Status";
 
     if (ros::Time::now().toSec() - last_image_time_ > 5 / desired_freq_)
     {
-      status.level = 2;
-      status.message = "Next frame is past due.";
+      stat.summary(2, "Next frame is past due.");
     }
     else
     {
-      status.level = 0;
-      status.message = "Frames are streaming.";
+      stat.summary(0, "Frames are streaming.");
     }
     
-    status.set_values_size(3);
-    status.values[0].label = "Missing image line frames";
-    status.values[0].value = missed_line_count_;
-    status.values[1].label = "Missing EOF frames";
-    status.values[1].value = missed_eof_count_;
-    status.values[2].label = "First packet offset";
-    status.values[2].value = first_packet_offset_;
-    status.set_strings_size(8);
-    status.strings[0].label = "Interface";
-    status.strings[0].value = if_name_;
-    status.strings[1].label = "Camera IP";
-    status.strings[1].value = ip_address_;
-    status.strings[2].label = "Camera Serial #";
-    status.strings[2].value = serial_number_;
-    status.strings[3].label = "Camera Hardware";
-    status.strings[3].value = hwinfo_;
-    status.strings[4].label = "Camera MAC";
-    status.strings[4].value = mac_;
-    status.strings[5].label = "Image mode";
-    status.strings[5].value = mode_name_;
-    status.strings[6].label = "Latest frame time";
-    status.strings[6].value = str(boost::format("%f")%last_image_time_);
-    status.strings[6].label = "Latest frame #";
-    status.strings[6].value = str(boost::format("%d")%last_frame_number_);
+    stat.addv("Missing image line frames", missed_line_count_);
+    stat.addv("Missing EOF frames", missed_eof_count_);
+    stat.addv("First packet offset", first_packet_offset_);
+    stat.adds("Interface", if_name_);
+    stat.adds("Camera IP", ip_address_);
+    stat.adds("Camera Serial #", serial_number_);
+    stat.adds("Camera Hardware", hwinfo_);
+    stat.addsf("Camera MAC", "%02X:%02X:%02X:%02X:%02X:%02X", mac_[0], mac_[1], mac_[2], mac_[3], mac_[4], mac_[5]);
+    stat.adds("Image mode", mode_name_);
+    stat.addsf("Latest frame time", "%f", last_image_time_);
+    stat.adds("Latest frame #", last_frame_number_);
   }
 
 private:
@@ -709,6 +666,7 @@ private:
       cam_info_.header.stamp = t;
       node_.publish("~cam_info", cam_info_);
     }
+    freq_diag_.tick();
   }
   
   double getTriggeredFrameTime(double firstPacketTime)
@@ -826,7 +784,6 @@ private:
     last_image_time_ = imageTime;
     last_frame_number_ = frame_info->frame_number;
     publishImage(frame_info->width, frame_info->height, frame_info->frameData, ros::Time(imageTime));
-    count_++;
   
     return 0;
   }
