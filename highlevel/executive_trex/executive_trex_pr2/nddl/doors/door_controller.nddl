@@ -407,8 +407,6 @@ CheckPath::Inactive{
     starts(door_controller.Holds dc);
     eq(dc.doorway_clear, is_clear);
     eq(dc.check_doorway, false);
-    // This will force us to be finishing if the doorway is clear, but not impact it otherwise.
-    leq(is_clear, dc.finishing);
   }
 }
 
