@@ -63,7 +63,7 @@ namespace nav
     ros_node_.param("~yaw_goal_tolerance", yaw_goal_tolerance_, 0.1);
     ros_node_.param("~diagnostics_expected_publish_time",diagnostics_expected_publish_time_,0.2);
     ros_node_.param("~control_topic_name", control_topic_name_, std::string("/base/trajectory_controller/command"));
-    ros_node_.param("~action_max_allowed_time", action_max_allowed_time_,30.0);
+    ros_node_.param("~action_max_allowed_time", action_max_allowed_time_,5.0);
 
     //for display purposes
     ros_node_.advertise<visualization_msgs::Polyline>("~gui_path", 1);

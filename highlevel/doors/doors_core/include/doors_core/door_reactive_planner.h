@@ -153,6 +153,8 @@ namespace door_reactive_planner
 
     double centerline_angle_; /**< Angle that the normal to the door makes in the path_frame when the door is closed */
 
+    double travel_angle_; /**< Angle that the normal to the door makes in the path_frame when the door is closed */
+
     pr2_robot_actions::Pose2D goal_; /**< Goal position on the other side of the doorway */
 
       pr2_robot_actions::Pose2D carrot_;

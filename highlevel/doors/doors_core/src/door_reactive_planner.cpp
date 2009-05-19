@@ -109,6 +109,7 @@ void DoorReactivePlanner::setDoor(door_msgs::Door door_msg_in, const pr2_robot_a
   KDL::Vector tmp_normal = getFrameNormal(door);
   
   centerline_angle_ = atan2(tmp_normal(1),tmp_normal(0));  
+  travel_angle_ = centerline_angle_;
   double centerline_angle_m_pi = angles::normalize_angle(centerline_angle_ + M_PI);
 
   if(fabs(angles::shortest_angular_distance(centerline_angle_m_pi,position.th)) < fabs(angles::shortest_angular_distance(centerline_angle_,position.th)))
@@ -227,7 +228,7 @@ void DoorReactivePlanner::getFinalPosition(const pr2_robot_actions::Pose2D &curr
     explore_distance = 0.0;
   }
 
-  global_explore_angle = centerline_angle_ + delta_angle;
+  global_explore_angle = travel_angle_ + delta_angle;
   end_position.x = current_position.x + cos(global_explore_angle) * explore_distance;
   end_position.y = current_position.y + sin(global_explore_angle) * explore_distance;
   end_position.th = centerline_angle_;
@@ -427,7 +428,7 @@ void DoorReactivePlanner::checkPath(const std::vector<pr2_robot_actions::Pose2D>
       ROS_DEBUG("Point %d: position: %f, %f, %f is not in collision",i,out_pose.x,out_pose.y,out_pose.th);
       continue;
     }
-    ROS_INFO("Point %d: position: %f, %f, %f is in collision with cost %f which is greater than: %f",i,out_pose.x,out_pose.y,out_pose.th,cost,max_inflated_cost_);
+    ROS_DEBUG("Point %d: position: %f, %f, %f is in collision with cost %f which is greater than: %f",i,out_pose.x,out_pose.y,out_pose.th,cost,max_inflated_cost_);
       }
     else
       {

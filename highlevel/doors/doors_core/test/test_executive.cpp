@@ -106,7 +106,7 @@ int
   Duration timeout_medium = Duration().fromSec(10.0);
   Duration timeout_long = Duration().fromSec(40.0);
 
-  robot_actions::ActionClient<std_msgs::Empty, robot_actions::NoArgumentsActionState, std_msgs::Empty> tuck_arm("doors_tuck_arms");
+  robot_actions::ActionClient<std_msgs::Empty, robot_actions::NoArgumentsActionState, std_msgs::Empty> tuck_arm("safety_tuck_arms");
   robot_actions::ActionClient<pr2_robot_actions::SwitchControllers, pr2_robot_actions::SwitchControllersState,  std_msgs::Empty> switch_controllers("switch_controllers");
   robot_actions::ActionClient<door_msgs::Door, pr2_robot_actions::DoorActionState, door_msgs::Door> detect_door("detect_door");
   robot_actions::ActionClient<door_msgs::Door, pr2_robot_actions::DoorActionState, door_msgs::Door> detect_handle("detect_handle");
@@ -120,6 +120,7 @@ int
   robot_actions::ActionClient<robot_msgs::PoseStamped, nav_robot_actions::MoveBaseState, robot_msgs::PoseStamped> move_base_local("move_base_local");
 
   door_msgs::Door tmp_door;
+  door_msgs::Door backup_door;
 
   cout << "before " << door << endl;
 
@@ -208,12 +209,16 @@ int
 					   &open_door, door, tmp_door, timeout_long));
   }    
 
+  bool move_thru_success = true;
   // move throught door
   pr2_robot_actions::Pose2D pose2d;
   switchlist.start_controllers.clear();  switchlist.stop_controllers.clear();
   if (switch_controllers.execute(switchlist, empty, timeout_short) != robot_actions::SUCCESS) return -1;
-  if (move_base_door.execute(door, tmp_door) != robot_actions::SUCCESS) return -1;
-
+  if (move_base_door.execute(door, tmp_door) != robot_actions::SUCCESS) 
+    {
+      move_thru_success = false;
+      backup_door = door;
+    };
   // preempt open/push door
   if (open_by_pushing)
     push_door.preempt();
@@ -221,6 +226,7 @@ int
     open_door.preempt();
   thread->join();
   delete thread;
+
 
   // release handle
   if (!open_by_pushing){
@@ -242,6 +248,15 @@ int
   switchlist.start_controllers.push_back("r_arm_joint_trajectory_controller");
   if (switch_controllers.execute(switchlist, empty, timeout_medium) != robot_actions::SUCCESS) return -1;
   if (tuck_arm.execute(empty, empty, timeout_medium) != robot_actions::SUCCESS) return -1;
+
+  if(!move_thru_success)
+  {
+    cout  << "using door for backup" << endl << backup_door << endl;
+    backup_door.travel_dir.x = -1.0;
+    backup_door.travel_dir.y = 0.0;
+    if (move_base_door.execute(backup_door, tmp_door) != robot_actions::SUCCESS)
+      return -1;
+  }
 
   // stop remaining controllers
   switchlist.start_controllers.clear();  switchlist.stop_controllers.clear();
