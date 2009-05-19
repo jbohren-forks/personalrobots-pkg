@@ -37,8 +37,8 @@ PlugTracker::PlugTracker(ros::Node &node)
   int j = 0;
   for (int y = 0; y < board_h_; ++y) {
     for (int x = 0; x < board_w_; ++x) {
-      cvSetReal2D(grid_pts_, j, 0, -x*square_size);
-      cvSetReal2D(grid_pts_, j, 1, -y*square_size);
+      cvSetReal2D(grid_pts_, j, 0, x*square_size);
+      cvSetReal2D(grid_pts_, j, 1, y*square_size);
       cvSetReal2D(grid_pts_, j, 2, 0.0);
       ++j;
     }
