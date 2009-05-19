@@ -37,8 +37,8 @@ PlugTracker::PlugTracker(ros::Node &node)
   int j = 0;
   for (int y = 0; y < board_h_; ++y) {
     for (int x = 0; x < board_w_; ++x) {
-      cvSetReal2D(grid_pts_, j, 0, x*square_size);
-      cvSetReal2D(grid_pts_, j, 1, y*square_size);
+      cvSetReal2D(grid_pts_, j, 0, -x*square_size);
+      cvSetReal2D(grid_pts_, j, 1, -y*square_size);
       cvSetReal2D(grid_pts_, j, 2, 0.0);
       ++j;
     }
@@ -79,11 +79,6 @@ bool PlugTracker::detectObject(tf::Transform &pose)
                                    CV_CALIB_CB_ADAPTIVE_THRESH) )
     return false;
 
-  //static const int RADIUS = 5;
-  static const int RADIUS = 11;
-  cvFindCornerSubPix(image, &corners_[0], ncorners_, cvSize(RADIUS,RADIUS), cvSize(-1,-1),
-                     cvTermCriteria(CV_TERMCRIT_EPS | CV_TERMCRIT_ITER, 30, 0.1));
-
   double rot[3], trans[3];
   CvMat R3, T3, D, img_pts;
   cvInitMatHeader(&R3, 3, 1, CV_64FC1, rot);
@@ -96,9 +91,20 @@ bool PlugTracker::detectObject(tf::Transform &pose)
   CvMat rot3x3_cv;
   cvInitMatHeader(&rot3x3_cv, 3, 3, CV_64FC1, rot3x3_arr);
 
-  bool use_estimate = false;
+  // Determining the pose of a checkerboard with so few and such small squares is a poorly
+  // conditioned problem, so we take some extra precautions against instability.
+  // We do a rough estimate without subpixel refinement of the corners, which seems to
+  // contribute to the instability. This gives a reliable position, but the orientation
+  // may still be wrong due to ambiguity. If TF information from a target frame is
+  // available, we substitute the orientation of the target frame in our estimate.
+  // Then we refine our estimate by finding subpixel corners and repeating the pose
+  // optimization using our rough estimate as the starting point.
+
+  // Find rough checkerboard pose
+  cvFindExtrinsicCameraParams2(grid_pts_, &img_pts, K_, &D, &R3, &T3, false);
+  
   if (roi_policy_ == TargetFrame) {
-    // Use target tool frame as initial estimate
+    // Use target tool frame to inform initial estimate
     robot_msgs::Pose target;
     try {
       target = getTargetInHighDef();
@@ -113,9 +119,9 @@ bool PlugTracker::detectObject(tf::Transform &pose)
     
     // Transform to OpenCV coordinate system
     target_tf = camera_in_cvcam_.inverse() * target_tf * plug_in_board_.inverse();
-    trans[0] = target_tf.getOrigin().x();
-    trans[1] = target_tf.getOrigin().y();
-    trans[2] = target_tf.getOrigin().z();
+    //trans[0] = target_tf.getOrigin().x();
+    //trans[1] = target_tf.getOrigin().y();
+    //trans[2] = target_tf.getOrigin().z();
 
     // Convert to Rodrigues rotation
     btMatrix3x3 &basis = target_tf.getBasis();
@@ -123,12 +129,16 @@ bool PlugTracker::detectObject(tf::Transform &pose)
       for (int j = 0; j < 3; ++j)
         rot3x3_arr[3*i + j] = basis[i][j];
     cvRodrigues2(&rot3x3_cv, &R3);
-
-    use_estimate = true;
   }
+
+  //static const int RADIUS = 5;
+  static const int RADIUS = 11;
+  cvFindCornerSubPix(image, &corners_[0], ncorners_, cvSize(RADIUS,RADIUS), cvSize(-1,-1),
+                     cvTermCriteria(CV_TERMCRIT_EPS | CV_TERMCRIT_ITER, 30, 0.1));
   
-  // Find checkerboard pose
-  cvFindExtrinsicCameraParams2(grid_pts_, &img_pts, K_, &D, &R3, &T3, use_estimate);
+  // Refine checkerboard pose
+  cvFindExtrinsicCameraParams2(grid_pts_, &img_pts, K_, &D, &R3, &T3, true);
+  //ROS_WARN("T = (%f, %f, %f), R = (%f, %f, %f)", trans[0], trans[1], trans[2], rot[0], rot[1], rot[2]);
 
   // Convert from Rodrigues to quaternion
   cvRodrigues2(&R3, &rot3x3_cv);
