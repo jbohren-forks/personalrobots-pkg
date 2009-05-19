@@ -91,7 +91,8 @@ robot_actions::ResultStatus PushDoorAction::execute(const door_msgs::Door& goal,
   
   // angle step
   Duration sleep_time(0.01);
-  double angle_step, angle=0;
+  double angle_step = 0;
+  Stamped<Pose> shoulder_pose; tf_.lookupTransform("r_shoulder_pan_link", goal_tr.header.frame_id, Time(), shoulder_pose);
   if (goal_tr.rot_dir == door_msgs::Door::ROT_DIR_CLOCKWISE)
     angle_step = -push_vel*sleep_time.toSec();
   else if (goal_tr.rot_dir == door_msgs::Door::ROT_DIR_COUNTERCLOCKWISE)
@@ -104,6 +105,7 @@ robot_actions::ResultStatus PushDoorAction::execute(const door_msgs::Door& goal,
   // push door
   Stamped<Pose> gripper_pose;
   robot_msgs::PoseStamped gripper_pose_msg;
+  double angle = getNearestDoorAngle(shoulder_pose, goal_tr, 0.75, push_dist);
   while (!isPreemptRequested()){
     // define griper pose
     gripper_pose = getGripperPose(goal_tr, angle, push_dist);

@@ -67,7 +67,7 @@ TouchDoorAction::~TouchDoorAction()
 
 robot_actions::ResultStatus TouchDoorAction::execute(const door_msgs::Door& goal, door_msgs::Door& feedback)
 {
-  ROS_INFO("TouchDoorAction: execute");
+  ROS_INFO("execute");
  
   // set default feedback
   feedback = goal;
@@ -75,14 +75,14 @@ robot_actions::ResultStatus TouchDoorAction::execute(const door_msgs::Door& goal
   // transform door message to time fixed frame
   door_msgs::Door goal_tr;
   if (!transformTo(tf_, fixed_frame, goal, goal_tr, fixed_frame)){
-    ROS_ERROR("TouchDoorAction: Could not tranform door message from '%s' to '%s' at time %f",
+    ROS_ERROR("Could not tranform door message from '%s' to '%s' at time %f",
 	      goal.header.frame_id.c_str(), fixed_frame.c_str(), goal.header.stamp.toSec());
     return robot_actions::ABORTED;
   }
 
   // check for preemption
   if (isPreemptRequested()) {
-    ROS_ERROR("TouchDoorAction: preempted");
+    ROS_ERROR("preempted");
     return robot_actions::PREEMPTED;
   }
 
@@ -91,20 +91,29 @@ robot_actions::ResultStatus TouchDoorAction::execute(const door_msgs::Door& goal
   gripper_msg.data = -20.0;
   node_.publish("r_gripper_effort_controller/command", gripper_msg);
   
-  // move gripper in front of door
-  //Stamped<Pose> gripper_pose = getGripperPose(goal_tr, getDoorAngle(goal_tr), touch_dist);
-  Stamped<Pose> gripper_pose = getGripperPose(goal_tr, 0.0, touch_dist);
+  // get gripper position that is feasable for the robot arm
+  Stamped<Pose> shoulder_pose; tf_.lookupTransform("r_shoulder_pan_link", goal_tr.header.frame_id, Time(), shoulder_pose);
+  double angle = getNearestDoorAngle(shoulder_pose, goal_tr, 0.75, touch_dist);
+  if (fabs(angle) > fabs(getDoorAngle(goal_tr))){
+    ROS_ERROR("Door touch pose for the gripper is inside the door");
+    return robot_actions::ABORTED;
+  }
+  Stamped<Pose> gripper_pose = getGripperPose(goal_tr, getNearestDoorAngle(shoulder_pose, goal_tr, 0.75, touch_dist), touch_dist);
   gripper_pose.stamp_ = Time::now();
   PoseStampedTFToMsg(gripper_pose, req_moveto.pose);
+  req_moveto.tolerance.vel.x = 0.1;
+  req_moveto.tolerance.vel.y = 0.1;
+  req_moveto.tolerance.vel.z = 0.1;
 
-  ROS_INFO("TouchDoorAction: move to touch the door at distance %f from hinge", touch_dist);
+  // move gripper in front of door
+  ROS_INFO("move to touch the door at distance %f from hinge", touch_dist);
   if (!ros::service::call("r_arm_cartesian_trajectory_controller/move_to", req_moveto, res_moveto)){
     if (isPreemptRequested()){
-      ROS_ERROR("TouchDoorAction: preempted");
+      ROS_ERROR("preempted");
       return robot_actions::PREEMPTED;
     }
     else{
-      ROS_ERROR("TouchDoorAction: move_to command failed");
+      ROS_ERROR("move_to command failed");
       return robot_actions::ABORTED;
     }
   }
