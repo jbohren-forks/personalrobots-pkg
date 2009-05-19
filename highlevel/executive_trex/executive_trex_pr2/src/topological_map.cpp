@@ -124,7 +124,7 @@ namespace executive_trex_pr2 {
      _qy(static_cast<IntervalDomain&>(getCurrentDomain(variables[4]))),
      _qz(static_cast<IntervalDomain&>(getCurrentDomain(variables[5]))),
      _qw(static_cast<IntervalDomain&>(getCurrentDomain(variables[6]))),
-     _outlet(static_cast<IntervalIntDomain&>(getCurrentDomain(variables[7]))){
+     _outlet_id(static_cast<IntervalIntDomain&>(getCurrentDomain(variables[7]))){
     checkError(variables.size() == 8, "Invalid signature for " << name.toString() << ". Check the constraint signature in the model.");
     checkError(TopologicalMapAdapter::instance() != NULL, "Failed to allocate topological map accessor. Some configuration error.");
   }
@@ -135,34 +135,34 @@ namespace executive_trex_pr2 {
   void MapGetOutletApproachPoseConstraint::handleExecute(){
 
     // Wait till inputs are bound.
-    if(!_outlet.isSingleton())
+    if(!_outlet_id.isSingleton())
       return;
 
     // If outlet id is 0 then skip.
-    if(_outlet.getSingletonValue() == 0){
-      debugMsg("map:get_outlet_appoach_pose", "Ignoring outlet id since it is a NO_KEY");
+    if(_outlet_id.getSingletonValue() == 0){
+      debugMsg("map:get_appoach_pose", "Ignoring outlet id since it is a NO_KEY");
       return;
     }
 
-    debugMsg("map:get_outlet_appoach_pose",  "BEFORE: "  << TREX::timeString() << toString());
+    debugMsg("map:get_appoach_pose",  "BEFORE: "  << TREX::timeString() << toString());
 
     try{
-      robot_msgs::Pose outlet_pose;
-      TopologicalMapAdapter::instance()->getOutletApproachPose(_outlet.getSingletonValue(), outlet_pose);
-      _x.set(outlet_pose.position.x);
-      _y.set(outlet_pose.position.y);
-      _z.set(outlet_pose.position.z);
-      _qx.set(outlet_pose.orientation.x);
-      _qy.set(outlet_pose.orientation.y);
-      _qz.set(outlet_pose.orientation.z);
-      _qw.set(outlet_pose.orientation.w);
+      robot_msgs::Pose pose;
+      TopologicalMapAdapter::instance()->getOutletApproachPose(_outlet_id.getSingletonValue(), pose);
+      _x.set(pose.position.x);
+      _y.set(pose.position.y);
+      _z.set(pose.position.z);
+      _qx.set(pose.orientation.x);
+      _qy.set(pose.orientation.y);
+      _qz.set(pose.orientation.z);
+      _qw.set(pose.orientation.w);
     }
     catch(...){
-      debugMsg("trex:warning", "Invalid outlet id (" << _outlet.getSingletonValue() << ")");
-      _outlet.empty();
+      debugMsg("trex:warning", "Invalid outlet id (" << _outlet_id.getSingletonValue() << ")");
+      _outlet_id.empty();
     }
 
-    debugMsg("map:get_outlet_approach_pose",  "AFTER: "  << TREX::timeString() << toString());
+    debugMsg("map:get_approach_pose",  "AFTER: "  << TREX::timeString() << toString());
   }
 
   //*******************************************************************************************
@@ -231,14 +231,11 @@ namespace executive_trex_pr2 {
   //*******************************************************************************************
   void MapGetNextMoveConstraint::handleExecute(){
 
-    debugMsg("map:get_next_move",  "BEFORE: "  << TREX::timeString() << toString());
-
     // Wait till inputs are bound. 
     if(!_current_x.isSingleton() || !_current_y.isSingleton() || !_target_x.isSingleton() || !_target_y.isSingleton()) {
       debugMsg("map:get_next_move",  "Exiting as inputs are not all bound");
       return;
     }
-
 
 
     // If ouputs are already bound, then do nothing
@@ -248,7 +245,9 @@ namespace executive_trex_pr2 {
       return;
     }
 
-    // Get next move by evaluating all options
+    debugMsg("map:get_next_move",  "BEFORE: "  << TREX::timeString() << toString());
+
+    // Get next move by evaluating all options. This will be the lowest cost
     double lowest_cost = PLUS_INFINITY;
     double next_x(0.0), next_y(0.0);
 
@@ -273,8 +272,7 @@ namespace executive_trex_pr2 {
       return;
     }
 
-    // If the source point and final point can be connected without traversing a region then we consider an option of going
-    // directly to the point rather than thru a connector.
+    // If the source point and final point can be connected without traversing a region then we select based on that
     if(this_region == final_region){
       lowest_cost = TopologicalMapAdapter::instance()->cost(current_x, current_y, target_x, target_y);
       next_x = target_x;
@@ -282,31 +280,30 @@ namespace executive_trex_pr2 {
       debugMsg("map:get_next_move",  "Including going directly to target since current and target are in the same region. Cost is: " << lowest_cost);
     }
 
-    std::vector< std::pair<topological_map::ConnectorId, double> > connector_cost_pairs;
-    ros::Time before = ros::Time::now();
-    TopologicalMapAdapter::instance()->getConnectorCosts(current_x, current_y, target_x, target_y, connector_cost_pairs);
-    ros::Duration elapsed = ros::Time::now() - before;
-    debugMsg("map:get_next_move", "connection_cost_latency is " << elapsed.toSec());
+    unsigned int next_connector = TopologicalMapAdapter::instance()->getNextConnector(current_x, current_y, target_x, target_y, lowest_cost, next_x, next_y);
 
-    for(std::vector< std::pair<topological_map::ConnectorId, double> >::const_iterator it = connector_cost_pairs.begin(); it != connector_cost_pairs.end(); ++it){
-      if(it->second < lowest_cost){
-	// Now prune this candidate if it is the current point
-	double candidate_x(0.0), candidate_y(0.0);
-	TopologicalMapAdapter::instance()->getConnectorPosition(it->first, candidate_x, candidate_y);
-	if(fabs(candidate_x - current_x) < 0.10 && fabs(candidate_y - current_y) < 0.10)
-	  continue;
-	else{
-	  next_x = candidate_x;
-	  next_y = candidate_y;
-	  lowest_cost = it->second;
-	}
-      }
-    }
-
-    if(lowest_cost == PLUS_INFINITY){
+    // If there is no next connector, and this_region != final_region, the move is infeasible
+    if(next_connector == 0 && this_region != final_region){
       _thru_doorway.empty();
       debugMsg("map:get_next_move",  "Exiting since there is no move available.");
       return;
+    }
+
+    bool thru_doorway = TopologicalMapAdapter::instance()->isDoorway(current_x, current_y, next_x, next_y);
+
+    // If not a doorway, and not the final move, then it must be an approach to a doorway. If that is the case, we must modify
+    // the x and y based on the approach point
+    if(next_connector != 0 && !thru_doorway && TopologicalMapAdapter::instance()->isDoorwayConnector(next_connector)){
+      robot_msgs::Pose pose;
+      TopologicalMapAdapter::instance()->getDoorApproachPose(next_connector, pose);
+      _next_x.set(pose.position.x);
+      _next_y.set(pose.position.y);
+      _next_z.set(pose.position.z);
+      _next_qx.set(pose.orientation.x);
+      _next_qy.set(pose.orientation.y);
+      _next_qz.set(pose.orientation.z);
+      _next_qw.set(pose.orientation.w);
+      debugMsg("map:get_next_move",  "Selecting approach for doorway connector " << next_connector << " at <" << pose.position.x << ", " << pose.position.y << ">.");
     }
     else {
       _next_x.set(next_x);
@@ -318,22 +315,7 @@ namespace executive_trex_pr2 {
       _next_qw.set(1.0);
     }
 
-    // Finally, we have to set the flag for if we are moving thru a doorway
-    double distance = sqrt(pow(current_x - next_x, 2) + pow(current_y - next_y, 2));
-    bool is_doorway(false);
-    // If points are pretty close, check if it is a doorway
-    if(distance < 3){
-      double mid_x = (current_x + next_x) / 2;
-      double mid_y = (current_y + next_y) / 2;
-      unsigned int region_id = TopologicalMapAdapter::instance()->getRegion(mid_x, mid_y);
-      if(region_id > 0 && !TopologicalMapAdapter::instance()->isDoorway(region_id, is_doorway)){
-	_thru_doorway.empty();
-	debugMsg("map:get_next_move",  "Exiting since region id " << region_id << " for <" << mid_x << ", " << mid_y << "> could not be checked.");
-	return;
-      }
-    }
-
-    _thru_doorway.set(is_doorway);
+    _thru_doorway.set(thru_doorway);
 
     debugMsg("map:get_next_move",  "AFTER: "  << TREX::timeString() << toString());
   }
@@ -1009,7 +991,6 @@ namespace executive_trex_pr2 {
     outlet_pose.orientation.w = outlet_info.qw;
   }
 
-
   /**
    * Impementation uses a distance of 1 meter and an error bound of 1 meter. Assume that the outlet pose can subsequently
    * be used.
@@ -1028,7 +1009,114 @@ namespace executive_trex_pr2 {
     approach_pose.orientation.w = q2.w();
   }
 
+  /**
+   * Impementation uses a distance of 1 meter
+   */
+  void TopologicalMapAdapter::getDoorApproachPose(unsigned int connector_id, robot_msgs::Pose& approach_pose){
+    topological_map::Point2D p = _map->doorApproachPosition (connector_id, 1.0);
+    approach_pose.position.x = p.x;
+    approach_pose.position.y = p.y;
+    approach_pose.position.z = 0;
+    // TO DO - Update the orientation to face the door
+    approach_pose.orientation.x = 0;
+    approach_pose.orientation.y = 0;
+    approach_pose.orientation.z = 0;
+    approach_pose.orientation.w = 1;
+  }
+
   void TopologicalMapAdapter::observeOutletBlocked(unsigned int outlet_id){
     _map->observeOutletBlocked(outlet_id);
+  }
+
+  bool TopologicalMapAdapter::isDoorway(double x1, double y1, double x2, double y2){
+    bool is_doorway(false);
+    double distance = sqrt(pow(x1-x2, 2) + pow(y1-y2, 2));
+    // If points are pretty close, check if it is a doorway. If they are not close we know it is not a doorway
+    if(distance < 2){
+      double p_x = x1 + 0.75 * (x2-x1);
+      double p_y = y1 + 0.75 * (y2-y1);
+      unsigned int region_id = getRegion(p_x, p_y);
+      isDoorway(region_id, is_doorway);
+    }
+
+    return is_doorway;
+  }
+
+  /**
+   * Will get the next connection.
+   */
+  unsigned int TopologicalMapAdapter::getNextConnector(double x1, double y1, double x2, double y2, 
+						       double& lowest_cost, double& next_x, double& next_y){
+    // Query neighboring connectors
+    unsigned int next_connector(0);
+    std::vector< std::pair<topological_map::ConnectorId, double> > connector_cost_pairs;
+    ros::Time before = ros::Time::now();
+    getConnectorCosts(x1, y1, x2, y2, connector_cost_pairs);
+    ros::Duration elapsed = ros::Time::now() - before;
+    debugMsg("map:getNextConnector", "connection_cost_latency is " << elapsed.toSec());
+
+    // Select if there is an improvement
+    for(std::vector< std::pair<topological_map::ConnectorId, double> >::const_iterator it = connector_cost_pairs.begin(); it != connector_cost_pairs.end(); ++it){
+      if(it->second < lowest_cost){
+	// Now prune this candidate if it is the current point
+	double candidate_x(0.0), candidate_y(0.0);
+	TopologicalMapAdapter::instance()->getConnectorPosition(it->first, candidate_x, candidate_y);
+	if(fabs(candidate_x - x1) < 0.10 && fabs(candidate_y - y1) < 0.10)
+	  continue;
+	else{
+	  next_connector = it->first;
+	  lowest_cost = it->second;
+	  next_x = candidate_x;
+	  next_y = candidate_y;
+	  debugMsg("map:getNextConnector", "Preferring connector " << next_connector << " at <" << next_x << ", " << next_y << "> with cost " << lowest_cost);
+	}
+      }
+    }
+
+    // If there is a new connector, then we have to consider the case where the connector is at the start of a doorway. In the event that it is, then based on the
+    // distance between them, we must decide if the doorway is to be crossed or not.
+    if(next_connector > 0 && isDoorwayConnector(next_connector)){
+      robot_msgs::Pose pose;
+      getDoorApproachPose(next_connector, pose);
+      if(fabs(pose.position.x - x1) < 0.10 && fabs(pose.position.y - y1) < 0.10){
+	next_connector = getOtherDoorConnector(next_connector);
+	TopologicalMapAdapter::instance()->getConnectorPosition(next_connector, next_x, next_y);
+	debugMsg("map:getNextConnector", "Preferring connector " << next_connector << " at <" << next_x << ", " << next_y << "> with cost " << lowest_cost);
+      }
+    }
+
+
+    return next_connector;
+  }
+
+  bool TopologicalMapAdapter::isDoorwayConnector(unsigned int connector_id){
+    unsigned int region_a(0), region_b(0);
+    bool doorway_a(false), doorway_b(false);
+    getConnectorRegions(connector_id, region_a, region_b);
+    isDoorway(region_a, doorway_a);
+    isDoorway(region_b, doorway_b);
+    return doorway_a || doorway_b;
+  }
+
+  unsigned int TopologicalMapAdapter::getOtherDoorConnector(unsigned int connector_id){
+    unsigned int region_a(0), region_b(0), doorway_region(0);
+    bool doorway_a(false), doorway_b(false);
+    getConnectorRegions(connector_id, region_a, region_b);
+    isDoorway(region_a, doorway_a);
+    isDoorway(region_b, doorway_b);
+
+    if(doorway_a)
+      doorway_region = region_a;
+    else if(doorway_b)
+      doorway_region = region_b;
+    else{
+      debugMsg("trex:error", "Must be at least one doorway region for connector " << connector_id);
+      ROS_ASSERT(doorway_a || doorway_b);
+    }
+
+    std::vector<unsigned int> connectors;
+    getRegionConnectors(doorway_region, connectors);
+    ROS_ASSERT(connectors.size() == 2);
+    return (connectors[0] != connector_id ? connectors[0] : connectors[1]);
   }
 }

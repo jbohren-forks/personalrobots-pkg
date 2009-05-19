@@ -402,7 +402,6 @@ namespace TREX{
 			  executive_trex_pr2::MapGetOutletApproachPoseConstraint, "map_get_outlet_approach_pose", "Default");
       REGISTER_CONSTRAINT(constraintEngine->getCESchema(),
 			  executive_trex_pr2::MapNotifyOutletBlockedConstraint, "map_notify_outlet_blocked", "Default");
-
       REGISTER_CONSTRAINT(constraintEngine->getCESchema(),
 			  TREX::TFGetRobotPoseConstraint, "tf_get_robot_pose", "Default");
 

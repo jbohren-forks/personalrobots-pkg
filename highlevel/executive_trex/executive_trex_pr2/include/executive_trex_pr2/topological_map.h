@@ -70,10 +70,9 @@ namespace executive_trex_pr2 {
 				       const LabelStr& propagatorName,
 				       const ConstraintEngineId& constraintEngine,
 				       const std::vector<ConstrainedVariableId>& variables);
-    
-    virtual void handleExecute();
-    
+
   private:
+    virtual void handleExecute();
     AbstractDomain& _x;
     AbstractDomain& _y;
     AbstractDomain& _z;
@@ -81,7 +80,7 @@ namespace executive_trex_pr2 {
     AbstractDomain& _qy;
     AbstractDomain& _qz;
     AbstractDomain& _qw;
-    IntervalIntDomain& _outlet;
+    IntervalIntDomain& _outlet_id;
   };
 
   /**
@@ -456,6 +455,11 @@ namespace executive_trex_pr2 {
     virtual void getOutletApproachPose(unsigned int outlet_id, robot_msgs::Pose& approach_pose);
 
     /**
+     * @brief Get the pose to navigate to in order to traverse a doorway starting from a given connector
+     */
+    virtual void getDoorApproachPose(unsigned int connector_id, robot_msgs::Pose& approach_pose);
+
+    /**
      * @brief Outlet blocked
      */
     virtual void observeOutletBlocked(unsigned int outlet_id);
@@ -463,6 +467,15 @@ namespace executive_trex_pr2 {
     /**
      */
     virtual unsigned int getNearestDoorway(double x, double y);
+
+    bool isDoorway(double x1, double y1, double x2, double y2);
+
+    virtual unsigned int getNextConnector(double x1, double y1, double x2, double y2, 
+					  double& lowest_cost, double& next_x, double& next_y);
+
+    virtual bool isDoorwayConnector(unsigned int connector_id);
+
+    virtual unsigned int getOtherDoorConnector(unsigned int connector_id);
 
   private:
     static TopologicalMapAdapter* _singleton;
