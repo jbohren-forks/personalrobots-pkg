@@ -372,18 +372,10 @@ bool
     }
     goodness_factor[cc] *= (area / (door_frame * door_height));
 
-    // ---[ Compute the distance from the door hinge to the prior of the door hinge
-    Point32 pnt1, pnt2;
-    cloud_geometry::statistics::getLargestXYPoints (pmap_.polygons[cc], pnt1, pnt2);
-    double door_distance = fmax (0.001, fmin(distToHinge(door_tr, pnt2), distToHinge(door_tr, pnt1)));
-    ROS_INFO("Dist from hinge is %f", door_distance);
-    if (door_distance > max_dist_from_prior_){
-      goodness_factor[cc] = 0;
-      continue;
-    }
-    goodness_factor[cc] /= door_distance;
     ROS_INFO ("A: Door candidate (%d, %d hull points, %d points) accepted with: average point density (%g), area (%g), width (%g), height (%g).\n Planar coefficients: [%g %g %g %g]",
               cc, (int)pmap_.polygons[cc].points.size (), (int)inliers.size (), density, area, door_frame, door_height, coeff[cc][0], coeff[cc][1], coeff[cc][2], coeff[cc][3]);
+
+
   } // loop over clusters
 
 
@@ -456,6 +448,7 @@ bool
     // Get the min_p and max_p of selected cluster
     cloud_geometry::statistics::getLargestXYPoints (pmap_.polygons[cc], min_p, max_p);
 
+    // compare doors with prior:
     // get door p1 and p2 that match frame p1 and p2
     double d_min_p = distToHinge(result[nr_d], min_p);
     double d_max_p = distToHinge(result[nr_d], max_p);
@@ -468,6 +461,21 @@ bool
       result[nr_d].door_p1 = max_p;
       result[nr_d].door_p2 = min_p;
       result[nr_d].door_p2.z = min_p.z;
+    }
+    double d_hinge = fmax(0.001, fmin(d_min_p, d_max_p));
+    ROS_INFO("Dist from hinge is %f", d_hinge);
+    if (d_hinge > max_dist_from_prior_){
+      result[nr_d].weight = 0;
+      continue;
+    }
+    result[nr_d].weight /= d_hinge;
+
+
+    // compare doors with prior:
+    // get door angle
+    if (fabs(getDoorAngle(result[nr_d])) > (M_PI/2.0 + M_PI/10.0)){
+      result[nr_d].weight = 0;
+      continue;
     }
 
     // get frame p1 and p2 from detected door, keeping the orientation of the door frame
