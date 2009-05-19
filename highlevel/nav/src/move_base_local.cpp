@@ -213,7 +213,7 @@ namespace nav {
       ros::Duration actual;
       //sleep the remainder of the cycle
       if(!r.sleep())
-        ROS_WARN("Controll loop missed its desired rate of %.4fHz... the loop actually took %.4f seconds", controller_frequency_, r.cycleTime().toSec());
+        ROS_WARN("Control loop missed its desired rate of %.4fHz... the loop actually took %.4f seconds", controller_frequency_, r.cycleTime().toSec());
     }
 
     //stop the controller's costmap
