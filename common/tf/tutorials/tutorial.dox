@@ -62,5 +62,108 @@ roslaunch complete_tutorial.launch
 
 @subsection common_tasks Common tasks using tf
 
+\subsubsection can_transform Find out if transforming between two frames is possible
+
+\code
+
+// previously created
+// tf::TransformListener tfl_(my_node); 
+
+
+if(tfl_.canTransform("target_frame", "source_frame", ros::Time()))
+{
+ //this transform is possible with current data
+}
+else
+{
+//this transform is not possible
+}
+
+  //this can also be done with the time traveling api
+  ros::Time source_time (10.0);
+if(  tfl_.canTransform("target_frame", ros::Time(), "source_frame", source_time, 
+                       "fixed_frame_id"))
+{
+ //this transform is possible with current data
+}
+else
+{
+//this transform is not possible
+}
+
+\endcode
+
+\subsubsection lookup_transform Lookup the Transform between two coordinate frames
+To lookup the transform between two coordiniate frames use the lookupTransform method
+provided by tf::Transformer and (inherited by tf::TransformListener ).  
+
+
+\code
+
+// previously created
+// tf::TransformListener tfl_(my_node); 
+
+
+tf::Stamped<tf::Transform> output_transform;
+try{
+  tfl_.lookupTransform("target_frame", "source_frame", ros::Time(), output_transform);
+  //output_transform is now set or an exception has been thrown
+
+  //this can also be done with the time traveling api
+  ros::Time source_time (10.0);
+  tfl_.lookupTransform("target_frame", ros::Time(), "source_frame", source_time, 
+                       "fixed_frame_id", output_transform);
+  //output_transform is now set or an exception has been thrown
+}
+catch (tf::TransformException &ex)
+{
+  //just in case data isn't available
+  
+}
+
+\endcode
+
+\subsubsection transform_data Transform Data into a different frame
+tf has built in support for many different data types.  The tf::Transformer class can transform
+any of the tf::Stamped< T > where T can be the types listed here,
+tf::Point, tf::Vector, tf::Quaternion, and tf::Pose.  And the tf::TransformListener
+can also transform a number of messages directly including robot_msgs::PointStamped, 
+robot_msgs::Vector3Stamped, robot_msgs::QuaternionStamped, robot_msgs::PoseStamped.  
+
+\code
+
+// previously created
+// tf::TransformListener tfl_(my_node); 
+// recieved or generated
+// tf::Stamped<tf::Pose> stamped_in (tf::Pose(tf::Quaternion(0,0,0), 
+//                                            tf::Vector3(0,0,0)), 
+//                                   ros::Time::now(),
+//                                   "source_frame_id");
+
+tf::Stamped<tf::Pose> output_pose;
+try{
+  tfl_.transformPose("target_frame", stamped_in, output_pose);
+  //output_transform is now set or an exception has been thrown
+
+
+  //this can also be done with the time traveling api
+  tfl_.transformPose("target_frame", ros::Time(), stamped_in, 
+                     "fixed_frame", output_pose);
+  //output_transform is now set or an exception has been thrown
+}
+catch (tf::TransformException &ex)
+{
+  //just in case data isn't available
+  
+}
+
+\endcode
+
+
+\subsubsection notifier_usage Buffer messages and get callbacks when tf information is available
+\todo fill this in
+
+\subsubsection send_transforms Publish Transform Information
+\todo fill me in
 
 */
