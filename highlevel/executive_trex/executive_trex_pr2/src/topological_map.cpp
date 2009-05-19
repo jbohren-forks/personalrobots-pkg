@@ -230,22 +230,27 @@ namespace executive_trex_pr2 {
     
   //*******************************************************************************************
   void MapGetNextMoveConstraint::handleExecute(){
+
+    debugMsg("map:get_next_move",  "BEFORE: "  << TREX::timeString() << toString());
+
     // Wait till inputs are bound. 
-    if(!_current_x.isSingleton() || !_current_x.isSingleton() || !_target_x.isSingleton() || !_target_y.isSingleton()) 
+    if(!_current_x.isSingleton() || !_current_y.isSingleton() || !_target_x.isSingleton() || !_target_y.isSingleton()) {
+      debugMsg("map:get_next_move",  "Exiting as inputs are not all bound");
       return;
+    }
 
 
 
     // If ouputs are already bound, then do nothing
     static const std::string OUTPUT_PARAMS(":x:y:z:qx:qy:qz:qw");
-    if(allSingletons(getScope(), OUTPUT_PARAMS))
+    if(allSingletons(getScope(), OUTPUT_PARAMS)){
+      debugMsg("map:get_next_move",  "Exiting as outputs are all bound");
       return;
-
-    debugMsg("map:get_next_move",  "BEFORE: "  << TREX::timeString() << toString());
+    }
 
     // Get next move by evaluating all options
     double lowest_cost = PLUS_INFINITY;
-    double next_x, next_y;
+    double next_x(0.0), next_y(0.0);
 
     // Obtain the values
     double current_x = _current_x.getSingletonValue();
@@ -274,6 +279,7 @@ namespace executive_trex_pr2 {
       lowest_cost = TopologicalMapAdapter::instance()->cost(current_x, current_y, target_x, target_y);
       next_x = target_x;
       next_y = target_y;
+      debugMsg("map:get_next_move",  "Including going directly to target since current and target are in the same region. Cost is: " << lowest_cost);
     }
 
     std::vector< std::pair<topological_map::ConnectorId, double> > connector_cost_pairs;
@@ -284,14 +290,22 @@ namespace executive_trex_pr2 {
 
     for(std::vector< std::pair<topological_map::ConnectorId, double> >::const_iterator it = connector_cost_pairs.begin(); it != connector_cost_pairs.end(); ++it){
       if(it->second < lowest_cost){
-	lowest_cost = it->second;
-	TopologicalMapAdapter::instance()->getConnectorPosition(it->first, next_x, next_y);
+	// Now prune this candidate if it is the current point
+	double candidate_x(0.0), candidate_y(0.0);
+	TopologicalMapAdapter::instance()->getConnectorPosition(it->first, candidate_x, candidate_y);
+	if(fabs(candidate_x - current_x) < 0.10 && fabs(candidate_y - current_y) < 0.10)
+	  continue;
+	else{
+	  next_x = candidate_x;
+	  next_y = candidate_y;
+	  lowest_cost = it->second;
+	}
       }
     }
 
     if(lowest_cost == PLUS_INFINITY){
       _thru_doorway.empty();
-      debugMsg("map:get_next_move",  "Exiting since not a doorway");
+      debugMsg("map:get_next_move",  "Exiting since there is no move available.");
       return;
     }
     else {
@@ -312,9 +326,9 @@ namespace executive_trex_pr2 {
       double mid_x = (current_x + next_x) / 2;
       double mid_y = (current_y + next_y) / 2;
       unsigned int region_id = TopologicalMapAdapter::instance()->getRegion(mid_x, mid_y);
-      if(!TopologicalMapAdapter::instance()->isDoorway(region_id, is_doorway)){
+      if(region_id > 0 && !TopologicalMapAdapter::instance()->isDoorway(region_id, is_doorway)){
 	_thru_doorway.empty();
-	debugMsg("map:get_next_move",  "Exiting since not a doorway");
+	debugMsg("map:get_next_move",  "Exiting since region id " << region_id << " for <" << mid_x << ", " << mid_y << "> could not be checked.");
 	return;
       }
     }

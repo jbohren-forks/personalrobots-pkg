@@ -95,6 +95,94 @@ void pickPointInSpace(unsigned int W, unsigned int H, double& x, double& y){
 
 
 /**
+ * Test the function to get the next move
+ */
+TEST(executive_trex_pr2, map_get_next_move){
+  std::ifstream is("test/willow.tmap");
+  TopologicalMapAdapter map(is);
+  Variable<IntervalDomain> next_x(ce, IntervalDomain(), false, true, "x");
+  Variable<IntervalDomain> next_y(ce, IntervalDomain(), false, true, "y");
+  Variable<IntervalDomain> next_z(ce, IntervalDomain(), false, true, "z");
+  Variable<IntervalDomain> next_qx(ce, IntervalDomain(), false, true, "qx");
+  Variable<IntervalDomain> next_qy(ce, IntervalDomain(), false, true, "qy");
+  Variable<IntervalDomain> next_qz(ce, IntervalDomain(), false, true, "qz");
+  Variable<IntervalDomain> next_qw(ce, IntervalDomain(), false, true, "qw");
+  Variable<BoolDomain> thru_doorway(ce, BoolDomain(), false, true, "thru_doorway");
+  Variable<IntervalDomain> current_x(ce, IntervalDomain(), false, true, "current_x");
+  Variable<IntervalDomain> current_y(ce, IntervalDomain(), false, true, "current_y");
+  Variable<IntervalDomain> target_x(ce, IntervalDomain(), false, true, "target_x");
+  Variable<IntervalDomain> target_y(ce, IntervalDomain(), false, true, "target_y");
+  std::vector<ConstrainedVariableId> scope;
+  scope.push_back(next_x.getId());
+  scope.push_back(next_y.getId());
+  scope.push_back(next_z.getId());
+  scope.push_back(next_qx.getId());
+  scope.push_back(next_qy.getId());
+  scope.push_back(next_qz.getId());
+  scope.push_back(next_qw.getId());
+  scope.push_back(thru_doorway.getId());
+  scope.push_back(current_x.getId());
+  scope.push_back(current_y.getId());
+  scope.push_back(target_x.getId());
+  scope.push_back(target_y.getId());
+
+  MapGetNextMoveConstraint::MapGetNextMoveConstraint map_get_next_move("map_next_move", "Default", ce, scope);
+
+  ASSERT_TRUE(ce->propagate());
+
+  /*
+   * Set values based on the following:
+   ARG[0]:x(15337) DERIVED=float:CLOSED[13.949999999999999, 13.949999999999999]
+   ARG[1]:y(15338) DERIVED=float:CLOSED[20.512499999999999, 20.512499999999999]
+   ARG[2]:z(15339) DERIVED=float:CLOSED[0.000000000000000, 0.000000000000000]
+   ARG[3]:qx(15340) DERIVED=float:CLOSED[0.000000000000000, 0.000000000000000]
+   ARG[4]:qy(15341) DERIVED=float:CLOSED[0.000000000000000, 0.000000000000000]
+   ARG[5]:qz(15342) DERIVED=float:CLOSED[0.000000000000000, 0.000000000000000]
+   ARG[6]:qw(15343) DERIVED=float:CLOSED[1.000000000000000, 1.000000000000000]
+   ARG[7]:thru_doorway(15351) DERIVED=bool:CLOSED[1, 1]
+   ARG[8]:x(14927) (S)  DERIVED=float:CLOSED[13.949999999999999, 13.949999999999999]
+   ARG[9]:y(14928) (S)  DERIVED=float:CLOSED[20.512499999999999, 20.512499999999999]
+   ARG[10]:x(591) (S)  DERIVED=float:CLOSED[12.687500000000000, 12.687500000000000]
+   ARG[11]:y(592) (S)  DERIVED=float:CLOSED[19.937500000000000, 19.937500000000000]
+  */
+
+  // Getting into brians office.
+  current_x.specify(13.9499);
+  current_y.specify(20.5124);
+  target_x.specify(12.6875);
+  target_y.specify(19.9375);
+  ASSERT_TRUE(ce->propagate());
+  ASSERT_TRUE(next_x.lastDomain().isSingleton());
+  ASSERT_TRUE(next_y.lastDomain().isSingleton());
+  ASSERT_TRUE(next_z.lastDomain().isSingleton());
+  ASSERT_TRUE(next_qx.lastDomain().isSingleton());
+  ASSERT_TRUE(next_qy.lastDomain().isSingleton());
+  ASSERT_TRUE(next_qz.lastDomain().isSingleton());
+  ASSERT_TRUE(next_qw.lastDomain().isSingleton());
+  ASSERT_TRUE(thru_doorway.lastDomain().isSingleton());
+
+  // Verify that the resulting point is not the same as the current point
+  ASSERT_FALSE(current_x.lastDomain().intersects(next_x.lastDomain()) && current_y.lastDomain().intersects(next_y.lastDomain()));
+
+  // Reset and try regression test case for source and target in the same region
+  /*
+    ARG[8]:x(40464) (S)  DERIVED=float:CLOSED[13.358695623295763, 13.358695623295763]
+    ARG[9]:y(40465) (S)  DERIVED=float:CLOSED[20.482971797587421, 20.482971797587421]
+    ARG[10]:x(591) (S)  DERIVED=float:CLOSED[12.687500000000000, 12.687500000000000]
+    ARG[11]:y(592) (S)  DERIVED=float:CLOSED[19.937500000000000, 19.937500000000000]
+  */
+  current_x.reset();
+  current_y.reset();
+  target_x.reset();
+  target_y.reset();
+  current_x.specify(13.3586);
+  current_y.specify(20.4829);
+  target_x.specify(12.6875);
+  target_y.specify(19.9375);
+  ASSERT_TRUE(ce->propagate());
+}
+
+/**
  * Test the function to get an outlet approach pose
  */
 TEST(executive_trex_pr2, map_get_outlet_approach_pose){
@@ -135,44 +223,6 @@ TEST(executive_trex_pr2, map_get_outlet_approach_pose){
   outlet_id.reset();
   outlet_id.specify(9999);
   ASSERT_FALSE(ce->propagate());
-}
-
-
-/**
- * Test the function to get the next move
- */
-TEST(executive_trex_pr2, map_get_next_move){
-  std::ifstream is("test/willow.tmap");
-  TopologicalMapAdapter map(is);
-  Variable<IntervalDomain> next_x(ce, IntervalDomain());
-  Variable<IntervalDomain> next_y(ce, IntervalDomain());
-  Variable<IntervalDomain> next_z(ce, IntervalDomain());
-  Variable<IntervalDomain> next_qx(ce, IntervalDomain());
-  Variable<IntervalDomain> next_qy(ce, IntervalDomain());
-  Variable<IntervalDomain> next_qz(ce, IntervalDomain());
-  Variable<IntervalDomain> next_qw(ce, IntervalDomain());
-  Variable<BoolDomain> thru_doorway(ce, BoolDomain());
-  Variable<IntervalDomain> current_x(ce, IntervalDomain());
-  Variable<IntervalDomain> current_y(ce, IntervalDomain());
-  Variable<IntervalDomain> target_x(ce, IntervalDomain());
-  Variable<IntervalDomain> target_y(ce, IntervalDomain());
-  std::vector<ConstrainedVariableId> scope;
-  scope.push_back(next_x.getId());
-  scope.push_back(next_y.getId());
-  scope.push_back(next_z.getId());
-  scope.push_back(next_qx.getId());
-  scope.push_back(next_qy.getId());
-  scope.push_back(next_qz.getId());
-  scope.push_back(next_qw.getId());
-  scope.push_back(thru_doorway.getId());
-  scope.push_back(current_x.getId());
-  scope.push_back(current_y.getId());
-  scope.push_back(target_x.getId());
-  scope.push_back(target_y.getId());
-
-  MapGetNextMoveConstraint::MapGetNextMoveConstraint map_get_next_move("map_next_move", "Default", ce, scope);
-
-  ASSERT_TRUE(ce->propagate());
 }
 
 /**
