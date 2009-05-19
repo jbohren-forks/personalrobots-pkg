@@ -1,0 +1,34 @@
+INSTALL_DIR = neven
+
+all: installed
+
+GIT_DIR = nevensrc
+GIT_URL = git://android.git.kernel.org/platform/external/neven.git
+GIT_REVISION = 1d07e4cb6f77c0c1994229aa39e978bd3d64ab71
+GIT_PATCH = 64bit.patch
+
+include $(shell rospack find mk)/git_checkout.mk
+
+installed: download
+	@mkdir -p build
+	@mkdir -p data
+	cd build && cmake -DCMAKE_TOOLCHAIN_FILE=`rospack find rosbuild`/rostoolchain.cmake ..
+	cd build && make $(ROS_PARALLEL_JOBS)
+clean:
+	-cd build && make clean
+	-rm -rf build
+	-rm -rf data
+	-rm .build_version
+	-rm .rosgcov_files
+
+wipe: clean
+	-rm -rf nevensrc patched
+
+test: all
+	if cd build && make -k $@; then make test-results; else make test-results && exit 1; fi
+tests: all
+	cd build && make $@
+test-future: all
+	cd build && make -k $@
+
+.PHONY : clean download
