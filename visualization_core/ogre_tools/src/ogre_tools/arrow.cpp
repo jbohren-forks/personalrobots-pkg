@@ -70,12 +70,10 @@ Arrow::~Arrow()
 
 void Arrow::set( float shaft_length, float shaft_radius, float head_length, float head_radius )
 {
-  shaft_->setScale(Ogre::Vector3(shaft_radius, shaft_length, shaft_radius));
-  shaft_->setColor( 0.5f, 0.5f, 0.5f, 1.0f );
+  shaft_->setScale(Ogre::Vector3(shaft_radius / 2.0f, shaft_length, shaft_radius / 2.0f));
   shaft_->setPosition( Ogre::Vector3( 0.0f, shaft_length/2.0f, 0.0f ) );
 
-  head_->setScale( Ogre::Vector3( head_radius, head_length, head_radius ) );
-  head_->setColor( 0.5f, 0.5f, 0.5f, 1.0f );
+  head_->setScale( Ogre::Vector3( head_radius / 2.0f, head_length, head_radius / 2.0f ) );
   head_->setPosition( Ogre::Vector3( 0.0f, shaft_length, 0.0f ) );
 }
 
