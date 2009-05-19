@@ -86,9 +86,9 @@ namespace nav {
     footprint_.push_back(pt);
 
     //give the robot a nose
-    pt.x = circumscribed_radius_;
-    pt.y = 0;
-    footprint_.push_back(pt);
+    //pt.x = circumscribed_radius_;
+    //pt.y = 0;
+    //footprint_.push_back(pt);
 
     //create a trajectory controller
     tc_ = new TrajectoryPlannerROS(ros_node_, tf_, controller_costmap_, footprint_, &controller_costmap_);
