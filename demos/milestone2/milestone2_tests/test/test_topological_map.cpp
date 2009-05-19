@@ -37,13 +37,14 @@
 #include <boost/foreach.hpp>
 #include <robot_actions/action_client.h>
 #include <nav_robot_actions/MoveBaseState.h>
-
+#include <boost/assign/std/vector.hpp>
 #include <gtest/gtest.h>
 
 
 #define foreach BOOST_FOREACH
 
 using namespace std;
+using namespace boost::assign;
 
 namespace ra=robot_actions;
 
@@ -58,6 +59,7 @@ using boost::tie;
 using std::stringstream;
 using topological_map::TopologicalMap;
 using topological_map::ConnectorId;
+using topological_map::OutletId;
 using robot_msgs::PoseStamped;
 using nav_robot_actions::MoveBaseState;
 using topological_map::Point2D;
@@ -77,15 +79,15 @@ TEST(TopologicalMap, Simulator)
   TopologicalMap m(str, 1.0, 1e9, 1e9);
 
   NodeHandle n;
+  ros::Duration timeout(120.0);
 
   ra::ActionClient<PoseStamped, MoveBaseState, PoseStamped> navigator("move_base");
 
-  set<ConnectorId> connector_set = m.allConnectors();
+  vector<OutletId> outlets;
+  outlets += 4, 1, 6, 2, 30, 10;
 
-  ros::Duration timeout(600.0);
-
-  foreach (ConnectorId connector, connector_set) {
-    Point2D p = m.connectorPosition(connector);
+  foreach (OutletId outlet, outlets) {
+    Point2D p = m.outletApproachPosition(outlet, 2.0, 0.5);
     cout << "Going to " << p << endl;
     PoseStamped goal, feedback;
     goal.pose.position.x = p.x;
