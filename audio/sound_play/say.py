@@ -52,8 +52,8 @@ if __name__ == '__main__':
     
     rospy.sleep(1)
     
-    s=''
-    for word in sys.argv[1:]:
+    s=sys.argv[1]
+    for word in sys.argv[2:]:
         s=s+' '+word
     print 'Saying "%s".'%s
 
