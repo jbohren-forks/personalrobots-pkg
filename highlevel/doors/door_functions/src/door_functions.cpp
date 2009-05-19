@@ -67,6 +67,26 @@ namespace door_functions{
   }
   
   
+  double getNearestDoorAngle(const tf::Pose& robot_pose, const door_msgs::Door& door, double robot_dist, double touch_dist)
+  { 
+    double angle = 0, step = 0;
+    if (door.rot_dir == door.ROT_DIR_CLOCKWISE)
+      step = -0.01;
+    else if (door.rot_dir == door.ROT_DIR_COUNTERCLOCKWISE)
+      step = 0.01;
+    else{
+      ROS_ERROR("Door rot dir is not specified");
+      return 0.0;
+    }
+
+    while ((robot_pose.getOrigin() - getGripperPose(door, angle, touch_dist).getOrigin()).length() < robot_dist &&
+           fabs(angle) < M_PI_2)
+      angle += step;
+
+    return angle;
+  }
+
+
   tf::Stamped<tf::Pose> getGripperPose(const door_msgs::Door& door, double angle, double dist)
   {
     Vector x_axis(1,0,0);
