@@ -1122,7 +1122,9 @@ namespace executive_trex_pr2 {
 
     std::vector<unsigned int> connectors;
     getRegionConnectors(doorway_region, connectors);
-    ROS_ASSERT(connectors.size() == 2);
+    ROS_ASSERT(connectors.size() <= 3);
+
+    // Now for each connector
     return (connectors[0] != connector_id ? connectors[0] : connectors[1]);
   }
 }
