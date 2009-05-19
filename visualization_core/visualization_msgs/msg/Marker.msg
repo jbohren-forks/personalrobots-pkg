@@ -6,6 +6,7 @@ byte LINE_STRIP=4
 byte LINE_LIST=5
 byte CUBE_LIST=6
 byte SPHERE_LIST=7
+byte POINTS=8
 
 byte ADD=0
 byte MODIFY=0
