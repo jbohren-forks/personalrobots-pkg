@@ -39,6 +39,6 @@
       <remap from="gui_path" to="/move_base/base_local_planner/global_plan" />
       <remap from="local_path" to="/move_base/base_local_planner/local_plan" />
       <remap from="robot_footprint" to="/move_base/base_local_planner/robot_footprint"/>
-    </node>
+    </node> 
   </group>
 </launch>

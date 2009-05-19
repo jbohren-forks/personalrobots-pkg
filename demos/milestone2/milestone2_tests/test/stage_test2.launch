@@ -2,5 +2,5 @@
   <master auto="start"/>
   <param name="/use_sim_time" value="true"/>
   <include file="$(find milestone2_tests)/test/move_base.launch"/>
-  <test test-name="stage_test" time-limit="60000" pkg="milestone2_tests" type="test_topological_map" />
+  <node test-name="stage_test" time-limit="60000" pkg="milestone2_tests" type="test_topological_map" />
 </launch>

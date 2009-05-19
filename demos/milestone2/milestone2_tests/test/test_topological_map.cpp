@@ -79,12 +79,12 @@ TEST(TopologicalMap, Simulator)
   TopologicalMap m(str, 1.0, 1e9, 1e9);
 
   NodeHandle n;
-  ros::Duration timeout(120.0);
+  ros::Duration timeout(600.0);
 
   ra::ActionClient<PoseStamped, MoveBaseState, PoseStamped> navigator("move_base");
 
   vector<OutletId> outlets;
-  outlets += 4, 1, 6, 2, 30, 10;
+  outlets += 1, 4, 2, 30, 10;
 
   foreach (OutletId outlet, outlets) {
     Point2D p = m.outletApproachPosition(outlet, 2.0, 0.5);
@@ -119,6 +119,6 @@ TEST(TopologicalMap, ConnectorCosts)
 int main (int argc, char** argv)
 {
   testing::InitGoogleTest(&argc, argv);
-  ros::init(argc, argv, "topological_map_visualizer"); 
+  ros::init(argc, argv, "topological_map_tests"); 
   return RUN_ALL_TESTS();
 }

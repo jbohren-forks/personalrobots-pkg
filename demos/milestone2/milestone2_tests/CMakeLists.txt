@@ -14,3 +14,5 @@ rospack(milestone2_tests)
 rospack_add_executable(test/test_topological_map test/test_topological_map.cpp)
 rospack_add_gtest_build_flags(test/test_topological_map)
 target_link_libraries(test/test_topological_map topological_graph)
+
+# rospack_add_rostest_graphical(test/stage_test.launch)
