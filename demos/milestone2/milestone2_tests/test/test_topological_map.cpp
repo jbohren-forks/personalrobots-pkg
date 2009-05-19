@@ -73,7 +73,7 @@ typedef vector<pair<ConnectorId, double> > CCosts;
 
 
 
-TEST(TopologicalMap, Simulator)
+TEST(TopologicalMap, OutletReachability)
 {
   ifstream str("/u/bhaskara/ros/ros-pkg/world_models/willow_maps/willow.tmap");
   TopologicalMap m(str, 1.0, 1e9, 1e9);
@@ -84,11 +84,11 @@ TEST(TopologicalMap, Simulator)
   ra::ActionClient<PoseStamped, MoveBaseState, PoseStamped> navigator("move_base");
 
   vector<OutletId> outlets;
-  outlets += 1, 4, 2, 30, 10;
+  outlets += 1, 4;
 
   foreach (OutletId outlet, outlets) {
     Point2D p = m.outletApproachPosition(outlet, 2.0, 0.5);
-    cout << "Going to " << p << endl;
+    cout << "Going to outlet " << outlet << " at " << p << endl;
     PoseStamped goal, feedback;
     goal.pose.position.x = p.x;
     goal.pose.position.y = p.y;
@@ -98,7 +98,39 @@ TEST(TopologicalMap, Simulator)
     ra::ResultStatus result = navigator.execute(goal, feedback, timeout);
     EXPECT_EQ (ra::SUCCESS, result);
   }
+
 }
+
+TEST(TopologicalMap, DoorReachability)
+{
+  ifstream str("/u/bhaskara/ros/ros-pkg/world_models/willow_maps/willow.tmap");
+  TopologicalMap m(str, 1.0, 1e9, 1e9);
+
+  NodeHandle n;
+  ros::Duration timeout(600.0);
+
+  ra::ActionClient<PoseStamped, MoveBaseState, PoseStamped> navigator("move_base");
+
+  vector<ConnectorId> door_connectors;
+  door_connectors += 85, 86;
+
+
+  foreach (ConnectorId connector, door_connectors) {
+    Point2D p = m.doorApproachPosition(connector, 1.0);
+    cout << "Going to connector " << connector << " at " << p << endl;
+    PoseStamped goal, feedback;
+    goal.pose.position.x = p.x;
+    goal.pose.position.y = p.y;
+    goal.pose.position.z = 0;
+    goal.pose.orientation.x = 1;
+    goal.header.frame_id = "map";
+    ra::ResultStatus result = navigator.execute(goal, feedback, timeout);
+    EXPECT_EQ (ra::SUCCESS, result);
+  }
+
+}
+
+
 
 TEST(TopologicalMap, ConnectorCosts)
 {
