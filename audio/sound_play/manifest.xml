@@ -5,6 +5,7 @@
 <author>Blaise Gassend</author>
 <license>BSD</license>
 <depend package="rospy" />
+<depend package="roscpp" />
 <depend package="robot_msgs" />
 </package>
 

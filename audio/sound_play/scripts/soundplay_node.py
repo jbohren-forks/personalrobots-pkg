@@ -134,11 +134,14 @@ class soundplay:
             else:
                 try:
                     if data.sound == SoundRequest.PLAY_FILE:
-                        if not data.arg in self.filesounds:
+                        if not data.arg in self.filesounds.keys():
                             self.filesounds[data.arg] = soundtype(data.arg)
+                        #    print "new wave "+data.arg
+                        #else:
+                        #    print "old wave "+data.arg
                         sound = self.filesounds[data.arg]
                     elif data.sound == SoundRequest.SAY:
-                        if not data.arg in self.filesounds:
+                        if not data.arg in self.voicesounds.keys():
                             txtfilename='/tmp/play_sound_text_temp.txt'
                             wavfilename='/tmp/play_sound_wave_temp.wav'
                             f = open(txtfilename, 'w')
@@ -148,6 +151,9 @@ class soundplay:
                                 f.close()
                             os.system('text2wave '+txtfilename+' -o '+wavfilename)
                             self.voicesounds[data.arg] = soundtype(wavfilename)
+                        #    print "new text "+data.arg
+                        #else:
+                        #    print "old text "+data.arg
                         sound = self.voicesounds[data.arg]
                     else:
                         sound = self.builtinsounds[data.sound]
@@ -179,7 +185,7 @@ class soundplay:
     def __init__(self):
         rospy.init_node('soundplay')
 
-        rootdir = os.path.join(os.path.dirname(__file__),'sounds')
+        rootdir = os.path.join(os.path.dirname(__file__),'..','sounds')
         
         self.mutex = threading.Lock()
         mixer.init(11025, -16, 1, 4000)

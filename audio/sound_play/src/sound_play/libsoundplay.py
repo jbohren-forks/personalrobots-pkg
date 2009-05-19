@@ -57,7 +57,7 @@ class SoundHandle:
         msg.arg=text
         self.pub.publish(msg)
 
-    def stopsayying(self,text):
+    def stopsaying(self,text):
         msg = SoundRequest()
         msg.sound = SoundRequest.SAY
         msg.command = SoundRequest.PLAY_STOP

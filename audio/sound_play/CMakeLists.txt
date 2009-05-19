@@ -9,4 +9,7 @@ set(ROS_BUILD_TYPE RelWithDebInfo)
 rospack(sound_play)
 genmsg()
 
+set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
+
+add_subdirectory(test)
 
