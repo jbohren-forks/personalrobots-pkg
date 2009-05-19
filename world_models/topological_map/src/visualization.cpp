@@ -239,7 +239,7 @@ struct DrawConnectors
 
 void drawDoorApproachPosition (const ConnectorId id, const TopologicalMap& tmap, const Publisher& pub)
 {
-    // Approach point
+  try {
     Marker approach_marker;
     approach_marker.id = id + 4000;
     approach_marker.ns = MARKER_NS;
@@ -257,6 +257,9 @@ void drawDoorApproachPosition (const ConnectorId id, const TopologicalMap& tmap,
     approach_marker.pose.position.x = approach_position.x;
     approach_marker.pose.position.y = approach_position.y;
     pub.publish(approach_marker);
+  }
+  catch (NoDoorApproachPositionException& e) {
+  }
 }
 
 

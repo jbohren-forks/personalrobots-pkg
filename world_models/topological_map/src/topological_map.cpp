@@ -160,6 +160,18 @@ RegionPtr TopologicalMap::MapImpl::squareRegion (const Point2D& p, const double 
   return region;
 }
 
+bool closerToObstacles (const ObstacleDistanceArray& distances, const Cell2D& c1, const Cell2D& c2)
+{
+  double d1 = distances[c1.r][c1.c];
+  double d2 = distances[c2.r][c2.c];
+  ROS_DEBUG_STREAM_NAMED ("outlet_approach", " distance of " << c1 << " is " << d1 << " and distance of " << c2 << " is " << d2);
+  return distances[c1.r][c1.c] < distances[c2.r][c2.c];
+}
+  
+
+
+
+
 
 
 /************************************************************
@@ -689,13 +701,8 @@ void TopologicalMap::MapImpl::setDoorCosts (const Time& t)
   for_each(regions.begin(), regions.end(), bind(&TopologicalMap::MapImpl::setDoorCost, this, _1, t));
 }
 
-
-Point2D TopologicalMap::MapImpl::doorApproachPosition (const ConnectorId id, const double r) const
+Point2D doorApproachCenter (const Door& door, const Point2D connector, const double r)
 {
-  // Get door info from map
-  const RegionPair adjacent_regions = adjacentRegions(id);
-  const RegionId doorRegion = regionType(adjacent_regions.first) == DOORWAY ? adjacent_regions.first : adjacent_regions.second;
-  const Door door = regionDoor(doorRegion);
   const double x1 = door.frame_p1.x;
   const double x2 = door.frame_p2.x;
   const double y1 = door.frame_p1.y;
@@ -711,7 +718,6 @@ Point2D TopologicalMap::MapImpl::doorApproachPosition (const ConnectorId id, con
   const double l = sqrt(nx*nx+ny*ny);
 
   // Compute connector offset
-  const Point2D connector = connectorPosition(id);
   const double ox = connector.x-cx;
   const double oy = connector.y-cy;
   
@@ -719,6 +725,29 @@ Point2D TopologicalMap::MapImpl::doorApproachPosition (const ConnectorId id, con
   const double mult = (nx*ox+ny*oy > 0) ? r/l : -r/l;
 
   return Point2D(cx+nx*mult, cy+ny*mult);
+}
+
+  
+
+  
+
+Point2D TopologicalMap::MapImpl::doorApproachPosition (const ConnectorId id, const double r1, const double r2) const
+{
+  // Get door and connector info from map
+  const RegionPair adjacent_regions = adjacentRegions(id);
+  const RegionId doorRegion = regionType(adjacent_regions.first) == DOORWAY ? adjacent_regions.first : adjacent_regions.second;
+  const Door door = regionDoor(doorRegion);
+  const Point2D connector = connectorPosition(id);
+  
+  // Compute center of approach positions, then find the one that's furthest from obstacles
+  RegionPtr region = squareRegion(doorApproachCenter(door, connector, r1), r2);
+  Region::iterator pos = max_element(region->begin(), region->end(), bind(closerToObstacles, ref(obstacle_distances_), _1, _2));
+  
+  if (pos==region->end() || obstacle_distances_[pos->r][pos->c]==0) 
+    throw NoDoorApproachPositionException(id,r1,r2);
+
+  ROS_DEBUG_STREAM_NAMED ("door_approach", " closest cell is " << *pos);
+  return cellCenter(*pos, resolution_);
 }
 
 
@@ -806,16 +835,6 @@ Point2D outletApproachCenter(const OutletInfo& outlet, const double distance)
 }
  
  
-
-bool closerToObstacles (const ObstacleDistanceArray& distances, const Cell2D& c1, const Cell2D& c2)
-{
-  double d1 = distances[c1.r][c1.c];
-  double d2 = distances[c2.r][c2.c];
-  ROS_DEBUG_STREAM_NAMED ("outlet_approach", " distance of " << c1 << " is " << d1 << " and distance of " << c2 << " is " << d2);
-  return distances[c1.r][c1.c] < distances[c2.r][c2.c];
-}
-  
-
 
 Point2D TopologicalMap::MapImpl::outletApproachPosition (const OutletId id, const double r1, const double r2) const
 {
@@ -1262,7 +1281,7 @@ bool TopologicalMap::isDoorOpen (RegionId id, const Time& stamp)
 
 Point2D TopologicalMap::doorApproachPosition (const ConnectorId id, const double r) const
 {
-  return map_impl_->doorApproachPosition(id, r);
+  return map_impl_->doorApproachPosition(id, r, r/4);
 }
 
 OutletId TopologicalMap::nearestOutlet (const Point2D& p) const

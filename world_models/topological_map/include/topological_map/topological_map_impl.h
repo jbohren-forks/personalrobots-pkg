@@ -135,8 +135,9 @@ public:
   /// \throws UnknownOutletException 
   Point2D outletApproachPosition (OutletId id, double r1, double r2) const;
 
-  /// \return Return approach point for the door that \a id refers to.  Approach point is at distance \a r from the center of the door frame along the normal
-  Point2D doorApproachPosition (ConnectorId id, double r) const;
+  /// \return Return approach point for the door that \a id refers to.  First find point at distance \a r from the center of the door frame along the normal.  Then
+  /// find point within a box of radius \a r2 around that point that is furthest from obstacles.
+  Point2D doorApproachPosition (ConnectorId id, double r, double r2) const;
 
   /// \return set of cells in region given id
   /// \throws UnknownRegionException

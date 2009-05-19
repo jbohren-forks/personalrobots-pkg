@@ -166,6 +166,12 @@ struct NoApproachPositionException: public TopologicalMapException
     TopologicalMapException (format ("No free cell within radius %1% of approach position at distance %2% from outlet %3%") % r2 % r1 % id) {}
 };
 
+struct NoDoorApproachPositionException: public TopologicalMapException
+{
+  NoDoorApproachPositionException (ConnectorId id, double r1, double r2) : 
+    TopologicalMapException (format ("No free cell within radius %1% of approach position at distance %2% from connector %3%") % r2 % r1 % id) {}
+};
+
 } // namespace topological_map
 
 
