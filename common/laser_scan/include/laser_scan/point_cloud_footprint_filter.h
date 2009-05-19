@@ -43,20 +43,18 @@ This is useful for ground plane extraction
 
 
 #include "filters/filter_base.h"
-#include "laser_scan/LaserScan.h"
 #include "tf/transform_listener.h"
 #include "robot_msgs/PointCloud.h"
 #include "ros/ros.h"
-#include "laser_scan/laser_scan.h"
 
 namespace laser_scan
 {
 
 template <typename T>
-class LaserScanFootprintFilter : public filters::FilterBase<laser_scan::LaserScan>
+class PointCloudFootprintFilter : public filters::FilterBase<robot_msgs::PointCloud>
 {
 public:
-  LaserScanFootprintFilter(): tf_(*ros::Node::instance()){}
+  PointCloudFootprintFilter(): tf_(*ros::Node::instance()){}
 
   bool configure()
   {
@@ -64,63 +62,63 @@ public:
     return true;
   }
 
-  virtual ~LaserScanFootprintFilter()
+  virtual ~PointCloudFootprintFilter()
   { 
 
   }
 
-  bool update(const std::vector<laser_scan::LaserScan>& data_in, std::vector<laser_scan::LaserScan>& data_out)
+  bool update(const std::vector<robot_msgs::PointCloud>& data_in, std::vector<robot_msgs::PointCloud>& data_out)
   {
+    if(&data_in == &data_out){
+      ROS_ERROR("This filter does not currently support in place copying");
+      return false;
+    }
     if (data_in.size() != 1 || data_out.size() != 1)
     {
-      ROS_ERROR("LaserScanFootprintFilter is not vectorized");
+      ROS_ERROR("PointCloudFootprintFilter is not vectorized");
       return false;
     }
     
-    const LaserScan& input_scan = data_in[0];
-    LaserScan& filtered_scan = data_out[0];
+    const robot_msgs::PointCloud& input_scan = data_in[0];
+    robot_msgs::PointCloud& filtered_scan = data_out[0];
 
-
-    filtered_scan = input_scan ;
     robot_msgs::PointCloud laser_cloud;
 
     try{
-    projector_.transformLaserScanToPointCloud("base_link", laser_cloud, input_scan, tf_);
+      tf_.transformPointCloud("base_link", input_scan, laser_cloud);
     }
     catch(tf::TransformException& ex){
       ROS_ERROR("Transform unavailable %s", ex.what());
       return false;
     }
 
-    int c_idx = indexChannel(laser_cloud);
-
-    if (c_idx == -1 || laser_cloud.chan[c_idx].vals.size () == 0){
-      ROS_ERROR("We need an index channel to be able to filter out the footprint");
-      return false;
+    filtered_scan.header = input_scan.header;
+    filtered_scan.pts.resize (input_scan.pts.size());
+    filtered_scan.chan.resize (input_scan.chan.size());
+    for (unsigned int d = 0; d < input_scan.get_chan_size (); d++){
+      filtered_scan.chan[d].vals.resize  (input_scan.pts.size());
+      filtered_scan.chan[d].name = input_scan.chan[d].name;
     }
-    
+
+    int num_pts = 0;
     for (unsigned int i=0; i < laser_cloud.pts.size(); i++)  
     {
-      if (inFootprint(laser_cloud.pts[i])){
-        int index = laser_cloud.chan[c_idx].vals[i];
-        filtered_scan.ranges[index] = filtered_scan.range_max + 1.0 ; // If so, then make it a value bigger than the max range
+      if (!inFootprint(laser_cloud.pts[i])){
+        filtered_scan.pts[num_pts] = input_scan.pts[i];
+        for (unsigned int d = 0; d < filtered_scan.get_chan_size (); d++)
+          filtered_scan.chan[d].vals[num_pts] = input_scan.chan[d].vals[i];
+        num_pts++;
       }
     }
+
+    // Resize output vectors
+    filtered_scan.pts.resize (num_pts);
+    for (unsigned int d = 0; d < filtered_scan.get_chan_size (); d++)
+      filtered_scan.chan[d].vals.resize (num_pts);
+
     return true;
   }
 
-  int indexChannel(const robot_msgs::PointCloud& scan_cloud){
-      int c_idx = -1;
-      for (unsigned int d = 0; d < scan_cloud.get_chan_size (); d++)
-      {
-        if (scan_cloud.chan[d].name == "index")
-        {
-          c_idx = d;
-          break;
-        }
-      }
-      return c_idx;
-  }
 
   bool inFootprint(const robot_msgs::Point32& scan_pt){
     if(scan_pt.x < -1.0 * inscribed_radius_ || scan_pt.x > inscribed_radius_ || scan_pt.y < -1.0 * inscribed_radius_ || scan_pt.y > inscribed_radius_)
@@ -134,7 +132,8 @@ private:
   double inscribed_radius_;
 } ;
 
-FILTERS_REGISTER_FILTER(LaserScanFootprintFilter, LaserScan);
+typedef robot_msgs::PointCloud RM_POINT_CLOUD;
+FILTERS_REGISTER_FILTER(PointCloudFootprintFilter, RM_POINT_CLOUD);
 }
 
 #endif // LASER_SCAN_FOOTPRINT_FILTER_H

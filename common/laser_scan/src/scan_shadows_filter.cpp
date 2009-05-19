@@ -45,6 +45,10 @@
 
 // TF
 #include <tf/transform_listener.h>
+#include "tf/message_notifier.h"
+
+#include "laser_scan/point_cloud_footprint_filter.h"
+#include "filters/filter_chain.h"
 
 using namespace robot_msgs;
 
@@ -55,7 +59,6 @@ class ScanShadowsFilter
   public:
 
     // ROS related
-    laser_scan::LaserScan scan_msg_;               // Filled by subscriber with new laser scans
     laser_scan::LaserProjection projector_; // Used to project laser scans
 
     double laser_max_range_;           // Used in laser scan projection
@@ -69,9 +72,11 @@ class ScanShadowsFilter
     
     // TF
     tf::TransformListener* tf_;
+    tf::MessageNotifier<laser_scan::LaserScan>* notifier_;
+    filters::FilterChain<robot_msgs::PointCloud> filter_chain_;
 
     ////////////////////////////////////////////////////////////////////////////////
-    ScanShadowsFilter () : laser_max_range_ (DBL_MAX)
+    ScanShadowsFilter () : laser_max_range_ (DBL_MAX), notifier_(NULL)
     {
       tf_ = new tf::TransformListener(*ros::Node::instance(), true) ;
 
@@ -86,13 +91,20 @@ class ScanShadowsFilter
       ros::Node::instance()->param ("~cloud_topic", cloud_topic_, std::string("tilt_laser_cloud_filtered"));
       ros::Node::instance()->param ("~laser_max_range", laser_max_range_, DBL_MAX);
 
-      ros::Node::instance()->subscribe(scan_topic_,  scan_msg_,  &ScanShadowsFilter::tiltScanCallback, this, 10);
+      notifier_ = new tf::MessageNotifier<laser_scan::LaserScan>(tf_, ros::Node::instance(), 
+          boost::bind(&ScanShadowsFilter::scanCallback, this, _1), scan_topic_, "base_link", 50);
+      notifier_->setTolerance(ros::Duration(0.03));
 
       ros::Node::instance()->advertise<PointCloud> (cloud_topic_, 10);
+
+      std::string filter_xml;
+      ros::Node::instance()->param("~filters", filter_xml, std::string("<filters><!--Filter Parameter Not Set--></filters>"));
+      ROS_INFO("Got parameter'~filters' as: %s\n", filter_xml.c_str());
+      filter_chain_.configureFromXMLString(1, filter_xml);
     }
 
     ////////////////////////////////////////////////////////////////////////////////
-    virtual ~ScanShadowsFilter () { }
+    virtual ~ScanShadowsFilter () { if(notifier_) delete notifier_;}
 
     ////////////////////////////////////////////////////////////////////////////////
     /**
@@ -158,7 +170,7 @@ class ScanShadowsFilter
         else
         {
           // Bogus XYZ entry. No need to copy channels.
-          cloud_out.pts[i].x = cloud_out.pts[i].y = cloud_out.pts[i].z = 0;
+          cloud_out.pts[i].x = cloud_out.pts[i].y = cloud_out.pts[i].z = 1e9;
         }
       }
     }
@@ -187,7 +199,7 @@ class ScanShadowsFilter
 
           double angle = getAngleWithViewpoint (cloud_in.pts[i].x, cloud_in.pts[i].y, cloud_in.pts[i].z,
                                                 cloud_in.pts[j].x, cloud_in.pts[j].y, cloud_in.pts[j].z);
-          if (angle < min_angle_ || angle > max_angle_)
+          if (angle < min_angle_ || angle > max_angle_ || cloud_in.pts[i].x > 1e6)
             valid_point = false;
         }
 
@@ -213,11 +225,22 @@ class ScanShadowsFilter
 
     ////////////////////////////////////////////////////////////////////////////////
     void
-      tiltScanCallback ()
+      scanCallback (const tf::MessageNotifier<laser_scan::LaserScan>::MessagePtr& msg_in)
     {
+      laser_scan::LaserScan& scan_msg = *msg_in;
       // Project laser into point cloud
       PointCloud scan_cloud;
-      int n_scan = scan_msg_.ranges.size ();      // Save the number of measurements
+      int n_scan = scan_msg.ranges.size ();      // Save the number of measurements
+
+      //\TODO CLEAN UP HACK 
+      // This is a trial at correcting for incident angles.  It makes many assumptions that do not generalise
+      for (unsigned int i = 0; i < scan_msg.ranges.size(); i++)
+      {
+        double angle = scan_msg.angle_min + i * scan_msg.angle_increment;
+        scan_msg.ranges[i] = scan_msg.ranges[i] + 0.03 * exp(-fabs(sin(angle)));
+
+      };
+
 
       // Transform into a PointCloud message
       int mask = laser_scan::MASK_INTENSITY | laser_scan::MASK_DISTANCE | laser_scan::MASK_INDEX | laser_scan::MASK_TIMESTAMP;
@@ -226,17 +249,17 @@ class ScanShadowsFilter
       {
         try
         {
-          projector_.transformLaserScanToPointCloud (target_frame_, scan_cloud, scan_msg_, *tf_, mask);
+          projector_.transformLaserScanToPointCloud (target_frame_, scan_cloud, scan_msg, *tf_, mask);
         }
         catch (tf::TransformException &ex)
         {
           ROS_WARN ("High fidelity enabled, but TF returned a transform exception to frame %s: %s", target_frame_.c_str (), ex.what ());
-          projector_.projectLaser (scan_msg_, scan_cloud, laser_max_range_, preservative_, mask);//, true);
+          projector_.projectLaser (scan_msg, scan_cloud, laser_max_range_, preservative_, mask);//, true);
         }
       }
       else
       {
-        projector_.projectLaser (scan_msg_, scan_cloud, laser_max_range_, preservative_, mask);//, true);
+        projector_.projectLaser (scan_msg, scan_cloud, laser_max_range_, preservative_, mask);//, true);
       }
       
 
@@ -271,8 +294,11 @@ class ScanShadowsFilter
       // Filter points
       filterShadowPoints (scan_full_cloud, filtered_cloud);
 
+      PointCloud clear_footprint_cloud;
+      filter_chain_.update (filtered_cloud, clear_footprint_cloud);
+
       // Set timestamp/frameid and publish
-      ros::Node::instance()->publish (cloud_topic_, filtered_cloud);
+      ros::Node::instance()->publish (cloud_topic_, clear_footprint_cloud);
     }
 
 } ;

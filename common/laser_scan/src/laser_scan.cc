@@ -106,11 +106,17 @@ namespace laser_scan
     {
       if (!preservative) //Default behaviour will throw out invalid data
       {
-        if ((ranges(0,index) < range_cutoff) && (ranges(0,index) > scan_in.range_min)) //only valid
+        if ((ranges(0,index) < range_cutoff) && (ranges(0,index) >= scan_in.range_min)) //only valid
         {
           cloud_out.pts[count].x = output(0,index);
           cloud_out.pts[count].y = output(1,index);
           cloud_out.pts[count].z = 0.0;
+
+          //double x = cloud_out.pts[count].x;
+          //double y = cloud_out.pts[count].y;
+          //if(x*x + y*y < scan_in.range_min * scan_in.range_min){
+          //  ROS_INFO("(%.2f, %.2f)", cloud_out.pts[count].x, cloud_out.pts[count].y);
+          //}
 
           // Save the original point index
           if (idx_index != -1)
@@ -137,6 +143,12 @@ namespace laser_scan
         cloud_out.pts[count].x = output(0,index);
         cloud_out.pts[count].y = output(1,index);
         cloud_out.pts[count].z = 0.0;
+
+        //double x = cloud_out.pts[count].x;
+        //double y = cloud_out.pts[count].y;
+        //if(x*x + y*y < scan_in.range_min * scan_in.range_min){
+        //  ROS_ERROR("YOU SHOULD NOT SEE ME: (%.2f, %.2f)", cloud_out.pts[count].x, cloud_out.pts[count].y);
+        //}
 
         // Save the original point index
         if (idx_index != -1)
@@ -209,7 +221,7 @@ namespace laser_scan
 
   void
     LaserProjection::transformLaserScanToPointCloud (const std::string &target_frame, robot_msgs::PointCloud &cloud_out, const laser_scan::LaserScan &scan_in,
-                                                     tf::Transformer& tf, int mask)
+                                                     tf::Transformer& tf, int mask, bool preservative)
   {
     cloud_out.header = scan_in.header;
     cloud_out.header.frame_id = target_frame;
@@ -264,7 +276,7 @@ namespace laser_scan
     ///\todo this can be optimized
     robot_msgs::PointCloud intermediate; //optimize out
 
-    projectLaser (scan_in, intermediate, -1.0, true, mask);
+    projectLaser (scan_in, intermediate, -1.0, preservative, mask);
 
     // Extract transforms for the beginning and end of the laser scan
     ros::Time start_time = scan_in.header.stamp ;

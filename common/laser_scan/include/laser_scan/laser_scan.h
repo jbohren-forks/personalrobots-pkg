@@ -80,7 +80,7 @@ namespace laser_scan
 
 
       /** \brief Transform a laser_scan::LaserScan into a PointCloud in target frame */
-      void transformLaserScanToPointCloud (const std::string& target_frame, robot_msgs::PointCloud & cloudOut, const laser_scan::LaserScan & scanIn, tf::Transformer & tf, int mask = DEFAULT_MASK);
+      void transformLaserScanToPointCloud (const std::string& target_frame, robot_msgs::PointCloud & cloudOut, const laser_scan::LaserScan & scanIn, tf::Transformer & tf, int mask = DEFAULT_MASK, bool preservative = false);
 
 
     private:
