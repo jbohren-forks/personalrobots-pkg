@@ -201,12 +201,10 @@ void TrackerBase::setRoiToTargetFrame()
   }
 
   // Get target frame pose in high def frame
-  robot_msgs::PointStamped origin, target_in_high_def;
-  origin.header.frame_id = target_frame_id_;
-  origin.header.stamp = ros::Time::now();
+  robot_msgs::Point target;
   try {
-    tf_listener_.canTransform("high_def_frame", origin.header.frame_id, origin.header.stamp, ros::Duration(0.5));
-    tf_listener_.transformPoint("high_def_frame", origin, target_in_high_def);
+    robot_msgs::Pose target_pose = getTargetInHighDef();
+    target = target_pose.position;
   }
   catch (tf::TransformException &ex)
   {
@@ -219,9 +217,7 @@ void TrackerBase::setRoiToTargetFrame()
   K_->data.db[5] += req_.region_y;
 
   // Project to image coordinates
-  CvPoint3D64f object_pt = cvPoint3D64f(-target_in_high_def.point.y,
-                                        -target_in_high_def.point.z,
-                                        target_in_high_def.point.x);
+  CvPoint3D64f object_pt = cvPoint3D64f(-target.y, -target.z, target.x);
   CvMat object_points = cvMat(1, 1, CV_64FC3, &object_pt.x);
   double zeros[] = {0, 0, 0};
   CvMat rotation_vector = cvMat(3, 1, CV_64FC1, zeros);
@@ -237,6 +233,20 @@ void TrackerBase::setRoiToTargetFrame()
                              target_roi_size_, target_roi_size_);
 
   setRoi( fitToFrame(object_roi) );
+}
+
+robot_msgs::Pose TrackerBase::getTargetInHighDef()
+{
+  robot_msgs::PoseStamped origin, target_in_high_def;
+  tf::Transform origin_tf;
+  origin_tf.setIdentity();
+  tf::PoseTFToMsg(origin_tf, origin.pose);
+  origin.header.frame_id = target_frame_id_;
+  origin.header.stamp = ros::Time::now();
+  tf_listener_.canTransform("high_def_frame", origin.header.frame_id, origin.header.stamp, ros::Duration(0.5));
+  tf_listener_.transformPose("high_def_frame", origin, target_in_high_def);
+  
+  return target_in_high_def.pose;
 }
 
 void TrackerBase::saveImage()

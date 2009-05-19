@@ -1,5 +1,6 @@
 #include "outlet_detection/plug_tracker.h"
 
+// FIXME: move back to OpenCV versions whenever they get updated
 extern "C"
 int cvFindChessboardCorners_ex( const void* arr, CvSize pattern_size,
                                 CvPoint2D32f* out_corners, int* out_corner_count,
@@ -91,14 +92,45 @@ bool PlugTracker::detectObject(tf::Transform &pose)
   double zeros[4] = {0};
   cvInitMatHeader(&D, 1, 4, CV_64FC1, zeros);
   cvInitMatHeader(&img_pts, corners_.size(), 2, CV_32FC1, &corners_[0]);
-  
-  // Find checkerboard pose
-  cvFindExtrinsicCameraParams2(grid_pts_, &img_pts, K_, &D, &R3, &T3);
-
-  // Convert from Rodriguez to quaternion
   double rot3x3_arr[9];
   CvMat rot3x3_cv;
   cvInitMatHeader(&rot3x3_cv, 3, 3, CV_64FC1, rot3x3_arr);
+
+  bool use_estimate = false;
+  if (roi_policy_ == TargetFrame) {
+    // Use target tool frame as initial estimate
+    robot_msgs::Pose target;
+    try {
+      target = getTargetInHighDef();
+    }
+    catch (tf::TransformException &ex)
+    {
+      ROS_WARN("Transform Exception %s", ex.what());
+      return false;
+    }
+    tf::Transform target_tf;
+    tf::PoseMsgToTF(target, target_tf);
+
+    // Transform to OpenCV coordinate system
+    target_tf *= camera_in_cvcam_.inverse();
+    trans[0] = target_tf.getOrigin().x();
+    trans[1] = target_tf.getOrigin().y();
+    trans[2] = target_tf.getOrigin().z();
+
+    // Convert to Rodrigues rotation
+    btMatrix3x3 &basis = target_tf.getBasis();
+    for (int i = 0; i < 3; ++i)
+      for (int j = 0; j < 3; ++j)
+        rot3x3_arr[3*i + j] = basis[i][j];
+    cvRodrigues2(&rot3x3_cv, &R3);
+
+    use_estimate = true;
+  }
+  
+  // Find checkerboard pose
+  cvFindExtrinsicCameraParams2(grid_pts_, &img_pts, K_, &D, &R3, &T3, use_estimate);
+
+  // Convert from Rodrigues to quaternion
   cvRodrigues2(&R3, &rot3x3_cv);
   btMatrix3x3 rot3x3(rot3x3_arr[0], rot3x3_arr[1], rot3x3_arr[2],
                      rot3x3_arr[3], rot3x3_arr[4], rot3x3_arr[5],
