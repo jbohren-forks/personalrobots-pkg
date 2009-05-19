@@ -46,7 +46,7 @@ namespace costmap_2d{
       double raytrace_range, double weight,
       const std::vector<unsigned char>& static_data, unsigned char lethal_threshold, unsigned int unknown_threshold, unsigned int mark_threshold)
     : Costmap2D(cells_size_x, cells_size_y, xy_resolution, origin_x, origin_y, inscribed_radius, circumscribed_radius,
-        inflation_radius, obstacle_range, (cells_size_z * z_resolution - origin_z), raytrace_range, weight, static_data, lethal_threshold),
+        inflation_radius, obstacle_range, cells_size_z * z_resolution + origin_z, raytrace_range, weight, static_data, lethal_threshold),
     voxel_grid_(cells_size_x, cells_size_y, cells_size_z), xy_resolution_(xy_resolution), z_resolution_(z_resolution),
     origin_z_(origin_z), unknown_threshold_(unknown_threshold + (16 - cells_size_z)), mark_threshold_(mark_threshold), size_z_(cells_size_z)
   {
@@ -194,8 +194,8 @@ namespace costmap_2d{
       double wpz = clearing_observation.cloud_.pts[i].z;
 
       double distance = dist(ox, oy, oz, wpx, wpy, wpz);
-      double scaling_fact = raytrace_range_ / distance;
-      scaling_fact = std::min(1.0, scaling_fact);
+      double scaling_fact = 1.0;
+      scaling_fact = std::max(std::min(scaling_fact, (distance -  2 * xy_resolution_) / distance), 0.0);
       wpx = scaling_fact * (wpx - ox) + ox;
       wpy = scaling_fact * (wpy - oy) + oy;
       wpz = scaling_fact * (wpz - oz) + oz;
@@ -203,56 +203,44 @@ namespace costmap_2d{
       double a = wpx - ox;
       double b = wpy - oy;
       double c = wpz - oz;
+      double t = 1.0;
 
       //we can only raytrace to a maximum z height
       if(wpz > max_obstacle_height_){
         //we know we want the vector's z value to be max_z
-        double t = (max_obstacle_height_ - 0.01 - oz) / c;
-        wpx = ox + a * t;
-        wpy = oy + b * t;
-        wpz = max_obstacle_height_ - 0.01;
+        t = std::min(t, (max_obstacle_height_ - 0.01 - oz) / c);
       }
       //and we can only raytrace down to the floor
       else if(wpz < origin_z_){
         //we know we want the vector's z value to be 0.0
-        double t = (origin_z_ - oz) / c;
-        wpx = ox + a * t;
-        wpy = oy + b * t;
-        wpz = origin_z_;
+        t = std::min(t, (origin_z_ - oz) / c);
       }
 
       //the minimum value to raytrace from is the origin
       if(wpx < origin_x_){
-        double t = (origin_x_ - ox) / a;
-        wpx = origin_x_;
-        wpy = oy + b * t;
-        wpz = oz + c * t;
+        t = std::min(t, (origin_x_ - ox) / a);
       }
       if(wpy < origin_y_){
-        double t = (origin_y_ - oy) / b;
-        wpx = ox + a * t;
-        wpy = origin_y_;
-        wpz = oz + c * t;
+        t = std::min(t, (origin_y_ - oy) / b);
       }
 
       //the maximum value to raytrace to is the end of the map
       if(wpx > map_end_x){
-        double t = (map_end_x - ox) / a;
-        wpx = map_end_x;
-        wpy = oy + b * t;
-        wpz = oz + c * t;
+        t = std::min(t, (map_end_x - ox) / a);
       }
       if(wpy > map_end_y){
-        double t = (map_end_y - oy) / b;
-        wpx = ox + a * t;
-        wpy = map_end_y;
-        wpz = oz + c * t;
+        t = std::min(t, (map_end_y - oy) / b);
       }
+
+      wpx = ox + a * t;
+      wpy = oy + b * t;
+      wpz = oz + c * t;
 
       double point_x, point_y, point_z;
       if(worldToMap3DFloat(wpx, wpy, wpz, point_x, point_y, point_z)){
+        unsigned int cell_raytrace_range = cellDistance(raytrace_range_);
         //voxel_grid_.markVoxelLine(sensor_x, sensor_y, sensor_z, point_x, point_y, point_z);
-        voxel_grid_.clearVoxelLineInMap(sensor_x, sensor_y, sensor_z, point_x, point_y, point_z, costmap_, unknown_threshold_, mark_threshold_);
+        voxel_grid_.clearVoxelLineInMap(sensor_x, sensor_y, sensor_z, point_x, point_y, point_z, costmap_, unknown_threshold_, mark_threshold_, cell_raytrace_range);
       }
     }
   }
