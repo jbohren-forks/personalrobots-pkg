@@ -117,9 +117,8 @@ namespace TREX {
     }
 
     virtual void fillInactiveObservationParameters(const int8_t& msg, ObservationByValue* obs){
-      //bool bool_value (msg < 1 ? false : true);
-      // Never clear for now
-      AdapterUtilities::read<bool>("is_clear", *obs, false);
+      bool bool_value (msg < 1 ? false : true);
+      AdapterUtilities::read<bool>("is_clear", *obs, bool_value);
     }
 
   };

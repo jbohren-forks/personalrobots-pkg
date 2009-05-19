@@ -158,17 +158,25 @@ DoorController::Holds {
     if(finishing == true){
       if(have_handle == false){
 	if(arms_tucked == true){
-	  if(doorway_clear == true){
-	    eq(s.active, false);
-	    meets(doorman.Inactive dm);
-	    eq(dm.status, SUCCESS);
-	    eq(duration, 1);
-	  }
 	  if(latch_state == LATCH_STATE_LOCKED){
 	    eq(s.active, false);
 	    meets(doorman.Inactive dm);
 	    eq(dm.status, ABORTED);
 	    eq(duration, 1);
+	  }
+	  else {
+	    if(doorway_clear == true){
+	      eq(s.active, false);
+	      meets(doorman.Inactive dm);
+	      eq(dm.status, SUCCESS);
+	      eq(duration, 1);
+	    }
+	    else {
+	      contains_start(check_path.Active cmd);
+	      concurrent(cmd.end, end);
+	      eq(cmd.frame_id, ds.frame_id);
+	      door_get_robot_pose_for_door(cmd.x, cmd.y, cmd.z, cmd.qx, cmd.qy, cmd.qz, cmd.qw, ds.object, DOORWAY_CLEARANCE_RANGE);
+	    }
 	  }
 	}
 	if(arms_tucked == false){
@@ -385,8 +393,10 @@ DetectDoor::Inactive{
 CheckPath::Inactive{
   if(status == SUCCESS){
     starts(door_controller.Holds dc);
-    eq(dc.doorway_clear, false);
+    eq(dc.doorway_clear, is_clear);
     eq(dc.check_doorway, false);
+    // This will force us to be finishing if the doorway is clear, but not impact it otherwise.
+    leq(is_clear, dc.finishing);
   }
 }
 
