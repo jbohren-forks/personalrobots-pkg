@@ -91,6 +91,8 @@ robot_actions::ResultStatus PlugInAction::execute(const std_msgs::Empty& empty, 
     d.sleep();
     if(ros::Time::now() - started > ros::Duration(120.0))
       deactivate(robot_actions::ABORTED,feedback);
+    if (isPreemptRequested())
+      deactivate(robot_actions::PREEMPTED, feedback);
   }
 
   return waitForDeactivation(feedback);
@@ -273,6 +275,9 @@ void PlugInAction::plugMeasurementCallback(const tf::MessageNotifier<robot_msgs:
 
   last_standoff_ = standoff;
   prev_viz_offset_ = viz_offset;
+
+  node_.publish(action_name_ + "/state", state_msg);
+
   return;
 }
 
