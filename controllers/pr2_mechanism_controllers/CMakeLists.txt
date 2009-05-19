@@ -16,9 +16,11 @@ rospack_add_library( pr2_mechanism_controllers
   src/base_position_controller.cpp
   src/laser_scanner_controller.cpp
   src/laser_scanner_traj_controller.cpp 
-  src/arm_position_controller.cpp
-  src/arm_velocity_controller.cpp
-  src/arm_dynamics_controller.cpp
+# These controllers are replaced by cartesian twist / pose controllers
+# They have been commented out from this cmake on May 18
+#  src/arm_position_controller.cpp
+#  src/arm_velocity_controller.cpp
+#  src/arm_dynamics_controller.cpp
   src/head_pan_tilt_controller.cpp
   src/head_servoing_controller.cpp
   src/caster_controller.cpp

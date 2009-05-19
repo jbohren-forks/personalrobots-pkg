@@ -67,7 +67,6 @@
 #include <pr2_mechanism_controllers/base_controller.h>
 
 //Kinematics
-#include <robot_kinematics/robot_kinematics.h>
 #include <trajectory/trajectory.h>
 
 #include <robot_msgs/ControllerState.h>
