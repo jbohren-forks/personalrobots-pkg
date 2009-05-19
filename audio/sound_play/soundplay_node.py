@@ -161,7 +161,10 @@ class soundplay:
     def cleanupdict(self, dict):
         purgelist = []
         for (key,sound) in dict.iteritems():
-            staleness = sound.get_staleness()
+            try:
+                staleness = sound.get_staleness()
+            except:
+                staleness = 100 # Something is wrong. Let's purge and try again.
             #print "%s %i"%(key, staleness)
             if staleness >= 2:
                 purgelist.append(key)
