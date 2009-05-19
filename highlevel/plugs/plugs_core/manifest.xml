@@ -20,6 +20,7 @@
   <depend package="pr2_mechanism_controllers" />
   <depend package="outlet_detection" />
   <depend package="safety_core" />
+  <depend package="plug_in" />
 
 
  <export>
