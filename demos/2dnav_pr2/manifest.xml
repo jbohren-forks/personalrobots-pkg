@@ -16,6 +16,7 @@
   <depend package="map_server"/>
   <depend package="willow_maps"/>
   <depend package="nav"/>
+  <depend package="mux"/>
 
   <!-- packages used in the test scripts -->
   <depend package="robot_actions"/>

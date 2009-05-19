@@ -1,0 +1,5 @@
+#!/bin/bash
+
+#Expected Result: Failure
+
+`rospack find 2dnav_pr2`/test/test_move_base_local.py 2.5 0.0 0 0.2 0.1 15

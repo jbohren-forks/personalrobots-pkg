@@ -1,0 +1,7 @@
+#!/bin/bash
+
+#Expected Result: Success
+
+`rospack find 2dnav_pr2`/test/test_move_base_local.py 1.628 0.591 -0.333 0.16 0.04 20 odom_combined
+`rospack find 2dnav_pr2`/test/test_move_base_local.py 2.261 0.327 -0.277 0.16 0.04 20 odom_combined
+

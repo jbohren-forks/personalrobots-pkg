@@ -71,7 +71,8 @@ class TestGoto(unittest.TestCase):
                                        current_pose.getOrigin().y(),
                                        current_pose.getBasis().getEulerZYXYaw())
           if not self.have_goal:
-            self.goal = current_pose * self.offset
+            #self.goal = current_pose * self.offset
+            self.goal = self.offset
             self.have_goal = True
             print 'offs: %.3f %.3f'%(self.offset.getOrigin().x(),
                                      self.offset.getOrigin().y())
@@ -115,6 +116,7 @@ class TestGoto(unittest.TestCase):
     self.tolerance_d = float(sys.argv[4])
     self.tolerance_a = float(sys.argv[5])
     target_time = float(sys.argv[6])
+    self.frame = sys.argv[7]
 
     while rospy.rostime.get_time() == 0.0:
       print 'Waiting for initial time publication'
@@ -123,7 +125,7 @@ class TestGoto(unittest.TestCase):
     # Construct goal a robot-centric frame; let move_base_local do the work
     goal = PoseStamped()
     goal.header.stamp = rospy.get_rostime()
-    goal.header.frame_id = 'base_link'
+    goal.header.frame_id = self.frame
     goal.pose.position.x = target_x
     goal.pose.position.y = target_y
     goal.pose.position.z = 0

@@ -1,6 +1,8 @@
 <launch>
   <!-- Pr2_alpha robot bringup-->
+  <!--
   <include file="$(find pr2_alpha)/$(env ROBOT).launch" />
+  -->
 
   <!-- The naviagtion stack and associated parameters -->
   <include file="$(find 2dnav_pr2)/move_base_local/2dnav_pr2.launch" />
