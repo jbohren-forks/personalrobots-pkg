@@ -129,7 +129,7 @@ public:
 	
 	const CvPoint2D32f* get_template() const
 	{
-		return centers;
+        return centers;
 	};
 	
 	void set_default_template()
@@ -235,15 +235,28 @@ IplImage* find_templates(IplImage* img, IplImage* templ);
 
 void calc_bounding_rect(int count, const CvRect* rects, CvRect& bounding_rect);
 
+void generate_object_points_2x1(CvPoint3D32f* points);
+void generate_object_points_2x1(CvPoint2D32f* points);
 
 // calc_camera_pose: pose estimation function. Assumes that camera calibration was done with real length.
 // Input parameters:
 //	intrinsic_mat: matrix of camera intrinsic parameters
 //	distortion_coeffs: vector of distortion coefficients. If 0, all coefficients are assumed 0.
-//	centers: outlet centers
+//  point_count: the number of points in object_points and image_points arrays
+//  object_points: the 3D coordinates of the detected points
+//  image_points: image coordinates of the detected points
 //	rotation_vector, translation_vector: output transformation from outlet coordinate system (origin in the 
 //	center of the upper left outlet) to camera coordinate system
-void calc_camera_pose(CvMat* intrinsic_mat, CvMat* distortion_coeffs, CvPoint2D32f* centers, 
-					  CvMat* rotation_vector, CvMat* translation_vector);
+void calc_camera_pose(CvMat* intrinsic_mat, CvMat* distortion_coeffs, int point_count, const CvPoint3D32f*object_points,
+                      const CvPoint2D32f* image_points, CvMat* rotation_vector, CvMat* translation_vector);
+
+void calc_camera_pose_2x1(CvMat* intrinsic_mat, CvMat* distortion_coeffs, const CvPoint2D32f* centers, 
+                          CvMat* rotation_vector, CvMat* translation_vector);
+
+void calc_camera_pose_2x2(CvMat* intrinsic_mat, CvMat* distortion_coeffs, const CvPoint2D32f* centers, 
+                          CvMat* rotation_vector, CvMat* translation_vector);
+
+void calc_camera_outlet_pose(CvMat* intrinsic_mat, CvMat* distortion_coeffs, const outlet_template_t& outlet_template,
+                             const CvPoint2D32f* image_points, CvMat* rotat, CvMat* translation_vector);
 
 #endif //_OUTLET_TUPLE_H

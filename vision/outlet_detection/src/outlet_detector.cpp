@@ -48,16 +48,38 @@ int detect_outlet_tuple(IplImage* src, CvMat* intrinsic_matrix, CvMat* distortio
         cvReleaseImage(&_img);
     }
     
+    int ret = 0;
     if(outlet_templ.get_color() == outletOrange && outlet_templ.get_count() == 4)
     {
-        return detect_outlet_tuple_2x2_orange(src, intrinsic_matrix, distortion_params, outlets, outlet_templ, output_path, filename);
+        ret = detect_outlet_tuple_2x2_orange(src, intrinsic_matrix, distortion_params, outlets, outlet_templ, output_path, filename);
     }
     else if(outlet_templ.get_count() == 2)
     {
-        return detect_outlet_tuple_2x1(src, intrinsic_matrix, distortion_params, outlets, outlet_templ, output_path, filename);
+        ret = detect_outlet_tuple_2x1(src, intrinsic_matrix, distortion_params, outlets, outlet_templ, output_path, filename);
     }
     
-    return 0;
+    if(ret == 1)
+    {
+#if defined(_VERBOSE)
+        PRINTF("Coordinate of the first hole: %f,%f,%f\n", outlets[0].coord_hole1.x, 
+               outlets[0].coord_hole1.y, outlets[0].coord_hole1.z);
+        PRINTF("The distance between upper holes: %f\n", length(outlets[0].coord_hole1 - outlets[0].coord_hole2));
+        PRINTF("The distance between lower holes: %f\n", length(outlets[1].coord_hole1 - outlets[1].coord_hole2));
+        /*
+		float mean, stddev;
+		calc_outlet_dist_stat(outlets, mean, stddev);
+		PRINTF("Distance between holes: Mean = %f, stddev = %f\n", mean, stddev);
+		
+		float ground_dist_x1, ground_dist_x2, ground_dist_y;
+		calc_outlet_tuple_dist_stat(outlets, ground_dist_x1, ground_dist_x2, ground_dist_y);
+		PRINTF("Horizontal distance between ground holes: top %f, bottom %f\n", 
+			   ground_dist_x1, ground_dist_x2);
+		PRINTF("Vertical distance between ground holes: %f\n", ground_dist_y);
+         */
+#endif // _VERBOSE
+    }
+    
+    return ret;
 }
 	
 
@@ -127,7 +149,7 @@ int detect_outlet_tuple_2x2_orange(IplImage* src, CvMat* intrinsic_matrix, CvMat
 
 	CvMat* rotation_vector = cvCreateMat(3, 1, CV_32FC1);
 	CvMat* translation_vector = cvCreateMat(3, 1, CV_32FC1);
-	calc_camera_pose(intrinsic_matrix, 0, outlet_tuple.centers, rotation_vector, translation_vector);
+	calc_camera_outlet_pose(intrinsic_matrix, 0, outlet_templ, outlet_tuple.centers, rotation_vector, translation_vector);
 	calc_outlet_coords(outlets, homography, origin, scale, rotation_vector, translation_vector);
 	cvReleaseMat(&rotation_vector);
 	cvReleaseMat(&translation_vector);
@@ -164,21 +186,6 @@ int detect_outlet_tuple_2x2_orange(IplImage* src, CvMat* intrinsic_matrix, CvMat
 		PRINTF("Outlet tuple not found!\n");
 		return 0;
 	}
-	else
-	{
-
-#if defined(_VERBOSE)
-		float mean, stddev;
-		calc_outlet_dist_stat(outlets, mean, stddev);
-		PRINTF("Distance between holes: Mean = %f, stddev = %f\n", mean, stddev);
-		
-		float ground_dist_x1, ground_dist_x2, ground_dist_y;
-		calc_outlet_tuple_dist_stat(outlets, ground_dist_x1, ground_dist_x2, ground_dist_y);
-		PRINTF("Horizontal distance between ground holes: top %f, bottom %f\n", 
-			   ground_dist_x1, ground_dist_x2);
-		PRINTF("Vertical distance between ground holes: %f\n", ground_dist_y);
-#endif // _VERBOSE
-	}
 
     cvReleaseMat(&homography);
 	
@@ -206,6 +213,27 @@ int detect_outlet_tuple_2x1(IplImage* src, CvMat* intrinsic_matrix, CvMat* disto
     if(holes.size() == 6)
     {
         features2outlets_2x1(holes, outlets);
+        
+        CvPoint2D32f centers[6];
+        for(int i = 0; i < 6; i++)
+        {
+            centers[i] = cvPoint2D32f(holes[i].center.x*2, holes[i].center.y*2);
+        }
+        
+        CvPoint2D32f object_points[6];
+        generate_object_points_2x1(object_points);
+        
+        CvMat* homography = cvCreateMat(3, 3, CV_32FC1);
+        cvGetPerspectiveTransform(centers, object_points, homography);
+        
+        CvMat* rotation_vector = cvCreateMat(3, 1, CV_32FC1);
+        CvMat* translation_vector = cvCreateMat(3, 1, CV_32FC1);
+
+        calc_camera_outlet_pose(intrinsic_matrix, distortion_params, outlet_templ, centers, rotation_vector, translation_vector);
+        
+        calc_outlet_coords(outlets, homography, cvPoint3D32f(0.0f, 0.0f, 0.0f), cvPoint2D32f(1.0f, 1.0f), 
+            rotation_vector, translation_vector);
+        
         return 1;
     }
     else

@@ -776,29 +776,83 @@ IplImage* find_templates(IplImage* img, IplImage* templ)
 	return mask;
 }
 
-void calc_camera_pose(CvMat* intrinsic_mat, CvMat* distortion_coeffs, CvPoint2D32f* centers, 
-					  CvMat* rotation_vector, CvMat* translation_vector)
+void calc_camera_outlet_pose(CvMat* intrinsic_mat, CvMat* distortion_coeffs, const outlet_template_t& outlet_template,
+                             const CvPoint2D32f* image_points, CvMat* rotation_vector, CvMat* translation_vector)
 {
-	CvMat* object_points = cvCreateMat(4, 3, CV_32FC1);
-	CvMat* image_points = cvCreateMat(4, 2, CV_32FC1);
+    if(outlet_template.get_count() == 4 && outlet_template.get_color() == outletOrange)
+    {
+        calc_camera_pose_2x2(intrinsic_mat, distortion_coeffs, image_points, rotation_vector, translation_vector);
+    }
+    
+    if(outlet_template.get_count() == 2)
+    {
+        calc_camera_pose_2x1(intrinsic_mat, distortion_coeffs, image_points, rotation_vector, translation_vector);
+    }
+}
+
+void generate_object_points_2x1(CvPoint3D32f* points)
+{
+    const float outlet_width = 12.37f; //mm
+    const float ground_hole_offset = 11.5f; //mm
+    points[0] = cvPoint3D32f(-outlet_width/2, 0.0f, 0.0f);
+    points[1] = cvPoint3D32f(outlet_width/2, 0.0f, 0.0f);
+    points[2] = cvPoint3D32f(-outlet_width/2, ysize, 0.0f);
+    points[3] = cvPoint3D32f(outlet_width/2, ysize, 0.0f);
+    points[4] = cvPoint3D32f(0.0f, -ground_hole_offset, 0.0f);
+    points[5] = cvPoint3D32f(0.0f, ysize - ground_hole_offset, 0.0f);
+}
+
+void generate_object_points_2x1(CvPoint2D32f* points)
+{
+    const float outlet_width = 12.37f; //mm
+    const float ground_hole_offset = 11.5f; //mm
+    points[0] = cvPoint2D32f(-outlet_width/2, 0.0f);
+    points[1] = cvPoint2D32f(outlet_width/2, 0.0f);
+    points[2] = cvPoint2D32f(-outlet_width/2, ysize);
+    points[3] = cvPoint2D32f(outlet_width/2, ysize);
+    points[4] = cvPoint2D32f(0.0f, -ground_hole_offset);
+    points[5] = cvPoint2D32f(0.0f, ysize - ground_hole_offset);
+}
+
+void calc_camera_pose_2x1(CvMat* intrinsic_mat, CvMat* distortion_coeffs, const CvPoint2D32f* centers, 
+                          CvMat* rotation_vector, CvMat* translation_vector)
+{
+    CvPoint3D32f object_points[6];
+    generate_object_points_2x1(object_points);
+    
+    calc_camera_pose(intrinsic_mat, distortion_coeffs, 6, object_points, centers, rotation_vector, translation_vector);
+}
+
+void calc_camera_pose_2x2(CvMat* intrinsic_mat, CvMat* distortion_coeffs, const CvPoint2D32f* centers, 
+                          CvMat* rotation_vector, CvMat* translation_vector)
+{
+    CvPoint3D32f object_points[] = {
+        cvPoint3D32f(0.0f, 0.0f, 0.0f),
+        cvPoint3D32f(xsize, 0.0f, 0.0f),
+        cvPoint3D32f(xsize, ysize, 0.0f),
+        cvPoint3D32f(0.0f, ysize, 0.0f)
+        };
+    
+    calc_camera_pose(intrinsic_mat, distortion_coeffs, 4, object_points, centers, rotation_vector, translation_vector);
+}
+
+void calc_camera_pose(CvMat* intrinsic_mat, CvMat* distortion_coeffs, int point_count, const CvPoint3D32f* object_points,
+                      const CvPoint2D32f* image_points, CvMat* rotation_vector, CvMat* translation_vector)
+{
+	CvMat* object_mat = cvCreateMat(point_count, 3, CV_32FC1);
+	CvMat* image_mat = cvCreateMat(point_count, 2, CV_32FC1);
 	
-	cvmSet(object_points, 0, 0, 0.0f);
-	cvmSet(object_points, 0, 1, 0.0f);
-	cvmSet(object_points, 0, 2, 0.0f);
-	cvmSet(object_points, 1, 0, xsize);
-	cvmSet(object_points, 1, 1, 0.0f);
-	cvmSet(object_points, 1, 2, 0.0f);
-	cvmSet(object_points, 2, 0, xsize);
-	cvmSet(object_points, 2, 1, ysize);
-	cvmSet(object_points, 2, 2, 0.0f);
-	cvmSet(object_points, 3, 0, 0.0f);
-	cvmSet(object_points, 3, 1, ysize);
-	cvmSet(object_points, 3, 2, 0.0f);
+    for(int i = 0; i < point_count; i++)
+    {
+        cvmSet(object_mat, i, 0, object_points[i].x);
+        cvmSet(object_mat, i, 1, object_points[i].y);
+        cvmSet(object_mat, i, 2, object_points[i].z);
+    }
 	
-	for(int i = 0; i < 4; i++) 
+	for(int i = 0; i < point_count; i++) 
 	{
-		cvmSet(image_points, i, 0, centers[i].x);
-		cvmSet(image_points, i, 1, centers[i].y);
+		cvmSet(image_mat, i, 0, image_points[i].x);
+		cvmSet(image_mat, i, 1, image_points[i].y);
 	}
 	
 	CvMat* _distortion_coeffs = 0;
@@ -812,7 +866,7 @@ void calc_camera_pose(CvMat* intrinsic_mat, CvMat* distortion_coeffs, CvPoint2D3
 		_distortion_coeffs = distortion_coeffs;
 	}
 
-	cvFindExtrinsicCameraParams2(object_points, image_points, intrinsic_mat, _distortion_coeffs, rotation_vector, 
+	cvFindExtrinsicCameraParams2(object_mat, image_mat, intrinsic_mat, _distortion_coeffs, rotation_vector, 
 								 translation_vector);
 	
 	if(distortion_coeffs == 0)
@@ -820,8 +874,8 @@ void calc_camera_pose(CvMat* intrinsic_mat, CvMat* distortion_coeffs, CvPoint2D3
 		cvReleaseMat(&_distortion_coeffs);
 	}
 	
-	cvReleaseMat(&object_points);
-	cvReleaseMat(&image_points);
+	cvReleaseMat(&object_mat);
+	cvReleaseMat(&image_mat);
 }
 
 void outlet_template_t::save(const char* filename)
