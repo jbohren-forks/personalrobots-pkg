@@ -5,6 +5,6 @@
   <node pkg="plugs_core" type="run_move_and_grasp_plug" output="screen" />
   <node pkg="plugs_core" type="run_localize_plug_in_gripper" output="screen" />
   <node pkg="plugs_core" type="run_plug_in" output="screen" />
-  <node pkg="plugs_core" type="run_unplug.cpp" output="screen" />
+  <node pkg="plugs_core" type="run_unplug" output="screen" />
   <node pkg="plugs_core" type="run_stow_plug" output="screen" />
 </launch>
