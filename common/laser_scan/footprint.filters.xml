@@ -1,0 +1,4 @@
+<filters>
+  <filter type="LaserScanFootprintFilter" name="footprint_filter"> 
+  </filter>
+</filters>

@@ -13,6 +13,7 @@ rospack_add_library(laser_scan src/laser_scan.cc )
 rospack_link_boost(laser_scan thread)
 
 rospack_add_executable(generic_laser_filter_node src/generic_laser_filter_node.cpp)
+target_link_libraries (generic_laser_filter_node laser_scan)
 
 rospack_add_executable(scan_shadows_filter_node src/scan_shadows_filter.cpp)
 target_link_libraries (scan_shadows_filter_node laser_scan)

@@ -32,6 +32,7 @@
 #include "laser_scan/median_filter.h"
 #include "laser_scan/intensity_filter.h"
 #include "laser_scan/scan_shadows_filter.h"
+#include "laser_scan/footprint_filter.h"
 
 static std::string median_filter_xml = "<!-- NO FILTER DEFINED-->";
 
