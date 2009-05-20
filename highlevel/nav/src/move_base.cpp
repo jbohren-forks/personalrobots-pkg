@@ -129,32 +129,25 @@ namespace nav {
     //if we have a tolerance on the goal point that is greater 
     //than the resolution of the map... compute the full potential function
     double resolution = planner_costmap_ros_->resolution();
-    robot_msgs::Point goal;
+    std::vector<robot_msgs::PoseStamped> global_plan;
     if(req.tolerance > resolution){
       planner_->computePotential(req.goal.pose.position);
-      robot_msgs::Point p;
-      p.x = req.goal.pose.position.x - req.tolerance;
-      p.y = req.goal.pose.position.y - req.tolerance; 
+      robot_msgs::PoseStamped p;
+      p = req.goal;
+      p.pose.position.x = req.goal.pose.position.x - req.tolerance;
+      p.pose.position.y = req.goal.pose.position.y - req.tolerance; 
       bool found_legal = false;
-      while(!found_legal && p.y < req.goal.pose.position.y + req.tolerance){
-        while(!found_legal && p.x < req.goal.pose.position.x + req.tolerance){
-          if(planner_->validPointPotential(p)){
+      while(!found_legal && p.pose.position.y < req.goal.pose.position.y + req.tolerance){
+        while(!found_legal && p.pose.position.x < req.goal.pose.position.x + req.tolerance){
+          if(planner_->makePlan(p, global_plan)){
+            global_plan.push_back(p);
             found_legal = true;
-            goal = p;
           }
-          p.x += resolution;
+          p.pose.position.x += resolution;
         }
-        p.y += resolution;
+        p.pose.position.y += resolution;
       }
-      req.goal.pose.position = goal;
     }
-
-    std::vector<robot_msgs::PoseStamped> global_plan;
-    bool valid_plan = planner_->makePlan(req.goal, global_plan);
-
-    //we'll also push the goal point onto the end of the plan to make sure orientation is taken into account
-    if(valid_plan)
-      global_plan.push_back(req.goal);
 
     //copy the plan into a message to send out
     resp.plan.set_poses_size(global_plan.size());
@@ -163,7 +156,6 @@ namespace nav {
     }
 
     return true;
-    
   }
 
   MoveBase::~MoveBase(){
