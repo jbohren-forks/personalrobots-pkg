@@ -1,4 +1,3 @@
-
 /*********************************************************************
 * Software License Agreement (BSD License)
 * 
@@ -46,7 +45,7 @@ static const double EPS = 1e-5;
 static const string publish_name = "odom_combined";
 
 
-#define __EKF_DEBUG_FILE__
+//#define __EKF_DEBUG_FILE__
 
 namespace estimation
 {
