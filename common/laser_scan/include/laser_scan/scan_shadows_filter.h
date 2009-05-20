@@ -37,6 +37,8 @@
 #ifndef LASER_SCAN_SHADOWS_FILTER_H
 #define LASER_SCAN_SHADOWS_FILTER_H
 
+#include <set>
+
 #include "filters/filter_base.h"
 #include <laser_scan/LaserScan.h>
 #include "angles/angles.h"
