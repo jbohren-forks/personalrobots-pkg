@@ -58,6 +58,7 @@ using ros::Time;
 typedef unsigned int RegionId;
 typedef unsigned int ConnectorId;
 typedef vector<RegionId> RegionIdVector;
+typedef vector<ConnectorId> ConnectorIdVector;
 typedef set<RegionId> RegionIdSet;
 typedef pair<RegionId, RegionId> RegionPair;
 typedef unsigned int OutletId;
@@ -227,6 +228,9 @@ public:
   /// and the cost of the best path from p1 to p2 through that id.  The costs will be taken at the time of the most recent door traversal
   /// observation, or time 0 if no door observations have been made.
   vector<pair<ConnectorId, double> > connectorCosts (const Point2D& p1, const Point2D& p2);
+
+  /// \return Vector of connectors.  First and last ones are temporary ones for the given points.  The intermediate ones form a shortest path in the connector graph.
+  ConnectorIdVector shortestConnectorPath (const Point2D& p1, const Point2D& p2);
 
   /// \return A vector of pairs.  There's one pair per connector in the containing region of p1, consisting of that connector's id 
   /// and the cost of the best path from p1 to p2 through that id

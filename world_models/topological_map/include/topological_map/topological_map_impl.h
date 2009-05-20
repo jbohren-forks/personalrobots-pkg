@@ -191,6 +191,9 @@ public:
   /// and the cost of the best path from p1 to p2 through that id
   vector<pair<ConnectorId, double> > connectorCosts (const Point2D& p1, const Point2D& p2);
 
+  /// \return Vector of connectors.  First and last ones are temporary ones for the given points.  The intermediate ones form a shortest path in the connector graph.
+  ConnectorIdVector shortestConnectorPath (const Point2D& p1, const Point2D& p2);
+
   /// \return A vector of pairs.  There's one pair per connector in the containing region of p1, consisting of that connector's id 
   /// and the cost of the best path from p1 to p2 through that id
   /// \param time Door costs are measured at this time

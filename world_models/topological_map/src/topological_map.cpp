@@ -1179,6 +1179,12 @@ vector<pair<ConnectorId, double> > TopologicalMap::MapImpl::connectorCosts (cons
   return roadmap_->connectorCosts(start.id, goal.id);
 }
 
+ConnectorIdVector TopologicalMap::MapImpl::shortestConnectorPath (const Point2D& p1, const Point2D& p2)
+{
+  TemporaryRoadmapNode start(this, p1);
+  TemporaryRoadmapNode goal(this, p1);
+  return roadmap_->shortestPath(start.id, goal.id);
+}
 
 ConnectorId getId (const ConnectorDesc& desc)
 {
@@ -1363,6 +1369,12 @@ vector<pair<ConnectorId, double> > TopologicalMap::connectorCosts (const Point2D
 {
   return map_impl_->connectorCosts(p1, p2, t);
 }
+
+ConnectorIdVector TopologicalMap::shortestConnectorPath (const Point2D& p1, const Point2D& p2)
+{
+  return map_impl_->shortestConnectorPath(p1, p2);
+}
+
 
 RegionId TopologicalMap::addRegion(const RegionPtr region, const int type, bool recompute_distances) 
 {

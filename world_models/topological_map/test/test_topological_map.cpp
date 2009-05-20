@@ -258,6 +258,9 @@ TEST(TopologicalMap, Creation)
   EXPECT_TRUE(costs[1].second > 1.5);
   EXPECT_TRUE(costs[0].second < 3);
   EXPECT_TRUE(costs[1].second < 3);
+  ConnectorIdVector path = m2.shortestConnectorPath(Point2D(.1,.1), Point2D(1,1));
+  EXPECT_TRUE(path.size()>=2);
+  EXPECT_TRUE(path.size()<=100);
 }
 
 int main (int argc, char** argv)
