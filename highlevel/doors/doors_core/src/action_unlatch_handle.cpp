@@ -66,7 +66,7 @@ UnlatchHandleAction::~UnlatchHandleAction()
 
 robot_actions::ResultStatus UnlatchHandleAction::execute(const door_msgs::Door& goal, door_msgs::Door& feedback)
 { 
-  ROS_INFO("UnlatchHandleAction: execute");
+  ROS_INFO("execute");
 
   // default feedback
   feedback = goal;
@@ -126,6 +126,7 @@ robot_actions::ResultStatus UnlatchHandleAction::execute(const door_msgs::Door& 
   ros::Time time_door_moved;
 
   // turn handle and push door, until door moves forward
+  ROS_INFO("Start turning handle");
   tff_handle_.value.rot.x = handle_dir * 0.5;
   while (time_door_moved == ros::Time() || ros::Time::now() < time_door_moved + wait_after_door_moved){
     Duration(sleep_time).sleep();
