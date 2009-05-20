@@ -50,6 +50,7 @@
 
 <!-- Stereo cam -->
   <group ns="stereo">
+    <param name="videre_mode" type="str" value="none"/>
     <param name="exposure_auto" type="bool" value="True" />
     <param name="gain_auto" type="bool" value="True" />
     <param name="brightness_auto" type="bool" value="True" />
