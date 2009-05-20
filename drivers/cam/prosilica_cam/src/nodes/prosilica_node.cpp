@@ -229,12 +229,11 @@ public:
     if (calibrated_) {
       node_.advertise<image_msgs::Image>("~image_rect", 1);
       node_.advertise<image_msgs::CamInfo>("~cam_info", 1);
+      node_.advertiseService("~cam_info_service", &ProsilicaNode::camInfoService, this, 0);
     }
 
     node_.param("~thumbnail_size", thumbnail_size_, 128);
     node_.advertise<image_msgs::Image>("~thumbnail", 1);
-
-    node_.advertiseService("~cam_info_service", &ProsilicaNode::camInfoService, this, 0);
 
     diagnostic_.addUpdater( &ProsilicaNode::freqStatus );
     diagnostic_.addUpdater( &ProsilicaNode::frameStatistics );
@@ -446,9 +445,9 @@ public:
   bool camInfoService(prosilica_cam::CamInfo::Request &req,
                       prosilica_cam::CamInfo::Response &res)
   {
-    if (!calibrated_)
-      return false;
     res.cam_info = cam_info_;
+    res.cam_info.header.stamp = ros::Time::now();
+    res.cam_info.header.frame_id = frame_id_;
     return true;
   }
 
@@ -622,17 +621,17 @@ private:
     if (!frameToImage(frame, img))
       return false;
 
-    img_.header.stamp = time;
-    img_.header.frame_id = frame_id_;
+    img.header.stamp = time;
+    img.header.frame_id = frame_id_;
     
     if (calibrated_) {
       if (!rectifyFrame(frame, img, rect_img))
         return false;
 
-      rect_img_.header.stamp = time;
-      rect_img_.header.frame_id = frame_id_;
-      cam_info_.header.stamp = time;
-      cam_info_.header.frame_id = frame_id_;
+      rect_img.header.stamp = time;
+      rect_img.header.frame_id = frame_id_;
+      cam_info.header.stamp = time;
+      cam_info.header.frame_id = frame_id_;
       
       // Camera info (uses full-frame width/height)
       cam_info.width = undistortY_.Width();

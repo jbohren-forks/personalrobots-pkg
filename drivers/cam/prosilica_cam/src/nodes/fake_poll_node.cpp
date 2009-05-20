@@ -3,6 +3,7 @@
 #include "image_msgs/CamInfo.h"
 #include "image_msgs/FillImage.h"
 #include "prosilica_cam/PolledImage.h"
+#include "prosilica_cam/CamInfo.h"
 
 #include <cv.h>
 #include <cvwimage.h>
@@ -32,12 +33,22 @@ public:
     cvReleaseFileStorage(&fs);
 
     ros::Node::instance()->advertiseService("/prosilica/poll", &FakePublisher::grab, this);
+    ros::Node::instance()->advertiseService("/prosilica/cam_info_service",
+                                            &FakePublisher::camInfo, this, 0);
   }
 
   ~FakePublisher()
   {
     cvReleaseMat(&K_);
     cvReleaseMat(&D_);
+  }
+
+  bool camInfo(prosilica_cam::CamInfo::Request &req,
+               prosilica_cam::CamInfo::Response &rsp)
+  {
+    memcpy((char*)(&rsp.cam_info.D[0]), (char*)(D_->data.db), 5*sizeof(double));
+    memcpy((char*)(&rsp.cam_info.K[0]), (char*)(K_->data.db), 9*sizeof(double));
+    return true;
   }
 
   bool grab(prosilica_cam::PolledImage::Request &req,
