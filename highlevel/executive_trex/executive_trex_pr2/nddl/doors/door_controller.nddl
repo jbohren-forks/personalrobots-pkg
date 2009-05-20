@@ -143,13 +143,13 @@ DoorController::Holds{
  *
  */
 DoorController::Holds {
-  contained_by(door_state.Holds ds);
 
   if(active == true){
+    contained_by(door_state.Holds ds);
     meets(Holds s);
     contained_by(doorman.Active dm_active);
 
-    // Derive arms_tucked from external safety monotor.
+    // Derive arms_tucked from external safety monitor.
     // TODO: Analyze bug that arises when I include guards directly on mb.arms_tucked. The local variable
     // below is just a workaround
     starts_during(mobility_status.Holds ms);

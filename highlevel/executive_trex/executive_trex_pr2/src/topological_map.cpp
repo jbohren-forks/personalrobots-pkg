@@ -341,6 +341,13 @@ namespace executive_trex_pr2 {
     double target_x = _target_x.getSingletonValue();
     double target_y = _target_y.getSingletonValue();
 
+    // Check if this is an outlet we are trying to get to
+    unsigned int nearest_outlet_id = TopologicalMapAdapter::instance()->getNearestOutlet(target_x, target_y);
+    robot_msgs::Pose outlet_pose;
+    TopologicalMapAdapter::instance()->getOutletState(nearest_outlet_id, outlet_pose);
+    double distance_to_outlet = sqrt(pow(outlet_pose.position.x - target_x, 2) + pow(outlet_pose.position.y - target_y, 2));
+    debugMsg("map:get_next_move", "Distance to nearest outlet is " << distance_to_outlet);
+
     unsigned int this_region =  TopologicalMapAdapter::instance()->getRegion(current_x, current_y);
     condDebugMsg(this_region == 0, "map", "No region for <" << current_x << ", " << current_y <<">");
     unsigned int final_region =  TopologicalMapAdapter::instance()->getRegion(target_x, target_y);
@@ -366,7 +373,7 @@ namespace executive_trex_pr2 {
 
     unsigned int next_connector = TopologicalMapAdapter::instance()->getNextConnector(current_x, current_y, target_x, target_y, lowest_cost, next_x, next_y);
 
-    // If there is no next connector, and this_region != final_region, the move is infeasible
+    // If there is no next connector, and this_region != final_region
     if(next_connector == 0 && this_region != final_region){
       _thru_doorway.empty();
       debugMsg("map:get_next_move",  "Exiting since there is no move available.");
@@ -1201,11 +1208,14 @@ namespace executive_trex_pr2 {
       ROS_ASSERT(doorway_a || doorway_b);
     }
 
-    // We want to get the next connector across the doorway. The general case must admit a set of connectors but exactly 2 of them 
+    // We want to get the next connector across the doorway. There must be exactly 2 connectors per doorway. This is a constraint
+    // in the definition of the topological map
     std::vector<unsigned int> connectors;
     getRegionConnectors(doorway_region, connectors);
-    ROS_ASSERT(connectors.size() <= 3);
+    ROS_ASSERT(connectors.size() <= 2);
+    return (connectors[0] == connector_id ? connectors[1] : connectors[0]);
 
+    /*
     // Obtain the center of the doorway
     door_msgs::Door door_state;
     getDoorState(doorway_region, door_state);
@@ -1214,6 +1224,7 @@ namespace executive_trex_pr2 {
     debugMsg("map:getOtherDoorConnector", "Trying doorway region " << doorway_region << " with center point <" << c_x << ", " << c_y << ">");
     double nx, ny, cost(PLUS_INFINITY);
     return getBestConnector(c_x, c_y, target_x, target_y, cost, nx, ny);
+    */
   }
 
   unsigned int TopologicalMapAdapter::getBestConnector(double x1, double y1, double x2, double y2,
@@ -1224,7 +1235,7 @@ namespace executive_trex_pr2 {
     ros::Time before = ros::Time::now();
     getConnectorCosts(x1, y1, x2, y2, connector_cost_pairs);
     ros::Duration elapsed = ros::Time::now() - before;
-    debugMsg("map:getBestConnector", "connection_cost_latency is " << elapsed.toSec());
+    debugMsg("map:getBestConnector", "connection_cost_latency is " << elapsed.toSec() << ". Found " << connector_cost_pairs.size() << " connectors.");
 
     // Select if there is an improvement
     for(std::vector< std::pair<topological_map::ConnectorId, double> >::const_iterator it = connector_cost_pairs.begin(); it != connector_cost_pairs.end(); ++it){

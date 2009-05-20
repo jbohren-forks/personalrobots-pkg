@@ -93,7 +93,6 @@ void pickPointInSpace(unsigned int W, unsigned int H, double& x, double& y){
   y = (rand() % H) + mantissa;
 }
 
-
 /**
  * Test the function to get the next move
  */
@@ -179,6 +178,31 @@ TEST(executive_trex_pr2, map_get_next_move){
   current_y.specify(20.4829);
   target_x.specify(12.6875);
   target_y.specify(19.9375);
+  ASSERT_TRUE(ce->propagate());
+
+  /* Going to an outlet
+    [map:get_next_move]BEFORE: [1242843828.751974]map_get_next_move(100878)
+    ARG[0]:x(100861) DERIVED=float:CLOSED[-inf, +inf]
+    ARG[1]:y(100862) DERIVED=float:CLOSED[-inf, +inf]
+    ARG[2]:z(100863) DERIVED=float:CLOSED[-inf, +inf]
+    ARG[3]:qx(100864) DERIVED=float:CLOSED[-inf, +inf]
+    ARG[4]:qy(100865) DERIVED=float:CLOSED[-inf, +inf]
+    ARG[5]:qz(100866) DERIVED=float:CLOSED[-inf, +inf]
+    ARG[6]:qw(100867) DERIVED=float:CLOSED[-inf, +inf]
+    ARG[7]:thru_doorway(100876) DERIVED=bool:CLOSED[0, 1]
+    ARG[8]:x(75624) (S)  DERIVED=float:CLOSED[13.574999999999999, 13.574999999999999]
+    ARG[9]:y(75625) (S)  DERIVED=float:CLOSED[21.887499999999999, 21.887499999999999]
+    ARG[10]:x(523) (S)  DERIVED=float:CLOSED[19.237500000000001, 19.237500000000001]
+    ARG[11]:y(524) (S)  DERIVED=float:CLOSED[32.737500000000004, 32.737500000000004]
+  */
+  current_x.reset();
+  current_y.reset();
+  target_x.reset();
+  target_y.reset();
+  current_x.specify(13.5749);
+  current_y.specify(21.8874);
+  target_x.specify(19.2375);
+  target_y.specify(32.7375);
   ASSERT_TRUE(ce->propagate());
 }
 
