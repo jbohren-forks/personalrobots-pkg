@@ -63,49 +63,62 @@ robot_actions::ResultStatus CheckPathAction::execute(const robot_msgs::PoseStamp
 {
   ROS_INFO("CheckPathAction: execute");
 
+
+  // check how far goal point is from current robot pose
+  if (!tf_.canTransform("base_footprint", goal.header.frame_id, Time())){
+    ROS_ERROR("cannot transform goal from %s to %s at time %f", goal.header.frame_id.c_str(), string("base_footprint").c_str(), 0.0);
+    return robot_actions::ABORTED;
+  }
+  Stamped<Pose> goal_pose, robot_pose; tf_.lookupTransform("base_footprint", goal.header.frame_id, Time(), robot_pose);
+  tf::PoseStampedMsgToTF(goal, goal_pose);
+  double length_straight = (goal_pose.getOrigin()-robot_pose.getOrigin()).length();
+  ROS_INFO("Try to find path to (%f %f %f), which is %f [m] from the current robot pose.", 
+	   goal.pose.position.x, goal.pose.position.y, goal.pose.position.z, length_straight);
+
   // transform goal message to map frame
   robot_msgs::PoseStamped goal_tr;
   ros::Duration timeout(3.0);
   if (!tf_.canTransform(goal.header.frame_id, fixed_frame, goal.header.stamp, timeout)){
-    ROS_ERROR("CheckPathAction: cannot transform goal from %s to %s at time %f", goal.header.frame_id.c_str(), fixed_frame.c_str(), goal.header.stamp.toSec());
+    ROS_ERROR("cannot transform goal from %s to %s at time %f", goal.header.frame_id.c_str(), fixed_frame.c_str(), goal.header.stamp.toSec());
     return robot_actions::ABORTED;
   }
   tf_.transformPose(fixed_frame, goal, goal_tr);
 
-  ROS_INFO("CheckPathAction: call planner to find path");
+  ROS_INFO("call planner to find path");
   req_plan.goal = goal_tr;
   req_plan.tolerance = 0.5;
   if (!ros::service::call("move_base/make_plan", req_plan, res_plan)){
     if (isPreemptRequested()){
-      ROS_ERROR("CheckPathAction: preempted");
+      ROS_ERROR("preempted");
       return robot_actions::PREEMPTED;
     }
     else{
-      ROS_ERROR("CheckPathAction: failed to check doorway");
+      ROS_ERROR("failed to check doorway");
       return robot_actions::ABORTED;
     }
   }
   double length = 0;
   if (res_plan.plan.poses.size() < 2){
-    ROS_INFO("CheckPathAction: path planner did not find a path because plan only contains %i points",res_plan.plan.poses.size());
+    ROS_INFO("path planner did not find a path because plan only contains %i points",res_plan.plan.poses.size());
     feedback = false;
     return robot_actions::SUCCESS;
   }
   else{
-    // calculate lenth of path
+    // calculate length of path
     for (unsigned int i=0; i<res_plan.plan.poses.size()-1; i++){
       length += sqrt( ((res_plan.plan.poses[i].pose.position.x - res_plan.plan.poses[i+1].pose.position.x)*
 		       (res_plan.plan.poses[i].pose.position.x - res_plan.plan.poses[i+1].pose.position.x))+
 		      ((res_plan.plan.poses[i].pose.position.y - res_plan.plan.poses[i+1].pose.position.y)*
 		       (res_plan.plan.poses[i].pose.position.y - res_plan.plan.poses[i+1].pose.position.y)));
     }
-    if (length > 4.0){
-      ROS_ERROR("CheckPathAction: received path from planner of length %f", length);
+    if (length > 2.0 * length_straight  || length > 5.0){
+      ROS_ERROR("received path from planner of length %f, which is longer than 5.0 [m] or more than 2x longer than the straight line path of lenght %f", 
+		length, length_straight);
       feedback = false;
       return robot_actions::SUCCESS;
     }
     else{
-      ROS_INFO("CheckPathAction: received path from planner of length %f", length);
+      ROS_INFO("received path from planner of length %f", length);
       feedback = true;
       return robot_actions::SUCCESS;
     }
