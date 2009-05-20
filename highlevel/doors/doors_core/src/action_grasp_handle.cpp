@@ -120,9 +120,9 @@ robot_actions::ResultStatus GraspHandleAction::execute(const door_msgs::Door& go
   gripper_pose.setRotation( Quaternion(getVectorAngle(x_axis, normal), 0, M_PI/2.0) ); 
   gripper_pose.stamp_ = Time::now();
   PoseStampedTFToMsg(gripper_pose, req_moveto.pose);
-  req_moveto.tolerance.vel.x = 0.1;
-  req_moveto.tolerance.vel.y = 0.1;
-  req_moveto.tolerance.vel.z = 0.1;
+  //req_moveto.tolerance.vel.x = 0.1;
+  //req_moveto.tolerance.vel.y = 0.1;
+  //req_moveto.tolerance.vel.z = 0.1;
   ROS_INFO("GraspHandleAction: move over handle");
   if (!ros::service::call("r_arm_cartesian_trajectory_controller/move_to", req_moveto, res_moveto)){
     if (isPreemptRequested()){
