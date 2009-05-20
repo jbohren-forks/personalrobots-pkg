@@ -565,24 +565,11 @@ counterclockwise
       <x>50.752865</x>
     </hinge>
     <end>
-      <y>23.139841</y>
-      <x>51.252808</x>
+      <y>23.124842</y>
+      <x>52.252697</x>
     </end>
     <orientation>
 counterclockwise
-</orientation>
-  </door>
-  <door>
-    <hinge>
-      <y>23.124842</y>
-      <x>52.252697</x>
-    </hinge>
-    <end>
-      <y>23.139841</y>
-      <x>51.252808</x>
-    </end>
-    <orientation>
-clockwise
 </orientation>
   </door>
   <door>
@@ -604,24 +591,11 @@ clockwise
       <x>13.726771</x>
     </hinge>
     <end>
-      <y>18.340921</y>
-      <x>14.4766865</x>
+      <y>18.330423</y>
+      <x>15.176608</x>
     </end>
     <orientation>
 counterclockwise
-</orientation>
-  </door>
-  <door>
-    <hinge>
-      <y>18.330423</y>
-      <x>15.176608</x>
-    </hinge>
-    <end>
-      <y>18.340921</y>
-      <x>14.4766865</x>
-    </end>
-    <orientation>
-clockwise
 </orientation>
   </door>
   <door>
@@ -630,24 +604,11 @@ clockwise
       <x>20.925962</x>
     </hinge>
     <end>
-      <y>18.232925</y>
-      <x>21.675879</x>
+      <y>18.222427</y>
+      <x>22.3758</x>
     </end>
     <orientation>
 counterclockwise
-</orientation>
-  </door>
-  <door>
-    <hinge>
-      <y>18.222427</y>
-      <x>22.3758</x>
-    </hinge>
-    <end>
-      <y>18.232925</y>
-      <x>21.675879</x>
-    </end>
-    <orientation>
-clockwise
 </orientation>
   </door>
   <door>
@@ -695,24 +656,11 @@ clockwise
       <x>12.344674</x>
     </hinge>
     <end>
-      <y>17.22255</y>
-      <x>12.3596735</x>
+      <y>18.223186</y>
+      <x>12.324679</x>
     </end>
     <orientation>
 counterclockwise
-</orientation>
-  </door>
-  <door>
-    <hinge>
-      <y>18.223186</y>
-      <x>12.324679</x>
-    </hinge>
-    <end>
-      <y>17.22255</y>
-      <x>12.3596735</x>
-    </end>
-    <orientation>
-clockwise
 </orientation>
   </door>
   <door>
@@ -734,24 +682,11 @@ clockwise
       <x>36.84492</x>
     </hinge>
     <end>
-      <y>17.05504</y>
-      <x>36.85992</x>
+      <y>18.054928</y>
+      <x>36.87492</x>
     </end>
     <orientation>
 clockwise
-</orientation>
-  </door>
-  <door>
-    <hinge>
-      <y>18.054928</y>
-      <x>36.87492</x>
-    </hinge>
-    <end>
-      <y>17.05504</y>
-      <x>36.85992</x>
-    </end>
-    <orientation>
-counterclockwise
 </orientation>
   </door>
   <door>
@@ -760,24 +695,11 @@ counterclockwise
       <x>50.674118</x>
     </hinge>
     <end>
-      <y>16.998032</y>
-      <x>50.660618</x>
+      <y>16.04814</y>
+      <x>50.64637</x>
     </end>
     <orientation>
 clockwise 
-</orientation>
-  </door>
-  <door>
-    <hinge>
-      <y>16.04814</y>
-      <x>50.64637</x>
-    </hinge>
-    <end>
-      <y>16.998032</y>
-      <x>50.660618</x>
-    </end>
-    <orientation>
-counterclockwise
 </orientation>
   </door>
   <door>
