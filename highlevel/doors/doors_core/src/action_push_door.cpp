@@ -79,7 +79,7 @@ robot_actions::ResultStatus PushDoorAction::execute(const door_msgs::Door& goal,
   // transform door message to time fixed frame
   door_msgs::Door goal_tr;
   if (!transformTo(tf_, fixed_frame, goal, goal_tr, fixed_frame)){
-    ROS_ERROR("PushDoorAction: Could not tranform door message from '%s' to '%s' at time %f",
+    ROS_ERROR("Could not tranform door message from '%s' to '%s' at time %f",
 	      goal.header.frame_id.c_str(), fixed_frame.c_str(), goal.header.stamp.toSec());
     return robot_actions::ABORTED;
   }
@@ -89,6 +89,21 @@ robot_actions::ResultStatus PushDoorAction::execute(const door_msgs::Door& goal,
   gripper_msg.data = -20.0;
   node_.publish("r_gripper_effort_controller/command", gripper_msg);
   
+  // start monitoring gripper pose
+  pose_state_received_ = false;
+  node_.subscribe("r_arm_cartesian_pose_controller/state/pose", pose_msg_,  &PushDoorAction::poseCallback, this, 1);
+  Duration timeout = Duration().fromSec(3.0);
+  Duration poll = Duration().fromSec(0.1);
+  Time start_time = ros::Time::now();
+  while (!pose_state_received_){
+    if (start_time + timeout < ros::Time::now()){
+      ROS_ERROR("failed to receive pose state");
+      node_.unsubscribe("r_arm_cartesian_pose_controller/state/pose");
+      return robot_actions::ABORTED;
+    }
+    poll.sleep();
+  }
+
   // angle step
   Duration sleep_time(0.01);
   double angle_step = 0;
@@ -98,7 +113,7 @@ robot_actions::ResultStatus PushDoorAction::execute(const door_msgs::Door& goal,
   else if (goal_tr.rot_dir == door_msgs::Door::ROT_DIR_COUNTERCLOCKWISE)
     angle_step = push_vel*sleep_time.toSec();
   else{
-    ROS_ERROR("PushDoorAction: door rotation direction not specified");
+    ROS_ERROR("door rotation direction not specified");
     return robot_actions::ABORTED;
   }
 
@@ -107,20 +122,28 @@ robot_actions::ResultStatus PushDoorAction::execute(const door_msgs::Door& goal,
   robot_msgs::PoseStamped gripper_pose_msg;
   double angle = getNearestDoorAngle(shoulder_pose, goal_tr, 0.75, push_dist);
   while (!isPreemptRequested()){
+    sleep_time.sleep();
+
     // define griper pose
     gripper_pose = getGripperPose(goal_tr, angle, push_dist);
     gripper_pose.stamp_ = Time::now();
     PoseStampedTFToMsg(gripper_pose, gripper_pose_msg);
     node_.publish("r_arm_cartesian_pose_controller/command", gripper_pose_msg);
 
-    // increase angle
-    if (fabs(angle) < M_PI/2.0)
+    // increase angle when pose error is small enough
+    boost::mutex::scoped_lock lock(pose_mutex_);
+    if (fabs(angle) < M_PI/2.0)// && (gripper_pose.getOrigin() - pose_state_.getOrigin()).length() < 0.5)
       angle += angle_step;
-
-    sleep_time.sleep();
   }
-  ROS_ERROR("PushDoorAction: preempted");
+  ROS_ERROR("preempted");
   return robot_actions::PREEMPTED;
 }
 
+
+void PushDoorAction::poseCallback()
+{
+  boost::mutex::scoped_lock lock(pose_mutex_);
+  PoseStampedMsgToTF(pose_msg_, pose_state_);
+  pose_state_received_ = true;
+}
 

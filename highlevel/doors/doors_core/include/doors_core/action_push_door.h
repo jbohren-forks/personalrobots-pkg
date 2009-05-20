@@ -49,6 +49,7 @@
 #include <robot_srvs/MoveToPose.h>
 #include <kdl/frames.hpp>
 #include <robot_actions/action.h>
+#include <boost/thread/mutex.hpp>
 
 namespace door_handle_detector{
 
@@ -62,8 +63,15 @@ public:
 
 
 private:
+  void poseCallback();
+
   ros::Node& node_;
   tf::TransformListener tf_; 
+
+  robot_msgs::PoseStamped pose_msg_;
+  tf::Stamped<tf::Pose> pose_state_;
+  bool pose_state_received_;
+  boost::mutex pose_mutex_;
 
 };
 
