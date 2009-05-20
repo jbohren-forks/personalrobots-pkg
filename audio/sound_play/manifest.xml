@@ -6,6 +6,7 @@
 <license>BSD</license>
 <depend package="rospy" />
 <depend package="roscpp" />
+<depend package="roslib" />
 <depend package="robot_msgs" />
 </package>
 

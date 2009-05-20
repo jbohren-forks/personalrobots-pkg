@@ -41,13 +41,21 @@ import roslib; roslib.load_manifest('sound_play')
 import rospy
 import threading
 from sound_play.msg import SoundRequest
-
-try:
-  import pygame.mixer as mixer
-except:
-  print "Error opening pygame.mixer. Is pygame installed? (sudo apt-get install python-pygame)"
-
 import os
+import logging
+
+logger = logging.getLogger('rospy.soundplay_node')
+try:
+    import pygame.mixer as mixer
+except:
+    str="""
+**************************************************************
+Error opening pygame.mixer. Is pygame installed? (sudo apt-get install python-pygame)
+**************************************************************
+"""
+    logger.fatal(str)
+    print str
+
 
 class soundtype:
     STOPPED = 0
@@ -132,34 +140,34 @@ class soundplay:
             if data.sound == SoundRequest.ALL and data.command == SoundRequest.PLAY_STOP:
                 self.stopall()
             else:
-                try:
-                    if data.sound == SoundRequest.PLAY_FILE:
-                        if not data.arg in self.filesounds.keys():
-                            self.filesounds[data.arg] = soundtype(data.arg)
-                        #    print "new wave "+data.arg
-                        #else:
-                        #    print "old wave "+data.arg
-                        sound = self.filesounds[data.arg]
-                    elif data.sound == SoundRequest.SAY:
-                        if not data.arg in self.voicesounds.keys():
-                            txtfilename='/tmp/play_sound_text_temp.txt'
-                            wavfilename='/tmp/play_sound_wave_temp.wav'
-                            f = open(txtfilename, 'w')
-                            try:
-                                f.write(data.arg)
-                            finally:
-                                f.close()
-                            os.system('text2wave '+txtfilename+' -o '+wavfilename)
-                            self.voicesounds[data.arg] = soundtype(wavfilename)
-                        #    print "new text "+data.arg
-                        #else:
-                        #    print "old text "+data.arg
-                        sound = self.voicesounds[data.arg]
+                if data.sound == SoundRequest.PLAY_FILE:
+                    if not data.arg in self.filesounds.keys():
+                        self.filesounds[data.arg] = soundtype(data.arg)
+                        logger.debug('command for  uncached wave: "%s"'%data.arg)
                     else:
-                        sound = self.builtinsounds[data.sound]
-                    sound.command(data.command)
-                except:
-                    pass # FIXME print something here?
+                        logger.debug('command for cached wave: "%s"'%data.arg)
+                    sound = self.filesounds[data.arg]
+                elif data.sound == SoundRequest.SAY:
+                    if not data.arg in self.voicesounds.keys():
+                        txtfilename='/tmp/play_sound_text_temp.txt'
+                        wavfilename='/tmp/play_sound_wave_temp.wav'
+                        f = open(txtfilename, 'w')
+                        try:
+                            f.write(data.arg)
+                        finally:
+                            f.close()
+                        os.system('text2wave '+txtfilename+' -o '+wavfilename)
+                        self.voicesounds[data.arg] = soundtype(wavfilename)
+                        logger.debug('command for uncached text: "%s"'%data.arg)
+                    else:
+                        logger.debug('command for cached text: "%s"'%data.arg)
+                        print "old text "+data.arg
+                    sound = self.voicesounds[data.arg]
+                else:
+                    sound = self.builtinsounds[data.sound]
+                sound.command(data.command)
+        except:
+            logger.debug('Exception in callback'%sys.exc_info()[0])
         finally:
             self.mutex.release()
 
@@ -188,24 +196,32 @@ class soundplay:
         rootdir = os.path.join(os.path.dirname(__file__),'..','sounds')
         
         self.mutex = threading.Lock()
-        mixer.init(11025, -16, 1, 4000)
-        self.builtinsounds = {
-                SoundRequest.BACKINGUP              : soundtype(os.path.join(rootdir, 'BACKINGUP.ogg')),
-                SoundRequest.NEEDS_UNPLUGGING       : soundtype(os.path.join(rootdir, 'NEEDS_UNPLUGGING.ogg')),
-                SoundRequest.NEEDS_PLUGGING         : soundtype(os.path.join(rootdir, 'NEEDS_PLUGGING.ogg')),
-                SoundRequest.NEEDS_UNPLUGGING_BADLY : soundtype(os.path.join(rootdir, 'NEEDS_UNPLUGGING_BADLY.ogg')),
-                SoundRequest.NEEDS_PLUGGING_BADLY   : soundtype(os.path.join(rootdir, 'NEEDS_PLUGGING_BADLY.ogg')),
-                }
-        self.filesounds = {}
-        self.voicesounds = {}
-        self.hotlist = []
+        logger.info('Starting soundplay_node')
+        try:
+            mixer.init(11025, -16, 1, 4000)
+            self.builtinsounds = {
+                    SoundRequest.BACKINGUP              : soundtype(os.path.join(rootdir, 'BACKINGUP.ogg')),
+                    SoundRequest.NEEDS_UNPLUGGING       : soundtype(os.path.join(rootdir, 'NEEDS_UNPLUGGING.ogg')),
+                    SoundRequest.NEEDS_PLUGGING         : soundtype(os.path.join(rootdir, 'NEEDS_PLUGGING.ogg')),
+                    SoundRequest.NEEDS_UNPLUGGING_BADLY : soundtype(os.path.join(rootdir, 'NEEDS_UNPLUGGING_BADLY.ogg')),
+                    SoundRequest.NEEDS_PLUGGING_BADLY   : soundtype(os.path.join(rootdir, 'NEEDS_PLUGGING_BADLY.ogg')),
+                    }
+            self.filesounds = {}
+            self.voicesounds = {}
+            self.hotlist = []
+        except:
+            logger.fatal('Exception in sound startup'%sys.exc_info()[0])
 
         rospy.Subscriber("robotsound", SoundRequest, self.callback)
 
         while not rospy.is_shutdown():
             rospy.sleep(1)   
             self.mutex.acquire()
-            self.cleanup()
+            try:
+                self.cleanup()
+            except:
+                logger.debug('Exception in cleanup'%sys.exc_info()[0])
+
             self.mutex.release()
 
 if __name__ == '__main__':
