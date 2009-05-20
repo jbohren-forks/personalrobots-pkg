@@ -52,7 +52,7 @@ public:
 
   double laser_max_range_;           // Used in laser scan projection
   double min_angle_, max_angle_;          // Filter angle threshold
-  int window_;
+  int window_, neighbors_;
     
 
   ////////////////////////////////////////////////////////////////////////////////
@@ -78,6 +78,11 @@ public:
     if (!filters::FilterBase<T>::getIntParam(std::string("window"), window_, 1))
     {
       ROS_ERROR("Error: ShadowsFilter was not given window.\n");
+      return false;
+    }
+    if (!filters::FilterBase<T>::getIntParam(std::string("neighbors"), neighbors_, 0))
+    {
+      ROS_INFO("Error: ShadowsFilter was not given neighbors.\n");
       return false;
     }
 
@@ -123,6 +128,7 @@ public:
     //copy across all data first
     scan_out = scan_in;
 
+    std::set<int> indices_to_delete;
     // For each point in the current line scan
     for (unsigned int i = 0; i < scan_in.ranges.size (); i++)
     {
@@ -132,15 +138,23 @@ public:
         if ( j < 0 || j >= (int)scan_in.ranges.size () || (int)i == j ) // Out of scan bounds or itself
           continue;
           
-        double angle = angles::to_degrees(getAngleWithViewpoint (scan_in.ranges[i],scan_in.ranges[j], scan_in.angle_increment));
+        double angle = abs(angles::to_degrees(getAngleWithViewpoint (scan_in.ranges[i],scan_in.ranges[j], y * scan_in.angle_increment)));
         if (angle < min_angle_ || angle > max_angle_) 
         {
-          //          printf("\nFailed test with angle %g", angle);
-          scan_out.ranges[i] = -1.0 * fabs(scan_in.ranges[i]); //Failed test so set the ranges to invalid value
+	  for (int index = std::max<int>(i - neighbors_, 0); index <= std::min<int>(i+neighbors_, (int)scan_in.ranges.size()-1); index++)
+	    {
+	      indices_to_delete.insert(index);
+	    }
         }
 
       }
     }
+
+    ROS_DEBUG("ScanShadowsFilter removing %d Points from scan", indices_to_delete.size());
+    for ( std::set<int>::iterator it = indices_to_delete.begin(); it != indices_to_delete.end(); ++it)
+      {
+	scan_out.ranges[*it] = -1.0 * fabs(scan_in.ranges[*it]); //Failed test so set the ranges to invalid value
+      }
     return true;
   }
 

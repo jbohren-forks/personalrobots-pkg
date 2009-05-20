@@ -242,14 +242,14 @@ class ScanShadowsFilter
 
       // Project laser into point cloud
       PointCloud scan_cloud;
-      int n_scan = scan_msg.ranges.size ();      // Save the number of measurements
+      int n_scan = filtered_scan.ranges.size ();      // Save the number of measurements
 
       //\TODO CLEAN UP HACK 
       // This is a trial at correcting for incident angles.  It makes many assumptions that do not generalise
-      for (unsigned int i = 0; i < scan_msg.ranges.size(); i++)
+      for (unsigned int i = 0; i < filtered_scan.ranges.size(); i++)
       {
-        double angle = scan_msg.angle_min + i * scan_msg.angle_increment;
-        scan_msg.ranges[i] = scan_msg.ranges[i] + 0.03 * exp(-fabs(sin(angle)));
+        double angle = filtered_scan.angle_min + i * filtered_scan.angle_increment;
+        filtered_scan.ranges[i] = filtered_scan.ranges[i] + 0.03 * exp(-fabs(sin(angle)));
 
       };
 
@@ -261,17 +261,17 @@ class ScanShadowsFilter
       {
         try
         {
-          projector_.transformLaserScanToPointCloud (target_frame_, scan_cloud, scan_msg, *tf_, mask);
+          projector_.transformLaserScanToPointCloud (target_frame_, scan_cloud, filtered_scan, *tf_, mask);
         }
         catch (tf::TransformException &ex)
         {
           ROS_WARN ("High fidelity enabled, but TF returned a transform exception to frame %s: %s", target_frame_.c_str (), ex.what ());
-          projector_.projectLaser (scan_msg, scan_cloud, laser_max_range_, preservative_, mask);//, true);
+          projector_.projectLaser (filtered_scan, scan_cloud, laser_max_range_, preservative_, mask);//, true);
         }
       }
       else
       {
-        projector_.projectLaser (scan_msg, scan_cloud, laser_max_range_, preservative_, mask);//, true);
+        projector_.projectLaser (filtered_scan, scan_cloud, laser_max_range_, preservative_, mask);//, true);
       }
       
 

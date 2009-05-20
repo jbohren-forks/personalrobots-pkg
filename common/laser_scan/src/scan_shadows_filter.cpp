@@ -170,7 +170,7 @@ class ScanShadowsFilter
         else
         {
           // Bogus XYZ entry. No need to copy channels.
-          cloud_out.pts[i].x = cloud_out.pts[i].y = cloud_out.pts[i].z = 1e9;
+          cloud_out.pts[i].x = cloud_out.pts[i].y = cloud_out.pts[i].z = 0.0;
         }
       }
     }
@@ -199,7 +199,7 @@ class ScanShadowsFilter
 
           double angle = getAngleWithViewpoint (cloud_in.pts[i].x, cloud_in.pts[i].y, cloud_in.pts[i].z,
                                                 cloud_in.pts[j].x, cloud_in.pts[j].y, cloud_in.pts[j].z);
-          if (angle < min_angle_ || angle > max_angle_ || cloud_in.pts[i].x > 1e6)
+          if (angle < min_angle_ || angle > max_angle_)
             valid_point = false;
         }
 
