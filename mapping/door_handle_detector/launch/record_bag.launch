@@ -1,0 +1,4 @@
+<launch>
+  <node pkg="rosrecord" type="rosrecord" args="tf_message full_cloud stereo/raw_stereo" output="screen" />
+</launch>
+

@@ -1,3 +1,5 @@
+<!-- Launch this before taking bags, and keep it up while taking bags. Run
+     rosrecord separately -->
 <launch>
 <include file="$(find pr2_alpha)/$(env ROBOT).machine" />
 
