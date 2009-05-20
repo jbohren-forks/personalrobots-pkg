@@ -194,14 +194,15 @@ void Transformer::lookupTransform(const std::string& target_frame,const ros::Tim
 
 
 bool Transformer::canTransform(const std::string& target_frame, const std::string& source_frame,
-                               const ros::Time& time, const ros::Duration& timeout) const
+                               const ros::Time& time, 
+                               const ros::Duration& timeout, const ros::Duration& polling_sleep_duration) const
 {
   ros::Time start_time = ros::Time::now();
   while (!canTransform(target_frame, source_frame, time))
   {
     if ((ros::Time::now() - start_time) >= timeout)
       return false;
-    ros::Duration().fromSec(0.01).sleep();
+    ros::Duration(polling_sleep_duration).sleep(); //\todo remove copy construction after ros 0.5.1 is released
   }
   return true;
 }
@@ -267,9 +268,10 @@ bool Transformer::canTransform(const std::string& target_frame,const ros::Time& 
 };
 
 bool Transformer::canTransform(const std::string& target_frame,const ros::Time& target_time, const std::string& source_frame,
-			       const ros::Time& source_time, const std::string& fixed_frame, const ros::Duration& timeout) const
+			       const ros::Time& source_time, const std::string& fixed_frame, 
+                               const ros::Duration& timeout, const ros::Duration& polling_sleep_duration) const
 {
-  return canTransform(target_frame, fixed_frame, target_time, timeout) && canTransform(fixed_frame, source_frame, source_time, timeout);
+  return canTransform(target_frame, fixed_frame, target_time, timeout, polling_sleep_duration) && canTransform(fixed_frame, source_frame, source_time, timeout, polling_sleep_duration);
 };
 
 
