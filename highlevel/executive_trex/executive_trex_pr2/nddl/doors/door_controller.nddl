@@ -387,7 +387,9 @@ CheckPath::Inactive{
     starts(door_controller.Holds dc);
     eq(dc.doorway_clear, is_clear);
     eq(dc.check_doorway, false);
-    eq(dc.finishing, true);
+    if(is_clear == true){
+      eq(dc.finishing, true);
+    }
   }
 }
 
