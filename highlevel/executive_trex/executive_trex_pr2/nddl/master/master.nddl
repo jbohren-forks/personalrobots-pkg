@@ -69,6 +69,8 @@ class M2Controller extends AgentTimeline {
     bool recharge_required;
     bool recharged;
     bool finished;
+    float x;
+    float y;
   }
 
   M2Controller(){
@@ -94,10 +96,13 @@ M2Goals::Active{
   contains(actions.startEvent);
 
   if(start){
+    starts_during(base_state.Holds bs);
     starts(m2_controller.Holds mc);
     eq(mc.active, true);
     eq(mc.recharged, false);
     eq(mc.finished, false);
+    eq(mc.x, bs.x);
+    eq(mc.y, bs.y);
 
     if(outlet_id == NO_KEY){
       eq(mc.recharge_required, false);
@@ -122,16 +127,16 @@ M2Controller::Holds{
   defaultOnCommit(recharge_required, p.recharge_required);
   defaultOnCommit(recharged, p.recharged);
   defaultOnCommit(finished, p.finished);
+  defaultOnCommit(x, p.x);
+  defaultOnCommit(y, p.y);
 
   if(active == true){
     meets(Holds s);
     contained_by(m2_goals.Active m2_active);
 
-    starts_during(base_state.Holds bs);
-
     // Are we at the goal?
     float distance;
-    calcDistance(distance, bs.x, bs.y, m2_active.x, m2_active.y);
+    calcDistance(distance, x, y, m2_active.x, m2_active.y);
     bool at_goal;
     testLEQ(at_goal, distance, 0.2);
 
@@ -187,7 +192,7 @@ M2Controller::Holds{
 	// Determine the next map point to go for. It will either be the outlet
 	// or it will be a doorway en-route to the outlet
 	bool thru_doorway;
-	map_get_next_move(cmd.x, cmd.y, cmd.z, cmd.qx, cmd.qy, cmd.qz, cmd.qw, thru_doorway, bs.x, bs.y, m2_active.x, m2_active.y);
+	map_get_next_move(cmd.x, cmd.y, cmd.z, cmd.qx, cmd.qy, cmd.qz, cmd.qw, thru_doorway, x, y, m2_active.x, m2_active.y);
 
 	if(thru_doorway == true){
 	  eq(cmd.object, doorman);
@@ -204,21 +209,25 @@ M2Controller::Holds{
  * The update does not change control states unless it aborted.
  */
 MoveBehavior::Inactive{
+  starts(m2_controller.Holds mc);
   if(status == ABORTED){
-    starts_during(m2_controller.Holds mc);
     eq(mc.finished, true);
+  }
+  if(status == SUCCESS){
+    eq(mc.x, x);
+    eq(mc.y, y);
   }
 }
 
 Recharger::Inactive{
+  starts(m2_controller.Holds mc);
   if(status == SUCCESS){
-    starts_during(m2_controller.Holds mc);
     eq(mc.finished, true);
     eq(mc.recharged, true);
   }
   else {
     if(status == ABORTED){
-      starts_during(m2_controller.Holds mc);
+      starts(m2_controller.Holds mc);
       eq(mc.finished, true);
       eq(mc.recharged, false);
     }

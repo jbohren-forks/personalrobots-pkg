@@ -16,7 +16,17 @@ enum NavigationMode {
 class MoveBehavior extends Behavior {
   bool for_doorways;
 
-  predicate Inactive{}
+  predicate Inactive{
+    string frame_id;
+    float time_stamp;
+    float x;
+    float y;
+    float z;
+    float qx;
+    float qy;
+    float qz;
+    float qw;
+  }
 
   // Parameters to get to the target
   predicate Active {
@@ -29,7 +39,6 @@ class MoveBehavior extends Behavior {
     float qy;
     float qz;
     float qw;
-    bool recharging;
   }
 
   MoveBehavior(Mode _mode, bool _for_doorways){
@@ -43,4 +52,9 @@ class MoveBehavior extends Behavior {
   }
 };
 
-MoveBehavior::Active{}
+MoveBehavior::Inactive{
+  if(status == SUCCESS){
+    met_by(Active p);
+    eq_pose_msg(object, p.object);
+  }
+}
