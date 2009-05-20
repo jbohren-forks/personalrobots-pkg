@@ -1,5 +1,4 @@
 #include "TREX.nddl"
-#include "world_model/topological_map.nddl"
 #include "rcs/exports.nddl"
 #include "rcs/nav/exports.nddl"
 #include "rcs/plugs/exports.nddl"

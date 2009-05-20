@@ -3,6 +3,8 @@ float XY_ERROR = 0.5;
 float THETA_ERROR = 0.1;
 float POSE_ERROR = 0.1;
 
+#include "world_model/topological_map.nddl"
+
 /**
  * The MoveBehavior is an abstract class that handles navigation towards a goal. A mode paramter
  * will be used to indicate the type of concrete class to use.
@@ -39,6 +41,8 @@ class MoveBehavior extends Behavior {
     float qy;
     float qz;
     float qw;
+    MAP_KEY start_connector;
+    MAP_KEY end_connector;
   }
 
   MoveBehavior(Mode _mode, bool _for_doorways){

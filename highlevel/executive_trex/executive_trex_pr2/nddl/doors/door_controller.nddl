@@ -147,6 +147,7 @@ DoorController::Holds {
 
   if(active == true){
     meets(Holds s);
+    contained_by(doorman.Active dm_active);
 
     // Derive arms_tucked from external safety monotor.
     // TODO: Analyze bug that arises when I include guards directly on mb.arms_tucked. The local variable
@@ -160,14 +161,14 @@ DoorController::Holds {
 	if(arms_tucked == true){
 	  if(latch_state == LATCH_STATE_LOCKED){
 	    eq(s.active, false);
-	    meets(doorman.Inactive dm);
-	    eq(dm.status, ABORTED);
+	    meets(doorman.Inactive dm_inactive);
+	    eq(dm_inactive.status, ABORTED);
 	    eq(duration, 1);
 	  }
 	  else {	
 	    eq(s.active, false);
-	    meets(doorman.Inactive dm);
-	    eq(dm.status, SUCCESS);
+	    meets(doorman.Inactive dm_inactive);
+	    eq(dm_inactive.status, SUCCESS);
 	    eq(duration, 1);
 	  }
 	}
@@ -262,12 +263,12 @@ DoorController::Holds {
 	      concurrent(cmd.end, end);
 	    }
 	    else {
-	      // Should move to detection position
+	      // Should move to detection position using standard navigation
 	      if(arms_tucked == true){
-		contains_start(move_base_local.Active cmd);
+		contains_start(move_base.Active cmd);
 		concurrent(cmd.end, end);
 		eq(cmd.frame_id, ds.frame_id);
-		door_get_robot_pose_for_door(cmd.x, cmd.y, cmd.z, cmd.qx, cmd.qy, cmd.qz, cmd.qw, ds.object, DETECTION_RANGE);
+		map_get_door_approach_pose(cmd.x, cmd.y, cmd.z, cmd.qx, cmd.qy, cmd.qz, cmd.qw, dm_active.start_connector);
 
 		contains_start(set_laser_tilt.Active cmd_set_laser_tilt);
 		eq(cmd_set_laser_tilt.status, SUCCESS);

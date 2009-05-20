@@ -18,7 +18,7 @@ map_get_outlet_approach_pose(g1.x, g1.y, g1.z, g1.qx, g1.qy, g1.qz, g1.qw, outle
 g1.outlet_id = NO_KEY;
 
 rejectable(m2_goals.Active g2);
-map_get_outlet_approach_pose(g2.x, g2.y, g2.z, g2.qx, g2.qy, g2.qz, g2.qw, outlet_in_phase_space);
+map_get_outlet_approach_pose(g2.x, g2.y, g2.z, g2.qx, g2.qy, g2.qz, g2.qw, outlet_in_green_room);
 g2.outlet_id = NO_KEY;
 
 

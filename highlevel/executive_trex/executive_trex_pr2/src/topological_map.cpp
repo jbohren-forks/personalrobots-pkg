@@ -18,6 +18,90 @@ namespace executive_trex_pr2 {
 
 
   //*******************************************************************************************
+  MapGetNearestConnectorConstraint::MapGetNearestConnectorConstraint(const LabelStr& name,
+							       const LabelStr& propagatorName,
+							       const ConstraintEngineId& constraintEngine,
+							       const std::vector<ConstrainedVariableId>& variables)
+    :Constraint(name, propagatorName, constraintEngine, variables),
+     _connector(static_cast<IntervalIntDomain&>(getCurrentDomain(variables[0]))),
+     _x(static_cast<IntervalDomain&>(getCurrentDomain(variables[1]))),
+     _y(static_cast<IntervalDomain&>(getCurrentDomain(variables[2]))){
+    checkError(variables.size() == 3, "Invalid signature for " << name.toString() << ". Check the constraint signature in the model.");
+    checkError(TopologicalMapAdapter::instance() != NULL, "Failed to allocate topological map accessor. Some configuration error.");
+  }
+    
+  /**
+   * If the position is bound, we can make a region query. The result should be intersected on the domain.
+   */
+  void MapGetNearestConnectorConstraint::handleExecute(){
+    // Wait till inputs are bound.
+    if(!_x.isSingleton() || !_y.isSingleton())
+      return;
+
+    debugMsg("map:get_nearest_connector",  "BEFORE: "  << TREX::timeString() << toString());
+
+    double x = _x.getSingletonValue();
+    double y = _y.getSingletonValue();
+    unsigned int connector_id = TopologicalMapAdapter::instance()->getNearestConnector(x, y);
+
+    condDebugMsg(connector_id > 0, "trex:error", "No connector found for <" << x << ", " << y << ">");
+    ROS_ASSERT(connector_id > 0); // If this is incorrect, then there is a bug in the topological map
+
+    _connector.set(connector_id);
+
+    debugMsg("map:get_nearest_connector",  "AFTER: "  << TREX::timeString() << toString());
+  }
+
+  //*******************************************************************************************
+  MapGetDoorApproachPoseConstraint::MapGetDoorApproachPoseConstraint(const LabelStr& name,
+								     const LabelStr& propagatorName,
+								     const ConstraintEngineId& constraintEngine,
+								     const std::vector<ConstrainedVariableId>& variables)
+    :Constraint(name, propagatorName, constraintEngine, variables),
+     _x(static_cast<IntervalDomain&>(getCurrentDomain(variables[0]))),
+     _y(static_cast<IntervalDomain&>(getCurrentDomain(variables[1]))),
+     _z(static_cast<IntervalDomain&>(getCurrentDomain(variables[2]))),
+     _qx(static_cast<IntervalDomain&>(getCurrentDomain(variables[3]))),
+     _qy(static_cast<IntervalDomain&>(getCurrentDomain(variables[4]))),
+     _qz(static_cast<IntervalDomain&>(getCurrentDomain(variables[5]))),
+     _qw(static_cast<IntervalDomain&>(getCurrentDomain(variables[6]))),
+     _connector_id(static_cast<IntervalIntDomain&>(getCurrentDomain(variables[7]))){
+    checkError(variables.size() == 8, "Invalid signature for " << name.toString() << ". Check the constraint signature in the model.");
+    checkError(TopologicalMapAdapter::instance() != NULL, "Failed to allocate topological map accessor. Some configuration error.");
+  }
+    
+  /**
+   * If the position is bound, we can make a region query. The result should be intersected on the domain.
+   */
+  void MapGetDoorApproachPoseConstraint::handleExecute(){
+
+    // Wait till inputs are bound.
+    if(!_connector_id.isSingleton())
+      return;
+
+    debugMsg("map:get_door_appoach_pose",  "BEFORE: "  << TREX::timeString() << toString());
+
+    try{
+      // Get the approach pose for that
+      robot_msgs::Pose pose;
+      TopologicalMapAdapter::instance()->getDoorApproachPose(_connector_id.getSingletonValue(), pose);
+      _x.set(pose.position.x);
+      _y.set(pose.position.y);
+      _z.set(pose.position.z);
+      _qx.set(pose.orientation.x);
+      _qy.set(pose.orientation.y);
+      _qz.set(pose.orientation.z);
+      _qw.set(pose.orientation.w);
+    }
+    catch(...){
+      debugMsg("trex:warning", "Invalid key value");
+      _connector_id.empty();
+    }
+
+    debugMsg("map:get_door_approach_pose",  "AFTER: "  << TREX::timeString() << toString());
+  }
+
+  //*******************************************************************************************
   MapInitializeFromFileConstraint::MapInitializeFromFileConstraint(const LabelStr& name,
 								   const LabelStr& propagatorName,
 								   const ConstraintEngineId& constraintEngine,
@@ -140,11 +224,11 @@ namespace executive_trex_pr2 {
 
     // If outlet id is 0 then skip.
     if(_outlet_id.getSingletonValue() == 0){
-      debugMsg("map:get_appoach_pose", "Ignoring outlet id since it is a NO_KEY");
+      debugMsg("map:get_outlet_appoach_pose", "Ignoring outlet id since it is a NO_KEY");
       return;
     }
 
-    debugMsg("map:get_appoach_pose",  "BEFORE: "  << TREX::timeString() << toString());
+    debugMsg("map:get_outlet_appoach_pose",  "BEFORE: "  << TREX::timeString() << toString());
 
     try{
       robot_msgs::Pose pose;
@@ -162,7 +246,7 @@ namespace executive_trex_pr2 {
       _outlet_id.empty();
     }
 
-    debugMsg("map:get_approach_pose",  "AFTER: "  << TREX::timeString() << toString());
+    debugMsg("map:get_outlet_approach_pose",  "AFTER: "  << TREX::timeString() << toString());
   }
 
   //*******************************************************************************************
@@ -978,6 +1062,29 @@ namespace executive_trex_pr2 {
   unsigned int TopologicalMapAdapter::getNearestOutlet(double x, double y){
     topological_map::Point2D p(x, y);
     return _map->nearestOutlet(p);
+  }
+
+  unsigned int TopologicalMapAdapter::getNearestConnector(double x, double y){
+    unsigned int connector_id(0);
+    double distance(PLUS_INFINITY);
+    unsigned int region_id = getRegion(x, y);
+    std::vector<unsigned int> connectors;
+    getRegionConnectors(region_id, connectors);
+    for(std::vector<unsigned int>::const_iterator it = connectors.begin(); it != connectors.end(); ++it){
+      unsigned int candidate = *it;
+      double cx, cy;
+      TopologicalMapAdapter::instance()->getConnectorPosition(candidate, cx, cy);
+      double distance_to_connector = sqrt(pow(x-cx, 2) + pow(y-cy,2));
+      if(distance_to_connector < distance){
+	distance = distance_to_connector;
+	connector_id = candidate;
+      }
+    }
+
+    debugMsg("map:getNearestConnector", 
+	     "Selecting connector " << connector_id << " in region " << region_id << " a distance " << distance << " from <" << x << ", " << y << ">");
+
+    return connector_id;
   }
 
   void TopologicalMapAdapter::getOutletState(unsigned int outlet_id, robot_msgs::Pose& outlet_pose){

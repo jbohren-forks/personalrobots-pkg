@@ -403,7 +403,9 @@ namespace TREX{
       REGISTER_CONSTRAINT(constraintEngine->getCESchema(),
 			  executive_trex_pr2::MapNotifyOutletBlockedConstraint, "map_notify_outlet_blocked", "Default");
       REGISTER_CONSTRAINT(constraintEngine->getCESchema(),
-			  TREX::TFGetRobotPoseConstraint, "tf_get_robot_pose", "Default");
+			  executive_trex_pr2::MapGetNearestConnectorConstraint, "map_get_nearest_connector", "Default");
+      REGISTER_CONSTRAINT(constraintEngine->getCESchema(),
+			  executive_trex_pr2::MapGetDoorApproachPoseConstraint, "map_get_door_approach_pose", "Default");
 
       // Register functions for calculations in the door domain
       REGISTER_CONSTRAINT(constraintEngine->getCESchema(),

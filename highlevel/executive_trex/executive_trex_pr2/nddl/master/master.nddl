@@ -193,7 +193,8 @@ M2Controller::Holds{
 	// or it will be a doorway en-route to the outlet
 	bool thru_doorway;
 	map_get_next_move(cmd.x, cmd.y, cmd.z, cmd.qx, cmd.qy, cmd.qz, cmd.qw, thru_doorway, x, y, m2_active.x, m2_active.y);
-
+	map_get_nearest_connector(cmd.start_connector, x, y);
+	map_get_nearest_connector(cmd.end_connector, m2_active.x, m2_active.y);
 	if(thru_doorway == true){
 	  eq(cmd.object, doorman);
 	}

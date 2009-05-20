@@ -61,6 +61,47 @@ namespace executive_trex_pr2 {
   };
 
   /**
+   * @brief A function: given an x,y position, find the nearest connector.
+   */
+  class MapGetNearestConnectorConstraint : public Constraint {
+  public:
+    
+    MapGetNearestConnectorConstraint(const LabelStr& name,
+				  const LabelStr& propagatorName,
+				  const ConstraintEngineId& constraintEngine,
+				  const std::vector<ConstrainedVariableId>& variables);
+    virtual void handleExecute();
+    
+  private:
+    IntervalIntDomain& _connector;
+    IntervalDomain& _x;
+    IntervalDomain& _y;
+  };
+
+  /**
+   * @brief Obtain an approach point for a door
+   */
+  class MapGetDoorApproachPoseConstraint : public Constraint {
+  public:
+    
+    MapGetDoorApproachPoseConstraint(const LabelStr& name,
+				       const LabelStr& propagatorName,
+				       const ConstraintEngineId& constraintEngine,
+				       const std::vector<ConstrainedVariableId>& variables);
+
+  private:
+    virtual void handleExecute();
+    AbstractDomain& _x;
+    AbstractDomain& _y;
+    AbstractDomain& _z;
+    AbstractDomain& _qx;
+    AbstractDomain& _qy;
+    AbstractDomain& _qz;
+    AbstractDomain& _qw;
+    IntervalIntDomain& _connector_id;
+  };
+
+  /**
    * @brief Obtain an approach point for an outlet
    */
   class MapGetOutletApproachPoseConstraint : public Constraint {
@@ -443,6 +484,11 @@ namespace executive_trex_pr2 {
      * @brief Get the nearest outlet given a 2d point
      */
     virtual unsigned int getNearestOutlet(double x, double y);
+
+    /**
+     * @brief Get the nearest connector given a 2d point
+     */
+    virtual unsigned int getNearestConnector(double x, double y);
 
     /**
      * @brief Query detailed outlet data. Might want to think about adding and OutletState msg

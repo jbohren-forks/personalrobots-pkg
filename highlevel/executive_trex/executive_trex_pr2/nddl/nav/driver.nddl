@@ -5,6 +5,8 @@
 class NavController extends AgentTimeline{
   predicate Holds{
     bool active;
+    bool at_goal;
+    bool finished;
   }
 
   NavController(){
@@ -23,28 +25,51 @@ nc_initial_value.active = false;
 MoveBehavior::Active{
   starts(NavController.Holds nc);
   eq(nc.active, true);
+  eq(nc.finished, false);
 }
 
 NavController::Holds{
+  if(active == false){
+    defaultOnCommit(at_goal, false);
+    defaultOnCommit(finished, false);
+  }
+
   met_by(Holds p);
   defaultOnCommit(active, p.active);
+  defaultOnCommit(at_goal, p.at_goal);
+  defaultOnCommit(finished, p.finished);
 
   if(active == true){
-    contained_by(driver.Active d);
-    starts_during(mobility_status.Holds ms);
+    if(finished == true){
+      meets(driver.Inactive dr_inactive);
+      eq(duration, 1);
+      meets(Holds s);
+      eq(s.active, false);
 
-    if(ms.arms_tucked == false){
-      contains_start(safety_tuck_arms.Active cmd);
-      concurrent(cmd.end, end);
+      if(at_goal == true){
+	eq(dr_inactive.status, SUCCESS);
+      }
+      else{
+	eq(dr_inactive.status, ABORTED);
+      }
     }
     else {
-      contains_start(move_base.Active cmd_move);
-      concurrent(cmd_move.end, end);
-      eq_pose_msg(cmd_move.object, d.object);
+      contained_by(driver.Active d);
+      starts_during(mobility_status.Holds ms);
 
-      contains_start(set_laser_tilt.Active cmd_set_laser_tilt);
-      eq(cmd_set_laser_tilt.status, SUCCESS);
-      cmd_set_laser_tilt before cmd_move;
+      if(ms.arms_tucked == false){
+	contains_start(safety_tuck_arms.Active cmd);
+	concurrent(cmd.end, end);
+      }
+      else {
+	contains_start(move_base.Active cmd_move);
+	concurrent(cmd_move.end, end);
+	eq_pose_msg(cmd_move.object, d.object);
+
+	contains_start(set_laser_tilt.Active cmd_set_laser_tilt);
+	eq(cmd_set_laser_tilt.status, SUCCESS);
+	cmd_set_laser_tilt before cmd_move;
+      }
     }
   }
   else {
@@ -53,10 +78,15 @@ NavController::Holds{
 }
 
 MoveBase::Inactive{
+  starts(nav_controller.Holds nc);
+
   if(status == SUCCESS){
-    starts(nav_controller.Holds nc);
-    eq(nc.active, false);
-    starts(driver.Inactive d);
-    eq(d.status, SUCCESS);
+    eq(nc.finished, true);
+    eq(nc.at_goal, true);
+  }
+
+  if(status == ABORTED){
+    eq(nc.finished, true);
+    eq(nc.at_goal, false);
   }
 }
