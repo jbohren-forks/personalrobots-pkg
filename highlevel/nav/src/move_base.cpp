@@ -126,6 +126,29 @@ namespace nav {
     //since we have a controller that knows the full footprint of the robot... we may as well clear it
     tc_->clearRobotFootprint(planner_costmap_);
 
+    //if we have a tolerance on the goal point that is greater 
+    //than the resolution of the map... compute the full potential function
+    double resolution = planner_costmap_ros_->resolution();
+    robot_msgs::Point goal;
+    if(req.tolerance > resolution){
+      planner_->computePotential(req.goal.pose.position);
+      robot_msgs::Point p;
+      p.x = req.goal.pose.position.x - req.tolerance;
+      p.y = req.goal.pose.position.y - req.tolerance; 
+      bool found_legal = false;
+      while(!found_legal && p.y < req.goal.pose.position.y + req.tolerance){
+        while(!found_legal && p.x < req.goal.pose.position.x + req.tolerance){
+          if(planner_->validPointPotential(p)){
+            found_legal = true;
+            goal = p;
+          }
+          p.x += resolution;
+        }
+        p.y += resolution;
+      }
+      req.goal.pose.position = goal;
+    }
+
     std::vector<robot_msgs::PoseStamped> global_plan;
     bool valid_plan = planner_->makePlan(req.goal, global_plan);
 
