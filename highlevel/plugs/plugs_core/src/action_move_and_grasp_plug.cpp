@@ -92,7 +92,7 @@ void MoveAndGraspPlugAction::reset()
   gripper_cmd_.data = 0.045;
   lifted_=false;
   req_pose_.pose.header.frame_id = plug_stow_.header.frame_id;
-  req_pose_.pose.pose.position.x = plug_stow_.plug_centroid.x;
+  req_pose_.pose.pose.position.x = plug_stow_.plug_centroid.x - 0.01;
   req_pose_.pose.pose.position.y = plug_stow_.plug_centroid.y;
   req_pose_.pose.pose.position.z = plug_stow_.plug_centroid.z + 0.05;
 
@@ -131,8 +131,8 @@ void MoveAndGraspPlugAction::moveToGrasp()
 
   node_->publish(gripper_controller_ + "/set_command", gripper_cmd_);
 
-  req_pose_.pose.pose.position.z = plug_stow_.plug_centroid.z - 0.1;
-  req_pose_.pose.pose.position.y = plug_stow_.plug_centroid.y - 0.02;
+  req_pose_.pose.pose.position.z = plug_stow_.plug_centroid.z - 0.14;
+  req_pose_.pose.pose.position.y = plug_stow_.plug_centroid.y - 0.03;
   req_pose_.pose.header.stamp = ros::Time();
   if (!ros::service::call(arm_controller_ + "/move_to", req_pose_, res_pose_))
   {
