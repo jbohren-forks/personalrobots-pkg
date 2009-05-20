@@ -17,6 +17,7 @@
   <depend package="willow_maps"/>
   <depend package="nav"/>
   <depend package="mux"/>
+  <depend package="backup_safetysound"/>
 
   <!-- packages used in the test scripts -->
   <depend package="robot_actions"/>

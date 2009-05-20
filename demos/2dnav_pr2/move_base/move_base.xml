@@ -6,6 +6,7 @@
   <remap from="cmd_vel" to="/bs" />
   -->
   <param name="controller_frequency" value="10.0" />
+  <param name="footprint_padding" value="0.015" />
 
   <rosparam file="$(find 2dnav_pr2)/config/costmap_common_params.yaml" command="load" ns="navfn" />
   <rosparam file="$(find 2dnav_pr2)/config/costmap_common_params.yaml" command="load" ns="base_local_planner" />
