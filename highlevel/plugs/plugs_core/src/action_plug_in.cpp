@@ -38,7 +38,10 @@
 
 namespace plugs_core {
 
-const double MIN_STANDOFF = 0.035;
+const double READY_TO_INSERT = -0.026;
+const double READY_TO_PUSH = -0.0135;  // -0.009;
+const double MIN_STANDOFF = 0.022;
+
 const double SUCCESS_THRESHOLD = 0.025;
 enum {MEASURING, MOVING, INSERTING, FORCING, HOLDING};
 
@@ -151,8 +154,8 @@ void PlugInAction::plugMeasurementCallback(const tf::MessageNotifier<robot_msgs:
   tf::Pose viz_offset_desi;
   viz_offset_desi.setIdentity();
   viz_offset_desi.getOrigin().setX(-standoff);
-  viz_offset_desi.getOrigin().setY(-0.003);
-  viz_offset_desi.getOrigin().setZ(-0.004);
+  viz_offset_desi.getOrigin().setY(0.0);
+  viz_offset_desi.getOrigin().setZ(0.0);
   PoseTFToMsg(viz_offset.inverse() * viz_offset_desi, state_msg.viz_error);
   mech_offset_desi_ = viz_offset.inverse() * viz_offset_desi * mech_offset_;
 
@@ -187,7 +190,8 @@ void PlugInAction::plugMeasurementCallback(const tf::MessageNotifier<robot_msgs:
       double error = sqrt(pow(viz_offset.getOrigin().y() - viz_offset_desi.getOrigin().y(), 2) +
                           pow(viz_offset.getOrigin().z() - viz_offset_desi.getOrigin().z(), 2));
       ROS_DEBUG("%s: Error = %0.6lf.", action_name_.c_str(), error);
-      if (error < 0.002 && last_standoff_ < MIN_STANDOFF + 0.002)
+      //if (error < 0.002 && last_standoff_ < MIN_STANDOFF + 0.002)
+      if (error < 0.002 && viz_offset.getOrigin().x() > READY_TO_INSERT)
         g_state_ = INSERTING;
       else
         g_state_ = MOVING;
@@ -204,9 +208,10 @@ void PlugInAction::plugMeasurementCallback(const tf::MessageNotifier<robot_msgs:
     {
       tf::Vector3 offset = viz_offset.getOrigin() - viz_offset_desi.getOrigin();
       ROS_DEBUG("%s: Offset: (% 0.3lf, % 0.3lf, % 0.3lf)", action_name_.c_str(), offset.x(), offset.y(), offset.z());
-      if (g_started_inserting_ + ros::Duration(30.0) < ros::Time::now())
+      if (g_started_inserting_ + ros::Duration(15.0) < ros::Time::now())
       {
-        if (offset.x() > SUCCESS_THRESHOLD) // if (in_outlet)
+        //if (offset.x() > SUCCESS_THRESHOLD) // if (in_outlet)
+        if (viz_offset.getOrigin().x() > READY_TO_PUSH)  // if (in_outlet)
         {
           g_state_ = FORCING;
         }
@@ -219,7 +224,7 @@ void PlugInAction::plugMeasurementCallback(const tf::MessageNotifier<robot_msgs:
     }
     case FORCING:
     {
-      if (ros::Time::now() > g_started_forcing_ + ros::Duration(1.0))
+      if (ros::Time::now() > g_started_forcing_ + ros::Duration(5.0))
         g_state_ = HOLDING;
       break;
     }
@@ -342,7 +347,7 @@ void PlugInAction::insert()
   tff_msg_.mode.rot.x = 3;
   tff_msg_.mode.rot.y = 3;
   tff_msg_.mode.rot.z = 3;
-  tff_msg_.value.vel.x = 0.001;
+  tff_msg_.value.vel.x = 0.003;
   tff_msg_.value.vel.y = mech_offset_desi_.getOrigin().y();
   tff_msg_.value.vel.z = mech_offset_desi_.getOrigin().z();
   mech_offset_desi_.getBasis().getEulerZYX(tff_msg_.value.rot.z, tff_msg_.value.rot.y, tff_msg_.value.rot.x);
@@ -382,12 +387,21 @@ void PlugInAction::force()
   tff_msg_.mode.rot.x = 3;
   tff_msg_.mode.rot.y = 3;
   tff_msg_.mode.rot.z = 3;
-  tff_msg_.value.vel.x = 30;
+  tff_msg_.value.vel.x = 50;
   tff_msg_.value.vel.y = mech_offset_.getOrigin().y();
   tff_msg_.value.vel.z = mech_offset_.getOrigin().z();
   mech_offset_desi_.getBasis().getEulerZYX(tff_msg_.value.rot.z, tff_msg_.value.rot.y, tff_msg_.value.rot.x);
 
   node_.publish(arm_controller_ + "/command", tff_msg_);
+
+  double base_roll = tff_msg_.value.rot.x;
+  while (ros::Time::now() - g_started_forcing_ < ros::Duration(3.0))
+  {
+    tff_msg_.value.rot.x = base_roll + 0.1 * (2.0*drand48()-1.0);
+    node_.publish(arm_controller_ + "/command", tff_msg_);
+    usleep(20000);
+  }
+
   return;
 }
 
