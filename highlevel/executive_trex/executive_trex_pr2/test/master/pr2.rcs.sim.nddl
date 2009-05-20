@@ -7,7 +7,6 @@ eq_map_pose_msg(f1.object, w1); //milestone_1_charging_station);
 f1.frame_id = "map";
 f1.time_stamp = 0.0;
 
-// We will make sure that the doorway is not clear until tick 50. This will hold up exit. The default value will kick in to
-// Transition to true.
+// We will make sure that the doorway is not clear - forcing controller to kick in
 fact(doorway_clear_sv.Holds f2);
 f2.value = false;

@@ -1054,30 +1054,7 @@ namespace executive_trex_pr2 {
   unsigned int TopologicalMapAdapter::getNextConnector(double x1, double y1, double x2, double y2, 
 						       double& lowest_cost, double& next_x, double& next_y){
     // Query neighboring connectors
-    unsigned int next_connector(0);
-    std::vector< std::pair<topological_map::ConnectorId, double> > connector_cost_pairs;
-    ros::Time before = ros::Time::now();
-    getConnectorCosts(x1, y1, x2, y2, connector_cost_pairs);
-    ros::Duration elapsed = ros::Time::now() - before;
-    debugMsg("map:getNextConnector", "connection_cost_latency is " << elapsed.toSec());
-
-    // Select if there is an improvement
-    for(std::vector< std::pair<topological_map::ConnectorId, double> >::const_iterator it = connector_cost_pairs.begin(); it != connector_cost_pairs.end(); ++it){
-      if(it->second < lowest_cost){
-	// Now prune this candidate if it is the current point
-	double candidate_x(0.0), candidate_y(0.0);
-	TopologicalMapAdapter::instance()->getConnectorPosition(it->first, candidate_x, candidate_y);
-	if(fabs(candidate_x - x1) < 0.10 && fabs(candidate_y - y1) < 0.10)
-	  continue;
-	else{
-	  next_connector = it->first;
-	  lowest_cost = it->second;
-	  next_x = candidate_x;
-	  next_y = candidate_y;
-	  debugMsg("map:getNextConnector", "Preferring connector " << next_connector << " at <" << next_x << ", " << next_y << "> with cost " << lowest_cost);
-	}
-      }
-    }
+    unsigned int next_connector = getBestConnector(x1, y1, x2, y2, lowest_cost, next_x, next_y);
 
     // If there is a new connector, then we have to consider the case where the connector is at the start of a doorway. In the event that it is, then based on the
     // distance between them, we must decide if the doorway is to be crossed or not.
@@ -1085,12 +1062,11 @@ namespace executive_trex_pr2 {
       robot_msgs::Pose pose;
       getDoorApproachPose(next_connector, pose);
       if(fabs(pose.position.x - x1) < 0.10 && fabs(pose.position.y - y1) < 0.10){
-	next_connector = getOtherDoorConnector(next_connector);
+	next_connector = getOtherDoorConnector(next_connector, x2, y2);
 	TopologicalMapAdapter::instance()->getConnectorPosition(next_connector, next_x, next_y);
 	debugMsg("map:getNextConnector", "Preferring connector " << next_connector << " at <" << next_x << ", " << next_y << "> with cost " << lowest_cost);
       }
     }
-
 
     return next_connector;
   }
@@ -1104,7 +1080,7 @@ namespace executive_trex_pr2 {
     return doorway_a || doorway_b;
   }
 
-  unsigned int TopologicalMapAdapter::getOtherDoorConnector(unsigned int connector_id){
+  unsigned int TopologicalMapAdapter::getOtherDoorConnector(unsigned int connector_id, double target_x, double target_y){
     unsigned int region_a(0), region_b(0), doorway_region(0);
     bool doorway_a(false), doorway_b(false);
     getConnectorRegions(connector_id, region_a, region_b);
@@ -1120,11 +1096,49 @@ namespace executive_trex_pr2 {
       ROS_ASSERT(doorway_a || doorway_b);
     }
 
+    // We want to get the next connector across the doorway. The general case must admit a set of connectors but exactly 2 of them 
     std::vector<unsigned int> connectors;
     getRegionConnectors(doorway_region, connectors);
     ROS_ASSERT(connectors.size() <= 3);
 
-    // Now for each connector
-    return (connectors[0] != connector_id ? connectors[0] : connectors[1]);
+    // Obtain the center of the doorway
+    door_msgs::Door door_state;
+    getDoorState(doorway_region, door_state);
+    double c_x = (door_state.frame_p1.x + door_state.frame_p2.x) / 2;
+    double c_y = (door_state.frame_p1.y + door_state.frame_p2.y) / 2;
+    debugMsg("map:getOtherDoorConnector", "Trying doorway region " << doorway_region << " with center point <" << c_x << ", " << c_y << ">");
+    double nx, ny, cost(PLUS_INFINITY);
+    return getBestConnector(c_x, c_y, target_x, target_y, cost, nx, ny);
+  }
+
+  unsigned int TopologicalMapAdapter::getBestConnector(double x1, double y1, double x2, double y2,
+						    double& lowest_cost, double& next_x, double& next_y){
+    // Query neighboring connectors
+    unsigned int best_connector(0);
+    std::vector< std::pair<topological_map::ConnectorId, double> > connector_cost_pairs;
+    ros::Time before = ros::Time::now();
+    getConnectorCosts(x1, y1, x2, y2, connector_cost_pairs);
+    ros::Duration elapsed = ros::Time::now() - before;
+    debugMsg("map:getBestConnector", "connection_cost_latency is " << elapsed.toSec());
+
+    // Select if there is an improvement
+    for(std::vector< std::pair<topological_map::ConnectorId, double> >::const_iterator it = connector_cost_pairs.begin(); it != connector_cost_pairs.end(); ++it){
+      if(it->second < lowest_cost){
+	// Now prune this candidate if it is the current point
+	double candidate_x(0.0), candidate_y(0.0);
+	TopologicalMapAdapter::instance()->getConnectorPosition(it->first, candidate_x, candidate_y);
+
+	if(fabs(candidate_x - x1) < 0.10 && fabs(candidate_y - y1) < 0.10)
+	  continue;
+
+	best_connector = it->first;
+	lowest_cost = it->second;
+	next_x = candidate_x;
+	next_y = candidate_y;
+	debugMsg("map:getBestConnector", "Preferring connector " << best_connector << " at <" << next_x << ", " << next_y << "> with cost " << lowest_cost);
+      }
+    }
+
+    return best_connector;
   }
 }

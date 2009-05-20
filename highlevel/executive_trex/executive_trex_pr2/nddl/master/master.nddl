@@ -167,6 +167,7 @@ M2Controller::Holds{
 	}
 	else {
 	  meets(m2_goals.Inactive m2_inactive);
+	  eq(m2_inactive.status, SUCCESS);
 	  eq(s.active, false);
 	  eq(duration, 1);
 	}

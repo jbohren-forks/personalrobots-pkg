@@ -473,9 +473,12 @@ namespace executive_trex_pr2 {
     virtual unsigned int getNextConnector(double x1, double y1, double x2, double y2, 
 					  double& lowest_cost, double& next_x, double& next_y);
 
-    virtual bool isDoorwayConnector(unsigned int connector_id);
+    unsigned int getBestConnector(double x1, double y1, double x2, double y2,
+				  double& lowest_cost, double& next_x, double& next_y);
 
-    virtual unsigned int getOtherDoorConnector(unsigned int connector_id);
+    virtual unsigned int getOtherDoorConnector(unsigned int connector_id, double target_x, double target_y);
+
+    virtual bool isDoorwayConnector(unsigned int connector_id);
 
   private:
     static TopologicalMapAdapter* _singleton;
