@@ -74,18 +74,20 @@ namespace nav {
     controller_costmap_ros_->getCostmapCopy(controller_costmap_);
 
     robot_msgs::Point pt;
+    double padding;
+    ros_node_.param("~footprint_padding", padding, 0.01);
     //create a square footprint
-    pt.x = inscribed_radius_ + .01;
-    pt.y = -1 * (inscribed_radius_ + .01);
+    pt.x = inscribed_radius_ + padding;
+    pt.y = -1 * (inscribed_radius_ + padding);
     footprint_.push_back(pt);
-    pt.x = -1 * (inscribed_radius_ + .01);
-    pt.y = -1 * (inscribed_radius_ + .01);
+    pt.x = -1 * (inscribed_radius_ + padding);
+    pt.y = -1 * (inscribed_radius_ + padding);
     footprint_.push_back(pt);
-    pt.x = -1 * (inscribed_radius_ + .01);
-    pt.y = inscribed_radius_ + .01;
+    pt.x = -1 * (inscribed_radius_ + padding);
+    pt.y = inscribed_radius_ + padding;
     footprint_.push_back(pt);
-    pt.x = inscribed_radius_ + .01;
-    pt.y = inscribed_radius_ + .01;
+    pt.x = inscribed_radius_ + padding;
+    pt.y = inscribed_radius_ + padding;
     footprint_.push_back(pt);
 
     //give the robot a nose
@@ -255,8 +257,10 @@ namespace nav {
         //if we have a new plan... we'll update the plan for the controller
         if(new_plan_){
           new_plan_ = false;
-          if(!tc_->updatePlan(global_plan_))
+          if(!tc_->updatePlan(global_plan_)){
+            resetState();
             return robot_actions::ABORTED;
+          }
         }
 
         //get observations for the non-costmap controllers
@@ -304,28 +308,29 @@ namespace nav {
         ros::Duration patience = ros::Duration(controller_patience_);
 
         //if we have a valid plan, but can't find a valid control for a certain time... abort
-        if(last_valid_control_ + patience < ros::Time::now())
+        if(last_valid_control_ + patience < ros::Time::now()){
+          resetState();
           return robot_actions::ABORTED;
+        }
 
         //try to make a plan
         if(done_half_rotation_ && !done_full_rotation_ || !tryPlan(goal_)){
           //if we've tried to reset our map and to rotate in place, to no avail, we'll abort the goal
           if(attempted_costmap_reset_ && done_full_rotation_){
-            attempted_rotation_ = false;
-            done_half_rotation_ = false;
-            done_full_rotation_ = false;
-            attempted_costmap_reset_ = false;
+            resetState();
             return robot_actions::ABORTED;
           }
 
           if(done_full_rotation_){
-            resetCostmaps();
+            resetCostmaps(circumscribed_radius_ * 2, circumscribed_radius_ * 2);
             attempted_rotation_ = false;
             done_half_rotation_ = false;
             done_full_rotation_ = false;
             attempted_costmap_reset_ = true;
           }
           else{
+            //clear things in the static map that are really far away
+            resetCostmaps(3.0, 3.0);
             //if planning fails... we'll try rotating in place to clear things out
             double angle = M_PI; //rotate 180 degrees
             tf::Stamped<tf::Pose> rotate_goal = tf::Stamped<tf::Pose>(tf::Pose(tf::Quaternion(angle, 0.0, 0.0), tf::Point(0.0, 0.0, 0.0)), ros::Time::now(), robot_base_frame_);
@@ -356,6 +361,13 @@ namespace nav {
     return robot_actions::PREEMPTED;
   }
 
+  void MoveBase::resetState(){
+    attempted_rotation_ = false;
+    done_half_rotation_ = false;
+    done_full_rotation_ = false;
+    attempted_costmap_reset_ = false;
+  }
+
   bool MoveBase::tryPlan(robot_msgs::PoseStamped goal){
     ros::Duration patience = ros::Duration(planner_patience_);
     ros::Time attempt_end = ros::Time::now() + patience;
@@ -383,9 +395,9 @@ namespace nav {
     return false;
   }
 
-  void MoveBase::resetCostmaps(){
-    planner_costmap_ros_->resetMapOutsideWindow(circumscribed_radius_ * 4, circumscribed_radius_ * 4);
-    controller_costmap_ros_->resetMapOutsideWindow(circumscribed_radius_ * 4, circumscribed_radius_ * 4);
+  void MoveBase::resetCostmaps(double size_x, double size_y){
+    planner_costmap_ros_->resetMapOutsideWindow(size_x, size_y);
+    controller_costmap_ros_->resetMapOutsideWindow(size_x, size_y);
   }
 
 };

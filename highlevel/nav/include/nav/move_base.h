@@ -103,7 +103,9 @@ namespace nav {
       /**
        * @brief  Resets the costmaps to the static map outside a given window
        */
-      void resetCostmaps();
+      void resetCostmaps(double size_x, double size_y);
+
+      void resetState();
 
       bool tryPlan(robot_msgs::PoseStamped goal);
 
