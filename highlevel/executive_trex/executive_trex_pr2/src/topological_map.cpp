@@ -997,17 +997,15 @@ namespace executive_trex_pr2 {
    */
   void TopologicalMapAdapter::getOutletApproachPose(unsigned int outlet_id, robot_msgs::Pose& approach_pose){
     topological_map::OutletInfo outlet_info = _map->outletInfo(outlet_id);
-    topological_map::Point2D p = _map->outletApproachPosition (outlet_id, 1.0, 1.0);
+    topological_map::Point2D p = _map->outletApproachPosition (outlet_id, 1.0, 0.3);
     approach_pose.position.x = p.x;
     approach_pose.position.y = p.y;
     approach_pose.position.z = 0;
 
-    tf::Quaternion q(outlet_info.qx, outlet_info.qy, outlet_info.qz, outlet_info.qw);
-    tf::Quaternion q2 = q * tf::Quaternion(M_PI, 0.0, 0.0);
-    approach_pose.orientation.x = q2.x();
-    approach_pose.orientation.y = q2.y();
-    approach_pose.orientation.z = q2.z();
-    approach_pose.orientation.w = q2.w();
+    double dx = outlet_info.x - approach_pose.position.x;
+    double dy = outlet_info.y - approach_pose.position.y;
+    double heading = atan2(dy, dx);
+    tf::QuaternionTFToMsg (tf::Quaternion(heading, 0.0, 0.0), approach_pose.orientation);
   }
 
   /**
