@@ -10,25 +10,25 @@ close();
 map_initialize_from_file("willow.tmap");
 
 rejectable(driver.Active g0);
-map_get_outlet_approach_pose(g0.x, g0.y, g0.z, g0.qx, g0.qy, g0.qz, g0.qw, 4);
+map_get_outlet_approach_pose(g0.x, g0.y, g0.z, g0.qx, g0.qy, g0.qz, g0.qw, 6);
 g0.frame_id = "map";
 
 rejectable(recharger.Active g1);
-g1.outlet_id = 4;
+g1.outlet_id = 6;
 
 rejectable(driver.Active g2);
-map_get_outlet_approach_pose(g2.x, g2.y, g2.z, g2.qx, g2.qy, g2.qz, g2.qw, 34);
+map_get_outlet_approach_pose(g2.x, g2.y, g2.z, g2.qx, g2.qy, g2.qz, g2.qw, 1);
 g2.frame_id = "map";
 
 rejectable(recharger.Active g3);
-g3.outlet_id = 34;
+g3.outlet_id = 1;
 
 rejectable(driver.Active g4);
-map_get_outlet_approach_pose(g4.x, g4.y, g4.z, g4.qx, g4.qy, g4.qz, g4.qw, 1);
+map_get_outlet_approach_pose(g4.x, g4.y, g4.z, g4.qx, g4.qy, g4.qz, g4.qw, 38);
 g4.frame_id = "map";
 
 rejectable(recharger.Active g5);
-g5.outlet_id = 1;
+g5.outlet_id = 38;
 
 g0 before g1;
 g1 before g2;
