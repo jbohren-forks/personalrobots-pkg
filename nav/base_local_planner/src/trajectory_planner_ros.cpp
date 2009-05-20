@@ -350,7 +350,7 @@ namespace base_local_planner {
         robot_msgs::PoseStamped new_pose;
         new_pose = orig_global_plan[i];
         if(!tf_.canTransform(global_frame_, new_pose.header.frame_id, new_pose.header.stamp, ros::Duration(update_plan_tolerance_))){
-          ROS_ERROR("TrajectoryPlannerROS cannot service your goal because the transform is not available, we waited %.4f seconds", update_plan_tolerance_);
+          ROS_ERROR("TrajectoryPlannerROS cannot service your goal because the transform is not available, we waited %.4f seconds, plan time: %.4f, current_time: %.4f, i: %d, size: %d", update_plan_tolerance_, new_pose.header.stamp.toSec(), ros::Time::now().toSec(), i, orig_global_plan.size());
           return false;
         }
         tf_.transformPose(global_frame_, new_pose, new_pose);

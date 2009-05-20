@@ -277,7 +277,7 @@ namespace base_local_planner{
         return;
       }
 
-      occ_cost += costmap_.getCost(cell_x, cell_y);
+      occ_cost = std::max(std::max(occ_cost, footprint_cost), double(costmap_.getCost(cell_x, cell_y)));
 
       double cell_pdist = map_(cell_x, cell_y).path_dist;
       double cell_gdist = map_(cell_x, cell_y).goal_dist;
@@ -327,12 +327,12 @@ namespace base_local_planner{
 
     }
 
-    //ROS_INFO("OccCost: %f", occ_cost);
+    //ROS_INFO("OccCost: %f, vx: %.2f, vy: %.2f, vtheta: %.2f", occ_cost, vx_samp, vy_samp, vtheta_samp);
     double cost = -1.0;
     if(!heading_scoring_)
-      cost = pdist_scale_ * path_dist + gdist_scale_ * goal_dist + occdist_scale_ * occ_cost;
+      cost = pdist_scale_ * path_dist + goal_dist * gdist_scale_ + occdist_scale_ * occ_cost;
     else
-      cost = occdist_scale_ * occ_cost + heading_diff + gdist_scale_ * goal_dist;
+      cost = occdist_scale_ * occ_cost + heading_diff + goal_dist * gdist_scale_;
 
     traj.cost_ = cost;
   }
