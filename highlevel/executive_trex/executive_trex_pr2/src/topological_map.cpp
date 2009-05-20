@@ -395,11 +395,18 @@ namespace executive_trex_pr2 {
     
     thru_doorway = TopologicalMapAdapter::instance()->isDoorway(current_x, current_y, next_x, next_y);
 
-    // If not a doorway, and not the final move, then it must be an approach to a doorway. If that is the case, we must modify
-    // the x and y based on the approach point
-    if(next_connector != 0 && !thru_doorway && TopologicalMapAdapter::instance()->isDoorwayConnector(next_connector)){
-      TopologicalMapAdapter::instance()->getDoorApproachPose(next_connector, target_pose);
-      debugMsg("map:get_next_move",  "Selecting approach for doorway connector " << next_connector << " at <" << target_pose.position.x << ", " << target_pose.position.y << ">.");
+    // If we have a connector, use it for the next pose!
+    if(next_connector != 0){
+      // If not a doorway, and not the final move, then it must be an approach to a doorway. If that is the case, we must modify
+      // the x and y based on the approach point
+      if(!thru_doorway && TopologicalMapAdapter::instance()->isDoorwayConnector(next_connector)){
+	TopologicalMapAdapter::instance()->getDoorApproachPose(next_connector, target_pose);
+	debugMsg("map:get_next_move",  "Selecting approach for doorway connector " << next_connector << " at <" << target_pose.position.x << ", " << target_pose.position.y << ">.");
+      }
+      else {
+	target_pose.position.x = next_x;
+	target_pose.position.y = next_y;
+      }
     }
 
     _next_x.set(target_pose.position.x);
