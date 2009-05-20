@@ -1209,7 +1209,7 @@ public:
 		PointStamped point;
 
 		point.header.stamp = ros::Time::now();
-		point.header.frame_id = "torso_lift_link";
+		point.header.frame_id = "head_tilt_link";
 
 		point.point.x = 1;
 		point.point.y = tan(M_PI*horizontalAngle/180);
@@ -1250,7 +1250,7 @@ public:
 		bool found = false;
 		subscribeToData();
 
-		float directions[][2] = { {0,0}, {-15,-10}, {0,-10}, {15,-10}, {15,0}, {0,0}, {-15,0,},{-15,10}, {0,10},{15,10} };
+		float directions[][2] = { {0,0}, {-15,-10}, {15,0}, {15,0}, {0,10}, {-15,0}, {-15,0,},{0,10}, {15,0},{15,0} };
 
 		for (size_t k=0; k<sizeof(directions)/sizeof(directions[0]); ++k)
 		{
