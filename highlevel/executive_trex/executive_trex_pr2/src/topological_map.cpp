@@ -343,10 +343,10 @@ namespace executive_trex_pr2 {
 
     // Check if this is an outlet we are trying to get to
     unsigned int nearest_outlet_id = TopologicalMapAdapter::instance()->getNearestOutlet(target_x, target_y);
-    robot_msgs::Pose outlet_pose;
+    robot_msgs::Pose outlet_pose, target_pose;
     TopologicalMapAdapter::instance()->getOutletState(nearest_outlet_id, outlet_pose);
     double distance_to_outlet = sqrt(pow(outlet_pose.position.x - target_x, 2) + pow(outlet_pose.position.y - target_y, 2));
-    debugMsg("map:get_next_move", "Distance to nearest outlet is " << distance_to_outlet);
+    debugMsg("map:get_next_move", "Distance from target to nearest outlet is " << distance_to_outlet);
 
     unsigned int this_region =  TopologicalMapAdapter::instance()->getRegion(current_x, current_y);
     condDebugMsg(this_region == 0, "map", "No region for <" << current_x << ", " << current_y <<">");
@@ -373,19 +373,20 @@ namespace executive_trex_pr2 {
 
     unsigned int next_connector = TopologicalMapAdapter::instance()->getNextConnector(current_x, current_y, target_x, target_y, lowest_cost, next_x, next_y);
 
-    // If there is no next connector, and this_region != final_region
-    if(next_connector == 0 && this_region != final_region){
-      _thru_doorway.empty();
-      debugMsg("map:get_next_move",  "Exiting since there is no move available.");
-      return;
+    // If there is no next connector, and this_region != final_region, then we must have filtered out the connector because we are so close. Connectors
+    // are spuriously assigned to regions! Ahhhhhhhh! 
+    if(next_connector == 0 && this_region != final_region && distance_to_outlet < 2){
+      TopologicalMapAdapter::instance()->getOutletApproachPose(nearest_outlet_id, target_pose);
+      debugMsg("map:get_next_move",  "Selecting approach for outlet");
+      next_x = target_pose.x;
+      next_y = target_pose.y;
     }
-
-    bool thru_doorway = TopologicalMapAdapter::instance()->isDoorway(current_x, current_y, next_x, next_y);
+    else {
+      bool thru_doorway = TopologicalMapAdapter::instance()->isDoorway(current_x, current_y, next_x, next_y);
 
     // If not a doorway, and not the final move, then it must be an approach to a doorway. If that is the case, we must modify
     // the x and y based on the approach point
     if(next_connector != 0 && !thru_doorway && TopologicalMapAdapter::instance()->isDoorwayConnector(next_connector)){
-      robot_msgs::Pose pose;
       TopologicalMapAdapter::instance()->getDoorApproachPose(next_connector, pose);
       _next_x.set(pose.position.x);
       _next_y.set(pose.position.y);
