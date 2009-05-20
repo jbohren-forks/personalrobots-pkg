@@ -167,7 +167,7 @@ namespace costmap_2d {
       void mapToWorld(unsigned int mx, unsigned int my, double& wx, double& wy) const;
 
       /**
-       * @brief  Convert from map coordinates to world coordinates
+       * @brief  Convert from world coordinates to map coordinates
        * @param  wx The x world coordinate
        * @param  wy The y world coordinate
        * @param  mx Will be set to the associated map x coordinate
