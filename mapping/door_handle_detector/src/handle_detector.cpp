@@ -371,7 +371,10 @@ void HandleDetector::refineHandleCandidatesWithDoorOutliers (vector<int> &handle
       dist_to_side = cloud_geometry::distances::pointToPointXYDistance(door_prior.door_p1, mid);
     else
       ROS_ERROR("HandleDetector: Door hinge side not defined");
-    score /= fmin(0.0001, dist_to_side);
+    if (dist_to_side > 0.3)
+      score = 0;
+    else
+      score /= fmin(0.0001, dist_to_side);
     ROS_INFO ("  Handle is found at %f [m] from the door side", dist_to_side);
     
     if (score > best_score)
