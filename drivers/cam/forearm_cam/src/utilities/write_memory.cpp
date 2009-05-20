@@ -21,7 +21,7 @@ int main(int argc, char** argv)
   pr2CamListInit(&camList);
 
   // Discover any connected cameras, wait for 0.5 second for replies
-  if( pr2Discover(if_name, &camList, SEC_TO_USEC(0.5)) == -1) {
+  if( pr2Discover(if_name, &camList, NULL, SEC_TO_USEC(0.5)) == -1) {
     printf("Discover error\n");
     return -1;
   }

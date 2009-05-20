@@ -27,7 +27,7 @@
 //#warning Building for LIBRARY
 
 #define FLASH_MAX_PAGENO 4095
-#define FLASH_PAGE_SIZE 528
+#define FLASH_PAGE_SIZE 264
 
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -139,7 +139,7 @@ typedef struct PACKED_ATTRIBUTE {
  * It can be directed to the broadcast address (MAC ff:ff:ff:ff:ff:ff) to detect all cameras
  * or to the unicast address of one camera to detect only that specific camera.
  *
- * The PacketDiscover is valid in all camera modes. It consists of a PacketGeneri
+ * The PacketDiscover is valid in all camera modes. It consists of a PacketGeneric
  * with the type field set to PKTT_DISCOVER and an IP Address.
  * When received, the camera will reply with a PacketAnnounce using the specified IP Address
  *

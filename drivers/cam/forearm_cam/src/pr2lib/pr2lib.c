@@ -6,6 +6,7 @@
 #include <errno.h>
 #include <unistd.h>
 #include <stdbool.h>
+#include <net/if.h>
 
 #include "host_netutil.h"
 #include "ipcam_packet.h"
@@ -24,8 +25,6 @@
 int pr2LibVersion() {
 	return PR2LIB_VERSION;
 }
-
-
 
 
 /**
@@ -74,7 +73,7 @@ int pr2StatusWait( int s, uint32_t wait_us, uint32_t *type, uint32_t *code ) {
  * @return	Returns -1 with errno set for system call errors. Otherwise returns number of new
  * 			cameras found.
  */
-int pr2Discover(const char *ifName, IpCamList *ipCamList, unsigned wait_us) {
+int pr2Discover(const char *ifName, IpCamList *ipCamList, const char *ipAddress, unsigned wait_us) {
 	// Create and initialize a new Discover packet
 	PacketDiscover dPkt;
 	dPkt.hdr.magic_no = htonl(WG_MAGIC_NO);
@@ -86,12 +85,35 @@ int pr2Discover(const char *ifName, IpCamList *ipCamList, unsigned wait_us) {
 	 */
 	int s = wgCmdSocketCreate(ifName, &dPkt.hdr.reply_to);
 	if(s == -1) {
-		printf("Unable to create socket\n");
+		perror("Unable to create socket\n");
 		return -1;
 	}
+  
+  //// Determine the broadcast address for ifName. This is the address we
+  //// will tell the camera to send from.
+
+	struct in_addr newIP;
+	if (ipAddress) // An IP was specified
+  {
+    inet_aton(ipAddress, &newIP);
+    dPkt.ip_addr = newIP.s_addr;
+  }
+  else // We guess an IP by flipping the host bits of the local IP.
+  {
+    struct in_addr localip;
+    struct in_addr netmask;
+    wgIpGetLocalAddr(ifName, &localip);
+    wgIpGetLocalNetmask(ifName, &netmask);
+    dPkt.ip_addr = localip.s_addr ^ netmask.s_addr ^ ~0;
+  }
 
 	if( wgSendUDPBcast(s, ifName, &dPkt,sizeof(dPkt)) == -1) {
-		printf("Unable to send broadcast\n");
+		perror("Unable to send broadcast\n");
+	}
+
+	// For the old API
+  if( wgSendUDPBcast(s, ifName, &dPkt,sizeof(dPkt)-sizeof(dPkt.ip_addr)) == -1) {
+		perror("Unable to send broadcast\n");
 	}
 
 	// Count the number of new cameras found
@@ -121,8 +143,8 @@ int pr2Discover(const char *ifName, IpCamList *ipCamList, unsigned wait_us) {
 			pr2CamListInit( tmpListItem );
 
 			// Initialize the new list item's data fields (byte order corrected)
-      tmpListItem->hw_version = aPkt.hw_version;
-      tmpListItem->fw_version = aPkt.fw_version;
+      tmpListItem->hw_version = ntohl(aPkt.hw_version);
+      tmpListItem->fw_version = ntohl(aPkt.fw_version);
       tmpListItem->ip = fromaddr.sin_addr.s_addr;
 			tmpListItem->serial = ntohl(aPkt.ser_no);
 			memcpy(&tmpListItem->mac, aPkt.mac, sizeof(aPkt.mac));
@@ -192,7 +214,7 @@ int pr2Configure( IpCamList *camInfo, const char *ipAddress, unsigned wait_us) {
 	}
 
 	if(wgSendUDPBcast(s, camInfo->ifName, &cPkt, sizeof(cPkt)) == -1) {
-		printf("Unable to send broadcast\n");
+	  debug("Unable to send broadcast\n");
     close(s);
 		return -1;
 	}
@@ -253,9 +275,6 @@ int pr2Configure( IpCamList *camInfo, const char *ipAddress, unsigned wait_us) {
  */
 int pr2StartVid( const IpCamList *camInfo, const uint8_t mac[6], const char *ipAddress, uint16_t port ) {
 	PacketVidStart vPkt;
-
-	debug("Starting video\n");
-
 
 	// Initialize the packet
 	vPkt.hdr.magic_no = htonl(WG_MAGIC_NO);
@@ -318,9 +337,6 @@ err_out:
  */
 int pr2StopVid( const IpCamList *camInfo ) {
 	PacketVidStop vPkt;
-
-
-	debug("Stopping video\n");
 
 	// Initialize the packet
 	vPkt.hdr.magic_no = htonl(WG_MAGIC_NO);
@@ -472,11 +488,11 @@ int pr2GetTimer( const IpCamList *camInfo, uint64_t *time_us ) {
 }
 
 /**
- * Reads one 528 byte page of the camera's onboard Atmel dataflash.
+ * Reads one FLASH_PAGE_SIZE byte page of the camera's onboard Atmel dataflash.
  *
  * @param camInfo Describes the camera to connect to.
  * @param address Specifies the 12-bit flash page address to read (0-4095)
- * @param pageDataOut Points to at least 528 bytes of storage in which to place the flash data.
+ * @param pageDataOut Points to at least FLASH_PAGE_SIZE bytes of storage in which to place the flash data.
  *
  * @return 	Returns 0 for success
  * 			Returns -1 for system error
@@ -494,8 +510,8 @@ int pr2FlashRead( const IpCamList *camInfo, uint32_t address, uint8_t *pageDataO
 		return 1;
 	}
 
-	// The page portion of the address is 12-bits wide, range (bit10..bit22)
-	rPkt.address = htonl(address<<10);
+	// The page portion of the address is 12-bits wide, range (bit9..bit21)
+	rPkt.address = htonl(address<<9);
 
 	strncpy(rPkt.hdr.hrt, "Flash read", sizeof(rPkt.hdr.hrt));
 
@@ -542,11 +558,11 @@ int pr2FlashRead( const IpCamList *camInfo, uint32_t address, uint8_t *pageDataO
 }
 
 /**
- * Writes one 528 byte page to the camera's onboard Atmel dataflash.
+ * Writes one FLASH_PAGE_SIZE byte page to the camera's onboard Atmel dataflash.
  *
  * @param camInfo Describes the camera to connect to.
  * @param address Specifies the 12-bit flash page address to write (0-4095)
- * @param pageDataOut Points to at least 528 bytes of storage from which to get the flash data.
+ * @param pageDataOut Points to at least FLASH_PAGE_SIZE bytes of storage from which to get the flash data.
  *
  * @return 	Returns 0 for success
  * 			Returns -1 for system error
@@ -563,8 +579,8 @@ int pr2FlashWrite( const IpCamList *camInfo, uint32_t address, const uint8_t *pa
 		return 1;
 	}
 
-	// The page portion of the address is 12-bits wide, range (bit10..bit22)
-	rPkt.address = htonl(address<<10);
+	// The page portion of the address is 12-bits wide, range (bit9..bit21)
+	rPkt.address = htonl(address<<9);
 	strncpy(rPkt.hdr.hrt, "Flash write", sizeof(rPkt.hdr.hrt));
 
 	memcpy(rPkt.data, pageDataIn, FLASH_PAGE_SIZE);
@@ -1075,21 +1091,6 @@ int pr2VidReceive( const char *ifName, uint16_t port, size_t height, size_t widt
 	// Counts number of lines received in current frame
 	uint32_t lineCount;
 
-	// Counts number of frames received total (for throughput calculations)
-	uint32_t frameCount=0;
-
-	// Counts number of short frames received (for statistics)
-	uint32_t shortFrameCount=0;
-
-	// Counts number of missing EOFs (for statistics)
-	uint32_t missingEofCount=0;
-
-	// Will capture the time that the first line was received
-	struct timeval vidStartTime;
-
-	// Will capture the time that the video stopped
-	struct timeval vidStopTime;
-
 	// Points to an EOF structure for passing to frameHandler;
 	PacketEOF *eof = NULL;
 
@@ -1187,10 +1188,6 @@ int pr2VidReceive( const char *ifName, uint16_t port, size_t height, size_t widt
 			if(firstPacket == true) {
 				firstPacket = false;
 				frameInfo.frame_number = vPkt->header.frame_number;
-
-				// Grab the time that the first line was received
-				gettimeofday(&vidStartTime, NULL);
-
 			}
 	
       // Store the start time for the frame.
@@ -1214,14 +1211,9 @@ int pr2VidReceive( const char *ifName, uint16_t port, size_t height, size_t widt
 			} else if((vPkt->header.frame_number - frameInfo.frame_number) & 0xFFFF) { // The camera only sends 16 bits of frame number
 				// If we have received a line from the next frame, we must have missed the EOF somehow
 				debug ("Frame #%u missing EOF, got %i lines\n", frameInfo.frame_number, lineCount);
-
 				frameComplete = true;
-
 				// EOF was missing
 				eof = NULL;
-
-				missingEofCount++;
-				frameCount++;
 			} else if( vPkt->header.line_number == IMAGER_LINENO_EOF ) {
 				// This is a 'normal' (non-error) end of frame packet (line number 0x3FF)
 				frameComplete = true;
@@ -1234,41 +1226,20 @@ int pr2VidReceive( const char *ifName, uint16_t port, size_t height, size_t widt
 				eof->ticks_lo = ntohl(eof->ticks_lo);
 				eof->ticks_per_sec = ntohl(eof->ticks_per_sec);
 
-				uint64_t frame_time_us;
-				frame_time_us = ((uint64_t)eof->ticks_hi << 32) + eof->ticks_lo;
-
-				// We want milliseconds from seconds, but to preserve some precision
-				// we'll multiply the numerator by 1000 and divide the denominator
-				// by 1000.
-				frame_time_us *= 1000;
-				frame_time_us /= (eof->ticks_per_sec/1000);
-				//debug("EOF frame #%u, time %llu, I2C ", vPkt->header.frame_number, frame_time_us);
-
 				// Correct to network byte order for frameHandler
 				eof->i2c_valid = ntohl(eof->i2c_valid);
 				for(int i=0; i<I2C_REGS_PER_FRAME; i++) {
 					eof->i2c[i] = ntohs(eof->i2c[i]);
 				}
 
-				for(int i=0; i<I2C_REGS_PER_FRAME; i++) {
-					if (eof->i2c_valid & (1UL << i)) {
-						//debug("%u: %04X ", i, eof->i2c[i]);
-					}
-				}
-
 				if(lineCount != height) {
-          //debug("Short (%u/%u)", lineCount, height);
 					// Flag packet as being short for the frameHandler
 					eof->header.line_number = IMAGER_LINENO_SHORT;
-          shortFrameCount++;
           frameInfo.shortFrame = true;
 				}
-        // debug("\n");
-
 				// Move to the next frame
-				frameCount++;
-			} else {
-
+			
+      } else {
 				// Remove extraneous frame information from the line number field
 				vPkt->header.line_number &= LINE_NUMBER_MASK;
 
@@ -1300,16 +1271,6 @@ int pr2VidReceive( const char *ifName, uint16_t port, size_t height, size_t widt
 			handlerReturn = -1;
 		}
 	} while( handlerReturn == 0 );
-
-	gettimeofday(&vidStopTime, NULL);
-
-	struct timeval totalTime;
-	timersub(&vidStopTime, &vidStartTime, &totalTime);
-	
-	debug("Video statistics:\n");
-	debug("Total run time was %llu usec\n", (long long int)totalTime.tv_sec*1000*1000+totalTime.tv_usec);
-	debug("Total frames received: %u (%f fps)\n", frameCount, frameCount/((double) totalTime.tv_sec+totalTime.tv_usec/1e6));
-	debug("Short frames: %u, Missing EOFs: %u\n", shortFrameCount, missingEofCount);
 
 	close(s);
 	return 0;

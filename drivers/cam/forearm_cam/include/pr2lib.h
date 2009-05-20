@@ -13,7 +13,7 @@ extern "C" {
  * Firmware version number
  */
 #define PR2LIB_VERSION_MAJOR 0x01
-#define PR2LIB_VERSION_MINOR 0x04
+#define PR2LIB_VERSION_MINOR 0x05
 #define PR2LIB_VERSION ((PR2LIB_VERSION_MAJOR <<8) | PR2LIB_VERSION_MINOR )
 
 
@@ -63,7 +63,7 @@ typedef struct
 
 int pr2LibVersion( void );
 
-int pr2Discover(const char *ifName, IpCamList *ipCamList, unsigned wait_us);
+int pr2Discover(const char *ifName, IpCamList *ipCamList, const char *ipAddress, unsigned wait_us);
 int pr2Configure( IpCamList *camInfo, const char *ipAddress, unsigned wait_us);
 int pr2StartVid( const IpCamList *camInfo, const uint8_t mac[6], const char *ipAddress, unsigned short port );
 int pr2StopVid( const IpCamList *camInfo );

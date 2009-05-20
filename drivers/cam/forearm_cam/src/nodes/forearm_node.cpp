@@ -397,7 +397,7 @@ public:
     if (retval == -1 || !WIFEXITED(retval) || WEXITSTATUS(retval))
     {
       ROS_WARN("Unable to set rp_filter to 0 on interface. Camera discovery is likely to fail.");
-    }
+    }  
     
     retval = system("sysctl net.core.rmem_max=16000000");
     if (retval == -1 || !WIFEXITED(retval) || WEXITSTATUS(retval))
@@ -407,7 +407,7 @@ public:
 
 #ifndef SIM_TEST
     // Discover any connected cameras, wait for 0.5 second for replies
-    if( pr2Discover(if_name.c_str(), &camList, SEC_TO_USEC(0.5)) == -1) {
+    if( pr2Discover(if_name.c_str(), &camList, ip_address.c_str(), SEC_TO_USEC(0.5)) == -1) {
       ROS_FATAL("Discover error");
       exit_status_ = 1;
       node_.shutdown();

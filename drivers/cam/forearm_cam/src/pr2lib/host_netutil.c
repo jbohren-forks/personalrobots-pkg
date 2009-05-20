@@ -218,6 +218,43 @@ int wgIpGetLocalAddr(const char *ifName, struct in_addr *addr) {
 
 
 /**
+ * Utility function to retrieve the local IPv4 netmask asssociated with
+ * a specified Ethernet interface name.
+ *
+ * @param ifName A null-terminated string containing the name of the Ethernet address (e.g., eth0)
+ * @param macAddr A in_addr structure to contain the local interface IP
+ *
+ * @return Returns 0 if successful, -1 with errno set otherwise
+ */
+int wgIpGetLocalNetmask(const char *ifName, struct in_addr *addr) {
+	struct ifreq ifr;
+	int s;
+
+	// Create a dummy socket
+	if ((s=socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP))==-1) {
+		perror("wgIpGetLocalAddr can't create socket");
+		return -1;
+	}
+
+	// Initialize the ifreq structure
+	strncpy(ifr.ifr_name,ifName,sizeof(ifr.ifr_name)-1);
+	ifr.ifr_name[sizeof(ifr.ifr_name)-1]='\0';
+
+	// Use socket ioctl to get the netmask for this interface
+	if( ioctl(s,SIOCGIFNETMASK , &ifr) == -1 ) {
+		perror("wgIpGetLocalNetmask ioctl failed");
+		return -1;
+	}
+
+	// Requires some fancy casting because the IP portion of a sockaddr_in after the port (which we don't need) in the struct
+	memcpy(&(addr->s_addr), &((struct sockaddr_in *)(&ifr.ifr_broadaddr))->sin_addr, sizeof(struct in_addr));
+	close(s);
+
+	return 0;
+}
+
+
+/**
  * Utility function to create a UDP socket and bind it to a specified address & port.
  *
  * @param addr The host IP address to bind to.

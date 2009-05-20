@@ -13,6 +13,7 @@ extern "C" {
 #endif
 
 int wgEthGetLocalMac(const char *ifName, struct sockaddr *macAddr);
+int wgIpGetLocalNetmask(const char *ifName, struct in_addr *bcast);
 int wgIpGetLocalBcast(const char *ifName, struct in_addr *bcast);
 int wgIpGetLocalAddr(const char *ifName, struct in_addr *addr);
 

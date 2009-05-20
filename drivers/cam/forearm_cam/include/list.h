@@ -255,11 +255,25 @@ typedef enum { CamStatusDiscovered, CamStatusConfigured, CamStatusVideo, CamStat
 typedef struct {
 	uint32_t serial;
 
+	/**
+   * FPGA and system board revision, formatted as follows:
+   * \li Bits 16..31: Reserved
+   * \li Bits  4..15: FPGA revision
+   * \li Bits   0..3: Hardware (PCBA) revision
+   */
+  uint32_t hw_version;
+
+  /**
+   * System soft-core processor firmware version number, formatted as follows:
+   *  \li Bits 16..31: Reserved
+   *  \li Bits  8..15: Major Revision Number
+   *  \li Bits   0..7: Minor Revision Number
+   */
+  uint32_t fw_version;
+
 	char ifName[9];
 	uint8_t mac[6];
 	IPAddress ip;
-  uint32_t hw_version;
-  uint32_t fw_version;
 
 	IpCamStatus status;
 
