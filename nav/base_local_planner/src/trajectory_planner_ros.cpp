@@ -116,7 +116,7 @@ namespace base_local_planner {
     ros_node.param("~base_local_planner/heading_lookahead", heading_lookahead, 0.325);
     ros_node.param("~base_local_planner/oscillation_reset_dist", oscillation_reset_dist, 0.05);
     ros_node.param("~base_local_planner/escape_reset_dist", escape_reset_dist, 0.10);
-    ros_node.param("~base_local_planner/escape_reset_theta", escape_reset_theta, M_PI_2);
+    ros_node.param("~base_local_planner/escape_reset_theta", escape_reset_theta, M_PI_4);
     ros_node.param("~base_local_planner/holonomic_robot", holonomic_robot, true);
     ros_node.param("~base_local_planner/max_vel_x", max_vel_x, 0.5);
     ros_node.param("~base_local_planner/min_vel_x", min_vel_x, 0.1);

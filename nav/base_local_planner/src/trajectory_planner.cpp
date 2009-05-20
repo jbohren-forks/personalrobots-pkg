@@ -814,11 +814,6 @@ namespace base_local_planner{
       stuck_right_strafe = false;
     }
 
-    dist = sqrt((x - escape_x_) * (x - escape_x_) + (y - escape_y_) * (y - escape_y_));
-    if(dist > escape_reset_dist_ || fabs(angles::shortest_angular_distance(escape_theta_, theta)) > escape_reset_theta_){
-      escaping_ = false;
-    }
-
     //only enter escape mode when the planner has given a valid goal point
     if(!escaping_ && best_traj->cost_ > -2.0){
       escape_x_ = x;
@@ -826,6 +821,12 @@ namespace base_local_planner{
       escape_theta_ = theta;
       escaping_ = true;
     }
+
+    dist = sqrt((x - escape_x_) * (x - escape_x_) + (y - escape_y_) * (y - escape_y_));
+    if(dist > escape_reset_dist_ || fabs(angles::shortest_angular_distance(escape_theta_, theta)) > escape_reset_theta_){
+      escaping_ = false;
+    }
+
 
     //if the trajectory failed because the footprint hits something, we're still going to back up
     if(best_traj->cost_ == -1.0)
