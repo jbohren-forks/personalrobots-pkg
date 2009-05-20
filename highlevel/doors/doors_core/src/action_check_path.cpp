@@ -74,6 +74,7 @@ robot_actions::ResultStatus CheckPathAction::execute(const robot_msgs::PoseStamp
 
   ROS_INFO("CheckPathAction: call planner to find path");
   req_plan.goal = goal_tr;
+  req_plan.tolerance = 0.5;
   if (!ros::service::call("move_base/make_plan", req_plan, res_plan)){
     if (isPreemptRequested()){
       ROS_ERROR("CheckPathAction: preempted");
@@ -86,7 +87,7 @@ robot_actions::ResultStatus CheckPathAction::execute(const robot_msgs::PoseStamp
   }
   double length = 0;
   if (res_plan.plan.poses.size() < 2){
-    ROS_INFO("CheckPathAction: path planner did not find a path");
+    ROS_INFO("CheckPathAction: path planner did not find a path because plan only contains %i points",res_plan.plan.poses.size());
     feedback = false;
     return robot_actions::SUCCESS;
   }
