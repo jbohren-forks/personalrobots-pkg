@@ -18,3 +18,5 @@ target_link_libraries (generic_laser_filter_node laser_scan)
 rospack_add_executable(scan_shadows_filter_node src/scan_shadows_filter.cpp)
 target_link_libraries (scan_shadows_filter_node laser_scan)
 
+rospack_add_executable(scan_to_cloud src/scan_to_cloud.cpp)
+target_link_libraries (scan_to_cloud laser_scan)
