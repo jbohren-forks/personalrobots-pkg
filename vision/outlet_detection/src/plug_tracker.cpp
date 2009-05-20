@@ -17,7 +17,7 @@ PlugTracker::PlugTracker(ros::Node &node)
     node_.shutdown();
     return;
   }
-  
+
   if (!node_.getParam("~board_width", board_w_)) {
     ROS_FATAL("Board width unspecified");
     node_.shutdown();
@@ -50,8 +50,15 @@ PlugTracker::PlugTracker(ros::Node &node)
   //plug_in_board_.getOrigin().setValue(0.003, -0.01, 0.005);
   //plug_in_board_.getBasis().setValue(0, -1, 0, -1, 0, 0, 0, 0, -1);
   // Pretty accurate numbers for boxy plug
-  plug_in_board_.getOrigin().setValue(0.00398, -0.01252, 0.00659);
-  plug_in_board_.setRotation(btQuaternion(-0.70607, 0.70787, 0.01876, -0.00651));
+
+  // Old plug:
+  //plug_in_board_.getOrigin().setValue(0.00398, -0.01252, 0.00659);
+  //plug_in_board_.setRotation(btQuaternion(-0.70607, 0.70787, 0.01876, -0.00651));
+
+  // New, boxy plug
+  plug_in_board_.setOrigin(tf::Vector3(0.00803, -0.01625, 0.02055));
+  plug_in_board_.setRotation(tf::Quaternion(-0.70416, 0.71004, 0.00032, -0.00341));
+
   // (Bad) estimate for new-style plug
   //plug_in_board_.getOrigin().setValue(0.00315, 0.01542, 0.01255);
   //plug_in_board_.setRotation(btQuaternion(0.60615, 0.60710, 0.39344, -0.33048));
@@ -73,7 +80,7 @@ bool PlugTracker::detectObject(tf::Transform &pose)
     return false; // throw instead?
   }
   IplImage* image = img_bridge_.toIpl();
-  
+
   if ( !cvFindChessboardCorners_ex(image, cvSize(board_w_, board_h_),
                                    &corners_[0], &ncorners_,
                                    CV_CALIB_CB_ADAPTIVE_THRESH) )
@@ -104,7 +111,7 @@ bool PlugTracker::detectObject(tf::Transform &pose)
   //ROS_WARN("Calculating plug pose");
   cvFindExtrinsicCameraParams2(grid_pts_, &img_pts, K_, &D, &R3, &T3, false);
   //ROS_WARN("Initial: T = (%f, %f, %f), R = (%f, %f, %f)", trans[0], trans[1], trans[2], rot[0], rot[1], rot[2]);
-  
+
   if (roi_policy_ == TargetFrame) {
     // Use target tool frame to inform initial estimate
     robot_msgs::Pose target;
@@ -118,7 +125,7 @@ bool PlugTracker::detectObject(tf::Transform &pose)
     }
     tf::Transform target_tf;
     tf::PoseMsgToTF(target, target_tf);
-    
+
     // Transform to OpenCV coordinate system
     target_tf = camera_in_cvcam_.inverse() * target_tf * plug_in_board_.inverse();
     //trans[0] = target_tf.getOrigin().x();
@@ -140,7 +147,7 @@ bool PlugTracker::detectObject(tf::Transform &pose)
   static const int RADIUS = 11;
   cvFindCornerSubPix(image, &corners_[0], ncorners_, cvSize(RADIUS,RADIUS), cvSize(-1,-1),
                      cvTermCriteria(CV_TERMCRIT_EPS | CV_TERMCRIT_ITER, 30, 0.1));
-  
+
   // Refine checkerboard pose
   cvFindExtrinsicCameraParams2(grid_pts_, &img_pts, K_, &D, &R3, &T3, true);
   //ROS_WARN("Refined: T = (%f, %f, %f), R = (%f, %f, %f)", trans[0], trans[1], trans[2], rot[0], rot[1], rot[2]);
@@ -156,6 +163,9 @@ bool PlugTracker::detectObject(tf::Transform &pose)
   // Calculate plug pose in the camera frame
   pose = camera_in_cvcam_ * board_in_cvcam * plug_in_board_;
   //pose = board_in_cvcam; // for calibration only!!
+
+  //pose = camera_in_cvcam_ * board_in_cvcam /* * plug_in_board_ */;
+
 
   return true;
 }
@@ -174,7 +184,7 @@ CvRect PlugTracker::getBoundingBox()
     max_x = std::max(max_x, board_corners[i].x);
     max_y = std::max(max_y, board_corners[i].y);
   }
-  
+
   return cvRect(min_x + 0.5f, min_y + 0.5f,
                 max_x - min_x + 0.5f, max_y - min_y + 0.5f);
 }
