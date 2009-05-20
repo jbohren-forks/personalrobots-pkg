@@ -37,6 +37,7 @@ import roslib
 roslib.load_manifest('pr2_default_controllers')
 
 import rospy
+import os
 
 from robot_msgs.msg import JointTraj, JointTrajPoint
 from mechanism_control import mechanism
@@ -63,24 +64,26 @@ def go(side, positions):
 USAGE = 'tuckarm.py <arms> ; <arms> is \'(r)ight\', \'(l)eft\', or \'(b)oth\' arms'
 
 def set_params_right():
+  rospy.set_param("r_arm_joint_trajectory_controller/autostart", "true")
   rospy.set_param("r_arm_joint_trajectory_controller/velocity_scaling_factor", 0.5)
   rospy.set_param("r_arm_joint_trajectory_controller/trajectory_wait_timeout", 0.25)
 
   rospy.set_param("r_arm_joint_trajectory_controller/r_shoulder_pan_joint/goal_reached_threshold", 0.1)
   rospy.set_param("r_arm_joint_trajectory_controller/r_shoulder_lift_joint/goal_reached_threshold", 0.1)
-  rospy.set_param("r_arm_joint_trajectory_controller/r_shoulder_roll_joint/goal_reached_threshold", 0.1)
+  rospy.set_param("r_arm_joint_trajectory_controller/r_upperarm_roll_joint/goal_reached_threshold", 0.1)
   rospy.set_param("r_arm_joint_trajectory_controller/r_elbow_flex_joint/goal_reached_threshold", 0.1)
   rospy.set_param("r_arm_joint_trajectory_controller/r_forearm_roll_joint/goal_reached_threshold", 0.1)
   rospy.set_param("r_arm_joint_trajectory_controller/r_wrist_flex_joint/goal_reached_threshold", 0.1)
   rospy.set_param("r_arm_joint_trajectory_controller/r_wrist_roll_joint/goal_reached_threshold", 0.1)
 
 def set_params_left():
+  rospy.set_param("l_arm_joint_trajectory_controller/autostart", "true")
   rospy.set_param("l_arm_joint_trajectory_controller/velocity_scaling_factor", 0.5)
   rospy.set_param("l_arm_joint_trajectory_controller/trajectory_wait_timeout", 0.25)
 
   rospy.set_param("l_arm_joint_trajectory_controller/l_shoulder_pan_joint/goal_reached_threshold", 0.1)
   rospy.set_param("l_arm_joint_trajectory_controller/l_shoulder_lift_joint/goal_reached_threshold", 0.1)
-  rospy.set_param("l_arm_joint_trajectory_controller/l_shoulder_roll_joint/goal_reached_threshold", 0.1)
+  rospy.set_param("l_arm_joint_trajectory_controller/l_upperarm_roll_joint/goal_reached_threshold", 0.1)
   rospy.set_param("l_arm_joint_trajectory_controller/l_elbow_flex_joint/goal_reached_threshold", 0.1)
   rospy.set_param("l_arm_joint_trajectory_controller/l_forearm_roll_joint/goal_reached_threshold", 0.1)
   rospy.set_param("l_arm_joint_trajectory_controller/l_wrist_flex_joint/goal_reached_threshold", 0.1)
@@ -101,8 +104,8 @@ if __name__ == '__main__':
   #path = roslib.packages.get_pkg_dir('sbpl_arm_executive')
   path = roslib.packages.get_pkg_dir('pr2_default_controllers')
 
-  xml_for_left = open(os.path.join(path, '/l_arm_joint_trajectory_controller.xml'))
-  xml_for_right = open(os.path.join(path, '/r_arm_joint_trajectory_controller.xml'))
+  xml_for_left = open(os.path.join(path, 'l_arm_joint_trajectory_controller.xml'))
+  xml_for_right = open(os.path.join(path, 'r_arm_joint_trajectory_controller.xml'))
 
   controllers = []
   try:
