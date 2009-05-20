@@ -94,7 +94,7 @@ Reads the following parameters from the parameter server
 - @b "~autostart"       : @b [bool]   whether the node should automatically start the hokuyo (Default: true)
 - @b "~calibrate_time"  : @b [bool]   whether the node should calibrate the hokuyo's time offset (Default: true)
 - @b "~hokuyoLaserModel04LX" : @b [bool]	whether the laser is a hokuyo mode 04LX by setting boolean LaserIsHokuyoModel04LX (Default: false)
-- @b "~frame_id"        : @b [string] the frame in which laser scans will be returned (Default: "FRAMEID_LASER")
+- @b "~frameid"        : @b [string] the frame in which laser scans will be returned (Default: "FRAMEID_LASER")
  **/
 
 #include <assert.h>
