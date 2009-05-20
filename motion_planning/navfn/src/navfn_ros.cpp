@@ -58,6 +58,10 @@ namespace navfn {
     ros_node_.param("~navfn/costmap/inflation_radius", inflation_radius_, 0.55);
   }
 
+  bool NavfnROS::validPointPotential(const robot_msgs::Point& world_point){
+    return getPointPotential(world_point) < COST_OBS_ROS;
+  }
+
   double NavfnROS::getPointPotential(const robot_msgs::Point& world_point){
     unsigned int mx, my;
     if(!costmap_.worldToMap(world_point.x, world_point.y, mx, my))

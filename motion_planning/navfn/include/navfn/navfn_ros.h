@@ -81,6 +81,13 @@ namespace navfn {
       double getPointPotential(const robot_msgs::Point& world_point);
 
       /**
+       * @brief Check for a valid potential value at a given point in the world (Note: You should call computePotential first)
+       * @param world_point The point to get the potential for 
+       * @return True if the navigation function is valid at that point in the world, false otherwise
+       */
+      bool validPointPotential(const robot_msgs::Point& world_point);
+
+      /**
        * @brief  Publish a path for visualization purposes
        */
       void publishPlan(const std::vector<robot_msgs::PoseStamped>& path, double r, double g, double b, double a);
