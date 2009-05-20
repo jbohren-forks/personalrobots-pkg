@@ -101,9 +101,9 @@ robot_actions::ResultStatus TouchDoorAction::execute(const door_msgs::Door& goal
   Stamped<Pose> gripper_pose = getGripperPose(goal_tr, getNearestDoorAngle(shoulder_pose, goal_tr, 0.75, touch_dist), touch_dist);
   gripper_pose.stamp_ = Time::now();
   PoseStampedTFToMsg(gripper_pose, req_moveto.pose);
-  req_moveto.tolerance.vel.x = 0.1;
-  req_moveto.tolerance.vel.y = 0.1;
-  req_moveto.tolerance.vel.z = 0.1;
+  //req_moveto.tolerance.vel.x = 0.1;
+  //req_moveto.tolerance.vel.y = 0.1;
+  //req_moveto.tolerance.vel.z = 0.1;
 
   // move gripper in front of door
   ROS_INFO("move to touch the door at distance %f from hinge", touch_dist);
