@@ -261,5 +261,19 @@
    <notes description="move table"/>
  </outlet>
 
+ <outlet id="39">
+   <origin xyz="15.97 34.35 0.3" rpy="0 0 1.57" />
+   <sockets size="4" color="orange" />
+   <room number="140" />
+   <notes description="Stu's office" />
+ </outlet>
+
+ <outlet id="40">
+   <origin xyz="20.67 35.55 0.3" rpy="0 0 0" />
+   <sockets size="4" color="orange" />
+   <room number="145" />
+   <notes description="Room next to copier" />
+ </outlet>
+
 </outlets>
 
