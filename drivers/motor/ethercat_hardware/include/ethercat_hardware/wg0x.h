@@ -207,10 +207,10 @@ public:
     level_ = 0;
 
     voltage_error_ = max_voltage_error_ = 0;
+    filtered_voltage_error_ = max_filtered_voltage_error_ = 0;
     current_error_ = max_current_error_ = 0;
+    filtered_current_error_ = max_filtered_current_error_ = 0;
     voltage_estimate_ = 0;
-    consecutive_voltage_errors_ = 0;
-    consecutive_current_errors_ = 0;
     last_timestamp_ = 0;
     last_last_timestamp_ = 0;
     drops_ = 0;
@@ -297,10 +297,10 @@ private:
   string reason_;
   int level_;
   double voltage_error_, max_voltage_error_;
+  double filtered_voltage_error_, max_filtered_voltage_error_;
   double current_error_, max_current_error_;
+  double filtered_current_error_, max_filtered_current_error_;
   double voltage_estimate_;
-  int consecutive_voltage_errors_;
-  int consecutive_current_errors_;
   uint32_t last_timestamp_;
   uint32_t last_last_timestamp_;
   int drops_;

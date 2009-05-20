@@ -3,10 +3,10 @@ Header header
 float64 measured_current
 float64 commanded_current
 float64 current_error
-int32 consecutive_current_errors
+float64 filtered_current_error
 
 float64 measured_voltage
 float64 expected_voltage
 float64 voltage_error
-int32 consecutive_voltage_errors
+float64 filtered_voltage_error
 

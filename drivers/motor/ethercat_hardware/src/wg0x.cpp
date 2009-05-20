@@ -464,51 +464,45 @@ bool WG0X::verifyState(ActuatorState &state, unsigned char *this_buffer, unsigne
 
   voltage_error_ = fabs(expected_voltage - voltage_estimate_);
   max_voltage_error_ = max(voltage_error_, max_voltage_error_);
+  filtered_voltage_error_ = 0.995 * filtered_voltage_error_ + 0.005 * voltage_error_;
+  max_filtered_voltage_error_ = max(filtered_voltage_error_, max_filtered_voltage_error_);
 
   // Check back-EMF consistency
-  if(voltage_error_ > 5)
+  if(filtered_voltage_error_ > 5)
   {
-    ++consecutive_voltage_errors_;
-    if (consecutive_voltage_errors_ > 40) ///\todo fixme magic number (how long the motor model is allowed to be out of range in milliseconds)
+    //Something is wrong with the encoder, the motor, or the motor board
+
+    //Disable motors
+    // TODO: don't disable motors for voltage error until all motor
+    // parameters are properly configured
+    //rv = false;
+
+    const double epsilon = 0.001;
+    //Try to diagnose further
+    //motor_velocity == 0 -> encoder failure likely
+    if (fabs(state.velocity_) < epsilon)
     {
-      //Something is wrong with the encoder, the motor, or the motor board
-
-      //Disable motors
-      // TODO: don't disable motors for voltage error until all motor
-      // parameters are properly configured
-      //rv = false;
-
-      const double epsilon = 0.001;
-      //Try to diagnose further
-      //motor_velocity == 0 -> encoder failure likely
-      if (fabs(state.velocity_) < epsilon)
-      {
-        reason = "Encoder failure likely";
-        level = 1;
-      }
-      //measured_current_ ~= 0 -> motor open-circuit likely
-      else if (fabs(state.last_measured_current_) < epsilon)
-      {
-        reason = "Motor open-circuit likely";
-        level = 1;
-      }
-      //motor_voltage_ ~= 0 -> motor short-circuit likely
-      else if (fabs(voltage_estimate_) < epsilon)
-      {
-        reason = "Motor short-circuit likely";
-        level = 1;
-      }
-      //else -> current-sense failure likely
-      else
-      {
-        reason = "Current-sense failure likely";
-        level = 1;
-      }
+      reason = "Encoder failure likely";
+      level = 1;
     }
-  }
-  else
-  {
-    consecutive_voltage_errors_ = 0;
+    //measured_current_ ~= 0 -> motor open-circuit likely
+    else if (fabs(state.last_measured_current_) < epsilon)
+    {
+      reason = "Motor open-circuit likely";
+      level = 1;
+    }
+    //motor_voltage_ ~= 0 -> motor short-circuit likely
+    else if (fabs(voltage_estimate_) < epsilon)
+    {
+      reason = "Motor short-circuit likely";
+      level = 1;
+    }
+    //else -> current-sense failure likely
+    else
+    {
+      reason = "Current-sense failure likely";
+      level = 1;
+    }
   }
 
   //Check current-loop performance
@@ -518,24 +512,20 @@ bool WG0X::verifyState(ActuatorState &state, unsigned char *this_buffer, unsigne
 
   max_current_error_ = max(current_error_, max_current_error_);
 
-  if (current_error_ > 0.05 &&
-      (last_commanded_current > 0 ?
-           prev_status->programmed_pwm_value_ < 8400 :
-           prev_status->programmed_pwm_value_ > -8400))
+  if ((last_commanded_current > 0 ?
+         prev_status->programmed_pwm_value_ < 0x2c00 :
+         prev_status->programmed_pwm_value_ > -0x2c00))
   {
-//printf("current_error: %f [%d], cmd: %f, mes: %f,  pwm: %d, %s\n", current_error_, consecutive_current_errors_, last_commanded_current, state.last_measured_current_, prev_status->programmed_pwm_value_, actuator_info_.name_);
-    ++consecutive_current_errors_;
-    if (consecutive_current_errors_ > 100)
-    {
-      //complain and shut down
-      //rv = false;
-      reason = "Current loop error too large";
-      level = 2;
-    }
+    filtered_current_error_ = 0.995 * filtered_current_error_ + 0.005 * current_error_;
+    max_filtered_current_error_ = max(filtered_current_error_, max_filtered_current_error_);
   }
-  else
+
+  if (filtered_current_error_ > 0.2)
   {
-    consecutive_current_errors_ = 0;
+    //complain and shut down
+    //rv = false;
+    reason = "Current loop error too large";
+    level = 2;
   }
 
   if (motor_publisher_ && motor_publisher_->trylock())
@@ -543,11 +533,11 @@ bool WG0X::verifyState(ActuatorState &state, unsigned char *this_buffer, unsigne
     motor_publisher_->msg_.measured_current = state.last_measured_current_;
     motor_publisher_->msg_.commanded_current = last_commanded_current;
     motor_publisher_->msg_.current_error = current_error_;
-    motor_publisher_->msg_.consecutive_current_errors = consecutive_current_errors_;
+    motor_publisher_->msg_.filtered_current_error = filtered_current_error_;
     motor_publisher_->msg_.measured_voltage = voltage_estimate_;
     motor_publisher_->msg_.expected_voltage = expected_voltage;
     motor_publisher_->msg_.voltage_error = voltage_error_;
-    motor_publisher_->msg_.consecutive_voltage_errors = consecutive_voltage_errors_;
+    motor_publisher_->msg_.filtered_voltage_error = filtered_voltage_error_;
     motor_publisher_->unlockAndPublish();
   }
 
@@ -983,8 +973,12 @@ void WG0X::diagnostics(robot_msgs::DiagnosticStatus &d, unsigned char *buffer)
 
   ADD_STRING_FMT("Voltage Error", "%f", voltage_error_);
   ADD_STRING_FMT("Max Voltage Error", "%f", max_voltage_error_);
+  ADD_STRING_FMT("Filtered Voltage Error", "%f", filtered_voltage_error_);
+  ADD_STRING_FMT("Max Filtered Voltage Error", "%f", max_filtered_voltage_error_);
   ADD_STRING_FMT("Current Error", "%f", current_error_);
   ADD_STRING_FMT("Max Current Error", "%f", max_current_error_);
+  ADD_STRING_FMT("Filtered Current Error", "%f", filtered_current_error_);
+  ADD_STRING_FMT("Max Filtered Current Error", "%f", max_filtered_current_error_);
 
   ADD_STRING_FMT("Drops", "%d", drops_);
   ADD_STRING_FMT("Consecutive Drops", "%d", consecutive_drops_);
