@@ -33,7 +33,7 @@ if __name__ == '__main__':
     d = .025
     #cmd.time     = [0.0, 0.4,  1.0, 1.1, 1.1+d,  1.2+d, 1.8+d, 2.2+d, 2.2+2*d]
     
-    cmd.pos = [1.0,  -.7, 1.0]
+    cmd.pos = [1.2,  -.7, 1.2]
     cmd.time= [0.0, 1.8, 2.025]
     cmd.max_rate =  20   # Ignores param
     cmd.max_accel=  175   # ignores param
