@@ -17,15 +17,16 @@
 
   <!-- Filter for tilt laser shadowing/veiling -->
   <node pkg="laser_scan" type="scan_shadows_filter_node" respawn="true" machine="three" name="tilt_shadow_filter">
+    <param name="filters" textfile="$(find laser_scan)/point_cloud_footprint.filters.xml" />
     <param name="scan_topic" value="tilt_scan" />
     <param name="cloud_topic" value="tilt_scan_filtered" />
   </node>
 
   <!-- Filter for base laser shadowing/veiling -->
-  <node pkg="laser_scan" type="scan_shadows_filter_node" respawn="true" machine="three" name="base_shadow_filter_non_preserve" >
+  <node pkg="laser_scan" type="scan_shadows_filter_node" respawn="true" machine="three" name="base_shadow_filter" >
+    <param name="filters" textfile="$(find laser_scan)/point_cloud_footprint.filters.xml" />
     <param name="scan_topic" value="base_scan" />
     <param name="cloud_topic" value="base_scan_marking" />
-    <param name="laser_max_range" value="30.0" />
   </node>
 
   <!-- Laser scan assembler for tilt laser -->
