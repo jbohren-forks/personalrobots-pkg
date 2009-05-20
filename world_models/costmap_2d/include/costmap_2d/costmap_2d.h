@@ -71,7 +71,7 @@ namespace costmap_2d {
        * @param  obstacle_range The maximum range at which obstacles will be put into the costmap
        * @param  max_obstacle_height The maximum height of obstacles that will be considered
        * @param  raytrace_range The maximum distance we'll raytrace out to
-       * @param  weight The scaling factor for the cost function. Should be 0 < weight <= 1. Lower values reduce effective cost.
+       * @param  weight The scaling factor for the cost function. 
        * @param  static_data Data used to initialize the costmap
        * @param  lethal_threshold The cost threshold at which a point in the static data is considered a lethal obstacle
        */

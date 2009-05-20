@@ -112,10 +112,18 @@ namespace costmap_2d {
       if(data_type == "LaserScan"){
         observation_notifiers_.push_back(new MessageNotifier<laser_scan::LaserScan>(&tf_, &ros_node_,
               boost::bind(&Costmap2DROS::laserScanCallback, this, _1, observation_buffers_.back()), topic, global_frame_, 50));
+        observation_notifiers_.back()->setTolerance(ros::Duration(0.05));
       }
       else{
         observation_notifiers_.push_back(new MessageNotifier<PointCloud>(&tf_, &ros_node_,
               boost::bind(&Costmap2DROS::pointCloudCallback, this, _1, observation_buffers_.back()), topic, global_frame_, 50));
+      }
+
+      if(sensor_frame != "frame_from_message"){
+        std::vector<std::string> target_frames;
+        target_frames.push_back(global_frame_);
+        target_frames.push_back(sensor_frame);
+        observation_notifiers_.back()->setTargetFrame(target_frames);
       }
 
     }
@@ -309,7 +317,15 @@ namespace costmap_2d {
     base_cloud.header = message->header;
 
     //project the scan into a point cloud
-    projector_.projectLaser(*message, base_cloud);
+    try
+    {
+      projector_.transformLaserScanToPointCloud(global_frame_, base_cloud, *message, tf_);
+    }
+    catch (tf::TransformException &ex)
+    {
+      ROS_WARN ("High fidelity enabled, but TF returned a transform exception to frame %s: %s", global_frame_.c_str (), ex.what ());
+      projector_.projectLaser(*message, base_cloud);
+    }
 
     //buffer the point cloud
     buffer->lock();

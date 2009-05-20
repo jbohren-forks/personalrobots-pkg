@@ -95,7 +95,8 @@ namespace costmap_2d {
     catch(TransformException& ex){
       //if an exception occurs, we need to remove the empty observation from the list
       observation_list_.pop_front();
-      ROS_ERROR("TF Exception that should never happen %s", ex.what());
+      ROS_ERROR("TF Exception that should never happen for sensor frame: %s, cloud frame: %s, %s", sensor_frame_.c_str(), 
+          cloud.header.frame_id.c_str(), ex.what());
       return;
     }
 
