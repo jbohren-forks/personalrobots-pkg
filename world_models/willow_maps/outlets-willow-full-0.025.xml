@@ -180,7 +180,7 @@
  </outlet>
 
  <outlet id="27">
-   <origin xyz="12.87 34.72 0.3" rpy="0 0 3.14" /> <!-- meters, radians -->
+   <origin xyz="12.87 35.5 0.3" rpy="0 0 3.14" /> <!-- meters, radians -->
    <sockets size="4" color="orange" />
    <room number="138"/>
    <notes description="move closet and table; unplug speakers"/>
