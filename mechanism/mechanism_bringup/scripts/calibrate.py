@@ -83,7 +83,7 @@ def calibrate(config):
             if name in waiting_for:
                 waiting_for.remove(name)
         for name in waiting_for:
-            rospy.Subscriber("/%s/calibrated" % name, Empty, calibrated, name)
+            rospy.Subscriber("%s/calibrated" % name, Empty, calibrated, name)
 
         # Waits until all the controllers have calibrated
         while waiting_for and not rospy.is_shutdown():
@@ -105,7 +105,17 @@ def main():
 
     if len(sys.argv) > 1:
         #xmls = [slurp(filename) for filename in sys.argv[1:]]
-        xmls = [os.popen2("rosrun xacro xacro.py %s" % f)[1].read() for f in sys.argv[1:]]
+
+        # Hack to remove bad args
+        args = []
+        for arg in sys.argv[1:]:
+            if arg.find(':=') < 0:
+                args.append(arg)
+
+        xmls = [os.popen2("rosrun xacro xacro.py %s" % f)[1].read() for f in args]
+
+        # Use this once rospy.myargv() works
+        # xmls = [os.popen2("rosrun xacro xacro.py %s" % f)[1].read() for f in rospy.myargv()[1:]]
 
         # Poor man's xml splicer
         for i in range(len(xmls) - 1):
