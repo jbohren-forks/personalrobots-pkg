@@ -87,7 +87,7 @@ namespace door_reactive_planner
      * @brief Set door information for the planner
      * @param door_msg_in The door message containing information about the door
      */
-    void setDoor(door_msgs::Door door_msg_in, const pr2_robot_actions::Pose2D &pose);
+    void setDoor(door_msgs::Door door_msg_in, const pr2_robot_actions::Pose2D &pose, door_msgs::Door &door_msg_out);
 
     /**
      * @brief compute the oriented footprint for a particular position of the robot 
@@ -106,6 +106,8 @@ namespace door_reactive_planner
     bool getGoal(pr2_robot_actions::Pose2D &goal);
 
     robot_msgs::DiagnosticStatus getDiagnostics();
+
+    bool door_information_set_ ; /**< Has door information been set before invoking the planner */
 
     private:
 
@@ -159,8 +161,6 @@ namespace door_reactive_planner
 
       pr2_robot_actions::Pose2D carrot_;
       double carrot_distance_;
-
-    bool door_information_set_ ; /**< Has door information been set before invoking the planner */
 
     void getParams(); /**< Check ROS param server for parameters */
 
