@@ -69,6 +69,11 @@ namespace tf {
       virtual void setTargetFrame(const std::string& target_frame) = 0;
 
       /**
+       * \brief Set the frame you need to be able to transform to before getting a message callback
+       */
+      virtual void setTargetFrame(const std::vector<std::string>& target_frames) = 0;
+
+      /**
        * \brief Set the topic to listen on
        */
       virtual void setTopic(const std::string& topic) = 0;
