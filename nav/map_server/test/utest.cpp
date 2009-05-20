@@ -44,7 +44,7 @@ TEST(MapServer, loadValidPNG)
   try
   {
     robot_srvs::StaticMap::Response map_resp;
-    map_server::loadMapFromFile(&map_resp, g_valid_png_file, g_valid_image_res, false);
+    map_server::loadMapFromFile(&map_resp, g_valid_png_file, g_valid_image_res, false, 0.65, 0.1);
     EXPECT_FLOAT_EQ(map_resp.map.info.resolution, g_valid_image_res);
     EXPECT_EQ(map_resp.map.info.width, g_valid_image_width);
     EXPECT_EQ(map_resp.map.info.height, g_valid_image_height);
@@ -64,7 +64,7 @@ TEST(MapServer, loadValidBMP)
   try
   {
     robot_srvs::StaticMap::Response map_resp;
-    map_server::loadMapFromFile(&map_resp, g_valid_bmp_file, g_valid_image_res, false);
+    map_server::loadMapFromFile(&map_resp, g_valid_bmp_file, g_valid_image_res, false, 0.65, 0.1);
     EXPECT_FLOAT_EQ(map_resp.map.info.resolution, g_valid_image_res);
     EXPECT_EQ(map_resp.map.info.width, g_valid_image_width);
     EXPECT_EQ(map_resp.map.info.height, g_valid_image_height);
@@ -84,7 +84,7 @@ TEST(MapServer, loadInvalidFile)
   try
   {
     robot_srvs::StaticMap::Response map_resp;
-    map_server::loadMapFromFile(&map_resp, "foo", 0.1, false);
+    map_server::loadMapFromFile(&map_resp, "foo", 0.1, false, 0.65, 0.1);
   }
   catch(std::runtime_error &e)
   {
