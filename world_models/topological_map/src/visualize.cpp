@@ -94,7 +94,7 @@ int main (int argc, char* argv[])
   ros::init(argc, argv, "topological_map_visualizer"); 
   tmap::Visualizer v(m3);
 
-  Duration dur(1);
+  Duration dur(10.0);
   ros::NodeHandle n;
   while (n.ok()) {
     dur.sleep();
