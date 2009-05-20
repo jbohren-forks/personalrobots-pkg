@@ -50,12 +50,6 @@
 
 <!-- Stereo cam -->
   <group ns="stereo">
-    <param name="videre_mode" type="str" value="none"/>
-    <param name="do_colorize" type="bool" value="True"/>
-    <param name="do_rectify" type="bool" value="True"/>
-    <param name="do_stereo" type="bool" value="True"/>
-    <param name="do_calc_points" type="bool" value="True"/>
-    <param name="do_keep_coords" type="bool" value="True"/>
     <param name="exposure_auto" type="bool" value="True" />
     <param name="gain_auto" type="bool" value="True" />
     <param name="brightness_auto" type="bool" value="True" />
