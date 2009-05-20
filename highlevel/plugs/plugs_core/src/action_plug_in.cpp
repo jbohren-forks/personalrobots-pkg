@@ -39,7 +39,7 @@
 namespace plugs_core {
 
 const double READY_TO_INSERT = -0.026;
-const double READY_TO_PUSH = -0.0135;  // -0.009;
+const double READY_TO_PUSH = -0.0150;  // -0.0135;  // -0.009;
 const double MIN_STANDOFF = 0.022;
 
 const double SUCCESS_THRESHOLD = 0.025;
@@ -208,7 +208,7 @@ void PlugInAction::plugMeasurementCallback(const tf::MessageNotifier<robot_msgs:
     {
       tf::Vector3 offset = viz_offset.getOrigin() - viz_offset_desi.getOrigin();
       ROS_DEBUG("%s: Offset: (% 0.3lf, % 0.3lf, % 0.3lf)", action_name_.c_str(), offset.x(), offset.y(), offset.z());
-      if (g_started_inserting_ + ros::Duration(15.0) < ros::Time::now())
+      if (g_started_inserting_ + ros::Duration(10.0) < ros::Time::now())
       {
         //if (offset.x() > SUCCESS_THRESHOLD) // if (in_outlet)
         if (viz_offset.getOrigin().x() > READY_TO_PUSH)  // if (in_outlet)
