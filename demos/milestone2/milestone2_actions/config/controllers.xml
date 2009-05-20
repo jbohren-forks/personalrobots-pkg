@@ -151,7 +151,7 @@
         <param name="p" value="400" />
         <param name="i" value="400" />
         <param name="d" value="15" />
-        <param name="i_clamp" value="4" />
+        <param name="i_clamp" value="8" />
       </group>
       <group ns="fb_rot">
         <param name="p" value="15" />
