@@ -46,11 +46,14 @@ namespace map_server
  * @param res The resolution of the map (gets stored in resp)
  * @param negate If true, then whiter pixels are occupied, and blacker
  *               pixels are free
+ * @param occ_th Threshold above which pixels are occupied
+ * @param free_th Threshold below which pixels are free
  *
  * @throws std::runtime_error If the image file can't be loaded
  * */
 void loadMapFromFile(robot_srvs::StaticMap::Response* resp,
-                     const char* fname, double res, bool negate);
+                     const char* fname, double res, bool negate,
+                     double occ_th, double free_th);
 }
 
 #endif

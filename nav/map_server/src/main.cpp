@@ -29,20 +29,17 @@
 
 /* Author: Brian Gerkey */
 
-/**
-
-@mainpage
-
-@htmlinclude manifest.html
+/** @defgroup map_server map_server
 
 @b map_server is a ROS node that reads an occupancy grid map from an image
 file and offers up the map via a ROS service.
 
-When parsing the image, a pixel is considered to be free (occupancy
-value 0) if the mean of its RGB values is greater than 0.9*255 (i.e.,
-very white).  The pixel is occupied (occupancy value 100) if the mean
-is less than 0.5*255 (i.e., sort of black).  Anything in between is
-considered unknown (occupancy value -1).
+The map_server converts color values into ternary occupancy values:
+free, occupied, and unknown.  Thresholds are used to divide the three
+categories (see below for setting these via parameters).  Whiter pixels
+are free, blacker pixels are occupied, and pixels in between are unknown.
+Color and grayscale images are accepted, but most maps are gray (even
+though they may be stored as if in color).
 
 @todo Establish a standard for storing maps, with metadata (origin,
 resolution, color thresholds, etc.) in the same file.  Perhaps we can use
@@ -53,10 +50,9 @@ standard.
 
 @section usage Usage
 @verbatim
-map_server <map> <resolution> [<negate>]
+map_server <map> <resolution>
            map: image file to load
            resolution: map resolution [meters/pixel]
-           negate: if non-zero, black is free, white is occupied
 @endverbatim
 
 @par Example
@@ -78,29 +74,78 @@ Offers (name/type):
 
 @section parameters ROS parameters
 
-- None
+- @b ~negate (boolean) : If true, the black/white semantics are reversed (i.e., black is free, white is occupied), default: false
+
+@subsection thresholds Occupancy thresholds
+When comparing to the threshold parameters, the occupancy probability of an
+image pixel is computed as follows: occ = (255 - color_avg) / 255.0,
+where color_avg is the 8-bit value that results from averaging over
+all channels.  E.g., if the image is 24-bit color, a pixel with the
+color 0x0a0a0a has an probability of 0.96, which is very occupied.
+The color 0xeeeeee yields 0.07, which is very unoccupied.  The default
+values below usually work well with maps produced by slam_gmapping.
+
+Above ~occupied_thresh is occupied; below ~free_thresh is free; in between
+is unknown.
+
+- @b ~occupied_thresh (float) : Minimum probability to be considered
+occupied, default 0.65
+- @b ~free_thresh (float) : Maximum probability to be considered
+free, default 0.196
+
+
 */
 
 
 
-#define USAGE "USAGE: map_server <map> <resolution> [<negate>]\n"\
+#define USAGE "USAGE: map_server <map> <resolution>\n"\
               "         map: image file to load\n"\
-              "  resolution: map resolution [meters/pixel]\n"\
-              "      negate: if non-zero, black is free, white is occupied"
+              "  resolution: map resolution [meters/pixel]"
 
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "ros/node.h"
-#include "ros/publisher.h"
+#include "ros/ros.h"
+#include "ros/console.h"
 #include "map_server/image_loader.h"
 #include "robot_msgs/MapMetaData.h"
 
-class MapServer : public ros::Node
+class MapServer
 {
   public:
     /** Trivial constructor */
-    MapServer() : ros::Node("map_server") {}
+    MapServer(const std::string& fname, double res)
+    {
+      int negate;
+      double occ_th, free_th;
+
+      n.param("~negate", negate, 0);
+      printf("negate: %d\n", negate);
+      n.param("~occupied_thresh", occ_th, 0.65);
+      n.param("~free_thresh", free_th, 0.196);
+
+      ROS_INFO("Loading map from image \"%s\"", fname.c_str());
+      map_server::loadMapFromFile(&map_resp_,fname.c_str(),res,negate,occ_th,free_th);
+      ROS_INFO("Read a %d X %d map @ %.3lf m/cell",
+               map_resp_.map.info.width,
+               map_resp_.map.info.height,
+               map_resp_.map.info.resolution);
+      ///\todo This could be optimzed regarding ticket:937
+      meta_data_message_.map_load_time = ros::Time::now();
+      meta_data_message_.resolution = map_resp_.map.info.resolution;
+      meta_data_message_.width = map_resp_.map.info.width;
+      meta_data_message_.height = map_resp_.map.info.height;
+      meta_data_message_.origin = map_resp_.map.info.origin;
+
+      service = n.advertiseService("static_map", &MapServer::mapCallback, this);
+      pub = n.advertise<robot_msgs::MapMetaData>("map_metadata", 1,
+                                                 boost::bind(&MapServer::metadataSubscriptionCallback, *this, _1));
+    }
+
+  private:
+    ros::NodeHandle n;
+    ros::Publisher pub;
+    ros::ServiceServer service;
 
     /** Callback invoked when someone requests our service */
     bool mapCallback(robot_srvs::StaticMap::Request  &req,
@@ -110,7 +155,7 @@ class MapServer : public ros::Node
 
       // = operator is overloaded to make deep copy (tricky!)
       res = map_resp_;
-      puts("sending map");
+      ROS_INFO("Sending map");
       return true;
     }
 
@@ -118,13 +163,9 @@ class MapServer : public ros::Node
      */
     robot_srvs::StaticMap::Response map_resp_;
 
-#if ROS_VERSION_MINIMUM(0, 5, 0)
     void metadataSubscriptionCallback(const ros::SingleSubscriberPublisher& pub)
-#else
-    void metadataSubscriptionCallback(const ros::PublisherPtr& pub)
-#endif
     {
-      publish( "map_metadata", meta_data_message_ );
+      pub.publish( meta_data_message_ );
     }
 
     robot_msgs::MapMetaData meta_data_message_;
@@ -132,37 +173,19 @@ class MapServer : public ros::Node
 
 int main(int argc, char **argv)
 {
-  ros::init(argc, argv);
-  if(argc < 3)
+  ros::init(argc, argv, "map_server", ros::init_options::AnonymousName);
+  if(argc != 3)
   {
     puts(USAGE);
     exit(-1);
   }
-  const char* fname = argv[1];
+  std::string fname(argv[1]);
   double res = atof(argv[2]);
-  bool negate = false;
-  if(argc > 3)
-    negate = atoi(argv[3]) ? true : false;
 
-  MapServer ms;
   try
   {
-    printf("[map_server] loading map from image \"%s\"\n", fname);
-    map_server::loadMapFromFile(&ms.map_resp_,fname,res,negate);
-    printf("[map_server] read a %d X %d map @ %.3lf m/cell\n",
-           ms.map_resp_.map.info.width,
-           ms.map_resp_.map.info.height,
-           ms.map_resp_.map.info.resolution);
-    ///\todo This could be optimzed regarding ticket:937
-    ms.meta_data_message_.map_load_time = ros::Time::now();
-    ms.meta_data_message_.resolution = ms.map_resp_.map.info.resolution;
-    ms.meta_data_message_.width = ms.map_resp_.map.info.width;
-    ms.meta_data_message_.height = ms.map_resp_.map.info.height;
-    ms.meta_data_message_.origin = ms.map_resp_.map.info.origin;
-    ms.advertiseService("static_map", &MapServer::mapCallback);
-    ms.advertise("map_metadata", ms.meta_data_message_, &MapServer::metadataSubscriptionCallback, 1);
-
-    ms.spin();
+    MapServer ms(fname, res);
+    ros::spin();
   }
   catch(std::runtime_error& e)
   {

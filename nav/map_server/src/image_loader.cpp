@@ -52,7 +52,8 @@ namespace map_server
 
 void
 loadMapFromFile(robot_srvs::StaticMap::Response* resp,
-                const char* fname, double res, bool negate)
+                const char* fname, double res, bool negate,
+                double occ_th, double free_th)
 {
   SDL_Surface* img;
 
@@ -117,12 +118,9 @@ loadMapFromFile(robot_srvs::StaticMap::Response* resp,
       // Apply thresholds to RGB means to determine occupancy values for
       // map.  Note that we invert the graphics-ordering of the pixels to
       // produce a map with cell (0,0) in the lower-left corner.
-      //
-      /// @todo Make the color thresholds configurable, probably from
-      /// within the comments section of the image file.
-      if(occ > 0.65)
+      if(occ > occ_th)
         resp->map.data[MAP_IDX(resp->map.info.width,i,resp->map.info.height - j - 1)] = +100;
-      else if(occ < 0.1)
+      else if(occ < free_th)
         resp->map.data[MAP_IDX(resp->map.info.width,i,resp->map.info.height - j - 1)] = 0;
       else
         resp->map.data[MAP_IDX(resp->map.info.width,i,resp->map.info.height - j - 1)] = -1;
