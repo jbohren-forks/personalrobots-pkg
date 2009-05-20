@@ -62,11 +62,12 @@ class soundtype:
     LOOPING = 1
     COUNTING = 2
 
-    def __init__(self, file):
+    def __init__(self, file, volume = 1.0):
         self.lock = threading.Lock()
         self.state = self.STOPPED
         self.chan = None
         self.sound = mixer.Sound(file)
+        self.sound.set_volume(volume)
         self.staleness = 0
 
     def loop(self):  
@@ -200,7 +201,7 @@ class soundplay:
         try:
             mixer.init(11025, -16, 1, 4000)
             self.builtinsounds = {
-                    SoundRequest.BACKINGUP              : soundtype(os.path.join(rootdir, 'BACKINGUP.ogg')),
+                    SoundRequest.BACKINGUP              : soundtype(os.path.join(rootdir, 'BACKINGUP.ogg'), 0.5),
                     SoundRequest.NEEDS_UNPLUGGING       : soundtype(os.path.join(rootdir, 'NEEDS_UNPLUGGING.ogg')),
                     SoundRequest.NEEDS_PLUGGING         : soundtype(os.path.join(rootdir, 'NEEDS_PLUGGING.ogg')),
                     SoundRequest.NEEDS_UNPLUGGING_BADLY : soundtype(os.path.join(rootdir, 'NEEDS_UNPLUGGING_BADLY.ogg')),
