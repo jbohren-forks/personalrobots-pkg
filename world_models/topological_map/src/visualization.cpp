@@ -66,7 +66,8 @@ const string MARKER_TOPIC("visualization_marker");
 const string CONNECTOR_TOPIC("~connectors");
 const string MARKER_NS("topological_map");
 const string VISUALIZER_FRAME("map");
-const double OUTLET_APPROACH_DISTANCE(2.0);
+const double OUTLET_APPROACH_DISTANCE(1.0);
+const double OUTLET_APPROACH_RADIUS(0.3);
 
 
 typedef set<ConnectorId> ConnectorSet;
@@ -177,7 +178,7 @@ void drawOutlet (const OutletId id, const TopologicalMap& m, const Publisher& pu
 
   // Approach position
   try {
-  Point2D approach_position = m.outletApproachPosition(id, OUTLET_APPROACH_DISTANCE, OUTLET_APPROACH_DISTANCE/4);
+  Point2D approach_position = m.outletApproachPosition(id, OUTLET_APPROACH_DISTANCE, OUTLET_APPROACH_RADIUS);
   Marker approach_marker;
   approach_marker.id = id+3000;
   approach_marker.ns = MARKER_NS;

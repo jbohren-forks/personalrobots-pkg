@@ -997,6 +997,8 @@ void TopologicalMap::MapImpl::updateDistances (const RegionId region_id)
         roadmap_->setCost(other_connectors[i], connector_id, resolution_*costs[i].second);
 
   }
+  ROS_DEBUG_STREAM_NAMED ("update_distances", "   Done updating connector distances for region " << region_id);
+
 }
 
 
