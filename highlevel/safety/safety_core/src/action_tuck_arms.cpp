@@ -84,7 +84,7 @@ TuckArmsAction::TuckArmsAction() :
   }
 
   // Default trajectory for tucking the arms
-  double right_arm_traj[traj_size][num_joints] = {{0.0,0.0,0.0,-2.25,0.0,0.0,0.0},{0.0,1.57,-1.57,-2.25,M_PI,0.0,-M_PI_2}};
+  double right_arm_traj[traj_size][num_joints] = {{-1.39,1.0,-1.15,-2.05,0.5,1.8,7.0},{0.0,1.57,-1.57,-2.25,M_PI,0.0,-M_PI_2}};
   double left_arm_traj[traj_size][num_joints] = {{0.0,0.0,0.0,-2.25,0.0,0.0,0.0}, {0.0,1.57,1.57,-2.25,M_PI,0.0,-M_PI_2}};
                      
   right_traj_req_.hastiming = 0;
