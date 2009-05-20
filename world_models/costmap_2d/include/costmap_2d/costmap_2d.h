@@ -177,7 +177,7 @@ namespace costmap_2d {
       bool worldToMap(double wx, double wy, unsigned int& mx, unsigned int& my) const;
 
       /**
-       * @brief  Convert from map coordinates to world coordinates without checking for legal bounds
+       * @brief  Convert from world coordinates to map coordinates without checking for legal bounds
        * @param  wx The x world coordinate
        * @param  wy The y world coordinate
        * @param  mx Will be set to the associated map x coordinate
@@ -261,6 +261,24 @@ namespace costmap_2d {
        * @return The resolution of the costmap
        */
       double resolution() const;
+    
+      /**
+       * @brief  Accessor for the inscribed radius of the robot
+       * @return The inscribed radius
+       */
+      double inscribedRadius() const { return inscribed_radius_; }
+    
+      /**
+       * @brief  Accessor for the circumscribed radius of the robot
+       * @return The circumscribed radius
+       */
+      double circumscribedRadius() const { return circumscribed_radius_; }
+    
+      /**
+       * @brief  Accessor for the inflation radius of the robot
+       * @return The inflation radius
+       */
+      double inflationRadius() const { return inflation_radius_; }
 
       /**
        * @brief  Locks the costmap
