@@ -210,10 +210,12 @@ namespace nav
 
   bool MoveBaseDoorAction::goalReached()
   {
-    KDL::Vector normal = getDoorNormal(door_);
+    KDL::Vector normal = getFrameNormal(door_);
     double goal_projection = normal(0)*(global_pose_.getOrigin().x()-goal_.x) + normal(1)*(global_pose_.getOrigin().y()-goal_.y);
     if((goalPositionReached() && goalOrientationReached()) || goal_projection > 0)
     { 
+      ROS_INFO("Normal: %f %f, Global pose: %f %f, Goal: %f %f",normal(0),normal(1),global_pose_.getOrigin().x(),global_pose_.getOrigin().y(),goal_.x,goal_.y);
+      ROS_INFO("Travel direction: %f %f",door_.travel_dir.x,door_.travel_dir.y);
       return true;
     }
     return false;
@@ -238,6 +240,8 @@ namespace nav
 
   robot_actions::ResultStatus MoveBaseDoorAction::execute(const door_msgs::Door& door, door_msgs::Door& feedback)
   {
+    door_msgs::Door door_transformed;
+    planner_->door_information_set_ = false;
     //update the global pose
     updateGlobalPose();
 
@@ -245,8 +249,9 @@ namespace nav
     planner_cost_map_ros_->start();
     planner_cost_map_ros_->clearNonLethalWindow(circumscribed_radius_ * 2, circumscribed_radius_ * 2);
 
-    door_ = door;
-    planner_->setDoor(door,getPose2D(global_pose_));//set the goal into the planner
+
+    planner_->setDoor(door,getPose2D(global_pose_),door_transformed);//set the goal into the planner
+    door_ = door_transformed;
     if(!planner_->getGoal(goal_)){
       //make sure to stop the costmap from running on return
       planner_cost_map_ros_->stop();

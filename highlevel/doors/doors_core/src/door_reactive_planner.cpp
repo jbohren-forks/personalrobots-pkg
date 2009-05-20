@@ -95,7 +95,7 @@ void DoorReactivePlanner::getParams()
   footprint_.push_back(pt);
 }
 
-void DoorReactivePlanner::setDoor(door_msgs::Door door_msg_in, const pr2_robot_actions::Pose2D &position)
+void DoorReactivePlanner::setDoor(door_msgs::Door door_msg_in, const pr2_robot_actions::Pose2D &position, door_msgs::Door &door_msg_out)
 {
   //Assumption is that the normal points in the direction we want to travel through the door
   door_msgs::Door door;
@@ -132,6 +132,8 @@ void DoorReactivePlanner::setDoor(door_msgs::Door door_msg_in, const pr2_robot_a
   vector_along_door_.z = 0.0;    
 
   door_information_set_ = true;
+  door_msg_out = door;
+
 }
 
 bool DoorReactivePlanner::getGoal(pr2_robot_actions::Pose2D &goal)
@@ -273,11 +275,12 @@ bool DoorReactivePlanner::makePlan(const pr2_robot_actions::Pose2D &start, std::
 //      double new_distance = projectedDistance(checked_path.back(),goal_,centerline_angle_);
       if( new_distance < min_distance_to_goal)
       {
+        delta_angle_ = i*delta_theta;
         best_path_costmap_frame.resize(checked_path.size());
         best_path_costmap_frame = checked_path;
         min_distance_to_goal = new_distance;
       }
-      //      delta_angle_ = i*delta_theta;
+
       if(i == 0 && choose_straight_line_trajectory_ && current_distance > door_goal_distance_/2.0)
       {
         best_path_control_frame.resize(best_path_costmap_frame.size());
@@ -304,7 +307,7 @@ bool DoorReactivePlanner::makePlan(const pr2_robot_actions::Pose2D &start, std::
         best_path_costmap_frame.resize(checked_path.size());
         best_path_costmap_frame = checked_path;
         min_distance_to_goal = new_distance;
-	//        delta_angle_ = -i*delta_theta;
+	delta_angle_ = -i*delta_theta;
         distance_to_goal_ = new_distance;
       }
     }
@@ -359,6 +362,10 @@ robot_msgs::DiagnosticStatus DoorReactivePlanner::getDiagnostics()
 
   v.label = "Centerline angle";
   v.value = centerline_angle_;
+  values.push_back(v);
+
+  v.label = "Travel angle";
+  v.value = travel_angle_;
   values.push_back(v);
 
   v.label = "Sideslip.x";
