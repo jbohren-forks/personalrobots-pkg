@@ -182,7 +182,7 @@ int
   if (switch_controllers.execute(switchlist, empty, timeout_short) != robot_actions::SUCCESS) return -5;
   if (plug_in.execute(empty, empty, timeout_long) != robot_actions::SUCCESS) return -6;
 
-  Duration().fromSec(5.0).sleep();
+  Duration().fromSec(10.0).sleep();
 
   //unplug
   if (unplug.execute(empty, empty, timeout_long) != robot_actions::SUCCESS) return -7;
