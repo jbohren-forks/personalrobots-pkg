@@ -123,6 +123,7 @@ if __name__ == "__main__":
     d.header.stamp = rospy.get_rostime()
     print "time ",d.header.stamp
     
+
     resp = detect_door_laser(d)
     resp = detect_handle_laser(resp.doors[0])
     resp = detect_handle_camera(d)    

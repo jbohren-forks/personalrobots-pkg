@@ -4,11 +4,22 @@
 <!-- use sim time -->
   <param name="use_sim_time" type="bool" value="true" />
 
+<!-- Stereo image processing -->
+  <group ns="stereo">
+    <param name="videre_mode" type="str" value="none"/>
+    <param name="do_colorize" type="bool" value="True"/>
+    <param name="do_rectify" type="bool" value="True"/>
+    <param name="do_stereo" type="bool" value="True"/>
+    <param name="do_calc_points" type="bool" value="True"/>
+    <param name="do_keep_coords" type="bool" value="True"/>
+  </group>
+  <node pkg="stereo_image_proc" type="stereoproc" respawn="false" />
+
 <!-- detectors -->
   <include file="$(find door_handle_detector)/launch/door_handle_detector.xml" />
 
 <!-- play bag file -->
-  <node pkg="rosrecord" type="rosplay" args="-b 100  $(find door_handle_detector)/launch/full_cloud_laser.bag " />
+  <node pkg="rosrecord" type="rosplay" args="-r 0.5 -b 100  /bags/door_handle_detection_2009-05-20-10-51-46-topic.bag " />
 
 <!-- run test  -->
   <node pkg="door_handle_detector" type="detect_handle_from_bag.py" args="" output="screen" />
