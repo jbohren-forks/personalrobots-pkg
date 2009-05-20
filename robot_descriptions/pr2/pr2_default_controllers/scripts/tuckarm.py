@@ -64,7 +64,7 @@ def go(side, positions):
 USAGE = 'tuckarm.py <arms> ; <arms> is \'(r)ight\', \'(l)eft\', or \'(b)oth\' arms'
 
 def set_params_right():
-  rospy.set_param("r_arm_joint_trajectory_controller/autostart", "true")
+#  rospy.set_param("r_arm_joint_trajectory_controller/autostart", "true")
   rospy.set_param("r_arm_joint_trajectory_controller/velocity_scaling_factor", 0.5)
   rospy.set_param("r_arm_joint_trajectory_controller/trajectory_wait_timeout", 0.25)
 
@@ -77,7 +77,7 @@ def set_params_right():
   rospy.set_param("r_arm_joint_trajectory_controller/r_wrist_roll_joint/goal_reached_threshold", 0.1)
 
 def set_params_left():
-  rospy.set_param("l_arm_joint_trajectory_controller/autostart", "true")
+#  rospy.set_param("l_arm_joint_trajectory_controller/autostart", "true")
   rospy.set_param("l_arm_joint_trajectory_controller/velocity_scaling_factor", 0.5)
   rospy.set_param("l_arm_joint_trajectory_controller/trajectory_wait_timeout", 0.25)
 
