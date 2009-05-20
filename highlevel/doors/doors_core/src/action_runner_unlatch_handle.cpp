@@ -52,7 +52,7 @@ int main(int argc, char** argv)
 {
   ros::init(argc,argv); 
 
-  ros::Node node("door_domain_action_runner");
+  ros::Node node("action_runner_unlatch_handle");
 
   UnlatchHandleAction unlatch(node);
 
