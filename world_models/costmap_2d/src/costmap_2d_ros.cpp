@@ -552,6 +552,13 @@ namespace costmap_2d {
     return size_y;
   }
 
+  double Costmap2DROS::resolution() {
+    costmap_->lock();
+    double resolution = costmap_->resolution();
+    costmap_->unlock();
+    return resolution;
+  }
+
 };
 
 int main(int argc, char** argv){

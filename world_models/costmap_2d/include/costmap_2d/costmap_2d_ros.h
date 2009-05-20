@@ -170,6 +170,12 @@ namespace costmap_2d {
       unsigned int cellSizeY();
 
       /**
+       * @brief  Returns the resolution of the costmap in meters
+       * @return The resolution of the costmap in meters
+       */
+      double resolution();
+
+      /**
        * @brief  Check if the observation buffers for the cost map are current
        * @return True if the buffers are current, false otherwise
        */
