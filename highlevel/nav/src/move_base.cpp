@@ -124,7 +124,7 @@ namespace nav {
     planner_costmap_ros_->getCostmapCopy(planner_costmap_);
 
     //since we have a controller that knows the full footprint of the robot... we may as well clear it
-    tc_->clearRobotFootprint(planner_costmap_);
+    //tc_->clearRobotFootprint(planner_costmap_); //now done in sensors
 
     //if we have a tolerance on the goal point that is greater 
     //than the resolution of the map... compute the full potential function
@@ -182,24 +182,26 @@ namespace nav {
     planner_costmap_ros_->getCostmapCopy(planner_costmap_);
 
     //since we have a controller that knows the full footprint of the robot... we may as well clear it
-    tc_->clearRobotFootprint(planner_costmap_);
+    //tc_->clearRobotFootprint(planner_costmap_); //now done in sensors
 
     std::vector<robot_msgs::PoseStamped> global_plan;
     bool valid_plan = planner_->makePlan(goal, global_plan);
 
     //we'll also push the goal point onto the end of the plan to make sure orientation is taken into account
     if(valid_plan){
-      global_plan.push_back(goal);
+      robot_msgs::PoseStamped goal_copy = goal;
+      goal_copy.header.stamp = ros::Time::now();
+      global_plan.push_back(goal_copy);
 
       //reset our flags for attempts to help create a valid plan
       attempted_rotation_ = false;
       attempted_costmap_reset_ = false;
+      new_plan_ = true;
     }
 
     lock_.lock();
     //copy over the new global plan
     valid_plan_ = valid_plan;
-    new_plan_ = true;
     global_plan_ = global_plan;
     lock_.unlock();
   }
