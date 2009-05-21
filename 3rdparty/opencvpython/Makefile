@@ -12,7 +12,7 @@ installed: $(SVN_DIR)
 	cd $(SVN_DIR) && \
 			   OPENCV_ROOT=$(PWD)/../opencv_latest/opencv python setup.py build_ext --rpath $(PWD)/../opencv_latest/opencv/lib && \
 			   OPENCV_ROOT=$(PWD)/../opencv_latest/opencv python setup.py install --prefix ../../src 
-	mv src/lib/python2.5/site-packages/* src/ 
+	mv src/lib/python2.?/site-packages/* src/ 
 	rm -rf src/bin src/lib
 	touch installed
 clean:
