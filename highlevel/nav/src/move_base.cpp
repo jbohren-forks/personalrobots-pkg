@@ -276,6 +276,7 @@ namespace nav {
           new_plan_ = false;
           if(!tc_->updatePlan(global_plan_)){
             resetState();
+            ROS_WARN("move_base aborted because it failed to pass the plan from the planner to the controller");
             return robot_actions::ABORTED;
           }
         }
@@ -327,6 +328,7 @@ namespace nav {
         //if we have a valid plan, but can't find a valid control for a certain time... abort
         if(last_valid_control_ + patience < ros::Time::now()){
           resetState();
+          ROS_WARN("move_base aborting because the controller could not find valid velocity commands for over %.4f seconds", patience_.toSec());
           return robot_actions::ABORTED;
         }
 
@@ -335,6 +337,7 @@ namespace nav {
           //if we've tried to reset our map and to rotate in place, to no avail, we'll abort the goal
           if(attempted_costmap_reset_ && done_full_rotation_){
             resetState();
+            ROS_WARN("move_base aborting because the planner could not find a valid plan, even after reseting the map and attempting in place rotation");
             return robot_actions::ABORTED;
           }
 
@@ -399,6 +402,7 @@ namespace nav {
       //for now... we'll publish zero velocity
       robot_msgs::PoseDot cmd_vel;
 
+      last_valid_control_ = ros::Time::now();
       cmd_vel.vel.vx = 0.0;
       cmd_vel.vel.vy = 0.0;
       cmd_vel.ang_vel.vz = 0.0;
