@@ -69,6 +69,7 @@ Publishes to (name / type):
 
 @section services
  - @b "~self_test"    :  SelfTest service provided by SelfTest helper class
+ - @b "~calibrate"    :  Calibrate the gyro's biases. The gyro must not move during calibration
 
 <hr>
 
@@ -76,9 +77,10 @@ Publishes to (name / type):
 
 Reads the following parameters from the parameter server
 
- - @b "~port"      : @b [string] the port the imu is running on
- - @b "~frame_id"  : @b [string] the frame in which imu readings will be returned (Default: "imu")
- - @b "~autostart" : @b [bool] whether the imu starts on its own (this is only useful for bringing up an imu in test mode)
+ - @b "~port"          : @b [string] the port the imu is running on
+ - @b "~frame_id"      : @b [string] the frame in which imu readings will be returned (Default: "imu")
+ - @b "~autostart"     : @b [bool] whether the imu starts on its own (this is only useful for bringing up an imu in test mode)
+ - @b "~autocalibrate" : @b [bool] whether the imu automatically computes its biases at startup (not useful if you intend to calibrate via the calibrate service)
 
  **/
 
@@ -94,13 +96,16 @@ Reads the following parameters from the parameter server
 #include "diagnostic_updater/diagnostic_updater.h"
 
 #include "robot_msgs/PoseWithRatesStamped.h"
+#include "std_srvs/Empty.h"
 
 #include "tf/transform_datatypes.h"
 #include "imu_node/AddOffset.h"
 
+#include "boost/thread.hpp"
+
 using namespace std;
 
-class ImuNode: public ros::Node
+class ImuNode 
 {
 public:
   ms_3dmgx2_driver::IMU imu;
@@ -115,31 +120,43 @@ public:
   SelfTest<ImuNode> self_test_;
   DiagnosticUpdater<ImuNode> diagnostic_;
 
+  ros::NodeHandle node_handle_;
+  ros::Publisher imu_data_pub_;
+  ros::ServiceServer add_offset_serv_;
+  ros::ServiceServer calibrate_serv_;
+
   bool running;
 
   bool autostart;
+
+  bool autocalibrate_;
+
+  volatile bool calibrate_request_;
 
   string frameid_;
   
   double offset_;
 
-  ImuNode() : ros::Node("imu"), count_(0), self_test_(this), diagnostic_(this)
+  ImuNode(ros::NodeHandle h) : count_(0), self_test_(this), diagnostic_(this), node_handle_(h), calibrate_request_(false)
   {
-    advertise<robot_msgs::PoseWithRatesStamped>("imu_data", 100);
+    imu_data_pub_ = node_handle_.advertise<robot_msgs::PoseWithRatesStamped>("imu_data", 100);
 
-    advertiseService("imu/add_offset", &ImuNode::addOffset, this);
+    add_offset_serv_ = node_handle_.advertiseService("imu/add_offset", &ImuNode::addOffset, this);
+    calibrate_serv_ = node_handle_.advertiseService("imu/calibrate", &ImuNode::calibrate, this);
 
-    param("~port", port, string("/dev/ttyUSB0"));
+    node_handle_.param("~autocalibrate", autocalibrate_, true);
+    
+    node_handle_.param("~port", port, string("/dev/ttyUSB0"));
 
-    param("~autostart", autostart, true);
+    node_handle_.param("~autostart", autostart, true);
 
     cmd = ms_3dmgx2_driver::IMU::CMD_ACCEL_ANGRATE_ORIENT;
     
     running = false;
 
-    param("~frameid", frameid_, string("imu"));
+    node_handle_.param("~frameid", frameid_, string("imu"));
 
-    param("~time_offset", offset_, 0.0);
+    node_handle_.param("~time_offset", offset_, 0.0);
 
     self_test_.setPretest(&ImuNode::pretest);
     self_test_.addTest(&ImuNode::InterruptionTest);
@@ -166,9 +183,16 @@ public:
     {
       imu.openPort(port.c_str());
 
-      ROS_INFO("Initializing IMU sensor.");
+      if (autocalibrate_)
+      {
+        ROS_INFO("Initializing IMU sensor.");
 
-      imu.initGyros();
+        imu.initGyros();
+      }
+      else
+      {
+        ROS_INFO("Not initializing the IMU sensor. Use the calibrate service to calibrate it before use.");
+      }
 
       ROS_INFO("Initializing IMU time with offset %f.", offset_);
 
@@ -245,7 +269,7 @@ public:
 
       starttime = ros::Time::now().toSec();
       //ROS_DEBUG("About to publish imu_data");
-      publish("imu_data", reading);
+      imu_data_pub_.publish(reading);
       //ROS_DEBUG("Done publishing imu_data");
       endtime = ros::Time::now().toSec();
       if (endtime - starttime > 0.003)
@@ -264,20 +288,22 @@ public:
   bool spin()
   {
     // Start up the laser
-    while (ok())
+    while (node_handle_.ok())
     {
       if (autostart && start() == 0)
       {
-        while(ok()) {
+        while(node_handle_.ok()) {
           if(publish_datum() < 0)
             break;
           self_test_.checkTest();
           diagnostic_.update();
+          calibrate_req_check();
         }
       } else {
         usleep(1000000);
         self_test_.checkTest();
         diagnostic_.update();
+        calibrate_req_check();
       }
     }
 
@@ -300,7 +326,7 @@ public:
   {
     status.name = "Interruption Test";
 
-    if (numSubscribers("imu_data") == 0 )
+    if (node_handle_.getNode()->numSubscribers("imu_data") == 0 )
     {
       status.level = 0;
       status.message = "No operation interrupted.";
@@ -507,7 +533,7 @@ public:
     imu.setFixedOffset(offset_);
 
     // write changes to param server
-    setParam("~time_offset", offset_);
+    node_handle_.setParam("~time_offset", offset_);
 
     // set response
     resp.total_offset = offset_;
@@ -515,20 +541,44 @@ public:
     return true;
   }
 
+  bool calibrate(std_srvs::Empty::Request &req, std_srvs::Empty::Response &resp)
+  {
+    calibrate_request_ = true;
 
+    while (calibrate_request_)
+    {
+      sleep(1); // The calibration takes 10s, so this is plenty often enough.
+    }
 
+    return true;
+  }
+  
+  void calibrate_req_check()
+  {
+    if (calibrate_request_)
+    {
+      ROS_INFO("Calibrating IMU gyros.");
+      imu.initGyros();
+      calibrate_request_ = false;
+      ROS_INFO("IMU gyro calibration completed.");
+    }
+  }
 };
 
 int
 main(int argc, char** argv)
 {
-  ros::init(argc, argv);
+  ros::init(argc, argv, "imu");
 
-  ImuNode in;
+  ros::NodeHandle nh;
 
-  in.spin();
-
+  ImuNode in(nh);
   
+  boost::thread DriverSpinThread(boost::bind(&ImuNode::spin, &in));
+
+  ros::spin();
+
+  DriverSpinThread.join();
 
   return(0);
 }

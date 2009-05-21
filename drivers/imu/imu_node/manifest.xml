@@ -11,6 +11,7 @@
   <depend package="self_test"/>
   <depend package="diagnostic_updater"/>
   <depend package="tf"/>
+  <depend package="std_srvs"/>
   <export>
     <cpp cflags="-I${prefix}/msg/cpp"/>
   </export>
