@@ -39,13 +39,13 @@ from robot_msgs.msg import TransformStamped
 class TransformBroadcaster:
     def __init__(self):
         print "TransformBroadcaster initing"
-        pub = rospy.Publisher("/tf_message", tfMessage)
+        self.pub = rospy.Publisher("/tf_message", tfMessage)
 
     def send_transform(self, transform):
         msg = tfMessage([transform])
-        pub.publish(msg)
+        self.pub.publish(msg)
 
     def send_transforms(self, transforms):
         msg = tfMessage(transforms)
-        pub.publish(msg)
+        self.pub.publish(msg)
 
