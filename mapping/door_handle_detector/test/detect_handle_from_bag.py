@@ -81,7 +81,9 @@ class TestDoorHandleDetector(unittest.TestCase):
          dx = handle_laser.doors[0].handle.x - handle_camera.doors[0].handle.x
          dy = handle_laser.doors[0].handle.y - handle_camera.doors[0].handle.y
          dz = handle_laser.doors[0].handle.z - handle_camera.doors[0].handle.z
-         dist = math.sqrt((dx-dx)*(dx-dx) + (dy-dy)*(dy-dy) + (dz-dz)*(dz-dz))
+         dist = math.sqrt(dx*dx + dy*dy + dz*dz)
+
+         print 'Difference between camera and laser: %9.6f'%(dist)
 
          self.assertTrue(dist < self.epsilon)
 
