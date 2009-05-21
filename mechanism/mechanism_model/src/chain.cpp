@@ -98,7 +98,7 @@ void Chain::getPositions(std::vector<JointState> &states, std::vector<double> &p
   positions.resize(joint_indices_.size());
   for (unsigned int i = 0; i < joint_indices_.size(); ++i)
   {
-    positions[i] = states[i].position_;
+    positions[i] = states[joint_indices_[i]].position_;
   }
 }
 
@@ -107,7 +107,7 @@ void Chain::getVelocities(std::vector<JointState> &states, std::vector<double> &
   velocities.resize(joint_indices_.size());
   for (unsigned int i = 0; i < joint_indices_.size(); ++i)
   {
-    velocities[i] = states[i].velocity_;
+    velocities[i] = states[joint_indices_[i]].velocity_;
   }
 }
 
