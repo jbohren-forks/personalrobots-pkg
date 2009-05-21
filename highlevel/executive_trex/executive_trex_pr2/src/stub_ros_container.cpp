@@ -283,11 +283,11 @@ int main(int argc, char** argv){
   if (getComponentParam("/trex/enable_localize_plug_in_gripper"))
     runner.connect<std_msgs::Empty, robot_actions::NoArgumentsActionState, std_msgs::Empty>(localize_plug_in_gripper);
 
-  executive_trex_pr2::SimpleStubAction<std_msgs::Empty> unplug("unplug");
+  executive_trex_pr2::SimpleStubAction<std_msgs::Empty> unplug("unplug", 5);
   if (getComponentParam("/trex/enable_unplug"))
     runner.connect<std_msgs::Empty, robot_actions::NoArgumentsActionState, std_msgs::Empty>(unplug);
   
-  executive_trex_pr2::SimpleStubAction<std_msgs::Empty> plug_in("plug_in");
+  executive_trex_pr2::SimpleStubAction<std_msgs::Empty> plug_in("plug_in", 5);
   if (getComponentParam("/trex/enable_plug_in"))
     runner.connect<std_msgs::Empty, robot_actions::NoArgumentsActionState, std_msgs::Empty>(plug_in);
   
