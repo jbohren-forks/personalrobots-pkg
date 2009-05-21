@@ -1,14 +1,14 @@
 <launch>
   <!-- Feed the images from disk.  -->
   <node pkg="prosilica_cam" type="fake_poll_node"
-        args="--roi $(find outlet_detection)/test/outlets_2009_05_20_part1"
+        args="--roi $(find outlet_detection)/test/outlets_2009_05_20_part2"
         output="screen"/>
   <!-- Run the detector -->
   <include file="$(find outlet_detection)/launch/outlet.launch"/>
-  <!-- Run the test program, with expected output as cmdline args
+  <!-- Run the test program, with expected output as cmdline args:
        px py pz position_tolerance qx qy qz qw angle_tolerance time-limit -->
-  <test test-name="outlets_2009_05_20_part1" pkg="outlet_detection"
+  <test test-name="outlets_2009_05_20_part2" pkg="outlet_detection"
         type="outlet_detection_from_prosilica_image_files.py"
         time-limit="20"
-        args="0.616 0.037 0.011 0.005 -0.060 -0.548 0.070 0.832 0.005 10"/>
+        args="0.638 0.099 0.097 0.005 0.022 -0.559 -0.032 0.828 0.005 10"/>
 </launch>

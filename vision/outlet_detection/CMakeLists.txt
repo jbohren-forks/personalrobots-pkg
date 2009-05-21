@@ -46,6 +46,8 @@ rospack_add_executable(calibrate_plug src/calibrate_plug.cpp)
 
 # TODO: move the tarball-unpacking logic into rosbuild
 
+#################
+# Test 1
 # Download the tarball of images
 rospack_download_test_data(http://pr.willowgarage.com/data/outlet_detection/outlets_2009_05_20_part1.tgz test/outlets_2009_05_20_part1.tgz)
 # Unpack the tarball.
@@ -58,8 +60,23 @@ add_custom_command(OUTPUT ${PROJECT_SOURCE_DIR}/test/outlets_2009_05_20_part1
 # Run a test on that data
 rospack_add_rostest(test/test_outlets_2009_05_20_part1.xml)
 
+#################
+# Test 2
+# Download the tarball of images
+rospack_download_test_data(http://pr.willowgarage.com/data/outlet_detection/outlets_2009_05_20_part2.tgz test/outlets_2009_05_20_part2.tgz)
+# Unpack the tarball.
+add_custom_command(OUTPUT ${PROJECT_SOURCE_DIR}/test/outlets_2009_05_20_part2
+                   COMMAND tar zxvf outlets_2009_05_20_part2.tgz
+                   COMMAND touch outlets_2009_05_20_part2
+                   DEPENDS ${PROJECT_SOURCE_DIR}/test/outlets_2009_05_20_part2.tgz
+                   WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/test
+                   VERBATIM)
+# Run a test on that data
+rospack_add_rostest(test/test_outlets_2009_05_20_part2.xml)
+
 
 # Set up dependencies so that we unpack the data before running tests
 add_custom_target(download_and_unpack_test_data
-                  DEPENDS ${PROJECT_SOURCE_DIR}/test/outlets_2009_05_20_part1)
+                  DEPENDS ${PROJECT_SOURCE_DIR}/test/outlets_2009_05_20_part1
+                          ${PROJECT_SOURCE_DIR}/test/outlets_2009_05_20_part2)
 add_dependencies(tests download_and_unpack_test_data)
