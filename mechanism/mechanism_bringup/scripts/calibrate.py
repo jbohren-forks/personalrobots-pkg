@@ -46,6 +46,7 @@ import rospy
 from std_msgs.msg import *
 from robot_srvs.srv import *
 from robot_mechanism_controllers.srv import *
+import std_srvs.srv
 
 def slurp(filename):
     f = open(filename)
@@ -94,6 +95,16 @@ def calibrate(config):
 
     return success
 
+def calibrate_imu():
+    print "Calibrating IMU"
+    try:
+        rospy.wait_for_service('/imu/calibrate', 5)
+        calibrate = rospy.ServiceProxy('/imu/calibrate', std_srvs.srv.Empty)
+        calibrate(timeout=20) # This should take 10 seconds
+        return True
+    except:
+        print "IMU calibration failed: %s"%sys.exc_info()[0]
+        return False
 
 def main():
     rospy.wait_for_service('spawn_controller')
@@ -126,8 +137,15 @@ def main():
         print "Reading from stdin..."
         xml = sys.stdin.read()
 
+    imustatus = calibrate_imu()
+
     if not calibrate(xml):
         sys.exit(1)
+
+    if not imustatus:
+        print "Mechanism calibration complete, but IMU calibration failed."
+        sys.exit(1)
+    
     print "Calibration complete"
 
 if __name__ == '__main__':
