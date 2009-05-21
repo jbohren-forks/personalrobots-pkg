@@ -13,6 +13,13 @@
 #include <cstdio>
 #include <cassert>
 
+// Extra stuff for snarfing directories
+#include <dirent.h>
+#include <sys/stat.h>
+#ifndef S_ISDIR 
+#define S_ISDIR(x) (((x) & S_IFMT) == S_IFDIR) 
+#endif
+
 class FakePublisher
 {
 private:
@@ -93,8 +100,25 @@ public:
   }
 };
 
+
+// Function to filter for *.jpg
+static int
+filter_jpg(const struct dirent* d)
+{
+  std::string dstr(d->d_name);
+  if((dstr.size() > 4) && 
+     ((dstr.substr(dstr.size()-4,4) == ".jpg") ||
+       (dstr.substr(dstr.size()-4,4) == ".JPG")))
+    return 1;
+  else
+    return 0;
+}
+
 int main(int argc, char** argv)
 {
+  // Call init first, to get roscpp to consume the ROS-specific args
+  ros::init(argc, argv);
+
   if (argc < 2) {
     printf("Usage: %s intrinsics.yml [FILES]\n", argv[0]);
     return 0;
@@ -106,7 +130,38 @@ int main(int argc, char** argv)
   bool roi = strcmp(argv[1], "--roi") == 0;
   for (int i = 2; i < argc; ++i) {
     std::string name = argv[i];
-    images.push_back( name );
+
+    // Is it a directory?
+    struct stat s;
+    if((stat(name.c_str(), &s) == 0) && 
+       (S_ISDIR(s.st_mode)))
+    {
+      // Yep; so pick out *.jpg from within.
+      struct dirent **matches;
+      int num_matches;
+      if((num_matches = scandir(name.c_str(), &matches, filter_jpg, alphasort)) < 0)
+        perror("scandir");
+      else
+      {
+        for(int j=0;j<num_matches;j++)
+        {
+          std::string fname = name + "/" + matches[j]->d_name;
+          images.push_back( fname.c_str() );
+        }
+      }
+    }
+    else
+    {
+          images.push_back( name );
+    }
+  }
+
+  for (std::vector<std::string>::const_iterator it = images.begin();
+       it != images.end();
+       ++it)
+  {
+    printf("file:%s:\n", it->c_str());
+    std::string name = *it;
     if (roi) {
       name.replace(name.begin() + name.find_last_of('.'), name.end(), ".yml");
       intrinsics.push_back(name);
@@ -115,7 +170,6 @@ int main(int argc, char** argv)
     }
   }
   
-  ros::init(argc, argv);
   ros::Node n("fake_publisher");
   FakePublisher fp(intrinsics, images);
   
