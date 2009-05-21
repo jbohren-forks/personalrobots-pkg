@@ -151,7 +151,7 @@ class PlanarFit
       node_.param ("~min_area", min_area_, 0.2);
       node_.param ("~n_max", n_max_, 1);
 
-      string cloud_topic ("cloud_pcd");
+      string cloud_topic ("/stereo/cloud");
 
       vector<pair<string, string> > t_list;
       node_.getPublishedTopics (&t_list);
