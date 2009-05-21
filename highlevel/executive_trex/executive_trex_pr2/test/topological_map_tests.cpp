@@ -128,7 +128,15 @@ TEST(executive_trex_pr2, map_get_next_move){
   MapGetNextMoveConstraint::MapGetNextMoveConstraint map_get_next_move("map_next_move", "Default", ce, scope);
 
   ASSERT_TRUE(ce->propagate());
-
+  /*
+  debugMsg("ConstraintEngine", "MARK");
+  current_x.specify(14.4125);
+  current_y.specify(17.5375);
+  target_x.specify(12.6999);
+  target_y.specify(22.5000);
+  ASSERT_TRUE(ce->propagate());
+  ASSERT_TRUE(next_y.lastDomain().getSingletonValue()  > 19);
+  */
   /*
    * Set values based on the following:
    ARG[0]:x(15337) DERIVED=float:CLOSED[13.949999999999999, 13.949999999999999]
@@ -204,7 +212,6 @@ TEST(executive_trex_pr2, map_get_next_move){
   target_x.specify(19.2375);
   target_y.specify(32.7375);
   ASSERT_TRUE(ce->propagate());
-
   /*
     ARG[0]:x(21065) DERIVED=float:CLOSED[0.000000000000000, 0.000000000000000]
     ARG[1]:y(21066) DERIVED=float:CLOSED[0.000000000000000, 0.000000000000000]
@@ -273,7 +280,6 @@ TEST(executive_trex_pr2, map_get_next_move){
  ARG[11]:y(481) (S)  DERIVED=float:CLOSED[22.500000000000000, 22.500000000000000]
    */
 
-  debugMsg("ConstraintEngine", "MARK");
   current_x.reset();
   current_y.reset();
   target_x.reset();
