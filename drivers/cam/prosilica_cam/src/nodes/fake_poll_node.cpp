@@ -9,6 +9,7 @@
 #include <cvwimage.h>
 #include <highgui.h>
 
+#include <cstring>
 #include <cstdio>
 #include <cassert>
 
@@ -17,21 +18,30 @@ class FakePublisher
 private:
   std::vector<std::string> files_;
   std::vector<std::string>::const_iterator current_iter_, end_iter_;
+  std::vector<std::string> intrinsics_;
+  std::vector<std::string>::const_iterator current_intrinsic_;
   CvMat *K_, *D_;
 
-public:
-  FakePublisher(const std::string &intrinsics_file,
-                const std::vector<std::string> &image_files)
-    : files_(image_files), current_iter_(files_.begin()), end_iter_(files_.end()),
-      K_(NULL), D_(NULL)
+  void loadIntrinsics(const std::string &intrinsics_file)
   {
-    // Read camera matrix and distortion from YML file
     CvFileStorage* fs = cvOpenFileStorage(intrinsics_file.c_str(), 0, CV_STORAGE_READ);
     assert(fs);
+    cvReleaseMat(&K_);
+    cvReleaseMat(&D_);
     K_ = (CvMat*)cvReadByName(fs, 0, "camera_matrix");
     D_ = (CvMat*)cvReadByName(fs, 0, "distortion_coefficients");
     cvReleaseFileStorage(&fs);
+  }
 
+public:
+  FakePublisher(const std::vector<std::string> &intrinsics_files,
+                const std::vector<std::string> &image_files)
+    : files_(image_files), current_iter_(files_.begin()), end_iter_(files_.end()),
+      intrinsics_(intrinsics_files), current_intrinsic_(intrinsics_.begin()),
+      K_(NULL), D_(NULL)
+  {
+    loadIntrinsics(intrinsics_[0]);
+    
     ros::Node::instance()->advertiseService("/prosilica/poll", &FakePublisher::grab, this);
     ros::Node::instance()->advertiseService("/prosilica/cam_info_service",
                                             &FakePublisher::camInfo, this, 0);
@@ -58,6 +68,9 @@ public:
       ros::Node::instance()->unadvertiseService("/prosilica/poll");
       return false;
     }
+
+    // Load intrinsics from file
+    loadIntrinsics(*current_intrinsic_);
     
     // Load image from file
     ROS_FATAL("Loading %s", current_iter_->c_str());
@@ -74,6 +87,7 @@ public:
     memcpy(&res.cam_info.K[0], K_->data.db, 9*sizeof(double));
 
     current_iter_++;
+    current_intrinsic_++;
 
     return true;
   }
@@ -86,16 +100,24 @@ int main(int argc, char** argv)
     return 0;
   }
   
-  std::vector<std::string> files;
-  files.reserve(argc - 2);
+  std::vector<std::string> images, intrinsics;
+  images.reserve(argc - 2);
+  intrinsics.reserve(argc - 2);
+  bool roi = strcmp(argv[1], "--roi") == 0;
   for (int i = 2; i < argc; ++i) {
-    //printf("File name: %s\n", argv[i]);
-    files.push_back( argv[i] );
+    std::string name = argv[i];
+    images.push_back( name );
+    if (roi) {
+      name.replace(name.begin() + name.find_last_of('.'), name.end(), ".yml");
+      intrinsics.push_back(name);
+    } else {
+      intrinsics.push_back(argv[1]);
+    }
   }
   
   ros::init(argc, argv);
   ros::Node n("fake_publisher");
-  FakePublisher fp(argv[1], files);
+  FakePublisher fp(intrinsics, images);
   
   n.spin();
 
