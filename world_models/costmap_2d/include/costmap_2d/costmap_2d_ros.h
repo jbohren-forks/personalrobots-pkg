@@ -81,8 +81,9 @@ namespace costmap_2d {
        * @param ros_node A reference to the ros node to run on
        * @param tf A reference to a TransformListener
        * @param prefix An optional prefix to prepend to the parameter list for the costmap
+       * @param footprint An optional footprint specification for the robot
        */
-      Costmap2DROS(ros::Node& ros_node, tf::TransformListener& tf, std::string prefix = std::string(""));
+      Costmap2DROS(ros::Node& ros_node, tf::TransformListener& tf, std::string prefix = std::string(""), std::vector<robot_msgs::Point> footprint = std::vector<robot_msgs::Point>(0));
 
       /**
        * @brief  Destructor for the wrapper. Cleans up pointers.
@@ -130,6 +131,17 @@ namespace costmap_2d {
        * If you want to update the map outside of the update loop that runs, you can call this.
        */
       void updateMap();
+
+      /**
+       * @brief Clear the footprint of the robot in the costmap
+       */
+      void clearRobotFootprint();
+
+      /**
+       * @brief Clear the footprint of the robot in the costmap at a given pose
+       * @param global_pose The pose to clear the footprint at
+       */
+      void clearRobotFootprint(const tf::Stamped<tf::Pose>& global_pose);
 
       /**
        * @brief  Reset to the static map outside of a window around the robot specified by the user
@@ -239,6 +251,7 @@ namespace costmap_2d {
       bool stop_updates_, initialized_;
       bool publish_voxel_;
       std::string prefix_;
+      std::vector<robot_msgs::Point> footprint_spec_;
 
   };
 };

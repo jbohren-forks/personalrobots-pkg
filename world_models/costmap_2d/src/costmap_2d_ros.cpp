@@ -45,8 +45,8 @@ using namespace robot_msgs;
 
 namespace costmap_2d {
 
-  Costmap2DROS::Costmap2DROS(ros::Node& ros_node, TransformListener& tf, string prefix) : ros_node_(ros_node),
-  tf_(tf), costmap_(NULL), map_update_thread_(NULL), costmap_publisher_(NULL), stop_updates_(false), initialized_(true), prefix_(prefix){
+  Costmap2DROS::Costmap2DROS(ros::Node& ros_node, TransformListener& tf, string prefix, std::vector<robot_msgs::Point> footprint) : ros_node_(ros_node),
+  tf_(tf), costmap_(NULL), map_update_thread_(NULL), costmap_publisher_(NULL), stop_updates_(false), initialized_(true), prefix_(prefix), footprint_spec_(footprint){
 
     std::string map_type;
     ros_node_.param("~" + prefix + "/costmap/map_type", map_type, std::string("costmap"));
@@ -573,6 +573,80 @@ namespace costmap_2d {
     double resolution = costmap_->resolution();
     costmap_->unlock();
     return resolution;
+  }
+
+  void Costmap2DROS::clearRobotFootprint(){
+    tf::Stamped<tf::Pose> robot_pose, global_pose;
+    robot_pose.setIdentity();
+    robot_pose.frame_id_ = robot_base_frame_;
+    robot_pose.stamp_ = ros::Time();
+    ros::Time current_time = ros::Time::now(); // save time for checking tf delay later
+
+    //get the global pose of the robot
+    try{
+      tf_.transformPose(global_frame_, robot_pose, global_pose);
+    }
+    catch(tf::LookupException& ex) {
+      ROS_ERROR("No Transform available Error: %s\n", ex.what());
+      return;
+    }
+    catch(tf::ConnectivityException& ex) {
+      ROS_ERROR("Connectivity Error: %s\n", ex.what());
+      return;
+    }
+    catch(tf::ExtrapolationException& ex) {
+      ROS_ERROR("Extrapolation Error: %s\n", ex.what());
+      return;
+    }
+    // check global_pose timeout
+    if (current_time.toSec() - global_pose.stamp_.toSec() > transform_tolerance_) {
+      ROS_ERROR("TrajcetoryPlannerROS transform timeout. Current time: %.4f, global_pose stamp: %.4f, tolerance: %.4f",
+          current_time.toSec() ,global_pose.stamp_.toSec() ,transform_tolerance_);
+      return;
+    }
+
+    clearRobotFootprint(global_pose);
+  }
+
+  void Costmap2DROS::clearRobotFootprint(const tf::Stamped<tf::Pose>& global_pose){
+    //make sure we have a legal footprint
+    if(footprint_spec_.size() < 3)
+      return;
+
+    double useless_pitch, useless_roll, yaw;
+    global_pose.getBasis().getEulerZYX(yaw, useless_pitch, useless_roll);
+
+    //get the oriented footprint of the robot
+    double x = global_pose.getOrigin().x();
+    double y = global_pose.getOrigin().y();
+    double theta = yaw;
+
+    //build the oriented footprint at the robot's current location
+    double cos_th = cos(theta);
+    double sin_th = sin(theta);
+    std::vector<robot_msgs::Point> oriented_footprint;
+    for(unsigned int i = 0; i < footprint_spec_.size(); ++i){
+      robot_msgs::Point new_pt;
+      new_pt.x = x + (footprint_spec_[i].x * cos_th - footprint_spec_[i].y * sin_th);
+      new_pt.y = y + (footprint_spec_[i].x * sin_th + footprint_spec_[i].y * cos_th);
+      oriented_footprint.push_back(new_pt);
+    }
+
+    costmap_->lock();
+    //set the associated costs in the cost map to be free
+    if(!costmap_->setConvexPolygonCost(oriented_footprint, costmap_2d::FREE_SPACE))
+      return;
+
+    double max_inflation_dist = costmap_->inflationRadius() + costmap_->circumscribedRadius();
+
+    //clear all non-lethal obstacles out to the maximum inflation distance of an obstacle in the robot footprint
+    costmap_->clearNonLethal(global_pose.getOrigin().x(), global_pose.getOrigin().y(), max_inflation_dist, max_inflation_dist);
+
+    //make sure to re-inflate obstacles in the affected region... plus those obstalces that could inflate to have costs in the footprint
+    costmap_->reinflateWindow(global_pose.getOrigin().x(), global_pose.getOrigin().y(), 
+        max_inflation_dist + costmap_->inflationRadius(), max_inflation_dist + costmap_->inflationRadius(), false);
+    costmap_->unlock();
+
   }
 
 };
