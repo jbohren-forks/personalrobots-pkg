@@ -1,0 +1,14 @@
+<package>
+  <description>A prototype for what the new message filtering system could look like</description>
+  <author></author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <depend package="roscpp" />
+  <depend package="std_msgs" />
+  <depend package="robot_msgs" />
+  <depend package="image_msgs" />
+  <export>
+    <cpp cflags="-I${prefix}/include" />
+  </export>
+  <url>http://pr.willowgarage.com/wiki/topic_synchronizer</url>
+</package>
