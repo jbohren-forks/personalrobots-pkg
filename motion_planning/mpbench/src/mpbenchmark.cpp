@@ -63,11 +63,11 @@ static void print_gnuplot();
 static string baseFilename();
 static string sanitizeSpec(string const & spec);
 
-static char * const d_world_spec("hc:office1:1.2:3");
-static char * const d_planner_spec("ad:2d:bwd");
-static char * const d_robot_spec("pr2:325:460:600:600");
-static char * const d_costmap_spec("ros:50");
-static char * const d_geometry("800x600");
+static char const * d_world_spec("hc:office1:1.2:3");
+static char const * d_planner_spec("ad:2d:bwd");
+static char const * d_robot_spec("pr2:325:460:600:600");
+static char const * d_costmap_spec("ros:50");
+static char const * d_geometry("800x600");
 
 static bool enableGfx;
 static string world_spec;
