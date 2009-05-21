@@ -94,6 +94,7 @@ Reads the following parameters from the parameter server
 #include "ros/time.h"
 #include "self_test/self_test.h"
 #include "diagnostic_updater/diagnostic_updater.h"
+#include "diagnostic_updater/update_functions.h"
 
 #include "robot_msgs/PoseWithRatesStamped.h"
 #include "std_srvs/Empty.h"
@@ -132,12 +133,19 @@ public:
   bool autocalibrate_;
   bool calibrated_;
   volatile bool calibrate_request_;
+  
+  int error_count_;
 
   string frameid_;
   
   double offset_;
 
-  ImuNode(ros::NodeHandle h) : count_(0), self_test_(this), diagnostic_(this, h), node_handle_(h), calibrated_(false), calibrate_request_(false)
+  double desired_freq_;
+  diagnostic_updater::FrequencyStatus freq_diag_;
+
+  ImuNode(ros::NodeHandle h) : count_(0), self_test_(this), diagnostic_(this, h), 
+  node_handle_(h), calibrated_(false), calibrate_request_(false), error_count_(0), 
+  desired_freq_(100), freq_diag_(desired_freq_, desired_freq_, 0.05)
   {
     imu_data_pub_ = node_handle_.advertise<robot_msgs::PoseWithRatesStamped>("imu_data", 100);
 
@@ -167,8 +175,9 @@ public:
     self_test_.addTest(&ImuNode::DisconnectTest);
     self_test_.addTest(&ImuNode::ResumeTest);
 
-    diagnostic_.add( &ImuNode::freqStatus );
+    diagnostic_.add( freq_diag_ );
     diagnostic_.add( &ImuNode::calibrationStatus );
+    diagnostic_.add( &ImuNode::deviceStatus );
   }
 
   ~ImuNode()
@@ -206,6 +215,7 @@ public:
       running = true;
 
     } catch (ms_3dmgx2_driver::Exception& e) {
+      error_count_++;
       ROS_INFO("Exception thrown while starting IMU.\n %s", e.what());
       return -1;
     }
@@ -221,6 +231,7 @@ public:
       {
         imu.closePort();
       } catch (ms_3dmgx2_driver::Exception& e) {
+        error_count_++;
         ROS_INFO("Exception thrown while stopping IMU.\n %s", e.what());
       }
       running = false;
@@ -277,6 +288,7 @@ public:
         ROS_WARN("Publishing took %f ms.", 1000 * (endtime - starttime));
         
     } catch (ms_3dmgx2_driver::Exception& e) {
+      error_count_++;
       ROS_INFO("Exception thrown while trying to get the IMU reading.\n%s", e.what());
       return -1;
     }
@@ -491,6 +503,20 @@ public:
     status.message = "Previous operation resumed successfully.";    
   }
 
+  void deviceStatus(diagnostic_updater::DiagnosticStatusWrapper &status)
+  {
+    status.name = "IMU Status";
+
+    if (running)
+      status.summary(0, "IMU is running");
+    else
+      status.summary(2, "IMU is stopped");
+
+    status.adds("Device", port);
+    status.adds("TF frame", frameid_);
+    status.addv("Error count", error_count_);
+  }
+
   void calibrationStatus(diagnostic_updater::DiagnosticStatusWrapper& status)
   {
     status.name = "Calibration Status";
@@ -500,35 +526,6 @@ public:
     else
       status.summary(2, "Gyro not calibrated");
   }
-
-  void freqStatus(diagnostic_updater::DiagnosticStatusWrapper& status)
-  {
-    status.name = "Frequency Status";
-
-    double desired_freq = 100.0;
-    double freq = (double)(count_)/diagnostic_.getPeriod();
-
-    if (freq < (.9*desired_freq))
-    {
-      status.summary(2, "Desired frequency not met");
-    }
-    else
-    {
-      status.summary(0, "Desired frequency met");
-    }
-
-    status.set_values_size(3);
-    status.values[0].label = "Scans in interval";
-    status.values[0].value = count_;
-    status.values[1].label = "Desired frequency";
-    status.values[1].value = desired_freq;
-    status.values[2].label = "Actual frequency";
-    status.values[2].value = freq;
-
-    count_ = 0;
-  }
-
-
 
   bool addOffset(imu_node::AddOffset::Request &req, imu_node::AddOffset::Response &resp)
   {
