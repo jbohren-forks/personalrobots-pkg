@@ -1174,8 +1174,9 @@ namespace executive_trex_pr2 {
       getDoorApproachPose(next_connector, pose);
       if(fabs(pose.position.x - x1) < 0.10 && fabs(pose.position.y - y1) < 0.10){
 	next_connector = getOtherDoorConnector(next_connector, x2, y2);
+	getDoorApproachPose(next_connector, pose);
 	TopologicalMapAdapter::instance()->getConnectorPosition(next_connector, next_x, next_y);
-	debugMsg("map:getNextConnector", "Preferring connector " << next_connector << " at <" << next_x << ", " << next_y << "> with cost " << lowest_cost);
+	debugMsg("map:getNextConnector", "Preferring approach point for connector " << next_connector << " at <" << next_x << ", " << next_y << "> with cost " << lowest_cost);
       }
     }
 
@@ -1240,17 +1241,20 @@ namespace executive_trex_pr2 {
     for(std::vector< std::pair<topological_map::ConnectorId, double> >::const_iterator it = connector_cost_pairs.begin(); it != connector_cost_pairs.end(); ++it){
       if(it->second < lowest_cost){
 	// Now prune this candidate if it is the current point
-	double candidate_x(0.0), candidate_y(0.0);
-	TopologicalMapAdapter::instance()->getConnectorPosition(it->first, candidate_x, candidate_y);
+	//double candidate_x(0.0), candidate_y(0.0);
+	robot_msgs::Pose pose;
+	getDoorApproachPose(it->first, pose);
+	//TopologicalMapAdapter::instance()->getConnectorPosition(it->first, candidate_x, candidate_y);
 
+	/**
 	if(fabs(candidate_x - x1) < 0.10 && fabs(candidate_y - y1) < 0.10)
 	  continue;
-
+	*/
 	best_connector = it->first;
 	lowest_cost = it->second;
-	next_x = candidate_x;
-	next_y = candidate_y;
-	debugMsg("map:getBestConnector", "Preferring connector " << best_connector << " at <" << next_x << ", " << next_y << "> with cost " << lowest_cost);
+	next_x = pose.position.x;
+	next_y = pose.position.y;
+	debugMsg("map:getBestConnector", "Preferring connector " << best_connector << " with approach point <" << next_x << ", " << next_y << "> with cost " << lowest_cost);
       }
     }
 

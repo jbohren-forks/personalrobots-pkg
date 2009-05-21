@@ -256,6 +256,34 @@ TEST(executive_trex_pr2, map_get_next_move){
   target_y.specify(22.5000);
   ASSERT_TRUE(ce->propagate());
   ASSERT_FALSE(next_x.lastDomain().isMember(12.6999));
+
+  /*
+[map:get_next_move]AFTER: [1242860675.581439]map_get_next_move(14486)
+ ARG[0]:x(14469) DERIVED=float:CLOSED[14.462500000000000, 14.462500000000000]
+ ARG[1]:y(14470) DERIVED=float:CLOSED[18.149999999999999, 18.149999999999999]
+ ARG[2]:z(14471) DERIVED=float:CLOSED[0.000000000000000, 0.000000000000000]
+ ARG[3]:qx(14472) DERIVED=float:CLOSED[0.000000000000000, 0.000000000000000]
+ ARG[4]:qy(14473) DERIVED=float:CLOSED[0.000000000000000, 0.000000000000000]
+ ARG[5]:qz(14474) DERIVED=float:CLOSED[0.000000000000000, 0.000000000000000]
+ ARG[6]:qw(14475) DERIVED=float:CLOSED[0.000000000000000, 0.000000000000000]
+ ARG[7]:thru_doorway(14484) DERIVED=bool:CLOSED[1, 1]
+ ARG[8]:x(14221) (S)  DERIVED=float:CLOSED[14.487500000000001, 14.487500000000001]
+ ARG[9]:y(14222) (S)  DERIVED=float:CLOSED[18.550000000000001, 18.550000000000001]
+ ARG[10]:x(480) (S)  DERIVED=float:CLOSED[12.699999999999999, 12.699999999999999]
+ ARG[11]:y(481) (S)  DERIVED=float:CLOSED[22.500000000000000, 22.500000000000000]
+   */
+
+  debugMsg("ConstraintEngine", "MARK");
+  current_x.reset();
+  current_y.reset();
+  target_x.reset();
+  target_y.reset();
+  current_x.specify(14.4875);
+  current_y.specify(18.5500);
+  target_x.specify(12.6999);
+  target_y.specify(22.5000);
+  ASSERT_TRUE(ce->propagate());
+  ASSERT_TRUE(next_y.lastDomain().getSingletonValue() > current_y.lastDomain().getSingletonValue());
 }
 
 /**
