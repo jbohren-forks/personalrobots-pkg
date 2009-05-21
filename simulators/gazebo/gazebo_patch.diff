@@ -1187,10 +1187,13 @@ Index: SConstruct
    LINKFLAGS=Split('-export-dynamic'),
  
    TARFLAGS = '-c -z',
-@@ -70,6 +79,19 @@
+@@ -70,6 +79,22 @@
    options=opts
  )
  
++env["ENV"]["PKG_CONFIG_PATH"] = os.environ.get("PKG_CONFIG_PATH")
++env["ENV"]["PATH"] = os.environ.get("PATH")
++
 +env['CCFLAGS']   +=   Split(env['boost_cflags'])
 +env['LINKFLAGS'] +=   Split(env['boost_lflags'])
 +
@@ -1207,7 +1210,7 @@ Index: SConstruct
  Help(opts.GenerateHelpText(env))
  
  if env['destdir'] != '/':
-@@ -86,7 +108,7 @@
+@@ -86,7 +111,7 @@
  rcconfig = env.RCConfig(target='gazeborc', source=Value(install_prefix))
  
  # DEFAULT list of subdirectories to build
@@ -1216,7 +1219,7 @@ Index: SConstruct
  
  # Set the compile mode
  if env['mode'] == 'debug':
-@@ -154,9 +176,10 @@
+@@ -154,9 +179,10 @@
          Exit(1)
  
  # Check for trimesh support in ODE
