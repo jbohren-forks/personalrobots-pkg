@@ -585,7 +585,7 @@ main(int argc, char** argv)
 
   ros::spin();
 
-  DriverSpinThread.join();
+  DriverSpinThread.timed_join(boost::posix_time::seconds(2) );
 
   return(0);
 }
