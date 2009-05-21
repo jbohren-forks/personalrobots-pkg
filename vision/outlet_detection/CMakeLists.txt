@@ -40,3 +40,26 @@ rospack_add_executable(plug_node src/plug_node.cpp)
 target_link_libraries(plug_node plug)
 
 rospack_add_executable(calibrate_plug src/calibrate_plug.cpp)
+
+##############################################
+# Regression testing
+
+# TODO: move the tarball-unpacking logic into rosbuild
+
+# Download the tarball of images
+rospack_download_test_data(http://pr.willowgarage.com/data/outlet_detection/outlets_2009_05_20_part1.tgz test/outlets_2009_05_20_part1.tgz)
+# Unpack the tarball.
+add_custom_command(OUTPUT ${PROJECT_SOURCE_DIR}/test/outlets_2009_05_20_part1
+                   COMMAND tar zxvf outlets_2009_05_20_part1.tgz
+                   COMMAND touch outlets_2009_05_20_part1
+                   DEPENDS ${PROJECT_SOURCE_DIR}/test/outlets_2009_05_20_part1.tgz
+                   WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/test
+                   VERBATIM)
+# Run a test on that data
+rospack_add_rostest(test/test_outlets_2009_05_20_part1.xml)
+
+
+# Set up dependencies so that we unpack the data before running tests
+add_custom_target(download_and_unpack_test_data
+                  DEPENDS ${PROJECT_SOURCE_DIR}/test/outlets_2009_05_20_part1)
+add_dependencies(tests download_and_unpack_test_data)
