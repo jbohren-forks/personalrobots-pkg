@@ -40,18 +40,21 @@
 #include <door_msgs/Door.h>
 #include <boost/thread/thread.hpp>
 #include <point_cloud_assembler/BuildCloudAngle.h>
+#include <kdl/frames.hpp>
 #include "doors_core/action_detect_handle.h"
 
 using namespace ros;
 using namespace std;
 using namespace door_handle_detector;
 using namespace door_functions;
+using namespace KDL;
 
 
 static const string fixed_frame = "odom_combined";
 static const double scan_speed  = 0.1; // [m/sec]
 static const double scan_height = 0.4; //[m]
 static const unsigned int max_retries = 5;
+static const double handle_dimension = 0.07; // [m] this is the radius of a half circle approximating the handle
 
 DetectHandleAction::DetectHandleAction(Node& node): 
   robot_actions::Action<door_msgs::Door, door_msgs::Door>("detect_handle"),
@@ -142,6 +145,33 @@ robot_actions::ResultStatus DetectHandleAction::execute(const door_msgs::Door& g
       feedback.handle.y = (result_laser.handle.y + result_camera.handle.y)/2.0;
       feedback.handle.z = (result_laser.handle.z + result_camera.handle.z)/2.0;
       
+      // take detection angle into account
+      robot_msgs::Point32 handle_robot_point;
+      if (!transformPointTo(tf_, feedback.header.frame_id, "base_footprint", feedback.header.stamp,  feedback.handle, handle_robot_point, fixed_frame, feedback.header.stamp)){
+	ROS_ERROR ("Could not transform handle from frame %s to frame %s.",
+		   feedback.header.frame_id.c_str (), string("base_footprint").c_str ());
+	return robot_actions::ABORTED;
+      }
+      robot_msgs::Vector3 handle_robot_vec;
+      handle_robot_vec.x = handle_robot_point.x;
+      handle_robot_vec.y = handle_robot_point.y;
+      handle_robot_vec.z = handle_robot_point.z;
+      if (!transformVectorTo(tf_,"base_footprint", feedback.header.frame_id, feedback.header.stamp,  handle_robot_vec, handle_robot_vec, fixed_frame, feedback.header.stamp)){
+	ROS_ERROR ("Could not transform handle from frame %s to frame %s.",
+		   feedback.header.frame_id.c_str (), string("base_footprint").c_str ());
+	return robot_actions::ABORTED;
+      }
+      Vector handle_door(handle_robot_vec.x, handle_robot_vec.y, 0.0);
+      handle_door.Normalize();
+      Vector door_normal = getDoorNormal(feedback);
+      Vector handle_door_old = - handle_door * handle_dimension;
+      Vector handle_door_new = Rotation::RotZ(getVectorAngle(handle_door, door_normal)) * handle_door_old;
+      Vector handle(feedback.handle.x, feedback.handle.y, feedback.handle.z);
+      handle = handle - handle_door_old + handle_door_new;
+      feedback.handle.x = handle.x();
+      feedback.handle.y = handle.y();
+      feedback.handle.z = handle.z();
+
       ROS_INFO("Found handle in %i tries", nr_tries+1);
       return robot_actions::SUCCESS;
     }
