@@ -1,11 +1,12 @@
 <launch>
 
-    <include file="$(find pr2_alpha)/$(env ROBOT).machine" /> 
+  <include file="$(find pr2_alpha)/$(env ROBOT).machine" /> 
 
   <master auto="start"/>
   <group name="wg">
-    <node machines="two" pkg="doors_core" type="move_base_door" respawn="false" name="door_reactive_planner">
+    <node machine="three" pkg="doors_core" type="move_base_door" respawn="false" name="door_reactive_planner">
 
+      <param name="action_max_allowed_time" value="120.0" />
       <param name="controller_frequency" value="20.0" />
       <param name="min_distance_from_obstacles" value="0.025" />
       <param name="max_waypoint_distance" value="0.01" />
