@@ -17,7 +17,7 @@ TrackerBase::TrackerBase(ros::Node &node, std::string prefix)
     tf_broadcaster_(node), tf_listener_(node),
     object_frame_id_(prefix + "_pose"), K_(NULL),
     window_name_(prefix + " tracker"),
-    save_count_(0), save_prefix_(prefix + "_failure")
+    save_count_(0), save_prefix_(prefix)
 {
   node_.param("~image_service", image_service_, std::string("/prosilica/poll"));
   node_.param("~cam_info_service", cam_info_service_, std::string("/prosilica/cam_info_service"));
@@ -252,6 +252,14 @@ robot_msgs::Pose TrackerBase::getTargetInHighDef()
 void TrackerBase::saveImage()
 {
   char filename[32];
+  snprintf(filename, 32, "%s%03i.yml", save_prefix_.c_str(), save_count_);
+  CvFileStorage *fs = cvOpenFileStorage(filename, 0, CV_STORAGE_WRITE);
+  cvWrite(fs, "camera_matrix", K_);
+  double zeros[] = {0, 0, 0, 0, 0};
+  CvMat D = cvMat(5, 1, CV_64FC1, zeros);
+  cvWrite(fs, "distortion_coefficients", &D);
+  cvReleaseFileStorage(&fs);
+
   snprintf(filename, 32, "%s%03i.jpg", save_prefix_.c_str(), save_count_++);
   cvSaveImage(filename, img_bridge_.toIpl());
   ROS_INFO("Saved %s", filename);
