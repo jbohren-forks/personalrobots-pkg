@@ -61,18 +61,6 @@ namespace nav {
     ros_node_.param("~navfn/costmap/inscribed_radius", inscribed_radius_, 0.325);
     ros_node_.param("~navfn/costmap/circumscribed_radius", circumscribed_radius_, 0.46);
 
-    //create the ros wrapper for the planner's costmap... and initializer a pointer we'll use with the underlying map
-    planner_costmap_ros_ = new Costmap2DROS(ros_node_, tf_, std::string("navfn"));
-    planner_costmap_ros_->getCostmapCopy(planner_costmap_);
-
-    //initialize the NavFn planner
-    planner_ = new NavfnROS(ros_node_, tf_, planner_costmap_);
-    ROS_INFO("MAP SIZE: %d, %d", planner_costmap_.cellSizeX(), planner_costmap_.cellSizeY());
-
-    //create the ros wrapper for the controller's costmap... and initializer a pointer we'll use with the underlying map
-    controller_costmap_ros_ = new Costmap2DROS(ros_node_, tf_, std::string("base_local_planner"));
-    controller_costmap_ros_->getCostmapCopy(controller_costmap_);
-
     robot_msgs::Point pt;
     double padding;
     ros_node_.param("~footprint_padding", padding, 0.01);
@@ -94,6 +82,18 @@ namespace nav {
     pt.x = circumscribed_radius_;
     pt.y = 0;
     footprint_.push_back(pt);
+
+    //create the ros wrapper for the planner's costmap... and initializer a pointer we'll use with the underlying map
+    planner_costmap_ros_ = new Costmap2DROS(ros_node_, tf_, std::string("navfn"), footprint_);
+    planner_costmap_ros_->getCostmapCopy(planner_costmap_);
+
+    //initialize the NavFn planner
+    planner_ = new NavfnROS(ros_node_, tf_, planner_costmap_);
+    ROS_INFO("MAP SIZE: %d, %d", planner_costmap_.cellSizeX(), planner_costmap_.cellSizeY());
+
+    //create the ros wrapper for the controller's costmap... and initializer a pointer we'll use with the underlying map
+    controller_costmap_ros_ = new Costmap2DROS(ros_node_, tf_, std::string("base_local_planner"), footprint_);
+    controller_costmap_ros_->getCostmapCopy(controller_costmap_);
 
     //create a trajectory controller
     tc_ = new TrajectoryPlannerROS(ros_node_, tf_, controller_costmap_, footprint_, &planner_costmap_);
@@ -121,6 +121,7 @@ namespace nav {
     }
 
     //update the copy of the costmap the planner uses
+    planner_costmap_ros_->clearRobotFootprint();
     planner_costmap_ros_->getCostmapCopy(planner_costmap_);
 
     //since we have a controller that knows the full footprint of the robot... we may as well clear it
@@ -179,6 +180,7 @@ namespace nav {
       return;
 
     //update the copy of the costmap the planner uses
+    planner_costmap_ros_->clearRobotFootprint();
     planner_costmap_ros_->getCostmapCopy(planner_costmap_);
 
     //since we have a controller that knows the full footprint of the robot... we may as well clear it
@@ -236,6 +238,7 @@ namespace nav {
     makePlan(goal_);
 
     costmap_2d::Rate r(controller_frequency_);
+    last_valid_control_ = ros::Time::now();
     while(!isPreemptRequested() && ros_node_.ok()){
       struct timeval start, end;
       double start_t, end_t, t_diff;
@@ -250,6 +253,7 @@ namespace nav {
       update(feedback);
 
       //make sure to update the costmap we'll use for this cycle
+      controller_costmap_ros_->clearRobotFootprint();
       controller_costmap_ros_->getCostmapCopy(controller_costmap_);
 
       robot_msgs::PoseDot cmd_vel;
