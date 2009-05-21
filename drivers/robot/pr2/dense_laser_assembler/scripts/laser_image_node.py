@@ -50,6 +50,17 @@ from image_msgs.msg import *
 # image_view. Generally used as a debugging tool.
 
 
+def rescale(x, max_val) :
+    lower_lim = max_val*0.0
+    upper_lim = max_val*1.0
+    a = x - lower_lim
+    if a <= 0 :
+        return chr(0)
+    elif a > upper_lim -lower_lim :
+        return chr(255)
+    
+    return chr(int((2**8-1)*a/(upper_lim-lower_lim)))
+
 def intensity_callback(msg) :
     image = image_msgs.msg.Image()
     image.header = msg.header
@@ -57,7 +68,8 @@ def intensity_callback(msg) :
     image.encoding = 'mono'
     image.depth = 'uint8'
     max_val = max(msg.data.data)
-    image.uint8_data.data   = "".join([chr(int((2**8-1)*x/max_val)) for x in msg.data.data])
+    #image.uint8_data.data   = "".join([chr(int((2**8-1)*x/max_val)) for x in msg.data.data])
+    image.uint8_data.data   = "".join([rescale(x,max_val) for x in msg.data.data])
     image.uint8_data.layout = msg.data.layout
     intensity_pub.publish(image)
 
