@@ -126,17 +126,45 @@ TEST(executive_trex_pr2, map_get_next_move){
   scope.push_back(target_y.getId());
 
   MapGetNextMoveConstraint::MapGetNextMoveConstraint map_get_next_move("map_next_move", "Default", ce, scope);
-
   ASSERT_TRUE(ce->propagate());
+
   /*
+    [Map:get_next_move]AFTER: [1242925482.950660]map_get_next_move(6066)
+    ARG[0]:x(6049) DERIVED=float:CLOSED[14.512500000000001, 14.512500000000001]
+    ARG[1]:y(6050) DERIVED=float:CLOSED[19.087500000000002, 19.087500000000002]
+    ARG[2]:z(6051) DERIVED=float:CLOSED[0.000000000000000, 0.000000000000000]
+    ARG[3]:qx(6052) DERIVED=float:CLOSED[0.000000000000000, 0.000000000000000]
+    ARG[4]:qy(6053) DERIVED=float:CLOSED[0.000000000000000, 0.000000000000000]
+    ARG[5]:qz(6054) DERIVED=float:CLOSED[-0.723346873689404, -0.723346873689404]
+    ARG[6]:qw(6055) DERIVED=float:CLOSED[0.690484829901255, 0.690484829901255]
+    ARG[7]:thru_doorway(6064) DERIVED=bool:CLOSED[0, 0]
+    ARG[8]:x(5796) DERIVED=float:CLOSED[16.258719465113977, 16.258719465113977]
+    ARG[9]:y(5797) DERIVED=float:CLOSED[17.538415136846279, 17.538415136846279]
+    ARG[10]:x(480) DERIVED=float:CLOSED[12.699999999999999, 12.699999999999999]
+    ARG[11]:y(481) DERIVED=float:CLOSED[22.500000000000000, 22.500000000000000]
+  */
+
+  // Make sure it does not go too far
   debugMsg("ConstraintEngine", "MARK");
-  current_x.specify(14.4125);
-  current_y.specify(17.5375);
+  current_x.specify(16.2587);
+  current_y.specify(17.538);
   target_x.specify(12.6999);
   target_y.specify(22.5000);
   ASSERT_TRUE(ce->propagate());
-  ASSERT_TRUE(next_y.lastDomain().getSingletonValue()  > 19);
-  */
+  ASSERT_TRUE(next_y.lastDomain().getSingletonValue()  < 18);
+
+  // Make sure it goes far enough across a door
+  current_x.reset();
+  current_y.reset();
+  target_x.reset();
+  target_y.reset();
+  current_x.specify(14.41);
+  current_y.specify(17.53);
+  target_x.specify(12.6999);
+  target_y.specify(22.5000);
+  ASSERT_TRUE(ce->propagate());
+  ASSERT_TRUE(next_y.lastDomain().getSingletonValue()  > 18);
+
   /*
    * Set values based on the following:
    ARG[0]:x(15337) DERIVED=float:CLOSED[13.949999999999999, 13.949999999999999]
@@ -154,6 +182,10 @@ TEST(executive_trex_pr2, map_get_next_move){
   */
 
   // Getting into brians office.
+  current_x.reset();
+  current_y.reset();
+  target_x.reset();
+  target_y.reset();
   current_x.specify(13.9499);
   current_y.specify(20.5124);
   target_x.specify(12.6875);

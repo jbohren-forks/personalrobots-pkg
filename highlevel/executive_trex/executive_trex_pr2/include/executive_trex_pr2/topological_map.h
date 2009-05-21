@@ -512,7 +512,7 @@ namespace executive_trex_pr2 {
 
     virtual unsigned int getNearestDoorway(double x, double y);
 
-    virtual bool isDoorway(double x1, double y1, double x2, double y2);
+    virtual bool isDoorway(double current_x, double current_y, unsigned int doorway_connector);
 
     virtual unsigned int getNextConnector(double x1, double y1, double x2, double y2);
 

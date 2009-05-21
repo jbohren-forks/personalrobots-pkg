@@ -3,9 +3,15 @@
 
 // Start with a default position
 fact(base_state.Holds f1);
-eq_map_pose_msg(f1.object, w1); //milestone_1_charging_station);
 f1.frame_id = "map";
 f1.time_stamp = 0.0;
+f1.x = 16.25;
+f1.y = 17.53;
+f1.z = 0.0;
+f1.qx = 0.0;
+f1.qy = 0.0;
+f1.qz = 0.0;
+f1.qw = 1.0;
 
 // We will make sure that the doorway is not clear - forcing controller to kick in
 fact(doorway_clear_sv.Holds f2);

@@ -1016,16 +1016,29 @@ namespace executive_trex_pr2 {
     _map->observeOutletBlocked(outlet_id);
   }
 
-  bool TopologicalMapAdapter::isDoorway(double x1, double y1, double x2, double y2){
+  /**
+   * Algorithm to see if we are crossing a doorway
+   * 1. We have the target connector. We know this is really close - in fact it is within the grid resolution of being in the doorway
+   * 2. We have the point where we are.
+   *
+   * Find the point a small distance (0.1 m) from the target connector in the direction of the current point. This is important since the current point may be pretty far away
+   * but the target connector is really on the doorway border.
+   */
+  bool TopologicalMapAdapter::isDoorway(double current_x, double current_y, unsigned int doorway_connector){
     bool is_doorway(false);
-    double distance = sqrt(pow(x1-x2, 2) + pow(y1-y2, 2));
-    // If points are pretty close, check if it is a doorway. If they are not close we know it is not a doorway
-    if(distance < 2){
-      double p_x = x1 + 0.75 * (x2-x1);
-      double p_y = y1 + 0.75 * (y2-y1);
-      unsigned int region_id = getRegion(p_x, p_y);
-      isDoorway(region_id, is_doorway);
-    }
+    double x, y;
+    getConnectorPosition(doorway_connector, x, y);
+    double dx = x - current_x;
+    double dy = y - current_y;
+    double sign_of_x = (dx < 0 ? -1 : 1);
+    double sign_of_y = (dy < 0 ? -1 : 1);
+    double p_x = x + 0.1 * sign_of_x;
+    double p_y = y + 0.1 * sign_of_y;
+    unsigned int region_id = getRegion(p_x, p_y);
+    isDoorway(region_id, is_doorway);
+
+    debugMsg("map:get_next_move", "The traverse from <" << current_x << ", " << current_y << "> to connector " << doorway_connector << 
+	     " at <" << x << ", " << y << "> " << (is_doorway ? "is" : "is not") << " a doorway.");
 
     return is_doorway;
   }
@@ -1067,8 +1080,17 @@ namespace executive_trex_pr2 {
 
     debugMsg("map:get_next_move", "Shortest path from <" << x1 << ", " << y1 << "> to <" << x2 << ", " << y2 << "> is " << pathToString(path));
     unsigned int next_connector = path[1];
+
+    // We can take this next connector, except for the case where it's approach point is already really close to where we are. This check
+    // only occurs where there are additional connectors to choose from and where the approach point for the connector is within our navigation tolerance. This
+    // should also only arise if the connector is on a doorway
     if(path.size() > 3 && isDoorwayConnector(next_connector)){
-      next_connector = path[2];
+      robot_msgs::Pose pose;
+      getDoorApproachPose(next_connector, pose);
+      if(fabs(pose.position.x - x1) < 0.2 && fabs(pose.position.y - y1) < 0.2){
+	debugMsg("map:get_next_move", "Switching to successor as we are already at approach <" << pose.position.x << ", " << pose.position.y << "> for connector " << next_connector);
+	next_connector = path[2];
+      }
     }
 
     return next_connector;
@@ -1131,8 +1153,8 @@ namespace executive_trex_pr2 {
     unsigned int next_connector = TopologicalMapAdapter::instance()->getNextConnector(current_x, current_y, target_x, target_y);
 
     robot_msgs::Pose next_pose;
-
-    if(next_connector > 0 && TopologicalMapAdapter::instance()->isDoorwayConnector(next_connector)){
+    bool is_doorway_connector = (next_connector > 0 ? TopologicalMapAdapter::instance()->isDoorwayConnector(next_connector) : false);
+    if(is_doorway_connector){
       TopologicalMapAdapter::instance()->getDoorApproachPose(next_connector, next_pose);
       debugMsg("map:get_next_move",  "Selecting approach for doorway connector " << next_connector << " at <" << next_pose.position.x << ", " << next_pose.position.y << ">.");
     }
@@ -1150,7 +1172,7 @@ namespace executive_trex_pr2 {
       }
     }
 
-    bool thru_doorway = TopologicalMapAdapter::instance()->isDoorway(current_x, current_y, next_pose.position.x, next_pose.position.y);
+    bool thru_doorway = TopologicalMapAdapter::instance()->isDoorway(current_x, current_y, next_connector);
 
     unsigned int next_region = TopologicalMapAdapter::instance()->getRegion(next_pose.position.x, next_pose.position.y);
 
