@@ -2,7 +2,7 @@ base_local_planner:
   #Independent settings for the local costmap
   costmap:
     publish_voxel_map: true
-    global_frame: map
+    global_frame: odom_combined
     robot_base_frame: base_link
     update_frequency: 5.0
     publish_frequency: 2.0
@@ -29,8 +29,8 @@ base_local_planner:
   xy_goal_tolerance: 0.1
   yaw_goal_tolerance: 0.05
   goal_distance_bias: 0.8
-  path_distance_bias: 0.8
-  occdist_scale: 0.00
+  path_distance_bias: 0.6
+  occdist_scale: 0.01
   heading_lookahead: 0.325
   oscillation_reset_dist: 0.05
   escape_reset_dist: 0.15
