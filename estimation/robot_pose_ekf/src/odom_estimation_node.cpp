@@ -351,7 +351,8 @@ namespace estimation
 
 	// update filter
 	if ( my_filter_.isInitialized() )  {
-	  if (my_filter_.update(odom_active_, imu_active_, vo_active_,  filter_stamp_)){
+	  bool diagnostics = true;
+	  if (my_filter_.update(odom_active_, imu_active_, vo_active_,  filter_stamp_, diagnostics)){
 
 	    // output most recent estimate and relative covariance
 	    my_filter_.getEstimate(output_);
@@ -373,9 +374,8 @@ namespace estimation
 	    corr_file_ << endl;
 #endif
 	  }
-	  else{
+	  if (!diagnostics)
 	    ROS_ERROR("Robot pose ekf diagnostics discovered a potential problem");
-	  }
 	}
 	// initialize filer with odometry frame
 	if ( odom_active_ && !my_filter_.isInitialized()){

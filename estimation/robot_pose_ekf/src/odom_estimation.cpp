@@ -161,7 +161,7 @@ namespace estimation
 
 
   // update filter
-  bool OdomEstimation::update(bool odom_active, bool imu_active, bool vo_active, const Time&  filter_time)
+  bool OdomEstimation::update(bool odom_active, bool imu_active, bool vo_active, const Time&  filter_time, bool& diagnostics_res)
   {
     // only update filter when it is initialized
     if (!filter_initialized_){
@@ -205,7 +205,10 @@ namespace estimation
 	filter_->Update(odom_meas_model_, odom_rel);
 	diagnostics_odom_rot_rel_ = odom_rel(3);
       }
-      else odom_initialized_ = true;
+      else{
+	odom_initialized_ = true;
+	diagnostics_odom_rot_rel_ = 0;
+      }
       odom_meas_old_ = odom_meas_;
     }
     // sensor not active
@@ -233,7 +236,10 @@ namespace estimation
 	imu_meas_pdf_->AdditiveNoiseSigmaSet(imu_covariance_ * pow(imu_covar_multiplier_ * dt,2));
 	filter_->Update(imu_meas_model_,  imu_rel);
       }
-      else imu_initialized_ = true;
+      else{
+	imu_initialized_ = true;
+	diagnostics_imu_rot_rel_ = 0;
+      }
       imu_meas_old_ = imu_meas_; 
     }
     // sensor not active
@@ -276,9 +282,14 @@ namespace estimation
     addMeasurement(Stamped<Transform>(filter_estimate_old_, filter_time, "odom", "base_footprint"));
 
     // diagnostics
-    double diagnostics = fabs(diagnostics_odom_rot_rel_ - diagnostics_imu_rot_rel_)/dt;
-    if (diagnostics > 0.3)
-      return false;
+    diagnostics_res = true;
+    if (odom_active && imu_active){
+      double diagnostics = fabs(diagnostics_odom_rot_rel_ - diagnostics_imu_rot_rel_)/dt;
+      if (diagnostics > 0.3 && dt > 0.01){
+	cout << "diagnostics: dt = " << dt << "    error = " << diagnostics << endl;
+	diagnostics_res = false;
+      }
+    }
 
     return true;
 };

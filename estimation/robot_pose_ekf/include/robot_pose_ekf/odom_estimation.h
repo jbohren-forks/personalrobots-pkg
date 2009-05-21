@@ -64,7 +64,7 @@ public:
   virtual ~OdomEstimation();
 
   /// update filter
-  bool update(bool odom_active, bool imu_active, bool vo_active, const ros::Time& filter_time);
+  bool update(bool odom_active, bool imu_active, bool vo_active, const ros::Time& filter_time, bool& diagnostics_res);
 
   /// initialize filter
   void initialize(const tf::Transform& prior, const ros::Time& time);
