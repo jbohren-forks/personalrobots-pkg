@@ -1480,7 +1480,7 @@ bool outlet_orient_pred_greater(outlet_t outlet1, outlet_t outlet2)
 
 bool outlet_orient_pred_dist_greater(outlet_t outlet1, outlet_t outlet2)
 {
-	return outlet1.feature1.weight + outlet1.feature1.weight > 
+	return outlet1.feature1.weight + outlet1.feature2.weight > 
 		outlet2.feature1.weight + outlet2.feature2.weight;
 }
 
