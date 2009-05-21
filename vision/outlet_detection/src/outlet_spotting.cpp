@@ -53,6 +53,7 @@
 #include "image_msgs/DisparityInfo.h"
 #include "image_msgs/CamInfo.h"
 #include "image_msgs/Image.h"
+#include "image_msgs/RawStereo.h"
 #include "robot_msgs/PointCloud.h"
 #include "robot_msgs/Point32.h"
 #include "robot_msgs/PoseStamped.h"
@@ -132,6 +133,7 @@ public:
 	image_msgs::StereoInfo stinfo;
 	image_msgs::DisparityInfo dispinfo;
 	image_msgs::CamInfo rcinfo;
+	image_msgs::RawStereo raw_stereo;
 
 	image_msgs::CvBridge lbridge;
 //	image_msgs::CvBridge rbridge;
@@ -151,6 +153,7 @@ public:
 	IplImage* disp_clone;
 
 	bool display;
+	bool debug;
 	bool save_patches;
 
 	TopicSynchronizer<OutletSpotting> sync;
@@ -178,6 +181,7 @@ public:
         tf_ = new tf::TransformListener(*this);
 
 		param ("~display", display, false);
+		param ("~debug", debug, false);
 		param ("~save_patches", save_patches, false);
 		param ("~frames_number", frames_number_, 5);
 		param<string> ("~target_frame", target_frame_, "odom_combined");
@@ -195,6 +199,10 @@ public:
         advertise<visualization_msgs::Marker>("visualization_marker", 1);
     	advertise<robot_msgs::PointStamped>(head_controller_ + "/head_track_point",10);
         advertiseService("~coarse_outlet_detect", &OutletSpotting::outletSpottingService, this);
+
+        if (debug) {
+        	advertise<image_msgs::RawStereo>("~raw_stereo",1);
+        }
 
 	}
 
@@ -234,6 +242,10 @@ private:
 
 		sync.subscribe("stereo/cloud", cloud_fetch, 1);
 
+		if (debug) {
+			sync.subscribe("stereo/raw_stereo", raw_stereo, 1);
+		}
+
 		sync.ready();
 
 		subscribe(base_scan_topic_, base_cloud_fetch_, &OutletSpotting::laser_callback, 1);
@@ -248,6 +260,9 @@ private:
         unsubscribe("stereo/disparity_info");
         unsubscribe("stereo/right/cam_info");
         unsubscribe("stereo/cloud");
+        if (debug) {
+        	unsubscribe("stereo/raw_stereo");
+        }
 //        unsubscribe("full_cloud");
     }
 
@@ -1227,6 +1242,10 @@ public:
 			ROS_INFO("OutletSpotter: waiting for images");
 			images_cv.wait(images_lock);
 
+			if (debug) {
+				publish("~raw_stereo",raw_stereo);
+			}
+
 			ROS_INFO("OutletSpotter: performing detection");
 			bool found = detectOutlet(pose);
 
@@ -1242,7 +1261,7 @@ public:
 
 		return false;
 	}
-	
+
 
 
 	bool runOutletSpotter(const robot_msgs::PointStamped& request, robot_msgs::PoseStamped& pose)
