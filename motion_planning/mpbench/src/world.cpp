@@ -274,18 +274,19 @@ namespace mpbench {
 		     << "  inscribed = " << opt_.costmap_inscribed_radius << "\n"
 		     << "  circumscribed = " << opt_.costmap_circumscribed_radius << "\n"
 		     << "  inflation = " << opt_.costmap_inflation_radius << "\n";
-#define XXXX_INIT_CM2D_AT_CREATION
-#ifdef XXXX_INIT_CM2D_AT_CREATION
-      // XXXX to do (maybe): allow non-static maps, but for now just
-      // initialize to the obstacle delta number zero ... later: leave
-      // remaining args at default values, the obstacle updates will
-      // get managed by mpglue
       double const obstacle_range(8); // whatever
       double const max_obstacle_height(1); // whatever
       double const raytrace_range(8);	   // whatever
       double const weight(1); // whatever: documentation says 0<w<=1 but default is 25???
       vector<unsigned char> static_data(cells_size_x * cells_size_y);
       unsigned char const lethal_threshold(1);
+
+#undef XXXX_INIT_CM2D_AT_CREATION
+#ifdef XXXX_INIT_CM2D_AT_CREATION
+      // XXXX to do (maybe): allow non-static maps, but for now just
+      // initialize to the obstacle delta number zero ... later: leave
+      // remaining args at default values, the obstacle updates will
+      // get managed by mpglue
       shared_ptr<mpglue::ObstacleDelta const> obstdelta(getObstdelta(0));
       mpglue::index_collection_t const * addidx(obstdelta->getAddedIndices());
       for (mpglue::index_collection_t::const_iterator iadd(addidx->begin());
@@ -296,6 +297,13 @@ namespace mpbench {
 	  continue;
 	static_data[iadd->iy * cells_size_x + iadd->ix] = lethal_threshold;
       }
+#endif // XXXX_INIT_CM2D_AT_CREATION
+      
+      // If we do not give an initial "static" map to Costmap2D, then
+      // it fills everything with NO_INFORMATION, which is actually
+      // LETHAL + 1, and we end up thinking the map is filled with
+      // obstacles... not very useful. So: create an empty initial
+      // map.
       shared_ptr<costmap_2d::Costmap2D>
 	cm2d(new costmap_2d::Costmap2D(cells_size_x,
 				       cells_size_y,
@@ -311,17 +319,6 @@ namespace mpbench {
 				       weight,
 				       static_data,
 				       lethal_threshold));
-#else // XXXX_INIT_CM2D_AT_CREATION
-      shared_ptr<costmap_2d::Costmap2D>
-	cm2d(new costmap_2d::Costmap2D(cells_size_x,
-				       cells_size_y,
-				       opt_.costmap_resolution,
-				       origin_x,
-				       origin_y,
-				       opt_.costmap_inscribed_radius,
-				       opt_.costmap_circumscribed_radius,
-				       opt_.costmap_inflation_radius));
-#endif // XXXX_INIT_CM2D_AT_CREATION
       cm = mpglue::createCostmapper(cm2d);
     }
     
