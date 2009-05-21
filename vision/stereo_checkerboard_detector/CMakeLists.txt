@@ -17,5 +17,8 @@ target_link_libraries(stereo_checkerboard_node stereo_checkerboard_detector)
 rospack_add_executable(image_pc_debugger src/image_pc_debugger.cpp)
 target_link_libraries(image_pc_debugger stereo_checkerboard_detector)
 
+rospack_add_executable(checkerboard_corners_node src/checkerboard_corners_node.cpp)
+target_link_libraries(checkerboard_corners_node stereo_checkerboard_detector)
+
 add_subdirectory(test EXCLUDE_FROM_ALL)
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
