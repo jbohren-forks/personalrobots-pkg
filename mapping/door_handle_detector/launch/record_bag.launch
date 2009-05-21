@@ -1,5 +1,5 @@
 <launch>
   <node pkg="rosrecord" type="rosrecord" args="-f /bags/door_handle_detection  tf_message full_cloud stereo/raw_stereo" output="screen" />
-  <node pkg="door_handle_detector" type="kill_record" />
+  <node pkg="door_handle_detector" type="kill_record.sh" />
 </launch>
 

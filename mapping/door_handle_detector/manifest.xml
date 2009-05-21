@@ -31,6 +31,7 @@
   <depend package="point_cloud_assembler" />
   <depend package="checkerboard_detector" />
   <depend package="stereo_utils"/>
+  <depend package="stereo_image_proc"/>
   <depend package="door_functions" />
 
  <export>

@@ -16,12 +16,9 @@
   <node pkg="stereo_image_proc" type="stereoproc" respawn="false" />
 
 <!-- detectors -->
-  <include file="$(find door_handle_detector)/launch/door_handle_detector.xml" />
+  <include file="$(find door_handle_detector)/launch/door_handle_detector_bag.xml" />
 
-<!-- play bag file -->
-  <node pkg="rosrecord" type="rosplay" args="-r 0.5 -b 100  /bags/door_handle_detection_2009-05-20-10-51-46-topic.bag " />
-
-<!-- run test  -->
-  <node pkg="door_handle_detector" type="detect_handle_from_bag.py" args="" output="screen" />
+<!-- crop point clouds to simulate a narrow scan -->
+  <node pkg="door_handle_detector" type="point_cloud_cropper" args="0.73 1.13 base_link" />
 
 </launch>

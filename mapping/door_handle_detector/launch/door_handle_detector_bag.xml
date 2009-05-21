@@ -8,9 +8,12 @@
  </node>
 
 <!-- Handle detector Laser -->
-  <node pkg="door_handle_detector" type="handle_detector_laser" name="handle_detector_laser" respawn="true" output="screen" />
+  <node pkg="door_handle_detector" type="handle_detector_laser" name="handle_detector_laser" respawn="true" output="screen">
+    <remap from="/full_cloud" to="/full_cloud_cropped"/>
+  </node>
 
 <!-- Door detector -->
   <node pkg="door_handle_detector" type="doors_detector_laser" name="doors_detector_laser" respawn="true" output="screen"/>
 
 </launch>
+
