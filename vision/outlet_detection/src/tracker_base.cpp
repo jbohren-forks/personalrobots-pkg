@@ -49,7 +49,7 @@ TrackerBase::TrackerBase(ros::Node &node, std::string prefix)
 
   node_.param("~save_failures", save_failures_, 0);
 
-  node_.param("~display", display_, 1);
+  node_.param("~display", display_, 0);
   if (display_) {
     cvNamedWindow(window_name_.c_str(), 0); // no autosize
     cvStartWindowThread();
