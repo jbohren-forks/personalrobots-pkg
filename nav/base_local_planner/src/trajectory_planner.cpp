@@ -823,6 +823,7 @@ namespace base_local_planner{
     }
 
     dist = sqrt((x - escape_x_) * (x - escape_x_) + (y - escape_y_) * (y - escape_y_));
+
     if(dist > escape_reset_dist_ || fabs(angles::shortest_angular_distance(escape_theta_, theta)) > escape_reset_theta_){
       escaping_ = false;
     }
