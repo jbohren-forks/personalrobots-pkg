@@ -5,6 +5,8 @@
 #include <executive_trex_pr2/components.h>
 #include <ros/console.h>
 #include <tf/transform_datatypes.h>
+#include <kdl/frames.hpp>
+#include <kdl/frames_io.hpp>
 #include "ConstrainedVariable.hh"
 #include "Utilities.hh"
 #include "Token.hh"
@@ -1025,21 +1027,56 @@ namespace executive_trex_pr2 {
    * but the target connector is really on the doorway border.
    */
   bool TopologicalMapAdapter::isDoorway(double current_x, double current_y, unsigned int doorway_connector){
+
+    // Regions for next conecttor are a and b
+    unsigned int region_a, region_b;
+    getConnectorRegions(doorway_connector, region_a, region_b);
+
+    // There can be many connectors for the current region
+    unsigned int current_region = getRegion(current_x, current_y);
+    std::vector<unsigned int> current_region_connectors;
+    getRegionConnectors(current_region, current_region_connectors);
+
+    // Iterate over the connectors.
+    unsigned int shared_region(0);
+    for(std::vector<unsigned int>::const_iterator it = current_region_connectors.begin(); it != current_region_connectors.end(); ++it){
+      unsigned int a, b;
+      getConnectorRegions(*it, a, b);
+      if (a == region_a || a == region_b){
+	shared_region = a;
+	break;
+      }
+      else if(b == region_a || b == region_b){
+	shared_region = b;
+	break;
+      }
+    }
     bool is_doorway(false);
+
+    if(shared_region > 0){
+      debugMsg("map:get_next_move", "Found shared region " << shared_region);
+      isDoorway(shared_region, is_doorway);
+
+      debugMsg("map:get_next_move", shared_region << (is_doorway ? " is " : " is not ") << "a doorway");
+    }
+
+    /*
     double x, y;
     getConnectorPosition(doorway_connector, x, y);
-    double dx = x - current_x;
-    double dy = y - current_y;
-    double sign_of_x = (dx < 0 ? -1 : 1);
-    double sign_of_y = (dy < 0 ? -1 : 1);
-    double p_x = x + 0.1 * sign_of_x;
-    double p_y = y + 0.1 * sign_of_y;
-    unsigned int region_id = getRegion(p_x, p_y);
-    isDoorway(region_id, is_doorway);
+    KDL::Vector current(current_x, current_y, 0);
+    KDL::Vector connector(x, y, 0);
+    KDL::Vector delta = current - connector;
+    delta.Normalize();
+    KDL::Vector region_point = connector + (delta * 0.2);
+    unsigned int region_id = getRegion(region_point.x(), region_point.y());
 
-    debugMsg("map:get_next_move", "The traverse from <" << current_x << ", " << current_y << "> to connector " << doorway_connector << 
-	     " at <" << x << ", " << y << "> " << (is_doorway ? "is" : "is not") << " a doorway.");
-
+    debugMsg("map:get_next_move", "Checking point " << region_point << " in region " << region_id);
+    debugMsg("map:get_next_move", "Delta == " << delta);
+    condDebugMsg(is_doorway, "map:get_next_move", "The traverse from current " << current << " to connector " << doorway_connector << 
+		 " at " << connector << " goes thru doorway at region " << region_id);
+    condDebugMsg(!is_doorway, "map:get_next_move", "The traverse from current " << current << " to connector " << doorway_connector << 
+		 " at " << connector << " does not go thru doorway at region " << region_id);
+    */
     return is_doorway;
   }
 
