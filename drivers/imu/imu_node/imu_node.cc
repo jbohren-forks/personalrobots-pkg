@@ -116,8 +116,6 @@ public:
 
   ms_3dmgx2_driver::IMU::cmd cmd;
 
-  int count_;
-
   SelfTest<ImuNode> self_test_;
   diagnostic_updater::Updater<ImuNode> diagnostic_;
 
@@ -143,7 +141,7 @@ public:
   double desired_freq_;
   diagnostic_updater::FrequencyStatus freq_diag_;
 
-  ImuNode(ros::NodeHandle h) : count_(0), self_test_(this), diagnostic_(this, h), 
+  ImuNode(ros::NodeHandle h) : self_test_(this), diagnostic_(this, h), 
   node_handle_(h), calibrated_(false), calibrate_request_(false), error_count_(0), 
   desired_freq_(100), freq_diag_(desired_freq_, desired_freq_, 0.05)
   {
@@ -211,6 +209,8 @@ public:
       ROS_INFO("IMU sensor initialized.");
 
       imu.setContinuous(cmd);
+
+      freq_diag_.clear();
 
       running = true;
 
@@ -287,20 +287,18 @@ public:
       if (endtime - starttime > 0.003)
         ROS_WARN("Publishing took %f ms.", 1000 * (endtime - starttime));
         
+      freq_diag_.tick();
     } catch (ms_3dmgx2_driver::Exception& e) {
       error_count_++;
       ROS_INFO("Exception thrown while trying to get the IMU reading.\n%s", e.what());
       return -1;
     }
 
-    count_++;
-
     return(0);
   }
 
   bool spin()
   {
-    // Start up the laser
     while (node_handle_.ok())
     {
       if (autostart && start() == 0)
@@ -490,6 +488,7 @@ public:
     {
 
       imu.openPort(port.c_str());
+      freq_diag_.clear();
 
       if (imu.setContinuous(cmd) != true)
       {
@@ -568,6 +567,7 @@ public:
       calibrated_ = true;
       calibrate_request_ = false;
       ROS_INFO("IMU gyro calibration completed.");
+      freq_diag_.clear();
     }
   }
 };
