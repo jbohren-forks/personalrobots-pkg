@@ -90,26 +90,32 @@ class DenseLaserCache() :
     # then added to the laser_done queue
     def process_scans(self) :
         self._mech_lock.acquire()
-        local_mech_q = self._mech_q
-        self._mech_lock.release()
 
-        if len(local_mech_q) > 0 :
-            oldest_mech = local_mech_q[0]
-            newest_mech = local_mech_q[-1]
+        if len(self._mech_q) > 0 :
+            oldest_mech_time = self._mech_q[0].header.stamp
+            newest_mech_time = self._mech_q[-1].header.stamp
         else :
+            self._mech_lock.release()
             return
-        
+
         self._laser_wait_lock.acquire()
-        laser_pending_q = [x for x in self._laser_wait_q
-                             if x.header.stamp < newest_mech.header.stamp and
-                                x.header.stamp > oldest_mech.header.stamp]
+
+        scan_interval = [ (x.header.stamp,
+#                           x.header.stamp + rostime.Duration().from_seconds(0.0) )
+                           x.header.stamp+rostime.Duration().from_seconds(len(x.ranges)*x.time_increment))
+                           for x in self._laser_wait_q ]
+
+        laser_pending_q = [x for i,x in enumerate(self._laser_wait_q)
+                             if scan_interval[i][1] < newest_mech_time and
+                                scan_interval[i][0] > oldest_mech_time]
         # Purge entire queue, except scans in the future
-        self._laser_wait_q = [x for x in self._laser_wait_q
-                                if x.header.stamp >= newest_mech.header.stamp]
+        self._laser_wait_q = [x for i,x in enumerate(self._laser_wait_q)
+                                if scan_interval[i][1] >= newest_mech_time]
+
         self._laser_wait_lock.release()
 
         # Now process the pending queue
-        processed = [self._process_pending(x,local_mech_q) for x in laser_pending_q]
+        processed = [self._process_pending(x,self._mech_q) for x in laser_pending_q]
 
         #if len(processed) > 0 :
         #    print 'processed %i scans' % len(processed)
@@ -119,26 +125,41 @@ class DenseLaserCache() :
         while len(self._laser_done_q) > self._max_laser_done_len :
             self._laser_done_q.pop(0)
         self._laser_done_lock.release()
-
+        self._mech_lock.release()
     # Process a scan, assuming that we have MechansimState data available before and after the scan
     # \param scan_msg The message that we want to process
     # \param the time-order queue of mechanism_state data
     # \param The processed scan element
     def _process_pending(self, scan_msg, mech_q):
+        scan_end = scan_msg.header.stamp + rostime.Duration().from_seconds(len(scan_msg.ranges)*scan_msg.time_increment)
         mech_before = [x for x in mech_q if x.header.stamp < scan_msg.header.stamp][-1]
-        mech_after  = [x for x in mech_q if x.header.stamp > scan_msg.header.stamp][0]
+        mech_after  = [x for x in mech_q if x.header.stamp > scan_end][0]
 
+        # Get the joint position and time associated with the MechanismState before the scan
         ind = [x.name for x in mech_before.joint_states].index('laser_tilt_mount_joint')
         pos_before = mech_before.joint_states[ind].position
-        elapsed_before = (scan_msg.header.stamp - mech_before.header.stamp).to_seconds()
+        time_before= mech_before.header.stamp
 
+        # Get the joint position and time associated with the MechanismState before the scan
         ind = [x.name for x in mech_after.joint_states].index('laser_tilt_mount_joint')
         pos_after = mech_after.joint_states[ind].position
-        elapsed_after = (mech_after.header.stamp - scan_msg.header.stamp).to_seconds()
+        time_after= mech_after.header.stamp
 
-        elapsed_total = elapsed_before + elapsed_after
+        elapsed = (time_after - time_before).to_seconds()
+
         # Linear interp
-        pos_during = elapsed_after/elapsed_total*pos_before + elapsed_before/elapsed_total*pos_after
+        #pos_during = elapsed_after/elapsed_total*pos_before + elapsed_before/elapsed_total*pos_after
+
+        #key_rays = range(0, len(scan_msg.ranges))
+        key_rays = [0, len(scan_msg.ranges)-1]
+        time_during = [ scan_msg.header.stamp
+                        + rostime.Duration().from_seconds(scan_msg.time_increment*x)
+                          for x in key_rays]
+        time_normalized = [ (x - time_before).to_seconds()/elapsed for x in time_during]
+        if any( [x > 1 for x in time_normalized]) or any( [x < 0 for x in time_normalized] ) :
+            print 'Error computing normalized time'
+        pos_during = [ pos_before * (1-x) + pos_after * x for x in time_normalized ]
+
         elem = LaserCacheElem()
         elem.pos  = pos_during
         elem.scan = scan_msg

@@ -156,8 +156,8 @@ public:
     marker.action = visualization_msgs::Marker::ADD ;
     tf::PoseTFToMsg(pose, marker.pose) ;
     marker.scale.x = .2 ;
-    marker.scale.y = .03 ;
-    marker.scale.z = .03 ;
+    marker.scale.y = .2 ;
+    marker.scale.z = .2 ;
     marker.color.r = 1.0 ;
     marker.color.g = 0.0 ;
     marker.color.b = 0.0 ;

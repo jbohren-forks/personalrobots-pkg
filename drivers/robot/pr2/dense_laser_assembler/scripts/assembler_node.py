@@ -37,6 +37,7 @@
 import roslib; roslib.load_manifest('dense_laser_assembler') 
 import sys
 import rospy
+import threading
 from time import sleep
 from laser_scan.msg import *
 from robot_msgs.msg import *
@@ -52,17 +53,23 @@ prev_signal_time = [ ]
 image_pub = [ ]
 test_pub = [ ]
 
+
 def scan_callback(msg) :
+    req_lock.acquire()
     laser_cache.add_scan(msg)
     laser_cache.process_scans()
     laser_cache.process_interval_reqs()
+    req_lock.release()
 
 def mech_callback(msg) :
+    req_lock.acquire()
     laser_cache.add_mech_state(msg)
     laser_cache.process_scans()
     laser_cache.process_interval_reqs()
+    req_lock.release()
 
 def signal_callback(msg) :
+    req_lock.acquire()
     global first_signal
     global prev_signal
     laser_cache.process_scans()
@@ -74,6 +81,7 @@ def signal_callback(msg) :
     prev_signal = msg
     print 'Got signal message!'
     print '  Signal=%i' % msg.signal
+    req_lock.release()
 
 def interval_req_callback(scans) :
 
@@ -92,7 +100,7 @@ def interval_req_callback(scans) :
     print 'About to process cloud with %u scans' % len(scans)
 
     # Sort by tilting joint angle
-    sorted_scans = sorted(scans, lambda x,y:cmp(x.pos,y.pos))
+    sorted_scans = sorted(scans, lambda x,y:cmp(x.pos[0],y.pos[0]))
 
 
     msg_header = roslib.msg.Header()
@@ -114,9 +122,10 @@ def interval_req_callback(scans) :
 
     intensity_msg.data.layout = layout
     range_msg.data.layout     = layout
-    joint_msg.data.layout = MultiArrayLayout([ MultiArrayDimension('rows', rows, rows),
-                                               MultiArrayDimension('cols', 1, 1),
+    joint_msg.data.layout = MultiArrayLayout([ MultiArrayDimension('rows', rows, rows*2),
+                                               MultiArrayDimension('cols', 2, 2),
                                                MultiArrayDimension('elem', 1, 1) ], 0 )
+    joint_msg.data.layout = layout
 
     # Clear out data from the info message. (Keep everything except intensity and range data)
     #info_msg.ranges = [ ]
@@ -128,32 +137,36 @@ def interval_req_callback(scans) :
     for x in sorted_scans :
         intensity_msg.data.data.extend(x.scan.intensities)
         range_msg.data.data.extend(x.scan.ranges)
-        joint_msg.data.data.append(x.pos)
+        joint_msg.data.data.extend(x.pos)
     
     intensity_pub.publish(intensity_msg)
     range_pub.publish(range_msg)
     info_pub.publish(info_msg)
     joint_pos_pub.publish(joint_msg)
 
-    image = image_msgs.msg.Image()
+    #image = image_msgs.msg.Image()
 
-    image.header = msg_header
-    image.label  = 'intensity'
-    image.encoding = 'mono'
-    image.depth = 'uint8'
-    max_val = max(intensity_msg.data.data)
-    image.uint8_data.data   = "".join([chr(int(255*x/max_val)) for x in intensity_msg.data.data])
+    #image.header = msg_header
+    #image.label  = 'intensity'
+    #image.encoding = 'mono'
+    #image.depth = 'uint8'
+    #max_val = max(joint_msg.data.data)
+    #min_val = min(joint_msg.data.data)
+    #image.uint8_data.data   = "".join([chr(int(255*x/max_val)) for x in intensity_msg.data.data])
+    #image.uint8_data.data   = "".join([chr(int(255*(x-min_val)/(max_val-min_val))) for x in joint_msg.data.data])
     #image.uint8_data.data = ''
-    image.uint8_data.layout = intensity_msg.data.layout
-    image_pub.publish(image)
+    #image.uint8_data.layout = intensity_msg.data.layout
+    #image_pub.publish(image)
 
 
     print '  Processed cloud with %u rays' % len(intensity_msg.data.data)
 
 if __name__ == '__main__':
 
+    req_lock = threading.Lock()
+
     print 'Initializing DenseLaserCache'
-    laser_cache = DenseLaserCache(interval_req_callback, 50, 1000, 100) ;
+    laser_cache = DenseLaserCache(interval_req_callback, 200, 1000, 100) ;
     print 'Done initializing'
 
     rospy.init_node('dense_assembler', anonymous=False)
@@ -164,7 +177,7 @@ if __name__ == '__main__':
     range_pub     = rospy.Publisher("dense_tilt_scan/range",     Float32MultiArrayStamped)
     info_pub      = rospy.Publisher("dense_tilt_scan/scan_info", LaserScan)
     joint_pos_pub = rospy.Publisher("dense_tilt_scan/joint_info",Float32MultiArrayStamped)
-    image_pub = rospy.Publisher("test_image", Image)
+    #image_pub = rospy.Publisher("test_image", Image)
     
     scan_sub = rospy.Subscriber("tilt_scan", LaserScan, scan_callback)
 
