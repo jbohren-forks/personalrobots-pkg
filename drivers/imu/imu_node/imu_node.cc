@@ -191,7 +191,7 @@ public:
       }
       else
       {
-        ROS_INFO("Not initializing the IMU sensor. Use the calibrate service to calibrate it before use.");
+        ROS_INFO("Not calibrating the IMU sensor. Use the calibrate service to calibrate it before use.");
       }
 
       ROS_INFO("Initializing IMU time with offset %f.", offset_);
