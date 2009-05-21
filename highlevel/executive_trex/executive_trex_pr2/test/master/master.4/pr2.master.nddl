@@ -21,6 +21,9 @@ rejectable(m2_goals.Active g2);
 map_get_outlet_approach_pose(g2.x, g2.y, g2.z, g2.qx, g2.qy, g2.qz, g2.qw, outlet_in_green_room);
 g2.outlet_id = NO_KEY;
 
+g0 before g1;
+g1 before g2;
+
 
 
 

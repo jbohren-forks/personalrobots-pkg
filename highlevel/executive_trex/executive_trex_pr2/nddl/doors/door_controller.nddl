@@ -267,7 +267,7 @@ DoorController::Holds {
 	      if(arms_tucked == true){
 		contains_start(move_base.Active cmd);
 		concurrent(cmd.end, end);
-		eq(cmd.frame_id, ds.frame_id);
+		eq(cmd.frame_id, "map");
 		map_get_door_approach_pose(cmd.x, cmd.y, cmd.z, cmd.qx, cmd.qy, cmd.qz, cmd.qw, dm_active.start_connector);
 
 		contains_start(set_laser_tilt.Active cmd_set_laser_tilt);
