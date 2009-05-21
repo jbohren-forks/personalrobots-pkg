@@ -428,24 +428,21 @@ void DoorReactivePlanner::checkPath(const std::vector<pr2_robot_actions::Pose2D>
     position.x = out_pose.x;
     position.y = out_pose.y;
     theta = out_pose.th;
-    if(getPointCost(position, oriented_footprint, cost))
-      {
-    if(cost < max_inflated_cost_) 
-    {
-      ROS_DEBUG("Point %d: position: %f, %f, %f is not in collision",i,out_pose.x,out_pose.y,out_pose.th);
-      continue;
+    if(getPointCost(position, oriented_footprint, cost)){
+      if(cost < max_inflated_cost_)  {
+	ROS_DEBUG("Point %d: position: %f, %f, %f is not in collision",i,out_pose.x,out_pose.y,out_pose.th);
+	continue;
+      }
+      ROS_DEBUG("Point %d: position: %f, %f, %f is in collision with cost %f which is greater than: %f",i,out_pose.x,out_pose.y,out_pose.th,cost,max_inflated_cost_);
     }
-    ROS_DEBUG("Point %d: position: %f, %f, %f is in collision with cost %f which is greater than: %f",i,out_pose.x,out_pose.y,out_pose.th,cost,max_inflated_cost_);
-      }
-    else
-      {
-	/*
-    ROS_ERROR("Point %d: position: %f, %f, %f is in collision",i,out_pose.x,out_pose.y,out_pose.th);
-    ROS_ERROR("Radius inscribed: %f, circumscribed: %f",inscribed_radius_, circumscribed_radius_);
-    for(int j=0; j < (int) oriented_footprint.size(); j++)
-      ROS_ERROR("Footprint point: %d is : %f,%f",j,oriented_footprint[j].x,oriented_footprint[j].y);
-	*/
-      }
+    else{
+      /*
+      ROS_ERROR("Point %d: position: %f, %f, %f is in collision",i,out_pose.x,out_pose.y,out_pose.th);
+      ROS_ERROR("Radius inscribed: %f, circumscribed: %f",inscribed_radius_, circumscribed_radius_);
+      for(int j=0; j < (int) oriented_footprint.size(); j++)
+	ROS_ERROR("Footprint point: %d is : %f,%f",j,oriented_footprint[j].x,oriented_footprint[j].y);
+      */
+    }
     break;
   }
   last_valid_point = std::max<int>(index-cell_distance_from_obstacles_,0);
@@ -462,7 +459,7 @@ void DoorReactivePlanner::checkPath(const std::vector<pr2_robot_actions::Pose2D>
 
 bool DoorReactivePlanner::getPointCost(const robot_msgs::Point &position, const std::vector<robot_msgs::Point> &oriented_footprint, double &cost)
 {
-  if(cost_map_model_->footprintCost(position,oriented_footprint,inscribed_radius_,circumscribed_radius_) <= 0)
+  if(cost_map_model_->footprintCost(position,oriented_footprint,inscribed_radius_,circumscribed_radius_) < 0)
   {
     ROS_DEBUG("Footprint has negative cost with inscribed radius %f, circumscribed radius %f",inscribed_radius_,circumscribed_radius_);
     return false;
