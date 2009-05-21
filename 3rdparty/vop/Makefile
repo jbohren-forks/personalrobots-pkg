@@ -13,7 +13,7 @@ vop: $(SOURCE_DIR)/unpacked
 	cd $(SOURCE_DIR) && \
 			   python setup.py build && \
 			   python setup.py install --prefix ../../src 
-	mv src/lib/python2.5/site-packages/* src/ 
+	mv src/lib/python2.?/site-packages/* src/ 
 	rm -rf src/bin src/lib
 	touch vop
 
