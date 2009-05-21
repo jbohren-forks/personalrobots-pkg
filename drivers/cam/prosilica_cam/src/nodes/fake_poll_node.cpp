@@ -80,7 +80,7 @@ public:
     loadIntrinsics(*current_intrinsic_);
     
     // Load image from file
-    ROS_FATAL("Loading %s", current_iter_->c_str());
+    ROS_INFO("Loading %s", current_iter_->c_str());
     cv::WImageBuffer3_b img( cvLoadImage(current_iter_->c_str()) );
     if (img.IsNull())
       return false;
