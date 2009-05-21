@@ -163,14 +163,20 @@ void Transformer::lookupTransform(const std::string& target_frame, const std::st
     }
   if (retval != NO_ERROR)
   {
+    std::stringstream ss;
+    ss << " When trying to transform between " << mapped_source_frame << " and " << mapped_target_frame <<".";
     if (retval == LOOKUP_ERROR)
-      throw LookupException(error_string);
+      throw LookupException(error_string + ss.str());
     if (retval == CONNECTIVITY_ERROR)
-      throw ConnectivityException(error_string);
+      throw ConnectivityException(error_string + ss.str());
   }
 
   if (test_extrapolation(temp_time, t_list, &error_string))
-    throw ExtrapolationException(error_string);
+    {
+    std::stringstream ss;
+    ss << " When trying to transform between " << mapped_source_frame << " and " << mapped_target_frame <<".";
+      throw ExtrapolationException(error_string + ss.str());
+    }
 
 
   transform.setData( computeTransformFromList(t_list));

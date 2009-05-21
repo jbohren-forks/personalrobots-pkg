@@ -1398,6 +1398,8 @@ TEST(tf, lookupTransform)
     mTR.lookupTransform("some_frame","some_frame", old_time, output);
     mTR.lookupTransform("some_frame","some_frame", valid_time, output);
     mTR.lookupTransform("some_frame","some_frame", future_time, output);
+    mTR.lookupTransform("child","child", future_time, output);
+    mTR.lookupTransform("other_child","other_child", future_time, output);
 
     //Valid data should pass
     mTR.lookupTransform("child", "parent", valid_time, output);

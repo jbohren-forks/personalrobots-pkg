@@ -169,7 +169,7 @@ void TransformListener::transformPose(const std::string& target_frame, const ros
 {
   Stamped<Pose> pin, pout;
   PoseStampedMsgToTF(msg_in, pin);
-  transformPose(target_frame, pin, pout);
+  transformPose(target_frame, target_time, pin, fixed_frame, pout);
   PoseStampedTFToMsg(pout, msg_out);
 }
 
