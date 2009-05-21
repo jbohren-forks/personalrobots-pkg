@@ -169,6 +169,10 @@ bool closerToObstacles (const ObstacleDistanceArray& distances, const Cell2D& c1
 }
   
 
+Point2D TopologicalMap::MapImpl::centerPoint (const Cell2D& cell) const
+{
+  return cellCenter(cell, resolution_);
+}
 
 
 
@@ -747,7 +751,7 @@ Point2D TopologicalMap::MapImpl::doorApproachPosition (const ConnectorId id, con
     throw NoDoorApproachPositionException(id,r1,r2);
 
   ROS_DEBUG_STREAM_NAMED ("door_approach", " closest cell is " << *pos);
-  return cellCenter(*pos, resolution_);
+  return centerPoint(*pos);
 }
 
 
@@ -845,7 +849,7 @@ Point2D TopologicalMap::MapImpl::outletApproachPosition (const OutletId id, cons
     throw NoApproachPositionException(id,r1,r2);
 
   ROS_DEBUG_STREAM_NAMED ("outlet_approach", " closest cell is " << *pos);
-  return cellCenter(*pos, resolution_);
+  return centerPoint(*pos);
 }
   
 
@@ -1145,7 +1149,7 @@ void TopologicalMap::MapImpl::unsetGoal ()
 
 void TopologicalMap::MapImpl::setGoal (const Cell2D& c)
 {
-  setGoal(cellCenter(c, resolution_));
+  setGoal(centerPoint(c));
 }
 
 ReachableCost TopologicalMap::MapImpl::goalDistance (ConnectorId id) const
@@ -1182,7 +1186,7 @@ vector<pair<ConnectorId, double> > TopologicalMap::MapImpl::connectorCosts (cons
 ConnectorIdVector TopologicalMap::MapImpl::shortestConnectorPath (const Point2D& p1, const Point2D& p2)
 {
   TemporaryRoadmapNode start(this, p1);
-  TemporaryRoadmapNode goal(this, p1);
+  TemporaryRoadmapNode goal(this, p2);
   return roadmap_->shortestPath(start.id, goal.id);
 }
 
@@ -1447,6 +1451,10 @@ void TopologicalMap::recomputeConnectorDistances ()
   map_impl_->recomputeConnectorDistances();
 }
 
+Point2D TopologicalMap::centerPoint (const Cell2D& cell) const
+{
+  return map_impl_->centerPoint(cell);
+}
 
 
 } // namespace topological_map

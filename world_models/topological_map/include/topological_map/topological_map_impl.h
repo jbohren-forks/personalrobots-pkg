@@ -233,6 +233,10 @@ public:
   /// only used internally
   void recomputeConnectorDistances ();
 
+  /// \return center point of \a cell
+  Point2D centerPoint (const Cell2D& cell) const;
+
+
 private: 
 
   // During the lifetime of an instance of this class, a temporary node will exist in the connector graph at point p

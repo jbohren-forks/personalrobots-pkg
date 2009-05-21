@@ -254,6 +254,9 @@ public:
   /// \post inter-connector distances are correct
   void recomputeConnectorDistances ();
 
+  /// \return center point of \a cell
+  Point2D centerPoint (const Cell2D& cell) const;
+
 private:
 
   // Forbid copy and assign

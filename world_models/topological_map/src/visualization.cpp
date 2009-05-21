@@ -84,9 +84,9 @@ struct DrawDoors
   {
     marker.header.frame_id = VISUALIZER_FRAME;
     marker.ns = MARKER_NS;
-    marker.id=1;
     marker.type=Marker::LINE_LIST;
     marker.action=Marker::ADD;
+    marker.id=1;
     marker.color.a=1.0;
     marker.scale.x=0.2;
     marker.scale.y=0.2;
@@ -97,7 +97,6 @@ struct DrawDoors
     marker.color.b=1.0;
     hinge_marker.header.frame_id = VISUALIZER_FRAME;
     hinge_marker.ns = MARKER_NS;
-    hinge_marker.id=1000;
     hinge_marker.type=Marker::SPHERE;
     hinge_marker.action=Marker::ADD;
     hinge_marker.color.a=1.0;
@@ -126,7 +125,7 @@ struct DrawDoors
 
       hinge_marker.pose.position.x = p1.x;
       hinge_marker.pose.position.y = p1.y;
-      hinge_marker.id++;
+      hinge_marker.id = id+1000;
       if (d.rot_dir == Door::ROT_DIR_CLOCKWISE) {
         hinge_marker.color.r=1;
         hinge_marker.color.g=0;

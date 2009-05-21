@@ -35,9 +35,13 @@
 #include <sysexits.h>
 #include <topological_map/topological_map.h>
 #include <topological_map/visualization.h>
+#include <topological_map/exception.h>
 #include <ros/time.h>
 #include <ros/ros.h>
 #include <ros/assert.h>
+#include <boost/foreach.hpp>
+
+#define foreach BOOST_FOREACH
 
 typedef unsigned int uint;
 typedef const uint cuint;
@@ -95,19 +99,19 @@ int main (int argc, char* argv[])
   setV(grid, 3, 7, 21, 8, 8, 24, false);
   setV(grid, 7, 7, 21, 4, 8, 24, false);
   
-  for (uint r=0; r<21; r++) {
-    for (uint c=0; c<24; c++) {
-      if (grid[r][c]) cout << "X"; else cout << ".";
-    }
-    cout << endl;
-  }
+//   for (uint r=0; r<21; r++) {
+//     for (uint c=0; c<24; c++) {
+//       if (grid[r][c]) cout << "X"; else cout << ".";
+//     }
+//     cout << endl;
+//   }
   
 
   TopologicalMapPtr m = topologicalMapFromGrid (grid, 1.0, 2, 1, 1, 0, "local");
   m->writeGridAndOutletData("local/gui_input.xml");
 
 
-  cout << *m;
+  // cout << *m;
 
   ofstream str("local/test");
   m->writeToStream(str);
@@ -122,9 +126,24 @@ int main (int argc, char* argv[])
 
 
   
-  ifstream str3("/u/bhaskara/local/top/willow.tmap");
+  ifstream str3("/u/bhaskara/ros/ros-pkg/world_models/willow_maps/willow.tmap");
   double dx=-.4;
   TopologicalMap m3(str3, 1.0, 1e9, 1e9);
+
+  Point2D p1(19.1125, 29.1625);
+  Point2D p2(44.0, 44.0);
+  tmap::ConnectorIdVector path = m3.shortestConnectorPath(p1, p2);
+  cout << " Path between " << p1 << " and " << p2 << ": ";
+  foreach (ConnectorId connector, path) {
+    cout << endl << " " << connector << ": ";
+    try {
+      cout << m3.connectorPosition(connector);
+    }
+    catch (tmap::UnknownConnectorIdException& e) {
+      cout << "unknown";
+    }
+  }
+  cout << endl;
 
   printConnectorCosts (m3, Point2D(33.844, 36.379), Point2D(12.7, 22.5), 0);
 
@@ -143,11 +162,12 @@ int main (int argc, char* argv[])
   ros::NodeHandle n;
   while (n.ok()) {
     dur.sleep();
-    v.visualize();
+    // v.visualize();
   }
 
 
-  Point2D p1(1-dx,1), p2(30-dx,30);
+  p1 = Point2D(1-dx,1);
+  p2 = Point2D(30-dx,30);
   cout << "Nearest outlet to " << p1 << " is " << m3.nearestOutlet(p1) << endl;
   cout << "Nearest outlet to " << p2 << " is " << m3.nearestOutlet(p2) << endl;
 
@@ -164,7 +184,7 @@ int main (int argc, char* argv[])
   printConnectorCosts(m3,p1,p2, 0);
 
   RegionId door1 = m3.containingRegion(Point2D(21.5-dx,20.5));
-  RegionId door2 = m3.containingRegion(Point2D(50-dx,30));
+  //RegionId door2 = m3.containingRegion(Point2D(50-dx,30));
   door_msgs::Door d = m3.regionDoor(m3.containingRegion(Point2D(50-dx,17.25)));
   cout << "Door at " << d.frame_p1.x << ", " << d.frame_p1.y << " and " << d.frame_p2.x << ", " << d.frame_p2.y << endl;
   cout << "Open prob at 0.0 is " << m3.doorOpenProb(door1, Time(0.0)) << endl;
