@@ -203,6 +203,7 @@ namespace estimation
 	// update filter
 	odom_meas_pdf_->AdditiveNoiseSigmaSet(odom_covariance_ * pow(odom_covar_multiplier_ * dt,2));
 	filter_->Update(odom_meas_model_, odom_rel);
+	diagnostics_odom_rot_rel_ = odom_rel(3);
       }
       else odom_initialized_ = true;
       odom_meas_old_ = odom_meas_;
@@ -227,6 +228,7 @@ namespace estimation
 	decomposeTransform(imu_rel_frame, tmp, tmp, tmp, tmp, tmp, imu_rel(3));
 	decomposeTransform(imu_meas_,     tmp, tmp, tmp, imu_rel(1), imu_rel(2), tmp);
 	angleOverflowCorrect(imu_rel(3), filter_estimate_old_vec_(6));
+	diagnostics_imu_rot_rel_ = imu_rel(3);
 	// update filter
 	imu_meas_pdf_->AdditiveNoiseSigmaSet(imu_covariance_ * pow(imu_covar_multiplier_ * dt,2));
 	filter_->Update(imu_meas_model_,  imu_rel);
@@ -272,6 +274,11 @@ namespace estimation
 				     Vector3(filter_estimate_old_vec_(1), filter_estimate_old_vec_(2), filter_estimate_old_vec_(3)));
     filter_time_old_ = filter_time;
     addMeasurement(Stamped<Transform>(filter_estimate_old_, filter_time, "odom", "base_footprint"));
+
+    // diagnostics
+    double diagnostics = fabs(diagnostics_odom_rot_rel_ - diagnostics_imu_rot_rel_)/dt;
+    if (diagnostics > 0.3)
+      return false;
 
     return true;
 };

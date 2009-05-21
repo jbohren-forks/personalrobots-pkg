@@ -113,6 +113,9 @@ private:
   bool filter_initialized_, odom_initialized_, imu_initialized_, vo_initialized_;
   double odom_covar_multiplier_, imu_covar_multiplier_, vo_covar_multiplier_;
 
+  // diagnostics
+  double diagnostics_odom_rot_rel_, diagnostics_imu_rot_rel_;
+
   // tf transformer
   tf::Transformer transformer_;
 

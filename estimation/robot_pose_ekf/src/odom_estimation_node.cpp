@@ -373,9 +373,10 @@ namespace estimation
 	    corr_file_ << endl;
 #endif
 	  }
+	  else{
+	    ROS_ERROR("Robot pose ekf diagnostics discovered a potential problem");
+	  }
 	}
-
-	  
 	// initialize filer with odometry frame
 	if ( odom_active_ && !my_filter_.isInitialized()){
 	  my_filter_.initialize(odom_meas_, odom_stamp_);
