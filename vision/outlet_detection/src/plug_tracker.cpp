@@ -59,9 +59,6 @@ PlugTracker::PlugTracker(ros::Node &node)
   plug_in_board_.setOrigin(tf::Vector3(0.00803, -0.01625, 0.02055));
   plug_in_board_.setRotation(tf::Quaternion(-0.70416, 0.71004, 0.00032, -0.00341));
 
-  // (Bad) estimate for new-style plug
-  //plug_in_board_.getOrigin().setValue(0.00315, 0.01542, 0.01255);
-  //plug_in_board_.setRotation(btQuaternion(0.60615, 0.60710, 0.39344, -0.33048));
   camera_in_cvcam_.getOrigin().setValue(0.0, 0.0, 0.0);
   camera_in_cvcam_.getBasis().setValue(0, 0, 1, -1, 0, 0, 0, -1, 0);
 

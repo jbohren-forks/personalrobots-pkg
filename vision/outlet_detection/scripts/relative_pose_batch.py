@@ -16,10 +16,14 @@ assert(num_poses == len(outlet_data))
 plug_pos = [ numpy.array(plug_data[i, :3]) for i in range(num_poses) ]
 outlet_pos = [ numpy.array(outlet_data[i, :3]) for i in range(num_poses) ]
 distances = numpy.array( [ 1000 * numpy.linalg.norm(plug_pos[i] - outlet_pos[i]) for i in range(num_poses) ] )
-print 'Distance:\n\tMean = %fmm\n\tStd dev = %f' % (distances.mean(), distances.std())
+print 'Distances:'
+print distances
+print 'Stats:\n\tMean = %fmm\n\tStd dev = %f' % (distances.mean(), distances.std())
 
 # Orientation stats
 plug_ori = [ numpy.array(plug_data[i, 3:]) for i in range(num_poses) ]
 outlet_ori = [ numpy.array(outlet_data[i, 3:]) for i in range(num_poses) ]
 angles = numpy.array( [ acos(numpy.dot(plug_ori[i], outlet_ori[i])) * 180.0 / pi for i in range(num_poses) ] )
-print 'Angle:\n\tMean = %f degrees\n\tStd dev = %f' % (angles.mean(), angles.std())
+print 'Angles:'
+print angles
+print 'Stats:\n\tMean = %f degrees\n\tStd dev = %f' % (angles.mean(), angles.std())
