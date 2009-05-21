@@ -303,14 +303,14 @@ RechargeController::Holds {
                 // coarse hasn't happened
                 else {
                   
-                  if (arms_tucked == true) {
-                    contains_start(detect_outlet_coarse.Active cmd);
-                    concurrent(cmd.end, end);
-                  }
-                  else {
-                    contains_start(safety_tuck_arms.Active cmd);
-                    concurrent(cmd.end, end);
-                  }
+                    if (arms_tucked == true) {
+                      contains_start(detect_outlet_coarse.Active cmd);
+                      concurrent(cmd.end, end);
+                    }
+                    else {
+                      contains_start(safety_tuck_arms.Active cmd);
+                      concurrent(cmd.end, end);
+                    }
                 }
               }
             }
