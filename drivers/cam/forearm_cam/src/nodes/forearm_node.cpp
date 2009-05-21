@@ -226,7 +226,8 @@ public:
 
   ForearmNode(ros::Node &node)
     : node_(node), camera_(NULL), started_video_(false),
-      diagnostic_(this, ros::NodeHandle()), freq_diag_(desired_freq_, 0.05)
+      diagnostic_(this, ros::NodeHandle()), 
+      freq_diag_(desired_freq_, desired_freq_, 0.05)
   {
     exit_status_ = 0;
     misfire_blank_ = 0;
@@ -364,6 +365,8 @@ public:
     // Stop video
     if ( started_video_ && pr2StopVid(camera_) != 0 )
       ROS_ERROR("Video Stop error");
+    if ( started_video_)
+      pr2Reset(camera_);
 
     // Stop Triggering
     if (!trig_controller_cmd_.empty())
@@ -383,6 +386,7 @@ public:
 
   void configure(const std::string &if_name, const std::string &ip_address, int port_)
   {
+    int retval;
     // Create a new IpCamList to hold the camera list
     IpCamList camList;
     pr2CamListInit(&camList);
@@ -391,13 +395,13 @@ public:
     // the first reply from the camera from being filtered out.
     // @todo Should we be setting rp_filter to zero here? This may violate
     // the user's secutity preferences?
-    std::string rp_str = "sysctl net.ipv4.conf."+if_name+".rp_filter|grep -q 0||sysctl -q -w net.ipv4.conf."+if_name+".rp_filter=0";
-    ROS_DEBUG("Running \"%s\"", rp_str.c_str());
-    int retval = system(rp_str.c_str());
-    if (retval == -1 || !WIFEXITED(retval) || WEXITSTATUS(retval))
-    {
-      ROS_WARN("Unable to set rp_filter to 0 on interface. Camera discovery is likely to fail.");
-    }  
+   // std::string rp_str = "sysctl net.ipv4.conf."+if_name+".rp_filter|grep -q 0||sysctl -q -w net.ipv4.conf."+if_name+".rp_filter=0";
+   // ROS_DEBUG("Running \"%s\"", rp_str.c_str());
+   // retval = system(rp_str.c_str());
+   // if (retval == -1 || !WIFEXITED(retval) || WEXITSTATUS(retval))
+   // {
+   //   ROS_WARN("Unable to set rp_filter to 0 on interface. Camera discovery is likely to fail.");
+   // }  
     
     retval = system("sysctl net.core.rmem_max=16000000");
     if (retval == -1 || !WIFEXITED(retval) || WEXITSTATUS(retval))
@@ -622,7 +626,7 @@ public:
 
   void freqStatus(diagnostic_updater::DiagnosticStatusWrapper& status)
   {
-    freq_diag_.update(status);
+    freq_diag_(status);
 
     status.addv("Free-running frequency", imager_freq_);
     status.adds("External trigger controller", trig_controller_);

@@ -3,21 +3,22 @@
 
   <node pkg="mechanism_control" type="spawner.py" args="$(find forearm_cam)/trigger_controller.xml" />
   
-  <group ns="forearm">
+  <group ns="forearm_node">
     <param name="if_name" type="str" value="eth2"/>
-    <param name="ip_address" type="str" value="192.168.201.2"/>
-    <!--param name="serial_number" type="int" value="2"/-->
+    <param name="ip_address" type="str" value="192.168.202.2"/>
+    <param name="serial_number" type="int" value="7"/>
     <param name="video_mode" type="str" value="640x480x30"/>
     <!--param name="frame_id" type="str" value="???"/-->
     <param name="do_colorize" type="bool" value="True"/>
     <param name="do_rectify" type="bool" value="True"/>
     <param name="ext_trigger" type="bool" value="True"/>
     <param name="trigger_controller" type="string" value="trig_controller"/>
-    <param name="trigger_rate" type="double" value="20"/>
+    <param name="trigger_rate" type="double" value="25"/>
     <param name="trigger_phase" type="double" value="0"/>
+    <param name="port" type="int" value="60000"/>
   </group>
-  <node name="forearm" pkg="forearm_cam" type="forearm_node" respawn="false" output="screen"/>
+  <node name="forearm_node" pkg="forearm_cam" type="forearm_node" respawn="false" output="screen"/>
   <node name="forearm_proc" pkg="stereo_image_proc" type="imageproc" respawn="false" output="screen">
-    <remap from="camera" to="forearm"/>
+    <remap from="camera" to="forearm_node"/>
   </node>
 </launch>
