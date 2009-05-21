@@ -1,5 +1,5 @@
 /**
- * Go to a set of goals. We are not going to engage the recharger, but we should be mizing driver and doorman based on outlet approach points.
+ * Go to a set of goals. We are not going to engage the recharger, but we should be mixing driver and doorman based on outlet approach points.
  * All goals are of equal priority
  */
 #include "master/master.nddl"

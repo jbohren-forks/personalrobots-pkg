@@ -510,21 +510,17 @@ namespace executive_trex_pr2 {
      */
     virtual void observeOutletBlocked(unsigned int outlet_id);
 
-    /**
-     */
     virtual unsigned int getNearestDoorway(double x, double y);
 
-    bool isDoorway(double x1, double y1, double x2, double y2);
+    virtual bool isDoorway(double x1, double y1, double x2, double y2);
 
-    virtual unsigned int getNextConnector(double x1, double y1, double x2, double y2, 
-					  double& lowest_cost, double& next_x, double& next_y);
+    virtual unsigned int getNextConnector(double x1, double y1, double x2, double y2);
 
-    unsigned int getBestConnector(double x1, double y1, double x2, double y2,
-				  double& lowest_cost, double& next_x, double& next_y);
-
-    virtual unsigned int getOtherDoorConnector(unsigned int connector_id, double target_x, double target_y);
+    virtual unsigned int getOutletByPosition(double x, double y);
 
     virtual bool isDoorwayConnector(unsigned int connector_id);
+
+    virtual std::string pathToString(const topological_map::ConnectorIdVector& path);
 
   private:
     static TopologicalMapAdapter* _singleton;
