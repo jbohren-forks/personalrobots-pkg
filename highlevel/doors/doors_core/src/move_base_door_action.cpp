@@ -438,27 +438,27 @@ int main(int argc, char** argv){
   tf::TransformListener tf(ros_node, true, ros::Duration(10));
   nav::MoveBaseDoorAction move_base_door(ros_node, tf);
 
-/*
-  door_msgs::Door door;
-  double tmp; int tmp2;
-  ros_node.param("~p_door_frame_p1_x", tmp, 0.5); door.frame_p1.x = tmp;
-  ros_node.param("~p_door_frame_p1_y", tmp, -0.5); door.frame_p1.y = tmp;
-  ros_node.param("~p_door_frame_p2_x", tmp, 0.5); door.frame_p2.x = tmp;
-  ros_node.param("~p_door_frame_p2_y", tmp, 0.5); door.frame_p2.y = tmp;
-  ros_node.param("~p_door_hinge" , tmp2, 1); door.hinge = tmp2;
-  ros_node.param("~p_door_rot_dir" , tmp2, 1); door.rot_dir = tmp2;
-  door.header.frame_id = "base_link";
-  door.normal.x = 1.0;
-  door.normal.y = 0.0;
-  door.normal.z = 0.0;
-  ros::Time my_time = ros::Time::now();
-  door.header.stamp = my_time;
-
-  move_base_door.execute(door,door);
-*/
   robot_actions::ActionRunner runner(20.0);
   runner.connect<door_msgs::Door, pr2_robot_actions::DoorActionState, door_msgs::Door>(move_base_door);
   runner.run();
+  /*
+  door_msgs::Door my_door_;
+  my_door_.frame_p1.x = 1.0;
+  my_door_.frame_p1.y = -0.5;
+  my_door_.frame_p2.x = 1.0;
+  my_door_.frame_p2.y = 0.5;
+  my_door_.travel_dir.x = 1;
+  my_door_.travel_dir.y = 0;
+  my_door_.travel_dir.z = 0;
+  my_door_.rot_dir = door_msgs::Door::ROT_DIR_COUNTERCLOCKWISE;
+  my_door_.hinge = door_msgs::Door::HINGE_P2;
+  my_door_.header.frame_id = "odom_combined";
+
+  door_msgs::Door feedback;
+  std::cout << "door in " << my_door_ << std::endl;
+  move_base_door.execute(my_door_, feedback);
+  std::cout << "door out " << feedback << std::endl;
+*/
   ros_node.spin();
 
   return(0);
