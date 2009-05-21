@@ -45,6 +45,10 @@ namespace sfl {
   class Mapper2d;
 }
 
+namespace costmap_2d {
+  class Costmap2D;
+}
+
 namespace mpglue {
   
   
@@ -126,6 +130,8 @@ namespace mpglue {
   
   boost::shared_ptr<Costmapper> createCostmapper(boost::shared_ptr<sfl::Mapper2d> m2d,
 						 int possibly_circumscribed_cost);
+  
+  boost::shared_ptr<Costmapper> createCostmapper(boost::shared_ptr<costmap_2d::Costmap2D> cm);
   
 }
 

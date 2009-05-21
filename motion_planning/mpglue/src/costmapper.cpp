@@ -34,6 +34,7 @@
 
 #include <mpglue/costmapper.h>
 #include <sfl/gplan/Mapper2d.hpp>
+#include <costmap_2d/costmap_2d.h>
 
 using namespace mpglue;
 using namespace boost;
@@ -103,7 +104,140 @@ namespace {
     }
     
   };
-
+  
+  
+  class cm2dCostmapper
+    : public mpglue::Costmapper
+  {
+  public:
+    struct cm2dgetter: public mpglue::costmap_2d_getter {
+      cm2dgetter(costmap_2d::Costmap2D * cm): cm_(cm) {}
+      virtual costmap_2d::Costmap2D const * operator () () { return cm_; }
+      costmap_2d::Costmap2D * cm_;
+    };
+    
+    boost::shared_ptr<costmap_2d::Costmap2D> cm_;
+    boost::shared_ptr<cm2dgetter> getter_;
+    boost::shared_ptr<CostmapAccessor> cma_;
+    boost::shared_ptr<IndexTransform> idxt_;
+    
+    cm2dCostmapper(boost::shared_ptr<costmap_2d::Costmap2D> cm)
+      : cm_(cm),
+	getter_(new cm2dgetter(cm.get())),
+	cma_(mpglue::createCostmapAccessor(getter_.get())),
+	idxt_(mpglue::createIndexTransform(getter_.get())) {}
+    
+    virtual boost::shared_ptr<CostmapAccessor const> getAccessor() const
+    { return cma_; }
+    
+    virtual boost::shared_ptr<IndexTransform const> getIndexTransform() const
+    { return idxt_; }
+    
+    
+    virtual size_t updateObstacles(index_collection_t const * added_obstacle_indices,
+				   index_collection_t const * removed_obstacle_indices,
+				   std::ostream * dbgos)
+    {
+      size_t count(0);
+      unsigned int bbx0(std::numeric_limits<unsigned int>::max());
+      unsigned int bbx1(std::numeric_limits<unsigned int>::min());
+      unsigned int bby0(std::numeric_limits<unsigned int>::max());
+      unsigned int bby1(std::numeric_limits<unsigned int>::min());
+      unsigned int const sizex(cm_->cellSizeX());
+      unsigned int const sizey(cm_->cellSizeY());
+      
+      if (removed_obstacle_indices) {
+	for (index_collection_t::const_iterator irem(removed_obstacle_indices->begin());
+	     irem != removed_obstacle_indices->end(); ++irem) {
+	  if ((irem->ix < 0) || (irem->iy < 0)) {
+	    if (dbgos)
+	      *dbgos << "mpglue::cm2dCostmapper::updateObstacles(): not removing negative index ["
+		     << irem->ix << "][" << irem->iy << "]\n";
+	    continue;
+	  }
+	  unsigned int const ix(irem->ix);
+	  unsigned int const iy(irem->iy);
+	  if ((ix >= sizex) || (iy >= sizey)) {
+	    if (dbgos)
+	      *dbgos << "mpglue::cm2dCostmapper::updateObstacles(): not removing out of bounds ["
+		     << ix << "][" << iy << "]\n";
+	    continue;
+	  }
+	  if (costmap_2d::LETHAL_OBSTACLE != cm_->getCost(ix, iy)) {
+	    if (dbgos)
+	      *dbgos << "mpglue::cm2dCostmapper::updateObstacles(): not removing non-lethal ["
+		     << ix << "][" << iy << "]\n";
+	    continue;
+	  }
+	  cm_->setCost(ix, iy, costmap_2d::FREE_SPACE);
+	  ++count;
+	  bbx0 = std::min(bbx0, ix);
+	  bbx1 = std::max(bbx1, ix);
+	  bby0 = std::min(bby0, iy);
+	  bby1 = std::max(bby1, iy);
+	}
+	if (dbgos)
+	  *dbgos << "mpglue::cm2dCostmapper::updateObstacles(): removed " << count << " lethal obstacles\n"
+		 << "  bbox: x in " << bbx0 << "-" << bbx1 << "  y in " << bby0 << "-" << bby1 << "\n";
+      }
+      
+      if (added_obstacle_indices) {
+	for (index_collection_t::const_iterator iadd(added_obstacle_indices->begin());
+	     iadd != added_obstacle_indices->end(); ++iadd) {
+	  if ((iadd->ix < 0) || (iadd->iy < 0)) {
+	    if (dbgos)
+	      *dbgos << "mpglue::cm2dCostmapper::updateObstacles(): not adding negative index ["
+		     << iadd->ix << "][" << iadd->iy << "]\n";
+	    continue;
+	  }
+	  unsigned int const ix(iadd->ix);
+	  unsigned int const iy(iadd->iy);
+	  if ((ix >= sizex) || (iy >= sizey)) {
+	    if (dbgos)
+	      *dbgos << "mpglue::cm2dCostmapper::updateObstacles(): not adding out of bounds ["
+		     << ix << "][" << iy << "]\n";
+	    continue;
+	  }
+	  if (costmap_2d::LETHAL_OBSTACLE == cm_->getCost(ix, iy)) {
+	    if (dbgos)
+	      *dbgos << "mpglue::cm2dCostmapper::updateObstacles(): not adding already lethal ["
+		     << ix << "][" << iy << "]\n";
+	    continue;
+	  }
+	  cm_->setCost(ix, iy, costmap_2d::LETHAL_OBSTACLE);
+	  ++count;
+	  bbx0 = std::min(bbx0, ix);
+	  bbx1 = std::max(bbx1, ix);
+	  bby0 = std::min(bby0, iy);
+	  bby1 = std::max(bby1, iy);
+	}
+	if (dbgos)
+	  *dbgos << "mpglue::cm2dCostmapper::updateObstacles(): removed and/or added " << count << " lethal obstacles\n"
+		 << "  bbox: x in " << bbx0 << "-" << bbx1 << "  y in " << bby0 << "-" << bby1 << "\n";
+      }
+      
+      if (0 < count) {
+	if (dbgos)
+	  *dbgos << "mpglue::cm2dCostmapper::updateObstacles(): changed " << count << " cells\n";
+	// Re-inflate in a region that's 2*inflation bigger than the
+	// bounds of the changed cells, after clearing it.  This
+	// wastes some operations, but if you want efficiency you
+	// probably want to use costmap_2d::Costmap2D directly anyway,
+	// without passing through mpglue.
+	double const resolution(cm_->resolution());
+	double const inflation2(2 * cm_->inflationRadius());
+	double const wx(resolution * 0.5 * (bbx0 + bbx1));
+	double const wy(resolution * 0.5 * (bby0 + bby1));
+	double const w_size_x(resolution * (bbx1 - bbx0) + inflation2);
+	double const w_size_y(resolution * (bby1 - bby0) + inflation2);
+	cm_->reinflateWindow(wx, wy, w_size_x, w_size_y, true);
+      }
+      
+      return count;
+    }
+    
+  };
+  
 }
 
 namespace mpglue {
@@ -114,5 +248,12 @@ namespace mpglue {
     shared_ptr<Costmapper> foo(new sflCostmapper(m2d, possibly_circumscribed_cost));
     return foo;
   }
-
+  
+  
+  boost::shared_ptr<Costmapper> createCostmapper(boost::shared_ptr<costmap_2d::Costmap2D> cm)
+  {
+    shared_ptr<Costmapper> foo(new cm2dCostmapper(cm));
+    return foo;
+  }
+  
 }

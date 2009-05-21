@@ -400,6 +400,52 @@ namespace mpglue {
   }
   
   
+  void CostmapAccessor::
+  dumpHistogram(char const * prefix, std::ostream & os) const
+  {
+    std::map<cost_t, size_t> hist;
+    for (index_t ix(getXBegin()); ix < getXEnd(); ++ix)
+      for (index_t iy(getYBegin()); iy < getYEnd(); ++iy) {
+	cost_t cost;
+	if (getCost(ix, iy, &cost))
+	  hist[cost] += 1;
+      }
+    size_t ttlethal(0);
+    size_t ttinscr(0);
+    size_t ttcirc(0);
+    size_t ttfree(0);
+    size_t tt(0);
+    for (std::map<cost_t, size_t>::const_iterator ih(hist.begin()); ih != hist.end(); ++ih) {
+      os << prefix;
+      if (getLethalCost() <= ih->first) {
+	ttlethal += ih->second;
+	os << "LETHAL ";
+      }
+      else if (getInscribedCost() <= ih->first) {
+	ttinscr += ih->second;
+	os << "inscr. ";
+      }
+      else if (getPossiblyCircumcribedCost() <= ih->first) {
+	ttcirc += ih->second;
+	os << "circ.  ";
+      }
+      else if (0 == ih->first) {
+	ttfree += ih->second;
+	os << "FREE   ";
+      }
+      else
+	os << "       ";
+      tt += ih->second;
+      os << ih->first << "\t" << ih->second << "\n";
+    }
+    os << prefix << "total lethal:        " << ttlethal << "\n"
+       << prefix << "total inscribed:     " << ttinscr << "\n"
+       << prefix << "total circumscribed: " << ttcirc << "\n"
+       << prefix << "total free:          " << ttfree << "\n"
+       << prefix << "total ALL:           " << tt << "\n";
+  }
+  
+  
   CostmapAccessor * createCostmapAccessor(costmap_2d_getter * get_costmap)
   {
     return new cm2dCostmapAccessor(get_costmap);

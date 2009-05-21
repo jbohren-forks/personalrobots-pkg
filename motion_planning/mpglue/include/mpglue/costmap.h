@@ -37,6 +37,7 @@
 #ifndef MPGLUE_COSTMAP_HPP
 #define MPGLUE_COSTMAP_HPP
 
+#include <iosfwd>
 #include <unistd.h>
 
 namespace costmap_2d {
@@ -103,6 +104,8 @@ namespace mpglue {
 	with a more efficient method. */
     virtual bool isFreespace(index_t index_x, index_t index_y,
 			     bool out_of_bounds_reply) const;
+    
+    void dumpHistogram(char const * prefix, std::ostream & os) const;
   };
   
   
