@@ -118,7 +118,7 @@ public:
   int count_;
 
   SelfTest<ImuNode> self_test_;
-  DiagnosticUpdater<ImuNode> diagnostic_;
+  diagnostic_updater::Updater<ImuNode> diagnostic_;
 
   ros::NodeHandle node_handle_;
   ros::Publisher imu_data_pub_;
@@ -130,14 +130,14 @@ public:
   bool autostart;
 
   bool autocalibrate_;
-
+  bool calibrated_;
   volatile bool calibrate_request_;
 
   string frameid_;
   
   double offset_;
 
-  ImuNode(ros::NodeHandle h) : count_(0), self_test_(this), diagnostic_(this), node_handle_(h), calibrate_request_(false)
+  ImuNode(ros::NodeHandle h) : count_(0), self_test_(this), diagnostic_(this, h), node_handle_(h), calibrated_(false), calibrate_request_(false)
   {
     imu_data_pub_ = node_handle_.advertise<robot_msgs::PoseWithRatesStamped>("imu_data", 100);
 
@@ -167,7 +167,8 @@ public:
     self_test_.addTest(&ImuNode::DisconnectTest);
     self_test_.addTest(&ImuNode::ResumeTest);
 
-    diagnostic_.addUpdater( &ImuNode::freqStatus );
+    diagnostic_.add( &ImuNode::freqStatus );
+    diagnostic_.add( &ImuNode::calibrationStatus );
   }
 
   ~ImuNode()
@@ -185,14 +186,14 @@ public:
 
       if (autocalibrate_)
       {
-        ROS_INFO("Initializing IMU sensor.");
-
-        imu.initGyros();
+        calibrate_request_ = true;
+        calibrate_req_check();
       }
       else
       {
         ROS_INFO("Not calibrating the IMU sensor. Use the calibrate service to calibrate it before use.");
       }
+
 
       ROS_INFO("Initializing IMU time with offset %f.", offset_);
 
@@ -490,7 +491,17 @@ public:
     status.message = "Previous operation resumed successfully.";    
   }
 
-  void freqStatus(robot_msgs::DiagnosticStatus& status)
+  void calibrationStatus(diagnostic_updater::DiagnosticStatusWrapper& status)
+  {
+    status.name = "Calibration Status";
+
+    if (calibrated_)
+      status.summary(0, "Gyro is calibrated");
+    else
+      status.summary(2, "Gyro not calibrated");
+  }
+
+  void freqStatus(diagnostic_updater::DiagnosticStatusWrapper& status)
   {
     status.name = "Frequency Status";
 
@@ -499,13 +510,11 @@ public:
 
     if (freq < (.9*desired_freq))
     {
-      status.level = 2;
-      status.message = "Desired frequency not met";
+      status.summary(2, "Desired frequency not met");
     }
     else
     {
-      status.level = 0;
-      status.message = "Desired frequency met";
+      status.summary(0, "Desired frequency met");
     }
 
     status.set_values_size(3);
@@ -559,6 +568,7 @@ public:
     {
       ROS_INFO("Calibrating IMU gyros.");
       imu.initGyros();
+      calibrated_ = true;
       calibrate_request_ = false;
       ROS_INFO("IMU gyro calibration completed.");
     }
