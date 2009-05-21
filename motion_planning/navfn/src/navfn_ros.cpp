@@ -104,6 +104,9 @@ namespace navfn {
     //make sure to re-inflate obstacles in the affected region
     costmap_.reinflateWindow(global_pose.getOrigin().x(), global_pose.getOrigin().y(), max_inflation_dist, max_inflation_dist);
 
+    //just in case we inflate over the point we just cleared
+    costmap_.setCost(mx, my, costmap_2d::FREE_SPACE);
+
   }
 
   bool NavfnROS::makePlan(const robot_msgs::PoseStamped& goal, std::vector<robot_msgs::PoseStamped>& plan){
