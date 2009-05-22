@@ -13,10 +13,10 @@ static inline CvRect resizeRect(CvRect rect, double alpha)
 
 TrackerBase::TrackerBase(ros::Node &node, std::string prefix)
   : node_(node), img_(res_.image), cam_info_(res_.cam_info),
-    topic_name_("~" + prefix + "_pose"),
+    pose_topic_name_("~" + prefix + "_pose"),
     tf_broadcaster_(node), tf_listener_(node),
     object_frame_id_(prefix + "_pose"), K_(NULL),
-    window_name_(prefix + " tracker"),
+    display_topic_name_("~" + prefix + "_image"),
     save_count_(0), save_prefix_(prefix)
 {
   node_.param("~image_service", image_service_, std::string("/prosilica/poll"));
@@ -48,12 +48,6 @@ TrackerBase::TrackerBase(ros::Node &node, std::string prefix)
   node_.param("~target_roi_size", target_roi_size_, 400);
 
   node_.param("~save_failures", save_failures_, 0);
-
-  node_.param("~display", display_, 0);
-  if (display_) {
-    cvNamedWindow(window_name_.c_str(), 0); // no autosize
-    cvStartWindowThread();
-  }
 }
 
 TrackerBase::~TrackerBase()
@@ -64,14 +58,13 @@ TrackerBase::~TrackerBase()
   }
 
   cvReleaseMat(&K_);
-
-  if (display_)
-    cvDestroyWindow(window_name_.c_str());
 }
 
 void TrackerBase::activate()
 {
-  node_.advertise<robot_msgs::PoseStamped>(topic_name_, 1);
+  node_.advertise<robot_msgs::PoseStamped>(pose_topic_name_, 1);
+  node_.advertise<image_msgs::Image>(display_topic_name_, 1);
+  
   boost::thread t(boost::bind(&TrackerBase::spin, this));
   active_thread_.swap(t);
 }
@@ -79,7 +72,9 @@ void TrackerBase::activate()
 void TrackerBase::deactivate()
 {
   active_thread_.interrupt();
-  node_.unadvertise(topic_name_);
+  
+  node_.unadvertise(pose_topic_name_);
+  node_.unadvertise(display_topic_name_);
 }
 
 IplImage* TrackerBase::getDisplayImage(bool success)
@@ -107,7 +102,7 @@ void TrackerBase::processImage()
     pose.header.frame_id = "high_def_frame";
     pose.header.stamp = img_.header.stamp;
     tf::PoseTFToMsg(transform, pose.pose);
-    node_.publish(topic_name_, pose);
+    node_.publish(pose_topic_name_, pose);
 
     // Publish to TF
     tf_broadcaster_.sendTransform(transform, ros::Time::now(),
@@ -137,8 +132,12 @@ void TrackerBase::processImage()
   }
 
   // Visual feedback
-  if (display_)
-    cvShowImage(window_name_.c_str(), getDisplayImage(success));
+  if (node_.numSubscribers(display_topic_name_) > 0) {
+    display_img_.encoding = "rgb"; // TODO: temporary hack
+    image_msgs::CvBridge::fromIpltoRosImage(getDisplayImage(success), display_img_);
+    display_img_.encoding = "bgr";
+    node_.publish(display_topic_name_, display_img_);
+  }
 }
 
 void TrackerBase::spin()

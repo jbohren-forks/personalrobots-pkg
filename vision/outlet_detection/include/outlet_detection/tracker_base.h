@@ -85,10 +85,10 @@ protected:
   prosilica_cam::PolledImage::Response res_;
   std::string image_service_;
   std::string cam_info_service_;
-  image_msgs::Image& img_;
-  image_msgs::CamInfo& cam_info_;
+  image_msgs::Image &img_;
+  image_msgs::CamInfo &cam_info_;
   image_msgs::CvBridge img_bridge_;
-  std::string topic_name_;
+  std::string pose_topic_name_;
   tf::TransformBroadcaster tf_broadcaster_;
   tf::TransformListener tf_listener_;
   std::string target_frame_id_;
@@ -100,9 +100,10 @@ protected:
   double resize_factor_found_;
   double resize_factor_failed_;
   int target_roi_size_;
+
+  image_msgs::Image display_img_;
+  std::string display_topic_name_;
   
-  /*bool*/ int display_;
-  std::string window_name_;
   /*bool*/ int save_failures_;
   int save_count_;
   std::string save_prefix_;
