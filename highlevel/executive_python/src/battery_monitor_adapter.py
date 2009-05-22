@@ -75,6 +75,11 @@ class BatteryMonitorAdapter:
     mail_string += "\nSubject: Thanks! I've been plugged in."
     mail_string += "\n\nIf you're thinking about plugging me in after my last e-mail, don't bother. Someone else beat you to it. Thanks."
 
+    #since the robot's have mail servers installed on them... we'll just pipe out our e-mail
+    pipe = os.popen("%s -t" % self.mail_program, 'w')
+    pipe.write(mail_string)
+    pipe.close()
+
   def sendUnpluggedEmail(self):
     mail_string = "To: "
     for address in self.email_addresses: mail_string += address + ", "

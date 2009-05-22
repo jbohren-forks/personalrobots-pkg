@@ -95,15 +95,18 @@ class Executive:
         if (not self.plugged_email_sent) and self.batt_monitor.pluggedIn():
           self.batt_monitor.sendPluggedEmail()
           self.plugged_email_sent = True
+          print "Sent plugged e-mail"
         if self.batt_monitor.chargeDone():
           if(self.batt_monitor.pluggedIn()):
             if not self.unplug_email_sent:
               self.batt_monitor.sendUnPlugEmail()
               self.unplug_email_sent = True
+              print "Sent unplug e-mail"
           else:
             self.unplug_email_sent = False
             self.plugged_email_sent = False
             self.batt_monitor.sendUnpluggedEmail()
+            print "Sent unplugged e-mail"
             #resume the current goal
             self.navigator.sendGoal(self.current_goal, "map")
             self.state = "nav"
@@ -116,6 +119,7 @@ class Executive:
         """
         if self.navigator.goalReached():
           self.batt_monitor.sendPlugEmail()
+          print "Sent plug e-mail"
           self.state = "recharge"
           print "nav_charge --> recharge"
         elif not self.navigator.active() or self.navigator.timeUp():
