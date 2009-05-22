@@ -8,3 +8,9 @@ target_link_libraries(discover forearmcam)
 
 rospack_add_executable(killcam killcam.cpp)
 target_link_libraries(killcam forearmcam)
+
+rospack_add_executable(check_flash check_flash.cpp)
+target_link_libraries(check_flash forearmcam)
+
+rospack_add_executable(read_all_flash read_all_flash.cpp)
+target_link_libraries(read_all_flash forearmcam)
