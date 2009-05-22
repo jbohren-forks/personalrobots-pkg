@@ -144,7 +144,7 @@ namespace nav {
        * @brief  Clear the footprint of the robot in a given cost map
        * @param cost_map The costmap to apply the clearing opertaion on
        */
-      void clearRobotFootprint(costmap_2d::Costmap2D& cost_map);
+      //void clearRobotFootprint(costmap_2d::Costmap2D& cost_map);
 
       /**
        * @brief  Resets the costmaps to the static map outside a given window

@@ -129,6 +129,7 @@ namespace nav
     return tmp_pose;
   }
 
+  /*
   void MoveBaseDoorAction::clearRobotFootprint(Costmap2D& cost_map)
   {
     double useless_pitch, useless_roll, yaw;
@@ -148,6 +149,7 @@ namespace nav
     //make sure to re-inflate obstacles in the affected region
     cost_map.reinflateWindow(global_pose_.getOrigin().x(), global_pose_.getOrigin().y(), max_inflation_dist, max_inflation_dist);
   }
+  */
 
   void MoveBaseDoorAction::makePlan()
   {
