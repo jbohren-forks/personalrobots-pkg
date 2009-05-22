@@ -50,6 +50,7 @@ namespace nav {
 
     //get some parameters that will be global to the move base node
     ros_node_.param("~navfn/robot_base_frame", robot_base_frame_, std::string("base_link"));
+    ros_node_.param("~navfn/global_frame", global_frame_, std::string("map"));
     ros_node_.param("~controller_frequency", controller_frequency_, 20.0);
     ros_node_.param("~planner_patience", planner_patience_, 10.0);
     ros_node_.param("~controller_patience", controller_patience_, 10.0);
@@ -347,7 +348,7 @@ namespace nav {
         }
 
         //try to make a plan
-        if(done_half_rotation_ && !done_full_rotation_ || !tryPlan(goal_)){
+        if((done_half_rotation_ && !done_full_rotation_) || !tryPlan(goal_)){
           //if we've tried to reset our map and to rotate in place, to no avail, we'll abort the goal
           if(attempted_costmap_reset_ && done_full_rotation_){
             resetState();
@@ -356,6 +357,7 @@ namespace nav {
           }
 
           if(done_full_rotation_){
+            ROS_INFO("Done one full rotation");
             resetCostmaps(circumscribed_radius_ * 2, circumscribed_radius_ * 2);
             attempted_rotation_ = false;
             done_half_rotation_ = false;
@@ -363,12 +365,23 @@ namespace nav {
             attempted_costmap_reset_ = true;
           }
           else{
+            ROS_INFO("Setting new rotation goal");
             //clear things in the static map that are really far away
             resetCostmaps(3.0, 3.0);
             //if planning fails... we'll try rotating in place to clear things out
             double angle = M_PI; //rotate 180 degrees
-            tf::Stamped<tf::Pose> rotate_goal = tf::Stamped<tf::Pose>(tf::Pose(tf::Quaternion(angle, 0.0, 0.0), tf::Point(0.0, 0.0, 0.0)), ros::Time::now(), robot_base_frame_);
+            tf::Stamped<tf::Pose> rotate_goal = tf::Stamped<tf::Pose>(tf::Pose(tf::Quaternion(angle, 0.0, 0.0), tf::Point(0.0, 0.0, 0.0)), ros::Time(), robot_base_frame_);
             robot_msgs::PoseStamped rotate_goal_msg;
+
+            try{
+              tf_.transformPose(global_frame_, rotate_goal, rotate_goal);
+            }
+            catch(tf::TransformException& ex){
+              ROS_ERROR("This tf error should never happen, %s", ex.what());
+              return robot_actions::ABORTED;
+              
+            }
+
             PoseStampedTFToMsg(rotate_goal, rotate_goal_msg);
             global_plan_.clear();
             global_plan_.push_back(rotate_goal_msg);
