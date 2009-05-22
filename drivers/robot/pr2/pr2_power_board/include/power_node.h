@@ -28,15 +28,24 @@ class Device
 {
   public:
     ros::Time message_time;
-    TransitionMessage tmsg;
+    
+    const TransitionMessage &getTransitionMessage()
+    {
+      return tmsg;
+    }
+    void setTransitionMessage(const TransitionMessage &newtmsg);
+    
     const PowerMessage &getPowerMessage()
     {
       return pmsg;
     }
     void setPowerMessage(const PowerMessage &newpmsg);
-    Device() { pmsgset = false; };
+    
+    Device() { pmsgset = false; tmsgset = false; };
     ~Device() { };
   private:
+    bool tmsgset;
+    TransitionMessage tmsg;
     bool pmsgset;
     PowerMessage pmsg;  //last power message recived from device
 };

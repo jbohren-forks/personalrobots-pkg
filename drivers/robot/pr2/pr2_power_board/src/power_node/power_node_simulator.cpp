@@ -66,6 +66,36 @@ static PowerBoard *myBoard;
 
 void processSentMessage(CommandMessage *cmd);
 
+void Device::setTransitionMessage(const TransitionMessage &newtmsg)
+{
+  if (tmsgset)
+  {
+#define PRINT_IF_CHANGED(val)                                                                                 \
+for (int counter = 0; counter < 3; counter++)                                                                 \
+{                                                                                                             \
+  if (tmsg.cb[counter].val##_count != newtmsg.cb[counter].val##_count)                                        \
+  {                                                                                                           \
+    ROS_INFO("Power board: CB%i "#val" event count changed to %i.", counter, newtmsg.cb[counter].val##_count);\
+  }                                                                                                           \
+}
+
+  PRINT_IF_CHANGED(stop);
+  PRINT_IF_CHANGED(estop);
+  PRINT_IF_CHANGED(trip);
+  PRINT_IF_CHANGED(fail_18V);
+  PRINT_IF_CHANGED(disable);
+  PRINT_IF_CHANGED(start);
+  PRINT_IF_CHANGED(pump_fail);
+  PRINT_IF_CHANGED(reset);
+
+#undef PRINT_IF_CHANGED
+  }
+  else
+    tmsgset = 1;
+
+  tmsg = newtmsg;
+}
+
 void Device::setPowerMessage(const PowerMessage &newpmsg)
 {
   if (pmsgset)
@@ -254,7 +284,7 @@ int PowerBoard::process_transition_message(const TransitionMessage *msg)
   for (unsigned i = 0; i<Devices.size(); ++i) {
     if (Devices[i]->getPowerMessage().header.serial_num == msg->header.serial_num) {
       boost::mutex::scoped_lock(library_lock_);
-      memcpy(&(Devices[i]->tmsg), msg, sizeof(TransitionMessage));
+      Devices[i]->setTransitionMessage(*msg);
       return 0;
     }
   }
@@ -262,7 +292,7 @@ int PowerBoard::process_transition_message(const TransitionMessage *msg)
   // Add new device to list
   Device *newDevice = new Device();
   Devices.push_back(newDevice);
-  memcpy(&(newDevice->tmsg), msg, sizeof(TransitionMessage));
+  newDevice->setTransitionMessage(*msg);
   return 0;
 }
 
@@ -468,10 +498,10 @@ void PowerBoard::sendDiagnostic()
       stat.values.push_back(val);
 
 
-      TransitionMessage *tmsg = &device->tmsg;
+      const TransitionMessage *tmsg = &device->getTransitionMessage();
       for(int cb_index=0; cb_index < 3; ++cb_index)
       {
-        TransitionCount *trans = &tmsg->cb[cb_index];
+        const TransitionCount *trans = &tmsg->cb[cb_index];
         ROS_DEBUG("Transition: CB%d", cb_index);
         val.value = trans->stop_count;
         ss.str("");
