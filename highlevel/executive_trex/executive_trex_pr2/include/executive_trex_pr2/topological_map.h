@@ -150,6 +150,11 @@ namespace executive_trex_pr2 {
     AbstractDomain& _current_y;
     AbstractDomain& _target_x;
     AbstractDomain& _target_y;
+    AbstractDomain& _target_z;
+    AbstractDomain& _target_qx;
+    AbstractDomain& _target_qy;
+    AbstractDomain& _target_qz;
+    AbstractDomain& _target_qw;
   };
 
   /**

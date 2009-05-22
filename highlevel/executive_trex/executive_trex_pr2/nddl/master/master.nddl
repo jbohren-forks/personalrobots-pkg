@@ -192,7 +192,8 @@ M2Controller::Holds{
 	// Determine the next map point to go for. It will either be the outlet
 	// or it will be a doorway en-route to the outlet
 	bool thru_doorway;
-	map_get_next_move(cmd.x, cmd.y, cmd.z, cmd.qx, cmd.qy, cmd.qz, cmd.qw, thru_doorway, x, y, m2_active.x, m2_active.y);
+	map_get_next_move(cmd.x, cmd.y, cmd.z, cmd.qx, cmd.qy, cmd.qz, cmd.qw, thru_doorway, x, y, 
+			  m2_active.x, m2_active.y, m2_active.z, m2_active.qx, m2_active.qy, m2_active.qz, m2_active.qw);
 	map_get_nearest_connector(cmd.start_connector, x, y);
 	map_get_nearest_connector(cmd.end_connector, m2_active.x, m2_active.y);
 	if(thru_doorway == true){
@@ -207,7 +208,7 @@ M2Controller::Holds{
 }
 
 /**
- * The update does not change control states unless it aborted.
+ * The update does not change control states unless it is aborted. Instead, it updates with the new position data
  */
 MoveBehavior::Inactive{
   starts(m2_controller.Holds mc);

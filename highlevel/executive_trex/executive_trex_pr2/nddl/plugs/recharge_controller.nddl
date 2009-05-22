@@ -14,11 +14,6 @@ class PlugState extends AgentTimeline {
     float y;
     float z;
     defaultOnCommit(stowed, true);
-    /**    defaultOnCommit(frame_id, "base_footprint");
-    defaultOnCommit(x, 0.0);
-    defaultOnCommit(y, 0.0);
-    defaultOnCommit(z, 0.0);
-    */
   }
 
   PlugState(){super(Internal, "Holds");}
@@ -35,14 +30,6 @@ class OutletState extends AgentTimeline {
     float qy;
     float qz;
     float qw;
-    /*      defaultOnCommit(frame_id, "base_footprint");
-            defaultOnCommit(x, 3.0);
-            defaultOnCommit(y, 0.0);
-            defaultOnCommit(z, 0.0);
-            defaultOnCommit(qx, 0.0);
-            defaultOnCommit(qy, 0.0);
-            defaultOnCommit(qz, 0.0);
-            defaultOnCommit(qw, 1.0); */
 
   }
 
@@ -81,6 +68,7 @@ fact(recharge_controller.Holds rc_initial_state);
 rc_initial_state.active = false;
 
 RechargeController::Holds{
+/*
   if(active == false){
     contained_by(recharger.Inactive);
     // These could be contained_by relations but then we would need a heuristic in the solver to order
@@ -88,7 +76,7 @@ RechargeController::Holds{
     equals(outlet_state.Holds);
     equals(plug_state.Holds);
   }
-
+*/
   met_by(Holds p);
   defaultOnCommit(active, p.active);
   defaultOnCommit(in_position, p.in_position);
@@ -125,11 +113,10 @@ RechargeController::Holds {
 
     if (finishing == true) {
       if (arms_tucked == true){
-
-	// @todo Should there e a status assignment here? (CMG)
         meets(recharger.Inactive rc_inactive);
         eq(duration, 1);
         eq(s.active, false);
+	eq(rc_inactive.status, ABORTED);
       }
       if (arms_tucked == false) {
         if (plug_is_stowed == yes) {

@@ -1173,15 +1173,22 @@ namespace executive_trex_pr2 {
      _current_x(static_cast<AbstractDomain&>(getCurrentDomain(variables[8]))),
      _current_y(static_cast<AbstractDomain&>(getCurrentDomain(variables[9]))),
      _target_x(static_cast<AbstractDomain&>(getCurrentDomain(variables[10]))),
-     _target_y(static_cast<AbstractDomain&>(getCurrentDomain(variables[11]))){
-    checkError(variables.size() == 12, "Invalid signature for " << name.toString() << ". Check the constraint signature in the model.");
+     _target_y(static_cast<AbstractDomain&>(getCurrentDomain(variables[11]))),
+     _target_z(static_cast<AbstractDomain&>(getCurrentDomain(variables[12]))),
+     _target_qx(static_cast<AbstractDomain&>(getCurrentDomain(variables[13]))),
+     _target_qy(static_cast<AbstractDomain&>(getCurrentDomain(variables[14]))),
+     _target_qz(static_cast<AbstractDomain&>(getCurrentDomain(variables[15]))),
+     _target_qw(static_cast<AbstractDomain&>(getCurrentDomain(variables[16]))){
+    checkError(variables.size() == 17, "Invalid signature for " << name.toString() << ". Check the constraint signature in the model.");
     checkError(TopologicalMapAdapter::instance() != NULL, "Failed to allocate topological map accessor. Some configuration error.");
   }
     
   //*******************************************************************************************
   void MapGetNextMoveConstraint::handleExecute(){
     // Wait till inputs are bound. 
-    if(!_current_x.isSingleton() || !_current_y.isSingleton() || !_target_x.isSingleton() || !_target_y.isSingleton()) {
+    if(!_current_x.isSingleton() || !_current_y.isSingleton() || 
+       !_target_x.isSingleton() || !_target_y.isSingleton()|| !_target_z.isSingleton() ||
+       !_target_qx.isSingleton() || !_target_qy.isSingleton()|| !_target_qz.isSingleton() || !_target_qz.isSingleton()){
       debugMsg("map:get_next_move",  "Exiting as inputs are not all bound");
       return;
     }
@@ -1216,8 +1223,13 @@ namespace executive_trex_pr2 {
 	debugMsg("map:get_next_move",  "Selecting approach for outlet connector " << next_connector << " at <" << next_pose.position.x << ", " << next_pose.position.y << ">.");
       }
       else {
-	next_pose.position.x = target_x;
-	next_pose.position.y = target_y;
+	next_pose.position.x = _target_x.getSingletonValue();
+	next_pose.position.y = _target_y.getSingletonValue();
+	next_pose.position.z = _target_z.getSingletonValue();
+	next_pose.orientation.x = _target_qx.getSingletonValue();
+	next_pose.orientation.y = _target_qy.getSingletonValue();
+	next_pose.orientation.z = _target_qz.getSingletonValue();
+	next_pose.orientation.w = _target_qw.getSingletonValue();
 	debugMsg("map:get_next_move",  "Going straight for target at <" << next_pose.position.x << ", " << next_pose.position.y << ">.");
       }
     }

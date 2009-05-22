@@ -117,10 +117,12 @@ dc_initial_state.active = false;
 
 DoorController::Holds{
   // Bind values for inactive case
+  /*
   if(active == false){
     contained_by(doorman.Inactive);
     equals(door_state.Holds);
   }
+  */
 
   // We will assume default values on commitment based on predecessor. We really want these values to be bound. These values carry
   // forward from priors as they are updated by actions and we thus assume inertia (if we had the handle before and have no information
@@ -159,17 +161,14 @@ DoorController::Holds {
     if(finishing == true){
       if(have_handle == false){
 	if(arms_tucked == true){
+	  eq(s.active, false);
+	  meets(doorman.Inactive dm_inactive);
+	  eq(duration, 1);
 	  if(latch_state == LATCH_STATE_LOCKED){
-	    eq(s.active, false);
-	    meets(doorman.Inactive dm_inactive);
 	    eq(dm_inactive.status, ABORTED);
-	    eq(duration, 1);
 	  }
 	  else {	
-	    eq(s.active, false);
-	    meets(doorman.Inactive dm_inactive);
 	    eq(dm_inactive.status, SUCCESS);
-	    eq(duration, 1);
 	  }
 	}
 	if(arms_tucked == false){
