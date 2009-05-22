@@ -129,7 +129,7 @@ class pressureVisualizer:
         self.dataready = False
         self.lock = threading.Lock()
 
-        self.vis_pub = rospy.Publisher('/visualization_marker', Marker)
+        self.vis_pub = rospy.Publisher('visualization_marker', Marker)
         rospy.Subscriber(source, PressureState, self.callback)
         rospy.Subscriber(source + "_info", PressureInfo, self.info_callback)
         
@@ -137,11 +137,11 @@ class pressureVisualizer:
 
 if __name__ == '__main__':
     #@todo it would be nice to read an xml configuration file to get these parameters.
-    rospy.init_node('pressure/sphere_viz')
+    rospy.init_node('pressure_sphere_viz')
     rospy.sleep(.2)
         
-    pv1 = pressureVisualizer('r_gripper_motor')
-    pv2 = pressureVisualizer('l_gripper_motor')
+    pv1 = pressureVisualizer('pressure/r_gripper_motor')
+    pv2 = pressureVisualizer('pressure/l_gripper_motor')
     
     while not rospy.is_shutdown():
         rospy.sleep(0.09)

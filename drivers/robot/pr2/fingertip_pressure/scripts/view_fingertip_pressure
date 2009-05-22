@@ -58,7 +58,7 @@ class MainWindow(wx.Frame):
         
         sizer = wx.BoxSizer()
         self.SetSizer(sizer)
-        sizer.Add(GripperPressurePanel(self, '/pressure/r_gripper_motor'), 1, wx.EXPAND)
+        sizer.Add(GripperPressurePanel(self, 'pressure/r_gripper_motor'), 1, wx.EXPAND)
         
         #self.SetMaxSize(wx.Size(1500,1500))
 

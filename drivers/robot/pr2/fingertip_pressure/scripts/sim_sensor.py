@@ -67,7 +67,7 @@ class pressureSimulator:
         self.pub.publish(ps)
 
     def __init__(self, dest):
-        rospy.init_node('pressure/sim_sensor', anonymous=True)
+        rospy.init_node('sim_sensor', anonymous=True)
         rospy.sleep(.2)
         
         self.pub = rospy.Publisher(dest, PressureState)
@@ -75,8 +75,8 @@ class pressureSimulator:
 
 if __name__ == '__main__':
     #@todo it would be nice to read an xml configuration file to get these parameters.
-    s1 = pressureSimulator('r_gripper_motor')
-    s2 = pressureSimulator('l_gripper_motor')
+    s1 = pressureSimulator('pressure/r_gripper_motor')
+    s2 = pressureSimulator('pressure/l_gripper_motor')
         
     while not rospy.is_shutdown():
         rospy.sleep(0.1)
