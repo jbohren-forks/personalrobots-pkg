@@ -85,7 +85,6 @@ public:
     if (!filters::FilterBase<T>::getIntParam(std::string("neighbors"), neighbors_, 0))
     {
       ROS_INFO("Error: ShadowsFilter was not given neighbors.\n");
-      return false;
     }
 
     return true;
