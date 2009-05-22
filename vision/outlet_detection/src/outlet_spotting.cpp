@@ -1221,17 +1221,22 @@ public:
 
 	void turnHead(double panAngle, double tiltAngle)
 	{
-    robot_msgs::JointCmd joint_cmds;
-    joint_cmds.set_names_size(2);
-		joint_cmds.names[0] = "head_pan_joint";
-    joint_cmds.names[1] = "head_tilt_joint";
 
-		joint_cmds.positions[0]=panAngle;
-    joint_cmds.positions[0]=tiltAngle;
+          robot_msgs::JointCmd joint_cmds;
+          joint_cmds.set_names_size(2);
+          joint_cmds.set_positions_size(2);
+          joint_cmds.names[0] = "head_pan_joint";
+          joint_cmds.names[1] = "head_tilt_joint";
 
-    for(int i=0; i<10; i++)
-  		publish(head_controller_ + "/set_command_array", joint_cmds);
-		ros::Duration(1.0).sleep();
+          joint_cmds.positions[0]=panAngle;
+          joint_cmds.positions[1]=tiltAngle;
+
+          for(int i=0; i<10; i++)
+            {
+
+              publish(head_controller_ + "/set_command_array", joint_cmds);
+            }
+          ros::Duration(1.0).sleep();
 	}
 
 
@@ -1268,37 +1273,42 @@ public:
 	{
 		bool found = false;
 		subscribeToData();
-    robot_srvs::GetJointCmd::Request req_cmd;
-    robot_srvs::GetJointCmd::Response res_cmd;
+                robot_srvs::GetJointCmd::Request req_cmd;
+                robot_srvs::GetJointCmd::Response res_cmd;
 
-    if (!ros::service::call(head_controller_ + "/get_command_array", req_cmd, res_cmd))
-    {
-      ROS_ERROR("Outlet Spotting failed to get last commanded head positions.");
-      return found;
-    }    
+                if (!ros::service::call(head_controller_ + "/get_command_array", req_cmd, res_cmd))
+                  {
+                    ROS_ERROR("Outlet Spotting failed to get last commanded head positions.");
+                    return found;
+                  }    
+                
+                double panOrig, tiltOrig;
+                if(res_cmd.command.names[0]=="head_pan_joint")
+                  { 
+                    panOrig=res_cmd.command.positions[0]; 
+                    tiltOrig=res_cmd.command.positions[1]; 
+                  }
+                else
+                  {
+                    panOrig=res_cmd.command.positions[1]; 
+                    tiltOrig=res_cmd.command.positions[0];
+                  }
 
-    double panOrig, tiltOrig;
-    if(res_cmd.command.names[0]=="head_pan_joint")
-    { 
-      panOrig=res_cmd.command.positions[0]; 
-      tiltOrig=res_cmd.command.positions[1]; 
-    }
-    else
-    {
-      panOrig=res_cmd.command.positions[1]; 
-      tiltOrig=res_cmd.command.positions[0];
-    }
-
-		float directions[][2] = { {0,0}, {-15,-10}, {0,-10}, {15,-10}, {15,0}, {0,0}, {-15,0},{-15,10}, {0,10},{15,10} };
+		double directions[][2] = { {0,0}, {-15,-10}, {0,-10}, {15,-10}, {15,0}, {0,0}, {-15,0},{-15,10}, {0,10},{15,10} };
 
 		for (size_t k=0; k<sizeof(directions)/sizeof(directions[0]); ++k)
 		{
-      double panAngle = panOrig + directions[k][0]*M_PI/180.0;
-      double tiltAngle = tiltOrig + directions[k][1]*M_PI/180.0;
-			turnHead(panAngle,tiltAngle);
-			found = runDetectLoop(pose);
 
-			if (found) break;
+                  double panAngle = panOrig + directions[k][0]*M_PI/180.0;
+                  double tiltAngle = tiltOrig + directions[k][1]*M_PI/180.0;
+		  
+                  turnHead(panAngle,tiltAngle);
+		  found = runDetectLoop(pose);
+                  
+		  if (found){
+
+                    break;
+                  }
 
 		}
 
