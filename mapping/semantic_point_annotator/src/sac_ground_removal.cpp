@@ -409,9 +409,9 @@ class GroundRemoval
         ROS_INFO ("Cloud view point in frame %s is: %g, %g, %g.", cloud_frame.c_str (),
                   viewpoint_cloud.point.x, viewpoint_cloud.point.y, viewpoint_cloud.point.z);
       }
-      catch (tf::ConnectivityException)
+      catch (tf::TransformException& ex)
       {
-        ROS_WARN ("Could not transform a point from frame %s to frame %s!", viewpoint_laser.header.frame_id.c_str (), cloud_frame.c_str ());
+        ROS_WARN ("Could not transform a point from frame %s to frame %s! %s", viewpoint_laser.header.frame_id.c_str (), cloud_frame.c_str (), ex.what());
         // Default to 0.05, 0, 0.942768
         viewpoint_cloud.point.x = 0.05; viewpoint_cloud.point.y = 0.0; viewpoint_cloud.point.z = 0.942768;
       }
@@ -435,7 +435,13 @@ class GroundRemoval
       tmp[1] = stamped_in.y;
       tmp[2] = stamped_in.z;
 
-      tf->transformPoint (target_frame, tmp, tmp);
+      try{
+        tf->transformPoint (target_frame, tmp, tmp);
+      }
+      catch (tf::TransformException& ex)
+      {
+        ROS_ERROR("%s", ex.what());
+      }
 
       stamped_out.stamp_ = tmp.stamp_;
       stamped_out.frame_id_ = tmp.frame_id_;
