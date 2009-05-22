@@ -174,7 +174,7 @@ private:
 class ForearmNode
 {
 private:
-  ros::Node &node_;
+  ros::NodeHandle &node_handle_;
   IpCamList* camera_;
   image_msgs::Image image_;
   image_msgs::CamInfo cam_info_;
@@ -200,6 +200,10 @@ private:
   in_addr localIp_;
   int port_;
   
+  ros::Publisher cam_pub_;
+  ros::Publisher cam_info_pub_;
+  ros::ServiceClient trig_service_;
+  
   boost::mutex diagnostics_lock_;
 
   unsigned char mac_[6];
@@ -224,8 +228,8 @@ private:
 public:
   int exit_status_;
 
-  ForearmNode(ros::Node &node)
-    : node_(node), camera_(NULL), started_video_(false),
+  ForearmNode(ros::NodeHandle &nh)
+    : node_handle_(nh), camera_(NULL), started_video_(false),
       diagnostic_(this, ros::NodeHandle()), 
       freq_diag_(desired_freq_, desired_freq_, 0.05)
   {
@@ -240,22 +244,22 @@ public:
     missed_eof_count_ = 0;
     
     // Read parameters
-    node_.param("~if_name", if_name_, std::string("eth0"));
+    node_handle_.param("~if_name", if_name_, std::string("eth0"));
 
-    if (node_.hasParam("~ip_address"))
-      node_.getParam("~ip_address", ip_address_);
+    if (node_handle_.hasParam("~ip_address"))
+      node_handle_.getParam("~ip_address", ip_address_);
     else {
       ROS_FATAL("IP address not specified");
       exit_status_ = 1;
-      node_.shutdown();
+      node_handle_.shutdown();
       return;
     }
 
-    node_.param("~port", port_, 9090);
+    node_handle_.param("~port", port_, 9090);
 
-    node_.param("~ext_trigger", ext_trigger_, false);
+    node_handle_.param("~ext_trigger", ext_trigger_, false);
 
-    node_.param("~video_mode", mode_name_, std::string("752x480x15"));
+    node_handle_.param("~video_mode", mode_name_, std::string("752x480x15"));
     if (mode_name_.compare("752x480x15") == 0)
       video_mode_ = MT9VMODE_752x480x15b1;
     else if (mode_name_.compare("752x480x12.5") == 0)
@@ -279,7 +283,7 @@ public:
     else {
       ROS_FATAL("Unknown video mode %s", mode_name_.c_str());
       exit_status_ = 1;
-      node_.shutdown();
+      node_handle_.shutdown();
       return;
     }
 
@@ -293,7 +297,7 @@ public:
     desired_freq_ = imager_freq_ = MODE_FPS[ video_mode_ ];
 
     // Specify which frame to add to message header
-    node_.param("~frame_id", frame_id_, std::string("NO_FRAME"));
+    node_handle_.param("~frame_id", frame_id_, std::string("NO_FRAME"));
     image_.header.frame_id = frame_id_;
     cam_info_.header.frame_id = frame_id_;
     cam_info_.width = width_;
@@ -302,7 +306,7 @@ public:
     // Configure camera
     configure(if_name_, ip_address_, port_);
 
-    if (node_.ok())
+    if (node_handle_.ok())
     {
       freq_diag_.clear(); // Avoids having an error until the window fills up.
       diagnostic_.add(&ForearmNode::freqStatus );
@@ -315,7 +319,7 @@ public:
   {
     //int frameless_updates = 0;
     
-    while (node_.ok())
+    while (node_handle_.ok())
     {
       { 
         boost::mutex::scoped_lock(diagnostics_lock_);
@@ -345,7 +349,7 @@ public:
   ~ForearmNode()
   {
     // Stop threads
-    node_.shutdown();
+    node_handle_.shutdown();
     if (image_thread_)
     {
       if (image_thread_->timed_join((boost::posix_time::milliseconds) 2000))
@@ -374,7 +378,7 @@ public:
       ROS_DEBUG("Stopping triggering.");
       trig_req_.running = 0;
       ros::Node shutdown_node("forearm_node", ros::Node::ANONYMOUS_NAME | ros::Node::DONT_ADD_ROSOUT_APPENDER); // Need this because the node has been shutdown already
-      if (!ros::service::call(trig_controller_cmd_, trig_req_, trig_rsp_))
+      if (!trig_service_.call(trig_req_, trig_rsp_))
       { // This probably means that the trigger controller was turned off,
         // so we don't really care.
         ROS_DEBUG("Was not able to stop triggering.");
@@ -414,22 +418,22 @@ public:
     if( pr2Discover(if_name.c_str(), &camList, ip_address.c_str(), SEC_TO_USEC(0.5)) == -1) {
       ROS_FATAL("Discover error");
       exit_status_ = 1;
-      node_.shutdown();
+      node_handle_.shutdown();
       return;
     }
 
     if (pr2CamListNumEntries(&camList) == 0) {
       ROS_FATAL("No cameras found");
       exit_status_ = 1;
-      node_.shutdown();
+      node_handle_.shutdown();
       return;
     }
 
     // Open camera with requested serial number.
     int index = -1;
-    if (node_.hasParam("~serial_number")) {
+    if (node_handle_.hasParam("~serial_number")) {
       int sn;
-      node_.getParam("~serial_number", sn);
+      node_handle_.getParam("~serial_number", sn);
       index = pr2CamListFind(&camList, sn);
       if (index == -1) {
         ROS_FATAL("Couldn't find camera with S/N %i", sn);
@@ -454,7 +458,7 @@ public:
         ROS_FATAL("Found camera with S/N #%u", camera_->serial);
         exit_status_ = 1;
       }
-      node_.shutdown();
+      node_handle_.shutdown();
       return;
     }
 
@@ -466,7 +470,7 @@ public:
       } else {
         ROS_FATAL("IP address configuration failed");
         exit_status_ = 1;
-        node_.shutdown();
+        node_handle_.shutdown();
         return;
       }
     }
@@ -481,7 +485,7 @@ public:
     if ( wgEthGetLocalMac(camera_->ifName, &localMac_) != 0 ) {
       ROS_FATAL("Unable to get local MAC address for interface %s", camera_->ifName);
       exit_status_ = 1;
-      node_.shutdown();
+      node_handle_.shutdown();
       return;
     }
 
@@ -489,7 +493,7 @@ public:
     if ( wgIpGetLocalAddr(camera_->ifName, &localIp_) != 0) {
       ROS_FATAL("Unable to get local IP address for interface %s", camera_->ifName);
       exit_status_ = 1;
-      node_.shutdown();
+      node_handle_.shutdown();
       return;
     }
       
@@ -497,7 +501,7 @@ public:
     if ( pr2TriggerControl( camera_, ext_trigger_ ? TRIG_STATE_EXTERNAL : TRIG_STATE_INTERNAL ) != 0) {
       ROS_FATAL("Trigger mode set error. Is %s accessible from interface %s? (Try running route to check.)", ip_address.c_str(), if_name.c_str());
       exit_status_ = 1;
-      node_.shutdown();
+      node_handle_.shutdown();
       return;
     }
 
@@ -505,49 +509,43 @@ public:
     {
       // How fast should we be triggering the camera? By default 1 Hz less
       // than nominal.
-      node_.param("~trigger_rate", trig_rate_, imager_freq_ - 1.);
+      node_handle_.param("~trigger_rate", trig_rate_, imager_freq_ - 1.);
       desired_freq_ = trig_rate_;
 
       // Configure the triggering controller
-      if (node_.hasParam("~trigger_controller") )
+      if (node_handle_.hasParam("~trigger_controller") )
       {
-        node_.getParam("~trigger_controller", trig_controller_);
+        node_handle_.getParam("~trigger_controller", trig_controller_);
         ROS_INFO("Configuring controller \"%s\" for triggering.", trig_controller_.c_str());
         trig_controller_cmd_ = trig_controller_ + "/set_waveform";
 
         double trig_phase_;
-        node_.param("~trigger_phase", trig_phase_, 0.);
+        node_handle_.param("~trigger_phase", trig_phase_, 0.);
 
-        ROS_DEBUG("Setting trigger off.");
-        trig_req_.running = 0;
+        ROS_DEBUG("Setting trigger.");
+        trig_req_.running = 1;
         trig_req_.rep_rate = trig_rate_; 
         trig_req_.phase = trig_phase_;
         trig_req_.active_low = 0;
         trig_req_.pulsed = 1;
         trig_req_.duty_cycle = 0; // Unused in pulsed mode.
 
-        if (!ros::service::call(trig_controller_cmd_, trig_req_, trig_rsp_))
+        trig_service_ = node_handle_.serviceClient<robot_mechanism_controllers::SetWaveform>(trig_controller_cmd_);
+        // Retry a few times in case the service is just coming up.
+        bool ret_val = false;
+        for (int retry_count = 0; retry_count < 5 && ! ret_val; retry_count++)
         {
-          ROS_FATAL("Unable to set trigger controller.");
-          exit_status_ = 1;
-          node_.shutdown();
-          return;
+          ret_val = trig_service_.call(trig_req_, trig_rsp_);
+          if (ret_val)
+            break;
+          sleep(1);
         }
 
-        ROS_DEBUG("Waiting for current frame to be guaranteed complete.");
-
-        // Wait twice the expected time just to be safe.
-        ros::Duration(2/imager_freq_).sleep();
-
-        ROS_DEBUG("Starting trigger.");
-
-        trig_req_.running = 1;
-
-        if (!ros::service::call(trig_controller_cmd_, trig_req_, trig_rsp_))
+        if (!ret_val)
         {
           ROS_FATAL("Unable to set trigger controller.");
           exit_status_ = 1;
-          node_.shutdown();
+          node_handle_.shutdown();
           return;
         }
       }
@@ -559,15 +557,15 @@ public:
 
     // First packet offset parameter
 
-    node_.param("~first_packet_offset", first_packet_offset_, 0.0025);
-    if (!node_.hasParam("~first_packet_offset") && trig_controller_.empty())
+    node_handle_.param("~first_packet_offset", first_packet_offset_, 0.0025);
+    if (!node_handle_.hasParam("~first_packet_offset") && trig_controller_.empty())
       ROS_INFO("first_packet_offset not specified. Using default value of %f ms.", first_packet_offset_);
 
     // Select a video mode
     if ( pr2ImagerModeSelect( camera_, video_mode_ ) != 0) {
       ROS_FATAL("Mode select error");
       exit_status_ = 1;
-      node_.shutdown();
+      node_handle_.shutdown();
       return;
     }
 
@@ -576,7 +574,7 @@ public:
     if ( pr2SensorWrite( camera_, 0xBD, 240 ) != 0) {
       ROS_FATAL("Sensor write error");
       exit_status_ = 1;
-      node_.shutdown();
+      node_handle_.shutdown();
       return;
     }
     */
@@ -597,7 +595,7 @@ public:
                       inet_ntoa(localIp_), port_) != 0 ) {
       ROS_FATAL("Video start error");
       exit_status_ = 1;
-      node_.shutdown();
+      node_handle_.shutdown();
       return;
     }
     started_video_ = true;
@@ -605,12 +603,13 @@ public:
 
     // Receive frames through callback
     // TODO: start this in separate thread?
-    node_.advertise<image_msgs::Image>("~image_raw", 1);
+    cam_pub_ = node_handle_.advertise<image_msgs::Image>("~image_raw", 1);
     if (calibrated_)
-      node_.advertise<image_msgs::CamInfo>("~cam_info", 1);
-    
-
+      cam_info_pub_ = node_handle_.advertise<image_msgs::CamInfo>("~cam_info", 1);
+      
     image_thread_ = new boost::thread(boost::bind(&ForearmNode::imageThread, this, port_));
+    
+    ROS_INFO("Camera running.");
   }
 
   void imageThread(int port)
@@ -665,10 +664,10 @@ private:
     fillImage(image_, "image", height, width, 1, "bayer_bggr", "uint8", frameData);
     
     image_.header.stamp = t;
-    node_.publish("~image_raw", image_);
+    cam_pub_.publish(image_);
     if (calibrated_) {
       cam_info_.header.stamp = t;
-      node_.publish("~cam_info", cam_info_);
+      cam_info_pub_.publish(cam_info_);
     }
     freq_diag_.tick();
   }
@@ -731,7 +730,7 @@ private:
   {
     boost::mutex::scoped_lock(diagnostics_lock_);
     
-    if (!node_.ok())
+    if (!node_handle_.ok())
       return 1;
     
     if (frame_info == NULL)
@@ -760,7 +759,9 @@ private:
     else
       unfilteredImageTime = getFreeRunningFrameTime(frameStartTime);
 
-    //ROS_DEBUG("first_packet %f unfilteredImageTime %f frame_id %u", frameStartTime, unfilteredImageTime, frame_info->frame_number);
+    //static double lastunfiltered;
+    //ROS_DEBUG("first_packet %f unfilteredImageTime %f frame_id %u deltaunf: %f", frameStartTime, unfilteredImageTime, frame_info->frame_number, unfilteredImageTime - lastunfiltered);
+    //lastunfiltered = unfilteredImageTime;
     
     double imageTime = frameTimeFilter_.run(unfilteredImageTime, frame_info->frame_number);
     if (imageTime < 0) // Signals an early frame arrival.
@@ -783,6 +784,7 @@ private:
     if (misfire_blank_ > 0)
     {
       ROS_WARN("Dropping frame #%u because of mistrigger event.", frame_info->frame_number);
+      misfire_blank_--;
     }
 
     last_image_time_ = imageTime;
@@ -893,11 +895,11 @@ private:
 
 int main(int argc, char **argv)
 {
-  ros::init(argc, argv);
-  ros::Node n("forearm_node");
-  ForearmNode fn(n);
-  n.spin();
-  ROS_DEBUG("Exited from n.spin()");
+  ros::init(argc, argv, "forearm_node");
+  ros::NodeHandle nh;
+  ForearmNode fn(nh);
+  ros::spin();
+  ROS_DEBUG("Exited from nh.spin()");
 	
 #ifdef __CHECK_FD_FREE__
   int s=socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
