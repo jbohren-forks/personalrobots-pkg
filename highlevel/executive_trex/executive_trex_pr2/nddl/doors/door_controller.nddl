@@ -381,6 +381,10 @@ DetectDoor::Inactive{
       eq(dc.finishing, true);
     }
   }
+  if(status == ABORTED){
+    starts(door_controller.Holds dc);
+    eq(dc.check_doorway, true);
+  }
 }
 
 CheckPath::Inactive{
