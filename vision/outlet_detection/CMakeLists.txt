@@ -58,7 +58,7 @@ add_custom_command(OUTPUT ${PROJECT_SOURCE_DIR}/test/outlets_2009_05_20_part1
                    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/test
                    VERBATIM)
 # Run a test on that data
-rospack_add_rostest(test/test_outlets_2009_05_20_part1.xml)
+rospack_add_rostest_future(test/test_outlets_2009_05_20_part1.xml)
 
 #################
 # Test 2
@@ -72,7 +72,7 @@ add_custom_command(OUTPUT ${PROJECT_SOURCE_DIR}/test/outlets_2009_05_20_part2
                    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/test
                    VERBATIM)
 # Run a test on that data
-rospack_add_rostest(test/test_outlets_2009_05_20_part2.xml)
+rospack_add_rostest_future(test/test_outlets_2009_05_20_part2.xml)
 
 
 # Set up dependencies so that we unpack the data before running tests
