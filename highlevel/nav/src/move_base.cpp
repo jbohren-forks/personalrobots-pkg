@@ -141,8 +141,10 @@ namespace nav {
       while(!found_legal && p.pose.position.y < req.goal.pose.position.y + req.tolerance){
         while(!found_legal && p.pose.position.x < req.goal.pose.position.x + req.tolerance){
           if(planner_->makePlan(p, global_plan)){
-            global_plan.push_back(p);
-            found_legal = true;
+            if(!global_plan.empty()){
+              global_plan.push_back(p);
+              found_legal = true;
+            }
           }
           p.pose.position.x += resolution;
         }
@@ -155,6 +157,8 @@ namespace nav {
     for(unsigned int i = 0; i < global_plan.size(); ++i){
       resp.plan.poses[i] = global_plan[i];
     }
+
+
 
     return true;
   }
@@ -188,6 +192,12 @@ namespace nav {
 
     std::vector<robot_msgs::PoseStamped> global_plan;
     bool valid_plan = planner_->makePlan(goal, global_plan);
+
+    //sometimes the planner returns zero length plans and reports success
+    if(global_plan.empty()){
+      valid_plan = false;
+    }
+
 
     //we'll also push the goal point onto the end of the plan to make sure orientation is taken into account
     if(valid_plan){
