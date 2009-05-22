@@ -1034,7 +1034,7 @@ namespace executive_trex_pr2 {
     robot_msgs::Pose connector_approach_pose;
     getDoorApproachPose(doorway_connector, connector_approach_pose);
     unsigned int current_region = getRegion(current_x, current_y);
-    unsigned int approach_point_region = getRegion(current_x, current_y);
+    unsigned int approach_point_region = getRegion(connector_approach_pose.position.x, connector_approach_pose.position.y);
 
     if(approach_point_region == current_region){
       debugMsg("map:get_next_move", "The region of interest is the current region.");
