@@ -1202,7 +1202,7 @@ namespace executive_trex_pr2 {
     // Wait till inputs are bound. 
     if(!_current_x.isSingleton() || !_current_y.isSingleton() || 
        !_target_x.isSingleton() || !_target_y.isSingleton()|| !_target_z.isSingleton() ||
-       !_target_qx.isSingleton() || !_target_qy.isSingleton()|| !_target_qz.isSingleton() || !_target_qz.isSingleton()){
+       !_target_qx.isSingleton() || !_target_qy.isSingleton()|| !_target_qz.isSingleton() || !_target_qw.isSingleton()){
       debugMsg("map:get_next_move",  "Exiting as inputs are not all bound");
       return;
     }

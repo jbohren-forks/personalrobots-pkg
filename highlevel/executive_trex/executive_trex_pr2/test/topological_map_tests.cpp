@@ -111,6 +111,12 @@ TEST(executive_trex_pr2, map_get_next_move){
   Variable<IntervalDomain> current_y(ce, IntervalDomain(), false, true, "current_y");
   Variable<IntervalDomain> target_x(ce, IntervalDomain(), false, true, "target_x");
   Variable<IntervalDomain> target_y(ce, IntervalDomain(), false, true, "target_y");
+  Variable<IntervalDomain> target_z(ce, IntervalDomain(), false, true, "target_z");
+  Variable<IntervalDomain> target_qx(ce, IntervalDomain(), false, true, "target_qx");
+  Variable<IntervalDomain> target_qy(ce, IntervalDomain(), false, true, "target_qy");
+  Variable<IntervalDomain> target_qz(ce, IntervalDomain(), false, true, "target_qz");
+  Variable<IntervalDomain> target_qw(ce, IntervalDomain(), false, true, "target_qw");
+
   std::vector<ConstrainedVariableId> scope;
   scope.push_back(next_x.getId());
   scope.push_back(next_y.getId());
@@ -124,6 +130,17 @@ TEST(executive_trex_pr2, map_get_next_move){
   scope.push_back(current_y.getId());
   scope.push_back(target_x.getId());
   scope.push_back(target_y.getId());
+  scope.push_back(target_z.getId());
+  scope.push_back(target_qx.getId());
+  scope.push_back(target_qy.getId());
+  scope.push_back(target_qz.getId());
+  scope.push_back(target_qw.getId());
+
+  target_z.specify(0);
+  target_qx.specify(0);
+  target_qy.specify(0);
+  target_qz.specify(0);
+  target_qw.specify(0);
 
   MapGetNextMoveConstraint::MapGetNextMoveConstraint map_get_next_move("map_next_move", "Default", ce, scope);
   ASSERT_TRUE(ce->propagate());
