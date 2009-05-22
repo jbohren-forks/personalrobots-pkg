@@ -1118,15 +1118,28 @@ namespace executive_trex_pr2 {
     debugMsg("map:get_next_move", "Shortest path from <" << x1 << ", " << y1 << "> to <" << x2 << ", " << y2 << "> is " << pathToString(path));
     unsigned int next_connector = path[1];
 
+    // The next connector is insuffient if we are already close to it. In the case that it is a door connecto we have to check against
+    // the approach point of the connector. Otherwise we can check against the connector itself.
+    robot_msgs::Pose pose;
+    if(isDoorwayConnector(next_connector)){
+      getDoorApproachPose(next_connector, pose);
+    }
+    else {
+      getConnectorPosition(next_connector, pose.position.x, pose.position.y);
+    }
+
     // We can take this next connector, except for the case where it's approach point is already really close to where we are. This check
     // only occurs where there are additional connectors to choose from and where the approach point for the connector is within our navigation tolerance. This
     // should also only arise if the connector is on a doorway
-    if(path.size() > 3 && isDoorwayConnector(next_connector)){
-      robot_msgs::Pose pose;
-      getDoorApproachPose(next_connector, pose);
-      if(fabs(pose.position.x - x1) < 0.2 && fabs(pose.position.y - y1) < 0.2){
+    bool too_close = fabs(pose.position.x - x1) < 0.1 && fabs(pose.position.y - y1) < 0.1;
+    if(too_close){
+      if(path.size() > 3){
 	debugMsg("map:get_next_move", "Switching to successor as we are already at approach <" << pose.position.x << ", " << pose.position.y << "> for connector " << next_connector);
 	next_connector = path[2];
+      }
+      else {
+	debugMsg("map:get_next_move", "Next connector is already achieved so skip it <" << pose.position.x << ", " << pose.position.y << "> for connector " << next_connector);
+	next_connector = 0;
       }
     }
 
