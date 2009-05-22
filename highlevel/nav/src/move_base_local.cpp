@@ -64,6 +64,7 @@ namespace nav {
 
     //create the ros wrapper for the controller's costmap... and initializer a pointer we'll use with the underlying map
     controller_costmap_ros_ = new Costmap2DROS(ros_node_, tf_, std::string("base_local_planner"));
+    controller_costmap_ros_->clearRobotFootprint();
     controller_costmap_ros_->getCostmapCopy(controller_costmap_);
 
 
