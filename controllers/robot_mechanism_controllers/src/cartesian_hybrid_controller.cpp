@@ -353,6 +353,10 @@ bool CartesianHybridController::starting()
   task_frame_offset_ = KDL::Frame::Identity();
   //tool_frame_offset_ = KDL::Frame::Identity();
 
+  for (int i = 0; i < 6; ++i) {
+    pose_pids_[i].reset();
+    twist_pids_[i].reset();
+  }
 
   switch(initial_mode_)
   {
@@ -387,6 +391,7 @@ bool CartesianHybridController::starting()
     }
     break;
   default:
+    ROS_FATAL("initial_mode_ is %d", initial_mode_);
     return false;
   }
 
