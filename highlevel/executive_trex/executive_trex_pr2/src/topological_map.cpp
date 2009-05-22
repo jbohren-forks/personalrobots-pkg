@@ -1028,45 +1028,50 @@ namespace executive_trex_pr2 {
   }
 
   /**
-   * Algorithm to see if we are crossing a doorway
-   * 1. We have the target connector. We know this is really close - in fact it is within the grid resolution of being in the doorway
-   * 2. We have the point where we are.
-   *
-   * Find the point a small distance (0.1 m) from the target connector in the direction of the current point. This is important since the current point may be pretty far away
-   * but the target connector is really on the doorway border.
    */
   bool TopologicalMapAdapter::isDoorway(double current_x, double current_y, unsigned int doorway_connector){
-
-    // Regions for next conecttor are a and b
-    unsigned int region_a, region_b;
-    getConnectorRegions(doorway_connector, region_a, region_b);
-
-    // There can be many connectors for the current region
+    unsigned int region_of_interest(0);
+    robot_msgs::Pose connector_approach_pose;
+    getDoorApproachPose(doorway_connector, connector_approach_pose);
     unsigned int current_region = getRegion(current_x, current_y);
-    std::vector<unsigned int> current_region_connectors;
-    getRegionConnectors(current_region, current_region_connectors);
+    unsigned int approach_point_region = getRegion(current_x, current_y);
 
-    // Iterate over the connectors.
-    unsigned int shared_region(0);
-    for(std::vector<unsigned int>::const_iterator it = current_region_connectors.begin(); it != current_region_connectors.end(); ++it){
-      unsigned int a, b;
-      getConnectorRegions(*it, a, b);
-      if (a == region_a || a == region_b){
-	shared_region = a;
-	break;
-      }
-      else if(b == region_a || b == region_b){
-	shared_region = b;
-	break;
+    if(approach_point_region == current_region){
+      debugMsg("map:get_next_move", "The region of interest is the current region.");
+      region_of_interest = current_region;
+    }
+    else {
+      // If r(appraoch(doorway_connector)) == r(current) the rion of interest == r(current
+      // Regions for next conecttor are a and b
+      unsigned int region_a, region_b;
+      getConnectorRegions(doorway_connector, region_a, region_b);
+
+      // There can be many connectors for the current region
+      std::vector<unsigned int> current_region_connectors;
+      getRegionConnectors(current_region, current_region_connectors);
+
+      // Iterate over the connectors.
+      for(std::vector<unsigned int>::const_iterator it = current_region_connectors.begin(); it != current_region_connectors.end(); ++it){
+	unsigned int a, b;
+	getConnectorRegions(*it, a, b);
+	if (a == region_a || a == region_b){
+	  region_of_interest = a;
+	  break;
+	}
+	else if(b == region_a || b == region_b){
+	  region_of_interest = b;
+	  break;
+	}
       }
     }
+
     bool is_doorway(false);
 
-    if(shared_region > 0){
-      debugMsg("map:get_next_move", "Found shared region " << shared_region);
-      isDoorway(shared_region, is_doorway);
+    if(region_of_interest > 0){
+      debugMsg("map:get_next_move", "Found shared region " << region_of_interest);
+      isDoorway(region_of_interest, is_doorway);
 
-      debugMsg("map:get_next_move", shared_region << (is_doorway ? " is " : " is not ") << "a doorway");
+      debugMsg("map:get_next_move", region_of_interest << (is_doorway ? " is " : " is not ") << "a doorway");
     }
 
     /*
