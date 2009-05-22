@@ -155,7 +155,7 @@ namespace laser_scan
  
   };
 
-  boost::numeric::ublas::matrix<double>& LaserProjection::getUnitVectors(float angle_min, float angle_max, float angle_increment)
+  const boost::numeric::ublas::matrix<double>& LaserProjection::getUnitVectors(float angle_min, float angle_max, float angle_increment)
   {
     //construct string for lookup in the map
     std::stringstream anglestring;

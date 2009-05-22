@@ -20,3 +20,6 @@ target_link_libraries (scan_shadows_filter_node laser_scan)
 
 rospack_add_executable(scan_to_cloud src/scan_to_cloud.cpp)
 target_link_libraries (scan_to_cloud laser_scan)
+
+rospack_add_gtest(test/projection_test test/projection_test.cpp)
+target_link_libraries (test/projection_test laser_scan)

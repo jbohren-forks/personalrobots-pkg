@@ -82,13 +82,11 @@ namespace laser_scan
       /** \brief Transform a laser_scan::LaserScan into a PointCloud in target frame */
       void transformLaserScanToPointCloud (const std::string& target_frame, robot_msgs::PointCloud & cloudOut, const laser_scan::LaserScan & scanIn, tf::Transformer & tf, int mask = DEFAULT_MASK, bool preservative = false);
 
+      /** \brief Return the unit vectors for this configuration
+       * Return the unit vectors for this configuration.    */
+      const boost::numeric::ublas::matrix<double>& getUnitVectors(float angle_max, float angle_min, float angle_increment);
 
     private:
-      /** \brief Return the unit vectors for this configuration
-       * Return the unit vectors for this configuration.
-       * if they have not been calculated yet, calculate them and store them
-       * Otherwise it will return them from memory. */
-      boost::numeric::ublas::matrix<double>& getUnitVectors(float angle_max, float angle_min, float angle_increment);
 
       ///The map of pointers to stored values
       std::map<std::string,boost::numeric::ublas::matrix<double>* > unit_vector_map_;
