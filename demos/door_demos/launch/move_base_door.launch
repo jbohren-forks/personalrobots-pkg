@@ -7,7 +7,7 @@
     <node machine="three" pkg="doors_core" type="move_base_door" respawn="false" name="door_reactive_planner">
 
       <param name="action_max_allowed_time" value="120.0" />
-      <param name="controller_frequency" value="20.0" />
+      <param name="controller_frequency" value="5.0" />
       <param name="min_distance_from_obstacles" value="0.025" />
       <param name="max_waypoint_distance" value="0.01" />
       <param name="max_waypoint_rot_distance" value="0.2" />
@@ -46,6 +46,13 @@
       <param name="costmap/base_scan_marking/data_type" value="PointCloud" />
       <param name="costmap/base_scan_marking/clearing" value="false" />
       <param name="costmap/base_scan_marking/marking" value="true" />
+
+      <param name="costmap/tilt_scan/sensor_frame" value="frame_from_message" />
+      <param name="costmap/tilt_scan/observation_persistance" value="0.0" />
+      <param name="costmap/tilt_scan/expected_update_rate" value="0.2" />
+      <param name="costmap/tilt_scan/data_type" value="LaserScan" />
+      <param name="costmap/tilt_scan/clearing" value="true" />
+      <param name="costmap/tilt_scan/marking" value="false" />	
 
       <param name="costmap/rolling_window" value="true" />
       <param name="costmap/static_map" value="false" />
