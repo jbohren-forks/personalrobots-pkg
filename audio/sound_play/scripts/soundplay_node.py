@@ -162,13 +162,12 @@ class soundplay:
                         logger.debug('command for uncached text: "%s"'%data.arg)
                     else:
                         logger.debug('command for cached text: "%s"'%data.arg)
-                        print "old text "+data.arg
                     sound = self.voicesounds[data.arg]
                 else:
                     sound = self.builtinsounds[data.sound]
                 sound.command(data.command)
         except:
-            logger.debug('Exception in callback'%sys.exc_info()[0])
+            logger.debug('Exception in callback: %s'%sys.exc_info()[0])
         finally:
             self.mutex.release()
 
@@ -201,7 +200,7 @@ class soundplay:
         try:
             mixer.init(11025, -16, 1, 4000)
             self.builtinsounds = {
-                    SoundRequest.BACKINGUP              : soundtype(os.path.join(rootdir, 'BACKINGUP.ogg'), 0.5),
+                    SoundRequest.BACKINGUP              : soundtype(os.path.join(rootdir, 'BACKINGUP.ogg'), 0.1),
                     SoundRequest.NEEDS_UNPLUGGING       : soundtype(os.path.join(rootdir, 'NEEDS_UNPLUGGING.ogg')),
                     SoundRequest.NEEDS_PLUGGING         : soundtype(os.path.join(rootdir, 'NEEDS_PLUGGING.ogg')),
                     SoundRequest.NEEDS_UNPLUGGING_BADLY : soundtype(os.path.join(rootdir, 'NEEDS_UNPLUGGING_BADLY.ogg')),
@@ -211,7 +210,7 @@ class soundplay:
             self.voicesounds = {}
             self.hotlist = []
         except:
-            logger.fatal('Exception in sound startup'%sys.exc_info()[0])
+            logger.fatal('Exception in sound startup: %s'%sys.exc_info()[0])
 
         rospy.Subscriber("robotsound", SoundRequest, self.callback)
 
@@ -221,7 +220,7 @@ class soundplay:
             try:
                 self.cleanup()
             except:
-                logger.debug('Exception in cleanup'%sys.exc_info()[0])
+                logger.debug('Exception in cleanup: %s'%sys.exc_info()[0])
 
             self.mutex.release()
 
