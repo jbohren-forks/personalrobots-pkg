@@ -42,6 +42,7 @@ from time import sleep
 from laser_scan.msg import *
 from robot_msgs.msg import *
 from std_msgs.msg import *
+from dense_laser_assembler.msg import *
 from pr2_mechanism_controllers.msg import *
 from dense_laser_assembler.dense_laser_cache import DenseLaserCache
 from image_msgs.msg import *
@@ -125,7 +126,7 @@ def interval_req_callback(scans) :
     joint_msg.data.layout = MultiArrayLayout([ MultiArrayDimension('rows', rows, rows*2),
                                                MultiArrayDimension('cols', 2, 2),
                                                MultiArrayDimension('elem', 1, 1) ], 0 )
-    joint_msg.data.layout = layout
+    #joint_msg.data.layout = layout
 
     # Clear out data from the info message. (Keep everything except intensity and range data)
     #info_msg.ranges = [ ]

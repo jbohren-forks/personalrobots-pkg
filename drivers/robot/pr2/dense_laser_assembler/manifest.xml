@@ -16,6 +16,10 @@
   <depend package="laser_scan"/>
   <depend package="pr2_mechanism_controllers"/>
   <depend package="image_msgs" />
+  
+  <export>
+    <cpp cflags="-I${prefix}/msg/cpp"/>
+  </export>
 
 </package>
 
