@@ -343,18 +343,44 @@ namespace base_local_planner {
   bool TrajectoryPlannerROS::updatePlan(const std::vector<robot_msgs::PoseStamped>& orig_global_plan){
     //reset the global plan
     global_plan_.clear();
+    global_plan_ = orig_global_plan;
 
-    //transform the plan into the frame of the controller
+    return true;
+  }
+
+  bool TrajectoryPlannerROS::transformGlobalPlan(std::vector<robot_msgs::PoseStamped>& transformed_plan){
+    const robot_msgs::PoseStamped& plan_pose = global_plan_[0];
+
+    transformed_plan.clear();
+
     try{
-      for(unsigned int i = 0; i < orig_global_plan.size(); ++i){
-        robot_msgs::PoseStamped new_pose;
-        new_pose = orig_global_plan[i];
-        if(!tf_.canTransform(global_frame_, new_pose.header.frame_id, new_pose.header.stamp, ros::Duration(update_plan_tolerance_))){
-          ROS_ERROR("TrajectoryPlannerROS cannot service your goal because the transform is not available, we waited %.4f seconds, plan time: %.4f, current_time: %.4f, i: %d, size: %d", update_plan_tolerance_, new_pose.header.stamp.toSec(), ros::Time::now().toSec(), i, orig_global_plan.size());
-          return false;
-        }
-        tf_.transformPose(global_frame_, new_pose, new_pose);
-        global_plan_.push_back(new_pose);
+      if (!global_plan_.size() > 0)
+      {
+        ROS_ERROR("Recieved plan with zero length");
+        return false;
+      }
+
+      tf::Stamped<tf::Transform> transform;
+      tf_.lookupTransform(global_frame_, ros::Time(), 
+          plan_pose.header.frame_id, plan_pose.header.stamp, 
+          plan_pose.header.frame_id, transform);
+
+
+      tf::Stamped<tf::Pose> tf_pose;
+      robot_msgs::PoseStamped newer_pose;
+
+      //we'll look ahead on the path the size of our window
+      unsigned int needed_path_length = std::max(costmap_.cellSizeX(), costmap_.cellSizeY());
+
+      for(unsigned int i = 0; i < std::min(global_plan_.size(), needed_path_length); ++i){
+        const robot_msgs::PoseStamped& new_pose = global_plan_[i];
+        PoseStampedMsgToTF(new_pose, tf_pose);
+        tf_pose.setData(transform * tf_pose);
+        tf_pose.stamp_ = transform.stamp_;
+        tf_pose.frame_id_ = global_frame_;
+        PoseStampedTFToMsg(tf_pose, newer_pose);
+
+        transformed_plan.push_back(newer_pose);
       }
     }
     catch(tf::LookupException& ex) {
@@ -367,10 +393,12 @@ namespace base_local_planner {
     }
     catch(tf::ExtrapolationException& ex) {
       ROS_ERROR("Extrapolation Error: %s\n", ex.what());
-      if (orig_global_plan.size() > 0)
-        ROS_ERROR("Global Frame: %s Plan Frame size %d: %s\n", global_frame_.c_str(),orig_global_plan.size(), orig_global_plan[0].header.frame_id.c_str());
+      if (global_plan_.size() > 0)
+        ROS_ERROR("Global Frame: %s Plan Frame size %d: %s\n", global_frame_.c_str(), global_plan_.size(), global_plan_[0].header.frame_id.c_str());
+
       return false;
     }
+
     return true;
   }
 
@@ -409,9 +437,17 @@ namespace base_local_planner {
       return false;
     }
 
+    std::vector<robot_msgs::PoseStamped> transformed_plan;
+    //get the global plan in our frame
+    if(!transformGlobalPlan(transformed_plan)){
+      ROS_WARN("Could not transform the global plan to the frame of the controller");
+      return false;
+    }
+
     //now we'll prune the plan based on the position of the robot
     if(prune_plan)
-      prunePlan(global_pose, global_plan_);
+      prunePlan(global_pose, transformed_plan, global_plan_);
+
 
     //we also want to clear the robot footprint from the costmap we're using
     clearRobotFootprint(global_pose, costmap_);
@@ -442,11 +478,11 @@ namespace base_local_planner {
     */
 
     //if the global plan passed in is empty... we won't do anything
-    if(global_plan_.empty())
+    if(transformed_plan.empty())
       return false;
 
     tf::Stamped<tf::Pose> goal_point;
-    tf::PoseStampedMsgToTF(global_plan_.back(), goal_point);
+    tf::PoseStampedMsgToTF(transformed_plan.back(), goal_point);
     //we assume the global goal is the last point in the global plan
     double goal_x = goal_point.getOrigin().getX();
     double goal_y = goal_point.getOrigin().getY();
@@ -470,7 +506,7 @@ namespace base_local_planner {
           goal_reached_ = true;
       }
       else {
-        tc_->updatePlan(global_plan_);
+        tc_->updatePlan(transformed_plan);
 
         obs_lock_.lock();
         //compute what trajectory to drive along
@@ -482,14 +518,14 @@ namespace base_local_planner {
 
       //publish the robot footprint and an empty plan because we've reached our goal position
       publishFootprint(global_pose);
-      publishPlan(global_plan_, "global_plan", 0.0, 1.0, 0.0, 0.0);
+      publishPlan(transformed_plan, "global_plan", 0.0, 1.0, 0.0, 0.0);
       publishPlan(local_plan, "local_plan", 0.0, 0.0, 1.0, 0.0);
 
       //we don't actually want to run the controller when we're just rotating to goal
       return true;
     }
 
-    tc_->updatePlan(global_plan_);
+    tc_->updatePlan(transformed_plan);
 
     obs_lock_.lock();
     //compute what trajectory to drive along
@@ -515,7 +551,7 @@ namespace base_local_planner {
     if(path.cost_ < 0){
       local_plan.clear();
       publishFootprint(global_pose);
-      publishPlan(global_plan_, "global_plan", 0.0, 1.0, 0.0, 0.0);
+      publishPlan(transformed_plan, "global_plan", 0.0, 1.0, 0.0, 0.0);
       publishPlan(local_plan, "local_plan", 0.0, 0.0, 1.0, 0.0);
       return false;
     }
@@ -549,7 +585,7 @@ namespace base_local_planner {
 
     //publish information to the visualizer
     publishFootprint(global_pose);
-    publishPlan(global_plan_, "global_plan", 0.0, 1.0, 0.0, 0.0);
+    publishPlan(transformed_plan, "global_plan", 0.0, 1.0, 0.0, 0.0);
     publishPlan(local_plan, "local_plan", 0.0, 0.0, 1.0, 0.0);
     return true;
   }
@@ -558,19 +594,22 @@ namespace base_local_planner {
     return tc_->getLocalGoal(x, y);
   }
 
-  void TrajectoryPlannerROS::prunePlan(const tf::Stamped<tf::Pose>& global_pose, std::vector<robot_msgs::PoseStamped>& plan){
+  void TrajectoryPlannerROS::prunePlan(const tf::Stamped<tf::Pose>& global_pose, std::vector<robot_msgs::PoseStamped>& plan, std::vector<robot_msgs::PoseStamped>& global_plan){
+    ROS_ASSERT(global_plan.size() >= plan.size());
     std::vector<robot_msgs::PoseStamped>::iterator it = plan.begin();
+    std::vector<robot_msgs::PoseStamped>::iterator global_it = global_plan.begin();
     while(it != plan.end()){
       const robot_msgs::PoseStamped& w = *it;
       // Fixed error bound of 2 meters for now. Can reduce to a portion of the map size or based on the resolution
       double x_diff = global_pose.getOrigin().x() - w.pose.position.x;
       double y_diff = global_pose.getOrigin().y() - w.pose.position.y;
-      double distance = sqrt(x_diff * x_diff + y_diff * y_diff);
-      if(distance < 1){
+      double distance_sq = x_diff * x_diff + y_diff * y_diff;
+      if(distance_sq < 1){
         ROS_DEBUG("Nearest waypoint to <%f, %f> is <%f, %f>\n", global_pose.getOrigin().x(), global_pose.getOrigin().y(), w.pose.position.x, w.pose.position.y);
         break;
       }
       it = plan.erase(it);
+      global_it = global_plan.erase(global_it);
     }
   }
 

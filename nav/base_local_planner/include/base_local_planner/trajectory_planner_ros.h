@@ -183,8 +183,15 @@ namespace base_local_planner {
        * @brief  Trim off parts of the global plan that are far enough behind the robot
        * @param global_pose The pose of the robot in the global frame
        * @param plan The plan to be pruned
+       * @param global_plan The plan to be pruned inf the frame of the planner
        */
-      void prunePlan(const tf::Stamped<tf::Pose>& global_pose, std::vector<robot_msgs::PoseStamped>& plan);
+      void prunePlan(const tf::Stamped<tf::Pose>& global_pose, std::vector<robot_msgs::PoseStamped>& plan, std::vector<robot_msgs::PoseStamped>& global_plan);
+
+      /**
+       * @brief  Transforms the global plan of the robot from the planner frame to the local frame
+       * @param transformed_plan Populated with the transformed plan
+       */
+      bool transformGlobalPlan(std::vector<robot_msgs::PoseStamped>& transformed_plan);
 
       /**
        * @brief  Publishes the footprint of the robot for visualization purposes
