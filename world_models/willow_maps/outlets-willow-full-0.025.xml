@@ -105,7 +105,7 @@
  </outlet>
 
  <outlet id="16">
-   <origin xyz="34.90 39.10 0.3" rpy="0 0 3.14" /> <!-- meters, radians -->
+   <origin xyz="38.95 38.45 0.3" rpy="0 0 3.14" /> <!-- meters, radians -->
    <sockets size="4" color="orange" />
    <room number="123"/>
    <notes description="move unused desk"/>
