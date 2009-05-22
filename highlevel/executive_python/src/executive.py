@@ -44,9 +44,10 @@ from std_msgs.msg import *
 from robot_msgs.msg import *
 from battery_monitor_adapter import *
 from navigation_adapter import *
+from stuck_adapter import *
 
 class Executive:
-  def __init__(self, goals, chrg_stations, navigator, batt_monitor, cycle_time):
+  def __init__(self, goals, chrg_stations, navigator, batt_monitor, unstuck, cycle_time):
     rospy.init_node("Executive", anonymous=True)
     self.goals = goals
     self.chrg_stations = chrg_stations
@@ -57,6 +58,9 @@ class Executive:
     self.current_goal = self.goals[0]
     self.plugged_email_sent = False
     self.unplug_email_sent = False
+    self.unstuck = unstuck
+    self.unstuck_time = rospy.get_time()
+    self.stuck = False
 
   def legalStates(self):
     return self.navigator.legalState() and self.batt_monitor.legalState()
@@ -64,6 +68,21 @@ class Executive:
   def doCycle(self):
     #make sure that all adapters have legal states
     if self.legalStates():
+      #check if we're stuck
+      #if self.unstuck.stuck():
+        #self.unstuck.getUnstuck()
+
+      if self.unstuck.stuck() and self.unstuck_time + 15.0 < rospy.get_time() and not self.stuck:
+        self.stuck = True
+        print "Oh no, I'm stuck... asking for help"
+        self.batt_monitor.sendStuckEmail()
+      else:
+        if self.stuck:
+          print "I've gotten myself unstuck... calling off the help"
+          self.batt_monitor.sendUnstuckEmail()
+          self.stuck = False
+        self.unstuck_time = rospy.get_time()
+
       if self.state == "nav":
         """ 
           State Transitions from nav:
@@ -151,6 +170,7 @@ if __name__ == '__main__':
   try:
     batt_monitor = BatteryMonitorAdapter(.25, .75, "battery_state", ["watts@willowgarage.com", "eitan@willowgarage.com", "pr2-users@lists.willowgarage.com"], "pre", "/usr/sbin/sendmail")
     navigator = NavigationAdapter(30, 300, "/move_base/feedback", "/move_base/activate")
+    unstuck = StuckAdapter("/base_controller/state", "/cmd_vel", 0.5) 
 
     goals = [
      [[18.912, 28.568, 0.000], [0.000, 0.000, 0.000, 1.000]],
@@ -165,7 +185,7 @@ if __name__ == '__main__':
     [[18.098, 21.015, 0.000], [0.000, 0.000, 0.713, 0.701]]
     ]
 
-    executive = Executive(goals, chrg_stations, navigator, batt_monitor, 1.0)
+    executive = Executive(goals, chrg_stations, navigator, batt_monitor, unstuck, 1.0)
     executive.run()
   except KeyboardInterrupt, e:
     pass

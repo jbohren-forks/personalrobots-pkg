@@ -116,5 +116,29 @@ class BatteryMonitorAdapter:
     pipe.write(mail_string)
     pipe.close()
 
+  def sendStuckEmail(self):
+    mail_string = "To: "
+    for address in self.email_addresses: mail_string += address + ", "
+    mail_string += "\nFrom: %s@willowgarage.com" % self.robot_name
+    mail_string += "\nSubject: My caster is stuck! Help!"
+    mail_string += "\n\nMy caster seems to be stuck! I have a solution to get myself unstuck, but it is dangerous and needs to be tested tomorrow. For now, could you please come wiggle me a bit? Its probably my back right caster. \n\nThanks much,\n%s" % self.robot_name
+
+    #since the robot's have mail servers installed on them... we'll just pipe out our e-mail
+    pipe = os.popen("%s -t" % self.mail_program, 'w')
+    pipe.write(mail_string)
+    pipe.close()
+
+  def sendUnstuckEmail(self):
+    mail_string = "To: "
+    for address in self.email_addresses: mail_string += address + ", "
+    mail_string += "\nFrom: %s@willowgarage.com" % self.robot_name
+    mail_string += "\nSubject: Whew, false alarm. I'm unstuck."
+    mail_string += "\n\nSorry to cause trouble. It turns out I got myself unstuck. I'll just keep driving... sorry for the trouble and any concern I've caused. \n\nThanks much,\n%s" % self.robot_name
+
+    #since the robot's have mail servers installed on them... we'll just pipe out our e-mail
+    pipe = os.popen("%s -t" % self.mail_program, 'w')
+    pipe.write(mail_string)
+    pipe.close()
+
   def pluggedIn(self):
     return self.state.power_consumption >= 0.0
