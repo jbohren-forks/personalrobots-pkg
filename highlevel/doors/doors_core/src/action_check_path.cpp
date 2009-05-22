@@ -63,18 +63,6 @@ robot_actions::ResultStatus CheckPathAction::execute(const robot_msgs::PoseStamp
 {
   ROS_INFO("CheckPathAction: execute");
 
-
-  // check how far goal point is from current robot pose
-  if (!tf_.canTransform("base_footprint", goal.header.frame_id, Time())){
-    ROS_ERROR("cannot transform goal from %s to %s at time %f", goal.header.frame_id.c_str(), string("base_footprint").c_str(), 0.0);
-    return robot_actions::ABORTED;
-  }
-  Stamped<Pose> goal_pose, robot_pose; tf_.lookupTransform("base_footprint", goal.header.frame_id, Time(), robot_pose);
-  tf::PoseStampedMsgToTF(goal, goal_pose);
-  double length_straight = (goal_pose.getOrigin()-robot_pose.getOrigin()).length();
-  ROS_INFO("Try to find path to (%f %f %f), which is %f [m] from the current robot pose.", 
-	   goal.pose.position.x, goal.pose.position.y, goal.pose.position.z, length_straight);
-
   // transform goal message to map frame
   robot_msgs::PoseStamped goal_tr;
   ros::Duration timeout(3.0);
@@ -84,9 +72,22 @@ robot_actions::ResultStatus CheckPathAction::execute(const robot_msgs::PoseStamp
   }
   tf_.transformPose(fixed_frame, goal, goal_tr);
 
+  // check how far goal point is from current robot pose
+  if (!tf_.canTransform(goal_tr.header.frame_id, "base_footprint", Time())){
+    ROS_ERROR("cannot get transform from %s to %s at time %f", goal_tr.header.frame_id.c_str(), string("base_footprint").c_str(), 0.0);
+    return robot_actions::ABORTED;
+  }
+  tf::Stamped<tf::Transform> robot_pose, goal_pose;
+  tf_.lookupTransform("base_footprint", goal_tr.header.frame_id, Time(), robot_pose);
+  tf::PoseStampedMsgToTF(goal_tr, goal_pose);
+  double length_straight = (goal_pose * robot_pose).getOrigin().length();
+  ROS_INFO("Try to find path to (%f %f %f), which is %f [m] from the current robot pose.", 
+	   goal_tr.pose.position.x, goal_tr.pose.position.y, goal_tr.pose.position.z, length_straight);
+
+
   ROS_INFO("call planner to find path");
   req_plan.goal = goal_tr;
-  req_plan.tolerance = 0.5;
+  req_plan.tolerance = 1.0;
   if (!ros::service::call("move_base/make_plan", req_plan, res_plan)){
     if (isPreemptRequested()){
       ROS_ERROR("preempted");
