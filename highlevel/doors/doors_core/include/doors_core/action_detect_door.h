@@ -49,7 +49,7 @@ namespace door_handle_detector{
 class DetectDoorAction: public robot_actions::Action<door_msgs::Door, door_msgs::Door>
 {
 public:
-  DetectDoorAction(ros::Node& node);
+  DetectDoorAction(ros::Node& node, tf::TransformListener& tf);
 
   ~DetectDoorAction();
 
@@ -59,7 +59,7 @@ public:
 
 private:
   bool laserDetection(const door_msgs::Door& door_in, door_msgs::Door& door_out);
-  tf::TransformListener tf_;
+  tf::TransformListener& tf_;
 
 };
 

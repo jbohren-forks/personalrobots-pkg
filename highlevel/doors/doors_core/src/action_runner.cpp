@@ -35,11 +35,22 @@
 /* Author: Wim Meeussen */
 
 #include <door_msgs/Door.h>
+#include "doors_core/action_detect_door.h"
+#include "doors_core/action_detect_handle.h"
+#include "doors_core/action_check_path.h"
+#include "doors_core/action_grasp_handle.h"
+#include "doors_core/action_detect_handle_no_camera.h"
+#include "doors_core/action_open_door.h"
 #include "doors_core/action_push_door.h"
+#include "doors_core/action_release_handle.h"
+#include "doors_core/action_touch_door.h"
+#include "doors_core/action_unlatch_handle.h"
+
+
 #include <robot_actions/action.h>
 #include <robot_actions/action_runner.h>
 #include <pr2_robot_actions/DoorActionState.h>
-
+#include <pr2_robot_actions/CheckPathState.h>
 
 using namespace door_handle_detector;
 
@@ -52,12 +63,31 @@ int main(int argc, char** argv)
 {
   ros::init(argc,argv); 
 
-  ros::Node node("action_runner_push_door");
+  ros::Node node("action_runner_door_domain");
+  tf::TransformListener tf(node);
 
-  PushDoorAction push(node);
+  DetectDoorAction detect_door(node, tf);
+  DetectHandleAction detect_handle(node, tf);
+  CheckPathAction check_path(node, tf);
+  GraspHandleAction grasp(node, tf);
+  DetectHandleNoCameraAction detect_handle_no_camera(node, tf);
+  OpenDoorAction open(node, tf);
+  PushDoorAction push(node, tf);
+  TouchDoorAction touch(node, tf);
+  ReleaseHandleAction release(node, tf);
+  UnlatchHandleAction unlatch(node, tf);
 
   robot_actions::ActionRunner runner(10.0);
+  runner.connect<door_msgs::Door, pr2_robot_actions::DoorActionState, door_msgs::Door>(detect_door);
+  runner.connect<door_msgs::Door, pr2_robot_actions::DoorActionState, door_msgs::Door>(detect_handle);  
+  runner.connect<robot_msgs::PoseStamped, pr2_robot_actions::CheckPathState, int8_t>(check_path);
+  runner.connect<door_msgs::Door, pr2_robot_actions::DoorActionState, door_msgs::Door>(detect_handle_no_camera);  
+  runner.connect<door_msgs::Door, pr2_robot_actions::DoorActionState, door_msgs::Door>(grasp);
+  runner.connect<door_msgs::Door, pr2_robot_actions::DoorActionState, door_msgs::Door>(open);
   runner.connect<door_msgs::Door, pr2_robot_actions::DoorActionState, door_msgs::Door>(push);
+  runner.connect<door_msgs::Door, pr2_robot_actions::DoorActionState, door_msgs::Door>(release);
+  runner.connect<door_msgs::Door, pr2_robot_actions::DoorActionState, door_msgs::Door>(touch);
+  runner.connect<door_msgs::Door, pr2_robot_actions::DoorActionState, door_msgs::Door>(unlatch);
 
   runner.run();
   node.spin();

@@ -49,10 +49,10 @@ static const string fixed_frame = "odom_combined";
 
 
 
-GraspHandleAction::GraspHandleAction(Node& node) : 
+GraspHandleAction::GraspHandleAction(Node& node, tf::TransformListener& tf) : 
   robot_actions::Action<door_msgs::Door, door_msgs::Door>("grasp_handle"), 
   node_(node),
-  tf_(node)
+  tf_(tf)
 {
   node_.advertise<std_msgs::Float64>("r_gripper_effort_controller/command",10);
 };

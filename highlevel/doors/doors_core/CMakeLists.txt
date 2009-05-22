@@ -10,56 +10,20 @@ genmsg()
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 
 # executive interface
-rospack_add_executable(action_runner_check_path
+rospack_add_executable(action_runner
                        src/action_check_path.cpp 
-		       src/action_runner_check_path.cpp
-                      )
-
-rospack_add_executable(action_runner_detect_door
                        src/action_detect_door.cpp 
-		       src/action_runner_detect_door.cpp
+                       src/action_detect_handle.cpp
+                       src/action_detect_handle_no_camera.cpp
+                       src/action_grasp_handle.cpp
+                       src/action_touch_door.cpp
+                       src/action_push_door.cpp
+                       src/action_open_door.cpp
+                       src/action_unlatch_handle.cpp
+                       src/action_release_handle.cpp
+		       src/action_runner.cpp
                       )
 
-rospack_add_executable(action_runner_detect_handle
-		       src/action_detect_handle.cpp 	     
-		       src/action_runner_detect_handle.cpp
-                      )
-
-
-rospack_add_executable(action_runner_detect_handle_no_camera
-		       src/action_detect_handle_no_camera.cpp 	     
-		       src/action_runner_detect_handle_no_camera.cpp
-                      )
-
-rospack_add_executable(action_runner_grasp_handle
-		       src/action_grasp_handle.cpp 
-		       src/action_runner_grasp_handle.cpp
-                      )
-
-rospack_add_executable(action_runner_touch_door
-		       src/action_touch_door.cpp 
-		       src/action_runner_touch_door.cpp
-                      )
-
-rospack_add_executable(action_runner_push_door
-		       src/action_push_door.cpp 
-		       src/action_runner_push_door.cpp
-                      )
-
-rospack_add_executable(action_runner_open_door
-		       src/action_open_door.cpp
-		       src/action_runner_open_door.cpp
-                      )
-
-rospack_add_executable(action_runner_unlatch_handle
-       		       src/action_unlatch_handle.cpp		
-		       src/action_runner_unlatch_handle.cpp
-                      )
-
-rospack_add_executable(action_runner_release_handle
-		       src/action_release_handle.cpp 
-		       src/action_runner_release_handle.cpp
-                      )
 
 # test
 rospack_add_executable(trigger_check_path

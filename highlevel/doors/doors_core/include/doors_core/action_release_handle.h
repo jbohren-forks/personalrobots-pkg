@@ -57,7 +57,7 @@ namespace door_handle_detector{
 class ReleaseHandleAction: public robot_actions::Action<door_msgs::Door, door_msgs::Door>
 {
 public:
-  ReleaseHandleAction(ros::Node& node);
+  ReleaseHandleAction(ros::Node& node, tf::TransformListener& tf);
   ~ReleaseHandleAction();
 
   virtual robot_actions::ResultStatus execute(const door_msgs::Door& goal, door_msgs::Door& feedback);
@@ -67,7 +67,7 @@ public:
 
 private:
   ros::Node& node_;
-  tf::TransformListener tf_; 
+  tf::TransformListener& tf_; 
   robot_msgs::PoseStamped pose_msg_;
   tf::Stamped<tf::Pose> gripper_pose_;
   bool pose_received_;

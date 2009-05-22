@@ -65,7 +65,8 @@ int
   pose.pose.orientation.w = 1.0;
 
   ros::Node node("trigger_check_path");
-  door_handle_detector::CheckPathAction check_path(node);
+  tf::TransformListener tf(node);
+  door_handle_detector::CheckPathAction check_path(node, tf);
   robot_actions::ActionRunner runner(10.0);
   runner.connect<robot_msgs::PoseStamped, pr2_robot_actions::CheckPathState, int8_t>(check_path);
   runner.run();

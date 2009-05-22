@@ -51,10 +51,10 @@ static const double push_vel  = 10.0 * M_PI/180.0;  // 10 [deg/sec]
 
 
 
-PushDoorAction::PushDoorAction(Node& node) : 
+PushDoorAction::PushDoorAction(Node& node, tf::TransformListener& tf) : 
   robot_actions::Action<door_msgs::Door, door_msgs::Door>("push_door"), 
   node_(node),
-  tf_(node)
+  tf_(tf)
 {
   node_.advertise<std_msgs::Float64>("r_gripper_effort_controller/command",10);
   node_.advertise<robot_msgs::PoseStamped>("r_arm_cartesian_pose_controller/command",20);

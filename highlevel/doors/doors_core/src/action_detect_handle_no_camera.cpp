@@ -53,10 +53,10 @@ static const double scan_speed  = 0.1; // [m/sec]
 static const double scan_height = 0.4; //[m]
 static const unsigned int max_retries = 5;
 
-DetectHandleNoCameraAction::DetectHandleNoCameraAction(Node& node): 
+DetectHandleNoCameraAction::DetectHandleNoCameraAction(Node& node, tf::TransformListener& tf): 
   robot_actions::Action<door_msgs::Door, door_msgs::Door>("detect_handle_no_camera"),
   node_(node),
-  tf_(node)
+  tf_(tf)
 {
   node_.advertise<robot_msgs::PointStamped>("head_controller/head_track_point",10);
 };

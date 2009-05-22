@@ -54,13 +54,16 @@ namespace door_handle_detector{
 class OpenDoorAction: public robot_actions::Action<door_msgs::Door, door_msgs::Door>
 {
 public:
-  OpenDoorAction(ros::Node& node);
+  OpenDoorAction(ros::Node& node, tf::TransformListener& tf);
   ~OpenDoorAction();
 
   virtual robot_actions::ResultStatus execute(const door_msgs::Door& goal, door_msgs::Door& feedback);
 
 private:
   ros::Node& node_;
+
+  tf::TransformListener& tf_;
+
   manipulation_msgs::TaskFrameFormalism tff_door_;
 };
 

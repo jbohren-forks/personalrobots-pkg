@@ -49,10 +49,10 @@ static const double touch_dist = 0.65;
 
 
 
-TouchDoorAction::TouchDoorAction(Node& node) : 
+TouchDoorAction::TouchDoorAction(Node& node, tf::TransformListener& tf) : 
   robot_actions::Action<door_msgs::Door, door_msgs::Door>("touch_door"), 
   node_(node),
-  tf_(node)
+  tf_(tf)
 {
   node_.advertise<std_msgs::Float64>("r_gripper_effort_controller/command",10);
 };

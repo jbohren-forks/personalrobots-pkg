@@ -50,7 +50,7 @@ namespace door_handle_detector{
 class CheckPathAction: public robot_actions::Action<robot_msgs::PoseStamped, int8_t>
 {
 public:
-  CheckPathAction(ros::Node& node);
+  CheckPathAction(ros::Node& node, tf::TransformListener& tf);
   ~CheckPathAction();
 
   virtual robot_actions::ResultStatus execute(const robot_msgs::PoseStamped& goal, int8_t& feedback);
@@ -59,7 +59,7 @@ public:
 
 private:
   ros::Node& node_;
-  tf::TransformListener tf_; 
+  tf::TransformListener& tf_; 
 
   nav_srvs::Plan::Request  req_plan;
   nav_srvs::Plan::Response res_plan;

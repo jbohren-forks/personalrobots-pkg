@@ -55,7 +55,7 @@ namespace door_handle_detector{
 class GraspHandleAction: public robot_actions::Action<door_msgs::Door, door_msgs::Door>
 {
 public:
-  GraspHandleAction(ros::Node& node);
+  GraspHandleAction(ros::Node& node, tf::TransformListener& tf);
   ~GraspHandleAction();
 
   virtual robot_actions::ResultStatus execute(const door_msgs::Door& goal, door_msgs::Door& feedback);
@@ -63,7 +63,7 @@ public:
 
 private:
   ros::Node& node_;
-  tf::TransformListener tf_; 
+  tf::TransformListener& tf_; 
 
   robot_srvs::MoveToPose::Request  req_moveto;
   robot_srvs::MoveToPose::Response res_moveto;

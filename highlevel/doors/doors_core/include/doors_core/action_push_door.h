@@ -56,7 +56,7 @@ namespace door_handle_detector{
 class PushDoorAction: public robot_actions::Action<door_msgs::Door, door_msgs::Door>
 {
 public:
-  PushDoorAction(ros::Node& node);
+  PushDoorAction(ros::Node& node, tf::TransformListener& tf);
   ~PushDoorAction();
 
   virtual robot_actions::ResultStatus execute(const door_msgs::Door& goal, door_msgs::Door& feedback);
@@ -66,7 +66,7 @@ private:
   void poseCallback();
 
   ros::Node& node_;
-  tf::TransformListener tf_; 
+  tf::TransformListener& tf_; 
 
   robot_msgs::PoseStamped pose_msg_;
   tf::Stamped<tf::Pose> pose_state_;

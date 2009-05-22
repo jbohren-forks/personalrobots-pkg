@@ -48,9 +48,10 @@ using namespace door_functions;
 static const string fixed_frame = "odom_combined";
 
 
-OpenDoorAction::OpenDoorAction(Node& node) :
+OpenDoorAction::OpenDoorAction(Node& node, tf::TransformListener& tf) :
   robot_actions::Action<door_msgs::Door, door_msgs::Door>("open_door"),
-  node_(node)
+  node_(node),
+  tf_(tf)
 {
   node_.advertise<manipulation_msgs::TaskFrameFormalism>("r_arm_cartesian_tff_controller/command", 10);
 };

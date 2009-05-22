@@ -49,7 +49,7 @@ namespace door_handle_detector{
 class DetectHandleAction: public robot_actions::Action<door_msgs::Door, door_msgs::Door>
 {
 public:
-  DetectHandleAction(ros::Node& node);
+  DetectHandleAction(ros::Node& node, tf::TransformListener& tf);
   ~DetectHandleAction();
 
 
@@ -62,7 +62,7 @@ private:
   bool cameraDetection(const door_msgs::Door& door, door_msgs::Door& door_out);
 
   ros::Node& node_;
-  tf::TransformListener tf_;
+  tf::TransformListener& tf_;
 
 };
 

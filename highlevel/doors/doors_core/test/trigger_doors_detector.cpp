@@ -60,6 +60,7 @@ int
   ros::init(argc, argv);
 
   ros::Node node("trigger_detect_door");
+  tf::TransformListener tf(node);
 
   door_msgs::Door my_door_;
 
@@ -71,8 +72,8 @@ int
   my_door_.hinge = door_msgs::Door::HINGE_P2;
   my_door_.header.frame_id = "base_footprint";
 
-  door_handle_detector::DetectDoorAction door_detector(node);
-  door_handle_detector::DetectHandleAction handle_detector(node);
+  door_handle_detector::DetectDoorAction door_detector(node,tf);
+  door_handle_detector::DetectHandleAction handle_detector(node,tf);
   robot_actions::ActionRunner runner(10.0);
   runner.connect<door_msgs::Door, pr2_robot_actions::DoorActionState, door_msgs::Door>(door_detector);
   runner.connect<door_msgs::Door, pr2_robot_actions::DoorActionState, door_msgs::Door>(handle_detector);
