@@ -372,7 +372,7 @@ namespace base_local_planner {
       //we'll look ahead on the path the size of our window
       unsigned int needed_path_length = std::max(costmap_.cellSizeX(), costmap_.cellSizeY());
 
-      for(unsigned int i = 0; i < std::min(global_plan_.size(), needed_path_length); ++i){
+      for(unsigned int i = 0; i < std::min((unsigned int)global_plan_.size(), needed_path_length); ++i){
         const robot_msgs::PoseStamped& new_pose = global_plan_[i];
         PoseStampedMsgToTF(new_pose, tf_pose);
         tf_pose.setData(transform * tf_pose);
@@ -394,7 +394,7 @@ namespace base_local_planner {
     catch(tf::ExtrapolationException& ex) {
       ROS_ERROR("Extrapolation Error: %s\n", ex.what());
       if (global_plan_.size() > 0)
-        ROS_ERROR("Global Frame: %s Plan Frame size %d: %s\n", global_frame_.c_str(), global_plan_.size(), global_plan_[0].header.frame_id.c_str());
+        ROS_ERROR("Global Frame: %s Plan Frame size %d: %s\n", global_frame_.c_str(), (unsigned int)global_plan_.size(), global_plan_[0].header.frame_id.c_str());
 
       return false;
     }
