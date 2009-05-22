@@ -1,6 +1,6 @@
 Index: ode/src/quickstep.cpp
 ===================================================================
---- ode/src/quickstep.cpp	(revision 1665)
+--- ode/src/quickstep.cpp	(revision 1669)
 +++ ode/src/quickstep.cpp	(working copy)
 @@ -33,6 +33,8 @@
  #include "lcp.h"
@@ -52,7 +52,7 @@ Index: ode/src/quickstep.cpp
          if (body[i]->flags & dxBodyGyroscopic) {
              dMatrix3 I;
              // compute inertia tensor in global frame
-@@ -760,6 +773,76 @@
+@@ -760,6 +773,87 @@
  		dRealAllocaArray (cforce,nb*6);
  		SOR_LCP (m,nb,J,jb,body,invI,lambda,cforce,rhs,lo,hi,cfm,findex,&world->qs);
  
@@ -66,62 +66,73 @@ Index: ode/src/quickstep.cpp
 +		          << " findex " << findex
 +                          << std::endl;
 +
-+                FILE* fJ = fopen("/tmp/J.mat","w");
++                FILE* fJ = fopen("/tmp/J.mat","a");
 +		//std::cout << " J " << J << std::endl;
++                fprintf(fJ,"\n");
 +                dPrintMatrix(J,m,12,"%10.4f",fJ);
 +                fclose(fJ);
 +
-+                FILE* finvI = fopen("/tmp/invI.mat","w");
++                FILE* finvI = fopen("/tmp/invI.mat","a");
 +		//std::cout << " invI " << invI << std::endl;
-+                dPrintMatrix(invI,3*nb,4,"%10.4f",finvI); // 3x4 matrices stacked vertically, nb matrices.
++                fprintf(finvI,"\n");
++                dPrintMatrix(invI,3*nb,4,"%10.4f",finvI);
 +                fclose(finvI);
 +
-+                FILE* ftmpI = fopen("/tmp/tmpI.mat","w");
++                FILE* ftmpI = fopen("/tmp/tmpI.mat","a");
 +		//std::cout << " tmpI " << tmpI << std::endl;
-+                dPrintMatrix(tmpI,3*nb,4,"%10.4f",ftmpI); // 3x4 matrices stacked vertically, nb matrices.
++                fprintf(ftmpI,"\n");
++                dPrintMatrix(tmpI,3*nb,4,"%10.4f",ftmpI);
 +                fclose(ftmpI);
 +
-+                FILE* ftmpM = fopen("/tmp/tmpM.mat","w");
++                FILE* ftmpM = fopen("/tmp/tmpM.mat","a");
 +		//std::cout << " tmpM " << tmpM << std::endl;
-+                dPrintMatrix(tmpM,nb,4,"%10.4f",ftmpM); // 3x4 matrices stacked vertically, nb matrices.
++                fprintf(ftmpM,"\n");
++                dPrintMatrix(tmpM,nb,4,"%10.4f",ftmpM);
 +                fclose(ftmpM);
 +
-+                FILE* fc = fopen("/tmp/c.mat","w");
++                FILE* fc = fopen("/tmp/c.mat","a");
 +		//std::cout << " c " << c << std::endl;
-+                dPrintMatrix(c,1,m,"%10.4f",fc); // 3x4 matrices stacked vertically, nb matrices.
++                fprintf(fc,"\n");
++                dPrintMatrix(c,1,m,"%10.4f",fc);
 +                fclose(fc);
 +
-+                FILE* flambda = fopen("/tmp/lambda.mat","w");
++                FILE* flambda = fopen("/tmp/lambda.mat","a");
 +		//std::cout << " lambda " << lambda << std::endl;
-+                dPrintMatrix(lambda,1,m,"%10.4f",flambda); // 3x4 matrices stacked vertically, nb matrices.
++                fprintf(flambda,"\n");
++                dPrintMatrix(lambda,1,m,"%10.4f",flambda);
 +                fclose(flambda);
 +
-+                FILE* fcforce = fopen("/tmp/cforce.mat","w");
++                FILE* fcforce = fopen("/tmp/cforce.mat","a");
++                fprintf(fcforce,"\n");
 +		//std::cout << " cforce " << cforce << std::endl;
-+                dPrintMatrix(cforce,nb,6,"%10.4f",fcforce); // 3x4 matrices stacked vertically, nb matrices.
++                dPrintMatrix(cforce,nb,6,"%10.4f",fcforce);
 +                fclose(fcforce);
 +
-+                FILE* frhs = fopen("/tmp/rhs.mat","w");
++                FILE* frhs = fopen("/tmp/rhs.mat","a");
 +		//std::cout << " rhs " << rhs << std::endl;
-+                dPrintMatrix(rhs,1,m,"%10.4f",frhs); // 3x4 matrices stacked vertically, nb matrices.
++                fprintf(frhs,"\n");
++                dPrintMatrix(rhs,1,m,"%10.4f",frhs);
 +                fclose(frhs);
 +
 +                // constraint forc mixing vector
-+                FILE* flo = fopen("/tmp/lo.mat","w");
++                FILE* flo = fopen("/tmp/lo.mat","a");
 +		//std::cout << " lo " << lo << std::endl;
-+                dPrintMatrix(lo,1,m,"%10.4f",flo); // 3x4 matrices stacked vertically, nb matrices.
++                fprintf(flo,"\n");
++                dPrintMatrix(lo,1,m,"%10.4f",flo);
 +                fclose(flo);
 +
 +                // constraint forc mixing vector
-+                FILE* fhi = fopen("/tmp/hi.mat","w");
++                FILE* fhi = fopen("/tmp/hi.mat","a");
 +		//std::cout << " hi " << hi << std::endl;
-+                dPrintMatrix(hi,1,m,"%10.4f",fhi); // 3x4 matrices stacked vertically, nb matrices.
++                fprintf(fhi,"\n");
++                dPrintMatrix(hi,1,m,"%10.4f",fhi);
 +                fclose(fhi);
 +
 +                // constraint forc mixing vector
-+                FILE* fcfm = fopen("/tmp/cfm.mat","w");
++                FILE* fcfm = fopen("/tmp/cfm.mat","a");
 +		//std::cout << " cfm " << cfm << std::endl;
-+                dPrintMatrix(cfm,1,m,"%10.4f",fcfm); // 3x4 matrices stacked vertically, nb matrices.
++                fprintf(fcfm,"\n");
++                dPrintMatrix(cfm,1,m,"%10.4f",fcfm);
 +                fclose(fcfm);
 +#endif
 +
