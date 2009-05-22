@@ -84,9 +84,4 @@ MoveBase::Inactive{
     eq(nc.finished, true);
     eq(nc.at_goal, true);
   }
-
-  if(status == ABORTED){
-    eq(nc.finished, true);
-    eq(nc.at_goal, false);
-  }
 }
