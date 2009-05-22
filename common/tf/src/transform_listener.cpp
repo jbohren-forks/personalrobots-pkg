@@ -139,7 +139,7 @@ void TransformListener::transformQuaternion(const std::string& target_frame, con
 {
   Stamped<Quaternion> pin, pout;
   QuaternionStampedMsgToTF(msg_in, pin);
-  transformQuaternion(target_frame, pin, pout);
+  transformQuaternion(target_frame, target_time, pin, fixed_frame, pout);
   QuaternionStampedTFToMsg(pout, msg_out);
 }
 
@@ -149,7 +149,7 @@ void TransformListener::transformVector(const std::string& target_frame, const r
 {
   Stamped<Vector3> pin, pout;
   Vector3StampedMsgToTF(msg_in, pin);
-  transformVector(target_frame, pin, pout);
+  transformVector(target_frame, target_time, pin, fixed_frame, pout);
   Vector3StampedTFToMsg(pout, msg_out);
 }
 
@@ -159,7 +159,7 @@ void TransformListener::transformPoint(const std::string& target_frame, const ro
 {
   Stamped<Point> pin, pout;
   PointStampedMsgToTF(msg_in, pin);
-  transformPoint(target_frame, pin, pout);
+  transformPoint(target_frame, target_time, pin, fixed_frame, pout);
   PointStampedTFToMsg(pout, msg_out);
 }
 
