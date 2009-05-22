@@ -17,6 +17,7 @@
   <!-- qhull necessary for convex hull computation of robot links -->
   <sysdepend os="ubuntu" version="7.04-feisty" package="libqhull-dev"/>
   <sysdepend os="ubuntu" version="8.04-hardy" package="libqhull-dev"/>
+  <rosdep name="qhull"/>
 
   <export>
     <cpp cflags="-I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -llaser_scan"/>
