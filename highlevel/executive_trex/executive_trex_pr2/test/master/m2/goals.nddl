@@ -4,25 +4,40 @@
  */
 
 rejectable(m2_goals.Active g_1);
-g_1.outlet_id = 4;
+g_1.outlet_id = outlet_in_sachins_office;
 rejectable(m2_goals.Active g_2);
-g_2.outlet_id = 1;
+g_2.outlet_id = outlet_in_green_room;
 rejectable(m2_goals.Active g_3);
-g_3.outlet_id = 6;
+g_3.outlet_id = outlet_in_johns_office;
 rejectable(m2_goals.Active g_4);
-g_4.outlet_id = 25;
+g_4.outlet_id = outlet_in_patricks_office;
 rejectable(m2_goals.Active g_5);
-g_5.outlet_id = 26;
+g_5.outlet_id = outlet_in_tonys_office;
+
 //rejectable(m2_goals.Active g_6);
 //g_6.outlet_id = 27;
-rejectable(m2_goals.Active g_7);
-g_7.outlet_id = 16;
-rejectable(m2_goals.Active g_8);
-g_8.outlet_id = 38;
+
+//rejectable(m2_goals.Active g_7);
+//g_7.outlet_id = 16;
+
+//rejectable(m2_goals.Active g_8);
+//g_8.outlet_id = outlet_in_meeting_room;
 rejectable(m2_goals.Active g_9);
-g_9.outlet_id = 20;
+g_9.outlet_id = outlet_1_in_conference_room;
 rejectable(m2_goals.Active g_10);
-g_10.outlet_id = 21;
+g_10.outlet_id = outlet_2_in_conference_room;
+
+// Impose fixed order
+g_1 before g_2;
+g_2 before g_3;
+g_3 before g_4;
+g_4 before g_5;
+g_5 before g_9;
+//g6 before g7;
+//g7 before g8;
+//g_8 before g_9;
+g_9 before g_10;
+
 //rejectable(m2_goals.Active g_11);
 //g_11.outlet_id = 39;
 //rejectable(m2_goals.Active g_12);

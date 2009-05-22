@@ -2,7 +2,6 @@
   <master auto="start"/>
 
   <!-- Common Actions -->
-  <param name="/trex/enable_notify_door_blocked" value="true"/>
   <param name="/trex/enable_switch_controllers" value="false"/>
   <param name="/trex/enable_safety_tuck_arms" value="false"/>
   <param name="/trex/enable_move_base" value="false"/>

@@ -46,7 +46,7 @@ namespace executive_trex_pr2 {
     double y = _y.getSingletonValue();
     unsigned int connector_id = TopologicalMapAdapter::instance()->getNearestConnector(x, y);
 
-    condDebugMsg(connector_id > 0, "trex:error", "No connector found for <" << x << ", " << y << ">");
+    condDebugMsg(connector_id == 0, "trex:error", "No connector found for <" << x << ", " << y << ">");
     ROS_ASSERT(connector_id > 0); // If this is incorrect, then there is a bug in the topological map
 
     _connector.set(connector_id);
