@@ -144,6 +144,28 @@ TEST(executive_trex_pr2, map_get_next_move){
 
   MapGetNextMoveConstraint::MapGetNextMoveConstraint map_get_next_move("map_next_move", "Default", ce, scope);
   ASSERT_TRUE(ce->propagate());
+  /*
+ARG[8]:x(17085) (S)  DERIVED=float:CLOSED[12.737500000000001, 12.737500000000001]
+ ARG[9]:y(17086) (S)  DERIVED=float:CLOSED[22.062500000000000, 22.062500000000000]
+ ARG[10]:x(478) (S)  DERIVED=float:CLOSED[12.699999999999999, 12.699999999999999]
+ ARG[11]:y(479) (S)  DERIVED=float:CLOSED[22.500000000000000, 22.500000000000000]
+ ARG[12]:z(480) (S)  DERIVED=float:CLOSED[0.000000000000000, 0.000000000000000]
+ ARG[13]:qx(481) (S)  DERIVED=float:CLOSED[0.000000000000000, 0.000000000000000]
+ ARG[14]:qy(482) (S)  DERIVED=float:CLOSED[0.000000000000000, 0.000000000000000]
+ ARG[15]:qz(483) (S)  DERIVED=float:CLOSED[0.000000000000000, 0.000000000000000]
+ ARG[16]:qw(484) (S)  DERIVED=float:CLOSED[1.000000000000000, 1.000000000000000]
+  */
+
+  // Make sure it handles going straight to target
+  current_x.reset();
+  current_y.reset();
+  target_x.reset();
+  target_y.reset();
+  current_x.specify(16.2587);
+  current_y.specify(17.5384);
+  target_x.specify(12.6999);
+  target_y.specify(22.5000);
+  ASSERT_TRUE(ce->propagate());
 
   /*
     [Map:get_next_move]AFTER: [1242925482.950660]map_get_next_move(6066)
@@ -162,7 +184,10 @@ TEST(executive_trex_pr2, map_get_next_move){
   */
 
   // Make sure it does not go too far
-  debugMsg("ConstraintEngine", "MARK");
+  current_x.reset();
+  current_y.reset();
+  target_x.reset();
+  target_y.reset();
   current_x.specify(16.2587);
   current_y.specify(17.538);
   target_x.specify(12.6999);
