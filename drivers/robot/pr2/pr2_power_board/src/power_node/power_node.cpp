@@ -66,6 +66,31 @@ static std::vector<Interface*> SendInterfaces;
 static PowerBoard *myBoard;
 static Interface* ReceiveInterface;
 
+
+void Device::setPowerMessage(const PowerMessage &newpmsg)
+{
+  if (pmsgset)
+  {
+#define PRINT_IF_CHANGED(val)                                                            \
+if (pmsg.status.val##_status != newpmsg.status.val##_status)                             \
+{                                                                                        \
+  ROS_INFO("Power board: status of "#val" changed to %i.", newpmsg.status.val##_status); \
+} 
+
+  PRINT_IF_CHANGED(CB0);  
+  PRINT_IF_CHANGED(CB1);
+  PRINT_IF_CHANGED(CB2);
+  PRINT_IF_CHANGED(estop_button);
+  PRINT_IF_CHANGED(estop);
+
+#undef PRINT_IF_CHANGED
+  }
+  else
+    pmsgset = 1;
+
+  pmsg = newpmsg;
+}
+
 Interface::Interface(const char* ifname) :
   recv_sock(-1),
   send_sock(-1) {
@@ -265,7 +290,7 @@ int PowerBoard::send_command(int selected_device, int circuit_breaker, const std
   memset(&cmdmsg, 0, sizeof(cmdmsg));
   cmdmsg.header.message_revision = CURRENT_MESSAGE_REVISION;
   cmdmsg.header.message_id = MESSAGE_ID_COMMAND;
-  cmdmsg.header.serial_num = device->pmsg.header.serial_num;
+  cmdmsg.header.serial_num = device->getPowerMessage().header.serial_num;
   //cmdmsg.header.serial_num = 0x12345678;
   strncpy(cmdmsg.header.text, "power command message", sizeof(cmdmsg.header.text));
   cmdmsg.command.CB0_command = NONE;
@@ -357,10 +382,10 @@ int PowerBoard::process_message(const PowerMessage *msg)
 
   // Look for device serial number in list of devices...
   for (unsigned i = 0; i<Devices.size(); ++i) {
-    if (Devices[i]->pmsg.header.serial_num == msg->header.serial_num) {
+    if (Devices[i]->getPowerMessage().header.serial_num == msg->header.serial_num) {
       boost::mutex::scoped_lock(library_lock_);
       Devices[i]->message_time = ros::Time::now();
-      memcpy(&(Devices[i]->pmsg), msg, sizeof(PowerMessage));
+      Devices[i]->setPowerMessage(*msg);
       return 0;
     }
   }
@@ -369,7 +394,7 @@ int PowerBoard::process_message(const PowerMessage *msg)
   Device *newDevice = new Device();
   Devices.push_back(newDevice);
   newDevice->message_time = ros::Time::now();
-  memcpy(&(newDevice->pmsg), msg, sizeof(PowerMessage));
+  newDevice->setPowerMessage(*msg);
   return 0;
 }
 
@@ -382,7 +407,7 @@ int PowerBoard::process_transition_message(const TransitionMessage *msg)
 
   // Look for device serial number in list of devices...
   for (unsigned i = 0; i<Devices.size(); ++i) {
-    if (Devices[i]->pmsg.header.serial_num == msg->header.serial_num) {
+    if (Devices[i]->getPowerMessage().header.serial_num == msg->header.serial_num) {
       boost::mutex::scoped_lock(library_lock_);
       memcpy(&(Devices[i]->tmsg), msg, sizeof(TransitionMessage));
       return 0;
@@ -491,7 +516,6 @@ int PowerBoard::collect_messages()
         }
         else
         {
-          ;
           ROS_DEBUG("Discard message len=%d", len);
         }
       }
@@ -560,7 +584,7 @@ void PowerBoard::sendDiagnostic()
       stat.strings.clear();
 
       Device *device = Devices[i];
-      PowerMessage *pmsg = &device->pmsg;
+      const PowerMessage *pmesg = &device->getPowerMessage();
       
       // Stop sending diagnostics if we stop getting packets
       if (device->message_time < last_diagnostic_time)
@@ -571,17 +595,17 @@ void PowerBoard::sendDiagnostic()
       stat.name = ss.str();
       stat.level = 0;///@todo fixem
       stat.message = "Power Node";
-      StatusStruct *status = &Devices[i]->pmsg.status;
+      const StatusStruct *status = &pmesg->status;
 
       ROS_DEBUG("Device %u", i);
-      ROS_DEBUG(" Serial       = %u", pmsg->header.serial_num);
+      ROS_DEBUG(" Serial       = %u", pmesg->header.serial_num);
 
       //val.label = "Time";
       //val.value = (float)Devices[i]->message_time;
       //stat.values.push_back(val);
 
       ss.str("");
-      ss << pmsg->header.serial_num;
+      ss << pmesg->header.serial_num;
       strval.value = ss.str();
       strval.label = "Serial Number";
       stat.strings.push_back(strval);
