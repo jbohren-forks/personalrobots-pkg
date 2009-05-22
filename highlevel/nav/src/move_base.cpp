@@ -146,9 +146,9 @@ namespace nav {
               found_legal = true;
             }
           }
-          p.pose.position.x += resolution;
+          p.pose.position.x += resolution*3.0;
         }
-        p.pose.position.y += resolution;
+        p.pose.position.y += resolution*3.0;
       }
     }
 
@@ -342,6 +342,8 @@ namespace nav {
         //if we have a valid plan, but can't find a valid control for a certain time... abort
         if(last_valid_control_ + patience < ros::Time::now()){
           if(attempted_rotation_){
+            ROS_INFO("Attempting aggresive reset of costmaps because we can't rotate");
+            resetCostmaps(circumscribed_radius_ * 2, circumscribed_radius_ * 2);
             done_half_rotation_ = true;
             done_full_rotation_ = true;
           }
@@ -362,7 +364,7 @@ namespace nav {
           }
 
           if(done_full_rotation_){
-            ROS_INFO("Done one full rotation");
+            ROS_INFO("Done one full rotation, resetting costmaps aggresively");
             resetCostmaps(circumscribed_radius_ * 2, circumscribed_radius_ * 2);
             attempted_rotation_ = false;
             done_half_rotation_ = false;
@@ -370,7 +372,7 @@ namespace nav {
             attempted_costmap_reset_ = true;
           }
           else{
-            ROS_INFO("Setting new rotation goal");
+            ROS_INFO("Setting new rotation goal and resetting costmaps outside of 3 meter window");
             //clear things in the static map that are really far away
             resetCostmaps(3.0, 3.0);
             //if planning fails... we'll try rotating in place to clear things out
