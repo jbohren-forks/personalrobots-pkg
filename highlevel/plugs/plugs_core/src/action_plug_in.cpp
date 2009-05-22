@@ -40,6 +40,7 @@ namespace plugs_core {
 
 const double READY_TO_INSERT = -0.026;
 const double READY_TO_PUSH = -0.0150;  // -0.0135;  // -0.009;
+const double FORCING_SUCCESSFUL = -0.009;
 const double MIN_STANDOFF = 0.022;
 
 const double SUCCESS_THRESHOLD = 0.025;
@@ -225,7 +226,14 @@ void PlugInAction::plugMeasurementCallback(const tf::MessageNotifier<robot_msgs:
     case FORCING:
     {
       if (ros::Time::now() > g_started_forcing_ + ros::Duration(5.0))
-        g_state_ = HOLDING;
+      {
+        if (viz_offset.getOrigin().x() > FORCING_SUCCESSFUL)
+          g_state_ = HOLDING;
+        else {
+          ROS_ERROR("Forcing occurred, but the plug wasn't in");
+          g_state_ = MEASURING;
+        }
+      }
       break;
     }
     case HOLDING:
@@ -387,7 +395,7 @@ void PlugInAction::force()
   tff_msg_.mode.rot.x = 3;
   tff_msg_.mode.rot.y = 3;
   tff_msg_.mode.rot.z = 3;
-  tff_msg_.value.vel.x = 50;
+  tff_msg_.value.vel.x = 30;
   tff_msg_.value.vel.y = mech_offset_.getOrigin().y();
   tff_msg_.value.vel.z = mech_offset_.getOrigin().z();
   mech_offset_desi_.getBasis().getEulerZYX(tff_msg_.value.rot.z, tff_msg_.value.rot.y, tff_msg_.value.rot.x);
@@ -395,11 +403,13 @@ void PlugInAction::force()
   node_.publish(arm_controller_ + "/command", tff_msg_);
 
   double base_roll = tff_msg_.value.rot.x;
-  while (ros::Time::now() - g_started_forcing_ < ros::Duration(3.0))
+  double base_pitch = tff_msg_.value.rot.y;
+  while (ros::Time::now() - g_started_forcing_ < ros::Duration(5.0))
   {
     tff_msg_.value.rot.x = base_roll + 0.1 * (2.0*drand48()-1.0);
+    tff_msg_.value.rot.y = base_pitch + 0.03 * (2.0*drand48()-1.0);
     node_.publish(arm_controller_ + "/command", tff_msg_);
-    usleep(20000);
+    usleep(10000);
   }
 
   return;
