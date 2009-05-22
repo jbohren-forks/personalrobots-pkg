@@ -1,11 +1,1 @@
-class TestActions extends AgentActions {
-
-  predicate StartEvent {}
-}
-
-TestActions test_actions = new TestActions();
-
-/**
- * Sim will start behaviors as soon as possible
- */
-ROSAction::Active{ starts(TestActions.StartEvent); }
+// TODO

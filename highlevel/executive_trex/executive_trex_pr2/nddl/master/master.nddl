@@ -88,12 +88,7 @@ MoveBehavior doorman = new MoveBehavior(External, true);
 Recharger recharger = new Recharger(External);
 BaseState base_state = new BaseState(External);
 
-// Actions
-AgentActions actions = new AgentActions();
-
 M2Goals::Active{
-  // Linking with a start event to force execution
-  contains(actions.startEvent);
 
   if(start){
     starts_during(base_state.Holds bs);
