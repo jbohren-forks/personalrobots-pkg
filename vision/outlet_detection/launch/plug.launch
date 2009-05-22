@@ -1,7 +1,5 @@
 <launch>
   <group ns="plug_detector" clear_params="true">
-    <param name="display" type="int" value="1"/>
-
     <!-- ROI settings -->
     <param name="roi_policy" type="str" value="LastImageLocation"/>
     <!--param name="roi_policy" type="str" value="FullResolution"/-->
