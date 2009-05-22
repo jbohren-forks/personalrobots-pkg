@@ -59,8 +59,8 @@ public:
 
     node->param("~window_name", window_name_, node->mapName("image"));
     bool autosize;
-    node->param("~autosize", autosize, true);
-    node->param("~filename_format", filename_format_, std::string("frame%04i.png"));
+    node->param("~autosize", autosize, false);
+    node->param("~filename_format", filename_format_, std::string("frame%04i.jpg"));
     
     cvNamedWindow(window_name_.c_str(), autosize ? CV_WINDOW_AUTOSIZE : 0);
     cvSetMouseCallback(window_name_.c_str(), &ImageView::mouse_cb, this);
