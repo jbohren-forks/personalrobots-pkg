@@ -40,4 +40,4 @@ MAP_KEY outlet_in_room_next_to_printer = 40;
 /**
  * As a work around, here are some approach points for outlets where we need to work around the data in the topological map. Fix the values
  */
-OutletApproachPoint approach_point_for_outlet_in_stus_office = new OutletApproachPoint(outlet_in_stus_office, 18.912, 28.568, 0.000, 0.000, 0.000, 0.000, 1.000);
+OutletApproachPoint approach_point_for_outlet_in_stus_office = new OutletApproachPoint(39, 18.912, 28.568, 0.000, 0.000, 0.000, 0.000, 1.000);
