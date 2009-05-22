@@ -341,9 +341,15 @@ namespace nav {
 
         //if we have a valid plan, but can't find a valid control for a certain time... abort
         if(last_valid_control_ + patience < ros::Time::now()){
-          resetState();
-          ROS_WARN("move_base aborting because the controller could not find valid velocity commands for over %.4f seconds", patience.toSec());
-          return robot_actions::ABORTED;
+          if(attempted_rotation_){
+            done_half_rotation_ = true;
+            done_full_rotation_ = true;
+          }
+          else{
+            resetState();
+            ROS_WARN("move_base aborting because the controller could not find valid velocity commands for over %.4f seconds", patience.toSec());
+            return robot_actions::ABORTED;
+          }
         }
 
         //try to make a plan
