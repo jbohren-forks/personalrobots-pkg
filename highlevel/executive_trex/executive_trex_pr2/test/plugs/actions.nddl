@@ -20,14 +20,13 @@ PlugActions::DetectOutlet {
 
   // Subgoals
   contains(detect_outlet_coarse.Active cmd_detect_outlet_coarse);
-  contains(move_base.Active cmd_move_to_outlet);
+  contains(move_base_local.Active cmd_move_to_outlet);
 
   // Sequence
   cmd_detect_outlet_coarse before cmd_move_to_outlet;
   
   // They all succeed
   eq(SUCCESS, cmd_detect_outlet_coarse.status, cmd_move_to_outlet.status);
-
 
   // Params
 
