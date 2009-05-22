@@ -219,6 +219,13 @@ namespace executive_trex_pr2 {
    * If the position is bound, we can make a region query. The result should be intersected on the domain.
    */
   void MapGetOutletApproachPoseConstraint::handleExecute(){
+    static bool initialized(false);
+    static std::map<unsigned int, robot_msgs::Pose> approach_points_by_id;
+
+    if(!initialized){
+
+      initialized = true;
+    }
 
     // Wait till inputs are bound.
     if(!_outlet_id.isSingleton())
@@ -234,7 +241,9 @@ namespace executive_trex_pr2 {
 
     try{
       robot_msgs::Pose pose;
-      TopologicalMapAdapter::instance()->getOutletApproachPose(_outlet_id.getSingletonValue(), pose);
+      unsigned int outlet_id = _outlet_id.getSingletonValue();
+      // First we will see if the
+      TopologicalMapAdapter::instance()->getOutletApproachPose(outlet_id, pose);
       _x.set(pose.position.x);
       _y.set(pose.position.y);
       _z.set(pose.position.z);

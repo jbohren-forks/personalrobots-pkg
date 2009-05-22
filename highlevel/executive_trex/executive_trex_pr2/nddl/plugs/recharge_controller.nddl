@@ -94,7 +94,7 @@ RechargeController::Holds{
 }
 
 /**
- * Main control loop
+ * Main control loop. Note that exi
  */
 RechargeController::Holds {
   if(active == true){
@@ -272,7 +272,7 @@ RechargeController::Holds {
 
                   // not in position: move
                   else {
-                    contains_start(move_base_local.Active cmd);
+                    contains_start(move_base.Active cmd);
                     // TODO ; Constraint should have inputs after outputs
                     plugs_get_offset_pose(os.x, os.y, os.z, os.qx, os.qy, os.qz, os.qw, 0.5, 
                                           cmd.x, cmd.y, cmd.z, cmd.qx, cmd.qy,cmd.qz, cmd.qw);
@@ -345,7 +345,7 @@ DetectPlugOnBase::Inactive{
     eq_plug_stow_msg(ps.object, object);
   }
   else {
-      eq(rc.finishing, true);
+    eq(rc.finishing, true);
   }
 }
 

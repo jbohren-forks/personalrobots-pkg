@@ -78,6 +78,16 @@ class Waypoint extends Location {
   }
 };
 
+class OutletApproachPoint extends Location {
+  MAP_KEY outlet_id;
+
+  OutletApproachPoint(MAP_KEY id, float x_, float y_, float z_, float qx_, float qy_, float qz_, float qw_){
+    super(x_, y_, z_, qx_, qy_, qz_, qw_);
+    outlet_id = id;
+  }
+};
+
+
 /**
  * @brief Charging Stations
  */
