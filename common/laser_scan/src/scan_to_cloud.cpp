@@ -116,38 +116,6 @@ class ScanShadowsFilter
     virtual ~ScanShadowsFilter () { if(notifier_) delete notifier_;}
 
     ////////////////////////////////////////////////////////////////////////////////
-    /**
-     * \brief Computes the angle between the two lines created from 2 points and the
-     * viewpoint. Returns the angle (in degrees).
-     * \param px X coordinate for the first point
-     * \param py Y coordinate for the first point
-     * \param pz Z coordinate for the first point
-     * \param qx X coordinate for the second point
-     * \param qy Y coordinate for the second point
-     * \param qz Z coordinate for the second point
-     */
-    inline double
-      getAngleWithViewpoint (float px, float py, float pz, float qx, float qy, float qz)
-    {
-      double dir_a[3], dir_b[3];
-      dir_a[0] =    - px; dir_a[1] =    - py; dir_a[2] =    - pz;   // Assume viewpoint is 0,0,0
-      dir_b[0] = qx - px; dir_b[1] = qy - py; dir_b[2] = qz - pz;
-
-      // sqrt (sqr (x) + sqr (y) + sqr (z))
-      double norm_a = sqrt (dir_a[0]*dir_a[0] + dir_a[1]*dir_a[1] + dir_a[2]*dir_a[2]);
-      // Check for bogus 0,0,0 points
-      if (norm_a == 0) return (0);
-      double norm_b = sqrt (dir_b[0]*dir_b[0] + dir_b[1]*dir_b[1] + dir_b[2]*dir_b[2]);
-      if (norm_b == 0) return (0);
-      // dot_product (x, y)
-      double dot_pr = dir_a[0]*dir_b[0] + dir_a[1]*dir_b[1] + dir_a[2]*dir_b[2];
-      if (dot_pr != dot_pr)     // Check for NaNs
-        return (0);
-
-      return ( acos (dot_pr / (norm_a * norm_b) ) * 180.0 / M_PI);
-    }
-
-    ////////////////////////////////////////////////////////////////////////////////
     /** \brief Given a PointCloud representing a single laser scan (usually obtained
      * after LaserProjection's projectLaser(), and the index of the channel
      * representing the true measurement "index", create a complete PointCloud
@@ -184,53 +152,6 @@ class ScanShadowsFilter
       }
     }
 
-    ////////////////////////////////////////////////////////////////////////////////
-    /** \brief Filter shadow points based on 3 global parameters: min_angle, max_angle
-     * and window. {min,max}_angle specify the allowed angle interval (in degrees)
-     * between the created lines (see getAngleWithViewPoint). Window specifies how many
-     * consecutive measurements to take into account for one point.
-     * \param cloud_in the input PointCloud message
-     * \param cloud_out the output PointCloud message
-     */
-    void
-      filterShadowPoints (PointCloud cloud_in, PointCloud &cloud_out)
-    {
-      // For each point in the current line scan
-      int n_pts_filtered = 0;
-      for (unsigned int i = 0; i < cloud_in.pts.size (); i++)
-      {
-        bool valid_point = true;
-        for (int y = -window_; y < window_ + 1; y++)
-        {
-          int j = i + y;
-          if ( j < 0 || j >= (int)cloud_in.pts.size () || (int)i == j ) // Out of scan bounds or itself
-            continue;
-
-          double angle = getAngleWithViewpoint (cloud_in.pts[i].x, cloud_in.pts[i].y, cloud_in.pts[i].z,
-                                                cloud_in.pts[j].x, cloud_in.pts[j].y, cloud_in.pts[j].z);
-          if (angle < min_angle_ || angle > max_angle_ || cloud_in.pts[i].x > 1e6)
-            valid_point = false;
-        }
-
-        // If point found as 'ok', copy the relevant data
-        if (valid_point)
-        {
-          cloud_out.pts[n_pts_filtered].x = cloud_in.pts[i].x;
-          cloud_out.pts[n_pts_filtered].y = cloud_in.pts[i].y;
-          cloud_out.pts[n_pts_filtered].z = cloud_in.pts[i].z;
-
-          for (unsigned int d = 0; d < cloud_out.get_chan_size (); d++)
-            cloud_out.chan[d].vals[n_pts_filtered] = cloud_in.chan[d].vals[i];
-
-          n_pts_filtered++;
-        }
-      }
-
-      // Resize output vectors
-      cloud_out.pts.resize (n_pts_filtered);
-      for (unsigned int d = 0; d < cloud_out.get_chan_size (); d++)
-        cloud_out.chan[d].vals.resize (n_pts_filtered);
-    }
 
     ////////////////////////////////////////////////////////////////////////////////
     void
