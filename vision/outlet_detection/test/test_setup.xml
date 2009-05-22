@@ -1,0 +1,24 @@
+<!-- Launch this once for each bag -->
+<launch>
+
+<!-- Stereo image processing -->
+  <group ns="stereo">
+    <param name="videre_mode" type="str" value="none"/>
+    <param name="do_colorize" type="bool" value="True"/>
+    <param name="do_rectify" type="bool" value="True"/>
+    <param name="do_stereo" type="bool" value="True"/>
+    <param name="do_calc_points" type="bool" value="True"/>
+    <param name="do_keep_coords" type="bool" value="True"/>
+  </group>
+  <node pkg="stereo_image_proc" type="stereoproc" respawn="false" />
+
+<!-- detectors -->
+<node pkg="outlet_detection" name="outlet_spotting" type="outlet_spotting" output="screen">
+    <param name="display" type="bool" value="False"/>
+    <param name="save_patches" type="bool" value="False"/>
+    <param name="base_scan_topic" value="base_scan_marking" />
+    <param name="target_frame" value="base_footprint" />
+</node>
+
+
+</launch>

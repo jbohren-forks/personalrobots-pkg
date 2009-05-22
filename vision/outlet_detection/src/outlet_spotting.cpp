@@ -71,6 +71,7 @@
 
 #include "topic_synchronizer/topic_synchronizer.h"
 #include <tf/transform_listener.h>
+#include <tf/message_notifier.h>
 
 #include "CvStereoCamModel.h"
 #include "outlet_detection/outlet_tuple_coarse.h"
@@ -145,7 +146,7 @@ public:
 	robot_msgs::PointCloud cloud_fetch;
 
 	robot_msgs::PointCloud base_cloud_;
-	robot_msgs::PointCloud base_cloud_fetch_;
+//	robot_msgs::PointCloud base_cloud_fetch_;
 
 //	robot_msgs::PoseStamped outlet_pose;
 
@@ -159,7 +160,7 @@ public:
 	bool save_patches;
 
 	TopicSynchronizer<OutletSpotting> sync;
-
+	tf::MessageNotifier<robot_msgs::PointCloud>* cloud_notifier_;
 
 	boost::mutex clound_point_mutex;
 	boost::condition_variable cloud_point_cv;
@@ -176,7 +177,10 @@ public:
 	string base_scan_topic_;
 	string head_controller_;
 
-	OutletSpotting() : ros::Node("stereo_view"),left(NULL), disp(NULL), disp_clone(NULL),
+	double max_outlet_height_;
+	double min_outlet_height_;
+
+	OutletSpotting() : ros::Node("outlet_spotting"),left(NULL), disp(NULL), disp_clone(NULL),
 		sync(this, &OutletSpotting::image_cb_all, ros::Duration().fromSec(0.1), &OutletSpotting::image_cb_timeout), have_cloud_point_(false)
 
 	{
@@ -189,6 +193,8 @@ public:
 		param<string> ("~target_frame", target_frame_, "odom_combined");
 		param<string> ("~base_scan_topic", base_scan_topic_, "base_scan_filtered");
 		param<string>("~head_controller", head_controller_, "head_controller");
+		param ("~max_outlet_height", max_outlet_height_, 0.7);
+		param ("~min_outlet_height", min_outlet_height_, 0.1);
 
 		if (display) {
 			ROS_INFO("Displaying images\n");
@@ -250,7 +256,11 @@ private:
 
 		sync.ready();
 
-		subscribe(base_scan_topic_, base_cloud_fetch_, &OutletSpotting::laser_callback, 1);
+		cloud_notifier_ = new tf::MessageNotifier<robot_msgs::PointCloud> (tf_, this,
+		               boost::bind(&OutletSpotting::laser_callback, this, _1),
+		               base_scan_topic_, "stereo_optical_frame", 100);
+
+//		subscribe(base_scan_topic_, base_cloud_fetch_, &OutletSpotting::laser_callback, 1);
     }
 
     void unsubscribeFromData()
@@ -266,6 +276,7 @@ private:
         	unsubscribe("stereo/raw_stereo");
         }
 //        unsubscribe("full_cloud");
+        delete cloud_notifier_;
     }
 
 
@@ -864,6 +875,18 @@ private:
 		ps_stereo.point.y = center_point.y;
 		ps_stereo.point.z = center_point.z;
 
+
+		PointStamped center_in_base_footprint;
+
+		tf_->transformPoint("base_footprint", ps_stereo, center_in_base_footprint);
+		double outlet_height = center_in_base_footprint.point.z;
+
+		if (outlet_height>max_outlet_height_ || outlet_height<min_outlet_height_) {
+			// not an outlet
+			return false;
+		}
+
+
 		ROS_INFO("OutletSpotter: Found outlet bbox, I'm waiting for cloud point.");
 
 		boost::unique_lock<boost::mutex> lock(clound_point_mutex);
@@ -1035,15 +1058,15 @@ private:
 			if (save_patches) savePatch(left,bbs[t],"outlet_match");
 
 
-			if (display) {
-				// draw bounding box
-				CvPoint pt2 = cvPoint(bbs[t].x+wi,bbs[t].y+hi);
-				cvRectangle(left,pt1,pt2,CV_RGB(0,255,0));
-			}
 			found = getPoseStamped(bbs[t], centers[t], pose);
 
 			// one outlet is enough
 			if (found) {
+				if (display) {
+					// draw bounding box
+					CvPoint pt2 = cvPoint(bbs[t].x+wi,bbs[t].y+hi);
+					cvRectangle(left,pt1,pt2,CV_RGB(0,255,0));
+				}
 				return true;
 			}
 		}
@@ -1133,11 +1156,11 @@ private:
     /**
      *
      */
-	void laser_callback()
+	void laser_callback(const tf::MessageNotifier<robot_msgs::PointCloud>::MessagePtr& cloud)
 	{
 		boost::lock_guard<boost::mutex> lock(clound_point_mutex);
 		have_cloud_point_ = true;
-		base_cloud_ = base_cloud_fetch_;
+		base_cloud_ = *cloud;
 
 		cloud_point_cv.notify_all();
 	}
@@ -1270,54 +1293,62 @@ public:
 
 
 	bool runOutletSpotter(const robot_msgs::PointStamped& request, robot_msgs::PoseStamped& pose)
-	{
-		bool found = false;
-		subscribeToData();
-                robot_srvs::GetJointCmd::Request req_cmd;
-                robot_srvs::GetJointCmd::Response res_cmd;
+    {
+        bool found = false;
+        bool turning_head = true;
+        subscribeToData();
+        robot_srvs::GetJointCmd::Request req_cmd;
+        robot_srvs::GetJointCmd::Response res_cmd;
 
-                if (!ros::service::call(head_controller_ + "/get_command_array", req_cmd, res_cmd))
-                  {
-                    ROS_ERROR("Outlet Spotting failed to get last commanded head positions.");
-                    return found;
-                  }    
-                
-                double panOrig, tiltOrig;
-                if(res_cmd.command.names[0]=="head_pan_joint")
-                  { 
-                    panOrig=res_cmd.command.positions[0]; 
-                    tiltOrig=res_cmd.command.positions[1]; 
-                  }
-                else
-                  {
-                    panOrig=res_cmd.command.positions[1]; 
-                    tiltOrig=res_cmd.command.positions[0];
-                  }
+        if (!ros::service::call(head_controller_ + "/get_command_array", req_cmd, res_cmd))
+        {
+            ROS_ERROR("Outlet Spotting failed to get last commanded head positions.");
+            turning_head = false;
+                //return found;
+        }
 
-		double directions[][2] = { {0,0}, {-15,-10}, {0,-10}, {15,-10}, {15,0}, {0,0}, {-15,0},{-15,10}, {0,10},{15,10} };
 
-		for (size_t k=0; k<sizeof(directions)/sizeof(directions[0]); ++k)
-		{
 
-                  double panAngle = panOrig + directions[k][0]*M_PI/180.0;
-                  double tiltAngle = tiltOrig + directions[k][1]*M_PI/180.0;
-		  
-                  turnHead(panAngle,tiltAngle);
-		  found = runDetectLoop(pose);
-                  
-		  if (found){
+        double panOrig, tiltOrig;
+        if (turning_head) {
+            if(res_cmd.command.names[0]=="head_pan_joint")
+            {
+                panOrig=res_cmd.command.positions[0];
+                tiltOrig=res_cmd.command.positions[1];
+            }
+            else
+            {
+                panOrig=res_cmd.command.positions[1];
+                tiltOrig=res_cmd.command.positions[0];
+            }
+        }
 
-                    break;
-                  }
+        double directions[][2] = { {0,0}, {-15,-10}, {0,-10}, {15,-10}, {15,0}, {0,0}, {-15,0},{-15,10}, {0,10},{15,10} };
 
-		}
+        for (size_t k=0; k<sizeof(directions)/sizeof(directions[0]); ++k)
+        {
 
-		unsubscribeFromData();
+            double panAngle = panOrig + directions[k][0]*M_PI/180.0;
+            double tiltAngle = tiltOrig + directions[k][1]*M_PI/180.0;
 
-		showMarkers(pose);
+            if (turning_head) {
+                turnHead(panAngle,tiltAngle);
+            }
+            found = runDetectLoop(pose);
 
-		return found;
-	}
+            if (found){
+
+                break;
+            }
+
+        }
+
+        unsubscribeFromData();
+
+        showMarkers(pose);
+
+        return found;
+    }
 
 
 
@@ -1328,12 +1359,12 @@ public:
 
 int main(int argc, char **argv)
 {
-	ros::init(argc, argv);
-	OutletSpotting spotter;
+    ros::init(argc, argv);
+    OutletSpotting spotter;
 
 
-	spotter.spin();
+    spotter.spin();
 
-	return 0;
+    return 0;
 }
 

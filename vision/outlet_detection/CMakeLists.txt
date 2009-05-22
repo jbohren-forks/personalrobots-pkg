@@ -44,8 +44,43 @@ rospack_add_executable(calibrate_plug src/calibrate_plug.cpp)
 ##############################################
 # Regression testing
 
-# TODO: move the tarball-unpacking logic into rosbuild
+###########################################
+# Outlet coarse detector
+###########################################
+macro(rostest_outlet_coarse _test_name)
+    rospack_download_test_data(http://pr.willowgarage.com/data/outlet_coarse_detection/outlet_test_${_test_name}.bag test/outlet_test_${_test_name}.bag)
+    rospack_download_test_data(http://pr.willowgarage.com/data/outlet_coarse_detection/outlet_test_${_test_name}.pose test/outlet_test_${_test_name}.pose)
+    rospack_add_rostest(test/outlet_test_${_test_name}.launch)
+endmacro(rostest_outlet_coarse)
 
+rostest_outlet_coarse(1)
+rostest_outlet_coarse(4)
+#rostest_outlet_coarse(4_2)
+#rostest_outlet_coarse(4_3)
+rostest_outlet_coarse(6)
+rostest_outlet_coarse(16_light_off)
+rostest_outlet_coarse(16_light_on)
+rostest_outlet_coarse(20)
+rostest_outlet_coarse(21)
+rostest_outlet_coarse(21b)
+rostest_outlet_coarse(24)
+rostest_outlet_coarse(25)
+rostest_outlet_coarse(26)
+rostest_outlet_coarse(26_false)
+rostest_outlet_coarse(27)
+rostest_outlet_coarse(39)
+#rostest_outlet_coarse(39_far)
+rostest_outlet_coarse(40_no_detection)
+rostest_outlet_coarse(40_no_detection2)
+rostest_outlet_coarse(40_no_detection3)
+#rostest_outlet_coarse(40_no_detection4)
+
+
+
+###########################################
+# Outlet fine detector
+###########################################
+# TODO: move the tarball-unpacking logic into rosbuild
 #################
 # Test 1
 # Download the tarball of images
@@ -72,8 +107,6 @@ add_custom_command(OUTPUT ${PROJECT_SOURCE_DIR}/test/outlets_2009_05_20_part2
                    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/test
                    VERBATIM)
 # Run a test on that data
-rospack_add_rostest_future(test/test_outlets_2009_05_20_part2.xml)
-
 
 # Set up dependencies so that we unpack the data before running tests
 add_custom_target(download_and_unpack_test_data
