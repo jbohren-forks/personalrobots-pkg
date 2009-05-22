@@ -133,13 +133,12 @@ namespace nav {
     double resolution = planner_costmap_ros_->resolution();
     std::vector<robot_msgs::PoseStamped> global_plan;
     if(req.tolerance > resolution){
-      planner_->computePotential(req.goal.pose.position);
       robot_msgs::PoseStamped p;
       p = req.goal;
-      p.pose.position.x = req.goal.pose.position.x - req.tolerance;
       p.pose.position.y = req.goal.pose.position.y - req.tolerance; 
       bool found_legal = false;
       while(!found_legal && p.pose.position.y < req.goal.pose.position.y + req.tolerance){
+        p.pose.position.x = req.goal.pose.position.x - req.tolerance;
         while(!found_legal && p.pose.position.x < req.goal.pose.position.x + req.tolerance){
           if(planner_->makePlan(p, global_plan)){
             if(!global_plan.empty()){
