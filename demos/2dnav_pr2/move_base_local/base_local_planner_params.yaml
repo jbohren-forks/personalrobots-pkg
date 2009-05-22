@@ -25,7 +25,7 @@ base_local_planner:
   max_vel_th: 1.0
   min_vel_th: -1.0
   min_in_place_vel_th: 0.15
-  xy_goal_tolerance: 0.04
+  xy_goal_tolerance: 0.08
   yaw_goal_tolerance: 0.02
   goal_distance_bias: 0.8
   path_distance_bias: 0.6
