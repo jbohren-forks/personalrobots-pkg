@@ -23,8 +23,8 @@ INTEL_OPTIONS = CC='/opt/intel/cc/10.1.008/bin/icc' CXX='/opt/intel/cc/10.1.008/
 INTEL_C_FLAGS     =  CXXFLAGS='-march=core2 -msse3 -ip  -no-prec-div         -parallel -O3 -fPIC -I$(ROOT)/include' CFLAGS='-march=core2 -msse3 -ip  -no-prec-div         -parallel -O3 -fPIC -I$(ROOT)/include -I$(ROOT)/usr/include'
 INTEL_C_FLAGS_OMP =  CXXFLAGS='-march=core2 -msse3 -ip  -no-prec-div -openmp -parallel -O3 -fPIC -I$(ROOT)/include' CFLAGS='-march=core2 -msse3 -ip  -no-prec-div -openmp -parallel -O3 -fPIC -I$(ROOT)/include -I$(ROOT)/usr/include'
 
-INTEL_LD_FLAGS     =  LDFLAGS='-Wl,-rpath,/opt/intel/cc/10.1.008/lib,-rpath,$(ROOT)/lib -L/opt/intel/cc/10.1.008/lib -L$(ROOT)/lib -lguide -lcxaguard -limf -lsvml -lirc -pthread -lintlc'
-INTEL_LD_FLAGS_OMP =  LDFLAGS='-Wl,-rpath,/opt/intel/cc/10.1.008/lib,-rpath,$(ROOT)/lib -L/opt/intel/cc/10.1.008/lib -L$(ROOT)/lib -lguide -lcxaguard -limf -lsvml -lirc -pthread -lintlc -lompstub -liomp5 -lomp_db'
+INTEL_LD_FLAGS     =  LDFLAGS='-Wl,-rpath,/opt/intel/cc/10.1.008/lib,-rpath,$(ROOT)/lib -L/opt/intel/cc/10.1.008/lib -L$(ROOT)/lib -lguide -lcxaguard -limf -lsvml -lirc -lpthread -lintlc'
+INTEL_LD_FLAGS_OMP =  LDFLAGS='-Wl,-rpath,/opt/intel/cc/10.1.008/lib,-rpath,$(ROOT)/lib -L/opt/intel/cc/10.1.008/lib -L$(ROOT)/lib -lguide -lcxaguard -limf -lsvml -lirc -lpthread -lintlc -lompstub -liomp5 -lomp_db'
 
 GCC_FLAGS     = CXXFLAGS='-DNDEBUG -O3 -fPIC -I$(ROOT)/include' CFLAGS='-DNDEBUG -O3 -fPIC -I$(ROOT)/include -I$(ROOT)/usr/include' LDFLAGS='-L$(ROOT)/lib'
 
@@ -39,10 +39,10 @@ installed: $(SVN_DIR) patched
 	cd $(SVN_DIR) && make install
 	@echo "patch ode-config to pass -Wl,-rpath,-L{exec_prefix}/lib"
 	sed 's/echo  -L$${exec_prefix}\/lib -lode/echo  -Wl,-rpath,$${exec_prefix}\/lib -L$${exec_prefix}\/lib -lode/g' opende-svn/ode-config > opende/bin/ode-config
-	#sed 's/echo  -L$${exec_prefix}\/lib -lode/echo  -Wl,-rpath,$${exec_prefix}\/lib -L$${exec_prefix}\/lib -lode -Wl,-rpath,\/opt\/intel\/cc\/10.1.008\/lib -L\/opt\/intel\/cc\/10.1.008\/lib -lguide -lcxaguard -limf -lsvml -lirc -pthread/g' opende-svn/ode-config > opende/bin/ode-config
+	#sed 's/echo  -L$${exec_prefix}\/lib -lode/echo  -Wl,-rpath,$${exec_prefix}\/lib -L$${exec_prefix}\/lib -lode -Wl,-rpath,\/opt\/intel\/cc\/10.1.008\/lib -L\/opt\/intel\/cc\/10.1.008\/lib -lguide -lcxaguard -limf -lsvml -lirc -lpthread/g' opende-svn/ode-config > opende/bin/ode-config
 	@echo "patch ode.pc to pass -Wl,-rpath,-L{libdir}"
 	sed 's/Libs: -L$${libdir} -lode/Libs: -Wl,-rpath,$${libdir} -L$${libdir} -lode/g' opende-svn/ode.pc > opende/lib/pkgconfig/ode.pc
-	#sed 's/Libs: -L$${libdir} -lode/Libs: -Wl,-rpath,$${libdir} -L$${libdir} -lode -Wl,-rpath,\/opt\/intel\/cc\/10.1.008\/lib -L\/opt\/intel\/cc\/10.1.008\/lib -lguide -lcxaguard -limf -lsvml -lirc -pthread/g' opende-svn/ode.pc > opende/lib/pkgconfig/ode.pc
+	#sed 's/Libs: -L$${libdir} -lode/Libs: -Wl,-rpath,$${libdir} -L$${libdir} -lode -Wl,-rpath,\/opt\/intel\/cc\/10.1.008\/lib -L\/opt\/intel\/cc\/10.1.008\/lib -lguide -lcxaguard -limf -lsvml -lirc -lpthread/g' opende-svn/ode.pc > opende/lib/pkgconfig/ode.pc
 	touch installed
 
 clean:
