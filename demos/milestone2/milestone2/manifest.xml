@@ -1,0 +1,10 @@
+<package>
+  <description>Launch files for milestone II.</description>
+  <author>Wim Meeussen</author>
+  <license>BSD</license>
+  <review status="na" notes=""/>
+  <url>http://pr.willowgarage.com/wiki/FIXME</url>
+
+  <depend package="milestone2_actions"/>
+  <depend package="milestone2_executive"/>
+</package>
