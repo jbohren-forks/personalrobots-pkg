@@ -25,7 +25,7 @@
       <!-- Start Costmap Parameters -->
       <param name="costmap/global_frame" value="odom_combined" />
       <param name="costmap/robot_base_frame" value="base_link" />
-      <param name="costmap/update_frequency" value="5.0" />
+      <param name="costmap/update_frequency" value="10.0" />
       <param name="costmap/publish_frequency" value="1.0" />
       <param name="costmap/obstacle_range" value="1.0" />
       <param name="costmap/max_obstacle_height" value="2.0" />
