@@ -1,0 +1,23 @@
+<package>
+  <description brief="Determine checkerboard locations from dense_laser_scans">
+     Run openCV checkerboard detection algorithms on dense laser scans.
+  </description>
+  <author>Vijay Pradeep/ vpradeep@willowgarage.com</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <!-- url>http://pr.willowgarage.com/wiki/laser_cb_detection</url -->
+  
+  <depend package="topic_synchronizer" />
+  <depend package="robot_msgs" />
+  <depend package="opencv_latest" />
+  <depend package="laser_scan" />
+  <depend package="dense_laser_assembler" />
+  
+  <!-- For the pr2 tilt-laser projector -->
+  <depend package="mechanism_model" />
+  <depend package="tinyxml" />
+  <depend package="hardware_interface" />
+  
+</package>
+
+
