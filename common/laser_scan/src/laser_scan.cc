@@ -54,7 +54,7 @@ namespace laser_scan
     //Stuff the output cloud
     cloud_out.header = scan_in.header;
     cloud_out.set_pts_size (scan_in.get_ranges_size ());
-    
+
     // Define 4 indices in the channel array for each possible value type
     int idx_intensity = -1, idx_index = -1, idx_distance = -1, idx_timestamp = -1;
     
@@ -104,50 +104,17 @@ namespace laser_scan
     unsigned int count = 0;
     for (unsigned int index = 0; index< scan_in.get_ranges_size(); index++)
     {
-      if (!preservative) //Default behaviour will throw out invalid data
+      if (preservative || ((ranges(0,index) < range_cutoff) && (ranges(0,index) >= scan_in.range_min))) //if valid or preservative
       {
-        if ((ranges(0,index) < range_cutoff) && (ranges(0,index) >= scan_in.range_min)) //only valid
-        {
-          cloud_out.pts[count].x = output(0,index);
-          cloud_out.pts[count].y = output(1,index);
-          cloud_out.pts[count].z = 0.0;
-
-          //double x = cloud_out.pts[count].x;
-          //double y = cloud_out.pts[count].y;
-          //if(x*x + y*y < scan_in.range_min * scan_in.range_min){
-          //  ROS_INFO("(%.2f, %.2f)", cloud_out.pts[count].x, cloud_out.pts[count].y);
-          //}
-
-          // Save the original point index
-          if (idx_index != -1)
-            cloud_out.chan[idx_index].vals[count] = index;
-
-          // Save the original point distance
-          if (idx_distance != -1)
-            cloud_out.chan[idx_distance].vals[count] = ranges (0, index);
-
-          if (scan_in.get_intensities_size() >= index)
-          { /// \todo optimize and catch length difference better
-            if (idx_intensity != -1)
-              cloud_out.chan[idx_intensity].vals[count] = scan_in.intensities[index];
-          }
-
-          if( idx_timestamp != -1)
-              cloud_out.chan[idx_timestamp].vals[count] = (float)index*scan_in.time_increment;
-
-          count++;
-        }
-      }
-      else //Keep all points
-      {
+	  
         cloud_out.pts[count].x = output(0,index);
         cloud_out.pts[count].y = output(1,index);
         cloud_out.pts[count].z = 0.0;
-
+	  
         //double x = cloud_out.pts[count].x;
         //double y = cloud_out.pts[count].y;
         //if(x*x + y*y < scan_in.range_min * scan_in.range_min){
-        //  ROS_ERROR("YOU SHOULD NOT SEE ME: (%.2f, %.2f)", cloud_out.pts[count].x, cloud_out.pts[count].y);
+        //  ROS_INFO("(%.2f, %.2f)", cloud_out.pts[count].x, cloud_out.pts[count].y);
         //}
 
         // Save the original point index
@@ -158,22 +125,27 @@ namespace laser_scan
         if (idx_distance != -1)
           cloud_out.chan[idx_distance].vals[count] = ranges (0, index);
 
+        // Save intensities channel
         if (scan_in.get_intensities_size() >= index)
         { /// \todo optimize and catch length difference better
           if (idx_intensity != -1)
             cloud_out.chan[idx_intensity].vals[count] = scan_in.intensities[index];
         }
 
+        // Save timestamps to seperate channel if asked for
+        if( idx_timestamp != -1)
+                  cloud_out.chan[idx_timestamp].vals[count] = (float)index*scan_in.time_increment;
+
         count++;
       }
-        
     }
+   
 
     //downsize if necessary
     cloud_out.set_pts_size (count);
     if (count == 0)
     {
-      cloud_out.chan.resize (0);
+      cloud_out.set_chan_size (0);
     }
     else
     {
@@ -276,7 +248,7 @@ namespace laser_scan
     ///\todo this can be optimized
     robot_msgs::PointCloud intermediate; //optimize out
 
-    projectLaser (scan_in, intermediate, -1.0, preservative, mask);
+    projectLaser (scan_in, intermediate, -1.0, true, mask);
 
     // Extract transforms for the beginning and end of the laser scan
     ros::Time start_time = scan_in.header.stamp ;
@@ -292,7 +264,7 @@ namespace laser_scan
     unsigned int count = 0;  
     for (unsigned int i = 0; i < scan_in.get_ranges_size(); i++)
     {
-      if (scan_in.ranges[i] < scan_in.range_max && scan_in.ranges[i] > scan_in.range_min) //only when valid
+      if (preservative || (scan_in.ranges[i] < scan_in.range_max && scan_in.ranges[i] > scan_in.range_min)) //only when valid
       {
         // Looking up transforms in tree is too expensive. Need more optimized way
         /*
@@ -328,7 +300,6 @@ namespace laser_scan
         cloud_out.pts[count].x  = pointOut.x();
         cloud_out.pts[count].y  = pointOut.y();
         cloud_out.pts[count].z  = pointOut.z();
-
 
         // Copy index over from projected point cloud
         if (idx_index != -1)
