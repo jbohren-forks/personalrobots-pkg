@@ -1,17 +1,27 @@
 <launch>
+  <!-- The camera node -->
   <group ns="forearm">
     <param name="if_name" type="str" value="lo"/>
     <param name="ip_address" type="str" value="127.0.0.1"/>
     <param name="serial_number" type="int" value="12345"/>
     <param name="video_mode" type="str" value="640x480x30"/>
-    <!--param name="frame_id" type="str" value="???"/-->
     <param name="do_colorize" type="bool" value="True"/>
     <param name="do_rectify" type="bool" value="True"/>
     <param name="ext_trigger" type="bool" value="False"/>
     <param name="trigger_controller" type="string" value=""/>
   </group>
   <node name="forearm" pkg="forearm_cam" type="forearm_node" respawn="false" output="screen"/>
-  <node name="forearm_proc" pkg="stereo_image_proc" type="imageproc" respawn="false" output="screen">
-    <remap from="camera" to="forearm"/>
-  </node>
+
+  <!-- The simulator -->
+  <node name="forearm_simulator" pkg="forearm_cam" type="fcam_sim" output="screen"/>
+
+  <!-- hztest to make sure images are coming out -->
+  <test test-name="hztest" pkg="rostest" type="hztest" name="scan_test">
+    <param name="topic" value="/forearm/image_raw" />  
+    <param name="hz" value="30" />
+    <param name="hzerror" value="5" />
+    <param name="test_duration" value="3.0" />
+    <param name="check_intervals" value="true" />    
+  </test>
+
 </launch>

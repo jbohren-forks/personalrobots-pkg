@@ -9,4 +9,6 @@ set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 gensrv()
 rospack_add_boost_directories()
 
+rospack_add_rostest(test/test_with_sim.xml)
+
 add_subdirectory(src)
