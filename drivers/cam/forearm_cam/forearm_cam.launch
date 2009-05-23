@@ -7,6 +7,8 @@
     <!--param name="frame_id" type="str" value="???"/-->
     <param name="do_colorize" type="bool" value="True"/>
     <param name="do_rectify" type="bool" value="True"/>
+    <param name="ext_trigger" type="bool" value="False"/>
+    <param name="trigger_controller" type="string" value=""/>
   </group>
   <node name="forearm" pkg="forearm_cam" type="forearm_node" respawn="false" output="screen"/>
   <node name="forearm_proc" pkg="stereo_image_proc" type="imageproc" respawn="false" output="screen">

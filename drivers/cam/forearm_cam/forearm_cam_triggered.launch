@@ -13,7 +13,7 @@
     <param name="do_rectify" type="bool" value="True"/>
     <param name="ext_trigger" type="bool" value="True"/>
     <param name="trigger_controller" type="string" value="trig_controller"/>
-    <param name="trigger_rate" type="double" value="25"/>
+    <param name="trigger_rate" type="double" value="10"/>
     <param name="trigger_phase" type="double" value="0"/>
     <param name="port" type="int" value="60000"/>
   </group>
