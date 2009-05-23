@@ -1,0 +1,10 @@
+<package>
+  <description>ROS nodes for image segmentation.</description>
+  <author>Caroline Pantofaru</author>
+  <license>BSD and GPL</license>
+  <review status="unreviewed" notes=""/>
+  <depend package="roscpp" />
+  <depend package="color_calib" />
+  <depend package="opencv_latest"/>
+  <url>http://pr.willowgarage.com/wiki/ImageSegmentation</url>
+</package>

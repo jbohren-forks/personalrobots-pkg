@@ -1,0 +1,24 @@
+<launch>
+  <!-- Whether to use color calibration -->
+  <param name="image_segmentation/do_color_calib" type="bool" value="false" />
+
+  <!-- Mean shift filtering params -->
+  <!-- Whether to perform mean shift filtering as pre-processing -->
+  <param name="image_segmentation/do_mean_shift" type="bool" value="true"/>
+  <!-- The spatial bandwidth. Bigger bandwidth = smoother image -->
+  <param name="image_segmentation/spatial_radius_pix" type="double" value="4.0"/>
+  <!-- The color bandwidth. Bigger bandwidth = smoother image -->
+  <param name="image_segmentation/color_radius_pix" type="double" value="10.0" />
+
+  <!-- FH graph-based segmentation parameters -->
+  <!-- Sigma for pre-processing Gaussian image blurring. (Only used if not doing mean shift filtering.) -->
+  <param name="image_segmentation/sigma" type="double" value="1.5" />
+  <!-- Clustering threshold. Bigger K = larger clusters -->
+  <param name="image_segmentation/K" type="double" value="500.0"/>
+  <!-- Minimum cluster size. Clusters smaller than this size will be merged in post-processing -->
+  <param name="image_segmentation/min_cluster_size" type="int" value="100" />
+
+
+  <node pkg="image_segmentation" type="msfhseg_node" args="" output="screen"/>
+</launch>
+
