@@ -33,6 +33,9 @@ system.
 <sysdepend os="debian" version="lenny/sid" package="openjdk-6-jdk"/> 
 <sysdepend os="debian" version="lenny/sid" package="ant"/> 
 <sysdepend os="debian" version="lenny/sid" package="liblog4cpp5"/>
+<rosdep name="jam"/>
+<rosdep name="ant"/>
+<rosdep name="java"/>
 </package>
 
 
