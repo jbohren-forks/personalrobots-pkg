@@ -206,21 +206,6 @@ class DetectHandle extends DoorManipulationBehavior {
   }
 };
 
-/**
- * NotifyDoorBlocked will just send a message to update the world model that the given door is blocked. We will indicate
- * the parameters based on the current and target positions
- */
-class NotifyDoorBlocked extends DoorManipulationBehavior {
-
-  // Redeclare because of bug in parser
-  predicate Active{}
-  predicate Inactive{}
-
-  NotifyDoorBlocked(Mode _mode){
-    super(_mode);
-  }
-
-};
 
 /**
  * 

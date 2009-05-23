@@ -75,9 +75,9 @@ namespace TREX {
   /**
    * @brief Singleton accessor
    */
-  ExecutiveId Executive::request(bool playback, bool warp){
+  ExecutiveId Executive::request(bool playback, bool warp, bool hyper){
     if(s_id == ExecutiveId::noId()){
-      new Executive(playback, warp);
+      new Executive(playback, warp, hyper);
     }
     return s_id;
   }
@@ -85,8 +85,8 @@ namespace TREX {
   /**
    * @brief Executive constructor sets up the trex agent instance
    */
-  Executive::Executive(bool playback, bool warp)
-    : m_id(this), watchDogCycleTime_(0.1), agent_clock_(NULL), debug_file_("Debug.log"), input_xml_root_(NULL), playback_(playback), warp_(warp)
+  Executive::Executive(bool playback, bool warp, bool hyper)
+    : m_id(this), watchDogCycleTime_(0.1), agent_clock_(NULL), debug_file_("Debug.log"), input_xml_root_(NULL), playback_(playback), warp_(warp), hyper_(hyper)
   {
     s_id = m_id;
     m_refCount = 0;
@@ -148,6 +148,8 @@ namespace TREX {
     input_xml_root_->Attribute("finalTick", &finalTick);
     if (playback_) {
       agent_clock_ = new TREX::PlaybackClock((time_limit == 0 ? finalTick : time_limit), warp, input_xml_root_);
+    } else if (hyper_) {
+      agent_clock_ = new TREX::PseudoClock(0, 50, true);
     } else {
       // Allocate a real time clock based on input of update_rate
       const double tick_duration = (update_rate <= 0 ? 1.0 : 1.0 / update_rate);
