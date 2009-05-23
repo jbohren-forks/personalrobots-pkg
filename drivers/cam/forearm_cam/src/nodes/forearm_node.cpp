@@ -37,6 +37,7 @@
 //#define SIM_TEST
 // TODO: Timeout receiving packet.
 // TODO: Check that partial EOF missing frames get caught.
+// @todo Do the triggering based on a stream of incoming timestamps.
 
 #include <ros/node.h>
 #include <image_msgs/Image.h>
@@ -255,7 +256,7 @@ public:
       return;
     }
 
-    node_handle_.param("~port", port_, 9090);
+    node_handle_.param("~port", port_, 9090); /// @todo Should get rid of this and let the OS pick a free port.
 
     node_handle_.param("~ext_trigger", ext_trigger_, false);
 
