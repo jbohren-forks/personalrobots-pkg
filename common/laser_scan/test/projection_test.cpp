@@ -39,8 +39,7 @@
 void test_getUnitVectors (float angle_min, float angle_max, float angle_increment)
 {
   double tolerance = 1e-6;
-  laser_scan::LaserProjection projector;
-  
+  laser_scan::LaserProjection projector;  
   
   const boost::numeric::ublas::matrix<double> & mat = projector.getUnitVectors(angle_min, angle_max, angle_increment);
   
@@ -59,6 +58,10 @@ TEST(laser_scan, getUnitVectors)
   test_getUnitVectors(0, M_PI, M_PI/2.0);
   test_getUnitVectors(-M_PI, M_PI, M_PI/100.0);
   test_getUnitVectors(M_PI, 2.0 * M_PI, M_PI/40.0);
+
+  test_getUnitVectors(-M_PI * 3.0/4.0, 3.0/4.0*M_PI, M_PI/180.0); // 270 @ one degree 
+  test_getUnitVectors(-M_PI * 3.0/4.0, 3.0/4.0*M_PI, M_PI/360.0); // 270 @ half degree
+  test_getUnitVectors(-M_PI * 3.0/4.0, 3.0/4.0*M_PI, M_PI/720.0); // 270 @ quarter degree
 }
 
 /*TEST(laser_scan, projectLaser)

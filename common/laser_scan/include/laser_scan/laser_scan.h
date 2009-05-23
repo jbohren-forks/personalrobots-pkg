@@ -83,7 +83,9 @@ namespace laser_scan
       void transformLaserScanToPointCloud (const std::string& target_frame, robot_msgs::PointCloud & cloudOut, const laser_scan::LaserScan & scanIn, tf::Transformer & tf, int mask = DEFAULT_MASK, bool preservative = false);
 
       /** \brief Return the unit vectors for this configuration
-       * Return the unit vectors for this configuration.    */
+       * Return the unit vectors for this configuration. 
+       * These are dynamically generated and allocated on first request
+       * and will be valid until destruction of this node. */
       const boost::numeric::ublas::matrix<double>& getUnitVectors(float angle_max, float angle_min, float angle_increment);
 
     private:
