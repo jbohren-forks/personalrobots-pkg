@@ -92,12 +92,13 @@ robot_actions::ResultStatus TouchDoorAction::execute(const door_msgs::Door& goal
   node_.publish("r_gripper_effort_controller/command", gripper_msg);
   
   // get gripper position that is feasable for the robot arm
-  Stamped<Pose> shoulder_pose; tf_.lookupTransform("r_shoulder_pan_link", goal_tr.header.frame_id, Time(), shoulder_pose);
-  double angle = getNearestDoorAngle(shoulder_pose, goal_tr, 0.75, touch_dist);
-  if (fabs(angle) > fabs(getDoorAngle(goal_tr))){
-    ROS_ERROR("Door touch pose for the gripper is inside the door");
-    return robot_actions::ABORTED;
-  }
+  Stamped<Pose> shoulder_pose; tf_.lookupTransform(goal_tr.header.frame_id, "r_shoulder_pan_link", Time(), shoulder_pose);
+  // this check does not make sense because we're not tracking the door angle while opinging
+  //double angle = getNearestDoorAngle(shoulder_pose, goal_tr, 0.75, touch_dist);
+  //if (fabs(angle) > fabs(getDoorAngle(goal_tr))){
+  //  ROS_ERROR("Door touch pose for the gripper is inside the door");
+  //  return robot_actions::ABORTED;
+  //}
   Stamped<Pose> gripper_pose = getGripperPose(goal_tr, getNearestDoorAngle(shoulder_pose, goal_tr, 0.75, touch_dist), touch_dist);
   gripper_pose.stamp_ = Time::now();
   PoseStampedTFToMsg(gripper_pose, req_moveto.pose);

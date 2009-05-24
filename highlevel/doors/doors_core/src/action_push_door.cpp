@@ -107,7 +107,7 @@ robot_actions::ResultStatus PushDoorAction::execute(const door_msgs::Door& goal,
   // angle step
   Duration sleep_time(0.01);
   double angle_step = 0;
-  Stamped<Pose> shoulder_pose; tf_.lookupTransform("r_shoulder_pan_link", goal_tr.header.frame_id, Time(), shoulder_pose);
+  Stamped<Pose> shoulder_pose; tf_.lookupTransform(goal_tr.header.frame_id, "r_shoulder_pan_link", Time(), shoulder_pose);
   if (goal_tr.rot_dir == door_msgs::Door::ROT_DIR_CLOCKWISE)
     angle_step = -push_vel*sleep_time.toSec();
   else if (goal_tr.rot_dir == door_msgs::Door::ROT_DIR_COUNTERCLOCKWISE)
