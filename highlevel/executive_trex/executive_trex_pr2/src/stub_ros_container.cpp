@@ -149,6 +149,24 @@ namespace executive_trex_pr2 {
     boost::thread* _update_thread;
   };
 
+  class StubBaseStatePublisher: public StatePublisher<robot_msgs::PoseStamped>{
+  public:
+    StubBaseStatePublisher(const std::string& update_topic, double update_rate)
+      : StatePublisher<robot_msgs::PoseStamped>(robot_msgs::PoseStamped(), update_topic, update_rate){
+    }
+
+    virtual void update(robot_msgs::PoseStamped& s){
+      s.header.frame_id = "map";
+      //s.header.stamp = 0.0;
+      s.pose.position.x = 16.25;
+      s.pose.position.y = 17.53;
+      s.pose.position.z = 0.0;
+      s.pose.orientation.x = 0.0;
+      s.pose.orientation.y = 0.0;
+      s.pose.orientation.z = 0.0;
+      s.pose.orientation.w = 1.0;
+    }
+  };
 
   class BaseStatePublisher: public StatePublisher<robot_msgs::PoseStamped>{
   public:
@@ -212,8 +230,10 @@ int main(int argc, char** argv){
   ros::Node node("executive_trex_pr2/action_container");
 
   // Create state publishers, if parameters are set
-  executive_trex_pr2::BaseStatePublisher* base_state_publisher = NULL;
+  executive_trex_pr2::StatePublisher<robot_msgs::PoseStamped>* base_state_publisher = NULL;
   if (getComponentParam("/trex/enable_base_state_publisher"))
+    base_state_publisher = new executive_trex_pr2::StubBaseStatePublisher("localizedpose", 10.0);
+  else
     base_state_publisher = new executive_trex_pr2::BaseStatePublisher("localizedpose", 10.0);
 
 

@@ -209,18 +209,8 @@ namespace TREX {
 	}
       }
     } else {
-      try{
-	ROS_INFO("Running the executive.\n");
-	TREX::Agent::instance()->run();
-      }
-      catch(const char * str){
-	std::cout << str << std::endl;
-      }
-      catch(std::runtime_error e){
-	ROS_ERROR(e.what());
-	ROS_ERROR("Terminating execution. See logs/latest/TREX.log for clues and see cfg/debug.cfg to enable useful debugging messages to aid in analysis.");
-	ROS_ERROR("You can also grep for trex:error and trex:warn in logs/latest directory");
-      }
+      ROS_INFO("Running the executive.\n");
+      TREX::Agent::instance()->run();
     }
 
     ROS_INFO("Agent has finished running.\n");

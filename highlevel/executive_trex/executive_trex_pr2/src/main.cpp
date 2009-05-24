@@ -213,9 +213,17 @@ int main(int argc, char **argv)
     ROS_INFO("Caught %s. Shutting down.\n", e);
     success = -1;
   }
+  catch(std::runtime_error e){
+    ROS_ERROR(e.what());
+  }
   catch(...){
     ROS_INFO("Caught Unknown Exception!. Shutting down.\n");
     success = -1;
+  }
+
+  if (success == -1){
+    ROS_ERROR("Terminating execution. See logs/latest/TREX.log for clues and see cfg/debug.cfg to enable useful debugging messages to aid in analysis.");
+    ROS_ERROR("You can also grep for trex:error and trex:warn in logs/latest directory");
   }
 
   delete (TREX::Executive*) node;
