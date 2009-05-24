@@ -77,10 +77,12 @@ robot_actions::ResultStatus CheckPathAction::execute(const robot_msgs::PoseStamp
     ROS_ERROR("cannot get transform from %s to %s at time %f", goal_tr.header.frame_id.c_str(), string("base_footprint").c_str(), 0.0);
     return robot_actions::ABORTED;
   }
-  tf::Stamped<tf::Transform> robot_pose, goal_pose;
-  tf_.lookupTransform("base_footprint", goal_tr.header.frame_id, Time(), robot_pose);
-  tf::PoseStampedMsgToTF(goal_tr, goal_pose);
-  double length_straight = (goal_pose * robot_pose).getOrigin().length();
+  tf::Stamped<tf::Point> goal_point;
+  goal_point[0] = goal_tr.pose.position.x;  goal_point[1] = goal_tr.pose.position.y;  goal_point[2] = 0;
+  goal_point.frame_id_ = goal_tr.header.frame_id;
+  goal_point.stamp_ = Time();
+  tf_.transformPoint("base_footprint", goal_point, goal_point);
+  double length_straight = goal_point.length();
   ROS_INFO("Try to find path to (%f %f %f), which is %f [m] from the current robot pose.", 
 	   goal_tr.pose.position.x, goal_tr.pose.position.y, goal_tr.pose.position.z, length_straight);
 
