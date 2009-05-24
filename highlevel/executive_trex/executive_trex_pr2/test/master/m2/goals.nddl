@@ -3,6 +3,8 @@
  * key in the topological map. No ordering is required. For now we will not order efficiently, but will add that shortly.
  */
 
+rejectable(m2_goals.Active g_10);
+g_10.outlet_id = outlet_2_in_conference_room;
 rejectable(m2_goals.Active g_1);
 g_1.outlet_id = outlet_in_sachins_office;
 rejectable(m2_goals.Active g_2);
@@ -13,19 +15,17 @@ rejectable(m2_goals.Active g_4);
 g_4.outlet_id = outlet_in_patricks_office;
 rejectable(m2_goals.Active g_9);
 g_9.outlet_id = outlet_1_in_conference_room;
-rejectable(m2_goals.Active g_10);
-g_10.outlet_id = outlet_2_in_conference_room;
 
 // Impose fixed order
-g_1 before g_2;
-g_2 before g_3;
-g_3 before g_4;
-g_4 before g_9;
+//g_1 before g_2;
+//g_2 before g_3;
+//g_3 before g_4;
+//g_4 before g_9;
 //g_5 before g_9;
 //g6 before g7;
 //g7 before g8;
 //g_8 before g_9;
-g_9 before g_10;
+//g_9 before g_10;
 
 //rejectable(m2_goals.Active g_11);
 //g_11.outlet_id = 39;
