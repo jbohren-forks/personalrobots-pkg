@@ -45,9 +45,10 @@ from robot_msgs.msg import *
 from battery_monitor_adapter import *
 from navigation_adapter import *
 from stuck_adapter import *
+from manual_charge_adapter import *
 
 class Executive:
-  def __init__(self, goals, chrg_stations, navigator, batt_monitor, unstuck, cycle_time):
+  def __init__(self, goals, chrg_stations, navigator, batt_monitor, unstuck, manual_charger, cycle_time):
     rospy.init_node("Executive", anonymous=True)
     self.goals = goals
     self.chrg_stations = chrg_stations
@@ -94,7 +95,7 @@ class Executive:
         if self.batt_monitor.pluggedIn():
           self.state = "recharge"
           print "nav --> recharge"
-        elif self.batt_monitor.chargeNeeded():
+        elif self.batt_monitor.chargeNeeded() or manual_charger.chargeRequested():
           chrg_pts = self.chrg_stations[random.randint(0, len(self.chrg_stations) - 1)]
           self.navigator.sendGoal(chrg_pts, "map")
           self.state = "nav_charge"
@@ -136,7 +137,10 @@ class Executive:
           1) nav_charge --- robot has reached charging station ---> recharge
           2) nav_charge --- robot is inactive or timeout is reached --> nav_charge
         """
-        if self.navigator.goalReached():
+        if self.navigator.goalReached() and manual_charger.chargeRequested() and not self.batt_monitor.pluggedIn():
+          print "nav_charge --> nav_charge"
+        elif self.navigator.goalReached():
+          manual_charger.reset()
           self.batt_monitor.sendPlugEmail()
           print "Sent plug e-mail"
           self.state = "recharge"
@@ -171,6 +175,7 @@ if __name__ == '__main__':
     batt_monitor = BatteryMonitorAdapter(.25, .75, "battery_state", ["watts@willowgarage.com", "eitan@willowgarage.com", "pr2-users@lists.willowgarage.com"], "pre", "/usr/sbin/sendmail")
     navigator = NavigationAdapter(30, 300, "/move_base/feedback", "/move_base/activate")
     unstuck = StuckAdapter("/base_controller/state", "/cmd_vel", 0.5) 
+    manual_charger = ManualChargeAdapter("/request_charge")
 
     goals = [
      [[18.912, 28.568, 0.000], [0.000, 0.000, 0.000, 1.000]],
@@ -185,7 +190,7 @@ if __name__ == '__main__':
     [[18.098, 21.015, 0.000], [0.000, 0.000, 0.713, 0.701]]
     ]
 
-    executive = Executive(goals, chrg_stations, navigator, batt_monitor, unstuck, 1.0)
+    executive = Executive(goals, chrg_stations, navigator, batt_monitor, unstuck, manual_charger, 1.0)
     executive.run()
   except KeyboardInterrupt, e:
     pass

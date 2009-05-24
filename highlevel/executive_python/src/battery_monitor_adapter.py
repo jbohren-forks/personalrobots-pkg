@@ -141,4 +141,4 @@ class BatteryMonitorAdapter:
     pipe.close()
 
   def pluggedIn(self):
-    return self.state.power_consumption >= 0.0
+    return self.state.power_consumption >= -100.0
