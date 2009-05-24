@@ -145,6 +145,36 @@ TEST(executive_trex_pr2, map_get_next_move){
   MapGetNextMoveConstraint::MapGetNextMoveConstraint map_get_next_move("map_next_move", "Default", ce, scope);
   ASSERT_TRUE(ce->propagate());
   /*
+ARG[8]:x(6081) DERIVED=float:CLOSED[14.584563537376155,
+ 14.584563537376155]
+ ARG[9]:y(6082) DERIVED=float:CLOSED[26.792833131576032,
+ 26.792833131576032]
+ ARG[10]:x(478) DERIVED=float:CLOSED[12.062500000000000,
+ 12.062500000000000]
+ ARG[11]:y(479) DERIVED=float:CLOSED[22.287500000000001,
+ 22.287500000000001]
+ ARG[12]:z(480) DERIVED=float:CLOSED[0.000000000000000, 0.000000000000000]
+ ARG[13]:qx(481) DERIVED=float:CLOSED[0.000000000000000,
+ 0.000000000000000]
+ ARG[14]:qy(482) DERIVED=float:CLOSED[0.000000000000000,
+ 0.000000000000000]
+ ARG[15]:qz(483) DERIVED=float:CLOSED[-0.767812094850370,
+ -0.767812094850370]
+ ARG[16]:qw(484) DERIVED=float:CLOSED[0.640675102529735,
+ 0.640675102529735]
+   */
+  /* COMMENT OUT FOR NOW. A test for Ticket: 1480
+  current_x.reset();
+  current_y.reset();
+  target_x.reset();
+  target_y.reset();
+  current_x.specify(14.5845);
+  current_y.specify(26.7928);
+  target_x.specify(12.0625);
+  target_y.specify(22.2875);
+  ASSERT_TRUE(ce->propagate());
+  */
+  /*
 ARG[8]:x(17085) (S)  DERIVED=float:CLOSED[12.737500000000001, 12.737500000000001]
  ARG[9]:y(17086) (S)  DERIVED=float:CLOSED[22.062500000000000, 22.062500000000000]
  ARG[10]:x(478) (S)  DERIVED=float:CLOSED[12.699999999999999, 12.699999999999999]
@@ -481,15 +511,15 @@ TEST(executive_trex_pr2, map_accessor){
     double x, y;
     pickPointInSpace(WIDTH_24 + 5, HEIGHT_21 + 5, x, y);
 
-    unsigned int region_id = TopologicalMapAdapter::instance()->getRegion(x, y);
-    if(region_id == 0){
-      bool valid = TopologicalMapAdapter::instance()->isObstacle(x, y) || x >= WIDTH_24 || y >= HEIGHT_21;
-      ROS_INFO_COND(!valid, "Should be off the map but isn't with (%f, %f)", x, y);
-      ASSERT_TRUE(valid);
-    }
-    else {
+    try{
+      TopologicalMapAdapter::instance()->getRegion(x, y);
       bool valid = !TopologicalMapAdapter::instance()->isObstacle(x, y) && x < WIDTH_24 && y < HEIGHT_21;
       ROS_INFO_COND(!valid, "Should be on the map but isn't with (%f, %f)", x, y);
+      ASSERT_TRUE(valid);
+    }
+    catch(...){
+      bool valid = TopologicalMapAdapter::instance()->isObstacle(x, y) || x >= WIDTH_24 || y >= HEIGHT_21;
+      ROS_INFO_COND(!valid, "Should be off the map but isn't with (%f, %f)", x, y);
       ASSERT_TRUE(valid);
     }
   }
@@ -498,9 +528,13 @@ TEST(executive_trex_pr2, map_accessor){
 TEST(executive_trex_pr2, map_accessor_regression_tests){
   TopologicalMapAdapter map(GRID_3_3_ALL_CONNECTED(), RESOLUTION);
   // Check a point that shoud be in a region.
-  unsigned int region_id = TopologicalMapAdapter::instance()->getRegion(8.5, 0.5);
-  ROS_INFO_COND(region_id == 0, "Should be on the map but isn't with (%f, %f)", 8.5, 0.5);
-  ASSERT_TRUE(region_id > 0 || TopologicalMapAdapter::instance()->isObstacle(8.5, 0.5));
+  try{
+    TopologicalMapAdapter::instance()->getRegion(8.5, 0.5);
+  }
+  catch(...){
+    ROS_INFO("Should be on the map but isn't with (%f, %f)", 8.5, 0.5);
+    ASSERT_TRUE(TopologicalMapAdapter::instance()->isObstacle(8.5, 0.5));
+  }
 }
 
 
@@ -570,19 +604,27 @@ TEST(executive_trex_pr2, map_region_from_position_constraint){
 
   // Generate points in the space and make sure we get a region for each point
   for(unsigned int counter = 0; counter < 100; counter++){
-    // Obtain random values for x and y
-    double x, y;
-    pickPointInSpace(WIDTH_24 + 5, HEIGHT_21 + 5, x, y);
-    unsigned int region_id = TopologicalMapAdapter::instance()->getRegion(x, y);
-
-    // Now bind x and y - should propagate
-    v_x.specify(x);
-    v_y.specify(y);
-    ASSERT_TRUE(ce->propagate());
-    ASSERT_TRUE(v_region.isSingleton());
-    ASSERT_EQ(v_region.derivedDomain().getSingletonValue(), region_id);
-    v_x.reset();
-    v_y.reset();
+    try{
+      // Obtain random values for x and y
+      double x, y;
+      pickPointInSpace(WIDTH_24 + 5, HEIGHT_21 + 5, x, y);
+      std::cout << "This";
+      unsigned int region_id = TopologicalMapAdapter::instance()->getRegion(x, y);
+      // Now bind x and y - should propagate
+      v_x.specify(x);
+      v_y.specify(y);
+      ASSERT_TRUE(ce->propagate());
+      ASSERT_TRUE(v_region.isSingleton());
+      ASSERT_EQ(v_region.derivedDomain().getSingletonValue(), region_id);
+      v_x.reset();
+      v_y.reset();
+    }
+    catch(std::runtime_error e){
+      std::cout << "This";
+    }
+    catch(...){
+      std::cout << "This";
+    }
   }
 }
 

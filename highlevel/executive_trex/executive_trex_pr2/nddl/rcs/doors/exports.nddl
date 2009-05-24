@@ -256,7 +256,10 @@ class PushDoor extends DoorManipulationBehavior {
 class OpenDoor extends DoorManipulationBehavior {
 
   // Redeclare because of bug in parser
-  predicate Active{}
+  predicate Active{
+    eq(max_duration, 1);
+  }
+
   predicate Inactive{}
 
   OpenDoor(Mode _mode){

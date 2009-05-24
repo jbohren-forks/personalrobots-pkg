@@ -141,6 +141,7 @@ namespace TREX {
 	fillActiveObservationParameters(_observation.goal, obs);
 
 	is_active = true;
+	_start_time = ros::Time::now();
       }
 
       TREX_INFO("ros:debug:synchronization", nameString() << "Observation retrieved.");
@@ -148,6 +149,11 @@ namespace TREX {
       _observation.unlock();
 
       lastPublished = lastUpdated;
+
+      if(isActive() && isTimedOut()){
+	preempt();
+      }
+
       return obs;
     }
 
@@ -199,11 +205,11 @@ namespace TREX {
       if(enableController){
 	Goal goal_msg;
 	fillDispatchParameters(goal_msg, goal);
+	setDurationBound(goal);
 	ros::Node::instance()->publish(_request_topic, goal_msg);
       }
       else {
-	std_msgs::Empty recall_msg;
-	ros::Node::instance()->publish(_preempt_topic, recall_msg);
+	preempt();
       }
 
       return true;
@@ -220,6 +226,36 @@ namespace TREX {
     bool succeeded() const {return _observation.status.value == _observation.status.SUCCESS;}
 
   private:
+
+    /**
+     * @brief If a goal has a max duration set then we use it to mark a timer which can be checked in synchronization to see if an action should be preempted.
+     */
+    void setDurationBound(const TokenId& goal){
+      // See TREX.nddl for definition
+      static const unsigned int  MAX_DURATION_INDEX(1);
+      static const LabelStr MAX_DURATION_LABEL("max_duration");
+
+      // Get the max_duration bound and update accordingly
+      ConstrainedVariableId max_duration = goal->parameters()[MAX_DURATION_INDEX];
+      checkError(max_duration.isValid() && max_duration->getName() == MAX_DURATION_LABEL, goal->toLongString());
+      checkError(max_duration->lastDomain().getUpperBound() >= 0, max_duration->toLongString());
+      _max_duration.fromSec(max_duration->getUpperBound());
+    }
+
+    /**
+     * @brief Check if the action has timed out
+     */
+    bool isTimedOut() const { return (ros::Time::now() - _start_time) > _max_duration; }
+
+    /**
+     * @brief Sends a preemption message
+     */
+    void preempt(){
+      TREX_INFO("ros:debug:dispatching",  "Sending preemption message.");
+      std_msgs::Empty recall_msg;
+      ros::Node::instance()->publish(_preempt_topic, recall_msg);
+    }
+
     State _state_msg; /*!< This message is used for the feedback callback handler */
     State _observation; /*!< This message is where we copy the state update on a transition */
     const LabelStr inactivePredicate;
@@ -230,6 +266,9 @@ namespace TREX {
     const std::string _request_topic;
     const std::string _preempt_topic;
     const std::string _feedback_topic;
+    ros::Time _start_time; /*!< Start time of the action */
+    ros::Duration _max_duration; /*!< Maximum duration an action can be active. If elapsed time exceeds this then it will be preempted until it
+				   becomes inactive */
   };
 }
 #endif

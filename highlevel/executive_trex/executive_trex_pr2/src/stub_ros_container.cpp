@@ -66,9 +66,14 @@ namespace executive_trex_pr2 {
 
     virtual robot_actions::ResultStatus execute(const Goal& goal, Feedback& feedback){
       ROS_DEBUG("Executing %s\n", robot_actions::Action<Goal, Feedback>::getName().c_str());
-      feedback = default_feedback_;
+      feedback = getFeedback();
       return default_status_;
     }
+
+    virtual Feedback getFeedback(){
+      return default_feedback_;
+    }
+
   private:
     Feedback default_feedback_;
     robot_actions::ResultStatus default_status_;
@@ -187,7 +192,6 @@ namespace executive_trex_pr2 {
   private:
     tf::TransformListener _tf;
   };
-
 }
 
 
@@ -238,7 +242,9 @@ int main(int argc, char** argv){
     runner.connect<door_msgs::Door, pr2_robot_actions::DoorActionState, door_msgs::Door>(grasp_handle);
 
   // Unlatch Handle
-  executive_trex_pr2::SimpleStubAction<door_msgs::Door> unlatch_handle("unlatch_handle");
+  door_msgs::Door feedback_with_latch_state;
+  feedback_with_latch_state.latch_state = 3; // Unlatched
+  executive_trex_pr2::StubAction<door_msgs::Door, door_msgs::Door> unlatch_handle("unlatch_handle", feedback_with_latch_state);
   if (getComponentParam("/trex/enable_unlatch_handle"))
     runner.connect<door_msgs::Door, pr2_robot_actions::DoorActionState, door_msgs::Door>(unlatch_handle);
 

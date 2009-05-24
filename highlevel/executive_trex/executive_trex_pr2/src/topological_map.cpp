@@ -734,7 +734,11 @@ namespace executive_trex_pr2 {
     try{
       result = _map->containingRegion(topological_map::Point2D(x, y));
     }
-    catch(...){}
+    catch(std::runtime_error e){
+      ROS_ERROR(e.what()); 
+      debugMsg("trex:error:map:getRegion", "failed to get a region for  <" << x << ", " << y << ">. " << e.what()); 
+      throw e;
+    }
     return result;
   }
 
@@ -747,7 +751,11 @@ namespace executive_trex_pr2 {
     try{
       result = _map->pointConnector(topological_map::Point2D(x, y));
     }
-    catch(...){}
+    catch(std::runtime_error e){
+      ROS_ERROR(e.what()); 
+      debugMsg("trex:error:map:getConnector", "failed to get a connector for  <" << x << ", " << y << ">. " << e.what()); 
+      throw e;
+    }
     return result;
   }
 
@@ -851,9 +859,8 @@ namespace executive_trex_pr2 {
     }
     catch(std::runtime_error e){
       ROS_ERROR(e.what()); 
-    }
-    catch(...){
-      debugMsg("map:getConnectorCosts", "failed for <" << x0 << ", " << y0 << "> => <" << x1 << ", " << y1 << ">"); 
+      debugMsg("trex:error:map:getConnectorCosts", "failed for <" << x0 << ", " << y0 << "> => <" << x1 << ", " << y1 << ">"); 
+      throw e;
     }
   }
 
@@ -976,14 +983,21 @@ namespace executive_trex_pr2 {
   }
 
   void TopologicalMapAdapter::getOutletState(unsigned int outlet_id, robot_msgs::Pose& outlet_pose){
-    topological_map::OutletInfo outlet_info = _map->outletInfo(outlet_id);
-    outlet_pose.position.x = outlet_info.x;
-    outlet_pose.position.y = outlet_info.y;
-    outlet_pose.position.z = outlet_info.z;
-    outlet_pose.orientation.x = outlet_info.qx;
-    outlet_pose.orientation.y = outlet_info.qy;
-    outlet_pose.orientation.z = outlet_info.qz;
-    outlet_pose.orientation.w = outlet_info.qw;
+    try{
+      topological_map::OutletInfo outlet_info = _map->outletInfo(outlet_id);
+      outlet_pose.position.x = outlet_info.x;
+      outlet_pose.position.y = outlet_info.y;
+      outlet_pose.position.z = outlet_info.z;
+      outlet_pose.orientation.x = outlet_info.qx;
+      outlet_pose.orientation.y = outlet_info.qy;
+      outlet_pose.orientation.z = outlet_info.qz;
+      outlet_pose.orientation.w = outlet_info.qw;
+    }
+    catch(std::runtime_error e){
+      ROS_ERROR(e.what()); 
+      debugMsg("trex:error:map:getOutletState", "failed to get outlet data for outlet" << outlet_id << ". " << e.what()); 
+      throw e;
+    }
   }
 
   /**
@@ -1132,13 +1146,14 @@ namespace executive_trex_pr2 {
   }
 
   unsigned int TopologicalMapAdapter::getNextConnector(double x1, double y1, double x2, double y2){
+    unsigned int next_connector = 0;
     topological_map::Point2D p1(x1, y1);
     topological_map::Point2D p2(x2, y2);
     topological_map::ConnectorIdVector path = _map->shortestConnectorPath(p1, p2);
     ROS_ASSERT(path.size() >= 2);
 
     debugMsg("map:get_next_move", "Shortest path from <" << x1 << ", " << y1 << "> to <" << x2 << ", " << y2 << "> is " << pathToString(path));
-    unsigned int next_connector = path[1];
+    next_connector = path[1];
 
     // The next connector is insuffient if we are already close to it. In the case that it is a door connecto we have to check against
     // the approach point of the connector. Otherwise we can check against the connector itself.
