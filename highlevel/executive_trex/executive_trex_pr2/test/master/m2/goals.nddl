@@ -9,8 +9,11 @@ rejectable(m2_goals.Active g_1);
 g_1.outlet_id = outlet_in_sachins_office;
 rejectable(m2_goals.Active g_2);
 g_2.outlet_id = outlet_in_green_room;
-rejectable(m2_goals.Active g_3);
-g_3.outlet_id = outlet_in_johns_office;
+
+// This needs to be scrubbed. The nav stack could net get in. Even though check path succeeded
+//rejectable(m2_goals.Active g_3);
+//g_3.outlet_id = outlet_in_johns_office;
+
 rejectable(m2_goals.Active g_4);
 g_4.outlet_id = outlet_in_patricks_office;
 rejectable(m2_goals.Active g_9);
