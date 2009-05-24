@@ -272,7 +272,9 @@ RechargeController::Holds {
 
                   // not in position: move
                   else {
+		    // Use indirection so we can route to a stub for the purposes of testing without actual plug actions
                     contains_start(move_base_local.Active cmd);
+
                     // TODO ; Constraint should have inputs after outputs
                     plugs_get_offset_pose(os.x, os.y, os.z, os.qx, os.qy, os.qz, os.qw, 0.6, 
                                           cmd.x, cmd.y, cmd.z, cmd.qx, cmd.qy,cmd.qz, cmd.qw);

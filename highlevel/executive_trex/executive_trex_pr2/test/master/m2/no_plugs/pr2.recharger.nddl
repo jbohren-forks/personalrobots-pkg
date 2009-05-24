@@ -1,0 +1,14 @@
+#include "TREX.nddl"
+#include "world_model/topological_map.nddl"
+#include "plugs/exports.nddl"
+
+Recharger recharger = new Recharger(Internal);
+
+close();
+
+Recharger::Active{
+  meets(Inactive s);
+  eq(s.status, SUCCESS);
+  eq(duration, 1);
+}
+
