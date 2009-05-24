@@ -257,7 +257,6 @@ class OpenDoor extends DoorManipulationBehavior {
 
   // Redeclare because of bug in parser
   predicate Active{
-    eq(max_duration, 1);
   }
 
   predicate Inactive{}
