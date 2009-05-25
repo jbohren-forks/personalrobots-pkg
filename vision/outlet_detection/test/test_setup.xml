@@ -13,11 +13,12 @@
   <node pkg="stereo_image_proc" type="stereoproc" respawn="false" />
 
 <!-- detectors -->
-<node pkg="outlet_detection" name="outlet_spotting" type="outlet_spotting" output="screen">
+<node pkg="outlet_detection" name="outlet_spotting" type="outlet_spotting2" output="screen">
     <param name="display" type="bool" value="False"/>
     <param name="save_patches" type="bool" value="False"/>
     <param name="base_scan_topic" value="base_scan_marking" />
     <param name="target_frame" value="base_footprint" />
+    <param name="template_path" value="$(find outlet_detection)/templates" />
 </node>
 
 

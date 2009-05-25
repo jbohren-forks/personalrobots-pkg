@@ -80,7 +80,6 @@
 #include <point_cloud_mapping/geometry/statistics.h>
 #include "tf/transform_listener.h"
 #include "topic_synchronizer/topic_synchronizer.h"
-#include "chamfer_matching/chamfer_matching.h"
 
 using namespace std;
 using namespace robot_msgs;
@@ -158,7 +157,7 @@ public:
 	vector<IplImage*> positive_templates;
 	vector<IplImage*> negative_templates;
 
-	OutletSpotting() : ros::Node("stereo_view"),left(NULL), disp(NULL), disp_clone(NULL),
+	OutletSpotting() : ros::Node("outlet_spotting"),left(NULL), disp(NULL), disp_clone(NULL),
 		sync(this, &OutletSpotting::image_cb_all, ros::Duration().fromSec(0.1), &OutletSpotting::image_cb_timeout), have_cloud_point_(false), have_images_(false), ppmm(0.5)
 
 	{
@@ -171,13 +170,13 @@ public:
 		param ("~save_patches", save_patches, false);
 		param ("~frames_number", frames_number_, 5);
 		param<string> ("~target_frame", target_frame_, "odom_combined");
-		param<string> ("~base_scan_topic", base_scan_topic_, "base_scan_filtered");
+		param<string> ("~base_scan_topic", base_scan_topic_, "base_scan_marking");
 		param<string>("~head_controller", head_controller_, "head_controller");
 		param ("~min_outlet_height", min_outlet_height_, 0.1);
 		param ("~max_outlet_height", max_outlet_height_, 0.7);
 		param<string>("~patch_path", patch_path, "data");
-		string template_path;
-        param<string>("~template_path", template_path,"templates");
+//		string template_path;
+//        param<string>("~template_path", template_path,"templates");
 
 		if (display) {
 			ROS_INFO("Displaying images\n");
@@ -191,7 +190,7 @@ public:
     	advertise<robot_msgs::PointStamped>(head_controller_ + "/head_track_point",10);
         advertiseService("~coarse_outlet_detect", &OutletSpotting::outletSpottingService, this);
 
-        loadTemplates(template_path);
+//        loadTemplates(template_path);
 
 	}
 
@@ -1050,7 +1049,150 @@ private:
     }
 
 
+    template<typename T, typename U>
+    double pointSquaredDistance2D(T a, U b)
+    {
+    	return (a.x-b.x)*(a.x-b.x)+(a.y-b.y)*(a.y-b.y);
+    }
+
+    int find_dir(const CvPoint* dir, int xsign, int ysign)
+    {
+    	for(int i = 0; i < 4; i++)
+    	{
+    		if(dir[i].x*xsign > 0 && dir[i].y*ysign > 0)
+    		{
+    			return i;
+    		}
+    	}
+    	return -1;
+    }
+
+    void order_tuple(vector<CvPoint>& centers)
+    {
+    	CvPoint ordered[4];
+    	int idx[4];
+
+    	CvPoint center = cvPoint(0.0f, 0.0f);
+    	for(int i = 0; i < 4; i++)
+    	{
+    		center.x += centers[i].x;
+    		center.y += centers[i].y;
+    	}
+    	center.x *= 0.25f;
+    	center.y *= 0.25f;
+
+    	CvPoint dir[4];
+    	for(int i = 0; i < 4; i++)
+    	{
+    		dir[i].x = centers[i].x - center.x;
+    		dir[i].y = centers[i].y - center.y;
+    	}
+
+    	idx[0] = find_dir(dir, -1, -1);
+    	idx[1] = find_dir(dir, 1, -1);
+    	idx[2] = find_dir(dir, 1, 1);
+    	idx[3] = find_dir(dir, -1, 1);
+
+    	for(int i = 0; i < 4; i++)
+    	{
+    		ordered[i] = centers[idx[i]];
+    	}
+
+    	for(int i = 0; i < 4; i++)
+    	{
+    		centers[i] = ordered[i];
+    	}
+
+    }
+
     bool detectOutletInImage(IplImage *outlet_image, CvRect& rect, string& category)
+    {
+    	IplImage* gray_image = cvCreateImage(cvGetSize(outlet_image), outlet_image->depth, 1);
+    	if (outlet_image->nChannels>1) {
+    		cvCvtColor(outlet_image,gray_image,CV_RGB2GRAY);
+    	}
+    	else {
+    		cvCopy(outlet_image,gray_image);
+    	}
+    	IplImage* binary_image = cvCreateImage(cvGetSize(outlet_image), outlet_image->depth, 1);
+
+    	cvCanny(gray_image, binary_image, 30,60);
+
+
+    	CvMemStorage* storage = cvCreateMemStorage();
+    	CvSeq* first = 0;
+    	cvFindContours(binary_image, storage, &first, sizeof(CvContour), CV_RETR_LIST);
+    	vector<CvPoint > candidates;
+    	for(CvSeq* seq = first; seq != NULL; seq = seq->h_next)
+    	{
+
+    		CvRect rect = cvBoundingRect(seq);
+
+    		if (abs(20-rect.width)>4 || abs(15-rect.height)>4)
+    		{
+    			continue;
+    		}
+
+    		CvPoint center = cvPoint(rect.x+rect.width/2, rect.y+rect.height/2);
+
+			bool add_candidate = true;
+			for (size_t i = 0; i<candidates.size();++i) {
+				if (pointSquaredDistance2D(candidates[i],center)<25) {
+					add_candidate = false;
+				}
+			}
+			if (add_candidate) {
+				candidates.push_back(center);
+			}
+    	}
+
+
+    	cvReleaseMemStorage(&storage);
+    	cvReleaseImage(&binary_image);
+    	cvReleaseImage(&gray_image);
+
+
+
+    	if (candidates.size()!=4) {
+    		return false;
+    	}
+
+    	order_tuple(candidates);
+
+    	if (abs(candidates[0].y-candidates[1].y)>5 || abs(candidates[2].y-candidates[3].y)>5) {
+    		return false;
+    	}
+    	if (abs(candidates[0].x-candidates[3].x)>5 || abs(candidates[1].x-candidates[2].x)>5) {
+    		return false;
+    	}
+
+    	if (display) {
+    		cvNamedWindow("templ",1);
+    		cvShowImage("templ", outlet_image);
+    	}
+
+    	if (abs(abs(candidates[0].x-candidates[1].x)-45*ppmm)>5 || abs(abs(candidates[2].x-candidates[3].x)-45*ppmm)>5) {
+    		return false;
+    	}
+
+    	if (abs(abs(candidates[0].y-candidates[3].y)-39*ppmm)>5 || abs(abs(candidates[1].y-candidates[2].y)-39*ppmm)>5) {
+    		return false;
+    	}
+
+
+    	rect.x = candidates[0].x-20;
+    	rect.y = candidates[0].y-20;
+    	rect.width = candidates[1].x-candidates[0].x+40;
+    	rect.height = candidates[2].y-candidates[0].y+40;
+
+
+    	return true;
+
+    }
+
+#if 0
+
+    bool detectOutletInImage2(IplImage *outlet_image, CvRect& rect, string& category)
     {
     	IplImage* gray_image = cvCreateImage(cvGetSize(outlet_image), outlet_image->depth, 1);
     	if (outlet_image->nChannels>1) {
@@ -1100,6 +1242,11 @@ private:
 
     	ROS_INFO("Outlet_type: %s", best_category.c_str());
 
+
+    	if (best_score>0.01) {
+    		return false;
+    	}
+
     	if (best_category=="comm") {
     		return false;
     	}
@@ -1113,6 +1260,7 @@ private:
 
     	return true;
     }
+#endif
 
     Point nearestPoint(const PointCloud& pc, const Point& point)
     {
@@ -1295,6 +1443,12 @@ private:
 //			Point outlet_center_in_wall;
 //			projectToWallPlane(outlet_center, )
 
+			for (int k = 0;k<4;++k) {
+				if (outlet_bbox[k].x<0 || outlet_bbox[k].x>left->width || outlet_bbox[k].y<0 || outlet_bbox[k].y>left->height) {
+					continue;
+				}
+			}
+
 
 			// update wall pose origin to the outlet center
 
@@ -1315,7 +1469,8 @@ private:
 			cvReleaseImage(&patch);
 
 			// if we got here, we found an outlet
-			pose = wall_pose;
+
+			tf_->transformPose(target_frame_, wall_pose, pose);
 			return true;
 		}
 

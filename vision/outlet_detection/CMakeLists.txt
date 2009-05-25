@@ -29,7 +29,8 @@ rospack_add_executable(outlet_node src/outlet_node.cpp)
 target_link_libraries(outlet_node outlet)
 
 # Far outlet spotting node
-rospack_add_executable(outlet_spotting src/outlet_spotting.cpp src/outlet_tuple_coarse.cpp)
+#rospack_add_executable(outlet_spotting src/outlet_spotting.cpp src/outlet_tuple_coarse.cpp)
+rospack_add_executable(outlet_spotting2 src/outlet_spotting2.cpp)
 rospack_add_executable(test_spotting_service src/test_spotting_service.cpp)
 
 # Plug tracking
@@ -55,8 +56,8 @@ endmacro(rostest_outlet_coarse)
 
 rostest_outlet_coarse(1)
 rostest_outlet_coarse(4)
-#rostest_outlet_coarse(4_2)
-#rostest_outlet_coarse(4_3)
+rostest_outlet_coarse(4_2)
+rostest_outlet_coarse(4_3)
 rostest_outlet_coarse(6)
 rostest_outlet_coarse(16_light_off)
 rostest_outlet_coarse(16_light_on)
@@ -69,11 +70,11 @@ rostest_outlet_coarse(26)
 rostest_outlet_coarse(26_false)
 rostest_outlet_coarse(27)
 rostest_outlet_coarse(39)
-#rostest_outlet_coarse(39_far)
+rostest_outlet_coarse(39_far)
 rostest_outlet_coarse(40_no_detection)
 rostest_outlet_coarse(40_no_detection2)
 rostest_outlet_coarse(40_no_detection3)
-#rostest_outlet_coarse(40_no_detection4)
+rostest_outlet_coarse(40_no_detection4)
 
 
 
