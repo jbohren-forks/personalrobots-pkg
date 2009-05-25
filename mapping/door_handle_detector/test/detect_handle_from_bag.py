@@ -75,7 +75,7 @@ class TestDoorHandleDetector(unittest.TestCase):
      
          door = self.detect_door_laser(d)
          handle_laser = self.detect_handle_laser(door.doors[0])
-         handle_camera = self.detect_handle_camera(d)    
+         handle_camera = self.detect_handle_camera(door.doors[0])    
 
          # Check handle positions against each other
          dx = handle_laser.doors[0].handle.x - handle_camera.doors[0].handle.x
@@ -114,6 +114,7 @@ class TestDoorHandleDetector(unittest.TestCase):
             door_reply = find_handle_laser(door_request)
             print "Request finished"
             print "Handle detected by laser at (%f, %f, %f)"%(door_reply.doors[0].handle.x, door_reply.doors[0].handle.y, door_reply.doors[0].handle.z)
+	    print "Laser frame", door_reply.doors[0].header.frame_id
             return door_reply
         except e:
             self.fail("Service call failed: %s"%e)
@@ -130,6 +131,7 @@ class TestDoorHandleDetector(unittest.TestCase):
             door_reply = find_handle(door_request)
             print "Request finished"
             print "Handle detected by camera at (%f, %f, %f)"%(door_reply.doors[0].handle.x, door_reply.doors[0].handle.y, door_reply.doors[0].handle.z)
+	    print "Camera frame", door_reply.doors[0].header.frame_id
             return door_reply
         except e:
             self.fail("Service call failed: %s"%e)
