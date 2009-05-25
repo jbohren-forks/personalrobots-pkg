@@ -10,7 +10,7 @@
     <include file="$(find prosilica_cam)/cam_settings.xml"/>
     <param name="acquisition_mode" type="str" value="Triggered"/>
   </group>
-  <node machine="three" name="prosilica" pkg="prosilica_cam" type="prosilica_node" output="screen" respawn="false"/>
+  <node machine="three" name="prosilica" pkg="prosilica_cam" type="prosilica_node" output="screen" respawn="true"/>
 
   <!-- Stereo image processing -->
   <group ns="stereo">
