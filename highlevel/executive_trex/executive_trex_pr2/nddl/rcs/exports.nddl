@@ -33,3 +33,9 @@ class ROSAction extends Behavior {
     super(_mode);
   }
 }
+
+ROSAction::Active{
+  int time_since_dispatch;
+  addEq(dispatch_time, time_since_dispatch, start);
+  leq(time_since_dispatch, 100);
+}
