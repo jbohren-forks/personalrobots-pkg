@@ -99,8 +99,8 @@ class TestDoorHandleDetector(unittest.TestCase):
             print "Request finished"
             print "Door detected by laser at (%f, %f) (%f, %f)"%(door_reply.doors[0].door_p1.x, door_reply.doors[0].door_p1.y, door_reply.doors[0].door_p2.x, door_reply.doors[0].door_p2.y)
             return door_reply
-        except e:
-            self.fail("Service call failed: %s"%e)
+        except:
+            self.fail("doors_detector service call failed")
     
      def detect_handle_laser(self, door_request):
         # block until the door_handle_detector service is available
@@ -116,8 +116,8 @@ class TestDoorHandleDetector(unittest.TestCase):
             print "Handle detected by laser at (%f, %f, %f)"%(door_reply.doors[0].handle.x, door_reply.doors[0].handle.y, door_reply.doors[0].handle.z)
 	    print "Laser frame", door_reply.doors[0].header.frame_id
             return door_reply
-        except e:
-            self.fail("Service call failed: %s"%e)
+        except:
+            self.fail("handle_detector service call failed")
     
      def detect_handle_camera(self, door_request):
         # block until the door_handle_detector service is available
@@ -133,8 +133,8 @@ class TestDoorHandleDetector(unittest.TestCase):
             print "Handle detected by camera at (%f, %f, %f)"%(door_reply.doors[0].handle.x, door_reply.doors[0].handle.y, door_reply.doors[0].handle.z)
 	    print "Camera frame", door_reply.doors[0].header.frame_id
             return door_reply
-        except e:
-            self.fail("Service call failed: %s"%e)
+        except:
+            self.fail("door_handle_vision_detector service call failed")
 
 
 if __name__ == "__main__":

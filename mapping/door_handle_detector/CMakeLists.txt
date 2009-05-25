@@ -29,7 +29,38 @@ rospack_add_executable(handle_detector_vision src/handle_detector_vision.cpp)
 rospack_add_executable(test_detect_service test/test_detect_service.cpp)
 rospack_add_executable(test_preempt_service test/test_preempt_service.cpp)
 
-# Testing
+##############################################
+# Regression testing
+
+# Helper macro
+macro(rostest_door_handle _test_name)
+    rospack_download_test_data(http://pr.willowgarage.com/data/door_handle_detector/${_test_name}.bag test/${_test_name}.bag)
+    rospack_add_rostest(test/${_test_name}.launch)
+endmacro(rostest_door_handle)
+
+# We use the point_cloud_cropper in the tests, to simulate a narrow scan of
+# the handle
 rospack_add_executable(point_cloud_cropper test/point_cloud_cropper.cpp)
-rospack_download_test_data(http://pr.willowgarage.com/data/door_handle_detector/door_closed_sachin.bag test/door_closed_sachin.bag)
-rospack_add_rostest(test/door_closed_sachin.launch)
+
+rostest_door_handle(door_closed_39)
+rostest_door_handle(door_closed_conference_1)
+rostest_door_handle(door_closed_josh)
+rostest_door_handle(door_closed_kurt)
+rostest_door_handle(door_closed_sachin)
+rostest_door_handle(door_closed_tully)
+
+# Currently failing tests below
+#rostest_door_handle(door_closed_melonee)
+#rostest_door_handle(door_closed_40)
+#rostest_door_handle(door_closed_alex)
+#rostest_door_handle(door_closed_blaise)
+#rostest_door_handle(door_closed_conor)
+#rostest_door_handle(door_closed_curt)
+#rostest_door_handle(door_closed_daniel)
+#rostest_door_handle(door_closed_ethan)
+#rostest_door_handle(door_closed_john)
+#rostest_door_handle(door_closed_melonee_2)
+#rostest_door_handle(door_closed_melonee_3)
+#rostest_door_handle(door_closed_patrick)
+#rostest_door_handle(door_closed_victoria)
+#rostest_door_handle(door_closed_vijay)
