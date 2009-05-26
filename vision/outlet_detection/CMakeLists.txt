@@ -49,8 +49,8 @@ rospack_add_executable(calibrate_plug src/calibrate_plug.cpp)
 # Outlet coarse detector
 ###########################################
 macro(rostest_outlet_coarse _test_name)
-    rospack_download_test_data(http://pr.willowgarage.com/data/outlet_coarse_detection/outlet_test_${_test_name}.bag test/outlet_test_${_test_name}.bag)
-    rospack_download_test_data(http://pr.willowgarage.com/data/outlet_coarse_detection/outlet_test_${_test_name}.pose test/outlet_test_${_test_name}.pose)
+    rospack_download_test_data(http://pr.willowgarage.com/data/outlet_detection/outlet_test_${_test_name}.bag test/outlet_test_${_test_name}.bag)
+    rospack_download_test_data(http://pr.willowgarage.com/data/outlet_detection/outlet_test_${_test_name}.pose test/outlet_test_${_test_name}.pose)
     rospack_add_rostest(test/outlet_test_${_test_name}.launch)
 endmacro(rostest_outlet_coarse)
 
