@@ -133,6 +133,15 @@ namespace costmap_2d {
       void updateMap();
 
       /**
+       * @brief  Given a pose, build the oriented footprint of the robot
+       * @param  x The x position of the robot
+       * @param  y The y position of the robot
+       * @param  theta The orientation of the robot
+       * @param  oriented_footprint Will be filled with the points in the oriented footprint of the robot
+       */
+      void getOrientedFootprint(double x, double y, double theta, std::vector<robot_msgs::Point>& oriented_footprint);
+
+      /**
        * @brief Clear the footprint of the robot in the costmap
        */
       void clearRobotFootprint();

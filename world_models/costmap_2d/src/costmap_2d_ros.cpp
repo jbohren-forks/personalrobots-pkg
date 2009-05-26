@@ -608,6 +608,18 @@ namespace costmap_2d {
     clearRobotFootprint(global_pose);
   }
 
+  void Costmap2DROS::getOrientedFootprint(double x, double y, double theta, std::vector<robot_msgs::Point>& oriented_footprint){
+    //build the oriented footprint at the robot's current location
+    double cos_th = cos(theta);
+    double sin_th = sin(theta);
+    for(unsigned int i = 0; i < footprint_spec_.size(); ++i){
+      robot_msgs::Point new_pt;
+      new_pt.x = x + (footprint_spec_[i].x * cos_th - footprint_spec_[i].y * sin_th);
+      new_pt.y = y + (footprint_spec_[i].x * sin_th + footprint_spec_[i].y * cos_th);
+      oriented_footprint.push_back(new_pt);
+    }
+  }
+
   void Costmap2DROS::clearRobotFootprint(const tf::Stamped<tf::Pose>& global_pose){
     //make sure we have a legal footprint
     if(footprint_spec_.size() < 3)
@@ -622,15 +634,8 @@ namespace costmap_2d {
     double theta = yaw;
 
     //build the oriented footprint at the robot's current location
-    double cos_th = cos(theta);
-    double sin_th = sin(theta);
     std::vector<robot_msgs::Point> oriented_footprint;
-    for(unsigned int i = 0; i < footprint_spec_.size(); ++i){
-      robot_msgs::Point new_pt;
-      new_pt.x = x + (footprint_spec_[i].x * cos_th - footprint_spec_[i].y * sin_th);
-      new_pt.y = y + (footprint_spec_[i].x * sin_th + footprint_spec_[i].y * cos_th);
-      oriented_footprint.push_back(new_pt);
-    }
+    getOrientedFootprint(x, y, theta, oriented_footprint);
 
     costmap_->lock();
     //set the associated costs in the cost map to be free
