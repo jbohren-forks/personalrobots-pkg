@@ -30,7 +30,7 @@ target_link_libraries(outlet_node outlet)
 
 # Far outlet spotting node
 #rospack_add_executable(outlet_spotting src/outlet_spotting.cpp src/outlet_tuple_coarse.cpp)
-rospack_add_executable(outlet_spotting2 src/outlet_spotting2.cpp)
+rospack_add_executable(outlet_spotting2 src/outlet_spotting2.cpp src/outlet_util.cpp)
 rospack_add_executable(test_spotting_service src/test_spotting_service.cpp)
 
 # Plug tracking
