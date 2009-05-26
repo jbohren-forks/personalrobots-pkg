@@ -70,6 +70,8 @@ There are a number of parameters that can be used to configure the costmap_2d::C
 <br><br>
 <li><b>~costmap/publish_frequency</b>, <i>double</i> <br>The frequency in Hz for the map to be publish display information</li>
 <br><br>
+<li><b>~costmap/transform_tolerance</b>, <i>double</i> <br>Specifies the delay in transform (tf) data that is tolerable. </li>
+<br><br>
 <li><b>~costmap/obstacle_range</b>, <i>double</i> <br>The maximum distance from the robot at which an obstacle will be inserted into the cost map</li>
 <br><br>
 <li><b>~costmap/max_obstacle_height</b>, <i>double</i> <br>The maximum height of an obstacle</li>
@@ -127,8 +129,6 @@ There are a number of parameters that can be used to configure the costmap_2d::C
 <li><b>~costmap/scaling_factor</b>, <i>double</i> <br>A scaling factor to apply to cost values during inflation, shoud be in the range [0, 1]</li>
 <br><br>
 <li><b>~costmap/lethal_cost_threshold</b>, <i>int</i> <br>The threshold value at which to consider a cost lethal when reading in a map</li>
-<br><br>
-<li><b>~costmap/transform_tolerance</b>, <i>double</i> <br>Specifies the delay in transform (tf) data that is tolerable. </li>
 </ul>
 
 
