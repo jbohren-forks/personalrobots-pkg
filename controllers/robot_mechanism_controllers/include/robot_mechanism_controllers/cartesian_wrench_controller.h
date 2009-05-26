@@ -85,6 +85,16 @@ private:
   ros::Duration diagnostics_interval_;
 
   robot_msgs::Wrench wrench_msg_;
+
+  struct joint_constraint{
+    int joint;
+    double low_limit;
+    double high_limit;
+    double stiffness;
+  };
+
+  joint_constraint constraint_;
+
 };
 
 } // namespace

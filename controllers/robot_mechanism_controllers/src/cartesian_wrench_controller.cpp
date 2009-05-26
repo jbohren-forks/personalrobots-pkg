@@ -79,6 +79,16 @@ bool CartesianWrenchController::initXml(mechanism::RobotState *robot_state, TiXm
     return false;
   }
 
+  // get the joint constraint from the parameter server
+  node_->param(controller_name_+"/constraint/joint", constraint_.joint, -1);
+  node_->param(controller_name_+"/constraint/low_limit", constraint_.low_limit, 0.0);
+  node_->param(controller_name_+"/constraint/high_limit", constraint_.high_limit, 0.0);
+  node_->param(controller_name_+"/constraint/stiffness", constraint_.stiffness, 0.0);
+
+  ROS_INFO("Using joint %i, low limit %f, high limit %f and stiffness %f",
+	   constraint_.joint, constraint_.low_limit, constraint_.high_limit, constraint_.stiffness);
+
+
   // test if we got robot pointer
   assert(robot_state);
   robot_state_ = robot_state;
@@ -147,6 +157,15 @@ void CartesianWrenchController::update()
     jnt_eff_(i) = 0;
     for (unsigned int j=0; j<6; j++)
       jnt_eff_(i) += (jacobian_(j,i) * wrench_desi_(j));
+  }
+
+  // apply joint constraint
+  if (constraint_.joint >= 0 && constraint_.joint < (int)(kdl_chain_.getNrOfJoints())){
+    double sgn = sign(constraint_.high_limit - constraint_.low_limit);
+    if (sgn*(constraint_.high_limit-jnt_pos_(constraint_.joint)) < 0)
+      jnt_eff_(constraint_.joint) = constraint_.stiffness * (constraint_.low_limit-jnt_pos_(constraint_.joint));
+    else if (sgn*(constraint_.low_limit-jnt_pos_(constraint_.joint)) < 0)
+      jnt_eff_(constraint_.joint) += constraint_.stiffness * (constraint_.low_limit-jnt_pos_(constraint_.joint));
   }
 
   // set effort to joints
