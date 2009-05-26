@@ -138,26 +138,13 @@ int
   if (switch_controllers.execute(switchlist, empty, timeout_short) != robot_actions::SUCCESS)
     printf("Taking down controllers kinda sorta failed\n");
 
-#if 0
-  // tuck arm
-  //  switchlist.start_controllers.clear();  switchlist.stop_controllers.clear();
-  //switchlist.start_controllers.push_back("r_arm_joint_trajectory_controller");
-  //if (switch_controllers.execute(switchlist, empty, timeout_medium) != robot_actions::SUCCESS) return -1;
-  //if (tuck_arm.execute(empty, empty, timeout_medium) != robot_actions::SUCCESS) return -1;
 
-  // untuck arm
-  // if (untuck_arm.execute(empty, empty, timeout_medium) != robot_actions::SUCCESS) return -1;
-
-  // detect plug on base
-  switchlist.start_controllers.clear();  switchlist.stop_controllers.clear();
-  switchlist.start_controllers.push_back("laser_tilt_controller");
-  if (switch_controllers.execute(switchlist, empty, timeout_short) != robot_actions::SUCCESS) return -1;
-  if (detect_plug_on_base.execute(empty, plug_stow, timeout_long) != robot_actions::SUCCESS) return -1;
-#endif
+  // detect outlet fine
+  if (detect_outlet_fine.execute(point, pose, timeout_long) != robot_actions::SUCCESS) return -3;
 
   // move and grasp plug
   switchlist.start_controllers.clear();  switchlist.stop_controllers.clear();
-  //switchlist.stop_controllers.push_back("r_arm_joint_trajectory_controller");
+  switchlist.stop_controllers.push_back("r_arm_joint_trajectory_controller");
   //switchlist.start_controllers.push_back("r_gripper_position_controller");
   switchlist.start_controllers.push_back("r_arm_cartesian_trajectory_controller");
   switchlist.start_controllers.push_back("r_arm_cartesian_pose_controller");
@@ -165,9 +152,6 @@ int
   switchlist.start_controllers.push_back("r_arm_cartesian_wrench_controller");
   if (switch_controllers.execute(switchlist, empty, timeout_short) != robot_actions::SUCCESS) return -2;
   //if (move_and_grasp_plug.execute(plug_stow, empty, timeout_long) != robot_actions::SUCCESS) return -1;
-
-  // detect outlet fine
-  if (detect_outlet_fine.execute(point, pose, timeout_long) != robot_actions::SUCCESS) return -3;
 
   // localize plug in gripper
   if (localize_plug_in_gripper.execute(empty, empty, timeout_long) != robot_actions::SUCCESS) return -4;
