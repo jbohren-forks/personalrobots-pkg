@@ -48,6 +48,11 @@ rospack_add_executable(run_plug_in
   src/action_plug_in.cpp
   )
 
+rospack_add_executable(run_plug_in2
+  src/run_plug_in2.cpp
+  src/action_plug_in2.cpp
+  )
+
 rospack_add_executable(run_unplug
   src/run_unplug.cpp
   src/action_unplug.cpp
