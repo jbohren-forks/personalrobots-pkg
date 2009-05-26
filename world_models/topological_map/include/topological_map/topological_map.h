@@ -115,6 +115,14 @@ public:
   /// \post Occupancy grid and outlet info written to \a filename
   void writeGridAndOutletData (const string& filename) const;
 
+  /// \post Outlet approach override points added
+  /// \a filename xml file containing override points
+  void readOutletApproachOverrides (const string& filename);
+
+  /// \post Door approach override points added
+  /// \a filename xml file containing override points
+  void readDoorApproachOverrides (const string& filename);
+
   /// \return Id of region containing a grid cell \a p
   /// \throws UnknownGridCellException
   /// \throws NoContainingRegionException

@@ -173,8 +173,7 @@ bool closerToObstacles (const ObstacleDistanceArray& distances, const Cell2D& c1
 {
   double d1 = distances[c1.r][c1.c];
   double d2 = distances[c2.r][c2.c];
-  ROS_DEBUG_STREAM_NAMED ("outlet_approach", " distance of " << c1 << " is " << d1 << " and distance of " << c2 << " is " << d2);
-  return distances[c1.r][c1.c] < distances[c2.r][c2.c];
+  return d1<d2;
 }
   
 
@@ -182,6 +181,62 @@ Point2D TopologicalMap::MapImpl::centerPoint (const Cell2D& cell) const
 {
   return cellCenter(cell, resolution_);
 }
+
+
+void TopologicalMap::MapImpl::readOutletApproachOverrides (const string& filename)
+{
+  TiXmlDocument doc(filename);
+  if (!doc.LoadFile()) {
+    throw XmlException(filename, "Unable to open");
+  }
+  
+  TiXmlHandle root=TiXmlHandle(&doc).FirstChildElement();
+  const string& root_name = root.Element()->ValueStr();
+  if (root_name!=string("outlet_approach_overrides"))
+  {
+    throw XmlException(filename, "Root was not outlet_approach_overrides");
+  }
+  TiXmlElement* next_override;
+  for (next_override=root.FirstChild().Element(); next_override; next_override=next_override->NextSiblingElement())
+  {
+    TiXmlHandle override_handle(next_override);
+    OutletId id = atoi(override_handle.FirstChildElement("id").FirstChild().Node()->Value());
+    double x = atof(override_handle.FirstChildElement("approach_point").FirstChildElement("x").FirstChild().Node()->Value());
+    double y = atof(override_handle.FirstChildElement("approach_point").FirstChildElement("y").FirstChild().Node()->Value());
+    Point2D p(x,y);
+    outlet_approach_overrides_[id] = p;
+    ROS_DEBUG_STREAM_NAMED("outlet_approach", "Adding override of outlet " << id << " to " << p);
+  }
+}
+
+
+void TopologicalMap::MapImpl::readDoorApproachOverrides (const string& filename)
+{
+  TiXmlDocument doc(filename);
+  if (!doc.LoadFile()) {
+    throw XmlException(filename, "Unable to open");
+  }
+  
+  TiXmlHandle root=TiXmlHandle(&doc).FirstChildElement();
+  const string& root_name = root.Element()->ValueStr();
+  if (root_name!=string("door_approach_overrides"))
+  {
+    throw XmlException(filename, "Root was not door_approach_overrides");
+  }
+  TiXmlElement* next_override;
+  for (next_override=root.FirstChild().Element(); next_override; next_override=next_override->NextSiblingElement())
+  {
+    TiXmlHandle override_handle(next_override);
+    ConnectorId id = atoi(override_handle.FirstChildElement("id").FirstChild().Node()->Value());
+    double x = atof(override_handle.FirstChildElement("approach_point").FirstChildElement("x").FirstChild().Node()->Value());
+    double y = atof(override_handle.FirstChildElement("approach_point").FirstChildElement("y").FirstChild().Node()->Value());
+    Point2D p(x,y);
+    door_approach_overrides_[id] = p;
+    ROS_DEBUG_STREAM_NAMED("door_approach", "Adding override of door " << id << " to " << p);
+  }
+}
+
+
 
 
 
@@ -785,6 +840,14 @@ Point2D doorApproachCenter (const Door& door, const Point2D connector, const dou
 
 Point2D TopologicalMap::MapImpl::doorApproachPosition (const ConnectorId id, const double r1, const double r2) const
 {
+  map<ConnectorId, Point2D>::const_iterator pos = door_approach_overrides_.find(id);
+  if (pos!=door_approach_overrides_.end()) {
+    ROS_DEBUG_STREAM_NAMED ("door_approach", " overriding door approach position for " << id << " to " << pos->second);
+    return pos->second;
+  }
+  else {
+  
+
   // Get door and connector info from map
   const RegionPair adjacent_regions = adjacentRegions(id);
   const RegionId doorRegion = regionType(adjacent_regions.first) == DOORWAY ? adjacent_regions.first : adjacent_regions.second;
@@ -800,6 +863,8 @@ Point2D TopologicalMap::MapImpl::doorApproachPosition (const ConnectorId id, con
 
   ROS_DEBUG_STREAM_NAMED ("door_approach", " closest cell is " << *pos);
   return centerPoint(*pos);
+
+  }
 }
 
 
@@ -890,14 +955,21 @@ Point2D outletApproachCenter(const OutletInfo& outlet, const double distance)
 
 Point2D TopologicalMap::MapImpl::outletApproachPosition (const OutletId id, const double r1, const double r2) const
 {
-  RegionPtr region = squareRegion(outletApproachCenter(outletInfo(id), r1), r2);
-  Region::iterator pos = max_element(region->begin(), region->end(), bind(closerToObstacles, ref(obstacle_distances_), _1, _2));
+  map<OutletId, Point2D>::const_iterator pos = outlet_approach_overrides_.find(id);
+  if (pos==outlet_approach_overrides_.end()) {
+    RegionPtr region = squareRegion(outletApproachCenter(outletInfo(id), r1), r2);
+    Region::iterator pos = max_element(region->begin(), region->end(), bind(closerToObstacles, ref(obstacle_distances_), _1, _2));
   
-  if (pos==region->end() || obstacle_distances_[pos->r][pos->c]==0) 
-    throw NoApproachPositionException(id,r1,r2);
+    if (pos==region->end() || obstacle_distances_[pos->r][pos->c]==0) 
+      throw NoApproachPositionException(id,r1,r2);
 
-  ROS_DEBUG_STREAM_NAMED ("outlet_approach", " closest cell is " << *pos);
-  return centerPoint(*pos);
+    ROS_DEBUG_STREAM_NAMED ("outlet_approach", " closest cell is " << *pos);
+    return centerPoint(*pos);
+  }
+  else {
+    ROS_DEBUG_STREAM_NAMED ("outlet_approach", " overriding approach point for " << id << " to " << pos->second);
+    return pos->second;
+  }
 }
   
 
@@ -1519,6 +1591,18 @@ Point2D TopologicalMap::centerPoint (const Cell2D& cell) const
 {
   return map_impl_->centerPoint(cell);
 }
+
+void TopologicalMap::readOutletApproachOverrides (const string& filename)
+{
+  map_impl_->readOutletApproachOverrides(filename);
+}
+
+void TopologicalMap::readDoorApproachOverrides (const string& filename)
+{
+  map_impl_->readDoorApproachOverrides(filename);
+}
+
+
 
 
 } // namespace topological_map

@@ -221,6 +221,14 @@ public:
   /// \post Occupancy grid and outlet info written to \a filename
   void writeGridAndOutletData (const string& filename) const;
 
+  /// \post Outlet approach override points added
+  /// \a filename xml file containing override points
+  void readOutletApproachOverrides (const string& filename);
+
+  /// \post Door approach override points added
+  /// \a filename xml file containing override points
+  void readDoorApproachOverrides (const string& filename);
+
   /// write map in ppm format
   void writePpm (ostream& str) const;
 
@@ -292,6 +300,8 @@ private:
  
   const double resolution_;
 
+  map<OutletId, Point2D> outlet_approach_overrides_;
+  map<ConnectorId, Point2D> door_approach_overrides_;
 };
 
 
