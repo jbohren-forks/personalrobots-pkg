@@ -48,7 +48,7 @@ DetectHandle::Active{
 }
 
 GraspHandle::Active{
-  contained_by(right_arm_mechanism.use_composite_cartesian_trajectory_controller);
+  contained_by(right_arm_mechanism.use_constrained_composite_cartesian_trajectory_controller);
   contained_by(right_gripper_mechanism.use_effort_controller);
 }
 
@@ -63,12 +63,12 @@ OpenDoor::Active{
 }
 
 TouchDoor::Active{
-  contained_by(right_arm_mechanism.use_composite_cartesian_trajectory_controller);
+  contained_by(right_arm_mechanism.use_constrained_composite_cartesian_trajectory_controller);
   contained_by(right_gripper_mechanism.use_effort_controller);
 }
 
 PushDoor::Active{
-  contained_by(right_arm_mechanism.use_composite_cartesian_pose_controller);
+  contained_by(right_arm_mechanism.use_constrained_composite_cartesian_pose_controller);
   contained_by(right_gripper_mechanism.use_effort_controller);
 }
 
@@ -79,7 +79,7 @@ MoveBaseDoor::Active{
 }
 
 ReleaseHandle::Active{
-  contained_by(right_arm_mechanism.use_composite_cartesian_trajectory_controller);
+  contained_by(right_arm_mechanism.use_constrained_composite_cartesian_trajectory_controller);
   contained_by(right_gripper_mechanism.use_effort_controller);
 }
 
