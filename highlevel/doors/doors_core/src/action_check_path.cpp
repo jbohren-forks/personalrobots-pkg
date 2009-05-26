@@ -89,7 +89,7 @@ robot_actions::ResultStatus CheckPathAction::execute(const robot_msgs::PoseStamp
 
   ROS_INFO("call planner to find path");
   req_plan.goal = goal_tr;
-  req_plan.tolerance = 0.25;
+  req_plan.tolerance = 0.0;
   if (!ros::service::call("move_base/make_plan", req_plan, res_plan)){
     if (isPreemptRequested()){
       ROS_ERROR("preempted");
