@@ -87,7 +87,8 @@ int main(int argc, char **argv)
 {
   ros::init(argc, argv);
   PointCloudAssemblerSrv pc_assembler;
+  pc_assembler.start() ;
   ros::Node::instance()->spin();
-  
+
   return 0;
 }

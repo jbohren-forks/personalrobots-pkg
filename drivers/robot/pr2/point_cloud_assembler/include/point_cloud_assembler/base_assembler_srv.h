@@ -74,6 +74,16 @@ public:
   BaseAssemblerSrv(const std::string& node_name) ;
   ~BaseAssemblerSrv() ;
 
+  /**
+   * \brief Tells the assembler to start listening to input data
+   * It is possible that a derived class needs to initialize and configure
+   * various things before actually beginning to process scans. Calling start
+   * create subcribes to the input stream, thus allowing the scanCallback and
+   * ConvertToCloud to be called. Start should be called only once.
+   */
+  void start() ;
+
+
   /** \brief Returns the number of points in the current scan
    * \param scan The scan for for which we want to know the number of points
    * \return the number of points in scan
@@ -116,6 +126,9 @@ private:
 
   //! \brief The frame to transform data into upon receipt
   std::string fixed_frame_ ;
+
+  //! \brief How long we should wait before processing the input data. Very useful for laser scans.
+  double tf_tolerance_secs_ ;
 
   //! \brief Specify how much to downsample the data. A value of 1 preserves all the data. 3 would keep 1/3 of the data.
   unsigned int downsample_factor_ ;
@@ -168,22 +181,36 @@ BaseAssemblerSrv<T>::BaseAssemblerSrv(const std::string& node_name) : node_(node
   ros::Node::instance()->advertiseService(ros::Node::instance()->getName()+"/build_cloud", &BaseAssemblerSrv<T>::buildCloud, this, 0) ;
 
   // **** Get the TF Notifier Tolerance ****
-  double tf_tolerance_secs ;
-  ros::Node::instance()->param("~tf_tolerance_secs", tf_tolerance_secs, 0.0) ;
-  if (tf_tolerance_secs < 0)
-    ROS_ERROR("Parameter tf_tolerance_secs<0 (%f)", tf_tolerance_secs) ;
-  ROS_INFO("tf Tolerance: %f seconds", tf_tolerance_secs) ;
+  ros::Node::instance()->param("~tf_tolerance_secs", tf_tolerance_secs_, 0.0) ;
+  if (tf_tolerance_secs_ < 0)
+    ROS_ERROR("Parameter tf_tolerance_secs<0 (%f)", tf_tolerance_secs_) ;
+  ROS_INFO("tf Tolerance: %f seconds", tf_tolerance_secs_) ;
 
   // ***** Start Listening to Data *****
-  scan_notifier_ = new tf::MessageNotifier<T>(tf_, ros::Node::instance(), boost::bind(&BaseAssemblerSrv<T>::scansCallback, this, _1), "scan_in", fixed_frame_, 10) ;
-  scan_notifier_->setTolerance(ros::Duration(tf_tolerance_secs)) ;
+  // (Well, don't start listening just yet. Keep this as null until we actually start listening, when start() is called)
+  scan_notifier_ = NULL ;
 
+}
+
+template <class T>
+void BaseAssemblerSrv<T>::start()
+{
+  ROS_INFO("Starting to listen on the input stream") ;
+  if (scan_notifier_)
+    ROS_ERROR("assembler::start() was called twice!. This is bad, and could leak memory") ;
+  else
+  {
+    scan_notifier_ = new tf::MessageNotifier<T>(tf_, ros::Node::instance(), boost::bind(&BaseAssemblerSrv<T>::scansCallback, this, _1), "scan_in", fixed_frame_, 10) ;
+    scan_notifier_->setTolerance(ros::Duration(tf_tolerance_secs_)) ;
+  }
 }
 
 template <class T>
 BaseAssemblerSrv<T>::~BaseAssemblerSrv()
 {
-  delete scan_notifier_ ;
+  if (scan_notifier_)
+    delete scan_notifier_ ;
+
   ros::Node::instance()->unadvertiseService(ros::Node::instance()->getName()+"/build_cloud") ;
   delete tf_ ;
 }
