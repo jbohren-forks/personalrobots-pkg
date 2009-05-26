@@ -24,7 +24,8 @@ class TeleopBase : public Node
   int axis_vx, axis_vy, axis_vw, axis_pan, axis_tilt;
   int deadman_button, run_button, torso_dn_button, torso_up_button, head_button, passthrough_button;
   bool deadman_no_publish_, torso_publish, head_publish;
-
+  ros::Time last_recieved_joy_message_time_;
+  ros::Duration joy_msg_timeout_;
   // Set pan, tilt steps as params
 
   TeleopBase(bool deadman_no_publish = false) : Node("teleop_base"), max_vx(0.6), max_vy(0.6), max_vw(0.8), max_vx_run(0.6), max_vy_run(0.6), max_vw_run(0.8), max_pan(2.7), max_tilt(1.4), min_tilt(-0.4), pan_step(0.1), tilt_step(0.1), deadman_no_publish_(deadman_no_publish)
@@ -72,30 +73,44 @@ class TeleopBase : public Node
         param<int>("torso_up_button", torso_up_button, 0);
         param<int>("head_button", head_button, 0);
         param<int>("passthrough_button", passthrough_button, 1);
+
+	double joy_msg_timeout;
+        param<double>("joy_msg_timeout", joy_msg_timeout, 1.0);
+	if (joy_msg_timeout <= 0)
+	  {
+	    joy_msg_timeout_ = ros::Duration().fromSec(9999999);//DURATION_MAX;
+	    ROS_DEBUG("joy_msg_timeout <= 0 -> no timeout");
+	  }
+	else
+	  {
+	    joy_msg_timeout_.fromSec(joy_msg_timeout);
+	    ROS_DEBUG("joy_msg_timeout: %.3f", joy_msg_timeout_.toSec());
+	  }
+
+        ROS_DEBUG("max_vx: %.3f m/s\n", max_vx);
+        ROS_DEBUG("max_vy: %.3f m/s\n", max_vy);
+        ROS_DEBUG("max_vw: %.3f deg/s\n", max_vw*180.0/M_PI);
         
-        printf("max_vx: %.3f m/s\n", max_vx);
-        printf("max_vy: %.3f m/s\n", max_vy);
-        printf("max_vw: %.3f deg/s\n", max_vw*180.0/M_PI);
+        ROS_DEBUG("max_vx_run: %.3f m/s\n", max_vx_run);
+        ROS_DEBUG("max_vy_run: %.3f m/s\n", max_vy_run);
+        ROS_DEBUG("max_vw_run: %.3f deg/s\n", max_vw_run*180.0/M_PI);
         
-        printf("max_vx_run: %.3f m/s\n", max_vx_run);
-        printf("max_vy_run: %.3f m/s\n", max_vy_run);
-        printf("max_vw_run: %.3f deg/s\n", max_vw_run*180.0/M_PI);
+        ROS_DEBUG("tilt step: %.3f rad\n", tilt_step);
+        ROS_DEBUG("pan step: %.3f rad\n", pan_step);
         
-        printf("tilt step: %.3f rad\n", tilt_step);
-        printf("pan step: %.3f rad\n", pan_step);
+        ROS_DEBUG("axis_vx: %d\n", axis_vx);
+        ROS_DEBUG("axis_vy: %d\n", axis_vy);
+        ROS_DEBUG("axis_vw: %d\n", axis_vw);
+        ROS_DEBUG("axis_pan: %d\n", axis_pan);
+        ROS_DEBUG("axis_tilt: %d\n", axis_tilt);
         
-        printf("axis_vx: %d\n", axis_vx);
-        printf("axis_vy: %d\n", axis_vy);
-        printf("axis_vw: %d\n", axis_vw);
-        printf("axis_pan: %d\n", axis_pan);
-        printf("axis_tilt: %d\n", axis_tilt);
-        
-        printf("deadman_button: %d\n", deadman_button);
-        printf("run_button: %d\n", run_button);
-        printf("torso_dn_button: %d\n", torso_dn_button);
-        printf("torso_up_button: %d\n", torso_up_button);
-        printf("head_button: %d\n", head_button);
-        printf("passthrough_button: %d\n", passthrough_button);
+        ROS_DEBUG("deadman_button: %d\n", deadman_button);
+        ROS_DEBUG("run_button: %d\n", run_button);
+        ROS_DEBUG("torso_dn_button: %d\n", torso_dn_button);
+        ROS_DEBUG("torso_up_button: %d\n", torso_up_button);
+        ROS_DEBUG("head_button: %d\n", head_button);
+        ROS_DEBUG("passthrough_button: %d\n", passthrough_button);
+        ROS_DEBUG("joy_msg_timeout: %f\n", joy_msg_timeout);
         
         if (torso_dn_button != 0)
           advertise<std_msgs::Float64>(TORSO_TOPIC, 1);
@@ -105,7 +120,7 @@ class TeleopBase : public Node
         advertise<robot_msgs::PoseDot>("cmd_vel", 1);
         subscribe("joy", joy, &TeleopBase::joy_cb, 1);
         subscribe("cmd_passthrough", cmd_passthrough, &TeleopBase::passthrough_cb, 1);
-        printf("done with ctor\n");
+        ROS_DEBUG("done with ctor\n");
       }
   
   ~TeleopBase()
@@ -123,6 +138,9 @@ class TeleopBase : public Node
 
       void joy_cb()
       {
+	//Record this message reciept
+	last_recieved_joy_message_time_ = ros::Time::now();
+
          /*
            printf("axes: ");
            for(int i=0;i<joy.get_axes_size();i++)
@@ -190,9 +208,11 @@ class TeleopBase : public Node
       void send_cmd_vel()
       {
          joy.lock();
-         if((deadman_button < 0) ||
+         if(((deadman_button < 0) ||
             ((((unsigned int)deadman_button) < joy.get_buttons_size()) &&
              joy.buttons[deadman_button]))
+	    &&
+	    last_recieved_joy_message_time_ + joy_msg_timeout_ > ros::Time::now())
          {
             if (passthrough_button >= 0 &&
                 passthrough_button < (int)joy.get_buttons_size() &&
