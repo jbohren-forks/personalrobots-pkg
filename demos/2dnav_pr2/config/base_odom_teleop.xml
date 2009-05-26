@@ -30,6 +30,7 @@
 <param name="torso_dn_button" value="1" type="int" />
 <param name="torso_up_button" value="3" type="int" />
 
+<param name="joy_msg_timeout" value="1.0"/>
 <param name="deadman_button" value="4" type="int"/>
 <node pkg="teleop_base" type="teleop_base" output="screen" args="--deadman_no_publish" respawn="true" machine="four"/>
 
