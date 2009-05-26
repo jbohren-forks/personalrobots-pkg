@@ -98,7 +98,7 @@ void pickPointInSpace(unsigned int W, unsigned int H, double& x, double& y){
  */
 TEST(executive_trex_pr2, map_get_next_move){
   std::ifstream is("test/willow.tmap");
-  TopologicalMapAdapter map(is);
+  TopologicalMapAdapter map(is, "test/willow.tmap.door_overrides.xml");
   Variable<IntervalDomain> next_x(ce, IntervalDomain(), false, true, "x");
   Variable<IntervalDomain> next_y(ce, IntervalDomain(), false, true, "y");
   Variable<IntervalDomain> next_z(ce, IntervalDomain(), false, true, "z");
@@ -432,7 +432,7 @@ ARG[8]:x(17085) (S)  DERIVED=float:CLOSED[12.737500000000001, 12.737500000000001
  */
 TEST(executive_trex_pr2, map_get_outlet_approach_pose){
   std::ifstream is("test/willow.tmap");
-  TopologicalMapAdapter map(is);
+  TopologicalMapAdapter map(is, "test/willow.tmap.door_overrides.xml");
   Variable<IntervalDomain> x(ce, IntervalDomain());
   Variable<IntervalDomain> y(ce, IntervalDomain());
   Variable<IntervalDomain> z(ce, IntervalDomain());
@@ -475,7 +475,7 @@ TEST(executive_trex_pr2, map_get_outlet_approach_pose){
  */
 TEST(executive_trex_pr2, map_read_from_file){
   std::ifstream is("test/willow.tmap");
-  TopologicalMapAdapter map(is);
+  TopologicalMapAdapter map(is, "test/willow.tmap.door_overrides.xml");
   std::ofstream os("doors.willow.out");
   printDoors(os);
 

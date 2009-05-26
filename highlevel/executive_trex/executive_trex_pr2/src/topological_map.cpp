@@ -114,9 +114,10 @@ namespace executive_trex_pr2 {
     checkError(dom.isSingleton(), dom.toString() << " is not a singleton when it should be.");
     const LabelStr fileName = dom.getSingletonValue();
     std::string fileNameStr = TREX::findFile(fileName.toString());
+    std::string doorOverridesStr = fileNameStr+".door_overrides.xml";
     std::ifstream is(fileNameStr.c_str());
     ROS_INFO("Loading the topological map from file");
-    _map = new TopologicalMapAdapter(is);
+    _map = new TopologicalMapAdapter(is, doorOverridesStr);
   }
 
   MapInitializeFromFileConstraint::~MapInitializeFromFileConstraint(){
@@ -663,7 +664,7 @@ namespace executive_trex_pr2 {
     return _singleton;
   }
 
-  TopologicalMapAdapter::TopologicalMapAdapter(std::istream& in){
+  TopologicalMapAdapter::TopologicalMapAdapter(std::istream& in, const std::string& door_overrides){
 
     if(_singleton != NULL)
       delete _singleton;
@@ -672,6 +673,7 @@ namespace executive_trex_pr2 {
 
     // Temporary fix due to mismatch between 5cm map and 2.5cm map
     _map = topological_map::TopologicalMapPtr(new topological_map::TopologicalMap(in, 1.0, 1e9, 1e9));
+    _map->readDoorApproachOverrides(door_overrides);
 
     debugMsg("map:initialization", toPPM());
   }
