@@ -861,7 +861,7 @@ Point2D TopologicalMap::MapImpl::doorApproachPosition (const ConnectorId id, con
   if (pos==region->end() || obstacle_distances_[pos->r][pos->c]==0) 
     throw NoDoorApproachPositionException(id,r1,r2);
 
-  ROS_DEBUG_STREAM_NAMED ("door_approach", " closest cell is " << *pos);
+  ROS_DEBUG_STREAM_NAMED ("door_approach", " closest point to door connector " << id << " at " << connector << " is " << centerPoint(*pos));
   return centerPoint(*pos);
 
   }
@@ -1315,14 +1315,7 @@ ConnectorIdVector TopologicalMap::MapImpl::shortestConnectorPath (const Point2D&
     return v;
   }
   else {
-    ConnectorIdVector path = roadmap_->shortestPath(start.id, goal.id);
-    ConnectorIdVector pruned_path;
-    uint length = path.size();
-    for (uint i=0; i<length; i++) 
-      if ((i==0) || (i==length-1) || containingRegion(connectorPosition(path[i])) != containingRegion(connectorPosition(path[i-1]))) 
-        pruned_path.push_back(path[i]);
-
-    return pruned_path;
+    return roadmap_->shortestPath(start.id, goal.id);
   }
 }
 

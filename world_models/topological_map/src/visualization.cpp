@@ -263,6 +263,26 @@ void drawDoorApproachPosition (const ConnectorId id, const TopologicalMap& tmap,
 }
 
 
+void drawConnector (const ConnectorId id, const TopologicalMap& tmap, const Publisher& pub)
+{
+  Marker marker;
+  marker.id = id+5000;
+  marker.ns = MARKER_NS;
+  marker.header.frame_id = VISUALIZER_FRAME;
+  marker.type = Marker::SPHERE;
+  marker.action  = Marker::ADD;
+  marker.color.a = 1.0;
+  marker.color.r = 1;
+  marker.scale.x = .1;
+  marker.scale.y = .1;
+  marker.scale.z = .1;
+  Point2D pos = tmap.connectorPosition(id);
+  marker.pose.position.x = pos.x;
+  marker.pose.position.y = pos.y;
+  marker.pose.orientation.x = 1.0;
+  pub.publish(marker);
+}
+
 
 /************************************************************
  * Top level 
@@ -277,7 +297,8 @@ void Visualizer::visualize ()
     drawOutlet (id, tmap_, marker_pub_);
 
   const ConnectorSet connectors = getConnectors(tmap_);
-  for_each (connectors.begin(), connectors.end(), DrawConnectors(tmap_, connector_pub_));
+  foreach (ConnectorId connector, connectors)
+    drawConnector (connector, tmap_, marker_pub_);
 
   foreach (ConnectorId id, connectors)
     drawDoorApproachPosition (id, tmap_, marker_pub_);

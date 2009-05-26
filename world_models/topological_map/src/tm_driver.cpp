@@ -122,13 +122,13 @@ int main (int argc, char* argv[])
   m->addOutlet(OutletInfo(1,2,3,4,5,6,7,8, "green"));
   m->addOutlet(OutletInfo(4,7,9,3,3.5,12,7.253,1, "blue"));
   m->readOutletApproachOverrides("/u/bhaskara/ros/ros-pkg/world_models/willow_maps/outlet_overrides.xml");
-  m->readDoorApproachOverrides("/u/bhaskara/ros/ros-pkg/world_models/willow_maps/door_overrides.xml");
+  m->readDoorApproachOverrides("/u/bhaskara/ros/ros-pkg/world_models/willow_maps/willow.tmap.door_overrides.xml");
   //str = ofstream("local/gui-input.xml");
   // m->writeOutletsAndMap(str);
 
   cout << "Approach position of outlet 1 is " << m->outletApproachPosition(1u, 1.0, 1.0) << endl;
   cout << "Approach position of outlet 2 is " << m->outletApproachPosition(2u, 1.0, 1.0) << endl;
-  cout << "Approach position of connector 20 is " << m->doorApproachPosition(20, 1.0) << endl;
+  cout << "Approach position of connector 100 is " << m->doorApproachPosition(100, 1.0) << endl;
 
 
   

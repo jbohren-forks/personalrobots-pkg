@@ -3,6 +3,6 @@
   <master auto="start"/>
   <group name="wg">
     <node pkg="tf" type="transform_sender" args="0 0 0 0 0 0 map none 10"/>
-    <node pkg="topological_map" type="visualize" args="-t $(find willow_maps)/willow.tmap" respawn="false" output="screen" />
+    <node pkg="topological_map" type="visualize" args="-t $(find willow_maps)/willow.tmap -d $(find willow_maps)/willow.tmap.door_overrides.xml" respawn="false" output="screen" />
   </group>
 </launch>
