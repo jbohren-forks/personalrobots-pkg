@@ -124,11 +124,20 @@ uint numCols(const OccupancyGrid& grid)
 
 bool TopologicalMap::MapImpl::isObstacle (const Point2D& p) const
 {
-  if (pointOnMap(p)) {
-    Cell2D cell = containingCell(p);
+  return pointOnMap(p) ? isObstacle(containingCell(p)) : false;
+}
+
+bool TopologicalMap::MapImpl::isObstacle (const Cell2D& cell) const
+{
+  if (cellOnMap(cell)) 
     return (*grid_)[cell.r][cell.c];
-  }
-  return false;
+  else 
+    throw UnknownGridCellException(cell);
+}
+
+bool TopologicalMap::MapImpl::cellOnMap (const Cell2D& cell) const
+{
+  return (cell.r>=0) && (cell.c>=0) && (cell.r<(int)numRows(*grid_)) && (cell.c<(int)numCols(*grid_));
 }
 
 bool TopologicalMap::MapImpl::pointOnMap (const Point2D& p) const
@@ -572,9 +581,39 @@ TopologicalMap::MapImpl::MapImpl (istream& str, double door_open_prior_prob, dou
  * RegionGraph const ops
  ****************************************/
 
-RegionId TopologicalMap::MapImpl::containingRegion (const Cell2D& p) const
+RegionId TopologicalMap::MapImpl::containingRegion (const Cell2D& c) const
 {
-  return region_graph_->containingRegion(p);
+  set<RegionId> containing_regions;
+  set<Cell2D> seen;
+  queue<Cell2D> queue ;
+  
+  while (!queue.empty()) {
+    const Cell2D cell = queue.front();
+    queue.pop();
+
+    if (cellOnMap(cell) && seen.find(cell)==seen.end()) {
+      seen.insert(cell);
+
+      if (isObstacle(cell)) {
+        for (uint vertical=0; vertical<2; ++vertical) {
+          for (uint mult=-1; mult<=1; mult+=2) {
+            const uint dr = mult * (vertical ? 1 : 0);
+            const uint dc = mult * (vertical ? 0 : 1);
+            queue.push(Cell2D(cell.r+dr, cell.c+dc));
+          }
+        }
+      }
+      
+      else {
+        containing_regions.insert(region_graph_->containingRegion(cell));
+      }
+    }
+  }
+
+  if (containing_regions.size()!=1) 
+    throw NoContainingRegionException(c, containing_regions.size());
+  else
+    return *(containing_regions.begin());
 }
 
 int TopologicalMap::MapImpl::regionType (const RegionId id) const

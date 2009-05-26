@@ -172,6 +172,12 @@ struct NoDoorApproachPositionException: public TopologicalMapException
     TopologicalMapException (format ("No free cell within radius %1% of approach position at distance %2% from connector %3%") % r2 % r1 % id) {}
 };
 
+struct NoContainingRegionException: public TopologicalMapException
+{
+  NoContainingRegionException (const Cell2D& cell, const uint num_regions) :
+    TopologicalMapException (format ("Cell %1% had %2% containing regions instead of 1") % cell % num_regions) {}
+};
+
 } // namespace topological_map
 
 

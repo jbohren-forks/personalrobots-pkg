@@ -33,4 +33,4 @@ rospack_add_executable(bin/visualize src/visualize)
 target_link_libraries(bin/visualize topological_graph)
 rospack_link_boost(bin/visualize program_options)						     
 
-rospack_add_executable(bin/door_sensor_fusion src/door_sensor_fusion.cpp)
+# rospack_add_executable(bin/door_sensor_fusion src/door_sensor_fusion.cpp)

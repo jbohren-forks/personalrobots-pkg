@@ -117,11 +117,13 @@ public:
 
   /// \return Id of region containing a grid cell \a p
   /// \throws UnknownGridCellException
+  /// \throws NoContainingRegionException
   RegionId containingRegion(const Cell2D& p) const;
 
   /// \return Id of region containing a 2d point
   /// \throws UnknownPointException
   /// \throws UnknownGridCellException
+  /// \throws NoContainingRegionException
   RegionId containingRegion(const Point2D& p) const;
 
   /// \return Id of connector that equals a given 2d point (\a x, \a y)

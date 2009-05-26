@@ -73,10 +73,12 @@ public:
 
   /// \return Id of region containing \a p
   /// \throws UnknownCell2DException
+  /// \throws NoContainingRegionException
   RegionId containingRegion(const Cell2D& p) const;
 
   /// \return Id of region containing point \a p
   /// \throws UnknownPointException
+  /// \throws NoContainingRegionException
   RegionId containingRegion (const Point2D& p) const;
 
   /// \return Integer representing type of region
@@ -155,7 +157,11 @@ public:
   /// \return Set of all region ids.  
   const RegionIdSet& allRegions() const;
 
+  /// \return is this point in an obstacle cell?  If off the map, return false.
   bool isObstacle (const Point2D& p) const ;
+
+  /// \return is this cell an obstacle cell?  
+  bool isObstacle (const Cell2D& cell) const ;
 
   /// \return vector of adjacent connector ids to region \a id
   /// \throws UnknownRegionException
@@ -257,6 +263,7 @@ private:
   tuple<ConnectorId, Cell2D, Cell2D> connectorCellsBetween (const RegionId r1, const RegionId r2) const;
   Point2D findBorderPoint(const Cell2D& cell1, const Cell2D& cell2) const;
   bool pointOnMap (const Point2D& p) const;
+  bool cellOnMap (const Cell2D& c) const;
   void setDoorCost (RegionId id, const Time& t);
   void setDoorCosts (const Time& t);
   void updateDistances (const RegionId region_id);
