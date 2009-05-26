@@ -137,7 +137,6 @@ TEST(TopologicalMap, BasicAPI)
   EXPECT_EQ(1u, m.containingRegion(Cell2D(3,10)));
   EXPECT_EQ(3u, m.containingRegion(Cell2D(4,13)));
   EXPECT_EQ(2u, m.containingRegion(Cell2D(4,9)));
-
   m.removeRegion(2);
   try {
     m.removeRegion(2);
@@ -215,6 +214,7 @@ TEST(TopologicalMap, Creation)
   setV(grid, 0, 1, 21, 8, 8, 24, true);
   setV(grid, 3, 7, 21, 8, 8, 24, false);
   setV(grid, 7, 7, 21, 4, 8, 24, false);
+  grid[18][12] = true;
 
   TopologicalMapPtr m = topologicalMapFromGrid (grid, 0.1, 2, 1, 1, 0, "local");
 
@@ -223,6 +223,17 @@ TEST(TopologicalMap, Creation)
   EXPECT_EQ(m->regionType(m->containingRegion(Point2D(.35,.82))), 1);
   EXPECT_TRUE(m->isObstacle(Point2D(2.35,.75)));
   EXPECT_TRUE(!(m->isObstacle(Point2D(2.35,.65))));
+
+  RegionId region = m->containingRegion(Cell2D(1u,1u));
+  EXPECT_EQ (region, m->containingRegion(Cell2D(2u,2u)));
+  try {
+    m->containingRegion(Cell2D(0,8));
+    ADD_FAILURE() << "Containing region didn't fail as expected";
+  }
+  catch (NoContainingRegionException& e) {}
+  region = m->containingRegion(Cell2D(18,12));
+  EXPECT_EQ(region, m->containingRegion(Cell2D(17,12)));
+             
 
   Point2D pos=m->connectorPosition(1);
   bool path_found;

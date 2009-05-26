@@ -586,7 +586,9 @@ RegionId TopologicalMap::MapImpl::containingRegion (const Cell2D& c) const
   set<RegionId> containing_regions;
   set<Cell2D> seen;
   queue<Cell2D> queue ;
-  
+  queue.push(c);
+  ROS_DEBUG_STREAM_NAMED ("containing_region", "Looking for containing region of " << c);
+
   while (!queue.empty()) {
     const Cell2D cell = queue.front();
     queue.pop();
@@ -595,18 +597,25 @@ RegionId TopologicalMap::MapImpl::containingRegion (const Cell2D& c) const
       seen.insert(cell);
 
       if (isObstacle(cell)) {
-        for (uint vertical=0; vertical<2; ++vertical) {
-          for (uint mult=-1; mult<=1; mult+=2) {
-            const uint dr = mult * (vertical ? 1 : 0);
-            const uint dc = mult * (vertical ? 0 : 1);
+        for (int vertical=0; vertical<2; ++vertical) {
+          for (int mult=-1; mult<=1; mult+=2) {
+            const int dr = mult * (vertical ? 1 : 0);
+            const int dc = mult * (vertical ? 0 : 1);
             queue.push(Cell2D(cell.r+dr, cell.c+dc));
           }
         }
+        ROS_DEBUG_STREAM_NAMED ("containing_region", " Adding neighbors of obstacle cell " << cell);
       }
       
       else {
-        containing_regions.insert(region_graph_->containingRegion(cell));
+        RegionId region = region_graph_->containingRegion(cell);
+        containing_regions.insert(region);
+        ROS_DEBUG_STREAM_NAMED ("containing_region", " Adding containing region " << region << " of " << cell);
       }
+    }
+    
+    else {
+      ROS_DEBUG_STREAM_NAMED ("containing_region", " Ignoring cell " << cell);
     }
   }
 

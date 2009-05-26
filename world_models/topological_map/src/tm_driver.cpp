@@ -131,7 +131,7 @@ int main (int argc, char* argv[])
   TopologicalMap m3(str3, 1.0, 1e9, 1e9);
 
   Point2D p1(19.1125, 29.1625);
-  Point2D p2(44.0, 44.0);
+  Point2D p2(12.7, 22.5);
   tmap::ConnectorIdVector path = m3.shortestConnectorPath(p1, p2);
   cout << " Path between " << p1 << " and " << p2 << ": ";
   foreach (ConnectorId connector, path) {
