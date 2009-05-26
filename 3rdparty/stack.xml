@@ -1,0 +1,13 @@
+<stack name="ros-pkg_3rdparty" version="0.1">
+  <description brief="3rdparty packages from ros-pkg">
+    These are common dependencies for ros-pkg
+  </description>
+  <version>0.1</version>
+  <author>Tully Foote tfoote@willowgarage.com</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://pr.willowgarage.com/wiki/3rdparty</url>
+  
+  <depend stack="ros" version="0.5"/>
+</stack>
+
