@@ -132,24 +132,22 @@ namespace nav {
     //than the resolution of the map... compute the full potential function
     double resolution = planner_costmap_ros_->resolution();
     std::vector<robot_msgs::PoseStamped> global_plan;
-    if(req.tolerance > resolution){
-      robot_msgs::PoseStamped p;
-      p = req.goal;
-      p.pose.position.y = req.goal.pose.position.y - req.tolerance; 
-      bool found_legal = false;
-      while(!found_legal && p.pose.position.y < req.goal.pose.position.y + req.tolerance){
-        p.pose.position.x = req.goal.pose.position.x - req.tolerance;
-        while(!found_legal && p.pose.position.x < req.goal.pose.position.x + req.tolerance){
-          if(planner_->makePlan(p, global_plan)){
-            if(!global_plan.empty()){
-              global_plan.push_back(p);
-              found_legal = true;
-            }
+    robot_msgs::PoseStamped p;
+    p = req.goal;
+    p.pose.position.y = req.goal.pose.position.y - req.tolerance; 
+    bool found_legal = false;
+    while(!found_legal && p.pose.position.y <= req.goal.pose.position.y + req.tolerance){
+      p.pose.position.x = req.goal.pose.position.x - req.tolerance;
+      while(!found_legal && p.pose.position.x <= req.goal.pose.position.x + req.tolerance){
+        if(planner_->makePlan(p, global_plan)){
+          if(!global_plan.empty()){
+            global_plan.push_back(p);
+            found_legal = true;
           }
-          p.pose.position.x += resolution*3.0;
         }
-        p.pose.position.y += resolution*3.0;
+        p.pose.position.x += resolution*3.0;
       }
+      p.pose.position.y += resolution*3.0;
     }
 
     //copy the plan into a message to send out
