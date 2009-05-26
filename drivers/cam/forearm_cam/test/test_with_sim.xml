@@ -21,7 +21,7 @@
     <param name="hz" value="30" />
     <param name="hzerror" value="5" />
     <param name="test_duration" value="3.0" />
-    <param name="check_intervals" value="true" />    
+    <!--param name="check_intervals" value="true" /-->    
   </test>
 
 </launch>
