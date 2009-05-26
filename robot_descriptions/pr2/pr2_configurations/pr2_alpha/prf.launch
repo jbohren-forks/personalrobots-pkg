@@ -54,6 +54,15 @@
     <param name="gain_auto" type="bool" value="true"/>
   </group>
   <node machine="three" pkg="dcam" type="stereodcam" respawn="false"/>
+
+  <!-- Prosilica camera setup -->
+  <group ns="prosilica">
+    <include file="$(find prosilica_cam)/cam_settings.xml"/>
+    <param name="acquisition_mode" type="str" value="Triggered"/>
+  </group>
+  <node machine="three" name="prosilica" pkg="prosilica_cam" type="prosilica_node" output="screen" respawn="true"/>
+
+
   
 <!-- Sound  -->
   <node pkg="sound_play" type="soundplay_node.py" machine="four" />
