@@ -145,6 +145,21 @@ int main (int argc, char* argv[])
   }
   cout << endl;
 
+
+  p2 = Point2D(18,28);
+  path = m3.shortestConnectorPath(p1, p2);
+  cout << " Path between " << p1 << " and " << p2 << ": ";
+  foreach (ConnectorId connector, path) {
+    cout << endl << " " << connector << ": ";
+    try {
+      cout << m3.connectorPosition(connector);
+    }
+    catch (tmap::UnknownConnectorIdException& e) {
+      cout << "unknown";
+    }
+  }
+  cout << endl;
+
   printConnectorCosts (m3, Point2D(33.844, 36.379), Point2D(12.7, 22.5), 0);
 
   cout << "Approach position of outlet 1 at radius 2, .4 is " << m3.outletApproachPosition(1,2,.4) << endl;

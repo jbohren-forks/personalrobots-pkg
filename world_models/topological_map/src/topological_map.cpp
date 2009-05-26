@@ -1235,7 +1235,16 @@ ConnectorIdVector TopologicalMap::MapImpl::shortestConnectorPath (const Point2D&
 {
   TemporaryRoadmapNode start(this, p1);
   TemporaryRoadmapNode goal(this, p2);
-  return roadmap_->shortestPath(start.id, goal.id);
+
+  if (containingRegion(p1)==containingRegion(p2)) {
+    ConnectorIdVector v;
+    v.push_back(start.id);
+    v.push_back(goal.id);
+    return v;
+  }
+  else {
+    return roadmap_->shortestPath(start.id, goal.id);
+  }
 }
 
 ConnectorId getId (const ConnectorDesc& desc)
