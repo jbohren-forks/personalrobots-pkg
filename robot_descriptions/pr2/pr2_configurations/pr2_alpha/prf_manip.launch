@@ -44,6 +44,7 @@
   <param name="imu/port"  type="string" value="/dev/ttyUSB0" />
   <param name="imu/autostart" type="bool" value="true" />
   <param name="imu/frameid"  type="string" value="imu" />
+  <param name="imu/autocalibrate" type="bool" value="false" />
   <node machine="four" pkg="imu_node" type="imu_node" output="screen"/>
 
 <!-- odom estimation -->
