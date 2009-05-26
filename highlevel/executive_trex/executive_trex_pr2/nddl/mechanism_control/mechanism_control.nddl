@@ -153,11 +153,11 @@ RightArmMechanism::use_constrained_composite_cartesian_pose_controller{
   eq(c3.is_up, false);
 
   contained_by(r_arm_cartesian_wrench_controller.Holds d0);
-  eq(d0.is_up, true);
+  eq(d0.is_up, false);
   contained_by(r_arm_cartesian_twist_controller.Holds d1);
-  eq(d1.is_up, true);
+  eq(d1.is_up, false);
   contained_by(r_arm_cartesian_pose_controller.Holds d2);
-  eq(d2.is_up, true);
+  eq(d2.is_up, false);
 }
 
 

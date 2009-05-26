@@ -216,6 +216,7 @@ DoorController::Holds {
 	      else {
 		contains_start(touch_door.Active cmd_touch_door);
 		contains_start(push_door.Active cmd_push_door);
+		eq(cmd_touch_door.status, SUCCESS);
 
 		cmd_touch_door before cmd_push_door;
 		cmd_push_door starts_before cmd_move_base_door;
