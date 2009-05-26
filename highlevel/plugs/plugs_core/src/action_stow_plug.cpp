@@ -88,10 +88,10 @@ void StowPlugAction::reset()
 
   last_grasp_value_ = 0.0;
   grasp_count_ = 0;
-  gripper_cmd_.data = 0.04;
+  gripper_cmd_.data = 0.055;
 
   req_pose_.pose.header.frame_id = plug_stow_.header.frame_id;
-  req_pose_.pose.pose.position.x = plug_stow_.plug_centroid.x;
+  req_pose_.pose.pose.position.x = plug_stow_.plug_centroid.x -0.01;
   req_pose_.pose.pose.position.y = plug_stow_.plug_centroid.y;
   req_pose_.pose.pose.position.z = plug_stow_.plug_centroid.z + 0.15;
 
@@ -120,7 +120,9 @@ void StowPlugAction::moveToStow()
     deactivate(robot_actions::PREEMPTED, std_msgs::Empty());
     return;
   }
-  req_pose_.pose.pose.position.z = plug_stow_.plug_centroid.z - 0.1;
+  req_pose_.pose.pose.position.z = plug_stow_.plug_centroid.z - 0.14;
+  req_pose_.pose.pose.position.y = plug_stow_.plug_centroid.y - 0.03;
+
   req_pose_.pose.header.stamp = ros::Time();
   if (!ros::service::call(arm_controller_ + "/move_to", req_pose_, res_pose_))
   {
