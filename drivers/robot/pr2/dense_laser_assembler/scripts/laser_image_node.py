@@ -53,6 +53,8 @@ from image_msgs.msg import *
 def rescale(x, max_val) :
     lower_lim = max_val*0.0
     upper_lim = max_val*1.0
+    #lower_lim = 2000
+    #upper_lim = 3000
     a = x - lower_lim
     if a <= 0 :
         return chr(0)

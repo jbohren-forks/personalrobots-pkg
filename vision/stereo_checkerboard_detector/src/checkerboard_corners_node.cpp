@@ -84,7 +84,7 @@ public:
     //bool found = helper_.getCorners(cv_image, cv_corners) ;
     int num_corners ;
     int found = cvFindChessboardCorners( cv_image, board_size_, &cv_corners[0], &num_corners,
-                                         CV_CALIB_CB_ADAPTIVE_THRESH ) ;
+                                         CV_CALIB_CB_ADAPTIVE_THRESH | CV_CALIB_CB_NORMALIZE_IMAGE) ;
 
     if(found)
     {
@@ -122,6 +122,13 @@ public:
       //  cvDrawChessboardCorners(cv_debug, board_size_, &cv_corners[0], cv_corners.size(), found) ;
 
       if (found)
+      {
+        for (unsigned int i=0; i<cv_corners.size(); i++)
+        {
+          cvCircle(cv_debug, cvPoint(cv_corners[i].x, cv_corners[i].y), 2, cvScalar(0,255,0), 1) ;
+        }
+      }
+      else
       {
         for (unsigned int i=0; i<cv_corners.size(); i++)
         {
