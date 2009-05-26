@@ -170,6 +170,9 @@ namespace nav {
           return true;
         }
       }
+      else{
+        resp.plan.poses[i] = global_plan[i];
+      }
     }
 
 
