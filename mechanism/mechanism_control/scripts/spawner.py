@@ -32,62 +32,81 @@
 #
 # Author: Stuart Glaser
 
-import roslib, time
-roslib.load_manifest('mechanism_control')
+import roslib; roslib.load_manifest('mechanism_control')
 
-import rospy, sys
+import sys
+import time
+
+import rospy
 from mechanism_control import mechanism
 from robot_srvs.srv import SpawnController, KillController
 
-def print_usage(exit_code = 0):
-    print 'spawner.py <controllers_config>'
-    sys.exit(exit_code)
-
-rospy.wait_for_service('spawn_controller')
-spawn_controller = rospy.ServiceProxy('spawn_controller', SpawnController)
-kill_controller = rospy.ServiceProxy('kill_controller', KillController)
-
+# global state of spawned/failed_spawned so that we can teardown controllers on process exit
 spawned = []
-prev_handler = None
+failed_spawned = []
 
-def shutdown(sig, stackframe):
-    global spawned
+## kill any controllers that this process has launched
+def shutdown():
+    kill_controller = rospy.ServiceProxy('kill_controller', KillController)
     for name in reversed(spawned):
-        for i in range(3):
+        for i in range(3): #try three times to kill
             try:
                 rospy.logout("Trying to kill %s" % name)
                 kill_controller(name)
                 rospy.logout("Succeeded in killing %s" % name)
-                break
-            except rospy.ServiceException:
-                raise
-                rospy.logerr("ServiceException while killing %s" % name)
-    # We're shutdown.  Now invoke rospy's handler for full cleanup.
-    if prev_handler is not None:
-        prev_handler(signal.SIGINT,None)
+                break 
+            except rospy.ServiceException, se:
+                rospy.logerr("ServiceException while killing %s: %s"%(name, se))
+
+## @return [str], [str]: spawned, failed_spawned. Names of controllers
+## that successfully loaded and those that failed. Returns None, None if
+## controller configs not loaded successfully.
+def spawner(configs):
+    global spawned, failed_spawned
+
+    # load the controller config xml files
+    xmls = []
+    for c in configs:
+        try:
+            f = open(c)
+            try:
+                xmls.append(f.read())
+            finally:
+                f.close()
+        except IOError, e:
+            print >> sys.stderr, "Cannot open controller config file [%s]"%c
+            return None, None
+
+    # spawn the configs
+    rospy.init_node('spawner', anonymous=True)
+    rospy.wait_for_service('spawn_controller')
+    rospy.on_shutdown(shutdown)
+    spawn_controller = rospy.ServiceProxy('spawn_controller', SpawnController)
+    for xml in xmls:
+        resp = spawn_controller(xml)
+        for ok, name in zip(resp.ok, resp.name):
+            if ok == chr(1):
+                spawned.append(name)
+            else:
+                failed_spawned.append(name)
+    return spawned, failed_spawned
+    
+def spawner_main(argv=sys.argv):
+    import optparse
+    parser = optparse.OptionParser('spawner.py <controllers_config>')
+    options, args = parser.parse_args(argv[1:])
+    if not args:
+        parser.error("you must specify controller config(s) to load")
+    spawned, failed_spawned = spawner(args)
+
+    if not spawned:
+        sys.exit(-1)
+    if failed_spawned:
+        print >> sys.stderr, "Failed to spawn: %s" % ', '.join(failed_spawned)
+    print "Spawned controllers: %s" % ', '.join(spawned)
+
+    # block until shutdown
+    rospy.spin()
 
 if __name__ == '__main__':
-    if len(sys.argv) < 2:
-        print_usage()
-    rospy.init_node('spawner', anonymous=True)
-
-    # Override rospy's signal handling.  We'll invoke rospy's handler after
-    # we're done shutting down.
-    import signal
-    prev_handler = signal.getsignal(signal.SIGINT)
-    signal.signal(signal.SIGINT, shutdown)
-
-    for c in range(1,len(sys.argv)):
-        f = open(sys.argv[c])
-        xml = f.read()
-        f.close()
-        resp = spawn_controller(xml)
-
-        for r in range(len(resp.ok)):
-            if resp.ok[r] == chr(1):
-                spawned.append(resp.name[r])
-            else:
-                print "Failed to spawn %s" % resp.name[r]
-
-    print "Spawned controllers: %s" % ', '.join(spawned)
-    rospy.spin()
+    spawner_main(rospy.myargv())
