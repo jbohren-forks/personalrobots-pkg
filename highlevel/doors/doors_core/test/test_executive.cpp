@@ -169,17 +169,17 @@ int
     switchlist.start_controllers.clear();  switchlist.stop_controllers.clear();
     switchlist.stop_controllers.push_back("r_arm_joint_trajectory_controller");
     switchlist.start_controllers.push_back("r_gripper_effort_controller");
-    switchlist.start_controllers.push_back("r_arm_cartesian_trajectory_controller");
-    switchlist.start_controllers.push_back("r_arm_cartesian_pose_controller");
-    switchlist.start_controllers.push_back("r_arm_cartesian_twist_controller");
-    switchlist.start_controllers.push_back("r_arm_cartesian_wrench_controller");
+    switchlist.start_controllers.push_back("r_arm_constraint_cartesian_trajectory_controller");
+    switchlist.start_controllers.push_back("r_arm_constraint_cartesian_pose_controller");
+    switchlist.start_controllers.push_back("r_arm_constraint_cartesian_twist_controller");
+    switchlist.start_controllers.push_back("r_arm_constraint_cartesian_wrench_controller");
     if (switch_controllers.execute(switchlist, empty, timeout_short) != robot_actions::SUCCESS) return -1;
     if (touch_door.execute(res_detect_handle, tmp_door, timeout_long) != robot_actions::SUCCESS) return -1;
     cout << "door touched" << endl;
 
     // push door in separate thread
     switchlist.start_controllers.clear();  switchlist.stop_controllers.clear();
-    switchlist.stop_controllers.push_back("r_arm_cartesian_trajectory_controller");
+    switchlist.stop_controllers.push_back("r_arm_constraint_cartesian_trajectory_controller");
     if (switch_controllers.execute(switchlist, empty, timeout_short) != robot_actions::SUCCESS) return -1;
     thread = new boost::thread(boost::bind(&robot_actions::ActionClient<door_msgs::Door, 
 					   pr2_robot_actions::DoorActionState, door_msgs::Door>::execute, 
@@ -190,18 +190,18 @@ int
     switchlist.start_controllers.clear();  switchlist.stop_controllers.clear();
     switchlist.stop_controllers.push_back("r_arm_joint_trajectory_controller");
     switchlist.start_controllers.push_back("r_gripper_effort_controller");
-    switchlist.start_controllers.push_back("r_arm_cartesian_trajectory_controller");
-    switchlist.start_controllers.push_back("r_arm_cartesian_pose_controller");
-    switchlist.start_controllers.push_back("r_arm_cartesian_twist_controller");
-    switchlist.start_controllers.push_back("r_arm_cartesian_wrench_controller");
+    switchlist.start_controllers.push_back("r_arm_constraint_cartesian_trajectory_controller");
+    switchlist.start_controllers.push_back("r_arm_constraint_cartesian_pose_controller");
+    switchlist.start_controllers.push_back("r_arm_constraint_cartesian_twist_controller");
+    switchlist.start_controllers.push_back("r_arm_constraint_cartesian_wrench_controller");
     if (switch_controllers.execute(switchlist, empty, timeout_short) != robot_actions::SUCCESS) return -1;
     if (grasp_handle.execute(res_detect_handle, tmp_door, timeout_long) != robot_actions::SUCCESS) return -1;
 
     // unlatch handle
     switchlist.start_controllers.clear();  switchlist.stop_controllers.clear();
-    switchlist.stop_controllers.push_back("r_arm_cartesian_trajectory_controller");
-    switchlist.stop_controllers.push_back("r_arm_cartesian_pose_controller");
-    switchlist.stop_controllers.push_back("r_arm_cartesian_twist_controller");
+    switchlist.stop_controllers.push_back("r_arm_constraint_cartesian_trajectory_controller");
+    switchlist.stop_controllers.push_back("r_arm_constraint_cartesian_pose_controller");
+    switchlist.stop_controllers.push_back("r_arm_constraint_cartesian_twist_controller");
     switchlist.start_controllers.push_back("r_arm_cartesian_tff_controller");
     if (switch_controllers.execute(switchlist, empty, timeout_short) != robot_actions::SUCCESS) return -1;
     if (unlatch_handle.execute(res_detect_handle, tmp_door, timeout_long) != robot_actions::SUCCESS) return -1;
@@ -240,19 +240,19 @@ int
   if (!open_by_pushing){
     switchlist.start_controllers.clear();  switchlist.stop_controllers.clear();
     switchlist.stop_controllers.push_back("r_arm_cartesian_tff_controller");
-    switchlist.start_controllers.push_back("r_arm_cartesian_trajectory_controller");
-    switchlist.start_controllers.push_back("r_arm_cartesian_pose_controller");
-    switchlist.start_controllers.push_back("r_arm_cartesian_twist_controller");
+    switchlist.start_controllers.push_back("r_arm_constraint_cartesian_trajectory_controller");
+    switchlist.start_controllers.push_back("r_arm_constraint_cartesian_pose_controller");
+    switchlist.start_controllers.push_back("r_arm_constraint_cartesian_twist_controller");
     if (switch_controllers.execute(switchlist, empty, timeout_short) != robot_actions::SUCCESS) return -1;
     if (release_handle.execute(res_detect_handle, tmp_door, timeout_long) != robot_actions::SUCCESS) return -1;
   }
 
   // tuck arm
   switchlist.start_controllers.clear();  switchlist.stop_controllers.clear();
-  switchlist.stop_controllers.push_back("r_arm_cartesian_trajectory_controller");
-  switchlist.stop_controllers.push_back("r_arm_cartesian_pose_controller");
-  switchlist.stop_controllers.push_back("r_arm_cartesian_twist_controller");
-  switchlist.stop_controllers.push_back("r_arm_cartesian_wrench_controller");
+  switchlist.stop_controllers.push_back("r_arm_constraint_cartesian_trajectory_controller");
+  switchlist.stop_controllers.push_back("r_arm_constraint_cartesian_pose_controller");
+  switchlist.stop_controllers.push_back("r_arm_constraint_cartesian_twist_controller");
+  switchlist.stop_controllers.push_back("r_arm_constraint_cartesian_wrench_controller");
   switchlist.start_controllers.push_back("r_arm_joint_trajectory_controller");
   if (switch_controllers.execute(switchlist, empty, timeout_medium) != robot_actions::SUCCESS) return -1;
   if (tuck_arm.execute(empty, empty, timeout_medium) != robot_actions::SUCCESS) return -1;
