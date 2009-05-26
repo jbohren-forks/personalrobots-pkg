@@ -87,69 +87,75 @@ public:
   {
     ROS_INFO("%f - Callback", t.toSec());
 
-    CHECK_LAYOUT(dense_range_.data);
-    CHECK_LAYOUT(joint_info_.data);
-
-    // Shape range data into an openCV matrix
-    CvMat cv_ranges = cvMat(dense_range_.data.layout.dim[0].size, dense_range_.data.layout.dim[1].size, CV_32FC1,
-                            &dense_range_.data.data[0]);
-
-    // Shape joint data into an openCV matrix
-    CvMat cv_joints = cvMat(joint_info_.data.layout.dim[0].size, joint_info_.data.layout.dim[1].size, CV_32FC1,
-                            &joint_info_.data.data[0]);
-
-    unsigned int C = pixel_corners_.pts.size();
-
-    vector<float> corners_pix_x(C);
-    vector<float> corners_pix_x_normalized(C);
-    vector<float> corners_pix_y(C);
-    vector<float> corners_joint(C);
-    vector<float> corners_range(C);
-
-    CvMat cv_corners_pix_x = cvMat(C, 1, CV_32FC1, &corners_pix_x[0]);
-    CvMat cv_corners_pix_x_normalized = cvMat(C, 1, CV_32FC1, &corners_pix_x_normalized[0]);
-    CvMat cv_corners_pix_y = cvMat(C, 1, CV_32FC1, &corners_pix_y[0]);
-    CvMat cv_corners_joint = cvMat(C, 1, CV_32FC1, &corners_joint[0]);
-    CvMat cv_corners_range = cvMat(C, 1, CV_32FC1, &corners_range[0]);
-
-    for (unsigned int i = 0; i < C; i++)
-    {
-      corners_pix_x[i] = pixel_corners_.pts[i].x;
-      corners_pix_y[i] = pixel_corners_.pts[i].y;
-    }
-
-    float x_scale = (float)(joint_info_.data.layout.dim[1].size - 1)
-        / (float)(dense_range_.data.layout.dim[1].size - 1);
-    // corners_pix_x_normalized = corners_pix_x *
-    cvConvertScale(&cv_corners_pix_x, &cv_corners_pix_x_normalized, x_scale);
-
-    for (unsigned int i = 0; i < 12; i++)
-    {
-      printf("%2u) x: %.2f    norm(x): %.2f\n", i, corners_pix_x[i], corners_pix_x_normalized[i]);
-      printf("    y: %.2f\n", corners_pix_y[i]);
-      printf("    Range=%.2f\n", *( (float*) CV_MAT_ELEM_PTR( cv_ranges,
-                                                              (int) corners_pix_y[i],
-                                                              (int) corners_pix_x[i])) ) ;
-    }
-
-    cvRemap(&cv_joints, &cv_corners_joint, &cv_corners_pix_x_normalized, &cv_corners_pix_y);//, CV_INTER_LINEAR);
-    cvRemap(&cv_ranges, &cv_corners_range, &cv_corners_pix_x, &cv_corners_pix_y);//, CV_INTER_LINEAR);
-
+    unsigned int C = pixel_corners_.pts.size() ;
     robot_msgs::PointCloud measured_corners;
+    measured_corners.header.stamp = pixel_corners_.header.stamp ;
+    measured_corners.header.frame_id = "NOT_APPLICABLE" ;
     measured_corners.pts.resize(C);
 
-    printf("Range=\n") ;
-    for (unsigned int i=0; i<6; i++)
-      printf("%2u) joint: %.2f   range: %.2f\n", i, corners_joint[i], corners_range[i]) ;
-
-    for (unsigned int i = 0; i < C; i++)
+    if (C > 0)
     {
-      // Tilt angle
-      measured_corners.pts[i].x = corners_joint[i];
-      // Pointing angle
-      measured_corners.pts[i].y = pointingAngle(scan_info_, pixel_corners_.pts[i].x);
-      // Range
-      measured_corners.pts[i].z = corners_range[i];
+      CHECK_LAYOUT(dense_range_.data);
+      CHECK_LAYOUT(joint_info_.data);
+
+      // Shape range data into an openCV matrix
+      CvMat cv_ranges = cvMat(dense_range_.data.layout.dim[0].size, dense_range_.data.layout.dim[1].size, CV_32FC1,
+                              &dense_range_.data.data[0]);
+
+      // Shape joint data into an openCV matrix
+      CvMat cv_joints = cvMat(joint_info_.data.layout.dim[0].size, joint_info_.data.layout.dim[1].size, CV_32FC1,
+                              &joint_info_.data.data[0]);
+
+      vector<float> corners_pix_x(C);
+      vector<float> corners_pix_x_normalized(C);
+      vector<float> corners_pix_y(C);
+      vector<float> corners_joint(C);
+      vector<float> corners_range(C);
+
+      printf("Allocated matricies with C=%u\n", C) ;
+      CvMat cv_corners_pix_x = cvMat(C, 1, CV_32FC1, &corners_pix_x[0]);
+      CvMat cv_corners_pix_x_normalized = cvMat(C, 1, CV_32FC1, &corners_pix_x_normalized[0]);
+      CvMat cv_corners_pix_y = cvMat(C, 1, CV_32FC1, &corners_pix_y[0]);
+      CvMat cv_corners_joint = cvMat(C, 1, CV_32FC1, &corners_joint[0]);
+      CvMat cv_corners_range = cvMat(C, 1, CV_32FC1, &corners_range[0]);
+      printf("done allocating!") ;
+
+      for (unsigned int i = 0; i < C; i++)
+      {
+        corners_pix_x[i] = pixel_corners_.pts[i].x;
+        corners_pix_y[i] = pixel_corners_.pts[i].y;
+      }
+
+      float x_scale = (float)(joint_info_.data.layout.dim[1].size - 1)
+        / (float)(dense_range_.data.layout.dim[1].size - 1);
+      // corners_pix_x_normalized = corners_pix_x *
+      cvConvertScale(&cv_corners_pix_x, &cv_corners_pix_x_normalized, x_scale);
+
+      for (unsigned int i = 0; i < 12; i++)
+      {
+        printf("%2u) x: %.2f    norm(x): %.2f\n", i, corners_pix_x[i], corners_pix_x_normalized[i]);
+        printf("    y: %.2f\n", corners_pix_y[i]);
+        printf("    Range=%.2f\n", *( (float*) CV_MAT_ELEM_PTR( cv_ranges,
+                                                                (int) corners_pix_y[i],
+                                                                (int) corners_pix_x[i])) ) ;
+      }
+
+      cvRemap(&cv_joints, &cv_corners_joint, &cv_corners_pix_x_normalized, &cv_corners_pix_y);//, CV_INTER_LINEAR);
+      cvRemap(&cv_ranges, &cv_corners_range, &cv_corners_pix_x, &cv_corners_pix_y);//, CV_INTER_LINEAR);
+
+      printf("Range=\n") ;
+      for (unsigned int i=0; i<6; i++)
+        printf("%2u) joint: %.2f   range: %.2f\n", i, corners_joint[i], corners_range[i]) ;
+
+      for (unsigned int i = 0; i < C; i++)
+      {
+        // Tilt angle
+        measured_corners.pts[i].x = corners_joint[i];
+        // Pointing angle
+        measured_corners.pts[i].y = pointingAngle(scan_info_, pixel_corners_.pts[i].x);
+        // Range
+        measured_corners.pts[i].z = corners_range[i];
+      }
     }
 
     node_->publish("dense_tilt_scan/measured_corners", measured_corners);
