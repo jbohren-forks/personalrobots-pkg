@@ -34,7 +34,7 @@
   </node>
 
   <!-- Laser scan assembler for tilt laser -->
-  <node pkg="point_cloud_assembler" type="laser_scan_assembler_srv" output="screen" name="laser_scan_assembler">
+  <node pkg="point_cloud_assembler" type="laser_scan_assembler_srv" output="screen" name="laser_scan_assembler" respawn="true">
     <remap from="scan_in" to="tilt_scan"/>
     <param name="filters" textfile="$(find laser_scan)/default_scan_shadows.xml" />
     <param name="tf_cache_time_secs" type="double" value="10.0" />
@@ -54,7 +54,7 @@
     <param name="downsample_factor" type="int" value="2" />
   </node>
 
-  <node pkg="point_cloud_assembler" type="point_cloud_snapshotter" output="screen" name="plugs_snapshotter">
+  <node pkg="point_cloud_assembler" type="point_cloud_snapshotter" output="screen" name="plugs_snapshotter" respawn="true">
     <remap from="laser_scanner_signal" to="laser_tilt_controller/laser_scanner_signal"/>
     <remap from="build_cloud" to="plugs_laser_scan_assembler/build_cloud" />
     <remap from="full_cloud" to="plug_snapshot_cloud" />
