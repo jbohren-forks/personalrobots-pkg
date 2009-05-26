@@ -59,8 +59,8 @@ namespace nav {
     ros_node_.advertise<robot_msgs::PoseDot>("cmd_vel", 1);
 
     //we'll assume the radius of the robot to be consistent with what's specified for the costmaps
-    ros_node_.param("~navfn/costmap/inscribed_radius", inscribed_radius_, 0.325);
-    ros_node_.param("~navfn/costmap/circumscribed_radius", circumscribed_radius_, 0.46);
+    ros_node_.param("~base_local_planner/costmap/inscribed_radius", inscribed_radius_, 0.325);
+    ros_node_.param("~base_local_planner/costmap/circumscribed_radius", circumscribed_radius_, 0.46);
 
     robot_msgs::Point pt;
     double padding;
@@ -150,29 +150,10 @@ namespace nav {
       p.pose.position.y += resolution*3.0;
     }
 
-    //we'll also check the plan for legality with the footprint of the robot
-    base_local_planner::CostmapModel footprint_checker(planner_costmap_);
     //copy the plan into a message to send out
     resp.plan.set_poses_size(global_plan.size());
     for(unsigned int i = 0; i < global_plan.size(); ++i){
-      if(i > 0){
-        double prev_x = global_plan[i - 1].pose.position.x;
-        double prev_y = global_plan[i - 1].pose.position.x;
-        double x = global_plan[i].pose.position.x;
-        double y = global_plan[i].pose.position.x;
-        double angle = atan2(y - prev_y, x - prev_x);
-        std::vector<robot_msgs::Point> oriented_footprint;
-        planner_costmap_ros_->getOrientedFootprint(x, y, angle, oriented_footprint);
-        if(footprint_checker.footprintCost(global_plan[i].pose.position, oriented_footprint, inscribed_radius_, circumscribed_radius_) >= 0.0)
-          resp.plan.poses[i] = global_plan[i];
-        else{
-          resp.plan.set_poses_size(0);
-          return true;
-        }
-      }
-      else{
-        resp.plan.poses[i] = global_plan[i];
-      }
+      resp.plan.poses[i] = global_plan[i];
     }
 
 
