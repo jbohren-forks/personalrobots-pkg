@@ -57,14 +57,14 @@ PushDoorAction::PushDoorAction(Node& node, tf::TransformListener& tf) :
   tf_(tf)
 {
   node_.advertise<std_msgs::Float64>("r_gripper_effort_controller/command",10);
-  node_.advertise<robot_msgs::PoseStamped>("r_arm_cartesian_pose_controller/command",20);
+  node_.advertise<robot_msgs::PoseStamped>("r_arm_constraint_cartesian_pose_controller/command",20);
 };
 
 
 PushDoorAction::~PushDoorAction()
 {
   node_.unadvertise("r_gripper_effort_controller/command");
-  node_.unadvertise("r_arm_cartesian_pose_controller/command");
+  node_.unadvertise("r_arm_constraint_cartesian_pose_controller/command");
 };
 
 
@@ -91,14 +91,14 @@ robot_actions::ResultStatus PushDoorAction::execute(const door_msgs::Door& goal,
   
   // start monitoring gripper pose
   pose_state_received_ = false;
-  node_.subscribe("r_arm_cartesian_pose_controller/state/pose", pose_msg_,  &PushDoorAction::poseCallback, this, 1);
+  node_.subscribe("r_arm_constraint_cartesian_pose_controller/state/pose", pose_msg_,  &PushDoorAction::poseCallback, this, 1);
   Duration timeout = Duration().fromSec(3.0);
   Duration poll = Duration().fromSec(0.1);
   Time start_time = ros::Time::now();
   while (!pose_state_received_){
     if (start_time + timeout < ros::Time::now()){
       ROS_ERROR("failed to receive pose state");
-      node_.unsubscribe("r_arm_cartesian_pose_controller/state/pose");
+      node_.unsubscribe("r_arm_constraint_cartesian_pose_controller/state/pose");
       return robot_actions::ABORTED;
     }
     poll.sleep();
@@ -128,7 +128,7 @@ robot_actions::ResultStatus PushDoorAction::execute(const door_msgs::Door& goal,
     gripper_pose = getGripperPose(goal_tr, angle, push_dist);
     gripper_pose.stamp_ = Time::now();
     PoseStampedTFToMsg(gripper_pose, gripper_pose_msg);
-    node_.publish("r_arm_cartesian_pose_controller/command", gripper_pose_msg);
+    node_.publish("r_arm_constraint_cartesian_pose_controller/command", gripper_pose_msg);
 
     // increase angle when pose error is small enough
     boost::mutex::scoped_lock lock(pose_mutex_);

@@ -108,7 +108,7 @@ robot_actions::ResultStatus TouchDoorAction::execute(const door_msgs::Door& goal
 
   // move gripper in front of door
   ROS_INFO("move to touch the door at distance %f from hinge", touch_dist);
-  if (!ros::service::call("r_arm_cartesian_trajectory_controller/move_to", req_moveto, res_moveto)){
+  if (!ros::service::call("r_arm_constraint_cartesian_trajectory_controller/move_to", req_moveto, res_moveto)){
     if (isPreemptRequested()){
       ROS_ERROR("preempted");
       return robot_actions::PREEMPTED;

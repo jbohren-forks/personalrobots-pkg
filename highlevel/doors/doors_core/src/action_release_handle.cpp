@@ -66,7 +66,7 @@ robot_actions::ResultStatus ReleaseHandleAction::execute(const door_msgs::Door& 
   ROS_INFO("ReleaseHandleAction: execute");
 
   // subscribe to the robot pose state message
-  node_.subscribe("r_arm_cartesian_pose_controller/state/pose", pose_msg_,  &ReleaseHandleAction::poseCallback, this, 1);
+  node_.subscribe("r_arm_constraint_cartesian_pose_controller/state/pose", pose_msg_,  &ReleaseHandleAction::poseCallback, this, 1);
   pose_received_ = false;
  
   // open the gripper during 4 seconds
@@ -80,7 +80,7 @@ robot_actions::ResultStatus ReleaseHandleAction::execute(const door_msgs::Door& 
       gripper_msg.data = 0.0;
       node_.publish("r_gripper_effort_controller/command", gripper_msg);
       ROS_ERROR("ReleaseHandleAction: preempted");
-      node_.unsubscribe("r_arm_cartesian_pose_controller/state/pose");
+      node_.unsubscribe("r_arm_constraint_cartesian_pose_controller/state/pose");
       return robot_actions::PREEMPTED;
     }
   }
@@ -93,12 +93,12 @@ robot_actions::ResultStatus ReleaseHandleAction::execute(const door_msgs::Door& 
   while (!pose_received_){
     if (start_time + timeout < ros::Time::now()){
       ROS_ERROR("ReleaseHandleAction: failed to receive robot pose");
-      node_.unsubscribe("r_arm_cartesian_pose_controller/state/pose");
+      node_.unsubscribe("r_arm_constraint_cartesian_pose_controller/state/pose");
       return robot_actions::ABORTED;
     }
     poll.sleep();
   }
-  node_.unsubscribe("r_arm_cartesian_pose_controller/state/pose");
+  node_.unsubscribe("r_arm_constraint_cartesian_pose_controller/state/pose");
   boost::mutex::scoped_lock lock(pose_mutex_);
 
 
@@ -108,7 +108,7 @@ robot_actions::ResultStatus ReleaseHandleAction::execute(const door_msgs::Door& 
   PoseStampedTFToMsg(Stamped<Pose>(gripper_goal, Time::now(), gripper_pose_.frame_id_), req_moveto.pose);
 
   ROS_INFO("ReleaseHandleAction: move gripper away from door ");
-  if (!ros::service::call("r_arm_cartesian_trajectory_controller/move_to", req_moveto, res_moveto)){
+  if (!ros::service::call("r_arm_constraint_cartesian_trajectory_controller/move_to", req_moveto, res_moveto)){
     if (isPreemptRequested()){
       ROS_ERROR("ReleaseHandleAction: preempted");
       return robot_actions::PREEMPTED;

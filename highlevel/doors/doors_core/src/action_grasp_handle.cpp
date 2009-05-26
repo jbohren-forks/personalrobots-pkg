@@ -102,7 +102,7 @@ robot_actions::ResultStatus GraspHandleAction::execute(const door_msgs::Door& go
   PoseStampedTFToMsg(gripper_pose, req_moveto.pose);
 
   ROS_INFO("GraspHandleAction: move in front of handle");
-  if (!ros::service::call("r_arm_cartesian_trajectory_controller/move_to", req_moveto, res_moveto)){
+  if (!ros::service::call("r_arm_constraint_cartesian_trajectory_controller/move_to", req_moveto, res_moveto)){
     if (isPreemptRequested()){
       ROS_ERROR("GraspHandleAction: preempted");
       return robot_actions::PREEMPTED;
@@ -124,7 +124,7 @@ robot_actions::ResultStatus GraspHandleAction::execute(const door_msgs::Door& go
   //req_moveto.tolerance.vel.y = 0.1;
   //req_moveto.tolerance.vel.z = 0.1;
   ROS_INFO("GraspHandleAction: move over handle");
-  if (!ros::service::call("r_arm_cartesian_trajectory_controller/move_to", req_moveto, res_moveto)){
+  if (!ros::service::call("r_arm_constraint_cartesian_trajectory_controller/move_to", req_moveto, res_moveto)){
     if (isPreemptRequested()){
       ROS_ERROR("GraspHandleAction: preempted");
       return robot_actions::PREEMPTED;
