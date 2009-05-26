@@ -1,6 +1,7 @@
 base_local_planner:
   #Independent settings for the local costmap
   costmap:
+    inscribed_radius: 0.325
     publish_voxel_map: true
     global_frame: odom_combined
     robot_base_frame: base_link
@@ -15,6 +16,7 @@ base_local_planner:
     origin_y: 0.0
   transform_tolerance: 0.2
   costmap_visualization_rate: 0.0
+  footprint_padding: 0.01
   world_model: costmap
   sim_time: 1.7
   sim_granularity: 0.025

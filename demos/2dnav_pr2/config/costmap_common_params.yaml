@@ -3,7 +3,6 @@ costmap:
   obstacle_range: 2.5
   max_obstacle_height: 2.0
   raytrace_range: 3.0
-  inscribed_radius: 0.325
   circumscribed_radius: 0.46
   inflation_radius: 0.55
   cost_scaling_factor: 10.0

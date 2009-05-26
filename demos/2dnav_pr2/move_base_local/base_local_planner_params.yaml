@@ -1,5 +1,6 @@
 base_local_planner:
   costmap:
+    inscribed_radius: 0.325
     publish_voxel_map: true
     global_frame: odom_combined
     robot_base_frame: base_link
