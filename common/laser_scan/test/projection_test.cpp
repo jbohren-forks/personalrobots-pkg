@@ -31,10 +31,39 @@
 #include <sys/time.h>
 
 #include "laser_scan/laser_scan.h"
+#include "robot_msgs/PointCloud.h"
 #include <math.h>
 
 
 #include "angles/angles.h"
+
+#define PROJECTION_TEST_RANGE_MIN (0.23)
+#define PROJECTION_TEST_RANGE_MAX (40.0) 
+
+laser_scan::LaserScan build_constant_scan(double range, double intensity, 
+                                          double ang_min, double ang_max, double ang_increment,
+                                          ros::Duration time_inc, ros::Duration scan_time)
+{
+  laser_scan::LaserScan scan;
+  scan.header.stamp = ros::Time::now();
+  scan.header.frame_id = "laser_frame";
+  scan.angle_min = ang_min;
+  scan.angle_max = ang_max;
+  scan.angle_increment = ang_increment;
+  scan.time_increment = time_inc.toSec();
+  scan.scan_time = scan_time.toSec();
+  scan.range_min = PROJECTION_TEST_RANGE_MIN;
+  scan.range_max = PROJECTION_TEST_RANGE_MAX;
+  unsigned int i = 0;
+  for(; ang_min + i * ang_increment < ang_max; i++)
+  {
+    scan.ranges.push_back(range);
+    scan.intensities.push_back(intensity);
+  }
+
+  return scan;
+};
+
 
 void test_getUnitVectors (float angle_min, float angle_max, float angle_increment)
 {
@@ -64,11 +93,26 @@ TEST(laser_scan, getUnitVectors)
   test_getUnitVectors(-M_PI * 3.0/4.0, 3.0/4.0*M_PI, M_PI/720.0); // 270 @ quarter degree
 }
 
-/*TEST(laser_scan, projectLaser)
+TEST(laser_scan, projectLaser)
 {
-  EXPECT_TRUE(true);
+  double tolerance = 1e-6;
+  laser_scan::LaserProjection projector;  
+  //\todo add more permutations
+  laser_scan::LaserScan scan = build_constant_scan(1.0, 1.0, -M_PI/2, M_PI/2, M_PI/180, ros::Duration(1/400), ros::Duration(1/40));
+
+  robot_msgs::PointCloud cloud_out;
+  projector.projectLaser(scan, cloud_out);
+
+  EXPECT_EQ(scan.ranges.size(), cloud_out.get_pts_size());
+  for (unsigned int i = 0; i < cloud_out.pts.size(); i++)
+  {
+    EXPECT_NEAR(cloud_out.pts[i].x , scan.ranges[i] * cos(scan.angle_min + i * scan.angle_increment), tolerance);
+    EXPECT_NEAR(cloud_out.pts[i].y , scan.ranges[i] * sin(scan.angle_min + i * scan.angle_increment), tolerance);
+    EXPECT_NEAR(cloud_out.pts[i].z, 0, tolerance);
+  };
+  
 }
-*/
+
 
 
 int main(int argc, char **argv){
