@@ -116,7 +116,7 @@ void PoseTFToMsg(const tf::Pose &p, robot_msgs::Twist &t)
   t.vel.x = p.getOrigin().x();
   t.vel.y = p.getOrigin().y();
   t.vel.z = p.getOrigin().z();
-  btMatrix3x3(p.getRotation()).getEulerYPR(t.rot.x, t.rot.y, t.rot.z);
+  btMatrix3x3(p.getRotation()).getEulerYPR(t.rot.z, t.rot.y, t.rot.x);
 }
 
 void PlugInAction::plugMeasurementCallback(const tf::MessageNotifier<robot_msgs::PoseStamped>::MessagePtr &msg)
