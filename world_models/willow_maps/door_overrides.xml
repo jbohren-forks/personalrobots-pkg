@@ -1,0 +1,11 @@
+<door_approach_overrides>
+
+<door>
+<id>88888</id>
+<approach_point>
+<x>24.442</x>
+<y>9999.8877</y>
+</approach_point>
+</door>
+
+</door_approach_overrides>

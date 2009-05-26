@@ -262,7 +262,7 @@
  </outlet>
 
  <outlet id="39">
-   <origin xyz="15.97 34.35 0.3" rpy="0 0 1.57" />
+   <origin xyz="15.97 34.35 0.3" rpy="0 0 -1.57" />
    <sockets size="4" color="orange" />
    <room number="140" />
    <notes description="Stu's office" />
