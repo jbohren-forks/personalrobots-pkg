@@ -20,4 +20,6 @@ This package contains Open Dynamics Engine OpenDE or ODE
 <sysdepend os="ubuntu" version="8.04-hardy" package="libtool"/> 
 <sysdepend os="ubuntu" version="8.10-intrepid" package="automake"/>
 <sysdepend os="ubuntu" version="8.10-intrepid" package="libtool"/> 
+<rosdep name="libtool"/>
+<rosdep name="automake"/>
 </package>
