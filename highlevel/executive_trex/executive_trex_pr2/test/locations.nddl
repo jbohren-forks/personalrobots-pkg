@@ -21,23 +21,14 @@ Waypoint w4 = new Waypoint(54.162, 20.087, 0.000, 0.000, 0.000, -0.160, 0.987);
 Waypoint w5 = new Waypoint(50.659, 6.916, 0.000, 0.000, 0.000, 0.924, -0.383);
 Waypoint w6 = new Waypoint(18.542, 12.301, 0.000, 0.000, 0.000, 0.906, -0.424);
 
-MAP_KEY outlet_in_sachins_office = 4;
 MAP_KEY outlet_in_green_room = 1;
+MAP_KEY outlet_in_sachins_office = 4;
 MAP_KEY outlet_in_melonees_office = 6;
+MAP_KEY outlet_1_in_conference_room = 20;
+MAP_KEY outlet_2_in_conference_room = 21;
 MAP_KEY outlet_in_johns_office = 25;
 MAP_KEY outlet_in_patricks_office = 26;
 MAP_KEY outlet_in_kurts_office = 27;
-MAP_KEY outlet_in_tonys_office = 16;
 MAP_KEY outlet_in_meeting_room = 38;
-MAP_KEY outlet_1_in_conference_room = 20;
-MAP_KEY outlet_2_in_conference_room = 21;
 MAP_KEY outlet_in_stus_office = 39;
 MAP_KEY outlet_in_room_next_to_printer = 40;
-
-// This one is out - cluttered space
-// MAP_KEY outlet_in_jason_and_jeremys_office = 14;
-
-/**
- * As a work around, here are some approach points for outlets where we need to work around the data in the topological map. Fix the values
- */
-//OutletApproachPoint approach_point_for_outlet_in_stus_office = new OutletApproachPoint(39, 18.912, 28.568, 0.000, 0.000, 0.000, 0.000, 1.000);

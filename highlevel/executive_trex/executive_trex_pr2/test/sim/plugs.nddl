@@ -1,3 +1,4 @@
+#include "world_model/topological_map.nddl"
 #include "rcs/plugs/exports.nddl"
 
 MoveAndGraspPlug move_and_grasp_plug = new MoveAndGraspPlug(Internal);

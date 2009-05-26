@@ -166,6 +166,25 @@ namespace TREX {
   // Allocate Factory
   TeleoReactor::ConcreteFactory<RechargeAdapter> RechargeAdapter_Factory("RechargeAdapter");
 
+  /***********************************************************************
+   * @brief PlugIn
+   **********************************************************************/
+  class PlugInAdapter: public ROSActionAdapter<std_msgs::Int32, pr2_robot_actions::PlugInState, std_msgs::Empty> {
+  public:
+
+    PlugInAdapter(const LabelStr& agentName, const TiXmlElement& configData)
+      : ROSActionAdapter<std_msgs::Int32, pr2_robot_actions::PlugInState, std_msgs::Empty>(agentName, configData){
+    }
+
+    virtual void fillDispatchParameters(std_msgs::Int32& msg, const TokenId& goalToken){
+      AdapterUtilities::write("outlet_id" , goalToken, msg.data);
+    }
+
+  };
+
+  // Allocate Factory
+  TeleoReactor::ConcreteFactory<PlugInAdapter> PlugInAdapter_Factory("PlugInAdapter");
+
 
   /***********************************************************************
    * @brief ShellCommand action will take system commands in strings and 

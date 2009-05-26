@@ -4,7 +4,6 @@
 #include "rcs/nav/exports.nddl"
 #include "rcs/doors/exports.nddl"
 #include "test/sim/plugs.nddl"
-#include "world_model/topological_map.nddl"
 #include "rcs/safety/exports.nddl"
 
 DetectPlugOnBase detect_plug_on_base = new DetectPlugOnBase(Internal);

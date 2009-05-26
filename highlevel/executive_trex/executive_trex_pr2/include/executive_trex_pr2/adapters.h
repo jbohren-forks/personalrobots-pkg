@@ -40,6 +40,7 @@
 
 #include <std_msgs/String.h>
 #include <std_msgs/Float32.h>
+#include <std_msgs/Int32.h>
 #include <std_msgs/Empty.h>
 #include <deprecated_msgs/RobotBase2DOdom.h>
 #include <robot_msgs/Pose.h>
@@ -62,3 +63,4 @@
 #include <pr2_robot_actions/SwitchControllers.h>
 #include <pr2_robot_actions/SwitchControllersState.h>
 #include <pr2_robot_actions/DetectOutletState.h>
+#include <pr2_robot_actions/PlugInState.h>

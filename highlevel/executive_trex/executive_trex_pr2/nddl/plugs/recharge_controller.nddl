@@ -202,6 +202,7 @@ RechargeController::Holds {
           
         if (ready_to_plug_in == true){
           contains_start(plug_in.Active cmd);
+	  eq(cmd.outlet_id, rc_active.outlet_id);
           concurrent(cmd.end, end);
           eq(s.arms_clear, false);
         }

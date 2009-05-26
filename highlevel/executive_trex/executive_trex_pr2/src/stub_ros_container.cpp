@@ -313,9 +313,9 @@ int main(int argc, char** argv){
   if (getComponentParam("/trex/enable_unplug"))
     runner.connect<std_msgs::Empty, robot_actions::NoArgumentsActionState, std_msgs::Empty>(unplug);
   
-  executive_trex_pr2::SimpleStubAction<std_msgs::Empty> plug_in("plug_in", 5);
+  executive_trex_pr2::StubAction<std_msgs::Int32, std_msgs::Empty> plug_in("plug_in");
   if (getComponentParam("/trex/enable_plug_in"))
-    runner.connect<std_msgs::Empty, robot_actions::NoArgumentsActionState, std_msgs::Empty>(plug_in);
+    runner.connect<std_msgs::Int32, pr2_robot_actions::PlugInState, std_msgs::Empty>(plug_in);
   
   executive_trex_pr2::StubAction<robot_msgs::PointStamped, robot_msgs::PoseStamped> detect_outlet_fine("detect_outlet_fine");
   if (getComponentParam("/trex/enable_detect_outlet_fine"))

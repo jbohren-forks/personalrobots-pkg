@@ -1,49 +1,29 @@
 /**
  * This file should be auto generated. The checked in version indicates a sample. There are 10 goals. Each is defined by an outlet_id which must be a valid
- * key in the topological map. No ordering is required. For now we will not order efficiently, but will add that shortly.
+ * key in the topological map. No ordering is required. A shortes path tour is used based on euclidean distance. 
  */
-
-rejectable(m2_goals.Active g_10);
-g_10.outlet_id = outlet_2_in_conference_room;
 rejectable(m2_goals.Active g_1);
-g_1.outlet_id = outlet_in_sachins_office;
-rejectable(m2_goals.Active g_2);
-g_2.outlet_id = outlet_in_green_room;
-
-// This needs to be scrubbed. The nav stack could net get in. Even though check path succeeded
-//rejectable(m2_goals.Active g_3);
-//g_3.outlet_id = outlet_in_johns_office;
-
+g_1.outlet_id = 1;
 rejectable(m2_goals.Active g_4);
-g_4.outlet_id = outlet_in_patricks_office;
-rejectable(m2_goals.Active g_9);
-g_9.outlet_id = outlet_1_in_conference_room;
+g_4.outlet_id = 4;
+rejectable(m2_goals.Active g_6);
+g_6.outlet_id = 6;
+rejectable(m2_goals.Active g_20);
+g_20.outlet_id = 20;
+rejectable(m2_goals.Active g_21);
+g_21.outlet_id = 21;
+rejectable(m2_goals.Active g_25);
+g_25.outlet_id = 25;
+rejectable(m2_goals.Active g_26);
+g_26.outlet_id = 26;
+rejectable(m2_goals.Active g_27);
+g_27.outlet_id = 27;
+rejectable(m2_goals.Active g_38);
+g_38.outlet_id = 38;
+rejectable(m2_goals.Active g_39);
+g_39.outlet_id = 39;
+rejectable(m2_goals.Active g_40);
+g_40.outlet_id = 40;
 
-// Impose fixed order
-//g_1 before g_2;
-//g_2 before g_3;
-//g_3 before g_4;
-//g_4 before g_9;
-//g_5 before g_9;
-//g6 before g7;
-//g7 before g8;
-//g_8 before g_9;
-//g_9 before g_10;
-
-//rejectable(m2_goals.Active g_11);
-//g_11.outlet_id = 39;
-//rejectable(m2_goals.Active g_12);
-//g_12.outlet_id = 40;
-//rejectable(m2_goals.Active g_5);
-//g_5.outlet_id = outlet_in_tonys_office;
-
-//rejectable(m2_goals.Active g_6);
-//g_6.outlet_id = 27;
-
-//rejectable(m2_goals.Active g_7);
-//g_7.outlet_id = 16;
-
-//rejectable(m2_goals.Active g_8);
-//g_8.outlet_id = outlet_in_meeting_room;
 
 

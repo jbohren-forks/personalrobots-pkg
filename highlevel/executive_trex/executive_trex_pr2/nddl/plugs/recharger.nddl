@@ -1,5 +1,4 @@
 #include "plugs/recharge_controller.nddl"
-#include "world_model/topological_map.nddl"
 
 Recharger::Active{
   // Start the recharge controller
