@@ -146,7 +146,8 @@ int main (int argc, char* argv[])
   cout << endl;
 
 
-  p2 = Point2D(18,28);
+  p1 = Point2D(51.53,22.3875);
+  p2 = Point2D(55.93, 9.68);
   path = m3.shortestConnectorPath(p1, p2);
   cout << " Path between " << p1 << " and " << p2 << ": ";
   foreach (ConnectorId connector, path) {

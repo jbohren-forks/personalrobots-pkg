@@ -1243,7 +1243,14 @@ ConnectorIdVector TopologicalMap::MapImpl::shortestConnectorPath (const Point2D&
     return v;
   }
   else {
-    return roadmap_->shortestPath(start.id, goal.id);
+    ConnectorIdVector path = roadmap_->shortestPath(start.id, goal.id);
+    ConnectorIdVector pruned_path;
+    uint length = path.size();
+    for (uint i=0; i<length; i++) 
+      if ((i==0) || (i==length-1) || containingRegion(connectorPosition(path[i])) != containingRegion(connectorPosition(path[i-1]))) 
+        pruned_path.push_back(path[i]);
+
+    return pruned_path;
   }
 }
 
