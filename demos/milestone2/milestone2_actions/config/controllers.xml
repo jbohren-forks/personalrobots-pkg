@@ -24,8 +24,7 @@
   <node pkg="mechanism_control" type="spawner.py" args="$(find pr2_default_controllers)/head_pan_tilt_controller.xml" />
 
 <!-- Torso controller -->
-  <param name="torso_lift_controller/autostart" type="bool" value="true" />
-  <node pkg="mechanism_control" type="spawner.py" args="$(find pr2_default_controllers)/torso_lift_controller.xml" />
+  <node pkg="mechanism_control" type="spawner.py" args="$(find pr2_default_controllers)/torso_lift_vel_controller.xml" output="screen" />
 
 <!-- Gripper effort controller -->
   <param name="r_gripper_effort_controller/autostart" type="bool" value="false" />

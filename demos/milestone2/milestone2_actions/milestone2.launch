@@ -39,10 +39,17 @@
   <param name="pan" value="4" type="int"/>
   <param name="tilt" value="5" type="int"/>
   <param name="max_vw" value="1.0" />
-  <param name="max_vx" value="1.0" />
-  <param name="max_vy" value="1.0" />
+  <param name="max_vx" value="0.6" />
+  <param name="max_vy" value="0.6" />
+  <param name="max_vw_run" value="1.4" />
+  <param name="max_vx_run" value="1.0" />
+  <param name="max_vy_run" value="1.0" />
+  <param name="run_button" value="5" type="int" />
+  <param name="torso_dn_button" value="1" type="int" />
+  <param name="torso_up_button" value="3" type="int" />
+  <param name="joy_msg_timeout" value="1.0"/>
   <param name="deadman_button" value="4" type="int"/>
-  <node pkg="teleop_base" type="teleop_base" args="--deadman_no_publish" respawn="true" machine="four" />
+  <node pkg="teleop_base" type="teleop_base" output="screen" args="--deadman_no_publish" respawn="true" machine="four"/>
 
 
 <!-- Robot pose ekf -->
