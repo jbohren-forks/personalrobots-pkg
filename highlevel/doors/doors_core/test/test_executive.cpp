@@ -161,7 +161,7 @@ int
   cout << "move to pose " << goal_msg.pose.position.x << ", " << goal_msg.pose.position.y << ", "<< goal_msg.pose.position.z << endl;
   switchlist.start_controllers.clear();  switchlist.stop_controllers.clear();
   if (switch_controllers.execute(switchlist, empty, timeout_short) != robot_actions::SUCCESS) return -1;
-  if (move_base_local.execute(goal_msg, goal_msg, timeout_long) != robot_actions::SUCCESS) return -1;
+  if (move_base_local.execute(goal_msg, goal_msg) != robot_actions::SUCCESS) return -1;
   cout << "door approach finished" << endl;
 
   // touch door
