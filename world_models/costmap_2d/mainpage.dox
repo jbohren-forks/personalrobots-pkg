@@ -96,6 +96,12 @@ There are a number of parameters that can be used to configure the costmap_2d::C
   <li><b>~costmap/topic_name/data_type</b>, <i>string</i> <br>The data_type associated with the topic, right now only PointCloud and LaserScan are supported natively.</li>
   <br><br>
   <li><b>~costmap/topic_name/clearing</b>, <i>bool</i> <br>Whether or not this observation should be used to clear out freespace</li>
+  <br><br>
+  <li><b>~costmap/topic_name/marking</b>, <i>bool</i> <br>Whether or not this observation should be used to mark obstacles</li>
+  <br><br>
+  <li><b>~costmap/topic_name/max_obstacle_height</b>, <i>bool</i> <br>The maximum height of a sensor reading considered valid</li>
+  <br><br>
+  <li><b>~costmap/topic_name/min_obstacle_height</b>, <i>bool</i> <br>The minimum height of a sensor reading considered valid</li>
   </ul>
 </li>
 <br><br>
@@ -121,6 +127,8 @@ There are a number of parameters that can be used to configure the costmap_2d::C
 <li><b>~costmap/scaling_factor</b>, <i>double</i> <br>A scaling factor to apply to cost values during inflation, shoud be in the range [0, 1]</li>
 <br><br>
 <li><b>~costmap/lethal_cost_threshold</b>, <i>int</i> <br>The threshold value at which to consider a cost lethal when reading in a map</li>
+<br><br>
+<li><b>~costmap/transform_tolerance</b>, <i>double</i> <br>Specifies the delay in transform (tf) data that is tolerable. </li>
 </ul>
 
 
