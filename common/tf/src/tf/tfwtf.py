@@ -64,7 +64,7 @@ def rostime_delta(ctx):
     for k, v in deltas.iteritems():
         errors.append("receiving transform from [%s] that differed from ROS time by %ss"%(k, v))
     return errors
-            
+
 def reparenting(ctx):
     errors = []
     parent_id_map = {}
@@ -78,6 +78,21 @@ def reparenting(ctx):
                     errors.append(msg)
             else:
                 parent_id_map[frame_id] = t.parent_id
+    return errors
+
+def multiple_authority(ctx):
+    errors = []
+    authority_map = {}
+    for m, stamp, callerid in _msgs:
+        for t in m.transforms:
+            frame_id = t.header.frame_id
+            if frame_id in authority_map and authority_map[frame_id] != callerid:
+                msg = "node [%s] publishing transform [%s] with parent [%s] already published by node [%s]"%(callerid, frame_id, t.parent_id, authority_map[frame_id])
+                authority_map[frame_id] = callerid
+                if msg not in errors:
+                    errors.append(msg)
+            else:
+                authority_map[frame_id] = callerid
     return errors
 
 def no_msgs(ctx):
@@ -94,6 +109,7 @@ tf_warnings = [
 ]
 tf_errors = [
   (reparenting, "TF re-parenting contention:"),
+  (multiple_authority, "TF multiple authority contention:"),
 ]
 
 # rospy subscriber callback for tf_message
