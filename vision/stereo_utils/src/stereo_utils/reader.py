@@ -1,8 +1,5 @@
 #!/usr/bin/python
 
-import roslib
-roslib.load_manifest('stereo_utils')
-import rostest
 import rospy
 import rosrecord
 
@@ -41,6 +38,7 @@ class reader:
       self.cam = camera.DictCamera(self.dc)
       self.f = int(self.dc['FirstFrame'])
     else:
+      self.gen = rosrecord.logplayer(sourcename)
       self.next = self.next_from_bag
     self.sourcename = sourcename
 
@@ -55,38 +53,37 @@ class reader:
 
   def next_from_bag(self):
 
-    for topic, msg, t in rosrecord.logplayer(self.sourcename):
+    while True:
+      topic, msg, t = self.gen.next()
       if rospy.is_shutdown():
         break
       if topic.endswith("stereo/raw_stereo"):
         cam = camera.StereoCamera(msg.right_info)
-        yield cam, self.from_msg(msg.left_image), self.from_msg(msg.right_image)
+        return cam, self.from_msg(msg.left_image), self.from_msg(msg.right_image)
+    raise StopIteration
 
   def __iter__(self):
-    return self.next()
+    return self
 
   def next_from_dir(self):
 
-    while True:
-      if rospy.is_shutdown():
-        break
-      Lname = self.sourcename + "/" + self.dc['LeftFilename'] % self.f
-      Rname = self.sourcename + "/" + self.dc['RightFilename'] % self.f
+    Lname = self.sourcename + "/" + self.dc['LeftFilename'] % self.f
+    Rname = self.sourcename + "/" + self.dc['RightFilename'] % self.f
 
-      if not os.access(Lname, os.R_OK) or not os.access(Rname, os.R_OK):
-        if 'LastFrame' in self.dc:
-          self.f += 1
-          continue
-        else:
-          break
-      L = self.from_file(Lname)
-      R = self.from_file(Rname)
+    if not os.access(Lname, os.R_OK) or not os.access(Rname, os.R_OK):
+      if 'LastFrame' in self.dc:
+        self.f += 1
+        return self.next()
+      else:
+        raise StopIteration
+    L = self.from_file(Lname)
+    R = self.from_file(Rname)
 
-      yield self.cam, L, R
+    if ('LastFrame' in self.dc) and (self.f == int(self.dc['LastFrame'])):
+      raise StopIteration
+    self.f += 1
+    return self.cam, L, R
 
-      if ('LastFrame' in self.dc) and (self.f == int(self.dc['LastFrame'])):
-        break
-      self.f += 1
 
 class CVreader(reader):
 
