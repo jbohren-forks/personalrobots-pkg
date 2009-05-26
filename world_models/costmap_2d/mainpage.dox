@@ -70,7 +70,7 @@ There are a number of parameters that can be used to configure the costmap_2d::C
 <br><br>
 <li><b>~costmap/publish_frequency</b>, <i>double</i> <br>The frequency in Hz for the map to be publish display information</li>
 <br><br>
-<li><b>~costmap/transform_tolerance</b>, <i>double</i> <br>Specifies the delay in transform (tf) data that is tolerable. </li>
+<li><b>~costmap/transform_tolerance</b>, <i>double</i> <br>Specifies the delay in transform (tf) data that is tolerable in seconds. </li>
 <br><br>
 <li><b>~costmap/obstacle_range</b>, <i>double</i> <br>The maximum distance from the robot at which an obstacle will be inserted into the cost map</li>
 <br><br>
@@ -101,9 +101,9 @@ There are a number of parameters that can be used to configure the costmap_2d::C
   <br><br>
   <li><b>~costmap/topic_name/marking</b>, <i>bool</i> <br>Whether or not this observation should be used to mark obstacles</li>
   <br><br>
-  <li><b>~costmap/topic_name/max_obstacle_height</b>, <i>bool</i> <br>The maximum height of a sensor reading considered valid</li>
+  <li><b>~costmap/topic_name/max_obstacle_height</b>, <i>double</i> <br>The maximum height in meters of a sensor reading considered valid</li>
   <br><br>
-  <li><b>~costmap/topic_name/min_obstacle_height</b>, <i>bool</i> <br>The minimum height of a sensor reading considered valid</li>
+  <li><b>~costmap/topic_name/min_obstacle_height</b>, <i>double</i> <br>The minimum height in meters of a sensor reading considered valid</li>
   </ul>
 </li>
 <br><br>
