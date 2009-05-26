@@ -50,6 +50,7 @@ PlugInAction::PlugInAction(ros::Node& node) :
   robot_actions::Action<std_msgs::Empty, std_msgs::Empty>("plug_in"),
   action_name_("plug_in"),
   node_(node),
+  battery_level_(95.0),
   arm_controller_("r_arm_hybrid_controller")
 {
   node_.setParam("~roi_policy", "LastImageLocation");
@@ -93,10 +94,16 @@ robot_actions::ResultStatus PlugInAction::execute(const std_msgs::Empty& empty, 
   ros::Duration d; d.fromSec(0.001);
   while (isActive()) {
     d.sleep();
-    if(ros::Time::now() - started > ros::Duration(120.0))
+    if(ros::Time::now() - started > ros::Duration(60.0))
+    {
+      ROS_DEBUG("%s: aborted. Failed to plug_in in the alotted time", action_name_.c_str());
       deactivate(robot_actions::ABORTED,feedback);
+    }
     if (isPreemptRequested())
+    {
+      ROS_DEBUG("%s: preempted.", action_name_.c_str());
       deactivate(robot_actions::PREEMPTED, feedback);
+    }
   }
 
   return waitForDeactivation(feedback);
@@ -123,15 +130,18 @@ void PlugInAction::plugMeasurementCallback(const tf::MessageNotifier<robot_msgs:
 {
   plugs_core::PlugInState state_msg;
 
-  //ROS_INFO("recieved plug_pose Msg in callback");
 
   if (!isActive())
     return;
 
   if (isPreemptRequested()){
     deactivate(robot_actions::PREEMPTED, empty_);
+    ROS_DEBUG("%s: preempted.", action_name_.c_str());
     return;
   }
+  ROS_DEBUG("%s: executing.", action_name_.c_str());
+
+
   tff_msg_.header.stamp = msg->header.stamp;
   // Both are transforms from the outlet to the estimated plug pose
   robot_msgs::PoseStamped viz_offset_msg;
@@ -279,7 +289,11 @@ void PlugInAction::plugMeasurementCallback(const tf::MessageNotifier<robot_msgs:
       {
         ROS_DEBUG("HOLDING");
         hold();
-        deactivate(robot_actions::SUCCESS, empty_);
+        if(battery_level_ > 90.0)
+        {
+          ROS_DEBUG("%s: success.", action_name_.c_str());
+          deactivate(robot_actions::SUCCESS, empty_);
+        }
         break;
       }
     }

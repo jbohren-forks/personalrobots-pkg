@@ -93,9 +93,9 @@ private:
   // TODO: mutex
   ros::Time vision_estimate_time_;
   tf::Pose outlet_pose_mech_;  // Outlet pose in the mechanism "frame"
+  
 
-
-
+  double battery_level_;
 
 
   double last_standoff_;
