@@ -1,11 +1,71 @@
 <door_approach_overrides>
 
 <door>
-<id>88888</id>
+<id>63</id>
 <approach_point>
-<x>24.442</x>
-<y>9999.8877</y>
+<x>12.3</x>
+<y>22.1</y>
 </approach_point>
 </door>
+
+
+
+<door>
+<id>83</id>
+<approach_point>
+<x>19.1</x>
+<y>32.0</y>
+</approach_point>
+</door>
+
+
+
+<door>
+  <id>90</id>
+<approach_point>
+<x>15</x>
+<y>32.3</y>
+</approach_point>
+</door>
+
+<door>
+  <id>125</id>
+<approach_point>
+<x>21.2</x>
+<y>43.1</y>
+</approach_point>
+</door>
+
+
+<door>
+  <id>104</id>
+<approach_point>
+<x>12.3</x>
+<y>37.0</y>
+</approach_point>
+</door>
+
+
+<door>
+  <id>9</id>
+<approach_point>
+<x>9</x>
+<y>3.5</y>
+</approach_point>
+</door>
+
+
+<door>
+  <id>36</id>
+<approach_point>
+<x>53.8</x>
+<y>10.2</y>
+</approach_point>
+</door>
+
+
+
+
+
 
 </door_approach_overrides>
