@@ -247,6 +247,7 @@ namespace nav {
 
     costmap_2d::Rate r(controller_frequency_);
     last_valid_control_ = ros::Time::now();
+    robot_msgs::PoseDot cmd_vel;
     while(!isPreemptRequested() && ros_node_.ok()){
       struct timeval start, end;
       double start_t, end_t, t_diff;
@@ -263,8 +264,6 @@ namespace nav {
       //make sure to update the costmap we'll use for this cycle
       controller_costmap_ros_->clearRobotFootprint();
       controller_costmap_ros_->getCostmapCopy(controller_costmap_);
-
-      robot_msgs::PoseDot cmd_vel;
 
       //check that the observation buffers for the costmap are current
       if(!controller_costmap_ros_->isCurrent()){
@@ -410,6 +409,13 @@ namespace nav {
       if(!r.sleep())
         ROS_WARN("Control loop missed its desired rate of %.4fHz... the loop actually took %.4f seconds", controller_frequency_, r.cycleTime().toSec());
     }
+
+    //make sure to stop on pre-emption
+    cmd_vel.vel.vx = 0.0;
+    cmd_vel.vel.vy = 0.0;
+    cmd_vel.ang_vel.vz = 0.0;
+    //give the base the velocity command
+    ros_node_.publish("cmd_vel", cmd_vel);
     return robot_actions::PREEMPTED;
   }
 
