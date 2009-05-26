@@ -32,7 +32,7 @@
       <param name="costmap/raytrace_range" value="1.5" />
 
       <!--param name="costmap/observation_topics" value="base_scan base_scan_marking" /-->
-      <param name="costmap/observation_topics" value="base_scan_marking" />
+      <param name="costmap/observation_topics" value="base_scan base_scan_marking" />
 
       <param name="costmap/base_scan/sensor_frame" value="frame_from_message" />
       <param name="costmap/base_scan/observation_persistance" value="0.0" />
@@ -45,7 +45,7 @@
       <param name="costmap/base_scan_marking/observation_persistance" value="0.0" />
       <param name="costmap/base_scan_marking/expected_update_rate" value="0.2" />
       <param name="costmap/base_scan_marking/data_type" value="PointCloud" />
-      <param name="costmap/base_scan_marking/clearing" value="true" />
+      <param name="costmap/base_scan_marking/clearing" value="false" />
       <param name="costmap/base_scan_marking/marking" value="true" />
 
       <param name="costmap/tilt_scan/sensor_frame" value="frame_from_message" />
