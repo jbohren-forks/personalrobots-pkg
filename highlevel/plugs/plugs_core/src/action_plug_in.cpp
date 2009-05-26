@@ -47,7 +47,7 @@ const double SUCCESS_THRESHOLD = 0.025;
 enum {MEASURING, MOVING, INSERTING, FORCING, HOLDING};
 
 PlugInAction::PlugInAction(ros::Node& node) :
-  robot_actions::Action<std_msgs::Empty, std_msgs::Empty>("plug_in"),
+  robot_actions::Action<std_msgs::Int32, std_msgs::Empty>("plug_in"),
   action_name_("plug_in"),
   node_(node),
   battery_level_(95.0),
@@ -85,7 +85,7 @@ PlugInAction::~PlugInAction()
 {
 };
 
-robot_actions::ResultStatus PlugInAction::execute(const std_msgs::Empty& empty, std_msgs::Empty& feedback)
+robot_actions::ResultStatus PlugInAction::execute(const std_msgs::Int32& outlet_id, std_msgs::Empty& feedback)
 {
   reset();
 

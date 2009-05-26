@@ -43,6 +43,7 @@
 
 // Msgs
 #include <std_msgs/Empty.h>
+#include <std_msgs/Int32.h>
 #include "robot_msgs/PoseStamped.h"
 #include "robot_msgs/CartesianState.h"
 #include "manipulation_msgs/TaskFrameFormalism.h"
@@ -59,13 +60,13 @@
 
 namespace plugs_core{
 
-class PlugInAction: public robot_actions::Action<std_msgs::Empty, std_msgs::Empty>
+class PlugInAction: public robot_actions::Action<std_msgs::Int32, std_msgs::Empty>
 {
 public:
   PlugInAction(ros::Node& node);
   ~PlugInAction();
 
-  robot_actions::ResultStatus execute(const std_msgs::Empty& empty, std_msgs::Empty& feedback);
+  robot_actions::ResultStatus execute(const std_msgs::Int32& outlet_id, std_msgs::Empty& feedback);
 
 private:
 

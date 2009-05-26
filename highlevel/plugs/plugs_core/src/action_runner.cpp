@@ -48,6 +48,7 @@
 
 // State Msgs
 #include <robot_actions/NoArgumentsActionState.h>
+#include <pr2_robot_actions/PlugInState.h>
 #include <pr2_robot_actions/MoveAndGraspPlugState.h>
 #include <pr2_robot_actions/DetectOutletState.h>
 #include <pr2_robot_actions/StowPlugState.h>
@@ -87,7 +88,7 @@ int main(int argc, char** argv)
   runner.connect<robot_msgs::PointStamped, pr2_robot_actions::DetectOutletState, robot_msgs::PoseStamped>(detect_outlet_fine);
   runner.connect<robot_msgs::PointStamped, pr2_robot_actions::DetectOutletState, robot_msgs::PoseStamped>(detect_outlet_coarse);
   runner.connect<std_msgs::Empty, robot_actions::NoArgumentsActionState, std_msgs::Empty>(localize_plug_in_gripper);
-  runner.connect<std_msgs::Empty, robot_actions::NoArgumentsActionState, std_msgs::Empty>(plug_in);
+  runner.connect<std_msgs::Int32, pr2_robot_actions::PlugInState, std_msgs::Empty>(plug_in);
   runner.connect<std_msgs::Empty, robot_actions::NoArgumentsActionState, std_msgs::Empty>(unplug);
   runner.connect<robot_msgs::PlugStow, pr2_robot_actions::StowPlugState, std_msgs::Empty>(stow_plug);
 

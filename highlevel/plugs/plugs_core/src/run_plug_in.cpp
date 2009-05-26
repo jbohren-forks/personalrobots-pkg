@@ -39,7 +39,7 @@
 #include <plugs_core/action_plug_in.h>
 
 // State Msgs
-#include <robot_actions/NoArgumentsActionState.h>
+#include <pr2_robot_actions/PlugInState.h>
 
 #include <robot_actions/action.h>
 #include <robot_actions/action_runner.h>
@@ -58,7 +58,7 @@ int main(int argc, char** argv)
   PlugInAction plug_in(node);
 
   robot_actions::ActionRunner runner(10.0);
-  runner.connect<std_msgs::Empty, robot_actions::NoArgumentsActionState, std_msgs::Empty>(plug_in);
+  runner.connect<std_msgs::Int32, pr2_robot_actions::PlugInState, std_msgs::Empty>(plug_in);
   runner.run();
 
   node.spin();
