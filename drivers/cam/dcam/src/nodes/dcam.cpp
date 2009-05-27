@@ -43,7 +43,8 @@
 #include "image_msgs/StereoInfo.h"
 #include "robot_msgs/PointCloud.h"
 
-#include "diagnostic_updater/diagnostic_updater.h"
+#include <diagnostic_updater/diagnostic_updater.h>
+#include <diagnostic_updater/update_functions.h>
 
 using namespace std;
 
@@ -57,6 +58,7 @@ class DcamNode : public ros::Node
   image_msgs::CamInfo      cam_info_;
 
   DiagnosticUpdater<DcamNode> diagnostic_;
+  diagnostic_updater::TimeStampStatus timestamp_diag_;
 
   int count_;
   double desired_freq_;
@@ -74,6 +76,7 @@ public:
 
     int num_cams = dcam::numCameras();
 
+    diagnostic_.add( timestamp_diag_ );
     diagnostic_.addUpdater( &DcamNode::freqStatus );
 
     if (num_cams > 0)
@@ -206,6 +209,7 @@ public:
                 img_data->imRaw );
 
       img_.header.stamp = ros::Time().fromNSec(cam_->camIm->im_time * 1000);
+      timestamp_diag_.tick(img_.header.stamp);
       publish(base_name + std::string("image_raw"), img_);
     }
 
@@ -216,6 +220,7 @@ public:
                 "mono", "uint8",
                 img_data->im );
       img_.header.stamp = ros::Time().fromNSec(cam_->camIm->im_time * 1000);
+      timestamp_diag_.tick(img_.header.stamp);
       publish(base_name + std::string("image"), img_);
     }
 
@@ -227,6 +232,7 @@ public:
                 img_data->imColor );
 
       img_.header.stamp = ros::Time().fromNSec(cam_->camIm->im_time * 1000);
+      timestamp_diag_.tick(img_.header.stamp);
       publish(base_name + std::string("image_color"), img_);
     }
 
@@ -237,6 +243,7 @@ public:
                 "mono", "uint8",
                 img_data->imRect );
       img_.header.stamp = ros::Time().fromNSec(cam_->camIm->im_time * 1000);
+      timestamp_diag_.tick(img_.header.stamp);
       publish(base_name + std::string("image_rect"), img_);
     }
 
@@ -247,6 +254,7 @@ public:
                 "rgb", "uint8",
                 img_data->imRectColor );
       img_.header.stamp = ros::Time().fromNSec(cam_->camIm->im_time * 1000);
+      timestamp_diag_.tick(img_.header.stamp);
       publish(base_name + std::string("image_rect_color"), img_);
     }
 
@@ -257,6 +265,7 @@ public:
                 "rgba", "uint8",
                 img_data->imRectColor );
       img_.header.stamp = ros::Time().fromNSec(cam_->camIm->im_time * 1000);
+      timestamp_diag_.tick(img_.header.stamp);
       publish(base_name + std::string("image_rect_color"), img_);
     }
 
@@ -269,6 +278,7 @@ public:
     memcpy((char*)(&cam_info_.R[0]), (char*)(img_data->R),  9*sizeof(double));
     memcpy((char*)(&cam_info_.P[0]), (char*)(img_data->P), 12*sizeof(double));
 
+    timestamp_diag_.tick(img_.header.stamp);
     publish(base_name + std::string("cam_info"), cam_info_);
 
   }

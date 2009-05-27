@@ -136,7 +136,8 @@ The camera will read from the following parameters:
 #include "image_msgs/RawStereo.h"
 #include "cam_bridge.h"
 
-#include "diagnostic_updater/diagnostic_updater.h"
+#include <diagnostic_updater/diagnostic_updater.h>
+#include <diagnostic_updater/update_functions.h>
 
 #include <boost/function.hpp>
 #include <boost/bind.hpp>
@@ -151,6 +152,7 @@ class StereoDcamNode : public ros::Node
 {
   image_msgs::RawStereo    raw_stereo_;
   DiagnosticUpdater<StereoDcamNode> diagnostic_;
+  diagnostic_updater::TimeStampStatus timestamp_diag_;
 
   int count_;
   double desired_freq_;
@@ -179,6 +181,7 @@ public:
     int num_cams = dcam::numCameras();
 
     // Register a frequency status updater
+    diagnostic_.add( timestamp_diag_ );
     diagnostic_.addUpdater( &StereoDcamNode::freqStatus );
 
     stereo_name_ = mapName("stereo") + std::string("/");
@@ -402,6 +405,7 @@ public:
     
     cam_bridge::StereoDataToRawStereo(stcam_->stIm, raw_stereo_);
     raw_stereo_.header.frame_id = frame_id_;
+    timestamp_diag_.tick(raw_stereo_.header.stamp);
     publish(stereo_name_ + std::string("raw_stereo"), raw_stereo_);
 
     count_++;
