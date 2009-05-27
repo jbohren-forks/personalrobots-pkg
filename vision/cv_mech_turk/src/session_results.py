@@ -17,6 +17,7 @@ import urllib2, cookielib
 
 import mimetypes
 import mimetools
+import Image
 
 import pprint
 
@@ -155,6 +156,7 @@ class MechFetchResults:
         if idx % 20 ==0:
             print "%d of %d" % (idx,len(results))
 
+
         fName=img.replace(".jpg",".xml").replace("/","__").replace("\\","__");
         full_filename=os.path.join(self.output_dir,fName);
 
@@ -170,6 +172,10 @@ class MechFetchResults:
 
 	    try:
                 if self.target_image_size:
+                  if self.target_image_size=="TRUESIZE":
+                    im=Image.open(img);
+                    response=self.convert_xml2image(response,im.size);
+                  else:
                     response=self.convert_xml2image(response,self.target_image_size);
             
                 fXml=open(full_filename,'w')
@@ -195,7 +201,7 @@ def usage(progname):
 
 def main(argv, stdout, environ):
   progname = argv[0]
-  optlist, args = getopt.getopt(argv[1:], "", ["help", "test", "debug", "session=", "server=", "saveto=", "size="])
+  optlist, args = getopt.getopt(argv[1:], "", ["help", "test", "debug", "session=", "server=", "saveto=", "size=","truesize"])
 
   testflag = 0
 
@@ -220,6 +226,8 @@ def main(argv, stdout, environ):
       output_folder = val
     elif field == "--size":
       target_size=map(lambda s:int(s),val.split('x'))
+    elif field == "--truesize":
+      target_size="TRUESIZE"
 
   if testflag:
     test()

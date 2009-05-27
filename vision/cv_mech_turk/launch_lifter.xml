@@ -1,0 +1,11 @@
+<launch>
+
+
+ <group ns="stereo_objects">  
+
+  <node pkg="cv_mech_turk" type="annotation_2_3d.py" name="a_lifter"
+    respawn="false" output="screen"/>
+
+
+ </group>
+</launch>

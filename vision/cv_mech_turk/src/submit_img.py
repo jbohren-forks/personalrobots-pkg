@@ -130,7 +130,7 @@ def usage(progname):
 
 def main(argv, stdout, environ):
   progname = argv[0]
-  optlist, args = getopt.getopt(argv[1:], "", ["help", "test", "debug", "ext_id=", "session="])
+  optlist, args = getopt.getopt(argv[1:], "", ["help", "test", "debug", "ext_id=", "session=","server="])
 
   testflag = 0
 

@@ -1,0 +1,13 @@
+<launch>
+
+<!-- Interactive for now
+
+        <node pkg="cv_mech_turk" type="mt_manual_select" >
+        <remap from="image" to="/stereo/left/image"/>
+    </node> -->
+    
+
+    <node pkg="cv_mech_turk" type="snapper.py" />
+    
+</launch>
+

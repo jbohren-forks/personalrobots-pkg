@@ -31,9 +31,14 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-import rostools
-rostools.load_manifest('vslam')
+"""                                                                             
+usage: %(progname)s --session=SESSION --server=SERVER [--imgdir=images/]
+        
+"""
+import roslib; roslib.load_manifest('cv_mech_turk')
 
+
+import os
 import sys
 import time
 import getopt
@@ -50,23 +55,56 @@ import time
 import submit_img
 
 class Snapper:
+
+
   def __init__(self):
+
+    srv_name="vm6.willowgarage.com:8080"
+    #target_session="prf-2009-05-21-22-29-00"
+    target_session="prf-2009-05-21-22-29-00-p"
+    images_dir="images/"+target_session+"/";
+    img_mode="gray";
+
+    self.init_internal(srv_name, target_session,images_dir,img_mode)
+
+  def init_internal(self,srv_name, target_session,images_dir,img_mode):
     self.mech = submit_img.MechSubmiter(srv_name, target_session)
+    self.img_dir=images_dir;
+    if not os.path.exists(images_dir):
+      os.makedirs(images_dir);
+    self.img_mode=img_mode;
   
   def handle_raw_stereo(self, msg):
+    print "Snapper image"
     image = msg.uint8_data.data
-    i = Image.fromstring("RGB", (640,480), image)
+    if self.img_mode=="gray":
+      i = Image.fromstring("L", (640,480), image)
+    else:
+      i = Image.fromstring("RGB", (640,480), image)
     fn = "foo-%d.%09d.jpg" % (msg.header.stamp.secs, msg.header.stamp.nsecs)
-    i.save(fn)
-    ext_id = self.mech.submit(fn)
-    print fn, ext_id
+    full_fn=os.path.join(self.img_dir,fn);
+    i.save(full_fn)
+    ext_id = self.mech.submit(full_fn)
+    print full_fn, ext_id
+    #print full_fn
     time.sleep(1.0)
 
-def main(args):
-  s = Snapper()
-  rospy.init_node('snapper')
-  rospy.Subscriber('/stereo/left/image_rect_color', image_msgs.msg.Image, s.handle_raw_stereo, queue_size=2, buff_size=7000000)
-  rospy.spin()
 
-if __name__ == '__main__':
-  main(sys.argv)
+
+
+def usage(progname):
+  print __doc__ % vars()
+
+def main(argv, stdout, environ):
+  progname = argv[0]
+
+  rospy.init_node('snapper')
+
+  s = Snapper()
+  rospy.Subscriber('image_to_annotate', image_msgs.msg.Image, s.handle_raw_stereo, queue_size=2, buff_size=7000000)
+  rospy.spin()
+      
+               
+
+if __name__ == "__main__":
+  main(sys.argv, sys.stdout, os.environ)
