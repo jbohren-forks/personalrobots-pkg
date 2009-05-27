@@ -145,6 +145,8 @@ namespace nav {
             global_plan.push_back(p);
             found_legal = true;
           }
+          else
+            ROS_DEBUG("Failed to find a  plan to point (%.2f, %.2f)", p.pose.position.x, p.pose.position.y);
         }
         p.pose.position.x += resolution*3.0;
       }
@@ -224,6 +226,9 @@ namespace nav {
       attempted_rotation_ = false;
       attempted_costmap_reset_ = false;
       new_plan_ = true;
+    }
+    else{
+      ROS_DEBUG("Failed to find a  plan to point (%.2f, %.2f)", goal.pose.position.x, goal.pose.position.y);
     }
 
     lock_.lock();
