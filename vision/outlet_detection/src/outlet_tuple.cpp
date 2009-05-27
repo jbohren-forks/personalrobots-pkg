@@ -272,204 +272,228 @@ int find_outlet_centroids(IplImage* img, outlet_tuple_t& outlet_tuple, const cha
 	cvSmooth(grey, grey);
 	cvAdaptiveThreshold(grey, binary, 255, CV_ADAPTIVE_THRESH_MEAN_C, 
 						CV_THRESH_BINARY_INV, 15, -1);
-	cvErode(binary, binary, 0, 1);
-	cvDilate(binary, binary, 0, 1);
-
-#if defined(_VERBOSE_TUPLE)
-	cvNamedWindow("1", 1);
-	cvShowImage("1", binary);
-	cvWaitKey(0);
-	cvSaveImage("mask.jpg", binary);
-#endif
-	
-	CvMemStorage* storage = cvCreateMemStorage();
-	CvSeq* first = 0;
-	cvFindContours(binary, storage, &first, sizeof(CvContour), CV_RETR_CCOMP);
-	vector<CvSeq*> candidates;
-
-#if defined(_VERBOSE_TUPLE)
-	IplImage* img1 = cvCloneImage(img);
-#endif //_VERBOSE_TUPLE
-
-    cv::WImageBuffer1_b mask_buf( cvCloneImage(grey) );
-	IplImage* mask = mask_buf.Ipl();
-	for(CvSeq* seq = first; seq != NULL; seq = seq->h_next)
-	{
-		CvRect rect = cvBoundingRect(seq);
-#if !defined(_OUTLET_HR)
-		const int xmin = 30;
-		const int xmax = 150;
-		const int ymin = 15;
-		const int ymax = 50;
-		const int min_width = 5;
-#else
-		const int xmin = 50;
-		const int xmax = 400;
-		const int ymin = 30; 
-		const int ymax = 400;
-		const int min_width = 5;
-#endif //OUTLET_HR
-		
-#if 0
-		if(abs(rect.x - 1387) < 20 && abs(rect.y - 127) < 20)
-		{
-			int w = 1;
-		}
-#endif
-		
-		if(rect.width < xmin || rect.width > xmax || rect.height < ymin || rect.height > ymax)
-		{
-			continue;
-		}
-		
-		float area = fabs(cvContourArea(seq));
-		float perimeter = fabs(cvArcLength(seq));
-
-		if(area/perimeter*2 < min_width)
-		{
-			continue;
-		}
-		
-		//cvSetImageROI(img, rect);
-		cvSetZero(mask);
-		cvDrawContours(mask, seq, cvScalar(255), cvScalar(255), 0, CV_FILLED);
-		
-		CvScalar mean = cvAvg(img, mask);
-		//cvResetImageROI(img);
-		if(mean.val[2]/mean.val[1] < 2.0f)
-		{
-			continue;
-		}
-		
-		candidates.push_back(seq);
-		
-#if defined(_VERBOSE_TUPLE)
-		cvDrawContours(img1, seq, CV_RGB(255, 0, 0), CV_RGB(255, 0, 0), 0, 2);
-#endif //_VERBOSE_TUPLE
-	}
-	
-#if defined(_VERBOSE_TUPLE)
-	cvNamedWindow("1", 1);
-	cvShowImage("1", img1);
-	cvWaitKey(0);
-	cvReleaseImage(&img1);
-#endif //_VERBOSE_TUPLE
-	
+    IplImage* _binary = cvCloneImage(binary);
+    CvMemStorage* storage = cvCreateMemStorage();
 	int found_tuple = 0;
-	vector<outlet_elem_t> tuple;
-	for(unsigned int i = 0; i < candidates.size(); i++)
-	{
-		vector<outlet_elem_t> tuple_candidates;
-		outlet_elem_t outlet_elem;
-		outlet_elem.seq = candidates[i];
-		outlet_elem.center = calc_center(candidates[i]);
-		tuple_candidates.push_back(outlet_elem);
-		
-		CvRect rect1 = cvBoundingRect(candidates[i]);
-		for(unsigned int j = 0; j < candidates.size(); j++)
-		{
-			if(j <= i) continue;
-			CvRect rect2 = cvBoundingRect(candidates[j]);
-			
-			// test the pair
-			CvPoint center1 = rect_center(rect1);
-			CvPoint center2 = rect_center(rect2);
-			
-			if(2.0f*(rect1.width - rect2.width)/(rect1.width + rect2.width) > 0.3f ||
-			   2.0f*(rect1.height - rect2.height)/(rect1.height + rect2.height) > 0.3f)
-			{
-				continue;
-			}
-			
-			float dist = sqrt(float(center1.x - center2.x)*(center1.x - center2.x) + 
-							  (center1.y - center2.y)*(center1.y - center2.y));
-			if(dist > 4*rect1.width)
-			{
-				continue;
-			}
-			
-			// found pair, add rect2 to the tuple
-			outlet_elem_t outlet_elem;
-			outlet_elem.seq = candidates[j];
-			outlet_elem.center = calc_center(candidates[j]);
-			tuple_candidates.push_back(outlet_elem);
-		}
-		
-		// find the tuple
- 		found_tuple = find_tuple(tuple_candidates, outlet_tuple.centers);
-		if(found_tuple == 1)
-		{
-			// found the tuple!
-			tuple = tuple_candidates;
-			break;
-		}
-	}
-	
-#if defined(_VERBOSE_TUPLE) || defined(_VERBOSE)
-	IplImage* img2 = cvCloneImage(img);
+
+    for(int dstep = 1; dstep < 10; dstep++)
+    {
+        cvErode(_binary, binary, 0, dstep);
+        cvDilate(binary, binary, 0, dstep);
+        
+#if defined(_VERBOSE_TUPLE)
+        cvNamedWindow("1", 1);
+        cvShowImage("1", binary);
+        cvWaitKey(0);
+        cvSaveImage("mask.jpg", binary);
+#endif
+        
+        CvSeq* first = 0;
+        cvFindContours(binary, storage, &first, sizeof(CvContour), CV_RETR_CCOMP);
+        vector<CvSeq*> candidates;
+        
+#if defined(_VERBOSE_TUPLE)
+        IplImage* img1 = cvCloneImage(img);
 #endif //_VERBOSE_TUPLE
-	
-	if(found_tuple == 1)
-	{
-		// draw the mask
-		if(outlet_tuple.tuple_mask)
-		{
-			cvSetZero(outlet_tuple.tuple_mask);
-			for(int i = 0; i < 4; i++)
-			{
-				cvDrawContours(outlet_tuple.tuple_mask, tuple[i].seq, cvScalar(i + 1), cvScalar(i + 1), 0, CV_FILLED);
-			}
-		}
-		
-		// calculate the tuple roi
-		CvRect tuple_roi[4];
-		for(int i = 0; i < 4; i++)
-		{
-			tuple_roi[i] = cvBoundingRect(tuple[i].seq);
-		}
-		calc_bounding_rect(4, tuple_roi, outlet_tuple.roi);
-		
-#if defined(_VERBOSE_TUPLE) || defined(_VERBOSE)
-		cvCircle(img2, cvPoint(outlet_tuple.centers[0]), 10, CV_RGB(0, 255, 0));
-		cvCircle(img2, cvPoint(outlet_tuple.centers[1]), 10, CV_RGB(0, 0, 255));			
-		cvCircle(img2, cvPoint(outlet_tuple.centers[2]), 10, CV_RGB(255, 255, 255));		
-		cvCircle(img2, cvPoint(outlet_tuple.centers[3]), 10, CV_RGB(0, 255, 255));		
-#endif //VERBOSE_TUPLE
-	
-        // save outlet borders 
-        for(int i = 0; i < 4; i++)
+        
+        cv::WImageBuffer1_b mask_buf( cvCloneImage(grey) );
+        IplImage* mask = mask_buf.Ipl();
+        for(CvSeq* seq = first; seq != NULL; seq = seq->h_next)
         {
-            for(int j = 0; j < tuple[i].seq->total; j++)
+            CvRect rect = cvBoundingRect(seq);
+#if !defined(_OUTLET_HR)
+            const int xmin = 30;
+            const int xmax = 150;
+            const int ymin = 15;
+            const int ymax = 50;
+            const int min_width = 5;
+#else
+            const int xmin = 50;
+            const int xmax = 400;
+            const int ymin = 30; 
+            const int ymax = 400;
+            const int min_width = 5;
+#endif //OUTLET_HR
+            
+#if 0
+            if(abs(rect.x - 1387) < 20 && abs(rect.y - 127) < 20)
             {
-                CvPoint* p = (CvPoint*)cvGetSeqElem(tuple[i].seq, j);
-                outlet_tuple.borders[i].push_back(cvPoint2D32f(p->x, p->y));
+                int w = 1;
+            }
+#endif
+            
+            if(rect.width < xmin || rect.width > xmax || rect.height < ymin || rect.height > ymax)
+            {
+                continue;
+            }
+            
+            float area = fabs(cvContourArea(seq));
+            float perimeter = fabs(cvArcLength(seq));
+            
+            if(area/perimeter*2 < min_width)
+            {
+                continue;
+            }
+            
+            //cvSetImageROI(img, rect);
+            cvSetZero(mask);
+            cvDrawContours(mask, seq, cvScalar(255), cvScalar(255), 0, CV_FILLED);
+            
+            CvScalar mean = cvAvg(img, mask);
+            //cvResetImageROI(img);
+            if(mean.val[2]/mean.val[1] < 2.0f)
+            {
+                continue;
+            }
+            
+            candidates.push_back(seq);
+            
+#if defined(_VERBOSE_TUPLE)
+            cvDrawContours(img1, seq, CV_RGB(255, 0, 0), CV_RGB(255, 0, 0), 0, 2);
+#endif //_VERBOSE_TUPLE
+        }
+        
+#if defined(_VERBOSE_TUPLE)
+        cvNamedWindow("1", 1);
+        cvShowImage("1", img1);
+        cvWaitKey(0);
+        cvReleaseImage(&img1);
+#endif //_VERBOSE_TUPLE
+        
+        vector<outlet_elem_t> tuple;
+        for(unsigned int i = 0; i < candidates.size(); i++)
+        {
+            vector<outlet_elem_t> tuple_candidates;
+            outlet_elem_t outlet_elem;
+            outlet_elem.seq = candidates[i];
+            outlet_elem.center = calc_center(candidates[i]);
+            tuple_candidates.push_back(outlet_elem);
+            
+            CvRect rect1 = cvBoundingRect(candidates[i]);
+            for(unsigned int j = 0; j < candidates.size(); j++)
+            {
+                if(j <= i) continue;
+                CvRect rect2 = cvBoundingRect(candidates[j]);
+                
+                // test the pair
+                CvPoint center1 = rect_center(rect1);
+                CvPoint center2 = rect_center(rect2);
+                
+                if(2.0f*(rect1.width - rect2.width)/(rect1.width + rect2.width) > 0.3f ||
+                   2.0f*(rect1.height - rect2.height)/(rect1.height + rect2.height) > 0.3f)
+                {
+                    continue;
+                }
+                
+                float dist = sqrt(float(center1.x - center2.x)*(center1.x - center2.x) + 
+                                  (center1.y - center2.y)*(center1.y - center2.y));
+                if(dist > 4*rect1.width)
+                {
+                    continue;
+                }
+                
+                // found pair, add rect2 to the tuple
+                outlet_elem_t outlet_elem;
+                outlet_elem.seq = candidates[j];
+                outlet_elem.center = calc_center(candidates[j]);
+                tuple_candidates.push_back(outlet_elem);
+            }
+            
+            // find the tuple
+            found_tuple = find_tuple(tuple_candidates, outlet_tuple.centers);
+            if(found_tuple == 1)
+            {
+                // found the tuple!
+                tuple = tuple_candidates;
+                break;
             }
         }
-    }
-	
-#if defined(_VERBOSE_TUPLE)
-	cvNamedWindow("1", 1);
-	cvShowImage("1", img2);
-	cvWaitKey(0);
+        
+#if defined(_VERBOSE_TUPLE) || defined(_VERBOSE)
+        IplImage* img2 = cvCloneImage(img);
 #endif //_VERBOSE_TUPLE
-	
+        
+        if(found_tuple == 1)
+        {
+            for(int i = 0; i < 4; i++)
+            {
+                tuple[i].seq = close_seq(tuple[i].seq, storage, 10, binary);
+            }
+            // draw the mask
+            if(outlet_tuple.tuple_mask)
+            {
+                cvSetZero(outlet_tuple.tuple_mask);
+                for(int i = 0; i < 4; i++)
+                {
+                    cvDrawContours(outlet_tuple.tuple_mask, tuple[i].seq, cvScalar(i + 1), cvScalar(i + 1), 0, CV_FILLED);
+                }
+            }
+            
+            // calculate the tuple roi
+            CvRect tuple_roi[4];
+            for(int i = 0; i < 4; i++)
+            {
+                tuple_roi[i] = cvBoundingRect(tuple[i].seq);
+            }
+            calc_bounding_rect(4, tuple_roi, outlet_tuple.roi);
+            
+#if defined(_VERBOSE_TUPLE) || defined(_VERBOSE)
+            cvCircle(img2, cvPoint(outlet_tuple.centers[0]), 10, CV_RGB(0, 255, 0));
+            cvCircle(img2, cvPoint(outlet_tuple.centers[1]), 10, CV_RGB(0, 0, 255));			
+            cvCircle(img2, cvPoint(outlet_tuple.centers[2]), 10, CV_RGB(255, 255, 255));		
+            cvCircle(img2, cvPoint(outlet_tuple.centers[3]), 10, CV_RGB(0, 255, 255));		
+#endif //VERBOSE_TUPLE
+            
+            // save outlet borders 
+            for(int i = 0; i < 4; i++)
+            {
+                for(int j = 0; j < tuple[i].seq->total; j++)
+                {
+                    CvPoint* p = (CvPoint*)cvGetSeqElem(tuple[i].seq, j);
+                    outlet_tuple.borders[i].push_back(cvPoint2D32f(p->x, p->y));
+                }
+            }
+        }
+        
+#if defined(_VERBOSE_TUPLE)
+        cvNamedWindow("1", 1);
+        cvShowImage("1", img2);
+        cvWaitKey(0);
+#endif //_VERBOSE_TUPLE
+        
+        
 #if defined(_VERBOSE)
-	if(output_path && filename)
-	{
-		char buf[1024];
-		sprintf(buf, "%s/warped/%s", output_path, filename);
-		cvSaveImage(buf, img2);
-	}
+        if(output_path && filename)
+        {
+            char buf[1024];
+            sprintf(buf, "%s/warped/%s", output_path, filename);
+            cvSaveImage(buf, img2);
+        }
 #endif //_VERBOSE
-	
+        
 #if defined(_VERBOSE) || defined(_VERBOSE_TUPLE)
-	cvReleaseImage(&img2);
+        cvReleaseImage(&img2);
 #endif
-
+        if(found_tuple == 1) break;
+    }
+    
 	cvReleaseMemStorage(&storage);
+    cvReleaseImage(&_binary);
 	
 	return found_tuple;
 	
+}
+
+CvSeq* close_seq(CvSeq* seq, CvMemStorage* storage, int closure_dist, IplImage* workspace)
+{
+    cvSetZero(workspace);
+    cvDrawContours(workspace, seq, cvScalar(255), cvScalar(255), 0, CV_FILLED);
+    cvDilate(workspace, workspace, 0, closure_dist);
+    cvErode(workspace, workspace, 0, closure_dist);
+    
+    CvSeq* first = 0;
+    cvFindContours(workspace, storage, &first, sizeof(CvContour), CV_RETR_LIST);
+    return(first);
 }
 
 void calc_bounding_rect(int count, const CvRect* rects, CvRect& bounding_rect)

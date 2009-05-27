@@ -259,4 +259,7 @@ void calc_camera_pose_2x2(CvMat* intrinsic_mat, CvMat* distortion_coeffs, const 
 void calc_camera_outlet_pose(CvMat* intrinsic_mat, CvMat* distortion_coeffs, const outlet_template_t& outlet_template,
                              const CvPoint2D32f* image_points, CvMat* rotat, CvMat* translation_vector);
 
+CvSeq* close_seq(CvSeq* seq, CvMemStorage* storage, int closure_dist, IplImage* workspace);
+
+
 #endif //_OUTLET_TUPLE_H
