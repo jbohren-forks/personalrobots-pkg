@@ -26,6 +26,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
+#include <iostream>
 using namespace std;
 
 #include "../../sbpl/headers.h"
@@ -2093,6 +2094,9 @@ void EnvironmentNAVXYTHETALAT::GetSuccs(int SourceStateID, vector<int>* SuccIDV,
 
 void EnvironmentNAVXYTHETALAT::GetPreds(int TargetStateID, vector<int>* PredIDV, vector<int>* CostV)
 {
+
+	//TODO- to support tolerance, need: a) generate preds for goal state based on all possible goal state variable settings,
+	//b) change goal check condition in gethashentry c) change getpredsofchangedcells and getsuccsofchangedcells functions
 
     int aind;
 
