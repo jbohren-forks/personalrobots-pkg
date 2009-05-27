@@ -117,7 +117,7 @@ public:
   ms_3dmgx2_driver::IMU::cmd cmd;
 
   SelfTest<ImuNode> self_test_;
-  diagnostic_updater::Updater<ImuNode> diagnostic_;
+  diagnostic_updater::Updater diagnostic_;
 
   ros::NodeHandle node_handle_;
   ros::Publisher imu_data_pub_;
@@ -141,7 +141,7 @@ public:
   double desired_freq_;
   diagnostic_updater::FrequencyStatus freq_diag_;
 
-  ImuNode(ros::NodeHandle h) : self_test_(this), diagnostic_(this, h), 
+  ImuNode(ros::NodeHandle h) : self_test_(this), diagnostic_(h), 
   node_handle_(h), calibrated_(false), calibrate_request_(false), error_count_(0), 
   desired_freq_(100), freq_diag_(desired_freq_, desired_freq_, 0.05)
   {
@@ -174,8 +174,8 @@ public:
     self_test_.addTest(&ImuNode::ResumeTest);
 
     diagnostic_.add( freq_diag_ );
-    diagnostic_.add( &ImuNode::calibrationStatus );
-    diagnostic_.add( &ImuNode::deviceStatus );
+    diagnostic_.add( "Calibration Status", this, &ImuNode::calibrationStatus );
+    diagnostic_.add( "IMU Status", this, &ImuNode::deviceStatus );
   }
 
   ~ImuNode()
@@ -504,8 +504,6 @@ public:
 
   void deviceStatus(diagnostic_updater::DiagnosticStatusWrapper &status)
   {
-    status.name = "IMU Status";
-
     if (running)
       status.summary(0, "IMU is running");
     else
@@ -518,8 +516,6 @@ public:
 
   void calibrationStatus(diagnostic_updater::DiagnosticStatusWrapper& status)
   {
-    status.name = "Calibration Status";
-
     if (calibrated_)
       status.summary(0, "Gyro is calibrated");
     else
