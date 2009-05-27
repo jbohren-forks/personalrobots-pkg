@@ -277,12 +277,27 @@ NavFn::setCostmap(const COSTTYPE *cmap, bool isROS)
 }
 
 bool
-NavFn::calcNavFnDijkstra()
+NavFn::calcNavFnDijkstra(bool atStart)
 {
   setupNavFn(true);
 
   // calculate the nav fn and path
-  return propNavFnDijkstra(std::max(nx*ny/20,nx+ny));
+  propNavFnDijkstra(std::max(nx*ny/20,nx+ny),atStart);
+
+  // path
+  int len = calcPath(nx*4);
+
+  if (len > 0)			// found plan
+    {
+      ROS_DEBUG("[NavFn] Path found, %d steps\n", len);
+      return true;
+    }
+  else
+    {
+      ROS_DEBUG("[NavFn] No path found\n");
+      return false;
+    }
+
 }
 
 

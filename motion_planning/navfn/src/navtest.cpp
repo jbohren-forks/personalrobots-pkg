@@ -70,9 +70,10 @@ int main(int argc, char **argv)
   int sx,sy;
   COSTTYPE *cmap = NULL;
   //  cmap = readPGM("maps/willow-full-0.05.pgm",&sx,&sy);
-  cmap = readPGM("maps/navfn_test1.pgm",&sx,&sy,true);
+  //  cmap = readPGM("maps/navfn_test1.pgm",&sx,&sy,true);
   //  cmap = readPGM("initial_costmap_1165_945.pgm",&sx,&sy,true);
   //  cmap = readPGM("initial_costmap_2332_1825.pgm",&sx,&sy,true);
+  cmap = readPGM("planning_problems/failure/test.pgm",&sx,&sy,true);
   if (cmap)
     {
       nav = new NavFn(sx,sy);
@@ -105,11 +106,14 @@ int main(int argc, char **argv)
 	}
       start[1] = 5*sy/6;
 
-      start[0] = 547;
-      start[1] = 590;
+      //      start[0] = 1146;
+      //      start[1] = 1293;
 
-      goal[0] = 368;
-      goal[1] = 525;
+      start[0] = 625;
+      start[1] = 1117;
+
+      goal[0] = 891;
+      goal[1] = 1439;
 
     }
   else
@@ -157,7 +161,7 @@ int main(int argc, char **argv)
       nav->setupNavFn(false);
       nav->setObs();		// simple obstacles
     }
-  //  nav->propNavFnDijkstra(sx*sy/20);
+  //nav->propNavFnDijkstra(sx*sy/20);
   nav->propNavFnAstar(sx*sy/20);
   double t1 = get_ms();
 
@@ -181,7 +185,8 @@ int main(int argc, char **argv)
       nav->setObs();		// simple obstacles
     }
   double t1 = get_ms();
-  nav->calcNavFnAstar();
+  //  nav->calcNavFnAstar();
+  nav->calcNavFnDijkstra(true);
   double t2 = get_ms();
   printf("Setup: %d ms  Plan: %d ms  Total: %d ms\n", 
 	 (int)(t1-t0), (int)(t2-t1), (int)(t2-t0));

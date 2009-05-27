@@ -106,7 +106,7 @@ class NavFn
 
   void setCostmap(const COSTTYPE *cmap, bool isROS=true); /**< sets up the cost map */
   bool calcNavFnAstar();	/**< calculates a plan, returns true if found */
-  bool calcNavFnDijkstra();	/**< calculates the full navigation function */
+  bool calcNavFnDijkstra(bool atStart = false);	/**< calculates the full navigation function */
   float *getPathX();		/**< x-coordinates of path */
   float *getPathY();		/**< x-coordinates of path */
   int   getPathLen();		/**< length of path, 0 if not found */
