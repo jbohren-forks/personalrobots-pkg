@@ -1,0 +1,15 @@
+<stack name="ros-pkg_simulators" version="0.1">
+  <description brief="Stage and Gazebo Simulators">
+    Simulators for ROS both Stage and Gazebo
+  </description>
+  <version>0.1</version>
+  <author>John Hsu johnhsu@willowgarage.com</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://pr.willowgarage.com/wiki/simulators</url>
+  
+  <depend stack="ros" version="0.5"/>
+  <depend stack="ros-pkg_common" version="0.1"/>
+  <depend stack="ros-pkg_visualization_core" version="0.1"/>
+</stack>
+

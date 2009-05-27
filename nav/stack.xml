@@ -1,0 +1,15 @@
+<stack name="ros-pkg_nav" version="0.1">
+  <description brief="nav stack">
+    The 2D navigation stack
+  </description>
+  <version>0.1</version>
+  <author>Eitan eitan@willowgarage.com</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://pr.willowgarage.com/wiki/nav</url>
+  
+  <depend stack="ros" version="0.5"/>
+  <depend stack="ros-pkg_common" version="0.1"/>
+  <depend stack="ros-pkg_visualization_core" version="0.1"/>
+</stack>
+
