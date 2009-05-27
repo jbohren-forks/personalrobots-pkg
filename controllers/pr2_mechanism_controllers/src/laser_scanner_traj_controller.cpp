@@ -263,6 +263,22 @@ bool LaserScannerTrajController::setPeriodicCmd(const pr2_msgs::PeriodicCmd& cmd
     double high_pt = cmd.amplitude + cmd.offset ;
     double low_pt = -cmd.amplitude + cmd.offset ;
 
+
+    double soft_limit_low  = joint_state_->joint_->joint_limit_min_ + joint_state_->joint_->safety_length_min_ ;
+    double soft_limit_high = joint_state_->joint_->joint_limit_max_ - joint_state_->joint_->safety_length_max_ ;
+
+    if (low_pt < soft_limit_low)
+    {
+      ROS_WARN("Lower setpoint (%.3f) is below the soft limit (%.3f). Truncating command", low_pt, soft_limit_low) ;
+      low_pt = soft_limit_low ;
+    }
+
+    if (high_pt > soft_limit_high)
+    {
+      ROS_WARN("Upper setpoint (%.3f) is above the soft limit (%.3f). Truncating command", high_pt, soft_limit_high) ;
+      high_pt = soft_limit_high ;
+    }
+
     std::vector<trajectory::Trajectory::TPoint> tpoints ;
 
     trajectory::Trajectory::TPoint cur_point(1) ;
