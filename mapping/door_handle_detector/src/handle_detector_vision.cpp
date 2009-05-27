@@ -611,7 +611,7 @@ private:
     {
         IplImage *gray = cvCreateImage(cvSize(left->width, left->height), 8, 1);
         cvCvtColor(left, gray, CV_BGR2GRAY);
-        cvEqualizeHist(gray, gray);
+//        cvEqualizeHist(gray, gray);
         cvClearMemStorage(storage);
         if(cascade){
             CvSeq *handles = cvHaarDetectObjects(gray, cascade, storage, 1.1, 2, 0, //|CV_HAAR_FIND_BIGGEST_OBJECT
