@@ -158,6 +158,8 @@ RightArmMechanism::use_constraint_composite_cartesian_pose_controller{
   eq(d1.is_up, false);
   contained_by(r_arm_cartesian_pose_controller.Holds d2);
   eq(d2.is_up, false);
+  contained_by(r_arm_constraint_cartesian_trajectory_controller.Holds d3);
+  eq(d3.is_up, false);
 }
 
 
