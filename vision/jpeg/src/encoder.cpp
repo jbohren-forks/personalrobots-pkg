@@ -63,35 +63,15 @@ void imageCB(const image_msgs::ImageConstPtr &image)
   uint32_t width;
   uint32_t height;
   int compressedSize;
-
+  IplImage *ipl;
   unsigned char *rawBuffer = NULL;
   int rawBufferSize = 0;
-  int depth = 1;
+  int depth = 3;
 
-  // Get the type of image to compress
-  if (g_img_bridge.fromImage(*image, "mono"))
-  {
-    compressedImageMessage.encoding = "mono";
-    depth = 1;
-  }
-  else if (g_img_bridge.fromImage(*image, "rgb"))
-  {
-    compressedImageMessage.encoding = "rgb";
-    depth = 3;
-  }
-  else if ( g_img_bridge.fromImage(*image, "bgr") )
-  {
-    compressedImageMessage.encoding = "bgr";
-    depth = 3;
-  }
-  else
-  {
-    ROS_ERROR("Unable to process raw image. Requres [mono | rgb | bgr]\n");
-    return;
-  }
+  g_img_bridge.fromImage(*image, "rgb");
 
   // Get the raw image attributes
-  IplImage *ipl = g_img_bridge.toIpl();
+  ipl = g_img_bridge.toIpl();
   size = cvGetSize(ipl);
 
   width = size.width;
@@ -114,6 +94,8 @@ void imageCB(const image_msgs::ImageConstPtr &image)
   compressedSize = jpeg_compress(jpegBuffer, rawBuffer, width, height, depth, 
                                  jpegBufferSize, jpegQuality );
 
+  compressedImageMessage.encoding = "rgb";
+
   // Create the output message
   compressedImageMessage.uint8_data.layout.dim.resize(2);
   compressedImageMessage.uint8_data.layout.dim[0].label = "height";
@@ -130,6 +112,7 @@ void imageCB(const image_msgs::ImageConstPtr &image)
 
   // Send the message
   jpegPub.publish(compressedImageMessage);
+
 }
 
 ////////////////////////////////////////////////////////////////////////////////

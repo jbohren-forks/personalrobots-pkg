@@ -92,7 +92,7 @@ void imageCB(const image_msgs::CompressedImageConstPtr &image)
 
   // Copy raw image data into the message
   fillImage(decompressedImageMessage, "decompressed_image",
-            height, width, depth, "mono", "uint8", rawBuffer);
+            height, width, depth, "rgb", "uint8", rawBuffer);
 
   // Publish the decompressed image
   rawPub.publish(decompressedImageMessage);
