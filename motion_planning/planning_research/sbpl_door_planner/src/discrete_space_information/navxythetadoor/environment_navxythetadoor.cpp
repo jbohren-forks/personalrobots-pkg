@@ -27,6 +27,8 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+using namespace std;
+
 #include <sbpl/headers.h>
 #include <sbpl_door_planner/environment_navxythetadoor.h>
 #include <door_msgs/Door.h>
