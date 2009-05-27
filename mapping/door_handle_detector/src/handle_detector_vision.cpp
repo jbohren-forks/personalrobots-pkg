@@ -580,19 +580,11 @@ private:
     	pin.point.x = p.x;
     	pin.point.y = p.y;
     	pin.point.z = p.z;
-    	try {
-    		tf_->transformPoint("base_footprint", pin, pout);
-    	}
-    	catch(tf::LookupException & ex){
-    		ROS_ERROR("Lookup exception: %s\n", ex.what());
-    	}
-    	catch(tf::ExtrapolationException & ex){
-    		ROS_DEBUG("Extrapolation exception: %s\n", ex.what());
-    	}
-    	catch(tf::ConnectivityException & ex){
-    		ROS_ERROR("Connectivity exception: %s\n", ex.what());
-    	}
-
+        if (!tf_->canTransform("base_footprint", pin.header.frame_id, pin.header.stamp, ros::Duration(5.0))){
+          ROS_ERROR("Cannot transform from base_footprint to %s", pin.header.frame_id.c_str());
+          return false;
+        }
+        tf_->transformPoint("base_footprint", pin, pout);
     	if(pout.point.z > max_height || pout.point.z < min_height){
     		printf("Height not within admissable range: %f\n", pout.point.z);
     		return false;
@@ -740,13 +732,13 @@ private:
         handle_stereo.point.y = p.y;
         handle_stereo.point.z = p.z;
 
-        try {
-        	tf_->transformPoint(handle.header.frame_id, handle_stereo, handle);
+        if (!tf_->canTransform(handle.header.frame_id, handle_stereo.header.frame_id, 
+                               handle_stereo.header.stamp, ros::Duration(5.0))){
+          ROS_ERROR("Cannot transform from %s to %s", handle.header.frame_id.c_str(),
+                    handle_stereo.header.frame_id.c_str());
+          return false;
         }
-        catch(tf::TransformException & ex){
-        	ROS_ERROR("Lookup exception: %s\n", ex.what());
-        }
-
+        tf_->transformPoint(handle.header.frame_id, handle_stereo, handle);
 
         ROS_INFO("Clustered Handle at: (%d,%d,%d,%d)", bbox.x,bbox.y,bbox.width, bbox.height);
 
@@ -825,18 +817,13 @@ private:
         }
         robot_msgs::PointStamped handle_transformed;
         // transform the point in the expected frame
-        try {
-            tf_->transformPoint(req.door.header.frame_id, handle, handle_transformed);
+        if (!tf_->canTransform(req.door.header.frame_id, handle.header.frame_id, 
+                               handle.header.stamp, ros::Duration(5.0))){
+          ROS_ERROR("Cannot transform from %s to %s", handle.header.frame_id.c_str(),
+                    req.door.header.frame_id.c_str());
+          return false;
         }
-        catch(tf::LookupException & ex){
-            ROS_ERROR("Lookup exception: %s\n", ex.what());
-        }
-        catch(tf::ExtrapolationException & ex){
-            ROS_DEBUG("Extrapolation exception: %s\n", ex.what());
-        }
-        catch(tf::ConnectivityException & ex){
-            ROS_ERROR("Connectivity exception: %s\n", ex.what());
-        }
+        tf_->transformPoint(req.door.header.frame_id, handle, handle_transformed);
         if(found){
             resp.doors.resize(1);
             resp.doors[0] = req.door;
@@ -946,20 +933,11 @@ private:
     void applyPositionPrior()
     {
         robot_msgs::PointCloud base_cloud;
-        tf_->setExtrapolationLimit(ros::Duration(2.0));
-        try {
-            tf_->transformPointCloud("base_footprint", cloud, base_cloud);
+        if (!tf_->canTransform("base_footprint", cloud.header.frame_id, cloud.header.stamp, ros::Duration(5.0))){
+          ROS_ERROR("Cannot transform from base_footprint to %s", cloud.header.frame_id.c_str());
+          return;
         }
-        catch(tf::ExtrapolationException & ex){
-            tf_->clear();
-            ROS_WARN("TF exception: %s", ex.what());
-        }
-        catch(tf::LookupException & ex){
-            ROS_ERROR("Lookup exception: %s\n", ex.what());
-        }
-        catch(tf::ConnectivityException & ex){
-            ROS_ERROR("Connectivity exception: %s\n", ex.what());
-        }
+        tf_->transformPointCloud("base_footprint", cloud, base_cloud);
         int xchan = -1;
         int ychan = -1;
         for(size_t i = 0;i < base_cloud.chan.size();++i){
