@@ -75,7 +75,7 @@ class TeleopBase : public Node
         param<int>("passthrough_button", passthrough_button, 1);
 
 	double joy_msg_timeout;
-        param<double>("joy_msg_timeout", joy_msg_timeout, 1.0);
+        param<double>("joy_msg_timeout", joy_msg_timeout, -1.0); //default to no timeout
 	if (joy_msg_timeout <= 0)
 	  {
 	    joy_msg_timeout_ = ros::Duration().fromSec(9999999);//DURATION_MAX;
