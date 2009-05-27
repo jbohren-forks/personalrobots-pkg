@@ -1,0 +1,13 @@
+<package>
+  <description>Checks that the joints in the system are currently calibrated, and publishes diagnostic information accordingly</description>
+  <author>Vijay Pradeep</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <depend package="robot_msgs" />
+  <depend package="std_msgs" />
+  <depend package="rospy" />
+  <depend package="diagnostic_msgs" />
+  <!-- export>
+    <cpp cflags="-I${prefix}/msg/cpp"/>
+  </export -->
+</package>
