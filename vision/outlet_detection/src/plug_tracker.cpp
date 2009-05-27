@@ -57,7 +57,11 @@ PlugTracker::PlugTracker(ros::Node &node)
   //plug_in_board_.setRotation(btQuaternion(-0.70607, 0.70787, 0.01876, -0.00651));
 
   // New, boxy plug
-  plug_in_board_.setOrigin(tf::Vector3(0.01047, -0.01988, 0.02932));
+  //plug_in_board_.setOrigin(tf::Vector3(0.01047, -0.01988, 0.02932));
+  //plug_in_board_.setRotation(tf::Quaternion(0.71428, -0.69958, 0.00588, 0.01906));
+
+  // Measured with caliper
+  plug_in_board_.setOrigin(tf::Vector3(0.007, -0.008, 0.029));
   plug_in_board_.setRotation(tf::Quaternion(0.71428, -0.69958, 0.00588, 0.01906));
 
   camera_in_cvcam_.getOrigin().setValue(0.0, 0.0, 0.0);
