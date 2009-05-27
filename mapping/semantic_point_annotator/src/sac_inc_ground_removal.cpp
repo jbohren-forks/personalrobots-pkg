@@ -85,7 +85,7 @@ class IncGroundRemoval
     PointStamped viewpoint_cloud_;
 
     // Parameters
-    double z_threshold_;
+  double z_threshold_, ground_slope_threshold_;
     int sac_min_points_per_model_, sac_max_iterations_;
     double sac_distance_threshold_;
     int planar_refine_;
@@ -94,6 +94,7 @@ class IncGroundRemoval
     IncGroundRemoval (ros::Node& anode) : node_ (anode), tf_ (anode)
     {
       node_.param ("~z_threshold", z_threshold_, 0.1);                          // 10cm threshold for ground removal
+      node_.param ("~ground_slope_threshold", ground_slope_threshold_, 0.0);                          // 0% slope threshold for ground removal
       node_.param ("~sac_distance_threshold", sac_distance_threshold_, 0.03);   // 3 cm threshold
 
       node_.param ("~planar_refine", planar_refine_, 1);                        // enable a final planar refinement step?
@@ -130,6 +131,7 @@ class IncGroundRemoval
       updateParametersFromServer ()
     {
       if (node_.hasParam ("~z_threshold")) node_.getParam ("~z_threshold", z_threshold_);
+      if (node_.hasParam ("~ground_slope_threshold")) node_.getParam ("~ground_slope_threshold", ground_slope_threshold_);
       if (node_.hasParam ("~sac_distance_threshold"))  node_.getParam ("~sac_distance_threshold", sac_distance_threshold_);
     }
 
@@ -264,14 +266,15 @@ class IncGroundRemoval
       // Transform z_threshold_ from the parameter parameter frame (parameter_frame_) into the point cloud frame
       z_threshold_ = transformDoubleValueTF (z_threshold_, "base_footprint", cloud_.header.frame_id, cloud_.header.stamp, &tf_);
 
-      // Select points whose Z dimension is close to the ground (0,0,0 in base_footprint)
+      // Select points whose Z dimension is close to the ground (0,0,0 in base_footprint) or under a gentle slope (allowing for pitch/roll error)
       vector<int> possible_ground_indices (cloud_.pts.size ());
       vector<int> all_indices (cloud_.pts.size ());
       int nr_p = 0;
       for (unsigned int cp = 0; cp < cloud_.pts.size (); cp++)
       {
         all_indices[cp] = cp;
-        if (fabs (cloud_.pts[cp].z) < z_threshold_)
+        if (fabs (cloud_.pts[cp].z) < z_threshold_ || // max height for ground
+            cloud_.pts[cp].z*cloud_.pts[cp].z < ground_slope_threshold_ * (cloud_.pts[cp].x*cloud_.pts[cp].x + cloud_.pts[cp].y*cloud_.pts[cp].y)) // max slope for ground 
         {
           possible_ground_indices[nr_p] = cp;
           nr_p++;
@@ -296,9 +299,9 @@ class IncGroundRemoval
       {
         // Get the remaining point indices
         vector<int> remaining_possible_ground_indices;
-        sort (possible_ground_indices.begin (), possible_ground_indices.end ());
+        sort (all_indices.begin (), all_indices.end ());
         sort (ground_inliers.begin (), ground_inliers.end ());
-        set_difference (possible_ground_indices.begin (), possible_ground_indices.end (), ground_inliers.begin (), ground_inliers.end (),
+        set_difference (all_indices.begin (), all_indices.end (), ground_inliers.begin (), ground_inliers.end (),
                         inserter (remaining_possible_ground_indices, remaining_possible_ground_indices.begin ()));
 
         // Estimate the plane from the line inliers
@@ -351,8 +354,8 @@ class IncGroundRemoval
       // Get all the non-ground point indices
       vector<int> remaining_indices;
       sort (ground_inliers.begin (), ground_inliers.end ());
-      sort (possible_ground_indices.begin(), possible_ground_indices.end());
-      set_difference (possible_ground_indices.begin (), possible_ground_indices.end (), ground_inliers.begin (), ground_inliers.end (),
+      sort (all_indices.begin(), all_indices.end());
+      set_difference (all_indices.begin (), all_indices.end (), ground_inliers.begin (), ground_inliers.end (),
                       inserter (remaining_indices, remaining_indices.begin ()));
 
       // Prepare new arrays
