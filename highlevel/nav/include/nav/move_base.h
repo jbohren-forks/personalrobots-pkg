@@ -49,6 +49,7 @@
 #include <vector>
 #include <string>
 #include <nav_srvs/Plan.h>
+#include <visualization_msgs/Marker.h>
 
 namespace nav {
   /**
@@ -92,6 +93,12 @@ namespace nav {
        * @param  goal The goal to plan to
        */
       void makePlan(const robot_msgs::PoseStamped& goal);
+
+      /**
+       * @brief  Publish a goal to the visualizer
+       * @param  goal The goal to visualize
+       */
+      void publishGoal(const robot_msgs::PoseStamped& goal);
 
       /**
        * @brief  Get the current pose of the robot in the specified frame

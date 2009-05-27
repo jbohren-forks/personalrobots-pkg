@@ -57,6 +57,7 @@ namespace nav {
 
     //for comanding the base
     ros_node_.advertise<robot_msgs::PoseDot>("cmd_vel", 1);
+    ros_node_.advertise<visualization_msgs::Marker>( "visualization_marker", 0 );
 
     //we'll assume the radius of the robot to be consistent with what's specified for the costmaps
     ros_node_.param("~base_local_planner/costmap/inscribed_radius", inscribed_radius_, 0.325);
@@ -175,6 +176,22 @@ namespace nav {
       delete controller_costmap_ros_;
   }
 
+  void MoveBase::publishGoal(const robot_msgs::PoseStamped& goal){
+    visualization_msgs::Marker marker;
+    marker.header = goal.header;
+    marker.ns = "move_base";
+    marker.id = 0;
+    marker.type = visualization_msgs::Marker::ARROW;
+    marker.pose = goal.pose;
+    marker.scale.x = 1.0;
+    marker.scale.y = 0.1;
+    marker.scale.z = 0.1;
+    marker.color.a = 1.0;
+    marker.color.r = 0.0;
+    marker.color.g = 1.0;
+    marker.color.b = 0.0;
+    ros_node_.publish("visualization_marker", marker);
+  }
 
   void MoveBase::makePlan(const robot_msgs::PoseStamped& goal){
     //since this gets called on handle activate
@@ -239,6 +256,9 @@ namespace nav {
   }
 
   robot_actions::ResultStatus MoveBase::execute(const robot_msgs::PoseStamped& goal, robot_msgs::PoseStamped& feedback){
+    //publish the goal point to the visualizer
+    publishGoal(goal);
+
     //update the goal
     goal_ = goal;
 
