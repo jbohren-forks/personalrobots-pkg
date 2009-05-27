@@ -85,47 +85,37 @@ robot_actions::ResultStatus CheckPathAction::execute(const robot_msgs::PoseStamp
   double length_straight = goal_point.length();
   ROS_INFO("Try to find path to (%f %f %f), which is %f [m] from the current robot pose.", 
 	   goal_tr.pose.position.x, goal_tr.pose.position.y, goal_tr.pose.position.z, length_straight);
-
-
+  
+  
   ROS_INFO("call planner to find path");
   req_plan.goal = goal_tr;
   req_plan.tolerance = 0.0;
   Duration timeout_check_path(5.0);
   Time start_time = Time::now();
-  while (!ros::service::call("move_base/make_plan", req_plan, res_plan)){
+  while (!isPreemptRequested()){
+    // check for timeout
     if (Time::now() > start_time + timeout_check_path){
-      ROS_ERROR("Timeout checking paths");
+      ROS_ERROR("Timeout checking paths. Did not find a path.");
       return robot_actions::ABORTED;
     }
-    if (isPreemptRequested()){
-      ROS_ERROR("preempted");
-      return robot_actions::PREEMPTED;
+    // find path
+    ros::service::call("move_base/make_plan", req_plan, res_plan);
+    if (res_plan.plan.poses.size() >= 2){
+      // calculate length of path
+      double length = 0;
+      for (unsigned int i=0; i<res_plan.plan.poses.size()-1; i++){
+	length += sqrt( ((res_plan.plan.poses[i].pose.position.x - res_plan.plan.poses[i+1].pose.position.x)*
+			 (res_plan.plan.poses[i].pose.position.x - res_plan.plan.poses[i+1].pose.position.x))+
+			((res_plan.plan.poses[i].pose.position.y - res_plan.plan.poses[i+1].pose.position.y)*
+			 (res_plan.plan.poses[i].pose.position.y - res_plan.plan.poses[i+1].pose.position.y)));
+      }
+      if (length < 2.0 * length_straight && length < 5.0){
+	ROS_INFO("received path from planner of length %f", length);
+	return robot_actions::SUCCESS;
+      }
     }
   }
-  double length = 0;
-  if (res_plan.plan.poses.size() < 2){
-    ROS_INFO("path planner did not find a path because plan only contains %i points",res_plan.plan.poses.size());
-    feedback = false;
-    return robot_actions::SUCCESS;
-  }
-  else{
-    // calculate length of path
-    for (unsigned int i=0; i<res_plan.plan.poses.size()-1; i++){
-      length += sqrt( ((res_plan.plan.poses[i].pose.position.x - res_plan.plan.poses[i+1].pose.position.x)*
-		       (res_plan.plan.poses[i].pose.position.x - res_plan.plan.poses[i+1].pose.position.x))+
-		      ((res_plan.plan.poses[i].pose.position.y - res_plan.plan.poses[i+1].pose.position.y)*
-		       (res_plan.plan.poses[i].pose.position.y - res_plan.plan.poses[i+1].pose.position.y)));
-    }
-    if (length > 2.0 * length_straight  || length > 5.0){
-      ROS_ERROR("received path from planner of length %f, which is longer than 5.0 [m] or more than 2x longer than the straight line path of lenght %f", 
-		length, length_straight);
-      feedback = false;
-      return robot_actions::SUCCESS;
-    }
-    else{
-      ROS_INFO("received path from planner of length %f", length);
-      feedback = true;
-      return robot_actions::SUCCESS;
-    }
-  }
-}
+  ROS_ERROR("preempted");
+  return robot_actions::PREEMPTED;
+};
+
