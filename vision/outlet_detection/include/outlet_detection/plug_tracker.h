@@ -48,6 +48,9 @@ protected:
   virtual CvRect getBoundingBox();
   virtual IplImage* getDisplayImage(bool success);
 
+  void publishBoardMarker(const tf::Transform &board_in_cam);
+  void publishRayMarker(const tf::Transform &board_in_cam);
+
   int board_w_, board_h_;
   CvMat *grid_pts_;
   int ncorners_;

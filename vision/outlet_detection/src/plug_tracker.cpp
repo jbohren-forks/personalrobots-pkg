@@ -1,4 +1,5 @@
 #include "outlet_detection/plug_tracker.h"
+#include <visualization_msgs/Marker.h>
 
 // FIXME: move back to OpenCV versions whenever they get updated
 extern "C"
@@ -62,6 +63,8 @@ PlugTracker::PlugTracker(ros::Node &node)
   camera_in_cvcam_.getOrigin().setValue(0.0, 0.0, 0.0);
   camera_in_cvcam_.getBasis().setValue(0, 0, 1, -1, 0, 0, 0, -1, 0);
 
+  node_.advertise<visualization_msgs::Marker>("visualization_marker", 1);
+  
   activate();
 }
 
@@ -158,11 +161,14 @@ bool PlugTracker::detectObject(tf::Transform &pose)
   tf::Transform board_in_cvcam(rot3x3, tf::Vector3(trans[0], trans[1], trans[2]));
 
   // Calculate plug pose in the camera frame
-  pose = camera_in_cvcam_ * board_in_cvcam * plug_in_board_;
+  tf::Transform board_in_cam = camera_in_cvcam_ * board_in_cvcam;
+  pose = board_in_cam * plug_in_board_;
   //pose = board_in_cvcam; // for calibration only!!
 
   //pose = camera_in_cvcam_ * board_in_cvcam /* * plug_in_board_ */;
 
+  publishBoardMarker(board_in_cam);
+  publishRayMarker(board_in_cam);
 
   return true;
 }
@@ -194,4 +200,73 @@ IplImage* PlugTracker::getDisplayImage(bool success)
   cvDrawChessboardCorners(display_img_.Ipl(), cvSize(board_w_, board_h_),
                           &corners_[0], ncorners_, success);
   return display_img_.Ipl();
+}
+
+void PlugTracker::publishBoardMarker(const tf::Transform &board_in_cam)
+{
+  visualization_msgs::Marker marker;
+  marker.header.frame_id = "high_def_frame";
+  marker.header.stamp = ros::Time();
+  marker.ns = "plug_detector";
+  marker.id = 0;
+  marker.type = visualization_msgs::Marker::LINE_STRIP;
+  marker.action = visualization_msgs::Marker::ADD;
+
+  marker.pose.position.x = 0;
+  marker.pose.position.y = 0;
+  marker.pose.position.z = 0;
+  marker.pose.orientation.x = 0.0;
+  marker.pose.orientation.y = 0.0;
+  marker.pose.orientation.z = 0.0;
+  marker.pose.orientation.w = 1.0;
+  marker.scale.x = 0.005;
+  marker.scale.y = 0.005;
+  marker.scale.z = 0.005;
+  marker.color.a = 1.0;
+  marker.color.r = 0.0;
+  marker.color.g = 1.0;
+  marker.color.b = 0.0;
+
+  int offsets[] = {0, board_w_ - 1, board_h_*board_w_ - 1, (board_h_ - 1)*board_w_, 0};
+  for (unsigned i = 0; i < sizeof(offsets)/sizeof(int); ++i) {
+    double *grid_pt = grid_pts_->data.db + 3*offsets[i];
+    tf::Point corner(grid_pt[0], grid_pt[1], grid_pt[2]);
+    tf::Point pt = board_in_cam * corner;
+    robot_msgs::Point pt_msg;
+    tf::PointTFToMsg(pt, pt_msg);
+    marker.points.push_back(pt_msg);
+    //ROS_INFO("Point: (%f, %f, %f)", pt.x(), pt.y(), pt.z());
+  }
+  
+  node_.publish("visualization_marker", marker);
+}
+
+void PlugTracker::publishRayMarker(const tf::Transform &board_in_cam)
+{
+  visualization_msgs::Marker marker;
+  marker.header.frame_id = "high_def_frame";
+  marker.header.stamp = ros::Time();
+  marker.ns = "plug_detector";
+  marker.id = 1;
+  marker.type = visualization_msgs::Marker::ARROW;
+  marker.action = visualization_msgs::Marker::ADD;
+
+  marker.pose.position.x = 0;
+  marker.pose.position.y = 0;
+  marker.pose.position.z = 0;
+  marker.pose.orientation.x = 0.0;
+  marker.pose.orientation.y = 0.0;
+  marker.pose.orientation.z = 0.0;
+  marker.pose.orientation.w = 1.0;
+  marker.scale.x = 0.005;
+  marker.scale.y = 0.01;
+  marker.color.a = 1.0;
+  marker.color.r = 0.0;
+  marker.color.g = 1.0;
+  marker.color.b = 0.0;
+
+  marker.points.resize(2); // first is origin
+  tf::PointTFToMsg(board_in_cam.getOrigin(), marker.points[1]);
+
+  node_.publish("visualization_marker", marker);
 }
