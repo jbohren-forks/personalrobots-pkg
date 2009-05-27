@@ -295,7 +295,7 @@ bool MechanismControl::killController(const std::string &name)
 bool MechanismControl::switchController(const std::vector<std::string>& start_controllers,
                                         const std::vector<std::string>& stop_controllers)
 {
-  controllers_lock_.lock();
+  boost::mutex::scoped_lock guard(controllers_lock_);
 
   controller::Controller* ct;
   // list all controllers to stop
@@ -326,7 +326,8 @@ bool MechanismControl::switchController(const std::vector<std::string>& start_co
   else
     ROS_INFO("MechanismControl: switching failed: result = %i", switch_success_);
 
-  controllers_lock_.unlock();
+  //controllers_lock_.unlock();
+  guard.unlock();
 
   if (switch_success_)
     ROS_INFO("MechanismControl: switching successful: result = %i", switch_success_);
