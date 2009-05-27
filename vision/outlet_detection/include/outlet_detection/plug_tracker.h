@@ -49,7 +49,9 @@ protected:
   virtual IplImage* getDisplayImage(bool success);
 
   void publishBoardMarker(const tf::Transform &board_in_cam);
-  void publishRayMarker(const tf::Transform &board_in_cam);
+  void publishBoardRayMarker(const tf::Transform &board_in_cam);
+  void publishPlugRayMarker(const tf::Transform &board_in_cam,
+                            const tf::Transform &plug_pose);
 
   int board_w_, board_h_;
   CvMat *grid_pts_;

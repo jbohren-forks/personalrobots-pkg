@@ -168,7 +168,8 @@ bool PlugTracker::detectObject(tf::Transform &pose)
   //pose = camera_in_cvcam_ * board_in_cvcam /* * plug_in_board_ */;
 
   publishBoardMarker(board_in_cam);
-  publishRayMarker(board_in_cam);
+  publishBoardRayMarker(board_in_cam);
+  publishPlugRayMarker(board_in_cam, pose);
 
   return true;
 }
@@ -241,7 +242,7 @@ void PlugTracker::publishBoardMarker(const tf::Transform &board_in_cam)
   node_.publish("visualization_marker", marker);
 }
 
-void PlugTracker::publishRayMarker(const tf::Transform &board_in_cam)
+void PlugTracker::publishBoardRayMarker(const tf::Transform &board_in_cam)
 {
   visualization_msgs::Marker marker;
   marker.header.frame_id = "high_def_frame";
@@ -267,6 +268,38 @@ void PlugTracker::publishRayMarker(const tf::Transform &board_in_cam)
 
   marker.points.resize(2); // first is origin
   tf::PointTFToMsg(board_in_cam.getOrigin(), marker.points[1]);
+
+  node_.publish("visualization_marker", marker);
+}
+
+void PlugTracker::publishPlugRayMarker(const tf::Transform &board_in_cam,
+                                       const tf::Transform &plug_pose)
+{
+  visualization_msgs::Marker marker;
+  marker.header.frame_id = "high_def_frame";
+  marker.header.stamp = ros::Time();
+  marker.ns = "plug_detector";
+  marker.id = 2;
+  marker.type = visualization_msgs::Marker::ARROW;
+  marker.action = visualization_msgs::Marker::ADD;
+
+  marker.pose.position.x = 0;
+  marker.pose.position.y = 0;
+  marker.pose.position.z = 0;
+  marker.pose.orientation.x = 0.0;
+  marker.pose.orientation.y = 0.0;
+  marker.pose.orientation.z = 0.0;
+  marker.pose.orientation.w = 1.0;
+  marker.scale.x = 0.005;
+  marker.scale.y = 0.01;
+  marker.color.a = 1.0;
+  marker.color.r = 0.0;
+  marker.color.g = 0.0;
+  marker.color.b = 1.0;
+
+  marker.points.resize(2);
+  tf::PointTFToMsg(board_in_cam.getOrigin(), marker.points[0]);
+  tf::PointTFToMsg(plug_pose.getOrigin(), marker.points[1]);
 
   node_.publish("visualization_marker", marker);
 }
