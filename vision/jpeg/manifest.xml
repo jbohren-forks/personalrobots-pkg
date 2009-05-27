@@ -1,0 +1,26 @@
+<package>
+  <description brief="jpeg">
+    This package provides two nodes: for encoding and decoding images using
+    libjpeg.
+  </description>
+
+  <author>Nate Koenig/ nkoenig@willowgarage.com</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+ 
+  <url>http://pr.willowgarage.com/wiki/jpeg</url>
+
+  <export>
+    <cpp cflags="-I${prefix}/srv/cpp"/>
+  </export>
+
+  <depend package="roscpp"/>
+  <depend package="std_msgs"/>
+  <depend package="opencv_latest"/>
+  <depend package="image_msgs"/>
+
+  <sysdepend os="ubuntu" version="9.04-jaunty" package="libjpeg62-dev"/>
+  <sysdepend os="ubuntu" version="8.10-intrepid" package="libjpeg62-dev"/>
+  <sysdepend os="ubuntu" version="8.04-hardy" package="libjpeg62-dev"/>
+
+</package>
