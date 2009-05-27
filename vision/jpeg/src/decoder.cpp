@@ -34,7 +34,7 @@
 
 #include <image_msgs/Image.h>
 #include <image_msgs/FillImage.h>
-#include <image_msgs/CompressedImage.h>
+#include <sensor_msgs/CompressedImage.h>
 #include <ros/ros.h>
 
 #include "opencv/cv.h"
@@ -53,7 +53,7 @@ int frameCount = 0;
 
 ////////////////////////////////////////////////////////////////////////////////
 // Image callback
-void imageCB(const image_msgs::CompressedImageConstPtr &image)
+void imageCB(const sensor_msgs::CompressedImageConstPtr &image)
 {
   int depth = 3;
   unsigned char *jpegBuffer = NULL;

@@ -33,10 +33,10 @@
 *********************************************************************/
 
 #include <image_msgs/Image.h>
-#include <image_msgs/CompressedImage.h>
 #include <opencv_latest/CvBridge.h>
 #include <ros/ros.h>
 
+#include "sensor_msgs/CompressedImage.h"
 #include "opencv/cv.h"
 
 #include "jpeg/SetQuality.h"
@@ -53,7 +53,7 @@ int jpegQuality = 80;
 
 std::string pubTopicName = "jpeg_image";
 
-image_msgs::CompressedImage compressedImageMessage;
+sensor_msgs::CompressedImage compressedImageMessage;
 
 ////////////////////////////////////////////////////////////////////////////////
 // Image callback
@@ -144,7 +144,7 @@ int main(int argc, char **argv)
   service = nodeHandle.advertiseService("set_jpeg_quality", &setQuality);
 
   // Create the publisher to output jpeg images
-  jpegPub = nodeHandle.advertise<image_msgs::CompressedImage>(pubTopicName,1);
+  jpegPub = nodeHandle.advertise<sensor_msgs::CompressedImage>(pubTopicName,1);
 
   // Setup some basic stuff for the compressed image message
   compressedImageMessage.label = "jpeg image";

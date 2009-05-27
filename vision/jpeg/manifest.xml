@@ -18,6 +18,7 @@
   <depend package="std_msgs"/>
   <depend package="opencv_latest"/>
   <depend package="image_msgs"/>
+  <depend package="sensor_msgs"/>
 
   <sysdepend os="ubuntu" version="9.04-jaunty" package="libjpeg62-dev"/>
   <sysdepend os="ubuntu" version="8.10-intrepid" package="libjpeg62-dev"/>
