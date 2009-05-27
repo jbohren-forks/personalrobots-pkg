@@ -218,7 +218,7 @@ private:
   controller::trigger_configuration trig_req_;
   robot_mechanism_controllers::SetWaveform::Response trig_rsp_;
 
-  diagnostic_updater::Updater<ForearmNode> diagnostic_;
+  diagnostic_updater::Updater diagnostic_;
   diagnostic_updater::FrequencyStatus freq_diag_;
 
   FrameTimeFilter frameTimeFilter_;
@@ -231,7 +231,7 @@ public:
 
   ForearmNode(ros::NodeHandle &nh)
     : node_handle_(nh), camera_(NULL), started_video_(false),
-      diagnostic_(this, ros::NodeHandle()), 
+      diagnostic_(ros::NodeHandle()), 
       freq_diag_(desired_freq_, desired_freq_, 0.05)
   {
     exit_status_ = 0;
@@ -310,8 +310,8 @@ public:
     if (node_handle_.ok())
     {
       freq_diag_.clear(); // Avoids having an error until the window fills up.
-      diagnostic_.add(&ForearmNode::freqStatus );
-      diagnostic_.add(&ForearmNode::linkStatus );
+      diagnostic_.add("Frequency Status", this, &ForearmNode::freqStatus );
+      diagnostic_.add("Link Status", this, &ForearmNode::linkStatus );
       diagnostic_thread_ = new boost::thread( boost::bind(&ForearmNode::diagnosticsLoop, this) );
     }
   }
@@ -635,8 +635,6 @@ public:
 
   void linkStatus(diagnostic_updater::DiagnosticStatusWrapper& stat)
   {
-    stat.name = "Link Status";
-
     if (ros::Time::now().toSec() - last_image_time_ > 5 / desired_freq_)
     {
       stat.summary(2, "Next frame is past due.");
