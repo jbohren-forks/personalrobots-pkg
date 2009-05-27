@@ -391,7 +391,7 @@ namespace executive_trex_pr2 {
     /**
      * @brief Constructor reading in from a serialized file of a prior map
      */
-    TopologicalMapAdapter(std::istream& in, const std::string& overrides);
+    TopologicalMapAdapter(std::istream& in, const std::string& overrides, const std::string& outlet_overrides);
 
     /**
      * @brief Constructor based on a grid
