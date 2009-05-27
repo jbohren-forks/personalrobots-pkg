@@ -1,4 +1,8 @@
 <launch>
+
+  <!-- Reset controllers to their original state -->
+  <include file="$(find milestone2_actions)/reset_controllers.launch" />
+
   <master auto="start"/>
 
   <!-- Common Actions -->
@@ -40,7 +44,7 @@
   <node pkg="executive_trex_pr2" type="stub_ros_container" respawn="true" />
   <node pkg="executive_trex_pr2" type="actions" respawn="true" />
 
-  <param name="/trex/update_rate" value="1"/>
+  <param name="/trex/update_rate" value="10"/>
   <param name="/trex/input_file" value="master.cfg"/>
   <param name="/trex/path" value="$(find executive_trex_pr2)/cfg"/>
   <param name="/trex/time_limit" value="20000"/>
