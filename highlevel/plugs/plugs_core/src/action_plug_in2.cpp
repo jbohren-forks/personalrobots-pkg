@@ -41,7 +41,7 @@ const double READY_TO_INSERT = -0.026;
 const double READY_TO_PUSH = -0.01;  //-0.0150;  // -0.0135;  // -0.009;
 const double FORCING_SUCCESSFUL = -0.009;
 
-const double MIN_STANDOFF = 0.026;
+const double MIN_STANDOFF = 0.03;
 
 const char* COMMAND_FRAME = "outlet_pose";
 const double SPIRAL_STEP = 0.002;
@@ -196,9 +196,13 @@ robot_actions::ResultStatus PlugInAction::execute(const std_msgs::Empty& empty, 
     }
 
     case FIRST_TOUCH: {
+
+
+
       spiral_r = 0.0001;
       spiral_t = 0.0;
-      last_push_x = 999999;
+      //last_push_x = 999999;
+      last_push_x = outlet_pose.getOrigin().x();
       state = SPIRALING;
       break;
     }
@@ -225,12 +229,14 @@ robot_actions::ResultStatus PlugInAction::execute(const std_msgs::Empty& empty, 
       tff_msg.mode.rot.y = 3;
       tff_msg.mode.rot.z = 3;
       PoseTFToMsg(desi, tff_msg.value);
+      tff_msg.value.vel.x = last_push_x - 0.03;
       node_.publish(arm_controller_ + "/command", tff_msg);
       ros::Duration(1.0).sleep(); // Settle
 
       // Insert (push)
       tff_msg.header.stamp = ros::Time::now() - ros::Duration(0.1);
-      tff_msg.value.vel.x = outlet_pose.getOrigin().x();
+      //tff_msg.value.vel.x = outlet_pose.getOrigin().x();
+      tff_msg.value.vel.x = last_push_x + 0.03;
       node_.publish(arm_controller_ + "/command", tff_msg);
       ros::Duration(1.0).sleep(); // Settle
 
