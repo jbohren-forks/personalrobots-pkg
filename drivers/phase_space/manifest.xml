@@ -8,6 +8,7 @@
   <depend package="mocap_msgs" />
   <depend package="rospy" />
   <sysdepend os="ubuntu" version="8.04-hardy" package="libstdc++5"/>
+  <rosdep name="libstdc++5"/>
   
   <export>
     <cpp cflags="-I${prefix}/msg/cpp"/>
