@@ -1,6 +1,30 @@
 <door_approach_overrides>
 
 <door>
+  <id>9</id>
+<approach_point>
+<x>9</x>
+<y>3.5</y>
+</approach_point>
+</door>
+
+<door>
+  <id>35</id>
+<approach_point>
+<x>51.60</x>
+<y>10.44</y>
+</approach_point>
+</door>
+
+<door>
+  <id>36</id>
+<approach_point>
+<x>53.8</x>
+<y>10.2</y>
+</approach_point>
+</door>
+
+<door>
 <id>63</id>
 <approach_point>
 <x>12.3</x>
@@ -8,6 +32,21 @@
 </approach_point>
 </door>
 
+<door>
+<id>65</id>
+<approach_point>
+<x>51.52</x>
+<y>24.38</y>
+</approach_point>
+</door>
+
+<door>
+  <id>77</id>
+<approach_point>
+<x>25.246</x>
+<y>30.022</y>
+</approach_point>
+</door>
 
 
 <door>
@@ -28,11 +67,12 @@
 </approach_point>
 </door>
 
+
 <door>
-  <id>125</id>
+  <id>100</id>
 <approach_point>
-<x>21.2</x>
-<y>43.1</y>
+<x>16</x>
+<y>36.5</y>
 </approach_point>
 </door>
 
@@ -45,39 +85,17 @@
 </approach_point>
 </door>
 
-
 <door>
-  <id>9</id>
+  <id>125</id>
 <approach_point>
-<x>9</x>
-<y>3.5</y>
+<x>21.2</x>
+<y>43.1</y>
 </approach_point>
 </door>
 
 
-<door>
-  <id>36</id>
-<approach_point>
-<x>53.8</x>
-<y>10.2</y>
-</approach_point>
-</door>
 
-<door>
-  <id>77</id>
-<approach_point>
-<x>25.246</x>
-<y>30.022</y>
-</approach_point>
-</door>
 
-<door>
-  <id>100</id>
-<approach_point>
-<x>16</x>
-<y>36.5</y>
-</approach_point>
-</door>
 
 
 
