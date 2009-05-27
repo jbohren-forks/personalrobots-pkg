@@ -1242,12 +1242,19 @@ struct HasId
 
 RegionPair TopologicalMap::MapImpl::adjacentRegions (const ConnectorId id) const
 {
-  RegionConnectorMap::const_iterator iter = find_if(region_connector_map_.begin(), region_connector_map_.end(), HasId(id));
-  if (iter==region_connector_map_.end()) {
-    ROS_ASSERT("Error finding adjacent pair of regions for connector");
-  }
   
-  return iter->first;
+  RegionConnectorMap::const_iterator start = region_connector_map_.begin(), end = region_connector_map_.end();
+  RegionConnectorMap::const_iterator iter = find_if(start, end, HasId(id));
+
+  if (iter==end) {
+    // To deal with temporary connectors that aren't in the region connector map
+    RegionId r = containingRegion(connectorPosition(id));
+    return RegionPair(r, r);
+  }
+
+  else {
+    return iter->first;
+  }
 }
 
 
@@ -1303,6 +1310,28 @@ vector<pair<ConnectorId, double> > TopologicalMap::MapImpl::connectorCosts (cons
   return roadmap_->connectorCosts(start.id, goal.id);
 }
 
+
+bool TopologicalMap::MapImpl::connectorsTouchSameRegion (const ConnectorId c1, const ConnectorId c2, const ConnectorId c3) const
+{
+  RegionPair r1 = adjacentRegions(c1);
+  RegionPair r2 = adjacentRegions(c2);
+  RegionPair r3 = adjacentRegions(c3);
+
+  RegionId r;
+  if ((r1.first == r2.first) || (r1.first == r2.second))
+    r = r1.first;
+  else if ((r1.second == r2.first) || (r1.second == r2.second))
+    r = r1.second;
+  else 
+    return false;
+
+  return (r == r3.first) || (r == r3.second);
+}
+
+  
+
+
+
 ConnectorIdVector TopologicalMap::MapImpl::shortestConnectorPath (const Point2D& p1, const Point2D& p2)
 {
   TemporaryRoadmapNode start(this, p1);
@@ -1315,7 +1344,13 @@ ConnectorIdVector TopologicalMap::MapImpl::shortestConnectorPath (const Point2D&
     return v;
   }
   else {
-    return roadmap_->shortestPath(start.id, goal.id);
+    ConnectorIdVector path = roadmap_->shortestPath(start.id, goal.id);
+    ConnectorIdVector pruned_path;
+    uint length = path.size();
+    for (uint i=0; i<length; i++) 
+      if ((i==0) || (i==length-1) || !connectorsTouchSameRegion(path[i-1], path[i], path[i+1]))
+        pruned_path.push_back(path[i]);
+    return pruned_path;
   }
 }
 

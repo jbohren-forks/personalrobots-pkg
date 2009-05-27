@@ -42,6 +42,7 @@
 #include <door_msgs/Door.h>
 #include <topological_map/outlet_info.h>
 #include <ros/time.h>
+#include <ros/assert.h>
 
 namespace topological_map
 {

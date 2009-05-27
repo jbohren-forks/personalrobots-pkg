@@ -275,6 +275,7 @@ private:
   void setDoorCost (RegionId id, const Time& t);
   void setDoorCosts (const Time& t);
   void updateDistances (const RegionId region_id);
+  bool connectorsTouchSameRegion (ConnectorId c1, ConnectorId c2, ConnectorId c3) const;
 
   RegionPtr squareRegion (const Point2D& p, double radius) const;
 
