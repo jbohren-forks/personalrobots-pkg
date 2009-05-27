@@ -17,6 +17,14 @@
 </approach_point>
 </outlet>
 
+<outlet>
+<id>28</id>
+<approach_point>
+<x>8.56</x>
+<y>3.02</y>
+</approach_point>
+</outlet>
+
 
 
 </outlet_approach_overrides>
