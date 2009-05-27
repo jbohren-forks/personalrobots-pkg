@@ -1,0 +1,16 @@
+<package>
+  <description brief="annotated_map_msgs">
+     Messages for annotated 3D maps.
+  </description>
+  <author>Alex Sorokin/sorokin@willowgarage.com</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://pr.willowgarage.com/wiki/annotated_map_msgs</url>
+  <depend package="std_msgs"/>
+  <depend package="robot_msgs"/>
+
+  <export>
+    <cpp cflags="-I${prefix}/msg/cpp"/>
+  </export>
+</package>
+
