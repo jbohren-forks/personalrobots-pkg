@@ -220,6 +220,7 @@ private:
 
   diagnostic_updater::Updater diagnostic_;
   diagnostic_updater::FrequencyStatus freq_diag_;
+  diagnostic_updater::TimeStampStatus timestamp_diag_;
 
   FrameTimeFilter frameTimeFilter_;
   
@@ -310,6 +311,7 @@ public:
     if (node_handle_.ok())
     {
       freq_diag_.clear(); // Avoids having an error until the window fills up.
+      diagnostic_.add(timestamp_diag_);
       diagnostic_.add("Frequency Status", this, &ForearmNode::freqStatus );
       diagnostic_.add("Link Status", this, &ForearmNode::linkStatus );
       diagnostic_thread_ = new boost::thread( boost::bind(&ForearmNode::diagnosticsLoop, this) );
@@ -663,6 +665,7 @@ private:
     fillImage(image_, "image", height, width, 1, "bayer_bggr", "uint8", frameData);
     
     image_.header.stamp = t;
+    timestamp_diag_.tick(t);
     cam_pub_.publish(image_);
     if (calibrated_) {
       cam_info_.header.stamp = t;
