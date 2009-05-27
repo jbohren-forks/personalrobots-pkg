@@ -23,7 +23,7 @@ RightArmMechanism::use_joint_trajectory_controller{
  contains_start(actions.startEvent);
 }
 
-RightArmMechanism::use_constrained_composite_cartesian_pose_controller{
+RightArmMechanism::use_constraint_composite_cartesian_pose_controller{
  contains_start(actions.startEvent);
 }
 
@@ -31,7 +31,7 @@ RightArmMechanism::use_composite_cartesian_trajectory_controller{
  contains_start(actions.startEvent);
 }
  
-RightArmMechanism::use_constrained_composite_cartesian_trajectory_controller{
+RightArmMechanism::use_constraint_composite_cartesian_trajectory_controller{
  contains_start(actions.startEvent);
 }
  
