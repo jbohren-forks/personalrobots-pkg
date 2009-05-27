@@ -31,6 +31,7 @@
  *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
+using namespace std;
 
 #include <mpglue/sbpl_planner.h>
 #include <mpglue/sbpl_environment.h>
