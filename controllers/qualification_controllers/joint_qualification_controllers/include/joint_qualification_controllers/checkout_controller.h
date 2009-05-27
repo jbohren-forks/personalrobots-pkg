@@ -32,97 +32,105 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
+// Author: Kevin Watts
+
 #pragma once
 
 /***************************************************/
-/*! \class controller::SineSweepController
-    \brief Sine Sweep Controller
+/*! \class controller::CheckoutController
+    \brief Checkout Controller
 
-    This class basically applies a sine sweep to the joint.
+    This tests that all joints of a robot are calibrated
+    and all actuators are enabled. It outputs a RobotData srv request
+    to the /robot_checkout topic with relevant joint and actuator information.
+
 */
 /***************************************************/
 
 
 #include <ros/node.h>
+#include <string>
 #include <math.h>
-#include <joint_qualification_controllers/TestData.h>
+#include <joint_qualification_controllers/RobotData.h>
 #include <realtime_tools/realtime_publisher.h>
 #include <realtime_tools/realtime_srv_call.h>
 #include <mechanism_model/controller.h>
-#include <control_toolbox/sine_sweep.h>
+
 
 
 namespace controller
 {
 
-class SineSweepController : public Controller
+class CheckoutController : public Controller
 {
-public:
-  /*!
-   * \brief Default Constructor of the SineSweepController class.
-   *
-   */
-  SineSweepController();
 
-  /*!
-   * \brief Destructor of the SineSweepController class.
-   */
-  ~SineSweepController();
+public:
+  enum { STARTING, LISTENING, ANALYZING, DONE};
+
+  CheckoutController();
+  ~CheckoutController();
 
   /*!
    * \brief Functional way to initialize.
-   * \param start_freq The start value of the sweep (Hz).
-   * \param end_freq  The end value of the sweep (Hz).
-   * \param amplitude The amplitude of the sweep (N).
-   * \param duration The duration in seconds from start to finish (s).
-   * \param time The current hardware time.
    * \param *robot The robot that is being controlled.
    */
-  void init(double start_freq, double end_freq, double duration, double amplitude, double first_mode, double second_mode, double error_tolerance, double time, std::string name,mechanism::RobotState *robot);
+  void init( double timeout, mechanism::RobotState *robot);
   bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
 
-  void analysis();
+
+  /*!
+   * \brief Perform the test analysis
+   */
+  void analysis(double time);
+
+  /*!
+   * \brief Checks joint, actuator status for calibrated and enabled.
+   */
   virtual void update();
   
-  bool done() { return done_ == 1; }
-  joint_qualification_controllers::TestData::Request test_data_;
+  bool done() { return state_ == DONE; }
+
+  int joint_count_;
+  int actuator_count_;
+  
+  joint_qualification_controllers::RobotData::Request robot_data_;
 
 private:
-  mechanism::JointState *joint_state_;      /**< Joint we're controlling. */
-  mechanism::RobotState *robot_;            /**< Pointer to robot structure. */
-  control_toolbox::SineSweep *sweep_;       /**< Sine sweep. */
-  double duration_;                         /**< Duration of the sweep. */
-  double initial_time_;                     /**< Start time of the sweep. */
-  int count_;
-  bool done_;
+
+  mechanism::RobotState *robot_;          /**< Pointer to robot structure. */
+  double initial_time_;                   /**< Start time of the test. */
  
+  double timeout_;
+  
+  int state_;
+
 };
 
 /***************************************************/
-/*! \class controller::SineSweepControllerNode
-    \brief Sine Sweep Controller ROS Node
+/*! \class controller::CheckoutControllerNode
+    \brief Checkout Controller
 
-*/
+  */
 /***************************************************/
 
-class SineSweepControllerNode : public Controller
+class CheckoutControllerNode : public Controller
 {
 public:
- 
-  SineSweepControllerNode();
-  ~SineSweepControllerNode();
+
+  CheckoutControllerNode();
+  ~CheckoutControllerNode();
 
   void update();
   bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
 
 private:
-  SineSweepController *c_;
+  CheckoutController *c_;
   mechanism::RobotState *robot_;
   
   bool data_sent_;
   
   double last_publish_time_;
-  realtime_tools::RealtimeSrvCall<joint_qualification_controllers::TestData::Request, joint_qualification_controllers::TestData::Response> call_service_;
+  realtime_tools::RealtimeSrvCall<joint_qualification_controllers::RobotData::Request, joint_qualification_controllers::RobotData::Response> call_service_;
 
 };
 }

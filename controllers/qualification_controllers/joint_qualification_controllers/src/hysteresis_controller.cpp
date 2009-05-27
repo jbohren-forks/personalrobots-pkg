@@ -33,7 +33,7 @@
  *********************************************************************/
 #include <joint_qualification_controllers/hysteresis_controller.h>
 
-#define MAX_DATA_POINTS 60000
+#define MAX_DATA_POINTS 100000
 
 using namespace std;
 using namespace controller;
@@ -50,6 +50,7 @@ HysteresisController::HysteresisController():
   test_data_.effort.resize(MAX_DATA_POINTS);
   test_data_.position.resize(MAX_DATA_POINTS);
   test_data_.velocity.resize(MAX_DATA_POINTS);
+
   test_data_.arg_name.resize(6);
   test_data_.arg_name[0] = "min_expected_effort";
   test_data_.arg_name[1] = "max_expected_effort";
@@ -81,11 +82,10 @@ void HysteresisController::init( double velocity, double max_effort, double max_
   assert(robot);
   robot_ = robot;
   joint_ = robot->getJointState(name);
-  if(name == "r_gripper_joint" || name == "l_gripper_joint")
-  {
-    joint_->calibrated_ = true;
-
-  }
+  //if(name == "r_gripper_joint" || name == "l_gripper_joint")
+  //{
+  //  joint_->calibrated_ = true;
+  //}
 
   velocity_ = velocity;
   max_effort_ = max_effort;
@@ -151,11 +151,11 @@ bool HysteresisController::initXml(mechanism::RobotState *robot, TiXmlElement *c
 
 void HysteresisController::update()
 {
-  diagnostic_message_.set_status_size(1);
-  robot_msgs::DiagnosticStatus *status = &diagnostic_message_.status[0];
-  status->name = "HysteresisTest";
-  status->level = 0;
-  status->message = "OK: Done.";
+  //diagnostic_message_.set_status_size(1);
+  //robot_msgs::DiagnosticStatus *status = &diagnostic_message_.status[0];
+  //status->name = "HysteresisTest";
+  //status->level = 0;
+  //status->message = "OK: Done.";
 
   // wait until the joint is calibrated if it has limits
   if(!joint_->calibrated_ && joint_->joint_->type_!=mechanism::JOINT_CONTINUOUS)
@@ -189,10 +189,10 @@ void HysteresisController::update()
   }
 
   // convert loop count to string for diagnostic message
-  stringstream s;
-  s << loop_count_;
-  string loop_str;
-  s >> loop_str;
+  //stringstream s;
+  //s << loop_count_;
+  //string loop_str;
+  //s >> loop_str;
 
   switch (state_)
   {
@@ -202,14 +202,14 @@ void HysteresisController::update()
     ++loop_count_;
     starting_count = 0;
     state_ = STARTING;
-    status->message = "Stopped, turning around on loop " + loop_str;
+    //status->message = "Stopped, turning around on loop " + loop_str;
     break;
   case STARTING:
     
     ++starting_count;
     if (starting_count > 100)
       state_ = MOVING;
-    status->message = "Starting to turn around on loop " + loop_str;
+    //status->message = "Starting to turn around on loop " + loop_str;
     break;
   case MOVING:
     if (fabs(joint_->velocity_) < 0.001 && fabs(joint_->commanded_effort_) > max_effort_ && joint_->joint_->type_!=mechanism::JOINT_CONTINUOUS)
@@ -230,17 +230,17 @@ void HysteresisController::update()
       else
         state_ = ANALYZING;
     }
-    status->message = "Moving, on loop " + loop_str;
+    //status->message = "Moving, on loop " + loop_str;
     break;
   case ANALYZING:
     velocity_controller_->setCommand(0.0);
-    status->message = "Analyzing.";
+    //status->message = "Analyzing.";
     analysis();
     state_ = DONE;
     break;
   case DONE:
     velocity_controller_->setCommand(0.0);
-    status->message = "OK, Done.";
+    //status->message = "OK, Done.";
     break;
   }
 
@@ -263,7 +263,7 @@ void HysteresisController::analysis()
 
 ROS_REGISTER_CONTROLLER(HysteresisControllerNode)
 HysteresisControllerNode::HysteresisControllerNode()
-: data_sent_(false), last_publish_time_(0), call_service_("/test_data"),pub_diagnostics_("/diagnostics", 1)
+: data_sent_(false), last_publish_time_(0), call_service_("/test_data")
 {
   c_ = new HysteresisController();
 }
@@ -299,19 +299,19 @@ void HysteresisControllerNode::update()
   }
   
   // Publish diagnostics at 2 Hz, 
-  if (last_publish_time_ + 0.5 < robot_->hw_->current_time_)
-  {
-    if (pub_diagnostics_.trylock())
-    {
-      last_publish_time_ = robot_->hw_->current_time_;
+  //if (last_publish_time_ + 0.5 < robot_->hw_->current_time_)
+  // {
+  //  if (pub_diagnostics_.trylock())
+  //  {
+  //    last_publish_time_ = robot_->hw_->current_time_;
       
-      robot_msgs::DiagnosticStatus *out = &pub_diagnostics_.msg_.status[0];
-      out->name = c_->diagnostic_message_.status[0].name;
-      out->level = c_->diagnostic_message_.status[0].level;
-      out->message = c_->diagnostic_message_.status[0].message;
-      pub_diagnostics_.unlockAndPublish();
-    }  
-  }
+  //    robot_msgs::DiagnosticStatus *out = &pub_diagnostics_.msg_.status[0];
+  //   out->name = c_->diagnostic_message_.status[0].name;
+  //  out->level = c_->diagnostic_message_.status[0].level;
+  //    out->message = c_->diagnostic_message_.status[0].message;
+  //    pub_diagnostics_.unlockAndPublish();
+  //  }  
+  //}
   
 }
 
@@ -323,7 +323,7 @@ bool HysteresisControllerNode::initXml(mechanism::RobotState *robot, TiXmlElemen
   if (!c_->initXml(robot, config))
     return false;
     
-  pub_diagnostics_.msg_.set_status_size(1);
+  //pub_diagnostics_.msg_.set_status_size(1);
   return true;
 }
 

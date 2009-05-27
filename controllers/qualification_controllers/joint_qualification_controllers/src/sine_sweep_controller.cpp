@@ -148,15 +148,9 @@ void SineSweepController::update()
 
 void SineSweepController::analysis()
 {
-  diagnostic_message_.set_status_size(1);
-  robot_msgs::DiagnosticStatus *status = &diagnostic_message_.status[0];
-
-  status->name = "SineSweepTest";
   count_=count_-1;
   //test done
   assert(count_>0);
-  status->level = 0;
-  status->message = "OK: Done.";
   test_data_.time.resize(count_);
   test_data_.cmd.resize(count_);
   test_data_.effort.resize(count_);
@@ -168,7 +162,7 @@ void SineSweepController::analysis()
 
 ROS_REGISTER_CONTROLLER(SineSweepControllerNode)
 SineSweepControllerNode::SineSweepControllerNode()
-: data_sent_(false), last_publish_time_(0), call_service_("/test_data"),pub_diagnostics_("/diagnostics", 1)
+: data_sent_(false), last_publish_time_(0), call_service_("/test_data")
 {
   c_ = new SineSweepController();
 }
@@ -201,19 +195,6 @@ void SineSweepControllerNode::update()
         data_sent_ = true;
        }
     }
-    if (last_publish_time_ + 0.5 < robot_->hw_->current_time_)
-    {
-      if (pub_diagnostics_.trylock())
-      {
-        last_publish_time_ = robot_->hw_->current_time_;
-        
-        robot_msgs::DiagnosticStatus *out = &pub_diagnostics_.msg_.status[0];
-        out->name = c_->diagnostic_message_.status[0].name;
-        out->level = c_->diagnostic_message_.status[0].level;
-        out->message = c_->diagnostic_message_.status[0].message;
-        pub_diagnostics_.unlockAndPublish();
-      }  
-    }
   }
 }
 
@@ -226,7 +207,6 @@ bool SineSweepControllerNode::initXml(mechanism::RobotState *robot, TiXmlElement
   if (!c_->initXml(robot, config))
     return false;
 
-  pub_diagnostics_.msg_.set_status_size(1);
   return true;
 }
 

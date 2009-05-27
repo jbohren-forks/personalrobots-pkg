@@ -35,95 +35,131 @@
 #pragma once
 
 /***************************************************/
-/*! \class controller::SineSweepController
-    \brief Sine Sweep Controller
+/*! \class controller::HoldSetController
+    \brief Hold Set Controller
 
-    This class basically applies a sine sweep to the joint.
+    This holds a joint in a set of locations, while
+    dithering the joint and recording position and cmd.
+
 */
 /***************************************************/
 
 
+#include <vector>
 #include <ros/node.h>
 #include <math.h>
-#include <joint_qualification_controllers/TestData.h>
+#include <robot_msgs/DiagnosticMessage.h>
+#include <joint_qualification_controllers/HoldSetData.h>
 #include <realtime_tools/realtime_publisher.h>
 #include <realtime_tools/realtime_srv_call.h>
 #include <mechanism_model/controller.h>
-#include <control_toolbox/sine_sweep.h>
-
+#include <robot_mechanism_controllers/joint_position_controller.h>
+#include <control_toolbox/dither.h>
 
 namespace controller
 {
 
-class SineSweepController : public Controller
+class HoldSetController : public Controller
 {
-public:
-  /*!
-   * \brief Default Constructor of the SineSweepController class.
-   *
-   */
-  SineSweepController();
 
-  /*!
-   * \brief Destructor of the SineSweepController class.
-   */
-  ~SineSweepController();
+public:
+  enum { STARTING, SETTLING, DITHERING, PAUSING, DONE };
+
+  HoldSetController();
+  ~HoldSetController();
 
   /*!
    * \brief Functional way to initialize.
-   * \param start_freq The start value of the sweep (Hz).
-   * \param end_freq  The end value of the sweep (Hz).
-   * \param amplitude The amplitude of the sweep (N).
-   * \param duration The duration in seconds from start to finish (s).
-   * \param time The current hardware time.
+   * \param velocity Target velocity for the velocity controller.
+   * \param max_effort Effort to limit the controller at.
    * \param *robot The robot that is being controlled.
    */
-  void init(double start_freq, double end_freq, double duration, double amplitude, double first_mode, double second_mode, double error_tolerance, double time, std::string name,mechanism::RobotState *robot);
+  void init( double test_duration, double time, std::string name, mechanism::RobotState *robot);
   bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
 
-  void analysis();
+
+  /*!
+   * \brief Issues commands to the joint. Should be called at regular intervals
+   */
+
   virtual void update();
   
-  bool done() { return done_ == 1; }
-  joint_qualification_controllers::TestData::Request test_data_;
+  bool done() { return state_ == DONE; }
+  
+  joint_qualification_controllers::HoldSetData::Request hold_set_data_;
 
 private:
+
+  control_toolbox::Dither *dither_;
+
+  controller::JointPositionController *position_controller_;
+  std::vector<double> hold_set_;
+
   mechanism::JointState *joint_state_;      /**< Joint we're controlling. */
   mechanism::RobotState *robot_;            /**< Pointer to robot structure. */
-  control_toolbox::SineSweep *sweep_;       /**< Sine sweep. */
-  double duration_;                         /**< Duration of the sweep. */
-  double initial_time_;                     /**< Start time of the sweep. */
-  int count_;
-  bool done_;
- 
+
+
+  int starting_count_;
+
+  int state_;
+  uint current_position_;
+
+  double initial_time_;
+
+  double settle_time_;
+  double start_time_;
+  double dither_time_;
+
+  int dither_count_;
+  double timeout_;
+
 };
 
 /***************************************************/
-/*! \class controller::SineSweepControllerNode
-    \brief Sine Sweep Controller ROS Node
+/*! \class controller::HoldSetControllerNode
+    \brief Hold Set Controller
+
+    This holds a joint at a set of positions, measuring effort
+
+<controller type="HoldSetControllerNode" name="head_tilt_hold_set_controller">
+  <joint name="r_shoulder_lift_joint">
+    <pid p="15" i="5.0" d="0" iClamp="1.0" />
+  </joint>
+
+  <controller_defaults dither_amplitude="0.5" settle_time="2.0" 
+  dither_time="1.0" timeout="60" />
+
+  <hold_pt position="1.35" />
+  <hold_pt position="1.1" />
+  <hold_pt position="0.9" />
+  <hold_pt position="0.7" />
+  <hold_pt position="0.6" />
+  <hold_pt position="0.2" />
+  <hold_pt position="-0.2" />
+  <hold_pt position="-0.3" />
+</controller>
 
 */
 /***************************************************/
 
-class SineSweepControllerNode : public Controller
+class HoldSetControllerNode : public Controller
 {
 public:
- 
-  SineSweepControllerNode();
-  ~SineSweepControllerNode();
 
+  HoldSetControllerNode();
+  ~HoldSetControllerNode();
+  
   void update();
   bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
 
 private:
-  SineSweepController *c_;
+  HoldSetController *c_;
   mechanism::RobotState *robot_;
   
   bool data_sent_;
   
   double last_publish_time_;
-  realtime_tools::RealtimeSrvCall<joint_qualification_controllers::TestData::Request, joint_qualification_controllers::TestData::Response> call_service_;
-
+  realtime_tools::RealtimeSrvCall<joint_qualification_controllers::HoldSetData::Request, joint_qualification_controllers::HoldSetData::Response> call_service_;
 };
 }
 

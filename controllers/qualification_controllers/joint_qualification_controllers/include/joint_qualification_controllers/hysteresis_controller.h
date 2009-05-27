@@ -142,7 +142,8 @@ private:
   
   double last_publish_time_;
   realtime_tools::RealtimeSrvCall<joint_qualification_controllers::TestData::Request, joint_qualification_controllers::TestData::Response> call_service_;
-  realtime_tools::RealtimePublisher<robot_msgs::DiagnosticMessage> pub_diagnostics_;
+  
+  //realtime_tools::RealtimePublisher<robot_msgs::DiagnosticMessage> pub_diagnostics_;
 };
 }
 
