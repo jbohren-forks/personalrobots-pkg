@@ -9,7 +9,9 @@
 #include <assert.h>
 #include <stdlib.h>
 
-using namespace std; // Necessary because some of the below includes assume it
+//using namespace std; 
+
+// Necessary because some of the below includes assume it
 #include "../../sbpl/headers.h"
 
 struct Adjacency

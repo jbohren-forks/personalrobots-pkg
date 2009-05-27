@@ -1,4 +1,7 @@
 #include <iostream>
+
+using namespace std;
+
 #include "../discrete_space_information/precomputed_adjacency_list/environment_precomputed_adjacency_list.h"
 
 

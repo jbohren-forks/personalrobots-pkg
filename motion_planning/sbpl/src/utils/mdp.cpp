@@ -27,6 +27,8 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 //MDP.cpp - contains all the functions for MDP classes
+using namespace std;
+
 #include "../sbpl/headers.h"
 
 

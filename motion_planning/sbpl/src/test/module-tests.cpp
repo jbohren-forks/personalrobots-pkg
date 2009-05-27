@@ -31,6 +31,9 @@
 #include <string>
 #include <fstream>
 #include <gtest/gtest.h>
+
+using namespace std;
+
 #include "../headers.h"
 
 static const std::string PATH_PREFIX("src/test/");
