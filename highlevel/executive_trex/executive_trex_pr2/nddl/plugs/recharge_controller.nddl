@@ -205,6 +205,7 @@ RechargeController::Holds {
 	  eq(cmd.outlet_id, rc_active.outlet_id);
           concurrent(cmd.end, end);
           eq(s.arms_clear, false);
+	  eq(cmd.max_duration, 20);
         }
 
         // not ready to plug in

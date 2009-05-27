@@ -67,8 +67,6 @@ class PlugIn extends PlugDomainAction {
 
   predicate Active{
     MAP_KEY outlet_id;
-    // Impose a 4 min duration bound before we quit. Allow for slow approach to actually complete.
-    eq(max_duration, 240);
   }
 
   predicate Inactive{}
