@@ -210,9 +210,10 @@ bool DetectHandleAction::laserDetection(const door_msgs::Door& door_in,
     return false;
   }
   tf_.transformPoint("base_footprint", handlepoint, handlepoint);
-  double dist = handlepoint[0];
   double handle_bottom = handlepoint[2]-(scan_height/2.0);
   double handle_top = handlepoint[2]+(scan_height/2.0);
+  handlepoint[2] = 0;
+  double dist = handlepoint.length();
   ROS_INFO("tilt laser is at height %f, and door at distance %f", laser_height, dist);
   
   // gets a point cloud from the point_cloud_srv

@@ -114,7 +114,8 @@ bool DetectDoorAction::laserDetection(const door_msgs::Door& door_in, door_msgs:
   }
 
   tf_.transformPoint("base_footprint", doorpoint, doorpoint);
-  double dist = doorpoint[0];
+  doorpoint[2] = 0;
+  double dist = doorpoint.length();
   double door_bottom = -0.5;
   double door_top    =  2.5;
   ROS_INFO("DetectDoorAction: tilt laser is at height %f, and door at distance %f", laser_height, dist);
