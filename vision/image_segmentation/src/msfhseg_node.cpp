@@ -64,29 +64,29 @@ namespace image_segmentation
   // with the additional option of performing mean shift filtering as preprocessing.
 
   class MSFHSeg{
-  public:
-    // ROS
-    ros::Node *node_;
+    public:
+      // ROS
+      ros::Node *node_;
 
-    // Images and conversion
-    image_msgs::Image limage_;
-    image_msgs::CvBridge lbridge_;
-    color_calib::Calibration *lcolor_cal_;
+      // Images and conversion
+      image_msgs::Image limage_;
+      image_msgs::CvBridge lbridge_;
+      color_calib::Calibration *lcolor_cal_;
 
-    bool calib_color_;
-    bool do_display_;
+      bool calib_color_;
+      bool do_display_;
 
-    double K_;
-    int min_clust_size_;
-    double sigma_;
+      double K_;
+      int min_clust_size_;
+      double sigma_;
 
-    bool do_mean_shift_;
-    double spatial_radius_pix_;
-    double color_radius_pix_;
+      bool do_mean_shift_;
+      double spatial_radius_pix_;
+      double color_radius_pix_;
 
-    /////////////////////////////////////////////////////////////////////
-    MSFHSeg(ros::Node *node) : 
-      node_(node)
+      /////////////////////////////////////////////////////////////////////
+      MSFHSeg(ros::Node *node) : 
+        node_(node)
     { 
 
       cvNamedWindow("Image, Preprocessed Image, Segmentation");
@@ -103,195 +103,195 @@ namespace image_segmentation
       node_->param("/image_segmentation/color_radius_pix", color_radius_pix_, 40.0);
 
       if (calib_color_) 
-	lcolor_cal_ = new color_calib::Calibration(node_);
+        lcolor_cal_ = new color_calib::Calibration(node_);
 
       node_->subscribe("stereo/left/image_rect_color",limage_,&MSFHSeg::imageCB,this,1);
 
 
     }
-  
-    /////////////////////////////////////////////////////////////////////
-    ~MSFHSeg()
-    {
-    }
- 
 
-
-
-    /////////////////////////////////////////////////////////////////////
-    void imageCB()
-    {
-
-      // Convert images to OpenCV and do apply color calibration if requested.
-      IplImage *cv_image_left;
-      if (lbridge_.fromImage(limage_,"bgr")) {
-	cv_image_left = lbridge_.toIpl();
-	// Color calibration
-	if (calib_color_) {
-	  if ( lcolor_cal_->getFromParam("stereo/left/image_rect_color")) {
-	    lcolor_cal_->correctColor(cv_image_left, cv_image_left, true, true, COLOR_CAL_BGR);
-	  }
-	  else {
-	    ROS_DEBUG_STREAM_NAMED("cv_mean_shift","Color calibration not available.");
-	    return;
-	  }
-	}
+      /////////////////////////////////////////////////////////////////////
+      ~MSFHSeg()
+      {
       }
 
 
-      int width = cv_image_left->width;
-      int height = cv_image_left->height;
 
 
-      // Timing
-      struct timeval timeofday;
-      gettimeofday(&timeofday,NULL);
-      ros::Time startt = ros::Time().fromNSec(1e9*timeofday.tv_sec + 1e3*timeofday.tv_usec);
+      /////////////////////////////////////////////////////////////////////
+      void imageCB()
+      {
+
+        // Convert images to OpenCV and do apply color calibration if requested.
+        IplImage *cv_image_left;
+        if (lbridge_.fromImage(limage_,"bgr")) {
+          cv_image_left = lbridge_.toIpl();
+          // Color calibration
+          if (calib_color_) {
+            if ( lcolor_cal_->getFromParam("stereo/left/image_rect_color")) {
+              lcolor_cal_->correctColor(cv_image_left, cv_image_left, true, true, COLOR_CAL_BGR);
+            }
+            else {
+              ROS_DEBUG_STREAM_NAMED("cv_mean_shift","Color calibration not available.");
+              return;
+            }
+          }
+        }
 
 
-      //////////////// Mean shift filtering /////////////////
-      // If requested, do mean shift filtering. Otherwise, just smooth the image.
-      IplImage *cv_image_smooth = cvCreateImage(cvSize(width,height), IPL_DEPTH_8U, 3);
-      if (do_mean_shift_) {
-	cvPyrMeanShiftFiltering( cv_image_left, cv_image_smooth, spatial_radius_pix_, color_radius_pix_);
+        int width = cv_image_left->width;
+        int height = cv_image_left->height;
+
+
+        // Timing
+        struct timeval timeofday;
+        gettimeofday(&timeofday,NULL);
+        ros::Time startt = ros::Time().fromNSec(1e9*timeofday.tv_sec + 1e3*timeofday.tv_usec);
+
+
+        //////////////// Mean shift filtering /////////////////
+        // If requested, do mean shift filtering. Otherwise, just smooth the image.
+        IplImage *cv_image_smooth = cvCreateImage(cvSize(width,height), IPL_DEPTH_8U, 3);
+        if (do_mean_shift_) {
+          cvPyrMeanShiftFiltering( cv_image_left, cv_image_smooth, spatial_radius_pix_, color_radius_pix_);
+        }
+        else {
+          cvSmooth(cv_image_left, cv_image_smooth, CV_GAUSSIAN, 0, 0, sigma_, sigma_);
+        }
+        //////////////////////////////////////////////////////
+
+        ////////////// FH graph-based segmentation ///////////
+        // Build the graph
+        edge *edges = new edge[width*height*4];
+        int num = 0;
+        int x, y;
+        uint8_t *ptr, *ptrup, *ptrdown;
+        for (y=0; y<height; ++y) {
+
+          // This row, the row above, and the row below.
+          ptr = (uint8_t*)(cv_image_smooth->imageData + y*cv_image_smooth->widthStep);
+          ptrup = 0;
+          ptrdown = 0;
+          if (y > 0)
+            ptrup = (uint8_t*)(cv_image_smooth->imageData + (y-1)*cv_image_smooth->widthStep);
+          if (y < height-1)
+            ptrdown = (uint8_t*)(cv_image_smooth->imageData + (y+1)*cv_image_smooth->widthStep);
+
+          for (x=0; x<width; ++x) {
+
+            int txy = y*width + x;
+
+            if (x < width-1) {
+              // Right edge
+              edges[num].a = txy;
+              edges[num].b = y*width + (x+1);
+              edges[num].w = col_diff(ptr, ptr+3);
+              num++;
+
+              if (y < height-1) {
+                // Down-right edge
+                edges[num].a = txy;
+                edges[num].b = (y+1)*width + (x+1);
+                edges[num].w = col_diff(ptr, ptrdown+3);
+                num++;
+              }
+
+              if (y > 0) {
+                // Up-right edge
+                edges[num].a = txy;
+                edges[num].b = (y-1)*width + (x+1);
+                edges[num].w = col_diff(ptr, ptrup+3);
+                num++;
+              }
+            }
+
+            if (y < height-1) {
+              // Down edge
+              edges[num].a = txy;
+              edges[num].b = (y+1)*width + x;
+              edges[num].w = col_diff(ptr, ptrdown);
+              num++;
+            }
+
+            ptr += 3;
+            ptrup += 3;
+            ptrdown += 3;
+          }
+        }
+
+        // Segment
+        universe *u = segment_graph(width*height, num, edges, K_);
+
+        // Merge clusters that are too small
+        for (int i=0; i<num; ++i) {
+          int a = u->find(edges[i].a);
+          int b = u->find(edges[i].b);
+          if ((a != b) && ((u->size(a) < min_clust_size_) || (u->size(b) < min_clust_size_)))
+            u->join(a, b);
+        }
+        delete [] edges;	     
+        //////////////////////////////////////////////////////
+
+
+        // Timing
+        gettimeofday(&timeofday,NULL);
+        ros::Time endt = ros::Time().fromNSec(1e9*timeofday.tv_sec + 1e3*timeofday.tv_usec);
+        ros::Duration diff = endt-startt;
+        ROS_DEBUG_STREAM_NAMED("msfhseg_node","Segmentation duration " << diff.toSec() );
+
+
+
+        // Make the display image and copy the original image into it.
+        IplImage *display_image = cvCreateImage( cvSize(3*width, height), IPL_DEPTH_8U, 3);
+        cvSetImageROI(display_image, cvRect(0,0,width,height));
+        cvCopy(cv_image_left, display_image);
+        cvResetImageROI(display_image);
+
+        // Copy the preprocessed image into the display image
+        cvSetImageROI(display_image, cvRect(width,0,width,height));
+        cvCopy(cv_image_smooth, display_image);
+        cvResetImageROI(display_image);
+
+
+        // Randomly colorize the output clusters and draw them into the output image
+        IplImage *colormap = cvCreateImage(cvSize(3, width*height), IPL_DEPTH_8U,1);
+        for (y=0; y<width*height; ++y) {
+          ptr = (uint8_t*)(colormap->imageData + y*colormap->widthStep);
+          *ptr = (uint8_t)(rand()%(256));  ptr++; 
+          *ptr = (uint8_t)(rand()%(256));  ptr++; 
+          *ptr = (uint8_t)(rand()%(256));  
+        }
+
+        int c;
+        uint8_t* cptr;
+        for (y=0; y<height; ++y) {
+          ptr = (uint8_t*)(display_image->imageData + y*display_image->widthStep + 2*cv_image_left->widthStep);
+          for (x=0; x<width; ++x) {
+            c = u->find(y*width + x);
+            cptr = (uint8_t*)(colormap->imageData + c*colormap->widthStep);
+            *ptr = *cptr; ptr++; cptr++;
+            *ptr = *cptr; ptr++; cptr++;
+            *ptr = *cptr; ptr++; cptr++;
+          }
+        }
+
+        // Display
+        cvShowImage("Image, Preprocessed Image, Segmentation", display_image);
+        cvWaitKey(3);
+
+        // Clean up
+        cvReleaseImage(&cv_image_smooth);
+        cvReleaseImage(&display_image);
+        cvReleaseImage(&colormap);
+        delete u;
       }
-      else {
-	cvSmooth(cv_image_left, cv_image_smooth, CV_GAUSSIAN, 0, 0, sigma_, sigma_);
-      }
-      //////////////////////////////////////////////////////
 
-      ////////////// FH graph-based segmentation ///////////
-      // Build the graph
-      edge *edges = new edge[width*height*4];
-      int num = 0;
-      int x, y;
-      uint8_t *ptr, *ptrup, *ptrdown;
-      for (y=0; y<height; ++y) {
-	  
-	// This row, the row above, and the row below.
-	ptr = (uint8_t*)(cv_image_smooth->imageData + y*cv_image_smooth->widthStep);
-	ptrup = 0;
-	ptrdown = 0;
-	if (y > 0)
-	  ptrup = (uint8_t*)(cv_image_smooth->imageData + (y-1)*cv_image_smooth->widthStep);
-	if (y < height-1)
-	  ptrdown = (uint8_t*)(cv_image_smooth->imageData + (y+1)*cv_image_smooth->widthStep);
+    private:
 
-	for (x=0; x<width; ++x) {
-
-	  int txy = y*width + x;
-
-	  if (x < width-1) {
-	    // Right edge
-	    edges[num].a = txy;
-	    edges[num].b = y*width + (x+1);
-	    edges[num].w = col_diff(ptr, ptr+3);
-	    num++;
-
-	    if (y < height-1) {
-	      // Down-right edge
-	      edges[num].a = txy;
-	      edges[num].b = (y+1)*width + (x+1);
-	      edges[num].w = col_diff(ptr, ptrdown+3);
-	      num++;
-	    }
-
-	    if (y > 0) {
-	      // Up-right edge
-	      edges[num].a = txy;
-	      edges[num].b = (y-1)*width + (x+1);
-	      edges[num].w = col_diff(ptr, ptrup+3);
-	      num++;
-	    }
-	  }
-
-	  if (y < height-1) {
-	    // Down edge
-	    edges[num].a = txy;
-	    edges[num].b = (y+1)*width + x;
-	    edges[num].w = col_diff(ptr, ptrdown);
-	    num++;
-	  }
-
-	  ptr += 3;
-	  ptrup += 3;
-	  ptrdown += 3;
-	}
+      float col_diff(uint8_t* p1, uint8_t* p2) {
+        return sqrt( std::pow((float)(*p1) - (float)(*p2), 2) + std::pow((float)(*(p1+1)) - (float)(*(p2+1)), 2) + std::pow((float)(*(p1+2)) - (float)(*(p2+2)), 2) );
       }
 
-      // Segment
-      universe *u = segment_graph(width*height, num, edges, K_);
-
-      // Merge clusters that are too small
-      for (int i=0; i<num; ++i) {
-	int a = u->find(edges[i].a);
-	int b = u->find(edges[i].b);
-	if ((a != b) && ((u->size(a) < min_clust_size_) || (u->size(b) < min_clust_size_)))
-	  u->join(a, b);
-      }
-      delete [] edges;	     
-      //////////////////////////////////////////////////////
-
-
-      // Timing
-      gettimeofday(&timeofday,NULL);
-      ros::Time endt = ros::Time().fromNSec(1e9*timeofday.tv_sec + 1e3*timeofday.tv_usec);
-      ros::Duration diff = endt-startt;
-      ROS_DEBUG_STREAM_NAMED("msfhseg_node","Segmentation duration " << diff.toSec() );
-
-
-
-      // Make the display image and copy the original image into it.
-      IplImage *display_image = cvCreateImage( cvSize(3*width, height), IPL_DEPTH_8U, 3);
-      cvSetImageROI(display_image, cvRect(0,0,width,height));
-      cvCopy(cv_image_left, display_image);
-      cvResetImageROI(display_image);
-
-      // Copy the preprocessed image into the display image
-      cvSetImageROI(display_image, cvRect(width,0,width,height));
-      cvCopy(cv_image_smooth, display_image);
-      cvResetImageROI(display_image);
-
-
-      // Randomly colorize the output clusters and draw them into the output image
-      IplImage *colormap = cvCreateImage(cvSize(3, width*height), IPL_DEPTH_8U,1);
-      for (y=0; y<width*height; ++y) {
-	ptr = (uint8_t*)(colormap->imageData + y*colormap->widthStep);
-	*ptr = (uint8_t)(rand()%(256));  ptr++; 
-	*ptr = (uint8_t)(rand()%(256));  ptr++; 
-	*ptr = (uint8_t)(rand()%(256));  
-      }
-
-      int c;
-      uint8_t* cptr;
-      for (y=0; y<height; ++y) {
-	ptr = (uint8_t*)(display_image->imageData + y*display_image->widthStep + 2*cv_image_left->widthStep);
-	for (x=0; x<width; ++x) {
-	  c = u->find(y*width + x);
-	  cptr = (uint8_t*)(colormap->imageData + c*colormap->widthStep);
-	  *ptr = *cptr; ptr++; cptr++;
-	  *ptr = *cptr; ptr++; cptr++;
-	  *ptr = *cptr; ptr++; cptr++;
-	}
-      }
-
-      // Display
-      cvShowImage("Image, Preprocessed Image, Segmentation", display_image);
-      cvWaitKey(3);
-
-      // Clean up
-      cvReleaseImage(&cv_image_smooth);
-      cvReleaseImage(&display_image);
-      cvReleaseImage(&colormap);
-      delete u;
-    }
-
-  private:
-	
-    float col_diff(uint8_t* p1, uint8_t* p2) {
-      return sqrt( std::pow((float)(*p1) - (float)(*p2), 2) + std::pow((float)(*(p1+1)) - (float)(*(p2+1)), 2) + std::pow((float)(*(p1+2)) - (float)(*(p2+2)), 2) );
-    }
-	  
 
   }; // class
 }; // namespace
@@ -299,7 +299,7 @@ namespace image_segmentation
 
 /////////////////////////////////////////////////////////////////////
 
-int
+  int
 main (int argc, char** argv)
 {
   ros::init (argc, argv);

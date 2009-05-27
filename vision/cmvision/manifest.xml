@@ -1,0 +1,15 @@
+<package>
+  <description brief="cmvision">
+
+    Node for the Color Machine Vision Project, used for fast color blob detection
+  </description>
+  <author>Nate Koenig</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://pr.willowgarage.com/wiki/cmvision</url>
+  <depend package="roscpp"/>
+  <depend package="image_msgs"/>
+  <depend package="opencv_latest"/>
+  <depend package="color_calib"/>
+
+</package>
