@@ -95,6 +95,7 @@ Reads the following parameters from the parameter server
 - @b "~calibrate_time"  : @b [bool]   whether the node should calibrate the hokuyo's time offset (Default: true)
 - @b "~hokuyoLaserModel04LX" : @b [bool]	whether the laser is a hokuyo mode 04LX by setting boolean LaserIsHokuyoModel04LX (Default: false)
 - @b "~frameid"        : @b [string] the frame in which laser scans will be returned (Default: "FRAMEID_LASER")
+- @b "~reconfigure"    : @b [bool] set to true to force the node to reread its configuration, the node will reset it to false when it is reconfigured (Default: false)
  **/
 
 #include <assert.h>
@@ -150,7 +151,29 @@ public:
   HokuyoNode() : ros::Node("hokuyo"), running_(false), count_(0), self_test_(this), diagnostic_(this)
   {
     advertise<laser_scan::LaserScan>("scan", 100);
+    
+    read_config();
 
+    self_test_.setPretest( &HokuyoNode::pretest );
+
+    self_test_.addTest( &HokuyoNode::interruptionTest );
+    self_test_.addTest( &HokuyoNode::connectTest );
+    self_test_.addTest( &HokuyoNode::IDTest );
+    self_test_.addTest( &HokuyoNode::statusTest );
+    self_test_.addTest( &HokuyoNode::laserTest );
+    self_test_.addTest( &HokuyoNode::polledDataTest );
+    self_test_.addTest( &HokuyoNode::streamedDataTest );
+    self_test_.addTest( &HokuyoNode::streamedIntensityDataTest );
+    self_test_.addTest( &HokuyoNode::laserOffTest );
+    self_test_.addTest( &HokuyoNode::disconnectTest );
+    self_test_.addTest( &HokuyoNode::resumeTest );
+    
+    diagnostic_.addUpdater( &HokuyoNode::connectionStatus );
+    diagnostic_.addUpdater( &HokuyoNode::freqStatus );
+  }
+
+  void read_config()
+  {
     if (hasParam("~min_ang_degrees") && hasParam("~min_ang"))
     {
       ROS_FATAL("Minimum angle is specified in both radians and degrees");
@@ -197,26 +220,30 @@ public:
     param("~port", port_, string("/dev/ttyACM0"));
     param("~autostart", autostart_, true);
     param("~calibrate_time", calibrate_time_, true);
-	 param("~hokuyoLaserModel04LX", LaserIsHokuyoModel04LX, false);  // LaserIsHokuyoModel04LX must be set to true via this parameter for a model 04LX rangefinder
+    param("~hokuyoLaserModel04LX", LaserIsHokuyoModel04LX, false);  // LaserIsHokuyoModel04LX must be set to true via this parameter for a model 04LX rangefinder
     param("~frameid", frameid_, string("FRAMEID_LASER"));
+  }
 
-    self_test_.setPretest( &HokuyoNode::pretest );
+  void check_reconfigure()
+  {
+    bool need_reconfigure;
+    param("~reconfigure", need_reconfigure, false);
+    if (need_reconfigure)
+    {
+      ROS_INFO("Reconfigured the hokuyo.");
+      diagnostic_.broadcast(2,"Reconfiguring");
+      bool was_running = running_;
+      if (was_running)
+        stop();
 
-    self_test_.addTest( &HokuyoNode::interruptionTest );
-    self_test_.addTest( &HokuyoNode::connectTest );
-    self_test_.addTest( &HokuyoNode::IDTest );
-    self_test_.addTest( &HokuyoNode::statusTest );
-    self_test_.addTest( &HokuyoNode::laserTest );
-    self_test_.addTest( &HokuyoNode::polledDataTest );
-    self_test_.addTest( &HokuyoNode::streamedDataTest );
-    self_test_.addTest( &HokuyoNode::streamedIntensityDataTest );
-    self_test_.addTest( &HokuyoNode::laserOffTest );
-    self_test_.addTest( &HokuyoNode::disconnectTest );
-    self_test_.addTest( &HokuyoNode::resumeTest );
+      read_config();
 
-    diagnostic_.addUpdater( &HokuyoNode::connectionStatus );
-    diagnostic_.addUpdater( &HokuyoNode::freqStatus );
+      if (was_running)
+        start();
 
+      setParam("~reconfigure", false);
+      diagnostic_.force_update();
+    }
   }
 
   ~HokuyoNode()
@@ -227,6 +254,8 @@ public:
   int start()
   {
     stop();
+
+    ROS_DEBUG("Calling start");
 
     try
     {
@@ -259,11 +288,12 @@ public:
       setParam("~min_range", (double)(config.min_range));
       setParam("~max_range", (double)(config.max_range));
 
-	// first parameter false when 04LX laser used because 04LX sensor only accepts MD commands, not ME commands
-	int status = laser_.requestScans(!LaserIsHokuyoModel04LX && intensity_, min_ang_, max_ang_, cluster_, skip_);
+      // first parameter false when 04LX laser used because 04LX sensor only accepts MD commands, not ME commands
+      int status = laser_.requestScans(!LaserIsHokuyoModel04LX && intensity_, min_ang_, max_ang_, cluster_, skip_);
 
       if (status != 0) {
         ROS_WARN("Failed to request scans from device.  Status: %d.", status);
+        ROS_DEBUG("Start failed");
         return -1;
       }
 
@@ -272,9 +302,11 @@ public:
     } catch (hokuyo::Exception& e) {
       ROS_WARN("Exception thrown while starting urg.\n%s", e.what());
       connect_fail_ = e.what();
-
+      ROS_DEBUG("Start excepted");
       return -1;
     }
+    
+    ROS_DEBUG("Start completed successfully");
 
     return(0);
   }
@@ -349,11 +381,13 @@ public:
             break;
           self_test_.checkTest();
           diagnostic_.update();
+          check_reconfigure();
         }
       } else {
-        usleep(1000000);
+        usleep(100000);
         self_test_.checkTest();
         diagnostic_.update();
+        check_reconfigure();
       }
     }
 
@@ -649,8 +683,6 @@ main(int argc, char** argv)
   HokuyoNode h;
 
   h.spin();
-
-  
 
   return(0);
 }
