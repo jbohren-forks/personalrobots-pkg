@@ -302,16 +302,16 @@ bool MechanismControl::switchController(const std::vector<std::string>& start_co
   for (unsigned int i=0; i<stop_controllers.size(); i++)
   {
     ct = getControllerByName(stop_controllers[i]);
-    if (ct != NULL)
-      stop_request_.push_back(ct);
+    if (ct == NULL) return false;
+    stop_request_.push_back(ct);
   }
 
   // list all controllers to start
   for (unsigned int i=0; i<start_controllers.size(); i++)
   {
     ct = getControllerByName(start_controllers[i]);
-    if (ct != NULL)
-      start_request_.push_back(ct);
+    if (ct == NULL) return false;
+    start_request_.push_back(ct);
   }
 
   // start the atomic controller switching
