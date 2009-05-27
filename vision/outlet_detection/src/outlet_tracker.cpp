@@ -1,4 +1,5 @@
 #include "outlet_detection/outlet_tracker.h"
+#include <visualization_msgs/Marker.h>
 
 #include <Eigen/Core>
 #include <Eigen/QR>
@@ -9,6 +10,8 @@ static btVector3 fitPlane(btVector3 *holes, int num_holes);
 OutletTracker::OutletTracker(ros::Node &node)
   : TrackerBase(node, "outlet")
 {
+  node_.advertise<visualization_msgs::Marker>("visualization_marker", 1);
+  
   activate();
 }
 
@@ -56,6 +59,9 @@ bool OutletTracker::detectObject(tf::Transform &pose)
   rotation.getRotation(orientation);
   pose = tf::Transform(orientation, holes[0]);
 
+  publishOutletMarker(holes);
+  publishRayMarker(holes[0]);
+  
   return true;
 }
 
@@ -125,6 +131,70 @@ static btVector3 fitPlane(btVector3 *holes, int num_holes)
   return btVector3(normal.x(), normal.y(), normal.z());
 }
 
+void OutletTracker::publishOutletMarker(const tf::Point* holes)
+{
+  visualization_msgs::Marker marker;
+  marker.header.frame_id = "high_def_frame";
+  marker.header.stamp = ros::Time();
+  marker.ns = "outlet_detector";
+  marker.id = 0;
+  //marker.type = visualization_msgs::Marker::POINTS;
+  marker.type = visualization_msgs::Marker::SPHERE_LIST;
+  marker.action = visualization_msgs::Marker::ADD;
+
+  marker.pose.position.x = 0;
+  marker.pose.position.y = 0;
+  marker.pose.position.z = 0;
+  marker.pose.orientation.x = 0;
+  marker.pose.orientation.y = 0;
+  marker.pose.orientation.z = 0;
+  marker.pose.orientation.w = 1;
+
+  marker.scale.x = 0.01;
+  marker.scale.y = 0.01;
+  marker.scale.z = 0.01;
+  marker.color.a = 1.0;
+  marker.color.r = 1.0;
+  marker.color.g = 0.0;
+  marker.color.b = 0.0;
+
+  marker.points.resize(12);
+  for (unsigned i = 0; i < 12; ++i) {
+    tf::PointTFToMsg(holes[i], marker.points[i]);
+  }
+  
+  node_.publish("visualization_marker", marker);
+}
+
+void OutletTracker::publishRayMarker(const tf::Point &outlet_position)
+{
+  visualization_msgs::Marker marker;
+  marker.header.frame_id = "high_def_frame";
+  marker.header.stamp = ros::Time();
+  marker.ns = "outlet_detector";
+  marker.id = 1;
+  marker.type = visualization_msgs::Marker::ARROW;
+  marker.action = visualization_msgs::Marker::ADD;
+
+  marker.pose.position.x = 0;
+  marker.pose.position.y = 0;
+  marker.pose.position.z = 0;
+  marker.pose.orientation.x = 0.0;
+  marker.pose.orientation.y = 0.0;
+  marker.pose.orientation.z = 0.0;
+  marker.pose.orientation.w = 1.0;
+  marker.scale.x = 0.005;
+  marker.scale.y = 0.01;
+  marker.color.a = 1.0;
+  marker.color.r = 1.0;
+  marker.color.g = 0.0;
+  marker.color.b = 0.0;
+
+  marker.points.resize(2); // first is origin
+  tf::PointTFToMsg(outlet_position, marker.points[1]);
+
+  node_.publish("visualization_marker", marker);
+}
 
 /*
 bool detectOutletService(outlet_detection::OutletDetection::Request &od_req,

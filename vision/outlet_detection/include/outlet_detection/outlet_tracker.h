@@ -48,6 +48,9 @@ protected:
   virtual bool detectObject(tf::Transform &pose);
   virtual CvRect getBoundingBox();
   virtual IplImage* getDisplayImage(bool success);
+
+  void publishOutletMarker(const tf::Point* holes);
+  void publishRayMarker(const tf::Point &outlet_position);
   
   std::vector<outlet_t> outlets_;
 
