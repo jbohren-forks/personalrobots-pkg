@@ -98,7 +98,7 @@ void imageCB(const image_msgs::CompressedImageConstPtr &image)
   rawPub.publish(decompressedImageMessage);
 
   // Debug: Will save the raw buffer to a pgm file
-  char filename[256];
+  /*char filename[256];
   sprintf(filename, "test%d.pgm", frameCount);
 
   // Output test file
@@ -106,6 +106,7 @@ void imageCB(const image_msgs::CompressedImageConstPtr &image)
   fprintf(file, "P5\n# My File\n%d %d\n255\n",width, height);
   fwrite(rawBuffer, rawBufferSize, 1, file);
   fclose(file);
+  */
 }
 
 ////////////////////////////////////////////////////////////////////////////////
