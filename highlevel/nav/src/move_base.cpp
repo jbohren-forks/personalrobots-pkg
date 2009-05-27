@@ -183,9 +183,9 @@ namespace nav {
     marker.id = 0;
     marker.type = visualization_msgs::Marker::ARROW;
     marker.pose = goal.pose;
-    marker.scale.x = 1.0;
-    marker.scale.y = 0.1;
-    marker.scale.z = 0.1;
+    marker.scale.x = 0.5;
+    marker.scale.y = 0.4;
+    marker.scale.z = 0.4;
     marker.color.a = 1.0;
     marker.color.r = 0.0;
     marker.color.g = 1.0;
