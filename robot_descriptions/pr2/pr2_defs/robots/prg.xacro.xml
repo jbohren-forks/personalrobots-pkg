@@ -1,0 +1,83 @@
+<?xml version="1.0"?>
+<robot name="pr2">
+  
+  <!-- Include file with calibration parameters -->
+  <include filename="$(find pr2_defs)/calibration/prg_cal.xml" />
+  
+  <!-- declare the path where all models/textures/materials are stored -->
+  <resource location="$(find pr2_defs)/meshes"/>
+  
+  <include filename="$(find pr2_defs)/defs/arm_defs.xml" />
+  <include filename="$(find pr2_defs)/defs/gripper_defs.xml" />
+  <include filename="$(find pr2_defs)/defs/head_defs.xml" />
+  <include filename="$(find pr2_defs)/defs/body_defs.xml" />
+  <include filename="$(find pr2_defs)/defs/base_defs.xml" />
+  <include filename="$(find pr2_defs)/defs/ptz_defs.xml" />
+  <include filename="$(find pr2_defs)/defs/prosilica_defs.xml" />
+  <include filename="$(find pr2_defs)/defs/gazebo_defs.xml" />
+  <include filename="$(find pr2_defs)/defs/mono_cam_defs.xml" />
+
+  <pr2_base name="base" >
+    <origin xyz="0 0 0.051" rpy="0 0 0" /> <!-- 5.1cm is the height of the base when wheels contact ground -->
+  </pr2_base>
+
+  <pr2_torso name="torso_lift" parent="base_link">
+    <origin xyz="-0.05 0 0.739675" rpy="0 0 0" />
+  </pr2_torso>
+
+  <pr2_head name="head" parent="torso_lift_link">
+    <!--origin xyz="0 0 0.3815" rpy="0 0 0" /-->
+    <origin xyz="${cal_head_x}    ${cal_head_y}     ${0.3915+cal_head_z}"
+            rpy="${cal_head_roll} ${cal_head_pitch} ${cal_head_yaw}" />
+  </pr2_head>
+
+  <!-- Prosilica Camera -->
+  <prosilica_cam name="high_def" parent="head_plate_frame">
+    <origin xyz="${cal_high_def_x}    ${0.07+cal_high_def_y} ${0.025+cal_high_def_z}"
+            rpy="${cal_high_def_roll} ${cal_high_def_pitch} ${cal_high_def_yaw}" />
+  </prosilica_cam>
+
+  <!-- Stereocam -->
+  <stereo_camera name="stereo" parent="head_plate_frame">
+    <origin xyz="0.0 -0.0254 0.0" rpy="0 0 0" />
+  </stereo_camera>
+    
+  <pr2_tilting_laser name="laser_tilt" parent="torso_lift_link">
+    <!--origin xyz="0.1 0 0.19525" rpy="0 0 0" /-->
+    <origin xyz="0.1 0 0.235" rpy="0 0 0" />
+  </pr2_tilting_laser>
+
+  <pr2_arm side="r" reflect="-1" parent="torso_lift_link">
+    <origin xyz="0 -0.188 0.0" rpy="0 0 0" />
+  </pr2_arm>
+  <pr2_gripper side="r" parent="r_wrist_roll_link" />
+
+  <pr2_arm side="l" reflect="1" parent="torso_lift_link">
+    <origin xyz="0.0 0.188 0.0" rpy="0 0 0" />
+  </pr2_arm>
+  <pr2_gripper side="l" parent="l_wrist_roll_link" />
+
+  <pr2_ptz side="r" reflect="-1" parent="torso_lift_link">
+    <origin xyz="0.0 -0.1975 0.2265" rpy="0 0 0" />
+  </pr2_ptz>
+
+  <pr2_ptz side="l" reflect="1" parent="torso_lift_link">
+    <origin xyz="0.0 0.1975 0.2265" rpy="0 0 0" />
+  </pr2_ptz>
+
+  <!-- Forearm Cam (Hand approximated values) -->
+
+
+  <mono_cam name="r_forearm_cam" parent="r_forearm_roll_link">
+    <origin xyz=".15 0 .07"
+            rpy="${-M_PI/2} ${-45*M_PI/180} 0" />
+  </mono_cam>
+
+  <!-- Define groups of links; a link may be part of multiple groups -->
+  <include filename="$(find pr2_defs)/robots/pr2_groups.xml" />
+
+  <!-- Kinematic chains -->
+  <chain root="torso_lift_link" tip="l_wrist_roll_link" />
+  <chain root="torso_lift_link" tip="r_wrist_roll_link" />
+
+</robot>
