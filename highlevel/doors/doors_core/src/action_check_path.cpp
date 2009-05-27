@@ -96,11 +96,14 @@ robot_actions::ResultStatus CheckPathAction::execute(const robot_msgs::PoseStamp
     // check for timeout
     if (Time::now() > start_time + timeout_check_path){
       ROS_ERROR("Timeout checking paths. Did not find a path.");
-      return robot_actions::ABORTED;
+      feedback = false;
+      return robot_actions::SUCCESS;
     }
     // find path
-    ros::service::call("move_base/make_plan", req_plan, res_plan);
-    if (res_plan.plan.poses.size() >= 2){
+    if (!ros::service::call("move_base/make_plan", req_plan, res_plan))
+      ROS_ERROR("Service for check path is not available");
+    else if (res_plan.plan.poses.size() >= 2){
+      ROS_INFO("Found possible path");
       // calculate length of path
       double length = 0;
       for (unsigned int i=0; i<res_plan.plan.poses.size()-1; i++){
@@ -111,9 +114,11 @@ robot_actions::ResultStatus CheckPathAction::execute(const robot_msgs::PoseStamp
       }
       if (length < 2.0 * length_straight && length < 5.0){
 	ROS_INFO("received path from planner of length %f", length);
+	feedback = true;
 	return robot_actions::SUCCESS;
       }
     }
+    Duration(1.0).sleep();
   }
   ROS_ERROR("preempted");
   return robot_actions::PREEMPTED;
