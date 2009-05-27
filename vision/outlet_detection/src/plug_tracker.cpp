@@ -46,6 +46,8 @@ PlugTracker::PlugTracker(ros::Node &node)
   }
 
   // Set up transforms
+  // Coordinate frame (looking down on plug): (right, -forward, down)
+  
   // TODO: set these through parameters?
   // Rough hand-measured
   //plug_in_board_.getOrigin().setValue(0.003, -0.01, 0.005);
