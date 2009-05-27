@@ -1,0 +1,21 @@
+<package>
+<description brief="Ros Log random access tools">
+This is a convenience tool to access random messages recorded in bag
+files. The main target is testing and debugging. Potential use
+includes access of some information from the past.
+
+</description>
+<author>Alex Sorokin (sorokin@willowgarage.com) </author>
+<license>BSD</license>
+<review status="unreviewed" notes=""/>
+<url>http://pr.willowgarage.com</url>
+<depend package="roscpp"/>
+<depend package="rospy"/>
+<depend package="rosrecord"/>
+<depend package="std_msgs"/>
+<export>
+  <cpp cflags="-I${prefix}/include"/>
+</export>
+
+</package>
+
