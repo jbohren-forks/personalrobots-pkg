@@ -188,8 +188,6 @@ DoorController::Holds {
 	  contains_start(check_path.Active cmd);
 	  concurrent(cmd.end, end);
 	  eq_pose_msg(cmd.object, dm_active.object);
-	  //eq(cmd.frame_id, ds.frame_id);
-	  //door_get_robot_pose_for_door(cmd.x, cmd.y, cmd.z, cmd.qx, cmd.qy, cmd.qz, cmd.qw, ds.object, DOORWAY_CLEARANCE_RANGE);
 	}
 	else {
 	  contains_start(safety_tuck_arms.Active cmd);

@@ -26,9 +26,11 @@ namespace executive_trex_pr2 {
 							       const std::vector<ConstrainedVariableId>& variables)
     :Constraint(name, propagatorName, constraintEngine, variables),
      _connector(static_cast<IntervalIntDomain&>(getCurrentDomain(variables[0]))),
-     _x(static_cast<IntervalDomain&>(getCurrentDomain(variables[1]))),
-     _y(static_cast<IntervalDomain&>(getCurrentDomain(variables[2]))){
-    checkError(variables.size() == 3, "Invalid signature for " << name.toString() << ". Check the constraint signature in the model.");
+     _x1(static_cast<IntervalDomain&>(getCurrentDomain(variables[1]))),
+     _y1(static_cast<IntervalDomain&>(getCurrentDomain(variables[2]))),
+     _x2(static_cast<IntervalDomain&>(getCurrentDomain(variables[3]))),
+     _y2(static_cast<IntervalDomain&>(getCurrentDomain(variables[4]))){
+    checkError(variables.size() == 5, "Invalid signature for " << name.toString() << ". Check the constraint signature in the model.");
     checkError(TopologicalMapAdapter::instance() != NULL, "Failed to allocate topological map accessor. Some configuration error.");
   }
     
@@ -37,17 +39,18 @@ namespace executive_trex_pr2 {
    */
   void MapGetNearestConnectorConstraint::handleExecute(){
     // Wait till inputs are bound.
-    if(!_x.isSingleton() || !_y.isSingleton())
+    if(!_x1.isSingleton() || !_y1.isSingleton() || !_x2.isSingleton() || !_y2.isSingleton())
       return;
 
     debugMsg("map:get_nearest_connector",  "BEFORE: "  << TREX::timeString() << toString());
 
-    double x = _x.getSingletonValue();
-    double y = _y.getSingletonValue();
-    unsigned int connector_id = TopologicalMapAdapter::instance()->getNearestConnector(x, y);
+    double x1 = _x1.getSingletonValue();
+    double y1 = _y1.getSingletonValue();
+    double x2 = _x2.getSingletonValue();
+    double y2 = _y2.getSingletonValue();
+    unsigned int connector_id = TopologicalMapAdapter::instance()->getNearestConnector(x1, y1, x2, y2);
 
-    condDebugMsg(connector_id == 0, "trex:error", "No connector found for <" << x << ", " << y << ">");
-    ROS_ASSERT(connector_id > 0); // If this is incorrect, then there is a bug in the topological map
+    condDebugMsg(connector_id == 0, "trex:error", "No connector found for <" << x1 << ", " << y1 << "> => " << x2 << ", " << y2 << ">");
 
     _connector.set(connector_id);
 
@@ -963,27 +966,18 @@ TopologicalMapAdapter::TopologicalMapAdapter(std::istream& in, const std::string
     return _map->nearestOutlet(p);
   }
 
-  unsigned int TopologicalMapAdapter::getNearestConnector(double x, double y){
-    unsigned int connector_id(0);
-    double distance(PLUS_INFINITY);
-    unsigned int region_id = getRegion(x, y);
-    std::vector<unsigned int> connectors;
-    getRegionConnectors(region_id, connectors);
-    for(std::vector<unsigned int>::const_iterator it = connectors.begin(); it != connectors.end(); ++it){
-      unsigned int candidate = *it;
-      double cx, cy;
-      TopologicalMapAdapter::instance()->getConnectorPosition(candidate, cx, cy);
-      double distance_to_connector = sqrt(pow(x-cx, 2) + pow(y-cy,2));
-      if(distance_to_connector < distance){
-	distance = distance_to_connector;
-	connector_id = candidate;
-      }
+  unsigned int TopologicalMapAdapter::getNearestConnector(double x1, double y1, double x2, double y2){
+    unsigned int next_connector = 0;
+    topological_map::Point2D p1(x1, y1);
+    topological_map::Point2D p2(x2, y2);
+    topological_map::ConnectorIdVector path = _map->shortestConnectorPath(p1, p2);
+
+    if(path.size() > 2){
+      debugMsg("map:get_nearest_connector", "Nearest connector going from <" << x1 << ", " << y1 << "> to <" << x2 << ", " << y2 << "> is " << next_connector);
+      next_connector = path[1];
     }
 
-    debugMsg("map:getNearestConnector", 
-	     "Selecting connector " << connector_id << " in region " << region_id << " a distance " << distance << " from <" << x << ", " << y << ">");
-
-    return connector_id;
+    return next_connector;
   }
 
   void TopologicalMapAdapter::getOutletState(unsigned int outlet_id, robot_msgs::Pose& outlet_pose){

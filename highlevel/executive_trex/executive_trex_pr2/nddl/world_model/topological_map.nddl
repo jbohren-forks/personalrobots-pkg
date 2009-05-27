@@ -43,6 +43,10 @@ constraint map_notify_door_blocked(door_id){ door_id <: MAP_KEY }
 // A function to get the nearest outlet given a 2D point
 constraint map_get_nearest_outlet(outlet_id, x, y){ outlet_id <: MAP_KEY && x <: numeric && y <: numeric }
 
+// A function to get the nearest connector based on a current position and the target position. It will result on the connector that
+// is nearest to both
+constraint map_get_nearest_connector(connector_id, current_x, current_y, next_x, next_y){ connector_id <: MAP_KEY && current_x <: numeric && current_y <: numeric && next_x <: numeric && next_y <: numeric }
+
 /***********************************************************************
  * Types related to a semantic view of the map
  ***********************************************************************/
@@ -75,15 +79,6 @@ class Location {
 class Waypoint extends Location {
   Waypoint(float x_, float y_, float z_, float qx_, float qy_, float qz_, float qw_){
     super(x_, y_, z_, qx_, qy_, qz_, qw_);
-  }
-};
-
-class OutletApproachPoint extends Location {
-  MAP_KEY outlet_id;
-
-  OutletApproachPoint(MAP_KEY id, float x_, float y_, float z_, float qx_, float qy_, float qz_, float qw_){
-    super(x_, y_, z_, qx_, qy_, qz_, qw_);
-    outlet_id = id;
   }
 };
 

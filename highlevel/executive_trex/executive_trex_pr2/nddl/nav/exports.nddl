@@ -42,7 +42,6 @@ class MoveBehavior extends Behavior {
     float qz;
     float qw;
     MAP_KEY start_connector;
-    MAP_KEY end_connector;
   }
 
   MoveBehavior(Mode _mode, bool _for_doorways){

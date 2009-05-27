@@ -74,8 +74,10 @@ namespace executive_trex_pr2 {
     
   private:
     IntervalIntDomain& _connector;
-    IntervalDomain& _x;
-    IntervalDomain& _y;
+    IntervalDomain& _x1;
+    IntervalDomain& _y1;
+    IntervalDomain& _x2;
+    IntervalDomain& _y2;
   };
 
   /**
@@ -493,7 +495,7 @@ namespace executive_trex_pr2 {
     /**
      * @brief Get the nearest connector given a 2d point
      */
-    virtual unsigned int getNearestConnector(double x, double y);
+    virtual unsigned int getNearestConnector(double x1, double y1, double x2, double y2);
 
     /**
      * @brief Query detailed outlet data. Might want to think about adding and OutletState msg

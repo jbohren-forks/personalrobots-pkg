@@ -185,12 +185,13 @@ M2Controller::Holds{
 	eq(cmd.frame_id, m2_active.frame_id);
 
 	// Determine the next map point to go for. It will either be the outlet
-	// or it will be a doorway en-route to the outlet
+	// or it will be a doorway en-route to the outlet. This function calls a topological planner.
 	bool thru_doorway;
 	map_get_next_move(cmd.x, cmd.y, cmd.z, cmd.qx, cmd.qy, cmd.qz, cmd.qw, thru_doorway, x, y, 
 			  m2_active.x, m2_active.y, m2_active.z, m2_active.qx, m2_active.qy, m2_active.qz, m2_active.qw);
-	map_get_nearest_connector(cmd.start_connector, x, y);
-	map_get_nearest_connector(cmd.end_connector, m2_active.x, m2_active.y);
+
+	map_get_nearest_connector(cmd.start_connector, x, y, m2_active.x, m2_active.y);
+
 	if(thru_doorway == true){
 	  eq(cmd.object, doorman);
 	}

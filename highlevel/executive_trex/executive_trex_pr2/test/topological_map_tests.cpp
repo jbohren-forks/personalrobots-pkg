@@ -93,12 +93,44 @@ void pickPointInSpace(unsigned int W, unsigned int H, double& x, double& y){
   y = (rand() % H) + mantissa;
 }
 
+
+/**
+ * Test the function to get the next connector
+ */
+TEST(executive_trex_pr2, map_get_next_connector){
+  std::ifstream is("test/willow.tmap");
+  TopologicalMapAdapter map(is, "test/willow.tmap.door_overrides.xml", "test/willow.tmap.outlet_overrides.xml");
+  Variable<IntervalIntDomain> connector_id(ce, IntervalIntDomain());
+  Variable<IntervalDomain> x1(ce, IntervalDomain());
+  Variable<IntervalDomain> y1(ce, IntervalDomain());
+  Variable<IntervalDomain> x2(ce, IntervalDomain());
+  Variable<IntervalDomain> y2(ce, IntervalDomain());
+  std::vector<ConstrainedVariableId> scope;
+  scope.push_back(connector_id.getId());
+  scope.push_back(x1.getId());
+  scope.push_back(y1.getId());
+  scope.push_back(x2.getId());
+  scope.push_back(y2.getId());
+
+  MapGetNearestConnectorConstraint::MapGetNearestConnectorConstraint map_get_nearest_connector("map_get_nearest_connector", "Default", ce, scope);
+
+  ASSERT_TRUE(ce->propagate());
+
+  // Ticket 1501
+  x1.specify(27.7125);
+  y1.specify(29.8875);
+  x2.specify(8.8375);
+  y2.specify(2.3125);
+  ASSERT_TRUE(ce->propagate());
+  ASSERT_TRUE(connector_id.lastDomain().getSingletonValue() == 76);
+}
+
 /**
  * Test the function to get the next move
  */
 TEST(executive_trex_pr2, map_get_next_move){
   std::ifstream is("test/willow.tmap");
-  TopologicalMapAdapter map(is, "test/willow.tmap.door_overrides.xml");
+  TopologicalMapAdapter map(is, "test/willow.tmap.door_overrides.xml", "test/willow.tmap.outlet_overrides.xml");
   Variable<IntervalDomain> next_x(ce, IntervalDomain(), false, true, "x");
   Variable<IntervalDomain> next_y(ce, IntervalDomain(), false, true, "y");
   Variable<IntervalDomain> next_z(ce, IntervalDomain(), false, true, "z");
@@ -432,7 +464,7 @@ ARG[8]:x(17085) (S)  DERIVED=float:CLOSED[12.737500000000001, 12.737500000000001
  */
 TEST(executive_trex_pr2, map_get_outlet_approach_pose){
   std::ifstream is("test/willow.tmap");
-  TopologicalMapAdapter map(is, "test/willow.tmap.door_overrides.xml");
+  TopologicalMapAdapter map(is, "test/willow.tmap.door_overrides.xml", "test/willow.tmap.outlet_overrides.xml");
   Variable<IntervalDomain> x(ce, IntervalDomain());
   Variable<IntervalDomain> y(ce, IntervalDomain());
   Variable<IntervalDomain> z(ce, IntervalDomain());
@@ -475,7 +507,7 @@ TEST(executive_trex_pr2, map_get_outlet_approach_pose){
  */
 TEST(executive_trex_pr2, map_read_from_file){
   std::ifstream is("test/willow.tmap");
-  TopologicalMapAdapter map(is, "test/willow.tmap.door_overrides.xml");
+  TopologicalMapAdapter map(is, "test/willow.tmap.door_overrides.xml",  "test/willow.tmap.outlet_overrides.xml");
   std::ofstream os("doors.willow.out");
   printDoors(os);
 
