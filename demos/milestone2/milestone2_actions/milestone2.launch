@@ -26,9 +26,7 @@
 
   
 <!-- Safety -->
-  <!--<node machine="four" pkg="safety_core" type="action_runner" output="screen" respawn="true" />-->
   <node machine="four" pkg="safety_core" type="run_detect_plug_on_base" output="screen" respawn="false" />
-  <node machine="four" pkg="safety_core" type="run_doors_tuck_arms" output="screen" respawn="true" />
   <node machine="four" pkg="safety_core" type="run_tuck_arms" output="screen" respawn="true" />
 
 
