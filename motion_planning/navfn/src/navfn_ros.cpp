@@ -180,7 +180,8 @@ namespace navfn {
     planner_.setStart(map_start);
     planner_.setGoal(map_goal);
 
-    bool success = planner_.calcNavFnAstar();
+    //bool success = planner_.calcNavFnAstar();
+    bool success = planner_.calcNavFnDijkstra(true);
 
     if(success){
       //extract the plan
