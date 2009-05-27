@@ -12,7 +12,7 @@
 
   <!-- Door Domain Actions -->
   <param name="/trex/enable_doors_tuck_arms" value="false"/>
-  <param name="/trex/enable_detect_plug_on_base" value="false"/>
+  <param name="/trex/enable_detect_plug_on_base" value="true"/>
   <param name="/trex/enable_detect_door" value="false"/>
   <param name="/trex/enable_detect_handle" value="false"/>
   <param name="/trex/enable_grasp_handle" value="false"/>
