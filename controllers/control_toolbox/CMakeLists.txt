@@ -10,6 +10,7 @@ rospack_add_library(control_toolbox
  src/sine_sweep.cpp
  src/ramp_output.cpp
  src/base_position_pid.cpp
+ src/dither.cpp
  )
  
 rospack_add_gtest(test/lqr_utils test/lqr_utils.cpp)
