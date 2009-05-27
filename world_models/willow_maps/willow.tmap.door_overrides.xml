@@ -63,6 +63,13 @@
 </approach_point>
 </door>
 
+<door>
+  <id>77</id>
+<approach_point>
+<x>25.246</x>
+<y>30.022</y>
+</approach_point>
+</door>
 
 <door>
   <id>100</id>
