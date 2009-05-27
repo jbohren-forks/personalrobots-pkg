@@ -150,7 +150,8 @@ public:
       // Verify Guid is the one expected
       unsigned long cam_guid = cam_->guid();
       if (guid != 0 && guid != cam_guid)
-        throw prosilica::ProsilicaException("Guid does not match expected");
+        throw prosilica::ProsilicaException(ePvErrBadParameter,
+                                            "Guid does not match expected");
       guid = cam_guid;
     }
     else if (guid != 0)
@@ -469,6 +470,9 @@ public:
       frame = cam_->grab(req.timeout_ms);
     }
     catch (prosilica::ProsilicaException &e) {
+      if (e.error_code == ePvErrBadSequence)
+        throw; // not easily recoverable
+      
       ROS_ERROR("Prosilica exception: %s\n\tx = %d, y = %d, width = %d, height = %d",
                 e.what(), req.region_x, req.region_y, req.width, req.height);
       return false;

@@ -52,7 +52,11 @@ namespace prosilica {
 
 struct ProsilicaException : public std::runtime_error
 {
-  ProsilicaException(const char* msg) : std::runtime_error(msg) {}
+  tPvErr error_code;
+  
+  ProsilicaException(tPvErr code, const char* msg)
+    : std::runtime_error(msg), error_code(code)
+  {}
 };
 
 void init();                // initializes API

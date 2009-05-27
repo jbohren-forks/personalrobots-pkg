@@ -47,7 +47,7 @@ do {                                                       \
   if (err != ePvErrSuccess) {                              \
     char msg[256];                                         \
     snprintf(msg, 256, "%s: %s", amsg, errorStrings[err]); \
-    throw ProsilicaException(msg);                         \
+    throw ProsilicaException(err, msg);                    \
   }                                                        \
 } while (false)
 
@@ -114,7 +114,7 @@ uint64_t getGuid(size_t i)
 {
   assert(i < MAX_CAMERA_LIST);
   if (i >= cameraNum)
-    throw ProsilicaException("No camera at index i");
+    throw ProsilicaException(ePvErrBadParameter, "No camera at index i");
   return cameraList[i].UniqueId;
 }
 
@@ -126,7 +126,8 @@ static void openCamera(boost::function<tPvErr (tPvCameraInfo*)> info_fn,
   CHECK_ERR( info_fn(&info), "Unable to find requested camera" );
 
   if (!(info.PermittedAccess & ePvAccessMaster))
-    throw ProsilicaException("Unable to open camera as master. "
+    throw ProsilicaException(ePvErrAccessDenied,
+                             "Unable to open camera as master. "
                              "Another process is already using it.");
   
   CHECK_ERR( open_fn(ePvAccessMaster), "Unable to open requested camera" );
@@ -284,7 +285,7 @@ tPvFrame* Camera::grab(unsigned long timeout_ms)
     // FIXME: this is a hack, it seems that re-commanding the software trigger
     // too quickly may cause the Prosilica driver to complain that the sequence
     // of API calls is incorrect.
-    boost::this_thread::sleep(boost::posix_time::millisec(200));
+    boost::this_thread::sleep(boost::posix_time::millisec(400));
   }
   
   return NULL;
