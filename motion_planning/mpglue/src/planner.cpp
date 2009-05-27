@@ -32,6 +32,8 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
+using namespace std;
+
 #include <mpglue/planner.h>
 #include <mpglue/costmap.h>
 #include <sfl/util/strutil.hpp>
