@@ -255,12 +255,12 @@ int main( int argc, char** argv )
 				}
 				else
 				{
-                    const int img_width = 2450;
-                    int img_height = img->height*img_width/img->width;
-                    IplImage* _img = cvCreateImage(cvSize(img_width, img_height), IPL_DEPTH_8U, 3);
-                    cvResize(img, _img);
-                    cvReleaseImage(&img);
-                    img = _img;
+                    //const int img_width = 2450;
+                    //int img_height = img->height*img_width/img->width;
+                    //IplImage* _img = cvCreateImage(cvSize(img_width, img_height), IPL_DEPTH_8U, 3);
+                    //cvResize(img, _img);
+                    //cvReleaseImage(&img);
+                    //img = _img;
                     
 					int ret = detect_outlet_tuple(img, CameraMatrix, 0, outlets, outlet_template_t(), 0, 0);
 
@@ -421,6 +421,13 @@ int main( int argc, char** argv )
 				outletcenters[i].x/=(counter*2);
 				outletcenters[i].y/=(counter*2);
 			}
+
+            printf("Relative centers:\n");
+            for (int i = 0; i < 4; ++i)
+            {
+              printf("\t(%.5f, %.5f)\n", outletcenters[i].x - outletcenters[0].x,
+                     outletcenters[i].y - outletcenters[0].y);
+            }
 
 			outlet_template_t* templ = new outlet_template_t(4,outletcenters);
 			if (OUTLETS_COORDINATES_PATH)

@@ -10,13 +10,14 @@
     <param name="target_roi_size" type="int" value="400"/>
 
     <!-- Plug checkerboard -->
+    
     <param name="square_size" type="double" value="0.0042"/>
     <param name="board_width" type="int" value="4"/>
     <param name="board_height" type="int" value="5"/>
-
+    
     <!-- Calibration checkerboard -->
     <!--
-    <param name="square_size" type="double" value="0.0215"/>
+    <param name="square_size" type="double" value="0.0225"/>
     <param name="board_width" type="int" value="6"/>
     <param name="board_height" type="int" value="9"/>
     -->
