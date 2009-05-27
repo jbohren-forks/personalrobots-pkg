@@ -65,6 +65,7 @@
     <param name="brightness_auto" type="bool" value="True" />
     <param name="fps" type="double" value="15.0"/>
     <param name="frame_id" type="string" value="stereo_optical_frame"/>
+    <param name="num_disp" value="128"/>
   </group>
   <node machine="four" pkg="dcam" type="stereodcam" respawn="false"/>
 

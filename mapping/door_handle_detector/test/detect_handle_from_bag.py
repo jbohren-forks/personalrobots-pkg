@@ -60,6 +60,14 @@ class TestDoorHandleDetector(unittest.TestCase):
          # Threshold for agreement between laser and camera detection
          self.epsilon = 0.1
 
+
+     def handle_dist(self, handle_laser, handle_camera):
+         dx = handle_laser.doors[0].handle.x - handle_camera.doors[0].handle.x
+         dy = handle_laser.doors[0].handle.y - handle_camera.doors[0].handle.y
+         dz = handle_laser.doors[0].handle.z - handle_camera.doors[0].handle.z
+         return math.sqrt(dx*dx + dy*dy + dz*dz)
+
+
      def test_door_handle_detector(self):
          rospy.sleep(2.0)
          d = Door()
@@ -74,14 +82,17 @@ class TestDoorHandleDetector(unittest.TestCase):
          print "time ",d.header.stamp
      
          door = self.detect_door_laser(d)
-         handle_laser = self.detect_handle_laser(door.doors[0])
-         handle_camera = self.detect_handle_camera(door.doors[0])    
+         handle_camera = self.detect_handle_camera(door.doors[0])   
 
+         cnt = 0
+
+         dist = self.epsilon + 1
+
+         while cnt<5 and dist>self.epsilon:
+             handle_laser = self.detect_handle_laser(door.doors[0])
+             dist = self.handle_dist(handle_laser,handle_camera)
+             cnt += 1
          # Check handle positions against each other
-         dx = handle_laser.doors[0].handle.x - handle_camera.doors[0].handle.x
-         dy = handle_laser.doors[0].handle.y - handle_camera.doors[0].handle.y
-         dz = handle_laser.doors[0].handle.z - handle_camera.doors[0].handle.z
-         dist = math.sqrt(dx*dx + dy*dy + dz*dz)
 
          print 'Difference between camera and laser: %9.6f'%(dist)
 
@@ -107,16 +118,21 @@ class TestDoorHandleDetector(unittest.TestCase):
         print "Waiting for service...", rospy.resolve_name('handle_detector')
         rospy.wait_for_service('doors_detector')
         print "Service is available"
-        try:
-            print "Getting service proxy"
-            find_handle_laser = rospy.ServiceProxy('handle_detector', DoorsDetector)
-            print "Calling service"
-            door_reply = find_handle_laser(door_request)
-            print "Request finished"
-            print "Handle detected by laser at (%f, %f, %f)"%(door_reply.doors[0].handle.x, door_reply.doors[0].handle.y, door_reply.doors[0].handle.z)
-	    print "Laser frame", door_reply.doors[0].header.frame_id
-            return door_reply
-        except:
+        detected = True
+        for tries in xrange(2):
+            print "Laser detection try: %d"%(tries+1)
+            try:
+                print "Getting service proxy"
+                find_handle_laser = rospy.ServiceProxy('handle_detector', DoorsDetector)
+                print "Calling service"
+                door_reply = find_handle_laser(door_request)
+                print "Request finished"
+                print "Handle detected by laser at (%f, %f, %f)"%(door_reply.doors[0].handle.x, door_reply.doors[0].handle.y, door_reply.doors[0].handle.z)
+                print "Laser frame", door_reply.doors[0].header.frame_id
+                return door_reply
+            except:
+                detected = False
+        if not detected:
             self.fail("handle_detector service call failed")
     
      def detect_handle_camera(self, door_request):

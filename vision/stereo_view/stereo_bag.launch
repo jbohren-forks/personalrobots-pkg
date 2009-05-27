@@ -9,5 +9,6 @@
 
   <node name="stereoproc" pkg="stereo_image_proc" type="stereoproc" respawn="false" />
   <node name="stereo_view" pkg="stereo_view" type="stereo_view_pixel_info" respawn="false" output="screen"/>
+  <node name="stereodcam_params" pkg="dcam" type="stereodcam_params.py" respawn="false" output="screen"/>
 </launch>
 

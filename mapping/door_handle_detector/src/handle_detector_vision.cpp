@@ -75,6 +75,9 @@
 using namespace std;
 
 
+#define ROSCONSOLE_MIN_SEVERITY ROSCONSOLE_SEVERITY_DEBUG
+
+
 template <typename T>
 class IndexedIplImage
 {
@@ -521,84 +524,84 @@ private:
     bool handlePossibleHere(CvRect &r)
     {
 
-        tryShrinkROI(r);
+    	tryShrinkROI(r);
 
-        if (r.width<10 || r.height<10) {
-        	return false;
-        }
+    	if (r.width<10 || r.height<10) {
+    		return false;
+    	}
 
-        cvSetImageROI(disp, r);
-        cvSetImageCOI(disp, 1);
-        int cnt;
-        const float nz_fraction = 0.1;
-        cnt = cvCountNonZero(disp);
-        if (cnt < nz_fraction * r.width * r.height){
-        		cvResetImageROI(disp);
-        		cvSetImageCOI(disp, 0);
-        		return false;
-        }
-        cvResetImageROI(disp);
-        cvSetImageCOI(disp, 0);
-
-
-        // compute least-squares handle plane
-        robot_msgs::PointCloud pc = filterPointCloud(r);
-        CvScalar plane = estimatePlaneLS(pc);
-
-        cnt = 0;
-        double sum = 0;
-        double max_dist = 0;
-        for(size_t i = 0;i < pc.pts.size();++i){
-            robot_msgs::Point32 p = pc.pts[i];
-            double dist = fabs(plane.val[0] * p.x + plane.val[1] * p.y + plane.val[2] * p.z + plane.val[3]);
-            max_dist = max(max_dist, dist);
-            sum += dist;
-            cnt++;
-        }
-        sum /= cnt;
-        if(max_dist > 0.1 || sum < 0.002){
-	  ROS_DEBUG("Not enough depth variation for handle candidate: %f, %f\n", max_dist, sum);
-	  return false;
-        }
-
-        double dx, dy;
-        robot_msgs::Point p;
-        getROIDimensions(r, dx, dy, p);
-        if(dx > 0.25 || dy > 0.15){
-	  ROS_DEBUG("Too big, discarding");
-	  return false;
-        }
+    	cvSetImageROI(disp, r);
+    	cvSetImageCOI(disp, 1);
+    	int cnt;
+    	const float nz_fraction = 0.1;
+    	cnt = cvCountNonZero(disp);
+    	if (cnt < nz_fraction * r.width * r.height){
+    		cvResetImageROI(disp);
+    		cvSetImageCOI(disp, 0);
+    		return false;
+    	}
+    	cvResetImageROI(disp);
+    	cvSetImageCOI(disp, 0);
 
 
+    	// compute least-squares handle plane
+    	robot_msgs::PointCloud pc = filterPointCloud(r);
+    	CvScalar plane = estimatePlaneLS(pc);
 
-        robot_msgs::PointStamped pin, pout;
-        pin.header.frame_id = cloud.header.frame_id;
-        pin.header.stamp = cloud.header.stamp;
-        pin.point.x = p.x;
-        pin.point.y = p.y;
-        pin.point.z = p.z;
-        try {
-            tf_->transformPoint("base_footprint", pin, pout);
-        }
-        catch(tf::LookupException & ex){
-            ROS_ERROR("Lookup exception: %s\n", ex.what());
-        }
-        catch(tf::ExtrapolationException & ex){
-            ROS_DEBUG("Extrapolation exception: %s\n", ex.what());
-        }
-        catch(tf::ConnectivityException & ex){
-            ROS_ERROR("Connectivity exception: %s\n", ex.what());
-        }
+    	cnt = 0;
+    	double avg = 0;
+    	double max_dist = 0;
+    	for(size_t i = 0;i < pc.pts.size();++i){
+    		robot_msgs::Point32 p = pc.pts[i];
+    		double dist = fabs(plane.val[0] * p.x + plane.val[1] * p.y + plane.val[2] * p.z + plane.val[3]);
+    		max_dist = max(max_dist, dist);
+    		avg += dist;
+    		cnt++;
+    	}
+    	avg /= cnt;
+    	if(max_dist > 0.1 || avg < 0.001){
+    		ROS_DEBUG("Not enough depth variation for handle candidate: %f, %f\n", max_dist, avg);
+    		return false;
+    	}
 
-        if(pout.point.z > max_height || pout.point.z < min_height){
-        	printf("Height not within admissable range: %f\n", pout.point.z);
-            return false;
-        }
-
-        ROS_DEBUG("Handle at: (%d,%d,%d,%d)", r.x,r.y,r.width, r.height);
+    	double dx, dy;
+    	robot_msgs::Point p;
+    	getROIDimensions(r, dx, dy, p);
+    	if(dx > 0.25 || dy > 0.15){
+    		ROS_DEBUG("Too big, discarding");
+    		return false;
+    	}
 
 
-        return true;
+
+    	robot_msgs::PointStamped pin, pout;
+    	pin.header.frame_id = cloud.header.frame_id;
+    	pin.header.stamp = cloud.header.stamp;
+    	pin.point.x = p.x;
+    	pin.point.y = p.y;
+    	pin.point.z = p.z;
+    	try {
+    		tf_->transformPoint("base_footprint", pin, pout);
+    	}
+    	catch(tf::LookupException & ex){
+    		ROS_ERROR("Lookup exception: %s\n", ex.what());
+    	}
+    	catch(tf::ExtrapolationException & ex){
+    		ROS_DEBUG("Extrapolation exception: %s\n", ex.what());
+    	}
+    	catch(tf::ConnectivityException & ex){
+    		ROS_ERROR("Connectivity exception: %s\n", ex.what());
+    	}
+
+    	if(pout.point.z > max_height || pout.point.z < min_height){
+    		printf("Height not within admissable range: %f\n", pout.point.z);
+    		return false;
+    	}
+
+    	ROS_DEBUG("Handle at: (%d,%d,%d,%d)", r.x,r.y,r.width, r.height);
+
+
+    	return true;
     }
 
     /**
@@ -623,7 +626,7 @@ private:
                 if(handlePossibleHere(*r)){
                     handle_rect.push_back(*r);
                     if(display){
-                        cvRectangle(left, cvPoint(r->x, r->y), cvPoint(r->x + r->width, r->y + r->height), CV_RGB(0, 255, 0));
+                        cvRectangle(left, cvPoint(r->x, r->y), cvPoint(r->x + r->width, r->y + r->height), CV_RGB(255, 255, 0));
                         cvRectangle(disp, cvPoint(r->x, r->y), cvPoint(r->x + r->width, r->y + r->height), CV_RGB(255, 255, 255));
                     }
                 }
