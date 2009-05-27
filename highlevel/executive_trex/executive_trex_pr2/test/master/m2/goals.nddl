@@ -25,5 +25,15 @@ g_39.outlet_id = 39;
 rejectable(m2_goals.Active g_40);
 g_40.outlet_id = 40;
 
+g_39 before g_1;
+g_1 before g_4;
+g_4 before g_6;
+g_6 before g_25;
+g_25 before g_26;
+g_26 before g_40;
+g_40 before g_27;
+g_27 before g_38;
+g_38 before g_40;
+
 
 
