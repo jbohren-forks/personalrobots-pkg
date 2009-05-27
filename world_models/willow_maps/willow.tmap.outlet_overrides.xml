@@ -2,6 +2,14 @@
 
 
 <outlet>
+<id>20</id>
+<approach_point>
+<x>53.54</x>
+<y>7.25</y>
+</approach_point>
+</outlet>
+
+<outlet>
 <id>21</id>
 <approach_point>
 <x>56.12</x>
@@ -10,10 +18,10 @@
 </outlet>
 
 <outlet>
-<id>20</id>
+  <id>26</id>
 <approach_point>
-<x>53.54</x>
-<y>7.25</y>
+<x>14.33</x>
+<y>35.63</y>
 </approach_point>
 </outlet>
 
