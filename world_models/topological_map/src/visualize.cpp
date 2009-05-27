@@ -73,12 +73,14 @@ int main (int argc, char* argv[])
 
   string top_map_file("");
   string door_overrides_file("");
+  string outlet_overrides_file("");
 
   // Declare the supported options.
   po::options_description desc("Allowed options");
   desc.add_options()
     ("help,h", "produce help message")
     ("door_overrides,d", po::value<string>(&door_overrides_file), "Door overrides file")
+    ("outlet_overrides,o", po::value<string>(&outlet_overrides_file), "Outlet overrides file")
     ("topological_map,t", po::value<string>(&top_map_file), "Topological map file");
   
   po::variables_map vm;
@@ -95,6 +97,9 @@ int main (int argc, char* argv[])
 
   if (vm.count("door_overrides")) {
     m3.readDoorApproachOverrides(door_overrides_file);
+  }
+  if (vm.count("outlet_overrides")) {
+    m3.readOutletApproachOverrides(outlet_overrides_file);
   }
 
   ros::init(argc, argv, "topological_map_visualizer"); 
