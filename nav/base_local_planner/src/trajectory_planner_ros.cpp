@@ -289,7 +289,6 @@ namespace base_local_planner {
     double uselessPitch, uselessRoll, yaw, vel_yaw;
     global_pose.getBasis().getEulerZYX(yaw, uselessPitch, uselessRoll);
     robot_vel.getBasis().getEulerZYX(vel_yaw, uselessPitch, uselessRoll);
-    ROS_DEBUG("Moving to desired goal orientation\n");
     cmd_vel.vel.vx = 0;
     cmd_vel.vel.vy = 0;
     double ang_diff = angles::shortest_angular_distance(yaw, goal_th);
@@ -298,6 +297,8 @@ namespace base_local_planner {
     //we still want to lay down the footprint of the robot and check if the action is legal
     bool valid_cmd = tc_->checkTrajectory(global_pose.getOrigin().getX(), global_pose.getOrigin().getY(), yaw, 
         robot_vel.getOrigin().getX(), robot_vel.getOrigin().getY(), vel_yaw, 0.0, 0.0, v_theta_samp);
+
+    ROS_DEBUG("Moving to desired goal orientation, th cmd: %.2f, valid_cmd: %d", v_theta_samp, valid_cmd);
 
     if(valid_cmd){
       cmd_vel.ang_vel.vz = v_theta_samp;
