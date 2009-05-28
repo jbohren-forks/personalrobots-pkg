@@ -35,6 +35,8 @@
 * Author: Eitan Marder-Eppstein
 *********************************************************************/
 #include <nav/move_base.h>
+#include <cstdlib>
+#include <ctime>
 
 using namespace base_local_planner;
 using namespace costmap_2d;
@@ -46,7 +48,7 @@ namespace nav {
     Action<robot_msgs::PoseStamped, robot_msgs::PoseStamped>(ros_node.getName()), ros_node_(ros_node), tf_(tf),
     run_planner_(true), tc_(NULL), planner_costmap_ros_(NULL), controller_costmap_ros_(NULL), 
     planner_(NULL), valid_plan_(false), new_plan_(false), attempted_rotation_(false), attempted_costmap_reset_(false),
-    done_half_rotation_(false), done_full_rotation_(false) {
+    done_half_rotation_(false), done_full_rotation_(false), escaping_(false) {
 
     //get some parameters that will be global to the move base node
     ros_node_.param("~navfn/robot_base_frame", robot_base_frame_, std::string("base_link"));
@@ -238,6 +240,35 @@ namespace nav {
     lock_.unlock();
   }
 
+  bool MoveBase::escape(double escape_dist, unsigned int max_attempts, const robot_msgs::PoseStamped& robot_pose){
+    ROS_DEBUG("Attempting to generate an escape goal %.2f meters away", escape_dist);
+    unsigned int attempts = 0;
+    ros::Rate r(controller_frequency_);
+    robot_msgs::PoseStamped goal_pose = robot_pose;
+    srand(time(0));
+    valid_plan_ = false;
+    while(!valid_plan_ && attempts < max_attempts){
+      double angle = 2 * M_PI * rand() / RAND_MAX;
+      double x_diff = escape_dist * cos(angle);
+      double y_diff = escape_dist * sin(angle);
+      goal_pose = robot_pose;
+      goal_pose.pose.position.x += x_diff;
+      goal_pose.pose.position.y += y_diff;
+      makePlan(goal_pose);
+      attempts++;
+      r.sleep();
+    }
+
+    if(valid_plan_){
+      ROS_DEBUG("Attempting to escape to point (%.2f, %.2f)", goal_pose.pose.position.x, goal_pose.pose.position.y);
+      return true;
+    }
+
+    ROS_INFO("Could not find a valid escape point");
+    return false;
+  }
+
+
   void MoveBase::getRobotPose(std::string frame, tf::Stamped<tf::Pose>& pose){
     tf::Stamped<tf::Pose> robot_pose;
     robot_pose.setIdentity();
@@ -321,6 +352,7 @@ namespace nav {
         std::vector<Observation> observations;
         controller_costmap_ros_->getMarkingObservations(observations);
         valid_control = tc_->computeVelocityCommands(cmd_vel, observations);
+        ROS_DEBUG("Velocity commands produced by controller: vx: %.2f, vy: %.2f, vth: %.2f", cmd_vel.vel.vx, cmd_vel.vel.vy, cmd_vel.ang_vel.vz);
 
         if(valid_control)
           last_valid_control_ = ros::Time::now();
@@ -335,6 +367,10 @@ namespace nav {
             else{
               done_half_rotation_ = true;
             }
+          }
+          else if(escaping_){
+            resetState();
+            valid_control = false;
           }
           else
             return robot_actions::SUCCESS;
@@ -362,6 +398,7 @@ namespace nav {
         ros::Duration patience = ros::Duration(controller_patience_);
 
         //if we have a valid plan, but can't find a valid control for a certain time... abort
+        ROS_DEBUG("Last valid control was %.2f seconds ago", (ros::Time::now() - last_valid_control_).toSec());
         if(last_valid_control_ + patience < ros::Time::now()){
           if(attempted_rotation_){
             ROS_INFO("Attempting aggresive reset of costmaps because we can't rotate");
@@ -371,8 +408,20 @@ namespace nav {
           }
           else{
             resetState();
-            ROS_WARN("move_base aborting because the controller could not find valid velocity commands for over %.4f seconds", patience.toSec());
-            return robot_actions::ABORTED;
+            if(escaping_){
+              ROS_WARN("move_base aborting because the controller could not find valid velocity commands for over %.4f seconds", patience.toSec());
+              return robot_actions::ABORTED;
+            }
+            else{
+              escaping_ = escape(0.20, 100, feedback);
+              if(!escaping_){
+                ROS_WARN("move_base aborting because the controller could not find valid velocity commands for over %.4f seconds", patience.toSec());
+                return robot_actions::ABORTED;
+              }
+              last_valid_control_ = ros::Time::now();
+              r.sleep();
+              continue;
+            }
           }
         }
 
@@ -381,8 +430,20 @@ namespace nav {
           //if we've tried to reset our map and to rotate in place, to no avail, we'll abort the goal
           if(attempted_costmap_reset_ && done_full_rotation_){
             resetState();
-            ROS_WARN("move_base aborting because the planner could not find a valid plan, even after reseting the map and attempting in place rotation");
-            return robot_actions::ABORTED;
+            if(escaping_){
+              ROS_WARN("move_base aborting because the planner could not find a valid plan, even after reseting the map and attempting in place rotation");
+              return robot_actions::ABORTED;
+            }
+            else{
+              escaping_ = escape(0.20, 100, feedback);
+              if(!escaping_){
+                ROS_WARN("move_base aborting because the planner could not find a valid plan, even after reseting the map and attempting in place rotation");
+                return robot_actions::ABORTED;
+              }
+              last_valid_control_ = ros::Time::now();
+              r.sleep();
+              continue;
+            }
           }
 
           if(done_full_rotation_){
@@ -449,6 +510,7 @@ namespace nav {
     done_half_rotation_ = false;
     done_full_rotation_ = false;
     attempted_costmap_reset_ = false;
+    escaping_ = false;
   }
 
   bool MoveBase::tryPlan(robot_msgs::PoseStamped goal){
