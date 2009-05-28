@@ -1381,7 +1381,7 @@ TopologicalMap::MapImpl::TemporaryRoadmapNode::TemporaryRoadmapNode (Topological
   transform(connector_descs.begin(), connector_descs.end(), connector_ids.begin(), getId);
   transform(connector_descs.begin(), connector_descs.end(), connector_cells.begin(), getCell);
 
-  vector<ReachableCost> costs = m->grid_graph_->singleSourceCosts(cell, connector_cells);
+  // vector<ReachableCost> costs = m->grid_graph_->singleSourceCosts(cell, connector_cells);
 
   for (uint i=0; i<connector_ids.size(); ++i) {
     Point2D p2 = m->connectorPosition(connector_ids[i]);
