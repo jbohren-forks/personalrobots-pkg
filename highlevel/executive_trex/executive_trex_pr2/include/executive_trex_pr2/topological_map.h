@@ -6,6 +6,7 @@
 #ifndef EXECUTIVE_TREX_PR2_TOPOLOGICAL_MAP_H_
 #define EXECUTIVE_TREX_PR2_TOPOLOGICAL_MAP_H_
 
+#include "XMLUtils.hh"
 #include "ConstraintEngineDefs.hh"
 #include "Variable.hh"
 #include "ConstrainedVariable.hh"
@@ -13,10 +14,11 @@
 #include "Constraints.hh"
 #include "Constraint.hh"
 #include "Domains.hh"
-#include "executive_trex_pr2/logger.h"
 #include "FlawFilter.hh"
 #include "UnboundVariableDecisionPoint.hh"
+#include "GoalManager.hh"
 #include <topological_map/topological_map.h>
+#include <executive_trex_pr2/logger.h>
 #include <door_msgs/Door.h>
 #include <robot_msgs/Pose.h>
 
@@ -25,6 +27,13 @@ using namespace TREX;
 
 namespace executive_trex_pr2 {
   
+  class TopologicalGoalManager: public TREX::GoalManager {
+  public:
+    TopologicalGoalManager(const TiXmlElement& configData);
+
+    virtual double computeDistance(const Position& p1, const Position& p2);
+  };
+
   class TopologicalMapAdapter;
 
   /**

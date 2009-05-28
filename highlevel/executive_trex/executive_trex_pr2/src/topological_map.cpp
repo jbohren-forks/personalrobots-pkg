@@ -1,12 +1,6 @@
 /**
  * @author Conor McGann
  */
-#include <executive_trex_pr2/topological_map.h>
-#include <executive_trex_pr2/components.h>
-#include <ros/console.h>
-#include <tf/transform_datatypes.h>
-#include <kdl/frames.hpp>
-#include <kdl/frames_io.hpp>
 #include "ConstrainedVariable.hh"
 #include "Utilities.hh"
 #include "Token.hh"
@@ -16,8 +10,21 @@
 using namespace EUROPA;
 using namespace TREX;
 
+#include <executive_trex_pr2/topological_map.h>
+#include <executive_trex_pr2/components.h>
+#include <ros/console.h>
+#include <tf/transform_datatypes.h>
+#include <kdl/frames.hpp>
+#include <kdl/frames_io.hpp>
+
 namespace executive_trex_pr2 {
 
+  TopologicalGoalManager::TopologicalGoalManager(const TiXmlElement& configData) : GoalManager(configData){}
+
+  double TopologicalGoalManager::computeDistance(const Position& p1, const Position& p2){
+    checkError(TopologicalMapAdapter::instance() != NULL, "Failed to allocate topological map accessor. Some configuration error.");
+    return TopologicalMapAdapter::instance()->cost(p1.x, p1.y, p2.x, p2.y);
+  }
 
   //*******************************************************************************************
   MapGetNearestConnectorConstraint::MapGetNearestConnectorConstraint(const LabelStr& name,
@@ -830,22 +837,15 @@ TopologicalMapAdapter::TopologicalMapAdapter(std::istream& in, const std::string
   }
 
 
-  double TopologicalMapAdapter::cost(double from_x, double from_y, double to_x, double to_y){
+  double TopologicalMapAdapter::cost(double x1, double y1, double x2, double y2){
+    topological_map::Point2D p1(x1, y1);
+    topological_map::Point2D p2(x2, y2);
+    topological_map::ReachableCost cost = _map->distanceBetween(p1, p2);
 
-    // Obtain the distance point to point
-    return sqrt(pow(from_x - to_x, 2) + pow(from_y - to_y, 2));
+    if(cost.first)
+      return cost.second;
 
-    /*
-    std::pair<bool, double> result = _map->distanceBetween(topological_map::Point2D(from_x, from_y), topological_map::Point2D(to_x, to_y));
-
-    // If there is no path then return infinint
-    if(!result.first)
-      return PLUS_INFINITY;
-
-
-    // Otherwise we return the euclidean distance between source and target
-    return result.second;
-    */
+    return PLUS_INFINITY;
   }
 
   double TopologicalMapAdapter::cost(double from_x, double from_y, unsigned int connector_id){

@@ -415,6 +415,7 @@ namespace TREX{
       EUROPA::SOLVERS::ComponentFactoryMgr* cfm = (EUROPA::SOLVERS::ComponentFactoryMgr*)assembly.getComponent("ComponentFactoryMgr");
       REGISTER_FLAW_FILTER(cfm, executive_trex_pr2::MapConnectorFilter, MapConnectorFilter);
       REGISTER_FLAW_HANDLER(cfm, executive_trex_pr2::MapConnectorSelector, MapConnectorSelector);
+      REGISTER_FLAW_MANAGER(cfm, executive_trex_pr2::TopologicalGoalManager, TopologicalGoalManager);
     }
 
   private:
