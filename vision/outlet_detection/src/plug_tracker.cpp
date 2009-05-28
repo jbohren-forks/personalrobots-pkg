@@ -63,7 +63,8 @@ PlugTracker::PlugTracker(ros::Node &node)
   //plug_in_board_.setRotation(tf::Quaternion(0.71428, -0.69958, 0.00588, 0.01906));
 
   // Measured with caliper
-  //plug_in_board_.setOrigin(tf::Vector3(0.007, -0.029, 0.008)); // to tip
+  prong_in_board_.setOrigin(tf::Vector3(0.007, -0.029, 0.008)); // to tip
+  prong_in_board_.setRotation(tf::Quaternion(0.71428, -0.69958, 0.00588, 0.01906));
   plug_in_board_.setOrigin(tf::Vector3(0.007, -0.0085, 0.015));
   plug_in_board_.setRotation(tf::Quaternion(0.71428, -0.69958, 0.00588, 0.01906));
 
@@ -308,5 +309,9 @@ void PlugTracker::publishPlugRayMarker(const tf::Transform &board_in_cam,
   tf::PointTFToMsg(board_in_cam.getOrigin(), marker.points[0]);
   tf::PointTFToMsg(plug_pose.getOrigin(), marker.points[1]);
 
+  node_.publish("visualization_marker", marker);
+
+  marker.id = 3;
+  tf::PointTFToMsg((board_in_cam * prong_in_board_).getOrigin(), marker.points[1]);
   node_.publish("visualization_marker", marker);
 }
