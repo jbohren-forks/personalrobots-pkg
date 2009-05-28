@@ -23,7 +23,7 @@
   <depend package="robot_pose_ekf"/>
   <depend package="runtime_monitor"/>
   <depend package="sound_play"/>
-
+  <depend package="joint_calibration_monitor" />
   <!-- For testing -->
   <depend package="std_msgs"/>
 </package>

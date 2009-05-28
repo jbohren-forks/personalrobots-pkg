@@ -73,6 +73,9 @@
 <!-- Runtime Diagnostics Logging -->
   <node pkg="rosrecord" type="rosrecord" args="-f /hwlog/prf_runtime_automatic /diagnostics" />
 
+<!-- Joint Calibration Monitor -->
+  <node pkg="joint_calibration_monitor" type="pr2_calibration_monitor_node.py" machine="two" />
+
 <!-- NTP monitoring script Warns to console if sync error -->
   <node pkg="runtime_monitor" type="ntp_monitor.py" args="prf2" machine="realtime"/>
   <node pkg="runtime_monitor" type="ntp_monitor.py" args="fw1 7000" machine="two"/> 
