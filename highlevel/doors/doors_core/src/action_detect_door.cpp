@@ -84,9 +84,15 @@ robot_actions::ResultStatus DetectDoorAction::execute(const door_msgs::Door& goa
     }
   }
 
-  ROS_INFO("DetectDoorAction: Succeeded");
-  feedback = result_laser;
-  return robot_actions::SUCCESS;
+  if (getDoorDir(result_laser) < 0){
+    ROS_ERROR("Detected door that opens towards robot");
+    return robot_actions::ABORTED;
+  }
+  else{
+    ROS_INFO("DetectDoorAction: Succeeded");
+    feedback = result_laser;
+    return robot_actions::SUCCESS;
+  }
 }
 
 bool DetectDoorAction::laserDetection(const door_msgs::Door& door_in, door_msgs::Door& door_out)
