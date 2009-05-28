@@ -112,6 +112,61 @@ namespace nav {
     //TODO:spawn planning thread here?
   }
 
+  void MoveBase::clearCostmapWindows(double size_x, double size_y){
+    tf::Stamped<tf::Pose> global_pose;
+
+    //clear the planner's costmap
+    getRobotPose(planner_costmap_ros_->globalFrame(), global_pose);
+
+    std::vector<robot_msgs::Point> clear_poly;
+    double x = global_pose.getOrigin().x();
+    double y = global_pose.getOrigin().y();
+    robot_msgs::Point pt;
+
+    pt.x = x - size_x / 2;
+    pt.y = y - size_x / 2;
+    clear_poly.push_back(pt);
+
+    pt.x = x + size_x / 2;
+    pt.y = y - size_x / 2;
+    clear_poly.push_back(pt);
+
+    pt.x = x + size_x / 2;
+    pt.y = y + size_x / 2;
+    clear_poly.push_back(pt);
+
+    pt.x = x - size_x / 2;
+    pt.y = y + size_x / 2;
+    clear_poly.push_back(pt);
+
+    planner_costmap_ros_->setConvexPolygonCost(clear_poly, costmap_2d::FREE_SPACE);
+
+    //clear the controller's costmap
+    getRobotPose(controller_costmap_ros_->globalFrame(), global_pose);
+
+    clear_poly.clear();
+    x = global_pose.getOrigin().x();
+    y = global_pose.getOrigin().y();
+
+    pt.x = x - size_x / 2;
+    pt.y = y - size_x / 2;
+    clear_poly.push_back(pt);
+
+    pt.x = x + size_x / 2;
+    pt.y = y - size_x / 2;
+    clear_poly.push_back(pt);
+
+    pt.x = x + size_x / 2;
+    pt.y = y + size_x / 2;
+    clear_poly.push_back(pt);
+
+    pt.x = x - size_x / 2;
+    pt.y = y + size_x / 2;
+    clear_poly.push_back(pt);
+
+    controller_costmap_ros_->setConvexPolygonCost(clear_poly, costmap_2d::FREE_SPACE);
+  }
+
   bool MoveBase::planService(nav_srvs::Plan::Request &req, nav_srvs::Plan::Response &resp){
     if(isActive()){
       ROS_ERROR("move_base must be in an inactive state to make a plan for an external user");
@@ -292,6 +347,9 @@ namespace nav {
   }
 
   robot_actions::ResultStatus MoveBase::execute(const robot_msgs::PoseStamped& goal, robot_msgs::PoseStamped& feedback){
+    //on activation... we'll reset our costmaps
+    clearCostmapWindows(2 * circumscribed_radius_ , 2 * circumscribed_radius_);
+
     //publish the goal point to the visualizer
     publishGoal(goal);
 

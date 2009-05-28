@@ -114,6 +114,8 @@ namespace nav {
        */
       void resetCostmaps(double size_x, double size_y);
 
+      void clearCostmapWindows(double size_x, double size_y);
+
       void resetState();
 
       bool tryPlan(robot_msgs::PoseStamped goal);

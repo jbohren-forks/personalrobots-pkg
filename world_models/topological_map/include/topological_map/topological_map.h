@@ -66,6 +66,7 @@ typedef set<RegionId> RegionIdSet;
 typedef pair<RegionId, RegionId> RegionPair;
 typedef unsigned int OutletId;
 typedef set<OutletId> OutletIdSet;
+typedef pair<bool, double> ReachableCost;
 
 
 typedef boost::multi_array<bool, 2> OccupancyGrid;
