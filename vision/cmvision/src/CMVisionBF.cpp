@@ -52,8 +52,11 @@ CMVisionBF::CMVisionBF(ros::Node *_node)
   // Get the level of debug output
   this->node->param("/cmvision/debug_on",this->debugOn,true);
 
+  // Turn color calibration on or off
+  this->node->param("/cmvision/color_cal_on",this->colorCalOn,false);
+
   // Mean shift stuff
-  this->node->param("/cmvision/do_mean_shift", this->doMeanShift, false);
+  this->node->param("/cmvision/mean_shift_on", this->meanShiftOn, false);
   this->node->param("/cmvision/spatial_radius_pix", this->spatialRadius, 2.0);
   this->node->param("/cmvision/color_radius_pix", this->colorRadius, 40.0);
 
@@ -62,6 +65,9 @@ CMVisionBF::CMVisionBF(ros::Node *_node)
 
   // Advertise our blobs
   this->node->advertise("blobs",this->blobMessage, 1);
+
+  if (this->colorCalOn)
+    this->colorCal = new color_calib::Calibration(this->node);
 
   if (this->debugOn)
     cvNamedWindow("Image");
@@ -129,8 +135,21 @@ void CMVisionBF::imageCB()
 
   }
 
-  // Smooth the image
-  if (this->doMeanShift) 
+  // Perform color calibration if turned on
+  if (this->colorCalOn)
+  {
+    if ( this->colorCal->getFromParam("stereo/left/image_rect_color"))
+    {
+      this->colorCal->correctColor(cvImage, cvImage, true, true, COLOR_CAL_BGR);
+    }
+    else
+    {
+      ROS_DEBUG_STREAM_NAMED("cmvision","Color calibration not available");
+    }
+  }
+
+  // Smooth the image, if turned on
+  if (this->meanShiftOn) 
   {
     cvPyrMeanShiftFiltering( cvImage, cvImage, this->spatialRadius, 
                              this->colorRadius );

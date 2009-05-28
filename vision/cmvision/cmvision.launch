@@ -7,8 +7,11 @@
   <!-- Turn debug output on or off -->
   <param name="cmvision/debug_on" type="bool" value="true"/>
 
+  <!-- Turn color calibration on or off -->
+  <param name="cmvision/color_cal_on" type="bool" value="false"/>
+
   <!-- Enable Mean shift filtering -->
-  <param name="cmvision/do_mean_shift" type="bool" value="true"/>
+  <param name="cmvision/mean_shift_on" type="bool" value="false"/>
 
   <!-- Spatial bandwidth: Bigger = smoother image -->
   <param name="cmvision/spatial_radius_pix" type="double" value="2.0"/>

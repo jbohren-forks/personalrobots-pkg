@@ -32,6 +32,7 @@
 #include "opencv_latest/CvBridge.h"
 
 #include "cmvision/Blobs.h"
+#include "color_calib.h"
 #include "conversions.h"
 #include "cmvision.h"
 #include "capture.h"
@@ -74,9 +75,12 @@ namespace color_blob_track
 
     private: cmvision::Blobs blobMessage;
 
+    private: bool meanShiftOn;
     private: double spatialRadius;
     private: double colorRadius;
-    private: bool doMeanShift;
+
+    private: bool colorCalOn;
+    private: color_calib::Calibration *colorCal;
   };
   
 }
