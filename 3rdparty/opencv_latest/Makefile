@@ -8,6 +8,8 @@ SVN_URL = https://opencvlibrary.svn.sourceforge.net/svnroot/opencvlibrary/tags/l
 #SVN_PATCH = calibration.patch
 include $(shell rospack find mk)/svn_checkout.mk
 
+
+
 CMAKE = cmake 
 CMAKE_ARGS = -D CMAKE_BUILD_TYPE=RELEASE \
              -D CMAKE_INSTALL_PREFIX=$(PWD)/$(INSTALL_DIR) \
