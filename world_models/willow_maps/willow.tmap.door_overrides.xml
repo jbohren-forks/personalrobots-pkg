@@ -3,8 +3,8 @@
 <door>
   <id>9</id>
 <approach_point>
-<x>9</x>
-<y>3.5</y>
+<x>9.29</x>
+<y>3.49</y>
 </approach_point>
 </door>
 
@@ -78,10 +78,10 @@
 
 
 <door>
-  <id>104</id>
+  <id>105</id>
 <approach_point>
-<x>12.3</x>
-<y>37.0</y>
+<x>11.68</x>
+<y>37.19</y>
 </approach_point>
 </door>
 
