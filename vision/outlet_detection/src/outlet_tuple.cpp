@@ -216,7 +216,7 @@ int find_start_idx3(const vector<outlet_elem_t>& helper_vec)
 		}
 	}
 	
-	// should not get past this point
+	// this is not a tuple
 	return -1;
 	
 }
@@ -249,6 +249,10 @@ int order_tuple2(vector<outlet_elem_t>& tuple)
 	int start_idx = find_start_idx(helper_vec);
 #else
 	int start_idx = find_start_idx3(tuple);
+    if(start_idx < 0)
+    {
+        return 0;
+    }
 #endif
 	
 	ordered = tuple;
@@ -418,7 +422,14 @@ int find_outlet_centroids(IplImage* img, outlet_tuple_t& outlet_tuple, const cha
             for(int i = 0; i < 4; i++)
             {
                 tuple[i].seq = close_seq(tuple[i].seq, storage, 10, binary);
+                if(tuple[i].seq == 0)
+                {
+                    found_tuple = 0;
+                    break;
+                }
             }
+            
+            if(found_tuple == 0) break;
             // draw the mask
             if(outlet_tuple.tuple_mask)
             {
@@ -531,7 +542,12 @@ int find_tuple(vector<outlet_elem_t>& candidates, CvPoint2D32f* centers)
 	if(candidates.size() == 4)
 	{
 		// we've got a tuple!
-		order_tuple2(candidates);
+		int ret = order_tuple2(candidates);
+        if(ret == 0)
+        {
+            return 0;
+        }
+        
 		for(int i = 0; i < 4; i++) 
 		{
 			centers[i] = candidates[i].center;
