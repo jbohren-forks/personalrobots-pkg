@@ -1,0 +1,16 @@
+<launch>
+
+     <node pkg="annotated_planar_patch_map" type="annotated_map_assembler_srv" 
+     	   name="annotated_map" respawn="false" output="screen">
+
+	   <remap from="scan_in" to="/poly_object_map"/>
+	   <param name="fixed_frame" value="odom"/>
+	   <param name="tf_tolerance_secs" value="0.0"/>
+	   <param name="tf_cache_time_secs" value="500.0"/>
+     </node>	   
+
+
+
+
+
+</launch>

@@ -1,0 +1,35 @@
+<launch>
+
+
+
+
+     <node pkg="annotated_planar_patch_map" type="annotated_map_query_snapshotter"  name="am_snapshotter_q1" respawn="false" output="screen">
+     <remap from="query_annotated_map" to="/annotated_map/query_map" />
+     <remap from="full_map" to="/labeled_maps/door" />
+
+     <param name="query" value="door"/>
+     </node>
+
+     <node pkg="annotated_planar_patch_map" type="annotated_map_query_snapshotter"  name="am_snapshotter_q2" respawn="false" output="screen">
+     <remap from="query_annotated_map" to="/annotated_map/query_map" />
+     <remap from="full_map" to="/labeled_maps/floor" />
+
+     <param name="query" value="floor"/>
+     </node>
+
+     <node pkg="annotated_planar_patch_map" type="annotated_map_query_snapshotter"  name="am_snapshotter_q3" respawn="false" output="screen">
+     <remap from="query_annotated_map" to="/annotated_map/query_map" />
+     <remap from="full_map" to="/labeled_maps/wall" />
+
+     <param name="query" value="wall"/>
+     </node>
+
+     <node pkg="annotated_planar_patch_map" type="annotated_map_query_snapshotter"  name="am_snapshotter_q4" respawn="false" output="screen">
+     <remap from="query_annotated_map" to="/annotated_map/query_map" />
+     <remap from="full_map" to="/labeled_maps/outlet" />
+
+     <param name="query" value="outlet"/>
+     </node>
+
+
+</launch>

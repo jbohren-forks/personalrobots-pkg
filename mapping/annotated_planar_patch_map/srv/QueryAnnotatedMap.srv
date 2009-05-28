@@ -1,0 +1,5 @@
+string query
+time begin
+time end
+---
+annotated_map_msgs/TaggedPolygonalMap map

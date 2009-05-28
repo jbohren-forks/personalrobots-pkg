@@ -1,0 +1,24 @@
+<package>
+  <description>
+    A node which lifts annotations to 3D, collects annotated polygons, stores them as a map and provides data access service.
+  </description>
+
+  <author>Alex Sorokin</author>
+  <license>BSD</license>
+  <url>http://pr.willowgarage.com</url>
+  <review status="experimental" notes="beta"/>
+
+  <depend package="roscpp" />
+  <depend package="std_msgs"/>
+  <depend package="robot_msgs" />
+  <depend package="image_msgs" />
+  <depend package="point_cloud_mapping" />
+  <depend package="cv_mech_turk" />
+
+  <depend package="annotated_map_msgs"/>
+
+  <export>
+    <cpp cflags="-I${prefix}/srv/cpp -I${prefix}/include" />
+  </export>
+
+</package>
