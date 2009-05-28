@@ -620,6 +620,25 @@ namespace costmap_2d {
     }
   }
 
+  bool Costmap2DROS::setConvexPolygonCost(const std::vector<robot_msgs::Point>& polygon, unsigned char cost_value){
+    costmap_->lock();
+    bool success = costmap_->setConvexPolygonCost(polygon, costmap_2d::FREE_SPACE);
+    costmap_->unlock();
+
+    //make sure to take our active sensor data into account
+    updateMap();
+
+    return success;
+  }
+
+  std::string Costmap2DROS::globalFrame(){
+    return global_frame_;
+  }
+
+  std::string Costmap2DROS::baseFrame(){
+    return robot_base_frame_;
+  }
+
   void Costmap2DROS::clearRobotFootprint(const tf::Stamped<tf::Pose>& global_pose){
     //make sure we have a legal footprint
     if(footprint_spec_.size() < 3)

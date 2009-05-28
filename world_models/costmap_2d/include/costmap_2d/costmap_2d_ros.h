@@ -153,6 +153,14 @@ namespace costmap_2d {
       void clearRobotFootprint(const tf::Stamped<tf::Pose>& global_pose);
 
       /**
+       * @brief  Set a region in the costmap specified by a convex polygon to a cost
+       * @param polygon The polygon affected
+       * @param cost_value The cost to apply
+       * @return True if the operation was successful, false otherwise
+       */
+      bool setConvexPolygonCost(const std::vector<robot_msgs::Point>& polygon, unsigned char cost_value);
+
+      /**
        * @brief  Reset to the static map outside of a window around the robot specified by the user
        * @param size_x The x size of the window to keep unchanged 
        * @param size_y The y size of the window to keep unchanged 
@@ -195,6 +203,18 @@ namespace costmap_2d {
        * @return The resolution of the costmap in meters
        */
       double resolution();
+
+      /**
+       * @brief  Returns the global frame of the costmap
+       * @return The global frame of the costmap
+       */
+      std::string globalFrame();
+
+      /**
+       * @brief  Returns the local frame of the costmap
+       * @return The local frame of the costmap
+       */
+      std::string baseFrame();
 
       /**
        * @brief  Check if the observation buffers for the cost map are current
