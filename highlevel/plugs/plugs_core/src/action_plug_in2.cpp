@@ -67,7 +67,7 @@ void PoseMsgToTF(const robot_msgs::Twist &t, tf::Pose &p)
 
 
 PlugInAction::PlugInAction(ros::Node& node) :
-  robot_actions::Action<std_msgs::Empty, std_msgs::Empty>("plug_in"),
+  robot_actions::Action<std_msgs::Int32, std_msgs::Empty>("plug_in"),
   action_name_("plug_in"),
   node_(node),
   arm_controller_("r_arm_hybrid_controller")
@@ -99,8 +99,9 @@ PlugInAction::~PlugInAction()
 {
 };
 
-robot_actions::ResultStatus PlugInAction::execute(const std_msgs::Empty& empty, std_msgs::Empty& feedback)
+robot_actions::ResultStatus PlugInAction::execute(const std_msgs::Int32& outlet_id, std_msgs::Empty& feedback)
 {
+  std_msgs::Empty empty;
   reset();
 
   enum {APPROACHING, FIRST_TOUCH, SPIRALING, FORCING} state = APPROACHING;
