@@ -188,6 +188,10 @@ DoorController::Holds {
 	  contains_start(check_path.Active cmd);
 	  concurrent(cmd.end, end);
 	  eq_pose_msg(cmd.object, dm_active.object);
+
+	  contains_start(set_laser_tilt.Active cmd_set_laser_tilt);
+	  eq(cmd_set_laser_tilt.status, SUCCESS);
+	  cmd_set_laser_tilt before cmd;
 	}
 	else {
 	  contains_start(safety_tuck_arms.Active cmd);

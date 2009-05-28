@@ -51,7 +51,7 @@ namespace TREX {
 	// Update marker to prevent overwrite
 	lastUpdated = getCurrentTick();
 
-	TREX_INFO("ros:debug:synchronization", nameString() << "Received transition to " << LabelStr(getResultStatus(_observation).getSingletonValue()).toString())
+	TREX_INFO("ros:debug:synchronization", nameString() << "Received transition to " << LabelStr(getResultStatus(_observation).getSingletonValue()).toString());
 	ROS_DEBUG("%sReceived transition to %s",  nameString().c_str(), LabelStr(getResultStatus(_observation).getSingletonValue()).c_str());
 
 	_observation.unlock();
@@ -107,6 +107,11 @@ namespace TREX {
       TREX_INFO("ros:debug:synchronization", nameString() << "First call - before checking flag. " <<
 		"Last updated at " << lastUpdated << " and last published " <<  lastPublished);
 
+      if(isActive() && isTimedOut()){
+	preempt();
+	return NULL;
+      }
+
       // Nothing to do if we published for the last update
       if(((int) lastUpdated) == lastPublished)
 	return NULL;
@@ -149,10 +154,6 @@ namespace TREX {
       _observation.unlock();
 
       lastPublished = lastUpdated;
-
-      if(isActive() && isTimedOut()){
-	preempt();
-      }
 
       return obs;
     }
@@ -237,9 +238,15 @@ namespace TREX {
 
       // Get the max_duration bound and update accordingly
       ConstrainedVariableId max_duration = goal->parameters()[MAX_DURATION_INDEX];
-      checkError(max_duration.isValid() && max_duration->getName() == MAX_DURATION_LABEL, goal->toLongString());
-      checkError(max_duration->lastDomain().getUpperBound() >= 0, max_duration->toLongString());
+      ROS_ASSERT(max_duration.isValid() && max_duration->getName() == MAX_DURATION_LABEL);
+      ROS_ASSERT(max_duration->lastDomain().getUpperBound() >= 0);
+
       _max_duration.fromSec(max_duration->getUpperBound());
+
+      condDebugMsg(max_duration->lastDomain().getUpperBound() == PLUS_INFINITY,
+		   "ros:debug:dispatching",  "Setting time limit to " << "+inf");
+      condDebugMsg(max_duration->lastDomain().getUpperBound() < PLUS_INFINITY,
+		   "ros:debug:dispatching",  "Setting time limit to " <<  max_duration->lastDomain().getUpperBound());
     }
 
     /**
