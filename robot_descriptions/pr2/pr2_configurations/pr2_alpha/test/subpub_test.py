@@ -44,10 +44,12 @@ from std_msgs.msg import String
 class TestBasicLocalization(unittest.TestCase):
 
   def setUp(self):
-    self.expected_names = sys.argv[1:-1]
+    argv = rospy.myargv()
+    self.expected_names = [a for a in argv[1:] if a[0] != '-']
     self.received = False
     rospy.Subscriber('success', String, self.callback)
     rospy.init_node('subpub_test', anonymous=True)
+    rospy.logerr("Expected: %s"%(self.expected_names))
 
   def callback(self, name):
     for i in range(0,len(self.expected_names)):
@@ -56,6 +58,8 @@ class TestBasicLocalization(unittest.TestCase):
         break
     if len(self.expected_names) == 0:
       self.received = True
+
+    rospy.logerr("Still expecting: %s"%(self.expected_names))
 
   def test_remote_pr2(self):
     while not self.received:

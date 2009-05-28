@@ -42,8 +42,9 @@ from std_msgs.msg import String
 class SubPub():
 
   def __init__(self):
-    self.name = sys.argv[1]
-    self.expected_names = sys.argv[1:]
+    argv = rospy.myargv()
+    self.name = argv[1]
+    self.expected_names = argv[1:]
     self.received = False
     self.pub = rospy.Publisher('subpub', String)
     self.pub_success = rospy.Publisher('success', String)
