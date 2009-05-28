@@ -18,7 +18,7 @@ OutletTracker::OutletTracker(ros::Node &node)
 OutletTracker::~OutletTracker()
 {
 }
-  
+
 bool OutletTracker::detectObject(tf::Transform &pose)
 {
   if (!img_bridge_.fromImage(img_, "bgr")) {
@@ -30,6 +30,21 @@ bool OutletTracker::detectObject(tf::Transform &pose)
   outlets_.clear();
   if (!detect_outlet_tuple(image, K_, NULL, outlets_))
     return false;
+
+  // TODO: do this in library code instead
+  // Project ground hole to image coordinates
+  for (int i = 0; i < 4; ++i) {
+    CvMat object_points = cvMat(1, 1, CV_32FC3, &outlets_[i].coord_hole_ground.x);
+    float zeros[] = {0, 0, 0};
+    CvMat rotation_vector = cvMat(3, 1, CV_32FC1, zeros);
+    CvMat translation_vector = cvMat(3, 1, CV_32FC1, zeros);
+    float point[2] = {0.0f, 0.0f};
+    CvMat image_points = cvMat(1, 1, CV_32FC2, point);
+    cvProjectPoints2(&object_points, &rotation_vector, &translation_vector,
+                     K_, NULL, &image_points);
+    outlets_[i].ground_hole.x = (int)(point[0] + 0.5f);
+    outlets_[i].ground_hole.y = (int)(point[1] + 0.5f);
+  }
 
   // Change data representation and coordinate frame
   btVector3 holes[12];

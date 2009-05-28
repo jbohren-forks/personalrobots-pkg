@@ -1579,6 +1579,7 @@ void draw_outlets(IplImage* temp, const vector<outlet_t>& outlets)
 	{
 		cvCircle(temp, it->hole1, 3, CV_RGB(255, 0, 0), CV_FILLED);
 		cvCircle(temp, it->hole2, 3, CV_RGB(255, 0, 0), CV_FILLED);
+        cvCircle(temp, it->ground_hole, 3, CV_RGB(255, 0, 0), CV_FILLED);
 		cvLine(temp, it->hole1, it->hole2, CV_RGB(0, 0, 255), 2);
 		CvRect orect = outlet_rect(*it);
 		cvRectangle(temp, orect, CV_RGB(0, 255, 0), 2);
