@@ -18,8 +18,8 @@
   <!-- hztest to make sure images are coming out -->
   <test test-name="hztest" pkg="rostest" type="hztest" name="scan_test">
     <param name="topic" value="/forearm/image_raw" />  
-    <param name="hz" value="15" />
-    <param name="hzerror" value="5" />
+    <param name="hz" value="10" />
+    <param name="hzerror" value="5.5" />
     <param name="test_duration" value="3.0" />
     <!--param name="check_intervals" value="true" /-->    
   </test>
