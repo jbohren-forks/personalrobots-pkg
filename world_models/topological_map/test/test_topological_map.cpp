@@ -31,6 +31,7 @@
 #include "topological_map/exception.h"
 #include <iostream>
 #include <sstream>
+#include <cmath>
 #include <gtest/gtest.h>
 
 using namespace topological_map;
@@ -258,8 +259,8 @@ TEST(TopologicalMap, Creation)
 
   tie(path_found, d4) = m2.distanceBetween(Point2D(1.1,.2), pos);
   EXPECT_TRUE(path_found);
-  EXPECT_EQ(d,d3+d4);
-  EXPECT_EQ(d2,d4);
+  EXPECT_TRUE(abs(d-d3-d4)<.01);
+  EXPECT_TRUE(abs(d2-d4)<.01);
 
   typedef pair<ConnectorId, double> ConnectorCost;
   vector<ConnectorCost> costs=m2.connectorCosts(Point2D(.1,.1), Point2D(1,1));

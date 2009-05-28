@@ -1372,7 +1372,7 @@ TopologicalMap::MapImpl::TemporaryRoadmapNode::TemporaryRoadmapNode (Topological
   ROS_DEBUG_STREAM_NAMED ("temp_node", "Adding temporary node " << id << " at cell " << cell << " in region " << r);
 
   // When computing distances, we need to separate this region from the rest of the graph
-  RegionIsolator i(m->grid_graph_.get(), *(m->regionCells(r)));
+  // RegionIsolator i(m->grid_graph_.get(), *(m->regionCells(r)));
 
   vector<ConnectorDesc> connector_descs = m->adjacentConnectorCells(r);
 
@@ -1384,11 +1384,13 @@ TopologicalMap::MapImpl::TemporaryRoadmapNode::TemporaryRoadmapNode (Topological
   vector<ReachableCost> costs = m->grid_graph_->singleSourceCosts(cell, connector_cells);
 
   for (uint i=0; i<connector_ids.size(); ++i) {
-    if (costs[i].first) {
-      double cost=m->resolution_*costs[i].second;
-      ROS_DEBUG_STREAM_NAMED ("temp_node", "Connecting to " << connector_ids[i] << " with cost " << cost);
-      m->roadmap_->setCost(id, connector_ids[i], cost);
-    }
+    Point2D p2 = m->connectorPosition(connector_ids[i]);
+    m->roadmap_->setCost(id, connector_ids[i], sqrt(pow(p2.x-p.x,2)+pow(p2.y-p.y,2)));
+//     if (costs[i].first) {
+//       double cost=m->resolution_*costs[i].second;
+//       ROS_DEBUG_STREAM_NAMED ("temp_node", "Connecting to " << connector_ids[i] << " with cost " << cost);
+//       m->roadmap_->setCost(id, connector_ids[i], cost);
+//     }
   }
 }
 
