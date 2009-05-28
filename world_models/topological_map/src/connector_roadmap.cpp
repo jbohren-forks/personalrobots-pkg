@@ -182,33 +182,25 @@ ConnectorCosts Roadmap::connectorCosts (const ConnectorId i, const ConnectorId j
 pair<bool, double> Roadmap::costBetween (const ConnectorId i, const ConnectorId j)
 {
   ROS_DEBUG_STREAM_NAMED ("roadmap_shortest_path", "Looking for shortest path between roadmap nodes " << i << " and " << j);
-  ConnectorPair connector_pair(i<j ? i : j, i<j ? j : i);
   
-  if (distance_cache_.find(connector_pair)==distance_cache_.end()) {
-    const RoadmapVertex v = idVertex(i);
-    const RoadmapVertex w = idVertex(j);
+  const RoadmapVertex v = idVertex(i);
+  const RoadmapVertex w = idVertex(j);
 
-    resetIndices();
-    DistanceMap distances;
-    PredecessorMap predecessors; // We shouldn't actually need this, but adding it removes a warning about boost/dijkstra_shortest_paths.hpp...
+  resetIndices();
+  DistanceMap distances;
+  PredecessorMap predecessors; // We shouldn't actually need this, but adding it removes a warning about boost/dijkstra_shortest_paths.hpp...
 
-    dijkstra_shortest_paths(graph_, v, weight_map(get(&EdgeInfo::cost, graph_)).
-                            vertex_index_map(get(&NodeInfo::index, graph_)).
-                            distance_map(DistancePmap(distances)).visitor(DijkstraVisitor()).
-                            predecessor_map(PredecessorPmap(predecessors)));
-    if (distances.find(w)==distances.end()) {
-      ROS_DEBUG_NAMED ("roadmap_shortest_path", "Path not found");
-      return pair<bool, double>(false, -1);
-    }
-    else {
-      ROS_DEBUG_STREAM_NAMED ("roadmap_shortest_path", "Path found with length " << distances[w]);
-      distance_cache_[connector_pair] = distances[w];
-      return pair<bool, double>(true, distances[w]);
-    }
+  dijkstra_shortest_paths(graph_, v, weight_map(get(&EdgeInfo::cost, graph_)).
+                          vertex_index_map(get(&NodeInfo::index, graph_)).
+                          distance_map(DistancePmap(distances)).visitor(DijkstraVisitor()).
+                          predecessor_map(PredecessorPmap(predecessors)));
+  if (distances.find(w)==distances.end()) {
+    ROS_DEBUG_NAMED ("roadmap_shortest_path", "Path not found");
+    return pair<bool, double>(false, -1);
   }
   else {
-    ROS_DEBUG_STREAM_NAMED ("roadmap_shortest_path", "Cached distance between " << i << " and " << j << " is " << distance_cache_[connector_pair]);
-    return pair<bool, double>(true, distance_cache_[connector_pair]);
+    ROS_DEBUG_STREAM_NAMED ("roadmap_shortest_path", "Path found with length " << distances[w]);
+    return pair<bool, double>(true, distances[w]);
   }
 }
 

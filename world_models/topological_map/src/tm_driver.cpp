@@ -119,6 +119,7 @@ int main (int argc, char* argv[])
   m->writePpm(str2);
   m->connectorCosts(Point2D(1,1), Point2D(10,10));
 
+
   m->addOutlet(OutletInfo(1,2,3,4,5,6,7,8, "green"));
   m->addOutlet(OutletInfo(4,7,9,3,3.5,12,7.253,1, "blue"));
   m->readOutletApproachOverrides("/u/bhaskara/ros/ros-pkg/world_models/willow_maps/outlet_overrides.xml");
@@ -152,8 +153,19 @@ int main (int argc, char* argv[])
   cout << endl;
 
 
+
+
   p1 = Point2D(51.53,22.3875);
   p2 = Point2D(55.93, 9.68);
+  
+  Point2D p3 = Point2D(12.7, 22.5);
+
+  m3.distanceBetween(p1, p3);
+
+
+  m3.distanceBetween(p1, p3);
+
+
   path = m3.shortestConnectorPath(p1, p2);
   cout << " Path between " << p1 << " and " << p2 << ": ";
   foreach (ConnectorId connector, path) {

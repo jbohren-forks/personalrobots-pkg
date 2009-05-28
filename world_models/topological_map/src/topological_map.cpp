@@ -80,6 +80,7 @@ using std::min;
 using std::stringstream;
 using std::max;
 using std::queue;
+using std::pair;
 using ros::Time;
 using tf::Transform;
 using tf::Vector3;
@@ -102,11 +103,6 @@ ostream& operator<< (ostream& str, const Point2D& p)
 {
   str << "(" << p.x << ", " << p.y << ")";
   return str;
-}
-
-bool operator== (const Point2D& p1, const Point2D& p2)
-{
-  return (p1.x==p2.x) && (p1.y==p2.y);
 }
 
 uint numRows(const OccupancyGrid& grid)
@@ -1290,9 +1286,23 @@ ReachableCost TopologicalMap::MapImpl::goalDistance (ConnectorId id) const
 
 ReachableCost TopologicalMap::MapImpl::getDistance (const Point2D& p1, const Point2D& p2)
 {
-  TemporaryRoadmapNode start(this, p1);
-  TemporaryRoadmapNode goal(this, p2);
-  return roadmap_->costBetween(start.id, goal.id);
+  pair<Point2D, Point2D> pair(p1 < p2 ? p1 : p2, p1 < p2 ? p2 : p1);
+  if (roadmap_distance_cache_.find(pair)==roadmap_distance_cache_.end()) {
+
+    TemporaryRoadmapNode start(this, p1);
+    TemporaryRoadmapNode goal(this, p2);
+    ReachableCost rcost = roadmap_->costBetween(start.id, goal.id);
+    double cost = rcost.second;
+    ROS_DEBUG_STREAM_NAMED ("roadmap_shortest_path", "Adding roadmap distance cache entry " << p1 << " " << p2 << " " << cost);
+    roadmap_distance_cache_[pair] = cost;
+    return rcost;
+  }
+  else {
+    double cached_cost = roadmap_distance_cache_[pair];
+    ROS_DEBUG_STREAM_NAMED ("roadmap_shortest_path", "Using cached roadmap cost " << cached_cost);
+    return ReachableCost(true, cached_cost);
+  }
+                            
 }
 
 vector<pair<ConnectorId, double> > TopologicalMap::MapImpl::connectorCosts (const Point2D& p1, const Point2D& p2)

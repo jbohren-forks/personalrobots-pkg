@@ -86,7 +86,23 @@ struct Point2D
   double x,y;
 };
 
-bool operator== (const Point2D& p1, const Point2D& p2);
+
+
+inline 
+int operator< (const Point2D& p, const Point2D& p2)
+{
+  return (p.x<p2.x) || ((p.x==p2.x) && (p.y<p2.y));
+}
+
+
+inline
+bool operator== (const Point2D& p, const Point2D& p2)
+{
+  return (p.x==p2.x) && (p.y==p2.y);
+}
+
+
+
 ostream& operator<< (ostream& str, const Point2D& p);
 
 Point2D cellCorner (const Cell2D& cell, double resolution);

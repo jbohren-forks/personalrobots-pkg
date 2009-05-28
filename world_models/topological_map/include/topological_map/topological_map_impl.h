@@ -303,6 +303,7 @@ private:
 
   map<OutletId, Point2D> outlet_approach_overrides_;
   map<ConnectorId, Point2D> door_approach_overrides_;
+  map<pair<Point2D, Point2D>, double> roadmap_distance_cache_;
 };
 
 
