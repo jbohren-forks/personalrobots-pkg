@@ -187,7 +187,7 @@ IplImage* calc_tuple_distance_map(IplImage* tuple_mask);
 //	rotation_vector, translation_vector: vectors for mapping from an outlet coordinate system into 
 //		a camera coordinate system. Are calculated by calc_camera_pose(...).
 int calc_outlet_coords(vector<outlet_t>& outlets, CvMat* map_matrix, CvPoint3D32f origin, CvPoint2D32f scale,
-	CvMat* rotation_vector, CvMat* translation_vector);
+	CvMat* rotation_vector, CvMat* translation_vector, CvMat* inv_map_matrix = 0);
 
 
 void calc_outlet_dist_stat(const vector<outlet_t>& outlets, float& mean, float& stddev);

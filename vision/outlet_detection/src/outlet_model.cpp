@@ -1739,7 +1739,7 @@ CvPoint3D32f map_point(CvPoint3D32f point, CvMat* rotation_mat, CvMat* translati
 }
 
 int calc_outlet_coords(vector<outlet_t>& outlets, CvMat* map_matrix, CvPoint3D32f origin, CvPoint2D32f scale, 
-	CvMat* rotation_vector, CvMat* translation_vector)
+	CvMat* rotation_vector, CvMat* translation_vector, CvMat* inv_map_matrix)
 {	
 	// create rotation matrix
 	CvMat* rotation_mat = cvCreateMat(3, 3, CV_32FC1);
@@ -1764,6 +1764,15 @@ int calc_outlet_coords(vector<outlet_t>& outlets, CvMat* map_matrix, CvPoint3D32
 		it->coord_hole_ground = cvPoint3D32f((it->coord_hole1.x + it->coord_hole2.x)*0.5f,
 											 (it->coord_hole1.y + it->coord_hole2.y)*0.5f - ground_hole_offset,
 											 0.0f);
+        
+        if(inv_map_matrix)
+        {
+            // update ground hole image coordinates
+            src->data.fl[0] = it->coord_hole_ground.x;
+            src->data.fl[1] = it->coord_hole_ground.y;
+            cvPerspectiveTransform(src, dst, inv_map_matrix);
+            it->ground_hole = cvPoint(floor(dst->data.fl[0]), floor(dst->data.fl[1]));
+        }
 		
 		it->coord_hole1 = map_point(it->coord_hole1, rotation_mat, translation_vector);
 		it->coord_hole2 = map_point(it->coord_hole2, rotation_mat, translation_vector);
