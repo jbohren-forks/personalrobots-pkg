@@ -1,5 +1,12 @@
 <outlet_approach_overrides>
 
+<outlet>
+<id>16</id>
+<approach_point>
+<x>33.0</x>
+<y>38.5</y>
+</approach_point>
+</outlet>
 
 <outlet>
 <id>20</id>
