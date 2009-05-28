@@ -178,6 +178,14 @@ robot_actions::ResultStatus PlugInAction::execute(const std_msgs::Int32& outlet_
       }
       else
       {
+        tf::Pose target = mech_pose_desi;
+        const double MAX = 0.02;
+        tf::Vector3 v = target.getOrigin() - mech_offset_from_viz_.getOrigin();
+        if (v.length() > MAX) {
+          target.setOrigin(mech_offset_from_viz_.getOrigin() + MAX * v / v.length());
+        }
+
+
         // Move
         manipulation_msgs::TaskFrameFormalism tff_msg;
         tff_msg.header.frame_id = COMMAND_FRAME;
@@ -188,7 +196,7 @@ robot_actions::ResultStatus PlugInAction::execute(const std_msgs::Int32& outlet_
         tff_msg.mode.rot.x = 3;
         tff_msg.mode.rot.y = 3;
         tff_msg.mode.rot.z = 3;
-        PoseTFToMsg(mech_pose_desi, tff_msg.value);
+        PoseTFToMsg(target, tff_msg.value);
         node_.publish(arm_controller_ + "/command", tff_msg);
         ros::Duration(1.0).sleep(); // Settle
       }
@@ -198,12 +206,58 @@ robot_actions::ResultStatus PlugInAction::execute(const std_msgs::Int32& outlet_
 
     case FIRST_TOUCH: {
 
+      const double WAIT = 1.0; // seconds
+      const double SPEED = 0.005;
 
+      tf::Pose desi = outlet_pose;
+      manipulation_msgs::TaskFrameFormalism tff_msg;
+      tff_msg.header.frame_id = COMMAND_FRAME;
+      tff_msg.header.stamp = ros::Time::now() - ros::Duration(0.1);
+      tff_msg.mode.vel.x = 2;
+      tff_msg.mode.vel.y = 3;
+      tff_msg.mode.vel.z = 3;
+      tff_msg.mode.rot.x = 3;
+      tff_msg.mode.rot.y = 3;
+      tff_msg.mode.rot.z = 3;
+      PoseTFToMsg(desi, tff_msg.value);
+      tff_msg.value.vel.x = SPEED;
+      node_.publish(arm_controller_ + "/command", tff_msg);
+
+      ros::Time touching_started = ros::Time::now();
+      double last_x = -99999999999.0;
+      while (true)
+      {
+        {
+          ros::Duration(WAIT).sleep();
+          boost::mutex::scoped_lock(from_c_lock_);
+          const double diff = 0.1 * (WAIT * SPEED);
+          if (pose_from_mech_.getOrigin().x() <= last_x + diff)
+          {
+            ros::Duration(1.0).sleep();
+            ROS_INFO("Finished FIRST_TOUCH because %.4lf is not further than %.4lf by %.4lf",
+                     pose_from_mech_.getOrigin().x(), last_x, diff);
+            last_x = std::max(pose_from_mech_.getOrigin().x(), last_x) + 0.001;
+            break;
+          }
+          else if (ros::Time::now() - touching_started > ros::Duration(60.0))
+          {
+            ROS_ERROR("Aborting: Never seemed to touch the outlet");
+            deactivate(robot_actions::ABORTED, empty_);
+            break;
+          }
+          last_x = pose_from_mech_.getOrigin().x();
+        }
+      }
+
+      if (!isActive())
+        break;
+
+      ros::Duration(1.0).sleep(); // Settle
 
       spiral_r = 0.0001;
       spiral_t = 0.0;
       //last_push_x = 999999;
-      last_push_x = outlet_pose.getOrigin().x();
+      last_push_x = last_x;
       state = SPIRALING;
       break;
     }
@@ -238,6 +292,10 @@ robot_actions::ResultStatus PlugInAction::execute(const std_msgs::Int32& outlet_
       tff_msg.header.stamp = ros::Time::now() - ros::Duration(0.1);
       //tff_msg.value.vel.x = outlet_pose.getOrigin().x();
       tff_msg.value.vel.x = last_push_x + 0.03;
+
+      //tff_msg.mode.vel.x = 2;
+      //tff_msg.value.vel.x = 0.1;
+
       node_.publish(arm_controller_ + "/command", tff_msg);
       ros::Duration(1.0).sleep(); // Settle
 
@@ -271,9 +329,51 @@ robot_actions::ResultStatus PlugInAction::execute(const std_msgs::Int32& outlet_
 
     case FORCING: {
       ROS_ERROR("FORCING!!!");
-      ros::Duration(2.0).sleep();
+      ros::Duration(0.2).sleep();
 
-      deactivate(robot_actions::SUCCESS, empty_);
+      ros::Time started_forcing = ros::Time::now();
+
+      tf::Pose orig_mech_pose;
+      {
+        boost::mutex::scoped_lock lock(from_c_lock_);
+        orig_mech_pose = pose_from_mech_;
+      }
+
+      tff_msg_.mode.vel.x = 1;
+      tff_msg_.mode.vel.y = 3;
+      tff_msg_.mode.vel.z = 3;
+      tff_msg_.mode.rot.x = 3;
+      tff_msg_.mode.rot.y = 3;
+      tff_msg_.mode.rot.z = 3;
+      tff_msg_.value.vel.x = 30;
+      tff_msg_.value.vel.y = orig_mech_pose.getOrigin().y();
+      tff_msg_.value.vel.z = orig_mech_pose.getOrigin().z();
+      orig_mech_pose.getBasis().getEulerZYX(tff_msg_.value.rot.z, tff_msg_.value.rot.y, tff_msg_.value.rot.x);
+
+      node_.publish(arm_controller_ + "/command", tff_msg_);
+
+      double base_roll = tff_msg_.value.rot.x;
+      double base_pitch = tff_msg_.value.rot.y;
+      while (ros::Time::now() - started_forcing < ros::Duration(5.0))
+      {
+        tff_msg_.value.rot.x = base_roll + 0.1 * (2.0*drand48()-1.0);
+        tff_msg_.value.rot.y = base_pitch + 0.03 * (2.0*drand48()-1.0);
+        node_.publish(arm_controller_ + "/command", tff_msg_);
+        ros::Duration(0.010).sleep();
+      }
+
+
+      if (true)
+      {
+        boost::mutex::scoped_lock(from_c_lock_);
+        ROS_INFO("Forcing successful: %.3lf, %.3lf", pose_from_mech_.getOrigin().x(), last_push_x);
+        deactivate(robot_actions::SUCCESS, empty_);
+      }
+      else
+      {
+        ROS_ERROR("Forcing failed to get us in");
+        deactivate(robot_actions::ABORTED, empty_);
+      }
 
       break;
     }
