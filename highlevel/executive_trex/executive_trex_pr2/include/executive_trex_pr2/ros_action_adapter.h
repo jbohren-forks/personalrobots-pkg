@@ -109,7 +109,6 @@ namespace TREX {
 
       if(isActive() && isTimedOut()){
 	preempt();
-	return NULL;
       }
 
       // Nothing to do if we published for the last update

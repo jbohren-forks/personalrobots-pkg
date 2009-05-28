@@ -53,6 +53,7 @@ rospack_add_nddl("test/master/m2/pr2.master.nddl")
 rospack_add_nddl("test/master/m2/no_plugs/pr2.rcs.sim.plugs.nddl")
 rospack_add_nddl("test/master/m2/no_plugs/pr2.recharger.nddl")
 rospack_add_nddl("test/master/m2/no_plugs/no_arms/pr2.mechanism_control.nddl")
+rospack_add_nddl("test/master/m2/no_arms/pr2.mechanism_control.nddl")
 
 set(TREX_FILES src/executive.cpp
 	       src/monitor.cpp
