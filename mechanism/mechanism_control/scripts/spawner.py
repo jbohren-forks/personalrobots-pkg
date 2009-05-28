@@ -67,7 +67,8 @@ def shutdown(sig, stackframe):
         prev_handler(signal.SIGINT,None)
 
 if __name__ == '__main__':
-    if len(sys.argv) < 2:
+    argv = rospy.myargv()
+    if len(argv) < 2:
         print_usage()
     rospy.init_node('spawner', anonymous=True)
 
@@ -77,8 +78,8 @@ if __name__ == '__main__':
     prev_handler = signal.getsignal(signal.SIGINT)
     signal.signal(signal.SIGINT, shutdown)
 
-    for c in range(1,len(sys.argv)):
-        f = open(sys.argv[c])
+    for c in range(1,len(argv)):
+        f = open(argv[c])
         xml = f.read()
         f.close()
         resp = spawn_controller(xml)
