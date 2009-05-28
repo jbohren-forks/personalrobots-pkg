@@ -214,6 +214,7 @@ RechargeController::Holds {
 		if (in_position == true) {
 		  contains_start(detect_outlet_fine.Active cmd);
 		  concurrent(cmd.end, end);
+		  eq(cmd.max_duration, 15); // 15 seconds max
 		}
 
 		// not in position: move
