@@ -157,7 +157,7 @@ RechargeController::Holds {
 	eq(s.arms_clear, false);
 	eq(cmd.outlet_id, rc_active.outlet_id);
 	// DURATION Bound Should go away! There is no recovery
-	eq(cmd.max_duration, 20);
+	eq(cmd.max_duration, 60);
       }
 
       // not ready to plug in
