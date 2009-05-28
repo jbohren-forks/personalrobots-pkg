@@ -76,6 +76,7 @@ typedef graph_traits<RoadmapImpl>::vertex_iterator VertexIterator;
 typedef map<ConnectorId, RoadmapVertex> ConnectorIdVertexMap;
 typedef pair<ConnectorId, double> ConnectorCost;
 typedef vector<ConnectorCost> ConnectorCosts;
+typedef pair<ConnectorId, ConnectorId> ConnectorPair;
 
 typedef vector<ConnectorId> ConnectorIdVector;
 
@@ -117,6 +118,7 @@ private:
   ConnectorId next_id_;
   ConnectorIdVertexMap id_vertex_map_;
   RoadmapImpl graph_;
+  map<ConnectorPair, double> distance_cache_;
 
 };
 
