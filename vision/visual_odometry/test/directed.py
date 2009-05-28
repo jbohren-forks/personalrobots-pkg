@@ -339,9 +339,6 @@ class TestDirected(unittest.TestCase):
   def test_stereo(self):
     fd = FeatureDetectorStar(300)
     ds = DescriptorSchemeSAD()
-    cam = camera.VidereCamera(open("wallcal.ini").read())
-    #lf = Image.open("wallcal-L.bmp").convert("L")
-    #rf = Image.open("wallcal-R.bmp").convert("L")
     for offset in [ 1, 10, 10.25, 10.5, 10.75, 11, 63]:
       lf = Image.open("snap.png").convert("L")
       rf = Image.open("snap.png").convert("L")
@@ -350,8 +347,8 @@ class TestDirected(unittest.TestCase):
       rf = rf.resize((640,480), Image.ANTIALIAS)
       for gradient in [ False, True ]:
         af = SparseStereoFrame(lf, rf, gradient, feature_detector = fd, descriptor_scheme = ds)
-        vo = VisualOdometer(cam)
-        error = offset - sum([d for (x,y,d) in af.features()]) / len(af.features())
+        kp = [ (x,y,d) for (x,y,d) in af.features() if (x > 64) ]
+        error = offset - sum([d for (x,y,d) in kp]) / len(kp)
         self.assert_(abs(error) < 0.5) 
 
     if 0:
@@ -400,5 +397,5 @@ if __name__ == '__main__':
     rostest.unitrun('visual_odometry', 'directed', TestDirected)
   else:
     suite = unittest.TestSuite()
-    suite.addTest(TestDirected('test_pe'))
+    suite.addTest(TestDirected('test_stereo'))
     unittest.TextTestRunner(verbosity=2).run(suite)
