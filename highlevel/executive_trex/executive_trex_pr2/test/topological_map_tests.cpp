@@ -5,13 +5,13 @@
  * int NDDL and TREX
  * @author Conor McGann
  */
+#include "Assembly.hh"
 
 #include <ros/console.h>
 #include <door_msgs/Door.h>
 #include <executive_trex_pr2/topological_map.h>
 #include <set>
 #include <gtest/gtest.h>
-#include "Assembly.hh"
 
 using namespace executive_trex_pr2;
 using namespace TREX;
