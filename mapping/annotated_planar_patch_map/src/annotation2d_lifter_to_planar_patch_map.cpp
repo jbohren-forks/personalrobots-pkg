@@ -117,14 +117,14 @@ class Annotation2DLifterToPlanarPatchMap : public ros::Node
     //Project the 3D map into the image coordinates
     projectPolygonalMap(stereo_info_,transformed_map_3D,transformed_map_2D);
 
-
+    /*
     ROS_DEBUG("Print annotations");    
     printAnnotations2D(annotation2d_object_);
     ROS_DEBUG("Print transformed 3D map");
     printPolygon3D(transformed_map_3D,"map3D");
     ROS_DEBUG("Print transformed 2D map");
     printPolygon3D(transformed_map_2D,"map2D");
-
+    */
     ROS_DEBUG("Bind map");    
     //Bind 2D annotations to the projected 3D map and lift the annotations into 3D
     bindAnnotationsToMap(annotation2d_object_,transformed_map_3D_fixed_frame,transformed_map_2D,polymapOut);
@@ -186,11 +186,11 @@ class Annotation2DLifterToPlanarPatchMap : public ros::Node
 	  projection[6]*pt.y()+
 	  projection[10]*pt.z()+
 	  projection[14]*1;
-	double s=
+	/*double s=
 	  projection[3]*pt.x()+
 	  projection[7]*pt.y()+
 	  projection[11]*pt.z()+
-	  projection[15]*1;
+	  projection[15]*1;*/
 
 	robot_msgs::Point32 &new_pt=polyOut.points[iPt];
 	new_pt.x= projected_pt.x;
@@ -229,7 +229,7 @@ class Annotation2DLifterToPlanarPatchMap : public ros::Node
 	//CvSeq* poly_annotation = cvCreateSeq( CV_SEQ_KIND_GENERIC|CV_32FC2, 
 	//				      sizeof(CvSeq),
 	//				      sizeof(CvPoint2D32f), storage );
-	printf("%0x\n",(unsigned int)(void*)poly_annotation);
+	//printf("%0x\n",(unsigned int)(void*)poly_annotation);
 
 	for (unsigned int iP=0;iP<pt_count;iP++){
 	  CvPoint2D32f pt;
@@ -357,7 +357,6 @@ class Annotation2DLifterToPlanarPatchMap : public ros::Node
     std::vector<int> overlap;
     overlap.reserve(num_3D_poly);
     
-    int num_overlap=0;
     for(unsigned int iPoly = 0; iPoly<num_3D_poly; iPoly++)
       {
 	//we're checking this one
