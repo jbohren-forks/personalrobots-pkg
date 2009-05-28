@@ -92,7 +92,6 @@ using robot_msgs::Point32;
 namespace topological_map
 {
 
-typedef pair<bool, double> ReachableCost;
 typedef boost::counting_iterator<unsigned int> Counter;
 
 /************************************************************

@@ -47,6 +47,7 @@
 namespace topological_map
 {
 
+
 using std::vector;
 using std::string;
 using std::ostream;
@@ -56,6 +57,7 @@ using std::pair;
 using ros::Time;
 
 
+ typedef std::pair<bool, double> ReachableCost;
 typedef unsigned int RegionId;
 typedef unsigned int ConnectorId;
 typedef vector<RegionId> RegionIdVector;
@@ -233,7 +235,7 @@ public:
   const RegionIdSet& allRegions() const;
 
   /// \return 1) true if there exists a path between these two points 2) the distance (only valid if 1 is true)
-  pair<bool, double> distanceBetween (const Point2D& p1, const Point2D& p2);
+  ReachableCost distanceBetween (const Point2D& p1, const Point2D& p2);
 
   /// \return A vector of pairs.  There's one pair per connector in the containing region of p1, consisting of that connector's id 
   /// and the cost of the best path from p1 to p2 through that id.  The costs will be taken at the time of the most recent door traversal
