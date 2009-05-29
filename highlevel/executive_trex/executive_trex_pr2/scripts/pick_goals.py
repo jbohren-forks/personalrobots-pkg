@@ -30,7 +30,7 @@ def get_goal(current_goals, valid_goals):
       
 #Read in topological map
 
-valid_goals = range(1, 50)
+valid_goals = [1, 4, 6, 16, 20, 21, 25, 26, 27, 38, 39, 40]
 
 #Collect user clicks (for now, just ask user to type in IDs) and validate them
 goals = []
