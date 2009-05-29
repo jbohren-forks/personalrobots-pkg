@@ -52,7 +52,7 @@ double getOffset(int id)
 {
   switch (id)
   {
-  case 0: return 0;
+  case 0: return 1.0;
   case 1: return 0.98948537037195827;
   case 6: return 0.97692542711765129;
   case 39: return 0.98097524550697912;
@@ -172,13 +172,6 @@ void PlugInAction::plugMeasurementCallback(const tf::MessageNotifier<robot_msgs:
   }
   ROS_DEBUG("%s: executing.", action_name_.c_str());
 
-  // Deals with the per-outlet offsets
-  double offset = getOffset(outlet_id_);
-  tf::Pose p;
-  tf::PoseMsgToTF(msg->pose, p);
-  p.getOrigin() *= offset;
-  tf::PoseTFToMsg(p, msg->pose);
-
   tff_msg_.header.stamp = msg->header.stamp;
   // Both are transforms from the outlet to the estimated plug pose
   robot_msgs::PoseStamped viz_offset_msg;
@@ -196,6 +189,11 @@ void PlugInAction::plugMeasurementCallback(const tf::MessageNotifier<robot_msgs:
   tf::Pose viz_offset;
   tf::PoseMsgToTF(viz_offset_msg.pose, viz_offset);
   PoseTFToMsg(viz_offset, state_msg.viz_offset);
+
+  // Deals with the per-outlet offsets
+  double offset = getOffset(outlet_id_);
+  viz_offset.getOrigin() *= offset;
+
   double standoff = std::max(MIN_STANDOFF, viz_offset.getOrigin().length()  * 2.5/4.0);
 
   // Computes the offset for movement
