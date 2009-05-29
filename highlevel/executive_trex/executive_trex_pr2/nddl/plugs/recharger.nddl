@@ -6,6 +6,7 @@ Recharger::Active{
 
   // Initialize control variables
   eq(rc.active, true);
+  eq(rc.ready_to_approach, true);
   eq(rc.in_position, false);
   eq(rc.outlet_detected_coarse, false);
   eq(rc.outlet_detected_fine, false);

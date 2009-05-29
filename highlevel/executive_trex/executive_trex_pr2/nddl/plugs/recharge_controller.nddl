@@ -40,6 +40,7 @@ class RechargeController extends AgentTimeline {
 
   predicate Holds {
     bool active;
+    bool ready_to_approach;
     bool in_position;
     bool outlet_detected_coarse;
     bool outlet_detected_fine;
@@ -70,6 +71,7 @@ rc_initial_state.active = false;
 RechargeController::Holds{
   met_by(Holds p);
   defaultOnCommit(active, p.active);
+  defaultOnCommit(ready_to_approach, p.ready_to_approach);
   defaultOnCommit(in_position, p.in_position);
   defaultOnCommit(outlet_detected_coarse, p.outlet_detected_coarse);
   defaultOnCommit(outlet_detected_fine, p.outlet_detected_fine);
@@ -219,20 +221,32 @@ RechargeController::Holds {
 
 		// not in position: move
 		else {
-		  contains_start(move_base_local.Active cmd);
-		  concurrent(cmd.end, end);
-
-		  // Here we can obtain the outlet state to get parameters from move_base local since
-		  // it should not be done generically at the action level as this is a shared action
-		  starts_during(outlet_state.Holds os);
-		  eq(cmd.frame_id, os.frame_id);
-		  plugs_get_offset_pose(os.x, os.y, os.z, os.qx, os.qy, os.qz, os.qw, 0.6, 
-					cmd.x, cmd.y, cmd.z, cmd.qx, cmd.qy,cmd.qz, cmd.qw);
-
-		  // Laser tilt action must run first.
+		  // We are moving no matter what - so we will need to set the laser tilt
 		  contains_start(set_laser_tilt.Active cmd_set_laser_tilt);
-		  cmd_set_laser_tilt before cmd;
 		  eq(cmd_set_laser_tilt.status, SUCCESS);
+
+		  if(ready_to_approach == true){
+		    contains_start(move_base_local.Active cmd);
+		    concurrent(cmd.end, end);
+
+		    // Here we can obtain the outlet state to get parameters from move_base local since
+		    // it should not be done generically at the action level as this is a shared action
+		    starts_during(outlet_state.Holds os);
+		    eq(cmd.frame_id, os.frame_id);
+		    plugs_get_offset_pose(os.x, os.y, os.z, os.qx, os.qy, os.qz, os.qw, 0.6, 
+					  cmd.x, cmd.y, cmd.z, cmd.qx, cmd.qy,cmd.qz, cmd.qw);
+		    cmd_set_laser_tilt before cmd;
+		  }
+		  // Not ready to approach, so we need to get to the approach point again
+		  else {
+		    contains_start(move_base.Active cmd);
+		    concurrent(cmd.end, end);
+		    cmd_set_laser_tilt before cmd;
+
+		    // Bind pose based on approach pose for the outlet
+		    map_get_outlet_approach_pose(cmd.x, cmd.y, cmd.z, cmd.qx, cmd.qy, cmd.qz, cmd.qw, rc_active.outlet_id);
+		    defaultOnCommit(cmd.frame_id, "map");
+		  }
 		}
 	      }
 
@@ -263,13 +277,20 @@ RechargeController::Holds {
 
 MoveBase::Inactive{
   starts(RechargeController.Holds rc);
-  if(status == SUCCESS){
-    eq(rc.in_position, true);
+  
+  if(object == move_base_local){
+    if(status == SUCCESS){
+      eq(rc.in_position, true);
+    }
+    else {
+      eq(rc.ready_to_approach, false);
+    }
   }
-  else {
-    // Might as well try again here. If we want to actually
-    // change the transition model we could jump back with restowing the plug
-    //eq(rc.finishing, true);
+  
+  if(object == move_base){
+    if(status == SUCCESS){
+      eq(rc.ready_to_approach, true);
+    }
   }
 }
 
