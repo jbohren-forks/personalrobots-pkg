@@ -1,41 +1,12 @@
-/**
- * This file should be auto generated. The checked in version indicates a sample. There are 10 goals. Each is defined by an outlet_id which must be a valid
- * key in the topological map. No ordering is required. A shortes path tour is used based on euclidean distance. 
+/*
+ *Auto-generated goals file, created at Fri May 29 01:08:00 2009
  */
+
+rejectable(m2_goals.Active g_0);
+g_0.outlet_id = 6;
 rejectable(m2_goals.Active g_1);
 g_1.outlet_id = 1;
-rejectable(m2_goals.Active g_4);
-g_4.outlet_id = 4;
-rejectable(m2_goals.Active g_6);
-g_6.outlet_id = 6;
-rejectable(m2_goals.Active g_20);
-g_20.outlet_id = 20;
-rejectable(m2_goals.Active g_21);
-g_21.outlet_id = 21;
-//rejectable(m2_goals.Active g_25);
-//g_25.outlet_id = 25;
-rejectable(m2_goals.Active g_26);
-g_26.outlet_id = 26;
-rejectable(m2_goals.Active g_27);
-g_27.outlet_id = 27;
-rejectable(m2_goals.Active g_38);
-g_38.outlet_id = 38;
-rejectable(m2_goals.Active g_39);
-g_39.outlet_id = 39;
-rejectable(m2_goals.Active g_40);
-g_40.outlet_id = 40;
-
-/*
-g_39 before g_1;
-g_1 before g_4;
-g_4 before g_6;
-g_6 before g_25;
-g_25 before g_26;
-g_26 before g_40;
-g_40 before g_27;
-g_27 before g_38;
-g_38 before g_20;
-g_20 before g_21;
-*/
-
-
+rejectable(m2_goals.Active g_2);
+g_2.outlet_id = 4;
+rejectable(m2_goals.Active g_3);
+g_3.outlet_id = 39;
