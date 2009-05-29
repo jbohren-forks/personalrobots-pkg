@@ -109,6 +109,18 @@ M2Goals::Active{
 }
 
 /**
+ * If a goal aborts then we should regenerate it for later
+ */
+M2Goals::Inactive{
+  if(status == ABORTED){
+    met_by(Active p);
+    before (Active g);
+    eq(g.outlet_id, p.outlet_id);
+    eq_pose_msg(g.object, p.object);
+  }
+}
+
+/**
  * The loop for master level control. It uses the doorman, driver and recharger. 
  */
 M2Controller::Holds{

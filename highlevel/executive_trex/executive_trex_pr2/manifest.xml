@@ -22,6 +22,7 @@
 
   <export>
     <nddl iflags="-I${prefix}/nddl -I${prefix}/deprecated -I${prefix}"/>
+    <cpp cflags="-I${prefix}/srv/cpp"/>
   </export>
 
   <rosdep name="jam"/>
