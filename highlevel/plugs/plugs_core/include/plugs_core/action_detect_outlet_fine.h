@@ -68,6 +68,7 @@ private:
   ros::Node& node_;
   std::string action_name_;
   std::string head_controller_;
+  bool finished_detecting_;
 
   OutletTracker::OutletTracker* detector_;
   

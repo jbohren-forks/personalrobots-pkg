@@ -54,7 +54,7 @@ DetectOutletFineAction::DetectOutletFineAction(ros::Node& node)
       return;
     }
   node_.advertise<robot_msgs::PointStamped>(head_controller_ + "/head_track_point",10);
-  node_.setParam("~display", 0);
+  node_.setParam("~save_failures", 1);
   detector_ = new OutletTracker::OutletTracker(node);
   detector_->deactivate();  
   node_.subscribe("~outlet_pose", outlet_pose_msg_, &DetectOutletFineAction::foundOutlet, this, 1);
@@ -74,34 +74,33 @@ robot_actions::ResultStatus DetectOutletFineAction::execute(const robot_msgs::Po
   // point the head at the outlet
   node_.publish(head_controller_ + "/head_track_point", outlet_estimate);
   node_.publish(head_controller_ + "/head_track_point", outlet_estimate);
+  ros::Duration(3.0).sleep();
 
+  finished_detecting_ = false;
   detector_->activate();
 
-  ros::Duration d; d.fromSec(0.001);
-  while (isActive()) {
-    d.sleep();
-    if (ros::Time::now() - started > ros::Duration(15.0))
-      deactivate(robot_actions::ABORTED, feedback);
+  // stay in loop until finished or preempted
+  while (!isPreemptRequested() && !finished_detecting_){
+    ros::Duration(0.01).sleep();
   }
-  return waitForDeactivation(feedback);
+  detector_->deactivate();
 
+  // preempted
+  if (isPreemptRequested()){
+      ROS_ERROR("%s: preempted.", action_name_.c_str());
+      return robot_actions::PREEMPTED;      
+  }
+
+  // succeeded
+  feedback = outlet_pose_msg_;
+  ROS_INFO("%s: succeeded.", action_name_.c_str());
+  return robot_actions::SUCCESS;
 }
+
 
 void DetectOutletFineAction::foundOutlet()
 {
-  if (!isActive())
-    return;
-
-  if (isPreemptRequested())
-    {
-      ROS_DEBUG("%s: preempted.", action_name_.c_str());
-      deactivate(robot_actions::PREEMPTED, outlet_pose_msg_);
-      return;
-    }
-  ROS_DEBUG("%s: succeeded.", action_name_.c_str());
-  deactivate(robot_actions::SUCCESS, outlet_pose_msg_);
-  detector_->deactivate();
-  
+  finished_detecting_ = true;
 }
 
 }
