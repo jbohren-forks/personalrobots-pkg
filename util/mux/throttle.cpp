@@ -84,7 +84,7 @@ public:
   {
     // yack up what we stored
     ROS_ASSERT(g_initialized);
-    //memcpy(writePtr, msgBuf, msgBufUsed);
+    memcpy(writePtr, msgBuf, msgBufUsed);
     return writePtr + msgBufUsed;
   }
   virtual uint8_t *deserialize(uint8_t *readPtr)
@@ -99,7 +99,7 @@ public:
       msgBufAlloc = __serialized_length;
     }
     msgBufUsed = __serialized_length;
-    //memcpy(msgBuf, readPtr, __serialized_length);
+    memcpy(msgBuf, readPtr, __serialized_length);
 
     if(!g_initialized)
     {
