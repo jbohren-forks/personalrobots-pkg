@@ -191,8 +191,17 @@ void PlugInAction::plugMeasurementCallback(const tf::MessageNotifier<robot_msgs:
   PoseTFToMsg(viz_offset, state_msg.viz_offset);
 
   // Deals with the per-outlet offsets
-  double offset = getOffset(outlet_id_);
-  viz_offset.getOrigin() *= offset;
+  {
+    double offset = getOffset(outlet_id_);
+    tf::Stamped<tf::Transform> high_def_in_outlet;
+    TF_->lookupTransform("outlet_pose", "high_def_frame", msg->header.stamp, high_def_in_outlet);
+    tf::Vector3 v = -high_def_in_outlet.getOrigin();
+    v *= (1 - offset);
+
+    tf::Pose old = viz_offset;
+    viz_offset.getOrigin() += v;
+    ROS_INFO("Outlet offset of %.3lf moves the estimate from (%.3lf, %.3lf, %.3lf) to (%.3lf, %.3lf, %.3lf)", offset, old.getOrigin().x(), old.getOrigin().y(), old.getOrigin().z(), viz_offset.getOrigin().x(), viz_offset.getOrigin().y(), viz_offset.getOrigin().z());
+  }
 
   double standoff = std::max(MIN_STANDOFF, viz_offset.getOrigin().length()  * 2.5/4.0);
 
