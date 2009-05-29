@@ -43,6 +43,8 @@
 
 namespace pr2_robot_actions {
   static bool setHokuyoMode(std::string node_name, std::string mode){
+    return true;
+    /*
     ros::NodeHandle n;
     if(mode == "intensity"){
       n.setParam(node_name + "/intensity", true);
@@ -68,6 +70,7 @@ namespace pr2_robot_actions {
 
     ROS_INFO("Laser mode successfully set");
     return true;
+    */
   }
 }
 
