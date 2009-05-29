@@ -75,8 +75,8 @@ PlugInAction::PlugInAction(ros::Node& node) :
   robot_actions::Action<std_msgs::Int32, std_msgs::Empty>("plug_in"),
   action_name_("plug_in"),
   node_(node),
-  battery_level_(95.0),
-  arm_controller_("r_arm_hybrid_controller")
+  arm_controller_("r_arm_hybrid_controller"),
+  battery_level_(95.0)
 {
   node_.setParam("~roi_policy", "LastImageLocation");
   node_.setParam("~display", 0);
