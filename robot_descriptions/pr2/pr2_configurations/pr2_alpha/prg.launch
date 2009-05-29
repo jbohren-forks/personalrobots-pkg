@@ -74,5 +74,17 @@
   </group>
   <node machine="four" pkg="dcam" type="stereodcam" respawn="false"/>
 
+  <!-- Plug to chessboard offsets -->
+  <group ns="plug_detector">
+    <param name="plug_position_x" value="0.0065" />
+    <param name="plug_position_y" value="-0.0065" />
+    <param name="plug_position_z" value="0.016" />
+    <param name="plug_orientation_x" value="0.71428" />
+    <param name="plug_orientation_y" value="-0.69958" />
+    <param name="plug_orientation_z" value="0.00588" />
+    <param name="plug_orientation_w" value="0.01906" />
+  </group>
+
+
 </launch>
 
