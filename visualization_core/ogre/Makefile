@@ -1,6 +1,6 @@
 all: ogre
 
-OGRE_VERSION = ogre-v1-4-9
+OGRE_VERSION = ogre-v1-6-1
 TARBALL = build/$(OGRE_VERSION).tar.bz2
 TARBALL_URL = http://pr.willowgarage.com/downloads/$(OGRE_VERSION).tar.bz2
 SOURCE_DIR = build/$(OGRE_VERSION)
