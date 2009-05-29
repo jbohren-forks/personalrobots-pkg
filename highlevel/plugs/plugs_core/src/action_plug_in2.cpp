@@ -171,7 +171,12 @@ robot_actions::ResultStatus PlugInAction::execute(const std_msgs::Int32& outlet_
       }
 
       // Are we done approaching?
-      if (error.getOrigin().length() <= 0.002)
+      if (ros::Time::now() - started > ros::Duration(30.0))
+      {
+        ROS_WARN("Approach took more than 30 seconds.  Moving on anyways, even though error is %.3lf", error.getOrigin().length());
+        state = FIRST_TOUCH;
+      }
+      else if (error.getOrigin().length() <= 0.002)
       {
         ROS_INFO("Moving onto touching with an error of %.4lf", error.getOrigin().length());
         state = FIRST_TOUCH;
