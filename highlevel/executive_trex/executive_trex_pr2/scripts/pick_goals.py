@@ -8,7 +8,7 @@ def write_goal_file(filename, goals):
   f.write('/*\n *Auto-generated goals file, created at %s\n */\n\n'%time.asctime())
   
   for (goal, index) in zip(goals, range(len(goals))):
-    f.write('rejectable(m2_goals.Active g_%d);\ng_%d.outlet_id = %s\n'%(index,index,goal))
+    f.write('rejectable(m2_goals.Active g_%d);\ng_%d.outlet_id = %s;\n'%(index,index,goal))
 
 def get_goal(current_goals, valid_goals):
   while(True):
@@ -30,7 +30,7 @@ def get_goal(current_goals, valid_goals):
       
 #Read in topological map
 
-valid_goals = range(1, 10)
+valid_goals = range(1, 50)
 
 #Collect user clicks (for now, just ask user to type in IDs) and validate them
 goals = []
