@@ -46,6 +46,29 @@ const double MIN_STANDOFF = 0.022;
 const double SUCCESS_THRESHOLD = 0.025;
 enum {MEASURING, MOVING, INSERTING, FORCING, HOLDING};
 
+double getOffset(int id)
+{
+  switch (id)
+  {
+  case 0: return 0;
+  case 1: return 0.98948537037195827;
+  case 6: return 0.97692542711765129;
+  case 39: return 0.98097524550697912;
+  case 4: return 0.97561703536950839;
+  case 3: return 0.99092973248973848;
+  case 38: return 0.95012308281214775;
+  case 40: return 0.98361298809350939;
+  case 27: return 0.9864272331729832;
+  case 26: return 0.98778051326139238;
+  case 25: return 0.98898110374305592;
+  case 20: return 0.98890562635876034;
+  case 21: return 0.9780777627427707;
+  default:
+    ROS_ERROR("Invalid outlet id: %d", id);
+    return 0;
+  }
+}
+
 PlugInAction::PlugInAction(ros::Node& node) :
   robot_actions::Action<std_msgs::Int32, std_msgs::Empty>("plug_in"),
   action_name_("plug_in"),
@@ -90,6 +113,7 @@ robot_actions::ResultStatus PlugInAction::execute(const std_msgs::Int32& outlet_
   reset();
 
   ros::Time started = ros::Time::now();
+  outlet_id_ = outlet_id.data;
 
   ros::Duration d; d.fromSec(0.001);
   while (isActive()) {
@@ -111,6 +135,7 @@ robot_actions::ResultStatus PlugInAction::execute(const std_msgs::Int32& outlet_
 
 void PlugInAction::reset()
 {
+  outlet_id_ = 0;
   last_standoff_ = 1.0e10;
   g_state_ = MEASURING;
   g_started_inserting_ = ros::Time::now();
@@ -141,6 +166,12 @@ void PlugInAction::plugMeasurementCallback(const tf::MessageNotifier<robot_msgs:
   }
   ROS_DEBUG("%s: executing.", action_name_.c_str());
 
+  // Deals with the per-outlet offsets
+  double offset = getOffset(outlet_id_);
+  tf::Pose p;
+  tf::PoseMsgToTF(msg->pose, p);
+  p.getOrigin() *= offset;
+  tf::PoseTFToMsg(p, msg->pose);
 
   tff_msg_.header.stamp = msg->header.stamp;
   // Both are transforms from the outlet to the estimated plug pose
