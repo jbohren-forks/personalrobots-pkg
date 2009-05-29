@@ -54,8 +54,8 @@ namespace nav {
     ros_node_.param("~navfn/robot_base_frame", robot_base_frame_, std::string("base_link"));
     ros_node_.param("~navfn/global_frame", global_frame_, std::string("map"));
     ros_node_.param("~controller_frequency", controller_frequency_, 20.0);
-    ros_node_.param("~planner_patience", planner_patience_, 10.0);
-    ros_node_.param("~controller_patience", controller_patience_, 10.0);
+    ros_node_.param("~planner_patience", planner_patience_, 5.0);
+    ros_node_.param("~controller_patience", controller_patience_, 15.0);
 
     //for comanding the base
     ros_node_.advertise<robot_msgs::PoseDot>("cmd_vel", 1);
@@ -468,42 +468,19 @@ namespace nav {
           }
           else{
             resetState();
-            if(escaping_){
-              ROS_WARN("move_base aborting because the controller could not find valid velocity commands for over %.4f seconds", patience.toSec());
-              return robot_actions::ABORTED;
-            }
-            else{
-              escaping_ = escape(0.20, 100, feedback);
-              if(!escaping_){
-                ROS_WARN("move_base aborting because the controller could not find valid velocity commands for over %.4f seconds", patience.toSec());
-                return robot_actions::ABORTED;
-              }
-              last_valid_control_ = ros::Time::now();
-              r.sleep();
-              continue;
-            }
+            ROS_WARN("move_base aborting because the controller could not find valid velocity commands for over %.4f seconds", patience.toSec());
+            return robot_actions::ABORTED;
           }
         }
 
         //try to make a plan
         if((done_half_rotation_ && !done_full_rotation_) || !tryPlan(goal_)){
+          last_valid_control_ = ros::Time::now();
           //if we've tried to reset our map and to rotate in place, to no avail, we'll abort the goal
           if(attempted_costmap_reset_ && done_full_rotation_){
             resetState();
-            if(escaping_){
-              ROS_WARN("move_base aborting because the planner could not find a valid plan, even after reseting the map and attempting in place rotation");
-              return robot_actions::ABORTED;
-            }
-            else{
-              escaping_ = escape(0.20, 100, feedback);
-              if(!escaping_){
-                ROS_WARN("move_base aborting because the planner could not find a valid plan, even after reseting the map and attempting in place rotation");
-                return robot_actions::ABORTED;
-              }
-              last_valid_control_ = ros::Time::now();
-              r.sleep();
-              continue;
-            }
+            ROS_WARN("move_base aborting because the planner could not find a valid plan, even after reseting the map and attempting in place rotation");
+            return robot_actions::ABORTED;
           }
 
           if(done_full_rotation_){
