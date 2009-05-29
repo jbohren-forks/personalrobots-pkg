@@ -35,7 +35,6 @@
 * Author: Eitan Marder-Eppstein
 *********************************************************************/
 #include <people_aware_nav/move_base_constrained.h>
-#include <robot_msgs/Polygon3D.h>
 
 using namespace base_local_planner;
 using namespace costmap_2d;
@@ -44,59 +43,70 @@ using namespace robot_actions;
 using std::vector;
 using robot_msgs::Point;
 using robot_msgs::Point32;
+using robot_msgs::PoseStamped;
+using robot_msgs::Polygon3D;
 
 namespace people_aware_nav {
   MoveBaseConstrained::MoveBaseConstrained(ros::Node& ros_node, tf::TransformListener& tf) : 
-    Action<people_aware_nav::ConstrainedGoal, robot_msgs::PoseStamped>(ros_node.getName()), ros_node_(ros_node), tf_(tf),
-    run_planner_(true), tc_(NULL), planner_cost_map_ros_(NULL), controller_cost_map_ros_(NULL), 
-    planner_(NULL), valid_plan_(false), new_plan_(false) {
+    Action<ConstrainedGoal, PoseStamped>(ros_node.getName()), ros_node_(ros_node), tf_(tf),
+    run_planner_(true), tc_(NULL), planner_costmap_ros_(NULL), controller_costmap_ros_(NULL), 
+    planner_(NULL), valid_plan_(false), new_plan_(false), attempted_rotation_(false), attempted_costmap_reset_(false),
+    done_half_rotation_(false), done_full_rotation_(false) {
 
     //get some parameters that will be global to the move base node
     ros_node_.param("~navfn/robot_base_frame", robot_base_frame_, std::string("base_link"));
+    ros_node_.param("~navfn/global_frame", global_frame_, std::string("map"));
     ros_node_.param("~controller_frequency", controller_frequency_, 20.0);
+    ros_node_.param("~planner_patience", planner_patience_, 10.0);
+    ros_node_.param("~controller_patience", controller_patience_, 10.0);
 
     //for comanding the base
     ros_node_.advertise<robot_msgs::PoseDot>("cmd_vel", 1);
 
-    double inscribed_radius, circumscribed_radius;
     //we'll assume the radius of the robot to be consistent with what's specified for the costmaps
-    ros_node_.param("~navfn/costmap/inscribed_radius", inscribed_radius, 0.325);
-    ros_node_.param("~navfn/costmap/circumscribed_radius", circumscribed_radius, 0.46);
-
-    //create the ros wrapper for the planner's costmap... and initializer a pointer we'll use with the underlying map
-    planner_cost_map_ros_ = new Costmap2DROS(ros_node_, tf_, std::string("navfn"));
-    planner_cost_map_ros_->getCostmapCopy(planner_cost_map_);
-
-    //initialize the NavFn planner
-    planner_ = new NavfnROS(ros_node_, tf_, planner_cost_map_);
-    ROS_INFO("MAP SIZE: %d, %d", planner_cost_map_.cellSizeX(), planner_cost_map_.cellSizeY());
-
-    //create the ros wrapper for the controller's cost_map... and initializer a pointer we'll use with the underlying map
-    controller_cost_map_ros_ = new Costmap2DROS(ros_node_, tf_, std::string("base_local_planner"));
-    controller_cost_map_ros_->getCostmapCopy(controller_cost_map_);
+    ros_node_.param("~base_local_planner/costmap/inscribed_radius", inscribed_radius_, 0.325);
+    ros_node_.param("~base_local_planner/costmap/circumscribed_radius", circumscribed_radius_, 0.46);
 
     robot_msgs::Point pt;
+    double padding;
+    ros_node_.param("~footprint_padding", padding, 0.01);
     //create a square footprint
-    pt.x = inscribed_radius + .01;
-    pt.y = -1 * (inscribed_radius + .01);
+    pt.x = inscribed_radius_ + padding;
+    pt.y = -1 * (inscribed_radius_ + padding);
     footprint_.push_back(pt);
-    pt.x = -1 * (inscribed_radius + .01);
-    pt.y = -1 * (inscribed_radius + .01);
+    pt.x = -1 * (inscribed_radius_ + padding);
+    pt.y = -1 * (inscribed_radius_ + padding);
     footprint_.push_back(pt);
-    pt.x = -1 * (inscribed_radius + .01);
-    pt.y = inscribed_radius + .01;
+    pt.x = -1 * (inscribed_radius_ + padding);
+    pt.y = inscribed_radius_ + padding;
     footprint_.push_back(pt);
-    pt.x = inscribed_radius + .01;
-    pt.y = inscribed_radius + .01;
+    pt.x = inscribed_radius_ + padding;
+    pt.y = inscribed_radius_ + padding;
     footprint_.push_back(pt);
 
     //give the robot a nose
-    pt.x = circumscribed_radius;
+    pt.x = circumscribed_radius_;
     pt.y = 0;
     footprint_.push_back(pt);
 
+    //create the ros wrapper for the planner's costmap... and initializer a pointer we'll use with the underlying map
+    planner_costmap_ros_ = new Costmap2DROS(ros_node_, tf_, std::string("navfn"), footprint_);
+    planner_costmap_ros_->getCostmapCopy(planner_costmap_);
+
+    //initialize the NavFn planner
+    planner_ = new NavfnROS(ros_node_, tf_, planner_costmap_);
+    ROS_INFO("MAP SIZE: %d, %d", planner_costmap_.cellSizeX(), planner_costmap_.cellSizeY());
+
+    //create the ros wrapper for the controller's costmap... and initializer a pointer we'll use with the underlying map
+    controller_costmap_ros_ = new Costmap2DROS(ros_node_, tf_, std::string("base_local_planner"), footprint_);
+    controller_costmap_ros_->getCostmapCopy(controller_costmap_);
+
     //create a trajectory controller
-    tc_ = new TrajectoryPlannerROS(ros_node_, tf_, controller_cost_map_, footprint_, &planner_cost_map_);
+    tc_ = new TrajectoryPlannerROS(ros_node_, tf_, controller_costmap_, footprint_, &planner_costmap_);
+
+    //initially clear any unknown space around the robot
+    planner_costmap_ros_->clearNonLethalWindow(circumscribed_radius_ * 2, circumscribed_radius_ * 2);
+    controller_costmap_ros_->clearNonLethalWindow(circumscribed_radius_ * 2, circumscribed_radius_ * 2);
 
     //TODO:spawn planning thread here?
   }
@@ -108,56 +118,65 @@ namespace people_aware_nav {
     if(tc_ != NULL)
       delete tc_;
 
-    if(planner_cost_map_ros_ != NULL)
-      delete planner_cost_map_ros_;
+    if(planner_costmap_ros_ != NULL)
+      delete planner_costmap_ros_;
 
-    if(controller_cost_map_ros_ != NULL)
-      delete controller_cost_map_ros_;
+    if(controller_costmap_ros_ != NULL)
+      delete controller_costmap_ros_;
   }
 
 
-void MoveBaseConstrained::makePlan(const people_aware_nav::ConstrainedGoal& goal){
+void MoveBaseConstrained::makePlan(const PoseStamped& goal, const Polygon3D& forbidden){
     //since this gets called on handle activate
-    if(planner_cost_map_ros_ == NULL)
+    if(planner_costmap_ros_ == NULL)
       return;
 
     //update the copy of the costmap the planner uses
-    planner_cost_map_ros_->getCostmapCopy(planner_cost_map_);
+    planner_costmap_ros_->clearRobotFootprint();
+    planner_costmap_ros_->getCostmapCopy(planner_costmap_);
 
-
-    // set cost of forbidden region
-    std::vector<robot_msgs::Point> polygon;
-    for (std::vector<robot_msgs::Point32>::const_iterator iter = goal.forbidden.points.begin(); iter!=goal.forbidden.points.end(); ++iter) {
+    // Set cost of forbidden region
+    vector<Point> polygon;
+    for (vector<Point32>::const_iterator iter = forbidden.points.begin(); iter!=forbidden.points.end(); ++iter) {
       Point p;
       p.x = iter->x;
       p.y = iter->y;
       p.z = iter->z;
       polygon.push_back(p);
     }
-    planner_cost_map_.setConvexPolygonCost(polygon, costmap_2d::LETHAL_OBSTACLE);
+    planner_costmap_.setConvexPolygonCost(polygon, costmap_2d::LETHAL_OBSTACLE);
 
-    ROS_DEBUG_NAMED("move", "Modified costmap");
+    ROS_DEBUG_NAMED ("move", "Modified costmap");
+
+
+
+    //since we have a controller that knows the full footprint of the robot... we may as well clear it
+    //tc_->clearRobotFootprint(planner_costmap_); //now done in sensors
 
     std::vector<robot_msgs::PoseStamped> global_plan;
-    
-    robot_msgs::PoseStamped goal_pose;
-    goal_pose.header = goal.header;
-    tf::PoseTFToMsg(tf::Pose(btQuaternion(goal.th, 0, 0), 
-                             btVector3(goal.x, goal.y, goal.z)),
-                    goal_pose.pose);
+    bool valid_plan = planner_->makePlan(goal, global_plan);
 
-    bool valid_plan = planner_->makePlan(goal_pose, global_plan);
+    //sometimes the planner returns zero length plans and reports success
+    if(global_plan.empty()){
+      valid_plan = false;
+    }
 
-    ROS_DEBUG_NAMED("move", "Planner found plan");
 
     //we'll also push the goal point onto the end of the plan to make sure orientation is taken into account
-    if(valid_plan)
-      global_plan.push_back(goal_pose);
+    if(valid_plan){
+      robot_msgs::PoseStamped goal_copy = goal;
+      goal_copy.header.stamp = ros::Time::now();
+      global_plan.push_back(goal_copy);
+
+      //reset our flags for attempts to help create a valid plan
+      attempted_rotation_ = false;
+      attempted_costmap_reset_ = false;
+      new_plan_ = true;
+    }
 
     lock_.lock();
     //copy over the new global plan
     valid_plan_ = valid_plan;
-    new_plan_ = true;
     global_plan_ = global_plan;
     lock_.unlock();
   }
@@ -184,21 +203,25 @@ void MoveBaseConstrained::makePlan(const people_aware_nav::ConstrainedGoal& goal
     }
   }
 
-  robot_actions::ResultStatus MoveBaseConstrained::execute(const people_aware_nav::ConstrainedGoal& goal, robot_msgs::PoseStamped& feedback){
-    //update the goal
-    goal_ = goal;
+  robot_actions::ResultStatus MoveBaseConstrained::execute(const ConstrainedGoal& goal, PoseStamped& feedback){
 
-    //first... make a plan to the goal
-    makePlan(goal_);
+    // Transform constrained goal into posestamped
+    goal_.header = goal.header;
+    tf::PoseTFToMsg(tf::Pose(btQuaternion(goal.th, 0, 0),
+                             btVector3(goal.x, goal.y, goal.z)),
+                    goal_.pose);
 
-    ros::Duration cycle_time = ros::Duration(1.0 / controller_frequency_);
-    while(!isPreemptRequested()){
+
+    // Make a plan to the goal
+    makePlan(goal_, goal.forbidden);
+
+    costmap_2d::Rate r(controller_frequency_);
+    last_valid_control_ = ros::Time::now();
+    robot_msgs::PoseDot cmd_vel;
+    while(!isPreemptRequested() && ros_node_.ok()){
       struct timeval start, end;
       double start_t, end_t, t_diff;
       gettimeofday(&start, NULL);
-
-      //get the start time of the loop
-      ros::Time start_time = ros::Time::now();
 
       //update feedback to correspond to our current position
       tf::Stamped<tf::Pose> global_pose;
@@ -208,30 +231,66 @@ void MoveBaseConstrained::makePlan(const people_aware_nav::ConstrainedGoal& goal
       //push the feedback out
       update(feedback);
 
-      //make sure to update the cost_map we'll use for this cycle
-      controller_cost_map_ros_->getCostmapCopy(controller_cost_map_);
+      //make sure to update the costmap we'll use for this cycle
+      controller_costmap_ros_->clearRobotFootprint();
+      controller_costmap_ros_->getCostmapCopy(controller_costmap_);
 
       //check that the observation buffers for the costmap are current
-      if(!controller_cost_map_ros_->isCurrent()){
+      if(!controller_costmap_ros_->isCurrent()){
         ROS_WARN("Sensor data is out of date, we're not going to allow commanding of the base for safety");
+        cmd_vel.vel.vx = 0.0;
+        cmd_vel.vel.vy = 0.0;
+        cmd_vel.ang_vel.vz = 0.0;
+        //give the base the velocity command
+        ros_node_.publish("cmd_vel", cmd_vel);
+        r.sleep();
         continue;
       }
 
 
       bool valid_control = false;
-      robot_msgs::PoseDot cmd_vel;
       //pass plan to controller
-      lock_.lock();
+      
       if(valid_plan_){
         //if we have a new plan... we'll update the plan for the controller
         if(new_plan_){
-          tc_->updatePlan(global_plan_);
           new_plan_ = false;
+          if(!tc_->updatePlan(global_plan_)){
+            resetState();
+            ROS_WARN("move_base aborted because it failed to pass the plan from the planner to the controller");
+            return robot_actions::ABORTED;
+          }
         }
+
         //get observations for the non-costmap controllers
         std::vector<Observation> observations;
-        controller_cost_map_ros_->getMarkingObservations(observations);
+        controller_costmap_ros_->getMarkingObservations(observations);
         valid_control = tc_->computeVelocityCommands(cmd_vel, observations);
+
+        if(valid_control)
+          last_valid_control_ = ros::Time::now();
+
+        //check for success
+        if(tc_->goalReached()){
+          if(attempted_rotation_){
+            valid_control = false;
+            if(done_half_rotation_){
+              done_full_rotation_ = true;
+            }
+            else{
+              done_half_rotation_ = true;
+            }
+          }
+          else
+            return robot_actions::SUCCESS;
+        }
+
+        //if we can't rotate to clear out space... just say we've done them and try to reset to the static map
+        if(!valid_control && attempted_rotation_){
+          done_full_rotation_ = true;
+          done_half_rotation_ = true;
+        }
+
       }
       else{
         //we don't have a valid plan... so we want to stop
@@ -243,16 +302,71 @@ void MoveBaseConstrained::makePlan(const people_aware_nav::ConstrainedGoal& goal
       //give the base the velocity command
       ros_node_.publish("cmd_vel", cmd_vel);
 
-      lock_.unlock();
-
-      //check for success
-      if(tc_->goalReached())
-        return robot_actions::SUCCESS;
-
-
       //if we don't have a valid control... we need to re-plan explicitly
       if(!valid_control){
-        makePlan(goal_);
+        ros::Duration patience = ros::Duration(controller_patience_);
+
+        //if we have a valid plan, but can't find a valid control for a certain time... abort
+        if(last_valid_control_ + patience < ros::Time::now()){
+          if(attempted_rotation_){
+            ROS_INFO("Attempting aggresive reset of costmaps because we can't rotate");
+            resetCostmaps(circumscribed_radius_ * 2, circumscribed_radius_ * 2);
+            done_half_rotation_ = true;
+            done_full_rotation_ = true;
+          }
+          else{
+            resetState();
+            ROS_WARN("move_base aborting because the controller could not find valid velocity commands for over %.4f seconds", patience.toSec());
+            return robot_actions::ABORTED;
+          }
+        }
+
+        //try to make a plan
+        if((done_half_rotation_ && !done_full_rotation_) || !tryPlan(goal_, goal.forbidden)){
+          //if we've tried to reset our map and to rotate in place, to no avail, we'll abort the goal
+          if(attempted_costmap_reset_ && done_full_rotation_){
+            resetState();
+            ROS_WARN("move_base aborting because the planner could not find a valid plan, even after reseting the map and attempting in place rotation");
+            return robot_actions::ABORTED;
+          }
+
+          if(done_full_rotation_){
+            ROS_INFO("Done one full rotation, resetting costmaps aggresively");
+            resetCostmaps(circumscribed_radius_ * 2, circumscribed_radius_ * 2);
+            attempted_rotation_ = false;
+            done_half_rotation_ = false;
+            done_full_rotation_ = false;
+            attempted_costmap_reset_ = true;
+          }
+          else{
+            ROS_INFO("Setting new rotation goal and resetting costmaps outside of 3 meter window");
+            //clear things in the static map that are really far away
+            resetCostmaps(3.0, 3.0);
+            //if planning fails... we'll try rotating in place to clear things out
+            double angle = M_PI; //rotate 180 degrees
+            tf::Stamped<tf::Pose> rotate_goal = tf::Stamped<tf::Pose>(tf::Pose(tf::Quaternion(angle, 0.0, 0.0), tf::Point(0.0, 0.0, 0.0)), ros::Time(), robot_base_frame_);
+            robot_msgs::PoseStamped rotate_goal_msg;
+
+            try{
+              tf_.transformPose(global_frame_, rotate_goal, rotate_goal);
+            }
+            catch(tf::TransformException& ex){
+              ROS_ERROR("This tf error should never happen, %s", ex.what());
+              return robot_actions::ABORTED;
+              
+            }
+
+            PoseStampedTFToMsg(rotate_goal, rotate_goal_msg);
+            global_plan_.clear();
+            global_plan_.push_back(rotate_goal_msg);
+            valid_plan_ = true;
+            new_plan_ = true;
+            attempted_rotation_ = true;
+          }
+        }
+
+        r.sleep();
+        continue;
       }
 
       gettimeofday(&end, NULL);
@@ -261,34 +375,58 @@ void MoveBaseConstrained::makePlan(const people_aware_nav::ConstrainedGoal& goal
       t_diff = end_t - start_t;
       ROS_DEBUG("Full control cycle: %.9f Valid control: %d, Vel Cmd (%.2f, %.2f, %.2f)", t_diff, valid_control, cmd_vel.vel.vx, cmd_vel.vel.vy, cmd_vel.ang_vel.vz);
 
-      ros::Duration actual;
       //sleep the remainder of the cycle
-      if(!sleepLeftover(start_time, cycle_time, actual))
-        ROS_WARN("Controll loop missed its desired cycle time of %.4f... the loop actually took %.4f seconds", cycle_time.toSec(), actual.toSec());
+      if(!r.sleep())
+        ROS_WARN("Control loop missed its desired rate of %.4fHz... the loop actually took %.4f seconds", controller_frequency_, r.cycleTime().toSec());
     }
+
+    //make sure to stop on pre-emption
+    cmd_vel.vel.vx = 0.0;
+    cmd_vel.vel.vy = 0.0;
+    cmd_vel.ang_vel.vz = 0.0;
+    //give the base the velocity command
+    ros_node_.publish("cmd_vel", cmd_vel);
     return robot_actions::PREEMPTED;
   }
 
-  bool MoveBaseConstrained::sleepLeftover(ros::Time start, ros::Duration cycle_time, ros::Duration& actual){
-    ros::Time expected_end = start + cycle_time;
-    ros::Time actual_end = ros::Time::now();
-    ///@todo: because durations don't handle subtraction properly right now
-    ros::Duration sleep_time = ros::Duration((expected_end - actual_end).toSec()); 
-
-    //set the actual amount of time the loop took
-    actual = actual_end - start;
-
-    if(sleep_time < ros::Duration(0.0)){
-      return false;
-    }
-
-    sleep_time.sleep();
-    return true;
+  void MoveBaseConstrained::resetState(){
+    attempted_rotation_ = false;
+    done_half_rotation_ = false;
+    done_full_rotation_ = false;
+    attempted_costmap_reset_ = false;
   }
 
-  void MoveBaseConstrained::resetCostmaps(){
-    planner_cost_map_ros_->resetMapOutsideWindow(5.0, 5.0);
-    controller_cost_map_ros_->resetMapOutsideWindow(5.0, 5.0);
+bool MoveBaseConstrained::tryPlan(robot_msgs::PoseStamped goal, const Polygon3D& forbidden){
+    ros::Duration patience = ros::Duration(planner_patience_);
+    ros::Time attempt_end = ros::Time::now() + patience;
+    costmap_2d::Rate r(controller_frequency_);
+    while(ros::Time::now() < attempt_end && !isPreemptRequested() && ros_node_.ok()){
+      makePlan(goal, forbidden);
+
+      //check if we've got a valid plan
+      if(valid_plan_)
+        return true;
+
+      //for now... we'll publish zero velocity
+      robot_msgs::PoseDot cmd_vel;
+
+      last_valid_control_ = ros::Time::now();
+      cmd_vel.vel.vx = 0.0;
+      cmd_vel.vel.vy = 0.0;
+      cmd_vel.ang_vel.vz = 0.0;
+      //give the base the velocity command
+      ros_node_.publish("cmd_vel", cmd_vel);
+
+      r.sleep();
+    }
+
+    //if we still don't have a valid plan... then our planning attempt has failed
+    return false;
+  }
+
+  void MoveBaseConstrained::resetCostmaps(double size_x, double size_y){
+    planner_costmap_ros_->resetMapOutsideWindow(size_x, size_y);
+    controller_costmap_ros_->resetMapOutsideWindow(size_x, size_y);
   }
 
 };
@@ -297,7 +435,7 @@ namespace pan=people_aware_nav;
 
 int main(int argc, char** argv){
   ros::init(argc, argv);
-  ros::Node ros_node("move_base_node");
+  ros::Node ros_node("move_base");
   tf::TransformListener tf(ros_node, true, ros::Duration(10));
   
   pan::MoveBaseConstrained move_base(ros_node, tf);
@@ -305,9 +443,11 @@ int main(int argc, char** argv){
   runner.connect<pan::ConstrainedGoal, pan::ConstrainedMoveBaseState, robot_msgs::PoseStamped>(move_base);
   runner.run();
 
+  //ros::MultiThreadedSpinner s;
+  //ros::spin(s);
+  
   ros_node.spin();
 
   return(0);
 
 }
-

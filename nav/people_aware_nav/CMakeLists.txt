@@ -5,12 +5,12 @@ gensrv()
 genmsg()
 
 rospack_add_boost_directories()
-set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
-rospack_add_executable(person_pos_sender src/person_node.cpp)
-rospack_add_executable(is_person_on_path src/is_person_on_path.cpp)
-rospack_link_boost(is_person_on_path thread)
 
-rospack_add_lisp_executable(hallway_move src/move-down-hallway.lisp)
+rospack_add_executable(bin/person_pos_sender src/person_node.cpp)
+rospack_add_executable(bin/is_person_on_path src/is_person_on_path.cpp)
+rospack_link_boost(bin/is_person_on_path thread)
 
-rospack_add_executable(move_base_constrained src/move_base_constrained.cpp)
-rospack_link_boost(move_base_constrained thread)
+rospack_add_lisp_executable(bin/hallway_move src/move-down-hallway.lisp)
+
+rospack_add_executable(bin/move_base_constrained src/move_base_constrained.cpp)
+rospack_link_boost(bin/move_base_constrained thread)

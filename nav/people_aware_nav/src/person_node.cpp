@@ -101,7 +101,6 @@ public:
   {
     Duration d(.5);
 
-
     while (node_.ok()) 
     {
       StampedPose id, odom_pose;

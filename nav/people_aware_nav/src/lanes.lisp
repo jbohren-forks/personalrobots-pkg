@@ -35,7 +35,7 @@
 (defparameter *wall-buffer* .2 "Additional buffer distance that we'd like to keep from wall")
 (defvar *person-on-path-use-stub* nil)
 (defvar *global-frame*)
-(defvar *master-uri* (make-uri "prg2" 11311))
+(defvar *master-uri* nil)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Types
@@ -60,7 +60,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defun main ()
-  (with-ros-node ("lane_changer" :master-uri *master-uri*)
+  (with-ros-node ("lane_changer")
     (setup-node)
     (loop-at-most-every 1
 	 (when *new-goal* (apply #'goto *new-goal*)))))
@@ -69,15 +69,15 @@
 (defun setup-node ()
   (subscribe "hallway_points" "robot_msgs/PointCloud" #'hallway-callback)
   (subscribe "robot_pose" "deprecated_msgs/Pose2DFloat32" #'pose-callback)
-  (subscribe "move_base_node/feedback" "people_aware_nav/ConstrainedMoveBaseState" #'state-callback)
+  (subscribe "move_base/feedback" "people_aware_nav/ConstrainedMoveBaseState" #'state-callback)
   (subscribe "goal" "robot_msgs/PoseStamped" #'goal-callback)
-  (advertise "move_base_node/activate" "people_aware_nav/ConstrainedGoal")
-  (advertise "move_base_node/preempt" "std_msgs/Empty")
+  (advertise "move_base/activate" "people_aware_nav/ConstrainedGoal")
+  (advertise "move_base/preempt" "std_msgs/Empty")
   (setq *global-frame* (get-param "global_frame_id" "map")
 	*person-on-path-use-stub* (get-param "~person_on_path_use_stub" *person-on-path-use-stub*)))
 
 (defun goto (x y theta)
-  (ros-info "Initiating hallway move to goal ~a ~a ~a" x y theta)
+  (ros-info pan "Initiating hallway move to goal ~a ~a ~a" x y theta)
   (setq *new-goal* nil *move-base-result* nil)
   (unwind-protect
        (progn
@@ -108,7 +108,7 @@
 
 
 (defun move-to-right ()
-  (ros-info "Moving to right")
+  (ros-info pan "Moving to right")
   (let* ((pose (waiting-pose *robot-pose* *hallway*))
 	 (position (pose-position pose))
 	 (theta (pose-orientation pose)))
@@ -121,14 +121,14 @@
 (defun send-move-goal (x y th &key (constrained nil))
   (setq *current-goal* (list x y)
 	*move-base-result* nil)
-  (publish-on-topic "/move_base_node/activate" 
+  (publish-on-topic "/move_base/activate" 
 		    (make-instance 'people_aware_nav:<ConstrainedGoal>
 				   :header (make-instance '<Header> :frame_id *global-frame*)
 				   :x x :y y :th th :forbidden (make-boundary *robot-pose* constrained))))
 
 (defun disable-nav ()
-  (publish-on-topic "/move_base_node/preempt" (make-instance 'std_msgs:<Empty>))
-  (ros-info "Disabling nav"))
+  (publish-on-topic "/move_base/preempt" (make-instance 'std_msgs:<Empty>))
+  (ros-info pan "Disabling nav"))
 
 
 (defun person-on-path ()
@@ -167,7 +167,7 @@
 				      (make-point (aref points 1))
 				      (make-point (aref points 2))))
 
-	(ros-error "Hallway cloud ~a had incorrect length.  Skipping." points))))
+	(ros-error pan "Hallway cloud ~a had incorrect length.  Skipping." points))))
 
 
 (defun goal-callback (m)
@@ -175,10 +175,11 @@
 		(x (x position pose)) 
 		(y (y position pose))
 		(w (w orientation pose))) m
+    (ros-info pan "Received goal ~a, ~a in frame ~a" x y frame)
     (let ((theta (* 2 (acos w))))
       (if (equal frame *global-frame*)
 	  (setq *new-goal* (list x y theta)) 
-	  (ros-error "Ignoring goal ~a ~a ~a as frame id ~a does not equal ~a"
+	  (ros-error pan "Ignoring goal ~a ~a ~a as frame id ~a does not equal ~a"
 		     x y theta frame *global-frame*)))))
   
 
@@ -212,7 +213,7 @@
 (defun waiting-pose (current-pose hallway)
   "Return the pose corresponding to 'shifting to the right lane' in the map frame"
   (declare (pose current-pose) (values pose))
-  (ros-info "Computing waiting pose given current pose ~a" current-pose)
+  (ros-info pan "Computing waiting pose given current pose ~a" current-pose)
   (let* ((hallway-pose (transform-pose (hallway-transform hallway) current-pose))
 	 (hallway-frame-position (pose-position hallway-pose))
 	 (facing-forward (<= 0.0 (pose-orientation hallway-pose) pi))
@@ -225,7 +226,7 @@
 	 (global-pose (transform-pose (inverse (hallway-transform hallway)) 
 				      (make-pose (vector target-wall-offset target-wall-y) 
 						 (/ pi (if facing-forward 2 -2))))))
-    (ros-info "Waiting pose is ~a" global-pose)
+    (ros-info pan "Waiting pose is ~a" global-pose)
     global-pose))
 
     

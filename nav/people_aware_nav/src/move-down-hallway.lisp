@@ -5,3 +5,6 @@
   (load (merge-pathnames "lanes.lisp" *load-pathname*) :verbose t))
 
 (in-package :lane-following)
+
+(set-debug-level '(roslisp) :info)
+(set-debug-level '(pan) :info)
