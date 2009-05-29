@@ -3,7 +3,6 @@
 
   <node pkg="mux" type="throttle" args="3.0 base_scan base_scan_throttled" />
   <node pkg="mux" type="throttle" args="3.0 tilt_scan tilt_scan_throttled" />
-  <node pkg="mux" type="throttle" args="1.0 stereo/cloud stereo/cloud_throttled" />
 
 
   <!-- Stereo image processing -->
@@ -15,6 +14,8 @@
     <param name="do_keep_coords" type="bool" value="True"/>
   </group>
   <node pkg="stereo_image_proc" type="stereoproc" respawn="false" machine="four" />
+  <!-- Downsampled version for remove viewing -->
+  <node pkg="mux" type="throttle" args="1.0 stereo/cloud stereo/cloud_throttled" machine="four"/>
 
   <!-- Filter for tilt laser shadowing/veiling -->
   <node pkg="laser_scan" type="scan_to_cloud" respawn="true" machine="three" name="tilt_shadow_filter">
