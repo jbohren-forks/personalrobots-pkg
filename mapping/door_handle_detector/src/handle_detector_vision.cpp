@@ -73,9 +73,7 @@
 #include <boost/thread.hpp>
 
 using namespace std;
-
-
-#define ROSCONSOLE_MIN_SEVERITY ROSCONSOLE_SEVERITY_DEBUG
+using namespace robot_msgs;
 
 
 template <typename T>
@@ -361,24 +359,132 @@ private:
     void getROIDimensions(const CvRect& r, double & dx, double & dy, robot_msgs::Point & center)
     {
         // initialize stereo camera model
-        double Fx = rcinfo.P[0];
-        double Fy = rcinfo.P[5];
-        double Clx = rcinfo.P[2];
-        double Crx = Clx;
-        double Cy = rcinfo.P[6];
-        double Tx = -rcinfo.P[3] / Fx;
-        CvStereoCamModel cam_model(Fx, Fy, Tx, Clx, Crx, Cy, 4.0 / (double)dispinfo.dpp);
-
-        double mean = 0;
-        disparitySTD(disp, r, mean);
-
-        robot_msgs::Point p1 = disparityTo3D(cam_model, r.x, r.y, mean);
-        robot_msgs::Point p2 = disparityTo3D(cam_model, r.x + r.width, r.y, mean);
-        robot_msgs::Point p3 = disparityTo3D(cam_model, r.x, r.y + r.height, mean);
-        center = disparityTo3D(cam_model, r.x + r.width / 2, r.y + r.height / 2, mean);
-        dx = distance3D(p1, p2);
-        dy = distance3D(p1, p3);
+//        double Fx = rcinfo.P[0];
+//        double Fy = rcinfo.P[5];
+//        double Clx = rcinfo.P[2];
+//        double Crx = Clx;
+//        double Cy = rcinfo.P[6];
+//        double Tx = -rcinfo.P[3] / Fx;
+//        CvStereoCamModel cam_model(Fx, Fy, Tx, Clx, Crx, Cy, 4.0 / (double)dispinfo.dpp);
+//
+//        double mean = 0;
+//        disparitySTD(disp, r, mean);
+//
+//        robot_msgs::Point p1 = disparityTo3D(cam_model, r.x, r.y, mean);
+//        robot_msgs::Point p2 = disparityTo3D(cam_model, r.x + r.width, r.y, mean);
+//        robot_msgs::Point p3 = disparityTo3D(cam_model, r.x, r.y + r.height, mean);
+//        center = disparityTo3D(cam_model, r.x + r.width / 2, r.y + r.height / 2, mean);
+//        dx = distance3D(p1, p2);
+//        dy = distance3D(p1, p3);
     }
+
+
+
+
+	struct Stats {
+
+		Stats() : mean(0), stdev(0), min(0), max(0) {};
+
+		float mean;
+		float stdev;
+		float min;
+		float max;
+	};
+
+
+	void pointCloudStatistics(const PointCloud& pc, Stats& x_stats, Stats& y_stats, Stats& z_stats)
+	{
+		uint32_t size = pc.get_pts_size();
+		if (size==0) {
+			return;
+		}
+		x_stats.mean = 0;
+		x_stats.stdev = 0;
+		y_stats.mean = 0;
+		y_stats.stdev = 0;
+		z_stats.mean = 0;
+		z_stats.stdev = 0;
+
+		x_stats.min = pc.pts[0].x;
+		x_stats.max = pc.pts[0].x;
+		y_stats.min = pc.pts[0].y;
+		y_stats.max = pc.pts[0].y;
+		z_stats.min = pc.pts[0].z;
+		z_stats.max = pc.pts[0].z;
+
+		for (uint32_t i=0;i<size;++i) {
+			x_stats.mean += pc.pts[i].x;
+			y_stats.mean += pc.pts[i].y;
+			z_stats.mean += pc.pts[i].z;
+			x_stats.stdev += (pc.pts[i].x*pc.pts[i].x);
+			y_stats.stdev += (pc.pts[i].y*pc.pts[i].y);
+			z_stats.stdev += (pc.pts[i].z*pc.pts[i].z);
+
+			if (x_stats.min>pc.pts[i].x) x_stats.min = pc.pts[i].x;
+			if (x_stats.max<pc.pts[i].x) x_stats.max = pc.pts[i].x;
+			if (y_stats.min>pc.pts[i].y) y_stats.min = pc.pts[i].y;
+			if (y_stats.max<pc.pts[i].y) y_stats.max = pc.pts[i].y;
+			if (z_stats.min>pc.pts[i].z) z_stats.min = pc.pts[i].z;
+			if (z_stats.max<pc.pts[i].z) z_stats.max = pc.pts[i].z;
+		}
+
+		x_stats.mean /= size;
+		y_stats.mean /= size;
+		z_stats.mean /= size;
+
+		x_stats.stdev = x_stats.stdev/size - x_stats.mean*x_stats.mean;
+		y_stats.stdev = y_stats.stdev/size - y_stats.mean*y_stats.mean;
+		z_stats.stdev = z_stats.stdev/size - z_stats.mean*z_stats.mean;
+	}
+
+
+
+    /**
+     * \brief Filters a cloud point, retains only points coming from a specific region in the disparity image
+     *
+     * @param rect Region in disparity image
+     * @return Filtered point cloud
+     */
+	robot_msgs::PointCloud filterPointCloud(const PointCloud pc, const CvRect& rect)
+	{
+		robot_msgs::PointCloud result;
+		result.header.frame_id = pc.header.frame_id;
+		result.header.stamp = pc.header.stamp;
+
+		int xchan = -1;
+		int ychan = -1;
+
+		for (size_t i=0;i<pc.chan.size();++i) {
+			if (pc.chan[i].name == "x") {
+				xchan = i;
+			}
+			if (pc.chan[i].name == "y") {
+				ychan = i;
+			}
+		}
+
+		int chan_size = pc.get_chan_size();
+		result.chan.resize(chan_size);
+		for (int j=0;j<chan_size;++j) {
+			result.chan[j].name = pc.chan[j].name;
+		}
+
+		if (xchan!=-1 && ychan!=-1) {
+			for (size_t i=0;i<pc.pts.size();++i) {
+				int x = (int)pc.chan[xchan].vals[i];
+				int y = (int)pc.chan[ychan].vals[i];
+				if (x>=rect.x && x<rect.x+rect.width && y>=rect.y && y<rect.y+rect.height) {
+					result.pts.push_back(pc.pts[i]);
+					for (int j=0;j<chan_size;++j) {
+						result.chan[j].vals.push_back(pc.chan[j].vals[i]);
+					}
+				}
+			}
+		}
+
+		return result;
+	}
+
 
 
     /**
@@ -545,7 +651,7 @@ private:
 
 
     	// compute least-squares handle plane
-    	robot_msgs::PointCloud pc = filterPointCloud(r);
+    	robot_msgs::PointCloud pc = filterPointCloud(cloud,r);
     	CvScalar plane = estimatePlaneLS(pc);
 
     	cnt = 0;
@@ -564,22 +670,26 @@ private:
     		return false;
     	}
 
+
+    	Stats xstats;
+    	Stats ystats;
+    	Stats zstats;
+    	pointCloudStatistics(pc, xstats, ystats, zstats );
     	double dx, dy;
-    	robot_msgs::Point p;
-    	getROIDimensions(r, dx, dy, p);
+//    	getROIDimensions(r, dx, dy, p);
+    	dx = xstats.max - xstats.min;
+    	dy = ystats.max - ystats.min;
     	if(dx > 0.25 || dy > 0.15){
     		ROS_DEBUG("Too big, discarding");
     		return false;
     	}
 
-
-
     	robot_msgs::PointStamped pin, pout;
     	pin.header.frame_id = cloud.header.frame_id;
     	pin.header.stamp = cloud.header.stamp;
-    	pin.point.x = p.x;
-    	pin.point.y = p.y;
-    	pin.point.z = p.z;
+    	pin.point.x = xstats.mean;
+    	pin.point.y = ystats.mean;
+    	pin.point.z = zstats.mean;
         if (!tf_->canTransform("base_footprint", pin.header.frame_id, pin.header.stamp, ros::Duration(5.0))){
           ROS_ERROR("Cannot transform from base_footprint to %s", pin.header.frame_id.c_str());
           return false;
@@ -720,19 +830,26 @@ private:
     	bbox.width = (int) sizes[max_ind].first;
     	bbox.height = (int) sizes[max_ind].second;
 
-        double dx, dy;
-        robot_msgs::Point p;
-        getROIDimensions(bbox, dx, dy, p);
+
+    	PointCloud outlet_cloud = filterPointCloud(cloud, bbox);
+
+    	Stats xstats;
+    	Stats ystats;
+    	Stats zstats;
+    	pointCloudStatistics(outlet_cloud, xstats, ystats, zstats );
+//    	double dx, dy;
+//        robot_msgs::Point p;
+//        getROIDimensions(bbox, dx, dy, p);
 
         robot_msgs::PointStamped handle_stereo;
 
         handle_stereo.header.frame_id = cloud.header.frame_id;
         handle_stereo.header.stamp = cloud.header.stamp;
-        handle_stereo.point.x = p.x;
-        handle_stereo.point.y = p.y;
-        handle_stereo.point.z = p.z;
+        handle_stereo.point.x = xstats.mean;
+        handle_stereo.point.y = ystats.mean;
+        handle_stereo.point.z = zstats.mean;
 
-        if (!tf_->canTransform(handle.header.frame_id, handle_stereo.header.frame_id, 
+        if (!tf_->canTransform(handle.header.frame_id, handle_stereo.header.frame_id,
                                handle_stereo.header.stamp, ros::Duration(5.0))){
           ROS_ERROR("Cannot transform from %s to %s", handle.header.frame_id.c_str(),
                     handle_stereo.header.frame_id.c_str());
@@ -817,7 +934,7 @@ private:
         }
         robot_msgs::PointStamped handle_transformed;
         // transform the point in the expected frame
-        if (!tf_->canTransform(req.door.header.frame_id, handle.header.frame_id, 
+        if (!tf_->canTransform(req.door.header.frame_id, handle.header.frame_id,
                                handle.header.stamp, ros::Duration(5.0))){
           ROS_ERROR("Cannot transform from %s to %s", handle.header.frame_id.c_str(),
                     req.door.header.frame_id.c_str());
@@ -851,41 +968,35 @@ private:
     }
 
 
-    /**
-     * \brief Filters a cloud point, retains only points coming from a specific region in the disparity image
-     *
-     * @param rect Region in disparity image
-     * @return Filtered point cloud
-     */
-    robot_msgs::PointCloud filterPointCloud(const CvRect & rect)
-    {
-        robot_msgs::PointCloud result;
-        result.header.frame_id = cloud.header.frame_id;
-        result.header.stamp = cloud.header.stamp;
-        int xchan = -1;
-        int ychan = -1;
-        for(size_t i = 0;i < cloud.chan.size();++i){
-            if(cloud.chan[i].name == "x"){
-                xchan = i;
-            }
-            if(cloud.chan[i].name == "y"){
-                ychan = i;
-            }
-        }
-
-        if(xchan != -1 && ychan != -1){
-            for(size_t i = 0;i < cloud.pts.size();++i){
-                int x = (int)(cloud.chan[xchan].vals[i]);
-                int y = (int)(cloud.chan[ychan].vals[i]);
-                if(x >= rect.x && x < rect.x + rect.width && y >= rect.y && y < rect.y + rect.height){
-                    result.pts.push_back(cloud.pts[i]);
-                }
-            }
-
-        }
-
-        return result;
-    }
+//    robot_msgs::PointCloud filterPointCloud(const CvRect & rect)
+//    {
+//        robot_msgs::PointCloud result;
+//        result.header.frame_id = cloud.header.frame_id;
+//        result.header.stamp = cloud.header.stamp;
+//        int xchan = -1;
+//        int ychan = -1;
+//        for(size_t i = 0;i < cloud.chan.size();++i){
+//            if(cloud.chan[i].name == "x"){
+//                xchan = i;
+//            }
+//            if(cloud.chan[i].name == "y"){
+//                ychan = i;
+//            }
+//        }
+//
+//        if(xchan != -1 && ychan != -1){
+//            for(size_t i = 0;i < cloud.pts.size();++i){
+//                int x = (int)(cloud.chan[xchan].vals[i]);
+//                int y = (int)(cloud.chan[ychan].vals[i]);
+//                if(x >= rect.x && x < rect.x + rect.width && y >= rect.y && y < rect.y + rect.height){
+//                    result.pts.push_back(cloud.pts[i]);
+//                }
+//            }
+//
+//        }
+//
+//        return result;
+//    }
 
     /**
      * \brief Computes a least-squares estimate of a plane.
