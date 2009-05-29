@@ -65,15 +65,14 @@ using namespace std;
 
 static bool g_initialized = false;
 static string g_md5sum = "*", g_datatype = "*", g_message_definition = "*";
+static uint8_t *msgBuf = NULL;
+static uint32_t msgBufUsed=0, msgBufAlloc=0;
 
 class ShapeShifter : public ros::Message
 {
 public:
-  uint8_t *msgBuf;
-  uint32_t msgBufUsed, msgBufAlloc;
-  ShapeShifter() : Message(), msgBuf(NULL), msgBufUsed(0), msgBufAlloc(0) { }
-  virtual ~ShapeShifter() { if (msgBuf) delete[] msgBuf;
-                            msgBuf = NULL; msgBufAlloc = 0; }
+  ShapeShifter() : Message() { }
+  virtual ~ShapeShifter() { }
   virtual const string __getDataType() const { return g_datatype; }
   virtual const string __getMD5Sum()   const { return g_md5sum; }
   virtual const string __getMessageDefinition()   const { return g_message_definition; }
@@ -85,7 +84,7 @@ public:
   {
     // yack up what we stored
     ROS_ASSERT(g_initialized);
-    memcpy(writePtr, msgBuf, msgBufUsed);
+    //memcpy(writePtr, msgBuf, msgBufUsed);
     return writePtr + msgBufUsed;
   }
   virtual uint8_t *deserialize(uint8_t *readPtr)
@@ -93,15 +92,18 @@ public:
     // stash this message in our buffer
     if (__serialized_length > msgBufAlloc)
     {
+      ROS_DEBUG("Allocating new buffer of size %u (old size: %u)", 
+                __serialized_length, msgBufAlloc);
       delete[] msgBuf;
       msgBuf = new uint8_t[__serialized_length];
       msgBufAlloc = __serialized_length;
     }
     msgBufUsed = __serialized_length;
-    memcpy(msgBuf, readPtr, __serialized_length);
+    //memcpy(msgBuf, readPtr, __serialized_length);
 
     if(!g_initialized)
     {
+      ROS_DEBUG("Storing message metadata");
       // Remember the md5 and type
       ros::M_string::iterator d = __connection_header->find(std::string("type"));
       if (d != __connection_header->end())
