@@ -10,7 +10,7 @@ find_ros_package(gazebo_robot_description)
 file(GLOB pr2_stl_files ${pr2_defs_PACKAGE_PATH}/meshes/*.stl ${pr2_defs_PACKAGE_PATH}/meshes/convex/*.stlb)
 set(pr2_gen_files "")
 
-set(pr2_out_path ${CMAKE_CURRENT_SOURCE_DIR}/world/Media/models/pr2)
+set(pr2_out_path ${CMAKE_CURRENT_SOURCE_DIR}/Media/models/pr2)
 
 MAKE_DIRECTORY(${pr2_out_path})
 

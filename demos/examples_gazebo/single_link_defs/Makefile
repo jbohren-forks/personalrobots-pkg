@@ -1,6 +1,6 @@
 XACRO = `rospack find xacro`/xacro.py
 URDF2GAZEBO = `rospack find gazebo_robot_description`/urdf2gazebo
-MODEL_FILE = `rospack find gazebo_robot_description`/world
+MODEL_FILE = `rospack find gazebo_robot_description`
 
 ROBOT = single_link
 
