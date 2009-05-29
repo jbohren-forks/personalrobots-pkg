@@ -34,10 +34,15 @@
 *
 * Author: Eitan Marder-Eppstein
 *********************************************************************/
-#include "ros/node.h"
+
+#ifndef SET_HOKUYO_MODE_H
+#define SET_HOKUYO_MODE_H
+
+#include <ros/node.h>
+#include <ros/ros.h>
 
 namespace pr2_robot_actions {
-  bool setHokuyoMode(std::string node_name, std::string mode){
+  static bool setHokuyoMode(std::string node_name, std::string mode){
     ros::NodeHandle n;
     if(mode == "intensity"){
       n.setParam(node_name + "/intensity", true);
@@ -65,3 +70,5 @@ namespace pr2_robot_actions {
     return true;
   }
 }
+
+#endif
