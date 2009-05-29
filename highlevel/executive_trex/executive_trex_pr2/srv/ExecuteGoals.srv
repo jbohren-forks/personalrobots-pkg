@@ -1,0 +1,4 @@
+# For now, a sequence of numbers that are actually outlet ids
+int32[] outlet_ids
+---
+byte ok
