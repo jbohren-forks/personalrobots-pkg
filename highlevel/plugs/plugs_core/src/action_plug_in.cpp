@@ -118,6 +118,7 @@ robot_actions::ResultStatus PlugInAction::execute(const std_msgs::Int32& outlet_
 
   ros::Time started = ros::Time::now();
   outlet_id_ = outlet_id.data;
+  ROS_INFO("plug_in running on outlet %d", outlet_id_);
 
   ros::Duration d; d.fromSec(0.001);
   while (isActive()) {
@@ -132,6 +133,7 @@ robot_actions::ResultStatus PlugInAction::execute(const std_msgs::Int32& outlet_
       ROS_DEBUG("%s: preempted.", action_name_.c_str());
       deactivate(robot_actions::PREEMPTED, feedback);
     }
+    node_.publish(TRACKER_ACTIVATE, feedback);
   }
 
   return waitForDeactivation(feedback);

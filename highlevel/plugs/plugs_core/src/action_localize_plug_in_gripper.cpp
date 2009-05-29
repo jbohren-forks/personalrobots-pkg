@@ -103,6 +103,7 @@ LocalizePlugInGripperAction::~LocalizePlugInGripperAction()
   while (isActive()) {
     if(ros::Time::now() - started > ros::Duration(15.0))
       deactivate(robot_actions::ABORTED,feedback);
+    node_.publish(TRACKER_ACTIVATE, empty);
     d.sleep();
   }
 
