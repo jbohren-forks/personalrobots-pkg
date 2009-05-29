@@ -64,6 +64,7 @@ namespace nav {
     //we'll assume the radius of the robot to be consistent with what's specified for the costmaps
     ros_node_.param("~base_local_planner/costmap/inscribed_radius", inscribed_radius_, 0.325);
     ros_node_.param("~base_local_planner/costmap/circumscribed_radius", circumscribed_radius_, 0.46);
+    ros_node_.param("~clearing_radius", clearing_radius_, circumscribed_radius_);
 
     robot_msgs::Point pt;
     double padding;
@@ -180,6 +181,7 @@ namespace nav {
     }
 
     //update the copy of the costmap the planner uses
+    clearCostmapWindows(2 * clearing_radius_, 2 * clearing_radius_);
     planner_costmap_ros_->clearRobotFootprint();
     planner_costmap_ros_->getCostmapCopy(planner_costmap_);
 
@@ -348,7 +350,7 @@ namespace nav {
 
   robot_actions::ResultStatus MoveBase::execute(const robot_msgs::PoseStamped& goal, robot_msgs::PoseStamped& feedback){
     //on activation... we'll reset our costmaps
-    clearCostmapWindows(2 * circumscribed_radius_ , 2 * circumscribed_radius_);
+    clearCostmapWindows(2 * clearing_radius_, 2 * clearing_radius_);
 
     //publish the goal point to the visualizer
     publishGoal(goal);

@@ -62,7 +62,7 @@ namespace pr2_robot_actions {
       req_laser.command.profile = "linear";
       req_laser.command.max_rate = 5;
       req_laser.command.max_accel = 5;
-      req_laser.command.pos.push_back(1.0);      req_laser.command.pos.push_back(-0.7);      req_laser.command.pos.push_back(1.0);
+      req_laser.command.pos.push_back(1.2);      req_laser.command.pos.push_back(-0.7);      req_laser.command.pos.push_back(1.2);
       req_laser.command.time.push_back(0.0);     req_laser.command.time.push_back(1.8);      req_laser.command.time.push_back(2.025);
       if(!ros::service::call(laser_controller_ + "/set_traj_cmd", req_laser, res_laser)){
         ROS_ERROR("Failed to start laser.");

@@ -136,7 +136,7 @@ namespace nav {
       robot_msgs::PoseStamped goal_;
 
       tf::Stamped<tf::Pose> global_pose_;
-      double controller_frequency_, inscribed_radius_, circumscribed_radius_, planner_patience_, controller_patience_;
+      double controller_frequency_, inscribed_radius_, circumscribed_radius_, planner_patience_, controller_patience_, clearing_radius_;
       bool attempted_rotation_, attempted_costmap_reset_;
       bool done_half_rotation_, done_full_rotation_;
       bool escaping_;
