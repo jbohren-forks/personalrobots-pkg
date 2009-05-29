@@ -49,6 +49,8 @@ const double SPIRAL_STEP = 0.002;
 const double SUCCESS_THRESHOLD = 0.025;
 enum {MEASURING, MOVING, INSERTING, FORCING, HOLDING};
 
+const static char* TRACKER_ACTIVATE = "/plug_detector/activate_tracker";
+
 void PoseTFToMsg(const tf::Pose &p, robot_msgs::Twist &t)
 {
   t.vel.x = p.getOrigin().x();
@@ -93,10 +95,12 @@ PlugInAction::PlugInAction(ros::Node& node) :
   tff_msg_.header.frame_id = "outlet_pose";
 
   node_.advertise<plugs_core::PlugInState>(action_name_ + "/state", 10);
+  node_.advertise<std_msgs::Empty>(TRACKER_ACTIVATE, 1);
 };
 
 PlugInAction::~PlugInAction()
 {
+  node_.unadvertise(TRACKER_ACTIVATE);
 };
 
 robot_actions::ResultStatus PlugInAction::execute(const std_msgs::Int32& outlet_id, std_msgs::Empty& feedback)
@@ -118,7 +122,7 @@ robot_actions::ResultStatus PlugInAction::execute(const std_msgs::Int32& outlet_
     ros::Duration(0.5).sleep();
   }
 
-  ros::Duration d(0.001);
+  ros::Duration d(0.01);
   while (isActive())
   {
     if(ros::Time::now() - started > ros::Duration(99120.0)) {
@@ -131,6 +135,8 @@ robot_actions::ResultStatus PlugInAction::execute(const std_msgs::Int32& outlet_
       deactivate(robot_actions::PREEMPTED, feedback);
       break;
     }
+
+    node_.publish(TRACKER_ACTIVATE, empty);
 
     switch (state)
     {

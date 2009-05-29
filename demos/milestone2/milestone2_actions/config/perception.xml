@@ -63,6 +63,7 @@
   <!-- Plug in hand tracker -->
   <group ns="plug_detector" clear_params="true">
     <param name="display" type="int" value="0"/>
+    <param name="stay_active" type="bool" value="false" />
 
     <!-- ROI settings -->
     <param name="roi_policy" type="str" value="TargetFrame"/>

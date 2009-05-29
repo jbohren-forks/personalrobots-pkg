@@ -45,6 +45,8 @@ const double MIN_STANDOFF = 0.022;
 
 const double SUCCESS_THRESHOLD = 0.025;
 enum {MEASURING, MOVING, INSERTING, FORCING, HOLDING};
+const static char* TRACKER_ACTIVATE = "/plug_detector/activate_tracker";
+
 
 double getOffset(int id)
 {
@@ -102,11 +104,13 @@ PlugInAction::PlugInAction(ros::Node& node) :
   tff_msg_.header.frame_id = "outlet_pose";
 
   node_.advertise<plugs_core::PlugInState>(action_name_ + "/state", 10);
-};
+  node_.advertise<std_msgs::Empty>(TRACKER_ACTIVATE, 1);
+}
 
 PlugInAction::~PlugInAction()
 {
-};
+  node_.unadvertise(TRACKER_ACTIVATE);
+}
 
 robot_actions::ResultStatus PlugInAction::execute(const std_msgs::Int32& outlet_id, std_msgs::Empty& feedback)
 {

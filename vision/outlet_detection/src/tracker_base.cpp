@@ -48,6 +48,10 @@ TrackerBase::TrackerBase(ros::Node &node, std::string prefix)
   node_.param("~target_roi_size", target_roi_size_, 400);
 
   node_.param("~save_failures", save_failures_, 0);
+
+  node_.param("~stay_active", stay_active_, true);
+  node_.subscribe("~activate_tracker", activate_msg_, &TrackerBase::activateCB, this, 2);
+  ROS_ERROR("Stay active = %d", stay_active_);
 }
 
 TrackerBase::~TrackerBase()
@@ -58,13 +62,14 @@ TrackerBase::~TrackerBase()
   }
 
   cvReleaseMat(&K_);
+  node_.unsubscribe("~activate_tracker");
 }
 
 void TrackerBase::activate()
 {
   node_.advertise<robot_msgs::PoseStamped>(pose_topic_name_, 1);
   node_.advertise<image_msgs::Image>(display_topic_name_, 1);
-  
+
   boost::thread t(boost::bind(&TrackerBase::spin, this));
   active_thread_.swap(t);
 }
@@ -72,7 +77,7 @@ void TrackerBase::activate()
 void TrackerBase::deactivate()
 {
   active_thread_.interrupt();
-  
+
   node_.unadvertise(pose_topic_name_);
   node_.unadvertise(display_topic_name_);
 }
@@ -142,8 +147,27 @@ void TrackerBase::processImage()
 
 void TrackerBase::spin()
 {
+  bool informed_of_deactivation = false;
   while (node_.ok() && !boost::this_thread::interruption_requested())
   {
+    if (!stay_active_)
+    {
+      if (ros::Time::now() - last_activate_time_ > ros::Duration(10.0))
+      {
+        if (!informed_of_deactivation)
+        {
+          informed_of_deactivation = true;
+          ROS_WARN("Tracker is going inactive (%s)", node_.getName().c_str());
+        }
+        ros::Duration(1.0).sleep();
+        continue;
+      }
+      else
+      {
+        informed_of_deactivation = false;
+      }
+    }
+
     if (roi_policy_ == TargetFrame)
       setRoiToTargetFrame();
 
@@ -244,7 +268,7 @@ robot_msgs::Pose TrackerBase::getTargetInHighDef()
   origin.header.stamp = ros::Time::now();
   tf_listener_.canTransform("high_def_frame", origin.header.frame_id, origin.header.stamp, ros::Duration(0.5));
   tf_listener_.transformPose("high_def_frame", origin, target_in_high_def);
-  
+
   return target_in_high_def.pose;
 }
 
@@ -273,6 +297,11 @@ bool TrackerBase::waitForService(const std::string &service)
       return true;
     usleep(100000);
   }
-  
+
   return false;
+}
+
+void TrackerBase::activateCB()
+{
+  last_activate_time_ = ros::Time::now();
 }
