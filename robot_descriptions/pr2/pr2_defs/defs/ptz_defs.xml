@@ -85,8 +85,7 @@
       <map name="sensor" flag="gazebo">
         <verbatim key="sensor_${side}_ptz_camera">
           <sensor:camera name="${side}_ptz_cam_sensor">
-            <imageWidth>640</imageWidth>
-            <imageHeight>480</imageHeight>
+            <imageSize>640 480</imageSize>
             <hfov>60</hfov>
             <nearClip>0.1</nearClip>
             <farClip>100</farClip>

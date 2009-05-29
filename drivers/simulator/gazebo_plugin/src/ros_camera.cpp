@@ -30,6 +30,7 @@
 
 #include <algorithm>
 #include <assert.h>
+#include <boost/thread/thread.hpp>
 
 #include <gazebo_plugin/ros_camera.h>
 
@@ -107,7 +108,18 @@ void RosCamera::InitChild()
   // set buffer size
   this->width            = this->myParent->GetImageWidth();
   this->height           = this->myParent->GetImageHeight();
-  this->depth            = 1;
+  this->depth            = this->myParent->GetImageDepth();
+  if (this->myParent->GetImageFormat() == "L8")
+    this->format           = "mono";
+  else if (this->myParent->GetImageFormat() == "R8G8B8")
+    this->format           = "rgb";
+  else if (this->myParent->GetImageFormat() == "B8G8R8")
+    this->format           = "bgr";
+  else
+  {
+    ROS_ERROR("Unsupported Gazebo ImageFormat\n");
+    this->format           = "rgb";
+  }
 
 }
 
@@ -138,10 +150,13 @@ void RosCamera::PutCameraData()
 {
   const unsigned char *src;
 
+  boost::recursive_mutex::scoped_lock mr_lock(*Simulator::Instance()->GetMRMutex());
+
   // Get a pointer to image data
   src = this->myParent->GetImageData(0);
 
-  //std::cout << " updating camera " << this->topicName << " " << data->image_size << std::endl;
+  //std::cout << " updating camera " << this->topicName << " " << this->width << std::endl;
+
   if (src)
   {
     //double tmpT0 = Simulator::Instance()->GetWallTime();
@@ -159,9 +174,9 @@ void RosCamera::PutCameraData()
     if (this->rosnode->numSubscribers(this->topicName) > 0)
     {
       // copy from src to imageMsg
-      fillImage(this->imageMsg   ,"image_raw" ,
-                this->height     ,this->width ,this->depth,
-                "mono"            ,"uint8"     ,
+      fillImage(this->imageMsg           ,"image_raw" ,
+                this->height             ,this->width ,  this->depth,
+                this->format.c_str()     ,"uint8"     ,
                 (void*)src );
 
       //tmpT2 = Simulator::Instance()->GetWallTime();

@@ -232,8 +232,8 @@
       <map name="sensor" flag="gazebo">
         <verbatim key="sensor_${name}_l_camera">
           <sensor:camera name="${name}_l_sensor">
-            <imageWidth>640</imageWidth>
-            <imageHeight>480</imageHeight>
+            <imageSize>640 480</imageSize>
+            <imageFormat>L8</imageFormat>
             <hfov>90</hfov>
             <nearClip>0.1</nearClip>
             <farClip>100</farClip>
@@ -285,8 +285,8 @@
       <map name="sensor" flag="gazebo">
         <verbatim key="sensor_${name}_r_camera">
           <sensor:camera name="${name}_r_sensor">
-            <imageWidth>640</imageWidth>
-            <imageHeight>480</imageHeight>
+            <imageSize>640 480</imageSize>
+            <imageFormat>L8</imageFormat>
             <hfov>90</hfov>
             <nearClip>0.1</nearClip>
             <farClip>100</farClip>
