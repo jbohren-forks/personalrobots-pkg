@@ -18,9 +18,6 @@ float DETECTION_RANGE = -1.0;
 float GRASP_RANGE = -0.6;
 float DOORWAY_CLEARANCE_RANGE = 0.4;
 
-// Additional mechanisms used
-RightGripperMechanism right_gripper_mechanism = new RightGripperMechanism(External);
-
 // Additional actions for the doro domain
 StopAction stop_action = new StopAction(External);
 ReleaseHandle release_handle = new ReleaseHandle(External);
