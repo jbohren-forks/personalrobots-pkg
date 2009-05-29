@@ -34,7 +34,6 @@
 
 // TODO: doxygen mainpage
 
-//#define SIM_TEST
 // TODO: Timeout receiving packet.
 // TODO: Check that partial EOF missing frames get caught.
 // @todo Do the triggering based on a stream of incoming timestamps.
@@ -45,6 +44,7 @@
 #include <image_msgs/FillImage.h>
 #include <diagnostic_updater/diagnostic_updater.h>
 #include <diagnostic_updater/update_functions.h>
+#include <self_test/self_test.h>
 #include <robot_mechanism_controllers/SetWaveform.h>
 #include <robot_mechanism_controllers/trigger_controller.h>
 #include <stdlib.h>
@@ -52,6 +52,7 @@
 #include <math.h>
 
 #include <boost/tokenizer.hpp>
+#include <boost/format.hpp>
 
 #include "pr2lib.h"
 #include "host_netutil.h"
@@ -201,6 +202,8 @@ private:
   in_addr localIp_;
   int port_;
   
+  bool open_;
+
   ros::Publisher cam_pub_;
   ros::Publisher cam_info_pub_;
   ros::ServiceClient trig_service_;
@@ -222,6 +225,9 @@ private:
   diagnostic_updater::FrequencyStatus freq_diag_;
   diagnostic_updater::TimeStampStatus timestamp_diag_;
 
+  SelfTest<ForearmNode> self_test_;
+  bool was_running_pretest_;
+  
   FrameTimeFilter frameTimeFilter_;
   
   boost::thread *image_thread_;
@@ -233,19 +239,50 @@ public:
   ForearmNode(ros::NodeHandle &nh)
     : node_handle_(nh), camera_(NULL), started_video_(false),
       diagnostic_(ros::NodeHandle()), 
-      freq_diag_(desired_freq_, desired_freq_, 0.05)
+      freq_diag_(desired_freq_, desired_freq_, 0.05),
+      self_test_(this)
   {
+    started_video_ = false;
+    open_ = false;
     exit_status_ = 0;
     misfire_blank_ = 0;
     image_thread_ = NULL;
     diagnostic_thread_ = NULL;
 
+    // Setup diagnostics
+    diagnostic_.add(timestamp_diag_);
+    diagnostic_.add("Frequency Status", this, &ForearmNode::freqStatus );
+    diagnostic_.add("Link Status", this, &ForearmNode::linkStatus );
+
+    // Setup self test
+    self_test_.setPretest( &ForearmNode::pretest );
+    self_test_.addTest( &ForearmNode::interruptionTest );
+    self_test_.addTest( &ForearmNode::connectTest );
+    self_test_.addTest( &ForearmNode::startTest );
+    self_test_.addTest( &ForearmNode::streamingTest );
+    self_test_.addTest( &ForearmNode::disconnectTest );
+    self_test_.addTest( &ForearmNode::resumeTest );
+    
     // Clear statistics
     last_image_time_ = 0;
     missed_line_count_ = 0;
     missed_eof_count_ = 0;
     
     // Read parameters
+    read_config();
+
+    if (node_handle_.ok())
+    {
+      freq_diag_.clear(); // Avoids having an error until the window fills up.
+      diagnostic_thread_ = new boost::thread( boost::bind(&ForearmNode::diagnosticsLoop, this) );
+    }
+
+    open();
+    start();
+  }
+ 
+  void read_config()
+  {
     node_handle_.param("~if_name", if_name_, std::string("eth0"));
 
     if (node_handle_.hasParam("~ip_address"))
@@ -304,18 +341,17 @@ public:
     cam_info_.header.frame_id = frame_id_;
     cam_info_.width = width_;
     cam_info_.height = height_;
+        
+    node_handle_.param("~trigger_controller", trig_controller_, std::string());
+    node_handle_.param("~trigger_rate", trig_rate_, imager_freq_ - 1.);
+    node_handle_.getParam("~serial_number", serial_number_, -1);
+    node_handle_.param("~trigger_phase", trig_phase_, 0.);
     
-    // Configure camera
-    configure(if_name_, ip_address_, port_);
+    // First packet offset parameter
 
-    if (node_handle_.ok())
-    {
-      freq_diag_.clear(); // Avoids having an error until the window fills up.
-      diagnostic_.add(timestamp_diag_);
-      diagnostic_.add("Frequency Status", this, &ForearmNode::freqStatus );
-      diagnostic_.add("Link Status", this, &ForearmNode::linkStatus );
-      diagnostic_thread_ = new boost::thread( boost::bind(&ForearmNode::diagnosticsLoop, this) );
-    }
+    node_handle_.param("~first_packet_offset", first_packet_offset_, 0.0025);
+    if (!node_handle_.hasParam("~first_packet_offset") && trig_controller_.empty())
+      ROS_INFO("first_packet_offset not specified. Using default value of %f ms.", first_packet_offset_);
   }
 
   void diagnosticsLoop()
@@ -327,6 +363,7 @@ public:
       { 
         boost::mutex::scoped_lock(diagnostics_lock_);
         diagnostic_.update();
+        self_test_.checkTest();
       }
       sleep(1);
 
@@ -353,13 +390,7 @@ public:
   {
     // Stop threads
     node_handle_.shutdown();
-    if (image_thread_)
-    {
-      if (image_thread_->timed_join((boost::posix_time::milliseconds) 2000))
-        delete image_thread_;
-      else
-        ROS_DEBUG("image_thread_ did not die after two seconds. Proceeding with shutdown.");
-    }
+    close();
 
     if (diagnostic_thread_)
     {
@@ -369,30 +400,14 @@ public:
         ROS_DEBUG("diagnostic_thread_ did not die after two seconds. Proceeding with shutdown.");
     }
 
-    // Stop video
-    if ( started_video_ && pr2StopVid(camera_) != 0 )
-      ROS_ERROR("Video Stop error");
-    if ( started_video_)
-      pr2Reset(camera_);
-
-    // Stop Triggering
-    if (!trig_controller_cmd_.empty())
-    {   
-      ROS_DEBUG("Stopping triggering.");
-      trig_req_.running = 0;
-      ros::Node shutdown_node("forearm_node", ros::Node::ANONYMOUS_NAME | ros::Node::DONT_ADD_ROSOUT_APPENDER); // Need this because the node has been shutdown already
-      if (!trig_service_.call(trig_req_, trig_rsp_))
-      { // This probably means that the trigger controller was turned off,
-        // so we don't really care.
-        ROS_DEBUG("Was not able to stop triggering.");
-      }
-    }
-  
     ROS_DEBUG("ForearmNode destructor exiting.");
   }
 
-  void configure(const std::string &if_name, const std::string &ip_address, int port_)
+  void open()
   {
+    if (open_)
+      return;
+    
     int retval;
     // Create a new IpCamList to hold the camera list
     IpCamList camList;
@@ -416,9 +431,8 @@ public:
       ROS_WARN("Unable to set net.core.rmem_max. Buffer overflows and packet loss is likely.");
     }
 
-#ifndef SIM_TEST
     // Discover any connected cameras, wait for 0.5 second for replies
-    if( pr2Discover(if_name.c_str(), &camList, ip_address.c_str(), SEC_TO_USEC(0.5)) == -1) {
+    if( pr2Discover(if_name_.c_str(), &camList, ip_address_.c_str(), SEC_TO_USEC(0.5)) == -1) {
       ROS_FATAL("Discover error");
       exit_status_ = 1;
       node_handle_.shutdown();
@@ -434,12 +448,10 @@ public:
 
     // Open camera with requested serial number.
     int index = -1;
-    if (node_handle_.hasParam("~serial_number")) {
-      int sn;
-      node_handle_.getParam("~serial_number", sn);
-      index = pr2CamListFind(&camList, sn);
+    if (serial_number_ != -1) {
+      index = pr2CamListFind(&camList, serial_number_);
       if (index == -1) {
-        ROS_FATAL("Couldn't find camera with S/N %i", sn);
+        ROS_FATAL("Couldn't find camera with S/N %i", serial_number_);
         exit_status_ = 1;
       }
       else
@@ -466,7 +478,7 @@ public:
     }
 
     // Configure the camera with its IP address, wait up to 500ms for completion
-    retval = pr2Configure(camera_, ip_address.c_str(), SEC_TO_USEC(0.5));
+    retval = pr2Configure(camera_, ip_address_.c_str(), SEC_TO_USEC(0.5));
     if (retval != 0) {
       if (retval == ERR_CONFIG_ARPFAIL) {
         ROS_WARN("Unable to create ARP entry (are you root?), continuing anyway");
@@ -478,7 +490,7 @@ public:
       }
     }
     ROS_INFO("Configured camera, S/N #%u, IP address %s",
-             camera_->serial, ip_address.c_str());
+             camera_->serial, ip_address_.c_str());
       
     serial_number_ = camera_->serial;
     hwinfo_ = camera_->hwinfo;
@@ -502,7 +514,7 @@ public:
       
     // Select trigger mode.
     if ( pr2TriggerControl( camera_, ext_trigger_ ? TRIG_STATE_EXTERNAL : TRIG_STATE_INTERNAL ) != 0) {
-      ROS_FATAL("Trigger mode set error. Is %s accessible from interface %s? (Try running route to check.)", ip_address.c_str(), if_name.c_str());
+      ROS_FATAL("Trigger mode set error. Is %s accessible from interface %s? (Try running route to check.)", ip_address_.c_str(), if_name_.c_str());
       exit_status_ = 1;
       node_handle_.shutdown();
       return;
@@ -512,18 +524,13 @@ public:
     {
       // How fast should we be triggering the camera? By default 1 Hz less
       // than nominal.
-      node_handle_.param("~trigger_rate", trig_rate_, imager_freq_ - 1.);
       desired_freq_ = trig_rate_;
 
       // Configure the triggering controller
-      if (node_handle_.hasParam("~trigger_controller") )
+      if (!trig_controller_.empty())
       {
-        node_handle_.getParam("~trigger_controller", trig_controller_);
         ROS_INFO("Configuring controller \"%s\" for triggering.", trig_controller_.c_str());
         trig_controller_cmd_ = trig_controller_ + "/set_waveform";
-
-        double trig_phase_;
-        node_handle_.param("~trigger_phase", trig_phase_, 0.);
 
         ROS_DEBUG("Setting trigger.");
         trig_req_.running = 1;
@@ -558,12 +565,6 @@ public:
       }
     }
 
-    // First packet offset parameter
-
-    node_handle_.param("~first_packet_offset", first_packet_offset_, 0.0025);
-    if (!node_handle_.hasParam("~first_packet_offset") && trig_controller_.empty())
-      ROS_INFO("first_packet_offset not specified. Using default value of %f ms.", first_packet_offset_);
-
     // Select a video mode
     if ( pr2ImagerModeSelect( camera_, video_mode_ ) != 0) {
       ROS_FATAL("Mode select error");
@@ -592,6 +593,25 @@ public:
 
     frameTimeFilter_ = FrameTimeFilter(desired_freq_, 0.001, 0.5 / imager_freq_); 
     
+    // Receive frames through callback
+    // TODO: start this in separate thread?
+    cam_pub_ = node_handle_.advertise<image_msgs::Image>("~image_raw", 1);
+    if (calibrated_)
+      cam_info_pub_ = node_handle_.advertise<image_msgs::CamInfo>("~cam_info", 1);
+    
+    open_ = true;;
+  }
+
+  void close()
+  {
+    stop();
+    open_ = false;
+  }
+
+  void start()
+  {
+    if (!open_)
+      open();
     // Start video; send it to specified host port
     // @todo TODO: Only start when somebody is listening?
     if ( pr2StartVid( camera_, (uint8_t *)&(localMac_.sa_data[0]),
@@ -602,26 +622,44 @@ public:
       return;
     }
     started_video_ = true;
-#endif
-
-    // Receive frames through callback
-    // TODO: start this in separate thread?
-    cam_pub_ = node_handle_.advertise<image_msgs::Image>("~image_raw", 1);
-    if (calibrated_)
-      cam_info_pub_ = node_handle_.advertise<image_msgs::CamInfo>("~cam_info", 1);
-      
     image_thread_ = new boost::thread(boost::bind(&ForearmNode::imageThread, this, port_));
-    
     ROS_INFO("Camera running.");
   }
 
+  void stop()
+  {
+    if (image_thread_)
+    {
+      if (image_thread_->timed_join((boost::posix_time::milliseconds) 2000))
+      {
+        delete image_thread_;
+        image_thread_ = NULL;
+      }
+      else
+        ROS_DEBUG("image_thread_ did not die after two seconds. Proceeding with shutdown.");
+    }
+    
+    // Stop video
+    if ( started_video_ && pr2StopVid(camera_) != 0 )
+      ROS_ERROR("Video Stop error");
+    
+    // Stop Triggering
+    if (!trig_controller_cmd_.empty())
+    {   
+      ROS_DEBUG("Stopping triggering.");
+      trig_req_.running = 0;
+      ros::Node shutdown_node("forearm_node", ros::Node::ANONYMOUS_NAME | ros::Node::DONT_ADD_ROSOUT_APPENDER); // Need this because the node has been shutdown already
+      if (!trig_service_.call(trig_req_, trig_rsp_))
+      { // This probably means that the trigger controller was turned off,
+        // so we don't really care.
+        ROS_DEBUG("Was not able to stop triggering.");
+      }
+    }
+  }
+  
   void imageThread(int port)
   {
-#ifndef SIM_TEST
     pr2VidReceive(camera_->ifName, port, height_, width_, &ForearmNode::frameHandler, this);
-#else
-    pr2VidReceive(if_name.c_str(), port, height_, width_, &ForearmNode::frameHandler, this);
-#endif
     
     ROS_DEBUG("Image thread exiting.");
   }
@@ -732,7 +770,7 @@ private:
   {
     boost::mutex::scoped_lock(diagnostics_lock_);
     
-    if (!node_handle_.ok())
+    if (!started_video_ || !node_handle_.ok())
       return 1;
     
     if (frame_info == NULL)
@@ -887,6 +925,119 @@ private:
     return items_read == EXPECTED_ITEMS && width != 0 && height != 0;
 #endif
   }
+
+  void pretest()
+  {
+    was_running_pretest_ = started_video_;
+    stop();
+  }
+
+  void interruptionTest(robot_msgs::DiagnosticStatus& status)
+  {
+    status.name = "Interruption Test";
+
+    if (node_handle_.getNode()->numSubscribers("~image_raw") == 0)
+    {
+      status.level = 0;
+      status.message = "No operation interrupted.";
+    }
+    else
+    {
+      status.level = 1;
+      status.message = "There were active subscribers.  Running of self test interrupted operations.";
+    }
+  }
+
+  void connectTest(robot_msgs::DiagnosticStatus& status)
+  {
+    status.name = "Connection Test";
+
+    open();
+
+    if (open_)
+    {
+      status.level = 0;
+      status.message = 
+        str(boost::format("Connected successfully to camera %i.")%serial_number_);
+    }
+    else
+    {
+      status.level = 2;
+      status.message = "Failed to connect.";
+    }
+
+    self_test_.setID(str(boost::format("FCAM%i")%serial_number_));
+  }
+
+  void startTest(robot_msgs::DiagnosticStatus& status)
+  {
+    status.name = "Start Test";
+
+    start();
+
+    status.level = 0;
+    status.message = "Started successfully.";
+  }
+
+  void streamingTest(robot_msgs::DiagnosticStatus& status)
+  {
+    freq_diag_.clear();
+    sleep(5);
+
+    diagnostic_updater::DiagnosticStatusWrapper dsfreq;
+    freq_diag_(dsfreq);
+
+    diagnostic_updater::DiagnosticStatusWrapper dstime;
+    timestamp_diag_(dstime);
+
+    if (dsfreq.level > 0)
+    { 
+      status = dsfreq;
+    }
+    else if (dstime.level > 0 && dstime.level > dsfreq.level)
+    { 
+      status = dstime;
+    }
+    else
+    {
+      status.level = 0;
+      status.message = "Started successfully.";
+    }
+    
+    status.name = "Streaming Test";
+  }
+
+  void disconnectTest(robot_msgs::DiagnosticStatus& status)
+  {
+    status.name = "Disconnect Test";
+
+    close();
+
+    status.level = 0;
+    status.message = "Disconnected successfully.";
+  }
+
+  void resumeTest(robot_msgs::DiagnosticStatus& status)
+  {
+    status.name = "Resume Test";
+
+    if (was_running_pretest_)
+    {
+      open();
+      start();
+
+      if (!started_video_)
+      {
+        status.level = 2;
+        status.message = "Failed to resume previous mode of operation.";
+        return;
+      }
+    }
+
+    status.level = 0;
+    status.message = "Previous operation resumed successfully.";
+  }
+
 };
 
 #define __CHECK_FD_FREE__

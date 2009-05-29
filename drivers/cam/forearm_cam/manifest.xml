@@ -10,6 +10,7 @@
   <depend package="diagnostic_updater" />
   <depend package="opencv_latest" />
   <depend package="stereo_image_proc" />
+  <depend package="self_test" />
   <depend package="image_view" />
   <depend package="robot_mechanism_controllers" />
 </package>

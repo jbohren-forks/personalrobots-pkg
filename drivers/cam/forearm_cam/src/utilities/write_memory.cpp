@@ -14,7 +14,7 @@ int main(int argc, char** argv)
   char* if_name = argv[1];
   char* ip_address = argv[2];
   int sn = atoi(argv[3]);
-  char* filename = argv[4];
+  //char* filename = argv[4];
 
   // Create a new IpCamList to hold the camera list
   IpCamList camList;
