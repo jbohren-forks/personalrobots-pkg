@@ -284,6 +284,7 @@ MoveBase::Inactive{
     }
     else {
       eq(rc.ready_to_approach, false);
+      eq(rc.outlet_detected_coarse, false);
     }
   }
   
