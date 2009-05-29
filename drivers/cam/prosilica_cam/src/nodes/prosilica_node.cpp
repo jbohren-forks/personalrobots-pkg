@@ -118,12 +118,14 @@ public:
     node_.param("~acquisition_mode", mode_str, std::string("Continuous"));
     if (mode_str == std::string("Continuous")) {
       mode_ = prosilica::Continuous;
+      cam_->setFrameCallback(boost::bind(&ProsilicaNode::publishImage, this, _1));
       // TODO: tighter bound than this minimal check
       desired_freq_ = 1; // make sure we get _something_
       buffer_size = prosilica::Camera::DEFAULT_BUFFER_SIZE;
     }
     else if (mode_str == std::string("Triggered")) {
       mode_ = prosilica::Triggered;
+      cam_->setFrameCallback(boost::bind(&ProsilicaNode::noopCallback, this, _1));
       desired_freq_ = 0;
       buffer_size = 1;
     }
@@ -163,10 +165,9 @@ public:
       cam_.reset( new prosilica::Camera(guid, buffer_size) );
     }
     ROS_INFO("Found camera, guid = %lu", guid);
-
-    cam_->setFrameCallback(boost::bind(&ProsilicaNode::publishImage, this, _1));
     
     // Feature control
+    bool auto_expose = true;
     std::string auto_setting;
     node_.param("~exposure_auto", auto_setting, std::string("Auto"));
     if (auto_setting == std::string("Auto"))
@@ -178,6 +179,7 @@ public:
       int val;
       node_.getParam("~exposure", val);
       cam_->setExposure(val, prosilica::Manual);
+      auto_expose = false;
     } else {
       ROS_FATAL("Unknown setting");
       node_.shutdown();
@@ -240,6 +242,10 @@ public:
     diagnostic_.addUpdater( &ProsilicaNode::frameStatistics );
     diagnostic_.addUpdater( &ProsilicaNode::packetStatistics );
     diagnostic_.addUpdater( &ProsilicaNode::packetErrorStatus );
+
+    // Auto-exposure tends to go wild the first few frames after startup
+    if (mode_ == prosilica::Triggered && auto_expose)
+      normalizeExposure();
   }
 
   ~ProsilicaNode()
@@ -691,6 +697,10 @@ private:
     publishTopics(img_, rect_img_, cam_info_);
   }
 
+  void noopCallback(tPvFrame* frame)
+  {
+  }
+
   void loadIntrinsics()
   {
     calibrated_ = false;
@@ -762,6 +772,16 @@ private:
     cvInitUndistortMap( &Kmat_, &Dmat_, undistortX_.Ipl(), undistortY_.Ipl() );
 
     calibrated_ = true;
+  }
+
+  void normalizeExposure()
+  {
+    cam_->stop();
+    cam_->start(prosilica::Continuous);
+    ros::Duration d = ros::Duration(2, 0);
+    d.sleep();
+    cam_->stop();
+    cam_->start(mode_);
   }
 };
 
