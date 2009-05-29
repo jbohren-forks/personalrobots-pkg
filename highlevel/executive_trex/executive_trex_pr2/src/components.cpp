@@ -17,6 +17,7 @@
 #include "LabelStr.hh"
 #include <executive_trex_pr2/topological_map.h>
 #include <executive_trex_pr2/door_domain_constraints.h>
+#include <executive_trex_pr2/ros_reactor.h>
 #include <tf/transform_listener.h>
 #include <math.h>
 
@@ -85,8 +86,8 @@ namespace TREX{
 	LabelStr param_name = param_names_lbl.getElement(i, DELIMITER);
 	ConstrainedVariableId var_a = getVariableByName(variables[0], param_name);
 	ConstrainedVariableId var_b = getVariableByName(variables[1], param_name);
-	checkError(var_a.isValid(), "In param_eq constrint - no variable for " << param_name.toString() << " for " << parentOf(variables[0])->toLongString());
-	checkError(var_b.isValid(), "In param_eq constrint - no variable for " << param_name.toString() << " for " << parentOf(variables[1])->toLongString());
+	checkError(var_a.isValid(), "In param_eq constrint - no variable for " << param_name.toString() << " for " << parentOf(variables[0])->toLongString() << " in /n" << toString());
+	checkError(var_b.isValid(), "In param_eq constrint - no variable for " << param_name.toString() << " for " << parentOf(variables[1])->toLongString()<< " in /n" << toString());
 
 	// Insert the pair
 	new_scope.push_back(var_a);
@@ -425,6 +426,7 @@ namespace TREX{
 
   void initROSExecutive(bool playback){
     initTREX();
+    new TeleoReactor::ConcreteFactory<executive_trex_pr2::ROSReactor>("ROSReactor");
     new ROSSchema(playback);
   }
 
