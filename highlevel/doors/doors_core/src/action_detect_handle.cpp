@@ -41,7 +41,9 @@
 #include <boost/thread/thread.hpp>
 #include <point_cloud_assembler/BuildCloudAngle.h>
 #include <kdl/frames.hpp>
+#include <pr2_robot_actions/set_hokuyo_mode.h>
 #include "doors_core/action_detect_handle.h"
+
 
 using namespace ros;
 using namespace std;
@@ -216,6 +218,9 @@ bool DetectHandleAction::laserDetection(const door_msgs::Door& door_in,
   double dist = handlepoint.length();
   ROS_INFO("tilt laser is at height %f, and door at distance %f", laser_height, dist);
   
+  // set the laser scanner to intensity mode
+  pr2_robot_actions::setHokuyoMode("tilt_hokuyo_node", "intensity");
+
   // gets a point cloud from the point_cloud_srv
   if (isPreemptRequested()) return false;
   ROS_INFO("get a point cloud from the door");
