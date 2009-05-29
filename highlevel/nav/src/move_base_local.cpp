@@ -103,6 +103,23 @@ namespace nav {
       delete controller_costmap_ros_;
   }
 
+  void MoveBaseLocal::publishGoal(const robot_msgs::PoseStamped& goal){
+    visualization_msgs::Marker marker;
+    marker.header = goal.header;
+    marker.ns = "move_base_local";
+    marker.id = 0;
+    marker.type = visualization_msgs::Marker::ARROW;
+    marker.pose = goal.pose;
+    marker.scale.x = 0.5;
+    marker.scale.y = 0.4;
+    marker.scale.z = 0.4;
+    marker.color.a = 1.0;
+    marker.color.r = 1.0;
+    marker.color.g = 0.0;
+    marker.color.b = 0.0;
+    ros_node_.publish("visualization_marker", marker);
+  }
+
   void MoveBaseLocal::getRobotPose(std::string frame, tf::Stamped<tf::Pose>& pose){
     tf::Stamped<tf::Pose> robot_pose;
     robot_pose.setIdentity();
@@ -126,6 +143,9 @@ namespace nav {
   }
 
   robot_actions::ResultStatus MoveBaseLocal::execute(const robot_msgs::PoseStamped& goal, robot_msgs::PoseStamped& feedback){
+    //visualize the goal
+    publishGoal(goal);
+
     //start the controller's costmap
     controller_costmap_ros_->start();
     controller_costmap_ros_->clearNonLethalWindow(circumscribed_radius_ * 2, circumscribed_radius_ * 2);
