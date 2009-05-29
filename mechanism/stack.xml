@@ -1,0 +1,13 @@
+<stack name="mechanism" version="0.1">
+  <description brief="mechanism packages from ros-pkg">
+    These are mechanism-related packages.
+  </description>
+  <version>0.1</version>
+  <author>Stu Glaser sglaser@willowgarage.com</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://pr.willowgarage.com/wiki/mechanism</url>
+  
+  <depend stack="ros" version="0.5"/>
+</stack>
+

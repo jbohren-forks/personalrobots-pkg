@@ -1,0 +1,13 @@
+<stack name="estimation" version="0.1">
+  <description brief="estimation packages from ros-pkg">
+    These are packages that help with estimating uncertain quantities.
+  </description>
+  <version>0.1</version>
+  <author>Wim Meeussen meeussen@willowgarage.com</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://pr.willowgarage.com/wiki/estimation</url>
+  
+  <depend stack="ros" version="0.5"/>
+</stack>
+

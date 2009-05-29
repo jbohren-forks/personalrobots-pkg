@@ -1,0 +1,13 @@
+<stack name="calibration" version="0.1">
+  <description brief="calibration packages from ros-pkg">
+    These are calibration-related packages.
+  </description>
+  <version>0.1</version>
+  <author>Vijay Pradeep vpradeep@willowgarage.com</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://pr.willowgarage.com/wiki/calibration</url>
+  
+  <depend stack="ros" version="0.5"/>
+</stack>
+

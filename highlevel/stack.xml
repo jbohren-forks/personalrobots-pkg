@@ -1,0 +1,17 @@
+<stack name="highlevel" version="0.1">
+  <description brief="high-level packages from ros-pkg">
+   This stack is meant to contain high-level stuff, i.e., software
+   that views the robot in very abstract terms, like "drive to XY on a
+   map" or "open the door in front of you" or "pick up the stapler in
+   front of you."
+  </description>
+  <version>0.1</version>
+  <author>Conor McGann mcgann@willowgarage.com</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://pr.willowgarage.com/wiki/highlevel</url>
+  
+  <depend stack="ros" version="0.5"/>
+</stack>
+
+

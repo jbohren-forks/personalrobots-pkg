@@ -1,0 +1,13 @@
+<stack name="util" version="0.1">
+  <description brief="utility packages from ros-pkg">
+    These are utility package.
+  </description>
+  <version>0.1</version>
+  <author>Morgan Quigley mquigley@cs.stanford.edu</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://pr.willowgarage.com/wiki/util</url>
+  
+  <depend stack="ros" version="0.5"/>
+</stack>
+

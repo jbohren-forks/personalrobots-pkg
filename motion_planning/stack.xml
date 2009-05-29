@@ -1,0 +1,14 @@
+<stack name="motion_planning" version="0.1">
+  <description brief="motion plannig packages from ros-pkg">
+   This stack contains motion planners and supporting infrastructure.
+  </description>
+  <version>0.1</version>
+  <author>Sachin Chitta sachinc@willowgarage.com</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://pr.willowgarage.com/wiki/motion_planning</url>
+  
+  <depend stack="ros" version="0.5"/>
+</stack>
+
+

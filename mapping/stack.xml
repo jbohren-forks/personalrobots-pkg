@@ -1,0 +1,15 @@
+<stack name="mapping" version="0.1">
+  <description brief="laser-based sensing packages from ros-pkg">
+    These are packages that primarily process laser / range data.
+  </description>
+  <version>0.1</version>
+  <author>Radu Rusu rusu@willowgarage.com,
+          Marius Muja mariusm@willowgarage.com
+  </author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://pr.willowgarage.com/wiki/mapping</url>
+  
+  <depend stack="ros" version="0.5"/>
+</stack>
+

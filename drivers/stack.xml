@@ -1,0 +1,14 @@
+<stack name="drivers" version="0.1">
+  <description brief="driver packages from ros-pkg">
+    These are hardware drivers.
+  </description>
+  <version>0.1</version>
+  <author>Blaise Gassend blaise@willowgarage.com</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://pr.willowgarage.com/wiki/drivers</url>
+  
+  <depend stack="ros" version="0.5"/>
+  <depend stack="common" version="0.1"/>
+</stack>
+

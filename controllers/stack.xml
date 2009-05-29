@@ -1,0 +1,13 @@
+<stack name="controllers" version="0.1">
+  <description brief="controller packages from ros-pkg">
+    These are robot controllers.
+  </description>
+  <version>0.1</version>
+  <author>Melonee Wise mwise@willowgarage.com</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://pr.willowgarage.com/wiki/controllers</url>
+  
+  <depend stack="ros" version="0.5"/>
+</stack>
+

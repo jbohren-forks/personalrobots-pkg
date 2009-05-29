@@ -1,0 +1,13 @@
+<stack name="vision" version="0.1">
+  <description brief="vision packages from ros-pkg">
+    These are vision-related packages.
+  </description>
+  <version>0.1</version>
+  <author>James Bowman jamesb@willowgarage.com</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://pr.willowgarage.com/wiki/vision</url>
+  
+  <depend stack="ros" version="0.5"/>
+</stack>
+

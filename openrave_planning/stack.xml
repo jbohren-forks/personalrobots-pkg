@@ -1,0 +1,15 @@
+<stack name="openrave_planning" version="0.1">
+  <description brief="openrave packages from cmu-ros-pkg">
+    These are OpenRAVE-related packages.
+  </description>
+  <version>0.1</version>
+  <author>Rosen Diankov rdiankov@cs.cmu.edu</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://pr.willowgarage.com/wiki/openrave</url>
+  
+  <depend stack="ros" version="0.5"/>
+  <depend stack="common" version="0.1"/>
+  <depend stack="simulators" version="0.1"/>
+</stack>
+
