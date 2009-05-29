@@ -59,6 +59,7 @@ protected:
   std::vector<CvPoint2D32f> corners_;
 
   tf::Transform plug_in_board_, camera_in_cvcam_;
+  tf::Transform prong_in_board_;
   
   cv::WImageBuffer3_b display_img_;
 };

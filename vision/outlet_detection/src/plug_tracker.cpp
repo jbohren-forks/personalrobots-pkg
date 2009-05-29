@@ -31,9 +31,35 @@ PlugTracker::PlugTracker(ros::Node &node)
     return;
   }
 
-  corners_.resize(board_w_ * board_h_);
+  // Set up transforms
+  // Coordinate frame (looking down on plug): (right, -forward, down)
+  double pos[3], ori[4];
+  if (node_.getParam("~plug_position_x", pos[0]) &&
+      node_.getParam("~plug_position_y", pos[1]) &&
+      node_.getParam("~plug_position_z", pos[2]) &&
+      node_.getParam("~plug_orientation_x", ori[0]) &&
+      node_.getParam("~plug_orientation_y", ori[1]) &&
+      node_.getParam("~plug_orientation_z", ori[2]) &&
+      node_.getParam("~plug_orientation_w", ori[3]) )
+  {
+    plug_in_board_.getOrigin().setValue(pos[0], pos[1], pos[2]);
+    plug_in_board_.setRotation(tf::Quaternion(ori[0], ori[1], ori[2], ori[3]));
+  } else {
+    ROS_WARN("Plug in board position unspecified, using defaults");
+    
+    // Measured with caliper
+    //plug_in_board_.setOrigin(tf::Vector3(0.007, -0.029, 0.008)); // to tip
+    plug_in_board_.setOrigin(tf::Vector3(0.007, -0.0085, 0.015));
+    plug_in_board_.setRotation(tf::Quaternion(0.71428, -0.69958, 0.00588, 0.01906));
+  }
+  prong_in_board_.setOrigin(tf::Vector3(0.007, -0.029, 0.008)); // to tip
+  prong_in_board_.setBasis(plug_in_board_.getBasis());
+
+  camera_in_cvcam_.getOrigin().setValue(0.0, 0.0, 0.0);
+  camera_in_cvcam_.getBasis().setValue(0, 0, 1, -1, 0, 0, 0, -1, 0);
 
   // Set up "true" grid of corner points
+  corners_.resize(board_w_ * board_h_);
   grid_pts_ = cvCreateMat(board_w_ * board_h_, 3, CV_64FC1);
   int j = 0;
   for (int y = 0; y < board_h_; ++y) {
@@ -44,31 +70,6 @@ PlugTracker::PlugTracker(ros::Node &node)
       ++j;
     }
   }
-
-  // Set up transforms
-  // Coordinate frame (looking down on plug): (right, -forward, down)
-  
-  // TODO: set these through parameters?
-  // Rough hand-measured
-  //plug_in_board_.getOrigin().setValue(0.003, -0.01, 0.005);
-  //plug_in_board_.getBasis().setValue(0, -1, 0, -1, 0, 0, 0, 0, -1);
-  // Pretty accurate numbers for boxy plug
-
-  // Old plug:
-  //plug_in_board_.getOrigin().setValue(0.00398, -0.01252, 0.00659);
-  //plug_in_board_.setRotation(btQuaternion(-0.70607, 0.70787, 0.01876, -0.00651));
-
-  // New, boxy plug
-  //plug_in_board_.setOrigin(tf::Vector3(0.01047, -0.01988, 0.02932));
-  //plug_in_board_.setRotation(tf::Quaternion(0.71428, -0.69958, 0.00588, 0.01906));
-
-  // Measured with caliper
-  //plug_in_board_.setOrigin(tf::Vector3(0.007, -0.029, 0.008)); // to tip
-  plug_in_board_.setOrigin(tf::Vector3(0.007, -0.0085, 0.015));
-  plug_in_board_.setRotation(tf::Quaternion(0.71428, -0.69958, 0.00588, 0.01906));
-
-  camera_in_cvcam_.getOrigin().setValue(0.0, 0.0, 0.0);
-  camera_in_cvcam_.getBasis().setValue(0, 0, 1, -1, 0, 0, 0, -1, 0);
 
   node_.advertise<visualization_msgs::Marker>("visualization_marker", 1);
   
@@ -172,8 +173,6 @@ bool PlugTracker::detectObject(tf::Transform &pose)
   pose = board_in_cam * plug_in_board_;
   //pose = board_in_cvcam; // for calibration only!!
 
-  //pose = camera_in_cvcam_ * board_in_cvcam /* * plug_in_board_ */;
-
   publishBoardMarker(board_in_cam);
   publishBoardRayMarker(board_in_cam);
   publishPlugRayMarker(board_in_cam, pose);
@@ -243,7 +242,6 @@ void PlugTracker::publishBoardMarker(const tf::Transform &board_in_cam)
     robot_msgs::Point pt_msg;
     tf::PointTFToMsg(pt, pt_msg);
     marker.points.push_back(pt_msg);
-    //ROS_INFO("Point: (%f, %f, %f)", pt.x(), pt.y(), pt.z());
   }
   
   node_.publish("visualization_marker", marker);
@@ -308,5 +306,9 @@ void PlugTracker::publishPlugRayMarker(const tf::Transform &board_in_cam,
   tf::PointTFToMsg(board_in_cam.getOrigin(), marker.points[0]);
   tf::PointTFToMsg(plug_pose.getOrigin(), marker.points[1]);
 
+  node_.publish("visualization_marker", marker);
+
+  marker.id = 3;
+  tf::PointTFToMsg((board_in_cam * prong_in_board_).getOrigin(), marker.points[1]);
   node_.publish("visualization_marker", marker);
 }
