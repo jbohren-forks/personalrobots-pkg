@@ -5,8 +5,8 @@
 fact(base_state.Holds f1);
 f1.frame_id = "map";
 f1.time_stamp = 0.0;
-f1.x = 16.25;
-f1.y = 17.53;
+f1.x = 8.50;
+f1.y = 3.00;
 f1.z = 0.0;
 f1.qx = 0.0;
 f1.qy = 0.0;
