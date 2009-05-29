@@ -287,7 +287,7 @@ namespace door_functions{
 
   double getHandleDir(const door_msgs::Door& d)
   {
-    Vector normal = getDoorNormal(d);
+    Vector normal = getFrameNormal(d);
     Vector frame_vec;
     if (d.hinge == door_msgs::Door::HINGE_P1)
       frame_vec = Vector(d.frame_p2.x - d.frame_p1.x, d.frame_p2.y - d.frame_p1.y, d.frame_p2.z - d.frame_p1.z);
@@ -306,18 +306,27 @@ namespace door_functions{
 
   double getDoorDir(const door_msgs::Door& d)
   {
-    double rot_dir = 0;
-    if (d.rot_dir == door_msgs::Door::ROT_DIR_CLOCKWISE)
-      rot_dir = -1;
-    else if (d.rot_dir == door_msgs::Door::ROT_DIR_COUNTERCLOCKWISE)
-      rot_dir = 1;
+    // get frame vector
+    Vector frame_vec;
+    if (d.hinge == door_msgs::Door::HINGE_P1)
+      frame_vec = Vector(d.frame_p2.x - d.frame_p1.x, d.frame_p2.y - d.frame_p1.y, d.frame_p2.z - d.frame_p1.z);
+    else if (d.hinge == door_msgs::Door::HINGE_P2)
+      frame_vec = Vector(d.frame_p1.x - d.frame_p2.x, d.frame_p1.y - d.frame_p2.y, d.frame_p1.z - d.frame_p2.z);
     else
-      ROS_ERROR("Door rotation direction not specified");
+      ROS_ERROR("Hinge side is not defined");
 
-    if (getHandleDir(d) < 0)
-      return rot_dir;
+    // rotate frame vector
+    if (d.rot_dir == door_msgs::Door::ROT_DIR_CLOCKWISE)
+      frame_vec = Rotation::RotZ(-M_PI_2) * frame_vec;
+    else if (d.rot_dir == door_msgs::Door::ROT_DIR_COUNTERCLOCKWISE)
+      frame_vec = Rotation::RotZ(M_PI_2) * frame_vec;
     else
-      return -rot_dir;
+      ROS_ERROR("Rot dir is not defined");
+
+    if (dot(frame_vec, getFrameNormal(d)) < 0)
+      return -1.0; 
+    else
+      return 1.0;
   }
 
 
