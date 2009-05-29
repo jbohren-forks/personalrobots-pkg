@@ -5,7 +5,7 @@ TARBALL = build/$(OGRE_VERSION).tar.bz2
 TARBALL_URL = http://pr.willowgarage.com/downloads/$(OGRE_VERSION).tar.bz2
 SOURCE_DIR = build/$(OGRE_VERSION)
 UNPACK_CMD = tar xf
-TARBALL_PATCH = warnings.patch boost.patch
+TARBALL_PATCH = 
 INITIAL_DIR = build/ogre
 include $(shell rospack find mk)/download_unpack_build.mk
 
@@ -22,7 +22,7 @@ LFLAGS = $(shell rospack export --lang=cpp --attrib=lflags freeimage) \
          $(shell rosboost-cfg --lflags thread) \
          -lpthread
 
-CONFIGURE_FLAGS = --prefix=$(OGREROOT) --enable-threading --with-pic --with-platform=GLX --with-gui=gtk  --disable-ogre-demos --with-arch=nocona --enable-release
+CONFIGURE_FLAGS = --prefix=$(OGREROOT) --with-pic --with-platform=GLX --with-gui=gtk  --disable-ogre-demos --with-arch=nocona --enable-release
 
 $(SOURCE_DIR)/Makefile: $(SOURCE_DIR)/unpacked changelist.txt
 	make clean
@@ -53,14 +53,14 @@ $(SOURCE_DIR)/Makefile: $(SOURCE_DIR)/unpacked changelist.txt
 ogre:
 	@if test `uname` = Darwin ; then \
 	  echo "OS X detected; assuming that you have installed the OGRE SDK"; \
-	elif ! pkg-config --exact-version 1.4.9 OGRE; then \
+	elif ! pkg-config --exact-version 1.6.1 OGRE; then \
 	  echo "You don't have OGRE.  I'm going to build it."; \
 	  if [ -h ogre/lib/OGRE ]; then \
 	    rm ogre/lib/OGRE; \
 	  fi; \
 	  make ogre/lib/pkgconfig/OGRE.pc; \
 	else \
-	  echo "You have OGRE 1.4.9. Watch this!"; \
+	  echo "You have OGRE 1.6.1. Watch this!"; \
 	  rm -rf ogre; \
 	  mkdir -p ogre/lib; \
 	  ln -sf /usr/lib/OGRE ogre/lib/OGRE; \
