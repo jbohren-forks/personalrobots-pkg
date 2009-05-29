@@ -39,7 +39,7 @@
 #include <gazebo/gazebo.h>
 #include <gazebo/GazeboError.hh>
 #include <gazebo/ControllerFactory.hh>
-#include "RaySensor.hh"
+#include <gazebo/RaySensor.hh>
 
 using namespace gazebo;
 

@@ -38,8 +38,8 @@
 #include <gazebo/GazeboError.hh>
 #include <gazebo/ControllerFactory.hh>
 #include <gazebo/Model.hh>
-#include "MonoCameraSensor.hh"
-#include "Body.hh"
+#include <gazebo/MonoCameraSensor.hh>
+#include <gazebo/Body.hh>
 
 #include "image_msgs/Image.h"
 #include "image_msgs/FillImage.h"

@@ -352,7 +352,7 @@ void URDF2Gazebo::convertLink(TiXmlElement *root, robot_desc::URDF::Link *link, 
                 for (int j = 0 ; j < 3 ; ++j)
                 {
                     // undo Gazebo's shift of object anchor to geom cg center, stay in body cs
-                    tmpAnchor[j] = (link->joint->anchor)[j] - (link->inertial->com)[j] - 0*(link->collision->xyz)[j];
+                    tmpAnchor[j] = (link->joint->anchor)[j]; // - (link->inertial->com)[j] - 0*(link->collision->xyz)[j];
                 }
                 
                 addKeyValue(joint, "anchorOffset", values2str(3, tmpAnchor));
@@ -374,20 +374,20 @@ void URDF2Gazebo::convertLink(TiXmlElement *root, robot_desc::URDF::Link *link, 
                           ROS_WARN("urdf2gazebo: limiting lowStop to <= 0 degrees");
                           *lowstop = 0.0;
                         }
-                        if (*lowstop < -(M_PI))
+                        if (*lowstop < -(M_PI)*0.9)
                         {
-                          ROS_WARN("urdf2gazebo: limiting lowStop to >= -(180) degrees");
-                          *lowstop = -(M_PI);
+                          ROS_WARN("urdf2gazebo: limiting lowStop to >= -(180)*0.9 degrees");
+                          *lowstop = -(M_PI)*0.9;
                         }
                         if (*highstop < 0)
                         {
                           ROS_WARN("urdf2gazebo: limiting highStop to >= 0 degrees");
                           *highstop = 0.0;
                         }
-                        if (*highstop > (M_PI))
+                        if (*highstop > (M_PI)*0.9)
                         {
-                          ROS_WARN("urdf2gazebo: limiting highStop to <= (180) degrees");
-                          *highstop = (M_PI);
+                          ROS_WARN("urdf2gazebo: limiting highStop to <= (180)*0.9 degrees");
+                          *highstop = (M_PI)*0.9;
                         }
                         addKeyValue(joint, "lowStop",  values2str(1, link->joint->limit    , rad2deg));
                         addKeyValue(joint, "highStop", values2str(1, link->joint->limit + 1, rad2deg));

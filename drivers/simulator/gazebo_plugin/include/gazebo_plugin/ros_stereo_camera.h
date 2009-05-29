@@ -31,7 +31,7 @@
 #include <ros/node.h>
 #include "boost/thread/mutex.hpp"
 
-#include <Generic_Camera.hh>
+#include <gazebo/Generic_Camera.hh>
 #include <gazebo/gazebo.h>
 #include <gazebo/Param.hh>
 #include <gazebo/Controller.hh>

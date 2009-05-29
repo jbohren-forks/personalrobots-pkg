@@ -8,13 +8,24 @@
   <review status="3rdparty" notes=""/>
   <depend package="opende" />
   <depend package="ogre" />
-  <depend package="opencv_latest" />
   <url>http://playerstage.sf.net</url>
   <export>
-    <cpp lflags="`xml2-config --libs` -Wl,-rpath,${prefix}/gazebo/lib -L${prefix}/gazebo/lib -lgazebo -lgazeboServer" cflags="`xml2-config --cflags` -I${prefix}/gazebo/include -I${prefix}/gazebo-svn-ogre-v1.4.9/server/controllers -I${prefix}/gazebo-svn-ogre-v1.4.9/server/controllers/camera/generic -I${prefix}/gazebo-svn-ogre-v1.4.9/server/physics -I${prefix}/gazebo-svn-ogre-v1.4.9/server/sensors -I${prefix}/gazebo-svn-ogre-v1.4.9/server/sensors/ray -I${prefix}/gazebo-svn-ogre-v1.4.9/server/sensors/camera -I${prefix}/gazebo-svn-ogre-v1.4.9/server/sensors/contact -I${prefix}/gazebo-svn-ogre-v1.4.9/server -I${prefix}/gazebo-svn-ogre-v1.4.9/server/rendering"/>
+    <cpp lflags="`xml2-config --libs` `rosboost-cfg --lflags thread,signals` -Wl,-rpath,${prefix}/gazebo/lib -L${prefix}/gazebo/lib -lgazebo -lgazebo_server -lgazebo_av -lgazebo_gui -lfltk -lfltk_gl" cflags="`xml2-config --cflags` `rosboost-cfg --cflags` -I${prefix}/gazebo/include"/>
     <doxymaker external="http://playerstage.sourceforge.net/doc/Gazebo-manual-svn-html/"/>
   </export>
   <versioncontrol type="svn" url="https://playerstage.svn.sourceforge.net/svnroot/playerstage/code/gazebo/trunk"/>
+  <sysdepend os="ubuntu" version="9.04-jaunty" package="scons"/>
+  <sysdepend os="ubuntu" version="9.04-jaunty" package="pkg-config"/>
+  <sysdepend os="ubuntu" version="9.04-jaunty" package="libxml2-dev"/>
+  <sysdepend os="ubuntu" version="9.04-jaunty" package="libltdl3-dev"/>
+  <sysdepend os="ubuntu" version="9.04-jaunty" package="libfltk1.1"/>
+  <sysdepend os="ubuntu" version="9.04-jaunty" package="libfltk1.1-dev"/>
+  <sysdepend os="ubuntu" version="8.10-intrepid" package="scons"/>
+  <sysdepend os="ubuntu" version="8.10-intrepid" package="pkg-config"/>
+  <sysdepend os="ubuntu" version="8.10-intrepid" package="libxml2-dev"/>
+  <sysdepend os="ubuntu" version="8.10-intrepid" package="libltdl3-dev"/>
+  <sysdepend os="ubuntu" version="8.10-intrepid" package="libfltk1.1"/>
+  <sysdepend os="ubuntu" version="8.10-intrepid" package="libfltk1.1-dev"/>
   <sysdepend os="ubuntu" version="8.04-hardy" package="scons"/>
   <sysdepend os="ubuntu" version="8.04-hardy" package="pkg-config"/>
   <sysdepend os="ubuntu" version="8.04-hardy" package="libxml2-dev"/>

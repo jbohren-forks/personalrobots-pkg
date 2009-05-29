@@ -339,6 +339,7 @@
 
             <minRange>0.05</minRange>
             <maxRange>10.0</maxRange>
+            <resRange>0.01</resRange>
             <updateRate>20.0</updateRate>
             <controller:ros_laser name="ros_base_laser_controller" plugin="libros_laser.so">
               <gaussianNoise>0.005</gaussianNoise>
@@ -490,6 +491,7 @@
 
             <minRange>0.05</minRange>
             <maxRange>10.0</maxRange>
+            <resRange>0.01</resRange>
             <updateRate>20.0</updateRate>
             <controller:ros_laser name="ros_base_laser_controller" plugin="libros_laser.so">
               <gaussianNoise>0.005</gaussianNoise>

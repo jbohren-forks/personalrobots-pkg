@@ -1,25 +1,63 @@
 all: installed
 
-SVN_DIR = gazebo-svn-ogre-v1.4.9
-#SVN_URL = https://playerstage.svn.sourceforge.net/svnroot/playerstage/code/gazebo/trunk
-SVN_URL = https://playerstage.svn.sourceforge.net/svnroot/playerstage/code/gazebo/branches/ogre-1.4.9
-SVN_REVISION = -r 7599
-SVN_PATCH = gazebo_patch.diff
+INSTALL_DIR = $(shell rospack find gazebo)/gazebo
+TEST_INSTALL_DIR = $(shell rospack find gazebo)/test-gazebo
+
+SVN_DIR = gazebo-svn
+SVN_URL = https://playerstage.svn.sourceforge.net/svnroot/playerstage/code/gazebo/trunk
+SVN_REVISION = 
+SVN_PATCH = 
 include $(shell rospack find mk)/svn_checkout.mk
+
+#SVN_URL = https://playerstage.svn.sourceforge.net/svnroot/playerstage/code/gazebo/branches/ogre-1.4.9
+#SVN_REVISION = -r 7599
+#SVN_PATCH = gazebo_patch.diff
 
 OGRE_PKG = $(shell rospack find ogre)/ogre/lib/pkgconfig
 PLAYER_PKG = $(shell rospack find player)/player/lib/pkgconfig
-FI_PKG = $(shell rospack find freeimage)/freeimage/lib/pkgconfig
 ODE_PKG = $(shell rospack find opende)/opende/lib/pkgconfig
-CV_PKG = $(shell rospack find opencv_latest)/opencv/lib/pkgconfig
-
 ODE_PATH = $(shell rospack find opende)/opende/bin
-FI_LD = $(shell rospack find freeimage)/freeimage/lib
-ROOT = $(shell rospack find gazebo)/gazebo
-TESTROOT = $(shell rospack find gazebo)/test-gazebo
 
-BOOST_CFLAGS = $(shell rosboost-cfg --cflags)
-BOOST_LFLAGS = $(shell rosboost-cfg --lflags signals,thread)
+FREEIMAGE_INCLUDE_DIR = $(shell rospack find freeimage)/freeimage/include
+FREEIMAGE_LIBRARY_DIR = $(shell rospack find freeimage)/freeimage/lib
+FREEIMAGE_LIBRARY = $(shell rospack find freeimage)/freeimage/lib/libfreeimage.so
+
+BOOST_INCLUDE_DIRS = $(shell rosboost-cfg --include_dirs)
+BOOST_LIBRARY_DIRS = $(shell rosboost-cfg --lib_dirs signals,thread)
+BOOST_LIBRARIES = $(shell rosboost-cfg --libs signals,thread)
+
+PKG_PATHS = PKG_CONFIG_PATH=${ODE_PKG}:${PLAYER_PKG}:${OGRE_PKG}:${PKG_CONFIG_PATH}
+PATHS = PATH=${ODE_PATH}:${PATH}
+
+CMAKE = cmake
+CMAKE_ARGS = -D CMAKE_BUILD_TYPE=RELEASE \
+						 -D CMAKE_INSTALL_PREFIX=$(INSTALL_DIR) \
+						 -D boost_include_dirs=$(BOOST_INCLUDE_DIRS) \
+						 -D boost_library_dirs=$(BOOST_LIBRARY_DIRS) \
+						 -D boost_libraries="$(BOOST_LIBRARIES)" \
+						 -D freeimage_include_dir=$(FREEIMAGE_INCLUDE_DIR) \
+						 -D freeimage_library_dir=$(FREEIMAGE_LIBRARY_DIR) \
+						 -D freeimage_library=$(FREEIMAGE_LIBRARY) \
+						 -D LIBAVCODEC_PATH="" \
+						 -D LIBAVFORMAT_PATH="" \
+						 -D CMAKE_CXX_LINK_FLAGS="-lfltk -lfltk_gl"
+
+
+
+CMAKE_CMD = $(PKG_PATHS) $(PATHS) $(CMAKE) $(CMAKE_ARGS)
+
+#build: SVN_UP_REVERT_PATCH gazebo
+installed: $(SVN_DIR) patched
+	if [ ! -d $(SVN_DIR)/build ]; then mkdir -p $(SVN_DIR)/build; fi
+	cd $(SVN_DIR)/build &&  $(CMAKE_CMD) ..
+	cd $(SVN_DIR)/build && $(PKG_PATHS) $(PATHS) make $(ROS_PARALLEL_JOBS) && make install
+
+clean:
+	-cd $(SVN_DIR) && PKG_CONFIG_PATH=${ODE_PKG}:${PLAYER_PKG}:${OGRE_PKG}:${PKG_CONFIG_PATH} PATH=${ODE_PATH}:${PATH} make clean
+	rm -rf gazebo installed
+wipe: clean
+	rm -rf $(SVN_DIR) gazebo
+
 
 # these flags used to build opende
 # ipo seems to break ogre and opende, use ip instead
@@ -28,45 +66,4 @@ INTEL_C_FLAGS     =  -march=core2 -msse3 -ip  -no-prec-div         -parallel -O3
 INTEL_C_FLAGS_OMP =  -march=core2 -msse3 -ip  -no-prec-div -openmp -parallel -O3 -fPIC -I$(ROOT)/include
 INTEL_LD_FLAGS     = -Wl,-rpath,/opt/intel/cc/10.1.008/lib,-rpath,$(ROOT)/lib -L/opt/intel/cc/10.1.008/lib -L$(ROOT)/lib -lguide -lcxaguard -limf -lsvml -lirc -pthread -lintlc
 INTEL_LD_FLAGS_OMP = -Wl,-rpath,/opt/intel/cc/10.1.008/lib,-rpath,$(ROOT)/lib -L/opt/intel/cc/10.1.008/lib -L$(ROOT)/lib -lguide -lcxaguard -limf -lsvml -lirc -pthread -lintlc -lompstub -liomp5 -lomp_db
-
-#build: SVN_UP_REVERT_PATCH gazebo
-installed: $(SVN_DIR) patched
-	if [ ! -d gazebo ]; then mkdir -p gazebo; mkdir -p gazebo/share; mkdir -p gazebo/share/gazebo; mkdir -p gazebo/share/gazebo/worlds; mkdir -p gazebo/share/gazebo/Media; fi
-	cd $(SVN_DIR) && PKG_CONFIG_PATH=${CV_PKG}:${ODE_PKG}:${FI_PKG}:${PLAYER_PKG}:${OGRE_PKG}:${PKG_CONFIG_PATH} PATH=${ODE_PATH}:${PATH} \
-	scons $(JOBC) $(ROS_PARALLEL_JOBS) mode=optimized prefix=$(ROOT) boost_cflags="$(BOOST_CFLAGS)" boost_lflags="$(BOOST_LFLAGS)"
-	-cd $(SVN_DIR) && PKG_CONFIG_PATH=${CV_PKG}:${ODE_PKG}:${FI_PKG}:${PLAYER_PKG}:${OGRE_PKG}:${PKG_CONFIG_PATH} PATH=${ODE_PATH}:${PATH} \
-	scons $(JOBC) $(ROS_PARALLEL_JOBS) mode=optimized prefix=$(ROOT) boost_cflags="$(BOOST_CFLAGS)" boost_lflags="$(BOOST_LFLAGS)" install
-	-cd $(SVN_DIR) && rm -f gazebo;
-	touch installed
-
-ROOT_ORIG = $(shell rospack find gazebo)/gazebo-original
-SVN_ORIG_DIR = gazebo-svn-original
-.PHONY: gazebo-original
-gazebo-original: $(SVN_ORIG_DIR)
-	if [ ! -d gazebo-original ]; then mkdir -p gazebo-original; mkdir -p gazebo-original/share; mkdir -p gazebo-original/share/gazebo/worlds; mkdir -p gazebo-original/share/gazebo; mkdir -p gazebo-original/share/gazebo/Media; fi
-	cd $(SVN_ORIG_DIR) && PKG_CONFIG_PATH=${CV_PKG}:${ODE_PKG}:${FI_PKG}:${PLAYER_PKG}:${OGRE_PKG}:${PKG_CONFIG_PATH} PATH=${ODE_PATH}:${PATH} \
-	scons prefix=$(ROOT_ORIG) 
-	-cd $(SVN_ORIG_DIR) && PKG_CONFIG_PATH=${CV_PKG}:${ODE_PKG}:${FI_PKG}:${PLAYER_PKG}:${OGRE_PKG}:${PKG_CONFIG_PATH} PATH=${ODE_PATH}:${PATH} \
-	scons prefix=$(ROOT_ORIG) install
-	touch gazebo-original
-
-test-$(SVN_TARGET):
-	@if [ ! -d test-$(SVN_DIR) ]; then svn co $(SVN_REVISION) https://playerstage.svn.sourceforge.net/svnroot/playerstage/code/gazebo/trunk test-$(SVN_DIR); fi
-	-cd test-$(SVN_DIR) && svn up #$(REVISION) 
-	#-patch -N -p0 < gazebo_patch.diff
-
-test-gazebo: test-$(SVN_TARGET)
-	if [ ! -d test-gazebo ]; then mkdir -p test-gazebo; fi
-	cd test-$(SVN_DIR) && export PKG_CONFIG_PATH=${PLAYER_PKG}:${OGRE_PKG}:${PKG_CONFIG_PATH} && \
-	export LIBPATH="${FI_LD}" && \
-	export PATH=${ODE_PATH}/bin:${PATH} && scons prefix=$(TESTROOT) && scons prefix=$(TESTROOT) install
-	touch test-gazebo
-
-#	export LD_LIBRARY_PATH="/usr/lib" && \
-
-clean:
-	-cd $(SVN_DIR) && PKG_CONFIG_PATH=${CV_PKG}:${ODE_PKG}:${FI_PKG}:${PLAYER_PKG}:${OGRE_PKG}:${PKG_CONFIG_PATH} PATH=${ODE_PATH}:${PATH} scons --clean
-	rm -rf gazebo installed
-wipe: clean
-	rm -rf $(SVN_DIR) gazebo
 

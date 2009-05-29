@@ -41,7 +41,7 @@
 #include <gazebo/gazebo.h>
 #include <gazebo/GazeboError.hh>
 #include <gazebo/ControllerFactory.hh>
-#include "MonoCameraSensor.hh"
+#include <gazebo/MonoCameraSensor.hh>
 
 #include "image_msgs/Image.h"
 #include "image_msgs/FillImage.h"

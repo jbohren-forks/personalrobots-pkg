@@ -98,6 +98,7 @@
 
             <minRange>0.05</minRange>
             <maxRange>10.0</maxRange>
+            <resRange>0.01</resRange>
             <updateRate>20.0</updateRate>
             <controller:ros_laser name="ros_${name}_controller" plugin="libros_laser.so">
               <gaussianNoise>0.005</gaussianNoise>
@@ -216,14 +217,14 @@
         <map name="gazebo_material" flag="gazebo">
           <elem key="material" value="PR2/Blue" />
         </map>
-        <geometry name="${name}_r_stereo_camera_visual">
+        <geometry name="${name}_l_stereo_camera_visual">
           <mesh scale="0.01 0.01 0.01" />
         </geometry>
       </visual>
 
       <collision>
         <origin xyz="0 0 0" rpy="0 0 0" />
-        <geometry name="${name}_r_stereo_camera_collision">
+        <geometry name="${name}_l_stereo_camera_collision">
           <box size="0.01 0.01 0.01" />
         </geometry>
       </collision>
@@ -572,6 +573,7 @@
 
             <minRange>0.05</minRange>
             <maxRange>10.0</maxRange>
+            <resRange>0.01</resRange>
             <updateRate>20.0</updateRate>
             <controller:ros_laser name="ros_${name}_controller" plugin="libros_laser.so">
               <gaussianNoise>0.005</gaussianNoise>
