@@ -216,6 +216,8 @@ TEST(TopologicalMap, Creation)
   setV(grid, 3, 7, 21, 8, 8, 24, false);
   setV(grid, 7, 7, 21, 4, 8, 24, false);
   grid[18][12] = true;
+  grid[0][9] = true;
+  
 
   TopologicalMapPtr m = topologicalMapFromGrid (grid, 0.1, 2, 1, 1, 0, "local");
 
@@ -227,11 +229,7 @@ TEST(TopologicalMap, Creation)
 
   RegionId region = m->containingRegion(Cell2D(1u,1u));
   EXPECT_EQ (region, m->containingRegion(Cell2D(2u,2u)));
-  try {
-    m->containingRegion(Cell2D(0,8));
-    ADD_FAILURE() << "Containing region didn't fail as expected";
-  }
-  catch (NoContainingRegionException& e) {}
+  EXPECT_EQ (m->containingRegion(Cell2D(0, 8)), m->containingRegion(Cell2D(0,7)));
   region = m->containingRegion(Cell2D(18,12));
   EXPECT_EQ(region, m->containingRegion(Cell2D(17,12)));
              

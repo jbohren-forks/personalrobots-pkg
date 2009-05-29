@@ -38,6 +38,7 @@
 #include <topological_map/exception.h>
 #include <ros/time.h>
 #include <ros/ros.h>
+#include <ros/console.h>
 #include <ros/assert.h>
 #include <boost/foreach.hpp>
 
@@ -153,6 +154,9 @@ int main (int argc, char* argv[])
   cout << endl;
 
 
+  p1 = Point2D(25.16, 35.1);
+  RegionId r1 = m3.containingRegion(p1);
+  ROS_INFO_STREAM ("Containing region of " << p1 << " is " << r1);
 
 
   p1 = Point2D(51.53,22.3875);
@@ -160,11 +164,10 @@ int main (int argc, char* argv[])
   
   Point2D p3 = Point2D(12.7, 22.5);
 
-  m3.distanceBetween(p1, p3);
-
-
-  m3.distanceBetween(p1, p3);
-
+  for (uint r=0; r<10; r++) {
+    ROS_INFO ("Looking for distance ");
+    m3.distanceBetween(p1, p3);
+  }
 
   path = m3.shortestConnectorPath(p1, p2);
   cout << " Path between " << p1 << " and " << p2 << ": ";
