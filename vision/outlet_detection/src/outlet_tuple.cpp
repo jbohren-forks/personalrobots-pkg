@@ -319,18 +319,19 @@ int find_outlet_centroids(IplImage* img, outlet_tuple_t& outlet_tuple, const cha
             const int min_width = 5;
 #endif //OUTLET_HR
             
-#if 0
-            if(abs(rect.x - 1387) < 20 && abs(rect.y - 127) < 20)
-            {
-                int w = 1;
-            }
-#endif
             
             if(rect.width < xmin || rect.width > xmax || rect.height < ymin || rect.height > ymax)
             {
                 continue;
             }
             
+#if 0
+            if(abs(rect.x - 1312) < 50 && abs(rect.y - 1576) < 50)
+            {
+                int w = 1;
+            }
+#endif
+
             float area = fabs(cvContourArea(seq));
             float perimeter = fabs(cvArcLength(seq));
             
@@ -470,6 +471,11 @@ int find_outlet_centroids(IplImage* img, outlet_tuple_t& outlet_tuple, const cha
         cvNamedWindow("1", 1);
         cvShowImage("1", img2);
         cvWaitKey(0);
+        
+        cvThreshold(outlet_tuple.tuple_mask, binary, 0, 255, CV_THRESH_BINARY);
+        cvShowImage("1", binary);
+        cvWaitKey(0);
+        
 #endif //_VERBOSE_TUPLE
         
         
@@ -504,7 +510,8 @@ CvSeq* close_seq(CvSeq* seq, CvMemStorage* storage, int closure_dist, IplImage* 
     
     CvSeq* first = 0;
     cvFindContours(workspace, storage, &first, sizeof(CvContour), CV_RETR_LIST);
-    return(first);
+    CvSeq* hull = cvConvexHull2(first, storage, CV_CLOCKWISE, 1);
+    return(hull);
 }
 
 void calc_bounding_rect(int count, const CvRect* rects, CvRect& bounding_rect)
