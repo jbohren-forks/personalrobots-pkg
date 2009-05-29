@@ -51,6 +51,30 @@ enum {MEASURING, MOVING, INSERTING, FORCING, HOLDING};
 
 const static char* TRACKER_ACTIVATE = "/plug_detector/activate_tracker";
 
+
+double getOffset(int id)
+{
+  switch (id)
+  {
+  case 0: return 1.0;
+  case 1: return 0.98948537037195827;
+  case 6: return 0.97692542711765129;
+  case 39: return 0.98097524550697912;
+  case 4: return 0.97561703536950839;
+  case 3: return 0.99092973248973848;
+  case 38: return 0.95012308281214775;
+  case 40: return 0.98361298809350939;
+  case 27: return 0.9864272331729832;
+  case 26: return 0.98778051326139238;
+  case 25: return 0.98898110374305592;
+  case 20: return 0.98890562635876034;
+  case 21: return 0.9780777627427707;
+  default:
+    ROS_ERROR("Invalid outlet id: %d", id);
+    return 0;
+  }
+}
+
 void PoseTFToMsg(const tf::Pose &p, robot_msgs::Twist &t)
 {
   t.vel.x = p.getOrigin().x();
@@ -153,6 +177,17 @@ robot_actions::ResultStatus PlugInAction::execute(const std_msgs::Int32& outlet_
         {
           outlet_pose = viz_offset_from_viz_.inverse() * mech_offset_from_viz_;
 
+          // Deals with the per-outlet offsets
+          {
+            double offset = getOffset(outlet_id.data);
+            tf::Stamped<tf::Transform> high_def_in_outlet;
+            TF_->lookupTransform("outlet_pose", "high_def_frame", ros::Time(0), high_def_in_outlet);
+            tf::Vector3 v = -high_def_in_outlet.getOrigin();
+            v *= (1 - offset);
+
+            outlet_pose.getOrigin() -= v;
+          }
+
           ROS_INFO("viz_offset_from_viz_ = (%.3lf, %.3lf, %.3lf)",
                    viz_offset_from_viz_.getOrigin()[0],
                    viz_offset_from_viz_.getOrigin()[1],
@@ -222,6 +257,7 @@ robot_actions::ResultStatus PlugInAction::execute(const std_msgs::Int32& outlet_
       const double SPEED = 0.005;
 
       tf::Pose desi = outlet_pose;
+      desi.getOrigin() += tf::Vector3(0, 0, -0.01);
       manipulation_msgs::TaskFrameFormalism tff_msg;
       tff_msg.header.frame_id = COMMAND_FRAME;
       tff_msg.header.stamp = ros::Time::now() - ros::Duration(0.1);
@@ -277,7 +313,7 @@ robot_actions::ResultStatus PlugInAction::execute(const std_msgs::Int32& outlet_
 
     case SPIRALING: {
       tf::Pose desi(outlet_pose);
-      desi.getOrigin() += tf::Vector3(-MIN_STANDOFF-0.015, spiral_r * cos(spiral_t) + 0.01, spiral_r * sin(spiral_t) + 0.01); //Hard-coded offset of (0.01, 0.01)
+      desi.getOrigin() += tf::Vector3(-MIN_STANDOFF-0.015, spiral_r * cos(spiral_t), spiral_r * sin(spiral_t));
 
       ROS_INFO("r = %.4lf,  t = %.3lf", spiral_r, spiral_t);
       ROS_INFO("desi = (%.3lf, %.3lf, %.3lf)",
