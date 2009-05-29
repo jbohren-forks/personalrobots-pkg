@@ -516,7 +516,11 @@ void CartesianHybridControllerNode::command(
     return;
   }
   tf::TransformTFToKDL(task_frame, c_.task_frame_offset_);
-
+  
+  int old_modes[6];
+  for (int i =0 ; i < 6; i++){
+    old_modes[i] = c_.mode_[i];
+  }
   c_.mode_[0] = (int)tff_msg->mode.vel.x;
   c_.mode_[1] = (int)tff_msg->mode.vel.y;
   c_.mode_[2] = (int)tff_msg->mode.vel.z;
@@ -529,6 +533,13 @@ void CartesianHybridControllerNode::command(
   c_.setpoint_[3] = tff_msg->value.rot.x;
   c_.setpoint_[4] = tff_msg->value.rot.y;
   c_.setpoint_[5] = tff_msg->value.rot.z;
+
+  for(int i = 0; i < 6; i++){
+    if(old_modes[i] != c_.mode_[i]){
+      c_.pose_pids_[i].reset();
+      c_.twist_pids_[i].reset();
+    }
+  }
 }
 
 bool CartesianHybridControllerNode::setToolFrame(
