@@ -99,7 +99,7 @@
       <visual>
         <origin xyz="0 0 0" rpy="0 0 0" />
         <map name="gazebo_material" flag="gazebo">
-          <elem key="material" value="Gazebo/Green" />
+          <elem key="material" value="PR2/Green" />
         </map>
         <geometry name="${suffix}_caster_rotation_visual">
           <mesh filename="caster" scale="1 1 1"/>
@@ -216,7 +216,7 @@
       <visual>
         <origin xyz="0 0 0" rpy="0 0 0" />
         <map name="gazebo_material" flag="gazebo">
-          <elem key="material" value="Gazebo/Green" />
+          <elem key="material" value="PR2/Green" />
         </map>
         <geometry name="${suffix}_caster_rotation_visual">
           <mesh filename="caster" scale="1 1 1"/>
@@ -262,7 +262,7 @@
       <visual>
         <origin xyz="0 0 0" rpy="0 0 0" />
         <map name="gazebo_material" flag="gazebo">
-          <elem key="material" value="Gazebo/Green" />
+          <elem key="material" value="PR2/Green" />
         </map>
         <geometry name="${name}_visual">
           <mesh filename="base" />
@@ -311,7 +311,7 @@
       <visual>
         <origin xyz="0 0 0.0" rpy="0 0 0" />
         <map name="gazebo_material" flag="gazebo">
-          <elem key="material" value="Gazebo/PioneerBody" />
+          <elem key="material" value="PR2/Red" />
         </map>
         <geometry name="base_laser_visual">
           <mesh scale="0.001 0.001 0.001"/>
@@ -413,7 +413,7 @@
       <visual>
         <origin xyz="0 0 0" rpy="0 0 0" />
         <map name="gazebo_material" flag="gazebo">
-          <elem key="material" value="Gazebo/Green" />
+          <elem key="material" value="PR2/Green" />
         </map>
         <geometry name="${name}_visual">
           <mesh filename="base" />
@@ -462,7 +462,7 @@
       <visual>
         <origin xyz="0 0 0.0" rpy="0 0 0" />
         <map name="gazebo_material" flag="gazebo">
-          <elem key="material" value="Gazebo/PioneerBody" />
+          <elem key="material" value="PR2/Red" />
         </map>
         <geometry name="base_laser_visual">
           <mesh scale="0.001 0.001 0.001"/>

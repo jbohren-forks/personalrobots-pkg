@@ -30,7 +30,7 @@
       <visual>
         <origin xyz="0 0 0" rpy="0 0 0" />
         <map name="gazebo_material" flag="gazebo">
-	  <elem key="material" value="Gazebo/Blue" />
+	  <elem key="material" value="PR2/Blue" />
         </map>
         <geometry name="${side}_ptz_pan_visual">
           <mesh filename="ptz_base_${side}" />
@@ -68,7 +68,7 @@
       <visual>
         <origin xyz="0 0 0" rpy="0 0 0" />
         <map name="foo" flag="gazebo">
-	  <elem key="material" value="Gazebo/Red" />
+	  <elem key="material" value="PR2/Red" />
         </map>
         <geometry name="${side}_ptz_tilt_visual">
           <mesh filename="ptz_top_${side}" />

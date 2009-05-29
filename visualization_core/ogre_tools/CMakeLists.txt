@@ -28,15 +28,15 @@ include_directories(${PYTHON_INCLUDE_PATH})
 
 # The versioned check apparently doesn't work.  So we'll check the version
 # manually
-pkg_check_modules(OGRE OGRE=1.4.9)
-if(OGRE_VERSION STREQUAL "1.4.9")
+pkg_check_modules(OGRE OGRE=1.6)
+if(OGRE_VERSION STREQUAL "1.6")
   include_directories( ${OGRE_INCLUDE_DIRS} )
   link_directories( ${OGRE_LIBRARY_DIRS} )
   message("Found OGRE: ${OGRE_VERSION}")
   add_definitions("-DHAS_INSTALLED_OGRE")
-else(OGRE_VERSION STREQUAL "1.4.9")
-  message("Didn't find OGRE 1.4.9")
-endif(OGRE_VERSION STREQUAL "1.4.9")
+else(OGRE_VERSION STREQUAL "1.6")
+  message("Didn't find OGRE 1.6")
+endif(OGRE_VERSION STREQUAL "1.6")
 
 # We need GTK2 and OpenGL for the wx render window
 pkg_check_modules(GTK2 gtk+-2.0)

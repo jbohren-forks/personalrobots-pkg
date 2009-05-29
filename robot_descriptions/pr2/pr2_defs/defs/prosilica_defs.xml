@@ -21,7 +21,7 @@
     <visual>
       <origin xyz="0 0 0" rpy="0 0 0" />
       <map name="gazebo_material" flag="gazebo">
-        <elem key="material" value="Gazebo/Blue" />
+        <elem key="material" value="PR2/Blue" />
       </map>
       <geometry name="${name}_visual">
         <mesh scale="0.01 0.01 0.01" />
@@ -78,7 +78,7 @@
     <visual>
       <origin xyz="0 0 0" rpy="0 0 0"/>
       <map name="gazebo_material" flag="gazebo">
-        <elem key="material" value="Gazebo/Blue" />
+        <elem key="material" value="PR2/Blue" />
       </map>
       <geometry name="${name}_optical_visual">
         <mesh scale="0.01 0.01 0.01" />

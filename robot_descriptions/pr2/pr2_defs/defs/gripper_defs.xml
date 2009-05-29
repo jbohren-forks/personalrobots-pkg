@@ -75,7 +75,7 @@
       <visual>
         <origin xyz="0 0 0" rpy="0 0 0" />
         <map name="gazebo_material" flag="gazebo">
-          <elem key="material" value="Gazebo/Shell" />
+          <elem key="material" value="PR2/Grey" />
         </map>
         <geometry name="${prefix}_l_finger_visual">
           <mesh filename="upper_finger_l" />
@@ -157,7 +157,7 @@
       <visual>
         <origin xyz="0 0 0" rpy="0 0 0" />
         <map name="gazebo_material" flag="gazebo">
-          <elem key="material" value="Gazebo/Shell" />
+          <elem key="material" value="PR2/Grey" />
         </map>
         <geometry name="${prefix}_r_finger_visual">
           <mesh filename="upper_finger_r" />
@@ -236,7 +236,7 @@
       <visual>
         <origin xyz="0 0 0" rpy="0 0 0" />
         <map name="gazebo_material" flag="gazebo">
-          <elem key="material" value="Gazebo/Green" />
+          <elem key="material" value="PR2/Green" />
         </map>
         <geometry name="${prefix}_l_finger_tip_visual">
           <mesh filename="finger_tip_l" />
@@ -316,7 +316,7 @@
       <visual>
         <origin xyz="0 0 0" rpy="0 0 0" />
         <map name="gazebo_material" flag="gazebo">
-          <elem key="material" value="Gazebo/Green" />
+          <elem key="material" value="PR2/Green" />
         </map>
         <geometry name="${prefix}_r_finger_tip_visual">
           <mesh filename="finger_tip_r" />
@@ -464,7 +464,7 @@
       <visual>
         <origin xyz="0 0 0" rpy="0 0 0" />
         <map name="gazebo_material" flag="gazebo">
-          <elem key="material" value="Gazebo/Red" />
+          <elem key="material" value="PR2/Red" />
         </map>
         <geometry name="${side}_gripper_palm_visual">
           <mesh filename="gripper_palm" />
@@ -532,7 +532,7 @@
       <visual>
         <origin xyz="0 0 0" rpy="0 0 0" />
         <map name="gazebo_material" flag="gazebo">
-          <elem key="material" value="Gazebo/Shell" />
+          <elem key="material" value="PR2/Grey" />
         </map>
         <geometry name="${side}_gripper_tool_visual">
           <mesh scale="0.0 0.0 0.0" />
@@ -633,7 +633,7 @@
       <visual>
         <origin xyz="0 0 0" rpy="0 0 0" />
         <map name="gazebo_material" flag="gazebo">
-          <elem key="material" value="Gazebo/Red" />
+          <elem key="material" value="PR2/Red" />
         </map>
         <geometry name="${side}_gripper_palm_visual">
           <mesh filename="gripper_palm" />
@@ -701,7 +701,7 @@
       <visual>
         <origin xyz="0 0 0" rpy="0 0 0" />
         <map name="gazebo_material" flag="gazebo">
-          <elem key="material" value="Gazebo/Shell" />
+          <elem key="material" value="PR2/Grey" />
         </map>
         <geometry name="${side}_gripper_tool_visual">
           <mesh scale="0.0 0.0 0.0" />

@@ -46,7 +46,7 @@
       <visual>
         <origin xyz="0 0 0" rpy="0 0 0" />
         <map name="gazebo_material" flag="gazebo">
-          <elem key="material">Gazebo/Blue</elem>
+          <elem key="material">PR2/Blue</elem>
         </map>
         <geometry name="${side}_shoulder_pan_visual">
           <mesh filename="shoulder_yaw" />
@@ -110,7 +110,7 @@
       <visual>
         <origin xyz="0 0 0" rpy="0 0 0" />
         <map name="gazebo_material" flag="gazebo">
-          <elem key="material">Gazebo/Grey</elem>
+          <elem key="material">PR2/Grey</elem>
         </map>
         <geometry name="${side}_shoulder_lift_visual">
           <mesh filename="shoulder_lift" />
@@ -177,7 +177,7 @@
       <visual>
         <origin xyz="0 0 0" rpy="0 0 0" />
         <map name="gazebo_material" flag="gazebo">
-          <elem key="material">Gazebo/Green</elem>
+          <elem key="material">PR2/Green</elem>
         </map>
         <geometry name="${side}_upper_arm_roll_visual">
           <mesh filename="upper_arm" />
@@ -245,7 +245,7 @@
       <visual>
         <origin xyz="0 0 0" rpy="0 0 0" />
         <map name="gazebo_material" flag="gazebo">
-          <elem key="material">Gazebo/Grey</elem>
+          <elem key="material">PR2/Grey</elem>
         </map>
         <geometry name="${side}_elbow_flex_visual">
           <mesh filename="elbow_flex" />
@@ -358,7 +358,7 @@
       <visual>
         <origin xyz="0 0 0" rpy="0 0 0" />
         <map name="gazebo_material" flag="gazebo">
-          <elem key="material">Gazebo/Blue</elem>
+          <elem key="material">PR2/Blue</elem>
         </map>
         <geometry name="${side}_forearm_roll_visual">
           <mesh filename="forearm" />
@@ -423,7 +423,7 @@
       <visual>
         <origin xyz="0 0 0" rpy="0 0 0" />
         <map name="gazebo_material" flag="gazebo">
-          <elem key="material">Gazebo/Grey</elem>
+          <elem key="material">PR2/Grey</elem>
         </map>
         <geometry name="${side}_wrist_flex_visual">
           <mesh filename="wrist_flex" />
@@ -479,7 +479,7 @@
       <visual>
         <origin xyz="0 0 0" rpy="0 0 0" />
         <map name="gazebo_material" flag="gazebo">
-          <elem key="material">Gazebo/Red</elem>
+          <elem key="material">PR2/Red</elem>
         </map>
         <geometry name="${side}_wrist_roll_visual">
           <mesh filename="wrist_roll" />

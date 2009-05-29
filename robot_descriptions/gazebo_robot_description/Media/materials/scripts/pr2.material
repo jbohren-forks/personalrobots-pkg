@@ -172,47 +172,149 @@ material PR2/bl_caster_r_wheel_link
 
 material PR2/Shiny
 {
-	technique
-	{
-		pass
-		{
-			ambient 0.75 0.75 0.75
-			texture_unit
-			{
-				texture Chrome.jpg
-				env_map spherical
-			}
-		}
-	}
+  technique
+  {
+    pass
+    {
+      ambient 0.75 0.75 0.75
+      texture_unit
+      {
+        texture plug_texture.jpg
+        env_map spherical
+      }
+    }
+  }
 }
 
 material PR2/Plug
 {
-	technique
-	{
-		pass
-		{
-			texture_unit
-			{
-				texture plug_texture.jpg
-			}
-		}
-	}
+  technique
+  {
+    pass
+    {
+      texture_unit
+      {
+        texture plug_texture.jpg
+      }
+    }
+  }
 }
 
 
 material PR2/White
 {
-	technique
-	{
-		pass Ambient
-		{
-			ambient 1.000000 1.000000 1.000000 1.000000
-		}
-		pass PointLight
-		{
-			ambient 1.000000 1.000000 1.000000 1.000000
-		}
-
-	}
+  technique
+  {
+    pass
+    {
+      ambient 0.8 0.8 0.8 1.0
+      diffuse 1.0 1.0 1.0 1.0
+      shading gouraud
+      lighting on
+    }
+  }
 }
+
+
+
+material PR2/Blue
+{
+  receive_shadows on
+
+  technique
+  {
+    pass
+    {
+      ambient 0.000000 0.000000 0.200000 1.000000
+      diffuse 0.000000 0.000000 0.800000 1.000000
+      specular 0.000000 0.000000 0.200000 1.000000
+      emissive 0.000000 0.000000 0.000000 1.000000
+      shading gouraud
+    }
+  }
+}
+
+material PR2/Grey2
+{
+  receive_shadows on
+
+  technique
+  {
+    pass
+    {
+      ambient 0.1 0.1 0.1 1.0
+      diffuse 0.9 0.9 0.9 1.0
+      specular 0.9 0.9 0.9 1
+      lighting on
+    }
+  }
+}
+
+material PR2/Grey
+{
+  receive_shadows on
+  lighting on
+
+  technique
+  {
+    pass
+    {
+      ambient 0.1 0.1 0.1 1.0
+      diffuse 0.7 0.7 0.7 1.0
+      specular 0.8 0.8 0.8 1
+    }
+  }
+}
+
+material PR2/Yellow
+{
+  receive_shadows on
+
+  technique
+  {
+    pass
+    {
+      ambient 0.200000 0.200000 0.000000 1.000000
+      diffuse 0.800000 0.800000 0.000000 1.000000
+      specular 0.200000 0.200000 0.000000 1.000000 
+      emissive 0.000000 0.000000 0.000000 1.000000
+      lighting on
+    }
+  }
+}
+
+material PR2/Red
+{
+  receive_shadows on
+  technique
+  {
+    pass
+    {
+      ambient 0.200000 0.000000 0.000000 1.000000
+      diffuse 0.800000 0.000000 0.000000 1.000000
+      specular 0.200000 0.000000 0.000000 1.000000 
+      emissive 0.000000 0.000000 0.000000 1.000000
+      lighting on
+      shading phong
+    }
+  }
+}
+
+material PR2/Green
+{
+  receive_shadows on
+
+  technique
+  {
+    pass
+    {
+      ambient 0.000000 0.200000 0.000000 1.000000
+      diffuse 0.000000 0.800000 0.000000 1.000000
+      specular 0.000000 0.200000 0.000000 1.000000 
+      emissive 0.000000 0.000000 0.000000 0.000000
+      lighting on
+      shading phong
+    }
+  }
+}
+
