@@ -405,6 +405,9 @@ public:
     
     cam_bridge::StereoDataToRawStereo(stcam_->stIm, raw_stereo_);
     raw_stereo_.header.frame_id = frame_id_;
+    raw_stereo_.header.stamp = ros::Time::now(); // Timestamp from the low level driver is bogus. 
+                                                 // Doing this as a stopgap
+                                                 // measure.
     timestamp_diag_.tick(raw_stereo_.header.stamp);
     publish(stereo_name_ + std::string("raw_stereo"), raw_stereo_);
 
