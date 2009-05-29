@@ -123,7 +123,7 @@ void DetectPlugOnBaseAction::localizePlug()
     not_found_count_++;
     if(not_found_count_ > 10)
     {
-      ROS_INFO("%s: aborted.", action_name_.c_str());
+      ROS_INFO("%s: aborted. The plug was not detected on the base 10 times.", action_name_.c_str());
       plug_stow_.stowed = 0;
       detector_->deactivate();
       deactivate(robot_actions::ABORTED, plug_stow_);
