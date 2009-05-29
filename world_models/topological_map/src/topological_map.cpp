@@ -659,8 +659,14 @@ RegionId TopologicalMap::MapImpl::containingRegion (const Cell2D& c) const
       
       else {
         RegionId region = region_graph_->containingRegion(cell);
-        containing_regions.insert(region);
-        ROS_DEBUG_STREAM_NAMED ("containing_region", " Adding containing region " << region << " of " << cell);
+
+        // The old way found all such regions and made sure there was just one
+        // Now we just return the first one we find (which will be the closest)
+        //containing_regions.insert(region);
+        //ROS_DEBUG_STREAM_NAMED ("containing_region", " Adding containing region " << region << " of " << cell);
+
+        return region;
+        
       }
     }
     
@@ -1285,6 +1291,7 @@ ReachableCost TopologicalMap::MapImpl::goalDistance (ConnectorId id) const
 
 ReachableCost TopologicalMap::MapImpl::getDistance (const Point2D& p1, const Point2D& p2)
 {
+  // Hacky: we're hashing on a pair of floats
   pair<Point2D, Point2D> pair(p1 < p2 ? p1 : p2, p1 < p2 ? p2 : p1);
   if (roadmap_distance_cache_.find(pair)==roadmap_distance_cache_.end()) {
 
@@ -1381,7 +1388,7 @@ TopologicalMap::MapImpl::TemporaryRoadmapNode::TemporaryRoadmapNode (Topological
   ROS_DEBUG_STREAM_NAMED ("temp_node", "Adding temporary node " << id << " at cell " << cell << " in region " << r);
 
   // When computing distances, we need to separate this region from the rest of the graph
-  // RegionIsolator i(m->grid_graph_.get(), *(m->regionCells(r)));
+  //RegionIsolator i(m->grid_graph_.get(), *(m->regionCells(r)));
 
   vector<ConnectorDesc> connector_descs = m->adjacentConnectorCells(r);
 
