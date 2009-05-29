@@ -132,10 +132,10 @@ class IncGroundRemoval
     void
       updateParametersFromServer ()
     {
-      if (node_.hasParam ("~z_threshold")) node_.getParam ("~z_threshold", z_threshold_);
-      if (node_.hasParam ("~ground_slope_threshold")) node_.getParam ("~ground_slope_threshold", ground_slope_threshold_);
-      if (node_.hasParam ("~sac_fitting_distance_threshold"))  node_.getParam ("~sac_fitting_distance_threshold", sac_fitting_distance_threshold_);
-      if (node_.hasParam ("~sac_distance_threshold"))  node_.getParam ("~sac_distance_threshold", sac_distance_threshold_);
+      node_.getParam ("~z_threshold", z_threshold_, true);
+      node_.getParam ("~ground_slope_threshold", ground_slope_threshold_, true);
+      node_.getParam ("~sac_fitting_distance_threshold", sac_fitting_distance_threshold_, true);
+      node_.getParam ("~sac_distance_threshold", sac_distance_threshold_, true);
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
