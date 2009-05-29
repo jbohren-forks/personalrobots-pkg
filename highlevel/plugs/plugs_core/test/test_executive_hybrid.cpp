@@ -84,7 +84,11 @@ int
   ros::Node node("test_executive");
   boost::thread_group threads_;
 
-
+  int outlet_id = 0;
+  if (argc >= 2) {
+    outlet_id = atoi(argv[1]);
+    printf("Trying outlet %d\n", outlet_id);
+  }
 
   pr2_robot_actions::SwitchControllers switchlist;
   std_msgs::Empty empty;
@@ -166,8 +170,8 @@ int
   switchlist.stop_controllers.push_back("r_arm_cartesian_twist_controller");
   switchlist.start_controllers.push_back("r_arm_hybrid_controller");
   if (switch_controllers.execute(switchlist, empty, timeout_short) != robot_actions::SUCCESS) return -5;
-  std_msgs::Int32 outlet_id; outlet_id.data = 0;
-  if (plug_in.execute(outlet_id, empty, timeout_long) != robot_actions::SUCCESS) return -6;
+  std_msgs::Int32 outlet_id_msg; outlet_id_msg.data = outlet_id;
+  if (plug_in.execute(outlet_id_msg, empty, timeout_long) != robot_actions::SUCCESS) return -6;
 
   Duration().fromSec(10.0).sleep();
 
