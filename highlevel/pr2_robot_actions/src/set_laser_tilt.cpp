@@ -43,6 +43,9 @@
 #include <robot_actions/NoArgumentsActionState.h>
 #include <string>
 #include <ros/ros.h>
+
+#include <pr2_robot_actions/set_hokuyo_mode.h>
+
 namespace pr2_robot_actions {
   class SetLaserTilt : public robot_actions::Action<std_msgs::Empty, std_msgs::Empty> {
   public:
@@ -51,6 +54,8 @@ namespace pr2_robot_actions {
       laser_controller_(laser_controller){};
 
     robot_actions::ResultStatus execute(const std_msgs::Empty& empty, std_msgs::Empty& feedback){
+      //first... set the hokuyo node to the desired frequency for navigation
+      pr2_robot_actions::setHokuyoMode("tilt_hokuyo_node", "navigate");
 
       pr2_srvs::SetLaserTrajCmd::Request req_laser;
       pr2_srvs::SetLaserTrajCmd::Response res_laser;
@@ -60,13 +65,13 @@ namespace pr2_robot_actions {
       req_laser.command.pos.push_back(1.0);      req_laser.command.pos.push_back(-0.7);      req_laser.command.pos.push_back(1.0);
       req_laser.command.time.push_back(0.0);     req_laser.command.time.push_back(1.8);      req_laser.command.time.push_back(2.025);
       if(!ros::service::call(laser_controller_ + "/set_traj_cmd", req_laser, res_laser)){
-	ROS_ERROR("Failed to start laser.");
-	return robot_actions::ABORTED;
+        ROS_ERROR("Failed to start laser.");
+        return robot_actions::ABORTED;
       }
-      
+
       return robot_actions::SUCCESS;
-      
-      }
+
+    }
     
   private:
     std::string laser_controller_;
