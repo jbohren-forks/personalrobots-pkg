@@ -174,7 +174,7 @@ bool Link::initXml(TiXmlElement *config, Robot *robot)
 
   // Collision
   TiXmlElement *col = config->FirstChildElement("collision");
-  if (v)
+  if (col)
   {
     collision_.reset(new Collision);
     if (!collision_->initXml(col))
