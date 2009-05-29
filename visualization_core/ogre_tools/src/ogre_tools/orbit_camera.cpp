@@ -40,7 +40,7 @@
 #include <stdint.h>
 #include <sstream>
 
-#define MIN_DISTANCE 0.5
+#define MIN_DISTANCE 0.01
 
 namespace ogre_tools
 {
@@ -58,8 +58,8 @@ OrbitCamera::OrbitCamera( Ogre::SceneManager* scene_manager )
 , distance_( 10.0f )
 {
   focal_point_object_ = new Shape( Shape::Sphere, scene_manager );
-  focal_point_object_->setScale( Ogre::Vector3( 0.1f, 0.02f, 0.1f ) );
-  focal_point_object_->setColor( 1.0f, 1.0f, 0.0f, 0.8f );
+  focal_point_object_->setScale( Ogre::Vector3( 0.05f, 0.01f, 0.05f ) );
+  focal_point_object_->setColor( 1.0f, 1.0f, 0.0f, 0.5f );
   focal_point_object_->getRootNode()->setVisible( false );
 
   update();
@@ -213,19 +213,6 @@ void OrbitCamera::zoom( float amount )
   if ( distance_ <= MIN_DISTANCE )
   {
     distance_ = MIN_DISTANCE;
-
-    Ogre::Quaternion orientation = camera_->getOrientation();
-
-    if ( relative_node_ )
-    {
-      orientation = relative_node_->getOrientation().Inverse() * orientation;
-    }
-
-    Ogre::Vector3 normalized = orientation * Ogre::Vector3::NEGATIVE_UNIT_Z;
-    normalized.normalise();
-    normalized *= amount;
-    normalized += focal_point_;
-    setFocalPoint(normalized);
   }
 
   update();
@@ -282,13 +269,13 @@ void OrbitCamera::lookAt( const Ogre::Vector3& point )
   update();
 }
 
-void OrbitCamera::mouseLeftDrag( int diff_x, int diff_y )
+void OrbitCamera::mouseLeftDrag( int diff_x, int diff_y, bool ctrl, bool alt, bool shift )
 {
   yaw( diff_x*0.005 );
   pitch( -diff_y*0.005 );
 }
 
-void OrbitCamera::mouseMiddleDrag( int diff_x, int diff_y )
+void OrbitCamera::mouseMiddleDrag( int diff_x, int diff_y, bool ctrl, bool alt, bool shift )
 {
   float fovY = camera_->getFOVy().valueRadians();
   float fovX = 2.0f * atan( tan( fovY / 2.0f ) * camera_->getAspectRatio() );
@@ -300,14 +287,28 @@ void OrbitCamera::mouseMiddleDrag( int diff_x, int diff_y )
 
 }
 
-void OrbitCamera::mouseRightDrag( int diff_x, int diff_y )
+void OrbitCamera::mouseRightDrag( int diff_x, int diff_y, bool ctrl, bool alt, bool shift )
 {
-  zoom( -diff_y * 0.1 );
+  if (shift)
+  {
+    move(0.0f, 0.0f, diff_y * 0.1 * (distance_ / 10.0f));
+  }
+  else
+  {
+    zoom( -diff_y * 0.1 * (distance_ / 10.0f) );
+  }
 }
 
-void OrbitCamera::scrollWheel( int diff )
+void OrbitCamera::scrollWheel( int diff, bool ctrl, bool alt, bool shift )
 {
-  zoom( diff * 0.01 );
+  if (shift)
+  {
+    move(0.0f, 0.0f, -diff * 0.01 * (distance_ / 10.0f));
+  }
+  else
+  {
+    zoom( diff * 0.01 * (distance_ / 10.0f) );
+  }
 }
 
 void OrbitCamera::mouseLeftDown( int x, int y )

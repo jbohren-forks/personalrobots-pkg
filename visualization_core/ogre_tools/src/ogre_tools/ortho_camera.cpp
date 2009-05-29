@@ -114,24 +114,24 @@ void OrthoCamera::lookAt( const Ogre::Vector3& point )
   camera_->lookAt( point );
 }
 
-void OrthoCamera::mouseLeftDrag( int diff_x, int diff_y )
+void OrthoCamera::mouseLeftDrag( int diff_x, int diff_y, bool ctrl, bool alt, bool shift )
 {
   roll( -diff_x * 0.005 );
 }
 
-void OrthoCamera::mouseMiddleDrag( int diff_x, int diff_y )
+void OrthoCamera::mouseMiddleDrag( int diff_x, int diff_y, bool ctrl, bool alt, bool shift )
 {
   move( -diff_x / scale_, diff_y / scale_, 0.0f );
 }
 
-void OrthoCamera::mouseRightDrag( int diff_x, int diff_y )
+void OrthoCamera::mouseRightDrag( int diff_x, int diff_y, bool ctrl, bool alt, bool shift )
 {
   scale_ *= 1.0 - diff_y * 0.01;
 
   update();
 }
 
-void OrthoCamera::scrollWheel( int diff )
+void OrthoCamera::scrollWheel( int diff, bool ctrl, bool alt, bool shift )
 {
   scale_ *= 1.0 - (-diff) * 0.001;
 

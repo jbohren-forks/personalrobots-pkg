@@ -229,19 +229,19 @@ private:
       bool handled = false;
       if ( left_mouse_down_ )
       {
-        camera_->mouseLeftDrag( diff_x, diff_y );
+        camera_->mouseLeftDrag( diff_x, diff_y, event.CmdDown(), event.AltDown(), event.ShiftDown());
 
         handled = true;
       }
       else if ( middle_mouse_down_ )
       {
-        camera_->mouseMiddleDrag( diff_x, diff_y );
+        camera_->mouseMiddleDrag( diff_x, diff_y, event.CmdDown(), event.AltDown(), event.ShiftDown() );
 
         handled = true;
       }
       else if ( right_mouse_down_ )
       {
-        camera_->mouseRightDrag( diff_x, diff_y );
+        camera_->mouseRightDrag( diff_x, diff_y, event.CmdDown(), event.AltDown(), event.ShiftDown() );
 
         handled = true;
       }
@@ -254,7 +254,7 @@ private:
 
     if ( event.GetWheelRotation() != 0 )
     {
-      camera_->scrollWheel( event.GetWheelRotation() );
+      camera_->scrollWheel( event.GetWheelRotation(), event.CmdDown(), event.AltDown(), event.ShiftDown() );
 
       m_WXRenderWindow->Refresh();
     }

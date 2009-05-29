@@ -190,23 +190,23 @@ void FPSCamera::lookAt( const Ogre::Vector3& point )
   update();
 }
 
-void FPSCamera::mouseLeftDrag( int diff_x, int diff_y )
+void FPSCamera::mouseLeftDrag( int diff_x, int diff_y, bool ctrl, bool alt, bool shift )
 {
   yaw( -diff_x*0.005 );
   pitch( -diff_y*0.005 );
 }
 
-void FPSCamera::mouseMiddleDrag( int diff_x, int diff_y )
+void FPSCamera::mouseMiddleDrag( int diff_x, int diff_y, bool ctrl, bool alt, bool shift )
 {
   move( diff_x*0.01, -diff_y*0.01, 0.0f );
 }
 
-void FPSCamera::mouseRightDrag( int diff_x, int diff_y )
+void FPSCamera::mouseRightDrag( int diff_x, int diff_y, bool ctrl, bool alt, bool shift )
 {
   move( 0.0f, 0.0f, diff_y*0.1 );
 }
 
-void FPSCamera::scrollWheel( int diff )
+void FPSCamera::scrollWheel( int diff, bool ctrl, bool alt, bool shift )
 {
   move( 0.0f, 0.0f, -diff * 0.01 );
 }

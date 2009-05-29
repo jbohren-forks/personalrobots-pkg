@@ -182,28 +182,28 @@ public:
    * @param diff_x Pixels the mouse has moved in the (window space) x direction
    * @param diff_y Pixels the mouse has moved in the (window space) y direction
    */
-  virtual void mouseLeftDrag( int diff_x, int diff_y ) = 0;
+  virtual void mouseLeftDrag( int diff_x, int diff_y, bool ctrl, bool alt, bool shift ) = 0;
   /**
    * \brief Handle a middle mouse button drag
    *
    * @param diff_x Pixels the mouse has moved in the (window space) x direction
    * @param diff_y Pixels the mouse has moved in the (window space) y direction
    */
-  virtual void mouseMiddleDrag( int diff_x, int diff_y ) = 0;
+  virtual void mouseMiddleDrag( int diff_x, int diff_y, bool ctrl, bool alt, bool shift ) = 0;
   /**
    * \brief Handle a right mouse button drag
    *
    * @param diff_x Pixels the mouse has moved in the (window space) x direction
    * @param diff_y Pixels the mouse has moved in the (window space) y direction
    */
-  virtual void mouseRightDrag( int diff_x, int diff_y ) = 0;
+  virtual void mouseRightDrag( int diff_x, int diff_y, bool ctrl, bool alt, bool shift ) = 0;
   /**
    * \brief Handle a scrollwheel change
    *
    * @param diff Number of "units" the scrollwheel has moved
    * @todo Probably need to pass in how many units there are in a "click" of the wheel
    */
-  virtual void scrollWheel( int diff ) = 0;
+  virtual void scrollWheel( int diff, bool ctrl, bool alt, bool shift ) = 0;
 
   /**
    * \brief Loads the camera's configure from the supplied string (generated through toString())

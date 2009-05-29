@@ -94,10 +94,10 @@ public:
 
   virtual void lookAt( const Ogre::Vector3& point );
 
-  virtual void mouseLeftDrag( int diff_x, int diff_y );
-  virtual void mouseMiddleDrag( int diff_x, int diff_y );
-  virtual void mouseRightDrag( int diff_x, int diff_y );
-  virtual void scrollWheel( int diff );
+  virtual void mouseLeftDrag( int diff_x, int diff_y, bool ctrl, bool alt, bool shift );
+  virtual void mouseMiddleDrag( int diff_x, int diff_y, bool ctrl, bool alt, bool shift );
+  virtual void mouseRightDrag( int diff_x, int diff_y, bool ctrl, bool alt, bool shift );
+  virtual void scrollWheel( int diff, bool ctrl, bool alt, bool shift );
 
   /**
    * \brief Calculates the camera's position and orientation from the yaw, pitch, distance and focal point
