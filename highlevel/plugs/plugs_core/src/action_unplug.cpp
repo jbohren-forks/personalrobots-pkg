@@ -34,6 +34,7 @@
 
 
 #include <plugs_core/action_unplug.h>
+#include <std_msgs/Float64.h>
 
 #define BACKOFF 0.06
 
@@ -56,6 +57,7 @@ UnplugAction::UnplugAction() :
     }
 
  node_->advertise<manipulation_msgs::TaskFrameFormalism>(arm_controller_ + "/command", 2);
+ node_->advertise<std_msgs::Float64>("/r_shoulder_pan_effort/command", 2);
 
  node_->subscribe(arm_controller_ + "/state", controller_state_msg_, &UnplugAction::checkUnplug, this, 1);
 
@@ -64,6 +66,8 @@ UnplugAction::UnplugAction() :
 
 UnplugAction::~UnplugAction()
 {
+ node_->unadvertise(arm_controller_ + "/command");
+ node_->unadvertise("/r_shoulder_pan_effort/command");
 };
 
 robot_actions::ResultStatus UnplugAction::execute(const std_msgs::Empty& empty, std_msgs::Empty& feedback)
@@ -87,8 +91,17 @@ robot_actions::ResultStatus UnplugAction::execute(const std_msgs::Empty& empty, 
 
   node_->publish(arm_controller_ + "/command", tff_msg_);
 
+  ros::Time started = ros::Time::now();
   while (isActive()) {
     ros::Duration(0.01).sleep();
+
+    double effort = 0.0;
+    if (ros::Time::now() - started > ros::Duration(5.0))
+      effort = -2.0;
+    else if (ros::Time::now() - started > ros::Duration(15.0))
+      effort = -5.0;
+    std_msgs::Float64 msg;  msg.data = effort;
+    node_->publish("/r_shoulder_pan_effort/command", msg);
   }
 
   node_->deleteParam("~x_threshold");

@@ -1,4 +1,10 @@
 <?xml version="1.0"?>
-
+<controllers>
   <controller name="r_arm_hybrid_controller" type="CartesianHybridControllerNode"/>
+
+  <param name="r_shoulder_pan_effort/autostart" value="true" type="bool" />
+  <controller name="r_shoulder_pan_effort" type="JointEffortControllerNode">
+    <joint name="r_shoulder_pan_effort" />
+  </controller>
+</controllers>
 
