@@ -37,7 +37,16 @@ extern "C" {
 #define MT9VMODE_320x240x50b2		7
 #define MT9VMODE_320x240x30b2		8
 #define MT9VMODE_320x240x25b2 		9
+#define MT9V_NUM_MODES 10
 
+struct MT9VMode {
+  char *name;
+  size_t width;
+  size_t height;
+  double fps;
+};
+
+extern const struct MT9VMode MT9VModes[MT9V_NUM_MODES];
 
 /*
  * The pr2FrameInfo structure is returned to the frame handler

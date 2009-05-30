@@ -12,9 +12,21 @@
 #include "ipcam_packet.h"
 
 /// Amount of time in microseconds that the host should wait for packet replies
-#define STD_REPLY_TIMEOUT SEC_TO_USEC(1)
+#define STD_REPLY_TIMEOUT SEC_TO_USEC(0.2)
 
-
+#define VMODEDEF(width, height, fps) { #width"x"#height"x"#fps, width, height, fps }  
+const struct MT9VMode MT9VModes[MT9V_NUM_MODES] = {
+  VMODEDEF(752,480,15),
+  VMODEDEF(752,480,12.5),
+  VMODEDEF(640,480,30),
+  VMODEDEF(640,480,25),
+  VMODEDEF(640,480,15),
+  VMODEDEF(640,480,12.5),
+  VMODEDEF(320,240,60),
+  VMODEDEF(320,240,50),
+  VMODEDEF(320,240,30),
+  VMODEDEF(320,240,25)
+};
 
 /**
  * Returns the version information for the library

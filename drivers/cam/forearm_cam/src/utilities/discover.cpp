@@ -44,7 +44,7 @@
 #include "pr2lib.h"
 #include "host_netutil.h"
 
-int discover(const std::string &if_name)
+int discover(const std::string &if_name, bool verbose, bool report_rp_filter)
 {
   // Create a new IpCamList to hold the camera list
   IpCamList camList;
@@ -54,21 +54,23 @@ int discover(const std::string &if_name)
   // the first reply from the camera from being filtered out.
   // @todo Should we be setting rp_filter to zero here? This may violate
   // the user's secutity preferences?
-  std::string rp_str = "sysctl net.ipv4.conf."+if_name+".rp_filter|grep -q 0||sysctl -q -w net.ipv4.conf."+if_name+".rp_filter=0";
+  std::string rp_str = "sysctl net.ipv4.conf."+if_name+".rp_filter|grep -q 0||sysctl -q -w net.ipv4.conf."+if_name+".rp_filter=0 2> /dev/null";
   int retval = system(rp_str.c_str());
-  if (retval == -1 || !WIFEXITED(retval) || WEXITSTATUS(retval))
+  if (retval == -1 || !WIFEXITED(retval) || WEXITSTATUS(retval) && report_rp_filter)
   {
     fprintf(stderr, "Unable to set rp_filter to 0 on interface %s. Camera discovery is likely to fail.\n", if_name.c_str());
   }
 
   // Discover any connected cameras, wait for 0.5 second for replies
   if( pr2Discover(if_name.c_str(), &camList, NULL, SEC_TO_USEC(0.5)) == -1) {
-    fprintf(stderr, "Discover error on interface %s.\n", if_name.c_str());
+    if (verbose)
+      fprintf(stderr, "Discover error on interface %s.\n", if_name.c_str());
     return -1;
   }
 
   if (pr2CamListNumEntries(&camList) == 0) {
-    fprintf(stderr, "No cameras found on interface %s\n", if_name.c_str());
+    if (verbose)
+      fprintf(stderr, "No cameras found on interface %s\n", if_name.c_str());
     return 0;
   }
 
@@ -111,7 +113,7 @@ int discoverall()
   std::vector<std::string> interfaces = getInterfaces();
 
   for (std::vector<std::string>::iterator iface = interfaces.begin(); iface != interfaces.end(); iface++)
-    if (discover(*iface))
+    if (discover(*iface, false, iface == interfaces.begin()))
       ret = -1;
   
   return ret;
@@ -120,7 +122,7 @@ int discoverall()
 int main(int argc, char **argv)
 {
   if (argc == 2)
-    return discover(argv[1]);
+    return discover(argv[1], true, true);
   else if (argc == 1)
     return discoverall();
     

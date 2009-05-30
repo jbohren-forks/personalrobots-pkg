@@ -57,8 +57,6 @@
 #include "pr2lib.h"
 #include "host_netutil.h"
 
-static const double MODE_FPS[] = {15, 12.5, 30, 25, 15, 12.5, 60, 50, 30, 25};
-
 // The FrameTimeFilter class takes a stream of image arrival times that
 // include time due to system load and network asynchrony, and generates a
 // (hopefully) more steady stream of arrival times. The filtering is based
@@ -233,6 +231,9 @@ private:
   boost::thread *image_thread_;
   boost::thread *diagnostic_thread_;
 
+  typedef boost::function<int(size_t, size_t, uint8_t*, ros::Time)> UseFrameFunction;
+  UseFrameFunction useFrame_;
+
 public:
   int exit_status_;
 
@@ -240,7 +241,8 @@ public:
     : node_handle_(nh), camera_(NULL), started_video_(false),
       diagnostic_(ros::NodeHandle()), 
       freq_diag_(desired_freq_, desired_freq_, 0.05),
-      self_test_(this)
+      self_test_(this),
+      useFrame_(boost::bind(&ForearmNode::publishImage, this, _1, _2, _3, _4))
   {
     started_video_ = false;
     open_ = false;
@@ -261,6 +263,11 @@ public:
     self_test_.addTest( &ForearmNode::startTest );
     self_test_.addTest( &ForearmNode::streamingTest );
     self_test_.addTest( &ForearmNode::disconnectTest );
+    for (int i = 0; i < MT9V_NUM_MODES; i++)
+    {
+      diagnostic_updater::TaskFunction f = boost::bind(&ForearmNode::videoModeTest, this, MT9VModes[i].name, _1);
+      self_test_.add( str(boost::format("Test Pattern in mode %s")%MT9VModes[i].name), f );
+    }
     self_test_.addTest( &ForearmNode::resumeTest );
     
     // Clear statistics
@@ -276,9 +283,6 @@ public:
       freq_diag_.clear(); // Avoids having an error until the window fills up.
       diagnostic_thread_ = new boost::thread( boost::bind(&ForearmNode::diagnosticsLoop, this) );
     }
-
-    open();
-    start();
   }
  
   void read_config()
@@ -299,41 +303,6 @@ public:
     node_handle_.param("~ext_trigger", ext_trigger_, false);
 
     node_handle_.param("~video_mode", mode_name_, std::string("752x480x15"));
-    if (mode_name_.compare("752x480x15") == 0)
-      video_mode_ = MT9VMODE_752x480x15b1;
-    else if (mode_name_.compare("752x480x12.5") == 0)
-      video_mode_ = MT9VMODE_752x480x12_5b1;
-    else if (mode_name_.compare("640x480x30") == 0)
-      video_mode_ = MT9VMODE_640x480x30b1;
-    else if (mode_name_.compare("640x480x25") == 0)
-      video_mode_ = MT9VMODE_640x480x25b1;
-    else if (mode_name_.compare("640x480x15") == 0)
-      video_mode_ = MT9VMODE_640x480x15b1;
-    else if (mode_name_.compare("640x480x12.5") == 0)
-      video_mode_ = MT9VMODE_640x480x12_5b1;
-    else if (mode_name_.compare("320x240x60") == 0)
-      video_mode_ = MT9VMODE_320x240x60b2;
-    else if (mode_name_.compare("320x240x50") == 0)
-      video_mode_ = MT9VMODE_320x240x50b2;
-    else if (mode_name_.compare("320x240x30") == 0)
-      video_mode_ = MT9VMODE_320x240x30b2;
-    else if (mode_name_.compare("320x240x25") == 0)
-      video_mode_ = MT9VMODE_320x240x25b2;
-    else {
-      ROS_FATAL("Unknown video mode %s", mode_name_.c_str());
-      exit_status_ = 1;
-      node_handle_.shutdown();
-      return;
-    }
-
-    if (video_mode_ <= MT9VMODE_752x480x12_5b1)
-      width_ = 752;
-    else if (video_mode_ <= MT9VMODE_640x480x12_5b1)
-      width_ = 640;
-    else
-      width_ = 320;
-    height_ = (video_mode_ <= MT9VMODE_640x480x12_5b1) ? 480 : 240;
-    desired_freq_ = imager_freq_ = MODE_FPS[ video_mode_ ];
 
     // Specify which frame to add to message header
     node_handle_.param("~frame_id", frame_id_, std::string("NO_FRAME"));
@@ -360,6 +329,14 @@ public:
     
     while (node_handle_.ok())
     {
+      if (!started_video_)
+      {
+        stop();
+        close();
+        open();
+        start();
+      }
+
       { 
         boost::mutex::scoped_lock(diagnostics_lock_);
         diagnostic_.update();
@@ -408,6 +385,21 @@ public:
     if (open_)
       return;
     
+    for (video_mode_ = 0; video_mode_ < MT9V_NUM_MODES; video_mode_++)
+      if (mode_name_.compare(MT9VModes[video_mode_].name) == 0)
+        break;
+    if (video_mode_ == MT9V_NUM_MODES) 
+    {
+      ROS_FATAL("Unknown video mode %s", mode_name_.c_str());
+      exit_status_ = 1;
+      node_handle_.shutdown();
+      return;
+    }
+
+    width_ = MT9VModes[video_mode_].width;
+    height_ = MT9VModes[video_mode_].height;
+    desired_freq_ = imager_freq_ = MT9VModes[video_mode_].fps;
+
     int retval;
     // Create a new IpCamList to hold the camera list
     IpCamList camList;
@@ -657,10 +649,12 @@ public:
     }
   }
   
+private:
   void imageThread(int port)
   {
     pr2VidReceive(camera_->ifName, port, height_, width_, &ForearmNode::frameHandler, this);
     
+    started_video_ = false;
     ROS_DEBUG("Image thread exiting.");
   }
 
@@ -697,8 +691,7 @@ public:
     stat.adds("Latest frame #", last_frame_number_);
   }
 
-private:
-  void publishImage(size_t width, size_t height, uint8_t *frameData, ros::Time t)
+  int publishImage(size_t width, size_t height, uint8_t *frameData, ros::Time t)
   {
     fillImage(image_, "image", height, width, 1, "bayer_bggr", "uint8", frameData);
     
@@ -710,6 +703,8 @@ private:
       cam_info_pub_.publish(cam_info_);
     }
     freq_diag_.tick();
+
+    return 0;
   }
   
   double getTriggeredFrameTime(double firstPacketTime)
@@ -777,7 +772,8 @@ private:
     {
       // The select call in the driver timed out.
       ROS_WARN("No data have arrived for more than one second.");
-      return 0;
+      stop();
+      return 1;
     }
 
     if (frame_info->eofInfo == NULL) {
@@ -829,9 +825,8 @@ private:
 
     last_image_time_ = imageTime;
     last_frame_number_ = frame_info->frame_number;
-    publishImage(frame_info->width, frame_info->height, frame_info->frameData, ros::Time(imageTime));
-  
-    return 0;
+
+    return useFrame_(frame_info->width, frame_info->height, frame_info->frameData, ros::Time(imageTime));
   }
 
   static int frameHandler(pr2FrameInfo *frameInfo, void *userData)
@@ -1015,6 +1010,128 @@ private:
 
     status.level = 0;
     status.message = "Disconnected successfully.";
+  }
+  
+  int setTestMode(uint16_t mode, diagnostic_updater::DiagnosticStatusWrapper &status)
+  {
+    if ( pr2SensorWrite( camera_, 0x7F, mode ) != 0) {
+      status.summary(2, "Could not set imager into test mode.");
+      status.adds("Writing imager test mode", "Fail");
+      return 1;
+    }
+    else
+    {
+      status.adds("Writing imager test mode", "Pass");
+    }
+
+    usleep(100000);
+    uint16_t inmode;
+    if ( pr2SensorRead( camera_, 0x7F, &inmode ) != 0) {
+      status.summary(2, "Could not read imager mode back.");
+      status.adds("Reading imager test mode", "Fail");
+      return 1;
+    }
+    else
+    {
+      status.adds("Reading imager test mode", "Pass");
+    }
+    
+    if (inmode != mode) {
+      status.summary(2, "Imager test mode read back did not match.");
+      status.addsf("Comparing read back value", "Fail (%04x != %04x)", inmode, mode);
+      return 1;
+    }
+    else
+    {
+      status.adds("Comparing read back value", "Pass");
+    }
+    
+    return 0;
+  }
+
+  class VideoModeTestFrameHandler
+  {
+    public:
+      VideoModeTestFrameHandler(diagnostic_updater::DiagnosticStatusWrapper &status) : status_(status)
+    {}
+
+      int operator()(size_t width, size_t height, uint8_t *data, ros::Time stamp)
+      {
+        status_.adds("Got a frame", "Pass");
+
+        for (size_t y = 0; y < height; y++)
+          for (size_t x = 0; x < width; x++, data++)
+          {
+            uint8_t expected;
+            
+            if (width > 320)
+              expected = get_expected(x, y);
+            else
+              expected = (get_expected(2 * x, 2 * y) + get_expected(2 * x, 2 * y + 1)) / 2;
+
+            if (*data == expected)
+              continue;
+
+            status_.level = 2;
+            status_.message += "Unexpected value in frame.";
+            status_.addsf("Frame content", "Fail: Unexpected value at (x=%i, y=%i, %hhi != %hhi)", x, y, expected, *data);
+            return 1;
+          }
+
+        status_.addsf("Frame content", "Pass");
+        return 1;
+      }
+
+    private:
+      static uint8_t get_expected(int x, int y)
+      {
+        if ((x + 1) / 2 + y < 500)
+          return 14 + x / 4;
+        else
+          return 0;
+      }
+      diagnostic_updater::DiagnosticStatusWrapper &status_;
+  };
+
+  void videoModeTest(const std::string mode, diagnostic_updater::DiagnosticStatusWrapper& status) 
+  {
+    const std::string oldmode = mode_name_;
+    UseFrameFunction oldUseFrame = useFrame_;
+
+    mode_name_ = mode;
+    VideoModeTestFrameHandler callback(status);
+    useFrame_ = boost::bind<int>(boost::ref(callback), _1, _2, _3, _4);
+
+    status.summaryf(0, "Testing mode %s:", mode.c_str());
+
+    open();
+
+    if (setTestMode(0x3800, status))
+      goto reset_state;
+
+    start();  
+    if (image_thread_->timed_join((boost::posix_time::milliseconds) 3000))
+    {
+      delete image_thread_;
+      image_thread_ = NULL;
+    }
+    else
+    {
+      ROS_ERROR("Lost the image_thread. This should never happen.");
+      status.summary(2, "Lost the image_thread. This should never happen.");
+    }
+    close();
+
+    if (setTestMode(0x0000, status))
+      goto reset_state;
+
+    if (status.level == 0)
+      status.message += "Pass";
+
+reset_state:
+    close();
+    useFrame_ = oldUseFrame;
+    mode_name_ = oldmode;
   }
 
   void resumeTest(robot_msgs::DiagnosticStatus& status)

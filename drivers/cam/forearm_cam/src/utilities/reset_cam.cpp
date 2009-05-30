@@ -55,7 +55,7 @@ int main(int argc, char** argv)
   }
  
   if ( pr2Reset( camera ) != 0) {
-    fprintf(stderr, "Error sending reset to camera.", ip_address, if_name);
+    fprintf(stderr, "Error sending reset to camera.");
     return -1;
   }
 
