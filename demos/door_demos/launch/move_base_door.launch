@@ -6,7 +6,7 @@
   <group name="wg">
     <node machine="three" pkg="doors_core" type="move_base_door" respawn="false" name="door_reactive_planner">
 
-      <param name="action_max_allowed_time" value="60.0" />
+      <param name="action_max_allowed_time" value="10.0" />
       <param name="controller_frequency" value="10.0" />
       <param name="min_distance_from_obstacles" value="0.025" />
       <param name="max_waypoint_distance" value="0.01" />
