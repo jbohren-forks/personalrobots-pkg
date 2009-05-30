@@ -42,8 +42,8 @@ planworks:
 	@if [ ! -d PlanWorks ]; then $(SVN_CMDLINE) co -r $(PLANWORKS_REVISION) http://europa-pso.googlecode.com/svn/PlanWorks/trunk PlanWorks; fi ;
 	@if [ ! -n "`svn info PlanWorks | grep 'Revision: $(PLANWORKS_REVISION)'`" ]; then cd PlanWorks && $(SVN_CMDLINE) up -r $(PLANWORKS_REVISION); fi;
 
-# Get TREXA
-TREX_REVISION=123
+# Get TREX
+TREX_REVISION=124
 trex: plasma
 	@if [ ! -d TREX ]; then $(SVN_CMDLINE) co -r $(TREX_REVISION) http://trex-autonomy.googlecode.com/svn/trunk TREX; fi ;
 	@if [ ! -n "`svn info TREX | grep 'Revision: $(TREX_REVISION)'`" ]; then cd TREX && $(SVN_CMDLINE) up -r $(TREX_REVISION); fi;
