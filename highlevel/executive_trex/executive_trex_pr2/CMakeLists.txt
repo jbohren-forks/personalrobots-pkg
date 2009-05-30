@@ -56,6 +56,7 @@ rospack_add_nddl("test/master/m2/no_plugs/pr2.recharger.nddl")
 rospack_add_nddl("test/master/m2/no_plugs/no_arms/pr2.mechanism_control.nddl")
 rospack_add_nddl("test/master/m2/no_arms/pr2.mechanism_control.nddl")
 rospack_add_nddl("test/master/m2/high_level_sim/pr2.rcs.sim.nddl")
+rospack_add_nddl("test/master/m2_remote_interface/pr2.master.nddl")
 
 set(TREX_FILES src/ros_reactor.cpp
 	       src/executive.cpp
