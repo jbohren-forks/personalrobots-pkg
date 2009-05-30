@@ -9,7 +9,7 @@
 </door>
 
 <door>
-  <id>35</id>
+  <id>34</id>
 <approach_point>
 <x>51.60</x>
 <y>10.44</y>
@@ -17,7 +17,7 @@
 </door>
 
 <door>
-  <id>36</id>
+  <id>35</id>
 <approach_point>
 <x>53.8</x>
 <y>10.2</y>
@@ -25,7 +25,7 @@
 </door>
 
 <door>
-<id>63</id>
+<id>61</id>
 <approach_point>
 <x>12.3</x>
 <y>22.1</y>
@@ -33,7 +33,7 @@
 </door>
 
 <door>
-<id>65</id>
+<id>63</id>
 <approach_point>
 <x>51.52</x>
 <y>24.38</y>
@@ -41,7 +41,7 @@
 </door>
 
 <door>
-  <id>77</id>
+  <id>75</id>
 <approach_point>
 <x>25.246</x>
 <y>30.022</y>
@@ -50,7 +50,7 @@
 
 
 <door>
-<id>83</id>
+<id>81</id>
 <approach_point>
 <x>19.1</x>
 <y>32.0</y>
@@ -60,7 +60,7 @@
 
 
 <door>
-  <id>90</id>
+  <id>88</id>
 <approach_point>
 <x>15</x>
 <y>32.3</y>
@@ -69,7 +69,7 @@
 
 
 <door>
-  <id>100</id>
+  <id>98</id>
 <approach_point>
 <x>15.509</x>
 <y>36.70</y>
@@ -78,15 +78,16 @@
 
 
 <door>
-  <id>105</id>
+  <id>103</id>
 <approach_point>
 <x>11.68</x>
 <y>37.19</y>
 </approach_point>
 </door>
 
+
 <door>
-  <id>125</id>
+  <id>124</id>
 <approach_point>
 <x>21.2</x>
 <y>43.1</y>
