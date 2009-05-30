@@ -82,9 +82,9 @@
         </geometry>
       </visual>
       <collision>
-        <origin xyz="0.03598 0.01730 -0.00164" rpy="0 0 0" />
+        <origin xyz="0.065 0.016 -0.00164" rpy="0 0 0" />
         <geometry name="${prefix}_l_finger_collision">
-          <box size="0.09 0.040 0.049" />
+          <box size="0.04 0.03 0.049" />
         </geometry>
         <verbose value="Yes" />
         <map flag="collision" name="mesh">
@@ -164,9 +164,9 @@
         </geometry>
       </visual>
       <collision>
-        <origin xyz="0.03576 -0.01736 -0.00095" rpy="0 0 0" />
+        <origin xyz="0.065 -0.016 -0.00095" rpy="0 0 0" />
         <geometry name="${prefix}_r_finger_collision">
-          <box size="0.09 0.040 0.049" />
+          <box size="0.04 0.03 0.049" />
         </geometry>
         <verbose value="Yes" />
         <map flag="collision" name="mesh">
@@ -243,9 +243,9 @@
         </geometry>
       </visual>
       <collision>
-        <origin xyz="0.00846 0.00568 0.0" rpy="0 0 0" />
+        <origin xyz="0.012 -0.009 0.0" rpy="0 0 0" />
         <geometry name="${prefix}_l_finger_tip_collision">
-          <box size="0.04577 0.0425 0.023" />
+          <box size="0.035 0.0125 0.023" />
         </geometry>
         <verbose value="Yes" />
         <map flag="collision" name="mesh">
@@ -323,9 +323,9 @@
         </geometry>
       </visual>
       <collision>
-        <origin xyz="${0.00846} ${-0.00568} 0.0" rpy="0 0 0" />
+        <origin xyz="0.012 0.009 0.0" rpy="0 0 0" />
         <geometry name="${prefix}_r_finger_tip_collision">
-          <box size="0.04577 0.0425 0.023" />
+          <box size="0.035 0.0125 0.023" />
         </geometry>
         <verbose value="Yes" />
         <map flag="collision" name="mesh">
@@ -580,16 +580,16 @@
       <actuator       name="${side}_gripper_motor" />
       <gap_joint      name="${side}_gripper_joint"                       mechanical_reduction="1.0" />
       <passive_joint  name="${side}_gripper_l_finger_joint"     >
-        <gazebo_mimic_pid p="0.000001" i="0.0" d="0.0" iClamp="0.0" />
+        <gazebo_mimic_pid p="0.0005" i="0.0" d="0.0" iClamp="0.0" />
       </passive_joint>
       <passive_joint  name="${side}_gripper_r_finger_joint"     >
-        <gazebo_mimic_pid p="0.000001" i="0.0" d="0.0" iClamp="0.0" />
+        <gazebo_mimic_pid p="0.0005" i="0.0" d="0.0" iClamp="0.0" />
       </passive_joint>
       <passive_joint  name="${side}_gripper_r_finger_tip_joint" >
-        <gazebo_mimic_pid p="0.000001" i="0.0" d="0.0" iClamp="0.0" />
+        <gazebo_mimic_pid p="0.000005" i="0.0" d="0.0" iClamp="0.0" />
       </passive_joint>
       <passive_joint  name="${side}_gripper_l_finger_tip_joint" >
-        <gazebo_mimic_pid p="0.000001" i="0.0" d="0.0" iClamp="0.0" />
+        <gazebo_mimic_pid p="0.000005" i="0.0" d="0.0" iClamp="0.0" />
       </passive_joint>
     </transmission>
 
