@@ -1,6 +1,6 @@
 Index: ode/src/quickstep.cpp
 ===================================================================
---- ode/src/quickstep.cpp	(revision 1669)
+--- ode/src/quickstep.cpp	(revision 1674)
 +++ ode/src/quickstep.cpp	(working copy)
 @@ -33,6 +33,8 @@
  #include "lcp.h"
@@ -30,7 +30,7 @@ Index: ode/src/quickstep.cpp
  static void multiply_invM_JT (int m, int nb, dRealMutablePtr iMJ, int *jb,
  	dRealMutablePtr in, dRealMutablePtr out)
  {
-@@ -589,6 +594,8 @@
+@@ -591,6 +596,8 @@
  	// frame, and compute the rotational force and add it to the torque
  	// accumulator. I and invI are a vertical stack of 3x4 matrices, one per body.
          dRealAllocaArray (invI,3*4*nb);
@@ -39,7 +39,7 @@ Index: ode/src/quickstep.cpp
  	for (i=0; i<nb; i++) {
  		dMatrix3 tmp;
  
-@@ -596,6 +603,12 @@
+@@ -598,6 +605,12 @@
  		dMULTIPLY2_333 (tmp,body[i]->invI,body[i]->posr.R);
  		dMULTIPLY0_333 (invI+i*12,body[i]->posr.R,tmp);
  
@@ -52,7 +52,7 @@ Index: ode/src/quickstep.cpp
          if (body[i]->flags & dxBodyGyroscopic) {
              dMatrix3 I;
              // compute inertia tensor in global frame
-@@ -760,6 +773,87 @@
+@@ -762,6 +775,87 @@
  		dRealAllocaArray (cforce,nb*6);
  		SOR_LCP (m,nb,J,jb,body,invI,lambda,cforce,rhs,lo,hi,cfm,findex,&world->qs);
  
