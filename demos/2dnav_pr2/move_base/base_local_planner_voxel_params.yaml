@@ -22,7 +22,7 @@ base_local_planner:
   dwa: true
   vx_samples: 3
   vtheta_samples: 20
-  max_vel_x: 0.65
+  max_vel_x: 0.52
   min_vel_x: 0.1
   max_vel_th: 1.0
   min_vel_th: -1.0
