@@ -109,7 +109,11 @@ namespace door_reactive_planner
 
     bool door_information_set_ ; /**< Has door information been set before invoking the planner */
 
+    int cell_distance_from_obstacles_; /**< Distance the robot should stay away from obstacles (in cells corresponding to the grid used for planning */
+
     private:
+
+    std::string current_position_in_collision_;
 
     ros::Node &node_;/**< A reference to a ros node */
    
@@ -147,7 +151,6 @@ namespace door_reactive_planner
 
     double max_inflated_cost_; /**< Maximum inflated cost for the point that the robot center is allowed to occupy */
 
-    int cell_distance_from_obstacles_; /**< Distance the robot should stay away from obstacles (in cells corresponding to the grid used for planning */
 
     int cell_distance_robot_center_from_obstacles_;
 

@@ -332,10 +332,15 @@ namespace nav
 
       if(abort_action_timeout > action_max_allowed_time_)
       {
+	planner_->cell_distance_from_obstacles_ = std::max(planner_->cell_distance_from_obstacles_-5,2);
+	ROS_INFO("Resetting cell distance from obstacles to %d and trying again",planner_->cell_distance_from_obstacles_);
+      }
+      else if(abort_action_timeout > 2*action_max_allowed_time_)
+	{
         ROS_ERROR("Move base door action timing out");
         planner_cost_map_ros_->stop();
         return robot_actions::ABORTED;
-      }
+	}
       last_time = start_time;
     }
     //make sure to stop the costmap from running on return

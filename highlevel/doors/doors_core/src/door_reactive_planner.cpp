@@ -46,6 +46,7 @@ DoorReactivePlanner::DoorReactivePlanner(ros::Node &ros_node, TransformListener 
   control_frame_id_ = control_frame_id;
   costmap_frame_id_ = costmap_frame_id;
   cost_map_ = cost_map;
+  current_position_in_collision_ = "false";
   getParams();
 }
 
@@ -133,7 +134,9 @@ void DoorReactivePlanner::setDoor(door_msgs::Door door_msg_in, const pr2_robot_a
 
   door_information_set_ = true;
   door_msg_out = door;
-
+  node_.param<double>("~min_distance_from_obstacles",min_distance_from_obstacles_,0.03);
+  node_.param<double>("~max_waypoint_distance",dist_waypoints_max_,0.01);
+  cell_distance_from_obstacles_ = std::max<int>((int) (min_distance_from_obstacles_/dist_waypoints_max_),10);
 }
 
 bool DoorReactivePlanner::getGoal(pr2_robot_actions::Pose2D &goal)
@@ -261,6 +264,15 @@ bool DoorReactivePlanner::makePlan(const pr2_robot_actions::Pose2D &start, std::
   distance_to_centerline = (start.x-goal_.x)*vector_along_door_.x + (start.y-goal_.y)*vector_along_door_.y;
   centerline_distance_ = distance_to_centerline;
   ROS_DEBUG("Start: %f %f, goal: %f %f, dc: %f",start.x,start.y,goal_.x,goal_.y,distance_to_centerline); 
+
+
+  linear_path.clear();
+  checked_path.clear();
+  getFinalPosition(start,0.0, distance_to_centerline,end_position);
+  createLinearPath(start,end_position,linear_path);
+  checkPath(linear_path,costmap_frame_id_,checked_path,costmap_frame_id_);
+
+
   for(int i=0; i < num_explore_paths_; i++)
   {
     linear_path.clear();
@@ -400,6 +412,14 @@ robot_msgs::DiagnosticStatus DoorReactivePlanner::getDiagnostics()
   v.value = current_position_.th;
   values.push_back(v);
 
+  v.label = "Cell distance from obstacles";
+  v.value = cell_distance_from_obstacles_;
+  values.push_back(v);
+
+  s.label = "Current position in collision";
+  s.value = current_position_in_collision_;
+  strings.push_back(s);
+
   status.set_values_vec(values);
   status.set_strings_vec(strings);
 
@@ -429,10 +449,18 @@ void DoorReactivePlanner::checkPath(const std::vector<pr2_robot_actions::Pose2D>
     position.y = out_pose.y;
     theta = out_pose.th;
     if(getPointCost(position, oriented_footprint, cost)){
-      if(cost < max_inflated_cost_)  {
+      if(cost < max_inflated_cost_ || cost == costmap_2d::NO_INFORMATION)  {
 	ROS_DEBUG("Point %d: position: %f, %f, %f is not in collision",i,out_pose.x,out_pose.y,out_pose.th);
 	continue;
       }
+      if(i == 0)
+	{
+	  ROS_ERROR("Initial position seems to be in collision");
+	  current_position_in_collision_ = "true";
+	}
+      if(i > 0)
+	  current_position_in_collision_ = "false";
+
       ROS_DEBUG("Point %d: position: %f, %f, %f is in collision with cost %f which is greater than: %f",i,out_pose.x,out_pose.y,out_pose.th,cost,max_inflated_cost_);
     }
     else{
