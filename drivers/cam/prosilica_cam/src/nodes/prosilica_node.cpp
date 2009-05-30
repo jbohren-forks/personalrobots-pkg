@@ -91,6 +91,10 @@ private:
   unsigned long packets_missed_total_, packets_received_total_;
   RollingSum<unsigned long> packets_missed_acc_, packets_received_acc_;
 
+  // So we don't get burned by auto-exposure
+  unsigned long last_exposure_value_;
+  int consecutive_stable_exposures_;
+
 public:
   ProsilicaNode(ros::Node &node)
     : node_(node), cam_(NULL), running_(false),
@@ -118,14 +122,12 @@ public:
     node_.param("~acquisition_mode", mode_str, std::string("Continuous"));
     if (mode_str == std::string("Continuous")) {
       mode_ = prosilica::Continuous;
-      cam_->setFrameCallback(boost::bind(&ProsilicaNode::publishImage, this, _1));
       // TODO: tighter bound than this minimal check
       desired_freq_ = 1; // make sure we get _something_
       buffer_size = prosilica::Camera::DEFAULT_BUFFER_SIZE;
     }
     else if (mode_str == std::string("Triggered")) {
       mode_ = prosilica::Triggered;
-      cam_->setFrameCallback(boost::bind(&ProsilicaNode::noopCallback, this, _1));
       desired_freq_ = 0;
       buffer_size = 1;
     }
@@ -165,7 +167,13 @@ public:
       cam_.reset( new prosilica::Camera(guid, buffer_size) );
     }
     ROS_INFO("Found camera, guid = %lu", guid);
-    
+
+    // Set appropriate frame callback
+    if (mode_ == prosilica::Continuous)
+      cam_->setFrameCallback(boost::bind(&ProsilicaNode::publishImage, this, _1));
+    else
+      cam_->setFrameCallback(boost::bind(&ProsilicaNode::normalizeCallback, this, _1));
+
     // Feature control
     bool auto_expose = true;
     std::string auto_setting;
@@ -697,10 +705,6 @@ private:
     publishTopics(img_, rect_img_, cam_info_);
   }
 
-  void noopCallback(tPvFrame* frame)
-  {
-  }
-
   void loadIntrinsics()
   {
     calibrated_ = false;
@@ -774,14 +778,35 @@ private:
     calibrated_ = true;
   }
 
+  void normalizeCallback(tPvFrame* frame)
+  {
+    unsigned long exposure;
+    cam_->getAttribute("ExposureValue", exposure);
+    //ROS_WARN("Exposure value = %u", exposure);
+
+    if (exposure == last_exposure_value_)
+      consecutive_stable_exposures_++;
+    else {
+      last_exposure_value_ = exposure;
+      consecutive_stable_exposures_ = 0;
+    }
+  }
+  
   void normalizeExposure()
   {
-    cam_->stop();
+    ROS_INFO("Normalizing exposure");
+    //cam_->stop();
+
+    last_exposure_value_ = 0;
+    consecutive_stable_exposures_ = 0;
     cam_->start(prosilica::Continuous);
-    ros::Duration d = ros::Duration(2, 0);
-    d.sleep();
+
+    // TODO: thread safety
+    while (consecutive_stable_exposures_ < 3)
+      boost::this_thread::sleep(boost::posix_time::millisec(250));
+
     cam_->stop();
-    cam_->start(mode_);
+    //cam_->start(mode_);
   }
 };
 
