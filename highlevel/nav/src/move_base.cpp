@@ -468,6 +468,7 @@ namespace nav {
           }
           else{
             resetState();
+            resetCostmaps(circumscribed_radius_ * 2, circumscribed_radius_ * 2);
             ROS_WARN("move_base aborting because the controller could not find valid velocity commands for over %.4f seconds", patience.toSec());
             return robot_actions::ABORTED;
           }
