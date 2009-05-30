@@ -89,7 +89,6 @@ robot_actions::ResultStatus UnplugAction::execute(const std_msgs::Empty& empty, 
   tff_msg_.value.rot.y = 0.0;
   tff_msg_.value.rot.z = 0.0;
 
-  std_msgs::Float64 msg;
   node_->publish(arm_controller_ + "/command", tff_msg_);
 
   ros::Time started = ros::Time::now();
@@ -99,18 +98,13 @@ robot_actions::ResultStatus UnplugAction::execute(const std_msgs::Empty& empty, 
     double effort = 0.0;
     if (ros::Time::now() - started > ros::Duration(5.0))
       effort = -2.0;
-    else if (ros::Time::now() - started > ros::Duration(15.0))
+    if (ros::Time::now() - started > ros::Duration(15.0))
       effort = -5.0;
-    msg.data = effort;
+    std_msgs::Float64 msg;  msg.data = effort;
     node_->publish("/r_shoulder_pan_effort/command", msg);
   }
 
   node_->deleteParam("~x_threshold");
-  msg.data = 0.0;
-  for (int i = 0; i < 10; ++i) {
-    node_->publish("/r_shoulder_pan_effort/command", msg);
-    ros::Duration(0.1).sleep();
-  }
 
   return waitForDeactivation(feedback);
 }
