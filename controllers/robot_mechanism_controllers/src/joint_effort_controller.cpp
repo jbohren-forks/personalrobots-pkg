@@ -90,7 +90,7 @@ bool JointEffortController::initXml(mechanism::RobotState *robot, TiXmlElement *
 
 void JointEffortController::update()
 {
-  joint_state_->commanded_effort_ = command_;
+  joint_state_->commanded_effort_ += command_;
 }
 
 
