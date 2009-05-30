@@ -42,6 +42,7 @@
 // Msgs
 #include <robot_msgs/PlugStow.h>
 #include <std_msgs/Empty.h>
+#include <std_msgs/Int32.h>
 
 // State Msgs
 #include <robot_actions/NoArgumentsActionState.h>
@@ -51,6 +52,7 @@
 #include <pr2_robot_actions/SwitchControllersState.h>
 #include <pr2_robot_actions/DetectPlugOnBaseState.h>
 #include <nav_robot_actions/MoveBaseState.h>
+#include <pr2_robot_actions/PlugInState.h>
 
 // Actions
 #include <safety_core/action_detect_plug_on_base.h>
@@ -102,11 +104,11 @@ int
   robot_actions::ActionClient<std_msgs::Empty, robot_actions::NoArgumentsActionState, std_msgs::Empty>
     localize_plug_in_gripper("localize_plug_in_gripper");
   robot_actions::ActionClient<std_msgs::Empty, robot_actions::NoArgumentsActionState, std_msgs::Empty>
-    plug_in("plug_in");
-  robot_actions::ActionClient<std_msgs::Empty, robot_actions::NoArgumentsActionState, std_msgs::Empty>
     unplug("unplug");
   robot_actions::ActionClient< robot_msgs::PlugStow, pr2_robot_actions::StowPlugState, std_msgs::Empty>
     stow_plug("stow_plug");
+  robot_actions::ActionClient<std_msgs::Int32, pr2_robot_actions::PlugInState, std_msgs::Empty>
+    plug_in("plug_in");
 
   Duration(1.0).sleep();
 
@@ -179,7 +181,9 @@ int
   if (switch_controllers.execute(switchlist, empty, switch_timeout) != robot_actions::SUCCESS) return -101;
 
   // Plug in
-  if (plug_in.execute(empty, empty, Duration(120.0)) != robot_actions::SUCCESS)
+  std_msgs::Int32 outlet_id; outlet_id.data = 0;
+  pr2_robot_actions::PlugInState plug_in_state;
+  if (plug_in.execute(outlet_id, empty, Duration(10000.0)) != robot_actions::SUCCESS)
     printf("Plug in failed!!\n");
 
   Duration(5.0).sleep();
