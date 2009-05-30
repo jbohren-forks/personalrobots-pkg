@@ -59,5 +59,6 @@
     <param name="vo_used" value="false"/>
   </node>
 
+  <node pkg="tf" machine="two" type="change_notifier"/>
 
 </launch>
