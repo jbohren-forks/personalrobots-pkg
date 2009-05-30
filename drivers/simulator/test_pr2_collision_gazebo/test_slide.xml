@@ -9,10 +9,7 @@
   <param name="robotdesc/pr2" command="$(find xacro)/xacro.py '$(find pr2_defs)/robots/pr2.xacro.xml'" />
 
   <!-- push robotdesc/pr2 to factory and spawn robot in gazebo -->
-  <node pkg="gazebo_plugin" type="urdf2factory" args="/robotdesc/pr2 0 6 18 0 -75 90" respawn="false" output="screen" /> <!-- load default arm controller -->
-
-  <!-- load controllers -->
-  <include file="$(find pr2_gazebo)/pr2_default_controllers.launch" />
+  <node pkg="gazebo_plugin" type="urdf2factory" args="/robotdesc/pr2 0 6 18 0 -75 90" respawn="false" output="screen" />
 
   <!-- test -->
   <test test-name="pr2_test_slide" pkg="test_pr2_collision_gazebo" type="test_slide.py" time-limit="120" />
