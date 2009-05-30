@@ -1,0 +1,12 @@
+<package>
+  <description brief="collect_people_data">
+    Information for collecting people data.
+  </description>
+  <author>Alex Sorokin/sorokin@willowgarage.com,Caroline Pantofaru/pantofaru@willowgarage.com</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://pr.willowgarage.com/wiki/collect_people_data</url>
+
+</package>
+
+

@@ -1,0 +1,22 @@
+<launch>
+	<include file="$(find pr2_alpha)/$(env ROBOT).machine" />
+
+	 <node pkg="rosrecord" type="rosrecord" 
+	       args="-f /bags/record_people_prosilica /stereo/raw_stereo" 
+	       machine="four"/>
+
+	 <node pkg="rosrecord" type="rosrecord" 
+	       args="-f /bags/record_people_tf /tf_message" />
+
+	 <node pkg="rosrecord" type="rosrecord" 
+	       args="-f /bags/record_people_prosilica /prosilica/image
+	       machine="three"/>
+
+	 <node pkg="rosrecord" type="rosrecord" 
+	       args="-f /bags/record_people_lasers /base_scan /tilt_laser /laser_tilt_controller/laser_scanner_signal" />
+
+	 <node pkg="rosrecord" type="rosrecord" 
+	       args="-f /bags/record_people_mechanism /mechanism_state" />
+
+
+</launch>
