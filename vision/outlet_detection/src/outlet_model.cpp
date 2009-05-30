@@ -305,6 +305,11 @@ void find_holes(const vector<outlet_feature_t>& holes, vector<outlet_t>& outlets
 			{
 				continue;
 			}
+            
+            if(dist < MAX(it1->bbox.width, it2->bbox.width)*5)
+            {
+                continue;
+            }
 
 			// check if there are other outlets in the region
 			candidates.push_back(it2);

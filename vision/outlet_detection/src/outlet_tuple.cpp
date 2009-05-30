@@ -275,7 +275,7 @@ int find_outlet_centroids(IplImage* img, outlet_tuple_t& outlet_tuple, const cha
 	cvCvtColor(img, grey, CV_RGB2GRAY);
 	cvSmooth(grey, grey);
 	cvAdaptiveThreshold(grey, binary, 255, CV_ADAPTIVE_THRESH_MEAN_C, 
-						CV_THRESH_BINARY_INV, 15, -1);
+						CV_THRESH_BINARY_INV, 13, -1);
     IplImage* _binary = cvCloneImage(binary);
     CvMemStorage* storage = cvCreateMemStorage();
 	int found_tuple = 0;
@@ -346,7 +346,7 @@ int find_outlet_centroids(IplImage* img, outlet_tuple_t& outlet_tuple, const cha
             
             CvScalar mean = cvAvg(img, mask);
             //cvResetImageROI(img);
-            if(mean.val[2]/mean.val[1] < 2.0f)
+            if(mean.val[2]/mean.val[1] < 1.8f)
             {
                 continue;
             }
