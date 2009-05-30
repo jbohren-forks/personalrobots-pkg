@@ -34,6 +34,8 @@
 
 
 #include <safety_core/action_tuck_arms.h>
+#include <std_msgs/Float64.h>
+
 
 namespace safety_core{
 
@@ -49,6 +51,8 @@ TuckArmsAction::TuckArmsAction() :
   right_arm_controller_("r_arm_joint_trajectory_controller"),
   left_arm_controller_("l_arm_joint_trajectory_controller")
 {
+  node_->advertise<std_msgs::Float64>("r_gripper_effort_controller/command",10);
+
   // Check which arms need to be untucked.
   node_->param(action_name_ + "/which_arms", which_arms_, which_arms_);
   if(which_arms_ == "")
@@ -117,6 +121,11 @@ TuckArmsAction::~TuckArmsAction()
 
 robot_actions::ResultStatus TuckArmsAction::execute(const std_msgs::Empty& empty, std_msgs::Empty& feedback)
 { 
+  // close the gripper while tucking arms
+  std_msgs::Float64 gripper_msg;
+  gripper_msg.data = -20.0;
+  node_->publish("r_gripper_effort_controller/command", gripper_msg);
+
   traj_error_ =false;
   if((which_arms_ == "both") || (which_arms_ == "right"))
   {
