@@ -307,6 +307,7 @@ robot_actions::ResultStatus PlugInAction::execute(const std_msgs::Int32& outlet_
       spiral_t = 0.0;
       //last_push_x = 999999;
       last_push_x = last_x;
+      node_.setParam("/unplug/x_threshold", last_x - 0.02);
       state = SPIRALING;
       break;
     }

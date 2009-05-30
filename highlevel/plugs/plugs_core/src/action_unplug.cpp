@@ -87,6 +87,12 @@ robot_actions::ResultStatus UnplugAction::execute(const std_msgs::Empty& empty, 
 
   node_->publish(arm_controller_ + "/command", tff_msg_);
 
+  while (isActive()) {
+    ros::Duration(0.01).sleep();
+  }
+
+  node_->deleteParam("~x_threshold");
+
   return waitForDeactivation(feedback);
 }
 
@@ -97,6 +103,13 @@ void  UnplugAction::checkUnplug()
 
   if (first_state_.header.seq == 0) {
     first_state_ = controller_state_msg_;
+    return;
+  }
+
+  double unplug_x_threshold;
+  if (!node_->getParam("~x_threshold", unplug_x_threshold, true)) {
+    ROS_WARN("Unplug succeeded because the x-threshold wasn't set (by plug_in)");
+    deactivate(robot_actions::SUCCESS, empty_);
     return;
   }
 
@@ -117,7 +130,7 @@ void  UnplugAction::checkUnplug()
 
   node_->publish(arm_controller_ + "/command", tff_msg_);
 
-  if(fabs(controller_state_msg_.last_pose_meas.vel.x + BACKOFF) < 0.02)
+  if(controller_state_msg_.last_pose_meas.vel.x  < unplug_x_threshold)
   {
     ROS_DEBUG("%s: succeeded.", action_name_.c_str());
     deactivate(robot_actions::SUCCESS, empty_);
