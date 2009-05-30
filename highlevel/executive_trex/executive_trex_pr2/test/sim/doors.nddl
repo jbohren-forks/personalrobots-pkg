@@ -5,14 +5,20 @@
 /**
  * A simulation control variable governing when the doorway will be clear.
  */
-class DoorwayClearSV extends AgentTimeline {
+class SimulationControl extends AgentTimeline {
 
   predicate Holds{ 
-    bool value;
+    bool doorway_clear;
   }
 
-  DoorwayClearSV(){ super(Internal, "Holds");}
+  SimulationControl(){ super(Internal, "Holds");}
 };
+
+// Carry prios forward by default
+SimulationControl::Holds{
+  met_by(Holds p);
+  defaultOnCommit(doorway_clear, p.doorway_clear);
+}
 
 ReleaseHandle release_handle = new ReleaseHandle(Internal);
 OpenDoor open_door = new OpenDoor(Internal);
@@ -27,70 +33,7 @@ MoveBase move_base_local = new MoveBase(Internal);
 MoveBaseDoor move_base_door = new MoveBaseDoor(Internal);
 StopAction stop_action = new StopAction(Internal);
 
-// Simulation Control Variables
-DoorwayClearSV doorway_clear_sv = new DoorwayClearSV();
+SimulationControl simulation_control = new SimulationControl();
 
-DoorwayClearSV::Holds{  default(value, true); }
-
-/**
- * A simulation control variable governing when the doorway will be unlocked
- */
-class DoorwayLockedSV extends AgentTimeline {
-
-  predicate Holds{ 
-    bool value;
-  }
-
-  DoorwayLockedSV(){ super(Internal, "Holds");}
-};
-
-
-DoorwayLockedSV::Holds{  default(value, false); }
-
-/**
- * For now, assume a fixed duration, and always return success.
- */
-
-DoorManipulationBehavior::Active{
-  eq(duration, 1);
-
-  // Handle always free at the end
-  meets(Inactive s);
-  eq(s.status, SUCCESS);
-}
-
-MoveBase::Active{
-  eq(duration, 1);
-  meets(Inactive s);
-  eq(s.status, SUCCESS);
-}
-
-CheckPath::Active {
-  eq(duration, 1);
-  meets(Inactive s);
-  eq(s.status, SUCCESS);
-
-  meets(BaseState.Holds bs);
-  eq_pose_msg(bs.object, object);
-}
-
-UnlatchHandle::Inactive{
-  if(status == SUCCESS){
-    eq(latch_state, LATCH_STATE_UNLATCHED);
-  }
-}
-/**
- * Update result parameters according to simulation control variables.
- */
-CheckPath::Inactive{
-  starts_during(DoorwayClearSV.Holds dc);
-  eq(is_clear, dc.value);
-}
-
-StopAction::Active{
-  eq(duration, 5);
-  meets(Inactive s);
-  eq(s.status, SUCCESS);
-}
 
 

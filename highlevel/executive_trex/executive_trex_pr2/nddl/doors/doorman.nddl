@@ -37,11 +37,8 @@ MoveBehavior::Active {
   MAP_KEY doorway_id;
   neq(doorway_id, NO_KEY);
 
-  /*
-    float current_x, current_y, current_z, current_qx, current_qy, current_qz, current_qw;
-    tf_get_robot_pose(current_x, current_y, current_z, current_qx, current_qy, current_qz, current_qw, "map");
-  */
-
+  // Only using the second point, since that point should be coming from the topological
+  // map. The doorway is derived from a connector whose approach pose is closest to this
   map_get_doorway_from_points(doorway_id, 0.0, 0.0, x, y);
   starts(door_state.Holds ds);
   map_get_door_state(ds.object, doorway_id);

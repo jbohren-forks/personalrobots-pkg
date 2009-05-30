@@ -164,14 +164,14 @@ DoorController::Holds {
 	  eq(s.active, false);
 	  meets(doorman.Inactive dm_inactive);
 	  eq(duration, 1);
-	  if(latch_state == LATCH_STATE_LOCKED){
-	    eq(dm_inactive.status, ABORTED);
-	  }
-	  else {	
+	  if(doorway_clear == true){
 	    eq(dm_inactive.status, SUCCESS);
 	  }
+	  else {
+	    eq(dm_inactive.status, ABORTED);	
+	  }
 	}
-	if(arms_tucked == false){
+	else {
 	  contains_start(safety_tuck_arms.Active cmd);
 	  concurrent(cmd.end, end);
 	}
@@ -182,110 +182,122 @@ DoorController::Holds {
       }
     }
     else{
-      if(check_doorway == true){
-	if(arms_tucked == true){
-	  // Now the goal will be the target across the doorway. This is the goal pose for the containing behavior
-	  contains_start(check_path.Active cmd);
-	  concurrent(cmd.end, end);
-	  eq_pose_msg(cmd.object, dm_active.object);
+      if(doorway_clear == true){
+	contains_start(move_base.Active cmd);
+	concurrent(cmd.end, end);
+	leq(cmd.max_duration, 30);
+	eq_pose_msg(cmd.object, dm_active.object);
 
-	  contains_start(set_laser_tilt.Active cmd_set_laser_tilt);
-	  eq(cmd_set_laser_tilt.status, SUCCESS);
-	  cmd_set_laser_tilt before cmd;
-	}
-	else {
-	  contains_start(safety_tuck_arms.Active cmd);
-	  concurrent(cmd.end, end);
-	}
+	contains_start(set_laser_tilt.Active cmd_set_laser_tilt);
+	eq(cmd_set_laser_tilt.status, SUCCESS);
+	cmd_set_laser_tilt before cmd;
       }
       else {
-	if(must_find_handle == false){
-	  if(in_position == true){
-	    if(latch_state == LATCH_STATE_UNLATCHED) {	
-	      // Moving the base set up here. Used in either case
-	      contains_start(move_base_door.Active cmd_move_base_door);
-	      concurrent(cmd_move_base_door.end, end);
-
-	      // Set up a preemption as needed. Will make this conditional shortly
-	      any(stop_action.Active cmd_stop_action);
-	      cmd_move_base_door before cmd_stop_action;
-
-	      if(have_handle == true){
-		contains_start(open_door.Active cmd_open_door);
-		cmd_open_door starts_before cmd_move_base_door;
-		eq(cmd_stop_action.action_name,"open_door");
-	      }
-	      else {
-		contains_start(touch_door.Active cmd_touch_door);
-		contains_start(push_door.Active cmd_push_door);
-		eq(cmd_touch_door.status, SUCCESS);
-
-		cmd_touch_door before cmd_push_door;
-		cmd_push_door starts_before cmd_move_base_door;
-		eq(cmd_stop_action.action_name,"push_door");
-	      }
-	    }
-	    else{
-	      if(have_handle == true){
-		contains_start(unlatch_handle.Active cmd);
-		concurrent(cmd.end, end);
-	      }
-	      else {
-		// Don't have the handle, but could grasp it!
-		contains_start(grasp_handle.Active cmd);
-		concurrent(cmd.end, end);
-	      }
-	    }
-	  }
-	  else { // Not in position
-	    // Move to the grasp position. Checking to tuck arms may be unnecessary
-	    if(arms_tucked == true){
-	      contains_start(move_base_local.Active cmd);
-	      concurrent(cmd.end, end);
-	      eq(cmd.frame_id, ds.frame_id);
-	      door_get_robot_pose_for_door(cmd.x, cmd.y, cmd.z, cmd.qx, cmd.qy, cmd.qz, cmd.qw, ds.object, GRASP_RANGE);
-
-	      contains_start(set_laser_tilt.Active cmd_set_laser_tilt);
-	      eq(cmd_set_laser_tilt.status, SUCCESS);
-	      cmd_set_laser_tilt before cmd;
-	    }
-	    else {
-	      contains_start(safety_tuck_arms.Active cmd);
-	      concurrent(cmd.end, end);
-	    }
-	  }
-	}
-	else { // Found handle == false
-	  if(found_door == true){
-	    contains_start(detect_handle.Active cmd);
+	if(check_doorway == true){
+	  if(arms_tucked == true){
+	    // Now the goal will be the target across the doorway. This is the goal pose for the containing behavior
+	    contains_start(check_path.Active cmd);
 	    concurrent(cmd.end, end);
+	    eq_pose_msg(cmd.object, dm_active.object);
+
+	    contains_start(set_laser_tilt.Active cmd_set_laser_tilt);
+	    eq(cmd_set_laser_tilt.status, SUCCESS);
+	    cmd_set_laser_tilt before cmd;
 	  }
 	  else {
-	    // If in detection position, we can detect the door
+	    contains_start(safety_tuck_arms.Active cmd);
+	    concurrent(cmd.end, end);
+	  }
+	}
+	else {
+	  if(must_find_handle == false){
 	    if(in_position == true){
-	      contains_start(detect_door.Active cmd);
-	      concurrent(cmd.end, end);
+	      if(latch_state == LATCH_STATE_UNLATCHED) {	
+		// Moving the base set up here. Used in either case
+		contains_start(move_base_door.Active cmd_move_base_door);
+		concurrent(cmd_move_base_door.end, end);
+
+		// Set up a preemption as needed. Will make this conditional shortly
+		any(stop_action.Active cmd_stop_action);
+		cmd_move_base_door before cmd_stop_action;
+
+		if(have_handle == true){
+		  contains_start(open_door.Active cmd_open_door);
+		  cmd_open_door starts_before cmd_move_base_door;
+		  eq(cmd_stop_action.action_name,"open_door");
+		}
+		else {
+		  contains_start(touch_door.Active cmd_touch_door);
+		  contains_start(push_door.Active cmd_push_door);
+		  eq(cmd_touch_door.status, SUCCESS);
+
+		  cmd_touch_door before cmd_push_door;
+		  cmd_push_door starts_before cmd_move_base_door;
+		  eq(cmd_stop_action.action_name,"push_door");
+		}
+	      }
+	      else{
+		if(have_handle == true){
+		  contains_start(unlatch_handle.Active cmd);
+		  concurrent(cmd.end, end);
+		}
+		else {
+		  // Don't have the handle, but could grasp it!
+		  contains_start(grasp_handle.Active cmd);
+		  concurrent(cmd.end, end);
+		}
+	      }
 	    }
-	    else {
-	      // Should move to detection position using standard navigation
+	    else { // Not in position
+	      // Move to the grasp position. Checking to tuck arms may be unnecessary
 	      if(arms_tucked == true){
-		contains_start(move_base.Active cmd);
+		contains_start(move_base_local.Active cmd);
 		concurrent(cmd.end, end);
-		eq(cmd.frame_id, "map");
-		map_get_door_approach_pose(cmd.x, cmd.y, cmd.z, cmd.qx, cmd.qy, cmd.qz, cmd.qw, dm_active.start_connector);
+		eq(cmd.frame_id, ds.frame_id);
+		door_get_robot_pose_for_door(cmd.x, cmd.y, cmd.z, cmd.qx, cmd.qy, cmd.qz, cmd.qw, ds.object, GRASP_RANGE);
 
 		contains_start(set_laser_tilt.Active cmd_set_laser_tilt);
 		eq(cmd_set_laser_tilt.status, SUCCESS);
 		cmd_set_laser_tilt before cmd;
 	      }
 	      else {
-		if(have_handle == true){
-		  contains_start(release_handle.Active cmd);
+		contains_start(safety_tuck_arms.Active cmd);
+		concurrent(cmd.end, end);
+	      }
+	    }
+	  }
+	  else { // Found handle == false
+	    if(found_door == true){
+	      contains_start(detect_handle.Active cmd);
+	      concurrent(cmd.end, end);
+	    }
+	    else {
+	      // If in detection position, we can detect the door
+	      if(in_position == true){
+		contains_start(detect_door.Active cmd);
+		concurrent(cmd.end, end);
+	      }
+	      else {
+		// Should move to detection position using standard navigation
+		if(arms_tucked == true){
+		  contains_start(move_base.Active cmd);
 		  concurrent(cmd.end, end);
+		  eq(cmd.frame_id, "map");
+		  map_get_door_approach_pose(cmd.x, cmd.y, cmd.z, cmd.qx, cmd.qy, cmd.qz, cmd.qw, dm_active.start_connector);
+
+		  contains_start(set_laser_tilt.Active cmd_set_laser_tilt);
+		  eq(cmd_set_laser_tilt.status, SUCCESS);
+		  cmd_set_laser_tilt before cmd;
 		}
 		else {
-		  contains_start(safety_tuck_arms.Active cmd);
-		  concurrent(cmd.end, end);
+		  if(have_handle == true){
+		    contains_start(release_handle.Active cmd);
+		    concurrent(cmd.end, end);
+		  }
+		  else {
+		    contains_start(safety_tuck_arms.Active cmd);
+		    concurrent(cmd.end, end);
+		  }
 		}
 	      }
 	    }
@@ -317,8 +329,8 @@ ReleaseHandle::Inactive{
 MoveBaseDoor::Inactive{
   if(status == SUCCESS){
     starts(door_controller.Holds dc);
-    eq(dc.doorway_clear, true);
     eq(dc.finishing, true);
+    eq(dc.doorway_clear, true);
   }
 }
 
@@ -396,15 +408,35 @@ CheckPath::Inactive{
     starts(door_controller.Holds dc);
     eq(dc.doorway_clear, is_clear);
     eq(dc.check_doorway, false);
-    if(is_clear == true){
-      eq(dc.finishing, true);
-    }
   }
 }
 
+/**
+ * Move base can be called as part of a recovery to retry from an approach pose, or it can be
+ * called because we think the doorway is clear and traversable. If it fails for any reason, we should
+ * finish. This could be quite frustrating to watch. For example, it could be right in the doorway
+ * and only a small push would be required to get thru. In that case, it will in fact give up and be going to the next goal. Note that
+ * it will try again later! The problem is, it is hard to bound the behavior of move_base reasonably and thus our ability
+ * to reliably attempt better local recoveries is questionable. Moreover, we typically assume we do not have the door data
+ */
 MoveBase::Inactive {
   if(status == SUCCESS){
     starts(door_controller.Holds dc);
     eq(dc.in_position, true);
+
+    // There are 2 conditions at play here. If the doorway is clear, and move base succeded, then we have to set
+    // finishing to true
+    met_by(door_controller.Holds p);
+    if(p.doorway_clear == true){
+      eq(dc.finishing, true);
+    }
+  }
+  else{
+    if(status == UNDEFINED){}
+    else {
+      starts(door_controller.Holds dc);
+      eq(dc.finishing, true);
+      eq(dc.doorway_clear, false);
+    }
   }
 }

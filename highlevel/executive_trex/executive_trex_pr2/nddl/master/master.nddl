@@ -69,8 +69,10 @@ class M2Controller extends AgentTimeline {
     bool recharge_required;
     bool recharged;
     bool finished;
+    /** DROPPING THE COMPLETION ASSUMPTION.
     float x;
     float y;
+    */
   }
 
   M2Controller(){
@@ -91,13 +93,15 @@ BaseState base_state = new BaseState(External);
 M2Goals::Active{
 
   if(start){
-    starts_during(base_state.Holds bs);
     starts(m2_controller.Holds mc);
     eq(mc.active, true);
     eq(mc.recharged, false);
     eq(mc.finished, false);
-    eq(mc.x, bs.x);
-    eq(mc.y, bs.y);
+
+    /** DROPPING THE COMPLETION ASSUMPTION.
+     eq(mc.x, bs.x);
+     eq(mc.y, bs.y);
+    */
 
     if(outlet_id == NO_KEY){
       eq(mc.recharge_required, false);
@@ -134,16 +138,20 @@ M2Controller::Holds{
   defaultOnCommit(recharge_required, p.recharge_required);
   defaultOnCommit(recharged, p.recharged);
   defaultOnCommit(finished, p.finished);
-  defaultOnCommit(x, p.x);
-  defaultOnCommit(y, p.y);
+
+  /**DROPPING COMPLETION ASSUMPTION
+     defaultOnCommit(x, p.x);
+     defaultOnCommit(y, p.y);
+  */
 
   if(active == true){
+    starts_during(base_state.Holds bs);
     meets(Holds s);
     contained_by(m2_goals.Active m2_active);
 
     // Are we at the goal?
     float distance;
-    calcDistance(distance, x, y, m2_active.x, m2_active.y);
+    calcDistance(distance, bs.x, bs.y, m2_active.x, m2_active.y);
     bool at_goal;
     testLEQ(at_goal, distance, 0.2);
 
@@ -199,10 +207,10 @@ M2Controller::Holds{
 	// Determine the next map point to go for. It will either be the outlet
 	// or it will be a doorway en-route to the outlet. This function calls a topological planner.
 	bool thru_doorway;
-	map_get_next_move(cmd.x, cmd.y, cmd.z, cmd.qx, cmd.qy, cmd.qz, cmd.qw, thru_doorway, x, y, 
+	map_get_next_move(cmd.x, cmd.y, cmd.z, cmd.qx, cmd.qy, cmd.qz, cmd.qw, thru_doorway, bs.x, bs.y, 
 			  m2_active.x, m2_active.y, m2_active.z, m2_active.qx, m2_active.qy, m2_active.qz, m2_active.qw);
 
-	map_get_nearest_connector(cmd.start_connector, x, y, m2_active.x, m2_active.y);
+	map_get_nearest_connector(cmd.start_connector, bs.x, bs.y, m2_active.x, m2_active.y);
 
 	if(thru_doorway == true){
 	  eq(cmd.object, doorman);
@@ -224,8 +232,10 @@ MoveBehavior::Inactive{
     eq(mc.finished, true);
   }
   if(status == SUCCESS){
+    /** DROPPING COMPLETION ASSUMPTION
     eq(mc.x, x);
     eq(mc.y, y);
+    */
   }
 }
 
