@@ -371,6 +371,15 @@ robot_actions::ResultStatus PlugInAction::execute(const std_msgs::Int32& outlet_
         {
           state = FORCING;
         }
+        if (pose_from_mech_.getOrigin().x() < first_x - 0.003)
+        {
+          // Did we just get out of the socket?
+          ROS_INFO("I think we just got out of the socket");
+          spiral_r = 0.0001;
+          spiral_t = 0.0;
+          first_x = pose_from_mech_.getOrigin().x();
+          node_.setParam("/unplug/x_threshold", first_x - 0.02);
+        }
         last_push_x = pose_from_mech_.getOrigin().x();
 #endif
       }
