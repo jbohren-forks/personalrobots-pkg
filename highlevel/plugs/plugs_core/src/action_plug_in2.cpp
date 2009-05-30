@@ -257,7 +257,7 @@ robot_actions::ResultStatus PlugInAction::execute(const std_msgs::Int32& outlet_
       const double SPEED = 0.005;
 
       tf::Pose desi = outlet_pose;
-      desi.getOrigin() += tf::Vector3(0, 0, -0.01);
+      desi.getOrigin() += tf::Vector3(0, -0.01, 0);
       manipulation_msgs::TaskFrameFormalism tff_msg;
       tff_msg.header.frame_id = COMMAND_FRAME;
       tff_msg.header.stamp = ros::Time::now() - ros::Duration(0.1);
