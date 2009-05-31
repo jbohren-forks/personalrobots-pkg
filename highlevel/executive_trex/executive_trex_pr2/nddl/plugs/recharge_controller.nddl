@@ -114,11 +114,15 @@ RechargeController::Holds {
 	  else {
 	    contains_start(move_base.Active cmd);
 	    concurrent(cmd.end, end);
-	    cmd_set_laser_tilt before cmd;
 
 	    // Bind pose based on approach pose for the outlet
 	    map_get_outlet_approach_pose(cmd.x, cmd.y, cmd.z, cmd.qx, cmd.qy, cmd.qz, cmd.qw, rc_active.outlet_id);
 	    defaultOnCommit(cmd.frame_id, "map");
+
+	    // PRE-REQ
+	    contains_start(set_laser_tilt.Active cmd_set_laser_tilt);
+	    eq(cmd_set_laser_tilt.status, SUCCESS);
+	    cmd_set_laser_tilt before cmd;
 	  }
 	}
 	else {
