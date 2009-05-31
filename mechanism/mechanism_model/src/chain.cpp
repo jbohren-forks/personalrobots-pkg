@@ -111,6 +111,15 @@ void Chain::getVelocities(std::vector<JointState> &states, std::vector<double> &
   }
 }
 
+void Chain::getEfforts(std::vector<JointState> &states, std::vector<double> &efforts)
+{
+  efforts.resize(joint_indices_.size());
+  for (unsigned int i = 0; i < joint_indices_.size(); ++i)
+  {
+    efforts[i] = states[joint_indices_[i]].applied_effort_;
+  }
+}
+
 bool Chain::allCalibrated(std::vector<JointState> &js)
 {
   for (unsigned int i = 0; i < joint_indices_.size(); ++i)
@@ -201,6 +210,13 @@ void Chain::getVelocities(std::vector<JointState>& s, KDL::JntArrayVel& a)
     a.q(i) = s[joint_indices_[i]].position_;
     a.qdot(i) = s[joint_indices_[i]].velocity_;
   }
+}
+
+void Chain::getEfforts(std::vector<JointState>& s, KDL::JntArray& a)
+{
+  assert(a.rows() == joint_indices_.size());
+  for (unsigned int i = 0; i < joint_indices_.size(); ++i)
+    a(i) = s[joint_indices_[i]].applied_effort_;
 }
 
 void Chain::setEfforts(KDL::JntArray& a, std::vector<JointState>& s)
