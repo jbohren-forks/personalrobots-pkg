@@ -174,6 +174,8 @@ void  UnplugAction::checkUnplug()
     deactivate(robot_actions::SUCCESS, empty_);
   }
 
+  ROS_DEBUG("Unplug is %f from the threshold", controller_state_msg_.last_pose_meas.vel.x - unplug_x_threshold);
+
   return;
 }
 
