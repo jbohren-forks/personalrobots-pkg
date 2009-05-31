@@ -183,7 +183,7 @@ DoorController::Holds {
     }
     else{
       if(doorway_clear == true){
-	contains_start(move_base.Active cmd);
+	contains_start(move_base_local.Active cmd);
 	concurrent(cmd.end, end);
 	leq(cmd.max_duration, 30);
 	eq_pose_msg(cmd.object, dm_active.object);
@@ -434,8 +434,14 @@ MoveBase::Inactive {
   else{
     if(status == UNDEFINED){}
     else {
+      // Rest control flags to go back to the beginning but preclude checking the doorway
       starts(door_controller.Holds dc);
-      eq(dc.finishing, true);
+      eq(dc.doorway_clear, false);
+      eq(dc.in_position, false);
+      eq(dc.found_door, false);
+      eq(dc.must_find_handle, true);
+      eq(dc.have_handle, false);
+      eq(dc.latch_state, UNKNOWN);
       eq(dc.doorway_clear, false);
     }
   }
