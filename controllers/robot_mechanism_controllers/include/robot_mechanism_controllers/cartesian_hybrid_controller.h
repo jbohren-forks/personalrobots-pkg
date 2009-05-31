@@ -68,6 +68,7 @@ public:
   KDL::Frame pose_meas_;
   KDL::Twist twist_meas_;
   KDL::Twist twist_meas_filtered_;
+  std::vector<double> measured_torque_, desired_torque_, max_jnt_eff_;
 
   control_toolbox::Pid pose_pids_[6];  // (x,y,z) position, then (x,y,z) rot
   control_toolbox::Pid twist_pids_[6];
