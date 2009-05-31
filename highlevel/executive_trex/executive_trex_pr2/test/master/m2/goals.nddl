@@ -22,3 +22,5 @@ rejectable(m2_goals.Active g_9);
 g_9.outlet_id = 39;
 rejectable(m2_goals.Active g_10);
 g_10.outlet_id = 40;
+rejectable(m2_goals.Active g_11);
+g_11.outlet_id = 26;
