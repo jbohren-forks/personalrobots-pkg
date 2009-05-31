@@ -6,7 +6,6 @@ Recharger::Active{
 
   // Initialize control variables
   eq(rc.active, true);
-  eq(rc.ready_to_approach, true);
   eq(rc.in_position, false);
   eq(rc.outlet_detected_coarse, false);
   eq(rc.outlet_detected_fine, false);
@@ -17,8 +16,7 @@ Recharger::Active{
   eq(rc.plugged_in, false);
   eq(rc.ready_to_grasp, false);
   eq(rc.arms_clear, false);
-  eq(rc.finishing, false);
-  eq(rc.restowing_plug, false);
+  eq(rc.resetting, false);
 
   // Initialize outlet state
   starts(outlet_state.Holds os);
