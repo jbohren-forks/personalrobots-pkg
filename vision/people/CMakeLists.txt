@@ -72,3 +72,6 @@ rospack_add_executable(train_leg_detector
                        src/calc_leg_features.cpp)
 
 #rospack_add_pyunit(test/directed.py)
+
+rospack_add_executable(pedestrian_detector_HOG
+			src/pedestrian_detector_HOG.cpp)
