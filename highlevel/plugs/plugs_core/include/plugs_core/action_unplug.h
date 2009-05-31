@@ -48,6 +48,9 @@
 #include "manipulation_msgs/TaskFrameFormalism.h"
 #include "robot_mechanism_controllers/CartesianHybridState.h"
 
+// Srvs
+#include <robot_srvs/SwitchController.h>
+
 //TF
 #include <tf/transform_listener.h>
 #include <tf/message_notifier.h>

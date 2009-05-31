@@ -35,6 +35,7 @@
 
 #include <plugs_core/action_unplug.h>
 #include <std_msgs/Float64.h>
+#include <ros/ros.h> //For the NodeHandle API 
 
 #define BACKOFF 0.06
 
@@ -89,6 +90,18 @@ robot_actions::ResultStatus UnplugAction::execute(const std_msgs::Empty& empty, 
   tff_msg_.value.rot.y = 0.0;
   tff_msg_.value.rot.z = 0.0;
 
+  //Start effort controller
+  ros::NodeHandle n;
+  ros::ServiceClient client = n.serviceClient<robot_srvs::SwitchController>("switch_controller");
+  robot_srvs::SwitchController srv;
+  srv.request.start_controllers.push_back("/r_shoulder_pan_effort");
+  if(client.call(srv)){
+    ROS_INFO("Enabled r_shoulder_pan_effort controller (at least the service call succeeded)");
+  }
+  else{
+    ROS_ERROR("Failed to enable r_shoulder_pan_effort_controller.  I'm continuing, but you might get stuck in a singularity");
+  }
+
   node_->publish(arm_controller_ + "/command", tff_msg_);
 
   ros::Time started = ros::Time::now();
@@ -103,7 +116,19 @@ robot_actions::ResultStatus UnplugAction::execute(const std_msgs::Empty& empty, 
     std_msgs::Float64 msg;  msg.data = effort;
     node_->publish("/r_shoulder_pan_effort/command", msg);
   }
+  std_msgs::Float64 msg; msg.data = 0;
+  node_->publish("/r_shoulder_pan_effort/command", msg);
 
+  //Stop effort controller
+  srv.request.stop_controllers.push_back("/r_shoulder_pan_effort");
+  srv.request.start_controllers.clear();
+  if(client.call(srv)){
+    ROS_INFO("Disabled r_shoulder_pan_effort controller (at least the service call succeeded)");
+  }
+  else{
+    ROS_ERROR("Failed to disable r_shoulder_pan_effort_controller.  I'm continuing, but this could interfere with other controllers");
+  }
+ 
   node_->deleteParam("~x_threshold");
 
   return waitForDeactivation(feedback);
