@@ -47,8 +47,7 @@
 
 #include <ros/node.h>
 #include <math.h>
-#include <robot_msgs/DiagnosticMessage.h>
-#include <robot_srvs/DynamicResponseData.h>
+#include <dynamic_verification_controllers/DynamicResponseData.h>
 #include <realtime_tools/realtime_publisher.h>
 #include <realtime_tools/realtime_srv_call.h>
 #include <mechanism_model/controller.h>
@@ -86,8 +85,7 @@ public:
   
   bool done() { return done_; }
   
-  robot_msgs::DiagnosticMessage diagnostic_message_;
-  robot_srvs::DynamicResponseData::Request dynamic_data_;
+  dynamic_verification_controllers::DynamicResponseData::Request dynamic_data_;
 
 private:
 
@@ -139,8 +137,7 @@ private:
   bool data_sent_;
   
   double last_publish_time_;
-  realtime_tools::RealtimeSrvCall<robot_srvs::DynamicResponseData::Request, robot_srvs::DynamicResponseData::Response> call_service_;
-  realtime_tools::RealtimePublisher<robot_msgs::DiagnosticMessage> pub_diagnostics_;
+  realtime_tools::RealtimeSrvCall<dynamic_verification_controllers::DynamicResponseData::Request, dynamic_verification_controllers::DynamicResponseData::Response> call_service_;
 };
 }
 

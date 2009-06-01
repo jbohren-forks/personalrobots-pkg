@@ -61,11 +61,7 @@ ConstantTorqueController::ConstantTorqueController():
   test_duration_ = 5;
   count_ = 0;
 
-  diagnostic_message_.set_status_size(1);
-  robot_msgs::DiagnosticStatus *status = &diagnostic_message_.status[0];
-  status->name = "ConstantTorque";
-  status->level = 0;
-  status->message = "OK: Done.";
+ 
 }
 
 ConstantTorqueController::~ConstantTorqueController()
@@ -170,15 +166,6 @@ void ConstantTorqueController::update()
 
 void ConstantTorqueController::analysis()
 {
-  diagnostic_message_.set_status_size(1);
-  robot_msgs::DiagnosticStatus *status = &diagnostic_message_.status[0];
-  status->name = "ConstantTorque";
-  count_=count_-1;
-  //test done
-  assert(count_>0);
-  status->level = 0;
-  status->message = "OK: Done.";
-
   dynamic_data_.time.resize(count_);
   dynamic_data_.cmd.resize(count_);
   dynamic_data_.effort.resize(count_);
@@ -190,7 +177,7 @@ void ConstantTorqueController::analysis()
 
 ROS_REGISTER_CONTROLLER(ConstantTorqueControllerNode)
 ConstantTorqueControllerNode::ConstantTorqueControllerNode()
-: data_sent_(false), last_publish_time_(0), call_service_("/dynamic_response_data"),pub_diagnostics_("/diagnostics", 1)
+: data_sent_(false), last_publish_time_(0), call_service_("/dynamic_response_data")
 {
   c_ = new ConstantTorqueController();
 }
@@ -209,7 +196,7 @@ void ConstantTorqueControllerNode::update()
     {
       if (call_service_.trylock())
       {
-        robot_srvs::DynamicResponseData::Request *out = &call_service_.srv_req_;
+        dynamic_verification_controllers::DynamicResponseData::Request *out = &call_service_.srv_req_;
         out->test_name = c_->dynamic_data_.test_name;
         out->joint_name = c_->dynamic_data_.joint_name;
         out->time = c_->dynamic_data_.time;
@@ -221,19 +208,6 @@ void ConstantTorqueControllerNode::update()
         data_sent_ = true;
       }
     }
-    if (last_publish_time_ + 0.5 < robot_->hw_->current_time_)
-    {
-      if (pub_diagnostics_.trylock())
-      {
-        last_publish_time_ = robot_->hw_->current_time_;
-        
-        robot_msgs::DiagnosticStatus *out = &pub_diagnostics_.msg_.status[0];
-        out->name = c_->diagnostic_message_.status[0].name;
-        out->level = c_->diagnostic_message_.status[0].level;
-        out->message = c_->diagnostic_message_.status[0].message;
-        pub_diagnostics_.unlockAndPublish();
-      }  
-    }
   }
 }
 
@@ -244,8 +218,7 @@ bool ConstantTorqueControllerNode::initXml(mechanism::RobotState *robot, TiXmlEl
   
   if (!c_->initXml(robot, config))
     return false;
-    
-  pub_diagnostics_.msg_.set_status_size(1);
+
   return true;
 }
 
