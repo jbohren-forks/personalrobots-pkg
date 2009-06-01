@@ -75,13 +75,13 @@ private:
 
   robot_mechanism_controllers::CartesianHybridState c_state_msg_;
   void controllerStateCB();
-
+  /*
   void measure();
   void move();
   void hold();
   void force();
   void insert();
-
+  */
 
   std::string action_name_;
 

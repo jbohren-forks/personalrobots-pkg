@@ -172,18 +172,16 @@ void  UnplugAction::checkUnplug()
   tff_msg_.value.vel.x = unplug_x_threshold - 0.02;
   tff_msg_.value.vel.y = first_state_.last_pose_meas.vel.y;
   tff_msg_.value.vel.z = first_state_.last_pose_meas.vel.z;
-  tff_msg_.value.rot.x = first_state_.last_pose_meas.rot.x;
-  tff_msg_.value.rot.y = first_state_.last_pose_meas.rot.y;
-  tff_msg_.value.rot.z = first_state_.last_pose_meas.rot.z + 0.1 * (2.0*drand48() - 1.0);
-
+  double time = ros::Time::now().toSec();
+  tff_msg_.value.rot.x = first_state_.last_pose_meas.rot.x + 0.06 * sin(time*37.0*M_PI);
+  tff_msg_.value.rot.y = first_state_.last_pose_meas.rot.y + 0.15 * sin(time*2.0 *M_PI);
+  tff_msg_.value.rot.z = first_state_.last_pose_meas.rot.z + 0.03 * sin(time*55.0 *M_PI);    
   node_->publish(arm_controller_ + "/command", tff_msg_);
 
-  if(controller_state_msg_.last_pose_meas.vel.x  < unplug_x_threshold)
-  {
+  if (controller_state_msg_.last_pose_meas.vel.x  < unplug_x_threshold){
     ROS_DEBUG("%s: succeeded.", action_name_.c_str());
     deactivate(robot_actions::SUCCESS, empty_);
   }
-
   ROS_DEBUG("Unplug is %f from the threshold", controller_state_msg_.last_pose_meas.vel.x - unplug_x_threshold);
 
   return;

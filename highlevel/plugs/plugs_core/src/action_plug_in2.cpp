@@ -254,7 +254,7 @@ robot_actions::ResultStatus PlugInAction::execute(const std_msgs::Int32& outlet_
     case FIRST_TOUCH: {
 
       const double WAIT = 1.0; // seconds
-      const double SPEED = 0.005;
+      const double SPEED = 0.01;
 
       tf::Pose desi = outlet_pose;
       desi.getOrigin() += tf::Vector3(0, -0.01, 0);
@@ -367,7 +367,7 @@ robot_actions::ResultStatus PlugInAction::execute(const std_msgs::Int32& outlet_
         }
 #else
         ROS_INFO("Checking for successful insertion: %.3lf, %.3lf", pose_from_mech_.getOrigin().x(), last_push_x);
-        if (pose_from_mech_.getOrigin().x() > first_x + 0.004)
+        if (pose_from_mech_.getOrigin().x() > first_x + 0.005)
         {
           state = FORCING;
         }
@@ -392,7 +392,7 @@ robot_actions::ResultStatus PlugInAction::execute(const std_msgs::Int32& outlet_
     }
 
     case FORCING: {
-      ROS_ERROR("FORCING!!!");
+      ROS_INFO("Forcing into the socket");
       ros::Duration(0.2).sleep();
 
       ros::Time started_forcing = ros::Time::now();
@@ -418,12 +418,15 @@ robot_actions::ResultStatus PlugInAction::execute(const std_msgs::Int32& outlet_
 
       double base_roll = tff_msg_.value.rot.x;
       double base_pitch = tff_msg_.value.rot.y;
-      while (ros::Time::now() - started_forcing < ros::Duration(10.0))
+      double base_yaw = tff_msg_.value.rot.z;
+      while (ros::Time::now() - started_forcing < ros::Duration(15.0))
       {
-        tff_msg_.value.rot.x = base_roll + 0.1 * (2.0*drand48()-1.0);
-        tff_msg_.value.rot.y = base_pitch + 0.03 * (2.0*drand48()-1.0);
+	double time = ros::Time::now().toSec();
+	tff_msg_.value.rot.x = base_roll  + 0.06 * sin(time*37.0*M_PI);
+	tff_msg_.value.rot.y = base_pitch + 0.15 * sin(time*2.0 *M_PI);
+	tff_msg_.value.rot.z = base_yaw   + 0.03 * sin(time*55.0 *M_PI);    
         node_.publish(arm_controller_ + "/command", tff_msg_);
-        ros::Duration(0.010).sleep();
+        ros::Duration(0.001).sleep();
       }
 
 
@@ -509,6 +512,7 @@ void PlugInAction::controllerStateCB()
 
 
 
+/*
 #if 0
 
   tff_msg_.header.stamp = msg->header.stamp;
@@ -662,7 +666,9 @@ x#endif
 
 }
 #endif
+*/
 
+/*
 void PlugInAction::measure()
 {
   if (!isActive())
@@ -805,5 +811,7 @@ void PlugInAction::hold()
   node_.publish(arm_controller_ + "/command", tff_msg_);
   return;
 }
+  */
+
 
 }
