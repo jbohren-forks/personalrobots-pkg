@@ -145,6 +145,7 @@ DoorController::Holds{
   defaultOnCommit(doorway_clear, p.doorway_clear);
   defaultOnCommit(check_doorway, p.check_doorway);
   defaultOnCommit(finishing, p.finishing);
+  defaultOnCommit(timed_out, false);
 }
 
 /**
