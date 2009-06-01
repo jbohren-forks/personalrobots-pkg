@@ -365,19 +365,11 @@ public:
 
   ~ForearmNode()
   {
-    // Stop threads
-    node_handle_.shutdown();
     close();
 
-    if (diagnostic_thread_)
-    {
-      if (diagnostic_thread_->timed_join((boost::posix_time::milliseconds) 2000))
-        delete diagnostic_thread_;
-      else
-        ROS_DEBUG("diagnostic_thread_ did not die after two seconds. Proceeding with shutdown.");
-    }
-
     ROS_DEBUG("ForearmNode destructor exiting.");
+    
+    node_handle_.shutdown();
   }
 
   void open()
@@ -609,22 +601,15 @@ public:
       open();
     // Start video; send it to specified host port
     // @todo TODO: Only start when somebody is listening?
-    if ( pr2StartVid( camera_, (uint8_t *)&(localMac_.sa_data[0]),
-                      inet_ntoa(localIp_), port_) != 0 ) {
-      ROS_FATAL("Video start error");
-      exit_status_ = 1;
-      node_handle_.shutdown();
-      return;
-    }
     started_video_ = true;
     image_thread_ = new boost::thread(boost::bind(&ForearmNode::imageThread, this, port_));
-    ROS_INFO("Camera running.");
   }
 
   void stop()
   {
     ROS_DEBUG("stop()");
-    
+
+    started_video_ = false;
     if (image_thread_)
     {
       if (image_thread_->timed_join((boost::posix_time::milliseconds) 2000))
@@ -633,12 +618,10 @@ public:
         image_thread_ = NULL;
       }
       else
-        ROS_DEBUG("image_thread_ did not die after two seconds. Proceeding with shutdown.");
+      {
+        ROS_DEBUG("image_thread_ did not die after two seconds. Proceeding.");
+      }
     }
-    
-    // Stop video
-    if ( started_video_ && pr2StopVid(camera_) != 0 )
-      ROS_ERROR("Video Stop error");
     
     // Stop Triggering
     if (!trig_controller_cmd_.empty())
@@ -657,9 +640,33 @@ public:
 private:
   void imageThread(int port)
   {
+    // Start video
+    if ( pr2StartVid( camera_, (uint8_t *)&(localMac_.sa_data[0]),
+                      inet_ntoa(localIp_), port_) != 0 ) {
+      ROS_FATAL("Video start error");
+      started_video_ = false;
+      exit_status_ = 1;
+      return;
+    }
+    frameTimeFilter_.reset_filter();
+    ROS_INFO("Camera running.");
+    
+    // Receive video
     pr2VidReceive(camera_->ifName, port, height_, width_, &ForearmNode::frameHandler, this);
     
-    started_video_ = false;
+    // Stop video
+    if (started_video_) // Exited unexpectedly.
+    {
+      started_video_ = false;
+      ROS_ERROR("Image thread exited unexpectedly.");
+      
+      if ( pr2StopVid(camera_) == 0 )
+        ROS_ERROR("Video should have been stopped"); /// @todo get rid of this once things have stabilized.
+    }
+    else // Exited expectedly.
+      if ( pr2StopVid(camera_) != 0)
+        ROS_ERROR("Video Stop error");
+    
     ROS_DEBUG("Image thread exiting.");
   }
 
@@ -770,9 +777,14 @@ private:
   {
     boost::mutex::scoped_lock(diagnostics_lock_);
     
-    if (!started_video_ || !node_handle_.ok())
+    if (!node_handle_.ok())
+      started_video_ = false;
+
+    if (!started_video_)
+    {
       return 1;
-    
+    }
+
     if (frame_info == NULL)
     {
       // The select call in the driver timed out.
@@ -830,8 +842,14 @@ private:
 
     last_image_time_ = imageTime;
     last_frame_number_ = frame_info->frame_number;
+    
+    if (useFrame_(frame_info->width, frame_info->height, frame_info->frameData, ros::Time(imageTime)))
+    {
+      started_video_ = false;
+      return 1;
+    }
 
-    return useFrame_(frame_info->width, frame_info->height, frame_info->frameData, ros::Time(imageTime));
+    return 0;
   }
 
   static int frameHandler(pr2FrameInfo *frameInfo, void *userData)
@@ -1078,7 +1096,7 @@ private:
               continue;
 
             status_.level = 2;
-            status_.message += "Unexpected value in frame.";
+            status_.message = "Unexpected value in frame.";
             status_.addsf("Frame content", "Fail: Unexpected value at (x=%i, y=%i, %hhi != %hhi)", x, y, expected, *data);
             return 1;
           }
@@ -1107,7 +1125,8 @@ private:
     VideoModeTestFrameHandler callback(status);
     useFrame_ = boost::bind<int>(boost::ref(callback), _1, _2, _3, _4);
 
-    status.summaryf(0, "Testing mode %s:", mode.c_str());
+    status.name = mode + " Pattern Test";
+    status.summary(0, "Passed"); // If nobody else fills this, then the test passed.
 
     open();
 
@@ -1129,9 +1148,6 @@ private:
 
     if (setTestMode(0x0000, status))
       goto reset_state;
-
-    if (status.level == 0)
-      status.message += "Pass";
 
 reset_state:
     close();

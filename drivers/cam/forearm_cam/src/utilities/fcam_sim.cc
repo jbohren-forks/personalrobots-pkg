@@ -67,6 +67,10 @@ public:
       return;
     }
     
+    for (int i = 0; i < NUM_IMAGER_REGISTERS; i++)
+      imager_register_flags_[i] = IMAGER_REGISTER_UNSUPPORTED;
+    imager_register_flags_[0x7F] &= ~IMAGER_REGISTER_UNSUPPORTED;
+    
     signal(SIGTERM, ForearmCameraSimulator::setExiting);
     reset();
   }
@@ -101,6 +105,11 @@ private:
   ros::Duration period_;
   ros::Time next_frame_time_;
   sockaddr_in data_addr_;
+  static const int NUM_IMAGER_REGISTERS = 256;
+  static const int IMAGER_REGISTER_UNDEFINED = 1;
+  static const int IMAGER_REGISTER_UNSUPPORTED = 2;
+  uint16_t imager_registers_[NUM_IMAGER_REGISTERS]; 
+  uint8_t imager_register_flags_[NUM_IMAGER_REGISTERS];
 
   void reset()
   {
@@ -110,6 +119,20 @@ private:
     height_ = 480;
     period_ = ros::Duration(1/30.);
     next_frame_time_ = ros::Time(0);
+    for (int i = 0; i < NUM_IMAGER_REGISTERS; i++)
+    {
+      imager_registers_[i] = 0;
+      imager_register_flags_[i] |= IMAGER_REGISTER_UNDEFINED;
+    }
+    imager_register_flags_[0x7F] &= ~IMAGER_REGISTER_UNDEFINED;
+  }
+      
+  static inline uint8_t get_diag_test_pattern(int x, int y)
+  {
+    if ((x + 1) / 2 + y < 500)
+      return 14 + x / 4;
+    else
+      return 0;
   }
 
   void SendData()
@@ -137,12 +160,27 @@ private:
     peof.header.horiz_resolution = pvl.header.horiz_resolution = htons(width_);
     peof.header.vert_resolution = pvl.header.vert_resolution = htons(height_);
   
-    for (int line = 0; line < height_; line++)
+    for (int y = 0; y < height_; y++)
     {
-      pvl.header.line_number = htons(line | (frame_ << 10));
+      if ((imager_registers_[0x7F] & 0x3C00) == 0x3800)
+      {
+        if (width_ > 320)
+          for (int x = 0; x < width_; x++)
+            pvl.data[x] = get_diag_test_pattern(x, y);
+        else
+          for (int x = 0; x < width_; x++)
+            pvl.data[x] = (get_diag_test_pattern(2 * x, 2 * y) + get_diag_test_pattern(2 * x, 2 * y + 1)) / 2;
+      }
+      else
+      {
+        for (int x = 0; x < width_; x++)
+          pvl.data[x] = x + y + frame_;
+      }
+
+      pvl.header.line_number = htons(y | (frame_ << 10));
       sendto(socket_, &pvl, sizeof(pvl.header) + width_, 0, 
           (struct sockaddr *) &data_addr_, sizeof(data_addr_));
-      if (line == 0)
+      if (y == 0)
         sched_yield(); // Make sure that first packet arrives with low jitter
     }
 
@@ -265,6 +303,28 @@ type *pkt = (type *) buff;
           }
           break;
 
+        case PKTT_SENSORRD:
+          {
+            CAST_AND_CHK(PacketSensorRequest);
+            if (imager_register_flags_[pkt->address] & IMAGER_REGISTER_UNDEFINED)
+              ROS_ERROR("Reading uninitialized imager register 0x%02X.", pkt->address);
+            if (imager_register_flags_[pkt->address] & IMAGER_REGISTER_UNSUPPORTED)
+              ROS_ERROR("Reading unsupported imager register 0x%02X.", pkt->address);
+            sendSensorData(&pkt->hdr, pkt->address, imager_registers_[pkt->address]);
+          }
+          break;
+
+        case PKTT_SENSORWR:
+          {
+            CAST_AND_CHK(PacketSensorData);
+            if (imager_register_flags_[pkt->address] & IMAGER_REGISTER_UNSUPPORTED)
+              ROS_ERROR("Writing unsupported imager register 0x%02X.", pkt->address);
+            imager_register_flags_[pkt->address] &= ~IMAGER_REGISTER_UNDEFINED;
+            imager_registers_[pkt->address] = ntohs(pkt->data);
+            sendStatus(&pkt->hdr, PKT_STATUST_OK, 0);
+          }
+          break;
+
         default:
           ROS_ERROR("Got an unknown message type: %i", ntohl(hdr->type));
           break;
@@ -307,8 +367,16 @@ sendto(socket_, &rsp, sizeof(rsp), 0, \
     if (type != PKT_STATUST_OK)
       ROS_ERROR("Error Condition.");
     FILL_HDR(Status, PKTT_STATUS); 
-    rsp.status_type = type;
-    rsp.status_code = code;
+    rsp.status_type = htonl(type);
+    rsp.status_code = htonl(code);
+    SEND_RSP;
+  }
+
+  void sendSensorData(PacketGeneric *hdr, uint8_t addr, uint16_t value)
+  {        
+    FILL_HDR(SensorData, PKTT_SENSORDATA); 
+    rsp.address = addr;
+    rsp.data = htons(value);
     SEND_RSP;
   }
 
