@@ -129,6 +129,10 @@ public:
 	boost::condition_variable data_cv_;
 	bool have_cloud_point_;
 	bool have_images_;
+	bool preempt_;
+
+	double timeout_;
+	ros::Time start_image_wait_;
 
 	tf::TransformListener* tf_;
 
@@ -171,6 +175,7 @@ public:
 		param ("~min_outlet_height", min_outlet_height_, 0.1);
 		param ("~max_outlet_height", max_outlet_height_, 0.7);
 		param<string>("~patch_path", patch_path, "data");
+		param("~timeout", timeout_, 3.0);
 //		string template_path;
 //        param<string>("~template_path", template_path,"templates");
 
@@ -1405,6 +1410,13 @@ private:
 		if (cloud_fetch.header.stamp != t)
 			printf("Timed out waiting for point cloud\n");
 
+
+        if ((ros::Time::now()-start_image_wait_) > ros::Duration(timeout_)) {
+        	ROS_INFO("No stereo data for %f seconds, timing out...", timeout_);
+        	preempt_ = true;
+        	data_cv_.notify_all();
+        }
+
 	}
 
 
@@ -1433,8 +1445,14 @@ private:
 
 		for (int i=0;i<frames_number_;++i) {
 			ROS_INFO("OutletSpotter: waiting for images and base laser data");
-			while (!(have_images_ && have_cloud_point_)) {
+        	start_image_wait_ = ros::Time::now();
+        	preempt_ = false;
+			while (!(have_images_ && have_cloud_point_) && !preempt_) {
 				data_cv_.wait(images_lock);
+			}
+			if (preempt_) {
+				ROS_INFO("OutletSpotter: detect loop preempted");
+				return false;
 			}
 			ROS_INFO("OutletSpotter: received images and base laser data, performing detection");
 
