@@ -382,6 +382,7 @@ public:
 
   void open()
   {
+    ROS_DEBUG("open()");
     if (open_)
       return;
     
@@ -596,12 +597,14 @@ public:
 
   void close()
   {
+    ROS_DEBUG("close()");
     stop();
     open_ = false;
   }
 
   void start()
   {
+    ROS_DEBUG("start()");
     if (!open_)
       open();
     // Start video; send it to specified host port
@@ -620,6 +623,8 @@ public:
 
   void stop()
   {
+    ROS_DEBUG("stop()");
+    
     if (image_thread_)
     {
       if (image_thread_->timed_join((boost::posix_time::milliseconds) 2000))
@@ -772,7 +777,7 @@ private:
     {
       // The select call in the driver timed out.
       ROS_WARN("No data have arrived for more than one second.");
-      stop();
+      started_video_ = false;
       return 1;
     }
 
