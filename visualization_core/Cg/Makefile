@@ -1,7 +1,7 @@
 all: Cg
 
-CG_SOURCE = $(shell (if [ `uname -m` = "x86_64" ]; then echo http://pr.willowgarage.com/downloads/Cg-2.0_May2008_x86_64.tgz; else echo http://pr.willowgarage.com/downloads/Cg-2.0_May2008_x86.tgz; fi))
-CG_TARBALL = $(shell (if [ `uname -m` = "x86_64" ]; then echo Cg-2.0_May2008_x86_64.tgz; else echo Cg-2.0_May2008_x86.tgz; fi))
+CG_SOURCE = $(shell (if [ `uname -m` = "x86_64" ]; then echo http://pr.willowgarage.com/downloads/Cg-2.2_April2009_x86_64.tgz; else echo http://pr.willowgarage.com/downloads/Cg-2.2_April2009_x86.tgz; fi))
+CG_TARBALL = $(shell (if [ `uname -m` = "x86_64" ]; then echo Cg-2.2_April2009_x86_64.tgz; else echo Cg-2.2_April2009_x86.tgz; fi))
 
 MTYPE = $(shell (if [ `uname -m` = "x86_64" ]; then echo x86_64; else echo x86; fi))
 BITS = $(shell (if [ `uname -m` = "x86_64" ]; then echo 64; fi))
