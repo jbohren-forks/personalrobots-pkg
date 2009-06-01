@@ -37,6 +37,10 @@
 #include <assert.h>
 #include <iostream>
 #include <fstream>
+#include <memory> // for std::auto_ptr
+ 
+#include <string.h> // for memset(3)
+#include <stdlib.h> // for atoi(3)
 
 #include <ros/console.h>
 #include <ros/time.h>
