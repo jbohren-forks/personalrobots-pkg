@@ -1,6 +1,6 @@
 <launch>
   <!-- Bring up the node we want to test. -->
-  <include file="$(find pr2_gazebo)/pr2_empty_no_x.launch"/>
+  <include file="$(find pr2_gazebo)/pr2_empty.launch"/>
 
   <!-- load controllers -->
   <include file="$(find pr2_gazebo)/pr2_default_controllers.launch" />

@@ -55,13 +55,7 @@ from tf.transformations import *
 from numpy import *
 
 
-ARM_JNT_NAMES   = ['l_shoulder_pan_joint','l_shoulder_lift_joint', \
-                   'l_upper_arm_roll_joint','l_elbow_flex_joint', \
-                   'l_forearm_roll_joint','l_wrist_flex_joint', \
-                   'l_wrist_roll_joint']
-CMD_POS         = [0.5,0.5,0.5,-0.5,0.5,0.5,0.5]
-CMD_VEL         = [0,0,0,0,0,0,0]
-GRP_CMD_POS     = 0.3
+GRP_CMD_POS     = 0.03
 
 TARGET_DURATION = 1.0
 ROT_TARGET_TOL      = 0.01  #empirical test result john - 20090110
@@ -69,21 +63,21 @@ POS_TARGET_TOL      = 0.01  #empirical test result john - 20090110
 TEST_TIMEOUT    = 100.0
 
 # pre-recorded poses for above commands
-TARGET_PALM_TX     = 0.704066619494
-TARGET_PALM_TY     = 0.301180392709
-TARGET_PALM_TZ     = 0.785849479228
-TARGET_PALM_QX     = 0.237245087815
-TARGET_PALM_QY     = -0.182857285664
-TARGET_PALM_QZ     = 0.190054769284
-TARGET_PALM_QW     = 0.934963724462
+TARGET_PALM_TX     =  0.155904378267
+TARGET_PALM_TY     =  -0.284510282483
+TARGET_PALM_TZ     =  0.745640692268
+TARGET_PALM_QX     =  -0.12484217292
+TARGET_PALM_QY     =  -0.276612397838
+TARGET_PALM_QZ     =  -0.696065775523
+TARGET_PALM_QW     =  0.650686137372
 
-TARGET_FNGR_TX     = 0.765855780229
-TARGET_FNGR_TY     = 0.329992191856
-TARGET_FNGR_TZ     = 0.822824120227
-TARGET_FNGR_QX     = 0.207243146301
-TARGET_FNGR_QY     = -0.216269033034
-TARGET_FNGR_QZ     = 0.327690008131
-TARGET_FNGR_QW     = 0.896045334921
+TARGET_FNGR_TX     = 0.155969249528
+TARGET_FNGR_TY     = -0.34905965841
+TARGET_FNGR_TZ     = 0.788914435708
+TARGET_FNGR_QX     = -0.148793579384
+TARGET_FNGR_QY     = -0.264505209737
+TARGET_FNGR_QZ     = -0.636004870454
+TARGET_FNGR_QW     = 0.709503537352
 
 class ArmTest(unittest.TestCase):
     def __init__(self, *args):
@@ -202,14 +196,12 @@ class ArmTest(unittest.TestCase):
     
     def test_arm(self):
         print "LNK\n"
-        pub_arm = rospy.Publisher("/left_arm_commands", JointPosCmd)
         pub_gripper = rospy.Publisher("/l_gripper_controller/set_command", Float64)
         rospy.Subscriber("/l_gripper_palm_pose_ground_truth", PoseWithRatesStamped, self.palmP3dInput)
         rospy.Subscriber("/l_gripper_l_finger_pose_ground_truth", PoseWithRatesStamped, self.fngrP3dInput)
         rospy.init_node(NAME, anonymous=True)
         timeout_t = time.time() + TEST_TIMEOUT
         while not rospy.is_shutdown() and (not self.palm_success or not self.fngr_success) and time.time() < timeout_t:
-            pub_arm.publish(JointPosCmd(ARM_JNT_NAMES,CMD_POS,CMD_VEL,0))
             pub_gripper.publish(Float64(GRP_CMD_POS))
             time.sleep(1.0)
         self.assert_(self.palm_success and self.fngr_success)

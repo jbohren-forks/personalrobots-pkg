@@ -1,6 +1,6 @@
 <launch>
   <!-- send single_link.xml to param server -->
-  <include file="$(find pr2_gazebo)/pr2_empty_no_x.launch" />
+  <include file="$(find pr2_gazebo)/pr2_empty.launch" />
 
   <!-- load controllers -->
   <include file="$(find pr2_gazebo)/pr2_default_controllers.launch" />
