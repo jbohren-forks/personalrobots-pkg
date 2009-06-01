@@ -2,9 +2,10 @@
 WITH_DRAWSTUFF = yes
 
 CFG_OPTIONS = --with-arch=nocona --enable-release --disable-asserts --with-pic #--enable-double-precision
-SVN_REVISION = -r 1674
+SVN_REVISION = -r 1675
 
 SVN_PATCH = opende_patch.diff
+#SVN_PATCH = quickstep.patch
 
 ifeq ($(WITH_DRAWSTUFF), yes)
 CFG_OPTIONS += --with-drawstuff=X11
