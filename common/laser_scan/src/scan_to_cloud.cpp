@@ -49,6 +49,7 @@
 
 //Filters
 #include "laser_scan/scan_shadows_filter.h"
+#include "laser_scan/intensity_filter.h"
 #include "laser_scan/point_cloud_footprint_filter.h"
 #include "filters/filter_chain.h"
 
