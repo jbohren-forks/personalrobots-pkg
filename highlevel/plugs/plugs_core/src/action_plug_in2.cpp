@@ -337,7 +337,7 @@ robot_actions::ResultStatus PlugInAction::execute(const std_msgs::Int32& outlet_
       tff_msg.mode.rot.y = 3;
       tff_msg.mode.rot.z = 3;
       PoseTFToMsg(desi, tff_msg.value);
-      tff_msg.value.vel.x = first_x - 0.02;
+      tff_msg.value.vel.x = first_x - 0.03;
       //tff_msg.value.vel.x = removal_speed;
       node_.publish(arm_controller_ + "/command", tff_msg);
       ros::Duration(0.2).sleep(); // Settle
@@ -352,7 +352,7 @@ robot_actions::ResultStatus PlugInAction::execute(const std_msgs::Int32& outlet_
       //tff_msg.value.vel.x = 0.1;
 
       node_.publish(arm_controller_ + "/command", tff_msg);
-      ros::Duration(1.5).sleep(); // Push in
+      ros::Duration(2.0).sleep(); // Push in
 
       // Check
       {
