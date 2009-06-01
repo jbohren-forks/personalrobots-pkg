@@ -203,8 +203,10 @@ M2Controller::Holds{
 			  m2_active.x, m2_active.y, m2_active.z, m2_active.qx, m2_active.qy, m2_active.qz, m2_active.qw);
 
 	map_get_nearest_connector(cmd.start_connector, x, y, m2_active.x, m2_active.y);
+	leq(cmd.max_duration, 600);
 
 	if(thru_doorway == true){
+	  // take no more than 10 minutes trying to get thru a doorway
 	  eq(cmd.object, doorman);
 	}
 	else{
@@ -220,12 +222,12 @@ M2Controller::Holds{
  */
 MoveBehavior::Inactive{
   starts(m2_controller.Holds mc);
-  if(status == ABORTED){
-    eq(mc.finished, true);
-  }
   if(status == SUCCESS){
     eq(mc.x, x);
     eq(mc.y, y);
+  }
+  else {
+    eq(mc.finished, true);
   }
 }
 
@@ -236,11 +238,8 @@ Recharger::Inactive{
     eq(mc.recharged, true);
   }
   else {
-    if(status == ABORTED){
-      starts(m2_controller.Holds mc);
-      eq(mc.finished, true);
-      eq(mc.recharged, false);
-    }
+    eq(mc.finished, true);
+    eq(mc.recharged, false);
   }
 }
 

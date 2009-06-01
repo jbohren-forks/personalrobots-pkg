@@ -238,9 +238,8 @@ namespace TREX {
       // Get the max_duration bound and update accordingly
       ConstrainedVariableId max_duration = goal->parameters()[MAX_DURATION_INDEX];
       ROS_ASSERT(max_duration.isValid() && max_duration->getName() == MAX_DURATION_LABEL);
-      ROS_ASSERT(max_duration->lastDomain().getUpperBound() >= 0);
 
-      _max_duration.fromSec(max_duration->getUpperBound());
+      _max_duration.fromSec(std::max(max_duration->getUpperBound(), 0.0));
 
       condDebugMsg(max_duration->lastDomain().getUpperBound() == PLUS_INFINITY,
 		   "ros:debug:dispatching",  "Setting time limit to " << "+inf");

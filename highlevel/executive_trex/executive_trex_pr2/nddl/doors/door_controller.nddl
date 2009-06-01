@@ -1,5 +1,18 @@
 #include "doors/imports.nddl"
 
+/**
+ * These constants are the set of all individual action timeout limits for actions
+ * used in the door domain. All values are in seconds
+ */
+float CHECK_PATH_DURATION_BOUND = 30.0;
+float DETECT_DOOR_DURATION_BOUND = 30.0;
+float DETECT_HANDLE_DURATION_BOUND = 60.0;
+float GRASP_HANDLE_DURATION_BOUND = 30.0;
+float UNLATCH_HANDLE_DURATION_BOUND = 30.0;
+float MOVE_BASE_LOCAL_APPROACH_DURATION_BOUND = 60.0;
+float MOVE_BASE_LOCAL_THROUGH_DOOR_DURATION_BOUND = 120.0;
+float MOVE_BASE_DOOR_DURATION_BOUND = 120.0;
+
 class DoorState extends AgentTimeline {
 
   predicate Holds{
@@ -116,14 +129,6 @@ fact(door_controller.Holds dc_initial_state);
 dc_initial_state.active = false;
 
 DoorController::Holds{
-  // Bind values for inactive case
-  /*
-  if(active == false){
-    contained_by(doorman.Inactive);
-    equals(door_state.Holds);
-  }
-  */
-
   // We will assume default values on commitment based on predecessor. We really want these values to be bound. These values carry
   // forward from priors as they are updated by actions and we thus assume inertia (if we had the handle before and have no information
   // to the contrary, then we still have the handle).
@@ -158,17 +163,35 @@ DoorController::Holds {
     bool arms_tucked;
     eq(arms_tucked, ms.arms_tucked);
 
+    // Compute a bound on the duration of any action we launch from here based on the global time limit
+    int elapsed_ticks;
+    float elapsed_time, remaining_time;
+    addEq(dm_active.start, elapsed_ticks, start);
+    mulEq(elapsed_ticks, TICK_DURATION, elapsed_time);
+    addEq(elapsed_time, remaining_time, dm_active.max_duration);
+
+    bool timed_out;
+    testLEQ(timed_out, remaining_time, 0.0);
+    if(timed_out == true){
+      eq(s.finishing, true);
+    }
+
     if(finishing == true){
       if(have_handle == false){
 	if(arms_tucked == true){
 	  eq(s.active, false);
 	  meets(doorman.Inactive dm_inactive);
-	  eq(duration, 1);
-	  if(doorway_clear == true){
-	    eq(dm_inactive.status, SUCCESS);
+	  eq(duration, 1);	 
+	  if(timed_out == true){
+	    eq(dm_inactive.status, ABORTED);
 	  }
 	  else {
-	    eq(dm_inactive.status, ABORTED);	
+	    if(doorway_clear == true){
+	      eq(dm_inactive.status, SUCCESS);
+	    }
+	    else {
+	      eq(dm_inactive.status, ABORTED);
+	    }
 	  }
 	}
 	else {
@@ -185,7 +208,8 @@ DoorController::Holds {
       if(doorway_clear == true){
 	contains_start(move_base_local.Active cmd);
 	concurrent(cmd.end, end);
-	leq(cmd.max_duration, 30);
+	leq(cmd.max_duration, remaining_time);
+	leq(cmd.max_duration, MOVE_BASE_LOCAL_THROUGH_DOOR_DURATION_BOUND);
 	eq_pose_msg(cmd.object, dm_active.object);
 
 	contains_start(set_laser_tilt.Active cmd_set_laser_tilt);
@@ -198,6 +222,8 @@ DoorController::Holds {
 	    // Now the goal will be the target across the doorway. This is the goal pose for the containing behavior
 	    contains_start(check_path.Active cmd);
 	    concurrent(cmd.end, end);
+	    leq(cmd.max_duration, remaining_time);
+	    leq(cmd.max_duration, CHECK_PATH_DURATION_BOUND);
 	    eq_pose_msg(cmd.object, dm_active.object);
 
 	    contains_start(set_laser_tilt.Active cmd_set_laser_tilt);
@@ -216,6 +242,8 @@ DoorController::Holds {
 		// Moving the base set up here. Used in either case
 		contains_start(move_base_door.Active cmd_move_base_door);
 		concurrent(cmd_move_base_door.end, end);
+		leq(cmd_move_base_door.max_duration, remaining_time);
+		leq(cmd_move_base_door.max_duration, MOVE_BASE_DOOR_DURATION_BOUND);
 
 		// Set up a preemption as needed. Will make this conditional shortly
 		any(stop_action.Active cmd_stop_action);
@@ -240,11 +268,15 @@ DoorController::Holds {
 		if(have_handle == true){
 		  contains_start(unlatch_handle.Active cmd);
 		  concurrent(cmd.end, end);
+		  leq(cmd.max_duration, remaining_time);
+		  leq(cmd.max_duration, UNLATCH_HANDLE_DURATION_BOUND);
 		}
 		else {
 		  // Don't have the handle, but could grasp it!
 		  contains_start(grasp_handle.Active cmd);
 		  concurrent(cmd.end, end);
+		  leq(cmd.max_duration, remaining_time);
+		  leq(cmd.max_duration, GRASP_HANDLE_DURATION_BOUND);
 		}
 	      }
 	    }
@@ -253,6 +285,8 @@ DoorController::Holds {
 	      if(arms_tucked == true){
 		contains_start(move_base_local.Active cmd);
 		concurrent(cmd.end, end);
+		leq(cmd.max_duration, remaining_time);
+		leq(cmd.max_duration, MOVE_BASE_LOCAL_APPROACH_DURATION_BOUND);
 		eq(cmd.frame_id, ds.frame_id);
 		door_get_robot_pose_for_door(cmd.x, cmd.y, cmd.z, cmd.qx, cmd.qy, cmd.qz, cmd.qw, ds.object, GRASP_RANGE);
 
@@ -269,12 +303,16 @@ DoorController::Holds {
 	  else { // Found handle == false
 	    if(found_door == true){
 	      contains_start(detect_handle.Active cmd);
+	      leq(cmd.max_duration, remaining_time);
+	      leq(cmd.max_duration, DETECT_HANDLE_DURATION_BOUND);
 	      concurrent(cmd.end, end);
 	    }
 	    else {
 	      // If in detection position, we can detect the door
 	      if(in_position == true){
 		contains_start(detect_door.Active cmd);
+		leq(cmd.max_duration, remaining_time);
+		leq(cmd.max_duration, DETECT_DOOR_DURATION_BOUND);
 		concurrent(cmd.end, end);
 	      }
 	      else {
@@ -282,6 +320,7 @@ DoorController::Holds {
 		if(arms_tucked == true){
 		  contains_start(move_base.Active cmd);
 		  concurrent(cmd.end, end);
+		  leq(cmd.max_duration, remaining_time);
 		  eq(cmd.frame_id, "map");
 		  map_get_door_approach_pose(cmd.x, cmd.y, cmd.z, cmd.qx, cmd.qy, cmd.qz, cmd.qw, dm_active.start_connector);
 
