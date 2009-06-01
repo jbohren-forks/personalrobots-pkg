@@ -2,6 +2,7 @@
 #include <robot_msgs/PoseStamped.h>
 #include <prosilica_cam/CamInfo.h>
 #include <boost/bind.hpp>
+#include <unistd.h> // getpid
 
 // TODO: don't use "high_def_frame" or handle the change of axes explicitly
 
@@ -124,8 +125,8 @@ void TrackerBase::processImage()
   }
   else {
     // Save failure for debugging
-    if (save_failures_)
-      saveImage();
+    //if (save_failures_)
+    //  saveImage();
 
     // Expand ROI for next image
     if (roi_policy_ == LastImageLocation) {
@@ -143,6 +144,9 @@ void TrackerBase::processImage()
     display_img_.encoding = "bgr";
     node_.publish(display_topic_name_, display_img_);
   }
+
+  // DEBUG: save out everything
+  saveImage();
 }
 
 void TrackerBase::spin()
@@ -275,15 +279,59 @@ robot_msgs::Pose TrackerBase::getTargetInHighDef()
 void TrackerBase::saveImage()
 {
   char filename[32];
-  snprintf(filename, 32, "%s%03i.yml", save_prefix_.c_str(), save_count_);
+  snprintf(filename, sizeof(filename), "%s%u_%03i.yml", save_prefix_.c_str(), getpid(), save_count_);
   CvFileStorage *fs = cvOpenFileStorage(filename, 0, CV_STORAGE_WRITE);
+  time_t t;
+  time( &t );
+  struct tm *t2 = localtime( &t );
+  char buf[1024];
+  strftime( buf, sizeof(buf)-1, "%c", t2 );
+  cvWriteString( fs, "save_time", buf );
   cvWrite(fs, "camera_matrix", K_);
   double zeros[] = {0, 0, 0, 0, 0};
   CvMat D = cvMat(5, 1, CV_64FC1, zeros);
   cvWrite(fs, "distortion_coefficients", &D);
   cvReleaseFileStorage(&fs);
 
-  snprintf(filename, 32, "%s%03i.jpg", save_prefix_.c_str(), save_count_++);
+  snprintf(filename, sizeof(filename), "%s%u_%03i.tf", save_prefix_.c_str(), getpid(), save_count_);
+  FILE *tf_file = fopen(filename, "w");
+  if (tf_file) {
+    try {
+      robot_msgs::PoseStamped origin, xfm_in_base_link;
+      origin.pose.orientation.w = 1.0;
+      origin.header.frame_id = "high_def_frame";
+      origin.header.stamp = ros::Time::now();
+      tf_listener_.canTransform("base_link", origin.header.frame_id, origin.header.stamp, ros::Duration(0.5));
+      tf_listener_.transformPose("base_link", origin, xfm_in_base_link);
+      fprintf(tf_file, "high_def_frame: (%.5f, %.5f, %.5f), (%.5f, %.5f, %.5f, %.5f)\n",
+              xfm_in_base_link.pose.position.x, xfm_in_base_link.pose.position.y,
+              xfm_in_base_link.pose.position.z, xfm_in_base_link.pose.orientation.x,
+              xfm_in_base_link.pose.orientation.y, xfm_in_base_link.pose.orientation.z,
+              xfm_in_base_link.pose.orientation.w);
+
+      if (!target_frame_id_.empty()) {
+        origin.header.frame_id = target_frame_id_;
+        origin.header.stamp = ros::Time::now();
+        tf_listener_.canTransform("base_link", origin.header.frame_id, origin.header.stamp, ros::Duration(0.5));
+        tf_listener_.transformPose("base_link", origin, xfm_in_base_link);
+        fprintf(tf_file, "%s: (%.5f, %.5f, %.5f), (%.5f, %.5f, %.5f, %.5f)\n",
+                target_frame_id_.c_str(), xfm_in_base_link.pose.position.x,
+                xfm_in_base_link.pose.position.y, xfm_in_base_link.pose.position.z,
+                xfm_in_base_link.pose.orientation.x, xfm_in_base_link.pose.orientation.y,
+                xfm_in_base_link.pose.orientation.z, xfm_in_base_link.pose.orientation.w);
+      }
+    }
+    catch (tf::TransformException &ex)
+    {
+      ROS_WARN("Transform Exception %s, couldn't save transforms", ex.what());
+    }
+    
+    fclose(tf_file);
+  } else {
+    ROS_WARN("Couldn't open file to save transforms");
+  }
+
+  snprintf(filename, sizeof(filename), "%s%u_%03i.jpg", save_prefix_.c_str(), getpid(), save_count_++);
   cvSaveImage(filename, img_bridge_.toIpl());
   ROS_INFO("Saved %s", filename);
 }
