@@ -158,7 +158,7 @@ public:
 	vector<IplImage*> negative_templates;
 
 	OutletSpotting() : ros::Node("outlet_spotting"),left(NULL), disp(NULL), disp_clone(NULL),
-		sync(this, &OutletSpotting::image_cb_all, ros::Duration().fromSec(0.1), &OutletSpotting::image_cb_timeout), have_cloud_point_(false), have_images_(false), ppmm(0.5)
+		sync(this, &OutletSpotting::image_cb_all, ros::Duration().fromSec(0.1), &OutletSpotting::image_cb_timeout), have_cloud_point_(true), have_images_(true), ppmm(0.5)
 
 	{
         tf_ = new tf::TransformListener(*this);
@@ -1410,13 +1410,6 @@ private:
 		if (cloud_fetch.header.stamp != t)
 			printf("Timed out waiting for point cloud\n");
 
-
-        if ((ros::Time::now()-start_image_wait_) > ros::Duration(timeout_)) {
-        	ROS_INFO("No stereo data for %f seconds, timing out...", timeout_);
-        	preempt_ = true;
-        	data_cv_.notify_all();
-        }
-
 	}
 
 
@@ -1447,6 +1440,9 @@ private:
 			ROS_INFO("OutletSpotter: waiting for images and base laser data");
         	start_image_wait_ = ros::Time::now();
         	preempt_ = false;
+			// want new data for next detection
+			have_images_ = false;
+			have_cloud_point_ = false;
 			while (!(have_images_ && have_cloud_point_) && !preempt_) {
 				data_cv_.wait(images_lock);
 			}
@@ -1459,10 +1455,6 @@ private:
 			bool found = detectOutlet(pose);
 
 			showMarkers(pose);
-
-			// want new data for next detection
-			have_images_ = false;
-			have_cloud_point_ = false;
 
 			if (display) {
 				cvShowImage("left", left);
@@ -1494,6 +1486,14 @@ public:
 		while (ok())
 		{
 			data_lock_.lock();
+
+			if (!have_images_ && !have_cloud_point_) {
+				if ((ros::Time::now()-start_image_wait_) > ros::Duration(timeout_)) {
+					preempt_ = true;
+					data_cv_.notify_all();
+				}
+			}
+
 			int key = cvWaitKey(3)&0x00FF;
 			data_lock_.unlock();
 			if(key == 27) //ESC
