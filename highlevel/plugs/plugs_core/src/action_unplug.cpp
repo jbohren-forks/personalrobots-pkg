@@ -73,6 +73,16 @@ UnplugAction::~UnplugAction()
 
 robot_actions::ResultStatus UnplugAction::execute(const std_msgs::Empty& empty, std_msgs::Empty& feedback)
 {
+
+  double unplug_x_threshold, unplug_x_target;
+  if (!node_->getParam("~x_threshold", unplug_x_threshold, true)) {
+    ROS_WARN("unplug x-threshold wasn't set (by plug_in)");
+    unplug_x_target = -BACKOFF;
+  }
+  else{
+    unplug_x_target = unplug_x_threshold - 0.02;
+  }
+
   first_state_.header.seq = 0;
   ROS_DEBUG("%s: executing.", action_name_.c_str());
   tff_msg_.header.frame_id = "outlet_pose";
@@ -83,7 +93,7 @@ robot_actions::ResultStatus UnplugAction::execute(const std_msgs::Empty& empty, 
   tff_msg_.mode.rot.x = 2;
   tff_msg_.mode.rot.y = 2;
   tff_msg_.mode.rot.z = 2;
-  tff_msg_.value.vel.x = -BACKOFF;
+  tff_msg_.value.vel.x = unplug_x_target;
   tff_msg_.value.vel.y = 0.0;
   tff_msg_.value.vel.z = 0.0;
   tff_msg_.value.rot.x = 0.0;
@@ -159,7 +169,7 @@ void  UnplugAction::checkUnplug()
   tff_msg_.mode.rot.x = 3;
   tff_msg_.mode.rot.y = 3;
   tff_msg_.mode.rot.z = 3;
-  tff_msg_.value.vel.x = -BACKOFF;
+  tff_msg_.value.vel.x = unplug_x_threshold - 0.02;
   tff_msg_.value.vel.y = first_state_.last_pose_meas.vel.y;
   tff_msg_.value.vel.z = first_state_.last_pose_meas.vel.z;
   tff_msg_.value.rot.x = first_state_.last_pose_meas.rot.x;
