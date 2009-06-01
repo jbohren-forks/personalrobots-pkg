@@ -174,11 +174,11 @@ DoorController::Holds {
     mulEq(elapsed_ticks, TICK_DURATION, elapsed_time);
     addEq(elapsed_time, remaining_time, dm_active.max_duration);
 
-    testLEQ(timed_out, remaining_time, 0.0);
-    if(timed_out == true){
-      eq(s.finishing, true);
-    }
-
+    //testLEQ(timed_out, remaining_time, 0.0);
+    //if(timed_out == true){
+      //eq(s.finishing, true);
+    //}
+    eq(timed_out, false);
     if(finishing == true){
       if(have_handle == false){
 	if(arms_tucked == true){
