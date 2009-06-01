@@ -773,10 +773,13 @@ void PlugInAction::force()
 
   double base_roll = tff_msg_.value.rot.x;
   double base_pitch = tff_msg_.value.rot.y;
+  double base_yaw = tff_msg_.value.rot.z;
   while (ros::Time::now() - g_started_forcing_ < ros::Duration(5.0))
   {
-    tff_msg_.value.rot.x = base_roll + 0.1 * (2.0*drand48()-1.0);
-    tff_msg_.value.rot.y = base_pitch + 0.03 * (2.0*drand48()-1.0);
+    double time = ros::Time::now().toSec();
+    tff_msg_.value.rot.x = base_roll  + 0.03 * sin(time*20.0*M_PI);
+    tff_msg_.value.rot.y = base_pitch + 0.03 * sin(time*2.1*M_PI);
+    tff_msg_.value.rot.z = base_yaw   + 0.01 * sin(time*5.3*M_PI);    
     node_.publish(arm_controller_ + "/command", tff_msg_);
     usleep(10000);
   }
