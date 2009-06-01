@@ -114,6 +114,7 @@ class DoorController extends AgentTimeline {
     bool doorway_clear;
     bool check_doorway;
     bool finishing;
+    bool timed_out;
     LatchState latch_state;
   }
 
@@ -172,7 +173,6 @@ DoorController::Holds {
     mulEq(elapsed_ticks, TICK_DURATION, elapsed_time);
     addEq(elapsed_time, remaining_time, dm_active.max_duration);
 
-    bool timed_out;
     testLEQ(timed_out, remaining_time, 0.0);
     if(timed_out == true){
       eq(s.finishing, true);

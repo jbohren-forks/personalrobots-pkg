@@ -67,6 +67,7 @@ class RechargeController extends AgentTimeline {
     bool ready_to_grasp;
     bool arms_clear; // Need this because the arm could be anywhere in principle!
     bool resetting;
+    bool timed_out;
   }
   
   RechargeController(){ super(Internal, "Holds"); }
@@ -119,7 +120,6 @@ RechargeController::Holds {
     mulEq(elapsed_ticks, TICK_DURATION, elapsed_time);
     addEq(elapsed_time, remaining_time, rc_active.max_duration);
 
-    bool timed_out;
     testLEQ(timed_out, remaining_time, 0.0);
     if(timed_out == true){
       eq(s.resetting, true);
