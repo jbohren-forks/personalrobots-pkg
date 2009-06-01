@@ -1,0 +1,82 @@
+%
+%Copyright (C) 2008, 2009 Pedro Felzenszwalb, Ross Girshick
+%Copyright (C) 2007 Pedro Felzenszwalb, Deva Ramanan
+%
+%Permission is hereby granted, free of charge, to any person obtaining
+%a copy of this software and associated documentation files (the
+%"Software"), to deal in the Software without restriction, including
+%without limitation the rights to use, copy, modify, merge, publish,
+%distribute, sublicense, and/or sell copies of the Software, and to
+%permit persons to whom the Software is furnished to do so, subject to
+%the following conditions:
+%
+%The above copyright notice and this permission notice shall be
+%included in all copies or substantial portions of the Software.
+%
+%THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+%EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+%MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+%NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+%LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+%OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+%WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+%
+
+function model = pascal_train(cls, n)
+
+% model = pascal_train(cls)
+% Train a model using the PASCAL dataset.
+
+globals; 
+[pos, neg] = pascal_data(cls);
+spos = pf_split(pos, n);
+
+% train root filters using warped positives & random negatives
+try
+  load([cachedir cls '_random']);
+catch
+  for i=1:n
+    models{i} = initmodel(spos{i});
+    models{i} = train(cls, models{i}, spos{i}, neg, 1, 1, 1, 1, 2^28);
+  end
+  save([cachedir cls '_random'], 'models');
+end
+
+% merge models and train using latent detections & hard negatives
+try 
+  load([cachedir cls '_hard']);
+catch
+  model = mergemodels(models);
+  model = train(cls, model, pos, neg(1:200), 0, 0, 2, 2, 2^28, true, 0.7);
+  save([cachedir cls '_hard'], 'model');
+end
+
+% add parts and update models using latent detections & hard negatives.
+try 
+  load([cachedir cls '_parts']);
+catch
+  for i=1:n
+    model = addparts(model, i, 6);
+  end 
+  % use more data mining iterations in the beginning
+  model = train(cls, model, pos, neg(1:200), 0, 0, 1, 4, 2^30, true, 0.7);
+  model = train(cls, model, pos, neg(1:200), 0, 0, 6, 2, 2^30, true, 0.7, true);
+  save([cachedir cls '_parts'], 'model');
+end
+
+% update models using full set of negatives.
+try 
+  load([cachedir cls '_mine']);
+catch
+  model = train(cls, model, pos, neg, 0, 0, 1, 3, 2^30, true, 0.7, true, ...
+                0.003*model.numcomponents, 2);
+  save([cachedir cls '_mine'], 'model');
+end
+
+% train bounding box prediction
+try
+  load([cachedir cls '_final']);
+catch
+  model = trainbox(cls, model, pos, 0.7);
+  save([cachedir cls '_final'], 'model');
+end

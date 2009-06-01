@@ -1,0 +1,14 @@
+<package>
+  <description brief="pf_object_detector">
+     Tree-structured object model. HOG features. LSVM training. An octave port and a wrapper for ROS. 
+     Original code by Pedro Felzenszwalb, Ross Girshick, Deva Ramanan.
+
+  </description>
+  <author>Alex Sorokin/sorokin@willowgarage.com</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://pr.willowgarage.com/wiki/vision/object_detection/pf_object_detector</url>
+
+</package>
+
+

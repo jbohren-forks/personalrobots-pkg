@@ -1,0 +1,18 @@
+<launch>
+
+
+
+
+   <node name="person_detector_slow_pfHOG" pkg="pf_object_detector" type="octave_run.sh"  args="$(find pf_object_detector)" respawn="false" output="screen">
+      <param name="~tag" value="person" type="str" />
+      <param name="~model_file" value="$(find pf_object_detector)/models/VOC2007/person_final.mat" type="str" />
+      <param name="~scale" value="1" type="double" />
+      <param name="~interval" value="10" type="int" />
+      <param name="~do_display" value="0" type="bool" />
+
+
+      <remap to="/person_detector_slow_pfHOG/image" from="/stereo/left/image"/>
+   </node>
+
+
+</launch>
