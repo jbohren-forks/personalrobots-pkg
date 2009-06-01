@@ -116,14 +116,16 @@ RechargeController::Holds {
     // Compute a bound on the duration of any action we launch from here based on the global time limit
     int elapsed_ticks;
     float elapsed_time, remaining_time;
-    addEq(rc_active.start, elapsed_ticks, start);
-    mulEq(elapsed_ticks, TICK_DURATION, elapsed_time);
-    addEq(elapsed_time, remaining_time, rc_active.max_duration);
-
+    //addEq(rc_active.start, elapsed_ticks, start);
+    //mulEq(elapsed_ticks, TICK_DURATION, elapsed_time);
+    //addEq(elapsed_time, remaining_time, rc_active.max_duration);
+/*
     testLEQ(timed_out, remaining_time, 0.0);
     if(timed_out == true){
       eq(s.resetting, true);
     }
+*/
+    eq(timed_out, false);
 
     // Here we are resetting - either to rety or to finish up
     if (resetting == true){
