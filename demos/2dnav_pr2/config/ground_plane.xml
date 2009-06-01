@@ -4,7 +4,7 @@
   <remap from="tilt_laser_cloud_filtered" to="tilt_scan_filtered" />
   <remap from="cloud_ground_filtered" to="ground_object_cloud" />
   <param name="z_threshold" value="0.15" />
-  <param name="sac_min_points_per_model" value="6" />
+  <param name="sac_min_points_per_model" value="10" />
   <param name="sac_distance_threshold" value="0.04" />
   <param name="planar_refine" value="1" />
 </node>
