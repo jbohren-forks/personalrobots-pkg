@@ -45,15 +45,16 @@ roslib.load_manifest('rostest')
 import sys, unittest
 import os, os.path, threading, time
 import rospy, rostest
-from deprecated_msgs.msg import Image as image_msg
+from image_msgs.msg import Image as image_msg
+from image_msgs.msg import CamInfo as caminfo_msg
 from PIL import Image      as pili
 from PIL import ImageChops as pilic
 
 FRAME_TARGET = "cam_sen-0050.ppm"
 FRAME_DIR = "test_camera_frames"
 TOTAL_ERROR_TOL = 5
-TEST_DURATION   = 30
-TEST_INIT_WAIT  = 70
+TEST_DURATION   = 10
+TEST_INIT_WAIT  = 1
 
 class PollCameraThread(threading.Thread):
     def __init__(self, target, dir):
@@ -76,7 +77,9 @@ class TestCameras(unittest.TestCase):
     def __init__(self, *args):
         super(TestCameras, self).__init__(*args)
         self.success = False
-        #self.pollThread = PollCameraThread(self, FRAME_DIR)
+        self.got_caminfo = False
+        self.caminfo_height = 0
+        self.caminfo_width = 0
 
     def onTargetFrame(self):
         time.sleep(0.5) #Safety, to make sure the image is really done being written.
@@ -116,15 +119,13 @@ class TestCameras(unittest.TestCase):
           return False
         print "thumbnail lengths ",len(i0d), len(i1d)
 
-        #compare thumbnails only
+        #compare pixel by pixel for thumbnails
         for i in range(len(i0d)):
-          (r0,g0,b0) = i0d[i]
-          (r1,g1,b1) = i1d[i]
-          #if abs(r0-r1) > 0 or abs(g0-g1) > 0 or abs(b0-b1) > 0:
-          #  print "debug errors ",i,abs(r0-r1),abs(g0-g1),abs(b0-b1)
-          if abs(r0-r1) > pixel_tol or abs(g0-g1) > pixel_tol or abs(b0-b1) > pixel_tol:
+          (p0) = i0d[i]
+          (p1) = i1d[i]
+          if abs(p0-p1) > pixel_tol:
             error_count = error_count + 1
-            error_total = error_total + abs(r0-r1) + abs(g0-g1) + abs(b0-b1)
+            error_total = error_total + abs(p0-p1)
         error_avg = float(error_total)/float(len(i0d))
         print "total error count:",error_count
         print "average error:    ",error_avg
@@ -133,58 +134,65 @@ class TestCameras(unittest.TestCase):
         else:
           return True
 
+    def caminfoInput(self,caminfo):
+      self.got_caminfo = True
+      self.caminfo_width = caminfo.width
+      self.caminfo_height = caminfo.height
+      print " got cam info (",caminfo.width,"X",caminfo.height,")"
+
     def imageInput(self,image):
 
-        print " got image message from ROS, begin comparing images "
+      if (self.got_caminfo):
+        print " got image and caminfo from ROS, begin comparing images."
+      else:
+        print " got image but no caminfo."
+        return
 
-        print "  - load validation image from file test_camera.valid.ppm "
-        fname = roslib.packages.get_pkg_dir('test_pr2_sensors_gazebo') + '/test_camera.valid.ppm'
-        if os.path.isfile(fname):
-          im0 = pili.open(fname)
-        #elif os.path.isfile("test/test_camera.valid.ppm"):
-        #  im0 = pili.open("test/test_camera.valid.ppm")
+      print "  - load validation image from file test_camera.valid.ppm "
+      fname = roslib.packages.get_pkg_dir('test_pr2_sensors_gazebo') + '/test_camera.valid.ppm'
+      if os.path.isfile(fname):
+        im0 = pili.open(fname)
+      else:
+        print "cannot find validation file: test_camera.valid.ppm"
+        self.success = False
+        return
+
+      print "  - load image from ROS "
+      size = self.caminfo_width,self.caminfo_height
+      im1 = pili.new("L",size)
+      im1 = pili.frombuffer("L",size,str(image.uint8_data.data));
+      im1 = im1.transpose(pili.FLIP_LEFT_RIGHT).rotate(180);
+      imc = pilic.difference(im0,im1)
+
+
+      print "  - comparing images "
+      im1.save("test_1.ppm") # uncomment this line to capture a new valid frame when things change
+      im0.save("test_0.ppm")
+      imc.save("test_d.ppm")
+      #im1.show()
+      #im0.show()
+      #imc.show()
+      comp_result = self.images_are_the_same(im0,im1)
+      print "test comparison ", comp_result
+      #print "proofcomparison ", self.images_are_the_same(im1.getdata(),im1.getdata())
+      if (self.success == False): # test if we have not succeeded
+        if (comp_result == 1):
+          print "  - images are the Same "
+          self.success = True
         else:
-          print "cannot find validation file: test_camera.valid.ppm"
+          print "  - images differ "
           self.success = False
-          return
-
-        print "  - load image from ROS "
-        size = image.width,image.height
-        im1 = pili.new("RGBA",size)
-        im1 = pili.frombuffer("RGB",size,str(image.data));
-        im1 = im1.transpose(pili.FLIP_LEFT_RIGHT).rotate(180);
-        imc = pilic.difference(im0,im1)
-
-
-        print "  - comparing images "
-        im1.save("test_1.ppm") # uncomment this line to capture a new valid frame when things change
-        im0.save("test_0.ppm")
-        imc.save("test_d.ppm")
-        #im1.show()
-        #im0.show()
-        #imc.show()
-        comp_result = self.images_are_the_same(im0,im1)
-        print "test comparison ", comp_result
-        #print "proofcomparison ", self.images_are_the_same(im1.getdata(),im1.getdata())
-        if (self.success == False): # test if we have not succeeded
-          if (comp_result == 1):
-            print "  - images are the Same "
-            self.success = True
-          else:
-            print "  - images differ "
-            self.success = False
 
     def test_camera(self):
         print " wait ",TEST_INIT_WAIT," sec for objects and head tilt to settle."
         time.sleep(TEST_INIT_WAIT)
         print " subscribe stereo left image from ROS "
-        #rospy.Subscriber("test_camera/image", image_msg, self.imageInput)  # this is a test camera, simply looking at the cups
-        rospy.Subscriber("/stereo_l/image", image_msg, self.imageInput) # this is a camera mounted on PR2 head (left stereo camera)
+        rospy.Subscriber("/stereo/left/image", image_msg, self.imageInput) # this is a camera mounted on PR2 head (left stereo camera)
+        rospy.Subscriber("/stereo/left/cam_info", caminfo_msg, self.caminfoInput) # this is a camera mounted on PR2 head (left stereo camera)
         rospy.init_node(NAME, anonymous=True)
-        #self.pollThread.start()
         timeout_t = time.time() + TEST_DURATION
         while not rospy.is_shutdown() and not self.success and time.time() < timeout_t:
-            time.sleep(0.1)
+            time.sleep(1.0)
         self.assert_(self.success)
         
     

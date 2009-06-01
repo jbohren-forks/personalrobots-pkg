@@ -32,7 +32,7 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #
 
-## Gazebo tug arms for navigation
+## Set head and gripper poses
 
 PKG = 'test_pr2_sensors_gazebo'
 NAME = 'set_pose'
@@ -50,29 +50,21 @@ from std_msgs.msg import *
 from pr2_mechanism_controllers.msg import *
 
 
-CMD_POS_1      =  0.0
-CMD_POS_2      =  0.0
-CMD_POS_3      =  0.0
-CMD_POS_4      =  0.0
-CMD_POS_5      =  0.0
-CMD_POS_6      =  0.0
-CMD_POS_7      =  0.0
-CMD_POS_8      =  0.0
-CMD_POS_9      =  0.2
+CMD_POS_1      =  0.02
+CMD_POS_2      = -0.2
+CMD_POS_3      =  0.2
 
 if __name__ == '__main__':
-    pub_l_arm = rospy.Publisher("/left_arm_commands", JointPosCmd)
     pub_l_gripper = rospy.Publisher("/l_gripper_controller/set_command", Float64)
-    pub_r_arm = rospy.Publisher("/right_arm_commands", JointPosCmd)
     pub_r_gripper = rospy.Publisher("/r_gripper_controller/set_command", Float64)
+    pub_head_pan  = rospy.Publisher("/head_pan_controller/set_command", Float64)
     pub_head_tilt = rospy.Publisher("/head_tilt_controller/set_command", Float64)
     rospy.init_node(NAME, anonymous=True)
     timeout_t = time.time() + 20.0 #publish for 20 seconds then stop
     while time.time() < timeout_t:
-        pub_l_arm.publish(JointPosCmd(['l_shoulder_pan_joint','l_shoulder_lift_joint','l_upper_arm_roll_joint','l_elbow_flex_joint','l_forearm_roll_joint','l_wrist_flex_joint','l_wrist_roll_joint'],[CMD_POS_1,CMD_POS_2,CMD_POS_3,CMD_POS_4,CMD_POS_5,CMD_POS_6,CMD_POS_7],[0,0,0,0,0,0,0],0))
-        pub_l_gripper.publish(Float64(CMD_POS_8))
-        pub_r_arm.publish(JointPosCmd(['r_shoulder_pan_joint','r_shoulder_lift_joint','r_upper_arm_rolr_joint','r_elbow_flex_joint','r_forearm_roll_joint','r_wrist_flex_joint','r_wrist_roll_joint'],[CMD_POS_1,CMD_POS_2,CMD_POS_3,CMD_POS_4,CMD_POS_5,CMD_POS_6,CMD_POS_7],[0,0,0,0,0,0,0],0))
-        pub_r_gripper.publish(Float64(CMD_POS_8))
-        pub_head_tilt.publish(Float64(CMD_POS_9))
+        pub_l_gripper.publish(Float64(CMD_POS_1))
+        pub_r_gripper.publish(Float64(CMD_POS_1))
+        pub_head_pan.publish(Float64(CMD_POS_2))
+        pub_head_tilt.publish(Float64(CMD_POS_3))
         time.sleep(0.2)
 
