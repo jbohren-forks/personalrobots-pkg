@@ -110,12 +110,11 @@ RechargeController::Holds {
     // Should be active. Get outlet param from it. Only require that for local navigation
     contained_by(recharger.Active rc_active);
 
-    if(timed_out == true){
-      eq(resetting, true);
-    }
+    bool done;
+    calc_or(done, timed_out, resetting);
 
     // Here we are resetting - either to rety or to finish up
-    if (resetting == true){
+    if (done == true){
       if (plug_is_stowed == yes){
 	if (arms_tucked == true){
 	  if(timed_out == true){
@@ -180,7 +179,7 @@ RechargeController::Holds {
     }
     
     // Thus begins the process of plugging in
-    if (resetting == false){
+    if (done == false){
       if (ready_to_plug_in == true){
 	contains_start(plug_in.Active cmd);
 	concurrent(cmd.end, end);

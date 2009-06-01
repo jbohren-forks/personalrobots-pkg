@@ -159,11 +159,9 @@ DoorController::Holds {
     bool arms_tucked;
     eq(arms_tucked, ms.arms_tucked);
 
-    if(timed_out == true){
-      eq(finishing, true);
-    }
-
-    if(finishing == true){
+    bool done;
+    calc_or(done, timed_out, finishing);
+    if(done == true){
       if(have_handle == false){
 	if(arms_tucked == true){
 	  eq(s.active, false);

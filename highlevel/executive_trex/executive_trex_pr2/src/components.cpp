@@ -140,6 +140,44 @@ namespace TREX{
     const TokenId _source_token;
   };
 
+
+  class CalcOrConstraint: public Constraint {
+  public:
+    CalcOrConstraint(const LabelStr& name,
+			const LabelStr& propagatorName,
+			const ConstraintEngineId& constraintEngine,
+			const std::vector<ConstrainedVariableId>& variables)
+      : Constraint(name, propagatorName, constraintEngine, variables)
+    {}
+
+  protected:
+
+    void handleExecute(){
+      debugMsg("trex:debug:propagation:calc_or",  "BEFORE: " << toString());
+      AbstractDomain& target = static_cast<BoolDomain&>(getCurrentDomain(getScope()[0]));
+      unsigned int true_count = 0;
+      unsigned int bound_count = 0;
+      for (unsigned int i = 1; i < getScope().size(); i++){
+	ConstrainedVariableId var = getScope()[i];
+	const BoolDomain& dom = static_cast<const BoolDomain&>(var->lastDomain());
+	if(dom.isSingleton()){
+	  bound_count++;
+	  if(dom.getSingletonValue() == true)
+	    true_count++;
+	}
+      }
+
+      if(true_count > 0){
+	target.set(1);
+      }
+      else if(bound_count == (getScope().size() - 1)){
+	target.set(0);
+      }
+
+      debugMsg("trex:debug:propagation:calc_or",  "AFTER: " << toString());
+    }
+  };
+
   class DoorMsgEqConstraint: public ParamEqConstraint {
   public:
     DoorMsgEqConstraint(const LabelStr& name,
@@ -362,6 +400,7 @@ namespace TREX{
       ConstraintEngineId constraintEngine = ((ConstraintEngine*) assembly.getComponent("ConstraintEngine"))->getId();
 
       // Constraint Registration
+      REGISTER_CONSTRAINT(constraintEngine->getCESchema(), TREX::CalcOrConstraint, "calc_or", "Default");
       REGISTER_CONSTRAINT(constraintEngine->getCESchema(), TREX::SubsetOfConstraint, "in", "Default");
       REGISTER_CONSTRAINT(constraintEngine->getCESchema(), TREX::CalcDistanceConstraint, "calcDistance", "Default");
       REGISTER_CONSTRAINT(constraintEngine->getCESchema(), FloorFunction, "calcFloor", "Default");
