@@ -5,7 +5,7 @@ TEST_INSTALL_DIR = $(shell rospack find gazebo)/test-gazebo
 
 SVN_DIR = gazebo-svn
 SVN_URL = https://playerstage.svn.sourceforge.net/svnroot/playerstage/code/gazebo/branches/threads
-SVN_REVISION = -r 7746
+SVN_REVISION = -r 7750
 SVN_PATCH = 
 include $(shell rospack find mk)/svn_checkout.mk
 
@@ -16,6 +16,7 @@ include $(shell rospack find mk)/svn_checkout.mk
 OGRE_PKG = $(shell rospack find ogre)/ogre/lib/pkgconfig
 PLAYER_PKG = $(shell rospack find player)/player/lib/pkgconfig
 ODE_PKG = $(shell rospack find opende)/opende/lib/pkgconfig
+FI_PKG = $(shell rospack find freeimage)/freeimage/lib/pkgconfig
 ODE_PATH = $(shell rospack find opende)/opende/bin
 
 FREEIMAGE_INCLUDE_DIR = $(shell rospack find freeimage)/freeimage/include
@@ -26,7 +27,7 @@ BOOST_INCLUDE_DIRS = $(shell rosboost-cfg --include_dirs)
 BOOST_LIBRARY_DIRS = $(shell rosboost-cfg --lib_dirs signals,thread)
 BOOST_LIBRARIES = $(shell rosboost-cfg --libs signals,thread)
 
-PKG_PATHS = PKG_CONFIG_PATH=${ODE_PKG}:${PLAYER_PKG}:${OGRE_PKG}:${PKG_CONFIG_PATH}
+PKG_PATHS = PKG_CONFIG_PATH=${ODE_PKG}:${FI_PKG}:${PLAYER_PKG}:${OGRE_PKG}:${PKG_CONFIG_PATH}
 PATHS = PATH=${ODE_PATH}:${PATH}
 
 CMAKE = cmake
@@ -49,11 +50,11 @@ CMAKE_CMD = $(PKG_PATHS) $(PATHS) $(CMAKE) $(CMAKE_ARGS)
 #build: SVN_UP_REVERT_PATCH gazebo
 installed: $(SVN_DIR) patched
 	if [ ! -d $(SVN_DIR)/build ]; then mkdir -p $(SVN_DIR)/build; fi
-	cd $(SVN_DIR)/build &&  $(CMAKE_CMD) ..
+	cd $(SVN_DIR)/build && $(CMAKE_CMD) ..
 	cd $(SVN_DIR)/build && $(PKG_PATHS) $(PATHS) make $(ROS_PARALLEL_JOBS) && make install
 
 clean:
-	-cd $(SVN_DIR) && PKG_CONFIG_PATH=${ODE_PKG}:${PLAYER_PKG}:${OGRE_PKG}:${PKG_CONFIG_PATH} PATH=${ODE_PATH}:${PATH} make clean
+	-cd $(SVN_DIR) && PKG_CONFIG_PATH=${ODE_PKG}:${FI_PKG}:${PLAYER_PKG}:${OGRE_PKG}:${PKG_CONFIG_PATH} PATH=${ODE_PATH}:${PATH} make clean
 	rm -rf gazebo installed
 wipe: clean
 	rm -rf $(SVN_DIR) gazebo
