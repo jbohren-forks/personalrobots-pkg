@@ -13,11 +13,12 @@
     <!-- nav-stack -->
     <include file="$(find 2dnav_gazebo)/2dnav-stack-fake_localization.launch"/>
 
+    <include file="$(find 2dnav_pr2)/rviz/rviz_move_base.launch"/>
+    <node pkg="rxtools" type="rxconsole" respawn="false" output="screen" />
     <!--
     <param name="/trex/ping_frequency" value="1"/>
     <node pkg="highlevel_controllers" type="recharge_controller" args="" respawn="false" />
     <node pkg="kinematic_planning" type="kinematic_planning" args="robotdesc/pr2"/>
-    <include file="$(find world_3d_map)/run.xml"/>
     <node pkg="highlevel_controllers" type="move_arm" args="right" respawn="false"/>
     <node pkg="highlevel_controllers" type="move_arm" args="left" respawn="false" />
     <node pkg="highlevel_controllers" type="move_end_effector" args="right" respawn="false"/>
