@@ -38,6 +38,11 @@
 // Priority for goals
 typedef int [0 5] PRIORITY;
 
+// Time Bounds For tope level components
+float RECHARGER_DURATION_BOUND = 300.0;
+float DOORMAN_DURATION_BOUND = 600.0;
+float DRIVER_DURATION_BOUND = 600.0;
+
 class M2Goals extends Behavior {
   predicate Active{
     MAP_KEY outlet_id;
@@ -175,6 +180,7 @@ M2Controller::Holds{
 	if(recharge_required == true){ 
 	  contains_start(recharger.Active cmd);
 	  concurrent(cmd.end, end);
+	  leq(cmd.max_duration, DRIVER_DURATION_BOUND);
 	  eq(cmd.outlet_id, m2_active.outlet_id);
 	}
 	else {
@@ -203,14 +209,15 @@ M2Controller::Holds{
 			  m2_active.x, m2_active.y, m2_active.z, m2_active.qx, m2_active.qy, m2_active.qz, m2_active.qw);
 
 	map_get_nearest_connector(cmd.start_connector, x, y, m2_active.x, m2_active.y);
-	leq(cmd.max_duration, 600);
 
 	if(thru_doorway == true){
 	  // take no more than 10 minutes trying to get thru a doorway
 	  eq(cmd.object, doorman);
+	  leq(cmd.max_duration, DOORMAN_DURATION_BOUND);
 	}
 	else{
 	  eq(cmd.object, driver);
+	  leq(cmd.max_duration, DRIVER_DURATION_BOUND);
 	}
       }
     }
