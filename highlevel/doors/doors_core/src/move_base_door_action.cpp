@@ -293,6 +293,7 @@ namespace nav
         publishDiagnostics(true);
         //make sure to stop the costmap from running on return
         planner_cost_map_ros_->stop();
+	ros::Duration(3.0).sleep();
         return robot_actions::SUCCESS;
       }
       else 
