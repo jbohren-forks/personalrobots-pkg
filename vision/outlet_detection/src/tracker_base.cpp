@@ -146,7 +146,7 @@ void TrackerBase::processImage()
   }
 
   // DEBUG: save out everything
-  saveImage(success);
+  //saveImage(success);
 }
 
 void TrackerBase::spin()
