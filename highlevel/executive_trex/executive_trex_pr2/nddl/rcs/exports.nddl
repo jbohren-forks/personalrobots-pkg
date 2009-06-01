@@ -40,8 +40,8 @@ Controller::Holds{
   float remaining_ticks;
   addEq(start, remaining_ticks, deadline);
   mulEq(remaining_ticks, TICK_DURATION, remaining_time);
-  testLEQ(timed_out, remaining_time, 0.0);
-  //eq(timed_out, false);
+  //testLEQ(timed_out, remaining_time, 0.0);
+  eq(timed_out, false);
 }
 
 /**
