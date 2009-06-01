@@ -6,7 +6,7 @@ Recharger::Active{
 
   // Compute the deadline in ticks
   float elapsedTicks;
-  mulEq(elapsedTicks, TICK_DURATION, max_duration);
+  mulEq(elapsedTicks, 0.1, max_duration);
   float deadline;
   addEq(start, elapsedTicks, deadline);
 
