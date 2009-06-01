@@ -62,7 +62,7 @@ double getOffset(int id)
   case 39: return 0.98097524550697912;
   case 4: return 0.97561703536950839;
   case 3: return 0.99092973248973848;
-  case 38: return 0.95012308281214775;
+  case 38: return 0.96012308281214775;
   case 40: return 0.98361298809350939;
   case 27: return 0.9864272331729832;
   case 26: return 0.98778051326139238;
@@ -367,6 +367,7 @@ robot_actions::ResultStatus PlugInAction::execute(const std_msgs::Int32& outlet_
       {
 
         boost::mutex::scoped_lock lock(from_c_lock_);
+	/*
 #if 0
         ROS_INFO("Checking for insertion: %.3lf, %.3lf", pose_from_mech_.getOrigin().x(), outlet_pose.getOrigin().x());
         if (pose_from_mech_.getOrigin().x() > outlet_pose.getOrigin().x() + READY_TO_PUSH)
@@ -375,7 +376,8 @@ robot_actions::ResultStatus PlugInAction::execute(const std_msgs::Int32& outlet_
           state = FORCING;
         }
 #else
-        ROS_INFO("Checking for successful insertion: %.3lf, %.3lf", pose_from_mech_.getOrigin().x(), last_push_x);
+	*/
+        ROS_INFO("Checking for successful insertion: %.4lf > %.4lf + 0.005", pose_from_mech_.getOrigin().x(), first_x);
         if (pose_from_mech_.getOrigin().x() > first_x + 0.005)
         {
           state = FORCING;
@@ -390,7 +392,7 @@ robot_actions::ResultStatus PlugInAction::execute(const std_msgs::Int32& outlet_
           node_.setParam("/unplug/x_threshold", first_x - 0.02);
         }
         last_push_x = pose_from_mech_.getOrigin().x();
-#endif
+	//#endif
       }
 
       // Next step on the spiral
