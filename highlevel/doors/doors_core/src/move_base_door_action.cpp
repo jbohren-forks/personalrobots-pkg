@@ -338,7 +338,7 @@ namespace nav
 	}
       if(abort_action_timeout > action_max_allowed_time_)
       {
-	planner_->cell_distance_from_obstacles_ = std::max(planner_->cell_distance_from_obstacles_-5,2);
+	planner_->cell_distance_from_obstacles_ = std::max(planner_->cell_distance_from_obstacles_-1,0);
 	ROS_INFO("Resetting cell distance from obstacles to %d and trying again",planner_->cell_distance_from_obstacles_);
       }
       last_time = start_time;

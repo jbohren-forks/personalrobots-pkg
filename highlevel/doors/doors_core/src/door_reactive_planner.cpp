@@ -455,8 +455,9 @@ void DoorReactivePlanner::checkPath(const std::vector<pr2_robot_actions::Pose2D>
       }
       if(i == 0)
 	{
-	  ROS_ERROR("Initial position seems to be in collision");
+	  ROS_WARN("Initial position seems to be too close to an obstacle.");
 	  current_position_in_collision_ = "true";
+	  continue;
 	}
       if(i > 0)
 	  current_position_in_collision_ = "false";
