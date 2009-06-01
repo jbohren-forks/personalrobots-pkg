@@ -126,7 +126,7 @@ void TrackerBase::processImage()
   else {
     // Save failure for debugging
     //if (save_failures_)
-    //  saveImage();
+    //  saveImage(false);
 
     // Expand ROI for next image
     if (roi_policy_ == LastImageLocation) {
@@ -146,7 +146,7 @@ void TrackerBase::processImage()
   }
 
   // DEBUG: save out everything
-  saveImage();
+  saveImage(success);
 }
 
 void TrackerBase::spin()
@@ -276,7 +276,7 @@ robot_msgs::Pose TrackerBase::getTargetInHighDef()
   return target_in_high_def.pose;
 }
 
-void TrackerBase::saveImage()
+void TrackerBase::saveImage(bool success)
 {
   char filename[32];
   snprintf(filename, sizeof(filename), "%s%u_%03i.yml", save_prefix_.c_str(), getpid(), save_count_);
@@ -287,6 +287,7 @@ void TrackerBase::saveImage()
   char buf[1024];
   strftime( buf, sizeof(buf)-1, "%c", t2 );
   cvWriteString( fs, "save_time", buf );
+  cvWriteString( fs, "success", success ? "true" : "false" );
   cvWrite(fs, "camera_matrix", K_);
   double zeros[] = {0, 0, 0, 0, 0};
   CvMat D = cvMat(5, 1, CV_64FC1, zeros);

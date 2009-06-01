@@ -73,7 +73,7 @@ protected:
   void setRoiToTargetFrame();
   robot_msgs::Pose getTargetInHighDef();
 
-  void saveImage();
+  void saveImage(bool success = false);
 
   // TODO: is this really not in roscpp somewhere?
   bool waitForService(const std::string &service);
