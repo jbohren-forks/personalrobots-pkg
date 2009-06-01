@@ -143,6 +143,15 @@ robot_actions::ResultStatus PlugInAction::execute(const std_msgs::Int32& outlet_
 
   while (isActive() && !updated_from_viz_)
   {
+    // Pet the plug detector, to keep it going, because we need poses from
+    // it
+    node_.publish(TRACKER_ACTIVATE, empty);
+
+    if (isPreemptRequested()) {
+      ROS_ERROR("Deactivating because of preemption; plug pose never received.");
+      deactivate(robot_actions::PREEMPTED, feedback);
+      return waitForDeactivation(feedback);
+    }
     ROS_INFO("Waiting on first plug pose");
     ros::Duration(0.5).sleep();
   }
