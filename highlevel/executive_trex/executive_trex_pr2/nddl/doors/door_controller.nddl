@@ -9,9 +9,11 @@ float DETECT_DOOR_DURATION_BOUND = 30.0;
 float DETECT_HANDLE_DURATION_BOUND = 60.0;
 float GRASP_HANDLE_DURATION_BOUND = 30.0;
 float UNLATCH_HANDLE_DURATION_BOUND = 30.0;
+float RELEASE_HANDLE_DURATION_BOUND = 30.0;
 float MOVE_BASE_LOCAL_APPROACH_DURATION_BOUND = 60.0;
 float MOVE_BASE_LOCAL_THROUGH_DOOR_DURATION_BOUND = 120.0;
 float MOVE_BASE_DOOR_DURATION_BOUND = 120.0;
+float SAFETY_TUCK_ARMS_DURATION_BOUND = 60.0;
 
 class DoorState extends AgentTimeline {
 
@@ -196,6 +198,7 @@ DoorController::Holds {
 	}
 	else {
 	  contains_start(safety_tuck_arms.Active cmd);
+	  leq(cmd.max_duration, SAFETY_TUCK_ARMS_DURATION_BOUND);
 	  concurrent(cmd.end, end);
 	}
       }
@@ -312,7 +315,6 @@ DoorController::Holds {
 	      if(in_position == true){
 		contains_start(detect_door.Active cmd);
 		leq(cmd.max_duration, remaining_time);
-		leq(cmd.max_duration, DETECT_DOOR_DURATION_BOUND);
 		concurrent(cmd.end, end);
 	      }
 	      else {
@@ -332,10 +334,12 @@ DoorController::Holds {
 		  if(have_handle == true){
 		    contains_start(release_handle.Active cmd);
 		    concurrent(cmd.end, end);
+		    leq(cmd.max_duration, RELEASE_HANDLE_DURATION_BOUND);
 		  }
 		  else {
 		    contains_start(safety_tuck_arms.Active cmd);
 		    concurrent(cmd.end, end);
+		    leq(cmd.max_duration, SAFETY_TUCK_ARMS_DURATION_BOUND);
 		  }
 		}
 	      }

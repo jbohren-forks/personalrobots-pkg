@@ -3,6 +3,22 @@
 enum BOOL {yes, no, maybe};
 
 /**
+ * ALL TIME BOUNDS FOR INTERNAL ACTIONS
+ */
+float DETECT_OUTLET_COARSE_DURATION_BOUND = 60.0;
+float DETECT_OUTLET_FINE_DURATION_BOUND = 60.0;
+float PLUGS_UNTUCK_ARMS_DURATION_BOUND = 60.0;
+float DETECT_PLUG_ON_BASE_DURATION_BOUND = 60.0;
+float MOVE_BASE_LOCAL_DURATION_BOUND = 60.0;
+float MOVE_BASE_DURATION_BOUND = 60.0;
+float MOVE_AND_GRASP_PLUG_DURATION_BOUND = 60.0;
+float LOCALIZE_PLUG_IN_GRIPPER_DURATION_BOUND = 60.0;
+float PLUG_IN_DURATION_BOUND = 180.0;
+float UNPLUG_DURATION_BOUND = 60.0;
+float STOW_PLUG_DURATION_BOUND = 60.0;
+float SAFETY_TUCK_ARMS_DURATION_BOUND = 60.0;
+
+/**
  * @todo Get better default values
  */
 class PlugState extends AgentTimeline {
@@ -96,64 +112,96 @@ RechargeController::Holds {
     // Should be active. Get outlet param from it. Only require that for local navigation
     contained_by(recharger.Active rc_active);
 
+    // Compute a bound on the duration of any action we launch from here based on the global time limit
+    int elapsed_ticks;
+    float elapsed_time, remaining_time;
+    addEq(rc_active.start, elapsed_ticks, start);
+    mulEq(elapsed_ticks, TICK_DURATION, elapsed_time);
+    addEq(elapsed_time, remaining_time, rc_active.max_duration);
+
+    bool timed_out;
+    testLEQ(timed_out, remaining_time, 0.0);
+    if(timed_out == true){
+      eq(s.resetting, true);
+    }
+
     // Here we are resetting - either to rety or to finish up
     if (resetting == true){
       if (plug_is_stowed == yes){
 	if (arms_tucked == true){
-	  if(in_position == true){
+	  if(timed_out == true){
 	    meets(recharger.Inactive rc_inactive);
 	    eq(duration, 1);
 	    eq(s.active, false);
-	    if(recharged == true){
-	      eq(rc_inactive.status, SUCCESS);
-	    }
-	    else {
-	      eq(rc_inactive.status, ABORTED);
-	    }
+	    eq(rc_inactive.status, ABORTED);
 	  }
 	  else {
-	    contains_start(move_base.Active cmd);
-	    concurrent(cmd.end, end);
+	    if(in_position == true){
+	      meets(recharger.Inactive rc_inactive);
+	      eq(duration, 1);
+	      eq(s.active, false);
 
-	    // Bind pose based on approach pose for the outlet
-	    map_get_outlet_approach_pose(cmd.x, cmd.y, cmd.z, cmd.qx, cmd.qy, cmd.qz, cmd.qw, rc_active.outlet_id);
-	    defaultOnCommit(cmd.frame_id, "map");
+	      if(recharged == true){
+		eq(rc_inactive.status, SUCCESS);
+	      }
+	      else {
+		eq(rc_inactive.status, ABORTED);
+	      }
+	    }
+	    else{
+	      contains_start(move_base.Active cmd);
+	      concurrent(cmd.end, end);
+	      leq(cmd.max_duration, MOVE_BASE_DURATION_BOUND);
+	      leq(cmd.max_duration, remaining_time);
 
-	    // PRE-REQ
-	    contains_start(set_laser_tilt.Active cmd_set_laser_tilt);
-	    eq(cmd_set_laser_tilt.status, SUCCESS);
-	    cmd_set_laser_tilt before cmd;
+	      // Bind pose based on approach pose for the outlet
+	      map_get_outlet_approach_pose(cmd.x, cmd.y, cmd.z, cmd.qx, cmd.qy, cmd.qz, cmd.qw, rc_active.outlet_id);
+	      defaultOnCommit(cmd.frame_id, "map");
+
+	      // PRE-REQ
+	      contains_start(set_laser_tilt.Active cmd_set_laser_tilt);
+	      eq(cmd_set_laser_tilt.status, SUCCESS);
+	      cmd_set_laser_tilt before cmd;
+	    }
 	  }
 	}
-	else {
+
+	if(arms_tucked == false){
           contains_start(safety_tuck_arms.Active cmd);
           concurrent(cmd.end, end);
+	  leq(cmd.max_duration, SAFETY_TUCK_ARMS_DURATION_BOUND);
           eq(s.arms_clear, false);
 	}
       }
-
-      if (plug_is_stowed == maybe){
+      /*
+	if (plug_is_stowed == maybe){
 	// Can this step be ommitted?
 	// Need to confirm
 	if (arms_clear == true) {
-	  contains_start(detect_plug_on_base.Active cmd);
-	  concurrent(cmd.end, end);
+	contains_start(detect_plug_on_base.Active cmd);
+	concurrent(cmd.end, end);
+	leq(cmd.max_duration, DETECT_PLUG_ON_BASE_DURATION_BOUND);
+	leq(cmd.max_duration, remaining_time);
 	}
 	else {
-	  contains_start(plugs_untuck_arms.Active cmd);
-	  concurrent(cmd.end, end);
+	contains_start(plugs_untuck_arms.Active cmd);
+	concurrent(cmd.end, end);
+	leq(cmd.max_duration, PLUGS_UNTUCK_ARMS_DURATION_BOUND);
+	leq(cmd.max_duration, remaining_time);
 	}
-      }
-
+	}
+      */
       if (plug_is_stowed == no){
 	if (plugged_in == false){
 	  contains_start(stow_plug.Active cmd);
 	  concurrent(cmd.end, end);
+	  leq(cmd.max_duration, STOW_PLUG_DURATION_BOUND);
 	  eq(s.arms_clear, false);
 	}
 	else {
 	  contains_start(unplug.Active cmd);
 	  concurrent(cmd.end, end);
+	  leq(cmd.max_duration, UNPLUG_DURATION_BOUND);
 	  eq(s.arms_clear, false);
 	}
       }
@@ -164,19 +212,24 @@ RechargeController::Holds {
       if (ready_to_plug_in == true){
 	contains_start(plug_in.Active cmd);
 	concurrent(cmd.end, end);
+	leq(cmd.max_duration, PLUG_IN_DURATION_BOUND);
+	leq(cmd.max_duration, remaining_time);
 	eq(s.arms_clear, false);
 	eq(cmd.outlet_id, rc_active.outlet_id);
-	eq(cmd.max_duration, 180);
       }
       else {
 	if (plug_in_hand == true) {
 	  contains_start(localize_plug_in_gripper.Active cmd);
 	  concurrent(cmd.end, end);
+	  leq(cmd.max_duration, LOCALIZE_PLUG_IN_GRIPPER_DURATION_BOUND);
+	  leq(cmd.max_duration, remaining_time);
 	}
 	else {
 	  if(ready_to_grasp == true){
 	    contains_start(move_and_grasp_plug.Active cmd);
 	    concurrent(cmd.end, end);
+	    leq(cmd.max_duration, remaining_time);
+	    leq(cmd.max_duration, MOVE_AND_GRASP_PLUG_DURATION_BOUND);
 	    eq(s.arms_clear, false);
 	  }
 	  else {   
@@ -184,10 +237,14 @@ RechargeController::Holds {
 	      if(arms_clear == true){
 		contains_start(detect_plug_on_base.Active cmd);
 		concurrent(cmd.end, end);
+		leq(cmd.max_duration, DETECT_PLUG_ON_BASE_DURATION_BOUND);
+		leq(cmd.max_duration, remaining_time);
 	      }
 	      else {
 		contains_start(plugs_untuck_arms.Active cmd);
 		concurrent(cmd.end, end);
+		leq(cmd.max_duration, PLUGS_UNTUCK_ARMS_DURATION_BOUND);
+		leq(cmd.max_duration, remaining_time);
 	      }
 	    }
 	    else {
@@ -195,11 +252,14 @@ RechargeController::Holds {
 		if (in_position == true) {
 		  contains_start(detect_outlet_fine.Active cmd);
 		  concurrent(cmd.end, end);
-		  eq(cmd.max_duration, 60); // 60 seconds max
+		  leq(cmd.max_duration, DETECT_OUTLET_FINE_DURATION_BOUND);
+		  leq(cmd.max_duration, remaining_time);
 		}
 		else {
 		  contains_start(move_base_local.Active cmd);
 		  concurrent(cmd.end, end);
+		  leq(cmd.max_duration, MOVE_BASE_LOCAL_DURATION_BOUND);
+		  leq(cmd.max_duration, remaining_time);
 
 		  // Here we can obtain the outlet state to get parameters from move_base local since
 		  // it should not be done generically at the action level as this is a shared action
@@ -218,10 +278,13 @@ RechargeController::Holds {
 		if (arms_tucked == true) {
 		  contains_start(detect_outlet_coarse.Active cmd);
 		  concurrent(cmd.end, end);
+		  leq(cmd.max_duration, DETECT_OUTLET_COARSE_DURATION_BOUND);
+		  leq(cmd.max_duration, remaining_time);
 		}
 		else {
 		  contains_start(safety_tuck_arms.Active cmd);
 		  concurrent(cmd.end, end);
+		  leq(cmd.max_duration, SAFETY_TUCK_ARMS_DURATION_BOUND);
 		}
 	      }
 	    }
@@ -303,7 +366,7 @@ StowPlug::Active{
 StowPlug::Inactive{
   starts(RechargeController.Holds rc);
   if(status == SUCCESS){
-    eq(rc.plug_is_stowed, maybe);
+    eq(rc.plug_is_stowed, yes);
     eq(rc.plug_in_hand, false);
   }
 }
