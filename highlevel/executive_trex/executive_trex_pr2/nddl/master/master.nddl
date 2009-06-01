@@ -39,9 +39,9 @@
 typedef int [0 5] PRIORITY;
 
 // Time Bounds For top level components
-float RECHARGER_DURATION_BOUND;// = 300.0;
-float DOORMAN_DURATION_BOUND; //= 600.0;
-float DRIVER_DURATION_BOUND;// = 600.0;
+float RECHARGER_DURATION_BOUND = 600.0;
+float DOORMAN_DURATION_BOUND = 600.0;
+float DRIVER_DURATION_BOUND = 600.0;
 
 class M2Goals extends Behavior {
   predicate Active{

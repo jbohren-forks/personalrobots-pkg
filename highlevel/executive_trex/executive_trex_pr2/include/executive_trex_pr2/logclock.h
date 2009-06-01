@@ -28,6 +28,10 @@ namespace TREX {
     TICK getNextTick();
 
     /**
+     */
+    virtual double getSecondsPerTick() const {return m_secondsPerTick;}
+
+    /*
      * @brief Monitors elapsed time and increments the tick counter
      */
     static void* threadRunner(void* clk);
