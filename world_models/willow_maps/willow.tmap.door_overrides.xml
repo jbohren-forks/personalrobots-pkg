@@ -85,6 +85,23 @@
 </approach_point>
 </door>
 
+<door>
+  <id>104</id>
+<approach_point>
+<x>12.53</x>
+<y>39.26</y>
+</approach_point>
+</door>
+
+
+<door>
+  <id>113</id>
+<approach_point>
+<x>12.537</x>
+<y>39.762</y>
+</approach_point>
+</door>
+
 
 <door>
   <id>124</id>
