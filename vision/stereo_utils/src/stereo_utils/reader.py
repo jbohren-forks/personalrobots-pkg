@@ -1,7 +1,7 @@
-#!/usr/bin/python
-
-import rospy
-import rosrecord
+"""
+:mod:`stereo_utils.reader` --- Generic image sequence reader
+============================================================
+"""
 
 import os
 
@@ -29,9 +29,26 @@ class dcamImage:
     return self.data
 
 class reader:
+  """
+  Is an iterator that yields a sequence of tuples *(Cam, lf, rf)* for every frame in *sourcename*, where
+
+  *Cam*
+      An instance of a :class:`stereo_utils.camera.Camera`
+  *lf*
+      Left image
+  *rf*
+      Right image
+
+  *lf* and *rf* are suitable for use with :mod:`stereo_utils.stereo`.
+
+  *sourcename* may be a
+  `ROS <http://pr.willowgarage.com/wiki/ROS>`_ bag, or a directory containing image files.  For example::
+
+     for (Cam,L,R) in stereo_utils.reader.reader("foo.bag"):
+       stereo_frame = SparseStereoFrame(L, R)
+  """
 
   def __init__(self, sourcename):
-
     if os.path.isdir(sourcename):
       self.next = self.next_from_dir
       self.dc = yaml.load(open("%s/sequence_parameters" % sourcename).read())

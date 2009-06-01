@@ -1,3 +1,7 @@
+"""
+:mod:`stereo_utils.timer` --- Stopwatch
+=======================================
+"""
 
 import time
 
@@ -26,3 +30,29 @@ class Timer:
       return "0 calls"
     else:
       return "%d calls, avg %fms" % (len(self.log), 1e3 * self.sum / len(self.log))
+
+class TimedClass:
+  """
+  *timing* is a sequence of timing categories.  The inheriting class will call::
+
+    self.timer['x'].start()
+    ... do something
+    self.timer['x'].stop()
+
+  for each timer.
+
+  """
+  def __init__(self, timing):
+    self.calls = 0
+    self.timer = {}
+    for t in timing:
+      self.timer[t] = Timer()
+
+  def summarize_timers(self):
+    """
+    Print a summary of time spent in each registered timing category.
+    """
+    print
+    print self.name()
+    for n,t in self.timer.items():
+      print "  %-20s %s" % (n, t.summ())

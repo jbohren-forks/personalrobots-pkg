@@ -1,3 +1,7 @@
+"""
+:mod:`stereo_utils.camera` --- Stereo camera model
+==================================================
+"""
 import numpy
 from math import *
 
@@ -6,9 +10,24 @@ import ImageDraw as ImageDraw
 
 # Fx, Fy, Tx, Clx, Crx, Cy
 class Camera:
-  """ See http://www.videredesign.com/docs/calibrate_4.4d.pdf
-      But note that the reprojection matrix Q ought to have (1/Tx),
-      according to Kurt.
+  """
+  *params* is a tuple *(Fx, Fy, Tx, Clx, Crx, Cy)* where:
+
+  *Fx*
+     Focal length in x (pixels)
+  *Fy*
+     Focal length in y (pixels)
+  *Tx*
+     Translation of the right camera relative to the left camera (typically meters)
+  *Clx*
+     x coordinate of left optical center
+  *Crx*
+     x coordinate of right optical center
+  *Cy*
+     y coordinate of left and right optical center
+
+  See http://www.videredesign.com/docs/calibrate_4.4d.pdf for a more complete description of the camera model.
+  (But note that the reprojection matrix Q ought to have (1/Tx).)
   """
    
   def __init__(self, params):
@@ -60,7 +79,7 @@ class Camera:
     ]
 
   def pix2cam(self, u, v, d):
-    """ takes pixel space u,v,d and returns camera space X,Y,Z """
+    """ given pixel space *(u,v,d)* returns camera space *(X,Y,Z)* """
     if 0:
       res = numpy.dot(self.Q, numpy.array( [ [u], [v], [d], [1] ])).transpose()[0]
       (x, y, z, w) = res
@@ -74,7 +93,7 @@ class Camera:
       return (x / w, y / w, z / w)
 
   def cam2pixLR(self, X, Y, Z):
-    """ takes camera space (X,Y,Z) and returns the pixel space (u,v) for both cameras """
+    """ given camera space *(X,Y,Z)* returns the pixel coordinates (u,v) for both cameras """
     if 0:
       def xform(P, pt):
         (x,y,w) = numpy.dot(P, pt).transpose()[0]
@@ -123,6 +142,9 @@ class VidereCamera(Camera):
     Camera.__init__(self, (Fx, Fy, Tx, Cx, Cx, Cy))
 
 class StereoCamera(Camera):
+  """
+  Initialize a camera object using the parameters encoded in the ROS message right_cam_info_msg
+  """
   def __init__(self, right_cam_info_msg):
     matrix = numpy.array(right_cam_info_msg.P).reshape((3,4))
     Fx = float(matrix[0][0])
@@ -133,6 +155,9 @@ class StereoCamera(Camera):
     Camera.__init__(self, (Fx, Fy, Tx, Cx, Cx, Cy))
 
 class DictCamera(Camera):
+  """
+  Alternate camera constructor.  *pd* is a dict containing values for keys Fx, Fy, Tx, Clx, Crx, Cy.
+  """
   def __init__(self, pd):
 
     Fx = float(pd['Fx'])
