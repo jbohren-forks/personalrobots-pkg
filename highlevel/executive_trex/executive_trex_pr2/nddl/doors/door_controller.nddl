@@ -194,7 +194,7 @@ DoorController::Holds {
     }
     else{
       if(doorway_clear == true){
-	contains_start(move_base_local.Active cmd);
+	contains_start(move_base.Active cmd);
 	concurrent(cmd.end, end);
 	leq(cmd.max_duration, remaining_time);
 	leq(cmd.max_duration, MOVE_BASE_LOCAL_THROUGH_DOOR_DURATION_BOUND);
