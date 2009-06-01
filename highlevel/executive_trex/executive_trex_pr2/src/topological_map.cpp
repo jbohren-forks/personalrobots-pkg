@@ -1191,6 +1191,15 @@ TopologicalMapAdapter::TopologicalMapAdapter(std::istream& in, const std::string
     return ss.str();
   }
 
+robot_msgs::Pose RotatePose180(robot_msgs::Pose input){
+  robot_msgs::Pose output;
+  output.position = input.position;
+  tf::Quaternion orientation;
+  tf::QuaternionMsgToTF(input.orientation, orientation);
+  tf::QuaternionTFToMsg(tf::Quaternion(M_PI, 0, 0) * orientation, output.orientation);
+  return output;
+}
+
   //*******************************************************************************************
   MapGetNextMoveConstraint::MapGetNextMoveConstraint(const LabelStr& name,
 						     const LabelStr& propagatorName,
