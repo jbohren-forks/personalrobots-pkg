@@ -1,10 +1,11 @@
 base_local_planner:
   #Independent settings for the local costmap
   costmap:
-    global_frame: map
+    inscribed_radius: 0.325
+    global_frame: /map
     robot_base_frame: base_link
     update_frequency: 5.0
-    publish_frequency: 0.0
+    publish_frequency: 2.0
     static_map: false
     rolling_window: true
     width: 6.0
@@ -13,10 +14,10 @@ base_local_planner:
     origin_x: 0.0
     origin_y: 0.0
   transform_tolerance: 0.3
-  costmap_visualization_rate: 2.0
-  world_model: freespace
+  costmap_visualization_rate: 0.0
+  world_model: costmap
   sim_time: 1.7
-  sim_granularity: 0.05
+  sim_granularity: 0.025
   dwa: true
   vx_samples: 3
   vtheta_samples: 20
@@ -28,8 +29,8 @@ base_local_planner:
   xy_goal_tolerance: 0.1
   yaw_goal_tolerance: 0.05
   goal_distance_bias: 0.8
-  path_distance_bias: 0.6
-  occdist_scale: 0.05
+  path_distance_bias: 0.8
+  occdist_scale: 0.00
   heading_lookahead: 0.325
   oscillation_reset_dist: 0.05
   acc_limit_th: 3.2
