@@ -209,7 +209,7 @@ bool CartesianHybridController::initXml(mechanism::RobotState *robot, TiXmlEleme
   if (kdl_chain_.getNrOfJoints() >= 7){
     max_jnt_eff_[0] = 12;
     max_jnt_eff_[1] = 12;
-    max_jnt_eff_[2] = 6;
+    max_jnt_eff_[2] = 7;
     max_jnt_eff_[3] = 7;
     max_jnt_eff_[4] = 12;
     max_jnt_eff_[5] = 10;
