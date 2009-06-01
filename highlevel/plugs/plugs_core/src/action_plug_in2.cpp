@@ -434,6 +434,7 @@ robot_actions::ResultStatus PlugInAction::execute(const std_msgs::Int32& outlet_
       {
         boost::mutex::scoped_lock(from_c_lock_);
         ROS_INFO("Forcing successful: %.3lf, %.3lf", pose_from_mech_.getOrigin().x(), last_push_x);
+	ros::Duration(10.0).sleep();
         deactivate(robot_actions::SUCCESS, empty_);
       }
       else
