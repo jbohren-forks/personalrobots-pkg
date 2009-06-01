@@ -4,8 +4,15 @@ Recharger::Active{
   // Start the recharge controller
   starts(RechargeController.Holds rc);
 
+  // Compute the deadline in ticks
+  float elapsedTicks;
+  mulEq(elapsedTicks, TICK_DURATION, max_duration);
+  float deadline;
+  addEq(start, elapsedTicks, deadline);
+
   // Initialize control variables
   eq(rc.active, true);
+  leq(rc.deadline, deadline);
   eq(rc.in_position, false);
   eq(rc.outlet_detected_coarse, false);
   eq(rc.outlet_detected_fine, false);

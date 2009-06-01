@@ -64,10 +64,6 @@ class MoveBase extends ROSAction {
   MoveBase(Mode _mode){
     super(_mode);
   }
-
-  MoveBase(Mode _mode, int max_duration_){
-    super(_mode, max_duration_);
-  }
 };
 
 

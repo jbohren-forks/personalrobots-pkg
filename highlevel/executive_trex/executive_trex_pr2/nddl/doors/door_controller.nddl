@@ -98,15 +98,12 @@ class DoorState extends AgentTimeline {
  * This is an internal controller which will select actions for execution based on control state variables using a
  * Teleo-reactive tree structure.
  */
-class DoorController extends AgentTimeline {
+class DoorController extends Controller {
 
   /**
    * The parameters here 
    */
   predicate Holds{
-    bool active;
-
-    // Control variables
     bool in_position;
     bool found_door;
     bool must_find_handle;
@@ -114,13 +111,10 @@ class DoorController extends AgentTimeline {
     bool doorway_clear;
     bool check_doorway;
     bool finishing;
-    bool timed_out;
     LatchState latch_state;
   }
 
-  DoorController(){
-    super(Internal, "Holds");
-  }
+  DoorController(){ super(); }
 };
 
 
@@ -136,7 +130,6 @@ DoorController::Holds{
   // forward from priors as they are updated by actions and we thus assume inertia (if we had the handle before and have no information
   // to the contrary, then we still have the handle).
   met_by(Holds p);
-  defaultOnCommit(active, p.active);
   defaultOnCommit(found_door, p.found_door);
   defaultOnCommit(in_position, p.in_position);
   defaultOnCommit(must_find_handle, p.must_find_handle);
@@ -145,7 +138,6 @@ DoorController::Holds{
   defaultOnCommit(doorway_clear, p.doorway_clear);
   defaultOnCommit(check_doorway, p.check_doorway);
   defaultOnCommit(finishing, p.finishing);
-  defaultOnCommit(timed_out, false);
 }
 
 /**
@@ -167,18 +159,9 @@ DoorController::Holds {
     bool arms_tucked;
     eq(arms_tucked, ms.arms_tucked);
 
-    // Compute a bound on the duration of any action we launch from here based on the global time limit
-    int elapsed_ticks;
-    float elapsed_time, remaining_time;
-    //addEq(dm_active.start, elapsed_ticks, start);
-    //mulEq(elapsed_ticks, TICK_DURATION, elapsed_time);
-    //addEq(elapsed_time, remaining_time, dm_active.max_duration);
-
-    //testLEQ(timed_out, remaining_time, 0.0);
-    //if(timed_out == true){
-      //eq(s.finishing, true);
-    //}
-    eq(timed_out, false);
+    if(timed_out == true){
+      eq(finishing, true);
+    }
 
     if(finishing == true){
       if(have_handle == false){

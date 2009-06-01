@@ -12,7 +12,7 @@
  */
 class DetectPlugOnBase extends ROSAction {
 
-  predicate Active { eq(max_duration, 60); }
+  predicate Active {}
 
   predicate Inactive {
     float time_stamp; // A double encoding is reliable

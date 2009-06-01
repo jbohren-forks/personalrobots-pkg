@@ -10,4 +10,4 @@ map_initialize_from_file("willow.tmap");
 rejectable(Recharger.Active g);
 g.frame_id = "map";
 g.outlet_id = 1;
-eq(g.max_duration, 500);
+eq(g.max_duration, 100);

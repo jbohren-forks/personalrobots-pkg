@@ -52,10 +52,9 @@ class OutletState extends AgentTimeline {
   OutletState(){super(Internal, "Holds");}
 };
 
-class RechargeController extends AgentTimeline {
+class RechargeController extends Controller {
 
   predicate Holds {
-    bool active;
     bool in_position;
     bool outlet_detected_coarse;
     bool outlet_detected_fine;
@@ -67,10 +66,9 @@ class RechargeController extends AgentTimeline {
     bool ready_to_grasp;
     bool arms_clear; // Need this because the arm could be anywhere in principle!
     bool resetting;
-    bool timed_out;
   }
   
-  RechargeController(){ super(Internal, "Holds"); }
+  RechargeController(){ super(); }
 };
 
 // Internal Timelines
@@ -85,7 +83,6 @@ rc_initial_state.active = false;
 
 RechargeController::Holds{
   met_by(Holds p);
-  defaultOnCommit(active, p.active);
   defaultOnCommit(in_position, p.in_position);
   defaultOnCommit(outlet_detected_coarse, p.outlet_detected_coarse);
   defaultOnCommit(outlet_detected_fine, p.outlet_detected_fine);
@@ -113,19 +110,9 @@ RechargeController::Holds {
     // Should be active. Get outlet param from it. Only require that for local navigation
     contained_by(recharger.Active rc_active);
 
-    // Compute a bound on the duration of any action we launch from here based on the global time limit
-    int elapsed_ticks;
-    float elapsed_time, remaining_time;
-    //addEq(rc_active.start, elapsed_ticks, start);
-    //mulEq(elapsed_ticks, TICK_DURATION, elapsed_time);
-    //addEq(elapsed_time, remaining_time, rc_active.max_duration);
-/*
-    testLEQ(timed_out, remaining_time, 0.0);
     if(timed_out == true){
-      eq(s.resetting, true);
+      eq(resetting, true);
     }
-*/
-    eq(timed_out, false);
 
     // Here we are resetting - either to rety or to finish up
     if (resetting == true){
@@ -175,24 +162,7 @@ RechargeController::Holds {
           eq(s.arms_clear, false);
 	}
       }
-      /*
-	if (plug_is_stowed == maybe){
-	// Can this step be ommitted?
-	// Need to confirm
-	if (arms_clear == true) {
-	contains_start(detect_plug_on_base.Active cmd);
-	concurrent(cmd.end, end);
-	leq(cmd.max_duration, DETECT_PLUG_ON_BASE_DURATION_BOUND);
-	leq(cmd.max_duration, remaining_time);
-	}
-	else {
-	contains_start(plugs_untuck_arms.Active cmd);
-	concurrent(cmd.end, end);
-	leq(cmd.max_duration, PLUGS_UNTUCK_ARMS_DURATION_BOUND);
-	leq(cmd.max_duration, remaining_time);
-	}
-	}
-      */
+
       if (plug_is_stowed == no){
 	if (plugged_in == false){
 	  contains_start(stow_plug.Active cmd);

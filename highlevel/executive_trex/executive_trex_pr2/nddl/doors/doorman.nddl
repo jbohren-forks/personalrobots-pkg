@@ -19,11 +19,17 @@ MoveBehavior::Inactive {
 }
 
 MoveBehavior::Active {
-
   starts(DoorController.Holds dc);
+
+  // Compute the deadline in ticks
+  float elapsedTicks;
+  mulEq(elapsedTicks, TICK_DURATION, max_duration);
+  float deadline;
+  addEq(start, elapsedTicks, deadline);
 
   // Initialize controller variables. We begin by assuming the worst.
   eq(dc.active, true);	 
+  leq(dc.deadline, deadline);
   eq(dc.in_position, false);
   eq(dc.found_door, false);
   eq(dc.must_find_handle, true);
