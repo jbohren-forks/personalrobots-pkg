@@ -73,7 +73,7 @@
   (subscribe "goal" "robot_msgs/PoseStamped" #'goal-callback)
   (advertise "move_base/activate" "people_aware_nav/ConstrainedGoal")
   (advertise "move_base/preempt" "std_msgs/Empty")
-  (setq *global-frame* (get-param "global_frame_id" "map")
+  (setq *global-frame* (get-param "global_frame_id" "/map")
 	*person-on-path-use-stub* (get-param "~person_on_path_use_stub" *person-on-path-use-stub*)))
 
 (defun goto (x y theta)
