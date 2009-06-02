@@ -23,7 +23,7 @@
    </node>
 
    <node pkg="planar_patch_map" type="planar_patch_map_node" >
-       <remap from="/full_cloud" to="/snapshot_cloud"/>
+       <remap from="/tilt_laser_cloud" to="/snapshot_cloud"/>
    </node>
 
   <node pkg="rosviz" type="rxgraph"/>
