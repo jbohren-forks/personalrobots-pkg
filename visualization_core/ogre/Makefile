@@ -2,7 +2,7 @@ all: ogre
 
 OGRE_VERSION = ogre-v1-6-1
 TARBALL = build/$(OGRE_VERSION).tar.bz2
-TARBALL_URL = http://pr.willowgarage.com/downloads/$(OGRE_VERSION).tar.bz2
+TARBALL_URL = http://superb-west.dl.sourceforge.net/sourceforge/ogre/$(OGRE_VERSION).tar.bz2
 SOURCE_DIR = build/$(OGRE_VERSION)
 UNPACK_CMD = tar xf
 TARBALL_PATCH = 
@@ -63,7 +63,7 @@ ogre:
 	  echo "You have OGRE 1.6.1. Watch this!"; \
 	  rm -rf ogre; \
 	  mkdir -p ogre/lib; \
-	  ln -sf /usr/lib/OGRE ogre/lib/OGRE; \
+	  ln -sf `pkg-config --variable=prefix OGRE`/lib/OGRE ogre/lib/OGRE; \
 	fi
 
 ogre/lib/pkgconfig/OGRE.pc: $(SOURCE_DIR)/Makefile $(SOURCE_DIR)
