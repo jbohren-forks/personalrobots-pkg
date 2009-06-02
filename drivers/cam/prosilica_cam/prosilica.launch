@@ -2,6 +2,7 @@
   <group ns="prosilica">
     <include file="$(find prosilica_cam)/cam_settings.xml"/>
     <param name="acquisition_mode" type="str" value="Triggered"/>
+    <param name="ip_address" type="str" value="10.68.0.20"/>
   </group>
   <node name="prosilica" pkg="prosilica_cam" type="prosilica_node" output="screen" respawn="false"/>
 </launch>
