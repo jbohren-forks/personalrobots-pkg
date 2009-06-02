@@ -2,13 +2,13 @@
 \mainpage
 \htmlinclude manifest.html
 
-\b roshist allows to play back any intervals of bag files. 
+\b bagserver allows to play back any intervals of bag files. 
 and playing them back. 
 
 
 \section What it does
 
-\b roshist uses an index over multiple bag files to play back any part of them in response to the service request. The index is built with \b history_build_index.py.  
+\b bagserver uses an index over multiple bag files to play back any part of them in response to the service request. The index is built with \b history_build_index.py.  
 
 \section Usage
 
@@ -22,18 +22,18 @@ Index builder takes the name to store the index, a comma-separated list of topic
 Note that the file names will be stored in the index name and should be available to the history service.
 
 
-\subsection roshist_srv.py
+\subsection bagserver_srv.py
 
 \verbatim
-roshist_srv.py <out_namespace> <index_name> 
+bagserver_srv.py <out_namespace> <index_name> 
 \endverbatim
 
-roshist_srv.py takes the output namespace and the index name. All messages will returned will be broadcast in their original topic names relocated to the the output namespace. The index file contains the names of all bag files used in the index.
+bagserver_srv.py takes the output namespace and the index name. All messages will returned will be broadcast in their original topic names relocated to the the output namespace. The index file contains the names of all bag files used in the index.
 
-\subsection roshist_query.py
+\subsection bagserver_query.py
 
 \verbatim
-roshist_query.py fromsec[.from_fraction_sec] tosec[.to_fraction_sec] [svc_name=hist] [topics=*]
+bagserver_query.py fromsec[.from_fraction_sec] tosec[.to_fraction_sec] [svc_name=hist] [topics=*]
 \endverbatim
 
 roshist_query.py asks the history server to send out everything in the specified interface. You can optionally specify which history service to query and which topics should be listed.
@@ -55,7 +55,7 @@ To map from (time,topic) to file position, we have a hashtable indexed by a seco
 
 The example assumes certain bag files. Assume you have them here:
 \verbatim
-D=/u/sorokin/ros/ros-pkg/util/roshist/test_data
+D=/u/sorokin/ros/ros-pkg/util/bagserver/test_data
 \endverbatim
 
 
@@ -74,12 +74,12 @@ Launch the stereo processor (note, that is's in the scope /hist)
 Launch the history server
 
 \verbatim
-  rosrun roshist roshist_srv.py  test/stereo.launch
+  rosrun bagserver bagserver_srv.py test_data/test1.stereo.index
 \endverbatim
 
 Do this several times:
 \verbatim
-./src/roshist_query.py 1242970240 1242970250
+./src/bagserver_query.py 1242970240 1242970250
 \endverbatim
 
 You will see the stereo output from that interval.

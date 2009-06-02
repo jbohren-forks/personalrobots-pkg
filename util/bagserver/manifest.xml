@@ -1,5 +1,5 @@
 <package>
-<description brief="Ros Log random access tools">
+<description brief="Random access into the bag files">
 This is a convenience tool to access random messages recorded in bag
 files. The main target is testing and debugging. Potential use
 includes access of some information from the past.
