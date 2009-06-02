@@ -305,9 +305,9 @@ int PowerBoard::send_command(int selected_device, int circuit_breaker, const std
   else if (command == "none") {
     command_enum = NONE;
   }
-  else if (command == "terrible_hack_shutdown") {
+/*  else if (command == "terrible_hack_shutdown") {
     exit(0);
-  }
+  }*/
   else {
     ROS_ERROR("invalid command '%s'", command.c_str());
     return -1;
