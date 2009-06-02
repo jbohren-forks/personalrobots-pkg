@@ -19,9 +19,9 @@ ODE_PKG = $(shell rospack find opende)/opende/lib/pkgconfig
 FI_PKG = $(shell rospack find freeimage)/freeimage/lib/pkgconfig
 ODE_PATH = $(shell rospack find opende)/opende/bin
 
-FREEIMAGE_INCLUDE_DIR = $(shell rospack find freeimage)/freeimage/include
-FREEIMAGE_LIBRARY_DIR = $(shell rospack find freeimage)/freeimage/lib
-FREEIMAGE_LIBRARY = $(shell rospack find freeimage)/freeimage/lib/libfreeimage.so
+#FREEIMAGE_INCLUDE_DIR = $(shell rospack find freeimage)/freeimage/include
+#FREEIMAGE_LIBRARY_DIR = $(shell rospack find freeimage)/freeimage/lib
+#FREEIMAGE_LIBRARY = $(shell rospack find freeimage)/freeimage/lib/libfreeimage.so
 
 BOOST_INCLUDE_DIRS = $(shell rosboost-cfg --include_dirs)
 BOOST_LIBRARY_DIRS = $(shell rosboost-cfg --lib_dirs signals,thread)
@@ -36,13 +36,11 @@ CMAKE_ARGS = -D CMAKE_BUILD_TYPE=RELEASE \
 						 -D boost_include_dirs=$(BOOST_INCLUDE_DIRS) \
 						 -D boost_library_dirs=$(BOOST_LIBRARY_DIRS) \
 						 -D boost_libraries="$(BOOST_LIBRARIES)" \
-						 -D freeimage_include_dir=$(FREEIMAGE_INCLUDE_DIR) \
-						 -D freeimage_library_dir=$(FREEIMAGE_LIBRARY_DIR) \
-						 -D freeimage_library=$(FREEIMAGE_LIBRARY) \
-						 -D LIBAVCODEC_PATH="" \
-						 -D LIBAVFORMAT_PATH="" \
 						 -D CMAKE_BUILD_TYPE="release" \
 						 -D CMAKE_CXX_LINK_FLAGS="-lfltk -lfltk_gl"
+						 #-D freeimage_include_dir=$(FREEIMAGE_INCLUDE_DIR) \
+						 #-D freeimage_library_dir=$(FREEIMAGE_LIBRARY_DIR) \
+						 #-D freeimage_library=$(FREEIMAGE_LIBRARY) \
 
 
 
