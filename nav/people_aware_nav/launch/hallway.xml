@@ -4,7 +4,7 @@
   <master auto="start"/>
   <group>
 
-    <param name="/global_frame_id" value="map"/>
+    <param name="/global_frame_id" value="/map"/>
 
     <!-- The navigation stack and associated parameters -->
     <include file="$(find people_aware_nav)/launch/nav_robot.xml" />

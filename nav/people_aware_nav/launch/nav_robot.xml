@@ -1,7 +1,7 @@
 <launch>
   <master auto="start"/>
   <group>
-  <param name="/use_sim_time" value="true"/>
+  <param name="/use_sim_time" value="false"/>
     <node pkg="people_aware_nav" type="move_base_constrained" respawn="false" name="move_base" output="screen">
       
       <param name="odom_frame" value="odom"/>
