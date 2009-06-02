@@ -19,11 +19,15 @@
 
     </node>
 
-    <node pkg="map_server" type="map_server" args="$(find 2dnav_stage)/maps/willow-full-0.025.pgm 0.025" respawn="false" />
-    <node pkg="stage" type="stageros" name="stageros" args="$(optenv ROS_STAGE_GRAPHICS -g) $(find 2dnav_stage)/worlds/willow-pr2-2.5cm.world" respawn="false" >
-      <param name="base_watchdog_timeout" value="0.2"/>
-    </node>
-    <node pkg="amcl" type="amcl" respawn="false" />
+    <include file="$(find pr2_alpha)/$(env ROBOT).machine" />
+    <include file="$(find 2dnav_pr2)/config/new_amcl_node.xml" />
+    <include file="$(find 2dnav_pr2)/config/base_odom_teleop.xml" />
+    <include file="$(find 2dnav_pr2)/config/lasers_and_filters.xml" />
+    <include file="$(find 2dnav_pr2)/config/map_server.xml" />
+    <include file="$(find 2dnav_pr2)/config/ground_plane.xml" />
+
+    <node pkg="mux" type="throttle" args="3.0 /move_base/base_local_planner/costmap/voxel_grid /move_base/base_local_planner/costmap/voxel_grid_throttled" />
+
 
     <node pkg="people_aware_nav" type="person_pos_sender" output="screen" />
     <node pkg="people_aware_nav" type="is_person_on_path" output="screen" />
