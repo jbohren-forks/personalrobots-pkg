@@ -5,7 +5,7 @@ TEST_INSTALL_DIR = $(shell rospack find gazebo)/test-gazebo
 
 SVN_DIR = gazebo-svn
 SVN_URL = https://playerstage.svn.sourceforge.net/svnroot/playerstage/code/gazebo/branches/threads
-SVN_REVISION = -r 7754
+SVN_REVISION = -r 7758
 SVN_PATCH = 
 include $(shell rospack find mk)/svn_checkout.mk
 
@@ -41,6 +41,7 @@ CMAKE_ARGS = -D CMAKE_BUILD_TYPE=RELEASE \
 						 -D freeimage_library=$(FREEIMAGE_LIBRARY) \
 						 -D LIBAVCODEC_PATH="" \
 						 -D LIBAVFORMAT_PATH="" \
+						 -D CMAKE_BUILD_TYPE="release" \
 						 -D CMAKE_CXX_LINK_FLAGS="-lfltk -lfltk_gl"
 
 
