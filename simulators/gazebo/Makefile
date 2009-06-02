@@ -25,7 +25,7 @@ FREEIMAGE_LIBRARY = $(shell rospack find freeimage)/freeimage/lib/libfreeimage.s
 
 BOOST_INCLUDE_DIRS = $(shell rosboost-cfg --include_dirs)
 BOOST_LIBRARY_DIRS = $(shell rosboost-cfg --lib_dirs signals,thread)
-BOOST_LIBRARIES = $(shell rosboost-cfg --libs signals,thread)
+BOOST_LIBRARIES = $(shell rosboost-cfg --lflags signals,thread)
 
 PKG_PATHS = PKG_CONFIG_PATH=${ODE_PKG}:${FI_PKG}:${PLAYER_PKG}:${OGRE_PKG}:${PKG_CONFIG_PATH}
 PATHS = PATH=${ODE_PATH}:${PATH}
