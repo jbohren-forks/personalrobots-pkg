@@ -63,7 +63,7 @@ namespace costmap_2d {
     ros_node_.param("~" + prefix + "/costmap/observation_topics", topics_string, string(""));
     ROS_INFO("Subscribed to Topics: %s", topics_string.c_str());
 
-    ros_node_.param("~" + prefix + "/costmap/global_frame", global_frame_, string("map"));
+    ros_node_.param("~" + prefix + "/costmap/global_frame", global_frame_, string("/map"));
     ros_node_.param("~" + prefix + "/costmap/robot_base_frame", robot_base_frame_, string("base_link"));
 
     //we need to make sure that the transform between the robot base frame and the global frame is available
@@ -153,7 +153,7 @@ namespace costmap_2d {
       robot_srvs::StaticMap::Request map_req;
       robot_srvs::StaticMap::Response map_resp;
       ROS_INFO("Requesting the map...\n");
-      while(!ros::service::call("static_map", map_req, map_resp))
+      while(!ros::service::call("/static_map", map_req, map_resp))
       {
         ROS_INFO("Request failed; trying again...\n");
         usleep(1000000);
