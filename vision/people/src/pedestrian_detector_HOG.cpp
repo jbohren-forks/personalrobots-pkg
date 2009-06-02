@@ -115,8 +115,6 @@ namespace people
       node_->param("/people/pedestrian_detector_HOG/ground_frame",ground_frame_,std::string("base_link"));
       node_->param("/people/pedestrian_detector_HOG/do_display", do_display_, true);
        
-      // TODO: Initialize OpenCV structures.
-
       // Advertise a 3d position measurement for each head.
       node_->advertise<people::PositionMeasurement>("people_tracker_measurements",1);
 
@@ -199,12 +197,7 @@ namespace people
 
 
 	// Run the HOG detector. Similar to samples/peopledetect.cpp.
-	//cv::HOGDescriptor hog;
-	//hog.setSVMDetector(cv::HOGDescriptor::getDefaultPeopleDetector());
-	double t = (double)cv::getTickCount();
 	hog_.detectMultiScale(img, found, hit_threshold_, cv::Size(8,8), cv::Size(24,16), 1.05, group_threshold_);
-	t = (double)cv::getTickCount() - t;
-	//ROS_DEBUG_STREAM_NAMED("pedestrian_detector", "Detection time = "<< t*1000./cv::getTickFrequency() <<"ms\n");
 	small_img = &img;
 
 	// Timing
@@ -265,12 +258,7 @@ namespace people
 	  small_img = &img;
 	}
 
-	//cv::HOGDescriptor hog;
-	//hog.setSVMDetector(cv::HOGDescriptor::getDefaultPeopleDetector());
-	double t = (double)cv::getTickCount();
 	hog_.detectMultiScale(*small_img, found, hit_threshold_, cv::Size(8,8), cv::Size(24,16), 1.05, group_threshold_);
-	t = (double)cv::getTickCount() - t;
-	//ROS_DEBUG_STREAM_NAMED("pedestrian_detector", "Detection time with scale = "<< t*1000./cv::getTickFrequency() <<"ms\n");
 	
 	//	cvReleaseMat(&z);
 	cvReleaseMat(&uvd);
@@ -311,7 +299,7 @@ namespace people
     int counter;
 
     /////////////////////////////////////////////////////////////////////
-    // TODO: Remove the ceiling (rows above max_height_m_)
+    // Remove the ceiling (rows above max_height_m_)
     // For each row, compute the maximum robot-relative height.
     // Find the first row with z-values below the max_height_m_ threshold.
     // Return the row for image cropping.
