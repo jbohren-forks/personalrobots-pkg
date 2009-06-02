@@ -5,5 +5,7 @@
 
   <node pkg="rviz" type="rviz" args="$(find point_cloud_basics_demo)/test/demo1_rviz.config.vcg"/>
 
+  <node pkg="rosviz" type="rxgraph"/>
+
 
 </launch>

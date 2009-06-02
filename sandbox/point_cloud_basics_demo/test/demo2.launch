@@ -26,5 +26,5 @@
        <remap from="/full_cloud" to="/snapshot_cloud"/>
    </node>
 
-
+  <node pkg="rosviz" type="rxgraph"/>
 </launch>

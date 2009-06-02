@@ -13,6 +13,7 @@
   <depend package="rosrecord"/>
   <depend package="point_cloud_assembler"/>
   <depend package="planar_patch_map"/>
+  <depend package="rosviz"/>
 
   <url>http://pr.willowgarage.com/wiki/ROS/Tutorials/point_cloud_basics</url>
 
