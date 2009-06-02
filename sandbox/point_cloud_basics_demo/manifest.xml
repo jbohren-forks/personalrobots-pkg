@@ -10,7 +10,9 @@
   <review status="unreviewed" notes=""/>
 
   <depend package="rviz"/>
-  <depend package="point_cloud_mapping"/>
+  <depend package="rosrecord"/>
+  <depend package="point_cloud_assembler"/>
+  <depend package="planar_patch_map"/>
 
   <url>http://pr.willowgarage.com/wiki/ROS/Tutorials/point_cloud_basics</url>
 
