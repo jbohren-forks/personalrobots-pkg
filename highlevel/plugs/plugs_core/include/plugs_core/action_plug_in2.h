@@ -41,6 +41,7 @@
 
 // Msgs
 #include <std_msgs/Empty.h>
+#include <std_msgs/Int32.h>
 #include "robot_msgs/PoseStamped.h"
 #include "manipulation_msgs/TaskFrameFormalism.h"
 #include "plugs_core/PlugInState.h"
@@ -57,13 +58,13 @@
 
 namespace plugs_core{
 
-class PlugInAction: public robot_actions::Action<std_msgs::Empty, std_msgs::Empty>
+class PlugInAction: public robot_actions::Action<std_msgs::Int32, std_msgs::Empty>
 {
 public:
   PlugInAction(ros::Node& node);
   ~PlugInAction();
 
-  robot_actions::ResultStatus execute(const std_msgs::Empty& empty, std_msgs::Empty& feedback);
+  robot_actions::ResultStatus execute(const std_msgs::Int32& outlet_id, std_msgs::Empty& feedback);
 
 private:
 
@@ -74,13 +75,13 @@ private:
 
   robot_mechanism_controllers::CartesianHybridState c_state_msg_;
   void controllerStateCB();
-
+  /*
   void measure();
   void move();
   void hold();
   void force();
   void insert();
-
+  */
 
   std::string action_name_;
 

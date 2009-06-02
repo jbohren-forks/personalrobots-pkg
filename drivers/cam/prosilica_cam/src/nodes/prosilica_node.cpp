@@ -91,6 +91,10 @@ private:
   unsigned long packets_missed_total_, packets_received_total_;
   RollingSum<unsigned long> packets_missed_acc_, packets_received_acc_;
 
+  // So we don't get burned by auto-exposure
+  unsigned long last_exposure_value_;
+  int consecutive_stable_exposures_;
+
 public:
   ProsilicaNode(ros::Node &node)
     : node_(node), cam_(NULL), running_(false),
@@ -164,9 +168,14 @@ public:
     }
     ROS_INFO("Found camera, guid = %lu", guid);
 
-    cam_->setFrameCallback(boost::bind(&ProsilicaNode::publishImage, this, _1));
-    
+    // Set appropriate frame callback
+    if (mode_ == prosilica::Continuous)
+      cam_->setFrameCallback(boost::bind(&ProsilicaNode::publishImage, this, _1));
+    else
+      cam_->setFrameCallback(boost::bind(&ProsilicaNode::normalizeCallback, this, _1));
+
     // Feature control
+    bool auto_expose = true;
     std::string auto_setting;
     node_.param("~exposure_auto", auto_setting, std::string("Auto"));
     if (auto_setting == std::string("Auto"))
@@ -178,6 +187,7 @@ public:
       int val;
       node_.getParam("~exposure", val);
       cam_->setExposure(val, prosilica::Manual);
+      auto_expose = false;
     } else {
       ROS_FATAL("Unknown setting");
       node_.shutdown();
@@ -240,6 +250,10 @@ public:
     diagnostic_.addUpdater( &ProsilicaNode::frameStatistics );
     diagnostic_.addUpdater( &ProsilicaNode::packetStatistics );
     diagnostic_.addUpdater( &ProsilicaNode::packetErrorStatus );
+
+    // Auto-exposure tends to go wild the first few frames after startup
+    if (mode_ == prosilica::Triggered && auto_expose)
+      normalizeExposure();
   }
 
   ~ProsilicaNode()
@@ -305,7 +319,6 @@ public:
     count_ = 0;
   }
 
-  // TODO: set StreamBytesPerSecond adaptively
   void frameStatistics(robot_msgs::DiagnosticStatus& status)
   {
     status.name = "Frame Statistics";
@@ -391,8 +404,30 @@ public:
       status.level = 2;
       status.message = "Excessive proportion of missed packets";
     }
+
+    unsigned long data_rate;
+    cam_->getAttribute("StreamBytesPerSecond", data_rate);
+#if 1
+    // Adjust data rate
+    static const unsigned long MAX_DATA_RATE = 115000000; // for typical GigE port
+    float multiplier = 1.0f;
+    if (recent_ratio == 1.0f) {
+      multiplier = 1.1f;
+    } else if (recent_ratio < 0.99f) {
+      multiplier = 0.9f;
+    }
+    if (multiplier != 1.0f) {
+      unsigned long new_data_rate = std::min((unsigned long)(multiplier * data_rate + 0.5), MAX_DATA_RATE);
+      new_data_rate = std::max(new_data_rate, MAX_DATA_RATE/1000);
+      if (data_rate != new_data_rate) {
+        data_rate = new_data_rate;
+        cam_->setAttribute("StreamBytesPerSecond", data_rate);
+        ROS_WARN("Changed data rate to %lu bytes per second", data_rate);
+      }
+    }
+#endif
     
-    status.set_values_size(6);
+    status.set_values_size(7);
     status.values[0].label = "Recent % Packets Received";
     status.values[0].value = recent_ratio * 100.0f;
     status.values[1].label = "Overall % Packets Received";
@@ -405,6 +440,8 @@ public:
     status.values[4].value = requested;
     status.values[5].label = "Resent Packets";
     status.values[5].value = resent;
+    status.values[6].label = "Data Rate (bytes/s)";
+    status.values[6].value = data_rate;
   }
 
   void packetErrorStatus(robot_msgs::DiagnosticStatus& status)
@@ -762,6 +799,37 @@ private:
     cvInitUndistortMap( &Kmat_, &Dmat_, undistortX_.Ipl(), undistortY_.Ipl() );
 
     calibrated_ = true;
+  }
+
+  void normalizeCallback(tPvFrame* frame)
+  {
+    unsigned long exposure;
+    cam_->getAttribute("ExposureValue", exposure);
+    //ROS_WARN("Exposure value = %u", exposure);
+
+    if (exposure == last_exposure_value_)
+      consecutive_stable_exposures_++;
+    else {
+      last_exposure_value_ = exposure;
+      consecutive_stable_exposures_ = 0;
+    }
+  }
+  
+  void normalizeExposure()
+  {
+    ROS_INFO("Normalizing exposure");
+    //cam_->stop();
+
+    last_exposure_value_ = 0;
+    consecutive_stable_exposures_ = 0;
+    cam_->start(prosilica::Continuous);
+
+    // TODO: thread safety
+    while (consecutive_stable_exposures_ < 3)
+      boost::this_thread::sleep(boost::posix_time::millisec(250));
+
+    cam_->stop();
+    //cam_->start(mode_);
   }
 };
 

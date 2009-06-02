@@ -88,6 +88,7 @@ class IncGroundRemoval
   double z_threshold_, ground_slope_threshold_;
     int sac_min_points_per_model_, sac_max_iterations_;
     double sac_distance_threshold_;
+    double sac_fitting_distance_threshold_;
     int planar_refine_;
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -96,6 +97,7 @@ class IncGroundRemoval
       node_.param ("~z_threshold", z_threshold_, 0.1);                          // 10cm threshold for ground removal
       node_.param ("~ground_slope_threshold", ground_slope_threshold_, 0.0);                          // 0% slope threshold for ground removal
       node_.param ("~sac_distance_threshold", sac_distance_threshold_, 0.03);   // 3 cm threshold
+      node_.param ("~sac_fitting_distance_threshold", sac_fitting_distance_threshold_, 0.015);   // 1.5 cm threshold
 
       node_.param ("~planar_refine", planar_refine_, 1);                        // enable a final planar refinement step?
       node_.param ("~sac_min_points_per_model", sac_min_points_per_model_, 6);  // 6 points minimum per line
@@ -130,9 +132,10 @@ class IncGroundRemoval
     void
       updateParametersFromServer ()
     {
-      if (node_.hasParam ("~z_threshold")) node_.getParam ("~z_threshold", z_threshold_);
-      if (node_.hasParam ("~ground_slope_threshold")) node_.getParam ("~ground_slope_threshold", ground_slope_threshold_);
-      if (node_.hasParam ("~sac_distance_threshold"))  node_.getParam ("~sac_distance_threshold", sac_distance_threshold_);
+      node_.getParam ("~z_threshold", z_threshold_, true);
+      node_.getParam ("~ground_slope_threshold", ground_slope_threshold_, true);
+      node_.getParam ("~sac_fitting_distance_threshold", sac_fitting_distance_threshold_, true);
+      node_.getParam ("~sac_distance_threshold", sac_distance_threshold_, true);
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -194,7 +197,7 @@ class IncGroundRemoval
 
       // Create and initialize the SAC model
       sample_consensus::SACModelLine *model = new sample_consensus::SACModelLine ();
-      sample_consensus::SAC *sac            = new sample_consensus::RANSAC (model, sac_distance_threshold_);
+      sample_consensus::SAC *sac            = new sample_consensus::RANSAC (model, sac_fitting_distance_threshold_);
       sac->setMaxIterations (sac_max_iterations_);
       sac->setProbability (0.99);
 

@@ -1,5 +1,5 @@
 <launch>
-  <node pkg="rviz" type="rviz" name="rviz">
+  <node pkg="rviz" type="rviz" name="rviz" args="-d $(find 2dnav_pr2)/rviz/move_base.vcg">
     <remap from="goal" to="/move_base/activate" />
   </node>
   <node pkg="costmap_2d" type="costmap_2d_markers" name="voxel_visualizer">

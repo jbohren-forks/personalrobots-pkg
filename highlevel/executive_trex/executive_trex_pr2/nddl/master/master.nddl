@@ -38,6 +38,11 @@
 // Priority for goals
 typedef int [0 5] PRIORITY;
 
+// Time Bounds For top level components
+float RECHARGER_DURATION_BOUND;// = 600.0;
+float DOORMAN_DURATION_BOUND;// = 600.0;
+float DRIVER_DURATION_BOUND;// = 600.0;
+
 class M2Goals extends Behavior {
   predicate Active{
     MAP_KEY outlet_id;
@@ -91,11 +96,11 @@ BaseState base_state = new BaseState(External);
 M2Goals::Active{
 
   if(start){
-    starts_during(base_state.Holds bs);
     starts(m2_controller.Holds mc);
+    starts_during(base_state.Holds bs);
     eq(mc.active, true);
     eq(mc.recharged, false);
-    eq(mc.finished, false);
+    eq(mc.finished, false);	
     eq(mc.x, bs.x);
     eq(mc.y, bs.y);
 
@@ -105,6 +110,18 @@ M2Goals::Active{
     else {
       eq(mc.recharge_required, true);
     }
+  }
+}
+
+/**
+ * If a goal aborts then we should regenerate it for later
+ */
+M2Goals::Inactive{
+  if(status == ABORTED){
+    met_by(Active p);
+    before (Active g);
+    eq(g.outlet_id, p.outlet_id);
+    eq_pose_msg(g.object, p.object);
   }
 }
 
@@ -163,6 +180,7 @@ M2Controller::Holds{
 	if(recharge_required == true){ 
 	  contains_start(recharger.Active cmd);
 	  concurrent(cmd.end, end);
+	  eq(cmd.max_duration, RECHARGER_DURATION_BOUND);
 	  eq(cmd.outlet_id, m2_active.outlet_id);
 	}
 	else {
@@ -193,10 +211,13 @@ M2Controller::Holds{
 	map_get_nearest_connector(cmd.start_connector, x, y, m2_active.x, m2_active.y);
 
 	if(thru_doorway == true){
+	  // take no more than 10 minutes trying to get thru a doorway
 	  eq(cmd.object, doorman);
+	  eq(cmd.max_duration, DOORMAN_DURATION_BOUND);
 	}
 	else{
 	  eq(cmd.object, driver);
+	  eq(cmd.max_duration, DRIVER_DURATION_BOUND);
 	}
       }
     }
@@ -208,12 +229,12 @@ M2Controller::Holds{
  */
 MoveBehavior::Inactive{
   starts(m2_controller.Holds mc);
-  if(status == ABORTED){
-    eq(mc.finished, true);
-  }
   if(status == SUCCESS){
     eq(mc.x, x);
     eq(mc.y, y);
+  }
+  else {
+    eq(mc.finished, true);
   }
 }
 
@@ -224,11 +245,8 @@ Recharger::Inactive{
     eq(mc.recharged, true);
   }
   else {
-    if(status == ABORTED){
-      starts(m2_controller.Holds mc);
-      eq(mc.finished, true);
-      eq(mc.recharged, false);
-    }
+    eq(mc.finished, true);
+    eq(mc.recharged, false);
   }
 }
 

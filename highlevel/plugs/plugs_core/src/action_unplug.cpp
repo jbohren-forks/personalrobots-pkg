@@ -34,6 +34,8 @@
 
 
 #include <plugs_core/action_unplug.h>
+#include <std_msgs/Float64.h>
+#include <ros/ros.h> //For the NodeHandle API 
 
 #define BACKOFF 0.06
 
@@ -56,6 +58,7 @@ UnplugAction::UnplugAction() :
     }
 
  node_->advertise<manipulation_msgs::TaskFrameFormalism>(arm_controller_ + "/command", 2);
+ node_->advertise<std_msgs::Float64>("/r_shoulder_pan_effort/command", 2);
 
  node_->subscribe(arm_controller_ + "/state", controller_state_msg_, &UnplugAction::checkUnplug, this, 1);
 
@@ -64,10 +67,22 @@ UnplugAction::UnplugAction() :
 
 UnplugAction::~UnplugAction()
 {
+ node_->unadvertise(arm_controller_ + "/command");
+ node_->unadvertise("/r_shoulder_pan_effort/command");
 };
 
 robot_actions::ResultStatus UnplugAction::execute(const std_msgs::Empty& empty, std_msgs::Empty& feedback)
 {
+
+  double unplug_x_threshold, unplug_x_target;
+  if (!node_->getParam("~x_threshold", unplug_x_threshold, true)) {
+    ROS_WARN("unplug x-threshold wasn't set (by plug_in)");
+    unplug_x_target = -BACKOFF;
+  }
+  else{
+    unplug_x_target = unplug_x_threshold - 0.02;
+  }
+
   first_state_.header.seq = 0;
   ROS_DEBUG("%s: executing.", action_name_.c_str());
   tff_msg_.header.frame_id = "outlet_pose";
@@ -78,14 +93,53 @@ robot_actions::ResultStatus UnplugAction::execute(const std_msgs::Empty& empty, 
   tff_msg_.mode.rot.x = 2;
   tff_msg_.mode.rot.y = 2;
   tff_msg_.mode.rot.z = 2;
-  tff_msg_.value.vel.x = -BACKOFF;
+  tff_msg_.value.vel.x = unplug_x_target;
   tff_msg_.value.vel.y = 0.0;
   tff_msg_.value.vel.z = 0.0;
   tff_msg_.value.rot.x = 0.0;
   tff_msg_.value.rot.y = 0.0;
   tff_msg_.value.rot.z = 0.0;
 
+  //Start effort controller
+  ros::NodeHandle n;
+  ros::ServiceClient client = n.serviceClient<robot_srvs::SwitchController>("switch_controller");
+  robot_srvs::SwitchController srv;
+  srv.request.start_controllers.push_back("/r_shoulder_pan_effort");
+  if(client.call(srv)){
+    ROS_INFO("Enabled r_shoulder_pan_effort controller (at least the service call succeeded)");
+  }
+  else{
+    ROS_ERROR("Failed to enable r_shoulder_pan_effort_controller.  I'm continuing, but you might get stuck in a singularity");
+  }
+
   node_->publish(arm_controller_ + "/command", tff_msg_);
+
+  ros::Time started = ros::Time::now();
+  while (isActive()) {
+    ros::Duration(0.01).sleep();
+
+    double effort = 0.0;
+    if (ros::Time::now() - started > ros::Duration(5.0))
+      effort = -2.0;
+    if (ros::Time::now() - started > ros::Duration(15.0))
+      effort = -5.0;
+    std_msgs::Float64 msg;  msg.data = effort;
+    node_->publish("/r_shoulder_pan_effort/command", msg);
+  }
+  std_msgs::Float64 msg; msg.data = 0;
+  node_->publish("/r_shoulder_pan_effort/command", msg);
+
+  //Stop effort controller
+  srv.request.stop_controllers.push_back("/r_shoulder_pan_effort");
+  srv.request.start_controllers.clear();
+  if(client.call(srv)){
+    ROS_INFO("Disabled r_shoulder_pan_effort controller (at least the service call succeeded)");
+  }
+  else{
+    ROS_ERROR("Failed to disable r_shoulder_pan_effort_controller.  I'm continuing, but this could interfere with other controllers");
+  }
+ 
+  node_->deleteParam("~x_threshold");
 
   return waitForDeactivation(feedback);
 }
@@ -100,6 +154,13 @@ void  UnplugAction::checkUnplug()
     return;
   }
 
+  double unplug_x_threshold;
+  if (!node_->getParam("~x_threshold", unplug_x_threshold, true)) {
+    ROS_WARN("Unplug succeeded because the x-threshold wasn't set (by plug_in)");
+    deactivate(robot_actions::SUCCESS, empty_);
+    return;
+  }
+
   tff_msg_.header.stamp = ros::Time::now();
   tff_msg_.header.frame_id = "outlet_pose";
   tff_msg_.mode.vel.x = 3;
@@ -108,20 +169,20 @@ void  UnplugAction::checkUnplug()
   tff_msg_.mode.rot.x = 3;
   tff_msg_.mode.rot.y = 3;
   tff_msg_.mode.rot.z = 3;
-  tff_msg_.value.vel.x = -BACKOFF;
+  tff_msg_.value.vel.x = unplug_x_threshold - 0.02;
   tff_msg_.value.vel.y = first_state_.last_pose_meas.vel.y;
   tff_msg_.value.vel.z = first_state_.last_pose_meas.vel.z;
-  tff_msg_.value.rot.x = first_state_.last_pose_meas.rot.x;
-  tff_msg_.value.rot.y = first_state_.last_pose_meas.rot.y;
-  tff_msg_.value.rot.z = first_state_.last_pose_meas.rot.z + 0.1 * (2.0*drand48() - 1.0);
-
+  double time = ros::Time::now().toSec();
+  tff_msg_.value.rot.x = first_state_.last_pose_meas.rot.x + 0.06 * sin(time*37.0*M_PI);
+  tff_msg_.value.rot.y = first_state_.last_pose_meas.rot.y + 0.15 * sin(time*2.0 *M_PI);
+  tff_msg_.value.rot.z = first_state_.last_pose_meas.rot.z + 0.03 * sin(time*55.0 *M_PI);    
   node_->publish(arm_controller_ + "/command", tff_msg_);
 
-  if(fabs(controller_state_msg_.last_pose_meas.vel.x + BACKOFF) < 0.02)
-  {
+  if (controller_state_msg_.last_pose_meas.vel.x  < unplug_x_threshold){
     ROS_DEBUG("%s: succeeded.", action_name_.c_str());
     deactivate(robot_actions::SUCCESS, empty_);
   }
+  ROS_DEBUG("Unplug is %f from the threshold", controller_state_msg_.last_pose_meas.vel.x - unplug_x_threshold);
 
   return;
 }

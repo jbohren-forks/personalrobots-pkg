@@ -54,6 +54,7 @@
 #include <pr2_robot_actions/StowPlugState.h>
 #include <pr2_robot_actions/SwitchControllersState.h>
 #include <pr2_robot_actions/DetectPlugOnBaseState.h>
+#include <pr2_robot_actions/PlugInState.h>
 
 // Actions
 #include <safety_core/action_detect_plug_on_base.h>
@@ -83,7 +84,11 @@ int
   ros::Node node("test_executive");
   boost::thread_group threads_;
 
-
+  int outlet_id = 0;
+  if (argc >= 2) {
+    outlet_id = atoi(argv[1]);
+    printf("Trying outlet %d\n", outlet_id);
+  }
 
   pr2_robot_actions::SwitchControllers switchlist;
   std_msgs::Empty empty;
@@ -107,7 +112,8 @@ int
   robot_actions::ActionClient<robot_msgs::PlugStow, pr2_robot_actions::MoveAndGraspPlugState, std_msgs::Empty> move_and_grasp_plug("move_and_grasp_plug");
   robot_actions::ActionClient<robot_msgs::PointStamped, pr2_robot_actions::DetectOutletState, robot_msgs::PoseStamped> detect_outlet_fine("detect_outlet_fine");
   robot_actions::ActionClient<std_msgs::Empty, robot_actions::NoArgumentsActionState, std_msgs::Empty> localize_plug_in_gripper("localize_plug_in_gripper");
-  robot_actions::ActionClient<std_msgs::Empty, robot_actions::NoArgumentsActionState, std_msgs::Empty> plug_in("plug_in");
+  robot_actions::ActionClient<std_msgs::Int32, pr2_robot_actions::PlugInState, std_msgs::Empty>
+    plug_in("plug_in");
   robot_actions::ActionClient<std_msgs::Empty, robot_actions::NoArgumentsActionState, std_msgs::Empty> unplug("unplug");
   robot_actions::ActionClient< robot_msgs::PlugStow, pr2_robot_actions::StowPlugState, std_msgs::Empty> stow_plug("stow_plug");
 
@@ -124,8 +130,7 @@ int
   unplug.preempt();
   stow_plug.preempt();
 
-
-  Duration(2.0).sleep();
+  Duration(1.0).sleep();
 
   switchlist.start_controllers.clear();  switchlist.stop_controllers.clear();
   switchlist.stop_controllers.push_back("laser_tilt_controller");
@@ -138,6 +143,7 @@ int
   if (switch_controllers.execute(switchlist, empty, timeout_short) != robot_actions::SUCCESS)
     printf("Taking down controllers kinda sorta failed\n");
 
+  Duration(2.0).sleep();
 
   // detect outlet fine
   if (detect_outlet_fine.execute(point, pose, timeout_long) != robot_actions::SUCCESS) return -3;
@@ -164,7 +170,8 @@ int
   switchlist.stop_controllers.push_back("r_arm_cartesian_twist_controller");
   switchlist.start_controllers.push_back("r_arm_hybrid_controller");
   if (switch_controllers.execute(switchlist, empty, timeout_short) != robot_actions::SUCCESS) return -5;
-  if (plug_in.execute(empty, empty, timeout_long) != robot_actions::SUCCESS) return -6;
+  std_msgs::Int32 outlet_id_msg; outlet_id_msg.data = outlet_id;
+  if (plug_in.execute(outlet_id_msg, empty, timeout_long) != robot_actions::SUCCESS) return -6;
 
   Duration().fromSec(10.0).sleep();
 

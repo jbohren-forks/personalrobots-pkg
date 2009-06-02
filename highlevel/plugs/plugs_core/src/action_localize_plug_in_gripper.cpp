@@ -39,6 +39,8 @@
 namespace plugs_core
 {
 
+const static char* TRACKER_ACTIVATE = "/plug_detector/activate_tracker";
+
 LocalizePlugInGripperAction::LocalizePlugInGripperAction(ros::Node& node) :
   robot_actions::Action<std_msgs::Empty, std_msgs::Empty>("localize_plug_in_gripper"),
   action_name_("localize_plug_in_gripper"),
@@ -77,11 +79,13 @@ LocalizePlugInGripperAction::LocalizePlugInGripperAction(ros::Node& node) :
 
   //detector_ = new PlugTracker::PlugTracker(node);
   //detector_->deactivate();
+  node_.advertise<std_msgs::Empty>(TRACKER_ACTIVATE, 1);
 };
 
 LocalizePlugInGripperAction::~LocalizePlugInGripperAction()
 {
   if(detector_) delete detector_;
+  node_.unadvertise(TRACKER_ACTIVATE);
 };
 
   robot_actions::ResultStatus LocalizePlugInGripperAction::execute(const std_msgs::Empty& empty, std_msgs::Empty& feedback)
@@ -99,6 +103,7 @@ LocalizePlugInGripperAction::~LocalizePlugInGripperAction()
   while (isActive()) {
     if(ros::Time::now() - started > ros::Duration(15.0))
       deactivate(robot_actions::ABORTED,feedback);
+    node_.publish(TRACKER_ACTIVATE, empty);
     d.sleep();
   }
 

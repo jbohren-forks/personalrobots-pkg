@@ -50,6 +50,7 @@ public:
 
   void getPositions(std::vector<JointState>&, std::vector<double>&);
   void getVelocities(std::vector<JointState>&, std::vector<double>&);
+  void getEfforts(std::vector<JointState>&, std::vector<double>&);
   bool allCalibrated(std::vector<JointState>&);
 
   // Constructs a KDL chain that corresponds to the mechanism chain.
@@ -59,6 +60,7 @@ public:
 
   void getPositions(std::vector<JointState>&, KDL::JntArray&);
   void getVelocities(std::vector<JointState>&, KDL::JntArrayVel&);
+  void getEfforts(std::vector<JointState>&, KDL::JntArray&);
 
   void setEfforts(KDL::JntArray&, std::vector<JointState>&);
   void addEfforts(KDL::JntArray&, std::vector<JointState>&);

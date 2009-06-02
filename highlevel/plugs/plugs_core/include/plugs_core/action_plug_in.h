@@ -80,6 +80,7 @@ private:
 
 
   std::string action_name_;
+  int outlet_id_;
 
   ros::Node& node_;
 
@@ -94,7 +95,7 @@ private:
   // TODO: mutex
   ros::Time vision_estimate_time_;
   tf::Pose outlet_pose_mech_;  // Outlet pose in the mechanism "frame"
-  
+
 
   double battery_level_;
 

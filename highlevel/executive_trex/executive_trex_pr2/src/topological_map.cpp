@@ -1191,6 +1191,15 @@ TopologicalMapAdapter::TopologicalMapAdapter(std::istream& in, const std::string
     return ss.str();
   }
 
+robot_msgs::Pose RotatePose180(robot_msgs::Pose input){
+  robot_msgs::Pose output;
+  output.position = input.position;
+  tf::Quaternion orientation;
+  tf::QuaternionMsgToTF(input.orientation, orientation);
+  tf::QuaternionTFToMsg(tf::Quaternion(M_PI, 0, 0) * orientation, output.orientation);
+  return output;
+}
+
   //*******************************************************************************************
   MapGetNextMoveConstraint::MapGetNextMoveConstraint(const LabelStr& name,
 						     const LabelStr& propagatorName,
@@ -1275,13 +1284,22 @@ TopologicalMapAdapter::TopologicalMapAdapter(std::istream& in, const std::string
 
     debugMsg("map:get_next_move", "next move is in region " << next_region);
 
-    _next_x.set(next_pose.position.x);
-    _next_y.set(next_pose.position.y);
-    _next_z.set(next_pose.position.z);
-    _next_qx.set(next_pose.orientation.x);
-    _next_qy.set(next_pose.orientation.y);
-    _next_qz.set(next_pose.orientation.z);
-    _next_qw.set(next_pose.orientation.w);
+    robot_msgs::Pose result_pose;
+
+    if(thru_doorway == false){
+      result_pose = next_pose;
+    }
+    else {
+      result_pose = RotatePose180(next_pose);
+    }
+
+    _next_x.set(result_pose.position.x);
+    _next_y.set(result_pose.position.y);
+    _next_z.set(result_pose.position.z);
+    _next_qx.set(result_pose.orientation.x);
+    _next_qy.set(result_pose.orientation.y);
+    _next_qz.set(result_pose.orientation.z);
+    _next_qw.set(result_pose.orientation.w);
     _thru_doorway.set(thru_doorway);
 
     debugMsg("map:get_next_move",  "AFTER: "  << TREX::timeString() << toString());

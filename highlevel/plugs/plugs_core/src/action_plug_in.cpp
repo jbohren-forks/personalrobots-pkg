@@ -45,13 +45,38 @@ const double MIN_STANDOFF = 0.022;
 
 const double SUCCESS_THRESHOLD = 0.025;
 enum {MEASURING, MOVING, INSERTING, FORCING, HOLDING};
+const static char* TRACKER_ACTIVATE = "/plug_detector/activate_tracker";
+
+
+double getOffset(int id)
+{
+  switch (id)
+  {
+  case 0: return 1.0;
+  case 1: return 0.98948537037195827;
+  case 6: return 0.97692542711765129;
+  case 39: return 0.98097524550697912;
+  case 4: return 0.97561703536950839;
+  case 3: return 0.99092973248973848;
+  case 38: return 0.95012308281214775;
+  case 40: return 0.98361298809350939;
+  case 27: return 0.9864272331729832;
+  case 26: return 0.98778051326139238;
+  case 25: return 0.98898110374305592;
+  case 20: return 0.98890562635876034;
+  case 21: return 0.9780777627427707;
+  default:
+    ROS_ERROR("Invalid outlet id: %d", id);
+    return 0;
+  }
+}
 
 PlugInAction::PlugInAction(ros::Node& node) :
   robot_actions::Action<std_msgs::Int32, std_msgs::Empty>("plug_in"),
   action_name_("plug_in"),
   node_(node),
-  battery_level_(95.0),
-  arm_controller_("r_arm_hybrid_controller")
+  arm_controller_("r_arm_hybrid_controller"),
+  battery_level_(95.0)
 {
   node_.setParam("~roi_policy", "LastImageLocation");
   node_.setParam("~display", 0);
@@ -79,17 +104,21 @@ PlugInAction::PlugInAction(ros::Node& node) :
   tff_msg_.header.frame_id = "outlet_pose";
 
   node_.advertise<plugs_core::PlugInState>(action_name_ + "/state", 10);
-};
+  node_.advertise<std_msgs::Empty>(TRACKER_ACTIVATE, 1);
+}
 
 PlugInAction::~PlugInAction()
 {
-};
+  node_.unadvertise(TRACKER_ACTIVATE);
+}
 
 robot_actions::ResultStatus PlugInAction::execute(const std_msgs::Int32& outlet_id, std_msgs::Empty& feedback)
 {
   reset();
 
   ros::Time started = ros::Time::now();
+  outlet_id_ = outlet_id.data;
+  ROS_INFO("plug_in running on outlet %d", outlet_id_);
 
   ros::Duration d; d.fromSec(0.001);
   while (isActive()) {
@@ -104,6 +133,7 @@ robot_actions::ResultStatus PlugInAction::execute(const std_msgs::Int32& outlet_
       ROS_DEBUG("%s: preempted.", action_name_.c_str());
       deactivate(robot_actions::PREEMPTED, feedback);
     }
+    node_.publish(TRACKER_ACTIVATE, feedback);
   }
 
   return waitForDeactivation(feedback);
@@ -111,6 +141,7 @@ robot_actions::ResultStatus PlugInAction::execute(const std_msgs::Int32& outlet_
 
 void PlugInAction::reset()
 {
+  outlet_id_ = 0;
   last_standoff_ = 1.0e10;
   g_state_ = MEASURING;
   g_started_inserting_ = ros::Time::now();
@@ -141,7 +172,6 @@ void PlugInAction::plugMeasurementCallback(const tf::MessageNotifier<robot_msgs:
   }
   ROS_DEBUG("%s: executing.", action_name_.c_str());
 
-
   tff_msg_.header.stamp = msg->header.stamp;
   // Both are transforms from the outlet to the estimated plug pose
   robot_msgs::PoseStamped viz_offset_msg;
@@ -159,6 +189,20 @@ void PlugInAction::plugMeasurementCallback(const tf::MessageNotifier<robot_msgs:
   tf::Pose viz_offset;
   tf::PoseMsgToTF(viz_offset_msg.pose, viz_offset);
   PoseTFToMsg(viz_offset, state_msg.viz_offset);
+
+  // Deals with the per-outlet offsets
+  {
+    double offset = getOffset(outlet_id_);
+    tf::Stamped<tf::Transform> high_def_in_outlet;
+    TF_->lookupTransform("outlet_pose", "high_def_frame", msg->header.stamp, high_def_in_outlet);
+    tf::Vector3 v = -high_def_in_outlet.getOrigin();
+    v *= (1 - offset);
+
+    tf::Pose old = viz_offset;
+    viz_offset.getOrigin() += v;
+    ROS_INFO("Outlet offset of %.3lf moves the estimate from (%.3lf, %.3lf, %.3lf) to (%.3lf, %.3lf, %.3lf)", offset, old.getOrigin().x(), old.getOrigin().y(), old.getOrigin().z(), viz_offset.getOrigin().x(), viz_offset.getOrigin().y(), viz_offset.getOrigin().z());
+  }
+
   double standoff = std::max(MIN_STANDOFF, viz_offset.getOrigin().length()  * 2.5/4.0);
 
   // Computes the offset for movement

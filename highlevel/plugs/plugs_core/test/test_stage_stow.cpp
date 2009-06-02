@@ -142,6 +142,9 @@ int
   if (switch_controllers.execute(switchlist, empty, switch_timeout) != robot_actions::SUCCESS) return -20;
   if (tuck_arm.execute(empty, empty, Duration(20.0)) != robot_actions::SUCCESS) return -30;
 
+  // detect outlet fine
+  if (detect_outlet_fine.execute(point, pose, Duration(300.0)) != robot_actions::SUCCESS) return -90;
+
   // Untucks arms
   if (untuck_arm.execute(empty, empty, Duration(10.0)) != robot_actions::SUCCESS) return -40;
 
@@ -161,9 +164,6 @@ int
   switchlist.start_controllers.push_back("r_arm_cartesian_wrench_controller");
   if (switch_controllers.execute(switchlist, empty, switch_timeout) != robot_actions::SUCCESS) return -70;
   if (move_and_grasp_plug.execute(plug_stow, empty, Duration(120.0)) != robot_actions::SUCCESS) return -80;
-
-  // detect outlet fine
-  if (detect_outlet_fine.execute(point, pose, Duration(300.0)) != robot_actions::SUCCESS) return -90;
 
   // localize plug in gripper
   if (localize_plug_in_gripper.execute(empty, empty, Duration(300.0)) != robot_actions::SUCCESS) return -100;

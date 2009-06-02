@@ -54,8 +54,8 @@ namespace nav {
     ros_node_.param("~navfn/robot_base_frame", robot_base_frame_, std::string("base_link"));
     ros_node_.param("~navfn/global_frame", global_frame_, std::string("map"));
     ros_node_.param("~controller_frequency", controller_frequency_, 20.0);
-    ros_node_.param("~planner_patience", planner_patience_, 10.0);
-    ros_node_.param("~controller_patience", controller_patience_, 10.0);
+    ros_node_.param("~planner_patience", planner_patience_, 5.0);
+    ros_node_.param("~controller_patience", controller_patience_, 15.0);
 
     //for comanding the base
     ros_node_.advertise<robot_msgs::PoseDot>("cmd_vel", 1);
@@ -64,6 +64,7 @@ namespace nav {
     //we'll assume the radius of the robot to be consistent with what's specified for the costmaps
     ros_node_.param("~base_local_planner/costmap/inscribed_radius", inscribed_radius_, 0.325);
     ros_node_.param("~base_local_planner/costmap/circumscribed_radius", circumscribed_radius_, 0.46);
+    ros_node_.param("~clearing_radius", clearing_radius_, circumscribed_radius_);
 
     robot_msgs::Point pt;
     double padding;
@@ -180,6 +181,7 @@ namespace nav {
     }
 
     //update the copy of the costmap the planner uses
+    clearCostmapWindows(2 * clearing_radius_, 2 * clearing_radius_);
     planner_costmap_ros_->clearRobotFootprint();
     planner_costmap_ros_->getCostmapCopy(planner_costmap_);
 
@@ -348,7 +350,7 @@ namespace nav {
 
   robot_actions::ResultStatus MoveBase::execute(const robot_msgs::PoseStamped& goal, robot_msgs::PoseStamped& feedback){
     //on activation... we'll reset our costmaps
-    clearCostmapWindows(2 * circumscribed_radius_ , 2 * circumscribed_radius_);
+    clearCostmapWindows(2 * clearing_radius_, 2 * clearing_radius_);
 
     //publish the goal point to the visualizer
     publishGoal(goal);
@@ -466,42 +468,20 @@ namespace nav {
           }
           else{
             resetState();
-            if(escaping_){
-              ROS_WARN("move_base aborting because the controller could not find valid velocity commands for over %.4f seconds", patience.toSec());
-              return robot_actions::ABORTED;
-            }
-            else{
-              escaping_ = escape(0.20, 100, feedback);
-              if(!escaping_){
-                ROS_WARN("move_base aborting because the controller could not find valid velocity commands for over %.4f seconds", patience.toSec());
-                return robot_actions::ABORTED;
-              }
-              last_valid_control_ = ros::Time::now();
-              r.sleep();
-              continue;
-            }
+            resetCostmaps(circumscribed_radius_ * 2, circumscribed_radius_ * 2);
+            ROS_WARN("move_base aborting because the controller could not find valid velocity commands for over %.4f seconds", patience.toSec());
+            return robot_actions::ABORTED;
           }
         }
 
         //try to make a plan
         if((done_half_rotation_ && !done_full_rotation_) || !tryPlan(goal_)){
+          last_valid_control_ = ros::Time::now();
           //if we've tried to reset our map and to rotate in place, to no avail, we'll abort the goal
           if(attempted_costmap_reset_ && done_full_rotation_){
             resetState();
-            if(escaping_){
-              ROS_WARN("move_base aborting because the planner could not find a valid plan, even after reseting the map and attempting in place rotation");
-              return robot_actions::ABORTED;
-            }
-            else{
-              escaping_ = escape(0.20, 100, feedback);
-              if(!escaping_){
-                ROS_WARN("move_base aborting because the planner could not find a valid plan, even after reseting the map and attempting in place rotation");
-                return robot_actions::ABORTED;
-              }
-              last_valid_control_ = ros::Time::now();
-              r.sleep();
-              continue;
-            }
+            ROS_WARN("move_base aborting because the planner could not find a valid plan, even after reseting the map and attempting in place rotation");
+            return robot_actions::ABORTED;
           }
 
           if(done_full_rotation_){

@@ -57,7 +57,7 @@ int
   robot_msgs::PoseStamped pose;
   pose.header.frame_id = "base_footprint";
   pose.pose.position.x = 2.0;
-  pose.pose.position.y = 0.0;
+  pose.pose.position.y = -0.5;
   pose.pose.position.z = 0.0;
   pose.pose.orientation.x = 0.0;
   pose.pose.orientation.y = 0.0;

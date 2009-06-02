@@ -136,6 +136,7 @@ robot_actions::ResultStatus PushDoorAction::execute(const door_msgs::Door& goal,
       angle += angle_step;
   }
   ROS_ERROR("preempted");
+  node_.unsubscribe("r_arm_constraint_cartesian_pose_controller/state/pose");
   return robot_actions::PREEMPTED;
 }
 

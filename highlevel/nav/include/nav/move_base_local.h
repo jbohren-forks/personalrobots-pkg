@@ -46,6 +46,7 @@
 #include <base_local_planner/trajectory_planner_ros.h>
 #include <vector>
 #include <string>
+#include <visualization_msgs/Marker.h>
 
 namespace nav {
   /**
@@ -74,6 +75,12 @@ namespace nav {
        * @return The result of the execution, ie: Success, Preempted, Aborted, etc.
        */
       virtual robot_actions::ResultStatus execute(const robot_msgs::PoseStamped& goal, robot_msgs::PoseStamped& feedback);
+
+      /**
+       * @brief  Publish a goal to the visualizer
+       * @param  goal The goal to visualize
+       */
+      void publishGoal(const robot_msgs::PoseStamped& goal);
 
     private:
       /**

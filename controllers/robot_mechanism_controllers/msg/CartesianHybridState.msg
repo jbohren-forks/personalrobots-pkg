@@ -9,3 +9,6 @@ robot_msgs/Twist last_twist_meas
 robot_msgs/Twist last_twist_meas_filtered
 robot_msgs/Twist last_twist_desi
 robot_msgs/Wrench last_wrench_desi
+
+float64[] desired_torque
+float64[] measured_torque

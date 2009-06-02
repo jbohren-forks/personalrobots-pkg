@@ -146,16 +146,18 @@ robot_actions::ResultStatus UnlatchHandleAction::execute(const door_msgs::Door& 
     // detect when gripper is not on hanlde
     if (fabs(tff_state_.rot.x) > M_PI/2.0 || fabs(tff_state_.vel.y) > 0.1 || fabs(tff_state_.vel.z) > 0.1 || 
 	fabs(tff_state_.rot.y) > M_PI/8.0 || fabs(tff_state_.rot.z) > M_PI/8.0){
-      node_.unsubscribe("r_arm_cartesian_tff_controller/state/position");
       node_.publish("r_arm_cartesian_tff_controller/command", tff_stop_);
+      lock.unlock();
+      node_.unsubscribe("r_arm_cartesian_tff_controller/state/position");
       ROS_ERROR("UnlatchHandleAction: Gripper was not on door handle");
       return robot_actions::ABORTED;
     }
 
     // detect when door is locked
     if (fabs(tff_handle_.value.rot.x) > 3.5 && fabs(tff_state_.rot.x < M_PI/6.0)){
-      node_.unsubscribe("r_arm_cartesian_tff_controller/state/position");
       node_.publish("r_arm_cartesian_tff_controller/command", tff_stop_);
+      lock.unlock();
+      node_.unsubscribe("r_arm_cartesian_tff_controller/state/position");
       ROS_INFO("UnlatchHandleAction: Door is locked");
       feedback.latch_state = door_msgs::Door::LOCKED;
       return robot_actions::SUCCESS;
@@ -164,6 +166,8 @@ robot_actions::ResultStatus UnlatchHandleAction::execute(const door_msgs::Door& 
     // check if preempted
     if (isPreemptRequested()) {
       node_.publish("r_arm_cartesian_tff_controller/command", tff_stop_);
+      lock.unlock();
+      node_.unsubscribe("r_arm_cartesian_tff_controller/state/position");
       ROS_ERROR("UnlatchHandleAction: preempted");
       return robot_actions::PREEMPTED;
     }

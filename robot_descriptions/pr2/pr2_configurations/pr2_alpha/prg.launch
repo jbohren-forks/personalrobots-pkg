@@ -41,20 +41,21 @@
   <node machine="four" pkg="imu_node" type="imu_node" output="screen"/>
 
 <!-- Prosilica camera setup -->
-<!--  <group ns="prosilica">
+  <group ns="prosilica">
     <include file="$(find prosilica_cam)/cam_settings.xml"/>
     <param name="acquisition_mode" type="str" value="Triggered"/>
     <param name="ip_address" type="str" value="10.68.7.20"/>
   </group>
   <node machine="three" name="prosilica" pkg="prosilica_cam" type="prosilica_node" output="screen" respawn="true"/>
--->
+
 
 <!-- Runtime Diagnostics Logging -->
   <node pkg="rosrecord" type="rosrecord" args="-f /hwlog/prg_runtime_automatic /diagnostics" />
 
 <!-- Joint Calibration Monitor -->
+<!--
   <node pkg="joint_calibration_monitor" type="pr2_calibration_monitor_node.py" machine="two" />
-
+-->
 <!-- NTP monitoring script Warns to console if sync error -->
   <node pkg="runtime_monitor" type="ntp_monitor.py" args="prg2" machine="realtime"/>
   <node pkg="runtime_monitor" type="ntp_monitor.py" args="fw1 7000" machine="two"/> 
@@ -72,6 +73,18 @@
     <param name="num_disp" value="128"/>
   </group>
   <node machine="four" pkg="dcam" type="stereodcam" respawn="false"/>
+
+  <!-- Plug to chessboard offsets -->
+  <group ns="plug_detector">
+    <param name="plug_position_x" value="0.0065" />
+    <param name="plug_position_y" value="-0.0065" />
+    <param name="plug_position_z" value="0.016" />
+    <param name="plug_orientation_x" value="0.71428" />
+    <param name="plug_orientation_y" value="-0.69958" />
+    <param name="plug_orientation_z" value="0.00588" />
+    <param name="plug_orientation_w" value="0.01906" />
+  </group>
+
 
 </launch>
 

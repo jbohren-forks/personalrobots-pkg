@@ -196,6 +196,26 @@ bool CartesianHybridController::initXml(mechanism::RobotState *robot, TiXmlEleme
 
   task_frame_offset_ = KDL::Frame::Identity();
 
+  // allocate vector in non-realtime
+  measured_torque_.resize(kdl_chain_.getNrOfJoints());
+  desired_torque_.resize(kdl_chain_.getNrOfJoints());
+  max_jnt_eff_.resize(kdl_chain_.getNrOfJoints());
+
+  // set default max jnt efforts
+  for (unsigned int i=0; i<kdl_chain_.getNrOfJoints(); i++)
+    max_jnt_eff_[i] = 100;
+
+  // @TODO: remove this ugly setting of joint effort limits
+  if (kdl_chain_.getNrOfJoints() >= 7){
+    max_jnt_eff_[0] = 12;
+    max_jnt_eff_[1] = 12;
+    max_jnt_eff_[2] = 7;
+    max_jnt_eff_[3] = 7;
+    max_jnt_eff_[4] = 12;
+    max_jnt_eff_[5] = 10;
+    max_jnt_eff_[6] = 10;
+  }
+
   return true;
 }
 
@@ -324,17 +344,35 @@ void CartesianHybridController::update()
     }
   }
 
-  // Transforms the wrench from the task frame to the chain root frame
-  KDL::Wrench wrench_in_root;
-  wrench_in_root.force = task_frame_offset_.M * wrench_desi_.force;
-  wrench_in_root.torque = task_frame_offset_.M * wrench_desi_.torque;
-
-  // Finds the Jacobian for the tool
+  // Finds the Jacobian with reference frame root, and reference point tool 
   KDL::ChainJntToJacSolver jac_solver(kdl_chain_);
   KDL::Jacobian ee_jacobian(kdl_chain_.getNrOfJoints());
-  KDL::Jacobian jacobian(kdl_chain_.getNrOfJoints());  // Tool Jacobian
+  KDL::Jacobian jacobian(kdl_chain_.getNrOfJoints());  
+  // get jacobian with reference frame root, and reference point tip 
   jac_solver.JntToJac(jnt_vel.q, ee_jacobian);
-  KDL::changeRefFrame(ee_jacobian, tool_frame_offset_, jacobian);
+  // change reference point of jacobian from ee to tool
+  KDL::changeRefPoint(ee_jacobian, ee_in_root.value().M * tool_frame_offset_.p, jacobian);  
+
+  // scale the force component in wrench_desi_ to prevent it from saturating the joint efforts
+  KDL::Wrench push_force(wrench_desi_.force, KDL::Vector::Zero());
+  push_force = task_frame_offset_.M * push_force;  
+  KDL::JntArray jnt_eff_push(kdl_chain_.getNrOfJoints());
+  for (size_t i = 0; i < kdl_chain_.getNrOfJoints(); ++i){
+    jnt_eff_push(i) = 0;
+    for (size_t j = 0; j < 6; ++j)
+      jnt_eff_push(i) += jacobian(j,i) * push_force(j);
+  }
+  double max_scale = 0;
+  for (unsigned int i=0; i<kdl_chain_.getNrOfJoints(); i++){
+    double scale = fabs(jnt_eff_push(i) / max_jnt_eff_[i]);
+    if (scale > max_scale) max_scale = scale;
+  }
+  if (max_scale > 1.0)
+    wrench_desi_.force = wrench_desi_.force / max_scale;
+
+  // transform the reference frame from the task frame to the root frame
+  KDL::Wrench wrench_in_root;
+  wrench_in_root = task_frame_offset_.M * wrench_desi_;  
 
   // jnt_eff = jacobian * wrench
   KDL::JntArray jnt_eff(kdl_chain_.getNrOfJoints());
@@ -344,8 +382,14 @@ void CartesianHybridController::update()
     for (size_t j = 0; j < 6; ++j)
       jnt_eff(i) += jacobian(j,i) * wrench_in_root(j);
   }
-
   chain_.addEfforts(jnt_eff, robot_->joint_states_);
+
+  // copy desired/measured joint torques in vector
+  for (unsigned int i=0; i<kdl_chain_.getNrOfJoints(); i++){
+    chain_.getEfforts(robot_->joint_states_, measured_torque_);
+    desired_torque_[i] = jnt_eff(i);
+  }
+
 }
 
 bool CartesianHybridController::starting()
@@ -450,6 +494,10 @@ bool CartesianHybridControllerNode::initXml(mechanism::RobotState *robot, TiXmlE
     twist_rot_pid_tuner_.add(c_.twist_pids_ + i);
   twist_rot_pid_tuner_.advertise(name_ + "/twist_rot");
 
+  // allocate vector in non-realtime
+  pub_state_->msg_.measured_torque.resize(c_.kdl_chain_.getNrOfJoints());
+  pub_state_->msg_.desired_torque.resize(c_.kdl_chain_.getNrOfJoints());
+
   return true;
 
 }
@@ -485,6 +533,9 @@ void CartesianHybridControllerNode::update()
                              last_pose_meas.rot[2]);
       TwistKDLToMsg(last_pose_meas, pub_state_->msg_.last_pose_meas);
 
+      pub_state_->msg_.desired_torque = c_.desired_torque_;
+      pub_state_->msg_.measured_torque = c_.measured_torque_;
+
       pub_state_->unlockAndPublish();
     }
     if (pub_tf_->trylock())
@@ -516,7 +567,11 @@ void CartesianHybridControllerNode::command(
     return;
   }
   tf::TransformTFToKDL(task_frame, c_.task_frame_offset_);
-
+  
+  int old_modes[6];
+  for (int i =0 ; i < 6; i++){
+    old_modes[i] = c_.mode_[i];
+  }
   c_.mode_[0] = (int)tff_msg->mode.vel.x;
   c_.mode_[1] = (int)tff_msg->mode.vel.y;
   c_.mode_[2] = (int)tff_msg->mode.vel.z;
@@ -529,6 +584,13 @@ void CartesianHybridControllerNode::command(
   c_.setpoint_[3] = tff_msg->value.rot.x;
   c_.setpoint_[4] = tff_msg->value.rot.y;
   c_.setpoint_[5] = tff_msg->value.rot.z;
+
+  for(int i = 0; i < 6; i++){
+    if(old_modes[i] != c_.mode_[i]){
+      c_.pose_pids_[i].reset();
+      c_.twist_pids_[i].reset();
+    }
+  }
 }
 
 bool CartesianHybridControllerNode::setToolFrame(

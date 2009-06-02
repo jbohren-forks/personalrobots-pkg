@@ -35,8 +35,8 @@ if __name__ == '__main__':
     
     cmd.pos = [1.2,  -.7, 1.2]
     cmd.time= [0.0, 1.8, 2.025]
-    cmd.max_rate =  20   # Ignores param
-    cmd.max_accel=  175   # ignores param
+    cmd.max_rate =  5   # Ignores param
+    cmd.max_accel=  5   # ignores param
 
     print 'Sending Command to %s: ' % controller
     print '  Profile Type: %s' % cmd.profile

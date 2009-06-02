@@ -48,11 +48,6 @@ class MoveBehavior extends Behavior {
     super(_mode);
     for_doorways = _for_doorways;
   }
-
-  MoveBehavior(Mode _mode, int max_duration, bool _for_doorways){
-    super(_mode, max_duration);
-    for_doorways = _for_doorways;
-  }
 };
 
 MoveBehavior::Inactive{

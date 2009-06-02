@@ -76,6 +76,31 @@ bool OutletTracker::detectObject(tf::Transform &pose)
 
   publishOutletMarker(holes);
   publishRayMarker(holes[0]);
+
+  //BEGIN CHANGE MADE WITHOUT KNOWLEDGE OF CODE STRUCTURE
+  //We want to insert a sanity-check here on the outlet, since we saw a detection that was off by 45 degrees during the milestone
+  //The check will be that the up vector of the outlet is within some threshold of up in the base frame
+  
+  //Transform up vector into torso frame
+  ros::Time timestamp = ros::Time(0); //TODO populate this with timestamp of image acquisition
+
+  tf::Stamped<tf::Vector3> up_stamped(up, timestamp, "high_def_frame");
+  tf::Stamped<tf::Vector3> global_up_stamped;
+
+  try{
+    tf_listener_.transformVector("base_link", up_stamped, global_up_stamped);
+
+    //Check for error, and abort if it fails the sanity check
+    if(tf::Vector3(0, 0, 1).angle(global_up_stamped) > 0.2){
+      ROS_WARN("Rejecting outlet location due to apparently bogus orientation (detected vertical off by more than 0.2 radians)");
+      return false;
+    }  
+  } 
+  catch(tf::TransformException &ex){
+    ROS_WARN("Unable to transform pose of outlet into base_link frame. Hoping it's OK anyway, but this means we can't do our sanity check.");
+  }
+
+  //END CHANGE MADE WITHOUT KNOWLEDGE OF CODE STRUCTURE
   
   return true;
 }

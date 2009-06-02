@@ -116,7 +116,7 @@ def main():
         for a in new_actions:
             watchers.append(ActionWatcher(a))
         
-        time.sleep(0.1)
+        time.sleep(0.5)
     rospy.spin()
 
 if __name__ == '__main__': main()

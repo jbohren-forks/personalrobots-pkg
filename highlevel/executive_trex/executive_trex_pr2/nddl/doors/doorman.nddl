@@ -19,11 +19,17 @@ MoveBehavior::Inactive {
 }
 
 MoveBehavior::Active {
-
   starts(DoorController.Holds dc);
+
+  // Compute the deadline in ticks
+  float elapsedTicks;
+  mulEq(elapsedTicks, 0.1, max_duration);
+  float deadline;
+  addEq(start, elapsedTicks, deadline);
 
   // Initialize controller variables. We begin by assuming the worst.
   eq(dc.active, true);	 
+  leq(dc.deadline, deadline);
   eq(dc.in_position, false);
   eq(dc.found_door, false);
   eq(dc.must_find_handle, true);
@@ -37,11 +43,8 @@ MoveBehavior::Active {
   MAP_KEY doorway_id;
   neq(doorway_id, NO_KEY);
 
-  /*
-    float current_x, current_y, current_z, current_qx, current_qy, current_qz, current_qw;
-    tf_get_robot_pose(current_x, current_y, current_z, current_qx, current_qy, current_qz, current_qw, "map");
-  */
-
+  // Only using the second point, since that point should be coming from the topological
+  // map. The doorway is derived from a connector whose approach pose is closest to this
   map_get_doorway_from_points(doorway_id, 0.0, 0.0, x, y);
   starts(door_state.Holds ds);
   map_get_door_state(ds.object, doorway_id);

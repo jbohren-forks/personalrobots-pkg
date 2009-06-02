@@ -1,0 +1,5 @@
+<launch>
+  <include file="$(find pr2_alpha)/$(env ROBOT).machine" />
+
+  <node pkg="executive_trex_pr2" machine="two" type="trexfast"/>
+</launch>

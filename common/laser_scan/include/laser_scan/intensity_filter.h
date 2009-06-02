@@ -115,8 +115,8 @@ public:
     return true;
   }
 } ;
-
-FILTERS_REGISTER_FILTER(LaserScanIntensityFilter, LaserScan);
+typedef laser_scan::LaserScan laser_scan_laser_scan;
+FILTERS_REGISTER_FILTER(LaserScanIntensityFilter, laser_scan_laser_scan);
 }
 
 #endif // LASER_SCAN_INTENSITY_FILTER_H

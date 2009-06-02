@@ -24,16 +24,6 @@ BaseState::Holds{
   eq(duration, 1);
 }
 
-/**
- * Behavior will be started and execute perfectly.
- */
-MoveBase::Active{
-  eq(duration, 1);
-  meets(Inactive s);
-  eq(s.status, SUCCESS);
-  eq_pose_msg(s.object, object);
-}
-
 MoveBase::Inactive{
   if(object == move_base){
     starts(BaseState.Holds bs);

@@ -1,5 +1,46 @@
 #include "test/doors/sim.nddl";
 
+/**
+ * For now, assume a fixed duration, and always return success.
+ */
+DoorManipulationBehavior::Active{
+  eq(duration, 1);
+
+  // Handle always free at the end
+  meets(Inactive s);
+  eq(s.status, SUCCESS);
+}
+
+MoveBase::Active{
+  eq(duration, 1);
+  meets(Inactive s);
+  eq(s.status, ABORTED);
+}
+
+CheckPath::Active{
+  eq(duration, 1);
+  meets(Inactive s);
+  eq(s.status, SUCCESS);
+}
+
+StopAction::Active{
+  eq(duration, 5);
+  meets(Inactive s);
+  eq(s.status, SUCCESS);
+}
+
+CheckPath::Inactive{
+  if(status == SUCCESS){
+    eq(is_clear, true);
+  }
+}
+
+UnlatchHandle::Inactive{
+  if(status == SUCCESS){
+    eq(latch_state, LATCH_STATE_UNLATCHED);
+  }
+}
+
 // Start with a default position
 fact(base_state.Holds f1);
 f1.x = 0.0;
@@ -9,9 +50,3 @@ f1.qx = 0.0;
 f1.qy = 0.0;
 f1.qz = 1.0;
 f1.qw = 0.0;
-
-// We will make sure that the doorway is not clear until tick 50. This will hold up exit. The default value will kick in to
-// Transition to true.
-fact(doorway_clear_sv.Holds f2);
-f2.end = 70;
-f2.value = false;

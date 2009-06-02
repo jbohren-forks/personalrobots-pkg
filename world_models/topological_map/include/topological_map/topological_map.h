@@ -47,6 +47,7 @@
 namespace topological_map
 {
 
+
 using std::vector;
 using std::string;
 using std::ostream;
@@ -56,6 +57,7 @@ using std::pair;
 using ros::Time;
 
 
+ typedef std::pair<bool, double> ReachableCost;
 typedef unsigned int RegionId;
 typedef unsigned int ConnectorId;
 typedef vector<RegionId> RegionIdVector;

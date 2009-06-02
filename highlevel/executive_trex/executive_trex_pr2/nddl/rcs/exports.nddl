@@ -3,6 +3,8 @@
  */
 typedef int [-1, 1] TIME_ERROR_BOUND;
 
+eq(TICK_DURATION, 0.1);
+
 /**
  * Defines core interfaces for ROS integration
  */
@@ -17,8 +19,32 @@ class ROSStateVariable extends AgentTimeline {
   ROSStateVariable(Mode _mode){
     super(_mode, "Holds");
   }
-}
+};
 
+class Controller extends AgentTimeline {
+  predicate Holds {
+    bool active;
+    int deadline;
+    float remaining_time;
+    bool timed_out;
+  }
+
+  Controller(){
+    super(Internal, "Holds");
+  }
+};
+
+Controller::Holds{
+  met_by(Holds p);
+  defaultOnCommit(active, p.active);
+  defaultOnCommit(deadline, p.deadline);
+
+  float remaining_ticks;
+  addEq(start, remaining_ticks, deadline);
+  mulEq(remaining_ticks, TICK_DURATION, remaining_time);
+  //testLEQ(timed_out, remaining_time, 0.0);
+  eq(timed_out, false);
+}
 
 /**
  * Specialize to mark all ROS Actions
@@ -32,7 +58,7 @@ class ROSAction extends Behavior {
   ROSAction(Mode _mode){
     super(_mode);
   }
-}
+};
 
 ROSAction::Active{
   int time_since_dispatch;

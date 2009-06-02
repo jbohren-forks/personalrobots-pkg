@@ -1,13 +1,13 @@
 /*********************************************************************
 * Software License Agreement (BSD License)
-* 
+*
 *  Copyright (c) 2008, Willow Garage, Inc.
 *  All rights reserved.
-* 
+*
 *  Redistribution and use in source and binary forms, with or without
 *  modification, are permitted provided that the following conditions
 *  are met:
-* 
+*
 *   * Redistributions of source code must retain the above copyright
 *     notice, this list of conditions and the following disclaimer.
 *   * Redistributions in binary form must reproduce the above
@@ -17,7 +17,7 @@
 *   * Neither the name of the Willow Garage nor the names of its
 *     contributors may be used to endorse or promote products derived
 *     from this software without specific prior written permission.
-* 
+*
 *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 *  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 *  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -59,7 +59,7 @@ public:
   void deactivate();
 
   void spin();
-  
+
 protected:
   virtual bool detectObject(tf::Transform &pose) = 0;
   virtual CvRect getBoundingBox() = 0;
@@ -67,20 +67,20 @@ protected:
 
   void processCamInfo();
   void processImage();
-  
+
   CvRect fitToFrame(CvRect roi);
   void setRoi(CvRect roi);
   void setRoiToTargetFrame();
   robot_msgs::Pose getTargetInHighDef();
 
-  void saveImage();
+  void saveImage(bool success = false);
 
   // TODO: is this really not in roscpp somewhere?
   bool waitForService(const std::string &service);
 
   ros::Node &node_;
   boost::thread active_thread_;
-  
+
   prosilica_cam::PolledImage::Request req_;
   prosilica_cam::PolledImage::Response res_;
   std::string image_service_;
@@ -103,10 +103,15 @@ protected:
 
   image_msgs::Image display_img_;
   std::string display_topic_name_;
-  
+
   /*bool*/ int save_failures_;
   int save_count_;
   std::string save_prefix_;
+
+  void activateCB();
+  bool stay_active_;
+  ros::Time last_activate_time_;
+  std_msgs::Empty activate_msg_;
 };
 
 #endif

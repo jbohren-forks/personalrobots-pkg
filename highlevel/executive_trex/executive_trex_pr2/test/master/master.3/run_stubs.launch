@@ -1,5 +1,0 @@
-<launch>
-  <master auto="start"/>
-  <param name="/trex/start_dir" value="$(find executive_trex_pr2)/test/master/master.3"/>
-  <include file="$(find executive_trex_pr2)/test/master/stubs.launch" />
-</launch>

@@ -243,6 +243,11 @@ tPvFrame* Camera::grab(unsigned long timeout_ms)
   unsigned long time_so_far = 0;
   while (time_so_far < timeout_ms)
   {
+    // FIXME: this is a hack, it seems that re-commanding the software trigger
+    // too quickly may cause the Prosilica driver to complain that the sequence
+    // of API calls is incorrect.
+    boost::this_thread::sleep(boost::posix_time::millisec(400));
+
     // Queue up a single frame
     tPvFrame* frame = &frames_[0];
     CHECK_ERR( PvCaptureQueueFrame(handle_, frame, NULL), "Couldn't queue frame" );
@@ -281,11 +286,6 @@ tPvFrame* Camera::grab(unsigned long timeout_ms)
     // Retry if data was lost in transmission. Probably no hope on other errors.
     if (frame->Status != ePvErrDataMissing && frame->Status != ePvErrDataLost)
       return NULL;
-
-    // FIXME: this is a hack, it seems that re-commanding the software trigger
-    // too quickly may cause the Prosilica driver to complain that the sequence
-    // of API calls is incorrect.
-    boost::this_thread::sleep(boost::posix_time::millisec(400));
   }
   
   return NULL;

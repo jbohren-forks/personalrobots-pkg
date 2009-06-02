@@ -129,6 +129,10 @@ public:
 	boost::condition_variable data_cv_;
 	bool have_cloud_point_;
 	bool have_images_;
+	bool preempt_;
+
+	double timeout_;
+	ros::Time start_image_wait_;
 
 	tf::TransformListener* tf_;
 
@@ -154,7 +158,7 @@ public:
 	vector<IplImage*> negative_templates;
 
 	OutletSpotting() : ros::Node("outlet_spotting"),left(NULL), disp(NULL), disp_clone(NULL),
-		sync(this, &OutletSpotting::image_cb_all, ros::Duration().fromSec(0.1), &OutletSpotting::image_cb_timeout), have_cloud_point_(false), have_images_(false), ppmm(0.5)
+		sync(this, &OutletSpotting::image_cb_all, ros::Duration().fromSec(0.1), &OutletSpotting::image_cb_timeout), have_cloud_point_(true), have_images_(true), ppmm(0.5)
 
 	{
         tf_ = new tf::TransformListener(*this);
@@ -171,6 +175,7 @@ public:
 		param ("~min_outlet_height", min_outlet_height_, 0.1);
 		param ("~max_outlet_height", max_outlet_height_, 0.7);
 		param<string>("~patch_path", patch_path, "data");
+		param("~timeout", timeout_, 3.0);
 //		string template_path;
 //        param<string>("~template_path", template_path,"templates");
 
@@ -1433,18 +1438,23 @@ private:
 
 		for (int i=0;i<frames_number_;++i) {
 			ROS_INFO("OutletSpotter: waiting for images and base laser data");
-			while (!(have_images_ && have_cloud_point_)) {
+        	start_image_wait_ = ros::Time::now();
+        	preempt_ = false;
+			// want new data for next detection
+			have_images_ = false;
+			have_cloud_point_ = false;
+			while (!(have_images_ && have_cloud_point_) && !preempt_) {
 				data_cv_.wait(images_lock);
+			}
+			if (preempt_) {
+				ROS_INFO("OutletSpotter: detect loop preempted");
+				return false;
 			}
 			ROS_INFO("OutletSpotter: received images and base laser data, performing detection");
 
 			bool found = detectOutlet(pose);
 
 			showMarkers(pose);
-
-			// want new data for next detection
-			have_images_ = false;
-			have_cloud_point_ = false;
 
 			if (display) {
 				cvShowImage("left", left);
@@ -1476,6 +1486,14 @@ public:
 		while (ok())
 		{
 			data_lock_.lock();
+
+			if (!have_images_ && !have_cloud_point_) {
+				if ((ros::Time::now()-start_image_wait_) > ros::Duration(timeout_)) {
+					preempt_ = true;
+					data_cv_.notify_all();
+				}
+			}
+
 			int key = cvWaitKey(3)&0x00FF;
 			data_lock_.unlock();
 			if(key == 27) //ESC
@@ -1497,7 +1515,11 @@ public:
 		bool found = false;
 		subscribeToData();
 
-		float directions[][2] = { {0,0}, {-15,-10}, {0,-10}, {15,-10}, {15,0}, {0,0}, {-15,0,},{-15,10}, {0,10},{15,10} };
+		//		float directions[][2] = { {0,0}, {-15,-10}, {0,-10}, {15,-10}, {15,0}, {0,0}, {-15,0,},{-15,10}, {0,10},{15,10} };
+		float directions[][2] = {{0, 0},{0, -10},{0, 10},{0, -20},{0, 20},{-10, 0},{-10, -10},
+					 {-10, 10},{-10, -20},{-10, 20},{10, 0},{10, -10},{10, 10},{10, -20},
+					 {10, 20},{-20, 0},{-20, -10},{-20, 10},{-20, -20},{-20, 20},{20, 0},
+					 {20, -10},{20, 10},{20, -20},{20, 20}};
 
 //
 //		tf::Stamped<tf::Pose> t1;

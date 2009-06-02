@@ -4,20 +4,26 @@ Recharger::Active{
   // Start the recharge controller
   starts(RechargeController.Holds rc);
 
+  // Compute the deadline in ticks
+  float elapsedTicks;
+  mulEq(elapsedTicks, 0.1, max_duration);
+  float deadline;
+  addEq(start, elapsedTicks, deadline);
+
   // Initialize control variables
   eq(rc.active, true);
+  leq(rc.deadline, deadline);
   eq(rc.in_position, false);
   eq(rc.outlet_detected_coarse, false);
   eq(rc.outlet_detected_fine, false);
   eq(rc.recharged, false);
-  eq(rc.plug_is_stowed, maybe);
+  eq(rc.plug_is_stowed, yes);
   eq(rc.ready_to_plug_in, false);
   eq(rc.plug_in_hand, false);
   eq(rc.plugged_in, false);
   eq(rc.ready_to_grasp, false);
   eq(rc.arms_clear, false);
-  eq(rc.finishing, false);
-  eq(rc.restowing_plug, false);
+  eq(rc.resetting, false);
 
   // Initialize outlet state
   starts(outlet_state.Holds os);
