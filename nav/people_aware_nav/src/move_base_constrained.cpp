@@ -146,7 +146,7 @@ void MoveBaseConstrained::makePlan(const PoseStamped& goal, const Polygon3D& for
     }
     planner_costmap_.setConvexPolygonCost(polygon, costmap_2d::LETHAL_OBSTACLE);
 
-    ROS_DEBUG_NAMED ("move", "Modified costmap");
+    ROS_INFO ("Modified costmap to take constraints into account");
 
 
 
@@ -215,6 +215,8 @@ void MoveBaseConstrained::makePlan(const PoseStamped& goal, const Polygon3D& for
     // Make a plan to the goal
     makePlan(goal_, goal.forbidden);
 
+    ROS_INFO ("Made plan");
+
     costmap_2d::Rate r(controller_frequency_);
     last_valid_control_ = ros::Time::now();
     robot_msgs::PoseDot cmd_vel;
@@ -253,6 +255,7 @@ void MoveBaseConstrained::makePlan(const PoseStamped& goal, const Polygon3D& for
       
       if(valid_plan_){
         //if we have a new plan... we'll update the plan for the controller
+        ROS_INFO ("Passing plan to controller");
         if(new_plan_){
           new_plan_ = false;
           if(!tc_->updatePlan(global_plan_)){
@@ -294,6 +297,9 @@ void MoveBaseConstrained::makePlan(const PoseStamped& goal, const Polygon3D& for
       }
       else{
         //we don't have a valid plan... so we want to stop
+
+        ROS_INFO ("No valid plan; stopping");
+
         cmd_vel.vel.vx = 0.0;
         cmd_vel.vel.vy = 0.0;
         cmd_vel.ang_vel.vz = 0.0;
@@ -304,6 +310,8 @@ void MoveBaseConstrained::makePlan(const PoseStamped& goal, const Polygon3D& for
 
       //if we don't have a valid control... we need to re-plan explicitly
       if(!valid_control){
+
+        ROS_INFO ("No valid control; replanning");
         ros::Duration patience = ros::Duration(controller_patience_);
 
         //if we have a valid plan, but can't find a valid control for a certain time... abort

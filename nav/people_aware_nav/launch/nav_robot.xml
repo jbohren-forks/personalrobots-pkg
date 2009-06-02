@@ -2,7 +2,12 @@
   <master auto="start"/>
   <group>
   <param name="/use_sim_time" value="false"/>
-    <node pkg="people_aware_nav" type="move_base_constrained" respawn="false" name="move_base" output="screen">
+    <node pkg="people_aware_nav" type="move_base_constrained" respawn="false" name="move_base" machine="three" output="screen">
+
+
+  <param name="controller_frequency" value="10.0" />
+  <param name="footprint_padding" value="0.015" />
+  <param name="controller_patience" value="15.0" />
       
       <param name="odom_frame" value="odom"/>
       <param name="global_frame" value="map" />
@@ -12,10 +17,10 @@
       <param name="circumscribed_radius" value="0.46" />
       <param name="inflation_radius" value="0.55" />
 
-      <rosparam file="$(find test_nav)/config/costmap_common_params.yaml" command="load" ns="navfn" />
-      <rosparam file="$(find test_nav)/config/costmap_common_params.yaml" command="load" ns="base_local_planner" />
-      <rosparam file="$(find test_nav)/move_base/navfn_params.yaml" command="load" />
-      <rosparam file="$(find test_nav)/move_base/base_local_planner_params.yaml" command="load" />
+      <rosparam file="$(find 2dnav_pr2)/config/costmap_common_params.yaml" command="load" ns="navfn" />
+      <rosparam file="$(find 2dnav_pr2)/config/costmap_common_params.yaml" command="load" ns="base_local_planner" />
+      <rosparam file="$(find 2dnav_pr2)/move_base/navfn_params.yaml" command="load" />
+      <rosparam file="$(find 2dnav_pr2)/move_base/base_local_planner_params.yaml" command="load" />
 
     </node>
 
