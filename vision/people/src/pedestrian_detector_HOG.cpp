@@ -50,13 +50,17 @@
 #include "topic_synchronizer/topic_synchronizer.h"
 #include "tf/transform_listener.h"
 #include <tf/message_notifier.h>
+#include "LinearMath/btTransform.h"
 
 #include "opencv/cxcore.h"
 #include "opencv/cv.h"
 #include "opencv/highgui.h"
 #include <boost/thread/mutex.hpp>
+#include "opencv/cvaux.hpp"
 
 #include "utils.h"
+
+//#include "HOG/hog.hpp"
 
 namespace people
 {
@@ -84,25 +88,32 @@ namespace people
     TopicSynchronizer<PedestrianDetectorHOG> *sync_;
 
     tf::TransformListener *tf_;
-    tf::MessageNotifier<people::PositionMeasurement>* message_notifier_person_;
-    string fixed_frame_;
 
     double hit_threshold_;
     int group_threshold_;
 
     bool use_depth_;
-  
+
+    bool use_height_;
+    double max_height_m_;
+    std::string ground_frame_;
+
     bool do_display_;
 
     /////////////////////////////////////////////////////////////////
     // Constructor
-    PedestrianDetectorHOG(ros::Node *node): node_(node) {
+    PedestrianDetectorHOG(ros::Node *node): node_(node), cam_model_(NULL), counter(0) {
+      
+      hog_.setSVMDetector(cv::HOGDescriptor::getDefaultPeopleDetector());
       
       // Get parameters from the server
-      node_->param("/people/pedestrian_detector_HOG/do_display", do_display_, true);
-      node_->param("/people/pedestrian_detector_HOG/use_depth", use_depth_, false);
       node_->param("/people/pedestrian_detector_HOG/hit_threshold",hit_threshold_,0.0);
       node_->param("/people/pedestrian_detector_HOG/group_threshold",group_threshold_,2);
+      node_->param("/people/pedestrian_detector_HOG/use_depth", use_depth_, true);
+      node_->param("/people/pedestrian_detector_HOG/use_height",use_height_,true);
+      node_->param("/people/pedestrian_detector_HOG/max_height_m",max_height_m_,2.2);
+      node_->param("/people/pedestrian_detector_HOG/ground_frame",ground_frame_,std::string("base_link"));
+      node_->param("/people/pedestrian_detector_HOG/do_display", do_display_, true);
        
       // TODO: Initialize OpenCV structures.
 
@@ -113,11 +124,15 @@ namespace people
       if (do_display_) {
 	node_->advertise<image_msgs::ColoredLines>("lines_to_draw",1);
 	ROS_INFO_STREAM_NAMED("pedestrian_detector_HOG","Advertising colored lines to draw remotely.");
-	cv::namedWindow("people detector", 1);
+	//cv::namedWindow("people detector", 1);
       }
 
-      // Subscribe to the images  
+      // Subscribe to tf & the images  
       if (use_depth_) {  
+
+	tf_ = new tf::TransformListener(*node_);
+	tf_->setExtrapolationLimit(ros::Duration().fromSec(0.01));
+
 	sync_ = new TopicSynchronizer<PedestrianDetectorHOG>(node_, this, &people::PedestrianDetectorHOG::imageCBAll, ros::Duration().fromSec(0.05), &PedestrianDetectorHOG::imageCBTimeout);
 	sync_->subscribe("stereo/left/image_rect",limage_,1);
 	sync_->subscribe("stereo/disparity",dimage_,1);
@@ -173,20 +188,100 @@ namespace people
       // TODO: Preprocess the image for the detector
 
       cv::Mat img(cv_image_left,false);
+      cv::Mat *small_img;
       cv::Vector<cv::Rect> found;
       if (!use_depth_) {
+
+	// Timing
+	struct timeval timeofday;
+	gettimeofday(&timeofday,NULL);
+	ros::Time startt = ros::Time().fromNSec(1e9*timeofday.tv_sec + 1e3*timeofday.tv_usec);
+
+
 	// Run the HOG detector. Similar to samples/peopledetect.cpp.
-	cv::HOGDescriptor hog;
-	hog.setSVMDetector(cv::HOGDescriptor::getDefaultPeopleDetector());
+	//cv::HOGDescriptor hog;
+	//hog.setSVMDetector(cv::HOGDescriptor::getDefaultPeopleDetector());
 	double t = (double)cv::getTickCount();
-	hog.detectMultiScale(img, found, hit_threshold_, cv::Size(8,8), cv::Size(24,16), 1.05, group_threshold_);
+	hog_.detectMultiScale(img, found, hit_threshold_, cv::Size(8,8), cv::Size(24,16), 1.05, group_threshold_);
 	t = (double)cv::getTickCount() - t;
-	ROS_DEBUG_STREAM_NAMED("pedestrian_detector", "Detection time = "<< t*1000./cv::getTickFrequency() <<"ms\n");
+	//ROS_DEBUG_STREAM_NAMED("pedestrian_detector", "Detection time = "<< t*1000./cv::getTickFrequency() <<"ms\n");
+	small_img = &img;
+
+	// Timing
+	gettimeofday(&timeofday,NULL);
+	ros::Time endt = ros::Time().fromNSec(1e9*timeofday.tv_sec + 1e3*timeofday.tv_usec);
+	ros::Duration diff = endt-startt;
+	ROS_DEBUG_STREAM_NAMED("pedestrian_detector","No depth, duration " << diff.toSec() );
 
       }
       else {
-	// TODO: Get the places to run the detector.
-	// TODO: Run the HOG detector at certain locations.
+
+	// Convert the stereo calibration into a camera model. Only done once.
+	if (!cam_model_) {
+	  double Fx = rcinfo_.P[0];
+	  double Fy = rcinfo_.P[5];
+	  double Clx = rcinfo_.P[2];
+	  double Crx = Clx;
+	  double Cy = rcinfo_.P[6];
+	  double Tx = -rcinfo_.P[3]/Fx;
+	  cam_model_ = new CvStereoCamModel(Fx,Fy,Tx,Clx,Crx,Cy,1.0/dispinfo_.dpp);
+	}
+
+	// Timing
+	struct timeval timeofday;
+	gettimeofday(&timeofday,NULL);
+	ros::Time startt = ros::Time().fromNSec(1e9*timeofday.tv_sec + 1e3*timeofday.tv_usec);
+
+	////////////////////////////////
+	// Get a 3d point for each pixel
+
+	CvMat *uvd = cvCreateMat(img.cols*img.rows,3,CV_32FC1);
+	CvMat *xyz = cvCreateMat(img.cols*img.rows,3,CV_32FC1);
+	// Convert image uvd to world xyz.
+	float *fptr = (float*)(uvd->data.ptr);
+	ushort *cptr;
+	for (int v =0; v < img.rows; ++v) {
+	  cptr = (ushort*)(cv_image_disp->imageData+v*cv_image_disp->widthStep);
+	  for (int u=0; u<img.cols; ++u) {
+	    (*fptr) = (float)u; ++fptr;
+	    (*fptr) = (float)v; ++fptr;
+	    (*fptr) = (float)(*cptr); ++fptr; ++cptr;      
+	  }
+	}
+	cam_model_->dispToCart(uvd,xyz);
+	//CvMat *y = cvCreateMat(img.cols*img.rows,1,CV_32FC1);
+	//CvMat *z = cvCreateMat(img.cols*img.rows,1,CV_32FC1);
+	//cvSplit(xyz, NULL, y, z, NULL);
+	cv::Mat xyzmat(xyz,false);
+	//cv::Mat zmap(z,false);
+
+	if (use_height_) {
+	  // Remove the ceiling
+	  int top_row;
+	  removeCeiling(img, xyzmat, limage_.header.frame_id, limage_.header.stamp, max_height_m_, top_row);
+	  small_img = new cv::Mat(img, cv::Rect(cv::Point(0, top_row), cv::Size(img.cols, img.rows-top_row)));
+	}
+	else {
+	  small_img = &img;
+	}
+
+	//cv::HOGDescriptor hog;
+	//hog.setSVMDetector(cv::HOGDescriptor::getDefaultPeopleDetector());
+	double t = (double)cv::getTickCount();
+	hog_.detectMultiScale(*small_img, found, hit_threshold_, cv::Size(8,8), cv::Size(24,16), 1.05, group_threshold_);
+	t = (double)cv::getTickCount() - t;
+	//ROS_DEBUG_STREAM_NAMED("pedestrian_detector", "Detection time with scale = "<< t*1000./cv::getTickFrequency() <<"ms\n");
+	
+	//	cvReleaseMat(&z);
+	cvReleaseMat(&uvd);
+	cvReleaseMat(&xyz);
+	
+	// Timing
+	gettimeofday(&timeofday,NULL);
+	ros::Time endt = ros::Time().fromNSec(1e9*timeofday.tv_sec + 1e3*timeofday.tv_usec);
+	ros::Duration diff = endt-startt;
+	ROS_DEBUG_STREAM_NAMED("pedestrian_detector","Remove ceiling, duration " << diff.toSec() );
+	
       }
       
       // TODO: Publish the found people.
@@ -194,23 +289,62 @@ namespace people
       for( int i = 0; i < (int)found.size(); i++ )
       {
 	cv::Rect r = found[i];
-	cv::rectangle(img, r.tl(), r.br(), cv::Scalar(0,255,0), 1);
+	cv::rectangle(*small_img, r.tl(), r.br(), cv::Scalar(0,255,0), 1);
       }
-      //ostringstream fname;
-      //fname << "/tmp/left_HOG_OpenCV_results/" << setfill('0') << setw(6) << counter << "L.jpg";
-      //counter ++;
-      //cv::imwrite(fname.str(), img);
-      cv::imshow("people detector", img);
-      cv::waitKey(3);
+      ostringstream fname;
+      fname << "/tmp/left_HOG_OpenCV_results2/" << setfill('0') << setw(6) << counter << "L.jpg";
+      counter ++;
+      cv::imwrite(fname.str(), *small_img);
+      //cv::imshow("people detector", img);
+      //cv::waitKey(3);
 
       // TODO: Release the sequence and related memory.
-
+      
     }
 
 
   private:
 
-    //int counter;
+    CvStereoCamModel *cam_model_;
+    cv::HOGDescriptor hog_;
+
+    int counter;
+
+    /////////////////////////////////////////////////////////////////////
+    // TODO: Remove the ceiling (rows above max_height_m_)
+    // For each row, compute the maximum robot-relative height.
+    // Find the first row with z-values below the max_height_m_ threshold.
+    // Return the row for image cropping.
+    void removeCeiling(cv::Mat &img, const cv::Mat &xyz, string img_frame, ros::Time time, double max_height_m_, int &top_row) 
+    {
+      // Get the rotation and translation matrices for converting the camera "world" coords to the "real" world.
+      // Note that a height of 0m in the "real" world is at the ground_frame_ origin. 
+      tf::Stamped<btTransform> transform_im_pt_to_ground;
+      tf_->lookupTransform(ground_frame_, img_frame, time, transform_im_pt_to_ground);
+      btVector3 translation = transform_im_pt_to_ground.getOrigin();
+      btMatrix3x3 rotation = transform_im_pt_to_ground.getBasis();
+      btVector3 row2 = rotation.getRow(2);
+
+      // Convert points to heights, starting at the top-left of the image. 
+      // The image wil be cropped at the highest row to have a "real"-world height of 
+      // less than max_height_m_.
+      float *ptr = (float*)(xyz.data);
+      int npoints = img.rows * img.cols;
+      for (int p=0; p<npoints; ++p, ptr+=3) {
+	// If invalid depth, continue.
+	if (*(ptr+2) == 0.0) 
+	  continue;
+       
+	// Get the robot-relative height. Return if it's too low.
+	double z = row2[0]*(*ptr) + row2[1]*(*(ptr+1)) + row2[2]*(*(ptr+2)) + translation[2];
+	if (z <= max_height_m_) {
+	  top_row = (int)(floor((float)p/(float)img.cols));
+	  return;
+	}
+      }
+
+      top_row = 0;
+    }
 
     /////////////////////////////////////////////////////////////////////
     // TODO: Get possible person positions and scales by considering the floor plane.
