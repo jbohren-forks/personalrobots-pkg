@@ -10,7 +10,6 @@
 <depend package="pr2_robot_actions" />
 <depend package="deprecated_msgs" />
 <depend package="vslam" />
-<depend package="rviz" />
 <depend package="tf" />
 <depend package="visualization_msgs" />
 <export>
