@@ -31,7 +31,7 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-PKG = 'roshist'
+PKG = 'bagserver'
 import roslib; roslib.load_manifest(PKG)
 import rospy
 import roslib.scriptutil
@@ -39,12 +39,14 @@ import rosrecord
 
 import pickle
 
-from roshist.srv import *
+from bagserver.srv import *
+
+from std_msgs.msg import Empty
 
 
 
 
-class RosHistSrv:
+class BagServerSrv:
 
     def __init__(self, out_namespace,index_name):
         self.out_namespace=out_namespace;
@@ -88,7 +90,7 @@ class RosHistSrv:
             pub = rospy.Publisher(self.out_namespace+out_topic, msg)
             self.publishers[topic]=pub;
 
-
+        self.reset_time_pub_ = rospy.Publisher(self.out_namespace+"/reset_time", Empty)
 
     def pick_next_topic(self):
         if len(self.active_topics)==0:
@@ -191,6 +193,8 @@ class RosHistSrv:
 
         self.setll(req);
 
+        e=Empty();
+        self.reset_time_pub_.publish(e);
         
         while 1:
             if rospy.is_shutdown():
@@ -216,7 +220,7 @@ class RosHistSrv:
 
 def start_server(out_namespace,index_fn):
     rospy.init_node('hist_server')
-    h = RosHistSrv(out_namespace,index_fn);
+    h = BagServerSrv(out_namespace,index_fn);
     s = rospy.Service('hist', History, h.handle_query)
     rospy.spin()
 
@@ -225,7 +229,7 @@ if __name__ == "__main__":
   if len(sys.argv) == 3:
     start_server(sys.argv[1], sys.argv[2])
   else:
-    print "usage: roshist_srv.py <out_namespace> <index_name> "
+    print "usage: bagserver_srv.py <out_namespace> <index_name> "
 
 
 

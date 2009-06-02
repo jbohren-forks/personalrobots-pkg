@@ -31,12 +31,12 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-PKG = 'roshist'
+PKG = 'bagserver'
 import roslib; roslib.load_manifest(PKG)
 
 import rospy
 import sys
-from roshist.srv import *
+from bagserver.srv import *
 
 
 def str2time(s):
@@ -78,5 +78,5 @@ if __name__ == "__main__":
     elif len(sys.argv)==5:
         print call_history(sys.argv[1],sys.argv[2],sys.argv[3],sys.argv[4]);
     else:
-        print "Usage: roshist_query,py timeFrom timeTo [svc_name=hist] [topics=*]"
+        print "Usage: bagserver_query,py timeFrom timeTo [svc_name=hist] [topics=*]"
 

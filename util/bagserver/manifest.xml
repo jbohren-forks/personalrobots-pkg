@@ -5,10 +5,10 @@ files. The main target is testing and debugging. Potential use
 includes access of some information from the past.
 
 </description>
-<author>Alex Sorokin (sorokin@willowgarage.com) </author>
+<author>Alex Sorokin /(sorokin@willowgarage.com) </author>
 <license>BSD</license>
 <review status="unreviewed" notes=""/>
-<url>http://pr.willowgarage.com</url>
+<url>http://pr.willowgarage.com/wiki/bagserver</url>
 <depend package="roscpp"/>
 <depend package="rospy"/>
 <depend package="rosrecord"/>

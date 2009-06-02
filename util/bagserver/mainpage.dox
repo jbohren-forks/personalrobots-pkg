@@ -36,7 +36,7 @@ bagserver_srv.py takes the output namespace and the index name. All messages wil
 bagserver_query.py fromsec[.from_fraction_sec] tosec[.to_fraction_sec] [svc_name=hist] [topics=*]
 \endverbatim
 
-roshist_query.py asks the history server to send out everything in the specified interface. You can optionally specify which history service to query and which topics should be listed.
+bagserver_query.py asks the history server to send out everything in the specified interface. You can optionally specify which history service to query and which topics should be listed.
 
 The time is specified in the format of secons[.fraction]. The fraction of secons is padded with "0" on the right to have 9 characters and then it's converted to nsec.
 
@@ -74,7 +74,7 @@ Launch the stereo processor (note, that is's in the scope /hist)
 Launch the history server
 
 \verbatim
-  rosrun bagserver bagserver_srv.py test_data/test1.stereo.index
+  rosrun bagserver bagserver_srv.py /hist test_data/test1.stereo.index
 \endverbatim
 
 Do this several times:
