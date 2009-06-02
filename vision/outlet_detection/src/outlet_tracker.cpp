@@ -4,6 +4,10 @@
 #include <Eigen/Core>
 #include <Eigen/QR>
 
+#include <boost/accumulators/accumulators.hpp>
+#include <boost/accumulators/statistics/stats.hpp>
+#include <boost/accumulators/statistics/variance.hpp>
+
 static void changeAxes(CvPoint3D32f src, btVector3 &dst);
 static btVector3 fitPlane(btVector3 *holes, int num_holes);
 
@@ -45,6 +49,24 @@ bool OutletTracker::detectObject(tf::Transform &pose)
     outlets_[i].ground_hole.x = (int)(point[0] + 0.5f);
     outlets_[i].ground_hole.y = (int)(point[1] + 0.5f);
   }
+
+#if 0
+  // Reject if variance in the relative image coordinates of hole pairs is too high.
+  // Not actually run during the milestone.
+  using namespace boost::accumulators;
+  typedef accumulator_set<int, stats<tag::variance> > Acc;
+  Acc x_acc, y_acc;
+  for (int i = 0; i < 4; ++i) {
+    x_acc(outlets_[i].coord_hole1.x - outlets_[i].coord_hole2.x);
+    y_acc(outlets_[i].coord_hole1.y - outlets_[i].coord_hole2.y);
+  }
+  static const float VARIANCE_THRESHOLD = 1.0f;
+  if (variance(x_acc) > VARIANCE_THRESHOLD || variance(y_acc) > VARIANCE_THRESHOLD) {
+    ROS_WARN("Rejecting outlet location due to high variance in relative hole image coordinates");
+    return false;
+  }
+  //ROS_WARN("Variances: (%f, %f)", variance(x_acc), variance(y_acc));
+#endif
 
   // Change data representation and coordinate frame
   btVector3 holes[12];
