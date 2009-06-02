@@ -112,7 +112,7 @@ namespace navfn {
   bool NavfnROS::makePlan(const robot_msgs::PoseStamped& goal, std::vector<robot_msgs::PoseStamped>& plan){
     //until tf can handle transforming things that are way in the past... we'll require the goal to be in our global frame
     if(goal.header.frame_id != global_frame_){
-      ROS_ERROR("The goal passed to this planner must be in the %s frame.", global_frame_.c_str());
+      ROS_ERROR("The goal passed to this planner must be in the %s frame.  It is instead in the %s frame.", global_frame_.c_str(), goal.header.frame_id.c_str());
       return false;
     }
 
