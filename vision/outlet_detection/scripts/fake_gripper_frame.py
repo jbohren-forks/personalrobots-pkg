@@ -69,10 +69,13 @@ def last_time():
 t = TransformStamped()
 t.header.frame_id = 'r_gripper_tool_frame'
 t.header.seq = 0
-t.parent_id = 'base_link'
-t.transform.translation = xyz(0.506305, -0.194843, 0.284381)
+#t.parent_id = 'base_link'
+#t.transform.translation = xyz(0.506305, -0.194843, 0.284381)
 #t.transform.rotation = rpy(0, 1.13, 0)
-t.transform.rotation = Quaternion(0.050555, 0.245594, -0.051239, 0.966697)
+#t.transform.rotation = Quaternion(0.050555, 0.245594, -0.051239, 0.966697)
+t.parent_id = 'high_def_frame'
+t.transform.translation = xyz(1.013218, -0.019657, -0.044208)
+t.transform.rotation = Quaternion(-0.092009, -0.482387, 0.139255, 0.859910)
 
 rospy.init_node('fake_gripper')
 pub_tf = rospy.Publisher('/tf_message', tfMessage)

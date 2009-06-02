@@ -17,8 +17,10 @@ plug_pos = [ numpy.array(plug_data[i, :3]) for i in range(num_poses) ]
 outlet_pos = [ numpy.array(outlet_data[i, :3]) for i in range(num_poses) ]
 
 offsets = [ numpy.linalg.norm(p) / numpy.linalg.norm(o) for (p, o) in zip(plug_pos, outlet_pos) ]
+#offsets = [0.95175] * num_poses
 print 'Offsets:'
 print offsets
+print 'Mean offset:', numpy.array(offsets).mean()
 print
 
 error = [ plug - outlet*offset for (plug, outlet, offset) in zip(plug_pos, outlet_pos, offsets) ]
@@ -26,8 +28,10 @@ print 'Error in scaled position:'
 print numpy.array(error)
 print
 
+error_norms = [ numpy.linalg.norm(e) for e in error ]
 print 'Error norms:'
-print [ numpy.linalg.norm(e) for e in error ]
+print error_norms
+print 'Mean error:', numpy.array(error_norms).mean()
 
 #distances = numpy.array( [ 1000 * numpy.linalg.norm(plug_pos[i] - outlet_pos[i]) for i in range(num_poses) ] )
 #print 'Distances:'
