@@ -1,0 +1,19 @@
+<package>
+  <description brief="A tutorial on laser and point cloud processing in ROS">
+    Tutorial on point clouds in ROS. It shows, how to build things in
+     ROS, how to launch things, how the data is sent from the laser scanner to processing nodes, how to display things and how to record the data.
+
+
+  </description>
+  <author>Alex Sorokin/ sorokin@willowgarage.com</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+
+  <depend package="rviz"/>
+  <depend package="point_cloud_mapping"/>
+
+  <url>http://pr.willowgarage.com/wiki/ROS/Tutorials/point_cloud_basics</url>
+
+</package>
+
+

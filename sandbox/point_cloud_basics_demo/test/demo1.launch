@@ -1,0 +1,9 @@
+<launch>
+
+
+  <node pkg="rosrecord" type="rosplay" args="$(find point_cloud_basics_demo)/test_data/demo1.bag" respawn="false" output="screen"/>
+
+  <node pkg="rviz" type="rviz" args="$(find point_cloud_basics_demo)/test/demo1_rviz.config.vcg"/>
+
+
+</launch>
