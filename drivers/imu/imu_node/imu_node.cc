@@ -143,7 +143,8 @@ public:
 
   ImuNode(ros::NodeHandle h) : self_test_(this), diagnostic_(h), 
   node_handle_(h), calibrated_(false), calibrate_request_(false), error_count_(0), 
-  desired_freq_(100), freq_diag_(desired_freq_, desired_freq_, 0.05)
+  desired_freq_(100), 
+  freq_diag_(diagnostic_updater::FrequencyStatusParam(&desired_freq_, &desired_freq_, 0.05))
   {
     imu_data_pub_ = node_handle_.advertise<robot_msgs::PoseWithRatesStamped>("imu_data", 100);
 

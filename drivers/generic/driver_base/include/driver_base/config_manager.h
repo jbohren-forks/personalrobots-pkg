@@ -1,3 +1,5 @@
+#error Do not use this file. It is scheduled for deletion.
+
 /*********************************************************************
  * Software License Agreement (BSD License)
  *
@@ -31,6 +33,8 @@
  *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
+
+// Author: Blaise Gassend
 
 #ifndef __CONFIG_MANAGER_H__
 #define __CONFIG_MANAGER_H__

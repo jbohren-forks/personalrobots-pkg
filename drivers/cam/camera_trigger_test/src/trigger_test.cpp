@@ -61,10 +61,6 @@ private:
 public:
   TriggerTest(ros::Node &node) : node_(node), outfile_(NULL)
   {
-    // Subscribe to image stream.
-
-    node_.subscribe("image", img_msg_, &TriggerTest::image_cb, this, 1);
-    
     // Read operating mode.
     
     node_.param("~mode", mode_, 0);
@@ -127,6 +123,10 @@ public:
     ignore_count_ = 5;
     node_.param("~repetitions", num_repetitions_, 10);
     reps_ = 0;
+    
+    // Subscribe to image stream.
+
+    node_.subscribe("image", img_msg_, &TriggerTest::image_cb, this, 1);
   }
 
   ~TriggerTest()

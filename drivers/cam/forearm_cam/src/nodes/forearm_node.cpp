@@ -44,6 +44,7 @@
 #include <image_msgs/FillImage.h>
 #include <diagnostic_updater/diagnostic_updater.h>
 #include <diagnostic_updater/update_functions.h>
+#include <diagnostic_updater/publisher.h>
 #include <self_test/self_test.h>
 #include <robot_mechanism_controllers/SetWaveform.h>
 #include <robot_mechanism_controllers/trigger_controller.h>
@@ -202,7 +203,9 @@ private:
   
   bool open_;
 
-  ros::Publisher cam_pub_;
+  diagnostic_updater::Updater diagnostic_;
+  
+  diagnostic_updater::DiagnosedPublisher<image_msgs::Image> cam_pub_;
   ros::Publisher cam_info_pub_;
   ros::ServiceClient trig_service_;
   
@@ -219,9 +222,8 @@ private:
   controller::trigger_configuration trig_req_;
   robot_mechanism_controllers::SetWaveform::Response trig_rsp_;
 
-  diagnostic_updater::Updater diagnostic_;
-  diagnostic_updater::FrequencyStatus freq_diag_;
-  diagnostic_updater::TimeStampStatus timestamp_diag_;
+//  diagnostic_updater::FrequencyStatus freq_diag_;
+//  diagnostic_updater::TimeStampStatus timestamp_diag_;
 
   SelfTest<ForearmNode> self_test_;
   bool was_running_pretest_;
@@ -240,7 +242,10 @@ public:
   ForearmNode(ros::NodeHandle &nh)
     : node_handle_(nh), camera_(NULL), started_video_(false),
       diagnostic_(ros::NodeHandle()), 
-      freq_diag_(desired_freq_, desired_freq_, 0.05),
+      cam_pub_(node_handle_.advertise<image_msgs::Image>("~image_raw", 1), 
+          diagnostic_,
+          diagnostic_updater::FrequencyStatusParam(&desired_freq_, &desired_freq_, 0.05), 
+          diagnostic_updater::TimeStampStatusParam()),
       self_test_(this),
       useFrame_(boost::bind(&ForearmNode::publishImage, this, _1, _2, _3, _4))
   {
@@ -252,8 +257,8 @@ public:
     diagnostic_thread_ = NULL;
 
     // Setup diagnostics
-    diagnostic_.add(timestamp_diag_);
-    diagnostic_.add("Frequency Status", this, &ForearmNode::freqStatus );
+    //diagnostic_.add(timestamp_diag_);
+    //diagnostic_.add("Frequency Status", this, &ForearmNode::freqStatus );
     diagnostic_.add("Link Status", this, &ForearmNode::linkStatus );
 
     // Setup self test
@@ -280,7 +285,7 @@ public:
 
     if (node_handle_.ok())
     {
-      freq_diag_.clear(); // Avoids having an error until the window fills up.
+      cam_pub_.clear_window(); // Avoids having an error until the window fills up.
       diagnostic_thread_ = new boost::thread( boost::bind(&ForearmNode::diagnosticsLoop, this) );
     }
   }
@@ -294,7 +299,7 @@ public:
     else {
       ROS_FATAL("IP address not specified");
       exit_status_ = 1;
-      node_handle_.shutdown();
+      //node_handle_.shutdown();
       return;
     }
 
@@ -527,22 +532,6 @@ public:
 
         trig_service_ = node_handle_.serviceClient<robot_mechanism_controllers::SetWaveform>(trig_controller_cmd_);
         // Retry a few times in case the service is just coming up.
-        bool ret_val = false;
-        for (int retry_count = 0; retry_count < 5 && ! ret_val; retry_count++)
-        {
-          ret_val = trig_service_.call(trig_req_, trig_rsp_);
-          if (ret_val)
-            break;
-          sleep(1);
-        }
-
-        if (!ret_val)
-        {
-          ROS_FATAL("Unable to set trigger controller.");
-          exit_status_ = 1;
-          node_handle_.shutdown();
-          return;
-        }
       }
       else
       {
@@ -554,7 +543,7 @@ public:
     if ( pr2ImagerModeSelect( camera_, video_mode_ ) != 0) {
       ROS_FATAL("Mode select error");
       exit_status_ = 1;
-      node_handle_.shutdown();
+      //node_handle_.shutdown();
       return;
     }
 
@@ -580,7 +569,7 @@ public:
     
     // Receive frames through callback
     // TODO: start this in separate thread?
-    cam_pub_ = node_handle_.advertise<image_msgs::Image>("~image_raw", 1);
+    //cam_pub_ = node_handle_.advertise<image_msgs::Image>("~image_raw", 1);
     if (calibrated_)
       cam_info_pub_ = node_handle_.advertise<image_msgs::CamInfo>("~cam_info", 1);
     
@@ -623,18 +612,6 @@ public:
       }
     }
     
-    // Stop Triggering
-    if (!trig_controller_cmd_.empty())
-    {   
-      ROS_DEBUG("Stopping triggering.");
-      trig_req_.running = 0;
-      ros::Node shutdown_node("forearm_node", ros::Node::ANONYMOUS_NAME | ros::Node::DONT_ADD_ROSOUT_APPENDER); // Need this because the node has been shutdown already
-      if (!trig_service_.call(trig_req_, trig_rsp_))
-      { // This probably means that the trigger controller was turned off,
-        // so we don't really care.
-        ROS_DEBUG("Was not able to stop triggering.");
-      }
-    }
   }
   
 private:
@@ -648,12 +625,38 @@ private:
       exit_status_ = 1;
       return;
     }
+    if (!trig_controller_cmd_.empty())
+    {
+      trig_req_.running = 1;
+      if (!trig_service_.call(trig_req_, trig_rsp_))
+      {
+        ROS_ERROR("Unable to set trigger controller.");
+        exit_status_ = 1;
+        //node_handle_.shutdown();
+        goto stop_video;
+      }
+    }
     frameTimeFilter_.reset_filter();
     ROS_INFO("Camera running.");
     
     // Receive video
     pr2VidReceive(camera_->ifName, port, height_, width_, &ForearmNode::frameHandler, this);
     
+    // Stop Triggering
+    if (!trig_controller_cmd_.empty())
+    {   
+      ROS_DEBUG("Stopping triggering.");
+      trig_req_.running = 0;
+      /// @todo need to turn on a node in the case where the node is
+      //already down.
+      //ros::Node shutdown_node("forearm_node", ros::Node::ANONYMOUS_NAME | ros::Node::DONT_ADD_ROSOUT_APPENDER); // Need this because the node has been shutdown already
+      if (!trig_service_.call(trig_req_, trig_rsp_))
+      { // This probably means that the trigger controller was turned off,
+        // so we don't really care.
+        ROS_DEBUG("Was not able to stop triggering.");
+      }
+    }
+stop_video:
     // Stop video
     if (started_video_) // Exited unexpectedly.
     {
@@ -670,14 +673,11 @@ private:
     ROS_DEBUG("Image thread exiting.");
   }
 
-  void freqStatus(diagnostic_updater::DiagnosticStatusWrapper& status)
+/*  void freqStatus(diagnostic_updater::DiagnosticStatusWrapper& status)
   {
     freq_diag_(status);
 
-    status.addv("Free-running frequency", imager_freq_);
-    status.adds("External trigger controller", trig_controller_);
-    status.adds("Trigger mode", ext_trigger_ ? "external" : "internal");
-  }
+  }*/
 
   void linkStatus(diagnostic_updater::DiagnosticStatusWrapper& stat)
   {
@@ -685,9 +685,13 @@ private:
     {
       stat.summary(2, "Next frame is past due.");
     }
-    else
+    else if (started_video_)
     {
       stat.summary(0, "Frames are streaming.");
+    }
+    else
+    {
+      stat.summary(1, "Frames are not streaming.");
     }
     
     stat.addv("Missing image line frames", missed_line_count_);
@@ -701,6 +705,9 @@ private:
     stat.adds("Image mode", mode_name_);
     stat.addsf("Latest frame time", "%f", last_image_time_);
     stat.adds("Latest frame #", last_frame_number_);
+    stat.addv("Free-running frequency", imager_freq_);
+    stat.adds("External trigger controller", trig_controller_);
+    stat.adds("Trigger mode", ext_trigger_ ? "external" : "internal");
   }
 
   int publishImage(size_t width, size_t height, uint8_t *frameData, ros::Time t)
@@ -708,13 +715,13 @@ private:
     fillImage(image_, "image", height, width, 1, "bayer_bggr", "uint8", frameData);
     
     image_.header.stamp = t;
-    timestamp_diag_.tick(t);
+    //timestamp_diag_.tick(t);
     cam_pub_.publish(image_);
     if (calibrated_) {
       cam_info_.header.stamp = t;
       cam_info_pub_.publish(cam_info_);
     }
-    freq_diag_.tick();
+    //freq_diag_.tick();
 
     return 0;
   }
@@ -950,7 +957,7 @@ private:
     stop();
   }
 
-  void interruptionTest(robot_msgs::DiagnosticStatus& status)
+  void interruptionTest(diagnostic_updater::DiagnosticStatusWrapper& status)
   {
     status.name = "Interruption Test";
 
@@ -966,7 +973,7 @@ private:
     }
   }
 
-  void connectTest(robot_msgs::DiagnosticStatus& status)
+  void connectTest(diagnostic_updater::DiagnosticStatusWrapper& status)
   {
     status.name = "Connection Test";
 
@@ -987,7 +994,7 @@ private:
     self_test_.setID(str(boost::format("FCAM%i")%serial_number_));
   }
 
-  void startTest(robot_msgs::DiagnosticStatus& status)
+  void startTest(diagnostic_updater::DiagnosticStatusWrapper& status)
   {
     status.name = "Start Test";
 
@@ -997,35 +1004,17 @@ private:
     status.message = "Started successfully.";
   }
 
-  void streamingTest(robot_msgs::DiagnosticStatus& status)
+  void streamingTest(diagnostic_updater::DiagnosticStatusWrapper& status)
   {
-    freq_diag_.clear();
+    cam_pub_.clear_window();
     sleep(5);
 
-    diagnostic_updater::DiagnosticStatusWrapper dsfreq;
-    freq_diag_(dsfreq);
+    cam_pub_.run(status);
 
-    diagnostic_updater::DiagnosticStatusWrapper dstime;
-    timestamp_diag_(dstime);
-
-    if (dsfreq.level > 0)
-    { 
-      status = dsfreq;
-    }
-    else if (dstime.level > 0 && dstime.level > dsfreq.level)
-    { 
-      status = dstime;
-    }
-    else
-    {
-      status.level = 0;
-      status.message = "Started successfully.";
-    }
-    
     status.name = "Streaming Test";
   }
 
-  void disconnectTest(robot_msgs::DiagnosticStatus& status)
+  void disconnectTest(diagnostic_updater::DiagnosticStatusWrapper& status)
   {
     status.name = "Disconnect Test";
 
@@ -1076,9 +1065,9 @@ private:
   {
     public:
       VideoModeTestFrameHandler(diagnostic_updater::DiagnosticStatusWrapper &status) : status_(status)
-    {}
+      {}
 
-      int operator()(size_t width, size_t height, uint8_t *data, ros::Time stamp)
+      int run(size_t width, size_t height, uint8_t *data, ros::Time stamp)
       {
         status_.adds("Got a frame", "Pass");
 
@@ -1123,7 +1112,7 @@ private:
 
     mode_name_ = mode;
     VideoModeTestFrameHandler callback(status);
-    useFrame_ = boost::bind<int>(boost::ref(callback), _1, _2, _3, _4);
+    useFrame_ = boost::bind(&VideoModeTestFrameHandler::run, boost::ref(callback), _1, _2, _3, _4);
 
     status.name = mode + " Pattern Test";
     status.summary(0, "Passed"); // If nobody else fills this, then the test passed.
@@ -1155,7 +1144,7 @@ reset_state:
     mode_name_ = oldmode;
   }
 
-  void resumeTest(robot_msgs::DiagnosticStatus& status)
+  void resumeTest(diagnostic_updater::DiagnosticStatusWrapper& status)
   {
     status.name = "Resume Test";
 

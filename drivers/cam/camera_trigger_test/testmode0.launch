@@ -6,7 +6,7 @@
 
   <group ns="forearm">
     <param name="ext_trigger" type="bool" value="True"/>
-    <param name="if_name" type="str" value="eth1"/>
+    <param name="if_name" type="str" value="eth2"/>
 		<param name="ip_address" type="str" value="169.254.0.1"/>
     <!--param name="serial_number" type="int" value="2"/-->
     <param name="video_mode" type="str" value="640x480x15"/>
