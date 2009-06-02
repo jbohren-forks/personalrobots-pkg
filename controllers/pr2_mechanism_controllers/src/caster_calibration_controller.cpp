@@ -54,13 +54,13 @@ bool CasterCalibrationController::initXml(mechanism::RobotState *robot, TiXmlEle
   TiXmlElement *cal = config->FirstChildElement("calibrate");
   if (!cal)
   {
-    std::cerr<<"CasterCalibrationController was not given calibration parameters"<<std::endl;
+    ROS_ERROR("CasterCalibrationController was not given calibration parameters");
     return false;
   }
 
   if(cal->QueryDoubleAttribute("velocity", &search_velocity_) != TIXML_SUCCESS)
   {
-    std::cerr<<"Velocity value was not specified\n";
+    ROS_ERROR("Velocity value was not specified");
     return false;
   }
 
@@ -68,7 +68,7 @@ bool CasterCalibrationController::initXml(mechanism::RobotState *robot, TiXmlEle
   joint_ = joint_name ? robot->getJointState(joint_name) : NULL;
   if (!joint_)
   {
-    fprintf(stderr, "Error: CasterCalibrationController could not find joint \"%s\"\n",
+    ROS_ERROR("Error: CasterCalibrationController could not find joint \"%s\"\n",
             joint_name);
     return false;
   }
@@ -77,7 +77,7 @@ bool CasterCalibrationController::initXml(mechanism::RobotState *robot, TiXmlEle
   actuator_ = actuator_name ? robot->model_->getActuator(actuator_name) : NULL;
   if (!actuator_)
   {
-    fprintf(stderr, "Error: CasterCalibrationController could not find actuator \"%s\"\n",
+    ROS_ERROR("Error: CasterCalibrationController could not find actuator \"%s\"\n",
             actuator_name);
     return false;
   }
@@ -86,7 +86,7 @@ bool CasterCalibrationController::initXml(mechanism::RobotState *robot, TiXmlEle
   transmission_ = transmission_name ? robot->model_->getTransmission(transmission_name) : NULL;
   if (!transmission_)
   {
-    fprintf(stderr, "Error: CasterCalibrationController could not find transmission \"%s\"\n",
+    ROS_ERROR("Error: CasterCalibrationController could not find transmission \"%s\"\n",
             transmission_name);
     return false;
   }
