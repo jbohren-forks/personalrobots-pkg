@@ -1,9 +1,10 @@
 <launch>
   <master auto="start"/>
-  <group name="wg">
+  <group>
   <param name="/use_sim_time" value="true"/>
     <node pkg="people_aware_nav" type="move_base_constrained" respawn="false" name="move_base" output="screen">
-
+      
+      <param name="odom_frame" value="odom_offset"/>
       <param name="global_frame" value="map" />
       <param name="robot_base_frame" value="base_link" />
 
@@ -17,16 +18,7 @@
       <rosparam file="$(find test_nav)/move_base/base_local_planner_params.yaml" command="load" />
 
     </node>
-    <!--
-    <node pkg="map_server" type="map_server" args="$(find 2dnav_stage)/maps/willow-empty-0.05.pgm 0.05" respawn="false" />
-    <node pkg="stage" type="stageros" name="stageros" args="$(optenv ROS_STAGE_GRAPHICS -g) $(find 2dnav_stage)/worlds/willow-pr2-5cm-fake.world" respawn="false" >
-      <param name="base_watchdog_timeout" value="0.2"/>
-    </node>
-    <node pkg="map_server" type="map_server" args="$(find 2dnav_stage)/maps/willow-full-0.05.pgm 0.05" respawn="false" />
-    <node pkg="stage" type="stageros" name="stageros" args="$(optenv ROS_STAGE_GRAPHICS -g) $(find 2dnav_stage)/worlds/willow-pr2-5cm.world" respawn="false" >
-      <param name="base_watchdog_timeout" value="0.2"/>xb
-    </node>
-    -->
+
     <node pkg="map_server" type="map_server" args="$(find 2dnav_stage)/maps/willow-full-0.025.pgm 0.025" respawn="false" />
     <node pkg="stage" type="stageros" name="stageros" args="$(optenv ROS_STAGE_GRAPHICS -g) $(find 2dnav_stage)/worlds/willow-pr2-2.5cm.world" respawn="false" >
       <param name="base_watchdog_timeout" value="0.2"/>
@@ -35,7 +27,8 @@
 
     <node pkg="people_aware_nav" type="person_pos_sender" output="screen" />
     <node pkg="people_aware_nav" type="is_person_on_path" output="screen" />
-    <node pkg="people_aware_nav" type="hallway_move" output="screen" />
+
+    <!-- node pkg="people_aware_nav" type="hallway_move" output="screen" /> -->
 
   </group>
 </launch>
