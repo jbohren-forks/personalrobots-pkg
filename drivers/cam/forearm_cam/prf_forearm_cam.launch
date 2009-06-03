@@ -1,13 +1,5 @@
 <launch>
-  <group ns="forearm_cam_r">
-    <param name="if_name" type="str" value="eth0"/>
-    <param name="ip_address" type="str" value="10.68.0.68"/>
-    <param name="serial_number" type="int" value="3"/>
-    <param name="video_mode" type="str" value="640x480x30"/>
-    <param name="frame_id" type="str" value="r_forearm_cam_optical_frame"/>
-    <param name="do_colorize" type="bool" value="True"/>
-    <param name="do_rectify" type="bool" value="True"/>
-  </group>
+  <include file="$(find forearm_cam)/prf_forearm_cam_config.launch"/>
   <node name="forearm_cam_r" pkg="forearm_cam" type="forearm_node" respawn="false" output="screen"/>
   <node name="forearm_proc_r" pkg="stereo_image_proc" type="imageproc" respawn="false" output="screen">
     <remap from="camera" to="forearm"/>
