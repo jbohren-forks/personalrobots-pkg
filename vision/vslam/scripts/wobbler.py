@@ -52,7 +52,7 @@ else:
 
 #scene += [object(isphere(vec3(0,0,0), 1000), shadeLitCloud, {'scale':0.001})]
 
-from visual_odometry.visualodometer import VisualOdometer, Pose
+from visual_odometry.visualodometer import VisualOdometer, Pose, from_xyz_euler
 from visual_odometry.pe import PoseEstimator
 from stereo_utils.stereo import ComputedDenseStereoFrame, SparseStereoFrame
 from stereo_utils.timer import Timer
