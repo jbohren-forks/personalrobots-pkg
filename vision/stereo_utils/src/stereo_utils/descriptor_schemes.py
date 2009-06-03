@@ -5,6 +5,7 @@
 import stereo_utils.lowlevel as LO
 from stereo_utils.timer import TimedClass
 import vop
+import os
 
 class DescriptorScheme(TimedClass):
   """
@@ -85,7 +86,7 @@ class DescriptorSchemeCalonder(DescriptorScheme):
   """
   Calonder is a random tree classifier.
   """
-  timing = [ 'BuildMatcher', 'Collect', 'find' ]
+  timing = [ 'BuildMatcher', 'Collect' ]
 
   def __init__(self):
     self.cl = calonder.classifier()
@@ -110,9 +111,5 @@ class DescriptorSchemeCalonder(DescriptorScheme):
     return matcher
 
   def search(self, di, matcher, hits):
-    self.timer['find'].start()
     r = matcher.findMatch(di, hits)
-    self.timer['find'].stop()
     return r
-
-
