@@ -212,7 +212,7 @@ protected:
 	
         int traj_done = -1;	
 	ros::ServiceClient clientStart = m_nodeHandle.serviceClient<pr2_mechanism_controllers::TrajectoryStart>("right_arm/trajectory_controller/TrajectoryStart");
-	ros::ServiceClient clientQuery = m_nodeHandle.serviceClient<pr2_mechanism_controllers::TrajectoryStart>("right_arm/trajectory_controller/TrajectoryQuery");
+	ros::ServiceClient clientQuery = m_nodeHandle.serviceClient<pr2_mechanism_controllers::TrajectoryQuery>("right_arm/trajectory_controller/TrajectoryQuery");
         if (clientStart.call(send_traj_start_req, send_traj_start_res))
         {	    
             ROS_INFO("Sent trajectory to controller (using a service)");
