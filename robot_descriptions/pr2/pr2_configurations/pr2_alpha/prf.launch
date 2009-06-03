@@ -65,8 +65,10 @@
   </group>
   <node machine="three" name="prosilica" pkg="prosilica_cam" type="prosilica_node" output="screen" respawn="true"/>
 
+<!-- Forearm Camera -->
+  <include file="$(find forearm_cam)/prf_forearm_cam_config.launch">
+  <node machine="three" name="forearm_cam_r" pkg="forearm_cam" type="forearm_node" respawn="false" output="screen"/>
 
-  
 <!-- Sound  -->
   <node pkg="sound_play" type="soundplay_node.py" machine="four" />
 
