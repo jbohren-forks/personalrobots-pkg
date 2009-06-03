@@ -190,10 +190,10 @@ class KinematicPlanning : public CollisionSpaceMonitor
 {
 public:
     
-    KinematicPlanning(ros::Node *node) : CollisionSpaceMonitor(node)
+    KinematicPlanning(void) : CollisionSpaceMonitor()
     {
-	m_node->advertiseService("plan_kinematic_path_state",    &KinematicPlanning::planToState, this);
-	m_node->advertiseService("plan_kinematic_path_position", &KinematicPlanning::planToPosition, this);
+	m_planKinematicPathStateService = m_nodeHandle.advertiseService("plan_kinematic_path_state",    &KinematicPlanning::planToState, this);
+	m_planKinematicPathPositionService = m_nodeHandle.advertiseService("plan_kinematic_path_position", &KinematicPlanning::planToPosition, this);
 	
 	m_replanID = 0;
 	m_replanningThread = NULL;
@@ -209,17 +209,17 @@ public:
 	m_currentPlanStatus.unsafe = 0;
 	m_currentlyExecutedPath.set_states_size(0);
 	
-	m_node->advertiseService("replan_kinematic_path_state",    &KinematicPlanning::replanToState, this);
-	m_node->advertiseService("replan_kinematic_path_position", &KinematicPlanning::replanToPosition, this);
-	m_node->advertiseService("replan_force",                   &KinematicPlanning::forceReplanning, this);
-	m_node->advertiseService("replan_stop",                    &KinematicPlanning::stopReplanning, this);
+	m_replanKinematicPathStateService = m_nodeHandle.advertiseService("replan_kinematic_path_state", &KinematicPlanning::replanToState, this);
+	m_replanKinematicPathPositionService = m_nodeHandle.advertiseService("replan_kinematic_path_position", &KinematicPlanning::replanToPosition, this);
+	m_replanForceService = m_nodeHandle.advertiseService("replan_force", &KinematicPlanning::forceReplanning, this);
+	m_replanStopService = m_nodeHandle.advertiseService("replan_stop", &KinematicPlanning::stopReplanning, this);
 
-	m_node->advertise<motion_planning_msgs::KinematicPlanStatus>("kinematic_planning_status", 1);
+	m_kinematicPlanningPublisher = m_nodeHandle.advertise<motion_planning_msgs::KinematicPlanStatus>("kinematic_planning_status", 1);
 
 	// determine intervals; a value of 0 means forever
-	m_node->param("refresh_interval_collision_map", m_intervalCollisionMap, 3.0);
-	m_node->param("refresh_interval_kinematic_state", m_intervalKinematicState, 0.5);
-	m_node->param("refresh_interval_base_pose", m_intervalBasePose, 0.5);
+	m_nodeHandle.param("refresh_interval_collision_map", m_intervalCollisionMap, 3.0);
+	m_nodeHandle.param("refresh_interval_kinematic_state", m_intervalKinematicState, 0.5);
+	m_nodeHandle.param("refresh_interval_base_pose", m_intervalBasePose, 0.5);
     }
     
     /** Free the memory */
@@ -244,7 +244,7 @@ public:
 	startPublishingStatus();
 	
 	if (mlist.size() > 0)
-	    m_node->spin();
+	    ros::spin();
 	else
 	    ROS_ERROR("No robot models loaded. OMPL planning node cannot start.");
     }
@@ -484,9 +484,9 @@ public:
 	return result;
     }
 
-    virtual void setRobotDescription(robot_desc::URDF *file)
+    virtual void loadRobotDescription(void)
     {
-	CollisionSpaceMonitor::setRobotDescription(file);	
+	CollisionSpaceMonitor::loadRobotDescription();
 	defaultPosition();
 	
 	ROS_DEBUG("=======================================");	
@@ -542,7 +542,7 @@ protected:
     void publishStatus(void)
     {
 	double seconds;
-	m_node->param("kinematic_planning_status_interval", seconds, 0.02);
+	m_nodeHandle.param("kinematic_planning_status_interval", seconds, 0.02);
 	ros::Duration duration(seconds);
 	ros::Duration delta(std::min(0.01, seconds));
 	
@@ -592,7 +592,7 @@ protected:
 	    if (m_currentPlanStatus.path.states.empty())
 		m_currentPlanStatus.unsafe = isSafeToPlan(false) ? 0 : 1;
 	    
-	    m_node->publish("kinematic_planning_status", m_currentPlanStatus);
+	    m_kinematicPlanningPublisher.publish(m_currentPlanStatus);
 	    
 	    // if we are sending a new path, remember it
 	    // we will need to check it for validity when the ma changes
@@ -726,9 +726,9 @@ protected:
     }
     
     /** Event executed after a change in the perceived world is observed */
-    virtual void afterWorldUpdate(void)
+    virtual void afterWorldUpdate(const robot_msgs::CollisionMapConstPtr &collisionMap)
     {
-	CollisionSpaceMonitor::afterWorldUpdate();
+	CollisionSpaceMonitor::afterWorldUpdate(collisionMap);
 	bool update = false;
 	
 	// notify the replanning thread of the change
@@ -838,20 +838,27 @@ private:
 	}
 	model->addIKKPIECE(options); 
     }
-
-    ModelMap                                                         m_models;
-
+    
     RKPBasicRequest<motion_planning_msgs::KinematicPlanStateRequest>        m_requestStateOpenLoop;
     RKPBasicRequest<motion_planning_msgs::KinematicPlanLinkPositionRequest> m_requestLinkPositionOpenLoop;
     RKPBasicRequest<motion_planning_msgs::KinematicPlanStateRequest>        m_requestState;
     RKPBasicRequest<motion_planning_msgs::KinematicPlanLinkPositionRequest> m_requestLinkPosition;
     
+    ModelMap                                                        m_models;
 
     // intervals for determining whether the monitored state & map are up to date
     double                                                          m_intervalCollisionMap;
     double                                                          m_intervalKinematicState;
     double                                                          m_intervalBasePose;
 
+
+    ros::Publisher                                                  m_kinematicPlanningPublisher;
+    ros::ServiceServer                                              m_planKinematicPathStateService;
+    ros::ServiceServer                                              m_planKinematicPathPositionService;
+    ros::ServiceServer                                              m_replanKinematicPathStateService;
+    ros::ServiceServer                                              m_replanKinematicPathPositionService;
+    ros::ServiceServer                                              m_replanForceService;
+    ros::ServiceServer                                              m_replanStopService;
 
     /*********** DATA USED FOR REPLANNING ONLY ***********/
     
@@ -922,13 +929,12 @@ public:
 
 int main(int argc, char **argv)
 { 
-    ros::init(argc, argv);
+    ros::init(argc, argv, "ompl_planning");
     
     OutputHandlerROScon rosconOutputHandler;	
     ompl::msg::useOutputHandler(&rosconOutputHandler);
     
-    ros::Node node("ompl_planning");
-    KinematicPlanning planner(&node);
+    KinematicPlanning planner;
     planner.run();
     
     return 0;

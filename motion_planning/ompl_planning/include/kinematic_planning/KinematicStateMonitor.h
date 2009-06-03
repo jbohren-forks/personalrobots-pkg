@@ -39,9 +39,9 @@
    state the robot is currently in.
 */
 
-#include <ros/node.h>
-#include <ros/time.h>
+#include <ros/ros.h>
 #include <ros/console.h>
+#include <boost/shared_ptr.hpp>
 
 #include <urdf/URDF.h>
 #include <planning_models/kinematic.h>
@@ -66,7 +66,7 @@ namespace kinematic_planning
        
        Subscribes to (name/type):
        - @b "mechanism_model"/MechanismModel : position for each of the robot's joints
-       - @b "odom_combined"/PoseWithCovariance : localized robot pose
+       - @b "localized_pose"/PoseWithCovariance : localized robot pose
 
        Publishes to (name/type):
        - None
@@ -92,42 +92,28 @@ namespace kinematic_planning
     {
 	
     public:
-        planning_models::KinematicModel* getKModel(void) { return m_kmodel; }
-        planning_models::KinematicModel::StateParams* getRobotState() { return m_robotState; }
-	
-	KinematicStateMonitor(ros::Node *node) : m_tf(*node, true, ros::Duration(1))
+		
+        KinematicStateMonitor(void) : m_tf(*ros::Node::instance(), true, ros::Duration(1))
 	{
 	    m_tf.setExtrapolationLimit(ros::Duration().fromSec(10));
 	    
-	    m_urdf = NULL;
-	    m_kmodel = NULL;
-	    m_robotState = NULL;
-	    m_node = node;
-	    m_basePos[0] = m_basePos[1] = m_basePos[2] = 0.0;
-	    
+	    m_basePos[0] = m_basePos[1] = m_basePos[2] = 0.0;	    
 	    m_includeBaseInState = false;	    
 	    m_haveMechanismState = false;
 	    m_haveBasePos = false;
 	    
-	    m_node->subscribe("mechanism_state", m_mechanismState, &KinematicStateMonitor::mechanismStateCallback, this, 1);
-	    m_node->subscribe("odom_combined", m_localizedPose, &KinematicStateMonitor::localizedPoseCallback, this, 1);
+	    kinematicStateSubscribe();
 	}
 	
 	virtual ~KinematicStateMonitor(void)
 	{
-	    if (m_urdf)
-		delete m_urdf;
-	    if (m_robotState)
-		delete m_robotState;
-	    if (m_kmodel)
-		delete m_kmodel;
 	}
 	
-	void setIncludeBaseInState(bool value);
-	void setRobotDescriptionFromData(const char *data);
-	void setRobotDescriptionFromFile(const char *filename);
+	boost::shared_ptr<planning_models::KinematicModel>              getKModel(void) const;
+	boost::shared_ptr<planning_models::KinematicModel::StateParams> getRobotState(void) const;
 	
-	virtual void setRobotDescription(robot_desc::URDF *file);
+	void setIncludeBaseInState(bool value);
+	
 	virtual void loadRobotDescription(void);
 	virtual void defaultPosition(void);
 	
@@ -141,38 +127,38 @@ namespace kinematic_planning
 
     protected:
 	
+	void kinematicStateSubscribe(void);
+	
 	virtual void stateUpdate(void);
 	virtual void baseUpdate(void);
 	
-	void localizedPoseCallback(void);
-	void mechanismStateCallback(void);
+	void localizedPoseCallback(const robot_msgs::PoseWithCovarianceConstPtr &localizedPose);
+	void mechanismStateCallback(const robot_msgs::MechanismStateConstPtr &mechanismState);
 	
+	ros::NodeHandle                                    m_nodeHandle;
+	ros::Subscriber                                    m_mechanismStateSubscriber;
+	ros::Subscriber                                    m_localizedPoseSubscriber;
 
-
-	ros::Node                                    *m_node;
-	tf::TransformListener                         m_tf; 
-	robot_desc::URDF                             *m_urdf;
-	planning_models::KinematicModel              *m_kmodel;
-
+	tf::TransformListener                              m_tf; 
+	
+	boost::shared_ptr<robot_desc::URDF>                m_urdf;
+	boost::shared_ptr<planning_models::KinematicModel> m_kmodel;
+	
 	// info about the pose; this is not placed in the robot's kinematic state 
-	bool                                          m_haveBasePos;	
-	double                                        m_basePos[3];
-	tf::Pose                                      m_pose;
-	robot_msgs::PoseWithCovariance                m_localizedPose;
+	bool                                               m_haveBasePos;	
+	double                                             m_basePos[3];
+	tf::Pose                                           m_pose;
 	
 	// info about the robot's joints
-	robot_msgs::MechanismState                    m_mechanismState;
-	bool                                          m_haveMechanismState;
-	
-	// the complete robot state
-	planning_models::KinematicModel::StateParams *m_robotState;
+	bool                                               m_haveMechanismState;	
+	boost::shared_ptr<planning_models::KinematicModel::StateParams>
+	                                                   m_robotState;
 	
 	// if this flag is true, the base position is included in the state as well
-	bool                                          m_includeBaseInState;
+	bool                                               m_includeBaseInState;
 	
-	ros::Time                                     m_lastStateUpdate;
-	ros::Time                                     m_lastBaseUpdate;
+	ros::Time                                          m_lastStateUpdate;
+	ros::Time                                          m_lastBaseUpdate;
     };
     
 } // kinematic_planning
-

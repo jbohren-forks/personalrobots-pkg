@@ -56,7 +56,7 @@ class Example : public kinematic_planning::KinematicStateMonitor
 {
 public:
     
-    Example(ros::Node *node) : kinematic_planning::KinematicStateMonitor(node)
+    Example(void) : kinematic_planning::KinematicStateMonitor()
     {
     }
 
@@ -99,7 +99,9 @@ public:
 	motion_planning_srvs::KinematicPlanState::Response s_res;
 	s_req.value = req;
 	
-	if (ros::service::call("plan_kinematic_path_state", s_req, s_res))
+	ros::ServiceClient client = m_nodeHandle.serviceClient<motion_planning_srvs::KinematicPlanState>("plan_kinematic_path_state");
+	
+	if (client.call(s_req, s_res))
 	{
 	    // send command to the base
 	    // no idea how to interface with that yet ...
@@ -126,10 +128,9 @@ private:
 
 int main(int argc, char **argv)
 {  
-    ros::init(argc, argv);
+    ros::init(argc, argv, "example_execute_plan_to_state_minimal");
 
-    ros::Node node("example_execute_plan_to_state_minimal");
-    Example plan(&node);
+    Example plan;
     plan.run();
 
     return 0;    

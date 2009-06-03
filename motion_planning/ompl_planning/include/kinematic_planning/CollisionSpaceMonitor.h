@@ -96,58 +96,52 @@ namespace kinematic_planning
 
     public:
 	
-        CollisionSpaceMonitor(ros::Node *node, collision_space::EnvironmentModel *collisionSpace = NULL) : KinematicStateMonitor(node)
+	CollisionSpaceMonitor(void) : KinematicStateMonitor()
 	{
-	    if (collisionSpace)
-		m_collisionSpace = collisionSpace;
-	    else
-		m_collisionSpace = new collision_space::EnvironmentModelODE();
+	    m_collisionSpace = boost::shared_ptr<collision_space::EnvironmentModel>(new collision_space::EnvironmentModelODE());
 	    m_collisionSpace->setSelfCollision(true);
+	    
 	    // hack for having ground plane
 	    m_collisionSpace->addStaticPlane(0.0, 0.0, 1.0, -0.01);
-	    
-	    m_node->subscribe("collision_map", m_collisionMap, &CollisionSpaceMonitor::collisionMapCallback, this, 1);
-	    m_node->advertiseService("set_collision_state", &CollisionSpaceMonitor::setCollisionState, this);
-	    	
-	    m_node->subscribe("attach_object", m_attachedObject, &CollisionSpaceMonitor::attachObject, this, 1);
+	    collisionSpaceSubscribe();
+	}
+	
+        CollisionSpaceMonitor(boost::shared_ptr<collision_space::EnvironmentModel> collisionSpace) : KinematicStateMonitor() 
+	{
+	    // use a given collision space
+	    m_collisionSpace = collisionSpace;
+
+	    collisionSpaceSubscribe();
 	}
 
 	virtual ~CollisionSpaceMonitor(void)
 	{
-	    if (m_collisionSpace)
-	    {
-		delete m_collisionSpace;
-		m_kmodel = NULL;
-	    }
 	}
 	
-	void attachObject(void);
 	
 	bool setCollisionState(motion_planning_srvs::CollisionCheckState::Request &req, motion_planning_srvs::CollisionCheckState::Response &res);
 
-	virtual void setRobotDescription(robot_desc::URDF *file);
-	
+	virtual void loadRobotDescription(void);
     	virtual void defaultPosition(void);
 	
 	bool isMapUpdated(double sec);
 
     protected:
 	
-	void addSelfCollisionGroups(unsigned int cid, robot_desc::URDF *model);
+	void collisionSpaceSubscribe(void);
 	
-	void collisionMapCallback(void);
+	void attachObjectCallback(const robot_msgs::AttachedObjectConstPtr &attachedObject);
+	void collisionMapCallback(const robot_msgs::CollisionMapConstPtr &collisionMap);
 	
-	virtual void beforeWorldUpdate(void);
-	virtual void afterWorldUpdate(void);
-	virtual void afterAttachBody(planning_models::KinematicModel::Link *link);
+	virtual void beforeWorldUpdate(const robot_msgs::CollisionMapConstPtr &collisionMap);
+	virtual void afterWorldUpdate(const robot_msgs::CollisionMapConstPtr &collisionMap);
+	virtual void afterAttachBody(const robot_msgs::AttachedObjectConstPtr &attachedObject, planning_models::KinematicModel::Link *link);
 	
-	robot_msgs::CollisionMap              m_collisionMap;
-	collision_space::EnvironmentModel    *m_collisionSpace;
-
-	// add or remove objects to be attached to a link
-	robot_msgs::AttachedObject            m_attachedObject;
-	
-	ros::Time                             m_lastMapUpdate;
+	boost::shared_ptr<collision_space::EnvironmentModel> m_collisionSpace;
+	ros::Subscriber                                      m_collisionMapSubscriber;
+	ros::Subscriber                                      m_attachedObjectSubscriber;
+	ros::ServiceServer                                   m_setCollisionStateService;
+	ros::Time                                            m_lastMapUpdate;
     };
      
 } // kinematic_planning

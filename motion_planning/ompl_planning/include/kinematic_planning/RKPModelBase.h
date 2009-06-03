@@ -40,6 +40,7 @@
 #include <collision_space/environment.h>
 #include <planning_models/kinematic.h>
 #include <boost/thread/mutex.hpp>
+#include <boost/shared_ptr.hpp>
 #include <string>
 
 namespace kinematic_planning
@@ -52,20 +53,18 @@ namespace kinematic_planning
 	{
 	    groupID          = -1;
 	    collisionSpaceID = 0;
-	    collisionSpace   = NULL;
-	    kmodel           = NULL;
 	}
 	
 	virtual ~RKPModelBase(void)
 	{
 	}
 	
-	boost::mutex                       lock;
-	collision_space::EnvironmentModel *collisionSpace;
-	unsigned int                       collisionSpaceID;
-	planning_models::KinematicModel   *kmodel;
-	std::string                        groupName;
-	int                                groupID;
+	boost::mutex                                         lock;
+	boost::shared_ptr<collision_space::EnvironmentModel> collisionSpace;
+	unsigned int                                         collisionSpaceID;
+	boost::shared_ptr<planning_models::KinematicModel>   kmodel;
+	std::string                                          groupName;
+	int                                                  groupID;
     };
 
 } // kinematic_planning

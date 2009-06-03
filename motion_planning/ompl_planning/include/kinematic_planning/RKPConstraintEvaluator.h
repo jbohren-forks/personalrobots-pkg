@@ -40,6 +40,7 @@
 #include <planning_models/kinematic.h>
 #include <motion_planning_msgs/KinematicConstraints.h>
 #include <angles/angles.h>
+#include <boost/shared_ptr.hpp>
 #include <iostream>
 #include <vector>
 
@@ -59,7 +60,7 @@ namespace kinematic_planning
 	}
 	
 	virtual void clear(void) = 0;
-	virtual bool use(planning_models::KinematicModel *kmodel, const ros::Message *kc) = 0;
+	virtual bool use(const planning_models::KinematicModel *kmodel, const ros::Message *kc) = 0;
 	virtual bool decide(void) const = 0;
 	virtual void print(std::ostream &out = std::cout) const
 	{
@@ -76,7 +77,7 @@ namespace kinematic_planning
 	    m_link = NULL;
 	}
 	
-	virtual bool use(planning_models::KinematicModel *kmodel, const ros::Message *kc)
+	virtual bool use(const planning_models::KinematicModel *kmodel, const ros::Message *kc)
 	{
 	    const motion_planning_msgs::PoseConstraint *pc = dynamic_cast<const motion_planning_msgs::PoseConstraint*>(kc);
 	    if (pc)
@@ -85,7 +86,7 @@ namespace kinematic_planning
 		return false;
 	}
 	
-	bool use(planning_models::KinematicModel *kmodel, const motion_planning_msgs::PoseConstraint &pc)
+	bool use(const planning_models::KinematicModel *kmodel, const motion_planning_msgs::PoseConstraint &pc)
 	{
 	    m_link = kmodel->getLink(pc.robot_link);
 	    m_pc   = pc;
@@ -340,7 +341,7 @@ namespace kinematic_planning
 	    m_kce.clear();	
 	}
 	
-	bool use(planning_models::KinematicModel *kmodel, const std::vector<motion_planning_msgs::PoseConstraint> &kc)
+	bool use(const planning_models::KinematicModel *kmodel, const std::vector<motion_planning_msgs::PoseConstraint> &kc)
 	{
 	    clear();
 	    bool result = true;

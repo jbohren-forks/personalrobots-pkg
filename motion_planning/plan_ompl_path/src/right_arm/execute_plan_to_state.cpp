@@ -71,13 +71,13 @@ class Example : public kinematic_planning::KinematicStateMonitor
 {
 public:
     
-    Example(ros::Node *node) : kinematic_planning::KinematicStateMonitor(node)
+    Example(void) : kinematic_planning::KinematicStateMonitor()
     {
 	// if we use the topic for sending commands to the controller, we need to advertise it
-	m_node->advertise<robot_msgs::JointTraj>("right_arm_trajectory_command", 1);
+	jointCommandPublisher_ = m_nodeHandle.advertise<robot_msgs::JointTraj>("right_arm/trajectory_controller/trajectory_command", 1);
 	
 	// advertise the topic for displaying kinematic plans
-	m_node->advertise<motion_planning_msgs::DisplayKinematicPath>("display_kinematic_path", 10);
+	displayKinematicPathPublisher_ = m_nodeHandle.advertise<motion_planning_msgs::DisplayKinematicPath>("display_kinematic_path", 10);
 	
 	// we can send commands to the trajectory controller both by using a topic, and by using services
 	use_topic_ = false;
@@ -131,8 +131,9 @@ public:
 	motion_planning_srvs::KinematicPlanState::Request  s_req;
 	motion_planning_srvs::KinematicPlanState::Response s_res;
 	s_req.value = req;
-	
-	if (ros::service::call("plan_kinematic_path_state", s_req, s_res))
+
+	ros::ServiceClient client = m_nodeHandle.serviceClient<motion_planning_srvs::KinematicPlanState>("plan_kinematic_path_state");
+	if (client.call(s_req, s_res))
 	{
 	    // print the path on screen
 	    printPath(s_res.value.path);
@@ -175,7 +176,7 @@ protected:
     }
 
     // convert a kinematic path message to a trajectory for the controller
-    void getTrajectoryMsg(motion_planning_msgs::KinematicPath &path, robot_msgs::JointTraj &traj)
+    void getTrajectoryMsg(const motion_planning_msgs::KinematicPath &path, robot_msgs::JointTraj &traj)
     {	
         traj.set_points_size(path.get_states_size());	
 	for (unsigned int i = 0 ; i < path.get_states_size() ; ++i)
@@ -188,17 +189,17 @@ protected:
     }
     
     // send a command to the trajectory controller using a topic
-    void sendArmCommand(motion_planning_msgs::KinematicPath &path, const std::string &model)
+    void sendArmCommand(const motion_planning_msgs::KinematicPath &path, const std::string &model)
     {
 	robot_msgs::JointTraj traj;
 	getTrajectoryMsg(path, traj);
-	m_node->publish("right_arm_trajectory_command", traj);
+	jointCommandPublisher_.publish(traj);
 	ROS_INFO("Sent trajectory to controller (using a topic)");
     }
 
     // send a command to the trajectory controller using a service; 
     // also demo how to wait for the trajectory to finish executing
-    void sendArmCommandAndWait(motion_planning_msgs::KinematicPath &path, const std::string &model)
+    void sendArmCommandAndWait(const motion_planning_msgs::KinematicPath &path, const std::string &model)
     {	
 	pr2_mechanism_controllers::TrajectoryStart::Request  send_traj_start_req;	
 	pr2_mechanism_controllers::TrajectoryStart::Response send_traj_start_res;
@@ -210,13 +211,15 @@ protected:
         send_traj_start_req.traj = traj;
 	
         int traj_done = -1;	
-        if (ros::service::call("right_arm_trajectory_controller/TrajectoryStart", send_traj_start_req, send_traj_start_res))
+	ros::ServiceClient clientStart = m_nodeHandle.serviceClient<pr2_mechanism_controllers::TrajectoryStart>("right_arm/trajectory_controller/TrajectoryStart");
+	ros::ServiceClient clientQuery = m_nodeHandle.serviceClient<pr2_mechanism_controllers::TrajectoryStart>("right_arm/trajectory_controller/TrajectoryQuery");
+        if (clientStart.call(send_traj_start_req, send_traj_start_res))
         {	    
             ROS_INFO("Sent trajectory to controller (using a service)");
             send_traj_query_req.trajectoryid =  send_traj_start_res.trajectoryid;	    
             while(!(traj_done == send_traj_query_res.State_Done || traj_done == send_traj_query_res.State_Failed))
             {		
-                if(ros::service::call("right_arm_trajectory_controller/TrajectoryQuery",  send_traj_query_req,  send_traj_query_res))
+		if(clientQuery.call(send_traj_query_req,  send_traj_query_res))
                 {		    
                     traj_done = send_traj_query_res.done;		    
                 }		
@@ -230,18 +233,18 @@ protected:
     }
     
     // send a message that can be used to display the kinematic path
-    void sendDisplay(motion_planning_msgs::KinematicState &start, motion_planning_msgs::KinematicPath &path, const std::string &model)
+    void sendDisplay(const motion_planning_msgs::KinematicState &start, const motion_planning_msgs::KinematicPath &path, const std::string &model)
     {
 	motion_planning_msgs::DisplayKinematicPath dpath;
 	dpath.frame_id = "base_link";
 	dpath.model_name = model;
 	dpath.start_state = start;
 	dpath.path = path;
-	m_node->publish("display_kinematic_path", dpath);
+	displayKinematicPathPublisher_.publish(dpath);
 	ROS_INFO("Sent planned path to display");
     }
     
-    void printPath(motion_planning_msgs::KinematicPath &path)
+    void printPath(const motion_planning_msgs::KinematicPath &path)
     {
 	printf("Path with %d states\n", (int)path.states.size());	
 	for (unsigned int i = 0 ; i < path.states.size() ; ++i)
@@ -254,8 +257,8 @@ protected:
     }
     
     // check if straight line path is valid (motion_validator node)
-    bool verifyDirectPath(motion_planning_msgs::KinematicState &start, motion_planning_msgs::KinematicConstraints &cstrs,
-			  motion_planning_msgs::KinematicState &goal, const std::string &model)
+    bool verifyDirectPath(const motion_planning_msgs::KinematicState &start, const motion_planning_msgs::KinematicConstraints &cstrs,
+			  const motion_planning_msgs::KinematicState &goal, const std::string &model)
     {  
 	motion_planning_srvs::ValidateKinematicPath::Request  req;	    
 	motion_planning_srvs::ValidateKinematicPath::Response res;
@@ -263,7 +266,9 @@ protected:
 	req.start_state = start;	    
 	req.constraints = cstrs;
 	req.goal_state = goal;
-	if (ros::service::call("validate_path", req, res))
+
+	ros::ServiceClient client = m_nodeHandle.serviceClient<motion_planning_srvs::ValidateKinematicPath>("validate_path");
+	if (client.call(req, res))
 	{		
 	    if (res.valid)
 		ROS_INFO("Direct path is valid");		
@@ -278,16 +283,18 @@ protected:
 
 private:
 
-    bool use_topic_;    
+    bool           use_topic_;    
+    ros::Publisher jointCommandPublisher_;
+    ros::Publisher displayKinematicPathPublisher_;
+
 };
 
 
 int main(int argc, char **argv)
 {  
-    ros::init(argc, argv);
+    ros::init(argc, argv, "example_execute_plan_to_state");
 
-    ros::Node node("example_execute_plan_to_state");
-    Example plan(&node);
+    Example plan;
     plan.run();
     
     return 0;    

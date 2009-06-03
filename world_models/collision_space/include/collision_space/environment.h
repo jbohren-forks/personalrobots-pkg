@@ -41,6 +41,7 @@
 #include <planning_models/kinematic.h>
 #include <LinearMath/btVector3.h>
 #include <boost/thread/mutex.hpp>
+#include <boost/shared_ptr.hpp>
 #include <vector>
 #include <string>
 
@@ -85,8 +86,6 @@ namespace collision_space
 	
 	virtual ~EnvironmentModel(void)
 	{
-	    for (unsigned int i = 0 ; i < m_models.size() ; ++i)
-		delete m_models[i];
 	}
 
 	/**********************************************************************/
@@ -111,7 +110,7 @@ namespace collision_space
 	    bodies (multiplicative factor). The padding can be used to
 	    increase or decrease the robot's bodies with by an
 	    additive term */
-	virtual unsigned int addRobotModel(planning_models::KinematicModel *model, const std::vector<std::string> &links, double scale = 1.0, double padding = 0.0);
+	virtual unsigned int addRobotModel(const boost::shared_ptr<planning_models::KinematicModel> &model, const std::vector<std::string> &links, double scale = 1.0, double padding = 0.0);
 
 	/** Update the positions of the geometry used in collision detection */
 	virtual void updateRobotModel(unsigned int model_id) = 0;
@@ -123,7 +122,7 @@ namespace collision_space
 	unsigned int getModelCount(void) const;
 
 	/** Get a specific model */
-	planning_models::KinematicModel* getRobotModel(unsigned int model_id) const;
+	boost::shared_ptr<planning_models::KinematicModel> getRobotModel(unsigned int model_id) const;
 	
 	/** Get the model ID based on the model (robot) name; returns -1 if model not found. */
 	int getModelID(const std::string& robot_name) const;
@@ -179,7 +178,8 @@ namespace collision_space
 	msg::Interface                                m_msg;
 	
 	/** List of loaded robot models */	
-	std::vector<planning_models::KinematicModel*> m_models;
+	std::vector< boost::shared_ptr<planning_models::KinematicModel> >
+	                                              m_models;
 	
     };
 }

@@ -53,10 +53,10 @@ class Example : public kinematic_planning::KinematicStateMonitor
 {
 public:
     
-    Example(ros::Node *node) : kinematic_planning::KinematicStateMonitor(node)
+    Example(void) : kinematic_planning::KinematicStateMonitor()
     {
 	// we use the topic for sending commands to the controller, so we need to advertise it
-	m_node->advertise<robot_msgs::JointTraj>("right_arm_trajectory_command", 1);
+	jointCommandPublisher_ = m_nodeHandle.advertise<robot_msgs::JointTraj>("right_arm/trajectory_controller/trajectory_command", 1);
     }
 
     void runExample(void)
@@ -88,7 +88,8 @@ public:
 	motion_planning_srvs::KinematicPlanState::Response s_res;
 	s_req.value = req;
 	
-	if (ros::service::call("plan_kinematic_path_state", s_req, s_res))
+	ros::ServiceClient client = m_nodeHandle.serviceClient<motion_planning_srvs::KinematicPlanState>("plan_kinematic_path_state");
+	if (client.call(s_req, s_res))
 	    sendArmCommand(s_res.value.path, GROUPNAME);
 	else
 	    ROS_ERROR("Service 'plan_kinematic_path_state' failed");
@@ -125,19 +126,20 @@ protected:
     {
 	robot_msgs::JointTraj traj;
 	getTrajectoryMsg(path, traj);
-	m_node->publish("right_arm_trajectory_command", traj);
+	jointCommandPublisher_.publish(traj);
 	ROS_INFO("Sent trajectory to controller (using a topic)");
     }
+    
+    ros::Publisher jointCommandPublisher_;    
 
 };
 
 
 int main(int argc, char **argv)
 {  
-    ros::init(argc, argv);
+    ros::init(argc, argv, "example_execute_plan_to_state_minimal");
 
-    ros::Node node("example_execute_plan_to_state_minimal");
-    Example plan(&node);
+    Example plan;
     plan.run();
     
     return 0;    

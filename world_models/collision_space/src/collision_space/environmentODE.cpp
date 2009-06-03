@@ -54,7 +54,7 @@ void collision_space::EnvironmentModelODE::freeMemory(void)
 	dSpaceDestroy(m_spaceBasicGeoms);
 }
 
-unsigned int collision_space::EnvironmentModelODE::addRobotModel(planning_models::KinematicModel *model, const std::vector<std::string> &links, double scale, double padding)
+unsigned int collision_space::EnvironmentModelODE::addRobotModel(const boost::shared_ptr<planning_models::KinematicModel> &model, const std::vector<std::string> &links, double scale, double padding)
 {
     unsigned int id = collision_space::EnvironmentModel::addRobotModel(model, links, scale, padding);
     

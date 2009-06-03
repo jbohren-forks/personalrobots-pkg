@@ -97,12 +97,10 @@ class DisplayPlannerCollisionModel : public CollisionSpaceMonitor
 {
 public:
 
-    DisplayPlannerCollisionModel(ros::Node *node) : CollisionSpaceMonitor(node)
+    DisplayPlannerCollisionModel(void) : CollisionSpaceMonitor()
     {
-	id_   = 0;
-
-	m_node->advertise<visualization_msgs::Marker>("visualization_marker", 10240);
-	m_node->advertise<robot_msgs::AttachedObject>("attach_object", 1);
+	id_ = 0;
+	visualizationMarkerPublisher_ = m_nodeHandle.advertise<visualization_msgs::Marker>("visualization_marker", 10240);
     }
 
     virtual ~DisplayPlannerCollisionModel(void)
@@ -112,28 +110,28 @@ public:
     void run(void)
     {
 	loadRobotDescription();
-	m_node->spin();
+	ros::spin();
     }
 
 protected:
 
-    void afterWorldUpdate(void)
+    void afterWorldUpdate(const robot_msgs::CollisionMapConstPtr &collisionMap)
     {
-	CollisionSpaceMonitor::afterWorldUpdate();
+	CollisionSpaceMonitor::afterWorldUpdate(collisionMap);
 
-	unsigned int n = m_collisionMap.get_boxes_size();
+	unsigned int n = collisionMap->get_boxes_size();
 	for (unsigned int i = 0 ; i < n ; ++i)
 	{
-	    robot_msgs::Point32 &point = m_collisionMap.boxes[i].center;
+	    const robot_msgs::Point32 &point = collisionMap->boxes[i].center;
 	    sendPoint(point.x, point.y, point.z,
 		      std::max(std::max(point.x, point.y), point.z),
-		      m_collisionMap.header, 1);
+		      collisionMap->header, 1);
 	}
     }
 
-    void afterAttachBody(planning_models::KinematicModel::Link *link)
+    void afterAttachBody(const robot_msgs::AttachedObjectConstPtr &attachedObject, planning_models::KinematicModel::Link *link)
     {
-	roslib::Header header = m_attachedObject.header;
+	roslib::Header header = attachedObject->header;
 	header.frame_id = link->name;
 	for (unsigned int i = 0 ; i < link->attachedBodies.size() ; ++i)
         {
@@ -144,6 +142,7 @@ protected:
                 sendPoint(v.x(), v.y(), v.z(), std::max(std::max(box->size[0], box->size[1]), box->size[2] / 2.0), header, 0);
             }
         }
+	afterAttachBody(attachedObject, link);
     }
 
 private:
@@ -179,20 +178,20 @@ private:
 	    mk.color.g = 1.0;
 	    mk.color.b = 0.04;
 	}
-
-	m_node->publish("visualization_marker", mk);
+	
+	visualizationMarkerPublisher_.publish(mk);
     }
 
-    int        id_;
-
+    int            id_;
+    ros::Publisher visualizationMarkerPublisher_;
+    
 };
 
 int main(int argc, char **argv)
 {
-    ros::init(argc, argv);
+    ros::init(argc, argv, "display_planner_collision_model");
 
-    ros::Node node("display_planner_collision_model");
-    DisplayPlannerCollisionModel disp(&node);
+    DisplayPlannerCollisionModel disp;
     disp.run();
 
     return 0;

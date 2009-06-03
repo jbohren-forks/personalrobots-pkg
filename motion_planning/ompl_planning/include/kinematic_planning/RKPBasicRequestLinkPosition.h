@@ -56,7 +56,7 @@ namespace kinematic_planning
 	    for (unsigned int i = 0 ; i < pc.size() ; ++i)
 	    {
 		PoseConstraintEvaluator *pce = new PoseConstraintEvaluator();
-		pce->use(m_model->kmodel, pc[i]);
+		pce->use(m_model->kmodel.get(), pc[i]);
 		m_pce.push_back(pce);
 		
 		// if we have position constraints

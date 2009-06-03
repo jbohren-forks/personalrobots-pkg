@@ -36,54 +36,49 @@
 
 #include "kinematic_planning/KinematicStateMonitor.h"
 
+void kinematic_planning::KinematicStateMonitor::kinematicStateSubscribe(void)
+{
+    m_mechanismStateSubscriber = m_nodeHandle.subscribe("mechanism_state", 1, &KinematicStateMonitor::mechanismStateCallback, this);
+    m_localizedPoseSubscriber  = m_nodeHandle.subscribe("localized_pose",  1, &KinematicStateMonitor::localizedPoseCallback,  this);
+}
+
+boost::shared_ptr<planning_models::KinematicModel> kinematic_planning::KinematicStateMonitor::getKModel(void) const
+{ 
+    return m_kmodel;
+}
+
+boost::shared_ptr<planning_models::KinematicModel::StateParams> kinematic_planning::KinematicStateMonitor::getRobotState(void) const
+{
+    return m_robotState;
+}
+
 void kinematic_planning::KinematicStateMonitor::setIncludeBaseInState(bool value)
 {
     m_includeBaseInState = value;
 }
 
-void kinematic_planning::KinematicStateMonitor::setRobotDescriptionFromData(const char *data)
-{
-    robot_desc::URDF *file = new robot_desc::URDF();
-    if (file->loadString(data))
-	setRobotDescription(file);
-    else
-	delete file;
-}
-
-void kinematic_planning::KinematicStateMonitor::setRobotDescriptionFromFile(const char *filename)
-{
-    robot_desc::URDF *file = new robot_desc::URDF();
-    if (file->loadFile(filename))
-	setRobotDescription(file);
-    else
-	delete file;
-}
-
-void kinematic_planning::KinematicStateMonitor::setRobotDescription(robot_desc::URDF *file)
-{
-    if (m_urdf)
-	delete m_urdf;
-    if (m_kmodel)
-	delete m_kmodel;
-    
-    m_urdf = file;
-    m_kmodel = new planning_models::KinematicModel();
-    m_kmodel->setVerbose(false);
-    m_kmodel->build(*file);
-    m_kmodel->reduceToRobotFrame();
-    
-    m_robotState = m_kmodel->newStateParams();
-    m_robotState->setInRobotFrame();
-    
-    m_haveMechanismState = false;
-    m_haveBasePos = false;
-}
-
 void kinematic_planning::KinematicStateMonitor::loadRobotDescription(void)
 {
     std::string content;
-    if (m_node->getParam("robot_description", content))
-	setRobotDescriptionFromData(content.c_str());
+    if (m_nodeHandle.getParam("robot_description", content))
+    {
+	m_urdf = boost::shared_ptr<robot_desc::URDF>(new robot_desc::URDF());
+	if (m_urdf->loadString(content.c_str()))
+	{
+	    m_kmodel = boost::shared_ptr<planning_models::KinematicModel>(new planning_models::KinematicModel());
+	    m_kmodel->setVerbose(false);
+	    m_kmodel->build(*m_urdf);
+	    m_kmodel->reduceToRobotFrame();
+	    
+	    m_robotState = boost::shared_ptr<planning_models::KinematicModel::StateParams>(m_kmodel->newStateParams());
+	    m_robotState->setInRobotFrame();
+	    
+	    m_haveMechanismState = false;
+	    m_haveBasePos = false;
+	}
+	else
+	    m_urdf.reset();
+    }
     else
 	ROS_ERROR("Robot model not found! Did you remap robot_description?");
 }
@@ -96,13 +91,13 @@ void kinematic_planning::KinematicStateMonitor::defaultPosition(void)
 
 bool kinematic_planning::KinematicStateMonitor::loadedRobot(void) const
 {
-    return m_kmodel != NULL;
+    return m_kmodel;
 }
 
 void kinematic_planning::KinematicStateMonitor::waitForState(void)
 {
     ROS_INFO("Waiting for mechanism state ...");	    
-    while (m_node->ok() && (m_haveMechanismState ^ loadedRobot()))
+    while (m_nodeHandle.ok() && (m_haveMechanismState ^ loadedRobot()))
 	ros::Duration().fromSec(0.05).sleep();
     ROS_INFO("Mechanism state received!");
 }
@@ -110,7 +105,7 @@ void kinematic_planning::KinematicStateMonitor::waitForState(void)
 void kinematic_planning::KinematicStateMonitor::waitForPose(void)
 {
     ROS_INFO("Waiting for robot pose ...");	    
-    while (m_node->ok() && (m_haveBasePos ^ loadedRobot()))
+    while (m_nodeHandle.ok() && (m_haveBasePos ^ loadedRobot()))
 	ros::Duration().fromSec(0.05).sleep();
     ROS_INFO("Robot pose received!");
 }
@@ -160,9 +155,9 @@ void kinematic_planning::KinematicStateMonitor::baseUpdate(void)
 	stateUpdate();
 }
 
-void kinematic_planning::KinematicStateMonitor::localizedPoseCallback(void)
+void kinematic_planning::KinematicStateMonitor::localizedPoseCallback(const robot_msgs::PoseWithCovarianceConstPtr &localizedPose)
 {
-    tf::PoseMsgToTF(m_localizedPose.pose, m_pose);
+    tf::PoseMsgToTF(localizedPose->pose, m_pose);
     if (std::isfinite(m_pose.getOrigin().x()))
 	m_basePos[0] = m_pose.getOrigin().x();
     if (std::isfinite(m_pose.getOrigin().y()))
@@ -176,35 +171,35 @@ void kinematic_planning::KinematicStateMonitor::localizedPoseCallback(void)
     baseUpdate();
 }
 
-void kinematic_planning::KinematicStateMonitor::mechanismStateCallback(void)
+void kinematic_planning::KinematicStateMonitor::mechanismStateCallback(const robot_msgs::MechanismStateConstPtr &mechanismState)
 {
     bool change = false;
     if (m_robotState)
     {
 	static bool first_time = true;
 
-	unsigned int n = m_mechanismState.get_joint_states_size();
+	unsigned int n = mechanismState->get_joint_states_size();
 	for (unsigned int i = 0 ; i < n ; ++i)
 	{
-	    planning_models::KinematicModel::Joint* joint = m_kmodel->getJoint(m_mechanismState.joint_states[i].name);
+	    planning_models::KinematicModel::Joint* joint = m_kmodel->getJoint(mechanismState->joint_states[i].name);
 	    if (joint)
 	    {
 		if (joint->usedParams == 1)
 		{
-		    double pos = m_mechanismState.joint_states[i].position;
-		    bool this_changed = m_robotState->setParamsJoint(&pos, m_mechanismState.joint_states[i].name);
+		    double pos = mechanismState->joint_states[i].position;
+		    bool this_changed = m_robotState->setParamsJoint(&pos, mechanismState->joint_states[i].name);
 		    change = change || this_changed;
 		}
 		else
 		{
 		    if (first_time)
-			ROS_WARN("Incorrect number of parameters: %s (expected %d, had 1)", m_mechanismState.joint_states[i].name.c_str(), joint->usedParams);
+			ROS_WARN("Incorrect number of parameters: %s (expected %d, had 1)", mechanismState->joint_states[i].name.c_str(), joint->usedParams);
 		}
 	    }
 	    else
 	    {
 		if (first_time)
-		    ROS_ERROR("Unknown joint: %s", m_mechanismState.joint_states[i].name.c_str());
+		    ROS_ERROR("Unknown joint: %s", mechanismState->joint_states[i].name.c_str());
 	    }
 	}
 	

@@ -38,24 +38,31 @@
 
 namespace kinematic_planning
 {  	
-    static inline double radiusOfBox(robot_msgs::Point32 &point)
+    static inline double radiusOfBox(const robot_msgs::Point32 &point)
     {
 	return std::max(std::max(point.x, point.y), point.z) * 1.73;
     }
 }
 
-void kinematic_planning::CollisionSpaceMonitor::attachObject(void)
+void kinematic_planning::CollisionSpaceMonitor::collisionSpaceSubscribe(void)
+{
+    m_collisionMapSubscriber   = m_nodeHandle.subscribe("collision_map", 1, &CollisionSpaceMonitor::collisionMapCallback, this);
+    m_attachedObjectSubscriber = m_nodeHandle.subscribe("attach_object", 1, &CollisionSpaceMonitor::attachObjectCallback, this);
+    m_setCollisionStateService = m_nodeHandle.advertiseService("set_collision_state", &CollisionSpaceMonitor::setCollisionState, this);
+}
+
+void kinematic_planning::CollisionSpaceMonitor::attachObjectCallback(const robot_msgs::AttachedObjectConstPtr &attachedObject)
 {
     m_collisionSpace->lock();
-    int model_id = m_collisionSpace->getModelID(m_attachedObject.robot_name);
-    planning_models::KinematicModel::Link *link = model_id >= 0 ? m_kmodel->getLink(m_attachedObject.link_name) : NULL;
+    int model_id = m_collisionSpace->getModelID(attachedObject->robot_name);
+    planning_models::KinematicModel::Link *link = model_id >= 0 ? m_kmodel->getLink(attachedObject->link_name) : NULL;
     
     if (link)
     {	
 	// clear the previously attached bodies 
 	for (unsigned int i = 0 ; i < link->attachedBodies.size() ; ++i)
 	    delete link->attachedBodies[i];
-	unsigned int n = m_attachedObject.get_objects_size();
+	unsigned int n = attachedObject->get_objects_size();
 	link->attachedBodies.resize(n);
 	
 	// create the new ones
@@ -65,31 +72,31 @@ void kinematic_planning::CollisionSpaceMonitor::attachObject(void)
 	    
 	    robot_msgs::PointStamped center;
 	    robot_msgs::PointStamped centerP;
-	    center.point.x = m_attachedObject.objects[i].center.x;
-	    center.point.y = m_attachedObject.objects[i].center.y;
-	    center.point.z = m_attachedObject.objects[i].center.z;
-	    center.header  = m_attachedObject.header;
-	    m_tf.transformPoint(m_attachedObject.link_name, center, centerP);
+	    center.point.x = attachedObject->objects[i].center.x;
+	    center.point.y = attachedObject->objects[i].center.y;
+	    center.point.z = attachedObject->objects[i].center.z;
+	    center.header  = attachedObject->header;
+	    m_tf.transformPoint(attachedObject->link_name, center, centerP);
 	    
 	    link->attachedBodies[i]->attachTrans.setOrigin(btVector3(centerP.point.x, centerP.point.y, centerP.point.z));
 	    
 	    // this is a HACK! we should have orientation
 	    planning_models::shapes::Box *box = new planning_models::shapes::Box();
-	    box->size[0] = m_attachedObject.objects[i].max_bound.x - m_attachedObject.objects[i].min_bound.x;
-	    box->size[1] = m_attachedObject.objects[i].max_bound.y - m_attachedObject.objects[i].min_bound.y;
-	    box->size[2] = m_attachedObject.objects[i].max_bound.z - m_attachedObject.objects[i].min_bound.z;
+	    box->size[0] = attachedObject->objects[i].max_bound.x - attachedObject->objects[i].min_bound.x;
+	    box->size[1] = attachedObject->objects[i].max_bound.y - attachedObject->objects[i].min_bound.y;
+	    box->size[2] = attachedObject->objects[i].max_bound.z - attachedObject->objects[i].min_bound.z;
 	    link->attachedBodies[i]->shape = box;
 	}
 	
 	// update the collision model
 	m_collisionSpace->updateAttachedBodies(model_id);
-	ROS_INFO("Link '%s' on '%s' has %d objects attached", m_attachedObject.link_name.c_str(), m_attachedObject.robot_name.c_str(), n);
+	ROS_INFO("Link '%s' on '%s' has %d objects attached", attachedObject->link_name.c_str(), attachedObject->robot_name.c_str(), n);
     }
     else
-	ROS_WARN("Unable to attach object to link '%s' on '%s'", m_attachedObject.link_name.c_str(), m_attachedObject.robot_name.c_str());
+	ROS_WARN("Unable to attach object to link '%s' on '%s'", attachedObject->link_name.c_str(), attachedObject->robot_name.c_str());
     m_collisionSpace->unlock();
     if (link)
-	afterAttachBody(link);
+	afterAttachBody(attachedObject, link);
 }
 
 bool kinematic_planning::CollisionSpaceMonitor::setCollisionState(motion_planning_srvs::CollisionCheckState::Request &req, motion_planning_srvs::CollisionCheckState::Response &res)
@@ -108,20 +115,26 @@ bool kinematic_planning::CollisionSpaceMonitor::setCollisionState(motion_plannin
     return true;	    
 }
 
-void kinematic_planning::CollisionSpaceMonitor::setRobotDescription(robot_desc::URDF *file)
+void kinematic_planning::CollisionSpaceMonitor::loadRobotDescription(void)
 {
-    KinematicStateMonitor::setRobotDescription(file);
+    KinematicStateMonitor::loadRobotDescription();
     if (m_kmodel)
     {
 	std::vector<std::string> links;
-	robot_desc::URDF::Group *g = file->getGroup("collision_check");
+	robot_desc::URDF::Group *g = m_urdf->getGroup("collision_check");
 	if (g && g->hasFlag("collision"))
 	    links = g->linkNames;
+
 	m_collisionSpace->lock();
 	unsigned int cid = m_collisionSpace->addRobotModel(m_kmodel, links);
+	std::vector<robot_desc::URDF::Group*> groups;
+	m_urdf->getGroups(groups);
+	
+	for (unsigned int i = 0 ; i < groups.size() ; ++i)
+	    if (groups[i]->hasFlag("self_collision"))
+		m_collisionSpace->addSelfCollisionGroup(cid, groups[i]->linkNames);
 	m_collisionSpace->unlock();
-	addSelfCollisionGroups(cid, file);
-    }	    
+    }
 }
 
 void kinematic_planning::CollisionSpaceMonitor::defaultPosition(void)
@@ -139,35 +152,23 @@ bool kinematic_planning::CollisionSpaceMonitor::isMapUpdated(double sec)
 	return true;
 }
 
-void kinematic_planning::CollisionSpaceMonitor::addSelfCollisionGroups(unsigned int cid, robot_desc::URDF *model)
+void kinematic_planning::CollisionSpaceMonitor::collisionMapCallback(const robot_msgs::CollisionMapConstPtr &collisionMap)
 {
-    std::vector<robot_desc::URDF::Group*> groups;
-    model->getGroups(groups);
-    
-    m_collisionSpace->lock();
-    for (unsigned int i = 0 ; i < groups.size() ; ++i)
-	if (groups[i]->hasFlag("self_collision"))
-	    m_collisionSpace->addSelfCollisionGroup(cid, groups[i]->linkNames);
-    m_collisionSpace->unlock();
-}
-
-void kinematic_planning::CollisionSpaceMonitor::collisionMapCallback(void)
-{
-    unsigned int n = m_collisionMap.get_boxes_size();
+    unsigned int n = collisionMap->get_boxes_size();
     ROS_DEBUG("Received %u points (collision map)", n);
     
-    beforeWorldUpdate();
+    beforeWorldUpdate(collisionMap);
     
     ros::WallTime startTime = ros::WallTime::now();
     double *data = new double[4 * n];	
     for (unsigned int i = 0 ; i < n ; ++i)
     {
 	unsigned int i4 = i * 4;	    
-	data[i4    ] = m_collisionMap.boxes[i].center.x;
-	data[i4 + 1] = m_collisionMap.boxes[i].center.y;
-	data[i4 + 2] = m_collisionMap.boxes[i].center.z;
+	data[i4    ] = collisionMap->boxes[i].center.x;
+	data[i4 + 1] = collisionMap->boxes[i].center.y;
+	data[i4 + 2] = collisionMap->boxes[i].center.z;
 	
-	data[i4 + 3] = radiusOfBox(m_collisionMap.boxes[i].extents);
+	data[i4 + 3] = radiusOfBox(collisionMap->boxes[i].extents);
     }
     
     m_collisionSpace->lock();
@@ -181,18 +182,18 @@ void kinematic_planning::CollisionSpaceMonitor::collisionMapCallback(void)
     ROS_DEBUG("Updated world model in %f seconds", tupd);
     m_lastMapUpdate = ros::Time::now();
     
-    afterWorldUpdate();
+    afterWorldUpdate(collisionMap);
 }
 
-void kinematic_planning::CollisionSpaceMonitor::beforeWorldUpdate(void)
+void kinematic_planning::CollisionSpaceMonitor::beforeWorldUpdate(const robot_msgs::CollisionMapConstPtr &collisionMap)
 {
 }
 
-void kinematic_planning::CollisionSpaceMonitor::afterWorldUpdate(void)
+void kinematic_planning::CollisionSpaceMonitor::afterWorldUpdate(const robot_msgs::CollisionMapConstPtr &collisionMap)
 {
 }
 
-void kinematic_planning::CollisionSpaceMonitor::afterAttachBody(planning_models::KinematicModel::Link *link)
+void kinematic_planning::CollisionSpaceMonitor::afterAttachBody(const robot_msgs::AttachedObjectConstPtr &attachedObject,
+								planning_models::KinematicModel::Link *link)
 {
 }
-

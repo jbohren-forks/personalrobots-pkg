@@ -39,7 +39,7 @@
 
 #include <ompl/extension/samplingbased/kinematic/SpaceInformationKinematic.h>
 #include "kinematic_planning/RKPModelBase.h"
-
+#include <boost/shared_ptr.hpp>
 #include <vector>
 
 namespace kinematic_planning
@@ -148,11 +148,11 @@ namespace kinematic_planning
 	    }
 	}
 	
-	double                           m_divisions;
-	planning_models::KinematicModel *m_kmodel;
-	int                              m_groupID;
-	std::vector<int>                 m_floatingJoints;
-	std::vector<int>                 m_planarJoints;
+	double                                             m_divisions;
+	boost::shared_ptr<planning_models::KinematicModel> m_kmodel;
+	int                                                m_groupID;
+	std::vector<int>                                   m_floatingJoints;
+	std::vector<int>                                   m_planarJoints;
 	
     };    
     

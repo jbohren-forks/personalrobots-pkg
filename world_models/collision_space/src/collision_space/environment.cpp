@@ -41,7 +41,7 @@ void collision_space::EnvironmentModel::setVerbose(bool verbose)
     m_verbose = verbose;
 }
 
-unsigned int collision_space::EnvironmentModel::addRobotModel(planning_models::KinematicModel *model, const std::vector<std::string> &links, double scale, double padding)
+unsigned int collision_space::EnvironmentModel::addRobotModel(const boost::shared_ptr<planning_models::KinematicModel> &model, const std::vector<std::string> &links, double scale, double padding)
 {
     unsigned int pos = m_models.size();
     m_models.push_back(model);
@@ -82,7 +82,7 @@ int collision_space::EnvironmentModel::getModelID(const std::string& robot_name)
     return -1;
 }
 
-planning_models::KinematicModel* collision_space::EnvironmentModel::getRobotModel(unsigned int model_id) const
+boost::shared_ptr<planning_models::KinematicModel> collision_space::EnvironmentModel::getRobotModel(unsigned int model_id) const
 {
     return m_models[model_id];
 }

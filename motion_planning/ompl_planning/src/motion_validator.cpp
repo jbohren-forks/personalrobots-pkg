@@ -101,7 +101,7 @@ using namespace kinematic_planning;
 
 class MotionValidator : public CollisionSpaceMonitor
 {
-public:
+protected:
     
     class myModel : public RKPModelBase
     {
@@ -122,12 +122,14 @@ public:
 	
 	ompl::sb::SpaceInformationKinematic *si;
 	ompl::base::StateValidityChecker    *svc;
-    };    
-    
-    MotionValidator(ros::Node *node) : CollisionSpaceMonitor(node)
+    }; 
+   
+public: 
+
+    MotionValidator(void) : CollisionSpaceMonitor()
     {
-	m_node->advertiseService("validate_direct_path", &MotionValidator::validatePath, this);
-	m_node->advertiseService("validate_state",       &MotionValidator::validateState, this);
+	m_validateDirectPathService = m_nodeHandle.advertiseService("validate_direct_path", &MotionValidator::validatePath, this);
+	m_validateStateService = m_nodeHandle.advertiseService("validate_state", &MotionValidator::validateState, this);
     }
     
     /** Free the memory */
@@ -267,9 +269,9 @@ public:
 	}
     }
 
-    virtual void setRobotDescription(robot_desc::URDF *file)
+    virtual void loadRobotDescription(void)
     {
-	CollisionSpaceMonitor::setRobotDescription(file);	
+	CollisionSpaceMonitor::loadRobotDescription();	
 	
 	ROS_INFO("=======================================");	
 	std::stringstream ss;
@@ -321,7 +323,7 @@ public:
 	for (unsigned int i = 0 ; i < mlist.size() ; ++i)
 	    ROS_INFO("  * %s", mlist[i].c_str());
 	if (mlist.size() > 0)
-	    m_node->spin();
+	    ros::spin();
 	else
 	    ROS_ERROR("No robot models defined. Path validation node cannot start.");
     }
@@ -336,16 +338,17 @@ private:
     }
     
     std::map<std::string, myModel*> m_models;
-    
+
+    ros::ServiceServer              m_validateDirectPathService;
+    ros::ServiceServer              m_validateStateService;
 };
 
 
 int main(int argc, char **argv)
 { 
-    ros::init(argc, argv);
+    ros::init(argc, argv, "motion_validator");
     
-    ros::Node node("motion_validator");
-    MotionValidator validator(&node);
+    MotionValidator validator;
     validator.run();
     
     return 0;    

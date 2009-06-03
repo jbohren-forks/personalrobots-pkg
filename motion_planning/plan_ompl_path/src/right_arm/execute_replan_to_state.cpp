@@ -56,14 +56,14 @@ class Example : public kinematic_planning::KinematicStateMonitor
 {
 public:
     
-    Example(ros::Node *node) : kinematic_planning::KinematicStateMonitor(node)
+    Example(void) : kinematic_planning::KinematicStateMonitor()
     {
 	plan_id_ = -1;
 	robot_stopped_ = true;
 	
 	// we use the topic for sending commands to the controller, so we need to advertise it
-	m_node->advertise<robot_msgs::JointTraj>("right_arm_trajectory_command", 1);
-	m_node->subscribe("kinematic_planning_status", plan_status_, &Example::receiveStatus, this, 1);
+	jointCommandPublisher_ = m_nodeHandle.advertise<robot_msgs::JointTraj>("right_arm/trajectory_controller/trajectory_command", 1);
+	kinematicPlanningStatusSubscriber_ = m_nodeHandle.subscribe("kinematic_planning_status", 1, &Example::receiveStatus, this);
     }
         
     void runExample(void)
@@ -95,7 +95,8 @@ public:
 	motion_planning_srvs::KinematicReplanState::Response s_res;
 	s_req.value = req;
 	
-	if (ros::service::call("replan_kinematic_path_state", s_req, s_res))
+	ros::ServiceClient client = m_nodeHandle.serviceClient<motion_planning_srvs::KinematicReplanState>("replan_kinematic_path_state");
+	if (client.call(s_req, s_res))
 	    plan_id_ = s_res.id;
 	else
 	    ROS_ERROR("Service 'replan_kinematic_path_state' failed");
@@ -108,28 +109,28 @@ public:
 	{
 	    sleep(1);
 	    runExample();
-	    m_node->spin();
+	    ros::spin();
 	}
     }
 
 protected:
 
     // handle new status message
-    void receiveStatus(void)
+    void receiveStatus(const motion_planning_msgs::KinematicPlanStatusConstPtr &planStatus)
     {
-	if (plan_id_ >= 0 && plan_status_.id == plan_id_)
+	if (plan_id_ >= 0 && planStatus->id == plan_id_)
 	{
-	    if (plan_status_.valid)
+	    if (planStatus->valid)
 	    {
-		if (!plan_status_.path.states.empty())
+		if (!planStatus->path.states.empty())
 		{
 		    robot_stopped_ = false;
-		    sendArmCommand(plan_status_.path, GROUPNAME);
+		    sendArmCommand(planStatus->path, GROUPNAME);
 		}
 	    }
 	    else
 		stopRobot();
-	    if (plan_status_.done)
+	    if (planStatus->done)
 	    {
 		plan_id_ = -1;
 		robot_stopped_ = true;
@@ -166,7 +167,7 @@ protected:
     }
 
     // convert a kinematic path message to a trajectory for the controller
-    void getTrajectoryMsg(motion_planning_msgs::KinematicPath &path, robot_msgs::JointTraj &traj)
+    void getTrajectoryMsg(const motion_planning_msgs::KinematicPath &path, robot_msgs::JointTraj &traj)
     {	
         traj.set_points_size(path.get_states_size());	
 	for (unsigned int i = 0 ; i < path.get_states_size() ; ++i)
@@ -179,27 +180,27 @@ protected:
     }
     
     // send a command to the trajectory controller using a topic
-    void sendArmCommand(motion_planning_msgs::KinematicPath &path, const std::string &model)
+    void sendArmCommand(const motion_planning_msgs::KinematicPath &path, const std::string &model)
     {
 	robot_msgs::JointTraj traj;
 	getTrajectoryMsg(path, traj);
-	m_node->publish("right_arm_trajectory_command", traj);
+	jointCommandPublisher_.publish(traj);
 	ROS_INFO("Sent trajectory to controller (using a topic)");
     }
 
-    motion_planning_msgs::KinematicPlanStatus plan_status_;
-    int                                       plan_id_;
-    bool                                      robot_stopped_;
+    int             plan_id_;
+    bool            robot_stopped_;
+    ros::Subscriber kinematicPlanningStatusSubscriber_;
+    ros::Publisher  jointCommandPublisher_;
     
 };
 
 
 int main(int argc, char **argv)
 {  
-    ros::init(argc, argv);
+    ros::init(argc, argv, "example_execute_replan_to_state");
 
-    ros::Node node("example_execute_replan_to_state");
-    Example plan(&node);
+    Example plan;
     plan.run();
     
     return 0;    

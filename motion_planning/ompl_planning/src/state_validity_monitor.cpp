@@ -98,10 +98,10 @@ class StateValidityMonitor : public CollisionSpaceMonitor
 {
 public:
 
-    StateValidityMonitor(ros::Node *node) : CollisionSpaceMonitor(node),
-					    last_(-1)
+    StateValidityMonitor(void) : CollisionSpaceMonitor(),
+				 last_(-1)
     {
-	m_node->advertise<std_msgs::Byte>("state_validity", 1);
+	stateValidityPublisher_ = m_nodeHandle.advertise<std_msgs::Byte>("state_validity", 1);
     }
 
     virtual ~StateValidityMonitor(void)
@@ -112,17 +112,17 @@ public:
     {
 	loadRobotDescription();
 	waitForState();
-	m_node->spin();
+	ros::spin();
     }
 
 protected:
 
-    void afterWorldUpdate(void)
+    void afterWorldUpdate(const robot_msgs::CollisionMapConstPtr &collisionMap)
     {
-	CollisionSpaceMonitor::afterWorldUpdate();
+	CollisionSpaceMonitor::afterWorldUpdate(collisionMap);
 	last_ = -1;
     }
-
+    
     void stateUpdate(void)
     {
 	CollisionSpaceMonitor::stateUpdate();
@@ -139,7 +139,7 @@ protected:
 	    if (last_ != msg.data)
 	    {
 		last_ = msg.data;
-		m_node->publish("state_validity", msg);
+		stateValidityPublisher_.publish(msg);
 		if (invalid)
 		    ROS_WARN("State is in collision");
 		else
@@ -150,16 +150,16 @@ protected:
 
 private:
 
-    int        last_;
-
+    int            last_;
+    ros::Publisher stateValidityPublisher_;
+    
 };
 
 int main(int argc, char **argv)
 {
-    ros::init(argc, argv);
+    ros::init(argc, argv, "state_validity_monitor");
 
-    ros::Node node("state_validity_monitor");
-    StateValidityMonitor validator(&node);
+    StateValidityMonitor validator;
     validator.run();
 
     return 0;

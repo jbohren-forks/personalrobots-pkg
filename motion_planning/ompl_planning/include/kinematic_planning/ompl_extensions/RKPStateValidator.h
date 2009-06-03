@@ -72,7 +72,7 @@ namespace kinematic_planning
 	
 	void setPoseConstraints(const std::vector<motion_planning_msgs::PoseConstraint> &kc)
 	{
-	    m_kce.use(m_model->kmodel, kc);
+	    m_kce.use(m_model->kmodel.get(), kc);
 	}
 	
 	void clearConstraints(void)

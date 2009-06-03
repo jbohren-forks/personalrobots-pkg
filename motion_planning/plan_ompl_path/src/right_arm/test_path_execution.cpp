@@ -49,9 +49,9 @@ class TestExecutionPath : public kinematic_planning::KinematicStateMonitor
 {
 public:
     
-    TestExecutionPath(ros::Node *node) : kinematic_planning::KinematicStateMonitor(node)
+    TestExecutionPath(void) : kinematic_planning::KinematicStateMonitor()
     {
-	m_node->advertise<robot_msgs::JointTraj>("right_arm_trajectory_command", 1);
+	jointCommandPublisher_ = m_nodeHandle.advertise<robot_msgs::JointTraj>("right_arm/trajectory_controller/trajectory_command", 1);
 	sleep_duration_ = 4;
 	use_topic_ = false;
     }
@@ -102,7 +102,7 @@ public:
 		
 		if (use_topic_)
 		{
-		    m_node->publish("right_arm_trajectory_command", traj);
+		    jointCommandPublisher_.publish(traj);
 		    sleep(sleep_duration_);
 		}		
 		else
@@ -115,14 +115,17 @@ public:
 		    
 		    send_traj_start_req.traj = traj;
 		    int traj_done = -1;
-		    if (ros::service::call("right_arm_trajectory_controller/TrajectoryStart", send_traj_start_req, send_traj_start_res))
+		    
+		    ros::ServiceClient clientStart = m_nodeHandle.serviceClient<pr2_mechanism_controllers::TrajectoryStart>("right_arm/trajectory_controller/TrajectoryStart");
+		    ros::ServiceClient clientQuery = m_nodeHandle.serviceClient<pr2_mechanism_controllers::TrajectoryStart>("right_arm/trajectory_controller/TrajectoryQuery");
+		    if (clientStart.call(send_traj_start_req, send_traj_start_res))
 		    {
 			ROS_INFO("Sent trajectory to controller");
 			
 			send_traj_query_req.trajectoryid =  send_traj_start_res.trajectoryid;
 			while(!(traj_done == send_traj_query_res.State_Done || traj_done == send_traj_query_res.State_Failed))
 			{
-			    if(ros::service::call("right_arm_trajectory_controller/TrajectoryQuery",  send_traj_query_req,  send_traj_query_res))  
+			    if(clientQuery.call(send_traj_query_req,  send_traj_query_res))  
 				traj_done = send_traj_query_res.done;
 			    else
 			    {
@@ -167,18 +170,18 @@ public:
     
 protected:
     
-    int  sleep_duration_;
-    bool use_topic_;
+    int            sleep_duration_;
+    bool           use_topic_;
+    ros::Publisher jointCommandPublisher_;
     
 };
 
 
 int main(int argc, char **argv)
 {  
-    ros::init(argc, argv);
-    
-    ros::Node node("test_kinematic_path");
-    TestExecutionPath plan(&node);
+    ros::init(argc, argv, "test_kinematic_path");
+
+    TestExecutionPath plan;
     plan.run();
     
     return 0;    

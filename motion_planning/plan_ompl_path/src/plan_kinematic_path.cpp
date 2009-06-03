@@ -66,19 +66,19 @@ class PlanKinematicPath : public kinematic_planning::KinematicStateMonitor
 {
 public:
     
-    PlanKinematicPath(ros::Node *node) : kinematic_planning::KinematicStateMonitor(node)
+    PlanKinematicPath(void) : kinematic_planning::KinematicStateMonitor()
     {
 	plan_id_ = -1;
 	robot_stopped_ = true;
 	
 	// we use the topic for sending commands to the controller, so we need to advertise it
-	m_node->advertise<robot_msgs::JointTraj>("right_arm_trajectory_command", 1);
-	m_node->advertise<robot_msgs::PoseStamped>("cartesian_trajectory/command", 1);
+	jointCommandPublisher_ = m_nodeHandle.advertise<robot_msgs::JointTraj>("right_arm/trajectory_controller/trajectory_command", 1);
+	cartesianCommandPublisher_ = m_nodeHandle.advertise<robot_msgs::PoseStamped>("right_arm/?/command", 1);
 
 	// advertise the topic for displaying kinematic plans
-	m_node->advertise<motion_planning_msgs::DisplayKinematicPath>("display_kinematic_path", 10);
+	displayKinematicPathPublisher_ = m_nodeHandle.advertise<motion_planning_msgs::DisplayKinematicPath>("display_kinematic_path", 10);
 
-	m_node->subscribe("kinematic_planning_status", plan_status_, &PlanKinematicPath::receiveStatus, this, 1);
+	kinematicPlanningStatusSubscriber_ = m_nodeHandle.subscribe("kinematic_planning_status", 1, &PlanKinematicPath::receiveStatus, this);
     }
         
     void runRightArmToPositionA(void)
@@ -109,8 +109,9 @@ public:
 	motion_planning_srvs::KinematicReplanState::Request  s_req;
 	motion_planning_srvs::KinematicReplanState::Response s_res;
 	s_req.value = req;
-	
-	if (ros::service::call("replan_kinematic_path_state", s_req, s_res))
+
+	ros::ServiceClient client = m_nodeHandle.serviceClient<motion_planning_srvs::KinematicReplanState>("replan_kinematic_path_state");
+	if (client.call(s_req, s_res))
 	    plan_id_ = s_res.id;
 	else
 	    ROS_ERROR("Service 'replan_kinematic_path_state' failed");
@@ -153,7 +154,9 @@ public:
 	motion_planning_srvs::KinematicReplanLinkPosition::Response s_res;
 	s_req.value = req;
 	
-	if (ros::service::call("replan_kinematic_path_position", s_req, s_res))
+	ros::ServiceClient client = m_nodeHandle.serviceClient<motion_planning_srvs::KinematicReplanLinkPosition>("replan_kinematic_path_position");
+
+	if (client.call(s_req, s_res))
 	    plan_id_ = s_res.id;
 	else
 	    ROS_ERROR("Service 'replan_kinematic_path_position' failed");
@@ -171,7 +174,7 @@ public:
 	ps.pose.orientation.y = 0;
 	ps.pose.orientation.z = 0;
 	ps.pose.orientation.w = 1;
-	m_node->publish("cartesian_trajectory/command", ps);
+	cartesianCommandPublisher_.publish(ps);
     }
 
     void run(void)
@@ -182,7 +185,7 @@ public:
 	    ros::Duration d(1.0);
 	    d.sleep();
 	    
-	    while (m_node->ok())
+	    while (m_nodeHandle.ok())
 	    {
 		ros::Duration d(10.0);
 		
@@ -201,28 +204,28 @@ public:
 		plan->runRightArmToCoordinates();
 	    */
 	    
-	    m_node->spin();
+	    ros::spin();
 	}	
     }
     
 protected:
 	
     // handle new status message
-    void receiveStatus(void)
+    void receiveStatus(const motion_planning_msgs::KinematicPlanStatusConstPtr &planStatus)
     {
-	if (plan_id_ >= 0 && plan_status_.id == plan_id_)
+	if (plan_id_ >= 0 && planStatus->id == plan_id_)
 	{
-	    if (plan_status_.valid && !plan_status_.unsafe)
+	    if (planStatus->valid && !planStatus->unsafe)
 	    {
-		if (!plan_status_.path.states.empty())
+		if (!planStatus->path.states.empty())
 		{
 		    robot_stopped_ = false;
-		    sendArmCommand(plan_status_.path, GROUPNAME);
+		    sendArmCommand(planStatus->path, GROUPNAME);
 		}
 	    }
 	    else
 		stopRobot();
-	    if (plan_status_.done)
+	    if (planStatus->done)
 	    {
 		plan_id_ = -1;
 		robot_stopped_ = true;
@@ -259,7 +262,7 @@ protected:
     }
 
     // convert a kinematic path message to a trajectory for the controller
-    void getTrajectoryMsg(motion_planning_msgs::KinematicPath &path, robot_msgs::JointTraj &traj)
+    void getTrajectoryMsg(const motion_planning_msgs::KinematicPath &path, robot_msgs::JointTraj &traj)
     {	
         traj.set_points_size(path.get_states_size());	
 	for (unsigned int i = 0 ; i < path.get_states_size() ; ++i)
@@ -272,28 +275,28 @@ protected:
     }
     
     // send a command to the trajectory controller using a topic
-    void sendArmCommand(motion_planning_msgs::KinematicPath &path, const std::string &model)
+    void sendArmCommand(const motion_planning_msgs::KinematicPath &path, const std::string &model)
     {
 	sendDisplay(path, model);
 	printPath(path);
 	robot_msgs::JointTraj traj;
 	getTrajectoryMsg(path, traj);
-	m_node->publish("right_arm_trajectory_command", traj);
+	jointCommandPublisher_.publish(traj);
 	ROS_INFO("Sent trajectory to controller");
     }
 
-    void sendDisplay(motion_planning_msgs::KinematicPath &path, const std::string &model)
+    void sendDisplay(const motion_planning_msgs::KinematicPath &path, const std::string &model)
     {
 	motion_planning_msgs::DisplayKinematicPath dpath;
 	dpath.frame_id = "base_link";
 	dpath.model_name = model;
 	currentState(dpath.start_state);
 	dpath.path = path;
-	m_node->publish("display_kinematic_path", dpath);
+	displayKinematicPathPublisher_.publish(dpath);
 	ROS_INFO("Sent planned path to display");
     }
 
-    void printPath(motion_planning_msgs::KinematicPath &path)
+    void printPath(const motion_planning_msgs::KinematicPath &path)
     {
 	printf("Path with %d states\n", (int)path.states.size());	
 	for (unsigned int i = 0 ; i < path.states.size() ; ++i)
@@ -305,19 +308,22 @@ protected:
 	printf("\n");
     }
     
-    motion_planning_msgs::KinematicPlanStatus plan_status_;
     int                                       plan_id_;
     bool                                      robot_stopped_;
-        
+
+    ros::Publisher                            jointCommandPublisher_;
+    ros::Publisher                            cartesianCommandPublisher_;
+    ros::Publisher                            displayKinematicPathPublisher_;
+    ros::Subscriber                           kinematicPlanningStatusSubscriber_;
+
 };
 
 
 int main(int argc, char **argv)
 {  
-    ros::init(argc, argv);
-    ros::Node *node = new ros::Node("plan_kinematic_path");
-    
-    PlanKinematicPath plan(node);
+    ros::init(argc, argv, "plan_kinematic_path");
+
+    PlanKinematicPath plan;
     plan.run();
 
     return 0;    

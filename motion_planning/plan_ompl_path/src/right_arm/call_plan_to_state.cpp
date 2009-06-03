@@ -50,10 +50,10 @@ class Example : public kinematic_planning::KinematicStateMonitor
 {
 public:
     
-    Example(ros::Node *node) : kinematic_planning::KinematicStateMonitor(node)
+    Example(void) : kinematic_planning::KinematicStateMonitor()
     {
 	// we use the topic for sending commands to the controller, so we need to advertise it
-	m_node->advertise<pr2_msgs::MoveArmGoal>("right_arm_goal", 1);
+	rightArmGoal_ = m_nodeHandle.advertise<pr2_msgs::MoveArmGoal>("right_arm_goal", 1);
     }
 
     void runExample(void)
@@ -66,7 +66,7 @@ public:
 	ag.set_goal_configuration_size(1);
 	ag.goal_configuration[0].name = "r_shoulder_pan_joint";
 	ag.goal_configuration[0].position = -0.5;
-	m_node->publish("right_arm_goal", ag);
+	rightArmGoal_.publish(ag);
     }
         
     void run(void)
@@ -79,16 +79,19 @@ public:
 	}
 	sleep(1);
     }
+    
+private:
 
+    ros::Publisher rightArmGoal_;
+    
 };
 
 
 int main(int argc, char **argv)
 {  
-    ros::init(argc, argv);
+    ros::init(argc, argv, "example_call_plan_to_state");
 
-    ros::Node node("example_call_plan_to_state");
-    Example plan(&node);
+    Example plan;
     plan.run();
     
     return 0;    
