@@ -51,6 +51,9 @@
 #include <stdlib.h>
 #include <limits>
 #include <math.h>
+#include <linux/sysctl.h>
+#include <iostream>
+#include <fstream>
 
 #include <boost/tokenizer.hpp>
 #include <boost/format.hpp>
@@ -200,6 +203,7 @@ private:
   sockaddr localMac_;
   in_addr localIp_;
   int port_;
+  bool exit_on_fault_;
   
   bool open_;
 
@@ -293,7 +297,9 @@ public:
   void read_config()
   {
     node_handle_.param("~if_name", if_name_, std::string("eth0"));
-
+    
+    node_handle_.param("~exit_on_fault", exit_on_fault_, false);
+    
     if (node_handle_.hasParam("~ip_address"))
       node_handle_.getParam("~ip_address", ip_address_);
     else {
@@ -332,14 +338,22 @@ public:
   {
     //int frameless_updates = 0;
     
+    bool have_started = false;
+
     while (node_handle_.ok())
     {
       if (!started_video_)
       {
         stop();
         close();
+        if (have_started && exit_on_fault_)
+        {
+          node_handle_.shutdown();
+          break;
+        }
         open();
         start();
+        have_started = true;
       }
 
       { 
@@ -390,7 +404,7 @@ public:
     {
       ROS_FATAL("Unknown video mode %s", mode_name_.c_str());
       exit_status_ = 1;
-      node_handle_.shutdown();
+      //node_handle_.shutdown();
       return;
     }
 
@@ -402,37 +416,30 @@ public:
     // Create a new IpCamList to hold the camera list
     IpCamList camList;
     pr2CamListInit(&camList);
-
-    // Set anti-spoofing filter off on camera interface. Needed to prevent
-    // the first reply from the camera from being filtered out.
-    // @todo Should we be setting rp_filter to zero here? This may violate
-    // the user's secutity preferences?
-   // std::string rp_str = "sysctl net.ipv4.conf."+if_name+".rp_filter|grep -q 0||sysctl -q -w net.ipv4.conf."+if_name+".rp_filter=0";
-   // ROS_DEBUG("Running \"%s\"", rp_str.c_str());
-   // retval = system(rp_str.c_str());
-   // if (retval == -1 || !WIFEXITED(retval) || WEXITSTATUS(retval))
-   // {
-   //   ROS_WARN("Unable to set rp_filter to 0 on interface. Camera discovery is likely to fail.");
-   // }  
     
-    retval = system("sysctl net.core.rmem_max=16000000");
-    if (retval == -1 || !WIFEXITED(retval) || WEXITSTATUS(retval))
+    // Check that rmem_max is large enough.
+    int rmem_max;
     {
-      ROS_WARN("Unable to set net.core.rmem_max. Buffer overflows and packet loss is likely.");
+      std::ifstream f("/proc/sys/net/core/rmem_max");
+      f >> rmem_max;
+    }
+    if (rmem_max < 10000000)
+    {
+      ROS_WARN("rmem_max is %i. Buffer overflows and packet loss may occur. Minimum recommended value is 10000000. Updates may not take effect until the driver is restarted. See http://pr.willowgarage.com/wiki/errors/Dropped_Frames_and_rmem_max for details.", rmem_max);
     }
 
     // Discover any connected cameras, wait for 0.5 second for replies
     if( pr2Discover(if_name_.c_str(), &camList, ip_address_.c_str(), SEC_TO_USEC(0.5)) == -1) {
       ROS_FATAL("Discover error");
       exit_status_ = 1;
-      node_handle_.shutdown();
+      //node_handle_.shutdown();
       return;
     }
 
     if (pr2CamListNumEntries(&camList) == 0) {
       ROS_FATAL("No cameras found");
       exit_status_ = 1;
-      node_handle_.shutdown();
+      //node_handle_.shutdown();
       return;
     }
 
@@ -463,7 +470,7 @@ public:
         ROS_FATAL("Found camera with S/N #%u", camera_->serial);
         exit_status_ = 1;
       }
-      node_handle_.shutdown();
+      //node_handle_.shutdown();
       return;
     }
 
@@ -475,7 +482,7 @@ public:
       } else {
         ROS_FATAL("IP address configuration failed");
         exit_status_ = 1;
-        node_handle_.shutdown();
+        //node_handle_.shutdown();
         return;
       }
     }
@@ -490,7 +497,7 @@ public:
     if ( wgEthGetLocalMac(camera_->ifName, &localMac_) != 0 ) {
       ROS_FATAL("Unable to get local MAC address for interface %s", camera_->ifName);
       exit_status_ = 1;
-      node_handle_.shutdown();
+      //node_handle_.shutdown();
       return;
     }
 
@@ -498,7 +505,7 @@ public:
     if ( wgIpGetLocalAddr(camera_->ifName, &localIp_) != 0) {
       ROS_FATAL("Unable to get local IP address for interface %s", camera_->ifName);
       exit_status_ = 1;
-      node_handle_.shutdown();
+      //node_handle_.shutdown();
       return;
     }
       
@@ -506,7 +513,7 @@ public:
     if ( pr2TriggerControl( camera_, ext_trigger_ ? TRIG_STATE_EXTERNAL : TRIG_STATE_INTERNAL ) != 0) {
       ROS_FATAL("Trigger mode set error. Is %s accessible from interface %s? (Try running route to check.)", ip_address_.c_str(), if_name_.c_str());
       exit_status_ = 1;
-      node_handle_.shutdown();
+      //node_handle_.shutdown();
       return;
     }
 
@@ -588,10 +595,13 @@ public:
     ROS_DEBUG("start()");
     if (!open_)
       open();
-    // Start video; send it to specified host port
-    // @todo TODO: Only start when somebody is listening?
-    started_video_ = true;
-    image_thread_ = new boost::thread(boost::bind(&ForearmNode::imageThread, this, port_));
+    if (open_)
+    {
+      // Start video; send it to specified host port
+      // @todo TODO: Only start when somebody is listening?
+      started_video_ = true;
+      image_thread_ = new boost::thread(boost::bind(&ForearmNode::imageThread, this, port_));
+    }
   }
 
   void stop()
