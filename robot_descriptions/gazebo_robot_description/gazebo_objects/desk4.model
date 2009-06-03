@@ -29,6 +29,7 @@
                 <mesh>unit_box</mesh>
                 <material>Gazebo/Green</material>
             </visual>
+            <laserRetro>1.0</laserRetro>
         </geom:box>
         <geom:box name="desk4leg_geom">
             <kp>100000000.0</kp>
@@ -54,6 +55,7 @@
                 <mesh>unit_box</mesh>
                 <material>Gazebo/Red</material>
             </visual>
+            <laserRetro>1.0</laserRetro>
         </geom:box>
         <geom:box name="desk4base_geom">
             <kp>100000000.0</kp>
@@ -79,6 +81,7 @@
                 <mesh>unit_box</mesh>
                 <material>Gazebo/Green</material>
             </visual>
+            <laserRetro>1.0</laserRetro>
         </geom:box>
     </body:box>
 </model:physical>
