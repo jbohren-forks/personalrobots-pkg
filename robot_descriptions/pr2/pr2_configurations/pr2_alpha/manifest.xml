@@ -24,6 +24,7 @@
   <depend package="runtime_monitor"/>
   <depend package="sound_play"/>
   <depend package="joint_calibration_monitor" />
+  <depend package="forearm_cam" />
   <!-- For testing -->
   <depend package="std_msgs"/>
 </package>
