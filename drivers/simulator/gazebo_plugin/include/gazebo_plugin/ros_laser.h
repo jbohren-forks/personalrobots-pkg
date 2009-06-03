@@ -161,6 +161,8 @@ class RosLaser : public Controller
   /// \brief A mutex to lock access to fields that are used in message callbacks
   private: boost::mutex lock;
 
+  /// \brief hack to mimic hokuyo intensity cutoff of 100
+  private: double hokuyo_min_intensity;
 };
 
 /** \} */

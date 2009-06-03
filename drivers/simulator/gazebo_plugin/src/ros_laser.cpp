@@ -68,6 +68,9 @@ RosLaser::RosLaser(Entity *parent)
     rosnode = new ros::Node("ros_gazebo",ros::Node::DONT_HANDLE_SIGINT);
     ROS_DEBUG("Starting node in laser");
   }
+  this->hokuyo_min_intensity = 101.0;
+  ROS_WARN("WARNING: ros_laser plugin artifically sets minimum intensity to %f due to cutoff in hokuyo filters."
+           , this->hokuyo_min_intensity);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -174,8 +177,8 @@ void RosLaser::PutLaserData()
     /*  point scan from laser                                      */
     /*                                                             */
     /***************************************************************/
-    this->laserMsg.ranges[i]        = std::min(r + minRange + this->GaussianKernel(0,this->gaussianNoise), maxRange);
-    this->laserMsg.intensities[i]   = intensity + this->GaussianKernel(0,this->gaussianNoise) ;
+    this->laserMsg.ranges[i]      = std::min(r + minRange + this->GaussianKernel(0,this->gaussianNoise), maxRange);
+    this->laserMsg.intensities[i] = std::max(this->hokuyo_min_intensity,intensity + this->GaussianKernel(0,this->gaussianNoise));
   }
 
   // send data out via ros message
