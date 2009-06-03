@@ -57,11 +57,14 @@ namespace laser_scan
 
     // Define 4 indices in the channel array for each possible value type
     int idx_intensity = -1, idx_index = -1, idx_distance = -1, idx_timestamp = -1;
-    
+
+    cloud_out.set_chan_size(0);    
+
     // Check if the intensity bit is set
     if ((mask & MASK_INTENSITY) && scan_in.get_intensities_size () > 0)
     {
-      cloud_out.set_chan_size (1);
+      int chan_size = cloud_out.get_chan_size ();
+      cloud_out.set_chan_size (chan_size + 1);
       cloud_out.chan[0].name = "intensities";
       cloud_out.chan[0].set_vals_size (scan_in.get_intensities_size ());
       idx_intensity = 0;
@@ -71,7 +74,7 @@ namespace laser_scan
     if (mask & MASK_INDEX)
     {
       int chan_size = cloud_out.get_chan_size ();
-      cloud_out.set_chan_size (chan_size + 1);
+      cloud_out.set_chan_size (chan_size +1);
       cloud_out.chan[chan_size].name = "index";
       cloud_out.chan[chan_size].set_vals_size (scan_in.get_ranges_size ());
       idx_index = chan_size;
@@ -201,11 +204,15 @@ namespace laser_scan
     
     // Define 4 indices in the channel array for each possible value type
     int idx_intensity = -1, idx_index = -1, idx_distance = -1, idx_timestamp = -1;
-    
+
+
+    cloud_out.set_chan_size(0);
+
     // Check if the intensity bit is set
     if ((mask & MASK_INTENSITY) && scan_in.get_intensities_size () > 0)
     {
-      cloud_out.set_chan_size (1);
+      int chan_size = cloud_out.get_chan_size ();
+      cloud_out.set_chan_size (chan_size + 1);
       cloud_out.chan[0].name = "intensities";
       cloud_out.chan[0].set_vals_size (scan_in.get_intensities_size ());
       idx_intensity = 0;

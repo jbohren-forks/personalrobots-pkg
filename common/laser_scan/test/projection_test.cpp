@@ -113,7 +113,42 @@ TEST(laser_scan, projectLaser)
   
 }
 
+TEST(laser_scan, projectLaserWithChannels)
+{
+  double tolerance = 1e-6;
+  laser_scan::LaserProjection projector;  
+  //\todo add more permutations
+  laser_scan::LaserScan scan = build_constant_scan(1.0, 1.0, -M_PI/2, M_PI/2, M_PI/180, ros::Duration(1/400), ros::Duration(1/40));
 
+  robot_msgs::PointCloud cloud_out;
+  projector.projectLaser(scan, cloud_out, -1.0, false, laser_scan::MASK_INDEX);
+  EXPECT_EQ(cloud_out.chan.size(), (unsigned int)1);
+  projector.projectLaser(scan, cloud_out, -1.0, false, laser_scan::MASK_INTENSITY);
+  EXPECT_EQ(cloud_out.chan.size(), (unsigned int)1);
+
+  projector.projectLaser(scan, cloud_out, -1.0, false);
+  EXPECT_EQ(cloud_out.chan.size(), (unsigned int)2);
+  projector.projectLaser(scan, cloud_out, -1.0, false, laser_scan::MASK_INTENSITY | laser_scan::MASK_INDEX);
+  EXPECT_EQ(cloud_out.chan.size(), (unsigned int)2);
+
+  projector.projectLaser(scan, cloud_out, -1.0, false, laser_scan::MASK_INTENSITY | laser_scan::MASK_INDEX | laser_scan::MASK_DISTANCE);
+  EXPECT_EQ(cloud_out.chan.size(), (unsigned int)3);
+
+  projector.projectLaser(scan, cloud_out, -1.0, false, laser_scan::MASK_INTENSITY | laser_scan::MASK_INDEX | laser_scan::MASK_DISTANCE | laser_scan::MASK_TIMESTAMP);
+  EXPECT_EQ(cloud_out.chan.size(), (unsigned int)4);
+
+  EXPECT_EQ(scan.ranges.size(), cloud_out.get_pts_size());
+  for (unsigned int i = 0; i < cloud_out.pts.size(); i++)
+  {
+    EXPECT_NEAR(cloud_out.pts[i].x , scan.ranges[i] * cos(scan.angle_min + i * scan.angle_increment), tolerance);
+    EXPECT_NEAR(cloud_out.pts[i].y , scan.ranges[i] * sin(scan.angle_min + i * scan.angle_increment), tolerance);
+    EXPECT_NEAR(cloud_out.pts[i].z, 0, tolerance);
+    EXPECT_NEAR(cloud_out.chan[0].vals[i], scan.intensities[i], tolerance);//intensity \todo determine this by lookup not hard coded order
+    EXPECT_NEAR(cloud_out.chan[1].vals[i], i, tolerance);//index
+    EXPECT_NEAR(cloud_out.chan[2].vals[i], scan.ranges[i], tolerance);//ranges
+    EXPECT_NEAR(cloud_out.chan[3].vals[i], (float)i * scan.time_increment, tolerance);//timestamps
+  };
+}
 
 int main(int argc, char **argv){
   testing::InitGoogleTest(&argc, argv);
