@@ -234,17 +234,20 @@ public:
     void run(void)
     {
 	loadRobotDescription();
+	
         std::vector<std::string> mlist;    
 	knownModels(mlist);
-	ROS_DEBUG("Known models:");    
+	ROS_INFO("Known models:");    
 	for (unsigned int i = 0 ; i < mlist.size() ; ++i)
-	    ROS_DEBUG("  * %s", mlist[i].c_str());    
+	    ROS_INFO("  * %s", mlist[i].c_str());    
 	
-	waitForState();
 	startPublishingStatus();
 	
 	if (mlist.size() > 0)
+	{
+	    ROS_INFO("Motion planning is now available.");
 	    ros::spin();
+	}
 	else
 	    ROS_ERROR("No robot models loaded. OMPL planning node cannot start.");
     }

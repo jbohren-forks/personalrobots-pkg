@@ -110,7 +110,8 @@ public:
     void run(void)
     {
 	loadRobotDescription();
-	ros::spin();
+	if (loadedRobot())
+	    ros::spin();
     }
 
 protected:

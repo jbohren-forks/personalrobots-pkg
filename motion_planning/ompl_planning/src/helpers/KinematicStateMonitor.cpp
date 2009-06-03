@@ -96,9 +96,11 @@ bool kinematic_planning::KinematicStateMonitor::loadedRobot(void) const
 
 void kinematic_planning::KinematicStateMonitor::waitForState(void)
 {
-    ROS_INFO("Waiting for mechanism state ...");	    
     while (m_nodeHandle.ok() && (m_haveMechanismState ^ loadedRobot()))
+    {
+	ROS_INFO("Waiting for mechanism state ...");	    
 	ros::Duration().fromSec(0.05).sleep();
+    }
     ROS_INFO("Mechanism state received!");
 }
 
@@ -174,6 +176,7 @@ void kinematic_planning::KinematicStateMonitor::localizedPoseCallback(const robo
 void kinematic_planning::KinematicStateMonitor::mechanismStateCallback(const robot_msgs::MechanismStateConstPtr &mechanismState)
 {
     bool change = false;
+
     if (m_robotState)
     {
 	static bool first_time = true;

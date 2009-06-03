@@ -70,6 +70,7 @@ public:
     {
 	plan_id_ = -1;
 	robot_stopped_ = true;
+	goalA_ = true;
 	
 	// we use the topic for sending commands to the controller, so we need to advertise it
 	jointCommandPublisher_ = m_nodeHandle.advertise<robot_msgs::JointTraj>("right_arm/trajectory_controller/trajectory_command", 1);
@@ -182,34 +183,22 @@ public:
 	loadRobotDescription();
 	if (loadedRobot())
 	{
-	    ros::Duration d(1.0);
-	    d.sleep();
-	    
-	    while (m_nodeHandle.ok())
-	    {
-		ros::Duration d(10.0);
-		
-		runRightArmToPositionA();
-		
-		d.sleep();
-		
-		runRightArmToPositionB();
-		
-		d.sleep();
-	    }
-	    
-	    /*	
-		sleep(30);
-		
-		plan->runRightArmToCoordinates();
-	    */
-	    
+	    goalTimer_ = m_nodeHandle.createTimer(ros::Duration(10.0), &PlanKinematicPath::changeGoal, this);
 	    ros::spin();
 	}	
     }
     
 protected:
-	
+    
+    void changeGoal(const ros::TimerEvent &e)
+    {
+	if (goalA_)
+	    runRightArmToPositionA();
+	else
+	    runRightArmToPositionB();
+	goalA_ = !goalA_;
+    }
+    
     // handle new status message
     void receiveStatus(const motion_planning_msgs::KinematicPlanStatusConstPtr &planStatus)
     {
@@ -310,7 +299,9 @@ protected:
     
     int                                       plan_id_;
     bool                                      robot_stopped_;
-
+    bool                                      goalA_;
+    ros::Timer                                goalTimer_;
+    
     ros::Publisher                            jointCommandPublisher_;
     ros::Publisher                            cartesianCommandPublisher_;
     ros::Publisher                            displayKinematicPathPublisher_;
