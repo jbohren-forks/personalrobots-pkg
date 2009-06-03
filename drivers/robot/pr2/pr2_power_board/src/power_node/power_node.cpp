@@ -68,6 +68,8 @@ static std::vector<Interface*> SendInterfaces;
 static PowerBoard *myBoard;
 static Interface* ReceiveInterface;
 
+static const ros::Duration TIMEOUT = ros::Duration(1,0);
+
 
 void Device::setTransitionMessage(const TransitionMessage &newtmsg)
 {
@@ -656,18 +658,23 @@ void PowerBoard::sendDiagnostic()
       const PowerMessage *pmesg = &device->getPowerMessage();
       
       ostringstream ss;
-      ss << "Power board " << i;
+      ss << "Power board " << pmesg->header.serial_num;
       stat.name = ss.str();
-      stat.level = 0;///@todo fixem
-      stat.message = "Power Node";
+
+      if( (ros::Time::now() - device->message_time) > TIMEOUT )
+      {
+        stat.level = 2;
+        stat.message = "No Updates";
+      }
+      else
+      {
+        stat.level = 0;
+        stat.message = "Running";
+      }
       const StatusStruct *status = &pmesg->status;
 
       ROS_DEBUG("Device %u", i);
       ROS_DEBUG(" Serial       = %u", pmesg->header.serial_num);
-
-      //val.label = "Time";
-      //val.value = (float)Devices[i]->message_time;
-      //stat.values.push_back(val);
 
       ss.str("");
       ss << pmesg->header.serial_num;
@@ -849,12 +856,6 @@ void PowerBoard::sendDiagnostic()
         stat.values.push_back(val);
       }
 
-
-      msg_out.status.push_back(stat);
-      robot_msgs::DiagnosticStatus stat;
-      stat.name = "pr2_power_board";
-      stat.level = 0;
-      stat.message = "Running";
       msg_out.status.push_back(stat);
 
       //ROS_DEBUG("Publishing ");

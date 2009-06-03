@@ -120,14 +120,6 @@ class PowerBoardPanel(wx.Panel):
         self.breaker2_status.SetEditable(False)
         self.estop_status.SetEditable(False)
 
-        # Start a timer to check for timeout
-        self.timeout_interval = 4
-        self.last_message_time = rospy.get_time()
-        self.timer = wx.Timer(self, 1)
-        self.Bind(wx.EVT_TIMER, self.on_timer, self.timer)
-        self.start_timer()
-        self.panel_enabled = True;
-
         self._messages = []
   
         self.myList.SetValue("none")
@@ -167,11 +159,18 @@ class PowerBoardPanel(wx.Panel):
         for message in self._messages:
             #print message
             for status in message.status:
-                if( (status.name != "pr2_power_board") & (self.myList.FindString( status.name ) == wx.NOT_FOUND) ):
-                  self.addBoard( status )
+                if( (self.myList.FindString( status.name ) == wx.NOT_FOUND) ):
+                    self.addBoard( status )
 
                 if (status.name == self.currentBoard):
-                    self.enable_panel()
+
+                    if( status.level == 0 ):
+                        self._real_panel.SetBackgroundColour("LIGHT_GREY")
+                        self._real_panel.Enable(True)
+                    else:
+                        self._real_panel.SetBackgroundColour("RED")
+                        self._real_panel.Enable(False)
+
                     for value in status.values:
                         if (value.label == "Breaker 0 Voltage"):
                             self.voltages[0] = value.value
@@ -334,85 +333,5 @@ class PowerBoardPanel(wx.Panel):
             self.power_control( self.boardList[self.currentBoard], 0, "none", 2)
         except rospy.ServiceException, e:
             print "Service Call Failed: %s"%e
-
-
-    def start_timer(self):
-      # Set a timer to expire one second after we expect to timeout. This
-      # way a timer event happens at most once every second if the
-      # simulation is in slow motion, and we are at most one second late if
-      # the simulation is happening in real time.
-      interval = rospy.get_time() - self.last_message_time;
-      sleep_time = 1000 * (self.timeout_interval - interval + 1);
-      self.timer.Start(sleep_time, True)
-      #print 'start_timer %f'%sleep_time
-
-    def on_timer(self, event):
-      self._mutex.acquire()
-
-      interval = rospy.get_time() - self.last_message_time
-      
-      #print 'on_timer %f %f %f'%(rospy.get_time(), self.last_message_time, interval)
-
-      # Consider that we have timed out after 5 seconds of ros time, or if
-      # the ros time jumps back (in that case something fishy just happened
-      # and the previously displayed value is most likely stale).
-      if interval > self.timeout_interval or interval < 0:
-        self.disable_panel()
-      else:
-        self.start_timer()
-
-      self._mutex.release()
-      self.Refresh()
-        
-    def set_widget_state(self, button): # Assumes lock held
-      if self.panel_enabled:
-        button.Enable()
-      else:
-        button.Disable()
-    
-    def set_widget_states(self): # Assumes lock held    
-      self.set_widget_state(xrc.XRCCTRL(self._real_panel, 'm_button1'))
-      self.set_widget_state(xrc.XRCCTRL(self._real_panel, 'm_button11'))
-      self.set_widget_state(xrc.XRCCTRL(self._real_panel, 'm_button12'))
-      
-      self.set_widget_state(xrc.XRCCTRL(self._real_panel, 'm_button2'))
-      self.set_widget_state(xrc.XRCCTRL(self._real_panel, 'm_button21'))
-      self.set_widget_state(xrc.XRCCTRL(self._real_panel, 'm_button22'))
-      
-      self.set_widget_state(xrc.XRCCTRL(self._real_panel, 'm_button3'))
-      self.set_widget_state(xrc.XRCCTRL(self._real_panel, 'm_button31'))
-      self.set_widget_state(xrc.XRCCTRL(self._real_panel, 'm_button32'))
-      
-      self.set_widget_state(xrc.XRCCTRL(self._real_panel, 'cb0_disable'))
-      self.set_widget_state(xrc.XRCCTRL(self._real_panel, 'cb1_disable'))
-      self.set_widget_state(xrc.XRCCTRL(self._real_panel, 'cb2_disable'))
-      
-      self.set_widget_state(xrc.XRCCTRL(self._real_panel, 'button_reset_current'))
-      self.set_widget_state(xrc.XRCCTRL(self._real_panel, 'button_reset_transitions'))
-        
-      self.set_widget_state(xrc.XRCCTRL(self._real_panel, 'm_textCtrl1'))
-      self.set_widget_state(xrc.XRCCTRL(self._real_panel, 'm_textCtrl11'))
-      self.set_widget_state(xrc.XRCCTRL(self._real_panel, 'm_textCtrl12'))
-      self.set_widget_state(xrc.XRCCTRL(self._real_panel, 'm_textCtrl9'))
-                        
-      self.breaker0_status.SetBackgroundColour("White")
-      self.breaker1_status.SetBackgroundColour("White")
-      self.breaker2_status.SetBackgroundColour("White")
-      self.estop_status.SetBackgroundColour("White")
-        
-    def disable_panel(self): # Assumes lock held
-        #print 'disable panel'
-      
-        self.panel_enabled = False
-        self.set_widget_states()
-                    
-    def enable_panel(self): # Assumes lock held
-      #print 'enable panel'
-      self.last_message_time = rospy.get_time()
-      self.start_timer()
-      if not self.panel_enabled:
-        #print 'enable panel activated'
-        self.panel_enabled = True
-        self.set_widget_states()
 
 
