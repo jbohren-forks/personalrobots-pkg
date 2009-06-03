@@ -120,9 +120,6 @@ class PowerBoardPanel(wx.Panel):
         self.breaker2_status.SetEditable(False)
         self.estop_status.SetEditable(False)
 
-#fixme        self.textboxes = [xrc.XRCCTRL(self._xrc, 'm_textCtrl1'), 0, 0]
-#        self.textboxes[0].value = "hi"
-
         # Start a timer to check for timeout
         self.timeout_interval = 4
         self.last_message_time = rospy.get_time()
@@ -141,7 +138,6 @@ class PowerBoardPanel(wx.Panel):
         self.currentBoard = self.myList.GetValue()
         self.serialText.Clear()
         self.serialText.WriteText( str(self.boardList[self.currentBoard]) )    
-        #print "selection %d" %(self.myList.GetSelection())
 
     def addBoard( self, status ):
         name = status.name
@@ -152,7 +148,6 @@ class PowerBoardPanel(wx.Panel):
         print "Adding: %s serial=%d" %(name,serial)
         self.myList.Append(str(name));
         self.boardList[name] = serial
-        #self.boardList.update( name=serial )
 
     def diagnostics_callback(self, message):
         self._mutex.acquire()
@@ -245,8 +240,6 @@ class PowerBoardPanel(wx.Panel):
                     self.estop_status.SetValue("RunStop Status: %s      Button(%s) Wireless(%s)"%(estop_status_temp, self.estop_button_status, self.estop_wireless_status))
 
         
-
-##        self.textboxes[0].value = "hi"       
         self._messages = []
         
         self._mutex.release()
