@@ -42,12 +42,19 @@
 namespace driver_base
 {
 
+{
+  static const 
+public:      
+  report_error();
+};
+
 
 class Driver
 {
 public:
   void Driver()
-  {
+  {                   
+
     prepare_diagnostics();
     prepare_self_tests();
     read_config();
@@ -59,19 +66,68 @@ public:
     {
       if (parameters_.autostart && !started())
       {
-        start();
+        go_running();
       }
 
       /// Will need some locking here or in diagnostic_updater?
       diagnostic_.update();
       self_test_.checkTest();
     }
+
+
+  }
+  
+  void go_running()
+  {
+    if (dev->getState() != Device::RUNNING)
+      go_opened();
+
+    if (dev->getState() == Device::OPENED)
+      dev->start();
+  }
+
+  void go_opened()
+  {
+    if (dev->getState() == Device::RUNNING)
+      dev->stop();
+    else if (dev->getState != Device::OPENED)
+    {
+      go_closed();
+
+      if (dev->getState == Device::CLOSED)
+        go_opened();
+    }
+  }
+
+  void go_closed()
+  {
+    if (dev->getState() == Device::RUNNING)
+      dev->stop();
+  
+    if (dev->getState() != Device::CLOSED)
+      dev->close(); 
+  }
+
+  int main(std::string name, int argc, char **argv)
+  {
+    ros::init(argc, argv, name, ros::init_options::NoSigIntHandler, Device *dev);
+    signal(SIGINT, Driver::sigCalled);
+    signal(SIGTERM, Driver::sigCalled);
+    Driver drv(dev);
+    ros::spin();
+    return drv.getExitStatus();
   }
 
 private:
+  static int ctrl_c_hit_count_;
+  Device &dev_;
   diagnostic_updater::Updater diagnostic_;
   self_test::Dispatcher self_test_;
 };
+
+static int Driver::ctrl_c_hit_count_ = 0;
+  
+// @todo exit status.
 
 };
 

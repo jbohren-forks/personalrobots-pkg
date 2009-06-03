@@ -41,14 +41,20 @@ namespace driver_base
 
 class Device
 {
-public:  
-  void open() = 0;
-  void close() = 0;
-  void start() = 0;
-  void stop() = 0;
-  void poll() = 0;
-  void started() = 0;
-};
+  virtual bool open() = 0;
+  virtual bool close() = 0;
+  
+  virtual bool start() = 0;
+  virtual bool stop() = 0;
+  
+  virtual void poll() = 0;
+
+  static const char CLOSED = 0;
+  static const char OPENED = 1;
+  static const char RUNNING = 2;
+  static const char ERROR = -1;
+
+}
 
 /// @fixme derived classes for nodes that only poll or only stream.
 
