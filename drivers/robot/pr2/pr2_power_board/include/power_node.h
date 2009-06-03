@@ -72,6 +72,5 @@ class PowerBoard : public ros::Node
     pr2_power_board::PowerBoardCommand::Request req_;
     pr2_power_board::PowerBoardCommand::Response res_;
     boost::mutex library_lock_;
-    ros::Time last_diagnostic_time;
     unsigned int serial_number;
 };

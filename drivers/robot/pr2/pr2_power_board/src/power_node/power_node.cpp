@@ -646,8 +646,6 @@ void PowerBoard::sendDiagnostic()
     //ROS_DEBUG("-");
     boost::mutex::scoped_lock(library_lock_);
   
-    ros::Time new_diagnostic_time = ros::Time::now();
-
     for (unsigned i = 0; i<Devices.size(); ++i)
     {
       msg_out.status.clear();
@@ -657,10 +655,6 @@ void PowerBoard::sendDiagnostic()
       Device *device = Devices[i];
       const PowerMessage *pmesg = &device->getPowerMessage();
       
-      // Stop sending diagnostics if we stop getting packets
-      if (device->message_time < last_diagnostic_time)
-        break;
-
       ostringstream ss;
       ss << "Power board " << i;
       stat.name = ss.str();
@@ -867,7 +861,6 @@ void PowerBoard::sendDiagnostic()
       publish("/diagnostics", msg_out);
     }
 
-    last_diagnostic_time = new_diagnostic_time;
   }
 }
 
