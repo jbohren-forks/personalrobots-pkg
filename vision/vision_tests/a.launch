@@ -1,0 +1,5 @@
+<launch>
+  <master auto="start"/>
+  <node pkg="vision_tests" type="source.py" args="none" respawn="false" output = "screen" />
+  <node pkg="vision_tests" type="sink.py" args="none" respawn="false" output = "screen" />
+</launch>

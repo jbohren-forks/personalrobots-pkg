@@ -1,0 +1,19 @@
+<package>
+  <description brief="vision_tests">
+
+     vision_tests
+
+  </description>
+  <author>James Bowman/ YOUR E-MAIL HERE</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+
+  <depend package="rospy"/>
+  <depend package="image_msgs"/>
+  <depend package="opencvpython"/>
+
+  <url>http://pr.willowgarage.com/wiki/vision_tests</url>
+
+</package>
+
+
