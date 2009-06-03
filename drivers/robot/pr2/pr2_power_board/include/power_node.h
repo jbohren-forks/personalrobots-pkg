@@ -41,7 +41,7 @@ class Device
     }
     void setPowerMessage(const PowerMessage &newpmsg);
     
-    Device() { pmsgset = false; tmsgset = false; };
+    Device(): message_time(0,0) { pmsgset = false; tmsgset = false; };
     ~Device() { };
   private:
     bool tmsgset;
@@ -54,7 +54,7 @@ class Device
 class PowerBoard : public ros::Node
 {
   public:
-    PowerBoard();
+    PowerBoard( unsigned int serial_number = 0 );
     bool commandCallback( pr2_power_board::PowerBoardCommand::Request &req_,
                           pr2_power_board::PowerBoardCommand::Response &res_);
 
@@ -73,4 +73,5 @@ class PowerBoard : public ros::Node
     pr2_power_board::PowerBoardCommand::Response res_;
     boost::mutex library_lock_;
     ros::Time last_diagnostic_time;
+    unsigned int serial_number;
 };

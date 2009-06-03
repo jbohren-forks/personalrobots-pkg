@@ -41,6 +41,7 @@
 #include <sstream>
 #include <iostream>
 #include <boost/thread/thread.hpp>
+#include <boost/program_options.hpp>
 
 // Internet/Socket stuff
 #include <sys/types.h>
@@ -58,6 +59,7 @@
 #include "ros/console.h"
 
 using namespace std;
+namespace po = boost::program_options;
 
 // Keep a pointer to the last message recieved for
 // Each board.
@@ -416,20 +418,33 @@ int PowerBoard::process_message(const PowerMessage *msg)
   }
 
   // Look for device serial number in list of devices...
-  for (unsigned i = 0; i<Devices.size(); ++i) {
-    if (Devices[i]->getPowerMessage().header.serial_num == msg->header.serial_num) {
+  if(serial_number != 0)  // when a specific serial is called out, ignore everything else
+  {
+    if(serial_number == msg->header.serial_num) //this should be our number
+    {
       boost::mutex::scoped_lock(library_lock_);
-      Devices[i]->message_time = ros::Time::now();
-      Devices[i]->setPowerMessage(*msg);
-      return 0;
+      Devices[0]->message_time = ros::Time::now();
+      Devices[0]->setPowerMessage(*msg);
     }
   }
+  else
+  {
+    for (unsigned i = 0; i<Devices.size(); ++i) {
+      if (Devices[i]->getPowerMessage().header.serial_num == msg->header.serial_num) {
+        boost::mutex::scoped_lock(library_lock_);
+        Devices[i]->message_time = ros::Time::now();
+        Devices[i]->setPowerMessage(*msg);
+        return 0;
+      }
+    }
 
-  // Add new device to list
-  Device *newDevice = new Device();
-  Devices.push_back(newDevice);
-  newDevice->message_time = ros::Time::now();
-  newDevice->setPowerMessage(*msg);
+    // Add new device to list
+    Device *newDevice = new Device();
+    Devices.push_back(newDevice);
+    newDevice->message_time = ros::Time::now();
+    newDevice->setPowerMessage(*msg);
+  }
+
   return 0;
 }
 
@@ -441,18 +456,31 @@ int PowerBoard::process_transition_message(const TransitionMessage *msg)
   }
 
   // Look for device serial number in list of devices...
-  for (unsigned i = 0; i<Devices.size(); ++i) {
-    if (Devices[i]->getPowerMessage().header.serial_num == msg->header.serial_num) {
+  if(serial_number != 0)  // when a specific serial is called out, ignore everything else
+  {
+    if(serial_number == msg->header.serial_num) //this should be our number
+    {
       boost::mutex::scoped_lock(library_lock_);
-      Devices[i]->setTransitionMessage(*msg);
-      return 0;
+      Devices[0]->message_time = ros::Time::now();
+      Devices[0]->setTransitionMessage(*msg);
     }
   }
+  else
+  {
+    for (unsigned i = 0; i<Devices.size(); ++i) {
+      if (Devices[i]->getPowerMessage().header.serial_num == msg->header.serial_num) {
+        boost::mutex::scoped_lock(library_lock_);
+        Devices[i]->setTransitionMessage(*msg);
+        return 0;
+      }
+    }
 
-  // Add new device to list
-  Device *newDevice = new Device();
-  Devices.push_back(newDevice);
-  newDevice->setTransitionMessage(*msg);
+    // Add new device to list
+    Device *newDevice = new Device();
+    Devices.push_back(newDevice);
+    newDevice->setTransitionMessage(*msg);
+  }
+
   return 0;
 }
 
@@ -564,7 +592,7 @@ int PowerBoard::collect_messages()
   return 0;
 }
 
-PowerBoard::PowerBoard(): ros::Node ("pr2_power_board")
+PowerBoard::PowerBoard( unsigned int serial_number ): ros::Node ("pr2_power_board")
 {
 
   ROSCONSOLE_AUTOINIT;
@@ -574,6 +602,14 @@ PowerBoard::PowerBoard(): ros::Node ("pr2_power_board")
   {
     // Set the ROS logger
     my_logger->setLevel(ros::console::g_level_lookup[ros::console::levels::Info]);
+  }
+
+  this->serial_number = serial_number;
+  if(serial_number != 0)
+  {
+    ROS_INFO("PowerBoard: created with serial number = %d", serial_number);
+    Device *newDevice = new Device();
+    Devices.push_back(newDevice);
   }
 
   advertiseService("power_board_control", &PowerBoard::commandCallback);
@@ -963,10 +999,27 @@ int CreateAllInterfaces(void)
 
 int main(int argc, char** argv)
 {
+  unsigned int serial_option;
+  po::options_description desc("Allowed options");
+  desc.add_options()
+    ("help", "this help message")
+    ("serial", po::value<unsigned int>(&serial_option)->default_value(0), "filter a specific serial number");
+
+  po::variables_map vm;
+  po::store(po::parse_command_line( argc, argv, desc), vm);
+  po::notify(vm);
+
+  if( vm.count("help"))
+  {
+    cout << desc << "\n";
+    return 1;
+  }
+
   ros::init(argc, argv);
 
   CreateAllInterfaces();
-  myBoard = new PowerBoard();
+
+  myBoard = new PowerBoard(serial_option);
 
   boost::thread getThread( &getMessages );
   boost::thread sendThread( &sendMessages );

@@ -305,7 +305,7 @@ int PowerBoard::process_transition_message(const TransitionMessage *msg)
   return 0;
 }
 
-PowerBoard::PowerBoard(): ros::Node ("pr2_power_board")
+PowerBoard::PowerBoard( unsigned int serial_number ): ros::Node ("pr2_power_board")
 {
 
   ROSCONSOLE_AUTOINIT;
