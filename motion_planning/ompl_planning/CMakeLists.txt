@@ -4,7 +4,9 @@ rospack(ompl_planning)
 
 rospack_add_boost_directories()
 
-rospack_add_library(ompl_planning_helpers src/helpers/ompl_planner/RKPPlannerSetup.cpp
+rospack_add_library(ompl_planning_helpers src/helpers/KinematicStateMonitor.cpp
+					  src/helpers/CollisionSpaceMonitor.cpp
+					  src/helpers/ompl_planner/RKPPlannerSetup.cpp
                                           src/helpers/ompl_planner/RKPESTSetup.cpp
                                           src/helpers/ompl_planner/RKPIKSBLSetup.cpp
                                           src/helpers/ompl_planner/RKPLazyRRTSetup.cpp

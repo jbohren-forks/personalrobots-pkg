@@ -95,7 +95,7 @@ namespace kinematic_planning
         planning_models::KinematicModel* getKModel(void) { return m_kmodel; }
         planning_models::KinematicModel::StateParams* getRobotState() { return m_robotState; }
 	
-      KinematicStateMonitor(ros::Node *node) : m_tf(*node, true, ros::Duration(1))
+	KinematicStateMonitor(ros::Node *node) : m_tf(*node, true, ros::Duration(1))
 	{
 	    m_tf.setExtrapolationLimit(ros::Duration().fromSec(10));
 	    
@@ -123,179 +123,31 @@ namespace kinematic_planning
 		delete m_kmodel;
 	}
 	
-	void setIncludeBaseInState(bool value)
-	{
-	    m_includeBaseInState = value;
-	}
+	void setIncludeBaseInState(bool value);
+	void setRobotDescriptionFromData(const char *data);
+	void setRobotDescriptionFromFile(const char *filename);
 	
-	void setRobotDescriptionFromData(const char *data)
-	{
-	    robot_desc::URDF *file = new robot_desc::URDF();
-	    if (file->loadString(data))
-		setRobotDescription(file);
-	    else
-		delete file;
-	}
+	virtual void setRobotDescription(robot_desc::URDF *file);
+	virtual void loadRobotDescription(void);
+	virtual void defaultPosition(void);
 	
-	void setRobotDescriptionFromFile(const char *filename)
-	{
-	    robot_desc::URDF *file = new robot_desc::URDF();
-	    if (file->loadFile(filename))
-		setRobotDescription(file);
-	    else
-		delete file;
-	}
-	
-	virtual void setRobotDescription(robot_desc::URDF *file)
-	{
-	    if (m_urdf)
-		delete m_urdf;
-	    if (m_kmodel)
-		delete m_kmodel;
-	    
-	    m_urdf = file;
-	    m_kmodel = new planning_models::KinematicModel();
-	    m_kmodel->setVerbose(false);
-	    m_kmodel->build(*file);
-	    m_kmodel->reduceToRobotFrame();
-	    
-	    m_robotState = m_kmodel->newStateParams();
-	    m_robotState->setInRobotFrame();
+	bool loadedRobot(void) const;
+	void waitForState(void);
+	void waitForPose(void);
 
-	    m_haveMechanismState = false;
-	    m_haveBasePos = false;
-	}
-	
-	virtual void loadRobotDescription(void)
-	{
-	    std::string content;
-	    if (m_node->getParam("robot_description", content))
-		setRobotDescriptionFromData(content.c_str());
-	    else
-		ROS_ERROR("Robot model not found! Did you remap robot_description?");
-	}
-	
-	virtual void defaultPosition(void)
-	{
-	    if (m_kmodel)
-		m_kmodel->defaultState();
-	}
-	
-	bool loadedRobot(void) const
-	{
-	    return m_kmodel != NULL;
-	}
-	
-	void waitForState(void)
-	{
-	    ROS_INFO("Waiting for mechanism state ...");	    
-	    while (m_node->ok() && (m_haveMechanismState ^ loadedRobot()))
-		ros::Duration().fromSec(0.05).sleep();
-	    ROS_INFO("Mechanism state received!");
-	}
-	
-	void waitForPose(void)
-	{
-	    ROS_INFO("Waiting for robot pose ...");	    
-	    while (m_node->ok() && (m_haveBasePos ^ loadedRobot()))
-		ros::Duration().fromSec(0.05).sleep();
-	    ROS_INFO("Robot pose received!");
-	}
+	void printCurrentState(void);
+	bool isStateUpdated(double sec);
+	bool isBaseUpdated(double sec);
 
-	void printCurrentState(void)
-	{
-	    std::stringstream ss;
-	    m_robotState->print(ss);
-	    ROS_INFO("%s", ss.str().c_str());
-	}
-	
-	bool isStateUpdated(double sec)
-	{
-	    if (sec > 0 && m_lastStateUpdate < ros::Time::now() - ros::Duration(sec))
-		return false;
-	    else
-		return true;
-	}
-	
-	bool isBaseUpdated(double sec)
-	{
-	    if (sec > 0 && m_lastBaseUpdate < ros::Time::now() - ros::Duration(sec))
-		return false;
-	    else
-		return true;
-	}
-	
     protected:
 	
-	virtual void stateUpdate(void)
-	{
-	}
+	virtual void stateUpdate(void);
+	virtual void baseUpdate(void);
 	
-	virtual void baseUpdate(void)
-	{
-	    bool change = false;
-	    if (m_robotState && m_includeBaseInState)
-		for (unsigned int i = 0 ; i < m_kmodel->getRobotCount() ; ++i)
-		{
-		    planning_models::KinematicModel::PlanarJoint* pj = 
-			dynamic_cast<planning_models::KinematicModel::PlanarJoint*>(m_kmodel->getRobot(i)->chain);
-		    if (pj)
-		    {
-			bool this_changed = m_robotState->setParamsJoint(m_basePos, pj->name);
-			change = change || this_changed;
-		    }
-		}
-	    if (change)
-		stateUpdate();
-	}
+	void localizedPoseCallback(void);
+	void mechanismStateCallback(void);
 	
-	void localizedPoseCallback(void)
-	{
-	    tf::PoseMsgToTF(m_localizedPose.pose, m_pose);
-	    if (std::isfinite(m_pose.getOrigin().x()))
-		m_basePos[0] = m_pose.getOrigin().x();
-	    if (std::isfinite(m_pose.getOrigin().y()))
-		m_basePos[1] = m_pose.getOrigin().y();
-	    double yaw, pitch, roll;
-	    m_pose.getBasis().getEulerZYX(yaw, pitch, roll);
-	    if (std::isfinite(yaw))
-		m_basePos[2] = yaw;
-	    m_haveBasePos = true;
-	    m_lastBaseUpdate = ros::Time::now();
-	    baseUpdate();
-	}
-	
-	void mechanismStateCallback(void)
-	{
-	    bool change = false;
-	    if (m_robotState)
-	    {
-		unsigned int n = m_mechanismState.get_joint_states_size();
-		for (unsigned int i = 0 ; i < n ; ++i)
-		{
-		    planning_models::KinematicModel::Joint* joint = m_kmodel->getJoint(m_mechanismState.joint_states[i].name);
-		    if (joint)
-		    {
-			if (joint->usedParams == 1)
-			{
-			    double pos = m_mechanismState.joint_states[i].position;
-			    bool this_changed = m_robotState->setParamsJoint(&pos, m_mechanismState.joint_states[i].name);
-			    change = change || this_changed;
-			}
-			//			else
-			//			    ROS_WARN("Incorrect number of parameters: %s (expected %d, had 1)", m_mechanismState.joint_states[i].name.c_str(), joint->usedParams);
-		    }
-		    else
-			ROS_ERROR("Unknown joint: %s", m_mechanismState.joint_states[i].name.c_str());
-		}
-		
-		if (!m_haveMechanismState)
-		    m_haveMechanismState = m_robotState->seenAll();
-		m_lastStateUpdate = ros::Time::now();
-	    }
-	    if (change)
-		stateUpdate();
-	}
+
 
 	ros::Node                                    *m_node;
 	tf::TransformListener                         m_tf; 

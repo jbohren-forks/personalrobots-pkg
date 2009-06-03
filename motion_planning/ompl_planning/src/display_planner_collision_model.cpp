@@ -124,10 +124,9 @@ protected:
 	unsigned int n = m_collisionMap.get_boxes_size();
 	for (unsigned int i = 0 ; i < n ; ++i)
 	{
-	    sendPoint(m_collisionMap.boxes[i].center.x,
-		      m_collisionMap.boxes[i].center.y,
-		      m_collisionMap.boxes[i].center.z,
-		      radiusOfBox(m_collisionMap.boxes[i].extents),
+	    robot_msgs::Point32 &point = m_collisionMap.boxes[i].center;
+	    sendPoint(point.x, point.y, point.z,
+		      std::max(std::max(point.x, point.y), point.z),
 		      m_collisionMap.header, 1);
 	}
     }
