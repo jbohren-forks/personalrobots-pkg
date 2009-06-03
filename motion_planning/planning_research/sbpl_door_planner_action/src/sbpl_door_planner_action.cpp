@@ -27,8 +27,11 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <pr2_ik/pr2_ik_controller.h>
+#include <pr2_ik/PoseCmd.h>
 #include <sbpl_door_planner_action/sbpl_door_planner_action.h>
 #include <visualization_msgs/Marker.h>
+
 #include "door_msgs/Door.h"
 #include <kdl/frames.hpp>
 #include <ros/node.h>
@@ -59,10 +62,12 @@ SBPLDoorPlanner::SBPLDoorPlanner(ros::Node& ros_node, tf::TransformListener& tf)
   ros_node_.param("~global_frame", global_frame_, std::string("odom_combined"));
   ros_node_.param("~robot_base_frame", robot_base_frame_, std::string("base_link"));
 
-  ros_node_.param("~arm_control_topic_name",arm_control_topic_name_,std::string("r_arm_cartesian_pose_controller/command"));
+//  ros_node_.param("~arm_control_topic_name",arm_control_topic_name_,std::string("r_arm_cartesian_pose_controller/command"));
+  ros_node_.param("~arm_control_topic_name",arm_control_topic_name_,std::string("right_arm_ik_controller/command"));
   ros_node_.param("~base_control_topic_name",base_control_topic_name_,std::string("base/trajectory_controller/command"));
+
   ros_node_.param("~distance_goal",distance_goal_,0.4);
-  ros_node_.param("~controller_frequency",controller_frequency_,20.0);
+  ros_node_.param("~controller_frequency",controller_frequency_,40.0);
   ros_node_.param("~animate_frequency",animate_frequency_,10.0);
 
   cost_map_ros_ = new costmap_2d::Costmap2DROS(ros_node_,tf_,std::string(""));
@@ -70,7 +75,7 @@ SBPLDoorPlanner::SBPLDoorPlanner(ros::Node& ros_node, tf::TransformListener& tf)
 
   sleep(2.0);
   ros_node_.param<double>("~door_thickness", door_env_.door_thickness, 1.0);
-  ros_node_.param<double>("~arm/min_workspace_angle",   door_env_.arm_min_workspace_angle, -M_PI);
+  ros_node_.param<double>("~arm/min_workspace_angle",   door_env_.arm_min_workspace_angle, -0.2);
   ros_node_.param<double>("~arm/max_workspace_angle",   door_env_.arm_max_workspace_angle, M_PI);
   ros_node_.param<double>("~arm/min_workspace_radius",  door_env_.arm_min_workspace_radius, 0.0);
   ros_node_.param<double>("~arm/max_workspace_radius",  door_env_.arm_max_workspace_radius, 0.85);
@@ -94,7 +99,8 @@ SBPLDoorPlanner::SBPLDoorPlanner(ros::Node& ros_node, tf::TransformListener& tf)
   if(costmap_publisher_->active())
     costmap_publisher_->updateCostmapData(cost_map_);
 
-  ros_node_.advertise<robot_msgs::PoseStamped>(arm_control_topic_name_,1);
+//  ros_node_.advertise<robot_msgs::PoseStamped>(arm_control_topic_name_,1);
+  ros_node_.advertise<pr2_ik::PoseCmd>(arm_control_topic_name_,1);
   ros_node_.advertise<robot_msgs::JointTraj>(base_control_topic_name_,1);
 
   robot_msgs::Point pt;
@@ -385,14 +391,17 @@ robot_actions::ResultStatus SBPLDoorPlanner::execute(const door_msgs::Door& door
   {
     publishPath(path,"global_plan",0,1,0,0);
   }
-  if(animate_ && isPreemptRequested())
-  {
-    animate(path);
-  }
+
+  handle_hinge_distance_ = getHandleHingeDistance(door_env_.door);
 
   robot_msgs::JointTraj new_path;
   processPlan(path,new_path);
 
+  if(animate_ && !isPreemptRequested())
+  {
+    ROS_INFO("Animating path");
+    animate(new_path);
+  }
   dispatchControl(new_path,door);
 
   ros::Duration d;
@@ -405,24 +414,33 @@ void SBPLDoorPlanner::dispatchControl(const robot_msgs::JointTraj &path, const d
 {
   int plan_count = 0;
   ros::Rate control_rate(controller_frequency_);
-  handle_hinge_distance_ = getHandleHingeDistance(door);
   while(!isPreemptRequested() && plan_count < (int) path.get_points_size())
   {
     robot_msgs::JointTraj base_plan;
     robot_msgs::JointTrajPoint path_point;
     path_point.positions.push_back(path.points[plan_count].positions[0]);
     path_point.positions.push_back(path.points[plan_count].positions[1]);
-    path_point.positions.push_back(path.points[plan_count].positions[2]);
+    path_point.positions.push_back(angles::normalize_angle(path.points[plan_count].positions[2]));
     base_plan.points.push_back(path_point);    
     tf::Stamped<tf::Pose> gripper_pose = getGlobalHandlePosition(door,angles::normalize_angle(path.points[plan_count].positions[3]-getFrameAngle(door)));
+    tf::Pose gripper_rotate(tf::Quaternion(0.0,0.0,M_PI/2.0),tf::Vector3(0.0,0.0,0.0));
+    gripper_pose.mult(gripper_pose,gripper_rotate);
 
     robot_msgs::PoseStamped gripper_msg;
     gripper_pose.stamp_ = ros::Time::now();
     PoseStampedTFToMsg(gripper_pose, gripper_msg);
+
+    pr2_ik::PoseCmd cmd;
+    cmd.pose = gripper_msg.pose;
+    cmd.header = gripper_msg.header;
+    cmd.free_angle_value = -0.2;
+
     ros_node_.publish(base_control_topic_name_,base_plan);
-    ros_node_.publish(arm_control_topic_name_,gripper_msg);
+//    ros_node_.publish(arm_control_topic_name_,gripper_msg);
+    ros_node_.publish(arm_control_topic_name_,cmd);
 
     plan_count++;
+    ROS_INFO("Cmd: %d of %d",plan_count,path.get_points_size());
     if (!control_rate.sleep())
     {
       ROS_WARN("Control loop missed its desired cycle rate of %.4f Hz", controller_frequency_);
@@ -480,30 +498,59 @@ void SBPLDoorPlanner::animate(const robot_msgs::JointTraj &path)
 
 void SBPLDoorPlanner::publishGripper(const double &angle)
 {
-  tf::Stamped<tf::Pose> gripper_pose = getGlobalHandlePosition(door_env_.door,angle);
+  door_msgs::Door result = rotateDoor(door_env_.door,angle);
   robot_msgs::PoseStamped gripper_msg;
+  double yaw = getDoorAngle(result);
+/*  gripper_msg.pose.position.x = result.handle.x;
+  gripper_msg.pose.position.y = result.handle.y;
+  gripper_msg.pose.position.z = result.handle.z;
+
+  tf::Quaternion quat_trans = tf::Quaternion(yaw,0.0,0.0);
+  gripper_msg.pose.orientation.x = quat_trans.x();
+  gripper_msg.pose.orientation.y = quat_trans.y();
+  gripper_msg.pose.orientation.z = quat_trans.z();
+  gripper_msg.pose.orientation.w = quat_trans.w();
+*/
+  tf::Stamped<tf::Pose> gripper_pose = getGlobalHandlePosition(door_env_.door,angle);
   gripper_pose.stamp_ = ros::Time::now();
   PoseStampedTFToMsg(gripper_pose, gripper_msg);
   visualization_msgs::Marker marker;
-  marker.header.frame_id = global_frame_;
+  marker.header.frame_id = gripper_msg.header.frame_id;
   marker.header.stamp = ros::Time();
   marker.ns = "~";
   marker.id = 1;
   marker.type = visualization_msgs::Marker::ARROW;
   marker.action = visualization_msgs::Marker::ADD;
   marker.pose = gripper_msg.pose;
-  marker.scale.x = 0.25;
+  marker.scale.x = 0.10;
   marker.scale.y = 0.03;
   marker.scale.z = 0.03;
   marker.color.a = 1.0;
-  marker.color.r = 1.0;
-  marker.color.g = 0.0;
-  marker.color.b = 1.0;
+  marker.color.r = 0.0;
+  marker.color.g = 1.0;
+  marker.color.b = 0.0;
   ros_node_.publish( "visualization_marker", marker );
 }
 
 tf::Stamped<tf::Pose> SBPLDoorPlanner::getGlobalHandlePosition(const door_msgs::Door &door_in, const double &angle)
 {
+/*  tf::Stamped<tf::Pose> handle_pose;
+
+  door_msgs::Door result = rotateDoor(door_in,angle);
+  robot_msgs::PoseStamped gripper_msg;
+  double yaw = getDoorAngle(result) + getFrameAngle(result);
+  gripper_msg.pose.position.x = result.handle.x;
+  gripper_msg.pose.position.y = result.handle.y;
+  gripper_msg.pose.position.z = result.handle.z;
+
+  tf::Quaternion quat_trans = tf::Quaternion(yaw,0.0,0.0);
+  gripper_msg.pose.orientation.x = quat_trans.x();
+  gripper_msg.pose.orientation.y = quat_trans.y();
+  gripper_msg.pose.orientation.z = quat_trans.z();
+  gripper_msg.pose.orientation.w = quat_trans.w();
+
+  PoseStampedMsgToTF(gripper_msg,handle_pose);
+*/
   door_msgs::Door door = door_in;
   door.header.stamp = ros::Time::now();
   tf::Stamped<tf::Pose> handle_pose = getGripperPose(door,angle,handle_hinge_distance_);
@@ -518,6 +565,7 @@ double SBPLDoorPlanner::getHandleHingeDistance(const door_msgs::Door &door)
   else
     hinge = door.frame_p2;
   double result = sqrt((hinge.x-door.handle.x)*(hinge.x-door.handle.x)+(hinge.y-door.handle.y)*(hinge.y-door.handle.y));
+  ROS_INFO("Handle hinge distance is %f",result);
   return result;
 }
 

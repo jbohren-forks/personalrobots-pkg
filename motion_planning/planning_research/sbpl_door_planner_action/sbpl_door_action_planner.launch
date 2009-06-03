@@ -41,6 +41,8 @@
      <remap from="inflated_obstacles" to="~inflated_obstacles" />
 
      <param name="sbpl_action_file" textfile="$(find mpbench)/data/pr2sides.mprim" />
+     <param name="animate" value="true"/>
+     <param name="animate_frequency" value="40.0"/>
     </node>
   </group>
 </launch>
