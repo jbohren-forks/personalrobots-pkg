@@ -1,26 +1,26 @@
 <launch>
-  <group name="gazebo">
-    <!-- start gazebo -->
-    <node pkg="gazebo" type="gazebo" args="-n $(find gazebo_robot_description)/gazebo_worlds/empty.world" respawn="false" output="screen">
-      <env name="LD_LIBRARY_PATH" value="$(find gazebo_plugin)/lib:$(find gazebo)/gazebo/lib:$(find Cg)/Cg/lib:$(optenv LD_LIBRARY_PATH)" />
-      <env name="GAZEBO_RESOURCE_PATH" value="$(find gazebo_robot_description):$(find gazebo)/gazebo/share/gazebo" />
-      <env name="OGRE_RESOURCE_PATH" value="$(find ogre)/ogre/lib/OGRE" />
-    </node>
+ <group name="gazebo">
+   <!-- start gazebo -->
+   <node launch-prefix="glc-capture" pkg="gazebo" type="gazebo" args="-n $(find gazebo_robot_description)/gazebo_worlds/empty.world" respawn="false" output="screen">
+     <env name="LD_LIBRARY_PATH" value="$(find gazebo_plugin)/lib:$(find gazebo)/gazebo/lib:$(find Cg)/Cg/lib:$(find ogre)/ogre/lib:$(find opende)/opende/lib:$(optenv LD_LIBRARY_PATH)" />
+     <env name="GAZEBO_RESOURCE_PATH" value="$(find gazebo_robot_description):$(find gazebo)/gazebo/share/gazebo" />
+     <env name="OGRE_RESOURCE_PATH" value="$(find ogre)/ogre/lib/OGRE" />
+   </node>
 
-    <!-- send pr2.xml to param server -->
-    <!-- push robotdesc/door to factory and spawn robot in gazebo -->
-    <param ns="pr2" name="robotdesc/pr2" command="$(find xacro)/xacro.py '$(find door_demos_gazebo)/robots/pr2_and_door.xacro.xml'" />
-    <node pkg="gazebo_plugin" type="urdf2factory" args="robotdesc/pr2" respawn="false" output="screen" />
+   <!-- send pr2.xml to param server -->
+   <!-- push robotdesc/door to factory and spawn robot in gazebo -->
+   <param ns="pr2" name="robotdesc/pr2" command="$(find xacro)/xacro.py '$(find door_demos_gazebo)/robots/pr2_and_door.xacro.xml'" />
+   <node pkg="gazebo_plugin" type="urdf2factory" args="robotdesc/pr2" respawn="false" output="screen" />
 
-    <!-- load door and handle controllers -->
-    <node pkg="mechanism_control" type="spawner.py" args="$(find door_demos_gazebo)/door_defs/door_controllers.xml" respawn="false" output="screen" />
-    <node pkg="door_demos_gazebo" type="set_door.py" output="screen"/>
+   <!-- load door and handle controllers -->
+   <node pkg="mechanism_control" type="spawner.py" args="$(find door_demos_gazebo)/door_defs/door_controllers.xml" respawn="false" output="screen" />
+   <node pkg="door_demos_gazebo" type="set_door.py" output="screen"/>
 
-    <!-- uncomment for visualization -->
-    <!--
-    <node pkg="rviz" type="rviz" output="screen"/>
-    -->
+   <!-- uncomment for visualization -->
+   <!--
+   <node pkg="rviz" type="rviz" output="screen"/>
+   -->
 
-  </group>
+ </group>
 </launch>
-
+ 
