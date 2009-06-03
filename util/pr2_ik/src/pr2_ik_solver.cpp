@@ -46,7 +46,7 @@ PR2IKSolver::PR2IKSolver():ChainIkSolverPos()
   ros::Node::instance()->param("~free_angle",free_angle,2);
   // Load robot description
   TiXmlDocument xml;
-  ROS_INFO("Reading xml file from parameter server\n");
+  ROS_DEBUG("Reading xml file from parameter server\n");
   assert(ros::Node::instance());
   std::string result;
   if (ros::Node::instance()->getParam(urdf_xml, result))
@@ -114,7 +114,7 @@ PR2IKSolver::PR2IKSolver():ChainIkSolverPos()
     {
       link_offset.push_back(link->getOffset());
       angle_multipliers.push_back(joint->axis_[0]*fabs(joint->axis_[0]) +  joint->axis_[1]*fabs(joint->axis_[1]) +  joint->axis_[2]*fabs(joint->axis_[2]));
-      ROS_INFO("Joint axis: %d, %f, %f, %f",6-num_joints,joint->axis_[0],joint->axis_[1],joint->axis_[2]);
+      ROS_DEBUG("Joint axis: %d, %f, %f, %f",6-num_joints,joint->axis_[0],joint->axis_[1],joint->axis_[2]);
       if(joint->type_ != mechanism::JOINT_CONTINUOUS)
       {
         min_angles.push_back(joint->joint_limit_min_);
@@ -148,10 +148,10 @@ PR2IKSolver::PR2IKSolver():ChainIkSolverPos()
   upperarm_elbow_offset = distance(link_offset[3]);
   elbow_wrist_offset = distance(link_offset[5]);
 
-  ROS_INFO("Torso shoulder offset: %f %f %f",torso_shoulder_offset_x,torso_shoulder_offset_y,torso_shoulder_offset_z);
-  ROS_INFO("Shoulder upper arm offset: %f",shoulder_upperarm_offset);
-  ROS_INFO("Upper arm elbow offset: %f",upperarm_elbow_offset);
-  ROS_INFO("Elbow wrist offset: %f",elbow_wrist_offset);
+  ROS_DEBUG("Torso shoulder offset: %f %f %f",torso_shoulder_offset_x,torso_shoulder_offset_y,torso_shoulder_offset_z);
+  ROS_DEBUG("Shoulder upper arm offset: %f",shoulder_upperarm_offset);
+  ROS_DEBUG("Upper arm elbow offset: %f",upperarm_elbow_offset);
+  ROS_DEBUG("Elbow wrist offset: %f",elbow_wrist_offset);
 
   pr2_ik_ = new PR2IK(shoulder_upperarm_offset,
                       upperarm_elbow_offset,
@@ -165,7 +165,7 @@ PR2IKSolver::PR2IKSolver():ChainIkSolverPos()
 
   for(int i=0; i<7; i++)
   {
-    ROS_INFO("Joint: %d, angle limits: (%f,%f)",i,min_angles[i],max_angles[i]);
+    ROS_DEBUG("Joint: %d, angle limits: (%f,%f)",i,min_angles[i],max_angles[i]);
   }
 
   ros::Node::instance()->param<double>("~search_discretization_angle",search_discretization_angle_,0.001);
@@ -217,6 +217,7 @@ int PR2IKSolver::CartToJnt(const KDL::JntArray& q_init, const KDL::Frame& p_in, 
   Eigen::Matrix4f b = KDLToEigenMatrix(p_in);
   if(pr2_ik_->free_angle_ == 0)
   {
+    ROS_DEBUG("Solving with %f",q_init(0)); 
     pr2_ik_->computeIKEfficient(b,q_init(0));
   }
   else
@@ -232,6 +233,15 @@ int PR2IKSolver::CartToJnt(const KDL::JntArray& q_init, const KDL::Frame& p_in, 
 
   for(int i=0; i< (int) pr2_ik_->solution_ik_.size(); i++)
   {     
+    ROS_DEBUG("Solution : %d",pr2_ik_->solution_ik_.size());
+
+    for(int j=0; j < (int)pr2_ik_->solution_ik_[i].size(); j++)
+    {   
+      ROS_DEBUG("%d: %f",j,pr2_ik_->solution_ik_[i][j]);
+    }
+    ROS_DEBUG(" ");
+    ROS_DEBUG(" ");
+
     double tmp_distance = computeEuclideanDistance(pr2_ik_->solution_ik_[i],q_init);
     if(tmp_distance < min_distance)
     {
@@ -242,6 +252,7 @@ int PR2IKSolver::CartToJnt(const KDL::JntArray& q_init, const KDL::Frame& p_in, 
 
   if(min_index > -1)
   {
+    q_out.resize((int)pr2_ik_->solution_ik_[min_index].size());
     for(int i=0; i < (int)pr2_ik_->solution_ik_[min_index].size(); i++)
     {   
       q_out(i) = pr2_ik_->solution_ik_[min_index][i];
@@ -344,4 +355,30 @@ int PR2IKSolver::CartToJntSearch(const KDL::JntArray& q_in, const KDL::Frame& p_
   return -1;
 }
 
+
+int PR2IKSolver::CartToJntSearch(const KDL::JntArray& q_in, const KDL::Frame& p_in, KDL::JntArray &q_out, const double &timeout)
+{
+  KDL::JntArray q_init = q_in;
+  Eigen::Matrix4f b = KDLToEigenMatrix(p_in);
+  double initial_guess = q_init(pr2_ik_->free_angle_);
+
+  ros::Time start_time = ros::Time::now();
+  double loop_time = 0;
+  int count = 0;
+
+  int num_positive_increments = (int)((pr2_ik_->max_angles_[pr2_ik_->free_angle_]-initial_guess)/search_discretization_angle_);
+  int num_negative_increments = (int)((initial_guess-pr2_ik_->min_angles_[pr2_ik_->free_angle_])/search_discretization_angle_);
+  ROS_DEBUG("%f %f %f %d %d \n\n",initial_guess,pr2_ik_->max_angles_[pr2_ik_->free_angle_],pr2_ik_->min_angles_[pr2_ik_->free_angle_],num_positive_increments,num_negative_increments);
+  while(loop_time < timeout)
+  {
+    if(CartToJnt(q_init,p_in,q_out) > 0)
+      return 1;
+    if(!getCount(count,num_positive_increments,-num_negative_increments))
+      return -1;
+    q_init(pr2_ik_->free_angle_) = initial_guess + search_discretization_angle_ * count;
+    ROS_DEBUG("%d, %f",count,q_init(pr2_ik_->free_angle_));
+    loop_time = (ros::Time::now()-start_time).toSec();
+  }
+  return -1;
+}
 

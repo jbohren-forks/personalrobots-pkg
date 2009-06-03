@@ -112,6 +112,9 @@ namespace pr2_ik
      */
     int CartToJntSearch(const KDL::JntArray& q_in, const KDL::Frame& p_in, std::vector<KDL::JntArray> &q_out, const double &timeout);
 
+
+    int CartToJntSearch(const KDL::JntArray& q_in, const KDL::Frame& p_in, KDL::JntArray &q_out, const double &timeout);
+
     private:
 
     mechanism::Robot robot_model_;

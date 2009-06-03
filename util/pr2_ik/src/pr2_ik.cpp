@@ -117,6 +117,7 @@ bool PR2IK::setFreeAngle(int angle_index)
     return false;
 
   free_angle_ = angle_index;
+  printf("Free angle index: %d\n",angle_index);
   return true;
 }
 
@@ -291,7 +292,7 @@ void PR2IK::computeIKEfficient(const Eigen::Matrix4f &g_in, const double &t1_in)
   g(1,3) = g_in(1,3) - torso_shoulder_offset_(1);
   g(2,3) = g_in(2,3) - torso_shoulder_offset_(2);
 
-  double t1 = angles::normalize_angle(t1);
+  double t1 = angles::normalize_angle(t1_in);
   if(!checkJointLimits(t1,0))
     return;
 
