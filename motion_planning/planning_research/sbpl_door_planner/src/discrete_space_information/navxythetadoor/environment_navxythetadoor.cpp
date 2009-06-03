@@ -516,7 +516,7 @@ void EnvironmentNAVXYTHETADOORLAT::setDoorProperties(const door_msgs::Door &door
   }
 
   db_.door_frame_global_yaw_ = atan2(edge_global_y-hinge_global_y,edge_global_x-hinge_global_x);
-  db_.door_length_ = sqrt(pow(edge_global_y-hinge_global_y,2) + pow(edge_global_x-hinge_global_x,2));
+  db_.door_length_ = sqrt(pow(edge_global_y-hinge_global_y,2) + pow(edge_global_x-hinge_global_x,2)) + 0.1;
 
   double sth = sin(db_.door_frame_global_yaw_);
   double cth = cos(db_.door_frame_global_yaw_);
