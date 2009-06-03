@@ -62,7 +62,7 @@ class MainWindow(wx.Frame):
         panel = PowerBoardPanel(self)
 #        panel.set_new_errors_callback(self.on_error)
         
-        self.SetSize(wx.Size(750,450))
+        self.SetSize(wx.Size(450,450))
 
 
     def on_exit(self, e):

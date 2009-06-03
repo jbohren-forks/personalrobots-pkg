@@ -265,11 +265,20 @@ bool Interface::IsReadSet(fd_set set) const {
   return FD_ISSET(recv_sock,&set);
 }
 
-int PowerBoard::send_command(int selected_device, int circuit_breaker, const std::string &command, unsigned flags)
+int PowerBoard::send_command(unsigned int serial_number, int circuit_breaker, const std::string &command, unsigned flags)
 {
   if (Devices.size() == 0) {
     fprintf(stderr,"No devices to send command to\n");
     return -1;
+  }
+
+  int selected_device = -1;
+  // Look for device serial number in list of devices...
+  for (unsigned i = 0; i<Devices.size(); ++i) {
+    if (Devices[i]->getPowerMessage().header.serial_num == serial_number) {
+      selected_device = i;
+      break;
+    }
   }
 
   if ((selected_device < 0) || (selected_device >= (int)Devices.size())) {
@@ -279,7 +288,6 @@ int PowerBoard::send_command(int selected_device, int circuit_breaker, const std
 
   Device* device = Devices[selected_device];
   assert(device != NULL);
-
 
   if ((circuit_breaker < 0) || (circuit_breaker > 2)) {
     fprintf(stderr, "Circuit breaker number must be between 0 and 2\n");
@@ -575,7 +583,7 @@ PowerBoard::PowerBoard(): ros::Node ("pr2_power_board")
 bool PowerBoard::commandCallback(pr2_power_board::PowerBoardCommand::Request &req_,
                      pr2_power_board::PowerBoardCommand::Response &res_)
 {
-  res_.retval = send_command( 0, req_.breaker_number, req_.command, req_.flags);
+  res_.retval = send_command( req_.serial_number, req_.breaker_number, req_.command, req_.flags);
 
   return true;
 }

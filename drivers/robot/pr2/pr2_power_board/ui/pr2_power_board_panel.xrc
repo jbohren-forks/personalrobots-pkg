@@ -2,7 +2,6 @@
 <resource xmlns="http://www.wxwindows.org/wxxrc" version="2.3.0.1">
 	<object class="wxPanel" name="PowerBoardPanel">
 		<style>wxTAB_TRAVERSAL</style>
-		<size>701,574</size>
 		<object class="wxBoxSizer">
 			<orient>wxVERTICAL</orient>
 			<object class="sizeritem">
