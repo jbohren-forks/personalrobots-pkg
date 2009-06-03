@@ -69,6 +69,7 @@
 
     <body:plane name="plane">
       <geom:plane name="plane">
+        <laserRetro>2000.0</laserRetro>
         <kp>1000000.0</kp>
         <kd>1.0</kd>
         <normal>0 0 1</normal>

@@ -113,7 +113,7 @@
         <box size="0.4 10 2" />
       </geometry>
       <map name="wall1_intensity" flag="gazebo">
-        <elem key="laserRetro" value="0.5" />
+        <elem key="laserRetro" value="3000" />
       </map>
     </collision>
     <map name="door_gravity" flag="gazebo">
@@ -147,7 +147,7 @@
         <box size="0.4 10 2" />
       </geometry>
       <map name="wall2_intensity" flag="gazebo">
-        <elem key="laserRetro" value="0.5" />
+        <elem key="laserRetro" value="3500" />
       </map>
     </collision>
     <map name="door_gravity" flag="gazebo">
@@ -181,7 +181,7 @@
         <box size="0.1 1.0 2.0" />
       </geometry>
       <map name="door_intensity" flag="gazebo">
-        <elem key="laserRetro" value="10.0" />
+        <elem key="laserRetro" value="2500" />
       </map>
     </collision>
     <map name="door_gravity" flag="gazebo">
@@ -216,7 +216,7 @@
         <cylinder radius="0.01" length="${handle_length}" />
       </geometry>
       <map name="handle_intensity" flag="gazebo">
-        <elem key="laserRetro" value="100.0" />
+        <elem key="laserRetro" value="3900.0" />
       </map>
     </collision>
     <map name="handle_gravity" flag="gazebo">
@@ -251,7 +251,7 @@
         <cylinder radius="0.01" length="0.05" />
       </geometry>
       <map name="handle1_intensity" flag="gazebo">
-        <elem key="laserRetro" value="100.0" />
+        <elem key="laserRetro" value="3900.0" />
       </map>
     </collision>
     <map name="handle1_options" flag="gazebo">
@@ -287,7 +287,7 @@
         <cylinder radius="0.01" length="0.05" />
       </geometry>
       <map name="handle2_intensity" flag="gazebo">
-        <elem key="laserRetro" value="100.0" />
+        <elem key="laserRetro" value="3900.0" />
       </map>
     </collision>
     <map name="handle2_options" flag="gazebo">
@@ -323,7 +323,7 @@
         <cylinder radius="0.03" length="0.02" />
       </geometry>
       <map name="handle3_intensity" flag="gazebo">
-        <elem key="laserRetro" value="100.0" />
+        <elem key="laserRetro" value="3900.0" />
       </map>
     </collision>
     <map name="handle3_options" flag="gazebo">
@@ -358,7 +358,7 @@
         <cylinder radius="0.03" length="0.02" />
       </geometry>
       <map name="keyhold_intensity" flag="gazebo">
-        <elem key="laserRetro" value="100.0" />
+        <elem key="laserRetro" value="3900.0" />
       </map>
     </collision>
     <map name="keyhold_options" flag="gazebo">
