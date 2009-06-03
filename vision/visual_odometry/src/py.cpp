@@ -15,12 +15,8 @@
 
 #include <opencv/cxcore.hpp>
 
-#include <stereolib.h> // from 3DPoseEstimation/include. The header file is there temporarily
-#include <ost_stereolib.h> // from 3DPoseEstimation/include. The header file is there temporarily
-
 // WG Ext of OpenCV
 #include <CvPoseEstErrMeasDisp.h>
-#include <Cv3DPoseEstimateStereo.h>
 #include "PoseEstimateDisp.h"
 #include "PoseEstimate.h"
 #include "CvMatUtils.h"
@@ -37,227 +33,6 @@ using namespace cv;
 using namespace std;
 
 #define JDC_DEBUG 0
-
-/************************************************************************/
-
-PyObject *do_ost_do_prefilter_norm(PyObject *self, PyObject *args)
-{
-  const uint8_t *im = (const uint8_t *)PyString_AsString(PyTuple_GetItem(args, 0));
-
-  uint8_t *ftim = (uint8_t *)PyString_AsString(PyTuple_GetItem(args, 1));
-  int xim = PyInt_AsLong(PyTuple_GetItem(args, 2));
-  int yim = PyInt_AsLong(PyTuple_GetItem(args, 3));
-  int ftzero = PyInt_AsLong(PyTuple_GetItem(args, 4));
-  uint8_t *buf = (uint8_t *)PyString_AsString(PyTuple_GetItem(args, 5));
-
-  ost_do_prefilter_fast_u(im, ftim, xim, yim, ftzero, buf);
-  Py_RETURN_NONE;
-}
-
-PyObject *do_ost_do_stereo_sparse(PyObject *self, PyObject *args)
-{
-  char *refpat, *rim;
-  int refpat_len, rim_len;
-  int x, y, xim, yim, ftzero, dlen, tfilter_thresh, ufilter_thresh;
-
-  PyArg_ParseTuple(args, "s#s#iiiiiiii",
-                   &refpat, &refpat_len, &rim, &rim_len,
-                   &x, &y, &xim, &yim, &ftzero, &dlen, &tfilter_thresh, &ufilter_thresh);
-  return PyInt_FromLong(ost_do_stereo_sparse((uint8_t*)refpat, (uint8_t*)rim,
-                       x, y, xim, yim, ftzero, dlen, tfilter_thresh, ufilter_thresh));
-}
-
-PyObject *grab_16x16(PyObject *self, PyObject *args)
-{
-  const uint8_t *im = (const uint8_t *)PyString_AsString(PyTuple_GetItem(args, 0));
-  int xim = PyInt_AsLong(PyTuple_GetItem(args, 1));
-  int x = PyInt_AsLong(PyTuple_GetItem(args, 2));
-  int y = PyInt_AsLong(PyTuple_GetItem(args, 3));
-
-  char sub[256];
-  if (1) {
-    for (size_t i = 0; i < 16; i++)
-      memcpy(sub + 16 * i, im + x + (y + i) * xim, 16);
-  } else {
-#define COPY16(N) \
-    _mm_storeu_ps((float*)(sub + 16 * N), _mm_loadu_ps((float*)(im + x + (y + N) * xim)));
-    COPY16(0)
-    COPY16(1)
-    COPY16(2)
-    COPY16(3)
-    COPY16(4)
-    COPY16(5)
-    COPY16(6)
-    COPY16(7)
-    COPY16(8)
-    COPY16(9)
-    COPY16(10)
-    COPY16(11)
-    COPY16(12)
-    COPY16(13)
-    COPY16(14)
-    COPY16(15)
-  }
-
-  return PyString_FromStringAndSize(sub, 256);
-}
-
-PyObject *sad(PyObject *self, PyObject *args)
-{
-  const uint8_t *im0 = (const uint8_t *)PyString_AsString(PyTuple_GetItem(args, 0));
-  const uint8_t *im1 = (const uint8_t *)PyString_AsString(PyTuple_GetItem(args, 1));
-
-  int sad = 0;
-  for (size_t i = 0; i < 256; i++)
-    sad += std::abs(im0[i] - im1[i]);
-
-  return PyFloat_FromDouble((double)sad);
-}
-
-PyObject *sad_search(PyObject *self, PyObject *args)
-{
-  const uint8_t *reference = (const uint8_t *)PyString_AsString(PyTuple_GetItem(args, 0));
-  PyObject *library = PyTuple_GetItem(args, 1);
-  char *hits;
-  Py_ssize_t nhits;
-  PyString_AsStringAndSize(PyTuple_GetItem(args, 2), &hits, &nhits);
-
-  int best_ci = -1;
-  int best_sad = 999999;
-
-  for (int ci = 0; ci < (int)nhits; ci++) {
-    if (hits[ci]) {
-      const uint8_t *im1 = (const uint8_t *)PyString_AsString(PyList_GetItem(library, ci));
-
-      int sad;
-      if (0) {
-        sad = 0;
-        for (size_t j = 0; j < 256; j++)
-          sad += std::abs(reference[j] - im1[j]);
-      } else {
-        __m128i a, b, diff, total;
-        total = (__m128i)_mm_setzero_ps();
-        unsigned int sums[4];
-
-#define ACCUM_SAD(offset) \
-        a = (__m128i)_mm_loadu_ps((float*)(reference + (16 * offset))); \
-        b = (__m128i)_mm_loadu_ps((float*)(im1 + (16 * offset))); \
-        diff = _mm_sad_epu8(a, b); \
-        total = _mm_add_epi32(diff, total);
-
-        ACCUM_SAD(0)
-        ACCUM_SAD(1)
-        ACCUM_SAD(2)
-        ACCUM_SAD(3)
-        ACCUM_SAD(4)
-        ACCUM_SAD(5)
-        ACCUM_SAD(6)
-        ACCUM_SAD(7)
-        ACCUM_SAD(8)
-        ACCUM_SAD(9)
-        ACCUM_SAD(10)
-        ACCUM_SAD(11)
-        ACCUM_SAD(12)
-        ACCUM_SAD(13)
-        ACCUM_SAD(14)
-        ACCUM_SAD(15)
-        _mm_storeu_ps((float*)sums, (__m128)total);
-
-        sad = sums[0] + sums[2];
-      }
-
-      if (sad < best_sad) {
-        best_sad = sad;
-        best_ci = ci;
-      }
-    }
-  }
-
-  if (best_ci == -1) {
-    Py_RETURN_NONE;
-  } else {
-    return PyInt_FromLong(best_ci);
-  }
-}
-
-//
-// Dense stereo pair
-//
-
-PyObject *dense_stereo(PyObject *self, PyObject *args)
-{
-  const uint8_t *lim = (const uint8_t *)PyString_AsString(PyTuple_GetItem(args, 0));
-  const uint8_t *rim = (const uint8_t *)PyString_AsString(PyTuple_GetItem(args, 1));
-  int w = PyInt_AsLong(PyTuple_GetItem(args, 2));
-  int h = PyInt_AsLong(PyTuple_GetItem(args, 3));
-  int16_t *disp = (int16_t *)PyString_AsString(PyTuple_GetItem(args, 4));
-
-  int16_t* textImg = NULL;
-
-  static const int mFTZero       = 31;		//< max 31 cutoff for prefilter value
-  static const int mDLen         = 64;		//< 64 disparities
-  static const int mCorr         = 15;		//< correlation window size
-  static const int mTextThresh   = 10;		//< texture threshold
-  static const int mUniqueThresh = 15;		//< uniqueness threshold
-
-// scratch images
-  uint8_t *mBufStereoPairs     = new uint8_t[h*mDLen*(mCorr+5)]; // local storage for the stereo pair algorithm
-  uint8_t *mFeatureImgBufLeft  = new uint8_t[w*h];
-  uint8_t *mFeatureImgBufRight = new uint8_t[w*h];
-
-  // prefilter
-  do_prefilter((uint8_t *)lim, mFeatureImgBufLeft, w, h, mFTZero, mBufStereoPairs);
-  do_prefilter((uint8_t *)rim, mFeatureImgBufRight, w, h, mFTZero, mBufStereoPairs);
-
-  // stereo
-  do_stereo(mFeatureImgBufLeft, mFeatureImgBufRight, disp, textImg, w, h,
-                  mFTZero, mCorr, mCorr, mDLen, mTextThresh, mUniqueThresh, mBufStereoPairs);
-
-  free(mBufStereoPairs);
-  free(mFeatureImgBufLeft);
-  free(mFeatureImgBufRight);
-  Py_RETURN_NONE;
-}
-
-PyObject *harris(PyObject *self, PyObject *args)
-{
-  char *imgdata;
-  int imgdata_size, x, y;
-  int corner_count;
-  double quality_level, min_distance;
-
-  if (!PyArg_ParseTuple(args, "s#iiidd", &imgdata, &imgdata_size, &x, &y, &corner_count, &quality_level, &min_distance))
-    return NULL;
-
-  IplImage* input = cvCreateImageHeader(cvSize(x, y), IPL_DEPTH_8U, 1);
-  cvSetData(input, imgdata, x);
-  IplImage* eig_image = cvCreateImage(cvSize(x, y), IPL_DEPTH_32F, 1);
-  IplImage* temp_image = cvCreateImage(cvSize(x, y), IPL_DEPTH_32F, 1);
-  CvPoint2D32f corners[corner_count];
-  cvGoodFeaturesToTrack(
-    input,
-    eig_image,
-    temp_image,
-    corners,
-    &corner_count,
-    quality_level,
-    min_distance,
-    NULL,
-    3,
-    1);
-
-  PyObject *r = PyList_New(corner_count);
-  for (int i = 0; i < corner_count; i++) {
-    PyList_SetItem(r, i, Py_BuildValue("dd",
-        corners[i].x,
-        corners[i].y));
-  }
-
-  cvReleaseImageHeader(&input);
-  cvReleaseImage(&eig_image);
-  cvReleaseImage(&temp_image);
-  return r;
-}
 
 /************************************************************************/
 
@@ -365,6 +140,7 @@ PyObject *frame_pose(PyObject *self, PyObject *args)
 }
 
 
+#if 0
 /************************************************************************/
 
 //
@@ -464,10 +240,11 @@ PyObject *point_track(PyObject *self, PyObject *args)
 
   return (PyObject*)object;
 }
-
+#endif
 
 /************************************************************************/
 
+#if 0
 //
 // Pose Estimator
 //
@@ -754,6 +531,7 @@ static PyTypeObject pose_estimator_Type = {
 
 PyObject *pose_estimator(PyObject *self, PyObject *args)
 {
+#if 0
   pose_estimator_t *object = PyObject_NEW(pose_estimator_t, &pose_estimator_Type);
   object->pe = new PoseEstimateStereo();
 
@@ -787,10 +565,12 @@ PyObject *pose_estimator(PyObject *self, PyObject *args)
 #endif
 
   return (PyObject*)object;
+#endif
 }
-
+#endif
 /************************************************************************/
 
+#if 0
 #include "imwin.h"
 
 typedef struct {
@@ -906,11 +686,16 @@ PyObject *mkimWindow(PyObject *self, PyObject *args)
 
   return (PyObject*)object;
 }
+#endif
 
 /************************************************************************/
 
-bool estimateLeastSquareInCol(CvMat *P0, CvMat *P1, CvMat *R, CvMat *T)
+bool estimateLeastSquareInCol(double *_P0, double *_P1, double *_R, double *_T)
 {
+  CvMat P0  = cvMat(3, 3, CV_64F, _P0);
+  CvMat P1  = cvMat(3, 3, CV_64F, _P1);
+  CvMat R = cvMat(3, 3, CV_64FC1, _R);
+  CvMat T = cvMat(3, 1, CV_64FC1, _T);
   bool status = true;
   double _Q[9], _W[9], _Ut[9], _Vt[9], _C0[3], _C1[3];
   CvMat Q  = cvMat(3, 3, CV_64F, _Q); // Q = P1 * transpose(P0)
@@ -921,20 +706,20 @@ bool estimateLeastSquareInCol(CvMat *P0, CvMat *P1, CvMat *R, CvMat *T)
   CvMat C1 = cvMat(3, 1, CV_64F, _C1); // centroid of the 3 points in P1
   // compute the centroids of these 3 ponints for the two positions
   //cvCVAPI(void)  cvReduce( const CvArr* src, CvArr* dst, int dim CV_DEFAULT(-1),
-//               int op CV_DEFAULT(CV_REDUCE_SUM) );
-  cvReduce(P0, &C0, -1, CV_REDUCE_AVG);
+  //               int op CV_DEFAULT(CV_REDUCE_SUM) );
+  cvReduce(&P0, &C0, -1, CV_REDUCE_AVG);
   // compute the relative vectors of the two groups of points w.r.t. their centroids.
-  double _Temp[3*P0->cols];
-  CvMat Temp = cvMat(3, P0->cols, CV_64F, _Temp);
+  double _Temp[3*P0.cols];
+  CvMat Temp = cvMat(3, P0.cols, CV_64F, _Temp);
   cvRepeat(&C0, &Temp);
-  cvSub(P0, &Temp, P0);
+  cvSub(&P0, &Temp, &P0);
 
-  cvReduce(P1, &C1, -1, CV_REDUCE_AVG);
+  cvReduce(&P1, &C1, -1, CV_REDUCE_AVG);
   cvRepeat(&C1, &Temp);
-  cvSub(P1, &Temp, P1);
+  cvSub(&P1, &Temp, &P1);
 
   // Q = P1 * P0^T
-  cvGEMM(P1, P0, 1, NULL, 0, &Q, CV_GEMM_B_T);
+  cvGEMM(&P1, &P0, 1, NULL, 0, &Q, CV_GEMM_B_T);
 
   // do a SVD on Q. Q = U*W*transpose(V)
   // according to the documentation, specifying the flags speeds up the processing
@@ -958,14 +743,85 @@ bool estimateLeastSquareInCol(CvMat *P0, CvMat *P1, CvMat *R, CvMat *T)
     CvMat UxS;
     cvInitMatHeader(&UxS, 3, 3, CV_64FC1, _UxS);
     cvGEMM(&Ut, &S, 1, NULL, 0, &UxS, CV_GEMM_A_T);
-    cvGEMM(&UxS, &Vt, 1, NULL, 0, R, 0);
+    cvGEMM(&UxS, &Vt, 1, NULL, 0, &R, 0);
   } else {
-    cvGEMM(&Ut, &Vt, 1, NULL, 0, R, CV_GEMM_A_T);
+    cvGEMM(&Ut, &Vt, 1, NULL, 0, &R, CV_GEMM_A_T);
   }
 
   // t = centroid1 - R*centroid0
-  cvGEMM(R, &C0, -1, &C1, 1, T, 0);
+  cvGEMM(&R, &C0, -1, &C1, 1, &T, 0);
   return status;
+}
+
+#include <Eigen/Core>
+#include <Eigen/Array>
+#include <Eigen/SVD>
+
+static double det(Eigen::Matrix3f m)
+{
+  double
+    a = m(0,0),
+    b = m(0,1),
+    c = m(0,2),
+    d = m(1,0),
+    e = m(1,1),
+    f = m(1,2),
+    g = m(2,0),
+    h = m(2,1),
+    i = m(2,2);
+  return a*e*i - a*f*h - b*d*i + b*f*g + c*d*h - c*e*g;
+}
+
+bool estimateLeastSquareInColE(double *_P0, double *_P1, double *_R, double *_T)
+{
+  Eigen::Matrix3f P0, P1;
+  P0 << _P0[0], _P0[1], _P0[2], _P0[3], _P0[4], _P0[5], _P0[6], _P0[7], _P0[8];
+  P1 << _P1[0], _P1[1], _P1[2], _P1[3], _P1[4], _P1[5], _P1[6], _P1[7], _P1[8];
+
+  Eigen::MatrixXf C0 = P0.rowwise().sum() / 3;
+  Eigen::Matrix3f C03;
+  C03.col(0) = C0;
+  C03.col(1) = C0;
+  C03.col(2) = C0;
+  P0 -= C03;
+
+  Eigen::MatrixXf C1 = P1.rowwise().sum() / 3;
+  Eigen::Matrix3f C13;
+  C13.col(0) = C1;
+  C13.col(1) = C1;
+  C13.col(2) = C1;
+  P1 -= C13;
+
+  // Q = P1 * P0^T
+  Eigen::Matrix3f Q = P1 * P0.transpose();
+
+  Eigen::SVD <Eigen::Matrix3f> svd(Q);
+
+  // R = U * S * V^T
+  // Eigen::MatrixXf R = svd.matrixU() * (svd.singularValues() * svd.matrixV().transpose());
+
+  Eigen::Matrix3f S = Eigen::Matrix3f::Identity();
+  S(2,2) = -1;
+  Eigen::Matrix3f R = svd.matrixU() * S * svd.matrixV().transpose();
+
+  // t = centroid1 - R*centroid0
+  Eigen::MatrixXf T = C1 - R * C0;
+
+  _R[0] = R(0,0);
+  _R[1] = R(0,1);
+  _R[2] = R(0,2);
+  _R[3] = R(1,0);
+  _R[4] = R(1,1);
+  _R[5] = R(1,2);
+  _R[6] = R(2,0);
+  _R[7] = R(2,1);
+  _R[8] = R(2,2);
+
+  _T[0] = T(0);
+  _T[1] = T(1);
+  _T[2] = T(2);
+
+  return 1;
 }
 
 static void unpackL(double *dst, PyObject *src)
@@ -985,16 +841,32 @@ PyObject *SVD(PyObject *self, PyObject *args)
     return NULL;
 
   double _P0[9], _P1[9];
-  CvMat P0  = cvMat(3, 3, CV_64F, _P0);
-  CvMat P1  = cvMat(3, 3, CV_64F, _P1);
 
   unpackL(_P0, pP0);
   unpackL(_P1, pP1);
 
   double _R[9], _T[3];
-  CvMat R = cvMat(3, 3, CV_64FC1, _R);
-  CvMat T = cvMat(3, 1, CV_64FC1, _T);
-  estimateLeastSquareInCol(&P0, &P1, &R, &T);
+  estimateLeastSquareInCol(_P0, _P1, _R, _T);
+  return Py_BuildValue("(ddddddddd)(ddd)(dddddddddddd)",
+    _R[0],_R[1],_R[2],_R[3],_R[4],_R[5],_R[6],_R[7],_R[8],
+    _T[0],_T[1],_T[2],
+    _R[0],_R[1],_R[2],_T[0], _R[3],_R[4],_R[5],_T[1], _R[6],_R[7],_R[8],_T[2]
+    );
+}
+
+PyObject *SVDe(PyObject *self, PyObject *args)
+{
+  PyObject *pP0, *pP1;
+  if (!PyArg_ParseTuple(args, "OO", &pP0, &pP1))
+    return NULL;
+
+  double _P0[9], _P1[9];
+
+  unpackL(_P0, pP0);
+  unpackL(_P1, pP1);
+
+  double _R[9], _T[3];
+  estimateLeastSquareInColE(_P0, _P1, _R, _T);
   return Py_BuildValue("(ddddddddd)(ddd)(dddddddddddd)",
     _R[0],_R[1],_R[2],_R[3],_R[4],_R[5],_R[6],_R[7],_R[8],
     _T[0],_T[1],_T[2],
@@ -1070,13 +942,14 @@ PyObject *polish(PyObject *self, PyObject *args)
 /************************************************************************/
 
 static PyMethodDef methods[] = {
-  {"point_track", point_track, METH_VARARGS},
+  // {"point_track", point_track, METH_VARARGS},
   {"frame_pose", frame_pose, METH_VARARGS},
-  {"imWindow", mkimWindow, METH_VARARGS},
+  // {"imWindow", mkimWindow, METH_VARARGS},
   {"SVD", ::SVD, METH_VARARGS},
+  {"SVDe", ::SVDe, METH_VARARGS},
   {"polish", polish, METH_VARARGS},
 
-  {"pose_estimator", pose_estimator, METH_VARARGS},
+  // {"pose_estimator", pose_estimator, METH_VARARGS},
   {NULL, NULL, NULL},
 };
 

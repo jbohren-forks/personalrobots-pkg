@@ -17,23 +17,6 @@ from stereo_utils.stereo import SparseStereoFrame
 from visualodometer import VisualOdometer, Pose, DescriptorSchemeCalonder, DescriptorSchemeSAD, FeatureDetectorFast, FeatureDetector4x4, FeatureDetectorStar, FeatureDetectorHarris, from_xyz_euler
 import cv
 
-class dcamImage:
-  def __init__(self, m):
-    if hasattr(m, "byte_data"):
-      ma = m.byte_data
-      self.data = ma.data
-    else:
-      ma = m.uint8_data # MultiArray
-      self.data = ma.data
-    d = ma.layout.dim
-    assert d[0].label == "height"
-    assert d[1].label == "width"
-    self.size = (d[1].size, d[0].size)
-    self.mode = "L"
-
-  def tostring(self):
-    return self.data
-
 vo = None
 fd = FeatureDetectorStar(300)
 ds = DescriptorSchemeCalonder()

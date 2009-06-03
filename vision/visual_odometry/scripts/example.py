@@ -27,12 +27,12 @@ cam = camera.Camera((Fx, Fy, Tx, Clx, Crx, Cy))
 fd = FeatureDetectorFast(300)
 
 # Descriptor Scheme
-ds = DescriptorSchemeSAD()
+ds = DescriptorSchemeCalonder()
 
 # Visual Odometer
 vo = VisualOdometer(cam)
 
-for i in range(100):
+for i in range(1000):
   # Left image
   lim = Image.open("%s/%06dL.png" % (sys.argv[1], i))
 
@@ -47,4 +47,6 @@ for i in range(100):
   print i, pose
   print
 
+fd.summarize_timers()
+ds.summarize_timers()
 vo.summarize_timers()

@@ -10,7 +10,6 @@
 #include "VisOdom.h"
 #include "KeypointDescriptors.h"
 using namespace cv::willow;
-#include "stereolib.h" // from 3DPoseEstimation/include. The header file is there temporarily
 
 #include <iostream>
 using namespace std;

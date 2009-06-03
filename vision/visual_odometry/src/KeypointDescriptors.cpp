@@ -11,8 +11,6 @@ using namespace cv::willow;
 
 #include <opencv/cv.h>
 
-#include "ost_stereolib.h"
-
 #include <boost/foreach.hpp>
 using namespace boost;
 
