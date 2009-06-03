@@ -13,13 +13,10 @@
   <depend package="robot_msgs"/>
   <depend package="image_msgs"/>
   <depend package="eigen"/>
-  <depend package="fast_detector"/>
-  <depend package="star_detector"/>
   <depend package="opencv_latest"/>
   <depend package="stereo_utils"/>
   <depend package="vop"/>
   <depend package="rosrecord"/>
-  <depend package="calonder_descriptor"/>
   <depend package="tf"/>
   <depend package="image_synthesizer"/>
   <depend package="opencvpython"/>

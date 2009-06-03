@@ -35,8 +35,8 @@
 # authors: jamesb
 
 import vop
-import votools as VO
-from stereo_utils.timer import Timer
+import visual_odometry.lowlevel as VOLO
+from stereo_utils.timer import TimedClass
 
 import os
 
@@ -44,8 +44,6 @@ import Image
 from math import *
 import numpy
 import numpy.linalg
-
-scratch = " " * (640 * 480)
 
 from tf import transformations
 
@@ -166,250 +164,6 @@ def from_xyz_euler(xyz, euler):
   return Pose(R[:3,:3], xyz)
 
 ########################################################################
-class TimedClass:
-
-  def __init__(self, timing):
-    self.calls = 0
-    self.timer = {}
-    for t in timing:
-      self.timer[t] = Timer()
-
-  def summarize_timers(self):
-    print
-    print self.name()
-    for n,t in self.timer.items():
-      print "  %-20s %s" % (n, t.summ())
-  
-########################################################################
-import fast
-
-class FeatureDetector(TimedClass):
-
-  timing = []
-
-  def name(self):
-    return self.__class__.__name__
-
-  def __init__(self, target_count):
-    self.thresh = self.default_thresh
-    self.cold = True
-    self.target_count = target_count
-
-    TimedClass.__init__(self, self.timing + ['detect'])
-
-  def detect(self, frame):
-
-    self.timer['detect'].start()
-    self.calls += 1
-    features = self.get_features(frame, self.target_count)
-    if len(features) < (self.target_count * 0.5) or len(features) > (self.target_count * 2.0):
-        (lo,hi) = self.threshrange
-        for i in range(7):
-          self.thresh = 0.5 * (lo + hi)
-          features = self.get_features(frame, self.target_count)
-          if len(features) < self.target_count:
-            hi = self.thresh
-          if len(features) > self.target_count:
-            lo = self.thresh
-        self.thresh = 0.5 * (lo + hi)
-
-    # Try to be a bit adaptive for next time
-    if len(features) > (self.target_count * 1.1):
-        self.thresh *= 1.05
-    if len(features) < (self.target_count * 0.9):
-        self.thresh *= 0.95
-    self.timer['detect'].stop()
-    return features
-
-# Feature detectors that return features in order (i.e. strongest first)
-# can be simpler.  Just always keep the threshold high enough to give
-# too many responses, and take the top N.
-
-class FeatureDetectorOrdered(FeatureDetector):
-
-  timing = ['get_features/False', 'get_features/True' ]
-
-  def detect(self, frame):
-
-    self.calls += 1
-    self.timer['detect'].start()
-    self.timer['get_features/False'].start()
-    features = self.get_features(frame, self.target_count)
-    self.timer['get_features/False'].stop()
-    # Too few features, so lower threshold
-    while (len(features) < self.target_count) and (self.thresh > self.threshrange[0]):
-      self.thresh = float(max(self.threshrange[0], self.thresh / 2))
-      self.timer['get_features/False'].start()
-      features = self.get_features(frame, self.target_count)
-      self.timer['get_features/False'].stop()
-    # If starving, rerun 
-    if (len(features) < 100) and (self.thresh <= self.threshrange[0]):
-      self.timer['get_features/True'].start()
-      features = self.get_features(frame, self.target_count, True)
-      self.timer['get_features/True'].stop()
-
-    # Try to be a bit more adaptive for next time
-    if len(features) > (self.target_count * 2):
-      self.thresh *= 2
-    if len(features) < (self.target_count * 1.25):
-      self.thresh *= 0.95
-    self.timer['detect'].stop()
-    return features[:self.target_count]
-
-def FAST(imdata, xsize, ysize, thresh, barrier = 9):
-  kp = fast.fast(imdata, xsize, ysize, barrier, int(thresh))
-  return sorted(fast.nonmax(kp), key = lambda x:(x[2],x[0],x[1]), reverse = True)
-
-class FeatureDetectorFast(FeatureDetectorOrdered):
-
-  default_thresh = 10
-  threshrange = (0.5,300)
-
-  def get_features(self, frame, target_points, starving = False):
-    assert len(frame.rawdata) == (frame.size[0] * frame.size[1])
-    if starving:
-      barrier = 3
-    else:
-      barrier = 9
-    feat = FAST(frame.rawdata, frame.size[0], frame.size[1], self.thresh, barrier)
-    return [ (x,y) for (x,y,r) in feat if (16 <= x and x <= (frame.size[0]-16) and (16 <= y) and y < (frame.size[1]-16)) ]
-
-class FeatureDetector4x4:
-
-  def __init__(self, fd):
-    self.fds = [ fd() for i in range(16) ]
-
-  def name(self):
-    return "4x4 " + self.fds[0].__class__.__name__
-
-  def detect(self, frame, target_points):
-    master = Image.fromstring("L", frame.size, frame.rawdata)
-    allpts = []
-    xbase = 16
-    ybase = 16
-    w = frame.size[0] - 32
-    h = frame.size[1] - 32
-    for x in range(4):
-      for y in range(4):
-        xleft = xbase + x * (w/4)
-        ytop = ybase + y * (h/4)
-        subimage = master.crop((xleft, ytop, xleft + (w/4), ytop + (h/4)))
-        assert subimage.size == ((w/4), (h/4))
-
-        class FrameAdapter:
-          def __init__(self, im):
-            self.size = im.size
-            self.rawdata = im.tostring()
-
-        subpts = self.fds[4 * x + y].detect(FrameAdapter(subimage), target_points / 16)
-        allpts += [(xleft + xp, ytop + yp) for (xp,yp) in subpts]
-    return allpts
-
-class FeatureDetectorHarris(FeatureDetector):
-
-  default_thresh = 1e-3
-  threshrange = (1e-4,1e-2)
-
-  def get_features(self, frame, target_points):
-    return VO.harris(frame.rawdata, frame.size[0], frame.size[1], int(target_points * 1.2), self.thresh, 2.0)
-
-import starfeature
-
-class FeatureDetectorStar(FeatureDetector):
-
-  default_thresh = 30.0
-  threshrange = (1,64)
-  line_thresh = 10.0
-
-  def get_features(self, frame, target_points):
-    sd = starfeature.star_detector(frame.size[0], frame.size[1], 5, self.thresh, self.line_thresh)
-    return [ (x,y) for (x,y,s,r) in sd.detect(frame.rawdata) ]
-
-########################################################################
-
-class DescriptorScheme(TimedClass):
-
-  timing = []
-
-  def __init__(self):
-    TimedClass.__init__(self, self.timing + ['Match'])
-
-  def name(self):
-    return self.__class__.__name__
-
-  def desc2matcher(self, descriptors):
-    return descriptors
-
-  def match0(self, af0kp, af0descriptors, af1kp, af1descriptors):
-
-    if af0kp == [] or af1kp == []:
-      return []
-    self.calls += 1
-    self.timer['Match'].start()
-    Xs = vop.array([k[0] for k in af1kp])
-    Ys = vop.array([k[1] for k in af1kp])
-    pairs = []
-    matcher = self.desc2matcher(af1descriptors)
-    for (i,(ki,di)) in enumerate(zip(af0kp, af0descriptors)):
-      predX = (abs(Xs - ki[0]) < 64)
-      predY = (abs(Ys - ki[1]) < 32)
-      hits = vop.where(predX & predY, 1, 0).tostring()
-      best = self.search(di, matcher, hits)
-      if best != None:
-        pairs.append((i, best[0], best[1]))
-    self.timer['Match'].stop()
-    return pairs
-
-  def match(self, af0, af1):
-    return self.match0(af0.kp, af0.descriptors, af1.kp, af1.descriptors)
-
-class DescriptorSchemeSAD(DescriptorScheme):
-
-  def collect0(self, frame, kp):
-    lgrad = " " * (frame.size[0] * frame.size[1])
-    VO.ost_do_prefilter_norm(frame.rawdata, frame.lgrad, frame.size[0], frame.size[1], 31, scratch)
-    return [ VO.grab_16x16(frame.lgrad, frame.size[0], p[0]-7, p[1]-7) for p in kp ]
-
-  def search(self, di, descriptors, hits):
-      i = VO.sad_search(di, descriptors, hits)
-      if i == None:
-        return None
-      else:
-        return (i, 0)
-
-import calonder
-
-class DescriptorSchemeCalonder(DescriptorScheme):
-  timing = [ 'BuildMatcher', 'Collect', 'find' ]
-
-  def __init__(self):
-    self.cl = calonder.classifier()
-    #self.cl.setThreshold(0.0)
-    filename = '/u/prdata/calonder_trees/current.rtc'
-    assert os.access(filename, os.R_OK)
-    self.cl.read(filename)
-    DescriptorScheme.__init__(self)
-
-  def collect0(self, frame, kp):
-    self.timer['Collect'].start()
-    r = self.cl.getSignatures(frame.size, frame.rawdata, [ (x,y) for (x,y,d) in kp ])
-    self.timer['Collect'].stop()
-    return r
-
-  def desc2matcher(self, descriptors):
-    self.timer['BuildMatcher'].start()
-    matcher = calonder.BruteForceMatcher(self.cl.dimension())
-    for sig in descriptors:
-      matcher.addSignature(sig)
-    self.timer['BuildMatcher'].stop()
-    return matcher
-
-  def search(self, di, matcher, hits):
-    self.timer['find'].start()
-    r = matcher.findMatch(di, hits)
-    self.timer['find'].stop()
-    return r
-
 uniq_track_id = 100
 
 class Track:
@@ -420,7 +174,7 @@ class Track:
     self.lastpt = p1
     self.alive = True
     #print p0id,p0,p1id,p1,p1pose.xform(*cam.pix2cam(*p1)),uniq_track_id
-    self.sba_track = VO.point_track(p0id, p0, p1id, p1, p1pose.xform(*cam.pix2cam(*p1)), uniq_track_id)
+    self.sba_track = VOLO.point_track(p0id, p0, p1id, p1, p1pose.xform(*cam.pix2cam(*p1)), uniq_track_id)
     self.uniq_track_id = uniq_track_id
     uniq_track_id += 1
   def kill(self):
@@ -439,7 +193,7 @@ class VisualOdometer(TimedClass):
     self.cam = cam
     TimedClass.__init__(self, ['temporal_match', 'solve'])
 
-    #self.pe = VO.pose_estimator(*self.cam.params)
+    #self.pe = VOLO.pose_estimator(*self.cam.params)
     self.pe = pe.PoseEstimator(*self.cam.params)
 
     self.prev_frame = None
@@ -682,7 +436,7 @@ class VisualOdometer(TimedClass):
     self.timer['tracks'].stop()
 
   def sba_add_frame(self, frame):
-    self.posechain.append((frame,VO.frame_pose(frame.id, frame.pose.tolist())))
+    self.posechain.append((frame,VOLO.frame_pose(frame.id, frame.pose.tolist())))
 
   def sba_handle_frame(self, frame):
     self.timer['sba'].start()
@@ -734,7 +488,7 @@ class VisualOdometer(TimedClass):
     self.find_disparities(fext)
     fext.id = self.ext_frames
     self.ext_frames += 1
-    frame.externals.append((fext, VO.frame_pose(fext.id, fext.pose.tolist())))
+    frame.externals.append((fext, VOLO.frame_pose(fext.id, fext.pose.tolist())))
 
   # just set up the frame with descriptors, no VO processing
   def setup_frame(self, frame):

@@ -2,7 +2,7 @@ import sys, os
 import time
 import PIL.Image
 
-import votools as VO
+from visual_odometry import votools
 
 class Vis:
 

@@ -8,7 +8,6 @@ import vop
 import sys
 sys.path.append('lib')
 
-import visual_odometry as VO
 import Image as Image
 import ImageChops as ImageChops
 import ImageDraw as ImageDraw
@@ -19,7 +18,9 @@ import unittest
 import math
 
 from stereo_utils.stereo import ComputedDenseStereoFrame, SparseStereoFrame
-from visualodometer import VisualOdometer, Pose, DescriptorSchemeCalonder, DescriptorSchemeSAD, FeatureDetectorFast, FeatureDetector4x4, FeatureDetectorStar, FeatureDetectorHarris
+from stereo_utils.feature_detectors import FeatureDetectorFast, FeatureDetector4x4, FeatureDetectorStar, FeatureDetectorHarris
+from stereo_utils.descriptor_schemes import DescriptorSchemeCalonder, DescriptorSchemeSAD
+from visual_odometry.visualodometer import VisualOdometer, Pose
 import fast
 from math import *
 
@@ -32,7 +33,7 @@ import numpy.linalg
 import cairo
 import array
 
-from pe import PoseEstimator
+from visual_odometry.pe import PoseEstimator
 from raytracer import object, sphere, isphere, render_stereo_scene, ray_camera, vec3, shadeLitCloud
 
 import cv
@@ -129,18 +130,6 @@ class TestDirected(unittest.TestCase):
         framecounter += 1
     print "distance from start:", vo.pose.distance()
     vo.summarize_timers()
-
-  def test_sparse_stereo(self):
-    left = Image.new("L", (640,480))
-    circle(left, 320, 200, 4, 255)
-
-    fd = FeatureDetectorStar(300)
-    ds = DescriptorSchemeSAD()
-    for disparity in range(20):
-      right = Image.new("L", (640,480))
-      circle(right, 320 - disparity, 200, 4, 255)
-      sf = SparseStereoFrame(left, right, feature_detector = fd, descriptor_scheme = ds)
-      self.assertAlmostEqual(sf.lookup_disparity(320,200), disparity, 0)
 
   def test_solve_spin(self):
     # Test process with one 'ideal' camera, one real-world Videre
@@ -335,21 +324,6 @@ class TestDirected(unittest.TestCase):
           print old, new, new[0] - old[0]
       prev_af = af
       print "frame", x, "has", len(af.kp), "keypoints", pose
-
-  def test_stereo(self):
-    fd = FeatureDetectorStar(300)
-    ds = DescriptorSchemeSAD()
-    for offset in [ 1, 10, 10.25, 10.5, 10.75, 11, 63]:
-      lf = Image.open("snap.png").convert("L")
-      rf = Image.open("snap.png").convert("L")
-      rf = rf.resize((16 * 640, 480))
-      rf = ImageChops.offset(rf, -int(offset * 16), 0)
-      rf = rf.resize((640,480), Image.ANTIALIAS)
-      for gradient in [ False, True ]:
-        af = SparseStereoFrame(lf, rf, gradient, feature_detector = fd, descriptor_scheme = ds)
-        kp = [ (x,y,d) for (x,y,d) in af.features() if (x > 64) ]
-        error = offset - sum([d for (x,y,d) in kp]) / len(kp)
-        self.assert_(abs(error) < 0.5) 
 
     if 0:
       scribble = Image.merge("RGB", (lf,rf,Image.new("L", lf.size))).resize((1280,960))

@@ -4,10 +4,11 @@ roslib.load_manifest('vslam')
 import Image
 from pytoro import TreeOptimizer3
 import place_recognition
-from visualodometer import VisualOdometer, Pose, DescriptorSchemeCalonder, DescriptorSchemeSAD, FeatureDetectorFast, FeatureDetector4x4, FeatureDetectorStar, FeatureDetectorHarris, from_xyz_euler
-from pe import PoseEstimator
+from visual_odometry.visualodometer import VisualOdometer, Pose
+from visual_odometry.pe import PoseEstimator
 from stereo_utils.stereo import SparseStereoFrame
 from stereo_utils.timer import Timer
+from stereo_utils.descriptor_schemes import DescriptorSchemeCalonder
 
 import calonder
 

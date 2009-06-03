@@ -1070,13 +1070,6 @@ PyObject *polish(PyObject *self, PyObject *args)
 /************************************************************************/
 
 static PyMethodDef methods[] = {
-  {"ost_do_prefilter_norm", do_ost_do_prefilter_norm, METH_VARARGS},
-  {"ost_do_stereo_sparse", do_ost_do_stereo_sparse, METH_VARARGS},
-  {"grab_16x16", grab_16x16, METH_VARARGS},
-  {"sad", sad, METH_VARARGS},
-  {"sad_search", sad_search, METH_VARARGS},
-  {"dense_stereo", dense_stereo, METH_VARARGS},
-  {"harris", harris, METH_VARARGS},
   {"point_track", point_track, METH_VARARGS},
   {"frame_pose", frame_pose, METH_VARARGS},
   {"imWindow", mkimWindow, METH_VARARGS},
@@ -1087,10 +1080,10 @@ static PyMethodDef methods[] = {
   {NULL, NULL, NULL},
 };
 
-extern "C" void initvotools()
+extern "C" void init_visual_odometry_lowlevel()
 {
     PyObject *m, *d;
 
-    m = Py_InitModule("votools", methods);
+    m = Py_InitModule("_visual_odometry_lowlevel", methods);
     d = PyModule_GetDict(m);
 }

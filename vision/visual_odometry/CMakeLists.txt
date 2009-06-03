@@ -10,11 +10,11 @@ include_directories(${PYTHON_INCLUDE_PATH})
 
 rospack_add_library(visual_odometry src/Cv3DPoseEstimateStereo.cpp src/CvMat3X3.cpp src/CvMatUtils.cpp src/CvPoseEstErrMeas.cpp src/CvPoseEstErrMeasDisp.cpp src/CvRandomTripletSetGenerator.cpp src/CvTestTimer.cpp src/LevMarq2.cpp src/LevMarqSparseBundleAdj.cpp src/LevMarqTransform.cpp src/LevMarqTransformDispSpace.cpp src/PathRecon.cpp src/PoseEstimate.cpp src/PoseEstimateDisp.cpp src/stereolib.cpp src/VisOdom2.cpp src/VisOdom.cpp src/KeypointDescriptors.cpp src/ost_stereolib.cpp src/PointTracks.cpp src/VOSparseBundleAdj.cpp)
 
-rospack_add_library(votools_py src/py.cpp src/Cv3DPoseEstimateStereo.cpp src/CvMat3X3.cpp src/CvMatUtils.cpp src/CvPoseEstErrMeas.cpp src/CvPoseEstErrMeasDisp.cpp src/CvRandomTripletSetGenerator.cpp src/CvTestTimer.cpp src/LevMarq2.cpp src/LevMarqSparseBundleAdj.cpp src/LevMarqTransform.cpp src/LevMarqTransformDispSpace.cpp src/PathRecon.cpp src/PoseEstimate.cpp src/PoseEstimateDisp.cpp src/stereolib.cpp src/VisOdom2.cpp src/VisOdom.cpp src/KeypointDescriptors.cpp src/ost_stereolib.cpp src/PointTracks.cpp src/VOSparseBundleAdj.cpp src/imwin.cpp)
+rospack_add_library(visual_odometry_lowlevel_py src/py.cpp src/Cv3DPoseEstimateStereo.cpp src/CvMat3X3.cpp src/CvMatUtils.cpp src/CvPoseEstErrMeas.cpp src/CvPoseEstErrMeasDisp.cpp src/CvRandomTripletSetGenerator.cpp src/CvTestTimer.cpp src/LevMarq2.cpp src/LevMarqSparseBundleAdj.cpp src/LevMarqTransform.cpp src/LevMarqTransformDispSpace.cpp src/PathRecon.cpp src/PoseEstimate.cpp src/PoseEstimateDisp.cpp src/stereolib.cpp src/VisOdom2.cpp src/VisOdom.cpp src/KeypointDescriptors.cpp src/ost_stereolib.cpp src/PointTracks.cpp src/VOSparseBundleAdj.cpp src/imwin.cpp)
 
-set_target_properties(votools_py PROPERTIES OUTPUT_NAME votools PREFIX "")
-rospack_add_compile_flags(votools_py -g -O3 -Wno-missing-field-initializers -msse3)
-target_link_libraries(votools_py fltk)
+set_target_properties(visual_odometry_lowlevel_py PROPERTIES OUTPUT_NAME visual_odometry_lowlevel PREFIX "_")
+rospack_add_compile_flags(visual_odometry_lowlevel_py -g -O3 -Wno-missing-field-initializers -msse3)
+target_link_libraries(visual_odometry_lowlevel_py fltk)
 
 # a non-ros testing program
 rospack_add_executable(test/testVisOdom test/CvTest3DPoseEstimate.cpp test/testVisOdom.cpp)

@@ -40,8 +40,10 @@ import getopt
 
 from math import *
 
-from stereo import DenseStereoFrame, SparseStereoFrame
-from visualodometer import VisualOdometer, Pose, DescriptorSchemeCalonder, DescriptorSchemeSAD, FeatureDetectorFast, FeatureDetector4x4, FeatureDetectorStar, FeatureDetectorHarris
+from stereo_utils.stereo import DenseStereoFrame, SparseStereoFrame
+# from visualodometer import VisualOdometer, Pose
+from stereo_utils.descriptor_schemes import DescriptorSchemeCalonder, DescriptorSchemeSAD
+from stereo_utils.feature_detectors import FeatureDetectorFast, FeatureDetector4x4, FeatureDetectorStar, FeatureDetectorHarris
 from skeleton import Skeleton
 import image_msgs.msg
 import deprecated_msgs.msg
