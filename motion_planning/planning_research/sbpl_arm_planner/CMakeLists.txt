@@ -3,6 +3,8 @@ include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
 rospack(sbpl_arm_planner)
 gensrv()
 
+rospack_add_boost_directories()
+
 include_directories(${PROJECT_SOURCE_DIR}/code)
 rospack_add_library(sbpl_arm_planner
 		              src/discrete_space_information/robarm3d/environment_robarm3d.cpp
