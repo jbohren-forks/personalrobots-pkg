@@ -1,21 +1,27 @@
 all: installed
 
-SOURCE_DIR = kdl-willow
+SVN_REVISION=-r 30175
+SVN_DIR = kdl-svn
+SVN_URL = http://svn.mech.kuleuven.be:/repos/orocos/branches/kdl-one-beta
+INSTALL_DIR = kdl
 CMAKE = cmake
-BOOST_INCLUDE_DIR = $(shell rosboost-cfg --include_dirs)
-BOOST_LIBRARY_DIR = $(shell rosboost-cfg --library_dirs)
-CMAKE_ARGS = -DCMAKE_INSTALL_PREFIX=$(PWD)/kdl/ \
+BOOST_INCLUDE =$(shell rosboost-cfg --include_dirs)
+EIGEN2_INCLUDE_DIR=`rospack find eigen`/build/eigen-2.0.0/
+CMAKE_ARGS = -DCMAKE_INSTALL_PREFIX=$(PWD)/$(INSTALL_DIR)/ \
 		-DPYTHON_BINDINGS=OFF \
-		-DKDL_PYTHON_INSTALL_PATH=$(PWD)/kdl/lib/ \
-		-DBOOST_INCLUDEDIR:STRING=$(BOOST_INCLUDE_DIR) \
-		-DBOOST_LIBRARYDIR:STRING=$(BOOST_LIBRARY_DIR)
+		-DBUILD_MODELS=OFF \
+		-DBOOST:STRING=$(BOOST_INCLUDE)\
+		-DEIGEN2_INCLUDE_DIR=$(EIGEN2_INCLUDE_DIR)\
+		-DCMAKE_BUILD_TYPE="Debug"
 
-installed: wiped
-	-mkdir -p $(SOURCE_DIR)/build
-	cd $(SOURCE_DIR)/build && $(CMAKE) $(CMAKE_ARGS) ..
-	cd $(SOURCE_DIR)/build && make $(ROS_PARALLEL_JOBS) && make install
+include $(shell rospack find mk)/svn_checkout.mk
+
+installed: $(SVN_DIR)
+	-mkdir -p $(SVN_DIR)/build
+	cd $(SVN_DIR)/build && $(CMAKE) $(CMAKE_ARGS) ..
+	cd $(SVN_DIR)/build && make $(ROS_PARALLEL_JOBS) && make install
 	if [ `uname` = Darwin ]; then \
-		install_name_tool -id `rospack find kdl`/kdl/lib/liborocos-kdl.0.99.dylib kdl/lib/liborocos-kdl.0.99.dylib; \
+		install_name_tool -id `rospack find kdl`/kdl/lib/liborocos-kdl.1.0.dylib kdl/lib/liborocos-kdl.1.0.dylib; \
 	fi
 	touch installed
 
@@ -24,7 +30,9 @@ wiped: Makefile
 	touch wiped
 
 clean:
+	rm -rf $(INSTALL_DIR)
+	rm -rf $(SVN_DIR)
 	rm -rf installed
 
 wipe: 	clean
-	rm -rf $(SOURCE_DIR)/build
+	rm -rf $(SVN_DIR)/build
