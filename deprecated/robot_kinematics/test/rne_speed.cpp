@@ -10,13 +10,13 @@
  */
 
 
+#include <robot_kinematics/RevoluteChainRNESolver.h>
+#include <robot_kinematics/kdl_chain_wrapper.h>
+#include <robot_kinematics/serial_chain.h>
 #include <kdl/chain.hpp>
 #include <kdl/chainidsolver.hpp>
 #include <kdl/chainidsolver_newtoneuler.hpp>
 #include <iostream>
-#include <robot_kinematics/RevoluteChainRNESolver.h>
-#include <robot_kinematics/kdl_chain_wrapper.h>
-#include <robot_kinematics/serial_chain.h>
 
 using namespace KDL;
 using namespace std;
