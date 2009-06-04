@@ -60,19 +60,37 @@ class AnnotatedMapSnapshotter
 
 public:
 
-  bool first_time_ ;
-
   std::string fixed_frame_ ;
 
   ros::Time start_time;
+  ros::Time last_snapshot_time_;
 
   ros::NodeHandle n_;
   ros::Publisher pub_;
+
+  ros::Duration sleep_duration_;
+
+  std::string snapshot_mode_ ;//"all" from start time to now, "rolling" - from previous to now.
 
   AnnotatedMapSnapshotter() 
   {
     pub_=n_.advertise<annotated_map_msgs::TaggedPolygonalMap> ("full_map", 1) ;
     start_time = ros::Time::now();
+
+    double snapshot_timeout ;
+    ros::Node::instance()->param("~snapshot_timeout", snapshot_timeout, 5.0) ;
+    if (snapshot_timeout < 0)
+      ROS_ERROR("Parameter snapshot_timeout<0 (%f)", snapshot_timeout) ;
+    
+    sleep_duration_ = ros::Duration(snapshot_timeout);
+
+    ros::Node::instance()->param("~snapshot_mode", snapshot_mode_, std::string("rolling")) ;
+    ROS_INFO("Snapshot mode: %s", snapshot_mode_.c_str()) ;
+    if ( (snapshot_mode_ != "rolling") && (snapshot_mode_ != "all"))
+      ROS_ERROR("Snapshot mode should be \"all\" or \"rolling\"") ;
+
+    last_snapshot_time_ = start_time;
+
   }
 
   ~AnnotatedMapSnapshotter()
@@ -82,31 +100,43 @@ public:
   void makeMap()
   {
 
-    ROS_DEBUG("Printing map");
+    ROS_DEBUG("Making map");
 
-      BuildAnnotatedMap::Request req ;
-      BuildAnnotatedMap::Response resp ;
-
-      req.begin = ros::Time(0.0);//start_time;
-      req.end   = ros::Time::now();
-
-      if (!ros::service::call("build_annotated_map", req, resp))
-	{
-	  ROS_ERROR("Failed to call service to build annotated map.");
-	  return;
-	}
-      ros::Node::instance()->publish("full_map", resp.map) ;
-      ROS_DEBUG("Snapshotter::Published map size=%u", resp.map.get_polygons_size()) ;
-
+    BuildAnnotatedMap::Request req ;
+    BuildAnnotatedMap::Response resp ;
+    
+    if ( snapshot_mode_ == "all")
+      {
+	req.begin = ros::Time(0.0);//start_time;
+	req.end   = ros::Time::now();
+      }
+    else if (snapshot_mode_ == "rolling") 
+      {
+	req.begin = last_snapshot_time_;
+	req.end   = ros::Time::now();	  
+      }
+    if (!ros::service::call("build_annotated_map", req, resp))
+      {
+	ROS_ERROR("Failed to call service to build annotated map.");
+	return;
+      }
+    
+    if (snapshot_mode_ == "rolling") 
+      {
+	last_snapshot_time_ = req.end;
+      }
+    ros::Node::instance()->publish("full_map", resp.map) ;
+    ROS_DEBUG("Snapshotter::Published map size=%u", resp.map.get_polygons_size()) ;
+    
   }
 
   void run(){
     while(1)
       {
 	makeMap();
-	//Wait a duration of one second.
-	ros::Duration d = ros::Duration(1, 0);
-	d.sleep();
+
+	//Wait a duration 
+	sleep_duration_.sleep();
 	if(!n_.ok()){
 	  break;
 	}

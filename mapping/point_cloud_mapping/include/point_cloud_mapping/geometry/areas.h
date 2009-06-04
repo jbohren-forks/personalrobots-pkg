@@ -77,8 +77,10 @@ namespace cloud_geometry
       else                  return (false);
     }
 
+    bool compute2DPolygonNormal(const robot_msgs::Polygon3D &poly, std::vector<double> &normal);
     double compute2DPolygonalArea (const robot_msgs::PointCloud &points, const std::vector<double> &normal);
     double compute2DPolygonalArea (const robot_msgs::Polygon3D &polygon, const std::vector<double> &normal);
+    double compute2DPolygonalArea (const robot_msgs::Polygon3D &polygon);
     void convexHull2D (const robot_msgs::PointCloud &points, const std::vector<int> &indices, const std::vector<double> &coeff, robot_msgs::Polygon3D &hull);
     void convexHull2D (const std::vector<robot_msgs::Point32> &points, visualization_msgs::Polyline &hull);
 

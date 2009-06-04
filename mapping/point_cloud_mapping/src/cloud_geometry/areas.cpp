@@ -103,7 +103,7 @@ namespace cloud_geometry
 
       double area = 0;
       float p_i[3], p_j[3];
-
+      printf("poly size: %d\n",polygon.points.size());
       for (unsigned int i = 0; i < polygon.points.size (); i++)
       {
         p_i[0] = polygon.points[i].x; p_i[1] = polygon.points[i].y; p_i[2] = polygon.points[i].z;
@@ -111,10 +111,64 @@ namespace cloud_geometry
         p_j[0] = polygon.points[j].x; p_j[1] = polygon.points[j].y; p_j[2] = polygon.points[j].z;
 
         area += p_i[k1] * p_j[k2] - p_i[k2] * p_j[k1];
+	printf("%d %g\n",i,area);
+
       }
       area = fabs (area) / (2 * ct);
 
       return (area);
+    }
+
+
+    bool compute2DPolygonNormal(const robot_msgs::Polygon3D &poly, std::vector<double> &normal)
+    {
+      int k0,k1,k2;
+      int sz=poly.points.size();
+      if(sz<3)
+	return false;
+
+      k0=0;
+      k1=sz/3;
+      if(k1<=k0) k1=k0+1;
+      k2=(2*sz)/3;
+      if(k2<=k1) k2=k1+1;
+
+      if(k2>=sz) return false;
+
+      Eigen::Vector3d p1, p2, p3;
+
+      p1 (0) = poly.points[k0].x-poly.points[k2].x;
+      p1 (1) = poly.points[k0].y-poly.points[k2].y;
+      p1 (2) = poly.points[k0].z-poly.points[k2].z;
+      
+      p2 (0) = poly.points[k1].x-poly.points[k2].x;
+      p2 (1) = poly.points[k1].y-poly.points[k2].y;
+      p2 (2) = poly.points[k1].z-poly.points[k2].z;
+
+      p3 = p1.cross (p2);
+      p3.normalize();
+
+      normal.resize(3);
+      normal[0]=p3(0);
+      normal[1]=p3(1);
+      normal[2]=p3(2);
+      return true;
+    }
+
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /** \brief Compute the area of a 2D planar polygon patch. The normal is computed automatically.
+      * \param polygon the planar polygon
+      * \param normal the plane normal
+      */
+    double
+      compute2DPolygonalArea (const robot_msgs::Polygon3D &polygon)
+    {
+      std::vector<double> normal;
+      if(!compute2DPolygonNormal(polygon,normal))
+	return 0; //the polygon is degenerate, so its area is 0;
+      
+      return compute2DPolygonalArea (polygon,normal);
+
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////

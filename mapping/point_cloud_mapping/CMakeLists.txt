@@ -31,6 +31,8 @@ target_link_libraries (bin/planar_fit_node cloud_geometry cloud_kdtree sample_co
                       )
   rospack_add_gtest (bin/test_geometry_statistics test/cloud_geometry/test_geometry_statistics.cpp)
   rospack_add_gtest (bin/test_geometry_angles     test/cloud_geometry/test_geometry_angles.cpp)
+  rospack_add_gtest (bin/test_geometry_areas      test/cloud_geometry/test_geometry_areas.cpp)
+  target_link_libraries (bin/test_geometry_areas cloud_geometry cloud_kdtree)
 
 # ---[ Cloud I/O library
   rospack_add_library (cloud_io

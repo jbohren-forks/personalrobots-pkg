@@ -58,6 +58,8 @@
 #include <point_cloud_mapping/geometry/nearest.h>
 #include <point_cloud_mapping/geometry/intersections.h>
 
+
+
 // Cloud Octree
 #include <point_cloud_mapping/cloud_octree.h>
 
@@ -83,6 +85,9 @@ class PlanarPatchMap
     int sac_min_points_per_cell_;
     double d_min_, d_max_;
 
+    double min_polygon_area_;
+    bool filter_by_area_;
+
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     PlanarPatchMap (ros::Node& anode) : node_ (anode)
     {
@@ -90,6 +95,17 @@ class PlanarPatchMap
 
       node_.param ("~distance_min", d_min_, 0.10);
       node_.param ("~distance_max", d_max_, 10.0);
+
+      node_.param ("~min_polygon_area", min_polygon_area_, -1.0);
+      if(min_polygon_area_<0)
+	{
+	  filter_by_area_=false;
+	  ROS_INFO ("Filtering by polygon area is disabled, as ~min_polygon_area is negative or not specified.");
+	}
+      else
+	{
+	  filter_by_area_=true;
+	}
 
       string cloud_topic ("tilt_laser_cloud");
 
@@ -163,6 +179,7 @@ class PlanarPatchMap
       cloud_out.pts.resize (nr_p);
     }
 
+
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Callback
     void cloud_cb ()
@@ -207,7 +224,24 @@ class PlanarPatchMap
         total_pts += leaf->getIndices ().size ();
 
         fitSACPlane (&cloud_f_, octree_, leaf, pmap.polygons[nr_poly]);
-        nr_poly++;
+
+	bool bFilter=false;
+
+	if(filter_by_area_)
+	  {
+	    double polygon_area = cloud_geometry::areas::compute2DPolygonalArea(pmap.polygons[nr_poly]);
+	    if( polygon_area < min_polygon_area_)
+	      {
+		bFilter=true;
+	      }
+	  }
+
+	if(pmap.polygons[nr_poly].get_points_size()==0)
+	  bFilter=true;
+
+	//Increase the polygon count only for accepted polygons.
+	if(~bFilter)
+	  nr_poly++;
       }
       pmap.polygons.resize (nr_poly);
 
