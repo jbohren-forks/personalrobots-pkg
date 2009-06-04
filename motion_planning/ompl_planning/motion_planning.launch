@@ -6,5 +6,6 @@
 	      <param name="refresh_interval_collision_map" type="double" value="0.0" />
 	      <param name="refresh_interval_kinematic_state" type="double" value="0.0" />
 	      <param name="refresh_interval_base_pose" type="double" value="0.0" />
+	      <param name="kinematic_planning_status_interval" type="double" value="0.02" />
 	</node>
 </launch>

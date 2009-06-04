@@ -217,9 +217,9 @@ public:
 	m_kinematicPlanningPublisher = m_nodeHandle.advertise<motion_planning_msgs::KinematicPlanStatus>("kinematic_planning_status", 1);
 
 	// determine intervals; a value of 0 means forever
-	m_nodeHandle.param("refresh_interval_collision_map", m_intervalCollisionMap, 3.0);
-	m_nodeHandle.param("refresh_interval_kinematic_state", m_intervalKinematicState, 0.5);
-	m_nodeHandle.param("refresh_interval_base_pose", m_intervalBasePose, 0.5);
+	m_nodeHandle.param("~refresh_interval_collision_map", m_intervalCollisionMap, 3.0);
+	m_nodeHandle.param("~refresh_interval_kinematic_state", m_intervalKinematicState, 0.5);
+	m_nodeHandle.param("~refresh_interval_base_pose", m_intervalBasePose, 0.5);
     }
     
     /** Free the memory */
@@ -545,7 +545,7 @@ protected:
     void publishStatus(void)
     {
 	double seconds;
-	m_nodeHandle.param("kinematic_planning_status_interval", seconds, 0.02);
+	m_nodeHandle.param("~kinematic_planning_status_interval", seconds, 0.02);
 	ros::Duration duration(seconds);
 	ros::Duration delta(std::min(0.01, seconds));
 	
