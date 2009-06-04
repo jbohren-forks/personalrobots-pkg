@@ -139,13 +139,15 @@ void SBPLArmPlannerNode::collisionMapCallback()
     sbpl_boxes[i][4] = collision_map_.boxes[i].extents.y;
     sbpl_boxes[i][5] = collision_map_.boxes[i].extents.z;
 
-//     printf("[SBPLArmPlannerNode] obstacle %i: %.3f %.3f %.3f %.3f %.3f %.3f\n",i,sbpl_boxes[i][0],sbpl_boxes[i][1],
-//            sbpl_boxes[i][2],sbpl_boxes[i][3],sbpl_boxes[i][4],sbpl_boxes[i][5]);
+/*    printf("[SBPLArmPlannerNode] obstacle %i: %.3f %.3f %.3f %.3f %.3f %.3f\n",i,sbpl_boxes[i][0],sbpl_boxes[i][1],
+           sbpl_boxes[i][2],sbpl_boxes[i][3],sbpl_boxes[i][4],sbpl_boxes[i][5]);*/
   }
+
   //NOTE: clear map for dynamic obstacle support
   pr2_arm_env_.ClearEnv();
   pr2_arm_env_.AddObstacles(sbpl_boxes); //TODO: BEN - change AddObstacles to take in a pointer 
 
+  //get sbpl collision map and publish it
   getSBPLCollisionMap();
 }
 
@@ -160,6 +162,7 @@ void SBPLArmPlannerNode::getSBPLCollisionMap()
 //             printf("%.3f ", sbpl_cubes[i][k]);
 //         printf("\n");
 //     }
+
     sbpl_collision_map_.header.frame_id = "torso_lift_link";
     sbpl_collision_map_.header.stamp = ros::Time ();
 
@@ -181,6 +184,7 @@ void SBPLArmPlannerNode::getSBPLCollisionMap()
         sbpl_collision_map_.boxes[i].angle = 0.0;
     }
 
+//     printf("[getSBPLCollisionMap] publishing %i obstacles.\n",sbpl_cubes.size());
     publish ("sbpl_collision_map", sbpl_collision_map_);
 }
 
@@ -211,9 +215,9 @@ bool SBPLArmPlannerNode::replan(robot_msgs::JointTraj &arm_path)
       {
         arm_path.points[i].positions[p] = angles_r[p];
       }
-      ROS_INFO("step %d: %.3f %.3f %.3f %.3f %.3f %.3f %.3f\n",
-               i,arm_path.points[i].positions[0],arm_path.points[i].positions[1],arm_path.points[i].positions[2],arm_path.points[i].positions[3],
-               arm_path.points[i].positions[4],arm_path.points[i].positions[5],arm_path.points[i].positions[6]);
+//       ROS_INFO("step %d: %.3f %.3f %.3f %.3f %.3f %.3f %.3f\n",
+//                i,arm_path.points[i].positions[0],arm_path.points[i].positions[1],arm_path.points[i].positions[2],arm_path.points[i].positions[3],
+//                arm_path.points[i].positions[4],arm_path.points[i].positions[5],arm_path.points[i].positions[6]);
       arm_path.points[i].time = 0.0;
     }
   }
@@ -293,7 +297,7 @@ bool SBPLArmPlannerNode::setStart(const robot_msgs::JointTrajPoint &start)
 }
 */
 
-
+// set cartesian goals
 bool SBPLArmPlannerNode::setGoals(const std::vector<robot_msgs::Pose> &goals)
 {
   double yaw(0.0), pitch(0.0), roll(0.0);
@@ -351,6 +355,7 @@ bool SBPLArmPlannerNode::setGoals(const std::vector<robot_msgs::Pose> &goals)
   return true;
 }
 
+// set joint space goals 
 bool SBPLArmPlannerNode::setGoals(const robot_msgs::JointTrajPoint &goal_joint_positions_)
 {
 //     int num_goals = (int) goal_joint_positions_.size();
@@ -359,9 +364,8 @@ bool SBPLArmPlannerNode::setGoals(const robot_msgs::JointTrajPoint &goal_joint_p
 
 //     for(int i=0; i<num_goals; i++)
 //     {
-    int i =0;
+        int i =0;
         sbpl_goal[i] = new double[7];
-
         sbpl_goal[i][0] = goal_joint_positions_.positions[0];
         sbpl_goal[i][1] = goal_joint_positions_.positions[1];
         sbpl_goal[i][2] = goal_joint_positions_.positions[2];
@@ -393,12 +397,18 @@ bool SBPLArmPlannerNode::planPath(sbpl_arm_planner_node::PlanPathSrv::Request &r
 //   ROS_INFO("goal: %1.2f %1.2f %1.2f", req.cartesian_goals[0].position.x,req.cartesian_goals[0].position.y,req.cartesian_goals[0].position.z);
 //   ROS_INFO("goal orientation: %1.2f %1.2f %1.2f %1.2f", req.cartesian_goals[0].orientation.x, req.cartesian_goals[0].orientation.y, req.cartesian_goals[0].orientation.z, req.cartesian_goals[0].orientation.w);
 
+  printf("[planPath] start configuration: %.2f %.2f %.2f %.2f %.2f %.2f %.2f\n", req.start.positions[0],req.start.positions[1],req.start.positions[2],req.start.positions[3],req.start.positions[4],req.start.positions[5],req.start.positions[6]);
   robot_msgs::JointTraj traj;
+
   if(setStart(req.start))
   {
-//     if(setGoals(req.cartesian_goals))
-    if(setGoals(req.joint_goal))
+    ROS_INFO("[planPath] Start configuration has been set.");
+    if(setGoals(req.cartesian_goals))
     {
+        ROS_INFO("[planPath] Goal configuration has been set.");
+
+//     if(setGoals(req.joint_goal))
+//     {
 //      nodHead(3);
       if(replan(traj))
       {
