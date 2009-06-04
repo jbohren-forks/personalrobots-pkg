@@ -4,7 +4,7 @@ navfn:
   costmap: 
 #inscribed_radius: 0.387
     inscribed_radius: 0.325
-    global_frame: map
+    global_frame: /map
     robot_base_frame: base_link
     update_frequency: 5.0
     publish_frequency: 0.0
