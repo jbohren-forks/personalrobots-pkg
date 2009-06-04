@@ -22,7 +22,7 @@ def print_usage(exit_code = 0):
     sys.exit(exit_code)
 
 if __name__ == '__main__':
-    if len(sys.argv) != 2:
+    if len(sys.argv) < 2:
         print_usage()
 
     cmd = LaserTrajCmd()
