@@ -26,28 +26,9 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
- 
-// #include <boost/thread/thread.hpp>
+
 #include <boost/thread/mutex.hpp>
-// #include <boost/thread/condition.hpp>
-
-/**
-
-@mainpage
-
-Motion planner for Robotic Arm based on the SBPL. It is capable of finding the shortest path to multiple 6 DoF destinations.
-
-
-@htmlinclude manifest.html
-
-@b robarm3d will be fully integrated with ros....coming soon.
-
- **/
-
- 
-// #include <boost/numeric/ublas/matrix.hpp>
-#include <robot_kinematics/robot_kinematics.h>
-
+// #include <robot_kinematics/robot_kinematics.h>
 
 #ifndef __ENVIRONMENT_ROBARM3D_H_
 #define __ENVIRONMENT_ROBARM3D_H_
@@ -59,6 +40,22 @@ Motion planner for Robotic Arm based on the SBPL. It is capable of finding the s
 #define INVALID_NUMBER 999
 
 #define NUM_TRANS_MATRICES 360 //precomputed matrices
+
+// using namespace robot_kinematics;
+// using namespace KDL;
+
+/**
+
+@mainpage
+
+Motion planner for Robotic Arm based on the SBPL. It is capable of finding the shortest path to multiple 6 DoF destinations.
+
+
+@htmlinclude manifest.html
+
+@b sbpl_arm_planner will be fully integrated with ros....coming soon.
+
+ **/
 
 
 // coords - used to pass around lists of valid cells
@@ -78,8 +75,6 @@ typedef struct STATE3D_t
     short unsigned int x;
     short unsigned int y;
     short unsigned int z;
-//     int heapindex;
-//     struct listelement* listelem[2];
 } State3D;
 
 // robot arm physical configuration structure
@@ -145,9 +140,9 @@ typedef struct ENV_ROBARM_CONFIG
     int anglevals[NUMOFLINKS];
 
     //for kinematic library use
-  robot_kinematics::RobotKinematics pr2_kin;
-  robot_kinematics::SerialChain *left_arm;
-  KDL::JntArray *pr2_config;
+/*    RobotKinematics pr2_kin;
+    SerialChain *right_arm;
+    JntArray *pr2_config; */
 
     //coords of goal - shouldn't be here
     short unsigned int goalcoords[NUMOFLINKS];
@@ -158,12 +153,8 @@ typedef struct ENV_ROBARM_CONFIG
     double LinkGoalAngles_d[NUMOFLINKS];
 
     int arm_length;
-    //starting joint configuration
-//     double JointStartConfig_d[NUMOFLINKS];
 
-    //end effector goal orientation
-    double GoalOrientationMOE[3][3];    //eventually remove this
-
+    //goals
     short unsigned int ** EndEffGoals_c;
     double ** EndEffGoals_m;
     double ** EndEffGoalRPY;
@@ -218,16 +209,15 @@ typedef struct ENV_ROBARM_CONFIG
     double cost_per_mm;
     double cost_per_rad;
 
+    //obstacles
+    std::vector<std::vector<double> > cubes;
     std::vector<std::vector<double> > sbpl_cubes;
 
-    //a bad hack
-    bool JointSpaceGoal;
-    bool dual_heuristics;
-    double uninformative_heur_dist_m;
+    bool dual_heuristics; //can remove
     double ApplyRPYCost_m;
-    double AngularDist_Weight;
+    double AngularDist_Weight; //not used?
     double ExpCoefficient;
-    bool angular_dist_cost;
+    bool angular_dist_cost; //not used?
 
     //joint-space search
     bool PlanInJointSpace;
@@ -235,15 +225,9 @@ typedef struct ENV_ROBARM_CONFIG
     double ** JointSpaceGoals;
     int nJointSpaceGoals;
 
-    std::vector<std::vector<double> > cubes;
-
-    bool bPlanning;
-    bool bUpdatePlanningGrid;
-
+    //mutexes to protect temporary & planning maps
     boost::mutex mCopyingGrid;
     boost::mutex mPlanning;
-
-//     std::vector<std::vector<double> > bigcubes;
 
 //     std::vector < std::vector<double> > EndEffGoals_m;
 //     std::vector < std::vector<double> > EndEffGoalsRPY;
@@ -259,6 +243,7 @@ typedef struct ENVROBARMHASHENTRY
     short unsigned int endeff[3];           //end eff pos (xyz)
     short unsigned int action;              //successor action number
     double orientation[3][3];               //orientation of end effector (rotation matrix)
+    double axis_angle;
 } EnvROBARMHashEntry_t;
 
 // main structure that stores environment data used in planning
@@ -344,7 +329,7 @@ public:
 
     //called by SBPL planner
     int GetFromToHeuristic(int FromStateID, int ToStateID);
-    int GetFromToHeuristic(int FromStateID, int ToStateID, double FromRPY[3], double ToRPY[3]);
+//     int GetFromToHeuristic(int FromStateID, int ToStateID, double axis_angle);
     int GetJointSpaceHeuristic(int FromStateID, int ToStateID);
     int GetGoalHeuristic(int stateID);
     int GetStartHeuristic(int stateID);
@@ -355,7 +340,7 @@ public:
     void StateID2Angles(int stateID, double* angles_r);
     int	 SizeofCreatedEnv();
 
-    //printing 
+    //printing
     void PrintState(int stateID, bool bVerbose, FILE* fOut=NULL);
     void PrintEnv_Config(FILE* fOut);
     void PrintHeurGrid();
@@ -363,13 +348,19 @@ public:
     void OutputPlanningStats();
 
     //old function - needed when using KDL for collision detection - will eventually be removed
-    void CloseKinNode();
+    // void CloseKinNode();
 
     void AddObstacles(std::vector <std::vector <double> > obstacles);
     void getRPY(double Rot[3][3], double* roll, double* pitch, double* yaw, int solution_number);
 //     bool SetEndEffGoals(vector<vector<double> >* EndEffGoals);
     bool SetJointSpaceGoals(double** JointSpaceGoals, int num_goals);
     std::vector<std::vector<double> >* getCollisionMap();
+    int GetFromToHeuristic(int FromStateID, int ToStateID, FILE* fOut);
+
+
+
+    void getValidPositions(int num_pos, FILE* fOut);
+    double gen_rand(double min, double max);
 
 private:
 
@@ -390,6 +381,7 @@ private:
     void InitializeEnvGrid();
     bool InitializeEnvironment();
     void AddObstacleToGrid(double* obstacle, int type, char*** grid, double gridcell_m);
+    bool InitGeneral();
 
     //coordinate frame/angle functions
     void DiscretizeAngles();
@@ -418,23 +410,20 @@ private:
     void ComputeActionCosts();
     void ComputeCostPerCell();
     double getAngularEuclDist(double rpy1[3], double rpy2[3]);
+    void ComputeCostPerRadian();
 
     //output
     void PrintHeader(FILE* fOut);
-    void PrintConfiguration();
+    void PrintAbridgedConfiguration();
+    void PrintConfiguration(FILE* fOut);
     void printangles(FILE* fOut, short unsigned int* coord, bool bGoal, bool bVerbose, bool bLocal);
     void PrintSuccGoal(int SourceStateID, int costtogoal, bool bVerbose, bool bLocal /*=false*/, FILE* fOut /*=NULL*/);
-    void OutputActionCostTable();
-    void OutputActions();
+    void OutputActionCostTable(FILE* fOut);
+    void OutputActions(FILE* fOut);
     void PrintAnglesWithAction(FILE* fOut, EnvROBARMHashEntry_t* HashEntry, bool bGoal, bool bVerbose, bool bLocal);
-    void PrintAbridgedConfiguration();
 
     //compute heuristic
-    void InitializeKinNode();
-    void ComputeCostPerRadian();
     void getDistancetoGoal(int* HeurGrid, int goalx, int goaly, int goalz);
-    int GetDistToClosestGoal(short unsigned int* xyz, int *goal_num);
-    double GetDistToClosestGoal(double *xyz,int *goal_num);
     void ComputeHeuristicValues();
     void ReInitializeState3D(State3D* state);
     void InitializeState3D(State3D* state, short unsigned int x, short unsigned int y, short unsigned int z);
@@ -446,16 +435,26 @@ private:
     void Search3DwithQueue(State3D*** statespace, int* HeurGrid, short unsigned  int searchstartx, short unsigned int searchstarty, short unsigned int searchstartz);
 //     void Search3DwithHeap(State3D*** statespace, int* HeurGrid, int searchstartx, int searchstarty, int searchstartz);
 
+    // distance functions
+    int GetDistToClosestGoal(short unsigned int* xyz, int *goal_num);
+    double GetDistToClosestGoal(double *xyz,int *goal_num);
+    double GetAxisAngle(double R1[3][3], double R2[3][3], double* angle);
+
     //forward kinematics
     int ComputeEndEffectorPos(double angles[NUMOFLINKS], double endeff_m[3]);
     int ComputeEndEffectorPos(double angles[NUMOFLINKS], short unsigned int endeff[3]);
     int ComputeEndEffectorPos(double angles[NUMOFLINKS], short unsigned int endeff[3], short unsigned int wrist[3], short unsigned int elbow[3], double orientation[3][3]);
     void ComputeDHTransformations();
-    void ComputeForwardKinematics_ROS(double *angles, int f_num, double *x, double *y, double *z);
     void ComputeForwardKinematics_DH(double angles[NUMOFLINKS]);
+    void RPY2Rot(double roll, double pitch, double yaw, double Rot[3][3]);
+
+    // void InitializeKinNode();
+    void ComputeForwardKinematics_ROS(double *angles, int f_num, double *x, double *y, double *z);
 
     /* JOINT SPACE PLANNING */
     void GetJointSpaceSuccs(int SourceStateID, vector<int>* SuccIDV, vector<int>* CostV);
+
+    // void CheckParamServer();
 };
 
 #endif

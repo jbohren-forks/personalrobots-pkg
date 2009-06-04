@@ -4,9 +4,9 @@
   </description>
   <author>Benjamin Cohen/bencohen2@gmail.com, Maxim Likhachev/maximl@seas.upenn.edu</author>
   <license>BSD</license>
-    <depend package="sbpl" />
-    <depend package="robot_kinematics" />
-    <depend package="angles" />
+  <depend package="sbpl" />
+  <depend package="angles" />
+    <!--     <depend package="robot_kinematics" /> -->
   <url></url>
 
   <export>
@@ -14,4 +14,3 @@
   </export>
 
 </package>
-

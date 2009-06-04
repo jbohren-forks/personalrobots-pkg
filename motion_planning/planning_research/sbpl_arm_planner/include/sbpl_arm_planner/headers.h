@@ -26,6 +26,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
+
 #ifndef __HEADERS_H_
 #define __HEADERS_H_
 
@@ -36,6 +37,7 @@
 #include <vector>
 #include <queue>
 
+using namespace std;
 
 #include "config.h"
 
@@ -63,10 +65,12 @@
 #include "planners/ADStar/adplanner.h"
 #include <sbpl_arm_planner/utils/utils.h>
 #include <angles/angles.h>
-#include <robot_kinematics/robot_kinematics.h>
+// #include <robot_kinematics/robot_kinematics.h>
 #include <unistd.h>
-#include <ros/node.h>
+// #include <ros/node.h>
 
+// using namespace robot_kinematics;
+// using namespace KDL;
 
 #endif
 

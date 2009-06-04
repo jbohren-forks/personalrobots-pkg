@@ -2,7 +2,7 @@
 #include <sbpl_arm_planner/headers.h>
 
 #define VERBOSE 1
-#define MAX_RUNTIME 60.0
+#define MAX_RUNTIME 80.0
 
 void PrintUsage(char *argv[])
 {
@@ -91,15 +91,17 @@ int planrobarm(int argc, char *argv[])
     planner.set_initialsolution_eps(environment_robarm.GetEpsilon());
 
     //set search mode (true - settle with first solution)
-    planner.set_search_mode(true);
+    planner.set_search_mode(false);
 
+    int sol_cost;
     printf("start planning...\n");
-    bRet = planner.replan(allocated_time_secs, &solution_stateIDs_V);
+    bRet = planner.replan(allocated_time_secs, &solution_stateIDs_V,&sol_cost);
 
     printf("completed in %.4f seconds.\n", double(clock()-starttime) / CLOCKS_PER_SEC);
 
     printf("done planning\n");
     std::cout << "size of solution=" << solution_stateIDs_V.size() << std::endl;
+    std::cout << "cost of solution=" << sol_cost << std::endl;
 
     printf("\ntotal planning time is %.4f seconds.\n", double(clock()-totaltime) / CLOCKS_PER_SEC);
 
@@ -129,7 +131,8 @@ int planrobarm(int argc, char *argv[])
 //     }
 
 #if !USE_DH
-    environment_robarm.CloseKinNode();
+    //environment_robarm.CloseKinNode();
+    printf("KDL IS DISABLED\n");
 #endif
 
 #if VERBOSE
