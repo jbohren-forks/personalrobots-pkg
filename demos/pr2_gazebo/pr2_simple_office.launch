@@ -1,0 +1,36 @@
+<launch>
+  <!-- send urdf to param server -->
+  <param name="robotdesc/pr2" command="$(find xacro)/xacro.py '$(find pr2_defs)/robots/prototype1.xacro.xml'" />
+
+  <!-- start gazebo -->
+  <node pkg="gazebo" type="gazebo" args="-n $(find gazebo_robot_description)/gazebo_worlds/simple_office.world" respawn="false" output="screen">
+    <env name="LD_LIBRARY_PATH" value="$(find gazebo_plugin)/lib:$(find gazebo)/gazebo/lib:$(find Cg)/Cg/lib:$(optenv LD_LIBRARY_PATH)" />
+    <env name="GAZEBO_RESOURCE_PATH" value="$(find gazebo_robot_description):$(find gazebo)/gazebo/share/gazebo" />
+    <env name="OGRE_RESOURCE_PATH" value="$(find ogre)/ogre/lib/OGRE" />
+  </node>
+
+  <!-- push robotdesc/pr2 to factory and spawn robot in gazebo -->
+  <node pkg="gazebo_plugin" type="urdf2factory" args="robotdesc/pr2 5 5 0 0 0 0" respawn="false" output="screen" />
+
+  <!-- startup base controller -->
+  <param name="base_controller/odom_publish_rate" value="10" />
+  <node pkg="mechanism_control" type="spawner.py" args="$(find pr2_default_controllers)/base_controller.xml" output="screen"/>
+  <node pkg="mechanism_control" type="spawner.py" args="$(find pr2_default_controllers)/gazebo_head_torso_lift_controller.xml" output="screen"/>
+
+  <!-- load map -->
+  <node pkg="map_server" type="map_server" args="$(find gazebo_robot_description)/Media/materials/textures/map_blank.png 0.1" respawn="true" />
+
+  <!-- dynamic map generation -->
+  <node pkg="slam_gmapping" type="slam_gmapping" respawn="false" />
+
+  <!-- nav-stack:
+       NOTE:  not working with amcl in loop, need to fix how amcl updates dynamic map
+       NOTE:  for now, rosrun teleop_base teleop_base_keyboard to drive robot around
+        -->
+  <!--include file="$(find 2dnav_gazebo)/2dnav-stack-amcl.launch"/-->
+
+  <!-- for visualization -->
+  <node pkg="rviz" type="rviz" respawn="false" />
+
+</launch>
+
