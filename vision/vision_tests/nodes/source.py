@@ -46,7 +46,7 @@ import image_msgs.msg
 class source:
 
   def __init__(self):
-    self.pub = rospy.Publisher("/raw_1", image_msgs.msg.RawStereo)
+    self.pub = rospy.Publisher("/stereo/raw_stereo", image_msgs.msg.RawStereo)
     self.rate = 30.0
     self.duration = 10.0
 

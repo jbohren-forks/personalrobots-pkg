@@ -38,6 +38,9 @@ import sys
 import time
 import getopt
 import math
+import Queue
+import threading
+import random
 
 import rospy
 
@@ -46,24 +49,60 @@ import image_msgs.msg
 class sink:
 
   def __init__(self):
-    rospy.Subscriber('/raw_1', image_msgs.msg.RawStereo, self.handle_raw_stereo, queue_size=2, buff_size=8000000)
-    self.processing_delay = 0.5
-    self.expecting = 6
+    self.queue = Queue.Queue(1)
+    self.processing_delay = 0.33333
+    self.expecting = 27
     self.messages = []
+    t0 = threading.Thread(target=self.sink_raw_stereo, args=())
+    t0.start()
+    self.massive = " " * 25000000
+    rospy.Subscriber('/stereo/raw_stereo', image_msgs.msg.RawStereo, self.handle_raw_stereo, queue_size=2, buff_size=8000000)
 
   def handle_raw_stereo(self, msg):
+
     print "rcv msg", msg.header.seq
     assert len(msg.left_image.uint8_data.data) == (640 * 480)
     assert len(msg.right_image.uint8_data.data) == (640 * 480)
-    if len(self.messages) == 0:
-      # first message
-      self.started = time.time()
-    self.messages.append(msg.header.seq)
-    if len(self.messages) == self.expecting:
-      took = time.time() - self.started
-      print "%d messages received in %f: %s" % (len(self.messages), took, str(self.messages))
-      rospy.core.signal_shutdown('completed')
-    time.sleep(self.processing_delay)
+
+    # If something older was in the queue, remove it
+    try:
+      _ = self.queue.get(False)
+    except Queue.Empty:
+      pass
+    self.queue.put(msg)
+
+  def sink_raw_stereo(self):
+    while True:
+      msg = self.queue.get(self.queue)
+
+      if len(self.messages) == 0:
+        # first message
+        self.started = time.time()
+      self.messages.append(msg.header.seq)
+      if len(self.messages) == self.expecting:
+        took = time.time() - self.started
+        print "%d messages received in %f: %s" % (len(self.messages), took, str(self.messages))
+        delays = [ b-a for a,b in zip(self.messages, self.messages[1:])]
+        print "delays %d-%d" % (min(delays), max(delays))
+        print "%3d: %4d" % (0, self.messages[0])
+        for i in range(1, len(self.messages)):
+          print "%3d: %4d %d" % (i, self.messages[i], self.messages[i] - self.messages[i - 1])
+        break
+
+      mode = 'massive'
+
+      if mode == 'sleep':
+        time.sleep(self.processing_delay)
+      elif mode == 'cpu':
+        started = time.time()
+        while (time.time() < (started + self.processing_delay)):
+          x = math.sqrt(random.random())
+      elif mode == 'massive':
+        started = time.time()
+        while (time.time() < (started + self.processing_delay)):
+          x = self.massive[random.randrange(len(self.massive))]
+
+    rospy.core.signal_shutdown('completed')
 
 def main(args):
   s = sink()
