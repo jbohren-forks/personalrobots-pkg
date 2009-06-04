@@ -51,8 +51,8 @@ namespace move_base {
     done_half_rotation_(false), done_full_rotation_(false), escaping_(false) {
 
     //get some parameters that will be global to the move base node
-    ros_node_.param("~navfn/robot_base_frame", robot_base_frame_, std::string("base_link"));
-    ros_node_.param("~navfn/global_frame", global_frame_, std::string("map"));
+    ros_node_.param("~navfn/costmap/robot_base_frame", robot_base_frame_, std::string("base_link"));
+    ros_node_.param("~navfn/costmap/global_frame", global_frame_, std::string("/map"));
     ros_node_.param("~controller_frequency", controller_frequency_, 20.0);
     ros_node_.param("~planner_patience", planner_patience_, 5.0);
     ros_node_.param("~controller_patience", controller_patience_, 15.0);

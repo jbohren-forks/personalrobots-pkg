@@ -47,7 +47,7 @@ namespace move_base {
     tc_(NULL), controller_costmap_ros_(NULL), action_name_("move_base_local"){
 
     //get some parameters that will be global to the move base node
-    ros_node_.param("~base_local_planner/robot_base_frame", robot_base_frame_, std::string("base_link"));
+    ros_node_.param("~base_local_planner/costmap/robot_base_frame", robot_base_frame_, std::string("base_link"));
     ros_node_.param("~controller_frequency", controller_frequency_, 20.0);
 
     double controller_patience;
