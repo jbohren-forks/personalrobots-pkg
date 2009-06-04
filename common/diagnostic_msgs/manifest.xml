@@ -8,6 +8,9 @@
   <license>BSD</license>
   <review status="api cleared" notes=""/>
   <url>http://pr.willowgarage.com/wiki/diagnostic_msgs</url>
+  <export>
+    <cpp cflags="-I${prefix}/msg/cpp"/>
+  </export>
 
 </package>
 
