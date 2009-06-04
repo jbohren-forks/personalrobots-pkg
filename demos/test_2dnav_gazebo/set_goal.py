@@ -301,7 +301,7 @@ class NavStackTest(unittest.TestCase):
             #create a temp header for publishers
             h = rospy.Header();
             h.stamp = rospy.get_rostime();
-            h.frame_id = "map"
+            h.frame_id = "/map"
             # publish initial pose until /amcl_pose is same as intialpose
             if self.publish_initialpose:
               p = Point(self.initialpose[0], self.initialpose[1], 0)
