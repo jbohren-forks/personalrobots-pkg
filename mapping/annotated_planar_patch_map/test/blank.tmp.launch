@@ -1,0 +1,11 @@
+<launch>
+     <node pkg="annotated_planar_patch_map" type="annotated_map_snapshotter"  name="am_snapshotter2" respawn="false" output="screen">
+        <remap from="build_annotated_map" to="/blank_map_server/build_map" />
+        <remap from="full_map" to="/labeled_maps/blank2" />
+   
+     </node>
+
+
+
+
+</launch>

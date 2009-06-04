@@ -17,5 +17,5 @@ rospack_add_executable(annotated_map_snapshotter src/annotated_map_snapshotter.c
 rospack_add_executable(annotated_map_query_snapshotter src/annotated_map_query_snapshotter.cpp)
 
 
-
+rospack_add_executable(empty_annotated_map src/empty_annotated_map.cpp)
 

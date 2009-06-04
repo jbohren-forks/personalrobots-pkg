@@ -45,7 +45,10 @@
 // Service
 #include "annotated_planar_patch_map/BuildAnnotatedMap.h"
 #include "annotated_planar_patch_map/QueryAnnotatedMap.h"
+#include "annotated_planar_patch_map/QueryAnnotatedMap.h"
 
+#include "point_cloud_mapping/kdtree/kdtree_ann.h"
+//include "point_cloud_mapping/kdtree/kdtree_flann.h"
 #include "boost/thread.hpp"
 #include "math.h"
 
@@ -64,6 +67,8 @@ namespace annotated_planar_patch_map
  *  - \b "~max_scans" (unsigned int) - The number of scans to store in the assembler's history, until they're thrown away
  *  - \b "~fixed_frame" (string) - The frame to which received data should immeadiately be transformed to
  *  - \b "~downsampling_factor" (int) - Specifies how often to sample from a scan. 1 preserves all the data. 3 keeps only 1/3 of the points.
+ *  - \b "~rejection_radius (double) - Rejection radius. How far each patch should extend.
+
  *
  *  @section services ROS Service Calls
  *  - \b "~build_map" (BuildAnnotatedMap.srv) - Accumulates scans between begin time and
@@ -111,6 +116,8 @@ private:
   bool isQueryMatchPoly(std::string query,const annotated_map_msgs::TaggedPolygon3D poly);
   bool isQueryMatch(std::string query,std::string name);
 
+  void simplify_output(const F& map_in, F& map_out);
+
   tf::MessageNotifier<T>* scan_notifier_ ;
 
   //! \brief Stores history of scans
@@ -128,6 +135,10 @@ private:
 
   //! \brief Specify how much to downsample the data. A value of 1 preserves all the data. 3 would keep 1/3 of the data.
   unsigned int downsample_factor_ ;
+
+  //! \brief Specify the rejection radius. There won't be (m)any patches within this distance in the map. Some duplicates may come from approximate nearest neighbors.
+  double max_radius_;
+
 
 } ;
 
@@ -172,6 +183,10 @@ private:
   }
   downsample_factor_ = tmp_downsample_factor ;
   ROS_INFO("Downsample Factor: %u", downsample_factor_) ;
+
+  // ***** Set downsample_factor *****
+  ros::Node::instance()->param("~rejection_radius", max_radius_, 0.1) ;
+  ROS_INFO("Rejection radius: %f", max_radius_) ;
 
   // ***** Start Services *****
   ros::Node::instance()->advertiseService(ros::Node::instance()->getName()+"/build_map", &MapBaseAssemblerSrv<T,F>::buildMap, this, 0) ;
@@ -273,27 +288,116 @@ private:
   {
     // Note: We are assuming that channel information is consistent across multiple scans. If not, then bad things (segfaulting) will happen
     // Allocate space for the cloud
-    resp.map.set_polygons_size( req_pts ) ;
+    annotated_map_msgs::TaggedPolygonalMap map;
+    
+    map.set_polygons_size( req_pts ) ;
     //resp.cloud.header.stamp = req.end ;
 
-    resp.map.header.frame_id = fixed_frame_ ;
+    map.header.frame_id = fixed_frame_ ;
     unsigned int cloud_count = 0 ;
     for (i=start_index; i<past_end_index; i+=downsample_factor_)
     {
       for(unsigned int j=0; j<scan_hist_[i].get_polygons_size(); j+=1)
       {
-        resp.map.polygons[cloud_count] = scan_hist_[i].polygons[j] ;
+        map.polygons[cloud_count] = scan_hist_[i].polygons[j] ;
 
         cloud_count++ ;
       }
-      resp.map.header.stamp = scan_hist_[i].header.stamp;
+      map.header.stamp = scan_hist_[i].header.stamp;
     }
+
+    simplify_output(map,resp.map);
   }
   scan_hist_mutex_.unlock() ;
 
   ROS_DEBUG("Aggregate map results: Aggregated from index %u->%u. BufferSize: %u", start_index, past_end_index, scan_hist_.size()) ;
   return true ;
 }
+
+    robot_msgs::Point32
+      computeMean (const robot_msgs::Polygon3D& poly)
+    {
+      robot_msgs::Point32 mean;
+      mean.x=0;mean.y=0;mean.z=0;
+
+      unsigned int sz= poly.points.size();;
+      for (unsigned int i = 0; i < sz; i++)
+      {
+        mean.x += poly.points[i].x;
+        mean.y += poly.points[i].y;
+        mean.z += poly.points[i].z;
+      }
+      if(sz>0){
+	mean.x /= sz;
+	mean.y /= sz;
+	mean.z /= sz;
+      }
+      return mean;
+    }
+
+ template <class T,class F>
+   void MapBaseAssemblerSrv<T,F>::simplify_output(const F& map_in, F& map_out)
+   {
+     //Compute the center of mass for each planar polygon
+     unsigned int num_poly=map_in.polygons.size();
+     std::vector<bool> valid_polygons;
+     valid_polygons.resize(num_poly);
+
+     robot_msgs::PointCloud centers;
+     centers.pts.resize(num_poly);
+     centers.chan.resize(0);
+
+     for(unsigned int iPoly=0;iPoly<num_poly;iPoly++){
+       centers.pts[iPoly]=computeMean(map_in.polygons[iPoly].polygon);
+     }
+
+
+     //Build kd-tree on centers of mass
+     cloud_kdtree::KdTreeANN kd_tree(centers);
+
+     //Eliminate duplicate polygons greedily
+     int num_poly_out=0;
+     for(unsigned int iPoly=0;iPoly<num_poly;iPoly++){
+       std::vector<int> k_indices;
+       std::vector<float> k_distances;
+       kd_tree.radiusSearch(centers, iPoly, max_radius_, k_indices, k_distances);
+       bool bKeep=true;
+
+       for(unsigned int iI=0;iI<k_indices.size();iI++){
+	 if(k_indices[iI]<int(iPoly) && (k_distances[iI]<max_radius_)){
+	   bKeep=false;
+	   break;
+	 }
+       }
+       /*int first_nei=*min_element(k_indices.begin(),k_indices.end());
+
+       if(first_nei<iPoly)
+	 {
+	   bKeep=false;
+	   }*/
+       valid_polygons[iPoly]=bKeep;
+       if(bKeep)
+	 {
+	   num_poly_out++;
+	 }
+     }
+
+     unsigned int iPolyOut=0;
+     map_out.set_polygons_size(num_poly_out) ;
+     for(unsigned int iPoly=0;iPoly<num_poly;iPoly++)
+       {
+	 if(valid_polygons[iPoly])
+	   {
+	     map_out.polygons[iPolyOut]=map_in.polygons[iPoly];
+	     iPolyOut++;
+	   }
+       }
+
+     std::cout << iPolyOut << std::endl;
+
+     map_out.header=map_in.header;
+   }
+
  template <class T,class F>
    bool MapBaseAssemblerSrv<T,F>::isQueryMatchPoly(std::string query,const annotated_map_msgs::TaggedPolygon3D poly)
    {
