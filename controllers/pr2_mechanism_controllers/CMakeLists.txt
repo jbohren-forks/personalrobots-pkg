@@ -17,11 +17,6 @@ rospack_add_library( pr2_mechanism_controllers
   src/base_position_controller.cpp
   src/laser_scanner_controller.cpp
   src/laser_scanner_traj_controller.cpp 
-# These controllers are replaced by cartesian twist / pose controllers
-# They have been commented out from this cmake on May 18
-#  src/arm_position_controller.cpp
-#  src/arm_velocity_controller.cpp
-#  src/arm_dynamics_controller.cpp
   src/head_pan_tilt_controller.cpp
   src/head_servoing_controller.cpp
   src/caster_controller.cpp
@@ -40,9 +35,6 @@ rospack_link_boost(pr2_mechanism_controllers thread)
 #target_link_libraries(testBaseController pr2_mechanism_controllers)
 
 #rospack_add_executable(testRunBaseController test/test_run_base_controller.cpp)
-#target_link_libraries(testRunBaseController pr2_mechanism_controllers)
-
-#rospack_add_executable(testArmDynamicsController test/test_arm_dynamics_controller.cpp)
 #target_link_libraries(testRunBaseController pr2_mechanism_controllers)
 
 rospack_add_executable(testOdom EXCLUDE_FROM_ALL test/test_odom.cpp)
