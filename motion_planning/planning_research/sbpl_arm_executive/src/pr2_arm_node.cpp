@@ -220,7 +220,7 @@ bool PR2ArmNode::sendTrajectory(std::string group_name, const robot_msgs::JointT
       ROS_ERROR("Trajectory query failed");
       return false;
     }
-  } 
+  }
   return true;
 }
 
@@ -245,6 +245,9 @@ void PR2ArmNode::getCurrentPosition(robot_msgs::JointTrajPoint &current_joint_po
     {
       current_joint_positions.positions[i] = res_traj_query.jointpositions[i];
     }
+    ROS_INFO("current arm configuration:  %1.2f %1.2f %1.2f %1.2f %1.2f %1.2f %1.2f\n",
+             current_joint_positions.positions[0],current_joint_positions.positions[1],current_joint_positions.positions[2],current_joint_positions.positions[3],
+             current_joint_positions.positions[4],current_joint_positions.positions[5],current_joint_positions.positions[6]);
   }
   else
   {
@@ -252,7 +255,7 @@ void PR2ArmNode::getCurrentPosition(robot_msgs::JointTrajPoint &current_joint_po
   }
 }
 
-
+// plan a path to a cartesian goal(s)
 bool PR2ArmNode::planSBPLPath(const robot_msgs::JointTrajPoint &joint_start, const std::vector<robot_msgs::Pose> &pose_goals, robot_msgs::JointTraj &planned_path)
 {
   sbpl_arm_planner_node::PlanPathSrv::Request  request;
@@ -268,6 +271,14 @@ bool PR2ArmNode::planSBPLPath(const robot_msgs::JointTrajPoint &joint_start, con
   if(ros::service::call(arm_name_ + sbpl_planner_service_name_,request,response))
   {
     planned_path = response.traj;
+
+    for(int i=0; i<planned_path.points.size(); i++)
+    {
+        ROS_INFO("%.2f %.2f %.2f %.2f %.2f %.2f %.2f",
+                    planned_path.points[i].positions[0],planned_path.points[i].positions[1],planned_path.points[i].positions[2],
+                    planned_path.points[i].positions[3],planned_path.points[i].positions[4],planned_path.points[i].positions[5],
+                    planned_path.points[i].positions[6]);
+    }
     return true;
   }
   else
@@ -277,10 +288,10 @@ bool PR2ArmNode::planSBPLPath(const robot_msgs::JointTrajPoint &joint_start, con
   }
 }
 
-
+//plan a path to a joint space goal
 bool PR2ArmNode::planSBPLPath(const robot_msgs::JointTrajPoint &joint_start, const std::vector<robot_msgs::JointTrajPoint> &joint_goal, robot_msgs::JointTraj &planned_path)
 {
-    printf("[PR2ArmNode::planSBPLPath] Planning....\n");
+  ROS_INFO("[PR2ArmNode::planSBPLPath] Planning....\n");
   int num_joints = 7;
   sbpl_arm_planner_node::PlanPathSrv::Request  request;
   sbpl_arm_planner_node::PlanPathSrv::Response response;
@@ -291,7 +302,11 @@ bool PR2ArmNode::planSBPLPath(const robot_msgs::JointTrajPoint &joint_start, con
   for(int i=0; i < num_joints; i++)
     request.joint_goal.positions[i] = joint_goal[0].positions[i];
 
-  nodHead(3);
+    printf("[planSBPLPath] start configuration: %.2f %.2f %.2f %.2f %.2f %.2f %.2f\n", request.start.positions[0],request.start.positions[1],request.start.positions[2],
+        request.start.positions[3],request.start.positions[4],request.start.positions[5],request.start.positions[6]);
+        
+  ROS_INFO("Nodding head...\n");
+  nodHead(10);
   if(ros::service::call(arm_name_ + sbpl_planner_service_name_,request,response))
   {
     planned_path = response.traj;
