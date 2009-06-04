@@ -1,69 +1,70 @@
 /**
-\mainpage
-\htmlinclude manifest.html
+@mainpage
+@htmlinclude manifest.html
 
-\b jpeg Provides two nodes for encoding and decoding jpeg streams. The encode node accepts raw images, and outputs jpeg images to the "jpeg_image" topic. The decode node accepts images from the "jpeg_image" topic, and output decompressed images to the "decompressed_image" topic.
+@b jpeg Provides two nodes for encoding and decoding jpeg streams. The encode node accepts raw images, and outputs jpeg images to the "jpeg_image" topic. The decode node accepts images from the "jpeg_image" topic, and output decompressed images to the "decompressed_image" topic.
 
-\section rosapi ROS API
+@section rosapi ROS API
 
 List of nodes:
-- \b encode
-- \b decode
+- @b encode
+- @b decode
 
 <!-- START: copy for each node -->
 
 <hr>
 
-\subsection encode encode 
+@subsection encode encode 
 
 encode takes a raw image and jpeg compresses it. The resulting image is published on the "jpeg_image" topic.
 
-\subsubsection Usage
-\verbatim
+@subsubsection Usage
+@verbatim
 $ rosrun jpeg encode
-\endverbatim
+@endverbatim
 
-\par Example
+@par Example
 
-\verbatim
+@verbatim
 $ rosrun jpeg encode 
-\endverbatim
+@endverbatim
 
-\subsubsection topics ROS topics
+@subsubsection topics ROS topics
 
 Subscribes to:
-- \b "raw_image": [image_msgs/Image] A raw image to compress
+- @b "raw_image": [image_msgs/Image] A raw image to compress
 
 Publishes to:
-- \b "jpg_image": [image_msgs/CompressedImage] The compressed image
+- @b "jpg_image": [image_msgs/CompressedImage] The compressed image
 
 
-\subsubsection services ROS services
-- \b "set_jpeg_quality": [jpeg/SetQuality] this service sets the compression quality from low to high quality on a scale of (0-100). The default quality is set to 80.
+@subsubsection services ROS services
+- @b "set_jpeg_quality": [jpeg/SetQuality] this service sets the compression quality from low to high quality on a scale of (0-100). The default quality is set to 80.
 
 
-\subsection decode decode 
+@subsection decode decode 
 
 decode takes a jpeg image and  decompresses it. The resulting image is published on the "decompressed_image" topic.
 
-\subsubsection Usage
-\verbatim
+@subsubsection Usage
+@verbatim
 $ rosrun jpeg decode
-\endverbatim
+@endverbatim
 
-\par Example
+@par Example
 
-\verbatim
+@verbatim
 $ rosrun jpeg decode 
-\endverbatim
+@endverbatim
 
-\subsubsection topics ROS topics
+@subsubsection topics ROS topics
 
 Subscribes to:
-- \b "jpeg_image": [image_msgs/CompressedImage] This is the jpeg image
+- @b "jpeg_image": [image_msgs/CompressedImage] This is the jpeg image
 
 Publishes to:
-- \b "decompressed_image": [image_msgs/Image] This is the decompressed image
+- @b "decompressed_image": [image_msgs/Image] This is the decompressed image
 
 
 <!-- END: copy for each node -->
+**/
