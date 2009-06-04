@@ -45,8 +45,6 @@
 #include <angles/angles.h>
 
 #include <pr2_ik/pr2_ik_solver.h>
-#include <robot_msgs/DiagnosticMessage.h>
-#include <robot_msgs/DiagnosticStatus.h>
 
 //Pose command for the ik controller, slightly different than a regular Pose stamped 
 //since it needs an extra joint angle to specify the free parameter
