@@ -103,11 +103,13 @@ load_png_grayscale(char *fname, color_coding_t *cc, int *width, int *height, int
     }
 
   // check type
+#if 0
   if (!decoder.isGreyscaleType())
     {
       std::cout << "[OST] error: not a greyscale image" << endl;
       return NULL;
     }
+#endif
 
   // no color conversion
   LodePNG_DecodeSettings st = decoder.getSettings();
