@@ -27,6 +27,7 @@ set(_srcs
     src/joint_blind_calibration_controller.cpp
     src/joint_chain_constraint_controller.cpp
     src/trigger_controller.cpp
+    src/probe.cpp
 )
 
 # For some reason, the endeffector_constraint_controller won't build on OSX
