@@ -1,0 +1,3 @@
+<launch>
+<node pkg="orocos_ros_integration" type="rosdeployer" args="--start $(find orocos_ros_integration)/example.xml --path $(find orocos_ros_integration) -ldebug" output="screen"/>
+</launch>

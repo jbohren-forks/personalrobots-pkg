@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE properties SYSTEM "cpf.dtd">
+<properties>
+  <simple name="Import" type="string"><value>/u/meeussen/ros/ros-pkg/rtt_controller/lib/librtt_controller</value></simple>
+  <simple name="Import" type="string"><value>/u/meeussen/ros/ros-pkg/orocos_ros_integration/lib/liborocos_ros_integration</value></simple>
+  <simple name="Import" type="string"><value>/u/meeussen/ros/ros-pkg/3rdparty/ocl/ocl/lib/liborocos-naxes</value></simple>
+
+ <struct name="pr2_etherCAT" type="pr2_etherCAT">
+    <struct name="Activity" type="PeriodicActivity">
+      <simple name="Period" type="double"><value>0.001</value></simple>
+      <simple name="Priority" type="short"><value>0</value></simple>
+      <simple name="Scheduler" type="string"><value>ORO_SCHED_RT</value></simple>
+    </struct>
+    <simple name="AutoConf" type="boolean"><value>1</value></simple>
+    <simple name="AutoStart" type="boolean"><value>1</value></simple>
+    <simple name="UpdateProperties" type="string"><value>/u/meeussen/ros/ros-pkg/rtt_controller/pr2_etherCAT-options.xml</value></simple>
+    <simple name="CreateRosNode" type="boolean"><value>1</value></simple>
+
+    <struct name="Ports" type="PropertyBag">
+      <simple name="joint_efforts" type="string"><value>JointEffortsPort</value></simple>
+      <simple name="joint_positions" type="string"><value>JointPositionsPort</value></simple>
+    </struct>
+
+  </struct>
+
+
+  <struct name="nAxesControllerPosVel" type="OCL::nAxesControllerPosVel">
+    <struct name="Activity" type="PeriodicActivity">
+      <simple name="Period" type="double"><value>0.01</value></simple>
+      <simple name="Priority" type="short"><value>0</value></simple>
+      <simple name="Scheduler" type="string"><value>ORO_SCHED_RT</value></simple>
+    </struct>
+    <simple name="AutoConf" type="boolean"><value>1</value></simple>
+    <simple name="AutoStart" type="boolean"><value>1</value></simple>
+    <simple name="PropertyFile" type="string"><value>cpf/nAxesControllerPosVel.cpf</value></simple>
+    <simple name="CreateRosNode" type="boolean"><value>1</value></simple>
+    
+    <struct name="Peers" type="PropertyBag">
+      <simple type="string"><value>nAxesGeneratorPos</value></simple>
+      <simple type="string"><value>pr2_etherCAT</value></simple>
+    </struct>
+
+    <simple name="AutoConnect" type="boolean"><value>1</value></simple>
+    <simple name="CreateRosNode" type="boolean"><value>1</value></simple>
+
+    <struct name="Ports" type="PropertyBag">
+      <simple name="nAxesOutputVelocity" type="string"><value>JointEffortsPort</value></simple>
+      <simple name="nAxesSensorPosition" type="string"><value>JointPositionsPort</value></simple>
+    </struct>
+  </struct>
+
+
+
+  <struct name="nAxesGeneratorPos" type="OCL::nAxesGeneratorPos">
+    <struct name="Activity" type="PeriodicActivity">
+      <simple name="Period" type="double"><value>0.01</value></simple>
+      <simple name="Priority" type="short"><value>0</value></simple>
+      <simple name="Scheduler" type="string"><value>ORO_SCHED_RT</value></simple>
+    </struct>
+    <simple name="AutoConf" type="boolean"><value>1</value></simple>
+    <simple name="AutoStart" type="boolean"><value>1</value></simple>
+    <simple name="PropertyFile" type="string"><value>cpf/nAxesGeneratorPos.cpf</value></simple>
+    
+    <simple name="AutoConnect" type="boolean"><value>1</value></simple>
+    <simple name="CreateRosNode" type="boolean"><value>1</value></simple>
+  </struct>
+  
+  
+  
+</properties>

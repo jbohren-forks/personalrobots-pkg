@@ -1,0 +1,19 @@
+<package>
+  <description brief="orocos_ros_integration">
+
+     orocos_ros_integration
+
+  </description>
+  <author>Ruben Smits/ ruben.smits@mech.kuleuven.be</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://pr.willowgarage.com/wiki/orocos_ros_integration</url>
+
+  <depend package="roscpp" />
+  <depend package="rtt" />
+  <depend package="ocl" />
+  <depend package="std_msgs" />
+  
+</package>
+
+
