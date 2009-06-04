@@ -1,0 +1,76 @@
+## This file should be loaded under /collision
+
+
+## links for which collision checking with the environment should be performed
+collision_links:
+  base_link
+  torso_lift_link
+  head_pan_link
+  head_tilt_link
+  r_shoulder_pan_link
+  r_shoulder_lift_link
+  r_upper_arm_roll_link
+  r_upper_arm_link
+  r_elbow_flex_link
+  r_forearm_roll_link
+  r_forearm_link
+  r_wrist_flex_link
+  r_wrist_roll_link
+  r_gripper_palm_link
+  r_gripper_l_finger_link
+  r_gripper_r_finger_link
+  r_gripper_l_finger_tip_link
+  r_gripper_r_finger_tip_link
+
+## self collision is performed between groups of links, usually pairs  
+self_collision_groups: scg1 scg2 scg3 scg4 scg5 scg6
+
+scg1:
+  r_forearm_link
+  base_link
+
+scg2:
+  r_gripper_palm_link
+  base_link
+
+scg3:
+  r_gripper_l_finger_link
+  base_link
+
+scg4:
+  r_gripper_r_finger_link
+  base_link
+
+scg5:
+  r_gripper_l_finger_tip_link
+  base_link
+
+scg6:
+  r_gripper_r_finger_tip_link
+  base_link
+
+
+## list of links that the robot can see with its sensors (used to remove 
+## parts of the robot from scanned data)
+self_see:
+  l_upper_arm_roll_link
+  r_upper_arm_roll_link
+  l_elbow_flex_link
+  r_elbow_flex_link
+  l_forearm_roll_link
+  r_forearm_roll_link
+  l_wrist_flex_link
+  r_wrist_flex_link
+  l_wrist_roll_link
+  r_wrist_roll_link
+  l_gripper_l_finger_link
+  l_gripper_r_finger_link
+  r_gripper_l_finger_link
+  r_gripper_r_finger_link
+  r_shoulder_pan_link
+  r_shoulder_lift_link
+  l_shoulder_pan_link
+  l_shoulder_lift_link
+  torso_lift_link
+  base_link
+  

@@ -1,0 +1,74 @@
+## This file should be loaded under /planning
+
+## the list of groups for which motion planning can be performed
+group_list:
+  base
+  left_arm
+  right_arm
+  arms
+  base_left_arm
+  base_right_arm
+  base_arms
+
+## the definition of each group
+groups:
+
+  base:
+    links:
+      base_link
+    planner_configs:
+      RRTConfig1 SBLConfig1
+
+  left_arm:
+    links:
+      l_shoulder_pan_link
+      l_shoulder_lift_link
+      l_upper_arm_roll_link
+      l_upper_arm_link
+      l_elbow_flex_link
+      l_forearm_roll_link
+      l_forearm_link
+      l_wrist_flex_link
+      l_wrist_roll_link
+    planner_configs:
+      RRTConfig2 SBLConfig2
+
+  right_arm:
+    links:
+      r_shoulder_pan_link
+      r_shoulder_lift_link
+      r_upper_arm_roll_link
+      r_upper_arm_link
+      r_elbow_flex_link
+      r_forearm_roll_link
+      r_forearm_link
+      r_wrist_flex_link
+      r_wrist_roll_link
+    planner_configs:
+      RRTConfig2 SBLConfig2
+      
+## the planner configurations; each config must have a type, which specifies
+## the planner to be used; other parameters can be specified as well
+
+planner_configs:
+  
+  RRTConfig1:
+    type: RRT
+    range: 0.75
+
+  SBLConfig1:
+    type: SBL
+    projection: 0 1
+    celldim: 1 1
+    range: 0.5
+    
+  RRTConfig2:
+    type: RRT
+    range: 0.75
+
+  SBLConfig2:
+    type: SBL
+    projection: 5 6
+    celldim: 0.1 0.1
+  
+    
