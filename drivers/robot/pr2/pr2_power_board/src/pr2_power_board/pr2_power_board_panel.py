@@ -159,7 +159,7 @@ class PowerBoardPanel(wx.Panel):
         for message in self._messages:
             #print message
             for status in message.status:
-                if( (self.myList.FindString( status.name ) == wx.NOT_FOUND) ):
+                if( (status.name.startswith("Power board") & (self.myList.FindString( status.name ) == wx.NOT_FOUND)) ):
                     self.addBoard( status )
 
                 if (status.name == self.currentBoard):
