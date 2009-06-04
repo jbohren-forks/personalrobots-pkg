@@ -43,12 +43,12 @@
 
 #include <boost/thread.hpp>
 
-#include "diagnostic_updater/diagnostic_updater.h"
-
 using namespace std;
 
 class ImageProc
 {
+  ros::Node &node_;
+  
   bool do_colorize_;
   bool do_rectify_;
 
@@ -59,19 +59,13 @@ class ImageProc
 
   image_msgs::Image img_;
 
-  //DiagnosticUpdater<ImageProc> diagnostic_;
-  int count_;
-  double desired_freq_;
-
   std::string cam_name_;
-
-  ros::Node &node_;
 
 public:
 
   cam::ImageData img_data_;
 
-  ImageProc(ros::Node &node) : have_cam_info_(false), count_(0), node_(node)
+  ImageProc(ros::Node &node) : node_(node), have_cam_info_(false)
   {
     cam_name_ = node_.mapName("camera") + "/";
     node_.param(cam_name_ + "do_colorize", do_colorize_, false);
@@ -106,8 +100,6 @@ public:
       img_data_.doRectify();
 
     publishImages();
-
-    count_++;
   }
 
   void publishImages()
@@ -160,7 +152,6 @@ public:
       node_.publish(cam_name_ + "image_rect_color", img_);
     }
   }
-
 
   void advertiseImages()
   {
