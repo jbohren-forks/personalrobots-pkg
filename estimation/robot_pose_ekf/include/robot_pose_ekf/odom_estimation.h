@@ -31,6 +31,8 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
+/* Author: Wim Meeussen */
+
 #ifndef __ODOM_ESTIMATION__
 #define __ODOM_ESTIMATION__
 

@@ -32,6 +32,8 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
+/* Author: Wim Meeussen */
+
 #include <robot_pose_ekf/odom_estimation.h>
 
 using namespace MatrixWrapper;
