@@ -14,6 +14,12 @@
     <param name="do_rectify" type="bool" value="True"/>
     <param name="do_stereo" type="bool" value="false"/>
     <param name="do_calc_points" type="bool" value="false"/>
+
+    <param name="num_disp" type="int" value=80/>
+    <param name="texture_thresh" type="int" value=4/>
+    <param name="unique_thresh" type="int" value=25/>
+    <param name="corr_size" type="int" value=11/>
+
   </group>
   <node pkg="dcam" type="stereodcam" respawn="false"/>
   <node pkg="stereo_image_proc" type="stereoproc" respawn="false"/>
