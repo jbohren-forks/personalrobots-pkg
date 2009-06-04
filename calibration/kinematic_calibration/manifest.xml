@@ -8,7 +8,6 @@
   <depend package="robot_msgs" />
   <depend package="mocap_msgs" />
   <depend package="std_msgs" />
-  <depend package="robot_kinematics" />
   <depend package="topic_synchronizer" />
   <depend package="image_msgs" />
   <depend package="newmat10"/>

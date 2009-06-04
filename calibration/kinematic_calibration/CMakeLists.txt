@@ -14,9 +14,11 @@ rospack_add_library(kinematic_calibration src/link_param_jacobian.cpp
 
 rospack_add_boost_directories()
 
-rospack_add_executable(arm_phasespace_grabber src/arm_phasespace_grabber.cpp)
-target_link_libraries(arm_phasespace_grabber kinematic_calibration)
-rospack_link_boost(arm_phasespace_grabber thread)
+# broken with the removal of robot_kinematics this uses the deprecated kdl chain wrapper from that package
+# Tully 2009-06-04
+#rospack_add_executable(arm_phasespace_grabber src/arm_phasespace_grabber.cpp)
+#target_link_libraries(arm_phasespace_grabber kinematic_calibration)
+#rospack_link_boost(arm_phasespace_grabber thread)
 
 #rospack_add_executable(sensor_kinematics_grabber src/sensor_kinematics_grabber.cpp)
 #target_link_libraries(sensor_kinematics_grabber kinematic_calibration)
