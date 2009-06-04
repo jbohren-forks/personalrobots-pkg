@@ -55,12 +55,17 @@ int frameCount = 0;
 // Image callback
 void imageCB(const sensor_msgs::CompressedImageConstPtr &image)
 {
-  int depth = 3;
+  int depth;
   unsigned char *jpegBuffer = NULL;
   int jpegBufferSize = 0;
 
   uint32_t width;
   uint32_t height;
+
+  if (image->encoding == "mono")
+    depth = 1;
+  else
+    depth = 3;
 
   // Make sure that the message has the right format
   if (image->format != "jpeg")
@@ -92,7 +97,8 @@ void imageCB(const sensor_msgs::CompressedImageConstPtr &image)
 
   // Copy raw image data into the message
   fillImage(decompressedImageMessage, "decompressed_image",
-            height, width, depth, "rgb", "uint8", rawBuffer);
+            height, width, depth, image->encoding != "mono" ? "bgr" : "mono", 
+            "uint8", rawBuffer);
 
   // Publish the decompressed image
   rawPub.publish(decompressedImageMessage);

@@ -66,9 +66,18 @@ void imageCB(const image_msgs::ImageConstPtr &image)
   IplImage *ipl;
   unsigned char *rawBuffer = NULL;
   int rawBufferSize = 0;
-  int depth = 3;
+  int depth;
 
-  g_img_bridge.fromImage(*image, "rgb");
+  g_img_bridge.fromImage(*image, image->encoding);
+
+  if (image->encoding == "mono")
+  {
+    depth = 1;
+  }
+  else
+  {
+    depth = 3;
+  }
 
   // Get the raw image attributes
   ipl = g_img_bridge.toIpl();
@@ -94,7 +103,7 @@ void imageCB(const image_msgs::ImageConstPtr &image)
   compressedSize = jpeg_compress(jpegBuffer, rawBuffer, width, height, depth, 
                                  jpegBufferSize, jpegQuality );
 
-  compressedImageMessage.encoding = "rgb";
+  compressedImageMessage.encoding = image->encoding;
 
   // Create the output message
   compressedImageMessage.uint8_data.layout.dim.resize(2);
