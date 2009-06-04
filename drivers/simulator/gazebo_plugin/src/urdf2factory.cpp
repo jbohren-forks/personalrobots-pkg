@@ -75,7 +75,7 @@ int main(int argc, char **argv)
     double initial_rx = 0;
     double initial_ry = 0;
     double initial_rz = 0;
-    if (argc == 8)
+    if (argc >= 8)
     {
         initial_rx = atof(argv[5]);
         initial_ry = atof(argv[6]);
