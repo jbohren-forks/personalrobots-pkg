@@ -1,0 +1,379 @@
+Index: deployment/DeploymentComponent.cpp
+===================================================================
+--- deployment/DeploymentComponent.cpp	(revision 30170)
++++ deployment/DeploymentComponent.cpp	(working copy)
+@@ -224,6 +224,7 @@
+         valid_names.insert("Activity");
+         valid_names.insert("Master");
+         valid_names.insert("Properties");
++        valid_names.insert("CreateRosNode");
+ 
+     }
+ 
+@@ -240,7 +241,9 @@
+         return true;
+     }
+ 
+-    bool DeploymentComponent::componentLoaded(TaskContext* c) { return true; }
++    bool DeploymentComponent::componentLoaded(TaskContext* c) { 
++        log(Debug)<<"Component: "<<c->getName()<<" loaded"<<endlog();
++        return true; }
+ 
+     DeploymentComponent::~DeploymentComponent()
+     {
+@@ -580,6 +583,16 @@
+                                 }
+                                 continue;
+                             }
++                            if ( (*optit)->getName() == "CreateRosNode" ) {
++                                Property<bool> ps = comp.rvalue().getProperty<bool>("CreateRosNode");
++                                if (!ps.ready()) {
++                                    log(Error) << "CreateRosNode must be of type <boolean>" << endlog();
++                                    valid = false;
++                                } else
++                                    comps[comp.getName()].rosnode = ps.get();
++                                continue;
++                            }
++
+                         }
+ 
+                         // Check if we know or are this component.
+Index: deployment/DeploymentComponent.hpp
+===================================================================
+--- deployment/DeploymentComponent.hpp	(revision 30170)
++++ deployment/DeploymentComponent.hpp	(working copy)
+@@ -86,8 +86,8 @@
+                   autostart(false), autoconf(false),
+                   autoconnect(false),  autosave(false),
+                   proxy(false), server(false),
+-                  use_naming(true),type(""),
+-                  configfile("")
++                  use_naming(true),rosnode(false)
++                  ,type(""),configfile("")
+             {}
+             /**
+              * The component instance. This is always a valid pointer.
+@@ -106,6 +106,7 @@
+             bool loaded;
+             bool autostart, autoconf, autoconnect, autosave;
+             bool proxy, server, use_naming;
++            bool rosnode;
+             std::string type, configfile;
+         };
+ 
+Index: hardware/robotsimulation/nAxesVelocityController.cpp
+===================================================================
+--- hardware/robotsimulation/nAxesVelocityController.cpp	(revision 30170)
++++ hardware/robotsimulation/nAxesVelocityController.cpp	(working copy)
+@@ -80,18 +80,24 @@
+             log(Error)<<D_driveValues.getName()<<" not ready"<<endlog();
+             return false;
+         }
++        /*
+         if(D_driveValues.Get().size()!=naxes){
+             Logger::In in(this->getName().data());
+             log(Error)<<"Size of "<<D_driveValues.getName()<<": "<<D_driveValues.Get().size()<<" != " << naxes<<endlog();
+             return false;
+         }
+-
++        */
+         return true;
+     }
+ 
+     void nAxesVelocityController::updateHook()
+     {
+         D_driveValues.Get(driveValues);
++        if(driveValues.size()!=naxes){
++            this->warning();
++            log(Warning)<<"Size of "<<D_driveValues.getName()<<": "<<driveValues.size()<<" != " << naxes<<endlog();
++            return;
++        }
+         for (unsigned int i=0;i<naxes;i++){
+             positionValues[i]=simulation_axes[i]->getSensor("Position")->readSensor();
+             if(simulation_axes[i]->isDriven())
+Index: hardware/robotsimulation/nAxesVelocityController.hpp
+===================================================================
+--- hardware/robotsimulation/nAxesVelocityController.hpp	(revision 30170)
++++ hardware/robotsimulation/nAxesVelocityController.hpp	(working copy)
+@@ -70,8 +70,8 @@
+         Method<bool(void)> M_unlockAllAxes;
+         Method<bool(void)> M_lockAllAxes;
+ 
+-        RTT::DataPort<std::vector<double> > D_driveValues;
+-        RTT::DataPort<std::vector<double> > D_positionValues;
++        RTT::ReadDataPort<std::vector<double> > D_driveValues;
++        RTT::WriteDataPort<std::vector<double> > D_positionValues;
+ 
+         RTT::Property<std::vector<double> > P_initialPositions;
+         RTT::Property<unsigned int> P_naxes;
+Index: motion_control/naxes/nAxesGeneratorPos.cpp
+===================================================================
+--- motion_control/naxes/nAxesGeneratorPos.cpp	(revision 30170)
++++ motion_control/naxes/nAxesGeneratorPos.cpp	(working copy)
+@@ -114,13 +114,15 @@
+             log(Error)<<p_m_port.getName()<<" not ready"<<endlog();
+             return false;
+         }
++
+         if(p_m_port.Get().size()!=num_axes){
+             Logger::In in(this->getName().data());
+             log(Error)<<"Size of "<<p_m_port.getName()<<": "<<p_m_port.Get().size()<<" != " << num_axes<<endlog();
+             return false;
+         }
+-	p_d = p_m_port.Get();
+-	p_d_port.Set(p_d);
++
++        p_d = p_m_port.Get();
++        p_d_port.Set(p_d);
+         is_moving = false;
+ 
+         return true;
+Index: motion_control/naxes/nAxesControllerPosVel.cpp
+===================================================================
+--- motion_control/naxes/nAxesControllerPosVel.cpp	(revision 30170)
++++ motion_control/naxes/nAxesControllerPosVel.cpp	(working copy)
+@@ -35,8 +35,10 @@
+           p_meas_port("nAxesSensorPosition"),
+           p_desi_port("nAxesDesiredPosition"),
+           v_desi_port("nAxesDesiredVelocity"),
+-          v_out_port("nAxesOutputVelocity"),
+-          gain_prop("K", "Proportional Gain"),
++          v_meas_port("nAxesSensorVelocity"),
++          v_out_port("nAxesOutputEffort"),
++          gain_pos_prop("Kp", "Proportional Pos Gain"),
++	  gain_vel_prop("Kv", "Proportional Vel Gain"),
+           num_axes_prop("num_axes","Number of Axes")
+     {
+         //Creating TaskContext
+@@ -45,11 +47,13 @@
+         this->ports()->addPort(&p_meas_port);
+         this->ports()->addPort(&p_desi_port);
+         this->ports()->addPort(&v_desi_port);
++        this->ports()->addPort(&v_meas_port);
+         this->ports()->addPort(&v_out_port);
+ 
+         //Adding properties
+         this->properties()->addProperty(&num_axes_prop);
+-        this->properties()->addProperty(&gain_prop);
++        this->properties()->addProperty(&gain_pos_prop);
++        this->properties()->addProperty(&gain_vel_prop);
+ 
+     }
+ 
+@@ -57,20 +61,29 @@
+ 
+     bool nAxesControllerPosVel::configureHook(){
+         num_axes=num_axes_prop.rvalue();
+-        if(gain_prop.value().size()!=num_axes){
++        if(gain_pos_prop.value().size()!=num_axes){
+             Logger::In in(this->getName().data());
+-            log(Error)<<"Size of "<<gain_prop.getName()
++            log(Error)<<"Size of "<<gain_pos_prop.getName()
+                       <<" does not match "<<num_axes_prop.getName()
+                       <<endlog();
+             return false;
+         }
++        gain_pos=gain_pos_prop.rvalue();
+ 
+-        gain=gain_prop.rvalue();
++        if(gain_vel_prop.value().size()!=num_axes){
++            Logger::In in(this->getName().data());
++            log(Error)<<"Size of "<<gain_vel_prop.getName()
++                      <<" does not match "<<num_axes_prop.getName()
++                      <<endlog();
++            return false;
++        }
++        gain_vel=gain_vel_prop.rvalue();
+ 
+         //Resizing all containers to correct size
+         p_meas.resize(num_axes);
+         p_desi.resize(num_axes);
+         v_desi.resize(num_axes);
++        v_meas.resize(num_axes);
+ 
+         //Initialise output ports:
+         v_out.assign(num_axes,0);
+@@ -97,6 +110,11 @@
+             log(Error)<<v_desi_port.getName()<<" not ready"<<endlog();
+             return false;
+         }
++        if(!v_meas_port.ready()){
++            Logger::In in(this->getName().data());
++            log(Error)<<v_meas_port.getName()<<" not ready"<<endlog();
++            return false;
++        }
+         if(p_meas_port.Get().size()!=num_axes){
+             Logger::In in(this->getName().data());
+             log(Error)<<"Size of "<<p_meas_port.getName()<<": "<<p_meas_port.Get().size()<<" != " << num_axes<<endlog();
+@@ -112,6 +130,11 @@
+             log(Error)<<"Size of "<<v_desi_port.getName()<<": "<<v_desi_port.Get().size()<<" != " << num_axes<<endlog();
+             return false;
+         }
++        if(v_meas_port.Get().size()!=num_axes){
++            Logger::In in(this->getName().data());
++            log(Error)<<"Size of "<<v_meas_port.getName()<<": "<<v_meas_port.Get().size()<<" != " << num_axes<<endlog();
++            return false;
++        }
+ 
+         return true;
+     }
+@@ -121,9 +144,11 @@
+         p_meas = p_meas_port.Get();
+         p_desi = p_desi_port.Get();
+         v_desi = v_desi_port.Get();
++        v_meas = v_meas_port.Get();
+ 
+         for(unsigned int i=0; i<num_axes; i++)
+-            v_out[i] = (gain[i] * (p_desi[i] - p_meas[i])) + v_desi[i];
++	  //v_out[i] = (gain[i] * (p_desi[i] - p_meas[i])) + v_desi[i];
++	  v_out[i] = gain_vel[i] * (v_desi[i] + gain_pos[i] * (p_desi[i] - p_meas[i]) - v_meas[i]);
+ 
+         v_out_port.Set(v_out);
+     }
+Index: motion_control/naxes/nAxesControllerPosVel.hpp
+===================================================================
+--- motion_control/naxes/nAxesControllerPosVel.hpp	(revision 30170)
++++ motion_control/naxes/nAxesControllerPosVel.hpp	(working copy)
+@@ -82,7 +82,7 @@
+     private:
+         unsigned int                              num_axes;
+ 
+-        std::vector<double>                       p_meas, p_desi, v_desi, v_out, gain;
++        std::vector<double>                       p_meas, p_desi, v_desi, v_meas, v_out, gain_pos, gain_vel;
+     protected:
+         /// The measured positions
+         RTT::ReadDataPort< std::vector<double> >  p_meas_port;
+@@ -90,10 +90,12 @@
+         RTT::ReadDataPort< std::vector<double> >  p_desi_port;
+         /// The desired velocities
+         RTT::ReadDataPort< std::vector<double> >  v_desi_port;
++        /// The measured velocities
++        RTT::ReadDataPort< std::vector<double> >  v_meas_port;
+         /// The calculated output velocities
+         RTT::WriteDataPort< std::vector<double> > v_out_port;
+         /// The control gain value for each axis.
+-        RTT::Property< std::vector<double> >      gain_prop;
++        RTT::Property< std::vector<double> >      gain_pos_prop, gain_vel_prop;
+         /// The number of axes to configure the components with.
+         RTT::Property< unsigned int > num_axes_prop;
+     }; // class
+Index: config/check_depend.cmake
+===================================================================
+--- config/check_depend.cmake	(revision 30170)
++++ config/check_depend.cmake	(working copy)
+@@ -96,9 +96,10 @@
+     MESSAGE("-- Looking for boost::program_options - found")
+ 
+ 	# now find the location of the associated library
+-    FIND_LIBRARY(BOOST_OPTIONS_LIBRARY boost_program_options NAMES boost_program_options boost_program_options-mt)
++    FIND_LIBRARY(BOOST_OPTIONS_LIBRARY NAMES boost_program_options boost_program_options-mt PATHS ${BOOST_OPTIONS_LIB_DIR})
+ 	IF ( BOOST_OPTIONS_LIBRARY )
+       MESSAGE("-- Looking for boost::program_options library - found")
++      MESSAGE("${BOOST_OPTIONS_LIBRARY}")
+ 	  GET_FILENAME_COMPONENT(BOOST_OPTIONS_LIBRARY_DIR ${BOOST_OPTIONS_LIBRARY} PATH)
+ 	  LINK_DIRECTORIES(${BOOST_OPTIONS_LIBRARY_DIR})
+ 	ELSE ( BOOST_OPTIONS_LIBRARY )
+Index: bin/deployer-funcs.cpp
+===================================================================
+--- bin/deployer-funcs.cpp	(revision 30170)
++++ bin/deployer-funcs.cpp	(working copy)
+@@ -53,6 +53,7 @@
+                          char**                     argv,
+                          std::string&               script,
+                          std::string&               name,
++                         std::string&               path,
+                          po::variables_map&         vm,
+                          po::options_description*   otherOptions)
+ {
+@@ -75,6 +76,9 @@
+ 		("DeployerName",
+ 		 po::value<std::string>(&name),
+ 		 "Name of deployer component (the --DeployerName flag is optional)")
++		("path",
++		 po::value<std::string>(&path),
++		 "path to the component libraries")
+ 		;
+ 	pos.add("DeployerName", 1);
+ 
+Index: bin/deployer.cpp
+===================================================================
+--- bin/deployer.cpp	(revision 30170)
++++ bin/deployer.cpp	(working copy)
+@@ -38,16 +38,18 @@
+ {
+ 	std::string             script;
+ 	std::string             name("Deployer");
++    std::string             path;
+     po::variables_map       vm;
+ 
+-	int rc = OCL::deployerParseCmdLine(argc, argv, script, name, vm);
++	int rc = OCL::deployerParseCmdLine(argc, argv, script, name, path,vm);
+ 	if (0 != rc)
+ 	{
+ 		return rc;
+ 	}
+ 
+     OCL::DeploymentComponent dc( name );
+-
++    dc.properties()->getProperty<std::string>("ComponentPath")->set(path);
++    
+     if ( !script.empty() )
+         {
+             dc.kickStart( script );
+Index: bin/deployer-funcs.hpp
+===================================================================
+--- bin/deployer-funcs.hpp	(revision 30170)
++++ bin/deployer-funcs.hpp	(working copy)
+@@ -51,6 +51,7 @@
+ 	char**                                          argv,
+ 	std::string&                                    script,
+ 	std::string&                                    name,
++	std::string&                                    path,
+     boost::program_options::variables_map&          vm,
+ 	boost::program_options::options_description*    otherOptions=NULL);
+ 
+Index: bin/deployer-corba.cpp
+===================================================================
+--- bin/deployer-corba.cpp	(revision 30170)
++++ bin/deployer-corba.cpp	(working copy)
+@@ -45,6 +45,7 @@
+ {
+ 	std::string                 script;
+ 	std::string                 name("Deployer");
++	std::string                 path;
+ 	po::variables_map           vm;
+ 	po::options_description     taoOptions("Additional options can also be passed to TAO");
+ 	// we don't actually list any options for TAO ...
+@@ -63,7 +64,7 @@
+     // if TAO options not found then process all command line options,
+     // otherwise process all options up to but not including "--"
+ 	int rc = OCL::deployerParseCmdLine(!found ? argc : taoIndex, argv,
+-                                       script, name, vm, &taoOptions);
++                                       script, name, path,vm, &taoOptions);
+ 	if (0 != rc)
+ 	{
+ 		return rc;
+@@ -76,7 +77,8 @@
+         ControlTaskServer::InitOrb( argc - taoIndex, &argv[taoIndex] );
+ 
+         OCL::CorbaDeploymentComponent dc( name );
+-
++        dc.properties()->getProperty<std::string>("ComponentPath")->set(path);
++        
+         ControlTaskServer::Create( &dc );
+ 
+         // The orb thread accepts incomming CORBA calls.
+Index: bin/CMakeLists.txt
+===================================================================
+--- bin/CMakeLists.txt	(revision 30170)
++++ bin/CMakeLists.txt	(working copy)
+@@ -5,6 +5,9 @@
+     ADD_EXECUTABLE( deployer-${OROCOS_TARGET} deployer.cpp deployer-funcs.cpp )
+     PROGRAM_ADD_DEPS( deployer-${OROCOS_TARGET} orocos-taskbrowser orocos-deployment )
+     TARGET_LINK_LIBRARIES( deployer-${OROCOS_TARGET} ${OROCOS_RTT_LIBS} ${BOOST_OPTIONS_LIBRARY})
++    SET_TARGET_PROPERTIES( deployer-${OROCOS_TARGET} PROPERTIES INSTALL_RPATH ${CMAKE_INSTALL_PREFIX}/lib
++      INSTALL_RPATH_USE_LINK_PATH ON)
++ 
+     INSTALL_TARGETS( /bin deployer-${OROCOS_TARGET} )
+ 
+ ENDIF ( BUILD_TASKBROWSER AND BUILD_DEPLOYMENT)

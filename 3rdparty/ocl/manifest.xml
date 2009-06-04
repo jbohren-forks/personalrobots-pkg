@@ -1,0 +1,30 @@
+<package>
+<description brief="Orocos Components library">
+
+  This package contains the latest code from the Orocos Components Library (OCL) of the OROCOS project.
+  This ROS package does not modify OCL in any way;
+  it simply provides a convenient way to download and compile the library
+  in a way that can be managed by the ROS dependency system.
+  
+</description>
+<author>Orocos Developers</author>
+<license>GPL+runtime exception,LGPL</license>
+<review status="3rdparty" notes=""/>
+<url>http://www.orocos.org/</url>
+<export>
+  <cpp cflags="-I${prefix}/ocl/include" lflags="-Wl,-rpath,-L${prefix}/ocl/lib -L${prefix}/ocl/lib -lorocos-ocl-common-gnulinux"/>
+  <doxymaker external="http://www.orocos.org/ocl" />
+</export>
+<depend package="rtt" />
+<sysdepend os="ubuntu" version="7.04-feisty" package="subversion"/>
+<sysdepend os="ubuntu" version="8.04-hardy" package="subversion"/>
+<sysdepend os="ubuntu" version="7.04-feisty" package="libreadline-dev"/>
+<sysdepend os="ubuntu" version="7.10-gutsy" package="libreadline-dev"/>
+<sysdepend os="ubuntu" version="8.04-hardy" package="libreadline-dev"/>
+<!--sysdepend os="ubuntu" version="7.04-feisty" package="libboost-dev"/-->
+<!--sysdepend os="ubuntu" version="7.10-gutsy" package="libboost-dev=1.34.1-2ubuntu1"/-->
+<!--sysdepend os="ubuntu" version="7.04-feisty" package="libboost-dev"/-->
+<!--sysdepend os="ubuntu" version="8.04-hardy" package="libboost-dev"/-->
+<versioncontrol type="svn" url="http://svn.mech.kuleuven.be/repos/orocos/trunk/ocl"/>
+</package>
+
