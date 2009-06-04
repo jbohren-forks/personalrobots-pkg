@@ -1453,3 +1453,47 @@ do_speckle(int16_t *disp, int16_t badval, int width, int height,
 }
 
 
+
+//
+// rectification algorithm
+// does bilinear interpolation using fixed lookup table
+//
+
+void 
+do_rectify_mono(uint8_t *dest, uint8_t *src, int w, int h, inttab_t *rtab)
+{
+  int i,j;
+  uint8_t *p;
+  int val;
+  // loop over rows
+  for (i=0; i<h; i++)
+    {
+      // loop over cols
+      for (j=0; j<w; j++, dest++, rtab++)
+	{
+	  p = src + rtab->addr; // upper left pixel
+	  val = (*p)*rtab->a1 + (*(p+1))*rtab->a2 + (*(p+w))*rtab->b1 + (*(p+w+1))*rtab->b2;
+	  *dest = val >> INTOFFSET; // get rid of fractional offset
+	}
+    }
+}
+
+// SSE version, TBD
+void 
+do_rectify_mono_fast(uint8_t *dest, uint8_t *src, int w, int h, inttab_t *rtab)
+{
+  int i,j;
+  uint8_t *p;
+  int val;
+  // loop over rows
+  for (i=0; i<h; i++)
+    {
+      // loop over cols
+      for (j=0; j<w; j++, dest++, rtab++)
+	{
+	  p = src + rtab->addr; // upper left pixel
+	  val = (*p)*rtab->a1 + (*(p+1))*rtab->a2 + (*(p+w))*rtab->b1 + (*(p+w+1))*rtab->b2;
+	  *dest = val >> INTOFFSET; // get rid of fractional offset
+	}
+    }
+}

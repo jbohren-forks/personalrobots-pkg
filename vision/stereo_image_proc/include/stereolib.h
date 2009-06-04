@@ -254,6 +254,37 @@ void do_speckle(int16_t *disp, int16_t badval, int width, int height,
 		uint32_t *labels, uint32_t *wbuf, uint8_t *rtype);
 
 
+//
+// bilinear interpolation structure
+// embeds fixed-point interpolation coefficients
+// should be 8 bytes in size
+
+#define INTOFFSET 8		// 8-bit fractional offset of interpolation fixed-point
+
+typedef struct 
+{
+  uint32_t addr;		// pixel addr, upper left
+  uint8_t a1,a2,b1,b2;		// coefficients
+} inttab_t;
+
+void 
+do_rectify_mono(uint8_t *dest,	// destination image
+		uint8_t *src,	// source image
+		int w,		// image width
+		int h,		// image height
+		inttab_t *rtab	// interpolation table
+		);
+
+
+void 
+do_rectify_mono_fast(uint8_t *dest, // destination image
+		uint8_t *src,	// source image
+		int w,		// image width
+		int h,		// image height
+		inttab_t *rtab	// interpolation table
+		);
+
+
 #ifdef __cplusplus
 }
 #endif
