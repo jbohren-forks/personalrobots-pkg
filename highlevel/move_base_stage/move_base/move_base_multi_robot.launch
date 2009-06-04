@@ -13,11 +13,11 @@
     <!-- BEGIN ROBOT 0 -->
     <group ns="robot_0">
       <param name="~tf_prefix" value="robot_0" />
-      <node pkg="nav" type="move_base" respawn="false" name="move_base" output="screen">
-        <rosparam file="$(find test_nav)/config/costmap_common_params.yaml" command="load" ns="navfn" />
-        <rosparam file="$(find test_nav)/config/costmap_common_params.yaml" command="load" ns="base_local_planner" />
-        <rosparam file="$(find test_nav)/move_base/navfn_params.yaml" command="load" />
-        <rosparam file="$(find test_nav)/move_base/base_local_planner_params.yaml" command="load" />
+      <node pkg="move_base" type="move_base" respawn="false" name="move_base" output="screen">
+        <rosparam file="$(find move_base_stage)/config/costmap_common_params.yaml" command="load" ns="navfn" />
+        <rosparam file="$(find move_base_stage)/config/costmap_common_params.yaml" command="load" ns="base_local_planner" />
+        <rosparam file="$(find move_base_stage)/move_base/navfn_params.yaml" command="load" />
+        <rosparam file="$(find move_base_stage)/move_base/base_local_planner_params.yaml" command="load" />
 
       </node>
 
@@ -38,11 +38,11 @@
     <!-- BEGIN ROBOT 1 -->
     <group ns="robot_1">
       <param name="~tf_prefix" value="robot_1" />
-      <node pkg="nav" type="move_base" respawn="false" name="move_base" output="screen">
-        <rosparam file="$(find test_nav)/config/costmap_common_params.yaml" command="load" ns="navfn" />
-        <rosparam file="$(find test_nav)/config/costmap_common_params.yaml" command="load" ns="base_local_planner" />
-        <rosparam file="$(find test_nav)/move_base/navfn_params.yaml" command="load" />
-        <rosparam file="$(find test_nav)/move_base/base_local_planner_params.yaml" command="load" />
+      <node pkg="move_base" type="move_base" respawn="false" name="move_base" output="screen">
+        <rosparam file="$(find move_base_stage)/config/costmap_common_params.yaml" command="load" ns="navfn" />
+        <rosparam file="$(find move_base_stage)/config/costmap_common_params.yaml" command="load" ns="base_local_planner" />
+        <rosparam file="$(find move_base_stage)/move_base/navfn_params.yaml" command="load" />
+        <rosparam file="$(find move_base_stage)/move_base/base_local_planner_params.yaml" command="load" />
 
       </node>
 

@@ -9,7 +9,7 @@ Tests relevant to milestone 2 that are not specific to a single package.
   <review status="unreviewed" notes=""/>
   <url>http://pr.willowgarage.com/wiki/milestone2_tests</url>
   <depend package="topological_map"/>
-  <depend package="nav"/>
+  <depend package="move_base"/>
   <depend package="robot_actions"/>
   <depend package="stage"/>
   <depend package="roscpp"/>

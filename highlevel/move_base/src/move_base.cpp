@@ -34,7 +34,7 @@
 *
 * Author: Eitan Marder-Eppstein
 *********************************************************************/
-#include <nav/move_base.h>
+#include <move_base/move_base.h>
 #include <cstdlib>
 #include <ctime>
 
@@ -43,7 +43,7 @@ using namespace costmap_2d;
 using namespace navfn;
 using namespace robot_actions;
 
-namespace nav {
+namespace move_base {
   MoveBase::MoveBase(ros::Node& ros_node, tf::TransformListener& tf) : 
     Action<robot_msgs::PoseStamped, robot_msgs::PoseStamped>(ros_node.getName()), ros_node_(ros_node), tf_(tf),
     run_planner_(true), tc_(NULL), planner_costmap_ros_(NULL), controller_costmap_ros_(NULL), 
@@ -591,7 +591,7 @@ int main(int argc, char** argv){
   ros::Node ros_node("move_base");
   tf::TransformListener tf(ros_node, true, ros::Duration(10));
   
-  nav::MoveBase move_base(ros_node, tf);
+  move_base::MoveBase move_base(ros_node, tf);
   robot_actions::ActionRunner runner(20.0);
   runner.connect<robot_msgs::PoseStamped, nav_robot_actions::MoveBaseState, robot_msgs::PoseStamped>(move_base);
   runner.run();

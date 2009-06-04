@@ -2,7 +2,7 @@
 <include file="$(find pr2_alpha)/$(env ROBOT).machine" />
 
 <node pkg="mux" type="throttle" args="3.0 /move_base/base_local_planner/costmap/voxel_grid /move_base/base_local_planner/costmap/voxel_grid_throttled" />
-<node pkg="nav" type="move_base" respawn="true" name="move_base" output="screen" machine="three">
+<node pkg="move_base" type="move_base" respawn="true" name="move_base" output="screen" machine="three">
   <!--
   <remap from="cmd_vel" to="/bs" />
   -->

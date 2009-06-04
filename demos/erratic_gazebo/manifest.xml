@@ -9,7 +9,7 @@
   <depend package="erratic_defs"/>
   <depend package="robot_mechanism_controllers"/>
 
-  <depend package="nav"/>
+  <depend package="move_base"/>
   <depend package="tf"/>
   <depend package="rospy"/>
   <depend package="std_msgs"/>

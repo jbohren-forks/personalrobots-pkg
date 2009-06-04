@@ -2,7 +2,7 @@
 <include file="$(find pr2_alpha)/$(env ROBOT).machine" />
 
 <node pkg="mux" type="throttle" args="3.0 /move_base_local/base_local_planner/costmap/voxel_grid /move_base_local/base_local_planner/costmap/voxel_grid_throttled" />
-<node pkg="nav" type="move_base_local" respawn="false" name="move_base_local" output="screen" machine="three">
+<node pkg="move_base" type="move_base_local" respawn="false" name="move_base_local" output="screen" machine="three">
   <param name="controller_frequency" value="10.0" />
 
   <rosparam file="$(find 2dnav_pr2)/config/costmap_common_params.yaml" command="load" ns="base_local_planner" />

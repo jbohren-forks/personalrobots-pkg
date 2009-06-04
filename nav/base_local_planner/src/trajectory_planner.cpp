@@ -217,7 +217,8 @@ namespace base_local_planner{
 
   //create and score a trajectory given the current pose of the robot and selected velocities
   void TrajectoryPlanner::generateTrajectory(double x, double y, double theta, double vx, double vy, 
-      double vtheta, double vx_samp, double vy_samp, double vtheta_samp, double acc_x, double acc_y, double acc_theta, double impossible_cost,
+      double vtheta, double vx_samp, double vy_samp, double vtheta_samp, 
+      double acc_x, double acc_y, double acc_theta, double impossible_cost,
       Trajectory& traj){
     double x_i = x;
     double y_i = y;
@@ -298,14 +299,17 @@ namespace base_local_planner{
 
       //do we want to follow blindly
       if(simple_attractor_){
-        goal_dist = (x_i - global_plan_[global_plan_.size() -1].pose.position.x) * (x_i - global_plan_[global_plan_.size() -1].pose.position.x) + 
-          (y_i - global_plan_[global_plan_.size() -1].pose.position.y) * (y_i - global_plan_[global_plan_.size() -1].pose.position.y);
+        goal_dist = (x_i - global_plan_[global_plan_.size() -1].pose.position.x) * 
+          (x_i - global_plan_[global_plan_.size() -1].pose.position.x) + 
+          (y_i - global_plan_[global_plan_.size() -1].pose.position.y) * 
+          (y_i - global_plan_[global_plan_.size() -1].pose.position.y);
         path_dist = 0.0;
       }
       else{
         //if a point on this trajectory has no clear path to goal it is invalid
         if(impossible_cost <= goal_dist || impossible_cost <= path_dist){
-          ROS_DEBUG("No path to goal with goal distance = %f, path_distance = %f and max cost = %f", goal_dist, path_dist, impossible_cost);
+          ROS_DEBUG("No path to goal with goal distance = %f, path_distance = %f and max cost = %f", 
+              goal_dist, path_dist, impossible_cost);
           traj.cost_ = -2.0;
           return;
         }
@@ -891,20 +895,26 @@ namespace base_local_planner{
 
     /*
     //If we want to print a ppm file to draw goal dist
-    printf("P3\n");
-    printf("%d %d\n", map_.size_x_, map_.size_y_);
-    printf("255\n");
-    for(int j = map_.size_y_ - 1; j >= 0; --j){
-      for(unsigned int i = 0; i < map_.size_x_; ++i){
-        int g_dist = 255 - int(map_(i, j).goal_dist);
-        int p_dist = 255 - int(map_(i, j).path_dist);
-        if(g_dist < 0)
-          g_dist = 0;
-        if(p_dist < 0)
-          p_dist = 0;
-        printf("%d 0 %d ", g_dist, 0);
+    char buf[4096];
+    sprintf(buf, "base_local_planner.ppm");
+    FILE *fp = fopen(buf, "w");
+    if(fp){
+      fprintf(fp, "P3\n");
+      fprintf(fp, "%d %d\n", map_.size_x_, map_.size_y_);
+      fprintf(fp, "255\n");
+      for(int j = map_.size_y_ - 1; j >= 0; --j){
+        for(unsigned int i = 0; i < map_.size_x_; ++i){
+          int g_dist = 255 - int(map_(i, j).goal_dist);
+          int p_dist = 255 - int(map_(i, j).path_dist);
+          if(g_dist < 0)
+            g_dist = 0;
+          if(p_dist < 0)
+            p_dist = 0;
+          fprintf(fp, "%d 0 %d ", g_dist, 0);
+        }
+        fprintf(fp, "\n");
       }
-      printf("\n");
+      fclose(fp);
     }
     */
 

@@ -51,7 +51,7 @@
 #include <nav_srvs/Plan.h>
 #include <visualization_msgs/Marker.h>
 
-namespace nav {
+namespace move_base {
   /**
    * @class MoveBase
    * @brief A class adhering to the robot_actions::Action interface that moves the robot base to a goal location.

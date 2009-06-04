@@ -2,9 +2,9 @@
   <master auto="start"/>
   <group name="wg">
   <param name="/use_sim_time" value="true"/>
-    <node pkg="nav" type="move_base_local" respawn="false" name="move_base_local" output="screen">
-      <rosparam file="$(find test_nav)/config/costmap_common_params.yaml" command="load" ns="base_local_planner" />
-      <rosparam file="$(find test_nav)/move_base_local/base_local_planner_params.yaml" command="load" />
+    <node pkg="move_base" type="move_base_local" respawn="false" name="move_base_local" output="screen">
+      <rosparam file="$(find move_base_stage)/config/costmap_common_params.yaml" command="load" ns="base_local_planner" />
+      <rosparam file="$(find move_base_stage)/move_base_local/base_local_planner_params.yaml" command="load" />
 
     </node>
     <!--
