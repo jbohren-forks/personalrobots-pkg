@@ -1,0 +1,40 @@
+StateMachine Simple_nAxes_Test
+{
+
+  const double pi = 3.14159265358979
+  var array pos1 = array(-1.11476, -0.26015, -0.230291, -0.985729, 1.82895, 1.3368, 1.3762)
+  var array pos2 = array(0.0872114, 1.01539, 0.0862739, -0.931444, 3.34327, 1.53325, 3.62295)
+  var array pos3 = array(-0.698104, -0.031218, -1.59758, -0.721686, 0.119339, 1.57101, 3.26183)
+  var array pos4 = array(-1.45134, 0.35558, -3.22964, -0.687088, -0.189102, 0.824574, 3.0408)
+
+  initial state MoveToState {
+    entry {
+      do nAxesGeneratorPos.start()
+      do nAxesControllerPosVel.start() 
+    }
+    run {
+      do nAxesGeneratorPos.moveTo(pos1, 0.0)
+      do nAxesGeneratorPos.moveTo(pos2, 0.0)
+      do nAxesGeneratorPos.moveTo(pos3, 0.0)
+      do nAxesGeneratorPos.moveTo(pos4, 0.0)
+    }
+    exit {
+	 do nAxesControllerPosVel.stop()
+	 do nAxesGeneratorPos.stop()
+    }
+    transitions {
+    }
+  }
+
+
+
+
+  final state StopRobotState {
+    entry {
+    }
+    exit {
+    }
+  }
+}
+
+RootMachine Simple_nAxes_Test SimpleMoveTo

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE properties SYSTEM "cpf.dtd">
+<properties>
+  <simple name="interface" type="string"><description>Connect to EtherCAT devices on this interface</description><value>eth0</value></simple>
+  <simple name="robot_description" type="string"><description>Load the robot description from this file</description><value>pr2_desc.xml</value></simple>
+  <struct name="joint_names" type="list">
+     <description>Names of the joints to allow control for with</description>
+     <simple name="joint1" type="string"><value>r_shoulder_pan_joint</value></simple>
+     <simple name="joint2" type="string"><value>r_shoulder_lift_joint</value></simple>
+     <simple name="joint3" type="string"><value>r_upper_arm_roll_joint</value></simple>
+     <simple name="joint4" type="string"><value>r_elbow_flex_joint</value></simple>
+     <simple name="joint5" type="string"><value>r_forearm_roll_joint</value></simple>
+     <simple name="joint6" type="string"><value>r_wrist_flex_joint</value></simple>
+     <simple name="joint7" type="string"><value>r_wrist_roll_joint</value></simple>
+  </struct>
+</properties>

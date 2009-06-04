@@ -1,0 +1,18 @@
+<package>
+  <description brief="rtt_controller">
+
+     rtt_controller, An RTT application controlling the robot
+
+  </description>
+  <author>Ruben Smits/ ruben.smits@mech.kuleuven.be</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://pr.willowgarage.com/wiki/rtt_controller</url>
+
+  <depend package="rtt"/>
+  <depend package="ocl"/>
+  <depend package="pr2_etherCAT"/>
+  <depend package="ethercat_hardware"/>
+</package>
+
+
