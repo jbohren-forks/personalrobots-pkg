@@ -202,7 +202,7 @@ public:
 
     // Publish localized pose
     m_currentPos.header = message->header;
-    m_currentPos.header.frame_id = "map"; ///\todo fixme hack
+    m_currentPos.header.frame_id = "/map"; ///\todo fixme hack
     m_currentPos.pose.position.x = x;
     m_currentPos.pose.position.y = y;
     // Leave z as zero
