@@ -43,6 +43,7 @@ import threading
 from sound_play.msg import SoundRequest
 import os
 import logging
+import sys
 
 logger = logging.getLogger('rospy.soundplay_node')
 try:
