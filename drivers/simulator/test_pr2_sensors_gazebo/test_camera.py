@@ -54,7 +54,7 @@ FRAME_TARGET = "cam_sen-0050.ppm"
 FRAME_DIR = "test_camera_frames"
 TOTAL_ERROR_TOL = 5
 TEST_DURATION   = 10
-TEST_INIT_WAIT  = 1
+TEST_INIT_WAIT  = 10
 
 class PollCameraThread(threading.Thread):
     def __init__(self, target, dir):
