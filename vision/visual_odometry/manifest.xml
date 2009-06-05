@@ -21,7 +21,7 @@
   <depend package="image_synthesizer"/>
   <depend package="opencvpython"/>
   <export>
-    <cpp cflags="-I${prefix}/include -I${prefix}/msg/cpp" lflags="-L${prefix}/lib -lvisual_odometry -Wl,-rpath,${prefix}/lib" />
+    <cpp cflags="-I${prefix}/include -I${prefix}/msg/cpp" lflags="-L${prefix}/lib -Wl,-rpath,${prefix}/lib" />
   </export>
   <sysdepend os="ubuntu" version="7.04-feisty" package="python-imaging"/>
   <sysdepend os="ubuntu" version="8.04-hardy" package="python-imaging"/>
