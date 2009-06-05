@@ -36,7 +36,7 @@ CMAKE_ARGS = -DCMAKE_INSTALL_PREFIX=$(PWD)/$(INSTALL_DIR)/ \
 
 include $(shell rospack find mk)/svn_checkout.mk
 
-installed: $(SVN_DIR) patched
+installed: $(SVN_DIR) patched Makefile
 	-mkdir -p $(SVN_DIR)/build
 	cd $(SVN_DIR)/build && $(CMAKE) $(CMAKE_ARGS) ..
 	cd $(SVN_DIR)/build && make $(ROS_PARALLEL_JOBS) && make install
