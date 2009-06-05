@@ -85,6 +85,12 @@ void collision_space::bodies::Sphere::updateInternalData(void)
     m_center = m_pose.getOrigin();
 }
 
+double collision_space::bodies::Sphere::computeVolume(void) const
+{
+    double r = m_radius * m_scale + m_padding;
+    return 4.0 * M_PI * r * r * r / 3.0;
+}
+
 bool collision_space::bodies::Cylinder::containsPoint(const btVector3 &p) const 
 {
     btVector3 v = p - m_center;		
@@ -122,6 +128,13 @@ void collision_space::bodies::Cylinder::updateInternalData(void)
     m_normalB1 = basis.getColumn(0);
     m_normalB2 = basis.getColumn(1);
     m_normalH  = basis.getColumn(2);
+}
+
+double collision_space::bodies::Cylinder::computeVolume(void) const
+{
+    double r = m_radius * m_scale + m_padding;
+    double l = m_scale * m_length + m_padding;
+    return M_PI * r * r * l;
 }
 
 bool collision_space::bodies::Box::containsPoint(const btVector3 &p) const 
@@ -167,6 +180,11 @@ void collision_space::bodies::Box::updateInternalData(void)
     m_normalL = basis.getColumn(0);
     m_normalW = basis.getColumn(1);
     m_normalH = basis.getColumn(2);
+}
+
+double collision_space::bodies::Box::computeVolume(void) const
+{
+    return 8.0 * m_length2 * m_width2 * m_height2;
 }
 
 bool collision_space::bodies::ConvexMesh::containsPoint(const btVector3 &p) const
@@ -217,12 +235,7 @@ void collision_space::bodies::ConvexMesh::useDimensions(const planning_models::s
 	    edge1.normalize();
 	    edge2.normalize();
 
-	    //	    printf("Edges = (%f, %f, %f) : (%f %f %f)\n", edge1.getX(), edge1.getY(), edge1.getZ(),
-	    //		   edge2.getX(), edge2.getY(), edge2.getZ());
-	    
 	    btVector3 planeNormal = edge1.cross(edge2);
-	    
-	    //	    MSG.inform("dist = %f", planeNormal.length2());
 	    
 	    if (planeNormal.length2() > btScalar(1e-6))
 	    {
@@ -284,4 +297,17 @@ unsigned int collision_space::bodies::ConvexMesh::countVerticesBehindPlane(const
 	    result++;
     }
     return result;
+}
+
+double collision_space::bodies::ConvexMesh::computeVolume(void) const
+{
+    double volume = 0.0;
+    for (unsigned int i = 0 ; i < m_triangles.size() / 3 ; ++i)
+    {
+	const btVector3 &v1 = m_vertices[m_triangles[3*i + 0]];
+        const btVector3 &v2 = m_vertices[m_triangles[3*i + 1]];
+	const btVector3 &v3 = m_vertices[m_triangles[3*i + 2]];
+	volume += v1.x()*v2.y()*v3.z() + v2.x()*v3.y()*v1.z() + v3.x()*v1.y()*v2.z() -v1.x()*v3.y()*v2.z() - v2.x()*v1.y()*v3.z() - v3.x()*v2.y()*v1.z();
+    }
+    return fabs(volume)/6.0;
 }

@@ -116,6 +116,8 @@ namespace collision_space
 	    
 	    virtual bool containsPoint(const btVector3 &p) const = 0;	
 	    
+	    virtual double computeVolume(void) const = 0;
+	    
 	protected:
 	    
 	    virtual void updateInternalData(void) = 0;
@@ -144,7 +146,8 @@ namespace collision_space
 	    }
 	    
 	    virtual bool containsPoint(const btVector3 &p) const;
-	    
+	    virtual double computeVolume(void) const;
+
 	protected:
 	    
 	    virtual void useDimensions(const planning_models::shapes::Shape *shape);
@@ -173,7 +176,8 @@ namespace collision_space
 	    }
 	    
 	    virtual bool containsPoint(const btVector3 &p) const;
-	    
+	    virtual double computeVolume(void) const;
+
 	protected:
 	    
 	    virtual void useDimensions(const planning_models::shapes::Shape *shape);
@@ -209,7 +213,8 @@ namespace collision_space
 	    }
 	    
 	    virtual bool containsPoint(const btVector3 &p) const;
-	    
+	    virtual double computeVolume(void) const;
+
 	protected:
 	    
 	    virtual void useDimensions(const planning_models::shapes::Shape *shape); // (x, y, z) = (length, width, height)	    
@@ -247,7 +252,8 @@ namespace collision_space
 	    }
 	    
 	    virtual bool containsPoint(const btVector3 &p) const;
-	    
+	    virtual double computeVolume(void) const;
+
 	protected:
 	    
 	    virtual void useDimensions(const planning_models::shapes::Shape *shape);
