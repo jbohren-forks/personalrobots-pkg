@@ -122,7 +122,6 @@ namespace kinematic_planning
 	bool setCollisionState(motion_planning_srvs::CollisionCheckState::Request &req, motion_planning_srvs::CollisionCheckState::Response &res);
 
 	virtual void loadRobotDescription(void);
-    	virtual void defaultPosition(void);
 	
 	bool isMapUpdated(double sec);
 

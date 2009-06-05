@@ -1,4 +1,4 @@
-## This file should be loaded under /collision
+## This file should be loaded under <robot description>_collision
 
 
 ## links for which collision checking with the environment should be performed

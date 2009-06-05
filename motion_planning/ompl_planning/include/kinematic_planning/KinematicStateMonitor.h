@@ -44,7 +44,7 @@
 #include <boost/shared_ptr.hpp>
 
 #include <urdf/URDF.h>
-#include <planning_models/kinematic.h>
+#include <planning_environment/collision_models.h>
 #include <tf/transform_datatypes.h>
 #include <tf/transform_listener.h>
 #include <sstream>
@@ -115,7 +115,6 @@ namespace kinematic_planning
 	void setIncludeBaseInState(bool value);
 	
 	virtual void loadRobotDescription(void);
-	virtual void defaultPosition(void);
 	
 	bool loadedRobot(void) const;
 	void waitForState(void);
@@ -141,6 +140,9 @@ namespace kinematic_planning
 
 	tf::TransformListener                              m_tf; 
 	
+	boost::shared_ptr<planning_environment::CollisionModels>
+	                                                   m_envModels;
+
 	boost::shared_ptr<robot_desc::URDF>                m_urdf;
 	boost::shared_ptr<planning_models::KinematicModel> m_kmodel;
 	

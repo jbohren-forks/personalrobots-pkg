@@ -119,29 +119,7 @@ void kinematic_planning::CollisionSpaceMonitor::loadRobotDescription(void)
 {
     KinematicStateMonitor::loadRobotDescription();
     if (m_kmodel)
-    {
-	std::vector<std::string> links;
-	robot_desc::URDF::Group *g = m_urdf->getGroup("collision_check");
-	if (g && g->hasFlag("collision"))
-	    links = g->linkNames;
-
-	m_collisionSpace->lock();
-	unsigned int cid = m_collisionSpace->addRobotModel(m_kmodel, links);
-	std::vector<robot_desc::URDF::Group*> groups;
-	m_urdf->getGroups(groups);
-	
-	for (unsigned int i = 0 ; i < groups.size() ; ++i)
-	    if (groups[i]->hasFlag("self_collision"))
-		m_collisionSpace->addSelfCollisionGroup(cid, groups[i]->linkNames);
-	m_collisionSpace->unlock();
-    }
-}
-
-void kinematic_planning::CollisionSpaceMonitor::defaultPosition(void)
-{
-    KinematicStateMonitor::defaultPosition();
-    if (m_collisionSpace && m_collisionSpace->getModelCount() == 1)
-	m_collisionSpace->updateRobotModel(0);
+	m_collisionSpace = m_envModels->getODECollisionModel();
 }
 
 bool kinematic_planning::CollisionSpaceMonitor::isMapUpdated(double sec)

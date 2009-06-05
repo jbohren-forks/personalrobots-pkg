@@ -36,7 +36,7 @@
 
 
 #include <ros/ros.h>
-#include <collision_space/environmentODE.h>
+#include <planning_environment/collision_models.h>
 #include <robot_msgs/MechanismState.h>
    
 class SelfWatch
@@ -62,84 +62,53 @@ protected:
 	m_nodeHandle.param("self_collision_scale_factor", m_scaling, 1.2);
 	m_nodeHandle.param("self_collision_padding", m_padding, 0.05);
 	
-	// load the string description of the robot 
-	std::string content;
-	if (m_nodeHandle.getParam("robot_description", content))
-	{
-	    // parse the description
-	    robot_desc::URDF *file = new robot_desc::URDF();
-	    if (file->loadString(content.c_str()))
-	    {
-		// create a kinematic model out of the parsed description
-		m_kmodel = boost::shared_ptr<planning_models::KinematicModel>(new planning_models::KinematicModel());
-		m_kmodel->setVerbose(false);
-		m_kmodel->build(*file);
-
-		// make sure the kinematic model is in its own frame
-		// (remove all transforms caused by planar or floating
-		// joints)
-		m_kmodel->reduceToRobotFrame();
-
-		// create a state that can be used to monitor the
-		// changes in the joints of the kinematic model
-		m_robotState = boost::shared_ptr<planning_models::KinematicModel::StateParams>(m_kmodel->newStateParams());
-
-		// make sure the transforms caused by the planar and
-		// floating joints are identity, to be compatible with
-		// the fact we are considering the robot in its own
-		// frame
-		m_robotState->setInRobotFrame();
-
-		// create a new collision space
-		m_collisionSpace = boost::shared_ptr<collision_space::EnvironmentModel>(new collision_space::EnvironmentModelODE());
-
-		// enable self collision checking (just in case default is disabled)
-		m_collisionSpace->setSelfCollision(true);
-		
-		// get the list of links that are enabled for collision checking
-		std::vector<std::string> links;
-		robot_desc::URDF::Group *g = file->getGroup("collision_check");
-		if (g && g->hasFlag("collision"))
-		    links = g->linkNames;
-		
-		// print some info, just to easily double-check the loaded data
-		if (links.empty())
-		    ROS_WARN("No links have been enabled for collision checking");
-		else
-		{
-		    ROS_INFO("Collision checking enabled for links: ");
-		    for (unsigned int i = 0 ; i < links.size() ; ++i)
-			ROS_INFO("  %s", links[i].c_str());
-		}
-		
-		// add the robot model to the collision space
-		m_collisionSpace->addRobotModel(m_kmodel, links, m_scaling, m_padding);
-
-		
-		// get the self collision groups and add them to the collision space
-		int nscgroups = 0;
-		std::vector<robot_desc::URDF::Group*> groups;
-		file->getGroups(groups);
-		for (unsigned int i = 0 ; i < groups.size() ; ++i)
-		    if (groups[i]->hasFlag("self_collision"))
-		    {
-			m_collisionSpace->addSelfCollisionGroup(0, groups[i]->linkNames);
-			ROS_INFO("Self-collision check group %d", nscgroups);
-			for (unsigned int j = 0 ; j < groups[i]->linkNames.size() ; ++j)
-			    ROS_INFO("  %s", groups[i]->linkNames[j].c_str());
-			nscgroups++;
-		    }
-		
-		if (nscgroups == 0)
-		    ROS_WARN("No self-collision checking enabled");
-		
-		ROS_INFO("Self-collision monitor is active, with scaling %g, padding %g", m_scaling, m_padding);
-	    }
-	    else
-		ROS_ERROR("Unable to parse robot description");
-	}
+	if (!m_nodeHandle.hasParam("robot_description"))
+	    ROS_ERROR("No robot description found");
 	else
-	    ROS_ERROR("Could not load robot description");
+	{
+	    m_envModels = boost::shared_ptr<planning_environment::CollisionModels>(new planning_environment::CollisionModels("robot_description", m_scaling, m_padding));
+	    m_kmodel = m_envModels->getKinematicModel();
+	    m_collisionSpace = m_envModels->getODECollisionModel();
+	    
+	    // create a state that can be used to monitor the
+	    // changes in the joints of the kinematic model
+	    m_robotState = boost::shared_ptr<planning_models::KinematicModel::StateParams>(m_kmodel->newStateParams());
+	    
+	    // make sure the transforms caused by the planar and
+	    // floating joints are identity, to be compatible with
+	    // the fact we are considering the robot in its own
+	    // frame
+	    m_robotState->setInRobotFrame();
+	    
+	    // get the list of links that are enabled for collision checking
+	    std::vector<std::string> links = m_envModels->getCollisionCheckLinks();
+	    
+	    // print some info, just to easily double-check the loaded data
+	    if (links.empty())
+		ROS_WARN("No links have been enabled for collision checking");
+	    else
+	    {
+		ROS_INFO("Collision checking enabled for links: ");
+		for (unsigned int i = 0 ; i < links.size() ; ++i)
+		    ROS_INFO("  %s", links[i].c_str());
+	    }
+	    
+	    std::vector< std::vector<std::string> > groups = m_envModels->getSelfCollisionGroups();
+	    
+	    int nscgroups = 0;
+	    for (unsigned int i = 0 ; i < groups.size() ; ++i)
+	    {
+		ROS_INFO("Self-collision check group %d", nscgroups);
+		for (unsigned int j = 0 ; j < groups[i].size() ; ++j)
+		    ROS_INFO("  %s", groups[i][j].c_str());
+		nscgroups++;
+	    }    
+	    
+	    if (nscgroups == 0)
+		ROS_WARN("No self-collision checking enabled");
+	    
+	    ROS_INFO("Self-collision monitor is active, with scaling %g, padding %g", m_scaling, m_padding);
+	}
     }
     
     void mechanismStateCallback(const robot_msgs::MechanismStateConstPtr &mechanismState)
@@ -215,6 +184,8 @@ protected:
     double                                                          m_scaling;
     double                                                          m_padding;
     
+    boost::shared_ptr<planning_environment::CollisionModels>        m_envModels;
+
     // the complete robot state
     boost::shared_ptr<planning_models::KinematicModel::StateParams> m_robotState;
 

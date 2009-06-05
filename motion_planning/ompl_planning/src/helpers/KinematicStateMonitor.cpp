@@ -35,6 +35,7 @@
 /** \author Ioan Sucan */
 
 #include "kinematic_planning/KinematicStateMonitor.h"
+#include <sstream>
 
 void kinematic_planning::KinematicStateMonitor::kinematicStateSubscribe(void)
 {
@@ -59,34 +60,14 @@ void kinematic_planning::KinematicStateMonitor::setIncludeBaseInState(bool value
 
 void kinematic_planning::KinematicStateMonitor::loadRobotDescription(void)
 {
-    std::string content;
-    if (m_nodeHandle.getParam("robot_description", content))
+    if (m_nodeHandle.hasParam("robot_description"))
     {
-	m_urdf = boost::shared_ptr<robot_desc::URDF>(new robot_desc::URDF());
-	if (m_urdf->loadString(content.c_str()))
-	{
-	    m_kmodel = boost::shared_ptr<planning_models::KinematicModel>(new planning_models::KinematicModel());
-	    m_kmodel->setVerbose(false);
-	    m_kmodel->build(*m_urdf);
-	    m_kmodel->reduceToRobotFrame();
-	    
-	    m_robotState = boost::shared_ptr<planning_models::KinematicModel::StateParams>(m_kmodel->newStateParams());
-	    m_robotState->setInRobotFrame();
-	    
-	    m_haveMechanismState = false;
-	    m_haveBasePos = false;
-	}
-	else
-	    m_urdf.reset();
+	m_envModels = boost::shared_ptr<planning_environment::CollisionModels>(new planning_environment::CollisionModels("robot_description"));
+	m_urdf = m_envModels->getParsedDescription();
+	m_kmodel = m_envModels->getKinematicModel();
     }
     else
 	ROS_ERROR("Robot model not found! Did you remap robot_description?");
-}
-
-void kinematic_planning::KinematicStateMonitor::defaultPosition(void)
-{
-    if (m_kmodel)
-	m_kmodel->defaultState();
 }
 
 bool kinematic_planning::KinematicStateMonitor::loadedRobot(void) const

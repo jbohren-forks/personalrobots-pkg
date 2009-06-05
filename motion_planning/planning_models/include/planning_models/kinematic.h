@@ -46,6 +46,7 @@
 #include <iostream>
 #include <vector>
 #include <string>
+#include <map>
 #include <cassert>
 
 /** @htmlinclude ../../manifest.html
@@ -569,8 +570,8 @@ namespace planning_models
 		delete m_robots[i];
 	}
 	
-	void         build(const std::string &description, bool ignoreSensors = false);
-	virtual void build(const robot_desc::URDF &model, bool ignoreSensors = false);
+	void         build(const std::string &description, const std::map< std::string, std::vector<std::string> > &groups, bool ignoreSensors = false);
+	virtual void build(const robot_desc::URDF &model, const std::map< std::string, std::vector<std::string> > &groups, bool ignoreSensors = false);
 	bool         isBuilt(void) const;
 	StateParams* newStateParams(void);
 	

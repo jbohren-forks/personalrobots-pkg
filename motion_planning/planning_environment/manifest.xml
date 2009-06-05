@@ -1,0 +1,24 @@
+<package>
+  <description brief="planning_environment">
+
+    Define the robot model and collision environment based on ROS
+    parameters. 
+
+  </description>
+  <author>Ioan Sucan</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  
+  <depend package="roscpp" />
+  <depend package="rosconsole" />
+  <depend package="pr2_defs" />
+  <depend package="planning_models" />
+  <depend package="collision_space" />
+  
+  <url>http://pr.willowgarage.com/wiki/planning_environment</url>
+
+  <export>
+    <cpp cflags="-I${prefix}/include `rosboost-cfg --cflags`" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lplanning_environment" />
+  </export>
+
+</package>

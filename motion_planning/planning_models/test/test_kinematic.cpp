@@ -66,10 +66,10 @@ TEST(Loading, EmptyRobot)
 	"<?xml version=\"1.0\" ?>" 
 	"<robot name=\"myrobot\">" 
 	"</robot>";
-    
+    std::map < std::string, std::vector<std::string> > groups;
     planning_models::KinematicModel *model = new planning_models::KinematicModel();
     model->setVerbose(false);
-    model->build(MODEL0);
+    model->build(MODEL0, groups);
     
     EXPECT_TRUE(model->isBuilt());
     EXPECT_TRUE(model->reduceToRobotFrame());
@@ -87,9 +87,9 @@ TEST(Loading, EmptyRobot)
     model->getJoints(joints);
     EXPECT_EQ((unsigned int)0, joints.size());
     
-    std::vector<std::string> groups;
-    model->getGroups(groups);    
-    EXPECT_EQ((unsigned int)0, groups.size());
+    std::vector<std::string> pgroups;
+    model->getGroups(pgroups);    
+    EXPECT_EQ((unsigned int)0, pgroups.size());
        
     delete model;
 }
@@ -198,10 +198,12 @@ TEST(LoadingAndFK, SimpleRobot)
 	"The state components for this group are: 0 1 2 base_link_joint base_link_joint base_link_joint \n";
         
     planning_models::KinematicModel *model = new planning_models::KinematicModel();
+    std::map < std::string, std::vector<std::string> > groups;
+    groups["base"].push_back("base_link");
     model->setVerbose(false);
     robot_desc::URDF *file = new robot_desc::URDF();
     file->loadString(MODEL1.c_str());
-    model->build(*file);
+    model->build(*file, groups);
     
     EXPECT_TRUE(model->isBuilt());
     EXPECT_TRUE(model->reduceToRobotFrame());
@@ -363,10 +365,14 @@ TEST(FK, OneRobot)
 	"Available groups: one_robot::base \n"
 	"Group one_robot::base with ID 0 has 1 roots: base_link_joint \n"
 	"The state components for this group are: 0 1 2 3 4 base_link_joint base_link_joint base_link_joint link_a_joint link_c_joint \n";
-        
+    std::map < std::string, std::vector<std::string> > groups;
+    groups["base"].push_back("base_link");
+    groups["base"].push_back("link_a");
+    groups["base"].push_back("link_b");
+    groups["base"].push_back("link_c");
     planning_models::KinematicModel *model = new planning_models::KinematicModel();
     model->setVerbose(false);
-    model->build(MODEL2);
+    model->build(MODEL2, groups);
     
     EXPECT_TRUE(model->isBuilt());
     EXPECT_TRUE(model->reduceToRobotFrame());
@@ -731,10 +737,34 @@ TEST(FK, MoreRobots)
 	"The state components for this group are: 0 1 2 3 4 5 6 7 8 9 base_link1_joint base_link1_joint base_link1_joint link_a_joint link_c_joint base_link2_joint base_link2_joint base_link2_joint link_d_joint link_f_joint \n"
 	"Group more_robots::r2 with ID 3 has 1 roots: base_link2_joint \n"
 	"The state components for this group are: 5 6 7 8 9 base_link2_joint base_link2_joint base_link2_joint link_d_joint link_f_joint \n";
-    
+
+    std::map < std::string, std::vector<std::string> > groups;
+    groups["r1"].push_back("base_link1");
+    groups["r1"].push_back("link_a");
+    groups["r1"].push_back("link_b");
+    groups["r1"].push_back("link_c");
+    groups["r2"].push_back("base_link2");
+    groups["r2"].push_back("link_d");
+    groups["r2"].push_back("link_e");
+    groups["r2"].push_back("link_f");
+    groups["r1r2"].push_back("base_link1");
+    groups["r1r2"].push_back("link_a");
+    groups["r1r2"].push_back("link_b");
+    groups["r1r2"].push_back("link_c");
+    groups["r1r2"].push_back("base_link2");
+    groups["r1r2"].push_back("link_d");
+    groups["r1r2"].push_back("link_e");
+    groups["r1r2"].push_back("link_f");
+    groups["parts"].push_back("base_link1");
+    groups["parts"].push_back("link_a");
+    groups["parts"].push_back("link_b");
+    groups["parts"].push_back("link_e");
+    groups["parts"].push_back("link_f");
+    groups["parts"].push_back("base_link3");
+
     planning_models::KinematicModel *model = new planning_models::KinematicModel();
     model->setVerbose(false);
-    model->build(MODEL3);
+    model->build(MODEL3, groups);
     
     EXPECT_TRUE(model->isBuilt());
     EXPECT_TRUE(model->reduceToRobotFrame());

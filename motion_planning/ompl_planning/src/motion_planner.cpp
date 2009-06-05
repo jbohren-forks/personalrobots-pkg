@@ -490,7 +490,6 @@ public:
     virtual void loadRobotDescription(void)
     {
 	CollisionSpaceMonitor::loadRobotDescription();
-	defaultPosition();
 	
 	ROS_DEBUG("=======================================");	
 	std::stringstream ss;

@@ -1,4 +1,4 @@
-## This file should be loaded under /planning
+## This file should be loaded under <robot description>_planning
 
 ## the list of groups for which motion planning can be performed
 group_list:

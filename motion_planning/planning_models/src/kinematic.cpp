@@ -384,15 +384,15 @@ bool planning_models::KinematicModel::reduceToRobotFrame(void)
     return result;
 }
 
-void planning_models::KinematicModel::build(const std::string &description, bool ignoreSensors)
+void planning_models::KinematicModel::build(const std::string &description, const std::map< std::string, std::vector<std::string> > &groups, bool ignoreSensors)
 {	    
     robot_desc::URDF *file = new robot_desc::URDF();
     file->loadString(description.c_str());
-    build(*file, ignoreSensors);
+    build(*file, groups, ignoreSensors);
     delete file;
 }
 
-void planning_models::KinematicModel::build(const robot_desc::URDF &model, bool ignoreSensors)
+void planning_models::KinematicModel::build(const robot_desc::URDF &model, const std::map< std::string, std::vector<std::string> > &groups, bool ignoreSensors)
 {
     if (m_built)
     {

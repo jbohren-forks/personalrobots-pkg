@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 2.4.6)
 include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
 rospack(plan_ompl_path)
 
+set(ROS_BUILD_TYPE Debug)
+
 rospack_add_executable(plan_kinematic_path src/plan_kinematic_path.cpp)
 
 rospack_add_executable(rarm_execute_plan_to_state src/right_arm/execute_plan_to_state.cpp)
