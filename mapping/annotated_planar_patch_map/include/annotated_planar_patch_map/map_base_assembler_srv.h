@@ -220,7 +220,6 @@ private:
    void MapBaseAssemblerSrv<T,F>::scansCallback(const boost::shared_ptr<T>& scan_ptr)
 {
   ROS_INFO("got map") ;
-  printf("got map") ;
 
   const T scan = *scan_ptr ;
 
@@ -256,7 +255,8 @@ private:
  template <class T,class F>
    bool MapBaseAssemblerSrv<T,F>::buildMap(BuildAnnotatedMap::Request& req, BuildAnnotatedMap::Response& resp)
 {
-  //printf("Starting Service Request\n") ;
+  ROS_DEBUG("Starting Service Request\n") ;
+  ROS_DEBUG_STREAM( "\tFrom: \t" << req.begin << "\n\tTo:\t" << req.end <<"\n") ;
 
   scan_hist_mutex_.lock() ;
   // Determine where in our history we actually are
@@ -269,7 +269,10 @@ private:
     i++ ;
   }
   unsigned int start_index = i ;
-
+  if(i>0)
+    ROS_DEBUG_STREAM( "Last scan before the interval\t" << scan_hist_[i-1].header.stamp<<"\n" );
+  else
+    ROS_DEBUG_STREAM( "No scans before the interval\n");
   unsigned int req_pts = 0 ;                                                          // Keep a total of the points in the current request
   // Find the end of the request
   while ( i < scan_hist_.size() &&                                                    // Don't go past end of deque
@@ -279,6 +282,10 @@ private:
     i += 1 ;
   }
   unsigned int past_end_index = i ;
+  if(i<scan_hist_.size())
+    ROS_DEBUG_STREAM( "First scan after the interval:\t" << scan_hist_[i].header.stamp << "\n");
+  else
+    ROS_DEBUG_STREAM( "No scans after the interval\n");
 
   if (start_index == past_end_index)
   {
@@ -342,6 +349,14 @@ private:
    {
      //Compute the center of mass for each planar polygon
      unsigned int num_poly=map_in.polygons.size();
+     if(num_poly==0)
+       {
+	 map_out.set_polygons_size(0);
+	 map_out.header=map_in.header;
+	 return;
+       }
+
+
      //Simple union-find. We keep only polygons where
      //canonical_polygon[iPoly]==iPoly
      std::vector<int> canonical_polygon;
@@ -445,7 +460,6 @@ private:
      std::vector<bool> have_merged;
      have_merged.resize(num_tags_in);
      int num_left=0;
-     ROS_DEBUG("\tmerging existing tags ");
      for(unsigned int iT=0;iT<num_tags_in;iT++)
        {
 	 bool bMerged=false;
@@ -463,7 +477,7 @@ private:
 	 if(!bMerged)
 	   num_left++;
        }
-     ROS_DEBUG_STREAM("\tmerging new tags" << num_left);
+
      if(num_left>0)
        {
 	 

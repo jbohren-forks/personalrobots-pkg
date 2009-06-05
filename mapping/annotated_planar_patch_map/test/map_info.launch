@@ -1,17 +1,17 @@
 <launch>
 
-     <node pkg="annotated_planar_patch_map" type="annotated_map_info"  name="am_info0" respawn="false" output="screen">
-        <remap from="annotated_map" to="/empty_poly_map" />
+<!--     <node pkg="annotated_planar_patch_map" type="annotated_map_info"  name="am_info0" respawn="false" output="screen">
+        <remap from="annotated_map" to="/patch_maps/empty" />
      </node>
-
+-->
 
      <node pkg="annotated_planar_patch_map" type="annotated_map_info"  name="am_info1" respawn="false" output="screen">
-        <remap from="annotated_map" to="/labeled_maps/blank" />
+        <remap from="annotated_map" to="/patch_maps/map_l1" />
    
      </node>
 
      <node pkg="annotated_planar_patch_map" type="annotated_map_info"  name="am_info2" respawn="false" output="screen">
-        <remap from="annotated_map" to="/labeled_maps/blank2" />
+        <remap from="annotated_map" to="/patch_maps/map_l2" />
    
      </node>
 
