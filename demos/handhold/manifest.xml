@@ -1,0 +1,13 @@
+<package>
+  <description brief="Handholding demo">
+    This demo allows you to lead the robot around by its hand.
+  </description>
+  <author>Stuart Glaser</author>
+  <license>BSD</license>
+  <depend package="roscpp" />
+  <depend package="tf" />
+  <depend package="pr2_default_controllers" />
+  <url>http://pr.willowgarage.com</url>
+  <export>
+  </export>
+</package>

@@ -1,0 +1,12 @@
+<launch>
+  <!--
+  <node pkg="mechanism_control" type="spawner.py"
+        args="$(find pr2_default_controllers)/r_arm_cartesian_pose_controller.xml" />
+  -->
+  <include file="$(find life_test)/arm_life_test/controller_cartesian_pose_right.launch" />
+  <node pkg="mechanism_control" type="spawner.py"
+        args="$(find pr2_default_controllers)/base_controller.xml" />
+
+  <node pkg="handhold" type="handhold" />
+
+</launch>
