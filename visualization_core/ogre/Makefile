@@ -54,14 +54,14 @@ $(SOURCE_DIR)/Makefile: $(SOURCE_DIR)/unpacked changelist.txt
 ogre:
 	@if test `uname` = Darwin ; then \
 	  echo "OS X detected; assuming that you have installed the OGRE SDK"; \
-	elif ! pkg-config --exact-version 1.6.1 OGRE; then \
-	  echo "You don't have OGRE.  I'm going to build it."; \
+	elif ! PKG_CONFIG_PATH= pkg-config --exact-version 1.6.1 OGRE; then \
+	  echo "You don't have OGRE locally.  I'm going to build it in ros-pkg."; \
 	  if [ -h ogre/lib/OGRE ]; then \
 	    rm ogre/lib/OGRE; \
 	  fi; \
 	  make ogre/lib/pkgconfig/OGRE.pc; \
 	else \
-	  echo "You have OGRE 1.6.1. Watch this!"; \
+	  echo "You have OGRE 1.6.1 locally, making a soft link to the system version."; \
 	  rm -rf ogre; \
 	  mkdir -p ogre/lib; \
 	  ln -sf `pkg-config --variable=prefix OGRE`/lib/OGRE ogre/lib/OGRE; \
