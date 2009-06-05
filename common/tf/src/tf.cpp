@@ -38,6 +38,7 @@ using namespace tf;
 // Thanks to Rob for pointing out the right way to do this.
 const double tf::Transformer::DEFAULT_CACHE_TIME;
 
+
 std::string tf::remap(const std::string& prefix, const std::string& frame_id)
 {
   //  printf ("remapping prefix:%s with frame_id:%s\n", prefix.c_str(), frame_id.c_str());
@@ -72,6 +73,8 @@ std::string tf::remap(const std::string& prefix, const std::string& frame_id)
     return frame_id;
   }
 };
+
+
 
 Transformer::Transformer(bool interpolating,
                                 ros::Duration cache_time):
@@ -840,7 +843,7 @@ void Transformer::getFrameStrings(std::vector<std::string> & vec) const
   //  for (std::vector< TimeCache*>::iterator  it = frames_.begin(); it != frames_.end(); ++it)
   for (unsigned int counter = 1; counter < frames_.size(); counter ++)
   {
-    vec.push_back(tf::remap(tf_prefix_, frameIDs_reverse[counter]));
+    vec.push_back(std::string("/") + frameIDs_reverse[counter]);
   }
   return;
 }
