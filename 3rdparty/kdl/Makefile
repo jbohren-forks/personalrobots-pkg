@@ -3,6 +3,7 @@ all: installed
 SVN_REVISION=-r 30175
 SVN_DIR = kdl-svn
 SVN_URL = http://svn.mech.kuleuven.be:/repos/orocos/branches/kdl-one-beta
+SVN_PATCH=total.patch
 INSTALL_DIR = kdl
 CMAKE = cmake
 BOOST_INCLUDE =$(shell rosboost-cfg --include_dirs)
@@ -18,7 +19,7 @@ CMAKE_ARGS = -DCMAKE_INSTALL_PREFIX=$(PWD)/$(INSTALL_DIR)/ \
 
 include $(shell rospack find mk)/svn_checkout.mk
 
-installed: $(SVN_DIR) Makefile
+installed: $(SVN_DIR) patched Makefile
 	-mkdir -p $(SVN_DIR)/build
 	cd $(SVN_DIR)/build && $(CMAKE) $(CMAKE_ARGS) ..
 	cd $(SVN_DIR)/build && make $(ROS_PARALLEL_JOBS) && make install

@@ -1,0 +1,33 @@
+Index: src/joint.cpp
+===================================================================
+--- src/joint.cpp	(revision 30175)
++++ src/joint.cpp	(working copy)
+@@ -154,5 +154,10 @@
+       }
+   }
+ 
++  Vector Joint::JointOrigin() const
++  {
++    return origin;
++  }
++
+ } // end of namespace KDL
+ 
+Index: src/joint.hpp
+===================================================================
+--- src/joint.hpp	(revision 30175)
++++ src/joint.hpp	(working copy)
+@@ -102,6 +102,13 @@
+          */
+         Vector JointAxis() const;
+ 
++        /**                                                                     
++         * Request the Vector corresponding to the origin of a revolute joint.    
++         *                                                                      
++         * @return Vector
++         */
++        Vector JointOrigin() const;
++
+         /**
+          * Request the type of the joint.
+          *
