@@ -4,7 +4,7 @@
   <license>BSD</license>
   <review status="na" notes=""/>
   <url>http://pr.willowgarage.com/wiki</url>
-  <depend package="old_2dnav_pr2"/>
+  <depend package="2dnav_pr2"/>
   <depend package="laser_scan"/>
   <depend package="robot_self_filter"/>
   <depend package="point_cloud_assembler"/>
@@ -14,7 +14,11 @@
   <depend package="executive_python"/>
   <depend package="plan_ompl_path"/>
   <depend package="pr2_msgs"/>
+  <depend package="robot_msgs"/>
   <depend package="visualization_msgs" />
+  <depend package="motion_planning_msgs" />
+  <depend package="motion_planning_srvs" />
+  <depend package="pr2_ik" />
   <depend package="rosviz"/>
   <depend package="robot_actions"/>
   <depend package="tf"/>
