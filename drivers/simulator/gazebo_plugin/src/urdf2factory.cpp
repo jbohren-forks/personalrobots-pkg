@@ -105,6 +105,9 @@ int main(int argc, char **argv)
       }
     }
 
+    /// @todo: hack, waiting for system to startup, find out why ConnectWait goes through w/o locking in gazebo
+    usleep(2000000);
+
     /// Open the Factory interface
     try
     {
