@@ -35,7 +35,7 @@
 #include <opencv/cv.h>
 #include <opencv/highgui.h>
 
-#include <ros/node.h>
+#include <ros/ros.h>
 #include <image_msgs/Image.h>
 #include <opencv_latest/CvBridge.h>
 
@@ -45,30 +45,35 @@
 class ImageView
 {
 private:
-  image_msgs::Image img_msg_;
+  ros::NodeHandle node_handle_;
+  ros::V_Subscriber subs_;
+  
+  image_msgs::ImageConstPtr last_msg_;
   image_msgs::CvBridge img_bridge_;
+  boost::mutex image_mutex_;
+  
   std::string window_name_;
   boost::format filename_format_;
   int count_;
-  boost::mutex image_mutex_;
 
 public:
-  ImageView() : filename_format_(""), count_(0)
+  ImageView(const ros::NodeHandle& node_handle)
+    : node_handle_(node_handle), filename_format_(""), count_(0)
   {
-    ros::Node* node = ros::Node::instance();
+    node_handle_.param("~window_name", window_name_, node_handle_.mapName("image"));
 
-    node->param("~window_name", window_name_, node->mapName("image"));
     bool autosize;
-    node->param("~autosize", autosize, false);
+    node_handle_.param("~autosize", autosize, false);
+    
     std::string format_string;
-    node->param("~filename_format", format_string, std::string("frame%04i.jpg"));
+    node_handle_.param("~filename_format", format_string, std::string("frame%04i.jpg"));
     filename_format_.parse(format_string);
     
     cvNamedWindow(window_name_.c_str(), autosize ? CV_WINDOW_AUTOSIZE : 0);
     cvSetMouseCallback(window_name_.c_str(), &ImageView::mouse_cb, this);
     cvStartWindowThread();
 
-    node->subscribe("image", img_msg_, &ImageView::image_cb, this, 1);
+    subs_.push_back( node_handle_.subscribe("image", 1, &ImageView::image_cb, this) );
   }
 
   ~ImageView()
@@ -76,15 +81,21 @@ public:
     cvDestroyWindow(window_name_.c_str());
   }
 
-  void image_cb()
+  void image_cb(const image_msgs::ImageConstPtr& msg)
   {
     boost::lock_guard<boost::mutex> guard(image_mutex_);
     
-    // May want to view raw bayer data
-    if (img_msg_.encoding.find("bayer") != std::string::npos)
-      img_msg_.encoding = "mono";
+    // Hang on to message pointer for sake of mouse_cb
+    last_msg_ = msg;
 
-    if (img_bridge_.fromImage(img_msg_, "bgr"))
+    /** @todo: restore raw bayer display, ideally without copying the whole msg... */
+#if 0
+    // May want to view raw bayer data
+    if (msg->encoding.find("bayer") != std::string::npos)
+      msg->encoding = "mono";
+#endif
+
+    if (img_bridge_.fromImage(*msg, "bgr"))
       cvShowImage(window_name_.c_str(), img_bridge_.toIpl());
   }
 
@@ -110,15 +121,17 @@ public:
 
 int main(int argc, char **argv)
 {
-  ros::init(argc, argv);
-  ros::Node n("image_view");
+  /** @todo: unique node names so can run multiple instances */
+  ros::init(argc, argv, "image_view");
+  ros::NodeHandle n;
   if (n.mapName("image") == "/image") {
     ROS_WARN("image_view: image has not been remapped! Example command-line usage:\n"
              "\t$ rosrun image_view image_view image:=/forearm/image_color");
   }
   
-  ImageView view;
-  n.spin();
+  ImageView view(n);
+
+  ros::spin();
   
   return 0;
 }
