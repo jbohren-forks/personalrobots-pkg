@@ -1,0 +1,20 @@
+<launch>
+
+  <!-- The simulator -->
+  <node name="forearm_simulator" pkg="forearm_cam" type="fcam_sim" output="screen"/>
+
+  <!-- The camera node -->
+  <group ns="forearm">
+    <param name="if_name" type="str" value="lo"/>
+    <param name="ip_address" type="str" value="127.0.0.1"/>
+    <param name="serial_number" type="int" value="12345"/>
+    <param name="video_mode" type="str" value="640x480x15"/>
+    <param name="do_colorize" type="bool" value="True"/>
+    <param name="do_rectify" type="bool" value="True"/>
+    <param name="ext_trigger" type="bool" value="False"/>
+    <param name="trigger_controller" type="string" value=""/>
+    <param name="port" type="int" value="62100"/>
+  </group>
+  <node name="forearm" pkg="forearm_cam" type="forearm_node" respawn="false" output="screen"/>
+
+</launch>
