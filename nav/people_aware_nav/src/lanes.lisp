@@ -1,8 +1,8 @@
-(roslisp:ros-load-message-types "robot_msgs/PointCloud" "robot_msgs/Point" "deprecated_msgs/Pose2DFloat32" 
+(roslisp:load-message-types "robot_msgs/PointCloud" "robot_msgs/Point" "deprecated_msgs/Pose2DFloat32" 
 				"robot_msgs/PoseStamped" "std_msgs/Empty"
 				"people_aware_nav/ConstrainedGoal" "people_aware_nav/ConstrainedMoveBaseState"
 				)
-(roslisp:ros-load-service-types "people_aware_nav/PersonOnPath")
+(roslisp:load-service-types "people_aware_nav/PersonOnPath")
 
 (defpackage :lane-following
   (:nicknames :lanes)
