@@ -15,7 +15,7 @@
              k_position="100" k_velocity="0.05"
              safety_length_min="0.0" safety_length_max="0.0" />
       <calibration reference_position="-0.35" values="0 0" />
-      <joint_properties damping="0.01" />
+      <joint_properties damping="0.005" />
     </joint>
 
     <link name="${name}_mount_link">
@@ -26,11 +26,11 @@
         <mass value="0.01" />
         <com xyz="0 0 0" />
         <inertia ixx="0.0001" ixy="0" ixz="0" 
-		 iyy="0.0001" iyz="0" 
+		 iyy="0.00001" iyz="0" 
 		 izz="0.0001" />
       </inertial>
 
-      <visual>
+      <visual><!--{-->
         <origin xyz="0 0 0" rpy="0 0 0" />
         <map name="gazebo_material" flag="gazebo">
           <elem key="material" value="PR2/Red" />
@@ -59,14 +59,14 @@
       <anchor xyz="0 0 0" />
     </joint>
 
-    <sensor name="${name}_link" type="laser">
+    <sensor name="${name}_link" type="laser"><!--}-->
       <parent name="${name}_mount_link" />
       <origin xyz="0 0 0.03" rpy="0 0 0" />
       <joint name="${name}_joint" />
       <inertial>
-        <mass value="0.1" />
+        <mass value="0.0001" />
         <com xyz="0 0 0" />
-        <inertia ixx="0.001" ixy="0" ixz="0" iyy="0.001" iyz="0" izz="0.001" />
+        <inertia ixx="0.001" ixy="0" ixz="0" iyy="0.000005" iyz="0" izz="0.001" />
       </inertial>
 
       <visual>
