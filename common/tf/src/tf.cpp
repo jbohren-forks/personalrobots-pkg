@@ -840,7 +840,7 @@ void Transformer::getFrameStrings(std::vector<std::string> & vec) const
   //  for (std::vector< TimeCache*>::iterator  it = frames_.begin(); it != frames_.end(); ++it)
   for (unsigned int counter = 1; counter < frames_.size(); counter ++)
   {
-    vec.push_back(frameIDs_reverse[counter]);
+    vec.push_back(tf::remap(tf_prefix_, frameIDs_reverse[counter]));
   }
   return;
 }
