@@ -125,3 +125,86 @@ std::vector< boost::shared_ptr<planning_environment::RobotModels::PlannerConfig>
     }
     return configs;
 }
+
+void planning_environment::RobotModels::getSelfSeeLinks(std::vector<std::string> &links)
+{
+    std::string link_list;
+    nh_.param(description_ + "_collision/self_see", link_list, std::string(""));
+    std::stringstream link_list_stream(link_list);
+    
+    while (link_list_stream.good() && !link_list_stream.eof())
+    {
+	std::string name;
+	link_list_stream >> name;
+	if (name.size() == 0)
+	    continue;
+	if (urdf_->getLink(name))
+	    links.push_back(name);
+	else
+	    ROS_ERROR("Unknown link: '%s'", name.c_str());
+    }
+}
+
+void planning_environment::RobotModels::getCollisionCheckLinks(std::vector<std::string> &links)
+{
+    std::string link_list;
+    nh_.param(description_ + "_collision/collision_links", link_list, std::string(""));
+    std::stringstream link_list_stream(link_list);
+    
+    while (link_list_stream.good() && !link_list_stream.eof())
+    {
+	std::string name;
+	link_list_stream >> name;
+	if (name.size() == 0)
+	    continue;
+	if (urdf_->getLink(name))
+	    links.push_back(name);
+	else
+	    ROS_ERROR("Unknown link: '%s'", name.c_str());
+    }
+}
+
+void planning_environment::RobotModels::getSelfCollisionGroups(std::vector< std::vector<std::string> > &groups)
+{
+    std::string group_list;
+    nh_.param(description_ + "_collision/self_collision_groups", group_list, std::string(""));
+    std::stringstream group_list_stream(group_list);
+    while (group_list_stream.good() && !group_list_stream.eof())
+    {
+	std::string name;
+	std::string group_elems;
+	group_list_stream >> name;
+	if (name.size() == 0)
+	    continue;
+	nh_.param(description_ + "_collision/" + name, group_elems, std::string(""));	
+	std::stringstream group_elems_stream(group_elems);
+	std::vector<std::string> this_group;
+	while (group_elems_stream.good() && !group_elems_stream.eof())
+	{
+	    std::string link_name;
+	    group_elems_stream >> link_name;
+	    if (link_name.size() == 0)
+		continue;
+	    if (urdf_->getLink(link_name))
+		this_group.push_back(link_name);
+	    else
+		ROS_ERROR("Unknown link: '%s'", link_name.c_str());
+	}
+	if (this_group.size() > 0)
+	    groups.push_back(this_group);
+    }
+}
+
+double planning_environment::RobotModels::getSelfSeePadding(void)
+{
+    double value;
+    nh_.param(description_ + "_collision/self_see_padd", value, 0.0);
+    return value;
+}
+
+double planning_environment::RobotModels::getSelfSeeScale(void)
+{
+    double value;
+    nh_.param(description_ + "_collision/self_see_scale", value, 1.0);
+    return value;
+}

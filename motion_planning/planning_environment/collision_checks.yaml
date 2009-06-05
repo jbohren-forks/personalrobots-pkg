@@ -74,3 +74,9 @@ self_see:
   torso_lift_link
   base_link
   
+
+## The padding to be added for the body parts the robot can see
+self_see_padd: 0.1
+
+## The scaling to be considered for the body parts the robot can see
+self_see_scale: 1.0

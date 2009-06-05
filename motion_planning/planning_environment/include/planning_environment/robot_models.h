@@ -112,14 +112,35 @@ namespace planning_environment
 	    return planning_groups_;
 	}	
 	
+	const std::vector<std::string> &getCollisionCheckLinks(void) const
+	{
+	    return collision_check_links_;
+	}
+	
+	const std::vector<std::string> &getSelfSeeLinks(void) const
+	{
+	    return self_see_links_;
+	}
+
+	const std::vector< std::vector<std::string> > &getSelfCollisionGroups(void) const
+	{
+	    return self_collision_check_groups_;
+	}
+	
+	double getSelfSeePadding(void);
+	double getSelfSeeScale(void);
+	
 	std::vector< boost::shared_ptr<PlannerConfig> > getGroupPlannersConfig(const std::string &group);
 	
 	/** Reload the robot description and recreate the model */
 	virtual void reload(void)
 	{
-	    planning_groups_.clear();
 	    kmodel_.reset();
 	    urdf_.reset();
+	    planning_groups_.clear();
+	    self_see_links_.clear();
+	    collision_check_links_.clear();
+	    self_collision_check_groups_.clear();
 	    loadRobot();
 	}
 	
@@ -128,14 +149,23 @@ namespace planning_environment
 	void loadRobot(void);
 	void getPlanningGroups(std::map< std::string, std::vector<std::string> > &groups);
 	
+	void getSelfSeeLinks(std::vector<std::string> &links);
+	void getCollisionCheckLinks(std::vector<std::string> &links);
+	void getSelfCollisionGroups(std::vector< std::vector<std::string> > &groups);
+	
+
 	ros::NodeHandle                                    nh_;
 	  
 	std::string                                        description_;
-	std::map< std::string, std::vector<std::string> >  planning_groups_;
 	
-
 	boost::shared_ptr<planning_models::KinematicModel> kmodel_;
 	boost::shared_ptr<robot_desc::URDF>                urdf_;
+	
+	std::map< std::string, std::vector<std::string> >  planning_groups_;
+	std::vector<std::string>                           self_see_links_;
+	std::vector<std::string>                           collision_check_links_;
+	std::vector< std::vector<std::string> >            self_collision_check_groups_;
+
     };
     
 	

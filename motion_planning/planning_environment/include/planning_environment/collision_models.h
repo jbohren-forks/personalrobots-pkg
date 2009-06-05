@@ -69,9 +69,6 @@ namespace planning_environment
 	{
 	    RobotModels::reload();
 	    ode_collision_model_.reset();
-	    self_see_links_.clear();
-	    collision_check_links_.clear();
-	    self_collision_check_groups_.clear();
 	    loadCollision();
 	}
 	
@@ -81,31 +78,9 @@ namespace planning_environment
 	    return ode_collision_model_;
 	}
 
-	const std::vector<std::string> &getCollisionCheckLinks(void) const
-	{
-	    return collision_check_links_;
-	}
-	
-	const std::vector<std::string> &getSelfSeeLinks(void) const
-	{
-	    return self_see_links_;
-	}
-
-	const std::vector< std::vector<std::string> > &getSelfCollisionGroups(void) const
-	{
-	    return self_collision_check_groups_;
-	}
-	
     protected:
 	
 	void loadCollision(void);
-	void getSelfSeeLinks(std::vector<std::string> &links);
-	void getCollisionCheckLinks(std::vector<std::string> &links);
-	void getSelfCollisionGroups(std::vector< std::vector<std::string> > &groups);
-	
-	std::vector<std::string>                             self_see_links_;
-	std::vector<std::string>                             collision_check_links_;
-	std::vector< std::vector<std::string> >              self_collision_check_groups_;
 	
 	boost::shared_ptr<collision_space::EnvironmentModel> ode_collision_model_;
 
