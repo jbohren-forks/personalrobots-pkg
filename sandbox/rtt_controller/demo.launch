@@ -1,8 +1,8 @@
 <launch>
 <!-- <node pkg="xacro" type="xacro.py" args="-o $(find rtt_controller)/pr2_desc.xml $(find pr2_defs)/robots/pr2.xacro.xml"  />-->
- <include file="$(find pr2_alpha)/prg.machine" />
+ <include file="$(find pr2_alpha)/prf.machine" />
 <!-- RosDeployer -->
 <!-- <node machine="realtime_root" pkg="orocos_ros_integration" type="rosdeployer" args="-s $(find rtt_controller)/demo.xml -ldebug" output="screen"/>-->
 <!-- PR2 Calibration -->
- <include file="$(find pr2_alpha)/calibrate_prg.launch" />
+ <include file="$(find pr2_alpha)/calibrate_prf.launch" />
 </launch>

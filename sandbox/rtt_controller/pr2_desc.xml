@@ -11,7 +11,7 @@
   
   
   
-  
+  <!--include filename="$(find pr2_defs)/defs/ptz_defs.xml" /-->
   
   <map flag="gazebo" name="sensor">
   <verbatim key="mechanism_control_simulation">
@@ -46,7 +46,8 @@
   </verbatim>
 </map>
 
-  <joint name="base_joint" type="planar"/><link name="base_link">
+  <joint name="base_joint" type="planar"/>
+   <link name="base_link">
       <parent name="world"/>
       <origin rpy="0 0 0" xyz="0 0 0.051"/>
       <joint name="base_joint"/>
@@ -60,7 +61,7 @@
       <visual>
         <origin rpy="0 0 0" xyz="0 0 0"/>
         <map flag="gazebo" name="gazebo_material">
-          <elem key="material" value="Gazebo/Green"/>
+          <elem key="material" value="PR2/Green"/>
         </map>
         <geometry name="base_visual">
           <mesh filename="base"/>
@@ -104,7 +105,7 @@
       <visual>
         <origin rpy="0 0 0" xyz="0 0 0.0"/>
         <map flag="gazebo" name="gazebo_material">
-          <elem key="material" value="Gazebo/PioneerBody"/>
+          <elem key="material" value="PR2/Red"/>
         </map>
         <geometry name="base_laser_visual">
           <mesh scale="0.001 0.001 0.001"/>
@@ -132,6 +133,7 @@
 
             <minRange>0.05</minRange>
             <maxRange>10.0</maxRange>
+            <resRange>0.01</resRange>
             <updateRate>20.0</updateRate>
             <controller:ros_laser name="ros_base_laser_controller" plugin="libros_laser.so">
               <gaussianNoise>0.005</gaussianNoise>
@@ -164,7 +166,7 @@
       <visual>
         <origin rpy="0 0 0" xyz="0 0 0"/>
         <map flag="gazebo" name="gazebo_material">
-          <elem key="material" value="Gazebo/Green"/>
+          <elem key="material" value="PR2/Green"/>
         </map>
         <geometry name="fl_caster_rotation_visual">
           <mesh filename="caster" scale="1 1 1"/>
@@ -313,7 +315,7 @@
       <visual>
         <origin rpy="0 0 0" xyz="0 0 0"/>
         <map flag="gazebo" name="gazebo_material">
-          <elem key="material" value="Gazebo/Green"/>
+          <elem key="material" value="PR2/Green"/>
         </map>
         <geometry name="fr_caster_rotation_visual">
           <mesh filename="caster" scale="1 1 1"/>
@@ -462,7 +464,7 @@
       <visual>
         <origin rpy="0 0 0" xyz="0 0 0"/>
         <map flag="gazebo" name="gazebo_material">
-          <elem key="material" value="Gazebo/Green"/>
+          <elem key="material" value="PR2/Green"/>
         </map>
         <geometry name="bl_caster_rotation_visual">
           <mesh filename="caster" scale="1 1 1"/>
@@ -611,7 +613,7 @@
       <visual>
         <origin rpy="0 0 0" xyz="0 0 0"/>
         <map flag="gazebo" name="gazebo_material">
-          <elem key="material" value="Gazebo/Green"/>
+          <elem key="material" value="PR2/Green"/>
         </map>
         <geometry name="br_caster_rotation_visual">
           <mesh filename="caster" scale="1 1 1"/>
@@ -778,8 +780,8 @@
 
       <visual>
         <origin rpy="0 0 0" xyz="0 0 0"/>
-        <map flag="gazebo" name="foo">
-	  <elem key="material" value="Gazebo/Red"/>
+        <map flag="gazebo" name="gazebo_material">
+	  <elem key="material" value="PR2/Grey2"/>
         </map>
         <geometry name="torso_lift_visual">
           <mesh filename="torso"/>
@@ -831,7 +833,7 @@
       <visual>
         <origin rpy="0 0 0 " xyz="0 0 0.0"/>
         <map flag="gazebo" name="gazebo_material">
-          <elem key="material" value="Gazebo/Blue"/>
+          <elem key="material" value="PR2/Blue"/>
         </map>
         <geometry name="head_pan_visual">
           <mesh filename="head_pan"/>
@@ -868,7 +870,7 @@
       <visual>
         <origin rpy="0.0 0.0 0.0 " xyz="0 0 0"/>
         <map flag="gazebo" name="gazebo_material">
-          <elem key="material" value="Gazebo/Green"/>
+          <elem key="material" value="PR2/Green"/>
         </map>
         <geometry name="head_tilt_visual">
           <mesh filename="head_tilt"/>
@@ -895,7 +897,7 @@
       <visual>
         <origin rpy="0 0 0" xyz="0 0 0"/>
         <map flag="gazebo" name="gazebo_material">
-          <elem key="material" value="Gazebo/Blue"/>
+          <elem key="material" value="PR2/Blue"/>
         </map>
         <geometry name="head_plate_frame_visual">
           <mesh scale="0.01 0.01 0.01"/>
@@ -925,7 +927,7 @@
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <map flag="gazebo" name="gazebo_material">
-        <elem key="material" value="Gazebo/Blue"/>
+        <elem key="material" value="PR2/Blue"/>
       </map>
       <geometry name="high_def_visual">
         <mesh scale="0.01 0.01 0.01"/>
@@ -942,8 +944,7 @@
     <map flag="gazebo" name="sensor">
       <verbatim key="sensor_high_def_camera">
         <sensor:camera name="high_def_sensor">
-          <imageWidth>1024</imageWidth>
-          <imageHeight>800</imageHeight>
+          <imageSize>1024 800</imageSize>
           <hfov>60</hfov>
           <nearClip>0.1</nearClip>
           <farClip>100</farClip>
@@ -976,7 +977,7 @@
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <map flag="gazebo" name="gazebo_material">
-        <elem key="material" value="Gazebo/Blue"/>
+        <elem key="material" value="PR2/Blue"/>
       </map>
       <geometry name="high_def_optical_visual">
         <mesh scale="0.01 0.01 0.01"/>
@@ -1006,7 +1007,7 @@
       <visual>
         <origin rpy="0 0 0" xyz="0.0 0 0.05"/>
         <map flag="gazebo" name="gazebo_material">
-          <elem key="material" value="Gazebo/Blue"/>
+          <elem key="material" value="PR2/Blue"/>
         </map>
         <geometry name="stereo_visual">
           <mesh scale="0.005 0.01 0.005"/>
@@ -1034,7 +1035,7 @@
       <visual>
         <origin rpy="0 0 0" xyz="0 0 0"/>
         <map flag="gazebo" name="gazebo_material">
-          <elem key="material" value="Gazebo/Blue"/>
+          <elem key="material" value="PR2/Blue"/>
         </map>
         <geometry name="stereo_optical_fixed_visual">
           <mesh scale="0.01 0.01 0.01"/>
@@ -1062,16 +1063,16 @@
       <visual>
         <origin rpy="0 0 0" xyz="0 0 0"/>
         <map flag="gazebo" name="gazebo_material">
-          <elem key="material" value="Gazebo/Blue"/>
+          <elem key="material" value="PR2/Blue"/>
         </map>
-        <geometry name="stereo_r_stereo_camera_visual">
+        <geometry name="stereo_l_stereo_camera_visual">
           <mesh scale="0.01 0.01 0.01"/>
         </geometry>
       </visual>
 
       <collision>
         <origin rpy="0 0 0" xyz="0 0 0"/>
-        <geometry name="stereo_r_stereo_camera_collision">
+        <geometry name="stereo_l_stereo_camera_collision">
           <box size="0.01 0.01 0.01"/>
         </geometry>
       </collision>
@@ -1079,8 +1080,8 @@
       <map flag="gazebo" name="sensor">
         <verbatim key="sensor_stereo_l_camera">
           <sensor:camera name="stereo_l_sensor">
-            <imageWidth>640</imageWidth>
-            <imageHeight>480</imageHeight>
+            <imageSize>640 480</imageSize>
+            <imageFormat>L8</imageFormat>
             <hfov>90</hfov>
             <nearClip>0.1</nearClip>
             <farClip>100</farClip>
@@ -1109,7 +1110,7 @@
       <visual>
         <origin rpy="0 0 0" xyz="0 0 0"/>
         <map flag="gazebo" name="gazebo_material">
-          <elem key="material" value="Gazebo/Blue"/>
+          <elem key="material" value="PR2/Blue"/>
         </map>
         <geometry name="stereo_r_stereo_camera_visual">
           <mesh scale="0.01 0.01 0.01"/>
@@ -1126,8 +1127,8 @@
       <map flag="gazebo" name="sensor">
         <verbatim key="sensor_stereo_r_camera">
           <sensor:camera name="stereo_r_sensor">
-            <imageWidth>640</imageWidth>
-            <imageHeight>480</imageHeight>
+            <imageSize>640 480</imageSize>
+            <imageFormat>L8</imageFormat>
             <hfov>90</hfov>
             <nearClip>0.1</nearClip>
             <farClip>100</farClip>
@@ -1185,7 +1186,7 @@
       <visual>
         <origin rpy="0 0 0" xyz="0 0 0"/>
         <map flag="gazebo" name="gazebo_material">
-          <elem key="material" value="Gazebo/PioneerBody"/>
+          <elem key="material" value="PR2/Red"/>
         </map>
         <geometry name="laser_tilt_mount_visual">
           <mesh filename="hok_tilt"/>
@@ -1244,6 +1245,7 @@
 
             <minRange>0.05</minRange>
             <maxRange>10.0</maxRange>
+            <resRange>0.01</resRange>
             <updateRate>20.0</updateRate>
             <controller:ros_laser name="ros_laser_tilt_controller" plugin="libros_laser.so">
               <gaussianNoise>0.005</gaussianNoise>
@@ -1282,7 +1284,7 @@
       <visual>
         <origin rpy="0 0 0" xyz="0 0 0"/>
         <map flag="gazebo" name="gazebo_material">
-          <elem key="material" value="Gazebo/Blue"/>
+          <elem key="material" value="PR2/Blue"/>
         </map>
         <geometry name="r_shoulder_pan_visual">
           <mesh filename="shoulder_yaw"/>
@@ -1340,7 +1342,7 @@
       <visual>
         <origin rpy="0 0 0" xyz="0 0 0"/>
         <map flag="gazebo" name="gazebo_material">
-          <elem key="material" value="Gazebo/Grey"/>
+          <elem key="material" value="PR2/Grey"/>
         </map>
         <geometry name="r_shoulder_lift_visual">
           <mesh filename="shoulder_lift"/>
@@ -1399,7 +1401,7 @@
       <visual> <!-- TODO: This component doesn't actually have a mesh -->
         <origin rpy="0 0 0" xyz="0 0 0"/>
         <map flag="gazebo" name="gazebo_material">
-          <elem key="material" value="Gazebo/Fish"/>
+          <elem key="material" value="PR2/Yellow"/>
         </map>
         <geometry name="r_upper_arm_roll_visual">
           <mesh filename="upper_arm_roll" scale="1 1 1"/>
@@ -1433,7 +1435,7 @@
       <visual>
         <origin rpy="0 0 0" xyz="0 0 0"/>
         <map flag="gazebo" name="gazebo_material">
-          <elem key="material" value="Gazebo/Green"/>
+          <elem key="material" value="PR2/Green"/>
         </map>
         <geometry name="r_upper_arm_visual">
           <mesh filename="upper_arm"/>
@@ -1490,7 +1492,7 @@
       <visual>
         <origin rpy="0 0 0" xyz="0 0 0"/>
         <map flag="gazebo" name="gazebo_material">
-          <elem key="material" value="Gazebo/Grey"/>
+          <elem key="material" value="PR2/Grey"/>
         </map>
         <geometry name="r_elbow_flex_visual">
           <mesh filename="elbow_flex"/>
@@ -1588,7 +1590,7 @@
       <visual><!-- TODO: need a mesh for this -->
         <origin rpy="0 0 0" xyz="0 0 0"/>
         <map flag="gazebo" name="gazebo_material">
-          <elem key="material" value="Gazebo/Fish"/>
+          <elem key="material" value="PR2/Yellow"/>
         </map>
         <geometry name="r_forearm_roll_visual">
           <mesh filename="forearm_roll" scale="1 1 1"/>
@@ -1619,7 +1621,7 @@
       <visual>
         <origin rpy="0 0 0" xyz="0 0 0"/>
         <map flag="gazebo" name="gazebo_material">
-          <elem key="material" value="Gazebo/Blue"/>
+          <elem key="material" value="PR2/Blue"/>
         </map>
         <geometry name="r_forearm_visual">
           <mesh filename="forearm"/>
@@ -1672,7 +1674,7 @@
       <visual>
         <origin rpy="0 0 0" xyz="0 0 0"/>
         <map flag="gazebo" name="gazebo_material">
-          <elem key="material" value="Gazebo/Grey"/>
+          <elem key="material" value="PR2/Grey"/>
         </map>
         <geometry name="r_wrist_flex_visual">
           <mesh filename="wrist_flex"/>
@@ -1723,7 +1725,7 @@
       <visual>
         <origin rpy="0 0 0" xyz="0 0 0"/>
         <map flag="gazebo" name="gazebo_material">
-          <elem key="material" value="Gazebo/Fish"/>
+          <elem key="material" value="PR2/Yellow"/>
         </map>
         <geometry name="r_wrist_roll_visual">
           <mesh filename="wrist_roll"/>
@@ -1804,7 +1806,7 @@
       <visual>
         <origin rpy="0 0 0" xyz="0 0 0"/>
         <map flag="gazebo" name="gazebo_material">
-          <elem key="material" value="Gazebo/Red"/>
+          <elem key="material" value="PR2/Red"/>
         </map>
         <geometry name="r_gripper_palm_visual">
           <mesh filename="gripper_palm"/>
@@ -1866,7 +1868,7 @@
       <visual>
         <origin rpy="0 0 0" xyz="0 0 0"/>
         <map flag="gazebo" name="gazebo_material">
-          <elem key="material" value="Gazebo/Shell"/>
+          <elem key="material" value="PR2/Grey"/>
         </map>
         <geometry name="r_gripper_tool_visual">
           <mesh scale="0.0 0.0 0.0"/>
@@ -1899,7 +1901,7 @@
       <axis xyz="0 0 1"/>
       <anchor xyz="0 0 0"/>
       <calibration reference_position="0" values="1.0 -1.0"/>
-      <limit effort="10.0" k_position="100.0" k_velocity="100.0" max="0.548" min="0.0" safety_length_max="0.0" safety_length_min="0.0" velocity="0.5"/>
+      <limit effort="100.0" k_position="100.0" k_velocity="100.0" max="0.548" min="0.0" safety_length_max="0.0" safety_length_min="0.0" velocity="0.5"/>
       <joint_properties damping="0.2"/>
       <map flag="gazebo" name="r_gripper_l_finger_joint_feedback">
         <elem key="provideFeedback" value="true"/>
@@ -1923,16 +1925,16 @@
       <visual>
         <origin rpy="0 0 0" xyz="0 0 0"/>
         <map flag="gazebo" name="gazebo_material">
-          <elem key="material" value="Gazebo/Shell"/>
+          <elem key="material" value="PR2/Grey"/>
         </map>
         <geometry name="r_gripper_l_finger_visual">
           <mesh filename="upper_finger_l"/>
         </geometry>
       </visual>
       <collision>
-        <origin rpy="0 0 0" xyz="0.03598 0.01730 -0.00164"/>
+        <origin rpy="0 0 0" xyz="0.065 0.016 -0.00164"/>
         <geometry name="r_gripper_l_finger_collision">
-          <box size="0.09 0.040 0.049"/>
+          <box size="0.04 0.03 0.049"/>
         </geometry>
         <verbose value="Yes"/>
         <map flag="collision" name="mesh">
@@ -1964,7 +1966,7 @@
       <axis xyz="0 0 -1"/>
       <anchor xyz="0 0 0"/>
       <calibration reference_position="0" values="1.0 -1.0"/>
-      <limit effort="10.0" k_position="100.0" k_velocity="100.0" max="0.548" min="0.0" safety_length_max="0.0" safety_length_min="0.0" velocity="0.5"/>
+      <limit effort="100.0" k_position="100.0" k_velocity="100.0" max="0.548" min="0.0" safety_length_max="0.0" safety_length_min="0.0" velocity="0.5"/>
       <joint_properties damping="0.2"/>
       <mimic mult="1" name="r_gripper_l_finger_joint" offset="0"/>
       <map flag="gazebo" name="r_gripper_r_finger_mimic">
@@ -1994,16 +1996,16 @@
       <visual>
         <origin rpy="0 0 0" xyz="0 0 0"/>
         <map flag="gazebo" name="gazebo_material">
-          <elem key="material" value="Gazebo/Shell"/>
+          <elem key="material" value="PR2/Grey"/>
         </map>
         <geometry name="r_gripper_r_finger_visual">
           <mesh filename="upper_finger_r"/>
         </geometry>
       </visual>
       <collision>
-        <origin rpy="0 0 0" xyz="0.03576 -0.01736 -0.00095"/>
+        <origin rpy="0 0 0" xyz="0.065 -0.016 -0.00095"/>
         <geometry name="r_gripper_r_finger_collision">
-          <box size="0.09 0.040 0.049"/>
+          <box size="0.04 0.03 0.049"/>
         </geometry>
         <verbose value="Yes"/>
         <map flag="collision" name="mesh">
@@ -2035,7 +2037,7 @@
       <axis xyz="0 0 -1"/>
       <anchor xyz="0 0 0"/>
       <calibration reference_position="0" values="1.0 -1.0"/>
-      <limit effort="10.0" k_position="100.0" k_velocity="100.0" max="0.548" min="0.0" safety_length_max="0.0" safety_length_min="0.0" velocity="0.5"/>
+      <limit effort="100.0" k_position="100.0" k_velocity="100.0" max="0.548" min="0.0" safety_length_max="0.0" safety_length_min="0.0" velocity="0.5"/>
       <joint_properties damping="0.01"/>
       <mimic mult="1" name="r_gripper_l_finger_joint" offset="0"/>
       <map flag="gazebo" name="r_gripper_l_finger_tip_mimic">
@@ -2065,16 +2067,16 @@
       <visual>
         <origin rpy="0 0 0" xyz="0 0 0"/>
         <map flag="gazebo" name="gazebo_material">
-          <elem key="material" value="Gazebo/Green"/>
+          <elem key="material" value="PR2/Green"/>
         </map>
         <geometry name="r_gripper_l_finger_tip_visual">
           <mesh filename="finger_tip_l"/>
         </geometry>
       </visual>
       <collision>
-        <origin rpy="0 0 0" xyz="0.00846 0.00568 0.0"/>
+        <origin rpy="0 0 0" xyz="0.012 -0.009 0.0"/>
         <geometry name="r_gripper_l_finger_tip_collision">
-          <box size="0.04577 0.0425 0.023"/>
+          <box size="0.035 0.0125 0.023"/>
         </geometry>
         <verbose value="Yes"/>
         <map flag="collision" name="mesh">
@@ -2107,7 +2109,7 @@
       <axis xyz="0 0 1"/>
       <anchor xyz="0 0 0"/>
       <calibration reference_position="0" values="1.0 -1.0"/>
-      <limit effort="10.0" k_position="100.0" k_velocity="100.0" max="0.548" min="0.0" safety_length_max="0.0" safety_length_min="0.0" velocity="0.5"/>
+      <limit effort="100.0" k_position="100.0" k_velocity="100.0" max="0.548" min="0.0" safety_length_max="0.0" safety_length_min="0.0" velocity="0.5"/>
       <joint_properties damping="0.01"/>
       <mimic mult="1" name="r_gripper_l_finger_joint" offset="0"/>
       <map flag="gazebo" name="r_gripper_r_finger_tip_mimic">
@@ -2137,16 +2139,16 @@
       <visual>
         <origin rpy="0 0 0" xyz="0 0 0"/>
         <map flag="gazebo" name="gazebo_material">
-          <elem key="material" value="Gazebo/Green"/>
+          <elem key="material" value="PR2/Green"/>
         </map>
         <geometry name="r_gripper_r_finger_tip_visual">
           <mesh filename="finger_tip_r"/>
         </geometry>
       </visual>
       <collision>
-        <origin rpy="0 0 0" xyz="0.00846 -0.00568 0.0"/>
+        <origin rpy="0 0 0" xyz="0.012 0.009 0.0"/>
         <geometry name="r_gripper_r_finger_tip_collision">
-          <box size="0.04577 0.0425 0.023"/>
+          <box size="0.035 0.0125 0.023"/>
         </geometry>
         <verbose value="Yes"/>
         <map flag="collision" name="mesh">
@@ -2257,20 +2259,20 @@
       <actuator name="r_gripper_motor"/>
       <gap_joint mechanical_reduction="1.0" name="r_gripper_joint"/>
       <passive_joint name="r_gripper_l_finger_joint">
-        <gazebo_mimic_pid d="0.0" i="0.0" iClamp="0.0" p="0.000001"/>
+        <gazebo_mimic_pid d="0.0" i="0.0" iClamp="0.0" p="0.0005"/>
       </passive_joint>
       <passive_joint name="r_gripper_r_finger_joint">
-        <gazebo_mimic_pid d="0.0" i="0.0" iClamp="0.0" p="0.000001"/>
+        <gazebo_mimic_pid d="0.0" i="0.0" iClamp="0.0" p="0.0005"/>
       </passive_joint>
       <passive_joint name="r_gripper_r_finger_tip_joint">
-        <gazebo_mimic_pid d="0.0" i="0.0" iClamp="0.0" p="0.000001"/>
+        <gazebo_mimic_pid d="0.0" i="0.0" iClamp="0.0" p="0.000005"/>
       </passive_joint>
       <passive_joint name="r_gripper_l_finger_tip_joint">
-        <gazebo_mimic_pid d="0.0" i="0.0" iClamp="0.0" p="0.000001"/>
+        <gazebo_mimic_pid d="0.0" i="0.0" iClamp="0.0" p="0.000005"/>
       </passive_joint>
     </transmission><joint name="r_gripper_joint" type="prismatic">
       <axis xyz="0 0 1"/>
-      <limit effort="10.0" k_position="20.0" k_velocity="500.0" max="0.09" min="0.0" safety_length_max="0.001" safety_length_min="0.0" velocity="0.02"/>
+      <limit effort="100.0" k_position="20.0" k_velocity="500.0" max="0.09" min="0.0" safety_length_max="0.001" safety_length_min="0.0" velocity="0.2"/>
     </joint>
 
   <joint name="l_shoulder_pan_joint" type="revolute">
@@ -2296,7 +2298,7 @@
       <visual>
         <origin rpy="0 0 0" xyz="0 0 0"/>
         <map flag="gazebo" name="gazebo_material">
-          <elem key="material" value="Gazebo/Blue"/>
+          <elem key="material" value="PR2/Blue"/>
         </map>
         <geometry name="l_shoulder_pan_visual">
           <mesh filename="shoulder_yaw"/>
@@ -2354,7 +2356,7 @@
       <visual>
         <origin rpy="0 0 0" xyz="0 0 0"/>
         <map flag="gazebo" name="gazebo_material">
-          <elem key="material" value="Gazebo/Grey"/>
+          <elem key="material" value="PR2/Grey"/>
         </map>
         <geometry name="l_shoulder_lift_visual">
           <mesh filename="shoulder_lift"/>
@@ -2413,7 +2415,7 @@
       <visual> <!-- TODO: This component doesn't actually have a mesh -->
         <origin rpy="0 0 0" xyz="0 0 0"/>
         <map flag="gazebo" name="gazebo_material">
-          <elem key="material" value="Gazebo/Fish"/>
+          <elem key="material" value="PR2/Yellow"/>
         </map>
         <geometry name="l_upper_arm_roll_visual">
           <mesh filename="upper_arm_roll" scale="1 1 1"/>
@@ -2447,7 +2449,7 @@
       <visual>
         <origin rpy="0 0 0" xyz="0 0 0"/>
         <map flag="gazebo" name="gazebo_material">
-          <elem key="material" value="Gazebo/Green"/>
+          <elem key="material" value="PR2/Green"/>
         </map>
         <geometry name="l_upper_arm_visual">
           <mesh filename="upper_arm"/>
@@ -2504,7 +2506,7 @@
       <visual>
         <origin rpy="0 0 0" xyz="0 0 0"/>
         <map flag="gazebo" name="gazebo_material">
-          <elem key="material" value="Gazebo/Grey"/>
+          <elem key="material" value="PR2/Grey"/>
         </map>
         <geometry name="l_elbow_flex_visual">
           <mesh filename="elbow_flex"/>
@@ -2602,7 +2604,7 @@
       <visual><!-- TODO: need a mesh for this -->
         <origin rpy="0 0 0" xyz="0 0 0"/>
         <map flag="gazebo" name="gazebo_material">
-          <elem key="material" value="Gazebo/Fish"/>
+          <elem key="material" value="PR2/Yellow"/>
         </map>
         <geometry name="l_forearm_roll_visual">
           <mesh filename="forearm_roll" scale="1 1 1"/>
@@ -2633,7 +2635,7 @@
       <visual>
         <origin rpy="0 0 0" xyz="0 0 0"/>
         <map flag="gazebo" name="gazebo_material">
-          <elem key="material" value="Gazebo/Blue"/>
+          <elem key="material" value="PR2/Blue"/>
         </map>
         <geometry name="l_forearm_visual">
           <mesh filename="forearm"/>
@@ -2686,7 +2688,7 @@
       <visual>
         <origin rpy="0 0 0" xyz="0 0 0"/>
         <map flag="gazebo" name="gazebo_material">
-          <elem key="material" value="Gazebo/Grey"/>
+          <elem key="material" value="PR2/Grey"/>
         </map>
         <geometry name="l_wrist_flex_visual">
           <mesh filename="wrist_flex"/>
@@ -2737,7 +2739,7 @@
       <visual>
         <origin rpy="0 0 0" xyz="0 0 0"/>
         <map flag="gazebo" name="gazebo_material">
-          <elem key="material" value="Gazebo/Fish"/>
+          <elem key="material" value="PR2/Yellow"/>
         </map>
         <geometry name="l_wrist_roll_visual">
           <mesh filename="wrist_roll"/>
@@ -2818,7 +2820,7 @@
       <visual>
         <origin rpy="0 0 0" xyz="0 0 0"/>
         <map flag="gazebo" name="gazebo_material">
-          <elem key="material" value="Gazebo/Red"/>
+          <elem key="material" value="PR2/Red"/>
         </map>
         <geometry name="l_gripper_palm_visual">
           <mesh filename="gripper_palm"/>
@@ -2880,7 +2882,7 @@
       <visual>
         <origin rpy="0 0 0" xyz="0 0 0"/>
         <map flag="gazebo" name="gazebo_material">
-          <elem key="material" value="Gazebo/Shell"/>
+          <elem key="material" value="PR2/Grey"/>
         </map>
         <geometry name="l_gripper_tool_visual">
           <mesh scale="0.0 0.0 0.0"/>
@@ -2913,7 +2915,7 @@
       <axis xyz="0 0 1"/>
       <anchor xyz="0 0 0"/>
       <calibration reference_position="0" values="1.0 -1.0"/>
-      <limit effort="10.0" k_position="100.0" k_velocity="100.0" max="0.548" min="0.0" safety_length_max="0.0" safety_length_min="0.0" velocity="0.5"/>
+      <limit effort="100.0" k_position="100.0" k_velocity="100.0" max="0.548" min="0.0" safety_length_max="0.0" safety_length_min="0.0" velocity="0.5"/>
       <joint_properties damping="0.2"/>
       <map flag="gazebo" name="l_gripper_l_finger_joint_feedback">
         <elem key="provideFeedback" value="true"/>
@@ -2937,16 +2939,16 @@
       <visual>
         <origin rpy="0 0 0" xyz="0 0 0"/>
         <map flag="gazebo" name="gazebo_material">
-          <elem key="material" value="Gazebo/Shell"/>
+          <elem key="material" value="PR2/Grey"/>
         </map>
         <geometry name="l_gripper_l_finger_visual">
           <mesh filename="upper_finger_l"/>
         </geometry>
       </visual>
       <collision>
-        <origin rpy="0 0 0" xyz="0.03598 0.01730 -0.00164"/>
+        <origin rpy="0 0 0" xyz="0.065 0.016 -0.00164"/>
         <geometry name="l_gripper_l_finger_collision">
-          <box size="0.09 0.040 0.049"/>
+          <box size="0.04 0.03 0.049"/>
         </geometry>
         <verbose value="Yes"/>
         <map flag="collision" name="mesh">
@@ -2978,7 +2980,7 @@
       <axis xyz="0 0 -1"/>
       <anchor xyz="0 0 0"/>
       <calibration reference_position="0" values="1.0 -1.0"/>
-      <limit effort="10.0" k_position="100.0" k_velocity="100.0" max="0.548" min="0.0" safety_length_max="0.0" safety_length_min="0.0" velocity="0.5"/>
+      <limit effort="100.0" k_position="100.0" k_velocity="100.0" max="0.548" min="0.0" safety_length_max="0.0" safety_length_min="0.0" velocity="0.5"/>
       <joint_properties damping="0.2"/>
       <mimic mult="1" name="l_gripper_l_finger_joint" offset="0"/>
       <map flag="gazebo" name="l_gripper_r_finger_mimic">
@@ -3008,16 +3010,16 @@
       <visual>
         <origin rpy="0 0 0" xyz="0 0 0"/>
         <map flag="gazebo" name="gazebo_material">
-          <elem key="material" value="Gazebo/Shell"/>
+          <elem key="material" value="PR2/Grey"/>
         </map>
         <geometry name="l_gripper_r_finger_visual">
           <mesh filename="upper_finger_r"/>
         </geometry>
       </visual>
       <collision>
-        <origin rpy="0 0 0" xyz="0.03576 -0.01736 -0.00095"/>
+        <origin rpy="0 0 0" xyz="0.065 -0.016 -0.00095"/>
         <geometry name="l_gripper_r_finger_collision">
-          <box size="0.09 0.040 0.049"/>
+          <box size="0.04 0.03 0.049"/>
         </geometry>
         <verbose value="Yes"/>
         <map flag="collision" name="mesh">
@@ -3049,7 +3051,7 @@
       <axis xyz="0 0 -1"/>
       <anchor xyz="0 0 0"/>
       <calibration reference_position="0" values="1.0 -1.0"/>
-      <limit effort="10.0" k_position="100.0" k_velocity="100.0" max="0.548" min="0.0" safety_length_max="0.0" safety_length_min="0.0" velocity="0.5"/>
+      <limit effort="100.0" k_position="100.0" k_velocity="100.0" max="0.548" min="0.0" safety_length_max="0.0" safety_length_min="0.0" velocity="0.5"/>
       <joint_properties damping="0.01"/>
       <mimic mult="1" name="l_gripper_l_finger_joint" offset="0"/>
       <map flag="gazebo" name="l_gripper_l_finger_tip_mimic">
@@ -3079,16 +3081,16 @@
       <visual>
         <origin rpy="0 0 0" xyz="0 0 0"/>
         <map flag="gazebo" name="gazebo_material">
-          <elem key="material" value="Gazebo/Green"/>
+          <elem key="material" value="PR2/Green"/>
         </map>
         <geometry name="l_gripper_l_finger_tip_visual">
           <mesh filename="finger_tip_l"/>
         </geometry>
       </visual>
       <collision>
-        <origin rpy="0 0 0" xyz="0.00846 0.00568 0.0"/>
+        <origin rpy="0 0 0" xyz="0.012 -0.009 0.0"/>
         <geometry name="l_gripper_l_finger_tip_collision">
-          <box size="0.04577 0.0425 0.023"/>
+          <box size="0.035 0.0125 0.023"/>
         </geometry>
         <verbose value="Yes"/>
         <map flag="collision" name="mesh">
@@ -3121,7 +3123,7 @@
       <axis xyz="0 0 1"/>
       <anchor xyz="0 0 0"/>
       <calibration reference_position="0" values="1.0 -1.0"/>
-      <limit effort="10.0" k_position="100.0" k_velocity="100.0" max="0.548" min="0.0" safety_length_max="0.0" safety_length_min="0.0" velocity="0.5"/>
+      <limit effort="100.0" k_position="100.0" k_velocity="100.0" max="0.548" min="0.0" safety_length_max="0.0" safety_length_min="0.0" velocity="0.5"/>
       <joint_properties damping="0.01"/>
       <mimic mult="1" name="l_gripper_l_finger_joint" offset="0"/>
       <map flag="gazebo" name="l_gripper_r_finger_tip_mimic">
@@ -3151,16 +3153,16 @@
       <visual>
         <origin rpy="0 0 0" xyz="0 0 0"/>
         <map flag="gazebo" name="gazebo_material">
-          <elem key="material" value="Gazebo/Green"/>
+          <elem key="material" value="PR2/Green"/>
         </map>
         <geometry name="l_gripper_r_finger_tip_visual">
           <mesh filename="finger_tip_r"/>
         </geometry>
       </visual>
       <collision>
-        <origin rpy="0 0 0" xyz="0.00846 -0.00568 0.0"/>
+        <origin rpy="0 0 0" xyz="0.012 0.009 0.0"/>
         <geometry name="l_gripper_r_finger_tip_collision">
-          <box size="0.04577 0.0425 0.023"/>
+          <box size="0.035 0.0125 0.023"/>
         </geometry>
         <verbose value="Yes"/>
         <map flag="collision" name="mesh">
@@ -3271,217 +3273,29 @@
       <actuator name="l_gripper_motor"/>
       <gap_joint mechanical_reduction="1.0" name="l_gripper_joint"/>
       <passive_joint name="l_gripper_l_finger_joint">
-        <gazebo_mimic_pid d="0.0" i="0.0" iClamp="0.0" p="0.000001"/>
+        <gazebo_mimic_pid d="0.0" i="0.0" iClamp="0.0" p="0.0005"/>
       </passive_joint>
       <passive_joint name="l_gripper_r_finger_joint">
-        <gazebo_mimic_pid d="0.0" i="0.0" iClamp="0.0" p="0.000001"/>
+        <gazebo_mimic_pid d="0.0" i="0.0" iClamp="0.0" p="0.0005"/>
       </passive_joint>
       <passive_joint name="l_gripper_r_finger_tip_joint">
-        <gazebo_mimic_pid d="0.0" i="0.0" iClamp="0.0" p="0.000001"/>
+        <gazebo_mimic_pid d="0.0" i="0.0" iClamp="0.0" p="0.000005"/>
       </passive_joint>
       <passive_joint name="l_gripper_l_finger_tip_joint">
-        <gazebo_mimic_pid d="0.0" i="0.0" iClamp="0.0" p="0.000001"/>
+        <gazebo_mimic_pid d="0.0" i="0.0" iClamp="0.0" p="0.000005"/>
       </passive_joint>
     </transmission><joint name="l_gripper_joint" type="prismatic">
       <axis xyz="0 0 1"/>
-      <limit effort="10.0" k_position="20.0" k_velocity="500.0" max="0.09" min="0.0" safety_length_max="0.001" safety_length_min="0.0" velocity="0.02"/>
+      <limit effort="100.0" k_position="20.0" k_velocity="500.0" max="0.09" min="0.0" safety_length_max="0.001" safety_length_min="0.0" velocity="0.2"/>
     </joint>
 
-  <joint name="r_ptz_pan_joint" type="revolute">
-      <limit effort="10" k_position="1.0" k_velocity="1.0" max="M_PI/2" min="-M_PI/2" safety_length_max="0" safety_length_min="0" velocity="5"/>
-      <axis xyz="0 0 -1"/>
-      <joint_properties damping="0.01" friction="0.0"/>
-    </joint><link name="r_ptz_pan_link">
-      <parent name="torso_lift_link"/>
-      <origin rpy="0 0 0" xyz="0.0 -0.1975 0.2265"/>
-      <joint name="r_ptz_pan_joint"/>
+  <!--pr2_ptz side="r" reflect="-1" parent="torso_lift_link">
+    <origin xyz="0.0 -0.1975 0.2265" rpy="0 0 0" />
+  </pr2_ptz>
 
-      <inertial>
-        <mass value="0.1"/>
-        <com xyz="0 0 0"/>
-        <inertia ixx="0.001" ixy="0.0" ixz="0.0" iyy="0.001" iyz="0.0" izz="0.001"/>
-      </inertial>
-
-      <visual>
-        <origin rpy="0 0 0" xyz="0 -0.0 0"/>
-        <map flag="gazebo" name="gazebo_material">
-	  <elem key="material" value="Gazebo/Blue"/>
-        </map>
-        <geometry name="r_ptz_pan_visual">
-          <mesh filename="ptz_base_r"/>
-        </geometry>
-      </visual>
-
-      <collision>
-        <origin rpy="0 0 0" xyz="0 -0.0 0"/>
-        <geometry name="r_ptz_pan_collision">
-          <cylinder length="0.05" radius="0.05"/>
-        </geometry>
-      </collision>
-    </link><joint name="r_ptz_tilt_joint" type="revolute">
-      <limit effort="10" k_position="1.0" k_velocity="1.0" max="M_PI/2" min="-M_PI/2" safety_length_max="0" safety_length_min="0" velocity="5"/>
-      <axis xyz="0 -1 0"/>
-      <anchor xyz="0 0 0"/>
-      <joint_properties damping="0.01" friction="0.0"/>
-    </joint><sensor name="r_ptz_tilt_link" type="camera">
-      <parent name="r_ptz_pan_link"/>
-      <origin rpy="0 0 0" xyz="0.0 -0.08 0.0"/>
-      <joint name="r_ptz_tilt_joint"/>
-
-      <inertial>
-        <mass value="0.1"/>
-        <com xyz="0 0 0"/>
-        <inertia ixx="0.001" ixy="0.0" ixz="0.0" iyy="0.001" iyz="0.0" izz="0.001"/>
-      </inertial>
-
-      <visual>
-        <origin rpy="0 0 0" xyz="0 0 0"/>
-        <map flag="gazebo" name="foo">
-	  <elem key="material" value="Gazebo/Red"/>
-        </map>
-        <geometry name="r_ptz_tilt_visual">
-          <mesh filename="ptz_top_r"/>
-        </geometry>
-      </visual>
-
-      <collision>
-        <origin rpy="0 0 0" xyz="0 -0.0 0"/>
-        <geometry name="r_ptz_tilt_collision">
-          <cylinder length="0.03" radius="0.03"/>
-        </geometry>
-      </collision>
-
-      <map flag="gazebo" name="sensor">
-        <verbatim key="sensor_r_ptz_camera">
-          <sensor:camera name="r_ptz_cam_sensor">
-            <imageWidth>640</imageWidth>
-            <imageHeight>480</imageHeight>
-            <hfov>60</hfov>
-            <nearClip>0.1</nearClip>
-            <farClip>100</farClip>
-            <updateRate>15.0</updateRate>
-            <controller:ros_camera name="r_ptz_cam_controller" plugin="libros_camera.so">
-              <alwaysOn>true</alwaysOn>
-              <updateRate>15.0</updateRate>
-              <topicName>axis_r/image</topicName>
-              <frameName>ptz_r</frameName>
-              <interface:camera name="r_ptz_cam_iface"/>
-            </controller:ros_camera>
-          </sensor:camera>
-        </verbatim>
-      </map>
-    </sensor><map flag="gazebo" name="sensor">
-      <verbatim key="sensor_r_ptz_actuators">
-        <!-- controllers for ptz -->
-        <controller:ros_ptz name="r_ptz_actuators_controller" plugin="libros_ptz.so">
-          <alwaysOn>true</alwaysOn>
-          <updateRate>15.0</updateRate>
-          <panJoint>r_ptz_pan_joint</panJoint>
-          <tiltJoint>r_ptz_tilt_joint</tiltJoint>
-          <commandTopicName>axis_r/ptz_cmd</commandTopicName>
-          <stateTopicName>axis_r/ptz_state</stateTopicName>
-          <interface:ptz name="r_ptz_actuators_iface"/>
-        </controller:ros_ptz>
-      </verbatim>
-    </map>
-
-  <joint name="l_ptz_pan_joint" type="revolute">
-      <limit effort="10" k_position="1.0" k_velocity="1.0" max="M_PI/2" min="-M_PI/2" safety_length_max="0" safety_length_min="0" velocity="5"/>
-      <axis xyz="0 0 -1"/>
-      <joint_properties damping="0.01" friction="0.0"/>
-    </joint><link name="l_ptz_pan_link">
-      <parent name="torso_lift_link"/>
-      <origin rpy="0 0 0" xyz="0.0 0.1975 0.2265"/>
-      <joint name="l_ptz_pan_joint"/>
-
-      <inertial>
-        <mass value="0.1"/>
-        <com xyz="0 0 0"/>
-        <inertia ixx="0.001" ixy="0.0" ixz="0.0" iyy="0.001" iyz="0.0" izz="0.001"/>
-      </inertial>
-
-      <visual>
-        <origin rpy="0 0 0" xyz="0 0.0 0"/>
-        <map flag="gazebo" name="gazebo_material">
-	  <elem key="material" value="Gazebo/Blue"/>
-        </map>
-        <geometry name="l_ptz_pan_visual">
-          <mesh filename="ptz_base_l"/>
-        </geometry>
-      </visual>
-
-      <collision>
-        <origin rpy="0 0 0" xyz="0 0.0 0"/>
-        <geometry name="l_ptz_pan_collision">
-          <cylinder length="0.05" radius="0.05"/>
-        </geometry>
-      </collision>
-    </link><joint name="l_ptz_tilt_joint" type="revolute">
-      <limit effort="10" k_position="1.0" k_velocity="1.0" max="M_PI/2" min="-M_PI/2" safety_length_max="0" safety_length_min="0" velocity="5"/>
-      <axis xyz="0 -1 0"/>
-      <anchor xyz="0 0 0"/>
-      <joint_properties damping="0.01" friction="0.0"/>
-    </joint><sensor name="l_ptz_tilt_link" type="camera">
-      <parent name="l_ptz_pan_link"/>
-      <origin rpy="0 0 0" xyz="0.0 0.08 0.0"/>
-      <joint name="l_ptz_tilt_joint"/>
-
-      <inertial>
-        <mass value="0.1"/>
-        <com xyz="0 0 0"/>
-        <inertia ixx="0.001" ixy="0.0" ixz="0.0" iyy="0.001" iyz="0.0" izz="0.001"/>
-      </inertial>
-
-      <visual>
-        <origin rpy="0 0 0" xyz="0 0 0"/>
-        <map flag="gazebo" name="foo">
-	  <elem key="material" value="Gazebo/Red"/>
-        </map>
-        <geometry name="l_ptz_tilt_visual">
-          <mesh filename="ptz_top_l"/>
-        </geometry>
-      </visual>
-
-      <collision>
-        <origin rpy="0 0 0" xyz="0 0.0 0"/>
-        <geometry name="l_ptz_tilt_collision">
-          <cylinder length="0.03" radius="0.03"/>
-        </geometry>
-      </collision>
-
-      <map flag="gazebo" name="sensor">
-        <verbatim key="sensor_l_ptz_camera">
-          <sensor:camera name="l_ptz_cam_sensor">
-            <imageWidth>640</imageWidth>
-            <imageHeight>480</imageHeight>
-            <hfov>60</hfov>
-            <nearClip>0.1</nearClip>
-            <farClip>100</farClip>
-            <updateRate>15.0</updateRate>
-            <controller:ros_camera name="l_ptz_cam_controller" plugin="libros_camera.so">
-              <alwaysOn>true</alwaysOn>
-              <updateRate>15.0</updateRate>
-              <topicName>axis_l/image</topicName>
-              <frameName>ptz_l</frameName>
-              <interface:camera name="l_ptz_cam_iface"/>
-            </controller:ros_camera>
-          </sensor:camera>
-        </verbatim>
-      </map>
-    </sensor><map flag="gazebo" name="sensor">
-      <verbatim key="sensor_l_ptz_actuators">
-        <!-- controllers for ptz -->
-        <controller:ros_ptz name="l_ptz_actuators_controller" plugin="libros_ptz.so">
-          <alwaysOn>true</alwaysOn>
-          <updateRate>15.0</updateRate>
-          <panJoint>l_ptz_pan_joint</panJoint>
-          <tiltJoint>l_ptz_tilt_joint</tiltJoint>
-          <commandTopicName>axis_l/ptz_cmd</commandTopicName>
-          <stateTopicName>axis_l/ptz_state</stateTopicName>
-          <interface:ptz name="l_ptz_actuators_iface"/>
-        </controller:ros_ptz>
-      </verbatim>
-    </map>
+  <pr2_ptz side="l" reflect="1" parent="torso_lift_link">
+    <origin xyz="0.0 0.1975 0.2265" rpy="0 0 0" />
+  </pr2_ptz-->
 
   <!-- Define groups of links; a link may be part of multiple groups -->
   <group flags="collision" name="self_see">
