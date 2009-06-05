@@ -181,7 +181,12 @@ static bool getJoint(TiXmlElement *joint_xml, Joint& joint)
 
 static bool getSegment(TiXmlElement *segment_xml, map<string, Joint>& joints, Segment& segment)
 {
-  // get mandetory joint name
+  // get mandetory frame
+  Frame frame;
+  if (!getFrame(segment_xml->FirstChildElement("origin"), frame)) 
+  {cout << "Segment does not have origin" << endl; return false;}
+
+  // get mandetory joint
   string joint_name;
   if (!getAtribute(segment_xml->FirstChildElement("joint"), "name", joint_name)) 
   {cout << "Segment does not specify joint name" << endl; return false;}
@@ -189,11 +194,8 @@ static bool getSegment(TiXmlElement *segment_xml, map<string, Joint>& joints, Se
   if (it == joints.end()) 
   {cout << "Could not find joint " << joint_name << " in segment" << endl; return false;}
   Joint joint = it->second;
-
-  // get mandetory frame
-  Frame frame;
-  if (!getFrame(segment_xml->FirstChildElement("origin"), frame)) 
-  {cout << "Segment does not have origin" << endl; return false;}
+  if (it->second.getType() != Joint::None)
+    joint = Joint(frame*(it->second.JointOrigin()), it->second.JointAxis(), it->second.getType());
 
   // get optional inertia
   RigidBodyInertia inertia(0.0);
