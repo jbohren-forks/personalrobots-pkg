@@ -65,6 +65,7 @@ void kinematic_planning::KinematicStateMonitor::loadRobotDescription(void)
 	m_envModels = boost::shared_ptr<planning_environment::CollisionModels>(new planning_environment::CollisionModels("robot_description"));
 	m_urdf = m_envModels->getParsedDescription();
 	m_kmodel = m_envModels->getKinematicModel();
+	m_robotState = boost::shared_ptr<planning_models::KinematicModel::StateParams>(m_kmodel->newStateParams());
     }
     else
 	ROS_ERROR("Robot model not found! Did you remap robot_description?");
