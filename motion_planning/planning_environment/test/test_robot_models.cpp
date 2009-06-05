@@ -35,17 +35,38 @@
 /** \author Ioan Sucan */
 
 #include <planning_environment/robot_models.h>
+#include <ros/time.h>
 #include <gtest/gtest.h>
 #include <iostream>
 #include <sstream>
 
-TEST(Loading, EmptyRobot)
+TEST(Loading, Simple)
 {
     planning_environment::RobotModels m("robotdesc/pr2");
 
     EXPECT_TRUE(m.getKinematicModel().get() != NULL);
 }
 
+TEST(ForwardKinematics, RuntimeArm)
+{
+    planning_environment::RobotModels m("robotdesc/pr2");
+    planning_models::KinematicModel* kmodel = m.getKinematicModel().get();
+    
+    int gid = kmodel->getGroupID("pr2::right_arm");
+    unsigned int dim = kmodel->getGroupDimension(gid);
+    double params[dim];
+    for (unsigned int i = 0 ; i < dim ; ++i)
+	params[dim] = 0.1;
+
+    ros::WallTime tm = ros::WallTime::now();
+    const unsigned int NT = 100000;  
+    for (unsigned int i = 0 ; i < NT ; ++i)
+	kmodel->computeTransformsGroup(params, gid);
+    double fps = (double)NT / (ros::WallTime::now() - tm).toSec();
+    ROS_ERROR("%f forward kinematics steps per second", fps);
+    
+    EXPECT_TRUE(fps > 10000.0);
+}
 
 int main(int argc, char **argv)
 {
