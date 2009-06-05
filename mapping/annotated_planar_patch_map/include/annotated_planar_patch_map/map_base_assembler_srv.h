@@ -113,8 +113,9 @@ private:
   bool queryMap(QueryAnnotatedMap::Request& req, QueryAnnotatedMap::Response& resp) ;
 
 
-  bool isQueryMatchPoly(std::string query,const annotated_map_msgs::TaggedPolygon3D poly);
-  bool isQueryMatch(std::string query,std::string name);
+  void mergePolygons(const annotated_map_msgs::TaggedPolygon3D &polyIn,annotated_map_msgs::TaggedPolygon3D &polyOut);
+  bool isQueryMatchPoly(std::string query,const annotated_map_msgs::TaggedPolygon3D& poly);
+  bool isQueryMatch(const std::string& query,const std::string& name);
 
   void simplify_output(const F& map_in, F& map_out);
 
@@ -340,12 +341,15 @@ private:
    {
      //Compute the center of mass for each planar polygon
      unsigned int num_poly=map_in.polygons.size();
-     std::vector<bool> valid_polygons;
-     valid_polygons.resize(num_poly);
+     //Simple union-find. We keep only polygons where
+     //canonical_polygon[iPoly]==iPoly
+     std::vector<int> canonical_polygon;
+     std::vector<int> canonical_polygon_output_id;
+     canonical_polygon.resize(num_poly);
+     canonical_polygon_output_id.resize(num_poly);
 
      robot_msgs::PointCloud centers;
      centers.pts.resize(num_poly);
-     centers.chan.resize(0);
 
      for(unsigned int iPoly=0;iPoly<num_poly;iPoly++){
        centers.pts[iPoly]=computeMean(map_in.polygons[iPoly].polygon);
@@ -363,33 +367,65 @@ private:
        kd_tree.radiusSearch(centers, iPoly, max_radius_, k_indices, k_distances);
        bool bKeep=true;
 
+       int bestPoly=int(iPoly);
        for(unsigned int iI=0;iI<k_indices.size();iI++){
-	 if(k_indices[iI]<int(iPoly) && (k_distances[iI]<max_radius_)){
-	   bKeep=false;
-	   break;
+	 if((k_indices[iI]<bestPoly) && (k_distances[iI]<max_radius_)){
+	   bestPoly=k_indices[iI];
 	 }
        }
+       if(bestPoly<int(iPoly))
+	 {
+	   bKeep=false;
+	   canonical_polygon[iPoly]=iPoly;
+	   break;
+	 }
        /*int first_nei=*min_element(k_indices.begin(),k_indices.end());
 
        if(first_nei<iPoly)
 	 {
 	   bKeep=false;
 	   }*/
-       valid_polygons[iPoly]=bKeep;
        if(bKeep)
 	 {
+	   canonical_polygon[iPoly]=iPoly;
 	   num_poly_out++;
 	 }
      }
+     //Union find: parent finding and path compression
+     for(unsigned int iPoly=0;iPoly<num_poly;iPoly++)
+       {
+	 int jPoly=iPoly;
+	 while(jPoly != canonical_polygon[jPoly])
+	   jPoly=canonical_polygon[jPoly];
 
+	 int kPoly=iPoly;
+	 while(kPoly != canonical_polygon[kPoly])
+	   { 
+	     int tmpKPoly=canonical_polygon[kPoly];
+	     canonical_polygon[kPoly]=jPoly;
+	     kPoly=tmpKPoly;
+	   }
+       }
+
+     //Here we rely that we'll see the root of the union first.
+     //We simply copy the root.
+     //For non-root elements, we merge them
      unsigned int iPolyOut=0;
      map_out.set_polygons_size(num_poly_out) ;
      for(unsigned int iPoly=0;iPoly<num_poly;iPoly++)
        {
-	 if(valid_polygons[iPoly])
+	 if(canonical_polygon[iPoly]==iPoly)
 	   {
 	     map_out.polygons[iPolyOut]=map_in.polygons[iPoly];
+
+	     canonical_polygon_output_id[iPoly]=iPolyOut;
 	     iPolyOut++;
+	   }
+	 else
+	   {
+	     int polyOutID=canonical_polygon_output_id[canonical_polygon[iPoly]];
+	     mergePolygons(map_in.polygons[iPoly],
+			   map_out.polygons[polyOutID]);
 	   }
        }
 
@@ -399,7 +435,62 @@ private:
    }
 
  template <class T,class F>
-   bool MapBaseAssemblerSrv<T,F>::isQueryMatchPoly(std::string query,const annotated_map_msgs::TaggedPolygon3D poly)
+   void MapBaseAssemblerSrv<T,F>::mergePolygons(const annotated_map_msgs::TaggedPolygon3D &polyIn,annotated_map_msgs::TaggedPolygon3D &polyOut)
+   {
+     //FIXME: assume that count is #0. No merging for others
+     unsigned int iHitsChannelOut=0;
+     unsigned int iHitsChannelIn=0;
+
+     unsigned int num_tags_in=polyIn.get_tags_size();
+     unsigned int num_tags_out=polyOut.get_tags_size();
+     std::vector<bool> have_merged;
+     have_merged.resize(num_tags_in);
+     int num_left=0;
+     for(unsigned int iT=0;iT<num_tags_in;iT++)
+       {
+	 bool bMerged=false;
+	 for(unsigned int outT=0;outT<num_tags_out;outT++)
+	   {
+	     if(polyIn.tags[iT]==polyOut.tags[iT])
+	       {
+		 //FIXME: assume that count is #0 . No merging for others
+		 polyOut.tags_chan[iHitsChannelOut].vals[outT]+=polyIn.tags_chan[iHitsChannelIn].vals[iT];		 
+		 bMerged=true;
+		 break;
+	       }
+	   }	
+	 have_merged[iT]=bMerged; 
+	 if(!bMerged)
+	   num_left++;
+       }
+     if(num_left>0)
+       {
+	 
+	 unsigned int num_tags_new=num_tags_out+num_left;
+	 polyOut.set_tags_size(num_tags_new);
+	 for(unsigned int iC=0;iC<polyOut.get_tags_chan_size();iC++)
+	   {
+	     polyOut.tags_chan[iC].set_vals_size(num_tags_new);
+	   }
+	 unsigned int iOut=num_tags_out;
+	 for(unsigned int iT=0;iT<num_tags_in;iT++)
+	   {
+	     if(have_merged[iT])
+	       continue;
+	     polyOut.tags[iOut] = polyIn.tags[iT];
+	     for(unsigned int iC=0;iC<polyOut.get_tags_chan_size();iC++)
+	       {
+		 polyOut.tags_chan[iC].vals[iOut]=
+		   polyIn.tags_chan[iC].vals[iT];
+	       }
+	     iOut++;
+	   }
+       }
+   }
+
+
+ template <class T,class F>
+   bool MapBaseAssemblerSrv<T,F>::isQueryMatchPoly(std::string query,const annotated_map_msgs::TaggedPolygon3D& poly)
    {
      for(unsigned int iT=0;iT<poly.get_tags_size();iT++)
        {
@@ -411,7 +502,7 @@ private:
      return false;
    }
  template <class T,class F>
-   bool MapBaseAssemblerSrv<T,F>::isQueryMatch(std::string query,std::string name)
+   bool MapBaseAssemblerSrv<T,F>::isQueryMatch(const std::string& query,const std::string& name)
    {
      if(query=="*")
        return true;

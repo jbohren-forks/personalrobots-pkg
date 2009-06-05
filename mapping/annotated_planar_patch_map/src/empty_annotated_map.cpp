@@ -1,9 +1,39 @@
-
-/* Author: Alexander Sorokin */
-
-
-#define USAGE "USAGE: annotation2d_lifter_to_planar_patch_map \n"
-
+/*********************************************************************
+ *
+ * Software License Agreement (BSD License)
+ *
+ *  Copyright (c) 2009, Willow Garage, Inc.
+ *  All rights reserved.
+ *
+ *  Redistribution and use in source and binary forms, with or without
+ *  modification, are permitted provided that the following conditions
+ *  are met:
+ *
+ *   * Redistributions of source code must retain the above copyright
+ *     notice, this list of conditions and the following disclaimer.
+ *   * Redistributions in binary form must reproduce the above
+ *     copyright notice, this list of conditions and the following
+ *     disclaimer in the documentation and/or other materials provided
+ *     with the distribution.
+ *   * Neither the name of the Willow Garage nor the names of its
+ *     contributors may be used to endorse or promote products derived
+ *     from this software without specific prior written permission.
+ *
+ *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ *  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ *  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+ *  FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+ *  COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+ *  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+ *  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ *  LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ *  CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ *  LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+ *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ *  POSSIBILITY OF SUCH DAMAGE.
+ *
+ * Author: Alexander Sorokin
+ *********************************************************************/
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -12,10 +42,12 @@
 #include <boost/numeric/ublas/matrix.hpp>
 #include "ros/node.h"
 #include "ros/publisher.h"
-#include <tf/transform_datatypes.h>
-#include <tf/transform_listener.h>
+#include "ros/ros.h"
+
 #include <cv.h>
 
+#include <tf/transform_datatypes.h>
+#include <tf/transform_listener.h>
 
 #include <robot_msgs/PolygonalMap.h>
 #include <image_msgs/StereoInfo.h>
@@ -23,61 +55,77 @@
 #include <annotated_map_msgs/TaggedPolygonalMap.h>
 #include <annotated_map_msgs/TaggedPolygon3D.h>
 
+#include <annotated_planar_patch_map/annotated_map_lib.h>
+
 using namespace std;
 using namespace tf;
 
 
-class EmptyAnnotatedMap : public ros::Node
+class EmptyAnnotatedMap
 {
-  public:
-    EmptyAnnotatedMap() : ros::Node("empty_annotated_map") {
-
-      out_topic_name_=std::string("empty_poly_map");
-
-      tf_ = new tf::TransformListener( *this, true);
-
-      param( std::string("target_frame"), target_frame_, std::string("odom"));
-
-      subscribe( std::string("planar_map"), unlabeled_map_, &EmptyAnnotatedMap::handleUnlabeledMap, 500);
-
-      advertise<annotated_map_msgs::TaggedPolygonalMap>(out_topic_name_,1);
-    };
+  ros::NodeHandle node_handle_;
+  ros::Subscriber sub_;
+  ros::Publisher pub_;
 
 
-  void handleUnlabeledMap()
+public:
+  EmptyAnnotatedMap(const ros::NodeHandle& node_handle)
+    : node_handle_(node_handle)
+  {
+  }
+
+  void init()
+  {
+    out_topic_name_=std::string("empty_poly_map");
+
+    tf_ = new tf::TransformListener( *node_handle_.getNode(), true);
+
+    node_handle_.param( std::string("target_frame"), target_frame_, std::string("odom"));
+
+    sub_=node_handle_.subscribe<robot_msgs::PolygonalMap>("planar_map", 100, &EmptyAnnotatedMap::handleUnlabeledMap, this);
+
+    pub_=node_handle_.advertise<annotated_map_msgs::TaggedPolygonalMap>(out_topic_name_,1);
+  };
+
+
+  void handleUnlabeledMap(const robot_msgs::PolygonalMapConstPtr& unlabeled_map)
   {
 
-    try{
+    try
+    {
       annotated_map_msgs::TaggedPolygonalMap polymapOut;
 
       robot_msgs::PolygonalMap transformed_map_3D;
-      transformPolygonalMap(target_frame_,unlabeled_map_,transformed_map_3D);
-
+      annotated_map_lib::transformAnyObject(target_frame_,tf_,*unlabeled_map,transformed_map_3D);
 
       unsigned int num_polygons = transformed_map_3D.get_polygons_size();
       if(num_polygons==0)
-	{
-	  return;
-	}
+        return;
 
       polymapOut.set_polygons_size(num_polygons);
 
       for(unsigned int iPoly = 0; iPoly<num_polygons; iPoly++)
-	{
-	  //create new tagged polygon
-	  annotated_map_msgs::TaggedPolygon3D newPoly;
-	  newPoly.set_tags_size(0);
-	  newPoly.polygon=transformed_map_3D.polygons[iPoly];
+      {
+        //create new tagged polygon
+        annotated_map_msgs::TaggedPolygon3D newPoly;
+        newPoly.set_tags_size(1);
+        newPoly.tags[0]="dup";
+        newPoly.set_tags_chan_size(1);
+        newPoly.tags_chan[0].name="hits";
+        newPoly.tags_chan[0].set_vals_size(1);
+        newPoly.tags_chan[0].vals[0]=1;
+        newPoly.polygon=transformed_map_3D.polygons[iPoly];
 	    
-	  //append polygon to the map
-	  polymapOut.polygons[iPoly]=newPoly;
-	}
+        //append polygon to the map
+        polymapOut.polygons[iPoly]=newPoly;
+      }
       polymapOut.header.frame_id=target_frame_;
-      polymapOut.header.stamp=unlabeled_map_.header.stamp;
+      polymapOut.header.stamp=unlabeled_map->header.stamp;
 
-      publish( out_topic_name_, polymapOut);     
+      pub_.publish(polymapOut);     
 
-    }catch (TransformException& ex)
+    }
+    catch (TransformException& ex)
     {
       ROS_ERROR("Failure to transform detected object:: %s\n", ex.what());
     }
@@ -85,133 +133,8 @@ class EmptyAnnotatedMap : public ros::Node
 
   };
 
-
-  //From tf
-void transformPolygonalMap(const std::string & target_frame, const robot_msgs::PolygonalMap & polymapIn, robot_msgs::PolygonalMap & polymapOut)
-  {
-  Stamped<Transform> transform;
-  tf_->lookupTransform(target_frame, polymapIn.header.frame_id, polymapIn.header.stamp, transform);
-
-  transformPolygonalMap(target_frame, transform, polymapIn.header.stamp, polymapIn, polymapOut);
-};
-void transformPolygonalMap(const std::string& target_frame, const ros::Time& target_time,
-    const robot_msgs::PolygonalMap& polymapIn,
-    const std::string& fixed_frame, robot_msgs::PolygonalMap& polymapOut)
-{
-  Stamped<Transform> transform;
-  tf_->lookupTransform(target_frame, target_time,
-      polymapIn.header.frame_id, polymapIn.header.stamp,
-      fixed_frame,
-      transform);
-
-  transformPolygonalMap(target_frame, transform, target_time, polymapIn, polymapOut);
-
-
-};
-
-  
-  void transformPolygonalMap(const std::string & target_frame, const Transform& net_transform, const ros::Time& target_time, const robot_msgs::PolygonalMap & polymapIn, robot_msgs::PolygonalMap & polymapOut)
-  {
-  boost::numeric::ublas::matrix<double> transform = transformAsMatrix(net_transform);
-
-
-  typedef std::vector<robot_msgs::Polygon3D> poly_vec;
-
-  bool bSame = (&polymapIn == &polymapOut);
-  unsigned int num_polygons = polymapIn.get_polygons_size();
-  if (!bSame)
-    {
-      polymapOut.set_polygons_size(polymapIn.get_polygons_size());
-    }
-
-  for(unsigned int iPoly=0;iPoly<num_polygons;iPoly++)  
-  {    
-    const robot_msgs::Polygon3D* p=&polymapIn.polygons[iPoly];
-
-    unsigned int length = p->get_points_size();
-
-    boost::numeric::ublas::matrix<double> matIn(4, length);
-
-    //  double * matrixPtr = matIn.Store();
-
-    for (unsigned int i = 0; i < length ; i++)
-      {
-	matIn(0,i) = p->points[i].x;
-	matIn(1,i) = p->points[i].y;
-	matIn(2,i) = p->points[i].z;
-	matIn(3,i) = 1;
-      };
-
-    boost::numeric::ublas::matrix<double> matOut = prod(transform, matIn);
-
-    robot_msgs::Polygon3D *polyOut;
-    if (!bSame)
-    {
-      polyOut = &(polymapOut.polygons[iPoly]);
-      polyOut->set_points_size(length);
-      polyOut->color=p->color;
-    }else{
-      polyOut = &(polymapOut.polygons[iPoly]);
-    }
-    for (unsigned int i = 0; i < length ; i++)
-    {
-      polyOut->points[i].x = matOut(0,i);
-      polyOut->points[i].y = matOut(1,i);
-      polyOut->points[i].z = matOut(2,i);
-    };
-    
-  }
-  // Copy relevant data from polymapIn, if needed
-  if (! bSame )
-  {
-    polymapOut.header = polymapIn.header;
-    polymapOut.set_chan_size(polymapIn.get_chan_size());
-    for (unsigned int i = 0 ; i < polymapIn.get_chan_size() ; ++i)
-      polymapOut.chan[i] = polymapIn.chan[i];
-  }
-
-  //Override the positions
-  polymapOut.header.stamp = target_time;
-  polymapOut.header.frame_id = target_frame;
-
-  };
-
-  /** \brief Convert the transform to a Homogeneous matrix for large operations */
-      static boost::numeric::ublas::matrix<double> transformAsMatrix(const Transform& 
-      bt)
-      {
-	boost::numeric::ublas::matrix<double> outMat(4,4);
-
-	double mv[12];
-	bt.getBasis().getOpenGLSubMatrix(mv);
-	
-	Vector3 origin = bt.getOrigin();
-	
-	outMat(0,0)= mv[0];
-	outMat(0,1)  = mv[4];
-	outMat(0,2)  = mv[8];
-	outMat(1,0)  = mv[1];
-	outMat(1,1)  = mv[5];
-	outMat(1,2)  = mv[9];
-	outMat(2,0)  = mv[2];
-	outMat(2,1)  = mv[6];
-	outMat(2,2) = mv[10];
-	
-	outMat(3,0)  = outMat(3,1) = outMat(3,2) = 0;
-	outMat(0,3) = origin.x();
-	outMat(1,3) = origin.y();
-	outMat(2,3) = origin.z();
-	outMat(3,3) = 1;
-	
-	
-	return outMat;
-      };
-
-
 protected:
   tf::TransformListener *tf_;
-
-  robot_msgs::PolygonalMap unlabeled_map_;
 
   std::string target_frame_;
 
@@ -228,13 +151,15 @@ protected:
 
 int main(int argc, char **argv)
 {
-  ros::init(argc, argv);
-
   try
   {
-    EmptyAnnotatedMap map_converter;
+    ros::init(argc, argv, "empty_annotated_map");
+    ros::NodeHandle n;
+    
+    EmptyAnnotatedMap map_converter(n);
+    map_converter.init();
 
-    map_converter.spin();
+    ros::spin();
   }
   catch(std::runtime_error& e)
   {
