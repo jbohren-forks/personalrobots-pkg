@@ -119,6 +119,7 @@
 
 
 (defun send-move-goal (x y th &key (constrained nil))
+  (ros-info pan "Sending nav goal ~a, ~a, ~a with constrained=~a" x y th constrained)
   (setq *current-goal* (list x y)
 	*move-base-result* nil)
   (publish-on-topic "/move_base/activate" 
@@ -177,7 +178,9 @@
 		(w (w orientation pose))) m
     (ros-info pan "Received goal ~a, ~a in frame ~a" x y frame)
     (let ((theta (* 2 (acos w))))
-      (if (equal frame *global-frame*)
+      (when (not (eql (aref frame 0) #\/))
+	(setq frame (concatenate 'string "/" frame)))
+      (if (search frame *global-frame*)
 	  (setq *new-goal* (list x y theta)) 
 	  (ros-error pan "Ignoring goal ~a ~a ~a as frame id ~a does not equal ~a"
 		     x y theta frame *global-frame*)))))

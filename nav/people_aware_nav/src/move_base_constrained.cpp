@@ -35,6 +35,7 @@
 * Author: Eitan Marder-Eppstein
 *********************************************************************/
 #include <people_aware_nav/move_base_constrained.h>
+#include <iostream>
 
 using namespace base_local_planner;
 using namespace costmap_2d;
@@ -55,7 +56,7 @@ namespace people_aware_nav {
 
     //get some parameters that will be global to the move base node
     ros_node_.param("~navfn/robot_base_frame", robot_base_frame_, std::string("base_link"));
-    ros_node_.param("~navfn/global_frame", global_frame_, std::string("map"));
+    ros_node_.param("~navfn/global_frame", global_frame_, std::string("/map"));
     ros_node_.param("~controller_frequency", controller_frequency_, 20.0);
     ros_node_.param("~planner_patience", planner_patience_, 10.0);
     ros_node_.param("~controller_patience", controller_patience_, 10.0);
@@ -204,6 +205,9 @@ void MoveBaseConstrained::makePlan(const PoseStamped& goal, const Polygon3D& for
   }
 
   robot_actions::ResultStatus MoveBaseConstrained::execute(const ConstrainedGoal& goal, PoseStamped& feedback){
+
+    ROS_INFO ("move_base exec");
+
 
     // Transform constrained goal into posestamped
     goal_.header = goal.header;
@@ -442,14 +446,23 @@ bool MoveBaseConstrained::tryPlan(robot_msgs::PoseStamped goal, const Polygon3D&
 namespace pan=people_aware_nav;
 
 int main(int argc, char** argv){
+
+  std::cout << "before node init" << std::endl;
   ros::init(argc, argv);
+  std::cout << "before node construction" << std::endl;
   ros::Node ros_node("move_base");
+  ROS_INFO ("move_base 0");
   tf::TransformListener tf(ros_node, true, ros::Duration(10));
+
+  ROS_INFO ("move_base 1");
   
   pan::MoveBaseConstrained move_base(ros_node, tf);
   robot_actions::ActionRunner runner(20.0);
   runner.connect<pan::ConstrainedGoal, pan::ConstrainedMoveBaseState, robot_msgs::PoseStamped>(move_base);
   runner.run();
+
+  ROS_INFO ("move_base 2");
+
 
   //ros::MultiThreadedSpinner s;
   //ros::spin(s);

@@ -79,7 +79,7 @@ public:
     total_dist_sqr_m_ = robot_radius_m*robot_radius_m + person_radius_m*person_radius_m;
 
     message_notifier_person_ = new tf::MessageNotifier<people::PositionMeasurement> (tf_, node_, boost::bind(&IsPersonOnPath::personPosCB, this, _1), "people_tracker_measurements", fixed_frame_, 1);
-    message_notifier_path_ = new tf::MessageNotifier<visualization_msgs::Polyline>(tf_, node_, boost::bind(&IsPersonOnPath::pathCB, this, _1), "/move_base_node/navfn/plan", fixed_frame_, 1);
+    message_notifier_path_ = new tf::MessageNotifier<visualization_msgs::Polyline>(tf_, node_, boost::bind(&IsPersonOnPath::pathCB, this, _1), "/move_base/navfn/plan", fixed_frame_, 1);
 
     node_->advertiseService ("is_person_on_path", &IsPersonOnPath::personOnPathCB, this);
     path_mutex_.lock();
@@ -147,7 +147,7 @@ public:
     {
       ROS_INFO_COND (!got_person_pos_, "Didn't have person");
       ROS_INFO_COND (!got_path_, "Didn't have path");
-      std::cout << "\nGot path is " << got_path_;
+      ROS_INFO_STREAM("Got path is " << got_path_);
       return false;
     }
 
@@ -160,7 +160,7 @@ public:
       tf_->transformPoint(fixed_frame_, *current_time, t_person_tf_stamped_point, fixed_frame_, t_person_tf_stamped_point);
     }
     catch (tf::TransformException& ex) {
-      ROS_INFO_STREAM ("Unable to do person transformation" << ex.what());
+      ROS_INFO_STREAM ("Unable to do person transformation: " << ex.what());
       ROS_INFO_STREAM ("Image time : " << person_pos_.header.stamp << ".  Current time : " << *current_time << ". Rostime " << ros::Time::now());
       got_person_pos_ = false;
       return false;

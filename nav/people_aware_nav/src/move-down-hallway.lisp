@@ -6,5 +6,6 @@
 
 (in-package :lane-following)
 
-;(roslisp::set-debug-level '(roslisp) :info)
-;(roslisp::set-debug-level '(pan) :info)
+(roslisp:set-debug-level '(roslisp) :info)
+(roslisp:set-debug-level '(roslisp tcp) :debug)
+(roslisp:set-debug-level '(pan) :debug)
