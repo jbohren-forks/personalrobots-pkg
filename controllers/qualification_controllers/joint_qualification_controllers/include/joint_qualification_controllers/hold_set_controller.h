@@ -48,7 +48,6 @@
 #include <vector>
 #include <ros/node.h>
 #include <math.h>
-#include <robot_msgs/DiagnosticMessage.h>
 #include <joint_qualification_controllers/HoldSetData.h>
 #include <realtime_tools/realtime_publisher.h>
 #include <realtime_tools/realtime_srv_call.h>

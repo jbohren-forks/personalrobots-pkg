@@ -52,12 +52,12 @@ int EK1122::initialize(Actuator *, bool, bool)
   ROS_DEBUG("Device #%02d: EK1122 (%#08x)", sh_->get_ring_position(), sh_->get_product_code());
   return 0;
 }
-void EK1122::diagnostics(robot_msgs::DiagnosticStatus &d, unsigned char *)
+void EK1122::diagnostics(diagnostic_msgs::DiagnosticStatus &d, unsigned char *)
 {
-  vector<robot_msgs::DiagnosticString> strings;
-  vector<robot_msgs::DiagnosticValue> values;
-  robot_msgs::DiagnosticValue v;
-  robot_msgs::DiagnosticString s;
+  vector<diagnostic_msgs::DiagnosticString> strings;
+  vector<diagnostic_msgs::DiagnosticValue> values;
+  diagnostic_msgs::DiagnosticValue v;
+  diagnostic_msgs::DiagnosticString s;
 
   stringstream str;
   str << "EtherCAT Device #" << setw(2) << setfill('0') << sh_->get_ring_position() << " (EK1122)";

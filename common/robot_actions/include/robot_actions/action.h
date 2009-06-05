@@ -50,7 +50,7 @@
 #include <boost/bind.hpp>
 #include <boost/thread.hpp>
 #include <ros/node.h>
-#include <robot_msgs/DiagnosticMessage.h>
+#include <diagnostic_msgs/DiagnosticMessage.h>
 
 namespace robot_actions {
 
@@ -185,7 +185,7 @@ namespace robot_actions {
     Action(const std::string& name)
       : _name(name), _preempt_request(false), _result_status(SUCCESS), _terminated(false), _action_thread(NULL), _callback(NULL),_diagnostics_statuses(1){
       _status.value = ActionStatus::UNDEFINED; 
-      ros::Node::instance()->advertise<robot_msgs::DiagnosticMessage> ("/diagnostics", 1) ;
+      ros::Node::instance()->advertise<diagnostic_msgs::DiagnosticMessage> ("/diagnostics", 1) ;
     }
 
     virtual ~Action(){
@@ -263,7 +263,7 @@ namespace robot_actions {
     }
 
     void publishDiagnostics(){
-      robot_msgs::DiagnosticStatus diagnostics_status; 
+      diagnostic_msgs::DiagnosticStatus diagnostics_status; 
       if (_status.value == ActionStatus::ACTIVE){
         if (isPreemptRequested())
           diagnostics_status.message = "Active and requested preempt";
@@ -300,8 +300,8 @@ namespace robot_actions {
     bool _terminated;
     boost::thread* _action_thread; /*!< Thread running the action */
     boost::function< void(const ActionStatus&, const Goal&, const Feedback&) > _callback; /*!< Callback function for sending updates */
-    robot_msgs::DiagnosticMessage _diagnostics_message;
-    std::vector<robot_msgs::DiagnosticStatus> _diagnostics_statuses;
+    diagnostic_msgs::DiagnosticMessage _diagnostics_message;
+    std::vector<diagnostic_msgs::DiagnosticStatus> _diagnostics_statuses;
   };
 }
 #endif

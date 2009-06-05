@@ -44,7 +44,7 @@
 
 #include <hardware_interface/hardware_interface.h>
 
-#include <robot_msgs/DiagnosticMessage.h>
+#include <diagnostic_msgs/DiagnosticMessage.h>
 
 #include <loki/Factory.h>
 
@@ -69,7 +69,7 @@ public:
   virtual void truncateCurrent(ActuatorCommand &command) = 0;
   virtual bool verifyState(ActuatorState &state, unsigned char *this_buffer, unsigned char *prev_buffer) = 0;
 
-  virtual void diagnostics(robot_msgs::DiagnosticStatus &d, unsigned char *) = 0;
+  virtual void diagnostics(diagnostic_msgs::DiagnosticStatus &d, unsigned char *) = 0;
 
   bool has_actuator_;
   unsigned int command_size_;

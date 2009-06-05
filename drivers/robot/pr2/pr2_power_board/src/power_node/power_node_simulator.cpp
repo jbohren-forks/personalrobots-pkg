@@ -53,7 +53,7 @@
 
 #include "power_comm.h"
 #include "power_node.h"
-#include "robot_msgs/DiagnosticMessage.h"
+#include "diagnostic_msgs/DiagnosticMessage.h"
 #include "rosconsole/macros_generated.h"
 #include "ros/console.h"
 
@@ -318,7 +318,7 @@ PowerBoard::PowerBoard( unsigned int serial_number ): ros::Node ("pr2_power_boar
   }
 
   advertiseService("power_board_control", &PowerBoard::commandCallback);
-  advertise<robot_msgs::DiagnosticMessage>("/diagnostics", 2);
+  advertise<diagnostic_msgs::DiagnosticMessage>("/diagnostics", 2);
 }
 
 bool PowerBoard::commandCallback(pr2_power_board::PowerBoardCommand::Request &req_,
@@ -331,10 +331,10 @@ bool PowerBoard::commandCallback(pr2_power_board::PowerBoardCommand::Request &re
 
 void PowerBoard::sendDiagnostic()
 {
-  robot_msgs::DiagnosticMessage msg_out;
-  robot_msgs::DiagnosticStatus stat;
-  robot_msgs::DiagnosticValue val;
-  robot_msgs::DiagnosticString strval;
+  diagnostic_msgs::DiagnosticMessage msg_out;
+  diagnostic_msgs::DiagnosticStatus stat;
+  diagnostic_msgs::DiagnosticValue val;
+  diagnostic_msgs::DiagnosticString strval;
 
   while(ok())
   {
@@ -550,7 +550,7 @@ void PowerBoard::sendDiagnostic()
 
 
       msg_out.status.push_back(stat);
-      robot_msgs::DiagnosticStatus stat;
+      diagnostic_msgs::DiagnosticStatus stat;
       stat.name = "pr2_power_board";
       stat.level = 0;
       stat.message = "Running";

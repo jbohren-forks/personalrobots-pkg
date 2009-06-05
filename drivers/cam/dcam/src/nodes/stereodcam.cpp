@@ -415,7 +415,7 @@ public:
     return true;
   }
 
-  void freqStatus(robot_msgs::DiagnosticStatus& status)
+  void freqStatus(diagnostic_msgs::DiagnosticStatus& status)
   {
     status.name = "Frequency Status";
 

@@ -250,9 +250,9 @@ void EthercatHardware::initXml(TiXmlElement *config, bool allow_override)
 void EthercatHardware::publishDiagnostics()
 {
   // Publish status of EtherCAT master
-  robot_msgs::DiagnosticStatus status;
-  robot_msgs::DiagnosticValue v;
-  robot_msgs::DiagnosticString s;
+  diagnostic_msgs::DiagnosticStatus status;
+  diagnostic_msgs::DiagnosticValue v;
+  diagnostic_msgs::DiagnosticString s;
 
   strings_.clear();
   values_.clear();

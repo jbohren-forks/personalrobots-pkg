@@ -112,6 +112,7 @@ Reads the following parameters from the parameter server
 
 #include "self_test/self_test.h"
 #include "diagnostic_updater/diagnostic_updater.h"
+#include "diagnostic_msgs/DiagnosticStatus.h"
 
 #include "hokuyo.h"
 
@@ -397,7 +398,7 @@ public:
     return true;
   }
 
-  void connectionStatus(robot_msgs::DiagnosticStatus& status)
+  void connectionStatus(diagnostic_msgs::DiagnosticStatus& status)
   {
     status.name = "Connection Status";
 
@@ -424,7 +425,7 @@ public:
     status.strings[2].value = device_status_;
   }
 
-  void freqStatus(robot_msgs::DiagnosticStatus& status)
+  void freqStatus(diagnostic_msgs::DiagnosticStatus& status)
   {
     status.name = "Frequency Status";
 
@@ -464,7 +465,7 @@ public:
     }
   }
 
-  void interruptionTest(robot_msgs::DiagnosticStatus& status)
+  void interruptionTest(diagnostic_msgs::DiagnosticStatus& status)
   {
     status.name = "Interruption Test";
 
@@ -480,7 +481,7 @@ public:
     }
   }
 
-  void connectTest(robot_msgs::DiagnosticStatus& status)
+  void connectTest(diagnostic_msgs::DiagnosticStatus& status)
   {
     status.name = "Connection Test";
 
@@ -490,7 +491,7 @@ public:
     status.message = "Connected successfully.";
   }
 
-  void IDTest(robot_msgs::DiagnosticStatus& status)
+  void IDTest(diagnostic_msgs::DiagnosticStatus& status)
   {
     status.name = "ID Test";
 
@@ -510,7 +511,7 @@ public:
     self_test_.setID(id);
   }
 
-  void statusTest(robot_msgs::DiagnosticStatus& status)
+  void statusTest(diagnostic_msgs::DiagnosticStatus& status)
   {
     status.name = "Status Test";
 
@@ -526,7 +527,7 @@ public:
     status.message = stat;
   }
 
-  void laserTest(robot_msgs::DiagnosticStatus& status)
+  void laserTest(diagnostic_msgs::DiagnosticStatus& status)
   {
     status.name = "Laser Test";
 
@@ -536,7 +537,7 @@ public:
     status.message = "Laser turned on successfully.";
   }
 
-  void polledDataTest(robot_msgs::DiagnosticStatus& status)
+  void polledDataTest(diagnostic_msgs::DiagnosticStatus& status)
   {
     status.name = "Polled Data Test";
 
@@ -557,7 +558,7 @@ public:
     }
   }
 
-  void streamedDataTest(robot_msgs::DiagnosticStatus& status)
+  void streamedDataTest(diagnostic_msgs::DiagnosticStatus& status)
   {
     status.name = "Streamed Data Test";
 
@@ -585,7 +586,7 @@ public:
     }
   }
 
-  void streamedIntensityDataTest(robot_msgs::DiagnosticStatus& status)
+  void streamedIntensityDataTest(diagnostic_msgs::DiagnosticStatus& status)
   {
     status.name = "Streamed Intensity Data Test";
 
@@ -630,7 +631,7 @@ public:
     }
   }
 
-  void laserOffTest(robot_msgs::DiagnosticStatus& status)
+  void laserOffTest(diagnostic_msgs::DiagnosticStatus& status)
   {
     status.name = "Laser Off Test";
 
@@ -640,7 +641,7 @@ public:
     status.message = "Laser turned off successfully.";
   }
 
-  void disconnectTest(robot_msgs::DiagnosticStatus& status)
+  void disconnectTest(diagnostic_msgs::DiagnosticStatus& status)
   {
     status.name = "Disconnect Test";
 
@@ -650,7 +651,7 @@ public:
     status.message = "Disconnected successfully.";
   }
 
-  void resumeTest(robot_msgs::DiagnosticStatus& status)
+  void resumeTest(diagnostic_msgs::DiagnosticStatus& status)
   {
     status.name = "Resume Test";
 

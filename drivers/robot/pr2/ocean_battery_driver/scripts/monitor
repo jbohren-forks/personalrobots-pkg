@@ -47,7 +47,7 @@ import time
 
 import rospy
 
-from robot_msgs.msg import * 
+from diagnostic_msgs.msg import DiagnosticMessage, DiagnosticStatus, DiagnosticValue, DiagnosticString
 
 NAME = 'monitor'
 

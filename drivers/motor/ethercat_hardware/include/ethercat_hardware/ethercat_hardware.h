@@ -107,7 +107,7 @@ private:
   bool halt_motors_;
   unsigned int reset_state_;
 
-  realtime_tools::RealtimePublisher<robot_msgs::DiagnosticMessage> publisher_;
+  realtime_tools::RealtimePublisher<diagnostic_msgs::DiagnosticMessage> publisher_;
   struct {
     accumulator_set<double, stats<tag::max, tag::mean> > acc_;
     double max_roundtrip_;
@@ -115,9 +115,9 @@ private:
   } diagnostics_;
   double last_published_;
   
-  vector<robot_msgs::DiagnosticStatus> statuses_;
-  vector<robot_msgs::DiagnosticValue> values_;
-  vector<robot_msgs::DiagnosticString> strings_;
+  vector<diagnostic_msgs::DiagnosticStatus> statuses_;
+  vector<diagnostic_msgs::DiagnosticValue> values_;
+  vector<diagnostic_msgs::DiagnosticString> strings_;
 
 };
 

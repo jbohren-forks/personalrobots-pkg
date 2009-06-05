@@ -58,7 +58,7 @@
 #include <robot_srvs/KillAndSpawnControllers.h>
 #include <robot_srvs/SwitchController.h>
 #include <robot_msgs/MechanismState.h>
-#include <robot_msgs/DiagnosticMessage.h>
+#include <diagnostic_msgs/DiagnosticMessage.h>
 #include "tf/tfMessage.h"
 
 typedef controller::Controller* (*ControllerAllocator)();
@@ -156,7 +156,7 @@ private:
   Statistics pre_update_stats_;
   Statistics update_stats_;
   Statistics post_update_stats_;
-  realtime_tools::RealtimePublisher<robot_msgs::DiagnosticMessage> publisher_;
+  realtime_tools::RealtimePublisher<diagnostic_msgs::DiagnosticMessage> publisher_;
   void publishDiagnostics();
   std::vector<controller::Controller*> start_request_, stop_request_;
   bool please_switch_;

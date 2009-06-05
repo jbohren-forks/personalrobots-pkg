@@ -41,7 +41,7 @@ import sys
 import threading
 import math
 
-from robot_msgs.msg import *
+from diagnostic_msgs.msg import DiagnosticMessage
 from roslib import rostime
 from joint_calibration_monitor.generic_joint_monitor import *
 

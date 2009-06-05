@@ -50,7 +50,6 @@
 #include <costmap_2d/costmap_2d_ros.h>
 #include <costmap_2d/costmap_2d.h>
 #include <door_msgs/Door.h>
-#include <robot_msgs/DiagnosticMessage.h>
 
 #include <angles/angles.h>
 #include <vector>

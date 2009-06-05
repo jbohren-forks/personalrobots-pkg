@@ -66,12 +66,12 @@ int WG014::initialize(Actuator *, bool, bool)
   } \
   strings.push_back(s)
 
-void WG014::diagnostics(robot_msgs::DiagnosticStatus &d, unsigned char *)
+void WG014::diagnostics(diagnostic_msgs::DiagnosticStatus &d, unsigned char *)
 {
-  vector<robot_msgs::DiagnosticString> strings;
-  vector<robot_msgs::DiagnosticValue> values;
-  robot_msgs::DiagnosticValue v;
-  robot_msgs::DiagnosticString s;
+  vector<diagnostic_msgs::DiagnosticString> strings;
+  vector<diagnostic_msgs::DiagnosticValue> values;
+  diagnostic_msgs::DiagnosticValue v;
+  diagnostic_msgs::DiagnosticString s;
 
   stringstream str;
   str << "EtherCAT Device #" << setw(2) << setfill('0') << sh_->get_ring_position() << " (WG014)";

@@ -4,7 +4,8 @@ import roslib
 roslib.load_manifest('2dnav_pr2')
 
 import sys, traceback, logging, rospy, os
-from robot_msgs.msg import DiagnosticMessage
+from diagnostic_msgs.msg import DiagnosticMessage, DiagnosticStatus, DiagnosticValue, DiagnosticString
+
 
 NAME = 'motor_monitor'
 

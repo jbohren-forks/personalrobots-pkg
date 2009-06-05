@@ -235,7 +235,7 @@ public:
   void program(WG0XActuatorInfo *);
   bool isProgrammed() { return actuator_info_.crc32_ != 0;}
 
-  void diagnostics(robot_msgs::DiagnosticStatus &d, unsigned char *);
+  void diagnostics(diagnostic_msgs::DiagnosticStatus &d, unsigned char *);
 
 private:
   string safetyDisableString(uint8_t status);
@@ -292,8 +292,8 @@ private:
   static const int ACTUATOR_INFO_PAGE = 4095;
 
   // Diagnostic message values
-  vector<robot_msgs::DiagnosticString> strings_;
-  vector<robot_msgs::DiagnosticValue> values_;
+  vector<diagnostic_msgs::DiagnosticString> strings_;
+  vector<diagnostic_msgs::DiagnosticValue> values_;
   string reason_;
   int level_;
   double voltage_error_, max_voltage_error_;

@@ -63,7 +63,7 @@ Subscribes to (name/type):
 
 Publishes to (name / type):
 - @b "imu_data"/<a href="../../std_msgs/html/classstd__msgs_1_1PoseWithRatesStamped.html">std_msgs/PoseWithRatesStamped</a> : the imu data
-- @b "/diagnostics"/<a href="../../robot_msgs/html/classrobot__msgs_1_1DiagnosticMessage.html">robot_msgs/DiagnosticMessage</a> : diagnostic status information.
+- @b "/diagnostics"/<a href="../../diagnostic_msgs/html/classrobot__msgs_1_1DiagnosticMessage.html">diagnostic_msgs/DiagnosticMessage</a> : diagnostic status information.
 
 <hr>
 
@@ -93,6 +93,7 @@ Reads the following parameters from the parameter server
 #include "ros/node.h"
 #include "ros/time.h"
 #include "self_test/self_test.h"
+#include "diagnostic_msgs/DiagnosticStatus.h"
 #include "diagnostic_updater/diagnostic_updater.h"
 #include "diagnostic_updater/update_functions.h"
 
@@ -334,7 +335,7 @@ public:
     }
   }
 
-  void InterruptionTest(robot_msgs::DiagnosticStatus& status)
+  void InterruptionTest(diagnostic_msgs::DiagnosticStatus& status)
   {
     status.name = "Interruption Test";
 
@@ -350,7 +351,7 @@ public:
     }
   }
 
-  void ConnectTest(robot_msgs::DiagnosticStatus& status)
+  void ConnectTest(diagnostic_msgs::DiagnosticStatus& status)
   {
     status.name = "Connection Test";
 
@@ -360,7 +361,7 @@ public:
     status.message = "Connected successfully.";
   }
 
-  void GyroBiasTest(robot_msgs::DiagnosticStatus& status)
+  void GyroBiasTest(diagnostic_msgs::DiagnosticStatus& status)
   {
     status.name = "Gyro Bias Test";
 
@@ -384,7 +385,7 @@ public:
   }
 
 
-  void StreamedDataTest(robot_msgs::DiagnosticStatus& status)
+  void StreamedDataTest(diagnostic_msgs::DiagnosticStatus& status)
   {
     status.name = "Streamed Data Test";
 
@@ -410,7 +411,7 @@ public:
     }
   }
 
-  void GravityTest(robot_msgs::DiagnosticStatus& status)
+  void GravityTest(diagnostic_msgs::DiagnosticStatus& status)
   {
     status.name = "Streamed Data Test";
 
@@ -471,7 +472,7 @@ public:
   }
 
 
-  void DisconnectTest(robot_msgs::DiagnosticStatus& status)
+  void DisconnectTest(diagnostic_msgs::DiagnosticStatus& status)
   {
     status.name = "Disconnect Test";
 
@@ -481,7 +482,7 @@ public:
     status.message = "Disconnected successfully.";
   }
 
-  void ResumeTest(robot_msgs::DiagnosticStatus& status)
+  void ResumeTest(diagnostic_msgs::DiagnosticStatus& status)
   {
     status.name = "Resume Test";
 

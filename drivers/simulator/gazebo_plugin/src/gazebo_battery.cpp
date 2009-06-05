@@ -76,7 +76,7 @@ namespace gazebo {
     this->stateTopicName_ = node->GetString("stateTopicName","battery_state",0);
     rosnode_->advertise<robot_msgs::BatteryState>(this->stateTopicName_,10);
     //this->diagnosticMessageTopicName_ = node->GetString("diagnosticMessageTopicName","diagnostic",0);
-    //rosnode_->advertise<robot_msgs::DiagnosticMessage>(this->diagnosticMessageTopicName_,10);
+    //rosnode_->advertise<diagnostic_msgs::DiagnosticMessage>(this->diagnosticMessageTopicName_,10);
 
     /// faking the plug and unplug of robot
     rosnode_->subscribe("plugged_in",this->plug_msg_,&GazeboBattery::SetPlug,this,10);

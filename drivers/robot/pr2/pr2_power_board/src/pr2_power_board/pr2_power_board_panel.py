@@ -40,7 +40,7 @@ roslib.load_manifest(PKG)
 
 import sys
 import rospy
-from robot_msgs.msg import *
+from diagonstic_msgs.msg import *
 from pr2_power_board.srv import *
 
 import wx

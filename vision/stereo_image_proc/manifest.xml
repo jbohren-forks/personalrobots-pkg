@@ -11,5 +11,6 @@
   <depend package="opencv_latest"/>
   <depend package="libdc1394v2"/>
   <depend package="image_msgs"/>
+  <depend package="robot_msgs"/>
   <depend package="diagnostic_updater"/>
 </package>

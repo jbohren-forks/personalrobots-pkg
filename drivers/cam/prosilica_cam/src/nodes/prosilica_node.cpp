@@ -40,6 +40,7 @@
 #include <image_msgs/FillImage.h>
 #include <opencv_latest/CvBridge.h>
 #include <diagnostic_updater/diagnostic_updater.h>
+#include "diagnostic_msgs/DiagnosticStatus.h"
 
 #include <cv.h>
 #include <cvwimage.h>
@@ -291,7 +292,7 @@ public:
     return 0;
   }
   
-  void freqStatus(robot_msgs::DiagnosticStatus& status)
+  void freqStatus(diagnostic_msgs::DiagnosticStatus& status)
   {
     status.name = "Frequency Status";
 
@@ -319,7 +320,7 @@ public:
     count_ = 0;
   }
 
-  void frameStatistics(robot_msgs::DiagnosticStatus& status)
+  void frameStatistics(diagnostic_msgs::DiagnosticStatus& status)
   {
     status.name = "Frame Statistics";
 
@@ -369,7 +370,7 @@ public:
     status.values[4].value = dropped;
   }
 
-  void packetStatistics(robot_msgs::DiagnosticStatus& status)
+  void packetStatistics(diagnostic_msgs::DiagnosticStatus& status)
   {
     status.name = "Packet Statistics";
 
@@ -444,7 +445,7 @@ public:
     status.values[6].value = data_rate;
   }
 
-  void packetErrorStatus(robot_msgs::DiagnosticStatus& status)
+  void packetErrorStatus(diagnostic_msgs::DiagnosticStatus& status)
   {
     status.name = "Packet Error Status";
     

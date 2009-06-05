@@ -639,7 +639,7 @@ bool WholeBodyTrajectoryControllerNode::initXml(mechanism::RobotState * robot, T
 
   if (diagnostics_publisher_ != NULL)// Make sure that we don't memory leak if initXml gets called twice
     delete diagnostics_publisher_ ;
-  diagnostics_publisher_ = new realtime_tools::RealtimePublisher <robot_msgs::DiagnosticMessage> ("/diagnostics", 2) ;
+  diagnostics_publisher_ = new realtime_tools::RealtimePublisher <diagnostic_msgs::DiagnosticMessage> ("/diagnostics", 2) ;
 
   last_diagnostics_publish_time_ = c_->robot_->hw_->current_time_;
   node_->param<double>(service_prefix_ + "/diagnostics_publish_delta_time",diagnostics_publish_delta_time_,0.05);
@@ -914,11 +914,11 @@ void WholeBodyTrajectoryControllerNode::publishDiagnostics()
     cmd.set_positions_size(1);
     cmd.set_velocity_size(1);
 
-    vector<robot_msgs::DiagnosticStatus> statuses;
-    vector<robot_msgs::DiagnosticValue> values;
-    vector<robot_msgs::DiagnosticString> strings;
-    robot_msgs::DiagnosticStatus status;
-    robot_msgs::DiagnosticValue v;
+    vector<diagnostic_msgs::DiagnosticStatus> statuses;
+    vector<diagnostic_msgs::DiagnosticValue> values;
+    vector<diagnostic_msgs::DiagnosticString> strings;
+    diagnostic_msgs::DiagnosticStatus status;
+    diagnostic_msgs::DiagnosticValue v;
 
     status.name = "Whole Body Trajectory Controller";
     status.level = 0;

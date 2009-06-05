@@ -142,7 +142,7 @@ public:
   }
 
 
-  void checkImage(robot_msgs::DiagnosticStatus& status)
+  void checkImage(diagnostic_msgs::DiagnosticStatus& status)
   {
     status.name = "Image Test";
     uint8_t *jpeg;
@@ -178,7 +178,7 @@ public:
     }
   }
 
-  void checkMac(robot_msgs::DiagnosticStatus& status)
+  void checkMac(diagnostic_msgs::DiagnosticStatus& status)
   {
     status.name = "MAC test";
     char cmd[100];

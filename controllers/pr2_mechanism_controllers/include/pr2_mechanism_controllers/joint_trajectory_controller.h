@@ -43,7 +43,7 @@
 // Services
 #include <robot_msgs/JointTraj.h>
 #include <robot_msgs/JointTrajPoint.h>
-#include <robot_msgs/DiagnosticMessage.h>
+#include <diagnostic_msgs/DiagnosticMessage.h>
 
 #include <pr2_mechanism_controllers/TrajectoryStart.h>
 #include <pr2_mechanism_controllers/TrajectoryQuery.h>
@@ -182,7 +182,7 @@ namespace controller
 
     bool watch_dog_active_; 
 
-    realtime_tools::RealtimePublisher <robot_msgs::DiagnosticMessage>* diagnostics_publisher_ ;  /**< Publishes controller information as a diagnostic message */
+    realtime_tools::RealtimePublisher <diagnostic_msgs::DiagnosticMessage>* diagnostics_publisher_ ;  /**< Publishes controller information as a diagnostic message */
 
     /*!
      * \brief mutex lock for setting and getting ros messages

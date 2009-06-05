@@ -5,5 +5,5 @@
   <review status="API cleared" notes=""/>
   <depend package="roscpp" />
   <depend package="rospy" />
-  <depend package="robot_msgs" />
+  <depend package="diagnostic_msgs" />
 </package>

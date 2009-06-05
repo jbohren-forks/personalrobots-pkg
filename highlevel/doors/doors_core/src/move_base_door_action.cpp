@@ -40,6 +40,9 @@
 #include <kdl/frames.hpp>
 #include <ros/rate.h>
 
+#include <diagnostic_msgs/DiagnosticMessage.h>
+
+
 
 using namespace base_local_planner;
 using namespace costmap_2d;
@@ -69,7 +72,7 @@ namespace nav
     ros_node_.advertise<visualization_msgs::Polyline>("~gui_path", 1);
     ros_node_.advertise<visualization_msgs::Polyline>("~local_path", 1);
     ros_node_.advertise<visualization_msgs::Polyline>("~robot_footprint", 1);
-    ros_node_.advertise<robot_msgs::DiagnosticMessage> ("/diagnostics", 1) ;
+    ros_node_.advertise<diagnostic_msgs::DiagnosticMessage> ("/diagnostics", 1) ;
 
     //pass on some parameters to the components of the move base node if they are not explicitly overridden 
     //(perhaps the controller and the planner could operate in different frames)
@@ -136,7 +139,7 @@ namespace nav
     global_pose_.getBasis().getEulerZYX(yaw, useless_pitch, useless_roll);
 
     //get the oriented footprint of the robot
-    std::vector<robot_msgs::Point> oriented_footprint;
+    std::vector<diagnostic_msgs::Point> oriented_footprint;
     pr2_robot_actions::Pose2D tmp_pose = getPose2D(global_pose_);
     planner_->computeOrientedFootprint(tmp_pose, planner_->footprint_, oriented_footprint);
 
@@ -425,10 +428,10 @@ namespace nav
       return;
     }
 
-    robot_msgs::DiagnosticMessage message;
-    std::vector<robot_msgs::DiagnosticStatus> statuses;
+    diagnostic_msgs::DiagnosticMessage message;
+    std::vector<diagnostic_msgs::DiagnosticStatus> statuses;
 
-    robot_msgs::DiagnosticStatus status_planner = planner_->getDiagnostics();
+    diagnostic_msgs::DiagnosticStatus status_planner = planner_->getDiagnostics();
     status_planner.message = plan_state_ + " (" + door_.header.frame_id + ")";
 
     statuses.push_back(status_planner);

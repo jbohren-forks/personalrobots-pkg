@@ -19,6 +19,7 @@
 <depend package="robot_srvs" />
 <depend package="std_srvs" />
 <depend package="rosconsole" />
+<depend package="diagnostic_msgs" />
 <export>
     <cpp cflags='-I${prefix}/include'
 	 lflags='-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lmechanism_control'/>

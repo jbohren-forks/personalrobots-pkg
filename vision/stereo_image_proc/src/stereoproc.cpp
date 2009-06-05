@@ -46,7 +46,7 @@
 #include "image_msgs/StereoInfo.h"
 #include "robot_msgs/PointCloud.h"
 
-
+#include "diagnostic_msgs/DiagnosticStatus.h"
 #include "diagnostic_updater/diagnostic_updater.h"
 
 using namespace std;
@@ -407,7 +407,7 @@ public:
   }
 
 
-  void freqStatus(robot_msgs::DiagnosticStatus& status)
+  void freqStatus(diagnostic_msgs::DiagnosticStatus& status)
   {
     status.name = "Frequency Status";
 

@@ -35,8 +35,8 @@
 * Author: Sachin Chitta
 *********************************************************************/
 #include <pr2_mechanism_controllers/base_trajectory_controller.h>
-#include <robot_msgs/DiagnosticMessage.h>
-#include <robot_msgs/DiagnosticStatus.h>
+#include <diagnostic_msgs/DiagnosticMessage.h>
+#include <diagnostic_msgs/DiagnosticStatus.h>
 #include <ros/rate.h>
 
 namespace pr2_mechanism_controllers
@@ -83,7 +83,7 @@ namespace pr2_mechanism_controllers
 
     ros_node_.advertise<robot_msgs::PoseDot>(control_topic_name_, 1);
     ros_node_.subscribe(path_input_topic_name_,path_msg_in_, &BaseTrajectoryController::pathCallback, this, 1);
-    ros_node_.advertise<robot_msgs::DiagnosticMessage> ("/diagnostics", 1) ;
+    ros_node_.advertise<diagnostic_msgs::DiagnosticMessage> ("/diagnostics", 1) ;
 
     last_diagnostics_publish_time_ = ros::Time::now();
     current_time_ = ros::Time::now().toSec();
@@ -277,14 +277,14 @@ namespace pr2_mechanism_controllers
       return;
     }
 
-    robot_msgs::DiagnosticMessage message;
-    std::vector<robot_msgs::DiagnosticStatus> statuses;
-    std::vector<robot_msgs::DiagnosticValue> values;
-    std::vector<robot_msgs::DiagnosticString> strings;
+    diagnostic_msgs::DiagnosticMessage message;
+    std::vector<diagnostic_msgs::DiagnosticStatus> statuses;
+    std::vector<diagnostic_msgs::DiagnosticValue> values;
+    std::vector<diagnostic_msgs::DiagnosticString> strings;
 
-    robot_msgs::DiagnosticStatus status;
-    robot_msgs::DiagnosticValue v;
-    robot_msgs::DiagnosticString s;
+    diagnostic_msgs::DiagnosticStatus status;
+    diagnostic_msgs::DiagnosticValue v;
+    diagnostic_msgs::DiagnosticString s;
     status.name = ros_node_.getName();
     status.message = control_state_;
 

@@ -92,12 +92,12 @@ void MechanismControl::publishDiagnostics()
     int active = 0;
     TimeStatistics blank_statistics;
 
-    std::vector<robot_msgs::DiagnosticStatus> statuses;
-    std::vector<robot_msgs::DiagnosticValue> values;
-    std::vector<robot_msgs::DiagnosticString> strings;
-    robot_msgs::DiagnosticStatus status;
-    robot_msgs::DiagnosticValue v;
-    robot_msgs::DiagnosticString s;
+    std::vector<diagnostic_msgs::DiagnosticStatus> statuses;
+    std::vector<diagnostic_msgs::DiagnosticValue> values;
+    std::vector<diagnostic_msgs::DiagnosticString> strings;
+    diagnostic_msgs::DiagnosticStatus status;
+    diagnostic_msgs::DiagnosticValue v;
+    diagnostic_msgs::DiagnosticString s;
 
     status.name = "Mechanism Control";
     status.level = 0;
