@@ -242,16 +242,23 @@ static bool getTree(TiXmlElement *robot, Tree& tree)
     string segment_parent;
     if (!getAtribute(segment_xml->FirstChildElement("parent"), "name", segment_parent)) 
     {cout << "Segment " << segment_name << " does not have parent" << endl; return false;}
+    if (tree.getNrOfSegments() == 0){
+      cout << "Adding first segment to tree. Changing parent name from " << segment_parent << " to root" << endl;
+      segment_parent = "root";
+    }
 
     // build segment
     if (!getSegment(segment_xml, joints, segment)) 
     {cout << "Constructing segment " << segment_name << " failed" << endl; return false;}
     
     // add segment to tree
-    tree.addSegment(segment, segment_name, segment_parent);
+    if (!tree.addSegment(segment, segment_name, segment_parent))
+    {cout << "Failed to add segment to tree" << endl; return false;}
 
-    cout << " - Added segment " << segment_name << " to " << segment_parent << endl;
+    cout << "Added segment " << segment_name << " to " << segment_parent << endl;
   }
+  cout << "Tree has " << tree.getNrOfJoints() << " joints and " << tree.getNrOfSegments() << " segments" << endl;
+
   return true;
 }
 
