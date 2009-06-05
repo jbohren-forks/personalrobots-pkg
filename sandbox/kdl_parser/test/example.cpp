@@ -34,7 +34,7 @@
 
 /* Author: Wim Meeussen */
 
-#include "../src/tree_parser.cpp"
+#include "tree_parser.hpp"
 
 using namespace KDL;
 
@@ -42,5 +42,8 @@ using namespace KDL;
 int main()
 {
   Tree my_tree;
-  return treeFromFile("pr2_desc.xml", my_tree);
+  if (!treeFromFile("pr2_desc.xml", my_tree)) return -1;
+
+  Chain chain = my_tree.getChain("torso_lift_link", "r_gripper_tool_frame");
+  cout << "Got chain with " << chain.getNrOfJoints() << " joints and " << chain.getNrOfSegments() << " segments" << endl;
 }

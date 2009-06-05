@@ -12,6 +12,10 @@
   <depend package="kdl" />
   <depend package="tinyxml" />
   
+<export>
+  <cpp cflags="-I${prefix}/src/"/>
+</export>
+
 </package>
 
 
