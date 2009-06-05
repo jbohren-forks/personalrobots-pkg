@@ -57,6 +57,10 @@ void planning_environment::RobotModels::loadRobot(void)
 	    // joints)
 	    kmodel_->reduceToRobotFrame();
 	    kmodel_->defaultState();
+
+	    getCollisionCheckLinks(collision_check_links_);	
+	    getSelfCollisionGroups(self_collision_check_groups_);
+	    getSelfSeeLinks(self_see_links_);	    
 	}
 	else
 	    urdf_.reset();

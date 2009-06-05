@@ -43,10 +43,6 @@ void planning_environment::CollisionModels::loadCollision(void)
     ode_collision_model_ = boost::shared_ptr<collision_space::EnvironmentModel>(new collision_space::EnvironmentModelODE());
     if (urdf_.get() && kmodel_.get())
     {
-	getCollisionCheckLinks(collision_check_links_);	
-	getSelfCollisionGroups(self_collision_check_groups_);
-	getSelfSeeLinks(self_see_links_);
-	
 	ode_collision_model_->lock();
 	unsigned int cid = ode_collision_model_->addRobotModel(kmodel_, collision_check_links_, scale_, padd_);
 	for (unsigned int i = 0 ; i < self_collision_check_groups_.size() ; ++i)
