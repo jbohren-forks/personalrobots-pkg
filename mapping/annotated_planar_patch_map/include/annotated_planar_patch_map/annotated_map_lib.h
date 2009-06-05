@@ -123,7 +123,74 @@ void transformAnyObject(const std::string& target_frame,
 
 boost::unordered_map<std::string, int> getAllMapTags(const annotated_map_msgs::TaggedPolygonalMap& map);
 
+/* !
+ * 
+ * \brief Get the area of all planar polygons in the map.
+ *
+ *
+ */
+double getMapArea(const annotated_map_msgs::TaggedPolygonalMap& map);
 
+/* !
+ * 
+ * \brief Get the area of all polygons that have all the tags in the query 
+ *
+ *
+ */
+double getMapAreaWithTagsMatchAll(const annotated_map_msgs::TaggedPolygonalMap& map,std::vector<std::string> query_tags);
+
+/* !
+ * 
+ * \brief Get the area of all polygons that have any of tags in the query 
+ *
+ *
+ */
+double getMapAreaWithTagsMatchAny(const annotated_map_msgs::TaggedPolygonalMap& map,std::vector<std::string> query_tags);
+
+
+bool doesQueryMatch(const std::string& query,const std::string& name)
+{
+  if(query=="*")
+    return true;
+  if(query==name)
+    return true;
+  return false;	 
+}
+bool doesQueryMatch(std::string query,const annotated_map_msgs::TaggedPolygon3D& poly)
+{
+  for(unsigned int iT=0;iT<poly.get_tags_size();iT++)
+  {
+    if(doesQueryMatch(query,poly.tags[iT]))
+    {
+      return true;
+    }
+  }
+  return false;
+}
+
+
+bool doesQueryMatchAny(std::vector<std::string> query,const annotated_map_msgs::TaggedPolygon3D& poly)
+{
+  for(unsigned int iT=0;iT<query.size();iT++)
+  {
+    if(doesQueryMatch(query[iT],poly))
+    {
+      return true;
+    }
+  }
+  return false;
+}
+bool doesQueryMatchAll(std::vector<std::string> query,const annotated_map_msgs::TaggedPolygon3D& poly)
+{
+  for(unsigned int iT=0;iT<query.size();iT++)
+  {
+    if(!doesQueryMatch(query[iT],poly))
+    {
+      return false;
+    }
+  }
+  return true;
+}
 
 } //end namespace
 

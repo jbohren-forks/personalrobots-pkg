@@ -228,19 +228,19 @@ class PlanarPatchMap
 	bool bFilter=false;
 
 	if(filter_by_area_)
-	  {
-	    double polygon_area = cloud_geometry::areas::compute2DPolygonalArea(pmap.polygons[nr_poly]);
-	    if( polygon_area < min_polygon_area_)
-	      {
-		bFilter=true;
-	      }
-	  }
+        {
+          double polygon_area = cloud_geometry::areas::compute2DPolygonalArea(pmap.polygons[nr_poly]);
+          if( polygon_area < min_polygon_area_)
+          {
+            bFilter=true;
+          }
+        }
 
 	if(pmap.polygons[nr_poly].get_points_size()==0)
 	  bFilter=true;
-
+        
 	//Increase the polygon count only for accepted polygons.
-	if(~bFilter)
+	if(!bFilter)
 	  nr_poly++;
       }
       pmap.polygons.resize (nr_poly);

@@ -98,8 +98,8 @@ public:
 	ROS_INFO("\t\t%s %d",tag_iter->first.c_str(),tag_iter->second);
 	tag_iter++;
       }
-
- 
+    double total_map_area = annotated_map_lib::getMapArea(*map);
+    ROS_INFO("\tsurface area: %g square meters",total_map_area);
 
   }
 };

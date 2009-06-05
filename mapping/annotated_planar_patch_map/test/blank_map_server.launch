@@ -18,7 +18,7 @@
    </node>
 
    <!-- Get planar patch maps -->
-   <node pkg="planar_patch_map" type="planar_patch_map_node" >
+   <node pkg="planar_patch_map" type="planar_patch_map_node" output="screen">
        <remap from="/tilt_laser_cloud" to="/snapshot_cloud"/>
    </node>
 
@@ -35,6 +35,7 @@
 
 
 
+     <!--	   launch-prefix="xterm -e gdb - - args" -->
 
      <node pkg="annotated_planar_patch_map" type="annotated_map_assembler_srv" 
      	   name="blank_map_server" respawn="false" 
@@ -52,7 +53,7 @@
      <node pkg="annotated_planar_patch_map" type="annotated_map_snapshotter"  name="am_snapshotter" respawn="false" output="screen">
         <remap from="build_annotated_map" to="/blank_map_server/build_map" />
         <remap from="full_map" to="/labeled_maps/blank" />
-   
+        <param name="snapshot_mode" value="all" />   
      </node>
 
 

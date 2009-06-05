@@ -35,8 +35,10 @@
 * Author: Alexander Sorokin
 *********************************************************************/
 
-#include "annotated_planar_patch_map/annotated_map_lib.h"
+#include "point_cloud_mapping/geometry/areas.h"
 
+
+#include "annotated_planar_patch_map/annotated_map_lib.h"
 using namespace annotated_map_lib;
 
 
@@ -244,3 +246,52 @@ boost::unordered_map<std::string, int> annotated_map_lib::getAllMapTags(const an
 
 }
 
+
+
+
+double annotated_map_lib::getMapArea(const annotated_map_msgs::TaggedPolygonalMap& map)
+{
+  double tot_area=0;
+  unsigned int num_poly=map.polygons.size();
+  for(unsigned int iPoly=0;iPoly<num_poly;iPoly++)
+  {
+    tot_area+=cloud_geometry::areas::compute2DPolygonalArea(map.polygons[iPoly].polygon);
+  }
+  return tot_area;
+}
+
+/* !
+ * 
+ * \brief Get the area of all polygons that have all the tags in the query 
+ *
+ *
+ */
+double annotated_map_lib::getMapAreaWithTagsMatchAll(const annotated_map_msgs::TaggedPolygonalMap& map,std::vector<std::string> query_tags)
+{
+  double tot_area=0;
+  unsigned int num_poly=map.polygons.size();
+  for(unsigned int iPoly=0;iPoly<num_poly;iPoly++)
+  {
+    if(doesQueryMatchAll(query_tags,map.polygons[iPoly]))
+       tot_area+=cloud_geometry::areas::compute2DPolygonalArea(map.polygons[iPoly].polygon);
+  }
+  return tot_area;
+}
+
+/* !
+ * 
+ * \brief Get the area of all polygons that have any of tags in the query 
+ *
+ *
+ */
+double getMapAreaWithTagsMatchAny(const annotated_map_msgs::TaggedPolygonalMap& map,std::vector<std::string> query_tags)
+{
+  double tot_area=0;
+  unsigned int num_poly=map.polygons.size();
+  for(unsigned int iPoly=0;iPoly<num_poly;iPoly++)
+  {
+    if(doesQueryMatchAny(query_tags,map.polygons[iPoly]))
+       tot_area+=cloud_geometry::areas::compute2DPolygonalArea(map.polygons[iPoly].polygon);
+  }
+  return tot_area;
+}

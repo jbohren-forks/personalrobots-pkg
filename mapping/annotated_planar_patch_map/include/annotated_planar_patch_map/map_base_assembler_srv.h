@@ -52,6 +52,9 @@
 #include "boost/thread.hpp"
 #include "math.h"
 
+
+#include "annotated_planar_patch_map/annotated_map_lib.h"
+
 namespace annotated_planar_patch_map
 {
 
@@ -114,8 +117,6 @@ private:
 
 
   void mergePolygons(const annotated_map_msgs::TaggedPolygon3D &polyIn,annotated_map_msgs::TaggedPolygon3D &polyOut);
-  bool isQueryMatchPoly(std::string query,const annotated_map_msgs::TaggedPolygon3D& poly);
-  bool isQueryMatch(const std::string& query,const std::string& name);
 
   void simplify_output(const F& map_in, F& map_out);
 
@@ -355,7 +356,7 @@ private:
        centers.pts[iPoly]=computeMean(map_in.polygons[iPoly].polygon);
      }
 
-
+     ROS_DEBUG("Building KDtree");
      //Build kd-tree on centers of mass
      cloud_kdtree::KdTreeANN kd_tree(centers);
 
@@ -368,29 +369,25 @@ private:
        bool bKeep=true;
 
        int bestPoly=int(iPoly);
-       for(unsigned int iI=0;iI<k_indices.size();iI++){
-	 if((k_indices[iI]<bestPoly) && (k_distances[iI]<max_radius_)){
+       for(unsigned int iI=0;iI<k_indices.size();iI++)
+       {
+	 if((k_indices[iI]<bestPoly) && (k_distances[iI]<max_radius_))
 	   bestPoly=k_indices[iI];
-	 }
+	 
        }
        if(bestPoly<int(iPoly))
-	 {
-	   bKeep=false;
-	   canonical_polygon[iPoly]=iPoly;
-	   break;
-	 }
-       /*int first_nei=*min_element(k_indices.begin(),k_indices.end());
-
-       if(first_nei<iPoly)
-	 {
-	   bKeep=false;
-	   }*/
+       {
+         bKeep=false;
+         canonical_polygon[iPoly]=bestPoly;
+       }
        if(bKeep)
-	 {
-	   canonical_polygon[iPoly]=iPoly;
-	   num_poly_out++;
-	 }
+       {
+         canonical_polygon[iPoly]=iPoly;
+         num_poly_out++;
+       }
      }
+
+     ROS_DEBUG("Union-find unification and path compression");
      //Union find: parent finding and path compression
      for(unsigned int iPoly=0;iPoly<num_poly;iPoly++)
        {
@@ -407,6 +404,7 @@ private:
 	   }
        }
 
+     ROS_DEBUG("Merging the labels");
      //Here we rely that we'll see the root of the union first.
      //We simply copy the root.
      //For non-root elements, we merge them
@@ -419,6 +417,7 @@ private:
 	     map_out.polygons[iPolyOut]=map_in.polygons[iPoly];
 
 	     canonical_polygon_output_id[iPoly]=iPolyOut;
+
 	     iPolyOut++;
 	   }
 	 else
@@ -446,6 +445,7 @@ private:
      std::vector<bool> have_merged;
      have_merged.resize(num_tags_in);
      int num_left=0;
+     ROS_DEBUG("\tmerging existing tags ");
      for(unsigned int iT=0;iT<num_tags_in;iT++)
        {
 	 bool bMerged=false;
@@ -463,6 +463,7 @@ private:
 	 if(!bMerged)
 	   num_left++;
        }
+     ROS_DEBUG_STREAM("\tmerging new tags" << num_left);
      if(num_left>0)
        {
 	 
@@ -489,28 +490,6 @@ private:
    }
 
 
- template <class T,class F>
-   bool MapBaseAssemblerSrv<T,F>::isQueryMatchPoly(std::string query,const annotated_map_msgs::TaggedPolygon3D& poly)
-   {
-     for(unsigned int iT=0;iT<poly.get_tags_size();iT++)
-       {
-	 if(isQueryMatch(query,poly.tags[iT]))
-	   {
-	     return true;
-	   }
-       }
-     return false;
-   }
- template <class T,class F>
-   bool MapBaseAssemblerSrv<T,F>::isQueryMatch(const std::string& query,const std::string& name)
-   {
-     if(query=="*")
-       return true;
-     if(query==name)
-       return true;
-     return false;	 
-   }
-
 
  template <class T,class F>
    bool MapBaseAssemblerSrv<T,F>::queryMap(QueryAnnotatedMap::Request& req, QueryAnnotatedMap::Response& resp)
@@ -536,7 +515,7 @@ private:
   {
     unsigned int nPoly=scan_hist_[i].get_polygons_size();
     for(uint iP=0;iP<nPoly;iP++){
-      if(!isQueryMatchPoly(req.query,scan_hist_[i].polygons[iP]))
+      if(!annotated_map_lib::doesQueryMatch(req.query,scan_hist_[i].polygons[iP]))
 	continue;
       else
 	req_pts ++;
@@ -564,7 +543,7 @@ private:
     {
       for(unsigned int j=0; j<scan_hist_[i].get_polygons_size(); j+=1)
       {
-	if(!isQueryMatchPoly(req.query,scan_hist_[i].polygons[j]))
+	if(!annotated_map_lib::doesQueryMatch(req.query,scan_hist_[i].polygons[j]))
 	  continue;
 
 	
