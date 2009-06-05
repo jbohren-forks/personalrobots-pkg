@@ -195,4 +195,6 @@ class SBPLDoorPlanner : public robot_actions::Action<door_msgs::Door, door_msgs:
 
   void processPlan(const robot_msgs::JointTraj &path, robot_msgs::JointTraj &return_path);
 
+  bool do_control_;
+
 };

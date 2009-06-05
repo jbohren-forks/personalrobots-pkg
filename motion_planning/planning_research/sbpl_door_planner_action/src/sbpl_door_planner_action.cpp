@@ -70,6 +70,8 @@ SBPLDoorPlanner::SBPLDoorPlanner(ros::Node& ros_node, tf::TransformListener& tf)
   ros_node_.param("~controller_frequency",controller_frequency_,40.0);
   ros_node_.param("~animate_frequency",animate_frequency_,10.0);
 
+  ros_node_.param("~do_control",do_control_,true);
+
   cost_map_ros_ = new costmap_2d::Costmap2DROS(ros_node_,tf_,std::string(""));
   cost_map_ros_->getCostmapCopy(cost_map_);
 
@@ -197,7 +199,12 @@ bool SBPLDoorPlanner::removeDoor()
     ROS_INFO("DOOR POLYGON %d:: %f, %f",i,door_polygon[i].x,door_polygon[i].y);
   }
   if(cost_map_.setConvexPolygonCost(door_polygon,costmap_2d::FREE_SPACE))
+  {
+    ROS_INFO("Reinflating obstacles everywhere around %f, %f",(door_env_.door.frame_p1.x+door_env_.door.frame_p2.x)/2.0,(door_env_.door.frame_p1.y+door_env_.door.frame_p2.y)/2.0 );
+    //make sure to re-inflate obstacles in the affected region
+    cost_map_.reinflateWindow((door_env_.door.frame_p1.x+door_env_.door.frame_p2.x)/2.0, (door_env_.door.frame_p1.y+door_env_.door.frame_p2.y)/2.0, 1.0,1.0);
     return true;
+  }
   ROS_INFO("Could not remove door");
   return false;
 }
@@ -250,6 +257,11 @@ bool SBPLDoorPlanner::makePlan(const pr2_robot_actions::Pose2D &start, const pr2
   publishFootprint(start,"~start",0,1.0,0);
   publishFootprint(goal,"~goal",0,0,1.0);
   ROS_INFO("[replan] replanning...");
+
+  ros::Duration d;
+  d.fromSec(2.0);
+  d.sleep();
+
   try {
     int max_cost = costmap_2d::FREE_SPACE;
     int min_cost = costmap_2d::NO_INFORMATION;
@@ -375,6 +387,7 @@ robot_actions::ResultStatus SBPLDoorPlanner::execute(const door_msgs::Door& door
   goal_.x = (door.frame_p1.x+door.frame_p2.x)/2.0 + distance_goal_ * cos(goal_.th);
   goal_.y = (door.frame_p1.y+door.frame_p2.y)/2.0 + distance_goal_ * sin(goal_.th);
 
+
   ROS_DEBUG("Goal: %f %f %f",goal_.x,goal_.y,goal_.th);
   if(!isPreemptRequested())
   {
@@ -389,7 +402,11 @@ robot_actions::ResultStatus SBPLDoorPlanner::execute(const door_msgs::Door& door
   }
   if(!isPreemptRequested())
   {
-    publishPath(path,"global_plan",0,1,0,0);
+    ROS_INFO("Publishing path");
+    publishPath(path,"global_plan",1.0,1.0,1.0,1.0);
+    ros::Duration d;
+    d.fromSec(2.0);
+    d.sleep();
   }
 
   handle_hinge_distance_ = getHandleHingeDistance(door_env_.door);
@@ -402,10 +419,14 @@ robot_actions::ResultStatus SBPLDoorPlanner::execute(const door_msgs::Door& door
     ROS_INFO("Animating path");
     animate(new_path);
   }
-  dispatchControl(new_path,door);
+
+  if(do_control_)
+  {
+    dispatchControl(new_path,door);
+  }
 
   ros::Duration d;
-  d.fromSec(20.0);
+  d.fromSec(2.0);
   d.sleep();
   return robot_actions::SUCCESS;
 }

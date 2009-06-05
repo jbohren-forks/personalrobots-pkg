@@ -25,6 +25,7 @@
 
       <param name="costmap/rolling_window" value="true" />
       <param name="costmap/static_map" value="false" />
+      <param name="costmap/inflation_radius" value="0.46" />
 
       <!-- begin only used if static map is set to false -->
       <param name="costmap/width" value="6.0" />
@@ -40,9 +41,13 @@
      <remap from="raw_obstacles" to="~raw_obstacles" />
      <remap from="inflated_obstacles" to="~inflated_obstacles" />
 
-     <param name="sbpl_action_file" textfile="$(find mpbench)/data/pr2sides.mprim" />
-     <param name="animate" value="true"/>
-     <param name="animate_frequency" value="40.0"/>
+     <!--param name="sbpl_action_file" textfile="$(find mpbench)/data/pr2sides.mprim" /-->
+     <param name="sbpl_action_file" textfile="$(find sbpl)/matlab/mprim/mprim_unic_sidebackdiag.mprim" />
+
+     <param name="animate" value="false"/>
+     <param name="do_control" value="true"/>
+     <param name="animate_frequency" value="10.0"/>
+     <param name="controller_frequency" value="40.0"/>
     </node>
   </group>
 </launch>

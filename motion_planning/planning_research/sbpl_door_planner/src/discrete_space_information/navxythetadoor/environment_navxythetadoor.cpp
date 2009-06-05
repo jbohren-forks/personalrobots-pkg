@@ -33,6 +33,8 @@ using namespace std;
 #include <sbpl_door_planner/environment_navxythetadoor.h>
 #include <door_msgs/Door.h>
 
+bool first_call = true;
+FILE* fEnv = fopen("debug_environment.txt", "w");
 
 static unsigned int inthash(unsigned int key)
 {
@@ -213,11 +215,11 @@ void EnvironmentNAVXYTHETADOORLAT::GetActionCost(int SourceX, int SourceY, int S
     
   //use cell cost as multiplicative factor
   if(interval_active[0] == true)    
-    *pCosttoDoorInterval0 = action->cost*(currentmaxcost+1)*(doorcostmultiplier + 1); 
+    *pCosttoDoorInterval0 = action->cost*(currentmaxcost+1)*(doorcostmultiplier*0.5 + 1); 
   else
     *pCosttoDoorInterval0 = INFINITECOST;
   if(interval_active[1] == true)     
-    *pCosttoDoorInterval1 =  action->cost*(currentmaxcost+1)*(doorcostmultiplier + 1); 
+    *pCosttoDoorInterval1 =  action->cost*(currentmaxcost+1)*(doorcostmultiplier*0.5 + 1); 
   else
     *pCosttoDoorInterval1 = INFINITECOST;
 
@@ -387,6 +389,20 @@ void EnvironmentNAVXYTHETADOORLAT::GetSuccs(int SourceStateID, vector<int>* Succ
                                             vector<int>* CostV, 
                                             vector<EnvNAVXYTHETALATAction_t*>* actionV /*=NULL*/)
 {
+    if(first_call)
+    {
+        first_call = false;
+        for(int i=0; i<EnvNAVXYTHETALATCfg.EnvHeight_c; i++)
+        {
+            for(int j=0; j<EnvNAVXYTHETALATCfg.EnvWidth_c; j++)
+            {
+                fprintf(fEnv,"%u ",EnvNAVXYTHETALATCfg.Grid2D[j][i]);
+            }
+            fprintf(fEnv,"\n");
+        }
+    }
+
+
   int aind;
 
 #if TIME_DEBUG

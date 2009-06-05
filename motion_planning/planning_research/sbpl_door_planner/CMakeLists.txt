@@ -1,4 +1,5 @@
 cmake_minimum_required(VERSION 2.4.6)
+set (ROS_BUILD_TYPE Release)
 include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
 rospack(sbpl_door_planner)
 gensrv()
