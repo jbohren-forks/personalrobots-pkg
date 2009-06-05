@@ -557,15 +557,10 @@ namespace planning_models
 	    m_ignoreSensors = false;
 	    m_verbose = false;	    
 	    m_built = false;
-	    m_lastTransformParams = NULL;
-	    m_lastTransformGroup = -2;
 	}
 	
 	virtual ~KinematicModel(void)
 	{
-	    if (m_lastTransformParams)
-		delete[] m_lastTransformParams;
-	    
 	    for (unsigned int i = 0 ; i < m_robots.size() ; ++i)
 		delete m_robots[i];
 	}
@@ -652,11 +647,6 @@ namespace planning_models
 
 	boost::mutex                      m_lock;
 
-	/* Subsequent calls with the same argument should not redo computation; 
-	 * We simply store this state information and compare against it for next time */
-	double                           *m_lastTransformParams;
-	int                               m_lastTransformGroup;
-	
     private:
 	
 	/** Build the needed datastructure for a joint */

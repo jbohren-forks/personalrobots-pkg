@@ -3,7 +3,7 @@ include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
 rospack(planning_models)
 rospack_add_boost_directories()
 
-set(ROS_BUILD_TYPE Debug)
+set(ROS_BUILD_TYPE Release)
 
 rospack_add_library(planning_models src/kinematic.cpp
                                     src/load_mesh.cpp)
