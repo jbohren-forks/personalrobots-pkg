@@ -40,6 +40,7 @@
 #include <tinyxml/tinyxml.h>
 #include <hardware_interface/hardware_interface.h>
 #include <mechanism_model/robot.h>
+#define BOOST_CB_DISABLE_DEBUG
 #include <boost/circular_buffer.hpp>
 #include <boost/thread/mutex.hpp>
 #include <boost/accumulators/accumulators.hpp>
