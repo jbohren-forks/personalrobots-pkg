@@ -24,4 +24,4 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 #gensrv()
 
 rospack_add_executable(example test/example.cpp )
-target_link_libraries(example ${PROJECT_NAME})
+

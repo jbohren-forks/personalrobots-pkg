@@ -1,21 +1,17 @@
 <package>
-  <description brief="orocos_ros_integration">
-
-     orocos_ros_integration
-
+  <description brief="Package to parse urdf in to kdl tree">
   </description>
-  <author>Ruben Smits/ ruben.smits@mech.kuleuven.be</author>
+  <author>Wim Meeussen</author>
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
-  <url>http://pr.willowgarage.com/wiki/orocos_ros_integration</url>
+  <url>http://pr.willowgarage.com/wiki/</url>
 
   <depend package="kdl" />
   <depend package="tinyxml" />
   
 <export>
-  <cpp cflags="-I${prefix}/src/"/>
+  <cpp cflags="-I${prefix}/include/"/>
 </export>
-
 </package>
 
 

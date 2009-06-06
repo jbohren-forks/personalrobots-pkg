@@ -34,7 +34,7 @@
 
 /* Author: Wim Meeussen */
 
-#include "tree_parser.hpp"
+#include "kdl_parser/tree_parser.hpp"
 
 using namespace KDL;
 
