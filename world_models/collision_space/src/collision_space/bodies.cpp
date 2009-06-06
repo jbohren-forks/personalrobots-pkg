@@ -34,7 +34,7 @@
 
 /** \author Ioan Sucan */
 
-#include "collision_space/point_inclusion.h"
+#include "collision_space/bodies.h"
 #include "collision_space/output.h"
 #include <LinearMath/btConvexHull.h>
 #include <cmath>
@@ -68,6 +68,37 @@ collision_space::bodies::Body* collision_space::bodies::createBodyFromShape(cons
     return body;
 }
 
+void collision_space::bodies::mergeBoundingSpheres(const std::vector<BoundingSphere> &spheres, BoundingSphere &mergedSphere)
+{
+    if (spheres.empty())
+    {
+	mergedSphere.center.setValue(btScalar(0), btScalar(0), btScalar(0));
+	mergedSphere.radius = 0.0;
+    }
+    else
+    {
+	mergedSphere = spheres[0];
+	for (unsigned int i = 1 ; i < spheres.size() ; ++i)
+	{
+	    if (spheres[i].radius <= 0.0)
+		continue;
+	    double d = spheres[i].center.distance(mergedSphere.center);
+	    if (d + mergedSphere.radius <= spheres[i].radius)
+	    {
+		mergedSphere.center = spheres[i].center;
+		mergedSphere.radius = spheres[i].radius;
+	    }
+	    else
+		if (d + spheres[i].radius > mergedSphere.radius)
+		{
+		    btVector3 delta = mergedSphere.center - spheres[i].center;
+		    mergedSphere.radius = (delta.length() + spheres[i].radius + mergedSphere.radius)/2.0;
+		    mergedSphere.center = delta.normalized() * (mergedSphere.radius - spheres[i].radius) + spheres[i].center;
+		}
+	}
+    }
+}
+
 bool collision_space::bodies::Sphere::containsPoint(const btVector3 &p) const 
 {
     return (m_center - p).length2() < m_radius2;
@@ -90,10 +121,10 @@ double collision_space::bodies::Sphere::computeVolume(void) const
     return 4.0 * M_PI * m_radiusU * m_radiusU * m_radiusU / 3.0;
 }
 
-void collision_space::bodies::Sphere::computeBoundingSphere(btVector3 &center, double &radius) const
+void collision_space::bodies::Sphere::computeBoundingSphere(BoundingSphere &sphere) const
 {
-    center = m_center;
-    radius = m_radiusU;
+    sphere.center = m_center;
+    sphere.radius = m_radiusU;
 }
 
 bool collision_space::bodies::Cylinder::containsPoint(const btVector3 &p) const 
@@ -141,10 +172,10 @@ double collision_space::bodies::Cylinder::computeVolume(void) const
     return 2.0 * M_PI * m_radiusU * m_radiusU * m_length2;
 }
 
-void collision_space::bodies::Cylinder::computeBoundingSphere(btVector3 &center, double &radius) const
+void collision_space::bodies::Cylinder::computeBoundingSphere(BoundingSphere &sphere) const
 {
-    center = m_center;
-    radius = m_radiusB;
+    sphere.center = m_center;
+    sphere.radius = m_radiusB;
 }
 
 bool collision_space::bodies::Box::containsPoint(const btVector3 &p) const 
@@ -198,10 +229,10 @@ double collision_space::bodies::Box::computeVolume(void) const
     return 8.0 * m_length2 * m_width2 * m_height2;
 }
 
-void collision_space::bodies::Box::computeBoundingSphere(btVector3 &center, double &radius) const
+void collision_space::bodies::Box::computeBoundingSphere(BoundingSphere &sphere) const
 {
-    center = m_center;
-    radius = m_radiusB;
+    sphere.center = m_center;
+    sphere.radius = m_radiusB;
 }
 
 bool collision_space::bodies::ConvexMesh::containsPoint(const btVector3 &p) const
@@ -306,10 +337,10 @@ void collision_space::bodies::ConvexMesh::updateInternalData(void)
     m_center = m_pose.getOrigin() + m_meshCenter;
 }
 
-void collision_space::bodies::ConvexMesh::computeBoundingSphere(btVector3 &center, double &radius) const
+void collision_space::bodies::ConvexMesh::computeBoundingSphere(BoundingSphere &sphere) const
 {
-    center = m_center;
-    radius = m_radiusB;
+    sphere.center = m_center;
+    sphere.radius = m_radiusB;
 }
 
 bool collision_space::bodies::ConvexMesh::isPointInsidePlanes(const btVector3& point) const

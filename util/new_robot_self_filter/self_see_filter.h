@@ -34,7 +34,7 @@
 #include <ros/console.h>
 #include <robot_msgs/PointCloud.h>
 #include <planning_environment/robot_models.h>
-#include <collision_space/point_inclusion.h>
+#include <collision_space/bodies.h>
 #include <tf/transform_listener.h>
 #include <string>
 #include <algorithm>
@@ -71,7 +71,7 @@ public:
   /** \brief Construct the filter */
   SelfFilter(void) : rm_("robot_description"), tf_(*ros::Node::instance(), true, ros::Duration(10))
   {
-      tf_.setExtrapolationLimit(ros::Duration().fromSec(10));
+      tf_.setExtrapolationLimit(ros::Duration().fromSec(10));      
   }
     
 
@@ -86,6 +86,10 @@ public:
     
   virtual bool configure(void)
   {
+      // keep only the points that are outside of the robot
+      // for testing purposes this may be changed to true
+      invert_ = false;
+      
       std::vector<std::string> links = rm_.getSelfSeeLinks();
       double scale = rm_.getSelfSeeScale();
       double padd  = rm_.getSelfSeePadding();
@@ -120,7 +124,7 @@ public:
       
       for (unsigned int i = 0 ; i < bodies_.size() ; ++i)
 	  ROS_INFO("Self see link %s with volume %f", bodies_[i].name.c_str(), bodies_[i].body->computeVolume());
-      
+
       return true;
   }
     
@@ -137,6 +141,7 @@ public:
       {
 	  const unsigned int bs = bodies_.size();
 	  const unsigned int np = data_in.pts.size();
+	  std::vector<collision_space::bodies::BoundingSphere> bspheres(bs);
 	  
 	  // place the links in the frame of the pointcloud
 	  for (unsigned int i = 0 ; i < bs ; ++i)
@@ -147,8 +152,13 @@ public:
 
 	      // set it for each body; we also include the offset specified in URDF
 	      bodies_[i].body->setPose(transf * bodies_[i].constTransf);
+	      bodies_[i].body->computeBoundingSphere(bspheres[i]);
 	  }
 	  
+	  // compute a sphere that bounds the entire robot
+	  collision_space::bodies::BoundingSphere bound;
+	  collision_space::bodies::mergeBoundingSpheres(bspheres, bound);	  
+
 	  // we now decide which points we keep
 	  std::vector<bool> keep(np);
 
@@ -157,9 +167,11 @@ public:
 	  {
 	      btVector3 pt = btVector3(btScalar(data_in.pts[i].x), btScalar(data_in.pts[i].y), btScalar(data_in.pts[i].z));
 	      bool out = true;
-	      for (unsigned int j = 0 ; out && j < bs ; ++j)
-		  out = !bodies_[j].body->containsPoint(pt);
-	      keep[i] = out;
+	      if (bound.center.distance(pt) < bound.radius)
+		  for (unsigned int j = 0 ; out && j < bs ; ++j)
+		      out = !bodies_[j].body->containsPoint(pt);
+	      
+	      keep[i] = invert_ ? !out : out;
 	  }
 	  
 	  
@@ -199,10 +211,11 @@ public:
 protected:
   
   planning_environment::RobotModels rm_;
-  
+  ros::NodeHandle                   nh_;  
   tf::TransformListener             tf_;
   std::vector<SeeLink>              bodies_;
-
+  bool                              invert_;
+  
 };
 
 typedef robot_msgs::PointCloud robot_msgs_PointCloud;

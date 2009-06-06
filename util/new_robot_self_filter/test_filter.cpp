@@ -36,39 +36,95 @@
 
 #include <ros/ros.h>
 #include "self_see_filter.h"
+#include <visualization_msgs/Marker.h>
 
-class test
+class TestSelfFilter
 {
 public:
-    test(void)
-    {
-	sf.configure();
-	sb = nh.subscribe("tilt_scan_filtered", 1, &test::myfilter, this);
-	pub = nh.advertise<robot_msgs::PointCloud>("my_point_cloud2", 10);
 
+    TestSelfFilter(void)
+    {
+	id_ = 1;
+	sf_.configure();
+	vmPub_ = nodeHandle_.advertise<visualization_msgs::Marker>("visualization_marker", 10240);
     }
     
-    void myfilter(const robot_msgs::PointCloudConstPtr &pc)
+    void sendPoint(double x, double y, double z)
     {
+	visualization_msgs::Marker mk;
+
+	mk.header.stamp = ros::Time::now();
+
+	mk.header.frame_id = "base_link";
+
+	mk.ns = "test_self_filter";
+	mk.id = id_++;
+	mk.type = visualization_msgs::Marker::SPHERE;
+	mk.action = visualization_msgs::Marker::ADD;
+	mk.pose.position.x = x;
+	mk.pose.position.y = y;
+	mk.pose.position.z = z;
+	mk.pose.orientation.w = 1.0;
+
+	mk.scale.x = mk.scale.y = mk.scale.z = 0.02;
+
+	mk.color.a = 1.0;
+	mk.color.r = 1.0;
+	mk.color.g = 0.04;
+	mk.color.b = 0.04;
+
+	vmPub_.publish(mk);
+    }
+    void run(void)
+    {
+	robot_msgs::PointCloud in;
 	robot_msgs::PointCloud out;
-	sf.update(*pc, out);
-	pub.publish(out);
+	
+	in.header.stamp = ros::Time::now();
+	in.header.frame_id = "base_link";
+	
+	const unsigned int N = 100000;	
+	in.pts.resize(N);
+	for (unsigned int i = 0 ; i < N ; ++i)
+	{
+	    in.pts[i].x = uniform(1);
+	    in.pts[i].y = uniform(1);
+	    in.pts[i].z = uniform(1);
+	}
+	
+	ros::WallTime tm = ros::WallTime::now();
+	sf_.update(in, out);
+	printf("%f points per second\n", (double)N/(ros::WallTime::now() - tm).toSec());
+	
+	for (unsigned int i = 0 ; i < out.pts.size() ; ++i)
+	{
+	    sendPoint(out.pts[i].x, out.pts[i].y, out.pts[i].z);
+	}
+	
+	ros::spin();	
+    }
+protected:
+    
+    double uniform(double magnitude)
+    {
+	return (2.0 * drand48() - 1.0) * magnitude;
     }
 
-    ros::Subscriber sb;
-    ros::Publisher pub;
-    ros::NodeHandle nh;        
-    filters::SelfFilter<robot_msgs::PointCloud> sf;
+    ros::Publisher                              vmPub_;
+    ros::NodeHandle                             nodeHandle_;        
+    filters::SelfFilter<robot_msgs::PointCloud> sf_;
+    int                                         id_;
 };
 
     
 int main(int argc, char **argv)
 {
-    ros::init(argc, argv, "ttt");
-    test t;
-    ros::spin();
-       
+    ros::init(argc, argv, "test_self_filter");
 
+    TestSelfFilter t;
+    sleep(1);
+    t.run();
+    
     return 0;
 }
 

@@ -38,7 +38,7 @@
 #include <ros/ros.h>
 #include <algorithm>
 #include <visualization_msgs/Marker.h>
-#include <collision_space/point_inclusion.h>
+#include <collision_space/bodies.h>
 using namespace collision_space;
 
 const int TEST_TIMES  = 3;
@@ -152,11 +152,10 @@ public:
 	collision_space::bodies::Body *s = new collision_space::bodies::Sphere(&shape);
 	printf("Sphere volume = %f\n", s->computeVolume());
 	
-	btVector3 center;
-	double radius;
-	s->computeBoundingSphere(center, radius);
+	collision_space::bodies::BoundingSphere sphere;
+	s->computeBoundingSphere(sphere);
 	
-	printf("Bounding radius = %f\n", radius);
+	printf("Bounding radius = %f\n", sphere.radius);
 	for (int i = 0 ; i < TEST_TIMES ; ++i)
 	{
 	    visualization_msgs::Marker mk;
@@ -181,11 +180,10 @@ public:
 	collision_space::bodies::Body *s = new collision_space::bodies::Box(&shape);
 	printf("Box volume = %f\n", s->computeVolume());
 	
-	btVector3 center;
-	double radius;
-	s->computeBoundingSphere(center, radius);
+	collision_space::bodies::BoundingSphere sphere;
+	s->computeBoundingSphere(sphere);
 	
-	printf("Bounding radius = %f\n", radius);
+	printf("Bounding radius = %f\n", sphere.radius);
 
 	for (int i = 0 ; i < TEST_TIMES ; ++i)
 	{
@@ -210,12 +208,11 @@ public:
 	planning_models::shapes::Cylinder shape(0.5, 2.5);
 	collision_space::bodies::Body *s = new collision_space::bodies::Cylinder(&shape);
 	printf("Cylinder volume = %f\n", s->computeVolume());
+		
+	collision_space::bodies::BoundingSphere sphere;
+	s->computeBoundingSphere(sphere);
 	
-	btVector3 center;
-	double radius;
-	s->computeBoundingSphere(center, radius);
-	
-	printf("Bounding radius = %f\n", radius);
+	printf("Bounding radius = %f\n", sphere.radius);
 
 	for (int i = 0 ; i < TEST_TIMES ; ++i)
 	{
@@ -264,11 +261,10 @@ public:
 	collision_space::bodies::Body *s = new collision_space::bodies::ConvexMesh(shape);
 	printf("Mesh volume = %f\n", s->computeVolume());
 	
-	btVector3 center;
-	double radius;
-	s->computeBoundingSphere(center, radius);
+	collision_space::bodies::BoundingSphere sphere;
+	s->computeBoundingSphere(sphere);
 	
-	printf("Bounding radius = %f\n", radius);
+	printf("Bounding radius = %f\n", sphere.radius);
 
 	for (int i = 0 ; i < TEST_TIMES ; ++i)
 	{

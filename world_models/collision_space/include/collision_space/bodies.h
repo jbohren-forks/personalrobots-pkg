@@ -56,6 +56,12 @@ namespace collision_space
     namespace bodies
     {
 	
+	struct BoundingSphere
+	{
+	    btVector3 center;
+	    double    radius;
+	};
+		
 	/** A body is a shape + its pose. Point inclusion can be
 	    tested, volumes and bounding spheres can be computed.*/
 	class Body
@@ -136,7 +142,7 @@ namespace collision_space
 	    
 	    /** Compute the bounding radius for the body, in its current
 		pose. Scaling and padding are accounted for. */
-	    virtual void computeBoundingSphere(btVector3 &center, double &radius) const = 0;
+	    virtual void computeBoundingSphere(BoundingSphere &sphere) const = 0;
 	    
 	protected:
 	    
@@ -167,7 +173,7 @@ namespace collision_space
 	    
 	    virtual bool containsPoint(const btVector3 &p) const;
 	    virtual double computeVolume(void) const;
-	    virtual void computeBoundingSphere(btVector3 &center, double &radius) const;
+	    virtual void computeBoundingSphere(BoundingSphere &sphere) const;
 
 	protected:
 	    
@@ -199,7 +205,7 @@ namespace collision_space
 	    
 	    virtual bool containsPoint(const btVector3 &p) const;
 	    virtual double computeVolume(void) const;
-	    virtual void computeBoundingSphere(btVector3 &center, double &radius) const;
+	    virtual void computeBoundingSphere(BoundingSphere &sphere) const;
 
 	protected:
 	    
@@ -239,7 +245,7 @@ namespace collision_space
 	    
 	    virtual bool containsPoint(const btVector3 &p) const;
 	    virtual double computeVolume(void) const;
-	    virtual void computeBoundingSphere(btVector3 &center, double &radius) const;
+	    virtual void computeBoundingSphere(BoundingSphere &sphere) const;
 
 	protected:
 	    
@@ -282,7 +288,7 @@ namespace collision_space
 	    
 	    virtual bool containsPoint(const btVector3 &p) const;
 	    virtual double computeVolume(void) const;
-	    virtual void computeBoundingSphere(btVector3 &center, double &radius) const;
+	    virtual void computeBoundingSphere(BoundingSphere &sphere) const;
 
 	protected:
 	    
@@ -303,8 +309,11 @@ namespace collision_space
 	};
 	
 	
+	/** Create a body from a given shape */
 	Body* createBodyFromShape(const planning_models::shapes::Shape *shape);
-	
+
+	/** Compute a bounding sphere to enclose a set of bounding spheres */
+	void mergeBoundingSpheres(const std::vector<BoundingSphere> &spheres, BoundingSphere &mergedSphere);
     }
 }
 

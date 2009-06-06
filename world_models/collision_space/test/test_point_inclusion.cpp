@@ -34,7 +34,7 @@
 
 /** \Author Ioan Sucan */
 
-#include <collision_space/point_inclusion.h>
+#include <collision_space/bodies.h>
 #include <gtest/gtest.h>
 
 TEST(SpherePointContainment, SimpleInside)
