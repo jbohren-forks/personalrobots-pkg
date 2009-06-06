@@ -35,20 +35,20 @@
 // Author: Marius Muja, Gary Bradski
 
 #include <vector>
+#include <algorithm>
 #include <fstream>
 #include <sstream>
 #include <time.h>
 #include <iostream>
 #include <iomanip>
 #include <queue>
-
+#include <cmath>
 
 #include "opencv_latest/CvBridge.h"
 
 #include "opencv/cxcore.h"
 #include "opencv/cv.h"
 #include "opencv/highgui.h"
-
 
 #include "ros/node.h"
 #include "image_msgs/StereoInfo.h"
@@ -59,8 +59,25 @@
 #include "robot_msgs/Point32.h"
 #include "robot_msgs/Vector3.h"
 #include "robot_msgs/PointStamped.h"
+#include <robot_msgs/Polygon3D.h>
 #include "door_msgs/Door.h"
 //#include "robot_msgs/VisualizationMarker.h"
+
+// Cloud kd-tree
+#include <point_cloud_mapping/kdtree/kdtree_ann.h>
+
+// Cloud geometry
+#include <point_cloud_mapping/geometry/angles.h>
+#include <point_cloud_mapping/geometry/point.h>
+#include <point_cloud_mapping/geometry/areas.h>
+
+// Sample Consensus
+#include <point_cloud_mapping/sample_consensus/sac.h>
+#include <point_cloud_mapping/sample_consensus/ransac.h>
+#include <point_cloud_mapping/sample_consensus/sac_model_plane.h>
+
+#include <angles/angles.h>
+
 
 #include <recognition_lambertian/visualization.h>
 
@@ -79,7 +96,7 @@
 
 using namespace std;
 using namespace robot_msgs;
-
+static const double pi = 3.141592653589793238462643383279502884197; // Archimedes constant pi
 
 typedef struct _triangle_offsets
 {
@@ -89,7 +106,308 @@ typedef struct _triangle_offsets
 }
 triangle_offsets;
 
+typedef cv::Vec_<float, 16> Mat4x4f;
 
+static inline cv::Vec4f transform4x4(const Mat4x4f& M, const cv::Vec4f& v)
+{
+    return cv::Vec4f(M[0]*v[0] + M[1]*v[1] + M[2]*v[2] + M[3]*v[3],
+                     M[4]*v[0] + M[5]*v[1] + M[6]*v[2] + M[7]*v[3],
+                     M[8]*v[0] + M[9]*v[1] + M[10]*v[2] + M[11]*v[3],
+                     M[12]*v[0] + M[13]*v[1] + M[14]*v[2] + M[15]*v[3]);
+}
+
+
+////////////////////PLANE FINDING/////////////////////////////////////////////////////
+
+// Slightly modifed plane finding class by RADU.
+// !!!!NOTE, grid should just find planes from points in the grid, rather than stuffing them into point clouds to use these functions as done now.!!!!
+class PlanarFit
+{
+
+  void getPointIndicesInZBounds (const PointCloud &points, double z_min, double z_max, vector<int> &indices);
+  bool fitSACPlanes (PointCloud *points, vector<int> &indices, vector<vector<int> > &inliers, vector<vector<double> > &coeff,
+                     const robot_msgs::Point32 &viewpoint_cloud, double dist_thresh, int n_max, int min_points_per_model = 100);
+
+  /**
+      * Input
+            o list of X,Y,Z,x,y points
+            o Z min, Z max (only process points within min to max range
+            o Support  where "Support" is a vertical distance above the plane where an object not on that plane will be considered to be supported by that plane  (OK, if this takes time, don't do it right now)
+            o A where A is the minimal area a plane should have (again, don't bother with for now unless its already there)
+            o N max number of planes to find in order of size
+      * Output
+            o list of indices in order of input list. Each indices is the tuple x,y,A where x,y is the pixel and A is "computed attribute"
+                  + 0 is illegal range or othersize "no data"
+                  + 1-N where this numbers the planes in terms of area. 1 is largest plane, 2 is next largest ...
+                  + -1, -2, -3 means supported object by cluster (or for now for speed, all points that are not a 0 or not a plane are -1).
+
+
+\NOTE: not sure if I understand the support parameter :(
+
+   **/
+
+public:
+
+	/**
+	 * \brief Segment planes from point clouds (this is the function I call in Radu's code for planes)
+	 * @param points 			The 3D points
+	 * @param indices_in_bounds	Index to the good points in "points" above
+	 * @param num_pts			Number of 3D points belonging to the found required to accept that plane
+	 * @param n_max				Maximum number of planes to look for
+	 * @param indices			2D list of planes and indices to points belonging to that plane (if indices[i].size() = 0, plane was invalid)
+	 * @param models			Equations of planes that were found.  Again, if models[i].size() = 0, then the plane wsa invalid
+	 */
+  void
+     segmentPlanes (PointCloud &points, vector<int> &indices_in_bounds, int num_pts, int n_max,
+                    vector<vector<int> > &indices, vector<vector<double> > &models)
+   {
+		// This should be given as a parameter as well, or set global, etc
+		double sac_distance_threshold_ = 0.007; // 2cm distance threshold for inliers (point-to-plane distance)
+
+		// We need to know the viewpoint where the data was acquired
+		// For simplicity, assuming 0,0,0 for stereo data in the stereo frame - however if this is not true, use TF to get
+		//the point in a different frame !
+		Point32 viewpoint;
+		viewpoint.x = viewpoint.y = viewpoint.z = 0;
+
+		// Use the entire data to estimate the plane equation.
+		// NOTE: if this is slow, we can downsample first, then fit (check mapping/point_cloud_mapping/src/planar_fit.cpp)
+		//   vector<vector<int> > inliers;
+		indices.clear(); //Points that are in plane
+		models.clear(); //Plane equations
+		//    vector<vector<double> > models;
+//		printf("#indices_in_bounds = %d\n", (int) indices_in_bounds.size());
+		fitSACPlanes(&points, indices_in_bounds, indices, models, viewpoint,
+				sac_distance_threshold_, n_max);
+//		printf("Num models found = %d\n", (int) models.size());
+		// Check the list of planar areas found against the minimally imposed area
+		for (unsigned int i = 0; i < models.size(); i++)
+		{
+			if ((int) indices[i].size() < num_pts){
+//
+//				// If the area is smaller, reset this planar model
+//				if (area < min_area) {
+					models[i].resize(0);
+					indices[i].resize(0);
+					continue;
+				}
+		}
+	}
+
+  void
+    segmentPlanes (PointCloud &points, double z_min, double z_max, double min_area, int n_max,
+                   vector<vector<int> > &indices, vector<vector<double> > &models)
+  {
+    // This should be given as a parameter as well, or set global, etc
+    double sac_distance_threshold_ = 0.007;        // 2cm distance threshold for inliers (point-to-plane distance)
+
+    vector<int> indices_in_bounds;
+    // Get the point indices within z_min <-> z_max
+    getPointIndicesInZBounds (points, z_min, z_max, indices_in_bounds);
+
+    // We need to know the viewpoint where the data was acquired
+    // For simplicity, assuming 0,0,0 for stereo data in the stereo frame - however if this is not true, use TF to get
+    //the point in a different frame !
+    Point32 viewpoint;
+    viewpoint.x = viewpoint.y = viewpoint.z = 0;
+
+    // Use the entire data to estimate the plane equation.
+    // NOTE: if this is slow, we can downsample first, then fit (check mapping/point_cloud_mapping/src/planar_fit.cpp)
+ //   vector<vector<int> > inliers;
+    indices.clear(); //Points that are in plane
+    models.clear();  //Plane equations
+//    vector<vector<double> > models;
+    fitSACPlanes (&points, indices_in_bounds, indices, models, viewpoint, sac_distance_threshold_, n_max);
+
+    // Check the list of planar areas found against the minimally imposed area
+    for (unsigned int i = 0; i < models.size (); i++)
+    {
+      // Compute the convex hull of the area
+      // NOTE: this is faster than computing the concave (alpha) hull, so let's see how this works out
+      Polygon3D polygon;
+      cloud_geometry::areas::convexHull2D (points, indices[i], models[i], polygon);
+
+      // Compute the area of the polygon
+      double area = cloud_geometry::areas::compute2DPolygonalArea (polygon, models[i]);
+
+      // If the area is smaller, reset this planar model
+      if (area < min_area)
+      {
+        models[i].resize (0);
+        indices[i].resize (0);
+        continue;
+      }
+    }
+
+//    // Copy all the planar models inliers to indices
+//    for (unsigned int i = 0; i < inliers.size (); i++)
+//    {
+//      if (inliers[i].size () == 0) continue;
+//
+//      int old_indices_size = indices.size ();
+//      indices.resize (old_indices_size + inliers[i].size ());
+//      for (unsigned int j = 0; j < inliers[i].size (); j++)
+//        indices[old_indices_size + j] = inliers[i][j];
+//    }
+  }
+
+  protected:
+
+
+  public:
+
+    // ROS messages
+//    PointCloud cloud_, cloud_plane_, cloud_outliers_;
+//
+//    double z_min_, z_max_, support_, min_area_;
+//    int n_max_;
+
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  /*  PlanarFit (ros::Node& anode) : node_ (anode)
+    {
+      node_.param ("~z_min", z_min_, 0.5);
+      node_.param ("~z_max", z_max_, 1.5);
+      node_.param ("~support", support_, 0.1);
+      node_.param ("~min_area", min_area_, 0.2);
+      node_.param ("~n_max", n_max_, 1);
+
+      string cloud_topic ("/stereo/cloud");
+
+      vector<pair<string, string> > t_list;
+      node_.getPublishedTopics (&t_list);
+      bool topic_found = false;
+      for (vector<pair<string, string> >::iterator it = t_list.begin (); it != t_list.end (); it++)
+      {
+        if (it->first.find (node_.mapName (cloud_topic)) != string::npos)
+        {
+          topic_found = true;
+          break;
+        }
+      }
+      if (!topic_found)
+        ROS_WARN ("Trying to subscribe to %s, but the topic doesn't exist!", node_.mapName (cloud_topic).c_str ());
+
+      node_.subscribe (cloud_topic, cloud_, &PlanarFit::cloud_cb, this, 1);
+      node_.advertise<PointCloud> ("~plane", 1);
+      node_.advertise<PointCloud> ("~outliers", 1);
+    }
+
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    // Callback
+    void cloud_cb ()
+    {
+      ROS_INFO ("Received %d data points in frame %s with %d channels (%s).", (int)cloud_.pts.size (), cloud_.header.frame_id.c_str (),
+                (int)cloud_.chan.size (), cloud_geometry::getAvailableChannels (cloud_).c_str ());
+      if (cloud_.pts.size () == 0)
+      {
+        ROS_ERROR ("No data points found. Exiting...");
+        return;
+      }
+
+      ros::Time ts = ros::Time::now ();
+
+      vector<vector<int> > indices;
+      vector<vector<double> > models;
+      segmentPlanes (cloud_, z_min_, z_max_, support_, min_area_, n_max_, indices, models);
+
+      if((int)indices.size() > 0){
+      cloud_geometry::getPointCloud (cloud_, indices[0], cloud_plane_);
+      cloud_geometry::getPointCloudOutside (cloud_, indices[0], cloud_outliers_);
+      ROS_INFO ("Planar model found with %d / %d inliers in %g seconds.\n", (int)indices[0].size (), (int)cloud_.pts.size (), (ros::Time::now () - ts).toSec ());
+      }
+
+      node_.publish ("~plane", cloud_plane_);
+      node_.publish ("~outliers", cloud_outliers_);
+    }
+    */
+};
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/** \brief Obtain a subset of the point cloud indices between two given Z (min, max) values
+  * \param points the point cloud message
+  * \param z_min the minimum Z value
+  * \param z_max the maximum Z value
+  */
+void
+  PlanarFit::getPointIndicesInZBounds (const PointCloud &points, double z_min, double z_max, vector<int> &indices)
+{
+  indices.resize (points.pts.size ());
+  int nr_p = 0;
+  for (unsigned int i = 0; i < points.pts.size (); i++)
+  {
+    if ((points.pts[i].z >= z_min && points.pts[i].z <= z_max))
+    {
+      indices[nr_p] = i;
+      nr_p++;
+    }
+  }
+  indices.resize (nr_p);
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/** \brief Find a list of plane models in a point cloud with SAmple Consensus methods
+  * \param points the point cloud message
+  * \param indices a subset of point indices to use
+  * \param inliers the resultant planar model inliers
+  * \param coeff the resultant plane model coefficients
+  * \param viewpoint_cloud a point to the pose where the data was acquired from (for normal flipping)
+  * \param dist_thresh the maximum allowed distance threshold of an inlier to the model
+  * \param n_max maximum number of planar models to search for
+  * \param min_points_per_model the minimum number of points allowed for a planar model (default: 100)
+  */
+bool
+  PlanarFit::fitSACPlanes (PointCloud *points, vector<int> &indices, vector<vector<int> > &inliers, vector<vector<double> > &coeff,
+                           const robot_msgs::Point32 &viewpoint_cloud, double dist_thresh, int n_max, int min_points_per_model)
+{
+  // Create and initialize the SAC model
+  sample_consensus::SACModelPlane *model = new sample_consensus::SACModelPlane ();
+  sample_consensus::SAC *sac             = new sample_consensus::RANSAC (model, dist_thresh);
+  sac->setMaxIterations (100);
+  model->setDataSet (points, indices);
+
+  int nr_models = 0, nr_points_left = indices.size ();
+  while (nr_models < n_max && nr_points_left > min_points_per_model)
+  {
+    // Search for the best plane
+    if (sac->computeModel ())
+    {
+      vector<double> model_coeff;
+      sac->computeCoefficients (model_coeff);                              // Compute the model coefficients
+      sac->refineCoefficients (model_coeff);                               // Refine them using least-squares
+      coeff.push_back (model_coeff);
+
+      // Get the list of inliers
+      vector<int> model_inliers;
+      model->selectWithinDistance (model_coeff, dist_thresh, model_inliers);
+      inliers.push_back (model_inliers);
+
+      // Flip the plane normal towards the viewpoint
+      cloud_geometry::angles::flipNormalTowardsViewpoint (model_coeff, points->pts.at (model_inliers[0]), viewpoint_cloud);
+
+      ROS_INFO ("Found a planar model supported by %d inliers: [%g, %g, %g, %g]", (int)model_inliers.size (),
+                model_coeff[0], model_coeff[1], model_coeff[2], model_coeff[3]);
+
+      // Remove the current inliers from the global list of points
+      nr_points_left = sac->removeInliers ();
+      nr_models++;
+    }
+    else
+    {
+      ROS_ERROR ("Could not compute a planar model for %d points.", nr_points_left);
+      break;
+    }
+  }
+
+  delete sac;
+  delete model;
+  return (true);
+}
+
+
+
+
+
+////////////////////STEREO POINT CLOUD FINDING////////////////////////////////////////
 class StereoPointCloudProcessing{
 
 public:
@@ -100,73 +418,7 @@ public:
 		rng_state = cvRNG();
 	}
 
-
-
-	int find2dRoiFrom3d(CvMat *xyzd, const CvPoint &p, float radius_sqr, CvRect &roi)
-	{
-		//SETUP AND CHECKUP
-		if(!xyzd) return -1;             //No data
-		if(radius_sqr <= 0.0) return -2; //Neg radius
-		int r = p.y;
-		int c = p.x;
-		int rows = xyzd->rows;
-		int cols = xyzd->cols;
-		if((r < 0)||(r >= rows)) return -3;// p.y is out of bounds
-		if((c < 0)||(c >= cols)) return -4;// p.x is out of bounds
-		//FIND EXTENTS OF ROI
-//		int up = r;  //Find extents of possible exploration
-//		int down = rows - r - 1;
-//		int left = c;
-//		int right = cols - c - 1;
-		int widthstep = cols*4;
-		float *fbase = xyzd->data.fl + r*widthstep + c*4; //pointns to (c,r)
-		float *fptr;
-		if(*(fbase+3) == 0.0) return -5; //We don't have a central point
-		float Xp = *fbase, Yp = *(fbase + 1), Zp = *(fbase + 2),Xd,Yd,Zd;
-		int x,y;
-		//Find how far up
-		for(y = r,fptr = fbase - widthstep; y>0; --y, fptr -= widthstep) {
-			if(*(fptr+3) == 0.0) continue;  //Skip over points that we don't have
-			Xd = (*fptr) - Xp; Yd = (*(fptr+1)) - Yp; Zd = (*(fptr+2)) - Zp;
-			if((Xd*Xd + Yd*Yd + Zd*Zd) > radius_sqr) break; //We found a point too far away
-		}
-		int up = y;
-		//Find out how far down
-		for(y=r, fptr=fbase + widthstep; y < rows - 1; ++y, fptr += widthstep){
-			if(*(fptr+3) == 0.0) continue;  //Skip over points that we don't have
-			Xd = (*fptr) - Xp; Yd = (*(fptr+1)) - Yp; Zd = (*(fptr+2)) - Zp;
-			if((Xd*Xd + Yd*Yd + Zd*Zd) > radius_sqr) break; //We found a point too far away
-		}
-		int down = y;
-		//Find out how far left
-		for(x = c,fptr = fbase - 4; x>0; --x, fptr -= 4) {
-			if(*(fptr+3) == 0.0) continue;  //Skip over points that we don't have
-			Xd = (*fptr) - Xp; Yd = (*(fptr+1)) - Yp; Zd = (*(fptr+2)) - Zp;
-			if((Xd*Xd + Yd*Yd + Zd*Zd) > radius_sqr) break; //We found a point too far away
-		}
-		int left = x;
-		//Find out how far right
-		for(x=c, fptr=fbase + 4; x < cols - 1; ++x, fptr += 4){
-			if(*(fptr+3) == 0.0) continue;  //Skip over points that we don't have
-			Xd = (*fptr) - Xp; Yd = (*(fptr+1)) - Yp; Zd = (*(fptr+2)) - Zp;
-			if((Xd*Xd + Yd*Yd + Zd*Zd) > radius_sqr) break; //We found a point too far away
-		}
-		int right = x;
-		//Record and out
-		roi.x = left;
-		roi.width = right - left + 1;
-		roi.y  = up;
-		roi.height = down - up + 1;
-		return 0;
-	}
-
-	int compute3dOffsetsFeature(CvMat *xyzd, vector<triangle_offsets> &v, CvPoint &p, float radius3D)
-	{
-
-		return 0;
-	}
-
-
+	//na -- for testing
 	void makePlaneData(CvMat *xyzd, float A, float B, float C, float Xa, float Ya, float Za)
 	{
 		float X,Y,Z;
@@ -174,26 +426,387 @@ public:
 		if(C == 0.0) return;
 		int rows = xyzd->rows;
 		int cols = xyzd->cols;
-//		printf("r,c = (%d, %d)\n",rows,cols);
 		for(int y=0; y<rows; ++y){
 			for(int x= 0; x<cols; ++x){
 				X = (float)x;
 				Y = (float)y;
 				Z = Za - ((A*(X-Xa)+B*(Y-Ya))/C); //Fill in depth that satisfies the equation of the plane
-
-//				if((!(y%48))&&(!(x%128)))
-//					printf("(%d, %d, %f\n",x,y,Z);
- //				Z = 0.9;
  				cvSet2D( xyzd, y, x, cvScalar(X,Y,Z,1.0) ); //Stick it into the array
 			}
 		}
 	}
 
 
+	void rotateHomogeniousPointsInROI_1(const CvMat *xyzd,
+	                                    CvMat *_rot_trans, CvRect roi,
+	                                    CvMat* output)
+	{
+	    CV_Assert(roi.x >= 0 && roi.width >= 0 && roi.x + roi.width <= xyzd->cols &&
+	        roi.y >= 0 && roi.height >= 0 && roi.y + roi.height <= xyzd->rows);
+	    CV_Assert(output->cols == roi.width && output->rows == roi.height &&
+	        CV_ARE_TYPES_EQ(output, xyzd) && CV_MAT_TYPE(output->type) == CV_32FC4);
+	    CV_Assert(_rot_trans->cols == CV_MAT_CN(output->type) &&
+	        _rot_trans->rows == _rot_trans->cols &&
+	        (CV_MAT_TYPE(_rot_trans->type) == CV_32F ||
+	        CV_MAT_TYPE(_rot_trans->type) == CV_64F));
+	    Mat4x4f M;
+	    CvMat _M = cvMat(4, 4, CV_32F, &M[0]);
+	    cvConvert(_rot_trans, &_M);
 
+	    for(int i = 0; i < roi.height; i++)
+	    {
+	        const cv::Vec4f* src = (const cv::Vec4f*)(xyzd->data.ptr + xyzd->step*(roi.y + i)) + roi.x;
+	        cv::Vec4f* dst = (cv::Vec4f*)(output->data.ptr + output->step*i);
+	        for(int j = 0; j < roi.width; j++)
+	            dst[j] = transform4x4(M, src[j]);
+	    }
+	}
+
+	void rotateHomogeniousPointsInROI_2(const CvMat *xyzd,
+	                                    CvMat *_rot_trans, CvRect roi,
+	                                    CvMat* output)
+	{
+	    CV_Assert(roi.x >= 0 && roi.width >= 0 && roi.x + roi.width <= xyzd->cols &&
+	        roi.y >= 0 && roi.height >= 0 && roi.y + roi.height <= xyzd->rows);
+	    CV_Assert(output->cols == roi.width && output->rows == roi.height &&
+	        CV_ARE_TYPES_EQ(output, xyzd) && CV_MAT_DEPTH(output->type) == CV_32F);
+	    CV_Assert(_rot_trans->cols == CV_MAT_CN(output->type) && _rot_trans->rows == _rot_trans->cols);
+	    CvMat xyzd_roi;
+	    cvGetSubRect(xyzd, &xyzd_roi, roi);
+
+	    cvTransform(&xyzd_roi, output, _rot_trans );
+	}
+
+
+
+	void prnMat4x4(CvMat *M, char * C )
+	{
+		printf("\n%s:\n",C);
+		float *f = M->data.fl;
+		for(int r = 0; r<4; ++r){
+			for(int c = 0; c<4; ++c){
+				printf("%f ",*f++);
+			}
+			printf("\n");
+		}
+	}
+
+	void prnMat4x4C4(CvMat *M, char * C, int d = 5 )
+	{
+		printf("\n%s:\n",C);
+		float *f = M->data.fl;
+		for(int r = 0; r<d; ++r){
+			for(int c = 0; c<d; ++c){
+				printf("[%f, ",*f++);
+				printf("%f, ",*f++);
+				printf("%f, ",*f++);
+				printf("%f], ",*f++);
+			}
+			printf("\n");
+		}
+	}
+
+
+	int computeRTtoCameraFromNormal(CvPoint3D32f pt3d, CvPoint3D32f n, CvMat *RT, CvMat *R = NULL )
+	{
+		//CHECKS
+		if((RT->rows) != 4 || (RT->cols) != 4) return -3;
+		int mtype =  cvGetElemType(RT);
+		if(mtype != CV_32FC1) return -3;
+		if(R){
+			if((R->rows) != 4 || (R->cols) != 4) return -4;
+			mtype =  cvGetElemType(R);
+			if(mtype != CV_32FC1) return -4;
+			cvSetZero(R);
+			cvSet2D(R, 3, 3, cvScalar(1.0));
+		}
+		cvSetZero(RT);
+		//SET TRANSLATION PART (cvSet uses the order (y,x)
+		//debug
+		pt3d.x = 1.0;pt3d.y = 2.0; pt3d.z = 3.0;
+		n.x = 1.0; n.y = 1.732050808; n.z = 1.0;
+		cvSet2D(RT, 0, 3, cvScalar(-pt3d.x));
+		cvSet2D(RT, 1, 3, cvScalar(-pt3d.y));
+		cvSet2D(RT, 2, 3, cvScalar(-pt3d.z));
+		cvSet2D(RT, 3, 3, cvScalar(1.0));
+//		CvMat *T = cvCloneMat(RT);
+//		cvSet2D(T, 0, 0, cvScalar(1.0));
+//		cvSet2D(T, 1, 1, cvScalar(1.0));
+//		cvSet2D(T, 2, 2, cvScalar(1.0));
+//		prnMat4x4(T, "T");
+
+		//SET ROTATION PARTS
+		CvMat *Rx,*Ry,*Rz, *Rzx;
+		Rx = cvCreateMat(4,4,CV_32FC1);
+		Ry = cvCreateMat(4,4,CV_32FC1);
+		Rz = cvCreateMat(4,4,CV_32FC1);
+		Rzx = cvCreateMat(4,4,CV_32FC1);
+		cvSetZero(Rx);
+		cvSetZero(Ry);
+		cvSetZero(Rz);
+		cvSetZero(Rzx);
+		//Find the angles
+
+		//MAKE THE Z ROTATION MATRIX (ROTATE INTO THE YZ PLANE)
+		float rxy = sqrt(n.x*n.x + n.y*n.y); //normed for rotatinon in the x,y plane aka about the z axis
+		float Theta_to_y =  -acos(n.y/rxy);    // This is the angle to rotate to get to the y,z plane
+//		printf("rxy=%f, theta_to_y= %f\n",rxy,Theta_to_y);
+		float cos_theta = (float)cos(Theta_to_y);
+		float sin_theta = (float)sin(Theta_to_y);
+		cvSet2D(Rz, 3, 3 ,cvScalar(1.0));
+		cvSet2D(Rz, 2, 2, cvScalar(1.0));
+		cvSet2D(Rz, 0, 0, cvScalar(cos_theta));
+		cvSet2D(Rz, 0, 1, cvScalar(sin_theta));
+		cvSet2D(Rz, 1, 0, cvScalar(-sin_theta));
+		cvSet2D(Rz, 1, 1, cvScalar(cos_theta));
+//		prnMat4x4(Rz,"Rz");
+
+		//MAKE THE X ROTATION MATRIX (ROTATE ONTO THE Z AXIS)
+		CvMat *z2x = cvCreateMat(1,1,CV_32FC4);
+		*(z2x->data.fl) = n.x;
+		*(z2x->data.fl + 1) = n.y;
+		*(z2x->data.fl + 2) = n.z;
+		*(z2x->data.fl + 3) = 1.0;
+//		prnMat4x4C4(z2x, "Point pre rotate", 1 );
+		rotateHomogeniousPointsInROI_2(z2x, Rz, cvRect(0,0,1,1), z2x);
+//		prnMat4x4C4(z2x, "Point post rotate", 1 );
+		n.x = *(z2x->data.fl); //This is just for consistency
+		n.y = *(z2x->data.fl + 1);
+		n.z = *(z2x->data.fl + 2);
+		cvReleaseMat(&z2x);
+		float ryz = sqrt(n.y*n.y + n.z*n.z);
+		float phi_to_z = -acos(n.z/ryz);
+//		ryz = sqrt(2*2 + 1);
+//		phi_to_z = -acos(1.0/ryz);
+//		printf("ryz=%f, phi_to_z= %f\n",ryz,phi_to_z);
+		float cos_phi = (float)cos(phi_to_z);
+		float sin_phi = (float)sin(phi_to_z);
+		cvSet2D(Rx, 3, 3, cvScalar(1.0));
+		cvSet2D(Rx, 0, 0, cvScalar(1.0));
+		cvSet2D(Rx, 1, 1, cvScalar(cos_phi));
+		cvSet2D(Rx, 1, 2, cvScalar(sin_phi));
+		cvSet2D(Rx, 2, 1, cvScalar(-sin_phi));
+		cvSet2D(Rx, 2, 2, cvScalar(cos_phi));
+//		prnMat4x4(Rx,"Rx");
+
+		//MAKE THE Y ROTATION MATRIX (WE DON'T REALLY CARE ABOUT ITS ORIENTATION
+		cvSet2D(Ry, 0,  0, cvScalar(1.0));
+		cvSet2D(Ry, 1,  1, cvScalar(1.0));
+		cvSet2D(Ry, 2,  2, cvScalar(1.0));
+		cvSet2D(Ry, 3,  3, cvScalar(1.0));
+//		prnMat4x4(Ry,"Ry");
+
+		//COMBINE
+		cvMatMul(Rx, Rz, Rzx );
+		if(R) cvAdd(Rzx,R,R);
+		cvAdd(Rzx,RT,RT);
+//		cvMatMul(Rzx, Ry, Rz);
+//		cvAdd(Rz,RT,RT);
+//		prnMat4x4(RT,"Rzxy+T");
+
+		//debug -- test this
+	    CvMat* points = cvCreateMat(5, 5, CV_32FC4);
+	    CvMat* norms =  cvCreateMat(5, 5, CV_32FC4);
+	    CvMat* points_out = cvCreateMat(5, 5, CV_32FC4);
+	    CvMat* norms_out = cvCreateMat(5, 5, CV_32FC4);
+		n.x = 1.0; n.y = 1.732050808; n.z = 1.0;
+
+	    float *pp = points->data.fl;
+	    float *pn = norms->data.fl;
+	    for(int i = 0; i< 25; ++i, pp+=4, pn+=4) {
+	    	*pp =  pt3d.x;
+	    	*(pp+1) = pt3d.y;
+	    	*(pp+2) = pt3d.z;
+	    	*(pp+3) = 1.0;
+	    	*pn =  n.x;
+	    	*(pn+1) = n.y;
+	    	*(pn+2) = n.z;
+	    	*(pn+3) = 1.0;
+	    }
+	    cvSet2D(points, 0, 0, cvScalar(1.0, 0.0, 0.0, 0.0));
+	    cvSet2D(points, 1, 0, cvScalar(0.0, 1.0, 0.0, 0.0));
+	    cvSet2D(points, 2, 0, cvScalar(0.0, 0.0, 1.0, 0.0));
+	    cvSet2D(norms, 0, 0, cvScalar(1.0, 0.0, 0.0, 0.0));
+	    cvSet2D(norms, 1, 0, cvScalar(0.0, 1.0, 0.0, 0.0));
+	    cvSet2D(norms, 2, 0, cvScalar(0.0, 0.0, 1.0, 0.0));
+	    prnMat4x4C4(norms,"norms in");
+		prnMat4x4(Rzx,"Rzx");
+
+
+	    rotateHomogeniousPointsInROI_1(norms, Rzx, cvRect(0,0,5,5), norms_out);
+	    prnMat4x4C4(norms_out,"Normals just by Rzx1");
+	    rotateHomogeniousPointsInROI_2(norms, Rzx, cvRect(0,0,5,5), norms_out);
+	    prnMat4x4C4(norms_out,"Normals just by Rzx2");
+
+	    rotateHomogeniousPointsInROI_1(points, RT, cvRect(0,0,5,5), points_out);
+	    prnMat4x4C4(points_out,"Points by RT1");
+	    rotateHomogeniousPointsInROI_2(points, RT, cvRect(0,0,5,5), points_out);
+	    prnMat4x4C4(points_out,"Points by RT2");
+
+
+//	    printf("\n\nRotation matrix test:\n");
+//
+//	    pp = points->data.fl;
+//	    pn = norms->data.fl;
+//	    float *ppo = points_out->data.fl;
+//	    float *pno = norms_out->data.fl;
+//
+//	    printf("point: (%f, %f, %f) => (%f, %f, %f)\n",*pp, *(pp+1), *(pp+2), *ppo, *(ppo+1), *(ppo+2));
+//	    printf("norms: (%f, %f, %f) => (%f, %f, %f)\n",*pn, *(pn+1), *(pn+2), *pno, *(pno+1), *(pno+2));
+//		printf("\n");
+
+		cvReleaseMat(&points);
+		cvReleaseMat(&norms);
+		cvReleaseMat(&points_out);
+		cvReleaseMat(&norms_out);
+
+
+//		printf("x=1.7, y= 1, z=1.7. Theta_11 should be 30");
+//		printf("RADIANS: ul,ur/ll,lr: [%f, %f]/[%f, %f]\n",Theta_xm1_1,Theta_x11,-Theta_xm1_1,-Theta_x11);
+//		printf("DEGREES: ul,ur/ll,lr: [%f, %f]/[%f, %f]\n",Theta_xm1_1*todeg,Theta_x11*todeg,-Theta_xm1_1*todeg,-Theta_x11*todeg);
+//		printf("cos(ul,ur/ll,lr): [%f, %f]/[%f, %f]\n",(float)cos(Theta_xm1_1),(float)cos(Theta_x11),(float)cos(-Theta_xm1_1),(float)cos(-Theta_x11));
+//		printf("neg angle cos(ul,ur/ll,lr): [%f, %f]/[%f, %f]\n",(float)cos(-Theta_xm1_1),(float)cos(-Theta_x11),(float)cos(Theta_xm1_1),(float)cos(Theta_x11));
+
+		cvReleaseMat(&Rx);
+		cvReleaseMat(&Ry);
+		cvReleaseMat(&Rz);
+		cvReleaseMat(&Rzx);
+		return 0;
+
+	}
+
+	  //!!!! This function SHOULD BE REPLACED with a native plane fit from a grid, for now, use Radu           !!!!
+	  //!!!! Note that I've already done the work of finding normals, so collecting them into planes is simple !!!!
+	  /**
+	   * \brief
+	   * @param xyza        X,Y,Z,A matrix.  Found plane points marked in order of size -1, -2 ...; -10K=>point not with in z_min or z_max; 0=>invalid point; >0 => outlier (object) points
+	   * @param z_min		minimum depth from camera to consider
+	   * @param z_max		maximum depth from camera to consider
+	   * @param num_pts		how many points must be contained in the planar surface, to be considered as a found plane
+	   * @param n_max		maximum number of planes to find
+	   * @param models		RETURN equations of found planes (any index model[i].size() that is zero indicates that plane failed due to small num_pts)
+	   * @return The number of planes found.  Negative numbers indicate some kind of error
+	   */
+	  int segmentPlanesFromXYZAGrid(CvMat *xyza, float z_min, float z_max, int num_pts, int n_max, vector<vector<double> > &models)
+	  {
+		  PlanarFit Pfit; //Just to call Pfit.segmentPlanes()
+		  int planes_found = 0;
+
+		  //STUFF POINT CLOUD
+		  PointCloud pc;
+		  robot_msgs::Point32 pt3d;
+		  int rows = xyza->rows;
+		  int cols = xyza->cols;
+		  float *fptr = xyza->data.fl;
+		  vector<int> indices_in_bounds;
+		  vector<int> offsets;
+		  int ptcnt = 0;
+		  int zoutcnt = 0;
+		  for(int y = 0; y<rows; ++y)
+		  {
+			  for(int x = 0; x<cols; ++x, fptr += 4)
+			  {
+				  if(*(fptr+3) < 0.0001) {  continue;}
+//				  else { if(!(x%10)){printf("X");}}
+				  if((*(fptr+2) < z_min)||(*(fptr+2) > z_max))
+				  {
+					  zoutcnt++;
+					  if(!(zoutcnt/16))  printf("(%d,%d): zout(%d) = %f || ",x,y,zoutcnt,*(fptr+1));
+					  *(fptr+3) = -10000.0; //Indicates out of range
+					  continue;
+				  }
+				  pt3d.x = *fptr;
+				  pt3d.y = *(fptr+1);
+				  pt3d.z = *(fptr+2);
+				  pc.pts.push_back(pt3d);
+				  indices_in_bounds.push_back(ptcnt++);
+				  offsets.push_back((int)(fptr - xyza->data.fl));
+			  }
+//			  printf("\n");
+		  }
+		  printf("\n");//Points pushed back = %d = %d = %d\n",(int)pc.pts.size(),(int)indices_in_bounds.size(),offsets.size());
+
+		  //FIND THE PLANES
+		  vector<vector<int> > indices;
+		  Pfit.segmentPlanes(pc, indices_in_bounds, num_pts, n_max, indices, models);
+//		  printf("Total number of indices = %d\n",(int)indices.size());
+
+		  //MARK THE PLANES ON XYZA
+		  fptr = xyza->data.fl;
+		 for (unsigned int i = 0; i < models.size (); i++)
+		 {
+			 int isize = (int)(indices[i].size());
+//			 printf("i = %d, indices.size = %d\n",i,isize);
+			 if(isize == 0) continue;
+			 planes_found++;
+			 for(int j = 0; j<isize; ++j)
+			 {
+				 int indx = indices[i][j];
+				 int oset = offsets[indx];
+//				 printf("(i%do%d:%d,%d)",i,j,indx,oset);
+//				 if(*(fptr+oset+3) < 0.0001) printf("[%d][%d]y:%d,x:%d",i,j,(int)(oset/(4.0*cols)),(int)(oset - 4*cols*((int)(oset/(4.0*cols))))/4);
+				 *(fptr+oset+3) =  -(float)(i+1);
+			 }
+		 }
+		 return planes_found;
+	  }
+
+
+	  /**
+	   * \brief This just markes points within grid_radius (in the 2D grid) that are within a 3D radius_sqr of the center point p. A list of good offsets is returned
+	   * @param xyzd        	X,Y,Z,D matrix, also known as xyza where "A" is anything, mainly to zero or allow using that 3D point
+	   * @param p				The 2D center point on the 2D grid
+	   * @param grid_radius		The radius on the grid to check (actually, it checks all points in the box around "p"
+	   * @param radius_sqr		Mark all 3D points within the grid_radius that are within radius_sqr of the center point
+	   * @param offsets			This returns the offsets to the valid (floating point) points relative to the data start xyzd->data.fl
+	   * @return Ratio of points that are valid within the grid_radius blocks.  NEGATIVE return, -1.0 => "p" wasn't valid
+	   */
+	  float markPointsInRadius(const CvMat *xyzd, const CvPoint &p, int grid_radius, float radius_sqr, vector<int> offsets)
+	  {
+		  if(!xyzd) return 0.0;
+		  int rows = xyzd->rows;
+		  int cols = xyzd->cols;
+		  float *fptr = xyzd->data.fl;
+		  //find how big our square can really be:
+		  int r = p.y;
+		  int c = p.x;
+		  if(*(fptr + r*cols*4 + c*4) < 0.001) return -1.0;  //center point "p" was not a valid point
+		  float pX = *fptr;
+		  float pY = *(fptr+1);
+		  float pZ = *(fptr+2);
+		  int rstart = r - grid_radius;
+		  if(rstart < 0) rstart = 0;
+		  int cstart = c - grid_radius;
+		  if(cstart < 0) cstart = 0;
+		  int rend = r + grid_radius;
+		  if(rend >= rows) rend = rows - 1;
+		  int cend = c + grid_radius;
+		  if(cend >= cols) cend = cols - 1;
+		  //LOOP THROUGH, LOOKING FOR GOOD POINTS
+		  int oset;
+		  float X,Y,Z;
+		  for(int R=rstart; R<rend; ++R){
+			  oset = R*cols*4 + cstart*4;
+			  for(int C=cstart; C<cend; ++C, oset += 4){
+				  if(*(fptr+oset+3) < 0.001) continue;
+				  X = *(fptr + oset)-pX;
+				  Y = *(fptr + oset + 1)-pY;
+				  Z = *(fptr + oset + 2)-pZ;
+				  float r2 = X*X+Y*Y+Z*Z;
+				  if(r2 > radius_sqr) continue;
+				  offsets.push_back(oset);
+			  }
+		  }
+		  float found = (float)(offsets.size());
+		  float total = (rend - rstart)*(cend - cstart) + 0.0000001;
+		  return found/total;
+	  }
+
+
+	//!!!! IN THE ROUTINE BELOW, CHOOSING THE MEDIAN NORMAL SHOULD BE CHANGED TO THE AVERAGE NORMAL FOR SSE EFFICIENCY ... SO SORRY !!!!
 	/**
 	 * \brief  Robust normal computation at point p in the X,Y,Z,D matrix
-	 * @param xyzd                  X,Y,Z,D matrix
+	 * @param xyzd                  X,Y,Z,D matrix, also known as xyza where "A" is anything, mainly to zero or allow using that 3D point
 	 * @param p                     point (x,y) in xyzd that we're computing robust normal at
 	 * @param v						precomputed list of triangle offsets to use at point p
 	 * @param radius_sqr   			ignore X,Y,Z points with X^2+Y^2+Z^2 greater than this distance
@@ -613,13 +1226,13 @@ public:
               for(size_t i = 0;i < cloud.pts.size();++i)
               {
                   int x   = (int)(cloud.chan[xchan].vals[i]);
-                  if((x<0)||(x>=cols)){
-                      printf("x(%d)=%d out of bounds(%d)\n",i,x,cols);
+                  if((x<0)||(x>=cols)){//xxx
+                      ROS_INFO("x(%d)=%d out of bounds(%d)\n",i,x,cols);
                       x = rows - 1;
                   }
                   int y   = (int)(cloud.chan[ychan].vals[i]);
                   if((y<0)||(y>=rows)){
-                      printf("y(%d)=%d out of bounds(%d)\n",i,y,rows);
+                      ROS_INFO("y(%d)=%d out of bounds(%d)\n",i,y,rows);
                       y = cols - 1;
                   }
                   float X = (float)(cloud.pts[i].x);
@@ -683,12 +1296,12 @@ public:
 			for(size_t i = 0;i < cloud.pts.size();++i){
 				int x   = (int)(cloud.chan[xchan].vals[i]);
 				if((x<0)||(x>=width)){
-					printf("x(%d)=%d out of bounds(%d)\n",i,x,width);
+					ROS_INFO("x(%d)=%d out of bounds(%d)\n",i,x,width);
 					x = width - 1;
 				}
 				int y   = (int)(cloud.chan[ychan].vals[i]);
 				if((y<0)||(y>=height)){
-					printf("y(%d)=%d out of bounds(%d)\n",i,y,height);
+					ROS_INFO("y(%d)=%d out of bounds(%d)\n",i,y,height);
 					y = height - 1;
 				}
 				float X = (float)(cloud.pts[i].x);
@@ -771,7 +1384,9 @@ void on_depth_near(int);
 void on_depth_far(int);
 
 
-
+void on_num_triangles(int val);
+void on_tri_radius_max(int val);
+void on_tri_radius_min(int val);
 
 
 
@@ -821,7 +1436,7 @@ public:
 	int edges_low;
 	int edges_high;
 	int depth_near,depth_far;
-
+   	int num_triangles, tri_radius_max, tri_radius_min;
 
 	typedef pair<int,int> coordinate;
 	typedef vector<coordinate> template_coords_t;
@@ -858,7 +1473,7 @@ public:
 
         edges_low = 50;
         edges_high = 170;
-        depth_near = 3;
+        depth_near = 1;
         depth_far = 20;
 
 
@@ -878,7 +1493,14 @@ public:
 
         	cvCreateTrackbar("near","color_depth",&depth_near, 49, &on_depth_near);
         	cvCreateTrackbar("far","color_depth",&depth_far, 50, &on_depth_far);
-        }
+
+        	num_triangles = 18;
+        	tri_radius_max = 21;
+        	tri_radius_min = 8;
+           	cvCreateTrackbar("num_tri","color_depth",&num_triangles,   25,&on_num_triangles);
+           	cvCreateTrackbar("max_tri_R","color_depth",&tri_radius_max,50,&on_tri_radius_max);
+           	cvCreateTrackbar("min_tri_R","color_depth",&tri_radius_min,30,&on_tri_radius_min);
+         }
 
 
 //        advertise<robot_msgs::PointStamped>("handle_detector/handle_location", 1);
@@ -959,7 +1581,7 @@ private:
     		int width = int(templ->width*scale);
     		int height = int(templ->height*scale);
 
-    		printf("Level: %d, scale: %f, width: %d, height: %d\n", i, scale, width, height);
+    		ROS_INFO("Level: %d, scale: %f, width: %d, height: %d\n", i, scale, width, height);
 
     		IplImage* templ_scale = cvCreateImage(cvSize(width, height), IPL_DEPTH_8U, 1);
     		cvResize(templ, templ_scale, CV_INTER_NN);
@@ -1079,7 +1701,8 @@ private:
     /**
      * \brief Computes size and center of ROI in real-world
      *
-     * Given a disparity images and a ROI in the image this function computes the approximate real-world size
+     * Given a disparity images and a ROI in the image t
+     * his function computes the approximate real-world size
      * and center of the ROI.
      *
      * This function is just an approximation, it uses the mean value of the disparity in the ROI and assumes
@@ -1436,12 +2059,12 @@ private:
             for(size_t i = 0;i < cloud.pts.size();++i){
                 int x   = (int)(cloud.chan[xchan].vals[i]);
                 if((x<0)||(x>=width)){
-                	printf("x(%d)=%d out of bounds(%d)\n",i,x,width);
+                	ROS_INFO("x(%d)=%d out of bounds(%d)\n",i,x,width);
                 	x = width - 1;
                 }
                 int y   = (int)(cloud.chan[ychan].vals[i]);
                 if((y<0)||(y>=height)){
-                	printf("y(%d)=%d out of bounds(%d)\n",i,y,height);
+                	ROS_INFO("y(%d)=%d out of bounds(%d)\n",i,y,height);
                 	y = height - 1;
                 }
                 float z = (float)(cloud.pts[i].z);
@@ -1514,8 +2137,6 @@ private:
 				//				float z = (float) (xyza.val[2]);
 				float z = *pM; //Fast way
 				pM += 4;
-//				if(!(y%96)&&!(x%128))
-//					printf("z = %f",z);
 				//Put this value into the image
 				if (x >= rect.x && x < rect.x + rect.width && y >= rect.y && y
 						< rect.y + rect.height) {
@@ -1542,9 +2163,6 @@ private:
 					*pI = (uchar)B; //Fast way
 					*(pI + 1) = (uchar)G;
 					*(pI + 2) = (uchar)R;
-//					if(!(y%96)&&!(x%128))
-//						printf("colorDepthImgFromMat: z=%f at xy (%d,%d) = [%d, %d, %d]\n",z,x,y,(int)B, (int)G, (int)R);
-//										cvSet2D(I, y, x, cvScalar(B, G, R)); //Slow way
 				}//end if in ROI
 //				else
 //					pI += 3;
@@ -1659,10 +2277,20 @@ public:
     	CvMat *M = cvCreateMat( color_depth->height, color_depth->width, CV_32FC4 );
     	StereoPointCloudProcessing spc;
     	spc.pointCloud2PointMat(M, R, cloud);
+    	vector<vector<double> > models;
+    	int num_pts = color_depth->height*color_depth->width/16;
+  	    int npl= spc.segmentPlanesFromXYZAGrid(M, 0.0, 50.0, num_pts, 10, models);
+
+
+  	    CvMat *RT = cvCreateMat(4,4,CV_32FC1);
+  		spc.computeRTtoCameraFromNormal(cvPoint3D32f(1.0,2.0,3.0), cvPoint3D32f(3.0,2.0,1.0), RT );
+  		cvReleaseMat(&RT);
+
+  	    printf("Number of planes found = %d, models = %d\n",npl, (int)models.size());
 //    	spc.makePlaneData(M, 0.3, 0.4, 500.0, 320, 240, 1.0); //Visualize this
     	colorDepthImageFromMat(color_depth,M,R,Dn,Df);
 
-		vector<triangle_offsets> Trioffs = spc.computeNTriangleOffsets(9, 640, 10, 4);
+		vector<triangle_offsets> Trioffs = spc.computeNTriangleOffsets(num_triangles, 640, tri_radius_max, tri_radius_min);
 		vector<float> normal_pt3d;
 		vector<vector<float> > normals;
 		vector<vector<float> > normal_angles;
@@ -1673,14 +2301,14 @@ public:
 		points.header.stamp = cloud.header.stamp;
 
 
-		printf("triangle offsets: %d\n",Trioffs.size());
+		ROS_INFO("triangle offsets: %d\n",Trioffs.size());
 
 		Vector3 v3;
 		Point32 p3;
 
 
-		for (int y=0;y<480;y+=15) {
-			for (int x=0;x<640;x+=15) {
+		for (int y=0;y<480;y+=5) {
+			for (int x=0;x<640;x+=5) {
 
 				int nindex =  spc.computeNormals(M, cvPoint(x,y), Trioffs, 400.0, normal_pt3d, normals, normal_angles);
 
@@ -1774,6 +2402,23 @@ void on_depth_near(int value)
 void on_depth_far(int value)
 {
 	node->depth_far = value;
+	node->displayColorDepthImage();
+}
+
+
+void on_num_triangles(int val)
+{
+	node->num_triangles = val;
+	node->displayColorDepthImage();
+}
+void on_tri_radius_max(int val)
+{
+	node->tri_radius_max = val;
+	node->displayColorDepthImage();
+}
+void on_tri_radius_min(int val)
+{
+	node->tri_radius_min = val;
 	node->displayColorDepthImage();
 }
 int main(int argc, char **argv)
