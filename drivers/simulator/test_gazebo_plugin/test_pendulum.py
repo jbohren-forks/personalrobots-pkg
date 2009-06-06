@@ -49,6 +49,7 @@ import rospy, rostest
 from robot_msgs.msg import *
 
 TOLERANCE = 0.01
+MAX_ERROR = 0.02
 TEST_DURATION = 20.0
 
 class E:
@@ -98,7 +99,6 @@ class PendulumTest(unittest.TestCase):
         self.error2_count = 0
         self.error1_max = 0
         self.error2_max = 0
-        self.tolerance    = TOLERANCE  # tolerance: 1cm error
         self.min_runs     = 1000  # average error over this many runs
 
 
@@ -158,8 +158,8 @@ class PendulumTest(unittest.TestCase):
                                  + " avg err:" + str(self.error2_total / self.error2_count) \
                                  + " max err:" + str(self.error2_max)
               if self.error2_count > self.min_runs and self.error1_count > self.min_runs:
-                if self.error1_total / self.error1_count < self.tolerance and self.error2_total / self.error2_count < self.tolerance:
-                  if self.error1_max < self.tolerance and self.error2_max < self.tolerance:
+                if self.error1_total / self.error1_count < TOLERANCE and self.error2_total / self.error2_count < TOLERANCE:
+                  if self.error1_max < MAX_ERROR and self.error2_max < MAX_ERROR:
                     self.success = True
             time.sleep(0.1)
         self.assert_(self.success)
