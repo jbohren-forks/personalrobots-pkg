@@ -163,7 +163,7 @@ public:
 	  std::vector<bool> keep(np);
 
 #pragma omp parallel for 
-	  for (unsigned int i = 0 ; i < np ; ++i)
+	  for (int i = 0 ; i < (int)np ; ++i)
 	  {
 	      btVector3 pt = btVector3(btScalar(data_in.pts[i].x), btScalar(data_in.pts[i].y), btScalar(data_in.pts[i].z));
 	      bool out = true;
