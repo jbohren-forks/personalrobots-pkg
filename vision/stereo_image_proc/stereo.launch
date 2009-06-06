@@ -33,7 +33,7 @@
                         Default value: 64
        -->
 
-  <param name="stereo/num_disp" type="int" value=64/>
+  <param name="stereo/num_disp" type="int" value="64"/>
 
  <node pkg="stereo_image_proc" type="stereoproc" respawn="false" output="screen"/>
 </launch>
