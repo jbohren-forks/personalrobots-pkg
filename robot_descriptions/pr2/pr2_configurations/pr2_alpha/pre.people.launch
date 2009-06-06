@@ -40,14 +40,16 @@
   <param name="imu/autocalibrate" type="bool" value="true" />
   <node machine="four" pkg="imu_node" type="imu_node" output="screen"/>
 
-  <node machine="four" pkg="dcam" type="stereodcam" name="stereodcam" args="">
+
+  <group ns="stereo">
   <param name="videre_mode" type="string" value="disparity_raw" />
   <param name="fps"         type="double" value="15.0"/>
-  <param name="do_colorize" type="bool" value="False"/>
+  <param name="do_colorize" type="bool" value="True"/>
   <param name="do_rectify" type="bool" value="True"/>
   <param name="do_stereo" type="bool" value="True"/>
   <param name="frame_id" type="string" value="stereo_optical_frame"/>
-  </node>
+  </group>
+  <node machine="four" pkg="dcam" type="stereodcam" name="stereodcam" args="" respawn="false"/>
 
 
 <!-- Sound  -->
