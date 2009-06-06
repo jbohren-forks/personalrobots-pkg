@@ -1,3 +1,7 @@
+"""
+:mod:`visual_odometry.pe` --- Pose Estimator
+============================================
+"""
 import random
 import vop
 import visual_odometry.lowlevel as VOLO
@@ -18,7 +22,10 @@ def xform(M, x, y, z):
   return (nx, ny, nz)
 
 class PoseEstimator:
-
+  """
+  A pose estimator.  The :method:`estimateC` does the actual pose
+  estimation; this class exists to cache some values for efficiency.
+  """
   def __init__(self, *camparams):
     self.iet = 3.0
     self.setNumRansacIterations(100)
@@ -32,7 +39,13 @@ class PoseEstimator:
     self.iet = t
 
   def setNumRansacIterations(self, i):
+    """
+    Sets the number of RANSAC iterations.
+    """
     self.ransac_iterations = i
+
+    # random.random is relatively slow, so run it here and keep the
+    # values in r0,r1,r2.
     self.r0 = vop.array([ random.random() for i in range(self.ransac_iterations) ])
     self.r1 = vop.array([ random.random() for i in range(self.ransac_iterations) ])
     self.r2 = vop.array([ random.random() for i in range(self.ransac_iterations) ])
@@ -45,8 +58,10 @@ class PoseEstimator:
 
   def estimateC(self, cam1, cp1, cam0, cp0, pairs, polish = True):
     """
-    Pose Estimator.  Given uvd points and cameras for two poses, along
-    with a list of matching point pairs, returns the relative pose
+    Pose Estimator.  Returns the relative pose between two camera views.
+    *cam1* and *cam0* are the two cameras.  *cp0* and *cp1* are the
+    (u,v,d) coordinates of the keypoints in the views.  *pairs* is a list
+    of matched pairs of keypoints between the frames.
     """
 
     if len(pairs) < 3:
@@ -94,7 +109,7 @@ class PoseEstimator:
         return d0==0 or d1==0 or (d1/d0)>1.1 or (d0/d1)>1.1
 
       if False:
-        # Rufus: Check if there is any scale change between the pairs
+        # Optimization from Rufus: Check if there is any scale change between the pairs
         p0s_dist_ab = (p0_x[a]-p0_x[b])**2 + (p0_y[a]-p0_y[b])**2 + (p0_z[a]-p0_z[b])**2
         p1s_dist_ab = (p1_x[aa]-p1_x[bb])**2 + (p1_y[aa]-p1_y[bb])**2 + (p1_z[aa]-p1_z[bb])**2
 

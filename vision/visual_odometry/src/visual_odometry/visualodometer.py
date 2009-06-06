@@ -48,6 +48,7 @@ import numpy.linalg
 from tf import transformations
 
 class Pose:
+  """ A Pose is a convenience wrapper for a numpy 4x4 matrix """
   def __init__(self, R=None, S=None):
     if R == None:
       R = numpy.identity(3)
@@ -56,24 +57,23 @@ class Pose:
     self.M = numpy.mat(numpy.vstack((numpy.hstack((R, numpy.array(S).reshape((3,1)))), numpy.array([0, 0, 0, 1]))))
 
   def fromlist(self, L):
+    """ Initialize the pose from the 16 element list *L*. """
     a = numpy.array(L)
     a.shape = 4,4
     self.M = numpy.mat(a)
 
   def tolist(self):
+    """ Return the 16 element list for the pose."""
     return sum(self.M.tolist(), [])
 
-  def invert(self):
-    r = Pose()
-    r.M = numpy.linalg.inv(self.M)
-    return r
-
   def __mul__(self, other):
+    """Matrix multiplication"""
     r = Pose()
     r.M = self.M * other.M
     return r
 
   def __invert__(self):
+    """Matrix inverse"""
     r = Pose()
     #r.M = self.M.T
     r.M = numpy.linalg.inv(self.M)
@@ -82,32 +82,26 @@ class Pose:
   def __repr__(self):
     return str(self.M)
 
-  def concatenate(self, P):
-    r = Pose()
-    r.M = numpy.dot(self.M, P.M)
-    return r
-
   def xform(self, x, y, z):
+    """ Transform point (*x*, *y*, *z*) by the matrix.  Returns triple (x', y', z'). """
     if 0:
       x,y,z,w = tuple(numpy.array(numpy.dot(self.M, numpy.array([x, y, z, 1]) ))[0])
       assert w == 1.0
       return (x,y,z)
     else:
+      # More efficient implementation that plays well with vop for the the optimized PE
       nx = float(self.M[0,0]) * x + float(self.M[0,1]) * y + float(self.M[0,2]) * z + float(self.M[0,3])
       ny = float(self.M[1,0]) * x + float(self.M[1,1]) * y + float(self.M[1,2]) * z + float(self.M[1,3])
       nz = float(self.M[2,0]) * x + float(self.M[2,1]) * y + float(self.M[2,2]) * z + float(self.M[2,3])
       return (nx, ny, nz)
 
   def quaternion(self):
+    """ Return the quaternion representation of the rotation of the pose matrix """
     return transformations.quaternion_from_rotation_matrix(self.M)
 
   def euler(self):
+    """ Return the Euler representation of the rotation of the pose matrix """
     return transformations.euler_from_rotation_matrix(self.M)
-
-  def comparison(self, other):
-    p0 = self.xform(0, 0, 0)
-    p1 = other.xform(0, 0, 0)
-    return "dist=%f" % (sqrt(sum([(a-b)**2 for a,b in zip(p0,p1)])))
 
   def compare(self, other):
     p0 = numpy.array(self.xform(0, 0, 0))
@@ -160,6 +154,7 @@ class Pose:
     #assert numpy.alltrue(numpy.abs(((rot * rot.T) - numpy.identity(3))) < 1.0e-3)
 
 def from_xyz_euler(xyz, euler):
+  """ Return a :class:`Pose` from an xyz position and triple *euler*. """
   R = transformations.rotation_matrix_from_euler(euler[0], euler[1], euler[2], 'sxyz')
   return Pose(R[:3,:3], xyz)
 
@@ -188,7 +183,35 @@ class Track:
 import pe
 
 class VisualOdometer(TimedClass):
+  """
+  VisualOdometer takes a series of views from a camera *cam*, and returns the relative pose of each view.
+  The visual odometer reduces accumulated error by computing pose from a previous key frame, and only moving the key frame
+  forwards when certain thresholds (below) are exceeded.
+  Keyword arguments:
 
+  position_keypoint_thresh
+        Threshold distance; when current frame's distance to key frame
+        exceeds this limit, key frame is moved forward.  Default value
+        0.5.
+
+  angle_keypoint_thresh
+        Threshold angle (radians); when current frame's angle to key frame
+        exceeds this limit, key frame is moved forward.  Default value
+        pi / 18.
+
+  inlier_thresh
+        Threshold inlier count; when current frame's inlier count is
+        below this value, key frame is moved forward.  Default value 175.
+
+  scavenge
+        Scavenger mode; first a first pass to obtain a pose estimate,
+        then re-runs the frame's matchers using the pose estimate to
+        restrict the search area.  Default value False.
+
+  num_ransac_iters
+        Number of iterations for the pose estimator's RANSAC.  Default value 100.
+
+  """
   def __init__(self, cam, **kwargs):
     self.cam = cam
     TimedClass.__init__(self, ['temporal_match', 'solve'])
@@ -219,7 +242,6 @@ class VisualOdometer(TimedClass):
     self.inlier_error_threshold = kwargs.get('inlier_error_threshold', 3.0)
     self.scavenge = kwargs.get('scavenge', False)
     self.sba = kwargs.get('sba', None)
-    self.targetkp = kwargs.get('targetkp', 300)
     self.num_ransac_iters = kwargs.get('ransac_iters', 100)
 
     self.pe.setInlierErrorThreshold(self.inlier_error_threshold)
@@ -251,7 +273,11 @@ class VisualOdometer(TimedClass):
       print "  %-20s %fms" % ("TOTAL", self.average_time_per_frame())
 
   def temporal_match(self, af0, af1, want_distances = False):
-    """ Match features between two frames.  Returns a list of pairs of indices into the features in the two frames, and optionally a distance value for each pair, if want_distances in True.  """
+    """
+    Match features between two frames.  Returns a list of pairs
+    of indices into the features in the two frames, and optionally a
+    distance value for each pair, if want_distances is True.
+    """
     self.timer['temporal_match'].start()
     pairs = af0.match(af1)
     if not want_distances:
@@ -277,10 +303,6 @@ class VisualOdometer(TimedClass):
       r33 = numpy.mat(numpy.array(rot).reshape(3,3))
       return Pose(r33, numpy.array(shift))
 
-    #pr = Pose(r33, numpy.array([0,0,0]))
-    #ps = Pose(numpy.mat([[1,0,0],[0,1,0],[0,0,1]]), numpy.array(shift))
-    #return pr * ps
-
   def show_pairs(self, pairs, f0, f1):
     print "*** SHOWING PAIRS FOR FRAMES ", f0.id, f1.id, "***"
     print f0.id, "has", len(f0.kp), "keypoints"
@@ -300,28 +322,6 @@ class VisualOdometer(TimedClass):
     pylab.scatter([x for (x,y,d) in f1.kp], [y for (x,y,d) in f1.kp], label = '%d kp' % f1.id, c = 'green')
     pylab.legend()
     pylab.show()
-
-  def proximity(self, f0, f1, scavenger = False):
-    """Given frames f0, f1, returns (inliers, pose) where pose is the transform that maps f1's frame to f0's frame.)"""
-    self.num_frames += 1
-
-    pairs = self.temporal_match(f0, f1)
-    #self.show_pairs(pairs, f0, f1)
-    if len(pairs) > 10:
-      solution = self.solve(f0.kp, f1.kp, pairs, True)
-      if scavenger and solution and solution[0] > 10:
-        (inl, rot, shift) = solution
-        pose = self.mkpose(rot, shift)
-        solution = self.scavenger(pose, f0, f1)
-      if solution:
-        (inl, rot, shift) = solution
-      else:
-        return (0, None)
-      #print "...and", inl, "inliers"
-      pose = self.mkpose(rot, shift)
-      return (inl, pose)
-    else:
-      return (0, None)
 
   def scavenger(self, diff_pose, af0, af1):
     Xs = vop.array([k[0] for k in af1.features()])
@@ -515,6 +515,9 @@ class VisualOdometer(TimedClass):
       self.sba_handle_frame(newkey)
 
   def handle_frame(self, frame):
+    """
+    Returns pose for *frame*.
+    """
     frame.id = self.num_frames
     return self.handle_frame_0(frame)
 
@@ -580,33 +583,3 @@ class VisualOdometer(TimedClass):
     self.tot_points  += len(frame.features())
 
     return self.pose
-
-  def correct(self, corrmap, current_frame):
-    p = corrmap(self.keyframe.id)
-    if p:
-      self.keyframe.pose = p
-    print "current", current_frame.id, "prev", self.prev_frame.id, "key", self.keyframe.id
-    for f in [ current_frame, self.prev_frame ]:
-      if f and f.ref_frame_id:
-        p = corrmap(f.ref_frame_id)
-        if p:
-          Tok = p
-          Tkp = f.diff_pose
-          Top = Tok * Tkp
-          print "** CORRECTED by", f.pose.d(Top), "**", "key", f.ref_frame_id, "of frame", f.id
-          f.pose = Top
-
-  def report_frame(self, frame):
-    import md5
-    print "*** FRAME", "id", frame.id, "key", frame.ref_frame_id, "***"
-    print "use_grad_img", frame.use_grad_img
-    print "limage md5:", " ".join([ "%02x" % ord(x) for x in md5.new(frame.lf.tostring()).digest()])
-    print "rimage md5:", " ".join([ "%02x" % ord(x) for x in md5.new(frame.rf.tostring()).digest()])
-    print "lgrad md5:", " ".join([ "%02x" % ord(x) for x in md5.new(frame.lgrad).digest()])
-    print "rimage md5:", " ".join([ "%02x" % ord(x) for x in md5.new(frame.rgrad).digest()])
-    print "kp2d length", len(frame.kp2d)
-    print "  ", frame.kp2d[:7]
-    print "kp length", len(frame.kp)
-    for k in frame.kp:
-      print "    ", k
-    print
