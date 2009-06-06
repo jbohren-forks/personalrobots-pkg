@@ -52,13 +52,16 @@
 
 namespace collision_space
 {
-
+    
     namespace bodies
     {
 	
+	/** A body is a shape + its pose. Point inclusion can be
+	    tested, volumes and bounding spheres can be computed.*/
 	class Body
 	{
 	public:
+	    
 	    Body(void)
 	    {
 		m_scale = 1.0;
@@ -70,53 +73,70 @@ namespace collision_space
 	    {
 	    }
 	    
+	    /** If the dimension of the body should be scaled, this
+		method sets the scale. Default is 1.0 */
 	    void setScale(double scale)
 	    {
 		m_scale = scale;
 		updateInternalData();
 	    }
 	    
+	    /** Retrieve the current scale */
 	    double getScale(void) const
 	    {
 		return m_scale;
 	    }
 	    
+	    /** If constant padding should be added to the body, this
+		method sets the padding. Default is 0.0 */
 	    void setPadding(double padd)
 	    {
 		m_padding = padd;
 		updateInternalData();
 	    }
 	    
+	    /** Retrieve the current padding */
 	    double getPadding(void) const
 	    {
 		return m_padding;
 	    }
 	    
+	    /** Set the pose of the body. Default is identity */
 	    void setPose(const btTransform &pose)
 	    {
 		m_pose = pose;
 		updateInternalData();
 	    }
 	    
+	    /** Retrieve the pose of the body */
 	    const btTransform& getPose(void) const
 	    {
 		return m_pose;
 	    }
 	    
+	    /** Set the dimensions of the body (from corresponding shape) */
 	    void setDimensions(const planning_models::shapes::Shape *shape)
 	    {
 		useDimensions(shape);
 		updateInternalData();
 	    }
 	    
+	    /** Check is a point is inside the body */
 	    bool containsPoint(double x, double y, double z) const
 	    {
 		return containsPoint(btVector3(btScalar(x), btScalar(y), btScalar(z)));
 	    }
 	    
+	    /** Check is a point is inside the body */
 	    virtual bool containsPoint(const btVector3 &p) const = 0;	
 	    
+	    /** Compute the volume of the body. This method includes
+		changes induced by scaling and padding */
 	    virtual double computeVolume(void) const = 0;
+	    
+	    /** Compute the bounding radius for the body, in its current
+		pose. Scaling and padding are accounted for. */
+	    virtual void computeBoundingSphere(btVector3 &center, double &radius) const = 0;
 	    
 	protected:
 	    
@@ -147,6 +167,7 @@ namespace collision_space
 	    
 	    virtual bool containsPoint(const btVector3 &p) const;
 	    virtual double computeVolume(void) const;
+	    virtual void computeBoundingSphere(btVector3 &center, double &radius) const;
 
 	protected:
 	    
@@ -155,6 +176,7 @@ namespace collision_space
 	    
 	    btVector3 m_center;
 	    double    m_radius;	
+	    double    m_radiusU;
 	    double    m_radius2;		    
 	};
         
@@ -177,6 +199,7 @@ namespace collision_space
 	    
 	    virtual bool containsPoint(const btVector3 &p) const;
 	    virtual double computeVolume(void) const;
+	    virtual void computeBoundingSphere(btVector3 &center, double &radius) const;
 
 	protected:
 	    
@@ -190,7 +213,9 @@ namespace collision_space
 	    
 	    double    m_length;
 	    double    m_length2;	
-	    double    m_radius;	
+	    double    m_radius;
+	    double    m_radiusU;
+	    double    m_radiusB;
 	    double    m_radius2;
 	};
 	
@@ -214,6 +239,7 @@ namespace collision_space
 	    
 	    virtual bool containsPoint(const btVector3 &p) const;
 	    virtual double computeVolume(void) const;
+	    virtual void computeBoundingSphere(btVector3 &center, double &radius) const;
 
 	protected:
 	    
@@ -231,6 +257,7 @@ namespace collision_space
 	    double    m_length2;
 	    double    m_width2;
 	    double    m_height2;	
+	    double    m_radiusB;
 	};
 	
 
@@ -240,10 +267,12 @@ namespace collision_space
 	    
 	    ConvexMesh(void) : Body()
 	    {
+		m_meshCenter.setValue(btScalar(0), btScalar(0), btScalar(0));
 	    }
 
 	    ConvexMesh(const planning_models::shapes::Shape *shape) : Body()
 	    {
+		m_meshCenter.setValue(btScalar(0), btScalar(0), btScalar(0));
 		setDimensions(shape);
 	    }
 	    
@@ -253,6 +282,7 @@ namespace collision_space
 	    
 	    virtual bool containsPoint(const btVector3 &p) const;
 	    virtual double computeVolume(void) const;
+	    virtual void computeBoundingSphere(btVector3 &center, double &radius) const;
 
 	protected:
 	    
@@ -266,6 +296,10 @@ namespace collision_space
 	    std::vector<btVector3>    m_vertices;
 	    std::vector<unsigned int> m_triangles;
 	    btTransform               m_iPose;
+
+	    btVector3                 m_center;
+	    btVector3                 m_meshCenter;
+	    double                    m_radiusB;
 	};
 	
 	

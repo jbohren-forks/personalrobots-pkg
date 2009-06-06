@@ -35,18 +35,14 @@
 /** \author Ioan Sucan */
 
 #include <cstdlib>
-#include <ros/node.h>
-#include <ros/publisher.h>
-#include <ros/time.h>
-#include <collision_space/environmentODE.h>
+#include <ros/ros.h>
 #include <algorithm>
 #include <visualization_msgs/Marker.h>
-#include <roslib/Time.h>
 #include <collision_space/point_inclusion.h>
 using namespace collision_space;
 
 const int TEST_TIMES  = 3;
-const int TEST_POINTS = 100;
+const int TEST_POINTS = 100000;
 
 namespace planning_models
 {
@@ -58,9 +54,9 @@ class TestVM
 {
 public:
 
-    TestVM(void) : m_node("TVM")
+    TestVM(void) 
     {
-	m_node.advertise<visualization_msgs::Marker>("visualization_marker", 10240);
+	m_vmPub = m_nodeHandle.advertise<visualization_msgs::Marker>("visualization_marker", 10240);
 	m_id = 1;
     }
 
@@ -92,7 +88,7 @@ public:
 	mk.color.g = 0.04;
 	mk.color.b = 0.04;
 
-	m_node.publish("visualization_marker", mk);
+	m_vmPub.publish(mk);
     }
 
     void testShape(collision_space::bodies::Body *s)
@@ -154,7 +150,13 @@ public:
     {
 	planning_models::shapes::Sphere shape(2.0);
 	collision_space::bodies::Body *s = new collision_space::bodies::Sphere(&shape);
-
+	printf("Sphere volume = %f\n", s->computeVolume());
+	
+	btVector3 center;
+	double radius;
+	s->computeBoundingSphere(center, radius);
+	
+	printf("Bounding radius = %f\n", radius);
 	for (int i = 0 ; i < TEST_TIMES ; ++i)
 	{
 	    visualization_msgs::Marker mk;
@@ -165,7 +167,7 @@ public:
 	    mk.scale.y = shape.radius*2.0;
 	    mk.scale.z = shape.radius*2.0;
 
-	    m_node.publish("visualization_marker", mk);
+	    m_vmPub.publish(mk);
 
 	    testShape(s);
 	}
@@ -177,6 +179,13 @@ public:
     {
 	planning_models::shapes::Box shape(2.0, 1.33, 1.5);
 	collision_space::bodies::Body *s = new collision_space::bodies::Box(&shape);
+	printf("Box volume = %f\n", s->computeVolume());
+	
+	btVector3 center;
+	double radius;
+	s->computeBoundingSphere(center, radius);
+	
+	printf("Bounding radius = %f\n", radius);
 
 	for (int i = 0 ; i < TEST_TIMES ; ++i)
 	{
@@ -188,7 +197,7 @@ public:
 	    mk.scale.y = shape.size[1]; // width
 	    mk.scale.z = shape.size[2]; // height
 
-	    m_node.publish("visualization_marker", mk);
+	    m_vmPub.publish(mk);
 
 	    testShape(s);
 	}
@@ -200,6 +209,13 @@ public:
     {
 	planning_models::shapes::Cylinder shape(0.5, 2.5);
 	collision_space::bodies::Body *s = new collision_space::bodies::Cylinder(&shape);
+	printf("Cylinder volume = %f\n", s->computeVolume());
+	
+	btVector3 center;
+	double radius;
+	s->computeBoundingSphere(center, radius);
+	
+	printf("Bounding radius = %f\n", radius);
 
 	for (int i = 0 ; i < TEST_TIMES ; ++i)
 	{
@@ -211,7 +227,7 @@ public:
 	    mk.scale.y = shape.radius * 2.0; // radius
 	    mk.scale.z = shape.length; //length
 
-	    m_node.publish("visualization_marker", mk);
+	    m_vmPub.publish(mk);
 
 	    testShape(s);
 	}
@@ -246,6 +262,13 @@ public:
 	//	planning_models::shapes::Mesh *shape = planning_models::create_mesh_from_binary_stl("base.stl");
 	planning_models::shapes::Mesh *shape = planning_models::create_mesh_from_vertices(pts);
 	collision_space::bodies::Body *s = new collision_space::bodies::ConvexMesh(shape);
+	printf("Mesh volume = %f\n", s->computeVolume());
+	
+	btVector3 center;
+	double radius;
+	s->computeBoundingSphere(center, radius);
+	
+	printf("Bounding radius = %f\n", radius);
 
 	for (int i = 0 ; i < TEST_TIMES ; ++i)
 	{
@@ -266,15 +289,13 @@ public:
 
 	m_tm = ros::Time::now();
 
-	//	testSphere();
+	//      testSphere();
 	//	testBox();
-	//	testCylinder();
-	testConvexMesh();
+		testCylinder();
+	//	testConvexMesh();
 
 	ROS_INFO("Idling...");
-	m_node.spin();
-	m_node.shutdown();
-
+	ros::spin();
     }
 
 protected:
@@ -286,7 +307,8 @@ protected:
 	return (2.0 * drand48() - 1.0) * magnitude;
     }
 
-    ros::Node                 m_node;
+    ros::NodeHandle           m_nodeHandle;
+    ros::Publisher            m_vmPub;
     ros::Time                 m_tm;
     int                       m_id;
 
@@ -295,7 +317,7 @@ protected:
 
 int main(int argc, char **argv)
 {
-    ros::init(argc, argv);
+    ros::init(argc, argv, "TVM");
 
     TestVM tvm;
     tvm.run();

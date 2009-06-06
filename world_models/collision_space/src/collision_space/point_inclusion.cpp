@@ -80,15 +80,20 @@ void collision_space::bodies::Sphere::useDimensions(const planning_models::shape
 
 void collision_space::bodies::Sphere::updateInternalData(void)
 {
-    m_radius2 = m_radius * m_scale + m_padding;
-    m_radius2 = m_radius2 * m_radius2;
+    m_radiusU = m_radius * m_scale + m_padding;
+    m_radius2 = m_radiusU * m_radiusU;
     m_center = m_pose.getOrigin();
 }
 
 double collision_space::bodies::Sphere::computeVolume(void) const
 {
-    double r = m_radius * m_scale + m_padding;
-    return 4.0 * M_PI * r * r * r / 3.0;
+    return 4.0 * M_PI * m_radiusU * m_radiusU * m_radiusU / 3.0;
+}
+
+void collision_space::bodies::Sphere::computeBoundingSphere(btVector3 &center, double &radius) const
+{
+    center = m_center;
+    radius = m_radiusU;
 }
 
 bool collision_space::bodies::Cylinder::containsPoint(const btVector3 &p) const 
@@ -119,10 +124,11 @@ void collision_space::bodies::Cylinder::useDimensions(const planning_models::sha
 
 void collision_space::bodies::Cylinder::updateInternalData(void)
 {
-    m_radius2 = m_radius * m_scale + m_padding;
-    m_radius2 = m_radius2 * m_radius2;
-    m_length2 = (m_scale * m_length + m_padding) / 2.0;
+    m_radiusU = m_radius * m_scale + m_padding;
+    m_radius2 = m_radiusU * m_radiusU;
+    m_length2 = m_scale * m_length / 2.0 + m_padding;
     m_center = m_pose.getOrigin();
+    m_radiusB = std::max(m_radiusU, m_length2);
     
     const btMatrix3x3& basis = m_pose.getBasis();
     m_normalB1 = basis.getColumn(0);
@@ -132,9 +138,13 @@ void collision_space::bodies::Cylinder::updateInternalData(void)
 
 double collision_space::bodies::Cylinder::computeVolume(void) const
 {
-    double r = m_radius * m_scale + m_padding;
-    double l = m_scale * m_length + m_padding;
-    return M_PI * r * r * l;
+    return 2.0 * M_PI * m_radiusU * m_radiusU * m_length2;
+}
+
+void collision_space::bodies::Cylinder::computeBoundingSphere(btVector3 &center, double &radius) const
+{
+    center = m_center;
+    radius = m_radiusB;
 }
 
 bool collision_space::bodies::Box::containsPoint(const btVector3 &p) const 
@@ -169,13 +179,14 @@ void collision_space::bodies::Box::useDimensions(const planning_models::shapes::
 void collision_space::bodies::Box::updateInternalData(void) 
 {
     double s2 = m_scale / 2.0;
-    double p2 = m_padding / 2.0;
-    m_length2 = m_length * s2 + p2;
-    m_width2  = m_width * s2 + p2;
-    m_height2 = m_height * s2 + p2;
+    m_length2 = m_length * s2 + m_padding;
+    m_width2  = m_width * s2 + m_padding;
+    m_height2 = m_height * s2 + m_padding;
     
     m_center  = m_pose.getOrigin();
     
+    m_radiusB = sqrt(m_length2 * m_length2 + m_width2 * m_width2 + m_height2 * m_height2);
+
     const btMatrix3x3& basis = m_pose.getBasis();
     m_normalL = basis.getColumn(0);
     m_normalW = basis.getColumn(1);
@@ -185,6 +196,12 @@ void collision_space::bodies::Box::updateInternalData(void)
 double collision_space::bodies::Box::computeVolume(void) const
 {
     return 8.0 * m_length2 * m_width2 * m_height2;
+}
+
+void collision_space::bodies::Box::computeBoundingSphere(btVector3 &center, double &radius) const
+{
+    center = m_center;
+    radius = m_radiusB;
 }
 
 bool collision_space::bodies::ConvexMesh::containsPoint(const btVector3 &p) const
@@ -199,7 +216,9 @@ void collision_space::bodies::ConvexMesh::useDimensions(const planning_models::s
     m_planes.clear();
     m_triangles.clear();
     m_vertices.clear();
-    
+    m_radiusB = 0.0;
+    m_meshCenter.setValue(btScalar(0), btScalar(0), btScalar(0));
+
     btVector3 *vertices = new btVector3[mesh->vertexCount];
     for(unsigned int i = 0; i < mesh->vertexCount ; ++i)
     {
@@ -216,8 +235,21 @@ void collision_space::bodies::ConvexMesh::useDimensions(const planning_models::s
 	MSG.inform("Convex hull has %d(%d) vertices (down from %d), %d faces", hr.m_OutputVertices.size(), hr.mNumOutputVertices, mesh->vertexCount, hr.mNumFaces);
 
 	m_vertices.reserve(hr.m_OutputVertices.size());
+	btVector3 sum(btScalar(0), btScalar(0), btScalar(0));	
 	for (int j = 0 ; j < hr.m_OutputVertices.size() ; ++j)
+	{
 	    m_vertices.push_back(hr.m_OutputVertices[j]);
+	    sum = sum + hr.m_OutputVertices[j];
+	}
+	
+	m_meshCenter = sum / (double)(hr.m_OutputVertices.size());
+	for (unsigned int j = 0 ; j < m_vertices.size() ; ++j)
+	{
+	    double dist = m_vertices[j].distance2(m_meshCenter);
+	    if (dist > m_radiusB)
+		m_radiusB = dist;
+	}
+	m_radiusB = sqrt(m_radiusB) * m_scale + m_padding;
 	
 	m_triangles.reserve(hr.m_Indices.size());
 	for (int j = 0 ; j < hr.m_Indices.size() ; ++j)
@@ -271,6 +303,13 @@ void collision_space::bodies::ConvexMesh::useDimensions(const planning_models::s
 void collision_space::bodies::ConvexMesh::updateInternalData(void) 
 {
     m_iPose = m_pose.inverse();
+    m_center = m_pose.getOrigin() + m_meshCenter;
+}
+
+void collision_space::bodies::ConvexMesh::computeBoundingSphere(btVector3 &center, double &radius) const
+{
+    center = m_center;
+    radius = m_radiusB;
 }
 
 bool collision_space::bodies::ConvexMesh::isPointInsidePlanes(const btVector3& point) const
