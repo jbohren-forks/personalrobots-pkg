@@ -41,7 +41,7 @@
 #include <gazebo/gazebo.h>
 #include <gazebo/GazeboError.hh>
 #include <gazebo/ControllerFactory.hh>
-#include "MonoCameraSensor.hh"
+#include "gazebo/MonoCameraSensor.hh"
 
 
 #include <image_msgs/Image.h>
@@ -61,7 +61,6 @@
 
 #include "prosilica/prosilica.h"
 #include "prosilica_cam/PolledImage.h"
-#include "prosilica_cam/CamInfo.h"
 
 using namespace gazebo;
 
@@ -167,19 +166,65 @@ void RosProsilica::PutCameraData()
     //double tmpT0 = Simulator::Instance()->GetWallTime();
 
     this->lock.lock();
+
+
     // copy data into image
-    this->imageMsg.header.frame_id = this->frameName;
-    this->imageMsg.header.stamp.sec = (unsigned long)floor(Simulator::Instance()->GetSimTime());
-    this->imageMsg.header.stamp.nsec = (unsigned long)floor(  1e9 * (  Simulator::Instance()->GetSimTime() - this->imageMsg.header.stamp.sec) );
+    this->imageMsg->header.frame_id = this->frameName;
+    this->imageMsg->header.stamp.sec = (unsigned long)floor(Simulator::Instance()->GetSimTime());
+    this->imageMsg->header.stamp.nsec = (unsigned long)floor(  1e9 * (  Simulator::Instance()->GetSimTime() - this->imageMsg->header.stamp.sec) );
 
     //double tmpT1 = Simulator::Instance()->GetWallTime();
     //double tmpT2;
+    // fill CamInfo left_info
+    this->camInfoMsg->header = this->imageMsg->header;
+    this->camInfoMsg->height = this->myParent->GetImageHeight();
+    this->camInfoMsg->width  = this->myParent->GetImageWidth() ;
+    // distortion
+    this->camInfoMsg->D[0] = 0.0;
+    this->camInfoMsg->D[1] = 0.0;
+    this->camInfoMsg->D[2] = 0.0;
+    this->camInfoMsg->D[3] = 0.0;
+    this->camInfoMsg->D[4] = 0.0;
+    // original camera matrix
+    this->camInfoMsg->K[0] = 0;//this->focal_length;
+    this->camInfoMsg->K[1] = 0.0;
+    this->camInfoMsg->K[2] = 0;//this->Cx;
+    this->camInfoMsg->K[3] = 0.0;
+    this->camInfoMsg->K[4] = 0;//this->focal_length;
+    this->camInfoMsg->K[5] = 0;//this->Cy;
+    this->camInfoMsg->K[6] = 0.0;
+    this->camInfoMsg->K[7] = 0.0;
+    this->camInfoMsg->K[8] = 1.0;
+    // rectification
+    this->camInfoMsg->R[0] = 1.0;
+    this->camInfoMsg->R[1] = 0.0;
+    this->camInfoMsg->R[2] = 0.0;
+    this->camInfoMsg->R[3] = 0.0;
+    this->camInfoMsg->R[4] = 1.0;
+    this->camInfoMsg->R[5] = 0.0;
+    this->camInfoMsg->R[6] = 0.0;
+    this->camInfoMsg->R[7] = 0.0;
+    this->camInfoMsg->R[8] = 1.0;
+    // camera projection matrix (same as camera matrix due to lack of distortion/rectification) (is this generated?)
+    this->camInfoMsg->P[0] = 0;//this->focal_length;
+    this->camInfoMsg->P[1] = 0.0;
+    this->camInfoMsg->P[2] = 0;//this->Cx;
+    this->camInfoMsg->P[3] = 0.0;
+    this->camInfoMsg->P[4] = 0.0;
+    this->camInfoMsg->P[5] = 0;//this->focal_length;
+    this->camInfoMsg->P[6] = 0;//this->Cy;
+    this->camInfoMsg->P[7] = 0.0;
+    this->camInfoMsg->P[8] = 0.0;
+    this->camInfoMsg->P[9] = 0.0;
+    this->camInfoMsg->P[10] = 1.0;
+    this->camInfoMsg->P[11] = 0.0;
+
 
     /// @todo: don't bother if there are no subscribers
     if (this->rosnode->numSubscribers(this->topicName) > 0)
     {
       // copy from src to imageMsg
-      fillImage(this->imageMsg   ,"image_raw" ,
+      fillImage(*this->imageMsg   ,"image_raw" ,
                 this->height     ,this->width ,this->depth,
                 "mono"            ,"uint8"     ,
                 (void*)src );
@@ -187,7 +232,7 @@ void RosProsilica::PutCameraData()
       //tmpT2 = Simulator::Instance()->GetWallTime();
 
       // publish to ros
-      rosnode->publish(this->topicName,this->imageMsg);
+      rosnode->publish(this->topicName,*this->imageMsg);
     }
 
     //double tmpT3 = Simulator::Instance()->GetWallTime();

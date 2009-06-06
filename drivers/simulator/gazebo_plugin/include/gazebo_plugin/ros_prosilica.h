@@ -29,9 +29,12 @@
 
 #include <ros/node.h>
 #include "boost/thread/mutex.hpp"
-#include <image_msgs/Image.h>
 #include <gazebo/Param.hh>
 #include <gazebo/Controller.hh>
+
+// raw_stereo components
+#include <image_msgs/Image.h>
+#include "image_msgs/CamInfo.h"
 
 namespace gazebo
 {
@@ -50,12 +53,12 @@ namespace gazebo
   <model:physical name="camera_model">
     <body:empty name="camera_body_name">
       <sensor:camera name="camera_sensor">
-        <controller:ros_camera name="controller-name" plugin="libros_camera.so">
+        <controller:ros_prosilica name="controller-name" plugin="libros_prosilica.so">
             <alwaysOn>true</alwaysOn>
             <updateRate>15.0</updateRate>
             <topicName>camera_name/image</topicName>
             <frameName>camera_body_name</frameName>
-        </controller:ros_camera>
+        </controller:ros_prosilica>
       </sensor:camera>
     </body:empty>
   </model:phyiscal>
@@ -75,12 +78,12 @@ namespace gazebo
   <model:physical name="camera_model">
     <body:empty name="camera_body_name">
       <sensor:camera name="camera_sensor">
-        <controller:ros_camera name="controller-name" plugin="libros_camera.so">
+        <controller:ros_prosilica name="controller-name" plugin="libros_prosilica.so">
             <alwaysOn>true</alwaysOn>
             <updateRate>15.0</updateRate>
             <topicName>camera_name/image</topicName>
             <frameName>camera_body_name</frameName>
-        </controller:ros_camera>
+        </controller:ros_prosilica>
       </sensor:camera>
     </body:empty>
   </model:phyiscal>
@@ -120,8 +123,11 @@ class RosProsilica : public Controller
   /// \brief A pointer to the ROS node.  A node will be instantiated if it does not exist.
   private: ros::Node *rosnode;
 
-  /// \brief ROS image message
-  private: image_msgs::Image imageMsg;
+  /// \brief ros message
+  /// \brief construct raw stereo message
+  private: image_msgs::Image* imageMsg;
+  private: image_msgs::CamInfo* camInfoMsg;
+
 
   /// \brief Parameters
   private: ParamT<std::string> *topicNameP;
