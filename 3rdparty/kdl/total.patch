@@ -1,3 +1,23 @@
+Index: src/tree.hpp
+===================================================================
+--- src/tree.hpp	(revision 30175)
++++ src/tree.hpp	(working copy)
+@@ -149,6 +149,15 @@
+             return segments.find(segment_name);
+         };
+ 
++        /**
++         * Request the chain of the tree between chain_root and chain_tip. The chain_root must be an ancester from chain_tip
++         *
++         * @param chain_root the name of the root segment of the chain
++         * @param chain_tip the name of the tip segment of the chain
++         *
++         * @return the chain form chain_root to chain_tip, copied from the tree
++         */
++        Chain getChain(const std::string& chain_root, const std::string& chain_tip)const;
+ 
+ 
+         const SegmentMap& getSegments()const
 Index: src/joint.cpp
 ===================================================================
 --- src/joint.cpp	(revision 30175)
@@ -13,6 +33,46 @@ Index: src/joint.cpp
 +
  } // end of namespace KDL
  
+Index: src/tree.cpp
+===================================================================
+--- src/tree.cpp	(revision 30175)
++++ src/tree.cpp	(working copy)
+@@ -114,5 +114,35 @@
+     return true;
+ }
+ 
++Chain Tree::getChain(const std::string& chain_root, const std::string& chain_tip)const
++{
++  // walk down the tree from tip to root
++  Chain chain;
++
++  // check if tip is valid name
++  SegmentMap::const_iterator s = getSegment(chain_tip);
++  if (s == segments.end()){
++    printf("Tree does not contain segment %s \n",chain_tip.c_str());
++    return chain;
++  }
++
++  // walk through tree from tip to root
++  std::vector<const Segment*> tmp;
++  while ((*s).first != chain_root){
++    tmp.push_back(&((*s).second.segment));
++    s = (*s).second.parent;
++    if (s == segments.end()){
++      printf("Failed to travel in tree from %s to %s \n", chain_tip.c_str(), chain_root.c_str());
++      return chain;
++    }
++  }
++
++  // construct chain
++  for (int i=((int)tmp.size())-1; i>=0; i--)
++    chain.addSegment(*(tmp[i]));
++  return chain;
+ }
+ 
++}
++
++
 Index: src/joint.hpp
 ===================================================================
 --- src/joint.hpp	(revision 30175)
