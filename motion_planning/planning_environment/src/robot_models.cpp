@@ -51,7 +51,6 @@ void planning_environment::RobotModels::loadRobot(void)
 	    kmodel_->setVerbose(false);
 	    kmodel_->build(*urdf_, planning_groups_);
 
-
 	    // make sure the kinematic model is in its own frame
 	    // (remove all transforms caused by planar or floating
 	    // joints)

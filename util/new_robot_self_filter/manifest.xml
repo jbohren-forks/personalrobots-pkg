@@ -1,0 +1,22 @@
+<package>
+  <description brief="new_robot_self_filter">
+
+     new_robot_self_filter
+
+  </description>
+  <author>Ioan Sucan</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://pr.willowgarage.com/wiki/new_robot_self_filter</url>
+
+  <depend package="roscpp"/>
+  <depend package="tf"/>
+  <depend package="filters"/>
+  <depend package="robot_msgs"/>
+  <depend package="visualization_msgs"/>
+  <depend package="collision_space"/>
+  <depend package="planning_environment"/>
+
+</package>
+
+

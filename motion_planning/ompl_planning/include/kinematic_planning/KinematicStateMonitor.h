@@ -93,7 +93,7 @@ namespace kinematic_planning
 	
     public:
 		
-        KinematicStateMonitor(void) : m_tf(*ros::Node::instance(), true, ros::Duration(1))
+        KinematicStateMonitor(void) : m_tf(*ros::Node::instance(), true, ros::Duration(10))
 	{
 	    m_tf.setExtrapolationLimit(ros::Duration().fromSec(10));
 	    

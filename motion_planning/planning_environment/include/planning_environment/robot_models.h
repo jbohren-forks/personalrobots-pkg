@@ -39,6 +39,7 @@
 
 #include "planning_models/kinematic.h"
 #include <ros/ros.h>
+#include <ros/node.h>
 #include <boost/shared_ptr.hpp>
 
 #include <map>
@@ -81,8 +82,9 @@ namespace planning_environment
 	};
 	
 	
-	RobotModels(const std::string &description) : description_(description)
+	RobotModels(const std::string &description)
 	{
+	    description_ = nh_.getNode()->mapName(description);
 	    loadRobot();
 	}
 	
