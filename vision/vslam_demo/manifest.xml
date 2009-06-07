@@ -1,0 +1,16 @@
+<package>
+  <description brief="vslam_demo">
+
+     vslam_demo
+
+  </description>
+  <author>James Bowman/ jamesb@willowgarage.com</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <depend package="vslam"/>
+  <depend package="dcam"/>
+  <url>http://pr.willowgarage.com/wiki/vslam_demo</url>
+
+</package>
+
+

@@ -9,6 +9,8 @@ import Image
 import yaml
 import cv
 
+import rosrecord
+import rospy
 from stereo_utils import camera
 
 class dcamImage:

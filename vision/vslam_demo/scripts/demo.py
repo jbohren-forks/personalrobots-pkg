@@ -32,46 +32,9 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 import roslib
-roslib.load_manifest('stereo_utils')
+roslib.load_manifest('vslam')
 import rospy
 
-import sys
-from stereo_utils.reader import CVreader
-import cv
-import time
-
-def playlist(args):
-  for f in args:
-    r = CVreader(f)
-    for d in r:
-      yield d + (f,)
-
-framecounter = 0
-font = cv.InitFont(cv.CV_FONT_HERSHEY_SIMPLEX, 1, 1)
-cv.NamedWindow("tv", 1)
-
-for cam,l_image,r_image,label in playlist(sys.argv[1:]):
-  ipl = l_image
-  msg = "%4d" % framecounter
-  (w,h),baseline = cv.GetTextSize(msg, font)
-  (_, imageh) = cv.GetSize(l_image)
-
-  if 0:
-    # Gray out the top-left rectangle
-    cv.SetImageROI(ipl, (0, imageh+baseline, w + 1, imageh))
-    cv.ConvertScale(ipl, ipl, 0.75)
-    cv.ResetImageROI(ipl)
-
-  # Draw the time
-  cv.PutText(ipl, msg, (0,imageh+baseline), font, (255,255,255))
-
-  cv.ShowImage("tv", ipl)
-
-  cmd = cv.WaitKey(10)
-  # Space is pause
-  if cmd == ord(" "):
-    cv.WaitKey()
-  if cmd in [ 27, ord('q') ]:
-    break
-
-  framecounter += 1
+import OpenGL.GL
+import OpenGL.GLUT
+import OpenGL.GLU
