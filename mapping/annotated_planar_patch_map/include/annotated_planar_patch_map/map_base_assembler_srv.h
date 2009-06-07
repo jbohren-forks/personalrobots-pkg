@@ -323,26 +323,6 @@ private:
   return true ;
 }
 
-    robot_msgs::Point32
-      computeMean (const robot_msgs::Polygon3D& poly)
-    {
-      robot_msgs::Point32 mean;
-      mean.x=0;mean.y=0;mean.z=0;
-
-      unsigned int sz= poly.points.size();;
-      for (unsigned int i = 0; i < sz; i++)
-      {
-        mean.x += poly.points[i].x;
-        mean.y += poly.points[i].y;
-        mean.z += poly.points[i].z;
-      }
-      if(sz>0){
-	mean.x /= sz;
-	mean.y /= sz;
-	mean.z /= sz;
-      }
-      return mean;
-    }
 
  template <class T,class F>
    void MapBaseAssemblerSrv<T,F>::simplify_output(const F& map_in, F& map_out)
@@ -368,7 +348,7 @@ private:
      centers.pts.resize(num_poly);
 
      for(unsigned int iPoly=0;iPoly<num_poly;iPoly++){
-       centers.pts[iPoly]=computeMean(map_in.polygons[iPoly].polygon);
+       centers.pts[iPoly]=annotated_map_lib::computeMean(map_in.polygons[iPoly].polygon);
      }
 
      ROS_DEBUG("Building KDtree");

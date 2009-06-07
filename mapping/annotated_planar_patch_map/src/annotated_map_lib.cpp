@@ -272,7 +272,7 @@ double annotated_map_lib::getMapAreaWithTagsMatchAll(const annotated_map_msgs::T
   unsigned int num_poly=map.polygons.size();
   for(unsigned int iPoly=0;iPoly<num_poly;iPoly++)
   {
-    if(doesQueryMatchAll(query_tags,map.polygons[iPoly]))
+    if(annotated_map_lib::doesQueryMatchAll(query_tags,map.polygons[iPoly]))
        tot_area+=cloud_geometry::areas::compute2DPolygonalArea(map.polygons[iPoly].polygon);
   }
   return tot_area;
@@ -290,8 +290,32 @@ double getMapAreaWithTagsMatchAny(const annotated_map_msgs::TaggedPolygonalMap& 
   unsigned int num_poly=map.polygons.size();
   for(unsigned int iPoly=0;iPoly<num_poly;iPoly++)
   {
-    if(doesQueryMatchAny(query_tags,map.polygons[iPoly]))
+    if(annotated_map_lib::doesQueryMatchAny(query_tags,map.polygons[iPoly]))
        tot_area+=cloud_geometry::areas::compute2DPolygonalArea(map.polygons[iPoly].polygon);
   }
   return tot_area;
 }
+
+
+ 
+robot_msgs::Point32 annotated_map_lib::computeMean (const robot_msgs::Polygon3D& poly)
+{
+  robot_msgs::Point32 mean;
+  mean.x=0;mean.y=0;mean.z=0;
+  
+  unsigned int sz= poly.points.size();;
+  for (unsigned int i = 0; i < sz; i++)
+  {
+    mean.x += poly.points[i].x;
+    mean.y += poly.points[i].y;
+    mean.z += poly.points[i].z;
+  }
+  if(sz>0){
+	mean.x /= sz;
+	mean.y /= sz;
+	mean.z /= sz;
+  }
+  return mean;
+}
+
+

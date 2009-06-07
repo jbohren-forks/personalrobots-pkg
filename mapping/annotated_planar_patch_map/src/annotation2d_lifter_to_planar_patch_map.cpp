@@ -60,6 +60,7 @@
 #include <annotated_map_msgs/TaggedPolygon3D.h>
 
 #include "annotated_planar_patch_map/annotated_map_lib.h"
+#include "annotated_planar_patch_map/projection.h"
 
 using namespace std;
 using namespace tf;
@@ -152,16 +153,9 @@ public:
 
     ROS_DEBUG("Project map");
     //Project the 3D map into the image coordinates
-    projectPolygonalMap(stereo_info_,transformed_map_3D,transformed_map_2D);
+    annotated_planar_patch_map::projection::projectPolygonalMap(stereo_info_,transformed_map_3D,transformed_map_2D);
 
-    /*
-      ROS_DEBUG("Print annotations");    
-      printAnnotations2D(annotation2d_object_);
-      ROS_DEBUG("Print transformed 3D map");
-      printPolygon3D(transformed_map_3D,"map3D");
-      ROS_DEBUG("Print transformed 2D map");
-      printPolygon3D(transformed_map_2D,"map2D");
-    */
+
     ROS_DEBUG("Bind map");    
     //Bind 2D annotations to the projected 3D map and lift the annotations into 3D
     bindAnnotationsToMap(annotation2d_object_,transformed_map_3D_fixed_frame,transformed_map_2D,polymapOut);
@@ -170,85 +164,6 @@ public:
       
   }
 
-  void projectPolygonalMap(image_msgs::StereoInfo stereo_info_, robot_msgs::PolygonalMap transformed_map_3D, robot_msgs::PolygonalMap &transformed_map_2D)
-  {
-
-    //Get projections matrix
-    //tf::Transform projection;
-    //btScalar tmp_proj[16];
-    double projection[16];
-    for(int i=0;i<16;i++)
-      projection[i]=stereo_info_.RP[i];
-      //tmp_proj[i]=stereo_info_.RP[i];
-
-    //projection.setFromOpenGLMatrix(tmp_proj);
-
-    //Project all points of all polygons
-    unsigned int num_polygons = transformed_map_3D.get_polygons_size();
-    transformed_map_2D.set_polygons_size(num_polygons);
-    for(unsigned int iPoly = 0; iPoly<num_polygons; iPoly++)
-    {
-      //create new polygon 2D (z=1)
-      robot_msgs::Polygon3D newPoly;
-      projectPolygonPoints(projection,transformed_map_3D.polygons[iPoly],newPoly);
-
-      //put the polygon into 2D map
-      transformed_map_2D.polygons[iPoly]=newPoly;
-    }
-  }
-  
-
-  void projectPolygonPoints(double* projection,robot_msgs::Polygon3D polyIn,robot_msgs::Polygon3D& polyOut)
-  {
-    //Project all points of all polygons
-    unsigned int num_pts = polyIn.get_points_size();
-    polyOut.set_points_size(num_pts);
-    for(unsigned int iPt = 0; iPt<num_pts; iPt++)
-    {
-      robot_msgs::Point32 &mpt=polyIn.points[iPt];
-      Vector3 pt(-mpt.y,-mpt.z,mpt.x);
-      //Vector3 projected_pt=projection * pt;
-
-      robot_msgs::Point32 projected_pt;
-      projected_pt.x=
-        projection[0]*pt.x()+
-        projection[4]*pt.y()+
-        projection[8]*pt.z()+
-        projection[12]*1;
-      projected_pt.y=
-        projection[1]*pt.x()+
-        projection[5]*pt.y()+
-        projection[9]*pt.z()+
-        projection[13]*1;
-      projected_pt.z=
-        projection[2]*pt.x()+
-        projection[6]*pt.y()+
-        projection[10]*pt.z()+
-        projection[14]*1;
-      /*double s=
-        projection[3]*pt.x()+
-        projection[7]*pt.y()+
-        projection[11]*pt.z()+
-        projection[15]*1;*/
-
-      robot_msgs::Point32 &new_pt=polyOut.points[iPt];
-      new_pt.x= projected_pt.x;
-      new_pt.y= projected_pt.y;
-      new_pt.z = projected_pt.z;
-      new_pt.z = pt.z();
-      //new_pt.x = projected_pt.x();
-      //new_pt.y = projected_pt.y();
-      //new_pt.z = projected_pt.z();
-
-      new_pt.x= new_pt.x*(stereo_info_.width/2) +stereo_info_.width/2;
-      new_pt.y= new_pt.y*(stereo_info_.height/2) +stereo_info_.height/2;
-      //new_pt.x= new_pt.x*stereo_info_.width;
-      //new_pt.y= new_pt.y*stereo_info_.height;	
-      /*printf("\t\tProjected from (%f, %f, %f) to (%f, %f)\n",
-        mpt.x,mpt.y,mpt.z,
-        new_pt.x,new_pt.y);*/
-    }
-  }
 
   void bindAnnotationsToMap(cv_mech_turk::ExternalAnnotation annotation2d_object, robot_msgs::PolygonalMap transformed_map_3D, robot_msgs::PolygonalMap transformed_map_2D,annotated_map_msgs::TaggedPolygonalMap &polymapOut)
   {

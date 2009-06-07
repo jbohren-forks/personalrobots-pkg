@@ -31,7 +31,7 @@ rospack_add_boost_directories()
 #rospack_add_executable(pf_learn src/learn.cc)
 #target_link_libraries(example ${PROJECT_NAME})
 
-rospack_add_library(annotated_map_lib src/annotated_map_lib.cpp)
+rospack_add_library(annotated_map_lib src/annotated_map_lib.cpp src/projection.cpp src/query.cpp)
 
 
 rospack_add_executable(annotation2d_lifter_to_planar_patch_map_node src/annotation2d_lifter_to_planar_patch_map.cpp)
@@ -43,6 +43,8 @@ target_link_libraries(annotated_map_info annotated_map_lib)
 
 
 rospack_add_executable(annotated_map_assembler_srv src/annotated_map_assembler_srv.cpp)
+target_link_libraries(annotated_map_assembler_srv annotated_map_lib)
+
 rospack_add_executable(annotated_map_snapshotter src/annotated_map_snapshotter.cpp)
 rospack_add_executable(annotated_map_query_snapshotter src/annotated_map_query_snapshotter.cpp)
 

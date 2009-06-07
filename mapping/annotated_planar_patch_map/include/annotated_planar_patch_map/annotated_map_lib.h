@@ -148,49 +148,18 @@ double getMapAreaWithTagsMatchAll(const annotated_map_msgs::TaggedPolygonalMap& 
 double getMapAreaWithTagsMatchAny(const annotated_map_msgs::TaggedPolygonalMap& map,std::vector<std::string> query_tags);
 
 
-bool doesQueryMatch(const std::string& query,const std::string& name)
-{
-  if(query=="*")
-    return true;
-  if(query==name)
-    return true;
-  return false;	 
-}
-bool doesQueryMatch(std::string query,const annotated_map_msgs::TaggedPolygon3D& poly)
-{
-  for(unsigned int iT=0;iT<poly.get_tags_size();iT++)
-  {
-    if(doesQueryMatch(query,poly.tags[iT]))
-    {
-      return true;
-    }
-  }
-  return false;
-}
+bool doesQueryMatch(const std::string& query,const std::string& name);
+
+bool doesQueryMatch(std::string query,const annotated_map_msgs::TaggedPolygon3D& poly);
 
 
-bool doesQueryMatchAny(std::vector<std::string> query,const annotated_map_msgs::TaggedPolygon3D& poly)
-{
-  for(unsigned int iT=0;iT<query.size();iT++)
-  {
-    if(doesQueryMatch(query[iT],poly))
-    {
-      return true;
-    }
-  }
-  return false;
-}
-bool doesQueryMatchAll(std::vector<std::string> query,const annotated_map_msgs::TaggedPolygon3D& poly)
-{
-  for(unsigned int iT=0;iT<query.size();iT++)
-  {
-    if(!doesQueryMatch(query[iT],poly))
-    {
-      return false;
-    }
-  }
-  return true;
-}
+bool doesQueryMatchAny(std::vector<std::string> query,const annotated_map_msgs::TaggedPolygon3D& poly);
+
+
+bool doesQueryMatchAll(std::vector<std::string> query,const annotated_map_msgs::TaggedPolygon3D& poly);
+
+
+robot_msgs::Point32 computeMean(const robot_msgs::Polygon3D& poly);
 
 } //end namespace
 
