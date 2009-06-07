@@ -93,14 +93,18 @@ protected:
 		    ROS_INFO("  %s", links[i].c_str());
 	    }
 	    
-	    std::vector< std::vector<std::string> > groups = m_envModels->getSelfCollisionGroups();
+	    std::vector< std::pair< std::vector<std::string>, std::vector<std::string> > > groups = m_envModels->getSelfCollisionGroups();
 	    
 	    int nscgroups = 0;
 	    for (unsigned int i = 0 ; i < groups.size() ; ++i)
 	    {
-		ROS_INFO("Self-collision check group %d", nscgroups);
-		for (unsigned int j = 0 ; j < groups[i].size() ; ++j)
-		    ROS_INFO("  %s", groups[i][j].c_str());
+		ROS_INFO("\nSelf-collision check group %d", nscgroups);
+		ROS_INFO("a)");
+		for (unsigned int j = 0 ; j < groups[i].first.size() ; ++j)
+		    ROS_INFO("  %s", groups[i].first[j].c_str());
+		ROS_INFO("b)");
+		for (unsigned int j = 0 ; j < groups[i].second.size() ; ++j)
+		    ROS_INFO("  %s", groups[i].second[j].c_str());
 		nscgroups++;
 	    }    
 	    
