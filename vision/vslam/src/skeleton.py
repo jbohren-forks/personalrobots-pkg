@@ -1,20 +1,15 @@
-import roslib
-roslib.load_manifest('vslam')
-
 import Image
+
 from pytoro import TreeOptimizer3
 import place_recognition
-from visual_odometry.visualodometer import VisualOdometer, Pose
+from visual_odometry.visualodometer import VisualOdometer, Pose, from_xyz_euler
 from visual_odometry.pe import PoseEstimator
 from stereo_utils.stereo import SparseStereoFrame
 from stereo_utils.timer import Timer
 from stereo_utils.descriptor_schemes import DescriptorSchemeCalonder
 
-import calonder
-
 import numpy
-import random
-import pickle
+import cPickle as pickle
 import math
 
 class minimum_frame:
@@ -27,6 +22,7 @@ class minimum_frame:
 def mk_covar(xyz, rp, yaw):
   return (1.0 / math.sqrt(xyz),1.0 / math.sqrt(xyz), 1.0 / math.sqrt(xyz), 1.0 / math.sqrt(rp), 1.0 / math.sqrt(rp), 1.0 / math.sqrt(yaw))
 #weak = mk_covar(0.01, 0.0002, 0.002)
+
 weak = mk_covar(9e10,3,3)
 strong = mk_covar(0.0001, 0.000002, 0.00002)
 
@@ -41,6 +37,7 @@ class Skeleton:
     self.weak_edges = []
     if 1:
       self.pg = TreeOptimizer3()
+      self.vset = set()
     else:
       import faketoro
       self.pg = faketoro.faketoro()
@@ -89,19 +86,21 @@ class Skeleton:
   def setlabel(self, str):
     self.label = str
 
-  def load(self, basename):
+  def load(self, basename, load_PR = True):
     f = open(basename + ".pickle", "r")
     self.nodes = pickle.load(f)
     self.node_labels = pickle.load(f)
     self.edges = pickle.load(f)
     self.place_ids = pickle.load(f)
-    self.node_kp = pickle.load(f)
-    self.node_descriptors = pickle.load(f)
+    if load_PR:
+      self.node_kp = pickle.load(f)
+      self.node_descriptors = pickle.load(f)
     self.prev_pose = None
     f.close()
 
-    for id in self.place_ids:
-      self.vt.add(None, self.node_descriptors[id])
+    if load_PR:
+      for id in self.place_ids:
+        self.vt.add(None, self.node_descriptors[id])
 
     if 0:
       self.pg.load(basename + ".toro")
@@ -134,8 +133,119 @@ class Skeleton:
           print "reached", sorted(reached)
           print "remaining edges", sorted([e[:2] for e in edges])
           sys.exit(1)
+    print "Loaded", basename, ":", len(self.nodes), "nodes;", len(self.edges), "edges"
 
-  def add(self, this, connected = True):
+  def fill(self, filename, startframe):
+
+    if len(self.nodes) != 0:
+      my_start = max(self.nodes) + 1
+    else:
+      my_start = 0
+
+    from tf import transformations
+
+    self.fills = {}
+    for l in open(filename):
+      f = l.split()
+
+      if len(f) == 11:
+        assert f[4] == 'pose:'
+        X = float(f[5])
+        Y = float(f[6])
+        Z = float(f[7])
+        if 0:
+          roll = math.pi * float(f[8]) / 180.0 
+          pitch = math.pi * float(f[9]) / 180.0
+          yaw = math.pi * float(f[10]) / 180.0
+
+          sa = math.sin(yaw);
+          sb = math.sin(pitch);
+          sg = math.sin(roll);
+
+          ca = math.cos(yaw);
+          cb = math.cos(pitch);
+          cg = math.cos(roll);
+
+          P = numpy.array(
+            [ [ ca*cb , -sa*cg + ca*sb*sg , sa*sg + ca*sb*cg  ],
+              [ sa*cb , ca*cg + sa*sb*sg  , -ca*sg + sa*sb*cg ],
+              [ -sb   , cb*sg             , cb*cg             ]]).T
+        else:
+          euler = [ float(c) * math.pi / 180 for c in f[8:11] ]
+
+          sa = math.sin(euler[2]);
+          sb = math.sin(euler[1]);
+          sg = math.sin(euler[0]);
+
+          ca = math.cos(euler[2]);
+          cb = math.cos(euler[1]);
+          cg = math.cos(euler[0]);
+
+          P = numpy.zeros((3,3))
+          P[0,0] = ca*cb;
+          P[0,1] = -sa*cg + ca*sb*sg;
+          P[0,2] = sa*sg + ca*sb*cg;
+
+          P[1,0] = sa*cb;
+          P[1,1] = ca*cg + sa*sb*sg;
+          P[1,2] = -ca*sg + sa*sb*cg;
+
+          P[2,0] = -sb;
+          P[2,1] = cb*sg;
+          P[2,2] = cb*cg;
+
+        cam90 = Pose(numpy.array([[ 1, 0, 0 ], [ 0, 0, -1 ], [ 0, 1, 0 ]]), numpy.array([0, 0, 0]))
+        veh_t = Pose(P, numpy.array([X, Y, Z]))
+        Tc2v = Pose(
+          numpy.array([
+            [0.010546  , -0.006048, 0.999926 ],
+            [-0.999650 , 0.024210 , 0.010689 ],
+            [-0.024273 ,-0.999689 ,-0.005791 ]]),
+          numpy.array(
+            [ 1.783353 , 0.265480 , -0.041039 ]))
+        self.fills[my_start + int(f[1])-startframe] = (~Tc2v * veh_t) * Tc2v
+
+    if 0:
+      import pylab, sys
+      po = [ self.fills[x].xform(0,0,0) for x in sorted(self.fills.keys()) ]
+      pylab.scatter([x for (x,y,z) in po], [y for (x,y,z) in po], c = 'r')
+
+      print self.fills[0].M
+
+      po = [ self.gt(0, x).xform(0,0,0) for x in sorted(self.fills.keys()) ]
+      pylab.scatter([x for (x,y,z) in po], [z for (x,y,z) in po], c = 'g')
+      pylab.show()
+      sys.exit(1)
+
+  def gt(self, i0, i1):
+    assert i0 <= i1
+    r = ~self.fills[i0] * self.fills[i1]
+    return r
+
+    p = Pose()
+    p.M[0,0] =  r.M[0,0]
+    p.M[0,1] =  r.M[0,2]
+    p.M[0,2] = -r.M[0,1]
+    p.M[0,3] =  r.M[0,3]
+
+    p.M[1,0] = -r.M[2,1]
+    p.M[1,1] =  r.M[2,2]
+    p.M[1,2] = -r.M[2,0]
+    p.M[1,3] = -r.M[2,3]
+
+    p.M[2,0] = -r.M[1,0]
+    p.M[2,1] =  r.M[1,2]
+    p.M[2,2] =  r.M[1,1]
+    p.M[2,3] =  r.M[1,3]
+    return p
+    cam90 = Pose(numpy.array([[ 1, 0, 0 ], [ 0, 0, -1 ], [ 0, 1, 0 ]]), numpy.array([0, 0, 0]))
+    return cam90 * r * ~cam90
+
+  def add(self, this, connected = 1):
+    """ add frame *this* to skeleton, *connected* 1 means good link to
+    previous, 0 means no link to previous - use fill data, -1 means no
+    link to previous force weak link.
+    """
     if len(self.nodes) == 0:
       self.nodes.add(this.id)
       self.node_labels[this.id] = self.label
@@ -144,32 +254,40 @@ class Skeleton:
       previd = max(self.nodes)
 
       # Ignore the node if there are less than node_vist frames since the previous node
-      if connected and (this.id - previd) < self.node_vdist:
+      if (connected == 1) and (this.id - previd) < self.node_vdist:
         return False
 
-      if connected and self.prev_pose:
+      if (connected == 1) and self.prev_pose:
         print "Strong link from %d to %d" % (previd, this.id)
         relpose = ~self.prev_pose * this.pose
         inf = strong
+        print "LINK: Strong from obs", relpose.xform(0,0,0)
       else:
-        self.weak_edges.append((previd, this.id))
-        print "Weak link from %d to %d" % (previd, this.id)
-        relpose = Pose(numpy.identity(3), [ 5, 0, 0 ])
-        inf = weak
+        if self.fills and (connected == 0):
+          print "Strong link from %d to %d" % (previd, this.id)
+          relpose = self.gt(self.prev_id, this.id)
+          inf = strong
+          print "LINK: Strong from fill", relpose.xform(0,0,0)
+        else:
+          self.weak_edges.append((previd, this.id))
+          print "Weak link from %d to %d" % (previd, this.id)
+          relpose = Pose(numpy.identity(3), [ 0, 0, 0 ])
+          inf = weak
+          print "LINK: Weak"
 
       self.nodes.add(this.id)
       self.node_labels[this.id] = self.label
       self.edges.add( (previd, this.id) )
       self.timer['toro add'].start()
-      self.pg.addIncrementalEdge(previd, this.id, relpose.xform(0,0,0), relpose.euler(), inf)
+      vtop = self.pg.addIncrementalEdge(previd, this.id, relpose.xform(0,0,0), relpose.euler(), inf)
+      self.vset.add(vtop)
       print "ADDED VO CONSTRAINT", previd, this.id, inf
       self.timer['toro add'].stop()
       #print "added node at", this.pose.xform(0,0,0), "in graph as", self.newpose(this.id).xform(0,0,0)
 
       self.memoize_node_kp_d(this)
-      this_d = self.node_descriptors[this.id]
 
-      far = [ id for id in self.place_find(this.lf, this_d) if (not id in [this.id, previd])]
+      far = [ id for id in self.place_find(this.descriptors()) if (not id in [this.id, previd])]
       self.place_ids.append(this.id)
       self.add_links(this.id, far)
 
@@ -178,6 +296,7 @@ class Skeleton:
       r = False
     if r:
       self.prev_pose = this.pose
+      self.prev_id = this.id
       #self.prev_frame = this
 
     return r
@@ -198,6 +317,7 @@ class Skeleton:
   def optimize(self):
 
     self.pg.initializeOnlineIterations()
+
     print "pg.error", self.pg.error()
     for j in range(1):
       for i in range(1000):
@@ -216,10 +336,10 @@ class Skeleton:
       p = Pose()
     return p
 
-  def place_find(self, lf, descriptors):
+  def place_find(self, descriptors):
     if self.vt:
       self.timer['place recognition'].start()
-      scores = self.vt.topN(lf, descriptors, len(self.place_ids), True)
+      scores = self.vt.topN(None, descriptors, len(self.place_ids), True)
       self.timer['place recognition'].stop()
       assert len(scores) == len(self.place_ids)+1
       return [id for (_,id) in sorted(zip(scores, self.place_ids))][:self.pr_maximum]
@@ -240,27 +360,31 @@ class Skeleton:
 
     t0 = self.timer['toro opt'].sum
     self.timer['toro opt'].start()
-    self.pg.initializeOnlineIterations()
-    count = 0
-    self.pg.iterate()                   # error can go way up on first iterate
-    prev_e = self.pg.error()
-    self.pg.iterate()
-    print
-    print "Starting OPT loop, error ", self.pg.error(), " prev error ", prev_e
-    while not self.termcrit(count, prev_e - self.pg.error()):
+    if len(self.vset) > 4:
+      self.pg.initializeOnlineIterations()
       prev_e = self.pg.error()
-      self.pg.iterate()
-      count += 1
-    self.timer['toro opt'].stop()
-    t1 = self.timer['toro opt'].sum
-    td = t1 - t0
-    if self.adaptive:
-      if (td > 0.300):                    # too large, stretch frame additions
-        self.node_vdist = 15 + (td - 0.4)*100
+      self.pg.iterate(self.vset, True)
+      if 1:
+        count = 1
       else:
-        self.node_vdist = 15
-    print "OPT TIMER ", 1000.0*(t1-t0), "  ITERATIONS ", count, "  FRAMES ", self.node_vdist, "  ERROR ", self.pg.error()
-    print
+        print
+        print "Starting OPT loop, error ", self.pg.error(), " prev error ", prev_e
+        while not self.termcrit(count, prev_e - self.pg.error()):
+          prev_e = self.pg.error()
+          self.pg.iterate()
+          count += 1
+      self.vset = set()
+    self.timer['toro opt'].stop()
+    if 0:
+      t1 = self.timer['toro opt'].sum
+      td = t1 - t0
+      if self.adaptive:
+        if (td > 0.300):                    # too large, stretch frame additions
+          self.node_vdist = 15 + (td - 0.4)*100
+        else:
+          self.node_vdist = 15
+      #print "OPT TIMER ", 1000.0*(t1-t0), "  ITERATIONS ", count, "  FRAMES ", self.node_vdist, "  ERROR ", self.pg.error()
+      #print
 
   def memoize_node_kp_d(self, af):
     self.timer['descriptors'].start()
@@ -289,7 +413,17 @@ class Skeleton:
       edges.append((p0, p1))
     return (nodepts, edges)
 
+  def digest(self):
+    pts = {}
+    for id in self.nodes:
+      (x,y,z) = self.newpose(id).xform(0,0,0)
+      xp = x
+      yp = z
+      pts[id] = (xp,yp)
+    return (self.edges, pts, self.node_labels)
+
   def plot(self, color, annotate = False, theta = 0.0):
+
     import pylab
     pts = {}
     for id in self.nodes:
@@ -315,7 +449,9 @@ class Skeleton:
 
     for lbl in uniq_l:
       nodepts = [ pts[id] for id in self.nodes if self.node_labels[id] == lbl ]
-      pylab.scatter([x for (x,y) in nodepts], [y for (x,y) in nodepts], s = 1, color = cols[lbl], label = lbl[:1])
+      print cols[lbl], lbl[:1]
+      pylab.scatter([x for (x,y) in nodepts], [y for (x,y) in nodepts], s = 6, color = cols[lbl], label = lbl[:1])
+
     if annotate:
       if True:
         for (f,(x,y)) in pts.items():
@@ -326,9 +462,10 @@ class Skeleton:
           pylab.annotate('%d' % f, (float(x), float(y)))
 
     ordered = sorted(self.nodes)
+    cross = 0
     for (f0,f1) in self.edges:
       # This expression is 1 if the nodes are consecutive
-      abs(ordered.index(f0) - ordered.index(f1))
+      # abs(ordered.index(f0) - ordered.index(f1))
       p0 = pts[f0]
       p1 = pts[f1]
       p0c = cols[self.node_labels[f0]]
@@ -337,7 +474,13 @@ class Skeleton:
         color = p0c
       else:
         color = 'b:'
-      pylab.plot((p0[0], p1[0]), (p0[1], p1[1]), color)
+        cross += 1
+        print "cross", (f0,f1)
+      pylab.plot((p0[0], p1[0]), (p0[1], p1[1]), color, linewidth=2)
+      if math.sqrt((p0[0]-p1[0])**2 + (p0[1]-p1[1])**2) > 10:
+        pylab.annotate('%d' % f0, p0)
+        pylab.annotate('%d' % f1, p1)
+    print "There are", cross, "cross links"
 
   def labelization(self):
     return [ self.node_labels[id] for id in sorted(self.nodes) ]
@@ -382,7 +525,7 @@ class Skeleton:
     return (return_positions, return_edges, return_loc)
 
     localizations = []
-    far = [id for id in self.place_find(qf.lf, qf.descriptors())]
+    far = [id for id in self.place_find(qf.descriptors())]
     assert 0
     coll = [ self.vo.proximity(qf, self.my_frame(f)) + (f,) for f in far ]
     print coll
