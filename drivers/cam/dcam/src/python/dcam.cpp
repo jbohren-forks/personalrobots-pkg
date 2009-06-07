@@ -142,13 +142,25 @@ static PyObject *dcam_getImage(PyObject *self, PyObject *args)
 {
   dcam_t *ps = (dcam_t*)self;
 
-  ps->dev->getImage(500);
-  StereoData *stIm = ps->dev->stIm;
+  bool r = ps->dev->getImage(500);
+  if (!r) {
+    Py_RETURN_NONE;
+  } else {
+    StereoData *stIm = ps->dev->stIm;
 
-  int w = stIm->imWidth;
-  int h = stIm->imHeight;
+    int w = stIm->imWidth;
+    int h = stIm->imHeight;
 
-  return Py_BuildValue("iis#s#", w, h, stIm->imLeft->imRaw, w * h, stIm->imRight->imRaw, w * h);
+    if (0) {
+      printf("%p\n", stIm->imLeft->imRaw);
+      printf("%p\n", stIm->imLeft->im);
+      printf("%p\n", stIm->imLeft->imColor);
+      printf("%p\n", stIm->imLeft->imRect);
+      printf("%p\n", stIm->imLeft->imRectColor);
+    }
+
+    return Py_BuildValue("iis#s#", w, h, stIm->imLeft->imRect, w * h, stIm->imRight->imRect, w * h);
+  }
 }
 
 static PyObject *dcam_stop(PyObject *self, PyObject *args)
@@ -190,7 +202,7 @@ static PyObject *make_dcam(PyObject *self, PyObject *args)
   ps->dev = new dcam::StereoDcam(dcam::getGuid(devIndex));
   ps->dev->setRangeMax(4.0);	// in meters
   ps->dev->setRangeMin(0.5);	// in meters
-  static videre_proc_mode_t pmode = PROC_MODE_NONE;
+  static videre_proc_mode_t pmode = PROC_MODE_RECTIFIED;
   dc1394video_mode_t videoMode;	// current video mode
   dc1394framerate_t videoRate;	// current video rate
   videoMode = VIDERE_STEREO_640x480;
