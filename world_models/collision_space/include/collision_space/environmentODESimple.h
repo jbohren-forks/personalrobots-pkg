@@ -34,8 +34,8 @@
 
 /** \author Ioan Sucan */
 
-#ifndef COLLISION_SPACE_ENVIRONMENT_MODEL_ODE_
-#define COLLISION_SPACE_ENVIRONMENT_MODEL_ODE_
+#ifndef COLLISION_SPACE_ENVIRONMENT_MODEL_ODE_SIMPLE_
+#define COLLISION_SPACE_ENVIRONMENT_MODEL_ODE_SIMPLE_
 
 #include "collision_space/environment.h"
 #include <ode/ode.h>
@@ -47,18 +47,18 @@
 namespace collision_space
 {
     
-    class EnvironmentModelODE : public EnvironmentModel
+    class EnvironmentModelODESimple : public EnvironmentModel
     {
     public:
 		
-        EnvironmentModelODE(void) : EnvironmentModel()
+        EnvironmentModelODESimple(void) : EnvironmentModel()
 	{
 	    dInitODE2(0);
 	    m_space = dHashSpaceCreate(0);
 	    m_spaceBasicGeoms = dHashSpaceCreate(0);
 	}
 	
-	virtual ~EnvironmentModelODE(void)
+	virtual ~EnvironmentModelODESimple(void)
 	{
 	    freeMemory();
 	    dCloseODE();
@@ -119,105 +119,6 @@ namespace collision_space
 	void testStaticBodyCollision(void *data);
 	void testDynamicBodyCollision(void *data);
 
-	class ODECollide2
-	{
-	public:
-	    
-	    ODECollide2(dSpaceID space = NULL)
-	    {	
-		m_setup = false;
-		if (space)
-		    registerSpace(space);
-	    }
-	    
-	    ~ODECollide2(void)
-	    {
-		clear();
-	    }
-	    
-	    void registerSpace(dSpaceID space);
-	    void registerGeom(dGeomID geom);
-	    void clear(void);
-	    void setup(void);
-	    void collide(dGeomID geom, void *data, dNearCallback *nearCallback);
-	    
-	private:
-	    
-	    struct Geom
-	    {
-		dGeomID id;
-		dReal   aabb[6];
-	    };
-	    
-	    struct SortByXLow
-	    {
-		bool operator()(const Geom *a, const Geom *b) 
-		{
-		    if (a->aabb[0] < b->aabb[0])
-			return true;
-		    return false;
-		}
-	    };
-	    
-	    struct SortByYLow
-	    {
-		bool operator()(const Geom *a, const Geom *b) 
-		{
-		    if (a->aabb[2] < b->aabb[2])
-			return true;
-		    return false;
-		}
-	    };
-	    
-	    struct SortByZLow
-	    {
-		bool operator()(const Geom *a, const Geom *b) 
-		{
-		    if (a->aabb[4] < b->aabb[4])
-			return true;
-		    return false;
-		}
-	    };
-	    
-	    struct SortByXTest
-	    {
-		bool operator()(const Geom *a, const Geom *b)
-		{
-		    if (a->aabb[1] < b->aabb[0])
-			return true;
-		    return false;
-		}
-	    };
-	    
-	    struct SortByYTest
-	    {
-		bool operator()(const Geom *a, const Geom *b)
-		{
-		    if (a->aabb[3] < b->aabb[2])
-			return true;
-		    return false;
-		}
-	    };
-	    
-	    struct SortByZTest
-	    {
-		bool operator()(const Geom *a, const Geom *b)
-		{
-		    if (a->aabb[5] < b->aabb[4])
-			return true;
-		    return false;
-		}
-	    };
-	    
-	    bool               m_setup;
-	    std::vector<Geom*> m_geomsX;
-	    std::vector<Geom*> m_geomsY;
-	    std::vector<Geom*> m_geomsZ;
-	    
-	    void checkColl(std::vector<Geom*>::iterator posStart, std::vector<Geom*>::iterator posEnd,
-			   Geom *g, void *data, dNearCallback *nearCallback);
-	};
-
 	struct kGeom
 	{
 	    std::vector<dGeomID>                   geom;
@@ -242,9 +143,6 @@ namespace collision_space
 	dSpaceID             m_space;
 	dSpaceID             m_spaceBasicGeoms;
 	
-	/* This is where geoms from the world (that can be cleared and recreated) are added; the space for this is m_space */
-	ODECollide2          m_collide2;
-
 	/* This is where static geoms from the world (that are not cleared) are added; the space for this is m_spaceBasicGeoms */
 	std::vector<dGeomID> m_basicGeoms;
 	

@@ -9,6 +9,7 @@ set(CMAKE_BUILD_TYPE Release)
 rospack_add_library(collision_space src/collision_space/output.cpp
                                     src/collision_space/bodies.cpp
 				    src/collision_space/environment.cpp
+				    src/collision_space/environmentODESimple.cpp
 				    src/collision_space/environmentODE.cpp)	
 rospack_link_boost(collision_space thread)
 
