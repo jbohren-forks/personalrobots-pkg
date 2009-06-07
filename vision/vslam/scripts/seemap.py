@@ -41,10 +41,6 @@ import vop
 import sys
 
 import visual_odometry as VO
-import Image as Image
-import ImageChops as ImageChops
-import ImageDraw as ImageDraw
-import ImageFilter as ImageFilter
 
 import random
 import unittest
@@ -52,10 +48,7 @@ import math
 import copy
 import pickle
 
-from stereo import DenseStereoFrame, SparseStereoFrame
-from visualodometer import VisualOdometer, Pose, DescriptorSchemeCalonder, DescriptorSchemeSAD, FeatureDetectorFast, FeatureDetector4x4, FeatureDetectorStar, FeatureDetectorHarris
 from skeleton import Skeleton
-from reader import reader
 
 from math import *
 
@@ -67,7 +60,7 @@ stereo_cam = camera.Camera((389.0, 389.0, 89.23 * 1e-3, 323.42, 323.42, 274.95))
 
 def render(filename, color, theta, dest):
   skel = Skeleton(stereo_cam)
-  skel.load(filename)
+  skel.load(filename, load_PR = False)
   skel.optimize()
   skel.optimize()
 
@@ -77,7 +70,7 @@ def render(filename, color, theta, dest):
   ylim = pylab.ylim()
   xrange = xlim[1] - xlim[0]
   yrange = ylim[1] - ylim[0]
-  r = max(xrange, yrange) * 0.48
+  r = max(xrange, yrange) * 0.5 # 0.32
   mid = sum(xlim) / 2
   pylab.xlim(mid - r, mid + r)
   mid = sum(ylim) / 2
@@ -88,6 +81,7 @@ if len(sys.argv) > 1:
   pylab.legend()
   pylab.savefig("foo.eps")
   pylab.show()
+  sys.exit(0)
 
 if False:
   fig = pylab.figure(figsize=(10,10), linewidth = 0.0)
@@ -118,7 +112,7 @@ if False:
   pylab.savefig("ABCDEF.eps")
   pylab.show()
 
-if True:
+if False:
   fig = pylab.figure(figsize=(10,10), linewidth = 0.0)
 
   s = fig.add_subplot(221)
@@ -142,3 +136,72 @@ if True:
   #pylab.legend()
   pylab.savefig("BCDE.eps")
   pylab.show()
+
+if False:
+  fig = pylab.figure(figsize=(10,10), linewidth = 0.0)
+
+  im = Image.open("versailles.png").convert("L")
+  mpp = 20. / (489-387) # meters per pixel
+  imx = im.size[0] * mpp
+  imy = im.size[1] * mpp
+
+  pylab.imshow(numpy.fromstring(im.tostring(), numpy.uint8).reshape(im.size[1],im.size[0]), cmap=pylab.cm.gray, extent = (0, imx, 0, imy), interpolation = 'nearest')
+
+  s = fig.add_subplot(111)
+  s.set_position( [ 0.05, 0.05, 0.90, 0.90 ] )
+  #s.set_position( [ 0.0, 0.0, 1.00, 1.00 ] )
+  def xform(xs, ys):
+    scale = 1.12
+    xs *= scale
+    ys *= scale
+
+    f = math.pi * 0.36
+    xp = xs * cos(f) - ys * sin(f)
+    yp = ys * cos(f) + xs * sin(f)
+    return (xp + 141,yp + 99.8)
+
+  render("versailles_star500", "#00FF00", xform, "versailles.eps")
+
+  pylab.savefig("versailles.eps")
+  pylab.show()
+
+if True:
+  fig = pylab.figure(figsize=(10,10), linewidth = 0.0)
+
+  edges, pts, node_labels = pickle.load(open("carson/optimized.pickle"))
+  # uniq_l is unique labels
+  uniq_l = sorted(set(node_labels.values()))
+
+  # labs maps labels to sets of points
+  labs = dict([ (l,set([id for (id,lab) in node_labels.items() if lab == l])) for l in uniq_l])
+
+  cols = dict(zip(uniq_l, [ 'green', 'red', 'magenta', 'cyan', 'darkorange', 'brown', 'darkolivegreen']))
+
+  for i,l in enumerate(labs):
+    ps = [ pts[idx] for idx in labs[l] ]
+    pylab.scatter([x for (x,y) in ps], [y for (x,y) in ps], color = cols[l], label = l.split('/')[-3])
+
+  for (f0,f1) in edges:
+    # This expression is 1 if the nodes are consecutive
+    # abs(ordered.index(f0) - ordered.index(f1))
+    p0 = pts[f0]
+    p1 = pts[f1]
+    p0c = cols[node_labels[f0]]
+    p1c = cols[node_labels[f1]]
+    if p0c == p1c:
+      color = p0c
+    else:
+      color = 'b:'
+    pylab.plot((p0[0], p1[0]), (p0[1], p1[1]), color, linewidth=2)
+
+  if 1:
+    origin = (512393.091458, 4277322.654691)
+    gps = []
+    for l in open("/u/prdata/vslam_data/FtCarson/2007.08/2007.08.29/course3-DTED4-run1/JPL_course3-DTED4-run1_Wed_Aug_29_13.34.43_2007_traj"):
+      f = l.split()
+      gps.append((float(f[5]), float(f[6])))
+    pylab.plot([x-origin[0] for (x,y) in gps], [y-origin[1] for (x,y) in gps])
+
+  pylab.legend()
+  pylab.show()
+  
