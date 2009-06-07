@@ -41,11 +41,9 @@ void collision_space::EnvironmentModel::setVerbose(bool verbose)
     m_verbose = verbose;
 }
 
-unsigned int collision_space::EnvironmentModel::addRobotModel(const boost::shared_ptr<planning_models::KinematicModel> &model, const std::vector<std::string> &links, double scale, double padding)
+void collision_space::EnvironmentModel::addRobotModel(const boost::shared_ptr<planning_models::KinematicModel> &model, const std::vector<std::string> &links, double scale, double padding)
 {
-    unsigned int pos = m_models.size();
-    m_models.push_back(model);
-    return pos;
+    m_robotModel = model;
 }
 
 void collision_space::EnvironmentModel::lock(void)
@@ -66,23 +64,4 @@ void collision_space::EnvironmentModel::setSelfCollision(bool selfCollision)
 bool collision_space::EnvironmentModel::getSelfCollision(void) const
 {
     return m_selfCollision;
-}
-
-
-unsigned int collision_space::EnvironmentModel::getModelCount(void) const
-{
-    return m_models.size();    
-}
-
-int collision_space::EnvironmentModel::getModelID(const std::string& robot_name) const
-{
-    for (unsigned int i = 0 ; i < m_models.size() ; ++i)
-	if (m_models[i]->getModelName() == robot_name)
-	    return i;
-    return -1;
-}
-
-boost::shared_ptr<planning_models::KinematicModel> collision_space::EnvironmentModel::getRobotModel(unsigned int model_id) const
-{
-    return m_models[model_id];
 }

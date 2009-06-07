@@ -290,7 +290,7 @@ namespace kinematic_planning
 	    {
 		/* set the pose of the whole robot */
 		psetup->model->kmodel->computeTransforms(&start_state.vals[0]);
-		psetup->model->collisionSpace->updateRobotModel(psetup->model->collisionSpaceID);
+		psetup->model->collisionSpace->updateRobotModel();
 		
 		/* extract the components needed for the start state of the desired group */
 		for (unsigned int i = 0 ; i < dim ; ++i)

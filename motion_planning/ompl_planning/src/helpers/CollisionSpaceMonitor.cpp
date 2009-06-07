@@ -54,8 +54,7 @@ void kinematic_planning::CollisionSpaceMonitor::collisionSpaceSubscribe(void)
 void kinematic_planning::CollisionSpaceMonitor::attachObjectCallback(const robot_msgs::AttachedObjectConstPtr &attachedObject)
 {
     m_collisionSpace->lock();
-    int model_id = m_collisionSpace->getModelID(attachedObject->robot_name);
-    planning_models::KinematicModel::Link *link = model_id >= 0 ? m_kmodel->getLink(attachedObject->link_name) : NULL;
+    planning_models::KinematicModel::Link *link = m_kmodel->getLink(attachedObject->link_name);
     
     if (link)
     {	
@@ -89,7 +88,7 @@ void kinematic_planning::CollisionSpaceMonitor::attachObjectCallback(const robot
 	}
 	
 	// update the collision model
-	m_collisionSpace->updateAttachedBodies(model_id);
+	m_collisionSpace->updateAttachedBodies();
 	ROS_INFO("Link '%s' on '%s' has %d objects attached", attachedObject->link_name.c_str(), attachedObject->robot_name.c_str(), n);
     }
     else
@@ -102,11 +101,7 @@ void kinematic_planning::CollisionSpaceMonitor::attachObjectCallback(const robot
 bool kinematic_planning::CollisionSpaceMonitor::setCollisionState(motion_planning_srvs::CollisionCheckState::Request &req, motion_planning_srvs::CollisionCheckState::Response &res)
 {
     m_collisionSpace->lock();
-    int model_id = m_collisionSpace->getModelID(req.robot_name);
-    if (model_id >= 0)
-	res.value = m_collisionSpace->setCollisionCheck(model_id, req.link_name, req.value ? true : false);
-    else
-	res.value = -1;
+    res.value = m_collisionSpace->setCollisionCheck(req.link_name, req.value ? true : false);
     m_collisionSpace->unlock();
     if (res.value == -1)
 	ROS_WARN("Unable to change collision checking state for link '%s' on '%s'", req.link_name.c_str(), req.robot_name.c_str());

@@ -127,12 +127,12 @@ protected:
     {
 	CollisionSpaceMonitor::stateUpdate();
 
-	if (m_collisionSpace && m_collisionSpace->getModelCount() == 1)
+	if (m_collisionSpace)
 	{
 	    m_collisionSpace->lock();
 	    m_kmodel->computeTransforms(m_robotState->getParams());
-	    m_collisionSpace->updateRobotModel(0);
-	    bool invalid = m_collisionSpace->isCollision(0);
+	    m_collisionSpace->updateRobotModel();
+	    bool invalid = m_collisionSpace->isCollision();
 	    m_collisionSpace->unlock();
 	    std_msgs::Byte msg;
 	    msg.data = invalid ? 0 : 1;

@@ -44,10 +44,10 @@ void planning_environment::CollisionModels::loadCollision(void)
     if (urdf_.get() && kmodel_.get())
     {
 	ode_collision_model_->lock();
-	unsigned int cid = ode_collision_model_->addRobotModel(kmodel_, collision_check_links_, scale_, padd_);
+	ode_collision_model_->addRobotModel(kmodel_, collision_check_links_, scale_, padd_);
 	for (unsigned int i = 0 ; i < self_collision_check_groups_.size() ; ++i)
-	    ode_collision_model_->addSelfCollisionGroup(cid, self_collision_check_groups_[i]);
-	ode_collision_model_->updateRobotModel(cid);
+	    ode_collision_model_->addSelfCollisionGroup(self_collision_check_groups_[i]);
+	ode_collision_model_->updateRobotModel();
 	ode_collision_model_->unlock();
     }
 }

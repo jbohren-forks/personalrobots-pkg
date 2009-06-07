@@ -155,11 +155,11 @@ protected:
 	m_kmodel->computeTransforms(m_robotState->getParams());
 
 	// ask the collision space to look at the updates
-	m_collisionSpace->updateRobotModel(0);
+	m_collisionSpace->updateRobotModel();
 	
 	// get the first contact point
 	std::vector<collision_space::EnvironmentModel::Contact> contacts;
-	m_collisionSpace->getCollisionContacts(0, contacts, 1);
+	m_collisionSpace->getCollisionContacts(contacts, 1);
 	
 	if (contacts.size() > 0)
 	{

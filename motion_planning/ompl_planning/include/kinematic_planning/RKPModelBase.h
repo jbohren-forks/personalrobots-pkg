@@ -51,8 +51,7 @@ namespace kinematic_planning
     public:
 	RKPModelBase(void)
 	{
-	    groupID          = -1;
-	    collisionSpaceID = 0;
+	    groupID = -1;
 	}
 	
 	virtual ~RKPModelBase(void)
@@ -61,7 +60,6 @@ namespace kinematic_planning
 	
 	boost::mutex                                         lock;
 	boost::shared_ptr<collision_space::EnvironmentModel> collisionSpace;
-	unsigned int                                         collisionSpaceID;
 	boost::shared_ptr<planning_models::KinematicModel>   kmodel;
 	std::string                                          groupName;
 	int                                                  groupID;

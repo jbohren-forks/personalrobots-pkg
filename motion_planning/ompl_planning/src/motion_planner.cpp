@@ -499,7 +499,6 @@ public:
 
 	/* set the data for the model */
 	RKPModel *model = new RKPModel();
-	model->collisionSpaceID = 0;
 	model->collisionSpace = m_collisionSpace;
         model->kmodel = m_kmodel;
 	model->groupName = m_kmodel->getModelName();
@@ -515,7 +514,6 @@ public:
 	for (unsigned int i = 0 ; i < groups.size() ; ++i)
 	{
 	    RKPModel *model = new RKPModel();
-	    model->collisionSpaceID = 0;
 	    model->collisionSpace = m_collisionSpace;
 	    model->kmodel = m_kmodel;
 	    model->groupID = m_kmodel->getGroupID(groups[i]);

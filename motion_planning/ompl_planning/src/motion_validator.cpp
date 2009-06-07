@@ -163,7 +163,7 @@ public:
 	    {
 		/* set the pose of the whole robot to the current state */
 		model->kmodel->computeTransforms(m_robotState->getParams());
-		model->collisionSpace->updateRobotModel(model->collisionSpaceID);
+		model->collisionSpace->updateRobotModel();
 
 		/* extract the components needed for the start state of the desired group */
 		for (unsigned int i = 0 ; i < dim ; ++i)
@@ -229,7 +229,7 @@ public:
 	    {
 		/* set the pose of the whole robot */
 		model->kmodel->computeTransforms(&req.start_state.vals[0]);
-		model->collisionSpace->updateRobotModel(model->collisionSpaceID);
+		model->collisionSpace->updateRobotModel();
 		
 		/* extract the components needed for the start state of the desired group */
 		for (unsigned int i = 0 ; i < dim ; ++i)
@@ -281,7 +281,6 @@ public:
 
 	/* set the data for the model */
 	myModel *model = new myModel();
-	model->collisionSpaceID = 0;
 	model->collisionSpace = m_collisionSpace;
         model->kmodel = m_kmodel;
 	model->groupName = m_kmodel->getModelName();
@@ -297,7 +296,6 @@ public:
 	for (unsigned int i = 0 ; i < groups.size() ; ++i)
 	{
 	    myModel *model = new myModel();
-	    model->collisionSpaceID = 0;
 	    model->collisionSpace = m_collisionSpace;
 	    model->kmodel = m_kmodel;
 	    model->groupID = m_kmodel->getGroupID(groups[i]);

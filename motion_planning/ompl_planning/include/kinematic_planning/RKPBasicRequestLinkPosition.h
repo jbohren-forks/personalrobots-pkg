@@ -126,7 +126,7 @@ namespace kinematic_planning
 	void update(const ompl::sb::State *state) const
 	{
 	    m_model->kmodel->computeTransformsGroup(state->values, m_model->groupID);
-	    m_model->collisionSpace->updateRobotModel(m_model->collisionSpaceID);
+	    m_model->collisionSpace->updateRobotModel();
 	}    
 	
 	mutable RKPModelBase                  *m_model;

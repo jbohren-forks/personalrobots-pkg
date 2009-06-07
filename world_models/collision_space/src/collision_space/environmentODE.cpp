@@ -42,37 +42,31 @@
 
 void collision_space::EnvironmentModelODE::freeMemory(void)
 { 
-    for (unsigned int i = 0 ; i < m_modelsGeom.size() ; ++i)
-    {
-	for (unsigned int j = 0 ; j < m_modelsGeom[i].linkGeom.size() ; ++j)
-	    delete m_modelsGeom[i].linkGeom[j];
-	dSpaceDestroy(m_modelsGeom[i].space);
-    }    
+    for (unsigned int j = 0 ; j < m_modelGeom.linkGeom.size() ; ++j)
+	delete m_modelGeom.linkGeom[j];
+    if (m_modelGeom.space)
+	dSpaceDestroy(m_modelGeom.space);
     if (m_space)
 	dSpaceDestroy(m_space);
     if (m_spaceBasicGeoms)
 	dSpaceDestroy(m_spaceBasicGeoms);
 }
 
-unsigned int collision_space::EnvironmentModelODE::addRobotModel(const boost::shared_ptr<planning_models::KinematicModel> &model, const std::vector<std::string> &links, double scale, double padding)
+void collision_space::EnvironmentModelODE::addRobotModel(const boost::shared_ptr<planning_models::KinematicModel> &model, const std::vector<std::string> &links, double scale, double padding)
 {
-    unsigned int id = collision_space::EnvironmentModel::addRobotModel(model, links, scale, padding);
+    collision_space::EnvironmentModel::addRobotModel(model, links, scale, padding);
     
-    if (m_modelsGeom.size() <= id)
-    {
-	m_modelsGeom.resize(id + 1);
-	m_modelsGeom[id].space = dHashSpaceCreate(0);	
-	m_modelsGeom[id].scale = scale;
-	m_modelsGeom[id].padding = padding;
-    }
+    m_modelGeom.space = dHashSpaceCreate(0);	
+    m_modelGeom.scale = scale;
+    m_modelGeom.padding = padding;
 
     std::map<std::string, bool> exists;
     for (unsigned int i = 0 ; i < links.size() ; ++i)
 	exists[links[i]] = true;
     
-    for (unsigned int j = 0 ; j < m_models[id]->getRobotCount() ; ++j)
+    for (unsigned int j = 0 ; j < m_robotModel->getRobotCount() ; ++j)
     {
-	planning_models::KinematicModel::Robot *robot = m_models[id]->getRobot(j);
+	planning_models::KinematicModel::Robot *robot = m_robotModel->getRobot(j);
 	for (unsigned int i = 0 ; i < robot->links.size() ; ++i)
 	{
 	    /* skip this link if we have no geometry or if the link
@@ -86,19 +80,18 @@ unsigned int collision_space::EnvironmentModelODE::addRobotModel(const boost::sh
 	    kGeom *kg = new kGeom();
 	    kg->link = robot->links[i];
 	    kg->enabled = true;
-	    dGeomID g = createODEGeom(m_modelsGeom[id].space, robot->links[i]->shape, scale, padding);
+	    dGeomID g = createODEGeom(m_modelGeom.space, robot->links[i]->shape, scale, padding);
 	    assert(g);
 	    kg->geom.push_back(g);
 	    for (unsigned int k = 0 ; k < kg->link->attachedBodies.size() ; ++k)
 	    {
-		dGeomID ga = createODEGeom(m_modelsGeom[id].space, kg->link->attachedBodies[k]->shape, scale, padding);
+		dGeomID ga = createODEGeom(m_modelGeom.space, kg->link->attachedBodies[k]->shape, scale, padding);
 		assert(ga);
 		kg->geom.push_back(ga);
 	    }
-	    m_modelsGeom[id].linkGeom.push_back(kg);
+	    m_modelGeom.linkGeom.push_back(kg);
 	}
     }
-    return id;
 }
 
 dGeomID collision_space::EnvironmentModelODE::createODEGeom(dSpaceID space, planning_models::shapes::Shape *shape, double scale, double padding) const
@@ -139,12 +132,12 @@ void collision_space::EnvironmentModelODE::updateGeom(dGeomID geom, btTransform 
     dGeomSetQuaternion(geom, q);
 }
 
-void collision_space::EnvironmentModelODE::updateAttachedBodies(unsigned int model_id)
+void collision_space::EnvironmentModelODE::updateAttachedBodies(void)
 {
-    const unsigned int n = m_modelsGeom[model_id].linkGeom.size();    
+    const unsigned int n = m_modelGeom.linkGeom.size();    
     for (unsigned int i = 0 ; i < n ; ++i)
     {
-	kGeom *kg = m_modelsGeom[model_id].linkGeom[i];
+	kGeom *kg = m_modelGeom.linkGeom[i];
 	
 	/* clear previosly attached bodies */
 	for (unsigned int k = 1 ; k < kg->geom.size() ; ++k)
@@ -155,23 +148,23 @@ void collision_space::EnvironmentModelODE::updateAttachedBodies(unsigned int mod
 	const unsigned int nab = kg->link->attachedBodies.size();
 	for (unsigned int k = 0 ; k < nab ; ++k)
 	{
-	    dGeomID ga = createODEGeom(m_modelsGeom[model_id].space, kg->link->attachedBodies[k]->shape, m_modelsGeom[model_id].scale, m_modelsGeom[model_id].padding);
+	    dGeomID ga = createODEGeom(m_modelGeom.space, kg->link->attachedBodies[k]->shape, m_modelGeom.scale, m_modelGeom.padding);
 	    assert(ga);
 	    kg->geom.push_back(ga);
 	}
     }
 }
 
-void collision_space::EnvironmentModelODE::updateRobotModel(unsigned int model_id)
+void collision_space::EnvironmentModelODE::updateRobotModel(void)
 { 
-    const unsigned int n = m_modelsGeom[model_id].linkGeom.size();
+    const unsigned int n = m_modelGeom.linkGeom.size();
     
     for (unsigned int i = 0 ; i < n ; ++i)
     {
-	updateGeom(m_modelsGeom[model_id].linkGeom[i]->geom[0], m_modelsGeom[model_id].linkGeom[i]->link->globalTrans);
-	const unsigned int nab = m_modelsGeom[model_id].linkGeom[i]->link->attachedBodies.size();
+	updateGeom(m_modelGeom.linkGeom[i]->geom[0], m_modelGeom.linkGeom[i]->link->globalTrans);
+	const unsigned int nab = m_modelGeom.linkGeom[i]->link->attachedBodies.size();
 	for (unsigned int k = 0 ; k < nab ; ++k)
-	    updateGeom(m_modelsGeom[model_id].linkGeom[i]->geom[k + 1], m_modelsGeom[model_id].linkGeom[i]->link->attachedBodies[k]->globalTrans);
+	    updateGeom(m_modelGeom.linkGeom[i]->geom[k + 1], m_modelGeom.linkGeom[i]->link->attachedBodies[k]->globalTrans);
     }    
 }
 
@@ -301,9 +294,9 @@ dSpaceID collision_space::EnvironmentModelODE::getODEBasicGeomSpace(void) const
     return m_spaceBasicGeoms;
 }
 
-dSpaceID collision_space::EnvironmentModelODE::getModelODESpace(unsigned int model_id) const
+dSpaceID collision_space::EnvironmentModelODE::getModelODESpace(void) const
 {
-    return m_modelsGeom[model_id].space;    
+    return m_modelGeom.space;    
 }
 
 struct CollisionData
@@ -385,39 +378,39 @@ static void nearCallbackFn(void *data, dGeomID o1, dGeomID o2)
     }
 }
 
-bool collision_space::EnvironmentModelODE::getCollisionContacts(unsigned int model_id, std::vector<Contact> &contacts, unsigned int max_count)
+bool collision_space::EnvironmentModelODE::getCollisionContacts(std::vector<Contact> &contacts, unsigned int max_count)
 {
     CollisionData cdata;
     cdata.contacts = &contacts;
     cdata.max_contacts = max_count;
     contacts.clear();
-    testCollision(model_id, reinterpret_cast<void*>(&cdata));
+    testCollision(reinterpret_cast<void*>(&cdata));
     return cdata.collides;
 }
 
-bool collision_space::EnvironmentModelODE::isCollision(unsigned int model_id)
+bool collision_space::EnvironmentModelODE::isCollision(void)
 {
     CollisionData cdata;
-    testCollision(model_id, reinterpret_cast<void*>(&cdata));
+    testCollision(reinterpret_cast<void*>(&cdata));
     return cdata.collides;
 }
 
-void collision_space::EnvironmentModelODE::testCollision(unsigned int model_id, void *data)
+void collision_space::EnvironmentModelODE::testCollision(void *data)
 {
     CollisionData *cdata = reinterpret_cast<CollisionData*>(data);
     
     /* check self collision */
     if (m_selfCollision)
     {
-	for (int i = m_modelsGeom[model_id].selfCollision.size() - 1 ; i >= 0 && !cdata->done ; --i)
+	for (int i = m_modelGeom.selfCollision.size() - 1 ; i >= 0 && !cdata->done ; --i)
 	{
-	    const std::vector<unsigned int> &vec = m_modelsGeom[model_id].selfCollision[i];
+	    const std::vector<unsigned int> &vec = m_modelGeom.selfCollision[i];
 	    unsigned int n = vec.size();
 	    
 	    for (unsigned int j = 0 ; j < n && !cdata->done ; ++j)
 	    {
-		cdata->link1 = m_modelsGeom[model_id].linkGeom[vec[j]]->link;
-		const unsigned int njg = m_modelsGeom[model_id].linkGeom[vec[j]]->geom.size();
+		cdata->link1 = m_modelGeom.linkGeom[vec[j]]->link;
+		const unsigned int njg = m_modelGeom.linkGeom[vec[j]]->geom.size();
 		
 		for (unsigned int k = j + 1 ; k < n && !cdata->done; ++k)
 		{
@@ -426,15 +419,15 @@ void collision_space::EnvironmentModelODE::testCollision(unsigned int model_id, 
 		    // get the data anyway, we attempt to speed things
 		    // up using it.
 		    
-		    const unsigned int nkg = m_modelsGeom[model_id].linkGeom[vec[k]]->geom.size();
-		    cdata->link2 = m_modelsGeom[model_id].linkGeom[vec[k]]->link;
+		    const unsigned int nkg = m_modelGeom.linkGeom[vec[k]]->geom.size();
+		    cdata->link2 = m_modelGeom.linkGeom[vec[k]]->link;
 
 		    /* this will account for attached bodies as well */
 		    for (unsigned int jg = 0 ; jg < njg && !cdata->done; ++jg)
 			for (unsigned int kg = 0 ; kg < nkg && !cdata->done; ++kg)
 			{
-			    dGeomID g1 = m_modelsGeom[model_id].linkGeom[vec[j]]->geom[jg];
-			    dGeomID g2 = m_modelsGeom[model_id].linkGeom[vec[k]]->geom[kg];
+			    dGeomID g1 = m_modelGeom.linkGeom[vec[j]]->geom[jg];
+			    dGeomID g2 = m_modelGeom.linkGeom[vec[k]]->geom[kg];
 			    
 			    dReal aabb1[6], aabb2[6];		    
 			    dGeomGetAABB(g1, aabb1);
@@ -448,7 +441,7 @@ void collision_space::EnvironmentModelODE::testCollision(unsigned int model_id, 
 			    
 			    if (cdata->collides && m_verbose)
 				m_msg.inform("Self-collision between '%s' and '%s'\n",
-					     m_modelsGeom[model_id].linkGeom[vec[j]]->link->name.c_str(), m_modelsGeom[model_id].linkGeom[vec[k]]->link->name.c_str());
+					     m_modelGeom.linkGeom[vec[j]]->link->name.c_str(), m_modelGeom.linkGeom[vec[k]]->link->name.c_str());
 			}
 		}
 	    }
@@ -460,17 +453,17 @@ void collision_space::EnvironmentModelODE::testCollision(unsigned int model_id, 
     if (!cdata->done)
     {
 	cdata->link2 = NULL;
-	for (int i = m_modelsGeom[model_id].linkGeom.size() - 1 ; i >= 0 && !cdata->done ; --i)
+	for (int i = m_modelGeom.linkGeom.size() - 1 ; i >= 0 && !cdata->done ; --i)
 	{
 	    /* skip disabled bodies */
-	    if (!m_modelsGeom[model_id].linkGeom[i]->enabled)
+	    if (!m_modelGeom.linkGeom[i]->enabled)
 		continue;
-	    const unsigned int ng = m_modelsGeom[model_id].linkGeom[i]->geom.size();
-	    cdata->link1 = m_modelsGeom[model_id].linkGeom[i]->link;	    
+	    const unsigned int ng = m_modelGeom.linkGeom[i]->geom.size();
+	    cdata->link1 = m_modelGeom.linkGeom[i]->link;	    
 
 	    for (unsigned int ig = 0 ; ig < ng && !cdata->done ; ++ig)
 	    {
-		dGeomID g1 = m_modelsGeom[model_id].linkGeom[i]->geom[ig];
+		dGeomID g1 = m_modelGeom.linkGeom[i]->geom[ig];
 		dReal aabb1[6];
 		dGeomGetAABB(g1, aabb1);
 		for (int j = m_basicGeoms.size() - 1 ; j >= 0 ; --j)
@@ -487,7 +480,7 @@ void collision_space::EnvironmentModelODE::testCollision(unsigned int model_id, 
 		    
 		    if (cdata->collides && m_verbose)
 			m_msg.inform("Collision between static body and link '%s'\n",
-				     m_modelsGeom[model_id].linkGeom[i]->link->name.c_str());
+				     m_modelGeom.linkGeom[i]->link->name.c_str());
 		}
 	    }
 	}	
@@ -499,17 +492,17 @@ void collision_space::EnvironmentModelODE::testCollision(unsigned int model_id, 
     {	
 	cdata->link2 = NULL;
 	m_collide2.setup();
-	for (int i = m_modelsGeom[model_id].linkGeom.size() - 1 ; i >= 0 && !cdata->done ; --i)
-	    if (m_modelsGeom[model_id].linkGeom[i]->enabled)
+	for (int i = m_modelGeom.linkGeom.size() - 1 ; i >= 0 && !cdata->done ; --i)
+	    if (m_modelGeom.linkGeom[i]->enabled)
 	    {
-		const unsigned int ng = m_modelsGeom[model_id].linkGeom[i]->geom.size();
-		cdata->link1 = m_modelsGeom[model_id].linkGeom[i]->link;	    
+		const unsigned int ng = m_modelGeom.linkGeom[i]->geom.size();
+		cdata->link1 = m_modelGeom.linkGeom[i]->link;	    
 		for (unsigned int ig = 0 ; ig < ng && !cdata->done ; ++ig)
 		{
-		    m_collide2.collide(m_modelsGeom[model_id].linkGeom[i]->geom[ig], data, nearCallbackFn);
+		    m_collide2.collide(m_modelGeom.linkGeom[i]->geom[ig], data, nearCallbackFn);
 		    if (cdata->collides && m_verbose)
 			m_msg.inform("Collision between dynamic body and link '%s'\n",
-				     m_modelsGeom[model_id].linkGeom[i]->link->name.c_str());
+				     m_modelGeom.linkGeom[i]->link->name.c_str());
 		}
 	    }
     }
@@ -544,35 +537,31 @@ void collision_space::EnvironmentModelODE::clearObstacles(void)
     m_collide2.setup();
 }
 
-void collision_space::EnvironmentModelODE::addSelfCollisionGroup(unsigned int model_id, std::vector<std::string> &links)
+void collision_space::EnvironmentModelODE::addSelfCollisionGroup(std::vector<std::string> &links)
 {
-    if (model_id < m_modelsGeom.size())
+    unsigned int pos = m_modelGeom.selfCollision.size();
+    m_modelGeom.selfCollision.resize(pos + 1);
+    for (unsigned int i = 0 ; i < links.size() ; ++i)
     {
-	unsigned int pos = m_modelsGeom[model_id].selfCollision.size();
-	m_modelsGeom[model_id].selfCollision.resize(pos + 1);
-	for (unsigned int i = 0 ; i < links.size() ; ++i)
-	{
-	    for (unsigned int j = 0 ; j < m_modelsGeom[model_id].linkGeom.size() ; ++j)
-		if (m_modelsGeom[model_id].linkGeom[j]->link->name == links[i])
-		    m_modelsGeom[model_id].selfCollision[pos].push_back(j);
-	}
+	for (unsigned int j = 0 ; j < m_modelGeom.linkGeom.size() ; ++j)
+	    if (m_modelGeom.linkGeom[j]->link->name == links[i])
+		m_modelGeom.selfCollision[pos].push_back(j);
     }
+
 }
 
-int collision_space::EnvironmentModelODE::setCollisionCheck(unsigned int model_id, const std::string &link, bool state)
+int collision_space::EnvironmentModelODE::setCollisionCheck(const std::string &link, bool state)
 { 
     int result = -1;
-    if (model_id < m_modelsGeom.size())
+    for (unsigned int j = 0 ; j < m_modelGeom.linkGeom.size() ; ++j)
     {
-	for (unsigned int j = 0 ; j < m_modelsGeom[model_id].linkGeom.size() ; ++j)
+	if (m_modelGeom.linkGeom[j]->link->name == link)
 	{
-	    if (m_modelsGeom[model_id].linkGeom[j]->link->name == link)
-	    {
-		result = m_modelsGeom[model_id].linkGeom[j]->enabled ? 1 : 0;
-		m_modelsGeom[model_id].linkGeom[j]->enabled = state;
-		break;
-	    }
+	    result = m_modelGeom.linkGeom[j]->enabled ? 1 : 0;
+	    m_modelGeom.linkGeom[j]->enabled = state;
+	    break;
 	}
     }
+
     return result;    
 }

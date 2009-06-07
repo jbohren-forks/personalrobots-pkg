@@ -73,14 +73,14 @@ namespace collision_space
 	/** Return the space ID for the space in which static objects are added */
 	dSpaceID getODEBasicGeomSpace(void) const;
 
-	/** Return the space ID for the space in which the particular model is instanciated */
-	dSpaceID getModelODESpace(unsigned int model_id) const;
+	/** Return the space ID for the space in which the robot model is instanciated */
+	dSpaceID getModelODESpace(void) const;
 	
 	/** Get the list of contacts (collisions) */
-	virtual bool getCollisionContacts(unsigned int model_id, std::vector<Contact> &contacts, unsigned int max_count = 1);
+	virtual bool getCollisionContacts(std::vector<Contact> &contacts, unsigned int max_count = 1);
 
 	/** Check if a model is in collision */
-	virtual bool isCollision(unsigned int model_id);
+	virtual bool isCollision(void);
 	
 	/** Remove all obstacles from collision model */
 	virtual void clearObstacles(void);
@@ -97,24 +97,24 @@ namespace collision_space
 	    bodies (multiplicative factor). The padding can be used to
 	    increase or decrease the robot's bodies with by an
 	    additive term */
-	virtual unsigned int addRobotModel(const boost::shared_ptr<planning_models::KinematicModel> &model, const std::vector<std::string> &links, double scale = 1.0, double padding = 0.0);
+	virtual void addRobotModel(const boost::shared_ptr<planning_models::KinematicModel> &model, const std::vector<std::string> &links, double scale = 1.0, double padding = 0.0);
 
 	/** Update the positions of the geometry used in collision detection */
-	virtual void updateRobotModel(unsigned int model_id);
+	virtual void updateRobotModel(void);
 
 	/** Update the set of bodies that are attached to the robot (re-creates them) */
-	virtual void updateAttachedBodies(unsigned int model_id);
+	virtual void updateAttachedBodies(void);
 
 	/** Add a group of links to be checked for self collision */
-	virtual void addSelfCollisionGroup(unsigned int model_id, std::vector<std::string> &links);
+	virtual void addSelfCollisionGroup(std::vector<std::string> &links);
 
 	/** Enable/Disable collision checking for specific links. Return the previous value of the state (1 or 0) if succesful; -1 otherwise */
-	virtual int setCollisionCheck(unsigned int model_id, const std::string &link, bool state);
+	virtual int setCollisionCheck(const std::string &link, bool state);
 	
     protected:
 	
 	/** Internal function for collision detection */
-	void testCollision(unsigned int model_id, void *data);
+	void testCollision(void *data);
 	
 	class ODECollide2
 	{
@@ -235,15 +235,15 @@ namespace collision_space
 	void    updateGeom(dGeomID geom, btTransform &pose) const;	
 	void    freeMemory(void);	
 	
-	std::vector<ModelInfo> m_modelsGeom;
-	dSpaceID               m_space;
-	dSpaceID               m_spaceBasicGeoms;
+	ModelInfo            m_modelGeom;
+	dSpaceID             m_space;
+	dSpaceID             m_spaceBasicGeoms;
 	
 	/* This is where geoms from the world (that can be cleared and recreated) are added; the space for this is m_space */
-	ODECollide2            m_collide2;
+	ODECollide2          m_collide2;
 
 	/* This is where static geoms from the world (that are not cleared) are added; the space for this is m_spaceBasicGeoms */
-	std::vector<dGeomID>   m_basicGeoms;
+	std::vector<dGeomID> m_basicGeoms;
 	
     };
 }

@@ -59,9 +59,9 @@ namespace kinematic_planning
 	{
 	    m_model->kmodel->lock();
 	    m_model->kmodel->computeTransformsGroup(static_cast<const ompl::sb::State*>(state)->values, m_model->groupID);
-	    m_model->collisionSpace->updateRobotModel(m_model->collisionSpaceID);
+	    m_model->collisionSpace->updateRobotModel();
 	    
-	    bool valid = !m_model->collisionSpace->isCollision(m_model->collisionSpaceID);
+	    bool valid = !m_model->collisionSpace->isCollision();
 	    
 	    if (valid)
 		valid = m_kce.decide();
