@@ -124,7 +124,7 @@ namespace planning_environment
 	    return self_see_links_;
 	}
 
-	const std::vector< std::vector<std::string> > &getSelfCollisionGroups(void) const
+	const std::vector< std::pair < std::vector<std::string>, std::vector<std::string> > > &getSelfCollisionGroups(void) const
 	{
 	    return self_collision_check_groups_;
 	}
@@ -153,7 +153,7 @@ namespace planning_environment
 	
 	void getSelfSeeLinks(std::vector<std::string> &links);
 	void getCollisionCheckLinks(std::vector<std::string> &links);
-	void getSelfCollisionGroups(std::vector< std::vector<std::string> > &groups);
+	void getSelfCollisionGroups(std::vector< std::pair < std::vector<std::string>, std::vector<std::string> > > &groups);
 	
 
 	ros::NodeHandle                                    nh_;
@@ -166,7 +166,8 @@ namespace planning_environment
 	std::map< std::string, std::vector<std::string> >  planning_groups_;
 	std::vector<std::string>                           self_see_links_;
 	std::vector<std::string>                           collision_check_links_;
-	std::vector< std::vector<std::string> >            self_collision_check_groups_;
+	std::vector< std::pair < std::vector<std::string>, std::vector<std::string> > >
+	                                                   self_collision_check_groups_;
 
     };
     

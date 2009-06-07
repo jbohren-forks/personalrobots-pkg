@@ -5,10 +5,6 @@ group_list:
   base
   left_arm
   right_arm
-  arms
-  base_left_arm
-  base_right_arm
-  base_arms
 
 ## the definition of each group
 groups:
@@ -17,7 +13,7 @@ groups:
     links:
       base_link
     planner_configs:
-      RRTConfig1 SBLConfig1
+      RRTConfig1 LazyRRTConfig1 SBLConfig1 KPIECEConfig1
 
   left_arm:
     links:
@@ -31,7 +27,7 @@ groups:
       l_wrist_flex_link
       l_wrist_roll_link
     planner_configs:
-      RRTConfig2 SBLConfig2
+      RRTConfig2 SBLConfig2 KPIECEConfig2l
 
   right_arm:
     links:
@@ -45,10 +41,11 @@ groups:
       r_wrist_flex_link
       r_wrist_roll_link
     planner_configs:
-      RRTConfig2 SBLConfig2
+      RRTConfig2 SBLConfig2 KPIECEConfig2r
       
 ## the planner configurations; each config must have a type, which specifies
-## the planner to be used; other parameters can be specified as well
+## the planner to be used; other parameters can be specified as well, depending 
+## on the planner
 
 planner_configs:
   
@@ -56,8 +53,18 @@ planner_configs:
     type: RRT
     range: 0.75
 
+  LazyRRTConfig1:
+    type: LazyRRT
+    range: 0.75
+
   SBLConfig1:
     type: SBL
+    projection: 0 1
+    celldim: 1 1
+    range: 0.5
+    
+  KPIECEConfig1:
+    type: KPIECE
     projection: 0 1
     celldim: 1 1
     range: 0.5
@@ -71,4 +78,13 @@ planner_configs:
     projection: 5 6
     celldim: 0.1 0.1
   
-    
+  KPIECEConfig2l:
+    type: KPIECE
+    projection: link l_wrist_roll_link
+    celldim: 0.1 0.1 0.1
+
+  KPIECEConfig2r:
+    type: KPIECE
+    projection: link r_wrist_roll_link
+    celldim: 0.1 0.1 0.1
+  

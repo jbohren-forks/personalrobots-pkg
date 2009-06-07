@@ -167,7 +167,7 @@ void planning_environment::RobotModels::getCollisionCheckLinks(std::vector<std::
     }
 }
 
-void planning_environment::RobotModels::getSelfCollisionGroups(std::vector< std::vector<std::string> > &groups)
+void planning_environment::RobotModels::getSelfCollisionGroups(std::vector< std::pair < std::vector<std::string>, std::vector<std::string> > > &groups)
 {
     std::string group_list;
     nh_.param(description_ + "_collision/self_collision_groups", group_list, std::string(""));
@@ -179,21 +179,40 @@ void planning_environment::RobotModels::getSelfCollisionGroups(std::vector< std:
 	group_list_stream >> name;
 	if (name.size() == 0)
 	    continue;
-	nh_.param(description_ + "_collision/" + name, group_elems, std::string(""));	
-	std::stringstream group_elems_stream(group_elems);
-	std::vector<std::string> this_group;
-	while (group_elems_stream.good() && !group_elems_stream.eof())
+	
+	std::pair < std::vector<std::string>, std::vector<std::string> > this_group;
+	
+	// read part 'a'
+	nh_.param(description_ + "_collision/" + name + "/a", group_elems, std::string(""));
+	std::stringstream group_elems_stream_a(group_elems);
+	while (group_elems_stream_a.good() && !group_elems_stream_a.eof())
 	{
 	    std::string link_name;
-	    group_elems_stream >> link_name;
+	    group_elems_stream_a >> link_name;
 	    if (link_name.size() == 0)
 		continue;
 	    if (urdf_->getLink(link_name))
-		this_group.push_back(link_name);
+		this_group.first.push_back(link_name);
 	    else
 		ROS_ERROR("Unknown link: '%s'", link_name.c_str());
 	}
-	if (this_group.size() > 0)
+	
+	// read part 'b'
+	nh_.param(description_ + "_collision/" + name + "/b", group_elems, std::string(""));
+	std::stringstream group_elems_stream_b(group_elems);
+	while (group_elems_stream_b.good() && !group_elems_stream_b.eof())
+	{
+	    std::string link_name;
+	    group_elems_stream_b >> link_name;
+	    if (link_name.size() == 0)
+		continue;
+	    if (urdf_->getLink(link_name))
+		this_group.second.push_back(link_name);
+	    else
+		ROS_ERROR("Unknown link: '%s'", link_name.c_str());
+	}
+	
+	if (this_group.first.size() > 0 && this_group.second.size() > 0)
 	    groups.push_back(this_group);
     }
 }

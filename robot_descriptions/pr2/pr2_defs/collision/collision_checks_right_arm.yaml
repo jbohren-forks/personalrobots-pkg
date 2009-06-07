@@ -22,69 +22,36 @@ collision_links:
   r_gripper_l_finger_tip_link
   r_gripper_r_finger_tip_link
 
-## self collision is performed between groups of links, usually pairs  
-self_collision_groups: scg1 scg2 scg3 scg4 scg5 scg6
+## self collision is performed between groups of links
+self_collision_groups: scg_r
 
-scg1:
-  r_forearm_link
-  base_link
-
-scg2:
-  r_gripper_palm_link
-  base_link
-
-scg3:
-  r_gripper_l_finger_link
-  base_link
-
-scg4:
-  r_gripper_r_finger_link
-  base_link
-
-scg5:
-  r_gripper_l_finger_tip_link
-  base_link
-
-scg6:
-  r_gripper_r_finger_tip_link
-  base_link
-
+## -- for right arm; self-collision if any link in 'a' collides with some link in 'b'
+scg_r:
+  a: r_forearm_link r_gripper_palm_link r_gripper_l_finger_link r_gripper_r_finger_link r_gripper_l_finger_tip_link r_gripper_r_finger_tip_link
+  b: base_link torso_lift_link laser_tilt_mount_link head_tilt_link
 
 ## list of links that the robot can see with its sensors (used to remove 
 ## parts of the robot from scanned data)
 self_see:
   r_upper_arm_link
-  l_upper_arm_link
-  l_upper_arm_roll_link
   r_upper_arm_roll_link
-  l_elbow_flex_link
   r_elbow_flex_link
   r_forearm_link
-  l_forearm_link
-  l_forearm_roll_link
   r_forearm_roll_link
-  l_wrist_flex_link
   r_wrist_flex_link
-  l_wrist_roll_link
   r_wrist_roll_link
-  l_gripper_l_finger_link
-  l_gripper_l_finger_tip_link
-  l_gripper_r_finger_link
-  l_gripper_r_finger_tip_link
   r_gripper_l_finger_link
   r_gripper_l_finger_tip_link
   r_gripper_r_finger_link
   r_gripper_r_finger_tip_link
   r_shoulder_pan_link
   r_shoulder_lift_link
-  l_shoulder_pan_link
-  l_shoulder_lift_link
   torso_lift_link
   base_link
   
 
 ## The padding to be added for the body parts the robot can see
-self_see_padd: 0.0
+self_see_padd: 0.1
 
 ## The scaling to be considered for the body parts the robot can see
 self_see_scale: 1.0

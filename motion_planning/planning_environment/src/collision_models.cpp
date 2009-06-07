@@ -45,8 +45,17 @@ void planning_environment::CollisionModels::loadCollision(void)
     {
 	ode_collision_model_->lock();
 	ode_collision_model_->addRobotModel(kmodel_, collision_check_links_, scale_, padd_);
+
+	// form all pairs of links that can collide and add them as self-collision groups
 	for (unsigned int i = 0 ; i < self_collision_check_groups_.size() ; ++i)
-	    ode_collision_model_->addSelfCollisionGroup(self_collision_check_groups_[i]);
+	    for (unsigned int g1 = 0 ; g1 < self_collision_check_groups_[i].first.size() ; ++g1)
+		for (unsigned int g2 = 0 ; g2 < self_collision_check_groups_[i].second.size() ; ++g2)
+		{
+		    std::vector<std::string> scg;
+		    scg.push_back(self_collision_check_groups_[i].first[g1]);
+		    scg.push_back(self_collision_check_groups_[i].second[g2]);
+		    ode_collision_model_->addSelfCollisionGroup(scg);
+		}
 	ode_collision_model_->updateRobotModel();
 	ode_collision_model_->unlock();
     }
