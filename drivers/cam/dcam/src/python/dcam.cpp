@@ -154,14 +154,8 @@ static PyObject *dcam_getImage(PyObject *self, PyObject *args)
 static PyObject *dcam_stop(PyObject *self, PyObject *args)
 {
   dcam_t *ps = (dcam_t*)self;
-
-  ps->dev->getImage(500);
-  StereoData *stIm = ps->dev->stIm;
-
-  int w = stIm->imWidth;
-  int h = stIm->imHeight;
-
-  return Py_BuildValue("iis#s#", w, h, stIm->imLeft->imRaw, w * h, stIm->imRight->imRaw, w * h);
+  ps->dev->stop();
+  Py_RETURN_NONE;
 }
 
 static struct PyMethodDef dcam_methods[] =
@@ -222,8 +216,8 @@ extern "C" void initdcam()
   dcam::init();
 
   dcam_Type.tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE;
+  dcam_specials();
   if (PyType_Ready(&dcam_Type) < 0)
     return;
-  dcam_specials();
   Py_InitModule("dcam", methods);
 }
