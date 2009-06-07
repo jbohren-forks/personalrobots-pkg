@@ -119,7 +119,6 @@ PyObject *pgvertex(PyObject *self, PyObject *args)
   if (!PyArg_ParseTuple(args, "i", &id))
     return NULL;
   Vertex* pv = to->vertex(id);
-  printf("Vertex[%d] %p has parent %p\n", id, pv, pv->parent);
   if (pv == NULL) {
     PyErr_SetString(PyExc_TypeError, "no such vertex");
     return NULL;
