@@ -163,7 +163,7 @@ It is a simple command-line utility that repeatedly publishes the fixed-offset t
 @page faq FAQ
 
 @section debugging Common Debugging Questions 
-
+@subsection introspection Introspection Methods
  - How can I see what transforms are in the system?
 
 Use the script viewframes.py in the tf package.  By default, it listens
@@ -175,6 +175,15 @@ The --node option will query the TransformListener instance in NODE_NAME
 for its transform information.
 This will allow you to see what that TransformListener is processing.
 
+ - How can I see how fast transforms are coming in.  
+
+Use tf::tf_monitor \todo expand this or confim linking
+
+ - How can I see what a specific transform's value is?
+
+Use tf::tf_echo \todo expand this or confirm linking
+
+@subsection Extrapolation Exceptions
  - I'm seeing an ExtrapolationException which is always X seconds in
 the past.  Why?
 
@@ -185,6 +194,22 @@ different machine will be off consistently.  As new data comes in ,the
 closest data will always be the same distance away resulting in the
 constant ExtrapolationException.
 
+ - I'm seeing a very small extrapolation in the future.  Where might that come from?
+
+In a distributed system information is not available instantaneously 
+in all parts of the system.  Depending on the setup is is possible for 
+data to be available before all the transforms necessary are available.  
+The recommended way to deal with this is to use a tf::MessageNotifier.
+
+ - I'm seeing a huge (~1.2E9 second) extrapolation error.  What's up?
+
+Most likely this is a problem that part of the ROS system is running 
+on sim time, while part is running without simtime.  Make sure that all
+nodes are started while time is being published.  And set the param 
+"/using_sim_time" to true so that on startup there will not be a race 
+condition for what mode ros::Time is running in.  
+
+@subsection datatypes_questions Data Types
  - What is the difference between a tf::Transform and a tf::Pose, or
 for that matter a tf::Point and a tf::Vector3?  They look like the
 same data type.
