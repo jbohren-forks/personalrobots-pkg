@@ -70,15 +70,22 @@ static bool getVector(TiXmlElement *vector_xml, const string& field, Vector& vec
   unsigned int pos=0;
   for (unsigned int i = 0; i < pieces.size(); ++i){
     if (pieces[i] != ""){
-      if (pos >= 3) {
-        cout << "More than 3 pieces in vector" << endl; 
-        for (unsigned int i = 0; i < pieces.size(); ++i)
-          cout << i << ": '" << pieces[i] << "'" << endl;
-        return false;
-      }
-      vector(pos) = atof(pieces[i].c_str());
+      if (pos < 3)
+        vector(pos) = atof(pieces[i].c_str());
       pos++;
     }
+  }
+
+  if (pos != 3) {
+    cout << "Vector did not contain 3 pieces:" << endl; 
+    pos = 1;
+    for (unsigned int i = 0; i < pieces.size(); ++i){
+      if (pieces[i] != ""){
+        cout << "  " << pos << ": '" << pieces[i] << "'" << endl;
+        pos++;
+      }
+    }
+    return false;
   }
 
   return true;
@@ -171,7 +178,7 @@ static bool getJoint(TiXmlElement *joint_xml, Joint& joint)
     joint = Joint(Joint::None);
   }
   else{
-    cout << " - UNKNOWN JOINT TYPE " << joint_type << endl;
+    cout << "Unknown joint type '" << joint_type << "'. Using fixed joint instead" << endl;
     joint = Joint(Joint::None);
   }
 
@@ -242,7 +249,7 @@ static bool getTree(TiXmlElement *robot, Tree& tree)
     string segment_parent;
     if (!getAtribute(segment_xml->FirstChildElement("parent"), "name", segment_parent)) 
     {cout << "Segment " << segment_name << " does not have parent" << endl; return false;}
-    if (tree.getNrOfSegments() == 0){
+    if (tree.getNrOfSegments() == 0 && segment_parent != "root"){
       cout << "Adding first segment to tree. Changing parent name from " << segment_parent << " to root" << endl;
       segment_parent = "root";
     }
