@@ -18,8 +18,8 @@ monitor_batteries -t/dev/ttyUSB -p0123
 @section topic ROS topics
 
 Publishes to (name / type):
- - @b "/diagnostic" / robot_msgs::DiagnosticMessage : The standard diagnostic status message format for self reporting.  
- - @b "battery_state" / robot_msgs::BatteryState : The joules remaining in the battery pack and the current wattage.
+ - @b "/diagnostic" / diagnostic_msgs::DiagnosticMessage : The standard diagnostic status message format for self reporting.  
+ - @b "battery_state" / diagnostic_msgs::BatteryState : The joules remaining in the battery pack and the current wattage.
 
 
 @section services ROS Services
