@@ -30,7 +30,7 @@
 #include <cstdio>
 #include <portaudio.h>
 #include "ros/node.h"
-#include "robot_msgs/AudioRawStream.h"
+#include "audio_msgs/AudioRawStream.h"
 
 const static int SAMPLE_RATE = 44100; // todo: make this a parameter.
 ros::Node *g_audio_node = NULL;
@@ -44,7 +44,7 @@ static int audio_cb(const void *input, void *output,
                     const PaStreamCallbackTimeInfo *time_info,
                     PaStreamCallbackFlags status, void *user_data)
 {
-  static robot_msgs::AudioRawStream audio_msg;
+  static audio_msgs::AudioRawStream audio_msg;
   audio_msg.num_channels = 1;
   audio_msg.sample_rate = SAMPLE_RATE;
 #ifdef GRATUITOUS_DEBUGGING
@@ -94,7 +94,7 @@ int main(int argc, char **argv)
   ros::init(argc, argv);
   ros::Node n("audio_capture", ros::Node::DONT_HANDLE_SIGINT);
   g_audio_node = &n;
-  n.advertise<robot_msgs::AudioRawStream>("audio", 5);
+  n.advertise<audio_msgs::AudioRawStream>("audio", 5);
   err = Pa_OpenDefaultStream(&stream, 1, 0, paFloat32, SAMPLE_RATE, 4096,
                              audio_cb, NULL);
   if (err != paNoError)

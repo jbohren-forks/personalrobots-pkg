@@ -31,7 +31,7 @@
 #include <deque>
 #include <vector>
 #include "ros/node.h"
-#include "robot_msgs/AudioRawStream.h"
+#include "audio_msgs/AudioRawStream.h"
 #include <sndfile.h>
 
 using std::deque;
@@ -156,7 +156,7 @@ private:
   uint64_t audio_clock;
   enum { IDLE, CLIP_START, IN_CLIP } clip_state;
   float window_power;
-  robot_msgs::AudioRawStream audio_msg;
+  audio_msgs::AudioRawStream audio_msg;
   deque<float> window;
   vector<float> clip;
 };
