@@ -28,12 +28,13 @@
  */
 
 #include "tf/transform_broadcaster.h"
+#include "ros/ros.h"
 
-class testBroadcaster : public ros::Node
+class testBroadcaster 
 {
 public:
   //constructor
-  testBroadcaster() : ros::Node("broadcaster"),broadcaster(*this),count(2){};
+  testBroadcaster() : count(2){};
   //Clean up ros connections
   ~testBroadcaster() { }
 
@@ -68,7 +69,8 @@ int main(int argc, char ** argv)
   //Construct/initialize the server
   testBroadcaster myTestBroadcaster;
 
-  while(myTestBroadcaster.ok())
+  ros::NodeHandle node; //\todo replace with ros::ok() after 0.5.2 release
+  while(node.ok())//Check if a Ctrl-C or other shutdown command has been recieved
   {
       //Send some data
       myTestBroadcaster.test();

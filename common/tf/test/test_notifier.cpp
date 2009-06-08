@@ -567,7 +567,7 @@ int main(int argc, char** argv)
 	g_node->advertise<robot_msgs::PointStamped>("test_message2", 0);
 
 	g_tf = new TransformListener(*g_node);
-	g_broadcaster = new TransformBroadcaster(*g_node);
+	g_broadcaster = new TransformBroadcaster();
 
 	int ret = RUN_ALL_TESTS();
 

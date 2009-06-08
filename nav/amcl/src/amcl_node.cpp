@@ -396,7 +396,7 @@ AmclNode::AmclNode() :
                                (M_PI/12.0) * (M_PI/12.0));
 
   cloud_pub_interval.fromSec(1.0);
-  tfb_ = new tf::TransformBroadcaster(*ros::Node::instance());
+  tfb_ = new tf::TransformBroadcaster();
   tf_ = new tf::TransformListener(*ros::Node::instance());
 
   map_ = requestMap();

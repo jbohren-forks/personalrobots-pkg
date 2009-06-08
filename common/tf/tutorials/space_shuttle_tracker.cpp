@@ -36,10 +36,10 @@ class SpaceShuttleTracker
 {
 public:
   //constructor
-  SpaceShuttleTracker(ros::Node& node) : broadcaster(node),count(2){};
+  SpaceShuttleTracker() : count(2){}
   //Clean up ros connections
   ~SpaceShuttleTracker() { }
-
+  
   //A pointer to the rosTFServer class
   tf::TransformBroadcaster broadcaster;
 
@@ -83,11 +83,11 @@ private:
 int main(int argc, char ** argv)
 {
   //Initialize ROS
-  ros::init(argc, argv);
-  ros::Node node("nasa_tracking");
+  ros::init(argc, argv,"nasa_tracking");
+  ros::NodeHandle node;//\todo replace with ros::ok() when 0.5.2 is released
 
   //Construct/initialize the server
-  SpaceShuttleTracker mySpaceShuttleTracker(node);
+  SpaceShuttleTracker mySpaceShuttleTracker;
 
   while(node.ok())//Check if a Ctrl-C or other shutdown command has been recieved
   {

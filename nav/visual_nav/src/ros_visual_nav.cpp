@@ -279,7 +279,7 @@ private:
 
 // Constructor
 RosVisualNavigator::RosVisualNavigator (double exit_point_radius, uint scan_period) :
-  node_("visual_navigator"), tf_listener_(node_), tf_sender_(node_), map_received_(false),
+  node_("visual_navigator"), tf_listener_(node_), map_received_(false),
   odom_received_(false), exit_point_radius_(exit_point_radius), have_goal_(false),
   num_active_markers_(0), scan_counter_(1), scan_period_(scan_period)
 {

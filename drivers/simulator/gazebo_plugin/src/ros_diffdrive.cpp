@@ -91,7 +91,7 @@ public:
     ros::Node::instance()->advertise<deprecated_msgs::RobotBase2DOdom>("odom", 1);
    
     deprecated_msgs::RobotBase2DOdom odom;
-    tf::TransformBroadcaster tfb(*ros::Node::instance());
+    tf::TransformBroadcaster tfb;
 
     ros::Duration d; d.fromSec(0.01);
     

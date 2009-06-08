@@ -32,10 +32,9 @@
 class TransformSender
 {
 public:
-  ros::Node node_;
+  ros::NodeHandle node_;
   //constructor
   TransformSender(double x, double y, double z, double yaw, double pitch, double roll, ros::Time time, const std::string& frame_id, const std::string& parent_id) :
-    node_("transform_sender", ros::Node::ANONYMOUS_NAME),broadcaster(node_),
     transform_(btTransform(btQuaternion(yaw,pitch,roll), btVector3(x,y,z)), time, frame_id , parent_id){};
   //Clean up ros connections
   ~TransformSender() { }
@@ -59,7 +58,7 @@ private:
 int main(int argc, char ** argv)
 {
   //Initialize ROS
-  ros::init(argc, argv);
+  ros::init(argc, argv,"transform_sender", ros::init_options::AnonymousName);
 
   if(argc != 10)
     {

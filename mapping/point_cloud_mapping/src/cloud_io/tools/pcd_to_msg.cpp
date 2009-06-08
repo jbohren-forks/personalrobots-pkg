@@ -66,7 +66,7 @@ class PCDGenerator
     string file_name_, cloud_topic_;
     double rate_;
 
-    PCDGenerator (ros::Node& anode) : tf_frame_ ("base_link"), node_ (anode), broadcaster_ (anode),
+    PCDGenerator (ros::Node& anode) : tf_frame_ ("base_link"), node_ (anode), 
                                       transform_ (btTransform (btQuaternion (0, 0, 0), btVector3 (0, 0, 0)), ros::Time::now (), tf_frame_, tf_frame_)
     {
       // Maximum number of outgoing messages to be queued for delivery to subscribers = 1

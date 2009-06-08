@@ -108,7 +108,7 @@ class ErraticNode: public ros::Node
     tf::TransformBroadcaster tf;
   
     ErraticNode() : ros::Node("erratic_player"),
-		    tf(*this), watts_charging_(10), watts_unplugged_(-10), charging_threshold_(12.98)
+                    watts_charging_(10), watts_unplugged_(-10), charging_threshold_(12.98)
     {
       // libplayercore boiler plate
       player_globals_init();

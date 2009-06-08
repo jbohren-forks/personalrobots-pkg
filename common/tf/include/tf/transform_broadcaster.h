@@ -33,10 +33,17 @@
 #ifndef TF_TRANSFORMBROADCASTER_H
 #define TF_TRANSFORMBROADCASTER_H
 
-#include "ros/node.h"
 #include "tf/tf.h"
 #include "tf/tfMessage.h"
 
+//Forward declaring not working
+#include "ros/ros.h"
+/*namespace ros
+{
+class NodeHandle;
+class Publisher;
+}
+*/
 namespace tf
 {
 
@@ -48,7 +55,7 @@ namespace tf
 class TransformBroadcaster{
 public:
   /** \brief Constructor (needs a ros::Node reference) */
-  TransformBroadcaster(ros::Node& anode);
+  TransformBroadcaster();
 
   /** \brief Send a Stamped<Transform> with parent parent_id 
    * The stamped data structure includes frame_id, and time, and parent_id already.  */
@@ -59,7 +66,8 @@ public:
   
 private:
   /// Internal reference to ros::Node
-  ros::Node & node_;
+  ros::NodeHandle node_;
+  ros::Publisher publisher_;
 
   std::string tf_prefix_;
 

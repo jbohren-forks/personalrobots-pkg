@@ -436,7 +436,7 @@ AmclNode::AmclNode() :
   this->setPose(startX, startY, startTH);
 
   cloud_pub_interval.fromSec(1.0);
-  this->tf = new tf::TransformBroadcaster(*this);
+  this->tf = new tf::TransformBroadcaster();
   this->tfL = new tf::TransformListener(*this);
 
   advertise<deprecated_msgs::RobotBase2DOdom>("localizedpose",2);

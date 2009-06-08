@@ -56,7 +56,6 @@ namespace estimation
     : ros::Node(node_name),
       node_name_(node_name),
       robot_state_(*this, true),
-      odom_broadcaster_(*this),
       vo_notifier_(NULL),
       vel_desi_(2),
       vel_active_(false),

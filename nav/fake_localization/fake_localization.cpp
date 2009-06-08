@@ -93,7 +93,7 @@ public:
     {
       advertise<robot_msgs::PoseWithCovariance>("amcl_pose",1);
       advertise<robot_msgs::ParticleCloud>("particlecloud",1);
-      m_tfServer = new tf::TransformBroadcaster(*this);	
+      m_tfServer = new tf::TransformBroadcaster();	
       m_tfListener = new tf::TransformListener(*this);
       m_lastUpdate = ros::Time::now();
       

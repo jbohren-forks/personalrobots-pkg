@@ -199,8 +199,7 @@ StageNode::cmdvelReceived()
 }
 
 StageNode::StageNode(int argc, char** argv, bool gui, const char* fname) :
-  ros::Node("stageros"),
-  tf(*this)
+  ros::Node("stageros")
 {
   this->sim_time.fromSec(0.0);
   this->base_last_cmd.fromSec(0.0);

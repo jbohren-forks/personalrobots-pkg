@@ -15,7 +15,7 @@ static inline CvRect resizeRect(CvRect rect, double alpha)
 TrackerBase::TrackerBase(ros::Node &node, std::string prefix)
   : node_(node), img_(res_.image), cam_info_(res_.cam_info),
     pose_topic_name_("~" + prefix + "_pose"),
-    tf_broadcaster_(node), tf_listener_(node),
+    tf_listener_(node),
     object_frame_id_(prefix + "_pose"), K_(NULL),
     display_topic_name_("~" + prefix + "_image"),
     save_count_(0), save_prefix_(prefix)

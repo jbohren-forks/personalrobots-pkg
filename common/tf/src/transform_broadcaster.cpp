@@ -31,14 +31,14 @@
 /** \author Tully Foote */
 
 
+#include "ros/ros.h"
 #include "tf/transform_broadcaster.h"
 
 namespace tf {
 
-TransformBroadcaster::TransformBroadcaster(ros::Node& anode):
-  node_(anode)
+TransformBroadcaster::TransformBroadcaster()
 {
-  node_.advertise<tfMessage>("/tf_message", 100);
+  publisher_ = node_.advertise<tfMessage>("/tf_message", 100);
   node_.param(std::string("~tf_prefix"),tf_prefix_, std::string(""));
 };
 
@@ -50,7 +50,7 @@ void TransformBroadcaster::sendTransform(const Stamped<Transform> & transform)
   msgtf.header.frame_id = tf::remap(tf_prefix_, msgtf.header.frame_id);
   msgtf.parent_id = tf::remap(tf_prefix_, msgtf.parent_id);
   message.transforms.push_back(msgtf);
-  node_.publish("/tf_message", message);
+  publisher_.publish(message);
 } 
   
 
@@ -64,7 +64,7 @@ void TransformBroadcaster::sendTransform(const Transform & transform, const ros:
   msgtf.parent_id = remap(tf_prefix_, parent_id);
   TransformTFToMsg(transform, msgtf.transform);
   message.transforms.push_back(msgtf);
-  node_.publish("/tf_message", message);
+  publisher_.publish(message);
 }
 
 

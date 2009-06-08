@@ -30,13 +30,14 @@
 /**\author Tully Foote/tfoote at willowgarage.com */
 
 #include "tf/transform_broadcaster.h"
+#include "ros/ros.h"
 #include <cmath>
 
 class EarthTracker 
 {
 public:
   //constructor
-  EarthTracker(ros::Node& node) : broadcaster(node),count(2){};
+  EarthTracker(): count(2){};
   //Clean up ros connections
   ~EarthTracker() { }
 
@@ -64,12 +65,12 @@ private:
 int main(int argc, char ** argv)
 {
   //Initialize ROS
-  ros::init(argc, argv);
-  ros::Node node("earth_tracker");
+  ros::init(argc, argv, "earth_tracker");
 
   //Construct/initialize the server
-  EarthTracker myEarthTracker(node);
+  EarthTracker myEarthTracker;
 
+  ros::NodeHandle node; //\todo replace with ros::ok() after 0.5.2 release
   while(node.ok())//Check if a Ctrl-C or other shutdown command has been recieved
   {
     //Send the position of the earth with respect to the sun
