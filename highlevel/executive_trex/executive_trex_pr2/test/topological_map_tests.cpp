@@ -122,7 +122,7 @@ TEST(executive_trex_pr2, map_get_next_connector){
   x2.specify(8.8375);
   y2.specify(2.3125);
   ASSERT_TRUE(ce->propagate());
-  ASSERT_TRUE(connector_id.lastDomain().getSingletonValue() == 76);
+  ASSERT_TRUE(connector_id.lastDomain().getSingletonValue() == 74);
 }
 
 /**
@@ -545,12 +545,12 @@ TEST(executive_trex_pr2, map_accessor){
 
     try{
       TopologicalMapAdapter::instance()->getRegion(x, y);
-      bool valid = !TopologicalMapAdapter::instance()->isObstacle(x, y) && x < WIDTH_24 && y < HEIGHT_21;
+      bool valid = x < WIDTH_24 && y < HEIGHT_21;
       ROS_INFO_COND(!valid, "Should be on the map but isn't with (%f, %f)", x, y);
       ASSERT_TRUE(valid);
     }
     catch(...){
-      bool valid = TopologicalMapAdapter::instance()->isObstacle(x, y) || x >= WIDTH_24 || y >= HEIGHT_21;
+      bool valid = x >= WIDTH_24-1 || y >= HEIGHT_21-1;
       ROS_INFO_COND(!valid, "Should be off the map but isn't with (%f, %f)", x, y);
       ASSERT_TRUE(valid);
     }
