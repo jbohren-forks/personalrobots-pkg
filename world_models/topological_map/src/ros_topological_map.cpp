@@ -36,146 +36,79 @@
  */
 
 
-#include <topological_map/ros_topological_map.h>
+#include <topological_map/topological_map.h>
+#include <topological_map/exception.h>
+#include <topological_map/GetTopologicalMap.h>
+#include <string>
+#include <boost/foreach.hpp>
+#include <boost/program_options.hpp>
+#include <boost/bind.hpp>
+#include <boost/ref.hpp>
+#include <iostream>
 #include <fstream>
-#include "robot_srvs/StaticMap.h"
-#include "LinearMath/btMatrix3x3.h"
-
-using std::string;
+#include <sysexits.h>
+#include <ros/ros.h>
 
 namespace topological_map
 {
 
-
-void RosTopologicalMap::loadMap (void)
+bool mapService (const TopologicalMap& m, GetTopologicalMap::Request& req, GetTopologicalMap::Response& resp)
 {
-    
-  robot_srvs::StaticMap::Request req;
-  robot_srvs::StaticMap::Response resp;
-  ROS_INFO ("Requesting map... \n");
-  while (!ros::service::call("static_map", req, resp))
-  {
-    sleep(2);
-    ROS_INFO ("Request failed: trying again...\n");
-    usleep(1000000);
-  }
-  sleep(2);
-  btQuaternion q(resp.map.info.origin.orientation.x, 
-                 resp.map.info.origin.orientation.y, 
-                 resp.map.info.origin.orientation.z, 
-                 resp.map.info.origin.orientation.w) ;
-  double yaw, pitch, roll;
-  btMatrix3x3(q).getEulerZYX(yaw, pitch, roll);
-      
-  ROS_INFO ("Received a %d by %d map at %f m/pix.  Origin is %f, %f, %f.  \n", resp.map.info.width, resp.map.info.height, resp.map.info.resolution, resp.map.info.origin.position.x, resp.map.info.origin.position.y, yaw);
+  return true;
+}
 
-  num_cols_ = resp.map.info.width;
-  num_rows_ = resp.map.info.height;
-  resolution_ = resp.map.info.resolution;
+typedef boost::function<bool(GetTopologicalMap::Request&, GetTopologicalMap::Response&)> TopMapCallback;
 
-  occupancy_grid_.resize(boost::extents[num_rows_][num_cols_]);
+
+} // End namespace
+
+
+
+
+
+
+
+namespace tmap=topological_map;
+namespace po=boost::program_options;
+using std::string;
+using std::cout;
+using std::ifstream;
+using boost::bind;
+using boost::ref;
+
+
+
+int main (int argc, char** argv)
+{
+
+  string top_map_file("");
   
-  uint i = 0;
-  bool expected[255];
-  for (uint j=0; j<255; j++) expected[j]=false;
-  for (uint r=0; r<num_rows_; r++) {
-    for (uint c=0; c<num_cols_; c++) {
-      int val = resp.map.data[i++];
-      occupancy_grid_[r][c] = (val != 0);
-      if (!expected[val]) {
-        ROS_DEBUG ("Saw map cell value %d", val);
-        expected[val]=true;
-        if ((val != 0) && (val != 100) && (val != -1)) {
-          ROS_INFO ("Treating unexpected val %d in returned static map as occupied\n", val);
-        }
-      }
-    }
+  // Begin command line argument processing
+
+  po::options_description desc("Allowed options");
+  desc.add_options()
+    ("help,h", "produce help message")
+    ("topological_map,t", po::value<string>(&top_map_file), "Topological map file");
+  po::variables_map vm;
+  po::store(po::parse_command_line(argc, argv, desc), vm);
+  po::notify(vm);
+
+  if (vm.count("help") || !vm.count("topological_map")) {
+    cout << desc;
+    return 1;
   }
-  ROS_INFO ("Finished reading map");
-}
 
+  ifstream top_map_stream(top_map_file.c_str());
+  tmap::TopologicalMap m(top_map_stream, 1.0, 1e9, 1e9);
 
-
-RosTopologicalMap::RosTopologicalMap (uint bottleneck_size, uint bottleneck_width, uint bottleneck_skip, uint inflation_radius, const string& pgm_output_dir)
-{
-  loadMap();
-
-  topological_map_ = topologicalMapFromGrid(occupancy_grid_, 1.0, bottleneck_size, bottleneck_width, bottleneck_skip, inflation_radius, pgm_output_dir);
-}
-
-
-
-
-} // namespace topological_map
-
-
-
-
-
-
-
-
-void exitWithUsage(void)
-{
-  exit(EX_USAGE);
-}
-
-
-// Parse command line params and initialize node
-int main(int argc, char** argv)
-{
-  unsigned bottleneck_size=0;
-  unsigned bottleneck_skip=1;
-  unsigned bottleneck_width=1;
-  unsigned inflation_radius=0;
-  char* ppm_output_dir=0;
-
-  while (1) {
-    static struct option options[] =
-      {{"bottleneck-size", required_argument, 0, 'b'},
-       {"bottleneck-width", required_argument, 0, 'w'},
-       {"bottleneck-skip", required_argument, 0, 'k'},
-       {"inflation-radius", required_argument, 0, 'r'},
-       {"ppm-output-dir", required_argument, 0, 'p'},
-       {0, 0, 0, 0}};
-
-    int option_index=0;
-    int c = getopt_long (argc, argv, "b:w:k:r:p:", options, &option_index);
-    if (c==-1) {
-      break;
-    }
-    else {
-      switch (c) {
-      case 'b':
-        bottleneck_size=atoi(optarg);
-        break;
-      case 'k':
-        bottleneck_skip=atoi(optarg);
-        break;
-      case 'w':
-        bottleneck_width=atoi(optarg);
-        break;
-      case 'r':
-        inflation_radius=atoi(optarg);
-        break;
-      case 'p':
-        ppm_output_dir=optarg;
-        break;
-      default:
-        exitWithUsage();
-      }
-    }
-  }
+  // End command line processing
+  // Create and startup node
   
-  if (!bottleneck_size) {
-    exitWithUsage();
-  }
+  ros::init(argc, argv, "topological_map");
+  ros::NodeHandle n;
 
-  ros::init(argc, argv);
-  ros::Node node("ros_topological_map");
-  topological_map::RosTopologicalMap ros_top_map(bottleneck_size, bottleneck_width, bottleneck_skip, inflation_radius, ppm_output_dir ? string(ppm_output_dir) : string());
+  ros::ServiceServer top_map_service = n.advertiseService("topological_map", tmap::TopMapCallback(bind(tmap::mapService, ref(m), _1, _2)));
+  ros::spin();
 
   return 0;
 }
-
-

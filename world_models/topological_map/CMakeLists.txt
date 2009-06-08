@@ -4,6 +4,7 @@ include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
 set(ROS_BUILD_TYPE RelWithDebInfo)
 
 rospack(topological_map)
+genmsg()
 gensrv()
 
 rospack_add_boost_directories()
@@ -34,3 +35,7 @@ target_link_libraries(bin/visualize topological_graph)
 rospack_link_boost(bin/visualize program_options)						     
 
 # rospack_add_executable(bin/door_sensor_fusion src/door_sensor_fusion.cpp)
+
+rospack_add_executable(bin/ros_topological_map src/ros_topological_map.cpp)
+target_link_libraries(bin/ros_topological_map topological_graph)
+rospack_link_boost(bin/ros_topological_map program_options)
