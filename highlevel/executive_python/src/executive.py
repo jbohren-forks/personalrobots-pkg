@@ -49,7 +49,6 @@ from manual_charge_adapter import *
 
 class Executive:
   def __init__(self, goals, chrg_stations, navigator, batt_monitor, unstuck, manual_charger, cycle_time):
-    rospy.init_node("Executive", anonymous=True)
     self.goals = goals
     self.chrg_stations = chrg_stations
     self.navigator = navigator
@@ -97,15 +96,15 @@ class Executive:
           print "nav --> recharge"
         elif self.batt_monitor.chargeNeeded() or manual_charger.chargeRequested():
           chrg_pts = self.chrg_stations[random.randint(0, len(self.chrg_stations) - 1)]
-          self.navigator.sendGoal(chrg_pts, "map")
+          self.navigator.sendGoal(chrg_pts, "/map")
           self.state = "nav_charge"
           print "nav --> nav_charge"
         elif self.navigator.goalReached() or self.navigator.aborted() or (not self.navigator.active() and self.current_goal == None) or self.navigator.timeUp():
           self.current_goal = self.goals[random.randint(0, len(self.goals) - 1)]
-          self.navigator.sendGoal(self.current_goal, "map")
+          self.navigator.sendGoal(self.current_goal, "/map")
           print "nav --> nav"
         elif not self.navigator.active() and self.current_goal != None:
-          self.navigator.sendGoal(self.current_goal, "map")
+          self.navigator.sendGoal(self.current_goal, "/map")
           print "nav --> nav"
       elif self.state == "recharge":
         """
@@ -128,7 +127,7 @@ class Executive:
             self.batt_monitor.sendUnpluggedEmail()
             print "Sent unplugged e-mail"
             #resume the current goal
-            self.navigator.sendGoal(self.current_goal, "map")
+            self.navigator.sendGoal(self.current_goal, "/map")
             self.state = "nav"
             print "recharge --> nav"
       elif self.state == "nav_charge":
@@ -147,7 +146,7 @@ class Executive:
           print "nav_charge --> recharge"
         elif not self.navigator.active() or self.navigator.timeUp():
           chrg_pts = self.chrg_stations[random.randint(0, len(self.chrg_stations) - 1)]
-          self.navigator.sendGoal(chrg_pts, "map")
+          self.navigator.sendGoal(chrg_pts, "/map")
           print "nav_charge --> nav_charge"
     else:
       if not self.navigator.legalState():
@@ -172,6 +171,7 @@ class Executive:
 
 if __name__ == '__main__':
   try:
+    rospy.init_node("Executive", anonymous=True)
     batt_monitor = BatteryMonitorAdapter(.25, .75, "battery_state", ["watts@willowgarage.com", "eitan@willowgarage.com", "pr2-users@lists.willowgarage.com"], "pre", "/usr/sbin/sendmail")
     navigator = NavigationAdapter(30, 300, "/move_base/feedback", "/move_base/activate")
     unstuck = StuckAdapter("/base_controller/state", "/cmd_vel", 0.5) 

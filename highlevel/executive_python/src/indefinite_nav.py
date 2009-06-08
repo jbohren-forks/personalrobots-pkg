@@ -46,7 +46,6 @@ from navigation_adapter import *
 
 class IndefiniteNav:
   def __init__(self, goals, navigator, cycle_time):
-    rospy.init_node("IndefiniteNav", anonymous=True)
     self.goals = goals
     self.navigator = navigator
     self.cycle_time = cycle_time
@@ -67,10 +66,10 @@ class IndefiniteNav:
         """
         if self.navigator.goalReached() or (not self.navigator.active() and self.current_goal == None) or self.navigator.timeUp():
           self.current_goal = self.goals[random.randint(0, len(self.goals) - 1)]
-          self.navigator.sendGoal(self.current_goal, "map")
+          self.navigator.sendGoal(self.current_goal, "/map")
           print "nav --> nav"
         elif not self.navigator.active() and self.current_goal != None:
-          self.navigator.sendGoal(self.current_goal, "map")
+          self.navigator.sendGoal(self.current_goal, "/map")
           print "nav --> nav"
     else:
       if not self.navigator.legalState():
@@ -91,6 +90,7 @@ class IndefiniteNav:
 
 if __name__ == '__main__':
   try:
+    rospy.init_node("IndefiniteNav", anonymous=True)
     navigator = NavigationAdapter(30, 300, "/move_base/feedback", "/move_base/activate")
 
     goals = [
