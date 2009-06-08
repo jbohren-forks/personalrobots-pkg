@@ -1,18 +1,17 @@
 <package>
   <description brief="audio_msgs">
-
-     audio_msgs
-
+    
+    audio_msgs
+    
   </description>
-  <author>Morgan Quigley<author>
+  <author>Morgan Quigley</author>
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
   <url>http://pr.willowgarage.com/wiki/audio_msgs</url>
   <export>
     <cpp cflags="-I${prefix}/msg/cpp"/>
   </export>
-
-
+  
 </package>
 
 
