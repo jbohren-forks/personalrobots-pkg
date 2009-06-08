@@ -38,6 +38,17 @@
 #include <ros/console.h>
 #include <sstream>
 
+void planning_environment::RobotModels::reload(void)
+{
+    kmodel_.reset();
+    urdf_.reset();
+    planning_groups_.clear();
+    self_see_links_.clear();
+    collision_check_links_.clear();
+    self_collision_check_groups_.clear();
+    loadRobot();
+}
+
 void planning_environment::RobotModels::loadRobot(void)
 {
     std::string content;
@@ -46,6 +57,7 @@ void planning_environment::RobotModels::loadRobot(void)
 	urdf_ = boost::shared_ptr<robot_desc::URDF>(new robot_desc::URDF());
 	if (urdf_->loadString(content.c_str()))
 	{
+	    loaded_models_ = true;
 	    getPlanningGroups(planning_groups_);
 	    kmodel_ = boost::shared_ptr<planning_models::KinematicModel>(new planning_models::KinematicModel());
 	    kmodel_->setVerbose(false);
@@ -54,7 +66,9 @@ void planning_environment::RobotModels::loadRobot(void)
 	    // make sure the kinematic model is in its own frame
 	    // (remove all transforms caused by planar or floating
 	    // joints)
-	    kmodel_->reduceToRobotFrame();
+	    if (!kmodel_->reduceToRobotFrame())
+		ROS_ERROR("Bad things happen with setting the robot(s) in thir frame. It is possible differences between frames will cause collisions when planning.");
+	    
 	    kmodel_->defaultState();
 
 	    getCollisionCheckLinks(collision_check_links_);	

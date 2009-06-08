@@ -81,6 +81,7 @@ void kinematic_planning::KinematicStateMonitor::waitForState(void)
     while (m_nodeHandle.ok() && (m_haveMechanismState ^ loadedRobot()))
     {
 	ROS_INFO("Waiting for mechanism state ...");	    
+	ros::spinOnce();
 	ros::Duration().fromSec(0.05).sleep();
     }
     ROS_INFO("Mechanism state received!");
@@ -88,9 +89,12 @@ void kinematic_planning::KinematicStateMonitor::waitForState(void)
 
 void kinematic_planning::KinematicStateMonitor::waitForPose(void)
 {
-    ROS_INFO("Waiting for robot pose ...");	    
     while (m_nodeHandle.ok() && (m_haveBasePos ^ loadedRobot()))
+    {
+	ROS_INFO("Waiting for robot pose ...");
+	ros::spinOnce();
 	ros::Duration().fromSec(0.05).sleep();
+    }
     ROS_INFO("Robot pose received!");
 }
 

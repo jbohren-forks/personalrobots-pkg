@@ -1,0 +1,137 @@
+/*********************************************************************
+* Software License Agreement (BSD License)
+* 
+*  Copyright (c) 2008, Willow Garage, Inc.
+*  All rights reserved.
+* 
+*  Redistribution and use in source and binary forms, with or without
+*  modification, are permitted provided that the following conditions
+*  are met:
+* 
+*   * Redistributions of source code must retain the above copyright
+*     notice, this list of conditions and the following disclaimer.
+*   * Redistributions in binary form must reproduce the above
+*     copyright notice, this list of conditions and the following
+*     disclaimer in the documentation and/or other materials provided
+*     with the distribution.
+*   * Neither the name of the Willow Garage nor the names of its
+*     contributors may be used to endorse or promote products derived
+*     from this software without specific prior written permission.
+* 
+*  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+*  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+*  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+*  FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+*  COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+*  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+*  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+*  LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+*  CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+*  LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+*  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+*  POSSIBILITY OF SUCH DAMAGE.
+*********************************************************************/
+
+/** \author Ioan Sucan */
+
+#ifndef PLANNING_ENVIRONMENT_COLLISION_SPACE_MONITOR_
+#define PLANNING_ENVIRONMENT_COLLISION_SPACE_MONITOR_
+
+#include "planning_environment/collision_models.h"
+#include "planning_environment/kinematic_model_state_monitor.h"
+
+#include <tf/transform_listener.h>
+#include <robot_msgs/CollisionMap.h>
+#include <robot_msgs/AttachedObject.h>
+
+namespace planning_environment
+{
+
+    /** @b CollisionSpaceMonitor is a class which in addition to being aware of a robot model,
+	is also aware of a collision space.
+       
+	<hr>
+	
+	@section topic ROS topics
+	
+	Subscribes to (name/type):
+	- @b "collision_map"/CollisionMap : data describing the 3D environment
+	- @b "attach_object"/AttachedObject : data describing an object to be attached to a link
+    */
+    class CollisionSpaceMonitor : public KinematicModelStateMonitor
+    {
+    public:
+	
+	CollisionSpaceMonitor(CollisionModels *cm) : KinematicModelStateMonitor(static_cast<RobotModels*>(cm), true),
+						     tf_(*ros::Node::instance())
+	{
+	    cm_ = cm;
+	    setupCSM();
+	}
+	
+	virtual ~CollisionSpaceMonitor(void)
+	{
+	}
+
+	collision_space::EnvironmentModel* getEnvironmentModel(void) const
+	{
+	    return collisionSpace_;
+	}
+	
+	CollisionModels* getCollisionModels(void) const
+	{
+	    return cm_;
+	}
+	
+	/** Define a callback for before updating a map */
+	void setOnBeforeMapUpdateCallback(const boost::function<void(const robot_msgs::CollisionMapConstPtr)> &callback)
+	{
+	    onBeforeMapUpdate_ = callback;
+	}
+
+	/** Define a callback for after updating a map */
+	void setOnAfterMapUpdateCallback(const boost::function<void(const robot_msgs::CollisionMapConstPtr)> &callback)
+	{
+	    onAfterMapUpdate_ = callback;
+	}
+
+	/** Define a callback for after updating a map */
+	void setOnAfterAttachBodyCallback(const boost::function<void(planning_models::KinematicModel::Link*)> &callback)
+	{
+	    onAfterAttachBody_ = callback;
+	}
+
+	bool haveMap(void) const
+	{
+	    return haveMap_;
+	}
+	
+	/** Return true if a map update has been received in the last sec seconds */
+	bool isMapUpdated(double sec) const;
+	
+    protected:
+	
+	void setupCSM(void);
+	void collisionMapCallback(const robot_msgs::CollisionMapConstPtr &collisionMap);
+	void attachObjectCallback(const robot_msgs::AttachedObjectConstPtr &attachedObject);
+	
+	tf::TransformListener                                          tf_;
+	CollisionModels                                               *cm_;
+	collision_space::EnvironmentModel                             *collisionSpace_;
+	
+	bool                                                           haveMap_;
+	ros::Time                                                      lastMapUpdate_;	
+	ros::Subscriber                                                attachBodySubscriber_;
+	ros::Subscriber                                                collisionMapSubscriber_;
+	
+	boost::function<void(const robot_msgs::CollisionMapConstPtr)>  onBeforeMapUpdate_;
+	boost::function<void(const robot_msgs::CollisionMapConstPtr)>  onAfterMapUpdate_;
+	boost::function<void(planning_models::KinematicModel::Link*)>  onAfterAttachBody_;
+    
+    };
+    
+	
+}
+
+#endif
+

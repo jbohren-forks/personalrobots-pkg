@@ -39,17 +39,11 @@
 
 #include "planning_environment/robot_models.h"
 #include <collision_space/environmentODE.h>
-#include <ros/ros.h>
-#include <boost/shared_ptr.hpp>
 
 namespace planning_environment
 {
 
-    /** @htmlinclude ../../manifest.html
-
-	@mainpage
-	
-	A class capable of loading a robot model from the parameter server */
+    /** A class capable of loading a robot model from the parameter server */
     
     class CollisionModels : public RobotModels
     {

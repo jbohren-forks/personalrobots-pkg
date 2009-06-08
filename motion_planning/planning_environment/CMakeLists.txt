@@ -6,7 +6,9 @@ rospack(planning_environment)
 set(ROS_BUILD_TYPE Release)
 
 rospack_add_library(planning_environment src/robot_models.cpp
-					 src/collision_models.cpp)
+					 src/collision_models.cpp
+					 src/kinematic_model_state_monitor.cpp
+					 src/collision_space_monitor.cpp)
 
 					 
 # Tests

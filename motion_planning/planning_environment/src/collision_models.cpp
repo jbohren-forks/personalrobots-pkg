@@ -35,14 +35,12 @@
 /** \author Ioan Sucan */
 
 #include "planning_environment/collision_models.h"
-#include <ros/console.h>
-#include <sstream>
 
 void planning_environment::CollisionModels::loadCollision(void)
 {
-    ode_collision_model_ = boost::shared_ptr<collision_space::EnvironmentModel>(new collision_space::EnvironmentModelODE());
-    if (urdf_.get() && kmodel_.get())
+    if (loadedModels())
     {
+	ode_collision_model_ = boost::shared_ptr<collision_space::EnvironmentModel>(new collision_space::EnvironmentModelODE());
 	ode_collision_model_->lock();
 	ode_collision_model_->addRobotModel(kmodel_, collision_check_links_, scale_, padd_);
 

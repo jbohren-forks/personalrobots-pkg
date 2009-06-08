@@ -4,7 +4,7 @@ rospack(collision_space)
 
 rospack_add_boost_directories()
 
-set(CMAKE_BUILD_TYPE Release)
+set(ROS_BUILD_TYPE Debug)
 
 rospack_add_library(collision_space src/collision_space/output.cpp
                                     src/collision_space/bodies.cpp

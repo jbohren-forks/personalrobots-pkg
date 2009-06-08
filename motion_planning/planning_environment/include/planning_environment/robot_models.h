@@ -37,7 +37,7 @@
 #ifndef PLANNING_ENVIRONMENT_ROBOT_MODELS_
 #define PLANNING_ENVIRONMENT_ROBOT_MODELS_
 
-#include "planning_models/kinematic.h"
+#include <planning_models/kinematic.h>
 #include <ros/ros.h>
 #include <ros/node.h>
 #include <boost/shared_ptr.hpp>
@@ -49,11 +49,7 @@
 namespace planning_environment
 {
     
-    /** @htmlinclude ../../manifest.html
-
-	@mainpage
-	
-	A class capable of loading a robot model from the parameter server */
+    /** A class capable of loading a robot model from the parameter server */
     
     class RobotModels
     {
@@ -85,6 +81,7 @@ namespace planning_environment
 	RobotModels(const std::string &description)
 	{
 	    description_ = nh_.getNode()->mapName(description);
+	    loaded_models_ = false;
 	    loadRobot();
 	}
 	
@@ -129,22 +126,18 @@ namespace planning_environment
 	    return self_collision_check_groups_;
 	}
 	
+	bool loadedModels(void) const
+	{
+	    return loaded_models_;
+	}
+	
 	double getSelfSeePadding(void);
 	double getSelfSeeScale(void);
 	
 	std::vector< boost::shared_ptr<PlannerConfig> > getGroupPlannersConfig(const std::string &group);
 	
 	/** Reload the robot description and recreate the model */
-	virtual void reload(void)
-	{
-	    kmodel_.reset();
-	    urdf_.reset();
-	    planning_groups_.clear();
-	    self_see_links_.clear();
-	    collision_check_links_.clear();
-	    self_collision_check_groups_.clear();
-	    loadRobot();
-	}
+	virtual void reload(void);
 	
     protected:
 	
@@ -160,6 +153,7 @@ namespace planning_environment
 	  
 	std::string                                        description_;
 	
+	bool                                               loaded_models_;
 	boost::shared_ptr<planning_models::KinematicModel> kmodel_;
 	boost::shared_ptr<robot_desc::URDF>                urdf_;
 	

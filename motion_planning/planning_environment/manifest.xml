@@ -11,7 +11,9 @@
   
   <depend package="roscpp" />
   <depend package="rosconsole" />
+  <depend package="tf" />
   <depend package="pr2_defs" />
+  <depend package="robot_msgs" />
   <depend package="planning_models" />
   <depend package="collision_space" />
   
