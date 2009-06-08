@@ -147,9 +147,15 @@ public:
 	  for (unsigned int i = 0 ; i < bs ; ++i)
 	  {
 	      // find the transform between the link's frame and the pointcloud frame
-	      tf::Stamped<btTransform> transf;    
-	      tf_.lookupTransform(data_in.header.frame_id, bodies_[i].name, data_in.header.stamp, transf);
-
+	      tf::Stamped<btTransform> transf;
+	      if (tf_.canTransform(data_in.header.frame_id, bodies_[i].name, data_in.header.stamp))
+		  tf_.lookupTransform(data_in.header.frame_id, bodies_[i].name, data_in.header.stamp, transf);
+	      else
+	      {
+		  transf.setIdentity();
+		  ROS_ERROR("Unable to lookup transform from %s to %s", bodies_[i].name.c_str(), data_in.header.frame_id.c_str());
+	      }
+	      
 	      // set it for each body; we also include the offset specified in URDF
 	      bodies_[i].body->setPose(transf * bodies_[i].constTransf);
 	      bodies_[i].body->computeBoundingSphere(bspheres[i]);
