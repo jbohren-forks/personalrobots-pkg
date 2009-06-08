@@ -18,6 +18,20 @@ Index: src/tree.hpp
  
  
          const SegmentMap& getSegments()const
+Index: src/jntarrayacc.hpp
+===================================================================
+--- src/jntarrayacc.hpp	(revision 30175)
++++ src/jntarrayacc.hpp	(working copy)
+@@ -36,7 +36,8 @@
+         JntArray qdot;
+         JntArray qdotdot;
+     public:
+-        JntArrayAcc(unsigned int size=0);
++      JntArrayAcc(){};
++        JntArrayAcc(unsigned int size);
+         JntArrayAcc(const JntArray& q,const JntArray& qdot,const JntArray& qdotdot);
+         JntArrayAcc(const JntArray& q,const JntArray& qdot);
+         JntArrayAcc(const JntArray& q);
 Index: src/joint.cpp
 ===================================================================
 --- src/joint.cpp	(revision 30175)
@@ -73,6 +87,20 @@ Index: src/tree.cpp
 +}
 +
 +
+Index: src/jntarrayvel.hpp
+===================================================================
+--- src/jntarrayvel.hpp	(revision 30175)
++++ src/jntarrayvel.hpp	(working copy)
+@@ -35,7 +35,8 @@
+         JntArray q;
+         JntArray qdot;
+     public:
+-        JntArrayVel(unsigned int size=0);
++        JntArrayVel(){};
++        JntArrayVel(unsigned int size);
+         JntArrayVel(const JntArray& q,const JntArray& qdot);
+         JntArrayVel(const JntArray& q);
+ 
 Index: src/joint.hpp
 ===================================================================
 --- src/joint.hpp	(revision 30175)
