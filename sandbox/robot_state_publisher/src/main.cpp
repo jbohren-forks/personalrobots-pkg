@@ -34,36 +34,21 @@
 
 /* Author: Wim Meeussen */
 
-#ifndef ROBOT_STATE_PUBLISHER_H
-#define ROBOT_STATE_PUBLISHER_H
+#include "robot_state_publisher/robot_state_publisher.h"
 
-#include <kdl_parser/tree_parser.hpp>
-#include <ros/ros.h>
-#include <tf/transform_broadcaster.h>
-#include <robot_msgs/MechanismState.h>
-#include "robot_state_publisher/treefksolverposfull_recursive.hpp"
+using namespace std;
+using namespace ros;
 
 
-typedef boost::shared_ptr<robot_msgs::MechanismState const> MechanismStateConstPtr;
-
-namespace robot_state_publisher{
-
-class RobotStatePublisher
+int main(int argc, char** argv)
 {
-public:
-  RobotStatePublisher();
-  ~RobotStatePublisher(){};
+  // Initialize ros
+  ros::init(argc, argv, "robot_state_publisher");
 
-private:
-  void callback(const MechanismStateConstPtr& state);
+  robot_state_publisher::RobotStatePublisher publisher;
 
-  KDL::Tree tree_;
-  ros::NodeHandle n_;
-  tf::TransformBroadcaster tf_;
-  ros::Subscriber mech_state_subscr_;
-  ros::Rate publish_rate_;
-};
+  ros::spin();
+
+  return -1;
 
 }
-
-#endif

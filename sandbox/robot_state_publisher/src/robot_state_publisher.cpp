@@ -34,7 +34,6 @@
 
 /* Author: Wim Meeussen */
 
-#include <robot_msgs/MechanismState.h>
 #include "robot_state_publisher/robot_state_publisher.h"
 
 using namespace std;
@@ -56,12 +55,15 @@ RobotStatePublisher::RobotStatePublisher()
 
   // build robot model
   string robot_desc;
-  n_.param("~robot_desc", robot_desc, string());
+  n_.param("/robotdesc/pr2", robot_desc, string());
   if (!treeFromString(robot_desc, tree_))
     ROS_ERROR("Failed to construct robot model from xml string");
 
+  // build tree solver
+
+
   // subscribe to mechanism_state
-  mech_state_subscr_ =  n_.subscribe("mechanism_state", 1, &RobotStatePublisher::callback, this);
+  mech_state_subscr_ =  n_.subscribe("/mechanism_state", 1, &RobotStatePublisher::callback, this);
 }
 
 
@@ -75,6 +77,7 @@ void RobotStatePublisher::callback(const MechanismStateConstPtr& state)
   }
 
   // calculate transforms form root to every segment in tree
+
 
   // send transforms to tf
   //tf_.sendTransform();

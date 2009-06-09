@@ -21,6 +21,6 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 #uncomment if you have defined services
 #gensrv()
 
-rospack_add_library(${PROJECT_NAME} src/robot_state_publisher.cpp)
-#rospack_add_executable(example test/example.cpp )
+rospack_add_library(${PROJECT_NAME} src/robot_state_publisher.cpp src/treefksolverposfull_recursive.cpp)
+rospack_add_executable(main src/main.cpp src/robot_state_publisher.cpp src/treefksolverposfull_recursive.cpp)
 
