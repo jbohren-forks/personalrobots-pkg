@@ -1,0 +1,13 @@
+<package>
+  <description>A python executive to run data collection of annotated maps</description>
+  <author>Alexander Sorokin</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <depend package="rospy" />
+  <depend package="nav_robot_actions" />
+  <depend package="std_msgs" />
+  <depend package="robot_msgs" />
+  <depend package="pr2_robot_actions" />
+  <depend package="milestone2_actions" />
+  <depend package="executive_python" />
+</package>

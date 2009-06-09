@@ -1,0 +1,20 @@
+<launch>
+  <include file="$(find pr2_alpha)/$(env ROBOT).machine" />
+
+  <include file="$(find 2dnav_pr2)/config/ground_plane.xml" />
+  <node pkg="pr2_robot_actions" type="set_laser_tilt" /> 
+
+<!-- Navigation through the door -->
+  <include file="$(find door_demos)/launch/move_base_door.launch" />
+  <param name="base_trajectory_controller/controller_frequency" value="20.0" type="double" />
+  <node pkg="pr2_mechanism_controllers" type="base_trajectory_controller"/>
+
+<!-- Local navigation in odom_combined -->
+  <include file="$(find 2dnav_pr2)/move_base_local/move_base_local_voxel.xml" />
+
+<!-- Navstack in map-->
+  <include file="$(find 2dnav_pr2)/config/new_amcl_node.xml" />
+<!--  <include file="$(find 2dnav_pr2)/config/amcl_node.xml" />-->
+  <include file="$(find 2dnav_pr2)/config/map_server.xml" />
+  <include file="$(find 2dnav_pr2)/move_base/move_base_voxel.xml" />
+</launch>
