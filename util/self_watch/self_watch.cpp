@@ -37,6 +37,7 @@
 
 #include <ros/ros.h>
 #include <planning_environment/collision_models.h>
+#include <planning_environment/kinematic_model_state_monitor.h>
 #include <robot_msgs/MechanismState.h>
    
 class SelfWatch
@@ -46,7 +47,6 @@ public:
     SelfWatch(void)
     {
 	setupCollisionSpace();
-	m_mechanismStateSubscriber = m_nodeHandle.subscribe("mechanism_state", 1, &SelfWatch::mechanismStateCallback, this);
     }
     
     void run(void)
@@ -72,14 +72,10 @@ protected:
 	    
 	    // create a state that can be used to monitor the
 	    // changes in the joints of the kinematic model
-	    m_robotState = boost::shared_ptr<planning_models::KinematicModel::StateParams>(m_kmodel->newStateParams());
-	    
-	    // make sure the transforms caused by the planar and
-	    // floating joints are identity, to be compatible with
-	    // the fact we are considering the robot in its own
-	    // frame
-	    m_robotState->setInRobotFrame();
-	    
+	    m_stateMonitor = boost::shared_ptr<planning_environment::KinematicModelStateMonitor>(new planning_environment::KinematicModelStateMonitor(m_envModels.get(), false));
+	    m_robotState = m_stateMonitor->getRobotState();
+	    m_stateMonitor->setOnStateUpdateCallback(boost::bind(&SelfWatch::stateUpdate, this));
+	    	    
 	    // get the list of links that are enabled for collision checking
 	    std::vector<std::string> links = m_envModels->getCollisionCheckLinks();
 	    
@@ -115,45 +111,12 @@ protected:
 	}
     }
     
-    void mechanismStateCallback(const robot_msgs::MechanismStateConstPtr &mechanismState)
-    {
-	bool change = false;
-	
-	if (m_robotState)
-	{
-	    static bool firstTime = true;
-	    unsigned int n = mechanismState->get_joint_states_size();
-	    for (unsigned int i = 0 ; i < n ; ++i)
-	    {
-		planning_models::KinematicModel::Joint* joint = m_kmodel->getJoint(mechanismState->joint_states[i].name);
-		if (joint)
-		{
-		    if (joint->usedParams == 1)
-		    {
-			double pos = mechanismState->joint_states[i].position;
-			bool this_changed = m_robotState->setParamsJoint(&pos, mechanismState->joint_states[i].name);
-			change = change || this_changed;
-		    }
-		    else
-			if (firstTime)
-			    ROS_WARN("Incorrect number of parameters: %s (expected %d, had 1)", mechanismState->joint_states[i].name.c_str(), joint->usedParams);
-		}
-		else
-		    if (firstTime)
-			ROS_ERROR("Unknown joint: %s", mechanismState->joint_states[i].name.c_str());
-	    }
-	    firstTime = false;
-	}
-	if (change)
-	    stateUpdate();
-    }
-    
     void stateUpdate(void)
     {
 	// when this function is called, we have a collision space set
 	// up and we know the position of the robot has changed
 	
-	ros::Time start_time = ros::Time::now();
+	ros::WallTime start_time = ros::WallTime::now();
 	
 	// do forward kinematics to compute the new positions of all robot parts of interest
 	m_kmodel->computeTransforms(m_robotState->getParams());
@@ -167,7 +130,7 @@ protected:
 	
 	if (contacts.size() > 0)
 	{
-	    ROS_WARN("Collision found in %g seconds", (ros::Time::now() - start_time).toSec());
+	    ROS_WARN("Collision found in %g seconds", (ros::WallTime::now() - start_time).toSec());
 	    for (unsigned int i = 0 ; i < contacts.size() ; ++i)
 	    {
 		ROS_INFO("Collision between link '%s' and '%s'", contacts[i].link1->name.c_str(), contacts[i].link2 ? contacts[i].link2->name.c_str() : "ENVIRONMENT");
@@ -178,26 +141,26 @@ protected:
 	}
     }
     
-    ros::NodeHandle                                                 m_nodeHandle;
-    ros::Subscriber                                                 m_mechanismStateSubscriber;
+    ros::NodeHandle                                                     m_nodeHandle;
     
     // we don't want to detect a collision after it happened, but this
     // is what collision checkers do, so we scale the robot up by a
     // small factor; when a collision is found between the inflated
     // parts, the robot should take action to preserve itself
-    double                                                          m_scaling;
-    double                                                          m_padding;
+    double                                                              m_scaling;
+    double                                                              m_padding;
     
-    boost::shared_ptr<planning_environment::CollisionModels>        m_envModels;
-
+    boost::shared_ptr<planning_environment::CollisionModels>            m_envModels;
+    boost::shared_ptr<planning_environment::KinematicModelStateMonitor> m_stateMonitor;
+    
     // the complete robot state
-    boost::shared_ptr<planning_models::KinematicModel::StateParams> m_robotState;
+    const planning_models::KinematicModel::StateParams                 *m_robotState;
 
     // the kinematic model
-    boost::shared_ptr<planning_models::KinematicModel>              m_kmodel;
+    boost::shared_ptr<planning_models::KinematicModel>                  m_kmodel;
 
     // the collision space
-    boost::shared_ptr<collision_space::EnvironmentModel>            m_collisionSpace;
+    boost::shared_ptr<collision_space::EnvironmentModel>                m_collisionSpace;
     
 };
 
