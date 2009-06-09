@@ -17,7 +17,7 @@
   <depend package="place_recognition"/>
   <depend package="stereo_utils"/>
   <depend package="map_server"/>
-  <depend package="amcl_player"/>
+  <depend package="amcl"/>
   <depend package="nav_view"/>
 
   <sysdepend os="ubuntu" version="8.04-hardy" package="mayavi2"/>
