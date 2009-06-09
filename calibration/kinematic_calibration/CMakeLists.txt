@@ -24,6 +24,11 @@ rospack_add_boost_directories()
 #target_link_libraries(sensor_kinematics_grabber kinematic_calibration)
 #rospack_link_boost(sensor_kinematics_grabber thread)
 
+rospack_add_executable(laser_head_grabber src/laser_head_grabber.cpp)
+target_link_libraries(laser_head_grabber kinematic_calibration)
+rospack_link_boost(laser_head_grabber thread)
+
+
 rospack_add_executable(run_chain_dumper src/run_chain_dumper.cpp)
 target_link_libraries(run_chain_dumper kinematic_calibration)
 rospack_link_boost(run_chain_dumper thread)

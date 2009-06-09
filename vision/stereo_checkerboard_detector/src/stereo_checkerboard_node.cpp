@@ -64,6 +64,8 @@ public:
     sync_.subscribe("stereo/right/cam_info", right_info_msg_,  1) ;
 
     node_->advertise<robot_msgs::PointCloud>("cb_corners", 1) ;
+    node_->advertise<robot_msgs::PointCloud>("cb_corners_left", 1) ;
+    node_->advertise<robot_msgs::PointCloud>("cb_corners_right", 1) ;
     node_->advertise<robot_msgs::PoseStamped>("cb_pose", 1) ;
     node_->advertise<image_msgs::Image>("left_cb_debug",1) ;
     node_->advertise<image_msgs::Image>("right_cb_debug",1) ;
@@ -77,27 +79,44 @@ public:
 
   }
 
+  void pointVecToCloud(const vector<robot_msgs::Point>& vec, robot_msgs::PointCloud& cloud)
+  {
+    cloud.pts.resize(vec.size()) ;
+    for (unsigned int i=0; i<vec.size(); i++)
+    {
+      cloud.pts[i].x = vec[i].x ;
+      cloud.pts[i].y = vec[i].y ;
+      cloud.pts[i].z = vec[i].z ;
+    }
+  }
+
   void msgCallback(ros::Time t)
   {
     bool found = cb_helper_.findCheckerboard(left_image_msg_, right_image_msg_, left_info_msg_, right_info_msg_) ;
+    // Define the cloud we'll be using to publish with
+    robot_msgs::PointCloud cloud ;
+    cloud.header.frame_id = left_image_msg_.header.frame_id ;
+    cloud.header.stamp = left_image_msg_.header.stamp ;
     if (found)
     {
-      vector<robot_msgs::Point> xyz ;
-      cb_helper_.getCorners(xyz) ;
+      //unsigned int N = xyz.size() ;
 
-      unsigned int N = xyz.size() ;
 
-      robot_msgs::PointCloud cloud ;
-      cloud.pts.resize(N) ;
-      for(unsigned int i=0; i<N; i++)
-      {
-        cloud.pts[i].x = xyz[i].x ;
-        cloud.pts[i].y = xyz[i].y ;
-        cloud.pts[i].z = xyz[i].z ;
-      }
-      cloud.header.frame_id = left_image_msg_.header.frame_id ;
-      cloud.header.stamp = left_image_msg_.header.stamp ;
+      // Publish the XYZ corners
+      vector<robot_msgs::Point> point_vec ;
+      cb_helper_.getCorners(point_vec) ;
+      pointVecToCloud(point_vec, cloud) ;
       node_->publish("cb_corners", cloud) ;
+
+      // Publish the left corners
+      cb_helper_.getCornersLeft(point_vec) ;
+      pointVecToCloud(point_vec, cloud) ;
+      node_->publish("cb_corners_left", cloud) ;
+
+      // Publish the right corners
+      cb_helper_.getCornersRight(point_vec) ;
+      pointVecToCloud(point_vec, cloud) ;
+      node_->publish("cb_corners_right", cloud) ;
 
       // Publish a mini-axes defining the checkerboard
       tf::Pose pose ;
@@ -113,7 +132,12 @@ public:
       printf("Found CB!\n") ;
     }
     else
+    {
+      cloud.pts.clear() ;
+      node_->publish("cb_corners_left", cloud) ;
+      node_->publish("cb_corners_right", cloud) ;
       printf("Not found\n") ;
+    }
 
     node_->publish("left_cb_debug", cb_helper_.getLeftDebug()) ;
     node_->publish("right_cb_debug", cb_helper_.getRightDebug()) ;

@@ -77,22 +77,33 @@ public:
 
     // Convert the ROS Image into openCV's IPL image
     IplImage* cv_image = img_bridge_.toIpl() ;
+    const int scale = 2 ;
+    IplImage* cv_image_scaled = cvCreateImage(cvSize(cv_image->width*scale, cv_image->height*scale),
+                                              cv_image->depth, cv_image->nChannels) ;
+    cvResize(cv_image, cv_image_scaled, CV_INTER_LINEAR);
 
     vector<CvPoint2D32f> cv_corners ;
     cv_corners.resize(board_size_.width*board_size_.height) ;
     // ******** Checkerboard Extraction **********
     //bool found = helper_.getCorners(cv_image, cv_corners) ;
     int num_corners ;
-    int found = cvFindChessboardCorners( cv_image, board_size_, &cv_corners[0], &num_corners,
-                                         CV_CALIB_CB_ADAPTIVE_THRESH | CV_CALIB_CB_NORMALIZE_IMAGE) ;
+    int found = cvFindChessboardCorners( cv_image_scaled, board_size_, &cv_corners[0], &num_corners,
+                                         CV_CALIB_CB_ADAPTIVE_THRESH) ;
 
     if(found)
     {
       // Subpixel fine-tuning stuff
-      cvFindCornerSubPix(cv_image, &cv_corners[0], num_corners,
+      cvFindCornerSubPix(cv_image_scaled, &cv_corners[0], num_corners,
                          cvSize(2,2),
                          cvSize(-1,-1),
                          cvTermCriteria(CV_TERMCRIT_ITER,20,1e-2)) ;
+    }
+
+    // Downscale the pixel locations
+    for (unsigned int i=0; i<cv_corners.size(); i++)
+    {
+      cv_corners[i].x /= scale ;
+      cv_corners[i].y /= scale ;
     }
 
     robot_msgs::PointCloud cloud ;
@@ -137,6 +148,7 @@ public:
       }
 
       img_bridge_.fromIpltoRosImage(cv_debug, debug_image_) ;
+      debug_image_.header.stamp = msg->header.stamp ;
       debug_pub_.publish(debug_image_) ;
     }
   }

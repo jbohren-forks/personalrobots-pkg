@@ -58,6 +58,22 @@ bool StereoCheckerboardHelper::findCheckerboard(image_msgs::Image& left, image_m
   bool left_found  =  left_helper_.getCorners(left_bridge_.toIpl(), left_corners) ;
   bool right_found = right_helper_.getCorners(right_bridge_.toIpl(), right_corners) ;
 
+  left_xy_.resize(left_corners.size()) ;
+  for (unsigned int i=0; i<left_corners.size(); i++)
+  {
+    left_xy_[i].x = left_corners[i].x ;
+    left_xy_[i].y = left_corners[i].y ;
+    left_xy_[i].z = 0.0 ;
+  }
+
+  right_xy_.resize(right_corners.size()) ;
+  for (unsigned int i=0; i<right_corners.size(); i++)
+  {
+    right_xy_[i].x = right_corners[i].x ;
+    right_xy_[i].y = right_corners[i].y ;
+    right_xy_[i].z = 0.0 ;
+  }
+
   // Build Debug Images
   IplImage* left_debug = cvCreateImage(cvGetSize(left_bridge_.toIpl()), IPL_DEPTH_8U, 3) ;
   IplImage* right_debug = cvCreateImage(cvGetSize(right_bridge_.toIpl()), IPL_DEPTH_8U, 3) ;
@@ -72,6 +88,8 @@ bool StereoCheckerboardHelper::findCheckerboard(image_msgs::Image& left, image_m
 
   left_bridge_.fromIpltoRosImage(left_debug, left_ros_debug_) ;
   right_bridge_.fromIpltoRosImage(right_debug, right_ros_debug_) ;
+  left_ros_debug_.header.stamp = left.header.stamp ;
+  right_ros_debug_.header.stamp = right.header.stamp ;
 
   cvReleaseImage(&left_debug) ;
   cvReleaseImage(&right_debug) ;
