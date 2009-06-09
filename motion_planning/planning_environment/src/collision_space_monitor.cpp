@@ -35,6 +35,7 @@
 /** \author Ioan Sucan */
 
 #include "planning_environment/collision_space_monitor.h"
+#include <robot_msgs/PointStamped.h>
 
 namespace planning_environment
 {
@@ -73,22 +74,54 @@ bool planning_environment::CollisionSpaceMonitor::isMapUpdated(double sec) const
 
 void planning_environment::CollisionSpaceMonitor::collisionMapCallback(const robot_msgs::CollisionMapConstPtr &collisionMap)
 {
-    unsigned int n = collisionMap->get_boxes_size();
-    ROS_DEBUG("Received %u points (collision map)", n);
+    int n = collisionMap->get_boxes_size();
+    ROS_DEBUG("Received %d points (collision map)", n);
     
     if (onBeforeMapUpdate_ != NULL)
 	onBeforeMapUpdate_(collisionMap);
+
+    // we want to make sure the frame the robot model is kept in is the same as the frame of the collisionMap
+    bool transform = !frame_id_.empty() && collisionMap->header.frame_id != frame_id_;
     
     ros::WallTime startTime = ros::WallTime::now();
     double *data = new double[4 * n];	
-    for (unsigned int i = 0 ; i < n ; ++i)
+
+    if (transform)
     {
-	unsigned int i4 = i * 4;	    
-	data[i4    ] = collisionMap->boxes[i].center.x;
-	data[i4 + 1] = collisionMap->boxes[i].center.y;
-	data[i4 + 2] = collisionMap->boxes[i].center.z;
+	std::string target = frame_id_;
 	
-	data[i4 + 3] = radiusOfBox(collisionMap->boxes[i].extents);
+#pragma omp parallel for
+	for (int i = 0 ; i < n ; ++i)
+	{
+	    int i4 = i * 4;
+	    robot_msgs::PointStamped psi;
+	    psi.header  = collisionMap->header;
+	    psi.point.x = collisionMap->boxes[i].center.x;
+	    psi.point.y = collisionMap->boxes[i].center.y;
+	    psi.point.z = collisionMap->boxes[i].center.z;
+
+	    robot_msgs::PointStamped pso;
+	    tf_.transformPoint(target, psi, pso);
+	    
+	    data[i4    ] = pso.point.x;
+	    data[i4 + 1] = pso.point.y;
+	    data[i4 + 2] = pso.point.z;
+	    
+	    data[i4 + 3] = radiusOfBox(collisionMap->boxes[i].extents);
+	}
+    }
+    else
+    {
+#pragma omp parallel for
+	for (int i = 0 ; i < n ; ++i)
+	{
+	    int i4 = i * 4;
+	    data[i4    ] = collisionMap->boxes[i].center.x;
+	    data[i4 + 1] = collisionMap->boxes[i].center.y;
+	    data[i4 + 2] = collisionMap->boxes[i].center.z;
+	    
+	    data[i4 + 3] = radiusOfBox(collisionMap->boxes[i].extents);
+	}
     }
     
     collisionSpace_->lock();

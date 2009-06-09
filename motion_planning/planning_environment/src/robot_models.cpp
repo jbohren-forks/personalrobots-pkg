@@ -37,6 +37,8 @@
 #include "planning_environment/robot_models.h"
 #include <planning_models/output.h>
 #include <ros/console.h>
+
+#include <boost/algorithm/string.hpp>
 #include <sstream>
 
 // make sure messages from planning_environments & collision_space go to ROS console
@@ -162,10 +164,18 @@ bool planning_environment::RobotModels::PlannerConfig::hasParam(const std::strin
     return nh_.hasParam(description_ + "_planning/planner_configs/" + config_ + "/" + param);
 }
 
-std::string planning_environment::RobotModels::PlannerConfig::getParam(const std::string &param)
+std::string planning_environment::RobotModels::PlannerConfig::getParamString(const std::string &param, const std::string& def)
 {
     std::string value;
-    nh_.param(description_ + "_planning/planner_configs/" + config_ + "/" + param, value, std::string(""));
+    nh_.param(description_ + "_planning/planner_configs/" + config_ + "/" + param, value, def);
+    boost::trim(value);
+    return value;
+}
+
+double planning_environment::RobotModels::PlannerConfig::getParamDouble(const std::string &param, double def)
+{
+    double value;
+    nh_.param(description_ + "_planning/planner_configs/" + config_ + "/" + param, value, def);
     return value;
 }
 
