@@ -100,10 +100,9 @@ namespace people_aware_nav {
 
     //create the ros wrapper for the controller's costmap... and initializer a pointer we'll use with the underlying map
     controller_costmap_ros_ = new Costmap2DROS(ros_node_, tf_, std::string("base_local_planner"), footprint_);
-    controller_costmap_ros_->getCostmapCopy(controller_costmap_);
 
     //create a trajectory controller
-    tc_ = new TrajectoryPlannerROS(ros_node_, tf_, controller_costmap_, footprint_);
+    tc_ = new TrajectoryPlannerROS(ros_node_, tf_, *controller_costmap_ros_, footprint_);
 
     //initially clear any unknown space around the robot
     planner_costmap_ros_->clearNonLethalWindow(circumscribed_radius_ * 2, circumscribed_radius_ * 2);
@@ -239,7 +238,6 @@ void MoveBaseConstrained::makePlan(const PoseStamped& goal, const Polygon3D& for
 
       //make sure to update the costmap we'll use for this cycle
       controller_costmap_ros_->clearRobotFootprint();
-      controller_costmap_ros_->getCostmapCopy(controller_costmap_);
 
       //check that the observation buffers for the costmap are current
       if(!controller_costmap_ros_->isCurrent()){

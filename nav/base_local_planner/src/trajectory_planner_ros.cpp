@@ -48,8 +48,8 @@ using namespace laser_scan;
 
 namespace base_local_planner {
   TrajectoryPlannerROS::TrajectoryPlannerROS(ros::Node& ros_node, tf::TransformListener& tf, 
-      Costmap2D& costmap, std::vector<Point> footprint_spec) 
-    : world_model_(NULL), tc_(NULL), costmap_(costmap), tf_(tf), ros_node_(ros_node), 
+      Costmap2DROS& costmap_ros, std::vector<Point> footprint_spec) 
+    : world_model_(NULL), tc_(NULL), costmap_ros_(costmap_ros), tf_(tf), ros_node_(ros_node), 
     rot_stopped_velocity_(1e-2), trans_stopped_velocity_(1e-2), goal_reached_(true), costmap_publisher_(NULL){
     double acc_lim_x, acc_lim_y, acc_lim_theta, sim_time, sim_granularity;
     int vx_samples, vtheta_samples;
@@ -58,6 +58,9 @@ namespace base_local_planner {
     double heading_scoring_timestep;
     double max_vel_x, min_vel_x, max_vel_th, min_vel_th;
     string world_model_type;
+
+    //initialize the copy of the costmap the controller will use
+    costmap_ros_.getCostmapCopy(costmap_);
 
     //adverstise the fact that we'll publish the robot footprint
     ros_node.advertise<visualization_msgs::Polyline>("~base_local_planner/robot_footprint", 1);
@@ -128,9 +131,9 @@ namespace base_local_planner {
     ros_node.param("~base_local_planner/point_grid/grid_resolution", grid_resolution, 0.2);
 
     ROS_ASSERT_MSG(world_model_type == "costmap", "At this time, only costmap world models are supported by this controller");
-    world_model_ = new CostmapModel(costmap); 
+    world_model_ = new CostmapModel(costmap_); 
 
-    tc_ = new TrajectoryPlanner(*world_model_, costmap, footprint_spec, inscribed_radius_, circumscribed_radius_,
+    tc_ = new TrajectoryPlanner(*world_model_, costmap_, footprint_spec, inscribed_radius_, circumscribed_radius_,
         acc_lim_x, acc_lim_y, acc_lim_theta, sim_time, sim_granularity, vx_samples, vtheta_samples, pdist_scale,
         gdist_scale, occdist_scale, heading_lookahead, oscillation_reset_dist, escape_reset_dist, escape_reset_theta, holonomic_robot,
         max_vel_x, min_vel_x, max_vel_th, min_vel_th, min_in_place_vel_th_,
@@ -338,7 +341,10 @@ namespace base_local_planner {
 
 
     //we also want to clear the robot footprint from the costmap we're using
-    clearRobotFootprint(global_pose, costmap_);
+    costmap_ros_.clearRobotFootprint();
+
+    //make sure to update the costmap we'll use for this cycle
+    costmap_ros_.getCostmapCopy(costmap_);
 
     //after clearing the footprint... we want to push the changes to the costmap publisher
     if(costmap_publisher_->active())
@@ -479,60 +485,6 @@ namespace base_local_planner {
       it = plan.erase(it);
       global_it = global_plan.erase(global_it);
     }
-  }
-
-  void TrajectoryPlannerROS::clearRobotFootprint(Costmap2D& costmap){
-    tf::Stamped<tf::Pose> robot_pose, global_pose;
-    robot_pose.setIdentity();
-    robot_pose.frame_id_ = robot_base_frame_;
-    robot_pose.stamp_ = ros::Time();
-    ros::Time current_time = ros::Time::now(); // save time for checking tf delay later
-
-    //get the global pose of the robot
-    try{
-      tf_.transformPose(global_frame_, robot_pose, global_pose);
-    }
-    catch(tf::LookupException& ex) {
-      ROS_ERROR("No Transform available Error: %s\n", ex.what());
-      return;
-    }
-    catch(tf::ConnectivityException& ex) {
-      ROS_ERROR("Connectivity Error: %s\n", ex.what());
-      return;
-    }
-    catch(tf::ExtrapolationException& ex) {
-      ROS_ERROR("Extrapolation Error: %s\n", ex.what());
-      return;
-    }
-    // check global_pose timeout
-    if (current_time.toSec() - global_pose.stamp_.toSec() > transform_tolerance_) {
-      ROS_ERROR("TrajcetoryPlannerROS transform timeout. Current time: %.4f, global_pose stamp: %.4f, tolerance: %.4f",
-          current_time.toSec() ,global_pose.stamp_.toSec() ,transform_tolerance_);
-      return;
-    }
-
-    clearRobotFootprint(global_pose, costmap);
-  }
-
-  void TrajectoryPlannerROS::clearRobotFootprint(const tf::Stamped<tf::Pose>& global_pose, Costmap2D& costmap){
-    double useless_pitch, useless_roll, yaw;
-    global_pose.getBasis().getEulerZYX(yaw, useless_pitch, useless_roll);
-
-    //get the oriented footprint of the robot
-    std::vector<robot_msgs::Point> oriented_footprint = drawFootprint(global_pose.getOrigin().x(), global_pose.getOrigin().y(), yaw);
-
-    //set the associated costs in the cost map to be free
-    if(!costmap.setConvexPolygonCost(oriented_footprint, costmap_2d::FREE_SPACE))
-      return;
-
-    double max_inflation_dist = inflation_radius_ + circumscribed_radius_;
-
-    //clear all non-lethal obstacles out to the maximum inflation distance of an obstacle in the robot footprint
-    costmap.clearNonLethal(global_pose.getOrigin().x(), global_pose.getOrigin().y(), max_inflation_dist, max_inflation_dist);
-
-    //make sure to re-inflate obstacles in the affected region... plus those obstalces that could 
-    costmap.reinflateWindow(global_pose.getOrigin().x(), global_pose.getOrigin().y(), max_inflation_dist + inflation_radius_, max_inflation_dist + inflation_radius_, false);
-
   }
 
   void TrajectoryPlannerROS::publishFootprint(const tf::Stamped<tf::Pose>& global_pose){

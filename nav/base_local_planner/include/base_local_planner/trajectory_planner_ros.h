@@ -82,7 +82,7 @@ namespace base_local_planner {
        * @param footprint_spec A polygon representing the footprint of the robot. (Must be convex)
        */
       TrajectoryPlannerROS(ros::Node& ros_node, tf::TransformListener& tf,
-          costmap_2d::Costmap2D& costmap, std::vector<robot_msgs::Point> footprint_spec);
+          costmap_2d::Costmap2DROS& costmap_ros, std::vector<robot_msgs::Point> footprint_spec);
 
       /**
        * @brief  Destructor for the wrapper
@@ -127,12 +127,6 @@ namespace base_local_planner {
        * @return True if achieved, false otherwise
        */
       bool goalReached();
-
-      /**
-       * @brief  Clear the footprint of the robot in a given cost map
-       * @param costmap The costmap to apply the clearing opertaion on
-       */
-      void clearRobotFootprint(costmap_2d::Costmap2D& costmap);
 
     private:
       /**
@@ -198,13 +192,6 @@ namespace base_local_planner {
       void publishFootprint(const tf::Stamped<tf::Pose>& global_pose);
 
       /**
-       * @brief  Clear the footprint of the robot in a given cost map
-       * @param global_pose The pose of the robot in the global frame
-       * @param costmap The costmap to apply the clearing opertaion on
-       */
-      void clearRobotFootprint(const tf::Stamped<tf::Pose>& global_pose, costmap_2d::Costmap2D& costmap);
-
-      /**
        * @brief  Publish a plan for visualization purposes
        */
       void publishPlan(const std::vector<robot_msgs::PoseStamped>& path, std::string topic, double r, double g, double b, double a);
@@ -213,7 +200,8 @@ namespace base_local_planner {
 
       WorldModel* world_model_; ///< @brief The world model that the controller will use
       TrajectoryPlanner* tc_; ///< @brief The trajectory controller
-      costmap_2d::Costmap2D& costmap_; ///< @brief The costmap the controller will use
+      costmap_2d::Costmap2DROS& costmap_ros_; ///< @brief The ROS wrapper for the costmap the controller will use
+      costmap_2d::Costmap2D costmap_; ///< @brief The costmap the controller will use
       tf::TransformListener& tf_; ///< @brief Used for transforming point clouds
       ros::Node& ros_node_; ///< @brief The ros node we're running under
       std::string global_frame_; ///< @brief The frame in which the controller will run

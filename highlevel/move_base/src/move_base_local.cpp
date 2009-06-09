@@ -65,7 +65,6 @@ namespace move_base {
     //create the ros wrapper for the controller's costmap... and initializer a pointer we'll use with the underlying map
     controller_costmap_ros_ = new Costmap2DROS(ros_node_, tf_, std::string("base_local_planner"));
     controller_costmap_ros_->clearRobotFootprint();
-    controller_costmap_ros_->getCostmapCopy(controller_costmap_);
 
 
     //initially we'll stop all updates on the costmap
@@ -92,7 +91,7 @@ namespace move_base {
     //footprint_.push_back(pt);
 
     //create a trajectory controller
-    tc_ = new TrajectoryPlannerROS(ros_node_, tf_, controller_costmap_, footprint_);
+    tc_ = new TrajectoryPlannerROS(ros_node_, tf_, *controller_costmap_ros_, footprint_);
   }
 
   MoveBaseLocal::~MoveBaseLocal(){
@@ -178,9 +177,6 @@ namespace move_base {
 
       //push the feedback out
       update(feedback);
-
-      //make sure to update the costmap we'll use for this cycle
-      controller_costmap_ros_->getCostmapCopy(controller_costmap_);
 
       robot_msgs::PoseDot cmd_vel;
 

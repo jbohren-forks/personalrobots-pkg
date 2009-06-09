@@ -123,7 +123,7 @@ namespace move_base {
       bool run_planner_;
       base_local_planner::TrajectoryPlannerROS* tc_;
       costmap_2d::Costmap2DROS* planner_costmap_ros_, *controller_costmap_ros_;
-      costmap_2d::Costmap2D planner_costmap_, controller_costmap_;
+      costmap_2d::Costmap2D planner_costmap_;
 
       navfn::NavfnROS* planner_;
       std::vector<robot_msgs::PoseStamped> global_plan_;
