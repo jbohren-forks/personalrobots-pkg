@@ -49,7 +49,8 @@ namespace planning_environment
 {
 
     /** @b KinematicModelStateMonitor is a class that monitors the robot state for the kinematic model defined in @b RobotModels
-
+           If the pose is not included, the robot state is the frame of the link it attaches to the world. If the pose is included,
+	   the frame of the robot is the one in which the pose is published.
        <hr>
        
        @section topic ROS topics
@@ -98,6 +99,12 @@ namespace planning_environment
 	    return robotState_;
 	}
 	
+	/** Return the frame id of the state */
+	const std::string& getFrameId(void) const
+	{
+	    return frame_id_;
+	}
+	
 	/** Return true if a pose has been received */
 	bool havePose(void) const	    
 	{
@@ -108,6 +115,18 @@ namespace planning_environment
 	bool haveState(void) const	    
 	{
 	    return haveMechanismState_;
+	}
+	
+	/** Return the time of the last pose update */
+	const ros::Time& lastPoseUpdate(void) const
+	{
+	    return lastPoseUpdate_;
+	}
+	
+	/** Return the time of the last state update */
+	const ros::Time& lastStateUpdate(void) const
+	{
+	    return lastStateUpdate_;
 	}
 	
 	/** Wait until a pose is received */
@@ -135,8 +154,8 @@ namespace planning_environment
 	RobotModels                                  *rm_;
 	bool                                          includePose_;
 	planning_models::KinematicModel              *kmodel_;
-	std::vector<std::string> planarJoints_;
-	std::vector<std::string> floatingJoints_;
+	std::string                                   planarJoint_;
+	std::string                                   floatingJoint_;
 	
 	ros::NodeHandle                               nh_;
 	ros::Subscriber                               mechanismStateSubscriber_;	
@@ -144,6 +163,8 @@ namespace planning_environment
 
 	planning_models::KinematicModel::StateParams *robotState_;
 	tf::Pose                                      pose_;
+	std::string                                   frame_id_;
+	
 	boost::function<void(void)>                   onStateUpdate_;
 	
 	bool                                          havePose_;

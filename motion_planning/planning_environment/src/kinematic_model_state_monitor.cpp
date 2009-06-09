@@ -48,16 +48,23 @@ void planning_environment::KinematicModelStateMonitor::setupRSM(void)
     {
 	kmodel_ = rm_->getKinematicModel().get();
 	robotState_ = kmodel_->newStateParams();
-	robotState_->setInRobotFrame();
 	
-	for (unsigned int i = 0 ; i < kmodel_->getModelInfo().floatingJoints.size() ; ++i)
-	    floatingJoints_.push_back(kmodel_->getModelInfo().parameterName[kmodel_->getModelInfo().floatingJoints[i]]);
-	for (unsigned int i = 0 ; i < kmodel_->getModelInfo().planarJoints.size() ; ++i)
-	    planarJoints_.push_back(kmodel_->getModelInfo().parameterName[kmodel_->getModelInfo().planarJoints[i]]);
-	
+	if (kmodel_->getRobotCount() > 1)
+	    ROS_WARN("Using more than one robot. A frame_id cannot be set (there multiple frames) and pose cannot be maintained");
+	else
+	{
+	    // joints to update based on received pose
+	    if (dynamic_cast<planning_models::KinematicModel::PlanarJoint*>(kmodel_->getRobot(0)->chain))
+		planarJoint_ = kmodel_->getRobot(0)->chain->name;
+	    if (dynamic_cast<planning_models::KinematicModel::FloatingJoint*>(kmodel_->getRobot(0)->chain))
+		floatingJoint_ = kmodel_->getRobot(0)->chain->name;
+	    
+	    if (includePose_)
+		localizedPoseSubscriber_ = nh_.subscribe("localized_pose", 1, &KinematicModelStateMonitor::localizedPoseCallback,  this);
+	    else
+		frame_id_ = kmodel_->getRobot(0)->chain->after->name;
+	}
 	mechanismStateSubscriber_ = nh_.subscribe("mechanism_state", 1, &KinematicModelStateMonitor::mechanismStateCallback, this);
-	if (includePose_)
-	    localizedPoseSubscriber_  = nh_.subscribe("localized_pose",  1, &KinematicModelStateMonitor::localizedPoseCallback,  this);
     }
 }
 
@@ -94,7 +101,7 @@ void planning_environment::KinematicModelStateMonitor::mechanismStateCallback(co
     
     first_time = false;
 
-    lastStateUpdate_ = ros::Time::now();
+    lastStateUpdate_ = mechanismState->header.stamp;
     if (!haveMechanismState_)
 	haveMechanismState_ = robotState_->seenAll();
     
@@ -105,12 +112,13 @@ void planning_environment::KinematicModelStateMonitor::mechanismStateCallback(co
 void planning_environment::KinematicModelStateMonitor::localizedPoseCallback(const robot_msgs::PoseWithCovarianceConstPtr &localizedPose)
 {
     tf::PoseMsgToTF(localizedPose->pose, pose_);
-    lastPoseUpdate_ = ros::Time::now();
-
+    lastPoseUpdate_ = localizedPose->header.stamp;
+    frame_id_ = localizedPose->header.frame_id;
+    
     bool change = !havePose_;
     havePose_ = true;
     
-    if (!planarJoints_.empty())
+    if (!planarJoint_.empty())
     {
 	double planar_joint[3];
 	planar_joint[0] = pose_.getOrigin().x();
@@ -120,14 +128,11 @@ void planning_environment::KinematicModelStateMonitor::localizedPoseCallback(con
 	pose_.getBasis().getEulerZYX(yaw, pitch, roll);
 	planar_joint[2] = yaw;
 	
-	for (unsigned int i = 0 ; i < planarJoints_.size() ; ++i)
-	{
-	    bool this_changed = robotState_->setParamsJoint(planar_joint, planarJoints_[i]);
-	    change = change || this_changed;
-	}
+	bool this_changed = robotState_->setParamsJoint(planar_joint, planarJoint_);
+	change = change || this_changed;
     }
     
-    if (!floatingJoints_.empty())
+    if (!floatingJoint_.empty())
     {
 	double floating_joint[7];
 	floating_joint[0] = pose_.getOrigin().x();
@@ -139,11 +144,8 @@ void planning_environment::KinematicModelStateMonitor::localizedPoseCallback(con
 	floating_joint[5] = q.z();
 	floating_joint[6] = q.w();
 
-	for (unsigned int i = 0 ; i < floatingJoints_.size() ; ++i)
-	{
-	    bool this_changed = robotState_->setParamsJoint(floating_joint, floatingJoints_[i]);
-	    change = change || this_changed;
-	}
+	bool this_changed = robotState_->setParamsJoint(floating_joint, floatingJoint_);
+	change = change || this_changed;
     }
     
     if (change && onStateUpdate_ != NULL)
