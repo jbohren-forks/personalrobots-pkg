@@ -35,9 +35,11 @@
 /* Author: Wim Meeussen */
 
 #include "robot_state_publisher/robot_state_publisher.h"
+#include <kdl/frames_io.hpp>
 
 using namespace std;
 using namespace ros;
+using namespace KDL;
 
 
 
@@ -60,7 +62,7 @@ RobotStatePublisher::RobotStatePublisher()
     ROS_ERROR("Failed to construct robot model from xml string");
 
   // build tree solver
-
+  solver_.reset(new TreeFkSolverPosFull_recursive(tree_));
 
   // subscribe to mechanism_state
   mech_state_subscr_ =  n_.subscribe("/mechanism_state", 1, &RobotStatePublisher::callback, this);
@@ -72,15 +74,23 @@ void RobotStatePublisher::callback(const MechanismStateConstPtr& state)
   // get joint positions from state message
   map<string, double> joint_positions;
   for (unsigned int i=0; i<state->joint_states.size(); i++){
-    joint_positions[state->joint_states[i].name] = state->joint_states[i].position;
-    cout << "Joint " << state->joint_states[i].name << " at position " << state->joint_states[i].position << endl;
+    string tmp = state->joint_states[i].name;
+    tmp.resize(tmp.size()-6);
+    tmp = tmp + "_link";
+    joint_positions[tmp] = state->joint_states[i].position;
+    cout << "Joint " << tmp << " at position " << state->joint_states[i].position << endl;
   }
 
-  // calculate transforms form root to every segment in tree
 
+  // calculate transforms form root to every segment in tree
+  map<string, Frame> frames;
+  solver_->JntToCart(joint_positions, frames);
 
   // send transforms to tf
-  //tf_.sendTransform();
+  for (map<string, Frame>::const_iterator f=frames.begin(); f!=frames.end(); f++){
+    cout << "frame " << f->first << " = " << f->second.p << endl;
+    tf_.sendTransform(tf::Transform(tf::Quaternion(0,0,0), tf::Vector3(f->second.p(0), f->second.p(1), f->second.p(2))), state->header.stamp, f->first + "_test", "root");
+  }
 
   publish_rate_.sleep();
 }
