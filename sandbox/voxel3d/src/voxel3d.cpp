@@ -30,6 +30,14 @@
 // Author: Stuart Glaser
 
 #include "voxel3d/voxel3d.h"
+
+#define USE_SSE 1
+
+//#if USE_SSE
+#include <emmintrin.h>
+#include <xmmintrin.h>
+//#endif
+
 #include <cmath>
 
 const unsigned char Voxel3d::CLEAR = 0xff;
@@ -83,6 +91,14 @@ void Voxel3d::putObstacle(int i, int j, int k)
     for (int jj = 0; jj < 17; ++jj)
     {
       unsigned char *ii_start = p;
+#if USE_SSE
+      __m128i vp, vr;
+      vp = _mm_loadu_si128((__m128i*)p);
+      vr = _mm_loadu_si128((__m128i*)r);
+      vp = _mm_min_epu8(vp, vr);
+      _mm_storeu_si128((__m128i*)p, vp);
+      r += 16;
+#else
       for (int ii = 0; ii < 16; ++ii)
       {
         if (*p > *r)
@@ -90,6 +106,7 @@ void Voxel3d::putObstacle(int i, int j, int k)
         ++r;
         ++p;
       }
+#endif
       p = ii_start + stride1_;
     }
     p = jj_start + stride2_;
