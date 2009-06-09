@@ -119,7 +119,7 @@ namespace image_msgs
           cvCvtColor(rosimg_, cvtimg_, CV_RGB2BGR);
           img_ = cvtimg_;
         }
-        if (encoding == "rgb" && rosimg.encoding == "bgr")
+        else if (encoding == "rgb" && rosimg.encoding == "bgr")
         {
           reallocIfNeeded(&cvtimg_, IPL_DEPTH_8U, 3);
           cvCvtColor(rosimg_, cvtimg_, CV_BGR2RGB);
