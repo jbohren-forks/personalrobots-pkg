@@ -1,0 +1,17 @@
+<package>
+  <description brief="image_publisher">
+
+     image_publisher provides facilities for transmitting images efficiently over a bandwidth-limited network connection.
+
+  </description>
+  <author>Patrick Mihelich/ mihelich@willowgarage.com</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://pr.willowgarage.com/wiki/image_publisher</url>
+
+  <depend package="roscpp"/>
+  <depend package="image_msgs"/>
+  <depend package="sensor_msgs"/>
+  <depend package="opencv_latest"/>
+
+</package>
