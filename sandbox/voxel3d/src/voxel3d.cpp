@@ -40,6 +40,8 @@
 
 #include <cmath>
 
+#include <string.h> // for memset(3)
+
 const unsigned char Voxel3d::CLEAR = 0xff;
 
 Voxel3d::Voxel3d(int size1, int size2, int size3)
