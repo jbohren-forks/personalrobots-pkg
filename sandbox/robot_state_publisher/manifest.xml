@@ -1,0 +1,19 @@
+<package>
+  <description brief="Package to publish the state of a robot to tf">
+  </description>
+  <author>Wim Meeussen</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://pr.willowgarage.com/wiki/</url>
+
+  <depend package="kdl_parser" />
+  <depend package="robot_msgs" />
+  <depend package="roscpp" />
+  <depend package="tf" />
+  
+<export>
+  <cpp cflags="-I${prefix}/include/"/>
+</export>
+</package>
+
+
