@@ -89,6 +89,7 @@ void planning_environment::CollisionSpaceMonitor::collisionMapCallback(const rob
     if (transform)
     {
 	std::string target = frame_id_;
+	bool err = false;
 	
 #pragma omp parallel for
 	for (int i = 0 ; i < n ; ++i)
@@ -101,7 +102,15 @@ void planning_environment::CollisionSpaceMonitor::collisionMapCallback(const rob
 	    psi.point.z = collisionMap->boxes[i].center.z;
 
 	    robot_msgs::PointStamped pso;
-	    tf_.transformPoint(target, psi, pso);
+	    try
+	    {
+		tf_.transformPoint(target, psi, pso);
+	    }
+	    catch(...)
+	    {
+		err = true;
+		pso = psi;
+	    }
 	    
 	    data[i4    ] = pso.point.x;
 	    data[i4 + 1] = pso.point.y;
@@ -109,6 +118,9 @@ void planning_environment::CollisionSpaceMonitor::collisionMapCallback(const rob
 	    
 	    data[i4 + 3] = radiusOfBox(collisionMap->boxes[i].extents);
 	}
+	
+	if (err)
+	    ROS_ERROR("Some errors encountered in transforming the collision map to frame %s from frame %s", target.c_str(), collisionMap->header.frame_id.c_str());
     }
     else
     {
@@ -151,29 +163,40 @@ void planning_environment::CollisionSpaceMonitor::attachObjectCallback(const rob
 	for (unsigned int i = 0 ; i < link->attachedBodies.size() ; ++i)
 	    delete link->attachedBodies[i];
 	unsigned int n = attachedObject->get_objects_size();
-	link->attachedBodies.resize(n);
+	link->attachedBodies.resize(0);
 	
 	// create the new ones
 	for (unsigned int i = 0 ; i < n ; ++i)
 	{
-	    link->attachedBodies[i] = new planning_models::KinematicModel::AttachedBody();
-	    
 	    robot_msgs::PointStamped center;
 	    robot_msgs::PointStamped centerP;
 	    center.point.x = attachedObject->objects[i].center.x;
 	    center.point.y = attachedObject->objects[i].center.y;
 	    center.point.z = attachedObject->objects[i].center.z;
 	    center.header  = attachedObject->header;
-	    tf_.transformPoint(attachedObject->link_name, center, centerP);
+	    bool err = false;
+	    try
+	    {
+		tf_.transformPoint(attachedObject->link_name, center, centerP);
+	    }
+	    catch(...)
+	    {
+		err = true;
+		ROS_ERROR("Unable to transform object to be attached from frame %s to frame %s", attachedObject->header.frame_id.c_str(), attachedObject->link_name.c_str());
+	    }
+	    if (err)
+		continue;
 	    
-	    link->attachedBodies[i]->attachTrans.setOrigin(btVector3(centerP.point.x, centerP.point.y, centerP.point.z));
+	    unsigned int j = link->attachedBodies.size();
+	    link->attachedBodies.push_back(new planning_models::KinematicModel::AttachedBody());
+	    link->attachedBodies[j]->attachTrans.setOrigin(btVector3(centerP.point.x, centerP.point.y, centerP.point.z));
 	    
 	    // this is a HACK! we should have orientation
 	    planning_models::shapes::Box *box = new planning_models::shapes::Box();
 	    box->size[0] = attachedObject->objects[i].max_bound.x - attachedObject->objects[i].min_bound.x;
 	    box->size[1] = attachedObject->objects[i].max_bound.y - attachedObject->objects[i].min_bound.y;
 	    box->size[2] = attachedObject->objects[i].max_bound.z - attachedObject->objects[i].min_bound.z;
-	    link->attachedBodies[i]->shape = box;
+	    link->attachedBodies[j]->shape = box;
 	}
 	
 	// update the collision model
