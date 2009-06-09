@@ -148,9 +148,11 @@ public:
 	  {
 	      // find the transform between the link's frame and the pointcloud frame
 	      tf::Stamped<btTransform> transf;
-	      if (tf_.canTransform(data_in.header.frame_id, bodies_[i].name, data_in.header.stamp))
+	      try
+	      {
 		  tf_.lookupTransform(data_in.header.frame_id, bodies_[i].name, data_in.header.stamp, transf);
-	      else
+	      }
+	      catch(...)
 	      {
 		  transf.setIdentity();
 		  ROS_ERROR("Unable to lookup transform from %s to %s", bodies_[i].name.c_str(), data_in.header.frame_id.c_str());
