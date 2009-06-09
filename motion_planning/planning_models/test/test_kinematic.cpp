@@ -72,7 +72,7 @@ TEST(Loading, EmptyRobot)
     model->build(MODEL0, groups);
     
     EXPECT_TRUE(model->isBuilt());
-    EXPECT_TRUE(model->reduceToRobotFrame());
+    model->reduceToRobotFrame();
     
     EXPECT_EQ(std::string("myrobot"), model->getModelName());
     EXPECT_EQ((unsigned int)0, model->getRobotCount());
@@ -206,7 +206,7 @@ TEST(LoadingAndFK, SimpleRobot)
     model->build(*file, groups);
     
     EXPECT_TRUE(model->isBuilt());
-    EXPECT_TRUE(model->reduceToRobotFrame());
+    model->reduceToRobotFrame();
     EXPECT_EQ((unsigned int)3, model->getModelInfo().stateDimension);
     
     std::vector<planning_models::KinematicModel::Joint*> joints;
@@ -375,7 +375,7 @@ TEST(FK, OneRobot)
     model->build(MODEL2, groups);
     
     EXPECT_TRUE(model->isBuilt());
-    EXPECT_TRUE(model->reduceToRobotFrame());
+    model->reduceToRobotFrame();
     EXPECT_EQ((unsigned int)5, model->getModelInfo().stateDimension);
 
     double param[5] = { 1, 1, 0.5, -0.5, 0.1 };
@@ -439,7 +439,7 @@ TEST(FK, OneRobot)
 
     tmpParam[0] = -1.0;    
     sp->setParamsJoint(tmpParam, "link_c_joint");
-    EXPECT_FALSE(sp->seenAll());
+    EXPECT_TRUE(sp->seenAll());
     
     tmpParam[0] = 0.5; tmpParam[1] = 0.4; tmpParam[2] = 1.1;
     sp->setParamsJoint(tmpParam, "base_link_joint");
@@ -767,7 +767,7 @@ TEST(FK, MoreRobots)
     model->build(MODEL3, groups);
     
     EXPECT_TRUE(model->isBuilt());
-    EXPECT_TRUE(model->reduceToRobotFrame());
+    model->reduceToRobotFrame();
     EXPECT_EQ((unsigned int)13, model->getModelInfo().stateDimension);
     
     std::stringstream ss;

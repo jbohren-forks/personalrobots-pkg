@@ -240,9 +240,11 @@ void planning_models::KinematicModel::RevoluteJoint::extractInformation(const ro
     {
 	limit[0] = urdfLink->joint->limit[0] + urdfLink->joint->safetyLength[0];
 	limit[1] = urdfLink->joint->limit[1] - urdfLink->joint->safetyLength[1];
+	continuous = false;       
     }
     else
     {
+	continuous = true;
 	limit[0] = -M_PI;
 	limit[1] =  M_PI;
     }
@@ -341,30 +343,27 @@ bool planning_models::KinematicModel::isBuilt(void) const
 
 planning_models::KinematicModel::StateParams* planning_models::KinematicModel::newStateParams(void)
 {
-    return new StateParams(this);
+    StateParams *sp = new StateParams(this);
+    if (m_mi.inRobotFrame)
+	sp->setInRobotFrame();
+    return sp;
 }
 	
-bool planning_models::KinematicModel::Robot::reduceToRobotFrame(void)
+void planning_models::KinematicModel::Robot::reduceToRobotFrame(void)
 {
-    if (floatingJoints.size() + planarJoints.size() == 1)
-    {
-	if (planarJoints.size())
-	    rootTransform *= joints[planarJoints[0]]->after->constTrans.inverse();
-	else
-	    rootTransform *= joints[floatingJoints[0]]->after->constTrans.inverse();
-	return true;
-    }
-    else
-	return false;    
+    if (dynamic_cast<PlanarJoint*>(chain) || dynamic_cast<FloatingJoint*>(chain))
+	rootTransform *= chain->after->constTrans.inverse();
 }
 
-bool planning_models::KinematicModel::reduceToRobotFrame(void)
+void planning_models::KinematicModel::reduceToRobotFrame(void)
 {
-    bool result = true;
-    for (unsigned int i = 0 ; i < m_robots.size() ; ++i)
-	result = result && m_robots[i]->reduceToRobotFrame();
+    if (!m_mi.inRobotFrame)
+    {
+	for (unsigned int i = 0 ; i < m_robots.size() ; ++i)
+	    m_robots[i]->reduceToRobotFrame();
+	m_mi.inRobotFrame = true;
+    }
     defaultState();
-    return result;
 }
 
 void planning_models::KinematicModel::build(const std::string &description, const std::map< std::string, std::vector<std::string> > &groups, bool ignoreSensors)

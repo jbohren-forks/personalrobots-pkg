@@ -53,7 +53,7 @@
 
     @mainpage
     
-    A class describing a kinematic robot model loaded from URDF */
+    A class describing a kinematic robot model loaded from URDF. Visual geometry is ignored */
 
 /** Main namespace */
 namespace planning_models
@@ -207,6 +207,7 @@ namespace planning_models
 	    RevoluteJoint(void) : Joint(), axis(0.0, 0.0, 0.0), anchor(0.0, 0.0, 0.0)
 	    {
 		limit[0] = limit[1] = 0.0;
+		continuous = false;
 		usedParams = 1;
 	    }
 	    
@@ -219,6 +220,7 @@ namespace planning_models
 	    btVector3 axis;
 	    btVector3 anchor;
 	    double    limit[2];
+	    bool      continuous;
 	};
 	
 	/** Class defining bodies that can be attached to robot
@@ -341,8 +343,9 @@ namespace planning_models
 		    delete chain;
 	    }
 	    
-	    /** Add transforms to the rootTransform such that the robot is in its planar/floating link frame */
-	    bool reduceToRobotFrame(void);
+	    /** Add transforms to the rootTransform such that the robot is in its planar/floating link frame.
+	     *  Such a transform is needed only if the root joint of the robot is planar or floating */
+	    void reduceToRobotFrame(void);
 
 	    /** The model that owns this robot */
 	    KinematicModel     *owner;
@@ -415,6 +418,9 @@ namespace planning_models
 	    
 	    /** Cumulative list of group roots */
 	    std::vector< std::vector<Joint*> >       groupChainStart;
+
+	    /** True if this model has been set in the robot frame */
+	    bool                                     inRobotFrame;
 	};
 	
 	/** A class that can hold the named parameters of this planning model */
@@ -554,6 +560,7 @@ namespace planning_models
 	KinematicModel(void)
 	{
 	    m_mi.stateDimension = 0;
+	    m_mi.inRobotFrame = false;
 	    m_ignoreSensors = false;
 	    m_verbose = false;	    
 	    m_built = false;
@@ -610,7 +617,7 @@ namespace planning_models
 	void computeTransforms(const double *params);
 	
 	/** Add thansforms to the rootTransform such that the robot is in its planar/floating link frame */
-	bool reduceToRobotFrame(void);
+	void reduceToRobotFrame(void);
 
 	/** Provide interface to a lock. Use carefully! */
 	void lock(void)

@@ -3,7 +3,7 @@ include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
 
 rospack(planning_environment)
 
-set(ROS_BUILD_TYPE Release)
+set(ROS_BUILD_TYPE Debug)
 
 rospack_add_library(planning_environment src/robot_models.cpp
 					 src/collision_models.cpp

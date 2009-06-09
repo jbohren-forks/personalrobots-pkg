@@ -66,9 +66,7 @@ void planning_environment::RobotModels::loadRobot(void)
 	    // make sure the kinematic model is in its own frame
 	    // (remove all transforms caused by planar or floating
 	    // joints)
-	    if (!kmodel_->reduceToRobotFrame())
-		ROS_ERROR("Bad things happen with setting the robot(s) in thir frame. It is possible differences between frames will cause collisions when planning.");
-	    
+	    kmodel_->reduceToRobotFrame();
 	    kmodel_->defaultState();
 
 	    getCollisionCheckLinks(collision_check_links_);	
