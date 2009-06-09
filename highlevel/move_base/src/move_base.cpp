@@ -124,11 +124,10 @@ namespace move_base {
 
     //create the ros wrapper for the planner's costmap... and initializer a pointer we'll use with the underlying map
     planner_costmap_ros_ = new Costmap2DROS(ros_node_, tf_, std::string("navfn"), footprint_);
-    planner_costmap_ros_->getCostmapCopy(planner_costmap_);
 
     //initialize the NavFn planner
-    planner_ = new NavfnROS(ros_node_, tf_, planner_costmap_);
-    ROS_INFO("MAP SIZE: %d, %d", planner_costmap_.cellSizeX(), planner_costmap_.cellSizeY());
+    planner_ = new NavfnROS(ros_node_, tf_, *planner_costmap_ros_);
+    ROS_INFO("MAP SIZE: %d, %d", planner_costmap_ros_->cellSizeX(), planner_costmap_ros_->cellSizeY());
 
     //create the ros wrapper for the controller's costmap... and initializer a pointer we'll use with the underlying map
     controller_costmap_ros_ = new Costmap2DROS(ros_node_, tf_, std::string("base_local_planner"), footprint_);
@@ -215,11 +214,6 @@ namespace move_base {
 
     //update the copy of the costmap the planner uses
     clearCostmapWindows(2 * clearing_radius_, 2 * clearing_radius_);
-    planner_costmap_ros_->clearRobotFootprint();
-    planner_costmap_ros_->getCostmapCopy(planner_costmap_);
-
-    //since we have a controller that knows the full footprint of the robot... we may as well clear it
-    //tc_->clearRobotFootprint(planner_costmap_); //now done in sensors
 
     //if we have a tolerance on the goal point that is greater 
     //than the resolution of the map... compute the full potential function
@@ -291,13 +285,6 @@ namespace move_base {
     //since this gets called on handle activate
     if(planner_costmap_ros_ == NULL)
       return;
-
-    //update the copy of the costmap the planner uses
-    planner_costmap_ros_->clearRobotFootprint();
-    planner_costmap_ros_->getCostmapCopy(planner_costmap_);
-
-    //since we have a controller that knows the full footprint of the robot... we may as well clear it
-    //tc_->clearRobotFootprint(planner_costmap_); //now done in sensors
 
     std::vector<robot_msgs::PoseStamped> global_plan;
     bool valid_plan = planner_->makePlan(goal, global_plan);

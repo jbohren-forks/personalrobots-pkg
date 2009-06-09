@@ -39,7 +39,7 @@
 
 #include <ros/node.h>
 #include <navfn/navfn.h>
-#include <costmap_2d/costmap_2d.h>
+#include <costmap_2d/costmap_2d_ros.h>
 #include <robot_msgs/PoseStamped.h>
 #include <robot_msgs/Point.h>
 #include <visualization_msgs/Polyline.h>
@@ -54,9 +54,9 @@ namespace navfn {
        * @brief  Constructor for the NavFnROS object
        * @param  ros_node The a reference to the ros node running
        * @param  tf A reference to a TransformListener
-       * @param  cos_map A reference to the costmap to use
+       * @param  costmap_ros A reference to the ROS wrapper of the costmap to use
        */
-      NavfnROS(ros::Node& ros_node, tf::TransformListener& tf, costmap_2d::Costmap2D& costmap);
+      NavfnROS(ros::Node& ros_node, tf::TransformListener& tf, costmap_2d::Costmap2DROS& costmap_ros);
 
       /**
        * @brief Given a goal pose in the world, compute a plan
@@ -98,7 +98,8 @@ namespace navfn {
       void clearRobotCell(const tf::Stamped<tf::Pose>& global_pose, unsigned int mx, unsigned int my);
       ros::Node& ros_node_;
       tf::TransformListener& tf_;
-      costmap_2d::Costmap2D& costmap_;
+      costmap_2d::Costmap2DROS& costmap_ros_;
+      costmap_2d::Costmap2D costmap_;
       NavFn planner_;
       std::string global_frame_, robot_base_frame_;
       double transform_tolerance_; // timeout before transform errors

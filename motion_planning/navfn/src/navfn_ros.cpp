@@ -37,8 +37,11 @@
 #include <navfn/navfn_ros.h>
 
 namespace navfn {
-  NavfnROS::NavfnROS(ros::Node& ros_node, tf::TransformListener& tf, costmap_2d::Costmap2D& costmap) : ros_node_(ros_node), tf_(tf), 
-  costmap_(costmap), planner_(costmap.cellSizeX(), costmap.cellSizeY()) {
+  NavfnROS::NavfnROS(ros::Node& ros_node, tf::TransformListener& tf, costmap_2d::Costmap2DROS& costmap_ros) : ros_node_(ros_node), tf_(tf), 
+  costmap_ros_(costmap_ros), planner_(costmap_ros.cellSizeX(), costmap_ros.cellSizeY()) {
+    //get an initial copy of the costmap
+    costmap_ros_.getCostmapCopy(costmap_);
+
     //advertise our plan visualization
     ros_node_.advertise<visualization_msgs::Polyline>("~navfn/plan", 1);
 
@@ -72,6 +75,10 @@ namespace navfn {
   }
 
   bool NavfnROS::computePotential(const robot_msgs::Point& world_point){
+    //make sure that we have the latest copy of the costmap and that we clear the footprint of obstacles
+    costmap_ros_.clearRobotFootprint();
+    costmap_ros_.getCostmapCopy(costmap_);
+
     planner_.setCostmap(costmap_.getCharMap());
 
     unsigned int mx, my;
@@ -110,6 +117,10 @@ namespace navfn {
   }
 
   bool NavfnROS::makePlan(const robot_msgs::PoseStamped& goal, std::vector<robot_msgs::PoseStamped>& plan){
+    //make sure that we have the latest copy of the costmap and that we clear the footprint of obstacles
+    costmap_ros_.clearRobotFootprint();
+    costmap_ros_.getCostmapCopy(costmap_);
+
     //until tf can handle transforming things that are way in the past... we'll require the goal to be in our global frame
     if(goal.header.frame_id != global_frame_){
       ROS_ERROR("The goal passed to this planner must be in the %s frame.  It is instead in the %s frame.", global_frame_.c_str(), goal.header.frame_id.c_str());
