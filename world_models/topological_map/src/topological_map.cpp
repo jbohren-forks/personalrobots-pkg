@@ -130,6 +130,11 @@ bool TopologicalMap::MapImpl::isObstacle (const Cell2D& cell) const
     throw UnknownGridCellException(cell);
 }
 
+double TopologicalMap::MapImpl::getResolution () const
+{
+  return resolution_;
+}
+
 bool TopologicalMap::MapImpl::cellOnMap (const Cell2D& cell) const
 {
   return (cell.r>=0) && (cell.c>=0) && (cell.r<(int)numRows(*grid_)) && (cell.c<(int)numCols(*grid_));
@@ -147,6 +152,7 @@ Cell2D TopologicalMap::MapImpl::containingCell (const Point2D& p) const
   }
   return Cell2D(floor((float)p.y/resolution_), floor((float)p.x/resolution_));
 }
+
 
 
 RegionPtr TopologicalMap::MapImpl::squareRegion (const Point2D& p, const double radius) const
@@ -233,6 +239,11 @@ void TopologicalMap::MapImpl::readDoorApproachOverrides (const string& filename)
 
 
 
+
+double TopologicalMap::MapImpl::getCost (const ConnectorId i, const ConnectorId j) const
+{
+  return roadmap_->getCost(i,j);
+}
 
 
 
@@ -1648,7 +1659,21 @@ void TopologicalMap::readDoorApproachOverrides (const string& filename)
   map_impl_->readDoorApproachOverrides(filename);
 }
 
+Cell2D TopologicalMap::containingCell (const Point2D& p) const
+{
+  return map_impl_->containingCell(p);
+}
 
+
+double TopologicalMap::getCost (const ConnectorId i, const ConnectorId j) const
+{
+  return map_impl_->getCost(i,j);
+}
+
+double TopologicalMap::getResolution () const
+{
+  return map_impl_->getResolution();
+}
 
 
 } // namespace topological_map

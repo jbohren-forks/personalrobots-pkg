@@ -93,6 +93,7 @@ public:
 
   ConnectorId addNode (const Point2D& p);
   void setCost (ConnectorId i, ConnectorId j, double cost);
+  double getCost (const ConnectorId i, const ConnectorId j) const;
   void removeNode (ConnectorId i);
 
   ConnectorId pointId (const Point2D& p) const;

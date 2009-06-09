@@ -155,7 +155,7 @@ public:
   /// \return set of all connector ids
   set<ConnectorId> allConnectors () const;
 
-  /// \return vector (of length 2) of ids of regions touching the given connector
+  /// \return pair of ids of regions touching the given connector
   /// \throws UnknownConnectorException
   RegionPair adjacentRegions (ConnectorId id) const;
 
@@ -270,6 +270,15 @@ public:
 
   /// \return center point of \a cell
   Point2D centerPoint (const Cell2D& cell) const;
+
+  /// \return a cell containing the point
+  Cell2D containingCell (const Point2D& p) const;
+
+  /// \return cost between two adjacent connectors
+  double getCost (const ConnectorId i, const ConnectorId j) const;
+
+  /// \return resolution of grid used by map
+  double getResolution () const;
 
 private:
 

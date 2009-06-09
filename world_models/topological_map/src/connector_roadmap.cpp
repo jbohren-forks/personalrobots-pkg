@@ -83,6 +83,15 @@ void Roadmap::setCost (const ConnectorId i, const ConnectorId j, double cost)
   ROS_DEBUG_STREAM_NAMED ("roadmap", "Set cost between connectors " << i << " and " << j << " to " << cost);
 }
 
+double Roadmap::getCost (const ConnectorId i, const ConnectorId j) const
+{
+  pair<RoadmapEdge, bool> res = edge(idVertex(i), idVertex(j), graph_);
+  ROS_ASSERT_MSG (res.second, "Tried to get cost between %u and %u which are not adjacent", i, j);
+  return graph_[res.first].cost;
+}
+    
+
+
 void Roadmap::removeNode (const ConnectorId i)
 {
   const RoadmapVertex v = idVertex(i);

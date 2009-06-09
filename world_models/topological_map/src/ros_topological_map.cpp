@@ -49,13 +49,57 @@
 #include <sysexits.h>
 #include <ros/ros.h>
 
+#define foreach BOOST_FOREACH
+
 namespace topological_map
 {
 
 bool mapService (const TopologicalMap& m, GetTopologicalMap::Request& req, GetTopologicalMap::Response& resp)
 {
-  resp.regions.push_back(MapRegion());
+
+  foreach (ConnectorId id, m.allConnectors()) {
+    RegionPair neighbors = m.adjacentRegions(id);
+    Connector conn;
+    conn.id = id;
+    conn.region1 = neighbors.first;
+    conn.region2 = neighbors.second;
+    Cell2D cell = m.containingCell(m.connectorPosition(id));
+    conn.pos.x = cell.c;
+    conn.pos.y = cell.r;
+    resp.connectors.push_back(conn);
+  }
+
+
+  foreach (RegionId r, m.allRegions()) {
+    MapRegion region;
+    region.id=r;
+    foreach (Cell2D cell, *(m.regionCells(r))) {
+      Cell cell_msg;
+      cell_msg.x = cell.c;
+      cell_msg.y = cell.r;
+      region.cells.push_back(cell_msg);
+    }
+    resp.regions.push_back(region);
+
+
+    vector<ConnectorId> conns = m.adjacentConnectors(r);
+    foreach (ConnectorId c1, conns) {
+      foreach (ConnectorId c2, conns) {
+        if (c1<c2) {
+          ConnectorEdge edge;
+          edge.connector1 = c1;
+          edge.connector2 = c2;
+          edge.cost = m.getCost(c1,c2);
+          resp.connector_edges.push_back(edge);
+        }
+      }
+    }
+  }
+
+  resp.resolution = m.getResolution();
+
   return true;
+
 }
 
 typedef boost::function<bool(GetTopologicalMap::Request&, GetTopologicalMap::Response&)> TopMapCallback;
@@ -100,6 +144,7 @@ int main (int argc, char** argv)
   }
 
   ifstream top_map_stream(top_map_file.c_str());
+  
   tmap::TopologicalMap m(top_map_stream, 1.0, 1e9, 1e9);
 
   // End command line processing

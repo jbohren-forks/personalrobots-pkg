@@ -250,6 +250,15 @@ public:
   /// \return center point of \a cell
   Point2D centerPoint (const Cell2D& cell) const;
 
+  /// \return a cell containing the point
+  Cell2D containingCell (const Point2D& p) const;
+
+  /// \return cost between two adjacent connectors
+  double getCost (const ConnectorId i, const ConnectorId j) const;
+
+  /// \return resolution of grid used by map
+  double getResolution () const;
+
 
 private: 
 
@@ -266,7 +275,6 @@ private:
   MapImpl(const MapImpl&);
   MapImpl& operator= (const MapImpl&);
 
-  Cell2D containingCell(const Point2D& p) const;
   ConnectorId connectorBetween (const RegionId r1, const RegionId r2) const;
   tuple<ConnectorId, Cell2D, Cell2D> connectorCellsBetween (const RegionId r1, const RegionId r2) const;
   Point2D findBorderPoint(const Cell2D& cell1, const Cell2D& cell2) const;
