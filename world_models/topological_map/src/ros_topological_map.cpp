@@ -54,6 +54,7 @@ namespace topological_map
 
 bool mapService (const TopologicalMap& m, GetTopologicalMap::Request& req, GetTopologicalMap::Response& resp)
 {
+  resp.regions.push_back(MapRegion());
   return true;
 }
 

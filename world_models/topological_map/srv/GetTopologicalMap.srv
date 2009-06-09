@@ -1,0 +1,7 @@
+# Get the topological map
+
+---
+
+topological_map/MapRegion[] regions
+topological_map/Connector[] connectors
+topological_map/ConnectorEdge[] connector_edges
