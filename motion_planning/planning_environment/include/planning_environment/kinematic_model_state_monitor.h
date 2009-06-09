@@ -77,71 +77,73 @@ namespace planning_environment
 		delete robotState_;
 	}
 
-	/** Define a callback for when the state is changed */
+	/** \brief Define a callback for when the state is changed */
 	void setOnStateUpdateCallback(const boost::function<void(void)> &callback)
 	{
 	    onStateUpdate_ = callback;
 	}
 	
+	/** \brief Get the kinematic model that is being monitored */
 	planning_models::KinematicModel* getKinematicModel(void) const
 	{
 	    return kmodel_;
 	}
-	
+
+	/** \brief Get the instance of @b RobotModels that is being used */
 	RobotModels* getRobotModels(void) const
 	{
 	    return rm_;
 	}
 	
-	/** Return a pointer to the maintained robot state */
+	/** \brief Return a pointer to the maintained robot state */
 	const planning_models::KinematicModel::StateParams* getRobotState(void) const
 	{
 	    return robotState_;
 	}
 	
-	/** Return the frame id of the state */
+	/** \brief Return the frame id of the state */
 	const std::string& getFrameId(void) const
 	{
 	    return frame_id_;
 	}
 	
-	/** Return true if a pose has been received */
+	/** \brief Return true if a pose has been received */
 	bool havePose(void) const	    
 	{
 	    return havePose_;
 	}
 
-	/** Return true if a full mechanism state has been received */
+	/** \brief Return true if a full mechanism state has been received */
 	bool haveState(void) const	    
 	{
 	    return haveMechanismState_;
 	}
 	
-	/** Return the time of the last pose update */
+	/** \brief Return the time of the last pose update */
 	const ros::Time& lastPoseUpdate(void) const
 	{
 	    return lastPoseUpdate_;
 	}
 	
-	/** Return the time of the last state update */
+	/** \brief Return the time of the last state update */
 	const ros::Time& lastStateUpdate(void) const
 	{
 	    return lastStateUpdate_;
 	}
 	
-	/** Wait until a pose is received */
+	/** \brief Wait until a pose is received */
 	void waitForPose(void) const;
 
-	/** Wait until a full mechanism state is received */
+	/** \brief Wait until a full mechanism state is received */
 	void waitForState(void) const;
 
-	/** Return true if a pose has been received in the last sec seconds */
+	/** \brief Return true if a pose has been received in the last sec seconds */
 	bool isPoseUpdated(double sec) const;
 
-	/** Return true if a full mechanism state has been received in the last sec seconds */
+	/** \brief Return true if a full mechanism state has been received in the last sec seconds */
 	bool isStateUpdated(double sec) const;
 	
-	/** Output the current state as ROS INFO */
+	/** \brief Output the current state as ROS INFO */
 	void printRobotState(void) const;
 
     protected:

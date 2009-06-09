@@ -54,7 +54,13 @@ void planning_environment::CollisionSpaceMonitor::setupCSM(void)
     collisionSpace_ = cm_->getODECollisionModel().get();
     
     collisionMapSubscriber_ = nh_.subscribe("collision_map", 1, &CollisionSpaceMonitor::collisionMapCallback, this);
-    attachBodySubscriber_ = nh_.subscribe("attach_object", 1, &CollisionSpaceMonitor::attachObjectCallback, this);
+    ROS_DEBUG("Listening to collision_map");
+
+    if (cm_->loadedModels())
+    {
+	attachBodySubscriber_ = nh_.subscribe("attach_object", 1, &CollisionSpaceMonitor::attachObjectCallback, this);
+	ROS_DEBUG("Listening to attach_object");
+    }
 }
 
 bool planning_environment::CollisionSpaceMonitor::isMapUpdated(double sec) const
@@ -94,7 +100,7 @@ void planning_environment::CollisionSpaceMonitor::collisionMapCallback(const rob
     
     double tupd = (ros::WallTime::now() - startTime).toSec();
     ROS_DEBUG("Updated map model in %f seconds", tupd);
-    lastMapUpdate_ = ros::Time::now();
+    lastMapUpdate_ = collisionMap->header.stamp;
     haveMap_ = true;
     
     if (onAfterMapUpdate_ != NULL)
@@ -139,7 +145,7 @@ void planning_environment::CollisionSpaceMonitor::attachObjectCallback(const rob
 	
 	// update the collision model
 	collisionSpace_->updateAttachedBodies();
-	ROS_INFO("Link '%s' on '%s' has %d objects attached", attachedObject->link_name.c_str(), attachedObject->robot_name.c_str(), n);
+	ROS_DEBUG("Link '%s' on '%s' has %d objects attached", attachedObject->link_name.c_str(), attachedObject->robot_name.c_str(), n);
     }
     else
 	ROS_WARN("Unable to attach object to link '%s' on '%s'", attachedObject->link_name.c_str(), attachedObject->robot_name.c_str());

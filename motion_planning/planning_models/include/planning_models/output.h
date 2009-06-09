@@ -34,14 +34,14 @@
 
 /* \author Ioan Sucan */
 
-#ifndef COLLISION_SPACE_OUTPUT_INTERFACE_
-#define COLLISION_SPACE_OUTPUT_INTERFACE_
+#ifndef PLANNING_MODELS_OUTPUT_INTERFACE_
+#define PLANNING_MODELS_OUTPUT_INTERFACE_
 
 #include <string>
 #include <cstdarg>
 
 /** Main namespace */
-namespace collision_space
+namespace planning_models
 {
     
     /** Message namespace */

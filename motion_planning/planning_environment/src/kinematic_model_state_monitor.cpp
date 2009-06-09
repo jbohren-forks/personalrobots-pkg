@@ -60,11 +60,18 @@ void planning_environment::KinematicModelStateMonitor::setupRSM(void)
 		floatingJoint_ = kmodel_->getRobot(0)->chain->name;
 	    
 	    if (includePose_)
+	    {
 		localizedPoseSubscriber_ = nh_.subscribe("localized_pose", 1, &KinematicModelStateMonitor::localizedPoseCallback,  this);
+		ROS_DEBUG("Listening to localized pose");
+	    }
 	    else
+	    {
 		frame_id_ = kmodel_->getRobot(0)->chain->after->name;
+		ROS_DEBUG("Robot state frame is %s", frame_id_.c_str());
+	    }
 	}
 	mechanismStateSubscriber_ = nh_.subscribe("mechanism_state", 1, &KinematicModelStateMonitor::mechanismStateCallback, this);
+	ROS_DEBUG("Listening to mechanism state");
     }
 }
 

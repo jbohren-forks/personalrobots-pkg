@@ -37,18 +37,19 @@
 #ifndef COLLISION_SPACE_ENVIRONMENT_MODEL_
 #define COLLISION_SPACE_ENVIRONMENT_MODEL_
 
-#include "collision_space/output.h"
 #include <planning_models/kinematic.h>
+#include <planning_models/output.h>
 #include <LinearMath/btVector3.h>
 #include <boost/thread/mutex.hpp>
 #include <boost/shared_ptr.hpp>
 #include <vector>
 #include <string>
 
-/** @htmlinclude ../../manifest.html
 
-    @mainpage
-    
+/** Main namespace */
+namespace collision_space
+{
+    /**   
     A class describing an environment for a kinematic robot. This is
     the base (abstract) definition. Different implementations are
     possible. The class is aware of a certain set of fixed
@@ -56,13 +57,7 @@
     can change (removed by clearObstacles()) and a kinematic
     robot model. The class provides functionality for checking whether a
     given robot is in collision. 
-    
- */
-
-/** Main namespace */
-namespace collision_space
-{
-    
+    */
     class EnvironmentModel
     {
     public:
@@ -168,7 +163,7 @@ namespace collision_space
 	boost::mutex                                       m_lock;
 	bool                                               m_selfCollision;
 	bool                                               m_verbose;
-	msg::Interface                                     m_msg;
+	planning_models::msg::Interface                    m_msg;
 	
 	/** List of loaded robot models */	
 	boost::shared_ptr<planning_models::KinematicModel> m_robotModel;

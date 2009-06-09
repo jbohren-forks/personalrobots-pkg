@@ -2,7 +2,10 @@
 \mainpage
 \htmlinclude manifest.html
 
-\b planning_environment is ... 
+\b planning_environment is a library that allows users to instantiate
+robot models and collision models based on data from the parameter
+server with minimal user input. Additionally, state information for
+both robot models and collision environments can be monitored.
 
 <!-- 
 In addition to providing an overview of your package,

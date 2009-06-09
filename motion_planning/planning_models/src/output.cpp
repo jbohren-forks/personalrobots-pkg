@@ -34,43 +34,43 @@
 
 /* \author Ioan Sucan */
 
-#include "collision_space/output.h"
+#include "planning_models/output.h"
 #include <boost/thread/mutex.hpp>
 #include <iostream>
 #include <cstdlib>
 
-static collision_space::msg::OutputHandlerSTD _defaultOutputHandler;
-static collision_space::msg::OutputHandler   *OUTPUT_HANDLER = static_cast<collision_space::msg::OutputHandler*>(&_defaultOutputHandler);
-static boost::mutex                _lock; // it is likely the outputhandler does some I/O, so we serialize it
+static planning_models::msg::OutputHandlerSTD _defaultOutputHandler;
+static planning_models::msg::OutputHandler   *OUTPUT_HANDLER = static_cast<planning_models::msg::OutputHandler*>(&_defaultOutputHandler);
+static boost::mutex                           _lock; // it is likely the outputhandler does some I/O, so we serialize it
 
-void collision_space::msg::noOutputHandler(void)
+void planning_models::msg::noOutputHandler(void)
 {
     _lock.lock();
     OUTPUT_HANDLER = NULL;
     _lock.unlock();
 }
 
-void collision_space::msg::useOutputHandler(OutputHandler *oh)
+void planning_models::msg::useOutputHandler(OutputHandler *oh)
 {
     _lock.lock();
     OUTPUT_HANDLER = oh;
     _lock.unlock();
 }
 
-collision_space::msg::OutputHandler* collision_space::msg::getOutputHandler(void)
+planning_models::msg::OutputHandler* planning_models::msg::getOutputHandler(void)
 {
     return OUTPUT_HANDLER;
 }
 
-collision_space::msg::Interface::Interface(void)
+planning_models::msg::Interface::Interface(void)
 {
 }
 
-collision_space::msg::Interface::~Interface(void)
+planning_models::msg::Interface::~Interface(void)
 {
 }
 
-void collision_space::msg::Interface::message(const std::string &text) const
+void planning_models::msg::Interface::message(const std::string &text) const
 {
     if (OUTPUT_HANDLER)
     {
@@ -80,7 +80,7 @@ void collision_space::msg::Interface::message(const std::string &text) const
     }
 }
 
-void collision_space::msg::Interface::message(const char *msg, ...) const
+void planning_models::msg::Interface::message(const char *msg, ...) const
 {
     va_list ap;
     va_start(ap, msg);
@@ -88,7 +88,7 @@ void collision_space::msg::Interface::message(const char *msg, ...) const
     va_end(ap);
 }
 
-void collision_space::msg::Interface::inform(const std::string &text) const
+void planning_models::msg::Interface::inform(const std::string &text) const
 {
     if (OUTPUT_HANDLER)
     {
@@ -98,7 +98,7 @@ void collision_space::msg::Interface::inform(const std::string &text) const
     }
 }
 
-void collision_space::msg::Interface::inform(const char *msg, ...) const
+void planning_models::msg::Interface::inform(const char *msg, ...) const
 {
     va_list ap; 
     va_start(ap, msg);
@@ -106,7 +106,7 @@ void collision_space::msg::Interface::inform(const char *msg, ...) const
     va_end(ap);
 }
 
-void collision_space::msg::Interface::warn(const std::string &text) const
+void planning_models::msg::Interface::warn(const std::string &text) const
 {
     if (OUTPUT_HANDLER)
     {
@@ -116,7 +116,7 @@ void collision_space::msg::Interface::warn(const std::string &text) const
     }
 }
 
-void collision_space::msg::Interface::warn(const char *msg, ...) const
+void planning_models::msg::Interface::warn(const char *msg, ...) const
 {
     va_list ap; 
     va_start(ap, msg);
@@ -124,7 +124,7 @@ void collision_space::msg::Interface::warn(const char *msg, ...) const
     va_end(ap);
 }
 
-void collision_space::msg::Interface::error(const std::string &text) const
+void planning_models::msg::Interface::error(const std::string &text) const
 {
     if (OUTPUT_HANDLER)
     {
@@ -134,14 +134,14 @@ void collision_space::msg::Interface::error(const std::string &text) const
     }
 }
 
-void collision_space::msg::Interface::error(const char *msg, ...) const
+void planning_models::msg::Interface::error(const char *msg, ...) const
 {
     va_list ap;
     va_start(ap, msg);
     error(combine(msg, ap));
     va_end(ap);
 }
-std::string collision_space::msg::Interface::combine(const char *msg, va_list va) const
+std::string planning_models::msg::Interface::combine(const char *msg, va_list va) const
 {
     va_list ap;
     va_copy(ap, va);
@@ -151,25 +151,25 @@ std::string collision_space::msg::Interface::combine(const char *msg, va_list va
     return buf;
 }
 
-void collision_space::msg::OutputHandlerSTD::error(const std::string &text)
+void planning_models::msg::OutputHandlerSTD::error(const std::string &text)
 {
     std::cerr << "Error:   " << text << std::endl;
     std::cerr.flush();
 }
 
-void collision_space::msg::OutputHandlerSTD::warn(const std::string &text)
+void planning_models::msg::OutputHandlerSTD::warn(const std::string &text)
 {
     std::cerr << "Warning: " << text << std::endl;
     std::cerr.flush();
 }
 
-void collision_space::msg::OutputHandlerSTD::inform(const std::string &text)
+void planning_models::msg::OutputHandlerSTD::inform(const std::string &text)
 { 
     std::cout << "Info:    " << text << std::endl;
     std::cout.flush();
 }
 
-void collision_space::msg::OutputHandlerSTD::message(const std::string &text)
+void planning_models::msg::OutputHandlerSTD::message(const std::string &text)
 {
     std::cout << text;
     std::cout.flush();

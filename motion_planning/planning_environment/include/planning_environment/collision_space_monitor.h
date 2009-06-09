@@ -78,36 +78,44 @@ namespace planning_environment
 	    return collisionSpace_;
 	}
 	
+	/** \brief Return the instance of collision models that is being used */
 	CollisionModels* getCollisionModels(void) const
 	{
 	    return cm_;
 	}
 	
-	/** Define a callback for before updating a map */
+	/** \brief Define a callback for before updating a map */
 	void setOnBeforeMapUpdateCallback(const boost::function<void(const robot_msgs::CollisionMapConstPtr)> &callback)
 	{
 	    onBeforeMapUpdate_ = callback;
 	}
 
-	/** Define a callback for after updating a map */
+	/** \brief Define a callback for after updating a map */
 	void setOnAfterMapUpdateCallback(const boost::function<void(const robot_msgs::CollisionMapConstPtr)> &callback)
 	{
 	    onAfterMapUpdate_ = callback;
 	}
 
-	/** Define a callback for after updating a map */
+	/** \brief Define a callback for after updating a map */
 	void setOnAfterAttachBodyCallback(const boost::function<void(planning_models::KinematicModel::Link*)> &callback)
 	{
 	    onAfterAttachBody_ = callback;
 	}
 
+	/** \brief Return true if  map has been received */
 	bool haveMap(void) const
 	{
 	    return haveMap_;
 	}
 	
-	/** Return true if a map update has been received in the last sec seconds */
+	/** \brief Return true if a map update has been received in the last sec seconds */
 	bool isMapUpdated(double sec) const;
+	
+	/** \brief Return the last update time for the map */
+	const ros::Time& lastMapUpdate(void) const
+	{
+	    return lastMapUpdate_;
+	}
 	
     protected:
 	

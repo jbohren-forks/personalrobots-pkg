@@ -1,7 +1,7 @@
 <launch>
 
   <param name="robotdesc/pr2" command="$(find xacro)/xacro.py '$(find pr2_defs)/robots/pr2.xacro.xml'" />
-  <rosparam command="load" ns="robotdesc/pr2_planning" file="$(find planning_environment)/planning.yaml" /> 
+  <rosparam command="load" ns="robotdesc/pr2_planning" file="$(find pr2_defs)/planning/planning.yaml" /> 
 
   <test test-name="test_robot_models" pkg="planning_environment" type="test_robot_models" />
   

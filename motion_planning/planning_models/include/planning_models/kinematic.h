@@ -38,7 +38,7 @@
 #define PLANNING_MODELS_KINEMATIC_ROBOT_MODEL_
 
 #include "planning_models/shapes.h"
-
+#include "planning_models/output.h"
 #include <urdf/URDF.h>
 #include <LinearMath/btTransform.h>
 #include <boost/thread/mutex.hpp>
@@ -49,11 +49,7 @@
 #include <map>
 #include <cassert>
 
-/** @htmlinclude ../../manifest.html
-
-    @mainpage
-    
-    A class describing a kinematic robot model loaded from URDF. Visual geometry is ignored */
+/** Describing a kinematic robot model loaded from URDF. Visual geometry is ignored */
 
 /** Main namespace */
 namespace planning_models
@@ -551,6 +547,7 @@ namespace planning_models
 	protected:
 	    
 	    KinematicModel                      *m_owner;
+	    msg::Interface                       m_msg;
 	    ModelInfo                           &m_mi;
 	    double                              *m_params;
 	    std::map<unsigned int, bool>         m_seen;
@@ -653,7 +650,8 @@ namespace planning_models
 	bool                              m_built;
 
 	boost::mutex                      m_lock;
-
+	msg::Interface                    m_msg;
+	
     private:
 	
 	/** Build the needed datastructure for a joint */

@@ -35,12 +35,12 @@
 /** \author Ioan Sucan */
 
 #include "collision_space/bodies.h"
-#include "collision_space/output.h"
+#include <planning_models/output.h>
 #include <LinearMath/btConvexHull.h>
 #include <cmath>
 
 
-static collision_space::msg::Interface MSG;
+static planning_models::msg::Interface MSG;
 
 collision_space::bodies::Body* collision_space::bodies::createBodyFromShape(const planning_models::shapes::Shape *shape)
 {

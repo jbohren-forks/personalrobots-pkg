@@ -49,13 +49,13 @@
 namespace planning_environment
 {
     
-    /** A class capable of loading a robot model from the parameter server */
+    /** \brief A class capable of loading a robot model from the parameter server */
     
     class RobotModels
     {
     public:
 	
-	/** A class to define a planner configuration */
+	/** \brief A class to define a planner configuration */
 	class PlannerConfig
 	{
 	public:
@@ -89,54 +89,67 @@ namespace planning_environment
 	{
 	}
 	
+	/** \brief Return the name of the description */
 	const std::string &getDescription(void) const
 	{
 	    return description_;
 	}
 	
-	/** Return the instance of the constructed kinematic model */
+	/** \brief Return the instance of the constructed kinematic model */
 	const boost::shared_ptr<planning_models::KinematicModel> &getKinematicModel(void) const
 	{
 	    return kmodel_;
 	}
 
-	/** Return the instance of the parsed robot description */
+	/** \brief Return the instance of the parsed robot description */
 	const boost::shared_ptr<robot_desc::URDF> &getParsedDescription(void) const
 	{
 	    return urdf_;
 	}
 	
+	/** \brief Return the map of the planning groups (arrays of link names) */
 	const std::map< std::string, std::vector<std::string> > &getPlanningGroups(void) const
 	{
 	    return planning_groups_;
 	}	
 	
+	/** \brief Return the names of the links that should be considered when performing collision checking */
 	const std::vector<std::string> &getCollisionCheckLinks(void) const
 	{
 	    return collision_check_links_;
 	}
-	
+
+	/** \brief Return the names of the links that should be considered when cleaning sensor data
+	    of parts the robot can see from itself */
 	const std::vector<std::string> &getSelfSeeLinks(void) const
 	{
 	    return self_see_links_;
 	}
 
+	/** \brief Return the groups of links that should be considered when testing for self collision. This is an
+	    array of pairs. Both elements of the pair are groups of links. If any link in the first member of the pair
+	    collides with some link in the second member of the pair, we have a collision */
 	const std::vector< std::pair < std::vector<std::string>, std::vector<std::string> > > &getSelfCollisionGroups(void) const
 	{
 	    return self_collision_check_groups_;
 	}
 	
+	/** \brief Return true if models have been loaded */
 	bool loadedModels(void) const
 	{
 	    return loaded_models_;
 	}
 	
+	/** \brief Get the amount of padding to be used for links when cleaning sensor data */
 	double getSelfSeePadding(void);
+
+	/** \brief Get the amount of scaling to be used for links when cleaning sensor data */
 	double getSelfSeeScale(void);
 	
+	/** \breif Get the list of planner configurations available for a specific planning group */
 	std::vector< boost::shared_ptr<PlannerConfig> > getGroupPlannersConfig(const std::string &group);
 	
-	/** Reload the robot description and recreate the model */
+	/** \brief Reload the robot description and recreate the model */
 	virtual void reload(void);
 	
     protected:

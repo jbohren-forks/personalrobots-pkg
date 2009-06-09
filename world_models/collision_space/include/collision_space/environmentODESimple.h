@@ -40,13 +40,11 @@
 #include "collision_space/environment.h"
 #include <ode/ode.h>
 
-/** @htmlinclude ../../manifest.html
-
-    A class describing an environment for a kinematic robot using ODE */
 
 namespace collision_space
 {
-    
+
+    /** A class describing an environment for a kinematic robot using ODE */
     class EnvironmentModelODESimple : public EnvironmentModel
     {
     public:

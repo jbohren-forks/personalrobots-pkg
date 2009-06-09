@@ -35,8 +35,53 @@
 /** \author Ioan Sucan */
 
 #include "planning_environment/robot_models.h"
+#include <planning_models/output.h>
 #include <ros/console.h>
 #include <sstream>
+
+// make sure messages from planning_environments & collision_space go to ROS console
+namespace planning_environment
+{    
+    class OutputHandlerROScon : public planning_models::msg::OutputHandler
+    {
+    public:
+	
+	OutputHandlerROScon(void) : OutputHandler()
+	{
+	    planning_models::msg::useOutputHandler(this);
+	}
+	
+	~OutputHandlerROScon(void)
+	{
+	    planning_models::msg::noOutputHandler();
+	}
+	
+	/** Issue a ROS error */
+	virtual void error(const std::string &text)
+	{
+	    ROS_ERROR("%s", text.c_str());
+	}	    
+	
+	/** Issue a ROS warning */
+	virtual void warn(const std::string &text)
+	{
+	    ROS_WARN("%s", text.c_str());
+	}
+	
+	/** Issue ROS info */
+	virtual void inform(const std::string &text)
+	{
+	    ROS_INFO("%s", text.c_str());
+	}	    
+	
+	/** Issue ROS debug */
+	virtual void message(const std::string &text)
+	{
+	    ROS_DEBUG("%s", text.c_str());
+	}
+    };
+    static OutputHandlerROScon _outputHandler;    
+}
 
 void planning_environment::RobotModels::reload(void)
 {
@@ -74,7 +119,10 @@ void planning_environment::RobotModels::loadRobot(void)
 	    getSelfSeeLinks(self_see_links_);	    
 	}
 	else
+	{
 	    urdf_.reset();
+	    ROS_ERROR("Unable to parse URDF description!");
+	}
     }
     else
 	ROS_ERROR("Robot model '%s' not found!", description_.c_str());

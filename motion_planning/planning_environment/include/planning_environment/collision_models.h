@@ -43,7 +43,7 @@
 namespace planning_environment
 {
 
-    /** A class capable of loading a robot model from the parameter server */
+    /** \brief A class capable of loading a robot model from the parameter server */
     
     class CollisionModels : public RobotModels
     {
@@ -58,7 +58,7 @@ namespace planning_environment
 	{
 	}
 
-	/** Reload the robot description and recreate the model */	
+	/** \brief Reload the robot description and recreate the model */	
 	virtual void reload(void)
 	{
 	    RobotModels::reload();
@@ -66,7 +66,7 @@ namespace planning_environment
 	    loadCollision();
 	}
 	
-	/** Return the instance of the constructed ODE collision model */
+	/** \brief Return the instance of the constructed ODE collision model */
 	const boost::shared_ptr<collision_space::EnvironmentModel> &getODECollisionModel(void) const
 	{
 	    return ode_collision_model_;

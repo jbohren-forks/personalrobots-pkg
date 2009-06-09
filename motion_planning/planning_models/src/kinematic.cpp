@@ -36,6 +36,7 @@
 
 #include <planning_models/kinematic.h>
 #include <algorithm>
+#include <sstream>
 #include <cmath>
 
 namespace planning_models
@@ -378,7 +379,7 @@ void planning_models::KinematicModel::build(const robot_desc::URDF &model, const
 {
     if (m_built)
     {
-	std::cerr << "Model has already been built!" << std::endl;
+	m_msg.error("Model has already been built!");
 	return;
     }
     
@@ -555,11 +556,11 @@ void planning_models::KinematicModel::buildChainJ(Robot *robot, Link *parent, Jo
     
     if (m_verbose && joint->usedParams > 0)
     {
-	std::cout << "Joint '" << urdfLink->joint->name << "' connects link '" << urdfLink->parentName << "' to link '" << 
-	    urdfLink->name << "' and uses state coordinates: ";
+	m_msg.message("Joint '" + urdfLink->joint->name + "' connects link '" + urdfLink->parentName + "' to link '" + urdfLink->name + "' and uses state coordinates: ");
+	std::stringstream ss;
 	for (unsigned int i = 0 ; i < joint->usedParams ; ++i)
-	    std::cout << i + robot->stateDimension << " ";
-	std::cout << std::endl;
+	    ss << i + robot->stateDimension << " ";
+	m_msg.message(ss.str());
     }
     
     robot->stateDimension += joint->usedParams;
@@ -588,6 +589,7 @@ void planning_models::KinematicModel::buildChainL(Robot *robot, Joint *parent, L
 planning_models::KinematicModel::Joint* planning_models::KinematicModel::createJoint(const robot_desc::URDF::Link* urdfLink)
 {
     Joint *newJoint = NULL;
+    std::stringstream ss;
     switch (urdfLink->joint->type)
     {
     case robot_desc::URDF::Link::Joint::FIXED:
@@ -606,7 +608,8 @@ planning_models::KinematicModel::Joint* planning_models::KinematicModel::createJ
 	newJoint = new RevoluteJoint();
 	break;
     default:
- 	std::cerr << "Unknown joint type " << urdfLink->joint->type << std::endl;
+	ss << urdfLink->joint->type;
+	m_msg.error("Unknown joint type " + ss.str());
 	break;
     }  
     return newJoint;
@@ -744,7 +747,7 @@ bool planning_models::KinematicModel::StateParams::setParamsJoint(const double *
 	}
     }
     else
-	std::cerr << "Unknown joint: '" << name << "'" << std::endl;
+	m_msg.error("Unknown joint: '" + name + "'");
     return result;
 }
 
@@ -878,10 +881,12 @@ int planning_models::KinematicModel::StateParams::getJointIndexInGroup(const std
 	    for (unsigned int i = 0 ; i < m_mi.groupStateIndexList[groupID].size() ; ++i)
 		if (m_mi.groupStateIndexList[groupID][i] == pos)
 		    return i;
-	    std::cerr << "Joint '" << name << "' is not in group " << groupID << std::endl; 
+	    std::stringstream ss;
+	    ss << groupID;
+	    m_msg.error("Joint '" + name + "' is not in group " + ss.str()); 
 	}
     }
-    std::cerr << "Unknown joint: '" << name << "'" << std::endl; 
+    m_msg.error("Unknown joint: '" + name + "'"); 
     return -1;
 }
 
@@ -899,7 +904,7 @@ void planning_models::KinematicModel::StateParams::copyParamsJoint(double *param
 	    return;
 	}
     }
-    std::cerr << "Unknown joint: '" << name << "'" << std::endl;
+    m_msg.error("Unknown joint: '" + name + "'");
 }
 
 void planning_models::KinematicModel::StateParams::copyParams(double *params) const
