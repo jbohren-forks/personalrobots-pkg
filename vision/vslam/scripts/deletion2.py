@@ -80,7 +80,7 @@ if 1:
   print set(skel.labelization())
   skel.optimize()
   skel.optimize()
-  skel.save("/home/jamesb/ABCDEF2")
+  skel.save("iros2009/ABCDEF2")
   pos,edges,_ = skel.localization()
   f = open("deletion2.pickle", "w")
   pickle.dump(pos, f)

@@ -83,6 +83,10 @@ if len(sys.argv) > 1:
   pylab.show()
   sys.exit(0)
 
+render(sys.argv[1], 'blue', 0.0, "foo.eps")
+pylab.savefig("foo.eps")
+pylab.show()
+
 if False:
   fig = pylab.figure(figsize=(10,10), linewidth = 0.0)
 

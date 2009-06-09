@@ -218,12 +218,18 @@ for vo in vos:
 skel.summarize_timers()
 skel.dump_timers('skel_timers.pickle')
 
+
 skel.trim()
 print "Saving as mkplot_snap"
 skel.save("mkplot_snap")
+
+skel.optimize()
+skel.optimize()
+
 skel.plot('blue', True)
 pylab.savefig("mkplot.eps")
 pylab.show()
+
 sys.exit(0)
 
 colors = [ 'red', 'black', 'magenta', 'cyan', 'orange', 'brown', 'purple', 'olive', 'gray' ]
