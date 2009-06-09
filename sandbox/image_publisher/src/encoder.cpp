@@ -2,7 +2,7 @@
 
 int main(int argc, char** argv)
 {
-  ros::init(argc, argv, "encoder");
+  ros::init(argc, argv, "encoder", ros::init_options::AnonymousName);
   ros::NodeHandle n;
 
   std::string topic = n.mapName("image");
