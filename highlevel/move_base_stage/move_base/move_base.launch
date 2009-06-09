@@ -4,7 +4,7 @@
   <param name="/use_sim_time" value="true"/>
     <node pkg="move_base" type="move_base" respawn="false" name="move_base" output="screen">
 
-      <param name="footprint_padding" value="0.02" />
+      <param name="footprint_padding" value="0.01" />
 
       <rosparam file="$(find move_base_stage)/config/costmap_common_params.yaml" command="load" ns="navfn" />
       <rosparam file="$(find move_base_stage)/config/costmap_common_params.yaml" command="load" ns="base_local_planner" />

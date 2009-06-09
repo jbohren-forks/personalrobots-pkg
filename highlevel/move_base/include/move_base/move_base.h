@@ -94,8 +94,6 @@ namespace move_base {
        */
       void makePlan(const robot_msgs::PoseStamped& goal);
 
-      bool escape(double escape_dist, unsigned int max_attempts, const robot_msgs::PoseStamped& robot_pose);
-
       /**
        * @brief  Publish a goal to the visualizer
        * @param  goal The goal to visualize

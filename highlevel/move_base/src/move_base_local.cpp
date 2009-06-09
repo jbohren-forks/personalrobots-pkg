@@ -92,7 +92,7 @@ namespace move_base {
     //footprint_.push_back(pt);
 
     //create a trajectory controller
-    tc_ = new TrajectoryPlannerROS(ros_node_, tf_, controller_costmap_, footprint_, &controller_costmap_);
+    tc_ = new TrajectoryPlannerROS(ros_node_, tf_, controller_costmap_, footprint_);
   }
 
   MoveBaseLocal::~MoveBaseLocal(){
@@ -197,10 +197,9 @@ namespace move_base {
       }
 
       bool valid_control = false;
-      //get observations for the non-costmap controllers
-      std::vector<Observation> observations;
-      controller_costmap_ros_->getMarkingObservations(observations);
-      valid_control = tc_->computeVelocityCommands(cmd_vel, observations, false);
+
+      //compute veloctiy commands to send to the base... don't prune the path
+      valid_control = tc_->computeVelocityCommands(cmd_vel, false);
 
       //give the base the velocity command
       ros_node_.publish("cmd_vel", cmd_vel);

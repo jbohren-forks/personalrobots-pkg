@@ -72,15 +72,6 @@ namespace base_local_planner {
       virtual double footprintCost(const robot_msgs::Point& position, const std::vector<robot_msgs::Point>& footprint,
           double inscribed_radius, double circumscribed_radius);
 
-      /**
-       * @brief  The costmap already keeps track of world observations, so for this world model this method does nothing
-       * @param footprint The footprint of the robot in its current location
-       * @param observations The observations from various sensors 
-       * @param laser_scans The scans used to clear freespace
-       */
-      virtual void updateWorld(const std::vector<robot_msgs::Point>& footprint,
-          const std::vector<costmap_2d::Observation>& observations, const std::vector<PlanarLaserScan>& laser_scans) {}
-
     private:
       /**
        * @brief  Rasterizes a line in the costmap grid and checks for collisions

@@ -44,6 +44,11 @@ using namespace navfn;
 using namespace robot_actions;
 
 namespace move_base {
+
+  double sign(double x){
+    return x < 0.0 ? -1.0 : 1.0;
+  }
+
   MoveBase::MoveBase(ros::Node& ros_node, tf::TransformListener& tf) : 
     Action<robot_msgs::PoseStamped, robot_msgs::PoseStamped>(ros_node.getName()), ros_node_(ros_node), tf_(tf),
     run_planner_(true), tc_(NULL), planner_costmap_ros_(NULL), controller_costmap_ros_(NULL), 
@@ -69,24 +74,53 @@ namespace move_base {
     robot_msgs::Point pt;
     double padding;
     ros_node_.param("~footprint_padding", padding, 0.01);
-    //create a square footprint
-    pt.x = inscribed_radius_ + padding;
-    pt.y = -1 * (inscribed_radius_ + padding);
-    footprint_.push_back(pt);
-    pt.x = -1 * (inscribed_radius_ + padding);
-    pt.y = -1 * (inscribed_radius_ + padding);
-    footprint_.push_back(pt);
-    pt.x = -1 * (inscribed_radius_ + padding);
-    pt.y = inscribed_radius_ + padding;
-    footprint_.push_back(pt);
-    pt.x = inscribed_radius_ + padding;
-    pt.y = inscribed_radius_ + padding;
-    footprint_.push_back(pt);
 
-    //give the robot a nose
-    pt.x = circumscribed_radius_;
-    pt.y = 0;
-    footprint_.push_back(pt);
+    //grab the footprint from the parameter server if possible
+    XmlRpc::XmlRpcValue footprint_list;
+    if(ros_node_.getParam("~footprint", footprint_list)){
+      //make sure we have a list of lists
+      ROS_ASSERT_MSG(footprint_list.getType() == XmlRpcValue::TypeArray && footprint_list.size() > 2, 
+          "The footprint must be specified as list of lists on the parameter server eg: [[x1, y1], [x2, y2], ..., [xn, yn]]");
+      for(int i = 0; i < footprint_list.size(); ++i){
+        //make sure we have a list of lists of size 2
+        XmlRpc::XmlRpcValue point = footprint_list[i];
+        ROS_ASSERT_MSG(point.getType() == XmlRpc::XmlRpcValue::TypeArray && point.size() == 2, 
+            "The footprint must be specified as list of lists on the parameter server eg: [[x1, y1], [x2, y2], ..., [xn, yn]]");
+
+        //make sure that the value we're looking at is either a double or an int
+        ROS_ASSERT(point[0].getType() == XmlRpc::XmlRpcValue::TypeInt || point[0].getType() == XmlRpc::XmlRpcValue::TypeDouble);
+        pt.x = point[0].getType() == XmlRpc::XmlRpcValue::TypeInt ? (int)(point[0]) : (double)(point[0]);
+        pt.x += sign(pt.x) * padding;
+
+        //make sure that the value we're looking at is either a double or an int
+        ROS_ASSERT(point[1].getType() == XmlRpc::XmlRpcValue::TypeInt || point[1].getType() == XmlRpc::XmlRpcValue::TypeDouble);
+        pt.y = point[1].getType() == XmlRpc::XmlRpcValue::TypeInt ? (int)(point[1]) : (double)(point[1]);
+        pt.y += sign(pt.y) * padding;
+
+        footprint_.push_back(pt);
+        
+      }
+    }
+    else{
+      //if no explicit footprint is set on the param server... create a square footprint
+      pt.x = inscribed_radius_ + padding;
+      pt.y = -1 * (inscribed_radius_ + padding);
+      footprint_.push_back(pt);
+      pt.x = -1 * (inscribed_radius_ + padding);
+      pt.y = -1 * (inscribed_radius_ + padding);
+      footprint_.push_back(pt);
+      pt.x = -1 * (inscribed_radius_ + padding);
+      pt.y = inscribed_radius_ + padding;
+      footprint_.push_back(pt);
+      pt.x = inscribed_radius_ + padding;
+      pt.y = inscribed_radius_ + padding;
+      footprint_.push_back(pt);
+
+      //give the robot a nose
+      pt.x = circumscribed_radius_;
+      pt.y = 0;
+      footprint_.push_back(pt);
+    }
 
     //create the ros wrapper for the planner's costmap... and initializer a pointer we'll use with the underlying map
     planner_costmap_ros_ = new Costmap2DROS(ros_node_, tf_, std::string("navfn"), footprint_);
@@ -101,7 +135,7 @@ namespace move_base {
     controller_costmap_ros_->getCostmapCopy(controller_costmap_);
 
     //create a trajectory controller
-    tc_ = new TrajectoryPlannerROS(ros_node_, tf_, controller_costmap_, footprint_, &planner_costmap_);
+    tc_ = new TrajectoryPlannerROS(ros_node_, tf_, controller_costmap_, footprint_);
 
     //advertise a service for getting a plan
     ros_node_.advertiseService("~make_plan", &MoveBase::planService, this);
@@ -297,35 +331,6 @@ namespace move_base {
     lock_.unlock();
   }
 
-  bool MoveBase::escape(double escape_dist, unsigned int max_attempts, const robot_msgs::PoseStamped& robot_pose){
-    ROS_DEBUG("Attempting to generate an escape goal %.2f meters away", escape_dist);
-    unsigned int attempts = 0;
-    ros::Rate r(controller_frequency_);
-    robot_msgs::PoseStamped goal_pose = robot_pose;
-    srand(time(0));
-    valid_plan_ = false;
-    while(!valid_plan_ && attempts < max_attempts){
-      double angle = 2 * M_PI * rand() / RAND_MAX;
-      double x_diff = escape_dist * cos(angle);
-      double y_diff = escape_dist * sin(angle);
-      goal_pose = robot_pose;
-      goal_pose.pose.position.x += x_diff;
-      goal_pose.pose.position.y += y_diff;
-      makePlan(goal_pose);
-      attempts++;
-      r.sleep();
-    }
-
-    if(valid_plan_){
-      ROS_DEBUG("Attempting to escape to point (%.2f, %.2f)", goal_pose.pose.position.x, goal_pose.pose.position.y);
-      return true;
-    }
-
-    ROS_INFO("Could not find a valid escape point");
-    return false;
-  }
-
-
   void MoveBase::getRobotPose(std::string frame, tf::Stamped<tf::Pose>& pose){
     tf::Stamped<tf::Pose> robot_pose;
     robot_pose.setIdentity();
@@ -408,10 +413,8 @@ namespace move_base {
           }
         }
 
-        //get observations for the non-costmap controllers
-        std::vector<Observation> observations;
-        controller_costmap_ros_->getMarkingObservations(observations);
-        valid_control = tc_->computeVelocityCommands(cmd_vel, observations);
+        //compute velocity commands to send to the base
+        valid_control = tc_->computeVelocityCommands(cmd_vel);
         ROS_DEBUG("Velocity commands produced by controller: vx: %.2f, vy: %.2f, vth: %.2f", cmd_vel.vel.vx, cmd_vel.vel.vy, cmd_vel.ang_vel.vz);
 
         if(valid_control)

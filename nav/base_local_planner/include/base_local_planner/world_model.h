@@ -51,15 +51,6 @@ namespace base_local_planner {
   class WorldModel{
     public:
       /**
-       * @brief  Subclass will implement this method to insert observations from sensors into its world model
-       * @param footprint The footprint of the robot in its current location
-       * @param observations The observations from various sensors 
-       * @param laser_scans The planar laser scans used to clear freespace
-       */
-      virtual void updateWorld(const std::vector<robot_msgs::Point>& footprint,
-          const std::vector<costmap_2d::Observation>& observations, const std::vector<PlanarLaserScan>& laser_scans) = 0;
-
-      /**
        * @brief  Subclass will implement this method to check a footprint at a given position and orientation for legality in the world
        * @param  position The position of the robot in world coordinates
        * @param  footprint The specification of the footprint of the robot in world coordinates

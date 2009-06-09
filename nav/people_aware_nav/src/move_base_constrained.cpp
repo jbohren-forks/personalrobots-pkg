@@ -103,7 +103,7 @@ namespace people_aware_nav {
     controller_costmap_ros_->getCostmapCopy(controller_costmap_);
 
     //create a trajectory controller
-    tc_ = new TrajectoryPlannerROS(ros_node_, tf_, controller_costmap_, footprint_, &planner_costmap_);
+    tc_ = new TrajectoryPlannerROS(ros_node_, tf_, controller_costmap_, footprint_);
 
     //initially clear any unknown space around the robot
     planner_costmap_ros_->clearNonLethalWindow(circumscribed_radius_ * 2, circumscribed_radius_ * 2);
@@ -270,9 +270,7 @@ void MoveBaseConstrained::makePlan(const PoseStamped& goal, const Polygon3D& for
         }
 
         //get observations for the non-costmap controllers
-        std::vector<Observation> observations;
-        controller_costmap_ros_->getMarkingObservations(observations);
-        valid_control = tc_->computeVelocityCommands(cmd_vel, observations);
+        valid_control = tc_->computeVelocityCommands(cmd_vel);
 
         if(valid_control)
           last_valid_control_ = ros::Time::now();

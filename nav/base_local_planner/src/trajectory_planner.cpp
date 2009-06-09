@@ -471,7 +471,8 @@ namespace base_local_planner{
       double vtheta, double vx_samp, double vy_samp, double vtheta_samp){
     Trajectory t; 
     double impossible_cost = map_.map_.size();
-    generateTrajectory(x, y, theta, vx, vy, vtheta, vx_samp, vy_samp, vtheta_samp, acc_lim_x_, acc_lim_y_, acc_lim_theta_, impossible_cost, t);
+    generateTrajectory(x, y, theta, vx, vy, vtheta, vx_samp, vy_samp, vtheta_samp, 
+        acc_lim_x_, acc_lim_y_, acc_lim_theta_, impossible_cost, t);
 
     //if the trajectory is a legal one... the check passes
     if(t.cost_ >= 0)
@@ -482,7 +483,8 @@ namespace base_local_planner{
   }
 
   //create the trajectories we wish to score
-  Trajectory TrajectoryPlanner::createTrajectories(double x, double y, double theta, double vx, double vy, double vtheta,
+  Trajectory TrajectoryPlanner::createTrajectories(double x, double y, double theta, 
+      double vx, double vy, double vtheta,
       double acc_x, double acc_y, double acc_theta){
     //compute feasible velocity limits in robot space
     double max_vel_x, max_vel_theta;
@@ -531,7 +533,8 @@ namespace base_local_planner{
       for(int i = 0; i < vx_samples_; ++i){
         vtheta_samp = 0;
         //first sample the straight trajectory
-        generateTrajectory(x, y, theta, vx, vy, vtheta, vx_samp, vy_samp, vtheta_samp, acc_x, acc_y, acc_theta, impossible_cost, *comp_traj);
+        generateTrajectory(x, y, theta, vx, vy, vtheta, vx_samp, vy_samp, vtheta_samp, 
+            acc_x, acc_y, acc_theta, impossible_cost, *comp_traj);
 
         //if the new trajectory is better... let's take it
         if(comp_traj->cost_ >= 0 && (comp_traj->cost_ < best_traj->cost_ || best_traj->cost_ < 0)){
@@ -543,7 +546,8 @@ namespace base_local_planner{
         vtheta_samp = min_vel_theta;
         //next sample all theta trajectories
         for(int j = 0; j < vtheta_samples_ - 1; ++j){
-          generateTrajectory(x, y, theta, vx, vy, vtheta, vx_samp, vy_samp, vtheta_samp, acc_x, acc_y, acc_theta, impossible_cost, *comp_traj);
+          generateTrajectory(x, y, theta, vx, vy, vtheta, vx_samp, vy_samp, vtheta_samp, 
+              acc_x, acc_y, acc_theta, impossible_cost, *comp_traj);
 
           //if the new trajectory is better... let's take it
           if(comp_traj->cost_ >= 0 && (comp_traj->cost_ < best_traj->cost_ || best_traj->cost_ < 0)){
@@ -562,7 +566,8 @@ namespace base_local_planner{
         vx_samp = 0.1;
         vy_samp = 0.1;
         vtheta_samp = 0.0;
-        generateTrajectory(x, y, theta, vx, vy, vtheta, vx_samp, vy_samp, vtheta_samp, acc_x, acc_y, acc_theta, impossible_cost, *comp_traj);
+        generateTrajectory(x, y, theta, vx, vy, vtheta, vx_samp, vy_samp, vtheta_samp, 
+            acc_x, acc_y, acc_theta, impossible_cost, *comp_traj);
 
         //if the new trajectory is better... let's take it
         if(comp_traj->cost_ >= 0 && (comp_traj->cost_ < best_traj->cost_ || best_traj->cost_ < 0)){
@@ -574,7 +579,8 @@ namespace base_local_planner{
         vx_samp = 0.1;
         vy_samp = -0.1;
         vtheta_samp = 0.0;
-        generateTrajectory(x, y, theta, vx, vy, vtheta, vx_samp, vy_samp, vtheta_samp, acc_x, acc_y, acc_theta, impossible_cost, *comp_traj);
+        generateTrajectory(x, y, theta, vx, vy, vtheta, vx_samp, vy_samp, vtheta_samp, 
+            acc_x, acc_y, acc_theta, impossible_cost, *comp_traj);
 
         //if the new trajectory is better... let's take it
         if(comp_traj->cost_ >= 0 && (comp_traj->cost_ < best_traj->cost_ || best_traj->cost_ < 0)){
@@ -595,12 +601,17 @@ namespace base_local_planner{
 
     for(int i = 0; i < vtheta_samples_; ++i){
       //enforce a minimum rotational velocity because the base can't handle small in-place rotations
-      double vtheta_samp_limited = vtheta_samp > 0 ? max(vtheta_samp, min_in_place_vel_th_) : min(vtheta_samp, -1.0 * min_in_place_vel_th_);
+      double vtheta_samp_limited = vtheta_samp > 0 ? max(vtheta_samp, min_in_place_vel_th_) 
+        : min(vtheta_samp, -1.0 * min_in_place_vel_th_);
 
-      generateTrajectory(x, y, theta, vx, vy, vtheta, vx_samp, vy_samp, vtheta_samp_limited, acc_x, acc_y, acc_theta, impossible_cost, *comp_traj);
+      generateTrajectory(x, y, theta, vx, vy, vtheta, vx_samp, vy_samp, vtheta_samp_limited, 
+          acc_x, acc_y, acc_theta, impossible_cost, *comp_traj);
 
-      //if the new trajectory is better... let's take it... note if we can legally rotate in place we prefer to do that rather than move with y velocity
-      if(comp_traj->cost_ >= 0 && (comp_traj->cost_ <= best_traj->cost_ || best_traj->cost_ < 0 || best_traj->yv_ != 0.0) && (vtheta_samp > dvtheta || vtheta_samp < -1 * dvtheta)){
+      //if the new trajectory is better... let's take it... 
+      //note if we can legally rotate in place we prefer to do that rather than move with y velocity
+      if(comp_traj->cost_ >= 0 
+          && (comp_traj->cost_ <= best_traj->cost_ || best_traj->cost_ < 0 || best_traj->yv_ != 0.0) 
+          && (vtheta_samp > dvtheta || vtheta_samp < -1 * dvtheta)){
         double x_r, y_r, th_r;
         comp_traj->getEndpoint(x_r, y_r, th_r);
         x_r += heading_lookahead_ * cos(th_r);
@@ -698,7 +709,8 @@ namespace base_local_planner{
         vtheta_samp = 0;
         vy_samp = y_vels_[i];
         //sample completely horizontal trajectories
-        generateTrajectory(x, y, theta, vx, vy, vtheta, vx_samp, vy_samp, vtheta_samp, acc_x, acc_y, acc_theta, impossible_cost, *comp_traj);
+        generateTrajectory(x, y, theta, vx, vy, vtheta, vx_samp, vy_samp, vtheta_samp, 
+            acc_x, acc_y, acc_theta, impossible_cost, *comp_traj);
 
         //if the new trajectory is better... let's take it
         if(comp_traj->cost_ >= 0 && (comp_traj->cost_ <= best_traj->cost_ || best_traj->cost_ < 0)){
@@ -790,7 +802,8 @@ namespace base_local_planner{
     vtheta_samp = 0.0;
     vx_samp = -0.1;
     vy_samp = 0.0;
-    generateTrajectory(x, y, theta, vx, vy, vtheta, vx_samp, vy_samp, vtheta_samp, acc_x, acc_y, acc_theta, impossible_cost, *comp_traj);
+    generateTrajectory(x, y, theta, vx, vy, vtheta, vx_samp, vy_samp, vtheta_samp, 
+        acc_x, acc_y, acc_theta, impossible_cost, *comp_traj);
 
     //if the new trajectory is better... let's take it
     /*
@@ -843,8 +856,7 @@ namespace base_local_planner{
 
   //given the current state of the robot, find a good trajectory
   Trajectory TrajectoryPlanner::findBestPath(tf::Stamped<tf::Pose> global_pose, tf::Stamped<tf::Pose> global_vel, 
-      tf::Stamped<tf::Pose>& drive_velocities, vector<costmap_2d::Observation> observations,
-      vector<PlanarLaserScan> laser_scans){
+      tf::Stamped<tf::Pose>& drive_velocities){
 
     double uselessPitch, uselessRoll, yaw, velYaw;
     global_pose.getBasis().getEulerZYX(yaw, uselessPitch, uselessRoll);
@@ -857,20 +869,6 @@ namespace base_local_planner{
     double vx = global_vel.getOrigin().getX();
     double vy = global_vel.getOrigin().getY();
     double vtheta = velYaw;
-
-    //build the oriented footprint at the robot's current location
-    double cos_th = cos(theta);
-    double sin_th = sin(theta);
-    vector<Point> oriented_footprint;
-    for(unsigned int i = 0; i < footprint_spec_.size(); ++i){
-      Point new_pt;
-      new_pt.x = x + (footprint_spec_[i].x * cos_th - footprint_spec_[i].y * sin_th);
-      new_pt.y = y + (footprint_spec_[i].x * sin_th + footprint_spec_[i].y * cos_th);
-      oriented_footprint.push_back(new_pt);
-    }
-
-    //update the point grid with new observations
-    world_model_.updateWorld(oriented_footprint, observations, laser_scans);
 
     //reset the map for new operations
     map_.resetPathDist();

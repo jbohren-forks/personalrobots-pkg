@@ -48,9 +48,9 @@ using namespace laser_scan;
 
 namespace base_local_planner {
   TrajectoryPlannerROS::TrajectoryPlannerROS(ros::Node& ros_node, tf::TransformListener& tf, 
-      Costmap2D& costmap, std::vector<Point> footprint_spec, const Costmap2D* planner_map) 
-    : world_model_(NULL), tc_(NULL), costmap_(costmap), base_scan_notifier_(NULL), tf_(tf), ros_node_(ros_node), laser_scans_(2), 
-    point_grid_(NULL), voxel_grid_(NULL), rot_stopped_velocity_(1e-2), trans_stopped_velocity_(1e-2), goal_reached_(true), costmap_publisher_(NULL){
+      Costmap2D& costmap, std::vector<Point> footprint_spec) 
+    : world_model_(NULL), tc_(NULL), costmap_(costmap), tf_(tf), ros_node_(ros_node), 
+    rot_stopped_velocity_(1e-2), trans_stopped_velocity_(1e-2), goal_reached_(true), costmap_publisher_(NULL){
     double acc_lim_x, acc_lim_y, acc_lim_theta, sim_time, sim_granularity;
     int vx_samples, vtheta_samples;
     double pdist_scale, gdist_scale, occdist_scale, heading_lookahead, oscillation_reset_dist, escape_reset_dist, escape_reset_theta;
@@ -89,15 +89,6 @@ namespace base_local_planner {
     // Subscribe to odometry messages to get global pose
     ros_node.subscribe(odom_topic, odom_msg_, &TrajectoryPlannerROS::odomCallback, this, 1);
 
-    base_scan_notifier_ = new tf::MessageNotifier<LaserScan>(&tf_, &ros_node,
-        boost::bind(&TrajectoryPlannerROS::baseScanCallback, this, _1),
-        "base_scan", global_frame_, 50);
-
-    tilt_scan_notifier_ = new tf::MessageNotifier<LaserScan>(&tf_, &ros_node,
-        boost::bind(&TrajectoryPlannerROS::tiltScanCallback, this, _1),
-        //"tilt_scan", global_frame_, 50);
-        "tilt_scan", global_frame_, 50);
-
     //we'll get the parameters for the robot radius from the costmap we're associated with
     ros_node.param("~base_local_planner/costmap/inscribed_radius", inscribed_radius_, 0.325);
     ros_node.param("~base_local_planner/costmap/circumscribed_radius", circumscribed_radius_, 0.46);
@@ -123,7 +114,7 @@ namespace base_local_planner {
     ros_node.param("~base_local_planner/max_vel_th", max_vel_th, 1.0);
     ros_node.param("~base_local_planner/min_vel_th", min_vel_th, -1.0);
     ros_node.param("~base_local_planner/min_in_place_vel_th", min_in_place_vel_th_, 0.4);
-    ros_node.param("~base_local_planner/world_model", world_model_type, string("freespace"));
+    ros_node.param("~base_local_planner/world_model", world_model_type, string("costmap"));
     ros_node.param("~base_local_planner/dwa", dwa, false);
     ros_node.param("~base_local_planner/heading_scoring", heading_scoring, false);
     ros_node.param("~base_local_planner/heading_scoring_timestep", heading_scoring_timestep, 0.1);
@@ -136,41 +127,8 @@ namespace base_local_planner {
     ros_node.param("~base_local_planner/point_grid/max_obstacle_height", max_obstacle_height, 2.0);
     ros_node.param("~base_local_planner/point_grid/grid_resolution", grid_resolution, 0.2);
 
-    if(world_model_type == "freespace"){
-      ROS_ASSERT_MSG(planner_map != NULL, "Until a rolling window version of the freespace controller is implemented... the costmap the planner uses must be passed in for sizing info.");
-      Point origin;
-      origin.x = planner_map->originX();
-      origin.y = planner_map->originY();
-      unsigned int cmap_width, cmap_height;
-      cmap_width = planner_map->cellSizeX();
-      cmap_height = planner_map->cellSizeY();
-      point_grid_ = new PointGrid(cmap_width * planner_map->resolution(), cmap_height * planner_map->resolution(), grid_resolution, 
-          origin, max_obstacle_height, max_sensor_range_, min_pt_separation);
-      world_model_ = point_grid_;
-      ROS_DEBUG("Freespace Origin: (%.4f, %.4f), Width: %.4f, Height: %.4f\n", origin.x, origin.y, cmap_width * planner_map->resolution(), cmap_height * planner_map->resolution());
-      /*For Debugging
-      ros_node.advertise<PointCloud>("point_grid", 1);
-      */
-    }
-    else if(world_model_type == "voxel"){
-      ROS_ASSERT_MSG(planner_map != NULL, "Until a rolling window version of the voxel controller is implemented... the costmap the planner uses must be passed in for sizing info.");
-      double origin_x, origin_y;
-      origin_x = planner_map->originX();
-      origin_y = planner_map->originY();
-      unsigned int cmap_width, cmap_height;
-      cmap_width = planner_map->cellSizeX();
-      cmap_height = planner_map->cellSizeY();
-      voxel_grid_ = new VoxelGridModel(cmap_width, cmap_height, 10, planner_map->resolution(), max_obstacle_height / 10,
-          origin_x, origin_y, 0.0, max_obstacle_height, max_sensor_range_);
-      world_model_ = voxel_grid_;
-      /*For Debugging
-      ros_node.advertise<PointCloud>("point_grid", 1);
-      */
-    }
-    else{
-      world_model_ = new CostmapModel(costmap); 
-      ROS_INFO("Costmap\n");
-    }
+    ROS_ASSERT_MSG(world_model_type == "costmap", "At this time, only costmap world models are supported by this controller");
+    world_model_ = new CostmapModel(costmap); 
 
     tc_ = new TrajectoryPlanner(*world_model_, costmap, footprint_spec, inscribed_radius_, circumscribed_radius_,
         acc_lim_x, acc_lim_y, acc_lim_theta, sim_time, sim_granularity, vx_samples, vtheta_samples, pdist_scale,
@@ -179,79 +137,9 @@ namespace base_local_planner {
         dwa, heading_scoring, heading_scoring_timestep, simple_attractor);
   }
 
-  void TrajectoryPlannerROS::baseScanCallback(const tf::MessageNotifier<LaserScan>::MessagePtr& message){
-    //project the laser into a point cloud
-    PointCloud base_cloud;
-    base_cloud.header = message->header;
-    //we want all values... even those out of range
-    projector_.projectLaser(*message, base_cloud, -1.0, true);
-    tf::Stamped<btVector3> global_origin;
-
-    obs_lock_.lock();
-    laser_scans_[0].angle_min = message->angle_min;
-    laser_scans_[0].angle_max = message->angle_max;
-    laser_scans_[0].angle_increment = message->angle_increment;
-
-    //we know the transform is available from the laser frame to the global frame 
-    try{
-      //transform the origin for the sensor
-      tf::Stamped<btVector3> local_origin(btVector3(0, 0, 0), base_cloud.header.stamp, base_cloud.header.frame_id);
-      tf_.transformPoint(global_frame_, local_origin, global_origin);
-      laser_scans_[0].origin.x = global_origin.getX();
-      laser_scans_[0].origin.y = global_origin.getY();
-      laser_scans_[0].origin.z = global_origin.getZ();
-
-      //transform the point cloud
-      tf_.transformPointCloud(global_frame_, base_cloud, laser_scans_[0].cloud);
-    }
-    catch(tf::TransformException& ex){
-      ROS_ERROR("TF Exception that should never happen %s", ex.what());
-      return;
-    }
-    obs_lock_.unlock();
-  }
-
-  void TrajectoryPlannerROS::tiltScanCallback(const tf::MessageNotifier<LaserScan>::MessagePtr& message){
-    //project the laser into a point cloud
-    PointCloud tilt_cloud;
-    tilt_cloud.header = message->header;
-    //we want all values... even those out of range
-    projector_.projectLaser(*message, tilt_cloud, -1.0, true);
-    tf::Stamped<btVector3> global_origin;
-
-    obs_lock_.lock();
-    laser_scans_[1].angle_min = message->angle_min;
-    laser_scans_[1].angle_max = message->angle_max;
-    laser_scans_[1].angle_increment = message->angle_increment;
-
-    //we know the transform is available from the laser frame to the global frame 
-    try{
-      //transform the origin for the sensor
-      tf::Stamped<btVector3> local_origin(btVector3(0, 0, 0), tilt_cloud.header.stamp, tilt_cloud.header.frame_id);
-      tf_.transformPoint(global_frame_, local_origin, global_origin);
-      laser_scans_[1].origin.x = global_origin.getX();
-      laser_scans_[1].origin.y = global_origin.getY();
-      laser_scans_[1].origin.z = global_origin.getZ();
-
-      //transform the point cloud
-      tf_.transformPointCloud(global_frame_, tilt_cloud, laser_scans_[1].cloud);
-    }
-    catch(tf::TransformException& ex){
-      ROS_ERROR("TF Exception that should never happen %s", ex.what());
-      return;
-    }
-    obs_lock_.unlock();
-  }
-
   TrajectoryPlannerROS::~TrajectoryPlannerROS(){
     if(costmap_publisher_ != NULL)
       delete costmap_publisher_;
-
-    if(base_scan_notifier_ != NULL)
-      delete base_scan_notifier_;
-
-    if(tilt_scan_notifier_ != NULL)
-      delete tilt_scan_notifier_;
 
     if(tc_ != NULL)
       delete tc_;
@@ -403,8 +291,7 @@ namespace base_local_planner {
     return true;
   }
 
-  bool TrajectoryPlannerROS::computeVelocityCommands(robot_msgs::PoseDot& cmd_vel, 
-    const std::vector<costmap_2d::Observation>& observations, bool prune_plan){
+  bool TrajectoryPlannerROS::computeVelocityCommands(robot_msgs::PoseDot& cmd_vel, bool prune_plan){
     //assume at the beginning of our control cycle that we could have a new goal
     goal_reached_ = false;
 
@@ -509,10 +396,8 @@ namespace base_local_planner {
       else {
         tc_->updatePlan(transformed_plan);
 
-        obs_lock_.lock();
         //compute what trajectory to drive along
-        Trajectory path = tc_->findBestPath(global_pose, robot_vel, drive_cmds, observations, laser_scans_);
-        obs_lock_.unlock();
+        Trajectory path = tc_->findBestPath(global_pose, robot_vel, drive_cmds);
         if(!rotateToGoal(global_pose, robot_vel, goal_th, cmd_vel))
           return false;
       }
@@ -528,10 +413,8 @@ namespace base_local_planner {
 
     tc_->updatePlan(transformed_plan);
 
-    obs_lock_.lock();
     //compute what trajectory to drive along
-    Trajectory path = tc_->findBestPath(global_pose, robot_vel, drive_cmds, observations, laser_scans_);
-    obs_lock_.unlock();
+    Trajectory path = tc_->findBestPath(global_pose, robot_vel, drive_cmds);
 
     /* For timing uncomment
     gettimeofday(&end, NULL);
@@ -567,22 +450,6 @@ namespace base_local_planner {
       tf::PoseStampedTFToMsg(p, pose);
       local_plan.push_back(pose);
     }
-
-    /* For Debugging
-    if(point_grid_ != NULL){
-      PointCloud grid_cloud;
-      grid_cloud.header.frame_id = global_frame_;
-      point_grid_->getPoints(grid_cloud);
-      ros::Node::instance()->publish("point_grid", grid_cloud);
-    }
-
-    if(voxel_grid_ != NULL){
-      PointCloud grid_cloud;
-      grid_cloud.header.frame_id = global_frame_;
-      voxel_grid_->getPoints(grid_cloud);
-      ros::Node::instance()->publish("point_grid", grid_cloud);
-    }
-    */
 
     //publish information to the visualizer
     publishFootprint(global_pose);

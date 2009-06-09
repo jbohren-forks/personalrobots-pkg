@@ -1,3 +1,4 @@
+footprint: [[-0.325, -0.325], [-0.325, 0.325], [0.325, 0.325], [0.325, -0.325]]
 base_local_planner:
   #Independent settings for the local costmap
   costmap:

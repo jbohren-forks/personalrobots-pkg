@@ -99,7 +99,7 @@ namespace base_local_planner {
        * @param observations The observations from various sensors 
        * @param laser_scans The laser scans used to clear freespace (the point grid only uses the first scan which is assumed to be the base laser)
        */
-      virtual void updateWorld(const std::vector<robot_msgs::Point>& footprint, 
+      void updateWorld(const std::vector<robot_msgs::Point>& footprint, 
           const std::vector<costmap_2d::Observation>& observations, const std::vector<PlanarLaserScan>& laser_scans);
 
       /**

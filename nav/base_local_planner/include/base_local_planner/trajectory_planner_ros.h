@@ -37,9 +37,10 @@
 #ifndef TRAJECTORY_ROLLOUT_TRAJECTORY_PLANNER_ROS_H_
 #define TRAJECTORY_ROLLOUT_TRAJECTORY_PLANNER_ROS_H_
 
-#include <ros/node.h>
+#include <ros/ros.h>
 #include <costmap_2d/costmap_2d.h>
 #include <costmap_2d/costmap_2d_publisher.h>
+#include <costmap_2d/costmap_2d_ros.h>
 #include <base_local_planner/world_model.h>
 #include <base_local_planner/point_grid.h>
 #include <base_local_planner/costmap_model.h>
@@ -79,11 +80,9 @@ namespace base_local_planner {
        * @param tf A reference to a transform listener
        * @param costmap The cost map to use for assigning costs to trajectories
        * @param footprint_spec A polygon representing the footprint of the robot. (Must be convex)
-       * @param planner_map Used to size the map for the freespace controller... this will go away once a rolling window version of the point grid is in place
        */
       TrajectoryPlannerROS(ros::Node& ros_node, tf::TransformListener& tf,
-          costmap_2d::Costmap2D& costmap, std::vector<robot_msgs::Point> footprint_spec,
-          const costmap_2d::Costmap2D* planner_map = NULL);
+          costmap_2d::Costmap2D& costmap, std::vector<robot_msgs::Point> footprint_spec);
 
       /**
        * @brief  Destructor for the wrapper
@@ -106,8 +105,7 @@ namespace base_local_planner {
        * @param prune_plan Set to true if you would like the plan to be pruned as the robot drives, false to leave the plan as is
        * @return True if a valid trajectory was found, false otherwise
        */
-      bool computeVelocityCommands(robot_msgs::PoseDot& cmd_vel,
-          const std::vector<costmap_2d::Observation>& observations = std::vector<costmap_2d::Observation>(0), bool prune_plan = true);
+      bool computeVelocityCommands(robot_msgs::PoseDot& cmd_vel, bool prune_plan = true);
 
       /**
        * @brief  Update the plan that the controller is following
@@ -211,23 +209,14 @@ namespace base_local_planner {
        */
       void publishPlan(const std::vector<robot_msgs::PoseStamped>& path, std::string topic, double r, double g, double b, double a);
 
-      void baseScanCallback(const tf::MessageNotifier<laser_scan::LaserScan>::MessagePtr& message);
-      void tiltScanCallback(const tf::MessageNotifier<laser_scan::LaserScan>::MessagePtr& message);
       void odomCallback();
 
       WorldModel* world_model_; ///< @brief The world model that the controller will use
       TrajectoryPlanner* tc_; ///< @brief The trajectory controller
       costmap_2d::Costmap2D& costmap_; ///< @brief The costmap the controller will use
-      tf::MessageNotifier<laser_scan::LaserScan>* base_scan_notifier_; ///< @brief Used to guarantee that a transform is available for base scans
-      tf::MessageNotifier<laser_scan::LaserScan>* tilt_scan_notifier_; ///< @brief Used to guarantee that a transform is available for tilt scans
       tf::TransformListener& tf_; ///< @brief Used for transforming point clouds
       ros::Node& ros_node_; ///< @brief The ros node we're running under
       std::string global_frame_; ///< @brief The frame in which the controller will run
-      laser_scan::LaserProjection projector_; ///< @brief Used to project laser scans into point clouds
-      boost::recursive_mutex obs_lock_; ///< @brief Lock for accessing data in callbacks safely
-      std::vector<PlanarLaserScan> laser_scans_; ///< @breif Storage for the last scan the lasers took... used for clearing free-space in front of the robot
-      PointGrid* point_grid_; ///< @brief If using a freespace grid... we want to access it
-      VoxelGridModel* voxel_grid_; ///< @brief If using a voxel grid... we want to access it
       double max_sensor_range_; ///< @brief Keep track of the effective maximum range of our sensors
       deprecated_msgs::RobotBase2DOdom odom_msg_, base_odom_; ///< @brief Used to get the velocity of the robot
       std::string robot_base_frame_; ///< @brief Used as the base frame id of the robot
