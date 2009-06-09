@@ -507,7 +507,7 @@ void collision_space::EnvironmentModelODE::testCollision(void *data)
     
     /* check self collision */
     if (m_selfCollision)
-	testSelfCollision(data);
+    	testSelfCollision(data);
     
     /* check collision with standalone ode bodies */
     if (!cdata->done)
