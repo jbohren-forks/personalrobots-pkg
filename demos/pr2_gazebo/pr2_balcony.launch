@@ -17,18 +17,5 @@
   <node pkg="mechanism_control" type="spawner.py" args="$(find pr2_default_controllers)/base_controller.xml" output="screen"/>
   <node pkg="mechanism_control" type="spawner.py" args="$(find pr2_default_controllers)/gazebo_head_torso_lift_controller.xml" output="screen"/>
 
-  <!-- for visualization -->
-  <node pkg="rviz" type="rviz" respawn="false" />
-
-  <!-- dynamic map generation -->
-  <node pkg="slam_gmapping" type="slam_gmapping" respawn="false" />
-
-  <!-- nav-stack:
-       NOTE:  not working with amcl in loop, need to fix how amcl updates dynamic map
-       NOTE:  for now, rosrun teleop_base teleop_base_keyboard to drive robot around
-        -->
-  <!--include file="$(find 2dnav_gazebo)/2dnav-stack-amcl.launch"/-->
-  <!--node pkg="map_server" type="map_server" args="$(find gazebo_robot_description)/Media/materials/textures/map_blank.png 0.1" respawn="true" /-->
-
 </launch>
 
