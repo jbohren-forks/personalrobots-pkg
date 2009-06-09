@@ -1,0 +1,10 @@
+<package>
+  <description brief="3D Voxel Costmap">
+  </description>
+  <author>Stuart Glaser</author>
+  <license>BSD</license>
+  <url>http://pr.willowgarage.com</url>
+  <depend package="roslib" />
+  <export>
+  </export>
+</package>
