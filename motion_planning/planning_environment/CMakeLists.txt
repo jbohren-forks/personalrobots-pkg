@@ -9,7 +9,7 @@ rospack_add_library(planning_environment src/robot_models.cpp
 					 src/collision_models.cpp
 					 src/kinematic_model_state_monitor.cpp
 					 src/collision_space_monitor.cpp)
-
+rospack_add_openmp_flags(planning_environment)
 					 
 # Tests
 
