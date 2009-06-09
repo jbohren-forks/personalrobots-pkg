@@ -105,9 +105,26 @@
     <body:box name="floor_2_body">
       <geom:box name="floor_2_geom">
         <mesh>default</mesh>
-        <size>10 5 .2</size>
+        <size>8 5 .2</size>
         <visual>
-          <size>10 5 .2</size>
+          <size>8 5 .2</size>
+          <material>PR2/White</material>
+          <mesh>unit_box</mesh>
+        </visual>
+      </geom:box>
+    </body:box>
+  </model:physical>
+
+  <model:physical name="floor_4_model">
+    <xyz>0.5 20.5 5.0</xyz>
+    <rpy>0.0 0.0 0.0</rpy>
+    <static>true</static>
+    <body:box name="floor_4_body">
+      <geom:box name="floor_4_geom">
+        <mesh>default</mesh>
+        <size>1.0 1.0 .2</size>
+        <visual>
+          <size>1.0 1.0 .2</size>
           <material>PR2/White</material>
           <mesh>unit_box</mesh>
         </visual>
@@ -116,15 +133,15 @@
   </model:physical>
 
   <model:physical name="floor_3_model">
-    <xyz>5 25 -0.1</xyz>
+    <xyz>5 27.5 -0.1</xyz>
     <rpy>0.0 0.0 0.0</rpy>
     <static>true</static>
     <body:box name="floor_3_body">
       <geom:box name="floor_3_geom">
         <mesh>default</mesh>
-        <size>10 10 .2</size>
+        <size>10 15 .2</size>
         <visual>
-          <size>10 10 .2</size>
+          <size>10 15 .2</size>
           <material>PR2/White</material>
           <mesh>unit_box</mesh>
         </visual>
@@ -138,10 +155,29 @@
     <static>true</static>
     <body:box name="ramp_1_body">
       <geom:box name="ramp_1_geom">
+        <mu1>100</mu1>
+        <mu2>100</mu2>
         <mesh>default</mesh>
         <size>1 11.1803 .2</size>
         <visual>
           <size>1 11.1803 .2</size>
+          <material>PR2/White</material>
+          <mesh>unit_box</mesh>
+        </visual>
+      </geom:box>
+    </body:box>
+  </model:physical>
+
+  <model:physical name="ramp_2_model">
+    <xyz>0.5 25.4 2.45</xyz>
+    <rpy>-30 0.0 0.0</rpy>
+    <static>true</static>
+    <body:box name="ramp_2_body">
+      <geom:box name="ramp_2_geom">
+        <mesh>default</mesh>
+        <size>1 10.2956 .2</size>
+        <visual>
+          <size>1 10.2956 .2</size>
           <material>PR2/White</material>
           <mesh>unit_box</mesh>
         </visual>
@@ -185,7 +221,7 @@
     </body:box>
   </model:physical>
   <model:physical name="wall_7_model">
-    <xyz>5 30 1</xyz>
+    <xyz>5 35 1</xyz>
     <rpy>0.0 0.0 0.0</rpy>
     <static>true</static>
     <body:box name="wall_7_body">
@@ -201,15 +237,15 @@
     </body:box>
   </model:physical>
   <model:physical name="wall_8_model">
-    <xyz>0 25 1</xyz>
+    <xyz>0 27.5 1</xyz>
     <rpy>0.0 0.0 0.0</rpy>
     <static>true</static>
     <body:box name="wall_8_body">
       <geom:box name="wall_8_geom">
         <mesh>default</mesh>
-        <size>.2 10 2</size>
+        <size>.2 15 2</size>
         <visual>
-          <size>.2 10 2</size>
+          <size>.2 15 2</size>
           <material>PR2/Green</material>
           <mesh>unit_box</mesh>
         </visual>
@@ -218,15 +254,15 @@
   </model:physical>
 
   <model:physical name="wall_9_model">
-    <xyz>10 25 1</xyz>
+    <xyz>10 27.5 1</xyz>
     <rpy>0.0 0.0 0.0</rpy>
     <static>true</static>
     <body:box name="wall_9_body">
       <geom:box name="wall_9_geom">
         <mesh>default</mesh>
-        <size>.2 10 2</size>
+        <size>.2 15 2</size>
         <visual>
-          <size>.2 10 2</size>
+          <size>.2 15 2</size>
           <material>PR2/Green</material>
           <mesh>unit_box</mesh>
         </visual>
