@@ -126,16 +126,12 @@ class MapServer
 
       ROS_INFO("Loading map from image \"%s\"", fname.c_str());
       map_server::loadMapFromFile(&map_resp_,fname.c_str(),res,negate,occ_th,free_th);
+      map_resp_.map.info.map_load_time = ros::Time::now();
       ROS_INFO("Read a %d X %d map @ %.3lf m/cell",
                map_resp_.map.info.width,
                map_resp_.map.info.height,
                map_resp_.map.info.resolution);
-      ///\todo This could be optimzed regarding ticket:937
-      meta_data_message_.map_load_time = ros::Time::now();
-      meta_data_message_.resolution = map_resp_.map.info.resolution;
-      meta_data_message_.width = map_resp_.map.info.width;
-      meta_data_message_.height = map_resp_.map.info.height;
-      meta_data_message_.origin = map_resp_.map.info.origin;
+      meta_data_message_ = map_resp_.map.info;
 
       service = n.advertiseService("static_map", &MapServer::mapCallback, this);
       pub = n.advertise<robot_msgs::MapMetaData>("map_metadata", 1,
