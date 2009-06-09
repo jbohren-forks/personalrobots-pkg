@@ -1,0 +1,21 @@
+<package>
+  <description brief="move_arm">
+
+     move_arm
+
+  </description>
+  <author>Ioan Sucan</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://pr.willowgarage.com/wiki/move_arm</url>
+
+  <depend package="roscpp"/>
+  <depend package="rosconsole"/>
+  <depend package="std_msgs"/>
+  <depend package="robot_msgs"/>
+  <depend package="motion_planning_msgs"/>
+  <depend package="motion_planning_srvs"/>
+  <depend package="pr2_msgs"/>
+  <depend package="robot_actions"/>
+
+</package>
