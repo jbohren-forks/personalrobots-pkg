@@ -121,8 +121,7 @@ public:
 
 int main(int argc, char **argv)
 {
-  /** @todo: unique node names so can run multiple instances */
-  ros::init(argc, argv, "image_view");
+  ros::init(argc, argv, "image_view", ros::init_options::AnonymousName);
   ros::NodeHandle n;
   if (n.mapName("image") == "/image") {
     ROS_WARN("image_view: image has not been remapped! Example command-line usage:\n"
