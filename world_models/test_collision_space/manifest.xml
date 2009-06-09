@@ -15,5 +15,6 @@
   <depend package="visualization_msgs" />
   <depend package="planning_models"/>
   <depend package="collision_space"/>
-  
+  <depend package="planning_environment"/>
+
 </package>
