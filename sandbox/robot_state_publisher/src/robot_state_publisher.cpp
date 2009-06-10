@@ -45,20 +45,15 @@ using namespace KDL;
 
 namespace robot_state_publisher{
 
-RobotStatePublisher::RobotStatePublisher()
+RobotStatePublisher::RobotStatePublisher(const Tree& tree)
   : n_("robot_state_publisher"),
-    publish_rate_(0.0)
+    publish_rate_(0.0),
+    tree_(tree)
 {
   // set publish frequency
   double publish_freq;
-  n_.param("~publish_frequency", publish_freq, 1.0);
+  n_.param("~publish_frequency", publish_freq, 50.0);
   publish_rate_ = Rate(publish_freq);
-
-  // build robot model
-  string robot_desc;
-  n_.param("/robotdesc/pr2", robot_desc, string());
-  if (!treeFromString(robot_desc, tree_))
-    ROS_ERROR("Failed to construct robot model from xml string");
 
   // build tree solver
   solver_.reset(new TreeFkSolverPosFull_recursive(tree_));
@@ -73,13 +68,12 @@ void RobotStatePublisher::callback(const MechanismStateConstPtr& state)
   // get joint positions from state message
   map<string, double> joint_positions;
   for (unsigned int i=0; i<state->joint_states.size(); i++){
+    // @TODO: What to do with this 'hack' to replace _joint by _link?
     string tmp = state->joint_states[i].name;
-    tmp.resize(tmp.size()-6);
-    tmp = tmp + "_link";
+    tmp.replace(tmp.size()-6, tmp.size(), "_link");
     joint_positions[tmp] = state->joint_states[i].position;
-    cout << "Joint " << tmp << " at position " << state->joint_states[i].position << endl;
+    //cout << "Joint " << tmp << " at position " << state->joint_states[i].position << endl;
   }
-
 
   // calculate transforms form root to every segment in tree
   map<string, Frame> frames;
@@ -87,8 +81,10 @@ void RobotStatePublisher::callback(const MechanismStateConstPtr& state)
 
   // send transforms to tf
   for (map<string, Frame>::const_iterator f=frames.begin(); f!=frames.end(); f++){
-    cout << "frame " << f->first << " = " << f->second.p << endl;
-    tf_.sendTransform(tf::Transform(tf::Quaternion(0,0,0), tf::Vector3(f->second.p(0), f->second.p(1), f->second.p(2))), state->header.stamp, f->first + "_test", "root");
+    //cout << "frame " << f->first << " = " << f->second.p << endl;
+    double z, y, x;
+    f->second.M.GetEulerZYX(z,y,x);
+    tf_.sendTransform(tf::Transform(tf::Quaternion(z, y, x), tf::Vector3(f->second.p(0), f->second.p(1), f->second.p(2))), state->header.stamp, f->first + "_test", "root");
   }
 
   publish_rate_.sleep();

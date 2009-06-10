@@ -52,17 +52,17 @@ namespace robot_state_publisher{
 class RobotStatePublisher
 {
 public:
-  RobotStatePublisher();
+  RobotStatePublisher(const KDL::Tree& tree);
   ~RobotStatePublisher(){};
 
 private:
   void callback(const MechanismStateConstPtr& state);
 
-  KDL::Tree tree_;
   ros::NodeHandle n_;
   tf::TransformBroadcaster tf_;
   ros::Subscriber mech_state_subscr_;
   ros::Rate publish_rate_;
+  KDL::Tree tree_;
   boost::scoped_ptr<KDL::TreeFkSolverPosFull_recursive> solver_;
 };
 

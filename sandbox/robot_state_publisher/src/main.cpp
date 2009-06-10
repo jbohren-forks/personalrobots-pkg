@@ -34,10 +34,13 @@
 
 /* Author: Wim Meeussen */
 
+#include <kdl/tree.hpp>
+#include <ros/ros.h>
 #include "robot_state_publisher/robot_state_publisher.h"
 
 using namespace std;
 using namespace ros;
+using namespace KDL;
 
 
 int main(int argc, char** argv)
@@ -45,10 +48,18 @@ int main(int argc, char** argv)
   // Initialize ros
   ros::init(argc, argv, "robot_state_publisher");
 
-  robot_state_publisher::RobotStatePublisher publisher;
+  // build robot model
+  string robot_desc;
+  NodeHandle node;
+  Tree tree;
+  node.param("/robotdesc/pr2", robot_desc, string());
+  if (!treeFromString(robot_desc, tree)){
+    ROS_ERROR("Failed to construct robot model from xml string");
+    return -1;
+  }
 
+  robot_state_publisher::RobotStatePublisher publisher(tree);
   ros::spin();
-
-  return -1;
+  return 0;
 
 }
