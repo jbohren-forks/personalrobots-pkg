@@ -177,8 +177,16 @@ void Transformer::lookupTransform(const std::string& target_frame, const std::st
   if (test_extrapolation(temp_time, t_list, &error_string))
     {
     std::stringstream ss;
-    ss << " When trying to transform between " << mapped_source_frame << " and " << mapped_target_frame <<".";
+    if (time == ros::Time())// Using latest common time if we extrapolate this means that one of the links is out of date
+    {
+      ss << "Could not find a common time " << mapped_source_frame << " and " << mapped_target_frame <<".";
+      throw ConnectivityException(ss.str());      
+    }    
+    else
+    {
+      ss << " When trying to transform between " << mapped_source_frame << " and " << mapped_target_frame <<".";
       throw ExtrapolationException(error_string + ss.str());
+    }
     }
 
 
