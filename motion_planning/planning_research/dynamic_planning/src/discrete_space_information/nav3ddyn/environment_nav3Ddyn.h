@@ -29,11 +29,10 @@
 #ifndef __ENVIRONMENT_NAV3DDYN_H_
 #define __ENVIRONMENT_NAV3DDYN_H_
 
-//shrink footprint
-#define NAV3DDYN_SHRINK_FOOTPRINT 0
-
 //eight-connected grid
-#define NAV3DDYN_DXYWIDTH 1
+#define NAV3DDYN_XYWIDTH 1
+
+#define NAV3DDYN_DEFAULTOBSTHRESH 254
 
 //number of theta directions
 #define NAV3DDYN_THETADIRS 8
@@ -47,12 +46,14 @@
 #define NAV3DDYN_NUMRV 5 //number of rotational velocity values to try
 
 //seconds
-#define NAV3DDYN_SHORTDUR 0.5
-#define NAV3DDYN_LONGDUR 2
+#define NAV3DDYN_LONGDUR 1
 #define NAV3DDYN_DURDISC 0.1
 
 #define MIN(x,y) (x < y ? x : y)
 #define MAX(x,y) (x > y ? x : y)
+
+#define INFINITE_COST 1000000
+typedef unsigned int cost_t;
 
 struct EnvNAV3DDYN2Dpt_t{
   double x;
@@ -65,9 +66,23 @@ struct EnvNAV3DDYN2Dpt_t{
   bool operator<(const EnvNAV3DDYN2Dpt_t &p) const{
     return (x < p.x || (x == p.x && y < p.y));
   }
+  
 }; 
 
 struct EnvNAV3DDYNContPose_t{
+  double X;
+  double Y;
+  double Theta;
+
+  bool operator==(const EnvNAV3DDYNContPose_t &p) const{
+    return (X==p.X && Y==p.Y && Theta==p.Theta);
+  }
+
+};
+
+struct EnvNAV3DDYNContPoseWAction_t{
+  int ThetaId;
+  int ActionId;
   double X;
   double Y;
   double Theta;
@@ -90,19 +105,26 @@ struct EnvNAV3DDYNDiscPose_t
 
 };
 
+typedef struct{
+
+  EnvNAV3DDYN2Dpt_t center;
+  double radius;
+
+}EnvNAV3DDYNCircle_t;
+
 typedef struct
 {
   int dX;  //change in x during action
   int dY;  //change in y
   int dTheta; //change in theta
-  unsigned int cost; 
+  cost_t cost; 
 
   double rv;  //rotational velocity for action
   double tv;  //translational velocity for action
   vector<EnvNAV3DDYNContPose_t> path_cont; //for debugging purposes
   vector<EnvNAV3DDYNDiscPose_t> path;  //path of center of robot
   vector<EnvNAV3DDYN2Dpt_t> footprint; //footprint swept during action
-
+  vector<EnvNAV3DDYNCircle_t> footprint_circles;
   int time; //time to execute action
 
 } EnvNAV3DDYNAction_t;
@@ -121,18 +143,25 @@ typedef struct ENV_NAV3DDYN_CONFIG
   int EndX_c;
   int EndY_c;
   int EndTheta;
+
+  unsigned char ObsThresh;
+  int OptimizeFootprint;
   
-  char** Grid2D;
+  
+  unsigned char** Grid2D;
+  unsigned char** Grid2D_expanded;
 
   double nominalvel_mpersecs; //translational velocity
   double timetoturnoneunitinplace_secs;
   double cellsize_m;
+
   
-  int dXY[NAV3DDYN_DXYWIDTH][2];
+  int dXY[NAV3DDYN_XYWIDTH][2];
 
   //footprint of robot
   vector <EnvNAV3DDYN2Dpt_t> FootprintPolygon; //real world coordinates
-  
+  vector <EnvNAV3DDYNCircle_t> FootprintCircles;
+ 
   EnvNAV3DDYNAction_t** ActionsV; //array of actions, ActionsV[i][j] - jth action for sourcetheta = i
   vector<EnvNAV3DDYNAction_t*>* PredActionsV;
   
@@ -174,6 +203,7 @@ class EnvironmentNAV3DDYN : public DiscreteSpaceInformation
 {
 
 public:
+  EnvironmentNAV3DDYN();
   ~EnvironmentNAV3DDYN(){};
 
   const EnvNAV3DDYNConfig_t* GetEnvNavConfig();
@@ -186,20 +216,25 @@ public:
 		     double goalx, double goaly, double goaltheta,
 		     double goaltol_x, double goaltol_y, double goaltol_theta,
 		     const vector<sbpl_2Dpt_t> & perimeterptsV,
-		     double cellsize_m, double nominalvel_mpersecs, double timetoturnoneunitinplace_secs);
+		     double cellsize_m, double nominalvel_mpersecs, double timetoturnoneunitinplace_secs,
+		     unsigned char obsthresh);
 
   void PrecomputeActions();
-  void CalculateFootprintForPath(vector<EnvNAV3DDYNContPose_t> path, vector<EnvNAV3DDYN2Dpt_t>* footprint);
-  void CalculateFootprintForPose(EnvNAV3DDYNContPose_t pose, vector<EnvNAV3DDYN2Dpt_t>* footprint);
+  void CalculateFootprintForPath(vector<EnvNAV3DDYNContPose_t> path, vector<EnvNAV3DDYN2Dpt_t>* footprint, vector<EnvNAV3DDYNCircle_t>* footprint_circles, double tv, double rv);
+  void CalculateFootprintForPose(EnvNAV3DDYNContPose_t pose, vector<EnvNAV3DDYN2Dpt_t>* footprint, double tv, double rv);
   void RemoveDuplicatesFromPath(vector<EnvNAV3DDYNDiscPose_t>* path);
   void RemoveDuplicatesFromFootprint(vector<EnvNAV3DDYN2Dpt_t>* footprint);
-  void DiscretizeAndShrinkFootprintBoundary();
-  
+  void PadEnvironment();
+  void CalculateCircleCoverageInFootprint(EnvNAV3DDYNCircle_t circle, vector<EnvNAV3DDYN2Dpt_t> footprint, vector<EnvNAV3DDYN2Dpt_t>* swept_area);
+  void RemoveAreaFromFootprint(vector<EnvNAV3DDYN2Dpt_t>* area, vector<EnvNAV3DDYN2Dpt_t>* footprint);
 
   //planning initialization functions
   bool InitializeMDPCfg(MDPConfig *MDPCfg);
   int SetStart(double x, double y, double theta);
   int SetGoal(double x, double y, double theta);
+  void EnableOptimizeFootprint();
+  void DisableOptimizeFootprint();
+  void SetObsThresh(unsigned char thresh);
 
   //planning functions
   void GetSuccs(int SourceStateID, vector<int>* SuccIDV, vector<int>* CostV);
@@ -215,11 +250,12 @@ public:
   void PrintActionsToFile(const char* logFile);
   void PrintState(int stateID, bool bVerbose, FILE* fOut=NULL);
   void PrintTimeStat(FILE* fOut);
+  void PrintCheckedCells(FILE* fOut);
   int	 SizeofCreatedEnv();
   void GetEnvParms(int *size_x, int *size_y, double* startx, double* starty, double* starttheta, double* goalx, double* goaly, double* goaltheta,
-		   double* cellsize_m);
-  void GetContPathFromStateIds(vector<int> stateIdV, vector<EnvNAV3DDYNContPose_t>* path);
-
+		   double* cellsize_m, unsigned char* obsthresh);
+  void GetContPathFromStateIds(vector<int> stateIdV, vector<EnvNAV3DDYNContPoseWAction_t>* path);
+  
   //functions updated but not tested  
   int  GetGoalHeuristic(int stateID);
   int  GetStartHeuristic(int stateID);
@@ -238,7 +274,14 @@ public:
 	//member data
 	EnvNAV3DDYNConfig_t EnvNAV3DDYNCfg;
 	EnvironmentNAV3DDYN_t EnvNAV3DDYN;
+	
+	//2D search for heuristic computations
+	bool bNeedtoRecomputeStartHeuristics;
+	SBPL2DGridSearch* grid2Dsearch;
 
+	int CheckedCells_100k;
+	int CheckedCells;
+	
 	//hash table functions
 	unsigned int GETHASHBIN(unsigned int X, unsigned int Y, unsigned int Theta);
 	EnvNAV3DDYNHashEntry_t* GetHashEntry(int X, int Y, int Theta);
@@ -259,6 +302,11 @@ public:
 	void ComputeHeuristicValues();
 	int InsideFootprint(EnvNAV3DDYN2Dpt_t pt, vector<EnvNAV3DDYN2Dpt_t>* bounding_polygon);
 	void CreateStartandGoalStates();
+
+	//utility functions
+	cost_t GetCostOfCell(EnvNAV3DDYN2Dpt_t cell);
+	cost_t GetCostOfCell(EnvNAV3DDYNCircle_t cell);
+	cost_t ComputeCostOfFootprint(vector<EnvNAV3DDYN2Dpt_t> footprint, vector<EnvNAV3DDYNCircle_t> footprint_circles, int xOffset, int yOffset);
 
 	//debugging functions
 	void PrintHashTableHist();

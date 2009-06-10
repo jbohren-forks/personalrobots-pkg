@@ -22,3 +22,10 @@ function action = readAction(fid)
         action.footprint(find).x = fread(fid, 1, 'double');
         action.footprint(find).y = fread(fid, 1, 'double');
     end
+    
+    action.footprint_circle_size = fread(fid, 1, 'uint');
+    for find=1:action.footprint_circle_size
+        action.footprint_circle(find).x = fread(fid, 1, 'double');
+        action.footprint_circle(find).y = fread(fid, 1, 'double');
+        action.footprint_circle(find).radius = fread(fid, 1, 'double');
+    end

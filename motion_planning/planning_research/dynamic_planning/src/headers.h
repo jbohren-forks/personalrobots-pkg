@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <assert.h>
 
+
 using namespace std;
 
 #include <cstdlib>
@@ -19,7 +20,11 @@ using namespace std;
 #include <utils/mdpconfig.h>
 #include <utils/utils.h>
 
+
 #include <planners/planner.h>
+
+#include <planners/ARAStar/araplanner.h>
+#include <utils/2Dgridsearch.h>
 
 #include <discrete_space_information/environment.h>
 #include <discrete_space_information/nav2d/environment_nav2D.h>
@@ -27,6 +32,5 @@ using namespace std;
 #include "discrete_space_information/nav3ddyn/environment_nav3Ddyn.h"
 
 
-#include <planners/ARAStar/araplanner.h>
 
 #endif

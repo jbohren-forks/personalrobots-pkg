@@ -13,6 +13,7 @@ c = textscan(fid, 'nominalvel(mpersecs): %f');
 cfg.nominalvel = c{1};
 
 c = textscan(fid, 'timetoturn45degsinplace(secs): %f');
+%c = textscan(fid, '\ttimetoturnoneunitinplace(secs): %f');
 cfg.timetoturn45degsinplace_secs = c{1};
 
 cfg.num_theta = 8;
@@ -42,11 +43,5 @@ if(cfg.num_footprint_corners)
     cfg.footprint = [cfg.footprint; cfg.footprint(1,:)];
 end
 
-c = textscan(fid, 'environment:');
-for i=1:cfg.height
-    fprintf('%d ', i);
-    c = textscan(fid, '%d ', cfg.width);
-    cfg.environment(i,:) = c{:};
-end
-
+cfg = readEnvironment(fid, cfg);
 fclose(fid);

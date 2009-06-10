@@ -36,6 +36,15 @@ static clock_t time_createhash = 0;
 static clock_t time_getsuccs = 0;
 #endif
 
+EnvironmentNAV3DDYN::EnvironmentNAV3DDYN(){
+  EnvNAV3DDYNCfg.OptimizeFootprint = 0;
+  EnvNAV3DDYNCfg.ObsThresh = NAV3DDYN_DEFAULTOBSTHRESH;
+
+  bNeedtoRecomputeStartHeuristics = true;
+
+  CheckedCells = 0;
+  CheckedCells_100k = 0;
+}
 
 
 //-------------------problem specific and local functions---------------------
@@ -137,13 +146,50 @@ static int EuclideanDistance(int X1, int Y1, int X2, int Y2)
   int sqdist = ((X1-X2)*(X1-X2)+(Y1-Y2)*(Y1-Y2));
   double dist = sqrt((double)sqdist);
 
-  return (int)(NAV3DDYN_COSTMULT*dist);
-  
+   return (int)(NAV3DDYN_COSTMULT*dist);
+  //  return (int)(dist);
 }
+
+static int EuclideanDistance_m(int X1, int Y1, int X2, int Y2)
+{
+  int sqdist = ((X1-X2)*(X1-X2)+(Y1-Y2)*(Y1-Y2));
+  double dist = sqrt((double)sqdist);
+  
+  return (int)(dist);
+
+}
+
+static float EuclideanDistance(float X1, float Y1, float X2, float Y2)
+{
+  float sqdist = ((X1-X2)*(X1-X2)+(Y1-Y2)*(Y1-Y2));
+  double dist = sqrt(sqdist);
+
+  return dist;
+}
+
 
 //-----------interface with outside functions---------------------
 const EnvNAV3DDYNConfig_t* EnvironmentNAV3DDYN::GetEnvNavConfig() {
   return &EnvNAV3DDYNCfg;
+}
+
+void EnvironmentNAV3DDYN::EnableOptimizeFootprint(){
+  EnvNAV3DDYNCfg.OptimizeFootprint = 1;
+}
+
+void EnvironmentNAV3DDYN::DisableOptimizeFootprint(){
+  EnvNAV3DDYNCfg.OptimizeFootprint = 0;
+}
+
+void EnvironmentNAV3DDYN::SetObsThresh(unsigned char thresh){
+  printf("Setting threshold: %d\n", thresh);
+  EnvNAV3DDYNCfg.ObsThresh = thresh;
+}
+
+void EnvironmentNAV3DDYN::PrintCheckedCells(FILE* fOut){
+ 
+  fprintf(fOut, "Number of cells checked: %d\n", CheckedCells);
+ 
 }
 
 bool EnvironmentNAV3DDYN::InitializeEnv(const char* sEnvFile)
@@ -156,11 +202,10 @@ bool EnvironmentNAV3DDYN::InitializeEnv(const char* sEnvFile)
       exit(1);
     }
   ReadConfiguration(fCfg);
-  
-  if(NAV3DDYN_SHRINK_FOOTPRINT){
-    DiscretizeAndShrinkFootprintBoundary();
-  }
 
+  if(EnvNAV3DDYNCfg.OptimizeFootprint){
+    PadEnvironment();
+  }
 
   InitGeneral();
   
@@ -174,7 +219,8 @@ bool EnvironmentNAV3DDYN::InitializeEnv(int width, int height,
 					double goalx, double goaly, double goaltheta,
 					double goaltol_x, double goaltol_y, double goaltol_theta,
 					const vector<sbpl_2Dpt_t> & perimeterptsV,
-					double cellsize_m, double nominalvel_mpersecs, double timetoturnoneunitinplace_secs)
+					double cellsize_m, double nominalvel_mpersecs, double timetoturnoneunitinplace_secs,
+					unsigned char obsthresh)
 {
   
   SetConfiguration(width, height,
@@ -183,10 +229,9 @@ bool EnvironmentNAV3DDYN::InitializeEnv(int width, int height,
 		   CONTXY2DISC(goalx, cellsize_m), CONTXY2DISC(goaly, cellsize_m), ContTheta2Disc(goaltheta, NAV3DDYN_THETADIRS),
 		   cellsize_m, nominalvel_mpersecs, timetoturnoneunitinplace_secs, perimeterptsV);
   
-  if(NAV3DDYN_SHRINK_FOOTPRINT){
-    DiscretizeAndShrinkFootprintBoundary();
+  if(EnvNAV3DDYNCfg.OptimizeFootprint){
+    PadEnvironment();
   }
-
 
   InitGeneral();
   
@@ -237,7 +282,7 @@ void EnvironmentNAV3DDYN::SetConfiguration(int width, int height,
   }
 
   EnvNAV3DDYN2Dpt_t pt;
-  for(int i=0; i<robot_perimeterV.size(); i++){
+  for(unsigned int i=0; i<robot_perimeterV.size(); i++){
     pt.x = robot_perimeterV[i].x;
     pt.y = robot_perimeterV[i].y;
     EnvNAV3DDYNCfg.FootprintPolygon.push_back(pt);
@@ -248,15 +293,16 @@ void EnvironmentNAV3DDYN::SetConfiguration(int width, int height,
   EnvNAV3DDYNCfg.timetoturnoneunitinplace_secs = timetoturnoneunitinplace_secs;
 
   //allocate the 2D environment
-  EnvNAV3DDYNCfg.Grid2D = new char* [EnvNAV3DDYNCfg.EnvWidth_c];
+  EnvNAV3DDYNCfg.Grid2D = new unsigned char* [EnvNAV3DDYNCfg.EnvWidth_c];
+
   for (int x = 0; x < EnvNAV3DDYNCfg.EnvWidth_c; x++) {
-    EnvNAV3DDYNCfg.Grid2D[x] = new char [EnvNAV3DDYNCfg.EnvHeight_c];
+    EnvNAV3DDYNCfg.Grid2D[x] = new unsigned char [EnvNAV3DDYNCfg.EnvHeight_c];
   }
   
   //environment:
   for (int y = 0; y < EnvNAV3DDYNCfg.EnvHeight_c; y++) {
     for (int x = 0; x < EnvNAV3DDYNCfg.EnvWidth_c; x++) {
-      char cval = mapdata[x+y*width];
+      unsigned char cval = mapdata[x+y*width];
       if(cval == 1) {
 	EnvNAV3DDYNCfg.Grid2D[x][y] = 1;
       } else {
@@ -266,15 +312,118 @@ void EnvironmentNAV3DDYN::SetConfiguration(int width, int height,
   }
 }
 
-void EnvironmentNAV3DDYN::DiscretizeAndShrinkFootprintBoundary(){
+//---------------------utility functions-------------------------
+cost_t EnvironmentNAV3DDYN::GetCostOfCell(EnvNAV3DDYN2Dpt_t cell){
+#if COMPUTE_STATS
+  CheckedCells++;
+#endif
+
+  int x = cell.x;
+  int y = cell.y;
   
+  cost_t cost;
+
+  if(IsWithinMapCell(x, y)){
+    cost = EnvNAV3DDYNCfg.Grid2D[x][y];
+  }else{
+    cost = INFINITE_COST;
+  }
+
+#if NAV3DDYN_DEBUG
+  //  printf("Cost of cell [%d, %d] = %d, Optimization value: %d\n", x, y, cost, OptimizeFootprint);
+#endif
+  return cost;
+}
+
+cost_t EnvironmentNAV3DDYN::GetCostOfCell(EnvNAV3DDYNCircle_t cell){
+  
+#if COMPUTE_STATS
+  CheckedCells++;
+#endif
+
+  int x = cell.center.x;
+  int y = cell.center.y;
+  cost_t cost;
+
+  if(IsWithinMapCell(x, y)){
+    cost = EnvNAV3DDYNCfg.Grid2D_expanded[x][y];
+  }else{
+    cost = INFINITE_COST;
+  }
+#if NAV3DDYN_DEBUG
+  //   printf("Cost of cell [%d, %d] = %d, Optimization value: %d, Center\n", x, y, cost, OptimizeFootprint);
+#endif
+
+  return cost;
+
+}
+
+//----------------------------------------------------------------
+
+cost_t EnvironmentNAV3DDYN::ComputeCostOfFootprint(vector<EnvNAV3DDYN2Dpt_t> footprint, vector<EnvNAV3DDYNCircle_t> footprint_circles, int xOffset, int yOffset){
+
+  //for now find the max value of the footprint
+  cost_t max_val = 0;
+  EnvNAV3DDYN2Dpt_t pt;
+  cost_t cost;
+
+  for(unsigned int i=0; i<footprint.size(); i++){
+    pt = footprint[i];
+    pt.x = pt.x + xOffset;
+    pt.y = pt.y + yOffset;
+
+    cost = GetCostOfCell(pt);
+
+    if(cost==INFINITE_COST){
+      max_val = INFINITE_COST;
+      break;
+    }
+
+    if(cost > max_val){
+      max_val = cost;
+    }
+  }
+
+  if(max_val != INFINITE_COST){
+    EnvNAV3DDYNCircle_t circle;
+    for(unsigned int i=0; i<footprint_circles.size(); i++){
+      circle = footprint_circles[i];
+      circle.center.x += xOffset;
+      circle.center.y += yOffset;
+      cost = GetCostOfCell(circle);
+   
+      if(cost==INFINITE_COST){
+	max_val = INFINITE_COST;
+	break;
+      }
+   
+      if(cost > max_val){
+	max_val = cost;
+      }
+    }
+  }
+  return max_val;
+}
+
+
+//---------------------------------------------------------------
+void EnvironmentNAV3DDYN::PadEnvironment(){
+
   if(EnvNAV3DDYNCfg.FootprintPolygon.size() <= 1){
     return;
   }
 
-  EnvNAV3DDYN2Dpt_t pt1 = EnvNAV3DDYNCfg.FootprintPolygon[0];
+  //TODO:  fix this to be cleaner
+  //create a temp polygon vector
+  vector <EnvNAV3DDYN2Dpt_t> temp_polygon;
+  for(unsigned int i=0; i<EnvNAV3DDYNCfg.FootprintPolygon.size(); i++){
+    temp_polygon.push_back(EnvNAV3DDYNCfg.FootprintPolygon[i]);
+  }
+
+
+  EnvNAV3DDYN2Dpt_t pt1 = temp_polygon[0];
   //tack the first point onto the back of the polygon
-  EnvNAV3DDYNCfg.FootprintPolygon.push_back(pt1);
+  temp_polygon.push_back(pt1);
 
   EnvNAV3DDYN2Dpt_t pt2;
   EnvNAV3DDYN2Dpt_t pt;
@@ -283,9 +432,10 @@ void EnvironmentNAV3DDYN::DiscretizeAndShrinkFootprintBoundary(){
   double min_radius = sqrt(pow(pt1.x,2.0) + pow(pt1.y,2.0));
   double radius;
 
-  //first descritize
-  for(unsigned int i=1; i<EnvNAV3DDYNCfg.FootprintPolygon.size(); i++){
-    pt2 = EnvNAV3DDYNCfg.FootprintPolygon[i];
+  //first descritize and find the min radius
+  for(unsigned int i=1; i<temp_polygon.size(); i++){
+    //pt2 = EnvNAV3DDYNCfg.FootprintPolygon[i];
+    pt2 = temp_polygon[i];
 
     //create a line between pt1 and pt2 
     for(double t=0; t<=1.0; t+=0.01){
@@ -309,44 +459,71 @@ void EnvironmentNAV3DDYN::DiscretizeAndShrinkFootprintBoundary(){
 #if NAV3DDYN_DEBUG
   printf("Min radius: %f %f\n", min_radius,  min_radius/EnvNAV3DDYNCfg.cellsize_m);
 #endif
-
-  EnvNAV3DDYNCfg.FootprintPolygon.clear();
-
-  //now shrink footprint
-  double alpha;
-  for(unsigned int i=0; i<footprintBoundary.size(); i++){
-    pt = footprintBoundary[i];
-
-    alpha = atan2(pt.y, pt.x);
-
-    pt.x = pt.x - min_radius*cos(alpha);
-    pt.y = pt.y - min_radius*sin(alpha);
-
-    EnvNAV3DDYNCfg.FootprintPolygon.push_back(pt);
-
+  
+  //first initialize the environment
+  EnvNAV3DDYNCfg.Grid2D_expanded = new unsigned char* [EnvNAV3DDYNCfg.EnvWidth_c];
+  for(int w=0; w < EnvNAV3DDYNCfg.EnvWidth_c; w++){
+    EnvNAV3DDYNCfg.Grid2D_expanded[w] = new unsigned char [EnvNAV3DDYNCfg.EnvHeight_c];
+    for(int h=0; h<EnvNAV3DDYNCfg.EnvHeight_c; h++){
+      EnvNAV3DDYNCfg.Grid2D_expanded[w][h] = 0;
+    }
   }
 
-  
-  //now blow up all the obstacles in the environment
   int r = static_cast<int>(min_radius/EnvNAV3DDYNCfg.cellsize_m + 0.5);
-  //TODO: probably can do this better
-  for(int w=0; w < EnvNAV3DDYNCfg.EnvWidth_c; w++){
-    for(int h=0; h < EnvNAV3DDYNCfg.EnvHeight_c; h++){
-      if(EnvNAV3DDYNCfg.Grid2D[w][h]==1){
-	
+
+  EnvNAV3DDYNCircle_t circle;
+  circle.radius = min_radius;
+  circle.center.x = 0;
+  circle.center.y = 0;
+  EnvNAV3DDYNCfg.FootprintCircles.push_back(circle);
+
+  float x_f, y_f, h_f, w_f;
+  unsigned char curr_val;
+  //now blow up all the obstacles in the environment  
+  for(int h=0; h < EnvNAV3DDYNCfg.EnvHeight_c; h++){
+    for(int w=0; w < EnvNAV3DDYNCfg.EnvWidth_c; w++){
+  
+      
+      if(EnvNAV3DDYNCfg.Grid2D[w][h]!=0){
+	curr_val = EnvNAV3DDYNCfg.Grid2D[w][h];
+	//move the continuous domain
+	w_f = DISCXY2CONT(w, EnvNAV3DDYNCfg.cellsize_m);
+	h_f = DISCXY2CONT(h, EnvNAV3DDYNCfg.cellsize_m);
 	//pad
-	for(int x = w-r; x <= w+r; x++){
-	  for(int y = h-r; y <= h+r; y++){
+	for(int y = h-r; y <= h+r; y++){
+	  for(int x = w-r; x <= w+r; x++){
 	    
-	    if(x >= 0 && y >= 0 && x < EnvNAV3DDYNCfg.EnvWidth_c && y < EnvNAV3DDYNCfg.EnvHeight_c &&
-	       EnvNAV3DDYNCfg.Grid2D[x][y] == 0){
-	      EnvNAV3DDYNCfg.Grid2D[x][y] = 2;
+	    //    if(x >= 0 && y >= 0 && x < EnvNAV3DDYNCfg.EnvWidth_c && y < EnvNAV3DDYNCfg.EnvHeight_c &&
+	    //    EnvNAV3DDYNCfg.Grid2D_expanded[x][y] == 0){
+	    if(x >= 0 && y >= 0 && x < EnvNAV3DDYNCfg.EnvWidth_c && y < EnvNAV3DDYNCfg.EnvHeight_c){
+	      x_f = DISCXY2CONT(x, EnvNAV3DDYNCfg.cellsize_m);
+	      y_f = DISCXY2CONT(y, EnvNAV3DDYNCfg.cellsize_m);
+	      
+	      if(EuclideanDistance(w_f, h_f, x_f, y_f)<=min_radius){
+		//		EnvNAV3DDYNCfg.Grid2D_expanded[x][y] = 1;
+		if(curr_val > EnvNAV3DDYNCfg.Grid2D_expanded[x][y]){
+		  EnvNAV3DDYNCfg.Grid2D_expanded[x][y] = curr_val;
+		}
+	      }
 	    }
 	  }
 	}
+      
       }
+      //      EnvNAV3DDYNCfg.Grid2D_expanded[w][h] = max_val;
     }
   }
+
+  /*#if NAV3DDYN_DEBUG
+  printf("Padded environment:\n");
+  
+  for(int h=0; h<EnvNAV3DDYNCfg.EnvHeight_c; h++){
+    for(int w=0; w<EnvNAV3DDYNCfg.EnvWidth_c; w++){
+      printf("%d ", EnvNAV3DDYNCfg.Grid2D_expanded[w][h]);
+    }
+    printf("\n");
+  }
+  #endif*/
 
 }
 
@@ -391,12 +568,13 @@ void EnvironmentNAV3DDYN::PrecomputeActions()
 #endif
 
   //calculate valid set of translational velocities
-  int numTvValues = 2;
+  unsigned int numTvValues = 2;
   double tvVals[2] = {-EnvNAV3DDYNCfg.nominalvel_mpersecs, EnvNAV3DDYNCfg.nominalvel_mpersecs};
   
   //calculate a set of time values
-  int numDtValues = 2;
-  double dtVals[2] = {NAV3DDYN_LONGDUR, NAV3DDYN_SHORTDUR};
+  unsigned int numDtValues = 2;
+  double shortDur = EnvNAV3DDYNCfg.cellsize_m/EnvNAV3DDYNCfg.nominalvel_mpersecs;
+  double dtVals[2] = {NAV3DDYN_LONGDUR, shortDur};
 
 #if NAV3DDYN_DEBUG
   printf("Translational Velocity values: \n");
@@ -406,7 +584,7 @@ void EnvironmentNAV3DDYN::PrecomputeActions()
 #endif
 
   //calculate a set of turn in place actions
-  int numTurnsInPlace = 2;
+  unsigned int numTurnsInPlace = 2;
   int turnsInPlace[2] = {-1, 1};
 
   //create an initial pose
@@ -425,7 +603,7 @@ void EnvironmentNAV3DDYN::PrecomputeActions()
   EnvNAV3DDYNCfg.ActionsV = new EnvNAV3DDYNAction_t*[NAV3DDYN_THETADIRS];
   EnvNAV3DDYNCfg.PredActionsV = new vector<EnvNAV3DDYNAction_t*>[NAV3DDYN_THETADIRS];
 
-  for(tind = 0; tind < NAV3DDYN_THETADIRS; tind++){
+   for(tind = 0; tind < NAV3DDYN_THETADIRS; tind++){
     num_actions = 0;
 
     initialPose_cont.Theta = (double)tind * (2.0*PI_CONST/NAV3DDYN_THETADIRS);
@@ -446,7 +624,7 @@ void EnvironmentNAV3DDYN::PrecomputeActions()
     //first compute the turn in place actions
      for(ind = 0; ind < numTurnsInPlace; ind++){
       EnvNAV3DDYNAction_t action;
-      action.rv = 0; //this doesn't matter
+      action.rv = EnvNAV3DDYNCfg.timetoturnoneunitinplace_secs*4/M_PI; //this doesn't matter
       action.tv = 0;
       action.time = EnvNAV3DDYNCfg.timetoturnoneunitinplace_secs;
 
@@ -454,25 +632,36 @@ void EnvironmentNAV3DDYN::PrecomputeActions()
       action.path_cont.push_back(initialPose_cont);
       action.path.push_back(initialPose_disc);
 
+      
       //calculate an end pose and put it on the path
       currentPose_cont.X = initialPose_cont.X;
       currentPose_cont.Y = initialPose_cont.Y;
       currentPose_cont.Theta = initialPose_cont.Theta + DiscTheta2Cont(turnsInPlace[ind], NAV3DDYN_THETADIRS);
-      action.path_cont.push_back(currentPose_cont);
+      
+      //iterate through the thetas
+      double dur_disc2 = .05;
+      for(double ts=0; ts <= action.time; ts+=dur_disc2){
+	
+	currentPose_cont.Theta = action.rv*ts + initialPose_cont.Theta;
+	
+	action.path_cont.push_back(currentPose_cont);
+      }
+
+      //      action.path_cont.push_back(currentPose_cont);
 
       currentPose_disc.X = initialPose_disc.X;
       currentPose_disc.Y = initialPose_disc.Y;
       currentPose_disc.Theta = ContTheta2Disc(currentPose_cont.Theta, NAV3DDYN_THETADIRS);
       action.path.push_back(currentPose_disc);
       
-      CalculateFootprintForPath(action.path_cont, &action.footprint);
-      RemoveDuplicatesFromFootprint(&action.footprint);
+      CalculateFootprintForPath(action.path_cont, &action.footprint, &action.footprint_circles, action.tv, action.rv);
+      //RemoveDuplicatesFromFootprint(&action.footprint);
 
       action.dX = 0;
       action.dY = 0;
       action.dTheta = turnsInPlace[ind];
-      action.cost = abs(turnsInPlace[ind])*EnvNAV3DDYNCfg.timetoturnoneunitinplace_secs*1000;
-      
+      action.cost = abs(turnsInPlace[ind])*EnvNAV3DDYNCfg.timetoturnoneunitinplace_secs*NAV3DDYN_COSTMULT;
+      // printf("Cost: %d\n", action.cost);
       EnvNAV3DDYNCfg.ActionsV[tind][aind] = action;
 
       int path_length = action.path.size();
@@ -488,7 +677,7 @@ void EnvironmentNAV3DDYN::PrecomputeActions()
 	    printf("%d %d %d\n", action.path[i].X, action.path[i].Y, action.path[i].Theta);
 	  }
 	  printf("Footprint: \n");
-	  for(int i = 0; i<action.footprint.size(); i++){
+	  for(unsigned int i = 0; i<action.footprint.size(); i++){
 	    printf("%f %f\n", action.footprint[i].x, action.footprint[i].y);
 	  }
 	  
@@ -526,7 +715,16 @@ void EnvironmentNAV3DDYN::PrecomputeActions()
 	  path_cont.push_back(initialPose_cont);
 	  action.path.push_back(initialPose_disc);
 	  
-	  for(double ts=0; ts < dtVals[dtind]; ts+=NAV3DDYN_DURDISC){
+	  //ensure the discritization is at least as small as the time it takes to move one cell
+	  double dur_disc = NAV3DDYN_DURDISC;
+	  if(action.tv != 0){
+	    double max_dur_disc = (1/fabs(action.tv))*EnvNAV3DDYNCfg.cellsize_m;
+	    if(dur_disc > max_dur_disc){
+	      dur_disc = max_dur_disc;
+	    }
+	  }
+
+	  for(double ts=0; ts <= dtVals[dtind]; ts+=dur_disc){
 	    //compute the new pose
 	    double tvoverrv;
 	    
@@ -551,7 +749,6 @@ void EnvironmentNAV3DDYN::PrecomputeActions()
 	    
 	    path_cont.push_back(currentPose_cont);
 	  }
-	  
 	  
 	  //fix the error so that the end point is precisely the center of the cell
 	  EnvNAV3DDYNContPose_t endPose_cont;
@@ -590,8 +787,8 @@ void EnvironmentNAV3DDYN::PrecomputeActions()
 	  action.path_cont = path_cont;
 	  
 	  RemoveDuplicatesFromPath(&action.path);
-	  CalculateFootprintForPath(path_cont, &action.footprint);
-	  RemoveDuplicatesFromFootprint(&action.footprint);
+	  CalculateFootprintForPath(path_cont, &action.footprint, &action.footprint_circles, action.tv, action.rv);
+	  // RemoveDuplicatesFromFootprint(&action.footprint);
 	  
 	  path_length = action.path.size();	
 
@@ -605,8 +802,10 @@ void EnvironmentNAV3DDYN::PrecomputeActions()
 	  }
 	  
 	  //convert cost to a time value instead of a distance value
-	  action.cost = action.cost / EnvNAV3DDYNCfg.nominalvel_mpersecs;
-
+	  //action.cost = (action.cost*EnvNAV3DDYNCfg.cellsize_m) / EnvNAV3DDYNCfg.nominalvel_mpersecs;
+	  action.cost = 1000;
+	  //printf("Cost: %d\n", action.cost);
+	  
 	  //add the action to the list of posible actions
 	  EnvNAV3DDYNCfg.ActionsV[tind][aind] = action;
 	  
@@ -623,7 +822,7 @@ void EnvironmentNAV3DDYN::PrecomputeActions()
 	    printf("%d %d %d\n", action.path[i].X, action.path[i].Y, action.path[i].Theta);
 	  }
 	  printf("Footprint: \n");
-	  for(int i = 0; i<action.footprint.size(); i++){
+	  for(unsigned int i = 0; i<action.footprint.size(); i++){
 	    printf("%f %f\n", action.footprint[i].x, action.footprint[i].y);
 	  }
 	  
@@ -642,13 +841,94 @@ void EnvironmentNAV3DDYN::PrecomputeActions()
 
 }
 
+void EnvironmentNAV3DDYN::CalculateCircleCoverageInFootprint(EnvNAV3DDYNCircle_t circle, vector<EnvNAV3DDYN2Dpt_t> footprint, vector<EnvNAV3DDYN2Dpt_t>* swept_area){
 
-
-void EnvironmentNAV3DDYN::CalculateFootprintForPath(vector<EnvNAV3DDYNContPose_t> path, vector<EnvNAV3DDYN2Dpt_t>* footprint){
   unsigned int find;
+  EnvNAV3DDYN2Dpt_t pt;
 
-  for(find = 0; find < path.size(); find++){
-    CalculateFootprintForPose(path[find], footprint);
+  double dist;
+
+  //check distance of each point in footprint from the center point
+  for(find = 0; find < footprint.size(); find++){
+    pt = footprint.at(find);
+    dist = sqrt(pow(circle.center.x - pt.x, 2.0) + pow(circle.center.y - pt.y, 2.0));
+
+ 
+    if(dist <= circle.radius){
+       swept_area->push_back(pt);
+    }
+  }
+
+}
+
+void EnvironmentNAV3DDYN::RemoveAreaFromFootprint(vector<EnvNAV3DDYN2Dpt_t>* area, vector<EnvNAV3DDYN2Dpt_t>* footprint){
+
+  //first remove all the duplicates from the area
+  vector<EnvNAV3DDYN2Dpt_t>::iterator new_end;
+  
+  sort(area->begin(), area->end());
+  new_end = unique(area->begin(), area->end());
+  area->erase(new_end, area->end());
+
+#if NAV3DDYN_DEBUG
+  printf("Number of elements to remove: %d, number of elements in footprint: %d\n",
+	 area->size(), footprint->size());
+#endif
+
+  //now remove the area from the footprint
+  for(unsigned int i=0; i < area->size(); i++){
+    new_end = remove(footprint->begin(), footprint->end(), area->at(i));
+    footprint->erase(new_end, footprint->end());
+  }
+
+#if NAV3DDYN_DEBUG
+  printf("Number of elements in footprint after removal %d\n", footprint->size());
+#endif
+
+}
+
+void EnvironmentNAV3DDYN::CalculateFootprintForPath(vector<EnvNAV3DDYNContPose_t> path, vector<EnvNAV3DDYN2Dpt_t>* footprint, vector<EnvNAV3DDYNCircle_t>* footprint_circles, double tv, double rv){
+  unsigned int find, cind, pind;
+
+  vector<EnvNAV3DDYN2Dpt_t> pose_footprint;
+  vector<EnvNAV3DDYN2Dpt_t> swept_area;  
+
+  for(pind = 0; pind < path.size(); pind++){
+    pose_footprint.clear();
+    CalculateFootprintForPose(path[pind], &pose_footprint, tv, rv);
+
+    //TODO: this better
+    for(find = 0; find < pose_footprint.size(); find++){
+      footprint->push_back(pose_footprint[find]);
+    }
+
+    if(EnvNAV3DDYNCfg.OptimizeFootprint){
+      EnvNAV3DDYNCircle_t circle;
+      
+      //remove circles from the footprint
+      for(cind = 0; cind < EnvNAV3DDYNCfg.FootprintCircles.size(); cind++){
+	//translate the center
+	circle.center.x = EnvNAV3DDYNCfg.FootprintCircles[cind].center.x + path[pind].X;
+	circle.center.y = EnvNAV3DDYNCfg.FootprintCircles[cind].center.y + path[pind].Y;
+	
+	//convert the center to a grid coordinate
+	circle.center.x = CONTXY2DISC(circle.center.x, EnvNAV3DDYNCfg.cellsize_m);
+	circle.center.y = CONTXY2DISC(circle.center.y, EnvNAV3DDYNCfg.cellsize_m);
+
+	//conver radius to grid size
+	circle.radius = static_cast<int>(EnvNAV3DDYNCfg.FootprintCircles[cind].radius/
+					 EnvNAV3DDYNCfg.cellsize_m);
+	
+	footprint_circles->push_back(circle);
+	CalculateCircleCoverageInFootprint(circle, pose_footprint, &swept_area); 
+      }
+    }
+  }
+
+  RemoveDuplicatesFromFootprint(footprint);
+
+  if(EnvNAV3DDYNCfg.OptimizeFootprint){
+    RemoveAreaFromFootprint(&swept_area, footprint);
   }
 }
 
@@ -661,7 +941,8 @@ int EnvironmentNAV3DDYN::InsideFootprint(EnvNAV3DDYN2Dpt_t pt, vector<EnvNAV3DDY
   
   int counter = 0;
   int i;
-  double xinters;
+  double xinters, minx, miny, maxx, maxy;
+  double epsilon = 0.00000001;
   EnvNAV3DDYN2Dpt_t p1;
   EnvNAV3DDYN2Dpt_t p2;
   int N = bounding_polygon->size();
@@ -669,11 +950,30 @@ int EnvironmentNAV3DDYN::InsideFootprint(EnvNAV3DDYN2Dpt_t pt, vector<EnvNAV3DDY
   p1 = bounding_polygon->at(0);
   for (i=1;i<=N;i++) {
     p2 = bounding_polygon->at(i % N);
-    if (pt.y > MIN(p1.y,p2.y)) {
-      if (pt.y <= MAX(p1.y,p2.y)) {
-        if (pt.x <= MAX(p1.x,p2.x)) {
-          if (p1.y != p2.y) {
+
+    minx = MIN(p1.x, p2.x);
+    maxx = MAX(p1.x, p2.x);
+    miny = MIN(p1.y, p2.y);
+    maxy = MAX(p1.y, p2.y);
+
+    //add a special case for points on a horizontal boundary
+    if(fabs(p1.y-p2.y)<=epsilon && fabs(p1.y-pt.y)<=epsilon && (pt.x - minx) >= -1.0*epsilon && (maxx - pt.x) >= -1.0*epsilon){
+      counter = 1;
+      break;
+    }
+
+    if (pt.y > miny) {
+      if (pt.y < maxy || fabs(pt.y - maxy) <= epsilon) {
+        if (pt.x < maxx || fabs(pt.x - maxx) <= epsilon) {
+          if (fabs(p1.y - p2.y) > epsilon) {
             xinters = (pt.y-p1.y)*(p2.x-p1.x)/(p2.y-p1.y)+p1.x;
+	    
+	    //check if the point is on the boundary line, if so count it as inside
+	    if(fabs(pt.x-xinters)<=epsilon && pt.y >= (miny-epsilon) && pt.y <= (maxy+epsilon)){
+	      counter = 1;
+	      break;
+	    }
+
             if (p1.x == p2.x || pt.x <= xinters)
               counter++;
           }
@@ -694,7 +994,7 @@ int EnvironmentNAV3DDYN::InsideFootprint(EnvNAV3DDYN2Dpt_t pt, vector<EnvNAV3DDY
 
 }
 
-void EnvironmentNAV3DDYN::CalculateFootprintForPose(EnvNAV3DDYNContPose_t pose, vector<EnvNAV3DDYN2Dpt_t>* footprint)
+void EnvironmentNAV3DDYN::CalculateFootprintForPose(EnvNAV3DDYNContPose_t pose, vector<EnvNAV3DDYN2Dpt_t>* footprint, double tv, double rv)
 {  
 #if NAV3DDYN_DEBUG
   printf("---Calculating Footprint for Pose: %f %f %f---\n",
@@ -753,11 +1053,34 @@ void EnvironmentNAV3DDYN::CalculateFootprintForPose(EnvNAV3DDYNContPose_t pose, 
   int discrete_x;
   int discrete_y;
 
-  for(double x=min_x; x<=max_x; x+=0.1){
-    for(double y=min_y; y<=max_y; y+=0.1){
+  min_x -= EnvNAV3DDYNCfg.cellsize_m;
+  max_x += EnvNAV3DDYNCfg.cellsize_m;
+  min_y -= EnvNAV3DDYNCfg.cellsize_m;
+  max_y += EnvNAV3DDYNCfg.cellsize_m;
+
+  double xfactor=1.0;
+  double yfactor=1.0;
+  double temp;
+
+  if(rv < 0){
+    temp = min_y;
+    min_y = -1.0*max_y;
+    max_y = -1.0*temp;
+    yfactor = -1.0;
+  }
+  
+  if(tv < 0){
+    temp = min_x;
+    min_x = -1.0*max_x;
+    max_x = -1.0*temp;
+    xfactor = -1.0;
+    }
+
+  for(double x=min_x; x<=max_x; x+=EnvNAV3DDYNCfg.cellsize_m){
+    for(double y=min_y; y<=max_y; y+=EnvNAV3DDYNCfg.cellsize_m){
       EnvNAV3DDYN2Dpt_t pt;
-      pt.x = x;
-      pt.y = y;
+      pt.x = xfactor*x;
+      pt.y = yfactor*y;
       discrete_x = CONTXY2DISC(pt.x, EnvNAV3DDYNCfg.cellsize_m);
       discrete_y = CONTXY2DISC(pt.y, EnvNAV3DDYNCfg.cellsize_m);
       
@@ -850,7 +1173,7 @@ bool EnvironmentNAV3DDYN::InitializeMDPCfg(MDPConfig *MDPCfg)
 int EnvironmentNAV3DDYN::SetStart(double x_m, double y_m, double theta_rad){
 
   int x = CONTXY2DISC(x_m, EnvNAV3DDYNCfg.cellsize_m);
-  int y = CONTXY2DISC(x_m, EnvNAV3DDYNCfg.cellsize_m);
+  int y = CONTXY2DISC(y_m, EnvNAV3DDYNCfg.cellsize_m);
   int theta = ContTheta2Disc(theta_rad, NAV3DDYN_THETADIRS);
   
   if(!IsWithinMapCell(x,y))
@@ -861,8 +1184,17 @@ int EnvironmentNAV3DDYN::SetStart(double x_m, double y_m, double theta_rad){
     //have to create a new entry
     OutHashEntry = CreateNewHashEntry(x, y, theta);
   }
-  EnvNAV3DDYN.startstateid = OutHashEntry->stateID;
+
+  //need to recompute start heuristics?
+  if(EnvNAV3DDYN.startstateid != OutHashEntry->stateID)
+    bNeedtoRecomputeStartHeuristics = true;  
   
+  EnvNAV3DDYN.startstateid = OutHashEntry->stateID;
+	EnvNAV3DDYNCfg.StartX_c = x;
+	EnvNAV3DDYNCfg.StartY_c = y;
+	EnvNAV3DDYNCfg.StartTheta = theta;
+  
+
   return EnvNAV3DDYN.startstateid;    
 
 }
@@ -871,7 +1203,7 @@ int EnvironmentNAV3DDYN::SetStart(double x_m, double y_m, double theta_rad){
 int EnvironmentNAV3DDYN::SetGoal(double x_m, double y_m, double theta_rad){
 
   int x = CONTXY2DISC(x_m, EnvNAV3DDYNCfg.cellsize_m);
-  int y = CONTXY2DISC(x_m, EnvNAV3DDYNCfg.cellsize_m);
+  int y = CONTXY2DISC(y_m, EnvNAV3DDYNCfg.cellsize_m);
   int theta = ContTheta2Disc(theta_rad, NAV3DDYN_THETADIRS);
   
   if(!IsWithinMapCell(x,y))
@@ -882,15 +1214,23 @@ int EnvironmentNAV3DDYN::SetGoal(double x_m, double y_m, double theta_rad){
     //have to create a new entry
     OutHashEntry = CreateNewHashEntry(x, y, theta);
   }
-  EnvNAV3DDYN.goalstateid = OutHashEntry->stateID;
+
+  if(EnvNAV3DDYN.goalstateid != OutHashEntry->stateID)
+    bNeedtoRecomputeStartHeuristics = true;
   
+  EnvNAV3DDYN.goalstateid = OutHashEntry->stateID;
+	EnvNAV3DDYNCfg.EndX_c = x;
+	EnvNAV3DDYNCfg.EndY_c = y;
+	EnvNAV3DDYNCfg.EndTheta = theta;
+  
+
   return EnvNAV3DDYN.goalstateid;    
   
 }
 
 void EnvironmentNAV3DDYN::GetSuccs(int SourceStateID, vector<int>* SuccIDV, vector<int>* CostV)
 {
-  unsigned int aind, ftind;
+  unsigned int aind;
 
   //get X, Y for the state
   EnvNAV3DDYNHashEntry_t* HashEntry = EnvNAV3DDYN.StateID2CoordTable[SourceStateID];
@@ -915,13 +1255,10 @@ void EnvironmentNAV3DDYN::GetSuccs(int SourceStateID, vector<int>* SuccIDV, vect
   	
   //get the set of valid actions from the current location
   EnvNAV3DDYNAction_t* valid_actions = EnvNAV3DDYNCfg.ActionsV[HashEntry->Theta];
-  int num_actions = NAV3DDYN_NUMRV * 2 + 2 + 2;
-  SuccIDV->reserve(num_actions);
-  CostV->reserve(num_actions);
+  unsigned int num_actions = NAV3DDYN_NUMRV * 2 + 2 + 2;
+  //  SuccIDV->reserve(num_actions);
+  //CostV->reserve(num_actions);
  
-  bool insideBounds;
-  bool collisionFree;
-
   //iterate through actions 
   for(aind = 0; aind < num_actions; aind++){
 
@@ -936,43 +1273,12 @@ void EnvironmentNAV3DDYN::GetSuccs(int SourceStateID, vector<int>* SuccIDV, vect
 	   newX, newY, newTheta);
 #endif      
 
-    int tempX, tempY;
-    double ftX, ftY;
-    insideBounds = true;
-    collisionFree = true;
-     //check for collisions in footprint
-    for (ftind = 0; ftind < nav3daction->footprint.size(); ftind++){
-      //translate the footprint
-      ftX = nav3daction->footprint.at(ftind).x;
-      ftY = nav3daction->footprint.at(ftind).y;
-      tempX = HashEntry->X + ftX;
-      tempY = HashEntry->Y + ftY;
-	
-      if(IsValidCell(tempX, tempY)){
-	if(EnvNAV3DDYNCfg.Grid2D[tempX][tempY] != 0){
-#if NAV3DDYN_DEBUG
-	  printf("Pt (%d, %d) is a collision\n", tempX, tempY);
-#endif
-	  collisionFree = false;
-	  break;
-	}
-      }else{
-#if NAV3DDYN_DEBUG
-	printf("Pt (%d, %d) is not inside bounds\n", tempX, tempY);
-#endif
-	insideBounds = false;
-	break;
-      }
-     
+    cost_t footprintCost = ComputeCostOfFootprint(nav3daction->footprint, nav3daction->footprint_circles, HashEntry->X, HashEntry->Y);
+    if(footprintCost >= EnvNAV3DDYNCfg.ObsThresh){
+      //footprint goes out of bounds
+      continue;
     }
-    
-    //skip the invalid actions
-    if(!insideBounds){ 
-      continue;
-    }else if(!collisionFree)
-      continue;
-    
-    
+
     EnvNAV3DDYNHashEntry_t* OutHashEntry;
     if((OutHashEntry = GetHashEntry(newX, newY, newTheta)) == NULL)
       {
@@ -981,8 +1287,8 @@ void EnvironmentNAV3DDYN::GetSuccs(int SourceStateID, vector<int>* SuccIDV, vect
       }
     
     //compute clow 
-    int cost = nav3daction->cost;
-
+    int cost = nav3daction->cost*(footprintCost+1);
+        
 #if NAV3DDYN_DEBUG
     int heuristic = GetFromToHeuristic(HashEntry->stateID, OutHashEntry->stateID);
     printf("Adding state with cost %d and heuristic %d\n", cost, heuristic);
@@ -1007,10 +1313,11 @@ void EnvironmentNAV3DDYN::GetSuccs(int SourceStateID, vector<int>* SuccIDV, vect
 void EnvironmentNAV3DDYN::GetPreds(int TargetStateID, vector<int>* PredIDV, vector<int>* CostV)
 {
   unsigned int aind;
-  unsigned int ftind;
 
 #if NAV3DDYN_DEBUG
   printf("Inside GetPreds\n");
+  int min_cost = -1;
+  int actionId = -1;
 #endif
 
 #if TIME_DEBUG
@@ -1028,20 +1335,19 @@ void EnvironmentNAV3DDYN::GetPreds(int TargetStateID, vector<int>* PredIDV, vect
   printf("Hash Entry values: %d %d %d\n", HashEntry->X, HashEntry->Y, HashEntry->Theta);
 #endif
   
-  //no predecessors if obstacle
+  /*  //no predecessors if obstacle
   if(EnvNAV3DDYNCfg.Grid2D[HashEntry->X][HashEntry->Y] != 0)
     return;
 
+  if(EnvNAV3DDYNCfg.OptimizeFootprint && EnvNAV3DDYNCfg.Grid2D_expanded[HashEntry->X][HashEntry->Y]
+  */
   //get the set of valid actions from the current location
   vector<EnvNAV3DDYNAction_t*> pred_actions = EnvNAV3DDYNCfg.PredActionsV[HashEntry->Theta];
 #if NAV3DDYN_DEBUG
   printf("Number of actions: %d\n", pred_actions.size());
 #endif
-  PredIDV->reserve(pred_actions.size());
-  CostV->reserve(pred_actions.size());
-
-  bool insideBounds;
-  bool collisionFree;
+  //  PredIDV->reserve(pred_actions.size());
+  //CostV->reserve(pred_actions.size());
 
   //iterate through actions
   for (aind = 0; aind < pred_actions.size(); aind++)
@@ -1057,40 +1363,12 @@ void EnvironmentNAV3DDYN::GetPreds(int TargetStateID, vector<int>* PredIDV, vect
       printf("Pred Values: %d %d %d\n", predX, predY, predTheta);
 #endif
       //check for collisions in footprint
-      int tempX, tempY;
-      double ftX, ftY;
-      insideBounds = true;
-      collisionFree = true;
-      for (ftind = 0; ftind < nav3daction->footprint.size(); ftind++){
-	//translate the footprint
-	ftX = nav3daction->footprint.at(ftind).x;
-	ftY = nav3daction->footprint.at(ftind).y;
-	tempX = ftX + predX;
-	tempY = ftY + predY;
-
-	if(IsValidCell(tempX, tempY)){
-	  if(EnvNAV3DDYNCfg.Grid2D[tempX][tempY] != 0){
-#if NAV3DDYN_DEBUG
-	    	printf("Pt (%d, %d) is a collision\n", tempX, tempY);
-#endif
-		collisionFree = false;
-	    break;
-	  }
-	}else{
-#if NAV3DDYN_DEBUG
-	  printf("Pt (%d, %d) is not inside bounds\n", tempX, tempY);
-#endif
-	  insideBounds = false;
-	  break;
-	}
+      cost_t footprintCost = ComputeCostOfFootprint(nav3daction->footprint, nav3daction->footprint_circles, predX, predY);
+      if(footprintCost >= EnvNAV3DDYNCfg.ObsThresh){
+	//footprint goes out of bounds
+	continue;
       }
-    
-      //skip the invalid actions
-      if(!insideBounds){ 
-	continue;
-      }else if(!collisionFree)
-	continue;
-      
+
       EnvNAV3DDYNHashEntry_t* OutHashEntry;
       if((OutHashEntry = GetHashEntry(predX, predY, predTheta)) == NULL)
 	{
@@ -1099,10 +1377,15 @@ void EnvironmentNAV3DDYN::GetPreds(int TargetStateID, vector<int>* PredIDV, vect
 	}
       
       //compute clow 
-      int cost = nav3daction->cost;
+      int cost = nav3daction->cost*(footprintCost+1);
+      
 #if NAV3DDYN_DEBUG
+      if(cost < min_cost || min_cost==-1){
+	min_cost = cost;
+	actionId = aind;
+      }
       int heuristic = GetFromToHeuristic(HashEntry->stateID, OutHashEntry->stateID);
-      printf("Adding pred (%d %d %d) with cost %d and heuristic value %d\n", predX, predY, predTheta, cost, heuristic);
+      printf("Adding pred (%d %d %d) with footprint cost %d, cost %d and heuristic value %d\n", predX, predY, predTheta, footprintCost, cost, heuristic);
 #endif
       PredIDV->push_back(OutHashEntry->stateID);
       CostV->push_back(cost);
@@ -1134,13 +1417,14 @@ int EnvironmentNAV3DDYN::GetFromToHeuristic(int FromStateID, int ToStateID)
  
 
   //TODO: This should actually calculate the length of the arc that the robot will drive along
- 
+  
+
   //get X, Y for the state
   EnvNAV3DDYNHashEntry_t* FromHashEntry = EnvNAV3DDYN.StateID2CoordTable[FromStateID];
   EnvNAV3DDYNHashEntry_t* ToHashEntry = EnvNAV3DDYN.StateID2CoordTable[ToStateID];
 	
 
-  return EuclideanDistance(FromHashEntry->X, FromHashEntry->Y, ToHashEntry->X, ToHashEntry->Y)/EnvNAV3DDYNCfg.nominalvel_mpersecs;	
+  return (EuclideanDistance(FromHashEntry->X, FromHashEntry->Y, ToHashEntry->X, ToHashEntry->Y)*EnvNAV3DDYNCfg.cellsize_m)/EnvNAV3DDYNCfg.nominalvel_mpersecs;	
   
 }
 
@@ -1171,7 +1455,7 @@ int EnvironmentNAV3DDYN::GetStateFromCoord(int x, int y, int theta) {
 
 bool EnvironmentNAV3DDYN::IsObstacle(int x, int y)
 {
-  return (EnvNAV3DDYNCfg.Grid2D[x][y] != 0);
+  return (EnvNAV3DDYNCfg.Grid2D[x][y] >= EnvNAV3DDYNCfg.ObsThresh);
 }
 
 //--------------------Debugging Functions---------------------
@@ -1197,11 +1481,28 @@ void EnvironmentNAV3DDYN::PrintConfigurationToFile(const char* logFile){
 
   fprintf(fp, "environment:\n");
   
-  for(unsigned int h=0; h<EnvNAV3DDYNCfg.EnvHeight_c; h++){
-    for(unsigned int w=0; w<EnvNAV3DDYNCfg.EnvWidth_c; w++){
+  for(int h=0; h<EnvNAV3DDYNCfg.EnvHeight_c; h++){
+    for(int w=0; w<EnvNAV3DDYNCfg.EnvWidth_c; w++){
       fprintf(fp, "%d ", EnvNAV3DDYNCfg.Grid2D[w][h]);
     }
     fprintf(fp, "\n");
+  }
+
+  if(EnvNAV3DDYNCfg.OptimizeFootprint && EnvNAV3DDYNCfg.FootprintCircles.size() > 0){
+    //char[] expanded_logfile;
+    //TODO: this cleaner
+    FILE* fp2 = fopen("expanded.log", "w");
+
+    fprintf(fp2, "environment:\n");
+    for(int h=0; h<EnvNAV3DDYNCfg.EnvHeight_c; h++){
+      for(int w=0; w<EnvNAV3DDYNCfg.EnvWidth_c; w++){
+	fprintf(fp2, "%d ", EnvNAV3DDYNCfg.Grid2D_expanded[w][h]);
+      }
+      fprintf(fp2, "\n");
+    }
+
+    fclose(fp2);
+
   }
 
   fclose(fp);
@@ -1216,12 +1517,13 @@ void EnvironmentNAV3DDYN::PrintActionsToFile(const char* logFile){
 
   FILE* fp = fopen(logFile, "w");
   unsigned int tind, aind, pind;
-  unsigned int num_actions, path_length, footprint_size;
+  unsigned int num_actions, path_length, footprint_size, footprint_circle_size;
   double rv, tv;
   int time;
   EnvNAV3DDYNDiscPose_t pt;
   EnvNAV3DDYNContPose_t pt_cont;
   EnvNAV3DDYN2Dpt_t ft_pt;
+  EnvNAV3DDYNCircle_t circle;
 
   for(tind = 0; tind < NAV3DDYN_THETADIRS; tind++){
     fwrite(&tind, sizeof(tind), 1, fp);
@@ -1241,7 +1543,8 @@ void EnvironmentNAV3DDYN::PrintActionsToFile(const char* logFile){
 	pt = EnvNAV3DDYNCfg.ActionsV[tind][aind].path[pind];
 	fwrite(&pt, sizeof(pt), 1, fp);
       }
-      
+     
+     
       path_length = EnvNAV3DDYNCfg.ActionsV[tind][aind].path_cont.size();
       fwrite(&path_length, sizeof(path_length), 1, fp);
       for(pind = 0; pind < path_length; pind++){
@@ -1253,6 +1556,13 @@ void EnvironmentNAV3DDYN::PrintActionsToFile(const char* logFile){
       for(pind = 0; pind < footprint_size; pind++){
 	ft_pt = EnvNAV3DDYNCfg.ActionsV[tind][aind].footprint[pind];
 	fwrite(&ft_pt, sizeof(ft_pt), 1, fp);
+      }
+      
+      footprint_circle_size = EnvNAV3DDYNCfg.ActionsV[tind][aind].footprint_circles.size();
+      fwrite(&footprint_circle_size, sizeof(footprint_circle_size), 1, fp);
+      for(pind = 0; pind < footprint_circle_size; pind++){
+	circle = EnvNAV3DDYNCfg.ActionsV[tind][aind].footprint_circles[pind];
+	fwrite(&circle, sizeof(circle), 1, fp);
       }
     } 
   }
@@ -1305,7 +1615,7 @@ int EnvironmentNAV3DDYN::SizeofCreatedEnv()
 }
 
 void EnvironmentNAV3DDYN::GetEnvParms(int *size_x, int *size_y, double* startx, double* starty, double*starttheta, double* goalx, double* goaly, double* goaltheta,
-				      double* cellsize_m)
+				      double* cellsize_m, unsigned char* obsthresh)
 {
   *size_x = EnvNAV3DDYNCfg.EnvWidth_c;
   *size_y = EnvNAV3DDYNCfg.EnvHeight_c;
@@ -1318,10 +1628,10 @@ void EnvironmentNAV3DDYN::GetEnvParms(int *size_x, int *size_y, double* startx, 
   *goaltheta = DiscTheta2Cont(EnvNAV3DDYNCfg.EndTheta, NAV3DDYN_THETADIRS);;
   
   *cellsize_m = EnvNAV3DDYNCfg.cellsize_m;
-
+  *obsthresh = EnvNAV3DDYNCfg.ObsThresh;
 }
 
-void EnvironmentNAV3DDYN::GetContPathFromStateIds(vector<int> stateIdV, vector<EnvNAV3DDYNContPose_t>* path){
+void EnvironmentNAV3DDYN::GetContPathFromStateIds(vector<int> stateIdV, vector<EnvNAV3DDYNContPoseWAction_t>* path){
   
   //check to be sure there are some states, if so then just return
   if(stateIdV.size() == 0){
@@ -1345,7 +1655,7 @@ void EnvironmentNAV3DDYN::GetContPathFromStateIds(vector<int> stateIdV, vector<E
  
 
   vector<EnvNAV3DDYNAction_t*> actions;
-  EnvNAV3DDYNContPose_t pose;
+  EnvNAV3DDYNContPoseWAction_t pose;
 
   for(unsigned int i=1; i<stateIdV.size(); i++){
     
@@ -1367,9 +1677,13 @@ void EnvironmentNAV3DDYN::GetContPathFromStateIds(vector<int> stateIdV, vector<E
       if( max(prevX - currX, currX - prevX) < ERR_EPS && max(prevY - currY, currY - prevY) < ERR_EPS && prevTheta==currTheta){
 	
 	for(unsigned int pind = 0; pind < actions[aind]->path_cont.size(); pind++){
-	  pose = actions[aind]->path_cont[pind];
-	  pose.X += currX;
-	  pose.Y += currY;
+	  
+	  pose.X = actions[aind]->path_cont[pind].X + currX;
+	  pose.Y = actions[aind]->path_cont[pind].Y + currY;
+	  pose.Theta = actions[aind]->path_cont[pind].Theta;
+	  pose.ActionId = aind;
+	  pose.ThetaId = theta;
+
 	  path->push_back(pose);
 	}
 	found = 1;
@@ -1413,9 +1727,11 @@ int EnvironmentNAV3DDYN::GetGoalHeuristic(int stateID)
 
 int EnvironmentNAV3DDYN::GetStartHeuristic(int stateID)
 {
+
 #if USE_HEUR==0
   return 0;
 #endif
+
   
   
 #if NAV3DDYN_DEBUG
@@ -1425,10 +1741,40 @@ int EnvironmentNAV3DDYN::GetStartHeuristic(int stateID)
       exit(1);
     }
 #endif
+
   
   //define this function if it used in the planner (heuristic backward search would use it)
-  return GetFromToHeuristic(EnvNAV3DDYN.startstateid, stateID);
+  // return GetFromToHeuristic(EnvNAV3DDYN.startstateid, stateID);
+  
+   
+  if(bNeedtoRecomputeStartHeuristics){
+    if(EnvNAV3DDYNCfg.OptimizeFootprint){
+      grid2Dsearch->search(EnvNAV3DDYNCfg.Grid2D_expanded, EnvNAV3DDYNCfg.ObsThresh,
+			   EnvNAV3DDYNCfg.StartX_c, EnvNAV3DDYNCfg.StartY_c,
+			   EnvNAV3DDYNCfg.EndX_c, EnvNAV3DDYNCfg.EndY_c,
+			   SBPL_2DGRIDSEARCH_TERM_CONDITION_20PERCENTOVEROPTPATH);
+    }else{
+      grid2Dsearch->search(EnvNAV3DDYNCfg.Grid2D, EnvNAV3DDYNCfg.ObsThresh,
+			   EnvNAV3DDYNCfg.StartX_c, EnvNAV3DDYNCfg.StartY_c,
+			   EnvNAV3DDYNCfg.EndX_c, EnvNAV3DDYNCfg.EndY_c,
+			   SBPL_2DGRIDSEARCH_TERM_CONDITION_20PERCENTOVEROPTPATH);
+    }
 
+    bNeedtoRecomputeStartHeuristics = false;
+  }
+
+  EnvNAV3DDYNHashEntry_t* HashEntry = EnvNAV3DDYN.StateID2CoordTable[stateID];
+  int h2D = grid2Dsearch->getlowerboundoncostfromstart_inmm(HashEntry->X, HashEntry->Y);
+  //int hEuclid = (int)(NAV3DDYN_COSTMULT_MTOMM*EuclideanDistance_m(EnvNAV3DDYNCfg.StartX_c, EnvNAV3DDYNCfg.StartY_c, HashEntry->X, HashEntry->Y)); 
+  int hEuclid = EuclideanDistance(EnvNAV3DDYNCfg.StartX_c, EnvNAV3DDYNCfg.StartY_c, HashEntry->X, HashEntry->Y)*EnvNAV3DDYNCfg.cellsize_m;	
+  //  printf("h2D = %d hEuclid = %d\n", h2D, hEuclid);
+
+#if DEBUG
+  fprintf(fDeb, "h2D = %d hEuclid = %d\n", h2D, hEuclid);
+#endif
+
+  return (int)(((double)__max(h2D, hEuclid))/EnvNAV3DDYNCfg.nominalvel_mpersecs);
+   
 }
 
 
@@ -1588,10 +1934,11 @@ void EnvironmentNAV3DDYN::ReadConfiguration(FILE* fCfg)
 
 	//allocate the 2D environment
 	int x, y;
-	EnvNAV3DDYNCfg.Grid2D = new char* [EnvNAV3DDYNCfg.EnvWidth_c];
+	EnvNAV3DDYNCfg.Grid2D = new unsigned char* [EnvNAV3DDYNCfg.EnvWidth_c];
+	
 	for (x = 0; x < EnvNAV3DDYNCfg.EnvWidth_c; x++)
 	{
-		EnvNAV3DDYNCfg.Grid2D[x] = new char [EnvNAV3DDYNCfg.EnvHeight_c];
+	  EnvNAV3DDYNCfg.Grid2D[x] = new unsigned char [EnvNAV3DDYNCfg.EnvHeight_c];
 	}
 
 	//environment:
@@ -1608,17 +1955,19 @@ void EnvironmentNAV3DDYN::ReadConfiguration(FILE* fCfg)
 			EnvNAV3DDYNCfg.Grid2D[x][y] = dTemp;
 		}
 
-#if NAV3DDYN_DEBUG
+	/*#if NAV3DDYN_DEBUG
 	printf("Environment: \n");
 	printf("\tdiscretization(cells): %d %d\n", EnvNAV3DDYNCfg.EnvWidth_c, EnvNAV3DDYNCfg.EnvHeight_c);
 	printf("\tcellsize(meters): %f\n", EnvNAV3DDYNCfg.cellsize_m);
 	printf("\tnominalvel(mpersecs): %f\n", EnvNAV3DDYNCfg.nominalvel_mpersecs);
 	printf("\ttimetoturnoneunitinplace(secs): %f\n", EnvNAV3DDYNCfg.timetoturnoneunitinplace_secs);
-	printf("\tstart(m,rad): %f %f %d\n", DISCXY2CONT(EnvNAV3DDYNCfg.StartX_c, EnvNAV3DDYNCfg.cellsize_m), DISCXY2CONT(EnvNAV3DDYNCfg.StartY_c, EnvNAV3DDYNCfg.cellsize_m), EnvNAV3DDYNCfg.StartTheta);
-	printf("\tend(m,rad): %f %f %d\n", DISCXY2CONT(EnvNAV3DDYNCfg.EndX_c, EnvNAV3DDYNCfg.cellsize_m), DISCXY2CONT(EnvNAV3DDYNCfg.EndY_c, EnvNAV3DDYNCfg.cellsize_m), EnvNAV3DDYNCfg.EndTheta);
+	//printf("\tstart(m,rad): %f %f %d\n", DISCXY2CONT(EnvNAV3DDYNCfg.StartX_c, EnvNAV3DDYNCfg.cellsize_m), DISCXY2CONT(EnvNAV3DDYNCfg.StartY_c, EnvNAV3DDYNCfg.cellsize_m), EnvNAV3DDYNCfg.StartTheta);
+	printf("\tstart(m,rad):%d %d %d\n", EnvNAV3DDYNCfg.StartX_c, EnvNAV3DDYNCfg.StartY_c, EnvNAV3DDYNCfg.StartTheta);
+	//	printf("\tend(m,rad): %f %f %d\n", DISCXY2CONT(EnvNAV3DDYNCfg.EndX_c, EnvNAV3DDYNCfg.cellsize_m), DISCXY2CONT(EnvNAV3DDYNCfg.EndY_c, EnvNAV3DDYNCfg.cellsize_m), EnvNAV3DDYNCfg.EndTheta);
+	printf("\tend(m,rad):%d %d %d\n", EnvNAV3DDYNCfg.EndX_c, EnvNAV3DDYNCfg.EndY_c, EnvNAV3DDYNCfg.EndTheta);
 	printf("\tnum_footprint_corners: %u\n", EnvNAV3DDYNCfg.FootprintPolygon.size());
 	printf("\tfootprint\n");
-	for(int c=0; c<EnvNAV3DDYNCfg.FootprintPolygon.size(); c++){
+	for(unsigned int c=0; c<EnvNAV3DDYNCfg.FootprintPolygon.size(); c++){
 	  printf("\t\t%f %f\n", EnvNAV3DDYNCfg.FootprintPolygon[c].x, EnvNAV3DDYNCfg.FootprintPolygon[c].y);
 	}
 	printf("\tenvironment:\n");
@@ -1629,7 +1978,7 @@ void EnvironmentNAV3DDYN::ReadConfiguration(FILE* fCfg)
 	  }
 	  printf("\n");
 	}
-#endif
+	#endif*/
 }
 
 bool EnvironmentNAV3DDYN::InitGeneral() {
@@ -1684,7 +2033,8 @@ void EnvironmentNAV3DDYN::ComputeHeuristicValues()
   //whatever necessary pre-computation of heuristic values is done here 
   printf("Precomputing heuristics...\n");
 	
-
+  //allocated 2D grid search
+  grid2Dsearch = new SBPL2DGridSearch(EnvNAV3DDYNCfg.EnvWidth_c, EnvNAV3DDYNCfg.EnvHeight_c, (float)EnvNAV3DDYNCfg.cellsize_m);
 
   printf("done\n");
 
@@ -1748,7 +2098,7 @@ bool EnvironmentNAV3DDYN::IsValidCell(int X, int Y)
 {
   return (X >= 0 && X < EnvNAV3DDYNCfg.EnvWidth_c && 
 	  Y >= 0 && Y < EnvNAV3DDYNCfg.EnvHeight_c && 
-	  EnvNAV3DDYNCfg.Grid2D[X][Y] == 0);
+	  EnvNAV3DDYNCfg.Grid2D[X][Y] < EnvNAV3DDYNCfg.ObsThresh);
 }
 
 bool EnvironmentNAV3DDYN::IsWithinMapCell(int X, int Y)

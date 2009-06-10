@@ -36,9 +36,10 @@
 //regular debugging
 #define DEBUG 1
 #define NAV3DDYN_DEBUG 0
+#define COMPUTE_STATS 1
 
 //timing debugging
-#define TIME_DEBUG 0
+#define TIME_DEBUG 1
 
 //small epsilon for various floating error checking
 #define ERR_EPS 0.0000001
