@@ -42,25 +42,23 @@ from pr2_msgs.msg import BaseControllerState
 from robot_msgs.msg import PoseDot
 from robot_msgs.msg import PoseDot
 
-from annotated_map_builder.msg import *
-
 class WaitForKMessagesAdapter:
-  def __init__(self, action_name, message_topic, count,timeout=10.0):
+  def __init__(self, message_topic,msgType, count, timeout):
+    print message_topic,msgType
+    rospy.Subscriber(message_topic, msgType, self.update)
 
-    self.action_name_=action_name;
-    self.state_topic_=self.action_name_+"/feedback";
-    print self.state_topic_
-
-    rospy.Subscriber(self.state_topic_, WaitActionState, self.update)
-    self.pub_ = rospy.Publisher(self.action_name_+"/request", WaitActionGoal)
-
-    self.message_topic_ = message_topic
-    self.wait_count_=count;
-
+    self.message_topic = message_topic
     self.time_limit_ = timeout
-    self.state=None
+    self.wait_count_=count;
+    self.msg_wait_count_down_=0;
 
+  def update(self,msg):
+    print "+",self.msg_wait_count_down_
+    if self.msg_wait_count_down_>0:
+      self.msg_wait_count_down_ -= 1;
 
+  def doneWaiting(self):
+    return self.msg_wait_count_down_==0;
 
   def startWaiting(self):
     self.start_time_ = rospy.get_time()
@@ -70,44 +68,3 @@ class WaitForKMessagesAdapter:
   def timeUp(self):
     pursuit_time = rospy.get_time() - self.start_time_
     return pursuit_time > self.time_limit_;
-
-
-  def sendGoal(self, count=None, topic=None):
-    self.start_time_ = rospy.get_time()
-    goal = WaitActionGoal()
-    if count:
-      goal.num_events = count
-    else:
-      goal.num_events = self.wait_count_;
-    if topic:
-      goal.topic_name =  topic;
-    else:
-      goal.topic_name =  self.message_topic_;
-
-    self.pub_.publish(goal)
-
-
-  def legalState(self):
-    return self.state != None
-
-  def update(self, state):
-    self.state = state
-    print self.state
-
-    #if we have a valid plan, reset the timeout on planning
-    if self.state.status.value == self.state.status.ACTIVE:
-      self.last_plan_time = rospy.get_time()
-
-  def active(self):
-    return self.state.status.value == self.state.status.ACTIVE
-
-  def aborted(self):
-    return self.state.status.value == self.state.status.ABORTED
-
-  def success(self):
-    return self.state.status.value == self.state.status.SUCCESS
-
-  #Have we reached a goal
-  def goalReached(self):
-    return self.state.status.value == self.state.status.SUCCESS
-

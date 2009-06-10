@@ -12,4 +12,6 @@
 
   <node pkg="rosrecord" type="rosrecord" machine="two" args="-f /bags/annotated_maps/state_ /odom "/>
 
+  <node pkg="rosrecord" type="rosrecord" machine="two" args="-f /bags/annotated_maps/actionstate /wait_k_messages_action/feedback"/>
+
 </launch>

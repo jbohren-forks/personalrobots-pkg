@@ -13,7 +13,8 @@
     <param name="do_calc_points" type="bool" value="True"/>
     <param name="do_keep_coords" type="bool" value="True"/>
   </group>
-  <node pkg="stereo_image_proc" type="stereoproc" respawn="false" machine="four" />
+
+<!--  node pkg="stereo_image_proc" type="stereoproc" respawn="false" machine="four" -->
 
   <!-- Downsampled version for remove viewing -->
   <node pkg="mux" type="throttle" args="1.0 stereo/cloud stereo/cloud_throttled" machine="four"/>
@@ -92,6 +93,7 @@
 
   <!-- Generate single sweep scan -->
   <node pkg="point_cloud_assembler" type="point_cloud_srv" output="screen" name="point_cloud_srv" />
+
 
 
 

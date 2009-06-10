@@ -37,6 +37,7 @@
 import roslib
 roslib.load_manifest('annotated_map_builder')
 import rospy
+import sys
 import random
 from std_msgs.msg import *
 from robot_msgs.msg import *
@@ -77,7 +78,7 @@ class ExecutiveDataCollector:
     self.stuck = False
 
   def legalStates(self):
-    return self.navigator.legalState() and self.batt_monitor.legalState()
+    return self.navigator.legalState() and self.batt_monitor.legalState() and self.capture_waiter.legalState()
 
 
   def selectNextGoal(self):
@@ -128,7 +129,7 @@ class ExecutiveDataCollector:
 
         elif self.navigator.goalReached():
           self.state = "capture"
-          self.capture_waiter.startWaiting();
+          self.capture_waiter.sendGoal();
           print "nav --> capture"
 
         elif self.navigator.aborted() or (not self.navigator.active() and self.current_goal == None) or self.navigator.timeUp():
@@ -142,18 +143,18 @@ class ExecutiveDataCollector:
           print "nav --> nav"
       elif self.state=="capture":
         print "C"
-        if self.capture_waiter.timeUp() and not self.capture_waiter.doneWaiting():
+        if self.capture_waiter.timeUp() and not self.capture_waiter.success():
           print "ERROR: capture timed out"
-        if self.capture_waiter.doneWaiting() or self.capture_waiter.doneWaiting():
-          self.capture_waiter.sendDefaultHeadConfig()
+        if self.capture_waiter.timeUp() or self.capture_waiter.success():
+          #self.capture_waiter.sendDefaultHeadConfig()
 
           self.state="nav"
           self.selectNextGoal();
 
           self.navigator.sendGoal(self.current_goal, "/map")
           print "capture --> nav"
-        else:
-          self.capture_waiter.cycle()
+        #else:
+        #  self.capture_waiter.doCycle()
           
 
       elif self.state == "recharge":
@@ -201,6 +202,9 @@ class ExecutiveDataCollector:
           self.navigator.sendGoal(chrg_pts, "/map")
           print "nav_charge --> nav_charge"
     else:
+      if not self.capture_waiter.legalState():
+        print("Waiting on %s to be published" % (self.capture_waiter.state_topic_))
+        rospy.logout("Waiting on %s to be published" % (self.capture_waiter.state_topic_))
       if not self.navigator.legalState():
         print("Waiting on %s to be published" % (self.navigator.state_topic))
         rospy.logout("Waiting on %s to be published" % (self.navigator.state_topic))
@@ -235,28 +239,47 @@ if __name__ == '__main__':
     manual_charger = ManualChargeAdapter("/request_charge")
 
     #/laser_tilt_controller/laser_scanner_signal - better!
-    capture_waiter = WaitForKMessagesAdapter("/stereo/raw_stereo_throttled",RawStereo,3,10)
+    capture_waiter = WaitForKMessagesAdapter("wait_k_messages_action","/stereo/raw_stereo_throttled",3,10)
     
     capture_configs=[[0.0,-0.1],[-0.5, 0.3],[0.5, 0.3]];
 
-    multi_config_waiter=WaitForMultipleHeadConfigsAdapter(capture_configs,capture_waiter);
+    #multi_config_waiter=WaitForMultipleHeadConfigsAdapter(capture_configs,capture_waiter);
+
+    hc_goal_topic_ = "/head_controller/set_command_array"
+    hc_pub = rospy.Publisher(hc_goal_topic_, JointCmd)
+
+    joint_cmds=JointCmd();
+    joint_cmds.names=[ "head_pan_joint", "head_tilt_joint"];
+    joint_cmds.positions=[0.0,0.3];
+
+    hc_pub.publish(joint_cmds);
+    rospy.sleep(0.1);
+    hc_pub.publish(joint_cmds);
 
     chrg_stations = [
     [[18.098, 21.015, 0.000], [0.000, 0.000, 0.713, 0.701]]
     ]
+
+    goals_file=sys.argv[1];
+    goals=open(goals_file,'r').readlines()
     
-    goals=annotated_map_builder.target_poses.willow_default_pose_list;
+    #goals=annotated_map_builder.target_poses.willow_default_pose_list;
     new_goals=[];
     pi2=3.14/2;
-    for (locX,locY,orient) in goals:
-      for th in [0, pi2, 2*pi2,3*pi2/4]:
-        thNew=orient+th;
-        while thNew>4*pi2:
-          thNew-=4*pi2
-        qt=tf.transformations.quaternion_about_axis(thNew,[0,0,1]);
-        new_goals.append([[locX,locY,0],[qt[0],qt[1],qt[2],qt[3]]])
+    for g in goals:
+      #(locX,locY,orient) = [float(s) for s in g.strip().split(" ")];
+      (locX,locY,locZ,q0,q1,q2,q3) = [float(s) for s in g.strip().split(" ")];
+      #for th in [0, pi2, 2*pi2,3*pi2/4]:
+      #thNew=orient;
+      #qt=tf.transformations.quaternion_about_axis(thNew,[0,0,1]);
+      new_goals.append([[locX,locY,locZ],[q0,q1,q2,q3]])
+      #new_goals.append([[locX,locY,0],[qt[0],qt[1],qt[2],qt[3]]])
+        #thNew=orient+th;
+        #while thNew>4*pi2:
+        #  thNew-=4*pi2
 
-    executive = ExecutiveDataCollector(new_goals, chrg_stations, navigator, batt_monitor, unstuck, manual_charger, multi_config_waiter, 1.0)
+
+    executive = ExecutiveDataCollector(new_goals, chrg_stations, navigator, batt_monitor, unstuck, manual_charger, capture_waiter, 1.0)
     executive.run()
   except KeyboardInterrupt, e:
     pass

@@ -1,7 +1,7 @@
 <launch>
   <include file="$(find pr2_alpha)/$(env ROBOT).machine" />
 
-  <node pkg="annotated_map_builder" type="executive_data_collector.py" machine="two">
+  <node pkg="annotated_map_builder" type="executive_data_collector.py" args="$(find annotated_map_builder)/targets/building_run_2" machine="two" output="screen">
   </node>
 
 

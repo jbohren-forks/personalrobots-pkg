@@ -1,0 +1,16 @@
+<launch>
+  <include file="$(find pr2_alpha)/$(env ROBOT).machine" />
+
+
+<!-- Actions -->
+  <node pkg="annotated_map_builder" type="wait_for_k_messages_action.py" machine="four" name="wait_k_messsages_action" output="screen">
+  </node>
+
+
+
+
+
+
+
+
+</launch>
