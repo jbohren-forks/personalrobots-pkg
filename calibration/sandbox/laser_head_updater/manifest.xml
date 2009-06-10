@@ -1,0 +1,14 @@
+<package>
+  <description>Some prototype nodes and scripts for updating
+               tf_message to improve laser-head registration</description>
+  <author>Vijay Pradeep</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <depend package="kdl" />
+  <depend package="robot_msgs" />
+  <depend package="std_msgs" />
+  <depend package="tf" />
+  <depend package="laser_scan" />
+  <depend package="image_msgs" />
+  
+</package>
