@@ -135,6 +135,16 @@ double TopologicalMap::MapImpl::getResolution () const
   return resolution_;
 }
 
+CellPair TopologicalMap::MapImpl::adjacentCells (const ConnectorId id) const
+{
+  RegionId r1, r2;
+  tie(r1, r2) = adjacentRegions(id);
+  return CellPair(connectorCell(id, r1), connectorCell(id, r2));
+}
+
+
+
+
 bool TopologicalMap::MapImpl::cellOnMap (const Cell2D& cell) const
 {
   return (cell.r>=0) && (cell.c>=0) && (cell.r<(int)numRows(*grid_)) && (cell.c<(int)numCols(*grid_));
@@ -628,7 +638,7 @@ TopologicalMap::MapImpl::MapImpl(const OccupancyGrid& grid, double resolution, d
 TopologicalMap::MapImpl::MapImpl (istream& str, double door_open_prior_prob, double door_reversion_rate,
                                   double locked_door_cost) :
   grid_(readGrid(str)), obstacle_distances_(computeObstacleDistances(grid_)), region_graph_(readRegionGraph(str)), 
-  roadmap_(readRoadmap(str)), grid_graph_(new GridGraph(grid_)),
+  roadmap_(readRoadmap(str)), //grid_graph_(new GridGraph(grid_)),
   region_connector_map_(readRegionConnectorMap(str)), door_open_prior_prob_(door_open_prior_prob),
   door_reversion_rate_(door_reversion_rate), locked_door_cost_(locked_door_cost), 
   region_door_map_(readRegionDoorMap(str, door_open_prior_prob_)), 
@@ -1178,6 +1188,24 @@ Point2D TopologicalMap::MapImpl::connectorPosition (const ConnectorId id) const
   return roadmap_->connectorPoint(id);
 }
 
+
+typedef tuple<ConnectorId, Cell2D, Cell2D> ConnectorDesc;
+Cell2D TopologicalMap::MapImpl::connectorCell (const ConnectorId id, const RegionId r) const
+{
+  RegionIdVector neighbors = this->neighbors(r);
+  foreach (RegionId r2, neighbors) {
+    if (connectorBetween(r, r2) == id) {
+      ConnectorDesc desc = connectorCellsBetween(r, r2);
+      return desc.get<1>();
+    }
+  }
+  throw ConnectorNotInRegionException(id, r);
+}
+  
+  
+  
+
+
 void TopologicalMap::MapImpl::recomputeConnectorDistances ()
 {
   foreach (RegionId id, allRegions()) {
@@ -1195,7 +1223,7 @@ vector<ConnectorId> TopologicalMap::MapImpl::adjacentConnectors (const RegionId 
   return connectors;
 }
 
-typedef tuple<ConnectorId, Cell2D, Cell2D> ConnectorDesc;
+
 
 vector<ConnectorDesc> TopologicalMap::MapImpl::adjacentConnectorCells (const RegionId id) const
 {
@@ -1674,6 +1702,13 @@ double TopologicalMap::getResolution () const
 {
   return map_impl_->getResolution();
 }
+
+
+CellPair TopologicalMap::adjacentCells (const ConnectorId id) const
+{
+  return map_impl_->adjacentCells(id);
+}
+
 
 
 } // namespace topological_map

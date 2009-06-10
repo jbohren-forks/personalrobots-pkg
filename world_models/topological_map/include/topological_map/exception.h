@@ -178,6 +178,12 @@ struct NoContainingRegionException: public TopologicalMapException
     TopologicalMapException (format ("Cell %1% had %2% containing regions instead of 1") % cell % num_regions) {}
 };
 
+struct ConnectorNotInRegionException: public TopologicalMapException
+{
+  ConnectorNotInRegionException (const ConnectorId id, const RegionId r) : 
+    TopologicalMapException (format ("Connector %1% not in region %2%") % id % r) {}
+};
+
 } // namespace topological_map
 
 

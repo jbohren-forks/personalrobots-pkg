@@ -45,11 +45,15 @@
 #include <boost/bind.hpp>
 #include <boost/ref.hpp>
 #include <iostream>
+#include <algorithm>
 #include <fstream>
 #include <sysexits.h>
 #include <ros/ros.h>
 
 #define foreach BOOST_FOREACH
+
+using boost::tie;
+using std::swap;
 
 namespace topological_map
 {
@@ -63,9 +67,26 @@ bool mapService (const TopologicalMap& m, GetTopologicalMap::Request& req, GetTo
     conn.id = id;
     conn.region1 = neighbors.first;
     conn.region2 = neighbors.second;
-    Cell2D cell = m.containingCell(m.connectorPosition(id));
-    conn.pos.x = cell.c;
-    conn.pos.y = cell.r;
+
+    Cell2D cell1, cell2;
+    tie(cell1, cell2) = m.adjacentCells(id);
+    const RegionId r1 = m.containingRegion(cell1);
+    const RegionId r2 = m.containingRegion(cell2);
+    if (r1 == neighbors.first) {
+      ROS_ASSERT_MSG (cells.second == neighbors.second, "Connector regions %u and %u don't match regions %d and %d",
+                      r1, r2, conn.region1, conn.region2);
+    }
+    else {
+      ROS_ASSERT_MSG ((cells.second == neighbors.first) && (cells.first == neighbors.second), "Connector regions %u and %u don't match regions %d and %d",
+                      r1, r2, conn.region1, conn.region2);
+      swap(cell1, cell2);
+    }
+                      
+
+    conn.pos1.x = cell1.c;
+    conn.pos1.y = cell1.r;
+    conn.pos2.x = cell2.c;
+    conn.pos2.y = cell2.r;
     resp.connectors.push_back(conn);
   }
 

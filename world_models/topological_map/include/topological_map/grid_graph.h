@@ -60,13 +60,13 @@ struct CellInfo
   CellInfo() : cell(4242, 4242) {} // Shouldn't ever be used, but bundled properties are required to be default constructible
   Cell2D cell;
   uint index;
-  uint component;
+  short component;
 };
 
 struct EdgeCost
 {
   EdgeCost(double cost=0.0) : cost(cost) {}
-  double cost;
+  float cost;
 };
 
 typedef adjacency_list<listS, listS, undirectedS, CellInfo, EdgeCost> Grid;
@@ -85,6 +85,8 @@ class GridGraph
 public:
   // Create an empty graph.  
   GridGraph() {}
+
+  ~GridGraph();
 
   // Create a graph from an occupancy grid.  
   GridGraph(boost::shared_ptr<OccupancyGrid> grid);

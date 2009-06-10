@@ -57,7 +57,7 @@ using std::pair;
 using ros::Time;
 
 
- typedef std::pair<bool, double> ReachableCost;
+typedef std::pair<bool, double> ReachableCost;
 typedef unsigned int RegionId;
 typedef unsigned int ConnectorId;
 typedef vector<RegionId> RegionIdVector;
@@ -67,10 +67,15 @@ typedef pair<RegionId, RegionId> RegionPair;
 typedef unsigned int OutletId;
 typedef set<OutletId> OutletIdSet;
 typedef pair<bool, double> ReachableCost;
-
-
+typedef pair<Cell2D, Cell2D> CellPair;
 typedef boost::multi_array<bool, 2> OccupancyGrid;
 typedef OccupancyGrid::size_type occ_grid_size;
+
+
+
+
+
+
 
 // Utilities for the occupancy grid
 uint numRows(const OccupancyGrid& grid);
@@ -151,6 +156,10 @@ public:
   /// \return vector of ids of connectors touching the given region
   /// \throws UnknownRegionException
   vector<ConnectorId> adjacentConnectors (RegionId id) const;
+
+  /// \return pair of cells touching given connector
+  /// \throws UnknownConnectorException
+  CellPair adjacentCells (ConnectorId id) const;
 
   /// \return set of all connector ids
   set<ConnectorId> allConnectors () const;

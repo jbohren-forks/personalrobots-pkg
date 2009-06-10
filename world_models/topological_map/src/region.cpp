@@ -43,8 +43,8 @@ ostream& operator<< (ostream& str, const Cell2D& c)
 
 vector<Cell2D> cellNeighbors (const Cell2D& p)
 {
-  int r=p.r;
-  int c=p.c;
+  short r=p.r;
+  short c=p.c;
   vector<Cell2D> neighbors(4);
   neighbors[0]=Cell2D(r-1,c);
   neighbors[1]=Cell2D(r+1,c);

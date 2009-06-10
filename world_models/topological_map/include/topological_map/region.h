@@ -43,9 +43,9 @@ using std::ostream;
 
 struct Cell2D
 {
-  int r, c;
+  short r, c;
   Cell2D() {}
-  Cell2D(const int row, const int column) : r(row), c(column) {}
+  Cell2D(const short row, const short column) : r(row), c(column) {}
 };
 
 ostream& operator<< (ostream& str, const Cell2D& c);

@@ -167,6 +167,10 @@ public:
   /// \throws UnknownRegionException
   vector<ConnectorId> adjacentConnectors (const RegionId id) const;
 
+  /// \return pair of cells touching given connector
+  /// \throws UnknownConnectorException
+  CellPair adjacentCells (ConnectorId id) const;
+
   /// \return set of all connector ids
   set<ConnectorId> allConnectors () const;
 

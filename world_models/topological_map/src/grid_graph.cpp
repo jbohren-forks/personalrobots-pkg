@@ -90,6 +90,11 @@ GridGraph::GridGraph(shared_ptr<OccupancyGrid> grid)
   }
 }
 
+GridGraph::~GridGraph()
+{
+  ROS_INFO("Destroying grid graph");
+}
+
 void GridGraph::addEdge (const Cell2D& cell1, const Cell2D& cell2, const double cost)
 {
   const GridGraphVertex v=cellVertex(cell1);
