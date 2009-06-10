@@ -46,7 +46,7 @@ from stereo_utils.descriptor_schemes import DescriptorSchemeCalonder, Descriptor
 from stereo_utils.feature_detectors import FeatureDetectorFast, FeatureDetector4x4, FeatureDetectorStar, FeatureDetectorHarris
 from skeleton import Skeleton
 import image_msgs.msg
-import deprecated_msgs.msg
+import robot_msgs.msg
 
 from stereo_utils import camera
 import rospy
@@ -113,15 +113,18 @@ class FakeRoadmapServer:
 
   def __init__(self, args):
     rospy.init_node('roadmap_server')
-    self.pub = rospy.Publisher("/roadmap", vslam.msg.Roadmap)
-    rospy.Subscriber('/localizedpose', deprecated_msgs.msg.RobotBase2DOdom, self.handle_localizedpose)
+    self.pub = rospy.Publisher("roadmap", vslam.msg.Roadmap)
+    rospy.Subscriber('amcl_pose', robot_msgs.msg.PoseWithCovariance, self.handle_localizedpose)
     self.nodes = []
 
   def handle_localizedpose(self, msg):
-    print msg.pos.x, msg.pos.y, msg.pos.th
-    n = (msg.pos.x, msg.pos.y, msg.pos.th)
+    th = acos(msg.pose.orientation.w)
+    x = msg.pose.position.x
+    y = msg.pose.position.y
+    print x, y, th
+    n = (x, y, th)
     if self.nodes == [] or (dist(self.nodes[-1], n) > 1.0) or (abs(self.nodes[-1][2] - n[2]) > (2.0 * pi / 180)):
-      self.nodes.append((msg.pos.x, msg.pos.y, msg.pos.th))
+      self.nodes.append((x, y, th))
       self.send_map(msg.header.stamp)
 
   def send_map(self, stamp):
