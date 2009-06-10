@@ -49,7 +49,6 @@ import pytf_swig
 import image_msgs.msg
 import robot_msgs.msg
 import tf.msg
-import deprecated_msgs.msg
 
 from stereo_utils import camera
 import rospy
