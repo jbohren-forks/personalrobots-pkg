@@ -27,9 +27,9 @@
     <stepTime>0.001</stepTime>
     <gravity>0 0 -9.8</gravity>
     <cfm>0.000000000001</cfm>
-    <erp>0.2</erp>
+    <erp>0.5</erp>
     <quickStep>true</quickStep>
-    <quickStepIters>300</quickStepIters>
+    <quickStepIters>100</quickStepIters>
     <quickStepW>1.3</quickStepW>
   </physics:ode>
 
@@ -39,7 +39,7 @@
 
   <rendering:gui>
     <type>fltk</type>
-    <imageSize>1024 800</imageSize>
+    <size>1024 800</size>
     <pos>0 0</pos>
     <frames>
       <row height="100%">
@@ -70,6 +70,7 @@
 
     <body:plane name="plane">
       <geom:plane name="plane">
+        <laserRetro>2000.0</laserRetro>
         <kp>1000000.0</kp>
         <kd>1.0</kd>
         <normal>0 0 1</normal>
@@ -82,7 +83,7 @@
 
   <!-- The "desk"-->
   <!-- small desks -->
-  <model:physical name="../gazebo_objects/desk1_model">
+  <model:physical name="desk1_model">
     <xyz>2.28  -0.21  0</xyz>
     <rpy>0.0 0.0 0.0 </rpy>
     <include embedded="true">
@@ -92,7 +93,7 @@
   </model:physical>
 
   <!-- The second "desk"-->
-  <model:physical name="../gazebo_objects/desk2_model">
+  <model:physical name="desk2_model">
     <xyz>2.25  -3.0   0</xyz>
     <rpy>0.0 0.0 0.0 </rpy>
     <include embedded="true">
@@ -116,6 +117,7 @@
           <material>Gazebo/PioneerBody</material>
           <mesh>unit_cylinder</mesh>
         </visual>
+        <laserRetro>1.0</laserRetro>
       </geom:cylinder>
       <geom:box name="cylinder1_base_geom">
         <kp>100000000.0</kp>
@@ -129,12 +131,13 @@
           <material>Gazebo/Fish</material>
           <mesh>unit_box</mesh>
         </visual>
+        <laserRetro>1.0</laserRetro>
       </geom:box>
     </body:cylinder>
   </model:physical>
 
   <!-- The small box "cup" -->
-  <model:physical name="../gazebo_objects/object1">
+  <model:physical name="object1">
     <xyz>2.28  -0.21  0</xyz>
     <rpy>0.0 0.0 0.0 </rpy>
     <include embedded="true">
@@ -239,6 +242,7 @@
   </model:physical>
 
   <model:empty name="factory_model">
+    <model_thread>false</model_thread>
     <controller:factory name="factory_controller">
       <alwaysOn>true</alwaysOn>
       <updateRate>1000.0</updateRate>
@@ -247,7 +251,6 @@
   </model:empty>
 
   <!-- White Directional light -->
-  <!--
   <model:renderable name="directional_white">
     <light>
       <type>directional</type>
@@ -255,8 +258,10 @@
       <diffuseColor>0.4 0.4 0.4</diffuseColor>
       <specularColor>0.0 0.0 0.0</specularColor>
       <attenuation>1 0.0 1.0 0.4</attenuation>
+      <range>10</range>
     </light>
   </model:renderable>
+  <!--
   -->
   
 
