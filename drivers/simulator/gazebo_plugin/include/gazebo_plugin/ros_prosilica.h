@@ -33,7 +33,8 @@
 #include <gazebo/Controller.hh>
 
 // image components
-#include <image_msgs/Image.h>
+#include "opencv_latest/CvBridge.h"
+#include "image_msgs/Image.h"
 #include "image_msgs/CamInfo.h"
 
 // prosilica components
@@ -138,11 +139,11 @@ class RosProsilica : public Controller
 
   /// \brief ros message
   /// \brief construct raw stereo message
-  private: image_msgs::Image* imageMsg;
-  private: image_msgs::Image* imageRectMsg;
-  private: image_msgs::Image* roiImageMsg;
-  private: image_msgs::CamInfo* camInfoMsg;
-  private: image_msgs::CamInfo* roiCamInfoMsg;
+  private: image_msgs::Image imageMsg;
+  private: image_msgs::Image imageRectMsg;
+  private: image_msgs::Image *roiImageMsg;
+  private: image_msgs::CamInfo *camInfoMsg;
+  private: image_msgs::CamInfo *roiCamInfoMsg;
 
 
   /// \brief Parameters
