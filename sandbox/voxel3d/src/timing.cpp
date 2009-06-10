@@ -30,6 +30,8 @@
 #include "ros/time.h"
 #include "voxel3d/voxel3d.h"
 
+#include <stdlib.h> // for lrand48(3)
+
 int main(int argc, char** argv)
 {
   const int POINTS = 100000;
