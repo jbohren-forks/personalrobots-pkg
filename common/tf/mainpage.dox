@@ -177,11 +177,11 @@ This will allow you to see what that TransformListener is processing.
 
  - How can I see how fast transforms are coming in.  
 
-Use tf::tf_monitor \todo expand this or confim linking
+Use \ref tf_monitor
 
  - How can I see what a specific transform's value is?
 
-Use tf::tf_echo \todo expand this or confirm linking
+Use \ref tf_echo
 
 @subsection Extrapolation Exceptions
  - I'm seeing an ExtrapolationException which is always X seconds in
