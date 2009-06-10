@@ -121,7 +121,7 @@ class RosProsilica : public Controller
   protected: virtual void FiniChild();
 
   /// \brief Put camera data to the ROS topic
-  private: void PutCameraData();
+  private: void PutCameraDataWithROI(int x, int y, int w, int h);
 
 
   /// \brief Service call to publish images, cam info
@@ -140,7 +140,9 @@ class RosProsilica : public Controller
   /// \brief construct raw stereo message
   private: image_msgs::Image* imageMsg;
   private: image_msgs::Image* imageRectMsg;
+  private: image_msgs::Image* roiImageMsg;
   private: image_msgs::CamInfo* camInfoMsg;
+  private: image_msgs::CamInfo* roiCamInfoMsg;
 
 
   /// \brief Parameters
@@ -151,12 +153,31 @@ class RosProsilica : public Controller
   private: ParamT<std::string> *pollServiceNameP;
   private: ParamT<std::string> *frameNameP;
 
+  private: ParamT<double> *CxPrimeP;           // rectified optical center x, for sim, CxPrime == Cx
+  private: ParamT<double> *CxP;            // optical center x
+  private: ParamT<double> *CyP;            // optical center y
+  private: ParamT<double> *focal_lengthP;  // also known as focal length
+  private: ParamT<double> *distortion_k1P; // linear distortion
+  private: ParamT<double> *distortion_k2P; // quadratic distortion
+  private: ParamT<double> *distortion_k3P; // cubic distortion
+  private: ParamT<double> *distortion_t1P; // tangential distortion
+  private: ParamT<double> *distortion_t2P; // tangential distortion
+
   /// \brief ROS image topic name
   private: std::string imageTopicName;
   private: std::string imageRectTopicName;
   private: std::string camInfoTopicName;
   private: std::string camInfoServiceName;
   private: std::string pollServiceName;
+  private: double CxPrime;
+  private: double Cx;
+  private: double Cy;
+  private: double focal_length;
+  private: double distortion_k1;
+  private: double distortion_k2;
+  private: double distortion_k3;
+  private: double distortion_t1;
+  private: double distortion_t2;
 
   /// \brief ROS frame transform name to use in the image message header.
   ///        This should typically match the link name the sensor is attached.
@@ -167,6 +188,7 @@ class RosProsilica : public Controller
 
   /// \brief size of image buffer
   private: int height, width, depth;
+  private: std::string format;
 };
 
 /** \} */

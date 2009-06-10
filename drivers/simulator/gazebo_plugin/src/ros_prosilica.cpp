@@ -80,6 +80,16 @@ RosProsilica::RosProsilica(Entity *parent)
   this->camInfoServiceNameP = new ParamT<std::string>("camInfoServiceName","~cam_info_service", 0);
   this->pollServiceNameP = new ParamT<std::string>("pollServiceName","~poll", 0);
   this->frameNameP = new ParamT<std::string>("frameName","prosilica_optical_frame", 0);
+  // camera parameters 
+  this->CxPrimeP = new ParamT<double>("CxPrime",320, 0); // for 640x480 image
+  this->CxP  = new ParamT<double>("Cx" ,320, 0); // for 640x480 image
+  this->CyP  = new ParamT<double>("Cy" ,240, 0); // for 640x480 image
+  this->focal_lengthP  = new ParamT<double>("focal_length" ,554.256, 0); // == image_width(px) / (2*tan( hfov(radian) /2))
+  this->distortion_k1P  = new ParamT<double>("distortion_k1" ,0, 0);
+  this->distortion_k2P  = new ParamT<double>("distortion_k2" ,0, 0);
+  this->distortion_k3P  = new ParamT<double>("distortion_k3" ,0, 0);
+  this->distortion_t1P  = new ParamT<double>("distortion_t1" ,0, 0);
+  this->distortion_t2P  = new ParamT<double>("distortion_t2" ,0, 0);
   Param::End();
 
   rosnode = ros::g_node; // comes from where?
@@ -104,6 +114,15 @@ RosProsilica::~RosProsilica()
   delete this->camInfoServiceNameP;
   delete this->pollServiceNameP;
   delete this->frameNameP;
+  delete this->CxPrimeP;
+  delete this->CxP;
+  delete this->CyP;
+  delete this->focal_lengthP;
+  delete this->distortion_k1P;
+  delete this->distortion_k2P;
+  delete this->distortion_k3P;
+  delete this->distortion_t1P;
+  delete this->distortion_t2P;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -116,6 +135,15 @@ void RosProsilica::LoadChild(XMLConfigNode *node)
   this->camInfoServiceNameP->Load(node);
   this->pollServiceNameP->Load(node);
   this->frameNameP->Load(node);
+  this->CxPrimeP->Load(node);
+  this->CxP->Load(node);
+  this->CyP->Load(node);
+  this->focal_lengthP->Load(node);
+  this->distortion_k1P->Load(node);
+  this->distortion_k2P->Load(node);
+  this->distortion_k3P->Load(node);
+  this->distortion_t1P->Load(node);
+  this->distortion_t2P->Load(node);
   
   this->imageTopicName = this->imageTopicNameP->GetValue();
   this->imageRectTopicName = this->imageRectTopicNameP->GetValue();
@@ -123,6 +151,15 @@ void RosProsilica::LoadChild(XMLConfigNode *node)
   this->camInfoServiceName = this->camInfoServiceNameP->GetValue();
   this->pollServiceName = this->pollServiceNameP->GetValue();
   this->frameName = this->frameNameP->GetValue();
+  this->CxPrime = this->CxPrimeP->GetValue();
+  this->Cx = this->CxP->GetValue();
+  this->Cy = this->CyP->GetValue();
+  this->focal_length = this->focal_lengthP->GetValue();
+  this->distortion_k1 = this->distortion_k1P->GetValue();
+  this->distortion_k2 = this->distortion_k2P->GetValue();
+  this->distortion_k3 = this->distortion_k3P->GetValue();
+  this->distortion_t1 = this->distortion_t1P->GetValue();
+  this->distortion_t2 = this->distortion_t2P->GetValue();
 
   ROS_DEBUG("prosilica image topic name %s", this->imageTopicName.c_str());
   rosnode->advertise<image_msgs::Image>(this->imageTopicName,1);
@@ -137,12 +174,121 @@ void RosProsilica::LoadChild(XMLConfigNode *node)
 bool RosProsilica::camInfoService(prosilica_cam::CamInfo::Request &req,
                                   prosilica_cam::CamInfo::Response &res)
 {
+  // should return the cam info for the entire camera frame
+  res.cam_info = *this->camInfoMsg;
+  res.cam_info.header.frame_id = this->frameName;
+  res.cam_info.header.stamp = ros::Time((unsigned long)floor(Simulator::Instance()->GetSimTime()));
   return true;
 }
+
+
+////////////////////////////////////////////////////////////////////////////////
+// service call to grab an image
 bool RosProsilica::triggeredGrab(prosilica_cam::PolledImage::Request &req,
                                  prosilica_cam::PolledImage::Response &res)
 {
+
+  const unsigned char *src;
+
+  // Get a pointer to image data
+  src = this->myParent->GetImageData(0);
+
+  //std::cout << " updating prosilica " << this->imageTopicName << " " << data->image_size << std::endl;
+  if (src)
+  {
+    this->lock.lock();
+
+    // fill CamInfo
+    this->roiCamInfoMsg = &res.cam_info;
+    this->roiCamInfoMsg->header.frame_id = this->frameName;
+    this->roiCamInfoMsg->header.stamp    = ros::Time((unsigned long)floor(Simulator::Instance()->GetSimTime()));
+    this->roiCamInfoMsg->width  = req.width; //this->myParent->GetImageWidth() ;
+    this->roiCamInfoMsg->height = req.height; //this->myParent->GetImageHeight();
+    // distortion
+    this->roiCamInfoMsg->D[0] = 0.0;
+    this->roiCamInfoMsg->D[1] = 0.0;
+    this->roiCamInfoMsg->D[2] = 0.0;
+    this->roiCamInfoMsg->D[3] = 0.0;
+    this->roiCamInfoMsg->D[4] = 0.0;
+    // original camera matrix
+    this->roiCamInfoMsg->K[0] = this->focal_length;
+    this->roiCamInfoMsg->K[1] = 0.0;
+    this->roiCamInfoMsg->K[2] = this->Cx - req.region_x;
+    this->roiCamInfoMsg->K[3] = 0.0;
+    this->roiCamInfoMsg->K[4] = this->focal_length;
+    this->roiCamInfoMsg->K[5] = this->Cy - req.region_y;
+    this->roiCamInfoMsg->K[6] = 0.0;
+    this->roiCamInfoMsg->K[7] = 0.0;
+    this->roiCamInfoMsg->K[8] = 1.0;
+    // rectification
+    this->roiCamInfoMsg->R[0] = 1.0;
+    this->roiCamInfoMsg->R[1] = 0.0;
+    this->roiCamInfoMsg->R[2] = 0.0;
+    this->roiCamInfoMsg->R[3] = 0.0;
+    this->roiCamInfoMsg->R[4] = 1.0;
+    this->roiCamInfoMsg->R[5] = 0.0;
+    this->roiCamInfoMsg->R[6] = 0.0;
+    this->roiCamInfoMsg->R[7] = 0.0;
+    this->roiCamInfoMsg->R[8] = 1.0;
+    // camera projection matrix (same as camera matrix due to lack of distortion/rectification) (is this generated?)
+    this->roiCamInfoMsg->P[0] = this->focal_length;
+    this->roiCamInfoMsg->P[1] = 0.0;
+    this->roiCamInfoMsg->P[2] = this->Cx - req.region_x;
+    this->roiCamInfoMsg->P[3] = 0.0;
+    this->roiCamInfoMsg->P[4] = 0.0;
+    this->roiCamInfoMsg->P[5] = this->focal_length;
+    this->roiCamInfoMsg->P[6] = this->Cy - req.region_y;
+    this->roiCamInfoMsg->P[7] = 0.0;
+    this->roiCamInfoMsg->P[8] = 0.0;
+    this->roiCamInfoMsg->P[9] = 0.0;
+    this->roiCamInfoMsg->P[10] = 1.0;
+    this->roiCamInfoMsg->P[11] = 0.0;
+
+
+    // copy data into image
+    this->imageMsg->header.frame_id    = this->frameName;
+    this->imageMsg->header.stamp       = ros::Time((unsigned long)floor(Simulator::Instance()->GetSimTime()));
+    // copy data into ROI image
+    this->roiImageMsg = &res.image;
+    this->roiImageMsg->header.frame_id = this->frameName;
+    this->roiImageMsg->header.stamp    = ros::Time((unsigned long)floor(Simulator::Instance()->GetSimTime()));
+
+    /// @todo: don't bother if there are no subscribers
+    if (this->rosnode->numSubscribers(this->imageTopicName) > 0)
+    {
+      // copy from src to imageMsg
+      fillImage(*this->imageMsg      ,"image_raw" ,
+                this->height         ,this->width ,this->depth,
+                this->format.c_str() , "uint8"    ,
+                (void*)src );
+
+      fillImage(*this->roiImageMsg   ,"image_raw" ,
+                this->height         ,this->width ,this->depth,
+                this->format.c_str() ,"uint8"     ,
+                (void*)src );
+
+      // publish to ros, thumbnails and rect image?
+      // rosnode->publish(this->imageTopicName,*this->imageMsg);
+    }
+
+
+    this->lock.unlock();
+  }
+
   return true;
+
+#if 0
+  ROS_ERROR("Prosilica exception: %s\n\tx = %d, y = %d, width = %d, height = %d",
+            e.what(), req.region_x, req.region_y, req.width, req.height);
+  
+  image_msgs::Image &image = res.image;
+  image_msgs::Image &rect_image = res.image : rect_img_;
+  bool success = processFrame(frame, image, rect_image, res.cam_info);
+  if (success)
+    publishTopics(image, rect_image, res.cam_info);
+  return success;
+#endif
+
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -156,7 +302,63 @@ void RosProsilica::InitChild()
   // set buffer size
   this->width            = this->myParent->GetImageWidth();
   this->height           = this->myParent->GetImageHeight();
-  this->depth            = 1;
+  this->depth            = this->myParent->GetImageDepth();
+  if (this->myParent->GetImageFormat() == "L8")
+    this->format           = "mono";
+  else if (this->myParent->GetImageFormat() == "R8G8B8")
+    this->format           = "rgb";
+  else if (this->myParent->GetImageFormat() == "B8G8R8")
+    this->format           = "bgr";
+  else
+  {
+    ROS_ERROR("Unsupported Gazebo ImageFormat\n");
+    this->format           = "rgb";
+  }
+
+  // fill CamInfo
+  this->camInfoMsg->header.frame_id = this->frameName;
+  this->camInfoMsg->header.stamp    = ros::Time((unsigned long)floor(Simulator::Instance()->GetSimTime()));
+  this->camInfoMsg->height = this->myParent->GetImageHeight();
+  this->camInfoMsg->width  = this->myParent->GetImageWidth() ;
+  // distortion
+  this->camInfoMsg->D[0] = 0.0;
+  this->camInfoMsg->D[1] = 0.0;
+  this->camInfoMsg->D[2] = 0.0;
+  this->camInfoMsg->D[3] = 0.0;
+  this->camInfoMsg->D[4] = 0.0;
+  // original camera matrix
+  this->camInfoMsg->K[0] = this->focal_length;
+  this->camInfoMsg->K[1] = 0.0;
+  this->camInfoMsg->K[2] = this->Cx;
+  this->camInfoMsg->K[3] = 0.0;
+  this->camInfoMsg->K[4] = this->focal_length;
+  this->camInfoMsg->K[5] = this->Cy;
+  this->camInfoMsg->K[6] = 0.0;
+  this->camInfoMsg->K[7] = 0.0;
+  this->camInfoMsg->K[8] = 1.0;
+  // rectification
+  this->camInfoMsg->R[0] = 1.0;
+  this->camInfoMsg->R[1] = 0.0;
+  this->camInfoMsg->R[2] = 0.0;
+  this->camInfoMsg->R[3] = 0.0;
+  this->camInfoMsg->R[4] = 1.0;
+  this->camInfoMsg->R[5] = 0.0;
+  this->camInfoMsg->R[6] = 0.0;
+  this->camInfoMsg->R[7] = 0.0;
+  this->camInfoMsg->R[8] = 1.0;
+  // camera projection matrix (same as camera matrix due to lack of distortion/rectification) (is this generated?)
+  this->camInfoMsg->P[0] = this->focal_length;
+  this->camInfoMsg->P[1] = 0.0;
+  this->camInfoMsg->P[2] = this->Cx;
+  this->camInfoMsg->P[3] = 0.0;
+  this->camInfoMsg->P[4] = 0.0;
+  this->camInfoMsg->P[5] = this->focal_length;
+  this->camInfoMsg->P[6] = this->Cy;
+  this->camInfoMsg->P[7] = 0.0;
+  this->camInfoMsg->P[8] = 0.0;
+  this->camInfoMsg->P[9] = 0.0;
+  this->camInfoMsg->P[10] = 1.0;
+  this->camInfoMsg->P[11] = 0.0;
 
 }
 
@@ -165,11 +367,12 @@ void RosProsilica::InitChild()
 void RosProsilica::UpdateChild()
 {
 
-  // do this first so there's chance for sensor to run 1 frame after activate
-  if (this->myParent->IsActive())
-    this->PutCameraData();
-  else
-    this->myParent->SetActive(true); // as long as this plugin is running, parent is active
+  // do nothing as we are using service, maybe consider thumbnailing
+
+  // if (this->myParent->IsActive())
+  //   this->PutCameraDataWithROI();
+  // else
+  //   this->myParent->SetActive(true); // as long as this plugin is running, parent is active
 
 }
 
@@ -187,92 +390,8 @@ void RosProsilica::FiniChild()
 
 ////////////////////////////////////////////////////////////////////////////////
 // Put laser data to the interface
-void RosProsilica::PutCameraData()
+void RosProsilica::PutCameraDataWithROI(int x, int y, int w, int h)
 {
-  const unsigned char *src;
-
-  // Get a pointer to image data
-  src = this->myParent->GetImageData(0);
-
-  //std::cout << " updating prosilica " << this->imageTopicName << " " << data->image_size << std::endl;
-  if (src)
-  {
-    //double tmpT0 = Simulator::Instance()->GetWallTime();
-
-    this->lock.lock();
-
-
-    // copy data into image
-    this->imageMsg->header.frame_id = this->frameName;
-    this->imageMsg->header.stamp.sec = (unsigned long)floor(Simulator::Instance()->GetSimTime());
-    this->imageMsg->header.stamp.nsec = (unsigned long)floor(  1e9 * (  Simulator::Instance()->GetSimTime() - this->imageMsg->header.stamp.sec) );
-
-    //double tmpT1 = Simulator::Instance()->GetWallTime();
-    //double tmpT2;
-    // fill CamInfo left_info
-    this->camInfoMsg->header = this->imageMsg->header;
-    this->camInfoMsg->height = this->myParent->GetImageHeight();
-    this->camInfoMsg->width  = this->myParent->GetImageWidth() ;
-    // distortion
-    this->camInfoMsg->D[0] = 0.0;
-    this->camInfoMsg->D[1] = 0.0;
-    this->camInfoMsg->D[2] = 0.0;
-    this->camInfoMsg->D[3] = 0.0;
-    this->camInfoMsg->D[4] = 0.0;
-    // original camera matrix
-    this->camInfoMsg->K[0] = 0;//this->focal_length;
-    this->camInfoMsg->K[1] = 0.0;
-    this->camInfoMsg->K[2] = 0;//this->Cx;
-    this->camInfoMsg->K[3] = 0.0;
-    this->camInfoMsg->K[4] = 0;//this->focal_length;
-    this->camInfoMsg->K[5] = 0;//this->Cy;
-    this->camInfoMsg->K[6] = 0.0;
-    this->camInfoMsg->K[7] = 0.0;
-    this->camInfoMsg->K[8] = 1.0;
-    // rectification
-    this->camInfoMsg->R[0] = 1.0;
-    this->camInfoMsg->R[1] = 0.0;
-    this->camInfoMsg->R[2] = 0.0;
-    this->camInfoMsg->R[3] = 0.0;
-    this->camInfoMsg->R[4] = 1.0;
-    this->camInfoMsg->R[5] = 0.0;
-    this->camInfoMsg->R[6] = 0.0;
-    this->camInfoMsg->R[7] = 0.0;
-    this->camInfoMsg->R[8] = 1.0;
-    // camera projection matrix (same as camera matrix due to lack of distortion/rectification) (is this generated?)
-    this->camInfoMsg->P[0] = 0;//this->focal_length;
-    this->camInfoMsg->P[1] = 0.0;
-    this->camInfoMsg->P[2] = 0;//this->Cx;
-    this->camInfoMsg->P[3] = 0.0;
-    this->camInfoMsg->P[4] = 0.0;
-    this->camInfoMsg->P[5] = 0;//this->focal_length;
-    this->camInfoMsg->P[6] = 0;//this->Cy;
-    this->camInfoMsg->P[7] = 0.0;
-    this->camInfoMsg->P[8] = 0.0;
-    this->camInfoMsg->P[9] = 0.0;
-    this->camInfoMsg->P[10] = 1.0;
-    this->camInfoMsg->P[11] = 0.0;
-
-
-    /// @todo: don't bother if there are no subscribers
-    if (this->rosnode->numSubscribers(this->imageTopicName) > 0)
-    {
-      // copy from src to imageMsg
-      fillImage(*this->imageMsg   ,"image_raw" ,
-                this->height     ,this->width ,this->depth,
-                "mono"            ,"uint8"     ,
-                (void*)src );
-
-      //tmpT2 = Simulator::Instance()->GetWallTime();
-
-      // publish to ros
-      rosnode->publish(this->imageTopicName,*this->imageMsg);
-    }
-
-    //double tmpT3 = Simulator::Instance()->GetWallTime();
-
-    this->lock.unlock();
-  }
 
 }
 
