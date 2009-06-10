@@ -115,7 +115,16 @@ class FakeRoadmapServer:
     rospy.init_node('roadmap_server')
     self.pub = rospy.Publisher("roadmap", vslam.msg.Roadmap)
     rospy.Subscriber('amcl_pose', robot_msgs.msg.PoseWithCovariance, self.handle_localizedpose)
+    self.updated = None
+    rospy.Subscriber('time', roslib.msg.Time, self.handle_time)
     self.nodes = []
+
+  def handle_time(self, msg):
+    if self.updated == None:
+      self.updated = msg.rostime
+    if (msg.rostime - self.updated) > roslib.rostime.Duration(5):
+      self.updated = msg.rostime
+      self.send_map(msg.header.stamp)
 
   def handle_localizedpose(self, msg):
     th = acos(msg.pose.orientation.w)
