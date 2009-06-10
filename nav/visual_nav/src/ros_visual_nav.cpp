@@ -312,11 +312,11 @@ void RosVisualNavigator::run ()
     // Wait till we have an initial value for odom and map
     updateOdom();
     if (!map_received_ || !odom_received_) {
-      ROS_INFO_COND_NAMED ((!map_received_) && !(i%10), "node", "Waiting for map message");
-      ROS_INFO_COND_NAMED (!(i%10) && (!odom_received_), "node", "Waiting for odom message");
+      ROS_DEBUG_COND_NAMED ((!map_received_) && !(i%10), "node", "Waiting for map message");
+      ROS_DEBUG_COND_NAMED (!(i%10) && (!odom_received_), "node", "Waiting for odom message");
     }
 
-    // Otherwise, send exit point goal if necessary, and publish visualization
+    // Assuming odom and map received, send exit point goal if necessary, and publish visualization
     else {
       if (have_goal_) {
         publishExitPoint();
@@ -477,7 +477,7 @@ void RosVisualNavigator::updateOdom ()
       tf_sender_.sendTransform (nav_odom_transform_.convertToTf(), Time::now(), "vslam", odom_frame_);
     }
     else {
-      ROS_DEBUG_STREAM_NAMED ("transform", "Did not update nav-odom transform because roadmap either not received or transform does not exist at time " << roadmap_timestamp_);
+      ROS_DEBUG_STREAM_NAMED ("transform", "Did not update nav–odom transform because roadmap either not received or transform does not exist at time " << roadmap_timestamp_);
     }
   }
 
