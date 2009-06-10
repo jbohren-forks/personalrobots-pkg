@@ -3,7 +3,7 @@ all: installed
 SVN_DIR = bullet_svn
 SVN_URL = http://bullet.googlecode.com/svn/trunk/
 SVN_PATCH = quaternion.patch demos.patch no_extras_build.patch
-SVN_REVISION=-r1644
+SVN_REVISION=-r1685
 
 include $(shell rospack find mk)/svn_checkout.mk
 
@@ -44,9 +44,8 @@ build_tarball: $(SVN_DIR) patched
 	# How to build tarball goes here
 	-cd $(SVN_DIR) && make clean
 	-cd $(SVN_DIR) && rm -f CMakeCache.txt
-	rm -rf $(SVN_DIR)/Extras
 	mkdir -p build
-	tar -cvzf $(TARBALL) $(SVN_DIR)
+	tar --exclude="Extras" --exclude=".svn" -cvzf $(TARBALL) $(SVN_DIR)
 
 
 installed: $(SOURCE_DIR)/unpacked
