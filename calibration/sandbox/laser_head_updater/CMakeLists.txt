@@ -4,6 +4,7 @@ rospack(laser_head_updater)
 
 rospack_add_executable(publish_laser_head_tf src/publish_laser_head_tf.cpp)
 rospack_add_executable(publish_laser_head_tf_pre src/publish_laser_head_tf_pre.cpp)
+rospack_add_executable(publish_laser_head_tf_prg src/publish_laser_head_tf_prg.cpp)
 
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 

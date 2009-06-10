@@ -111,19 +111,18 @@ public:
 
   void buildKinematicModel()
   {
-    double laser_initial[]= { 0.11631,  0.00729,  0.17278,
-                              0.00253, -0.18418,  0.02304};
-    double laser_final[]  = { 0.00000,  0.00000,  0.03961,
-                             -0.00328,  0.15701, -0.01390};
+
+    double laser_initial[]= { 0.14404, -0.01135,  0.22294,
+                              0.00450, -0.05240,  0.03241};
+    double laser_final[]  = { 0.00000,  0.00000,  0.02770,
+                             -0.00118,  0.06043, -0.00967};
     double head_initial[] = { 0.00000,  0.00000,  0.38150,
                               0.00000,  0.00000,  0.00000};
-    double after_pan[]    = { 0.07548,  0.00012,  0.00000,
-                             -1.56836, -0.00122,  0.00122};
-    double after_tilt[]   = { 0.07171, -0.09274,  0.03037,
-                             -0.00252,  1.57006,  0.00014};
-
-    PR_03_ = -38.53712 ;
-
+    double after_pan[]    = { 0.06341, -0.00004,  0.00000,
+                             -1.57093,  0.00052, -0.00052};
+    double after_tilt[]   = { 0.07223, -0.09497,  0.00147,
+                              0.00015,  1.57120,  0.00055};
+    double PR_03_ = -63.28370;
 
     laser_initial_T_ = buildTransform(laser_initial) ;
     laser_final_T_   = buildTransform(laser_final) ;
