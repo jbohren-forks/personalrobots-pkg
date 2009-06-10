@@ -79,16 +79,16 @@ public:
   std::vector<Link*> links_;
 
   // All return -1 on failure.
-  int getJointIndex(const std::string &name);
-  int getActuatorIndex(const std::string &name);
-  int getLinkIndex(const std::string &name);
-  int getTransmissionIndex(const std::string &name);
+  int getJointIndex(const std::string &name) const;
+  int getActuatorIndex(const std::string &name) const;
+  int getLinkIndex(const std::string &name) const;
+  int getTransmissionIndex(const std::string &name) const;
 
   // All return NULL on failure
-  Joint* getJoint(const std::string &name);
-  Actuator* getActuator(const std::string &name);
-  Link* getLink(const std::string &name);
-  Transmission* getTransmission(const std::string &name);
+  Joint* getJoint(const std::string &name) const;
+  Actuator* getActuator(const std::string &name) const;
+  Link* getLink(const std::string &name) const;
+  Transmission* getTransmission(const std::string &name) const;
 
   // For debugging
   void printLinkTree();

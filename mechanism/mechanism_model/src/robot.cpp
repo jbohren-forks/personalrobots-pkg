@@ -96,7 +96,7 @@ bool Robot::initXml(TiXmlElement *root)
 }
 
 template <class T>
-int findIndexByName(std::vector<T*>& v, const std::string &name)
+int findIndexByName(const std::vector<T*>& v, const std::string &name)
 {
   for (unsigned int i = 0; i < v.size(); ++i)
   {
@@ -106,47 +106,47 @@ int findIndexByName(std::vector<T*>& v, const std::string &name)
   return -1;
 }
 
-int Robot::getActuatorIndex(const std::string &name)
+int Robot::getActuatorIndex(const std::string &name) const
 {
   if (!hw_)
     return -1;
   return findIndexByName(hw_->actuators_, name);
 }
 
-int Robot::getJointIndex(const std::string &name)
+int Robot::getJointIndex(const std::string &name) const
 {
   return findIndexByName(joints_, name);
 }
 
-int Robot::getLinkIndex(const std::string &name)
+int Robot::getLinkIndex(const std::string &name) const
 {
   return findIndexByName(links_, name);
 }
 
-int Robot::getTransmissionIndex(const std::string &name)
+int Robot::getTransmissionIndex(const std::string &name) const
 {
   return findIndexByName(transmissions_, name);
 }
 
-Joint* Robot::getJoint(const std::string &name)
+Joint* Robot::getJoint(const std::string &name) const
 {
   int i = getJointIndex(name);
   return i >= 0 ? joints_[i] : NULL;
 }
 
-Actuator* Robot::getActuator(const std::string &name)
+Actuator* Robot::getActuator(const std::string &name) const
 {
   int i = getActuatorIndex(name);
   return i >= 0 ? hw_->actuators_[i] : NULL;
 }
 
-Link* Robot::getLink(const std::string &name)
+Link* Robot::getLink(const std::string &name) const
 {
   int i = getLinkIndex(name);
   return i >= 0 ? links_[i] : NULL;
 }
 
-Transmission* Robot::getTransmission(const std::string &name)
+Transmission* Robot::getTransmission(const std::string &name) const
 {
   int i = getTransmissionIndex(name);
   return i >= 0 ? transmissions_[i] : NULL;
