@@ -6,7 +6,7 @@
   </description>
   <author>Patrick Mihelich/ mihelich@willowgarage.com</author>
   <license>BSD</license>
-  <review status="unreviewed" notes=""/>
+  <review status="proposal cleared" notes=""/>
   <url>http://pr.willowgarage.com/wiki/image_publisher</url>
 
   <depend package="roscpp"/>
