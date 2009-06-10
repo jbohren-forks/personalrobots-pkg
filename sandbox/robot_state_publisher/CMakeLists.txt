@@ -23,5 +23,5 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 #gensrv()
 
 rospack_add_library(${PROJECT_NAME} src/robot_state_publisher.cpp src/treefksolverposfull_recursive.cpp)
-rospack_add_executable(main src/main.cpp src/robot_state_publisher.cpp src/treefksolverposfull_recursive.cpp)
+rospack_add_executable(state_publisher src/main.cpp src/robot_state_publisher.cpp src/treefksolverposfull_recursive.cpp)
 
