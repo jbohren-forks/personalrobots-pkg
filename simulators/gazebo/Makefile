@@ -5,7 +5,7 @@ TEST_INSTALL_DIR = $(shell rospack find gazebo)/test-gazebo
 
 SVN_DIR = gazebo-svn
 SVN_URL = https://playerstage.svn.sourceforge.net/svnroot/playerstage/code/gazebo/trunk
-SVN_REVISION = -r 7777
+#SVN_REVISION = -r 7777
 SVN_PATCH = 
 include $(shell rospack find mk)/svn_checkout.mk
 
@@ -27,6 +27,13 @@ BOOST_INCLUDE_DIRS = $(shell rosboost-cfg --include_dirs)
 BOOST_LIBRARY_DIRS = $(shell rosboost-cfg --lib_dirs signals,thread)
 BOOST_LIBRARIES = $(shell rosboost-cfg --lflags signals,thread)
 
+BULLET_INCLUDE_DIRS   = /u/johnhsu/packages/simulators/BULLET/bullet-svn/src
+BULLET_DYNAMICS_DIRS  = /u/johnhsu/local/lib
+BULLET_COLLISION_DIRS = /u/johnhsu/local/lib
+BULLET_SOFTBODY_DIRS  = /u/johnhsu/local/lib
+BULLET_MATH_DIRS      = /u/johnhsu/local/lib
+
+
 PKG_PATHS = PKG_CONFIG_PATH=${ODE_PKG}:${FI_PKG}:${PLAYER_PKG}:${OGRE_PKG}:${PKG_CONFIG_PATH}
 PATHS = PATH=${ODE_PATH}:${PATH}
 
@@ -37,6 +44,11 @@ CMAKE_ARGS = -D CMAKE_BUILD_TYPE=RELEASE \
 						 -D boost_library_dirs=$(BOOST_LIBRARY_DIRS) \
 						 -D boost_libraries="$(BOOST_LIBRARIES)" \
 						 -D CMAKE_BUILD_TYPE="release" \
+						 -D bullet_include_dirs=$(BULLET_INCLUDE_DIRS) \
+						 -D bullet_dynamics_dirs=$(BULLET_DYNAMICS_DIRS) \
+						 -D bullet_collision_dirs=$(BULLET_COLLISION_DIRS) \
+						 -D bullet_softbody_dirs=$(BULLET_SOFTBODY_DIRS) \
+						 -D bullet_math_dirs=$(BULLET_MATH_DIRS) \
 						 -D CMAKE_CXX_LINK_FLAGS="-lfltk -lfltk_gl"
 						 #-D freeimage_include_dir=$(FREEIMAGE_INCLUDE_DIR) \
 						 #-D freeimage_library_dir=$(FREEIMAGE_LIBRARY_DIR) \
