@@ -72,8 +72,9 @@ private:
   int thumbnail_size_;
 
   // Compression parameters
-  std::string compression_type_;
-  int compression_quality_;
+  int compression_params_[3];
+  std::string extension_;
+  std::string format_;
 
   bool republishing_;
 };

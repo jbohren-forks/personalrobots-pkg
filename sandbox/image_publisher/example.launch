@@ -1,0 +1,23 @@
+<launch>
+  <group ns="camera">
+    <param name="thumbnail_size" type="int" value="64"/>
+    <param name="compression_type" type="str" value="jpeg"/>
+    <param name="compression_level" type="int" value="80"/>
+    <!--
+    <param name="compression_type" type="str" value="png"/>
+    <param name="compression_level" type="int" value="9"/>
+    -->
+  </group>
+
+  <node name="still_image_publisher" ns="camera" pkg="image_publisher" type="test_publisher" args="image.jpg"/>
+  <node name="encoder" ns="camera" pkg="image_publisher" type="encoder">
+    <remap from="image" to="raw_image"/>
+  </node>
+  <node name="decoder" ns="camera" pkg="image_publisher" type="decoder">
+    <remap from="compressed" to="raw_image_compressed"/>
+    <remap from="decompressed" to="raw_image_decompressed"/>
+  </node>
+  <node pkg="image_view" ns="camera" type="image_view">
+    <remap from="image" to="raw_image_decompressed"/>
+  </node>
+</launch>
