@@ -62,6 +62,7 @@ def img_err(f0, f1, RT, stereo_cam):
   # Transform those points from f1's frame into f0's
   # Compute the uvd of each point
   # Sample f0 image using the uv
+  # Returns f0 warped into f1's frame
 
   def f_uvd(f):
     d_str = "".join([ chr(min(x / 4, 255)) for x in f.disp_values])
@@ -73,15 +74,31 @@ def img_err(f0, f1, RT, stereo_cam):
     i = vop.array(Image.fromstring("L", (640,480), f.rawdata).resize(chipsize, Image.NEAREST).tostring()) / 255.
     return (f_valid, u, v, f_d, i)
 
+  # Compute validity and (u,v,d) for both images
   f0p,f0u,f0v,f0d,f0i = f_uvd(f0)
   f1p,f1u,f1v,f1d,f1i = f_uvd(f1)
+
+  # Take f1 in camera (x,y,z)
   (f1x,f1y,f1z) = stereo_cam.pix2cam(f1u, f1v, f1d)
+
+  # Pass that via the given transform, to get transformed (x,y,z)
   (f1x0,f1y0,f1z0) = xform(RT, f1x, f1y, f1z)
+
+  # Now take those x,y,z and map to u,v,d
   (f1u0,f1v0,f1d0) = stereo_cam.cam2pix(f1x0,f1y0,f1z0)
+
+  # Sample f0 using those (u,v,d) points; this gives f0 in f1's frame, called f1i0
+
   addr = vop.floor(f1u0 / factor) + chipsize[0] * vop.floor(f1v0 / factor)
   ok = f1p & (0 <= f1u0) & (f1u0 < 640) & (0 <= f1v0) & (f1v0 < 480)
   addr = vop.where(ok, addr, 0)
   f1i0 = vop.take(f0i, addr)
+
+  # Return:
+  #  ok: which pixels are reliable in f1i0
+  #  f1p: which pixels are good in f1
+  #  f1i0: as computed above
+  #  f1i: the original f1 image
   return (ok, f1p, f1i0, f1i)
 
 def img_img(f0, f1, RT, stereo_cam):
