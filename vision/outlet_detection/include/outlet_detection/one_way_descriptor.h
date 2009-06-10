@@ -83,7 +83,11 @@ public:
 };
 
 void AffineTransformPatch(IplImage* src, IplImage* dst, CvAffinePose pose);
+void GenerateAffineTransformFromPose(CvSize size, CvAffinePose pose, CvMat* transform);
+void generate_mean_transform(CvSize size, CvAffinePose pose, int num_samples, float noise, CvMat* transform);
 
+const static int num_mean_components = 500;
+const static float noise_intensity = 0.15f;
 
 class CvOneWayDescriptor
 {
@@ -93,6 +97,8 @@ public:
     
     void Allocate(int num_samples, IplImage* frontal);
     void GenerateSamples(int num_samples, IplImage* frontal);
+    void GenerateSamplesWithTransforms(int num_samples, IplImage* frontal);
+    void SetTransforms(CvAffinePose* poses, CvMat** transforms);
     void CalcInitialPose(CvRect roi);
     void Initialize(int num_samples, IplImage* frontal, const char* image_name = 0, CvPoint center = cvPoint(0, 0));
     void ProjectPCASample(IplImage* patch, CvMat* avg, CvMat* eigenvectors, CvMat* pca_coeffs);
@@ -112,16 +118,16 @@ public:
     
     const char* GetImageName() const;
     CvPoint GetCenter() const;
-    
+
 protected:
     int m_num_samples;
     IplImage** m_samples;
     CvMat** m_pca_coeffs;
     CvAffinePose* m_affine_poses;
+    CvMat** m_transforms;
     
     string m_image_name;
     CvPoint m_center;
-    
 };
 
 class CvOneWayDescriptorBase
@@ -137,6 +143,7 @@ public:
     
     const CvOneWayDescriptor* GetDescriptor(int desc_idx) const {return &m_descriptors[desc_idx];};
     void FindDescriptor(IplImage* patch, int& desc_idx, int& pose_idx, float& distance) const;
+    void InitializePoseTransforms();
     
     int IsDescriptorObject(int desc_idx) const;
     int MatchPointToPart(CvPoint pt) const;
@@ -153,6 +160,9 @@ protected:
     CvMat* m_pca_avg;
     CvMat* m_pca_eigenvectors;
     vector<feature_t> m_train_features;
+    
+    CvMat** m_transforms;
+    CvAffinePose* m_poses;
 };
 
 void readTrainingBase(const char* config_filename, char* outlet_filename, 

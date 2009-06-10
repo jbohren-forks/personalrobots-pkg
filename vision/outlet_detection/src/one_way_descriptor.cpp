@@ -29,6 +29,38 @@ void homography_transform(IplImage* frontal, IplImage* result, CvMat* homography
     cvWarpPerspective(frontal, result, homography);
 }
 
+CvAffinePose perturbate_pose(CvAffinePose pose, float noise)
+{
+    // perturbate the matrix
+    float noise_mult_factor = 1 + (0.5f - float(rand())/RAND_MAX)*noise;
+    float noise_add_factor = noise_mult_factor - 1;
+    
+    CvAffinePose pose_pert = pose;
+    pose_pert.phi += noise_add_factor;
+    pose_pert.theta += noise_mult_factor;
+    pose_pert.lambda1 *= noise_mult_factor;
+    pose_pert.lambda2 *= noise_mult_factor;
+
+    return pose_pert;
+}
+
+void generate_mean_transform(CvSize size, CvAffinePose pose, int num_samples, float noise, CvMat* transform)
+{
+    cvSetZero(transform);
+    CvMat* temp = cvCloneMat(transform);
+    
+    for(int i = 0; i < num_samples; i++)
+    {
+        CvAffinePose pose_pert = perturbate_pose(pose, noise);
+        GenerateAffineTransformFromPose(size, pose_pert, temp);
+        cvAdd(temp, transform, transform);
+    }
+    
+    cvConvertScale(transform, transform, 1.0f/num_samples, 0);
+    
+    cvReleaseMat(&temp);
+}
+
 void generate_mean_patch(IplImage* frontal, IplImage* result, CvAffinePose pose, int num_samples, float noise)
 {
     IplImage* sum = cvCreateImage(cvSize(result->width, result->height), IPL_DEPTH_32F, 1);
@@ -38,16 +70,7 @@ void generate_mean_patch(IplImage* frontal, IplImage* result, CvAffinePose pose,
     cvSetZero(sum);
     for(int i = 0; i < num_samples; i++)
     {
-        // perturbate the matrix
-        float noise_mult_factor = 1 + (0.5f - float(rand())/RAND_MAX)*noise;
-        float noise_add_factor = noise_mult_factor - 1;
-        
-        CvAffinePose pose_pert = pose;
-        pose.phi += noise_add_factor;
-        pose.theta += noise_mult_factor;
-        pose.lambda1 *= noise_mult_factor;
-        pose.lambda2 *= noise_mult_factor;
-        
+        CvAffinePose pose_pert = perturbate_pose(pose, noise);
         AffineTransformPatch(frontal, workspace, pose_pert);
         cvConvertScale(workspace, workspace_float);
         cvAdd(sum, workspace_float, sum);
@@ -66,6 +89,7 @@ CvOneWayDescriptor::CvOneWayDescriptor()
     m_samples = 0;
     m_pca_coeffs = 0;
     m_affine_poses = 0;
+    m_transforms = 0;
 }
 
 CvOneWayDescriptor::~CvOneWayDescriptor()
@@ -89,6 +113,7 @@ void CvOneWayDescriptor::Allocate(int num_samples, IplImage* frontal)
     m_samples = new IplImage* [m_num_samples];
     m_pca_coeffs = new CvMat* [m_num_samples];
     m_affine_poses = new CvAffinePose[m_num_samples];
+    
     CvRect roi = cvGetImageROI(frontal);
     int length = pca_dim;//roi.width*roi.height;
     for(int i = 0; i < m_num_samples; i++)
@@ -152,6 +177,38 @@ CvAffinePose GenRandomAffinePose()
     return pose;
 }
 
+void GenerateAffineTransformFromPose(CvSize size, CvAffinePose pose, CvMat* transform)
+{
+    CvMat* temp = cvCreateMat(3, 3, CV_32FC1);
+    CvMat* final = cvCreateMat(3, 3, CV_32FC1);
+    cvmSet(temp, 2, 0, 0.0f);
+    cvmSet(temp, 2, 1, 0.0f);
+    cvmSet(temp, 2, 2, 1.0f);
+
+    CvMat rotation;
+    cvGetSubRect(temp, &rotation, cvRect(0, 0, 3, 2));
+    
+    cv2DRotationMatrix(cvPoint2D32f(size.width/2, size.height/2), pose.phi, 1.0, &rotation);
+    cvCopy(temp, final);
+
+    cvmSet(temp, 0, 0, pose.lambda1);
+    cvmSet(temp, 0, 1, 0.0f);
+    cvmSet(temp, 1, 0, 0.0f);
+    cvmSet(temp, 1, 1, pose.lambda2);
+    cvmSet(temp, 0, 2, size.width/2*(1 - pose.lambda1));
+    cvmSet(temp, 1, 2, size.height/2*(1 - pose.lambda2));
+    cvMatMul(temp, final, final);
+    
+    cv2DRotationMatrix(cvPoint2D32f(size.width/2, size.height/2), pose.theta - pose.phi, 1.0, &rotation);
+    cvMatMul(temp, final, final);
+
+    cvGetSubRect(final, &rotation, cvRect(0, 0, 3, 2));
+    cvCopy(&rotation, transform);   
+    
+    cvReleaseMat(&temp);
+    cvReleaseMat(&final);
+}
+
 void AffineTransformPatch(IplImage* src, IplImage* dst, CvAffinePose pose)
 {
     CvRect src_roi = cvGetImageROI(src);
@@ -194,10 +251,14 @@ void AffineTransformPatch(IplImage* src, IplImage* dst, CvAffinePose pose)
 
 void CvOneWayDescriptor::GenerateSamples(int num_samples, IplImage* frontal)
 {
+    if(m_transforms)
+    {
+        GenerateSamplesWithTransforms(num_samples, frontal);
+        return;
+    }
+    
     CvRect roi = cvGetImageROI(frontal);
     IplImage* patch_8u = cvCreateImage(cvSize(roi.width, roi.height), IPL_DEPTH_8U, frontal->nChannels);
-    int num_mean_components = 30;
-    float noise_intensity = 0.15f;
     for(int i = 0; i < num_samples; i++)
     {
         m_affine_poses[i] = GenRandomAffinePose();
@@ -206,6 +267,45 @@ void CvOneWayDescriptor::GenerateSamples(int num_samples, IplImage* frontal)
         float sum = cvSum(patch_8u).val[0];
         cvConvertScale(patch_8u, m_samples[i], 1/sum);
     }
+    cvReleaseImage(&patch_8u);
+}
+
+void CvOneWayDescriptor::SetTransforms(CvAffinePose* poses, CvMat** transforms)
+{
+    if(m_affine_poses)
+    {
+        delete []m_affine_poses;
+    }
+    
+    m_affine_poses = poses;
+    m_transforms = transforms;
+}
+
+void CvOneWayDescriptor::GenerateSamplesWithTransforms(int num_samples, IplImage* frontal)
+{
+    CvRect roi = cvGetImageROI(frontal);
+    CvRect large_roi = double_rect(roi);
+    cvSetImageROI(frontal, large_roi);
+    IplImage* patch_8u = cvCreateImage(cvSize(large_roi.width, large_roi.height), IPL_DEPTH_8U, frontal->nChannels);
+    
+    for(int i = 0; i < num_samples; i++)
+    {
+        cvWarpAffine(frontal, patch_8u, m_transforms[i]);
+        cvSetImageROI(patch_8u, cvRect(roi.width/2, roi.height/2, roi.width, roi.height));
+        float sum = cvSum(patch_8u).val[0];
+        cvConvertScale(patch_8u, m_samples[i], 1.0f/sum);
+        cvResetImageROI(patch_8u);
+        
+#if 1
+        cvNamedWindow("1", 1);
+        cvShowImage("1", frontal);
+        cvNamedWindow("2", 1);
+        cvShowImage("2", patch_8u);
+        cvWaitKey();
+#endif
+}
+    
+    cvSetImageROI(frontal, roi);
     cvReleaseImage(&patch_8u);
 }
 
@@ -374,6 +474,8 @@ CvOneWayDescriptorBase::CvOneWayDescriptorBase(CvSize patch_size, int pose_count
     m_patch_size = patch_size;
     m_pose_count = pose_count;
     
+    InitializePoseTransforms();
+    
     char pca_config_filename[1024];
     sprintf(pca_config_filename, "%s/%s", train_path, pca_config);
     readPCAFeatures(pca_config_filename, &m_pca_avg, &m_pca_eigenvectors);
@@ -398,6 +500,31 @@ CvOneWayDescriptorBase::~CvOneWayDescriptorBase()
     cvReleaseMat(&m_pca_avg);
     cvReleaseMat(&m_pca_eigenvectors);
     delete []m_descriptors;
+    
+    if(!m_transforms)
+    {
+        delete []m_poses;
+    }
+
+    for(int i = 0; i < m_pose_count; i++)
+    {
+        cvReleaseMat(&m_transforms[i]);
+    }
+    delete []m_transforms;
+}
+
+void CvOneWayDescriptorBase::InitializePoseTransforms()
+{
+    m_transforms = new CvMat*[m_pose_count];
+    m_poses = new CvAffinePose[m_pose_count];
+    
+    for(int i = 0; i < m_pose_count; i++)
+    {
+        m_poses[i] = GenRandomAffinePose();
+        m_transforms[i] = cvCreateMat(2, 3, CV_32FC1);
+        generate_mean_transform(cvSize(m_patch_size.width*2, m_patch_size.height*2), m_poses[i], 
+                                num_mean_components, noise_intensity, m_transforms[i]);
+    }
 }
 
 void CvOneWayDescriptorBase::LoadTrainingFeatures(const char* train_image_filename, const char* train_image_filename1)
@@ -444,6 +571,8 @@ void CvOneWayDescriptorBase::LoadTrainingFeatures(const char* train_image_filena
         {
             continue;
         }
+        
+        m_descriptors[i].SetTransforms(m_poses, m_transforms);
         m_descriptors[i].Initialize(m_pose_count, train_image, train_image_filename, center);
         m_descriptors[i].InitializePCACoeffs(m_pca_avg, m_pca_eigenvectors);
     }
@@ -461,6 +590,7 @@ void CvOneWayDescriptorBase::LoadTrainingFeatures(const char* train_image_filena
         {
             continue;
         }
+        m_descriptors[outlet_features.size() + i].SetTransforms(m_poses, m_transforms);
         m_descriptors[outlet_features.size() + i].Initialize(m_pose_count, train_image1, train_image_filename1, center);
         m_descriptors[outlet_features.size() + i].InitializePCACoeffs(m_pca_avg, m_pca_eigenvectors);
         
