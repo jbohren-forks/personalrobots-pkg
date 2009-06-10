@@ -116,6 +116,7 @@
 
 
   <!-- White Directional light -->
+  <!--
   <model:renderable name="directional_white">
     <light>
       <type>directional</type>
@@ -126,8 +127,23 @@
       <range>10</range>
     </light>
   </model:renderable>
-  <!--
   -->
-  
+  <!-- White Point light -->
+  <model:renderable name="point_white">
+    <xyz>0.0 0.0 5.</xyz>
+    <rpy>0 00.0 00.0</rpy>
+    <enableGravity>false</enableGravity>
+
+    <light>
+      <type>directional</type>
+      <diffuseColor>0.5 0.5 0.5</diffuseColor>
+      <specularColor>0.2 0.2 0.2</specularColor>
+      <range>10</range>
+
+      <!-- Constant(0-1) Linear(0-1) Quadratic -->
+      <attenuation>0.9 0.1 0.001</attenuation>
+    </light>
+  </model:renderable>
+
 
 </gazebo:world>
