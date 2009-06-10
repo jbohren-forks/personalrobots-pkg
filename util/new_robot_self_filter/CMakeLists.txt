@@ -28,4 +28,4 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 #rospack_link_boost(${PROJECT_NAME} thread)
 
 rospack_add_executable(test_filter test_filter.cpp)
-rospack_add_openmp_flags(test_filter)
+#rospack_add_openmp_flags(test_filter)
