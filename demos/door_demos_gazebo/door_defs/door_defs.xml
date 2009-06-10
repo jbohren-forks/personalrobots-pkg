@@ -67,7 +67,7 @@
     <visual>
       <origin xyz="0 0 0.001" rpy="0 0 0" />
       <map name="gazebo_material" flag="gazebo">
-        <elem key="material" value="Gazebo/Grey" />
+        <elem key="material" value="PR2/Grey" />
       </map>
       <geometry name="floor_visual_geom">
         <mesh scale="4 4 0.002" />
@@ -101,7 +101,7 @@
     <visual>
       <origin xyz="0 5 1" rpy="0 0 0" />
       <map name="gazebo_material" flag="gazebo">
-        <elem key="material" value="PR2/White" />
+        <elem key="material" value="PR2/Grey2" />
       </map>
       <geometry name="wall1_visual_geom">
         <mesh scale="0.4 10 2" />
@@ -135,7 +135,7 @@
     <visual>
       <origin xyz="0 -5 1" rpy="0 0 0" />
       <map name="gazebo_material" flag="gazebo">
-        <elem key="material" value="PR2/White" />
+        <elem key="material" value="PR2/Grey2" />
       </map>
       <geometry name="wall2_visual_geom">
         <mesh scale="0.4 10 2" />
@@ -169,7 +169,7 @@
     <visual >
       <origin xyz="0.0 -0.5 1.0" rpy="0 0 ${M_PI}" />
       <map name="gazebo_material" flag="gazebo">
-        <elem key="material" value="Gazebo/White" />
+        <elem key="material" value="PR2/White" />
       </map>
       <geometry name="sholder_roll_mesh_file">
         <mesh scale="0.1 1.0 2.0" />
