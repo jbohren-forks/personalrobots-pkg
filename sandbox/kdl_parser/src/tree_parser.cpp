@@ -35,7 +35,6 @@
 /* Author: Wim Meeussen */
 
 #include <tinyxml/tinyxml.h>
-#include <kdl/frames_io.hpp>
 #include <boost/algorithm/string.hpp>
 #include "kdl_parser/tree_parser.hpp"
 
