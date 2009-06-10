@@ -1,0 +1,129 @@
+%File: formatting-instruction.tex
+\documentclass[letterpaper]{article}
+\usepackage{aaai}
+
+
+\usepackage{times}
+\usepackage{helvet}
+\usepackage{courier}
+\setcounter{secnumdepth}{0}  
+ \begin{document}
+% The file aaai.sty is the style file for AAAI Press 
+% proceedings, working notes, and technical reports.
+%
+\title{Model-based, Hierarchical Control of a Mobile Manipulation Platform}
+\author{Cast of many\\
+Willow Garage
+}
+\maketitle
+\begin{abstract}
+PR2 is a sophisticated mobile manipulation platform designed for operation in dynamic and unstructured indoor environments. In this paper we describe an experiment using TREX, a hierarchical control framework based on constraint-based temporal planning, to control PR2. The experiment was part of a fully integrated demonstration of PR2 capabilities involving autonomous navigation, door-opening, and recharging using standard electrical outlets. The goal of this experiment was to evaluate the applicability of a model-based, planning centric approach for practical robotics on a large scale. The results were encouraging. Not only did TREX play an important role in accomplishing the milestone which was in itself  a significant achievement in autonomous robotics, but it did so with modest computatational overhead and system complexity. In this paper we outline the details of the milestone and how TREX was used to achieve it, providing a quantitative and qualititative evaluation of TREX performance. We believe this presents a promising pathway for deep integration of declarative models, automated reasoning and search as a paradigm for practical robot programming.
+\begin{quote}
+\end{quote}
+\end{abstract}
+
+\section{Introduction}
+
+\section{Motivation}
+TREX provides a uniform computational framework based on formal, declarative models, and temporal plans with:
+\begin{itemize}
+\item Metric time
+\item Discrete and continuous states
+\item Durative actions
+\item Different abstraction levels
+\item Different planning horizons
+\item Explicit support for partitioning and composition
+\item Expressive language for temporal and non-temporal constraints
+\item Support for concurrent actions
+\end{itemize}
+
+Hypothesize the following expected benefits:
+\begin{itemize}
+\item Robust autonomous behavior through temporal flexibility, incremental planning and replanning
+\item Representationally sufficient for real-world applications
+\item Scalable through hierarchical control structure
+\item Seamless integration of planning and execution in a continuum of deliberative and reactive behavior
+\item Reduced programming complexity since model and planner can assist and can specify a program at a very high level
+\end{itemize}
+
+Ultimately, evaluation based on expreiences with real world systems. Want to push to a larger scale application with a more inherently challenging control problem. Want to demonstrate applicability on a harder problem and a different platform to evaluate the generality of the approach.
+
+\section{Milestone 2 Requirements}
+
+What it is and why.
+
+Complexity of the problem
+\begin{itemize}
+\item High-level goals (recharge at outlet 6)
+\item High-level planning (handle all top-level goals, with an optimal tour). Break down into sub-goals for driving, doorway traversal and recharging
+\item 25 low-level actions
+\item Action failure (the primary manifestation of uncertainty)
+\item Interactions based on shared resources
+\end{itemize}
+
+\section{Executive Design}
+
+\section{Results}
+
+Key Data point - it worked! This in itself is important. What is the state of the art to compare to?
+
+Complexity of the solution:
+\begin{itemize}
+\item Number of reactors
+\item Number of state variables
+\item Number of timelines (instances of state variables)
+\item Number of lines of code in the model
+\item Cost of integration with external system components
+\item Development effort
+\end{itemize}
+
+Computational efficiency:
+\begin{itemize}
+\item Update rate of 10Hz
+\item Cumulative clock drift of 10 per-cent (need to fix this). Suggests we should be playing catch up.
+\item CPU utilization with topological map was flat at about 450MB. However, topological map is about 430MB. Need to get better numbers on this but expect the executive will be in the 10 MB range.
+\item Show CPU utilization as a function of time. Make the point that cost accrues based on actual change which makes costs of partitioning small since change is usually localized
+\item Time spent planning
+\item Time spent in synchronization
+\end{itemize}
+
+Capabilities that were important:
+\begin{itemize}
+\item Total number of actions executed (approximately 500).
+\item Number of times executive preempted an action based on local timeout
+\item Number of times executive preempted based on global timeout
+\item Number of times actions failed triggering recovery (but not replanning).
+\item Number of plan failures (detection of inconsistency). Did not happen.
+\end{itemize}
+
+\section{Evaluation}
+
+Are easy things easy?
+
+Alternatives
+
+Integration Effort
+
+Specialized Knowledge Required
+
+Timing Guarantees
+
+What about probabilistic models? We did very little looking ahead to reason about which actions to pick. Almost explicity based on cost estimates. Who cares?
+
+Calling the motion planner to check for a path by executing an action?
+
+Hack for mechanism control?
+
+Rationale for putting something in the model or in the executive?
+
+Did not integrate everything into the model? Why not? Was this good or bad? Could we have?
+
+\section{Related Work}
+
+\section{Conclusions and Future Work}
+Scaled well.
+Tackle tougher tasks.
+
+Make the techology easier to use.
+
+\end{document}
