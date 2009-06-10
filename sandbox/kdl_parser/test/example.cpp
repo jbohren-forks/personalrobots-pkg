@@ -35,8 +35,10 @@
 /* Author: Wim Meeussen */
 
 #include "kdl_parser/tree_parser.hpp"
+#include <iostream>
 
 using namespace KDL;
+using namespace std;
 
 
 int main()

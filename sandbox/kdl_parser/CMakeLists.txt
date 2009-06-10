@@ -23,5 +23,6 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 #uncomment if you have defined services
 #gensrv()
 
-rospack_add_executable(example test/example.cpp )
+rospack_add_library(${PROJECT_NAME} src/tree_parser.cpp)
+rospack_add_executable(example test/example.cpp src/tree_parser.cpp)
 
