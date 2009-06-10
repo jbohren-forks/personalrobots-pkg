@@ -33,6 +33,8 @@
 #include <algorithm>
 
 #include <robot_msgs/Point32.h>
+#include <door_msgs/Door.h>
+#include <door_functions/door_functions.h>
 
 #define MAX_COST 255
 
@@ -45,6 +47,7 @@ namespace door_base_collision_cost
 
     public:
 
+    door_msgs::Door door_msg_;
 
     void init();
 
@@ -142,6 +145,10 @@ namespace door_base_collision_cost
     double local_door_min_angle_;
 
     double local_door_max_angle_;
+
+    bool doLineSegsIntersect(robot_msgs::Point32 a, robot_msgs::Point32 b, robot_msgs::Point32 c, robot_msgs::Point32 d);
+
+    bool checkBaseDoorIntersect(double angle);
 
   };
 }

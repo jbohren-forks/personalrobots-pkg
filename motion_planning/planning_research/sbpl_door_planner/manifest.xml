@@ -12,6 +12,7 @@
     <depend package="door_msgs"/>
     <depend package="angles"/>
     <depend package="tf"/>
+    <depend package="door_functions"/>
   <url></url>
 
   <export>

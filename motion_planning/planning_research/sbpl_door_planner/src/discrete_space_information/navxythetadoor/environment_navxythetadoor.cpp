@@ -34,7 +34,7 @@ using namespace std;
 #include <door_msgs/Door.h>
 
 bool first_call = true;
-FILE* fEnv = fopen("debug_environment.txt", "w");
+
 
 static unsigned int inthash(unsigned int key)
 {
@@ -389,8 +389,9 @@ void EnvironmentNAVXYTHETADOORLAT::GetSuccs(int SourceStateID, vector<int>* Succ
                                             vector<int>* CostV, 
                                             vector<EnvNAVXYTHETALATAction_t*>* actionV /*=NULL*/)
 {
-    if(first_call)
+  /*    if(first_call)
     {
+      FILE* fEnv = fopen("debug_environment.txt", "w");
         first_call = false;
         for(int i=0; i<EnvNAVXYTHETALATCfg.EnvHeight_c; i++)
         {
@@ -400,8 +401,9 @@ void EnvironmentNAVXYTHETADOORLAT::GetSuccs(int SourceStateID, vector<int>* Succ
             }
             fprintf(fEnv,"\n");
         }
+	fclose(fEnv);
     }
-
+  */
 
   int aind;
 
@@ -501,7 +503,6 @@ void EnvironmentNAVXYTHETADOORLAT::setDoorDiscretizationAngle(const double &door
 void EnvironmentNAVXYTHETADOORLAT::setDoorProperties(const door_msgs::Door &door, 
                                                      double door_thickness)
 {
-
   db_.door_thickness_ = door_thickness;
 
   double hinge_global_x = door.frame_p1.x;
@@ -552,6 +553,7 @@ void EnvironmentNAVXYTHETADOORLAT::setDoorProperties(const door_msgs::Door &door
 
 //  db_.rot_dir_ = door.rot_dir;
   db_.init();
+  db_.door_msg_ = door;
 
   //Set default desired door angle to door open position
   vector<int> desired_door_angles;

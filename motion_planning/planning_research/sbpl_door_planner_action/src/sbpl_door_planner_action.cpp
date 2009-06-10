@@ -387,7 +387,7 @@ robot_actions::ResultStatus SBPLDoorPlanner::execute(const door_msgs::Door& door
   goal_.x = (door.frame_p1.x+door.frame_p2.x)/2.0 + distance_goal_ * cos(goal_.th);
   goal_.y = (door.frame_p1.y+door.frame_p2.y)/2.0 + distance_goal_ * sin(goal_.th);
 
-
+  publishDoor(door_env_.door,0.0);
   ROS_DEBUG("Goal: %f %f %f",goal_.x,goal_.y,goal_.th);
   if(!isPreemptRequested())
   {
@@ -403,10 +403,11 @@ robot_actions::ResultStatus SBPLDoorPlanner::execute(const door_msgs::Door& door
   if(!isPreemptRequested())
   {
     ROS_INFO("Publishing path");
-    publishPath(path,"global_plan",1.0,1.0,1.0,1.0);
+    publishPath(path,"global_plan",1.0,0.0,0.0,0.0);
     ros::Duration d;
-    d.fromSec(2.0);
+    d.fromSec(10.0);
     d.sleep();
+    publishPath(path,"global_plan",1.0,0.0,0.0,0.0);
   }
 
   handle_hinge_distance_ = getHandleHingeDistance(door_env_.door);
@@ -426,7 +427,7 @@ robot_actions::ResultStatus SBPLDoorPlanner::execute(const door_msgs::Door& door
   }
 
   ros::Duration d;
-  d.fromSec(2.0);
+  d.fromSec(20.0);
   d.sleep();
   return robot_actions::SUCCESS;
 }
@@ -594,11 +595,12 @@ void SBPLDoorPlanner::publishPath(const robot_msgs::JointTraj &path, std::string
 {
   visualization_msgs::Polyline gui_path_msg;
   gui_path_msg.header.frame_id = global_frame_;
+  gui_path_msg.header.stamp = ros::Time::now();
 
   //given an empty path we won't do anything
   if(path.get_points_size() > 0){
     // Extract the plan in world co-ordinates, we assume the path is all in the same frame
-    gui_path_msg.header.stamp = door_env_.door.header.stamp;
+    //    gui_path_msg.header.stamp = door_env_.door.header.stamp;
     gui_path_msg.set_points_size(path.get_points_size());
     for(unsigned int i=0; i < path.get_points_size(); i++){
       gui_path_msg.points[i].x = path.points[i].positions[0];

@@ -35,6 +35,7 @@
 #define MAX_COST 255
 //#define DEBUG 1
 using namespace std;
+using namespace door_functions;
 
 namespace door_base_collision_cost
 {
@@ -231,7 +232,7 @@ namespace door_base_collision_cost
           exit(-1);
         }
 #endif
-          obstructed_angles.push_back(angle);
+        obstructed_angles.push_back(angle);
       }
     }
     std::vector<robot_msgs::Point32> solution;
@@ -322,21 +323,29 @@ namespace door_base_collision_cost
       if(min_obstructed_angle >= local_door_max_angle_)
         min_obstructed_angle = local_door_max_angle_;
 
+      bool check_passed = false;
       int num_intervals = (int) (angles::normalize_angle(min_obstructed_angle-local_door_min_angle_)/door_angle_discretization_interval_);
       for(int i=0; i<num_intervals; i++)
       {
         double new_angle = angles::normalize_angle(local_door_min_angle_ + i * door_angle_discretization_interval_);
         unsigned char cost = findWorkspaceCost(global_position,global_yaw,new_angle);
+
+        if(!check_passed)
+          if(checkBaseDoorIntersect(new_angle))
+            continue;
+
+        check_passed = true;
+
         if(cost < MAX_COST)
         {
           if(min_obstructed_angle == local_door_max_angle_)
           {
-              valid_angles.push_back((int)(new_angle*180.0/M_PI));
-              valid_cost.push_back((int) cost);
-              valid_interval.push_back(1);
-              valid_angles.push_back((int)(new_angle*180.0/M_PI));
-              valid_cost.push_back((int) cost);
-              valid_interval.push_back(0);
+            valid_angles.push_back((int)(new_angle*180.0/M_PI));
+            valid_cost.push_back((int) cost);
+            valid_interval.push_back(1);
+            valid_angles.push_back((int)(new_angle*180.0/M_PI));
+            valid_cost.push_back((int) cost);
+            valid_interval.push_back(0);
           }
           else
           {
@@ -370,20 +379,29 @@ namespace door_base_collision_cost
         max_obstructed_angle = local_door_min_angle_;
       }
       int num_intervals = (int) (angles::normalize_angle(local_door_max_angle_-max_obstructed_angle)/door_angle_discretization_interval_);
+
+      bool check_passed = false;
       for(int i=0; i<num_intervals; i++)
       {
         double new_angle = angles::normalize_angle(local_door_max_angle_ - i * door_angle_discretization_interval_);
         unsigned char cost = findWorkspaceCost(global_position,global_yaw,new_angle);
+
+        if(!check_passed)
+          if(checkBaseDoorIntersect(new_angle))
+            continue;
+
+        check_passed = true;
+
         if(cost < MAX_COST)
         {
           if(max_obstructed_angle == local_door_min_angle_)
           {
-              valid_angles.push_back((int)(new_angle*180.0/M_PI));
-              valid_cost.push_back((int) cost);
-              valid_interval.push_back(1);
-              valid_angles.push_back((int)(new_angle*180.0/M_PI));
-              valid_cost.push_back((int) cost);
-              valid_interval.push_back(0);
+            valid_angles.push_back((int)(new_angle*180.0/M_PI));
+            valid_cost.push_back((int) cost);
+            valid_interval.push_back(1);
+            valid_angles.push_back((int)(new_angle*180.0/M_PI));
+            valid_cost.push_back((int) cost);
+            valid_interval.push_back(0);
           }
           else
           {
@@ -451,6 +469,85 @@ namespace door_base_collision_cost
 //      printf("\n\nDB:: desired door angle: %d\n\n",local_desired_door_angles[i]);
     }
   }
+
+  bool DoorBaseCollisionCost::doLineSegsIntersect(robot_msgs::Point32 a, robot_msgs::Point32 b, robot_msgs::Point32 c, robot_msgs::Point32 d)
+  {
+    double b_a[2], c_d[2], c_a[2];
+    b_a[0] = b.x-a.x;
+    b_a[1] = b.y-a.y;
+
+    c_d[0] = c.x-d.x;
+    c_d[1] = c.y-d.y;
+
+    c_a[0] = c.x-a.x;
+    c_a[1] = c.y-a.y;
+
+    double det = (b_a[0]*c_d[1]) - (b_a[1]*c_d[0]);
+    double t = ((c_a[0]*c_d[1]) - (c_a[1]*c_d[0])) / det;
+    double u = ((b_a[0]*c_a[1]) - (b_a[1]*c_a[0])) / det;
+
+    if ((t<0)||(u<0)||(t>1)||(u>1))
+      return false;
+    else
+      return true;
+  }
+
+
+  bool DoorBaseCollisionCost::checkBaseDoorIntersect(double angle)
+  {
+    // rotate the door
+//    printf("[checkBaseDoorIntersect] just rotated door message...\n");
+    door_msgs::Door rotated_door = door_functions::rotateDoor(door_msg_, angle);
+
+//    printf("[checkBaseDoorIntersect] just rotated door message...\n");
+//    cout << "Rotated" <<  rotated_door;
+
+    // get polygon of door
+    std::vector<robot_msgs::Point32> door_polygon(4);
+    std::vector<robot_msgs::Point> door_polygon64 = door_functions::getPolygon(rotated_door, door_thickness_);
+
+    //convert to type robot_msgs::Point32 to check for intersection (getPolygon returns 64-bit floats)
+    door_polygon[0].x = door_polygon64[0].x;
+    door_polygon[0].y = door_polygon64[0].y;
+
+    door_polygon[1].x = door_polygon64[1].x;
+    door_polygon[1].y = door_polygon64[1].y;
+
+    door_polygon[2].x = door_polygon64[2].x;
+    door_polygon[2].y = door_polygon64[2].y;
+
+    door_polygon[3].x = door_polygon64[3].x;
+    door_polygon[3].y = door_polygon64[3].y;
+
+//    printf("[checkBaseDoorIntersect] checking if line segments intersect\n");
+    if(doLineSegsIntersect(footprint_[0], footprint_[1], door_polygon[0], door_polygon[1]) ||
+        doLineSegsIntersect(footprint_[1], footprint_[2], door_polygon[0], door_polygon[1]) ||
+        doLineSegsIntersect(footprint_[2], footprint_[3], door_polygon[0], door_polygon[1]) ||
+        doLineSegsIntersect(footprint_[3], footprint_[0], door_polygon[0], door_polygon[1]))
+      return true;
+
+    if(doLineSegsIntersect(footprint_[0], footprint_[1], door_polygon[1], door_polygon[2]) ||
+        doLineSegsIntersect(footprint_[1], footprint_[2], door_polygon[1], door_polygon[2]) ||
+        doLineSegsIntersect(footprint_[2], footprint_[3], door_polygon[1], door_polygon[2]) ||
+        doLineSegsIntersect(footprint_[3], footprint_[0], door_polygon[1], door_polygon[2]))
+      return true;
+
+    if(doLineSegsIntersect(footprint_[0], footprint_[1], door_polygon[2], door_polygon[3]) ||
+        doLineSegsIntersect(footprint_[1], footprint_[2], door_polygon[2], door_polygon[3]) ||
+        doLineSegsIntersect(footprint_[2], footprint_[3], door_polygon[2], door_polygon[3]) ||
+        doLineSegsIntersect(footprint_[3], footprint_[0], door_polygon[2], door_polygon[3]))
+      return true;
+
+    if(doLineSegsIntersect(footprint_[0], footprint_[1], door_polygon[0], door_polygon[3]) ||
+        doLineSegsIntersect(footprint_[1], footprint_[2], door_polygon[0], door_polygon[3]) ||
+        doLineSegsIntersect(footprint_[2], footprint_[3], door_polygon[0], door_polygon[3]) ||
+        doLineSegsIntersect(footprint_[3], footprint_[0], door_polygon[0], door_polygon[3]))
+      return true;
+    
+//    printf("[checkBaseDoorIntersect] base does not collide into door at angle: %.3f\n",angle);
+    return false;
+  }
+
 };
 
 

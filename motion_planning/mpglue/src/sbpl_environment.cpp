@@ -556,7 +556,7 @@ namespace mpglue {
 	if (cm->getCost(ix, iy, &cost))	// "always" succeeds though
 	  env->UpdateCost(ix, iy, cost);
       }
-    const double door_thickness = 0.05;
+    const double door_thickness = 0.10;
     // transform door from global to local frame
     float dummy;
     it->globalToLocal(door.frame_p1.x, door.frame_p1.y, (float) 0.0, &door.frame_p1.x, &door.frame_p1.y, &dummy);
@@ -569,10 +569,10 @@ namespace mpglue {
     env->setDoorProperties(door, door_thickness);
 
   const double arm_min_workspace_radius = 0.0;
-  const double arm_max_workspace_radius = 0.85;
+  const double arm_max_workspace_radius = 0.70;
 
   const double arm_max_workspace_angle = M_PI/2.0;
-  const double arm_min_workspace_angle = -0.2;
+  const double arm_min_workspace_angle = -M_PI/2.0;
   const double door_angle_discretization_interval = 0.0175;
   robot_msgs::Point32 shoulder;
   shoulder.x = 0.0;
