@@ -1090,12 +1090,11 @@ stop_video:
               expected = get_expected(x, y);
             else
               expected = (get_expected(2 * x, 2 * y) + get_expected(2 * x, 2 * y + 1)) / 2;
-
+                                   
             if (*data == expected)
               continue;
 
-            status_.level = 2;
-            status_.message = "Unexpected value in frame.";
+            status_.summaryf(2, "Unexpected value in frame at x=%i y=%i expected=%i got=%i.", x, y, (int) expected, (int) *data);
             status_.addsf("Frame content", "Fail: Unexpected value at (x=%i, y=%i, %hhi != %hhi)", x, y, expected, *data);
             return 1;
           }

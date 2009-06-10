@@ -30,7 +30,7 @@ int sensorwrite(IpCamList *camera, uint8_t reg, uint16_t val)
 int main(int argc, char** argv)
 {
   if (argc < 4 || argc > 7) {
-    fprintf(stderr, "Usage: %s <interface> <IP address> <serial number> <register> [<value>]\nAssumes that the IP is already configured.", argv[0]);
+    fprintf(stderr, "Usage: %s <interface> <IP address> <serial number> <register> [<value>]\nAssumes that the IP is already configured.\n", argv[0]);
     return 0;
   }
   char* if_name = argv[1];
@@ -66,7 +66,7 @@ int main(int argc, char** argv)
   }
   IpCamList* camera = pr2CamListGetEntry(&camList, index);
 
-  if (!strcmp(argv[4], "readtst"))
+  if (argc >= 5 && !strcmp(argv[4], "readtst"))
   {
     int count = 0;
     if (argc >= 6)
@@ -77,7 +77,7 @@ int main(int argc, char** argv)
       fprintf(stderr, "count %i reg %02x read: %04x\n", count++, reg, oldval);
     }
   }
-  else if (!strcmp(argv[4], "writetst"))
+  else if (argc >= 5 && !strcmp(argv[4], "writetst"))
   {
     int count = 0;
     while (1)
