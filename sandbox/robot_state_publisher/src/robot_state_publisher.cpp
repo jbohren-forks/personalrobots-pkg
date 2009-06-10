@@ -47,7 +47,6 @@ namespace robot_state_publisher{
 
 RobotStatePublisher::RobotStatePublisher()
   : n_("robot_state_publisher"),
-    tf_(),
     publish_rate_(0.0)
 {
   // set publish frequency
