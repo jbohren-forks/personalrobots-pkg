@@ -64,6 +64,7 @@ private:
   ros::Rate publish_rate_;
   KDL::Tree tree_;
   boost::scoped_ptr<KDL::TreeFkSolverPosFull_recursive> solver_;
+  std::string tf_prefix_;
 };
 
 }

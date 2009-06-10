@@ -55,6 +55,9 @@ RobotStatePublisher::RobotStatePublisher(const Tree& tree)
   n_.param("~publish_frequency", publish_freq, 50.0);
   publish_rate_ = Rate(publish_freq);
 
+  // get tf prefix
+  n_.param("~tf_prefix", tf_prefix_, string());
+
   // build tree solver
   solver_.reset(new TreeFkSolverPosFull_recursive(tree_));
 
@@ -84,7 +87,7 @@ void RobotStatePublisher::callback(const MechanismStateConstPtr& state)
     //cout << "frame " << f->first << " = " << f->second.p << endl;
     double z, y, x;
     f->second.M.GetEulerZYX(z,y,x);
-    tf_.sendTransform(tf::Transform(tf::Quaternion(z, y, x), tf::Vector3(f->second.p(0), f->second.p(1), f->second.p(2))), state->header.stamp, f->first + "_test", "root");
+    tf_.sendTransform(tf::Transform(tf::Quaternion(z, y, x), tf::Vector3(f->second.p(0), f->second.p(1), f->second.p(2))), state->header.stamp, tf::remap(tf_prefix_, f->first + "_test"), "root");
   }
 
   publish_rate_.sleep();
