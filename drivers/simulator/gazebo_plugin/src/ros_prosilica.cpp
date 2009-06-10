@@ -59,9 +59,6 @@
 #include <boost/thread.hpp>
 #include <string>
 
-#include "prosilica/prosilica.h"
-#include "prosilica_cam/PolledImage.h"
-
 using namespace gazebo;
 
 GZ_REGISTER_DYNAMIC_CONTROLLER("ros_prosilica", RosProsilica);
@@ -77,8 +74,12 @@ RosProsilica::RosProsilica(Entity *parent)
     gzthrow("RosProsilica controller requires a Camera Sensor as its parent");
 
   Param::Begin(&this->parameters);
-  this->topicNameP = new ParamT<std::string>("topicName","stereo/raw_stereo", 0);
-  this->frameNameP = new ParamT<std::string>("frameName","stereo_link", 0);
+  this->imageTopicNameP = new ParamT<std::string>("imageTopicName","~image", 0);
+  this->imageRectTopicNameP = new ParamT<std::string>("imageRectTopicName","~image_rect", 0);
+  this->camInfoTopicNameP = new ParamT<std::string>("camInfoTopicName","~cam_info", 0);
+  this->camInfoServiceNameP = new ParamT<std::string>("camInfoServiceName","~cam_info_service", 0);
+  this->pollServiceNameP = new ParamT<std::string>("pollServiceName","~poll", 0);
+  this->frameNameP = new ParamT<std::string>("frameName","prosilica_optical_frame", 0);
   Param::End();
 
   rosnode = ros::g_node; // comes from where?
@@ -88,7 +89,7 @@ RosProsilica::RosProsilica(Entity *parent)
   {
     ros::init(argc,argv);
     rosnode = new ros::Node("ros_gazebo",ros::Node::DONT_HANDLE_SIGINT);
-    ROS_DEBUG("Starting node in prosilica");
+    ROS_DEBUG("Starting node in prosilica plugin");
   }
 
 }
@@ -97,7 +98,11 @@ RosProsilica::RosProsilica(Entity *parent)
 // Destructor
 RosProsilica::~RosProsilica()
 {
-  delete this->topicNameP;
+  delete this->imageTopicNameP;
+  delete this->imageRectTopicNameP;
+  delete this->camInfoTopicNameP;
+  delete this->camInfoServiceNameP;
+  delete this->pollServiceNameP;
   delete this->frameNameP;
 }
 
@@ -105,14 +110,39 @@ RosProsilica::~RosProsilica()
 // Load the controller
 void RosProsilica::LoadChild(XMLConfigNode *node)
 {
-  this->topicNameP->Load(node);
+  this->imageTopicNameP->Load(node);
+  this->imageRectTopicNameP->Load(node);
+  this->camInfoTopicNameP->Load(node);
+  this->camInfoServiceNameP->Load(node);
+  this->pollServiceNameP->Load(node);
   this->frameNameP->Load(node);
   
-  this->topicName = this->topicNameP->GetValue();
+  this->imageTopicName = this->imageTopicNameP->GetValue();
+  this->imageRectTopicName = this->imageRectTopicNameP->GetValue();
+  this->camInfoTopicName = this->camInfoTopicNameP->GetValue();
+  this->camInfoServiceName = this->camInfoServiceNameP->GetValue();
+  this->pollServiceName = this->pollServiceNameP->GetValue();
   this->frameName = this->frameNameP->GetValue();
 
-  ROS_DEBUG("prosilica topic name %s", this->topicName.c_str());
-  rosnode->advertise<image_msgs::Image>(this->topicName,1);
+  ROS_DEBUG("prosilica image topic name %s", this->imageTopicName.c_str());
+  rosnode->advertise<image_msgs::Image>(this->imageTopicName,1);
+  rosnode->advertise<image_msgs::Image>(this->imageRectTopicName,1);
+  rosnode->advertise<image_msgs::CamInfo>(this->camInfoTopicName,1);
+  rosnode->advertiseService(this->camInfoServiceName,&RosProsilica::camInfoService, this, 0);
+  rosnode->advertiseService(this->pollServiceName,&RosProsilica::triggeredGrab, this, 0);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// service call to return camera info
+bool RosProsilica::camInfoService(prosilica_cam::CamInfo::Request &req,
+                                  prosilica_cam::CamInfo::Response &res)
+{
+  return true;
+}
+bool RosProsilica::triggeredGrab(prosilica_cam::PolledImage::Request &req,
+                                 prosilica_cam::PolledImage::Response &res)
+{
+  return true;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -147,7 +177,11 @@ void RosProsilica::UpdateChild()
 // Finalize the controller
 void RosProsilica::FiniChild()
 {
-  rosnode->unadvertise(this->topicName);
+  rosnode->unadvertise(this->imageTopicName);
+  rosnode->unadvertise(this->imageRectTopicName);
+  rosnode->unadvertise(this->camInfoTopicName);
+  rosnode->unadvertiseService(this->camInfoServiceName);
+  rosnode->unadvertiseService(this->pollServiceName);
   this->myParent->SetActive(false);
 }
 
@@ -160,7 +194,7 @@ void RosProsilica::PutCameraData()
   // Get a pointer to image data
   src = this->myParent->GetImageData(0);
 
-  //std::cout << " updating prosilica " << this->topicName << " " << data->image_size << std::endl;
+  //std::cout << " updating prosilica " << this->imageTopicName << " " << data->image_size << std::endl;
   if (src)
   {
     //double tmpT0 = Simulator::Instance()->GetWallTime();
@@ -221,7 +255,7 @@ void RosProsilica::PutCameraData()
 
 
     /// @todo: don't bother if there are no subscribers
-    if (this->rosnode->numSubscribers(this->topicName) > 0)
+    if (this->rosnode->numSubscribers(this->imageTopicName) > 0)
     {
       // copy from src to imageMsg
       fillImage(*this->imageMsg   ,"image_raw" ,
@@ -232,7 +266,7 @@ void RosProsilica::PutCameraData()
       //tmpT2 = Simulator::Instance()->GetWallTime();
 
       // publish to ros
-      rosnode->publish(this->topicName,*this->imageMsg);
+      rosnode->publish(this->imageTopicName,*this->imageMsg);
     }
 
     //double tmpT3 = Simulator::Instance()->GetWallTime();

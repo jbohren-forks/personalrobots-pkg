@@ -32,9 +32,15 @@
 #include <gazebo/Param.hh>
 #include <gazebo/Controller.hh>
 
-// raw_stereo components
+// image components
 #include <image_msgs/Image.h>
 #include "image_msgs/CamInfo.h"
+
+// prosilica components
+#include "prosilica/prosilica.h"
+#include "prosilica_cam/CamInfo.h"
+#include "prosilica_cam/PolledImage.h"
+
 
 namespace gazebo
 {
@@ -117,6 +123,13 @@ class RosProsilica : public Controller
   /// \brief Put camera data to the ROS topic
   private: void PutCameraData();
 
+
+  /// \brief Service call to publish images, cam info
+  private: bool camInfoService(prosilica_cam::CamInfo::Request &req,
+                               prosilica_cam::CamInfo::Response &res);
+  private: bool triggeredGrab(prosilica_cam::PolledImage::Request &req,
+                              prosilica_cam::PolledImage::Response &res);
+
   /// \brief A pointer to the parent camera sensor
   private: MonoCameraSensor *myParent;
 
@@ -126,15 +139,25 @@ class RosProsilica : public Controller
   /// \brief ros message
   /// \brief construct raw stereo message
   private: image_msgs::Image* imageMsg;
+  private: image_msgs::Image* imageRectMsg;
   private: image_msgs::CamInfo* camInfoMsg;
 
 
   /// \brief Parameters
-  private: ParamT<std::string> *topicNameP;
+  private: ParamT<std::string> *imageTopicNameP;
+  private: ParamT<std::string> *imageRectTopicNameP;
+  private: ParamT<std::string> *camInfoTopicNameP;
+  private: ParamT<std::string> *camInfoServiceNameP;
+  private: ParamT<std::string> *pollServiceNameP;
   private: ParamT<std::string> *frameNameP;
 
   /// \brief ROS image topic name
-  private: std::string topicName;
+  private: std::string imageTopicName;
+  private: std::string imageRectTopicName;
+  private: std::string camInfoTopicName;
+  private: std::string camInfoServiceName;
+  private: std::string pollServiceName;
+
   /// \brief ROS frame transform name to use in the image message header.
   ///        This should typically match the link name the sensor is attached.
   private: std::string frameName;
