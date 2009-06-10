@@ -109,6 +109,8 @@ def dist(a,b):
   yd = a[1] - b[1]
   return math.sqrt(xd*xd + yd*yd)
 
+import tf
+
 class FakeRoadmapServer:
 
   def __init__(self, args):
@@ -127,7 +129,7 @@ class FakeRoadmapServer:
       self.send_map(msg.header.stamp)
 
   def handle_localizedpose(self, msg):
-    th = acos(msg.pose.orientation.w)
+    th = tf.transformations.euler_from_quaternion([msg.pose.orientation.x, msg.pose.orientation.y, msg.pose.orientation.z, msg.pose.orientation.w])[2]
     x = msg.pose.position.x
     y = msg.pose.position.y
     print x, y, th
