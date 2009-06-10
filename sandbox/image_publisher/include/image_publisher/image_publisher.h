@@ -37,24 +37,73 @@
 #include <sensor_msgs/CompressedImage.h>
 #include <opencv_latest/CvBridge.h>
 
+/**
+ * \brief Publishes images efficiently across a bandwidth-limited network
+ * connection.
+ *
+ * ImagePublisher will, on demand (i.e. if there are subscribers), publish
+ * low-memory versions of the image message on separate topics. An ImagePublisher
+ * constructed with base topic "camera/image" will advertise:
+ *
+ * - camera/image : The original image
+ * - camera/image_thumbnail : The image scaled down to thumbnail size
+ * - camera/image_compressed : A compressed (JPEG or PNG) version of the image
+ */
 class ImagePublisher
 {
 public:
+  /*!
+   * \brief Constructor
+   *
+   * Construct an ImagePublisher publishing the raw image on the base topic
+   * name (if !republishing) and low-memory images on derived topic names.
+   * \param topic           Base topic name for publishing raw image
+   * \param republishing    If true, do not publish the raw image
+   */
   ImagePublisher(const std::string& topic, const ros::NodeHandle& node_handle,
                  bool republishing = false);
 
   ~ImagePublisher();
 
-  /** @todo: fix const-correctness once ROS updated */
+  /*!
+   * \brief Returns the number of subscribers that are currently connected to
+   * this ImagePublisher.
+   *
+   * Returns the total number of subscribers to the raw, thumbnail and compressed topics.
+   */
   uint32_t getNumSubscribers() /*const*/;
 
+  /*!
+   * \brief Returns the topic that this ImagePublisher will publish the raw
+   * image on.
+   */
   std::string getTopic() /*const*/;
+
+  /*!
+   * \brief Returns the topic that this ImagePublisher will publish the thumbnail
+   * image on.
+   */
   std::string getTopicThumbnail() /*const*/;
+
+  /*!
+   * \brief Returns the topic that this ImagePublisher will publish the compressed
+   * image on.
+   */
   std::string getTopicCompressed() /*const*/;
 
+  /*!
+   * \brief Publish an image on the topics associated with this ImagePublisher.
+   */
   void publish(const image_msgs::Image& message) /*const*/;
+
+  /*!
+   * \brief Publish an image on the topics associated with this ImagePublisher.
+   */
   void publish(const image_msgs::ImageConstPtr& message) /*const*/;
 
+  /*!
+   * \brief Shutdown the advertisements associated with this ImagePublisher.
+   */
   void shutdown();
 
 private:
@@ -78,3 +127,6 @@ private:
 
   bool republishing_;
 };
+
+/** @todo: Handle dynamic updates to parameters */
+/** @todo: fix const-correctness once ROS updated */
