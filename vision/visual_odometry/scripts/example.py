@@ -11,7 +11,9 @@ sys.path.append('lib')
 
 from stereo_utils import camera
 from stereo_utils.stereo import SparseStereoFrame
-from visualodometer import VisualOdometer, Pose, DescriptorSchemeCalonder, DescriptorSchemeSAD, FeatureDetectorFast, FeatureDetector4x4, FeatureDetectorStar, FeatureDetectorHarris, from_xyz_euler
+from stereo_utils.descriptor_schemes import DescriptorSchemeCalonder, DescriptorSchemeSAD
+from stereo_utils.feature_detectors import FeatureDetectorFast, FeatureDetector4x4, FeatureDetectorStar, FeatureDetectorHarris
+from visual_odometry.visualodometer import VisualOdometer, Pose, from_xyz_euler
 
 Fx = 100   # Focal length x
 Fy = 100   # Focal length y
