@@ -33,27 +33,25 @@
 
 import roslib
 roslib.load_manifest('vslam')
-import rostest
-import rospy
-
-import vop
 
 import sys
-
-import visual_odometry as VO
-import Image as Image
-import ImageChops as ImageChops
-import ImageDraw as ImageDraw
-import ImageFilter as ImageFilter
-
 import random
 import unittest
 import math
 import copy
 import pickle
+import time
+
+import vop
+import Image as Image
+import ImageChops as ImageChops
+import ImageDraw as ImageDraw
+import ImageFilter as ImageFilter
 
 from stereo_utils.stereo import DenseStereoFrame, SparseStereoFrame
-from visualodometer import VisualOdometer, Pose, DescriptorSchemeCalonder, DescriptorSchemeSAD, FeatureDetectorFast, FeatureDetector4x4, FeatureDetectorStar, FeatureDetectorHarris
+from stereo_utils.descriptor_schemes import DescriptorSchemeCalonder, DescriptorSchemeSAD
+from stereo_utils.feature_detectors import FeatureDetectorFast, FeatureDetector4x4, FeatureDetectorStar, FeatureDetectorHarris
+from visual_odometry.visualodometer import VisualOdometer, Pose
 from skeleton import Skeleton
 from stereo_utils.reader import reader
 
@@ -62,11 +60,10 @@ from math import *
 import numpy
 import numpy.linalg
 import pylab
+import cv
 
 import rosrecord
 from tf import transformations
-
-from vis import Vis
 
 def planar(x, y, z):
   from scipy import optimize
@@ -94,23 +91,27 @@ keys = set()
 import getopt
 
 skel_load_filename = None
-optlist, args = getopt.getopt(sys.argv[1:], "l:")
+optlist, args = getopt.getopt(sys.argv[1:], "l:f:")
 print optlist, args
 for o,a in optlist:
   if o == '-l':
     skel_load_filename = a
+  if o == '-f':
+    skel_fill_filename = a
 
 def playlist(args):
   for f in args:
     r = reader(f)
-    for d in r.next():
+    for d in r:
       yield d + (f,)
 
 log_dead_reckon = []
 
+cold = True
 inl_history = [0,0]
 for cam,l_image,r_image,label in playlist(args):
-  print framecounter
+  if vos:
+    print framecounter, len(skel.nodes), "skel nodes"
   if vos == None:
     #fd = FeatureDetectorFast(300)
     fd = FeatureDetectorStar(300)
@@ -132,7 +133,11 @@ for cam,l_image,r_image,label in playlist(args):
       skel.load(skel_load_filename)
       vos[0].num_frames = max(skel.nodes) + 1
       framecounter = max(skel.nodes) + 1
-    skel.node_vdist = 5
+    # skel.fill("/u/prdata/vslam_data/FtCarson/2007.08/2007.08.29/course3-DTED4-run1/traj.txt", 118016)
+    # skel.fill("/u/prdata/vslam_data/FtCarson/2007.08/2007.08.29/course3-DTED5-run1/traj.txt", 13916)
+    if skel_fill_filename:
+      skel.fill(skel_fill_filename)
+    skel.node_vdist = 15
     oe_x = []
     oe_y = []
     oe_home = None
@@ -142,8 +147,12 @@ for cam,l_image,r_image,label in playlist(args):
     log_dead_reckon.append(vopose)
     inl_history.append(vo.inl)
     inl_history = inl_history[-2:]
-    af.connected = vo.inl > 7
+    if cold:
+      af.connected = -1
+    else:
+      af.connected = vo.inl > 7
     # Log keyframes into "pool_loop"
+    # Image.fromstring("L", af.lf.size, af.lf.tostring()).save("dump/%06dL.png" % af.id)
     if False and not vo.keyframe.id in keys:
       k = vo.keyframe
       Image.fromstring("L", (640,480), k.lf.tostring()).save("dump/%06dL.png" % len(keys))
@@ -163,35 +172,29 @@ for cam,l_image,r_image,label in playlist(args):
     vo_u[i].append(x1 - x)
     vo_v[i].append(z1 - z)
 
-    if len(skel.nodes) > 1771:
-      break
-
   print framecounter, "kp", len(af.features()), "inliers:", vo.inl
   inliers.append(vo.inl)
 
+  def rod(p):
+    m = cv.CreateMat(3, 3, cv.CV_32FC1)
+    for i in range(3):
+      for j in range(3):
+        m[i,j] = p.M[i,j]
+    r = cv.CreateMat(3, 1, cv.CV_32FC1)
+    cv.Rodrigues2(m, r)
+    return [ r[0,0], r[1,0], r[2,0] ]
+
   framecounter += 1
-  if framecounter > 99999:
+  LIMIT = 51248
+  LIMIT = 999999
+  if framecounter > LIMIT:
     break
+  cold = False
 
   def ground_truth(p, q):
     return Pose(transformations.rotation_matrix_from_quaternion([q.x, q.y, q.z, q.w])[:3,:3], [p.x, p.y, p.z])
 
   gtp = None
-  if 0:
-    if topic.endswith("odom_estimation"):
-      gtp = ground_truth(msg.pose.position, msg.pose.orientation)
-      ground_truth_label = "PhaseSpace"
-    if topic.endswith("phase_space_snapshot"):
-      gtp = ground_truth(msg.bodies[0].pose.translation, msg.bodies[0].pose.rotation)
-      ground_truth_label = "wheel + IMU odometry"
-    if gtp and cam:
-      oe_pose = gtp
-      if not oe_home:
-        oe_home = oe_pose
-      local = ~oe_home * oe_pose
-      (x,y,z) = local.xform(0,0,0)
-      oe_x.append(-y)
-      oe_y.append(x)
 
 print "There are", len(vo.tracks), "tracks"
 print "There are", len([t for t in vo.tracks if t.alive]), "live tracks"
@@ -201,7 +204,6 @@ f = open('dead_reckon.poses', 'w')
 for i,p in enumerate(log_dead_reckon):
   print >>f, i, p.tolist()
 f.close()
-skel.optimize()
 f = open('optimized.poses', 'w')
 for i in sorted(skel.nodes):
   print >>f, i, skel.newpose(i).tolist()
@@ -218,8 +220,8 @@ for vo in vos:
 skel.summarize_timers()
 skel.dump_timers('skel_timers.pickle')
 
+#skel.trim()
 
-skel.trim()
 print "Saving as mkplot_snap"
 skel.save("mkplot_snap")
 

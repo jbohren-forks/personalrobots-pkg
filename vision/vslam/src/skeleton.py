@@ -135,7 +135,9 @@ class Skeleton:
           sys.exit(1)
     print "Loaded", basename, ":", len(self.nodes), "nodes;", len(self.edges), "edges"
 
-  def fill(self, filename, startframe):
+  def fill(self, filename):
+
+    startframe = None
 
     if len(self.nodes) != 0:
       my_start = max(self.nodes) + 1
@@ -149,6 +151,10 @@ class Skeleton:
       f = l.split()
 
       if len(f) == 11:
+
+        if not startframe:
+          startframe = int(f[1])
+
         assert f[4] == 'pose:'
         X = float(f[5])
         Y = float(f[6])
