@@ -37,7 +37,6 @@
 #ifndef SINUSOID_H_
 #define SINUSOID_H_
 
-#include "XmlRpcValue.h"
 #include <iostream>
 #include <tinyxml/tinyxml.h>
 
