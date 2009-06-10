@@ -44,8 +44,8 @@
     <frames>
       <row height="100%">
         <camera width="100%">
-          <xyz>0 0 20</xyz>
-          <rpy>0 90 90</rpy>
+          <xyz>-37 6 6</xyz>
+          <rpy>0 6 15</rpy>
         </camera>
       </row>
     </frames>
@@ -99,7 +99,7 @@
   </model:physical>
 
   <model:physical name="floor_2_model">
-    <xyz>5 22.5 5.0</xyz>
+    <xyz>5 32.5 5.0</xyz>
     <rpy>0.0 0.0 0.0</rpy>
     <static>true</static>
     <body:box name="floor_2_body">
@@ -116,7 +116,7 @@
   </model:physical>
 
   <model:physical name="floor_4_model">
-    <xyz>0.5 20.5 5.0</xyz>
+    <xyz>0.5 34.5 5.0</xyz>
     <rpy>0.0 0.0 0.0</rpy>
     <static>true</static>
     <body:box name="floor_4_body">
@@ -150,17 +150,17 @@
   </model:physical>
 
   <model:physical name="ramp_1_model">
-    <xyz>6.5 15 2.45</xyz>
-    <rpy>26.9 0.0 0.0</rpy>
+    <xyz>6.5 20.01 2.45</xyz>
+    <rpy>14.3 0.0 0.0</rpy>
     <static>true</static>
     <body:box name="ramp_1_body">
       <geom:box name="ramp_1_geom">
         <mu1>100</mu1>
         <mu2>100</mu2>
         <mesh>default</mesh>
-        <size>1 11.1803 .2</size>
+        <size>1 20.6155 .2</size>
         <visual>
-          <size>1 11.1803 .2</size>
+          <size>1 20.6155 .2</size>
           <material>PR2/White</material>
           <mesh>unit_box</mesh>
         </visual>
@@ -169,15 +169,15 @@
   </model:physical>
 
   <model:physical name="ramp_2_model">
-    <xyz>0.5 25.4 2.45</xyz>
-    <rpy>-30 0.0 0.0</rpy>
+    <xyz>0.5 27.55 2.45</xyz>
+    <rpy>21.5 0.0 0.0</rpy>
     <static>true</static>
     <body:box name="ramp_2_body">
       <geom:box name="ramp_2_geom">
         <mesh>default</mesh>
-        <size>1 10.2956 .2</size>
+        <size>1 13.9284 .2</size>
         <visual>
-          <size>1 10.2956 .2</size>
+          <size>1 13.9284 .2</size>
           <material>PR2/White</material>
           <mesh>unit_box</mesh>
         </visual>
@@ -186,7 +186,7 @@
   </model:physical>
 
 
-  <!-- office walls -->
+  <!-- office walls
   <model:physical name="wall_1_model">
     <xyz>5 0 1</xyz>
     <rpy>0.0 0.0 0.0</rpy>
@@ -304,8 +304,9 @@
       </geom:box>
     </body:box>
   </model:physical>
+  -->
 
-  <!-- interior walls -->
+  <!-- interior walls
   <model:physical name="wall_5_model">
     <xyz>3 10 1</xyz>
     <rpy>0.0 0.0 0.0</rpy>
@@ -339,6 +340,7 @@
       </geom:box>
     </body:box>
   </model:physical>
+  -->
 
 
 
