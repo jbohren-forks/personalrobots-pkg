@@ -37,6 +37,8 @@
 #include <sensor_msgs/CompressedImage.h>
 #include <opencv_latest/CvBridge.h>
 
+/** @todo: fix const-correctness once ROS updated */
+
 /**
  * \brief Publishes images efficiently across a bandwidth-limited network
  * connection.
@@ -110,23 +112,11 @@ private:
   void publishThumbnailImage(image_msgs::Image& thumbnail) /*const*/;
   void publishCompressedImage(sensor_msgs::CompressedImage& compressed) /*const*/;
   
-  // ROS stuff
   ros::NodeHandle node_handle_;
   ros::Publisher image_pub_;
   ros::Publisher thumbnail_pub_;
   ros::Publisher compressed_pub_;
   mutable image_msgs::CvBridge cv_bridge_;
 
-  // Thumbnail parameters
-  int thumbnail_size_;
-
-  // Compression parameters
-  int compression_params_[3];
-  std::string extension_;
-  std::string format_;
-
   bool republishing_;
 };
-
-/** @todo: Handle dynamic updates to parameters */
-/** @todo: fix const-correctness once ROS updated */

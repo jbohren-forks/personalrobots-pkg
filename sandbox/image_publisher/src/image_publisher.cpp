@@ -46,25 +46,6 @@ ImagePublisher::ImagePublisher(const std::string& topic, const ros::NodeHandle& 
     image_pub_ = node_handle_.advertise<image_msgs::Image>(topic, 1);
   thumbnail_pub_ = node_handle_.advertise<image_msgs::Image>(topic + "_thumbnail", 1);
   compressed_pub_ = node_handle_.advertise<sensor_msgs::CompressedImage>(topic + "_compressed", 1);
-  
-  node_handle_.param("thumbnail_size", thumbnail_size_, 128);
-  node_handle_.param("compression_type", format_, std::string("jpeg"));
-  if (format_ == "jpeg") {
-    compression_params_[0] = CV_IMWRITE_JPEG_QUALITY;
-    node_handle_.param("compression_level", compression_params_[1], 80); // 80% quality
-  }
-  else if (format_ == "png") {
-    compression_params_[0] = CV_IMWRITE_PNG_COMPRESSION;
-    node_handle_.param("compression_level", compression_params_[1], 9); // max compression
-  }
-  else {
-    ROS_FATAL("Unknown compression type '%s', valid options are 'jpeg' and 'png'",
-              format_.c_str());
-    node_handle_.shutdown();
-    return;
-  }
-  compression_params_[2] = 0;
-  extension_ = '.' + format_;
 }
 
 ImagePublisher::~ImagePublisher()
@@ -156,16 +137,22 @@ void ImagePublisher::shutdown()
 
 void ImagePublisher::publishThumbnailImage(image_msgs::Image& thumbnail) //const
 {
+  // Update settings from parameter server
+  int thumbnail_size = 128;
+  node_handle_.getParam("thumbnail_size", thumbnail_size, true);
+
+  // Rescale image
   const IplImage* image = cv_bridge_.toIpl();
   int width = image->width;
   int height = image->height;
   float aspect = std::sqrt((float)width / height);
-  int scaled_width  = thumbnail_size_ * aspect + 0.5;
-  int scaled_height = thumbnail_size_ / aspect + 0.5;
+  int scaled_width  = thumbnail_size * aspect + 0.5;
+  int scaled_height = thumbnail_size / aspect + 0.5;
 
   cv::WImageBuffer_b buffer(scaled_width, scaled_height, image->nChannels);
   cvResize(image, buffer.Ipl());
 
+  // Set up message and publish
   if (image_msgs::CvBridge::fromIpltoRosImage(buffer.Ipl(), thumbnail)) {
     thumbnail_pub_.publish(thumbnail);
   } else {
@@ -175,10 +162,33 @@ void ImagePublisher::publishThumbnailImage(image_msgs::Image& thumbnail) //const
 
 void ImagePublisher::publishCompressedImage(sensor_msgs::CompressedImage& compressed) //const
 {
-  const IplImage* image = cv_bridge_.toIpl();
-  CvMat* buf = cvEncodeImage(extension_.c_str(), image, compression_params_);
+  // Update settings from parameter server
+  int params[3] = {0};
+  std::string format;
+  if (!node_handle_.getParam("compression_type", format, true))
+    format = "jpeg";
+  if (format == "jpeg") {
+    params[0] = CV_IMWRITE_JPEG_QUALITY;
+    params[1] = 80; // default: 80% quality
+  }
+  else if (format == "png") {
+    params[0] = CV_IMWRITE_PNG_COMPRESSION;
+    params[1] = 9; // default: maximum compression
+  }
+  else {
+    ROS_ERROR("Unknown compression type '%s', valid options are 'jpeg' and 'png'",
+              format.c_str());
+    return;
+  }
+  node_handle_.getParam("compression_level", params[1], true);
+  std::string extension = '.' + format;
 
-  compressed.format = format_;
+  // Compress image
+  const IplImage* image = cv_bridge_.toIpl();
+  CvMat* buf = cvEncodeImage(extension.c_str(), image, params);
+
+  // Set up message and publish
+  compressed.format = format;
   compressed.uint8_data.layout.dim.resize(2);
   compressed.uint8_data.layout.dim[0].label = "height";
   compressed.uint8_data.layout.dim[0].size = image->height;
