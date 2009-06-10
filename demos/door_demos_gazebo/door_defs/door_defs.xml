@@ -332,10 +332,10 @@
     </map>
   </link>
 
-  <link name="keyhold_link">
+  <link name="keyhole_link">
     <parent name="door_link" />
-    <origin xyz="-0.11 -0.8 ${handle_height-0.05+0.15}" rpy="${0*M_PI/2.0} 0 0" />
-    <joint name="keyhold_joint" type="fixed" />
+    <origin xyz="-0.05 -0.8 ${handle_height-0.05+0.15}" rpy="${0*M_PI/2.0} 0 0" />
+    <joint name="keyhole_joint" type="fixed" />
     <inertial >
       <mass value="0.1" />
       <com xyz="0.0 0.0 0.0" /> 
@@ -354,14 +354,14 @@
     </visual>
     <collision >
       <origin xyz="0.0 0.0 0.0" rpy="0 ${1*M_PI/2.0} 0" />
-      <geometry name="keyhold_collision_geom">
+      <geometry name="keyhole_collision_geom">
         <cylinder radius="0.03" length="0.02" />
       </geometry>
-      <map name="keyhold_intensity" flag="gazebo">
+      <map name="keyhole_intensity" flag="gazebo">
         <elem key="laserRetro" value="3900.0" />
       </map>
     </collision>
-    <map name="keyhold_options" flag="gazebo">
+    <map name="keyhole_options" flag="gazebo">
       <elem key="turnGravityOff" value="true" />
       <elem key="selfCollide" value="true" />
     </map>
