@@ -35,6 +35,8 @@ using namespace std;
 
 bool first_call = true;
 
+// for debugging costs
+FILE* fCosts = fopen("debug_costs.txt", "w");
 
 static unsigned int inthash(unsigned int key)
 {
@@ -57,6 +59,153 @@ unsigned int EnvironmentNAVXYTHETADOORLAT::GETHASHBIN(unsigned int X1, unsigned 
 {
 
   return inthash(inthash(X1)+(inthash(X2)<<1)+(inthash(Theta)<<2)) & (HashTableSize-1);
+}
+
+void EnvironmentNAVXYTHETADOORLAT::ReadConfiguration(FILE* fCfg)
+{
+	//read in the configuration of environment and initialize  EnvNAVXYTHETALATCfg structure
+  char sTemp[1024], sTemp1[1024];
+  int dTemp;
+  int x, y;
+
+	//discretization(cells)
+  fscanf(fCfg, "%s", sTemp);
+  strcpy(sTemp1, "discretization(cells):");
+  if(strcmp(sTemp1, sTemp) != 0)
+  {
+    printf("ERROR: configuration file has incorrect format\n");
+    printf("Expected %s got %s\n", sTemp1, sTemp);
+    exit(1);
+  }
+  fscanf(fCfg, "%s", sTemp);
+  EnvNAVXYTHETALATCfg.EnvWidth_c = atoi(sTemp);
+  fscanf(fCfg, "%s", sTemp);
+  EnvNAVXYTHETALATCfg.EnvHeight_c = atoi(sTemp);
+
+	//cellsize
+  fscanf(fCfg, "%s", sTemp);
+  strcpy(sTemp1, "cellsize(meters):");
+  if(strcmp(sTemp1, sTemp) != 0)
+  {
+    printf("ERROR: configuration file has incorrect format\n");
+    printf("Expected %s got %s\n", sTemp1, sTemp);
+    exit(1);
+  }
+  fscanf(fCfg, "%s", sTemp);
+  EnvNAVXYTHETALATCfg.cellsize_m = atof(sTemp);
+	
+	//speeds
+  fscanf(fCfg, "%s", sTemp);
+  strcpy(sTemp1, "nominalvel(mpersecs):");
+  if(strcmp(sTemp1, sTemp) != 0)
+  {
+    printf("ERROR: configuration file has incorrect format\n");
+    printf("Expected %s got %s\n", sTemp1, sTemp);
+    exit(1);
+  }
+  fscanf(fCfg, "%s", sTemp);
+  EnvNAVXYTHETALATCfg.nominalvel_mpersecs = atof(sTemp);
+  fscanf(fCfg, "%s", sTemp);
+  strcpy(sTemp1, "timetoturn45degsinplace(secs):");
+  if(strcmp(sTemp1, sTemp) != 0)
+  {
+    printf("ERROR: configuration file has incorrect format\n");
+    printf("Expected %s got %s\n", sTemp1, sTemp);
+    exit(1);
+  }
+  fscanf(fCfg, "%s", sTemp);
+  EnvNAVXYTHETALATCfg.timetoturn45degsinplace_secs = atof(sTemp);
+
+
+	//start(meters,rads): 
+  fscanf(fCfg, "%s", sTemp);
+  fscanf(fCfg, "%s", sTemp);
+  EnvNAVXYTHETALATCfg.StartX_c = CONTXY2DISC(atof(sTemp),EnvNAVXYTHETALATCfg.cellsize_m);
+  fscanf(fCfg, "%s", sTemp);
+  EnvNAVXYTHETALATCfg.StartY_c = CONTXY2DISC(atof(sTemp),EnvNAVXYTHETALATCfg.cellsize_m);
+  fscanf(fCfg, "%s", sTemp);
+  EnvNAVXYTHETALATCfg.StartTheta = ContTheta2Disc(atof(sTemp), NAVXYTHETALAT_THETADIRS);
+  fscanf(fCfg, "%s", sTemp);
+  EnvNAVXYTHETALATCfg.StartTheta = ContTheta2Disc(atof(sTemp), NAVXYTHETALAT_THETADIRS);
+//   fscanf(fCfg, "%s", sTemp);
+//   start_door_intervalindex = sTemp;
+
+  if(EnvNAVXYTHETALATCfg.StartX_c < 0 || EnvNAVXYTHETALATCfg.StartX_c >= EnvNAVXYTHETALATCfg.EnvWidth_c)
+  {
+    printf("ERROR: illegal start coordinates\n");
+    exit(1);
+  }
+  if(EnvNAVXYTHETALATCfg.StartY_c < 0 || EnvNAVXYTHETALATCfg.StartY_c >= EnvNAVXYTHETALATCfg.EnvHeight_c)
+  {
+    printf("ERROR: illegal start coordinates\n");
+    exit(1);
+  }
+  if(EnvNAVXYTHETALATCfg.StartTheta < 0 || EnvNAVXYTHETALATCfg.StartTheta >= NAVXYTHETALAT_THETADIRS) {
+    printf("ERROR: illegal start coordinates for theta\n");
+    exit(1);
+  }
+
+  //end(meters,rads): 
+  fscanf(fCfg, "%s", sTemp);
+  fscanf(fCfg, "%s", sTemp);
+  EnvNAVXYTHETALATCfg.EndX_c = CONTXY2DISC(atof(sTemp),EnvNAVXYTHETALATCfg.cellsize_m);
+  fscanf(fCfg, "%s", sTemp);
+  EnvNAVXYTHETALATCfg.EndY_c = CONTXY2DISC(atof(sTemp),EnvNAVXYTHETALATCfg.cellsize_m);
+  fscanf(fCfg, "%s", sTemp);
+  EnvNAVXYTHETALATCfg.EndTheta = ContTheta2Disc(atof(sTemp), NAVXYTHETALAT_THETADIRS);
+  fscanf(fCfg, "%s", sTemp);
+//   desired_door_intervalindex = sTemp;
+
+  if(EnvNAVXYTHETALATCfg.EndX_c < 0 || EnvNAVXYTHETALATCfg.EndX_c >= EnvNAVXYTHETALATCfg.EnvWidth_c)
+  {
+    printf("ERROR: illegal end coordinates\n");
+    exit(1);
+  }
+  if(EnvNAVXYTHETALATCfg.EndY_c < 0 || EnvNAVXYTHETALATCfg.EndY_c >= EnvNAVXYTHETALATCfg.EnvHeight_c)
+  {
+    printf("ERROR: illegal end coordinates\n");
+    exit(1);
+  }
+  if(EnvNAVXYTHETALATCfg.EndTheta < 0 || EnvNAVXYTHETALATCfg.EndTheta >= NAVXYTHETALAT_THETADIRS) {
+    printf("ERROR: illegal goal coordinates for theta\n");
+    exit(1);
+  }
+
+
+	//allocate the 2D environment
+  EnvNAVXYTHETALATCfg.Grid2D = new unsigned char* [EnvNAVXYTHETALATCfg.EnvWidth_c];
+  for (x = 0; x < EnvNAVXYTHETALATCfg.EnvWidth_c; x++)
+  {
+    EnvNAVXYTHETALATCfg.Grid2D[x] = new unsigned char [EnvNAVXYTHETALATCfg.EnvHeight_c];
+  }
+
+	//environment:
+  fscanf(fCfg, "%s", sTemp);
+  for (y = 0; y < EnvNAVXYTHETALATCfg.EnvHeight_c; y++)
+    for (x = 0; x < EnvNAVXYTHETALATCfg.EnvWidth_c; x++)
+  {
+    if(fscanf(fCfg, "%d", &dTemp) != 1)
+    {
+      printf("huh\n");
+//       printf("ERROR: incorrect format of config file --> %d\n", dTemp);
+// 				exit(1);
+    }
+    EnvNAVXYTHETALATCfg.Grid2D[x][y] = dTemp;
+  }
+
+  FILE* fEnv = fopen("grid_right_after_loaded.txt", "w");
+  printf("height: %i width: %i\n",EnvNAVXYTHETALATCfg.EnvHeight_c,EnvNAVXYTHETALATCfg.EnvWidth_c);
+
+  for(int i=0; i<EnvNAVXYTHETALATCfg.EnvHeight_c; i++)
+  {
+    for(int j=0; j<EnvNAVXYTHETALATCfg.EnvWidth_c; j++)
+    {
+      fprintf(fEnv,"%u ",EnvNAVXYTHETALATCfg.Grid2D[j][i]);
+    }
+    fprintf(fEnv,"\n");
+  }
+  fclose(fEnv);
+
 }
 
 void EnvironmentNAVXYTHETADOORLAT::GetActionCost(int SourceX, int SourceY, int SourceTheta, 
@@ -231,6 +380,179 @@ void EnvironmentNAVXYTHETADOORLAT::GetActionCost(int SourceX, int SourceY, int S
 
 }
 
+void EnvironmentNAVXYTHETADOORLAT::GetActionCostDebug(int SourceX, int SourceY, int SourceTheta, 
+                                                      int SourceDoorIntervalIndex,
+                                                      EnvNAVXYTHETALATAction_t* action,
+                                                      int* pCosttoDoorInterval0, int* pCosttoDoorInterval1, int* pBaseCost, int* pDoorCost)
+{
+
+  sbpl_2Dcell_t cell;
+  vector<int> doorangleV, prevdoorangleV;
+  vector<int> dooranglecostV, prevdooranglecostV;
+  vector<unsigned char> doorangleintV, prevdoorangleintV;
+  int i;
+  bool bPrint = false; //TODO-debugmax
+
+  //if(SourceX == 55 && SourceY == 84 && SourceTheta == 4 && SourceDoorIntervalIndex == 0)
+  //  bPrint = true; 
+
+  if(!IsValidCell(SourceX, SourceY))
+  {
+    printf("\n\n\nReturning infinite cost\n\n\n");
+    *pCosttoDoorInterval0 = INFINITECOST;
+    *pCosttoDoorInterval1 = INFINITECOST;
+    return;
+  }
+  //compute world frame offset for the action
+  double sourcex = DISCXY2CONT(SourceX, EnvNAVXYTHETALATCfg.cellsize_m);
+  double sourcey = DISCXY2CONT(SourceY, EnvNAVXYTHETALATCfg.cellsize_m);
+
+  //iterate over intermediate poses and compute the cost multiplier due to door
+  //active intervals indicate the interval that is currently reachable
+  *pCosttoDoorInterval0 = 0;
+  *pCosttoDoorInterval1 = 0;
+  bool interval_active[2];
+  interval_active[0] = interval_active[1] = false; //both inactive
+  interval_active[SourceDoorIntervalIndex] = true; //active interval
+  int doorcostmultiplier = 0;
+
+  for(i = 0; i < (int)action->intermptV.size(); i++) 
+  {
+    EnvNAVXYTHETALAT3Dpt_t point3D = action->intermptV.at(i);
+
+    //get the pose translated into the world frame
+    point3D.x = point3D.x + sourcex;
+    point3D.y = point3D.y + sourcey;
+
+    //get the door intervals together with the costs
+    doorangleV.clear();
+    dooranglecostV.clear();
+    doorangleintV.clear();
+//        printf("\n\n\n Getting action cost\n\n\n");
+    GetValidDoorAngles(point3D, &doorangleV, &dooranglecostV, &doorangleintV);
+//        printf("Size angles: %d, costs: %d\n",doorangleV.size(),dooranglecostV.size());
+
+    if(bPrint){
+      printf("pt %d: %f %f %f\n", i, point3D.x, point3D.y, point3D.theta);
+      printf("interval active: %d %d doorcostmultiplier: %d\n", interval_active[0], interval_active[1],doorcostmultiplier);
+      printf("possible door angles:\n");
+      for(int aind = 0; aind < (int)doorangleV.size(); aind++){
+        printf("doorangle=%d doorangleint=%d dooranglecost=%d\n", 
+               doorangleV.at(aind), doorangleintV.at(aind), dooranglecostV.at(aind));
+      }
+      printf("--------------\n");
+    }
+
+    if(i > 0){
+      //go over the previous interval and pick the common value with the smallest cost
+      int mincost[2];
+      mincost[0] = mincost[1] = INFINITECOST;
+      for(int cind = 0; cind < (int)doorangleV.size(); cind++){
+        for(int pind = 0; pind < (int) prevdoorangleV.size(); pind++){
+          if(doorangleV[cind] == prevdoorangleV[pind] && 
+             interval_active[prevdoorangleintV[pind]] == true){
+            //activate new interval if possible
+            interval_active[doorangleintV[cind]] = true;
+
+            if(bPrint && doorangleintV[cind] == 1){
+              printf("activating interval %d: angle %d is same as previous angle with prevdoorangleint %d\n", 
+                     doorangleintV[cind], doorangleV[cind], prevdoorangleintV[pind]); 
+            }
+
+            //track the best cost
+            if(__max(dooranglecostV[cind], prevdooranglecostV[pind]) < mincost[doorangleintV[cind]])
+              mincost[doorangleintV[cind]] = __max(dooranglecostV[cind], prevdooranglecostV[pind]);
+             }
+        }//prevdoorangles
+      }//current door angles
+      if(mincost[0] == INFINITECOST)
+        interval_active[0] = false; //nothing is reachable in this interval
+      if(mincost[1] == INFINITECOST)
+        interval_active[1] = false; //nothing is reachable in this interval
+
+      //is the worst case cost (a bit incorrect: should take min only if intervals overlap, otherwise it should be
+      //separate cost for each interval)
+      doorcostmultiplier = __max(__min(mincost[0], mincost[1]), doorcostmultiplier);
+
+    }
+    else{
+      //NOTE: it would be more efficient to return intervalindex = 2 to indicate overlap. then it would be linear
+      for(int cind = 0; cind < (int)doorangleV.size(); cind++){
+        for(int c2ind = cind+1; c2ind < (int)doorangleV.size(); c2ind++){
+          if(doorangleV[cind] == doorangleV[c2ind] && 
+             (doorangleintV[cind] == SourceDoorIntervalIndex || doorangleintV[c2ind] == SourceDoorIntervalIndex)){
+            interval_active[doorangleintV[cind]] = true;
+            interval_active[doorangleintV[c2ind]] = true;
+             }
+        }
+      }
+    }//else
+
+    //    printf("\n\n\n Skipping previous step\n\n\n");
+    if(doorcostmultiplier >= INFINITECOST){
+      *pCosttoDoorInterval0 = INFINITECOST;
+      *pCosttoDoorInterval1 = INFINITECOST;
+      return;
+    }
+
+
+    //store the old interval
+    prevdoorangleV = doorangleV;
+    prevdoorangleintV = doorangleintV;
+    prevdooranglecostV = dooranglecostV;
+
+  }
+
+  // find the highest cost cell in the footprint of the base
+  int currentmaxcost = 0;
+  for(i = 0; i < (int)action->intersectingcellsV.size(); i++) 
+  {
+    //get the cell in the map
+    cell = action->intersectingcellsV.at(i);
+    cell.x = cell.x + SourceX;
+    cell.y = cell.y + SourceY;
+
+    //check validity
+    if(!IsValidCell(cell.x, cell.y)){
+      *pCosttoDoorInterval0 = INFINITECOST;
+      *pCosttoDoorInterval1 = INFINITECOST;
+      return;
+    }
+
+    if(EnvNAVXYTHETALATCfg.Grid2D[cell.x][cell.y] > currentmaxcost)
+      currentmaxcost = EnvNAVXYTHETALATCfg.Grid2D[cell.x][cell.y];
+  }
+
+  //to ensure consistency of h2D:
+  currentmaxcost = __max(currentmaxcost, EnvNAVXYTHETALATCfg.Grid2D[SourceX][SourceY]);
+  if(!IsValidCell(SourceX + action->dX, SourceY + action->dY)){
+    *pCosttoDoorInterval0 = INFINITECOST;
+    *pCosttoDoorInterval1 = INFINITECOST;
+    return;
+  }
+
+  currentmaxcost = __max(currentmaxcost, EnvNAVXYTHETALATCfg.Grid2D[SourceX + action->dX][SourceY + action->dY]);
+
+  *pBaseCost = currentmaxcost;
+  *pDoorCost = doorcostmultiplier;
+
+  //use cell cost as multiplicative factor
+  if(interval_active[0] == true)    
+    *pCosttoDoorInterval0 = action->cost*(currentmaxcost+1)*(doorcostmultiplier + 1); 
+  else
+    *pCosttoDoorInterval0 = INFINITECOST;
+  if(interval_active[1] == true)     
+    *pCosttoDoorInterval1 =  action->cost*(currentmaxcost+1)*(doorcostmultiplier + 1); 
+  else
+    *pCosttoDoorInterval1 = INFINITECOST;
+
+  if(*pCosttoDoorInterval0 == INFINITECOST && *pCosttoDoorInterval1 == INFINITECOST)
+  {
+    printf("ERROR: both costtodoorintervals are infinite\n");
+    exit(1);
+  }
+
+}
 
 void EnvironmentNAVXYTHETADOORLAT::GetValidDoorAngles(EnvNAVXYTHETALAT3Dpt_t worldrobotpose3D, 
 						      vector<int>* doorangleV, 
@@ -421,16 +743,27 @@ void EnvironmentNAVXYTHETADOORLAT::GetSuccs(int SourceStateID, vector<int>* Succ
     actionV->clear();
     actionV->reserve(EnvNAVXYTHETALATCfg.actionwidth);
   }
-    
+
   //goal state should be absorbing
   if(SourceStateID == EnvNAVXYTHETALAT.goalstateid)
     return;
-    
+
   //get X, Y for the state
   EnvNAVXYTHETADOORHashEntry_t* HashEntry = StateID2CoordTable[SourceStateID];
 
   //printf("getting successors of %d %d %d %d\n", HashEntry->X, HashEntry->Y, HashEntry->Theta, HashEntry->door_intervalind);
-    
+
+  
+/*---------- debug DOOR VS BASE costs --------------- */
+//   int costtodoorinterval_debug[2];
+//   int door_cost = 0, base_cost = 0; 
+//   GetActionCostDebug(HashEntry->X, HashEntry->Y, HashEntry->Theta, HashEntry->door_intervalind, nav3daction, 
+//                 &costtodoorinterval_debug[0], &costtodoorinterval_debug[1], &door_cost, &base_cost);
+//   fprintf(fCosts,"state %i {%d %d %d %d}:  door_cost= %d   base_cost= %d   costtodoorinterval_0= %d   costtodoorinterval_1= %d\n",
+//           HashEntry->X, HashEntry->Y, HashEntry->Theta, HashEntry->door_intervalind, door_cost, base_cost, costtodoorinterval_debug[0], costtodoorinterval_debug[1]);
+
+/* -------------------------------------------------- */
+
   //iterate through actions
   for (aind = 0; aind < EnvNAVXYTHETALATCfg.actionwidth; aind++)
   {
@@ -446,9 +779,14 @@ void EnvironmentNAVXYTHETADOORLAT::GetSuccs(int SourceStateID, vector<int>* Succ
     //get cost
     //int newdoorintervals = 0; //0 - same, 1 - new interval, 2 - both old and new
     int costtodoorinterval[2];
-    GetActionCost(HashEntry->X, HashEntry->Y, HashEntry->Theta, HashEntry->door_intervalind, nav3daction, 
-		  &costtodoorinterval[0], &costtodoorinterval[1]);
-	
+//     GetActionCost(HashEntry->X, HashEntry->Y, HashEntry->Theta, HashEntry->door_intervalind, nav3daction,
+// 		  &costtodoorinterval[0], &costtodoorinterval[1]);
+
+    int door_cost = 0, base_cost = 0; 
+    GetActionCostDebug(HashEntry->X, HashEntry->Y, HashEntry->Theta, HashEntry->door_intervalind, nav3daction, 
+                       &costtodoorinterval[0], &costtodoorinterval[1], &door_cost, &base_cost);
+
+
     //check that the out state is not goal in term of desired door_angles
     //iterate over target door intervals
     for(int dind = 0; dind < 2; dind++){
@@ -484,10 +822,12 @@ void EnvironmentNAVXYTHETADOORLAT::GetSuccs(int SourceStateID, vector<int>* Succ
 
 	//printf("normal succ set at %d %d %d %d\n", newX,newY,newTheta,dind);
 
+        fprintf(fCosts,"state %i {%d %d %d %d}:  door_cost= %d   base_cost= %d   action_cost=%d   costtodoorinterval_0= %d   costtodoorinterval_1= %d\n",
+                OutHashEntry->stateID, OutHashEntry->X, OutHashEntry->Y, OutHashEntry->Theta, OutHashEntry->door_intervalind, door_cost, base_cost, nav3daction->cost, costtodoorinterval[0], costtodoorinterval[1]);
       }
     }//over door intervals
   }
-    
+
 #if TIME_DEBUG
   time_getsuccs += clock()-currenttime;
 #endif

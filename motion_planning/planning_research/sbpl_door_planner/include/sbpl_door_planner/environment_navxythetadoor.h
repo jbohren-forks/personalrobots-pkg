@@ -73,6 +73,8 @@ class EnvironmentNAVXYTHETADOORLAT : public EnvironmentNAVXYTHETALATTICE
   unsigned char desired_door_intervalindex;	
   unsigned char start_door_intervalindex;	
 
+  void ReadConfiguration(FILE* fCfg);
+
   //this function sets the door angles at which a goal configuration is declared EVEN if goalx,goaly,goaltheta are not satisfied.
   //The goal is ALSO declared if goalx,goaly,goaltheta are satisfied but none of the desired door angles are satisfied
   //It is therefore important to keep setting goalx,goaly,goaltheta, otherwise it will be 0s by default and may be satisfied right away. They are
@@ -173,6 +175,12 @@ class EnvironmentNAVXYTHETADOORLAT : public EnvironmentNAVXYTHETALATTICE
      printf("printvars: start door interval=%d goal door interval=%d\n", 
 	    (int)start_door_intervalindex, (int)desired_door_intervalindex);
    };
+
+   // added by Ben on 6.10.09 for debugging door and base costs - remove later
+   void GetActionCostDebug(int SourceX, int SourceY, int SourceTheta, 
+       int SourceDoorIntervalIndex,
+       EnvNAVXYTHETALATAction_t* action,
+       int* pCosttoDoorInterval0, int* pCosttoDoorInterval1, int* pBaseCost, int* pDoorCost);
 
   protected:
 

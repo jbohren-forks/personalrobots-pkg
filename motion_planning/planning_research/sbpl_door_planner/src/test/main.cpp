@@ -118,14 +118,14 @@ int planxythetadoor(int argc, char *argv[])
 
   environment_navxythetadoor.db_.door_frame_global_position_.x = 0.25;
   environment_navxythetadoor.db_.door_frame_global_position_.y = 1.1;
-  environment_navxythetadoor.db_.door_frame_global_yaw_ = 0.0;
+  environment_navxythetadoor.db_.door_frame_global_yaw_ = -1.581783; //0.0;
 
   environment_navxythetadoor.db_.door_thickness_ = 0.01;
   environment_navxythetadoor.db_.pivot_length_ = 0.0;
   environment_navxythetadoor.db_.door_length_ = 0.9;
 
   environment_navxythetadoor.db_.arm_min_workspace_radius_ = 0.0;
-  environment_navxythetadoor.db_.arm_max_workspace_radius_ = 1.1;
+  environment_navxythetadoor.db_.arm_max_workspace_radius_ = 0.85;
 
   environment_navxythetadoor.db_.arm_max_workspace_angle_ = M_PI/2.0;
   environment_navxythetadoor.db_.arm_min_workspace_angle_ = -M_PI/2.0;

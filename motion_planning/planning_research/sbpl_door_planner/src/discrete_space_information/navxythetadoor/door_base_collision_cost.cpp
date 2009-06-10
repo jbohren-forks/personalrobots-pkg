@@ -496,11 +496,7 @@ namespace door_base_collision_cost
   bool DoorBaseCollisionCost::checkBaseDoorIntersect(double angle)
   {
     // rotate the door
-//    printf("[checkBaseDoorIntersect] just rotated door message...\n");
     door_msgs::Door rotated_door = door_functions::rotateDoor(door_msg_, angle);
-
-//    printf("[checkBaseDoorIntersect] just rotated door message...\n");
-//    cout << "Rotated" <<  rotated_door;
 
     // get polygon of door
     std::vector<robot_msgs::Point32> door_polygon(4);
@@ -519,7 +515,6 @@ namespace door_base_collision_cost
     door_polygon[3].x = door_polygon64[3].x;
     door_polygon[3].y = door_polygon64[3].y;
 
-//    printf("[checkBaseDoorIntersect] checking if line segments intersect\n");
     if(doLineSegsIntersect(footprint_[0], footprint_[1], door_polygon[0], door_polygon[1]) ||
         doLineSegsIntersect(footprint_[1], footprint_[2], door_polygon[0], door_polygon[1]) ||
         doLineSegsIntersect(footprint_[2], footprint_[3], door_polygon[0], door_polygon[1]) ||
@@ -543,8 +538,7 @@ namespace door_base_collision_cost
         doLineSegsIntersect(footprint_[2], footprint_[3], door_polygon[0], door_polygon[3]) ||
         doLineSegsIntersect(footprint_[3], footprint_[0], door_polygon[0], door_polygon[3]))
       return true;
-    
-//    printf("[checkBaseDoorIntersect] base does not collide into door at angle: %.3f\n",angle);
+
     return false;
   }
 
