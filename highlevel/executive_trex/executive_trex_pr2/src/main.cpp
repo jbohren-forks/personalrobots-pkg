@@ -114,9 +114,7 @@ Publishes to (name/type):
 #include <stdlib.h>
 #include <unistd.h>
 
-bool g_playback = false;
-
-TREX::ExecutiveId node;
+TREX::ExecutiveId node; // TODO: Rename this "executive" since "node" is REALLY ambiguous
 ros::Node* g_ros_node;
 
 namespace executive_trex_pr2 {
@@ -134,7 +132,144 @@ namespace executive_trex_pr2 {
     return false;
   }
 
+  // Run parameters
+  bool g_playback,
+       g_hyper,
+       g_console;
+  
+  // Tick position management
+  TREX::TICK consoleStopTick,
+    currentTick;
 
+  /**
+   * @brief Live documentation for interactive mode
+   */
+  void printConsoleHelp() {
+    std::cout << "Interactive mode." << std::endl;
+    std::cout << "Options:" << std::endl;
+    std::cout << " Q :- Quit" << std::endl;
+    std::cout << " N :- Next" << std::endl;
+    std::cout << " G :- Goto <tick> e.g. g100" << std::endl;
+    std::cout << " R :- Reload Debug.cfg" << std::endl;
+    std::cout << " + :- Enable pattern e.g. '+Agent'" << std::endl;
+    std::cout << " - :- Disable pattern e.g. '-Agent'" << std::endl;
+    std::cout << " ! :- Disable all debug messages" << std::endl;
+    std::cout << " PW :- Start PlanWorks output" << std::endl;
+    std::cout << " EPW :- End PlanWorks output" << std::endl;
+    std::cout << " H :- Help" << std::endl;
+  }
+
+  
+  void printConsolePopup() {
+    std::string cmdString, cmdStringRaw;
+    bool cmdValid = false;
+
+    std::cout << "At tick " << currentTick << ", H for help." << std::endl;
+    while (!cmdValid) {
+      std::cout << "> ";
+      getline(std::cin, cmdStringRaw);
+      cmdString = cmdStringRaw;
+      std::transform(cmdString.begin(), cmdString.end(), cmdString.begin(), toupper);
+      const char cmd = cmdString.length() == 0 ? 0 : cmdString.at(0);
+      if (!cmd) {
+	cmdValid = false;
+      } else if(cmd == 'H' || cmd == 'h'){
+	// Print help message
+	printConsoleHelp();
+	cmdValid = false;
+      } else if(cmd == 'Q' || cmd == 'q'){
+	// Quit
+	std::cout << "Goodbye :-)" << std::endl;
+	cmdValid = true;
+	exit(0);
+      } else if(cmd == 'N' || cmd == 'n'){
+	// Step to the next tick
+	consoleStopTick = currentTick + 1;
+	cmdValid = true;
+      } else if(cmd == 'G' || cmd == 'g'){
+	// Go to an absolute tick step
+	
+	std::string tickStr = cmdString.substr(1);
+
+	if (atoi(tickStr.c_str()) > 0) {
+	  // Set which tick to step to
+	  consoleStopTick = (TREX::TICK)atoi(tickStr.c_str());
+	  cmdValid = true;
+	  
+	  // Check if the desired tick is in the past
+	  if (consoleStopTick < currentTick) {
+	    cmdValid = true;
+	    std::cout << "Doing a rewind." << std::endl;
+
+	    // Reset the executive
+	    node->reset();
+
+	    // Re-initialize the executive with the initial arguments
+	    node = TREX::Executive::request(g_playback, g_hyper);
+	  } else if (currentTick == consoleStopTick) {
+	    cmdValid = false;
+	    std::cout << "Already at that tick." << std::endl;
+	  }
+	} else {
+	  // No number entered
+	  std::cout << "Please enter a number." << std::endl;
+	  cmdValid = false;
+	}
+      } else if(cmd == 'R' || cmd == 'r'){
+	// Reload the debug configuration
+	std::cout << "Reading debug.cfg." << std::endl;
+	std::ifstream config(TREX::findFile("Debug.cfg").c_str());
+	DebugMessage::readConfigFile(config);
+	cmdValid = false;
+      } else if(cmdString == "PW"){
+	std::cout << "Enable plan works." << std::endl;
+	DebugMessage::enableMatchingMsgs("", "PlanWorks");
+      } else if(cmdString == "EPW"){
+	std::cout << "Disable plan works." << std::endl;
+	DebugMessage::disableMatchingMsgs("", "PlanWorks");
+      } else if(cmd == '+'){
+	std::string pattern = cmdStringRaw.substr(1);
+	std::cout << "Enable pattern: " << pattern << std::endl;
+	DebugMessage::enableMatchingMsgs("", pattern);
+	cmdValid = false;
+      } else if(cmd == '-'){
+	std::string pattern = cmdStringRaw.substr(1);
+	std::cout << "Disable pattern: " << pattern << std::endl;
+	DebugMessage::disableMatchingMsgs("", pattern);
+	cmdValid = false;
+      } else if(cmd == '!'){
+	std::cout << "Disable all." << std::endl;
+	DebugMessage::disableAll();
+	cmdValid = false;
+      } else {
+	std::cout << "Invalid command. Type \"H\" for help." << std::endl;
+	cmdValid = false;
+      }
+    }
+  }
+
+  /**
+   * @brief Console interaction loop
+   */
+  void interactiveRun() {
+
+    while (true) {
+      // Grab the current tick
+      currentTick = TREX::Agent::instance()->getCurrentTick();
+
+      // If this is the stop tick, display prompt
+      if (currentTick == consoleStopTick) {
+	printConsolePopup();
+      }
+
+      // Step agent forward
+      if (!node->step()) {
+	// Mission complete
+	std::cout << "Agent has completed its mission." << std::endl;
+	printConsolePopup();
+      }
+    }
+  }
 }
 
 /**
@@ -164,6 +299,8 @@ TEST(trex, validateOutput){
 
 int main(int argc, char **argv)
 {
+  using namespace executive_trex_pr2;
+
   signal(SIGINT,  &TREX::signalHandler);
   signal(SIGTERM, &TREX::signalHandler);
   signal(SIGQUIT, &TREX::signalHandler);
@@ -172,42 +309,52 @@ int main(int argc, char **argv)
   ros::init(argc, argv);
   g_ros_node = new ros::Node("trex");
 
+  // Display help if requested
   if(executive_trex_pr2::isArg(argc, argv, "--help")){
     std::cout << "\n";
     std::cout << "Welcome! TREX is an executive for supervisory  control of an autonomous system. TREX requires the following ROS parameters:\n";
     std::cout << "* trex/input_file: An xml file that defines the agent control configuration.\n";
     std::cout << "* trex/path:       A search path for locating input files. This should include a location for\n";
     std::cout << "                   the input configuration file, as well as locations for agent initialization files (nddl files)\n";
-    std::cout << "* trex/start_dir   A directory from which to start the search for input files";
+    std::cout << "* trex/start_dir   A directory from which to start the search for input files\n";
     std::cout << "* trex/log_dir:    An output directory for TREX log files.\n";
     std::cout << "\n";
-    std::cout << "Usage: trexfast  [--help | --playback]\n";
+    std::cout << "Usage: trexfast  [--help | [--playback | --hyper ] [--console]]\n";
     std::cout << "--help:            Provides this message!\n";
     std::cout << "--playback:        Use if debugging a previous run. Expects an xml observation log file as input named <your_agent_name>.log\n";
-    std::cout << "                   and a clock log file names clock.log.\n";
-    std::cout << "--warp:            Use unlimited steps per tick in playback, ignore clock.log.\n";
-    std::cout << "--hyper:           Run at 100% CPU for debugging\n";
+    std::cout << "                   and a clock log file names clock.log. In each tick, this will enforce that the Agent is allowed only as many\n";
+    std::cout << "                   execution steps that occured during the original run.\n";
+    std::cout << "--hyper:           Run at 100% CPU for debugging. This enforces no limit on execution steps during each tick, and does not\n";
+    std::cout << "                   sleep if there is time left before the next tick.\n";
+    std::cout << "--console:         Run in interactive mode. This will have no effect on the number of execution steps during each tick.\n";
     return 0;
   }
 
   int success = 0;
 
-  bool playback = executive_trex_pr2::isArg(argc, argv, "--playback");
-  bool warp = executive_trex_pr2::isArg(argc, argv, "--warp");
-  bool hyper = executive_trex_pr2::isArg(argc, argv, "--hyper");
+  // Process input arguments
+  g_playback = executive_trex_pr2::isArg(argc, argv, "--playback");
+  g_hyper = executive_trex_pr2::isArg(argc, argv, "--hyper");
+  g_console = executive_trex_pr2::isArg(argc, argv, "--console");
 
-  if (!playback && warp) {
-    warp = false;
-    ROS_ERROR("--warp should only be used in playback");
-  }
-  if (playback && hyper) {
-    ROS_ERROR("--hyper should not be used in playback");
-    hyper = false;
+  // Hyper and playback make different assumptions about the execution steps in each tick
+  if (g_playback && g_hyper) {
+    ROS_ERROR("--hyper should not be used in playback. Disabling --hyper.\n");
+    g_hyper = false;
   }
 
   try{
-    node = TREX::Executive::request(playback, warp, hyper);
-    node->run();
+    // Get executive singleton
+    node = TREX::Executive::request(g_playback, g_hyper);
+
+    if(g_console) {
+      // Run with interactive stepping
+      node->interactiveInit();
+      interactiveRun();
+    } else {
+      // Run in nonstop mode
+      node->run();
+    }
   }
   catch(char* e){
     ROS_INFO("Caught %s. Shutting down.\n", e);

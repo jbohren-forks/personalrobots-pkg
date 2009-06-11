@@ -75,9 +75,9 @@ namespace TREX {
   /**
    * @brief Singleton accessor
    */
-  ExecutiveId Executive::request(bool playback, bool warp, bool hyper){
+  ExecutiveId Executive::request(bool playback, bool hyper){
     if(s_id == ExecutiveId::noId()){
-      new Executive(playback, warp, hyper);
+      new Executive(playback, hyper);
     }
     return s_id;
   }
@@ -85,8 +85,8 @@ namespace TREX {
   /**
    * @brief Executive constructor sets up the trex agent instance
    */
-  Executive::Executive(bool playback, bool warp, bool hyper)
-    : m_id(this), watchDogCycleTime_(0.1), agent_clock_(NULL), debug_file_("Debug.log"), input_xml_root_(NULL), playback_(playback), warp_(warp), hyper_(hyper)
+  Executive::Executive(bool playback, bool hyper)
+    : m_id(this), watchDogCycleTime_(0.1), agent_clock_(NULL), debug_file_("Debug.log"), input_xml_root_(NULL), playback_(playback), hyper_(hyper)
   {
     s_id = m_id;
     m_refCount = 0;
@@ -146,12 +146,15 @@ namespace TREX {
     // Set up the clock
     int finalTick = 1;
     input_xml_root_->Attribute("finalTick", &finalTick);
+
     if (playback_) {
-      agent_clock_ = new TREX::PlaybackClock((time_limit == 0 ? finalTick : time_limit), warp, input_xml_root_);
+      // Run the agent off of a clock that reads from the log file "clock.log"
+      agent_clock_ = new TREX::PlaybackClock(true);
     } else if (hyper_) {
+      // Run the agent off of a clock that runs as fast as possible
       agent_clock_ = new TREX::PseudoClock(0, 50, true);
     } else {
-      // Allocate a real time clock based on input of update_rate
+      // Allocate a real time clock based on input of update_rate, and write out to the log file "clock.log"
       const double tick_duration = (update_rate <= 0 ? 1.0 : 1.0 / update_rate);
       agent_clock_ = new TREX::LogClock(tick_duration);
     }
@@ -171,11 +174,15 @@ namespace TREX {
     ROS_INFO("Shutting down at tick(%d)\n", TREX::Agent::instance()->getCurrentTick());
 
     // Terminate the agent
+    ROS_INFO("Terminating agent...\n");
     TREX::Agent::terminate();
-    TREX::Clock::sleep(3);
-    TREX::Agent::reset();
-
+    TREX::Clock::sleep(5);
+    ROS_INFO("Cleaning up log...\n");
     TREX::Agent::cleanupLog();
+    ROS_INFO("Resetting agent...\n");
+    TREX::Agent::reset(); //FIXME: This does not work.
+    ROS_INFO("Destructing Executive...\n");
+
 
     // Deallocate clock
     if(agent_clock_ != NULL)
@@ -192,28 +199,44 @@ namespace TREX {
   }
 
   /**
-   * @broef Kicks off all the work to do.
+   * @brief Kicks off all the work to do.
    */
   void Executive::run(){
-    if (playback_) {
-      ROS_INFO("Stepping the executive.\n");
-      agent_clock_->doStart();
-      TREX::LogManager::instance().handleInit();
-      while (!((TREX::PlaybackClock*)agent_clock_)->isTimedOut()) {
-	if (((TREX::PlaybackClock*)agent_clock_)->isAtGoalTick()) {
-	  ((TREX::PlaybackClock*)agent_clock_)->consolePopup();
-	}
-	if (!TREX::Agent::instance()->doNext()) {
-	  std::cout << "Agent has completed its mission." << std::endl;
-	  ((TREX::PlaybackClock*)agent_clock_)->consolePopup();
-	}
-      }
-    } else {
-      ROS_INFO("Running the executive.\n");
-      TREX::Agent::instance()->run();
+    ROS_INFO("Running the executive in nonstop mode.\n");
+    TREX::Agent::instance()->run();
+    ROS_INFO("Agent has finished running.\n");
+  }
+
+
+  /**
+   * @brief Initializes interactive mode. This is some work usually done by Agent::run()
+   */
+  void Executive::interactiveInit() {
+    // Start the clock
+    agent_clock_->doStart();
+
+    // Initialize agent logging
+    TREX::LogManager::instance().handleInit();
+
+    ROS_INFO("Running the executive in interactive mode.\n");
+  }
+
+  /**
+   * @brief Steps the executive agent by one step
+   */
+  bool Executive::step(){
+    return TREX::Agent::instance()->doNext();
+  }
+
+
+  void Executive::reset(){
+    checkError(s_id.isNoId() || s_id.isValid(), "Bad Executive Id.");
+
+    if(s_id.isId()) {
+      delete (Executive*) s_id;
     }
 
-    ROS_INFO("Agent has finished running.\n");
+    s_id = ExecutiveId::noId();
   }
 
   void Executive::watchDogLoop(){

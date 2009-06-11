@@ -24,14 +24,14 @@ namespace TREX{
     /**
      * Creates and instance of the singleton and adds a reference.
      */
-    static ExecutiveId request(bool playback = false, bool warp = false, bool hyper = false);
+    static ExecutiveId request(bool playback = false, bool hyper = false);
 
     /**
      * Releases a reference to the singleton.
      */
     static void release();
 
-    Executive(bool playback, bool warp, bool hyper);
+    Executive(bool playback, bool hyper);
 
     ~Executive();
 
@@ -55,6 +55,22 @@ namespace TREX{
       ros::Node::instance()->publish(_topic, msg);
     }
     */
+
+    /**
+     * @brief Initializes interactive mode.
+     */
+    void interactiveInit();
+
+    /**
+     * @brief Step the executive agent by one step
+     */
+    bool step();
+
+    /**
+     * @brief Allow a reset of the current instance - deallocate it.
+     */
+    void reset();
+
   private:
 
     /**

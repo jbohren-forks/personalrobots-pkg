@@ -6,17 +6,20 @@
 #include <pthread.h>
 #include <fstream>
 
+#include <ros/time.h>
+
 /**
  * @brief Declaration of clock interface and implementation sub-classes
  */
 namespace TREX {
   /**
-   * @brief A clock that monitors time on a separate thread and generates updates to the tick.
+   * @brief A clock that monitors time on a separate thread and generates updates to the tick and writes time out to "clock.log".
    */
   class LogClock: public Clock {
   public:
     LogClock(double secondsPerTick, bool stats = true);
 
+    virtual ~LogClock();
     /**
      * @brief Will idle till this is called.
      */
@@ -36,6 +39,8 @@ namespace TREX {
      */
     static void* threadRunner(void* clk);
 
+  protected:
+
   private:
     unsigned int m_gets;
     TICK m_tick;
@@ -43,13 +48,17 @@ namespace TREX {
     pthread_t m_thread;
     pthread_mutex_t m_lock;
     std::ofstream m_file;
+    bool m_enabled;
+    ros::Time m_start_time;
   };
   /**
-   * @brief A clock that monitors time on a separate thread and generates updates to the tick.
+   * @brief A clock that reads time out of "clock.log" and generates updates to the tick.
    */
   class PlaybackClock: public Clock {
   public:
-    PlaybackClock(unsigned int finalTick, bool warp, TiXmlElement* root, bool stats = true);
+    PlaybackClock(bool stats = true);
+
+    virtual ~PlaybackClock();
 
     /**
      * @brief Will idle till this is called.
@@ -60,29 +69,12 @@ namespace TREX {
      * @brief Retrieve the tick
      */
     TICK getNextTick();
-    /**
-     * @brief Get user input.
-     */
-    void consolePopup();
-    /**
-     * @brief Returns true if we are at the goal tick == should pop up the console.
-     */
-    bool isAtGoalTick();
-    /**
-     * @brief Returns true if this system has timed out.
-     */
-    bool isTimedOut();
-  private:
-    /**
-     * @brief Generate help console popup.
-     */
-    void printHelp();
 
-    unsigned int m_gets, m_finalTick;
-    TICK m_tick, m_stopTick; 
-    TiXmlElement* m_root;
+  private:
+
+    unsigned int m_gets;
+    TICK m_tick; 
     FILE* m_file;
-    bool m_timedOut;
   };
 }
 
