@@ -75,6 +75,18 @@ void planning_environment::KinematicModelStateMonitor::setupRSM(void)
     }
 }
 
+const std::string& planning_environment::KinematicModelStateMonitor::getFrameId(void) const
+{
+    if (frame_id_.empty())
+    {
+	if (includePose_)
+	    waitForPose();
+	if (frame_id_.empty())
+	    ROS_ERROR("Cannot get frame ID for robot state");
+    }
+    return frame_id_;
+}
+
 void planning_environment::KinematicModelStateMonitor::mechanismStateCallback(const robot_msgs::MechanismStateConstPtr &mechanismState)
 {
     bool change = !haveMechanismState_;
@@ -167,7 +179,8 @@ void planning_environment::KinematicModelStateMonitor::waitForState(void) const
 	ros::spinOnce();
 	ros::Duration().fromSec(0.05).sleep();
     }
-    ROS_INFO("Mechanism state received!");
+    if (haveMechanismState_)
+	ROS_INFO("Mechanism state received!");
 }
 
 void planning_environment::KinematicModelStateMonitor::waitForPose(void) const
@@ -178,7 +191,8 @@ void planning_environment::KinematicModelStateMonitor::waitForPose(void) const
 	ros::spinOnce();
 	ros::Duration().fromSec(0.05).sleep();
     }
-    ROS_INFO("Robot pose received!");
+    if (havePose_)
+	ROS_INFO("Robot pose received!");
 }
 
 bool planning_environment::KinematicModelStateMonitor::isStateUpdated(double sec) const

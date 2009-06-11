@@ -56,7 +56,7 @@ public:
     KinematicPlanning(void)
     {
 	m_collisionModels = new planning_environment::CollisionModels("robot_description");
-	m_collisionSpaceMonitor = new planning_environment::CollisionSpaceMonitor(m_collisionModels);
+	m_collisionSpaceMonitor = new planning_environment::CollisionSpaceMonitor(m_collisionModels, false);
 	m_collisionSpaceMonitor->setOnAfterMapUpdateCallback(boost::bind(&KinematicPlanning::afterWorldUpdate, this, _1));
 	
 	m_replanID = 0;
@@ -106,12 +106,16 @@ public:
 	    ROS_INFO("Known models:");    
 	    for (unsigned int i = 0 ; i < mlist.size() ; ++i)
 		ROS_INFO("  * %s", mlist[i].c_str());    
+
+	    m_collisionSpaceMonitor->waitForState();
+	    ROS_INFO("Working in frame %s", m_collisionSpaceMonitor->getFrameId().c_str());
 	    
 	    startPublishingStatus();
 	}
 	
 	if (mlist.size() > 0)
 	{
+	    
 	    ROS_INFO("Motion planning is now available.");
 	    ros::spin();
 	}

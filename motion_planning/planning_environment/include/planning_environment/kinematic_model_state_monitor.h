@@ -64,7 +64,7 @@ namespace planning_environment
     {
     public:
 	
-	KinematicModelStateMonitor(RobotModels *rm, bool includePose = false)
+	KinematicModelStateMonitor(RobotModels *rm, bool includePose)
 	{
 	    rm_ = rm;
 	    includePose_ = includePose;
@@ -102,10 +102,7 @@ namespace planning_environment
 	}
 	
 	/** \brief Return the frame id of the state */
-	const std::string& getFrameId(void) const
-	{
-	    return frame_id_;
-	}
+	const std::string& getFrameId(void) const;
 	
 	/** \brief Return true if a pose has been received */
 	bool havePose(void) const	    
@@ -142,6 +139,12 @@ namespace planning_environment
 
 	/** \brief Return true if a full mechanism state has been received in the last sec seconds */
 	bool isStateUpdated(double sec) const;
+	
+	/** \brief Return true if the pose is included in the state */
+	bool isPoseIncluded(void) const
+	{
+	    return includePose_;
+	}
 	
 	/** \brief Output the current state as ROS INFO */
 	void printRobotState(void) const;

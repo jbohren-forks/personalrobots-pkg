@@ -62,8 +62,8 @@ namespace planning_environment
     {
     public:
 	
-	CollisionSpaceMonitor(CollisionModels *cm) : KinematicModelStateMonitor(static_cast<RobotModels*>(cm), true),
-						     tf_(*ros::Node::instance())
+	CollisionSpaceMonitor(CollisionModels *cm, bool includePose) : KinematicModelStateMonitor(static_cast<RobotModels*>(cm), includePose),
+								       tf_(*ros::Node::instance())
 	{
 	    cm_ = cm;
 	    setupCSM();

@@ -52,7 +52,7 @@ public:
     TestExecutionPath(void)
     {
 	rm_ = new planning_environment::RobotModels("robot_description");
-	kmsm_ = new planning_environment::KinematicModelStateMonitor(rm_);
+	kmsm_ = new planning_environment::KinematicModelStateMonitor(rm_, false);
 	jointCommandPublisher_ = nh_.advertise<robot_msgs::JointTraj>("right_arm/trajectory_controller/trajectory_command", 1);
 	sleep_duration_ = 4;
 	use_topic_ = false;

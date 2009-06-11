@@ -199,6 +199,9 @@ void kinematic_planning::RKPRequestHandler::update(void)
     
     /* add goal state */
     setupGoalState(m_activePSetup, m_activeReq);	    
+    
+    std::vector<double> rho(m_activePSetup->si->getStateDimension(), 0.1);
+    m_activePSetup->si->fixInvalidInputStates(rho, rho, 100);
 }
 
 /** Validate common space parameters */

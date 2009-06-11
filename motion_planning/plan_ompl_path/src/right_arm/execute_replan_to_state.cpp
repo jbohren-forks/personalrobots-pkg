@@ -61,7 +61,7 @@ public:
 	plan_id_ = -1;
 	robot_stopped_ = true;
 	rm_ = new planning_environment::RobotModels("robot_description");
-	kmsm_ = new planning_environment::KinematicModelStateMonitor(rm_);
+	kmsm_ = new planning_environment::KinematicModelStateMonitor(rm_, false);
 	
 	// we use the topic for sending commands to the controller, so we need to advertise it
 	jointCommandPublisher_ = nh_.advertise<robot_msgs::JointTraj>("right_arm/trajectory_controller/trajectory_command", 1);
@@ -101,7 +101,7 @@ public:
 	}
 	
 	req.goal_constraints.joint[0].min[0] = req.goal_constraints.joint[0].max[0] = -1.5;
-	req.goal_constraints.joint[1].min[0] = req.goal_constraints.joint[1].max[0] = -0.2;
+	req.goal_constraints.joint[3].min[0] = req.goal_constraints.joint[3].max[0] = -0.2;
 	req.goal_constraints.joint[5].min[0] = req.goal_constraints.joint[5].max[0] = 0.15;
 
 	// allow 1 second computation time

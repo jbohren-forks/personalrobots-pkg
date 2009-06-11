@@ -118,11 +118,11 @@ void kinematic_planning::GoalToState::setup(ompl::sb::SpaceInformationKinematic 
     {
 	stateVals_[i] = (bounds_[i].first + bounds_[i].second) / 2.0;
 	// increase bounds by epsilon so we do not have errors when checking
-	bounds_[i].first  -= 1e-12;
-	bounds_[i].second += 1e-12;
+	bounds_[i].first  -= ompl::STATE_EPSILON;
+	bounds_[i].second += ompl::STATE_EPSILON;
     }
 
-    threshold = 1e-12;	    
+    threshold = ompl::STATE_EPSILON;	    
 }
 
 double kinematic_planning::GoalToPosition::distanceGoal(const ompl::base::State *state) const
