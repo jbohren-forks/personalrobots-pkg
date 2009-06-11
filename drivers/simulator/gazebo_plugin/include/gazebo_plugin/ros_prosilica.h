@@ -124,6 +124,8 @@ class RosProsilica : public Controller
   /// \brief Put camera data to the ROS topic
   private: void PutCameraDataWithROI(int x, int y, int w, int h);
 
+  /// \brief does nothing for now
+  private: static void mouse_cb(int event, int x, int y, int flags, void* param) { };
 
   /// \brief Service call to publish images, cam info
   private: bool camInfoService(prosilica_cam::CamInfo::Request &req,

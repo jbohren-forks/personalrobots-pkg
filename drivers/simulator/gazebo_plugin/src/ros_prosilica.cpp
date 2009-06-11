@@ -47,8 +47,11 @@
 #include <image_msgs/Image.h>
 #include <image_msgs/CamInfo.h>
 #include <image_msgs/FillImage.h>
-#include <opencv_latest/CvBridge.h>
 #include <diagnostic_updater/diagnostic_updater.h>
+
+#include <opencv_latest/CvBridge.h>
+#include <opencv/cv.h>
+#include <opencv/highgui.h>
 
 #include <cv.h>
 #include <cvwimage.h>
@@ -57,6 +60,7 @@
 #include <boost/bind.hpp>
 #include <boost/tokenizer.hpp>
 #include <boost/thread.hpp>
+#include <boost/thread/recursive_mutex.hpp>
 #include <string>
 
 using namespace gazebo;
@@ -230,6 +234,8 @@ bool RosProsilica::triggeredGrab(prosilica_cam::PolledImage::Request &req,
                                  prosilica_cam::PolledImage::Response &res)
 {
 
+  boost::recursive_mutex::scoped_lock lock(*Simulator::Instance()->GetMRMutex());
+
   const unsigned char *src;
 
   // Get a pointer to image data
@@ -290,6 +296,7 @@ bool RosProsilica::triggeredGrab(prosilica_cam::PolledImage::Request &req,
     // copy data into image
     this->imageMsg.header.frame_id    = this->frameName;
     this->imageMsg.header.stamp       = ros::Time((unsigned long)floor(Simulator::Instance()->GetSimTime()));
+
     // copy data into ROI image
     this->roiImageMsg = &res.image;
     this->roiImageMsg->header.frame_id = this->frameName;
@@ -303,20 +310,21 @@ bool RosProsilica::triggeredGrab(prosilica_cam::PolledImage::Request &req,
                 this->height         ,this->width ,this->depth,
                 this->format.c_str() , "uint8"    ,
                 (void*)src );
-
-
-      // for (int i=0;i<req.width;i++)
-      // for (int j=0;j<req.height;j++)
-      // for (int k=0;k<this->depth;k++)
-      // {
-      // }
-      fillImage(*this->roiImageMsg   ,"image_raw" ,
-                this->height         ,this->width ,this->depth,
-                this->format.c_str() ,"uint8"     ,
-                (void*)src );
-
       // publish to ros, thumbnails and rect image?
       rosnode->publish(this->imageTopicName,this->imageMsg);
+
+      image_msgs::CvBridge img_bridge_;
+      img_bridge_.fromImage(this->imageMsg,this->format.c_str());
+
+      //cvNamedWindow("showme",CV_WINDOW_AUTOSIZE);
+      //cvSetMouseCallback("showme", &RosProsilica::mouse_cb, this);
+      //cvStartWindowThread();
+
+      //cvShowImage("showme",img_bridge_.toIpl());
+
+      cvSetImageROI(img_bridge_.toIpl(),cvRect(req.region_x,req.region_y,req.width,req.height));
+      img_bridge_.fromIpltoRosImage(img_bridge_.toIpl(),*this->roiImageMsg);
+
     }
 
 
@@ -325,17 +333,6 @@ bool RosProsilica::triggeredGrab(prosilica_cam::PolledImage::Request &req,
 
   return true;
 
-#if 0
-  ROS_ERROR("Prosilica exception: %s\n\tx = %d, y = %d, width = %d, height = %d",
-            e.what(), req.region_x, req.region_y, req.width, req.height);
-  
-  image_msgs::Image &image = res.image;
-  image_msgs::Image &rect_image = res.image : rect_img_;
-  bool success = processFrame(frame, image, rect_image, res.cam_info);
-  if (success)
-    publishTopics(image, rect_image, res.cam_info);
-  return success;
-#endif
 
 }
 
@@ -398,4 +395,6 @@ void RosProsilica::PutCameraDataWithROI(int x, int y, int w, int h)
 {
 
 }
+
+
 
