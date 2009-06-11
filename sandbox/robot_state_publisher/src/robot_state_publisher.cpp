@@ -48,7 +48,8 @@ namespace robot_state_publisher{
 RobotStatePublisher::RobotStatePublisher(const Tree& tree)
   : n_("robot_state_publisher"),
     publish_rate_(0.0),
-    tree_(tree)
+    tree_(tree),
+    use_tf_broadcaster_(true)
 {
   // set publish frequency
   double publish_freq;
@@ -63,6 +64,15 @@ RobotStatePublisher::RobotStatePublisher(const Tree& tree)
 
   // subscribe to mechanism_state
   mech_state_subscr_ =  n_.subscribe("/mechanism_state", 1, &RobotStatePublisher::callback, this);
+
+  // advertise tf message
+  if (!use_tf_broadcaster_)
+    tf_publisher_ = n_.advertise<tf::tfMessage>("/tf_message", 5);
+
+  // get root segment
+  SegmentMap::const_iterator root = tree.getSegment("root");
+  if (root->second.children.begin() != root->second.children.end())
+    root_ = (*root->second.children.begin())->first;
 }
 
 
@@ -81,15 +91,45 @@ void RobotStatePublisher::callback(const MechanismStateConstPtr& state)
   // calculate transforms form root to every segment in tree
   map<string, Frame> frames;
   solver_->JntToCart(joint_positions, frames);
+  tf::tfMessage tf_msg; tf_msg.transforms.resize(frames.size()-1);
+  robot_msgs::TransformStamped trans; 
 
-  // send transforms to tf
-  for (map<string, Frame>::const_iterator f=frames.begin(); f!=frames.end(); f++){
-    //cout << "frame " << f->first << " = " << f->second.p << endl;
-    double z, y, x;
-    f->second.M.GetEulerZYX(z,y,x);
-    tf_.sendTransform(tf::Transform(tf::Quaternion(z, y, x), tf::Vector3(f->second.p(0), f->second.p(1), f->second.p(2))), state->header.stamp, tf::remap(tf_prefix_, f->first + "_test"), "root");
+  map<string, Frame>::const_iterator root = frames.find(root_);
+  if (root != frames.end()){
+    // remove root from published poses
+    Frame offset = root->second.Inverse();
+    unsigned int i = 0;
+    // send transforms to tf
+    for (map<string, Frame>::const_iterator f=frames.begin(); f!=frames.end(); f++){
+      if (f != root){
+	Frame frame = offset * f->second;
+	if (use_tf_broadcaster_){
+	  double z, y, x;
+	  frame.M.GetEulerZYX(z,y,x);
+	  tf_.sendTransform(tf::Transform(tf::Quaternion(z, y, x), tf::Vector3(frame.p(0), frame.p(1), frame.p(2))), state->header.stamp, tf::remap(tf_prefix_, f->first), root->first);
+	}
+	else{
+	  double qx, qy, qz, qw;
+	  frame.M.GetQuaternion(qx, qy, qz, qw);
+	  trans.header.stamp = state->header.stamp;
+	  trans.header.frame_id = tf::remap(tf_prefix_, f->first);
+	  trans.parent_id = root->first;
+	  trans.transform.translation.x = frame.p(0);
+	  trans.transform.translation.y = frame.p(1);
+	  trans.transform.translation.z = frame.p(2);
+	  trans.transform.rotation.w = qw;
+	  trans.transform.rotation.x = qx;
+	  trans.transform.rotation.y = qy;
+	  trans.transform.rotation.z = qz;
+	  tf_msg.transforms[i++] = trans;
+	}
+      }
+    }
+    if (!use_tf_broadcaster_)
+      tf_publisher_.publish(tf_msg);
   }
-
+  else
+    cout << "failed to find root" << endl;
   publish_rate_.sleep();
 }
 

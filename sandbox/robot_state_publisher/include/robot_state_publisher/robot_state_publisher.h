@@ -60,10 +60,13 @@ private:
 
   ros::NodeHandle n_;
   tf::TransformBroadcaster tf_;
+  ros::Publisher tf_publisher_;
   ros::Subscriber mech_state_subscr_;
   ros::Rate publish_rate_;
   KDL::Tree tree_;
   boost::scoped_ptr<KDL::TreeFkSolverPosFull_recursive> solver_;
+  std::string root_;
+  bool use_tf_broadcaster_;
   std::string tf_prefix_;
 };
 
