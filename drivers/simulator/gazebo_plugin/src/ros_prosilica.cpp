@@ -302,30 +302,28 @@ bool RosProsilica::triggeredGrab(prosilica_cam::PolledImage::Request &req,
     this->roiImageMsg->header.frame_id = this->frameName;
     this->roiImageMsg->header.stamp    = ros::Time((unsigned long)floor(Simulator::Instance()->GetSimTime()));
 
+    // copy from src to imageMsg
+    fillImage(this->imageMsg      ,"image_raw" ,
+              this->height         ,this->width ,this->depth,
+              this->format.c_str() , "uint8"    ,
+              (void*)src );
+    // publish to ros, thumbnails and rect image?
     /// @todo: don't bother if there are no subscribers
     if (this->rosnode->numSubscribers(this->imageTopicName) > 0)
-    {
-      // copy from src to imageMsg
-      fillImage(this->imageMsg      ,"image_raw" ,
-                this->height         ,this->width ,this->depth,
-                this->format.c_str() , "uint8"    ,
-                (void*)src );
-      // publish to ros, thumbnails and rect image?
       rosnode->publish(this->imageTopicName,this->imageMsg);
 
-      image_msgs::CvBridge img_bridge_;
-      img_bridge_.fromImage(this->imageMsg,this->format.c_str());
+    image_msgs::CvBridge img_bridge_;
+    img_bridge_.fromImage(this->imageMsg,this->format.c_str());
 
-      //cvNamedWindow("showme",CV_WINDOW_AUTOSIZE);
-      //cvSetMouseCallback("showme", &RosProsilica::mouse_cb, this);
-      //cvStartWindowThread();
+    //cvNamedWindow("showme",CV_WINDOW_AUTOSIZE);
+    //cvSetMouseCallback("showme", &RosProsilica::mouse_cb, this);
+    //cvStartWindowThread();
 
-      //cvShowImage("showme",img_bridge_.toIpl());
+    //cvShowImage("showme",img_bridge_.toIpl());
 
-      cvSetImageROI(img_bridge_.toIpl(),cvRect(req.region_x,req.region_y,req.width,req.height));
-      img_bridge_.fromIpltoRosImage(img_bridge_.toIpl(),*this->roiImageMsg);
+    cvSetImageROI(img_bridge_.toIpl(),cvRect(req.region_x,req.region_y,req.width,req.height));
+    img_bridge_.fromIpltoRosImage(img_bridge_.toIpl(),*this->roiImageMsg);
 
-    }
 
 
     this->lock.unlock();
