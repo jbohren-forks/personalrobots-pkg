@@ -39,7 +39,7 @@
 
 double kinematic_planning::GoalToState::distanceGoal(const ompl::base::State *s) const
 {
-    const double *vals = static_cast<const ompl::sb::State*>(state)->values;
+    const double *vals = static_cast<const ompl::sb::State*>(s)->values;
     for (int i = 0 ; i < dim_; ++i)
 	if (bounds_[i].first > vals[i])
 	    cVals_[i] = stateVals_[i] + bounds_[i].first - vals[i];

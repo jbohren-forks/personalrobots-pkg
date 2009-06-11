@@ -114,7 +114,7 @@ public:
 	if (client.call(req, res))
 	    plan_id_ = res.id;
 	else
-	    ROS_ERROR("Service 'plan_kinematic_path_state' failed");
+	    ROS_ERROR("Service 'plan_kinematic_path' failed");
     }
     
     void run(void)
