@@ -59,5 +59,6 @@ private:
     return k * stride2_ + j * stride1_ + i;
   }
 
-  std::vector<unsigned char> kernel_;
+  //std::vector<unsigned char> kernel_;
+  unsigned char *kernel_;
 };

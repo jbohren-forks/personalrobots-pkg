@@ -39,6 +39,7 @@
 //#endif
 
 #include <cmath>
+#include <malloc.h>
 
 #include <string.h> // for memset(3)
 
@@ -52,7 +53,8 @@ Voxel3d::Voxel3d(int size1, int size2, int size3)
   reset();
 
   // Constructs the kernel
-  kernel_.resize(16*17*17);
+  //kernel_.resize(16*17*17);
+  kernel_ = (unsigned char*)memalign(16, 16*17*17);
   for (int k = 0; k < 17; ++k) {
     for (int j = 0; j < 17; ++j) {
       for (int i = 0; i < 16; ++i) {
@@ -65,6 +67,8 @@ Voxel3d::Voxel3d(int size1, int size2, int size3)
 
 Voxel3d::~Voxel3d()
 {
+  //delete [] kernel_;
+  free(kernel_);
 }
 
 
@@ -90,17 +94,38 @@ void Voxel3d::putObstacle(int i, int j, int k)
   for (int kk = 0; kk < 17; ++kk)
   {
     unsigned char *jj_start = p;
+
+#if USE_SSE
     for (int jj = 0; jj < 17; ++jj)
     {
       unsigned char *ii_start = p;
-#if USE_SSE
       __m128i vp, vr;
       vp = _mm_loadu_si128((__m128i*)p);
-      vr = _mm_loadu_si128((__m128i*)r);
-      vp = _mm_min_epu8(vp, vr);
-      _mm_storeu_si128((__m128i*)p, vp);
+      vr = _mm_load_si128((__m128i*)r);
+      _mm_storeu_si128((__m128i*)p, _mm_min_epu8(vp, vr));
       r += 16;
+      p = ii_start + stride1_;
+    }
+//     for (int jj = 0; jj < 16; jj += 2)
+//     {
+//       __m128i vp1, vr1, vp2, vr2;
+//       vp1 = _mm_loadu_si128((__m128i*)p);
+//       vr1 = _mm_load_si128((__m128i*)r);
+//       vp2 = _mm_loadu_si128((__m128i*)(p+stride1_));
+//       vr2 = _mm_load_si128((__m128i*)(r+16));
+//       vp1 = _mm_min_epu8(vp1, vr1);
+//       vp2 = _mm_min_epu8(vp2, vr2);
+//       _mm_storeu_si128((__m128i*)p, vp1);
+//       _mm_storeu_si128((__m128i*)(p+stride1_), vp2);
+
+//       r += 32;
+//       p += 2*stride1_;// + stride1_;
+//     }
+//     INCOMPLETE!!!
 #else
+    for (int jj = 0; jj < 17; ++jj)
+    {
+      unsigned char *ii_start = p;
       for (int ii = 0; ii < 16; ++ii)
       {
         if (*p > *r)
@@ -108,9 +133,10 @@ void Voxel3d::putObstacle(int i, int j, int k)
         ++r;
         ++p;
       }
-#endif
       p = ii_start + stride1_;
     }
+#endif
+
     p = jj_start + stride2_;
   }
 }
