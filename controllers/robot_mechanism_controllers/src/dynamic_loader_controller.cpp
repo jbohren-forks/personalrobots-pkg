@@ -36,8 +36,10 @@
 #include "robot_srvs/KillController.h"
 #include <iostream>
 
+#include <boost/thread.hpp>
 #include <boost/foreach.hpp>
 #include <boost/algorithm/string/trim.hpp>
+#include <ros/ros.h>
 
 namespace controller {
 
@@ -106,7 +108,7 @@ bool DynamicLoaderController::initXml(mechanism::RobotState *robot, TiXmlElement
   while (fgets(buffer, sizeof(buffer), pipe) != NULL)
     package_dir.append(buffer);
   pclose(pipe);
-  
+
   int errors = lt_dlinit();
   if (errors) {
     ROS_ERROR("Unable to initialize dynamic loader (%s)", lt_dlerror());
@@ -120,7 +122,7 @@ bool DynamicLoaderController::initXml(mechanism::RobotState *robot, TiXmlElement
     ROS_ERROR("Unable to dlopen %s: %s", path.str().c_str(), lt_dlerror());
     return false;
   }
-  
+
   TiXmlElement *controller = config->FirstChildElement();
 
   if (controller) {
