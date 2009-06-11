@@ -218,7 +218,6 @@ void BaseController::init(std::vector<JointControlParam> jcp, mechanism::RobotSt
     usleep(100000);
   }
 
-
   for(jcp_iter = jcp.begin(); jcp_iter != jcp.end(); jcp_iter++)
   {
     joint_name = jcp_iter->joint_name;
@@ -236,7 +235,7 @@ void BaseController::init(std::vector<JointControlParam> jcp, mechanism::RobotSt
       ROS_WARN(" Unsuccessful getting joint state for %s",joint_name.c_str());
     }
 
-    base_object.controller_.init(robot_state, joint_name, Pid(jcp_iter->p_gain,jcp_iter->i_gain,jcp_iter->d_gain,jcp_iter->windup));
+    base_object.controller_->init(robot_state, joint_name, Pid(jcp_iter->p_gain,jcp_iter->i_gain,jcp_iter->d_gain,jcp_iter->windup));
 
     if(joint_name.find("rotation") != string::npos)
     {
@@ -322,7 +321,7 @@ void BaseController::init(std::vector<JointControlParam> jcp, mechanism::RobotSt
 bool BaseController::initXml(mechanism::RobotState *robot_state, TiXmlElement *config)
 {
 
-  ROS_DEBUG("BaseController:: name: %s",config->Attribute("name")); 
+  ROS_DEBUG("BaseController:: name: %s",config->Attribute("name"));
   TiXmlElement *elt = config->FirstChildElement("controller");
   std::vector<JointControlParam> jcp_vec;
   JointControlParam jcp;
@@ -336,8 +335,8 @@ bool BaseController::initXml(mechanism::RobotState *robot_state, TiXmlElement *c
     jcp.joint_name = jnt->Attribute("name");
     jcp_vec.push_back(jcp);
 
-    ROS_DEBUG("BaseController:: joint name: %s",jcp.joint_name.c_str()); 
-    ROS_DEBUG("BaseController:: controller type: %s\n",jcp.control_type.c_str()); 
+    ROS_DEBUG("BaseController:: joint name: %s",jcp.joint_name.c_str());
+    ROS_DEBUG("BaseController:: controller type: %s\n",jcp.control_type.c_str());
 
     elt = elt->NextSiblingElement("controller");
   }
@@ -371,7 +370,7 @@ bool BaseController::initXml(mechanism::RobotState *robot_state, TiXmlElement *c
   }
 
   max_trans_vel_magnitude_  = fabs(max_vel_.x);
- 
+
   ROS_DEBUG("BaseController:: kp_speed %f",kp_speed_);
   ROS_DEBUG("BaseController:: kp_caster_steer  %f",caster_steer_vel_gain_);
   ROS_DEBUG("BaseController:: timeout %f",timeout_);
@@ -527,7 +526,7 @@ void BaseController::computeDesiredCasterSteer()
 void BaseController::setDesiredCasterSteer()
 {
   for(int i=0; i < num_casters_; i++)
-    base_casters_[i].controller_.setCommand(steer_velocity_desired_[i]);
+    base_casters_[i].controller_->setCommand(steer_velocity_desired_[i]);
 }
 
 void BaseController::computeDesiredWheelSpeeds()
@@ -558,7 +557,7 @@ void BaseController::setDesiredWheelSpeeds()
 {
   for(int i=0; i < (int) num_wheels_; i++)
   {
-    base_wheels_[i].controller_.setCommand(base_wheels_[i].direction_multiplier_*wheel_speed_cmd_[i]);
+    base_wheels_[i].controller_->setCommand(base_wheels_[i].direction_multiplier_*wheel_speed_cmd_[i]);
   }
 }
 
@@ -566,9 +565,9 @@ void BaseController::setDesiredWheelSpeeds()
 void BaseController::updateJointControllers()
 {
   for(int i=0; i < num_wheels_; i++)
-    base_wheels_[i].controller_.update();
+    base_wheels_[i].controller_->update();
   for(int i=0; i < num_casters_; i++)
-    base_casters_[i].controller_.update();
+    base_casters_[i].controller_->update();
 }
 
 void BaseController::setOdomMessage(deprecated_msgs::RobotBase2DOdom &odom_msg_)
@@ -794,7 +793,7 @@ void BaseController::computeStall()
 {
 
   for(int i=0; i < num_casters_; i++)
-  {     
+  {
     caster_speed_error_[i] = fabs(base_casters_[i].joint_state_->velocity_ - steer_velocity_desired_[i]);
     caster_speed_filtered_[i] = alpha_stall_*caster_speed_filtered_[i] + (1-alpha_stall_)*base_casters_[i].joint_state_->velocity_;
 
@@ -877,9 +876,9 @@ void BaseControllerNode::update()
 
     if (odometer_publisher_->trylock())
     {
-      odometer_publisher_->msg_.distance = c_->odometer_distance_; 
-      odometer_publisher_->msg_.angle = c_->odometer_angle_; 
-      odometer_publisher_->unlockAndPublish();      
+      odometer_publisher_->msg_.distance = c_->odometer_distance_;
+      odometer_publisher_->msg_.angle = c_->odometer_angle_;
+      odometer_publisher_->unlockAndPublish();
     }
 
     if (publisher_->trylock())
@@ -924,7 +923,7 @@ void BaseControllerNode::update()
       if (base_odom_velocity_mag > EPS)
       {
         dirn_x = fabs(c_->base_odom_velocity_.x/base_odom_velocity_mag);
-        dirn_y = fabs(c_->base_odom_velocity_.y/base_odom_velocity_mag);   
+        dirn_y = fabs(c_->base_odom_velocity_.y/base_odom_velocity_mag);
         dirn_z = fabs(c_->base_odom_velocity_.z/base_odom_velocity_mag);
       }
       else
@@ -970,7 +969,7 @@ void BaseControllerNode::update()
       //      out.transform.rotation.z = sqrt(1/(1 + pow(angle, 2)));
       //      out.transform.rotation.w = sqrt(pow(angle, 2) / (1 + pow(angle, 2)));
       //      out.pitch = 0;
-      //out.yaw = 
+      //out.yaw =
 
 
       robot_msgs::TransformStamped &out2 = transform_publisher_->msg_.transforms[1];
@@ -1049,7 +1048,7 @@ bool BaseControllerNode::setWheelRadiusMultiplier(
   pr2_mechanism_controllers::WheelRadiusMultiplier::Response &resp)
 {
   double calibration_multiplier = req.radius_multiplier;
-  ROS_INFO("Received radius multiplier %f ",calibration_multiplier); 
+  ROS_INFO("Received radius multiplier %f ",calibration_multiplier);
   c_->wheel_radius_ *= calibration_multiplier;
 
   double param_multiplier;

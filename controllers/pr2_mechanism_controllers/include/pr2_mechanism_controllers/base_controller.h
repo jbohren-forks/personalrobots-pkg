@@ -98,7 +98,7 @@ namespace controller
 
     friend std::ostream & operator<<(std::ostream& mystream, const controller::BaseParam &bp);
 
-    BaseParam():direction_multiplier_(1){};
+    BaseParam() : controller_(new JointVelocityController), direction_multiplier_(1){};
 
     ~BaseParam(){}
 
@@ -106,7 +106,7 @@ namespace controller
 
     std::string name_; /** name of joint corresponding to the link */
 
-    JointVelocityController controller_; /** controller for the link */
+    boost::shared_ptr<JointVelocityController> controller_; /** controller for the link */
 
     mechanism::JointState *joint_state_; /** pointer to joint in Robot structure corresponding to link */
 
@@ -161,7 +161,7 @@ namespace controller
 
     /*!
      * \brief (a) Updates commands to caster and wheels.
-     *         
+     *
      *  Called every timestep in realtime
      */
     virtual void update();
@@ -227,7 +227,7 @@ namespace controller
     void setDesiredCasterSteer();
 
     /*!
-     * \brief compute the joint commands 
+     * \brief compute the joint commands
      */
     void computeJointCommands();
 
@@ -353,13 +353,13 @@ namespace controller
 
 
     /*!
-     * \brief Input speed command vector represents the desired speed requested by the node. Note that this may differ from the 
-     * current commanded speed due to acceleration limits imposed by the controller. This 
+     * \brief Input speed command vector represents the desired speed requested by the node. Note that this may differ from the
+     * current commanded speed due to acceleration limits imposed by the controller. This
      */
     libTF::Vector cmd_vel_t_;
 
     /*!
-     * \brief Input speed command vector represents the desired speed requested by the node. 
+     * \brief Input speed command vector represents the desired speed requested by the node.
      */
     libTF::Vector desired_vel_;
 
@@ -414,7 +414,7 @@ namespace controller
     /*!
      * \brief function to add parameter to map so it can be initialized easily from the xml file
      */
-    void addParamToMap(std::string key, double *value); 
+    void addParamToMap(std::string key, double *value);
 
     std::vector<double> steer_angle_actual_; /** vector of actual caster steer angles */
 
@@ -448,7 +448,7 @@ namespace controller
   };
 
   /*! \class
-    \brief This class inherits from Controller and is the ROS Node corresponding to the controller. This is the class that should be instantiated whenever the user wants to spawn a new base controller. 
+    \brief This class inherits from Controller and is the ROS Node corresponding to the controller. This is the class that should be instantiated whenever the user wants to spawn a new base controller.
   */
   class BaseControllerNode : public Controller
   {
@@ -476,7 +476,7 @@ namespace controller
 
     /*!
      * \brief get back the odometry values from the controller itself
-     * \param x position computed by odometry 
+     * \param x position computed by odometry
      * \param y position computed by odometry
      * \param theta (yaw) computed by odometry
      * \param x velocity computed by odometry (in local frame)
@@ -499,7 +499,7 @@ namespace controller
                                                       pr2_mechanism_controllers::WheelRadiusMultiplier::Response &resp);
 
     /*
-     * \brief callback function for setting the desired velocity using a topic 
+     * \brief callback function for setting the desired velocity using a topic
      */
     void setCommand(double vx, double vy, double vw);
 
@@ -528,7 +528,7 @@ namespace controller
     double odom_publish_delta_t_; /** time after which odometry message will be published */
 
     double odom_publish_rate_; /** rate at which odometry message will be published ( = 1/odom_publish_delta_t_)*/
-           
+
     realtime_tools::RealtimePublisher <deprecated_msgs::RobotBase2DOdom>* publisher_ ;  //!< Publishes the odometry msg from the update() realtime loop
 
     realtime_tools::RealtimePublisher <tf::tfMessage>* transform_publisher_ ;  //!< Publishes the odom to base transform msg from the update() realtime loop
@@ -537,7 +537,7 @@ namespace controller
 
     realtime_tools::RealtimePublisher <pr2_msgs::Covariance2D>* covariance_publisher_ ;  //!< Publishes the odom to base transform msg from the update() realtime loop
 
-    realtime_tools::RealtimePublisher <pr2_msgs::BaseControllerState>* state_publisher_ ;  
+    realtime_tools::RealtimePublisher <pr2_msgs::BaseControllerState>* state_publisher_ ;
 
     /*
      * \brief pointer to ros node
