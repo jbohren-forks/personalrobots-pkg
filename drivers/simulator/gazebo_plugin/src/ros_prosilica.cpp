@@ -241,7 +241,6 @@ bool RosProsilica::triggeredGrab(prosilica_cam::PolledImage::Request &req,
   // Get a pointer to image data
   src = this->myParent->GetImageData(0);
 
-  //std::cout << " updating prosilica " << this->imageTopicName << " " << data->image_size << std::endl;
   if (src)
   {
     this->lock.lock();
@@ -250,8 +249,8 @@ bool RosProsilica::triggeredGrab(prosilica_cam::PolledImage::Request &req,
     this->roiCamInfoMsg = &res.cam_info;
     this->roiCamInfoMsg->header.frame_id = this->frameName;
     this->roiCamInfoMsg->header.stamp    = ros::Time((unsigned long)floor(Simulator::Instance()->GetSimTime()));
-    this->roiCamInfoMsg->width  = 0*req.width; //this->myParent->GetImageWidth() ;
-    this->roiCamInfoMsg->height = 0*req.height; //this->myParent->GetImageHeight();
+    this->roiCamInfoMsg->width  = req.width; //this->myParent->GetImageWidth() ;
+    this->roiCamInfoMsg->height = req.height; //this->myParent->GetImageHeight();
     // distortion
     this->roiCamInfoMsg->D[0] = 0.0;
     this->roiCamInfoMsg->D[1] = 0.0;
@@ -261,10 +260,10 @@ bool RosProsilica::triggeredGrab(prosilica_cam::PolledImage::Request &req,
     // original camera matrix
     this->roiCamInfoMsg->K[0] = this->focal_length;
     this->roiCamInfoMsg->K[1] = 0.0;
-    this->roiCamInfoMsg->K[2] = this->Cx - 0*req.region_x;
+    this->roiCamInfoMsg->K[2] = this->Cx - req.region_x;
     this->roiCamInfoMsg->K[3] = 0.0;
     this->roiCamInfoMsg->K[4] = this->focal_length;
-    this->roiCamInfoMsg->K[5] = this->Cy - 0*req.region_y;
+    this->roiCamInfoMsg->K[5] = this->Cy - req.region_y;
     this->roiCamInfoMsg->K[6] = 0.0;
     this->roiCamInfoMsg->K[7] = 0.0;
     this->roiCamInfoMsg->K[8] = 1.0;
@@ -281,11 +280,11 @@ bool RosProsilica::triggeredGrab(prosilica_cam::PolledImage::Request &req,
     // camera projection matrix (same as camera matrix due to lack of distortion/rectification) (is this generated?)
     this->roiCamInfoMsg->P[0] = this->focal_length;
     this->roiCamInfoMsg->P[1] = 0.0;
-    this->roiCamInfoMsg->P[2] = this->Cx - 0*req.region_x;
+    this->roiCamInfoMsg->P[2] = this->Cx - req.region_x;
     this->roiCamInfoMsg->P[3] = 0.0;
     this->roiCamInfoMsg->P[4] = 0.0;
     this->roiCamInfoMsg->P[5] = this->focal_length;
-    this->roiCamInfoMsg->P[6] = this->Cy - 0*req.region_y;
+    this->roiCamInfoMsg->P[6] = this->Cy - req.region_y;
     this->roiCamInfoMsg->P[7] = 0.0;
     this->roiCamInfoMsg->P[8] = 0.0;
     this->roiCamInfoMsg->P[9] = 0.0;
@@ -322,7 +321,12 @@ bool RosProsilica::triggeredGrab(prosilica_cam::PolledImage::Request &req,
     //cvShowImage("showme",img_bridge_.toIpl());
 
     cvSetImageROI(img_bridge_.toIpl(),cvRect(req.region_x,req.region_y,req.width,req.height));
-    img_bridge_.fromIpltoRosImage(img_bridge_.toIpl(),*this->roiImageMsg);
+    IplImage *roi = cvCreateImage(cvSize(req.width,req.height),
+                                 img_bridge_.toIpl()->depth,
+                                 img_bridge_.toIpl()->nChannels);
+    cvCopy(img_bridge_.toIpl(),roi);
+
+    img_bridge_.fromIpltoRosImage(roi,*this->roiImageMsg);
 
 
 
