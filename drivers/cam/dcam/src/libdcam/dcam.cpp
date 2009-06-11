@@ -325,6 +325,7 @@ dcam::Dcam::Dcam(uint64_t guid, size_t bsize)
 	  major = (stocFirmware & 0xff00)>>8;
 	  minor = stocFirmware & 0xff;
 	  PRINTF("[dcam] STOC version: %02d.%02d\n", major, minor);
+
 	  if (major > 0 && major < 0xff && minor != 0xff) // check for odd firmware values
 	    {
 	      isSTOC = true;
@@ -409,14 +410,14 @@ dcam::Dcam::Dcam(uint64_t guid, size_t bsize)
       if (hasFeature(DC1394_FEATURE_GAIN))
 	{
 	  getFeatureBoundaries(DC1394_FEATURE_GAIN,gainMin,gainMax);
-	  PRINTF("[Dcam] Gain min/max: [%d,%d]\n",expMin,expMax);
+	  PRINTF("[Dcam] Gain min/max: [%d,%d]\n",gainMin,gainMax);
 	}
       else
 	PRINTF("[Dcam] No gain feature\n");
 
       if (hasFeature(DC1394_FEATURE_BRIGHTNESS))
 	{
-	  getFeatureBoundaries(DC1394_FEATURE_BRIGHTNESS,gainMin,gainMax);
+	  getFeatureBoundaries(DC1394_FEATURE_BRIGHTNESS,brightMin,brightMax);
 	  PRINTF("[Dcam] Brightness min/max: [%d,%d]\n",brightMin,brightMax);
 	}
       else

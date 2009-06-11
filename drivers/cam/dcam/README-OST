@@ -1,0 +1,19 @@
+OST is an open source version of fast stereo algorithms.  These
+algorithms are also incorporated into OpenCV.
+
+This distribution contains the stereo libraries, a GUI calibration app
+using the OpenCV calibration routines, and a libdc1394 interface to
+Videre Design stereo cameras.
+
+To install, first install the latest version of OpenCV and
+libdc1394v2.  Then modify the Makefile to point to the appropriate
+directories of these distributions, and run "make".  Executables are
+in the bin/ directory, libraries in lib/.  
+
+Run bin/ost to get a stereo GUI and the calibration routines.
+
+Currently bin/ost will exit if it doesn't find a camera, but this will
+be changed soon, because it can also run from files.
+
+License: BSD
+

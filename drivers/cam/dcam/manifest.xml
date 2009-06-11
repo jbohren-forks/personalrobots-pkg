@@ -4,8 +4,9 @@
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
   <sysdepend os="ubuntu" package="libfltk-dev"/>
+  <sysdepend os="ubuntu" package="libglut-dev"/>
   <export>
-    <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -ldcam"/>
+    <cpp cflags="-g -I${prefix}/include" lflags="-L${prefix}/lib -ldcam"/>
   </export>
   <depend package="libdc1394v2"/>
   <depend package="opencv_latest"/>
