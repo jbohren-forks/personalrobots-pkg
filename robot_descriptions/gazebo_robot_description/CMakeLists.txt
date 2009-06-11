@@ -5,6 +5,7 @@ rospack(gazebo_robot_description)
 # find needed paths
 find_ros_package(pr2_defs)
 find_ros_package(gazebo_robot_description)
+find_ros_package(ogre)
 
 # build the ogre mesh files from *.stl (and *.stlb from convex decomposition)
 file(GLOB pr2_stl_files ${pr2_defs_PACKAGE_PATH}/meshes/*.stl ${pr2_defs_PACKAGE_PATH}/meshes/convex/*.stlb)
@@ -22,8 +23,10 @@ foreach(it ${pr2_stl_files})
     OUTPUT ${pr2_out_path}/${basename}.mesh
     COMMAND rosrun 
     ARGS ogre_tools stl_to_mesh ${it} ${pr2_out_path}/${basename}.mesh
+    COMMAND ${ogre_PACKAGE_PATH}/ogre/bin/OgreMeshUpgrade 
+    ARGS ${pr2_out_path}/${basename}.mesh
     DEPENDS ${it})
-
+  
   set(pr2_gen_files ${pr2_gen_files} ${pr2_out_path}/${basename}.mesh)
 endforeach(it)
 
