@@ -39,10 +39,10 @@
     The minimum number of things to get the arm to move (and replan) is done.
  */
 
-#include <kinematic_planning/KinematicStateMonitor.h>
+#include <planning_environment/kinematic_model_state_monitor.h>
 
 // service for (re)planning to a state
-#include <motion_planning_srvs/KinematicReplanState.h>
+#include <motion_planning_srvs/KinematicPlan.h>
 
 // message for receiving the planning status
 #include <motion_planning_msgs/KinematicPlanStatus.h>
@@ -50,64 +50,77 @@
 // messages to interact with the trajectory controller
 #include <robot_msgs/JointTraj.h>
 
-static const std::string GROUPNAME = "pr2::right_arm";
+static const std::string GROUPNAME = "right_arm";
     
-class Example : public kinematic_planning::KinematicStateMonitor
+class Example
 {
 public:
     
-    Example(void) : kinematic_planning::KinematicStateMonitor()
+    Example(void)
     {
 	plan_id_ = -1;
 	robot_stopped_ = true;
+	rm_ = new planning_environment::RobotModels("robot_description");
+	kmsm_ = new planning_environment::KinematicModelStateMonitor(rm_);
 	
 	// we use the topic for sending commands to the controller, so we need to advertise it
-	jointCommandPublisher_ = m_nodeHandle.advertise<robot_msgs::JointTraj>("right_arm/trajectory_controller/trajectory_command", 1);
-	kinematicPlanningStatusSubscriber_ = m_nodeHandle.subscribe("kinematic_planning_status", 1, &Example::receiveStatus, this);
+	jointCommandPublisher_ = nh_.advertise<robot_msgs::JointTraj>("right_arm/trajectory_controller/trajectory_command", 1);
+	kinematicPlanningStatusSubscriber_ = nh_.subscribe("kinematic_planning_status", 1, &Example::receiveStatus, this);
     }
         
+    ~Example(void)
+    {
+	delete kmsm_;
+	delete rm_;
+    }
+    
     void runExample(void)
     {
 	// construct the request for the motion planner
-	motion_planning_msgs::KinematicPlanStateRequest req;
+	motion_planning_srvs::KinematicPlan::Request req;
 	
 	req.params.model_id = GROUPNAME;
 	req.params.distance_metric = "L2Square";
 	req.params.planner_id = "SBL";
-	req.threshold = 0.1;
 	req.interpolate = 1;
 	req.times = 1;
 
 	// skip setting the start state
 	
 	// 7 DOF for the arm; pick a goal state (joint angles)
-	req.goal_state.set_vals_size(7);
-	for (unsigned int i = 0 ; i < req.goal_state.get_vals_size(); ++i)
-	    req.goal_state.vals[i] = 0.0;	
-	req.goal_state.vals[0] = -1.5;
-	req.goal_state.vals[1] = -0.2;
+	std::vector<std::string> names;
+	rm_->getKinematicModel()->getJointsInGroup(names, GROUPNAME);
+	req.goal_constraints.joint.resize(names.size());
+	for (unsigned int i = 0 ; i < req.goal_constraints.joint.size(); ++i)
+	{
+	    req.goal_constraints.joint[i].joint_name = names[i];
+	    req.goal_constraints.joint[i].min.resize(1);
+	    req.goal_constraints.joint[i].max.resize(1);
+	    req.goal_constraints.joint[i].min[0] = 0.0;
+	    req.goal_constraints.joint[i].max[0] = 0.0;
+	}
+	
+	req.goal_constraints.joint[0].min[0] = req.goal_constraints.joint[0].max[0] = -1.5;
+	req.goal_constraints.joint[1].min[0] = req.goal_constraints.joint[1].max[0] = -0.2;
+	req.goal_constraints.joint[5].min[0] = req.goal_constraints.joint[5].max[0] = 0.15;
 
 	// allow 1 second computation time
 	req.allowed_time = 1.0;
 	
 	// define the service messages
-	motion_planning_srvs::KinematicReplanState::Request  s_req;
-	motion_planning_srvs::KinematicReplanState::Response s_res;
-	s_req.value = req;
+	motion_planning_srvs::KinematicPlan::Response res;
 	
-	ros::ServiceClient client = m_nodeHandle.serviceClient<motion_planning_srvs::KinematicReplanState>("replan_kinematic_path_state");
-	if (client.call(s_req, s_res))
-	    plan_id_ = s_res.id;
+	ros::ServiceClient client = nh_.serviceClient<motion_planning_srvs::KinematicPlan>("plan_kinematic_path");
+	if (client.call(req, res))
+	    plan_id_ = res.id;
 	else
-	    ROS_ERROR("Service 'replan_kinematic_path_state' failed");
+	    ROS_ERROR("Service 'plan_kinematic_path_state' failed");
     }
     
     void run(void)
     {
-	loadRobotDescription();
-	if (loadedRobot())
+	if (rm_->loadedModels())
 	{
-	    sleep(1);
 	    runExample();
 	    ros::spin();
 	}
@@ -147,10 +160,13 @@ protected:
 	
 	// get the current params for the robot's right arm
 	double cmd[7];
-	m_robotState->copyParamsGroup(cmd, GROUPNAME);
-	
+	kmsm_->getRobotState()->copyParamsGroup(cmd, GROUPNAME);
+
+	std::vector<std::string> names;
+	rm_->getKinematicModel()->getJointsInGroup(names, GROUPNAME);
+
 	motion_planning_msgs::KinematicPath stop_path;	
-	stop_path.set_states_size(1);
+	stop_path.states.resize(1);
 	stop_path.states[0].set_vals_size(7);
 	for (unsigned int i = 0 ; i < 7 ; ++i)
 	    stop_path.states[0].vals[i] = cmd[i];
@@ -158,14 +174,6 @@ protected:
 	sendArmCommand(stop_path, GROUPNAME);
     }
     
-    // get the current state from the StateParams instance monitored by the KinematicStateMonitor
-    void currentState(motion_planning_msgs::KinematicState &state)
-    {
-	state.set_vals_size(m_kmodel->getModelInfo().stateDimension);
-	for (unsigned int i = 0 ; i < state.get_vals_size() ; ++i)
-	    state.vals[i] = m_robotState->getParams()[i];	
-    }
-
     // convert a kinematic path message to a trajectory for the controller
     void getTrajectoryMsg(const motion_planning_msgs::KinematicPath &path, robot_msgs::JointTraj &traj)
     {	
@@ -175,7 +183,7 @@ protected:
             traj.points[i].set_positions_size(path.states[i].get_vals_size());	    
             for (unsigned int j = 0 ; j < path.states[i].get_vals_size() ; ++j)
                 traj.points[i].positions[j] = path.states[i].vals[j];
-            traj.points[i].time = 0.0;	    
+            traj.points[i].time = path.times[i];	    
         }	
     }
     
@@ -187,11 +195,15 @@ protected:
 	jointCommandPublisher_.publish(traj);
 	ROS_INFO("Sent trajectory to controller (using a topic)");
     }
-
-    int             plan_id_;
-    bool            robot_stopped_;
-    ros::Subscriber kinematicPlanningStatusSubscriber_;
-    ros::Publisher  jointCommandPublisher_;
+    
+    int                                               plan_id_;
+    bool                                              robot_stopped_;
+    ros::NodeHandle                                   nh_;
+    ros::Subscriber                                   kinematicPlanningStatusSubscriber_;
+    ros::Publisher                                    jointCommandPublisher_;
+    planning_environment::RobotModels                *rm_;
+    planning_environment::KinematicModelStateMonitor *kmsm_;
+    
     
 };
 

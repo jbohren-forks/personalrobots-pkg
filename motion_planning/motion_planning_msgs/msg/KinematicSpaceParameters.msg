@@ -1,7 +1,7 @@
 # This message contains a set of parameters useful in setting up a
 # kinematic space for planning
 
-# The model (defined in the robot description as a group of links)
+# The model (defined in pr2_defs/planning/planning.yaml)
 # for which the motion planner should plan for
 string model_id
 

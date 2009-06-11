@@ -77,7 +77,6 @@ TEST(Loading, EmptyRobot)
     EXPECT_EQ(std::string("myrobot"), model->getModelName());
     EXPECT_EQ((unsigned int)0, model->getRobotCount());
     EXPECT_EQ((unsigned int)0, model->getModelInfo().stateDimension);
-    EXPECT_EQ((unsigned int)0, model->getGroupDimension(-1));
     
     std::vector<planning_models::KinematicModel::Link*> links;
     model->getLinks(links);
@@ -193,8 +192,8 @@ TEST(LoadingAndFK, SimpleRobot)
 	"2 = base_link_joint\n"
 	"Floating joints at: \n"
 	"Planar joints at: 0 base_link_joint \n"
-	"Available groups: one_robot::base \n"
-	"Group one_robot::base with ID 0 has 1 roots: base_link_joint \n"
+	"Available groups: base \n"
+	"Group base with ID 0 has 1 roots: base_link_joint \n"
 	"The state components for this group are: 0 1 2 base_link_joint base_link_joint base_link_joint \n";
         
     planning_models::KinematicModel *model = new planning_models::KinematicModel();
@@ -224,6 +223,7 @@ TEST(LoadingAndFK, SimpleRobot)
     std::stringstream ssi;
     model->printModelInfo(ssi);
     EXPECT_TRUE(sameStringIgnoringWS(MODEL1_INFO, ssi.str()));
+    
     
     double param[3] = { 10, 8, 0 };
     model->computeTransforms(param);
@@ -362,8 +362,8 @@ TEST(FK, OneRobot)
 	"4 = link_c_joint\n"
 	"Floating joints at: \n"
 	"Planar joints at: 0 base_link_joint \n"
-	"Available groups: one_robot::base \n"
-	"Group one_robot::base with ID 0 has 1 roots: base_link_joint \n"
+	"Available groups: base \n"
+	"Group base with ID 0 has 1 roots: base_link_joint \n"
 	"The state components for this group are: 0 1 2 3 4 base_link_joint base_link_joint base_link_joint link_a_joint link_c_joint \n";
     std::map < std::string, std::vector<std::string> > groups;
     groups["base"].push_back("base_link");
@@ -379,7 +379,7 @@ TEST(FK, OneRobot)
     EXPECT_EQ((unsigned int)5, model->getModelInfo().stateDimension);
 
     double param[5] = { 1, 1, 0.5, -0.5, 0.1 };
-    model->computeTransformsGroup(param, model->getGroupID("one_robot::base"));
+    model->computeTransformsGroup(param, model->getGroupID("base"));
     
     std::stringstream ss1;
     model->printModelInfo(ss1);
@@ -387,7 +387,6 @@ TEST(FK, OneRobot)
 
     // make sure applying the state works for the entire robot
     model->printLinkPoses(ss1);
-    EXPECT_EQ(-1, model->getGroupID("one_robot"));
     
     model->computeTransforms(param);
     
@@ -728,14 +727,14 @@ TEST(FK, MoreRobots)
 	"12 = base_link3_joint\n"
 	"Floating joints at: \n"
 	"Planar joints at: 0 5 10 base_link1_joint base_link2_joint base_link3_joint \n"
-	"Available groups: more_robots::parts more_robots::r1 more_robots::r1r2 more_robots::r2 \n"
-	"Group more_robots::parts with ID 0 has 3 roots: base_link1_joint link_e_joint base_link3_joint \n"
+	"Available groups: parts r1 r1r2 r2 \n"
+	"Group parts with ID 0 has 3 roots: base_link1_joint link_e_joint base_link3_joint \n"
 	"The state components for this group are: 0 1 2 3 9 10 11 12 base_link1_joint base_link1_joint base_link1_joint link_a_joint link_f_joint base_link3_joint base_link3_joint base_link3_joint \n"
-	"Group more_robots::r1 with ID 1 has 1 roots: base_link1_joint \n"
+	"Group r1 with ID 1 has 1 roots: base_link1_joint \n"
 	"The state components for this group are: 0 1 2 3 4 base_link1_joint base_link1_joint base_link1_joint link_a_joint link_c_joint \n"
-	"Group more_robots::r1r2 with ID 2 has 2 roots: base_link1_joint base_link2_joint \n"
+	"Group r1r2 with ID 2 has 2 roots: base_link1_joint base_link2_joint \n"
 	"The state components for this group are: 0 1 2 3 4 5 6 7 8 9 base_link1_joint base_link1_joint base_link1_joint link_a_joint link_c_joint base_link2_joint base_link2_joint base_link2_joint link_d_joint link_f_joint \n"
-	"Group more_robots::r2 with ID 3 has 1 roots: base_link2_joint \n"
+	"Group r2 with ID 3 has 1 roots: base_link2_joint \n"
 	"The state components for this group are: 5 6 7 8 9 base_link2_joint base_link2_joint base_link2_joint link_d_joint link_f_joint \n";
 
     std::map < std::string, std::vector<std::string> > groups;
@@ -773,7 +772,7 @@ TEST(FK, MoreRobots)
     std::stringstream ss;
     model->printModelInfo(ss);
     double param[8] = { -1, -1, 0, 1.57, 0.0, 5, 5, 0 };
-    model->computeTransformsGroup(param, model->getGroupID("more_robots::parts"));    
+    model->computeTransformsGroup(param, model->getGroupID("parts"));    
     
     EXPECT_TRUE(sameStringIgnoringWS(MODEL3_INFO, ss.str()));
 

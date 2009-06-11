@@ -35,10 +35,7 @@
 /** \author Ioan Sucan */
 
 #include "kinematic_planning/ompl_planner/RKPPlannerSetup.h"
-
-#include <boost/lexical_cast.hpp>
 #include <boost/algorithm/string.hpp>
-
 #include <cassert>
 #include <vector>
 
@@ -76,18 +73,14 @@ void kinematic_planning::RKPPlannerSetup::setupDistanceEvaluators(void)
     sde["L2Square"] = new ompl::sb::L2SquareStateDistanceEvaluator(si);
 }
 	
-ompl::base::ProjectionEvaluator* kinematic_planning::RKPPlannerSetup::getProjectionEvaluator(const std::map<std::string, std::string> &options) const
+ompl::base::ProjectionEvaluator* kinematic_planning::RKPPlannerSetup::getProjectionEvaluator(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options) const
 {
-    std::map<std::string, std::string>::const_iterator pit = options.find("projection");
-    std::map<std::string, std::string>::const_iterator cit = options.find("celldim");
     ompl::base::ProjectionEvaluator *pe = NULL;
     
-    if (pit != options.end() && cit != options.end())
+    if (options->hasParam("projection") && options->hasParam("celldim"))
     {
-	std::string proj = pit->second;
-	boost::trim(proj);
-	std::string celldim = cit->second;
-	boost::trim(celldim);
+	std::string proj = options->getParamString("projection");
+	std::string celldim = options->getParamString("celldim");
 	
 	if (proj.substr(0, 4) == "link")
 	{
@@ -125,7 +118,7 @@ ompl::base::ProjectionEvaluator* kinematic_planning::RKPPlannerSetup::getProject
     return pe;
 }
 
-void kinematic_planning::RKPPlannerSetup::preSetup(const std::map<std::string, std::string> &options)
+void kinematic_planning::RKPPlannerSetup::preSetup(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options)
 {
     ROS_DEBUG("Adding %s instance for motion planning: %s", name.c_str(), model->groupName.c_str());
     
@@ -140,38 +133,9 @@ void kinematic_planning::RKPPlannerSetup::preSetup(const std::map<std::string, s
     gaik     = new ompl::sb::GAIK(si);
 }
 
-void kinematic_planning::RKPPlannerSetup::postSetup(const std::map<std::string, std::string> &options)
+void kinematic_planning::RKPPlannerSetup::postSetup(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options)
 {
     setupDistanceEvaluators();
     si->setup();
     mp->setup();	    
-}
-
-bool kinematic_planning::RKPPlannerSetup::hasOption(const std::map<std::string, std::string> &options, const std::string &opt) const
-{
-    return options.find(opt) != options.end();
-}
-
-double kinematic_planning::RKPPlannerSetup::optionAsDouble(const std::map<std::string, std::string> &options, const std::string &opt, double def) const
-{
-    std::map<std::string, std::string>::const_iterator it = options.find(opt);
-    return (it != options.end()) ? parseDouble(it->second, def) : def;
-}
-
-std::string kinematic_planning::RKPPlannerSetup::optionAsString(const std::map<std::string, std::string> &options, const std::string &opt, const::std::string &def) const
-{
-    std::map<std::string, std::string>::const_iterator it = options.find(opt);
-    return (it != options.end()) ? it->second : def;
-}
-
-double kinematic_planning::RKPPlannerSetup::parseDouble(const std::string &value, double def) const
-{
-    try
-    {
-	return boost::lexical_cast<double>(value);
-    }
-    catch (...)
-    {
-	return def;
-    }
 }

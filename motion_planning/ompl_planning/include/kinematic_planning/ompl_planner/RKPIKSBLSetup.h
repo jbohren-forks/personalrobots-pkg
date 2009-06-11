@@ -49,7 +49,7 @@ namespace kinematic_planning
 	
         RKPIKSBLSetup(RKPModelBase *m);
 	virtual ~RKPIKSBLSetup(void);
-	virtual bool setup(const std::map<std::string, std::string> &options);
+	virtual bool setup(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options);
     };
 
 } // kinematic_planning

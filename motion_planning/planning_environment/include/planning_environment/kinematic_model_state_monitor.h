@@ -175,7 +175,6 @@ namespace planning_environment
 	ros::Time                                     lastPoseUpdate_;
     };
     
-	
 }
 
 #endif

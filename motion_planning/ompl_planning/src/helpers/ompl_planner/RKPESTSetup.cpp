@@ -52,22 +52,22 @@ kinematic_planning::RKPESTSetup::~RKPESTSetup(void)
     }
 }
 
-bool kinematic_planning::RKPESTSetup::setup(const std::map<std::string, std::string> &options)
+bool kinematic_planning::RKPESTSetup::setup(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options)
 {
     preSetup(options);
     
     ompl::sb::EST *est = new ompl::sb::EST(si);
     mp                 = est;	
 
-    if (hasOption(options, "range"))
+    if (options->hasParam("range"))
     {
-	est->setRange(optionAsDouble(options, "range", est->getRange()));
+	est->setRange(options->getParamDouble("range", est->getRange()));
 	ROS_DEBUG("Range is set to %g", est->getRange());
     }
 
-    if (hasOption(options, "goal_bias"))
+    if (options->hasParam("goal_bias"))
     {
-	est->setGoalBias(optionAsDouble(options, "goal_bias", est->getGoalBias()));
+	est->setGoalBias(options->getParamDouble("goal_bias", est->getGoalBias()));
 	ROS_DEBUG("Goal bias is set to %g", est->getGoalBias());
     }
         

@@ -6,11 +6,6 @@ set(ROS_BUILD_TYPE Debug)
 
 rospack_add_executable(plan_kinematic_path src/plan_kinematic_path.cpp)
 
-rospack_add_executable(rarm_execute_plan_to_state src/right_arm/execute_plan_to_state.cpp)
-rospack_add_executable(rarm_execute_plan_to_state_minimal src/right_arm/execute_plan_to_state_minimal.cpp)
-rospack_add_executable(rarm_execute_plan_to_position_minimal src/right_arm/execute_plan_to_position_minimal.cpp)
 rospack_add_executable(rarm_execute_replan_to_state src/right_arm/execute_replan_to_state.cpp)
 rospack_add_executable(rarm_test_path_execution src/right_arm/test_path_execution.cpp)
-rospack_add_executable(rarm_call_plan_to_state src/right_arm/call_plan_to_state.cpp)
 
-rospack_add_executable(base_execute_plan_to_state_minimal src/base/execute_plan_to_state_minimal.cpp)

@@ -42,10 +42,13 @@
 #include "kinematic_planning/ompl_extensions/RKPSpaceInformation.h"
 #include "kinematic_planning/ompl_extensions/RKPProjectionEvaluators.h"
 #include "kinematic_planning/ompl_extensions/RKPDistanceEvaluators.h"
+#include "kinematic_planning/ompl_extensions/RKPGoalDefinitions.h"
 
 #include <ompl/extension/samplingbased/Planner.h>
 #include <ompl/extension/samplingbased/kinematic/PathSmootherKinematic.h>
 #include <ompl/extension/samplingbased/kinematic/extension/ik/GAIK.h>
+
+#include <planning_environment/robot_models.h>
 
 #include <ros/console.h>
 #include <string>
@@ -65,12 +68,12 @@ namespace kinematic_planning
 	/** For each planner definition, define the set of distance metrics it can use */
 	virtual void setupDistanceEvaluators(void);
 	
-	virtual ompl::base::ProjectionEvaluator* getProjectionEvaluator(const std::map<std::string, std::string> &options) const;
+	virtual ompl::base::ProjectionEvaluator* getProjectionEvaluator(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options) const;
 	
-	virtual void preSetup(const std::map<std::string, std::string> &options);
-	virtual void postSetup(const std::map<std::string, std::string> &options);
+	virtual void preSetup(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options);
+	virtual void postSetup(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options);
 	
-	virtual bool setup(const std::map<std::string, std::string> &options) = 0;
+	virtual bool setup(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options) = 0;
 	
 	RKPModelBase                                              *model;
 	
@@ -82,12 +85,6 @@ namespace kinematic_planning
 	std::map<std::string, ompl::base::StateDistanceEvaluator*> sde;
 	ompl::sb::PathSmootherKinematic                           *smoother;
 
-    protected:
-	
-	double parseDouble(const std::string &value, double def) const;
-	bool   hasOption(const std::map<std::string, std::string> &options, const std::string &opt) const;
-	double optionAsDouble(const std::map<std::string, std::string> &options, const std::string &opt, double def) const;
-	std::string optionAsString(const std::map<std::string, std::string> &options, const std::string &opt, const::std::string &def) const;	
     };
 
     

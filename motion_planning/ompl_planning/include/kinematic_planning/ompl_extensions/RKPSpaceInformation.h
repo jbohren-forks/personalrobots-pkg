@@ -56,18 +56,28 @@ namespace kinematic_planning
 	    m_divisions = divisions;
 	    
 	    /* compute the state space for this group */
-	    m_stateDimension = m_groupID >= 0 ? m_kmodel->getModelInfo().groupStateIndexList[m_groupID].size() : m_kmodel->getModelInfo().stateDimension;
+	    m_stateDimension = m_kmodel->getModelInfo().groupStateIndexList[m_groupID].size();
+	    
 	    m_stateComponent.resize(m_stateDimension);
 	    
 	    for (unsigned int i = 0 ; i < m_stateDimension ; ++i)
 	    {	
+		int p = m_kmodel->getModelInfo().groupStateIndexList[m_groupID][i] * 2;
+		
 		if (m_stateComponent[i].type == ompl::sb::StateComponent::UNKNOWN)
-		    m_stateComponent[i].type = ompl::sb::StateComponent::NORMAL;
-		int p = m_groupID >= 0 ? m_kmodel->getModelInfo().groupStateIndexList[m_groupID][i] * 2 : i * 2;
+		{
+		    planning_models::KinematicModel::RevoluteJoint *rj = 
+			dynamic_cast<planning_models::KinematicModel::RevoluteJoint*>(m_kmodel->getJoint(m_kmodel->getModelInfo().parameterName[p]));
+		    if (rj && rj->continuous)
+			m_stateComponent[i].type = ompl::sb::StateComponent::WRAPPING_ANGLE;
+		    else
+			m_stateComponent[i].type = ompl::sb::StateComponent::NORMAL;
+		}
+		
 		m_stateComponent[i].minValue   = m_kmodel->getModelInfo().stateBounds[p    ];
 		m_stateComponent[i].maxValue   = m_kmodel->getModelInfo().stateBounds[p + 1];
 		m_stateComponent[i].resolution = (m_stateComponent[i].maxValue - m_stateComponent[i].minValue) / m_divisions;
-		
+
 		for (unsigned int j = 0 ; j < m_kmodel->getModelInfo().floatingJoints.size() ; ++j)
 		    if (m_kmodel->getModelInfo().floatingJoints[j] == p)
 		    {
@@ -80,6 +90,7 @@ namespace kinematic_planning
 		    if (m_kmodel->getModelInfo().planarJoints[j] == p)
 		    {
 			m_planarJoints.push_back(i);
+			m_stateComponent[i + 2].type = ompl::sb::StateComponent::WRAPPING_ANGLE;
 			break;		    
 		    }
 	    }
@@ -148,11 +159,11 @@ namespace kinematic_planning
 	    }
 	}
 	
-	double                                             m_divisions;
-	boost::shared_ptr<planning_models::KinematicModel> m_kmodel;
-	int                                                m_groupID;
-	std::vector<int>                                   m_floatingJoints;
-	std::vector<int>                                   m_planarJoints;
+	double                           m_divisions;
+	planning_models::KinematicModel *m_kmodel;
+	int                              m_groupID;
+	std::vector<int>                 m_floatingJoints;
+	std::vector<int>                 m_planarJoints;
 	
     };    
     

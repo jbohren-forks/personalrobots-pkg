@@ -50,7 +50,7 @@ namespace planning_environment
 	
 	OutputHandlerROScon(void) : OutputHandler()
 	{
-	    planning_models::msg::useOutputHandler(this);
+	    planning_models::msg::useOutputHandler(this);		
 	}
 	
 	~OutputHandlerROScon(void)
@@ -82,7 +82,7 @@ namespace planning_environment
 	    ROS_DEBUG("%s", text.c_str());
 	}
     };
-    static OutputHandlerROScon _outputHandler;    
+    
 }
 
 void planning_environment::RobotModels::reload(void)

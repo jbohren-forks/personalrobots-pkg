@@ -51,22 +51,22 @@ kinematic_planning::RKPIKSBLSetup::~RKPIKSBLSetup(void)
     }
 }
 
-bool kinematic_planning::RKPIKSBLSetup::setup(const std::map<std::string, std::string> &options)
+bool kinematic_planning::RKPIKSBLSetup::setup(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options)
 {
     preSetup(options);
     
     ompl::sb::IKSBL* sbl = new ompl::sb::IKSBL(si);
     mp                   = sbl;	
 
-    if (hasOption(options, "range"))
+    if (options->hasParam("range"))
     {
-	sbl->setRange(optionAsDouble(options, "range", sbl->getRange()));
+	sbl->setRange(options->getParamDouble("range", sbl->getRange()));
 	ROS_DEBUG("Range is set to %g", sbl->getRange());
     }
     
-    if (hasOption(options, "ik_range"))
+    if (options->hasParam("ik_range"))
     {
-	sbl->setIKRange(optionAsDouble(options, "ik_range", sbl->getIKRange()));
+	sbl->setIKRange(options->getParamDouble("ik_range", sbl->getIKRange()));
 	ROS_DEBUG("IK range is set to %g", sbl->getIKRange());
     }
     

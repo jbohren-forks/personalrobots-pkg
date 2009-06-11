@@ -46,22 +46,22 @@ kinematic_planning::RKPLazyRRTSetup::~RKPLazyRRTSetup(void)
 {
 }
 
-bool kinematic_planning::RKPLazyRRTSetup::setup(const std::map<std::string, std::string> &options)
+bool kinematic_planning::RKPLazyRRTSetup::setup(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options)
 {
     preSetup(options);
     
     ompl::sb::LazyRRT *rrt = new ompl::sb::LazyRRT(si);
     mp                     = rrt;    
 
-    if (hasOption(options, "range"))
+    if (options->hasParam("range"))
     {
-	rrt->setRange(optionAsDouble(options, "range", rrt->getRange()));
+	rrt->setRange(options->getParamDouble("range", rrt->getRange()));
 	ROS_DEBUG("Range is set to %g", rrt->getRange());
     }
     
-    if (hasOption(options, "goal_bias"))
+    if (options->hasParam("goal_bias"))
     {
-	rrt->setGoalBias(optionAsDouble(options, "goal_bias", rrt->getGoalBias()));
+	rrt->setGoalBias(options->getParamDouble("goal_bias", rrt->getGoalBias()));
 	ROS_DEBUG("Goal bias is set to %g", rrt->getGoalBias());
     }
     

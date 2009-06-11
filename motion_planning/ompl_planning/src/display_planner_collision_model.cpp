@@ -36,8 +36,6 @@
 
 /**
 
-@htmlinclude ../manifest.html
-
 @b DisplayPlannerCollisionModel is a node that displays the state of
 the robot's collision space, as seen by the planner
 
@@ -82,44 +80,42 @@ Provides (name/type):
 
 **/
 
-#include "kinematic_planning/CollisionSpaceMonitor.h"
-
-#include <std_msgs/Byte.h>
+#include <planning_environment/collision_space_monitor.h>
 #include <visualization_msgs/Marker.h>
+#include <std_msgs/Byte.h>
 
 #include <iostream>
 #include <sstream>
 #include <string>
 #include <map>
-using namespace kinematic_planning;
 
-class DisplayPlannerCollisionModel : public CollisionSpaceMonitor
+class DisplayPlannerCollisionModel
 {
 public:
 
-    DisplayPlannerCollisionModel(void) : CollisionSpaceMonitor()
+    DisplayPlannerCollisionModel(void)
     {
 	id_ = 0;
-	visualizationMarkerPublisher_ = m_nodeHandle.advertise<visualization_msgs::Marker>("visualization_marker", 10240);
+	visualizationMarkerPublisher_ = nh_.advertise<visualization_msgs::Marker>("visualization_marker", 10240);
+	collisionModels_ = new planning_environment::CollisionModels("robot_description");
+	collisionSpaceMonitor_ = new planning_environment::CollisionSpaceMonitor(collisionModels_);
+	if (collisionModels_->loadedModels())
+	{
+	    collisionSpaceMonitor_->setOnAfterMapUpdateCallback(boost::bind(&DisplayPlannerCollisionModel::afterWorldUpdate, this, _1));
+	    collisionSpaceMonitor_->setOnAfterAttachBodyCallback(boost::bind(&DisplayPlannerCollisionModel::afterAttachBody, this, _1));
+	}
     }
 
     virtual ~DisplayPlannerCollisionModel(void)
     {
-    }
-
-    void run(void)
-    {
-	loadRobotDescription();
-	if (loadedRobot())
-	    ros::spin();
+	delete collisionSpaceMonitor_;
+	delete collisionModels_;
     }
 
 protected:
 
     void afterWorldUpdate(const robot_msgs::CollisionMapConstPtr &collisionMap)
     {
-	CollisionSpaceMonitor::afterWorldUpdate(collisionMap);
-
 	unsigned int n = collisionMap->get_boxes_size();
 	for (unsigned int i = 0 ; i < n ; ++i)
 	{
@@ -130,9 +126,10 @@ protected:
 	}
     }
 
-    void afterAttachBody(const robot_msgs::AttachedObjectConstPtr &attachedObject, planning_models::KinematicModel::Link *link)
+    void afterAttachBody(planning_models::KinematicModel::Link *link)
     {
-	roslib::Header header = attachedObject->header;
+	roslib::Header header;
+	header.stamp = ros::Time::now();
 	header.frame_id = link->name;
 	for (unsigned int i = 0 ; i < link->attachedBodies.size() ; ++i)
         {
@@ -143,7 +140,6 @@ protected:
                 sendPoint(v.x(), v.y(), v.z(), std::max(std::max(box->size[0], box->size[1]), box->size[2] / 2.0), header, 0);
             }
         }
-	afterAttachBody(attachedObject, link);
     }
 
 private:
@@ -183,8 +179,11 @@ private:
 	visualizationMarkerPublisher_.publish(mk);
     }
 
-    int            id_;
-    ros::Publisher visualizationMarkerPublisher_;
+    int                                          id_;
+    ros::Publisher                               visualizationMarkerPublisher_;
+    ros::NodeHandle                              nh_;
+    planning_environment::CollisionModels       *collisionModels_;
+    planning_environment::CollisionSpaceMonitor *collisionSpaceMonitor_;
     
 };
 
@@ -193,7 +192,7 @@ int main(int argc, char **argv)
     ros::init(argc, argv, "display_planner_collision_model");
 
     DisplayPlannerCollisionModel disp;
-    disp.run();
-
+    ros::spin();
+    
     return 0;
 }

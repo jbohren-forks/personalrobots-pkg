@@ -39,21 +39,29 @@
     between the defined limits. Agreement with the mechanism control
     is looked at as well.  */
 
-#include <kinematic_planning/KinematicStateMonitor.h>
+#include <planning_environment/kinematic_model_state_monitor.h>
 #include <robot_msgs/JointTraj.h>
 #include <pr2_mechanism_controllers/TrajectoryStart.h>
 #include <pr2_mechanism_controllers/TrajectoryQuery.h>
 #include <cassert>
     
-class TestExecutionPath : public kinematic_planning::KinematicStateMonitor
+class TestExecutionPath 
 {
 public:
     
-    TestExecutionPath(void) : kinematic_planning::KinematicStateMonitor()
+    TestExecutionPath(void)
     {
-	jointCommandPublisher_ = m_nodeHandle.advertise<robot_msgs::JointTraj>("right_arm/trajectory_controller/trajectory_command", 1);
+	rm_ = new planning_environment::RobotModels("robot_description");
+	kmsm_ = new planning_environment::KinematicModelStateMonitor(rm_);
+	jointCommandPublisher_ = nh_.advertise<robot_msgs::JointTraj>("right_arm/trajectory_controller/trajectory_command", 1);
 	sleep_duration_ = 4;
 	use_topic_ = false;
+    }
+    
+    ~TestExecutionPath(void)
+    {
+	delete kmsm_;
+	delete rm_;
     }
     
     void testJointLimitsRightArm(const std::string& jname = "")
@@ -61,7 +69,7 @@ public:
 	// we send a trajectory with one state
 	robot_msgs::JointTraj traj;
 	const int controllerDim = 7;
-	std::string groupName = "pr2::right_arm";
+	std::string groupName = "right_arm";
 	traj.set_points_size(1);
         traj.points[0].set_positions_size(controllerDim);
 
@@ -70,7 +78,7 @@ public:
 	if (jname.empty())
 	{
 	    // get the joints in the group
-	    m_kmodel->getJointsInGroup(joints, m_kmodel->getGroupID(groupName));
+	    kmsm_->getKinematicModel()->getJointsInGroup(joints,  kmsm_->getKinematicModel()->getGroupID(groupName));
 	}
 	else
 	{
@@ -80,14 +88,14 @@ public:
         for (unsigned int j = 0 ;  j < joints.size() ; ++j)
         {
 	    // we only test revolute joints
-            planning_models::KinematicModel::RevoluteJoint *joint = dynamic_cast<planning_models::KinematicModel::RevoluteJoint*>(m_kmodel->getJoint(joints[j]));
+            planning_models::KinematicModel::RevoluteJoint *joint = dynamic_cast<planning_models::KinematicModel::RevoluteJoint*>(kmsm_->getKinematicModel()->getJoint(joints[j]));
             if (!joint) continue;
             
 	    printf("Testing '%s': [%f, %f]\n", joint->name.c_str(), joint->limit[0], joint->limit[1]);
 	    fprintf(stderr, "%s:\n", joint->name.c_str());
 	    
 	    // check the value of the joint at small increments
-            planning_models::KinematicModel::StateParams *sp = m_kmodel->newStateParams();
+            planning_models::KinematicModel::StateParams *sp = kmsm_->getKinematicModel()->newStateParams();
             for (double val = joint->limit[0] ; val <= joint->limit[1] ; val += 0.1)
             {
              	double to_send[controllerDim];
@@ -95,7 +103,7 @@ public:
 	            to_send[i] = 0.0;
                 sp->setParamsJoint(&val, joints[j]);
                 sp->copyParamsGroup(to_send, groupName);
-		int index = sp->getJointIndexInGroup(joints[j], groupName);
+		int index = kmsm_->getKinematicModel()->getJointIndexInGroup(joints[j], groupName);
 		
                 for (unsigned int i = 0 ;  i < traj.points[0].get_positions_size() ; ++i)
                     traj.points[0].positions[i] = to_send[i];
@@ -116,8 +124,8 @@ public:
 		    send_traj_start_req.traj = traj;
 		    int traj_done = -1;
 		    
-		    ros::ServiceClient clientStart = m_nodeHandle.serviceClient<pr2_mechanism_controllers::TrajectoryStart>("right_arm/trajectory_controller/TrajectoryStart");
-		    ros::ServiceClient clientQuery = m_nodeHandle.serviceClient<pr2_mechanism_controllers::TrajectoryQuery>("right_arm/trajectory_controller/TrajectoryQuery");
+		    ros::ServiceClient clientStart = nh_.serviceClient<pr2_mechanism_controllers::TrajectoryStart>("right_arm/trajectory_controller/TrajectoryStart");
+		    ros::ServiceClient clientQuery = nh_.serviceClient<pr2_mechanism_controllers::TrajectoryQuery>("right_arm/trajectory_controller/TrajectoryQuery");
 		    if (clientStart.call(send_traj_start_req, send_traj_start_res))
 		    {
 			ROS_INFO("Sent trajectory to controller");
@@ -141,7 +149,7 @@ public:
 		    printf("%f ", traj.points[0].positions[i]);
 		printf("\n");
 		
-		m_robotState->copyParamsGroup(to_send, groupName);
+		kmsm_->getRobotState()->copyParamsGroup(to_send, groupName);
                 printf("Achieved: ");
                 for (unsigned int i = 0 ;  i < traj.points[0].get_positions_size() ; ++i)
                     printf("%f ", to_send[i]);
@@ -159,8 +167,7 @@ public:
     
     void run(void)
     {
-	loadRobotDescription();
-	if (loadedRobot())
+	if (rm_->loadedModels())
 	{
 	    sleep(1);
 	    testJointLimitsRightArm();
@@ -169,11 +176,13 @@ public:
     }
     
 protected:
-    
-    int            sleep_duration_;
-    bool           use_topic_;
-    ros::Publisher jointCommandPublisher_;
-    
+    ros::NodeHandle                                   nh_;
+
+    int                                               sleep_duration_;
+    bool                                              use_topic_;
+    ros::Publisher                                    jointCommandPublisher_;
+    planning_environment::RobotModels                *rm_;
+    planning_environment::KinematicModelStateMonitor *kmsm_;
 };
 
 

@@ -39,10 +39,9 @@
 
 #include <ompl/extension/samplingbased/State.h>
 #include <ompl/base/StateValidityChecker.h>
-#include <planning_models/kinematic.h>
 #include <collision_space/environment.h>
+#include <planning_environment/kinematic_state_constraint_evaluator.h>
 #include "kinematic_planning/RKPModelBase.h"
-#include "kinematic_planning/RKPConstraintEvaluator.h"
 
 namespace kinematic_planning
 {
@@ -52,42 +51,47 @@ namespace kinematic_planning
     public:
         StateValidityPredicate(RKPModelBase *model) : ompl::base::StateValidityChecker()
 	{
-	    m_model = model;
+	    model_ = model;
 	}
 	
-	virtual bool operator()(const ompl::base::State *state) const
+	virtual bool operator()(const ompl::base::State *s) const
 	{
-	    m_model->kmodel->lock();
-	    m_model->kmodel->computeTransformsGroup(static_cast<const ompl::sb::State*>(state)->values, m_model->groupID);
-	    m_model->collisionSpace->updateRobotModel();
-	    
-	    bool valid = !m_model->collisionSpace->isCollision();
-	    
+	    model_->kmodel->lock();
+	    const double *state = static_cast<const ompl::sb::State*>(s)->values;
+	    model_->kmodel->computeTransformsGroup(state, model_->groupID);
+
+	    bool valid = kce_.decide(state, model_->groupID);
 	    if (valid)
-		valid = m_kce.decide();
-	    m_model->kmodel->unlock();
+	    {
+		model_->collisionSpace->updateRobotModel();
+		valid = !model_->collisionSpace->isCollision();
+	    }
+	    
+	    model_->kmodel->unlock();
 	    
 	    return valid;
 	}
 	
-	void setPoseConstraints(const std::vector<motion_planning_msgs::PoseConstraint> &kc)
+	void setConstraints(const motion_planning_msgs::KinematicConstraints &kc)
 	{
-	    m_kce.use(m_model->kmodel.get(), kc);
+	    kce_.clear();
+	    kce_.add(model_->kmodel, kc.pose);
+	    kce_.add(model_->kmodel, kc.joint);
 	}
 	
 	void clearConstraints(void)
 	{
-	    m_kce.clear();
+	    kce_.clear();
 	}
 	
-	const KinematicConstraintEvaluatorSet&  getKinematicConstraintEvaluatorSet(void) const
+	const planning_environment::KinematicConstraintEvaluatorSet& getKinematicConstraintEvaluatorSet(void) const
 	{
-	    return m_kce;
+	    return kce_;
 	}
 	
     protected:
-	mutable RKPModelBase            *m_model;
-	KinematicConstraintEvaluatorSet  m_kce;
+	mutable RKPModelBase                                  *model_;
+	planning_environment::KinematicConstraintEvaluatorSet  kce_;
     };  
     
 } // kinematic_planning

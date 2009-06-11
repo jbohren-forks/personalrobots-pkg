@@ -1,0 +1,29 @@
+# This service contains the definition for a request to the motion
+# planner and the output it provides
+
+# Parameters for the state space 
+motion_planning_msgs/KinematicSpaceParameters params
+
+
+# The goal state for the model to plan for. The goal is achieved
+# if all constraints are satisfied
+motion_planning_msgs/KinematicConstraints goal_constraints
+
+# No state in the produced motion plan will violate these constraints
+motion_planning_msgs/KinematicConstraints path_constraints
+
+# The number of times this plan is to be computed. Shortest solution
+# will be reported.
+int32 times
+
+# Boolean flag: if true, the returned path will contain interpolated
+# states. Otherwise, linear interpolation between states is assumed
+byte interpolate
+
+# The maximum amount of time the motion planner is allowed to plan for
+float64 allowed_time
+
+---
+
+# A handle for the motion plan. Future status messages will be marked with this ID.
+int32 id       

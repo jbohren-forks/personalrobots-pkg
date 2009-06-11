@@ -51,7 +51,7 @@ kinematic_planning::RKPIKKPIECESetup::~RKPIKKPIECESetup(void)
     }
 }
 
-bool kinematic_planning::RKPIKKPIECESetup::setup(const std::map<std::string, std::string> &options)
+bool kinematic_planning::RKPIKKPIECESetup::setup(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options)
 {
     preSetup(options);
     
@@ -59,21 +59,21 @@ bool kinematic_planning::RKPIKKPIECESetup::setup(const std::map<std::string, std
     mp                          = kpiece;	
 
     
-    if (hasOption(options, "range"))
+    if (options->hasParam("range"))
     {
-	kpiece->setRange(optionAsDouble(options, "range", kpiece->getRange()));
+	kpiece->setRange(options->getParamDouble("range", kpiece->getRange()));
 	ROS_DEBUG("Range is set to %g", kpiece->getRange());
     }
     
-    if (hasOption(options, "ik_range"))
+    if (options->hasParam("ik_range"))
     {
-	kpiece->setIKRange(optionAsDouble(options, "ik_range", kpiece->getIKRange()));
+	kpiece->setIKRange(options->getParamDouble("ik_range", kpiece->getIKRange()));
 	ROS_DEBUG("IK range is set to %g", kpiece->getIKRange());
     }
     
-    if (hasOption(options, "goal_bias"))
+    if (options->hasParam("goal_bias"))
     {
-	kpiece->setGoalBias(optionAsDouble(options, "goal_bias", kpiece->getGoalBias()));
+	kpiece->setGoalBias(options->getParamDouble("goal_bias", kpiece->getGoalBias()));
 	ROS_DEBUG("Goal bias is set to %g", kpiece->getGoalBias());
     }
     

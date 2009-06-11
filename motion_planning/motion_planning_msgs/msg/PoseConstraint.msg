@@ -2,6 +2,10 @@
 # Since there are multiple types of constraints, the 'type' member is used
 # to identify the different constraints
 
+Header header
+
+# Constants that represent possible values for type. A position and an 
+# orientation constant can be combined (by adding).
 
 int32 POSITION_XYZ=1 #  only x,y,z of position is considered
 int32 POSITION_XY=2  #  only x,y of position is considered
@@ -25,7 +29,7 @@ int32 ORIENTATION_Y=1792    # only roll, yaw of orientation is considered
 int32 type
 
 # The robot link this constraint refers to
-string robot_link
+string link_name
 
 # The desired pose of the robot link (in the robot frame)
 float64 x

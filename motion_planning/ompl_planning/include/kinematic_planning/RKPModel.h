@@ -67,7 +67,7 @@ namespace kinematic_planning
 		    delete i->second;
 	}
 	
-	void addRRT(const std::map<std::string, std::string> &options)
+	void addRRT(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options)
 	{
 	    RKPPlannerSetup *rrt = new RKPRRTSetup(dynamic_cast<RKPModelBase*>(this));
 	    if (rrt->setup(options))
@@ -76,7 +76,7 @@ namespace kinematic_planning
 		delete rrt;
 	}
 	
-	void addLazyRRT(const std::map<std::string, std::string> &options)
+	void addLazyRRT(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options)
 	{
 	    RKPPlannerSetup *rrt = new RKPLazyRRTSetup(dynamic_cast<RKPModelBase*>(this));
 	    if (rrt->setup(options))
@@ -85,7 +85,7 @@ namespace kinematic_planning
 		delete rrt;
 	}
 	
-	void addEST(const std::map<std::string, std::string> &options)
+	void addEST(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options)
 	{
 	    RKPPlannerSetup *est = new RKPESTSetup(dynamic_cast<RKPModelBase*>(this));
 	    if (est->setup(options))
@@ -94,7 +94,7 @@ namespace kinematic_planning
 		delete est;
 	}
 
-	void addSBL(const std::map<std::string, std::string> &options)
+	void addSBL(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options)
 	{
 	    RKPPlannerSetup *sbl = new RKPSBLSetup(dynamic_cast<RKPModelBase*>(this));
 	    if (sbl->setup(options))
@@ -103,7 +103,7 @@ namespace kinematic_planning
 		delete sbl;
 	}
 
-	void addIKSBL(const std::map<std::string, std::string> &options)
+	void addIKSBL(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options)
 	{
 	    RKPPlannerSetup *sbl = new RKPIKSBLSetup(dynamic_cast<RKPModelBase*>(this));
 	    if (sbl->setup(options))
@@ -112,7 +112,7 @@ namespace kinematic_planning
 		delete sbl;
 	}
 		
-	void addKPIECE(const std::map<std::string, std::string> &options)
+	void addKPIECE(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options)
 	{
 	    RKPPlannerSetup *kpiece = new RKPKPIECESetup(dynamic_cast<RKPModelBase*>(this));
 	    if (kpiece->setup(options))
@@ -122,7 +122,7 @@ namespace kinematic_planning
 	}
 
 	
-	void addIKKPIECE(const std::map<std::string, std::string> &options)
+	void addIKKPIECE(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options)
 	{
 	    RKPPlannerSetup *kpiece = new RKPIKKPIECESetup(dynamic_cast<RKPModelBase*>(this));
 	    if (kpiece->setup(options))

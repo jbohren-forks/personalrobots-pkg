@@ -107,7 +107,9 @@ namespace planning_models
 	    
 	    /** Bitvector identifying which groups this joint is part of */
 	    std::vector<bool> inGroup;
-	    
+
+	protected:
+
 	    /** the local transform (computed by forward kinematics) */
 	    btTransform       varTrans;
 
@@ -131,7 +133,7 @@ namespace planning_models
 	/** A fixed joint */
 	class FixedJoint : public Joint
 	{
-	public:
+	protected:
 	    
 	    /** Update the value of varTrans using the information from params */
 	    virtual void updateVariableTransform(const double *params);
@@ -149,7 +151,8 @@ namespace planning_models
 	    {
 	        usedParams = 3; // (x, y, theta)
 	    }
-	    
+
+	protected:
 	    /** Update the value of varTrans using the information from params */
 	    virtual void updateVariableTransform(const double *params);
 
@@ -166,6 +169,8 @@ namespace planning_models
 	    {
 	        usedParams = 7; // vector: (x, y, z)  quaternion: (x, y, z, w)
 	    }
+
+	protected:
 
 	    /** Update the value of varTrans using the information from params */
 	    virtual void updateVariableTransform(const double *params);
@@ -184,15 +189,17 @@ namespace planning_models
 		limit[0] = limit[1] = 0.0;
 		usedParams = 1;
 	    }
-	    
+
+	    btVector3 axis;
+	    double    limit[2];
+
+	protected:
 	    /** Update the value of varTrans using the information from params */
 	    virtual void updateVariableTransform(const double *params);
 
 	    /** Extract the information needed by the joint given the URDF description */
 	    virtual void extractInformation(const robot_desc::URDF::Link *urdfLink, Robot *robot);
 	    
-	    btVector3 axis;
-	    double    limit[2];
 	};
 	
 	/** A revolute joint */
@@ -206,17 +213,20 @@ namespace planning_models
 		continuous = false;
 		usedParams = 1;
 	    }
-	    
+	    	    
+	    btVector3 axis;
+	    btVector3 anchor;
+	    double    limit[2];
+	    bool      continuous;
+
+	protected:
+
 	    /** Update the value of varTrans using the information from params */
 	    virtual void updateVariableTransform(const double *params);
 
 	    /** Extract the information needed by the joint given the URDF description */
 	    virtual void extractInformation(const robot_desc::URDF::Link *urdfLink, Robot *robot);
-	    
-	    btVector3 axis;
-	    btVector3 anchor;
-	    double    limit[2];
-	    bool      continuous;
+
 	};
 	
 	/** Class defining bodies that can be attached to robot
@@ -224,6 +234,8 @@ namespace planning_models
 	    the robot. */
 	class AttachedBody
 	{
+	    friend class KinematicModel;
+	    
 	public:
 	    
 	    AttachedBody(void)
@@ -247,6 +259,7 @@ namespace planning_models
 	    /** The global transform for this link (computed by forward kinematics) */
 	    btTransform         globalTrans;
 	    
+	protected:
 	    /** recompute globalTrans */
 	    void computeTransform(btTransform &parentTrans);
 	};
@@ -311,6 +324,8 @@ namespace planning_models
 	    /** The global transform for this link (computed by forward kinematics) */
 	    btTransform                globalTrans;
 
+	protected:
+
 	    /* compute the parameter names from this link */
 	    unsigned int computeParameterNames(unsigned int pos);
 
@@ -339,10 +354,6 @@ namespace planning_models
 		    delete chain;
 	    }
 	    
-	    /** Add transforms to the rootTransform such that the robot is in its planar/floating link frame.
-	     *  Such a transform is needed only if the root joint of the robot is planar or floating */
-	    void reduceToRobotFrame(void);
-
 	    /** The model that owns this robot */
 	    KinematicModel     *owner;
 	    
@@ -502,12 +513,6 @@ namespace planning_models
 	    /** Return the current value of the params */
 	    const double* getParams(void) const;
 	    
-	    /** Get the offset for the parameter of a joint in a given group */
-	    int getJointIndexInGroup(const std::string &name, const std::string &group) const;
-
-	    /** Get the offset for the parameter of a joint in a given group */
-	    int getJointIndexInGroup(const std::string &name, int groupID) const;
-
 	    /** Copy the parameters for a given group to a destination address */
 	    void copyParamsGroup(std::vector<double> &params, const std::string &group) const;
 
@@ -542,7 +547,7 @@ namespace planning_models
 	    void print(std::ostream &out = std::cout) const;
 
 	    /** Print the missing joint names */
-	    void missing(int groupID = -1, std::ostream &out = std::cout);
+	    void missing(std::ostream &out = std::cout);
 	    
 	protected:
 	    
@@ -558,7 +563,6 @@ namespace planning_models
 	{
 	    m_mi.stateDimension = 0;
 	    m_mi.inRobotFrame = false;
-	    m_ignoreSensors = false;
 	    m_verbose = false;	    
 	    m_built = false;
 	}
@@ -569,8 +573,8 @@ namespace planning_models
 		delete m_robots[i];
 	}
 	
-	void         build(const std::string &description, const std::map< std::string, std::vector<std::string> > &groups, bool ignoreSensors = false);
-	virtual void build(const robot_desc::URDF &model, const std::map< std::string, std::vector<std::string> > &groups, bool ignoreSensors = false);
+	void         build(const std::string &description, const std::map< std::string, std::vector<std::string> > &groups);
+	virtual void build(const robot_desc::URDF &model, const std::map< std::string, std::vector<std::string> > &groups);
 	bool         isBuilt(void) const;
 	StateParams* newStateParams(void);
 	
@@ -581,22 +585,40 @@ namespace planning_models
 	unsigned int getRobotCount(void) const;
 	Robot*       getRobot(unsigned int index) const;
 
+	/** Get the array of groups, indexed by their group ID */
 	void         getGroups(std::vector<std::string> &groups) const;
-	int          getGroupID(const std::string &group) const;
-
-	/** Return the group name as it was in the original URDF document */
-	std::string  getURDFGroup(const std::string &group) const;
 	
+	/** Get the number of groups */
+	unsigned int getGroupCount(void) const;
+	
+	/** Get the group ID of a group */
+	int          getGroupID(const std::string &group) const;
+	
+	/** Get a link by its name */
 	Link*        getLink(const std::string &link) const;
+
+	/** Get the array of links, in no particular order */
 	void         getLinks(std::vector<Link*> &links) const;
 
+	/** Get a joint by its name */
 	Joint*       getJoint(const std::string &joint) const;
+
+	/** Get the array of joints, in no particular order */
 	void         getJoints(std::vector<Joint*> &joints) const;
 
-	/** Get the names of the joints in a specific group */
+	/** Get the names of the joints in a specific group. Only joints with paramteres are returned and the order is the 
+	    same as in the group state */
 	void         getJointsInGroup(std::vector<std::string> &names, int groupID) const;
-	/** Get the names of the joints in a specific group */
+	
+	/** Get the names of the joints in a specific group. Only joints with parameters are returned and the order is the 
+	    same as in the group state */
 	void         getJointsInGroup(std::vector<std::string> &names, const std::string &name) const;
+
+	/** Get the index for the parameter of a joint in a given group */
+	int getJointIndexInGroup(const std::string &name, const std::string &group) const;
+
+	/** Get the index for the parameter of a joint in a given group */
+	int getJointIndexInGroup(const std::string &name, int groupID) const;
 
 	/** Returns the dimension of the group (as a state, not number of joints) */
 	unsigned int getGroupDimension(int groupID) const;
@@ -613,7 +635,8 @@ namespace planning_models
 	/** Apply the transforms to the entire robot, based on the params */
 	void computeTransforms(const double *params);
 	
-	/** Add thansforms to the rootTransform such that the robot is in its planar/floating link frame */
+	/** Add transforms to the rootTransform such that the robot is in its planar/floating link frame.
+	 *  Such a transform is needed only if the root joint of the robot is planar or floating */
 	void reduceToRobotFrame(void);
 
 	/** Provide interface to a lock. Use carefully! */
@@ -637,23 +660,28 @@ namespace planning_models
     protected:
 	
 	/** The name of the model */
-	std::string                       m_name;
-	ModelInfo                         m_mi;
+	std::string                                       m_name;
+	ModelInfo                                         m_mi;
 	
-	std::vector<Robot*>               m_robots;
-	std::vector<std::string>          m_groups;
-	std::map<std::string, int>        m_groupsMap;	       
-	std::map<std::string, Link*>      m_linkMap;	
-	std::map<std::string, Joint*>     m_jointMap;
-	bool                              m_ignoreSensors;
-	bool                              m_verbose;    
-	bool                              m_built;
+	std::vector<Robot*>                               m_robots;
+	std::vector<std::string>                          m_groups;
+	std::map<std::string, int>                        m_groupsMap;
+	std::map< std::string, std::vector<std::string> > m_groupContent;
+	
+	std::map<std::string, Link*>                      m_linkMap;	
+	std::map<std::string, Joint*>                     m_jointMap;
+	std::map< std::string, std::map<int, int> >       m_jointIndexGroup;
+	
 
-	boost::mutex                      m_lock;
-	msg::Interface                    m_msg;
+	bool                                              m_verbose;    
+	bool                                              m_built;
+
+	boost::mutex                                      m_lock;
+	msg::Interface                                    m_msg;
 	
     private:
 	
+
 	/** Build the needed datastructure for a joint */
 	void buildChainJ(Robot *robot, Link  *parent, Joint *joint, const robot_desc::URDF::Link *urdfLink, const robot_desc::URDF &model);
 
@@ -661,11 +689,14 @@ namespace planning_models
 	void buildChainL(Robot *robot, Joint *parent, Link  *link,  const robot_desc::URDF::Link *urdfLink, const robot_desc::URDF &model);
 
 	/** Construct the list of groups the model knows about (the ones marked with the 'plan' attribute) */
-	void constructGroupList(const robot_desc::URDF &model);
+	void constructGroupList();
 	
 	/* compute the parameter names  */
 	void computeParameterNames(void);
 
+	/** Get the index for the parameter of a joint in a given group */
+	int getJointIndexInGroupSlow(const std::string &name, int groupID) const;
+	
 	/** Allocate a joint of appropriate type, depending on the loaded link */
 	Joint* createJoint(const robot_desc::URDF::Link* urdfLink);
 	

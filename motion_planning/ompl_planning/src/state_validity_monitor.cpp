@@ -36,9 +36,6 @@
 
 /**
 
-
-@htmlinclude ../manifest.html
-
 @b StateValidityMonitor is a node capable of verifying if the current
 state of the robot is valid or not.
 
@@ -83,76 +80,70 @@ Provides (name/type):
 
 **/
 
-#include "kinematic_planning/CollisionSpaceMonitor.h"
-
+#include <planning_environment/collision_space_monitor.h>
 #include <std_msgs/Byte.h>
-#include <visualization_msgs/Marker.h>
 
 #include <iostream>
 #include <sstream>
 #include <string>
 #include <map>
-using namespace kinematic_planning;
 
-class StateValidityMonitor : public CollisionSpaceMonitor
+class StateValidityMonitor
 {
 public:
 
-    StateValidityMonitor(void) : CollisionSpaceMonitor(),
-				 last_(-1)
+    StateValidityMonitor(void) : last_(-1)
     {
-	stateValidityPublisher_ = m_nodeHandle.advertise<std_msgs::Byte>("state_validity", 1);
+	stateValidityPublisher_ = nh_.advertise<std_msgs::Byte>("state_validity", 1);
+	collisionModels_ = new planning_environment::CollisionModels("robot_description");
+	collisionSpaceMonitor_ = new planning_environment::CollisionSpaceMonitor(collisionModels_);
+	if (collisionModels_->loadedModels())
+	{
+	    collisionSpaceMonitor_->setOnAfterMapUpdateCallback(boost::bind(&StateValidityMonitor::afterWorldUpdate, this, _1));
+	    collisionSpaceMonitor_->setOnStateUpdateCallback(boost::bind(&StateValidityMonitor::stateUpdate, this));
+	}
     }
 
     virtual ~StateValidityMonitor(void)
     {
-    }
-
-    void run(void)
-    {
-	loadRobotDescription();
-	waitForState();
-	ros::spin();
+	delete collisionSpaceMonitor_;
+	delete collisionModels_;
     }
 
 protected:
 
     void afterWorldUpdate(const robot_msgs::CollisionMapConstPtr &collisionMap)
     {
-	CollisionSpaceMonitor::afterWorldUpdate(collisionMap);
 	last_ = -1;
     }
     
     void stateUpdate(void)
     {
-	CollisionSpaceMonitor::stateUpdate();
-
-	if (m_collisionSpace)
+	collisionSpaceMonitor_->getEnvironmentModel()->lock();
+	collisionSpaceMonitor_->getKinematicModel()->computeTransforms(collisionSpaceMonitor_->getRobotState()->getParams());
+	collisionSpaceMonitor_->getEnvironmentModel()->updateRobotModel();
+	bool invalid = collisionSpaceMonitor_->getEnvironmentModel()->isCollision();
+	collisionSpaceMonitor_->getEnvironmentModel()->unlock();
+	std_msgs::Byte msg;
+	msg.data = invalid ? 0 : 1;
+	if (last_ != msg.data)
 	{
-	    m_collisionSpace->lock();
-	    m_kmodel->computeTransforms(m_robotState->getParams());
-	    m_collisionSpace->updateRobotModel();
-	    bool invalid = m_collisionSpace->isCollision();
-	    m_collisionSpace->unlock();
-	    std_msgs::Byte msg;
-	    msg.data = invalid ? 0 : 1;
-	    if (last_ != msg.data)
-	    {
-		last_ = msg.data;
-		stateValidityPublisher_.publish(msg);
-		if (invalid)
-		    ROS_WARN("State is in collision");
-		else
-		    ROS_INFO("State is valid");
-	    }
+	    last_ = msg.data;
+	    stateValidityPublisher_.publish(msg);
+	    if (invalid)
+		ROS_WARN("State is in collision");
+	    else
+		ROS_INFO("State is valid");
 	}
     }
-
+    
 private:
 
-    int            last_;
-    ros::Publisher stateValidityPublisher_;
-    
+    int                                          last_;
+    ros::NodeHandle                              nh_;
+    ros::Publisher                               stateValidityPublisher_;
+    planning_environment::CollisionModels       *collisionModels_;
+    planning_environment::CollisionSpaceMonitor *collisionSpaceMonitor_;
 };
 
 int main(int argc, char **argv)
@@ -160,7 +151,7 @@ int main(int argc, char **argv)
     ros::init(argc, argv, "state_validity_monitor");
 
     StateValidityMonitor validator;
-    validator.run();
-
+    ros::spin();
+    
     return 0;
 }

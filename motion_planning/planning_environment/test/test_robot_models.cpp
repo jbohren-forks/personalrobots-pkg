@@ -52,7 +52,7 @@ TEST(ForwardKinematics, RuntimeArm)
     planning_environment::RobotModels m("robotdesc/pr2");
     planning_models::KinematicModel* kmodel = m.getKinematicModel().get();
     
-    int gid = kmodel->getGroupID("pr2::right_arm");
+    int gid = kmodel->getGroupID("right_arm");
     unsigned int dim = kmodel->getGroupDimension(gid);
     double params[dim];
     for (unsigned int i = 0 ; i < dim ; ++i)

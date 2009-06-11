@@ -1,0 +1,132 @@
+/**
+\mainpage
+\htmlinclude manifest.html
+
+@b KinematicPlanning is a node capable of planning kinematic paths for
+a set of robot models. Each robot model is a complete model specified
+in URDF or consists of an URDF group.
+
+Organization:
+ - there are multiple models
+ - there are multiple planners that can be used for each model
+ - there are multiple types of planning requests
+
+The code is mostly implemented in the included RKP* files (ROS
+Kinematic Planning). There exists one basic class (RKPBasicRequest)
+that can handle different requests. However, since the type of a
+request may vary, the code for this basic request is templated. The
+functions that vary with the type of request have a simple default
+implementation (this implementation should not be used since it is
+incomplete) and specializations for the different types of
+requests. For new requests to be added, only specialization is
+needed. Inheritance is also possible, on top of RKPBasicRequest, but
+is not needed for the types of requets currently handled.
+
+A model is defined for each loaded URDF model, and for each of the
+URDF groups marked for planning. This model includes a kinematic
+model, a collision space (shared between models) and a set of
+planners. If a planner is used for different models, it is
+instantiated each time. Since planners may require different
+setup/configuration code, there exists a base class that defines the
+functionality and an inherited class for each type of planner that can
+be instantiated. The planners are associated to string names: RRT,
+LazyRRT, EST, SBL, IKSBL. These string names can be used for the 
+planner_id component of the planning request.
+
+When checking states for validity, a resolution at which paths are
+check needs to be defined. To make things easier for the user, this
+parameter is computed by default by the SpaceInformationRKPModel
+class. The current settings work fine for the PR2, but if another
+robot is to be used, different settings man need to be used.
+
+\todo
+- Find a better way to specify resolution for state validity
+checking.
+
+When using replanning, this node monitors the current state of the
+robot and that of the environment. When a change is detected, the
+currently executed path is checked for validity. If the current path
+is no longer valid, the validity status is set to false and a new path
+is computed. When the new path is computed, it is sent in the status
+messsage and validity is set to true (unless no solution is found, in
+which case the status remains invalid; a change in the map or a call
+to force_replanning will make the planner try again). When the planner
+detects that the robot reached the desired position, it stops the
+replanning thread and sets the done flag to true.
+
+If the monitored state of the robot and of the environment is not
+updated for a while (see the @ref parameters section), the unsafe flag
+of the planning status is set to true.
+
+
+\section codeapi Code API
+
+\section rosapi ROS API
+
+List of nodes:
+- \b motion_planner
+- \b state_validity_checker
+- \b display_planner_collision_model
+
+<!-- START: copy for each node -->
+
+<hr>
+
+\subsection motion_planner
+
+\subsubsection Usage
+\verbatim
+$ ompl_planning [standard ROS args]
+\endverbatim
+
+\par Example
+
+\verbatim
+$ ompl_planning robot_description:=pr2/robot_description
+\endverbatim
+
+
+\subsubsection topics ROS topics
+
+Subscribes to:
+- \b "in": [mechanism_state/MechanismState] 
+- \b "in": [localized_pose/PoseWithCovariance] 
+- \b "in": [collision_map/CollisionMap] 
+- \b "in": [attach_object/AttachedObject] 
+
+Publishes to:
+- \b "out": [kinematic_plan_status/KinematicPlanStatus] 
+
+\subsubsection parameters ROS parameters
+
+Reads the following parameters from the parameter server
+- @b "~refresh_interval_collision_map"/double : if more than this interval passes when receiving a request for motion planning,
+  the unsafe flag is set to true
+
+- @b "~refresh_interval_kinematic_state"/double : if more than this interval passes when receiving a request for motion planning,
+  the unsafe flag is set to true
+
+- @b "~refresh_interval_base_pose"/double : if more than this interval passes when receiving a request for motion planning,
+  the unsafe flag is set to true, unless we are planning in the robot frame, in which case, this the pase pose does not matter
+  (the collision map would be in the same frame)
+
+
+\subsubsection services ROS services
+
+- @b "plan_kinematic_path_state"/KinematicPlanState : given a robot model, starting and goal states,
+  this service computes and recomputes a collision free path until the monitored state is actually at the goal or
+  stopping is requested. Changes in the collision model trigger replanning. The computed path is published
+  as part of the status message.
+
+- @b "plan_kinematic_path_position"/KinematicPlanLinkPosition : given a robot model, starting state and goal
+  poses of certain links, this service computes a collision free path until the monitored state is actually at the 
+  goal or stopping is requested. Changes in the collision model trigger replanning.
+
+- @b "replan_force"/Empty : signal the planner to replan one more step
+
+- @b "replan_stop"/Empty : signal the planner to stop replanning
+
+
+<!-- END: copy for each node -->
+
+*/
