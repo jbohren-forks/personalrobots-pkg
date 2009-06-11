@@ -53,17 +53,18 @@
 
 
   <rendering:ogre>
-    <ambient>1.0 1.0 1.0 1.0</ambient>
+    <ambient>0.0 0.0 0.0 0.0</ambient>
     <sky>
       <material>Gazebo/CloudySky</material>
     </sky>
     <gazeboPath>media</gazeboPath>
     <grid>false</grid>
     <maxUpdateRate>10.</maxUpdateRate>
+    <shadowTechnique>stencilAdditive</shadowTechnique>
   </rendering:ogre>
 
   <model:physical name="gplane">
-    <xyz>0 0 0</xyz>	
+    <xyz>0 0 0</xyz>
     <rpy>0 0 0</rpy>
     <static>true</static>
 
@@ -74,7 +75,9 @@
         <kd>1.0</kd>
         <normal>0 0 1</normal>
         <size>51.3 51.3</size>
-        <material>Gazebo/White</material>
+        <segments>10 10</segments>
+        <uvTile>100 100</uvTile>
+        <material>Gazebo/GrayGrid</material>
       </geom:plane>
     </body:plane>
   </model:physical>
@@ -140,18 +143,16 @@
   </model:empty>
 
   <!-- White Directional light -->
-  <model:renderable name="directional_white">
+  <model:renderable name="point_white">
+    <xyz>0.0 0.0 50</xyz>
+    <enableGravity>false</enableGravity>
     <light>
-      <type>directional</type>
-      <direction>0 -0.5 -0.5</direction>
-      <diffuseColor>0.4 0.4 0.4</diffuseColor>
-      <specularColor>0.0 0.0 0.0</specularColor>
-      <attenuation>1 0.0 1.0 0.4</attenuation>
-      <range>10</range>
+      <type>point</type>
+      <diffuseColor>0.8 0.8 0.8</diffuseColor>
+      <specularColor>.1 .1 .1</specularColor>
+      <attenuation>0.1 0.03 0</attenuation>
+      <range>500</range>
     </light>
   </model:renderable>
-  <!--
-  -->
-  
 
 </gazebo:world>
