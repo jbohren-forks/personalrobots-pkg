@@ -816,9 +816,13 @@ void TopologicalMap::MapImpl::setDoorCost (RegionId id, const Time& t)
           Cell2D cell2 = containingCell(connectorPosition(*c2));
           bool found;
           double distance;
-          tie (found, distance) = grid_graph_->distanceBetween(cell1, cell2);
-          double cost = locked_cost + (found ? distance*resolution_ : locked_door_cost_);
-          roadmap_->setCost(*c1, *c2, cost);
+
+          // Hacky: because we don't always load the grid graph any more for memory reasons
+          if (grid_graph_.get()) {
+            tie (found, distance) = grid_graph_->distanceBetween(cell1, cell2);
+            double cost = locked_cost + (found ? distance*resolution_ : locked_door_cost_);
+            roadmap_->setCost(*c1, *c2, cost);
+          }
         }
   }
 }
