@@ -32,12 +32,17 @@ target_link_libraries(simpletest tf)
 #target_link_libraries(testMatrixQuaternion TF)
 #rospack_add_gtest(pose3d_unittest test/pose3d_unittest.cpp src/Pose3D.cpp)
 #target_link_libraries(pose3d_unittest TF)
-rospack_add_gtest(tf_unittest test/tf_unittest.cpp)
-target_link_libraries(tf_unittest tf)
-rospack_add_gtest_future(tf_unittest_future test/tf_unittest_future.cpp)
-target_link_libraries(tf_unittest_future tf)
-rospack_add_gtest(cache_unittest test/cache_unittest.cpp)
-target_link_libraries(cache_unittest tf)
+rospack_add_gtest(test/tf_unittest test/tf_unittest.cpp)
+target_link_libraries(test/tf_unittest tf)
+rospack_add_gtest_future(test/tf_unittest_future test/tf_unittest_future.cpp)
+target_link_libraries(test/tf_unittest_future tf)
+rospack_add_gtest(test/cache_unittest test/cache_unittest.cpp)
+target_link_libraries(test/cache_unittest tf)
+
+### Benchmarking
+rospack_add_gtest(test/tf_benchmark test/tf_benchmark.cpp)
+target_link_libraries(test/tf_benchmark tf)
+
 
 rospack_add_executable(btTest test/quaternion.cpp)
 rospack_add_executable(testListener test/testListener.cpp)
