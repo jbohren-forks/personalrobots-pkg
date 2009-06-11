@@ -80,6 +80,33 @@ def reparenting(ctx):
                 parent_id_map[frame_id] = t.parent_id
     return errors
 
+def cycle_detection(ctx):
+    max_depth = 100
+    errors = []
+    parent_id_map = {}
+    for m, stamp, callerid in _msgs:
+        for t in m.transforms:
+            frame_id = t.header.frame_id
+            parent_id_map[frame_id] = t.parent_id
+
+    for frame in parent_id_map:
+        frame_list = []
+        current_frame = frame
+        count = 0
+        while count < max_depth + 2:
+            count = count + 1
+            frame_list.append(current_frame)
+            try:
+                current_frame = parent_id_map[current_frame]
+            except KeyError:
+                break 
+            if current_frame == frame:
+                errors.append("Frame %s is in a loop. It's loop has elements:\n%s"% (frame, " -> ".join(frame_list)))
+                break
+            
+            
+    return errors
+
 def multiple_authority(ctx):
     errors = []
     authority_map = {}
@@ -109,6 +136,7 @@ tf_warnings = [
 ]
 tf_errors = [
   (reparenting, "TF re-parenting contention:"),
+  (cycle_detection, "TF cycle detection::"),
   (multiple_authority, "TF multiple authority contention:"),
 ]
 
