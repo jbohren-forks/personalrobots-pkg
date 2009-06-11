@@ -73,15 +73,16 @@ Sinusoid::Sinusoid()
 {
 }
 
-void Sinusoid::sample(double time, double& q, double& qd, double& qdd)
+double Sinusoid::update(double time, double& qd, double& qdd)
 {
   double angular_frequency = 2.0*M_PI*frequency_;
   double p = phase_ + angular_frequency*time;
   double sin_p = sin(p);
   double cos_p = cos(p);
-  q = offset_ + amplitude_*sin_p;
+  double q = offset_ + amplitude_*sin_p;
   qd = angular_frequency*amplitude_*cos_p;
   qdd = -angular_frequency*angular_frequency*amplitude_*sin_p;
+  return q;
 }
 
 void Sinusoid::debug()

@@ -91,11 +91,11 @@ public:
    * \brief Gets the value and derivatives of the sinusoid at a given time
    *
    * \param time Time at which to sample the sine wave
-   * \param q (output) The sampled value of the sine wave
    * \param qd (output) The derivative of the sine wave
    * \param qdd (output) Second derivative of the sine wave
+   * \return The sampled value of the sine wave
    */
-  void sample(double time, double& q, double& qd, double& qdd);
+  double update(double time, double& qd, double& qdd);
 
 private:
   double offset_;               /**< DC offset of the sine wave. */
