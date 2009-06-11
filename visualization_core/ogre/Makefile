@@ -6,7 +6,7 @@ TARBALL = build/$(OGRE_VERSION).tar.bz2
 TARBALL_URL = http://pr.willowgarage.com/downloads/$(OGRE_VERSION).tar.bz2
 SOURCE_DIR = build/$(OGRE_VERSION)
 UNPACK_CMD = tar xf
-TARBALL_PATCH = 
+TARBALL_PATCH = resize.diff
 INITIAL_DIR = build/ogre
 include $(shell rospack find mk)/download_unpack_build.mk
 
