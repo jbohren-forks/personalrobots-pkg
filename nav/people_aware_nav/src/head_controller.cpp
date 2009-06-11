@@ -67,7 +67,6 @@ public:
   HeadController() : node_("head_controller")//, tf_(node_)
   {
 
-    node_.param("/global_frame_id", global_frame_, string("/map"));
     node_.param("/head_control_type", head_control_type_, string("look_forward"));
     node_.param("/default_speed", default_speed_, 1.0);
     // look_forward, glance, look_at_goal
@@ -142,7 +141,6 @@ public:
 
 private:
   Node node_;
-  string global_frame_;
   //tf::TransformListener tf_;
   //NotifierPtr goal_notifier_;
   string head_control_type_;
@@ -187,24 +185,20 @@ private:
     if (speed < 0.0) {
       // As fast as possible
       PointStamped p;
-      //p.header.frame_id = global_frame_;
       p.header.frame_id = goal_pose_.header.frame_id;
       p.point = goal_pose_.pose.position;
-      //tf_.transformPoint(global_frame_, p, p);
       node_.publish("head_track_point",p);
     }
     else {
       // Change this to include the speed.
       PointStamped p;
-      //p.header.frame_id = global_frame_;
       p.header.frame_id = goal_pose_.header.frame_id;
       p.point = goal_pose_.pose.position;
-      //tf_.transformPoint(global_frame_, p, p);
       node_.publish("head_track_point",p);
     }
   }
 
-};
+}; // class
   
 } // namespace
 
