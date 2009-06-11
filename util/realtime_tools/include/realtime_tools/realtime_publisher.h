@@ -39,7 +39,7 @@
 #define REALTIME_PUBLISHER_H
 
 #include <string>
-#include <ros/node.h>
+#include <ros/node_handle.h>
 #include <boost/thread/mutex.hpp>
 #include <boost/thread/thread.hpp>
 #include <realtime_tools/realtime_tools.h>
@@ -49,18 +49,10 @@ namespace realtime_tools {
 template <class Msg>
 class RealtimePublisher
 {
-public:
-  RealtimePublisher(const std::string &topic, int queue_size)
-    : topic_(topic), node_(NULL), is_running_(false), keep_running_(false), turn_(REALTIME)
+private:
+  void construct(int queue_size)
   {
-    if ((node_ = ros::Node::instance()) == NULL)
-    {
-      int argc = 0;  char **argv = NULL;
-      ros::init(argc, argv);
-      node_ = new ros::Node("realtime_publisher", ros::Node::DONT_HANDLE_SIGINT);
-    }
-
-    node_->advertise<Msg>(topic_, queue_size);
+    publisher_ = node_.advertise<Msg>(topic_, queue_size);
 
     if (0 != realtime_cond_create(&updated_cond_))
     {
@@ -75,6 +67,20 @@ public:
     keep_running_ = true;
     thread_ = boost::thread(&RealtimePublisher::publishingLoop, this);
   }
+public:
+
+  // Deprecated
+  RealtimePublisher(const std::string &topic, int queue_size)
+    : topic_(topic), is_running_(false), keep_running_(false), turn_(REALTIME)
+  {
+    construct(queue_size);
+  }
+
+  RealtimePublisher(const ros::NodeHandle &node, const std::string &topic, int queue_size)
+    : topic_(topic), node_(node), is_running_(false), keep_running_(false), turn_(REALTIME)
+  {
+    construct(queue_size);
+  }
 
   ~RealtimePublisher()
   {
@@ -82,11 +88,7 @@ public:
     while (is_running())
       usleep(100);
 
-    // TODO: fix when multiple nodes per process are supported
-
-    // Don't unadvertise topic because other threads within the
-    // process may still be publishing on the topic
-    //node_->unadvertise(topic_);
+    publisher_.shutdown();
 
     // Destroy thread resources
     realtime_cond_delete(&updated_cond_);
@@ -165,7 +167,7 @@ public:
 
       // Sends the outgoing message
       if (keep_running_)
-        node_->publish(topic_, outgoing);
+        publisher_.publish(outgoing);
     }
     is_running_ = false;
   }
@@ -174,7 +176,8 @@ public:
 
 private:
 
-  ros::Node *node_;
+  ros::NodeHandle node_;
+  ros::Publisher publisher_;
   bool is_running_;
   bool keep_running_;
 
