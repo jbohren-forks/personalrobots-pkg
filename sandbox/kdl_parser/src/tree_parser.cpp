@@ -200,8 +200,8 @@ bool getSegment(TiXmlElement *segment_xml, map<string, Joint>& joints, Segment& 
   if (it == joints.end()) 
   {cout << "Could not find joint " << joint_name << " in segment" << endl; return false;}
   Joint joint = it->second;
-  if (it->second.getType() != Joint::None)
-    joint = Joint(frame*(it->second.JointOrigin()), it->second.JointAxis(), it->second.getType());
+  if (joint.getType() != Joint::None)
+    joint = Joint(frame*(joint.JointOrigin()), joint.JointAxis(), joint.getType());
 
   // get optional inertia
   RigidBodyInertia inertia(0.0);
