@@ -212,6 +212,19 @@ bool getSegment(TiXmlElement *segment_xml, map<string, Joint>& joints, Segment& 
 }
 
 
+void addChildrenToTree(const string& root, const map<string, Segment>& segments, const map<string, string>& parents, Tree& tree)
+{
+  // add root segments
+  if (tree.addSegment(segments.find(root)->second, root, parents.find(root)->second)){
+    cout << "Added segment " << root << " to " << parents.find(root)->second << endl;
+
+    // find children
+    for (map<string, string>::const_iterator p=parents.begin(); p!=parents.end(); p++)
+      if (p->second == root) addChildrenToTree(p->first, segments, parents, tree);
+  }
+  else {cout << "Failed to add segment to tree" << endl;}
+}
+
 
 bool getTree(TiXmlElement *robot, Tree& tree)
 {
@@ -237,6 +250,8 @@ bool getTree(TiXmlElement *robot, Tree& tree)
   // Constructs the segments
   TiXmlElement *segment_xml = NULL;
   Segment segment;
+  map<string, Segment> segments;
+  map<string, string> parents;
   for (segment_xml = robot->FirstChildElement("link"); segment_xml; segment_xml = segment_xml->NextSiblingElement("link")){
 
     // get segment name
@@ -248,21 +263,29 @@ bool getTree(TiXmlElement *robot, Tree& tree)
     string segment_parent;
     if (!getAtribute(segment_xml->FirstChildElement("parent"), "name", segment_parent)) 
     {cout << "Segment " << segment_name << " does not have parent" << endl; return false;}
-    if (tree.getNrOfSegments() == 0 && segment_parent != "root"){
-      cout << "Adding first segment to tree. Changing parent name from " << segment_parent << " to root" << endl;
-      segment_parent = "root";
-    }
 
     // build segment
     if (!getSegment(segment_xml, joints, segment)) 
     {cout << "Constructing segment " << segment_name << " failed" << endl; return false;}
-    
-    // add segment to tree
-    if (!tree.addSegment(segment, segment_name, segment_parent))
-    {cout << "Failed to add segment to tree" << endl; return false;}
-
-    cout << "Added segment " << segment_name << " to " << segment_parent << endl;
+    segments[segment_name] = segment;
+    parents[segment_name] = segment_parent;
   }
+
+  
+  // find the root segment: the parent segment that does not exist
+  string root;
+  for (map<string, string>::const_iterator p=parents.begin(); p!=parents.end(); p++){
+    for (map<string, Segment>::const_iterator s=segments.begin(); s!=segments.end(); s++){
+      if (p->second == s->first) break;
+      if (s == --(segments.end())) root = p->first;
+    }
+  }
+  cout << "renaming parent of root segment '" << root << "' from " << parents[root] << " to root" << endl;
+  parents[root] = "root";
+
+  // add all segments to tree
+  addChildrenToTree(root, segments, parents, tree);
+
   cout << "Tree has " << tree.getNrOfJoints() << " joints and " << tree.getNrOfSegments() << " segments" << endl;
 
   return true;
