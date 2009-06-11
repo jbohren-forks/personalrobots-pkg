@@ -328,6 +328,7 @@ bool RosProsilica::triggeredGrab(prosilica_cam::PolledImage::Request &req,
 
     img_bridge_.fromIpltoRosImage(roi,*this->roiImageMsg);
 
+    cvReleaseImage(&roi);
 
 
     this->lock.unlock();
