@@ -5,7 +5,7 @@ TEST_INSTALL_DIR = $(shell rospack find gazebo)/test-gazebo
 
 SVN_DIR = gazebo-svn
 SVN_URL = https://playerstage.svn.sourceforge.net/svnroot/playerstage/code/gazebo/trunk
-SVN_REVISION = -r 7840
+SVN_REVISION = -r 7844
 SVN_PATCH = 
 include $(shell rospack find mk)/svn_checkout.mk
 
@@ -49,7 +49,8 @@ CMAKE_ARGS = -D CMAKE_BUILD_TYPE=RELEASE \
 						 -D bullet_collision_dirs=$(BULLET_COLLISION_DIRS) \
 						 -D bullet_softbody_dirs=$(BULLET_SOFTBODY_DIRS) \
 						 -D bullet_math_dirs=$(BULLET_MATH_DIRS) \
-						 -D CMAKE_CXX_LINK_FLAGS="-lfltk -lfltk_gl"
+						 -D CMAKE_CXX_LINK_FLAGS="-lfltk -lfltk_gl"\
+						 -D ENABLE_SHADOWS=ON
 						 #-D freeimage_include_dir=$(FREEIMAGE_INCLUDE_DIR) \
 						 #-D freeimage_library_dir=$(FREEIMAGE_LIBRARY_DIR) \
 						 #-D freeimage_library=$(FREEIMAGE_LIBRARY) \
