@@ -111,8 +111,8 @@ public:
   {
     bool ret = false;
 
-    // start succeeds when the controller was stopped and starting() returns true
-    if (state_ == INITIALIZED){
+    // start succeeds even if the controller was already started
+    if (state_ == RUNNING || state_ == INITIALIZED){
       ret = starting();
       if (ret) state_ = RUNNING;
     }
