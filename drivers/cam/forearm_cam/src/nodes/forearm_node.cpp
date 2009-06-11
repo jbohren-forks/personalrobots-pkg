@@ -324,7 +324,7 @@ public:
         
     node_handle_.param("~trigger_controller", trig_controller_, std::string());
     node_handle_.param("~trigger_rate", trig_rate_, imager_freq_ - 1.);
-    node_handle_.getParam("~serial_number", serial_number_, -1);
+    node_handle_.getParam("~serial_number", serial_number_, -2);
     node_handle_.param("~trigger_phase", trig_phase_, 0.);
     
     // First packet offset parameter
@@ -445,19 +445,29 @@ public:
 
     // Open camera with requested serial number.
     int index = -1;
-    if (serial_number_ != -1) {
+    if (serial_number_ == -1) // Auto
+    {
+      if (pr2CamListNumEntries(&camList) == 1)
+      {
+        index = 0;
+      }
+      else
+      {
+        ROS_FATAL("Camera autodetection only works when exactly one camera is discoverable. Unfortunately, we found %i cameras.", pr2CamListNumEntries(&camList));
+      }
+    }
+    else if (serial_number_ == -2) // Nothing specified
+    {
+      ROS_FATAL("No camera serial_number was specified. Specifying a serial number is now mandatory to avoid accidentally configuring a random camera elsewhere in the building. You can specify -1 for autodetection.");
+      exit_status_ = 1;
+    }
+    else
+    {
       index = pr2CamListFind(&camList, serial_number_);
       if (index == -1) {
         ROS_FATAL("Couldn't find camera with S/N %i", serial_number_);
         exit_status_ = 1;
       }
-      else
-        camera_ = pr2CamListGetEntry(&camList, index);
-    }
-    else
-    {
-      ROS_FATAL("No camera serial_number was specified. Specifying a serial number is now mandatory to avoid accidentally configuring a random camera elsewhere in the building.");
-      exit_status_ = 1;
     }
 
     // List found cameras if we were unable to open the requested one or
@@ -475,6 +485,7 @@ public:
     }
 
     // Configure the camera with its IP address, wait up to 500ms for completion
+    camera_ = pr2CamListGetEntry(&camList, index);
     retval = pr2Configure(camera_, ip_address_.c_str(), SEC_TO_USEC(0.5));
     if (retval != 0) {
       if (retval == ERR_CONFIG_ARPFAIL) {
