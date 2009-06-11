@@ -11,7 +11,7 @@
  <depend package="door_msgs"/>
  <depend package="pr2_msgs"/>
  <depend package="pr2_srvs"/>
-
+ <depend package="motion_planning_msgs"/>
 
  <export>
     <cpp cflags="-I${prefix}/msg/cpp -I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib  -lrobot_actions"/>
