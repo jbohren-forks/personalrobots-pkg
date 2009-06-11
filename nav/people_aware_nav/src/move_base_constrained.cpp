@@ -95,7 +95,7 @@ namespace people_aware_nav {
     planner_costmap_ros_->getCostmapCopy(planner_costmap_);
 
     //initialize the NavFn planner
-    planner_ = new NavfnROS(ros_node_, tf_, planner_costmap_);
+    planner_ = new NavfnROS(ros_node_, tf_, *planner_costmap_ros_);
     ROS_INFO("MAP SIZE: %d, %d", planner_costmap_.cellSizeX(), planner_costmap_.cellSizeY());
 
     //create the ros wrapper for the controller's costmap... and initializer a pointer we'll use with the underlying map

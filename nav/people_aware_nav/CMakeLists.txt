@@ -14,3 +14,6 @@ rospack_add_lisp_executable(bin/hallway_move people-aware-nav lanes:main)
 
 rospack_add_executable(bin/move_base_constrained src/move_base_constrained.cpp)
 rospack_link_boost(bin/move_base_constrained thread)
+
+rospack_add_executable(bin/head_controller src/head_controller.cpp)
+rospack_link_boost(bin/head_controller thread)
