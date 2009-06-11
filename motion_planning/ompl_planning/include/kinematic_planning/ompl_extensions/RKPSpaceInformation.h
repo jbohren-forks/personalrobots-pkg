@@ -38,6 +38,7 @@
 #define KINEMATIC_PLANNING_RKP_SPACE_INFORMATION_
 
 #include <ompl/extension/samplingbased/kinematic/SpaceInformationKinematic.h>
+#include <motion_planning_msgs/JointConstraint.h>
 #include "kinematic_planning/RKPModelBase.h"
 #include <boost/shared_ptr.hpp>
 #include <vector>
@@ -49,52 +50,12 @@ namespace kinematic_planning
     class SpaceInformationRKPModel : public ompl::sb::SpaceInformationKinematic
     {
     public:
-        SpaceInformationRKPModel(RKPModelBase *model, double divisions = 20.0) : SpaceInformationKinematic()
+        SpaceInformationRKPModel(RKPModelBase *model) : SpaceInformationKinematic()
 	{	
 	    m_kmodel = model->kmodel;
 	    m_groupID = model->groupID;
-	    m_divisions = divisions;
-	    
-	    /* compute the state space for this group */
-	    m_stateDimension = m_kmodel->getModelInfo().groupStateIndexList[m_groupID].size();
-	    
-	    m_stateComponent.resize(m_stateDimension);
-	    
-	    for (unsigned int i = 0 ; i < m_stateDimension ; ++i)
-	    {	
-		int p = m_kmodel->getModelInfo().groupStateIndexList[m_groupID][i] * 2;
-		
-		if (m_stateComponent[i].type == ompl::sb::StateComponent::UNKNOWN)
-		{
-		    planning_models::KinematicModel::RevoluteJoint *rj = 
-			dynamic_cast<planning_models::KinematicModel::RevoluteJoint*>(m_kmodel->getJoint(m_kmodel->getModelInfo().parameterName[p]));
-		    if (rj && rj->continuous)
-			m_stateComponent[i].type = ompl::sb::StateComponent::WRAPPING_ANGLE;
-		    else
-			m_stateComponent[i].type = ompl::sb::StateComponent::NORMAL;
-		}
-		
-		m_stateComponent[i].minValue   = m_kmodel->getModelInfo().stateBounds[p    ];
-		m_stateComponent[i].maxValue   = m_kmodel->getModelInfo().stateBounds[p + 1];
-		m_stateComponent[i].resolution = (m_stateComponent[i].maxValue - m_stateComponent[i].minValue) / m_divisions;
-
-		for (unsigned int j = 0 ; j < m_kmodel->getModelInfo().floatingJoints.size() ; ++j)
-		    if (m_kmodel->getModelInfo().floatingJoints[j] == p)
-		    {
-			m_floatingJoints.push_back(i);
-			m_stateComponent[i + 3].type = ompl::sb::StateComponent::QUATERNION;
-			break;
-		    }
-		
-		for (unsigned int j = 0 ; j < m_kmodel->getModelInfo().planarJoints.size() ; ++j)
-		    if (m_kmodel->getModelInfo().planarJoints[j] == p)
-		    {
-			m_planarJoints.push_back(i);
-			m_stateComponent[i + 2].type = ompl::sb::StateComponent::WRAPPING_ANGLE;
-			break;		    
-		    }
-	    }
-	    updateResolution();
+	    m_divisions = 20.0;
+	    setupRKP();
 	}
 	
 	virtual ~SpaceInformationRKPModel(void)
@@ -104,66 +65,27 @@ namespace kinematic_planning
 	/** For planar and floating joints, we have infinite
 	    dimensions. The bounds for these dimensions are set by the
 	    user. */
-	void setPlanningVolume(double x0, double y0, double z0, double x1, double y1, double z1)
-	{
-	    for (unsigned int i = 0 ; i < m_floatingJoints.size() ; ++i)
-	    {
-		int id = m_floatingJoints[i];		
-		m_stateComponent[id    ].minValue = x0;
-		m_stateComponent[id    ].maxValue = x1;
-		m_stateComponent[id + 1].minValue = y0;
-		m_stateComponent[id + 1].maxValue = y1;
-		m_stateComponent[id + 2].minValue = z0;
-		m_stateComponent[id + 2].maxValue = z1;
-		for (int j = 0 ; j < 3 ; ++j)
-		    m_stateComponent[j + id].resolution = (m_stateComponent[j + id].maxValue - m_stateComponent[j + id].minValue) / m_divisions;
-	    }
-	    updateResolution();
-	}
+	void setPlanningVolume(double x0, double y0, double z0, double x1, double y1, double z1);
+	void setPlanningArea(double x0, double y0, double x1, double y1);
 	
-	void setPlanningArea(double x0, double y0, double x1, double y1)
-	{
-	    for (unsigned int i = 0 ; i < m_planarJoints.size() ; ++i)
-	    {
-		int id = m_planarJoints[i];		
-		m_stateComponent[id    ].minValue = x0;
-		m_stateComponent[id    ].maxValue = x1;
-		m_stateComponent[id + 1].minValue = y0;
-		m_stateComponent[id + 1].maxValue = y1;
-		for (int j = 0 ; j < 2 ; ++j)
-		    m_stateComponent[j + id].resolution = (m_stateComponent[j + id].maxValue - m_stateComponent[j + id].minValue) / m_divisions;
-	    }
-	    updateResolution();
-	}
+	/** Reduce bounds on the state space to incorporate joint constraints */
+	void setJointConstraints(const std::vector<motion_planning_msgs::JointConstraint> &jc);
+
+	/** Restore the constraints to the ones when the class was instantiated */
+	void clearJointConstraints(void);
 	
     protected:
+
+	void setupRKP(void);
+	void checkResolution(void);
+	bool checkBounds(void);
 	
-	void updateResolution(void)
-	{
-	    /* for movement in plane/space, we want to make sure the resolution is small enough */
-	    for (unsigned int i = 0 ; i < m_planarJoints.size() ; ++i)
-	    {
-		if (m_stateComponent[m_planarJoints[i]].resolution > 0.1)
-		    m_stateComponent[m_planarJoints[i]].resolution = 0.1;
-		if (m_stateComponent[m_planarJoints[i] + 1].resolution > 0.1)
-		    m_stateComponent[m_planarJoints[i] + 1].resolution = 0.1;
-	    }
-	    for (unsigned int i = 0 ; i < m_floatingJoints.size() ; ++i)
-	    {
-		if (m_stateComponent[m_floatingJoints[i]].resolution > 0.1)
-		    m_stateComponent[m_floatingJoints[i]].resolution = 0.1;
-		if (m_stateComponent[m_floatingJoints[i] + 1].resolution > 0.1)
-		    m_stateComponent[m_floatingJoints[i] + 1].resolution = 0.1;
-		if (m_stateComponent[m_floatingJoints[i] + 2].resolution > 0.1)
-		    m_stateComponent[m_floatingJoints[i] + 2].resolution = 0.1;
-	    }
-	}
-	
-	double                           m_divisions;
-	planning_models::KinematicModel *m_kmodel;
-	int                              m_groupID;
-	std::vector<int>                 m_floatingJoints;
-	std::vector<int>                 m_planarJoints;
+	std::vector<ompl::sb::StateComponent> m_basicStateComponent;
+	double                                m_divisions;
+	planning_models::KinematicModel      *m_kmodel;
+	int                                   m_groupID;
+	std::vector<int>                      m_floatingJoints;
+	std::vector<int>                      m_planarJoints;
 	
     };    
     

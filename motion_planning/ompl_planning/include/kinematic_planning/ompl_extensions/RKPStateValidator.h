@@ -42,6 +42,7 @@
 #include <collision_space/environment.h>
 #include <planning_environment/kinematic_state_constraint_evaluator.h>
 #include "kinematic_planning/RKPModelBase.h"
+#include "kinematic_planning/ompl_extensions/RKPSpaceInformation.h"
 
 namespace kinematic_planning
 {
@@ -49,8 +50,9 @@ namespace kinematic_planning
     class StateValidityPredicate : public ompl::base::StateValidityChecker
     {
     public:
-        StateValidityPredicate(RKPModelBase *model) : ompl::base::StateValidityChecker()
+        StateValidityPredicate(SpaceInformationRKPModel *si, RKPModelBase *model) : ompl::base::StateValidityChecker()
 	{
+	    si_ = si;
 	    model_ = model;
 	}
 	
@@ -76,7 +78,9 @@ namespace kinematic_planning
 	{
 	    kce_.clear();
 	    kce_.add(model_->kmodel, kc.pose);
-	    kce_.add(model_->kmodel, kc.joint);
+	    // joint constraints simply update the state space bounds
+	    si_->clearJointConstraints();
+	    si_->setJointConstraints(kc.joint);
 	}
 	
 	void clearConstraints(void)
@@ -91,6 +95,7 @@ namespace kinematic_planning
 	
     protected:
 	mutable RKPModelBase                                  *model_;
+	SpaceInformationRKPModel                              *si_;
 	planning_environment::KinematicConstraintEvaluatorSet  kce_;
     };  
     

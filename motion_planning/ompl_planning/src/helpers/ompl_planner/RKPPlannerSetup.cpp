@@ -122,8 +122,9 @@ void kinematic_planning::RKPPlannerSetup::preSetup(boost::shared_ptr<planning_en
 {
     ROS_DEBUG("Adding %s instance for motion planning: %s", name.c_str(), model->groupName.c_str());
     
-    si       = new SpaceInformationRKPModel(model);
-    svc      = new StateValidityPredicate(model);
+    SpaceInformationRKPModel *si_rkp = new SpaceInformationRKPModel(model);
+    si       = si_rkp;
+    svc      = new StateValidityPredicate(si_rkp, model);
     si->setStateValidityChecker(svc);
     
     smoother = new ompl::sb::PathSmootherKinematic(si);

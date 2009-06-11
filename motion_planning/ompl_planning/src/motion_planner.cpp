@@ -216,7 +216,7 @@ public:
 	
 	stopReplanning();
 	
-	if (1 || m_collisionSpaceMonitor->haveState())
+	if (m_collisionSpaceMonitor->haveState())
 	{	    
 	    motion_planning_msgs::KinematicState start;
 	    m_collisionSpaceMonitor->getRobotState()->copyParams(start.vals);

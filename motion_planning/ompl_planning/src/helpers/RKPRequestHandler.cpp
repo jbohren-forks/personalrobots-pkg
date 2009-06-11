@@ -191,9 +191,11 @@ void kinematic_planning::RKPRequestHandler::setupGoalState(RKPPlannerSetup *pset
 
 void kinematic_planning::RKPRequestHandler::update(void)
 {
+    /* before configuring, we may need to update bounds on the state space */
+    setupConstraints(m_activePSetup, m_activeReq.path_constraints);
+    
     /* configure state space and starting state */
     setupStateSpaceAndStartState(m_activePSetup, m_activeReq.params, m_activeStartState);
-    setupConstraints(m_activePSetup, m_activeReq.path_constraints);
     
     /* add goal state */
     setupGoalState(m_activePSetup, m_activeReq);	    
@@ -377,6 +379,9 @@ void kinematic_planning::RKPRequestHandler::fillSolution(RKPPlannerSetup *psetup
     {
 	path.states.resize(bestPath->states.size());
 	path.times.resize(bestPath->states.size());
+	path.names.clear();
+	psetup->model->kmodel->getJointsInGroup(path.names, psetup->model->groupID);
+	
 	for (unsigned int i = 0 ; i < bestPath->states.size() ; ++i)
 	{
 	    path.times[i] = i * 0.1;

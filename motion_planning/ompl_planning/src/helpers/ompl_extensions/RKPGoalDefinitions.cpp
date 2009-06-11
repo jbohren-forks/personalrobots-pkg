@@ -98,7 +98,7 @@ void kinematic_planning::GoalToState::setup(ompl::sb::SpaceInformationKinematic 
 	}
     }
     
-    // check if joint bounds are feasibles
+    // check if joint bounds are feasible
     for (int i = 0 ; i < dim_ ; ++i)
 	if (bounds_[i].first > bounds_[i].second)
 	{
