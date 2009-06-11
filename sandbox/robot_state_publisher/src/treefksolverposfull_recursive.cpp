@@ -62,7 +62,7 @@ void TreeFkSolverPosFull_recursive::addFrameToMap(const map<string, double>& q_i
     this_frame = this_frame * this_segment->second.segment.pose(jnt_pos->second);
   }
   if (this_segment->first != "root")
-    p_out[this_segment->first] = this_frame;
+    p_out.insert(make_pair(this_segment->first, this_frame));
 
   // get poses of child segments
   for (vector<SegmentMap::const_iterator>::const_iterator child=this_segment->second.children.begin(); child !=this_segment->second.children.end(); child++)

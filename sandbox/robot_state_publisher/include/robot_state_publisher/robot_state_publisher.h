@@ -39,9 +39,10 @@
 
 #include <kdl_parser/tree_parser.hpp>
 #include <ros/ros.h>
-#include <tf/transform_broadcaster.h>
 #include <robot_msgs/MechanismState.h>
 #include <boost/scoped_ptr.hpp>
+#include <tf/tf.h>
+#include <tf/tfMessage.h>
 #include "robot_state_publisher/treefksolverposfull_recursive.hpp"
 
 
@@ -59,14 +60,12 @@ private:
   void callback(const MechanismStateConstPtr& state);
 
   ros::NodeHandle n_;
-  tf::TransformBroadcaster tf_;
   ros::Publisher tf_publisher_;
   ros::Subscriber mech_state_subscr_;
   ros::Rate publish_rate_;
   KDL::Tree tree_;
   boost::scoped_ptr<KDL::TreeFkSolverPosFull_recursive> solver_;
   std::string root_;
-  bool use_tf_broadcaster_;
   std::string tf_prefix_;
 };
 
