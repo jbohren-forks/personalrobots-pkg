@@ -26,6 +26,7 @@ set(_srcs
     src/joint_limit_calibration_controller.cpp
     src/joint_blind_calibration_controller.cpp
     src/joint_chain_constraint_controller.cpp
+    src/joint_chain_sine_controller.cpp
     src/trigger_controller.cpp
     src/probe.cpp
 )
