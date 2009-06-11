@@ -119,7 +119,7 @@
 
   <!-- White Point light -->
   <model:renderable name="point_white">
-    <xyz>2 1 4</xyz>
+    <xyz>0.0 0.0 3</xyz>
     <enableGravity>false</enableGravity>
     <light>
       <type>point</type>
