@@ -258,14 +258,14 @@ void JointChainSineController::update()
     jnt_des_pos_vel_.q = jnt_prev_des_pos_;
     for (int i=0; i<num_joints_; i++)
       jnt_des_pos_vel_.qdot(i) = 0.0;
-    if (count_%200 == 0)
-      printf("Violating constraints!\n");
+    //if (count_%200 == 0)
+    //  printf("Violating constraints!\n");
   }
   else
   {
     jnt_prev_des_pos_ = jnt_pos_vel_.q;
-    if (count_%200 == 0)
-      printf("Not violating constraints!\n");
+    //if (count_%200 == 0)
+    //  printf("Not violating constraints!\n");
   }
 
   // set the efforts for the joints using pid:
@@ -307,26 +307,18 @@ bool JointChainSineController::violatesConstraints()
 {
   KDL::Frame pose;
   KDL::Frame cur_pose;
-  KDL::Frame test_pose;
   jnt_to_pose_solver_->JntToCart(jnt_des_pos_vel_.q, pose);
   jnt_to_pose_solver_->JntToCart(jnt_pos_vel_.q, cur_pose);
 
-  KDL::JntArray test_q;
-  test_q.resize(num_joints_);
-  for (int i=0; i<num_joints_; i++)
-    test_q(i) = 0.0;
-  jnt_to_pose_solver_->JntToCart(test_q, test_pose);
-
-
-  if (count_%200 == 0)
+  /*if (count_%200 == 0)
   {
     printf("Desired = %f %f %f\n", pose.p[0], pose.p[1], pose.p[2]);
     printf("Current = %f %f %f\n", cur_pose.p[0], cur_pose.p[1], cur_pose.p[2]);
-    printf("Test    = %f %f %f\n", test_pose.p[0], test_pose.p[1], test_pose.p[2]);
+    //printf("Test    = %f %f %f\n", test_pose.p[0], test_pose.p[1], test_pose.p[2]);
     double roll, pitch, yaw;
     //cur_pose.M.GetRPY(roll, pitch, yaw);
     //printf("Current rpy = %f %f %f\n", roll, pitch, yaw);
-  }
+  }*/
 
   // iterate through each constraint, check if anything is violated:
   for (unsigned int i=0; i<cart_constraints_.size(); i++)
