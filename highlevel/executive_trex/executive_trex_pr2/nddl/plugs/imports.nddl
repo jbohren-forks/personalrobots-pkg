@@ -16,6 +16,10 @@ PlugIn plug_in = new PlugIn(External);
 DetectOutletFine detect_outlet_fine = new DetectOutletFine(External);
 DetectOutletCoarse detect_outlet_coarse = new DetectOutletCoarse(External);
 
+// Additional mechanisms used
+RightArmMechanism right_arm_mechanism = new RightArmMechanism(External);
+RightGripperMechanism right_gripper_mechanism = new RightGripperMechanism(External);
+
 /******************************
  * Controller Requirements
  *****************************/
@@ -26,11 +30,14 @@ DetectPlugOnBase::Active{
 DetectOutletCoarse::Active{
   contained_by(head_mechanism.use_head_controller);
   contained_by(laser_tilt_mechanism.use_laser_tilt_controller);
+  contained_by(arms_tucked.Holds p);
+  eq(p.value, true);
 }
 
 DetectOutletFine::Active{
   contained_by(head_mechanism.use_head_controller);
-  //@todo Priscillica camera?
+  contained_by(arms_tucked.Holds p);
+  eq(p.value, true);
 }
 
 PlugsUntuckArms::Active{

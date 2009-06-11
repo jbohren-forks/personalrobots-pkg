@@ -1,12 +1,6 @@
+#include "safety/exports.nddl"
+
 // Navigation specific
 MoveBase move_base = new MoveBase(External);
-
-/**
- * Must be in a valid mobility state
- */
-MoveBase::Active{
-  contained_by(MobilityStatus.Holds ms);
-  eq(ms.stuck, false);
-  eq(ms.gripper_open, true);
-  eq(ms.arm_stowed, true);
-}
+ArmsTucked arms_tucked = new ArmsTucked(External);
+TiltLaserReady tilt_laser_ready = new TiltLaserReady(External);

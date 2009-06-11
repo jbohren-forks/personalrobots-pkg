@@ -13,7 +13,6 @@ float RELEASE_HANDLE_DURATION_BOUND = 30.0;
 float MOVE_BASE_LOCAL_APPROACH_DURATION_BOUND = 60.0;
 float MOVE_BASE_THROUGH_DOOR_DURATION_BOUND = 600.0;
 float MOVE_BASE_DOOR_DURATION_BOUND = 120.0;
-float SAFETY_TUCK_ARMS_DURATION_BOUND = 60.0;
 
 class DoorState extends AgentTimeline {
 
@@ -152,37 +151,23 @@ DoorController::Holds {
     meets(Holds s);
     contained_by(doorman.Active dm_active);
 
-    // Derive arms_tucked from external safety monitor.
-    // TODO: Analyze bug that arises when I include guards directly on mb.arms_tucked. The local variable
-    // below is just a workaround
-    starts_during(mobility_status.Holds ms);
-    bool arms_tucked;
-    eq(arms_tucked, ms.arms_tucked);
-
     bool done;
     calc_or(done, timed_out, finishing);
     if(done == true){
       if(have_handle == false){
-	if(arms_tucked == true){
-	  eq(s.active, false);
-	  meets(doorman.Inactive dm_inactive);
-	  eq(duration, 1);	 
-	  if(timed_out == true){
-	    eq(dm_inactive.status, ABORTED);
-	  }
-	  else {
-	    if(doorway_clear == true){
-	      eq(dm_inactive.status, SUCCESS);
-	    }
-	    else {
-	      eq(dm_inactive.status, ABORTED);
-	    }
-	  }
+	eq(s.active, false);
+	meets(doorman.Inactive dm_inactive);
+	eq(duration, 1);	 
+	if(timed_out == true){
+	  eq(dm_inactive.status, ABORTED);
 	}
 	else {
-	  contains_start(safety_tuck_arms.Active cmd);
-	  leq(cmd.max_duration, SAFETY_TUCK_ARMS_DURATION_BOUND);
-	  concurrent(cmd.end, end);
+	  if(doorway_clear == true){
+	    eq(dm_inactive.status, SUCCESS);
+	  }
+	  else {
+	    eq(dm_inactive.status, ABORTED);
+	  }
 	}
       }
       else{
@@ -192,34 +177,22 @@ DoorController::Holds {
     }
     else{
       if(doorway_clear == true){
+	// STATE_DRIVE_THRU
 	contains_start(move_base.Active cmd);
 	concurrent(cmd.end, end);
 	leq(cmd.max_duration, remaining_time);
 	leq(cmd.max_duration, MOVE_BASE_THROUGH_DOOR_DURATION_BOUND);
 	eq_pose_msg(cmd.object, dm_active.object);
-
-	contains_start(set_laser_tilt.Active cmd_set_laser_tilt);
-	eq(cmd_set_laser_tilt.status, SUCCESS);
-	cmd_set_laser_tilt before cmd;
       }
       else {
 	if(check_doorway == true){
-	  if(arms_tucked == true){
-	    // Now the goal will be the target across the doorway. This is the goal pose for the containing behavior
-	    contains_start(check_path.Active cmd);
-	    concurrent(cmd.end, end);
-	    leq(cmd.max_duration, remaining_time);
-	    leq(cmd.max_duration, CHECK_PATH_DURATION_BOUND);
-	    eq_pose_msg(cmd.object, dm_active.object);
-
-	    contains_start(set_laser_tilt.Active cmd_set_laser_tilt);
-	    eq(cmd_set_laser_tilt.status, SUCCESS);
-	    cmd_set_laser_tilt before cmd;
-	  }
-	  else {
-	    contains_start(safety_tuck_arms.Active cmd);
-	    concurrent(cmd.end, end);
-	  }
+	  // STATE_CHECK_DOORWAY
+	  // Now the goal will be the target across the doorway. This is the goal pose for the containing behavior
+	  contains_start(check_path.Active cmd);
+	  concurrent(cmd.end, end);
+	  leq(cmd.max_duration, remaining_time);
+	  leq(cmd.max_duration, CHECK_PATH_DURATION_BOUND);
+	  eq_pose_msg(cmd.object, dm_active.object);
 	}
 	else {
 	  if(must_find_handle == false){
@@ -236,11 +209,13 @@ DoorController::Holds {
 		cmd_move_base_door before cmd_stop_action;
 
 		if(have_handle == true){
+		  // STATE_OPEN_DOOR
 		  contains_start(open_door.Active cmd_open_door);
 		  cmd_open_door starts_before cmd_move_base_door;
 		  eq(cmd_stop_action.action_name,"open_door");
 		}
 		else {
+		  // STATE_PUSH_DOOR
 		  contains_start(touch_door.Active cmd_touch_door);
 		  contains_start(push_door.Active cmd_push_door);
 		  eq(cmd_touch_door.status, SUCCESS);
@@ -252,6 +227,7 @@ DoorController::Holds {
 	      }
 	      else{
 		if(have_handle == true){
+		  // STATE_UNLATCH
 		  contains_start(unlatch_handle.Active cmd);
 		  concurrent(cmd.end, end);
 		  leq(cmd.max_duration, remaining_time);
@@ -259,6 +235,7 @@ DoorController::Holds {
 		}
 		else {
 		  // Don't have the handle, but could grasp it!
+		  // STATE_GRASP
 		  contains_start(grasp_handle.Active cmd);
 		  concurrent(cmd.end, end);
 		  leq(cmd.max_duration, remaining_time);
@@ -267,27 +244,19 @@ DoorController::Holds {
 	      }
 	    }
 	    else { // Not in position
-	      // Move to the grasp position. Checking to tuck arms may be unnecessary
-	      if(arms_tucked == true){
-		contains_start(move_base_local.Active cmd);
-		concurrent(cmd.end, end);
-		leq(cmd.max_duration, remaining_time);
-		leq(cmd.max_duration, MOVE_BASE_LOCAL_APPROACH_DURATION_BOUND);
-		eq(cmd.frame_id, ds.frame_id);
-		door_get_robot_pose_for_door(cmd.x, cmd.y, cmd.z, cmd.qx, cmd.qy, cmd.qz, cmd.qw, ds.object, GRASP_RANGE);
-
-		contains_start(set_laser_tilt.Active cmd_set_laser_tilt);
-		eq(cmd_set_laser_tilt.status, SUCCESS);
-		cmd_set_laser_tilt before cmd;
-	      }
-	      else {
-		contains_start(safety_tuck_arms.Active cmd);
-		concurrent(cmd.end, end);
-	      }
+	      // STATE_APPROACH_DOOR
+	      // Move to the grasp position. 
+	      contains_start(move_base_local.Active cmd);
+	      concurrent(cmd.end, end);
+	      leq(cmd.max_duration, remaining_time);
+	      leq(cmd.max_duration, MOVE_BASE_LOCAL_APPROACH_DURATION_BOUND);
+	      eq(cmd.frame_id, ds.frame_id);
+	      door_get_robot_pose_for_door(cmd.x, cmd.y, cmd.z, cmd.qx, cmd.qy, cmd.qz, cmd.qw, ds.object, GRASP_RANGE);
 	    }
 	  }
 	  else { // Found handle == false
 	    if(found_door == true){
+	      // STATE_DETECT_HANDLE
 	      contains_start(detect_handle.Active cmd);
 	      leq(cmd.max_duration, remaining_time);
 	      leq(cmd.max_duration, DETECT_HANDLE_DURATION_BOUND);
@@ -296,34 +265,26 @@ DoorController::Holds {
 	    else {
 	      // If in detection position, we can detect the door
 	      if(in_position == true){
+		// STATE_DETECT_HANDLE
 		contains_start(detect_door.Active cmd);
 		leq(cmd.max_duration, remaining_time);
 		concurrent(cmd.end, end);
 	      }
 	      else {
 		// Should move to detection position using standard navigation
-		if(arms_tucked == true){
+		if(have_handle == false){
+		  // STATE_POSITIONING
 		  contains_start(move_base.Active cmd);
 		  concurrent(cmd.end, end);
 		  leq(cmd.max_duration, remaining_time);
 		  eq(cmd.frame_id, "map");
 		  map_get_door_approach_pose(cmd.x, cmd.y, cmd.z, cmd.qx, cmd.qy, cmd.qz, cmd.qw, dm_active.start_connector);
-
-		  contains_start(set_laser_tilt.Active cmd_set_laser_tilt);
-		  eq(cmd_set_laser_tilt.status, SUCCESS);
-		  cmd_set_laser_tilt before cmd;
 		}
 		else {
-		  if(have_handle == true){
-		    contains_start(release_handle.Active cmd);
-		    concurrent(cmd.end, end);
-		    leq(cmd.max_duration, RELEASE_HANDLE_DURATION_BOUND);
-		  }
-		  else {
-		    contains_start(safety_tuck_arms.Active cmd);
-		    concurrent(cmd.end, end);
-		    leq(cmd.max_duration, SAFETY_TUCK_ARMS_DURATION_BOUND);
-		  }
+		  // STATE_WITHDRAWING?
+		  contains_start(release_handle.Active cmd);
+		  concurrent(cmd.end, end);
+		  leq(cmd.max_duration, RELEASE_HANDLE_DURATION_BOUND);
 		}
 	      }
 	    }

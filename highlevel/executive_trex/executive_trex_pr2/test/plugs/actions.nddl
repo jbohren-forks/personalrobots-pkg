@@ -53,7 +53,6 @@ PlugActions::PickupAndRelease {
   // Subgoal all the actions. It would be nice if they were sequenced in declaration
   // These are variable declarations, in the form of contains(${X}.active cmd_${X})
   // where X is a variable declared in plugs/imports.nddl.
-  contains(safety_tuck_arms.Active cmd_tuck_arms);
   contains(plugs_untuck_arms.Active cmd_untuck_arms);
   contains(detect_plug_on_base.Active cmd_detect_plug_on_base);
   contains(move_and_grasp_plug.Active cmd_move_and_grasp_plug);
@@ -64,7 +63,6 @@ PlugActions::PickupAndRelease {
   contains(stow_plug.Active cmd_stow_plug);
 
   // Sequence them
-  cmd_tuck_arms before cmd_untuck_arms;
   cmd_untuck_arms before cmd_detect_plug_on_base;
   cmd_detect_plug_on_base before cmd_move_and_grasp_plug;
   cmd_move_and_grasp_plug before cmd_detect_outlet_fine;
@@ -75,7 +73,6 @@ PlugActions::PickupAndRelease {
 
   // Constrain all to be successful
   eq(SUCCESS,
-     cmd_tuck_arms.status,
      cmd_untuck_arms.status,
      cmd_detect_plug_on_base.status,
      cmd_move_and_grasp_plug.status,

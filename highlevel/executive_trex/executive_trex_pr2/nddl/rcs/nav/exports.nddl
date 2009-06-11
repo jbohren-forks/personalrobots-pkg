@@ -31,10 +31,21 @@ class BaseState extends ROSStateVariable {
 };
 
 /**
+ * @brief Common base class for navigation behaviors which will impose similar requirements
+ */
+class NavigationBehavior extends ROSAction{
+  predicate Inactive{}
+  predicate Active{}
+  NavigationBehavior(Mode _mode){
+    super(_mode);
+  }
+};
+
+/**
  * MoveBase behavior will handle active control of vehicle to accomplish 
  * a waypoint. Takes a pose.
  */
-class MoveBase extends ROSAction {
+class MoveBase extends NavigationBehavior{
 
   predicate Inactive{
     float time_stamp;
@@ -70,7 +81,7 @@ class MoveBase extends ROSAction {
 /**
  * This is a sensing action to see if there is a path to the goal.
  */
-class CheckPath extends ROSAction {
+class CheckPath extends NavigationBehavior {
 
   /**
    * The parameters here 
@@ -95,16 +106,3 @@ class CheckPath extends ROSAction {
     super(_mode);
   }
 };
-
-/**
- * Will set the laser tilt to a standard configuration. Eventually we will
- * add parameters for this.
- */
-class SetLaserTilt extends ROSAction {
-  predicate Inactive{}
-  predicate Active{}
-
-  SetLaserTilt(Mode _mode){
-    super(_mode);
-  }
-}

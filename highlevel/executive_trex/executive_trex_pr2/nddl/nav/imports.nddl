@@ -14,25 +14,15 @@
 // Mechanisms used for driving and tucking arms
 HeadMechanism head_mechanism = new HeadMechanism(External);
 TiltLaserMechanism laser_tilt_mechanism = new TiltLaserMechanism(External);
-RightArmMechanism right_arm_mechanism = new RightArmMechanism(External);
-RightGripperMechanism right_gripper_mechanism = new RightGripperMechanism(External);
 
 // Safety
-MobilityStatus mobility_status = new MobilityStatus(External);
-SafetyTuckArms safety_tuck_arms = new SafetyTuckArms(External);
+ArmsTucked arms_tucked = new ArmsTucked(External);
+TiltLaserReady tilt_laser_ready = new TiltLaserReady(External);
 DetectPlugOnBase detect_plug_on_base = new DetectPlugOnBase(External);
-
-// Laser Configuration Management
-SetLaserTilt set_laser_tilt = new SetLaserTilt(External);
 
 // Controller requirements for actions
 DetectPlugOnBase::Active{
   contained_by(laser_tilt_mechanism.use_laser_tilt_controller);
-}
-
-SafetyTuckArms::Active{
-  contained_by(right_arm_mechanism.use_joint_trajectory_controller);
-  contained_by(right_gripper_mechanism.use_effort_controller);
 }
 
 // Controller and laser configuration requirements
@@ -41,6 +31,13 @@ MoveBase::Active{
   contained_by(laser_tilt_mechanism.use_laser_tilt_controller);
 }
 
-SetLaserTilt::Active{
-  contained_by(laser_tilt_mechanism.use_laser_tilt_controller);
+/**
+ * Must be in a valid configuration for navigation
+ */
+NavigationBehavior::Active{
+  contained_by(arms_tucked.Holds a);
+  eq(a.value, true);
+
+  contained_by(tilt_laser_ready.Holds b);
+  eq(b.value, true);
 }

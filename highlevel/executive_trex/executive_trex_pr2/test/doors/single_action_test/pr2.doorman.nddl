@@ -7,7 +7,6 @@
 close();
 
 // The goal is to execute an OpenDoor action, where we give it the door data
-rejectable(safety_tuck_arms.Active cmd_tuck_arms);
 rejectable(detect_door.Active cmd_detect_door);
 rejectable(detect_door.Inactive feedback_detect_door);
 rejectable(detect_handle.Active cmd_detect_handle);
@@ -18,10 +17,8 @@ rejectable(unlatch_handle.Active cmd_unlatch_handle);
 rejectable(open_door.Active cmd_open_door);
 rejectable(move_base_door.Active cmd_move_base_door);
 rejectable(release_handle.Active cmd_release_handle);
-rejectable(safety_tuck_arms.Active cmd_tuck_arms_final);
 
 // Impose a temporal order
-cmd_tuck_arms before cmd_detect_door;
 cmd_detect_door meets feedback_detect_door;
 cmd_detect_door before cmd_detect_handle;
 cmd_detect_handle meets feedback_detect_handle;
@@ -30,7 +27,6 @@ cmd_move_to_grasp before cmd_grasp_handle;
 cmd_grasp_handle before cmd_unlatch_handle;
 cmd_unlatch_handle before cmd_open_door;
 cmd_open_door before cmd_release_handle;
-cmd_release_handle before cmd_tuck_arms_final;
 
 // Final phase involves parallel activities, finishing up with releasing the handle
 cmd_open_door starts_before cmd_move_base_door;
@@ -42,7 +38,6 @@ cmd_open_door before cmd_release_handle;
 
 // All must succeed
 eq(SUCCESS,
-   cmd_tuck_arms.status,
    cmd_detect_door.status,
    cmd_detect_handle.status,
    cmd_move_to_grasp.status,

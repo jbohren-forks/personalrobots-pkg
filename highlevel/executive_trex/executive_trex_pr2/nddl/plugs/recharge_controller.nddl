@@ -101,10 +101,6 @@ RechargeController::Holds{
  */
 RechargeController::Holds {
   if(active == true){
-    // Derive arms_tucked from external safety monotor
-    bool arms_tucked;
-    starts_during(mobility_status.Holds mb);
-    eq(arms_tucked, mb.arms_tucked);
     meets(Holds s); // Successor
 
     // Should be active. Get outlet param from it. Only require that for local navigation
@@ -116,49 +112,35 @@ RechargeController::Holds {
     // Here we are resetting - either to rety or to finish up
     if (done == true){
       if (plug_is_stowed == yes){
-	if (arms_tucked == true){
-	  if(timed_out == true){
+	if(timed_out == true){
+	  meets(recharger.Inactive rc_inactive);
+	  eq(duration, 1);
+	  eq(s.active, false);
+	  eq(rc_inactive.status, ABORTED);
+	}
+	else {
+	  if(in_position == true){
 	    meets(recharger.Inactive rc_inactive);
 	    eq(duration, 1);
 	    eq(s.active, false);
-	    eq(rc_inactive.status, ABORTED);
-	  }
-	  else {
-	    if(in_position == true){
-	      meets(recharger.Inactive rc_inactive);
-	      eq(duration, 1);
-	      eq(s.active, false);
 
-	      if(recharged == true){
-		eq(rc_inactive.status, SUCCESS);
-	      }
-	      else {
-		eq(rc_inactive.status, ABORTED);
-	      }
+	    if(recharged == true){
+	      eq(rc_inactive.status, SUCCESS);
 	    }
-	    else{
-	      contains_start(move_base.Active cmd);
-	      concurrent(cmd.end, end);
-	      leq(cmd.max_duration, MOVE_BASE_DURATION_BOUND);
-	      leq(cmd.max_duration, remaining_time);
-
-	      // Bind pose based on approach pose for the outlet
-	      map_get_outlet_approach_pose(cmd.x, cmd.y, cmd.z, cmd.qx, cmd.qy, cmd.qz, cmd.qw, rc_active.outlet_id);
-	      defaultOnCommit(cmd.frame_id, "map");
-
-	      // PRE-REQ
-	      contains_start(set_laser_tilt.Active cmd_set_laser_tilt);
-	      eq(cmd_set_laser_tilt.status, SUCCESS);
-	      cmd_set_laser_tilt before cmd;
+	    else {
+	      eq(rc_inactive.status, ABORTED);
 	    }
 	  }
-	}
+	  else{
+	    contains_start(move_base.Active cmd);
+	    concurrent(cmd.end, end);
+	    leq(cmd.max_duration, MOVE_BASE_DURATION_BOUND);
+	    leq(cmd.max_duration, remaining_time);
 
-	if(arms_tucked == false){
-          contains_start(safety_tuck_arms.Active cmd);
-          concurrent(cmd.end, end);
-	  leq(cmd.max_duration, SAFETY_TUCK_ARMS_DURATION_BOUND);
-          eq(s.arms_clear, false);
+	    // Bind pose based on approach pose for the outlet
+	    map_get_outlet_approach_pose(cmd.x, cmd.y, cmd.z, cmd.qx, cmd.qy, cmd.qz, cmd.qw, rc_active.outlet_id);
+	    defaultOnCommit(cmd.frame_id, "map");
+	  }
 	}
       }
 
@@ -238,25 +220,14 @@ RechargeController::Holds {
 		  eq(cmd.frame_id, os.frame_id);
 		  plugs_get_offset_pose(os.x, os.y, os.z, os.qx, os.qy, os.qz, os.qw, 0.6, 
 					cmd.x, cmd.y, cmd.z, cmd.qx, cmd.qy,cmd.qz, cmd.qw);
-
-		  contains_start(set_laser_tilt.Active cmd_set_laser_tilt);
-		  eq(cmd_set_laser_tilt.status, SUCCESS);
-		  cmd_set_laser_tilt before cmd;
 		}
 	      }
 
 	      if (outlet_detected_coarse == false) {
-		if (arms_tucked == true) {
-		  contains_start(detect_outlet_coarse.Active cmd);
-		  concurrent(cmd.end, end);
-		  leq(cmd.max_duration, DETECT_OUTLET_COARSE_DURATION_BOUND);
-		  leq(cmd.max_duration, remaining_time);
-		}
-		else {
-		  contains_start(safety_tuck_arms.Active cmd);
-		  concurrent(cmd.end, end);
-		  leq(cmd.max_duration, SAFETY_TUCK_ARMS_DURATION_BOUND);
-		}
+		contains_start(detect_outlet_coarse.Active cmd);
+		concurrent(cmd.end, end);
+		leq(cmd.max_duration, DETECT_OUTLET_COARSE_DURATION_BOUND);
+		leq(cmd.max_duration, remaining_time);
 	      }
 	    }
 	  }

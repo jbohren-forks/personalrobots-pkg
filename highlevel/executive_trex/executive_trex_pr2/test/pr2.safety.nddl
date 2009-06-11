@@ -2,5 +2,8 @@
 
 close();
 
-fact(mobility_status.Holds ms);
-ms.arms_tucked = false;
+fact(arms_tucked.Holds f0);
+f0.value = false;
+
+fact(tilt_laser_ready.Holds f1);
+f1.value = false;

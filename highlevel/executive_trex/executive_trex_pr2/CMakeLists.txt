@@ -3,7 +3,6 @@ include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
 #set(ROS_BUILD_TYPE Release)
 rospack(executive_trex_pr2)
 
-
 genmsg()
 gensrv()
 
