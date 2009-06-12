@@ -59,7 +59,7 @@
       <anchor xyz="0 0 0" />
     </joint>
 
-    <sensor name="${name}_link" type="laser"><!--}-->
+    <link name="${name}_link" type="laser"><!--}-->
       <parent name="${name}_mount_link" />
       <origin xyz="0 0 0.03" rpy="0 0 0" />
       <joint name="${name}_joint" />
@@ -112,7 +112,7 @@
         </verbatim>
       </map>
 
-    </sensor>
+    </link>
 
   </macro>
 
@@ -165,7 +165,7 @@
 
 
     <joint name="${name}_optical_fixed_joint" type="fixed" />
-    <sensor name="${name}_optical_frame" type="camera">
+    <link name="${name}_optical_frame" type="camera">
       <parent name="${name}_link" />
       <origin xyz="${cal_stereo_x}            ${0.045+cal_stereo_y}   ${.0305+cal_stereo_z}"
               rpy="${-M_PI/2+cal_stereo_roll} ${0.0+cal_stereo_pitch} ${-M_PI/2+cal_stereo_yaw}" />
@@ -196,10 +196,10 @@
         </geometry>
       </collision>
 
-    </sensor>
+    </link>
 
     <joint name="${name}_l_stereo_camera_fixed_joint" type="fixed" />
-    <sensor name="${name}_l_stereo_camera_frame">
+    <link name="${name}_l_stereo_camera_frame">
       <parent name="${name}_optical_frame" />
       <origin xyz="0 0 0" rpy="0 ${-M_PI/2} ${M_PI/2}" />
       <joint name="${name}_l_stereo_camera_fixed_joint" />
@@ -248,10 +248,10 @@
           </sensor:camera>
        	</verbatim>
       </map>
-    </sensor>
+    </link>
 
     <joint name="${name}_r_stereo_camera_fixed_joint" type="fixed" />
-    <sensor name="${name}_r_stereo_camera_frame">
+    <link name="${name}_r_stereo_camera_frame">
       <parent name="${name}_l_stereo_camera_frame" />
       <origin xyz="${stereo_dx} ${stereo_dy} ${stereo_dz}"
               rpy="${stereo_rx} ${stereo_ry} ${stereo_rz}" />
@@ -301,7 +301,7 @@
           </sensor:camera>
        	</verbatim>
       </map>
-    </sensor>
+    </link>
 
 
     <!-- stereo plugin that produces a raw_stereo message
@@ -534,7 +534,7 @@
       <anchor xyz="0 0 0" />
     </joint>
 
-    <sensor name="${name}_link" type="laser">
+    <link name="${name}_link" type="laser">
       <parent name="${name}_mount_link" />
       <origin xyz="0 0 0.03" rpy="0 0 0" />
       <joint name="${name}_joint" />
@@ -587,7 +587,7 @@
         </verbatim>
       </map>
 
-    </sensor>
+    </link>
 
   </macro>
 

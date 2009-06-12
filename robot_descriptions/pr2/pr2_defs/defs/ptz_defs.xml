@@ -52,7 +52,7 @@
       <joint_properties damping="0.01" friction="0.0" />
     </joint>
 
-    <sensor name="${side}_ptz_tilt_link" type="camera">
+    <link name="${side}_ptz_tilt_link" type="camera">
       <parent name="${side}_ptz_pan_link" />
       <origin xyz="0.0 ${reflect*0.08} 0.0" rpy="0 0 0"/>
       <joint name="${side}_ptz_tilt_joint" />
@@ -100,7 +100,7 @@
           </sensor:camera>
         </verbatim>
       </map>
-    </sensor>
+    </link>
     <map name="sensor" flag="gazebo">
       <verbatim key="sensor_${side}_ptz_actuators">
         <!-- controllers for ptz -->
