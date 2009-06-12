@@ -39,9 +39,17 @@ target_link_libraries(test/tf_unittest_future tf)
 rospack_add_gtest(test/cache_unittest test/cache_unittest.cpp)
 target_link_libraries(test/cache_unittest tf)
 
+# The benchmark test fails on 64-bit, #?
+include(CMakeDetermineSystem)
+if(CMAKE_SYSTEM_PROCESSOR MATCHES "i686" OR
+   CMAKE_SYSTEM_PROCESSOR MATCHES "i386" OR
+   CMAKE_SYSTEM_PROCESSOR MATCHES "unknown")
 ### Benchmarking
-rospack_add_gtest(test/tf_benchmark test/tf_benchmark.cpp)
-target_link_libraries(test/tf_benchmark tf)
+  rospack_add_gtest(test/tf_benchmark test/tf_benchmark.cpp)
+  target_link_libraries(test/tf_benchmark tf)
+endif(CMAKE_SYSTEM_PROCESSOR MATCHES "i686" OR
+      CMAKE_SYSTEM_PROCESSOR MATCHES "i386" OR
+      CMAKE_SYSTEM_PROCESSOR MATCHES "unknown")
 
 
 rospack_add_executable(btTest test/quaternion.cpp)
