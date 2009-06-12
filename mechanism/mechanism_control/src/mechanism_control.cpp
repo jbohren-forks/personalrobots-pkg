@@ -485,8 +485,7 @@ void MechanismControl::changeControllers(std::vector<RemoveReq> &remove_reqs,
 MechanismControlNode::MechanismControlNode(MechanismControl *mc)
   : mc_(mc), cycles_since_publish_(0),
     mechanism_state_topic_("mechanism_state"),
-    publisher_(mechanism_state_topic_, 1),
-    transform_publisher_("tf_message", 5)
+    publisher_(mechanism_state_topic_, 1)
 {
   assert(mc != NULL);
   assert(mechanism_state_topic_);
@@ -523,7 +522,6 @@ bool MechanismControlNode::initXml(TiXmlElement *config)
     if (mc_->model_.links_[i]->parent_name_ != std::string("world"))
       ++num_transforms;
   }
-  transform_publisher_.msg_.set_transforms_size(num_transforms);
 
 
   // Advertise services
@@ -600,36 +598,6 @@ void MechanismControlNode::update()
       publisher_.msg_.time = mc_->hw_->current_time_;
 
       publisher_.unlockAndPublish();
-    }
-
-
-    // Frame transforms
-    if (transform_publisher_.trylock())
-    {
-      //assert(mc_->model_.links_.size() == transform_publisher_.msg_.get_quaternions_size());
-      int ti = 0;
-      for (unsigned int i = 0; i < mc_->model_.links_.size(); ++i)
-      {
-        if (mc_->model_.links_[i]->parent_name_ == std::string("world"))
-          continue;
-
-        tf::Vector3 pos = mc_->state_->link_states_[i].rel_frame_.getOrigin();
-        tf::Quaternion quat = mc_->state_->link_states_[i].rel_frame_.getRotation();
-        robot_msgs::TransformStamped &out = transform_publisher_.msg_.transforms[ti++];
-
-        out.header.stamp.fromSec(mc_->hw_->current_time_);
-        out.header.frame_id = mc_->model_.links_[i]->name_;
-        out.parent_id = mc_->model_.links_[i]->parent_name_;
-        out.transform.translation.x = pos.x();
-        out.transform.translation.y = pos.y();
-        out.transform.translation.z = pos.z();
-        out.transform.rotation.w = quat.w();
-        out.transform.rotation.x = quat.x();
-        out.transform.rotation.y = quat.y();
-        out.transform.rotation.z = quat.z();
-      }
-
-      transform_publisher_.unlockAndPublish();
     }
   }
 }

@@ -122,12 +122,6 @@ public:
   Link *link_;
 
   tf::Transform rel_frame_;  // Relative transform to the parent link's frame.
-  tf::Vector3 abs_position_;  // Absolute position (in the robot frame)
-  tf::Quaternion abs_orientation_;  // Absolute orientation (in the robot frame)
-  tf::Vector3 abs_velocity_;
-  tf::Vector3 abs_rot_velocity_;
-
-  void propagateFK(LinkState *parent, JointState *joint);
 
   LinkState() : link_(NULL) {}
   LinkState(const LinkState &s) : link_(s.link_), rel_frame_(s.rel_frame_) {}

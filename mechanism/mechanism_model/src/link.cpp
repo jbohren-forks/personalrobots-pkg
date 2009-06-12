@@ -189,50 +189,6 @@ bool Link::initXml(TiXmlElement *config, Robot *robot)
   return true;
 }
 
-// j[oint] connects this and p[arent]
-void LinkState::propagateFK(LinkState *p, JointState *j)
-{
-  if (p == NULL && j == NULL)
-  {
-    rel_frame_.setIdentity();
-    abs_position_.setValue(0, 0, 0);
-    abs_orientation_.setValue(0, 0, 0, 1);
-    abs_velocity_.setValue(0, 0, 0);
-    abs_rot_velocity_.setValue(0, 0, 0);
-  }
-  else
-  {
-    assert(p);  assert(j);
-
-    abs_position_ =
-      p->abs_position_
-      + quatRotate(p->abs_orientation_, link_->origin_xyz_)
-      + quatRotate(p->abs_orientation_, j->getTranslation());
-
-    tf::Quaternion rel_or(link_->origin_rpy_[2], link_->origin_rpy_[1], link_->origin_rpy_[0]);
-    abs_orientation_ = p->abs_orientation_ * j->getRotation() * rel_or;
-    abs_orientation_.normalize();
-
-    abs_velocity_ =
-      p->abs_velocity_
-      + cross(p->abs_rot_velocity_, quatRotate(p->abs_orientation_,
-                                               link_->origin_xyz_))
-      + quatRotate(p->abs_orientation_, j->getTransVelocity());
-
-    abs_rot_velocity_ = p->abs_rot_velocity_ + quatRotate(p->abs_orientation_, j->getRotVelocity());
-
-
-    // Computes the relative frame transform
-    rel_frame_.setIdentity();
-    rel_frame_ *= tf::Transform(tf::Quaternion(0,0,0), link_->origin_xyz_);
-    rel_frame_ *= j->getTransform();
-    rel_frame_ *= tf::Transform(tf::Quaternion(link_->origin_rpy_[2],
-                                               link_->origin_rpy_[1],
-                                               link_->origin_rpy_[0]));
-
-    tf::Vector3 jo = j->getTransform().getOrigin();
-  }
-}
 
 Visual::Visual()
   : origin_xyz_(0,0,0), origin_rpy_(0,0,0)

@@ -129,8 +129,6 @@ public:
   void propagateStateBackwards();
   void propagateEffortBackwards();
 
-private:
-  void propagateAbsolutePose(int index);
 };
 
 }

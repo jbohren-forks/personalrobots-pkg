@@ -242,15 +242,6 @@ void RobotState::propagateState()
     model_->transmissions_[i]->propagatePosition(transmissions_in_[i],
                                                  transmissions_out_[i]);
   }
-
-  // Computes the absolute pose of the links using the relative transforms
-  for (unsigned int i = 0; i < link_states_.size(); ++i)
-  {
-    if (links_joint_[i] < 0) // Root link, attached to the world
-    {
-      propagateAbsolutePose(i);
-    }
-  }
 }
 
 void RobotState::propagateEffort()
@@ -294,14 +285,5 @@ void RobotState::propagateEffortBackwards()
   }
 }
 
-void RobotState::propagateAbsolutePose(int index)
-{
-  LinkState *p = links_parent_[index] >= 0 ? &link_states_[links_parent_[index]] : NULL;
-  JointState *j = links_joint_[index] >= 0 ? &joint_states_[links_joint_[index]] : NULL;
-  link_states_[index].propagateFK(p, j);
-
-  for (unsigned int i = 0; i < links_children_[index].size(); ++i)
-    propagateAbsolutePose(links_children_[index][i]);
-}
 
 } // namespace mechanism

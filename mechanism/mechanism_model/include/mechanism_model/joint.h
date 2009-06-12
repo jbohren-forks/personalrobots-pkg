@@ -103,14 +103,6 @@ public:
 
   bool calibrated_;
 
-  tf::Vector3 getTranslation();
-  tf::Quaternion getRotation();
-  tf::Vector3 getTransVelocity();
-  tf::Vector3 getRotVelocity();
-
-  tf::Transform getTransform();
-
-
   JointState() : joint_(NULL), commanded_effort_(0), calibrated_(false) {}
   JointState(const JointState &s)
     : joint_(s.joint_), position_(s.position_), velocity_(s.velocity_),
