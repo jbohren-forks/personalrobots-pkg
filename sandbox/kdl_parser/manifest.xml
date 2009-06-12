@@ -8,6 +8,7 @@
 
   <depend package="kdl" />
   <depend package="tinyxml" />
+  <depend package="gtest" />
   
 <export>
   <cpp cflags="-I${prefix}/include -I${prefix}/msg/cpp -I${prefix}/srv/cpp" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lkdl_parser"/>
