@@ -238,17 +238,22 @@ NavFn::setCostmap(const COSTTYPE *cmap, bool isROS)
 	{
 	  int k=i*nx;
 	  for (int j=0; j<nx; j++, k++, cmap++, cm++)
-	    {
-	      *cm = COST_OBS;
-	      int v = *cmap;
-	      if (v < COST_OBS_ROS)
-		{
-		  v = COST_NEUTRAL+COST_FACTOR*v;
-		  if (v >= COST_OBS)
-		    v = COST_OBS-1;
-		  *cm = v;
-		}
-	    }
+    {
+      *cm = COST_OBS;
+      int v = *cmap;
+      if (v < COST_OBS_ROS)
+      {
+        v = COST_NEUTRAL+COST_FACTOR*v;
+        if (v >= COST_OBS)
+          v = COST_OBS-1;
+        *cm = v;
+      }
+      else if(v == COST_UNKNOWN_ROS)
+      {
+        v = COST_OBS-1;
+        *cm = v;
+      }
+    }
 	}
     }
 
@@ -258,19 +263,24 @@ NavFn::setCostmap(const COSTTYPE *cmap, bool isROS)
 	{
 	  int k=i*nx;
 	  for (int j=0; j<nx; j++, k++, cmap++, cm++)
-	    {
-	      *cm = COST_OBS;
-	      if (i<7 || i > ny-8 || j<7 || j > nx-8)
-		continue;	// don't do borders
-	      int v = *cmap;
-	      if (v < COST_OBS_ROS)
-		{
-		  v = COST_NEUTRAL+COST_FACTOR*v;
-		  if (v >= COST_OBS)
-		    v = COST_OBS-1;
-		  *cm = v;
-		}
-	    }
+    {
+      *cm = COST_OBS;
+      if (i<7 || i > ny-8 || j<7 || j > nx-8)
+        continue;	// don't do borders
+      int v = *cmap;
+      if (v < COST_OBS_ROS)
+      {
+        v = COST_NEUTRAL+COST_FACTOR*v;
+        if (v >= COST_OBS)
+          v = COST_OBS-1;
+        *cm = v;
+      }
+      else if(v == COST_UNKNOWN_ROS)
+      {
+        v = COST_OBS-1;
+        *cm = v;
+      }
+    }
 	}
 
     }

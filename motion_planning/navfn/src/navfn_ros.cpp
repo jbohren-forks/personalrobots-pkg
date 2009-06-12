@@ -126,8 +126,11 @@ namespace navfn {
     costmap_ros_.getCostmapCopy(costmap_);
 
     //until tf can handle transforming things that are way in the past... we'll require the goal to be in our global frame
-    if(goal.header.frame_id != global_frame_){
-      ROS_ERROR("The goal passed to this planner must be in the %s frame.  It is instead in the %s frame.", global_frame_.c_str(), goal.header.frame_id.c_str());
+    
+
+    if(ros_node_.mapName(goal.header.frame_id) != ros_node_.mapName(global_frame_)){
+      ROS_ERROR("The goal passed to this planner must be in the %s frame.  It is instead in the %s frame.", 
+                ros_node_.mapName(global_frame_).c_str(), ros_node_.mapName(goal.header.frame_id).c_str());
       return false;
     }
 
