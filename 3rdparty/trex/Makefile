@@ -25,7 +25,7 @@ includes: trex PlanWorks PLASMA
 
 
 # GET plasma
-PLASMA_REVISION=5451
+PLASMA_REVISION=5457
 plasma:
 	@if [ ! -d PLASMA ]; then $(SVN_CMDLINE) co -r $(PLASMA_REVISION) http://europa-pso.googlecode.com/svn/PLASMA/trunk PLASMA; fi ;
 	@if [ ! -n "`svn info PLASMA | grep 'Revision: $(PLASMA_REVISION)'`" ]; then cd PLASMA && $(SVN_CMDLINE) up -r $(PLASMA_REVISION); fi;
