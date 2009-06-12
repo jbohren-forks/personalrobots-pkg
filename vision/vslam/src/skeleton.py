@@ -51,10 +51,13 @@ class Skeleton:
     self.cam = cam
     self.pe = PoseEstimator(*cam.params)
 
+    self.optimize_after_addition = True
     self.ds = None
     for k,a in kwargs.items():
       if k == 'descriptor_scheme':
         self.ds = a
+      elif k == 'optimize_after_addition':
+        self.optimize_after_addition = a
     if self.ds == None:
       self.ds = DescriptorSchemeCalonder()
 
@@ -357,30 +360,31 @@ class Skeleton:
     coll = [ self.PE(this, f) + (f,) for f in far ]
     self.timer['gcc'].stop()
     id0 = this
-    print coll
+    # print coll
     for inl,obs,id1 in coll:
       if 40 <= inl:
         old_error = self.pg.error()
         self.addConstraint(id0, id1, obs)
-        print "ADDED CONSTRAINT", id0, id1, "error changed from", old_error, "to", self.pg.error()
+        # print "ADDED CONSTRAINT", id0, id1, "error changed from", old_error, "to", self.pg.error()
 
-    t0 = self.timer['toro opt'].sum
-    self.timer['toro opt'].start()
-    if len(self.vset) > 4:
-      self.pg.initializeOnlineIterations()
-      prev_e = self.pg.error()
-      self.pg.iterate(self.vset, True)
-      if 1:
-        count = 1
-      else:
-        print
-        print "Starting OPT loop, error ", self.pg.error(), " prev error ", prev_e
-        while not self.termcrit(count, prev_e - self.pg.error()):
-          prev_e = self.pg.error()
-          self.pg.iterate()
-          count += 1
-      self.vset = set()
-    self.timer['toro opt'].stop()
+    if self.optimize_after_addition:
+      t0 = self.timer['toro opt'].sum
+      self.timer['toro opt'].start()
+      if len(self.vset) > 4:
+        self.pg.initializeOnlineIterations()
+        prev_e = self.pg.error()
+        self.pg.iterate(self.vset, True)
+        if 1:
+          count = 1
+        else:
+          # print
+          # print "Starting OPT loop, error ", self.pg.error(), " prev error ", prev_e
+          while not self.termcrit(count, prev_e - self.pg.error()):
+            prev_e = self.pg.error()
+            self.pg.iterate()
+            count += 1
+        self.vset = set()
+      self.timer['toro opt'].stop()
     if 0:
       t1 = self.timer['toro opt'].sum
       td = t1 - t0
