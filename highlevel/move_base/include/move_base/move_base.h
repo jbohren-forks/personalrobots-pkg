@@ -39,17 +39,18 @@
 #include <robot_actions/action.h>
 #include <robot_actions/action_runner.h>
 #include <nav_robot_actions/MoveBaseState.h>
+#include <nav_robot_actions/base_local_planner.h>
+#include <nav_robot_actions/base_global_planner.h>
 #include <robot_msgs/PoseStamped.h>
 #include <ros/ros.h>
 #include <costmap_2d/costmap_2d_ros.h>
 #include <costmap_2d/costmap_2d.h>
 #include <costmap_2d/rate.h>
-#include <navfn/navfn_ros.h>
-#include <base_local_planner/trajectory_planner_ros.h>
 #include <vector>
 #include <string>
 #include <nav_srvs/Plan.h>
 #include <visualization_msgs/Marker.h>
+#include <robot_msgs/PoseDot.h>
 
 namespace move_base {
   /**
@@ -62,9 +63,10 @@ namespace move_base {
        * @brief  Constructor for the actions
        * @param ros_node A reference to the ros node used 
        * @param tf A reference to a TransformListener
-       * @return 
+       * @param global_planner The name of the global planner to use
+       * @param local_planner The name of the local planner to use
        */
-      MoveBase(ros::Node& ros_node, tf::TransformListener& tf);
+      MoveBase(ros::Node& ros_node, tf::TransformListener& tf, std::string global_planner, std::string local_planner);
 
       /**
        * @brief  Destructor - Cleans up
@@ -120,11 +122,10 @@ namespace move_base {
 
       ros::Node& ros_node_;
       tf::TransformListener& tf_;
-      bool run_planner_;
-      base_local_planner::TrajectoryPlannerROS* tc_;
+      nav_robot_actions::BaseLocalPlanner* tc_;
       costmap_2d::Costmap2DROS* planner_costmap_ros_, *controller_costmap_ros_;
 
-      navfn::NavfnROS* planner_;
+      nav_robot_actions::BaseGlobalPlanner* planner_;
       std::vector<robot_msgs::PoseStamped> global_plan_;
       std::vector<robot_msgs::Point> footprint_;
       std::string robot_base_frame_, global_frame_;

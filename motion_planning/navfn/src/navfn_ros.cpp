@@ -37,7 +37,11 @@
 #include <navfn/navfn_ros.h>
 
 namespace navfn {
-  NavfnROS::NavfnROS(ros::Node& ros_node, tf::TransformListener& tf, costmap_2d::Costmap2DROS& costmap_ros) : ros_node_(ros_node), tf_(tf), 
+  //register this factory with the ros BaseGlobalPlanner factory
+  ROS_REGISTER_BGP(NavfnROS);
+
+  NavfnROS::NavfnROS(ros::Node& ros_node, tf::TransformListener& tf, costmap_2d::Costmap2DROS& costmap_ros) 
+    : ros_node_(ros_node), tf_(tf), 
   costmap_ros_(costmap_ros), planner_(costmap_ros.cellSizeX(), costmap_ros.cellSizeY()) {
     //get an initial copy of the costmap
     costmap_ros_.getCostmapCopy(costmap_);

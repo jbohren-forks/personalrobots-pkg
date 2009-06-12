@@ -18,6 +18,7 @@
   <depend package="voxel_grid" />
   <depend package="angles" />
   <depend package="visualization_msgs"/>
+  <depend package="nav_robot_actions"/>
   <url>http://pr.willowgarage.com</url>
   <repository>http://pr.willowgarage.com/repos</repository>
   <export>

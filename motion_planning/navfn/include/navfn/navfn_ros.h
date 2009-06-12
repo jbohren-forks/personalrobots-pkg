@@ -46,9 +46,10 @@
 #include <tf/transform_listener.h>
 #include <vector>
 #include <robot_msgs/Point.h>
+#include <nav_robot_actions/base_global_planner.h>
 
 namespace navfn {
-  class NavfnROS {
+  class NavfnROS : public nav_robot_actions::BaseGlobalPlanner {
     public:
       /**
        * @brief  Constructor for the NavFnROS object

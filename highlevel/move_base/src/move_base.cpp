@@ -38,9 +38,7 @@
 #include <cstdlib>
 #include <ctime>
 
-using namespace base_local_planner;
 using namespace costmap_2d;
-using namespace navfn;
 using namespace robot_actions;
 
 namespace move_base {
@@ -49,9 +47,9 @@ namespace move_base {
     return x < 0.0 ? -1.0 : 1.0;
   }
 
-  MoveBase::MoveBase(ros::Node& ros_node, tf::TransformListener& tf) : 
+  MoveBase::MoveBase(ros::Node& ros_node, tf::TransformListener& tf, std::string global_planner, std::string local_planner) :
     Action<robot_msgs::PoseStamped, robot_msgs::PoseStamped>(ros_node.getName()), ros_node_(ros_node), tf_(tf),
-    run_planner_(true), tc_(NULL), planner_costmap_ros_(NULL), controller_costmap_ros_(NULL), 
+    tc_(NULL), planner_costmap_ros_(NULL), controller_costmap_ros_(NULL), 
     planner_(NULL), valid_plan_(false), new_plan_(false), attempted_rotation_(false), attempted_costmap_reset_(false),
     done_half_rotation_(false), done_full_rotation_(false), escaping_(false) {
 
@@ -125,15 +123,27 @@ namespace move_base {
     //create the ros wrapper for the planner's costmap... and initializer a pointer we'll use with the underlying map
     planner_costmap_ros_ = new Costmap2DROS(ros_node_, tf_, std::string("navfn"), footprint_);
 
-    //initialize the NavFn planner
-    planner_ = new NavfnROS(ros_node_, tf_, *planner_costmap_ros_);
+    //initialize the global planner
+    try {
+      planner_ = nav_robot_actions::BGPFactory::Instance().CreateObject(global_planner, ros_node_, tf_, *planner_costmap_ros_);
+    } catch (Loki::DefaultFactoryError<std::string, nav_robot_actions::BaseGlobalPlanner>::Exception)
+    {
+      ROS_ASSERT_MSG(false, "Cannot create the desired global planner because it is not registered with the factory");
+    }
+
     ROS_INFO("MAP SIZE: %d, %d", planner_costmap_ros_->cellSizeX(), planner_costmap_ros_->cellSizeY());
 
     //create the ros wrapper for the controller's costmap... and initializer a pointer we'll use with the underlying map
     controller_costmap_ros_ = new Costmap2DROS(ros_node_, tf_, std::string("base_local_planner"), footprint_);
 
-    //create a trajectory controller
-    tc_ = new TrajectoryPlannerROS(ros_node_, tf_, *controller_costmap_ros_, footprint_);
+    //create a local planner
+    try {
+      tc_ = nav_robot_actions::BLPFactory::Instance().CreateObject(local_planner, 
+          ros_node_, tf_, *controller_costmap_ros_, footprint_);
+    } catch (Loki::DefaultFactoryError<std::string, nav_robot_actions::BaseLocalPlanner>::Exception)
+    {
+      ROS_ASSERT_MSG(false, "Cannot create the desired local planner because it is not registered with the factory");
+    }
 
     //advertise a service for getting a plan
     ros_node_.advertiseService("~make_plan", &MoveBase::planService, this);
@@ -579,7 +589,7 @@ int main(int argc, char** argv){
   ros::Node ros_node("move_base");
   tf::TransformListener tf(ros_node, true, ros::Duration(10));
   
-  move_base::MoveBase move_base(ros_node, tf);
+  move_base::MoveBase move_base(ros_node, tf, "NavfnROS", "TrajectoryPlannerROS");
   robot_actions::ActionRunner runner(20.0);
   runner.connect<robot_msgs::PoseStamped, nav_robot_actions::MoveBaseState, robot_msgs::PoseStamped>(move_base);
   runner.run();

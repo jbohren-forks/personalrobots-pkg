@@ -67,12 +67,14 @@
 
 #include <angles/angles.h>
 
+#include <nav_robot_actions/base_local_planner.h>
+
 namespace base_local_planner {
   /**
    * @class TrajectoryPlannerROS
    * @brief A ROS wrapper for the trajectory controller that queries the param server to construct a controller
    */
-  class TrajectoryPlannerROS{
+  class TrajectoryPlannerROS : public nav_robot_actions::BaseLocalPlanner {
     public:
       /**
        * @brief  Constructs the ros wrapper
@@ -101,11 +103,9 @@ namespace base_local_planner {
       /**
        * @brief  Given the current position, orientation, and velocity of the robot, compute velocity commands to send to the base
        * @param cmd_vel Will be filled with the velocity command to be passed to the robot base
-       * @param observations A vector of updates from the robot's sensors in world space, is sometimes unused depending on the model
-       * @param prune_plan Set to true if you would like the plan to be pruned as the robot drives, false to leave the plan as is
        * @return True if a valid trajectory was found, false otherwise
        */
-      bool computeVelocityCommands(robot_msgs::PoseDot& cmd_vel, bool prune_plan = true);
+      bool computeVelocityCommands(robot_msgs::PoseDot& cmd_vel);
 
       /**
        * @brief  Update the plan that the controller is following
@@ -215,6 +215,7 @@ namespace base_local_planner {
       costmap_2d::Costmap2DPublisher* costmap_publisher_;
       std::vector<robot_msgs::PoseStamped> global_plan_;
       double transform_tolerance_, update_plan_tolerance_;
+      bool prune_plan_;
   };
 
 };

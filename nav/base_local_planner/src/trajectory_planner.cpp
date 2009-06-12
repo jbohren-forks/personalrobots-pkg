@@ -336,7 +336,7 @@ namespace base_local_planner{
     if(!heading_scoring_)
       cost = pdist_scale_ * path_dist + goal_dist * gdist_scale_ + occdist_scale_ * occ_cost;
     else
-      cost = occdist_scale_ * occ_cost + heading_diff + goal_dist * gdist_scale_;
+      cost = occdist_scale_ * occ_cost + pdist_scale_ * path_dist + 0.3 * heading_diff + goal_dist * gdist_scale_;
 
     traj.cost_ = cost;
   }

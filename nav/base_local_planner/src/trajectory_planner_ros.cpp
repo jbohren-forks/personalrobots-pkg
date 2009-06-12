@@ -47,6 +47,9 @@ using namespace costmap_2d;
 using namespace laser_scan;
 
 namespace base_local_planner {
+  //register this base local planner with the BaseLocalPlanner factory
+  ROS_REGISTER_BLP(TrajectoryPlannerROS);
+
   TrajectoryPlannerROS::TrajectoryPlannerROS(ros::Node& ros_node, tf::TransformListener& tf, 
       Costmap2DROS& costmap_ros, std::vector<Point> footprint_spec) 
     : world_model_(NULL), tc_(NULL), costmap_ros_(costmap_ros), tf_(tf), ros_node_(ros_node), 
@@ -71,6 +74,7 @@ namespace base_local_planner {
     ros_node.param("~base_local_planner/costmap/robot_base_frame", robot_base_frame_, string("base_link"));
     ros_node.param("~base_local_planner/transform_tolerance", transform_tolerance_, 0.2);
     ros_node.param("~base_local_planner/update_plan_tolerance", update_plan_tolerance_, 1.0);
+    ros_node.param("~base_local_planner/prune_plan", prune_plan_, true);
 
     double map_publish_frequency;
     ros_node.param("~base_local_planner/costmap_visualization_rate", map_publish_frequency, 2.0);
@@ -294,7 +298,7 @@ namespace base_local_planner {
     return true;
   }
 
-  bool TrajectoryPlannerROS::computeVelocityCommands(robot_msgs::PoseDot& cmd_vel, bool prune_plan){
+  bool TrajectoryPlannerROS::computeVelocityCommands(robot_msgs::PoseDot& cmd_vel){
     //assume at the beginning of our control cycle that we could have a new goal
     goal_reached_ = false;
 
@@ -336,7 +340,7 @@ namespace base_local_planner {
     }
 
     //now we'll prune the plan based on the position of the robot
-    if(prune_plan)
+    if(prune_plan_)
       prunePlan(global_pose, transformed_plan, global_plan_);
 
 

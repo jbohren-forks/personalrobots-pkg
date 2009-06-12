@@ -194,8 +194,8 @@ namespace move_base {
 
       bool valid_control = false;
 
-      //compute veloctiy commands to send to the base... don't prune the path
-      valid_control = tc_->computeVelocityCommands(cmd_vel, false);
+      //compute veloctiy commands to send to the base
+      valid_control = tc_->computeVelocityCommands(cmd_vel);
 
       //give the base the velocity command
       ros_node_.publish("cmd_vel", cmd_vel);
