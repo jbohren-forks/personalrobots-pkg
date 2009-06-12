@@ -1,0 +1,14 @@
+<launch>
+  <master auto="start"/>
+  <group name="wg">
+    <param name="/use_sim_time" value="false"/>
+    <param name="/global_frame_id" value="odom"/>
+
+    <include file="$(find visual_nav)/launch/move_base.launch"/>
+    <node pkg="vslam" type="roadmap.py" />
+
+    <param name="visual_navigator/odom_frame" value="odom"/>
+    <node pkg="visual_nav" type="ros_visual_nav" args="" respawn="false" output="screen" /> 
+
+  </group>
+</launch>

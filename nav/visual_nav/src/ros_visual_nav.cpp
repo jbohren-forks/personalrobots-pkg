@@ -48,16 +48,13 @@
 #include <boost/tokenizer.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/thread/mutex.hpp>
-#include <ros/node.h>
 #include <deprecated_msgs/RobotBase2DOdom.h>
 #include <robot_msgs/Point.h>
 #include <robot_msgs/PointCloud.h>
 #include <robot_msgs/PoseStamped.h>
 #include <robot_msgs/PointStamped.h>
 #include <laser_scan/laser_scan.h>
-#include <ros/time.h>
-#include <ros/console.h>
-#include <ros/assert.h>
+#include <ros/ros.h>
 #include <tf/transform_listener.h>
 #include <tf/transform_broadcaster.h>
 #include <tf/message_notifier.h>
@@ -96,7 +93,7 @@ using visualization_msgs::Marker; // the message class name
 using ros::Time;
 using deprecated_msgs::RobotBase2DOdom;
 using std::string;
-
+using ros::Node;
 
 typedef map<int, NodeId> IdMap;
 typedef shared_ptr<PointSet> PointsPtr;
@@ -269,6 +266,7 @@ private:
   // Message notifier to ensure that we only deal with scans when we can transform them
   NotifierPtr base_scan_notifier_;
 
+
 };
 
 
@@ -371,6 +369,7 @@ void RosVisualNavigator::goalCallback()
   if (goal_message_.goal>=0) {
     goal_id_ = getInternalId(goal_message_.goal);
     have_goal_=true;
+    ROS_INFO_STREAM ("New goal: node " << goal_id_);
   }
   else {
     have_goal_=false;
@@ -435,13 +434,20 @@ void RosVisualNavigator::publishExitPoint ()
     exit_point_ = roadmap_->pathExitPoint(path, exit_point_radius_);
 
     // publish the goal message
-    PoseStamped m;
+    PoseStamped goal, odom_goal;
 
-    m.pose.position.x = exit_point_.x;
-    m.pose.position.y = exit_point_.y;
-    tf::QuaternionTFToMsg(tf::Quaternion(exit_point_.theta, 0, 0), m.pose.orientation);
-    m.header.frame_id = "vslam";
-    node_.publish("/move_base/activate", m);
+    goal.pose.position.x = exit_point_.x;
+    goal.pose.position.y = exit_point_.y;
+    tf::QuaternionTFToMsg(tf::Quaternion(exit_point_.theta, 0, 0), goal.pose.orientation);
+    goal.header.frame_id = "vslam";
+
+    tf_listener_.transformPose(odom_frame_, goal, odom_goal);
+
+    node_.publish("/move_base/activate", odom_goal);
+    
+    ROS_DEBUG_STREAM_NAMED("nav", "Publishing exit point " << odom_goal.pose.position.x << ", " 
+                           << odom_goal.pose.position.y << ", " << acos(odom_goal.pose.orientation.w/2)
+                           << " in " << odom_goal.header.frame_id << " frame");
   }
   catch (UnknownNodeIdException& r) {
     if (r.id == goal_id_) {
@@ -477,7 +483,7 @@ void RosVisualNavigator::updateOdom ()
       tf_sender_.sendTransform (nav_odom_transform_.convertToTf(), Time::now(), "vslam", odom_frame_);
     }
     else {
-      ROS_DEBUG_STREAM_NAMED ("transform", "Did not update nav–odom transform because roadmap either not received or transform does not exist at time " << roadmap_timestamp_);
+      ROS_DEBUG_STREAM_NAMED ("transform", "Did not update nav-odom transform because roadmap either not received or transform does not exist at time " << roadmap_timestamp_);
     }
   }
 
@@ -507,11 +513,11 @@ struct DrawEdges
     marker.type=Marker::LINE_LIST;
     marker.action=Marker::ADD;
     marker.color.a=1.0;
-    marker.scale.x = 0.1;
+    marker.scale.x = 0.04;
     marker.pose.orientation.w = 1.0;
     marker.color.r=0;
-    marker.color.g=0;
-    marker.color.b=255;
+    marker.color.g=100;
+    marker.color.b=100;
     ROS_DEBUG_STREAM_NAMED ("rviz", "Creating roadmap marker for graph with " << roadmap->numNodes() << " nodes");
   }
 
@@ -538,9 +544,14 @@ struct DrawEdges
 
   void publish ()
   {
-    ROS_INFO_STREAM_NAMED ("rviz", "Publishing graph with " << marker.get_points_size() << " edges and " << roadmap->numNodes() << " nodes");
-    marker.header.stamp = Time::now();
-    Node::instance()->publish("visualization_marker", marker);
+    if (marker.get_points_size() > 0) {
+      ROS_DEBUG_STREAM_NAMED ("rviz", "Publishing graph with " << marker.get_points_size() << " edges and " << roadmap->numNodes() << " nodes");
+      marker.header.stamp = Time::now();
+      Node::instance()->publish("visualization_marker", marker);
+    }
+    else {
+      ROS_DEBUG_STREAM_NAMED ("rviz", "Not yet publishing roadmap visualization.  Num nodes is " << roadmap->numNodes());
+    }
   }
 
   RoadmapPtr roadmap;
@@ -667,8 +678,6 @@ void RosVisualNavigator::publishNodeMarker (const Pose& pose, const uint r, cons
 
 
 using visual_nav::RosVisualNavigator;
-using ros::Node;
-
 
 int main(int argc, char** argv)
 {
