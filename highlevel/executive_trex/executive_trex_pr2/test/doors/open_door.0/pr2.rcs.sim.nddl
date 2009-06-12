@@ -1,5 +1,55 @@
 #include "test/doors/sim.nddl";
-#include "test/sim/default_rules.nddl"
+
+/**
+ * For now, assume a fixed duration, and always return success.
+ */
+DoorManipulationBehavior::Active{
+  meets(Inactive s);
+  eq(s.status, SUCCESS);
+  eq(duration, 1);
+}
+
+CheckPath::Active{
+  meets(Inactive s);
+  eq(s.status, SUCCESS);
+  eq(duration, 1);
+}
+
+MoveBase::Active{
+  meets(Inactive s);
+  eq(s.status, SUCCESS);
+  eq(duration, 1);
+}
+
+StopAction::Active{
+  eq(duration, 5);
+  meets(Inactive s);
+  eq(s.status, SUCCESS);
+}
+
+CheckPath::Inactive{
+  if(status == SUCCESS){
+    eq(is_clear, false);
+  }
+}
+
+DetectDoor::Inactive{
+  if(status == SUCCESS){
+    eq(latch_state, LATCH_STATE_LATCHED);
+  }
+}
+
+DetectHandle::Inactive{
+  if(status == SUCCESS){
+    eq(latch_state, LATCH_STATE_LATCHED);
+  }
+}
+
+UnlatchHandle::Inactive{
+  if(status == SUCCESS){
+    eq(latch_state, LATCH_STATE_UNLATCHED);
+  }
+}
 
 // Start with a default position
 fact(base_state.Holds f1);

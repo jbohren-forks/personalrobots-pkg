@@ -2,17 +2,10 @@
 
 close();
 
-rejectable(door_controller.Holds g0);
+// Load the topological map
+map_initialize_from_file("willow.tmap");
 
-// Initial conditions for control flags
-g0.active = true;
-g0.in_position = false;
-g0.found_door = false;
-g0.must_find_handle = true;
-g0.have_handle = false;
-g0.doorway_clear = false;
-g0.check_doorway = true;
-g0.finishing = false;
+rejectable(door_controller.CheckingDoorway g0);
 
 // Initialize the controller with a door message.
 fact(door_state.Holds ds);
