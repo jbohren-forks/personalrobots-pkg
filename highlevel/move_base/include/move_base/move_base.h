@@ -63,10 +63,8 @@ namespace move_base {
        * @brief  Constructor for the actions
        * @param ros_node A reference to the ros node used 
        * @param tf A reference to a TransformListener
-       * @param global_planner The name of the global planner to use
-       * @param local_planner The name of the local planner to use
        */
-      MoveBase(ros::Node& ros_node, tf::TransformListener& tf, std::string global_planner, std::string local_planner);
+      MoveBase(ros::Node& ros_node, tf::TransformListener& tf);
 
       /**
        * @brief  Destructor - Cleans up

@@ -47,13 +47,16 @@ namespace move_base {
     return x < 0.0 ? -1.0 : 1.0;
   }
 
-  MoveBase::MoveBase(ros::Node& ros_node, tf::TransformListener& tf, std::string global_planner, std::string local_planner) :
+  MoveBase::MoveBase(ros::Node& ros_node, tf::TransformListener& tf) :
     Action<robot_msgs::PoseStamped, robot_msgs::PoseStamped>(ros_node.getName()), ros_node_(ros_node), tf_(tf),
     tc_(NULL), planner_costmap_ros_(NULL), controller_costmap_ros_(NULL), 
     planner_(NULL), valid_plan_(false), new_plan_(false), attempted_rotation_(false), attempted_costmap_reset_(false),
     done_half_rotation_(false), done_full_rotation_(false), escaping_(false) {
 
     //get some parameters that will be global to the move base node
+    std::string global_planner, local_planner;
+    ros_node_.param("~base_global_planner", global_planner, std::string("NavfnROS"));
+    ros_node_.param("~base_local_planner", local_planner, std::string("TrajectoryPlannerROS"));
     ros_node_.param("~navfn/costmap/robot_base_frame", robot_base_frame_, std::string("base_link"));
     ros_node_.param("~navfn/costmap/global_frame", global_frame_, std::string("/map"));
     ros_node_.param("~controller_frequency", controller_frequency_, 20.0);
@@ -589,7 +592,7 @@ int main(int argc, char** argv){
   ros::Node ros_node("move_base");
   tf::TransformListener tf(ros_node, true, ros::Duration(10));
   
-  move_base::MoveBase move_base(ros_node, tf, "NavfnROS", "TrajectoryPlannerROS");
+  move_base::MoveBase move_base(ros_node, tf);
   robot_actions::ActionRunner runner(20.0);
   runner.connect<robot_msgs::PoseStamped, nav_robot_actions::MoveBaseState, robot_msgs::PoseStamped>(move_base);
   runner.run();
