@@ -13,5 +13,12 @@
 
   <!-- push robotdesc/pr2 to factory and spawn robot in gazebo -->
   <node pkg="gazebo_plugin" type="urdf2factory" args="robotdesc/pr2" respawn="false" output="screen" />
+
+  <!-- Robot state publisher -->
+  <node machine="two" pkg="robot_state_publisher" type="state_publisher" name="robot_state_publisher">
+    <param name="publish_frequency" type="double" value="50.0" />
+    <param name="tf_prefix" type="string" value="" />
+  </node>
+
 </launch>
 
