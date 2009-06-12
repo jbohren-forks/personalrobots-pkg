@@ -36,18 +36,28 @@
 
 #include <kdl/tree.hpp>
 #include <ros/ros.h>
+#include <kdl_parser/tree_parser.hpp>
 #include "robot_state_publisher/robot_state_publisher.h"
 
 using namespace std;
 using namespace ros;
 using namespace KDL;
-
+using namespace robot_state_publisher;
 
 class MechStatePublisher{
 public:
-  MechStatePublisher(const Tree& tree)
-    : state_publisher_(tree), publish_rate_(0.0)
+  MechStatePublisher(const string& robot_desc)
+    : publish_rate_(0.0)
   {
+    // create kinematic tree
+    Tree tree;
+    if (!treeFromString(robot_desc, tree, joint_segment_mapping_))
+      ROS_ERROR("Failed to construct robot model from xml string");
+    state_publisher_ = new RobotStatePublisher(tree);
+
+    for (map<string, string>::const_iterator it=joint_segment_mapping_.begin(); it!=joint_segment_mapping_.end(); it++)
+      cout << "mapping joint " << it->first << " on segment " << it->second << endl;
+
     // set publish frequency
     double publish_freq;
     n_.param("~publish_frequency", publish_freq, 50.0);
@@ -57,7 +67,10 @@ public:
     mech_state_sub_ = n_.subscribe("/mechanism_state", 1, &MechStatePublisher::callbackMechState, this);;
 
   };
-  ~MechStatePublisher(){};
+  ~MechStatePublisher()
+  {
+    delete state_publisher_;
+  };
 
 private:
   void callbackMechState(const MechanismStateConstPtr& state)
@@ -65,20 +78,24 @@ private:
     // get joint positions from state message
     map<string, double> joint_positions;
     for (unsigned int i=0; i<state->joint_states.size(); i++){
-      // @TODO: What to do with this 'hack' to replace _joint and _frame by _link?
-      string tmp = state->joint_states[i].name;
-      tmp.replace(tmp.size()-6, tmp.size(), "_link");
-      joint_positions.insert(make_pair(tmp, state->joint_states[i].position));
+      map<string, string>::const_iterator jnt = joint_segment_mapping_.find(state->joint_states[i].name);
+      if (jnt == joint_segment_mapping_.end()){
+	ROS_ERROR("did not find matching link for joint %s", state->joint_states[i].name.c_str());
+	joint_segment_mapping_[state->joint_states[i].name] = "NO MAPPING SPECIFIED";
+      }
+      else
+	joint_positions.insert(make_pair(jnt->second, state->joint_states[i].position));
       //cout << "Joint " << tmp << " at position " << state->joint_states[i].position << endl;
     }
-    state_publisher_.publishTransforms(joint_positions, state->header.stamp);
+    state_publisher_->publishTransforms(joint_positions, state->header.stamp);
     publish_rate_.sleep();
   }
 
   NodeHandle n_;
-  robot_state_publisher::RobotStatePublisher state_publisher_;
+  robot_state_publisher::RobotStatePublisher* state_publisher_;
   Rate publish_rate_;
   Subscriber mech_state_sub_;
+  map<string, string> joint_segment_mapping_;
 };
 
 
@@ -91,17 +108,12 @@ int main(int argc, char** argv)
 {
   // Initialize ros
   ros::init(argc, argv, "robot_state_publisher");
+  NodeHandle node;
 
   // build robot model
   string robot_desc;
-  NodeHandle node;
-  Tree tree;
   node.param("/robotdesc/pr2", robot_desc, string());
-  if (!treeFromString(robot_desc, tree)){
-    ROS_ERROR("Failed to construct robot model from xml string");
-    return -1;
-  }
-  MechStatePublisher publisher(tree);
+  MechStatePublisher publisher(robot_desc);
 
   ros::spin();
   return 0;
