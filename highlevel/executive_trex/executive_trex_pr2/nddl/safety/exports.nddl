@@ -8,8 +8,6 @@ class ArmsTucked extends AgentTimeline {
     defaultOnCommit(value, false);
   }
 
-  predicate False{}
-
   ArmsTucked(Mode _mode){
     super(_mode, "Holds");
   }
@@ -24,8 +22,6 @@ class TiltLaserReady extends AgentTimeline {
     bool value;
     defaultOnCommit(value, false);
   }
-
-  predicate False{}
 
   TiltLaserReady(Mode _mode){
     super(_mode, "Holds");
