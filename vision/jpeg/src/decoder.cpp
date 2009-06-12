@@ -100,6 +100,10 @@ void imageCB(const sensor_msgs::CompressedImageConstPtr &image)
             height, width, depth, image->encoding != "mono" ? "bgr" : "mono", 
             "uint8", rawBuffer);
 
+  // Copy over the ros header info
+  decompressedImageMessage.header.stamp    = image->header.stamp ;
+  decompressedImageMessage.header.frame_id = image->header.frame_id ;
+
   // Publish the decompressed image
   rawPub.publish(decompressedImageMessage);
 

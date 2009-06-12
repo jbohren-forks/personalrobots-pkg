@@ -119,6 +119,10 @@ void imageCB(const image_msgs::ImageConstPtr &image)
   memcpy((char*)(&compressedImageMessage.uint8_data.data[0]), 
          (char*)jpegBuffer, compressedSize);
 
+  // Copy over the ros header info
+  compressedImageMessage.header.stamp = image->header.stamp ;
+  compressedImageMessage.header.frame_id = image->header.frame_id ;
+
   // Send the message
   jpegPub.publish(compressedImageMessage);
 
