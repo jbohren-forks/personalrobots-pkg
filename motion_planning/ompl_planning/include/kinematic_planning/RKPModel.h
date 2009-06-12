@@ -47,6 +47,7 @@
 #include "kinematic_planning/ompl_planner/RKPKPIECESetup.h"
 #include "kinematic_planning/ompl_planner/RKPIKKPIECESetup.h"
 
+#include <boost/shared_ptr.hpp>
 #include <string>
 #include <map>
 
@@ -67,71 +68,21 @@ namespace kinematic_planning
 		    delete i->second;
 	}
 	
-	void addRRT(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options)
-	{
-	    RKPPlannerSetup *rrt = new RKPRRTSetup(dynamic_cast<RKPModelBase*>(this));
-	    if (rrt->setup(options))
-		planners[rrt->name] = rrt;
-	    else
-		delete rrt;
-	}
+	/* instantiate the planners that can be used  */
+	void createMotionPlanningInstances(std::vector< boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> > cfgs);
 	
-	void addLazyRRT(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options)
-	{
-	    RKPPlannerSetup *rrt = new RKPLazyRRTSetup(dynamic_cast<RKPModelBase*>(this));
-	    if (rrt->setup(options))
-		planners[rrt->name] = rrt;
-	    else
-		delete rrt;
-	}
-	
-	void addEST(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options)
-	{
-	    RKPPlannerSetup *est = new RKPESTSetup(dynamic_cast<RKPModelBase*>(this));
-	    if (est->setup(options))
-		planners[est->name] = est;
-	    else
-		delete est;
-	}
-
-	void addSBL(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options)
-	{
-	    RKPPlannerSetup *sbl = new RKPSBLSetup(dynamic_cast<RKPModelBase*>(this));
-	    if (sbl->setup(options))
-		planners[sbl->name] = sbl;
-	    else
-		delete sbl;
-	}
-
-	void addIKSBL(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options)
-	{
-	    RKPPlannerSetup *sbl = new RKPIKSBLSetup(dynamic_cast<RKPModelBase*>(this));
-	    if (sbl->setup(options))
-		planners[sbl->name] = sbl;
-	    else
-		delete sbl;
-	}
-		
-	void addKPIECE(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options)
-	{
-	    RKPPlannerSetup *kpiece = new RKPKPIECESetup(dynamic_cast<RKPModelBase*>(this));
-	    if (kpiece->setup(options))
-		planners[kpiece->name] = kpiece;
-	    else
-		delete kpiece;
-	}
-
-	
-	void addIKKPIECE(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options)
-	{
-	    RKPPlannerSetup *kpiece = new RKPIKKPIECESetup(dynamic_cast<RKPModelBase*>(this));
-	    if (kpiece->setup(options))
-		planners[kpiece->name] = kpiece;
-	    else
-		delete kpiece;
-	}
-
 	std::map<std::string, RKPPlannerSetup*> planners;
+	
+    protected:
+	
+	void addRRT(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options);
+	void addLazyRRT(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options);
+	void addEST(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options);
+	void addSBL(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options);
+	void addIKSBL(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options);
+	void addKPIECE(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options);
+	void addIKKPIECE(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options);
+	
     };
     
     typedef std::map<std::string, RKPModel*> ModelMap;

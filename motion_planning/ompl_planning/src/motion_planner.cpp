@@ -62,6 +62,7 @@ public:
 	m_replanID = 0;
 	m_replanningThread = NULL;
 	m_collisionMonitorChange = false;
+	m_publishStatus = false;
 	
 	m_currentPlanStatus.id = -1;
 	m_currentPlanStatus.distance = -1.0;
@@ -96,6 +97,7 @@ public:
     
     void run(void)
     {
+	bool execute = false;
 	std::vector<std::string> mlist;    
 	
 	if (m_collisionModels->loadedModels())
@@ -107,20 +109,24 @@ public:
 	    for (unsigned int i = 0 ; i < mlist.size() ; ++i)
 		ROS_INFO("  * %s", mlist[i].c_str());    
 
-	    m_collisionSpaceMonitor->waitForState();
-	    ROS_INFO("Working in frame %s", m_collisionSpaceMonitor->getFrameId().c_str());
+	    //	    m_collisionSpaceMonitor->waitForState();
+	    execute = !mlist.empty() && m_collisionSpaceMonitor->haveState() || 1; // hack
 	    
-	    startPublishingStatus();
+	    if (execute)
+	    {
+		ROS_INFO("Working in frame %s", m_collisionSpaceMonitor->getFrameId().c_str());
+		startPublishingStatus();
+	    }
 	}
 	
-	if (mlist.size() > 0)
+	if (execute)
 	{
-	    
 	    ROS_INFO("Motion planning is now available.");
 	    ros::spin();
 	}
 	else
-	    ROS_ERROR("No robot model loaded. OMPL planning node cannot start.");
+	    if (mlist.empty())
+		ROS_ERROR("No robot model loaded. OMPL planning node cannot start.");
     }
     
     bool isSafeToPlan(bool report)
@@ -271,7 +277,8 @@ public:
 	    model->kmodel = m_collisionSpaceMonitor->getKinematicModel();
 	    model->groupID = model->kmodel->getGroupID(it->first);
 	    model->groupName = it->first;
-	    createMotionPlanningInstances(model);
+
+	    model->createMotionPlanningInstances(m_collisionModels->getGroupPlannersConfig(model->groupName));
 	    m_models[model->groupName] = model;
 	}
     }
@@ -450,40 +457,7 @@ protected:
     
 private:
     
-    /* instantiate the planners that can be used  */
-    void createMotionPlanningInstances(RKPModel* model)
-    {	
-	std::vector< boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> > cfgs =
-	    m_collisionModels->getGroupPlannersConfig(model->groupName);
-	
-	for (unsigned int i = 0 ; i < cfgs.size() ; ++i)
-	{
-	    std::string type = cfgs[i]->getParamString("type");
-	    if (type == "RRT")
-		model->addRRT(cfgs[i]);
-	    else
-	    if (type == "LazyRRT")
-		model->addLazyRRT(cfgs[i]);
-	    else
-	    if (type == "EST")
-		model->addEST(cfgs[i]);
-	    else
-	    if (type == "SBL")
-		model->addSBL(cfgs[i]);
-	    else
-	    if (type == "KPIECE")
-		model->addKPIECE(cfgs[i]);
-	    else
-	    if (type == "IKSBL")
-		model->addIKSBL(cfgs[i]);
-	    else
-	    if (type == "IKKPIECE")
-		model->addIKKPIECE(cfgs[i]);
-	    else
-		ROS_WARN("Unknown planner type: %s", type.c_str());
-	}
-    }
-    
+
     RKPRequestHandler                                               m_requestHandler;
     
     ros::NodeHandle                                                 m_nodeHandle;
