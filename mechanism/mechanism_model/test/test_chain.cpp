@@ -90,30 +90,6 @@ TEST_F(ShortChainTest, FKShouldMatchOnShortChainWhenStraight)
 
   KDL::JntArray jnts(model.joints_.size());
   chain.getPositions(state->joint_states_, jnts);
-
-
-  // FK with mechanism
-  state->link_states_[0].propagateFK(NULL, NULL);
-  for (unsigned int i = 1; i < state->link_states_.size(); ++i)
-    state->link_states_[i].propagateFK(&state->link_states_[i-1], &state->joint_states_[i-1]);
-
-  // FK with KDL
-  std::vector<KDL::Frame> kdl_frames(model.links_.size());
-  KDL::ChainFkSolverPos_recursive solver(kdl);
-  for (unsigned int i = 0; i < model.links_.size(); ++i)
-    ASSERT_GE(solver.JntToCart(jnts, kdl_frames[i], i+1), 0) << "failed on link " << i;
-
-  // Compares the resulting transforms/frames
-  for (unsigned int i = 0; i < model.links_.size(); ++i)
-  {
-    tf::Transform from_kdl;
-    tf::TransformKDLToTF(kdl_frames[i], from_kdl);
-
-    tf::Transform from_mech(state->link_states_[i].abs_orientation_,
-                            state->link_states_[i].abs_position_);
-
-    EXPECT_TRANSFORMS_EQ(from_mech, from_kdl) << "...and this was for link " << i;
-  }
 }
 
 int main(int argc, char **argv){
