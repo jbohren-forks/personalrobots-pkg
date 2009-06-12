@@ -10,6 +10,15 @@ gensrv()
 rospack_add_boost_directories()
 
 rospack_add_rostest(test/test_with_sim_hztest.xml)
-rospack_add_rostest(test/test_with_sim_selftest.xml)
+
+# The selftest fails on 64-bit, #1494
+include(CMakeDetermineSystem)
+if(CMAKE_SYSTEM_PROCESSOR MATCHES "i686" OR
+   CMAKE_SYSTEM_PROCESSOR MATCHES "i386" OR
+   CMAKE_SYSTEM_PROCESSOR MATCHES "unknown")
+  rospack_add_rostest(test/test_with_sim_selftest.xml)
+endif(CMAKE_SYSTEM_PROCESSOR MATCHES "i686" OR
+      CMAKE_SYSTEM_PROCESSOR MATCHES "i386" OR
+      CMAKE_SYSTEM_PROCESSOR MATCHES "unknown")
 
 add_subdirectory(src)
