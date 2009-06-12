@@ -60,7 +60,6 @@
 #include <robot_srvs/SwitchController.h>
 #include <robot_msgs/MechanismState.h>
 #include <diagnostic_msgs/DiagnosticMessage.h>
-#include "tf/tfMessage.h"
 
 typedef controller::Controller* (*ControllerAllocator)();
 
@@ -205,8 +204,6 @@ private:
 
   const char* const mechanism_state_topic_;
   realtime_tools::RealtimePublisher<robot_msgs::MechanismState> publisher_;
-
-  realtime_tools::RealtimePublisher<tf::tfMessage> transform_publisher_;
 
   AdvertisedServiceGuard list_controllers_guard_, list_controller_types_guard_,
     spawn_controller_guard_, kill_controller_guard_, switch_controller_guard_,
