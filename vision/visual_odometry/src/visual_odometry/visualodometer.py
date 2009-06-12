@@ -97,10 +97,11 @@ class Pose:
 
   def quaternion(self):
     """ Return the quaternion representation of the rotation of the pose matrix """
-    return transformations.quaternion_from_rotation_matrix(self.M)
+    return transformations.quaternion_from_matrix(self.M)
 
   def euler(self):
     """ Return the Euler representation of the rotation of the pose matrix """
+    return transformations.euler_from_matrix(self.M)
     return transformations.euler_from_rotation_matrix(self.M)
 
   def compare(self, other):
@@ -155,7 +156,7 @@ class Pose:
 
 def from_xyz_euler(xyz, euler):
   """ Return a :class:`Pose` from an xyz position and triple *euler*. """
-  R = transformations.rotation_matrix_from_euler(euler[0], euler[1], euler[2], 'sxyz')
+  R = transformations.euler_matrix(euler[0], euler[1], euler[2], 'sxyz')
   return Pose(R[:3,:3], xyz)
 
 ########################################################################
