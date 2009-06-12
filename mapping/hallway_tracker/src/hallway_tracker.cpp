@@ -82,6 +82,7 @@
 //Filters
 #include "filters/filter_chain.h"
 #include "laser_scan/scan_shadows_filter.h"
+#include "laser_scan/intensity_filter.h"
 
 using namespace std;
 using namespace robot_msgs;
