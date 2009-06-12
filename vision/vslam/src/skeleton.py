@@ -44,6 +44,7 @@ class Skeleton:
     self.pg.initializeOnlineOptimization()
     if 1:
       filename = '/u/mihelich/images/holidays/holidays.tree'
+      assert os.access(filename, os.R_OK)
       self.vt = place_recognition.load(filename)
     else:
       self.vt = None
