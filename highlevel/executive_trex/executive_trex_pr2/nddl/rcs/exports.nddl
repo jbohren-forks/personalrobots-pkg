@@ -3,8 +3,6 @@
  */
 typedef int [-1, 1] TIME_ERROR_BOUND;
 
-eq(TICK_DURATION, 0.1);
-
 /**
  * Defines core interfaces for ROS integration
  */
@@ -42,8 +40,12 @@ Controller::Holds{
   float remaining_ticks;
   addEq(start, remaining_ticks, deadline);
   mulEq(remaining_ticks, TICK_DURATION, remaining_time);
-  //testLEQ(timed_out, remaining_time, 0.0);
-  eq(timed_out, false);
+  testLEQ(timed_out, remaining_time, 0.0);
+
+  // Guard needed, otherwise the two defaultOnCommit constraints conflict
+  if(remaining_time) {
+    defaultOnCommit(timed_out, false);
+  }
 }
 
 /**
