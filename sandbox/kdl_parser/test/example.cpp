@@ -44,8 +44,13 @@ using namespace std;
 int main()
 {
   Tree my_tree;
-  if (!treeFromFile("pr2_desc.xml", my_tree)) return -1;
+  map<string, string> segment_joint_mapping;
+  if (!treeFromFile("pr2_desc.xml", my_tree, segment_joint_mapping)) return -1;
 
   Chain chain = my_tree.getChain("torso_lift_link", "r_gripper_tool_frame");
   cout << "Got chain with " << chain.getNrOfJoints() << " joints and " << chain.getNrOfSegments() << " segments" << endl;
+
+  for (map<string, string>::const_iterator it=segment_joint_mapping.begin(); it!=segment_joint_mapping.end(); it++)
+    cout << "mapping joint " << it->first << " on segment " << it->second << endl;
 }
+

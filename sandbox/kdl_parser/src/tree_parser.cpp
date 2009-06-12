@@ -185,7 +185,7 @@ bool getJoint(TiXmlElement *joint_xml, Joint& joint)
 }
 
 
-bool getSegment(TiXmlElement *segment_xml, map<string, Joint>& joints, Segment& segment)
+bool getSegment(TiXmlElement *segment_xml, map<string, Joint>& joints, Segment& segment, string& joint_name)
 {
   // get mandetory frame
   Frame frame;
@@ -193,7 +193,6 @@ bool getSegment(TiXmlElement *segment_xml, map<string, Joint>& joints, Segment& 
   {cout << "Segment does not have origin" << endl; return false;}
 
   // get mandetory joint
-  string joint_name;
   if (!getAtribute(segment_xml->FirstChildElement("joint"), "name", joint_name)) 
   {cout << "Segment does not specify joint name" << endl; return false;}
   map<string, Joint>::iterator it = joints.find(joint_name);
@@ -226,10 +225,11 @@ void addChildrenToTree(const string& root, const map<string, Segment>& segments,
 }
 
 
-bool getTree(TiXmlElement *robot, Tree& tree)
+bool getTree(TiXmlElement *robot, Tree& tree, map<string, string>& joint_segment_mapping)
 {
   // empty tree
   tree = Tree();
+  joint_segment_mapping.clear();
 
   // Constructs the joints
   TiXmlElement *joint_xml = NULL;
@@ -265,8 +265,10 @@ bool getTree(TiXmlElement *robot, Tree& tree)
     {cout << "Segment " << segment_name << " does not have parent" << endl; return false;}
 
     // build segment
-    if (!getSegment(segment_xml, joints, segment)) 
+    string joint_name;
+    if (!getSegment(segment_xml, joints, segment, joint_name)) 
     {cout << "Constructing segment " << segment_name << " failed" << endl; return false;}
+    joint_segment_mapping[joint_name] = segment_name;
     segments[segment_name] = segment;
     parents[segment_name] = segment_parent;
   }
@@ -292,7 +294,7 @@ bool getTree(TiXmlElement *robot, Tree& tree)
 }
 
 
-bool treeFromFile(const string& file, Tree& tree)
+bool treeFromFile(const string& file, Tree& tree, map<string, string>& joint_segment_mapping)
 {
   TiXmlDocument urdf_xml;
   urdf_xml.LoadFile(file);
@@ -301,11 +303,11 @@ bool treeFromFile(const string& file, Tree& tree)
     cout << "Could not parse the xml" << endl;
     return false;
   }
-  return getTree(root, tree);
+  return getTree(root, tree, joint_segment_mapping);
 }
 
 
-bool treeFromString(const string& xml, Tree& tree)
+bool treeFromString(const string& xml, Tree& tree, map<string, string>& joint_segment_mapping)
 {
   TiXmlDocument urdf_xml;
   urdf_xml.Parse(xml.c_str());
@@ -314,7 +316,7 @@ bool treeFromString(const string& xml, Tree& tree)
     cout << "Could not parse the xml" << endl;
     return false;
   }
-  return getTree(root, tree);
+  return getTree(root, tree, joint_segment_mapping);
 }
 }
 

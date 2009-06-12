@@ -47,7 +47,7 @@ class TestParser : public testing::Test
 {
 public:
   Tree my_tree;
-
+  map<string, string> segment_joint_mapping;
 
 protected:
   /// constructor
@@ -67,7 +67,7 @@ protected:
 
 TEST_F(TestParser, test)
 {
-  ASSERT_TRUE(treeFromFile(g_argv[1], my_tree));
+  ASSERT_TRUE(treeFromFile(g_argv[1], my_tree, segment_joint_mapping));
   ASSERT_TRUE(my_tree.getNrOfJoints() == 38);
   ASSERT_TRUE(my_tree.getNrOfSegments() == 51);
   ASSERT_TRUE(my_tree.getSegment("base_link")->second.parent->first == "root");
