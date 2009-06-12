@@ -4,10 +4,21 @@
      writing_core
 
   </description>
-  <author>Melonee Wise/ YOUR E-MAIL HERE</author>
+  <author>Melonee Wise/ mwise@willowgarage.com</author>
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
   <url>http://pr.willowgarage.com/wiki/writing_core</url>
+  
+  <depend package="roscpp" />
+  <depend package="robot_msgs" />
+  <depend package="robot_srvs" />
+  <depend package="robot_actions" />
+  <depend package="pr2_robot_actions" />
+  <depend package="tf" />
+  
+  <export>
+    <cpp cflags="-I${prefix}/msg/cpp -I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib"/>
+  </export>
 
 </package>
 
