@@ -9,6 +9,7 @@
   <review status="unreviewed" notes=""/>
   <depend package="vslam"/>
   <depend package="dcam"/>
+  <depend package="tf"/>
   <url>http://pr.willowgarage.com/wiki/vslam_demo</url>
 
 </package>
