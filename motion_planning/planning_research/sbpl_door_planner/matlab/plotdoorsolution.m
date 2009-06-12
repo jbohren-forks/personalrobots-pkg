@@ -15,7 +15,7 @@ initRobotBox = [local_footprint';
 a = load('sol.txt');
 figure(1)
 hold on
-axis([-2 2 -2 2]);
+axis([-4 4 -4 4]);
 axis equal
 plot(a(:,1),a(:,2),'g');
 for i=1:size(a,1)
@@ -26,7 +26,7 @@ for i=1:size(a,1)
         set(handle2,'XData',px,'YData',py);
     end
     
-    door_p2 = rotZ(door_angle+a(i,4))*[door_length 0 0 1]';
+    door_p2 = rotZ(a(i,4))*[door_length 0 0 1]';
     door_p2 = door_p2(1:2,1) + hinge_global_position(1:2)';
     if i==1
       handle1 = plot([door_p1(1) door_p2(1)],[door_p1(2) door_p2(2)],'r-');

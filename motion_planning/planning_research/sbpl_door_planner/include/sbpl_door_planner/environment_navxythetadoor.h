@@ -180,7 +180,7 @@ class EnvironmentNAVXYTHETADOORLAT : public EnvironmentNAVXYTHETALATTICE
    void GetActionCostDebug(int SourceX, int SourceY, int SourceTheta, 
        int SourceDoorIntervalIndex,
        EnvNAVXYTHETALATAction_t* action,
-       int* pCosttoDoorInterval0, int* pCosttoDoorInterval1, int* pBaseCost, int* pDoorCost);
+       int* pCosttoDoorInterval0, int* pCosttoDoorInterval1, int* pBaseCost, int* pDoorCost, int maxcostXY[2], int* maxcostcellcost, int* SourceCost);
 
   protected:
 
