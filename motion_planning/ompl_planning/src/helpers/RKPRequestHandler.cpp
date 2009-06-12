@@ -36,8 +36,8 @@
 
 #include "kinematic_planning/RKPRequestHandler.h"
 
-	/** Set up all the data needed by motion planning based on a request and lock the planner setup
-	 *  using this data */
+/** Set up all the data needed by motion planning based on a request and lock the planner setup
+ *  using this data */
 bool kinematic_planning::RKPRequestHandler::configure(ModelMap &models, const motion_planning_msgs::KinematicState &startState, const motion_planning_srvs::KinematicPlan::Request &req)
 {
     // make sure the same motion planner instance is not used by other calls

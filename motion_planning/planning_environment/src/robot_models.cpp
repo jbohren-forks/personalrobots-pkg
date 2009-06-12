@@ -83,6 +83,7 @@ namespace planning_environment
 	}
     };
     
+    static OutputHandlerROScon _outputROS;
 }
 
 void planning_environment::RobotModels::reload(void)

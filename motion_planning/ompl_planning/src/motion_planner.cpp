@@ -55,22 +55,28 @@ public:
     
     KinematicPlanning(void)
     {
+	// register with ROS
 	m_collisionModels = new planning_environment::CollisionModels("robot_description");
 	m_collisionSpaceMonitor = new planning_environment::CollisionSpaceMonitor(m_collisionModels, false);
 	m_collisionSpaceMonitor->setOnAfterMapUpdateCallback(boost::bind(&KinematicPlanning::afterWorldUpdate, this, _1));
 	
-	m_replanID = 0;
-	m_replanningThread = NULL;
-	m_collisionMonitorChange = false;
-	m_publishStatus = false;
-	
+	// status info
+	m_publishingStatus = false;
+	m_shouldPublishStatusNow = false;
+	m_statusThread = NULL;
 	m_currentPlanStatus.id = -1;
 	m_currentPlanStatus.distance = -1.0;
 	m_currentPlanStatus.done = 1;
 	m_currentPlanStatus.approximate = 0;
 	m_currentPlanStatus.valid = 1;
 	m_currentPlanStatus.unsafe = 0;
-	m_currentlyExecutedPath.set_states_size(0);
+	
+
+	m_replanID = 0;
+	m_replanningThread = NULL;
+	m_replanning = false;
+	
+	m_collisionMonitorChange = false;
 	
 	m_replanKinematicPathService = m_nodeHandle.advertiseService("plan_kinematic_path", &KinematicPlanning::replanToGoal, this);
 	m_replanForceService = m_nodeHandle.advertiseService("replan_force", &KinematicPlanning::forceReplanning, this);
@@ -109,8 +115,8 @@ public:
 	    for (unsigned int i = 0 ; i < mlist.size() ; ++i)
 		ROS_INFO("  * %s", mlist[i].c_str());    
 
-	    //	    m_collisionSpaceMonitor->waitForState();
-	    execute = !mlist.empty() && m_collisionSpaceMonitor->haveState() || 1; // hack
+	    m_collisionSpaceMonitor->waitForState();
+	    execute = !mlist.empty() && m_collisionSpaceMonitor->haveState();
 	    
 	    if (execute)
 	    {
@@ -144,6 +150,14 @@ public:
 		ROS_WARN("Planning is not safe: kinematic state is not up to date");
 	    return false;
 	}
+	else
+	    if (m_collisionSpaceMonitor->isPoseIncluded())
+		if (!m_collisionSpaceMonitor->isPoseUpdated(m_intervalKinematicState))
+		{
+		    if (report)
+			ROS_WARN("Planning is not safe: kinematic state is not up to date");
+		    return false;
+		}
 	
 	return true;
     }
@@ -151,45 +165,27 @@ public:
     bool forceReplanning(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res)
     {
 	ROS_INFO("Received request to force replanning");
-	notifyReplanning();
-	return true;
-    }
-    
-    void notifyReplanning(void)
-    {
-	m_continueReplanningLock.lock();
 	m_collisionMonitorChange = true;
-	m_continueReplanningLock.unlock();
-	m_collisionMonitorCondition.notify_all();
+	m_replanCondition.notify_all();
+	return true;
     }
     
     void stopReplanning(void)
     {	
 	m_replanningLock.lock();
-	bool stop = false;
-	m_continueReplanningLock.lock();
-	if (m_requestHandler.isActive())
+	if (m_replanning)
 	{
-	    m_requestHandler.release();
+	    m_replanning = false;
+	    m_replanCondition.notify_all();
 	    
-	    /* make sure the working thread knows it is time to stop */
-	    m_collisionMonitorCondition.notify_all();
-	    stop = true;
-	}
-	m_continueReplanningLock.unlock();
-	
-	if (stop)
-	{
-	    /* wait for the thread to stop & clean up*/
 	    m_replanningThread->join();
 	    delete m_replanningThread;
 	    m_replanningThread = NULL;
+	    m_requestHandler.release();
+	    
+	    ROS_INFO("Replanning stopped");
 	}
-	
 	m_replanningLock.unlock();
-
-	if (stop)
-	    ROS_INFO("Replanning stopped");	
     }
     
     bool stopReplanning(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res)
@@ -203,19 +199,20 @@ public:
     {
 	if (m_collisionModels->loadedModels())
 	{
-	    m_publishStatus = true;	
+	    m_publishingStatus = true;	
 	    m_statusThread = new boost::thread(boost::bind(&KinematicPlanning::publishStatus, this));
 	}
     }
     
     void stopPublishingStatus(void)
     {
-	if (m_publishStatus)
+	if (m_publishingStatus)
 	{
-	    m_publishStatus = false;
+	    m_publishingStatus = false;
 	    m_statusThread->join();
 	    delete m_statusThread;
-	}	
+	    m_statusThread = NULL;
+	}
     }
 
     bool replanToGoal(motion_planning_srvs::KinematicPlan::Request &req, motion_planning_srvs::KinematicPlan::Response &res)
@@ -234,9 +231,8 @@ public:
 
 	    if (st)
 	    {
-		// start planning thread
-		m_replanningLock.lock();
-		
+		// update status 
+		m_statusLock.lock();	    
 		m_currentPlanStatus.id = ++m_replanID;
 		m_currentPlanStatus.valid = 1;
 		m_currentPlanStatus.path.set_states_size(0);
@@ -246,7 +242,10 @@ public:
 		res.id = m_currentPlanStatus.id;
 		m_statusLock.unlock();	    
 		
+		// start planning thread
 		ROS_INFO("Start replanning with plan id %d", res.id);
+		m_replanningLock.lock();
+		m_replanning = true;
 		m_replanningThread = new boost::thread(boost::bind(&KinematicPlanning::replanToGoalThread, this));
 		m_replanningLock.unlock();
 	    }
@@ -298,22 +297,14 @@ protected:
 	ros::Duration duration(seconds);
 	ros::Duration delta(std::min(0.01, seconds));
 	
-	while (m_publishStatus)
+	while (m_publishingStatus)
 	{
 	    ros::Time nextTime = ros::Time::now() + duration;
-	    bool wait = true;
-	    while (m_publishStatus && wait && ros::Time::now() < nextTime)
-	    {
+	    while (m_publishingStatus && !m_shouldPublishStatusNow && ros::Time::now() < nextTime)
 		delta.sleep();
-		if (m_statusLock.try_lock())
-		{
-		    if (m_currentPlanStatus.path.get_states_size() > 0)
-			wait = false;
-		    m_statusLock.unlock();
-		}
-	    }
+	    m_shouldPublishStatusNow = false;	    
 
-	    bool issueStop = false;	    
+	    bool issueStop = false;
 	    bool replan_inactive = m_continueReplanningLock.try_lock();
 	    
 	    m_statusLock.lock();
@@ -322,14 +313,19 @@ protected:
 	    if (replan_inactive)
 	    {
 		// check if we reached the goal position
-		if (m_requestHandler.isActive())
+		if (m_replanning)
 		{
-		    m_collisionSpaceMonitor->getRobotState()->copyParams(m_requestHandler.activeStartState().vals);
-		    m_currentPlanStatus.done = m_requestHandler.isTrivial(&m_currentPlanStatus.distance) ? 1  : 0;
-		    issueStop = m_currentPlanStatus.done;
+		    if (m_currentPlanStatus.done == 0)
+		    {
+			m_collisionSpaceMonitor->getRobotState()->copyParams(m_requestHandler.activeStartState().vals);
+			m_currentPlanStatus.done = m_requestHandler.isTrivial(&m_currentPlanStatus.distance) ? 1  : 0;
+			issueStop = m_currentPlanStatus.done;
+		    }
+		    else
+			issueStop = true;
 		}
 	    }
-
+	    
 	    // we check the safety of the plan, unless we are
 	    // reporting a path, in which case we want to make sure
 	    // the sent safety value is the one before the motion
@@ -343,18 +339,8 @@ protected:
 	    // we will need to check it for validity when the ma changes
 	    // we also make sure the next time the status is sent, we do not
 	    // resend the path
-	    if (m_currentPlanStatus.path.get_states_size() > 0)
-	    {
-		m_currentlyExecutedPath = m_currentPlanStatus.path;
-		m_currentPlanStatus.path.set_states_size(0);
-	    }
-	    else
-	    {
-		// if we are not sending anything, and the path is not valid or done,
-		// we mark the fact there is no path that we are currently monitoring
-		if (!m_currentPlanStatus.valid || m_currentPlanStatus.done)
-		    m_currentlyExecutedPath.set_states_size(0);
-	    }
+	    if (m_currentPlanStatus.path.states.size() > 0)
+		m_currentPlanStatus.path.states.resize(0);
 	    
 	    m_statusLock.unlock();
 	    
@@ -376,10 +362,10 @@ protected:
 	ros::Duration eps(0.001);
 	motion_planning_msgs::KinematicPath solution;
 	unsigned int step = 0;
-	bool trivial = false;
-	bool approximate = false;
+	bool         trivial = false;
+	bool         approximate = false;
 
-	while (m_requestHandler.isActive() && !trivial)
+	while (m_replanning && !trivial)
 	{
 	    step++;
 	    ROS_DEBUG("Replanning step %d", step);
@@ -389,9 +375,10 @@ protected:
 	    bool safe = isSafeToPlan(true);
 	    
 	    m_collisionSpaceMonitor->getRobotState()->copyParams(m_requestHandler.activeStartState().vals);
-	    m_currentlyExecutedPathStart = m_requestHandler.activeStartState();
 	    m_requestHandler.execute(solution, distance, trivial, approximate);
-	    bool foundSolution = solution.get_states_size() > 0;
+	    m_currentlyExecutedPathStart = m_requestHandler.activeStartState();
+	    m_currentlyExecutedPath = solution;
+	    bool foundSolution = solution.states.size() > 0;
 
 	    m_statusLock.lock();	    
 	    m_currentPlanStatus.path = solution;
@@ -406,8 +393,8 @@ protected:
 		break;
 	    
 	    if (foundSolution)
-		while (m_requestHandler.isActive() && !m_collisionMonitorChange)
-		    m_collisionMonitorCondition.wait(m_continueReplanningLock);
+		while (m_replanning && !m_collisionMonitorChange)
+		    m_replanCondition.wait(m_continueReplanningLock);
 	    else
 	    {
 		// give a chance to the map to update itself
@@ -426,7 +413,7 @@ protected:
 	// notify the replanning thread of the change
 	m_continueReplanningLock.lock();
 	m_statusLock.lock();
-	if (m_requestHandler.isActive() && m_currentPlanStatus.valid)
+	if (m_replanning && m_currentPlanStatus.valid)
 	{
 	    m_requestHandler.activeStartState() = m_currentlyExecutedPathStart;
 	    update = !m_requestHandler.isStillValid(m_currentlyExecutedPath);
@@ -437,6 +424,7 @@ protected:
 		ROS_INFO("Currently executed path is no longer valid. Recomputing...");
 		m_collisionMonitorChange = true;
 		m_currentPlanStatus.valid = 0;
+		m_shouldPublishStatusNow = true;
 	    }
 	    else
 		ROS_DEBUG("Currently executed path is still valid");
@@ -450,49 +438,51 @@ protected:
 	
 	m_statusLock.unlock();
 	m_continueReplanningLock.unlock();
-
+	
 	if (update)
-	    m_collisionMonitorCondition.notify_all();
+	    m_replanCondition.notify_all();
     }
     
 private:
     
-
-    RKPRequestHandler                                               m_requestHandler;
-    
+    // ROS interface 
     ros::NodeHandle                                                 m_nodeHandle;
     planning_environment::CollisionModels                          *m_collisionModels;
     planning_environment::CollisionSpaceMonitor                    *m_collisionSpaceMonitor;
-
-    ModelMap                                                        m_models;
-
-    // intervals for determining whether the monitored state & map are up to date
-    double                                                          m_intervalCollisionMap;
-    double                                                          m_intervalKinematicState;
-    double                                                          m_intervalBasePose;
-
-
     ros::Publisher                                                  m_kinematicPlanningPublisher;
     ros::ServiceServer                                              m_replanKinematicPathService;
     ros::ServiceServer                                              m_replanForceService;
     ros::ServiceServer                                              m_replanStopService;
 
-    /*********** DATA USED FOR REPLANNING ONLY ***********/
-    
-    // current status of the motion planner
-    motion_planning_msgs::KinematicPlanStatus                       m_currentPlanStatus; 
+
+    // planning data
+    ModelMap                                                        m_models;
+    RKPRequestHandler                                               m_requestHandler;
     motion_planning_msgs::KinematicPath                             m_currentlyExecutedPath;
     motion_planning_msgs::KinematicState                            m_currentlyExecutedPathStart;
+    // the ID of the current replanning task
+    int                                                             m_replanID;
+    // flag to indicate whether we are replanning
+    bool                                                            m_replanning;
     
+    
+    // current status of the motion planner
+    motion_planning_msgs::KinematicPlanStatus                       m_currentPlanStatus;     
     // lock used for changing the motion planner status
     boost::mutex                                                    m_statusLock;
     // status publishing thread
     boost::thread                                                  *m_statusThread;
     // flag used to request stopping the publishing thread
-    bool                                                            m_publishStatus;
+    bool                                                            m_publishingStatus;
+    // flag used to notify the immediate publishing of the status
+    bool                                                            m_shouldPublishStatusNow;
     
-    // the ID of the current replanning task
-    int                                                             m_replanID;
+
+
+    // intervals for determining whether the monitored state & map are up to date
+    double                                                          m_intervalCollisionMap;
+    double                                                          m_intervalKinematicState;
+    double                                                          m_intervalBasePose;
     
     // pointer to the replanning thread (not NULL only when current request type is R_NONE)
     boost::thread                                                  *m_replanningThread;
@@ -502,7 +492,7 @@ private:
     // flag set when the map was updated
     bool                                                            m_collisionMonitorChange;
     // condition being broadcasted when the map is updated
-    boost::condition                                                m_collisionMonitorCondition;
+    boost::condition                                                m_replanCondition;
     // lock used in conjuction with the condition
     boost::mutex                                                    m_continueReplanningLock;    
 };
@@ -545,11 +535,6 @@ int main(int argc, char **argv)
 { 
     ros::init(argc, argv, "ompl_planning");
 
-    ROSCONSOLE_AUTOINIT;
-    log4cxx::LoggerPtr my_logger = log4cxx::Logger::getLogger(ROSCONSOLE_DEFAULT_NAME);
-    // Set the logger for this package to output all statements
-    my_logger->setLevel(ros::console::g_level_lookup[ros::console::levels::Debug]);
-    
     OutputHandlerROScon rosconOutputHandler;	
     ompl::msg::useOutputHandler(&rosconOutputHandler);
     
