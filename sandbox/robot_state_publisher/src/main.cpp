@@ -43,6 +43,50 @@ using namespace ros;
 using namespace KDL;
 
 
+class MechStatePublisher{
+public:
+  MechStatePublisher(const Tree& tree)
+    : state_publisher_(tree), publish_rate_(0.0)
+  {
+    // set publish frequency
+    double publish_freq;
+    n_.param("~publish_frequency", publish_freq, 50.0);
+    publish_rate_ = Rate(publish_freq);
+
+    // subscribe to mechanism state
+    mech_state_sub_ = n_.subscribe("/mechanism_state", 1, &MechStatePublisher::callbackMechState, this);;
+
+  };
+  ~MechStatePublisher(){};
+
+private:
+  void callbackMechState(const MechanismStateConstPtr& state)
+  {
+    // get joint positions from state message
+    map<string, double> joint_positions;
+    for (unsigned int i=0; i<state->joint_states.size(); i++){
+      // @TODO: What to do with this 'hack' to replace _joint and _frame by _link?
+      string tmp = state->joint_states[i].name;
+      tmp.replace(tmp.size()-6, tmp.size(), "_link");
+      joint_positions.insert(make_pair(tmp, state->joint_states[i].position));
+      //cout << "Joint " << tmp << " at position " << state->joint_states[i].position << endl;
+    }
+    state_publisher_.publishTransforms(joint_positions, state->header.stamp);
+    publish_rate_.sleep();
+  }
+
+  NodeHandle n_;
+  robot_state_publisher::RobotStatePublisher state_publisher_;
+  Rate publish_rate_;
+  Subscriber mech_state_sub_;
+};
+
+
+
+
+// ----------------------------------
+// ----- MAIN -----------------------
+// ----------------------------------
 int main(int argc, char** argv)
 {
   // Initialize ros
@@ -57,9 +101,8 @@ int main(int argc, char** argv)
     ROS_ERROR("Failed to construct robot model from xml string");
     return -1;
   }
+  MechStatePublisher publisher(tree);
 
-  robot_state_publisher::RobotStatePublisher publisher(tree);
   ros::spin();
   return 0;
-
 }

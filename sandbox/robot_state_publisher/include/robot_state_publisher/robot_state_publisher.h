@@ -56,17 +56,18 @@ public:
   RobotStatePublisher(const KDL::Tree& tree);
   ~RobotStatePublisher(){};
 
+  bool publishTransforms(const std::map<std::string, double>& joint_positions, const ros::Time& time);
+
 private:
   void callback(const MechanismStateConstPtr& state);
 
   ros::NodeHandle n_;
   ros::Publisher tf_publisher_;
-  ros::Subscriber mech_state_subscr_;
-  ros::Rate publish_rate_;
   KDL::Tree tree_;
   boost::scoped_ptr<KDL::TreeFkSolverPosFull_recursive> solver_;
   std::string root_;
   std::string tf_prefix_;
+  tf::tfMessage tf_msg_;
 };
 
 }
