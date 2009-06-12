@@ -53,14 +53,16 @@ void TreeFkSolverPosFull_recursive::addFrameToMap(const map<string, double>& q_i
 {
   // get pose of this segment
   Frame this_frame = previous_frame;
+  double jnt_p = 0;
   if (this_segment->second.segment.getJoint().getType() != Joint::None){
     map<string, double>::const_iterator jnt_pos = q_in.find(this_segment->first);
     if (jnt_pos == q_in.end()){
       printf("Could not find value for joint %s\n", this_segment->first.c_str());
       return;
     }
-    this_frame = this_frame * this_segment->second.segment.pose(jnt_pos->second);
+    jnt_p = jnt_pos->second;
   }
+  this_frame = this_frame * this_segment->second.segment.pose(jnt_p);
   if (this_segment->first != "root")
     p_out.insert(make_pair(this_segment->first, this_frame));
 
