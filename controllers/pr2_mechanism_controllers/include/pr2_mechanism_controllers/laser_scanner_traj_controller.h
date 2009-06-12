@@ -77,7 +77,7 @@ public:
 
   bool setTrajCmd(const pr2_msgs::LaserTrajCmd& traj_cmd) ;
 
-  bool setTrackLinkCmd(const pr2_mechanism_controllers::TrackLinkCmd& track_link_cmd) ;
+  //bool setTrackLinkCmd(const pr2_mechanism_controllers::TrackLinkCmd& track_link_cmd) ;
 
   bool setTrajectory(const std::vector<trajectory::Trajectory::TPoint>& traj_points,
                      double max_rate, double max_acc, std::string interp ) ;
@@ -97,9 +97,9 @@ private:
   boost::mutex traj_lock_ ;                                       // Mutex for traj_
   trajectory::Trajectory traj_ ;                                        // Stores the current trajectory being executed
 
-  boost::mutex track_link_lock_ ;
-  bool track_link_enabled_ ;
-  mechanism::LinkState* target_link_ ;
+  //boost::mutex track_link_lock_ ;
+  //bool track_link_enabled_ ;
+  //mechanism::LinkState* target_link_ ;
   mechanism::LinkState* mount_link_ ;
   tf::Vector3 track_point_ ;
 
@@ -136,7 +136,7 @@ public:
   // Message Callbacks
   void setPeriodicCmd() ;
   void setTrajCmd() ;
-  void setTrackLinkCmd() ;
+  //void setTrackLinkCmd() ;
   bool setPeriodicSrv(pr2_srvs::SetPeriodicCmd::Request &req,
                       pr2_srvs::SetPeriodicCmd::Response &res);
   bool setTrajSrv(pr2_srvs::SetLaserTrajCmd::Request &req,

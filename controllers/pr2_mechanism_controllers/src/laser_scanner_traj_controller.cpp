@@ -46,7 +46,7 @@ ROS_REGISTER_CONTROLLER(LaserScannerTrajController)
 LaserScannerTrajController::LaserScannerTrajController() : traj_(1)
 {
   tracking_offset_ = 0 ;
-  track_link_enabled_ = false ;
+  //track_link_enabled_ = false ;
 }
 
 LaserScannerTrajController::~LaserScannerTrajController()
@@ -151,7 +151,7 @@ void LaserScannerTrajController::update()
 
   // ***** Compute the offset from tracking a link *****
   //! \todo replace this link tracker with a KDL inverse kinematics solver
-  if(track_link_lock_.try_lock())
+  /*if(track_link_lock_.try_lock())
   {
     if (track_link_enabled_  && target_link_ && mount_link_)
     {
@@ -170,8 +170,9 @@ void LaserScannerTrajController::update()
       tracking_offset_ = 0.0 ;
     }
     track_link_lock_.unlock() ;
-  }
+    }*/
 
+  tracking_offset_ = 0.0 ;
   // ***** Compute the current command from the trajectory profile *****
   if (traj_lock_.try_lock())
   {
@@ -363,7 +364,7 @@ bool LaserScannerTrajController::setTrajCmd(const pr2_msgs::LaserTrajCmd& traj_c
   }
 }
 
-bool LaserScannerTrajController::setTrackLinkCmd(const pr2_mechanism_controllers::TrackLinkCmd& track_link_cmd)
+/*bool LaserScannerTrajController::setTrackLinkCmd(const pr2_mechanism_controllers::TrackLinkCmd& track_link_cmd)
 {
   while (!track_link_lock_.try_lock())
     usleep(100) ;
@@ -397,7 +398,7 @@ bool LaserScannerTrajController::setTrackLinkCmd(const pr2_mechanism_controllers
   track_link_lock_.unlock() ;
 
   return track_link_enabled_;
-}
+  }*/
 
 
 ROS_REGISTER_CONTROLLER(LaserScannerTrajControllerNode)
@@ -411,7 +412,7 @@ LaserScannerTrajControllerNode::~LaserScannerTrajControllerNode()
 {
   node_->unsubscribe(service_prefix_ + "/set_periodic_cmd") ;
   node_->unsubscribe(service_prefix_ + "/set_traj_cmd") ;
-  node_->unsubscribe(service_prefix_ + "/set_track_link_cmd") ;
+  //node_->unsubscribe(service_prefix_ + "/set_track_link_cmd") ;
 
   node_->unadvertiseService(service_prefix_ + "/set_periodic_cmd");
   node_->unadvertiseService(service_prefix_ + "/set_traj_cmd");
@@ -481,7 +482,7 @@ bool LaserScannerTrajControllerNode::initXml(mechanism::RobotState *robot, TiXml
   node_->subscribe(service_prefix_ + "/set_periodic_cmd", cmd_, &LaserScannerTrajControllerNode::setPeriodicCmd, this, 1) ;
   node_->subscribe(service_prefix_ + "/set_traj_cmd", traj_cmd_, &LaserScannerTrajControllerNode::setTrajCmd, this, 1) ;
 
-  node_->subscribe(service_prefix_ + "/set_track_link_cmd", track_link_cmd_, &LaserScannerTrajControllerNode::setTrackLinkCmd, this, 1) ;
+  //node_->subscribe(service_prefix_ + "/set_track_link_cmd", track_link_cmd_, &LaserScannerTrajControllerNode::setTrackLinkCmd, this, 1) ;
 
   node_->advertiseService(service_prefix_ + "/set_periodic_cmd", &LaserScannerTrajControllerNode::setPeriodicSrv, this);
   node_->advertiseService(service_prefix_ + "/set_traj_cmd", &LaserScannerTrajControllerNode::setTrajSrv, this);
@@ -536,8 +537,8 @@ void LaserScannerTrajControllerNode::setTrajCmd()
   c_.setTrajCmd(traj_cmd_) ;
 }
 
-void LaserScannerTrajControllerNode::setTrackLinkCmd()
+/*void LaserScannerTrajControllerNode::setTrackLinkCmd()
 {
   c_.setTrackLinkCmd(track_link_cmd_) ;
-}
+  }*/
 
