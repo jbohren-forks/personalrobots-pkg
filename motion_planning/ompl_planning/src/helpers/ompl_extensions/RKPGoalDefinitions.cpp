@@ -74,6 +74,10 @@ void kinematic_planning::GoalToState::setup(ompl::sb::SpaceInformationKinematic 
     for (int i = 0 ; i < dim_ ; ++i)
 	bounds_[i] = std::make_pair(si->getStateComponent(i).minValue, si->getStateComponent(i).maxValue);
 
+    // keep track of the desired joint values
+    std::vector<double> desiredValue(dim_);
+    std::vector<int> desiredValueCount(dim_, 0);
+    
     // tighten the bounds based on the constraints
     for (unsigned int i = 0 ; i < jc.size() ; ++i)
     {
@@ -83,16 +87,18 @@ void kinematic_planning::GoalToState::setup(ompl::sb::SpaceInformationKinematic 
 	{
 	    unsigned int usedParams = model->kmodel->getJoint(jc[i].joint_name)->usedParams;
 	    
-	    if (jc[i].min.size() != jc[i].max.size() || jc[i].max.size() != usedParams)
+	    if (jc[i].toleranceAbove.size() != jc[i].toleranceBelow.size() || jc[i].value.size() != jc[i].toleranceBelow.size() || jc[i].value.size() != usedParams)
 		ROS_ERROR("Constraint on joint %s has incorrect number of parameters. Expected %u", jc[i].joint_name.c_str(), usedParams);
 	    else
 	    {
 		for (unsigned int j = 0 ; j < usedParams ; ++j)
 		{
-		    if (bounds_[idx + j].first < jc[i].min[j])
-			bounds_[idx + j].first = jc[i].min[j];
-		    if (bounds_[idx + j].second > jc[i].max[j])
-			bounds_[idx + j].second = jc[i].max[j];
+		    if (bounds_[idx + j].first < jc[i].value[j] - jc[i].toleranceBelow[j])
+			bounds_[idx + j].first = jc[i].value[j] - jc[i].toleranceBelow[j];
+		    if (bounds_[idx + j].second > jc[i].value[j] + jc[i].toleranceAbove[j])
+			bounds_[idx + j].second = jc[i].value[j] + jc[i].toleranceAbove[j];
+		    desiredValueCount[idx + j]++;
+		    desiredValue[idx + j] = jc[i].value[j];
 		}
 	    }   
 	}
@@ -116,12 +122,20 @@ void kinematic_planning::GoalToState::setup(ompl::sb::SpaceInformationKinematic 
     
     for (int i = 0 ; i < dim_ ; ++i)
     {
-	stateVals_[i] = (bounds_[i].first + bounds_[i].second) / 2.0;
+	if (desiredValueCount[i] == 1)
+	    stateVals_[i] = desiredValue[i];
+	else
+	{
+	    stateVals_[i] = (bounds_[i].first + bounds_[i].second) / 2.0;
+	    if (desiredValueCount[i] > 0)
+		ROS_WARN("More than one desired values were specified for joint %d in group %s", i, model->groupName.c_str());
+	}
+	
 	// increase bounds by epsilon so we do not have errors when checking
 	bounds_[i].first  -= ompl::STATE_EPSILON;
 	bounds_[i].second += ompl::STATE_EPSILON;
     }
-
+    
     threshold = ompl::STATE_EPSILON;	    
 }
 

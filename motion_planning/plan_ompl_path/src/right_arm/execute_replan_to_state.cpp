@@ -50,6 +50,8 @@
 // messages to interact with the trajectory controller
 #include <robot_msgs/JointTraj.h>
 
+#include <std_srvs/Empty.h>
+
 static const std::string GROUPNAME = "right_arm";
     
 class Example
@@ -81,12 +83,11 @@ public:
 	
 	req.params.model_id = GROUPNAME;
 	req.params.distance_metric = "L2Square";
-	req.params.planner_id = "SBL";
-	req.interpolate = 1;
-	req.times = 1;
+	req.params.planner_id = "KPIECE";
+	req.times = 50;
 
-	// skip setting the start state
-	
+
+
 	// 7 DOF for the arm; pick a goal state (joint angles)
 	std::vector<std::string> names;
 	rm_->getKinematicModel()->getJointsInGroup(names, GROUPNAME);
@@ -94,15 +95,18 @@ public:
 	for (unsigned int i = 0 ; i < req.goal_constraints.joint.size(); ++i)
 	{
 	    req.goal_constraints.joint[i].joint_name = names[i];
-	    req.goal_constraints.joint[i].min.resize(1);
-	    req.goal_constraints.joint[i].max.resize(1);
-	    req.goal_constraints.joint[i].min[0] = 0.0;
-	    req.goal_constraints.joint[i].max[0] = 0.0;
+	    req.goal_constraints.joint[i].value.resize(1);
+	    req.goal_constraints.joint[i].toleranceAbove.resize(1);
+	    req.goal_constraints.joint[i].toleranceBelow.resize(1);
+	    req.goal_constraints.joint[i].value[0] = 0.0;
+	    req.goal_constraints.joint[i].toleranceBelow[0] = 0.0;
+	    req.goal_constraints.joint[i].toleranceAbove[0] = 0.0;
 	}
 	
-	req.goal_constraints.joint[0].min[0] = req.goal_constraints.joint[0].max[0] = -1.5;
-	req.goal_constraints.joint[3].min[0] = req.goal_constraints.joint[3].max[0] = -0.2;
-	req.goal_constraints.joint[5].min[0] = req.goal_constraints.joint[5].max[0] = 0.15;
+	req.goal_constraints.joint[0].value[0] = -1.0;
+	req.goal_constraints.joint[3].value[0] = -0.1;
+	req.goal_constraints.joint[5].value[0] = 0.15;
+
 
 	// allow 1 second computation time
 	req.allowed_time = 1.0;
@@ -136,7 +140,12 @@ protected:
 	    if (planStatus->valid)
 	    {
 		if (!planStatus->path.states.empty())
-		{
+		{	
+		    ros::ServiceClient client = nh_.serviceClient<std_srvs::Empty>("replan_stop");
+		    std_srvs::Empty::Request req;
+		    std_srvs::Empty::Response res;
+		    if (!client.call(req, res))
+			ROS_ERROR("Service 'replan_stop' failed");
 		    robot_stopped_ = false;
 		    sendArmCommand(planStatus->path, GROUPNAME);
 		}

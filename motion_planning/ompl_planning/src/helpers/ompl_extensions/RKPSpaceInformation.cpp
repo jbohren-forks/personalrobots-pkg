@@ -159,16 +159,17 @@ void kinematic_planning::SpaceInformationRKPModel::setJointConstraints(const std
 	{
 	    unsigned int usedParams = m_kmodel->getJoint(jc[i].joint_name)->usedParams;
 	    
-	    if (jc[i].min.size() != jc[i].max.size() || jc[i].max.size() != usedParams)
+	    if (jc[i].toleranceAbove.size() != jc[i].toleranceBelow.size() || jc[i].value.size() != jc[i].toleranceBelow.size() || jc[i].value.size() != usedParams)
 		ROS_ERROR("Constraint on joint %s has incorrect number of parameters. Expected %u", jc[i].joint_name.c_str(), usedParams);
 	    else
 	    {
 		for (unsigned int j = 0 ; j < usedParams ; ++j)
 		{
-		    if (m_stateComponent[idx + j].minValue < jc[i].min[j])
-			m_stateComponent[idx + j].minValue = jc[i].min[j];
-		    if (m_stateComponent[idx + j].maxValue > jc[i].max[j])
-			m_stateComponent[idx + j].maxValue = jc[i].max[j];
+
+		    if (m_stateComponent[idx + j].minValue < jc[i].value[j] - jc[i].toleranceBelow[j])
+			m_stateComponent[idx + j].minValue = jc[i].value[j] - jc[i].toleranceBelow[j];
+		    if (m_stateComponent[idx + j].maxValue > jc[i].value[j] + jc[i].toleranceAbove[j])
+			m_stateComponent[idx + j].maxValue = jc[i].value[j] + jc[i].toleranceAbove[j];
 		}
 	    }
 	}

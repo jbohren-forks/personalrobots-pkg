@@ -35,6 +35,7 @@
 /** \author Ioan Sucan */
 
 #include "planning_environment/kinematic_state_constraint_evaluator.h"
+#include <cassert>
 
 bool planning_environment::JointConstraintEvaluator::use(const planning_models::KinematicModel *kmodel, const ros::Message *kc)
 {
@@ -56,12 +57,14 @@ bool planning_environment::JointConstraintEvaluator::use(const planning_models::
 bool planning_environment::JointConstraintEvaluator::decide(const double *params, const int groupID) const
 {
     const double *val = params + m_kmodel->getJointIndexInGroup(m_joint->name, groupID);
-    for (unsigned int i = 0 ; i < m_jc.min.size() ; ++i)
-	if (val[i] < m_jc.min[i])
+    assert(m_jc.value.size() == m_jc.toleranceBelow.size() && m_jc.value.size() == m_jc.toleranceAbove.size());
+    
+    for (unsigned int i = 0 ; i < m_jc.value.size() ; ++i)
+    {
+	double dif = val[i] - m_jc.value[i];
+	if (dif > m_jc.toleranceAbove[i] || dif < - m_jc.toleranceBelow[i])
 	    return false;
-    for (unsigned int i = 0 ; i < m_jc.max.size() ; ++i)
-	if (val[i] > m_jc.max[i])
-	    return false;
+    }
     return true;
 }
 
@@ -81,13 +84,15 @@ void planning_environment::JointConstraintEvaluator::print(std::ostream &out) co
     if (m_joint)
     {
 	out << "Joint constraint for joint " << m_jc.joint_name << ": " << std::endl;
-	out << "  min = ";	    
-	for (unsigned int i = 0 ; i < m_jc.min.size() ; ++i)
-	    out << m_jc.min[i] << "; ";
-	
-	out << "  max = ";
-	for (unsigned int i = 0 ; i < m_jc.max.size() ; ++i)
-	    out << m_jc.max[i] << "; ";
+	out << "  value = ";	    
+	for (unsigned int i = 0 ; i < m_jc.value.size() ; ++i)
+	    out << m_jc.value[i] << "; ";
+	out << "  tolerance below = ";	    
+	for (unsigned int i = 0 ; i < m_jc.toleranceBelow.size() ; ++i)
+	    out << m_jc.toleranceBelow[i] << "; ";	
+	out << "  tolerance above = ";
+	for (unsigned int i = 0 ; i < m_jc.toleranceAbove.size() ; ++i)
+	    out << m_jc.toleranceAbove[i] << "; ";
 	out << std::endl;
     }
     else

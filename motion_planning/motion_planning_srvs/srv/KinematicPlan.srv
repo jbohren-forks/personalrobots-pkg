@@ -16,10 +16,6 @@ motion_planning_msgs/KinematicConstraints path_constraints
 # will be reported.
 int32 times
 
-# Boolean flag: if true, the returned path will contain interpolated
-# states. Otherwise, linear interpolation between states is assumed
-byte interpolate
-
 # The maximum amount of time the motion planner is allowed to plan for
 float64 allowed_time
 

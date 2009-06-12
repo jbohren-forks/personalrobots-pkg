@@ -154,8 +154,7 @@ void kinematic_planning::RKPRequestHandler::execute(motion_planning_msgs::Kinema
     double                   bestDifference = 0.0;	
     
     m_activePSetup->model->collisionSpace->lock();
-    trivial = computePlan(m_activePSetup, m_activeReq.times, m_activeReq.allowed_time, m_activeReq.interpolate,
-			  bestPath, bestDifference, approximate);
+    trivial = computePlan(m_activePSetup, m_activeReq.times, m_activeReq.allowed_time, true, bestPath, bestDifference, approximate);
     m_activePSetup->model->collisionSpace->unlock();
     
     /* fill in the results */

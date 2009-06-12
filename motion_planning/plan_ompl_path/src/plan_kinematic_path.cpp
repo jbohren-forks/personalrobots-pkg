@@ -96,8 +96,7 @@ public:
 	req.params.model_id = GROUPNAME;
 	req.params.distance_metric = "L2Square";
 	req.params.planner_id = "KPIECE";
-	req.interpolate = 1;
-	req.times = 1;
+	req.times = 5;
 
 	// 7 DOF for the arm; pick a goal state (joint angles)
 	std::vector<std::string> names;
@@ -106,16 +105,17 @@ public:
 	for (unsigned int i = 0 ; i < req.goal_constraints.joint.size(); ++i)
 	{
 	    req.goal_constraints.joint[i].joint_name = names[i];
-	    req.goal_constraints.joint[i].min.resize(1);
-	    req.goal_constraints.joint[i].max.resize(1);
-	    req.goal_constraints.joint[i].min[0] = 0.0;
-	    req.goal_constraints.joint[i].max[0] = 0.0;
+	    req.goal_constraints.joint[i].value.resize(1);
+	    req.goal_constraints.joint[i].toleranceAbove.resize(1);
+	    req.goal_constraints.joint[i].toleranceBelow.resize(1);
+	    req.goal_constraints.joint[i].value[0] = 0.0;
+	    req.goal_constraints.joint[i].toleranceBelow[0] = 0.0;
+	    req.goal_constraints.joint[i].toleranceAbove[0] = 0.0;
 	}
 	
-	req.goal_constraints.joint[0].min[0] = -1.5;
-	req.goal_constraints.joint[0].max[0] = -1.5;
-	req.goal_constraints.joint[3].min[0] = req.goal_constraints.joint[3].max[0] = -0.2;
-	req.goal_constraints.joint[5].min[0] = req.goal_constraints.joint[5].max[0] = 0.15;
+	req.goal_constraints.joint[0].value[0] = -1.0;
+	req.goal_constraints.joint[3].value[0] = -0.1;
+	req.goal_constraints.joint[5].value[0] = 0.15;
 
 	// allow 1 second computation time
 	req.allowed_time = 1.0;
@@ -138,14 +138,13 @@ public:
 	req.params.model_id = GROUPNAME;
 	req.params.distance_metric = "L2Square";
 	req.params.planner_id = "KPIECE";
-	req.interpolate = 1;
-	req.times = 1;
+	req.times = 5;
 
 	// skip setting the start state
 	
 	// set the goal constraints
 	req.goal_constraints.pose.resize(1);
-	req.goal_constraints.pose[0].type = motion_planning_msgs::PoseConstraint::POSITION_XYZ + motion_planning_msgs::PoseConstraint::ORIENTATION_RPY;
+	req.goal_constraints.pose[0].type = motion_planning_msgs::PoseConstraint::POSITION_XYZ + motion_planning_msgs::PoseConstraint::ORIENTATION_RP;
 	req.goal_constraints.pose[0].link_name = "r_gripper_r_finger_tip_link";
 	req.goal_constraints.pose[0].x = 0.75025;
 	req.goal_constraints.pose[0].y = -0.188;	
@@ -160,7 +159,7 @@ public:
 	req.goal_constraints.pose[0].orientation_importance = 0.0001;
 	
 	// allow 1 second computation time
-	req.allowed_time = 0.5;
+	req.allowed_time = 1.0;
 	
 	// define the service messages
 	motion_planning_srvs::KinematicPlan::Response res;
@@ -229,6 +228,8 @@ protected:
 		robot_stopped_ = true;
 		ROS_INFO("Execution is complete");
 	    }
+	    if (!planStatus->path.states.empty())
+		printPath(planStatus->path);
 	}
     }
     
@@ -268,7 +269,6 @@ protected:
     void sendArmCommand(const motion_planning_msgs::KinematicPath &path, const std::string &model)
     {
 	sendDisplay(path, model);
-	printPath(path);
 	robot_msgs::JointTraj traj;
 	getTrajectoryMsg(path, traj);
 	jointCommandPublisher_.publish(traj);
