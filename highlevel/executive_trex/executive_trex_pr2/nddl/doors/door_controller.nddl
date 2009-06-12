@@ -97,23 +97,27 @@ class DoorState extends AgentTimeline {
  * This is an internal controller which will select actions for execution based on control state variables using a
  * Teleo-reactive tree structure.
  */
-class DoorController extends Controller {
+class DoorController extends AgentTimeline {
 
-  /**
-   * The parameters here 
-   */
-  predicate Holds{
-    bool in_position;
-    bool found_door;
-    bool must_find_handle;
-    bool have_handle;
-    bool doorway_clear;
-    bool check_doorway;
-    bool finishing;
-    LatchState latch_state;
+  predicate Inactive{
+    ResultStatus status;
+    defaultOnCommit(status, UNDEFINED);
   }
 
-  DoorController(){ super(); }
+  predicate CheckingDoorway{}
+  predicate Positioning{}
+  predicate DetectingDoor{}
+  predicate DetectingHandle{}
+  predicate ReleasingHandle{}
+  predicate ApproachingDoor{}
+  predicate GraspingHandle{}
+  predicate UnlatchingHandle{}
+  predicate DriveThruDoorway{}
+  predicate OpenDoor{
+    bool use_handle;
+  }
+
+  DoorController(){ super(Internal, "Inactive"); }
 };
 
 
@@ -121,177 +125,194 @@ MoveBehavior doorman = new MoveBehavior(Internal, true);
 DoorController door_controller = new DoorController();
 DoorState door_state = new DoorState();
 
-fact(door_controller.Holds dc_initial_state);
-dc_initial_state.active = false;
+fact(door_controller.Inactive dc_initial_state);
+dc_initial_state.status = UNDEFINED;
 
-DoorController::Holds{
-  // We will assume default values on commitment based on predecessor. We really want these values to be bound. These values carry
-  // forward from priors as they are updated by actions and we thus assume inertia (if we had the handle before and have no information
-  // to the contrary, then we still have the handle).
-  met_by(Holds p);
-  defaultOnCommit(found_door, p.found_door);
-  defaultOnCommit(in_position, p.in_position);
-  defaultOnCommit(must_find_handle, p.must_find_handle);
-  defaultOnCommit(have_handle, p.have_handle);
-  defaultOnCommit(latch_state, p.latch_state);
-  defaultOnCommit(doorway_clear, p.doorway_clear);
-  defaultOnCommit(check_doorway, p.check_doorway);
-  defaultOnCommit(finishing, p.finishing);
+DoorController::Inactive{
+  starts(doorman.Inactive dm);
+  eq(dm.status, status);
 }
 
-/**
- * This rule fires essentially a TR-style decision tree to select
- * the next action to take.
- *
- */
-DoorController::Holds {
+DoorController::CheckingDoorway{
+  // Now the goal will be the target across the doorway. This is the goal pose for the containing behavior
+  contains_start(check_path.Active cmd);
+  concurrent(cmd.end, end);
+  leq(cmd.max_duration, CHECK_PATH_DURATION_BOUND);
+  contained_by(doorman.Active dm);
+  eq_pose_msg(cmd.object, dm.object);
+  eq(cmd.status, SUCCESS);
 
-  if(active == true){
-    contained_by(door_state.Holds ds);
-    meets(Holds s);
-    contained_by(doorman.Active dm_active);
+  cmd meets (check_path.Inactive cmd_feedback);
+  if(cmd_feedback.is_clear == true){
+    meets(door_controller.DriveThruDoorway);
+  }
+  else {
+    meets(door_controller.Positioning);
+  }
+}
 
-    bool done;
-    calc_or(done, timed_out, finishing);
-    if(done == true){
-      if(have_handle == false){
-	eq(s.active, false);
-	meets(doorman.Inactive dm_inactive);
-	eq(duration, 1);	 
-	if(timed_out == true){
-	  eq(dm_inactive.status, ABORTED);
-	}
-	else {
-	  if(doorway_clear == true){
-	    eq(dm_inactive.status, SUCCESS);
-	  }
-	  else {
-	    eq(dm_inactive.status, ABORTED);
-	  }
-	}
-      }
-      else{
-	contains_start(release_handle.Active cmd);
-	concurrent(cmd.end, end);
-      }
+// We must move the base to the approach point
+DoorController::DriveThruDoorway{
+  contains_start(move_base.Active cmd);
+  concurrent(cmd.end, end);
+  contained_by(doorman.Active dm);
+  leq(cmd.max_duration, MOVE_BASE_THROUGH_DOOR_DURATION_BOUND);
+  eq_pose_msg(cmd.object, dm.object);
+  
+  if(cmd.status == SUCCESS){
+    meets(Inactive s);
+    eq(s.status, SUCCESS);
+  }
+  else{
+    meets(Positioning);
+  }
+}
+
+// We must move the base to the approach point
+DoorController::Positioning{
+  contains_start(move_base.Active cmd);
+  concurrent(cmd.end, end);
+  eq(cmd.frame_id, "map");
+  eq(cmd.status, SUCCESS);
+  contained_by(doorman.Active dm);
+  map_get_door_approach_pose(cmd.x, cmd.y, cmd.z, cmd.qx, cmd.qy, cmd.qz, cmd.qw, dm.start_connector);
+  meets(DetectingDoor);
+}
+
+DoorController::DetectingDoor{
+  contains_start(detect_door.Active cmd);
+  concurrent(cmd.end, end);
+
+  if(cmd.status == SUCCESS){
+    cmd meets(detect_door.Inactive cmd_feedback);
+    if(cmd_feedback.latch_state == LATCH_STATE_UNLATCHED){
+      meets(ApproachingDoor);
     }
     else{
-      if(doorway_clear == true){
-	// STATE_DRIVE_THRU
-	contains_start(move_base.Active cmd);
-	concurrent(cmd.end, end);
-	leq(cmd.max_duration, remaining_time);
-	leq(cmd.max_duration, MOVE_BASE_THROUGH_DOOR_DURATION_BOUND);
-	eq_pose_msg(cmd.object, dm_active.object);
-      }
-      else {
-	if(check_doorway == true){
-	  // STATE_CHECK_DOORWAY
-	  // Now the goal will be the target across the doorway. This is the goal pose for the containing behavior
-	  contains_start(check_path.Active cmd);
-	  concurrent(cmd.end, end);
-	  leq(cmd.max_duration, remaining_time);
-	  leq(cmd.max_duration, CHECK_PATH_DURATION_BOUND);
-	  eq_pose_msg(cmd.object, dm_active.object);
-	}
-	else {
-	  if(must_find_handle == false){
-	    if(in_position == true){
-	      if(latch_state == LATCH_STATE_UNLATCHED) {	
-		// Moving the base set up here. Used in either case
-		contains_start(move_base_door.Active cmd_move_base_door);
-		concurrent(cmd_move_base_door.end, end);
-		leq(cmd_move_base_door.max_duration, remaining_time);
-		leq(cmd_move_base_door.max_duration, MOVE_BASE_DOOR_DURATION_BOUND);
-
-		// Set up a preemption as needed. Will make this conditional shortly
-		any(stop_action.Active cmd_stop_action);
-		cmd_move_base_door before cmd_stop_action;
-
-		if(have_handle == true){
-		  // STATE_OPEN_DOOR
-		  contains_start(open_door.Active cmd_open_door);
-		  cmd_open_door starts_before cmd_move_base_door;
-		  eq(cmd_stop_action.action_name,"open_door");
-		}
-		else {
-		  // STATE_PUSH_DOOR
-		  contains_start(touch_door.Active cmd_touch_door);
-		  contains_start(push_door.Active cmd_push_door);
-		  eq(cmd_touch_door.status, SUCCESS);
-
-		  cmd_touch_door before cmd_push_door;
-		  cmd_push_door starts_before cmd_move_base_door;
-		  eq(cmd_stop_action.action_name,"push_door");
-		}
-	      }
-	      else{
-		if(have_handle == true){
-		  // STATE_UNLATCH
-		  contains_start(unlatch_handle.Active cmd);
-		  concurrent(cmd.end, end);
-		  leq(cmd.max_duration, remaining_time);
-		  leq(cmd.max_duration, UNLATCH_HANDLE_DURATION_BOUND);
-		}
-		else {
-		  // Don't have the handle, but could grasp it!
-		  // STATE_GRASP
-		  contains_start(grasp_handle.Active cmd);
-		  concurrent(cmd.end, end);
-		  leq(cmd.max_duration, remaining_time);
-		  leq(cmd.max_duration, GRASP_HANDLE_DURATION_BOUND);
-		}
-	      }
-	    }
-	    else { // Not in position
-	      // STATE_APPROACH_DOOR
-	      // Move to the grasp position. 
-	      contains_start(move_base_local.Active cmd);
-	      concurrent(cmd.end, end);
-	      leq(cmd.max_duration, remaining_time);
-	      leq(cmd.max_duration, MOVE_BASE_LOCAL_APPROACH_DURATION_BOUND);
-	      eq(cmd.frame_id, ds.frame_id);
-	      door_get_robot_pose_for_door(cmd.x, cmd.y, cmd.z, cmd.qx, cmd.qy, cmd.qz, cmd.qw, ds.object, GRASP_RANGE);
-	    }
-	  }
-	  else { // Found handle == false
-	    if(found_door == true){
-	      // STATE_DETECT_HANDLE
-	      contains_start(detect_handle.Active cmd);
-	      leq(cmd.max_duration, remaining_time);
-	      leq(cmd.max_duration, DETECT_HANDLE_DURATION_BOUND);
-	      concurrent(cmd.end, end);
-	    }
-	    else {
-	      // If in detection position, we can detect the door
-	      if(in_position == true){
-		// STATE_DETECT_HANDLE
-		contains_start(detect_door.Active cmd);
-		leq(cmd.max_duration, remaining_time);
-		concurrent(cmd.end, end);
-	      }
-	      else {
-		// Should move to detection position using standard navigation
-		if(have_handle == false){
-		  // STATE_POSITIONING
-		  contains_start(move_base.Active cmd);
-		  concurrent(cmd.end, end);
-		  leq(cmd.max_duration, remaining_time);
-		  eq(cmd.frame_id, "map");
-		  map_get_door_approach_pose(cmd.x, cmd.y, cmd.z, cmd.qx, cmd.qy, cmd.qz, cmd.qw, dm_active.start_connector);
-		}
-		else {
-		  // STATE_WITHDRAWING?
-		  contains_start(release_handle.Active cmd);
-		  concurrent(cmd.end, end);
-		  leq(cmd.max_duration, RELEASE_HANDLE_DURATION_BOUND);
-		}
-	      }
-	    }
-	  }
-	}
-      }
+      meets(DetectingHandle);
     }
+  }
+  else {
+    meets(CheckingDoorway);
+  }
+}
+
+DoorController::DetectingHandle{
+  contains_start(detect_handle.Active cmd);
+  leq(cmd.max_duration, DETECT_HANDLE_DURATION_BOUND);
+  concurrent(cmd.end, end);
+
+  if(cmd.status == SUCCESS){
+    meets(ApproachingDoor);
+  }
+  else {
+    meets(DetectingDoor);
+  }
+}
+
+DoorController::ApproachingDoor{
+  contains_start(move_base_local.Active cmd);
+  concurrent(cmd.end, end);
+  leq(cmd.max_duration, MOVE_BASE_LOCAL_APPROACH_DURATION_BOUND);
+  contained_by(door_state.Holds ds);
+  eq(cmd.frame_id, ds.frame_id);
+  door_get_robot_pose_for_door(cmd.x, cmd.y, cmd.z, cmd.qx, cmd.qy, cmd.qz, cmd.qw, ds.object, GRASP_RANGE);
+
+  // FOXME: The introduction of a new variable here is a work around to a EUROPA bug on constraint migration. Remove when fixed.
+  bool use_handle;
+  testEQ(use_handle, ds.latch_state, LATCH_STATE_LATCHED);
+
+  if(cmd.status == SUCCESS){
+    if(use_handle == true){
+      meets(GraspingHandle);
+    }
+    else{
+      meets(OpenDoor s);
+      eq(s.use_handle, false);
+    }
+  }
+  else {
+    meets(Positioning);
+  }
+}
+
+DoorController::GraspingHandle{
+  contains_start(grasp_handle.Active cmd);
+  concurrent(cmd.end, end);
+  leq(cmd.max_duration, GRASP_HANDLE_DURATION_BOUND);
+
+  if(cmd.status == SUCCESS){
+    meets(UnlatchingHandle);
+  }
+  else {
+    meets(ReleasingHandle rh);
+    rh meets(Positioning);
+  }
+}
+
+DoorController::UnlatchingHandle{
+  contains_start(unlatch_handle.Active cmd);
+  concurrent(cmd.end, end);
+  leq(cmd.max_duration, UNLATCH_HANDLE_DURATION_BOUND);
+
+  if(cmd.status == SUCCESS){
+    cmd meets(unlatch_handle.Inactive cmd_feedback);
+
+    // If locked, try again later
+    if(cmd_feedback.latch_state == LATCH_STATE_LOCKED){
+      meets(ReleasingHandle rh);
+      rh meets(Inactive s);
+      eq(s.status, ABORTED);
+    }
+    else {
+      meets(OpenDoor s);
+      eq(s.use_handle, true);
+    }
+  }
+  else {
+    meets(ReleasingHandle rh);
+    rh meets(Positioning);
+  }
+}
+
+DoorController::ReleasingHandle{
+  contains_start(release_handle.Active cmd);
+  concurrent(cmd.end, end);
+  leq(cmd.max_duration, RELEASE_HANDLE_DURATION_BOUND);
+  eq(cmd.status, SUCCESS);
+}
+
+DoorController::OpenDoor{
+  // Moving the base set up here. Used in either case
+  contains_start(move_base_door.Active cmd_move_base_door);
+  concurrent(cmd_move_base_door.end, end);
+  leq(cmd_move_base_door.max_duration, MOVE_BASE_DOOR_DURATION_BOUND);
+  eq(cmd_move_base_door.status, SUCCESS);
+
+  cmd_move_base_door before(stop_action.Active cmd_stop_action);
+
+  if(use_handle == true){
+    contains_start(open_door.Active cmd_open_door);
+    eq(cmd_open_door.status, SUCCESS);
+    cmd_open_door starts_before cmd_move_base_door;
+    // Must stop the open door action explicitly
+    eq(cmd_stop_action.action_name,"open_door");
+    meets(ReleasingHandle rh);
+    rh meets(Inactive s);
+    eq(s.status, SUCCESS);
+  }
+  else {
+    contains_start(touch_door.Active cmd_touch_door);
+    contains_start(push_door.Active cmd_push_door);
+    eq(cmd_touch_door.status, SUCCESS);
+    eq(cmd_push_door.status, SUCCESS);
+
+    cmd_touch_door before cmd_push_door;
+    cmd_push_door starts_before cmd_move_base_door;
+    eq(cmd_stop_action.action_name,"push_door");
+
+    meets(Inactive s);
+    eq(s.status, SUCCESS);
   }
 }
 
@@ -300,136 +321,33 @@ DoorController::Holds {
  * feedback parameters on success or failure
  ***********************************************************************/
 
-// Derive input bounds from the behavior
+/**
+ * All door domain actions have the current door state as input.
+ */
 DoorManipulationBehavior::Active{
   starts_during(DoorState.Holds ds);
   eq_door_msg(this.object, ds.object);
 }
 
-ReleaseHandle::Inactive{
-  if(status == SUCCESS){
-    starts(door_controller.Holds dc);
-    eq(dc.have_handle, false);
-  }
-}
-
-MoveBaseDoor::Inactive{
-  if(status == SUCCESS){
-    starts(door_controller.Holds dc);
-    eq(dc.finishing, true);
-    eq(dc.doorway_clear, true);
-  }
-}
-
+/**
+ * @brief This commands update the door state if successful. Note that it is probable safe to assume this for all door actions
+ * but they might screw up the feedback values! We could subclass the ones that do this to avoid redundancy.
+ */
 UnlatchHandle::Inactive{
   if(status == SUCCESS){
     starts(DoorState.Holds ds);
     eq_door_msg(ds.object, this.object);
-    starts(door_controller.Holds dc);
-    eq(dc.latch_state, latch_state);
-    if(latch_state == LATCH_STATE_LOCKED){
-      eq(dc.finishing, true);
-    }
-  }
-  else{
-    if(status == UNDEFINED){}
-    else{
-      starts(door_controller.Holds dc);
-      eq(dc.must_find_handle, true);
-      eq(dc.found_door, false);
-      eq(dc.in_position, false);
-    }
   }
 }
-
-GraspHandle::Inactive{
-  if(status == SUCCESS){
-    starts(door_controller.Holds dc);
-    eq(dc.have_handle, true);
-  }
-}
-
 DetectHandle::Inactive{
   if(status == SUCCESS){
-    starts(door_controller.Holds dc);
-    eq(dc.must_find_handle, false);
     starts(DoorState.Holds ds);
     eq_door_msg(ds.object, this.object);
-    eq(dc.latch_state, ds.latch_state);
-  }
-  else {
-    if(status == UNDEFINED){}
-    else {
-      starts(door_controller.Holds dc);
-      eq(dc.in_position, false);
-      eq(dc.found_door, false);
-    }
   }
 }
-
 DetectDoor::Inactive{
   if(status == SUCCESS){
-    starts(door_controller.Holds dc);
-    eq(dc.found_door, true);
-    eq(dc.in_position, false);
     starts(DoorState.Holds ds);
     eq_door_msg(ds.object, this.object);
-    eq(dc.latch_state, ds.latch_state);
-
-    if(latch_state == LATCH_STATE_UNLATCHED){
-      eq(dc.must_find_handle, false);
-    }
-
-    if(latch_state == LATCH_STATE_LOCKED){
-      eq(dc.finishing, true);
-    }
-  }
-  if(status == ABORTED){
-    starts(door_controller.Holds dc);
-    eq(dc.check_doorway, true);
-  }
-}
-
-CheckPath::Inactive{
-  if(status == SUCCESS){
-    starts(door_controller.Holds dc);
-    eq(dc.doorway_clear, is_clear);
-    eq(dc.check_doorway, false);
-  }
-}
-
-/**
- * Move base can be called as part of a recovery to retry from an approach pose, or it can be
- * called because we think the doorway is clear and traversable. If it fails for any reason, we should
- * finish. This could be quite frustrating to watch. For example, it could be right in the doorway
- * and only a small push would be required to get thru. In that case, it will in fact give up and be going to the next goal. Note that
- * it will try again later! The problem is, it is hard to bound the behavior of move_base reasonably and thus our ability
- * to reliably attempt better local recoveries is questionable. Moreover, we typically assume we do not have the door data
- */
-MoveBase::Inactive {
-  if(status == SUCCESS){
-    starts(door_controller.Holds dc);
-    eq(dc.in_position, true);
-
-    // There are 2 conditions at play here. If the doorway is clear, and move base succeded, then we have to set
-    // finishing to true
-    met_by(door_controller.Holds p);
-    if(p.doorway_clear == true){
-      eq(dc.finishing, true);
-    }
-  }
-  else{
-    if(status == UNDEFINED){}
-    else {
-      // Rest control flags to go back to the beginning but preclude checking the doorway
-      starts(door_controller.Holds dc);
-      eq(dc.doorway_clear, false);
-      eq(dc.in_position, false);
-      eq(dc.found_door, false);
-      eq(dc.must_find_handle, true);
-      eq(dc.have_handle, false);
-      eq(dc.latch_state, UNKNOWN);
-      eq(dc.doorway_clear, false);
-    }
   }
 }
