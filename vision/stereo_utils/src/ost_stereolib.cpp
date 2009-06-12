@@ -43,7 +43,7 @@ memclr(void *buf, int n)
 // feature output aligned at 16 bytes
 //
 
-void
+void __attribute__ ((force_align_arg_pointer))
 ost_do_prefilter_norm(
     const uint8_t *im,	// input image
 	  uint8_t *ftim,	// feature image output
@@ -156,7 +156,7 @@ memclr_si128(__m128i *buf, int n)
 #define PXKERN 7
 #define PYKERN 7
 
-void
+void __attribute__ ((force_align_arg_pointer))
 ost_do_prefilter_fast(
     const uint8_t *im,	// input image
 	  uint8_t *ftim,	// feature image output
@@ -388,7 +388,7 @@ ost_do_prefilter_fast(
 //
 
 
-void
+void __attribute__ ((force_align_arg_pointer))
 ost_do_prefilter_fast_u(
     const uint8_t *im,  // input image
     uint8_t *ftim,  // feature image output
@@ -428,9 +428,9 @@ ost_do_prefilter_fast_u(
 
   // constants
   zeros = _mm_setzero_si128();
-  const_ftzero     = _mm_set1_epi16(ftzero);
   const_ftzero_x48 = _mm_set1_epi16(ftzero*48);
   const_ftzero_x2  = _mm_set1_epi16(ftzero*2);
+  const_ftzero     = _mm_set1_epi16(ftzero);
 
   // loop over rows
   for (j=0; j<yim; j++, im+=xim, ftim+=xim)
@@ -624,7 +624,7 @@ ost_do_prefilter_fast_u(
 // other parameters as in do_stereo
 //
 
-int
+int __attribute__ ((force_align_arg_pointer))
 ost_do_stereo_sparse(uint8_t *refpat, uint8_t *rim, // input feature images
       int x, int y,         // position of feature pixel
     int xim, int yim, // size of images
