@@ -187,7 +187,7 @@ TEST(tf_benchmark, benchmarkExhaustiveSearch)
   ros::WallDuration run_duration = ros::WallTime::now() - start_time;
   double frequency = (double)runs / run_duration.toSec() ;
   printf("frequency %f\n", frequency);
-  EXPECT_GT( frequency, 1000.0);
+  EXPECT_GT( frequency, 500.0);
   
 }
 
