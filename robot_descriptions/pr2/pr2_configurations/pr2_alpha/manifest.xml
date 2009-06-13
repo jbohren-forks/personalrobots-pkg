@@ -26,6 +26,7 @@
   <depend package="joint_calibration_monitor" />
   <depend package="forearm_cam" />
   <depend package="robot_state_publisher" />
+  <depend package="prosilica_cam" />
   <!-- For testing -->
   <depend package="std_msgs"/>
 </package>
