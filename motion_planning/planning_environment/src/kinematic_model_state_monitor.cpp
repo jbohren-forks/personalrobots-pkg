@@ -69,6 +69,7 @@ void planning_environment::KinematicModelStateMonitor::setupRSM(void)
 	    if (includePose_)
 	    {
 		tf_ = new tf::TransformListener(*ros::Node::instance());
+		tf_->setExtrapolationLimit(ros::Duration(1.0));
 		ROS_DEBUG("Maintaining robot pose in frame '%s'", frame_id_.c_str());
 	    }
 	    else
