@@ -216,6 +216,7 @@ public:
 	{	    
 	    motion_planning_msgs::KinematicState start;
 	    m_collisionSpaceMonitor->getRobotState()->copyParams(start.vals);
+	    bringRequestToModelFrame(req);
 	    st = m_requestHandler.configure(m_models, start, req);
 
 	    if (st)
@@ -278,6 +279,18 @@ public:
     }
 
 protected:
+    
+    void bringRequestToModelFrame(motion_planning_srvs::KinematicPlan::Request &req)
+    {
+	for (unsigned int i = 0; i < req.goal_constraints.pose.size() ; ++i)
+	    m_collisionSpaceMonitor->getTransformListener()->transformPose(m_collisionSpaceMonitor->getFrameId(),
+									   req.goal_constraints.pose[i].pose,
+									   req.goal_constraints.pose[i].pose);
+	for (unsigned int i = 0; i < req.path_constraints.pose.size() ; ++i)
+	    m_collisionSpaceMonitor->getTransformListener()->transformPose(m_collisionSpaceMonitor->getFrameId(),
+									   req.path_constraints.pose[i].pose,
+									   req.path_constraints.pose[i].pose);
+    }
     
     void publishStatus(void)
     {
