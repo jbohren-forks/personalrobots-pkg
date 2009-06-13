@@ -428,18 +428,22 @@ PyObject *mkvocabularytree(PyObject *self, PyObject *args)
   return (PyObject*)object;
 }
 
+typedef struct {
+  PyObject_HEAD
+  RTreeClassifier *classifier;
+} classifier_t;
 
 PyObject *mkload(PyObject *self, PyObject *args)
 {
-  char *filename;
-  if (!PyArg_ParseTuple(args, "s", &filename))
+  char *vt_filename;
+  PyObject *ds;
+  if (!PyArg_ParseTuple(args, "sO", &vt_filename, &ds))
     return NULL;
 
   vocabularytree_t *object = PyObject_NEW(vocabularytree_t, &vocabularytree_Type);
   object->vt = new VocabularyTree();
-  object->classifier = new RTreeClassifier();
-  object->classifier->read(classifier_file);
-  object->vt->load(filename);
+  object->classifier = ((classifier_t*)ds)->classifier;
+  object->vt->load(vt_filename);
 
   return (PyObject*)object;
 }

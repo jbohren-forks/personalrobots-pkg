@@ -91,9 +91,14 @@ class DescriptorSchemeCalonder(DescriptorScheme):
   def __init__(self):
     self.cl = calonder.classifier()
     #self.cl.setThreshold(0.0)
-    filename = '/u/prdata/calonder_trees/current.rtc'
-    assert os.access(filename, os.R_OK)
-    self.cl.read(filename)
+    search = [ '/u/prdata/calonder_trees/current.rtc', '/u/jamesb/current.rtc', None ]
+    for filename in search:
+      if not filename:
+        print "Failed to find current.rtc in", search
+        assert 0
+      if os.access(filename, os.R_OK):
+        self.cl.read(filename)
+        break
     DescriptorScheme.__init__(self)
 
   def collect0(self, frame, kp):

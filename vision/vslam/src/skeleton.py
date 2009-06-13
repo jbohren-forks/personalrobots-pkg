@@ -11,6 +11,7 @@ from stereo_utils.descriptor_schemes import DescriptorSchemeCalonder
 import numpy
 import cPickle as pickle
 import math
+import os
 
 class minimum_frame:
   def __init__(self, id, kp, descriptors):
@@ -42,12 +43,7 @@ class Skeleton:
       import faketoro
       self.pg = faketoro.faketoro()
     self.pg.initializeOnlineOptimization()
-    if 1:
-      filename = '/u/mihelich/images/holidays/holidays.tree'
-      assert os.access(filename, os.R_OK)
-      self.vt = place_recognition.load(filename)
-    else:
-      self.vt = None
+
     self.place_ids = []
     self.cam = cam
     self.pe = PoseEstimator(*cam.params)
@@ -61,6 +57,16 @@ class Skeleton:
         self.optimize_after_addition = a
     if self.ds == None:
       self.ds = DescriptorSchemeCalonder()
+
+    self.vt = None
+    search = [ '/u/mihelich/images/holidays/holidays.tree', '/u/jamesb/holidays.tree' ]
+    for filename in search:
+      if os.access(filename, os.R_OK):
+        self.vt = place_recognition.load(filename, self.ds.cl)
+        break
+    if not self.vt:
+      print "ERROR: Could not find a valid place_recognition tree in", search
+      assert 0
 
     self.node_kp = {}
     self.node_descriptors = {}
