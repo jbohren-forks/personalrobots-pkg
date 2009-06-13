@@ -68,6 +68,9 @@ namespace planning_environment
 	/** Decide whether the constraint is satisfied. The kinematic model is assumed to be at the state we want to decide. */
 	virtual bool decide(const double *params, const int groupID) const = 0;
 
+	/** Decide whether the constraint is satisfied. The kinematic model is assumed to be at the state we want to decide. */
+	virtual bool decide(const double *params) const;
+
 	/** Print the constraint data */
 	virtual void print(std::ostream &out = std::cout) const
 	{
@@ -182,6 +185,9 @@ namespace planning_environment
 	
 	/** Decide whether the set of constraints is satisfied  */
 	bool decide(const double *params, int groupID) const;
+
+	/** Decide whether the set of constraints is satisfied  */
+	bool decide(const double *params) const;
 
 	/** Print the constraint data */
 	void print(std::ostream &out = std::cout) const;

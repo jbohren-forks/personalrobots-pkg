@@ -38,6 +38,11 @@
 #include <tf/transform_datatypes.h>
 #include <cassert>
 
+bool planning_environment::KinematicConstraintEvaluator::decide(const double *params) const
+{
+    return decide(params, -1);
+}
+
 bool planning_environment::JointConstraintEvaluator::use(const planning_models::KinematicModel *kmodel, const ros::Message *kc)
 {
     const motion_planning_msgs::JointConstraint *jc = dynamic_cast<const motion_planning_msgs::JointConstraint*>(kc);
@@ -54,10 +59,10 @@ bool planning_environment::JointConstraintEvaluator::use(const planning_models::
     m_jc     = jc;
     return true;
 }
-	
+
 bool planning_environment::JointConstraintEvaluator::decide(const double *params, const int groupID) const
 {
-    const double *val = params + m_kmodel->getJointIndexInGroup(m_joint->name, groupID);
+    const double *val = params + (groupID >= 0 ? m_kmodel->getJointIndexInGroup(m_joint->name, groupID) : m_kmodel->getJointIndex(m_joint->name));
     assert(m_jc.value.size() == m_jc.toleranceBelow.size() && m_jc.value.size() == m_jc.toleranceAbove.size());
     
     for (unsigned int i = 0 ; i < m_jc.value.size() ; ++i)
@@ -383,6 +388,11 @@ bool planning_environment::KinematicConstraintEvaluatorSet::decide(const double 
 	if (!m_kce[i]->decide(params, groupID))
 	    return false;
     return true;
+}
+
+bool planning_environment::KinematicConstraintEvaluatorSet::decide(const double *params) const
+{
+    return decide(params, -1);
 }
 
 void planning_environment::KinematicConstraintEvaluatorSet::print(std::ostream &out) const
