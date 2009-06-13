@@ -85,7 +85,7 @@ namespace planning_environment
 	    loaded_models_ = false;
 	    loadRobot();
 	}
-	
+
 	virtual ~RobotModels(void)
 	{
 	}

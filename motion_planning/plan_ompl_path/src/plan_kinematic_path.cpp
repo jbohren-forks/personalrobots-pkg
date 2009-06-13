@@ -70,7 +70,7 @@ public:
 	goalA_ = true;
 	
 	rm_ = new planning_environment::RobotModels("robot_description");
-	kmsm_ = new planning_environment::KinematicModelStateMonitor(rm_, false);
+	kmsm_ = new planning_environment::KinematicModelStateMonitor(rm_);
 	
 	// we use the topic for sending commands to the controller, so we need to advertise it
 	jointCommandPublisher_ = nh_.advertise<robot_msgs::JointTraj>("right_arm/trajectory_controller/trajectory_command", 1);
@@ -146,13 +146,16 @@ public:
 	req.goal_constraints.pose.resize(1);
 	req.goal_constraints.pose[0].type = motion_planning_msgs::PoseConstraint::POSITION_XYZ + motion_planning_msgs::PoseConstraint::ORIENTATION_RP;
 	req.goal_constraints.pose[0].link_name = "r_gripper_r_finger_tip_link";
-	req.goal_constraints.pose[0].x = 0.75025;
-	req.goal_constraints.pose[0].y = -0.188;	
-	req.goal_constraints.pose[0].z = 0.829675;	
+	req.goal_constraints.pose[0].pose.header.stamp = ros::Time::now();
+	req.goal_constraints.pose[0].pose.header.frame_id = "base_link";
+	req.goal_constraints.pose[0].pose.pose.position.x = 0.75025;
+	req.goal_constraints.pose[0].pose.pose.position.y = -0.188;	
+	req.goal_constraints.pose[0].pose.pose.position.z = 0.829675;	
 
-	req.goal_constraints.pose[0].roll = 0.0;
-	req.goal_constraints.pose[0].pitch = 0.0;
-	req.goal_constraints.pose[0].yaw = 0.0;
+	req.goal_constraints.pose[0].pose.pose.orientation.x = 0.0;
+	req.goal_constraints.pose[0].pose.pose.orientation.y = 0.0;
+	req.goal_constraints.pose[0].pose.pose.orientation.z = 0.0;
+	req.goal_constraints.pose[0].pose.pose.orientation.w = 1.0;
 	
 	req.goal_constraints.pose[0].position_distance = 0.0001;
 	req.goal_constraints.pose[0].orientation_distance = 0.1;

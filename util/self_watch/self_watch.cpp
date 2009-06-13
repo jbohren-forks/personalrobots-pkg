@@ -72,7 +72,7 @@ protected:
 	    
 	    // create a state that can be used to monitor the
 	    // changes in the joints of the kinematic model
-	    m_stateMonitor = boost::shared_ptr<planning_environment::KinematicModelStateMonitor>(new planning_environment::KinematicModelStateMonitor(m_envModels.get(), false));
+	    m_stateMonitor = boost::shared_ptr<planning_environment::KinematicModelStateMonitor>(new planning_environment::KinematicModelStateMonitor(m_envModels.get()));
 	    m_robotState = m_stateMonitor->getRobotState();
 	    m_stateMonitor->setOnStateUpdateCallback(boost::bind(&SelfWatch::stateUpdate, this));
 	    	    

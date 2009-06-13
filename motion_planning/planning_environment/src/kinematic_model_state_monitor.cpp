@@ -43,6 +43,7 @@ void planning_environment::KinematicModelStateMonitor::setupRSM(void)
     kmodel_ = NULL;
     robotState_ = NULL;
     onStateUpdate_ = NULL;
+    tf_ = NULL;
     havePose_ = haveMechanismState_ = false;
     if (rm_->loadedModels())
     {
@@ -50,7 +51,10 @@ void planning_environment::KinematicModelStateMonitor::setupRSM(void)
 	robotState_ = kmodel_->newStateParams();
 	
 	if (kmodel_->getRobotCount() > 1)
+	{
 	    ROS_WARN("Using more than one robot. A frame_id cannot be set (there multiple frames) and pose cannot be maintained");
+	    includePose_ = false;
+	}
 	else
 	{
 	    // joints to update based on received pose
@@ -59,32 +63,21 @@ void planning_environment::KinematicModelStateMonitor::setupRSM(void)
 	    if (dynamic_cast<planning_models::KinematicModel::FloatingJoint*>(kmodel_->getRobot(0)->chain))
 		floatingJoint_ = kmodel_->getRobot(0)->chain->name;
 	    
+	    robot_frame_ = kmodel_->getRobot(0)->chain->after->name;
+	    ROS_DEBUG("Robot frame is '%s'", robot_frame_.c_str());
+	    
 	    if (includePose_)
 	    {
-		localizedPoseSubscriber_ = nh_.subscribe("localized_pose", 1, &KinematicModelStateMonitor::localizedPoseCallback,  this);
-		ROS_DEBUG("Listening to localized pose");
+		tf_ = new tf::TransformListener(*ros::Node::instance());
+		ROS_DEBUG("Maintaining robot pose in frame '%s'", frame_id_.c_str());
 	    }
 	    else
-	    {
-		frame_id_ = kmodel_->getRobot(0)->chain->after->name;
-		ROS_DEBUG("Robot state frame is %s", frame_id_.c_str());
-	    }
+		frame_id_ = robot_frame_;
 	}
+	
 	mechanismStateSubscriber_ = nh_.subscribe("mechanism_state", 1, &KinematicModelStateMonitor::mechanismStateCallback, this);
 	ROS_DEBUG("Listening to mechanism state");
     }
-}
-
-const std::string& planning_environment::KinematicModelStateMonitor::getFrameId(void) const
-{
-    if (frame_id_.empty())
-    {
-	if (includePose_)
-	    waitForPose();
-	if (frame_id_.empty())
-	    ROS_ERROR("Cannot get frame ID for robot state");
-    }
-    return frame_id_;
 }
 
 void planning_environment::KinematicModelStateMonitor::mechanismStateCallback(const robot_msgs::MechanismStateConstPtr &mechanismState)
@@ -124,47 +117,49 @@ void planning_environment::KinematicModelStateMonitor::mechanismStateCallback(co
     if (!haveMechanismState_)
 	haveMechanismState_ = robotState_->seenAll();
     
-    if (change && onStateUpdate_ != NULL)
-	onStateUpdate_();
-}
-
-void planning_environment::KinematicModelStateMonitor::localizedPoseCallback(const robot_msgs::PoseWithCovarianceConstPtr &localizedPose)
-{
-    tf::PoseMsgToTF(localizedPose->pose, pose_);
-    lastPoseUpdate_ = localizedPose->header.stamp;
-    frame_id_ = localizedPose->header.frame_id;
-    
-    bool change = !havePose_;
-    havePose_ = true;
-    
-    if (!planarJoint_.empty())
+    if (includePose_)
     {
-	double planar_joint[3];
-	planar_joint[0] = pose_.getOrigin().x();
-	planar_joint[1] = pose_.getOrigin().y();
-	
-	double yaw, pitch, roll;
-	pose_.getBasis().getEulerZYX(yaw, pitch, roll);
-	planar_joint[2] = yaw;
-	
-	bool this_changed = robotState_->setParamsJoint(planar_joint, planarJoint_);
-	change = change || this_changed;
-    }
-    
-    if (!floatingJoint_.empty())
-    {
-	double floating_joint[7];
-	floating_joint[0] = pose_.getOrigin().x();
-	floating_joint[1] = pose_.getOrigin().y();
-	floating_joint[2] = pose_.getOrigin().z();
-	btQuaternion q = pose_.getRotation();	
-	floating_joint[3] = q.x();
-	floating_joint[4] = q.y();
-	floating_joint[5] = q.z();
-	floating_joint[6] = q.w();
-
-	bool this_changed = robotState_->setParamsJoint(floating_joint, floatingJoint_);
-	change = change || this_changed;
+	// use tf to figure out pose	
+	if (tf_->canTransform(frame_id_, robot_frame_, mechanismState->header.stamp))
+	{	  
+	    tf::Stamped<btTransform> transf;
+	    tf_->lookupTransform(frame_id_, robot_frame_, mechanismState->header.stamp, transf);
+	    pose_ = transf;
+	    
+	    if (!planarJoint_.empty())
+	    {
+		double planar_joint[3];
+		planar_joint[0] = pose_.getOrigin().x();
+		planar_joint[1] = pose_.getOrigin().y();
+		
+		double yaw, pitch, roll;
+		pose_.getBasis().getEulerZYX(yaw, pitch, roll);
+		planar_joint[2] = yaw;
+		
+		bool this_changed = robotState_->setParamsJoint(planar_joint, planarJoint_);
+		change = change || this_changed;
+	    }
+	    
+	    if (!floatingJoint_.empty())
+	    {
+		double floating_joint[7];
+		floating_joint[0] = pose_.getOrigin().x();
+		floating_joint[1] = pose_.getOrigin().y();
+		floating_joint[2] = pose_.getOrigin().z();
+		btQuaternion q = pose_.getRotation();	
+		floating_joint[3] = q.x();
+		floating_joint[4] = q.y();
+		floating_joint[5] = q.z();
+		floating_joint[6] = q.w();
+		
+		bool this_changed = robotState_->setParamsJoint(floating_joint, floatingJoint_);
+		change = change || this_changed;
+	    }
+	    
+	    havePose_ = true;
+	}
+	else
+	    ROS_WARN("Unable fo find transform from link '%s' to link '%s'", robot_frame_.c_str(), frame_id_.c_str());
     }
     
     if (change && onStateUpdate_ != NULL)
@@ -173,39 +168,19 @@ void planning_environment::KinematicModelStateMonitor::localizedPoseCallback(con
 
 void planning_environment::KinematicModelStateMonitor::waitForState(void) const
 {
-    while (nh_.ok() && !haveMechanismState_)
+    while (nh_.ok() && !haveState())
     {
 	ROS_INFO("Waiting for mechanism state ...");	    
 	ros::spinOnce();
 	ros::Duration().fromSec(0.05).sleep();
     }
-    if (haveMechanismState_)
+    if (haveState())
 	ROS_INFO("Mechanism state received!");
-}
-
-void planning_environment::KinematicModelStateMonitor::waitForPose(void) const
-{
-    while (nh_.ok() && !havePose_)
-    {
-	ROS_INFO("Waiting for robot pose ...");
-	ros::spinOnce();
-	ros::Duration().fromSec(0.05).sleep();
-    }
-    if (havePose_)
-	ROS_INFO("Robot pose received!");
 }
 
 bool planning_environment::KinematicModelStateMonitor::isStateUpdated(double sec) const
 {
     if (sec > 0 && lastStateUpdate_ < ros::Time::now() - ros::Duration(sec))
-	return false;
-    else
-	return true;
-}
-
-bool planning_environment::KinematicModelStateMonitor::isPoseUpdated(double sec) const
-{
-    if (sec > 0 && lastPoseUpdate_ < ros::Time::now() - ros::Duration(sec))
 	return false;
     else
 	return true;

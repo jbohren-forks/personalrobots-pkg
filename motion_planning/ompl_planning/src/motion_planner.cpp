@@ -57,7 +57,7 @@ public:
     {
 	// register with ROS
 	m_collisionModels = new planning_environment::CollisionModels("robot_description");
-	m_collisionSpaceMonitor = new planning_environment::CollisionSpaceMonitor(m_collisionModels, false);
+	m_collisionSpaceMonitor = new planning_environment::CollisionSpaceMonitor(m_collisionModels);
 	m_collisionSpaceMonitor->setOnAfterMapUpdateCallback(boost::bind(&KinematicPlanning::afterWorldUpdate, this, _1));
 	
 	// status info
@@ -120,16 +120,13 @@ public:
 	    
 	    if (execute)
 	    {
-		ROS_INFO("Working in frame %s", m_collisionSpaceMonitor->getFrameId().c_str());
+		ROS_INFO("Motion planning running in frame '%s'", m_collisionSpaceMonitor->getFrameId().c_str());
 		startPublishingStatus();
 	    }
 	}
 	
 	if (execute)
-	{
-	    ROS_INFO("Motion planning is now available.");
 	    ros::spin();
-	}
 	else
 	    if (mlist.empty())
 		ROS_ERROR("No robot model loaded. OMPL planning node cannot start.");
@@ -150,14 +147,6 @@ public:
 		ROS_WARN("Planning is not safe: kinematic state is not up to date");
 	    return false;
 	}
-	else
-	    if (m_collisionSpaceMonitor->isPoseIncluded())
-		if (!m_collisionSpaceMonitor->isPoseUpdated(m_intervalKinematicState))
-		{
-		    if (report)
-			ROS_WARN("Planning is not safe: kinematic state is not up to date");
-		    return false;
-		}
 	
 	return true;
     }

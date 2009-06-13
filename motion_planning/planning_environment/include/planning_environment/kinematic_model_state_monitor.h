@@ -39,8 +39,8 @@
 
 #include "planning_environment/robot_models.h"
 #include <tf/transform_datatypes.h>
+#include <tf/transform_listener.h>
 #include <robot_msgs/MechanismState.h>
-#include <robot_msgs/PoseWithCovariance.h>
 #include <boost/bind.hpp>
 #include <vector>
 #include <string>
@@ -64,10 +64,18 @@ namespace planning_environment
     {
     public:
 	
-	KinematicModelStateMonitor(RobotModels *rm, bool includePose)
+	KinematicModelStateMonitor(RobotModels *rm)
 	{
 	    rm_ = rm;
-	    includePose_ = includePose;
+	    includePose_ = false;
+	    setupRSM();
+	}
+	
+	KinematicModelStateMonitor(RobotModels *rm, const std::string &frame_id)
+	{
+	    rm_ = rm;
+	    includePose_ = true;
+	    frame_id_ = frame_id;	    
 	    setupRSM();
 	}
 	
@@ -75,6 +83,8 @@ namespace planning_environment
 	{
 	    if (robotState_)
 		delete robotState_;
+	    if (tf_)
+		delete tf_;
 	}
 
 	/** \brief Define a callback for when the state is changed */
@@ -102,24 +112,21 @@ namespace planning_environment
 	}
 	
 	/** \brief Return the frame id of the state */
-	const std::string& getFrameId(void) const;
-	
-	/** \brief Return true if a pose has been received */
-	bool havePose(void) const	    
+	const std::string& getFrameId(void) const
 	{
-	    return havePose_;
+	    return frame_id_;
 	}
-
+	
+	/** \brief Return the robot frame id (robot without pose) */
+	const std::string& getRobotFrameId(void) const
+	{
+	    return robot_frame_;
+	}
+	
 	/** \brief Return true if a full mechanism state has been received */
 	bool haveState(void) const	    
 	{
-	    return haveMechanismState_;
-	}
-	
-	/** \brief Return the time of the last pose update */
-	const ros::Time& lastPoseUpdate(void) const
-	{
-	    return lastPoseUpdate_;
+	    return haveMechanismState_ && (!includePose_ || (includePose_ && havePose_));
 	}
 	
 	/** \brief Return the time of the last state update */
@@ -127,15 +134,9 @@ namespace planning_environment
 	{
 	    return lastStateUpdate_;
 	}
-	
-	/** \brief Wait until a pose is received */
-	void waitForPose(void) const;
 
 	/** \brief Wait until a full mechanism state is received */
 	void waitForState(void) const;
-
-	/** \brief Return true if a pose has been received in the last sec seconds */
-	bool isPoseUpdated(double sec) const;
 
 	/** \brief Return true if a full mechanism state has been received in the last sec seconds */
 	bool isStateUpdated(double sec) const;
@@ -152,7 +153,6 @@ namespace planning_environment
     protected:
 
 	void setupRSM(void);
-	void localizedPoseCallback(const robot_msgs::PoseWithCovarianceConstPtr &localizedPose);
 	void mechanismStateCallback(const robot_msgs::MechanismStateConstPtr &mechanismState);
 
 
@@ -164,10 +164,11 @@ namespace planning_environment
 	
 	ros::NodeHandle                               nh_;
 	ros::Subscriber                               mechanismStateSubscriber_;	
-	ros::Subscriber                               localizedPoseSubscriber_;
+	tf::TransformListener                        *tf_;
 
 	planning_models::KinematicModel::StateParams *robotState_;
 	tf::Pose                                      pose_;
+	std::string                                   robot_frame_;
 	std::string                                   frame_id_;
 	
 	boost::function<void(void)>                   onStateUpdate_;
@@ -175,7 +176,6 @@ namespace planning_environment
 	bool                                          havePose_;
 	bool                                          haveMechanismState_;
 	ros::Time                                     lastStateUpdate_;
-	ros::Time                                     lastPoseUpdate_;
     };
     
 }

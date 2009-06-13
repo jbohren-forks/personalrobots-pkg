@@ -2,8 +2,6 @@
 # Since there are multiple types of constraints, the 'type' member is used
 # to identify the different constraints
 
-Header header
-
 # Constants that represent possible values for type. A position and an 
 # orientation constant can be combined (by adding).
 
@@ -31,15 +29,8 @@ int32 type
 # The robot link this constraint refers to
 string link_name
 
-# The desired pose of the robot link (in the robot frame)
-float64 x
-float64 y
-float64 z
-
-# euler angles around YXZ
-float64 roll   # around Z axis
-float64 pitch  # around X axis
-float64 yaw    # around Y axis
+# The desired pose of the robot link
+robot_msgs/PoseStamped pose
 
 # the allowed difference (square of euclidian distance) for position
 float64 position_distance

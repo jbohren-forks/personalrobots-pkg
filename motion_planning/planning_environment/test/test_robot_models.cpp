@@ -63,7 +63,7 @@ TEST(ForwardKinematics, RuntimeArm)
     for (unsigned int i = 0 ; i < NT ; ++i)
 	kmodel->computeTransformsGroup(params, gid);
     double fps = (double)NT / (ros::WallTime::now() - tm).toSec();
-    ROS_ERROR("%f forward kinematics steps per second", fps);
+    ROS_INFO("%f forward kinematics steps per second", fps);
     
     EXPECT_TRUE(fps > 10000.0);
 }

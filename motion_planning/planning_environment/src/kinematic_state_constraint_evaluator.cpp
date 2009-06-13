@@ -35,6 +35,7 @@
 /** \author Ioan Sucan */
 
 #include "planning_environment/kinematic_state_constraint_evaluator.h"
+#include <tf/transform_datatypes.h>
 #include <cassert>
 
 bool planning_environment::JointConstraintEvaluator::use(const planning_models::KinematicModel *kmodel, const ros::Message *kc)
@@ -114,6 +115,14 @@ bool planning_environment::PoseConstraintEvaluator::use(const planning_models::K
 {
     m_link = kmodel->getLink(pc.link_name);
     m_pc   = pc;
+
+    tf::Pose pose;
+    tf::PoseMsgToTF(m_pc.pose.pose, pose);
+    pose.getBasis().getEulerYPR(m_yaw, m_pitch, m_roll);
+    m_x = pose.getOrigin().x();
+    m_y = pose.getOrigin().y();
+    m_z = pose.getOrigin().z();
+    
     return true;
 }
 
@@ -143,36 +152,36 @@ void planning_environment::PoseConstraintEvaluator::evaluate(double *distPos, do
 		switch (m_pc.type & 0xFF)
 		{
 		case motion_planning_msgs::PoseConstraint::POSITION_XYZ:
-		    dx = bodyPos.getX() - m_pc.x;
-		    dy = bodyPos.getY() - m_pc.y;
-		    dz = bodyPos.getZ() - m_pc.z;
+		    dx = bodyPos.getX() - m_x;
+		    dy = bodyPos.getY() - m_y;
+		    dz = bodyPos.getZ() - m_z;
 		    *distPos = dx * dx + dy * dy + dz * dz;
 		    break;
 		case motion_planning_msgs::PoseConstraint::POSITION_XY:
-		    dx = bodyPos.getX() - m_pc.x;
-		    dy = bodyPos.getY() - m_pc.y;
+		    dx = bodyPos.getX() - m_x;
+		    dy = bodyPos.getY() - m_y;
 		    *distPos = dx * dx + dy * dy;
 		    break;
 		case motion_planning_msgs::PoseConstraint::POSITION_XZ:
-		    dx = bodyPos.getX() - m_pc.x;
-		    dz = bodyPos.getZ() - m_pc.z;
+		    dx = bodyPos.getX() - m_x;
+		    dz = bodyPos.getZ() - m_z;
 		    *distPos = dx * dx + dz * dz;
 		    break;
 		case motion_planning_msgs::PoseConstraint::POSITION_YZ:
-		    dy = bodyPos.getY() - m_pc.y;
-		    dz = bodyPos.getZ() - m_pc.z;
+		    dy = bodyPos.getY() - m_y;
+		    dz = bodyPos.getZ() - m_z;
 		    *distPos = dy * dy + dz * dz;
 		    break;
 		case motion_planning_msgs::PoseConstraint::POSITION_X:
-		    dx = bodyPos.getX() - m_pc.x;
+		    dx = bodyPos.getX() - m_x;
 		    *distPos = dx * dx;
 		    break;
 		case motion_planning_msgs::PoseConstraint::POSITION_Y:
-		    dy = bodyPos.getY() - m_pc.y;
+		    dy = bodyPos.getY() - m_y;
 		    *distPos = dy * dy;
 		    break;
 		case motion_planning_msgs::PoseConstraint::POSITION_Z:
-		    dz = bodyPos.getZ() - m_pc.z;
+		    dz = bodyPos.getZ() - m_z;
 		    *distPos = dz * dz;
 		    break;
 		default:
@@ -192,30 +201,30 @@ void planning_environment::PoseConstraintEvaluator::evaluate(double *distPos, do
 		switch (m_pc.type & (~0xFF))
 		{
 		case motion_planning_msgs::PoseConstraint::ORIENTATION_RPY:
-		    *distAng = fabs(angles::shortest_angular_distance(roll, m_pc.roll)) + 
-			fabs(angles::shortest_angular_distance(pitch, m_pc.pitch)) +
-			fabs(angles::shortest_angular_distance(yaw, m_pc.yaw));
+		    *distAng = fabs(angles::shortest_angular_distance(roll, m_roll)) + 
+			fabs(angles::shortest_angular_distance(pitch, m_pitch)) +
+			fabs(angles::shortest_angular_distance(yaw, m_yaw));
 		    break;
 		case motion_planning_msgs::PoseConstraint::ORIENTATION_RP:
-		    *distAng = fabs(angles::shortest_angular_distance(roll, m_pc.roll)) + 
-			fabs(angles::shortest_angular_distance(pitch, m_pc.pitch));
+		    *distAng = fabs(angles::shortest_angular_distance(roll, m_roll)) + 
+			fabs(angles::shortest_angular_distance(pitch, m_pitch));
 		    break;
 		case motion_planning_msgs::PoseConstraint::ORIENTATION_RY:
-		    *distAng = fabs(angles::shortest_angular_distance(roll, m_pc.roll)) + 
-			fabs(angles::shortest_angular_distance(yaw, m_pc.yaw));
+		    *distAng = fabs(angles::shortest_angular_distance(roll, m_roll)) + 
+			fabs(angles::shortest_angular_distance(yaw, m_yaw));
 		    break;
 		case motion_planning_msgs::PoseConstraint::ORIENTATION_PY:
-		    *distAng = fabs(angles::shortest_angular_distance(pitch, m_pc.pitch)) +
-			fabs(angles::shortest_angular_distance(yaw, m_pc.yaw));
+		    *distAng = fabs(angles::shortest_angular_distance(pitch, m_pitch)) +
+			fabs(angles::shortest_angular_distance(yaw, m_yaw));
 		    break;
 		case motion_planning_msgs::PoseConstraint::ORIENTATION_R:
-		    *distAng = fabs(angles::shortest_angular_distance(roll, m_pc.roll));
+		    *distAng = fabs(angles::shortest_angular_distance(roll, m_roll));
 		    break;
 		case motion_planning_msgs::PoseConstraint::ORIENTATION_P:
-		    *distAng = fabs(angles::shortest_angular_distance(pitch, m_pc.pitch));
+		    *distAng = fabs(angles::shortest_angular_distance(pitch, m_pitch));
 		    break;
 		case motion_planning_msgs::PoseConstraint::ORIENTATION_Y:
-		    *distAng = fabs(angles::shortest_angular_distance(yaw, m_pc.yaw));
+		    *distAng = fabs(angles::shortest_angular_distance(yaw, m_yaw));
 		    break;
 		default:
 		    *distAng = 0.0;
@@ -259,30 +268,30 @@ void planning_environment::PoseConstraintEvaluator::print(std::ostream &out) con
 	    switch (m_pc.type & 0xFF)
 	    {
 	    case motion_planning_msgs::PoseConstraint::POSITION_XYZ:
-		out << "x = " << m_pc.x << " ";
-		out << "y = " << m_pc.y << " ";
-		out << "z = " << m_pc.z << " ";
+		out << "x = " << m_x << " ";
+		out << "y = " << m_y << " ";
+		out << "z = " << m_z << " ";
 		break;
 	    case motion_planning_msgs::PoseConstraint::POSITION_XY:
-		out << "x = " << m_pc.x << " ";
-		out << "y = " << m_pc.y << " ";
+		out << "x = " << m_x << " ";
+		out << "y = " << m_y << " ";
 		break;
 	    case motion_planning_msgs::PoseConstraint::POSITION_XZ:
-		out << "x = " << m_pc.x << " ";
-		out << "z = " << m_pc.z << " ";
+		out << "x = " << m_x << " ";
+		out << "z = " << m_z << " ";
 		break;
 	    case motion_planning_msgs::PoseConstraint::POSITION_YZ:
-		out << "y = " << m_pc.y << " ";
-		out << "z = " << m_pc.z << " ";
+		out << "y = " << m_y << " ";
+		out << "z = " << m_z << " ";
 		break;
 	    case motion_planning_msgs::PoseConstraint::POSITION_X:
-		out << "x = " << m_pc.x << " ";
+		out << "x = " << m_x << " ";
 		break;
 	    case motion_planning_msgs::PoseConstraint::POSITION_Y:
-		out << "y = " << m_pc.y << " ";
+		out << "y = " << m_y << " ";
 		break;
 	    case motion_planning_msgs::PoseConstraint::POSITION_Z:
-		out << "z = " << m_pc.z << " ";
+		out << "z = " << m_z << " ";
 		break;
 	    default:
 		break;
@@ -298,30 +307,30 @@ void planning_environment::PoseConstraintEvaluator::print(std::ostream &out) con
 	    switch (m_pc.type & (~0xFF))
 	    {
 	    case motion_planning_msgs::PoseConstraint::ORIENTATION_RPY:
-		out << "roll = " << m_pc.roll << " ";
-		out << "pitch = " << m_pc.pitch << " ";
-		out << "yaw = " << m_pc.yaw << " ";
+		out << "roll = " << m_roll << " ";
+		out << "pitch = " << m_pitch << " ";
+		out << "yaw = " << m_yaw << " ";
 		break;
 	    case motion_planning_msgs::PoseConstraint::ORIENTATION_RP:
-		out << "roll = " << m_pc.roll << " ";
-		out << "pitch = " << m_pc.pitch << " ";
+		out << "roll = " << m_roll << " ";
+		out << "pitch = " << m_pitch << " ";
 		break;
 	    case motion_planning_msgs::PoseConstraint::ORIENTATION_RY:
-		out << "roll = " << m_pc.roll << " ";
-		out << "yaw = " << m_pc.yaw << " ";
+		out << "roll = " << m_roll << " ";
+		out << "yaw = " << m_yaw << " ";
 		break;
 	    case motion_planning_msgs::PoseConstraint::ORIENTATION_PY:
-		out << "pitch = " << m_pc.pitch << " ";
-		out << "yaw = " << m_pc.yaw << " ";
+		out << "pitch = " << m_pitch << " ";
+		out << "yaw = " << m_yaw << " ";
 		break;
 	    case motion_planning_msgs::PoseConstraint::ORIENTATION_R:
-		out << "roll = " << m_pc.roll << " ";
+		out << "roll = " << m_roll << " ";
 		break;
 	    case motion_planning_msgs::PoseConstraint::ORIENTATION_P:
-		out << "pitch = " << m_pc.pitch << " ";
+		out << "pitch = " << m_pitch << " ";
 		break;
 	    case motion_planning_msgs::PoseConstraint::ORIENTATION_Y:
-		out << "yaw = " << m_pc.yaw << " ";
+		out << "yaw = " << m_yaw << " ";
 		break;
 	    default:
 		break;

@@ -52,6 +52,10 @@ void planning_environment::CollisionSpaceMonitor::setupCSM(void)
     onAfterMapUpdate_  = NULL;
     onAfterAttachBody_ = NULL;
     haveMap_ = false;
+
+    if (!tf_)
+	tf_ = new tf::TransformListener(*ros::Node::instance());
+    
     collisionSpace_ = cm_->getODECollisionModel().get();
     
     collisionMapSubscriber_ = nh_.subscribe("collision_map", 1, &CollisionSpaceMonitor::collisionMapCallback, this);
@@ -104,7 +108,7 @@ void planning_environment::CollisionSpaceMonitor::collisionMapCallback(const rob
 	    robot_msgs::PointStamped pso;
 	    try
 	    {
-		tf_.transformPoint(target, psi, pso);
+		tf_->transformPoint(target, psi, pso);
 	    }
 	    catch(...)
 	    {
@@ -120,7 +124,7 @@ void planning_environment::CollisionSpaceMonitor::collisionMapCallback(const rob
 	}
 	
 	if (err)
-	    ROS_ERROR("Some errors encountered in transforming the collision map to frame %s from frame %s", target.c_str(), collisionMap->header.frame_id.c_str());
+	    ROS_ERROR("Some errors encountered in transforming the collision map to frame '%s' from frame '%s'", target.c_str(), collisionMap->header.frame_id.c_str());
     }
     else
     {
@@ -177,12 +181,12 @@ void planning_environment::CollisionSpaceMonitor::attachObjectCallback(const rob
 	    bool err = false;
 	    try
 	    {
-		tf_.transformPoint(attachedObject->link_name, center, centerP);
+		tf_->transformPoint(attachedObject->link_name, center, centerP);
 	    }
 	    catch(...)
 	    {
 		err = true;
-		ROS_ERROR("Unable to transform object to be attached from frame %s to frame %s", attachedObject->header.frame_id.c_str(), attachedObject->link_name.c_str());
+		ROS_ERROR("Unable to transform object to be attached from frame '%s' to frame '%s'", attachedObject->header.frame_id.c_str(), attachedObject->link_name.c_str());
 	    }
 	    if (err)
 		continue;

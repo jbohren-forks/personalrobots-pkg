@@ -59,12 +59,16 @@ namespace planning_environment
 	{
 	}
 	
+	/** Clear the stored constraint */
 	virtual void clear(void) = 0;
+
+	/** This function assumes the constraint has been transformed into the proper frame, if such a transform is needed */
 	virtual bool use(const planning_models::KinematicModel *kmodel, const ros::Message *kc) = 0;
 
 	/** Decide whether the constraint is satisfied. The kinematic model is assumed to be at the state we want to decide. */
 	virtual bool decide(const double *params, const int groupID) const = 0;
 
+	/** Print the constraint data */
 	virtual void print(std::ostream &out = std::cout) const
 	{
 	}
@@ -80,12 +84,23 @@ namespace planning_environment
 	    m_kmodel = NULL;
 	}
 
+	/** This function assumes the constraint has been transformed into the proper frame, if such a transform is needed */
 	virtual bool use(const planning_models::KinematicModel *kmodel, const ros::Message *kc);
+
+	/** This function assumes the constraint has been transformed into the proper frame, if such a transform is needed */
 	bool use(const planning_models::KinematicModel *kmodel, const motion_planning_msgs::JointConstraint &jc);
+
+	/** Decide whether the constraint is satisfied. The kinematic model is assumed to be at the state we want to decide. */
 	virtual bool decide(const double *params, const int groupID) const;
+
+	/** Clear the stored constraint */
 	virtual void clear(void);
-	const motion_planning_msgs::JointConstraint& getConstraintMessage(void) const;
+
+	/** Print the constraint data */
 	virtual void print(std::ostream &out = std::cout) const;
+
+	/** Get the constraint message */
+	const motion_planning_msgs::JointConstraint& getConstraintMessage(void) const;
 
     protected:
 	
@@ -105,19 +120,39 @@ namespace planning_environment
 	    m_link = NULL;
 	}
 	
+	/** This function assumes the constraint has been transformed into the proper frame, if such a transform is needed */
 	virtual bool use(const planning_models::KinematicModel *kmodel, const ros::Message *kc);
+
+	/** This function assumes the constraint has been transformed into the proper frame, if such a transform is needed */
 	bool use(const planning_models::KinematicModel *kmodel, const motion_planning_msgs::PoseConstraint &pc);
+
+	/** Clear the stored constraint */
 	virtual void clear(void);
+	
+	/** Decide whether the constraint is satisfied. The kinematic model is assumed to be at the state we want to decide. */
 	virtual bool decide(const double *params, int groupID) const;
+
+	/** Evaluate the distances to the position and to the orientation are given. */
 	void evaluate(double *distPos, double *distAng) const;
+	
+	/** Decide whether the constraint is satisfied. The distances to the position and to the orientation are given. */
 	bool decide(double dPos, double dAng) const;
 	
-	const motion_planning_msgs::PoseConstraint& getConstraintMessage(void) const;
+	/** Print the constraint data */
 	void print(std::ostream &out = std::cout) const;
+
+	/** Get the constraint message */
+	const motion_planning_msgs::PoseConstraint& getConstraintMessage(void) const;
 	
     protected:
 	
 	motion_planning_msgs::PoseConstraint   m_pc;
+	double                                 m_x;
+	double                                 m_y;
+	double                                 m_z;	
+	double                                 m_yaw;
+	double                                 m_pitch;
+	double                                 m_roll;	
 	planning_models::KinematicModel::Link *m_link;    
 	
     };
@@ -136,10 +171,19 @@ namespace planning_environment
 	    clear();
 	}
 	
+	/** Clear the stored constraints */
 	void clear(void);
+	
+	/** Add a set of joint constraints */
 	bool add(const planning_models::KinematicModel *kmodel, const std::vector<motion_planning_msgs::JointConstraint> &jc);
+
+	/** Add a set of pose constraints */
 	bool add(const planning_models::KinematicModel *kmodel, const std::vector<motion_planning_msgs::PoseConstraint> &kc);
+	
+	/** Decide whether the set of constraints is satisfied  */
 	bool decide(const double *params, int groupID) const;
+
+	/** Print the constraint data */
 	void print(std::ostream &out = std::cout) const;
 
     protected:

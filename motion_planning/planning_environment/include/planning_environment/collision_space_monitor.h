@@ -40,7 +40,6 @@
 #include "planning_environment/collision_models.h"
 #include "planning_environment/kinematic_model_state_monitor.h"
 
-#include <tf/transform_listener.h>
 #include <robot_msgs/CollisionMap.h>
 #include <robot_msgs/AttachedObject.h>
 
@@ -62,8 +61,13 @@ namespace planning_environment
     {
     public:
 	
-	CollisionSpaceMonitor(CollisionModels *cm, bool includePose) : KinematicModelStateMonitor(static_cast<RobotModels*>(cm), includePose),
-								       tf_(*ros::Node::instance())
+	CollisionSpaceMonitor(CollisionModels *cm, std::string frame_id) : KinematicModelStateMonitor(static_cast<RobotModels*>(cm), frame_id)
+	{
+	    cm_ = cm;
+	    setupCSM();
+	}
+	
+	CollisionSpaceMonitor(CollisionModels *cm) : KinematicModelStateMonitor(static_cast<RobotModels*>(cm))
 	{
 	    cm_ = cm;
 	    setupCSM();
@@ -123,7 +127,6 @@ namespace planning_environment
 	void collisionMapCallback(const robot_msgs::CollisionMapConstPtr &collisionMap);
 	void attachObjectCallback(const robot_msgs::AttachedObjectConstPtr &attachedObject);
 	
-	tf::TransformListener                                          tf_;
 	CollisionModels                                               *cm_;
 	collision_space::EnvironmentModel                             *collisionSpace_;
 	
