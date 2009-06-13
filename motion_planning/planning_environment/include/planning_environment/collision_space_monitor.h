@@ -88,6 +88,12 @@ namespace planning_environment
 	    return cm_;
 	}
 	
+	/** \brief Return the transform listener */
+	tf::TransformListener *getTransformListener(void) const
+	{
+	    return tf_;
+	}
+	
 	/** \brief Define a callback for before updating a map */
 	void setOnBeforeMapUpdateCallback(const boost::function<void(const robot_msgs::CollisionMapConstPtr)> &callback)
 	{
