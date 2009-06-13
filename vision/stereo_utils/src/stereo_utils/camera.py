@@ -130,7 +130,7 @@ class VidereCamera(Camera):
       ws = l.split()
       if ws != []:
         if section == "right camera" and ws[0].isalpha():
-          in_proj = (ws[0] == 'proj')
+          in_proj = (ws[0] in ['proj', 'projection'])
         elif in_proj:
           matrix.append([ float(s) for s in l.split() ])
     Fx = matrix[0][0]
