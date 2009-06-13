@@ -585,7 +585,7 @@ namespace planning_models
 	unsigned int getRobotCount(void) const;
 	Robot*       getRobot(unsigned int index) const;
 
-	/** Get the array of groups, indexed by their group ID */
+	/** Get the array of planning groups, indexed by their group ID */
 	void         getGroups(std::vector<std::string> &groups) const;
 	
 	/** Get the number of groups */
@@ -613,6 +613,9 @@ namespace planning_models
 	/** Get the names of the joints in a specific group. Only joints with parameters are returned and the order is the 
 	    same as in the group state */
 	void         getJointsInGroup(std::vector<std::string> &names, const std::string &name) const;
+
+	/** Return the index of a joint in the complete state vector */
+	int getJointIndex(const std::string &name) const;
 
 	/** Get the index for the parameter of a joint in a given group */
 	int getJointIndexInGroup(const std::string &name, const std::string &group) const;

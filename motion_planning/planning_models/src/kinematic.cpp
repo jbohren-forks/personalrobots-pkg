@@ -826,6 +826,15 @@ const double* planning_models::KinematicModel::StateParams::getParams(void) cons
     return m_params;
 }
 
+int planning_models::KinematicModel::getJointIndex(const std::string &name) const
+{
+    std::map<std::string, unsigned int>::const_iterator it = m_mi.parameterIndex.find(name);
+    if (it != m_mi.parameterIndex.end())
+	return it->second;
+    m_msg.error("Joint " + name + " not found");
+    return -1;
+}
+
 int planning_models::KinematicModel::getJointIndexInGroup(const std::string &name, const std::string &group) const
 {
     return getJointIndexInGroup(name, getGroupID(group));
