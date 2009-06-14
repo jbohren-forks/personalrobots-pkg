@@ -17,14 +17,58 @@ Willow Garage
 }
 \maketitle
 \begin{abstract}
-PR2 is a sophisticated mobile manipulation platform designed for operation in dynamic and unstructured indoor environments. In this paper we describe an experiment using TREX, a hierarchical control framework based on constraint-based temporal planning, to control PR2. The experiment was part of a fully integrated demonstration of PR2 capabilities involving autonomous navigation, door-opening, and recharging using standard electrical outlets. The goal of this experiment was to evaluate the applicability of a model-based, planning centric approach for practical robotics on a large scale. The results were encouraging. Not only did TREX play an important role in accomplishing the milestone which was in itself  a significant achievement in autonomous robotics, but it did so with modest computatational overhead and system complexity. In this paper we outline the details of the milestone and how TREX was used to achieve it, providing a quantitative and qualititative evaluation of TREX performance. We believe this presents a promising pathway for deep integration of declarative models, automated reasoning and search as a paradigm for practical robot programming.
+PR2 is a sophisticated mobile manipulation platform designed for operation in dynamic and unstructured indoor environments. In this paper we describe an experiment using TREX, a hierarchical control framework based on constraint-based temporal planning, to control PR2. The experiment was part of a fully integrated demonstration of PR2 capabilities involving autonomous navigation, door-opening, and recharging using standard electrical outlets. The goal of this experiment was to evaluate the applicability of a model-based, planning centric approach for practical robotics on a large scale. The results were encouraging. Not only did TREX play an important role in accomplishing the milestone which was in itself  a significant achievement in autonomous robotics, but it did so with modest computatational overhead and system complexity. In this paper we outline the details of the milestone and how TREX was used to achieve it, providing a quantitative and qualititative evaluation of TREX performance. We believe this presents a promising pathway for deep integration of declarative models, and automated planning as a paradigm for practical robot programming.
 \begin{quote}
 \end{quote}
 \end{abstract}
 
 \section{Introduction}
+PR2 is a sophisticated mobile manipulation platform designed for operation in dynamic and unstructured indoor environments. Writing programs to enable such a robot to operate autonomously, competently and robustly is hard. The overall goal of our work is to make programming such robots easier. Our strategy for achieving this goal is to develop robust, re-usable action primitives that are maximally decoupled, and focus on methods to compose these actions in a principled way to accomplish higher level tasks. 
 
-\section{Motivation}
+In this paper we report results from an experiment applying TREX, a hierarchical control framework based on constraint-based temporal planning, to control PR2. TREX was chosen because it claimed to support a synthesis of goal-directed and reactive behavior in a uniform computational model based on formal, declarative models and automated planning techniques. Moreover, EUROPA [], the constraint-based temporal planning system at the heart of TREX, has a promising track record in planning for practical robotics applications[]. 
+
+The experiment was part of a fully integrated demonstration of PR2 capabilities involving autonomous navigation, door-opening, and recharging using standard electrical outlets. The goal of this experiment was to evaluate the applicability of a model-based, planning centric approach for practical robot programming on a large scale. The results were encouraging. Not only did TREX play an important role in accomplishing the milestone which was in itself  a significant achievement in autonomous robotics, but it did so with modest computatational overhead and system complexity. We believe this presents a promising pathway for deep integration of declarative models, and automated planning as a paradigm for practical robot programming.
+
+The paper is structured as follows. We begin with a description of PR2 and the demonstration requirements that motivated our work. We then describe TREX and elaborate on why we chose it as a method for tackling the composition problem over other alternatives. Next, we describe in some detail the specifics of applying TREX to this domain to give the reader a concrete sense of how it worked in practice. This is followed by a presentation of quantitative and qualitative results which are the main contribution of the paper. We close with a discussion of related work and speculate on the implications of our results for future research.
+
+\section{Milestone 2}
+\subsection{The Platform}
+PR2 (Personal Robot 2) is a sophisticated mobile manipulation platform designed for operation in dynamic and unstructured indoor environments (figure). It is a successor to PR1[] developed as part of the STAIR project []. PR2 is being developed as a fully integrated system for robotics research. It has a quasi-holonomic base, 2 arms, with grippers. It has 4 dual core XGz whiz bang maker computers, 1 GB ethernet, etc.. It has a horizontal scanning Hokuyo laser mounted on the base, a tilting laser mounted on the head, and a rotating turret at the head which includes mono and stereo cameras. PR2 uses ROS (Robot Operating System) [] for synchronous and asynhchronous inter-process communication. Low-level mechanism control is handled in a real-time linux kernel [] at an update rate of 1KHz. 
+
+\subsection{The Challenge}
+As part of the development goals for PR2, a number of higher level perception, planning and control capabilities will be provided to offer an out-of-the-box integrated system that researchers can build upon. All software is available open-source. Milestone 2 was designed as a major test of these integrated capabilities. The basic idea was to validate that the system could operate robustly and autonomously in an indoor office environment and utilize all major components to be self sufficient. To this end, a challenge was designed with 2 main parts. The first was a navigation marathon, which was conducted on a stripped down version of PR2 (no arms). This was largely a matter of making our core navigation behavior robust, with only limited demands for top-level control. The second component of the challenge, and the focus of this work, was more of a triathlon, integrating planar navigation, navigation through closed, partially-open, or fully open doorways, and recharging by plugging in to one of a range of standard electrical outlets located around our building. PR2 had to autonomously navigate to each of 10 outlets, selected by a user at the start, whereupon it would plug itself in, unplug and move on to the next one. In the course of driving from one outlet to another, PR2 would traverse doorways as needed. If an outlet was in an office with a locked door, it could give up on that goal (or try again later). It had to accomplish this in under 2 hours. Once underway, human intervention was prohibited. Figure (fig) shows the layout of our office building, with outlets identified as numbered squares.
+
+\subsection{The Work Breakdown}
+The milestone effort was divided into 4 key sub-domains:
+\begin{itemize}
+\item Navigation. Handled planar navigation on a metric costmap derived from laser data. This provided a capability for global navigation around the building, and local positioning of the robot over smaller scales, each based on achieving a target 6DOF pose. 
+\item Doors. Handled doorway traversal, including door and handle detection, local navigation for positioning the base, and arm commands for contacting and manipulating the door and handle. These capabilities were encapsulated as a set of 10 durative actions. 
+\item Plugs. Handled outlet and plug detection, local navigation around the outlet, as well as arm commands for grasping and manipulating the plug. The plug was mounted on the base via a magnet and would be removed and restored to that position on each recharge cycle. These capabilities were also encapsulated as a set of durative actions.
+\item Topological map. A topological map was developed providing a graph based representation of regions and connectors derived from the underlying metric map. This would allow path planning for higher-level control. The topological map was annotated with prior information about doors, outlets and reachable approach points for each.
+\end{itemize}
+
+In order to achieve the milestone, substantial capabilities were required in each area, involving innovations in perception, planning and control. However, their specifics are outside the scope of this paper. Rather, we consider the products of each sub-domain as modular building blocks for higher level control. This approach allowed us to develop and test specific capabilities, in a decoupled fashion, as well as script specific combinations within each domain, for testing and demonstration. A complete listing of all actions is shown in (listing).
+
+To achieve a greater degree of robustness, a more sophisticated integration would be required, handling recovery in the event of failure, and asembling all capabilities in a coherent manner. Behavior co-ordination and system configuration management at this level would be the job for the Executive. Co-ordination would be driven by top-level goals (e.g. recharge at outlet 6). Configuration changes would be driven by resource and safey requirements. As an example of safety constraints, the tilt laser had to be running when driving around in order to see obstacles, and the arms had to be stowed within the base footprint of the robot. Also, specialized mechanism control configurations would be required based on the needs of each action. For example, an action to untuck the arms (useful to obtain a clear view of the base when looking for the plug) used a joint-space trajectory controller, whereas grasping the handle used an effort controller.
+
+\section{Executive Design}
+
+\subsection{Requirements}
+\begin{itemize}
+\item High-level goals (i.e. recharge at outlet 6)
+\item High-level planning (handle all top-level goals, with an optimal tour). Break down into sub-goals for driving, doorway traversal and recharging
+\item Durative actions
+\item Concurrent actions
+\item Discrete and continuous states
+\item Temporal uncertainty
+\item Conditional effects
+\item Action failure
+\item Interactions based on shared resources
+\end{itemize}
+
+\subsection{Options}
+
+\subsection{TREX}
 TREX provides a uniform computational framework based on formal, declarative models, and temporal plans with:
 \begin{itemize}
 \item Metric time
@@ -37,6 +81,9 @@ TREX provides a uniform computational framework based on formal, declarative mod
 \item Support for concurrent actions
 \end{itemize}
 
+\section{Results}
+
+\subsection{Expectations}
 Hypothesize the following expected benefits:
 \begin{itemize}
 \item Robust autonomous behavior through temporal flexibility, incremental planning and replanning
@@ -45,25 +92,6 @@ Hypothesize the following expected benefits:
 \item Seamless integration of planning and execution in a continuum of deliberative and reactive behavior
 \item Reduced programming complexity since model and planner can assist and can specify a program at a very high level
 \end{itemize}
-
-Ultimately, evaluation based on expreiences with real world systems. Want to push to a larger scale application with a more inherently challenging control problem. Want to demonstrate applicability on a harder problem and a different platform to evaluate the generality of the approach.
-
-\section{Milestone 2 Requirements}
-
-What it is and why.
-
-Complexity of the problem
-\begin{itemize}
-\item High-level goals (recharge at outlet 6)
-\item High-level planning (handle all top-level goals, with an optimal tour). Break down into sub-goals for driving, doorway traversal and recharging
-\item 25 low-level actions
-\item Action failure (the primary manifestation of uncertainty)
-\item Interactions based on shared resources
-\end{itemize}
-
-\section{Executive Design}
-
-\section{Results}
 
 Key Data point - it worked! This in itself is important. What is the state of the art to compare to?
 
@@ -96,7 +124,7 @@ Capabilities that were important:
 \item Number of plan failures (detection of inconsistency). Did not happen.
 \end{itemize}
 
-\section{Evaluation}
+\section{Discussion}
 
 Are easy things easy?
 
@@ -123,6 +151,8 @@ Did not integrate everything into the model? Why not? Was this good or bad? Coul
 \section{Conclusions and Future Work}
 Scaled well.
 Tackle tougher tasks.
+
+Ultimately, evaluation based on expreiences with real world systems. Want to push to a larger scale application with a more inherently challenging control problem. Want to demonstrate applicability on a harder problem and a different platform to evaluate the generality of the approach.
 
 Make the techology easier to use.
 
