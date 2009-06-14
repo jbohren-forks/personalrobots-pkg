@@ -38,12 +38,7 @@
 #define KINEMATIC_PLANNING_RKP_REQUEST_HANDLER_
 
 #include "kinematic_planning/RKPModel.h"
-#include <motion_planning_msgs/KinematicPath.h>
 #include <motion_planning_srvs/KinematicPlan.h>
-
-#include <ros/console.h>
-#include <iostream>
-#include <sstream>
 
 /** Main namespace */
 namespace kinematic_planning
@@ -58,54 +53,28 @@ namespace kinematic_planning
 	
 	RKPRequestHandler(void)
 	{
-	    m_activePSetup = NULL;
 	}
 	
 	~RKPRequestHandler(void)
 	{
 	}
 	
-	/** Set up all the data needed by motion planning based on a request and lock the planner setup
-	 *  using this data */
-	bool configure(ModelMap &models, const motion_planning_msgs::KinematicState &startState, const motion_planning_srvs::KinematicPlan::Request &req);
-	void release(void);
-	
-	bool isActive(void);
-	RKPPlannerSetup *activePlannerSetup(void);
-	motion_planning_srvs::KinematicPlan::Request& activeRequest(void);
-	motion_planning_msgs::KinematicState& activeStartState(void);
-	
-	bool isStillValid(motion_planning_msgs::KinematicPath &path);
-	bool isTrivial(double *distance = NULL);
-	void execute(motion_planning_msgs::KinematicPath &path, double &distance, bool &trivial, bool &approximate);
+	bool isRequestValid(ModelMap &models, motion_planning_msgs::KinematicState &startState, motion_planning_srvs::KinematicPlan::Request &req);
 
+	/* Check and compute a motion plan. Return true if the plan was succesfully computed */
+	bool computePlan(ModelMap &models, motion_planning_srvs::KinematicPlan::Request &req, motion_planning_srvs::KinematicPlan::Response &res);
+	
+	
     protected:
 
-	bool isRequestValid(ModelMap &models, motion_planning_msgs::KinematicState &startState, motion_planning_srvs::KinematicPlan::Request &req);
-	bool areSpaceParamsValid(const ModelMap &modelsRef, motion_planning_msgs::KinematicSpaceParameters &params) const;
-
-	
-	void update(void);
-	void setupGoalState(RKPPlannerSetup *psetup, motion_planning_srvs::KinematicPlan::Request &req);
-
-	/** Configure the state space for a given set of parameters and set the starting state */
-	void setupStateSpaceAndStartState(RKPPlannerSetup *psetup,
-					  motion_planning_msgs::KinematicSpaceParameters &params,
-					  motion_planning_msgs::KinematicState &start_state);
-	
-	/** Set the kinematic constraints to follow */
-	void setupConstraints(RKPPlannerSetup *psetup, const motion_planning_msgs::KinematicConstraints &cstrs);
+	/** Set up all the data needed by motion planning based on a request and lock the planner setup
+	 *  using this data */
+	void configure(const motion_planning_msgs::KinematicState &startState, motion_planning_srvs::KinematicPlan::Request &req, RKPPlannerSetup *psetup);
 	
 	/** Compute the actual motion plan. Return true if computed plan was trivial (start state already in goal region) */
-	bool computePlan(RKPPlannerSetup *psetup, int times, double allowed_time, bool interpolate,
+	bool callPlanner(RKPPlannerSetup *psetup, int times, double allowed_time, bool interpolate,
 			 ompl::sb::PathKinematic* &bestPath, double &bestDifference, bool &approximate);
-	void fillSolution(RKPPlannerSetup *psetup, ompl::sb::PathKinematic *bestPath, double bestDifference,
-			  motion_planning_msgs::KinematicPath &path, double &distance);
-	void cleanupPlanningData(RKPPlannerSetup *psetup);
 	
-	motion_planning_srvs::KinematicPlan::Request m_activeReq;
-	motion_planning_msgs::KinematicState         m_activeStartState;
-	RKPPlannerSetup                             *m_activePSetup;
     };
     
 } // kinematic_planning

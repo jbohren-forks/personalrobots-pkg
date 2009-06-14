@@ -58,18 +58,15 @@ namespace kinematic_planning
 	
 	virtual bool operator()(const ompl::base::State *s) const
 	{
-	    model_->kmodel->lock();
 	    const double *state = static_cast<const ompl::sb::State*>(s)->values;
 	    model_->kmodel->computeTransformsGroup(state, model_->groupID);
-
+	    
 	    bool valid = kce_.decide(state, model_->groupID);
 	    if (valid)
 	    {
 		model_->collisionSpace->updateRobotModel();
 		valid = !model_->collisionSpace->isCollision();
 	    }
-	    
-	    model_->kmodel->unlock();
 	    
 	    return valid;
 	}
@@ -94,7 +91,8 @@ namespace kinematic_planning
 	}
 	
     protected:
-	mutable RKPModelBase                                  *model_;
+	
+	RKPModelBase                                          *model_;
 	SpaceInformationRKPModel                              *si_;
 	planning_environment::KinematicConstraintEvaluatorSet  kce_;
     };  

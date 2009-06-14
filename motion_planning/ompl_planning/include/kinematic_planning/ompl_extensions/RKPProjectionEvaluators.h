@@ -50,8 +50,8 @@ namespace kinematic_planning
 
         LinkPositionProjectionEvaluator(RKPModelBase *model, const std::string &linkName) : ompl::base::ProjectionEvaluator()
 	{
-	    m_model = model;
-	    m_link  = m_model->kmodel->getLink(linkName);
+	    model_ = model;
+	    link_  = model_->kmodel->getLink(linkName);
 	}
 	
 	/** Return the dimension of the projection defined by this evaluator */
@@ -64,19 +64,17 @@ namespace kinematic_planning
 	virtual void operator()(const ompl::base::State *state, double *projection) const
 	{  
 	    const ompl::sb::State *kstate = static_cast<const ompl::sb::State*>(state);
-	    m_model->kmodel->lock();
-	    m_model->kmodel->computeTransformsGroup(kstate->values, m_model->groupID);
-	    const btVector3 &origin = m_link->globalTrans.getOrigin();
+	    model_->kmodel->computeTransformsGroup(kstate->values, model_->groupID);
+	    const btVector3 &origin = link_->globalTrans.getOrigin();
 	    projection[0] = origin.x();
 	    projection[1] = origin.y();
 	    projection[2] = origin.z();
-	    m_model->kmodel->unlock();
 	}
 	
     protected:
 	
-	RKPModelBase                          *m_model;
-	planning_models::KinematicModel::Link *m_link;
+	RKPModelBase                          *model_;
+	planning_models::KinematicModel::Link *link_;
 	
     };
     

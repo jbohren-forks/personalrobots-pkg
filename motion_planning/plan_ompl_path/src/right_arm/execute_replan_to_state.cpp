@@ -44,9 +44,6 @@
 // service for (re)planning to a state
 #include <motion_planning_srvs/KinematicPlan.h>
 
-// message for receiving the planning status
-#include <motion_planning_msgs/KinematicPlanStatus.h>
-
 // messages to interact with the trajectory controller
 #include <robot_msgs/JointTraj.h>
 
@@ -67,7 +64,6 @@ public:
 	
 	// we use the topic for sending commands to the controller, so we need to advertise it
 	jointCommandPublisher_ = nh_.advertise<robot_msgs::JointTraj>("right_arm/trajectory_controller/trajectory_command", 1);
-	kinematicPlanningStatusSubscriber_ = nh_.subscribe("kinematic_planning_status", 1, &Example::receiveStatus, this);
     }
         
     ~Example(void)
@@ -86,14 +82,15 @@ public:
 	req.params.planner_id = "KPIECE";
 	req.times = 50;
 
-
-
+	
 	// 7 DOF for the arm; pick a goal state (joint angles)
 	std::vector<std::string> names;
 	rm_->getKinematicModel()->getJointsInGroup(names, GROUPNAME);
 	req.goal_constraints.joint.resize(names.size());
 	for (unsigned int i = 0 ; i < req.goal_constraints.joint.size(); ++i)
 	{
+	    req.goal_constraints.joint[i].header.stamp = ros::Time::now();
+	    req.goal_constraints.joint[i].header.frame_id = "base_link";
 	    req.goal_constraints.joint[i].joint_name = names[i];
 	    req.goal_constraints.joint[i].value.resize(1);
 	    req.goal_constraints.joint[i].toleranceAbove.resize(1);
@@ -116,7 +113,10 @@ public:
 	
 	ros::ServiceClient client = nh_.serviceClient<motion_planning_srvs::KinematicPlan>("plan_kinematic_path");
 	if (client.call(req, res))
-	    plan_id_ = res.id;
+	{
+	    
+	    sendArmCommand(res.path, GROUPNAME);
+	}
 	else
 	    ROS_ERROR("Service 'plan_kinematic_path' failed");
     }
@@ -132,57 +132,6 @@ public:
 
 protected:
 
-    // handle new status message
-    void receiveStatus(const motion_planning_msgs::KinematicPlanStatusConstPtr &planStatus)
-    {
-	if (plan_id_ >= 0 && planStatus->id == plan_id_)
-	{
-	    if (planStatus->valid)
-	    {
-		if (!planStatus->path.states.empty())
-		{	
-		    ros::ServiceClient client = nh_.serviceClient<std_srvs::Empty>("replan_stop");
-		    std_srvs::Empty::Request req;
-		    std_srvs::Empty::Response res;
-		    if (!client.call(req, res))
-			ROS_ERROR("Service 'replan_stop' failed");
-		    robot_stopped_ = false;
-		    sendArmCommand(planStatus->path, GROUPNAME);
-		}
-	    }
-	    else
-		stopRobot();
-	    if (planStatus->done)
-	    {
-		plan_id_ = -1;
-		robot_stopped_ = true;
-		ROS_INFO("Execution is complete");
-	    }
-	}
-    }
-    
-    void stopRobot(void)
-    {
-	if (robot_stopped_)
-	    return;
-	robot_stopped_ = true;
-	
-	// get the current params for the robot's right arm
-	double cmd[7];
-	kmsm_->getRobotState()->copyParamsGroup(cmd, GROUPNAME);
-
-	std::vector<std::string> names;
-	rm_->getKinematicModel()->getJointsInGroup(names, GROUPNAME);
-
-	motion_planning_msgs::KinematicPath stop_path;	
-	stop_path.states.resize(1);
-	stop_path.states[0].set_vals_size(7);
-	for (unsigned int i = 0 ; i < 7 ; ++i)
-	    stop_path.states[0].vals[i] = cmd[i];
-	
-	sendArmCommand(stop_path, GROUPNAME);
-    }
-    
     // convert a kinematic path message to a trajectory for the controller
     void getTrajectoryMsg(const motion_planning_msgs::KinematicPath &path, robot_msgs::JointTraj &traj)
     {	
@@ -208,7 +157,6 @@ protected:
     int                                               plan_id_;
     bool                                              robot_stopped_;
     ros::NodeHandle                                   nh_;
-    ros::Subscriber                                   kinematicPlanningStatusSubscriber_;
     ros::Publisher                                    jointCommandPublisher_;
     planning_environment::RobotModels                *rm_;
     planning_environment::KinematicModelStateMonitor *kmsm_;

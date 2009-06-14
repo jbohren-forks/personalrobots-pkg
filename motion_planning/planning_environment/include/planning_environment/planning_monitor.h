@@ -80,9 +80,19 @@ namespace planning_environment
 	/** Set the kinematic constraints the monitor should use when checking a path's last state (the goal) */
 	void setGoalConstraints(const motion_planning_msgs::KinematicConstraints &kc);
 	
+	/** Transform the frames in which constraints are specified to the one requested */
+	void transformConstraintsToFrame(motion_planning_msgs::KinematicConstraints &kc, const std::string &target);
+	
+	/** Transform the kinematic path to the frame requested */
+	void transformPathToFrame(motion_planning_msgs::KinematicPath &kp, const std::string &target);
+
     protected:
-			 
-	void bringConstraintsToModelFrame(motion_planning_msgs::KinematicConstraints &kc);
+	
+	/** Transform the joint parameters (if needed) to a target frame */
+	void transformJoint(const std::string &name, unsigned int index, std::vector<double> &params, roslib::Header &header, const std::string& target);
+	
+	/** Check the path assuming it is in the frame of the model */
+	bool isPathValidAux(const motion_planning_msgs::KinematicPath &path);
 	
 	motion_planning_msgs::KinematicConstraints kcPath_;
 	motion_planning_msgs::KinematicConstraints kcGoal_;

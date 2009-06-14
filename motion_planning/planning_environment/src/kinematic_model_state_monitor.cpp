@@ -123,7 +123,7 @@ void planning_environment::KinematicModelStateMonitor::mechanismStateCallback(co
 	// use tf to figure out pose	
 	if (tf_->canTransform(frame_id_, robot_frame_, mechanismState->header.stamp))
 	{	  
-	    tf::Stamped<btTransform> transf;
+	    tf::Stamped<tf::Pose> transf;
 	    tf_->lookupTransform(frame_id_, robot_frame_, mechanismState->header.stamp, transf);
 	    pose_ = transf;
 	    

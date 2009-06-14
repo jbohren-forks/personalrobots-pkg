@@ -580,9 +580,14 @@ namespace planning_models
 	
 	void         setVerbose(bool verbose);	
 	
+
+	/** General the model name **/
 	const std::string& getModelName(void) const;
 	
+	/** Get the number of robots in the model */
 	unsigned int getRobotCount(void) const;
+
+	/** Get the datastructure associated to a specific robot */
 	Robot*       getRobot(unsigned int index) const;
 
 	/** Get the array of planning groups, indexed by their group ID */
@@ -603,7 +608,7 @@ namespace planning_models
 	/** Get a joint by its name */
 	Joint*       getJoint(const std::string &joint) const;
 
-	/** Get the array of joints, in no particular order */
+	/** Get the array of joints, ordered in the same way as in the state vector */
 	void         getJoints(std::vector<Joint*> &joints) const;
 
 	/** Get the names of the joints in a specific group. Only joints with paramteres are returned and the order is the 

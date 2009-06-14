@@ -21,5 +21,14 @@ float64 allowed_time
 
 ---
 
-# A handle for the motion plan. Future status messages will be marked with this ID.
-int32 id       
+# A solution path, if found
+motion_planning_msgs/KinematicPath path
+
+# distance to goal as computed by the heuristic
+float64 distance
+
+# set to 1 if the computed path was approximate
+byte approximate
+
+# if state information was not up to date when planning, this is set to 1
+byte unsafe

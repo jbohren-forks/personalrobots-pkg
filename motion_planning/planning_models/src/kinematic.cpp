@@ -414,12 +414,13 @@ void planning_models::KinematicModel::build(const robot_desc::URDF &model, const
     }
 
     computeParameterNames();
-
+    
     // compute the index of every joint in every group
     for (std::map<std::string, Joint*>::const_iterator it = m_jointMap.begin() ; it != m_jointMap.end() ; ++it)
-	for (int i = 0 ; i < (int)m_groups.size() ; ++i)
-	    m_jointIndexGroup[it->first][i] = getJointIndexInGroupSlow(it->first, i);
-
+	if (it->second->usedParams > 0)
+	    for (int i = 0 ; i < (int)m_groups.size() ; ++i)
+		m_jointIndexGroup[it->first][i] = getJointIndexInGroupSlow(it->first, i);
+    
     defaultState();
 }
 
@@ -471,8 +472,13 @@ planning_models::KinematicModel::Joint* planning_models::KinematicModel::getJoin
 
 void planning_models::KinematicModel::getJoints(std::vector<Joint*> &joints) const
 {
+    joints.resize(m_jointMap.size());
     for (std::map<std::string, Joint*>::const_iterator it = m_jointMap.begin() ; it != m_jointMap.end() ; ++it)
-	joints.push_back(it->second);
+    {
+	std::map<std::string, unsigned int>::const_iterator p = m_mi.parameterIndex.find(it->first);
+	assert(p != m_mi.parameterIndex.end());
+	joints[p->second] = it->second;
+    }
 }
 
 unsigned int planning_models::KinematicModel::getGroupDimension(int groupID) const
