@@ -11,7 +11,7 @@ rospack_add_library(planning_environment src/robot_models.cpp
 					 src/collision_space_monitor.cpp
 					 src/kinematic_state_constraint_evaluator.cpp
 					 src/planning_monitor.cpp)
-#rospack_add_openmp_flags(planning_environment)
+rospack_add_openmp_flags(planning_environment)
 					 
 # Tests
 
