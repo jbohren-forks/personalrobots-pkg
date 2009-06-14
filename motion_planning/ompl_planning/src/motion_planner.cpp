@@ -129,6 +129,9 @@ public:
 	res.path.names.clear();
 	res.path.times.clear();
 	res.path.start_state.vals.clear();
+	res.path.model_id = req.params.model_id;
+	res.path.header.frame_id = planningMonitor_->getFrameId();
+	res.path.header.stamp = planningMonitor_->lastMapUpdate();
 	res.unsafe = isSafeToPlan(true) ? 0 : 1;
 	res.distance = -1.0;
 	res.approximate = 0;
