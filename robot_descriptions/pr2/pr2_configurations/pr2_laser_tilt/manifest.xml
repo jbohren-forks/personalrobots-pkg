@@ -13,8 +13,5 @@
   <depend package="pr2_defs" />
   <depend package="pr2_default_controllers" />
   <depend package="pr2_etherCAT"/>
-  <depend package="pr2_power_board"/>
-  <depend package="ocean_battery_driver"/>
-  <depend package="hokuyo_node"/>
   <depend package="point_cloud_assembler" />
 </package>
