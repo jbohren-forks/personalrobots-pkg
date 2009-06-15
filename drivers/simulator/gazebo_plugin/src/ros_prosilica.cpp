@@ -234,6 +234,13 @@ bool RosProsilica::triggeredGrab(prosilica_cam::PolledImage::Request &req,
                                  prosilica_cam::PolledImage::Response &res)
 {
 
+  if (req.region_x <= 0 || req.region_y <= 0 || req.width <= 0 || req.height <= 0)
+  {
+    req.region_x = 0;
+    req.region_y = 0;
+    req.width = this->width;
+    req.height = this->height;
+  }
   boost::recursive_mutex::scoped_lock lock(*Simulator::Instance()->GetMRMutex());
 
   const unsigned char *src;
