@@ -42,7 +42,8 @@
      <remap from="inflated_obstacles" to="~inflated_obstacles" />
 
      <!--param name="sbpl_action_file" textfile="$(find mpbench)/data/pr2sides.mprim" /-->
-     <param name="sbpl_action_file" textfile="$(find sbpl)/matlab/mprim/mprim_unic_sidebackdiag.mprim" />
+     <!--param name="sbpl_action_file" textfile="$(find sbpl)/matlab/mprim/mprim_unic_sidebackdiag.mprim" /-->
+     <param name="sbpl_action_file" textfile="$(find sbpl)/matlab/mprim/pr2_all_2.5cm_20turncost.mprim" />
 
      <param name="animate" value="false"/>
      <param name="do_control" value="true"/>

@@ -1124,13 +1124,15 @@ void EnvironmentNAVXYTHETADOORLAT::GetActionCostDebug(int SourceX, int SourceY, 
 
   //use cell cost as multiplicative factor
   if(interval_active[0] == true)
-    *pCosttoDoorInterval0 = (currentmaxcost+1)*(doorcostmultiplier + 1);  //NO ACTION COST
+//    *pCosttoDoorInterval0 = (currentmaxcost+1)*(doorcostmultiplier + 1);  //NO ACTION COST
 //    *pCosttoDoorInterval0 = action->cost*(currentmaxcost+1)*(doorcostmultiplier + 1);
+    *pCosttoDoorInterval0 = action->cost*(currentmaxcost+1);
   else
     *pCosttoDoorInterval0 = INFINITECOST;
   if(interval_active[1] == true) 
-    *pCosttoDoorInterval1 =  (currentmaxcost+1)*(doorcostmultiplier + 1);  //NO ACTION COST
+//    *pCosttoDoorInterval1 =  (currentmaxcost+1)*(doorcostmultiplier + 1);  //NO ACTION COST
 //    *pCosttoDoorInterval1 =  action->cost*(currentmaxcost+1)*(doorcostmultiplier + 1);
+   *pCosttoDoorInterval1 =  action->cost*(currentmaxcost+1);
   else
     *pCosttoDoorInterval1 = INFINITECOST;
 
