@@ -126,6 +126,7 @@ class WaitForKMessagesAction:
   def doCycle(self):
     if self.timeUp():
       self.abort();
+    self.postStatus();
 
 
   def postStatus(self):
