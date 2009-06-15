@@ -222,6 +222,8 @@ class TableObjectDetector
         }
       }
       indices_in_bounds.resize (nr_p);
+      ROS_DEBUG("%d of %d points are within the table height bounds of [%.2lf,%.2lf]",
+                nr_p, cloud_in_.pts.size(), table_min_height_, table_max_height_);
 
       // Downsample the cloud in the bounding box for faster processing
       // NOTE: <leaves_> gets allocated internally in downsamplePointCloud() and is not deallocated on exit
@@ -470,7 +472,8 @@ class TableObjectDetector
     // Callback
     void cloud_cb (const tf::MessageNotifier<robot_msgs::PointCloud>::MessagePtr& pc)
     {
-      cloud_in_ = *pc;
+      //cloud_in_ = *pc;
+      tf_.transformPointCloud(global_frame_, *pc, cloud_in_);
       need_cloud_data_ = false;
     }
 
