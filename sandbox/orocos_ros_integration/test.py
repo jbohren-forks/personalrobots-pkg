@@ -6,7 +6,7 @@ from std_msgs.msg import *
 def callback(data):
     print data.data
 
-pub = rospy.Publisher('RTT/Comp1/ReadPort1',Float64)
+pub = rospy.Publisher('/RTT/Deployer/Comp1/ReadPort1',Float64)
 n=rospy.init_node('test',anonymous=True)
 fl=Float64(0.0)
 
