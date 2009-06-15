@@ -7,6 +7,8 @@
     <depend package="roscpp"/>
     <depend package="std_msgs"/>
     <depend package="robot_msgs" />
+    <depend package="motion_planning_msgs" />
+    <depend package="motion_planning_srvs" />
     <depend package="sbpl_arm_planner" />
     <depend package="tf" />
   <url></url>

@@ -35,7 +35,7 @@ using namespace sbpl_arm_planner_node;
 
 SBPLArmPlannerNode::SBPLArmPlannerNode(std::string node_name):ros::Node(node_name),node_name_(node_name)
 {
-    param<std::string>("~arm_name", arm_name_, "right_arm");
+  param<std::string>("~arm_name", arm_name_, "right_arm");
   param ("~allocated_time", allocated_time_, 1.0);
   param ("~forward_search", forward_search_, true);
 
