@@ -37,8 +37,7 @@
 #ifndef KINEMATIC_PLANNING_KINEMATIC_RKP_MODEL_BASE_
 #define KINEMATIC_PLANNING_KINEMATIC_RKP_MODEL_BASE_
 
-#include <collision_space/environment.h>
-#include <planning_models/kinematic.h>
+#include <planning_environment/planning_monitor.h>
 #include <boost/thread/mutex.hpp>
 #include <boost/shared_ptr.hpp>
 #include <string>
@@ -60,11 +59,12 @@ namespace kinematic_planning
 	{
 	}
 	
-	boost::mutex                       lock;
-	collision_space::EnvironmentModel *collisionSpace;
-	planning_models::KinematicModel   *kmodel;
-	std::string                        groupName;
-	int                                groupID;
+	boost::mutex                           lock;
+	planning_environment::PlanningMonitor *planningMonitor;
+	collision_space::EnvironmentModel     *collisionSpace;
+	planning_models::KinematicModel       *kmodel;
+	std::string                            groupName;
+	int                                    groupID;
     };
 
 } // kinematic_planning

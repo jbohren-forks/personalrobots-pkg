@@ -34,8 +34,6 @@
 
 /** \author Ioan Sucan */
 
-
-#include <planning_environment/planning_monitor.h>
 #include "kinematic_planning/RKPModel.h"
 #include "kinematic_planning/RKPRequestHandler.h"
 
@@ -135,7 +133,6 @@ public:
 	res.unsafe = isSafeToPlan(true) ? 0 : 1;
 	res.distance = -1.0;
 	res.approximate = 0;
-	
 	if (planningMonitor_->haveState())
 	{
 	    planningMonitor_->getRobotState()->copyParams(res.path.start_state.vals);
@@ -161,6 +158,7 @@ public:
 	for (std::map< std::string, std::vector<std::string> >::iterator it = groups.begin(); it != groups.end() ; ++it)
 	{
 	    RKPModel *model = new RKPModel();
+	    model->planningMonitor = planningMonitor_;
 	    model->collisionSpace = planningMonitor_->getEnvironmentModel();
 	    model->kmodel = planningMonitor_->getKinematicModel();
 	    model->groupID = model->kmodel->getGroupID(it->first);
