@@ -314,13 +314,28 @@ public:
     node_handle_.param("~ext_trigger", ext_trigger_, false);
 
     node_handle_.param("~video_mode", mode_name_, std::string("752x480x15"));
+    for (video_mode_ = 0; video_mode_ < MT9V_NUM_MODES; video_mode_++)
+      if (mode_name_.compare(MT9VModes[video_mode_].name) == 0)
+        break;
+    if (video_mode_ == MT9V_NUM_MODES) 
+    {
+      ROS_FATAL("Unknown video mode %s", mode_name_.c_str());
+      exit_status_ = 1;
+      //node_handle_.shutdown();
+      return;
+    }
+
+    /// @todo add a check that width_ and height_ are set in cam_info in test bench
+    width_ = MT9VModes[video_mode_].width;
+    height_ = MT9VModes[video_mode_].height;
+    cam_info_.width = width_;
+    cam_info_.height = height_;
+    desired_freq_ = imager_freq_ = MT9VModes[video_mode_].fps;
 
     // Specify which frame to add to message header
     node_handle_.param("~frame_id", frame_id_, std::string("NO_FRAME"));
     image_.header.frame_id = frame_id_;
     cam_info_.header.frame_id = frame_id_;
-    cam_info_.width = width_;
-    cam_info_.height = height_;
         
     node_handle_.param("~trigger_controller", trig_controller_, std::string());
     node_handle_.param("~trigger_rate", trig_rate_, imager_freq_ - 1.);
@@ -397,21 +412,6 @@ public:
     if (open_)
       return;
     
-    for (video_mode_ = 0; video_mode_ < MT9V_NUM_MODES; video_mode_++)
-      if (mode_name_.compare(MT9VModes[video_mode_].name) == 0)
-        break;
-    if (video_mode_ == MT9V_NUM_MODES) 
-    {
-      ROS_FATAL("Unknown video mode %s", mode_name_.c_str());
-      exit_status_ = 1;
-      //node_handle_.shutdown();
-      return;
-    }
-
-    width_ = MT9VModes[video_mode_].width;
-    height_ = MT9VModes[video_mode_].height;
-    desired_freq_ = imager_freq_ = MT9VModes[video_mode_].fps;
-
     int retval;
     // Create a new IpCamList to hold the camera list
     IpCamList camList;
