@@ -81,8 +81,10 @@ int main(int argc, char **argv)
         initial_ry = atof(argv[6]);
         initial_rz = atof(argv[7]);
     }
+
     std::string robot_model_name("pr2_model");
-    if (argc >= 9)
+    // make sure this is not the ros-generated commandline log filename
+    if (argc >= 9 && robot_model_name.find(std::string(" __log:")) == robot_model_name.size())
     {
         robot_model_name = std::string(argv[8]);
     }
