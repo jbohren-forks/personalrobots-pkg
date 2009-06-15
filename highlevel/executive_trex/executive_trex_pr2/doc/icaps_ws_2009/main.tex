@@ -51,24 +51,22 @@ In order to achieve the milestone, substantial capabilities were required in eac
 
 To achieve a greater degree of robustness, a more sophisticated integration would be required, handling recovery in the event of failure, and asembling all capabilities in a coherent manner. Behavior co-ordination and system configuration management at this level would be the job for the Executive. Co-ordination would be driven by top-level goals (e.g. recharge at outlet 6). Configuration changes would be driven by resource and safey requirements. As an example of safety constraints, the tilt laser had to be running when driving around in order to see obstacles, and the arms had to be stowed within the base footprint of the robot. Also, specialized mechanism control configurations would be required based on the needs of each action. For example, an action to untuck the arms (useful to obtain a clear view of the base when looking for the plug) used a joint-space trajectory controller, whereas grasping the handle used an effort controller.
 
+\section{Related Work}
+The details of the milestone indicate needs for high-level goals, high-level planning, durative and concurrent actions, discrete and continuous states, substantial uncertainty in the duration that actions might take, and their outcomes. In addition, actions are subject to safety and resource constraints. 
+
+There are many approaches to consider for developing a system to integrate these capabilities.
+%Pre-sequenced linear plans were out of the question due to the high-degree of uncertainty in action outcomes. 
+For the most part, individual subdomains (i.e. plugs, doors and navigation) could be handled using purely reactive techniques encoded as finite-state machines [] or teleo-reactive programs[]. However, these approaches require explicit treatment of common constraints. This might entail as part of the state machine, or part of the condition logic of a TR program, explicitly checking if the arm is tucked prior to driving, and inserting the action to tuck the arms if it is not. Similarly, these procedural methods would have to check the controller configurations for mechanisms they needed (i.e. base, head, arm) and generate suitable configuration switching statements as needed. 
+
+In our particular scenario, it is almost possible to operate with purely sequential action execution. However, some actions \em may be executable in parallel (e.g. it is possible to switch controllers and change the configuration of the tilt laser at the same time), and some actions \em must be executed in parallel (e.g. drive the base thru the doorway while pushing the door open with the arm). Moreover, it is pretty clear that future scenarios involving both arms will require a greater degree of co-ordination between concurrent actions. Even if these limitations were not problematic, we would still be left with the additional requirement to integrate high-level planning of goals. 
+
+The most common method for integrating these requirements is based on layered architectures that integrate deliberative planning at the top layer, reactive controllers at the bottom, and a sequencer in the middle to co-ordinate controller execution, guided by the plan. Examples of this approach abound [3T, Remote Agent, LAAS, ATLANTIS, CASPER], and their drawbacks are well documented [Muscettola, Shanahan, Beetz, Others]. The fundamental objection to 3-tier archictures is that they confine the role of formal, deliberative techniques to only the highest levels of abstraction and render a great deal of subsequent robot behavior subject to the pitfalls of informal, reactive approaches that have no ability to foresee problematic implications of local decisions. Furthermore, they offer no leverage for scaling up to large scale autonomous systems since the programming model is largely based on manual coding. 
+
+More recently, a number of researchers have developed executives that emphasize model-based approaches and automated planning.  Shanahan, con-golog, structured reactive controllers, LAAS variant, IDEA, and TREX. (TBD)
+
 \section{Executive Design}
 
-\subsection{Requirements}
-\begin{itemize}
-\item High-level goals (i.e. recharge at outlet 6)
-\item High-level planning (handle all top-level goals, with an optimal tour). Break down into sub-goals for driving, doorway traversal and recharging
-\item Durative actions
-\item Concurrent actions
-\item Discrete and continuous states
-\item Temporal uncertainty
-\item Conditional effects
-\item Action failure
-\item Interactions based on shared resources
-\end{itemize}
-
-\subsection{Options}
-
-\subsection{TREX}
+\subsection{TREX Overview}
 TREX provides a uniform computational framework based on formal, declarative models, and temporal plans with:
 \begin{itemize}
 \item Metric time
@@ -80,6 +78,16 @@ TREX provides a uniform computational framework based on formal, declarative mod
 \item Expressive language for temporal and non-temporal constraints
 \item Support for concurrent actions
 \end{itemize}
+
+\subsection{Reactor Graph}
+
+\subsection{The Topological Map}
+
+\subsection{The Door Domain}
+
+\subsection{Mechanism Control}
+
+\section{TREX}
 
 \section{Results}
 
