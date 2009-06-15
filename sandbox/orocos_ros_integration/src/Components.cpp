@@ -3,12 +3,11 @@
 #include <rtt/Ports.hpp>
 #include <ocl/ComponentLoader.hpp>
 
-#include <ros/ros.h>
 #include <std_msgs/Float64.h>
-#include <ros/callback_queue.h>
-#include "Orocos2Ros.hpp"
+
 
 using namespace RTT;
+using namespace std_msgs;
 
 class Component1 : public RTT::TaskContext{
 public:
@@ -29,18 +28,6 @@ public:
     this->ports()->addPort(&wport3);
     
   };
-  bool configureHook(){
-    ros_node_ = RosNode::createRosNode(this);
-    //np_act_ = new NonPeriodicActivity(ORO_SCHED_OTHER,OS::LowestPriority,ros_node_->engine());
-    //p_act_ = new PeriodicActivity(ORO_SCHED_OTHER,OS::LowestPriority,0.1,ros_node_->engine());
-    return true;
-  };
-  
-  bool startHook(){
-    ros_node_->start();
-    return true;
-  }
-  
   void updateHook(){
     float_.data++;
     
@@ -48,14 +35,6 @@ public:
     wport3.Set(float_);
   };
 
-  void stopHook(){
-    ros_node_->stop();
-  }
-  void cleanupHook(){
-    delete ros_node_;
-    //delete np_act_;
-    //delete p_act_;
-  }
   
   ~Component1(){};
 private:
@@ -68,10 +47,6 @@ private:
   WriteDataPort<std::vector<double> > wport2;
   WriteDataPort<Float64 > wport3;
   
-//  NonPeriodicActivity* np_act_;
-//  PeriodicActivity* p_act_;
-
-  TaskContext* ros_node_;
 };
 
 ORO_CREATE_COMPONENT_TYPE()
