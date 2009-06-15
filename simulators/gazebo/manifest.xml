@@ -8,6 +8,7 @@
   <review status="3rdparty" notes=""/>
   <depend package="opende" />
   <depend package="ogre" />
+  <depend package="bullet" />
   <url>http://playerstage.sf.net</url>
   <export>
     <cpp lflags="`xml2-config --libs` `rosboost-cfg --lflags thread,signals` -Wl,-rpath,${prefix}/gazebo/lib -L${prefix}/gazebo/lib -lgazebo -lgazebo_server -lgazebo_av -lgazebo_gui -lfltk -lfltk_gl" cflags="`xml2-config --cflags` `rosboost-cfg --cflags` -I${prefix}/gazebo/include"/>
