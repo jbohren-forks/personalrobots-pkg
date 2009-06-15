@@ -23,4 +23,6 @@
   <depend package="deprecated_msgs"/>
   <depend package="rviz"/>
   <depend package="rxtools"/>
+  <depend package="2dnav_pr2"/>
+  <depend package="2dnav_gazebo"/>
 </package>
