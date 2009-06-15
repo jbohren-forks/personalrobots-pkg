@@ -81,6 +81,12 @@ int main(int argc, char **argv)
         initial_ry = atof(argv[6]);
         initial_rz = atof(argv[7]);
     }
+    std::string robot_model_name("pr2_model");
+    if (argc >= 9)
+    {
+        robot_model_name = std::string(argv[8]);
+    }
+
 
     // connect to gazebo
     gazebo::Client *client = new gazebo::Client();
@@ -140,7 +146,6 @@ int main(int argc, char **argv)
     }
 
 
-    std::string robot_model_name("pr2_model");
     //
     // init a parser library
     //
