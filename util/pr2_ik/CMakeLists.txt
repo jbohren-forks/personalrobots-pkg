@@ -4,6 +4,7 @@ include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
 add_definitions(-Wall)
 rospack(pr2_ik)
 genmsg()
+gensrv()
 
 rospack_add_library(pr2_ik
  src/pr2_ik.cpp
@@ -18,6 +19,9 @@ rospack_add_library(pr2_ik
 
 rospack_add_executable(pr2_ik_controller src/pr2_ik_controller.cpp)
 target_link_libraries(pr2_ik_controller pr2_ik)
+
+rospack_add_executable(pr2_ik_node src/pr2_ik_node.cpp)
+target_link_libraries(pr2_ik_node pr2_ik)
 
 #rospack_add_executable(test_ik_controller test/test_ik_controller.cpp)
 #target_link_libraries(test_ik_controller pr2_ik)
