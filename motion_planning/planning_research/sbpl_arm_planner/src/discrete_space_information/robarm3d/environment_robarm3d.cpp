@@ -30,6 +30,10 @@
 #include <boost/thread/mutex.hpp>
 #include <sbpl_arm_planner/headers.h>
 
+// #include <rosdep/yaml-cpp/include/yaml.h>
+// #include "/u/bcohen/ros/ros/tools/rosdep/yaml-cpp/include/yaml.h"
+// #include <fstream>
+
 #define PI_CONST 3.141592653
 #define DEG2RAD(d) ((d)*(PI_CONST/180.0))
 #define RAD2DEG(r) ((r)*(180.0/PI_CONST))
@@ -56,7 +60,7 @@
 #define DEBUG_JOINTSPACE_PLANNING 0
 #define DEBUG_CHECK_LINE_SEGMENT 0
 #define DEBUG_HEURISTIC 0
-#define DEBUG 0
+// #define DEBUG 0
 
 //for ComputeForwardKinematics_DH - to rotate DH frames to PR2 frames
 #define ELBOW_JOINT 2
@@ -502,7 +506,7 @@ void EnvironmentROBARM3D::Search3DwithQueue(State3D*** statespace, int* HeurGrid
     }
 
     //create a queue
-    queue<State3D*> Queue; 
+    queue<State3D*> Queue;
 
     int b = 0;
     //initialize to infinity all 
@@ -1148,6 +1152,22 @@ void EnvironmentROBARM3D::ReadParamsFile(FILE* fCfg)
             }
         }
     }
+}
+
+void EnvironmentROBARM3D::ParseYAMLFile(const char* sParamFile)
+{
+/*
+  std::ifstream fin(sParamFile);
+  YAML::Parser parser(fin);
+
+  YAML::Node doc;
+  for(YAML::Iterator it=doc.begin();it!=doc.end();++it) {
+    std::string key, value;
+    it.first() >> key;
+    it.second() >> value;
+    std::cout << "Key: " << key << ", value: " << value << std::endl;
+  }
+*/
 }
 
 bool EnvironmentROBARM3D::SetEnvParameter(char* parameter, double value)
@@ -2666,10 +2686,25 @@ EnvironmentROBARM3D::EnvironmentROBARM3D()
     //hard coded temporarily (meters)
     EnvROBARMCfg.arm_length = ARM_WORKSPACE;
 
+//     EnvROBARMCfg.EndEffGoal_m = new std::vector<std::vector<double> >(1, std::vector <double> (6,-1));
+//     EnvROBARMCfg.EndEffGoal_c = new std::vector<std::vector<short unsigned int> >(1, std::vector <short unsigned int> (3,-1));
+//     EnvROBARMCfg.EndEffGoal_r = new std::vector<std::vector<double> >(1, std::vector <double> (3,-1));
+
+    EnvROBARMCfg.EndEffGoal_m.resize(1);
+    EnvROBARMCfg.EndEffGoal_c.resize(1);
+    EnvROBARMCfg.EndEffGoal_r.resize(1);
+    EnvROBARMCfg.EndEffGoal_m[0].resize(6,0);
+    EnvROBARMCfg.EndEffGoal_c[0].resize(3,0);
+    EnvROBARMCfg.EndEffGoal_r[0].resize(3,0);
+
+
+
 }
 
 bool EnvironmentROBARM3D::InitializeEnv(const char* sEnvFile)
 {
+//     ParseYAMLFile(sEnvFile);
+//     exit(1);
 
     //parse the parameter file - temporary
     char parFile[] = "params.cfg";
@@ -2713,19 +2748,11 @@ bool EnvironmentROBARM3D::InitializeEnv(const char* sEnvFile)
         EnvROBARM.goalHashEntry->endeff[0] = EnvROBARMCfg.EndEffGoals_c[0][0];
         EnvROBARM.goalHashEntry->endeff[1] = EnvROBARMCfg.EndEffGoals_c[0][1];
         EnvROBARM.goalHashEntry->endeff[2] = EnvROBARMCfg.EndEffGoals_c[0][2];
+        EnvROBARM.goalHashEntry->action = 0;
+        RPY2Rot(EnvROBARMCfg.EndEffGoalRPY[0][0],EnvROBARMCfg.EndEffGoalRPY[0][1],EnvROBARMCfg.EndEffGoalRPY[0][2],EnvROBARM.goalHashEntry->orientation);
+        for(int i=0; i<NUMOFLINKS; i++)
+          EnvROBARM.goalHashEntry->coord[i] = 0;
 
-        double Rot[3][3];
-        RPY2Rot(EnvROBARMCfg.EndEffGoalRPY[0][0],EnvROBARMCfg.EndEffGoalRPY[0][1],EnvROBARMCfg.EndEffGoalRPY[0][2],Rot);
-
-        for(int x=0; x<3;x++)
-        {
-            for(int y=0; y<3; y++)
-            {
-                EnvROBARM.goalHashEntry->orientation[x][y] = Rot[x][y];
-//                 printf("%.3f  ",EnvROBARM.goalHashEntry->orientation[x][y]);
-            }
-//             printf("\n");
-        }
     }
 
 #if VERBOSE
@@ -2742,6 +2769,11 @@ bool EnvironmentROBARM3D::InitializeEnv(const char* sEnvFile)
 
     //for statistics purposes
     starttime = clock();
+
+    std::vector <std::vector<double> > goals(4, std::vector<double>(6,0));
+    goals[1][1] = 5.0;
+    SetGoalPosition(goals);
+    exit(1);
 
     return true;
 }
@@ -3579,25 +3611,19 @@ bool EnvironmentROBARM3D::SetEndEffGoals(double** EndEffGoals, int goal_type, in
         ComputeCostPerCell();
 
     //pre-compute heuristics with new goal
-    if(EnvROBARMCfg.dijkstra_heuristic) // && bComputeHeuristic)
+    if(EnvROBARMCfg.dijkstra_heuristic)
         ComputeHeuristicValues();
 
 
     EnvROBARM.goalHashEntry->endeff[0] = EnvROBARMCfg.EndEffGoals_c[0][0];
     EnvROBARM.goalHashEntry->endeff[1] = EnvROBARMCfg.EndEffGoals_c[0][1];
     EnvROBARM.goalHashEntry->endeff[2] = EnvROBARMCfg.EndEffGoals_c[0][2];
+    EnvROBARM.goalHashEntry->action = 0;
+    for(int i=0; i<NUMOFLINKS; i++)
+      EnvROBARM.goalHashEntry->coord[i] = 0;
 
-    EnvROBARMCfg.bGoalIsSet = true;
+    RPY2Rot(EnvROBARMCfg.EndEffGoalRPY[0][0],EnvROBARMCfg.EndEffGoalRPY[0][1],EnvROBARMCfg.EndEffGoalRPY[0][2],EnvROBARM.goalHashEntry->orientation);
 
-    //NOTE Clean this up
-    double Rot[3][3];
-    RPY2Rot(EnvROBARMCfg.EndEffGoalRPY[0][0],EnvROBARMCfg.EndEffGoalRPY[0][1],EnvROBARMCfg.EndEffGoalRPY[0][2],Rot);
-
-    for(int x=0; x<3;x++)
-    {
-        for(int y=0; y<3; y++)
-            EnvROBARM.goalHashEntry->orientation[x][y] = Rot[x][y];
-    }
 
 #if DEBUG
     //temporary debugging output
@@ -3727,29 +3753,22 @@ bool EnvironmentROBARM3D::SetEndEffGoals(double** EndEffGoals, int num_goals)
         ComputeCostPerCell();
 
     //pre-compute heuristics with new goal
-    if(EnvROBARMCfg.dijkstra_heuristic) // && bComputeHeuristic)
+    if(EnvROBARMCfg.dijkstra_heuristic)
         ComputeHeuristicValues();
 
     EnvROBARM.goalHashEntry->endeff[0] = EnvROBARMCfg.EndEffGoals_c[0][0];
     EnvROBARM.goalHashEntry->endeff[1] = EnvROBARMCfg.EndEffGoals_c[0][1];
     EnvROBARM.goalHashEntry->endeff[2] = EnvROBARMCfg.EndEffGoals_c[0][2];
+    EnvROBARM.goalHashEntry->action = 0;
+    for(int i=0; i<NUMOFLINKS; i++)
+      EnvROBARM.goalHashEntry->coord[i] = 0;
 
-    //NOTE Clean this up
-    double Rot[3][3];
-    RPY2Rot(EnvROBARMCfg.EndEffGoalRPY[0][0],EnvROBARMCfg.EndEffGoalRPY[0][1],EnvROBARMCfg.EndEffGoalRPY[0][2],Rot);
-
-    for(int x=0; x<3;x++)
-    {
-        for(int y=0; y<3; y++)
-            EnvROBARM.goalHashEntry->orientation[x][y] = Rot[x][y];
-    }
+    RPY2Rot(EnvROBARMCfg.EndEffGoalRPY[0][0],EnvROBARMCfg.EndEffGoalRPY[0][1],EnvROBARMCfg.EndEffGoalRPY[0][2],EnvROBARM.goalHashEntry->orientation);
 
     EnvROBARMCfg.bGoalIsSet = true;
 
 #if DEBUG
     //temporary debugging output
-    double pX,pY,pZ;
-
     printf("goal coord: ");
     for(int i=0; i < 7; i++)
         printf("%i  ", EnvROBARM.goalHashEntry->coord[i]);
@@ -3829,6 +3848,375 @@ bool EnvironmentROBARM3D::SetStartJointConfig(double angles[NUMOFLINKS], bool bR
     return true;
 }
 
+/*
+bool EnvironmentROBARM3D::SetGoalPosition(const std::vector <std::vector<double> > &goals)
+{
+  if(!EnvROBARMCfg.bInitialized)
+  {
+    printf("Cannot set goal position because environment is not initialized.\n");
+    return false;
+  }
+
+  //resize goal list
+  EnvROBARMCfg.EndEffGoal_m->resize(goals.size());
+  EnvROBARMCfg.EndEffGoal_c->resize(goals.size());
+  EnvROBARMCfg.EndEffGoal_r->resize(goals.size());
+
+  for(unsigned int i = 0; i < EnvROBARMCfg.EndEffGoal_m->size(); i++)
+  {
+    EnvROBARMCfg.EndEffGoal_m->at(i) = goals[i];
+    EnvROBARMCfg.EndEffGoal_r->at(i)[0] = goals[i][3];
+    EnvROBARMCfg.EndEffGoal_r->at(i)[1] = goals[i][4];
+    EnvROBARMCfg.EndEffGoal_r->at(i)[2] = goals[i][5];
+
+    //convert goal position from meters to cells
+    ContXYZ2Cell(EnvROBARMCfg.EndEffGoal_m->at(i)[0],EnvROBARMCfg.EndEffGoal_m->at(i)[1],EnvROBARMCfg.EndEffGoal_m->at(i)[2],
+                 &(EnvROBARMCfg.EndEffGoal_c->at(i)[0]), &(EnvROBARMCfg.EndEffGoal_c->at(i)[1]), &(EnvROBARMCfg.EndEffGoal_c->at(i)[2]));
+
+    // check if goals are within arms length
+    if(fabs(EnvROBARMCfg.EndEffGoal_m->at(i)[0]) >= EnvROBARMCfg.arm_length ||
+       fabs(EnvROBARMCfg.EndEffGoal_m->at(i)[1]) >= EnvROBARMCfg.arm_length ||
+       fabs(EnvROBARMCfg.EndEffGoal_m->at(i)[2]) >= EnvROBARMCfg.arm_length)
+    {
+      printf("End effector goal position (%.2f %.2f %.2f) is out of bounds.\n",EnvROBARMCfg.EndEffGoal_m->at(i)[0],EnvROBARMCfg.EndEffGoal_m->at(i)[1],EnvROBARMCfg.EndEffGoal_m->at(i)[2]);
+      EnvROBARMCfg.EndEffGoal_c->erase(EnvROBARMCfg.EndEffGoal_c->begin()+i);
+      EnvROBARMCfg.EndEffGoal_m->erase(EnvROBARMCfg.EndEffGoal_m->begin()+i);
+      EnvROBARMCfg.EndEffGoal_r->erase(EnvROBARMCfg.EndEffGoal_r->begin()+i);
+
+      if(EnvROBARMCfg.EndEffGoal_c->size() <= 1)
+      {
+        EnvROBARMCfg.bGoalIsSet  = false;
+        return false;
+      }
+      else
+      {
+        printf("[SetEndEffGoals] Removed goal %i. %i goal(s) remaining.\n", i, EnvROBARMCfg.EndEffGoal_c->size());
+        continue;
+      }
+
+      i--;  //temporary hack
+    }
+
+    if(EnvROBARMCfg.Grid3D[EnvROBARMCfg.EndEffGoal_c->at(i)[0]][EnvROBARMCfg.EndEffGoal_c->at(i)[1]][EnvROBARMCfg.EndEffGoal_c->at(i)[2]] >= EnvROBARMCfg.ObstacleCost)
+    {
+      printf("End effector goal position (%.2f %.2f %.2f) is invalid\n",EnvROBARMCfg.EndEffGoal_m->at(i)[0],EnvROBARMCfg.EndEffGoal_m->at(i)[1],EnvROBARMCfg.EndEffGoal_m->at(i)[2]);
+      EnvROBARMCfg.EndEffGoal_c->erase(EnvROBARMCfg.EndEffGoal_c->begin()+i);
+      EnvROBARMCfg.EndEffGoal_m->erase(EnvROBARMCfg.EndEffGoal_m->begin()+i);
+      EnvROBARMCfg.EndEffGoal_r->erase(EnvROBARMCfg.EndEffGoal_r->begin()+i);
+
+      if(EnvROBARMCfg.EndEffGoal_c->size() <= 1)
+      {
+        EnvROBARMCfg.bGoalIsSet  = false;
+        return false;
+      }
+      else
+      {
+        printf("[SetEndEffGoals] Removed goal %i. %i goal(s) remaining.\n", i, EnvROBARMCfg.EndEffGoal_c->size());
+      }
+
+      i--;  //temporary hack
+    }
+
+    printf("%.2f %.2f %.2f %.2f %.2f %.2f\n",
+           EnvROBARMCfg.EndEffGoal_m->at(i)[0],EnvROBARMCfg.EndEffGoal_m->at(i)[1],EnvROBARMCfg.EndEffGoal_m->at(i)[2],EnvROBARMCfg.EndEffGoal_m->at(i)[3],
+           EnvROBARMCfg.EndEffGoal_m->at(i)[4],EnvROBARMCfg.EndEffGoal_m->at(i)[5]);
+  }
+
+  //set goalangle to invalid number - NOTE: might be a deprecated variable
+//   EnvROBARMCfg.LinkGoalAngles_d[0] = INVALID_NUMBER;
+
+  if(EnvROBARMCfg.cost_per_cell == -1)
+    ComputeCostPerCell();
+
+  // pre-compute heuristics with new goal
+  if(EnvROBARMCfg.dijkstra_heuristic)
+    ComputeHeuristicValues();
+
+  // set goal hash entry
+  EnvROBARM.goalHashEntry->endeff[0] = EnvROBARMCfg.EndEffGoal_c->at(0)[0];
+  EnvROBARM.goalHashEntry->endeff[1] = EnvROBARMCfg.EndEffGoal_c->at(0)[1];
+  EnvROBARM.goalHashEntry->endeff[2] = EnvROBARMCfg.EndEffGoal_c->at(0)[2];
+  EnvROBARM.goalHashEntry->action = 0;
+  RPY2Rot(EnvROBARMCfg.EndEffGoal_r->at(0)[0],EnvROBARMCfg.EndEffGoal_r->at(0)[1],EnvROBARMCfg.EndEffGoal_r->at(0)[2],EnvROBARM.goalHashEntry->orientation);
+  for(int i=0; i<NUMOFLINKS; i++)
+    EnvROBARM.goalHashEntry->coord[i] = 0;
+
+  EnvROBARMCfg.bGoalIsSet = true;
+
+#if VERBOSE
+  for(int i = 0; i < EnvROBARMCfg.nEndEffGoals; i++)
+    printf("goal %i:  %u %u %u (cells) --> %.2f %.2f %.2f (meters)  rpy: (%1.2f %1.2f %1.2f)\n",i,EnvROBARMCfg.EndEffGoals_c[i][0], EnvROBARMCfg.EndEffGoals_c[i][1],
+           EnvROBARMCfg.EndEffGoals_c[i][2],EnvROBARMCfg.EndEffGoals_m[i][0],EnvROBARMCfg.EndEffGoals_m[i][1],EnvROBARMCfg.EndEffGoals_m[i][2],EnvROBARMCfg.EndEffGoalRPY[i][0],EnvROBARMCfg.EndEffGoalRPY[i][1],EnvROBARMCfg.EndEffGoalRPY[i][2]);
+#endif
+
+  return true;
+}
+*/
+
+bool EnvironmentROBARM3D::SetGoalPosition(const std::vector <std::vector<double> > &goals)
+{
+  if(!EnvROBARMCfg.bInitialized)
+  {
+    printf("Cannot set goal position because environment is not initialized.\n");
+    return false;
+  }
+
+  //resize goal list
+  EnvROBARMCfg.EndEffGoal_m.resize(goals.size());
+  EnvROBARMCfg.EndEffGoal_c.resize(goals.size());
+  EnvROBARMCfg.EndEffGoal_r.resize(goals.size());
+
+  for(unsigned int i = 0; i < EnvROBARMCfg.EndEffGoal_m.size(); i++)
+  {
+    EnvROBARMCfg.EndEffGoal_m.at(i) = goals[i];
+    EnvROBARMCfg.EndEffGoal_r.at(i)[0] = goals[i][3];
+    EnvROBARMCfg.EndEffGoal_r.at(i)[1] = goals[i][4];
+    EnvROBARMCfg.EndEffGoal_r.at(i)[2] = goals[i][5];
+
+    //convert goal position from meters to cells
+    ContXYZ2Cell(EnvROBARMCfg.EndEffGoal_m.at(i)[0],EnvROBARMCfg.EndEffGoal_m.at(i)[1],EnvROBARMCfg.EndEffGoal_m.at(i)[2],
+                 &(EnvROBARMCfg.EndEffGoal_c.at(i)[0]), &(EnvROBARMCfg.EndEffGoal_c.at(i)[1]), &(EnvROBARMCfg.EndEffGoal_c.at(i)[2]));
+
+    // check if goals are within arms length
+    if(fabs(EnvROBARMCfg.EndEffGoal_m.at(i)[0]) >= EnvROBARMCfg.arm_length ||
+       fabs(EnvROBARMCfg.EndEffGoal_m.at(i)[1]) >= EnvROBARMCfg.arm_length ||
+       fabs(EnvROBARMCfg.EndEffGoal_m.at(i)[2]) >= EnvROBARMCfg.arm_length)
+    {
+      printf("End effector goal position (%.2f %.2f %.2f) is out of bounds.\n",EnvROBARMCfg.EndEffGoal_m.at(i)[0],EnvROBARMCfg.EndEffGoal_m.at(i)[1],EnvROBARMCfg.EndEffGoal_m.at(i)[2]);
+      EnvROBARMCfg.EndEffGoal_c.erase(EnvROBARMCfg.EndEffGoal_c.begin()+i);
+      EnvROBARMCfg.EndEffGoal_m.erase(EnvROBARMCfg.EndEffGoal_m.begin()+i);
+      EnvROBARMCfg.EndEffGoal_r.erase(EnvROBARMCfg.EndEffGoal_r.begin()+i);
+
+      if(EnvROBARMCfg.EndEffGoal_c.size() <= 1)
+      {
+        EnvROBARMCfg.bGoalIsSet  = false;
+        return false;
+      }
+      else
+      {
+        printf("[SetEndEffGoals] Removed goal %i. %i goal(s) remaining.\n", i, EnvROBARMCfg.EndEffGoal_c.size());
+        continue;
+      }
+
+      i--;  //temporary hack
+    }
+
+    if(EnvROBARMCfg.Grid3D[EnvROBARMCfg.EndEffGoal_c.at(i)[0]][EnvROBARMCfg.EndEffGoal_c.at(i)[1]][EnvROBARMCfg.EndEffGoal_c.at(i)[2]] >= EnvROBARMCfg.ObstacleCost)
+    {
+      printf("End effector goal position (%.2f %.2f %.2f) is invalid\n",EnvROBARMCfg.EndEffGoal_m.at(i)[0],EnvROBARMCfg.EndEffGoal_m.at(i)[1],EnvROBARMCfg.EndEffGoal_m.at(i)[2]);
+      EnvROBARMCfg.EndEffGoal_c.erase(EnvROBARMCfg.EndEffGoal_c.begin()+i);
+      EnvROBARMCfg.EndEffGoal_m.erase(EnvROBARMCfg.EndEffGoal_m.begin()+i);
+      EnvROBARMCfg.EndEffGoal_r.erase(EnvROBARMCfg.EndEffGoal_r.begin()+i);
+
+      if(EnvROBARMCfg.EndEffGoal_c.size() <= 1)
+      {
+        EnvROBARMCfg.bGoalIsSet  = false;
+        return false;
+      }
+      else
+      {
+        printf("[SetEndEffGoals] Removed goal %i. %i goal(s) remaining.\n", i, EnvROBARMCfg.EndEffGoal_c.size());
+      }
+
+      i--;  //temporary hack
+    }
+
+    printf("%.2f %.2f %.2f %.2f %.2f %.2f\n",
+           EnvROBARMCfg.EndEffGoal_m.at(i)[0],EnvROBARMCfg.EndEffGoal_m.at(i)[1],EnvROBARMCfg.EndEffGoal_m.at(i)[2],EnvROBARMCfg.EndEffGoal_m.at(i)[3],
+                                         EnvROBARMCfg.EndEffGoal_m.at(i)[4],EnvROBARMCfg.EndEffGoal_m.at(i)[5]);
+  }
+
+  //set goalangle to invalid number - NOTE: might be a deprecated variable
+//   EnvROBARMCfg.LinkGoalAngles_d[0] = INVALID_NUMBER;
+
+  if(EnvROBARMCfg.cost_per_cell == -1)
+    ComputeCostPerCell();
+
+  // pre-compute heuristics with new goal
+  if(EnvROBARMCfg.dijkstra_heuristic)
+    ComputeHeuristicValues();
+
+  // set goal hash entry
+  EnvROBARM.goalHashEntry->endeff[0] = EnvROBARMCfg.EndEffGoal_c.at(0)[0];
+  EnvROBARM.goalHashEntry->endeff[1] = EnvROBARMCfg.EndEffGoal_c.at(0)[1];
+  EnvROBARM.goalHashEntry->endeff[2] = EnvROBARMCfg.EndEffGoal_c.at(0)[2];
+  EnvROBARM.goalHashEntry->action = 0;
+  RPY2Rot(EnvROBARMCfg.EndEffGoal_r.at(0)[0],EnvROBARMCfg.EndEffGoal_r.at(0)[1],EnvROBARMCfg.EndEffGoal_r.at(0)[2],EnvROBARM.goalHashEntry->orientation);
+  for(int i=0; i<NUMOFLINKS; i++)
+    EnvROBARM.goalHashEntry->coord[i] = 0;
+
+  EnvROBARMCfg.bGoalIsSet = true;
+
+#if VERBOSE
+  for(int i = 0; i < EnvROBARMCfg.nEndEffGoals; i++)
+    printf("goal %i:  %u %u %u (cells) -. %.2f %.2f %.2f (meters)  rpy: (%1.2f %1.2f %1.2f)\n",i,EnvROBARMCfg.EndEffGoals_c[i][0], EnvROBARMCfg.EndEffGoals_c[i][1],
+           EnvROBARMCfg.EndEffGoals_c[i][2],EnvROBARMCfg.EndEffGoals_m[i][0],EnvROBARMCfg.EndEffGoals_m[i][1],EnvROBARMCfg.EndEffGoals_m[i][2],EnvROBARMCfg.EndEffGoalRPY[i][0],EnvROBARMCfg.EndEffGoalRPY[i][1],EnvROBARMCfg.EndEffGoalRPY[i][2]);
+#endif
+
+  return true;
+}
+
+/*
+bool EnvironmentROBARM3D::SetGoalConfiguration(const std::vector <std::vector<double> > &goals)
+{
+  short unsigned  int coord[NUMOFLINKS], elbow[3] = {0}, wrist[3] = {0}, endeff[3] = {0};
+  double angles[NUMOFLINKS], angles_pos[NUMOFLINKS], orientation[3][3];
+
+  if(!EnvROBARMCfg.bInitialized)
+  {
+    printf("Cannot set goal position because environment is not initialized.\n");
+    return false;
+  }
+
+  if(goals.size() < 1)
+    return false;
+
+  //resize goal list
+  EnvROBARMCfg.JointSpaceGoal_r->resize(goals.size());
+
+  for(unsigned int i = 0; i < EnvROBARMCfg.JointSpaceGoal_r->size(); i++)
+  {
+    EnvROBARMCfg.JointSpaceGoal_r->at(i) = goals[i];
+
+    //get joint positions of goal configuration
+    if(!ComputeEndEffectorPos(angles, endeff, wrist, elbow, orientation))
+    {
+      EnvROBARMCfg.JointSpaceGoal_r->erase(EnvROBARMCfg.JointSpaceGoal_r->begin()+i);
+
+      if(EnvROBARMCfg.JointSpaceGoal_r->size() <= 1)
+      {
+        EnvROBARMCfg.bGoalIsSet  = false;
+        return false;
+      }
+      else
+      {
+        printf("[SetEndEffGoals] Removed goal %i. %i goal(s) remaining.\n", i, EnvROBARMCfg.JointSpaceGoal_r->size());
+        continue;
+      }
+
+      i--;
+    }
+
+    //get coords
+    ComputeCoord(angles_pos, coord);
+
+    //check if goal position is valid
+    if(!IsValidCoord(coord,endeff,wrist,elbow,orientation))
+    {
+      EnvROBARMCfg.JointSpaceGoal_r->at(i) = goals[i];
+
+      if(EnvROBARMCfg.JointSpaceGoal_r->size() <= 1)
+      {
+        EnvROBARMCfg.bGoalIsSet  = false;
+        return false;
+      }
+      else
+      {
+        printf("[SetEndEffGoals] Removed goal %i. %i goal(s) remaining.\n", i, EnvROBARMCfg.JointSpaceGoal_r->size());
+        continue;
+      }
+
+      i--;
+    }
+  }
+
+  //set goalangle to invalid number - NOTE: might be a deprecated variable
+//   EnvROBARMCfg.LinkGoalAngles_d[0] = INVALID_NUMBER;
+
+  if(EnvROBARMCfg.cost_per_cell == -1)
+    ComputeCostPerCell();
+
+  // pre-compute heuristics with new goal
+  if(EnvROBARMCfg.dijkstra_heuristic)
+    ComputeHeuristicValues();
+
+  // set goal hash entry
+  EnvROBARM.goalHashEntry->endeff[0] = EnvROBARMCfg.EndEffGoal_c->at(0)[0];
+  EnvROBARM.goalHashEntry->endeff[1] = EnvROBARMCfg.EndEffGoal_c->at(0)[1];
+  EnvROBARM.goalHashEntry->endeff[2] = EnvROBARMCfg.EndEffGoal_c->at(0)[2];
+  EnvROBARM.goalHashEntry->action = 0;
+  RPY2Rot(EnvROBARMCfg.EndEffGoal_r->at(0)[0],EnvROBARMCfg.EndEffGoal_r->at(0)[1],EnvROBARMCfg.EndEffGoal_r->at(0)[2],EnvROBARM.goalHashEntry->orientation);
+  for(int i=0; i<NUMOFLINKS; i++)
+    EnvROBARM.goalHashEntry->coord[i] = 0;
+
+  EnvROBARMCfg.bGoalIsSet = true;
+
+#if VERBOSE
+  for(int i = 0; i < EnvROBARMCfg.nEndEffGoals; i++)
+    printf("goal %i:  %u %u %u (cells) --> %.2f %.2f %.2f (meters)  rpy: (%1.2f %1.2f %1.2f)\n",i,EnvROBARMCfg.EndEffGoals_c[i][0], EnvROBARMCfg.EndEffGoals_c[i][1],
+           EnvROBARMCfg.EndEffGoals_c[i][2],EnvROBARMCfg.EndEffGoals_m[i][0],EnvROBARMCfg.EndEffGoals_m[i][1],EnvROBARMCfg.EndEffGoals_m[i][2],EnvROBARMCfg.EndEffGoalRPY[i][0],EnvROBARMCfg.EndEffGoalRPY[i][1],EnvROBARMCfg.EndEffGoalRPY[i][2]);
+#endif
+
+  return true;
+}
+*/
+
+/* possibly just a duplicate - remove it
+bool EnvironmentROBARM3D::SetStartJointConfig(double angles[NUMOFLINKS], bool bRad)
+{
+  double startangles[NUMOFLINKS];
+  short unsigned int elbow[3] = {0}, wrist[3] = {0};
+
+    //set initial joint configuration
+  if(bRad) //input is in radians
+  {
+    for(unsigned int i = 0; i < NUMOFLINKS; i++)
+    {
+      if(angles[i] < 0)
+        EnvROBARMCfg.LinkStartAngles_d[i] = RAD2DEG(angles[i] + PI_CONST*2.0);
+      else
+        EnvROBARMCfg.LinkStartAngles_d[i] = RAD2DEG(angles[i]);
+    }
+  }
+  else //input is in degrees
+  {
+    for(unsigned int i = 0; i < NUMOFLINKS; i++)
+    {
+      if(angles[i] < 0)
+        EnvROBARMCfg.LinkStartAngles_d[i] =  angles[i] + 360.0;
+      else
+        EnvROBARMCfg.LinkStartAngles_d[i] =  angles[i];
+    }
+  }
+
+    //initialize the angles of the start states
+  for(int i = 0; i < NUMOFLINKS; i++)
+    startangles[i] = DEG2RAD(EnvROBARMCfg.LinkStartAngles_d[i]);
+
+    //compute arm position in environment
+  ComputeCoord(startangles, EnvROBARM.startHashEntry->coord);
+
+    //TODO: REMOVE ME - Don't check start position when running in gazebo/robot.
+    //get joint positions of starting configuration
+  if(!ComputeEndEffectorPos(startangles, EnvROBARM.startHashEntry->endeff, wrist, elbow, EnvROBARM.startHashEntry->orientation))
+  {
+    printf("[ComputeEndEffectorPos] Start position is invalid.\n");
+//         return false;
+  }
+
+    //check if starting position is valid - TODO: REMOVE ME - Don't check start position when running in gazebo/robot.
+  if(!IsValidCoord(EnvROBARM.startHashEntry->coord,EnvROBARM.startHashEntry->endeff,wrist,elbow,EnvROBARM.startHashEntry->orientation))
+  {
+    printf("\n[SetStartJointConfig] Start Hash Entry is invalid\n");
+    printf("coords: %i %i %i %i %i %i %i\n", EnvROBARM.startHashEntry->coord[0],EnvROBARM.startHashEntry->coord[1],EnvROBARM.startHashEntry->coord[2],EnvROBARM.startHashEntry->coord[3],EnvROBARM.startHashEntry->coord[4],EnvROBARM.startHashEntry->coord[5],EnvROBARM.startHashEntry->coord[6]);
+    printf("Start: %1.2f %1.2f %1.2f %1.2f %1.2f %1.2f %1.2f\n",startangles[0],startangles[1],startangles[2],startangles[3],startangles[4],startangles[5],startangles[6]);
+    printf("Start: endeff (%u %u %u)  wrist: (%u %u %u)  elbow: (%u %u %u)\n",EnvROBARM.startHashEntry->endeff[0],EnvROBARM.startHashEntry->endeff[1],EnvROBARM.startHashEntry->endeff[2],wrist[0],wrist[1],wrist[2],elbow[0],elbow[1],elbow[2]);
+    printf("Start Hash Entry is invalid\n");
+//         return false;
+  }
+  else
+  {
+#if DEBUG
+    printf("\n[SetStartJointConfig] Start configuration has been set successfully.\n");
+    printf("Start: %1.2f %1.2f %1.2f %1.2f %1.2f %1.2f %1.2f\n",startangles[0],startangles[1],startangles[2],startangles[3],startangles[4],startangles[5],startangles[6]);
+    printf("Start: endeff (%u %u %u)  wrist: (%u %u %u)  elbow: (%u %u %u)\n",EnvROBARM.startHashEntry->endeff[0],EnvROBARM.startHashEntry->endeff[1],EnvROBARM.startHashEntry->endeff[2],wrist[0],wrist[1],wrist[2],elbow[0],elbow[1],elbow[2]);
+#endif
+  }
+
+  return true;
+}
+*/
+
 void EnvironmentROBARM3D::StateID2Angles(int stateID, double* angles_r)
 {
     bool bGoal = false;
@@ -3850,11 +4238,11 @@ void EnvironmentROBARM3D::StateID2Angles(int stateID, double* angles_r)
     }
 
     //debugging output
-    double pnt[3] = {0};
-    Cell2ContXYZ(HashEntry->endeff[0],HashEntry->endeff[1],HashEntry->endeff[2],&(pnt[0]),&(pnt[1]),&(pnt[2]));
-    for(int i=0; i < NUMOFLINKS; i++)
-        printf("%.3f ",angles_r[i]);
-    printf("     endeff: %.2f %.2f %.2f\n",pnt[0],pnt[1],pnt[2]);
+//     double pnt[3] = {0};
+//     Cell2ContXYZ(HashEntry->endeff[0],HashEntry->endeff[1],HashEntry->endeff[2],&(pnt[0]),&(pnt[1]),&(pnt[2]));
+//     for(int i=0; i < NUMOFLINKS; i++)
+//         printf("%.3f ",angles_r[i]);
+//     printf("     endeff: %.2f %.2f %.2f\n",pnt[0],pnt[1],pnt[2]);
 }
 
 void EnvironmentROBARM3D::AddObstaclesToEnv(double**obstacles, int numobstacles)

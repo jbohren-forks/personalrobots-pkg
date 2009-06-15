@@ -28,6 +28,7 @@
  */
 
 #include <boost/thread/mutex.hpp>
+
 // #include <robot_kinematics/robot_kinematics.h>
 
 #ifndef __ENVIRONMENT_ROBARM3D_H_
@@ -80,9 +81,7 @@ typedef struct STATE3D_t
 // robot arm physical configuration structure
 typedef struct ENV_ROBARM_CONFIG
 {
-    //epsilon to be used by planner
-    //this is the wrong place to store it, but it allows epsilon to be read in params.cfg
-    double epsilon;
+/* Environment Description */
 
     //environment dimensions (meters)
     double EnvWidth_m;
@@ -94,6 +93,11 @@ typedef struct ENV_ROBARM_CONFIG
     int EnvHeight_c;
     int EnvDepth_c;
 
+    //low resolution environment dimensions (cells)
+    int LowResEnvWidth_c;
+    int LowResEnvHeight_c;
+    int LowResEnvDepth_c;
+
     //fixed location of shoulder base (cells) 
     short unsigned int BaseX_c;
     short unsigned int BaseY_c;
@@ -104,32 +108,33 @@ typedef struct ENV_ROBARM_CONFIG
     double BaseY_m;
     double BaseZ_m;
 
-    //end effector goal position (cell)
-    short unsigned int EndEffGoalX_c;   //get rid of this
-    short unsigned int EndEffGoalY_c;
-    short unsigned int EndEffGoalZ_c;
-
-    //low resolution environment dimensions (cells)
-    int LowResEnvWidth_c;
-    int LowResEnvHeight_c;
-    int LowResEnvDepth_c;
-
     //flag determines if the environment has been initialized or not
     bool bInitialized;
 
-    //cost of cells on grid of obstacles and close to obstacles
-    char ObstacleCost;
-    char medObstacleCost;
-    char lowObstacleCost;
+    //3D grid of world space 
+    char*** Grid3D;
+    char*** LowResGrid3D;
+    double GridCellWidth;           // cells are square (width=height=depth)
+    double LowResGridCellWidth;     // cells are square (width=height=depth)
+    char*** Grid3D_temp;
+    char*** LowResGrid3D_temp;
 
-    int medCostRadius_c;
-    int lowCostRadius_c;
+    //obstacles
+    std::vector<std::vector<double> > cubes;
+    std::vector<std::vector<double> > sbpl_cubes;
+
+/* ARM DESCRIPTION */
 
     //DH Parameters
     double DH_alpha[NUMOFLINKS];
     double DH_a[NUMOFLINKS];
     double DH_d[NUMOFLINKS];
     double DH_theta[NUMOFLINKS];
+
+    //robot arm dimensions/positions
+    double LinkLength_m[NUMOFLINKS];
+    double LinkStartAngles_d[NUMOFLINKS];
+    double LinkGoalAngles_d[NUMOFLINKS];
 
     //Motor Limits
     double PosMotorLimits[NUMOFLINKS];
@@ -139,22 +144,21 @@ typedef struct ENV_ROBARM_CONFIG
     double angledelta[NUMOFLINKS];
     int anglevals[NUMOFLINKS];
 
+    // temporary hack
+    int arm_length;
+
     //for kinematic library use
 /*    RobotKinematics pr2_kin;
     SerialChain *right_arm;
     JntArray *pr2_config; */
 
-    //coords of goal - shouldn't be here
-    short unsigned int goalcoords[NUMOFLINKS];
-
-    //robot arm dimensions/positions
-    double LinkLength_m[NUMOFLINKS];
-    double LinkStartAngles_d[NUMOFLINKS];
-    double LinkGoalAngles_d[NUMOFLINKS];
-
-    int arm_length;
+/* Planner Parameters/Options */
 
     //goals
+    short unsigned int EndEffGoalX_c;   //get rid of this
+    short unsigned int EndEffGoalY_c;
+    short unsigned int EndEffGoalZ_c;
+
     short unsigned int ** EndEffGoals_c;
     double ** EndEffGoals_m;
     double ** EndEffGoalRPY;
@@ -163,13 +167,13 @@ typedef struct ENV_ROBARM_CONFIG
     int nEndEffGoals;
     bool bGoalIsSet;
 
-    //3D grid of world space 
-    char*** Grid3D;
-    char*** LowResGrid3D;
-    double GridCellWidth;           // cells are square (width=height=depth)
-    double LowResGridCellWidth;     // cells are square (width=height=depth)
-    char*** Grid3D_temp;
-    char*** LowResGrid3D_temp;
+
+    //coords of goal - shouldn't be here
+    short unsigned int goalcoords[NUMOFLINKS];
+
+    //epsilon to be used by planner
+    //this is the wrong place to store it, but it allows epsilon to be read in params.cfg
+    double epsilon;
 
     //options
     bool use_DH;
@@ -189,6 +193,13 @@ typedef struct ENV_ROBARM_CONFIG
     double grasped_object_length_m;
     double goal_moe_m;
 
+    bool dual_heuristics; //can remove
+    double ApplyRPYCost_m;
+    double AngularDist_Weight; //not used?
+    double ExpCoefficient;
+    bool angular_dist_cost; //not used?
+
+/* Motion Primitives */
     //successor actions
     double ** SuccActions;
     int nSuccActions;
@@ -196,12 +207,8 @@ typedef struct ENV_ROBARM_CONFIG
     int ** ActiontoActionCosts;
     int HighResActionsThreshold_c;
 
-    //for precomputing cos/sin & DH matrices 
-    double cos_r[360];
-    double sin_r[360];
-    double T_DH[4*NUM_TRANS_MATRICES][4][NUMOFLINKS];
-
-    //cell-to-cell costs - TODO change then to integers
+/* Costs */
+    //action costs - TODO change them to integers
     double CellsPerAction;
     double cost_per_cell;
     double cost_sqrt2_move;
@@ -209,15 +216,13 @@ typedef struct ENV_ROBARM_CONFIG
     double cost_per_mm;
     double cost_per_rad;
 
-    //obstacles
-    std::vector<std::vector<double> > cubes;
-    std::vector<std::vector<double> > sbpl_cubes;
+    //cost of cells on grid of obstacles and close to obstacles
+    char ObstacleCost;
+    char medObstacleCost;
+    char lowObstacleCost;
+    int medCostRadius_c;
+    int lowCostRadius_c;
 
-    bool dual_heuristics; //can remove
-    double ApplyRPYCost_m;
-    double AngularDist_Weight; //not used?
-    double ExpCoefficient;
-    bool angular_dist_cost; //not used?
 
     //joint-space search
     bool PlanInJointSpace;
@@ -229,9 +234,19 @@ typedef struct ENV_ROBARM_CONFIG
     boost::mutex mCopyingGrid;
     boost::mutex mPlanning;
 
-//     std::vector < std::vector<double> > EndEffGoals_m;
-//     std::vector < std::vector<double> > EndEffGoalsRPY;
-//     std::vector < std::vector<short unsigned int> > EndEffGoals_c;
+    //for precomputing cos/sin & DH matrices 
+    double cos_r[360];
+    double sin_r[360];
+    double T_DH[4*NUM_TRANS_MATRICES][4][NUMOFLINKS];
+/*
+    std::vector <std::vector<double> > * EndEffGoal_m;
+    std::vector <std::vector<double> > * EndEffGoal_r;
+    std::vector <std::vector<short unsigned int> > * EndEffGoal_c;
+*/
+
+    std::vector <std::vector<double> > EndEffGoal_m;
+    std::vector <std::vector<double> > EndEffGoal_r;
+    std::vector <std::vector<short unsigned int> > EndEffGoal_c;
 
 } EnvROBARMConfig_t;
 
@@ -362,6 +377,8 @@ public:
     void getValidPositions(int num_pos, FILE* fOut);
     double gen_rand(double min, double max);
 
+    bool SetGoalPosition(const std::vector <std::vector<double> > &goals);
+
 private:
 
     //member data
@@ -455,6 +472,7 @@ private:
     void GetJointSpaceSuccs(int SourceStateID, vector<int>* SuccIDV, vector<int>* CostV);
 
     // void CheckParamServer();
+    void ParseYAMLFile(const char* sParamFile);
 };
 
 #endif
