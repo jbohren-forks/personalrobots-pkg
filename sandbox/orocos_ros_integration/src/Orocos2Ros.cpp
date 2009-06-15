@@ -36,7 +36,7 @@
 #include <rtt/Logger.hpp>
 
 RTT::TaskContext* RosNode::createRosNode(RTT::TaskContext* tc){
-
+  RTT::log(RTT::Info)<<"Creating RosNode for component "<<tc->getName()<<RTT::endlog();
   RosNode* ros_node = new RosNode(tc->getName());
   
   /*************************************

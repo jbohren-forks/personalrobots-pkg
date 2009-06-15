@@ -49,6 +49,7 @@ namespace OCL{
   }
 
   bool RosDeploymentComponent::createRosNode(const std::string& tc){
+    log(Debug)<<"Trying to create RosNode for component "<<tc<<endlog();
     TaskContext* peer = this->getPeer(tc);
     if(!peer){
       log(Error)<<"No such peer: "<< tc <<endlog();
@@ -65,8 +66,8 @@ namespace OCL{
 
   bool RosDeploymentComponent::componentLoaded(TaskContext* c){
     bool ros = comps[c->getName()].rosnode;
-    log(Info)<<"Name: "<<c->getName()<<"RosNode: "<<ros<<endlog();
     if(ros){
+      log(Info)<<"CreateRosNode flag was true"<<endlog();
       TaskContext* rosnode = RosNode::createRosNode(c);
       if(rosnode!=0){
 	rosnodes.push_back(couple(c,rosnode));
