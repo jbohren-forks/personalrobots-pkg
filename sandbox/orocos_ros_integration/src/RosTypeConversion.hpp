@@ -15,7 +15,7 @@ namespace RTT
   template <>
   struct StdRosTypeConversion<double>:
     public RosTypeConversion<Float64,double>{
-    static bool copyRosToOrocos(const Float64ConstPtr& ros,double& orocos){
+    static bool copyRosToOrocos(Float64ConstPtr ros,double& orocos){
       orocos=ros->data;
       return true;
     };
@@ -27,7 +27,7 @@ namespace RTT
   template <>
   struct StdRosTypeConversion<Float64>:
     public RosTypeConversion<Float64,Float64>{
-    static bool copyRosToOrocos(const Float64ConstPtr& ros,Float64& orocos){
+    static bool copyRosToOrocos(Float64ConstPtr ros,Float64& orocos){
       orocos=(*ros);
       return true;
     };
@@ -48,7 +48,7 @@ namespace RTT
   struct StdRosTypeConversion<std::vector<double> >:
     public RosTypeConversion<Float64MultiArray,std::vector<double> >{
     
-    static bool copyRosToOrocos(const Float64MultiArrayConstPtr& ros,std::vector<double>& orocos){
+    static bool copyRosToOrocos(Float64MultiArrayConstPtr ros,std::vector<double>& orocos){
       orocos=ros->data;
       return true;
     };
@@ -61,7 +61,7 @@ namespace RTT
   struct StdRosTypeConversion<Float64MultiArray >:
     public RosTypeConversion<Float64MultiArray,Float64MultiArray >{
     
-    static bool copyRosToOrocos(const Float64MultiArrayConstPtr& ros,Float64MultiArray& orocos){
+    static bool copyRosToOrocos(Float64MultiArrayConstPtr ros,Float64MultiArray& orocos){
       orocos=(*ros);
       return true;
     };

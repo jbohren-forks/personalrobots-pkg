@@ -16,7 +16,7 @@ namespace RTT
     typedef boost::shared_ptr<T_ros> RosTypePtr;
     typedef boost::shared_ptr<T_ros const> RosTypeConstPtr;
   
-    static bool copyRosToOrocos(const RosType& ros,Type& orocos){
+    static bool copyRosToOrocos(RosTypeConstPtr ros,Type& orocos){
       log(Error)<<"Failing conversion of RosType to type "<<detail::DataSourceTypeInfo<Type>::getType()<<"."<<endlog();
       return false;
     }
@@ -42,7 +42,7 @@ namespace RTT
   private:
     T raw_;
     RTT::ValueDataSource<T> data_;
-    PortInterface* port_;
+    const RTT::PortInterface* port_;
     
   public:
     static RosReadPort* createRosReadPort(ros::NodeHandle* node,RTT::PortInterface* port){
@@ -63,8 +63,11 @@ namespace RTT
       StdRosTypeConversion<T>::copyRosToOrocos(msg,raw_);
       log(Debug)<<"Set raw data in DataSource"<<endlog();
       data_.set(raw_);
-      log(Debug)<<"Update port connection with datasource"<<endlog();
-      port_->connection()->getDataSource()->update(data_.clone());
+      if(port_->connected()){
+	log(Debug)<<port_->getName()<<" Update port connection with datasource" <<endlog();
+	port_->connection()->getDataSource()->update(data_.clone());
+      } else
+	log(Error)<<port_->getName()<<" has lost its connection :("<<endlog();
       log(Debug)<<"Port updated"<<endlog();
     };
   };
@@ -97,10 +100,12 @@ namespace RTT
     void publishCallback(RTT::PortInterface* port){
       log(Debug)<<"publishing on topic "<<"~"<<port->getName()<<endlog();
       //Copy the data from the Orocos DataType to the Ros message
-      data_.update(port->connection()->getDataSource().get());
-      StdRosTypeConversion<T>::copyOrocosToRos(data_.get(),msg_);
-      //Publish the message
-      pub_.publish(msg_);
+      if(data_.update(port->connection()->getDataSource().get())){
+	StdRosTypeConversion<T>::copyOrocosToRos(data_.get(),msg_);
+	//Publish the message
+	pub_.publish(msg_);
+      }else
+	log(Error)<<"Could not update the data from "<<port->getName()<<endlog();
     };
   };
 
