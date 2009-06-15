@@ -308,6 +308,7 @@ void URDF2Gazebo::convertLink(TiXmlElement *root, robot_desc::URDF::Link *link, 
         /* compute the joint tag */
         bool fixed = false;
         std::string jtype;
+        if (link->joint != NULL)
         switch (link->joint->type)
         {
         case robot_desc::URDF::Link::Joint::REVOLUTE:
