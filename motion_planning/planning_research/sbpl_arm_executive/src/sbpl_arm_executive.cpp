@@ -131,7 +131,7 @@ class ExecNode : public PR2ArmNode
             getCurrentPosition(current_joint_positions_);
 
             //plan joint space path - change this so that it can replan if it doesn't find a path
-            if(planSBPLPath(current_joint_positions_,goal_,planned_path_))
+            if(planSBPLPath_ioan(current_joint_positions_,goal_,planned_path_))
             {
                 ROS_INFO("Planning was a success.\n");
             }
@@ -143,7 +143,7 @@ class ExecNode : public PR2ArmNode
             if(sendTrajectory(arm_name_,planned_path_))
             {
                 ROS_INFO("Executed trajectory successfully");
-                sleep(25);
+                sleep(35);
             }
             else
                 ROS_INFO("Could not execute trajectory.");

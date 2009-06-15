@@ -5,7 +5,8 @@ gensrv()
 
 # Build executables in the bin directory
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
-rospack_add_library(pr2_arm_node src/pr2_arm_node.cpp)
 
-rospack_add_executable(sbpl_arm_executive src/sbpl_arm_executive.cpp)
-target_link_libraries(sbpl_arm_executive pr2_arm_node)
+# rospack_add_library(pr2_arm_node src/pr2_arm_node.cpp)
+
+# rospack_add_executable(sbpl_arm_executive src/sbpl_arm_executive.cpp)
+# target_link_libraries(sbpl_arm_executive pr2_arm_node)

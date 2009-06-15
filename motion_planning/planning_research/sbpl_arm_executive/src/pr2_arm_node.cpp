@@ -258,34 +258,36 @@ void PR2ArmNode::getCurrentPosition(robot_msgs::JointTrajPoint &current_joint_po
 // plan a path to a cartesian goal(s)
 bool PR2ArmNode::planSBPLPath(const robot_msgs::JointTrajPoint &joint_start, const std::vector<robot_msgs::Pose> &pose_goals, robot_msgs::JointTraj &planned_path)
 {
-  sbpl_arm_planner_node::PlanPathSrv::Request  request;
-  sbpl_arm_planner_node::PlanPathSrv::Response response;
-
-  request.type.data = "cartesian";
-  request.start = joint_start;
-  request.cartesian_goals = pose_goals;
-
-  nodHead(3);
-  ROS_INFO("goal: %1.2f %1.2f %1.2f", request.cartesian_goals[0].position.x,request.cartesian_goals[0].position.y,request.cartesian_goals[0].position.z);
-  ROS_INFO("goal orientation: %1.2f %1.2f %1.2f %1.2f", request.cartesian_goals[0].orientation.x, request.cartesian_goals[0].orientation.y, request.cartesian_goals[0].orientation.z, request.cartesian_goals[0].orientation.w);
-  if(ros::service::call(arm_name_ + sbpl_planner_service_name_,request,response))
-  {
-    planned_path = response.traj;
-
-    for(int i=0; i<planned_path.points.size(); i++)
-    {
-        ROS_INFO("%.2f %.2f %.2f %.2f %.2f %.2f %.2f",
-                    planned_path.points[i].positions[0],planned_path.points[i].positions[1],planned_path.points[i].positions[2],
-                    planned_path.points[i].positions[3],planned_path.points[i].positions[4],planned_path.points[i].positions[5],
-                    planned_path.points[i].positions[6]);
-    }
-    return true;
-  }
-  else
-  {
-    ROS_ERROR("Could not get path");
-    return false;
-  }
+  printf("FIX\n\n\n\n");
+//   sbpl_arm_planner_node::PlanPathSrv::Request  request;
+//   sbpl_arm_planner_node::PlanPathSrv::Response response;
+// 
+//   request.type.data = "cartesian";
+//   request.start = joint_start;
+//   request.cartesian_goals = pose_goals;
+// 
+//   nodHead(3);
+//   ROS_INFO("goal: %1.2f %1.2f %1.2f", request.cartesian_goals[0].position.x,request.cartesian_goals[0].position.y,request.cartesian_goals[0].position.z);
+//   ROS_INFO("goal orientation: %1.2f %1.2f %1.2f %1.2f", request.cartesian_goals[0].orientation.x, request.cartesian_goals[0].orientation.y, request.cartesian_goals[0].orientation.z, request.cartesian_goals[0].orientation.w);
+//   if(ros::service::call(arm_name_ + sbpl_planner_service_name_,request,response))
+//   {
+//     planned_path = response.traj;
+// 
+//     for(int i=0; i<planned_path.points.size(); i++)
+//     {
+//         ROS_INFO("%.2f %.2f %.2f %.2f %.2f %.2f %.2f",
+//                     planned_path.points[i].positions[0],planned_path.points[i].positions[1],planned_path.points[i].positions[2],
+//                     planned_path.points[i].positions[3],planned_path.points[i].positions[4],planned_path.points[i].positions[5],
+//                     planned_path.points[i].positions[6]);
+//     }
+//     return true;
+//   }
+//   else
+//   {
+//     ROS_ERROR("Could not get path");
+//     return false;
+//   }
+  return false; //remove
 }
 
 //plan a path to a joint space goal
@@ -317,6 +319,68 @@ bool PR2ArmNode::planSBPLPath(const robot_msgs::JointTrajPoint &joint_start, con
     ROS_ERROR("Could not get path");
     return false;
   }
+}
+
+// plan a path to a cartesian goal(s)
+bool PR2ArmNode::planSBPLPath_ioan(const robot_msgs::JointTrajPoint &joint_start, const std::vector<robot_msgs::Pose> &pose_goals, robot_msgs::JointTraj &planned_path)
+{
+  printf("FIX\n\n\n\n");
+  //temporary
+  int num_joints = 7;
+  double pitch=0.0,yaw=0.0,roll=0.0;
+  motion_planning_srvs::KinematicPlanLinkPosition::Request req;
+  motion_planning_srvs::KinematicPlanLinkPosition::Response res;
+  tf::Pose tf_pose;
+
+  req.value.start_state.set_vals_size(num_joints);
+  req.value.set_goal_constraints_size(pose_goals.size());
+
+  for(int i=0; i<num_joints; i++)
+    req.value.start_state.vals[i] = joint_start.positions[i];
+
+  for(unsigned int i=0; i<pose_goals.size(); i++)
+  {
+    req.value.goal_constraints[i].x = pose_goals[i].position.x;
+    req.value.goal_constraints[i].y = pose_goals[i].position.y;
+    req.value.goal_constraints[i].z = pose_goals[i].position.z;
+
+    tf::PoseMsgToTF(pose_goals[i],tf_pose);
+    btMatrix3x3 mat = tf_pose.getBasis();
+    mat.getEulerZYX(yaw,pitch,roll);
+
+    req.value.goal_constraints[i].roll = roll;
+    req.value.goal_constraints[i].pitch = pitch;
+    req.value.goal_constraints[i].yaw = yaw;
+  }
+
+  nodHead(3);
+
+//   if(ros::service::call(sbpl_planner_service_name_,req,res))
+//   {
+//     planned_path.set_points_size(res.value.path.get_states_size());
+// 
+//     printf("[planSBPLPath_ioan] Path has %i points.\n",res.value.path.get_states_size());
+// 
+//     for(unsigned int i=0; i<planned_path.points.size(); i++)
+//     {
+//       planned_path.points[i].set_positions_size(res.value.path.states[i].get_vals_size());
+// 
+//       for(unsigned int j=0; j<planned_path.points[i].get_positions_size(); j++)
+//         planned_path.points[i].positions[j] = res.value.path.states[i].vals[j];
+// 
+//       ROS_INFO("%.2f %.2f %.2f %.2f %.2f %.2f %.2f",
+//                planned_path.points[i].positions[0],planned_path.points[i].positions[1],planned_path.points[i].positions[2],
+//                planned_path.points[i].positions[3],planned_path.points[i].positions[4],planned_path.points[i].positions[5],
+//                planned_path.points[i].positions[6]);
+//     }
+//     return true;
+//   }
+//   else
+//   {
+//     ROS_ERROR("[planSBPLPath_ioan] Could not get path");
+//     return false;
+//   }
+  return false; //remove
 }
 
 robot_msgs::Pose PR2ArmNode::RPYToTransform(double roll, double pitch, double yaw, double x, double y, double z)

@@ -45,6 +45,14 @@
 
 #include <sbpl_arm_planner_node/PlanPathSrv.h>
 
+#include <motion_planning_msgs/KinematicPath.h>
+#include <motion_planning_msgs/KinematicState.h>
+#include <motion_planning_msgs/PoseConstraint.h>
+#include <motion_planning_msgs/KinematicPlanLinkPositionRequest.h>
+#include <motion_planning_msgs/KinematicPlanStateRequest.h>
+#include <motion_planning_srvs/KinematicPlanState.h>
+#include <motion_planning_srvs/KinematicPlanLinkPosition.h>
+
 namespace pr2_arm_node
 {
   class PR2ArmNode : public ros::Node
@@ -57,59 +65,61 @@ namespace pr2_arm_node
 
     PR2ArmNode(std::string node_name, std::string arm_name, std::string gripper_name);
 
-      ~PR2ArmNode();
+    ~PR2ArmNode();
 
-      bool use_gripper_effort_controller_;
+    bool use_gripper_effort_controller_;
 
-      static const double GRIPPER_OPEN  = 0.6;
+    static const double GRIPPER_OPEN  = 0.6;
 
-      static const double GRIPPER_CLOSE = 0.1;
+    static const double GRIPPER_CLOSE = 0.1;
 
-      static const double GRIPPER_OPEN_EFFORT = 6;
+    static const double GRIPPER_OPEN_EFFORT = 6;
 
-      static const double GRIPPER_CLOSE_EFFORT = 2;
+    static const double GRIPPER_CLOSE_EFFORT = 2;
 
-      double joint_space_goal_[7];
+    double joint_space_goal_[7];
 
-      std::string arm_name_,gripper_name_;
+    std::string arm_name_,gripper_name_;
 
-      std::string trajectory_topic_name_,trajectory_query_name_,trajectory_start_name_,effort_controller_command_name_,sbpl_planner_service_name_;
+    std::string trajectory_topic_name_,trajectory_query_name_,trajectory_start_name_,effort_controller_command_name_,sbpl_planner_service_name_;
 
-      void getCurrentPosition();
+    void getCurrentPosition();
 
-      void openGripper();
+    void openGripper();
 
-      void closeGripper();
+    void closeGripper();
 
-      void openGripperEffort();
+    void openGripperEffort();
 
-      void closeGripperEffort();
+    void closeGripperEffort();
 
-      void actuateGripper(const int &open);
+    void actuateGripper(const int &open);
 
-      void actuateGripperEffort(const int &open);
+    void actuateGripperEffort(const int &open);
 
-      void goHome(const std::vector<double> &home_position);
+    void goHome(const std::vector<double> &home_position);
 
-      bool sendTrajectory(std::string group_name, const robot_msgs::JointTraj &traj);
+    bool sendTrajectory(std::string group_name, const robot_msgs::JointTraj &traj);
 
-      void sendTrajectoryOnTopic(std::string group_name, const robot_msgs::JointTraj &traj);
+    void sendTrajectoryOnTopic(std::string group_name, const robot_msgs::JointTraj &traj);
 
-      bool planSBPLPath(const robot_msgs::JointTrajPoint &joint_start, const std::vector<robot_msgs::Pose> &pose_goals, robot_msgs::JointTraj &planned_path);
+    bool planSBPLPath(const robot_msgs::JointTrajPoint &joint_start, const std::vector<robot_msgs::Pose> &pose_goals, robot_msgs::JointTraj &planned_path);
 
-      bool planSBPLPath(const robot_msgs::JointTrajPoint &joint_start, const std::vector<robot_msgs::JointTrajPoint> &joint_goal, robot_msgs::JointTraj &planned_path);
+    bool planSBPLPath(const robot_msgs::JointTrajPoint &joint_start, const std::vector<robot_msgs::JointTrajPoint> &joint_goal, robot_msgs::JointTraj &planned_path);
 
-      void getCurrentPosition(robot_msgs::JointTrajPoint &current_joint_positions);
+    bool planSBPLPath_ioan(const robot_msgs::JointTrajPoint &joint_start, const std::vector<robot_msgs::Pose> &pose_goals, robot_msgs::JointTraj &planned_path);
 
-      robot_msgs::Pose RPYToTransform(double roll, double pitch, double yaw, double x, double y, double z);
+    void getCurrentPosition(robot_msgs::JointTrajPoint &current_joint_positions);
 
-      void pointHead(double yaw, double pitch);
+    robot_msgs::Pose RPYToTransform(double roll, double pitch, double yaw, double x, double y, double z);
 
-      void nodHead(int num_times);
+    void pointHead(double yaw, double pitch);
 
-      void shakeHead();
+    void nodHead(int num_times);
 
-      void getGraspTrajectory(const robot_msgs::PoseStamped &transform, robot_msgs::JointTraj &traj);
+    void shakeHead();
+
+    void getGraspTrajectory(const robot_msgs::PoseStamped &transform, robot_msgs::JointTraj &traj);
 
   };
 }
