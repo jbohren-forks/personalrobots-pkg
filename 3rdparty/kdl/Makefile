@@ -1,8 +1,8 @@
 all: installed
 
-SVN_REVISION=-r 30175
+SVN_REVISION=-r 30213
 SVN_DIR = kdl-svn
-SVN_URL = http://svn.mech.kuleuven.be:/repos/orocos/branches/kdl-one-beta
+SVN_URL = http://svn.mech.kuleuven.be:/repos/orocos/trunk/kdl
 SVN_PATCH=total.patch
 INSTALL_DIR = kdl
 CMAKE = cmake
