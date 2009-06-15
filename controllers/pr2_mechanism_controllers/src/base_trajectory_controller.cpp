@@ -39,6 +39,8 @@
 #include <diagnostic_msgs/DiagnosticStatus.h>
 #include <ros/rate.h>
 
+#include "ros/node.h" //\todo Switch to node handles in ros.h
+
 namespace pr2_mechanism_controllers
 {
   BaseTrajectoryController::BaseTrajectoryController(ros::Node& ros_node, tf::TransformListener& tf) : ros_node_(ros_node), tf_(tf)
