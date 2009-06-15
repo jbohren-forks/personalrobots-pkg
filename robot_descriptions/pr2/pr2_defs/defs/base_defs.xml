@@ -450,7 +450,6 @@
     </joint>
 
     <link name="base_laser" type="laser">
-      <calibration filename="calib_filename" />
       <parent name="${name}_link" />
       <origin xyz="0.275 0 0.252" rpy="0 0 0" />
       <joint name="base_laser_joint" />
