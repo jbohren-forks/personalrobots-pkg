@@ -31,31 +31,39 @@
 
 namespace tf {
 
+  void VectorTFToKDL(const tf::Vector3& t, KDL::Vector& k)
+  {
+    k = KDL::Vector(t[0], t[1], t[2]);
+  }
 
-void VectorTFToKDL(const tf::Vector3& t, KDL::Vector& k)
-{
-  k = KDL::Vector(t[0], t[1], t[2]);
-}
+  void RotationTFToKDL(const tf::Quaternion& t, KDL::Rotation& k)
+  {
+    k.Quaternion(t[0], t[1], t[2], t[3]);
+  }
 
-void RotationTFToKDL(const tf::Quaternion& t, KDL::Rotation& k)
-{
-  k.Quaternion(t[0], t[1], t[2], t[3]);
-}
+  void TransformTFToKDL(const tf::Transform &t, KDL::Frame &k)
+  {
+    for (unsigned int i = 0; i < 3; ++i)
+      k.p.data[i] = t.getOrigin()[i];
+    for (unsigned int i = 0; i < 9; ++i)
+      k.M.data[i] = t.getBasis()[i/3][i%3];
+  }
 
-void TransformTFToKDL(const tf::Transform &t, KDL::Frame &k)
-{
-  for (unsigned int i = 0; i < 3; ++i)
-    k.p.data[i] = t.getOrigin()[i];
-  for (unsigned int i = 0; i < 9; ++i)
-    k.M.data[i] = t.getBasis()[i/3][i%3];
-}
+  void TransformKDLToTF(const KDL::Frame &k, tf::Transform &t)
+  {
+    t.setOrigin(tf::Vector3(k.p.data[0], k.p.data[1], k.p.data[2]));
+    t.setBasis(btMatrix3x3(k.M.data[0], k.M.data[1], k.M.data[2],
+                           k.M.data[3], k.M.data[4], k.M.data[5],
+                           k.M.data[6], k.M.data[7], k.M.data[8]));
+  }
 
-void TransformKDLToTF(const KDL::Frame &k, tf::Transform &t)
-{
-  t.setOrigin(tf::Vector3(k.p.data[0], k.p.data[1], k.p.data[2]));
-  t.setBasis(btMatrix3x3(k.M.data[0], k.M.data[1], k.M.data[2],
-                         k.M.data[3], k.M.data[4], k.M.data[5],
-                         k.M.data[6], k.M.data[7], k.M.data[8]));
-}
-
+  void PoseTFToKDL(const tf::Pose& pose, KDL::Frame& frame)
+  {
+    double Rz, Ry, Rx;
+    frame.p(0) = pose.getOrigin().x();
+    frame.p(1) = pose.getOrigin().y();
+    frame.p(2) = pose.getOrigin().z();
+    pose.getBasis().getEulerZYX(Rz, Ry, Rx);
+    frame.M = KDL::Rotation::EulerZYX(Rz, Ry, Rx);
+  }
 }
