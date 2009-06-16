@@ -73,7 +73,7 @@ public:
    * \param max_effort Effort to limit the controller at.
    * \param *robot The robot that is being controlled.
    */
-  void init( double velocity, double max_effort, double max_expected_effort, double min_expected_effort, double min_pos, double max_pos, double time, double timeout, std::string name, mechanism::RobotState *robot);
+  void init( double velocity, double max_effort, double max_expected_effort, double min_expected_effort, double min_pos, double max_pos, double time, double timeout, double slope, std::string name, mechanism::RobotState *robot);
   bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
 
 
@@ -95,12 +95,12 @@ public:
 
 private:
 
-  mechanism::JointState *joint_;                        /**< Joint we're controlling. */
-  mechanism::RobotState *robot_;                        /**< Pointer to robot structure. */
+  mechanism::JointState *joint_;     /**< Joint we're controlling. */
+  mechanism::RobotState *robot_;     /**< Pointer to robot structure. */
   controller::JointVelocityController *velocity_controller_;    /**< The velocity controller for the hysteresis test. */
-  double velocity_;                                    /**< Torque applied during the test. */
-  double max_effort_;
-  double initial_time_;                                 /**< Start time of the test. */
+  double velocity_;            /**< Velocity during the test. */
+  double max_effort_;          /**< Maximum allowable effort. */
+  double initial_time_;             /**< Start time of the test. */
   double initial_position_;
   int count_;
   int loop_count_;
@@ -116,7 +116,7 @@ private:
 
 /***************************************************/
 /*! \class controller::HysteresisControllerNode
-    \brief Hystersis Controller
+    \brief Hystersis Controller Node
 
     This tests the hysteresis of a joint using a
     velocity controller.
@@ -142,8 +142,7 @@ private:
   
   double last_publish_time_;
   realtime_tools::RealtimeSrvCall<joint_qualification_controllers::TestData::Request, joint_qualification_controllers::TestData::Response> call_service_;
-  
-  //realtime_tools::RealtimePublisher<diagnostic_msgs::DiagnosticMessage> pub_diagnostics_;
+
 };
 }
 

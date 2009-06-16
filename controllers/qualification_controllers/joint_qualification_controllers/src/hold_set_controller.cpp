@@ -36,8 +36,6 @@
 
 #include <joint_qualification_controllers/hold_set_controller.h>
 
-#define MAX_DATA_POINTS 10000
-
 using namespace std;
 using namespace controller;
 
@@ -45,15 +43,11 @@ using namespace controller;
 ROS_REGISTER_CONTROLLER(HoldSetController)
 
 HoldSetController::HoldSetController():
-  joint_state_(NULL), robot_(NULL)
+  robot_(NULL)
 {
-  dither_ = new control_toolbox::Dither::Dither(100.0);
-
-  //hold_set_ = new vector<double>();
-
+  
   hold_set_data_.test_name = "hold_set";
-  hold_set_data_.joint_name = "default";
-
+  
   state_ = STARTING;
   
   current_position_ = 0;
@@ -63,100 +57,173 @@ HoldSetController::HoldSetController():
   start_time_ = 0.0;
   dither_time_ = 0.0;
   dither_count_  = 0.0;
-  timeout_ = 60.0;
+  timeout_ = 120.0;
 
 }
 
 HoldSetController::~HoldSetController()
 {
-
 }
 
 bool HoldSetController::initXml(mechanism::RobotState *robot, TiXmlElement *config)
 {
   assert(robot);
+  robot_ = robot;
+ 
+  initial_time_ = robot_->hw_->current_time_;
   
-  TiXmlElement *j = config->FirstChildElement("joint");
-  if (!j)
+  // Adding Joint Position Controllers
+  TiXmlElement *elt = config->FirstChildElement("controller");
+  if (!elt)
   {
-    fprintf(stderr, "HoldSetController was not given a joint\n");
+    fprintf(stderr, "HoldSetController's config did not give the required joint position controllers.\n");
     return false;
   }
 
-  const char *joint_name = j->Attribute("name");
-  joint_state_ = joint_name ? robot->getJointState(joint_name) : NULL;
-  if (!joint_state_)
+  ROS_INFO("Setting up joint position controllers!");
+  while (elt)
   {
-    fprintf(stderr, "HoldSetController could not find joint named \"%s\"\n", joint_name);
-    return false;
+    ROS_INFO("Making JPC");
+    JointPositionController * jpc = new JointPositionController();
+    //std::cout<<elt->Attribute("type")<<elt->Attribute("name")<<std::endl;
+    assert(static_cast<std::string>(elt->Attribute("type")) == std::string("JointPositionController"));
+    //ROS_INFO("Passed assert");
+
+    ROS_INFO("Pushing back JPC, joint states");
+
+    // Store controller, joint state, name
+    joint_position_controllers_.push_back(jpc);
+
+    if (!jpc->initXml(robot, elt))
+      return false;
+
+    hold_set_data_.joint_names.push_back(jpc->getJointName());
+    joint_states_.push_back(robot->getJointState(jpc->getJointName()));
+
+    TiXmlElement *dith = elt->FirstChildElement("dither");
+    double dither_amp = atof(dith->Attribute("dither_amp"));
+    control_toolbox::Dither *dither = new control_toolbox::Dither::Dither(100.0);
+    dither->init(dither_amp);
+    dithers_.push_back(dither);
+
+    hold_set_data_.dither_amps.push_back(dither_amp);
+
+    ROS_INFO("Next controller!");
+    elt = elt->NextSiblingElement("controller");
   }
 
-  hold_set_data_.joint_name = joint_name;
-
-  // Need a PID to pass into position controller...
-  position_controller_ = new JointPositionController();
-  position_controller_->initXml(robot, config);
-
+  num_joints_ = joint_position_controllers_.size();
+    
+  hold_set_data_.joint_names.resize(num_joints_);
+  hold_set_data_.dither_amps.resize(num_joints_);
+  
+  // Setting controller defaults
   TiXmlElement *cd = config->FirstChildElement("controller_defaults");
   if (cd)
   {
     settle_time_ = atof(cd->Attribute("settle_time"));
     dither_time_ = atof(cd->Attribute("dither_time"));
     timeout_ = atof(cd->Attribute("timeout"));
-    double dither_amp = atof(cd->Attribute("dither_amp"));
-    dither_->init(dither_amp);
-  }
+   }
   else
   {
     fprintf(stderr, "HoldSetController was not given required controller defaults\n");
     return false;
   }
 
+  // Setting holding points
   // Need to pass in a list of points here
+  // Store as vector of vectors...
   TiXmlElement *hs = config->FirstChildElement("hold_pt");
-  while (hs)
-  {
-    double position;
-    hs->Attribute("position", &position);
-
-    hold_set_.push_back(position);
-
-    hs = hs->NextSiblingElement("hold_pt");
-  }
-  
   if (!hs)
   {
     fprintf(stderr, "HoldSetController's config did not give the required holding set.\n");
     return false;
   }
 
+  ROS_INFO("Storing Hold Points");
+
+  while (hs)
+  {
+    std::vector<double> position;
+    
+    TiXmlElement *jnt_pt = hs->FirstChildElement("joint");
+    
+    while (jnt_pt)
+    {
+      
+      double point = atof(jnt_pt->Attribute("position"));
+
+      position.push_back(point);
+
+      jnt_pt = jnt_pt->NextSiblingElement("joint");
+    }
+
+    if (position.size() != num_joints_)
+    {
+      ROS_ERROR("Incorrect number of points for joint");
+      fprintf(stderr, "HoldSetController's points did not have the correct number of joints.\n");
+      return false;
+    }
+
+    hold_set_.push_back(position);
+
+    hs = hs->NextSiblingElement("hold_pt");
+  }
+
+  // Set up correct number of holding points
+  hold_set_data_.hold_data.resize(hold_set_.size()); 
+  
   return true;
 }
 
 void HoldSetController::update()
 {
-  // wait until the joint is calibrated if it has limits
-  if(!joint_state_->calibrated_)
+  // wait until the joints are calibrated to start
+  for (unsigned int i = 0; i < num_joints_; i++)
   {
-    return;
+    if (!joint_states_[i]->calibrated_)
+    {
+      ROS_INFO("Not calibrated!");
+      return;
+    }
   }
-  
+    
   double time = robot_->hw_->current_time_;
   
   if (time - initial_time_ > timeout_ && state_ != DONE) 
   {
+    ROS_INFO("Timeout!");
     state_ = DONE;
   }
 
-  position_controller_->update();
+  for (unsigned int i = 0; i < num_joints_; ++i)
+  {
+    joint_position_controllers_[i]->update();
+  }
 
   switch (state_)
   {
   case STARTING:
     {
-      position_controller_->setCommand(hold_set_[current_position_]);
+      ROS_INFO("Starting!");
+
+      std::vector<double> current = hold_set_[current_position_];
+      assert(current.size() == num_joints_);
+                                                        
+      hold_set_data_.hold_data[current_position_].joint_data.resize(num_joints_);
+
+      for (unsigned int i = 0; i < num_joints_; ++i)
+      {
+        double cmd = current[i];
+
+        joint_position_controllers_[i]->setCommand(cmd);
+        hold_set_data_.hold_data[current_position_].joint_data[i].desired = cmd;
+      }
+
       start_time_ = time;
       state_ = SETTLING;
+      ROS_INFO("Settling");
       break;
     }
   case SETTLING:
@@ -165,45 +232,47 @@ void HoldSetController::update()
       {
         state_ = DITHERING;
         start_time_ = time;
-        dither_count_ = 0;
-        hold_set_data_.hold_data[current_position_].desired = hold_set_[current_position_];
+        ROS_INFO("Dithering!");
       }
       
       break;
     }
   case DITHERING:
     {
-      // Need to add dither to PID
-      joint_state_->commanded_effort_ += dither_->update();
-      
-      // Measure
-      joint_qualification_controllers::HoldPositionData *data = &hold_set_data_.hold_data[current_position_];
-      
-      data->position.push_back(joint_state_->position_);
-      data->velocity.push_back(joint_state_->velocity_);
+      joint_qualification_controllers::HoldPositionData *data = &hold_set_data_.hold_data[current_position_];  
 
-      data->cmd.push_back(joint_state_->commanded_effort_);
-      data->effort.push_back(joint_state_->applied_effort_);
+      
+      for (unsigned int i = 0; i < num_joints_; ++i)
+      {
+        // Add dither
+        joint_states_[i]->commanded_effort_ += dithers_[i]->update();
+
+        // Record state
+        data->joint_data[i].time.push_back(time - start_time_);
+        data->joint_data[i].position.push_back(joint_states_[i]->position_);
+        data->joint_data[i].velocity.push_back(joint_states_[i]->velocity_);
+        data->joint_data[i].cmd.push_back(joint_states_[i]->commanded_effort_);
+        data->joint_data[i].effort.push_back(joint_states_[i]->applied_effort_);
+      }
       
       if (time - start_time_ > dither_time_)
       {
-        // Go onto next point
-        //data->position.resize(dither_count_);
-        //data->cmd.resize(dither_count_);
-        //data->effort.resize(dither_count_);
-        //dither_count_ = 0;
-        
         state_ = PAUSING;
       }
       break;
     }
   case PAUSING:
     {
-    if (current_position_++ > hold_set_.size())
+    if (++current_position_ >= hold_set_.size())
+    {     
       state_ = DONE;
+      ROS_INFO("Done!");
+    }
     else
+    {
       state_ = STARTING;
-
+      ROS_INFO("Next point!");
+    }
     break;
     }  
   case DONE:
@@ -236,21 +305,28 @@ void HoldSetControllerNode::update()
     {
       if (call_service_.trylock())
       {
+        ROS_INFO("Calling results service!");
         joint_qualification_controllers::HoldSetData::Request *out = &call_service_.srv_req_;
-        out->test_name = c_->hold_set_data_.test_name;
-        out->joint_name = c_->hold_set_data_.joint_name;
+        out->test_name   = c_->hold_set_data_.test_name;
+        out->joint_names = c_->hold_set_data_.joint_names;
+        out->dither_amps = c_->hold_set_data_.dither_amps;
 
         out->hold_data.resize(c_->hold_set_data_.hold_data.size());
 
-        for (uint i = 0; i < c_->hold_set_data_.hold_data.size(); i++)
+        for (uint i = 0; i < c_->hold_set_data_.hold_data.size(); ++i)
         {
-          joint_qualification_controllers::HoldPositionData *data = &c_->hold_set_data_.hold_data[i];
+          out->hold_data[i].joint_data.resize(c_->hold_set_data_.hold_data[i].joint_data.size());
 
-          out->hold_data[i].position = data->position;
-          out->hold_data[i].velocity = data->velocity;
-
-          out->hold_data[i].cmd = data->cmd;
-          out->hold_data[i].effort = data->effort;
+          for (unsigned int j = 0; j < c_->hold_set_data_.hold_data[i].joint_data.size(); ++j)
+          {
+            out->hold_data[i].joint_data[j].desired  = c_->hold_set_data_.hold_data[i].joint_data[j].desired;
+            out->hold_data[i].joint_data[j].time     = c_->hold_set_data_.hold_data[i].joint_data[j].time;
+            out->hold_data[i].joint_data[j].position = c_->hold_set_data_.hold_data[i].joint_data[j].position;
+            out->hold_data[i].joint_data[j].velocity = c_->hold_set_data_.hold_data[i].joint_data[j].velocity;
+            out->hold_data[i].joint_data[j].cmd      = c_->hold_set_data_.hold_data[i].joint_data[j].cmd;
+            out->hold_data[i].joint_data[j].effort   = c_->hold_set_data_.hold_data[i].joint_data[j].effort;
+            
+          }
         }
         call_service_.unlockAndCall();
         data_sent_ = true;
@@ -264,10 +340,12 @@ bool HoldSetControllerNode::initXml(mechanism::RobotState *robot, TiXmlElement *
 {
   assert(robot);
   robot_ = robot;
-  
+
+  ROS_INFO("Initing hold set controller");
   if (!c_->initXml(robot, config))
     return false;
     
+  ROS_INFO("Hold set controller initialized");
   return true;
 }
 

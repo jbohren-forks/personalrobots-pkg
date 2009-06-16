@@ -55,6 +55,10 @@
 #include <robot_mechanism_controllers/joint_position_controller.h>
 #include <control_toolbox/dither.h>
 
+#include <iostream>
+#include <string>
+#include <sstream>
+
 namespace controller
 {
 
@@ -89,14 +93,15 @@ public:
 
 private:
 
-  control_toolbox::Dither *dither_;
+  std::vector<control_toolbox::Dither*> dithers_;
 
-  controller::JointPositionController *position_controller_;
-  std::vector<double> hold_set_;
+  std::vector<controller::JointPositionController*> joint_position_controllers_;
+  std::vector<std::vector<double> > hold_set_;
 
-  mechanism::JointState *joint_state_;      /**< Joint we're controlling. */
+  std::vector<mechanism::JointState*> joint_states_;      /**< Joint we're controlling. */
   mechanism::RobotState *robot_;            /**< Pointer to robot structure. */
 
+  uint num_joints_;
 
   int starting_count_;
 
@@ -120,22 +125,60 @@ private:
 
     This holds a joint at a set of positions, measuring effort
 
-<controller type="HoldSetControllerNode" name="head_tilt_hold_set_controller">
-  <joint name="r_shoulder_lift_joint">
-    <pid p="15" i="5.0" d="0" iClamp="1.0" />
-  </joint>
+<controller type="HoldSetControllerNode" name="cb_hold_set_controller">
 
-  <controller_defaults dither_amplitude="0.5" settle_time="2.0" 
-  dither_time="1.0" timeout="60" />
+      <controller name="shoulder_lift_controller" type="JointPositionController"><br>
+      <dither dither_amp="0.25" />
+        <joint name="r_shoulder_lift_joint" ><br>
+          <pid p="1.5" d="0.1" i="0.3" iClamp="0.2" /><br>
+        </joint><br>
+      </controller><br>
 
-  <hold_pt position="1.35" />
-  <hold_pt position="1.1" />
-  <hold_pt position="0.9" />
-  <hold_pt position="0.7" />
-  <hold_pt position="0.6" />
-  <hold_pt position="0.2" />
-  <hold_pt position="-0.2" />
-  <hold_pt position="-0.3" />
+      <controller name="elbow_flex_controller" type="JointPositionController"><br>
+      <dither dither_amp="0.25" />
+        <joint name="r_elbow_flex_joint" ><br>
+          <pid p="0.8" d="0.05" i="0.1" iClamp="0.1" /><br>
+        </joint><br>
+      </controller><br>
+
+  <controller_defaults settle_time="2.0" dither_time="1.0" timeout="60" />
+
+  <hold_pt>
+    <joint position="1.35" />
+    <joint position="0.0" />
+  </hold_pt>
+
+  <hold_pt>
+    <joint position="1.0" />
+    <joint position="0.0" />
+  </hold_pt>
+
+  <hold_pt>
+    <joint position="0.75" />
+    <joint position="0.0" />
+  </hold_pt>
+
+  <hold_pt>
+    <joint position="0.5" />
+    <joint position="0.0" />
+  </hold_pt>  
+
+  <hold_pt>
+    <joint position="0.25" />
+    <joint position="0.0" />
+  </hold_pt>
+
+  <hold_pt>
+    <joint position="0.0" />
+    <joint position="0.0" />
+  </hold_pt>
+
+  <hold_pt>
+    <joint position="-0.25" />
+    <joint position="0.0" />
+  </hold_pt>
+
+
 </controller>
 
 */

@@ -1,4 +1,5 @@
 string test_name
-string joint_name
-HoldPositionData[] hold_data
+string[] joint_names
+float32[] dither_amps
+HoldPositionData[] hold_data # Data for each hold
 ---

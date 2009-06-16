@@ -174,28 +174,34 @@ void CheckoutController::update()
       // Wheel joints and fingers don't calibrate, so don't wait for them
       if (cal && (robot_->joint_states_[i].joint_->name_.find("wheel_joint") != string::npos))
       {     
-        cal = true;
+        //cal = true;
         continue;
       }
 
       if (cal && (robot_->joint_states_[i].joint_->name_.find("finger") != string::npos))
       {
-        cal = true;
+        //cal = true;
         continue;
       }
 
       // Base joint is a dummy joint used to set up visualization
       if (cal && robot_->joint_states_[i].joint_->name_ == "base_joint")
       {
-        cal = true;
+        //cal = true;
         continue;
       }
 
-      if (cal && robot_->joint_states_[i].calibrated_)
-        cal = true;
-      else
+      //if (cal && robot_->joint_states_[i].calibrated_)
+      //  cal = true;
+      //else
+      //  cal = false;
+      // break;
+      
+      if (!robot_->joint_states_[i].calibrated_)
+      {     
         cal = false;
         break;
+      }
     }
 
     enabled = true;
