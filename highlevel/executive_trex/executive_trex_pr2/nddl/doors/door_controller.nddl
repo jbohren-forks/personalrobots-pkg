@@ -275,6 +275,7 @@ DoorController::DriveThruDoorway{
 DoorController::Positioning{
   // Just move the base
   contains_start(move_base.Active cmd);
+  concurrent(cmd.end, end);
   // Arguments derived from the topological map
   eq(cmd.frame_id, "map");
   contained_by(doorman.Active dm);
