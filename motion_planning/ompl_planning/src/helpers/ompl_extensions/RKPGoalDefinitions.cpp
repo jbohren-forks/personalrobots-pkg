@@ -224,21 +224,21 @@ void kinematic_planning::GoalToMultipleConstraints::print(std::ostream &out) con
 
 ompl::base::Goal* kinematic_planning::computeGoalFromConstraints(ompl::sb::SpaceInformationKinematic *si, RKPModelBase *model, const motion_planning_msgs::KinematicConstraints &kc)
 {
-    if (kc.joint.empty() && kc.pose.empty())
+    if (kc.joint_constraint.empty() && kc.pose_constraint.empty())
     {
 	ROS_ERROR("No goal constraints defined. No goal can be selected");
 	return NULL;
     }
     
-    if (kc.joint.size() > 0 && kc.pose.empty())
+    if (kc.joint_constraint.size() > 0 && kc.pose_constraint.empty())
 	// we have no pose constraints, only joint constraints
 	// we compute the 'middle state' and plan towards it
-	return new GoalToState(si, model, kc.joint);
+	return new GoalToState(si, model, kc.joint_constraint);
     
-    if (kc.joint.empty() && kc.pose.size() > 0)
+    if (kc.joint_constraint.empty() && kc.pose_constraint.size() > 0)
 	// we have no joint constraints, only pose constraints
 	// we know nothing of the state we want to get to (in terms of joint angles)
-	return new GoalToPosition(si, model, kc.pose);
+	return new GoalToPosition(si, model, kc.pose_constraint);
     
     return new GoalToMultipleConstraints(si, model, kc);
 }

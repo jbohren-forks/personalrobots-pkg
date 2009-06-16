@@ -1,4 +1,4 @@
 # This message contains a list of motion planning constraints.
 
-JointConstraint[] joint
-PoseConstraint[] pose
+JointConstraint[] joint_constraint
+PoseConstraint[] pose_constraint

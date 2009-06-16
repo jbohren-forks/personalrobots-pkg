@@ -51,14 +51,14 @@ void planning_environment::PlanningMonitor::setGoalConstraints(const motion_plan
 
 void planning_environment::PlanningMonitor::transformConstraintsToFrame(motion_planning_msgs::KinematicConstraints &kc, const std::string &target) const
 {
-    for (unsigned int i = 0; i < kc.pose.size() ; ++i)
-	tf_->transformPose(target, kc.pose[i].pose, kc.pose[i].pose);
+    for (unsigned int i = 0; i < kc.pose_constraint.size() ; ++i)
+	tf_->transformPose(target, kc.pose_constraint[i].pose, kc.pose_constraint[i].pose);
     
     // if there are any floating or planar joints, transform them
     if (getKinematicModel()->getModelInfo().planarJoints.size() > 0 || getKinematicModel()->getModelInfo().floatingJoints.size() > 0)
     {
-	for (unsigned int i = 0; i < kc.joint.size() ; ++i)
-	    transformJoint(kc.joint[i].joint_name, 0, kc.joint[i].value, kc.joint[i].header, target);
+	for (unsigned int i = 0; i < kc.joint_constraint.size() ; ++i)
+	    transformJoint(kc.joint_constraint[i].joint_name, 0, kc.joint_constraint[i].value, kc.joint_constraint[i].header, target);
     }
 }
 
@@ -166,8 +166,8 @@ bool planning_environment::PlanningMonitor::isStateValidOnPath(const planning_mo
     if (valid)
     {	    
 	KinematicConstraintEvaluatorSet ks;
-	ks.add(getKinematicModel(), kcPath_.joint);
-	ks.add(getKinematicModel(), kcPath_.pose);
+	ks.add(getKinematicModel(), kcPath_.joint_constraint);
+	ks.add(getKinematicModel(), kcPath_.pose_constraint);
 	valid = ks.decide(state->getParams());
     }
     
@@ -193,10 +193,10 @@ bool planning_environment::PlanningMonitor::isStateValidAtGoal(const planning_mo
     if (valid)
     {	    
 	KinematicConstraintEvaluatorSet ks;
-	ks.add(getKinematicModel(), kcPath_.joint);
-	ks.add(getKinematicModel(), kcPath_.pose);
-	ks.add(getKinematicModel(), kcGoal_.joint);
-	ks.add(getKinematicModel(), kcGoal_.pose);
+	ks.add(getKinematicModel(), kcPath_.joint_constraint);
+	ks.add(getKinematicModel(), kcPath_.pose_constraint);
+	ks.add(getKinematicModel(), kcGoal_.joint_constraint);
+	ks.add(getKinematicModel(), kcGoal_.pose_constraint);
 	valid = ks.decide(state->getParams());
     }
     
@@ -268,8 +268,8 @@ bool planning_environment::PlanningMonitor::isPathValidAux(const motion_planning
     sp->setParams(path.start_state.vals);
 
     KinematicConstraintEvaluatorSet ks;
-    ks.add(getKinematicModel(), kcPath_.joint);
-    ks.add(getKinematicModel(), kcPath_.pose);
+    ks.add(getKinematicModel(), kcPath_.joint_constraint);
+    ks.add(getKinematicModel(), kcPath_.pose_constraint);
     
     getEnvironmentModel()->lock();
     getKinematicModel()->lock();
@@ -315,8 +315,8 @@ bool planning_environment::PlanningMonitor::isPathValidAux(const motion_planning
     // if we got to the last state, we also check the goal constraints
     if (valid)
     {
-	ks.add(getKinematicModel(), kcGoal_.joint);
-	ks.add(getKinematicModel(), kcGoal_.pose);
+	ks.add(getKinematicModel(), kcGoal_.joint_constraint);
+	ks.add(getKinematicModel(), kcGoal_.pose_constraint);
 	valid = ks.decide(sp->getParams());
     }
     

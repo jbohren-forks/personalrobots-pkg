@@ -86,23 +86,23 @@ public:
 	// 7 DOF for the arm; pick a goal state (joint angles)
 	std::vector<std::string> names;
 	rm_->getKinematicModel()->getJointsInGroup(names, GROUPNAME);
-	req.goal_constraints.joint.resize(names.size());
-	for (unsigned int i = 0 ; i < req.goal_constraints.joint.size(); ++i)
+	req.goal_constraints.joint_constraint.resize(names.size());
+	for (unsigned int i = 0 ; i < req.goal_constraints.joint_constraint.size(); ++i)
 	{
-	    req.goal_constraints.joint[i].header.stamp = ros::Time::now();
-	    req.goal_constraints.joint[i].header.frame_id = "base_link";
-	    req.goal_constraints.joint[i].joint_name = names[i];
-	    req.goal_constraints.joint[i].value.resize(1);
-	    req.goal_constraints.joint[i].toleranceAbove.resize(1);
-	    req.goal_constraints.joint[i].toleranceBelow.resize(1);
-	    req.goal_constraints.joint[i].value[0] = 0.0;
-	    req.goal_constraints.joint[i].toleranceBelow[0] = 0.0;
-	    req.goal_constraints.joint[i].toleranceAbove[0] = 0.0;
+	    req.goal_constraints.joint_constraint[i].header.stamp = ros::Time::now();
+	    req.goal_constraints.joint_constraint[i].header.frame_id = "base_link";
+	    req.goal_constraints.joint_constraint[i].joint_name = names[i];
+	    req.goal_constraints.joint_constraint[i].value.resize(1);
+	    req.goal_constraints.joint_constraint[i].toleranceAbove.resize(1);
+	    req.goal_constraints.joint_constraint[i].toleranceBelow.resize(1);
+	    req.goal_constraints.joint_constraint[i].value[0] = 0.0;
+	    req.goal_constraints.joint_constraint[i].toleranceBelow[0] = 0.0;
+	    req.goal_constraints.joint_constraint[i].toleranceAbove[0] = 0.0;
 	}
 	
-	req.goal_constraints.joint[0].value[0] = -1.0;
-	req.goal_constraints.joint[3].value[0] = -0.1;
-	req.goal_constraints.joint[5].value[0] = 0.15;
+	req.goal_constraints.joint_constraint[0].value[0] = -1.0;
+	req.goal_constraints.joint_constraint[3].value[0] = -0.1;
+	req.goal_constraints.joint_constraint[5].value[0] = 0.15;
 
 
 	// allow 1 second computation time

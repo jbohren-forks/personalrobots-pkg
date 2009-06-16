@@ -83,31 +83,31 @@ bool kinematic_planning::RKPRequestHandler::isRequestValid(ModelMap &models, mot
     }
     
     // check headers
-    for (unsigned int i = 0 ; i < req.goal_constraints.pose.size() ; ++i)
-	if (!m->planningMonitor->getTransformListener()->frameExists(req.goal_constraints.pose[i].pose.header.frame_id))
+    for (unsigned int i = 0 ; i < req.goal_constraints.pose_constraint.size() ; ++i)
+	if (!m->planningMonitor->getTransformListener()->frameExists(req.goal_constraints.pose_constraint[i].pose.header.frame_id))
 	{
-	    ROS_ERROR("Frame '%s' is not defined for goal pose constraint message %u", req.goal_constraints.pose[i].pose.header.frame_id.c_str(), i);
+	    ROS_ERROR("Frame '%s' is not defined for goal pose constraint message %u", req.goal_constraints.pose_constraint[i].pose.header.frame_id.c_str(), i);
 	    return false;
 	}
     
-    for (unsigned int i = 0 ; i < req.goal_constraints.joint.size() ; ++i)
-	if (!m->planningMonitor->getTransformListener()->frameExists(req.goal_constraints.joint[i].header.frame_id))
+    for (unsigned int i = 0 ; i < req.goal_constraints.joint_constraint.size() ; ++i)
+	if (!m->planningMonitor->getTransformListener()->frameExists(req.goal_constraints.joint_constraint[i].header.frame_id))
 	{
-	    ROS_ERROR("Frame '%s' is not defined for goal joint constraint message %u", req.goal_constraints.joint[i].header.frame_id.c_str(), i);
+	    ROS_ERROR("Frame '%s' is not defined for goal joint constraint message %u", req.goal_constraints.joint_constraint[i].header.frame_id.c_str(), i);
 	    return false;
 	}
     
-    for (unsigned int i = 0 ; i < req.path_constraints.pose.size() ; ++i)
-	if (!m->planningMonitor->getTransformListener()->frameExists(req.path_constraints.pose[i].pose.header.frame_id))
+    for (unsigned int i = 0 ; i < req.path_constraints.pose_constraint.size() ; ++i)
+	if (!m->planningMonitor->getTransformListener()->frameExists(req.path_constraints.pose_constraint[i].pose.header.frame_id))
 	{
-	    ROS_ERROR("Frame '%s' is not defined for path pose constraint message %u", req.path_constraints.pose[i].pose.header.frame_id.c_str(), i);
+	    ROS_ERROR("Frame '%s' is not defined for path pose constraint message %u", req.path_constraints.pose_constraint[i].pose.header.frame_id.c_str(), i);
 	    return false;
 	}
     
-    for (unsigned int i = 0 ; i < req.path_constraints.joint.size() ; ++i)
-	if (!m->planningMonitor->getTransformListener()->frameExists(req.path_constraints.joint[i].header.frame_id))
+    for (unsigned int i = 0 ; i < req.path_constraints.joint_constraint.size() ; ++i)
+	if (!m->planningMonitor->getTransformListener()->frameExists(req.path_constraints.joint_constraint[i].header.frame_id))
 	{
-	    ROS_ERROR("Frame '%s' is not defined for path joint constraint message %u", req.path_constraints.joint[i].header.frame_id.c_str(), i);
+	    ROS_ERROR("Frame '%s' is not defined for path joint constraint message %u", req.path_constraints.joint_constraint[i].header.frame_id.c_str(), i);
 	    return false;
 	}
     

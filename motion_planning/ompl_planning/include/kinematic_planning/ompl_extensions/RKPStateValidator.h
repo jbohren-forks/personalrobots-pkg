@@ -74,10 +74,10 @@ namespace kinematic_planning
 	void setConstraints(const motion_planning_msgs::KinematicConstraints &kc)
 	{
 	    kce_.clear();
-	    kce_.add(model_->kmodel, kc.pose);
+	    kce_.add(model_->kmodel, kc.pose_constraint);
 	    // joint constraints simply update the state space bounds
 	    si_->clearJointConstraints();
-	    si_->setJointConstraints(kc.joint);
+	    si_->setJointConstraints(kc.joint_constraint);
 	}
 	
 	void clearConstraints(void)

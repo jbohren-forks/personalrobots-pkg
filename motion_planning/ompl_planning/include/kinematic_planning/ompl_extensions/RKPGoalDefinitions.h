@@ -120,7 +120,7 @@ namespace kinematic_planning
     {
     public:
 	GoalToMultipleConstraints(ompl::sb::SpaceInformationKinematic *si, RKPModelBase *model, const motion_planning_msgs::KinematicConstraints &kc) : ompl::sb::GoalRegionKinematic(si), sCore_(si),
-																			gp_(si, model, kc.pose), gs_(si, model, kc.joint)
+																			gp_(si, model, kc.pose_constraint), gs_(si, model, kc.joint_constraint)
 	{
 	    threshold = gp_.threshold + gs_.threshold;
 	    std::vector< std::pair<double, double> > b = gs_.getBounds();
