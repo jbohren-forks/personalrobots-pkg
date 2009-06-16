@@ -137,7 +137,8 @@ public:
 
     setTopic(topic);
 
-    tf_subscriber_ = node_.subscribe("/tf_message", 1, boost::bind(&MessageNotifier::incomingTFMessage, this, _1));
+    tf_subscriber_ = node_.subscribe<tfMessage>("/tf_message", 1,
+                                  boost::bind(&MessageNotifier::incomingTFMessage, this, _1));
 
     thread_handle_ = boost::thread(boost::bind(&MessageNotifier::workerThread, this));
   }
