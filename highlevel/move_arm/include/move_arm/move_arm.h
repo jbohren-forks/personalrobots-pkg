@@ -49,35 +49,62 @@
 #include <vector>
 #include <string>
 
+/** IK services */
+#include <manipulation_srvs/IKService.h>
+#include <manipulation_srvs/IKQuery.h>
 
-namespace move_arm {
+namespace move_arm 
+{
   /**
    * @class MoveArm
    * @brief A class adhering to the robot_actions::Action interface that moves the robot base to a goal location.
    */
-  class MoveArm : public robot_actions::Action<pr2_robot_actions::MoveArmGoal, int32_t> {
+  class MoveArm : public robot_actions::Action<pr2_robot_actions::MoveArmGoal, int32_t> 
+  {
     public:
-      /**
-       * @brief  Constructor for the actions
-       */
-      MoveArm();
+    /**
+     * @brief  Constructor for the actions
+     */
+    MoveArm();
 
-      /**
-       * @brief  Destructor - Cleans up
-       */
-      virtual ~MoveArm();
+    /**
+     * @brief  Destructor - Cleans up
+     */
+    virtual ~MoveArm();
 
-      /**
-       * @brief  Runs whenever a new goal is sent to the move_base
-       * @param goal The goal to pursue 
-       * @param feedback Feedback that the action gives to a higher-level monitor, in this case, the position of the robot
-       * @return The result of the execution, ie: Success, Preempted, Aborted, etc.
-       */
-      virtual robot_actions::ResultStatus execute(const pr2_robot_actions::MoveArmGoal& goal, int32_t& feedback);
+    /**
+     * @brief  Runs whenever a new goal is sent to the move_base
+     * @param goal The goal to pursue 
+     * @param feedback Feedback that the action gives to a higher-level monitor, in this case, the position of the robot
+     * @return The result of the execution, ie: Success, Preempted, Aborted, etc.
+     */
+    virtual robot_actions::ResultStatus execute(const pr2_robot_actions::MoveArmGoal& goal, int32_t& feedback);
 
     private:
 
+    std::string ik_service_name_; /**< Name of the service that provides IK */
+
+    std::string ik_query_name_; /**< Name of the service that allows you to query the joint names that IK uses */
+
+    std::string control_query_name_;
+
+    std::string control_topic_name_;
+
+    std::string control_service_name_;
+
+    ros::NodeHandle node_handle_;
+
+    bool computeIK(const robot_msgs::PoseStamped &pose_stamped_msg, std::vector<std::pair<std::string, double> > &solution);
+
+    int arm_number_joints_;
+
+    std::vector<std::string> arm_joint_names_;
+
+    bool sendControl(const std::vector<std::pair<std::string, double> > &solution);
+
+    bool getControlJointNames(std::vector<std::string> &joint_names);
   };
 };
+
 #endif
 

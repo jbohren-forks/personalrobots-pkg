@@ -1,0 +1,6 @@
+<launch>
+  <node pkg="move_arm" type="move_arm" name="move_arm">    
+   <param name="ik_service_name" value="pr2_ik_node/ik_service" />     
+   <param name="ik_service" value="pr2_ik_node/ik_query" />  
+  </node>
+</launch>

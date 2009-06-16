@@ -21,7 +21,8 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 #uncomment if you have defined services
 #gensrv()
 
-#rospack_add_executable(move_arm_action src/move_arm.cpp)
+rospack_add_executable(move_arm src/move_arm.cpp)
+rospack_add_executable(move_arm_action_test test/test_move_arm.cpp)
 
 #common commands for building c++ executables and libraries
 #rospack_add_library(${PROJECT_NAME} src/example.cpp)

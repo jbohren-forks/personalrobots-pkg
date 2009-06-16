@@ -17,5 +17,7 @@
   <depend package="motion_planning_srvs"/>
   <depend package="pr2_robot_actions"/>
   <depend package="robot_actions"/>
+  <depend package="manipulation_srvs"/>
+  <depend package="pr2_mechanism_controllers"/>
 
 </package>
