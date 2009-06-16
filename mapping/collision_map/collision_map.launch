@@ -10,7 +10,7 @@
 
 <launch>
   <node pkg="collision_map" type="collision_map_buffer_node" name="collision_map_buffer" respawn="true" output="screen">
-<!--    <remap from="full_cloud" to="cloud_1_raw" />-->
+    <remap from="full_cloud" to="full_cloud_filtered" />
 
     <param name="end_effector_frame_l" type="string" value="r_gripper_l_finger_tip_link" />
     <param name="end_effector_frame_r" type="string" value="r_gripper_r_finger_tip_link" />

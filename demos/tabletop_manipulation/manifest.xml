@@ -12,14 +12,14 @@
   <depend package="collision_map"/>
   <depend package="ompl_planning"/>
   <depend package="executive_python"/>
-  <depend package="plan_ompl_path"/>
   <depend package="pr2_msgs"/>
   <depend package="robot_msgs"/>
   <depend package="visualization_msgs" />
+  <depend package="manipulation_msgs" />
   <depend package="motion_planning_msgs" />
   <depend package="motion_planning_srvs" />
+  <depend package="move_base" />
+  <depend package="move_arm" />
   <depend package="pr2_ik" />
-  <depend package="rosviz"/>
-  <depend package="robot_actions"/>
-  <depend package="tf"/>
+  <depend package="rviz"/>
 </package>
