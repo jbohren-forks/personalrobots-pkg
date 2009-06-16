@@ -260,7 +260,10 @@ DoorController::DriveThruDoorway{
   
   // If the command succeded we are done! If not, it is likely because the door is actually blocking us so we will want
   // to get back to detect the door and figure out how to get thru
-  if(cmd.status == SUCCESS){
+
+  bool cmd_status;
+  eq(cmd_status, cmd.status);
+  if(cmd_status == SUCCESS){
     meets(Inactive s);
     eq(s.status, SUCCESS);
   }
@@ -279,7 +282,9 @@ DoorController::Positioning{
 
   // Always followed by detecting the door
   // Must succeed. We have no workarounds!
-  if(cmd.status == SUCCESS){
+  bool cmd_status;
+  eq(cmd_status, cmd.status);
+  if(cmd_status == SUCCESS){
     meets(DetectingDoor);
   }
   else {
@@ -294,7 +299,9 @@ DoorController::DetectingDoor{
   // if we succed, then depending on the latch state we can go sttraight for the door
   // or we need to detect the handle first. if it fails, maybe the door has been opened! We might as well check the
   // doorway for a clear path again
-  if(cmd.status == SUCCESS){
+  bool cmd_status;
+  eq(cmd_status, cmd.status);
+  if(cmd_status == SUCCESS){
     cmd meets(detect_door.Inactive cmd_feedback);
     if(cmd_feedback.latch_state == LATCH_STATE_UNLATCHED){
       meets(ApproachingDoor);
@@ -315,7 +322,9 @@ DoorController::DetectingHandle{
   // Duration bounds
   leq(cmd.max_duration, DETECT_HANDLE_DURATION_BOUND);
   // If we fail here, we can try get a new door pose. If we succeed we are ready to approach the door to open it
-  if(cmd.status == SUCCESS){
+  bool cmd_status;
+  eq(cmd_status, cmd.status);
+  if(cmd_status == SUCCESS){
     meets(ApproachingDoor);
   }
   else {
@@ -337,7 +346,9 @@ DoorController::ApproachingDoor{
   bool use_handle;
   testEQ(use_handle, ds.latch_state, LATCH_STATE_LATCHED);
   // If we succed, then based on the latch state we will open the door or have to grasp the handle first. On failure we restart!
-  if(cmd.status == SUCCESS){
+  bool cmd_status;
+  eq(cmd_status, cmd.status);
+  if(cmd_status == SUCCESS){
     if(use_handle == true){
       meets(GraspingHandle);
     }
@@ -357,7 +368,9 @@ DoorController::GraspingHandle{
   concurrent(cmd.end, end);
   leq(cmd.max_duration, GRASP_HANDLE_DURATION_BOUND);
   // If we have it, we can unlatch it. Otherwise we need to release the handle and go back to the start
-  if(cmd.status == SUCCESS){
+  bool cmd_status;
+  eq(cmd_status, cmd.status);
+  if(cmd_status == SUCCESS){
     meets(UnlatchingHandle);
   }
   else {
@@ -372,7 +385,9 @@ DoorController::UnlatchingHandle{
   concurrent(cmd.end, end);
   leq(cmd.max_duration, UNLATCH_HANDLE_DURATION_BOUND);
   // We could fail. In which case we want to restart. Otherwise handle case where the door is locked, vs unlatched.
-  if(cmd.status == SUCCESS){
+  bool cmd_status;
+  eq(cmd_status, cmd.status);
+  if(cmd_status == SUCCESS){
     cmd meets(unlatch_handle.Inactive cmd_feedback);
     // If locked, try again later
     if(cmd_feedback.latch_state == LATCH_STATE_LOCKED){
@@ -396,7 +411,9 @@ DoorController::ReleasingHandle{
   contains_start(release_handle.Active cmd);
   concurrent(cmd.end, end);
   leq(cmd.max_duration, RELEASE_HANDLE_DURATION_BOUND);
-  if(cmd.status == SUCCESS){
+  bool cmd_status;
+  eq(cmd_status, cmd.status);
+  if(cmd_status == SUCCESS){
   }
   else{
     meets(ReleasingHandle);
