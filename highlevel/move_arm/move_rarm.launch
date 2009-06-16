@@ -1,0 +1,7 @@
+<launch>
+  <node pkg="move_arm" type="move_arm" name="move_arm" args="robot_description:=robotdesc/pr2" output="screen">    
+   <param name="ik_service_name" value="pr2_ik_node/ik_service" />     
+   <param name="ik_query_name" value="pr2_ik_node/ik_query" /> 
+   <param name="arm" value="right_arm" />
+  </node>
+</launch>
