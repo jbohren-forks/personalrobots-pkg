@@ -1,6 +1,8 @@
 #ifndef DORYLUS_H
 #define DORYLUS_H
 
+#include <limits>
+
 #include <iomanip>
 #include <newmat10/newmat.h>
 #include <newmat10/newmatio.h>
