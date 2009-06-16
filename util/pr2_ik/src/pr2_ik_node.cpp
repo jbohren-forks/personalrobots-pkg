@@ -79,24 +79,24 @@ namespace pr2_ik {
   int PR2IKNode::getJointIndex(const std::string &name)
   {
     for(int i=0; i< dimension_; i++)
+    {
+      if(pr2_ik_solver_.chain_.getJoint(i)->name_ == name)
       {
-	if(pr2_ik_solver_.chain_.getJoint(i)->name_ == name)
-	  {
-	    return i;
-	  }
+        return i;
       }
+    }
     return -1;   
   }
 
   bool PR2IKNode::checkJointNames(const manipulation_srvs::IKService::Request &request)
   {
-      for(int i=0; i< dimension_; i++)
+    for(int i=0; i< dimension_; i++)
+    {
+      if(getJointIndex(request.data.joint_names[i]) == -1)
       {
-	if(!getJointIndex(request.data.joint_names[i]))
-	  {
-	    return false;
-	  }
+        return false;
       }
+    }
     return true;   
   }
 
