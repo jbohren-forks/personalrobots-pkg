@@ -18,8 +18,14 @@ installed: $(SVN_DIR) patched
 	cd $(SVN_DIR)/build-boost && make $(ROS_PARALLEL_JOBS) && make install
 	touch installed
 
+wiped: Makefile
+	make wipe
+	touch wiped
+
 clean:
 	rm -rf $(INSTALL_DIR)
-	rm -rf $(SVN_DIR)
+	rm -rf $(SVN_DIR)/build
 	rm -rf installed
 
+wipe: 	clean
+	rm -rf $(SVN_DIR)
