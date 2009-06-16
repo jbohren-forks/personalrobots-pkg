@@ -21,7 +21,7 @@
 <!-- plug domain -->
   <!--<include file="$(find outlet_detection)/launch/plug.launch" /> -->
   <include file="$(find outlet_detection)/launch/outlet_coarse_detection/outlet_coarse_detection.launch" />
-  <node machine = "four" pkg="plug_in" type="outlet_pose_filter.py"/>
+  <node machine = "four" pkg="plugs_core" type="outlet_pose_filter.py"/>
   <include file="$(find plugs_core)/launch/plugs_actions.launch" />
 
   

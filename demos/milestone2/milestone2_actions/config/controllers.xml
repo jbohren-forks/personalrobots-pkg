@@ -234,10 +234,11 @@
         <param name="i_clamp" value="0" />
       </group>
     </group>
-    <param name="twist_filter" command="$(find plug_in)/make_lowpass.m twist_filter 0.1 " />
+    <param name="twist_filter" command="$(find plugs_core)/scripts/make_lowpass.m twist_filter 0.1 " />
+
     <param name="saturated_velocity" value="-0.5" />
     <param name="autostart" value="false" type="bool" />
   </group>
-  <node pkg="mechanism_control" type="spawner.py" args="$(find plug_in)/integration/r_arm_hybrid_controller.xml"/>
+  <node pkg="mechanism_control" type="spawner.py" args="$(find pr2_experimental_controllers)/r_arm_hybrid_controller.xml"/>
 
 </launch>
