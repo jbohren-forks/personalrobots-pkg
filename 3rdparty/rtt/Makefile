@@ -2,7 +2,7 @@ all: installed
 
 SVN_REVISION=-r 30170
 SVN_DIR = rtt-svn
-SVN_URL = http://svn.mech.kuleuven.be:/repos/orocos/trunk/rtt
+SVN_URL = http://svn.mech.kuleuven.be/repos/orocos/trunk/rtt
 INSTALL_DIR = rtt
 CMAKE = cmake
 BOOST_INCLUDE =$(shell rosboost-cfg --include_dirs)
