@@ -1,7 +1,8 @@
 all: installed
 
 SVN_REVISION=-r 30215
-SVN_DIR = kdl-svn
+SVN_DIR = kdl-svn-trunk
+OLD_SVN_DIR = kdl-svn
 SVN_URL = http://svn.mech.kuleuven.be:/repos/orocos/trunk/kdl
 SVN_PATCH=total.patch
 INSTALL_DIR = kdl
@@ -35,8 +36,9 @@ wiped: Makefile
 
 clean:
 	rm -rf $(INSTALL_DIR)
-	rm -rf $(SVN_DIR)
+	rm -rf $(SVN_DIR)/build
 	rm -rf installed
 
 wipe: 	clean
-	rm -rf $(SVN_DIR)/build
+	rm -rf $(SVN_DIR)
+	rm -rf $(OLD_SVN_DIR)
