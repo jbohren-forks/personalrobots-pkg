@@ -133,13 +133,17 @@ public:
 	res.unsafe = isSafeToPlan(true) ? 0 : 1;
 	res.distance = -1.0;
 	res.approximate = 0;
-	if (planningMonitor_->haveState())
-	{
-	    planningMonitor_->getRobotState()->copyParams(res.path.start_state.vals);
-	    st = requestHandler_.computePlan(models_, req, res);
-	}
+	
+	if (!req.start_state.vals.empty())
+	    res.path.start_state = req.start_state;
 	else
-	    ROS_ERROR("Current robot state is unknown. Cannot start plan.");
+	    if (planningMonitor_->haveState())
+		planningMonitor_->getRobotState()->copyParams(res.path.start_state.vals);		
+	
+	if (!res.path.start_state.vals.empty())
+	    st = requestHandler_.computePlan(models_, req, res);
+	else
+	    ROS_ERROR("Starting robot state is unknown. Cannot start plan.");
 	
 	return st;	
     }
