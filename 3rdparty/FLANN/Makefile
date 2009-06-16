@@ -13,6 +13,8 @@ installed: wiped $(SOURCE_DIR)/unpacked
 	mkdir -p build/build && cd build/build && cmake ../flann-1.2-src/src && make && make install
 	touch installed
 
+clean: wipe
+
 wiped: Makefile
 	make wipe
 	touch wiped

@@ -12,5 +12,6 @@ installed: $(SOURCE_DIR)/unpacked Makefile
 	echo "Building CMinpack..."
 	cd $(SOURCE_DIR) && make
 	touch installed
+clean: wipe
 wipe:
 	rm -rf build installed

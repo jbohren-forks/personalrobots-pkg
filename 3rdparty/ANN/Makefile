@@ -16,5 +16,6 @@ installed: $(SOURCE_DIR)/unpacked Makefile
 	  cd build/ann_1.1.1 && make linux-shared-g++; \
 	fi
 	touch installed
+clean: wipe
 wipe:
 	rm -rf build installed
