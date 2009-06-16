@@ -21,7 +21,7 @@ def print_usage(exit_code = 0):
     sys.exit(exit_code)
 
 if __name__ == '__main__':
-    if len(sys.argv) != 6:
+    if len(sys.argv) < 6:
         print_usage()
     if sys.argv[2] == 'sine' :
         profile_type = 4            # Implies a sine sweep
