@@ -325,26 +325,22 @@ class NavStackTest(unittest.TestCase):
             # compute angular error between deltas in odom and p3d
             # compute delta in odom from initial pose
             print "========================"
-            tmpori = rotation_matrix_from_quaternion(self.odom_qi)
-            tmpoqi = quaternion_from_rotation_matrix(linalg.inv(tmpori))
+            tmpoqi = quaternion_inverse(self.odom_qi)
             odom_q_delta = quaternion_multiply(tmpoqi,self.odom_q)
             print "odom delta:" , euler_from_quaternion(odom_q_delta)
             # compute delta in p3d from initial pose
-            tmppri = rotation_matrix_from_quaternion(self.p3d_qi)
-            tmppqi = quaternion_from_rotation_matrix(linalg.inv(tmppri))
+            tmppqi = quaternion_inverse(self.p3d_qi)
             p3d_q_delta = quaternion_multiply(tmppqi,self.p3d_q)
             print "p3d delta:" , euler_from_quaternion(p3d_q_delta)
             # compute delta between odom and p3d
-            tmpdri = rotation_matrix_from_quaternion(p3d_q_delta)
-            tmpdqi = quaternion_from_rotation_matrix(linalg.inv(tmpdri))
+            tmpdqi = quaternion_inverse(p3d_q_delta)
             delta = quaternion_multiply(tmpdqi,odom_q_delta)
             delta_euler = euler_from_quaternion(delta)
             odom_drift_dyaw = delta_euler[2]
             print "odom drift from p3d:" , euler_from_quaternion(delta)
 
             # compute delta between target and p3d
-            tmptri = rotation_matrix_from_quaternion(self.target_q)
-            tmptqi = quaternion_from_rotation_matrix(linalg.inv(tmptri))
+            tmptqi = quaternion_inverse(self.target_q)
             navdq = quaternion_multiply(tmptqi,self.p3d_q)
             navde = euler_from_quaternion(navdq)
             nav_dyaw = navde[2]
