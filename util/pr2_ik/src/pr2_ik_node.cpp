@@ -46,10 +46,10 @@ namespace pr2_ik {
         dimension_(7)
   {
     node_handle_.param<std::string>("~root_name", root_name_, "torso_lift_link");
-    node_handle_.param<std::string>("~control_topic_name",control_topic_name_,"r_arm_joint_trajectory_controller/command");
     node_handle_.param<bool>("~free_angle_constraint",free_angle_constraint_,false);
     node_handle_.param<int>("~dimension",dimension_,7);
-    node_handle_.advertise<robot_msgs::JointTraj>(control_topic_name_, 1);
+    node_handle_.param<std::string>("~ik_service_name",ik_service_name_,"~ik_service");
+    node_handle_.param<std::string>("~ik_query_name",ik_query_name_,"~ik_query");
 
     if(free_angle_constraint_)
     {
@@ -60,6 +60,8 @@ namespace pr2_ik {
       pr2_ik_solver_.pr2_ik_->max_angles_[pr2_ik_solver_.pr2_ik_->free_angle_] = free_angle_constraint_max;
     }
     this->init();
+    ik_service_ = node_handle_.advertiseService(ik_service_name_,&PR2IKNode::ikService,this);
+    ik_query_ = node_handle_.advertiseService(ik_query_name_,&PR2IKNode::ikQuery,this);
   }
 
   PR2IKNode::~PR2IKNode()
@@ -86,7 +88,7 @@ namespace pr2_ik {
     return -1;   
   }
 
-  bool PR2IKNode::checkJointNames(const pr2_ik::IKService::Request &request)
+  bool PR2IKNode::checkJointNames(const manipulation_srvs::IKService::Request &request)
   {
       for(int i=0; i< dimension_; i++)
       {
@@ -98,7 +100,7 @@ namespace pr2_ik {
     return true;   
   }
 
-  bool PR2IKNode::ikService(pr2_ik::IKService::Request &request, pr2_ik::IKService::Response &response)
+  bool PR2IKNode::ikService(manipulation_srvs::IKService::Request &request, manipulation_srvs::IKService::Response &response)
   {
     tf::Stamped<tf::Pose> pose_stamped;
     if(!checkJointNames(request))
@@ -140,6 +142,16 @@ namespace pr2_ik {
       ROS_ERROR("IK invalid");   
       return false;
     }
+  }
+
+  bool PR2IKNode::ikQuery(manipulation_srvs::IKQuery::Request &request, manipulation_srvs::IKQuery::Response &response)
+  {
+    response.names.resize(dimension_);
+    for(int i=0; i < dimension_; i++)
+    {
+      response.names[i] = pr2_ik_solver_.chain_.getJoint(i)->name_;
+    }
+    return true;
   }
 
   void PR2IKNode::poseToFrame(const tf::Pose& pose, KDL::Frame& frame)

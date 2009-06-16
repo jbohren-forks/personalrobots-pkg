@@ -51,10 +51,14 @@ int main(int argc, char **argv)
    input.resize(7);
 
 //   const double ja[7] = {-0.087379,1.225220,-2.439131,-1.610891,-2.395076,1.585149,0.031105};
-   const double ja[7] = {0.566087,1.358282,-2.673285,-0.969307,-1.835188,1.585149,1.648559};
+//   const double ja[7] = {0.566087,1.358282,-2.673285,-0.969307,-1.835188,1.585149,1.648559};
   
 //   double init =  -1.970823;
-   double init =  -2.670823;
+//   double init =  -2.670823;
+
+   const double ja[7] = {0.684899,1.149184,-2.907439,-1.420792,1.835188,2.177228,1.461929};
+   double init =  -0.917129;
+
 
    input(0) = ja[0];
    input(1) = ja[1];
@@ -66,7 +70,7 @@ int main(int argc, char **argv)
    input(6) = ja[6];
 
    KDL::JntArray guess = input;
-   guess(2) = init;
+   guess(2) = init+0.1;
 
    PR2IKSolver ik;
    if(!ik.active_)

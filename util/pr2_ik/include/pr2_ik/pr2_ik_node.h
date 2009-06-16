@@ -48,8 +48,10 @@
 #include <pr2_ik/pr2_ik_solver.h>
 
 //Pose command for the ik node
-#include <pr2_ik/IKService.h>
+#include <manipulation_srvs/IKService.h>
+#include <manipulation_srvs/IKQuery.h>
 
+#include <manipulation_msgs/IKRequest.h>
 
 namespace pr2_ik
 {
@@ -71,6 +73,8 @@ namespace pr2_ik
 
     ros::ServiceServer ik_service_;
 
+    ros::ServiceServer ik_query_;
+
     PR2IKSolver pr2_ik_solver_;
 
     tf::TransformListener tf_;
@@ -89,10 +93,16 @@ namespace pr2_ik
 
     bool free_angle_constraint_;
 
-    bool ikService(pr2_ik::IKService::Request &request, pr2_ik::IKService::Response &response);
+    bool ikService(manipulation_srvs::IKService::Request &request, manipulation_srvs::IKService::Response &response);
+
+    bool ikQuery(manipulation_srvs::IKQuery::Request &request, manipulation_srvs::IKQuery::Response &response);
 
     int getJointIndex(const std::string &name);
 
-    bool checkJointNames(const pr2_ik::IKService::Request &request);
+    bool checkJointNames(const manipulation_srvs::IKService::Request &request);
+
+    std::string ik_service_name_;
+
+    std::string ik_query_name_;
   };
 }
