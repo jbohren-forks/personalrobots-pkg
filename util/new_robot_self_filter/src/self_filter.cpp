@@ -35,95 +35,41 @@
 /** \author Ioan Sucan */
 
 #include <ros/ros.h>
-#include "self_see_filter.h"
-#include <visualization_msgs/Marker.h>
+#include "robot_self_filter/self_see_filter.h"
 
-class TestSelfFilter
+class SelfFilter
 {
 public:
 
-    TestSelfFilter(void)
+    SelfFilter(void)
     {
-	id_ = 1;
 	sf_.configure();
-	vmPub_ = nodeHandle_.advertise<visualization_msgs::Marker>("visualization_marker", 10240);
+	pointCloudSubscriber_ = nh_.subscribe("full_cloud", 1, &SelfFilter::cloudCallback, this);
+	pointCloudPublisher_ = nh_.advertise<robot_msgs::PointCloud>("full_cloud_filtered", 1);	
     }
     
-    void sendPoint(double x, double y, double z)
+    void cloudCallback(const robot_msgs::PointCloudConstPtr &cloud)
     {
-	visualization_msgs::Marker mk;
-
-	mk.header.stamp = ros::Time::now();
-
-	mk.header.frame_id = "base_link";
-
-	mk.ns = "test_self_filter";
-	mk.id = id_++;
-	mk.type = visualization_msgs::Marker::SPHERE;
-	mk.action = visualization_msgs::Marker::ADD;
-	mk.pose.position.x = x;
-	mk.pose.position.y = y;
-	mk.pose.position.z = z;
-	mk.pose.orientation.w = 1.0;
-
-	mk.scale.x = mk.scale.y = mk.scale.z = 0.02;
-
-	mk.color.a = 1.0;
-	mk.color.r = 1.0;
-	mk.color.g = 0.04;
-	mk.color.b = 0.04;
-
-	vmPub_.publish(mk);
-    }
-    void run(void)
-    {
-	robot_msgs::PointCloud in;
 	robot_msgs::PointCloud out;
-	
-	in.header.stamp = ros::Time::now();
-	in.header.frame_id = "base_link";
-	
-	const unsigned int N = 100000;	
-	in.pts.resize(N);
-	for (unsigned int i = 0 ; i < N ; ++i)
-	{
-	    in.pts[i].x = uniform(1);
-	    in.pts[i].y = uniform(1);
-	    in.pts[i].z = uniform(1);
-	}
-	
-	ros::WallTime tm = ros::WallTime::now();
-	sf_.update(in, out);
-	printf("%f points per second\n", (double)N/(ros::WallTime::now() - tm).toSec());
-	
-	for (unsigned int i = 0 ; i < out.pts.size() ; ++i)
-	{
-	    sendPoint(out.pts[i].x, out.pts[i].y, out.pts[i].z);
-	}
-	
-	ros::spin();	
+	sf_.update(*cloud, out);
+	pointCloudPublisher_.publish(out);
     }
-protected:
     
-    double uniform(double magnitude)
-    {
-	return (2.0 * drand48() - 1.0) * magnitude;
-    }
-
-    ros::Publisher                              vmPub_;
-    ros::NodeHandle                             nodeHandle_;        
+private:
+    
+    ros::Publisher                              pointCloudPublisher_;
+    ros::Subscriber                             pointCloudSubscriber_;
+    ros::NodeHandle                             nh_;        
     filters::SelfFilter<robot_msgs::PointCloud> sf_;
-    int                                         id_;
 };
 
     
 int main(int argc, char **argv)
 {
-    ros::init(argc, argv, "test_self_filter");
+    ros::init(argc, argv, "self_filter");
 
-    TestSelfFilter t;
-    sleep(1);
-    t.run();
+    SelfFilter s;
+    ros::spin();
     
     return 0;
 }

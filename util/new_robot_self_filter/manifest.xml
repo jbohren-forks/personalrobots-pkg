@@ -17,6 +17,10 @@
   <depend package="collision_space"/>
   <depend package="planning_environment"/>
 
+  <export>
+    <cpp cflags="-I${prefix}/include" lflags="" />
+  </export>
+
 </package>
 
 
