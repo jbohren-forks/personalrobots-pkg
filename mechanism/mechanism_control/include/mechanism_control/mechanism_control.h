@@ -197,11 +197,7 @@ private:
   bool getController(const std::string& name, int& id);
 
   MechanismControl *mc_;
-
-  //static const double STATE_PUBLISHING_PERIOD = 0.01;  // this translates to about 100Hz
-  static const int CYCLES_PER_STATE_PUBLISH = 10;  // 100 Hz
-  int cycles_since_publish_;
-
+  double publish_period_, last_publish_;
   const char* const mechanism_state_topic_;
   realtime_tools::RealtimePublisher<robot_msgs::MechanismState> publisher_;
 

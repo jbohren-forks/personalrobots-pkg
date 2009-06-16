@@ -483,7 +483,7 @@ void MechanismControl::changeControllers(std::vector<RemoveReq> &remove_reqs,
 
 
 MechanismControlNode::MechanismControlNode(MechanismControl *mc)
-  : mc_(mc), cycles_since_publish_(0),
+  : mc_(mc),
     mechanism_state_topic_("mechanism_state"),
     publisher_(mechanism_state_topic_, 1)
 {
@@ -538,6 +538,12 @@ bool MechanismControlNode::initXml(TiXmlElement *config)
   node_->advertiseService("kill_and_spawn_controllers", &MechanismControlNode::killAndSpawnControllers, this);
   kill_and_spawn_controllers_guard_.set("kill_and_spawn_controllers");
 
+
+  // get the publish rate for mechanism state
+  double publish_rate;
+  node_->param("~publish_rate_mechamism_state", publish_rate, 100.0);
+  publish_period_ = 1.0/fmax(0.000001,publish_rate);
+  last_publish_ = realtime_gettime();
   return true;
 }
 
@@ -545,9 +551,9 @@ void MechanismControlNode::update()
 {
   mc_->update();
 
-  if (++cycles_since_publish_ >= CYCLES_PER_STATE_PUBLISH)
+  if (realtime_gettime() > last_publish_ + publish_period_)
   {
-    cycles_since_publish_ = 0;
+    last_publish_ = realtime_gettime();
     if (publisher_.trylock())
     {
       unsigned int j = 0;
@@ -595,7 +601,7 @@ void MechanismControlNode::update()
         out->motor_voltage = in->motor_voltage_;
         out->num_encoder_errors = in->num_encoder_errors_;
       }
-      publisher_.msg_.time = mc_->hw_->current_time_;
+      publisher_.msg_.time = realtime_gettime();
 
       publisher_.unlockAndPublish();
     }
