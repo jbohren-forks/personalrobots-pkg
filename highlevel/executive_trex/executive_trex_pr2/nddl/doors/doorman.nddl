@@ -45,4 +45,9 @@ MoveBehavior::Active {
   addEq(bs.x, ds.travel_dir_x, x);
   addEq(bs.y, ds.travel_dir_y, y);
   eq(ds.travel_dir_z, 0.0);
+
+  // Set start connect by default if not set
+  MAP_KEY connector_default;
+  map_get_nearest_connector(connector_default, bs.x, bs.y, x, y);
+  defaultOnCommit(start_connector, connector_default);
 }
