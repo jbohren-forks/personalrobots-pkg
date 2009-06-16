@@ -120,8 +120,9 @@ protected:
 	for (unsigned int i = 0 ; i < n ; ++i)
 	{
 	    const robot_msgs::Point32 &point = collisionMap->boxes[i].center;
+	    const robot_msgs::Point32 &extents = collisionMap->boxes[i].extents;
 	    sendPoint(point.x, point.y, point.z,
-		      std::max(std::max(point.x, point.y), point.z),
+		      std::max(std::max(extents.x, extents.y), extents.z) * 1.73,
 		      collisionMap->header, 1);
 	}
     }
