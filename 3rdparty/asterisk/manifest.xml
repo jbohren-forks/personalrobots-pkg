@@ -1,0 +1,18 @@
+<package>
+    <description brief="asterisk">
+        Asterisk is the world's leading open source PBX, telephony engine, and telephony applications toolkit. Offering flexibility unheard of in the world of proprietary communications, Asterisk empowers developers and integrators to create advanced communication solutions...for free.
+  </description>
+
+  <author></author>
+  <license>GPL 2</license>
+  <review status="3rdparty" notes=""/>
+  <url>http://www.asterisk.org</url>
+  <export>
+  </export>
+  <depend package="rospy" />
+  <depend package="std_msgs" />
+
+  <sysdepend os="ubuntu" version="7.04-feisty" package="wget"/>
+  <sysdepend os="ubuntu" version="8.04-hardy" package="wget"/>
+
+</package>
