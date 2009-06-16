@@ -73,13 +73,25 @@ TransformListener::TransformListener(ros::Node & rosnode,
                                      bool interpolating,
                                      ros::Duration max_cache_time):
   Transformer(interpolating,
-              max_cache_time),
-  node_(rosnode)
+              max_cache_time)
 {
   //  printf("Constructed rosTF\n");
-  node_.subscribe("/tf_message", msg_in_, &TransformListener::subscription_callback, this,100); ///\todo magic number
+  message_subscriber_ = node_.subscribe<tf::tfMessage>("/tf_message", 100, boost::bind(&TransformListener::subscription_callback, this, _1)); ///\todo magic number
   
-  node_.subscribe("/reset_time", empty_, &TransformListener::reset_callback, this,100); ///\todo magic number
+  reset_time_subscriber_ = node_.subscribe<std_msgs::Empty>("/reset_time", 100, boost::bind(&TransformListener::reset_callback, this, _1)); ///\todo magic number
+  
+  node_.advertiseService("~tf_frames", &TransformListener::getFrames, this);
+  node_.param(std::string("~tf_prefix"), tf_prefix_, std::string(""));
+}
+
+TransformListener::TransformListener(ros::Duration max_cache_time):
+  Transformer(true,
+              max_cache_time)
+{
+  //  printf("Constructed rosTF\n");
+  message_subscriber_ = node_.subscribe<tf::tfMessage>("/tf_message", 100, boost::bind(&TransformListener::subscription_callback, this, _1)); ///\todo magic number
+  
+  reset_time_subscriber_ = node_.subscribe<std_msgs::Empty>("/reset_time", 100, boost::bind(&TransformListener::reset_callback, this, _1)); ///\todo magic number
   
   node_.advertiseService("~tf_frames", &TransformListener::getFrames, this);
   node_.param(std::string("~tf_prefix"), tf_prefix_, std::string(""));
@@ -87,8 +99,6 @@ TransformListener::TransformListener(ros::Node & rosnode,
 
 TransformListener::~TransformListener()
 {
-  node_.unsubscribe("/tf_message", &TransformListener::subscription_callback, this);
-  node_.unsubscribe("/reset_time", &TransformListener::reset_callback, this);
 }
 
 
@@ -243,15 +253,16 @@ void TransformListener::transformPointCloud(const std::string & target_frame, co
 
 
 
-void TransformListener::subscription_callback()
+void TransformListener::subscription_callback(const tf::tfMessageConstPtr& msg)
 {
-  for (unsigned int i = 0; i < msg_in_.transforms.size(); i++)
+  const tf::tfMessage& msg_in = *msg;
+  for (unsigned int i = 0; i < msg_in.transforms.size(); i++)
   {
     Stamped<Transform> trans;
-    TransformStampedMsgToTF(msg_in_.transforms[i], trans);
+    TransformStampedMsgToTF(msg_in.transforms[i], trans);
     try
     {
-      std::map<std::string, std::string>* msg_header_map = msg_in_.__connection_header.get();
+      std::map<std::string, std::string>* msg_header_map = msg_in.__connection_header.get();
       std::string authority;
       std::map<std::string, std::string>::iterator it = msg_header_map->find("callerid");
       if (it == msg_header_map->end())
@@ -270,11 +281,15 @@ void TransformListener::subscription_callback()
     {
       ///\todo Use error reporting
       std::string temp = ex.what();
-      ROS_ERROR("Failure to set recieved transform %s to %s with error: %s\n", msg_in_.transforms[i].header.frame_id.c_str(), msg_in_.transforms[i].parent_id.c_str(), temp.c_str());
+      ROS_ERROR("Failure to set recieved transform %s to %s with error: %s\n", msg_in.transforms[i].header.frame_id.c_str(), msg_in.transforms[i].parent_id.c_str(), temp.c_str());
     }
   }
-
-
-
 };
+
+void TransformListener::reset_callback(const std_msgs::EmptyConstPtr &msg)
+{
+  clear();
+};
+
+
 

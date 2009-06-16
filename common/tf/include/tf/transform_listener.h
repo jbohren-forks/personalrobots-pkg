@@ -36,7 +36,7 @@
 #include "std_msgs/Empty.h"
 #include "tf/tfMessage.h"
 #include "tf/tf.h"
-#include "ros/node.h"
+#include "ros/ros.h"
 
 #include "tf/FrameGraph.h" //frame graph service
 
@@ -46,16 +46,21 @@ namespace tf{
 class TransformListener : public Transformer { //subscribes to message and automatically stores incoming data
 
 private:
-  ros::Node& node_;
+  ros::NodeHandle node_;
+  ros::Subscriber message_subscriber_, reset_time_subscriber_;
 
 public:
-  /**@brief Constructor for transform listener
+  /**@brief The deprecated constructor for transform listener
    * \param rosnode A reference to an instance of a ros::Node for communication
    * \param interpolating Whether to interpolate or return the closest
    * \param max_cache_time How long to store transform information */
   TransformListener(ros::Node & rosnode,
                     bool interpolating = true,
-                    ros::Duration max_cache_time = ros::Duration(DEFAULT_CACHE_TIME));
+                    ros::Duration max_cache_time = ros::Duration(DEFAULT_CACHE_TIME))__attribute__((deprecated));
+
+  /**@brief Constructor for transform listener
+   * \param max_cache_time How long to store transform information */
+  TransformListener(ros::Duration max_cache_time = ros::Duration(DEFAULT_CACHE_TIME));
 
   
   ~TransformListener();
@@ -114,17 +119,14 @@ public:
   }
 
 private:
-  /// memory space for callback
-  tfMessage msg_in_;
-  ///\todo Switch to robot_msgs::Transform
   /// Callback function for ros message subscriptoin
-  void subscription_callback();
+  void subscription_callback(const tf::tfMessageConstPtr& msg);
 
   /** @brief a helper function to be used for both transfrom pointCloud methods */
   void transformPointCloud(const std::string & target_frame, const Transform& transform, const ros::Time& target_time, const robot_msgs::PointCloud& pcin, robot_msgs::PointCloud& pcout) const;
 
   /// clear the cached data
-  void reset_callback(){clear();};
+  void reset_callback(const std_msgs::EmptyConstPtr &msg);
   std_msgs::Empty empty_;
 
 };

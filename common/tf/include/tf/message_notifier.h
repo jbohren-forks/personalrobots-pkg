@@ -32,7 +32,7 @@
 #ifndef MESSAGE_NOTIFIER_H
 #define MESSAGE_NOTIFIER_H
 
-#include <ros/node.h>
+#include <ros/ros.h>
 #include <tf/tf.h>
 #include <tf/tfMessage.h>
 #include <tf/message_notifier_base.h>
@@ -82,7 +82,7 @@ class Transformer;
  * The callback takes one argument, which is a boost shared_ptr to a message.  MessageNotifier provides a MessagePtr typedef,
  * so the signature of the callback is:
  \verbatim
- void funcName(const MessageNotifier<Message>::MessagePtr& message);
+ void funcName(const MessageNotifier<MessageT>::MessagePtr& message);
  \endverbatim
  *
  * A bare function can be passed directly as the callback.  Methods must be passed using boost::bind.  For example
@@ -98,28 +98,26 @@ class Transformer;
  *
  \endverbatim
  */
-template<class Message>
+template<class MessageT>
 class MessageNotifier : public MessageNotifierBase
 {
 public:
-  typedef boost::shared_ptr<Message> MessagePtr;
+  typedef boost::shared_ptr<MessageT> MessagePtr;
   typedef boost::function<void(const MessagePtr&)> Callback;
 
   /**
    * \brief Constructor
    * \param tf The Transformer to use for checking if the transform data is available
-   * \param node The ros::Node to subscribe on
    * \param callback The function to call when a message is ready to be transformed
    * \param topic The topic to listen on
    * \param target_frame The frame we need to be able to transform to before a message is ready
-   * \param queue_size The number of messages to keep around waiting for transform data.  This is passed directly to ros::Node::subscribe.
+   * \param queue_size The number of messages to keep around waiting for transform data.  
    * \note A queue size of 0 means infinite, which can be dangerous
    */
-  MessageNotifier(Transformer* tf, ros::Node* node, Callback callback,
+  MessageNotifier(Transformer& tf, Callback callback,
       const std::string& topic, const std::string& target_frame,
       uint32_t queue_size)
   : tf_(tf)
-  , node_(node)
   , callback_(callback)
   , queue_size_(queue_size)
   , message_count_(0)
@@ -139,11 +137,43 @@ public:
 
     setTopic(topic);
 
-    node_->subscribe("/tf_message", transforms_message_,
-        &MessageNotifier::incomingTFMessage, this, 1);
+    tf_subscriber_ = node_.subscribe("/tf_message", 1, boost::bind(&MessageNotifier::incomingTFMessage, this, _1));
 
     thread_handle_ = boost::thread(boost::bind(&MessageNotifier::workerThread, this));
   }
+
+  /**
+   * \brief Constructor
+   * Backwards compatible API call.  Please switch to prototype without Node*
+   */
+  MessageNotifier(Transformer* tf, ros::Node* node, Callback callback,
+      const std::string& topic, const std::string& target_frame,
+      uint32_t queue_size)
+  : tf_(*tf)
+  , callback_(callback)
+  , queue_size_(queue_size)
+  , message_count_(0)
+  , destructing_(false)
+  , new_messages_(false)
+  , new_transforms_(false)
+  , successful_transform_count_(0)
+  , failed_transform_count_(0)
+  , failed_out_the_back_count_(0)
+  , transform_message_count_(0)
+  , incoming_message_count_(0)
+  , dropped_message_count_(0)
+  , time_tolerance_(0.0)
+  {
+    target_frames_.resize(1);
+    target_frames_[0] = target_frame;
+
+    setTopic(topic);
+    
+    tf_subscriber_ = node_.subscribe<tfMessage>("/tf_message", 1,
+                                  boost::bind(&MessageNotifier::incomingTFMessage, this, _1));
+
+    thread_handle_ = boost::thread(boost::bind(&MessageNotifier::workerThread, this));
+  } __attribute__((deprecated));
 
   /**
    * \brief Destructor
@@ -154,8 +184,7 @@ public:
                         successful_transform_count_, failed_transform_count_, failed_out_the_back_count_, transform_message_count_, incoming_message_count_, dropped_message_count_);
 
     unsubscribeFromMessage();
-
-    node_->unsubscribe("/tf_message", &MessageNotifier::incomingTFMessage, this);
+    
 
     // Tell the worker thread that we're destructing
     destructing_ = true;
@@ -262,8 +291,8 @@ public:
   {
     if (!topic_.empty())
     {
-      node_->subscribe(topic_, message_, &MessageNotifier::incomingMessage,
-          this, queue_size_);
+      subscriber_ = node_.subscribe<MessageT>(topic_, queue_size_, 
+                                              boost::bind(&MessageNotifier::incomingMessage,  this, _1));
     }
   }
 
@@ -274,7 +303,7 @@ public:
   {
     if (!topic_.empty())
     {
-      node_->unsubscribe(topic_, &MessageNotifier::incomingMessage, this);
+      subscriber_.shutdown();
     }
   }
 
@@ -316,13 +345,13 @@ private:
           ros::Time latest_transform_time ;
           std::string error_string ;
 
-          tf_->getLatestCommonTime(message->header.frame_id, target_frame, latest_transform_time, &error_string) ;
-          if (message->header.stamp + tf_->getCacheLength() < latest_transform_time)
+          tf_.getLatestCommonTime(message->header.frame_id, target_frame, latest_transform_time, &error_string) ;
+          if (message->header.stamp + tf_.getCacheLength() < latest_transform_time)
           {
             --message_count_;
             ++failed_out_the_back_count_;
             ++dropped_message_count_;
-            NOTIFIER_DEBUG("Discarding Message %d , in frame %s, Out of the back of Cache Time(stamp: %.3f + cache_length: %.3f < latest_transform_time %.3f.  Message Count now: %d", i, message->header.frame_id.c_str(), message->header.stamp.toSec(),  tf_->getCacheLength().toSec(), latest_transform_time.toSec(), message_count_);
+            NOTIFIER_DEBUG("Discarding Message %d , in frame %s, Out of the back of Cache Time(stamp: %.3f + cache_length: %.3f < latest_transform_time %.3f.  Message Count now: %d", i, message->header.frame_id.c_str(), message->header.stamp.toSec(),  tf_.getCacheLength().toSec(), latest_transform_time.toSec(), message_count_);
 
             last_out_the_back_stamp_ = message->header.stamp;
             last_out_the_back_frame_ = message->header.frame_id;
@@ -345,12 +374,12 @@ private:
         std::string& target_frame = *target_it;
         if (time_tolerance_ != ros::Duration(0.0))
         {
-          ready = ready && (tf_->canTransform(target_frame, message->header.frame_id, message->header.stamp) &&
-                            tf_->canTransform(target_frame, message->header.frame_id, message->header.stamp + time_tolerance_) );
+          ready = ready && (tf_.canTransform(target_frame, message->header.frame_id, message->header.stamp) &&
+                            tf_.canTransform(target_frame, message->header.frame_id, message->header.stamp + time_tolerance_) );
         }
         else
         {
-          ready = ready && tf_->canTransform(target_frame, message->header.frame_id, message->header.stamp);
+          ready = ready && tf_.canTransform(target_frame, message->header.frame_id, message->header.stamp);
         }
       }
 
@@ -477,9 +506,9 @@ private:
   class MessageDeleter
   {
   public:
-    void operator()(Message* m)
+    void operator()(MessageT* m)
     {
-      m->~Message();
+      m->~MessageT();
       notifierDeallocate(m);
     }
   };
@@ -487,16 +516,16 @@ private:
   /**
    * \brief Callback that happens when we receive a message on the message topic
    */
-  void incomingMessage()
+  void incomingMessage(typename MessageT::ConstPtr msg)
   {
     // Allocate our new message and placement-new it
-    Message* mem = (Message*) notifierAllocate(sizeof(Message));
-    new (mem) Message();
+    MessageT* mem = (MessageT*) notifierAllocate(sizeof(MessageT));
+    new (mem) MessageT();
 
     // Create a boost::shared_ptr from the message, with our custom deleter
     MessagePtr message(mem, MessageDeleter());
     // Copy the message
-    *message = message_;
+    *message = *msg;
 
     enqueueMessage(message);
   }
@@ -504,7 +533,7 @@ private:
   /**
    * \brief Callback that happens when we receive a message on the TF message topic
    */
-  void incomingTFMessage()
+  void incomingTFMessage(const tf::tfMessage::ConstPtr msg)
   {
     // Notify the worker thread that there is new data available
     new_data_.notify_all();
@@ -540,8 +569,10 @@ private:
     }
   }
 
-  Transformer* tf_; ///< The Transformer used to determine if transformation data is available
-  ros::Node* node_; ///< The node used to subscribe to the topic
+  Transformer& tf_; ///< The Transformer used to determine if transformation data is available
+  ros::NodeHandle node_; ///< The node used to subscribe to the topic
+  ros::Subscriber subscriber_;
+  ros::Subscriber tf_subscriber_;
   Callback callback_; ///< The callback to call when a message is ready
   std::vector<std::string> target_frames_; ///< The frames we need to be able to transform to before a message is ready
   std::string target_frames_string_;
@@ -552,10 +583,6 @@ private:
   L_Message messages_; ///< The message list
   uint32_t message_count_; ///< The number of messages in the list.  Used because messages_.size() has linear cost
   boost::mutex list_mutex_; ///< The mutex used for locking message list operations
-
-  Message message_; ///< The incoming message
-
-  tfMessage transforms_message_; ///< The incoming TF transforms message
 
   bool destructing_; ///< Used to notify the worker thread that it needs to shutdown
   boost::thread thread_handle_; ///< Thread handle for the worker thread

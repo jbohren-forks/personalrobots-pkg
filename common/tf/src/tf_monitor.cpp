@@ -35,6 +35,7 @@
 #include "tf/tf.h"
 #include "tf/transform_listener.h"
 #include <string>
+#include "ros/ros.h"
 
 using namespace tf;
 using namespace ros;
@@ -47,7 +48,8 @@ public:
   std::string framea_, frameb_;
   bool using_specific_chain_;
   
-  Node node_;
+  ros::NodeHandle node_;
+  ros::Subscriber subscriber_;
   std::vector<std::string> chain_;
   std::map<std::string, std::string> frame_authority_map;
   std::map<std::string, std::vector<double> > delay_map;
@@ -59,11 +61,12 @@ public:
   tf::tfMessage message_;
 
   boost::mutex map_lock_;
-  void callback()
+  void callback(const tf::tfMessageConstPtr& msg_ptr)
   {
+    const tf::tfMessage& message = *msg_ptr;
     //Lookup the authority 
     std::string authority;
-    std::map<std::string, std::string>* msg_header_map = message_.__connection_header.get();
+    std::map<std::string, std::string>* msg_header_map = message.__connection_header.get();
     std::map<std::string, std::string>::iterator it = msg_header_map->find("callerid");
     if (it == msg_header_map->end())
     {
@@ -78,17 +81,17 @@ public:
 
     double average_offset = 0;
     boost::mutex::scoped_lock my_lock(map_lock_);  
-    for (unsigned int i = 0; i < message_.transforms.size(); i++)
+    for (unsigned int i = 0; i < message.transforms.size(); i++)
     {
-      frame_authority_map[message_.transforms[i].header.frame_id] = authority;
+      frame_authority_map[message.transforms[i].header.frame_id] = authority;
 
-      double offset = (ros::Time::now() - message_.transforms[i].header.stamp).toSec();
+      double offset = (ros::Time::now() - message.transforms[i].header.stamp).toSec();
       average_offset  += offset;
       
-      std::map<std::string, std::vector<double> >::iterator it = delay_map.find(message_.transforms[i].header.frame_id);
+      std::map<std::string, std::vector<double> >::iterator it = delay_map.find(message.transforms[i].header.frame_id);
       if (it == delay_map.end())
       {
-        delay_map[message_.transforms[i].header.frame_id] = std::vector<double>(1,offset);
+        delay_map[message.transforms[i].header.frame_id] = std::vector<double>(1,offset);
       }
       else
       {
@@ -99,7 +102,7 @@ public:
       
     } 
     
-    average_offset /= max((size_t) 1, message_.transforms.size());
+    average_offset /= max((size_t) 1, message.transforms.size());
 
     //create the authority log
     std::map<std::string, std::vector<double> >::iterator it2 = authority_map.find(authority);
@@ -131,9 +134,7 @@ public:
 
   TFMonitor(bool using_specific_chain, std::string framea  = "", std::string frameb = ""):
     framea_(framea), frameb_(frameb),
-    using_specific_chain_(using_specific_chain),
-    node_("tf_monitor", ros::Node::ANONYMOUS_NAME),
-    tf_(node_)
+    using_specific_chain_(using_specific_chain)
   {
     
     if (using_specific_chain_)
@@ -151,7 +152,7 @@ public:
       }
       cout <<endl;
     }
-  node_.subscribe("tf_message", message_, &TFMonitor::callback, this, 100);
+    subscriber_ = node_.subscribe<tf::tfMessage>("tf_message", 100, boost::bind(&TFMonitor::callback, this, _1));
     
   }
 
@@ -242,7 +243,7 @@ public:
 int main(int argc, char ** argv)
 {
   //Initialize ROS
-  init(argc, argv);
+  init(argc, argv, "tf_monitor", ros::init_options::AnonymousName);
 
   string framea, frameb;
   bool using_specific_chain = true;

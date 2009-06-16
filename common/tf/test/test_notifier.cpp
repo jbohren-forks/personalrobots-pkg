@@ -36,6 +36,8 @@
 #include <boost/bind.hpp>
 #include <boost/scoped_ptr.hpp>
 
+#include "ros/node.h"
+
 #include <gtest/gtest.h>
 
 using namespace tf;

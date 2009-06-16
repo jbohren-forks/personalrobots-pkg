@@ -28,19 +28,17 @@
  */
 
 #include "tf/transform_listener.h"
+#include "ros/ros.h"
 
 
-
-class testListener : public ros::Node
+class testListener 
 {
 public:
 
   tf::TransformListener tf;
 
   //constructor with name
-  testListener() :
-    ros::Node("listener"),
-    tf(*this)
+  testListener() 
   {
 
   };
@@ -56,7 +54,7 @@ public:
 int main(int argc, char ** argv)
 {
   //Initialize ROS
-  ros::init(argc, argv);
+  ros::init(argc, argv, "listener");
 
   //Instantiate a local listener
   testListener testListener;
@@ -64,7 +62,8 @@ int main(int argc, char ** argv)
   //Nothing needs to be done except wait for a quit
   //The callbacks withing the listener class
   //will take care of everything
-  while(testListener.ok())
+  ros::NodeHandle n;
+  while(n.ok())
     {
       std::cout << "The current list of frames is:" <<std::endl;
       std::cout << testListener.tf.allFramesAsString()<<std::endl;

@@ -36,7 +36,6 @@
 *********************************************************************/
 #ifndef MESSAGE_NOTIFIER_BASE_H_
 #define MESSAGE_NOTIFIER_BASE_H_
-#include <ros/node.h>
 #include <tf/tf.h>
 #include <tf/tfMessage.h>
 #include <tf/message_notifier_base.h>

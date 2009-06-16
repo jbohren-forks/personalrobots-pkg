@@ -28,7 +28,7 @@
  */
 
 #include "tf/transform_listener.h"
-
+#include "ros/node.h"
 
 
 class echoListener
