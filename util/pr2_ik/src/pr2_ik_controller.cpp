@@ -34,6 +34,8 @@
 #include <algorithm>
 #include <pr2_ik/pr2_ik_controller.h>
 
+#include "ros/node.h"
+
 
 using namespace KDL;
 using namespace tf;
