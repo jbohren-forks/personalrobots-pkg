@@ -195,10 +195,14 @@ bool getSegment(TiXmlElement *segment_xml, map<string, Joint>& joints, Segment& 
   // get mandetory joint
   if (!getAtribute(segment_xml->FirstChildElement("joint"), "name", joint_name)) 
   {cout << "Segment does not specify joint name" << endl; return false;}
+
+  Joint joint;
   map<string, Joint>::iterator it = joints.find(joint_name);
-  if (it == joints.end()) 
-  {cout << "Could not find joint " << joint_name << " in segment" << endl; return false;}
-  Joint joint = it->second;
+  if (it != joints.end())
+    joint = it->second;
+  else if (getJoint(segment_xml->FirstChildElement("joint"), joint));
+  else {cout << "Could not find joint " << joint_name << " in segment" << endl; return false;}
+
   if (joint.getType() != Joint::None)
     joint = Joint(frame*(joint.JointOrigin()), joint.JointAxis(), joint.getType());
 
