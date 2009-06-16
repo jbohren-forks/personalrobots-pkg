@@ -41,70 +41,79 @@
 #include <robot_actions/action.h>
 #include <robot_actions/action_runner.h>
 
+#include <robot_msgs/JointTraj.h>
 #include <pr2_robot_actions/MoveArmState.h>
 #include <pr2_robot_actions/MoveArmGoal.h>
+#include <motion_planning_msgs/KinematicPath.h>
 
-/** ROS */
 #include <ros/ros.h>
-#include <vector>
-#include <string>
-
-/** IK services */
-#include <manipulation_srvs/IKService.h>
-#include <manipulation_srvs/IKQuery.h>
+#include <planning_environment/planning_monitor.h>
 
 namespace move_arm 
-{
-  /**
-   * @class MoveArm
-   * @brief A class adhering to the robot_actions::Action interface that moves the robot base to a goal location.
-   */
-  class MoveArm : public robot_actions::Action<pr2_robot_actions::MoveArmGoal, int32_t> 
-  {
+{    
+    
+    enum ArmType
+	{
+	    LEFT, RIGHT
+	};
+    
+    /**
+     * @class MoveArm
+     * @brief A class adhering to the robot_actions::Action interface that moves the robot base to a goal location.
+     */
+    class MoveArm : public robot_actions::Action<pr2_robot_actions::MoveArmGoal, int32_t> 
+    {
     public:
-    /**
-     * @brief  Constructor for the actions
-     */
-    MoveArm();
-
-    /**
-     * @brief  Destructor - Cleans up
-     */
-    virtual ~MoveArm();
-
-    /**
-     * @brief  Runs whenever a new goal is sent to the move_base
-     * @param goal The goal to pursue 
-     * @param feedback Feedback that the action gives to a higher-level monitor, in this case, the position of the robot
-     * @return The result of the execution, ie: Success, Preempted, Aborted, etc.
-     */
-    virtual robot_actions::ResultStatus execute(const pr2_robot_actions::MoveArmGoal& goal, int32_t& feedback);
-
+	/**
+	 * @brief  Constructor for the actions
+	 */
+	MoveArm(const ArmType &arm);
+	
+	/**
+	 * @brief  Destructor - Cleans up
+	 */
+	virtual ~MoveArm(void);
+	
+	/**
+	 * @brief  Runs whenever a new goal is sent to the move_base
+	 * @param goal The goal to pursue 
+	 * @param feedback Feedback that the action gives to a higher-level monitor, in this case, the position of the robot
+	 * @return The result of the execution, ie: Success, Preempted, Aborted, etc.
+	 */
+	virtual robot_actions::ResultStatus execute(const pr2_robot_actions::MoveArmGoal& goal, int32_t& feedback);
+	
     private:
+	
+	// the state of the action; this should be true if initialized properly
+	bool                     valid_;
+	
+	// the arm we are planning for
+	std::string              arm_;
+	std::vector<std::string> arm_joint_names_;	
 
-    std::string ik_service_name_; /**< Name of the service that provides IK */
+	
+	bool        perform_ik_;      /**< Flag that enables the option of IK */
+	std::string ik_service_name_; /**< Name of the service that provides IK */
+	std::string ik_query_name_;   /**< Name of the service that allows you to query the joint names that IK uses */
 
-    std::string ik_query_name_; /**< Name of the service that allows you to query the joint names that IK uses */
+	// service names
+	std::string motion_plan_name_;
+	std::string control_start_name_;
+	std::string control_query_name_;
+	std::string control_cancel_name_;
+	
+	ros::NodeHandle   node_handle_;
+	ros::Publisher    displayPathPublisher_;
+	
+	motion_planning_msgs::KinematicPath    currentPath_;
+	planning_environment::CollisionModels *collisionModels_;
+	planning_environment::PlanningMonitor *planningMonitor_;
 
-    std::string control_query_name_;
-
-    std::string control_topic_name_;
-
-    std::string control_service_name_;
-
-    ros::NodeHandle node_handle_;
-
-    bool computeIK(const robot_msgs::PoseStamped &pose_stamped_msg, std::vector<std::pair<std::string, double> > &solution);
-
-    int arm_number_joints_;
-
-    std::vector<std::string> arm_joint_names_;
-
-    bool sendControl(const std::vector<std::pair<std::string, double> > &solution);
-
-    bool getControlJointNames(std::vector<std::string> &joint_names);
-  };
-};
+	void fillTrajectoryPath(const motion_planning_msgs::KinematicPath &path, robot_msgs::JointTraj &traj);
+	bool computeIK(const robot_msgs::PoseStamped &pose_stamped_msg, std::vector<double> &solution);
+	bool getControlJointNames(std::vector<std::string> &joint_names);
+    };
+}
 
 #endif
 

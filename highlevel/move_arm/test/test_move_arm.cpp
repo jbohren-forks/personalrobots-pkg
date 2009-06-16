@@ -51,44 +51,44 @@ using namespace std;
 
 int main(int argc, char **argv)
 {
-  ros::init(argc, argv);
-  ros::Node node("test_move_arm");
-//  boost::thread* thread;
-
-  pr2_robot_actions::SwitchControllers switchlist;
-  std_msgs::Empty empty;
-
-  Duration timeout_short = Duration().fromSec(2.0);
-  Duration timeout_medium = Duration().fromSec(10.0);
-  Duration timeout_long = Duration().fromSec(40.0);
-
-//  robot_actions::ActionClient<pr2_robot_actions::SwitchControllers, pr2_robot_actions::SwitchControllersState,  std_msgs::Empty> switch_controllers("switch_controllers");
-  robot_actions::ActionClient<pr2_robot_actions::MoveArmGoal, pr2_robot_actions::MoveArmState, int32_t> move_arm("move_arm");
-
-  int32_t feedback;
-  pr2_robot_actions::MoveArmGoal goal;
-  pr2_robot_actions::MoveArmState state;
-
-  goal.goal_constraints.set_pose_constraint_size(1);
-  goal.goal_constraints.pose_constraint[0].pose.header.stamp = ros::Time::now();
-  goal.goal_constraints.pose_constraint[0].pose.header.frame_id = "torso_lift_link";
-
-  goal.goal_constraints.pose_constraint[0].pose.pose.position.x = 0.75;
-  goal.goal_constraints.pose_constraint[0].pose.pose.position.y = -0.188;
-  goal.goal_constraints.pose_constraint[0].pose.pose.position.z = 0;
-
-  goal.goal_constraints.pose_constraint[0].pose.pose.orientation.x = 0;
-  goal.goal_constraints.pose_constraint[0].pose.pose.orientation.y = 0;
-  goal.goal_constraints.pose_constraint[0].pose.pose.orientation.z = 0;
-  goal.goal_constraints.pose_constraint[0].pose.pose.orientation.w = 1;
-
-//  switchlist.start_controllers.clear();  switchlist.stop_controllers.clear();
-//  switchlist.start_controllers.push_back("r_arm_joint_trajectory_controller");
-
-//  if(switch_controllers.execute(switchlist, empty, timeout_medium) != robot_actions::SUCCESS) return -1;
-  ROS_INFO("Done switching controllers");
-
-  if(move_arm.execute(goal,feedback,timeout_long) != robot_actions::SUCCESS) return -1;
-
-  return (0);
+    ros::init(argc, argv);
+    ros::Node node("test_move_arm");
+    //  boost::thread* thread;
+    
+    pr2_robot_actions::SwitchControllers switchlist;
+    std_msgs::Empty empty;
+    
+    Duration timeout_short = Duration().fromSec(2.0);
+    Duration timeout_medium = Duration().fromSec(10.0);
+    Duration timeout_long = Duration().fromSec(40.0);
+    
+    //  robot_actions::ActionClient<pr2_robot_actions::SwitchControllers, pr2_robot_actions::SwitchControllersState,  std_msgs::Empty> switch_controllers("switch_controllers");
+    robot_actions::ActionClient<pr2_robot_actions::MoveArmGoal, pr2_robot_actions::MoveArmState, int32_t> move_arm("move_arm");
+    
+    int32_t feedback;
+    pr2_robot_actions::MoveArmGoal goal;
+    pr2_robot_actions::MoveArmState state;
+    
+    goal.goal_constraints.set_pose_constraint_size(1);
+    goal.goal_constraints.pose_constraint[0].pose.header.stamp = ros::Time::now();
+    goal.goal_constraints.pose_constraint[0].pose.header.frame_id = "torso_lift_link";
+    
+    goal.goal_constraints.pose_constraint[0].pose.pose.position.x = 0.75;
+    goal.goal_constraints.pose_constraint[0].pose.pose.position.y = -0.188;
+    goal.goal_constraints.pose_constraint[0].pose.pose.position.z = 0;
+    
+    goal.goal_constraints.pose_constraint[0].pose.pose.orientation.x = 0;
+    goal.goal_constraints.pose_constraint[0].pose.pose.orientation.y = 0;
+    goal.goal_constraints.pose_constraint[0].pose.pose.orientation.z = 0;
+    goal.goal_constraints.pose_constraint[0].pose.pose.orientation.w = 1;
+    
+    //  switchlist.start_controllers.clear();  switchlist.stop_controllers.clear();
+    //  switchlist.start_controllers.push_back("r_arm_joint_trajectory_controller");
+    
+    //  if(switch_controllers.execute(switchlist, empty, timeout_medium) != robot_actions::SUCCESS) return -1;
+    ROS_INFO("Done switching controllers");
+    
+    if(move_arm.execute(goal,feedback,timeout_long) != robot_actions::SUCCESS) return -1;
+    
+    return (0);
 }
