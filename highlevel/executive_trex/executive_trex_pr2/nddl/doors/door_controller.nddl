@@ -434,7 +434,6 @@ DoorController::OpenDoor{
   if(use_handle == true){
     // Open the door with a grasp on the handle.
     contains_start(open_door.Active cmd_open_door);
-    eq(cmd_open_door.status, SUCCESS);
     // This must start before we begin moving the base
     cmd_open_door starts_before cmd_move_base_door;
     // Must stop the open door action explicitly
@@ -449,7 +448,6 @@ DoorController::OpenDoor{
     contains_start(touch_door.Active cmd_touch_door);
     cmd_touch_door before(push_door.Active cmd_push_door);
     eq(cmd_touch_door.status, SUCCESS);
-    eq(cmd_push_door.status, SUCCESS);
     // Must start pushing before we begin moving the base
     cmd_push_door starts_before cmd_move_base_door;
     eq(cmd_stop_action.action_name,"push_door");
