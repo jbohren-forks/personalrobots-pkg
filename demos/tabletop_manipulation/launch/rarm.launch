@@ -1,4 +1,5 @@
 <launch>
+  <include file="$(find pr2_defs)/pr2_planning_environment.launch" />
   <include file="$(find pr2_ik)/pr2_ik_rarm_node.launch"/>
   <include file="$(find move_arm)/move_rarm.launch"/>
   <node pkg="mechanism_control" type="spawner.py" args="$(find pr2_default_controllers)/r_arm_joint_trajectory_controller.xml" />
