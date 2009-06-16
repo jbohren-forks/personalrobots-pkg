@@ -17,7 +17,6 @@
   </pr2_base>
 
   <pr2_torso name="torso_lift" parent="base_link">
-    <!-- TODO: if the spine is at all raised, the z offset is incorrect -->
     <origin xyz="-0.05 0 0.739675" rpy="0 0 0" />
   </pr2_torso>
   
