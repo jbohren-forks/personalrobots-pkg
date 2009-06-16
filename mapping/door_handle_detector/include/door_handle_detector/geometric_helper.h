@@ -37,6 +37,8 @@
 #include <vector>
 
 // ROS includes
+#include "ros/node.h" //\todo Switch to node handle API
+
 #include <robot_msgs/PointCloud.h>
 #include <robot_msgs/Polygon3D.h>
 #include <robot_msgs/Point32.h>
