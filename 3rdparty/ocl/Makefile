@@ -2,7 +2,7 @@ all: installed
 
 SVN_REVISION=-r 30170
 SVN_DIR = ocl-svn
-SVN_URL = http://svn.mech.kuleuven.be:/repos/orocos/trunk/ocl
+SVN_URL = http://svn.mech.kuleuven.be/repos/orocos/trunk/ocl
 SVN_PATCH=total.patch
 INSTALL_DIR = ocl
 CMAKE = cmake
