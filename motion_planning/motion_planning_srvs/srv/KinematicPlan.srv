@@ -4,6 +4,11 @@
 # Parameters for the state space 
 motion_planning_msgs/KinematicSpaceParameters params
 
+# The starting state. If not specified (no values in the state) the
+# current state is to be used. This state has no names attached to it
+# and it should be produced using
+# planning_models::KinematicModel::StateParams
+motion_planning_msgs/KinematicState start_state
 
 # The goal state for the model to plan for. The goal is achieved
 # if all constraints are satisfied
