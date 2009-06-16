@@ -67,9 +67,9 @@ namespace move_arm
 	node_handle_.param<std::string>("~ik_query_name",   ik_query_name_,   "pr2_ik_query");
 	
 	node_handle_.param<std::string>("~motion_plan_name",    motion_plan_name_,    "plan_kinematic_path");
-	node_handle_.param<std::string>("~control_start_name",  control_start_name_,  "right_arm/trajectory_controller/TrajectoryStart");
-	node_handle_.param<std::string>("~control_query_name",  control_query_name_,  "right_arm/trajectory_controller/TrajectoryQuery");
-	node_handle_.param<std::string>("~control_cancel_name", control_cancel_name_, "right_arm/trajectory_controller/TrajectoryCancel");
+	node_handle_.param<std::string>("~control_start_name",  control_start_name_,  "r_arm_joint_trajectory_controller/TrajectoryStart");
+	node_handle_.param<std::string>("~control_query_name",  control_query_name_,  "r_arm_joint_trajectory_controller/TrajectoryQuery");
+	node_handle_.param<std::string>("~control_cancel_name", control_cancel_name_, "r_arm_joint_trajectory_controller/TrajectoryCancel");
 	
 	if (!(valid_ = collisionModels_->loadedModels() && getControlJointNames(arm_joint_names_)))
 	    ROS_ERROR("Move arm action is invalid");
