@@ -160,12 +160,17 @@ void CartesianWrenchController::update()
   }
 
   // apply joint constraint
-  if (constraint_.joint >= 0 && constraint_.joint < (int)(kdl_chain_.getNrOfJoints())){
-    double sgn = sign(constraint_.high_limit - constraint_.low_limit);
-    if (sgn*(constraint_.high_limit-jnt_pos_(constraint_.joint)) < 0)
-      jnt_eff_(constraint_.joint) = constraint_.stiffness * (constraint_.low_limit-jnt_pos_(constraint_.joint));
-    else if (sgn*(constraint_.low_limit-jnt_pos_(constraint_.joint)) < 0)
-      jnt_eff_(constraint_.joint) += constraint_.stiffness * (constraint_.low_limit-jnt_pos_(constraint_.joint));
+  if (constraint_.joint >= 0 && constraint_.joint < (int)(kdl_chain_.getNrOfJoints()))
+  {
+    mechanism::Joint *joint = chain_.getJoint(constraint_.joint);
+    assert(joint);
+
+    double effort_high, effort_low;
+    effort_high = min(joint->effort_limit_,
+                      -constraint_.stiffness * (jnt_pos_(constraint_.joint) - constraint_.high_limit));
+    effort_low = max(-joint->effort_limit_,
+                     -constraint_.stiffness * (jnt_pos_(constraint_.joint) - constraint_.low_limit));
+    jnt_eff_(constraint_.joint) = max(effort_low, min(jnt_eff_(constraint_.joint), effort_high));
   }
 
   // set effort to joints
