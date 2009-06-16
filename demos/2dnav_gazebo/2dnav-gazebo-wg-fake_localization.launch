@@ -15,7 +15,7 @@
 
   <!-- for visualization -->
   <!--
-  <include file="$(find 2dnav_pr2)/rviz_move_base.launch"/>
+  <include file="$(find 2dnav_pr2)/rviz/rviz_move_base.launch"/>
   -->
 
   <!-- for manual control -->

@@ -14,7 +14,7 @@
   <node pkg="nav_view" type="nav_view" respawn="false" output="screen" >
     <remap from="goal" to="/move_base/activate" />
   </node>
-  <include file="$(find 2dnav_pr2)/rviz_move_base.launch"/>
+  <include file="$(find 2dnav_pr2)/rviz/rviz_move_base.launch"/>
   -->
 
   <!-- for manual control -->
