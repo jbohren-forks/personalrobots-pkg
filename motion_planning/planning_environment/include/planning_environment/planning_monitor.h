@@ -38,6 +38,7 @@
 #define PLANNING_ENVIRONMENT_PLANNING_MONITOR_
 
 #include "planning_environment/collision_space_monitor.h"
+#include <motion_planning_msgs/KinematicJoint.h>
 #include <motion_planning_msgs/KinematicPath.h>
 #include <motion_planning_msgs/KinematicConstraints.h>
 
@@ -74,9 +75,6 @@ namespace planning_environment
 	/** Check if the path is valid */
 	bool isPathValid(const motion_planning_msgs::KinematicPath &path) const;
 	
-	/** Return the index of the state on the path that is closest to the current state */
-	unsigned int positionOnPath(const motion_planning_msgs::KinematicPath &path) const;
-
 	/** Set the kinematic constraints the monitor should use when checking a path */
 	void setPathConstraints(const motion_planning_msgs::KinematicConstraints &kc);
 
@@ -89,6 +87,9 @@ namespace planning_environment
 	/** Transform the kinematic path to the frame requested */
 	void transformPathToFrame(motion_planning_msgs::KinematicPath &kp, const std::string &target) const;
 
+	/** Transform the kinematic joint to the frame requested */
+	void transformJointToFrame(motion_planning_msgs::KinematicJoint &kj, const std::string &target) const;
+	
     protected:
 	
 	/** Transform the joint parameters (if needed) to a target frame */

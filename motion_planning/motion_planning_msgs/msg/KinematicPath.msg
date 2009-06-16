@@ -9,9 +9,12 @@ KinematicState start_state
 string model_id
 
 # The joint names, in the same order as the values in the state
+# and the same order reported by KinematicModel::StateParams
 string[] names
 
-# A list of states, each with the dimension of the requested model 
+# A list of states, each with the dimension of the requested model.
+# The dimension of the model may be different from the number of joints
+# (when there are joints that use more than one parameter)
 KinematicState[] states
 
 # Same length as the list of states, the time at which a state should

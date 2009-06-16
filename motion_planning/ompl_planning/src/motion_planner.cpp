@@ -134,14 +134,35 @@ public:
 	res.distance = -1.0;
 	res.approximate = 0;
 	
-	if (!req.start_state.vals.empty())
-	    res.path.start_state = req.start_state;
-	else
-	    if (planningMonitor_->haveState())
-		planningMonitor_->getRobotState()->copyParams(res.path.start_state.vals);		
-	
-	if (!res.path.start_state.vals.empty())
+	if (planningMonitor_->haveState())
+	{
+	    // get current state
+	    planningMonitor_->getRobotState()->copyParams(res.path.start_state.vals);
+
+	    // apply changes as indicated in request
+	    for (unsigned int i = 0 ; req.start_state.size() ; ++i)
+	    {
+		if (!planningMonitor_->getTransformListener()->frameExists(req.start_state[i].header.frame_id))
+		{
+		    ROS_ERROR("Frame '%s' for joint '%s' in starting state is unknown", req.start_state[i].header.frame_id.c_str(), req.start_state[i].joint_name.c_str());
+		    continue;
+		}
+		
+		planningMonitor_->transformJointToFrame(req.start_state[i], planningMonitor_->getFrameId());
+		int idx = planningMonitor_->getKinematicModel()->getJointIndex(req.start_state[i].joint_name);
+		if (idx >= 0)
+		{
+		    unsigned int u = planningMonitor_->getKinematicModel()->getJoint(req.start_state[i].joint_name)->usedParams;
+		    if (u == req.start_state[i].value.size())
+			for (unsigned int j = 0 ; j < u ; ++j)
+			    res.path.start_state.vals[idx + j] = req.start_state[i].value[j];
+		    else
+			ROS_ERROR("Incorrect number of parameters for joint '%s': expected %u, got %u", req.start_state[i].joint_name.c_str(), u, (unsigned int)req.start_state[i].value.size());
+		}
+	    }
+	    
 	    st = requestHandler_.computePlan(models_, req, res);
+	}
 	else
 	    ROS_ERROR("Starting robot state is unknown. Cannot start plan.");
 	
