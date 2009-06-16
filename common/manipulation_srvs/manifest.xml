@@ -1,0 +1,15 @@
+<package>
+  <description brief="manipulation_srvs">
+     Core services for manipulation
+  </description>
+  <author>Sachin Chitta, Ioan Sucan</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://pr.willowgarage.com/wiki/</url>
+  <depend package="manipulation_msgs"/>
+  <depend package="robot_msgs"/>
+  <export>
+    <cpp cflags="-I${prefix}/srv/cpp"/>
+  </export>
+</package>
+

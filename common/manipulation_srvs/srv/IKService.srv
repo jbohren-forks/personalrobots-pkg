@@ -1,0 +1,3 @@
+manipulation_msgs/IKRequest data
+---
+float64[] solution
