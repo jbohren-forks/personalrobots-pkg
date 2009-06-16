@@ -51,7 +51,10 @@ public:
     void cloudCallback(const robot_msgs::PointCloudConstPtr &cloud)
     {
 	robot_msgs::PointCloud out;
+	ros::WallTime tm = ros::WallTime::now();
 	sf_.update(*cloud, out);
+	double sec = (ros::WallTime::now() - tm).toSec();
+	ROS_INFO("Self filter: reduced %d points to %d points in %f seconds", (int)cloud->pts.size(), (int)out.pts.size(), sec);	
 	pointCloudPublisher_.publish(out);
     }
     

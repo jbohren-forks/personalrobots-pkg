@@ -1,7 +1,4 @@
 <launch> 
-
-	<rosparam command="load" ns="robotdesc/pr2_collision" file="$(find pr2_defs)/collision/collision_checks.yaml" />
-
-	<node pkg="new_robot_self_filter" type="self_filter" args="robot_description:=robotdesc/pr2 full_cloud:=snapshot_cloud" respawn="true" output="screen">
-	</node>
+   <include file="$(find pr2_defs)/pr2_planning_environment.launch" />
+   <node pkg="new_robot_self_filter" type="self_filter" args="robot_description:=robotdesc/pr2 full_cloud:=snapshot_cloud" respawn="true" output="screen" />
 </launch>
