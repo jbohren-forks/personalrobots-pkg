@@ -1,3 +1,4 @@
+#include<algorithm>
 #include<dorylus.h>
 
 using namespace std;
