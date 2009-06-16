@@ -81,12 +81,14 @@ public:
 	template_orientations_t orientations;
 	CvSize size;
 	CvPoint center;
+	float template_scale;  // pixels per meter
 
 	ChamferTemplate()
 	{
 	}
 
-	ChamferTemplate(IplImage* edge_image);
+	ChamferTemplate(IplImage* edge_image, float scale = -1);
+
 
 
 	/**
@@ -161,6 +163,7 @@ class ChamferMatching
 	float truncate;
 
 	vector<ChamferTemplate*> templates;
+	vector<CvPoint> candidate_locations;
 
 public:
 	ChamferMatching() : min_scale(0.5), max_scale(1.5), count_scale(5), truncate(20)
@@ -180,6 +183,20 @@ public:
 	 * @param templ An edge image
 	 */
 	void addTemplateFromImage(IplImage* templ);
+	void addTemplateFromImage(IplImage* templ, float real_height);
+
+
+	/**
+	 * In case we know where the object might be, we can add those locations to
+	 * speedup the search. Otherwise a classic sliding-window search will be
+	 * performed over the entire image.
+	 *
+	 * @param locations
+	 */
+	void addCandidateLocations(const vector<CvPoint>& locations)
+	{
+		candidate_locations = locations;
+	}
 
 	/**
 	 * Run matching usin an edge image.
@@ -187,6 +204,9 @@ public:
 	 * @return a match object
 	 */
 	ChamferMatch matchEdgeImage(IplImage* edge_img);
+
+	ChamferMatch matchEdgeImage(IplImage* edge_img, const vector<CvPoint>& locations, const vector<float>& scales);
+
 
 	/**
 	 * Run matching using a regular image.
@@ -266,6 +286,8 @@ private:
      * @param cm Matching result
      */
     void matchTemplates(IplImage* dist_img, IplImage* orientation_img, ChamferMatch& cm);
+
+    void matchTemplates(IplImage* dist_img, IplImage* orientation_img, ChamferMatch& cm, const vector<CvPoint>& locations, const vector<float>& scales);
 
 
 //    void getMatches();

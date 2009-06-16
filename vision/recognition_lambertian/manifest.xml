@@ -10,13 +10,11 @@
 
   <depend package="roscpp" />
   <depend package="robot_msgs" />
-  <depend package="door_msgs" />
   <depend package="robot_srvs" />
   <depend package="robot_actions" />
   <depend package="kdl" />
   <depend package="angles" />
   <depend package="point_cloud_mapping" />
-  <depend package="checkerboard_detector" />
   <depend package="point_cloud_assembler" />
   <depend package="std_msgs" />
   <depend package="opencv_latest"/>
@@ -25,9 +23,9 @@
   <depend package="stereo_utils"/>
   <depend package="tf"/>
   <depend package="visualization_msgs" />
-  <depend package="prosilica_cam"/>
   <depend package="eigen"/>
   <depend package="chamfer_matching"/>
+  <depend package="FLANN"/>
 
 
  <export>

@@ -1,4 +1,0 @@
-door_msgs/Door door
-robot_msgs/PointCloud cloud
----
-door_msgs/Door[] doors

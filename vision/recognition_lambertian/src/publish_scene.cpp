@@ -96,7 +96,7 @@ public:
 	std_msgs::String msg_prefix;
 
 	PublishScene (ros::Node& anode) : tf_frame_ ("base_link"), node_ (anode),
-	transform_ (btTransform (btQuaternion (0, 0, 0), btVector3 (0, 0, 0)), ros::Time::now (), tf_frame_, tf_frame_)
+	transform_ (btTransform (btQuaternion (0, 0, 0), btVector3 (0, 0, 0)), ros::Time::now (), tf_frame_)
 	{
 		// Maximum number of outgoing messages to be queued for delivery to subscribers = 1
 		cloud_topic_ = "stereo/cloud";
