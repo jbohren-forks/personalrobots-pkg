@@ -1522,45 +1522,7 @@ public:
 					 {20, -10},{20, 10},{20, -20},{20, 20}};
 
 //
-//		tf::Stamped<tf::Pose> t1;
-//		tf_->lookupTransform("head_pan_link", "torso_lift_link", ros::Time(0.0), t1);
-//		tf::Stamped<tf::Pose> t2;
-//		tf_->lookupTransform("head_tilt_link", "head_pan_link", ros::Time(0.0), t2);
-//
-//		tf::Stamped<tf::Pose> t4;
-//		tf_->lookupTransform("head_tilt_link", "torso_lift_link", ros::Time(0.0), t4);
-//
-//		PointStamped p1;
-//		p1.header.frame_id = "head_tilt_link";
-//		p1.header.stamp = ros::Time(0.0);
-//		p1.point.x = 1.0;
-//		p1.point.y = 0.0;
-//		p1.point.z = 0.0;
-//
-//
-//
-//		double yaw, pitch, roll;
-//		t1.getBasis().getEulerZYX(yaw, pitch, roll);
-//		printf("Yaw: %f\n", yaw*180/M_PI);
-//		printf("Pitch: %f\n", pitch*180/M_PI);
-//		printf("Roll: %f\n\n", roll*180/M_PI);
-//
-//		t2.getBasis().getEulerZYX(yaw, pitch, roll);
-//		printf("Yaw: %f\n", yaw*180/M_PI);
-//		printf("Pitch: %f\n", pitch*180/M_PI);
-//		printf("Roll: %f\n\n", roll*180/M_PI);
-//
-//		(t4).getBasis().getEulerZYX(yaw, pitch, roll);
-//		printf("Yaw: %f\n", yaw*180/M_PI);
-//		printf("Pitch: %f\n", pitch*180/M_PI);
-//		printf("Roll: %f\n\n", roll*180/M_PI);
-//
-//		(t2*t1).getBasis().getEulerZYX(yaw, pitch, roll);
-//		printf("Yaw: %f\n", yaw*180/M_PI);
-//		printf("Pitch: %f\n", pitch*180/M_PI);
-//		printf("Roll: %f\n\n", roll*180/M_PI);
-//
-//		return false;
+
 
 
 		for (size_t k=0; k<sizeof(directions)/sizeof(directions[0]); ++k)

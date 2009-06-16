@@ -180,6 +180,7 @@ bool getWallPoseFromBaseLaser(const PointCloud& pc, const PointStamped& near_poi
 	btVector3 position(closest_base_laser.x,closest_base_laser.y,closest_base_laser.z);
 	btVector3 up(0,0,1);
 	btVector3 left(line_segment[1].x-line_segment[0].x,line_segment[1].y-line_segment[0].y,line_segment[1].z-line_segment[0].z);
+	left = left.normalized();
 	btVector3 normal = left.cross(up).normalized();
 
 	btMatrix3x3 rotation;
