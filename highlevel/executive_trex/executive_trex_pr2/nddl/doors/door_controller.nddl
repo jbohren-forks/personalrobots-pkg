@@ -235,11 +235,11 @@ DoorController::CheckingDoorway{
   contained_by(doorman.Active dm);
   eq_pose_msg(cmd.object, dm.object);
   // We require that the cmd succeed. Failure will trigger a replan
-  eq(cmd.status, SUCCESS);
   // To evaluate the enxt state, we consider the results of the command, which are in feedback paramaters.
   // If the doorway is clear we can drive on thru. Otherwise we have to figure out how to open the door. To do so,
   // we must be in position for detection
   cmd meets (check_path.Inactive cmd_feedback);
+  eq(cmd_feedback.status, SUCCESS);
   if(cmd_feedback.is_clear == true){
     meets(DriveThruDoorway);
   }
@@ -272,15 +272,19 @@ DoorController::DriveThruDoorway{
 DoorController::Positioning{
   // Just move the base
   contains_start(move_base.Active cmd);
-  concurrent(cmd.end, end);
-  // Must succeed. We have no workarounds!
-  eq(cmd.status, SUCCESS);
   // Arguments derived from the topological map
   eq(cmd.frame_id, "map");
   contained_by(doorman.Active dm);
   map_get_door_approach_pose(cmd.x, cmd.y, cmd.z, cmd.qx, cmd.qy, cmd.qz, cmd.qw, dm.start_connector);
+
   // Always followed by detecting the door
-  meets(DetectingDoor);
+  // Must succeed. We have no workarounds!
+  if(cmd.status == SUCCESS){
+    meets(DetectingDoor);
+  }
+  else {
+    meets(Positioning);
+  }
 }
 
 DoorController::DetectingDoor{
@@ -392,7 +396,11 @@ DoorController::ReleasingHandle{
   contains_start(release_handle.Active cmd);
   concurrent(cmd.end, end);
   leq(cmd.max_duration, RELEASE_HANDLE_DURATION_BOUND);
-  eq(cmd.status, SUCCESS);
+  if(cmd.status == SUCCESS){
+  }
+  else{
+    meets(ReleasingHandle);
+  }
 }
 
 DoorController::OpenDoor{
