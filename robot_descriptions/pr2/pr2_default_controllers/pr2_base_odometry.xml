@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+
+<controllers>
+  <controller name="pr2_odometry" type="Pr2Odometry">
+   <caster name="fl_caster_rotation_">
+    <wheel name="fl_caster_l_wheel_"/>
+    <wheel name="fl_caster_r_wheel_"/>
+   </caster>
+   <caster name="fr_caster_rotation_">
+    <wheel name="fr_caster_l_wheel_"/>
+    <wheel name="fr_caster_r_wheel_"/>
+   </caster>
+   <caster name="bl_caster_rotation_">
+   	<wheel name="bl_caster_l_wheel_"/>
+    <wheel name="bl_caster_r_wheel_"/>
+   </caster>
+   <caster name="br_caster_rotation_">
+    <wheel name="br_caster_l_wheel_"/>
+    <wheel name="br_caster_r_wheel_"/>
+   </caster>
+  </controller>
+</controllers>
