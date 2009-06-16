@@ -51,8 +51,9 @@ using namespace urdf2gazebo;
 
 void usage(const char *progname)
 {
-    printf("\nUsage: %s xml_param_name [initial x y z roll pitch yaw]\n", progname);
-    printf("  e.g. read robotdesc/pr2 from param server and send to gazebo factory to spawn robot\n\n");
+    printf("\nUsage: %s xml_param_name [initial x y z roll pitch yaw gazebo_model_name]\n", progname);
+    printf("  For example: urdf2factory robot_descriptions 0 0 1 0 0 90 pr3_model\n\n");
+    printf("  Note: gazebo_model_name defaults to pr2_model.\n\n");
 }
 
 int main(int argc, char **argv)
@@ -84,9 +85,12 @@ int main(int argc, char **argv)
 
     std::string robot_model_name("pr2_model");
     // make sure this is not the ros-generated commandline log filename
-    if (argc >= 9 && robot_model_name.find(std::string(" __log:")) == robot_model_name.size())
+    if (argc >= 9)
     {
-        robot_model_name = std::string(argv[8]);
+        std::string name = std::string(argv[8]);
+        ROS_ERROR("Model Name: %s %d\n",name.c_str(),name.find(std::string(" __log:")));
+        if (name.find(std::string(" __log:")) == -1)
+            robot_model_name = name;
     }
 
 
