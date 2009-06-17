@@ -41,6 +41,7 @@ class OptionBase
 public:
   virtual void reset() =0;
   virtual bool step() =0;
+  virtual ~OptionBase() {};
 };
 
 
@@ -55,6 +56,8 @@ public:
     reset();
   }
   
+  virtual ~Option(){};
+
   void reset(){
     current_element_ = options_.begin();
     *output_ = *current_element_;
@@ -81,10 +84,13 @@ private:
 class Permuter
 {
 public:
+  /** Clean up allocated data */
+  virtual ~Permuter(){ clearAll();};
+
   template<class T>
-  void addOption(Option<T> *option)
+  void addOption(const std::vector<T>& values, T* output)
   {
-    options_.push_back(static_cast<OptionBase*> (option));
+    options_.push_back(static_cast<OptionBase*> (new Option<T>(values, output)));
     reset();
   };
 
@@ -114,15 +120,19 @@ public:
     return false;
   };
 
+  //\todo add mutex to be thread safe
 
   void clearAll()
   {
+    for ( unsigned int i = 0 ; i < options_.size(); i++)
+    {
+      delete options_[i];
+    }
     options_.clear();
   };
 
 private:
   std::vector<OptionBase*> options_;
-  
 };
 
 

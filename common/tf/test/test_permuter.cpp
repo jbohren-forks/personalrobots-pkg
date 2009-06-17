@@ -50,9 +50,11 @@ TEST(tf, Option)
   for ( unsigned int i = 0; i < vals.size(); i++)
   {
     EXPECT_NEAR(vals[i], value, epsilon);
-    EXPECT_TRUE(op.step());
+    if (i < vals.size() -1)
+      EXPECT_TRUE(op.step());
+    else
+      EXPECT_FALSE(op.step());
   };
-    EXPECT_FALSE(op.step());
   
   
 }
@@ -70,9 +72,9 @@ TEST(Permuter, OneDoubleOption)
 
 
   double value = 0;
-  Option<double> op(vals, &value);
 
-  permuter.addOption(&op);
+  permuter.addOption(vals, &value);
+
   for ( unsigned int i = 0; i < vals.size(); i++)
   {
     EXPECT_NEAR(vals[i], value, epsilon);
@@ -96,7 +98,6 @@ TEST(Permuter, TwoDoubleOptions)
 
 
   double value = 0;
-  Option<double> op(vals, &value);
   
   std::vector<double> vals2;
   vals2.push_back(9.0);
@@ -105,10 +106,9 @@ TEST(Permuter, TwoDoubleOptions)
   vals2.push_back(6.0);
 
   double value2;
-  Option<double> op2(vals2, &value2);
 
-  permuter.addOption(&op);
-  permuter.addOption(&op2);
+  permuter.addOption(vals, &value);
+  permuter.addOption(vals2, &value2);
   for ( unsigned int j = 0; j < vals2.size(); j++)
     for ( unsigned int i = 0; i < vals.size(); i++)
     {
@@ -134,7 +134,6 @@ TEST(Permuter, ThreeDoubleOptions)
 
 
   double value = 0;
-  Option<double> op(vals, &value);
   
   std::vector<double> vals2;
   vals2.push_back(9.0);
@@ -143,7 +142,6 @@ TEST(Permuter, ThreeDoubleOptions)
   vals2.push_back(6.0);
 
   double value2;
-  Option<double> op2(vals2, &value2);
 
   std::vector<double> vals3;
   vals3.push_back(99.0);
@@ -152,11 +150,10 @@ TEST(Permuter, ThreeDoubleOptions)
   vals3.push_back(63.0);
 
   double value3;
-  Option<double> op3(vals3, &value3);
 
-  permuter.addOption(&op);
-  permuter.addOption(&op2);
-  permuter.addOption(&op3);
+  permuter.addOption(vals, &value);
+  permuter.addOption(vals2, &value2);
+  permuter.addOption(vals3, &value3);
 
   for ( unsigned int k = 0; k < vals3.size(); k++)
     for ( unsigned int j = 0; j < vals2.size(); j++)
@@ -185,7 +182,6 @@ TEST(Permuter, DoubleStringOptions)
 
 
   double value = 0;
-  Option<double> op(vals, &value);
   
   std::vector<std::string> vals2;
   vals2.push_back("hi");
@@ -194,10 +190,10 @@ TEST(Permuter, DoubleStringOptions)
   vals2.push_back("works");
 
   std::string value2;
-  Option<std::string> op2(vals2, &value2);
 
-  permuter.addOption(&op);
-  permuter.addOption(&op2);
+  permuter.addOption(vals, &value);
+  permuter.addOption(vals2, &value2);
+
   for ( unsigned int j = 0; j < vals2.size(); j++)
     for ( unsigned int i = 0; i < vals.size(); i++)
     {
