@@ -1,4 +1,4 @@
-<stack name="ros-pkg_nav" version="0.1">
+<stack name="nav" version="0.1">
   <description brief="nav stack">
     The 2D navigation stack
   </description>
