@@ -601,6 +601,7 @@ void MechanismControlNode::update()
         out->motor_voltage = in->motor_voltage_;
         out->num_encoder_errors = in->num_encoder_errors_;
       }
+      publisher_.msg_.header.stamp.fromSec(realtime_gettime());
       publisher_.msg_.time = realtime_gettime();
 
       publisher_.unlockAndPublish();
