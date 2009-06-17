@@ -2,14 +2,10 @@
  * Tracks the state if the arms are tucked or not. This is a safety issue for mobility.
  */
 class ArmsTucked extends AgentTimeline {
-
-  predicate Holds{
-    bool value;
-    defaultOnCommit(value, false);
-  }
-
+  predicate True{}
+  predicate False{};
   ArmsTucked(Mode _mode){
-    super(_mode, "Holds");
+    super(_mode, "False");
   }
 };
 
@@ -17,13 +13,9 @@ class ArmsTucked extends AgentTimeline {
  * This will change to actually track the laser tilt configuration
  */
 class TiltLaserReady extends AgentTimeline {
-
-  predicate Holds{
-    bool value;
-    defaultOnCommit(value, false);
-  }
-
+  predicate True{}
+  predicate False{};
   TiltLaserReady(Mode _mode){
-    super(_mode, "Holds");
+    super(_mode, "False");
   }
 };

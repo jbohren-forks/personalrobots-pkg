@@ -40,16 +40,14 @@ RightGripperMechanism right_gripper_mechanism = new RightGripperMechanism(Extern
 DetectDoor::Active{
   contained_by(laser_tilt_mechanism.use_laser_tilt_controller);
   contained_by(right_arm_mechanism.use_joint_trajectory_controller);
-  contained_by(arms_tucked.Holds p);
-  eq(p.value, true);
+  contained_by(arms_tucked.True);
 }
 
 DetectHandle::Active{
   contained_by(laser_tilt_mechanism.use_laser_tilt_controller);
   contained_by(head_mechanism.use_head_controller);
   contained_by(right_arm_mechanism.use_joint_trajectory_controller);
-  contained_by(arms_tucked.Holds p);
-  eq(p.value, true);
+  contained_by(arms_tucked.True);
 }
 
 GraspHandle::Active{

@@ -76,53 +76,43 @@ SetLaserTilt::Active{
   contained_by(laser_tilt_mechanism.use_laser_tilt_controller);
 }
 
-ArmsTucked::Holds{
-  if(value == true){
-    met_by(safety_tuck_arms.Active p);
-    eq(p.status, SUCCESS);
-    leq(p.max_duration, SAFETY_TUCK_ARMS_DURATION_BOUND);
-  }
+ArmsTucked::True{
+  met_by(safety_tuck_arms.Active p);
+  eq(p.status, SUCCESS);
+  leq(p.max_duration, SAFETY_TUCK_ARMS_DURATION_BOUND);
 }
 
 // Force switch back after completion. This will go away if we directly observe laser tilt configuration
 MoveBase::Inactive{
-  starts_during(tilt_laser_ready.Holds p);
-  eq(p.value, false);
+  starts_during(tilt_laser_ready.False);
 }
 
 // Ideally this update should be unnecessary and we just observe the state as a function of joint configuration perhaps?
 SafetyTuckArms::Inactive{
   if(status == SUCCESS){
-    starts_during(arms_tucked.Holds p);
-    eq(p.value, true);
+    starts_during(arms_tucked.True);
   }
 }
 
 TouchDoor::Active{
-  starts_during(arms_tucked.Holds p);
-  eq(p.value, false);
+  starts_during(arms_tucked.False);
 }
 
 GraspHandle::Active{
-  starts_during(arms_tucked.Holds p);
-  eq(p.value, false);
+  starts_during(arms_tucked.False);
 }
 
 PlugsUntuckArms::Active{
-  starts_during(arms_tucked.Holds p);
-  eq(p.value, false);
+  starts_during(arms_tucked.False);
 }
 
-TiltLaserReady::Holds{
-  if(value == true){
-    met_by(set_laser_tilt.Active p);
-    eq(p.status, SUCCESS);
-  }
+TiltLaserReady::True{
+  met_by(set_laser_tilt.Active p);
+  eq(p.status, SUCCESS);
 }
 
 SetLaserTilt::Inactive{
   if(status == SUCCESS){
-    starts_during(tilt_laser_ready.Holds p);
-    eq(p.value, true);
+    starts_during(tilt_laser_ready.True);
   }
 }

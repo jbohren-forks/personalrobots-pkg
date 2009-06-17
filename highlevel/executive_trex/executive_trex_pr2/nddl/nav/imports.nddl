@@ -35,9 +35,6 @@ MoveBase::Active{
  * Must be in a valid configuration for navigation
  */
 NavigationBehavior::Active{
-  contained_by(arms_tucked.Holds a);
-  eq(a.value, true);
-
-  contained_by(tilt_laser_ready.Holds b);
-  eq(b.value, true);
+  contained_by(arms_tucked.True);
+  contained_by(tilt_laser_ready.True);
 }

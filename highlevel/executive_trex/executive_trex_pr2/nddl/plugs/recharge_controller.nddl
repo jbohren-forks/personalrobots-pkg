@@ -1,7 +1,5 @@
 #include "plugs/imports.nddl"
 
-enum BOOL {yes, no, maybe};
-
 /**
  * ALL TIME BOUNDS FOR INTERNAL ACTIONS
  */
@@ -54,7 +52,7 @@ class OutletState extends AgentTimeline {
 
 
 /**
- * @note This oculd be sensed from the battery state
+ * @note This could be sensed from the battery state
  */
 class PluggedIn extends AgentTimeline{
   predicate True{}
@@ -74,13 +72,9 @@ class PlugStowed extends AgentTimeline{
   PlugStowed(){ super(Internal, "True"); }
 };
 
-class RechargeController extends AgentTimeline {
-
-  // The controller is in an inactive state. Basically idle.
-  predicate Inactive{
-    ResultStatus status;
-    defaultOnCommit(status, UNDEFINED);
-  }
+class RechargeController extends StateMachine {
+  // Idle state
+  predicate Inactive{}
   // Move to the approach pose
   predicate Positioning{}
   // Do coarse outlet detection to find the outlet based on prior
@@ -98,7 +92,7 @@ class RechargeController extends AgentTimeline {
   // Plug in
   predicate PluggingIn{}
   
-  RechargeController(){ super(Internal, "Inactive"); }
+  RechargeController(){ super(); }
 };
 
 // Internal Timelines
@@ -130,7 +124,6 @@ RechargeController::Positioning{
   contained_by(recharger.Active rc);
   map_get_outlet_approach_pose(cmd.x, cmd.y, cmd.z, cmd.qx, cmd.qy, cmd.qz, cmd.qw, rc.outlet_id);
   defaultOnCommit(cmd.frame_id, "map");
-
   meets(FindingOutlet);
 }
 
@@ -226,9 +219,7 @@ RechargeController::PluggingIn{
   contained_by(recharger.Active rc);
   eq(cmd.outlet_id, rc.outlet_id);
 
-  ResultStatus x;
-  eq(x, cmd.status);
-  if(x == SUCCESS){
+  if(cmd.status == SUCCESS){
     meets(Inactive s);
     eq(s.status, SUCCESS);
   }
@@ -305,7 +296,6 @@ DetectPlugOnBase::Inactive{
     eq_plug_stow_msg(ps.object, object);
   }
 }
-
 // Use prior outlet state
 DetectOutletFine::Active{
   starts_during(outlet_state.Holds os);

@@ -19,34 +19,22 @@ class ROSStateVariable extends AgentTimeline {
   }
 };
 
-class Controller extends AgentTimeline {
-  predicate Holds {
-    bool active;
-    int deadline;
-    float remaining_time;
-    bool timed_out;
-  }
+/**
+ * A StateMachine control structure
+ */
+class StateMachine extends AgentTimeline {
 
-  Controller(){
-    super(Internal, "Holds");
+  // The controller is in an inactive state. Basically idle.
+  predicate Inactive{
+    ResultStatus status;
+    // Be default will be UNDEFINED
+    defaultOnCommit(status, UNDEFINED);
+    // Should always be integrated in the mission profile
+    temporalDistance(start, [1, +inf], missionEnd);
   }
+  
+  StateMachine(){ super(Internal, "Inactive"); }
 };
-
-Controller::Holds{
-  met_by(Holds p);
-  defaultOnCommit(active, p.active);
-  defaultOnCommit(deadline, p.deadline);
-
-  float remaining_ticks;
-  addEq(start, remaining_ticks, deadline);
-  mulEq(remaining_ticks, TICK_DURATION, remaining_time);
-  testLEQ(timed_out, remaining_time, 0.0);
-
-  // Guard needed, otherwise the two defaultOnCommit constraints conflict
-  if(remaining_time) {
-    defaultOnCommit(timed_out, false);
-  }
-}
 
 /**
  * Specialize to mark all ROS Actions

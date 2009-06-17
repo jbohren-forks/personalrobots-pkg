@@ -2,8 +2,5 @@
 
 close();
 
-fact(arms_tucked.Holds f0);
-f0.value = false;
-
-fact(tilt_laser_ready.Holds f1);
-f1.value = false;
+fact(arms_tucked.False);
+fact(tilt_laser_ready.False);

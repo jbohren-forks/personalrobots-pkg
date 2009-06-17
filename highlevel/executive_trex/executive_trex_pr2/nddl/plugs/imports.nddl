@@ -21,7 +21,7 @@ RightArmMechanism right_arm_mechanism = new RightArmMechanism(External);
 RightGripperMechanism right_gripper_mechanism = new RightGripperMechanism(External);
 
 /******************************
- * Controller Requirements
+ * Resource Requirements
  *****************************/
 DetectPlugOnBase::Active{
   contained_by(laser_tilt_mechanism.use_laser_tilt_controller);
@@ -30,14 +30,12 @@ DetectPlugOnBase::Active{
 DetectOutletCoarse::Active{
   contained_by(head_mechanism.use_head_controller);
   contained_by(laser_tilt_mechanism.use_laser_tilt_controller);
-  contained_by(arms_tucked.Holds p);
-  eq(p.value, true);
+  contained_by(arms_tucked.True);
 }
 
 DetectOutletFine::Active{
   contained_by(head_mechanism.use_head_controller);
-  contained_by(arms_tucked.Holds p);
-  eq(p.value, true);
+  contained_by(arms_tucked.True);
 }
 
 PlugsUntuckArms::Active{
@@ -53,18 +51,15 @@ MoveAndGraspPlug::Active{
   contained_by(right_gripper_mechanism.use_position_controller);
 }
 
-// Check this with Melonee
 LocalizePlugInGripper::Active{
   contained_by(right_arm_mechanism.use_composite_cartesian_trajectory_controller);
   contained_by(right_gripper_mechanism.use_position_controller);
 }
 
-// Which Controllers
 PlugIn::Active{
   contained_by(right_arm_mechanism.use_hybrid_controller);
 }
 
-// Check this with Melonee
 StowPlug::Active{
   contained_by(right_arm_mechanism.use_composite_cartesian_trajectory_controller);
   contained_by(right_gripper_mechanism.use_position_controller);

@@ -26,7 +26,7 @@
  * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
- * @author Conor McGann, Wim Meeussen
+ * @author Conor McGann
  */
 
 /**
@@ -162,15 +162,12 @@ class HaveHandle extends AgentTimeline {
  * The state machine for high-level control in the door domain. The class declaration defines components of teh state machine, but not its transition
  * rules.
  */
-class DoorController extends AgentTimeline {
+class DoorController extends StateMachine {
 
-  // The controller is in an inactive state. Basically idle.
-  predicate Inactive{
-    ResultStatus status;
-    defaultOnCommit(status, UNDEFINED);
-  }
+  // Idle
+  predicate Inactive{}
 
-  // Chekcing the doorway to see if we can drive thru without having to contact the door
+  // Checking the doorway to see if we can drive thru without having to contact the door
   predicate CheckingDoorway{}
 
   // For positioning the robot at the approach point to the door rom which it can detect the door
@@ -203,7 +200,7 @@ class DoorController extends AgentTimeline {
     bool use_handle;
   }
 
-  DoorController(){ super(Internal, "Inactive"); }
+  DoorController(){ super(); }
 };
 
 
@@ -261,9 +258,7 @@ DoorController::DriveThruDoorway{
   // If the command succeded we are done! If not, it is likely because the door is actually blocking us so we will want
   // to get back to detect the door and figure out how to get thru
 
-  ResultStatus cmd_status;
-  eq(cmd_status, cmd.status);
-  if(cmd_status == SUCCESS){
+  if(cmd.status == SUCCESS){
     meets(Inactive s);
     eq(s.status, SUCCESS);
   }
@@ -292,9 +287,7 @@ DoorController::DetectingDoor{
   // if we succed, then depending on the latch state we can go sttraight for the door
   // or we need to detect the handle first. if it fails, maybe the door has been opened! We might as well check the
   // doorway for a clear path again
-  ResultStatus cmd_status;
-  eq(cmd_status, cmd.status);
-  if(cmd_status == SUCCESS){
+  if(cmd.status == SUCCESS){
     cmd meets(detect_door.Inactive cmd_feedback);
     if(cmd_feedback.latch_state == LATCH_STATE_UNLATCHED){
       meets(ApproachingDoor);
@@ -315,9 +308,7 @@ DoorController::DetectingHandle{
   // Duration bounds
   leq(cmd.max_duration, DETECT_HANDLE_DURATION_BOUND);
   // If we fail here, we can try get a new door pose. If we succeed we are ready to approach the door to open it
-  ResultStatus cmd_status;
-  eq(cmd_status, cmd.status);
-  if(cmd_status == SUCCESS){
+  if(cmd.status == SUCCESS){
     meets(ApproachingDoor);
   }
   else {
@@ -335,13 +326,13 @@ DoorController::ApproachingDoor{
   contained_by(door_state.Holds ds);
   eq(cmd.frame_id, ds.frame_id);
   door_get_robot_pose_for_door(cmd.x, cmd.y, cmd.z, cmd.qx, cmd.qy, cmd.qz, cmd.qw, ds.object, GRASP_RANGE);
-  // FIXME: The introduction of a new variable here is a work around to a EUROPA bug on constraint migration. Remove when fixed.
+
+  // Workaround for remaining bug in migration of constraint connecting internally in a rule
   bool use_handle;
   testEQ(use_handle, ds.latch_state, LATCH_STATE_LATCHED);
+
   // If we succed, then based on the latch state we will open the door or have to grasp the handle first. On failure we restart!
-  ResultStatus cmd_status;
-  eq(cmd_status, cmd.status);
-  if(cmd_status == SUCCESS){
+  if(cmd.status == SUCCESS){
     if(use_handle == true){
       meets(GraspingHandle);
     }
@@ -361,9 +352,7 @@ DoorController::GraspingHandle{
   concurrent(cmd.end, end);
   leq(cmd.max_duration, GRASP_HANDLE_DURATION_BOUND);
   // If we have it, we can unlatch it. Otherwise we need to release the handle and go back to the start
-  ResultStatus cmd_status;
-  eq(cmd_status, cmd.status);
-  if(cmd_status == SUCCESS){
+  if(cmd.status == SUCCESS){
     meets(UnlatchingHandle);
   }
   else {
@@ -378,9 +367,7 @@ DoorController::UnlatchingHandle{
   concurrent(cmd.end, end);
   leq(cmd.max_duration, UNLATCH_HANDLE_DURATION_BOUND);
   // We could fail. In which case we want to restart. Otherwise handle case where the door is locked, vs unlatched.
-  ResultStatus cmd_status;
-  eq(cmd_status, cmd.status);
-  if(cmd_status == SUCCESS){
+  if(cmd.status == SUCCESS){
     cmd meets(unlatch_handle.Inactive cmd_feedback);
     // If locked, try again later
     if(cmd_feedback.latch_state == LATCH_STATE_LOCKED){
