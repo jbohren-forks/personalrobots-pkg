@@ -1,6 +1,7 @@
 #include "camera_calibration/pinhole.h"
 #include "camera_calibration/file_io.h"
 
+#include <algorithm>
 #include <boost/algorithm/string/predicate.hpp>
 
 namespace camera_calibration {
@@ -9,22 +10,73 @@ PinholeCameraModel::PinholeCameraModel()
 {
 }
 
-bool PinholeCameraModel::load(const std::string& file_name)
+PinholeCameraModel::PinholeCameraModel(const PinholeCameraModel& other)
+  : camera_name_(other.camera_name_),
+    image_width_(other.image_width_), image_height_(other.image_height_),
+    distorted_(other.distorted_)
 {
-  if (boost::iends_with(file_name, ".ini"))
-    return readIntrinsicsIni(file_name, camera_name, image_width_, image_height_, K, D);
-  if (boost::iends_with(file_name, ".yml") || boost::iends_with(file_name, ".yaml"))
-    return readIntrinsicsYml(file_name, camera_name, image_width_, image_height_, K, D);
+  std::copy(other.K, other.K+9, K);
+  std::copy(other.D, other.D+5, D);
 
-  return false;
+  undistort_map_x_.CloneFrom(other.undistort_map_x_);
+  undistort_map_y_.CloneFrom(other.undistort_map_y_);
 }
 
-bool PinholeCameraModel::save(const std::string& file_name)
+PinholeCameraModel PinholeCameraModel::withRoi(int x, int y, int width, int height) const
+{
+  PinholeCameraModel roi_model;
+  std::copy(K, K+9, roi_model.K);
+  std::copy(D, D+5, roi_model.D);
+
+  // Move principal point
+  roi_model.cx() -= x;
+  roi_model.cy() -= y;
+
+  // Compute ROI undistort map
+  roi_model.distorted_ = distorted_;
+  if (distorted_) {
+    roi_model.undistort_map_x_.Allocate(width, height);
+    /** @todo: need const version of View in cvwimage.h */
+    cvSubS(const_cast<PinholeCameraModel*>(this)->undistort_map_x_.View(x, y, width, height).Ipl(),
+           cvScalar(x), roi_model.undistort_map_x_.Ipl());
+    roi_model.undistort_map_y_.Allocate(width, height);
+    cvSubS(const_cast<PinholeCameraModel*>(this)->undistort_map_y_.View(x, y, width, height).Ipl(),
+           cvScalar(y), roi_model.undistort_map_y_.Ipl());
+  }
+
+  return roi_model;
+}
+
+void PinholeCameraModel::undistort(IplImage* src, IplImage* dst) const
+{
+  if (distorted_)
+    cvRemap(src, dst, undistort_map_x_.Ipl(), undistort_map_y_.Ipl(),
+            CV_INTER_LINEAR | CV_WARP_FILL_OUTLIERS);
+  else
+    cvCopy(src, dst);
+}
+
+bool PinholeCameraModel::load(const std::string& file_name)
+{
+  bool success = false;
+  if (boost::iends_with(file_name, ".ini"))
+    success = readIntrinsicsIni(file_name, camera_name_, image_width_, image_height_, K, D);
+  else if (boost::iends_with(file_name, ".yml") ||
+           boost::iends_with(file_name, ".yaml"))
+    success = readIntrinsicsYml(file_name, camera_name_, image_width_, image_height_, K, D);
+
+  if (success)
+    initUndistortMap();
+  
+  return success;
+}
+
+bool PinholeCameraModel::save(const std::string& file_name) const
 {
   if (boost::iends_with(file_name, ".ini"))
-    return writeIntrinsicsIni(file_name, camera_name, image_width_, image_height_, K, D);
+    return writeIntrinsicsIni(file_name, camera_name_, image_width_, image_height_, K, D);
   if (boost::iends_with(file_name, ".yml") || boost::iends_with(file_name, ".yaml"))
-    return writeIntrinsicsYml(file_name, camera_name, image_width_, image_height_, K, D);
+    return writeIntrinsicsYml(file_name, camera_name_, image_width_, image_height_, K, D);
 
   return false;
 }
@@ -34,7 +86,23 @@ bool PinholeCameraModel::parse(const std::string& buffer, const std::string& for
   if (format != "ini")
     return false;
   
-  return parseIntrinsicsIni(buffer, camera_name, image_width_, image_height_, K, D);
+  bool success = parseIntrinsicsIni(buffer, camera_name_, image_width_, image_height_, K, D);
+  if (success)
+    initUndistortMap();
+  return success;
+}
+
+void PinholeCameraModel::initUndistortMap()
+{
+  distorted_ = D[0]!=0.0 || D[1]!=0.0 || D[2]!=0.0 || D[3]!=0.0 || D[4]!=0.0;
+  if (!distorted_)
+    return;
+
+  undistort_map_x_.Allocate(image_width_, image_height_);
+  undistort_map_y_.Allocate(image_width_, image_height_);
+  const CvMat Km = K_cv();
+  const CvMat Dm = D_cv();
+  cvInitUndistortMap(&Km, &Dm, undistort_map_x_.Ipl(), undistort_map_y_.Ipl());
 }
 
 } //namespace camera_calibration

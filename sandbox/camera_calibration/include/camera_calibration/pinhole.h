@@ -15,16 +15,28 @@ public:
   double K[3*3];
   double D[5];
 
-  std::string camera_name;
-
   // No-initialization constructor
   PinholeCameraModel();
-  // Constructor/setter with params fx, fy, ...?
 
+  // Copy constructor
+  PinholeCameraModel(const PinholeCameraModel& other);
+  
+  // Constructor/setter with params fx, fy, ...?
+  // Setter from CamInfo message?
+
+  const std::string& name() const;
+
+  int width() const;
+  int height() const;
+  
   // getters for focal length, principal point
+  double& fx();
   double fx() const;
+  double& fy();
   double fy() const;
+  double& cx();
   double cx() const;
+  double& cy();
   double cy() const;
   
   // to CvMat functions
@@ -34,36 +46,48 @@ public:
   const CvMat D_cv() const;
 
   // move principal point, update distortion matrices...
-  // should be ROI? stick this in subclass?
-  //virtual void moveImageOrigin(int dx, int dy);
-  // reset?
+  // NOTE: distortion params won't really be right...
+  PinholeCameraModel withRoi(int x, int y, int width, int height) const;
 
   // rescale
   //virtual void setResolution(int new_width, int new_height);
 
   // undistort (& rectify)
-  //virtual void undistort(IplImage* src, IplImage* dst);
+  bool hasDistortion() const;
+  virtual void undistort(IplImage* src, IplImage* dst) const;
   
   // file I/O
   virtual bool load(const std::string& file_name);
-  virtual bool save(const std::string& file_name);
+  virtual bool save(const std::string& file_name) const;
   virtual bool parse(const std::string& buffer, const std::string& format = "ini");
 
 protected:
+  std::string camera_name_;
   int image_width_;
   int image_height_;
-  int origin_x_, origin_y_;
 
   bool distorted_;
-  cv::WImageBuffer1_f full_undistort_map_x_, full_undistort_map_y_;
-  cv::WImageBuffer1_f region_undistort_map_x_, region_undistort_map_y_;
-  
+  cv::WImageBuffer1_f undistort_map_x_, undistort_map_y_;
+
+  void initUndistortMap();
 };
 
 
+inline const std::string& PinholeCameraModel::name() const
+{
+  return camera_name_;
+}
+
+inline int PinholeCameraModel::width() const { return image_width_; }
+inline int PinholeCameraModel::height() const { return image_height_; }
+
+inline double& PinholeCameraModel::fx() { return K[0]; }
 inline double PinholeCameraModel::fx() const { return K[0]; }
+inline double& PinholeCameraModel::fy() { return K[4]; }
 inline double PinholeCameraModel::fy() const { return K[4]; }
+inline double& PinholeCameraModel::cx() { return K[2]; }
 inline double PinholeCameraModel::cx() const { return K[2]; }
+inline double& PinholeCameraModel::cy() { return K[5]; }
 inline double PinholeCameraModel::cy() const { return K[5]; }
 
 inline CvMat PinholeCameraModel::K_cv()
@@ -85,6 +109,8 @@ inline const CvMat PinholeCameraModel::D_cv() const
 {
   return cvMat(1, 5, CV_64FC1, const_cast<double*>(D));
 }
+
+inline bool PinholeCameraModel::hasDistortion() const { return distorted_; }
 
 } //namespace camera_calibration
 
