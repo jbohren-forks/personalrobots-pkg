@@ -1,0 +1,23 @@
+string name
+int32 device_id
+int32 encoder_count
+float64 position
+float64 timestamp
+float64 encoder_velocity
+float64 velocity
+byte calibration_reading
+byte calibration_rising_edge_valid
+byte calibration_falling_edge_valid
+float64 last_calibration_rising_edge
+float64 last_calibration_falling_edge
+byte is_enabled
+byte run_stop_hit
+float64 last_requested_current
+float64 last_commanded_current
+float64 last_measured_current
+float64 last_requested_effort
+float64 last_commanded_effort
+float64 last_measured_effort
+float64 motor_voltage
+int32 num_encoder_errors
+

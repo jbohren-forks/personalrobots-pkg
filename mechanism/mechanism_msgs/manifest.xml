@@ -1,0 +1,14 @@
+<package>
+  <description brief="mechanism_msgs">
+     Messages used in mechanism control
+  </description>
+  <author>Stuart Glaser/sglaser@willowgarage.com</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://pr.willowgarage.com/</url>
+  <depend package="robot_msgs"/>
+  <export>
+    <cpp cflags="-I${prefix}/msg/cpp"/>
+  </export>
+</package>
+
