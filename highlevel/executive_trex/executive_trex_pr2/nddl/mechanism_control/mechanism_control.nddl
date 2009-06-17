@@ -62,7 +62,7 @@ MechanismController::Holds {
     eq(cmd.status, SUCCESS);
     //tao(cmd.dispatch_time);
     any(actions.startEvent a);
-    precedes(a.start, cmd.dispatch_time);
+    temporalDistance(a.start, [1, +inf], cmd.dispatch_time);
   }
 }
 

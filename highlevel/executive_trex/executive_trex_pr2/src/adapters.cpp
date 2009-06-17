@@ -362,7 +362,7 @@ namespace TREX {
 	bool is_up = (bool) param->lastDomain().getSingletonValue();
 	std::string controller_name = Observation::getTimelineName(master_token).toString();
 
-	if(is_up){
+	if(is_up == false){
 	  TREX_INFO("ros:debug:dispatching", "Adding " << controller_name << " to the stop list. Current state is:" << param->lastDomain().toString());
 	  msg.stop_controllers.push_back(controller_name);
 	}
