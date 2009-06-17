@@ -60,9 +60,17 @@ def build_index(index_name,topic_filter,bag_names):
             if topic_filter_dict:
                 if not topic in topic_filter_dict:
                     continue
+            (datatype, data, md5sum, bag_pos, pytype)=msg
+
+            msg2 = pytype()
+            msg2.deserialize(data)
+
+            if hasattr(msg2,'header'):
+                t=msg2.header.stamp;
+
             s=t.secs
             if i % 100 ==0:
-                print "\t",i,s,msg[3]
+                print "\t",i,s,bag_pos
 
             ns=t.nsecs
             if s not in index:

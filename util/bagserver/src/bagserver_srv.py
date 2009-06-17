@@ -48,14 +48,20 @@ from std_msgs.msg import Empty
 
 class BagServerSrv:
 
-    def __init__(self, out_namespace,index_name):
-        self.out_namespace=out_namespace;
-        self.index_name_=index_name;
+    def __init__(self):
+
+        
+        self.out_namespace=rospy.get_param("~namespace");
+        self.index_name_=rospy.get_param("~index");
+
+        print self.out_namespace, rospy.get_param("~index");
 
         self.setup_hist();
-
+        print "setup done" 
+        self.s = rospy.Service('hist', History, self.handle_query)
 
     def setup_hist(self):
+        
         fIn=open(self.index_name_,'r');
         (all_topics,index,bag_names)=pickle.load(fIn);
         fIn.close();    
@@ -67,6 +73,7 @@ class BagServerSrv:
         self.max_t=max(index.keys());
         print self.min_t,self.max_t
 
+        self.active_topics={};
 
         self.player_fcn=[];
         self.player=[];
@@ -218,18 +225,20 @@ class BagServerSrv:
     
         
 
-def start_server(out_namespace,index_fn):
+def start_server():
     rospy.init_node('hist_server')
-    h = BagServerSrv(out_namespace,index_fn);
-    s = rospy.Service('hist', History, h.handle_query)
+    h = BagServerSrv();
     rospy.spin()
 
 if __name__ == "__main__":
   import sys
-  if len(sys.argv) == 3:
-    start_server(sys.argv[1], sys.argv[2])
-  else:
-    print "usage: bagserver_srv.py <out_namespace> <index_name> "
+
+  start_server();
+
+  #if len(sys.argv) == 3:
+  #  start_server(sys.argv[1], sys.argv[2])
+  #else:
+  #  print "usage: bagserver_srv.py <out_namespace> <index_name> "
 
 
 
