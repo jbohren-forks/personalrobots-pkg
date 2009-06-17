@@ -2,6 +2,6 @@
   <include file="$(find forearm_cam)/prf_forearm_cam_config.launch"/>
   <node name="forearm_cam_r" pkg="forearm_cam" type="forearm_node" respawn="false" output="screen"/>
   <node name="forearm_proc_r" pkg="stereo_image_proc" type="imageproc" respawn="false" output="screen">
-    <remap from="camera" to="forearm"/>
+    <remap from="camera" to="forearm_cam_r"/>
   </node>
 </launch>
