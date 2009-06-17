@@ -35,7 +35,8 @@
 
 namespace tf
 {
-
+/** \brief A base class for storing pointers to generic data types
+ */
 class OptionBase
 {
 public:
@@ -45,6 +46,9 @@ public:
 };
 
 
+/**\brief A class to hold a set of option values and currently used state
+ *  This class holds 
+ */
 template<class T>
 class Option : public OptionBase
 {
@@ -73,20 +77,31 @@ public:
   };
 
 private:
+  /// Local storage of the possible values
   std::vector<T> options_;
+  /// The output variable
   T* output_;
   typedef typename std::vector<T>::iterator vecTit;
+  /// The last updated element
   vecTit current_element_;
 
 };
 
-
+/** \brief A class to provide easy permutation of options
+ * This class provides a way to collapse independent 
+ * permutations of options into a single loop.  
+ */
 class Permuter
 {
 public:
-  /** Clean up allocated data */
+  /** \brief Destructor to clean up allocated data */
   virtual ~Permuter(){ clearAll();};
 
+
+  /** \brief Add a set of values and an output to the iteration
+   * @param values The set of possible values for this output
+   * @param output The value to set at each iteration
+   */
   template<class T>
   void addOption(const std::vector<T>& values, T* output)
   {
@@ -95,12 +110,15 @@ public:
   };
 
 
-
+  /** \brief Reset the internal counters */
   void reset(){
     for (unsigned int level= 0; level < options_.size(); level++)
       options_[level]->reset();
   };
 
+  /** \brief Iterate to the next value in the iteration
+   * Returns true unless done iterating.  
+   */
   bool step()
   {
     // base case just iterating
@@ -121,7 +139,7 @@ public:
   };
 
   //\todo add mutex to be thread safe
-
+  /** \brief Clear all stored data */
   void clearAll()
   {
     for ( unsigned int i = 0 ; i < options_.size(); i++)
@@ -132,7 +150,7 @@ public:
   };
 
 private:
-  std::vector<OptionBase*> options_;
+  std::vector<OptionBase*> options_; ///< Store all the option objects
 };
 
 
