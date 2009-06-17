@@ -130,4 +130,22 @@ int main( int argc, char** argv )
   {
     ROS_INFO("service call failed");
   }
+
+  usleep(1e4);
+  req_q.trajectoryid =  pr2_mechanism_controllers::TrajectoryQuery::Request::Query_Joint_Names;
+
+  if(ros::service::call("r_arm_joint_trajectory_controller/TrajectoryQuery", req_q, res_q))  
+  {
+    ROS_INFO("response:: %f, %d",res_q.trajectorytime,res_q.done);
+  }
+  else
+  {
+    ROS_INFO("service call failed");
+    for(int i=0; i < (int) res_q.jointnames.size(); i++)
+    {
+      ROS_INFO("Joint name: %s", res_q.jointnames[i].c_str());
+    }      
+  }
+
+
 }

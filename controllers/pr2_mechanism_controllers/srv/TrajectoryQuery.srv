@@ -2,7 +2,8 @@
 
 # if trajectoryid is 0, returns the timestamp of the current trajectory
 # and done is filled whenever all the trajectories have been finished
-uint32 trajectoryid
+int32 trajectoryid
+int32 Query_Joint_Names=-1
 ---
 uint8 State_Active=0
 uint8 State_Done=1

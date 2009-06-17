@@ -51,8 +51,9 @@ target_link_libraries(testTraj pr2_mechanism_controllers)
 rospack_add_executable(base_trajectory_controller src/base_trajectory_controller.cpp)
 rospack_declare_test(base_trajectory)
 
-
 rospack_add_executable(testTrajServ EXCLUDE_FROM_ALL test/test_arm_trajectory_service.cpp)
 rospack_declare_test(testTrajServ)
 target_link_libraries(testTrajServ pr2_mechanism_controllers)
 
+rospack_add_executable(testJointTrajSrv test/test_joint_trajectory_controller_srv.cpp)
+target_link_libraries(testJointTrajSrv pr2_mechanism_controllers)
