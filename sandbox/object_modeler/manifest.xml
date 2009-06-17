@@ -1,0 +1,18 @@
+<package>
+  <description brief="object_modeler">
+
+     object_modeler
+
+  </description>
+  <author>Romain Thibaux/ YOUR E-MAIL HERE</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://pr.willowgarage.com/wiki/sandbox/object_modeler</url>
+  <depend package="roscpp"/>
+  <depend package="std_msgs"/>
+  <depend package="move_base"/>
+  <depend package="nav_robot_actions"/>
+
+</package>
+
+
