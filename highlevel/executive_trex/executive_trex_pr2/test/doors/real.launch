@@ -9,7 +9,7 @@
   <node pkg="executive_trex_pr2" type="stub_ros_container" respawn="false" />
   <node pkg="executive_trex_pr2" type="actions" respawn="false" />
 
-  <param name="/trex/input_file" value="doorman.cfg"/>
+  <param name="/trex/input_file" value="playback.doorman.cfg"/>
 
   <include file="$(find executive_trex_pr2)/test/trex_config.launch" />
 </launch>

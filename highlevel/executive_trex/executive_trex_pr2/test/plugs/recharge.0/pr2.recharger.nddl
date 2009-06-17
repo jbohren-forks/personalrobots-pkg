@@ -2,16 +2,6 @@
 
 close();
 
-rejectable(recharge_controller.Holds g);
+rejectable(recharge_controller.Positioning g);
 g.start = 2;
-g.active = true;
-g.in_position = true;
-g.arms_clear = false;	
-g.outlet_detected_coarse = false;
-g.outlet_detected_fine = false;
-g.recharged = false;
-g.plug_is_stowed = maybe;
-g.ready_to_plug_in = false;
-g.plug_in_hand = false;
-g.plugged_in = false;
-g.ready_to_grasp = false;
+
