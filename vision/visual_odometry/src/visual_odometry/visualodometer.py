@@ -205,7 +205,7 @@ class VisualOdometer(TimedClass):
         below this value, key frame is moved forward.  Default value 175.
 
   scavenge
-        Scavenger mode; first a first pass to obtain a pose estimate,
+        Scavenger mode; runs a first pass to obtain a pose estimate,
         then re-runs the frame's matchers using the pose estimate to
         restrict the search area.  Default value False.
 
@@ -236,6 +236,7 @@ class VisualOdometer(TimedClass):
     self.tracks = set()
     self.all_tracks = set()
     self.posechain = []
+    self.verbose = False
 
     self.position_thresh = kwargs.get('position_keypoint_thresh', 0.5)
     self.angle_thresh = kwargs.get('angle_keypoint_thresh', (2 * pi) / (5. / 360))
@@ -244,6 +245,7 @@ class VisualOdometer(TimedClass):
     self.scavenge = kwargs.get('scavenge', False)
     self.sba = kwargs.get('sba', None)
     self.num_ransac_iters = kwargs.get('ransac_iters', 100)
+    self.verbose = kwargs.get('verbose', None)
 
     self.pe.setInlierErrorThreshold(self.inlier_error_threshold)
     self.pe.setNumRansacIterations(self.num_ransac_iters)
@@ -505,7 +507,8 @@ class VisualOdometer(TimedClass):
     self.inl = solution[0]
 
   def change_keyframe(self, newkey, reason):
-    print "Change keyframe from", self.keyframe.id, "to", newkey.id, ":", reason
+    if self.verbose:
+      print "Change keyframe from", self.keyframe.id, "to", newkey.id, ":", reason
     self.log_keyframes.append(newkey.id)
     self.log_keyposes.append(newkey.pose)
     oldkey = self.keyframe

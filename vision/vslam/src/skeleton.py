@@ -78,6 +78,8 @@ class Skeleton:
     self.label = "no label"
     self.node_labels = {}
 
+    self.fills = False
+
     self.timer = {}
     for t in ['toro add', 'toro opt', 'place recognition', 'gcc', 'descriptors']:
       self.timer[t] = Timer()
@@ -330,13 +332,13 @@ class Skeleton:
     self.edges -= set(self.weak_edges)
     self.weak_edges = []
 
-  def optimize(self):
+  def optimize(self, iters = 1000):
 
     self.pg.initializeOnlineIterations()
 
     print "pg.error", self.pg.error()
     for j in range(1):
-      for i in range(1000):
+      for i in range(iters):
         #print "iter", i, "pg.error", self.pg.error()
         self.pg.iterate()
       print "pg.error", self.pg.error()

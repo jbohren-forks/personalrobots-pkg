@@ -60,7 +60,11 @@ class RealSource:
     self.dc = dcam.dcam()
 
   def cam(self):
-    return VidereCamera(self.dc.retParameters())
+    paramstr = self.dc.retParameters()
+    print "PARAMSTR-------"
+    print paramstr
+    print "PARAMSTR-------"
+    return VidereCamera(paramstr)
 
   def getImage(self):
 
@@ -86,40 +90,93 @@ class FakeSource:
     self.r = reader(source)
 
   def cam(self):
+    self.started = time.time()
     (cam, l, r) = self.r.next()
     return cam
 
   def getImage(self):
-    (cam, l, r) = self.r.next()
+    try:
+      (cam, l, r) = self.r.next()
+    except StopIteration:
+      print "Took %f" % (time.time() - self.started)
+      # sys.exit(1)
+      l,r = self.prev
+    self.prev = (l,r)
     (w, h) = l.size
     return (w, h, l, r)
 
 class Demo:
   def __init__(self, source):
-    cv.NamedWindow("Camera")
-    cv.MoveWindow("Camera", 0, 500)
     self.cvim = None
 
-    self.fd = FeatureDetectorFast(300)
-    self.ds = DescriptorSchemeCalonder()
+    # These variables are internal:
+
     self.stereo_cam = source.cam()
-    self.vo = VisualOdometer(self.stereo_cam, scavenge = False, sba=None, inlier_error_threshold = 3.0)
-    self.skel = Skeleton(self.stereo_cam, descriptor_scheme = self.ds, optimize_after_addition = False)
     self.connected = False
+    self.snail_trail = []
     self.source = source
+    self.inlier_history = []
+    self.label = 0
+
+    # These variables can be tweaked:
+
+    self.fd = FeatureDetectorFast(200)
+    self.ds = DescriptorSchemeCalonder()
+    self.camera_preview = False
+    self.vo = VisualOdometer(self.stereo_cam,
+                             scavenge = False,
+                             sba=None,
+                             inlier_error_threshold = 3.0)
+    self.skel = Skeleton(self.stereo_cam, descriptor_scheme = self.ds, optimize_after_addition = False)
+    self.skel.node_vdist = 0
+
+    if self.camera_preview:
+      cv.NamedWindow("Camera")
+      cv.MoveWindow("Camera", 0, 500)
 
   def handleFrame(self):
     (w,h,li,ri) = self.source.getImage()
 
-    f = SparseStereoFrame(li, ri, feature_detector = self.fd, descriptor_scheme = self.ds)
-    self.vo.handle_frame(f)
-    self.skel.add(self.vo.keyframe, self.connected)
-    self.connected = True
+    self.f = SparseStereoFrame(li, ri, feature_detector = self.fd, descriptor_scheme = self.ds)
+    self.vo.handle_frame(self.f)
+    self.inlier_history = self.inlier_history[-20:] + [self.vo.inl]
+    # If the VO inlier count falls below 20, we're not well-connected for this link
+    if self.vo.inl < 20:
+      self.connected = False
 
-    if 1:
+    # Add a frame to graph if:
+    #   Frame zero, or
+    #   There have been N successful preceding frames, and either
+    #   Not connected,
+    #   or if connected, the distance from the youngest graph frame to this frame is > thresh
+
+    add_to_graph = None
+    if self.vo.keyframe.id == 0:
+      add_to_graph = "Zero keyframe"
+    elif min(self.inlier_history) > 20:
+      if not self.connected:
+        add_to_graph = "Unconnected - but now recovering good poses"
+        # This is a new graph, so generate a new label
+        self.label += 1
+      else:
+        relpose = ~self.last_added_pose * self.f.pose
+        if relpose.distance() > 0.5:
+          add_to_graph = "Connected and distance thresh passed"
+
+    if add_to_graph:
+      self.skel.setlabel(self.label)
+      self.skel.add(self.vo.keyframe, self.connected)
+      print "ADD %d %s" % (self.f.id, add_to_graph)
+      self.connected = True
+      self.last_added_pose = self.f.pose
+      self.snail_trail = []
+
+    self.snail_trail.append(self.vo.pose)
+
+    if self.camera_preview:
       # Run the OpenCV preview
       if not self.cvim:
-        self.cvim = cv.CreateImage((w,h/2), cv.IPL_DEPTH_8U, 1)
+        self.cvim = cv.CreateImage((w,h/2), cv.IPL_DEPTH_8U, 3)
 
       im = cv.CreateImage((w,h), cv.IPL_DEPTH_8U, 1)
       im2 = cv.CreateImage((w/2,h/2), cv.IPL_DEPTH_8U, 1)
@@ -127,14 +184,41 @@ class Demo:
         cv.SetData(im, str(src.tostring()), w)
         cv.Resize(im, im2)
         cv.SetImageROI(self.cvim, (i * w / 2, 0, w / 2, h / 2))
-        cv.Copy(im2, self.cvim)
+        cv.CvtColor(im2, self.cvim, cv.CV_GRAY2BGR)
+
       cv.ResetImageROI(self.cvim)
+
+      green = cv.RGB(0,255,0)
+      for (x,y,d) in self.f.features():
+        cv.Circle(self.cvim, (x/2, y/2), 2, green)
+        d = int(d)
+        cv.Line(self.cvim, ((w+x-d)/2, y/2 - 2), ((w+x-d)/2, y/2 + 2), green)
 
       cv.ShowImage("Camera", self.cvim)
       cv.WaitKey(10)
 
+  def anchor(self):
+    """ Return the current pose of the mosrt recently added skeleton node """
+    id = max(self.skel.nodes)
+    return self.skel.newpose(id)
+
+  def optimize(self):
+    self.skel.optimize()
+
+  def report(self):
+    print
+    print
+    print
+    print "-" * 80
+    print self.skel.edges
+    print "-" * 80
+
   def pose(self):
-    return self.vo.pose
+    """ Return the current camera pose in the skeleton frame """
+    if len(self.skel.nodes) == 0:
+      return self.vo.pose
+    else:
+      return self.anchor() * (~demo.snail_trail[0] * self.snail_trail[-1])
 
 if len(sys.argv) == 1:
   demo = Demo(RealSource())
@@ -169,7 +253,12 @@ def InitGL(Width, Height):				# We call this right after our OpenGL window is cr
   glClearDepth(1.0)					# Enables Clearing Of The Depth Buffer
   glDepthFunc(GL_LESS)				        # The Type Of Depth Test To Do
   glEnable(GL_DEPTH_TEST)				# Enables Depth Testing
+  # glDisable(GL_DEPTH_TEST)				# Enables Depth Testing
   glShadeModel(GL_SMOOTH)				# Enables Smooth Color Shading
+
+  glEnable(GL_LINE_SMOOTH)
+  glEnable(GL_BLEND)
+  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
   
   glMatrixMode(GL_PROJECTION)
   glLoadIdentity()					# Reset The Projection Matrix
@@ -190,7 +279,7 @@ def ReSizeGLScene(Width, Height):
   #glMatrixMode(GL_MODELVIEW)
   #gluLookAt(0.0, 0.0, 3.0,   0.0, 0.0, 0.0,   0.0, 1.0, 0.0);      
 
-def cube():
+def draw_cube():
   glBegin(GL_LINES)
   for a in [ -1, 1 ]:
     for b in [ -1, 1 ]:
@@ -202,10 +291,10 @@ def cube():
       glVertex3f(1, a, b)
   glEnd()
 
-def camera():
+def draw_camera():
   glPushMatrix()
   glScalef(.1, .1, .1)
-  cube()
+  draw_cube()
 
   glBegin(GL_LINES)
   glVertex3f(0,0,0)
@@ -230,7 +319,6 @@ def draw_view():
     'd' : (.1, .1, .1),
     'e' : (.1, -.1, .1) }
 
-  glColor3f(.8, .7, .6)
   glBegin(GL_LINES)
   for p0,p1 in [ ('a','b'), ('a','c'), ('a','d'), ('a','e'), ('b','c'), ('c','d'), ('d','e'), ('e','b') ]:
     glVertex3f(*mod[p0])
@@ -249,31 +337,75 @@ def DrawGLScene():
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
   demo.handleFrame()
-  glColor3f(1, 1, 1)
-  cube()
 
+  glMatrixMode(GL_MODELVIEW)
+
+  # Draw the home cube with a gray floor
+
+  glColor3f(1, 1, 1)
+  draw_cube()
   glColor3f(.3, .3, .3)
   glBegin(GL_QUADS)
   for x,z in [ (-1,-1), (-1,1), (1,1), (1,-1) ]:
     glVertex3f(x, -1, z)
   glEnd()
 
-  glMatrixMode(GL_MODELVIEW)
+  # Draw the snail trail
 
-  # Plot the skeleton
+  if demo.connected:
+    anchor = demo.anchor()
+    glColor3f(0, 1, 0)
+    glBegin(GL_LINE_STRIP)
+    for p in demo.snail_trail:
+      relpose = anchor * (~demo.snail_trail[0] * p)
+      x,y,z = relpose.xform(0,0,0)
+      glVertex3f(-x, -y, z)
+    glEnd()
 
-  glColor3f(.3, .3, 1)
+  # Draw the skeleton edges as thick lines
+
+  def label2color(l):
+    # most recent N get N distinctive colors
+    # older labels get the same color
+    fresh_colors = [
+      (153,255,0),
+      (255,230,0),
+      (255,102,0) ]
+    old_color = (153,102,0)
+
+    if (demo.label - l) < len(fresh_colors):
+      return fresh_colors[l % len(fresh_colors)]
+    else:
+      return old_color
+
   glLineWidth(3)
-  glBegin(GL_LINES)
   for i0,i1 in demo.skel.edges:
+    l0 = demo.skel.node_labels[i0]
+    l1 = demo.skel.node_labels[i1]
+    if l0 == l1:
+      glColor3ub(*label2color(l0))
+    else:
+      glColor3f(.3, .3, 1)
+    if (i0,i1) in demo.skel.weak_edges:
+      glLineStipple(3, 0x5555)
+      glEnable(GL_LINE_STIPPLE)
+    else:
+      glDisable(GL_LINE_STIPPLE)
+    glBegin(GL_LINES)
     (x,y,z) = demo.skel.newpose(i0).xform(0,0,0)
     glVertex3f(-x,-y,z)
     (x,y,z) = demo.skel.newpose(i1).xform(0,0,0)
     glVertex3f(-x,-y,z)
-  glEnd()
+    glEnd()
   glLineWidth(1)
+  glDisable(GL_LINE_STIPPLE)
+
+  # Draw the skeleton nodes as frustums
 
   for id in demo.skel.nodes:
+    l0 = demo.skel.node_labels[id]
+    glColor3ub(*label2color(l0))
+
     glPushMatrix()
     poseMultMatrix(demo.skel.newpose(id))
     draw_view()
@@ -285,7 +417,7 @@ def DrawGLScene():
     poseMultMatrix(demo.pose())
 
   glColor3f(1, 1, 1)
-  camera()
+  draw_camera()
 
   glutSwapBuffers()
 
@@ -304,6 +436,8 @@ class MouseLook:
     self.a_clm = 0
     self.v_clm = 0
     self.last = time.time()
+    self.mode = 1
+    self.fullscreen = False
 
   def matrix(self):
     R = transformations.euler_matrix(self.phi, self.th, 0)
@@ -329,29 +463,37 @@ class MouseLook:
     self.z = M[2,3]
 
   def frob(self):
-    t = time.time()
-    delta = t - self.last
-    self.last = t
+    if self.mode == 0:
+      t = time.time()
+      delta = t - self.last
+      self.last = t
 
-    self.v_fwd += delta * self.a_fwd
-    if self.a_fwd:
-      self.v_fwd *= 0.99
+      self.v_fwd += delta * self.a_fwd
+      if self.a_fwd:
+        self.v_fwd *= 0.99
+      else:
+        self.v_fwd *= 0.7
+
+      self.v_rgt += delta * self.a_rgt
+      if self.a_rgt:
+        self.v_rgt *= 0.99
+      else:
+        self.v_rgt *= 0.7
+
+      self.v_clm += delta * self.a_clm
+      if self.a_clm:
+        self.v_clm *= 0.99
+      else:
+        self.v_clm *= 0.7
+
+      self.translate(self.v_rgt * delta, self.v_clm * delta, -self.v_fwd * delta)
     else:
-      self.v_fwd *= 0.7
-
-    self.v_rgt += delta * self.a_rgt
-    if self.a_rgt:
-      self.v_rgt *= 0.99
-    else:
-      self.v_rgt *= 0.7
-
-    self.v_clm += delta * self.a_clm
-    if self.a_clm:
-      self.v_clm *= 0.99
-    else:
-      self.v_clm *= 0.7
-
-    self.translate(self.v_rgt * delta, self.v_clm * delta, -self.v_fwd * delta)
+      x,y,z = demo.pose().xform(0,0,0)
+      self.x = -x
+      self.y = 10
+      self.z = z
+      self.th = 0
+      self.phi = -math.pi / 2
 
   def unkey(self, k):
     if k == 'w':
@@ -362,8 +504,26 @@ class MouseLook:
       self.a_rgt = 0
     if k in [ 'c', ' ' ]:
       self.a_clm = 0
-    
+ 
   def key(self, k):
+
+    if k == 'o':
+      demo.optimize()
+
+    if k == '\r':
+      self.fullscreen = not self.fullscreen
+      if self.fullscreen:
+        glutFullScreen()
+      else:
+        glutPositionWindow(0, 0)
+        glutReshapeWindow(640, 480)
+
+    if k == '/':
+      demo.report()
+
+    if k == '1':
+      self.mode = (self.mode + 1) % 2
+
     th_inc = 0.05
     if k == 'w':
       self.a_fwd = 2
