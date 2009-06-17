@@ -551,7 +551,7 @@ void MechanismControlNode::update()
 {
   mc_->update();
 
-  if (realtime_gettime() > last_publish_ + publish_period_)
+  if (round ((realtime_gettime() - last_publish_ - publish_period_)/ (0.000001)) >= 0)
   {
     last_publish_ = realtime_gettime();
     if (publisher_.trylock())
