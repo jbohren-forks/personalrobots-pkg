@@ -54,7 +54,7 @@ void planning_environment::CollisionSpaceMonitor::setupCSM(void)
     haveMap_ = false;
 
     if (!tf_)
-	tf_ = new tf::TransformListener(*ros::Node::instance());
+	tf_ = new tf::TransformListener();
     
     collisionSpace_ = cm_->getODECollisionModel().get();
     

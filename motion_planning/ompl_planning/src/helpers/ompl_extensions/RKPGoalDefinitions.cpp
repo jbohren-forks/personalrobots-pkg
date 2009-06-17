@@ -167,7 +167,6 @@ void kinematic_planning::GoalToPosition::print(std::ostream &out) const
 	
 double kinematic_planning::GoalToPosition::evaluateGoalAux(const ompl::sb::State *state, std::vector<bool> *decision) const
 {
-    model_->kmodel->lock();
     update(state);
     
     if (decision)
@@ -181,7 +180,6 @@ double kinematic_planning::GoalToPosition::evaluateGoalAux(const ompl::sb::State
 	    (*decision)[i] = pce_[i]->decide(dPos, dAng);
 	distance += dPos + pce_[i]->getConstraintMessage().orientation_importance * dAng;
     }
-    model_->kmodel->unlock();
     
     return distance;
 }

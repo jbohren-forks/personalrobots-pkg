@@ -74,7 +74,7 @@ namespace move_arm
 	    ROS_ERROR("Arm '%s' is not known", arm_.c_str());
 	}
 	else
-	    ROS_INFO("Starting move_arm for '%s'", arm_.c_str());
+	    ROS_INFO("Starting move_arm for '%s' (IK is %senabled)", arm_.c_str(), perform_ik_ ? "" : "not ");
 	
 	if (valid_)
 	    valid_ = collisionModels_->loadedModels() && getControlJointNames(arm_joint_names_);
@@ -200,7 +200,9 @@ namespace move_arm
 				{
 				    if (res.approximate)
 					ROS_INFO("Approximate path was found. Distance to goal is: %f", res.distance);
+				    ROS_INFO("Received path with %u states from motion planner", (unsigned int)res.path.states.size());
 				    currentPath_ = res.path;
+				    displayPathPublisher_.publish(currentPath_);
 				    feedback = pr2_robot_actions::MoveArmState::MOVING;	
 				    update(feedback);
 				}
@@ -210,7 +212,7 @@ namespace move_arm
 		}
 		else
 		{
-		    ROS_ERROR("Service 'plan_kinematic_path' failed");
+		    ROS_ERROR("Motion planning service failed");
 		    result = robot_actions::ABORTED;
 		    break;
 		}
@@ -328,15 +330,11 @@ namespace move_arm
 	    }
 	    eps.sleep();	
 	}
-
-	return result;
-
-	/*
-
 	
-	return robot_actions::SUCCESS;
-
-	*/
+	if (result == robot_actions::SUCCESS)
+	    ROS_INFO("Trajectory execution is complete");
+	
+	return result;
     }
 
     void MoveArm::fillTrajectoryPath(const motion_planning_msgs::KinematicPath &path, robot_msgs::JointTraj &traj)

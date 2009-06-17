@@ -38,8 +38,6 @@
 #define KINEMATIC_PLANNING_KINEMATIC_RKP_MODEL_BASE_
 
 #include <planning_environment/planning_monitor.h>
-#include <boost/thread/mutex.hpp>
-#include <boost/shared_ptr.hpp>
 #include <string>
 
 namespace kinematic_planning
@@ -59,7 +57,6 @@ namespace kinematic_planning
 	{
 	}
 	
-	boost::mutex                           lock;
 	planning_environment::PlanningMonitor *planningMonitor;
 	collision_space::EnvironmentModel     *collisionSpace;
 	planning_models::KinematicModel       *kmodel;

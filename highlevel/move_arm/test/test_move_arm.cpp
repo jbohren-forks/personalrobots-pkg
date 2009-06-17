@@ -81,12 +81,17 @@ int main(int argc, char **argv)
     goal.goal_constraints.pose_constraint[0].pose.pose.orientation.y = 0;
     goal.goal_constraints.pose_constraint[0].pose.pose.orientation.z = 0;
     goal.goal_constraints.pose_constraint[0].pose.pose.orientation.w = 1;
+    goal.goal_constraints.pose_constraint[0].position_distance = 0.01;
+    goal.goal_constraints.pose_constraint[0].orientation_distance = 0.01;
+    goal.goal_constraints.pose_constraint[0].orientation_importance = 0.1;
+    goal.goal_constraints.pose_constraint[0].type = motion_planning_msgs::PoseConstraint::POSITION_XYZ + 
+	motion_planning_msgs::PoseConstraint::ORIENTATION_RPY;
     
     //  switchlist.start_controllers.clear();  switchlist.stop_controllers.clear();
     //  switchlist.start_controllers.push_back("r_arm_joint_trajectory_controller");
     
     //  if(switch_controllers.execute(switchlist, empty, timeout_medium) != robot_actions::SUCCESS) return -1;
-    ROS_INFO("Done switching controllers");
+    //    ROS_INFO("Done switching controllers");
     
     if(move_arm.execute(goal,feedback,timeout_long) != robot_actions::SUCCESS) return -1;
     
