@@ -33,7 +33,6 @@
 #include "tf/message_notifier.h"
 
 #include "robot_msgs/PoseStamped.h"
-#include "robot_msgs/CartesianState.h"
 #include "manipulation_msgs/TaskFrameFormalism.h"
 
 const double MIN_STANDOFF = 0.035;

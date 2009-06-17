@@ -45,7 +45,6 @@
 #include <std_msgs/Empty.h>
 #include <std_msgs/Int32.h>
 #include "robot_msgs/PoseStamped.h"
-#include "robot_msgs/CartesianState.h"
 #include "manipulation_msgs/TaskFrameFormalism.h"
 #include "plugs_core/PlugInState.h"
 
