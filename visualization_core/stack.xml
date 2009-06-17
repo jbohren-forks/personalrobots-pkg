@@ -1,4 +1,4 @@
-<stack name="ros-pkg_visualization_core" version="0.1">
+<stack name="visualization_core" version="0.1">
   <description brief="Visualization Core">
     Tools used for visualization
   </description>
@@ -9,6 +9,6 @@
   <url>http://pr.willowgarage.com/wiki/visualization_core</url>
   
   <depend stack="ros" version="0.5"/>
-  <depend stack="ros-pkg_common" version="0.1"/>
+  <depend stack="common" version="0.1"/>
 </stack>
 
