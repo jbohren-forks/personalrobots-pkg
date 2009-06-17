@@ -276,21 +276,13 @@ DoorController::Positioning{
   // Just move the base
   contains_start(move_base.Active cmd);
   concurrent(cmd.end, end);
+  // Must succeed. We have no workarounds!
+  eq(cmd.status, SUCCESS);
   // Arguments derived from the topological map
   eq(cmd.frame_id, "map");
   contained_by(doorman.Active dm);
   map_get_door_approach_pose(cmd.x, cmd.y, cmd.z, cmd.qx, cmd.qy, cmd.qz, cmd.qw, dm.start_connector);
-
-  // Always followed by detecting the door
-  // Must succeed. We have no workarounds!
-  ResultStatus cmd_status;
-  eq(cmd_status, cmd.status);
-  if(cmd_status == SUCCESS){
-    meets(DetectingDoor);
-  }
-  else {
-    meets(Positioning);
-  }
+  meets(DetectingDoor);
 }
 
 DoorController::DetectingDoor{
@@ -411,14 +403,8 @@ DoorController::ReleasingHandle{
   // Action with bounds. It must succeed
   contains_start(release_handle.Active cmd);
   concurrent(cmd.end, end);
+  eq(cmd.status, SUCCESS);
   leq(cmd.max_duration, RELEASE_HANDLE_DURATION_BOUND);
-  ResultStatus cmd_status;
-  eq(cmd_status, cmd.status);
-  if(cmd_status == SUCCESS){
-  }
-  else{
-    meets(ReleasingHandle);
-  }
 }
 
 DoorController::OpenDoor{
