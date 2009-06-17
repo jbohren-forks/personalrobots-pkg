@@ -57,13 +57,11 @@ namespace tf {
                            k.M.data[6], k.M.data[7], k.M.data[8]));
   }
 
-  void PoseTFToKDL(const tf::Pose& pose, KDL::Frame& frame)
+  void PoseTFToKDL(const tf::Pose& t, KDL::Frame& k)
   {
-    double Rz, Ry, Rx;
-    frame.p(0) = pose.getOrigin().x();
-    frame.p(1) = pose.getOrigin().y();
-    frame.p(2) = pose.getOrigin().z();
-    pose.getBasis().getEulerZYX(Rz, Ry, Rx);
-    frame.M = KDL::Rotation::EulerZYX(Rz, Ry, Rx);
+    for (unsigned int i = 0; i < 3; ++i)
+      k.p.data[i] = t.getOrigin()[i];
+    for (unsigned int i = 0; i < 9; ++i)
+      k.M.data[i] = t.getBasis()[i/3][i%3];
   }
 }
