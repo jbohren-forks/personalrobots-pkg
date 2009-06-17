@@ -78,6 +78,24 @@ typedef struct STATE3D_t
     short unsigned int z;
 } State3D;
 
+typedef struct GOAL_POSITION
+{
+  int type;
+  double pos[3];
+  double rpy[3];
+  short unsigned int xyz_tolerance;
+  short unsigned int xyz[3];
+  short unsigned int xyz_lr[3];
+  double rpy_tolerance;
+} GoalPos;
+
+typedef struct GOAL_CONFIGURATION
+{
+  std::vector <double> pos;
+  std::vector <double> tolerance_above;
+  std::vector <double> tolerance_below;
+} GoalConfig;
+
 // robot arm physical configuration structure
 typedef struct ENV_ROBARM_CONFIG
 {
@@ -148,27 +166,20 @@ typedef struct ENV_ROBARM_CONFIG
     int arm_length;
 
     //for kinematic library use
-/*    RobotKinematics pr2_kin;
+    /*RobotKinematics pr2_kin;
     SerialChain *right_arm;
-    JntArray *pr2_config; */
+    JntArray *pr2_config;*/
 
 /* Planner Parameters/Options */
 
     //goals
-    short unsigned int EndEffGoalX_c;   //get rid of this
-    short unsigned int EndEffGoalY_c;
-    short unsigned int EndEffGoalZ_c;
-
-    short unsigned int ** EndEffGoals_c;
-    double ** EndEffGoals_m;
-    double ** EndEffGoalRPY;
-    double GoalRPY_MOE[3];
-    double ** EndEffGoalOrientations;
-    int nEndEffGoals;
     bool bGoalIsSet;
+    bool PlanInJointSpace;
+    std::vector <GoalPos> EndEffGoals;
+    std::vector <GoalConfig> JointSpaceGoals;
+    std::vector <std::vector <double> > ParsedGoals;
 
-
-    //coords of goal - shouldn't be here
+    //actual coords of goal - shouldn't be here
     short unsigned int goalcoords[NUMOFLINKS];
 
     //epsilon to be used by planner
@@ -191,13 +202,8 @@ typedef struct ENV_ROBARM_CONFIG
     double padding;
     double gripper_orientation_moe; //gripper orientation margin of error
     double grasped_object_length_m;
-    double goal_moe_m;
 
-    bool dual_heuristics; //can remove
     double ApplyRPYCost_m;
-    double AngularDist_Weight; //not used?
-    double ExpCoefficient;
-    bool angular_dist_cost; //not used?
 
 /* Motion Primitives */
     //successor actions
@@ -223,13 +229,6 @@ typedef struct ENV_ROBARM_CONFIG
     int medCostRadius_c;
     int lowCostRadius_c;
 
-
-    //joint-space search
-    bool PlanInJointSpace;
-    double JointSpaceGoalMOE[NUMOFLINKS];
-    double ** JointSpaceGoals;
-    int nJointSpaceGoals;
-
     //mutexes to protect temporary & planning maps
     boost::mutex mCopyingGrid;
     boost::mutex mPlanning;
@@ -238,15 +237,6 @@ typedef struct ENV_ROBARM_CONFIG
     double cos_r[360];
     double sin_r[360];
     double T_DH[4*NUM_TRANS_MATRICES][4][NUMOFLINKS];
-/*
-    std::vector <std::vector<double> > * EndEffGoal_m;
-    std::vector <std::vector<double> > * EndEffGoal_r;
-    std::vector <std::vector<short unsigned int> > * EndEffGoal_c;
-*/
-
-    std::vector <std::vector<double> > EndEffGoal_m;
-    std::vector <std::vector<double> > EndEffGoal_r;
-    std::vector <std::vector<short unsigned int> > EndEffGoal_c;
 
 } EnvROBARMConfig_t;
 
@@ -309,14 +299,6 @@ public:
      */
     bool SetStartJointConfig(double angles[NUMOFLINKS], bool bRad);
     /*!
-     * @brief Set the end effector goals.
-     * @param EndEffGoals a list of n end effector goals (n x 12: {x, y, z, r11, r12, r13, r21, r22, r23, r31, r32, 33})
-     * @param goal_type 0: cartesian  1: joint space (internally converted to cartesian coordinates, does NOT plan to joint space configuration)
-     * @param num_goals number of goals in the list
-     * @param bComputeHeuristic 1: recompute heuristic (needs to be set to 1, if called from outside the class)
-     */
-    bool SetEndEffGoals(double** EndEffGoals, int goal_type, int num_goals, bool bComputeHeuristic);
-    /*!
      * @brief Add obstacles to the environment
      * @param obstacles a list of cubic obstacles (n x 6: {x_center, y_center, z_center, width, depth, height})
      * @param num_obstacles number of obstacles in the list
@@ -337,7 +319,6 @@ public:
      * @param pCfg pointer to file with the Arm planner parameters
      */
     bool InitEnvFromFilePtr(FILE* eCfg, FILE* pCfg);
-    bool SetEndEffGoals(double** EndEffGoals, int num_goals);
 
     //this should be removed  - it returns the planner Epsilon
     double GetEpsilon();
@@ -365,19 +346,19 @@ public:
     //old function - needed when using KDL for collision detection - will eventually be removed
     // void CloseKinNode();
 
-    void AddObstacles(std::vector <std::vector <double> > obstacles);
+    void AddObstacles(const std::vector <std::vector <double> > &obstacles);
     void getRPY(double Rot[3][3], double* roll, double* pitch, double* yaw, int solution_number);
-//     bool SetEndEffGoals(vector<vector<double> >* EndEffGoals);
-    bool SetJointSpaceGoals(double** JointSpaceGoals, int num_goals);
     std::vector<std::vector<double> >* getCollisionMap();
     int GetFromToHeuristic(int FromStateID, int ToStateID, FILE* fOut);
-
-
 
     void getValidPositions(int num_pos, FILE* fOut);
     double gen_rand(double min, double max);
 
-    bool SetGoalPosition(const std::vector <std::vector<double> > &goals);
+    bool SetGoalPosition(const std::vector <std::vector<double> > &goals, const std::vector<std::vector<double> > &tolerances, const std::vector<int> &type);
+    void SetGoalPositionTolerance(const std::vector <std::vector<double> > &tolerance);
+    void SetGoalPositionType(const std::vector <int> &goal_type);
+    bool SetGoalConfiguration(const std::vector <std::vector<double> > &goals, const std::vector<std::vector<double> > &tolerance_above, const std::vector<std::vector<double> > &tolerance_below);
+    void SetGoalConfigurationTolerance(const std::vector<std::vector<double> > &tolerance_above, const std::vector<std::vector<double> > &tolerance_below);
 
 private:
 
@@ -417,7 +398,6 @@ private:
     bool IsValidCell(int X, int Y, int Z);
     bool IsWithinMapCell(int X, int Y, int Z);
     bool AreEquivalent(int State1ID, int State2ID);
-    bool RemoveGoal(int goal_index);
     void UpdateEnvironment();
 
     //cost functions
@@ -448,14 +428,14 @@ private:
     void Delete3DStateSpace(State3D**** statespace3D);
     int XYZTO3DIND(int x, int y, int z);
 //     void Search3DwithQueue(State3D*** statespace, int* HeurGrid, std::vector <std::vector<short unsigned int> >* EndEffGoals_c);
-    void Search3DwithQueue(State3D*** statespace, int* HeurGrid, short unsigned int ** EndEffGoals_c);
-    void Search3DwithQueue(State3D*** statespace, int* HeurGrid, short unsigned  int searchstartx, short unsigned int searchstarty, short unsigned int searchstartz);
+    void Search3DwithQueue(State3D*** statespace, int* HeurGrid, const vector< GoalPos> &Goals);
+//     void Search3DwithQueue(State3D*** statespace, int* HeurGrid, short unsigned  int searchstartx, short unsigned int searchstarty, short unsigned int searchstartz);
 //     void Search3DwithHeap(State3D*** statespace, int* HeurGrid, int searchstartx, int searchstarty, int searchstartz);
 
     // distance functions
     int GetDistToClosestGoal(short unsigned int* xyz, int *goal_num);
     double GetDistToClosestGoal(double *xyz,int *goal_num);
-    double GetAxisAngle(double R1[3][3], double R2[3][3], double* angle);
+    void GetAxisAngle(double R1[3][3], double R2[3][3], double* angle);
 
     //forward kinematics
     int ComputeEndEffectorPos(double angles[NUMOFLINKS], double endeff_m[3]);
@@ -473,6 +453,8 @@ private:
 
     // void CheckParamServer();
     void ParseYAMLFile(const char* sParamFile);
+
+    bool isGoalPosition(const short unsigned int endeff[3], const double orientation[3][3], const GoalPos &goal, const double &axis_angle);
 };
 
 #endif

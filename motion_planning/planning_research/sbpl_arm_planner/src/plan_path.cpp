@@ -91,7 +91,7 @@ int planrobarm(int argc, char *argv[])
     planner.set_initialsolution_eps(environment_robarm.GetEpsilon());
 
     //set search mode (true - settle with first solution)
-    planner.set_search_mode(false);
+    planner.set_search_mode(true);
 
     int sol_cost;
     printf("start planning...\n");
