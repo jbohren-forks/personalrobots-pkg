@@ -1,4 +1,4 @@
-<stack name="ros-pkg_simulators" version="0.1">
+<stack name="simulators" version="0.1">
   <description brief="Stage and Gazebo Simulators">
     Simulators for ROS both Stage and Gazebo
   </description>
