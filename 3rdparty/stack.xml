@@ -1,4 +1,4 @@
-<stack name="ros-pkg_3rdparty" version="0.1">
+<stack name="3rdparty" version="0.1">
   <description brief="3rdparty packages from ros-pkg">
     These are common dependencies for ros-pkg
   </description>
