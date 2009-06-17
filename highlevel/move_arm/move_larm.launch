@@ -1,7 +1,15 @@
 <launch>
   <node pkg="move_arm" type="move_arm" name="move_arm" args="robot_description:=robotdesc/pr2" output="screen">    
-   <param name="ik_service_name" value="pr2_ik_node/ik_service" />     
-   <param name="ik_query_name" value="pr2_ik_node/ik_query" /> 
+
+   <remap from="arm_ik" to="pr2_ik_node/ik_service" />	
+   <remap from="arm_ik_query" to="pr2_ik_node/ik_query" />
+
+   <remap from="controller_start"  to="l_arm_joint_trajectory_controller/TrajectoryStart" />
+   <remap from="controller_query"  to="l_arm_joint_trajectory_controller/TrajectoryQuery" />
+   <remap from="controller_cancel" to="l_arm_joint_trajectory_controller/TrajectoryCancel" />
+
+   <remap from="motion_plan" to="plan_kinematic_path" />
+
    <param name="arm" value="left_arm" />
   </node>
 </launch>

@@ -49,29 +49,37 @@ using namespace robot_actions;
 
 namespace move_arm 
 {
-    MoveArm::MoveArm(const ArmType &arm) : Action<pr2_robot_actions::MoveArmGoal, int32_t>("move_arm")
-    {
-	if (arm == LEFT)
-	    arm_ = "left_arm";
-	else
-	    arm_ = "right_arm";
-	
-	ROS_INFO("Starting move_arm for '%s'", arm_.c_str());
+    // these are the strings used internally to access services
+    // they should be remaped in the launch file
+    static const std::string CONTROL_START_NAME  = "controller_start";
+    static const std::string CONTROL_QUERY_NAME  = "controller_query";
+    static const std::string CONTROL_CANCEL_NAME = "controller_cancel";
+    static const std::string MOTION_PLAN_NAME    = "motion_plan";
+
+    static const std::string ARM_IK_NAME         = "arm_ik";
+    static const std::string ARM_IK_QUERY_NAME   = "arm_ik_query";
+
+    MoveArm::MoveArm(void) : Action<pr2_robot_actions::MoveArmGoal, int32_t>("move_arm")
+    {	
+	node_handle_.param<std::string>("~arm", arm_, std::string());
+	node_handle_.param<bool>("~perform_ik", perform_ik_, true);
 	
 	// monitor robot
 	collisionModels_ = new planning_environment::CollisionModels("robot_description");
 	planningMonitor_ = new planning_environment::PlanningMonitor(collisionModels_);
-
-	node_handle_.param<bool>       ("~perform_ik",      perform_ik_,      true);
-	node_handle_.param<std::string>("~ik_service_name", ik_service_name_, "pr2_ik");
-	node_handle_.param<std::string>("~ik_query_name",   ik_query_name_,   "pr2_ik_query");
 	
-	node_handle_.param<std::string>("~motion_plan_name",    motion_plan_name_,    "plan_kinematic_path");
-	node_handle_.param<std::string>("~control_start_name",  control_start_name_,  "r_arm_joint_trajectory_controller/TrajectoryStart");
-	node_handle_.param<std::string>("~control_query_name",  control_query_name_,  "r_arm_joint_trajectory_controller/TrajectoryQuery");
-	node_handle_.param<std::string>("~control_cancel_name", control_cancel_name_, "r_arm_joint_trajectory_controller/TrajectoryCancel");
+	if (collisionModels_->getKinematicModel()->getGroupID(arm_) < 0)
+	{
+	    valid_ = false;
+	    ROS_ERROR("Arm '%s' is not known", arm_.c_str());
+	}
+	else
+	    ROS_INFO("Starting move_arm for '%s'", arm_.c_str());
 	
-	if (!(valid_ = collisionModels_->loadedModels() && getControlJointNames(arm_joint_names_)))
+	if (valid_)
+	    valid_ = collisionModels_->loadedModels() && getControlJointNames(arm_joint_names_);
+	
+	if (!valid_)
 	    ROS_ERROR("Move arm action is invalid");
 	
 	// advertise the topic for displaying kinematic plans
@@ -155,10 +163,10 @@ namespace move_arm
 	feedback = pr2_robot_actions::MoveArmState::PLANNING;
 	update(feedback);
 	
-	ros::ServiceClient clientPlan   = node_handle_.serviceClient<motion_planning_srvs::KinematicPlan>("plan_kinematic_path", true);
-	ros::ServiceClient clientStart  = node_handle_.serviceClient<pr2_mechanism_controllers::TrajectoryStart>("right_arm/trajectory_controller/TrajectoryStart", true);
-	ros::ServiceClient clientQuery  = node_handle_.serviceClient<pr2_mechanism_controllers::TrajectoryQuery>("right_arm/trajectory_controller/TrajectoryQuery", true);
-	ros::ServiceClient clientCancel = node_handle_.serviceClient<pr2_mechanism_controllers::TrajectoryCancel>("right_arm/trajectory_controller/TrajectoryCancel", true);
+	ros::ServiceClient clientPlan   = node_handle_.serviceClient<motion_planning_srvs::KinematicPlan>(MOTION_PLAN_NAME, true);
+	ros::ServiceClient clientStart  = node_handle_.serviceClient<pr2_mechanism_controllers::TrajectoryStart>(CONTROL_START_NAME, true);
+	ros::ServiceClient clientQuery  = node_handle_.serviceClient<pr2_mechanism_controllers::TrajectoryQuery>(CONTROL_QUERY_NAME, true);
+	ros::ServiceClient clientCancel = node_handle_.serviceClient<pr2_mechanism_controllers::TrajectoryCancel>(CONTROL_CANCEL_NAME, true);
 
 	int                trajectoryId = -1;
 	ros::Duration      eps(0.01);
@@ -286,7 +294,7 @@ namespace move_arm
 		    }
 		    else
 		    {
-			ROS_ERROR("Service 'right_arm/trajectory_controller/TrajectoryStart' failed");
+			ROS_ERROR("Unable to start trajectory controller");
 			result = robot_actions::ABORTED;
 			break;
 		    }
@@ -343,14 +351,14 @@ namespace move_arm
     
     bool MoveArm::getControlJointNames(std::vector<std::string> &joint_names)
     {
-	ros::ServiceClient client_query = node_handle_.serviceClient<pr2_mechanism_controllers::TrajectoryQuery>(control_query_name_);
+	ros::ServiceClient client_query = node_handle_.serviceClient<pr2_mechanism_controllers::TrajectoryQuery>(CONTROL_QUERY_NAME);
 	pr2_mechanism_controllers::TrajectoryQuery::Request  req_query;
 	pr2_mechanism_controllers::TrajectoryQuery::Response res_query;
 	req_query.trajectoryid = -1;
 	
 	if (!client_query.call(req_query, res_query))
 	{
-	    ROS_ERROR("Unable to retrieve controller joint names using '%s' service", control_query_name_.c_str());
+	    ROS_ERROR("Unable to retrieve controller joint names from control query service");
 	    return false;
 	}
 	
@@ -403,11 +411,11 @@ namespace move_arm
 		request.data.positions.push_back(params[j]);
 	}
 	
-	ros::ServiceClient client = node_handle_.serviceClient<manipulation_srvs::IKService>(ik_service_name_);
+	ros::ServiceClient client = node_handle_.serviceClient<manipulation_srvs::IKService>(ARM_IK_NAME);
 	
 	if (client.call(request, response))
 	{ 
-	    ROS_DEBUG("MoveArm:: Got IK solution");
+	    ROS_DEBUG("Obtained IK solution");
 	    solution = response.solution;
 	    for(unsigned int i = 0; i < solution.size() ; ++i)
 		ROS_DEBUG("%f", solution[i]);
@@ -415,7 +423,7 @@ namespace move_arm
 	}
 	else
 	{
-	    ROS_ERROR("MoveArm:: Service '%s' failed", ik_service_name_.c_str());
+	    ROS_ERROR("IK service failed");
 	    return false;
 	}
     }
@@ -427,7 +435,7 @@ int main(int argc, char** argv)
     ros::init(argc, argv, "move_arm");  
     ros::Node xx; // hack to get action to work
     
-    move_arm::MoveArm move_arm(move_arm::RIGHT);
+    move_arm::MoveArm move_arm;
     robot_actions::ActionRunner runner(20.0);
     runner.connect<pr2_robot_actions::MoveArmGoal, pr2_robot_actions::MoveArmState, int32_t>(move_arm);
     runner.run();

@@ -52,11 +52,6 @@
 namespace move_arm 
 {    
     
-    enum ArmType
-	{
-	    LEFT, RIGHT
-	};
-    
     /**
      * @class MoveArm
      * @brief A class adhering to the robot_actions::Action interface that moves the robot base to a goal location.
@@ -67,7 +62,7 @@ namespace move_arm
 	/**
 	 * @brief  Constructor for the actions
 	 */
-	MoveArm(const ArmType &arm);
+	MoveArm(void);
 	
 	/**
 	 * @brief  Destructor - Cleans up
@@ -86,24 +81,15 @@ namespace move_arm
 	
 	// the state of the action; this should be true if initialized properly
 	bool                     valid_;
+	bool                     perform_ik_;      /**< Flag that enables the option of IK */
 	
 	// the arm we are planning for
 	std::string              arm_;
 	std::vector<std::string> arm_joint_names_;	
 
 	
-	bool        perform_ik_;      /**< Flag that enables the option of IK */
-	std::string ik_service_name_; /**< Name of the service that provides IK */
-	std::string ik_query_name_;   /**< Name of the service that allows you to query the joint names that IK uses */
-
-	// service names
-	std::string motion_plan_name_;
-	std::string control_start_name_;
-	std::string control_query_name_;
-	std::string control_cancel_name_;
-	
-	ros::NodeHandle   node_handle_;
-	ros::Publisher    displayPathPublisher_;
+	ros::NodeHandle          node_handle_;
+	ros::Publisher           displayPathPublisher_;
 	
 	motion_planning_msgs::KinematicPath    currentPath_;
 	planning_environment::CollisionModels *collisionModels_;
@@ -116,4 +102,3 @@ namespace move_arm
 }
 
 #endif
-
