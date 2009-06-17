@@ -122,14 +122,57 @@ public:
 		init();
 	}
 
-	void setCount(int count)
+
+	template <typename T, typename M>
+	class CallbackFunctor {
+		TopicSynchronizer* synchronizer_;
+		const boost::function<void (const boost::shared_ptr<M const>&)> callback_;
+
+	public:
+
+		CallbackFunctor(TopicSynchronizer* synchronizer, const boost::function<void (const boost::shared_ptr<M const>&)>& callback) :
+			synchronizer_(synchronizer), callback_(callback)
+		{
+		}
+
+		void operator()(const boost::shared_ptr<M const>& message)
+		{
+			callback_(message);
+			synchronizer_->update(message->header.stamp);
+		}
+	};
+
+	template <typename T, typename M>
+	const boost::function<void (const boost::shared_ptr<M const>&)> decorate(void(T::*fp)(const boost::shared_ptr<M const>&), T* obj)
 	{
-		expected_count_ = count;
+		expected_count_++;
+		return CallbackFunctor<T,M>(this, boost::bind(fp, obj, _1));
+	}
+
+	template <typename T, typename M>
+	const boost::function<void (const boost::shared_ptr<M const>&)> decorate(void(T::*fp)(const boost::shared_ptr<M const>&), const boost::shared_ptr<T>& obj)
+	{
+		expected_count_++;
+		return CallbackFunctor<T,M>(this, boost::bind(fp, obj.get(), _1));
+	}
+
+	template <typename T, typename M>
+	const boost::function<void (const boost::shared_ptr<M const>&)> decorate(void(*fp)(const boost::shared_ptr<M const>&))
+	{
+		expected_count_++;
+		return CallbackFunctor<T,M>(this, boost::function<void(const boost::shared_ptr<M>&)>(fp));
+	}
+
+	template <typename T, typename M>
+	const boost::function<void (const boost::shared_ptr<M const>&)> decorate(const boost::function<void (const boost::shared_ptr<M const>&)>& callback)
+	{
+		expected_count_++;
+		return CallbackFunctor<T,M>(this, callback);
 	}
 
 	void init()
 	{
-		count_ = 0;
+		expected_count_ = 0;
 	}
 
 	void update(const ros::Time& time)
@@ -235,13 +278,16 @@ public:
 			//        	cvCreateTrackbar("edges_high","edges",&edges_high, 500, &on_edges_high);
 		}
 
-		// subscribe to topics
-		left_image_sub_ = nh_.subscribe("stereo/left/image_rect", 1, &RecognitionLambertian::leftImageCallback, this);
-		right_image_sub_ = nh_.subscribe("stereo/right/image_rect", 1, &RecognitionLambertian::rightImageCallback, this);
-		disparity_sub_ = nh_.subscribe("stereo/disparity", 1, &RecognitionLambertian::disparityImageCallback, this);
-		cloud_sub_ = nh_.subscribe("stereo/cloud", 1, &RecognitionLambertian::cloudCallback, this);
+//		sync_.decorate(&RecognitionLambertian::leftImageCallback, this);
 
-		sync_.setCount(4);
+		// subscribe to topics
+		left_image_sub_ = nh_.subscribe("stereo/left/image_rect", 1, sync_.decorate(&RecognitionLambertian::leftImageCallback, this));
+		right_image_sub_ = nh_.subscribe("stereo/right/image_rect", 1, sync_.decorate(&RecognitionLambertian::rightImageCallback, this));
+		disparity_sub_ = nh_.subscribe("stereo/disparity", 1, sync_.decorate(&RecognitionLambertian::disparityImageCallback, this));
+		cloud_sub_ = nh_.subscribe("stereo/cloud", 1, sync_.decorate(&RecognitionLambertian::cloudCallback, this));
+
+//		sync_.setCount(4);
+
 
 		// advertise topics
 		objects_pub_ = nh_.advertise<PointCloud> ("~objects", 1);
@@ -275,7 +321,6 @@ private:
 		if(lbridge.fromImage(*limage, "bgr")) {
 			left = lbridge.toIpl();
 		}
-		sync_.update(image->header.stamp);
 	}
 
 	void rightImageCallback(const image_msgs::Image::ConstPtr& image)
@@ -284,7 +329,6 @@ private:
 		if(rbridge.fromImage(*rimage, "bgr")) {
 			right = rbridge.toIpl();
 		}
-		sync_.update(image->header.stamp);
 	}
 
 	void disparityImageCallback(const image_msgs::Image::ConstPtr& image)
@@ -293,14 +337,11 @@ private:
 		if(dbridge.fromImage(*dimage)) {
 			disp = dbridge.toIpl();
 		}
-		sync_.update(image->header.stamp);
 	}
 
 	void cloudCallback(const robot_msgs::PointCloud::ConstPtr& point_cloud)
 	{
-		printf("Got point cloud\n");
 		cloud = point_cloud;
-		sync_.update(point_cloud->header.stamp);
 	}
 
 
