@@ -12,11 +12,11 @@ bool writeIntrinsicsIni(const std::string& file_name, const std::string& camera_
                         const double* K, const double* D = NULL,
                         const double* R = NULL, const double* P = NULL);
 
-bool readIntrinsicsIni(const std::string& file_name, const std::string& camera_name,
+bool readIntrinsicsIni(const std::string& file_name, std::string& camera_name,
                        int &width, int &height,
                        double* K, double* D = NULL, double* R = NULL, double* P = NULL);
 
-bool parseIntrinsicsIni(const std::string& buffer, const std::string& camera_name,
+bool parseIntrinsicsIni(const std::string& buffer, std::string& camera_name,
                         int &width, int &height,
                         double* K, double* D = NULL, double* R = NULL, double* P = NULL);
 
@@ -26,7 +26,7 @@ bool writeIntrinsicsYml(const std::string& file_name, const std::string& camera_
                         const double* K, const double* D = NULL,
                         const double* R = NULL, const double* P = NULL);
 
-bool readIntrinsicsYml(const std::string& file_name, const std::string& camera_name,
+bool readIntrinsicsYml(const std::string& file_name, std::string& camera_name,
                        int &width, int &height,
                        double* K, double* D = NULL, double* R = NULL, double* P = NULL);
 

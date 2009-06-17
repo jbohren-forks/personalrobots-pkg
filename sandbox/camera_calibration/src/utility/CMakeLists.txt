@@ -1,0 +1,2 @@
+rospack_add_executable(yml2ini yml2ini.cpp)
+target_link_libraries(yml2ini camera_calibration)

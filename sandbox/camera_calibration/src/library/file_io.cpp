@@ -1,10 +1,16 @@
 #include "camera_calibration/file_io.h"
 #include <ros/console.h>
 #include <opencv/cv.h>
-#include <boost/tokenizer.hpp>
 #include <boost/shared_ptr.hpp>
+#include <boost/spirit/include/classic_core.hpp>
+#include <boost/spirit/include/classic_file_iterator.hpp>
+#include <boost/spirit/include/classic_confix.hpp>
+#include <boost/spirit/include/classic_loops.hpp>
+#include <boost/typeof/typeof.hpp>
 #include <cstdio>
 #include <ctime>
+
+using namespace BOOST_SPIRIT_CLASSIC_NS;
 
 namespace camera_calibration {
 
@@ -29,6 +35,7 @@ bool writeIntrinsicsIni(const std::string& file_name, const std::string& camera_
   boost::shared_ptr<FILE> guard(file, fclose);
 
   fprintf(file, "# %s camera intrinsics\n\n", camera_name.c_str());
+  /** @todo: time? */
   fprintf(file, "[image]\n\n");
   fprintf(file, "width\n%d\n\n", width);
   fprintf(file, "height\n%d\n\n", height);
@@ -64,93 +71,120 @@ bool writeIntrinsicsIni(const std::string& file_name, const std::string& camera_
   return true;
 }
 
-bool readIntrinsicsIni(const std::string& file_name, const std::string& camera_name,
-                       int &width, int &height,
-                       double* K, double* D, double* R, double* P)
+// Semantic action to store a sequence of values in an array
+template <typename T>
+struct ArrayAssignActor
 {
-  FILE* file = fopen(file_name.c_str(), "r");
-  if (!file)
-    return false;
-  boost::shared_ptr<FILE> guard(file, fclose);
+  ArrayAssignActor(T* start)
+    : ptr_(start)
+  {}
 
-  fseek(file, 0, SEEK_END);
-  long size = ftell(file);
-  std::string buffer(size, '\0');
-  rewind(file);
-  fread(&buffer[0], 1, size, file);
+  void operator()(T val) const
+  {
+    *ptr_++ = val;
+  }
 
-  return parseIntrinsicsIni(buffer, camera_name, width, height, K, D, R, P);
+  mutable T* ptr_;
+};
+
+// Semantic action generator
+template <typename T>
+ArrayAssignActor<T> array_assign_a(T* start)
+{
+  return ArrayAssignActor<T>(start);
 }
 
-bool parseIntrinsicsIni(const std::string& buffer, const std::string& camera_name,
-                        int &width, int &height,
-                        double* K, double* D, double* R, double* P)
+template <typename Iterator>
+bool parseIntrinsicsIniRange(Iterator first, Iterator last,
+                             std::string& camera_name, int& width, int& height,
+                             double* K, double* D, double* R, double* P)
 {
-  /** @todo: actually parse only what's requested */
+  /** @todo: actually parse only what's requested? */
   double ignore[12];
   if (!D) D = ignore;
   if (!R) R = ignore;
   if (!P) P = ignore;
   
-  // Separate into lines
-  typedef boost::tokenizer<boost::char_separator<char> > Tok;
-  boost::char_separator<char> sep("\n");
-  Tok tok(buffer, sep);
+  bool have_externals = false;
+  double trans[3], rot[3];
 
-  // Check "header"
-  Tok::iterator iter = tok.begin();
-  std::string header = "# " + camera_name + " camera intrinsics";
-  if (*iter++ != header) {
-    ROS_WARN("Camera intrinsics header doesn't match");
-    return false;
-  }
+  /** @todo: separate grammar out into separate function */
+  
+  // Image section (width, height)
+  BOOST_AUTO(image,
+      str_p("[image]")
+      >> "width"
+      >> uint_p[assign_a(width)]
+      >> "height"
+      >> uint_p[assign_a(height)]
+     );
 
-  // Read calibration matrices
-  width = height = 0;
-  int items_read = 0;
-  static const int EXPECTED_ITEMS = 9 + 5 + 9 + 12;
-  for (Tok::iterator ie = tok.end(); iter != ie; ++iter) {
-    if (*iter == "width") {
-      ++iter;
-      width = atoi(iter->c_str());
-    }
-    else if (*iter == "height") {
-      ++iter;
-      height = atoi(iter->c_str());
-    }
-    else if (*iter == "camera matrix")
-      for (int i = 0; i < 3; ++i) {
-        ++iter;
-        items_read += sscanf(iter->c_str(), "%lf %lf %lf",
-                             &K[3*i], &K[3*i+1], &K[3*i+2]);
-      }
-    else if (*iter == "distortion") {
-      ++iter;
-      items_read += sscanf(iter->c_str(), "%lf %lf %lf %lf %lf",
-                           D, D+1, D+2, D+3, D+4);
-    }
-    else if (*iter == "rectification")
-      for (int i = 0; i < 3; ++i) {
-        ++iter;
-        items_read += sscanf(iter->c_str(), "%lf %lf %lf",
-                             &R[3*i], &R[3*i+1], &R[3*i+2]);
-      }
-    else if (*iter == "projection")
-      for (int i = 0; i < 3; ++i) {
-        ++iter;
-        items_read += sscanf(iter->c_str(), "%lf %lf %lf %lf",
-                             &P[4*i], &P[4*i+1], &P[4*i+2], &P[4*i+3]);
-      }
-  }
+  // Optional externals section
+  BOOST_AUTO(externals,
+      str_p("[externals]")
+      >> "translation"
+      >> repeat_p(3)[real_p[array_assign_a(trans)]]
+      >> "rotation"
+      >> repeat_p(3)[real_p[array_assign_a(rot)]]
+     );
 
-  // Check we got everything
-  return items_read == EXPECTED_ITEMS && width != 0 && height != 0;
+  // Parser to save name of camera section
+  BOOST_AUTO(name, confix_p('[', (*anychar_p)[assign_a(camera_name)], ']'));
+
+  // Camera section (intrinsics)
+  BOOST_AUTO(camera,
+      name
+      >> "camera matrix"
+      >> repeat_p(9)[real_p[array_assign_a(K)]]
+      >> "distortion"
+      >> repeat_p(5)[real_p[array_assign_a(D)]]
+      >> "rectification"
+      >> repeat_p(9)[real_p[array_assign_a(R)]]
+      >> "projection"
+      >> repeat_p(12)[real_p[array_assign_a(P)]]
+     );
+
+  // Full grammar
+  BOOST_AUTO(ini_grammar,
+      image
+      >> !externals[assign_a(have_externals, true)]
+      >>  camera);
+
+  // Skip whitespace and line comments
+  BOOST_AUTO(skip, space_p | comment_p('#'));
+
+  parse_info<Iterator> info = parse(first, last, ini_grammar, skip);
+  /** @todo: do anything with externals? */
+  return info.hit;
 }
 
-static const char K_YML_NAME[] = "camera_matrix";
-static const char D_YML_NAME[] = "distortion_coefficients";
-static const char R_YML_NAME[] = "rectification_matrix";
-static const char P_YML_NAME[] = "projection_matrix";
+bool readIntrinsicsIni(const std::string& file_name, std::string& camera_name,
+                       int &width, int &height,
+                       double* K, double* D, double* R, double* P)
+{
+  typedef file_iterator<char> Iterator;
+
+  Iterator first(file_name);
+  Iterator last = first.make_end();
+
+  return parseIntrinsicsIniRange(first, last, camera_name, width, height, K, D, R, P);
+}
+
+bool parseIntrinsicsIni(const std::string& buffer, std::string& camera_name,
+                        int &width, int &height,
+                        double* K, double* D, double* R, double* P)
+{
+  return parseIntrinsicsIniRange(buffer.begin(), buffer.end(), camera_name,
+                                 width, height, K, D, R, P);
+}
+
+static const char CAM_YML_NAME[]    = "camera_name";
+static const char WIDTH_YML_NAME[]  = "image_width";
+static const char HEIGHT_YML_NAME[] = "image_height";
+static const char K_YML_NAME[]      = "camera_matrix";
+static const char D_YML_NAME[]      = "distortion_coefficients";
+static const char R_YML_NAME[]      = "rectification_matrix";
+static const char P_YML_NAME[]      = "projection_matrix";
 
 bool writeIntrinsicsYml(const std::string& file_name, const std::string& camera_name,
                         int width, int height,
@@ -180,8 +214,10 @@ bool writeIntrinsicsYml(const std::string& file_name, const std::string& camera_
   time_t raw_time;
   time( &raw_time );
   cvWriteString(fs, "save_time", asctime( localtime(&raw_time) ));
+  cvWriteInt(fs, WIDTH_YML_NAME, width);
+  cvWriteInt(fs, HEIGHT_YML_NAME, height);
   
-  cvWriteString(fs, "camera_name", camera_name.c_str());
+  cvWriteString(fs, CAM_YML_NAME, camera_name.c_str());
   const CvMat K_mat = cvMat(3, 3, CV_64FC1, const_cast<double*>(K));
   cvWrite(fs, K_YML_NAME, &K_mat);
   const CvMat D_mat = cvMat(1, 5, CV_64FC1, const_cast<double*>(D));
@@ -195,7 +231,7 @@ bool writeIntrinsicsYml(const std::string& file_name, const std::string& camera_
   return true;
 }
 
-bool readIntrinsicsYml(const std::string& file_name, const std::string& camera_name,
+bool readIntrinsicsYml(const std::string& file_name, std::string& camera_name,
                        int &width, int &height,
                        double* K, double* D, double* R, double* P)
 {
@@ -203,29 +239,46 @@ bool readIntrinsicsYml(const std::string& file_name, const std::string& camera_n
   if (!fs)
     return false;
 
+  const char* name = cvReadStringByName(fs, NULL, CAM_YML_NAME, NULL);
+  if (name)
+    camera_name = name;
+
+  width = cvReadIntByName(fs, NULL, WIDTH_YML_NAME);
+  height = cvReadIntByName(fs, NULL, HEIGHT_YML_NAME);
+  if (width == 0 || height == 0)
+    return false;
+
   CvMat* K_mat = (CvMat*)cvReadByName(fs, 0, K_YML_NAME);
+  if (!K_mat)
+    return false;
   memcpy(K, K_mat->data.db, 9*sizeof(double));
 
-  /** @todo: default values, error checking */
+  /** @todo: default values? */
   if (D) {
     CvMat* D_mat = (CvMat*)cvReadByName(fs, 0, D_YML_NAME);
+    if (!D_mat)
+      return false;
     memcpy(D, D_mat->data.db, 5*sizeof(double));
     cvReleaseMat(&D_mat);
   }
 
   if (R) {
     CvMat* R_mat = (CvMat*)cvReadByName(fs, 0, R_YML_NAME);
+    if (!R_mat)
+      return false;
     memcpy(R, R_mat->data.db, 9*sizeof(double));
     cvReleaseMat(&R_mat);
   }
 
   if (P) {
     CvMat* P_mat = (CvMat*)cvReadByName(fs, 0, P_YML_NAME);
+    if (!P_mat)
+      return false;
     memcpy(P, P_mat->data.db, 12*sizeof(double));
     cvReleaseMat(&P_mat);
   }
   
-  return false;
+  return true;
 }
 
 } //namespace camera_calibration
