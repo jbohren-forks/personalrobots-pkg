@@ -30,7 +30,7 @@
 *  CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
 *  LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
 *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-*  POSSIBILITY OF SUCH DAMAGE.    return robot_actions::PREEMPTED;
+*  POSSIBILITY OF SUCH DAMAGE.  
 
 *
 * Authors: Sachin Chitta, Ioan Sucan
@@ -91,7 +91,7 @@ namespace move_arm
 	delete planningMonitor_;
 	delete collisionModels_;
     }
-    
+
     robot_actions::ResultStatus MoveArm::execute(const pr2_robot_actions::MoveArmGoal& goal, int32_t& feedback)
     { 
 	if (!valid_)
@@ -121,40 +121,41 @@ namespace move_arm
 	    req.goal_constraints.pose_constraint[0].type == motion_planning_msgs::PoseConstraint::POSITION_XYZ +
 	    motion_planning_msgs::PoseConstraint::ORIENTATION_RPY && // that is active on all 6 DOFs
 	    req.goal_constraints.pose_constraint[0].position_distance < 0.1 && // and the desired position and
-	    req.goal_constraints.pose_constraint[0].orientation_distance < 0.1 && // orientation distances are small,
-	    ((arm_ == "left_arm"  && req.goal_constraints.pose_constraint[0].link_name == arm_joint_names_.back())
-	     || (arm_ == "right_arm" && req.goal_constraints.pose_constraint[0].link_name == arm_joint_names_.back()))) // and acts on the last link of the arm
+	    req.goal_constraints.pose_constraint[0].orientation_distance < 0.1) // orientation distances are small
 	{
-	    // we can do ik can turn the pose constraint into a joint one
-	    ROS_INFO("Converting pose constraint to joint constraint using IK...");
-	    
-	    std::vector<double> solution;
-	    if (computeIK(req.goal_constraints.pose_constraint[0].pose, solution))
+	    planning_models::KinematicModel::Link *link = planningMonitor_->getKinematicModel()->getLink(req.goal_constraints.pose_constraint[0].link_name);
+	    if (link && link->before && link->before->name == arm_joint_names_.back())
 	    {
-		req.goal_constraints.joint_constraint.resize(1);
-		req.goal_constraints.joint_constraint[0].header.frame_id = req.goal_constraints.pose_constraint[0].pose.header.frame_id;
-		req.goal_constraints.joint_constraint[0].header.stamp = planningMonitor_->lastStateUpdate();
-		unsigned int n = 0;
-		for (unsigned int i = 0 ; i < arm_joint_names_.size() ; ++i)
+		// we can do ik can turn the pose constraint into a joint one
+		ROS_INFO("Converting pose constraint to joint constraint using IK...");
+		
+		std::vector<double> solution;
+		if (computeIK(req.goal_constraints.pose_constraint[0].pose, solution))
 		{
-		    motion_planning_msgs::JointConstraint jc;
-		    jc.joint_name = arm_joint_names_[i];
-		    unsigned int u = planningMonitor_->getKinematicModel()->getJoint(arm_joint_names_[i])->usedParams;
-		    for (unsigned int j = 0 ; j < u ; ++j)
+		    unsigned int n = 0;
+		    for (unsigned int i = 0 ; i < arm_joint_names_.size() ; ++i)
 		    {
-			jc.value.push_back(solution[n + j]);
-			jc.toleranceAbove.push_back(0.0);
-			jc.toleranceBelow.push_back(0.0);
+			motion_planning_msgs::JointConstraint jc;
+			jc.joint_name = arm_joint_names_[i];
+			jc.header.frame_id = req.goal_constraints.pose_constraint[0].pose.header.frame_id;
+			jc.header.stamp = planningMonitor_->lastStateUpdate();
+			unsigned int u = planningMonitor_->getKinematicModel()->getJoint(arm_joint_names_[i])->usedParams;
+			for (unsigned int j = 0 ; j < u ; ++j)
+			{
+			    jc.value.push_back(solution[n + j]);
+			    jc.toleranceAbove.push_back(0.0);
+			    jc.toleranceBelow.push_back(0.0);
+			}
+			n += u;			
+			req.goal_constraints.joint_constraint.push_back(jc);
 		    }
-		    n += u;			
-		    req.goal_constraints.joint_constraint.push_back(jc);
+		    req.goal_constraints.pose_constraint.clear();
 		}
-		req.goal_constraints.pose_constraint.clear();
+		else
+		    ROS_WARN("Unable to compute IK");
 	    }
-	    else
-		ROS_WARN("Unable to compute IK");
 	}
-	    
+	
 	req.times = 1;
 	req.allowed_time = 0.5;
 	
@@ -226,12 +227,17 @@ namespace move_arm
 	    // stop the robot if we need to
 	    if (feedback == pr2_robot_actions::MoveArmState::MOVING)
 	    {
-		if (result == robot_actions::PREEMPTED || !planningMonitor_->isPathValid(currentPath_))
+		bool safe = planningMonitor_->isEnvironmentSafe();
+		bool valid = planningMonitor_->isPathValid(currentPath_);
+		if (result == robot_actions::PREEMPTED || !safe || !valid)
 		{
 		    if (result == robot_actions::PREEMPTED)
 			ROS_INFO("Preempt requested. Stopping arm.");
 		    else
-			ROS_INFO("Current path is no longer valid. Stopping & replanning...");
+			if (safe)
+			    ROS_WARN("Environment is no longer safe. Cannot decide if path is valid. Stopping & replanning...");
+			else
+			    ROS_INFO("Current path is no longer valid. Stopping & replanning...");
 
 		    if (trajectoryId != -1)
 		    {
@@ -354,7 +360,18 @@ namespace move_arm
 	pr2_mechanism_controllers::TrajectoryQuery::Response res_query;
 	req_query.trajectoryid = -1;
 	
-	if (!client_query.call(req_query, res_query))
+	bool result = client_query.call(req_query, res_query);
+	
+	if (!result)
+	{
+	    ROS_WARN("Unable to retrieve controller joint names from control query service. Waiting a bit and retrying...");
+	    ros::Duration(1.0).sleep();
+	    result = client_query.call(req_query, res_query);
+	    if (result)
+		ROS_WARN("Retrieved controller joints on second attempt");
+	}
+	
+	if (!result)
 	{
 	    ROS_ERROR("Unable to retrieve controller joint names from control query service");
 	    return false;

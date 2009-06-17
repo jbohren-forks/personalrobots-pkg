@@ -56,10 +56,6 @@ public:
 	    planningMonitor_ = new planning_environment::PlanningMonitor(collisionModels_);
 	
 	planKinematicPathService_ = nodeHandle_.advertiseService("plan_kinematic_path", &KinematicPlanning::planToGoal, this);
-
-	// determine intervals; a value of 0 means forever
-	nodeHandle_.param("~refresh_interval_collision_map", intervalCollisionMap_, 3.0);
-	nodeHandle_.param("~refresh_interval_kinematic_state", intervalState_, 0.5);
     }
     
     /** Free the memory */
@@ -99,25 +95,6 @@ public:
 		ROS_ERROR("No robot model loaded. OMPL planning node cannot start.");
     }
     
-    bool isSafeToPlan(bool report)
-    {
-	if (!planningMonitor_->isMapUpdated(intervalCollisionMap_))
-	{
-	    if (report)
-		ROS_WARN("Planning is not safe: map is not up to date");
-	    return false;
-	}
-	
-	if (!planningMonitor_->isStateUpdated(intervalState_))
-	{
-	    if (report)
-		ROS_WARN("Planning is not safe: robot state is not up to date");
-	    return false;
-	}
-	
-	return true;
-    }
-    
     bool planToGoal(motion_planning_srvs::KinematicPlan::Request &req, motion_planning_srvs::KinematicPlan::Response &res)
     {
 	ROS_INFO("Received request for planning");
@@ -130,7 +107,7 @@ public:
 	res.path.model_id = req.params.model_id;
 	res.path.header.frame_id = planningMonitor_->getFrameId();
 	res.path.header.stamp = planningMonitor_->lastMapUpdate();
-	res.unsafe = isSafeToPlan(true) ? 0 : 1;
+	res.unsafe = planningMonitor_->isEnvironmentSafe() ? 0 : 1;
 	res.distance = -1.0;
 	res.approximate = 0;
 	

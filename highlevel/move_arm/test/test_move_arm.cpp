@@ -73,6 +73,7 @@ int main(int argc, char **argv)
     goal.goal_constraints.pose_constraint[0].pose.header.stamp = ros::Time::now();
     goal.goal_constraints.pose_constraint[0].pose.header.frame_id = "torso_lift_link";
     
+    goal.goal_constraints.pose_constraint[0].link_name = "r_wrist_roll_link";
     goal.goal_constraints.pose_constraint[0].pose.pose.position.x = 0.75;
     goal.goal_constraints.pose_constraint[0].pose.pose.position.y = -0.188;
     goal.goal_constraints.pose_constraint[0].pose.pose.position.z = 0;
