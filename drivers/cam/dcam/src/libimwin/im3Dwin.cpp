@@ -286,6 +286,75 @@ void im3DWindow::DisplayImage(StereoData *stIm)
   redraw();
 }
 
+void im3DWindow::DisplayImage(vector<float> pts, vector<float> cls, int type)
+{
+  numPoints = pts.size()/3;
+  if (numPoints > bufsize)	// check buffers
+    {
+      if (bufsize > 0)
+	{
+	  delete [] pointListX;
+	  delete [] pointListY;
+	  delete [] pointListZ;
+	  delete [] colorListR;
+	  delete [] colorListG;
+	  delete [] colorListB;
+	}
+      bufsize = numPoints;
+      pointListX = new GLfloat[bufsize];
+      pointListY = new GLfloat[bufsize];
+      pointListZ = new GLfloat[bufsize];
+      colorListR = new GLfloat[bufsize];
+      colorListG = new GLfloat[bufsize];
+      colorListB = new GLfloat[bufsize];
+    }
+ 
+  maxx = maxy = maxz = -1000;
+  minx = miny = minz = 1000;
+
+  vector<float>::iterator ipts = pts.begin();
+  vector<float>::iterator icls = cls.begin();
+  for (int i=0; i<numPoints; i++)
+    {
+      pointListX[i] = *ipts++;
+      pointListY[i] = *ipts++;
+      pointListZ[i] = *ipts++;
+      if (cls.size() == numPoints*3)
+	{
+	  colorListR[i] = *icls++;
+	  colorListG[i] = *icls++;
+	  colorListB[i] = *icls++;
+	}
+      else
+	{
+	  colorListR[i] = 1.0;
+	  colorListG[i] = 1.0;
+	  colorListB[i] = 1.0;
+	}
+    }
+
+#if 0
+  for (i=20; i<100; i+=10)
+    {
+      if (calcCenterZ(di,i))
+	break;
+      else
+	centerz = 1.0;
+    }
+#endif
+
+  //  printf("center: (%f, %f, %f)\n", centerx, centery, centerz);
+  //  printf("%d/%d points, center (0,0,%d)\n", numPoints, di->numPoints, (int)centerz);
+//  printf("extremes: ([%f, %f], [%f, %f], [%f, %f])\n", maxx, minx,
+//	 maxy, miny, maxz, minz);
+
+
+  newModel = 1;
+  redraw();
+}
+
+
+
 void im3DWindow::recalcModelView() 
 {
   // effects: recalculates the view of the model based on

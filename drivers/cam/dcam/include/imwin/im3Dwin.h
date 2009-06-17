@@ -57,12 +57,16 @@
 #ifndef _IM3DWIN_H_
 #define _IM3DWIN_H_
 
+#include <stdlib.h>
+#include <vector>
 #include "FL/Fl_Gl_Window.H"
 #include "FL/gl.h"
 #include <GL/glut.h>
 #include <GL/glu.h>
 #include "image.h"
 
+
+using namespace std;
 using namespace cam;
 
 //
@@ -77,8 +81,10 @@ class im3DWindow : public Fl_Gl_Window {
 
   // set up 3D image from disparity
   void DisplayImage(StereoData *stIm);
-  // set up 3D image from points
-  void DisplayImage(float *imPts, int type);
+  // set up 3D image from points and colors
+  // colors and be NULL, uses white
+  // type???
+  void DisplayImage(vector<float> imPts, vector<float> imCls, int type);
 
   // orientation and scaling
   void scaleImage(float value);	// scales the image with a fixed aspect ratio
