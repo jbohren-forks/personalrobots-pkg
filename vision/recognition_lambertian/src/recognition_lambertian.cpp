@@ -62,7 +62,9 @@
 #include <point_cloud_mapping/geometry/projections.h>
 
 
-#include "ros/node.h"
+
+#include "ros/ros.h"
+//#include "ros/node.h"
 #include "image_msgs/StereoInfo.h"
 #include "image_msgs/DisparityInfo.h"
 #include "image_msgs/CamInfo.h"
@@ -78,7 +80,7 @@
 #include <tf/transform_listener.h>
 #include <tf/transform_broadcaster.h>
 
-#include "topic_synchronizer/topic_synchronizer.h"
+//#include "topic_synchronizer/topic_synchronizer.h"
 
 #include "CvStereoCamModel.h"
 
@@ -100,38 +102,98 @@ void on_edges_high(int);
 
 
 
+class TopicSynchronizer
+{
+	int expected_count_;
+	int count_;
+	ros::Time time_;
+	boost::function<void ()> callback_;
+
+public:
+
+	template <typename T>
+	TopicSynchronizer(void(T::*fp)(), T* obj) : callback_(boost::bind(fp,obj))
+	{
+		init();
+	}
+
+	TopicSynchronizer(void (*fp)()) : callback_(fp)
+	{
+		init();
+	}
+
+	void setCount(int count)
+	{
+		expected_count_ = count;
+	}
+
+	void init()
+	{
+		count_ = 0;
+	}
+
+	void update(const ros::Time& time)
+	{
+		if (count_==0 || time>time_) {
+			time_ = time;
+			count_ = 0;
+		}
+
+		if (time==time_) {
+			count_++;
+		}
+
+		if (count_==expected_count_) {
+			callback_();
+		}
+	}
+};
 
 
-class RecognitionLambertian : public ros::Node
+
+class RecognitionLambertian
 {
 public:
 
+	ros::NodeHandle nh_;
 
-	image_msgs::Image limage;
-	image_msgs::Image rimage;
-	image_msgs::Image dimage;
-	image_msgs::StereoInfo stinfo;
-	image_msgs::DisparityInfo dispinfo;
+	image_msgs::ImageConstPtr limage;
+	image_msgs::ImageConstPtr rimage;
+	image_msgs::ImageConstPtr dimage;
+	image_msgs::StereoInfoConstPtr stinfo;
+	image_msgs::DisparityInfoConstPtr dispinfo;
 	image_msgs::CamInfo rcinfo;
 	image_msgs::CamInfo lcinfo;
 	image_msgs::CvBridge lbridge;
 	image_msgs::CvBridge rbridge;
 	image_msgs::CvBridge dbridge;
 
-	robot_msgs::PointCloud cloud_fetch;
-	robot_msgs::PointCloud cloud;
+
+	ros::Subscriber left_image_sub_;
+	ros::Subscriber right_image_sub_;
+	ros::Subscriber disparity_sub_;
+	ros::Subscriber cloud_sub_;
+
+
+	ros::Publisher object_pub_;
+	ros::Publisher objects_pub_;
+	ros::Publisher marker_pub_;
+
+	robot_msgs::PointCloudConstPtr cloud;
 
 	IplImage* left;
 	IplImage* right;
 	IplImage* disp;
 	IplImage* disp_clone;
 
-	TopicSynchronizer<RecognitionLambertian> sync;
+//	TopicSynchronizer<RecognitionLambertian> sync;
 
 	boost::mutex cv_mutex;
 	boost::condition_variable images_ready;
 
-	tf::TransformListener *tf_;
+	tf::TransformListener tf_;
+
+	TopicSynchronizer sync_;
 
 
 	// minimum height to look at (in base_link frame)
@@ -150,20 +212,15 @@ public:
 	ChamferMatching* cm;
 
 	RecognitionLambertian()
-	:ros::Node("stereo_view"), left(NULL), right(NULL), disp(NULL), disp_clone(NULL), sync(this, &RecognitionLambertian::image_cb_all, ros::Duration().fromSec(0.1), &RecognitionLambertian::image_cb_timeout)
+	: left(NULL), right(NULL), disp(NULL), disp_clone(NULL), sync_(&RecognitionLambertian::syncCallback, this)
 	{
-		tf_ = new tf::TransformListener(*this);
 		// define node parameters
-
-
-		param("~min_height", min_height, 0.7);
-		param("~max_height", max_height, 1.0);
-		param("~frames_no", frames_no, 7);
-
-
-		param("~display", display, false);
+		nh_.param("~min_height", min_height, 0.7);
+		nh_.param("~max_height", max_height, 1.0);
+		nh_.param("~frames_no", frames_no, 7);
+		nh_.param("~display", display, false);
 		string template_path;
-		param<string>("~template_path", template_path,"templates.txt");
+		nh_.param<string>("~template_path", template_path,"templates.txt");
 
 		templates_no = 10;
 		edges_high = 170;
@@ -178,78 +235,74 @@ public:
 			//        	cvCreateTrackbar("edges_high","edges",&edges_high, 500, &on_edges_high);
 		}
 
+		// subscribe to topics
+		left_image_sub_ = nh_.subscribe("stereo/left/image_rect", 1, &RecognitionLambertian::leftImageCallback, this);
+		right_image_sub_ = nh_.subscribe("stereo/right/image_rect", 1, &RecognitionLambertian::rightImageCallback, this);
+		disparity_sub_ = nh_.subscribe("stereo/disparity", 1, &RecognitionLambertian::disparityImageCallback, this);
+		cloud_sub_ = nh_.subscribe("stereo/cloud", 1, &RecognitionLambertian::cloudCallback, this);
 
-		//        advertise<robot_msgs::PointStamped>("handle_detector/handle_location", 1);
-		advertise<visualization_msgs::Marker>("visualization_marker", 1);
+		sync_.setCount(4);
 
-		subscribeStereoData();
+		// advertise topics
+		objects_pub_ = nh_.advertise<PointCloud> ("~objects", 1);
+		object_pub_ = nh_.advertise<PointCloud> ("~object", 1);
+//		advertise<PointCloud> ("~outliers", 1);
+//		advertise<PointCloud> ("~inliers", 1);
+		marker_pub_ = nh_.advertise<visualization_msgs::Marker>("visualization_marker",1);
+
 
 		cm = new ChamferMatching();
-
 		loadTemplates(template_path);
 
-		advertise<PointCloud> ("~plane", 1);
-		advertise<PointCloud> ("~plane2", 1);
-		advertise<PointCloud> ("~outliers", 1);
-		advertise<PointCloud> ("~inliers", 1);
-		advertise<PointCloud> ("~object", 1);
-		advertise<visualization_msgs::Marker>("visualization_marker",1);
 	}
 
 	~RecognitionLambertian()
 	{
-		if(left){
-			cvReleaseImage(&left);
-		}
-		if(right){
-			cvReleaseImage(&right);
-		}
-		if(disp){
-			cvReleaseImage(&disp);
-		}
-
 		delete cm;
-
-		unsubscribeStereoData();
 	}
 
 private:
 
-	void subscribeStereoData()
+	void syncCallback()
 	{
-
-		sync.reset();
-		std::list<std::string> left_list;
-		left_list.push_back(std::string("stereo/left/image_rect_color"));
-		left_list.push_back(std::string("stereo/left/image_rect"));
-		sync.subscribe(left_list, limage, 1);
-
-		std::list<std::string> right_list;
-		right_list.push_back(std::string("stereo/right/image_rect_color"));
-		right_list.push_back(std::string("stereo/right/image_rect"));
-		sync.subscribe(right_list, rimage, 1);
-
-		sync.subscribe("stereo/disparity", dimage, 1);
-		//        sync.subscribe("stereo/stereo_info", stinfo, 1);
-		//        sync.subscribe("stereo/disparity_info", dispinfo, 1);
-		//        sync.subscribe("stereo/right/cam_info", rcinfo, 1);
-		sync.subscribe("stereo/cloud", cloud_fetch, 1);
-		sync.ready();
-		//        sleep(1);
+		runRecognitionLambertian();
+		cvWaitKey(100);
 	}
 
-	void unsubscribeStereoData()
+	void leftImageCallback(const image_msgs::Image::ConstPtr& image)
 	{
-		unsubscribe("stereo/left/image_rect_color");
-		unsubscribe("stereo/left/image_rect");
-		unsubscribe("stereo/right/image_rect_color");
-		unsubscribe("stereo/right/image_rect");
-		unsubscribe("stereo/disparity");
-		//        unsubscribe("stereo/stereo_info");
-		//        unsubscribe("stereo/disparity_info");
-		//        unsubscribe("stereo/right/cam_info");
-		unsubscribe("stereo/cloud");
+		limage = image;
+		if(lbridge.fromImage(*limage, "bgr")) {
+			left = lbridge.toIpl();
+		}
+		sync_.update(image->header.stamp);
 	}
+
+	void rightImageCallback(const image_msgs::Image::ConstPtr& image)
+	{
+		rimage = image;
+		if(rbridge.fromImage(*rimage, "bgr")) {
+			right = rbridge.toIpl();
+		}
+		sync_.update(image->header.stamp);
+	}
+
+	void disparityImageCallback(const image_msgs::Image::ConstPtr& image)
+	{
+		dimage = image;
+		if(dbridge.fromImage(*dimage, "bgr")) {
+			disp = dbridge.toIpl();
+		}
+		sync_.update(image->header.stamp);
+	}
+
+	void cloudCallback(const robot_msgs::PointCloud::ConstPtr& point_cloud)
+	{
+		printf("Got point cloud\n");
+		cloud = point_cloud;
+		sync_.update(point_cloud->header.stamp);
+	}
+
 
 	void trimSpaces( string& str)
 	{
@@ -348,8 +401,8 @@ private:
 	void filterByZBounds(const PointCloud& pc, double zmin, double zmax, PointCloud& filtered_pc, PointCloud& filtered_outside)
 	{
 		vector<int> indices_remove;
-		for (size_t i = 0;i<cloud.get_pts_size();++i) {
-			if (cloud.pts[i].z>zmax || cloud.pts[i].z<zmin) {
+		for (size_t i = 0;i<cloud->get_pts_size();++i) {
+			if (cloud->pts[i].z>zmax || cloud->pts[i].z<zmin) {
 				indices_remove.push_back(i);
 			}
 		}
@@ -394,7 +447,7 @@ private:
 		PointCloud filtered_cloud;
 		PointCloud filtered_outside;
 
-		filterByZBounds(cloud,0.1, 1.2 , filtered_cloud, filtered_outside );
+		filterByZBounds(*cloud,0.1, 1.2 , filtered_cloud, filtered_outside );
 
 		clearFromImage(disp, filtered_outside);
 
@@ -425,8 +478,8 @@ private:
 		}
 
 		PointCloud object_projections;
-		object_projections.header.stamp = cloud.header.stamp;
-		object_projections.header.frame_id = cloud.header.frame_id;
+		object_projections.header.stamp = cloud->header.stamp;
+		object_projections.header.frame_id = cloud->header.frame_id;
 
 		cloud_geometry::projections::pointsToPlane(objects, object_indices, object_projections, coefficients);
 
@@ -549,7 +602,7 @@ private:
 					marker.color.b = ((i+1)>>2)&1;
 				}
 			}
-			publish("visualization_marker", marker);
+			marker_pub_.publish(marker);
 		}
 
 
@@ -578,7 +631,7 @@ private:
 		// add wall_frame to tf
 		tf::Stamped<tf::Pose> table_pose_frame(tf_pose, origin.header.stamp, "table_frame", origin.header.frame_id);
 
-		tf_->setTransform(table_pose_frame);
+		tf_.setTransform(table_pose_frame);
 
 //		tf::TransformBroadcaster broadcaster_;
 //		broadcaster_.sendTransform(table_pose_frame);
@@ -645,7 +698,7 @@ private:
 		marker.points[4].y = ymin;
 		marker.points[4].z = 0;
 
-		publish("visualization_marker",marker);
+		marker_pub_.publish(marker);
 
 	}
 
@@ -679,10 +732,7 @@ private:
 		marker.color.g = color[1];
 		marker.color.b = color[2];
 
-		publish("visualization_marker",marker);
-		publish("visualization_marker",marker);
-		publish("visualization_marker",marker);
-		publish("visualization_marker",marker);
+		marker_pub_.publish(marker);
 	}
 
 //	class NNIndexer
@@ -1043,7 +1093,7 @@ private:
 	Point project3DPointIntoImage(const image_msgs::CamInfo& cam_info, PointStamped point)
 	{
 		PointStamped image_point;
-		tf_->transformPoint(cam_info.header.frame_id, point, image_point);
+		tf_.transformPoint(cam_info.header.frame_id, point, image_point);
 		Point pp; // projected point
 
 		pp.x = cam_info.P[0]*image_point.point.x+
@@ -1069,8 +1119,8 @@ private:
 
 	void getCameraIntrinsics(image_msgs::CamInfo& lcinfo)
 	{
-		lcinfo.header.frame_id = cloud.header.frame_id;
-		lcinfo.header.stamp = cloud.header.stamp;
+		lcinfo.header.frame_id = cloud->header.frame_id;
+		lcinfo.header.stamp = cloud->header.stamp;
 
 		lcinfo.P[0] = 725.00002432;
 		lcinfo.P[1] = 0.0;
@@ -1176,7 +1226,7 @@ private:
 					object.pts.push_back(cloud.pts[i]);
 				}
 			}
-			publish("~object", object);
+			object_pub_.publish(object);
 		}
 	}
 
@@ -1187,8 +1237,8 @@ private:
 		PointCloud plane_pc;
 		filterTablePlane(plane,objects_pc,plane_pc);
 
-		publish("~inliers", plane_pc);
-		publish("~outliers", objects_pc);
+//		publish("~inliers", plane_pc);
+//		publish("~outliers", objects_pc);
 
 
 		PointCloud projected_objects = projectToPlane(objects_pc, plane);
@@ -1204,7 +1254,7 @@ private:
 		addTableFrame(table_point,plane);
 
 		PointCloud objects_table_frame;
-		tf_->transformPointCloud("table_frame", objects_pc, objects_table_frame);
+		tf_.transformPointCloud("table_frame", objects_pc, objects_table_frame);
 
 		drawTableBBox(objects_table_frame);
 
@@ -1215,10 +1265,7 @@ private:
 
 		publishClusters(objects_table_frame,clusters);
 
-//		printf("Got here 1\n");
-		publish("~plane", objects_table_frame);
-//		printf("Got here 2\n");
-
+		objects_pub_.publish(objects_table_frame);
 
 		// reproject bboxes in image
 //		projectClusters(objects_table_frame, clusters);
@@ -1283,130 +1330,126 @@ private:
 
 
 
-	/**
-	* \brief Filters a cloud point, retains only points coming from a specific region in the disparity image
-	*
-	* @param rect Region in disparity image
-	* @return Filtered point cloud
-	*/
-	robot_msgs::PointCloud filterPointCloud(const CvRect & rect)
-	{
-		robot_msgs::PointCloud result;
-		result.header.frame_id = cloud.header.frame_id;
-		result.header.stamp = cloud.header.stamp;
-		int xchan = -1;
-		int ychan = -1;
-		for(size_t i = 0;i < cloud.chan.size();++i){
-			if(cloud.chan[i].name == "x"){
-				xchan = i;
-			}
-			if(cloud.chan[i].name == "y"){
-				ychan = i;
-			}
-		}
-
-		if(xchan != -1 && ychan != -1){
-			for(size_t i = 0;i < cloud.pts.size();++i){
-				int x = (int)(cloud.chan[xchan].vals[i]);
-				int y = (int)(cloud.chan[ychan].vals[i]);
-				if(x >= rect.x && x < rect.x + rect.width && y >= rect.y && y < rect.y + rect.height){
-					result.pts.push_back(cloud.pts[i]);
-				}
-			}
-
-		}
-
-
-		return result;
-	}
-
-
-	/**
-	* Callback from topic synchronizer, timeout
-	* @param t
-	*/
-	void image_cb_timeout(ros::Time t)
-	{
-		if(limage.header.stamp != t) {
-			printf("Timed out waiting for left image\n");
-		}
-
-		if(dimage.header.stamp != t) {
-			printf("Timed out waiting for disparity image\n");
-		}
-
-		//        if(stinfo.header.stamp != t) {
-		//            printf("Timed out waiting for stereo info\n");
-		//        }
-
-		if(cloud_fetch.header.stamp != t) {
-			printf("Timed out waiting for point cloud\n");
-		}
-	}
+//	/**
+//	* \brief Filters a cloud point, retains only points coming from a specific region in the disparity image
+//	*
+//	* @param rect Region in disparity image
+//	* @return Filtered point cloud
+//	*/
+//	robot_msgs::PointCloud filterPointCloud(const PointCloud& cloud, const CvRect & rect)
+//	{
+//		robot_msgs::PointCloud result;
+//		result.header.frame_id = cloud.header.frame_id;
+//		result.header.stamp = cloud.header.stamp;
+//		int xchan = -1;
+//		int ychan = -1;
+//		for(size_t i = 0;i < cloud.chan.size();++i){
+//			if(cloud.chan[i].name == "x"){
+//				xchan = i;
+//			}
+//			if(cloud.chan[i].name == "y"){
+//				ychan = i;
+//			}
+//		}
+//
+//		if(xchan != -1 && ychan != -1){
+//			for(size_t i = 0;i < cloud.pts.size();++i){
+//				int x = (int)(cloud.chan[xchan].vals[i]);
+//				int y = (int)(cloud.chan[ychan].vals[i]);
+//				if(x >= rect.x && x < rect.x + rect.width && y >= rect.y && y < rect.y + rect.height){
+//					result.pts.push_back(cloud.pts[i]);
+//				}
+//			}
+//
+//		}
+//
+//
+//		return result;
+//	}
 
 
-	/**
-	* Callback from topic synchronizer, images ready to be consumed
-	* @param t
-	*/
-	void image_cb_all(ros::Time t)
-	{
-		// obtain lock on vision data
-		boost::lock_guard<boost::mutex> lock(cv_mutex);
+//	/**
+//	* Callback from topic synchronizer, timeout
+//	* @param t
+//	*/
+//	void image_cb_timeout(ros::Time t)
+//	{
+//		if(limage.header.stamp != t) {
+//			printf("Timed out waiting for left image\n");
+//		}
+//
+//		if(dimage.header.stamp != t) {
+//			printf("Timed out waiting for disparity image\n");
+//		}
+//
+//		//        if(stinfo.header.stamp != t) {
+//		//            printf("Timed out waiting for stereo info\n");
+//		//        }
+//
+//		if(cloud_fetch.header.stamp != t) {
+//			printf("Timed out waiting for point cloud\n");
+//		}
+//	}
 
-		if(lbridge.fromImage(limage, "bgr")){
-			if(left != NULL)
-				cvReleaseImage(&left);
 
-			left = cvCloneImage(lbridge.toIpl());
-		}
-		if(rbridge.fromImage(rimage, "bgr")){
-			if(right != NULL)
-				cvReleaseImage(&right);
-
-			right = cvCloneImage(rbridge.toIpl());
-		}
-		if(dbridge.fromImage(dimage)){
-			if(disp != NULL)
-				cvReleaseImage(&disp);
-
-			//            disp = cvCreateImage(cvGetSize(dbridge.toIpl()), IPL_DEPTH_8U, 1);
-			disp = cvCloneImage(dbridge.toIpl());
-			//            cvCvtScale(dbridge.toIpl(), disp, 4.0 / dispinfo.dpp);
-		}
-
-		cloud = cloud_fetch;
-
-		//        images_ready.notify_all();
-		runRecognitionLambertian();
-	}
+//	/**
+//	* Callback from topic synchronizer, images ready to be consumed
+//	* @param t
+//	*/
+//	void image_cb_all(ros::Time t)
+//	{
+//		// obtain lock on vision data
+//		boost::lock_guard<boost::mutex> lock(cv_mutex);
+//
+//		if(lbridge.fromImage(limage, "bgr")){
+//			if(left != NULL)
+//				cvReleaseImage(&left);
+//
+//			left = cvCloneImage(lbridge.toIpl());
+//		}
+//		if(rbridge.fromImage(rimage, "bgr")){
+//			if(right != NULL)
+//				cvReleaseImage(&right);
+//
+//			right = cvCloneImage(rbridge.toIpl());
+//		}
+//		if(dbridge.fromImage(dimage)){
+//			if(disp != NULL)
+//				cvReleaseImage(&disp);
+//
+//			//            disp = cvCreateImage(cvGetSize(dbridge.toIpl()), IPL_DEPTH_8U, 1);
+//			disp = cvCloneImage(dbridge.toIpl());
+//			//            cvCvtScale(dbridge.toIpl(), disp, 4.0 / dispinfo.dpp);
+//		}
+//
+//		cloud = cloud_fetch;
+//
+//		//        images_ready.notify_all();
+//		runRecognitionLambertian();
+//	}
 
 
 
 public:
-	/**
-	* Needed for OpenCV event loop, to show images
-	* @return
-	*/
-	/**
-	* Needed for OpenCV event loop, to show images
-	* @return
-	*/
-	bool spin()
-	{
-		while (ok())
-		{
-			cv_mutex.lock();
-			int key = cvWaitKey(3)&0x00FF;
-			if(key == 27) //ESC
-				break;
-
-			cv_mutex.unlock();
-			usleep(10000);
-		}
-
-		return true;
-	}
+//	/**
+//	* Needed for OpenCV event loop, to show images
+//	* @return
+//	*/
+//	bool spin()
+//	{
+//		while (ok())
+//		{
+//			cv_mutex.lock();
+//			int key = cvWaitKey(3)&0x00FF;
+//			if(key == 27) //ESC
+//				break;
+//
+//			cv_mutex.unlock();
+//			usleep(10000);
+//		}
+//
+//		return true;
+//	}
 
 	void triggerEdgeDetection()
 	{
@@ -1434,9 +1477,9 @@ int main(int argc, char **argv)
 	for(int i = 0; i<argc; ++i)
 		cout << "(" << i << "): " << argv[i] << endl;
 
-	ros::init(argc, argv);
+	ros::init(argc, argv, "recognition_lambertian");
 	node = new RecognitionLambertian();
-	node->spin();
+	ros::spin();
 
 	delete node;
 
