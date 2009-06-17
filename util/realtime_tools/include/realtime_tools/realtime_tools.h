@@ -31,6 +31,7 @@
 #define REALTIME_TOOLS_H
 
 #include <pthread.h>
+#include <ros/time.h>
 
 typedef unsigned long xnhandle_t;
 typedef struct {

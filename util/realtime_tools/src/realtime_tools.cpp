@@ -193,16 +193,7 @@ double realtime_gettime(void)
   else
 #endif
   {
-    struct timespec n;
-#if defined(__APPLE__)
-    struct timeval t;
-    gettimeofday(&t, NULL);
-    n.tv_sec = t.tv_sec;
-    n.tv_nsec = t.tv_usec * 1000;
-#else
-    clock_gettime(CLOCK_REALTIME, &n);
-#endif
-    now = double(n.tv_nsec) / 1e9 + n.tv_sec;
+    now = ros::Time::now().toSec();
   }
 
   return now;
