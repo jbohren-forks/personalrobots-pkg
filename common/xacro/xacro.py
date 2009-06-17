@@ -415,6 +415,7 @@ def eval_self_contained(doc):
 
 def print_usage(exit_code = 0):
     print "Usage: %s [-o <output>] <input>" % 'xacro.py'
+    print "       %s --deps" % 'xacro.py'
     sys.exit(exit_code)
 
 if __name__ == '__main__':
