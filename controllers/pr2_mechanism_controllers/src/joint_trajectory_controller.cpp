@@ -848,13 +848,14 @@ bool JointTrajectoryController::queryJointTrajSrv(pr2_mechanism_controllers::Tra
   {
     resp.jointnames[i] = joint_name_[i];
     resp.jointpositions[i] = current_joint_position_[i];
+    ROS_DEBUG("Joint name: %s",joint_name_[i].c_str());
   }
-  if(req.trajectoryid >= joint_trajectory_status_.size())
+  if(req.trajectoryid >= joint_trajectory_status_.size() || (int) req.trajectoryid < 0)
   {
     resp.trajectorytime = 0.0;
     resp.done = JointTrajectoryController::DOES_NOT_EXIST;
     ROS_DEBUG("Query joint traj with id: %d, status: DOES_NOT_EXIST, size of status vector: %d",req.trajectoryid,joint_trajectory_status_.size());
-    return false;
+    return true;
   }
   else
   {
