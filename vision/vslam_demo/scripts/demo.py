@@ -61,9 +61,6 @@ class RealSource:
 
   def cam(self):
     paramstr = self.dc.retParameters()
-    print "PARAMSTR-------"
-    print paramstr
-    print "PARAMSTR-------"
     return VidereCamera(paramstr)
 
   def getImage(self):
@@ -220,11 +217,6 @@ class Demo:
     else:
       return self.anchor() * (~demo.snail_trail[0] * self.snail_trail[-1])
 
-if len(sys.argv) == 1:
-  demo = Demo(RealSource())
-else:
-  demo = Demo(FakeSource(sys.argv[1]))
-
 while False:
   demo.handleFrame()
   print demo.skel.nodes
@@ -256,6 +248,7 @@ def InitGL(Width, Height):				# We call this right after our OpenGL window is cr
   # glDisable(GL_DEPTH_TEST)				# Enables Depth Testing
   glShadeModel(GL_SMOOTH)				# Enables Smooth Color Shading
 
+                                                        # Enable AA lines
   glEnable(GL_LINE_SMOOTH)
   glEnable(GL_BLEND)
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
@@ -276,8 +269,6 @@ def ReSizeGLScene(Width, Height):
   glMatrixMode(GL_PROJECTION)
   glLoadIdentity()
   gluPerspective(45.0, float(Width)/float(Height), 0.1, 100.0)
-  #glMatrixMode(GL_MODELVIEW)
-  #gluLookAt(0.0, 0.0, 3.0,   0.0, 0.0, 0.0,   0.0, 1.0, 0.0);      
 
 def draw_cube():
   glBegin(GL_LINES)
@@ -521,7 +512,7 @@ class MouseLook:
     if k == '/':
       demo.report()
 
-    if k == '1':
+    if k == 'm':
       self.mode = (self.mode + 1) % 2
 
     th_inc = 0.05
@@ -637,5 +628,19 @@ def main():
 
   glutMainLoop()
 
+if len(sys.argv) == 1:
+  demo = Demo(RealSource())
+else:
+  demo = Demo(FakeSource(sys.argv[1]))
+
+print "-" * 80
+print
+print "ENTER for fullscreen"
+print "'m' toggles manual camera"
+print "'o' run optimization"
+print
 print "Hit ESC key to quit."
+print
+print "-" * 80
+
 main()
