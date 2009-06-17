@@ -290,7 +290,7 @@ private:
 	void disparityImageCallback(const image_msgs::Image::ConstPtr& image)
 	{
 		dimage = image;
-		if(dbridge.fromImage(*dimage, "bgr")) {
+		if(dbridge.fromImage(*dimage)) {
 			disp = dbridge.toIpl();
 		}
 		sync_.update(image->header.stamp);
@@ -1431,25 +1431,23 @@ private:
 
 
 public:
-//	/**
-//	* Needed for OpenCV event loop, to show images
-//	* @return
-//	*/
-//	bool spin()
-//	{
-//		while (ok())
-//		{
-//			cv_mutex.lock();
-//			int key = cvWaitKey(3)&0x00FF;
-//			if(key == 27) //ESC
-//				break;
-//
-//			cv_mutex.unlock();
-//			usleep(10000);
-//		}
-//
-//		return true;
-//	}
+	/**
+	* Needed for OpenCV event loop, to show images
+	* @return
+	*/
+	bool spin()
+	{
+		while (nh_.ok())
+		{
+			int key = cvWaitKey(10)&0x00FF;
+			if(key == 27) //ESC
+				break;
+
+			ros::spinOnce();
+		}
+
+		return true;
+	}
 
 	void triggerEdgeDetection()
 	{
@@ -1479,7 +1477,8 @@ int main(int argc, char **argv)
 
 	ros::init(argc, argv, "recognition_lambertian");
 	node = new RecognitionLambertian();
-	ros::spin();
+	node->spin();
+//	ros::spin();
 
 	delete node;
 
