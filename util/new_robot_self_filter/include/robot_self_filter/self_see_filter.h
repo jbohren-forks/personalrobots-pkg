@@ -69,7 +69,7 @@ protected:
     
 public:
   /** \brief Construct the filter */
-  SelfFilter(void) : rm_("robot_description"), tf_(*ros::Node::instance(), true, ros::Duration(10))
+  SelfFilter(void) : rm_("robot_description"), tf_(ros::Duration(10))
   {
       tf_.setExtrapolationLimit(ros::Duration().fromSec(10));      
   }
