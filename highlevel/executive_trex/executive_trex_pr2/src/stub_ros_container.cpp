@@ -246,23 +246,25 @@ int main(int argc, char** argv){
   if (getComponentParam("/trex/enable_check_path"))
     runner.connect<robot_msgs::PoseStamped, pr2_robot_actions::CheckPathState, int8_t>(check_path);
 
+  // Feedback Variable for latch state
+  door_msgs::Door feedback_with_latch_state;
+  feedback_with_latch_state.latch_state = 2; // Latched
+
   // Detect Door
-  executive_trex_pr2::SimpleStubAction<door_msgs::Door> detect_door("detect_door");
+  executive_trex_pr2::StubAction<door_msgs::Door, door_msgs::Door> detect_door("detect_door", feedback_with_latch_state);
   if (getComponentParam("/trex/enable_detect_door"))
     runner.connect<door_msgs::Door, pr2_robot_actions::DoorActionState, door_msgs::Door>(detect_door);
 
   // Detect Handle
-  executive_trex_pr2::SimpleStubAction<door_msgs::Door> detect_handle("detect_handle");
+  executive_trex_pr2::StubAction<door_msgs::Door, door_msgs::Door> detect_handle("detect_handle", feedback_with_latch_state);
   if (getComponentParam("/trex/enable_detect_handle"))
     runner.connect<door_msgs::Door, pr2_robot_actions::DoorActionState, door_msgs::Door>(detect_handle);
 
   // Grasp Handle
-  executive_trex_pr2::SimpleStubAction<door_msgs::Door> grasp_handle("grasp_handle");
+  executive_trex_pr2::StubAction<door_msgs::Door, door_msgs::Door> grasp_handle("grasp_handle", feedback_with_latch_state);
   if (getComponentParam("/trex/enable_grasp_handle"))
     runner.connect<door_msgs::Door, pr2_robot_actions::DoorActionState, door_msgs::Door>(grasp_handle);
 
-  // Unlatch Handle
-  door_msgs::Door feedback_with_latch_state;
   feedback_with_latch_state.latch_state = 3; // Unlatched
   executive_trex_pr2::StubAction<door_msgs::Door, door_msgs::Door> unlatch_handle("unlatch_handle", feedback_with_latch_state);
   if (getComponentParam("/trex/enable_unlatch_handle"))

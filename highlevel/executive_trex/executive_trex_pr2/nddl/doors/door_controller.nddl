@@ -143,19 +143,12 @@ class DoorState extends AgentTimeline {
 };
 
 /**
- * @brief An internal variable for tracking if the robot has the handle or not. Will drive requirements to release the handle
- * if necessary
+ * @brief An internal variable for tracking if the gripper is free or not
  */
-class HaveHandle extends AgentTimeline {
-
-  predicate Holds{
-    bool value;
-    defaultOnCommit(value, false);
-  }
-
-  HaveHandle(){
-    super(Internal, "Holds");
-  }
+class GripperFree extends AgentTimeline{
+  predicate True{}
+  predicate False{}
+  GripperFree(){ super(Internal, "True"); }
 };
 
 /**
@@ -178,9 +171,6 @@ class DoorController extends StateMachine {
 
   // For detectin the handle.
   predicate DetectingHandle{}
-
-  // For reeasing the handle 
-  predicate ReleasingHandle{}
 
   // For moving towards the doo. Used prior to grasping, and/or opening the door
   predicate ApproachingDoor{}
@@ -207,19 +197,22 @@ class DoorController extends StateMachine {
 MoveBehavior doorman = new MoveBehavior(Internal, true);
 DoorController door_controller = new DoorController();
 DoorState door_state = new DoorState();
-HaveHandle have_handle = new HaveHandle();
+GripperFree gripper_free = new GripperFree();
+AgentActions actions = new AgentActions();
 
 // Initial conditions for internal timelines. The controller is inactive and we do not have the handle
 fact(door_controller.Inactive dc_initial_state);
 dc_initial_state.status = UNDEFINED;
-fact(have_handle.Holds hh_initial_state);
-hh_initial_state.value = false;
+fact(gripper_free.True);
 
 // The doorman also becomes inactive when this transitions. These states should be co-temporal. This is an example of
 // constraints across timelines
 DoorController::Inactive{
   equals(doorman.Inactive dm);
   eq(dm.status, status);
+
+  starts_during(gripper_free.True);
+  starts(actions.startEvent);
 }
 
 DoorController::CheckingDoorway{
@@ -317,6 +310,7 @@ DoorController::ApproachingDoor{
   contained_by(doorman.Active);
   // Action that does all the work
   contains(move_base_local.Active cmd);
+
   // Bounds
   leq(cmd.max_duration, MOVE_BASE_LOCAL_APPROACH_DURATION_BOUND);
   // target pose derived from the door state, and assuming a desired grasp range
@@ -353,8 +347,7 @@ DoorController::GraspingHandle{
     meets(UnlatchingHandle);
   }
   else {
-    meets(ReleasingHandle rh);
-    rh meets(Positioning);
+    meets(Positioning);
   }
 }
 
@@ -368,8 +361,7 @@ DoorController::UnlatchingHandle{
     cmd meets(unlatch_handle.Inactive cmd_feedback);
     // If locked, try again later
     if(cmd_feedback.latch_state == LATCH_STATE_LOCKED){
-      meets(ReleasingHandle rh);
-      rh meets(Inactive s);
+      meets(Inactive s);
       eq(s.status, ABORTED);
     }
     else {
@@ -378,17 +370,8 @@ DoorController::UnlatchingHandle{
     }
   }
   else {
-    meets(ReleasingHandle rh);
-    rh meets(Positioning);
+    meets(Positioning);
   }
-}
-
-DoorController::ReleasingHandle{
-  contained_by(doorman.Active);
-  // Action with bounds. It must succeed
-  contains(release_handle.Active cmd);
-  eq(cmd.status, SUCCESS);
-  leq(cmd.max_duration, RELEASE_HANDLE_DURATION_BOUND);
 }
 
 DoorController::OpenDoor{
@@ -408,10 +391,6 @@ DoorController::OpenDoor{
     cmd_open_door starts_before cmd_move_base_door;
     // Must stop the open door action explicitly
     eq(cmd_stop_action.action_name,"open_door");
-    // Finish up by releasing the handle
-    cmd_move_base_door meets(ReleasingHandle rh);
-    rh meets(Inactive s);
-    eq(s.status, SUCCESS);
   }
   else {
     // Need to touch the door and then push it. Both must succeed
@@ -421,10 +400,11 @@ DoorController::OpenDoor{
     // Must start pushing before we begin moving the base
     cmd_push_door starts_before cmd_move_base_door;
     eq(cmd_stop_action.action_name,"push_door");
-    // Just finish up
-    cmd_move_base_door meets(Inactive s);
-    eq(s.status, SUCCESS);
   }
+
+  // Just finish up
+  meets(Inactive s);
+  eq(s.status, SUCCESS);
 }
 
 /************************************************************************
@@ -436,7 +416,7 @@ DoorController::OpenDoor{
  * All door domain actions have the current door state as input.
  */
 DoorManipulationBehavior::Active{
-  starts_during(DoorState.Holds ds);
+  starts_during(door_state.Holds ds);
   eq_door_msg(this.object, ds.object);
 }
 
@@ -446,19 +426,36 @@ DoorManipulationBehavior::Active{
  */
 UnlatchHandle::Inactive{
   if(status == SUCCESS){
-    starts(DoorState.Holds ds);
+    starts(door_state.Holds ds);
     eq_door_msg(ds.object, this.object);
   }
 }
 DetectHandle::Inactive{
   if(status == SUCCESS){
-    starts(DoorState.Holds ds);
+    starts(door_state.Holds ds);
     eq_door_msg(ds.object, this.object);
   }
 }
 DetectDoor::Inactive{
   if(status == SUCCESS){
-    starts(DoorState.Holds ds);
+    starts(door_state.Holds ds);
     eq_door_msg(ds.object, this.object);
   }
+}
+UnlatchHandle::Active{
+  contained_by(gripper_free.False);
+}
+OpenDoor::Active{
+  contained_by(gripper_free.False);
+}
+GraspHandle::Active{
+  starts_during(gripper_free.False);
+}
+GripperFree::True{
+  met_by(release_handle.Active cmd);
+  eq(cmd.status, SUCCESS);
+  leq(cmd.max_duration, RELEASE_HANDLE_DURATION_BOUND);
+}
+SafetyTuckArms::Active{
+  contained_by(gripper_free.True);
 }
