@@ -15,7 +15,6 @@
 <depend package="wg_robot_description_parser"/>
 <depend package="manipulation_srvs"/>
 <depend package="manipulation_msgs"/>
-<depend package="tf_conversions"/>
 
 <export>
 <cpp cflags="-I${prefix}/include -I${prefix}/msg/cpp" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lpr2_ik"/>
