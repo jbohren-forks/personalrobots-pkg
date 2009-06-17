@@ -102,12 +102,12 @@ public:
     {
       if(options_[level]->step())
       {
-        printf("stepping level %d returning true \n", level);
+        //printf("stepping level %d returning true \n", level);
         return true;
       }
       else
       {
-        printf("reseting level %d\n", level);
+        //printf("reseting level %d\n", level);
         options_[level]->reset();
       }
     }

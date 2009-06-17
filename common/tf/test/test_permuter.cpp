@@ -58,7 +58,7 @@ TEST(tf, Option)
 }
 
 
-TEST(Permuter, OneOption)
+TEST(Permuter, OneDoubleOption)
 {
   double epsilon = 1e-9;
   tf::Permuter permuter;
@@ -84,7 +84,7 @@ TEST(Permuter, OneOption)
 
 }
 
-TEST(Permuter, TwoOptions)
+TEST(Permuter, TwoDoubleOptions)
 {
   double epsilon = 1e-9;
   tf::Permuter permuter;
@@ -112,7 +112,7 @@ TEST(Permuter, TwoOptions)
   for ( unsigned int j = 0; j < vals2.size(); j++)
     for ( unsigned int i = 0; i < vals.size(); i++)
     {
-      printf("%f?=%f %f?=%f\n", value, vals[i], value2, vals2[j]); 
+      //printf("%f?=%f %f?=%f\n", value, vals[i], value2, vals2[j]); 
       EXPECT_NEAR(vals[i], value, epsilon);
       EXPECT_NEAR(vals2[j], value2, epsilon);
       if (i == vals.size() -1 && j == vals2.size() -1)
@@ -122,7 +122,95 @@ TEST(Permuter, TwoOptions)
     };
 
 }
+TEST(Permuter, ThreeDoubleOptions)
+{
+  double epsilon = 1e-9;
+  tf::Permuter permuter;
+  std::vector<double> vals;
+  vals.push_back(1.0);
+  vals.push_back(2.0);
+  vals.push_back(3.0);
+  vals.push_back(4.0);
 
+
+  double value = 0;
+  Option<double> op(vals, &value);
+  
+  std::vector<double> vals2;
+  vals2.push_back(9.0);
+  vals2.push_back(8.0);
+  vals2.push_back(7.0);
+  vals2.push_back(6.0);
+
+  double value2;
+  Option<double> op2(vals2, &value2);
+
+  std::vector<double> vals3;
+  vals3.push_back(99.0);
+  vals3.push_back(88.0);
+  vals3.push_back(78.0);
+  vals3.push_back(63.0);
+
+  double value3;
+  Option<double> op3(vals3, &value3);
+
+  permuter.addOption(&op);
+  permuter.addOption(&op2);
+  permuter.addOption(&op3);
+
+  for ( unsigned int k = 0; k < vals3.size(); k++)
+    for ( unsigned int j = 0; j < vals2.size(); j++)
+      for ( unsigned int i = 0; i < vals.size(); i++)
+      {
+        EXPECT_NEAR(vals[i], value, epsilon);
+        EXPECT_NEAR(vals2[j], value2, epsilon);
+        EXPECT_NEAR(vals3[k], value3, epsilon);
+        if (i == vals.size() -1 && j == vals2.size() -1&& k == vals3.size() -1)
+          EXPECT_FALSE(permuter.step());
+        else
+          EXPECT_TRUE(permuter.step());
+      };
+  
+}
+
+TEST(Permuter, DoubleStringOptions)
+{
+  double epsilon = 1e-9;
+  tf::Permuter permuter;
+  std::vector<double> vals;
+  vals.push_back(1.0);
+  vals.push_back(2.0);
+  vals.push_back(3.0);
+  vals.push_back(4.0);
+
+
+  double value = 0;
+  Option<double> op(vals, &value);
+  
+  std::vector<std::string> vals2;
+  vals2.push_back("hi");
+  vals2.push_back("there");
+  vals2.push_back("this");
+  vals2.push_back("works");
+
+  std::string value2;
+  Option<std::string> op2(vals2, &value2);
+
+  permuter.addOption(&op);
+  permuter.addOption(&op2);
+  for ( unsigned int j = 0; j < vals2.size(); j++)
+    for ( unsigned int i = 0; i < vals.size(); i++)
+    {
+      //printf("%f?=%f %s?=%s\n", value, vals[i], value2.c_str(), vals2[j].c_str()); 
+      EXPECT_NEAR(vals[i], value, epsilon);
+      EXPECT_STREQ(vals2[j].c_str(), value2.c_str());
+      if (i == vals.size() -1 && j == vals2.size() -1)
+        EXPECT_FALSE(permuter.step());
+      else
+        EXPECT_TRUE(permuter.step());
+    };
+
+}
 int main(int argc, char **argv){
   testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
