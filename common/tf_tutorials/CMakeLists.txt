@@ -16,6 +16,9 @@ set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 #set the default path for built libraries to the "lib" directory
 set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
+rospack_add_boost_directories()
+
+
 #uncomment if you have defined messages
 #genmsg()
 #uncomment if you have defined services
@@ -28,3 +31,13 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 #rospack_link_boost(${PROJECT_NAME} thread)
 #rospack_add_executable(example examples/example.cpp)
 #target_link_libraries(example ${PROJECT_NAME})
+
+
+rospack_add_executable(earth_tracker src/earth_tracker.cpp)
+target_link_libraries(earth_tracker tf)
+rospack_add_executable(space_shuttle_tracker src/space_shuttle_tracker.cpp)
+target_link_libraries(space_shuttle_tracker tf)
+rospack_add_executable(shuttle_observer src/shuttle_observer.cpp)
+target_link_libraries(shuttle_observer tf)
+rospack_add_executable(tutorial_listener src/tutorial_listener.cpp)
+target_link_libraries(tutorial_listener tf)
