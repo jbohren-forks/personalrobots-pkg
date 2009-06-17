@@ -34,6 +34,7 @@ MechanismController::Holds {
   if(required == true){
     ends(SwitchControllers.Active swap_cmd);
     eq(swap_cmd.status, SUCCESS);
+    temporalDistance(swap_cmd.dispatch_time, [0, 1], swap_cmd.start);
   }
 }
 
