@@ -116,20 +116,19 @@ fact(recharge_controller.Inactive);
  * STATE MACHINE DECLARATION
  ***********************************************************************************/
 RechargeController::Positioning{
-  contains_start(move_base.Active cmd);
-  concurrent(cmd.end, end);
+  contained_by(recharger.Active rc);
+  contains(move_base.Active cmd);
   eq(cmd.status, SUCCESS);
   leq(cmd.max_duration, MOVE_BASE_DURATION_BOUND);
   // Bind pose based on approach pose for the outlet
-  contained_by(recharger.Active rc);
   map_get_outlet_approach_pose(cmd.x, cmd.y, cmd.z, cmd.qx, cmd.qy, cmd.qz, cmd.qw, rc.outlet_id);
   defaultOnCommit(cmd.frame_id, "map");
   meets(FindingOutlet);
 }
 
 RechargeController::FindingOutlet{
-  contains_start(detect_outlet_coarse.Active cmd);
-  concurrent(cmd.end, end);
+  contained_by(recharger.Active);
+  contains(detect_outlet_coarse.Active cmd);
   leq(cmd.max_duration, DETECT_OUTLET_COARSE_DURATION_BOUND);
 
   if(cmd.status == SUCCESS){
@@ -141,8 +140,8 @@ RechargeController::FindingOutlet{
 }
 
 RechargeController::Approaching{
-  contains_start(move_base_local.Active cmd);
-  concurrent(cmd.end, end);
+  contained_by(recharger.Active);
+  contains(move_base_local.Active cmd);
   leq(cmd.max_duration, MOVE_BASE_LOCAL_DURATION_BOUND);
 
   // Here we can obtain the outlet state to get parameters from move_base local since
@@ -161,8 +160,8 @@ RechargeController::Approaching{
 }
 
 RechargeController::LocalizingOutlet{
-  contains_start(detect_outlet_fine.Active cmd);
-  concurrent(cmd.end, end);
+  contained_by(recharger.Active);
+  contains(detect_outlet_fine.Active cmd);
   leq(cmd.max_duration, DETECT_OUTLET_FINE_DURATION_BOUND);
 
   if(cmd.status == SUCCESS){
@@ -174,8 +173,8 @@ RechargeController::LocalizingOutlet{
 }
 
 RechargeController::FindingPlug{
-  contains_start(detect_plug_on_base.Active cmd);
-  concurrent(cmd.end, end);
+  contained_by(recharger.Active);
+  contains(detect_plug_on_base.Active cmd);
   leq(cmd.max_duration, DETECT_PLUG_ON_BASE_DURATION_BOUND);
 
   if(cmd.status == SUCCESS){
@@ -187,8 +186,8 @@ RechargeController::FindingPlug{
 }
 
 RechargeController::GraspingPlug{
-  contains_start(move_and_grasp_plug.Active cmd);
-  concurrent(cmd.end, end);
+  contained_by(recharger.Active);
+  contains(move_and_grasp_plug.Active cmd);
   leq(cmd.max_duration, MOVE_AND_GRASP_PLUG_DURATION_BOUND);
 
   if(cmd.status == SUCCESS){
@@ -200,8 +199,8 @@ RechargeController::GraspingPlug{
 }
 
 RechargeController::LocalizingPlugInGripper{
-  contains_start(localize_plug_in_gripper.Active cmd);
-  concurrent(cmd.end, end);
+  contained_by(recharger.Active);
+  contains(localize_plug_in_gripper.Active cmd);
   leq(cmd.max_duration, LOCALIZE_PLUG_IN_GRIPPER_DURATION_BOUND);
 
   if(cmd.status == SUCCESS){
@@ -213,10 +212,10 @@ RechargeController::LocalizingPlugInGripper{
 }
 
 RechargeController::PluggingIn{
-  contains_start(plug_in.Active cmd);
+  contained_by(recharger.Active rc);
+  contains(plug_in.Active cmd);
   leq(cmd.max_duration, PLUG_IN_DURATION_BOUND);
   // Bind outlet id
-  contained_by(recharger.Active rc);
   eq(cmd.outlet_id, rc.outlet_id);
 
   if(cmd.status == SUCCESS){
