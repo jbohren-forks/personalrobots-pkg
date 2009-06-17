@@ -1,13 +1,13 @@
 /*********************************************************************
 * Software License Agreement (BSD License)
-* 
+*
 *  Copyright (c) 2008, Willow Garage, Inc.
 *  All rights reserved.
-* 
+*
 *  Redistribution and use in source and binary forms, with or without
 *  modification, are permitted provided that the following conditions
 *  are met:
-* 
+*
 *   * Redistributions of source code must retain the above copyright
 *     notice, this list of conditions and the following disclaimer.
 *   * Redistributions in binary form must reproduce the above
@@ -17,7 +17,7 @@
 *   * Neither the name of the Willow Garage nor the names of its
 *     contributors may be used to endorse or promote products derived
 *     from this software without specific prior written permission.
-* 
+*
 *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 *  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 *  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -49,7 +49,7 @@ void planning_environment::KinematicModelStateMonitor::setupRSM(void)
     {
 	kmodel_ = rm_->getKinematicModel().get();
 	robotState_ = kmodel_->newStateParams();
-	
+
 	if (kmodel_->getRobotCount() > 1)
 	{
 	    ROS_WARN("Using more than one robot. A frame_id cannot be set (there multiple frames) and pose cannot be maintained");
@@ -62,10 +62,10 @@ void planning_environment::KinematicModelStateMonitor::setupRSM(void)
 		planarJoint_ = kmodel_->getRobot(0)->chain->name;
 	    if (dynamic_cast<planning_models::KinematicModel::FloatingJoint*>(kmodel_->getRobot(0)->chain))
 		floatingJoint_ = kmodel_->getRobot(0)->chain->name;
-	    
+
 	    robot_frame_ = kmodel_->getRobot(0)->chain->after->name;
 	    ROS_DEBUG("Robot frame is '%s'", robot_frame_.c_str());
-	    
+
 	    if (includePose_)
 	    {
 		tf_ = new tf::TransformListener();
@@ -75,18 +75,18 @@ void planning_environment::KinematicModelStateMonitor::setupRSM(void)
 	    else
 		frame_id_ = robot_frame_;
 	}
-	
+
 	mechanismStateSubscriber_ = nh_.subscribe("mechanism_state", 1, &KinematicModelStateMonitor::mechanismStateCallback, this);
 	ROS_DEBUG("Listening to mechanism state");
     }
 }
 
-void planning_environment::KinematicModelStateMonitor::mechanismStateCallback(const robot_msgs::MechanismStateConstPtr &mechanismState)
+void planning_environment::KinematicModelStateMonitor::mechanismStateCallback(const mechanism_msgs::MechanismStateConstPtr &mechanismState)
 {
     bool change = !haveMechanismState_;
-    
+
     static bool first_time = true;
-    
+
     unsigned int n = mechanismState->get_joint_states_size();
     for (unsigned int i = 0 ; i < n ; ++i)
     {
@@ -111,58 +111,58 @@ void planning_environment::KinematicModelStateMonitor::mechanismStateCallback(co
 		ROS_ERROR("Unknown joint: %s", mechanismState->joint_states[i].name.c_str());
 	}
     }
-    
+
     first_time = false;
 
     lastStateUpdate_ = mechanismState->header.stamp;
     if (!haveMechanismState_)
 	haveMechanismState_ = robotState_->seenAll();
-    
+
     if (includePose_)
     {
-	// use tf to figure out pose	
+	// use tf to figure out pose
 	if (tf_->canTransform(frame_id_, robot_frame_, mechanismState->header.stamp))
-	{	  
+	{
 	    tf::Stamped<tf::Pose> transf;
 	    tf_->lookupTransform(frame_id_, robot_frame_, mechanismState->header.stamp, transf);
 	    pose_ = transf;
-	    
+
 	    if (!planarJoint_.empty())
 	    {
 		double planar_joint[3];
 		planar_joint[0] = pose_.getOrigin().x();
 		planar_joint[1] = pose_.getOrigin().y();
-		
+
 		double yaw, pitch, roll;
 		pose_.getBasis().getEulerZYX(yaw, pitch, roll);
 		planar_joint[2] = yaw;
-		
+
 		bool this_changed = robotState_->setParamsJoint(planar_joint, planarJoint_);
 		change = change || this_changed;
 	    }
-	    
+
 	    if (!floatingJoint_.empty())
 	    {
 		double floating_joint[7];
 		floating_joint[0] = pose_.getOrigin().x();
 		floating_joint[1] = pose_.getOrigin().y();
 		floating_joint[2] = pose_.getOrigin().z();
-		btQuaternion q = pose_.getRotation();	
+		btQuaternion q = pose_.getRotation();
 		floating_joint[3] = q.x();
 		floating_joint[4] = q.y();
 		floating_joint[5] = q.z();
 		floating_joint[6] = q.w();
-		
+
 		bool this_changed = robotState_->setParamsJoint(floating_joint, floatingJoint_);
 		change = change || this_changed;
 	    }
-	    
+
 	    havePose_ = true;
 	}
 	else
 	    ROS_WARN("Unable fo find transform from link '%s' to link '%s'", robot_frame_.c_str(), frame_id_.c_str());
     }
-    
+
     if (change && onStateUpdate_ != NULL)
 	onStateUpdate_();
 }
@@ -171,7 +171,7 @@ void planning_environment::KinematicModelStateMonitor::waitForState(void) const
 {
     while (nh_.ok() && !haveState())
     {
-	ROS_INFO("Waiting for mechanism state ...");	    
+	ROS_INFO("Waiting for mechanism state ...");
 	ros::spinOnce();
 	ros::Duration().fromSec(0.05).sleep();
     }

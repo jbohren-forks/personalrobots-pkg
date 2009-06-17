@@ -9,6 +9,7 @@ from std_msgs.msg import Empty
 from pr2_mechanism_controllers.srv import *
 from pr2_mechanism_controllers.msg import *
 from robot_msgs.msg import *
+from mechanism_msgs.msg import MechanismState
 from kinematic_calibration.msg import *
 
 traj_actuator_names = ['r_shoulder_pan_motor',
@@ -32,7 +33,7 @@ N = 100
 print_count = 0
 
 def mech_state_callback(data, interval_publisher):
-	
+
 	#print "Callback Called"
 	global arm_mapping
 	global headers
@@ -51,7 +52,7 @@ def mech_state_callback(data, interval_publisher):
 	ms_actuator_mapping = [ms_actuator_names.index(x) for x in traj_actuator_names]
 	ms_joint_mapping = [ms_joint_names.index(x) for x in traj_joint_names]
 
-	joint_state_hist.append([data.header.stamp, [data.joint_states[x].position for x in ms_joint_mapping ]] ) 
+	joint_state_hist.append([data.header.stamp, [data.joint_states[x].position for x in ms_joint_mapping ]] )
 	while (len(joint_state_hist) > N) :
 		joint_state_hist.pop(0)
 
@@ -76,7 +77,7 @@ def mech_state_callback(data, interval_publisher):
 							            joint_state_hist[0][0], joint_state_hist[-1][0]))
 				ready_to_capture = False
 				done_capturing = True
-		
+
 
 if __name__ == '__main__':
 	print "Running python code"

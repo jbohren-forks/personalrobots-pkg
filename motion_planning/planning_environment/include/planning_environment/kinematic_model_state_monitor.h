@@ -1,13 +1,13 @@
 /*********************************************************************
 * Software License Agreement (BSD License)
-* 
+*
 *  Copyright (c) 2008, Willow Garage, Inc.
 *  All rights reserved.
-* 
+*
 *  Redistribution and use in source and binary forms, with or without
 *  modification, are permitted provided that the following conditions
 *  are met:
-* 
+*
 *   * Redistributions of source code must retain the above copyright
 *     notice, this list of conditions and the following disclaimer.
 *   * Redistributions in binary form must reproduce the above
@@ -17,7 +17,7 @@
 *   * Neither the name of the Willow Garage nor the names of its
 *     contributors may be used to endorse or promote products derived
 *     from this software without specific prior written permission.
-* 
+*
 *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 *  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 *  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -40,7 +40,7 @@
 #include "planning_environment/robot_models.h"
 #include <tf/transform_datatypes.h>
 #include <tf/transform_listener.h>
-#include <robot_msgs/MechanismState.h>
+#include <mechanism_msgs/MechanismState.h>
 #include <boost/bind.hpp>
 #include <vector>
 #include <string>
@@ -52,33 +52,33 @@ namespace planning_environment
            If the pose is not included, the robot state is the frame of the link it attaches to the world. If the pose is included,
 	   the frame of the robot is the one in which the pose is published.
        <hr>
-       
+
        @section topic ROS topics
-       
+
        Subscribes to (name/type):
        - @b "mechanism_model"/MechanismModel : position for each of the robot's joints
        - @b "localized_pose"/PoseWithCovariance : localized robot pose
-       
-    */    
+
+    */
     class KinematicModelStateMonitor
     {
     public:
-	
+
 	KinematicModelStateMonitor(RobotModels *rm)
 	{
 	    rm_ = rm;
 	    includePose_ = false;
 	    setupRSM();
 	}
-	
+
 	KinematicModelStateMonitor(RobotModels *rm, const std::string &frame_id)
 	{
 	    rm_ = rm;
 	    includePose_ = true;
-	    frame_id_ = frame_id;	    
+	    frame_id_ = frame_id;
 	    setupRSM();
 	}
-	
+
 	virtual ~KinematicModelStateMonitor(void)
 	{
 	    if (robotState_)
@@ -92,7 +92,7 @@ namespace planning_environment
 	{
 	    onStateUpdate_ = callback;
 	}
-	
+
 	/** \brief Get the kinematic model that is being monitored */
 	planning_models::KinematicModel* getKinematicModel(void) const
 	{
@@ -104,31 +104,31 @@ namespace planning_environment
 	{
 	    return rm_;
 	}
-	
+
 	/** \brief Return a pointer to the maintained robot state */
 	const planning_models::KinematicModel::StateParams* getRobotState(void) const
 	{
 	    return robotState_;
 	}
-	
+
 	/** \brief Return the frame id of the state */
 	const std::string& getFrameId(void) const
 	{
 	    return frame_id_;
 	}
-	
+
 	/** \brief Return the robot frame id (robot without pose) */
 	const std::string& getRobotFrameId(void) const
 	{
 	    return robot_frame_;
 	}
-	
+
 	/** \brief Return true if a full mechanism state has been received */
-	bool haveState(void) const	    
+	bool haveState(void) const
 	{
 	    return haveMechanismState_ && (!includePose_ || (includePose_ && havePose_));
 	}
-	
+
 	/** \brief Return the time of the last state update */
 	const ros::Time& lastStateUpdate(void) const
 	{
@@ -140,20 +140,20 @@ namespace planning_environment
 
 	/** \brief Return true if a full mechanism state has been received in the last sec seconds */
 	bool isStateUpdated(double sec) const;
-	
+
 	/** \brief Return true if the pose is included in the state */
 	bool isPoseIncluded(void) const
 	{
 	    return includePose_;
 	}
-	
+
 	/** \brief Output the current state as ROS INFO */
 	void printRobotState(void) const;
 
     protected:
 
 	void setupRSM(void);
-	void mechanismStateCallback(const robot_msgs::MechanismStateConstPtr &mechanismState);
+	void mechanismStateCallback(const mechanism_msgs::MechanismStateConstPtr &mechanismState);
 
 
 	RobotModels                                  *rm_;
@@ -161,23 +161,23 @@ namespace planning_environment
 	planning_models::KinematicModel              *kmodel_;
 	std::string                                   planarJoint_;
 	std::string                                   floatingJoint_;
-	
+
 	ros::NodeHandle                               nh_;
-	ros::Subscriber                               mechanismStateSubscriber_;	
+	ros::Subscriber                               mechanismStateSubscriber_;
 	tf::TransformListener                        *tf_;
 
 	planning_models::KinematicModel::StateParams *robotState_;
 	tf::Pose                                      pose_;
 	std::string                                   robot_frame_;
 	std::string                                   frame_id_;
-	
+
 	boost::function<void(void)>                   onStateUpdate_;
-	
+
 	bool                                          havePose_;
 	bool                                          haveMechanismState_;
 	ros::Time                                     lastStateUpdate_;
     };
-    
+
 }
 
 #endif

@@ -9,6 +9,7 @@ from std_msgs.msg import Empty
 from pr2_mechanism_controllers.srv import *
 from pr2_mechanism_controllers.msg import *
 from robot_msgs.msg import *
+from mechanism_msgs.msg import MechanismState
 from kinematic_calibration.msg import *
 
 arm_mapping = [ ]
@@ -25,7 +26,7 @@ print_count = 0
 capture_publisher = [ ] ;
 
 def mech_state_callback(data, interval_publisher):
-	
+
 	#print "Callback Called"
 	global arm_mapping
 	global headers
@@ -41,7 +42,7 @@ def mech_state_callback(data, interval_publisher):
 	ms_joint_names = [x.name for x in data.joint_states]
 	ms_joint_mapping = [ms_joint_names.index(x) for x in traj_joint_names]
 
-	joint_state_hist.append([data.header.stamp, [data.joint_states[x].position for x in ms_joint_mapping ]] ) 
+	joint_state_hist.append([data.header.stamp, [data.joint_states[x].position for x in ms_joint_mapping ]] )
 	while (len(joint_state_hist) > N) :
 		joint_state_hist.pop(0)
 

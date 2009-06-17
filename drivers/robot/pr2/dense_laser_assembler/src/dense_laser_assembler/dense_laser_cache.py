@@ -40,6 +40,7 @@ import sys
 import threading
 from laser_scan.msg import *
 from robot_msgs.msg import *
+from mechanism_msgs.msg import MechanismState
 from roslib import rostime
 
 # Stores a single laser scan plus some meta information
@@ -182,7 +183,7 @@ class DenseLaserCache() :
         else :
             latest_time = rostime.Time().from_seconds(0.0)
         self._laser_done_lock.release()
-        return latest_time 
+        return latest_time
 
     # Adds a request for extracting data during an interval. This request will be attempted to
     # processed when process_interval_reqs is called.

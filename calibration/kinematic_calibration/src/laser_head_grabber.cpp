@@ -36,7 +36,7 @@
 
 #include "ros/node.h"
 #include "boost/thread/mutex.hpp"
-#include "robot_msgs/MechanismState.h"
+#include "mechanism_msgs/MechanismState.h"
 
 #include "topic_synchronizer/topic_synchronizer.h"
 
@@ -82,7 +82,7 @@ public:
 
   // Mechanism State
   boost::mutex mech_state_lock_ ;
-  ADD_MSG(robot_msgs::MechanismState, mech_state_) ;
+  ADD_MSG(mechanism_msgs::MechanismState, mech_state_) ;
 
   // Stereo Messages
   boost::mutex stereo_lock_ ;

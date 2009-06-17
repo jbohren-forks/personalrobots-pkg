@@ -34,13 +34,14 @@
 #
 
 
-import roslib; roslib.load_manifest('dense_laser_assembler') 
+import roslib; roslib.load_manifest('dense_laser_assembler')
 import sys
 import rospy
 import threading
 from time import sleep
 from laser_scan.msg import *
 from robot_msgs.msg import *
+from mechanism_msgs.msg import MechanismState
 from std_msgs.msg import *
 from dense_laser_assembler.msg import *
 from pr2_mechanism_controllers.msg import *
@@ -107,7 +108,7 @@ def interval_req_callback(scans) :
     msg_header = roslib.msg.Header()
     msg_header.stamp = scans[-1].scan.header.stamp
     msg_header.frame_id = scans[-1].scan.header.frame_id
-    
+
     layout = MultiArrayLayout([ MultiArrayDimension('rows', rows, rows*cols),
                                 MultiArrayDimension('cols', cols, cols),
                                 MultiArrayDimension('elem', 1, 1) ], 0 )
@@ -139,7 +140,7 @@ def interval_req_callback(scans) :
         intensity_msg.data.data.extend(x.scan.intensities)
         range_msg.data.data.extend(x.scan.ranges)
         joint_msg.data.data.extend(x.pos)
-    
+
     intensity_pub.publish(intensity_msg)
     range_pub.publish(range_msg)
     info_pub.publish(info_msg)
@@ -179,7 +180,7 @@ if __name__ == '__main__':
     info_pub      = rospy.Publisher("dense_tilt_scan/scan_info", LaserScan)
     joint_pos_pub = rospy.Publisher("dense_tilt_scan/joint_info",Float32MultiArrayStamped)
     #image_pub = rospy.Publisher("test_image", Image)
-    
+
     scan_sub = rospy.Subscriber("tilt_scan", LaserScan, scan_callback)
 
     mech_sub = rospy.Subscriber("mechanism_state", MechanismState, mech_callback)

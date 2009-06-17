@@ -37,7 +37,7 @@
 #include <kdl/tree.hpp>
 #include <ros/ros.h>
 #include <kdl_parser/tree_parser.hpp>
-#include <robot_msgs/MechanismState.h>
+#include <mechanism_msgs/MechanismState.h>
 #include "robot_state_publisher/robot_state_publisher.h"
 
 using namespace std;
@@ -74,7 +74,7 @@ public:
   };
 
 private:
-  void callbackMechState(const robot_msgs::MechanismStateConstPtr& state)
+  void callbackMechState(const mechanism_msgs::MechanismStateConstPtr& state)
   {
     // get joint positions from state message
     map<string, double> joint_positions;

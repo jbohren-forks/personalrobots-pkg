@@ -9,6 +9,7 @@ from std_msgs.msg import Empty
 from pr2_mechanism_controllers.srv import *
 from pr2_mechanism_controllers.msg import *
 from robot_msgs.msg import *
+from mechanism_msgs.msg import MechanismState
 from kinematic_calibration.msg import *
 
 from kinematic_calibration.arm_commander import ArmCommander
@@ -69,7 +70,7 @@ for k in range(0,num_cmds) :
             for x in arm_stats.ranges :
                 arm_settled = arm_settled and (x < .0001)
             time.sleep(.1)
-        print "   Arm is settled!"        
+        print "   Arm is settled!"
 
         # Grab a stereotypical MechanismState that's close to the middle of the interval
         cur_mech_state = arm_stats.seg[len(arm_stats.seg)/2]
@@ -94,7 +95,7 @@ for k in range(0,num_cmds) :
             print "    [" + ', '.join( ['%.3f'%x for x in arm_stats.ranges] ) + "]"
             for s in msg.samples :
                 print "    [%3.2f, %3.2f]" % (s.m[0], s.m[1])
-            
+
         else :
             print "   Found no leds...sleeping...",
             sys.stdout.flush()

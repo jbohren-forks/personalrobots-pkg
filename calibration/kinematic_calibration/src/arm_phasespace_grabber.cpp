@@ -36,7 +36,7 @@
 
 #include "ros/node.h"
 #include "boost/thread/mutex.hpp"
-#include "robot_msgs/MechanismState.h"
+#include "mechanism_msgs/MechanismState.h"
 #include "mocap_msgs/MocapSnapshot.h"
 #include "robot_kinematics/robot_kinematics.h"
 
@@ -271,7 +271,7 @@ public:
   {
     // Grab mechanism state and put it in a local copy
     mech_lock_.lock() ;
-    robot_msgs::MechanismState mech_state = safe_mech_state_ ;
+    mechanism_msgs::MechanismState mech_state = safe_mech_state_ ;
     mech_lock_.unlock() ;
 
     angles.resize(names.size()) ;
@@ -305,12 +305,12 @@ public:
 
 private:
     mocap_msgs::MocapSnapshot snapshot_ ;
-  robot_msgs::MechanismState mech_state_ ;
+  mechanism_msgs::MechanismState mech_state_ ;
 
     mocap_msgs::MocapSnapshot safe_snapshot_ ;
   int marker_id_ ;
 
-  robot_msgs::MechanismState safe_mech_state_ ;
+  mechanism_msgs::MechanismState safe_mech_state_ ;
 
   boost::mutex mech_lock_ ;
   boost::mutex snapshot_lock_ ;
@@ -327,7 +327,7 @@ int main(int argc, char** argv)
   ArmPhaseSpaceGrabber grabber ;
   grabber.spin() ;
 
-  
+
 
   return 0 ;
 }

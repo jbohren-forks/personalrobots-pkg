@@ -46,14 +46,6 @@ class Tracker:
     def callback(self, msg):
         self.msg = msg
 
-mechanism_state = Tracker('/mechanism_state', MechanismState)
-def last_time():
-    global mechanism_state
-    if mechanism_state.msg:
-        return mechanism_state.msg.header.stamp
-    return 0
-
-
 
 def main():
     rospy.init_node('plug_in')
@@ -100,7 +92,7 @@ def main():
     cnt = 0
     while not rospy.is_shutdown():
         cnt += 1
-        outlet_pose.header.stamp = last_time()
+        outlet_pose.header.stamp = rospy.get_rostime()
         pub_command.publish(outlet_pose)
         if cnt % 3 == 0:
             try:

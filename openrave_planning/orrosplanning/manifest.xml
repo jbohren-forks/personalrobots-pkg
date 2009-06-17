@@ -11,5 +11,6 @@
   <depend package="pr2_mechanism_controllers"/>
   <depend package="tf"/>
   <depend package="robot_msgs"/>
+  <depend package="mechanism_msgs" />
   <depend package="mocap_msgs"/>
 </package>

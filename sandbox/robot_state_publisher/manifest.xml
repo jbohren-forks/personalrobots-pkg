@@ -8,6 +8,7 @@
 
   <depend package="kdl_parser" />
   <depend package="robot_msgs" />
+  <depend package="mechanism_msgs" />
   <depend package="roscpp" />
   <depend package="tf" />
   <depend package="tf_conversions" />

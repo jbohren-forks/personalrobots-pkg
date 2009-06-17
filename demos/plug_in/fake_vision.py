@@ -57,14 +57,6 @@ class Tracker:
   def callback(self, msg):
     self.msg = msg
 
-mechanism_state = Tracker('/mechanism_state', MechanismState)
-def last_time():
-  return rospy.get_rostime()
-  global mechanism_state
-  if mechanism_state.msg:
-    return mechanism_state.msg.header.stamp
-  return 0
-
 
 
 pub_outlet = rospy.Publisher('/outlet_detector/pose', PoseStamped)
@@ -74,13 +66,13 @@ sleep(0.2)
 
 def send():
   op = PoseStamped()
-  op.header.stamp = last_time()
+  op.header.stamp = rospy.get_rostime()
   op.header.frame_id = 'torso_lift_link'
   op.pose.position = xyz(0.7, -0.4, -0.4)
   op.pose.orientation = rpy(0, 0, 0)
 
   pp = PoseStamped()
-  pp.header.stamp = last_time()
+  pp.header.stamp = rospy.get_rostime()
   pp.header.frame_id = 'r_gripper_tool_frame'
   pp.pose.position = xyz(0.0, 0.0, 0.0)
   pp.pose.orientation = rpy(0,-pi/6,0)

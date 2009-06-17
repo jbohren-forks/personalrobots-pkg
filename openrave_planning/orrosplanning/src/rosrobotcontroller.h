@@ -24,7 +24,7 @@
 #ifndef RAVE_ROS_ROBOT_CONTROLLER
 #define RAVE_ROS_ROBOT_CONTROLLER
 
-#include <robot_msgs/MechanismState.h>
+#include <mechanism_msgs/MechanismState.h>
 #include <pr2_mechanism_controllers/TrajectoryStart.h>
 #include <pr2_mechanism_controllers/TrajectoryCancel.h>
 #include <pr2_mechanism_controllers/TrajectoryWait.h>
@@ -599,7 +599,7 @@ private:
 
     string _topic;
 
-    robot_msgs::MechanismState _mstate_cb, _mstate;
+    mechanism_msgs::MechanismState _mstate_cb, _mstate;
     vector<dReal> _vecdesired;
     set< pair<string, int> > _setEnabledJoints; // set of enabled joints and their indices
     mutable boost::mutex _mutexstate;

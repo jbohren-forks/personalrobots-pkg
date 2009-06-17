@@ -38,7 +38,7 @@
 PKG = 'laser_camera_calibration' # this package name
 NAME = 'lasercamera_gatherer'
 
-import roslib; roslib.load_manifest(PKG) 
+import roslib; roslib.load_manifest(PKG)
 
 import sys
 import thread
@@ -47,7 +47,7 @@ from numpy import *
 import rospy
 from roslib import rostime
 from laser_scan.msg import LaserScan
-from robot_msgs.msg import MechanismState
+from mechanism_msgs.msg import MechanismState
 from checkerboard_detector.msg import ObjectDetection
 import copy
 
@@ -70,7 +70,7 @@ class GatherData:
         rospy.Subscriber("tilt_scan", LaserScan, self.callback_laser, 1)
         rospy.Subscriber("mechanism_state", MechanismState, self.callback_robot, 1)
         rospy.init_node(NAME, anonymous=True)
-        
+
     def pose_dist(self, pose1, pose2):
         t1 = array([pose1.position.x, pose1.position.y, pose1.position.z])
         q1 = array([pose1.orientation.x, pose1.orientation.y, pose1.orientation.z, pose1.orientation.w])
@@ -129,7 +129,7 @@ class GatherData:
 
             if len(self.laserqueue) < 2 or len(self.robotqueue) < 2:
                 return
-            
+
             stamp = min(self.objdetqueue[-1].header.stamp, self.laserqueue[-1].header.stamp, self.robotqueue[-1].header.stamp)
 
             # interpolate scanlines, find two scanlines that are between stamp

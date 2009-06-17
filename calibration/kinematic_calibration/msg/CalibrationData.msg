@@ -8,7 +8,7 @@ Header header
 image_msgs/RawStereo raw_stereo
 
 # Mechanism State - Stores the robots joint angles
-robot_msgs/MechanismState mechanism_state
+mechanism_msgs/MechanismState mechanism_state
 
 # PointCloud generated from the tilt laser
 robot_msgs/PointCloud laser_cloud

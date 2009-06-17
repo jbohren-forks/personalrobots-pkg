@@ -1,13 +1,13 @@
 /*********************************************************************
 * Software License Agreement (BSD License)
-* 
+*
 *  Copyright (c) 2008, Willow Garage, Inc.
 *  All rights reserved.
-* 
+*
 *  Redistribution and use in source and binary forms, with or without
 *  modification, are permitted provided that the following conditions
 *  are met:
-* 
+*
 *     notice, this list of conditions and the following disclaimer.
 *   * Redistributions in binary form must reproduce the above
 *     copyright notice, this list of conditions and the following
@@ -16,7 +16,7 @@
 *   * Neither the name of the Willow Garage nor the names of its
 *     contributors may be used to endorse or promote products derived
 *     from this software without specific prior written permission.
-* 
+*
 *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 *  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 *  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -45,7 +45,7 @@
 #include "deprecated_msgs/RobotBase2DOdom.h"
 #include "robot_msgs/PoseDot.h"
 #include "robot_msgs/PoseWithRatesStamped.h"
-#include "robot_msgs/MechanismState.h"
+#include "mechanism_msgs/MechanismState.h"
 
 namespace calibration
 {
@@ -79,12 +79,12 @@ private:
   void AngleOverflowCorrect(double& a, double ref);
 
   // messages to receive
-  deprecated_msgs::RobotBase2DOdom       _odom;  
-  robot_msgs::PoseWithRatesStamped  _imu;  
-  robot_msgs::MechanismState      _mech;
+  deprecated_msgs::RobotBase2DOdom       _odom;
+  robot_msgs::PoseWithRatesStamped  _imu;
+  mechanism_msgs::MechanismState      _mech;
 
   // estimated robot pose message to send
-  robot_msgs::PoseDot               _vel; 
+  robot_msgs::PoseDot               _vel;
 
   // service messages
   pr2_mechanism_controllers::WheelRadiusMultiplier::Request _srv_snd, _srv_rsp;
@@ -101,7 +101,7 @@ private:
   std::vector<double> _mech_begin, _mech_end;
 
   // mutex
-  boost::mutex _odom_mutex, _imu_mutex, _mech_mutex;  
+  boost::mutex _odom_mutex, _imu_mutex, _mech_mutex;
 
 }; // class
 

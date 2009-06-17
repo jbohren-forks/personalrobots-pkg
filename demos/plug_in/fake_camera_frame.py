@@ -1,10 +1,10 @@
 #! /usr/bin/env python
 # Copyright (c) 2008, Willow Garage, Inc.
 # All rights reserved.
-# 
+#
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
-# 
+#
 #     * Redistributions of source code must retain the above copyright
 #       notice, this list of conditions and the following disclaimer.
 #     * Redistributions in binary form must reproduce the above copyright
@@ -13,7 +13,7 @@
 #     * Neither the name of the Willow Garage, Inc. nor the names of its
 #       contributors may be used to endorse or promote products derived from
 #       this software without specific prior written permission.
-# 
+#
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 # AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 # IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -61,11 +61,6 @@ class Tracker:
   def callback(self, msg):
     self.msg = msg
 
-mechanism_state = Tracker('/mechanism_state', MechanismState)
-def last_time():
-  global mechanism_state
-  return mechanism_state.msg.header.stamp
-
 t = TransformStamped()
 t.header.frame_id = 'high_def_frame'
 t.header.seq = 0
@@ -77,7 +72,7 @@ rospy.init_node('fake_camera')
 pub_tf = rospy.Publisher('/tf_message', tfMessage)
 
 while not rospy.is_shutdown():
-  t.header.stamp = last_time()
+  t.header.stamp = rospy.get_rostime()
   msg = tfMessage([t])
   pub_tf.publish(msg)
   time.sleep(0.1)

@@ -37,7 +37,8 @@ import roslib
 roslib.load_manifest('tabletop_manipulation')
 import rospy
 from pr2_msgs.msg import MoveArmGoal, MoveArmState
-from robot_msgs.msg import JointState, PoseConstraint, ControllerStatus
+from robot_msgs.msg import PoseConstraint, ControllerStatus
+from mechanism_msgs.msg import JointState
 
 import sys
 
@@ -129,7 +130,7 @@ class MoveArm:
       rospy.sleep(1.0)
 
     return self.status.value == ControllerStatus.SUCCESS
-  
+
 USAGE = 'movearm.py {left|right} <shoulder_lift> <shoulder_pan>'
 if __name__ == '__main__':
   if len(sys.argv) != 4 or (sys.argv[1] != 'left' and sys.argv[1] != 'right'):
@@ -137,7 +138,7 @@ if __name__ == '__main__':
     sys.exit(-1)
 
   side = sys.argv[1]
-  joints = {} 
+  joints = {}
   joints[side[0] + '_shoulder_lift_joint']  = float(sys.argv[2])
   joints[side[0] + '_shoulder_pan_joint']  = float(sys.argv[3])
 

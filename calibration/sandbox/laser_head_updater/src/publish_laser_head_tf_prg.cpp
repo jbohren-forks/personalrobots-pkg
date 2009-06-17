@@ -38,7 +38,7 @@
 #include "ros/ros.h"
 #include "tf/tfMessage.h"
 #include "tf/transform_datatypes.h"
-#include "robot_msgs/MechanismState.h"
+#include "mechanism_msgs/MechanismState.h"
 #include "laser_scan/LaserScan.h"
 #include "image_msgs/RawStereo.h"
 
@@ -131,7 +131,7 @@ public:
     after_tilt_T_     = buildTransform(after_tilt) ;
   }
 
-  double getJointPos(const robot_msgs::MechanismStateConstPtr& mech_state,
+  double getJointPos(const mechanism_msgs::MechanismStateConstPtr& mech_state,
                      const std::string& name)
   {
     for(unsigned int i=0; i<mech_state->joint_states.size(); i++)
@@ -145,7 +145,7 @@ public:
   }
 
 
-  void updateTf(const robot_msgs::MechanismStateConstPtr& mech_state)
+  void updateTf(const mechanism_msgs::MechanismStateConstPtr& mech_state)
   {
     //printf("In callback\n") ;
 
