@@ -63,8 +63,6 @@ namespace pr2_ik
 
     ~PR2IKNode();
 
-    //    void command(const tf::MessageNotifier<pr2_ik::PoseCmd>::MessagePtr& pose_msg);
-
     bool init();
 
     private:
@@ -84,10 +82,6 @@ namespace pr2_ik
     KDL::Frame pose_desired_;
 
     std::string root_name_;
-
-    //    boost::scoped_ptr<tf::MessageNotifier<pr2_ik::PoseCmd> > command_notifier_;
-
-    void poseToFrame(const tf::Pose& pose, KDL::Frame& frame);
 
     int dimension_;
 

@@ -33,6 +33,7 @@
 
 #include <algorithm>
 #include <pr2_ik/pr2_ik_node.h>
+#include <tf_conversions/tf_kdl.h>
 
 #include "ros/node.h"
 
@@ -117,7 +118,7 @@ namespace pr2_ik {
     // convert to reference frame of root link of the chain
     tf_.transformPose(root_name_, pose_stamped, pose_stamped);
     ROS_DEBUG("Converted tf command to root name");
-    poseToFrame(pose_stamped, pose_desired_);
+    PoseTFToKDL(pose_stamped, pose_desired_);
     ROS_DEBUG("Converted tf command to KDL");
 
     //Do the IK
@@ -156,16 +157,6 @@ namespace pr2_ik {
     return true;
   }
 
-  void PR2IKNode::poseToFrame(const tf::Pose& pose, KDL::Frame& frame)
-  {
-    frame.p(0) = pose.getOrigin().x();
-    frame.p(1) = pose.getOrigin().y();
-    frame.p(2) = pose.getOrigin().z();
-
-    double Rz, Ry, Rx;
-    pose.getBasis().getEulerZYX(Rz, Ry, Rx);
-    frame.M = Rotation::EulerZYX(Rz, Ry, Rx);
-  }
 } // namespace
 
 int main(int argc, char** argv){
