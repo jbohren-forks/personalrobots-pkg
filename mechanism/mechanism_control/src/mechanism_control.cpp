@@ -541,7 +541,7 @@ bool MechanismControlNode::initXml(TiXmlElement *config)
 
   // get the publish rate for mechanism state
   double publish_rate;
-  node_->param("~publish_rate_mechamism_state", publish_rate, 100.0);
+  node_->param("~publish_rate_mechanism_state", publish_rate, 100.0);
   publish_period_ = 1.0/fmax(0.000001,publish_rate);
   last_publish_ = realtime_gettime();
   return true;
