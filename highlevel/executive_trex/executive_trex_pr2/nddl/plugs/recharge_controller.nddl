@@ -52,23 +52,53 @@ class OutletState extends AgentTimeline {
   OutletState(){super(Internal, "Holds");}
 };
 
-class RechargeController extends Controller {
 
-  predicate Holds {
-    bool in_position;
-    bool outlet_detected_coarse;
-    bool outlet_detected_fine;
-    bool recharged;
-    BOOL plug_is_stowed;
-    bool ready_to_plug_in;
-    bool plug_in_hand;
-    bool plugged_in;
-    bool ready_to_grasp;
-    bool arms_clear; // Need this because the arm could be anywhere in principle!
-    bool resetting;
+/**
+ * @note This oculd be sensed from the battery state
+ */
+class PluggedIn extends AgentTimeline{
+  predicate True{}
+  predicate False{}
+  PluggedIn(){ super(Internal, "False"); }
+};
+
+class ArmsClear extends AgentTimeline{
+  predicate True{}
+  predicate False{}
+  ArmsClear(){ super(Internal, "False"); }
+};
+
+class PlugStowed extends AgentTimeline{
+  predicate True{}
+  predicate False{}
+  PlugStowed(){ super(Internal, "True"); }
+};
+
+class RechargeController extends AgentTimeline {
+
+  // The controller is in an inactive state. Basically idle.
+  predicate Inactive{
+    ResultStatus status;
+    defaultOnCommit(status, UNDEFINED);
   }
+  // Move to the approach pose
+  predicate Positioning{}
+  // Do coarse outlet detection to find the outlet based on prior
+  predicate FindingOutlet{}
+  // Approach the outlet to plug in
+  predicate Approaching{}
+  // Find the plug on the base
+  predicate FindingPlug{}
+  // Grasp the plug from the base
+  predicate GraspingPlug{}
+  // Localize the outlet precisely to plug in
+  predicate LocalizingOutlet{}
+  // Localize the plug in the gripper
+  predicate LocalizingPlugInGripper{}
+  // Plug in
+  predicate PluggingIn{}
   
-  RechargeController(){ super(); }
+  RechargeController(){ super(Internal, "Inactive"); }
 };
 
 // Internal Timelines
@@ -77,332 +107,232 @@ PlugState plug_state = new PlugState();
 Recharger recharger = new Recharger(Internal);
 RechargeController recharge_controller = new RechargeController();
 
+// Important internal state variables
+PluggedIn plugged_in = new PluggedIn();
+ArmsClear arms_clear = new ArmsClear();
+PlugStowed plug_stowed = new PlugStowed();
+
+// Used for a start event
+AgentActions actions = new AgentActions();
+
 // Initialize controller to inactive
-fact(recharge_controller.Holds rc_initial_state);
-rc_initial_state.active = false;
+fact(recharge_controller.Inactive);
 
-RechargeController::Holds{
-  met_by(Holds p);
-  defaultOnCommit(in_position, p.in_position);
-  defaultOnCommit(outlet_detected_coarse, p.outlet_detected_coarse);
-  defaultOnCommit(outlet_detected_fine, p.outlet_detected_fine);
-  defaultOnCommit(recharged, p.recharged);
-  defaultOnCommit(plug_is_stowed, p.plug_is_stowed);
-  defaultOnCommit(ready_to_plug_in, p.ready_to_plug_in);
-  defaultOnCommit(plug_in_hand, p.plug_in_hand);
-  defaultOnCommit(plugged_in, p.plugged_in);
-  defaultOnCommit(ready_to_grasp, p.ready_to_grasp);
-  defaultOnCommit(arms_clear, p.arms_clear);
-  defaultOnCommit(resetting, p.resetting);
+/***********************************************************************************
+ * STATE MACHINE DECLARATION
+ ***********************************************************************************/
+RechargeController::Positioning{
+  contains_start(move_base.Active cmd);
+  concurrent(cmd.end, end);
+  eq(cmd.status, SUCCESS);
+  leq(cmd.max_duration, MOVE_BASE_DURATION_BOUND);
+  // Bind pose based on approach pose for the outlet
+  contained_by(recharger.Active rc);
+  map_get_outlet_approach_pose(cmd.x, cmd.y, cmd.z, cmd.qx, cmd.qy, cmd.qz, cmd.qw, rc.outlet_id);
+  defaultOnCommit(cmd.frame_id, "map");
+
+  meets(FindingOutlet);
 }
 
-/**
- * Main control loop step.
- */
-RechargeController::Holds {
-  if(active == true){
-    meets(Holds s); // Successor
+RechargeController::FindingOutlet{
+  contains_start(detect_outlet_coarse.Active cmd);
+  concurrent(cmd.end, end);
+  leq(cmd.max_duration, DETECT_OUTLET_COARSE_DURATION_BOUND);
 
-    // Should be active. Get outlet param from it. Only require that for local navigation
-    contained_by(recharger.Active rc_active);
-
-    bool done;
-    calc_or(done, timed_out, resetting);
-
-    // Here we are resetting - either to rety or to finish up
-    if (done == true){
-      if (plug_is_stowed == yes){
-	if(timed_out == true){
-	  meets(recharger.Inactive rc_inactive);
-	  eq(duration, 1);
-	  eq(s.active, false);
-	  eq(rc_inactive.status, ABORTED);
-	}
-	else {
-	  if(in_position == true){
-	    meets(recharger.Inactive rc_inactive);
-	    eq(duration, 1);
-	    eq(s.active, false);
-
-	    if(recharged == true){
-	      eq(rc_inactive.status, SUCCESS);
-	    }
-	    else {
-	      eq(rc_inactive.status, ABORTED);
-	    }
-	  }
-	  else{
-	    contains_start(move_base.Active cmd);
-	    concurrent(cmd.end, end);
-	    leq(cmd.max_duration, MOVE_BASE_DURATION_BOUND);
-	    leq(cmd.max_duration, remaining_time);
-
-	    // Bind pose based on approach pose for the outlet
-	    map_get_outlet_approach_pose(cmd.x, cmd.y, cmd.z, cmd.qx, cmd.qy, cmd.qz, cmd.qw, rc_active.outlet_id);
-	    defaultOnCommit(cmd.frame_id, "map");
-	  }
-	}
-      }
-
-      if (plug_is_stowed == no){
-	if (plugged_in == false){
-	  contains_start(stow_plug.Active cmd);
-	  concurrent(cmd.end, end);
-	  leq(cmd.max_duration, STOW_PLUG_DURATION_BOUND);
-	  eq(s.arms_clear, false);
-	}
-	else {
-	  contains_start(unplug.Active cmd);
-	  concurrent(cmd.end, end);
-	  leq(cmd.max_duration, UNPLUG_DURATION_BOUND);
-	  eq(s.arms_clear, false);
-	}
-      }
-    }
-    
-    // Thus begins the process of plugging in
-    if (done == false){
-      if (ready_to_plug_in == true){
-	contains_start(plug_in.Active cmd);
-	concurrent(cmd.end, end);
-	leq(cmd.max_duration, PLUG_IN_DURATION_BOUND);
-	leq(cmd.max_duration, remaining_time);
-	eq(s.arms_clear, false);
-	eq(cmd.outlet_id, rc_active.outlet_id);
-      }
-      else {
-	if (plug_in_hand == true) {
-	  contains_start(localize_plug_in_gripper.Active cmd);
-	  concurrent(cmd.end, end);
-	  leq(cmd.max_duration, LOCALIZE_PLUG_IN_GRIPPER_DURATION_BOUND);
-	  leq(cmd.max_duration, remaining_time);
-	}
-	else {
-	  if(ready_to_grasp == true){
-	    contains_start(move_and_grasp_plug.Active cmd);
-	    concurrent(cmd.end, end);
-	    leq(cmd.max_duration, remaining_time);
-	    leq(cmd.max_duration, MOVE_AND_GRASP_PLUG_DURATION_BOUND);
-	    eq(s.arms_clear, false);
-	  }
-	  else {   
-	    if (outlet_detected_fine == true) {
-	      if(arms_clear == true){
-		contains_start(detect_plug_on_base.Active cmd);
-		concurrent(cmd.end, end);
-		leq(cmd.max_duration, DETECT_PLUG_ON_BASE_DURATION_BOUND);
-		leq(cmd.max_duration, remaining_time);
-	      }
-	      else {
-		contains_start(plugs_untuck_arms.Active cmd);
-		concurrent(cmd.end, end);
-		leq(cmd.max_duration, PLUGS_UNTUCK_ARMS_DURATION_BOUND);
-		leq(cmd.max_duration, remaining_time);
-	      }
-	    }
-	    else {
-	      if (outlet_detected_coarse == true) {
-		if (in_position == true) {
-		  contains_start(detect_outlet_fine.Active cmd);
-		  concurrent(cmd.end, end);
-		  leq(cmd.max_duration, DETECT_OUTLET_FINE_DURATION_BOUND);
-		  leq(cmd.max_duration, remaining_time);
-		}
-		else {
-		  contains_start(move_base_local.Active cmd);
-		  concurrent(cmd.end, end);
-		  leq(cmd.max_duration, MOVE_BASE_LOCAL_DURATION_BOUND);
-		  leq(cmd.max_duration, remaining_time);
-
-		  // Here we can obtain the outlet state to get parameters from move_base local since
-		  // it should not be done generically at the action level as this is a shared action
-		  starts_during(outlet_state.Holds os);
-		  eq(cmd.frame_id, os.frame_id);
-		  plugs_get_offset_pose(os.x, os.y, os.z, os.qx, os.qy, os.qz, os.qw, 0.6, 
-					cmd.x, cmd.y, cmd.z, cmd.qx, cmd.qy,cmd.qz, cmd.qw);
-		}
-	      }
-
-	      if (outlet_detected_coarse == false) {
-		contains_start(detect_outlet_coarse.Active cmd);
-		concurrent(cmd.end, end);
-		leq(cmd.max_duration, DETECT_OUTLET_COARSE_DURATION_BOUND);
-		leq(cmd.max_duration, remaining_time);
-	      }
-	    }
-	  }
-	}
-      }
-    }
+  if(cmd.status == SUCCESS){
+    meets(Approaching);
+  }
+  else{
+    meets(Positioning);
   }
 }
 
+RechargeController::Approaching{
+  contains_start(move_base_local.Active cmd);
+  concurrent(cmd.end, end);
+  leq(cmd.max_duration, MOVE_BASE_LOCAL_DURATION_BOUND);
 
+  // Here we can obtain the outlet state to get parameters from move_base local since
+  // it should not be done generically at the action level as this is a shared action
+  starts_during(outlet_state.Holds os);
+  eq(cmd.frame_id, os.frame_id);
+  plugs_get_offset_pose(os.x, os.y, os.z, os.qx, os.qy, os.qz, os.qw, 0.6, 
+			cmd.x, cmd.y, cmd.z, cmd.qx, cmd.qy,cmd.qz, cmd.qw);
 
-/**************************************************
- * Update Rules
- *************************************************/
-
-/**
- * We use move_base_local to approach the wall and move_base to reposition.
- */
-MoveBase::Inactive{
-  starts(RechargeController.Holds rc);
-  
-  if(object == move_base_local){
-    if(status == SUCCESS){
-      eq(rc.in_position, true);
-    }
-    else{
-      eq(rc.resetting, true);
-      eq(rc.in_position, false);
-    }
+  if(cmd.status == SUCCESS){
+    meets(LocalizingOutlet);
   }
-  
-  if(object == move_base){
-    if(status == SUCCESS){
-      // Pretty much a full reset
-      eq(rc.in_position, true);
-      eq(rc.resetting, false);	
-      eq(rc.outlet_detected_coarse, false);
-      eq(rc.outlet_detected_fine, false);
-      eq(rc.recharged, false);
-      eq(rc.plug_is_stowed, yes);
-      eq(rc.ready_to_plug_in, false);
-      eq(rc.plug_in_hand, false);
-      eq(rc.plugged_in, false);
-      eq(rc.ready_to_grasp, false);
-    }
+  else{
+    meets(Positioning);
   }
 }
 
-DetectPlugOnBase::Inactive{
-  starts(RechargeController.Holds rc);
+RechargeController::LocalizingOutlet{
+  contains_start(detect_outlet_fine.Active cmd);
+  concurrent(cmd.end, end);
+  leq(cmd.max_duration, DETECT_OUTLET_FINE_DURATION_BOUND);
+
+  if(cmd.status == SUCCESS){
+    meets(FindingPlug);
+  }
+  else{
+    meets(Positioning);
+  }
+}
+
+RechargeController::FindingPlug{
+  contains_start(detect_plug_on_base.Active cmd);
+  concurrent(cmd.end, end);
+  leq(cmd.max_duration, DETECT_PLUG_ON_BASE_DURATION_BOUND);
+
+  if(cmd.status == SUCCESS){
+    meets(GraspingPlug);
+  }
+  else{
+    meets(Positioning);
+  }
+}
+
+RechargeController::GraspingPlug{
+  contains_start(move_and_grasp_plug.Active cmd);
+  concurrent(cmd.end, end);
+  leq(cmd.max_duration, MOVE_AND_GRASP_PLUG_DURATION_BOUND);
+
+  if(cmd.status == SUCCESS){
+    meets(LocalizingPlugInGripper);
+  }
+  else{
+    meets(Positioning);
+  }
+}
+
+RechargeController::LocalizingPlugInGripper{
+  contains_start(localize_plug_in_gripper.Active cmd);
+  concurrent(cmd.end, end);
+  leq(cmd.max_duration, LOCALIZE_PLUG_IN_GRIPPER_DURATION_BOUND);
+
+  if(cmd.status == SUCCESS){
+    meets(PluggingIn);
+  }
+  else{
+    meets(Positioning);
+  }
+}
+
+RechargeController::PluggingIn{
+  contains_start(plug_in.Active cmd);
+  leq(cmd.max_duration, PLUG_IN_DURATION_BOUND);
+  // Bind outlet id
+  contained_by(recharger.Active rc);
+  eq(cmd.outlet_id, rc.outlet_id);
+
+  ResultStatus x;
+  eq(x, cmd.status);
+  if(x == SUCCESS){
+    meets(Inactive s);
+    eq(s.status, SUCCESS);
+  }
+  else{
+    meets(Positioning);
+  }
+}
+
+RechargeController::Inactive{
+  // Update the recharger with feedback
+  starts(recharger.Inactive rc);
+  eq(rc.status, status);
+  // plug must be stowed
+  starts_during(plug_stowed.True);
+  // Want to start as early as possible
+  starts(actions.startEvent);
+}
+
+/***********************************************************************************/
+
+// The plug gets stowed by the plug_stow action
+PlugStowed::True{
+  met_by(stow_plug.Active cmd);
+  eq(cmd.status, SUCCESS);
+}
+// Use prior plug state
+StowPlug::Active{
+  starts_during(plug_state.Holds ps);
+  eq_plug_stow_msg(object, ps.object);
+  // Must not be plugged in
+  contained_by(plugged_in.False);
+}
+// The plug must be stowed whenever we move the base
+MoveBase::Active{
+  contained_by(plug_stowed.True);
+}
+// The arms must be clear whenever we need to detect the plug in the base
+DetectPlugOnBase::Active{
+  contained_by(arms_clear.True);
+}
+// The action that moves the arms from the clear position! It also uses prior plug state
+MoveAndGraspPlug::Active{
+  starts_during(arms_clear.False);
+  starts_during(plug_state.Holds ps);
+  eq_point_msg(object, ps.object);
+}
+// If we succeed in grasping the plug, it is not stowed!
+MoveAndGraspPlug::Inactive{
   if(status == SUCCESS){
-    eq(rc.plug_is_stowed, yes);
-    eq(rc.ready_to_grasp, true);
-
-    // Update PlugState
+    starts_during(plug_stowed.False);
+  }
+}
+// Unplug to become unplugged!
+PluggedIn::False{
+  met_by(unplug.Active cmd);
+  eq(cmd.status, SUCCESS);
+  leq(cmd.max_duration, UNPLUG_DURATION_BOUND);
+}
+// If plug_in succeeds, it will transition internal state
+PlugIn::Active{
+  if(status == SUCCESS){
+    meets(plugged_in.True);
+  }
+}
+// The arms become clear by untucking them
+ArmsClear::True{
+  met_by(plugs_untuck_arms.Active cmd);
+  leq(cmd.max_duration, PLUGS_UNTUCK_ARMS_DURATION_BOUND);
+}
+// Update PlugState
+DetectPlugOnBase::Inactive{
+  if(status == SUCCESS){
     starts(plug_state.Holds ps);
     eq_plug_stow_msg(ps.object, object);
   }
 }
 
-PlugsUntuckArms::Inactive{
-  starts(RechargeController.Holds rc);
-  if(status == SUCCESS){
-    eq(rc.arms_clear, true);
-  }
-  else {
-    eq(rc.resetting, true);
-    eq(rc.in_position, false);
-  }
-}
-
-StowPlug::Active{
-  starts_during(plug_state.Holds ps);
-  eq_plug_stow_msg(object, ps.object);
-}
-
-// If we stow successfully, declare maybe. Requires confirmation!
-StowPlug::Inactive{
-  starts(RechargeController.Holds rc);
-  if(status == SUCCESS){
-    eq(rc.plug_is_stowed, yes);
-    eq(rc.plug_in_hand, false);
-  }
-}
-
-Unplug::Inactive{
-  starts(RechargeController.Holds rc);
-  if(status == SUCCESS){
-    eq(rc.plugged_in, false);
-  }
-}
-
-PlugIn::Inactive{
-  starts(RechargeController.Holds rc);
-  eq(rc.resetting, true);
-  if(status == SUCCESS){
-    eq(rc.plugged_in, true);
-    eq(rc.recharged, true);
-  }
-  else {
-    eq(rc.in_position, false);
-  }
-}
-
+// Use prior outlet state
 DetectOutletFine::Active{
   starts_during(outlet_state.Holds os);
   eq_point_msg(object, os.object);
 }
-
+// Update OutletState
 DetectOutletFine::Inactive{
-  starts(RechargeController.Holds rc);
   if(status == SUCCESS){
-    eq(rc.outlet_detected_fine, true);
-
     // Update outlet state with feedback
     starts(outlet_state.Holds os);
     eq_pose_msg(os.object, object);
   }
-  else {
-    eq(rc.resetting, true);
-    eq(rc.in_position, false);
-  }
 }
-
+// Use prior outlet state
 DetectOutletCoarse::Active{
   starts_during(outlet_state.Holds os);
   eq_point_msg(object, os.object);
 }
-
+// Update outlet state
 DetectOutletCoarse::Inactive{
-  starts(RechargeController.Holds rc);
   if(status == SUCCESS){
-    eq(rc.outlet_detected_coarse, true);
-    eq(rc.in_position, false);
-
-    // Update outlet state with feedback
     starts(outlet_state.Holds os);
     eq_pose_msg(os.object, object);
   }
-  else {
-    eq(rc.resetting, true);
-    eq(rc.in_position, false);
-  }
 }
-
+// Use prior outlet state
 LocalizePlugInGripper::Active{
   starts_during(outlet_state.Holds os);
   eq_pose_msg(object, os.object);
-}
-
-LocalizePlugInGripper::Inactive{
-  starts(RechargeController.Holds rc);
-  if(status == SUCCESS){
-    eq(rc.ready_to_plug_in, true);
-  }
-  else {
-    eq(rc.resetting, true);
-    eq(rc.in_position, false);
-  }
-}
-
-MoveAndGraspPlug::Active{
-  starts_during(plug_state.Holds ps);
-  eq_point_msg(object, ps.object);
-}
-
-MoveAndGraspPlug::Inactive{
-  starts(RechargeController.Holds rc);
-  if(status == SUCCESS){
-    eq(rc.plug_in_hand, true);
-    eq(rc.ready_to_grasp, false);
-    eq(rc.plug_is_stowed, no);
-  }
-  else{
-    eq(rc.resetting, true);
-    eq(rc.in_position, false);
-  }
 }
