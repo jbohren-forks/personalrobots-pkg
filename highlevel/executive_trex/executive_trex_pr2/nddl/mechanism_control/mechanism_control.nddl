@@ -20,24 +20,6 @@ class MechanismController extends AgentTimeline {
   }
 };
 
-// Same rule expressed for both states
-MechanismController::Holds {
-  // Values oscillate
-  meets(Holds s);
-  met_by(Holds p);
-  neq(is_up, p.is_up);
-  neq(is_up, s.is_up);
-
-  // If and only if required, then link to a command. A better way to handle this?
-  bool required;
-  testLT(required, end, missionEnd);
-  if(required == true){
-    ends(SwitchControllers.Active swap_cmd);
-    eq(swap_cmd.status, SUCCESS);
-    temporalDistance(swap_cmd.dispatch_time, [0, 1], swap_cmd.start);
-  }
-}
-
 // Controllers
 
 // Arm controllers that are mutually exclusive
@@ -60,6 +42,29 @@ MechanismController r_arm_constraint_cartesian_twist_controller = new MechanismC
 MechanismController r_arm_constraint_cartesian_wrench_controller = new MechanismController(Internal);
 MechanismController r_arm_constraint_cartesian_pose_controller = new MechanismController(Internal);
 MechanismController r_arm_constraint_cartesian_trajectory_controller = new MechanismController(Internal);
+
+// Actions for a start event
+AgentActions actions = new AgentActions();
+
+// Same rule expressed for both states
+MechanismController::Holds {
+  // Values oscillate
+  meets(Holds s);
+  met_by(Holds p);
+  neq(is_up, p.is_up);
+  neq(is_up, s.is_up);
+
+  // Ahh - special case of start token
+  bool fire;
+  testLT(fire, 0, start);
+  if(fire == true){
+    met_by(SwitchControllers.Active cmd);
+    eq(cmd.status, SUCCESS);
+    //tao(cmd.dispatch_time);
+    any(actions.startEvent a);
+    precedes(a.start, cmd.dispatch_time);
+  }
+}
 
 HeadMechanism::use_head_controller{ 
   contains(AgentActions.startEvent);
