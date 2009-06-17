@@ -55,6 +55,7 @@
 #include <robot_msgs/PointStamped.h>
 #include <laser_scan/laser_scan.h>
 #include <ros/ros.h>
+#include <ros/node.h>
 #include <tf/transform_listener.h>
 #include <tf/transform_broadcaster.h>
 #include <tf/message_notifier.h>
