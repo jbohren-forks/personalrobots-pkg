@@ -146,6 +146,7 @@ def child_elements(elt):
             yield c
         c = c.nextSibling
 
+all_includes = []
 ## @throws XacroException if a parsing error occurs with an included document
 def process_includes(doc, base_dir):
     previous = doc.documentElement
@@ -163,6 +164,8 @@ def process_includes(doc, base_dir):
                     print elt
                     raise XacroException("included file \"%s\" could not be opened: %s" % (filename, str(e)))
                 try:
+                    global all_includes
+                    all_includes.append(filename)
                     included = parse(f)
                 except Exception, e:
                     raise XacroException("included file [%s] generated an error during XML parsing: %s"%(filename, str(e)))
@@ -417,10 +420,12 @@ def print_usage(exit_code = 0):
 if __name__ == '__main__':
 
     try:
-        opts, args = getopt.gnu_getopt(sys.argv[1:], "ho:")
+        opts, args = getopt.gnu_getopt(sys.argv[1:], "ho:", ['deps'])
     except getopt.GetoptError, err:
         print str(err)
         print_usage(2)
+
+    just_deps = False
 
     output = sys.stdout
     for o, a in opts:
@@ -428,6 +433,8 @@ if __name__ == '__main__':
             print_usage(0)
         elif o == '-o':
             output = open(a, 'w')
+        elif o == '--deps':
+            just_deps = True
 
     if len(args) < 1:
         print "No input given"
@@ -439,7 +446,10 @@ if __name__ == '__main__':
 
 
     process_includes(doc, os.path.dirname(sys.argv[1]))
-    eval_self_contained(doc)
-
-    doc.writexml(output)
-    print
+    if just_deps:
+        for inc in all_includes:
+            print inc
+    else:
+        eval_self_contained(doc)
+        doc.writexml(output)
+        print
