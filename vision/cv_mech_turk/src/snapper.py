@@ -59,13 +59,41 @@ class Snapper:
 
   def __init__(self):
 
-    srv_name="vm6.willowgarage.com:8080"
-    #target_session="prf-2009-05-21-22-29-00"
-    target_session="prf-2009-05-21-22-29-00-p"
-    images_dir="images/"+target_session+"/";
-    img_mode="gray";
+    try:
+      srv_name=rospy.get_param("~server")
+    except:
+      srv_name="vm6.willowgarage.com:8080"
 
-    self.init_internal(srv_name, target_session,images_dir,img_mode)
+    #target_session="prf-2009-05-21-22-29-00"
+
+    try:
+      self.target_session=rospy.get_param("~session")
+    except:
+      self.target_session="prf-2009-05-21-22-29-00-p"
+
+    try:
+      self.block_submit=rospy.get_param("~block_submit")
+    except:
+      self.block_submit="0"
+
+    try:
+      self.save_imgs_dir=rospy.get_param("~img_dir")
+    except:
+      self.save_imgs_dir="."
+
+    print self.save_imgs_dir
+
+    images_dir=self.save_imgs_dir+"images/"+self.target_session+"/";
+    img_mode="gray";
+ 
+    try:
+      self.frame_id=rospy.get_param("~frame");
+    except:
+      self.frame_id="stereo_l_stereo_camera_frame"
+
+    rospy.logwarn("INIT DONE")
+    print "INIT DONE"
+    self.init_internal(srv_name, self.target_session,images_dir,img_mode)
 
   def init_internal(self,srv_name, target_session,images_dir,img_mode):
     self.mech = submit_img.MechSubmiter(srv_name, target_session)
@@ -73,21 +101,44 @@ class Snapper:
     if not os.path.exists(images_dir):
       os.makedirs(images_dir);
     self.img_mode=img_mode;
+
+
+    self.sub=rospy.Subscriber('image', image_msgs.msg.Image, self.handle_image)
   
-  def handle_raw_stereo(self, msg):
+  def handle_image(self, msg):
+    rospy.loginfo("Snapper image")
     print "Snapper image"
+
+
     image = msg.uint8_data.data
+    image_sz = (640,480);
     if self.img_mode=="gray":
-      i = Image.fromstring("L", (640,480), image)
+      i = Image.fromstring("L", image_sz, image)
     else:
-      i = Image.fromstring("RGB", (640,480), image)
+      i = Image.fromstring("RGB", image_sz, image)
+
+    ref_time = "%d.%09d" % (msg.header.stamp.secs, msg.header.stamp.nsecs)
     fn = "foo-%d.%09d.jpg" % (msg.header.stamp.secs, msg.header.stamp.nsecs)
     full_fn=os.path.join(self.img_dir,fn);
     i.save(full_fn)
-    ext_id = self.mech.submit(full_fn)
-    print full_fn, ext_id
+
+    if not self.block_submit=="1":
+      ext_id = self.mech.submit(full_fn,{'image_size':"640,480",
+                                         'topic_in':rospy.resolve_name('image'),
+                                         'topic_out':rospy.resolve_name('annotation'),
+                                         'ref_time':ref_time,
+                                         'frame_id':self.frame_id,
+                                         })
+      rospy.loginfo("Submitted %s %s"% ( full_fn, ext_id))
+      print "Submitted %s %s"% ( full_fn, ext_id)
+    else:
+      rospy.loginfo("Submission to session %s blocked by parameter ~block_submit=1", self.target_session)
+      print "Submission blocked to session %s by parameter ~block_submit=1" % self.target_session
+      ext_id="n/a"
+
+
     #print full_fn
-    time.sleep(1.0)
+    #time.sleep(1.0)
 
 
 
@@ -97,11 +148,10 @@ def usage(progname):
 
 def main(argv, stdout, environ):
   progname = argv[0]
-
+  print "Starting a snapper"
   rospy.init_node('snapper')
 
   s = Snapper()
-  rospy.Subscriber('image_to_annotate', image_msgs.msg.Image, s.handle_raw_stereo, queue_size=2, buff_size=7000000)
   rospy.spin()
       
                

@@ -79,7 +79,7 @@ class MechSubmiter:
     
     self.submit_url="http://%s/mt" % (self.srv_name, )
 
-  def submit(self, inp_img):
+  def submit(self, inp_img, extras={}):
     target_img_name=uuid.uuid4();
 
     url = self.submit_url + "/newHIT2/"
@@ -88,6 +88,8 @@ class MechSubmiter:
     fields.append(('session',self.target_session))
     fields.append(('frame',str(target_img_name)))
     fields.append(('original_name',str(inp_img)))
+    for (k,v) in extras.items():
+      fields.append((k,v))
 
     attachment=open(inp_img,'rb').read();
 

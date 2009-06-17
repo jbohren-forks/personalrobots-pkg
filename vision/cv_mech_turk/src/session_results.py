@@ -131,7 +131,7 @@ class MechFetchResults:
 
 
   def fetch_results(self):
-    url= "http://"+self.srv_name + "/mt/session_images/%s/" % (self.target_session, )
+    url= "http://"+self.srv_name + "/mt/session_images2/%s/" % (self.target_session, )
 
     #input = build_request(url, [], [])
     try:
