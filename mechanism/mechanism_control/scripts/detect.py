@@ -6,7 +6,7 @@ import roslib
 roslib.load_manifest(PKG)
 
 import sys, traceback, logging, rospy
-from robot_msgs.msg import MechanismState
+from mechanism_msgs.msg import MechanismState
 
 NAME = 'joint_listener'
 
@@ -28,14 +28,14 @@ def callback(data):
         stdscr.attrset(curses.A_BOLD)
       else:
         stdscr.attrset(curses.A_NORMAL)
-      
+
       if a[3] != "":
         stdscr.addstr(row, 0, "Device: %02d (%25s), count: %7d, velocity: %f" % (a[0], a[3], a[1], a[2]))
       else:
         stdscr.addstr(row, 0, "Device: %02d, count: %7d, velocity: %f" % (a[0], a[1], a[2]))
       row += 1
     stdscr.refresh()
-   
+
 
 def listener_with_user_data():
     rospy.Subscriber("/mechanism_state", MechanismState, callback)

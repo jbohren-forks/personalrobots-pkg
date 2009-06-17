@@ -6,7 +6,7 @@ roslib.load_manifest('mechanism_control')
 
 import rospy, sys
 from mechanism_control import mechanism
-from robot_msgs.msg import MechanismState
+from mechanism_msgs.msg import MechanismState
 
 class Tracker:
   def __init__(self, topic, Msg):

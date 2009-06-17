@@ -563,7 +563,7 @@ void MechanismControlNode::update()
         if (type == JOINT_ROTARY || type == JOINT_CONTINUOUS || type == JOINT_PRISMATIC)
         {
           assert(j < publisher_.msg_.get_joint_states_size());
-          robot_msgs::JointState *out = &publisher_.msg_.joint_states[j++];
+          mechanism_msgs::JointState *out = &publisher_.msg_.joint_states[j++];
           mechanism::JointState *in = &mc_->state_->joint_states_[i];
           out->name = mc_->model_.joints_[i]->name_;
           out->position = in->position_;
@@ -576,7 +576,7 @@ void MechanismControlNode::update()
 
       for (unsigned int i = 0; i < mc_->hw_->actuators_.size(); ++i)
       {
-        robot_msgs::ActuatorState *out = &publisher_.msg_.actuator_states[i];
+        mechanism_msgs::ActuatorState *out = &publisher_.msg_.actuator_states[i];
         ActuatorState *in = &mc_->hw_->actuators_[i]->state_;
         out->name = mc_->hw_->actuators_[i]->name_;
         out->encoder_count = in->encoder_count_;
