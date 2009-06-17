@@ -64,13 +64,13 @@ namespace robot_actions {
     ~ActionClient();
 
     /**
-     * @brief Executes the action, with no duration limit. Will run to completion by the server.
+     * @brief Executes the action, with a duration bound. Will preempt the server if we have not
+     * terminated by the given time limit.
      */
     ResultStatus execute(const Goal& goal, Feedback& feedback, const ros::Duration& duration_bound);
 
     /**
-     * @brief Executes the action, with a duration bound. Will preempt the server if we have not
-     * terminated by the given time limit.
+     * @brief Executes the action, with no duration limit. Will run to completion by the server.
      */
     ResultStatus execute(const Goal& goal, Feedback& feedback);
 
