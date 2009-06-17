@@ -80,7 +80,7 @@ TransformListener::TransformListener(ros::Node & rosnode,
   
   reset_time_subscriber_ = node_.subscribe<std_msgs::Empty>("/reset_time", 100, boost::bind(&TransformListener::reset_callback, this, _1)); ///\todo magic number
   
-  node_.advertiseService("~tf_frames", &TransformListener::getFrames, this);
+  tf_frames_srv_ = node_.advertiseService("~tf_frames", &TransformListener::getFrames, this);
   node_.param(std::string("~tf_prefix"), tf_prefix_, std::string(""));
 }
 
@@ -93,7 +93,7 @@ TransformListener::TransformListener(ros::Duration max_cache_time):
   
   reset_time_subscriber_ = node_.subscribe<std_msgs::Empty>("/reset_time", 100, boost::bind(&TransformListener::reset_callback, this, _1)); ///\todo magic number
   
-  node_.advertiseService("~tf_frames", &TransformListener::getFrames, this);
+  tf_frames_srv_ = node_.advertiseService("~tf_frames", &TransformListener::getFrames, this);
   node_.param(std::string("~tf_prefix"), tf_prefix_, std::string(""));
 }
 

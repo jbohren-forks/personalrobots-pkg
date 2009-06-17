@@ -128,6 +128,7 @@ private:
   /// clear the cached data
   void reset_callback(const std_msgs::EmptyConstPtr &msg);
   std_msgs::Empty empty_;
+  ros::ServiceServer tf_frames_srv_;
 
 };
 }
