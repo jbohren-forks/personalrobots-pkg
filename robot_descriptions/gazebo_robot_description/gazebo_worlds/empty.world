@@ -53,7 +53,7 @@
 
 
   <rendering:ogre>
-    <ambient>0 0 0 0</ambient>
+    <ambient>0.8 0.8 0.8 0.8</ambient>
     <sky>
       <material>Gazebo/CloudySky</material>
     </sky>
