@@ -56,6 +56,8 @@ namespace planning_environment
 	
 	PlanningMonitor(CollisionModels *cm, std::string frame_id) : CollisionSpaceMonitor(static_cast<CollisionModels*>(cm), frame_id)
 	{
+	    nh_.param("~refresh_interval_collision_map", intervalCollisionMap_, 3.0);
+	    nh_.param("~refresh_interval_kinematic_state", intervalState_, 0.5);
 	}
 	
 	PlanningMonitor(CollisionModels *cm) : CollisionSpaceMonitor(static_cast<CollisionModels*>(cm))
@@ -66,6 +68,9 @@ namespace planning_environment
 	{
 	}
 
+	/** Return true if recent enough data is available so that planning is considered safe */
+	bool isEnvironmentSafe(void) const;
+	
 	/** Check if the full state of the robot is valid */
 	bool isStateValidOnPath(const planning_models::KinematicModel::StateParams *state) const;
 
@@ -100,6 +105,9 @@ namespace planning_environment
 	
 	motion_planning_msgs::KinematicConstraints kcPath_;
 	motion_planning_msgs::KinematicConstraints kcGoal_;
+	
+	double intervalCollisionMap_;
+	double intervalState_;
     };
     
 	

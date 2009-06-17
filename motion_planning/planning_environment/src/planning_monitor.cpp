@@ -37,6 +37,22 @@
 #include "planning_environment/planning_monitor.h"
 #include "planning_environment/kinematic_state_constraint_evaluator.h"
 
+bool planning_environment::PlanningMonitor::isEnvironmentSafe(void) const
+{
+    if (isMapUpdated(intervalCollisionMap_))
+    {
+	ROS_WARN("Planning is not safe: map is not up to date");
+	return false;
+    }
+    
+    if (isStateUpdated(intervalState_))
+    {
+	ROS_WARN("Planning is not safe: robot state is not up to date");
+	return false;
+    }
+    return true;
+}
+
 void planning_environment::PlanningMonitor::setPathConstraints(const motion_planning_msgs::KinematicConstraints &kc)
 {
     kcPath_ = kc;
