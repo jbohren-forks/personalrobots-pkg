@@ -12,5 +12,6 @@
   <depend package="tf"/>
   <depend package="robot_msgs"/>
   <depend package="mechanism_msgs" />
+  <depend package="manipulation_msgs" />
   <depend package="mocap_msgs"/>
 </package>

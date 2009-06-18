@@ -33,7 +33,7 @@
  *********************************************************************/
 
 #include <ros/node.h>
-#include <robot_msgs/JointTraj.h>
+#include <manipulation_msgs/JointTraj.h>
 
 static int done = 0;
 
@@ -55,7 +55,7 @@ int main( int argc, char** argv )
 
 
   /*********** Start moving the robot ************/
-  robot_msgs::JointTraj cmd;
+  manipulation_msgs::JointTraj cmd;
 
   int num_points = 1;
   int num_joints = 3;
@@ -70,7 +70,7 @@ int main( int argc, char** argv )
   cmd.points[0].positions[2] = 0.0;
   cmd.points[0].time = 0.0;
 
-  node->advertise<robot_msgs::JointTraj>("base/trajectory_controller/command",1);
+  node->advertise<manipulation_msgs::JointTraj>("base/trajectory_controller/command",1);
   sleep(1);
   node->publish("base/trajectory_controller/command",cmd);
   sleep(4);

@@ -12,6 +12,7 @@
     <depend package="costmap_2d"/>
     <depend package="tf"/>
     <depend package="mpglue"/>
+    <depend package="manipulation_msgs"/>
   <url></url>
 
   <export>

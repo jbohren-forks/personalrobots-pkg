@@ -11,6 +11,7 @@ from pr2_mechanism_controllers.msg import *
 from robot_msgs.msg import *
 from mechanism_msgs.msg import MechanismState
 from kinematic_calibration.msg import *
+from manipulation_msgs.msg import *
 
 traj_actuator_names = ['r_shoulder_pan_motor',
 		       'r_shoulder_lift_motor',

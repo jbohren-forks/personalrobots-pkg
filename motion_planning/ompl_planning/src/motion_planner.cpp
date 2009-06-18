@@ -117,7 +117,7 @@ public:
 	    planningMonitor_->getRobotState()->copyParams(res.path.start_state.vals);
 
 	    // apply changes as indicated in request
-	    for (unsigned int i = 0 ; req.start_state.size() ; ++i)
+	    for (unsigned int i = 0 ; i < req.start_state.size() ; ++i)
 	    {
 		if (!planningMonitor_->getTransformListener()->frameExists(req.start_state[i].header.frame_id))
 		{

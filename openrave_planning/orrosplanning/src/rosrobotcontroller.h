@@ -25,6 +25,7 @@
 #define RAVE_ROS_ROBOT_CONTROLLER
 
 #include <mechanism_msgs/MechanismState.h>
+#include <manipulation_msgs/JointTrajPoint.h>
 #include <pr2_mechanism_controllers/TrajectoryStart.h>
 #include <pr2_mechanism_controllers/TrajectoryCancel.h>
 #include <pr2_mechanism_controllers/TrajectoryWait.h>
@@ -123,7 +124,7 @@ class ROSRobotController : public ControllerBase
             return true;
         }
 
-        void GetTrajPoint(const vector<dReal>& vrobotvalues, robot_msgs::JointTrajPoint& pt)
+        void GetTrajPoint(const vector<dReal>& vrobotvalues, manipulation_msgs::JointTrajPoint& pt)
         {
             pt.positions.resize(_vjointmap.size());
             typeof(pt.positions.begin()) itcontrollerpos = pt.positions.begin();

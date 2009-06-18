@@ -25,6 +25,8 @@
   <depend package="angles" />
   <depend package="control_toolbox" />
   <depend package="filters" />
+  <depend package="manipulation_msgs" />
+
   <url>http://pr.willowgarage.com</url>
   <repository>http://pr.willowgarage.com/repos</repository>
   <export>

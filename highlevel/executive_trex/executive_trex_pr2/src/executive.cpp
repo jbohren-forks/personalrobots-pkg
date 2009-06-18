@@ -92,6 +92,8 @@ namespace TREX {
     m_refCount = 0;
 
     // ROS Parameters for running the agent
+    ros::NodeHandle node_handle;
+
     double ping_frequency(1.0);
     double update_rate(1.0);
     std::string input_file;
@@ -99,13 +101,15 @@ namespace TREX {
     int time_limit(0);
     std::string start_dir;
     std::string log_dir;
-    ros::Node::instance()->param("/trex/ping_frequency", ping_frequency, ping_frequency);
-    ros::Node::instance()->param("/trex/update_rate", update_rate, update_rate);
-    ros::Node::instance()->param("/trex/input_file", input_file, input_file);
-    ros::Node::instance()->param("/trex/path", path, path);
-    ros::Node::instance()->param("/trex/time_limit", time_limit, time_limit);
-    ros::Node::instance()->param("/trex/start_dir", start_dir, start_dir);
-    ros::Node::instance()->param("/trex/log_dir", log_dir, log_dir);
+    double broadcast_plan_rate(0.0);
+    node_handle.param("/trex/ping_frequency", ping_frequency, ping_frequency);
+    node_handle.param("/trex/update_rate", update_rate, update_rate);
+    node_handle.param("/trex/input_file", input_file, input_file);
+    node_handle.param("/trex/path", path, path);
+    node_handle.param("/trex/time_limit", time_limit, time_limit);
+    node_handle.param("/trex/start_dir", start_dir, start_dir);
+    node_handle.param("/trex/log_dir", log_dir, log_dir);
+    node_handle.param("/trex/broadcast_plan_rate", broadcast_plan_rate, broadcast_plan_rate);
 
     // Bind the watchdog loop sleep time from input controller frequency
     if(ping_frequency > 0)
@@ -163,7 +167,6 @@ namespace TREX {
     TREX::Agent::initialize(*input_xml_root_, *agent_clock_, time_limit);
 
     // Set up  watchdog thread message generation
-    ros::Node::instance()->ros::Node::advertise<std_msgs::Empty>("trex/ping", 1);
     new boost::thread(boost::bind(&Executive::watchDogLoop, this));
 
     ROS_INFO("Executive created.\n");
@@ -240,9 +243,12 @@ namespace TREX {
   }
 
   void Executive::watchDogLoop(){
+    ros::NodeHandle node_handle;
+    ros::Publisher pub = node_handle.advertise<std_msgs::Empty>("trex/ping", 1);
+
     std_msgs::Empty pingMsg;
     while(!Agent::terminated()){
-      ros::Node::instance()->publish("trex/ping", pingMsg);
+      pub.publish(pingMsg);
       usleep((unsigned int) rint(watchDogCycleTime_ * 1e6));
     }
   }

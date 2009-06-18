@@ -54,7 +54,7 @@ namespace pr2_ik {
     node_->param<std::string>("~control_topic_name",control_topic_name_,"r_arm_joint_trajectory_controller/command");
     node_->param<bool>("~free_angle_constraint",free_angle_constraint_,false);
     node_->param<int>("~dimension",dimension_,7);
-    node_->advertise<robot_msgs::JointTraj>(control_topic_name_, 1);
+    node_->advertise<manipulation_msgs::JointTraj>(control_topic_name_, 1);
 
     if(free_angle_constraint_)
     {
@@ -112,7 +112,7 @@ namespace pr2_ik {
 
     if(ik_valid)
     {
-      robot_msgs::JointTraj joint_traj;
+      manipulation_msgs::JointTraj joint_traj;
       joint_traj.set_points_size(1);
       joint_traj.points[0].set_positions_size(dimension_);
       for(int i=0; i < dimension_; i++)

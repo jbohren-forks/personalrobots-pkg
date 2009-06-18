@@ -3,7 +3,7 @@
 #define H_EXECUTIVE
 
 // roscpp
-#include <ros/node.h>
+#include <ros/ros.h>
 
 // TREX
 #include "AgentClock.hh"

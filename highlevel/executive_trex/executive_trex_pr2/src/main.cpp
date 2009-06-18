@@ -114,8 +114,7 @@ Publishes to (name/type):
 #include <stdlib.h>
 #include <unistd.h>
 
-TREX::ExecutiveId node; // TODO: Rename this "executive" since "node" is REALLY ambiguous
-ros::Node* g_ros_node;
+TREX::ExecutiveId executive;
 
 namespace executive_trex_pr2 {
 
@@ -202,10 +201,10 @@ namespace executive_trex_pr2 {
 	    std::cout << "Doing a rewind." << std::endl;
 
 	    // Reset the executive
-	    node->reset();
+	    executive->reset();
 
 	    // Re-initialize the executive with the initial arguments
-	    node = TREX::Executive::request(g_playback, g_hyper);
+	    executive = TREX::Executive::request(g_playback, g_hyper);
 	  } else if (currentTick == consoleStopTick) {
 	    cmdValid = false;
 	    std::cout << "Already at that tick." << std::endl;
@@ -263,7 +262,7 @@ namespace executive_trex_pr2 {
       }
 
       // Step agent forward
-      if (!node->step()) {
+      if (!executive->step()) {
 	// Mission complete
 	std::cout << "Agent has completed its mission." << std::endl;
 	printConsolePopup();
@@ -276,11 +275,9 @@ namespace executive_trex_pr2 {
  * @brief Handle cleanup on exit
  */
 void cleanup(){
-  if(node.isId()){
-    g_ros_node->shutdown();
-    delete (ros::Node*) g_ros_node;
-    delete (TREX::Executive*) node;
-    node = TREX::ExecutiveId::noId();
+  if(executive.isId()){
+    delete (TREX::Executive*) executive;
+    executive = TREX::ExecutiveId::noId();
   }
   exit(0);
 }
@@ -306,8 +303,8 @@ int main(int argc, char **argv)
   signal(SIGQUIT, &TREX::signalHandler);
   signal(SIGKILL, &TREX::signalHandler);
 
-  ros::init(argc, argv);
-  g_ros_node = new ros::Node("trex");
+  ros::init(argc, argv, "trex");
+  ros::NodeHandle node_handle;
 
   // Display help if requested
   if(executive_trex_pr2::isArg(argc, argv, "--help")){
@@ -345,15 +342,15 @@ int main(int argc, char **argv)
 
   try{
     // Get executive singleton
-    node = TREX::Executive::request(g_playback, g_hyper);
+    executive = TREX::Executive::request(g_playback, g_hyper);
 
     if(g_console) {
       // Run with interactive stepping
-      node->interactiveInit();
+      executive->interactiveInit();
       interactiveRun();
     } else {
       // Run in nonstop mode
-      node->run();
+      executive->run();
     }
   }
   catch(char* e){
@@ -373,10 +370,8 @@ int main(int argc, char **argv)
     ROS_ERROR("You can also grep for trex:error and trex:warn in logs/latest directory");
   }
 
-  delete (TREX::Executive*) node;
-  node = TREX::ExecutiveId::noId();
-  delete (ros::Node*) g_ros_node;
-
+  delete (TREX::Executive*) executive;
+  executive = TREX::ExecutiveId::noId();
 
   // Parse command line arguments to see if we must apply test case validation
   if(executive_trex_pr2::isArg(argc, argv, "--gtest")){

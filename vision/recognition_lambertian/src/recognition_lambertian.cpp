@@ -80,7 +80,7 @@
 #include <tf/transform_listener.h>
 #include <tf/transform_broadcaster.h>
 
-//#include "topic_synchronizer/topic_synchronizer.h"
+#include "topic_synchronizer2/topic_synchronizer.h"
 
 #include "CvStereoCamModel.h"
 
@@ -93,106 +93,7 @@ using namespace robot_msgs;
 using namespace std;
 
 
-void on_templates_no(int);
-void on_edges_high(int);
-
-
 #define CV_PIXEL(type,img,x,y) (((type*)(img->imageData+y*img->widthStep))+x*img->nChannels)
-
-
-
-
-class TopicSynchronizer
-{
-	int expected_count_;
-	int count_;
-	ros::Time time_;
-	boost::function<void ()> callback_;
-
-public:
-
-	template <typename T>
-	TopicSynchronizer(void(T::*fp)(), T* obj) : callback_(boost::bind(fp,obj))
-	{
-		init();
-	}
-
-	TopicSynchronizer(void (*fp)()) : callback_(fp)
-	{
-		init();
-	}
-
-
-	template <typename T, typename M>
-	class CallbackFunctor {
-		TopicSynchronizer* synchronizer_;
-		const boost::function<void (const boost::shared_ptr<M const>&)> callback_;
-
-	public:
-
-		CallbackFunctor(TopicSynchronizer* synchronizer, const boost::function<void (const boost::shared_ptr<M const>&)>& callback) :
-			synchronizer_(synchronizer), callback_(callback)
-		{
-		}
-
-		void operator()(const boost::shared_ptr<M const>& message)
-		{
-			callback_(message);
-			synchronizer_->update(message->header.stamp);
-		}
-	};
-
-	template <typename T, typename M>
-	const boost::function<void (const boost::shared_ptr<M const>&)> decorate(void(T::*fp)(const boost::shared_ptr<M const>&), T* obj)
-	{
-		expected_count_++;
-		return CallbackFunctor<T,M>(this, boost::bind(fp, obj, _1));
-	}
-
-	template <typename T, typename M>
-	const boost::function<void (const boost::shared_ptr<M const>&)> decorate(void(T::*fp)(const boost::shared_ptr<M const>&), const boost::shared_ptr<T>& obj)
-	{
-		expected_count_++;
-		return CallbackFunctor<T,M>(this, boost::bind(fp, obj.get(), _1));
-	}
-
-	template <typename T, typename M>
-	const boost::function<void (const boost::shared_ptr<M const>&)> decorate(void(*fp)(const boost::shared_ptr<M const>&))
-	{
-		expected_count_++;
-		return CallbackFunctor<T,M>(this, boost::function<void(const boost::shared_ptr<M>&)>(fp));
-	}
-
-	template <typename T, typename M>
-	const boost::function<void (const boost::shared_ptr<M const>&)> decorate(const boost::function<void (const boost::shared_ptr<M const>&)>& callback)
-	{
-		expected_count_++;
-		return CallbackFunctor<T,M>(this, callback);
-	}
-
-	void init()
-	{
-		expected_count_ = 0;
-	}
-
-	void update(const ros::Time& time)
-	{
-		if (count_==0 || time>time_) {
-			time_ = time;
-			count_ = 0;
-		}
-
-		if (time==time_) {
-			count_++;
-		}
-
-		if (count_==expected_count_) {
-			callback_();
-		}
-	}
-};
-
-
 
 class RecognitionLambertian
 {
@@ -231,13 +132,8 @@ public:
 
 //	TopicSynchronizer<RecognitionLambertian> sync;
 
-	boost::mutex cv_mutex;
-	boost::condition_variable images_ready;
-
 	tf::TransformListener tf_;
-
 	TopicSynchronizer sync_;
-
 
 	// minimum height to look at (in base_link frame)
 	double min_height;
@@ -266,7 +162,7 @@ public:
 		nh_.param<string>("~template_path", template_path,"templates.txt");
 
 		templates_no = 10;
-		edges_high = 170;
+		edges_high = 100;
 
 		if(display){
 			cvNamedWindow("left", CV_WINDOW_AUTOSIZE);
@@ -274,17 +170,13 @@ public:
 			cvNamedWindow("disparity", CV_WINDOW_AUTOSIZE);
 			cvNamedWindow("disparity_clone", CV_WINDOW_AUTOSIZE);
 			cvNamedWindow("edges",1);
-			//        	cvCreateTrackbar("templates","edges",&templates_no, 7, &on_templates_no);
-			//        	cvCreateTrackbar("edges_high","edges",&edges_high, 500, &on_edges_high);
 		}
 
-//		sync_.decorate(&RecognitionLambertian::leftImageCallback, this);
-
 		// subscribe to topics
-		left_image_sub_ = nh_.subscribe("stereo/left/image_rect", 1, sync_.decorate(&RecognitionLambertian::leftImageCallback, this));
-		right_image_sub_ = nh_.subscribe("stereo/right/image_rect", 1, sync_.decorate(&RecognitionLambertian::rightImageCallback, this));
-		disparity_sub_ = nh_.subscribe("stereo/disparity", 1, sync_.decorate(&RecognitionLambertian::disparityImageCallback, this));
-		cloud_sub_ = nh_.subscribe("stereo/cloud", 1, sync_.decorate(&RecognitionLambertian::cloudCallback, this));
+		left_image_sub_ = nh_.subscribe("stereo/left/image_rect", 1, sync_.synchronize(&RecognitionLambertian::leftImageCallback, this));
+		right_image_sub_ = nh_.subscribe("stereo/right/image_rect", 1, sync_.synchronize(&RecognitionLambertian::rightImageCallback, this));
+		disparity_sub_ = nh_.subscribe("stereo/disparity", 1, sync_.synchronize(&RecognitionLambertian::disparityImageCallback, this));
+		cloud_sub_ = nh_.subscribe("stereo/cloud", 1, sync_.synchronize(&RecognitionLambertian::cloudCallback, this));
 
 //		sync_.setCount(4);
 
@@ -361,7 +253,6 @@ private:
 
 	void loadTemplates(string path)
 	{
-
 		FILE* fin = fopen(path.c_str(),"r");
 
 		if (fin==NULL) {
@@ -372,9 +263,17 @@ private:
 		char* path_ptr = strdup(path.c_str());
 		string dir_path = dirname(path_ptr);
 
-		char line[512];
-		while (fgets(line,512, fin)) {
 
+		int num;
+		fscanf(fin,"%d",&num);
+
+		for (int i=0;i<num;++i) {
+
+			char line[512];
+			float real_size;
+			float image_size;
+
+			fscanf(fin,"%s %f %f", line, &real_size, &image_size);
 			string template_file = line;
 			trimSpaces(template_file);
 			printf("template file: %s\n",template_file.c_str());
@@ -386,7 +285,8 @@ private:
 					ROS_ERROR("Cannot load template image: %s", template_path.c_str());
 					exit(1);
 				}
-				cm->addTemplateFromImage(templ, 0.2);
+				cm->addTemplateFromImage(templ, 1000*image_size/real_size);  // real_size is in mm
+				printf("%s %f %f %f\n", line, real_size, image_size, 1000*image_size/real_size);
 				cvReleaseImage(&templ);
 			}
 		}
@@ -674,8 +574,8 @@ private:
 
 		tf_.setTransform(table_pose_frame);
 
-//		tf::TransformBroadcaster broadcaster_;
-//		broadcaster_.sendTransform(table_pose_frame);
+		tf::TransformBroadcaster broadcaster_;
+		broadcaster_.sendTransform(table_pose_frame);
 	}
 
 
@@ -1253,7 +1153,15 @@ private:
 	}
 
 
-	void publishClusters(const PointCloud& cloud, const vector<Point32>& clusters)
+	void publishObjects(const vector<PointCloud>& objects)
+	{
+
+		for (size_t k=0;k<objects.size();++k) {
+			object_pub_.publish(objects[k]);
+		}
+	}
+
+	void getObjects(const PointCloud& cloud, const vector<Point32>& clusters, vector<PointCloud>& objects)
 	{
 		PointCloud object;
 
@@ -1267,9 +1175,27 @@ private:
 					object.pts.push_back(cloud.pts[i]);
 				}
 			}
-			object_pub_.publish(object);
+			objects.push_back(object);
 		}
 	}
+
+//	void computeDescriptor(const PointCloud& cloud, const Point32& center, float step, vector<pair<float, float> >& descriptor)
+//	{
+//		int size = int((center.z/step)+1);
+//		descriptor.resize(size);
+//		vector<bool> first(size,true);
+//
+//		for (size_t i=0;i<cloud.get_pts_size();++i) {
+//			int bin = int(cloud.pts[i].z/step);
+//
+//			if (first[i]) {
+//				descriptor[i].first = dist2D(center, cloud.pts[i]);
+//				descriptor[i].second = dist2D(center, cloud.pts[i]);
+//				first[i] = false;
+//			}
+//		}
+//	}
+
 
 	void findObjectPositionsFromStereo(vector<CvPoint>& locations, vector<float>& scales)
 	{
@@ -1304,7 +1230,10 @@ private:
 		vector<Point32> clusters;
 		findClusters2(objects_table_frame, clusters);
 
-		publishClusters(objects_table_frame,clusters);
+		vector<PointCloud> objects;
+		getObjects(objects_table_frame, clusters, objects);
+
+		publishObjects(objects);
 
 		objects_pub_.publish(objects_table_frame);
 
@@ -1336,11 +1265,12 @@ private:
 			Point pp2 = project3DPointIntoImage(lcinfo, ps);
 
 			float dist = sqrt(dist2D(pp1,pp2));
-//			printf("Pixel height: %f\n", dist);
+			printf("Pixel height: %f\n", dist);
 			printf("Real height: %f\n", clusters[i].z);
 			scales[i] = dist/clusters[i].z;  // pixels per meter
+			printf("Scale: %f\n", scales[i]);
 
-			cvCircle(left, locations[i], 5, CV_RGB(0,255,0));
+//			cvCircle(left, locations[i], 5, CV_RGB(0,255,0));
 
 		}
 
@@ -1368,109 +1298,6 @@ private:
 	}
 
 
-
-
-
-//	/**
-//	* \brief Filters a cloud point, retains only points coming from a specific region in the disparity image
-//	*
-//	* @param rect Region in disparity image
-//	* @return Filtered point cloud
-//	*/
-//	robot_msgs::PointCloud filterPointCloud(const PointCloud& cloud, const CvRect & rect)
-//	{
-//		robot_msgs::PointCloud result;
-//		result.header.frame_id = cloud.header.frame_id;
-//		result.header.stamp = cloud.header.stamp;
-//		int xchan = -1;
-//		int ychan = -1;
-//		for(size_t i = 0;i < cloud.chan.size();++i){
-//			if(cloud.chan[i].name == "x"){
-//				xchan = i;
-//			}
-//			if(cloud.chan[i].name == "y"){
-//				ychan = i;
-//			}
-//		}
-//
-//		if(xchan != -1 && ychan != -1){
-//			for(size_t i = 0;i < cloud.pts.size();++i){
-//				int x = (int)(cloud.chan[xchan].vals[i]);
-//				int y = (int)(cloud.chan[ychan].vals[i]);
-//				if(x >= rect.x && x < rect.x + rect.width && y >= rect.y && y < rect.y + rect.height){
-//					result.pts.push_back(cloud.pts[i]);
-//				}
-//			}
-//
-//		}
-//
-//
-//		return result;
-//	}
-
-
-//	/**
-//	* Callback from topic synchronizer, timeout
-//	* @param t
-//	*/
-//	void image_cb_timeout(ros::Time t)
-//	{
-//		if(limage.header.stamp != t) {
-//			printf("Timed out waiting for left image\n");
-//		}
-//
-//		if(dimage.header.stamp != t) {
-//			printf("Timed out waiting for disparity image\n");
-//		}
-//
-//		//        if(stinfo.header.stamp != t) {
-//		//            printf("Timed out waiting for stereo info\n");
-//		//        }
-//
-//		if(cloud_fetch.header.stamp != t) {
-//			printf("Timed out waiting for point cloud\n");
-//		}
-//	}
-
-
-//	/**
-//	* Callback from topic synchronizer, images ready to be consumed
-//	* @param t
-//	*/
-//	void image_cb_all(ros::Time t)
-//	{
-//		// obtain lock on vision data
-//		boost::lock_guard<boost::mutex> lock(cv_mutex);
-//
-//		if(lbridge.fromImage(limage, "bgr")){
-//			if(left != NULL)
-//				cvReleaseImage(&left);
-//
-//			left = cvCloneImage(lbridge.toIpl());
-//		}
-//		if(rbridge.fromImage(rimage, "bgr")){
-//			if(right != NULL)
-//				cvReleaseImage(&right);
-//
-//			right = cvCloneImage(rbridge.toIpl());
-//		}
-//		if(dbridge.fromImage(dimage)){
-//			if(disp != NULL)
-//				cvReleaseImage(&disp);
-//
-//			//            disp = cvCreateImage(cvGetSize(dbridge.toIpl()), IPL_DEPTH_8U, 1);
-//			disp = cvCloneImage(dbridge.toIpl());
-//			//            cvCvtScale(dbridge.toIpl(), disp, 4.0 / dispinfo.dpp);
-//		}
-//
-//		cloud = cloud_fetch;
-//
-//		//        images_ready.notify_all();
-//		runRecognitionLambertian();
-//	}
-
-
-
 public:
 	/**
 	* Needed for OpenCV event loop, to show images
@@ -1490,25 +1317,8 @@ public:
 		return true;
 	}
 
-	void triggerEdgeDetection()
-	{
-//		doChamferMatching(left);
-	}
+
 };
-
-RecognitionLambertian* node;
-
-void on_templates_no(int value)
-{
-	node->templates_no = value;
-	node->triggerEdgeDetection();
-}
-
-void on_edges_high(int value)
-{
-	node->edges_high = value;
-	node->triggerEdgeDetection();
-}
 
 
 int main(int argc, char **argv)
@@ -1517,11 +1327,8 @@ int main(int argc, char **argv)
 		cout << "(" << i << "): " << argv[i] << endl;
 
 	ros::init(argc, argv, "recognition_lambertian");
-	node = new RecognitionLambertian();
-	node->spin();
-//	ros::spin();
-
-	delete node;
+	RecognitionLambertian node;
+	node.spin();
 
 	return 0;
 }

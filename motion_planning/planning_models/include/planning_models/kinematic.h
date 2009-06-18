@@ -531,8 +531,11 @@ namespace planning_models
 	    /** Copy all parameters to a destination address */
 	    void copyParams(std::vector<double> &params) const;
 	    
-	    /** Copy the parameters describen a given joint */
+	    /** Copy the parameters describing a given joint */
 	    void copyParamsJoint(double *params, const std::string &name) const;
+	    
+	    /** Copy the parameters describing a given joint */
+	    void copyParamsJoint(std::vector<double> &params, const std::string &name) const;
 	    
 	    /** Check if all params in a group were seen */
 	    bool seenAllGroup(const std::string &group) const;

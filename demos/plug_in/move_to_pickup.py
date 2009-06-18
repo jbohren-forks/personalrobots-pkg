@@ -7,7 +7,8 @@ roslib.load_manifest('mechanism_bringup')
 import numpy
 import rospy
 
-from robot_msgs.msg import JointTraj, JointTrajPoint, PlugStow, Point, PoseStamped
+from robot_msgs.msg import PlugStow, Point, PoseStamped
+from mechanism_msgs.msg import JointTraj, JointTrajPoint
 from mechanism_control import mechanism
 from robot_mechanism_controllers.srv import *
 from pr2_mechanism_controllers.srv import *

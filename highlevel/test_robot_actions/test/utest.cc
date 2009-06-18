@@ -1,4 +1,3 @@
-#include <robot_actions/action.h>
 #include <robot_actions/action_runner.h>
 #include <robot_actions/action_client.h>
 #include <robot_actions/message_adapter.h>
@@ -18,7 +17,7 @@ using namespace std_msgs;
 class MyAction: public robot_actions::Action<Float32, Float32> {
 public:
 
-  MyAction(): robot_actions::Action<Float32, Float32>("my_action"), _use_deactivate_wait(false) {}
+  MyAction(std::string name): robot_actions::Action<Float32, Float32>(name), _use_deactivate_wait(false) {}
 
   bool _use_deactivate_wait;
 
@@ -80,7 +79,7 @@ public:
   MySimpleContainer(MyAction& action){
     _value = 0;
     action.connect(boost::bind(&MySimpleContainer::notify, this, _1, _2, _3));
-    _status.value = robot_actions::ActionStatus::UNDEFINED;
+    _status.value = robot_actions::ActionStatus::RESET;
   }
 
   ActionStatus _status;
@@ -89,7 +88,7 @@ public:
 
 
 // Hack to fordce linkage - gtest macro issue
-const int8_t robot_actions::ActionStatus::UNDEFINED;
+const int8_t robot_actions::ActionStatus::RESET;
 const int8_t robot_actions::ActionStatus::SUCCESS;
 const int8_t robot_actions::ActionStatus::PREEMPTED;
 const int8_t robot_actions::ActionStatus::ABORTED;
@@ -100,7 +99,7 @@ const int8_t robot_actions::ActionStatus::ACTIVE;
  * Test - just exercises compilation and demonstrates use
  */
 TEST(robot_actions, action_with_simple_container){
-  MyAction a;
+  MyAction a("my_action_test_action_with_simple_container");
   MySimpleContainer c(a);
   Float32 g;
   g.data = 10.0;
@@ -131,13 +130,14 @@ TEST(robot_actions, action_with_simple_container){
   robot_actions::AbstractAdapter& abstract_adapter(adapter); 
   abstract_adapter.initialize();
   abstract_adapter.terminate();
+  a.terminate();
 }
 
 /**
  * Test - Run give a number of goals.
  */
 TEST(robot_actions, many_goals) {
-  MyAction a;
+  MyAction a("my_action_test_many_goals");
   MySimpleContainer c(a);
   Float32 g;
   robot_actions::ActionStatus foo;
@@ -165,14 +165,14 @@ TEST(robot_actions, many_goals) {
       ASSERT_EQ(i < c._value, true);
     }
   }
-
+  a.terminate();
 }
 
 /**
  * Test - Run give a number of goals. Use waitForDeactivation().
  */
 TEST(robot_actions, many_goals_wait_for_deactivation) {
-  MyAction a;
+  MyAction a("robot_actions_test_many_goals_wait_for_deactivation");
   MySimpleContainer c(a);
   Float32 g;
   robot_actions::ActionStatus foo;
@@ -201,6 +201,7 @@ TEST(robot_actions, many_goals_wait_for_deactivation) {
       ASSERT_EQ(i < c._value, true);
     }
   }
+  a.terminate();
 }
 
 /**
@@ -209,7 +210,7 @@ TEST(robot_actions, many_goals_wait_for_deactivation) {
 TEST(robot_actions, action_with_action_runner){
 
   // Now connect actions
-  MyAction a;
+  MyAction a("my_action_test_action_with_action_runner");
   Float32 g;
   robot_actions::ActionStatus foo;
 
@@ -230,7 +231,7 @@ TEST(robot_actions, action_with_action_runner){
 TEST(robot_actions, action_client){
 
   // Now connect actions
-  MyAction action;
+  MyAction action("my_action");
 
   // Now run it.
   robot_actions::ActionRunner runner(10.0);
@@ -244,7 +245,7 @@ TEST(robot_actions, action_client){
 
   Float32 g, f;
   g.data = 5;
-  robot_actions::ResultStatus result = client.execute(g, f, ros::Duration(1));
+  robot_actions::ResultStatus result = client.execute(g, f, ros::Duration().fromSec(10));
   ASSERT_EQ(result, robot_actions::SUCCESS);
 
   result = client.execute(g, f, ros::Duration().fromSec(0.0001));
@@ -265,7 +266,9 @@ TEST(robot_actions, scalability_test){
   // First allocate it with an update rate of 10 Hz
   robot_actions::ActionRunner runner(10.0);
   for (int i = 0; i < 100; i++) {
-    MyAction* a = new MyAction();
+    std::stringstream buff;  
+    buff << "my_action_test_scalability" << i;
+    MyAction* a = new MyAction(buff.str());
     actions.push_back(a);
     runner.connect<Float32, TestState, Float32>(*a);
   }
@@ -278,6 +281,7 @@ TEST(robot_actions, scalability_test){
   duration.sleep();
 
   while(!actions.size()) {
+    actions[0]->terminate();
     delete actions[0];
     actions.erase(actions.begin());
   }

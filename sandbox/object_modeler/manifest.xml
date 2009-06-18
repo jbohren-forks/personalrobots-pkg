@@ -12,6 +12,7 @@
   <depend package="std_msgs"/>
   <depend package="move_base"/>
   <depend package="nav_robot_actions"/>
+  <depend package="bullet"/>
 
 </package>
 

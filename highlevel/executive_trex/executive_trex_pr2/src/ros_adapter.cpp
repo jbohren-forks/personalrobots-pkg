@@ -58,7 +58,8 @@ namespace TREX {
 
     ros::Duration d; d.fromSec(0.1);
     // Wait till we are initialized before moving ahead
-    while(!isInitialized() && ros::Node::instance()->ok()){
+    ros::NodeHandle node_handle;
+    while(!isInitialized() && node_handle.ok()){
       TREX_INFO("ros:info", "Waiting to connect for " << timelineName.c_str() << 
 		". If this is taking too long then the expected message is not being published. Check rostopic hz <topic_name>");
       d.sleep();

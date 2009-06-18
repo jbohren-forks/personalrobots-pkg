@@ -10,6 +10,7 @@
   <depend package="pr2_mechanism_controllers" />
   <depend package="std_msgs" />
   <depend package="robot_msgs" />
+  <depend package="manipulation_msgs" />
 
 
 </package>

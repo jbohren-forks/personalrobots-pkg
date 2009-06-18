@@ -19,7 +19,10 @@ in a way that can be managed by the ROS dependency system.
 <sysdepend os="ubuntu" version="8.04-hardy" package="subversion"/>
 <sysdepend os="ubuntu" version="8.04-hardy" package="libcppunit-dev" />
 <depend package="eigen"/>
+<!-- Disabled until next release of rosdep, which will include the ability
+to update the user's database
 <rosdep name="cppunit"/>
+-->
 <!--sysdepend os="ubuntu" version="7.04-feisty" package="libboost-dev"/>
 <sysdepend os="ubuntu" version="7.10-gutsy" package="libboost-dev=1.34.1-2ubuntu1"/>
 <sysdepend os="ubuntu" version="7.04-feisty" package="libboost-dev"/>

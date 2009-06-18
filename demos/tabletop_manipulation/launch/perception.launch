@@ -1,7 +1,0 @@
-<launch>
-   <include file="$(find pr2_defs)/pr2_planning_environment.launch" />
-   <include file="$(find pr2_laser_tilt)/laser_tilt_controller.launch" />
-   <include file="$(find point_cloud_assembler)/point_cloud_assembler.launch" />
-   <include file="$(find new_robot_self_filter)/self_filter.launch" />
-   <include file="$(find collision_map)/collision_map.launch" />
-</launch>

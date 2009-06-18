@@ -45,7 +45,7 @@
 #include <motion_planning_srvs/KinematicPlan.h>
 
 // messages to interact with the trajectory controller
-#include <robot_msgs/JointTraj.h>
+#include <manipulation_msgs/JointTraj.h>
 
 #include <std_srvs/Empty.h>
 
@@ -63,7 +63,7 @@ public:
 	kmsm_ = new planning_environment::KinematicModelStateMonitor(rm_);
 	
 	// we use the topic for sending commands to the controller, so we need to advertise it
-	jointCommandPublisher_ = nh_.advertise<robot_msgs::JointTraj>("right_arm/trajectory_controller/trajectory_command", 1);
+	jointCommandPublisher_ = nh_.advertise<manipulation_msgs::JointTraj>("right_arm/trajectory_controller/trajectory_command", 1);
     }
         
     ~Example(void)
@@ -133,7 +133,7 @@ public:
 protected:
 
     // convert a kinematic path message to a trajectory for the controller
-    void getTrajectoryMsg(const motion_planning_msgs::KinematicPath &path, robot_msgs::JointTraj &traj)
+    void getTrajectoryMsg(const motion_planning_msgs::KinematicPath &path, manipulation_msgs::JointTraj &traj)
     {	
         traj.set_points_size(path.get_states_size());	
 	for (unsigned int i = 0 ; i < path.get_states_size() ; ++i)
@@ -148,7 +148,7 @@ protected:
     // send a command to the trajectory controller using a topic
     void sendArmCommand(const motion_planning_msgs::KinematicPath &path, const std::string &model)
     {
-	robot_msgs::JointTraj traj;
+	manipulation_msgs::JointTraj traj;
 	getTrajectoryMsg(path, traj);
 	jointCommandPublisher_.publish(traj);
 	ROS_INFO("Sent trajectory to controller (using a topic)");

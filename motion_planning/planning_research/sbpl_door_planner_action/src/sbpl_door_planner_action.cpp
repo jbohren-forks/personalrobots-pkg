@@ -103,7 +103,7 @@ SBPLDoorPlanner::SBPLDoorPlanner(ros::Node& ros_node, tf::TransformListener& tf)
 
 //  ros_node_.advertise<robot_msgs::PoseStamped>(arm_control_topic_name_,1);
   ros_node_.advertise<pr2_ik::PoseCmd>(arm_control_topic_name_,1);
-  ros_node_.advertise<robot_msgs::JointTraj>(base_control_topic_name_,1);
+  ros_node_.advertise<manipulation_msgs::JointTraj>(base_control_topic_name_,1);
 
   robot_msgs::Point pt;
   //create a square footprint
@@ -238,7 +238,7 @@ bool SBPLDoorPlanner::createLinearPath(const pr2_robot_actions::Pose2D &cp,const
   return true;
 }
 
-bool SBPLDoorPlanner::makePlan(const pr2_robot_actions::Pose2D &start, const pr2_robot_actions::Pose2D &goal, robot_msgs::JointTraj &path)
+bool SBPLDoorPlanner::makePlan(const pr2_robot_actions::Pose2D &start, const pr2_robot_actions::Pose2D &goal, manipulation_msgs::JointTraj &path)
 {
   ROS_INFO("[replan] getting fresh copy of costmap");
   lock_.lock();
@@ -318,7 +318,7 @@ bool SBPLDoorPlanner::makePlan(const pr2_robot_actions::Pose2D &start, const pr2
       ROS_DEBUG("Found a path with %d points",(int) plan->size());
       for(int i=0; i < (int) plan->size(); i++)
       {
-        robot_msgs::JointTrajPoint path_point;
+        manipulation_msgs::JointTrajPoint path_point;
         mpglue::waypoint_s const * wpt((*plan)[i].get());
         mpglue::door_waypoint_s const * doorwpt(dynamic_cast<mpglue::door_waypoint_s const *>(wpt));	
         path_point.positions.push_back(doorwpt->x);
@@ -344,7 +344,7 @@ bool SBPLDoorPlanner::makePlan(const pr2_robot_actions::Pose2D &start, const pr2
 //   path.points.clear();
 //   for(int i=0; i < (int) return_path.size(); i++)
 //   {
-//     robot_msgs::JointTrajPoint path_point;
+//     manipulation_msgs::JointTrajPoint path_point;
 //     path_point.positions.push_back(return_path[i].x);
 //     path_point.positions.push_back(return_path[i].y);
 //     path_point.positions.push_back(return_path[i].th);
@@ -358,7 +358,7 @@ bool SBPLDoorPlanner::makePlan(const pr2_robot_actions::Pose2D &start, const pr2
 
 robot_actions::ResultStatus SBPLDoorPlanner::execute(const door_msgs::Door& door_msg_in, door_msgs::Door& feedback)
 {
-  robot_msgs::JointTraj path;
+  manipulation_msgs::JointTraj path;
   door_msgs::Door door;
   if(!updateGlobalPose())
   {
@@ -412,7 +412,7 @@ robot_actions::ResultStatus SBPLDoorPlanner::execute(const door_msgs::Door& door
 
   handle_hinge_distance_ = getHandleHingeDistance(door_env_.door);
 
-  robot_msgs::JointTraj new_path;
+  manipulation_msgs::JointTraj new_path;
   processPlan(path,new_path);
 
   if(animate_ && !isPreemptRequested())
@@ -432,14 +432,14 @@ robot_actions::ResultStatus SBPLDoorPlanner::execute(const door_msgs::Door& door
   return robot_actions::SUCCESS;
 }
 
-void SBPLDoorPlanner::dispatchControl(const robot_msgs::JointTraj &path, const door_msgs::Door &door)
+void SBPLDoorPlanner::dispatchControl(const manipulation_msgs::JointTraj &path, const door_msgs::Door &door)
 {
   int plan_count = 0;
   ros::Rate control_rate(controller_frequency_);
   while(!isPreemptRequested() && plan_count < (int) path.get_points_size())
   {
-    robot_msgs::JointTraj base_plan;
-    robot_msgs::JointTrajPoint path_point;
+    manipulation_msgs::JointTraj base_plan;
+    manipulation_msgs::JointTrajPoint path_point;
     path_point.positions.push_back(path.points[plan_count].positions[0]);
     path_point.positions.push_back(path.points[plan_count].positions[1]);
     path_point.positions.push_back(angles::normalize_angle(path.points[plan_count].positions[2]));
@@ -470,7 +470,7 @@ void SBPLDoorPlanner::dispatchControl(const robot_msgs::JointTraj &path, const d
   }
 }
 
-void SBPLDoorPlanner::processPlan(const robot_msgs::JointTraj &path, robot_msgs::JointTraj &return_path)
+void SBPLDoorPlanner::processPlan(const manipulation_msgs::JointTraj &path, manipulation_msgs::JointTraj &return_path)
 {
   return_path = path;
   double global_yaw = getFrameAngle(door_env_.door);  //Take the plan and add the last few steps to open the door
@@ -483,7 +483,7 @@ void SBPLDoorPlanner::processPlan(const robot_msgs::JointTraj &path, robot_msgs:
   double delta_open_angle = 0.05;
   int num_intervals = fabs(additional_open_angle)/delta_open_angle;
 
-  robot_msgs::JointTrajPoint additional_point = path.points.back();
+  manipulation_msgs::JointTrajPoint additional_point = path.points.back();
   for(int i=0; i<num_intervals; i++)
   {
     additional_point.positions[3] = angles::normalize_angle(last_plan_angle + i*additional_open_angle/(double)num_intervals);
@@ -499,7 +499,7 @@ void SBPLDoorPlanner::processPlan(const robot_msgs::JointTraj &path, robot_msgs:
 
 }
 
-void SBPLDoorPlanner::animate(const robot_msgs::JointTraj &path)
+void SBPLDoorPlanner::animate(const manipulation_msgs::JointTraj &path)
 {
   ros::Rate animate_rate(animate_frequency_);
   for(int i=0; i < (int) path.get_points_size(); i++)
@@ -591,7 +591,7 @@ double SBPLDoorPlanner::getHandleHingeDistance(const door_msgs::Door &door)
   return result;
 }
 
-void SBPLDoorPlanner::publishPath(const robot_msgs::JointTraj &path, std::string topic, double r, double g, double b, double a)
+void SBPLDoorPlanner::publishPath(const manipulation_msgs::JointTraj &path, std::string topic, double r, double g, double b, double a)
 {
   visualization_msgs::Polyline gui_path_msg;
   gui_path_msg.header.frame_id = global_frame_;

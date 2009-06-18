@@ -44,8 +44,8 @@
 
 /** Messages needed for trajectory control and collision map**/
 #include <robot_msgs/Pose.h>
-#include <robot_msgs/JointTraj.h>
-#include <robot_msgs/JointTrajPoint.h>
+#include <manipulation_msgs/JointTraj.h>
+#include <manipulation_msgs/JointTrajPoint.h>
 #include <robot_msgs/CollisionMap.h>
 
 // Costmap used for the map representation
@@ -129,7 +129,7 @@ class SBPLDoorPlanner : public robot_actions::Action<door_msgs::Door, door_msgs:
   
   bool initializePlannerAndEnvironment(const door_msgs::Door &door);
   
-  bool makePlan(const pr2_robot_actions::Pose2D &start, const pr2_robot_actions::Pose2D &goal, robot_msgs::JointTraj &path);
+  bool makePlan(const pr2_robot_actions::Pose2D &start, const pr2_robot_actions::Pose2D &goal, manipulation_msgs::JointTraj &path);
 
   std::vector<robot_msgs::Point> footprint_;
 
@@ -151,7 +151,7 @@ class SBPLDoorPlanner : public robot_actions::Action<door_msgs::Door, door_msgs:
 
   bool removeDoor();
 
-  void publishPath(const robot_msgs::JointTraj &path, std::string topic, double r, double g, double b, double a);
+  void publishPath(const manipulation_msgs::JointTraj &path, std::string topic, double r, double g, double b, double a);
 
   bool computeOrientedFootprint(const pr2_robot_actions::Pose2D &position, const std::vector<robot_msgs::Point>& footprint_spec, std::vector<robot_msgs::Point>& oriented_footprint);
 
@@ -171,7 +171,7 @@ class SBPLDoorPlanner : public robot_actions::Action<door_msgs::Door, door_msgs:
 
   double handle_hinge_distance_;
 
-  void animate(const robot_msgs::JointTraj &path);
+  void animate(const manipulation_msgs::JointTraj &path);
 
   tf::Stamped<tf::Pose> getGlobalHandlePosition(const door_msgs::Door &door, const double &local_angle);
 
@@ -183,7 +183,7 @@ class SBPLDoorPlanner : public robot_actions::Action<door_msgs::Door, door_msgs:
 
   std::string arm_control_topic_name_;
 
-  void dispatchControl(const robot_msgs::JointTraj &path, const door_msgs::Door &door);
+  void dispatchControl(const manipulation_msgs::JointTraj &path, const door_msgs::Door &door);
 
   double distance_goal_;
 
@@ -193,7 +193,7 @@ class SBPLDoorPlanner : public robot_actions::Action<door_msgs::Door, door_msgs:
 
   void publishGripper(const double &angle);
 
-  void processPlan(const robot_msgs::JointTraj &path, robot_msgs::JointTraj &return_path);
+  void processPlan(const manipulation_msgs::JointTraj &path, manipulation_msgs::JointTraj &return_path);
 
   bool do_control_;
 

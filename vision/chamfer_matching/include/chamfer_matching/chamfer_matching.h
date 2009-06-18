@@ -159,6 +159,7 @@ class ChamferMatching
 	float min_scale;
 	float max_scale;
 	int count_scale;
+	float use_orientation;
 
 	float truncate;
 
@@ -166,7 +167,8 @@ class ChamferMatching
 	vector<CvPoint> candidate_locations;
 
 public:
-	ChamferMatching() : min_scale(0.5), max_scale(1.5), count_scale(5), truncate(20)
+	ChamferMatching(bool use_orientation_ = false) : min_scale(0.5), max_scale(1.5), count_scale(5),
+		truncate(20), use_orientation(use_orientation_)
 	{
 
 	}
@@ -266,7 +268,7 @@ private:
      * @param alpha Weighting between distance cost and orientation cost.
      * @return Chamfer matching cost
      */
-    float localChamferDistance(IplImage* dist_img, IplImage* orientation_img, const vector<int>& templ_addr, const vector<float>& templ_orientations, CvPoint offset, float alpha = 0.7);
+    float localChamferDistance(IplImage* dist_img, IplImage* orientation_img, const vector<int>& templ_addr, const vector<float>& templ_orientations, CvPoint offset, float alpha = 0.5);
 
 
     /**

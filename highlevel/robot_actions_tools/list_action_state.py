@@ -103,8 +103,8 @@ controllers = {}
 
 def set_topic_key(topic, msg):
     global controllers
-    if (msg.status.value == msg.status.UNDEFINED):
-        controllers[topic] = "Undefined"
+    if (msg.status.value == msg.status.RESET):
+        controllers[topic] = "Reset"
     elif (msg.status.value == msg.status.SUCCESS):
         controllers[topic] = "Success"
     elif (msg.status.value == msg.status.ABORTED):

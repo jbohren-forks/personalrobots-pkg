@@ -39,9 +39,9 @@
 
 /** Messages needed for trajectory control and collision map**/
 #include <robot_msgs/Pose.h>
-#include <robot_msgs/JointTraj.h>
+#include <manipulation_msgs/JointTraj.h>
 #include <robot_msgs/CollisionMap.h>
-#include <robot_msgs/JointTrajPoint.h>
+#include <manipulation_msgs/JointTrajPoint.h>
 
 /** sbpl planner include files **/
 #include <sbpl_arm_planner/headers.h>
@@ -104,13 +104,13 @@ namespace sbpl_arm_planner_node
 
       bool initializePlannerAndEnvironment();
 
-      bool setStart(const robot_msgs::JointTrajPoint &start);
+      bool setStart(const manipulation_msgs::JointTrajPoint &start);
 
       bool setGoals(const std::vector<robot_msgs::Pose> &goals);
 
-      bool setGoals(const robot_msgs::JointTrajPoint &goal_joint_positions_);
+      bool setGoals(const manipulation_msgs::JointTrajPoint &goal_joint_positions_);
 
-      bool replan(robot_msgs::JointTraj &arm_path);
+      bool replan(manipulation_msgs::JointTraj &arm_path);
 
       void getSBPLCollisionMap();
 

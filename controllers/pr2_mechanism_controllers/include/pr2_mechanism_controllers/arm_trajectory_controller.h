@@ -56,8 +56,8 @@
 #include <pr2_mechanism_controllers/SetJointTarget.h>
 #include <pr2_mechanism_controllers/JointPosCmd.h>
 
-#include <robot_msgs/JointTraj.h>
-#include <robot_msgs/JointTrajPoint.h>
+#include <manipulation_msgs/JointTraj.h>
+#include <manipulation_msgs/JointTrajPoint.h>
 #include <diagnostic_msgs/DiagnosticMessage.h>
 
 #include <pr2_mechanism_controllers/TrajectoryStart.h>
@@ -228,9 +228,9 @@ namespace controller
 
     void deleteTrajectoryFromQueue(int id);
 
-    void addTrajectoryToQueue(robot_msgs::JointTraj new_traj, int id);
+    void addTrajectoryToQueue(manipulation_msgs::JointTraj new_traj, int id);
 
-    int createTrajectory(const robot_msgs::JointTraj &new_traj,trajectory::Trajectory &return_trajectory);
+    int createTrajectory(const manipulation_msgs::JointTraj &new_traj,trajectory::Trajectory &return_trajectory);
 
     void updateTrajectoryQueue(int last_trajectory_finish_status);
 
@@ -247,7 +247,7 @@ namespace controller
      */
     boost::mutex ros_lock_;
 
-    robot_msgs::JointTraj traj_msg_;
+    manipulation_msgs::JointTraj traj_msg_;
 
     pr2_mechanism_controllers::JointPosCmd msg_;   //The message used by the ROS callback
     ArmTrajectoryController *c_;
@@ -280,11 +280,11 @@ namespace controller
 
     int trajectory_id_;
 
-    std::vector<robot_msgs::JointTraj> joint_trajectory_vector_;
+    std::vector<manipulation_msgs::JointTraj> joint_trajectory_vector_;
 
     std::vector<int> joint_trajectory_id_;
 
-    void setTrajectoryCmdFromMsg(robot_msgs::JointTraj traj_msg);
+    void setTrajectoryCmdFromMsg(manipulation_msgs::JointTraj traj_msg);
 
     int request_trajectory_id_;
 

@@ -1,3 +1,4 @@
-template.png
-template2.png
-template3.png
+3
+template.png 203 156
+template2.png 206 141
+template3.png 211 171
