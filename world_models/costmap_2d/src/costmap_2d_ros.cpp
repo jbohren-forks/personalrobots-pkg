@@ -534,7 +534,7 @@ namespace costmap_2d {
     }
     // check global_pose timeout
     if (current_time.toSec() - global_pose.stamp_.toSec() > transform_tolerance_) {
-      ROS_ERROR("TrajcetoryPlannerROS transform timeout. Current time: %.4f, global_pose stamp: %.4f, tolerance: %.4f",
+      ROS_ERROR("Costmap2DROS transform timeout. Current time: %.4f, global_pose stamp: %.4f, tolerance: %.4f",
           current_time.toSec() ,global_pose.stamp_.toSec() ,transform_tolerance_);
       return false;
     }
