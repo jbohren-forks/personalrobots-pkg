@@ -20,6 +20,10 @@ public:
 
   // Copy constructor
   PinholeCameraModel(const PinholeCameraModel& other);
+
+  void setParameters(int width, int height, double fx, double fy,
+                     double cx, double cy);
+  void setDistortion(const double* D);
   
   // Constructor/setter with params fx, fy, ...?
   // Setter from CamInfo message?

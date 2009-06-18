@@ -18,6 +18,7 @@ public:
   //void fixAspectRatio(bool on = true);
   //void zeroTangentialDistortion(bool on = true);
   //void useDistortionCoefficients(int);
+  // setFlags?
 
   size_t views() const;
   
@@ -25,6 +26,7 @@ public:
 
   void calibrate();
 
+  /** @todo: per-view errors */
   double reprojectionError() const;
 
   PinholeCameraModel& model();

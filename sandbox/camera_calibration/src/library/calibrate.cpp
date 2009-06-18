@@ -33,14 +33,32 @@ void Calibrater::calibrate()
 
 double Calibrater::reprojectionError() const
 {
+  const CvMat K = model_.K_cv();
+  const CvMat D = model_.D_cv();
+  std::vector<CvPoint2D32f> proj_pts(image_points_.size());
+  
   int points_so_far = 0;
   double total_err = 0.0;
   
-  for (int i = 0; i < views(); ++i) {
+  for (size_t i = 0; i < views(); ++i) {
     int pt_count = point_counts_[i];
+    const CvMat obj_pts_i = cvMat(1, pt_count, CV_32FC3,
+                                  (void*)&object_points_[points_so_far]);
+    const CvMat img_pts_i = cvMat(1, pt_count, CV_32FC2,
+                                  (void*)&image_points_[points_so_far]);
+    CvMat proj_pts_i = cvMat(1, pt_count, CV_32FC2, &proj_pts[points_so_far]);
+    points_so_far += pt_count;
     
+    const CvMat rot = cvMat(1, 3, CV_32FC1, (void*)&rotation_vectors_[3*i]);
+    const CvMat trans = cvMat(1, 3, CV_32FC1, (void*)&translation_vectors_[3*i]);
+
+    cvProjectPoints2(&obj_pts_i, &rot, &trans, &K, &D, &proj_pts_i);
+
+    double err = cvNorm(&img_pts_i, &proj_pts_i, CV_L1);
+    //per_view_errors[i] = err / pt_count;
+    total_err += err;
   }
-  
+
   return total_err / points_so_far;
 }
 
