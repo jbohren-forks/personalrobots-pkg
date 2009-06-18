@@ -14,9 +14,10 @@
 
   <param name="right_arm/sbpl_planner/collision_map_topic" value="collision_map_buffer" />
   <param name="right_arm/sbpl_planner/arm_name" value="right_arm" />
-  
+
   <param name="right_arm/sbpl_planner/use_collision_map" value="true" />
 
+  <!-- node launch-prefix="gdb" pkg="sbpl_arm_planner_node" type="sbpl_arm_planner_node" name="right_arm/sbpl_planner" output="screen" respawn="false"/ -->
   <node pkg="sbpl_arm_planner_node" type="sbpl_arm_planner_node" name="right_arm/sbpl_planner" output="screen" respawn="false"/>
 
 </launch>

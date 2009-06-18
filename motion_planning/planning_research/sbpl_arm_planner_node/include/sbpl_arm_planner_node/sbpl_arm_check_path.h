@@ -38,7 +38,7 @@
 #include <tf/tf.h>
 
 /** Messages needed for trajectory control and collision map**/
-#include <manipulation_msgs/Pose.h>
+#include <robot_msgs/Pose.h>
 #include <manipulation_msgs/JointTraj.h>
 #include <robot_msgs/CollisionMap.h>
 #include <manipulation_msgs/JointTrajPoint.h>
@@ -73,7 +73,7 @@ namespace sbpl_arm_check_path
       double torso_arm_offset_z_;
 
       int num_joints_;
-    
+
       std::string collision_map_topic_;
 
       std::string node_name_;

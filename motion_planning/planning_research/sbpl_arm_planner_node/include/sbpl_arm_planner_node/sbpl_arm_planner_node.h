@@ -29,25 +29,33 @@
 #ifndef __SBPL_ARM_PLANNER_NODE_H_
 #define __SBPL_ARM_PLANNER_NODE_H_
 
-#include <iostream> 
+#include <iostream>
 
 /** ROS **/
 #include <ros/node.h>
 
 /** TF **/
 #include <tf/tf.h>
+#include <tf/tf.h>
+#include <tf/transform_listener.h>
+#include <tf/message_notifier.h>
+#include <tf/transform_datatypes.h>
 
 /** Messages needed for trajectory control and collision map**/
 #include <robot_msgs/Pose.h>
-#include <manipulation_msgs/JointTraj.h>
+#include <robot_msgs/JointTraj.h>
 #include <robot_msgs/CollisionMap.h>
-#include <manipulation_msgs/JointTrajPoint.h>
+#include <robot_msgs/JointTrajPoint.h>
+#include <motion_planning_msgs/KinematicPath.h>
+#include <motion_planning_msgs/KinematicState.h>
+#include <motion_planning_msgs/PoseConstraint.h>
 
 /** sbpl planner include files **/
 #include <sbpl_arm_planner/headers.h>
 
 /** services **/
 #include <sbpl_arm_planner_node/PlanPathSrv.h>
+#include <motion_planning_srvs/KinematicPlan.h>
 
 namespace sbpl_arm_planner_node
 {
@@ -62,9 +70,12 @@ namespace sbpl_arm_planner_node
 
       ~SBPLArmPlannerNode();
 
-      bool planPath(sbpl_arm_planner_node::PlanPathSrv::Request &req, sbpl_arm_planner_node::PlanPathSrv::Response &resp);
+      bool planKinematicPath(motion_planning_srvs::KinematicPlan::Request &req, motion_planning_srvs::KinematicPlan::Response &res);
+
 
      private:
+
+      std::string planner_type_;
 
       double torso_arm_offset_x_;
 
@@ -104,13 +115,16 @@ namespace sbpl_arm_planner_node
 
       bool initializePlannerAndEnvironment();
 
-      bool setStart(const manipulation_msgs::JointTrajPoint &start);
+      bool setStart(const motion_planning_msgs::KinematicJoint &start_state);
 
-      bool setGoals(const std::vector<robot_msgs::Pose> &goals);
+      bool setGoalPosition(const std::vector<motion_planning_msgs::PoseConstraint, std::allocator<motion_planning_msgs::PoseConstraint> > &goals);
 
-      bool setGoals(const manipulation_msgs::JointTrajPoint &goal_joint_positions_);
+      bool setGoalState(const std::vector<motion_planning_msgs::JointConstraint> &joint_constraint);
 
-      bool replan(manipulation_msgs::JointTraj &arm_path);
+      bool planToState(motion_planning_srvs::KinematicPlan::Request &req, motion_planning_srvs::KinematicPlan::Response &res);
+      bool planToPosition(motion_planning_srvs::KinematicPlan::Request &req, motion_planning_srvs::KinematicPlan::Response &res);
+
+      bool plan(motion_planning_msgs::KinematicPath &arm_path);
 
       void getSBPLCollisionMap();
 
