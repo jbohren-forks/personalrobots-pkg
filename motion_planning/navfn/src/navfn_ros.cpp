@@ -118,16 +118,19 @@ namespace navfn {
     costmap_ros_.clearRobotFootprint();
     costmap_ros_.getCostmapCopy(costmap_);
 
+    //get a handle to the global namespace
+    ros::NodeHandle global_handle;
+
     //until tf can handle transforming things that are way in the past... we'll require the goal to be in our global frame
-    if(ros_node_.mapName(goal.header.frame_id) != ros_node_.mapName(global_frame_)){
+    if(global_handle.mapName(goal.header.frame_id) != global_handle.mapName(global_frame_)){
       ROS_ERROR("The goal pose passed to this planner must be in the %s frame.  It is instead in the %s frame.", 
-                ros_node_.mapName(global_frame_).c_str(), ros_node_.mapName(goal.header.frame_id).c_str());
+                global_handle.mapName(global_frame_).c_str(), global_handle.mapName(goal.header.frame_id).c_str());
       return false;
     }
 
-    if(ros_node_.mapName(start.header.frame_id) != ros_node_.mapName(global_frame_)){
+    if(global_handle.mapName(start.header.frame_id) != global_handle.mapName(global_frame_)){
       ROS_ERROR("The start pose passed to this planner must be in the %s frame.  It is instead in the %s frame.", 
-                ros_node_.mapName(global_frame_).c_str(), ros_node_.mapName(start.header.frame_id).c_str());
+                global_handle.mapName(global_frame_).c_str(), global_handle.mapName(start.header.frame_id).c_str());
       return false;
     }
 
