@@ -46,7 +46,7 @@ public:
   const CvMat D_cv() const;
 
   // move principal point, update distortion matrices...
-  // NOTE: distortion params won't really be right...
+  // NOTE: distortion params won't really be right, will they?
   PinholeCameraModel withRoi(int x, int y, int width, int height) const;
 
   // rescale
