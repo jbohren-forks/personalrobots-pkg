@@ -253,12 +253,6 @@ StowPlug::Active{
   // Must not be plugged in
   contained_by(plugged_in.False);
 }
-// Switch arms clear state to false when we tuck the arms
-SafetyTuckArms::Inactive{
-  if(status == SUCCESS){
-    starts_during(arms_clear.False);
-  }
-}
 // The plug must be stowed whenever we move the base
 MoveBase::Active{
   contained_by(plug_stowed.True);
@@ -295,6 +289,10 @@ PlugIn::Active{
 ArmsClear::True{
   met_by(plugs_untuck_arms.Active cmd);
   leq(cmd.max_duration, PLUGS_UNTUCK_ARMS_DURATION_BOUND);
+}
+// The arms are not clear if they are tucked
+ArmsTucked::True{
+  contained_by(arms_clear.False);
 }
 // Update PlugState
 DetectPlugOnBase::Inactive{
