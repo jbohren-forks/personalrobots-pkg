@@ -31,7 +31,6 @@ HeadController all_head_controllers;
 
 // RightGripper Controller
 class RightGripperController extends MechanismController{};
-RightGripperController gripper_controller = new RightGripperController();
 RightGripperController r_gripper_effort_controller = new RightGripperController();
 RightGripperController r_gripper_position_controller = new RightGripperController();
 RightGripperController no_controller_right_gripper = new RightGripperController();
