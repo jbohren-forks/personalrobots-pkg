@@ -70,7 +70,7 @@ void planning_environment::CollisionSpaceMonitor::setupCSM(void)
 
 bool planning_environment::CollisionSpaceMonitor::isMapUpdated(double sec) const
 {
-    if (sec > 0 && lastMapUpdate_ < ros::Time::now() - ros::Duration(sec))
+    if (sec > 0.0 && lastMapUpdate_ < ros::Time::now() - ros::Duration(sec))
 	return false;
     else
 	return true;
