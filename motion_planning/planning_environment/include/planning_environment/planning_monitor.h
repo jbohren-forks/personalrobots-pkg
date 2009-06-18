@@ -56,8 +56,8 @@ namespace planning_environment
 	
 	PlanningMonitor(CollisionModels *cm, std::string frame_id) : CollisionSpaceMonitor(static_cast<CollisionModels*>(cm), frame_id)
 	{
-	    nh_.param("~refresh_interval_collision_map", intervalCollisionMap_, 3.0);
-	    nh_.param("~refresh_interval_kinematic_state", intervalState_, 0.5);
+	    nh_.param("~refresh_interval_collision_map", intervalCollisionMap_, 0.0);
+	    nh_.param("~refresh_interval_kinematic_state", intervalState_, 0.0);
 	}
 	
 	PlanningMonitor(CollisionModels *cm) : CollisionSpaceMonitor(static_cast<CollisionModels*>(cm))

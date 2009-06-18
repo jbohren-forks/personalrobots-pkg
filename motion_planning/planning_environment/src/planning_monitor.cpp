@@ -41,13 +41,13 @@ bool planning_environment::PlanningMonitor::isEnvironmentSafe(void) const
 {
     if (!isMapUpdated(intervalCollisionMap_))
     {
-        ROS_WARN("Planning is not safe: map is not up to date");
+        ROS_WARN("Planning is not safe: map not updated in the last %f seconds", intervalCollisionMap_);
         return false;
     }
   
     if (!isStateUpdated(intervalState_))
     {
-        ROS_WARN("Planning is not safe: robot state is not up to date");
+        ROS_WARN("Planning is not safe: robot state not updated in the last %f seconds", intervalState_);
         return false;
     }
     return true;
