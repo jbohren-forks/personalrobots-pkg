@@ -400,12 +400,9 @@ void ChamferMatching::addTemplateFromImage(IplImage* templ)
 
 void ChamferMatching::addTemplateFromImage(IplImage* templ, float scale)
 {
-
-//	printf("Template height: %d\n", templ->height);
-//	printf("Real height: %f\n", real_height);
-
 	ChamferTemplate* cmt = new ChamferTemplate(templ, scale);
 	templates.push_back(cmt);
+	printf("Added a new template\n");
 
 //	for(int i = 0; i < count_scale; ++i) {
 //		float scale = min_scale + (max_scale - min_scale)*i/count_scale;
@@ -723,22 +720,21 @@ void ChamferMatching::matchTemplates(IplImage* dist_img, IplImage* orientation_i
 {
 	int width = dist_img->width;
 
-	printf("Number of locations: %d\n", locations.size());
-
-
 	for (size_t k=0;k<locations.size();++k) {
 
 		CvPoint best_offset;
 		float best_cost = -1;
 		ChamferTemplate* best_template = NULL;
 
-
 		for(size_t i = 0; i < templates.size(); i++) {
 
-			if (scales[k]>0) {
+			printf("Trying template: %d\n", i);
+
+
+			if (scales[k]>0 && templates[i]->template_scale>0) {
 
 				ChamferTemplate* tpl_resized = new ChamferTemplate(*templates[i]);
-				tpl_resized->rescale(scales[k]);
+				tpl_resized->rescale(scales[k]/templates[i]->template_scale);
 				ChamferTemplate& tpl = *tpl_resized;
 
 				int x_start = tpl.center.x;
@@ -753,7 +749,6 @@ void ChamferMatching::matchTemplates(IplImage* dist_img, IplImage* orientation_i
 				for (size_t j= 0; j<coords.size();++j) {
 					templ_addr.push_back(coords[j].second*width+coords[j].first);
 				}
-
 
 				int region = 20;
 				int step = 5;
@@ -771,7 +766,7 @@ void ChamferMatching::matchTemplates(IplImage* dist_img, IplImage* orientation_i
 						if (best_cost<0 || cost<best_cost) {
 							best_cost = cost;
 							best_offset = offset;
-							best_template = templates[i];
+							best_template = tpl_resized;
 						}
 
 					}
