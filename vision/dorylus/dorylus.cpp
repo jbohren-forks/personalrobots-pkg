@@ -23,20 +23,20 @@ float newtonSingle(const Function &fcn, const Gradient &grad, const Hessian &hes
 
 void DorylusDataset::setObjs(const vector<object> &objs)
 {
-  //num_class_objs_ contains the number of bg objs.  classes_ does NOT, nor does nClasses_
+  //num_objs_of_class_ contains the number of bg objs.  classes_ does NOT, nor does nClasses_
   objs_ = objs;
-  num_class_objs_.clear();
+  num_objs_of_class_.clear();
   classes_.clear();
 
-  // -- Get num_class_objs_, classes_, and nClasses_.
+  // -- Get num_objs_of_class_, classes_, and nClasses_.
   for(unsigned int m=0; m<objs.size(); m++) {
     // Don't count label=0 as a class!
-    if(num_class_objs_.find(objs[m].label) == num_class_objs_.end() && objs[m].label != 0)
+    if(num_objs_of_class_.find(objs[m].label) == num_objs_of_class_.end() && objs[m].label != 0)
       classes_.push_back(objs[m].label);
-    num_class_objs_[objs[m].label] = 0;
+    num_objs_of_class_[objs[m].label] = 0;
   }
   for(unsigned int m=0; m<objs.size(); m++) {
-    num_class_objs_[objs[m].label]++;
+    num_objs_of_class_[objs[m].label]++;
   }
   nClasses_ = classes_.size();
 
@@ -73,7 +73,7 @@ string DorylusDataset::displayFeatures() {
       oss << v;
     }
   }
-  oss << "ymc_: " << endl << ymc_ << endl;
+
   return oss.str();
 }
   
@@ -108,8 +108,8 @@ std::string DorylusDataset::status()
   oss << "  nClasses: " << nClasses_ << "\n";
   oss << "  nObjects: " << objs_.size() << "\n";
   oss << "  nDescriptors: " << objs_[0].features.size() << "\n";
-  oss << "  num_class_objs_: " << "\n";
-  for(map<int, unsigned int>::iterator it=num_class_objs_.begin(); it != num_class_objs_.end(); it++) {
+  oss << "  num_objs_of_class_: " << "\n";
+  for(map<int, unsigned int>::iterator it=num_objs_of_class_.begin(); it != num_objs_of_class_.end(); it++) {
     oss << "    class " << (*it).first << ": " << (*it).second << " objects. \n";
   }
 
@@ -249,45 +249,6 @@ bool DorylusDataset::load(string filename, bool quiet)
   return true;
 }
 
-
-bool DorylusDataset::testSave()
-{
-  cout << "Running save test." << endl;
-  DorylusDataset dd;
-
-  map<string, Matrix> f;
-  Matrix spin(3,2);
-  spin(1,1) = 1;
-  spin(2,1) = 2;
-  spin(3,1) = 3;
-  spin(1,2) = 4;
-  spin(2,2) = 5;
-  spin(3,2) = 6;
-  Matrix sift(3,2); sift = 2.2;
-  sift(1,1) = 101;
-  sift(2,2) = 102;
-  f["spinimg"] = spin;
-  f["sift"] = sift;
-
-  object obj;
-  obj.label = 0;
-  obj.features = f;
-  vector<object> objs;
-  objs.push_back(obj);
-  //obj.label = 1;
-  //objs.push_back(obj);
-  dd.setObjs(objs);
-
-  cout << dd.status() << endl;
-  dd.save(string("test.dd"));
-
-  DorylusDataset dd2;
-  dd2.load(string("test.dd"));
-  dd2.save(string("test2.dd"));
-  cout << dd2.status() << endl;
-
-  return true;
-}
 
 bool Dorylus::save(string filename, string *user_data_str)
 {
@@ -467,14 +428,9 @@ bool Dorylus::load(string filename, bool quiet, string *user_data_str)
 }
 
 
-void Dorylus::loadDataset(DorylusDataset *dd) {
+void Dorylus::useDataset(DorylusDataset *dd) {
   dd_ = dd;
-//   weights_ = Matrix(dd_->nClasses_, dd_->objs_.size());
-//   for(int i=1; i<=weights_.Nrows(); i++) {
-//     for(int j=1; j<=weights_.Ncols(); j++) {
-//       weights_(i,j) = 1;
-//     }
-//   }
+
   log_weights_ = Matrix(dd_->nClasses_, dd_->objs_.size());
   for(int i=1; i<=log_weights_.Nrows(); i++) {
     for(int j=1; j<=log_weights_.Ncols(); j++) {
@@ -482,24 +438,9 @@ void Dorylus::loadDataset(DorylusDataset *dd) {
     }
   }
 
-  //normalizeWeights();
  nClasses_ = dd_->nClasses_;
  classes_ = dd->classes_;
 }
-
-
-// void Dorylus::normalizeWeights() {
-//   Matrix n(1,1); n = (1 / weights_.Sum());
-//   weights_ = KP(weights_, n);
-
-//   // -- Make sure no weights are zero.
-//   for(int i=1; i<weights_.Nrows(); i++) {
-//     for(int j=1; j<weights_.Ncols(); j++) {
-//       if(weights_(i,j) == 0)
-// 	weights_(i,j) = FLT_MIN;
-//     }
-//   }
-//}
 
 vector<weak_classifier*> Dorylus::findActivatedWCs(const string &descriptor, const Matrix &pt) {
   vector<weak_classifier> &wcs = battery_[descriptor];
@@ -512,17 +453,46 @@ vector<weak_classifier*> Dorylus::findActivatedWCs(const string &descriptor, con
   return activated;
 }
 
+void Dorylus::train(int nCandidates, int max_secs, int max_wcs, void (*debugHook)(weak_classifier)) {
+  time_t start, end;
+  time(&start);
+  
+  cout << "Objective: " << computeObjective() << endl;
+  cout << "Objective (from classify()): " << classify(*dd_) << endl;
+    	  
+  map<string, float> max_thetas = computeMaxThetas(*dd_);
+  int wcs=0;
+  while(true) {
+    bool found_better = learnWC(nCandidates, max_thetas);
+    if(!found_better) {
+      continue;
+    }
+    wcs++;
+    time(&end);
+    debugHook(*pwcs_.back());
+    cout << "Objective: " << computeObjective() << endl;
+
+    if(difftime(end,start) > max_secs)
+      break;
+    if(wcs >= max_wcs)
+      break;
+  }
+
+  cout << "Done training." << endl;
+}
+
+
 bool Dorylus::learnWC(int nCandidates, map<string, float> max_thetas, vector<string> *desc_ignore) {
   int nThetas = 100;
-  assert(dd_!=0);
+  assert(dd_!=NULL);
   weak_classifier best;
   time_t start, end;
   time(&start);
 
   // -- Get a weights matrix that does not include the bg pts.
-  map<int, unsigned int>:: iterator it = dd_->num_class_objs_.begin();
+  map<int, unsigned int>:: iterator it = dd_->num_objs_of_class_.begin();
   int nNonBGObjs = 0;
-  for(; it != dd_->num_class_objs_.end(); it++) {
+  for(; it != dd_->num_objs_of_class_.end(); it++) {
     if(it->first == 0)
       continue;
     nNonBGObjs += it->second;
@@ -616,22 +586,17 @@ bool Dorylus::learnWC(int nCandidates, map<string, float> max_thetas, vector<str
       dists.push_back(Matrix(1, f.Ncols()));
       nPts += f.Ncols();
     }
-    //int chunk = nPts / 2;
+
     int j=0,k=0;
     Matrix *f;
 
-    //#pragma omp parallel default(shared) private(j,k,f)
-    {
-
-      //#pragma omp for schedule(dynamic,chunk)
-      for(j=0; j<(int)dd_->objs_.size(); j++) {
-	f = &dd_->objs_[j].features[cand[i].descriptor];
-	for(k=1; k<=f->Ncols(); k++) {
-	  dists[j](1, k) = euc(f->Column(k), cand[i].center);
-	}
+    for(j=0; j<(int)dd_->objs_.size(); j++) {
+      f = &dd_->objs_[j].features[cand[i].descriptor];
+      for(k=1; k<=f->Ncols(); k++) {
+	dists[j](1, k) = euc(f->Column(k), cand[i].center);
       }
-
     }
+
 
     cand[i].theta = 0;
     for(int iTheta=0; iTheta<nThetas; iTheta++) {
