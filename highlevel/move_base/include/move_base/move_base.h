@@ -61,10 +61,10 @@ namespace move_base {
     public:
       /**
        * @brief  Constructor for the actions
-       * @param ros_node A reference to the ros node used 
+       * @param name The name of the action
        * @param tf A reference to a TransformListener
        */
-      MoveBase(ros::Node& ros_node, tf::TransformListener& tf);
+      MoveBase(std::string name, tf::TransformListener& tf);
 
       /**
        * @brief  Destructor - Cleans up
@@ -118,7 +118,7 @@ namespace move_base {
 
       bool tryPlan(robot_msgs::PoseStamped goal);
 
-      ros::Node& ros_node_;
+      ros::NodeHandle ros_node_;
       tf::TransformListener& tf_;
       nav_robot_actions::BaseLocalPlanner* tc_;
       costmap_2d::Costmap2DROS* planner_costmap_ros_, *controller_costmap_ros_;
@@ -137,6 +137,7 @@ namespace move_base {
       bool done_half_rotation_, done_full_rotation_;
       bool escaping_;
       ros::Time last_valid_control_;
+      ros::Publisher vis_pub_, vel_pub_;
 
   };
 };

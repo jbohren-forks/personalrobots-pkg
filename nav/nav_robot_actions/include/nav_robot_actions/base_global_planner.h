@@ -45,7 +45,8 @@
 namespace nav_robot_actions {
   class BaseGlobalPlanner{
     public:
-      virtual bool makePlan(const robot_msgs::PoseStamped& goal, std::vector<robot_msgs::PoseStamped>& plan) = 0;
+      virtual bool makePlan(const robot_msgs::PoseStamped& start, 
+          const robot_msgs::PoseStamped& goal, std::vector<robot_msgs::PoseStamped>& plan) = 0;
 
     protected:
       BaseGlobalPlanner(){}
@@ -55,17 +56,16 @@ namespace nav_robot_actions {
   typedef Loki::SingletonHolder
   <
     Loki::Factory< BaseGlobalPlanner, std::string, 
-      Loki::Seq< ros::Node&, 
-      tf::TransformListener&, 
+      Loki::Seq< std::string, 
       costmap_2d::Costmap2DROS&  > >,
     Loki::CreateUsingNew,
     Loki::LongevityLifetime::DieAsSmallObjectParent
   > BGPFactory;
 
 #define ROS_REGISTER_BGP(c) \
-  nav_robot_actions::BaseGlobalPlanner* ROS_New_##c(ros::Node& ros_node, tf::TransformListener& tf, \
+  nav_robot_actions::BaseGlobalPlanner* ROS_New_##c(std::string name, \
       costmap_2d::Costmap2DROS& costmap_ros){ \
-    return new c(ros_node, tf, costmap_ros); \
+    return new c(name, costmap_ros); \
   }  \
   class RosBGP##c { \
     public: \

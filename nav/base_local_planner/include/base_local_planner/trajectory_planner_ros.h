@@ -78,12 +78,12 @@ namespace base_local_planner {
     public:
       /**
        * @brief  Constructs the ros wrapper
-       * @param ros_node The node that is running the controller, used to get parameters from the parameter server
+       * @param name The name to give this instance of the trajectory planner
        * @param tf A reference to a transform listener
        * @param costmap The cost map to use for assigning costs to trajectories
        * @param footprint_spec A polygon representing the footprint of the robot. (Must be convex)
        */
-      TrajectoryPlannerROS(ros::Node& ros_node, tf::TransformListener& tf,
+      TrajectoryPlannerROS(std::string name, tf::TransformListener& tf,
           costmap_2d::Costmap2DROS& costmap_ros, std::vector<robot_msgs::Point> footprint_spec);
 
       /**
@@ -194,19 +194,19 @@ namespace base_local_planner {
       /**
        * @brief  Publish a plan for visualization purposes
        */
-      void publishPlan(const std::vector<robot_msgs::PoseStamped>& path, std::string topic, double r, double g, double b, double a);
+      void publishPlan(const std::vector<robot_msgs::PoseStamped>& path, const ros::Publisher& pub, double r, double g, double b, double a);
 
-      void odomCallback();
+      void odomCallback(const deprecated_msgs::RobotBase2DOdom::ConstPtr& msg);
 
       WorldModel* world_model_; ///< @brief The world model that the controller will use
       TrajectoryPlanner* tc_; ///< @brief The trajectory controller
       costmap_2d::Costmap2DROS& costmap_ros_; ///< @brief The ROS wrapper for the costmap the controller will use
       costmap_2d::Costmap2D costmap_; ///< @brief The costmap the controller will use
       tf::TransformListener& tf_; ///< @brief Used for transforming point clouds
-      ros::Node& ros_node_; ///< @brief The ros node we're running under
+      ros::NodeHandle ros_node_; ///< @brief The ros node we're running under
       std::string global_frame_; ///< @brief The frame in which the controller will run
       double max_sensor_range_; ///< @brief Keep track of the effective maximum range of our sensors
-      deprecated_msgs::RobotBase2DOdom odom_msg_, base_odom_; ///< @brief Used to get the velocity of the robot
+      deprecated_msgs::RobotBase2DOdom base_odom_; ///< @brief Used to get the velocity of the robot
       std::string robot_base_frame_; ///< @brief Used as the base frame id of the robot
       double rot_stopped_velocity_, trans_stopped_velocity_;
       double xy_goal_tolerance_, yaw_goal_tolerance_, min_in_place_vel_th_;
@@ -216,6 +216,8 @@ namespace base_local_planner {
       std::vector<robot_msgs::PoseStamped> global_plan_;
       double transform_tolerance_, update_plan_tolerance_;
       bool prune_plan_;
+      ros::Publisher footprint_pub_, g_plan_pub_, l_plan_pub_;
+      ros::Subscriber odom_sub_;
   };
 
 };

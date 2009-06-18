@@ -1,19 +1,6 @@
 footprint: [[-0.325, -0.325], [-0.325, 0.325], [0.325, 0.325], [0.325, -0.325]]
-base_local_planner:
+TrajectoryPlannerROS:
   #Independent settings for the local costmap
-  costmap:
-    inscribed_radius: 0.325
-    global_frame: /map
-    robot_base_frame: base_link
-    update_frequency: 5.0
-    publish_frequency: 2.0
-    static_map: false
-    rolling_window: true
-    width: 6.0
-    height: 6.0
-    resolution: 0.025
-    origin_x: 0.0
-    origin_y: 0.0
   transform_tolerance: 0.3
   costmap_visualization_rate: 0.0
   world_model: costmap

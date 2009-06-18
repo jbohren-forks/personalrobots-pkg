@@ -50,9 +50,9 @@ namespace base_local_planner {
   //register this base local planner with the BaseLocalPlanner factory
   ROS_REGISTER_BLP(TrajectoryPlannerROS);
 
-  TrajectoryPlannerROS::TrajectoryPlannerROS(ros::Node& ros_node, tf::TransformListener& tf, 
+  TrajectoryPlannerROS::TrajectoryPlannerROS(std::string name, tf::TransformListener& tf, 
       Costmap2DROS& costmap_ros, std::vector<Point> footprint_spec) 
-    : world_model_(NULL), tc_(NULL), costmap_ros_(costmap_ros), tf_(tf), ros_node_(ros_node), 
+    : world_model_(NULL), tc_(NULL), costmap_ros_(costmap_ros), tf_(tf), ros_node_(name), 
     rot_stopped_velocity_(1e-2), trans_stopped_velocity_(1e-2), goal_reached_(true), costmap_publisher_(NULL){
     double acc_lim_x, acc_lim_y, acc_lim_theta, sim_time, sim_granularity;
     int vx_samples, vtheta_samples;
@@ -66,73 +66,71 @@ namespace base_local_planner {
     costmap_ros_.getCostmapCopy(costmap_);
 
     //adverstise the fact that we'll publish the robot footprint
-    ros_node.advertise<visualization_msgs::Polyline>("~base_local_planner/robot_footprint", 1);
-    ros_node.advertise<visualization_msgs::Polyline>("~base_local_planner/global_plan", 1);
-    ros_node.advertise<visualization_msgs::Polyline>("~base_local_planner/local_plan", 1);
+    footprint_pub_ = ros_node_.advertise<visualization_msgs::Polyline>("~robot_footprint", 1);
+    g_plan_pub_ = ros_node_.advertise<visualization_msgs::Polyline>("~global_plan", 1);
+    l_plan_pub_ = ros_node_.advertise<visualization_msgs::Polyline>("~local_plan", 1);
 
-    ros_node.param("~base_local_planner/costmap/global_frame", global_frame_, string("/map"));
-    ros_node.param("~base_local_planner/costmap/robot_base_frame", robot_base_frame_, string("base_link"));
-    ros_node.param("~base_local_planner/transform_tolerance", transform_tolerance_, 0.2);
-    ros_node.param("~base_local_planner/update_plan_tolerance", update_plan_tolerance_, 1.0);
-    ros_node.param("~base_local_planner/prune_plan", prune_plan_, true);
+    global_frame_ = costmap_ros_.globalFrame();
+    robot_base_frame_ = costmap_ros_.baseFrame();
+    ros_node_.param("~transform_tolerance", transform_tolerance_, 0.2);
+    ros_node_.param("~update_plan_tolerance", update_plan_tolerance_, 1.0);
+    ros_node_.param("~prune_plan", prune_plan_, true);
 
     double map_publish_frequency;
-    ros_node.param("~base_local_planner/costmap_visualization_rate", map_publish_frequency, 2.0);
-    costmap_publisher_ = new costmap_2d::Costmap2DPublisher(ros_node, map_publish_frequency, global_frame_, "base_local_planner");
+    ros_node_.param("~costmap_visualization_rate", map_publish_frequency, 2.0);
+    costmap_publisher_ = new costmap_2d::Costmap2DPublisher(ros_node_, map_publish_frequency, global_frame_);
 
     if(costmap_publisher_->active())
       costmap_publisher_->updateCostmapData(costmap_);
 
-    //we need to make sure that the transform between the robot base frame and the global frame is available
-    while(!tf_.canTransform(global_frame_, robot_base_frame_, ros::Time(), ros::Duration(5.0))){
-      ROS_WARN("Waiting on transform from %s to %s to become available before running the controller", robot_base_frame_.c_str(), global_frame_.c_str());
-    }
-
-    ros_node.param("~base_local_planner/yaw_goal_tolerance", yaw_goal_tolerance_, 0.05);
-    ros_node.param("~base_local_planner/xy_goal_tolerance", xy_goal_tolerance_, 0.10);
+    ros_node_.param("~yaw_goal_tolerance", yaw_goal_tolerance_, 0.05);
+    ros_node_.param("~xy_goal_tolerance", xy_goal_tolerance_, 0.10);
 
     string odom_topic;
-    ros_node.param("~base_local_planner/odom_topic", odom_topic, string("odom"));
+    ros_node_.param("~odom_topic", odom_topic, string("odom"));
     // Subscribe to odometry messages to get global pose
-    ros_node.subscribe(odom_topic, odom_msg_, &TrajectoryPlannerROS::odomCallback, this, 1);
+    
+    //to get odometery information, we need to get a handle to the topic in the global namespace of the node
+    ros::NodeHandle global_node;
+    odom_sub_ = global_node.subscribe<deprecated_msgs::RobotBase2DOdom>(odom_topic, 1, boost::bind(&TrajectoryPlannerROS::odomCallback, this, _1));
 
     //we'll get the parameters for the robot radius from the costmap we're associated with
-    ros_node.param("~base_local_planner/costmap/inscribed_radius", inscribed_radius_, 0.325);
-    ros_node.param("~base_local_planner/costmap/circumscribed_radius", circumscribed_radius_, 0.46);
-    ros_node.param("~base_local_planner/costmap/inflation_radius", inflation_radius_, 0.55);
+    inscribed_radius_ = costmap_ros_.inscribedRadius();
+    circumscribed_radius_ = costmap_ros_.circumscribedRadius();
+    inflation_radius_ = costmap_ros_.inflationRadius();
     
-    ros_node.param("~base_local_planner/acc_lim_x", acc_lim_x, 2.5);
-    ros_node.param("~base_local_planner/acc_lim_y", acc_lim_y, 2.5);
-    ros_node.param("~base_local_planner/acc_lim_th", acc_lim_theta, 3.2);
-    ros_node.param("~base_local_planner/sim_time", sim_time, 1.0);
-    ros_node.param("~base_local_planner/sim_granularity", sim_granularity, 0.025);
-    ros_node.param("~base_local_planner/vx_samples", vx_samples, 20);
-    ros_node.param("~base_local_planner/vtheta_samples", vtheta_samples, 20);
-    ros_node.param("~base_local_planner/path_distance_bias", pdist_scale, 0.6);
-    ros_node.param("~base_local_planner/goal_distance_bias", gdist_scale, 0.8);
-    ros_node.param("~base_local_planner/occdist_scale", occdist_scale, 0.2);
-    ros_node.param("~base_local_planner/heading_lookahead", heading_lookahead, 0.325);
-    ros_node.param("~base_local_planner/oscillation_reset_dist", oscillation_reset_dist, 0.05);
-    ros_node.param("~base_local_planner/escape_reset_dist", escape_reset_dist, 0.10);
-    ros_node.param("~base_local_planner/escape_reset_theta", escape_reset_theta, M_PI_4);
-    ros_node.param("~base_local_planner/holonomic_robot", holonomic_robot, true);
-    ros_node.param("~base_local_planner/max_vel_x", max_vel_x, 0.5);
-    ros_node.param("~base_local_planner/min_vel_x", min_vel_x, 0.1);
-    ros_node.param("~base_local_planner/max_vel_th", max_vel_th, 1.0);
-    ros_node.param("~base_local_planner/min_vel_th", min_vel_th, -1.0);
-    ros_node.param("~base_local_planner/min_in_place_vel_th", min_in_place_vel_th_, 0.4);
-    ros_node.param("~base_local_planner/world_model", world_model_type, string("costmap"));
-    ros_node.param("~base_local_planner/dwa", dwa, false);
-    ros_node.param("~base_local_planner/heading_scoring", heading_scoring, false);
-    ros_node.param("~base_local_planner/heading_scoring_timestep", heading_scoring_timestep, 0.1);
-    ros_node.param("~base_local_planner/simple_attractor", simple_attractor, false);
+    ros_node_.param("~acc_lim_x", acc_lim_x, 2.5);
+    ros_node_.param("~acc_lim_y", acc_lim_y, 2.5);
+    ros_node_.param("~acc_lim_th", acc_lim_theta, 3.2);
+    ros_node_.param("~sim_time", sim_time, 1.0);
+    ros_node_.param("~sim_granularity", sim_granularity, 0.025);
+    ros_node_.param("~vx_samples", vx_samples, 20);
+    ros_node_.param("~vtheta_samples", vtheta_samples, 20);
+    ros_node_.param("~path_distance_bias", pdist_scale, 0.6);
+    ros_node_.param("~goal_distance_bias", gdist_scale, 0.8);
+    ros_node_.param("~occdist_scale", occdist_scale, 0.2);
+    ros_node_.param("~heading_lookahead", heading_lookahead, 0.325);
+    ros_node_.param("~oscillation_reset_dist", oscillation_reset_dist, 0.05);
+    ros_node_.param("~escape_reset_dist", escape_reset_dist, 0.10);
+    ros_node_.param("~escape_reset_theta", escape_reset_theta, M_PI_4);
+    ros_node_.param("~holonomic_robot", holonomic_robot, true);
+    ros_node_.param("~max_vel_x", max_vel_x, 0.5);
+    ros_node_.param("~min_vel_x", min_vel_x, 0.1);
+    ros_node_.param("~max_vel_th", max_vel_th, 1.0);
+    ros_node_.param("~min_vel_th", min_vel_th, -1.0);
+    ros_node_.param("~min_in_place_vel_th", min_in_place_vel_th_, 0.4);
+    ros_node_.param("~world_model", world_model_type, string("costmap"));
+    ros_node_.param("~dwa", dwa, false);
+    ros_node_.param("~heading_scoring", heading_scoring, false);
+    ros_node_.param("~heading_scoring_timestep", heading_scoring_timestep, 0.1);
+    ros_node_.param("~simple_attractor", simple_attractor, false);
 
     //parameters for using the freespace controller
     double min_pt_separation, max_obstacle_height, grid_resolution;
-    ros_node.param("~base_local_planner/point_grid/max_sensor_range", max_sensor_range_, 2.0);
-    ros_node.param("~base_local_planner/point_grid/min_pt_separation", min_pt_separation, 0.01);
-    ros_node.param("~base_local_planner/point_grid/max_obstacle_height", max_obstacle_height, 2.0);
-    ros_node.param("~base_local_planner/point_grid/grid_resolution", grid_resolution, 0.2);
+    ros_node_.param("~point_grid/max_sensor_range", max_sensor_range_, 2.0);
+    ros_node_.param("~point_grid/min_pt_separation", min_pt_separation, 0.01);
+    ros_node_.param("~point_grid/max_obstacle_height", max_obstacle_height, 2.0);
+    ros_node_.param("~point_grid/grid_resolution", grid_resolution, 0.2);
 
     ROS_ASSERT_MSG(world_model_type == "costmap", "At this time, only costmap world models are supported by this controller");
     world_model_ = new CostmapModel(costmap_); 
@@ -205,16 +203,16 @@ namespace base_local_planner {
 
   }
 
-  void TrajectoryPlannerROS::odomCallback(){
+  void TrajectoryPlannerROS::odomCallback(const deprecated_msgs::RobotBase2DOdom::ConstPtr& msg){
     base_odom_.lock();
 
     try
     {
-      tf::Stamped<btVector3> v_in(btVector3(odom_msg_.vel.x, odom_msg_.vel.y, 0), ros::Time(), odom_msg_.header.frame_id), v_out;
-      tf_.transformVector(robot_base_frame_, ros::Time(), v_in, odom_msg_.header.frame_id, v_out);
+      tf::Stamped<btVector3> v_in(btVector3(msg->vel.x, msg->vel.y, 0), ros::Time(), msg->header.frame_id), v_out;
+      tf_.transformVector(robot_base_frame_, ros::Time(), v_in, msg->header.frame_id, v_out);
       base_odom_.vel.x = v_in.x();
       base_odom_.vel.y = v_in.y();
-      base_odom_.vel.th = odom_msg_.vel.th;
+      base_odom_.vel.th = msg->vel.th;
     }
     catch(tf::LookupException& ex)
     {
@@ -303,34 +301,9 @@ namespace base_local_planner {
     goal_reached_ = false;
 
     std::vector<robot_msgs::PoseStamped> local_plan;
-    tf::Stamped<tf::Pose> robot_pose, global_pose;
-    robot_pose.setIdentity();
-    robot_pose.frame_id_ = robot_base_frame_;
-    robot_pose.stamp_ = ros::Time();
-    ros::Time current_time = ros::Time::now(); // save time for checking tf delay later
-
-    //get the global pose of the robot
-    try{
-      tf_.transformPose(global_frame_, robot_pose, global_pose);
-    }
-    catch(tf::LookupException& ex) {
-      ROS_ERROR("No Transform available Error: %s\n", ex.what());
+    tf::Stamped<tf::Pose> global_pose;
+    if(!costmap_ros_.getRobotPose(global_pose))
       return false;
-    }
-    catch(tf::ConnectivityException& ex) {
-      ROS_ERROR("Connectivity Error: %s\n", ex.what());
-      return false;
-    }
-    catch(tf::ExtrapolationException& ex) {
-      ROS_ERROR("Extrapolation Error: %s\n", ex.what());
-      return false;
-    }
-    // check global_pose timeout
-    if (current_time.toSec() - global_pose.stamp_.toSec() > transform_tolerance_) {
-      ROS_ERROR("TrajectoryPlannerROS transform timeout. Current time: %.4f, global_pose stamp: %.4f, tolerance: %.4f",
-          current_time.toSec() ,global_pose.stamp_.toSec() ,transform_tolerance_);
-      return false;
-    }
 
     std::vector<robot_msgs::PoseStamped> transformed_plan;
     //get the global plan in our frame
@@ -414,8 +387,8 @@ namespace base_local_planner {
 
       //publish the robot footprint and an empty plan because we've reached our goal position
       publishFootprint(global_pose);
-      publishPlan(transformed_plan, "global_plan", 0.0, 1.0, 0.0, 0.0);
-      publishPlan(local_plan, "local_plan", 0.0, 0.0, 1.0, 0.0);
+      publishPlan(transformed_plan, g_plan_pub_, 0.0, 1.0, 0.0, 0.0);
+      publishPlan(local_plan, l_plan_pub_, 0.0, 0.0, 1.0, 0.0);
 
       //we don't actually want to run the controller when we're just rotating to goal
       return true;
@@ -445,8 +418,8 @@ namespace base_local_planner {
     if(path.cost_ < 0){
       local_plan.clear();
       publishFootprint(global_pose);
-      publishPlan(transformed_plan, "global_plan", 0.0, 1.0, 0.0, 0.0);
-      publishPlan(local_plan, "local_plan", 0.0, 0.0, 1.0, 0.0);
+      publishPlan(transformed_plan, g_plan_pub_, 0.0, 1.0, 0.0, 0.0);
+      publishPlan(local_plan, l_plan_pub_, 0.0, 0.0, 1.0, 0.0);
       return false;
     }
 
@@ -463,8 +436,8 @@ namespace base_local_planner {
 
     //publish information to the visualizer
     publishFootprint(global_pose);
-    publishPlan(transformed_plan, "global_plan", 0.0, 1.0, 0.0, 0.0);
-    publishPlan(local_plan, "local_plan", 0.0, 0.0, 1.0, 0.0);
+    publishPlan(transformed_plan, g_plan_pub_, 0.0, 1.0, 0.0, 0.0);
+    publishPlan(local_plan, l_plan_pub_, 0.0, 0.0, 1.0, 0.0);
     return true;
   }
 
@@ -507,10 +480,10 @@ namespace base_local_planner {
       footprint_msg.points[i].y = footprint[i].y;
       footprint_msg.points[i].z = footprint[i].z;
     }
-    ros_node_.publish("~base_local_planner/robot_footprint", footprint_msg);
+    footprint_pub_.publish(footprint_msg);
   }
 
-  void TrajectoryPlannerROS::publishPlan(const std::vector<robot_msgs::PoseStamped>& path, std::string topic, double r, double g, double b, double a){
+  void TrajectoryPlannerROS::publishPlan(const std::vector<robot_msgs::PoseStamped>& path, const ros::Publisher& pub, double r, double g, double b, double a){
     visualization_msgs::Polyline gui_path_msg;
     gui_path_msg.header.frame_id = global_frame_;
 
@@ -531,6 +504,6 @@ namespace base_local_planner {
     gui_path_msg.color.b = b;
     gui_path_msg.color.a = a;
 
-    ros_node_.publish("~base_local_planner/" + topic, gui_path_msg);
+    pub.publish(gui_path_msg);
   }
 };

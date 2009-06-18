@@ -37,7 +37,7 @@
 #ifndef COSTMAP_COSTMAP_2D_ROS_H_
 #define COSTMAP_COSTMAP_2D_ROS_H_
 
-#include <ros/node.h>
+#include <ros/ros.h>
 #include <ros/console.h>
 #include <costmap_2d/costmap_2d.h>
 #include <costmap_2d/costmap_2d_publisher.h>
@@ -78,12 +78,11 @@ namespace costmap_2d {
     public:
       /**
        * @brief  Constructor for the wrapper
-       * @param ros_node A reference to the ros node to run on
+       * @param name The name for this costmap
        * @param tf A reference to a TransformListener
-       * @param prefix An optional prefix to prepend to the parameter list for the costmap
        * @param footprint An optional footprint specification for the robot
        */
-      Costmap2DROS(ros::Node& ros_node, tf::TransformListener& tf, std::string prefix = std::string(""), std::vector<robot_msgs::Point> footprint = std::vector<robot_msgs::Point>(0));
+      Costmap2DROS(std::string name, tf::TransformListener& tf, std::vector<robot_msgs::Point> footprint = std::vector<robot_msgs::Point>(0));
 
       /**
        * @brief  Destructor for the wrapper. Cleans up pointers.
@@ -140,6 +139,13 @@ namespace costmap_2d {
        * @param  oriented_footprint Will be filled with the points in the oriented footprint of the robot
        */
       void getOrientedFootprint(double x, double y, double theta, std::vector<robot_msgs::Point>& oriented_footprint);
+
+      /**
+       * @brief Get the pose of the robot in the global frame of the costmap
+       * @param global_pose Will be set to the pose of the robot in the global frame of the costmap
+       * @return True if the pose was set successfully, false otherwise
+       */
+      bool getRobotPose(tf::Stamped<tf::Pose>& global_pose);
 
       /**
        * @brief Clear the footprint of the robot in the costmap
@@ -217,6 +223,24 @@ namespace costmap_2d {
       std::string baseFrame();
 
       /**
+       * @brief  Returns the inscribed radius of the costmap
+       * @return The inscribed radius of the costmap
+       */
+      double inscribedRadius();
+
+      /**
+       * @brief  Returns the circumscribed radius of the costmap
+       * @return The circumscribed radius of the costmap
+       */
+      double circumscribedRadius();
+
+      /**
+       * @brief  Returns the inflation radius of the costmap
+       * @return The inflation radius of the costmap
+       */
+      double inflationRadius();
+
+      /**
        * @brief  Check if the observation buffers for the cost map are current
        * @return True if the buffers are current, false otherwise
        */
@@ -261,7 +285,7 @@ namespace costmap_2d {
        */
       void mapUpdateLoop(double frequency);
 
-      ros::Node& ros_node_; ///< @brief The ros node to use
+      ros::NodeHandle ros_node_; ///< @brief The ros node to use
       tf::TransformListener& tf_; ///< @brief Used for transforming point clouds
       laser_scan::LaserProjection projector_; ///< @brief Used to project laser scans into point clouds
       Costmap2D* costmap_; ///< @brief The underlying costmap to update
@@ -279,8 +303,8 @@ namespace costmap_2d {
       Costmap2DPublisher* costmap_publisher_;
       bool stop_updates_, initialized_;
       bool publish_voxel_;
-      std::string prefix_;
       std::vector<robot_msgs::Point> footprint_spec_;
+      ros::Publisher voxel_pub_;
 
   };
 };

@@ -14,6 +14,3 @@ rospack_link_boost(move_base thread)
 
 # move_base
 rospack_add_executable(bin/move_base src/move_base.cpp)
-
-#local controller
-rospack_add_executable(bin/move_base_local src/move_base_local.cpp)

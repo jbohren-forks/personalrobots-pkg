@@ -37,13 +37,13 @@
 #ifndef NAVFN_NAVFN_ROS_H_
 #define NAVFN_NAVFN_ROS_H_
 
-#include <ros/node.h>
+#include <ros/ros.h>
 #include <navfn/navfn.h>
 #include <costmap_2d/costmap_2d_ros.h>
 #include <robot_msgs/PoseStamped.h>
 #include <robot_msgs/Point.h>
 #include <visualization_msgs/Polyline.h>
-#include <tf/transform_listener.h>
+#include <tf/transform_datatypes.h>
 #include <vector>
 #include <robot_msgs/Point.h>
 #include <nav_robot_actions/base_global_planner.h>
@@ -53,19 +53,20 @@ namespace navfn {
     public:
       /**
        * @brief  Constructor for the NavFnROS object
-       * @param  ros_node The a reference to the ros node running
-       * @param  tf A reference to a TransformListener
+       * @param  name The name of this planner
        * @param  costmap_ros A reference to the ROS wrapper of the costmap to use
        */
-      NavfnROS(ros::Node& ros_node, tf::TransformListener& tf, costmap_2d::Costmap2DROS& costmap_ros);
+      NavfnROS(std::string name, costmap_2d::Costmap2DROS& costmap_ros);
 
       /**
        * @brief Given a goal pose in the world, compute a plan
+       * @param start The start pose 
        * @param goal The goal pose 
        * @param plan The plan... filled by the planner
        * @return True if a valid plan was found, false otherwise
        */
-      bool makePlan(const robot_msgs::PoseStamped& goal, std::vector<robot_msgs::PoseStamped>& plan);
+      bool makePlan(const robot_msgs::PoseStamped& start, 
+          const robot_msgs::PoseStamped& goal, std::vector<robot_msgs::PoseStamped>& plan);
 
       /**
        * @brief  Compute the full navigation function for the costmap given a point in the world to start from
@@ -97,14 +98,13 @@ namespace navfn {
 
     private:
       void clearRobotCell(const tf::Stamped<tf::Pose>& global_pose, unsigned int mx, unsigned int my);
-      ros::Node& ros_node_;
-      tf::TransformListener& tf_;
+      ros::NodeHandle ros_node_;
       costmap_2d::Costmap2DROS& costmap_ros_;
       costmap_2d::Costmap2D costmap_;
       NavFn planner_;
-      std::string global_frame_, robot_base_frame_;
-      double transform_tolerance_; // timeout before transform errors
+      std::string global_frame_;
       double inscribed_radius_, circumscribed_radius_, inflation_radius_;
+      ros::Publisher plan_pub_;
   };
 };
 
