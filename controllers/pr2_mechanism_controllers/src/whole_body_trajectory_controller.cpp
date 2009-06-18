@@ -666,7 +666,7 @@ void WholeBodyTrajectoryControllerNode::getJointTrajectoryThresholds()
   }
 }
 
-void WholeBodyTrajectoryControllerNode::setTrajectoryCmdFromMsg(robot_msgs::JointTraj traj_msg)
+void WholeBodyTrajectoryControllerNode::setTrajectoryCmdFromMsg(manipulation_msgs::JointTraj traj_msg)
 {
   std::vector<trajectory::Trajectory::TPoint> tp;
   int msg_size = std::max<int>((int)traj_msg.get_points_size(),1);
@@ -839,7 +839,7 @@ bool WholeBodyTrajectoryControllerNode::cancelJointTrajSrv(pr2_mechanism_control
   return true;
 }
 
-int WholeBodyTrajectoryControllerNode::createTrajectory(const robot_msgs::JointTraj &new_traj,trajectory::Trajectory &return_trajectory)
+int WholeBodyTrajectoryControllerNode::createTrajectory(const manipulation_msgs::JointTraj &new_traj,trajectory::Trajectory &return_trajectory)
 {
   std::vector<trajectory::Trajectory::TPoint> tp;
 
@@ -879,7 +879,7 @@ int WholeBodyTrajectoryControllerNode::createTrajectory(const robot_msgs::JointT
   return 1;
 }
 
-void WholeBodyTrajectoryControllerNode::addTrajectoryToQueue(robot_msgs::JointTraj new_traj, int id)
+void WholeBodyTrajectoryControllerNode::addTrajectoryToQueue(manipulation_msgs::JointTraj new_traj, int id)
 {
   joint_trajectory_vector_.push_back(new_traj);
   joint_trajectory_id_.push_back(id);

@@ -41,8 +41,8 @@
 #include <robot_mechanism_controllers/joint_pd_controller.h>
 
 // Services
-#include <robot_msgs/JointTraj.h>
-#include <robot_msgs/JointTrajPoint.h>
+#include <manipulation_msgs/JointTraj.h>
+#include <manipulation_msgs/JointTrajPoint.h>
 #include <diagnostic_msgs/DiagnosticMessage.h>
 
 #include <pr2_mechanism_controllers/TrajectoryStart.h>
@@ -189,7 +189,7 @@ namespace controller
      */
     boost::mutex ros_lock_;
 
-    robot_msgs::JointTraj traj_msg_; /**< The trajectory message received over ROS */
+    manipulation_msgs::JointTraj traj_msg_; /**< The trajectory message received over ROS */
 
     /*!
      * \brief node name
@@ -206,7 +206,7 @@ namespace controller
      */
     ros::Node * const node_;
 
-    std::vector<robot_msgs::JointTraj> joint_trajectory_vector_; /**< Vector of trajectory requests */
+    std::vector<manipulation_msgs::JointTraj> joint_trajectory_vector_; /**< Vector of trajectory requests */
 
     std::vector<int> joint_trajectory_id_; /**< Vector of ids for trajectory requests */
 
@@ -366,7 +366,7 @@ namespace controller
      * @param traj_msg Trajectory message received on a topic or a service
      * @param id The associated id for the trajectory command
      */
-    void setTrajectoryCmdFromMsg(robot_msgs::JointTraj traj_msg, int id);
+    void setTrajectoryCmdFromMsg(manipulation_msgs::JointTraj traj_msg, int id);
 
     /**   
      * @brief Callback when a trajectory message is received on a topic
@@ -406,28 +406,28 @@ namespace controller
      * @param new_traj The trajectory message that needs to be converted
      * @param tp The resultant vector of TPoints
      */
-    bool createTrajectoryPointsVectorFromMsg(const robot_msgs::JointTraj &new_traj, std::vector<trajectory::Trajectory::TPoint> &tp);
+    bool createTrajectoryPointsVectorFromMsg(const manipulation_msgs::JointTraj &new_traj, std::vector<trajectory::Trajectory::TPoint> &tp);
 
     /**   
      * @brief Create a trajectory object from a trajectory message
      * @param new_traj The trajectory message that needs to be converted
      * @param return_trajectory The resultant trajectory object
      */
-    bool createTrajectoryFromMsg(const robot_msgs::JointTraj &new_traj,trajectory::Trajectory &return_trajectory);
+    bool createTrajectoryFromMsg(const manipulation_msgs::JointTraj &new_traj,trajectory::Trajectory &return_trajectory);
 
     /**   
      * @brief Add a new trajectory request to the queue of trajectories that need to be sent out
      * @param new_traj The trajectory message that needs to be queued
      * @param id The id of the trajectory to be queued
      */
-    void addTrajectoryToQueue(robot_msgs::JointTraj new_traj, int id);
+    void addTrajectoryToQueue(manipulation_msgs::JointTraj new_traj, int id);
 
     /**   
      * @brief Preempt the current trajectory queue
      * @param new_traj The trajectory message that needs to executed
      * @param id The id of the trajectory
      */
-    void preemptTrajectoryQueue(robot_msgs::JointTraj new_traj, int id);
+    void preemptTrajectoryQueue(manipulation_msgs::JointTraj new_traj, int id);
 
     /**   
      * @brief Delete a trajectory from the queue of trajectories

@@ -36,7 +36,8 @@
 import roslib
 roslib.load_manifest('tabletop_manipulation')
 import rospy
-from robot_msgs.msg import JointTraj, JointTrajPoint, MechanismState
+from manipulation_msgs.msg import JointTraj, JointTrajPoint
+from mechanism_msgs.msg import MechanismState
 
 import sys
 from math import *

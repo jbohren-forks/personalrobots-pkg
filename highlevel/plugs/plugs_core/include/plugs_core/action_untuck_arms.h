@@ -44,7 +44,7 @@
 #include <std_msgs/Empty.h>
 #include <robot_actions/action.h>
 
-#include <robot_msgs/JointTraj.h>
+#include <manipulation_msgs/JointTraj.h>
 #include <pr2_mechanism_controllers/TrajectoryStart.h>
 #include <pr2_mechanism_controllers/TrajectoryQuery.h>
 #include <pr2_mechanism_controllers/TrajectoryCancel.h>

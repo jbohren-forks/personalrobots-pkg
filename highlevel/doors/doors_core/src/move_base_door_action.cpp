@@ -100,7 +100,7 @@ namespace nav
     planner_ = new DoorReactivePlanner(ros_node_, tf_,&planner_cost_map_,control_frame_,global_frame_);
     ROS_INFO("MAP SIZE: %d, %d", planner_cost_map_.cellSizeX(), planner_cost_map_.cellSizeY());
 
-    ros_node_.advertise<robot_msgs::JointTraj>(control_topic_name_, 1);
+    ros_node_.advertise<manipulation_msgs::JointTraj>(control_topic_name_, 1);
     last_diagnostics_publish_time_ = ros::Time::now();
 
     ROS_INFO("Move base door action initialized");
@@ -353,7 +353,7 @@ namespace nav
 
   void MoveBaseDoorAction::dispatchControl(const std::vector<pr2_robot_actions::Pose2D> &plan_in)
   {
-    robot_msgs::JointTraj plan_out;
+    manipulation_msgs::JointTraj plan_out;
     current_distance_to_goal_ = distance(global_pose_.getOrigin().x(),global_pose_.getOrigin().y(),goal_.x,goal_.y);
     if((int)plan_in.size() <= 0)
     {

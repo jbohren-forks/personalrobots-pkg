@@ -34,9 +34,9 @@
 #include <std_msgs/Float64.h>
 
 #include <robot_msgs/Pose.h>
-#include <robot_msgs/JointTraj.h>
+#include <manipulation_msgs/JointTraj.h>
 #include <robot_msgs/PoseStamped.h>
-#include <robot_msgs/JointTrajPoint.h>
+#include <manipulation_msgs/JointTrajPoint.h>
 
 #include <pr2_mechanism_controllers/TrajectoryStart.h>
 #include <pr2_mechanism_controllers/TrajectoryQuery.h>
@@ -99,17 +99,17 @@ namespace pr2_arm_node
 
     void goHome(const std::vector<double> &home_position);
 
-    bool sendTrajectory(std::string group_name, const robot_msgs::JointTraj &traj);
+    bool sendTrajectory(std::string group_name, const manipulation_msgs::JointTraj &traj);
 
-    void sendTrajectoryOnTopic(std::string group_name, const robot_msgs::JointTraj &traj);
+    void sendTrajectoryOnTopic(std::string group_name, const manipulation_msgs::JointTraj &traj);
 
-    bool planSBPLPath(const robot_msgs::JointTrajPoint &joint_start, const std::vector<robot_msgs::Pose> &pose_goals, robot_msgs::JointTraj &planned_path);
+    bool planSBPLPath(const manipulation_msgs::JointTrajPoint &joint_start, const std::vector<robot_msgs::Pose> &pose_goals, manipulation_msgs::JointTraj &planned_path);
 
-    bool planSBPLPath(const robot_msgs::JointTrajPoint &joint_start, const std::vector<robot_msgs::JointTrajPoint> &joint_goal, robot_msgs::JointTraj &planned_path);
+    bool planSBPLPath(const manipulation_msgs::JointTrajPoint &joint_start, const std::vector<manipulation_msgs::JointTrajPoint> &joint_goal, manipulation_msgs::JointTraj &planned_path);
 
-    bool planSBPLPath_ioan(const robot_msgs::JointTrajPoint &joint_start, const std::vector<robot_msgs::Pose> &pose_goals, robot_msgs::JointTraj &planned_path);
+    bool planSBPLPath_ioan(const manipulation_msgs::JointTrajPoint &joint_start, const std::vector<robot_msgs::Pose> &pose_goals, manipulation_msgs::JointTraj &planned_path);
 
-    void getCurrentPosition(robot_msgs::JointTrajPoint &current_joint_positions);
+    void getCurrentPosition(manipulation_msgs::JointTrajPoint &current_joint_positions);
 
     robot_msgs::Pose RPYToTransform(double roll, double pitch, double yaw, double x, double y, double z);
 
@@ -119,7 +119,7 @@ namespace pr2_arm_node
 
     void shakeHead();
 
-    void getGraspTrajectory(const robot_msgs::PoseStamped &transform, robot_msgs::JointTraj &traj);
+    void getGraspTrajectory(const robot_msgs::PoseStamped &transform, manipulation_msgs::JointTraj &traj);
 
   };
 }

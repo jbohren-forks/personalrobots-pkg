@@ -39,7 +39,7 @@ roslib.load_manifest('pr2_mechanism_controllers')
 
 import rospy
 
-from robot_msgs.msg import JointTraj, JointTrajPoint
+from manipulation_msgs.msg import JointTraj, JointTrajPoint
 from mechanism_control import mechanism
 from robot_mechanism_controllers.srv import *
 

@@ -156,7 +156,7 @@ void SBPLPlannerNode::costMapCallBack()
   lock_.unlock();
 }
 
-bool SBPLPlannerNode::replan(const robot_msgs::JointTrajPoint &start, const robot_msgs::JointTrajPoint &goal, robot_msgs::JointTraj &path)
+bool SBPLPlannerNode::replan(const manipulation_msgs::JointTrajPoint &start, const manipulation_msgs::JointTrajPoint &goal, manipulation_msgs::JointTraj &path)
 {
   ROS_INFO("[replan] getting fresh copy of costmap");
   lock_.lock();
@@ -223,7 +223,7 @@ bool SBPLPlannerNode::replan(const robot_msgs::JointTrajPoint &start, const robo
 bool SBPLPlannerNode::planPath(sbpl_planner_node::PlanPathSrv::Request &req, sbpl_planner_node::PlanPathSrv::Response &resp)
 {
   ROS_INFO("[planPath] Planning...");
-  robot_msgs::JointTraj traj;
+  manipulation_msgs::JointTraj traj;
 
   if(replan(req.start,req.joint_goal,traj))
   {

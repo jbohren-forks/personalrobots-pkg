@@ -741,7 +741,7 @@ bool JointTrajectoryController::getTrajectoryFromQueue(int &index)
 }
 
 
-void JointTrajectoryController::setTrajectoryCmdFromMsg(robot_msgs::JointTraj traj_msg, int id)
+void JointTrajectoryController::setTrajectoryCmdFromMsg(manipulation_msgs::JointTraj traj_msg, int id)
 {
   std::vector<trajectory::Trajectory::TPoint> tp;
   int msg_size = std::max<int>((int)traj_msg.get_points_size(),1);
@@ -894,7 +894,7 @@ bool JointTrajectoryController::cancelJointTrajSrv(pr2_mechanism_controllers::Tr
 }
 
 
-bool JointTrajectoryController::createTrajectoryPointsVectorFromMsg(const robot_msgs::JointTraj &new_traj, std::vector<trajectory::Trajectory::TPoint> &tp)
+bool JointTrajectoryController::createTrajectoryPointsVectorFromMsg(const manipulation_msgs::JointTraj &new_traj, std::vector<trajectory::Trajectory::TPoint> &tp)
 {
   if(new_traj.get_points_size() > 0)
   {
@@ -925,7 +925,7 @@ bool JointTrajectoryController::createTrajectoryPointsVectorFromMsg(const robot_
   return true;
 }
 
-bool JointTrajectoryController::createTrajectoryFromMsg(const robot_msgs::JointTraj &new_traj,trajectory::Trajectory &return_trajectory)
+bool JointTrajectoryController::createTrajectoryFromMsg(const manipulation_msgs::JointTraj &new_traj,trajectory::Trajectory &return_trajectory)
 {
   std::vector<trajectory::Trajectory::TPoint> tp;
 
@@ -945,7 +945,7 @@ bool JointTrajectoryController::createTrajectoryFromMsg(const robot_msgs::JointT
   return true;
 }
 
-void JointTrajectoryController::addTrajectoryToQueue(robot_msgs::JointTraj new_traj, int id)
+void JointTrajectoryController::addTrajectoryToQueue(manipulation_msgs::JointTraj new_traj, int id)
 {
   trajectory_queue_.lock();
 
@@ -958,7 +958,7 @@ void JointTrajectoryController::addTrajectoryToQueue(robot_msgs::JointTraj new_t
   trajectory_queue_.unlock();
 }
 
-void JointTrajectoryController::preemptTrajectoryQueue(robot_msgs::JointTraj new_traj, int id)
+void JointTrajectoryController::preemptTrajectoryQueue(manipulation_msgs::JointTraj new_traj, int id)
 {
   int index = std::max(current_trajectory_index_,0);
   trajectory_queue_.try_lock();

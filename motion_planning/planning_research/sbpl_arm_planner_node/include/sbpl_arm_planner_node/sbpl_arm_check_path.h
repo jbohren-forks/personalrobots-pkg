@@ -38,10 +38,10 @@
 #include <tf/tf.h>
 
 /** Messages needed for trajectory control and collision map**/
-#include <robot_msgs/Pose.h>
-#include <robot_msgs/JointTraj.h>
+#include <manipulation_msgs/Pose.h>
+#include <manipulation_msgs/JointTraj.h>
 #include <robot_msgs/CollisionMap.h>
-#include <robot_msgs/JointTrajPoint.h>
+#include <manipulation_msgs/JointTrajPoint.h>
 
 /** sbpl planner include files **/
 #include <sbpl_arm_planner/headers.h>

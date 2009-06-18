@@ -43,7 +43,7 @@
 #include <robot_actions/action_runner.h>
 #include <pr2_robot_actions/DoorActionState.h>
 #include <pr2_robot_actions/Pose2D.h>
-#include <robot_msgs/JointTraj.h>
+#include <manipulation_msgs/JointTraj.h>
 
 #include <ros/node.h>
 

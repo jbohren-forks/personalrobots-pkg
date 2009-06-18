@@ -37,8 +37,8 @@
 
 #include <robot_msgs/PoseDot.h>
 #include <pr2_robot_actions/Pose2D.h>
-#include <robot_msgs/JointTrajPoint.h>
-#include <robot_msgs/JointTraj.h>
+#include <manipulation_msgs/JointTrajPoint.h>
+#include <manipulation_msgs/JointTraj.h>
 #include <trajectory/trajectory.h>
 
 #include <tf/tf.h>
@@ -86,8 +86,8 @@ namespace pr2_mechanism_controllers
     double controller_frequency_;
     std::string control_topic_name_, path_input_topic_name_;
     std::string trajectory_type_;
-    robot_msgs::JointTraj path_msg_in_;
-    robot_msgs::JointTraj path_msg_;
+    manipulation_msgs::JointTraj path_msg_in_;
+    manipulation_msgs::JointTraj path_msg_;
 
     ros::Node& ros_node_;
     tf::TransformListener& tf_;

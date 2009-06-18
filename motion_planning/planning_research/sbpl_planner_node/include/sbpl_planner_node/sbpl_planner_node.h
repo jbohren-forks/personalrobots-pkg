@@ -43,8 +43,8 @@
 
 /** Messages needed for trajectory control and collision map**/
 #include <robot_msgs/Pose.h>
-#include <robot_msgs/JointTraj.h>
-#include <robot_msgs/JointTrajPoint.h>
+#include <manipulation_msgs/JointTraj.h>
+#include <manipulation_msgs/JointTrajPoint.h>
 #include <robot_msgs/CollisionMap.h>
 
 // Costmap used for the map representation
@@ -101,7 +101,7 @@ class SBPLPlannerNode
   bool initializePlannerAndEnvironment();
   void costMapCallBack();
   
-  bool replan(const robot_msgs::JointTrajPoint &start, const robot_msgs::JointTrajPoint &goal, robot_msgs::JointTraj &path);
+  bool replan(const manipulation_msgs::JointTrajPoint &start, const manipulation_msgs::JointTrajPoint &goal, manipulation_msgs::JointTraj &path);
   bool planPath(sbpl_planner_node::PlanPathSrv::Request &req, sbpl_planner_node::PlanPathSrv::Response &resp);
 
  std::vector<robot_msgs::Point> footprint_;

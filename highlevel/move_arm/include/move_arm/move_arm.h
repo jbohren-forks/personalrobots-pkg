@@ -41,7 +41,7 @@
 #include <robot_actions/action.h>
 #include <robot_actions/action_runner.h>
 
-#include <robot_msgs/JointTraj.h>
+#include <manipulation_msgs/JointTraj.h>
 #include <pr2_robot_actions/MoveArmState.h>
 #include <pr2_robot_actions/MoveArmGoal.h>
 #include <motion_planning_msgs/KinematicPath.h>
@@ -95,7 +95,7 @@ namespace move_arm
 	planning_environment::CollisionModels *collisionModels_;
 	planning_environment::PlanningMonitor *planningMonitor_;
 
-	void fillTrajectoryPath(const motion_planning_msgs::KinematicPath &path, robot_msgs::JointTraj &traj);
+	void fillTrajectoryPath(const motion_planning_msgs::KinematicPath &path, manipulation_msgs::JointTraj &traj);
 	bool computeIK(const robot_msgs::PoseStamped &pose_stamped_msg, std::vector<double> &solution);
 	bool getControlJointNames(std::vector<std::string> &joint_names);
     };

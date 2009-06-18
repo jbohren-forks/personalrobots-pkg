@@ -362,7 +362,7 @@ namespace move_arm
 	return result;
     }
 
-    void MoveArm::fillTrajectoryPath(const motion_planning_msgs::KinematicPath &path, robot_msgs::JointTraj &traj)
+    void MoveArm::fillTrajectoryPath(const motion_planning_msgs::KinematicPath &path, manipulation_msgs::JointTraj &traj)
     {
 	traj.points.resize(path.states.size());
 	for (unsigned int i = 0 ; i < path.states.size() ; ++i)

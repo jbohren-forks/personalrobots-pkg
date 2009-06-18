@@ -40,6 +40,8 @@
 
 namespace robot_msgs {
   class Pose;
+}
+namespace manipulation_msgs {
   class JointTraj;
 }
 
@@ -92,7 +94,7 @@ namespace mpglue {
     void addWaypoint(boost::shared_ptr<waypoint_s> wp);
     
     static void convertToJointTraj(waypoint_plan_t const * plan,
-				   robot_msgs::JointTraj * jointTraj);
+				   manipulation_msgs::JointTraj * jointTraj);
     
     /**
        Convert a plan from a raw state ID sequence (as computed by

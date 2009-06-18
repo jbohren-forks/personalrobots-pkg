@@ -33,7 +33,7 @@
  *********************************************************************/
 
 #include <ros/node.h>
-#include <robot_msgs/JointTraj.h>
+#include <manipulation_msgs/JointTraj.h>
 
 static int done = 0;
 

@@ -35,8 +35,8 @@
 * Author: Sachin Chitta
 *********************************************************************/
 
-#include <robot_msgs/JointTrajPoint.h>
-#include <robot_msgs/JointTraj.h>
+#include <manipulation_msgs/JointTrajPoint.h>
+#include <manipulation_msgs/JointTraj.h>
 
 #include <tf/tf.h>
 #include <tf/transform_listener.h>

@@ -40,7 +40,7 @@
     is looked at as well.  */
 
 #include <planning_environment/kinematic_model_state_monitor.h>
-#include <robot_msgs/JointTraj.h>
+#include <manipulation_msgs/JointTraj.h>
 #include <pr2_mechanism_controllers/TrajectoryStart.h>
 #include <pr2_mechanism_controllers/TrajectoryQuery.h>
 #include <cassert>
@@ -53,7 +53,7 @@ public:
     {
 	rm_ = new planning_environment::RobotModels("robot_description");
 	kmsm_ = new planning_environment::KinematicModelStateMonitor(rm_);
-	jointCommandPublisher_ = nh_.advertise<robot_msgs::JointTraj>("right_arm/trajectory_controller/trajectory_command", 1);
+	jointCommandPublisher_ = nh_.advertise<manipulation_msgs::JointTraj>("right_arm/trajectory_controller/trajectory_command", 1);
 	sleep_duration_ = 4;
 	use_topic_ = false;
     }
@@ -67,7 +67,7 @@ public:
     void testJointLimitsRightArm(const std::string& jname = "")
     {
 	// we send a trajectory with one state
-	robot_msgs::JointTraj traj;
+	manipulation_msgs::JointTraj traj;
 	const int controllerDim = 7;
 	std::string groupName = "right_arm";
 	traj.set_points_size(1);
