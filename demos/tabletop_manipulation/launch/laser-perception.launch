@@ -1,5 +1,7 @@
 <launch>
-
+  
+  <include file="$(find pr2_defs)/pr2_planning_environment.launch" />
+  
   <node pkg="point_cloud_assembler" type="laser_scan_assembler_srv" output="screen"  name="laser_scan_assembler">
     <remap from="scan_in" to="tilt_scan"/>
     <param name="tf_cache_time_secs" type="double" value="10.0" />
@@ -9,11 +11,17 @@
     <param name="fixed_frame" type="string" value="torso_lift_link" />
     <param name="downsample_factor" type="int" value="2" />
   </node>
-
+  
   <node pkg="point_cloud_assembler" type="point_cloud_snapshotter" output="screen" name="snapshotter">
     <remap from="laser_scanner_signal" to="laser_tilt_controller/laser_scanner_signal"/>
     <remap from="build_cloud" to="laser_scan_assembler/build_cloud" />
     <remap from="full_cloud" to="snapshot_cloud" />
   </node>
+  
+  <include file="$(find pr2_laser_tilt)/laser_tilt_controller.launch" />
+
+  <node pkg="new_robot_self_filter" type="self_filter" args="robot_description:=robotdesc/pr2 full_cloud:=snapshot_cloud" respawn="true" output="screen" />
+  
+  <include file="$(find collision_map)/collision_map.launch" />
 
 </launch>
