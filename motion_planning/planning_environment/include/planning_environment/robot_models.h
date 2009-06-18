@@ -38,6 +38,7 @@
 #define PLANNING_ENVIRONMENT_ROBOT_MODELS_
 
 #include <planning_models/kinematic.h>
+#include <planning_models/kinematic_state_params.h>
 #include <ros/ros.h>
 #include <ros/node.h>
 #include <boost/shared_ptr.hpp>

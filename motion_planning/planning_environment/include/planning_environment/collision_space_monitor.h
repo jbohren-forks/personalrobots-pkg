@@ -118,7 +118,7 @@ namespace planning_environment
 	    return haveMap_;
 	}
 	
-	/** \brief Return true if a map update has been received in the last sec seconds */
+	/** \brief Return true if a map update has been received in the last sec seconds. If sec < 10us, this function always returns true. */
 	bool isMapUpdated(double sec) const;
 	
 	/** \brief Return the last update time for the map */

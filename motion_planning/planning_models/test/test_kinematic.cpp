@@ -35,6 +35,7 @@
 /** \author Ioan Sucan */
 
 #include <planning_models/kinematic.h>
+#include <planning_models/kinematic_state_params.h>
 #include <gtest/gtest.h>
 #include <sstream>
 #include <ctype.h>
@@ -428,7 +429,7 @@ TEST(FK, OneRobot)
     EXPECT_NEAR(0.0, model->getLink("link_c")->globalTrans.getRotation().z(), 1e-5);
     EXPECT_NEAR(1.0, model->getLink("link_c")->globalTrans.getRotation().w(), 1e-5);
 
-    planning_models::KinematicModel::StateParams *sp = model->newStateParams();
+    planning_models::StateParams *sp = model->newStateParams();
     EXPECT_FALSE(sp->seenAll());
 
     double tmpParam[3];

@@ -59,17 +59,17 @@ namespace kinematic_planning
 	{
 	}
 	
-	bool isRequestValid(ModelMap &models, motion_planning_msgs::KinematicState &startState, motion_planning_srvs::KinematicPlan::Request &req);
+	bool isRequestValid(ModelMap &models, motion_planning_srvs::KinematicPlan::Request &req);
 
 	/* Check and compute a motion plan. Return true if the plan was succesfully computed */
-	bool computePlan(ModelMap &models, motion_planning_srvs::KinematicPlan::Request &req, motion_planning_srvs::KinematicPlan::Response &res);
+	bool computePlan(ModelMap &models, const planning_models::StateParams *start, motion_planning_srvs::KinematicPlan::Request &req, motion_planning_srvs::KinematicPlan::Response &res);
 	
 	
     protected:
 
 	/** Set up all the data needed by motion planning based on a request and lock the planner setup
 	 *  using this data */
-	void configure(const motion_planning_msgs::KinematicState &startState, motion_planning_srvs::KinematicPlan::Request &req, RKPPlannerSetup *psetup);
+	void configure(const planning_models::StateParams *startState, motion_planning_srvs::KinematicPlan::Request &req, RKPPlannerSetup *psetup);
 	
 	/** Compute the actual motion plan. Return true if computed plan was trivial (start state already in goal region) */
 	bool callPlanner(RKPPlannerSetup *psetup, int times, double allowed_time, bool interpolate,

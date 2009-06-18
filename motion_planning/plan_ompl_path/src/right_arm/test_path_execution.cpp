@@ -95,7 +95,7 @@ public:
 	    fprintf(stderr, "%s:\n", joint->name.c_str());
 	    
 	    // check the value of the joint at small increments
-            planning_models::KinematicModel::StateParams *sp = kmsm_->getKinematicModel()->newStateParams();
+            planning_models::StateParams *sp = kmsm_->getKinematicModel()->newStateParams();
             for (double val = joint->limit[0] ; val <= joint->limit[1] ; val += 0.1)
             {
              	double to_send[controllerDim];

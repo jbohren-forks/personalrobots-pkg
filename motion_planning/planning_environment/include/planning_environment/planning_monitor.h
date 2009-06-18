@@ -72,10 +72,10 @@ namespace planning_environment
 	bool isEnvironmentSafe(void) const;
 	
 	/** Check if the full state of the robot is valid */
-	bool isStateValidOnPath(const planning_models::KinematicModel::StateParams *state) const;
+	bool isStateValidOnPath(const planning_models::StateParams *state) const;
 
 	/** Check if the full state of the robot is valid */
-	bool isStateValidAtGoal(const planning_models::KinematicModel::StateParams *state) const;
+	bool isStateValidAtGoal(const planning_models::StateParams *state) const;
 	
 	/** Check if the path is valid */
 	bool isPathValid(const motion_planning_msgs::KinematicPath &path) const;
@@ -87,18 +87,18 @@ namespace planning_environment
 	void setGoalConstraints(const motion_planning_msgs::KinematicConstraints &kc);
 	
 	/** Transform the frames in which constraints are specified to the one requested */
-	void transformConstraintsToFrame(motion_planning_msgs::KinematicConstraints &kc, const std::string &target) const;
+	bool transformConstraintsToFrame(motion_planning_msgs::KinematicConstraints &kc, const std::string &target) const;
 	
 	/** Transform the kinematic path to the frame requested */
-	void transformPathToFrame(motion_planning_msgs::KinematicPath &kp, const std::string &target) const;
+	bool transformPathToFrame(motion_planning_msgs::KinematicPath &kp, const std::string &target) const;
 
 	/** Transform the kinematic joint to the frame requested */
-	void transformJointToFrame(motion_planning_msgs::KinematicJoint &kj, const std::string &target) const;
+	bool transformJointToFrame(motion_planning_msgs::KinematicJoint &kj, const std::string &target) const;
 	
     protected:
 	
 	/** Transform the joint parameters (if needed) to a target frame */
-	void transformJoint(const std::string &name, unsigned int index, std::vector<double> &params, roslib::Header &header, const std::string& target) const;
+	bool transformJoint(const std::string &name, unsigned int index, std::vector<double> &params, roslib::Header &header, const std::string& target) const;
 	
 	/** Check the path assuming it is in the frame of the model */
 	bool isPathValidAux(const motion_planning_msgs::KinematicPath &path) const;
