@@ -192,7 +192,7 @@ int WG06::initialize(Actuator *actuator, bool allow_unprogrammed, bool motor_mod
   
   if (!retval)
   {
-    string topic = "/pressure";
+    string topic = "pressure";
     if (!actuator->name_.empty())
       topic = topic + "/" + string(actuator->name_);
     pressure_publisher_ = new realtime_tools::RealtimePublisher<ethercat_hardware::PressureState>(topic, 1);
