@@ -472,13 +472,19 @@ planning_models::KinematicModel::Joint* planning_models::KinematicModel::getJoin
 
 void planning_models::KinematicModel::getJoints(std::vector<Joint*> &joints) const
 {
-    joints.resize(m_jointMap.size());
+    std::vector<Joint*> jn(m_mi.stateDimension, NULL);
     for (std::map<std::string, Joint*>::const_iterator it = m_jointMap.begin() ; it != m_jointMap.end() ; ++it)
     {
+	if (it->second->usedParams == 0)
+	    continue;
 	std::map<std::string, unsigned int>::const_iterator p = m_mi.parameterIndex.find(it->first);
 	assert(p != m_mi.parameterIndex.end());
-	joints[p->second] = it->second;
+	jn[p->second] = it->second;
     }
+    joints.clear();
+    for (unsigned int i = 0 ; i < jn.size() ; ++i)
+	if (jn[i])
+	    joints.push_back(jn[i]);
 }
 
 unsigned int planning_models::KinematicModel::getGroupDimension(int groupID) const
@@ -504,10 +510,9 @@ void planning_models::KinematicModel::getJointsInGroup(std::vector<std::string> 
     for (std::map<std::string, Joint*>::const_iterator it = m_jointMap.begin() ; it != m_jointMap.end() ; ++it)
 	if (it->second->inGroup[groupID] && it->second->usedParams > 0)
 	    nm.push_back(it->first);
-    unsigned int start = names.size();
-    names.resize(start + nm.size());
+    names.resize(nm.size());
     for (unsigned int i = 0 ; i < nm.size() ; ++i)
-	names[start + getJointIndexInGroup(nm[i], groupID)] = nm[i];
+	names[getJointIndexInGroup(nm[i], groupID)] = nm[i];
 }
 
 void planning_models::KinematicModel::buildChainJ(Robot *robot, Link *parent, Joint* joint, const robot_desc::URDF::Link* urdfLink, const robot_desc::URDF &model)
@@ -883,6 +888,24 @@ void planning_models::KinematicModel::StateParams::copyParamsJoint(double *param
     Joint *joint = m_owner->getJoint(name);
     if (joint)
     {
+	std::map<std::string, unsigned int>::const_iterator it = m_mi.parameterIndex.find(name);
+	if (it != m_mi.parameterIndex.end())
+	{
+	    unsigned int pos = it->second;
+	    for (unsigned int i = 0 ; i < joint->usedParams ; ++i)
+		params[i] = m_params[pos + i];
+	    return;
+	}
+    }
+    m_msg.error("Unknown joint: '" + name + "'");
+}
+
+void planning_models::KinematicModel::StateParams::copyParamsJoint(std::vector<double> &params, const std::string &name) const
+{
+    Joint *joint = m_owner->getJoint(name);
+    if (joint)
+    {
+	params.resize(joint->usedParams);
 	std::map<std::string, unsigned int>::const_iterator it = m_mi.parameterIndex.find(name);
 	if (it != m_mi.parameterIndex.end())
 	{

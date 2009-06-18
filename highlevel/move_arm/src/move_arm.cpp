@@ -103,18 +103,26 @@ namespace move_arm
 	motion_planning_srvs::KinematicPlan::Request  req;
 	motion_planning_srvs::KinematicPlan::Response res;
 	
-	req.params.model_id = arm_;
-	req.params.planner_id = "KPIECE";
-	req.params.distance_metric = "L2Square";
+	
+	req.params.model_id = arm_;              // the model to plan for (should be defined in planning.yaml)
+	req.params.planner_id = "KPIECE";        // this is optional; the planning node should be able to pick a planner
+	req.params.distance_metric = "L2Square"; // the metric to be used in the robot's state space
 	
 	// this volume is only needed if planar or floating joints move in the space
 	req.params.volumeMin.x = req.params.volumeMin.y = req.params.volumeMin.z = 0.0;
 	req.params.volumeMax.x = req.params.volumeMax.y = req.params.volumeMax.z = 0.0;
 	
+	// forward the goal & path constraints
 	req.goal_constraints = goal.goal_constraints;
 	req.path_constraints = goal.path_constraints;
 	
-	
+	// compute the path once
+	req.times = 1;
+
+	// do not spend more than this amount of time
+	req.allowed_time = 0.5;
+
+	// change pose constraints to joint constraints, if possible and so desired
 	if (perform_ik_ &&                                           // IK is enabled,
 	    req.goal_constraints.joint_constraint.empty() &&         // we have no joint constraints on the goal,
 	    req.goal_constraints.pose_constraint.size() == 1 &&      // we have a single pose constraint on the goal
@@ -156,9 +164,6 @@ namespace move_arm
 	    }
 	}
 	
-	req.times = 1;
-	req.allowed_time = 0.5;
-	
 	ResultStatus result = robot_actions::SUCCESS;
 	
 	feedback = pr2_robot_actions::MoveArmState::PLANNING;
@@ -180,6 +185,20 @@ namespace move_arm
 	    // if we have to plan, do so
 	    if (result == robot_actions::SUCCESS && feedback == pr2_robot_actions::MoveArmState::PLANNING)
 	    {
+		
+		// fill in start state with current one
+		std::vector<planning_models::KinematicModel::Joint*> joints;
+		planningMonitor_->getKinematicModel()->getJoints(joints);
+		
+		req.start_state.resize(joints.size());
+		for (unsigned int i = 0 ; i < joints.size() ; ++i)
+		{
+		    req.start_state[i].header.frame_id = planningMonitor_->getFrameId();
+		    req.start_state[i].header.stamp = planningMonitor_->lastStateUpdate();
+		    req.start_state[i].joint_name = joints[i]->name;
+		    planningMonitor_->getRobotState()->copyParamsJoint(req.start_state[i].value, joints[i]->name);
+		}
+		
 		// call the planner and decide whether to use the path 
 		if (clientPlan.call(req, res))
 		{
