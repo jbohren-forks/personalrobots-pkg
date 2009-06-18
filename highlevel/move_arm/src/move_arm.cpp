@@ -384,7 +384,7 @@ namespace move_arm
 	if (!result)
 	{
 	    ROS_WARN("Unable to retrieve controller joint names from control query service. Waiting a bit and retrying...");
-	    ros::Duration(1.0).sleep();
+	    ros::Duration(5.0).sleep();
 	    result = client_query.call(req_query, res_query);
 	    if (result)
 		ROS_WARN("Retrieved controller joints on second attempt");
