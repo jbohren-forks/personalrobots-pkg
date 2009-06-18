@@ -244,10 +244,8 @@ DoorController::DriveThruDoorway{
   leq(cmd.max_duration, MOVE_BASE_THROUGH_DOOR_DURATION_BOUND);
   // Command parameters based on doorman goal pose
   eq_pose_msg(cmd.object, dm.object);
-  
   // If the command succeded we are done! If not, it is likely because the door is actually blocking us so we will want
   // to get back to detect the door and figure out how to get thru
-
   if(cmd.status == SUCCESS){
     meets(Inactive s);
     eq(s.status, SUCCESS);

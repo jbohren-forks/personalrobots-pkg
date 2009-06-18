@@ -143,15 +143,15 @@ RightArmMechanism::use_hybrid_controller{
 RightGripperMechanism::use_effort_controller{
   met_by(switch_controllers.Active cmd);
   eq(cmd.status, SUCCESS);
-  subsetOf(cmd.up_list, all_right_arm_controllers);
-  subsetOf(cmd.down_list, all_right_arm_controllers);
+  subsetOf(cmd.up_list, all_right_gripper_controllers);
+  subsetOf(cmd.down_list, all_right_gripper_controllers);
   neq(r_gripper_effort_controller, cmd.down_list);
 }
 
 RightGripperMechanism::use_position_controller{
   met_by(switch_controllers.Active cmd);
   eq(cmd.status, SUCCESS);
-  subsetOf(cmd.up_list, all_right_arm_controllers);
-  subsetOf(cmd.down_list, all_right_arm_controllers);
+  subsetOf(cmd.up_list, all_right_gripper_controllers);
+  subsetOf(cmd.down_list, all_right_gripper_controllers);
   neq(r_gripper_position_controller, cmd.down_list);
 }
