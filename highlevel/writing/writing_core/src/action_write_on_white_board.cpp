@@ -67,7 +67,7 @@ robot_actions::ResultStatus WriteOnWhiteBoardAction::execute(const robot_msgs::P
 
   text_trajectory_ = text_trajectory;
 
-  node_.subscribe(arm_controller_+ "/state/error", pose_error_msg_, &WriteOnWhiteBoardAction::writeText, this, 1);
+  //node_->subscribe(arm_controller_+ "/state/error", pose_error_msg_, &WriteOnWhiteBoardAction::writeText, this, 1);
  
   return waitForDeactivation(feedback);
 }
@@ -77,14 +77,14 @@ void WriteOnWhiteBoardAction::writeText()
 {
   if (!isActive())
   {
-    node_.unsubscribe(arm_controller_+ "/state/error");
+    //node_->unsubscribe(arm_controller_+ "/state/error");
     return;
   }
   
   if (isPreemptRequested())
   {
     ROS_DEBUG("%s: preempted.", action_name_.c_str());
-    node_.unsubscribe(arm_controller_+ "/state/error");
+    //node_->unsubscribe(arm_controller_+ "/state/error");
     deactivate(robot_actions::PREEMPTED, empty_);
     return;
   }
