@@ -46,7 +46,6 @@ namespace pr2_ik {
 
   PR2IKController::PR2IKController()
       : node_(ros::Node::instance()),
-        tf_(*node_),
         command_notifier_(NULL),
         dimension_(7)
   {
