@@ -6,6 +6,7 @@
   <license>BSD</license>
   <depend package="sbpl" />
   <depend package="angles" />
+<!--   <depend package="yaml-cpp" /> -->
 <!--   <depend package="rosdep"/> -->
 <!--     <depend package="robot_kinematics" /> -->
   <url></url>

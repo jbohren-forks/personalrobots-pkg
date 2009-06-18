@@ -27,12 +27,11 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+// #include <yaml-cpp/include/yaml.h>
 #include <boost/thread/mutex.hpp>
 #include <sbpl_arm_planner/headers.h>
 
-// #include <rosdep/yaml-cpp/include/yaml.h>
-// #include "/u/bcohen/ros/ros/tools/rosdep/yaml-cpp/include/yaml.h"
-// #include <fstream>
+#include <fstream>
 
 #define PI_CONST 3.141592653
 #define DEG2RAD(d) ((d)*(PI_CONST/180.0))
@@ -60,7 +59,7 @@
 #define DEBUG_JOINTSPACE_PLANNING 0
 #define DEBUG_CHECK_LINE_SEGMENT 0
 #define DEBUG_HEURISTIC 0
-#define DEBUG 0
+// #define DEBUG 0
 
 //for ComputeForwardKinematics_DH - to rotate DH frames to PR2 frames
 #define ELBOW_JOINT 2
@@ -942,18 +941,17 @@ void EnvironmentROBARM3D::ReadParamsFile(FILE* fCfg)
 
 void EnvironmentROBARM3D::ParseYAMLFile(const char* sParamFile)
 {
-/*
-  std::ifstream fin(sParamFile);
-  YAML::Parser parser(fin);
+//   std::ifstream fin(sParamFile);
+//   YAML::Parser parser(fin);
+// 
+//   YAML::Node doc;
+//   for(YAML::Iterator it=doc.begin();it!=doc.end();++it) {
+//     std::string key, value;
+//     it.first() >> key;
+//     it.second() >> value;
+//     std::cout << "Key: " << key << ", value: " << value << std::endl;
+//   }
 
-  YAML::Node doc;
-  for(YAML::Iterator it=doc.begin();it!=doc.end();++it) {
-    std::string key, value;
-    it.first() >> key;
-    it.second() >> value;
-    std::cout << "Key: " << key << ", value: " << value << std::endl;
-  }
-*/
 }
 
 bool EnvironmentROBARM3D::SetEnvParameter(char* parameter, double value)
@@ -1389,7 +1387,7 @@ void EnvironmentROBARM3D::AddObstacleToGrid(double* obstacle, int type, char*** 
     }
 
     //output collision map debugging  - stupid way of doing this but fine for now!
-    if(EnvROBARMCfg.lowres_collision_checking && gridcell_m == EnvROBARMCfg.LowResGridCellWidth)
+    if(EnvROBARMCfg.lowres_collision_checking && gridcell_m == EnvROBARMCfg.GridCellWidth)
     {
         Cell2ContXYZ(obs_c[0],obs_c[1],obs_c[2],&(ob[0]),&(ob[1]),&(ob[2]));
         EnvROBARMCfg.cubes.resize(EnvROBARMCfg.cubes.size()+1);
@@ -3642,8 +3640,7 @@ void EnvironmentROBARM3D::StateID2Angles(int stateID, double* angles_r)
 void EnvironmentROBARM3D::AddObstaclesToEnv(double**obstacles, int numobstacles)
 {
     int i,p;
-    double obs[6]; //angles[NUMOFLINKS], orientation[3][3];
-//     short unsigned int endeff[3],elbow[3],wrist[3], coord[7];
+    double obs[6];
 
     for(i = 0; i < numobstacles; i++)
     {
@@ -3666,95 +3663,6 @@ void EnvironmentROBARM3D::AddObstaclesToEnv(double**obstacles, int numobstacles)
 
         printf("[AddObstaclesToEnv] Obstacle %i was added to the environment.\n",i);
     }
-
-//     //pre-compute heuristics
-//     if(EnvROBARMCfg.dijkstra_heuristic)
-//         ComputeHeuristicValues();
-// 
-//     //compute forward kinematics
-//     ComputeContAngles(EnvROBARM.startHashEntry->coord, angles);
-//     if(!ComputeEndEffectorPos(angles, endeff, wrist, elbow, orientation))
-//     {
-//         printf("[AddObstaclesToEnv] Start position is invalid after adding obstacles.\n"); //this should never be true from gazebo
-//         exit(1);
-//     }
-// 
-// 
-//     //check if the starting position and goal are still valid
-//     if(!IsValidCoord(EnvROBARM.startHashEntry->coord,EnvROBARM.startHashEntry->endeff,wrist,elbow,EnvROBARM.startHashEntry->orientation))
-//     {
-//         printf("Start Hash Entry is invalid after adding obstacles.\n");
-//         exit(1);
-//     }
-// 
-//        //check if goals are still valid
-//     if(EnvROBARMCfg.PlanInJointSpace)
-//     {
-//         for (i = 0; i < EnvROBARMCfg.nJointSpaceGoals; i++)
-//         {
-//             for(p = 0; p < NUMOFLINKS; p++)
-//                 angles[p] = EnvROBARMCfg.JointSpaceGoals[i][p];
-// 
-//             //get joint positions of starting configuration
-//             if(!ComputeEndEffectorPos(angles, endeff, wrist, elbow, orientation))
-//             {
-//                 printf("[AddObstaclesToEnv] goal %i: (%.2f %.2f %.2f %.2f %.2f %.2f %.2f) is out of bounds.\n",
-//                        i,angles[0],angles[1],angles[2],angles[3],angles[4],angles[5],angles[6]);
-//                 if(!RemoveGoal(i))
-//                 {
-//                     EnvROBARMCfg.bGoalIsSet  = false;
-//                     return;
-//                 }
-//                 else
-//                 {
-//                     printf("[AddObstaclesToEnv] Removed goal %i. %i goals remaining.\n", i, EnvROBARMCfg.nJointSpaceGoals);
-//                 }
-//             }
-// 
-//             //get coords
-//             ComputeCoord(angles, coord);
-// //             printf("[AddObstacles] goal angles %i: %.2f %.2f %.2f %.2f %.2f %.2f %.2f\n",
-// //                    i,angles[0],angles[1],angles[2],angles[3],angles[4],angles[5],angles[6]);
-// //             printf("[AddObstacles] goal coord %i: %i %i %i %i %i %i %i\n",
-// //                    i,coord[0],coord[1],coord[2],coord[3],coord[4],coord[5],coord[6]);
-// 
-//             //check if starting position is valid
-//             if(!IsValidCoord(coord,endeff,wrist,elbow,orientation))
-//             {
-//                 printf("[AddObstaclesToEnv] goal %i: (%.2f %.2f %.2f %.2f %.2f %.2f %.2f) is invalid. Removing it.\n",
-//                        i,angles[0],angles[1],angles[2],angles[3],angles[4],angles[5],angles[6]);
-//                 if(!RemoveGoal(i))
-//                 {
-//                     EnvROBARMCfg.bGoalIsSet  = false;
-//                     return;
-//                 }
-//                 else
-//                 {
-//                     printf("[AddObstaclesToEnv] Removed goal %i. %i goals remaining.\n", i, EnvROBARMCfg.nJointSpaceGoals);
-//                 }
-//             }
-//         }
-//     }
-//     else
-//     {
-//         for (i = 0; i < EnvROBARMCfg.EndEffGoals.size(); i++)
-//         {
-//             if(EnvROBARMCfg.Grid3D[EnvROBARMCfg.EndEffGoals[i].xyz[0]][EnvROBARMCfg.EndEffGoals[i].xyz[1]][EnvROBARMCfg.EndEffGoals[i].xyz[2]] >= EnvROBARMCfg.ObstacleCost)
-//             {
-//                 printf("End Effector Goal(%u %u %u) is invalid after adding obstacles.\n",
-//                     EnvROBARMCfg.EndEffGoals[i].xyz[0],EnvROBARMCfg.EndEffGoals[i].xyz[1],EnvROBARMCfg.EndEffGoals[i].xyz[2]);
-//                 if(!RemoveGoal(i))
-//                 {
-//                     EnvROBARMCfg.bGoalIsSet  = false;
-//                     return;
-//                 }
-//                 else
-//                 {
-//                     printf("[AddObstacles] Removed goal %i. %i goal(s) remaining.\n", i, EnvROBARMCfg.EndEffGoals.size());
-//                 }
-//             }
-//         }
-//     }
 }
 
 void EnvironmentROBARM3D::AddObstacles(const vector<vector <double> > &obstacles)
@@ -3819,202 +3727,28 @@ void EnvironmentROBARM3D::AddObstacles(const vector<vector <double> > &obstacles
 //     printf("[AddObstacles] %i big cubes are in the cube vector\n",EnvROBARMCfg.bigcubes.size());
 }
 
-/*
-void EnvironmentROBARM3D::AddObstacles(const vector<vector <double> > &obstacles)
-{
-    int i, p, cubes_added=0; //NOTE: can be unsigned to?
-    short unsigned int endeff[3],elbow[3],wrist[3], coord[NUMOFLINKS];
-    double obs[6], angles[NUMOFLINKS], orientation[3][3];
-
-    if(EnvROBARMCfg.mCopyingGrid.try_lock())
-    {
-//        printf("[AddObstacles] Grabbed ownership of the grid mutex. Obstacles will be added.\n");
-
-        for(i = 0; i < (int)obstacles.size(); i++)
-        {
-            //check if obstacle has 6 parameters --> {X,Y,Z,W,H,D}
-            if(obstacles[i].size() < 6)
-            {
-    //             printf("[AddObstacles] Obstacle %i has too few parameters.Skipping it.\n",i);
-                continue;
-            }
-
-            //throw out obstacles if they are too small
-            if(obstacles[i][3] <.001 || obstacles[i][4] <.001 || obstacles[i][5] <.001)
-            {
-    //             printf("[AddObstacles] Obstacle %i is too small.Skipping it.\n",i);
-                continue;
-            }
-
-
-            //check if obstacle is within the arm's reach - stupid way of doing this - change it
-            if(EnvROBARMCfg.arm_length < fabs(obstacles[i][0]) - obstacles[i][3] - EnvROBARMCfg.padding ||
-                EnvROBARMCfg.arm_length < fabs(obstacles[i][1]) - obstacles[i][4] - EnvROBARMCfg.padding ||
-                EnvROBARMCfg.arm_length < fabs(obstacles[i][2]) - obstacles[i][5] - EnvROBARMCfg.padding)
-            {
-    //             printf("[AddObstacles] Obstacle %i, centered at (%1.3f %1.3f %1.3f), is out of the arm's workspace.\n",i,obstacles[i][0],obstacles[i][1],obstacles[i][2]);
-                continue;
-            }
-            else
-            {
-                for(p = 0; p < 6; p++)
-                    obs[p] = obstacles[i][p];
-
-                //wrap mutexes around the temp grid
-//                 EnvROBARMCfg.mCopyingGrid.lock();
-
-                //NOTE putting new obstacles in the temporary maps
-    //             AddObstacleToGrid(obs,0, EnvROBARMCfg.Grid3D, EnvROBARMCfg.GridCellWidth);
-                AddObstacleToGrid(obs,0, EnvROBARMCfg.Grid3D_temp, EnvROBARMCfg.GridCellWidth);
-
-                if(EnvROBARMCfg.lowres_collision_checking)
-                    AddObstacleToGrid(obs,0, EnvROBARMCfg.LowResGrid3D_temp, EnvROBARMCfg.LowResGridCellWidth);
-    //                 AddObstacleToGrid(obs,0, EnvROBARMCfg.LowResGrid3D, EnvROBARMCfg.LowResGridCellWidth);
-
-//                 EnvROBARMCfg.mCopyingGrid.unlock();
-
- //             printf("[AddObstacles] Obstacle %i: (%.2f %.2f %.2f) was added to the environment.\n",i,obs[0],obs[1],obs[2]);
-                cubes_added++;
-            }
-        }
-
-        EnvROBARMCfg.mCopyingGrid.unlock();
-    }
-    else
-    {
- //       printf("[AddObstacles] Tried to get mutex lock but failed. Obstacles were not added.\n");
-        return;
-    }
-
-//     printf("[AddObstacles] %i cubic obstacles were added to the environment.\n",cubes_added);
-
-    //check if start position is still valid
-    ComputeContAngles(EnvROBARM.startHashEntry->coord, angles);
-    if(!ComputeEndEffectorPos(angles, endeff, wrist, elbow, orientation))
-    {
-        printf("[AddObstacles] Start position is invalid after adding obstacles.\n");
-//         exit(1); // TODO shouldnt be here when adding obstacles, before updating start position....perhaps add aflag to know the start isnt set?
-    }
-
-    if(!IsValidCoord(EnvROBARM.startHashEntry->coord,EnvROBARM.startHashEntry->endeff,wrist,elbow,EnvROBARM.startHashEntry->orientation))
-    {
-        printf("[AddObstacles] Start Hash Entry is invalid after adding obstacles.\n");
-//         exit(1);
-    }
-
-    //check if goals are still valid
-    if(EnvROBARMCfg.PlanInJointSpace)
-    {
-        i = 0;
-//         for (i = 0; i < EnvROBARMCfg.nJointSpaceGoals; i++)
-        while(i >= 0 && i < (int)EnvROBARMCfg.JointSpaceGoals.size())
-        {
-            for(p = 0; p < NUMOFLINKS; p++)
-                angles[p] = EnvROBARMCfg.JointSpaceGoals[i].pos[p];
-
-            //get joint positions of goal configurations
-            if(!ComputeEndEffectorPos(angles, endeff, wrist, elbow, orientation))
-            {
-//                printf("[AddObstacles] goal %i: (%.2f %.2f %.2f %.2f %.2f %.2f %.2f) is out of bounds.\n",
-//                       i,angles[0],angles[1],angles[2],angles[3],angles[4],angles[5],angles[6]);
-              EnvROBARMCfg.JointSpaceGoals.erase(EnvROBARMCfg.JointSpaceGoals.begin()+i);
-              if(EnvROBARMCfg.JointSpaceGoals.size() <= 0)
-                {
-                    EnvROBARMCfg.bGoalIsSet  = false;
-                    return;
-                }
-                else
-                {
-                    printf("[AddObstacles] Removed goal %i. %i goal(s) remaining.\n", i, EnvROBARMCfg.EndEffGoals.size());
-                }
-
-                i--;
-                continue;
-            }
-
-            printf("[AddObstacles] goal %i: elbow (%u %u %u) wrist (%u %u %u) endeff (%u %u %u)\n",
-                   i,elbow[0],elbow[1],elbow[2],wrist[0],wrist[1],wrist[2],endeff[0],endeff[1],endeff[2]);
-
-            //get coords
-            ComputeCoord(angles, coord);
-
-            //check if goal position is valid
-            if(!IsValidCoord(coord,endeff,wrist,elbow,orientation))
-            {
-                printf("[AddObstacles] goal %i: (%.2f %.2f %.2f %.2f %.2f %.2f %.2f) is invalid. Removing it.\n",
-                       i,angles[0],angles[1],angles[2],angles[3],angles[4],angles[5],angles[6]);
-
-                EnvROBARMCfg.JointSpaceGoals.erase(EnvROBARMCfg.JointSpaceGoals.begin()+i);
-                if(EnvROBARMCfg.JointSpaceGoals.size() <= 0)
-                {
-                    EnvROBARMCfg.bGoalIsSet  = false;
-                    return;
-                }
-                else
-                {
-                    printf("[AddObstacles] Removed goal %i. %i goal(s) remaining.\n", i, EnvROBARMCfg.EndEffGoals.size());
-                }
-
-                i--;
-            }
-
-            i++;
-        }
-    }
-    else
-    {
-//         for (i = 0; i < EnvROBARMCfg.EndEffGoals.size(); i++)
-        while(i >= 0 && i < EnvROBARMCfg.EndEffGoals.size())
-        {
-            if(EnvROBARMCfg.Grid3D[EnvROBARMCfg.EndEffGoals[i].xyz[0]][EnvROBARMCfg.EndEffGoals[i].xyz[1]][EnvROBARMCfg.EndEffGoals[i].xyz[2]] >= EnvROBARMCfg.ObstacleCost)
-            {
-                printf("[AddObstacles] End Effector Goal(%u %u %u) is invalid after adding obstacles.\n",
-                        EnvROBARMCfg.EndEffGoals[i].xyz[0],EnvROBARMCfg.EndEffGoals[i].xyz[1],EnvROBARMCfg.EndEffGoals[i].xyz[2]);
-                EnvROBARMCfg.EndEffGoals.erase(EnvROBARMCfg.JointSpaceGoals.begin()+i);
-                if(EnvROBARMCfg.JointSpaceGoals.size() <= 0)
-                {
-                    EnvROBARMCfg.bGoalIsSet  = false;
-                    return;
-                }
-                else
-                {
-                    printf("[AddObstacles] Removed goal %i. %i goal(s) remaining.\n", i, EnvROBARMCfg.EndEffGoals.size());
-                }
-            }
-            i++
-        }
-    }
-
-//     //pre-compute heuristics
-//     if(EnvROBARMCfg.dijkstra_heuristic)
-//         ComputeHeuristicValues();
-
-//    printf("[AddObstacles] %i cubes are in the cube vector\n",EnvROBARMCfg.cubes.size());
-//     printf("[AddObstacles] %i big cubes are in the cube vector\n",EnvROBARMCfg.bigcubes.size());
-}
-*/
 
 std::vector<std::vector<double> >* EnvironmentROBARM3D::getCollisionMap()
 {
-//     for(unsigned int i=0; i < EnvROBARMCfg.cubes.size(); i++)
-//     {
-//         printf("[sendCollisionMap] cube %i:, ",i);
-//         for(unsigned int k=0; k < EnvROBARMCfg.cubes[i].size(); k++)
-//             printf("%.3f ",EnvROBARMCfg.cubes[i][k]);
-//         printf("\n");
-//     }
-//    if(EnvROBARMCfg.mCopyingGrid.try_lock())
-//    {
-//        printf("[getCollisionMap] Acquired mutex...\n");
+    for(unsigned int i=0; i < EnvROBARMCfg.cubes.size(); i++)
+    {
+        printf("[getCollisionMap] cube %i: ",i);
+        for(unsigned int k=0; k < EnvROBARMCfg.cubes[i].size(); k++)
+            printf("%.3f ",EnvROBARMCfg.cubes[i][k]);
+        printf("\n");
+    }
 
-//        EnvROBARMCfg.sbpl_cubes = EnvROBARMCfg.cubes;
-//        EnvROBARMCfg.mCopyingGrid.unlock();
-//    }
-//    else
-//    {
- //       printf("[getCollisionMap] Could not acquire mutex...\n");
-        
- //   }
+   if(EnvROBARMCfg.mCopyingGrid.try_lock())
+   {
+       printf("[getCollisionMap] Acquired mutex...\n");
+
+       EnvROBARMCfg.sbpl_cubes = EnvROBARMCfg.cubes;
+       EnvROBARMCfg.mCopyingGrid.unlock();
+   }
+   else
+   {
+       printf("[getCollisionMap] Could not acquire mutex...\n");
+   }
     return &(EnvROBARMCfg.sbpl_cubes);
 }
 
@@ -4059,22 +3793,9 @@ void EnvironmentROBARM3D::ClearEnv()
     }
     else
     {
- //       printf("[ClearEnv] Tried to get mutex lock but failed. Environment was not cleared.\n");
-        return;
+      printf("[ClearEnv] Tried to get mutex lock but failed. Environment was not cleared.\n");
+      return;
     }
-
- //   printf("[ClearEnv] Exiting...\n");
-//     for (z = 45; z <= 50; z++)
-//     {
-//         printf("\n[ClearEnv] z = %i\n",z);
-//         for (x = 0; x < EnvROBARMCfg.LowResEnvWidth_c; x++) 
-//         {
-//             for (y = 0; y < EnvROBARMCfg.LowResEnvHeight_c; y++)
-//                 printf("%d ",EnvROBARMCfg.LowResGrid3D[x][y][z]);
-//             printf("\n");
-//         }
-//         printf("\n");
-//     }
 }
 
 bool EnvironmentROBARM3D::isPathValid(double** path, int num_waypoints)
