@@ -112,10 +112,12 @@ int main(int argc, char **argv)
     {
 	ros::spinOnce();
 	if (move_arm.execute(goalA, feedback, ros::Duration(10.0)) != robot_actions::SUCCESS)
-	    return -1;
+	  ROS_ERROR("failed on goal A");
+	  //	    return -1;
 	ros::spinOnce();
 	if (move_arm.execute(goalB, feedback, ros::Duration(10.0)) != robot_actions::SUCCESS)
-	    return -1;
+	  ROS_ERROR("failed on goal B");
+	  //	    return -1;
     }
     
     return 0;

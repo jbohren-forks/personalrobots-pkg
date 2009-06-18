@@ -253,7 +253,7 @@ namespace move_arm
 		    if (result == robot_actions::PREEMPTED)
 			ROS_INFO("Preempt requested. Stopping arm.");
 		    else
-			if (safe)
+			if (!safe)
 			    ROS_WARN("Environment is no longer safe. Cannot decide if path is valid. Stopping & replanning...");
 			else
 			    ROS_INFO("Current path is no longer valid. Stopping & replanning...");
