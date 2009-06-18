@@ -45,7 +45,7 @@ import time
 from visual_odometry.visualodometer import VisualOdometer, Pose, from_xyz_euler
 from stereo_utils.stereo import ComputedDenseStereoFrame, SparseStereoFrame
 from stereo_utils.descriptor_schemes import DescriptorSchemeCalonder, DescriptorSchemeSAD
-from stereo_utils.feature_detectors import FeatureDetectorFast
+from stereo_utils.feature_detectors import FeatureDetectorFast, FeatureDetectorStar
 from stereo_utils.camera import VidereCamera
 
 from skeleton import Skeleton
@@ -85,6 +85,7 @@ class FakeSource:
 
   def __init__(self, source):
     self.r = reader(source)
+    self.cold = True
 
   def cam(self):
     self.started = time.time()
@@ -95,9 +96,11 @@ class FakeSource:
     try:
       (cam, l, r) = self.r.next()
     except StopIteration:
-      print "Took %f" % (time.time() - self.started)
-      # sys.exit(1)
+      if self.cold:
+        print "Took %f" % (time.time() - self.started)
+        self.cold = False
       l,r = self.prev
+
     self.prev = (l,r)
     (w, h) = l.size
     return (w, h, l, r)
@@ -109,6 +112,7 @@ class Demo:
     # These variables are internal:
 
     self.stereo_cam = source.cam()
+    print "Camera is", self.stereo_cam
     self.connected = False
     self.snail_trail = []
     self.source = source
@@ -117,12 +121,13 @@ class Demo:
 
     # These variables can be tweaked:
 
-    self.fd = FeatureDetectorFast(200)
+    self.fd = FeatureDetectorFast(300)
     self.ds = DescriptorSchemeCalonder()
-    self.camera_preview = False
+    self.camera_preview = True
     self.vo = VisualOdometer(self.stereo_cam,
                              scavenge = False,
                              sba=None,
+                             num_ransac_iters=200,
                              inlier_error_threshold = 3.0)
     self.skel = Skeleton(self.stereo_cam, descriptor_scheme = self.ds, optimize_after_addition = False)
     self.skel.node_vdist = 0
@@ -138,8 +143,10 @@ class Demo:
     self.vo.handle_frame(self.f)
     self.inlier_history = self.inlier_history[-20:] + [self.vo.inl]
     # If the VO inlier count falls below 20, we're not well-connected for this link
+    print "===> inl", self.vo.inl
     if self.vo.inl < 20:
       self.connected = False
+      self.f.pose = Pose()
 
     # Add a frame to graph if:
     #   Frame zero, or
@@ -148,7 +155,7 @@ class Demo:
     #   or if connected, the distance from the youngest graph frame to this frame is > thresh
 
     add_to_graph = None
-    if self.vo.keyframe.id == 0:
+    if self.vo.keyframe.id == 0 and len(self.skel.nodes) == 0:
       add_to_graph = "Zero keyframe"
     elif min(self.inlier_history) > 20:
       if not self.connected:
@@ -368,27 +375,56 @@ def DrawGLScene():
       return old_color
 
   glLineWidth(3)
+
+  edges_plain = {}  # edges that are the same color
+  edges_cross = []  # cross track edges
+  edges_weak = []
+
   for i0,i1 in demo.skel.edges:
     l0 = demo.skel.node_labels[i0]
     l1 = demo.skel.node_labels[i1]
     if l0 == l1:
-      glColor3ub(*label2color(l0))
+      edges_plain.setdefault(l0, [])
+      edges_plain[l0].append((i0,i1))
     else:
-      glColor3f(.3, .3, 1)
-    if (i0,i1) in demo.skel.weak_edges:
-      glLineStipple(3, 0x5555)
-      glEnable(GL_LINE_STIPPLE)
-    else:
-      glDisable(GL_LINE_STIPPLE)
-    glBegin(GL_LINES)
-    (x,y,z) = demo.skel.newpose(i0).xform(0,0,0)
-    glVertex3f(-x,-y,z)
-    (x,y,z) = demo.skel.newpose(i1).xform(0,0,0)
-    glVertex3f(-x,-y,z)
-    glEnd()
-  glLineWidth(1)
-  glDisable(GL_LINE_STIPPLE)
+      if (i0,i1) in demo.skel.weak_edges:
+        edges_weak.append((i0,i1))
+      else:
+        edges_cross.append((i0,i1))
 
+  xformed = dict([(i, demo.skel.newpose(i).xform(0,0,0)) for i in demo.skel.nodes])
+
+  def draw_edge(i0,i1):
+    (x,y,z) = xformed[i0]
+    glVertex3f(-x,-y,z)
+    (x,y,z) = xformed[i1]
+    glVertex3f(-x,-y,z)
+
+  glLineWidth(3)
+
+  for l,vv in edges_plain.items():
+    glColor3ub(*label2color(l))
+    glBegin(GL_LINES)
+    for (i0,i1) in vv:
+      draw_edge(i0, i1)
+    glEnd()
+
+  glColor3f(.3, .3, 1)
+  glBegin(GL_LINES)
+  for i0,i1 in edges_cross:
+    draw_edge(i0, i1)
+  glEnd()
+
+  glLineStipple(3, 0x5555)
+  glEnable(GL_LINE_STIPPLE)
+  glBegin(GL_LINES)
+  for i0,i1 in edges_weak:
+    draw_edge(i0, i1)
+  glEnd()
+  glDisable(GL_LINE_STIPPLE)
+    
+  glLineWidth(1)
+    
   # Draw the skeleton nodes as frustums
 
   for id in demo.skel.nodes:
@@ -512,6 +548,11 @@ class MouseLook:
 
     if k == 'm':
       self.mode = (self.mode + 1) % 2
+    if self.mode == 0:
+      glutWarpPointer(320,240)
+      glutSetCursor(GLUT_CURSOR_NONE)
+    else:
+      glutSetCursor(GLUT_CURSOR_INHERIT)
 
     th_inc = 0.05
     if k == 'w':
@@ -532,10 +573,11 @@ class MouseLook:
       self.turn_r(th_inc)
 
   def passive(self, x, y):
-    if x != 320 or y != 240:
-      self.turn_r((x - 320) * 0.001)
-      self.turn_u((y - 240) * 0.001)
-      glutWarpPointer(320,240)
+    if self.mode == 0:
+      if x != 320 or y != 240:
+        self.turn_r((x - 320) * 0.001)
+        self.turn_u((y - 240) * 0.001)
+        glutWarpPointer(320,240)
 
 ml = MouseLook(0,0,4)
 
@@ -599,13 +641,8 @@ def main():
   glutKeyboardUpFunc(keyUnpressed)
   glutSpecialFunc(specialKeyPressed)
   glutIgnoreKeyRepeat(True)
-  if 0:
-    glutMouseFunc(mouseEvent)
-    glutMotionFunc(motionEvent)
   glutPassiveMotionFunc(ml.passive)
 
-  glutWarpPointer(320,240)
-  glutSetCursor(GLUT_CURSOR_NONE)
   InitGL(640, 480)
   updateMV()
 
