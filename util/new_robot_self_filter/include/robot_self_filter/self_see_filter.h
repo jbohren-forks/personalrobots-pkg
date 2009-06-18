@@ -167,7 +167,8 @@ public:
 	  // compute a sphere that bounds the entire robot
 	  collision_space::bodies::BoundingSphere bound;
 	  collision_space::bodies::mergeBoundingSpheres(bspheres, bound);	  
-
+	  btScalar radiusSquared = bound.radius * bound.radius;
+	  
 	  // we now decide which points we keep
 	  std::vector<bool> keep(np);
 
@@ -176,7 +177,7 @@ public:
 	  {
 	      btVector3 pt = btVector3(btScalar(data_in.pts[i].x), btScalar(data_in.pts[i].y), btScalar(data_in.pts[i].z));
 	      bool out = true;
-	      if (bound.center.distance(pt) < bound.radius)
+	      if (bound.center.distance2(pt) < radiusSquared)
 		  for (unsigned int j = 0 ; out && j < bs ; ++j)
 		      out = !bodies_[j].body->containsPoint(pt);
 	      
