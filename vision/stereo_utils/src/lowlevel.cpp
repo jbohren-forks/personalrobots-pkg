@@ -25,13 +25,19 @@ using namespace std;
 
 PyObject *do_ost_do_prefilter_norm(PyObject *self, PyObject *args)
 {
-  const uint8_t *im = (const uint8_t *)PyString_AsString(PyTuple_GetItem(args, 0));
+  const uint8_t *im;
+  uint8_t *ftim;
+  int xim;
+  int yim;
+  int ftzero;
+  uint8_t *buf;
+  int im_size, ftim_size, buf_size;
+  if (!PyArg_ParseTuple(args, "s#s#iiis#", &im, &im_size, &ftim, &ftim_size, &xim, &yim, &ftzero, &buf, &buf_size)) {
+    return NULL;
+  }
 
-  uint8_t *ftim = (uint8_t *)PyString_AsString(PyTuple_GetItem(args, 1));
-  int xim = PyInt_AsLong(PyTuple_GetItem(args, 2));
-  int yim = PyInt_AsLong(PyTuple_GetItem(args, 3));
-  int ftzero = PyInt_AsLong(PyTuple_GetItem(args, 4));
-  uint8_t *buf = (uint8_t *)PyString_AsString(PyTuple_GetItem(args, 5));
+  assert(im_size == (xim * yim));
+  assert(ftim_size == (xim * yim));
 
   ost_do_prefilter_fast_u(im, ftim, xim, yim, ftzero, buf);
   Py_RETURN_NONE;
@@ -52,10 +58,13 @@ PyObject *do_ost_do_stereo_sparse(PyObject *self, PyObject *args)
 
 PyObject *grab_16x16(PyObject *self, PyObject *args)
 {
-  const uint8_t *im = (const uint8_t *)PyString_AsString(PyTuple_GetItem(args, 0));
-  int xim = PyInt_AsLong(PyTuple_GetItem(args, 1));
-  int x = PyInt_AsLong(PyTuple_GetItem(args, 2));
-  int y = PyInt_AsLong(PyTuple_GetItem(args, 3));
+  const uint8_t *im;
+  int im_size;
+  int xim;
+  int x;
+  int y;
+  if (!PyArg_ParseTuple(args, "s#iii", &im, &im_size, &xim, &x, &y))
+    return NULL;
 
   char sub[256];
   if (1) {
@@ -99,11 +108,13 @@ PyObject *sad(PyObject *self, PyObject *args)
 
 PyObject *sad_search(PyObject *self, PyObject *args)
 {
-  const uint8_t *reference = (const uint8_t *)PyString_AsString(PyTuple_GetItem(args, 0));
-  PyObject *library = PyTuple_GetItem(args, 1);
+  const uint8_t *reference;
+  PyObject *library;
+  int reference_size;
   char *hits;
-  Py_ssize_t nhits;
-  PyString_AsStringAndSize(PyTuple_GetItem(args, 2), &hits, &nhits);
+  int nhits;
+  if (!PyArg_ParseTuple(args, "s#Os#", &reference, &reference_size, &library, &hits, &nhits))
+    return NULL;
 
   int best_ci = -1;
   int best_sad = 999999;
@@ -242,6 +253,25 @@ PyObject *harris(PyObject *self, PyObject *args)
   return r;
 }
 
+PyObject *buffer(PyObject *self, PyObject *args)
+{
+  int size;
+  if (!PyArg_ParseTuple(args, "i", &size))
+    return NULL;
+  char *original = new char[size + 16];
+  char *ptr = (char*)(((int)original + 15) & ~15);
+  return Py_BuildValue("NL", PyBuffer_FromReadWriteMemory(ptr, size), (long long)original);
+}
+
+PyObject *release(PyObject *self, PyObject *args)
+{
+  long long ptr;
+  if (!PyArg_ParseTuple(args, "L", &ptr))
+    return NULL;
+  delete (void*)ptr;
+  Py_RETURN_NONE;
+}
+
 /************************************************************************/
 
 static PyMethodDef methods[] = {
@@ -252,6 +282,9 @@ static PyMethodDef methods[] = {
   {"sad_search", sad_search, METH_VARARGS},
   {"dense_stereo", dense_stereo, METH_VARARGS},
   {"harris", harris, METH_VARARGS},
+
+  {"buffer", buffer, METH_VARARGS},
+  {"release", release, METH_VARARGS},
 
   {NULL, NULL, NULL},
 };
