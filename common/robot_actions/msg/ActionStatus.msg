@@ -1,8 +1,8 @@
 # This message defines the expected format for robot action status messages
 # Embed this in the feedback state message of robot actions
 
-# The action is inactive, and its status with respect to a prior request is undefined.
-byte UNDEFINED=0
+# The action is inactive, and has just been reset.
+byte RESET=0
 
 # The action has successfuly completed and is now inactive
 byte SUCCESS=1

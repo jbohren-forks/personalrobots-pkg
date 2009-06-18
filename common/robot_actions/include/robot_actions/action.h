@@ -51,6 +51,7 @@
 #include <boost/thread.hpp>
 #include <ros/node.h>
 #include <diagnostic_msgs/DiagnosticMessage.h>
+#include "ros/assert.h" 
 
 namespace robot_actions {
 
@@ -77,13 +78,6 @@ namespace robot_actions {
      * @param feedback The feedback message. At the end of the function, this will be published.
      */
     virtual ResultStatus execute(const Goal& goal, Feedback& feedback) = 0;
-
-    /**
-     * @brief Allows the user to check if the action is active. This is primarily used to condition behavior
-     * for low duty cycles when the action is inactive
-     * @return True if the action is active, false otherwise.
-     */
-    bool isActive() const { return _status.value == _status.ACTIVE; }
     
     /**
      * @brief Called by the user to check if the action has a new goal.
@@ -105,6 +99,13 @@ namespace robot_actions {
     }
 
   public:
+
+    /**
+     * @brief Allows the user to check if the action is active. This is primarily used to condition behavior
+     * for low duty cycles when the action is inactive
+     * @return True if the action is active, false otherwise.
+     */
+    bool isActive() const { return _status.value == _status.ACTIVE; }
 
     /**
      * @brief Accessor for the action name
@@ -184,12 +185,12 @@ namespace robot_actions {
      */
     Action(const std::string& name)
       : _name(name), _preempt_request(false), _result_status(SUCCESS), _terminated(false), _action_thread(NULL), _callback(NULL),_diagnostics_statuses(1){
-      _status.value = ActionStatus::UNDEFINED; 
+      _status.value = ActionStatus::RESET; 
       ros::Node::instance()->advertise<diagnostic_msgs::DiagnosticMessage> ("/diagnostics", 1) ;
     }
 
     virtual ~Action(){
-      terminate();
+      ROS_ASSERT_MSG(_terminated, "Actions must be terminated before they are deleted, or there will be a segfault. In this case, action '%s' terminated was terminated before it was deleted.", _name.c_str());
       if(_action_thread != NULL){
 	_action_thread->join();
 	delete _action_thread;
@@ -270,8 +271,8 @@ namespace robot_actions {
         else
           diagnostics_status.message = "Active";
       }
-      else if (_status.value == ActionStatus::UNDEFINED)
-        diagnostics_status.message = "Undefined";
+      else if (_status.value == ActionStatus::RESET)
+        diagnostics_status.message = "Reset";
       else if (_status.value == ActionStatus::PREEMPTED)
         diagnostics_status.message = "Preempted";
       else if (_status.value == ActionStatus::ABORTED)
