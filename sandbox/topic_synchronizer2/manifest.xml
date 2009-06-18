@@ -1,0 +1,12 @@
+<package>
+  <description>A class to synchronize incoming topics with the same timestamp, for the new API.</description>
+  <author>Marius Muja</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <depend package="roscpp" />
+  <depend package="std_msgs" />
+  <export>
+    <cpp cflags="-I${prefix}/include"/>
+  </export>
+  <url>http://pr.willowgarage.com/wiki/topic_synchronizer2</url>
+</package>
