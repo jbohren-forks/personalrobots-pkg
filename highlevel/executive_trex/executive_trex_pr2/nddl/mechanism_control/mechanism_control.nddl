@@ -3,313 +3,45 @@
 #include "rcs/mechanism_control/exports.nddl"
 #include "mechanism_control/exports.nddl"
 
-AgentActions agent_actions = new AgentActions();
 
-/**
- * @brief Track the state (up or down) of a specific controller in mechanism control
- */
-class MechanismController extends AgentTimeline {
+// Mechanism Controller Base Class. An instance at this level is used to capture the case of an empty domain without
+// implying inconsistency
 
-  predicate Holds{
-    bool is_up;
-    defaultOnCommit(is_up, false);
-  }
+// Right Arm Controllers
+class RightArmController extends MechanismController{};
+RightArmController r_arm_joint_trajectory_controller = new RightArmController();
+RightArmController r_arm_cartesian_trajectory_controller = new RightArmController();
+RightArmController r_arm_cartesian_tff_controller = new RightArmController();
+RightArmController r_arm_hybrid_controller = new RightArmController();
+RightArmController r_arm_constraint_cartesian_twist_controller = new RightArmController();
+RightArmController r_arm_constraint_cartesian_wrench_controller = new RightArmController();
+RightArmController r_arm_constraint_cartesian_pose_controller = new RightArmController();
+RightArmController r_arm_constraint_cartesian_trajectory_controller = new RightArmController();
+RightArmController r_arm_cartesian_twist_controller = new RightArmController();
+RightArmController r_arm_cartesian_wrench_controller = new RightArmController();
+RightArmController r_arm_cartesian_pose_controller = new RightArmController();
+RightArmController no_controller_right_arm = new RightArmController();
+RightArmController all_right_arm_controllers;
 
-  MechanismController(Mode _mode){
-    super(_mode, "Holds");
-  }
-};
+// Head Controllers
+class HeadController extends MechanismController{};
+HeadController head_controller = new HeadController();
+HeadController no_controller_head = new HeadController();
+HeadController all_head_controllers;
 
-// Controllers
+// RightGripper Controller
+class RightGripperController extends MechanismController{};
+RightGripperController gripper_controller = new RightGripperController();
+RightGripperController r_gripper_effort_controller = new RightGripperController();
+RightGripperController r_gripper_position_controller = new RightGripperController();
+RightGripperController no_controller_right_gripper = new RightGripperController();
+RightGripperController all_right_gripper_controllers;
 
-// Arm controllers that are mutually exclusive
-MechanismController r_arm_joint_trajectory_controller = new MechanismController(Internal);
-MechanismController r_arm_cartesian_trajectory_controller = new MechanismController(Internal);
-MechanismController r_arm_cartesian_tff_controller = new MechanismController(Internal);
-MechanismController r_arm_hybrid_controller = new MechanismController(Internal);
-
-// Additional ones
-MechanismController r_arm_cartesian_twist_controller = new MechanismController(Internal);
-MechanismController r_arm_cartesian_wrench_controller = new MechanismController(Internal);
-MechanismController r_arm_cartesian_pose_controller = new MechanismController(Internal);
-MechanismController head_controller = new MechanismController(Internal);
-MechanismController laser_tilt_controller = new MechanismController(Internal);
-MechanismController r_gripper_effort_controller = new MechanismController(Internal);
-MechanismController r_gripper_position_controller = new MechanismController(Internal);
-
-// Constraint controllers
-MechanismController r_arm_constraint_cartesian_twist_controller = new MechanismController(Internal);
-MechanismController r_arm_constraint_cartesian_wrench_controller = new MechanismController(Internal);
-MechanismController r_arm_constraint_cartesian_pose_controller = new MechanismController(Internal);
-MechanismController r_arm_constraint_cartesian_trajectory_controller = new MechanismController(Internal);
-
-// Actions for a start event
-AgentActions actions = new AgentActions();
-
-// Same rule expressed for both states
-MechanismController::Holds {
-  // Values oscillate
-  meets(Holds s);
-  met_by(Holds p);
-  neq(is_up, p.is_up);
-  neq(is_up, s.is_up);
-
-  // Ahh - special case of start token
-  bool fire;
-  testLT(fire, 0, start);
-  if(fire == true){
-    met_by(SwitchControllers.Active cmd);
-    eq(cmd.status, SUCCESS);
-    //tao(cmd.dispatch_time);
-    any(actions.startEvent a);
-    temporalDistance(a.start, [1, +inf], cmd.dispatch_time);
-  }
-}
-
-HeadMechanism::use_head_controller{ 
-  contains(AgentActions.startEvent);
-  contained_by(head_controller.Holds c);
-  eq(c.is_up, true);
-}
-
-TiltLaserMechanism::use_laser_tilt_controller{ 
-  contains(AgentActions.startEvent);
-  contained_by(laser_tilt_controller.Holds c);
-  eq(c.is_up, true);
-}
-
-RightArmMechanism::use_composite_cartesian_trajectory_controller{
-  contains(AgentActions.startEvent);
-  contained_by(r_arm_cartesian_wrench_controller.Holds c0);
-  eq(c0.is_up, true);
-  contained_by(r_arm_cartesian_twist_controller.Holds c1);
-  eq(c1.is_up, true);
-  contained_by(r_arm_cartesian_pose_controller.Holds c2);
-  eq(c2.is_up, true);
-  contained_by(r_arm_cartesian_trajectory_controller.Holds c3);
-  eq(c3.is_up, true);
-
-  // We also require certain other controllers are down
-  contained_by(r_arm_cartesian_tff_controller.Holds down_0);
-  eq(down_0.is_up, false);
-  contained_by(r_arm_joint_trajectory_controller.Holds down_1);
-  eq(down_1.is_up, false);
-  contained_by(r_arm_hybrid_controller.Holds c5);
-  eq(c5.is_up, false);
-
-  // This is ugly. We should not have to explicitly restate the mutex
-  contained_by(r_arm_constraint_cartesian_wrench_controller.Holds d0);
-  eq(d0.is_up, false);
-  contained_by(r_arm_constraint_cartesian_twist_controller.Holds d1);
-  eq(d1.is_up, false);
-  contained_by(r_arm_constraint_cartesian_pose_controller.Holds d2);
-  eq(d2.is_up, false);
-  contained_by(r_arm_constraint_cartesian_trajectory_controller.Holds d3);
-  eq(d3.is_up, false);
-}
-
-
-RightArmMechanism::use_constraint_composite_cartesian_trajectory_controller{
-  contains(AgentActions.startEvent);
-  contained_by(r_arm_constraint_cartesian_wrench_controller.Holds c0);
-  eq(c0.is_up, true);
-  contained_by(r_arm_constraint_cartesian_twist_controller.Holds c1);
-  eq(c1.is_up, true);
-  contained_by(r_arm_constraint_cartesian_pose_controller.Holds c2);
-  eq(c2.is_up, true);
-  contained_by(r_arm_constraint_cartesian_trajectory_controller.Holds c3);
-  eq(c3.is_up, true);
-
-  // We also require certain other controllers are down
-  contained_by(r_arm_cartesian_tff_controller.Holds down_0);
-  eq(down_0.is_up, false);
-  contained_by(r_arm_joint_trajectory_controller.Holds down_1);
-  eq(down_1.is_up, false);
-  contained_by(r_arm_hybrid_controller.Holds down_2);
-  eq(down_2.is_up, false);
-
-  // This is ugly. We should not have to explicitly restate the mutex
-  contained_by(r_arm_cartesian_wrench_controller.Holds d0);
-  eq(d0.is_up, false);
-  contained_by(r_arm_cartesian_twist_controller.Holds d1);
-  eq(d1.is_up, false);
-  contained_by(r_arm_cartesian_pose_controller.Holds d2);
-  eq(d2.is_up, false);
-  contained_by(r_arm_cartesian_trajectory_controller.Holds d3);
-  eq(d3.is_up, false);
-}
-
-RightArmMechanism::use_constraint_composite_cartesian_pose_controller{
-  contains(AgentActions.startEvent);
-  contained_by(r_arm_constraint_cartesian_wrench_controller.Holds c0);
-  eq(c0.is_up, true);
-  contained_by(r_arm_constraint_cartesian_twist_controller.Holds c1);
-  eq(c1.is_up, true);
-  contained_by(r_arm_constraint_cartesian_pose_controller.Holds c2);
-  eq(c2.is_up, true);
-
-  // We also require certain other controllers are down
-  contained_by(r_arm_cartesian_tff_controller.Holds down_0);
-  eq(down_0.is_up, false);
-  contained_by(r_arm_joint_trajectory_controller.Holds down_1);
-  eq(down_1.is_up, false);
-  contained_by(r_arm_hybrid_controller.Holds c5);
-  eq(c5.is_up, false);
-  contained_by(r_arm_cartesian_trajectory_controller.Holds c3);
-  eq(c3.is_up, false);
-
-  contained_by(r_arm_cartesian_wrench_controller.Holds d0);
-  eq(d0.is_up, false);
-  contained_by(r_arm_cartesian_twist_controller.Holds d1);
-  eq(d1.is_up, false);
-  contained_by(r_arm_cartesian_pose_controller.Holds d2);
-  eq(d2.is_up, false);
-  contained_by(r_arm_constraint_cartesian_trajectory_controller.Holds d3);
-  eq(d3.is_up, false);
-}
-
-
-RightArmMechanism::use_composite_tff_controller{
-  contains(AgentActions.startEvent);
-  contained_by(r_arm_constraint_cartesian_wrench_controller.Holds c0);
-  eq(c0.is_up, true);
-  contained_by(r_arm_cartesian_tff_controller.Holds c1);
-  eq(c1.is_up, true);
-
-  // All others should be down
-  contained_by(r_arm_joint_trajectory_controller.Holds c2);
-  eq(c2.is_up, false);
-  contained_by(r_arm_cartesian_twist_controller.Holds c3);
-  eq(c3.is_up, false);
-  contained_by(r_arm_cartesian_pose_controller.Holds c4);
-  eq(c4.is_up, false);
-  contained_by(r_arm_cartesian_trajectory_controller.Holds c5);
-  eq(c5.is_up, false);
-  contained_by(r_arm_hybrid_controller.Holds c6);
-  eq(c6.is_up, false);
-
-  // This is ugly. We should not have to explicitly restate the mutex
-  contained_by(r_arm_cartesian_wrench_controller.Holds d0);
-  eq(d0.is_up, false);
-  contained_by(r_arm_constraint_cartesian_twist_controller.Holds d1);
-  eq(d1.is_up, false);
-  contained_by(r_arm_constraint_cartesian_pose_controller.Holds d2);
-  eq(d2.is_up, false);
-  contained_by(r_arm_constraint_cartesian_trajectory_controller.Holds d3);
-  eq(d3.is_up, false);
-}
-
-RightArmMechanism::use_joint_trajectory_controller{
-  contains(AgentActions.startEvent);
-  contained_by(r_arm_joint_trajectory_controller.Holds c);
-  eq(c.is_up, true);
-
-  // All others should be down
-  contained_by(r_arm_cartesian_wrench_controller.Holds c0);
-  eq(c0.is_up, false);
-  contained_by(r_arm_cartesian_twist_controller.Holds c1);
-  eq(c1.is_up, false);
-  contained_by(r_arm_cartesian_pose_controller.Holds c2);
-  eq(c2.is_up, false);
-  contained_by(r_arm_cartesian_trajectory_controller.Holds c3);
-  eq(c3.is_up, false);
-  contained_by(r_arm_cartesian_tff_controller.Holds c4);
-  eq(c4.is_up, false);
-  contained_by(r_arm_hybrid_controller.Holds c5);
-  eq(c5.is_up, false);
-
-  // This is ugly. We should not have to explicitly restate the mutex
-  contained_by(r_arm_constraint_cartesian_wrench_controller.Holds d0);
-  eq(d0.is_up, false);
-  contained_by(r_arm_constraint_cartesian_twist_controller.Holds d1);
-  eq(d1.is_up, false);
-  contained_by(r_arm_constraint_cartesian_pose_controller.Holds d2);
-  eq(d2.is_up, false);
-  contained_by(r_arm_constraint_cartesian_trajectory_controller.Holds d3);
-  eq(d3.is_up, false);
-}
-
-RightArmMechanism::use_cartesian_trajectory_controller{
-  contains(AgentActions.startEvent);
-  contained_by(r_arm_cartesian_trajectory_controller.Holds c);
-  eq(c.is_up, true);
-
-  // All others should be down
-  contained_by(r_arm_cartesian_wrench_controller.Holds c0);
-  eq(c0.is_up, false);
-  contained_by(r_arm_cartesian_twist_controller.Holds c1);
-  eq(c1.is_up, false);
-  contained_by(r_arm_cartesian_pose_controller.Holds c2);
-  eq(c2.is_up, false);
-  contained_by(r_arm_joint_trajectory_controller.Holds c3);
-  eq(c3.is_up, false);
-  contained_by(r_arm_cartesian_tff_controller.Holds c4);
-  eq(c4.is_up, false);
-
-  contained_by(r_arm_hybrid_controller.Holds c5);
-  eq(c5.is_up, false);
-
-  // This is ugly. We should not have to explicitly restate the mutex
-  contained_by(r_arm_constraint_cartesian_wrench_controller.Holds d0);
-  eq(d0.is_up, false);
-  contained_by(r_arm_constraint_cartesian_twist_controller.Holds d1);
-  eq(d1.is_up, false);
-  contained_by(r_arm_constraint_cartesian_pose_controller.Holds d2);
-  eq(d2.is_up, false);
-  contained_by(r_arm_constraint_cartesian_trajectory_controller.Holds d3);
-  eq(d3.is_up, false);
-}
-
-
-RightArmMechanism::use_hybrid_controller{
-  contains(AgentActions.startEvent);
-
-  contained_by(r_arm_hybrid_controller.Holds c);
-  eq(c.is_up, true);
-
-  contained_by(r_arm_cartesian_wrench_controller.Holds c0);
-  eq(c0.is_up, false);
-  contained_by(r_arm_cartesian_twist_controller.Holds c1);
-  eq(c1.is_up, false);
-  contained_by(r_arm_cartesian_pose_controller.Holds c2);
-  eq(c2.is_up, false);
-  contained_by(r_arm_cartesian_trajectory_controller.Holds c3);
-  eq(c3.is_up, false);
-
-  // We also require certain other controllers are down
-  contained_by(r_arm_cartesian_tff_controller.Holds down_0);
-  eq(down_0.is_up, false);
-  contained_by(r_arm_joint_trajectory_controller.Holds down_1);
-  eq(down_1.is_up, false);
-
-  // This is ugly. We should not have to explicitly restate the mutex
-  contained_by(r_arm_constraint_cartesian_wrench_controller.Holds d0);
-  eq(d0.is_up, false);
-  contained_by(r_arm_constraint_cartesian_twist_controller.Holds d1);
-  eq(d1.is_up, false);
-  contained_by(r_arm_constraint_cartesian_pose_controller.Holds d2);
-  eq(d2.is_up, false);
-  contained_by(r_arm_constraint_cartesian_trajectory_controller.Holds d3);
-  eq(d3.is_up, false);
-}
-
-RightGripperMechanism::use_effort_controller{
-  contains(AgentActions.startEvent);
-  contained_by(r_gripper_effort_controller.Holds c);
-  eq(c.is_up, true);
-
-  contained_by(r_gripper_position_controller.Holds c1);
-  eq(c1.is_up, false);
-}
-
-RightGripperMechanism::use_position_controller{
-  contains(AgentActions.startEvent);
-  contained_by(r_gripper_position_controller.Holds c);
-  eq(c.is_up, true);
-
-  contained_by(r_gripper_effort_controller.Holds c1);
-  eq(c1.is_up, false);
-}
+// Tilt Laser
+class TiltLaserController extends MechanismController{}
+TiltLaserController laser_tilt_controller = new TiltLaserController();
+TiltLaserController no_controller_tilt_laser = new TiltLaserController();
+TiltLaserController all_laser_tilt_controllers;
 
 // Swap Command
 SwitchControllers switch_controllers = new SwitchControllers(External);
@@ -319,3 +51,107 @@ HeadMechanism head_mechanism = new HeadMechanism(Internal);
 TiltLaserMechanism laser_tilt_mechanism = new TiltLaserMechanism(Internal);
 RightArmMechanism right_arm_mechanism = new RightArmMechanism(Internal);
 RightGripperMechanism right_gripper_mechanism = new RightGripperMechanism(Internal);
+
+SwitchControllers::Active{
+  met_by(Inactive);
+}
+
+HeadMechanism::use_head_controller{
+  met_by(switch_controllers.Active cmd);
+  eq(cmd.status, SUCCESS);
+  subsetOf(cmd.up_list, all_head_controllers);
+  subsetOf(cmd.down_list, all_head_controllers);
+  neq(head_controller, cmd.down_list);
+}
+
+TiltLaserMechanism::use_laser_tilt_controller{ 
+  met_by(switch_controllers.Active cmd);
+  eq(cmd.status, SUCCESS);
+  subsetOf(cmd.up_list, all_laser_tilt_controllers);
+  subsetOf(cmd.down_list, all_laser_tilt_controllers);
+  neq(laser_tilt_controller, cmd.down_list);
+}
+
+RightArmMechanism::use_composite_cartesian_trajectory_controller{
+  met_by(switch_controllers.Active cmd);
+  eq(cmd.status, SUCCESS);
+  subsetOf(cmd.up_list, all_right_arm_controllers);
+  subsetOf(cmd.down_list, all_right_arm_controllers);
+  neq(r_arm_cartesian_wrench_controller, cmd.down_list);
+  neq(r_arm_cartesian_twist_controller, cmd.down_list);
+  neq(r_arm_cartesian_pose_controller, cmd.down_list);
+  neq(r_arm_cartesian_trajectory_controller, cmd.down_list);
+}
+
+
+RightArmMechanism::use_constraint_composite_cartesian_trajectory_controller{
+  met_by(switch_controllers.Active cmd);
+  eq(cmd.status, SUCCESS);
+  subsetOf(cmd.up_list, all_right_arm_controllers);
+  subsetOf(cmd.down_list, all_right_arm_controllers);
+  neq(r_arm_constraint_cartesian_wrench_controller, cmd.down_list);
+  neq(r_arm_constraint_cartesian_twist_controller, cmd.down_list);
+  neq(r_arm_constraint_cartesian_pose_controller, cmd.down_list);
+  neq(r_arm_constraint_cartesian_trajectory_controller, cmd.down_list);
+}
+
+RightArmMechanism::use_constraint_composite_cartesian_pose_controller{
+  met_by(switch_controllers.Active cmd);
+  eq(cmd.status, SUCCESS);
+  subsetOf(cmd.up_list, all_right_arm_controllers);
+  subsetOf(cmd.down_list, all_right_arm_controllers);
+  neq(r_arm_constraint_cartesian_wrench_controller, cmd.down_list);
+  neq(r_arm_constraint_cartesian_twist_controller, cmd.down_list);
+  neq(r_arm_constraint_cartesian_pose_controller, cmd.down_list);
+}
+
+
+RightArmMechanism::use_composite_tff_controller{
+  met_by(switch_controllers.Active cmd);
+  eq(cmd.status, SUCCESS);
+  subsetOf(cmd.up_list, all_right_arm_controllers);
+  subsetOf(cmd.down_list, all_right_arm_controllers);
+  neq(r_arm_constraint_cartesian_wrench_controller, cmd.down_list);
+  neq(r_arm_cartesian_tff_controller, cmd.down_list);
+}
+
+RightArmMechanism::use_joint_trajectory_controller{
+  met_by(switch_controllers.Active cmd);
+  eq(cmd.status, SUCCESS);
+  subsetOf(cmd.up_list, all_right_arm_controllers);
+  subsetOf(cmd.down_list, all_right_arm_controllers);
+  neq(r_arm_joint_trajectory_controller, cmd.down_list);
+}
+
+RightArmMechanism::use_cartesian_trajectory_controller{
+  met_by(switch_controllers.Active cmd);
+  eq(cmd.status, SUCCESS);
+  subsetOf(cmd.up_list, all_right_arm_controllers);
+  subsetOf(cmd.down_list, all_right_arm_controllers);
+  neq(r_arm_cartesian_trajectory_controller, cmd.down_list);
+}
+
+
+RightArmMechanism::use_hybrid_controller{
+  met_by(switch_controllers.Active cmd);
+  eq(cmd.status, SUCCESS);
+  subsetOf(cmd.up_list, all_right_arm_controllers);
+  subsetOf(cmd.down_list, all_right_arm_controllers);
+  neq(r_arm_hybrid_controller, cmd.down_list);
+}
+
+RightGripperMechanism::use_effort_controller{
+  met_by(switch_controllers.Active cmd);
+  eq(cmd.status, SUCCESS);
+  subsetOf(cmd.up_list, all_right_arm_controllers);
+  subsetOf(cmd.down_list, all_right_arm_controllers);
+  neq(r_gripper_effort_controller, cmd.down_list);
+}
+
+RightGripperMechanism::use_position_controller{
+  met_by(switch_controllers.Active cmd);
+  eq(cmd.status, SUCCESS);
+  subsetOf(cmd.up_list, all_right_arm_controllers);
+  subsetOf(cmd.down_list, all_right_arm_controllers);
+  neq(r_gripper_position_controller, cmd.down_list);
+}
