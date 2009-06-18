@@ -251,6 +251,12 @@ StowPlug::Active{
   // Must not be plugged in
   contained_by(plugged_in.False);
 }
+// Toggle Arms Clear State
+StowPlug::Inactive{
+  if(status == SUCCESS){
+    starts_during(arms_clear.False);
+  }
+}
 // The plug must be stowed whenever we move the base
 MoveBase::Active{
   contained_by(plug_stowed.True);
