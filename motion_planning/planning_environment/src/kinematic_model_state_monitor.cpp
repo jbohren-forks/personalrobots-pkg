@@ -181,7 +181,8 @@ void planning_environment::KinematicModelStateMonitor::waitForState(void) const
 
 bool planning_environment::KinematicModelStateMonitor::isStateUpdated(double sec) const
 {
-    if (sec > 0.0 && lastStateUpdate_ < ros::Time::now() - ros::Duration(sec))
+    // less than 10us is considered 0 
+    if (sec > 1e-5 && lastStateUpdate_ < ros::Time::now() - ros::Duration(sec))
 	return false;
     else
 	return true;
