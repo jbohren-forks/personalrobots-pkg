@@ -237,8 +237,6 @@ ESCAPE = '\033'
 window = 0
 
 import numpy
-ball = transformations.Arcball(initial=numpy.identity(4))
-ball.place([320, 240], 320)
 
 def InitGL(Width, Height):				# We call this right after our OpenGL window is created.
   glClearColor(0.0, 0.0, 0.0, 0.0)	                # This Will Clear The Background Color To Black
@@ -570,21 +568,6 @@ def updateMV():
     L = (sum(M.T.tolist(), []))
     glLoadMatrixf(L)
   #print "GL has:\n", glGetFloatv(GL_MODELVIEW_MATRIX)
-
-if 0:
-  def mouseEvent(button, state, x, y):
-    if button == 0 and state == 0:
-      ball.down([640 - x, 480 - y])
-
-  def updateMV():
-    glMatrixMode(GL_MODELVIEW)
-    glLoadIdentity()
-    glTranslatef(0, 0, -4)
-    glMultMatrixf(ball.matrix())
-
-  def motionEvent(x, y):
-    ball.drag([640 - x, 480 - y])
-    updateMV()
 
 def every():
   ml.frob()
