@@ -126,6 +126,9 @@ int main(int argc, char** argv)
     case robot_actions::PREEMPTED:
       ROS_INFO("Move preempted");
       break;
-    }    
+    }
+    ros::Duration wait_time;
+    wait_time.fromSec(3);
+    wait_time.sleep();
   }
 }
