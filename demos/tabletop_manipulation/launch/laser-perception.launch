@@ -29,7 +29,7 @@
   <node pkg="point_cloud_assembler" type="point_cloud_snapshotter" output="screen" name="snapshotter">
     <remap from="laser_scanner_signal" to="laser_tilt_controller/laser_scanner_signal"/>
     <remap from="build_cloud" to="point_cloud_assembler/build_cloud" />
-    <remap from="full_cloud" to="snapshot_cloud" />
+    <remap from="full_cloud" to="full_cloud_filtered" />
   </node>
   
   <include file="$(find collision_map)/collision_map.launch" />
