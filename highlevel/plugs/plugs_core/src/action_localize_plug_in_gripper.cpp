@@ -101,8 +101,10 @@ LocalizePlugInGripperAction::~LocalizePlugInGripperAction()
 
   ros::Duration d; d.fromSec(0.001);
   while (isActive()) {
-    if(ros::Time::now() - started > ros::Duration(15.0))
+    if(ros::Time::now() - started > ros::Duration(15.0)) {
+      ROS_ERROR("%s: Timed out.", action_name_.c_str());
       deactivate(robot_actions::ABORTED,feedback);
+    }
     node_.publish(TRACKER_ACTIVATE, empty);
     d.sleep();
   }
