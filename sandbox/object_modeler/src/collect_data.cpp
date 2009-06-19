@@ -93,15 +93,18 @@ robot_msgs::Quaternion direction(robot_msgs::Point position, robot_msgs::Point t
 
 int main(int argc, char** argv)
 {
+  ROS_DEBUG("Initializing");
   ros::init(argc, argv, "object_modeler");
-  //ros::NodeHandle n;
+  ros::NodeHandle n;
   
+  ROS_DEBUG("Declaring action clients");
   typedef robot_msgs::PoseStamped PS;
   robot_actions::ActionClient<PS, nav_robot_actions::MoveBaseState, PS> move_client("move_base");
   typedef annotated_map_builder::WaitActionState WaitState;
   typedef annotated_map_builder::WaitActionGoal WaitGoal;
   robot_actions::ActionClient<WaitGoal, WaitState, WaitState> wait_client("wait_k_messages_action");
-
+  
+  ROS_DEBUG("Reading way points");
   vector<robot_msgs::Point> goal_points;
   read_poses_from_file(goal_points, "poses.txt");
   if (goal_points.size() < 2) {
@@ -111,6 +114,7 @@ int main(int argc, char** argv)
 
   robot_msgs::Point target = goal_points[0];
 
+  ROS_DEBUG("Reading way points");
   typedef vector<robot_msgs::Point>::const_iterator I;
   for (I i = goal_points.begin() + 1; i != goal_points.end(); i++) {
     robot_msgs::Pose goal_pose;
@@ -130,7 +134,7 @@ int main(int argc, char** argv)
     case robot_actions::PREEMPTED:
       ROS_INFO("Move preempted");
       break;
-    }
+      }
     /*
     WaitGoal wait_goal;
     wait_goal.num_events = 3;
@@ -148,8 +152,9 @@ int main(int argc, char** argv)
       ROS_INFO("Wait preempted");
       break;
       }*/
+  
     ros::Duration wait_time;
     wait_time.fromSec(3);
     wait_time.sleep();
-  }
+    }
 }
