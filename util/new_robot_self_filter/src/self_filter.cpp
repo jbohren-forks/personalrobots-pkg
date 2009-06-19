@@ -56,7 +56,7 @@ private:
 	ros::WallTime tm = ros::WallTime::now();
 	sf_.update(*cloud, out);
 	double sec = (ros::WallTime::now() - tm).toSec();
-	ROS_INFO("Self filter: reduced %d points to %d points in %f seconds", (int)cloud->pts.size(), (int)out.pts.size(), sec);	
+	ROS_DEBUG("Self filter: reduced %d points to %d points in %f seconds", (int)cloud->pts.size(), (int)out.pts.size(), sec);
 	pointCloudPublisher_.publish(out);
     }
     
