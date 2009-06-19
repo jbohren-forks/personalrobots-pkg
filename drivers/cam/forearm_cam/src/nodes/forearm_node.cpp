@@ -929,12 +929,6 @@ stop_video:
       return 1;
     }
 
-    if (frame_info->eofInfo == NULL) {
-      // We no longer use the eofInfo.
-      missed_eof_count_++;
-      ROS_WARN("Frame %u was missing EOF", frame_info->frame_number);
-    }
-
     // If we are not in triggered mode then use the arrival time of the
     // first packet as the image time.
 
@@ -962,6 +956,13 @@ stop_video:
 
     //ROS_DEBUG("imageTime %f", imageTime);
     
+    // Check for frame with missing EOF.
+    if (frame_info->eofInfo == NULL) {
+      // We no longer use the eofInfo.
+      missed_eof_count_++;
+      ROS_WARN("Frame %u was missing EOF", frame_info->frame_number);
+    }
+
     // Check for short packet (video lines were missing)
     if (frame_info->shortFrame) {
       missed_line_count_++;
