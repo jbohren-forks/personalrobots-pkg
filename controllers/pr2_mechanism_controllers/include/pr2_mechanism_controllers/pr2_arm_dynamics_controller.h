@@ -53,7 +53,6 @@
 //Kinematics
 #include <robot_kinematics/robot_kinematics.h>
 
-// #include <libTF/Pose3D.h>
 // #include <urdf/URDF.h>
 
 namespace controller

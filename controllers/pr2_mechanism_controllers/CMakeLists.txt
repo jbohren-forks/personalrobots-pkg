@@ -31,6 +31,7 @@ rospack_add_library( pr2_mechanism_controllers
   src/pr2_odometry.cpp
   src/pr2_base_controller.cpp
   src/base_kinematics.cpp
+  src/Pose3D.cpp
   )
 rospack_link_boost(pr2_mechanism_controllers thread)
 

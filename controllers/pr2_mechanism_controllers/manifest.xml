@@ -12,7 +12,6 @@
   <depend package="realtime_tools" />
   <depend package="robot_mechanism_controllers" />
   <depend package="rospy" />
-  <depend package="libTF" />
   <depend package="std_msgs" />
   <depend package="deprecated_msgs" />
   <depend package="pr2_msgs" />
@@ -26,6 +25,7 @@
   <depend package="control_toolbox" />
   <depend package="filters" />
   <depend package="manipulation_msgs" />
+  <depend package="newmat10" />
 
   <url>http://pr.willowgarage.com</url>
   <repository>http://pr.willowgarage.com/repos</repository>
