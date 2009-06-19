@@ -107,16 +107,18 @@ public:
 	image_msgs::StereoInfoConstPtr stinfo;
 	image_msgs::DisparityInfoConstPtr dispinfo;
 	image_msgs::CamInfo rcinfo;
-	image_msgs::CamInfo lcinfo;
+	image_msgs::CamInfoConstPtr lcinfo_;
 	image_msgs::CvBridge lbridge;
 	image_msgs::CvBridge rbridge;
 	image_msgs::CvBridge dbridge;
 
 
 	ros::Subscriber left_image_sub_;
+	ros::Subscriber left_caminfo_image_sub_;
 	ros::Subscriber right_image_sub_;
 	ros::Subscriber disparity_sub_;
 	ros::Subscriber cloud_sub_;
+	ros::Subscriber dispinfo_sub_;
 
 
 	ros::Publisher object_pub_;
@@ -174,9 +176,11 @@ public:
 
 		// subscribe to topics
 		left_image_sub_ = nh_.subscribe("stereo/left/image_rect", 1, sync_.synchronize(&RecognitionLambertian::leftImageCallback, this));
+		left_caminfo_image_sub_ = nh_.subscribe("stereo/left/cam_info", 1, sync_.synchronize(&RecognitionLambertian::leftCamInfoCallback, this));
 		right_image_sub_ = nh_.subscribe("stereo/right/image_rect", 1, sync_.synchronize(&RecognitionLambertian::rightImageCallback, this));
 		disparity_sub_ = nh_.subscribe("stereo/disparity", 1, sync_.synchronize(&RecognitionLambertian::disparityImageCallback, this));
 		cloud_sub_ = nh_.subscribe("stereo/cloud", 1, sync_.synchronize(&RecognitionLambertian::cloudCallback, this));
+		dispinfo_sub_ = nh_.subscribe("stereo/disparity_info", 1, sync_.synchronize(&RecognitionLambertian::dispinfoCallback, this));
 
 //		sync_.setCount(4);
 
@@ -203,8 +207,20 @@ private:
 
 	void syncCallback()
 	{
+		if (disp!=NULL) {
+			cvReleaseImage(&disp);
+		}
+		if(dbridge.fromImage(*dimage)) {
+			disp = cvCreateImage(cvGetSize(dbridge.toIpl()), IPL_DEPTH_8U, 1);
+			cvCvtScale(dbridge.toIpl(), disp, 4.0/dispinfo->dpp);
+		}
+
 		runRecognitionLambertian();
-		cvWaitKey(100);
+	}
+
+	void leftCamInfoCallback(const image_msgs::CamInfo::ConstPtr& info)
+	{
+		lcinfo_ = info;
 	}
 
 	void leftImageCallback(const image_msgs::Image::ConstPtr& image)
@@ -213,6 +229,7 @@ private:
 		if(lbridge.fromImage(*limage, "bgr")) {
 			left = lbridge.toIpl();
 		}
+		cvShowImage("left", left);
 	}
 
 	void rightImageCallback(const image_msgs::Image::ConstPtr& image)
@@ -226,9 +243,11 @@ private:
 	void disparityImageCallback(const image_msgs::Image::ConstPtr& image)
 	{
 		dimage = image;
-		if(dbridge.fromImage(*dimage)) {
-			disp = dbridge.toIpl();
-		}
+	}
+
+	void dispinfoCallback(const image_msgs::DisparityInfo::ConstPtr& dinfo)
+	{
+		dispinfo = dinfo;
 	}
 
 	void cloudCallback(const robot_msgs::PointCloud::ConstPtr& point_cloud)
@@ -388,7 +407,7 @@ private:
 		PointCloud filtered_cloud;
 		PointCloud filtered_outside;
 
-		filterByZBounds(*cloud,0.1, 1.2 , filtered_cloud, filtered_outside );
+		filterByZBounds(*cloud,0.1, 1.5 , filtered_cloud, filtered_outside );
 
 		clearFromImage(disp, filtered_outside);
 
@@ -1060,27 +1079,32 @@ private:
 
 	void getCameraIntrinsics(image_msgs::CamInfo& lcinfo)
 	{
-		lcinfo.header.frame_id = cloud->header.frame_id;
-		lcinfo.header.stamp = cloud->header.stamp;
-
-		lcinfo.P[0] = 725.00002432;
-		lcinfo.P[1] = 0.0;
-		lcinfo.P[2] = 321.35299836;
-		lcinfo.P[3] = 0.0;
-		lcinfo.P[4] = 0.0;
-		lcinfo.P[5] = 725.00002432;
-		lcinfo.P[6] = 210.43089442;
-		lcinfo.P[7] = 0;
-		lcinfo.P[8] = 0;
-		lcinfo.P[9] = 0;
-		lcinfo.P[10] = 1;
-		lcinfo.P[11] = 0;
+		lcinfo = *lcinfo_;
+//
+//
+//
+//		lcinfo.header.frame_id = cloud->header.frame_id;
+//		lcinfo.header.stamp = cloud->header.stamp;
+//
+//		lcinfo.P[0] = 725.00002432;
+//		lcinfo.P[1] = 0.0;
+//		lcinfo.P[2] = 321.35299836;
+//		lcinfo.P[3] = 0.0;
+//		lcinfo.P[4] = 0.0;
+//		lcinfo.P[5] = 725.00002432;
+//		lcinfo.P[6] = 210.43089442;
+//		lcinfo.P[7] = 0;
+//		lcinfo.P[8] = 0;
+//		lcinfo.P[9] = 0;
+//		lcinfo.P[10] = 1;
+//		lcinfo.P[11] = 0;
 	}
 
 	void projectClusters(const PointCloud& objects_table_frame, const vector<Point32>& clusters)
 	{
 		image_msgs::CamInfo lcinfo;
 		getCameraIntrinsics(lcinfo);
+
 
 		Point pp[8];
 		for (size_t i=0;i<clusters.size();++i) {
@@ -1240,6 +1264,7 @@ private:
 		// reproject bboxes in image
 //		projectClusters(objects_table_frame, clusters);
 
+		image_msgs::CamInfo lcinfo;
 		getCameraIntrinsics(lcinfo);
 
 		locations.resize(clusters.size());
@@ -1307,7 +1332,7 @@ public:
 	{
 		while (nh_.ok())
 		{
-			int key = cvWaitKey(10)&0x00FF;
+			int key = cvWaitKey(100)&0x00FF;
 			if(key == 27) //ESC
 				break;
 
@@ -1323,10 +1348,8 @@ public:
 
 int main(int argc, char **argv)
 {
-	for(int i = 0; i<argc; ++i)
-		cout << "(" << i << "): " << argv[i] << endl;
-
 	ros::init(argc, argv, "recognition_lambertian");
+
 	RecognitionLambertian node;
 	node.spin();
 

@@ -159,16 +159,15 @@ class ChamferMatching
 	float min_scale;
 	float max_scale;
 	int count_scale;
-	float use_orientation;
-
 	float truncate;
+
 
 	vector<ChamferTemplate*> templates;
 	vector<CvPoint> candidate_locations;
 
 public:
 	ChamferMatching(bool use_orientation_ = false) : min_scale(0.5), max_scale(1.5), count_scale(5),
-		truncate(20), use_orientation(use_orientation_)
+		truncate(20)
 	{
 
 	}
