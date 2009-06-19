@@ -60,6 +60,7 @@
 
 #include "pr2lib.h"
 #include "host_netutil.h"
+#include "mt9v.h"
 
 // The FrameTimeFilter class takes a stream of image arrival times that
 // include time due to system load and network asynchrony, and generates a
@@ -225,6 +226,9 @@ private:
   std::string mode_name_;
   controller::trigger_configuration trig_req_;
   robot_mechanism_controllers::SetWaveform::Response trig_rsp_;
+  
+  int gain_;
+  double exposure_;
 
 //  diagnostic_updater::FrequencyStatus freq_diag_;
 //  diagnostic_updater::TimeStampStatus timestamp_diag_;
@@ -309,6 +313,21 @@ public:
       return;
     }
 
+    node_handle_.param("~gain", gain_, -1);
+    if (gain_ != -1)
+    {
+      if (gain_ < 16)
+      {
+        ROS_WARN("Gain of %i is too low. Legal range is 16 to 64. Resetting to 16.", gain_);
+        gain_ = 16;
+      }
+      if (gain_ > 64)
+      {
+        ROS_WARN("Gain of %i is too high. Legal range is 16 to 64. Resetting to 64.", gain_);
+        gain_ = 64;
+      }
+    }
+
     node_handle_.param("~port", port_, 9090); /// @todo Should get rid of this and let the OS pick a free port.
 
     node_handle_.param("~ext_trigger", ext_trigger_, false);
@@ -330,7 +349,7 @@ public:
     height_ = MT9VModes[video_mode_].height;
     cam_info_.width = width_;
     cam_info_.height = height_;
-    desired_freq_ = imager_freq_ = MT9VModes[video_mode_].fps;
+    imager_freq_ = MT9VModes[video_mode_].fps;
 
     // Specify which frame to add to message header
     node_handle_.param("~frame_id", frame_id_, std::string("NO_FRAME"));
@@ -342,11 +361,36 @@ public:
     node_handle_.getParam("~serial_number", serial_number_, -2);
     node_handle_.param("~trigger_phase", trig_phase_, 0.);
     
+    desired_freq_ = ext_trigger_ ? trig_rate_ : imager_freq_;
+    
     // First packet offset parameter
 
     node_handle_.param("~first_packet_offset", first_packet_offset_, 0.0025);
     if (!node_handle_.hasParam("~first_packet_offset") && trig_controller_.empty())
       ROS_INFO("first_packet_offset not specified. Using default value of %f ms.", first_packet_offset_);
+    
+    node_handle_.param("~exposure", exposure_, -1.0);
+    if (exposure_ != -1)
+    {
+      if (exposure_ <= 0)
+      {
+        ROS_WARN("Exposure is %f, but must be positive. Setting to automatic.", exposure_);
+        exposure_ = -1;
+      }
+
+      if (exposure_ > 1 / desired_freq_)
+      {
+        ROS_WARN("Exposure (%f s) is greater frame period (%f s). Setting to 90%% of frame period.", 
+            exposure_, 1 / desired_freq_);
+        exposure_ = 0.9 * 1 / desired_freq_;
+      }
+
+      if (exposure_ > 0.95 / desired_freq_)
+      {
+        ROS_WARN("Exposure (%f s) is greater than 95%% of frame period (%f s). You may miss frames.", 
+            exposure_, 0.95 / desired_freq_);
+      }
+    }
   }
 
   void diagnosticsLoop()
@@ -530,10 +574,6 @@ public:
 
     if (ext_trigger_)
     {
-      // How fast should we be triggering the camera? By default 1 Hz less
-      // than nominal.
-      desired_freq_ = trig_rate_;
-
       // Configure the triggering controller
       if (!trig_controller_.empty())
       {
@@ -565,6 +605,17 @@ public:
       return;
     }
 
+    // Set horizontal blanking
+    if ( pr2SensorWrite( camera_, MT9V_REG_HORIZONTAL_BLANKING, MT9VModes[video_mode_].hblank ) != 0)
+    {
+      ROS_WARN("Error setting horizontal blanking.");
+    }
+
+    if ( pr2SensorWrite( camera_, MT9V_REG_VERTICAL_BLANKING, MT9VModes[video_mode_].vblank) != 0)
+    {
+      ROS_WARN("Error setting vertical blanking.");
+    }
+
     /*
     // Set maximum course shutter width
     if ( pr2SensorWrite( camera_, 0xBD, 240 ) != 0) {
@@ -574,6 +625,37 @@ public:
       return;
     }
     */
+
+    if (pr2SensorWrite(camera_, MT9V_REG_AGC_AEC_ENABLE, (gain_ == -1) * 2 + (exposure_ == -1)) != 0)
+    {
+      ROS_WARN("Error setting AGC/AEC mode. Exposure and gain may be incorrect.");
+    }
+
+    if (gain_ != -1) // Manual gain
+    {
+      if ( pr2SensorWrite( camera_, MT9V_REG_ANALOG_GAIN, gain_) != 0)
+      {
+        ROS_WARN("Error setting analog gain.");
+      }
+    }
+
+    if (exposure_ != -1) // Manual exposure
+    {
+      uint16_t hblank = MT9VModes[video_mode_].hblank; 
+      uint16_t hpix = width_ > 320 ? width_ : width_ * 2; 
+      double line_time = (hpix + hblank) / MT9V_CK_FREQ;
+      ROS_DEBUG("Line time is %f microseconds. (hpix = %i, hblank = %i)", line_time * 1e6, hpix, hblank);
+      int explines = exposure_ / line_time;
+      if (explines < 1) /// @TODO warning here?
+        explines = 1;
+      if (explines > 32767) /// @TODO warning here?
+        explines = 32767;
+      ROS_DEBUG("Setting exposure lines to %i.", explines);
+      if ( pr2SensorWrite( camera_, MT9V_REG_TOTAL_SHUTTER_WIDTH, explines) != 0)
+      {
+        ROS_WARN("Error setting exposure.");
+      }
+    }
 
     // Try to load camera intrinsics from flash memory
     calibrated_ = loadIntrinsics(&cam_info_.D[0], &cam_info_.K[0],
@@ -735,6 +817,27 @@ stop_video:
   {
     fillImage(image_, "image", height, width, 1, "bayer_bggr", "uint8", frameData);
     
+    /*static FILE *f = fopen("/tmp/deltas.out", "w");
+    std::vector<unsigned char> idat = image_.uint8_data.data;
+    int maxdelta = 0;
+    for (int i = width_/3; i < 2*width_/3; i++)
+    {
+      int d1 = (i & 1) * width_;
+      int d2 = width_ - d1;
+      int h1 = idat[width_ * (height_ / 2) + i + d2] - idat[width_ * (height_ / 2) + i + 1 + d1];
+      if (abs(h1) > maxdelta)
+        maxdelta = abs(h1);
+      h1 += height_ / 2;
+      image_.uint8_data.data[h1 * width_ + i] = 255;
+      image_.uint8_data.data[(h1 + 1) * width_ + i] = 0;
+      image_.uint8_data.data[(h1 + 2) * width_ + i] = 255;
+      image_.uint8_data.data[(height_/2 - 1) * width_ + i] = 0;
+      image_.uint8_data.data[height_/2 * width_ + i] = 255;
+      image_.uint8_data.data[(height_/2 + 1) * width_ + i] = 0;
+    }
+    fprintf(f, "Maxdelta: %i\n", maxdelta);
+    fflush(f);*/
+
     image_.header.stamp = t;
     //timestamp_diag_.tick(t);
     cam_pub_.publish(image_);

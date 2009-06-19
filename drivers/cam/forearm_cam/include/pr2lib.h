@@ -44,6 +44,8 @@ struct MT9VMode {
   size_t width;
   size_t height;
   double fps;
+  uint16_t hblank;
+  uint16_t vblank;
 };
 
 extern const struct MT9VMode MT9VModes[MT9V_NUM_MODES];
