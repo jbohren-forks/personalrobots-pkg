@@ -1,0 +1,2 @@
+rospack_add_executable(calibration_server calibration_server.cpp)
+target_link_libraries(calibration_server camera_calibration)

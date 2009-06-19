@@ -9,7 +9,7 @@ int main(int argc, char** argv)
   int board_width = 6;
   int board_height = 9;
   float square_size = 1.0;//0.0225;
-  int image_width, image_height;
+  int image_width = 0, image_height = 0;
 
   CheckerboardDetector detector(board_width, board_height, square_size);
   detector.setFlags(CV_CALIB_CB_ADAPTIVE_THRESH);
