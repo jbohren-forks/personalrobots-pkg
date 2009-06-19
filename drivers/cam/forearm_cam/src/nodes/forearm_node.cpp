@@ -733,10 +733,15 @@ private:
       trig_req_.running = 1;
       if (!trig_service_.call(trig_req_, trig_rsp_))
       {
-        ROS_ERROR("Unable to set trigger controller.");
-        exit_status_ = 1;
-        //node_handle_.shutdown();
-        goto stop_video;
+        ROS_DEBUG("Could not start trigger on first attempt. Sleeping and retrying.");
+        sleep(3); // Perhaps the trigger is just being brought up.
+        if (!trig_service_.call(trig_req_, trig_rsp_))
+        {
+          ROS_ERROR("Unable to set trigger controller.");
+          exit_status_ = 1;
+          //node_handle_.shutdown();
+          goto stop_video;
+        }
       }
     }
     frameTimeFilter_.reset_filter();
