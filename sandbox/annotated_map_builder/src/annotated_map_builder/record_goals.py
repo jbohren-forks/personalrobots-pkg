@@ -43,7 +43,10 @@ from robot_msgs.msg import PoseStamped
 
 class RecordGoals:
   def __init__(self,filename):
-    self.sub_ = rospy.Subscriber("/goal", PoseStamped, self.onPose)
+    goal_t="/move_base/activate";
+    #goal_t="/goal";
+    self.sub_ = rospy.Subscriber(goal_t, PoseStamped, self.onPose)
+
 
     print filename
     self.outF=open(filename,'w');

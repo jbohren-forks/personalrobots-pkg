@@ -37,24 +37,18 @@
 import roslib
 roslib.load_manifest('annotated_map_builder')
 import rospy
-import random
-from pr2_msgs.msg import BaseControllerState
-from robot_msgs.msg import PoseDot
-from robot_msgs.msg import PoseDot
 
 from annotated_map_builder.msg import *
 
 class MoveHeadAdapter:
-  def __init__(self, action_name, message_topic, count,timeout=10.0):
+  def __init__(self, action_name, timeout=10.0):
 
     self.action_name_=action_name;
     self.state_topic_=self.action_name_+"/feedback";
     print self.state_topic_
 
     rospy.Subscriber(self.state_topic_, MoveHeadState, self.update)
-    self.pub_ = rospy.Publisher(self.action_name_+"/request", MoveHeadState)
-    self.goal_topic_ = "/head_controller/set_command_array"
-
+    self.pub_ = rospy.Publisher(self.action_name_+"/request", MoveHeadGoal)
     self.time_limit_ = timeout
     self.state=None
 
@@ -66,21 +60,15 @@ class MoveHeadAdapter:
     self.msg_wait_count_down_=self.wait_count_
 
   def timeUp(self):
+    if self.time_limit_<0:
+      return False;
+
     pursuit_time = rospy.get_time() - self.start_time_
     return pursuit_time > self.time_limit_;
 
-  def sendGoal(self, count=None, topic=None):
+  def sendGoal(self):
     self.start_time_ = rospy.get_time()
-    goal = WaitActionGoal()
-    if count:
-      goal.num_events = count
-    else:
-      goal.num_events = self.wait_count_;
-    if topic:
-      goal.topic_name =  topic;
-    else:
-      goal.topic_name =  self.message_topic_;
-
+    goal = MoveHeadGoal()
     self.pub_.publish(goal)
 
 

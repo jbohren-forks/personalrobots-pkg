@@ -53,17 +53,19 @@ from manual_charge_adapter import *
 
 from annotated_map_builder.wait_for_k_messages_adapter import *
 from annotated_map_builder.wait_for_multiple_head_configs import *
+from annotated_map_builder.move_head_adapter import *
 import annotated_map_builder.target_poses
 
 
 class ExecutiveDataCollector:
-  def __init__(self, goals, chrg_stations, navigator, batt_monitor, unstuck, manual_charger, capture_waiter, cycle_time):
+  def __init__(self, goals, chrg_stations, navigator, batt_monitor, unstuck, manual_charger, capture_waiter, move_head_adapter, cycle_time):
     self.goals = goals
     #self.capture_configs=capture_configs
     self.chrg_stations = chrg_stations
     self.navigator = navigator
     self.batt_monitor = batt_monitor
     self.capture_waiter = capture_waiter;
+    self.move_head_adapter = move_head_adapter;
     self.cycle_time = cycle_time
 
     self.state = "nav"
@@ -78,7 +80,7 @@ class ExecutiveDataCollector:
     self.stuck = False
 
   def legalStates(self):
-    return self.navigator.legalState() and self.batt_monitor.legalState() and self.capture_waiter.legalState()
+    return self.navigator.legalState() and self.batt_monitor.legalState() and self.capture_waiter.legalState() and self.move_head_adapter.legalState()
 
 
   def selectNextGoal(self):
@@ -136,7 +138,7 @@ class ExecutiveDataCollector:
         elif self.navigator.aborted() or (not self.navigator.active() and self.current_goal == None) or self.navigator.timeUp():
           print "Aborted:",self.current_goal
           self.selectNextGoal();
-
+          self.move_head_adapter.sendGoal(); 
           self.navigator.sendGoal(self.current_goal, "/map")
           print "nav --> nav"
 
@@ -152,7 +154,7 @@ class ExecutiveDataCollector:
 
           self.state="nav"
           self.selectNextGoal();
-
+          self.move_head_adapter.sendGoal(); 
           self.navigator.sendGoal(self.current_goal, "/map")
           print "capture --> nav"
         #else:
@@ -204,6 +206,10 @@ class ExecutiveDataCollector:
           self.navigator.sendGoal(chrg_pts, "/map")
           print "nav_charge --> nav_charge"
     else:
+      if not self.move_head_adapter.legalState():
+        print("Waiting on %s to be published" % (self.move_head_adapter.state_topic_))
+        rospy.logout("Waiting on %s to be published" % (self.move_head_adapter.state_topic_))
+
       if not self.capture_waiter.legalState():
         print("Waiting on %s to be published" % (self.capture_waiter.state_topic_))
         rospy.logout("Waiting on %s to be published" % (self.capture_waiter.state_topic_))
@@ -241,11 +247,13 @@ if __name__ == '__main__':
     manual_charger = ManualChargeAdapter("/request_charge")
 
     #/laser_tilt_controller/laser_scanner_signal - better!
-    capture_waiter = WaitForKMessagesAdapter("wait_k_messages_action","/stereo/raw_stereo_throttled",3,10)
+    capture_waiter = WaitForKMessagesAdapter("wait_k_messages_action",3,10)
     
     #capture_configs=[[0.0,-0.1],[-0.5, 0.3],[0.5, 0.3]];
 
     #multi_config_waiter=WaitForMultipleHeadConfigsAdapter(capture_configs,capture_waiter);
+
+    move_head_adapter=MoveHeadAdapter("/move_head/move_head_action",-1);
 
     hc_goal_topic_ = "/head_controller/set_command_array"
     hc_pub = rospy.Publisher(hc_goal_topic_, JointCmd)
@@ -283,7 +291,7 @@ if __name__ == '__main__':
         #  thNew-=4*pi2
 
 
-    executive = ExecutiveDataCollector(new_goals, chrg_stations, navigator, batt_monitor, unstuck, manual_charger, capture_waiter, 1.0)
+    executive = ExecutiveDataCollector(new_goals, chrg_stations, navigator, batt_monitor, unstuck, manual_charger, capture_waiter, move_head_adapter, 1.0)
     executive.run()
   except KeyboardInterrupt, e:
     pass

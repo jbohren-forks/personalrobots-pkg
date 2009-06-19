@@ -38,8 +38,11 @@ import roslib
 roslib.load_manifest('annotated_map_builder')
 import rospy
 import random
+import threading 
+
 from image_msgs.msg import RawStereo
 from std_msgs.msg import Empty
+
 
 from robot_actions.msg import ActionStatus;
 
@@ -50,10 +53,11 @@ class WaitForKMessagesAction:
 
     self.nn=node_name;#HACK
 
-    try:
-      self.message_topic_ = rospy.get_param("topic");
-    except:
-      self.message_topic_ = "/stereo/raw_stereo_throttled"
+    #try:
+    #  self.message_topic_ = rospy.get_param("topic");
+    #except:
+    #  self.message_topic_ = "/stereo/raw_stereo_throttled"
+    self.message_topic_ = "topic" #use remap
 
     self.goals_sub_ = rospy.Subscriber(self.nn+"/request", WaitActionGoal, self.onGoal)
     print self.goals_sub_
@@ -67,14 +71,18 @@ class WaitForKMessagesAction:
       self.time_limit_ = 10;
 
     self.status=ActionStatus();
-    self.status.value=ActionStatus.UNDEFINED
-    for i in range(0,10):
-      print "upd"
-      self.postStatus();
-      rospy.sleep(0.1);
-    print "INIT done"
+    self.status.value=ActionStatus.RESET
+    self.postStatus();
+
     self.topic_sub_ = rospy.Subscriber(self.message_topic_, RawStereo, self.update)
+
+    try:
+      self.wait_count_=rospy.get_param("count")
+    except:
+      self.wait_count_=3;
     
+    print "INIT done"
+
 
   def update(self,msg):
     print "."
@@ -124,7 +132,7 @@ class WaitForKMessagesAction:
     self.pursuit_time = rospy.get_time() - self.start_time_
     self.status.value=ActionStatus.ACTIVE;
 
-    while self.status.value==ActionStatus.ACTIVE:
+    while self.status.value==ActionStatus.ACTIVE and not rospy.is_shutdown():
       self.doCycle();
       rospy.sleep(0.1)
 
@@ -135,8 +143,7 @@ class WaitForKMessagesAction:
     self.postStatus();
 
   def spin(self):
-    while rospy.ok():
-      rospy.spinOnce()
+    while not rospy.is_shutdown():
       self.postStatus()
       rospy.sleep(0.1)
 
@@ -155,8 +162,10 @@ if __name__ == '__main__':
 
     rospy.init_node("wait_k_msg_action")
     w=WaitForKMessagesAction("wait_k_messages_action");
-    w.spin();
-    #rospy.spin();
+    w_thread=threading.Thread(None,w.spin)
+    w_thread.run()
+    
+    rospy.spin();
 
   except KeyboardInterrupt, e:
     pass

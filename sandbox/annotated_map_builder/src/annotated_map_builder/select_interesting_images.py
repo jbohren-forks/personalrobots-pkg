@@ -38,71 +38,53 @@ import roslib
 roslib.load_manifest('annotated_map_builder')
 import rospy
 import random
-from pr2_msgs.msg import BaseControllerState
-from robot_msgs.msg import PoseDot
-from robot_msgs.msg import PoseDot
+import sys
+from robot_msgs.msg import PoseStamped
+from annotated_map_builder.msg import WaitActionState
+from image_msgs.msg import RawStereo
 
-from annotated_map_builder.msg import *
-
-class WaitForKMessagesAdapter:
-  def __init__(self, action_name, count,timeout=10.0):
-
-    self.action_name_=action_name;
-    self.state_topic_=self.action_name_+"/feedback";
-    print self.state_topic_
-
-    rospy.Subscriber(self.state_topic_, WaitActionState, self.update)
-    self.pub_ = rospy.Publisher(self.action_name_+"/request", WaitActionGoal)
-
-    self.wait_count_=count;
-
-    self.time_limit_ = timeout
-    self.state=None
+from robot_actions.msg import ActionStatus;
 
 
+class SelectInterestingFrames:
+  def __init__(self):
 
-  def startWaiting(self):
-    self.start_time_ = rospy.get_time()
-    pursuit_time = rospy.get_time() - self.start_time_
-    self.msg_wait_count_down_=self.wait_count_
+    state_topic="/wait_k_messages_action/feedback"
+    data_topic="/stereo/raw_stereo_throttled"
 
-  def timeUp(self):
-    pursuit_time = rospy.get_time() - self.start_time_
-    return pursuit_time > self.time_limit_;
+    self.sub_state_ = rospy.Subscriber(state_topic, WaitActionState, self.onState)
+    self.sub_image_ = rospy.Subscriber(data_topic, RawStereo, self.onData)
 
-  def sendGoal(self, count=None):
-    self.start_time_ = rospy.get_time()
-    goal = WaitActionGoal()
-    if count:
-      goal.num_events = count
+    self.prev_state_ = None
+    self.state_="none"
+    self.image_list_=[];
+    self.all_selections = [];
+
+  def onState(self,state):
+    #print "s"
+    if state.status.value==ActionStatus.ACTIVE and (not self.prev_state_ or self.prev_state_.status.value != ActionStatus.ACTIVE):
+      #Activate
+      self.state_="active"
+      self.image_list_=[];
+    elif state.status.value==ActionStatus.SUCCESS and (self.prev_state_ and self.prev_state_.status.value == ActionStatus.ACTIVE):
+      self.state_="idle"
+      if len(self.image_list_)>0:
+        selection=self.image_list_[len(self.image_list_)/2];
+        self.all_selections.append(selection);
+        print selection.secs,selection.nsecs
     else:
-      goal.num_events = self.wait_count_;
-    goal.topic_name =  "deprecated";
+      self.state="idle"
 
-    self.pub_.publish(goal)
+    self.prev_state_=state
 
+  def onData(self,image_msg):
+    #print "d"
+    if self.state_=="active":
+      self.image_list_.append(image_msg.header.stamp);
 
-  def legalState(self):
-    return self.state != None
+if __name__ == '__main__':
 
-  def update(self, state):
-    self.state = state
-    #print self.state
-
-    #if we have a valid plan, reset the timeout on planning
-    if self.state.status.value == self.state.status.ACTIVE:
-      self.last_plan_time = rospy.get_time()
-
-  def active(self):
-    return self.state.status.value == self.state.status.ACTIVE
-
-  def aborted(self):
-    return self.state.status.value == self.state.status.ABORTED
-
-  def success(self):
-    return self.state.status.value == self.state.status.SUCCESS
-
-  #Have we reached a goal
-  def goalReached(self):
-    return self.state.status.value == self.state.status.SUCCESS
-
+  rospy.init_node("select_frames", anonymous=True)
+  rg=SelectInterestingFrames()
+  rospy.spin();
+    

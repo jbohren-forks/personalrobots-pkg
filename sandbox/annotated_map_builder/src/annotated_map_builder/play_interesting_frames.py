@@ -37,72 +37,52 @@
 import roslib
 roslib.load_manifest('annotated_map_builder')
 import rospy
-import random
-from pr2_msgs.msg import BaseControllerState
-from robot_msgs.msg import PoseDot
-from robot_msgs.msg import PoseDot
+from bagserver.srv import *
 
-from annotated_map_builder.msg import *
+def str2time(s):
+    parts=s.strip().split(' ');
+    print parts
 
-class WaitForKMessagesAdapter:
-  def __init__(self, action_name, count,timeout=10.0):
-
-    self.action_name_=action_name;
-    self.state_topic_=self.action_name_+"/feedback";
-    print self.state_topic_
-
-    rospy.Subscriber(self.state_topic_, WaitActionState, self.update)
-    self.pub_ = rospy.Publisher(self.action_name_+"/request", WaitActionGoal)
-
-    self.wait_count_=count;
-
-    self.time_limit_ = timeout
-    self.state=None
+    sec=int(parts[0]);
+    nsec=int(parts[1]);
+    return rospy.Time(sec,nsec);    
 
 
+if __name__ == '__main__':
 
-  def startWaiting(self):
-    self.start_time_ = rospy.get_time()
-    pursuit_time = rospy.get_time() - self.start_time_
-    self.msg_wait_count_down_=self.wait_count_
+  rospy.init_node("play_frames_query", anonymous=True)
 
-  def timeUp(self):
-    pursuit_time = rospy.get_time() - self.start_time_
-    return pursuit_time > self.time_limit_;
+  fname=rospy.get_param("~frames_file");
+  try:
+      secBefore=int(rospy.get_param("~secs_before"));
+  except:
+      secBefore=0;
+      
+  #fname="selected_frames2"
+  q="*"
 
-  def sendGoal(self, count=None):
-    self.start_time_ = rospy.get_time()
-    goal = WaitActionGoal()
-    if count:
-      goal.num_events = count
-    else:
-      goal.num_events = self.wait_count_;
-    goal.topic_name =  "deprecated";
+  svc="hist"
+  rospy.wait_for_service(svc)
+  hist = rospy.ServiceProxy(svc, History)
 
-    self.pub_.publish(goal)
+  dS=0;
+  dNS=1000;
+  fIn=open(fname,'r');
+  for l in fIn.readlines():
+    #(sec,nsec)=[ int(x) for x in ().split(' ')];
+    #print sec,nsec
+    b=str2time(l.strip());
+    e=str2time(l.strip());
+    print b
+    e=b;
+    b.secs -= dS - secBefore;
+    e.secs += dS;
+    b.nsecs -= dNS;
+    e.nsecs += dNS;
+
+    print b,e
+    resp = hist(b, e, q)    
+    rospy.sleep(1.0)
 
 
-  def legalState(self):
-    return self.state != None
-
-  def update(self, state):
-    self.state = state
-    #print self.state
-
-    #if we have a valid plan, reset the timeout on planning
-    if self.state.status.value == self.state.status.ACTIVE:
-      self.last_plan_time = rospy.get_time()
-
-  def active(self):
-    return self.state.status.value == self.state.status.ACTIVE
-
-  def aborted(self):
-    return self.state.status.value == self.state.status.ABORTED
-
-  def success(self):
-    return self.state.status.value == self.state.status.SUCCESS
-
-  #Have we reached a goal
-  def goalReached(self):
-    return self.state.status.value == self.state.status.SUCCESS
 

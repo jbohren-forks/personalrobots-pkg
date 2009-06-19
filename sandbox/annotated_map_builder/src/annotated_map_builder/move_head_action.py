@@ -41,38 +41,57 @@ import random
 from image_msgs.msg import RawStereo
 from std_msgs.msg import Empty
 
+import threading
+
 from robot_actions.msg import ActionStatus;
 
 from annotated_map_builder.msg import *
+from annotated_map_builder import *
+from annotated_map_builder.wait_for_k_messages_adapter import WaitForKMessagesAdapter 
+
+from pr2_msgs.msg import BaseControllerState
+from robot_msgs.msg import PoseDot
+from robot_msgs.msg import JointCmd
 
 class MoveHeadAction:
   def __init__(self,node_name):
 
     self.nn=node_name;#HACK
 
-
-    self.goals_sub_ = rospy.Subscriber(self.nn+"/request", WaitActionGoal, self.onGoal)
-    print self.goals_sub_
+    self.goals_sub_ = rospy.Subscriber(self.nn+"/request", MoveHeadGoal, self.onGoal)
     self.preempt_sub_ = rospy.Subscriber(self.nn+"/preempt",Empty, self.onPreempt)
 
-    self.state_pub_ = rospy.Publisher(self.nn+"/feedback", WaitActionState)
+    self.state_pub_ = rospy.Publisher(self.nn+"/feedback", MoveHeadState)
+
+    self.head_goal_topic_ = "/head_controller/set_command_array"
+    self.head_pub_ = rospy.Publisher(self.head_goal_topic_, JointCmd)
 
     self.status=ActionStatus();
-    self.status.value=ActionStatus.UNDEFINED
-
-    for i in range(0,10):
-      print "upd"
-      self.postStatus();
-      rospy.sleep(0.1);
-    print "INIT done"
+    self.status.value=ActionStatus.RESET
 
     try:
-      self.wait_action_name_ = rospy.get_param("wait_action");
+      self.time_limit_=rospy.get_param("time_limit")
+    except:
+      self.time_limit_=1e9;
+
+    self.postStatus();
+
+
+    try:
+      self.wait_action_name_ = rospy.get_param("~wait_action");
     except:
       self.wait_action_name_ = "wait_k_messages_action"
 
-    self.capture_waiter = WaitForKMessagesAdapter(self.wait_action_name_)
+    self.capture_waiter_ = WaitForKMessagesAdapter(self.wait_action_name_,3)
 
+    self.state="idle"
+
+    self.head_configs_=rospy.get_param("~head_configs");
+    print self.head_configs_
+
+    self.current_config_ = 0
+
+    print "INIT done"
 
 
   def done(self):
@@ -87,49 +106,64 @@ class MoveHeadAction:
 
   def onPreempt(self):
     self.status.value=robot_actions.msg.ActionStatus.PREEMPTED;
-    if self.topic_sub_:
-      self.topic_sub_ = None
-
-    self.postStatus()
+    self.state="idle"
 
 
   def abort(self):
+    self.state="idle"
     self.status.value=robot_actions.msg.ActionStatus.ABORTED;
-    if self.topic_sub_:
-      self.topic_sub_ = None
-
     self.postStatus();
 
 
   def onGoal(self,msg):
-    print msg
-    self.wait_count_=msg.num_events
-    self.message_topic_=msg.topic_name
-
-    self.msg_wait_count_down_=self.wait_count_
-
     self.start_time_ = rospy.get_time()
     self.pursuit_time = rospy.get_time() - self.start_time_
     self.status.value=ActionStatus.ACTIVE;
+    self.state="active"
+    self.current_config_ = -1;
 
-    while self.status.value==ActionStatus.ACTIVE:
+
+    while self.status.value==ActionStatus.ACTIVE and not rospy.is_shutdown():
       self.doCycle();
       rospy.sleep(0.1)
+    
+  def legalStates(self):
+    return self.capture_waiter_.legalState()
 
+  def selectNextConfig(self):
+    self.current_config_ += 1
+    if self.current_config_>=len(self.head_configs_):
+      self.current_config_=0;
 
   def doCycle(self):
     if self.timeUp():
       self.abort();
-    self.postStatus();
+
+    if not self.legalStates():
+      print("Waiting on %s to be published" % (self.capture_waiter_.state_topic_))
+      return
+
+    if self.state=="active":
+      self.selectNextConfig();
+      self.sendHeadConfig();
+      self.state="waiting";
+      self.capture_waiter_.sendGoal();
+      
+    elif self.state=="waiting":
+      if self.capture_waiter_.timeUp() or self.capture_waiter_.success():
+        self.state="active"
+      else:
+        self.sendHeadConfig();
+        
+
 
   def spin(self):
-    while rospy.ok():
-      rospy.spinOnce()
+    while not rospy.is_shutdown():
       self.postStatus()
       rospy.sleep(0.1)
 
   def postStatus(self):
-    success_msg=WaitActionState();
+    success_msg=MoveHeadState();
     success_msg.status=self.status;
     self.state_pub_.publish(success_msg);
     
@@ -138,13 +172,25 @@ class MoveHeadAction:
     return self.pursuit_time > self.time_limit_;
 
 
+  def sendHeadConfig(self):
+    
+      joint_cmds=JointCmd();
+      joint_cmds.names=[ "head_pan_joint", "head_tilt_joint"];
+      joint_cmds.positions=self.head_configs_[self.current_config_];
+
+      self.head_pub_.publish(joint_cmds);
+
+
+
 if __name__ == '__main__':
   try:
 
-    rospy.init_node("wait_k_msg_action")
-    w=WaitForKMessagesAction("wait_k_messages_action");
-    w.spin();
-    #rospy.spin();
+    rospy.init_node("move_head_action")
+    w=MoveHeadAction("move_head_action");
+    w_thread=threading.Thread(None,w.spin)
+    w_thread.run()
+    
+    rospy.spin();
 
   except KeyboardInterrupt, e:
     pass
