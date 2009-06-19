@@ -353,23 +353,25 @@ DoorController::UnlatchingHandle{
   contained_by(doorman.Active);
   // Action with bounds
   contains_start(unlatch_handle.Active cmd);
-  ends cmd;
   leq(cmd.max_duration, UNLATCH_HANDLE_DURATION_BOUND);
   // We could fail. In which case we want to restart. Otherwise handle case where the door is locked, vs unlatched.
   if(cmd.status == SUCCESS){
     cmd meets(unlatch_handle.Inactive cmd_feedback);
     // If locked, try again later
     if(cmd_feedback.latch_state == LATCH_STATE_LOCKED){
+      // After the end time, release the handle
+      ends(release_handle.Active cmd_rh);
+      eq(cmd_rh.status, SUCCESS);
       meets(Inactive s);
       eq(s.status, ABORTED);
     }
     else {
-      meets(OpenDoor s);
+      cmd meets(OpenDoor s);
       eq(s.use_handle, true);
     }
   }
   else {
-    meets(Positioning);
+    cmd meets(Positioning);
   }
 }
 
