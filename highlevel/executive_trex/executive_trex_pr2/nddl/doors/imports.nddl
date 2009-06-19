@@ -33,10 +33,6 @@ MoveBase move_base = new MoveBase(External);
 MoveBase move_base_local = new MoveBase(External);
 MoveBaseDoor move_base_door = new MoveBaseDoor(External);
 
-// Additional mechanisms used
-RightArmMechanism right_arm_mechanism = new RightArmMechanism(External);
-RightGripperMechanism right_gripper_mechanism = new RightGripperMechanism(External);
-
 DetectDoor::Active{
   contained_by(laser_tilt_mechanism.use_laser_tilt_controller);
   contained_by(right_arm_mechanism.use_joint_trajectory_controller);

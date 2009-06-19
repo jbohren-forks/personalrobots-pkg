@@ -29,90 +29,23 @@
 
 // TREX base class declaration and definitions
 #include "TREX.nddl"
-
-// Model inputs
-#include "rcs/exports.nddl"
-#include "world_model/topological_map.nddl"
-#include "rcs/nav/exports.nddl"
-#include "rcs/plugs/exports.nddl"
-#include "rcs/doors/exports.nddl"
-#include "rcs/safety/exports.nddl"
-#include "mechanism_control/exports.nddl"
-#include "safety/exports.nddl"
-
-float SAFETY_TUCK_ARMS_DURATION_BOUND = 60.0;
+#include "safety/imports.nddl"
 
 // Internal Timelines
 ArmsTucked arms_tucked = new ArmsTucked(Internal);
 TiltLaserReady tilt_laser_ready = new TiltLaserReady(Internal);
 
-// Action causing arms to be tucked
+
+// Actions causing arms to be tucked.
 SafetyTuckArms safety_tuck_arms = new SafetyTuckArms(External);
 
 // Actions causing arms to become untucked. Required to be untucked from beginning to end
 TouchDoor touch_door = new TouchDoor(External);
 GraspHandle grasp_handle = new GraspHandle(External);
 PlugsUntuckArms plugs_untuck_arms = new PlugsUntuckArms(External);
-
-// Action causing tilt laser to be set
-SetLaserTilt set_laser_tilt = new SetLaserTilt(External);
-
-// Action causing tilt laser to be reset. Total hack in lieu of observed value
 MoveBase move_base = new MoveBase(External);
 MoveBase move_base_local = new MoveBase(External);
 CheckPath check_path = new CheckPath(External);
 
-// Mechamisms of interest
-TiltLaserMechanism laser_tilt_mechanism = new TiltLaserMechanism(External);
-RightArmMechanism right_arm_mechanism = new RightArmMechanism(External);
-RightGripperMechanism right_gripper_mechanism = new RightGripperMechanism(External);
-
-SafetyTuckArms::Active{
-  contained_by(right_arm_mechanism.use_joint_trajectory_controller);
-  contained_by(right_gripper_mechanism.use_effort_controller);
-}
-
-SetLaserTilt::Active{
-  contained_by(laser_tilt_mechanism.use_laser_tilt_controller);
-}
-
-ArmsTucked::True{
-  met_by(safety_tuck_arms.Active p);
-  eq(p.status, SUCCESS);
-  leq(p.max_duration, SAFETY_TUCK_ARMS_DURATION_BOUND);
-}
-
-// Force switch back after completion. This will go away if we directly observe laser tilt configuration
-MoveBase::Inactive{
-  starts_during(tilt_laser_ready.False);
-}
-
-// Ideally this update should be unnecessary and we just observe the state as a function of joint configuration perhaps?
-SafetyTuckArms::Inactive{
-  if(status == SUCCESS){
-    starts_during(arms_tucked.True);
-  }
-}
-
-TouchDoor::Active{
-  starts_during(arms_tucked.False);
-}
-
-GraspHandle::Active{
-  starts_during(arms_tucked.False);
-}
-
-PlugsUntuckArms::Active{
-  starts_during(arms_tucked.False);
-}
-
-TiltLaserReady::True{
-  met_by(set_laser_tilt.Active p);
-  eq(p.status, SUCCESS);
-}
-
-SetLaserTilt::Inactive{
-  if(status == SUCCESS){
-    starts_during(tilt_laser_ready.True);
-  }
-}
+// Action causing tilt laser to be set
+SetLaserTilt set_laser_tilt = new SetLaserTilt(External);
