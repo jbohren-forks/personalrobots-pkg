@@ -38,7 +38,7 @@ SBPLPlannerNode::SBPLPlannerNode()
 	true,			// interpolating
 	ros::Duration(10)	// max_cache_time   XXXX tune this! (get as param?)
 	),
-    cost_map_ros_(*ros::Node::instance(), tf_),
+    cost_map_ros_("costmap", tf_),
     cm_getter_(this)
 {
   ros::Node::instance()->param("~allocated_time", allocated_time_, 1.0);

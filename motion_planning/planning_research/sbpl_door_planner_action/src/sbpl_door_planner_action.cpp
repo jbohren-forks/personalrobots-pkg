@@ -72,7 +72,7 @@ SBPLDoorPlanner::SBPLDoorPlanner(ros::Node& ros_node, tf::TransformListener& tf)
 
   ros_node_.param("~do_control",do_control_,true);
 
-  cost_map_ros_ = new costmap_2d::Costmap2DROS(ros_node_,tf_,std::string(""));
+  cost_map_ros_ = new costmap_2d::Costmap2DROS("costmap",tf_);
   cost_map_ros_->getCostmapCopy(cost_map_);
 
   sleep(2.0);
@@ -96,10 +96,6 @@ SBPLDoorPlanner::SBPLDoorPlanner(ros::Node& ros_node, tf::TransformListener& tf)
   ros_node_.advertise<visualization_msgs::Polyline>("~door/frame", 1);
   ros_node_.advertise<visualization_msgs::Polyline>("~door/door", 1);
   ros_node_.advertise<visualization_msgs::Marker>( "visualization_marker",1);
-
-  costmap_publisher_ = new costmap_2d::Costmap2DPublisher(ros_node_, 1.0, global_frame_, "costmap_publisher");
-  if(costmap_publisher_->active())
-    costmap_publisher_->updateCostmapData(cost_map_);
 
 //  ros_node_.advertise<robot_msgs::PoseStamped>(arm_control_topic_name_,1);
   ros_node_.advertise<pr2_ik::PoseCmd>(arm_control_topic_name_,1);
@@ -133,9 +129,6 @@ SBPLDoorPlanner::~SBPLDoorPlanner()
 
   ros_node_.unadvertise(arm_control_topic_name_);
   ros_node_.unadvertise(base_control_topic_name_);
-
-  if(costmap_publisher_ != NULL)
-    delete costmap_publisher_;
 
   if(cost_map_ros_ != NULL)
     delete cost_map_ros_;
@@ -248,10 +241,6 @@ bool SBPLDoorPlanner::makePlan(const pr2_robot_actions::Pose2D &start, const pr2
   if(!removeDoor())
   {
     return false;
-  }
-  if(costmap_publisher_->active())
-  {
-    costmap_publisher_->updateCostmapData(cost_map_);
   }
 
   publishFootprint(start,"~start",0,1.0,0);

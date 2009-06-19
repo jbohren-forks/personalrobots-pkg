@@ -165,8 +165,6 @@ class SBPLDoorPlanner : public robot_actions::Action<door_msgs::Door, door_msgs:
 
   void publishDoor(const door_msgs::Door &door_in, const double &angle);
 
-  costmap_2d::Costmap2DPublisher* costmap_publisher_;
-
   bool animate_;
 
   double handle_hinge_distance_;
