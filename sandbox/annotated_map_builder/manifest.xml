@@ -11,4 +11,9 @@
   <depend package="robot_actions" />
   <depend package="milestone2_actions" />
   <depend package="executive_python" />
+
+  <export>
+     <cpp cflags="-I${prefix}/msg/cpp -I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib  -lannotated_map_builder"/>
+  </export>
+
 </package>
