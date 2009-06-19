@@ -170,6 +170,20 @@ material PR2/bl_caster_r_wheel_link
 }
 
 
+material PR2/RollLinks
+{
+  technique
+  {
+    pass
+    {
+      texture_unit
+      {
+        texture pr2_wheel_left.png
+      }
+    }
+  }
+}
+
 material PR2/Shiny
 {
   technique
