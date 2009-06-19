@@ -1,2 +1,3 @@
+rospack_add_executable(led_flash_test led_flash_test.cpp)
 rospack_add_executable(trigger_test trigger_test.cpp)
 rospack_add_executable(timestamp_test timestamp_test.cpp)
