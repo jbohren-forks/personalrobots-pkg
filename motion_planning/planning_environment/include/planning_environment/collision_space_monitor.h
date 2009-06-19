@@ -121,6 +121,10 @@ namespace planning_environment
 	/** \brief Return true if a map update has been received in the last sec seconds. If sec < 10us, this function always returns true. */
 	bool isMapUpdated(double sec) const;
 	
+
+	/** \brief Wait until a map is received */
+	void waitForMap(void) const;	
+
 	/** \brief Return the last update time for the map */
 	const ros::Time& lastMapUpdate(void) const
 	{

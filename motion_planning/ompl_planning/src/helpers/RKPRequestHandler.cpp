@@ -214,6 +214,7 @@ bool kinematic_planning::RKPRequestHandler::computePlan(ModelMap &models, const 
     {
 	std::vector<planning_models::KinematicModel::Joint*> joints;
 	psetup->model->kmodel->getJoints(joints);
+	res.path.start_state.resize(joints.size());
 	for (unsigned int i = 0 ; i < joints.size() ; ++i)
 	{
 	    res.path.start_state[i].header = res.path.header;

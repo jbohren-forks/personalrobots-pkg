@@ -41,7 +41,7 @@ class SelfFilter
 {
 public:
 
-    SelfFilter(void)
+    SelfFilter(void) : tf_(ros::Duration(10.0))
     {
 	sf_.configure();
 	pointCloudSubscriber_ = nh_.subscribe("full_cloud", 1, &SelfFilter::cloudCallback, this);
@@ -59,11 +59,12 @@ public:
     }
     
 private:
-    
+
+    tf::TransformListener                       tf_;
+    filters::SelfFilter<robot_msgs::PointCloud> sf_;
     ros::Publisher                              pointCloudPublisher_;
     ros::Subscriber                             pointCloudSubscriber_;
-    ros::NodeHandle                             nh_;        
-    filters::SelfFilter<robot_msgs::PointCloud> sf_;
+    ros::NodeHandle                             nh_;
 };
 
     

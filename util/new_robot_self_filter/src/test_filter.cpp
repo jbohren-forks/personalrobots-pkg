@@ -83,14 +83,24 @@ public:
 	
 	in.header.stamp = ros::Time::now();
 	in.header.frame_id = "base_link";
+	in.chan.resize(1);
+	in.chan[0].name = "stamps";
 	
 	const unsigned int N = 100000;	
 	in.pts.resize(N);
+	in.chan[0].vals.resize(N);
 	for (unsigned int i = 0 ; i < N ; ++i)
 	{
 	    in.pts[i].x = uniform(1);
 	    in.pts[i].y = uniform(1);
 	    in.pts[i].z = uniform(1);
+	    in.chan[0].vals[i] = (double)i/(double)N;
+	}
+	
+	for (unsigned int i = 0 ; i < 1000 ; ++i)
+	{
+	    ros::Duration(0.001).sleep();
+	    ros::spinOnce();
 	}
 	
 	ros::WallTime tm = ros::WallTime::now();

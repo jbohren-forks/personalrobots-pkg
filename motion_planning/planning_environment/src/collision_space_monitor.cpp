@@ -78,6 +78,21 @@ bool planning_environment::CollisionSpaceMonitor::isMapUpdated(double sec) const
 	return true;
 }
 
+void planning_environment::CollisionSpaceMonitor::waitForMap(void) const
+{
+    int s = 0;
+    while (nh_.ok() && !haveMap())
+    {
+	if (s == 0)
+	    ROS_INFO("Waiting for map ...");
+	s = (s + 1) % 40;
+	ros::spinOnce();
+	ros::Duration().fromSec(0.05).sleep();
+    }
+    if (haveMap())
+	ROS_INFO("Map received!");
+}
+
 void planning_environment::CollisionSpaceMonitor::collisionMapCallback(const robot_msgs::CollisionMapConstPtr &collisionMap)
 {
     int n = collisionMap->get_boxes_size();

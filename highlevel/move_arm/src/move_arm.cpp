@@ -77,7 +77,14 @@ namespace move_arm
 	    ROS_INFO("Starting move_arm for '%s' (IK is %senabled)", arm_.c_str(), perform_ik_ ? "" : "not ");
 	
 	if (valid_)
-	    valid_ = collisionModels_->loadedModels() && getControlJointNames(arm_joint_names_);
+	    valid_ = collisionModels_->loadedModels();
+	
+	if (valid_)
+	{
+	    planningMonitor_->waitForState();
+	    planningMonitor_->waitForMap();
+	    valid_ = getControlJointNames(arm_joint_names_);
+	}
 	
 	if (!valid_)
 	    ROS_ERROR("Move arm action is invalid");
@@ -138,8 +145,33 @@ namespace move_arm
 		ROS_INFO("Converting pose constraint to joint constraint using IK...");
 		
 		std::vector<double> solution;
-		if (computeIK(req.goal_constraints.pose_constraint[0].pose, solution))
+		bool foundIKsolution = false;
+		unsigned int IKsteps = 0;
+		while (IKsteps < 5 && !foundIKsolution)
 		{
+		    if (!computeIK(req.goal_constraints.pose_constraint[0].pose, solution))
+			break;
+		    
+		    // if IK did not fail, check if the state is valid
+		    planning_models::StateParams spTest(*planningMonitor_->getRobotState());
+		    unsigned int n = 0;		    
+		    for (unsigned int i = 0 ; i < arm_joint_names_.size() ; ++i)
+		    {
+			unsigned int u = planningMonitor_->getKinematicModel()->getJoint(arm_joint_names_[i])->usedParams;
+			for (unsigned int j = 0 ; j < u ; ++j)
+			{
+			    std::vector<double> params(solution.begin() + n, solution.begin() + n + u);
+			    spTest.setParamsJoint(params, arm_joint_names_[i]);
+			}
+			n += u;			
+		    }
+		    if (planningMonitor_->isStateValidAtGoal(&spTest))
+			foundIKsolution = true;
+		    IKsteps++;
+		}
+		
+		if (foundIKsolution)
+		{	    
 		    unsigned int n = 0;
 		    for (unsigned int i = 0 ; i < arm_joint_names_.size() ; ++i)
 		    {

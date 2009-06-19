@@ -105,7 +105,6 @@ public:
 		ROS_ERROR("Frame '%s' for joint '%s' in starting state is unknown", given[i].header.frame_id.c_str(), given[i].joint_name.c_str());
 		continue;
 	    }
-	    
 	    motion_planning_msgs::KinematicJoint kj = given[i];
 	    if (planningMonitor_->transformJointToFrame(kj, planningMonitor_->getFrameId()))
 		s->setParamsJoint(kj.value, kj.joint_name);
@@ -117,6 +116,7 @@ public:
 	{
 	    if (planningMonitor_->haveState())
 	    {
+		ROS_INFO("Using the current state to fill in the starting state for the motion plan");
 		std::vector<planning_models::KinematicModel::Joint*> joints;
 		planningMonitor_->getKinematicModel()->getJoints(joints);
 		for (unsigned int i = 0 ; i < joints.size() ; ++i)
@@ -149,6 +149,9 @@ public:
 	
 	if (startState)
 	{
+	    std::stringstream ss;
+	    startState->print(ss);
+	    ROS_DEBUG("Complete starting state:\n%s", ss.str().c_str());
 	    st = requestHandler_.computePlan(models_, startState, req, res);
 	    delete startState;
 	}

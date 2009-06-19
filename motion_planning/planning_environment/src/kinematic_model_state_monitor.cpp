@@ -168,9 +168,12 @@ void planning_environment::KinematicModelStateMonitor::mechanismStateCallback(co
 
 void planning_environment::KinematicModelStateMonitor::waitForState(void) const
 {
+    int s = 0;
     while (nh_.ok() && !haveState())
     {
-	ROS_INFO("Waiting for mechanism state ...");
+	if (s == 0)
+	    ROS_INFO("Waiting for mechanism state ...");
+	s = (s + 1) % 40;
 	ros::spinOnce();
 	ros::Duration().fromSec(0.05).sleep();
     }

@@ -191,6 +191,7 @@ bool planning_models::StateParams::setParamsJoint(const std::vector<double> &par
     if (joint)
     {
 	double *dparams = new double[joint->usedParams];
+	std::copy(params.begin(), params.end(), dparams);	
 	result = setParamsJoint(dparams, name);
 	delete[] dparams;
     }
@@ -223,8 +224,7 @@ bool planning_models::StateParams::setParamsJoint(const double *params, const st
 bool planning_models::StateParams::setParams(const std::vector<double> &params)
 { 
     double *dparams = new double[m_mi.stateDimension];
-    for (unsigned int i = 0 ; i < params.size() ; ++i)
-	dparams[i] = params[i];
+    std::copy(params.begin(), params.end(), dparams);
     bool result = setParams(dparams);
     delete[] dparams;
     return result;
@@ -251,8 +251,7 @@ bool planning_models::StateParams::setParamsGroup(const std::vector<double> &par
 bool planning_models::StateParams::setParamsGroup(const std::vector<double> &params, int groupID)
 {
     double *dparams = new double[m_owner->getGroupDimension(groupID)];
-    for (unsigned int i = 0 ; i < params.size() ; ++i)
-	dparams[i] = params[i];
+    std::copy(params.begin(), params.end(), dparams);
     bool result = setParamsGroup(dparams, groupID);
     delete[] dparams;
     return result;
