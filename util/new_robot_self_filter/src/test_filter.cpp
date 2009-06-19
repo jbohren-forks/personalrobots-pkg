@@ -36,16 +36,16 @@
 
 #include <ros/ros.h>
 #include <visualization_msgs/Marker.h>
-#include "robot_self_filter/self_see_filter.h"
+#include "robot_self_filter/self_mask.h"
 
 class TestSelfFilter
 {
 public:
 
-    TestSelfFilter(void)
+    TestSelfFilter(void) : sf_(tf_)
     {
 	id_ = 1;
-	sf_.configure();
+	sf_.configure(false);
 	vmPub_ = nodeHandle_.advertise<visualization_msgs::Marker>("visualization_marker", 10240);
     }
     
@@ -79,7 +79,6 @@ public:
     void run(void)
     {
 	robot_msgs::PointCloud in;
-	robot_msgs::PointCloud out;
 	
 	in.header.stamp = ros::Time::now();
 	in.header.frame_id = "base_link";
@@ -104,12 +103,14 @@ public:
 	}
 	
 	ros::WallTime tm = ros::WallTime::now();
-	sf_.update(in, out);
+	std::vector<bool> mask;
+	sf_.mask(in, mask);
 	printf("%f points per second\n", (double)N/(ros::WallTime::now() - tm).toSec());
 	
-	for (unsigned int i = 0 ; i < out.pts.size() ; ++i)
+	for (unsigned int i = 0 ; i < mask.size() ; ++i)
 	{
-	    sendPoint(out.pts[i].x, out.pts[i].y, out.pts[i].z);
+	    if (!mask[i])
+		sendPoint(in.pts[i].x, in.pts[i].y, in.pts[i].z);
 	}
 	
 	ros::spin();	
@@ -121,10 +122,11 @@ protected:
 	return (2.0 * drand48() - 1.0) * magnitude;
     }
 
-    ros::Publisher                              vmPub_;
-    ros::NodeHandle                             nodeHandle_;        
-    filters::SelfFilter<robot_msgs::PointCloud> sf_;
-    int                                         id_;
+    tf::TransformListener       tf_;
+    robot_self_filter::SelfMask sf_;
+    ros::Publisher              vmPub_;
+    ros::NodeHandle             nodeHandle_;        
+    int                         id_;
 };
 
     
