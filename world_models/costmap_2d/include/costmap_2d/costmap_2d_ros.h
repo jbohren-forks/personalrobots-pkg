@@ -37,6 +37,7 @@
 #ifndef COSTMAP_COSTMAP_2D_ROS_H_
 #define COSTMAP_COSTMAP_2D_ROS_H_
 
+#include <XmlRpc.h>
 #include <ros/ros.h>
 #include <ros/console.h>
 #include <costmap_2d/costmap_2d.h>
@@ -80,9 +81,8 @@ namespace costmap_2d {
        * @brief  Constructor for the wrapper
        * @param name The name for this costmap
        * @param tf A reference to a TransformListener
-       * @param footprint An optional footprint specification for the robot
        */
-      Costmap2DROS(std::string name, tf::TransformListener& tf, std::vector<robot_msgs::Point> footprint = std::vector<robot_msgs::Point>(0));
+      Costmap2DROS(std::string name, tf::TransformListener& tf);
 
       /**
        * @brief  Destructor for the wrapper. Cleans up pointers.
@@ -241,6 +241,12 @@ namespace costmap_2d {
       double inflationRadius();
 
       /**
+       * @brief  Returns the footprint of the robot in the robot_base_frame. To get the footprint in the global_frame use getOrientedFootprint
+       * @return The footprint of the robot in the robot_base_frame
+       */
+      std::vector<robot_msgs::Point> robotFootprint();
+
+      /**
        * @brief  Check if the observation buffers for the cost map are current
        * @return True if the buffers are current, false otherwise
        */
@@ -284,6 +290,11 @@ namespace costmap_2d {
        * @param  frequency The rate at which to run the loop
        */
       void mapUpdateLoop(double frequency);
+
+      /**
+       * @brief  Grab the footprint of the robot from the parameter server if available
+       */
+      std::vector<robot_msgs::Point> loadRobotFootprint(ros::NodeHandle node, double inscribed_radius, double circumscribed_radius);
 
       ros::NodeHandle ros_node_; ///< @brief The ros node to use
       tf::TransformListener& tf_; ///< @brief Used for transforming point clouds

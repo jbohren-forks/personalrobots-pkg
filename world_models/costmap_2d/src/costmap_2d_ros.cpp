@@ -39,14 +39,14 @@
 #include <robot_srvs/StaticMap.h>
 
 
-using namespace std;
-using namespace tf;
-using namespace robot_msgs;
-
 namespace costmap_2d {
 
-  Costmap2DROS::Costmap2DROS(std::string name, TransformListener& tf, std::vector<robot_msgs::Point> footprint) : ros_node_(name),
-  tf_(tf), costmap_(NULL), map_update_thread_(NULL), costmap_publisher_(NULL), stop_updates_(false), initialized_(true), footprint_spec_(footprint){
+  double sign(double x){
+    return x < 0.0 ? -1.0 : 1.0;
+  }
+
+  Costmap2DROS::Costmap2DROS(std::string name, tf::TransformListener& tf) : ros_node_(name),
+  tf_(tf), costmap_(NULL), map_update_thread_(NULL), costmap_publisher_(NULL), stop_updates_(false), initialized_(true) {
 
     std::string map_type;
     ros_node_.param("~map_type", map_type, std::string("costmap"));
@@ -58,13 +58,13 @@ namespace costmap_2d {
     else
       publish_voxel_ = false;
 
-    string topics_string;
+    std::string topics_string;
     //get the topics that we'll subscribe to from the parameter server
-    ros_node_.param("~observation_topics", topics_string, string(""));
+    ros_node_.param("~observation_topics", topics_string, std::string(""));
     ROS_INFO("Subscribed to Topics: %s", topics_string.c_str());
 
-    ros_node_.param("~global_frame", global_frame_, string("/map"));
-    ros_node_.param("~robot_base_frame", robot_base_frame_, string("base_link"));
+    ros_node_.param("~global_frame", global_frame_, std::string("/map"));
+    ros_node_.param("~robot_base_frame", robot_base_frame_, std::string("base_link"));
 
     ros::Time last_error = ros::Time::now();
     //we need to make sure that the transform between the robot base frame and the global frame is available
@@ -79,17 +79,17 @@ namespace costmap_2d {
     ros_node_.param("~transform_tolerance", transform_tolerance_, 0.2);
 
     //now we need to split the topics based on whitespace which we can use a stringstream for
-    stringstream ss(topics_string);
+    std::stringstream ss(topics_string);
 
-    string topic;
+    std::string topic;
     while(ss >> topic){
       //get the parameters for the specific topic
       double observation_keep_time, expected_update_rate, min_obstacle_height, max_obstacle_height;
-      string sensor_frame, data_type;
-      ros_node_.param("~" + topic + "/sensor_frame", sensor_frame, string("frame_from_message"));
+      std::string sensor_frame, data_type;
+      ros_node_.param("~" + topic + "/sensor_frame", sensor_frame, std::string("frame_from_message"));
       ros_node_.param("~" + topic + "/observation_persistance", observation_keep_time, 0.0);
       ros_node_.param("~" + topic + "/expected_update_rate", expected_update_rate, 0.0);
-      ros_node_.param("~" + topic + "/data_type", data_type, string("PointCloud"));
+      ros_node_.param("~" + topic + "/data_type", data_type, std::string("PointCloud"));
       ros_node_.param("~" + topic + "/min_obstacle_height", min_obstacle_height, 0.05);
       ros_node_.param("~" + topic + "/max_obstacle_height", max_obstacle_height, 2.0);
 
@@ -115,12 +115,12 @@ namespace costmap_2d {
 
       //create a callback for the topic
       if(data_type == "LaserScan"){
-        observation_notifiers_.push_back(new MessageNotifier<laser_scan::LaserScan>(tf_, 
+        observation_notifiers_.push_back(new tf::MessageNotifier<laser_scan::LaserScan>(tf_, 
               boost::bind(&Costmap2DROS::laserScanCallback, this, _1, observation_buffers_.back()), topic, global_frame_, 50));
         observation_notifiers_.back()->setTolerance(ros::Duration(0.05));
       }
       else{
-        observation_notifiers_.push_back(new MessageNotifier<PointCloud>(tf_,
+        observation_notifiers_.push_back(new tf::MessageNotifier<robot_msgs::PointCloud>(tf_,
               boost::bind(&Costmap2DROS::pointCloudCallback, this, _1, observation_buffers_.back()), topic, global_frame_, 50));
       }
 
@@ -197,6 +197,10 @@ namespace costmap_2d {
     ros_node_.param("~circumscribed_radius", circumscribed_radius, 0.46);
     ros_node_.param("~inflation_radius", inflation_radius, 0.55);
 
+    //load the robot footprint from the parameter server if its available in the global namespace
+    ros::NodeHandle n;
+    footprint_spec_ = loadRobotFootprint(n, inscribed_radius, circumscribed_radius);
+
     double obstacle_range, max_obstacle_height, raytrace_range;
     ros_node_.param("~obstacle_range", obstacle_range, 2.5);
     ros_node_.param("~max_obstacle_height", max_obstacle_height, 2.0);
@@ -208,7 +212,7 @@ namespace costmap_2d {
     int temp_lethal_threshold;
     ros_node_.param("~lethal_cost_threshold", temp_lethal_threshold, int(100));
 
-    unsigned char lethal_threshold = max(min(temp_lethal_threshold, 255), 0);
+    unsigned char lethal_threshold = std::max(std::min(temp_lethal_threshold, 255), 0);
 
     struct timeval start, end;
     double start_t, end_t, t_diff;
@@ -259,6 +263,61 @@ namespace costmap_2d {
     ros_node_.param("~update_frequency", map_update_frequency, 5.0);
     map_update_thread_ = new boost::thread(boost::bind(&Costmap2DROS::mapUpdateLoop, this, map_update_frequency));
 
+  }
+
+  std::vector<robot_msgs::Point> Costmap2DROS::loadRobotFootprint(ros::NodeHandle node, double inscribed_radius, double circumscribed_radius){
+    std::vector<robot_msgs::Point> footprint;
+    robot_msgs::Point pt;
+    double padding;
+    node.param("~footprint_padding", padding, 0.01);
+
+    //grab the footprint from the parameter server if possible
+    XmlRpc::XmlRpcValue footprint_list;
+    if(node.getParam("~footprint", footprint_list)){
+      //make sure we have a list of lists
+      ROS_ASSERT_MSG(footprint_list.getType() == XmlRpcValue::TypeArray && footprint_list.size() > 2, 
+          "The footprint must be specified as list of lists on the parameter server eg: [[x1, y1], [x2, y2], ..., [xn, yn]]");
+      for(int i = 0; i < footprint_list.size(); ++i){
+        //make sure we have a list of lists of size 2
+        XmlRpc::XmlRpcValue point = footprint_list[i];
+        ROS_ASSERT_MSG(point.getType() == XmlRpc::XmlRpcValue::TypeArray && point.size() == 2, 
+            "The footprint must be specified as list of lists on the parameter server eg: [[x1, y1], [x2, y2], ..., [xn, yn]]");
+
+        //make sure that the value we're looking at is either a double or an int
+        ROS_ASSERT(point[0].getType() == XmlRpc::XmlRpcValue::TypeInt || point[0].getType() == XmlRpc::XmlRpcValue::TypeDouble);
+        pt.x = point[0].getType() == XmlRpc::XmlRpcValue::TypeInt ? (int)(point[0]) : (double)(point[0]);
+        pt.x += sign(pt.x) * padding;
+
+        //make sure that the value we're looking at is either a double or an int
+        ROS_ASSERT(point[1].getType() == XmlRpc::XmlRpcValue::TypeInt || point[1].getType() == XmlRpc::XmlRpcValue::TypeDouble);
+        pt.y = point[1].getType() == XmlRpc::XmlRpcValue::TypeInt ? (int)(point[1]) : (double)(point[1]);
+        pt.y += sign(pt.y) * padding;
+
+        footprint.push_back(pt);
+        
+      }
+    }
+    else{
+      //if no explicit footprint is set on the param server... create a square footprint
+      pt.x = inscribed_radius + padding;
+      pt.y = -1 * (inscribed_radius + padding);
+      footprint.push_back(pt);
+      pt.x = -1 * (inscribed_radius + padding);
+      pt.y = -1 * (inscribed_radius + padding);
+      footprint.push_back(pt);
+      pt.x = -1 * (inscribed_radius + padding);
+      pt.y = inscribed_radius + padding;
+      footprint.push_back(pt);
+      pt.x = inscribed_radius + padding;
+      pt.y = inscribed_radius + padding;
+      footprint.push_back(pt);
+
+      //give the robot a nose
+      pt.x = circumscribed_radius;
+      pt.y = 0;
+      footprint.push_back(pt);
+    }
+    return footprint;
   }
 
   Costmap2DROS::~Costmap2DROS(){
@@ -318,7 +377,7 @@ namespace costmap_2d {
 
   void Costmap2DROS::laserScanCallback(const tf::MessageNotifier<laser_scan::LaserScan>::MessagePtr& message, ObservationBuffer* buffer){
     //project the laser into a point cloud
-    PointCloud base_cloud;
+    robot_msgs::PointCloud base_cloud;
     base_cloud.header = message->header;
 
     //project the scan into a point cloud
@@ -338,7 +397,7 @@ namespace costmap_2d {
     buffer->unlock();
   }
 
-  void Costmap2DROS::pointCloudCallback(const tf::MessageNotifier<PointCloud>::MessagePtr& message, ObservationBuffer* buffer){
+  void Costmap2DROS::pointCloudCallback(const tf::MessageNotifier<robot_msgs::PointCloud>::MessagePtr& message, ObservationBuffer* buffer){
     //buffer the point cloud
     buffer->lock();
     buffer->bufferCloud(*message);
@@ -548,6 +607,10 @@ namespace costmap_2d {
       return;
 
     clearRobotFootprint(global_pose);
+  }
+
+  std::vector<robot_msgs::Point> Costmap2DROS::robotFootprint(){
+    return footprint_spec_;
   }
 
   void Costmap2DROS::getOrientedFootprint(double x, double y, double theta, std::vector<robot_msgs::Point>& oriented_footprint){

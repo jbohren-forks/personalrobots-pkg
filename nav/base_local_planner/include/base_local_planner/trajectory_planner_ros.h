@@ -81,10 +81,9 @@ namespace base_local_planner {
        * @param name The name to give this instance of the trajectory planner
        * @param tf A reference to a transform listener
        * @param costmap The cost map to use for assigning costs to trajectories
-       * @param footprint_spec A polygon representing the footprint of the robot. (Must be convex)
        */
       TrajectoryPlannerROS(std::string name, tf::TransformListener& tf,
-          costmap_2d::Costmap2DROS& costmap_ros, std::vector<robot_msgs::Point> footprint_spec);
+          costmap_2d::Costmap2DROS& costmap_ros);
 
       /**
        * @brief  Destructor for the wrapper

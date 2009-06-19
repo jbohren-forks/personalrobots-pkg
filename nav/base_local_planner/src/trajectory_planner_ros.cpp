@@ -51,7 +51,7 @@ namespace base_local_planner {
   ROS_REGISTER_BLP(TrajectoryPlannerROS);
 
   TrajectoryPlannerROS::TrajectoryPlannerROS(std::string name, tf::TransformListener& tf, 
-      Costmap2DROS& costmap_ros, std::vector<Point> footprint_spec) 
+      Costmap2DROS& costmap_ros) 
     : world_model_(NULL), tc_(NULL), costmap_ros_(costmap_ros), tf_(tf), ros_node_(name), 
     rot_stopped_velocity_(1e-2), trans_stopped_velocity_(1e-2), goal_reached_(true), costmap_publisher_(NULL){
     double acc_lim_x, acc_lim_y, acc_lim_theta, sim_time, sim_granularity;
@@ -135,7 +135,7 @@ namespace base_local_planner {
     ROS_ASSERT_MSG(world_model_type == "costmap", "At this time, only costmap world models are supported by this controller");
     world_model_ = new CostmapModel(costmap_); 
 
-    tc_ = new TrajectoryPlanner(*world_model_, costmap_, footprint_spec, inscribed_radius_, circumscribed_radius_,
+    tc_ = new TrajectoryPlanner(*world_model_, costmap_, costmap_ros_.robotFootprint(), inscribed_radius_, circumscribed_radius_,
         acc_lim_x, acc_lim_y, acc_lim_theta, sim_time, sim_granularity, vx_samples, vtheta_samples, pdist_scale,
         gdist_scale, occdist_scale, heading_lookahead, oscillation_reset_dist, escape_reset_dist, escape_reset_theta, holonomic_robot,
         max_vel_x, min_vel_x, max_vel_th, min_vel_th, min_in_place_vel_th_,

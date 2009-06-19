@@ -1,4 +1,5 @@
 footprint: [[-0.325, -0.325], [-0.325, 0.325], [0.325, 0.325], [0.325, -0.325]]
+shutdown_costmaps: true
 TrajectoryPlannerROS:
   transform_tolerance: 0.2
   costmap_visualization_rate: 0.0

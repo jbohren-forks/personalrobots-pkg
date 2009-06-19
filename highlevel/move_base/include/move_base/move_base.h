@@ -125,7 +125,6 @@ namespace move_base {
 
       nav_robot_actions::BaseGlobalPlanner* planner_;
       std::vector<robot_msgs::PoseStamped> global_plan_;
-      std::vector<robot_msgs::Point> footprint_;
       std::string robot_base_frame_, global_frame_;
       bool valid_plan_, new_plan_;
       boost::recursive_mutex lock_;
@@ -138,6 +137,7 @@ namespace move_base {
       bool escaping_;
       ros::Time last_valid_control_;
       ros::Publisher vis_pub_, vel_pub_;
+      bool shutdown_costmaps_;
 
   };
 };
