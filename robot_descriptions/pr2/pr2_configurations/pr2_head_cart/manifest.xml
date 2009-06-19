@@ -13,4 +13,5 @@
   <depend package="dcam" />
   <depend package="robot_state_publisher" />
   <depend package="prosilica_cam" />
+  <depend package="teleop_head" />
 </package>

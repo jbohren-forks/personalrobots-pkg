@@ -1,0 +1,12 @@
+<launch>
+  <node pkg="mechanism_control" type="spawner.py" args="$(find pr2_default_controllers)/head_pan_tilt_controller.xml" output="screen" />
+
+  <param "max_pan" value="2.7" />
+  <param "max_tilt" value="1.4" />
+  <param "min_tilt" value="-0.4" />
+
+  <param name="tilt_step" value="0.02" />
+  <param name="pan_step" value="0.02" />
+ 
+  <node pkg="teleop_head" type="teleop_head_keyboard" output="screen" />
+</launch>
