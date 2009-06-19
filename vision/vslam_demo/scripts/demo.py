@@ -122,6 +122,7 @@ class Demo:
     # These variables can be tweaked:
 
     self.fd = FeatureDetectorFast(300)
+#    self.fd = FeatureDetectorStar(300)
     self.ds = DescriptorSchemeCalonder()
     self.camera_preview = True
     self.vo = VisualOdometer(self.stereo_cam,
@@ -131,6 +132,7 @@ class Demo:
                              inlier_error_threshold = 3.0)
     self.skel = Skeleton(self.stereo_cam, descriptor_scheme = self.ds, optimize_after_addition = False)
     self.skel.node_vdist = 0
+    self.running = -1                   # run forever
 
     if self.camera_preview:
       cv.NamedWindow("Camera")
@@ -202,7 +204,7 @@ class Demo:
       cv.WaitKey(10)
 
   def anchor(self):
-    """ Return the current pose of the mosrt recently added skeleton node """
+    """ Return the current pose of the most recently added skeleton node """
     id = max(self.skel.nodes)
     return self.skel.newpose(id)
 
@@ -328,11 +330,15 @@ def poseMultMatrix(pose):
                              [ 0, 0, 0, 1]]), pose.M)
   glMultMatrixf(sum(M.T.tolist(), []))
 
+
+
 def DrawGLScene():
   glClearColor(0, 0, 0, 1)
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
-  demo.handleFrame()
+  if demo.running != 0:
+    demo.handleFrame()
+    demo.running -= 1
 
   glMatrixMode(GL_MODELVIEW)
 
@@ -545,6 +551,17 @@ class MouseLook:
 
     if k == '/':
       demo.report()
+
+    if k == 'P':
+      print "\nPAUSING\n"
+      if demo.running:
+        demo.running = 0
+      else:
+        demo.running = -1
+
+    if k == 'p':
+      print "\nSINGLE STEP\n"
+      demo.running = 1
 
     if k == 'm':
       self.mode = (self.mode + 1) % 2
