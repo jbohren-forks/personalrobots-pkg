@@ -13,7 +13,7 @@
   <depend package="executive_python" />
 
   <export>
-     <cpp cflags="-I${prefix}/msg/cpp -I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib  -lannotated_map_builder"/>
+     <cpp cflags="-I${prefix}/msg/cpp -I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib"/>
   </export>
 
 </package>

@@ -118,8 +118,8 @@ int main(int argc, char** argv)
     goal_pose.orientation = direction(*i, target);
     PS goal_pose_stamped;
     goal_pose_stamped.pose = goal_pose;
-    PS feedback;
-    robot_actions::ResultStatus result_move = move_client.execute(goal_pose_stamped, feedback, ros::Duration(30));
+    PS move_feedback;
+    robot_actions::ResultStatus result_move = move_client.execute(goal_pose_stamped, move_feedback, ros::Duration(30));
     switch (result_move) {
     case robot_actions::SUCCESS:
       ROS_INFO("Move successful");
@@ -131,10 +131,13 @@ int main(int argc, char** argv)
       ROS_INFO("Move preempted");
       break;
     }
-    WaitActionGoal wait_goal;
+    /*
+    WaitGoal wait_goal;
     wait_goal.num_events = 3;
     wait_goal.topic_name = "/stereo/raw_stereo_throttled";
-    robot_actions::ResultStatus result_wait = wait_client.execute(, feedback, ros::Duration(30));
+    WaitState wait_feedback;
+    robot_actions::ResultStatus result_wait = wait_client.execute(wait_goal, wait_feedback, ros::Duration(30));
+    switch (result_wait) {
     case robot_actions::SUCCESS:
       ROS_INFO("Wait successful");
       break;
@@ -144,9 +147,9 @@ int main(int argc, char** argv)
     case robot_actions::PREEMPTED:
       ROS_INFO("Wait preempted");
       break;
-    }
-    //ros::Duration wait_time;
-    //wait_time.fromSec(3);
-    //wait_time.sleep();
+      }*/
+    ros::Duration wait_time;
+    wait_time.fromSec(3);
+    wait_time.sleep();
   }
 }
