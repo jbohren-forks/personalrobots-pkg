@@ -1,0 +1,14 @@
+<package>
+  <description brief="Pose Msg to Visualization Msg Retransmitter" />
+  <author>Gunter Niemeyer</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <depend package="roscpp"/>
+  <depend package="std_msgs"/>
+  <depend package="robot_msgs"/>
+  <depend package="visualization_msgs"/>
+  <depend package="bullet" />
+  <depend package="tf"/>
+</package>
+
+
