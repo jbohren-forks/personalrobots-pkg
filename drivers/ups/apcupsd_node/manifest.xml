@@ -1,0 +1,16 @@
+<package>
+  <description brief="apcupsd_node">
+    A node giving access to apcupsd compatible Uninterruptable Power
+    Supplies (UPS).
+  </description>
+  <author>Blaise Gassend</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://pr.willowgarage.com/wiki/apcupsd_node</url>
+  <depend package="rospy"/>
+  <depend package="diagnostic_msgs"/>
+  <depend package="robot_msgs"/>
+  <sysdepend os="ubuntu" version="8.04-hardy" package="apcupsd"/>
+</package>
+
+
