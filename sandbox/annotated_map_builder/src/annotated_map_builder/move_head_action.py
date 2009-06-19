@@ -45,15 +45,11 @@ from robot_actions.msg import ActionStatus;
 
 from annotated_map_builder.msg import *
 
-class WaitForKMessagesAction:
+class MoveHeadAction:
   def __init__(self,node_name):
 
     self.nn=node_name;#HACK
 
-    try:
-      self.message_topic_ = rospy.get_param("topic");
-    except:
-      self.message_topic_ = "/stereo/raw_stereo_throttled"
 
     self.goals_sub_ = rospy.Subscriber(self.nn+"/request", WaitActionGoal, self.onGoal)
     print self.goals_sub_
@@ -61,31 +57,23 @@ class WaitForKMessagesAction:
 
     self.state_pub_ = rospy.Publisher(self.nn+"/feedback", WaitActionState)
 
-    try:
-      self.time_limit_ = rospy.get_param("time_limit");
-    except:
-      self.time_limit_ = 10;
-
     self.status=ActionStatus();
     self.status.value=ActionStatus.UNDEFINED
+
     for i in range(0,10):
       print "upd"
       self.postStatus();
       rospy.sleep(0.1);
     print "INIT done"
-    self.topic_sub_ = rospy.Subscriber(self.message_topic_, RawStereo, self.update)
-    
 
-  def update(self,msg):
-    print "."
-    if self.status.value != ActionStatus.ACTIVE:
-      return
+    try:
+      self.wait_action_name_ = rospy.get_param("wait_action");
+    except:
+      self.wait_action_name_ = "wait_k_messages_action"
 
-    print "+",self.msg_wait_count_down_
-    if self.msg_wait_count_down_>0:
-      self.msg_wait_count_down_ -= 1;
-    else:
-      self.done();
+    self.capture_waiter = WaitForKMessagesAdapter(self.wait_action_name_)
+
+
 
   def done(self):
     print "DONE"

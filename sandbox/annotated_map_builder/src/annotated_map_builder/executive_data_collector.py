@@ -59,7 +59,7 @@ import annotated_map_builder.target_poses
 class ExecutiveDataCollector:
   def __init__(self, goals, chrg_stations, navigator, batt_monitor, unstuck, manual_charger, capture_waiter, cycle_time):
     self.goals = goals
-    self.capture_configs=capture_configs
+    #self.capture_configs=capture_configs
     self.chrg_stations = chrg_stations
     self.navigator = navigator
     self.batt_monitor = batt_monitor
@@ -115,8 +115,9 @@ class ExecutiveDataCollector:
           State Transitions from nav:
             1) nav --- robot is plugged in ---> recharge
             2) nav --- battery level is low --> nav_charge
-            3) nav --- robot is inactive initially, reaches a goal, or timeout is reached ---> nav
-            4) nav --- robot is inactive and should be pursuing the current goal (move_base crashed) ---> nav
+            3) nav --- reaches a goal --> capture
+            4) nav --- robot is inactive initially,  or timeout is reached ---> nav
+            5) nav --- robot is inactive and should be pursuing the current goal (move_base crashed) ---> nav
         """
         if self.batt_monitor.pluggedIn():
           self.state = "recharge"
@@ -133,6 +134,7 @@ class ExecutiveDataCollector:
           print "nav --> capture"
 
         elif self.navigator.aborted() or (not self.navigator.active() and self.current_goal == None) or self.navigator.timeUp():
+          print "Aborted:",self.current_goal
           self.selectNextGoal();
 
           self.navigator.sendGoal(self.current_goal, "/map")
@@ -241,7 +243,7 @@ if __name__ == '__main__':
     #/laser_tilt_controller/laser_scanner_signal - better!
     capture_waiter = WaitForKMessagesAdapter("wait_k_messages_action","/stereo/raw_stereo_throttled",3,10)
     
-    capture_configs=[[0.0,-0.1],[-0.5, 0.3],[0.5, 0.3]];
+    #capture_configs=[[0.0,-0.1],[-0.5, 0.3],[0.5, 0.3]];
 
     #multi_config_waiter=WaitForMultipleHeadConfigsAdapter(capture_configs,capture_waiter);
 
@@ -267,6 +269,8 @@ if __name__ == '__main__':
     new_goals=[];
     pi2=3.14/2;
     for g in goals:
+      if g.strip()[0]=="#":
+        continue
       #(locX,locY,orient) = [float(s) for s in g.strip().split(" ")];
       (locX,locY,locZ,q0,q1,q2,q3) = [float(s) for s in g.strip().split(" ")];
       #for th in [0, pi2, 2*pi2,3*pi2/4]:

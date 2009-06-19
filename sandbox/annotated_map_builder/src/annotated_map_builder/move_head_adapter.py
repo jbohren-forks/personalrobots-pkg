@@ -44,18 +44,16 @@ from robot_msgs.msg import PoseDot
 
 from annotated_map_builder.msg import *
 
-class WaitForKMessagesAdapter:
+class MoveHeadAdapter:
   def __init__(self, action_name, message_topic, count,timeout=10.0):
 
     self.action_name_=action_name;
     self.state_topic_=self.action_name_+"/feedback";
     print self.state_topic_
 
-    rospy.Subscriber(self.state_topic_, WaitActionState, self.update)
-    self.pub_ = rospy.Publisher(self.action_name_+"/request", WaitActionGoal)
-
-    self.message_topic_ = message_topic
-    self.wait_count_=count;
+    rospy.Subscriber(self.state_topic_, MoveHeadState, self.update)
+    self.pub_ = rospy.Publisher(self.action_name_+"/request", MoveHeadState)
+    self.goal_topic_ = "/head_controller/set_command_array"
 
     self.time_limit_ = timeout
     self.state=None
