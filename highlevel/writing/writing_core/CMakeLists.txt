@@ -26,3 +26,6 @@ rospack_add_executable(run_write_on_white_board
   src/run_write_on_white_board.cpp
   src/action_write_on_white_board.cpp
 )
+
+
+rospack_add_executable(whiteboard_detector src/whiteboard_detector.cpp)
