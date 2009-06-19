@@ -68,7 +68,7 @@ public:
 	    ROS_INFO("Inverting filter output");
 	
 	bool accurate;
-	nh_.param("~accurate_timing", accurate, true);
+	nh_.param("~accurate_timing", accurate, false);
 	
 	if (accurate)
 	    ROS_INFO("Using accurate timing");

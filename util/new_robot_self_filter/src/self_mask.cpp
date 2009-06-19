@@ -139,7 +139,7 @@ void robot_self_filter::SelfMask::maskAccurate(const robot_msgs::PointCloud& dat
     float maxT = *std::max_element(times.vals.begin(), times.vals.end());
     if (maxT <= FLT_MIN)
     {
-	ROS_WARN("'stamp' channel contains invalid data");
+	ROS_WARN("'stamps' channel contains invalid data");
 	maskSimple(data_in, mask);
 	return;
     }

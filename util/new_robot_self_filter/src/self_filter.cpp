@@ -41,12 +41,14 @@ class SelfFilter
 {
 public:
 
-    SelfFilter(void) : tf_(ros::Duration(10.0))
+    SelfFilter(void)
     {
 	sf_.configure();
-	pointCloudSubscriber_ = nh_.subscribe("full_cloud", 1, &SelfFilter::cloudCallback, this);
-	pointCloudPublisher_ = nh_.advertise<robot_msgs::PointCloud>("full_cloud_filtered", 1);	
+	pointCloudSubscriber_ = nh_.subscribe("cloud_in", 1, &SelfFilter::cloudCallback, this);
+	pointCloudPublisher_ = nh_.advertise<robot_msgs::PointCloud>("cloud_out", 1);
     }
+    
+private:
     
     void cloudCallback(const robot_msgs::PointCloudConstPtr &cloud)
     {
@@ -58,9 +60,6 @@ public:
 	pointCloudPublisher_.publish(out);
     }
     
-private:
-
-    tf::TransformListener                       tf_;
     filters::SelfFilter<robot_msgs::PointCloud> sf_;
     ros::Publisher                              pointCloudPublisher_;
     ros::Subscriber                             pointCloudSubscriber_;
@@ -70,13 +69,10 @@ private:
     
 int main(int argc, char **argv)
 {
-    ros::init(argc, argv, "self_filter");
+    ros::init(argc, argv, "self_filter", ros::init_options::AnonymousName);
 
     SelfFilter s;
     ros::spin();
     
     return 0;
 }
-
-    
-    
