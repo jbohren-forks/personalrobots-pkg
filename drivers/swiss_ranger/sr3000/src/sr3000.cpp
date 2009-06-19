@@ -52,7 +52,7 @@ namespace sr3000 {
       SR3000(){}
       int setup();
       int shutdown();
-      void refreshData();
+      void run();
 
     private:
       CMesaDevice* sr_cam_;
@@ -124,7 +124,7 @@ namespace sr3000 {
     return 0;
   }
 
-  void SR3000::refreshData(){
+  void SR3000::run(){
     ros::NodeHandle n;
     ros::Publisher cloud_pub, dist_pub, int_pub;
 
@@ -146,11 +146,6 @@ namespace sr3000 {
 
       uint16_t *distance_image  = (unsigned uint16_t*)SR_GetImage(sr_cam_, 0);
       uint16_t *intensity_image = (unsigned uint16_t*)SR_GetImage(sr_cam_, 1);
-
-      /*
-      uint8_t *distance_image  = (unsigned char*)img_entry_array_->data;
-      uint8_t *intensity_image = (unsigned char*)img_entry_array_->data + (img_entry_array_->width * img_entry_array_->height * 2);
-      */
 
       // Points array
       SR_CoordTrfFlt (sr_cam_, xp_, yp_, zp_, sizeof (float), sizeof (float), sizeof (float));
@@ -201,5 +196,5 @@ int main(int argc, char** argv){
   ros::init(argc, argv, "SR3000_node");
   SR3000 sr;
   sr.setup();
-  sr.refreshData();
+  sr.run();
 }
