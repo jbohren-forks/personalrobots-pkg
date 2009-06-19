@@ -29,58 +29,78 @@
 
 // Author: Stuart Glaser
 
-#include <vector>
+#include "boost/scoped_ptr.hpp"
+#include "ros/ros.h"
 #include "ros/node_handle.h"
-#include "tf/transform_datatypes.h"
+#include "tf/transform_listener.h"
+#include "voxel3d/voxel3d.h"
+
 #include "robot_msgs/PointCloud.h"
 
-class Voxel3d
+int world_to_voxel(double x)
+{
+  return (int)(x * 100.0) + 100;
+}
+
+class VoxelNode
 {
 public:
-  const static unsigned char CLEAR;
+  VoxelNode(const ros::NodeHandle &node)
+    : node_(node), TF(*node_.getNode())
+  {
+    node_.param("~frame", frame_, std::string("torso_lift_link"));
 
-  Voxel3d(int size1, int size2, int size3, double resolution, const tf::Vector3 &origin,
-          bool visualize = false);
-  ~Voxel3d();
+    bool visualize;
+    node_.param("~visualize", visualize, false);
+    voxel_.reset(new Voxel3d(200,200,200, 0.01, tf::Vector3(-1,-1,-1), visualize));
 
-  void updateWorld(const robot_msgs::PointCloud &cloud);
-
-  unsigned char &operator()(int i, int j, int k) {
-    return data_[ref(i,j,k)];
-  }
-  const unsigned char &operator()(int i, int j, int k) const {
-    return data_[ref(i,j,k)];
+    sub_cloud_ = node_.subscribe("cloud", 1, &VoxelNode::cloudCB, this);
   }
 
-  void reset();
-
-  void putObstacle(int i, int j, int k);
+  ~VoxelNode()
+  {
+    sub_cloud_.shutdown();
+  }
 
 private:
-  std::vector<unsigned char> data_;
-  int size1_, size2_, size3_;
-  int stride1_, stride2_;
-  double resolution_;  // meters/cell
-  tf::Vector3 origin_;
+  ros::NodeHandle node_;
+  std::string frame_;
+  tf::TransformListener TF;
+  ros::Subscriber sub_cloud_;
 
-  bool visualize_;
-  ros::Publisher pub_viz_;
-  ros::Time last_visualized_;
+  boost::scoped_ptr<Voxel3d> voxel_;
 
-  void worldToGrid(double wx, double wy, double wz, int &gx, int &gy, int &gz) const {
-    gx = (int)((wx - origin_.x()) / resolution_);
-    gy = (int)((wy - origin_.y()) / resolution_);
-    gz = (int)((wz - origin_.z()) / resolution_);
-  }
-  void gridToWorld(int gx, int gy, int gz, double &wx, double &wy, double &wz) const {
-    wx = gx * resolution_ + origin_.x();
-    wy = gy * resolution_ + origin_.y();
-    wz = gz * resolution_ + origin_.z();
-  }
-  inline int ref(int i, int j, int k) const {
-    return k * stride2_ + j * stride1_ + i;
+  void cloudCB(const robot_msgs::PointCloudConstPtr &msg_orig)
+  {
+    try
+    {
+      ros::Time start = ros::Time::now();
+
+      robot_msgs::PointCloud msg;
+      TF.transformPointCloud(frame_, *msg_orig, msg);
+      ROS_INFO("Transform took %lf seconds", (ros::Time::now() - start).toSec());
+      start = ros::Time::now();
+
+      voxel_->reset();
+      voxel_->updateWorld(msg);
+
+      ros::Duration d = ros::Time::now() - start;
+      ROS_INFO("Took %lf seconds", (ros::Time::now() - start).toSec());
+    }
+    catch (tf::TransformException ex)
+    {
+      ROS_ERROR("Transform exception: %s", ex.what());
+    }
   }
 
-  //std::vector<unsigned char> kernel_;
-  unsigned char *kernel_;
 };
+
+
+int main(int argc, char** argv)
+{
+  ros::init(argc, argv, "voxel");
+  ros::NodeHandle node;
+  VoxelNode v(node);
+  ros::spin();
+  return 0;
+}

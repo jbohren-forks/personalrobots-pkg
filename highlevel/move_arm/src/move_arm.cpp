@@ -253,7 +253,7 @@ namespace move_arm
 		    if (result == robot_actions::PREEMPTED)
 			ROS_INFO("Preempt requested. Stopping arm.");
 		    else
-			if (safe)
+			if (!safe)
 			    ROS_WARN("Environment is no longer safe. Cannot decide if path is valid. Stopping & replanning...");
 			else
 			    ROS_INFO("Current path is no longer valid. Stopping & replanning...");
@@ -384,7 +384,7 @@ namespace move_arm
 	if (!result)
 	{
 	    ROS_WARN("Unable to retrieve controller joint names from control query service. Waiting a bit and retrying...");
-	    ros::Duration(1.0).sleep();
+	    ros::Duration(5.0).sleep();
 	    result = client_query.call(req_query, res_query);
 	    if (result)
 		ROS_WARN("Retrieved controller joints on second attempt");

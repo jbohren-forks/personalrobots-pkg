@@ -35,6 +35,8 @@
 /** \author Ioan Sucan */
 
 #include <planning_models/kinematic.h>
+#include <planning_models/kinematic_state_params.h>
+#include <cassert>
 #include <algorithm>
 #include <sstream>
 #include <cmath>
@@ -323,14 +325,11 @@ bool planning_models::KinematicModel::isBuilt(void) const
     return m_built;
 }
 
-planning_models::KinematicModel::StateParams* planning_models::KinematicModel::newStateParams(void)
+planning_models::StateParams* planning_models::KinematicModel::newStateParams(void)
 {
-    StateParams *sp = new StateParams(this);
-    if (m_mi.inRobotFrame)
-	sp->setInRobotFrame();
-    return sp;
+    return new StateParams(this);
 }
-	
+
 void planning_models::KinematicModel::reduceToRobotFrame(void)
 {
     if (!m_mi.inRobotFrame)
@@ -625,218 +624,6 @@ void planning_models::KinematicModel::AttachedBody::computeTransform(btTransform
     globalTrans = attachTrans * parentTrans;
 }
 
-void planning_models::KinematicModel::StateParams::reset(void)
-{
-    for (unsigned int i = 0 ; i < m_mi.stateDimension ; ++i)
-	m_seen[i] = false;
-}
-
-void planning_models::KinematicModel::StateParams::resetGroup(const std::string &group)
-{
-    resetGroup(m_owner->getGroupID(group));
-}
-
-void planning_models::KinematicModel::StateParams::resetGroup(int groupID)
-{
-    assert(groupID >= 0 && groupID < (int)m_owner->getGroupCount());
-    for (unsigned int i = 0 ; i < m_mi.groupStateIndexList[groupID].size() ; ++i)
-    {
-	unsigned int j = m_mi.groupStateIndexList[groupID][i];
-	m_seen[j] = false;
-    }
-}
-
-bool planning_models::KinematicModel::StateParams::seenAll(void) const
-{
-    for (unsigned int i = 0 ; i < m_mi.stateDimension ; ++i)
-    {
-	std::map<unsigned int, bool>::const_iterator it = m_seen.find(i);
-	if (!it->second)
-	    return false;
-    }  
-    return true;
-}
-
-bool planning_models::KinematicModel::StateParams::seenAllGroup(const std::string &group) const
-{
-    return seenAllGroup(m_owner->getGroupID(group));
-}
-
-bool planning_models::KinematicModel::StateParams::seenAllGroup(int groupID) const
-{    
-    assert(groupID >= 0 && groupID < (int)m_owner->getGroupCount());
-    for (unsigned int i = 0 ; i < m_mi.groupStateIndexList[groupID].size() ; ++i)
-    {
-	unsigned int j = m_mi.groupStateIndexList[groupID][i];
-	std::map<unsigned int, bool>::const_iterator it = m_seen.find(j);
-	if (!it->second)
-	    return false;
-    }
-    return true;
-}
-
-void planning_models::KinematicModel::StateParams::missing(std::ostream &out)
-{
-    for (unsigned int i = 0 ; i < m_mi.stateDimension ; ++i)
-	if (!m_seen[i])
-	    out << m_mi.parameterName[i] << " ";
-}
-
-const double* planning_models::KinematicModel::StateParams::getParamsJoint(const std::string &name) const
-{
-    Joint *joint = m_owner->getJoint(name);
-    if (joint)
-    {
-	std::map<std::string, unsigned int>::const_iterator it = m_mi.parameterIndex.find(name);
-	if (it != m_mi.parameterIndex.end())
-	    return m_params + it->second;
-	else
-	    return NULL;
-    }
-    else
-	return NULL;    
-}
-
-bool planning_models::KinematicModel::StateParams::setParamsJoint(const std::vector<double> &params, const std::string &name)
-{
-    bool result = false;
-    Joint *joint = m_owner->getJoint(name);
-    if (joint)
-    {
-	double *dparams = new double[joint->usedParams];
-	result = setParamsJoint(dparams, name);
-	delete[] dparams;
-    }
-    return result;
-}
-
-bool planning_models::KinematicModel::StateParams::setParamsJoint(const double *params, const std::string &name)
-{
-    bool result = false;
-    Joint *joint = m_owner->getJoint(name);
-    if (joint)
-    {
-	unsigned int pos = m_mi.parameterIndex[name];
-	for (unsigned int i = 0 ; i < joint->usedParams ; ++i)
-	{
-	    unsigned int pos_i = pos + i;
-	    if (m_params[pos_i] != params[i] || !m_seen[pos_i])
-	    {
-		m_params[pos_i] = params[i];
-		m_seen[pos_i] = true;		
-		result = true;
-	    }
-	}
-    }
-    else
-	m_msg.error("Unknown joint: '" + name + "'");
-    return result;
-}
-
-bool planning_models::KinematicModel::StateParams::setParams(const std::vector<double> &params)
-{ 
-    double *dparams = new double[m_mi.stateDimension];
-    for (unsigned int i = 0 ; i < params.size() ; ++i)
-	dparams[i] = params[i];
-    bool result = setParams(dparams);
-    delete[] dparams;
-    return result;
-}
-
-bool planning_models::KinematicModel::StateParams::setParams(const double *params)
-{  
-    bool result = false;
-    for (unsigned int i = 0 ; i < m_mi.stateDimension ; ++i)
-	if (m_params[i] != params[i] || !m_seen[i])
-	{
-	    m_params[i] = params[i];
-	    m_seen[i] = true;
-	    result = true;
-	}
-    return result;
-}
-
-bool planning_models::KinematicModel::StateParams::setParamsGroup(const std::vector<double> &params, const std::string &group)
-{
-    return setParamsGroup(params, m_owner->getGroupID(group));
-}
-
-bool planning_models::KinematicModel::StateParams::setParamsGroup(const std::vector<double> &params, int groupID)
-{
-    double *dparams = new double[m_owner->getGroupDimension(groupID)];
-    for (unsigned int i = 0 ; i < params.size() ; ++i)
-	dparams[i] = params[i];
-    bool result = setParamsGroup(dparams, groupID);
-    delete[] dparams;
-    return result;
-}
-
-bool planning_models::KinematicModel::StateParams::setParamsGroup(const double *params, const std::string &group)
-{
-    return setParamsGroup(params, m_owner->getGroupID(group));
-}
-
-bool planning_models::KinematicModel::StateParams::setParamsGroup(const double *params, int groupID)
-{
-    bool result = false;
-    for (unsigned int i = 0 ; i < m_mi.groupStateIndexList[groupID].size() ; ++i)
-    {
-	unsigned int j = m_mi.groupStateIndexList[groupID][i];
-	if (m_params[j] != params[i] || !m_seen[j])
-	{
-	    m_params[j] = params[i];
-	    m_seen[j] = true;
-	    result = true;
-	}
-    }
-    return result;
-}
-
-void planning_models::KinematicModel::StateParams::setAllInGroup(const double value, const std::string &group)
-{
-    setAllInGroup(value, m_owner->getGroupID(group));
-}
-
-void planning_models::KinematicModel::StateParams::setAllInGroup(const double value, int groupID)
-{
-    assert(groupID >= 0 && groupID < (int)m_owner->getGroupCount());
-    for (unsigned int i = 0 ; i < m_mi.groupStateIndexList[groupID].size() ; ++i)
-    {
-	unsigned int j = m_mi.groupStateIndexList[groupID][i];
-	m_params[j] = value;
-	m_seen[j] = true;
-    }	
-}
-
-void planning_models::KinematicModel::StateParams::setAll(const double value)
-{
-    for (unsigned int i = 0 ; i < m_mi.stateDimension ; ++i)
-    {
-	m_params[i] = value;
-	m_seen[i] = true;
-    }   
-}
-
-void planning_models::KinematicModel::StateParams::setInRobotFrame(void)
-{
-    for (unsigned int j = 0 ; j < m_mi.floatingJoints.size() ; ++j)
-    {
-	double vals[7] = {0, 0, 0, 0, 0, 0, 1};
-	setParamsJoint(vals, m_mi.parameterName[m_mi.floatingJoints[j]]);
-    }
-    
-    for (unsigned int j = 0 ; j < m_mi.planarJoints.size() ; ++j)
-    {
-	double vals[3] = {0, 0, 0};
-	setParamsJoint(vals, m_mi.parameterName[m_mi.planarJoints[j]]);
-    }
-}
-
-const double* planning_models::KinematicModel::StateParams::getParams(void) const
-{
-    return m_params;
-}
-
 int planning_models::KinematicModel::getJointIndex(const std::string &name) const
 {
     std::map<std::string, unsigned int>::const_iterator it = m_mi.parameterIndex.find(name);
@@ -881,82 +668,6 @@ int planning_models::KinematicModel::getJointIndexInGroupSlow(const std::string 
 	if (m_mi.groupStateIndexList[groupID][i] == pos)
 	    return i;
     return -1;
-}
-
-void planning_models::KinematicModel::StateParams::copyParamsJoint(double *params, const std::string &name) const
-{
-    Joint *joint = m_owner->getJoint(name);
-    if (joint)
-    {
-	std::map<std::string, unsigned int>::const_iterator it = m_mi.parameterIndex.find(name);
-	if (it != m_mi.parameterIndex.end())
-	{
-	    unsigned int pos = it->second;
-	    for (unsigned int i = 0 ; i < joint->usedParams ; ++i)
-		params[i] = m_params[pos + i];
-	    return;
-	}
-    }
-    m_msg.error("Unknown joint: '" + name + "'");
-}
-
-void planning_models::KinematicModel::StateParams::copyParamsJoint(std::vector<double> &params, const std::string &name) const
-{
-    Joint *joint = m_owner->getJoint(name);
-    if (joint)
-    {
-	params.resize(joint->usedParams);
-	std::map<std::string, unsigned int>::const_iterator it = m_mi.parameterIndex.find(name);
-	if (it != m_mi.parameterIndex.end())
-	{
-	    unsigned int pos = it->second;
-	    for (unsigned int i = 0 ; i < joint->usedParams ; ++i)
-		params[i] = m_params[pos + i];
-	    return;
-	}
-    }
-    m_msg.error("Unknown joint: '" + name + "'");
-}
-
-void planning_models::KinematicModel::StateParams::copyParams(double *params) const
-{
-    for (unsigned int i = 0 ; i < m_mi.stateDimension ; ++i)
-	params[i] = m_params[i];
-}
-
-void planning_models::KinematicModel::StateParams::copyParams(std::vector<double> &params) const
-{
-    params.resize(m_mi.stateDimension);
-    for (unsigned int i = 0 ; i < m_mi.stateDimension ; ++i)
-	params[i] = m_params[i];
-}
-
-void planning_models::KinematicModel::StateParams::copyParamsGroup(double *params, const std::string &group) const
-{
-    copyParamsGroup(params, m_owner->getGroupID(group));
-}
-
-void planning_models::KinematicModel::StateParams::copyParamsGroup(std::vector<double> &params, const std::string &group) const
-{
-    copyParamsGroup(params, m_owner->getGroupID(group));
-}
-
-void planning_models::KinematicModel::StateParams::copyParamsGroup(std::vector<double> &params, int groupID) const
-{ 
-    unsigned int dim = m_owner->getGroupDimension(groupID);
-    double *dparams = new double[dim];
-    copyParamsGroup(dparams, groupID);
-    params.resize(dim);
-    for (unsigned int i = 0 ; i < dim ; ++i)
-	params[i] = dparams[i];
-    delete[] dparams;
-}
-
-void planning_models::KinematicModel::StateParams::copyParamsGroup(double *params, int groupID) const
-{   
-    assert(groupID >= 0 && groupID < (int)m_owner->getGroupCount());
-    for (unsigned int i = 0 ; i < m_mi.groupStateIndexList[groupID].size() ; ++i)
-	params[i] = m_params[m_mi.groupStateIndexList[groupID][i]];
 }
 
 void planning_models::KinematicModel::printModelInfo(std::ostream &out) 
@@ -1036,27 +747,4 @@ void planning_models::KinematicModel::printLinkPoses(std::ostream &out) const
 	out << "  quaternion: " << q.x() << ", " << q.y() << ", " << q.z() << ", " << q.w() << std::endl;
 	out << std::endl;
     }    
-}
-
-void planning_models::KinematicModel::StateParams::print(std::ostream &out) const
-{
-    out << std::endl;
-    for (std::map<std::string, unsigned int>::const_iterator it = m_mi.parameterIndex.begin() ; it != m_mi.parameterIndex.end() ; ++it)
-    {
-	Joint* joint = m_owner->getJoint(it->first);
-	if (joint)
-	{
-	    out << it->first;
-	    std::map<unsigned int, bool>::const_iterator sit = m_seen.find(it->second);
-	    if (!sit->second)
-		out << "[ *** UNSEEN *** ]";
-	    out << ": ";
-	    for (unsigned int i = 0 ; i < joint->usedParams ; ++i)
-		out << m_params[it->second + i] << std::endl;
-	}
-    }
-    out << std::endl;
-    for (unsigned int i = 0; i < m_mi.stateDimension ; ++i)
-	out << m_params[i] << " ";
-    out << std::endl;
 }

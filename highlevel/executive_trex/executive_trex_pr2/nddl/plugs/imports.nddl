@@ -16,10 +16,6 @@ PlugIn plug_in = new PlugIn(External);
 DetectOutletFine detect_outlet_fine = new DetectOutletFine(External);
 DetectOutletCoarse detect_outlet_coarse = new DetectOutletCoarse(External);
 
-// Additional mechanisms used
-RightArmMechanism right_arm_mechanism = new RightArmMechanism(External);
-RightGripperMechanism right_gripper_mechanism = new RightGripperMechanism(External);
-
 /******************************
  * Resource Requirements
  *****************************/

@@ -32,7 +32,7 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
-#include "libTF/Pose3D.h"
+#include "pr2_mechanism_controllers/Pose3D.h"
 #include <cmath>
 #include <cassert>
 

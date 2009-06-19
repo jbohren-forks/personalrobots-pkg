@@ -32,7 +32,7 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
-#include <libTF/libTF.h>
+#include <pr2_mechanism_controllers/Pose3D.h>
 #include <ros/node.h>
 #include <robot_msgs/PoseWithRatesStamped.h>
 #include <robot_msgs/PoseDot.h>

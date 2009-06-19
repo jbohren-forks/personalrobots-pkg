@@ -35,12 +35,12 @@
 int main(int argc, char** argv)
 {
   const int POINTS = 100000;
-  Voxel3d v(100,200,100);
+  Voxel3d v(200,200,200, 0.01, tf::Vector3(-1,-1,-1));
 
   ros::Time start = ros::Time::now();
   for (int i = 0; i < POINTS; ++i)
   {
-    v.putObstacle(lrand48()%100, lrand48()%200, lrand48()%100);
+    v.putObstacle(lrand48()%200, lrand48()%200, lrand48()%200);
   }
   ros::Time end = ros::Time::now();
 

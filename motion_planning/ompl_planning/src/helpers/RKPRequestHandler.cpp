@@ -39,7 +39,7 @@
 #include <sstream>
 
 /** Check if request looks valid  */
-bool kinematic_planning::RKPRequestHandler::isRequestValid(ModelMap &models, motion_planning_msgs::KinematicState &startState, motion_planning_srvs::KinematicPlan::Request &req)
+bool kinematic_planning::RKPRequestHandler::isRequestValid(ModelMap &models, motion_planning_srvs::KinematicPlan::Request &req)
 {   
     ModelMap::const_iterator pos = models.find(req.params.model_id);
     
@@ -76,12 +76,6 @@ bool kinematic_planning::RKPRequestHandler::isRequestValid(ModelMap &models, mot
 	return false;
     }
     
-    if (m->kmodel->getModelInfo().stateDimension != startState.get_vals_size())
-    {
-	ROS_ERROR("Dimension of start state expected to be %d but was received as %d", m->kmodel->getModelInfo().stateDimension, startState.get_vals_size());
-	return false;
-    }
-    
     // check headers
     for (unsigned int i = 0 ; i < req.goal_constraints.pose_constraint.size() ; ++i)
 	if (!m->planningMonitor->getTransformListener()->frameExists(req.goal_constraints.pose_constraint[i].pose.header.frame_id))
@@ -114,7 +108,7 @@ bool kinematic_planning::RKPRequestHandler::isRequestValid(ModelMap &models, mot
     return true;
 }
 
-void kinematic_planning::RKPRequestHandler::configure(const motion_planning_msgs::KinematicState &startState, motion_planning_srvs::KinematicPlan::Request &req, RKPPlannerSetup *psetup)
+void kinematic_planning::RKPRequestHandler::configure(const planning_models::StateParams *startState, motion_planning_srvs::KinematicPlan::Request &req, RKPPlannerSetup *psetup)
 {
     /* clear memory */
     psetup->si->clearGoal();
@@ -139,19 +133,15 @@ void kinematic_planning::RKPRequestHandler::configure(const motion_planning_msgs
     if (psetup->model->groupID >= 0)
     {
 	/* set the pose of the whole robot */
-	psetup->model->kmodel->computeTransforms(&startState.vals[0]);
+	psetup->model->kmodel->computeTransforms(startState->getParams());
 	psetup->model->collisionSpace->updateRobotModel();
 	
 	/* extract the components needed for the start state of the desired group */
-	for (unsigned int i = 0 ; i < dim ; ++i)
-	    start->values[i] = startState.vals[psetup->model->kmodel->getModelInfo().groupStateIndexList[psetup->model->groupID][i]];
+	startState->copyParamsGroup(start->values, psetup->model->groupID);
     }
     else
-    {
 	/* the start state is the complete state */
-	for (unsigned int i = 0 ; i < dim ; ++i)
-	    start->values[i] = startState.vals[i];
-    }
+	startState->copyParams(start->values);
     
     psetup->si->addStartState(start);
     
@@ -186,9 +176,10 @@ void kinematic_planning::RKPRequestHandler::configure(const motion_planning_msgs
     ROS_DEBUG("=======================================");	
 }
 
-bool kinematic_planning::RKPRequestHandler::computePlan(ModelMap &models, motion_planning_srvs::KinematicPlan::Request &req, motion_planning_srvs::KinematicPlan::Response &res)
+bool kinematic_planning::RKPRequestHandler::computePlan(ModelMap &models, const planning_models::StateParams *start, 
+							motion_planning_srvs::KinematicPlan::Request &req, motion_planning_srvs::KinematicPlan::Response &res)
 {
-    if (!isRequestValid(models, res.path.start_state, req))
+    if (!isRequestValid(models, req))
 	return false;
     
     ROS_INFO("Selected motion planner: '%s'", req.params.planner_id.c_str());
@@ -200,7 +191,7 @@ bool kinematic_planning::RKPRequestHandler::computePlan(ModelMap &models, motion
     RKPPlannerSetup *psetup = m->planners[req.params.planner_id];
     
     // configure the planner
-    configure(res.path.start_state, req, psetup);
+    configure(start, req, psetup);
     
     /* compute actual motion plan */
     ompl::sb::PathKinematic *bestPath       = NULL;
@@ -221,6 +212,15 @@ bool kinematic_planning::RKPRequestHandler::computePlan(ModelMap &models, motion
     /* copy the solution to the result */
     if (bestPath)
     {
+	std::vector<planning_models::KinematicModel::Joint*> joints;
+	psetup->model->kmodel->getJoints(joints);
+	for (unsigned int i = 0 ; i < joints.size() ; ++i)
+	{
+	    res.path.start_state[i].header = res.path.header;
+	    res.path.start_state[i].joint_name = joints[i]->name;
+	    start->copyParamsJoint(res.path.start_state[i].value, joints[i]->name);
+	}
+	
 	res.path.states.resize(bestPath->states.size());
 	res.path.times.resize(bestPath->states.size());
 	res.path.names.clear();

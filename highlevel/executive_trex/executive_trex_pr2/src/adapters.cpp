@@ -332,45 +332,38 @@ namespace TREX {
     }
 
     void fillDispatchParameters(pr2_robot_actions::SwitchControllers& msg, const TokenId& goalToken){
-      // The token will have a set of merged tokens on it. These merged tokens all are derived from a master of type
-      // 'MechanismController' which will be in a state of up or down. If it is up, we will append to the stop list, and if down, we
-      // will append to the start list
-
-      // Apply for immediate master token
-      handleMasterToken(goalToken->master(), msg);
-
-      // Apply over merged tokens
-      const TokenSet& merged_tokens = goalToken->getMergedTokens();
-      for(TokenSet::const_iterator it = merged_tokens.begin(); it != merged_tokens.end(); ++it){
-	TokenId merged_token = *it;
-	handleMasterToken(merged_token->master(), msg);
-      }
-    }
-
-    /**
-     * The Master Token is an instance of a MechanismController. It has a paramater indicating if it is up or down. The timeline name
-     * should correspond to the actual controller name.
-     */
-    void handleMasterToken(const TokenId& master_token, pr2_robot_actions::SwitchControllers& msg){
-      if(master_token.isId() && master_token->getPlanDatabase()->getSchema()->isA(master_token->getPredicateName(), "MechanismController.Holds")){
-	ConstrainedVariableId param = master_token->getVariable("is_up");
-	checkError(param.isValid(), "Trying to dispatch controller switch but could find no variable named 'is_up' in token " << master_token->toString() << 
-		   ". This indicates that the model is out of synch with the adapter code.");
-	ROS_ASSERT(param.isId());
-	checkError(param->lastDomain().isSingleton(), "Cannot tell if controller is up or down:" << param->toString() << ". Model should ensure value is bound.");
-
-	bool is_up = (bool) param->lastDomain().getSingletonValue();
-	std::string controller_name = Observation::getTimelineName(master_token).toString();
-
-	if(is_up == false){
-	  TREX_INFO("ros:debug:dispatching", "Adding " << controller_name << " to the stop list. Current state is:" << param->lastDomain().toString());
+      static const std::string NO_CONTROLLER("no_controller");
+      static const LabelStr UP_LIST("up_list");
+      static const LabelStr DOWN_LIST("down_list");
+      checkError(goalToken->getVariable(UP_LIST).isValid(), goalToken->toLongString());
+      checkError(goalToken->getVariable(DOWN_LIST).isValid(), goalToken->toLongString());
+      // Get domains
+      ObjectDomain up_list_domain(static_cast<const ObjectDomain&>(goalToken->getVariable(UP_LIST)->lastDomain()));
+      std::list<ObjectId> down_list = (static_cast<const ObjectDomain&>(goalToken->getVariable(DOWN_LIST)->lastDomain())).makeObjectList();
+      // Process down list first.
+      for(std::list<ObjectId>::const_iterator it = down_list.begin(); it != down_list.end(); ++it){
+	ObjectId object = *it;
+	std::string controller_name = object->getName().toString();
+	if(controller_name.find(NO_CONTROLLER) == std::string::npos){
+	  TREX_INFO("ros:debug:dispatching", "Adding " << controller_name << " to the down list.");
 	  msg.stop_controllers.push_back(controller_name);
 	}
-	else {
-	  TREX_INFO("ros:debug:dispatching", "Adding " << controller_name << " to the start list. Current state is:" << param->lastDomain().toString());
+
+	up_list_domain.remove(object);
+      }
+      // Now process up list
+      std::list<ObjectId> up_list = up_list_domain.makeObjectList();
+      for(std::list<ObjectId>::const_iterator it = up_list.begin(); it != up_list.end(); ++it){
+	ObjectId object = *it;
+	std::string controller_name = object->getName().toString();
+	if(controller_name.find(NO_CONTROLLER) == std::string::npos){
+	  TREX_INFO("ros:debug:dispatching", "Adding " << controller_name << " to the up list.");
 	  msg.start_controllers.push_back(controller_name);
 	}
       }
+
+      // Finally, restrict the up_list paramater
+      goalToken->getVariable(UP_LIST)->restrictBaseDomain(up_list_domain);
     }
   };
 

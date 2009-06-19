@@ -14,7 +14,6 @@ float LOCALIZE_PLUG_IN_GRIPPER_DURATION_BOUND = 60.0;
 float PLUG_IN_DURATION_BOUND = 300.0;
 float UNPLUG_DURATION_BOUND = 60.0;
 float STOW_PLUG_DURATION_BOUND = 60.0;
-float SAFETY_TUCK_ARMS_DURATION_BOUND = 60.0;
 
 /**
  * @todo Get better default values
@@ -44,7 +43,6 @@ class OutletState extends AgentTimeline {
     float qy;
     float qz;
     float qw;
-
   }
 
   OutletState(){super(Internal, "Holds");}
@@ -254,12 +252,6 @@ StowPlug::Active{
   // Must not be plugged in
   contained_by(plugged_in.False);
 }
-// Toggle Arms Clear State
-StowPlug::Inactive{
-  if(status == SUCCESS){
-    starts_during(arms_clear.False);
-  }
-}
 // The plug must be stowed whenever we move the base
 MoveBase::Active{
   contained_by(plug_stowed.True);
@@ -296,6 +288,10 @@ PlugIn::Active{
 ArmsClear::True{
   met_by(plugs_untuck_arms.Active cmd);
   leq(cmd.max_duration, PLUGS_UNTUCK_ARMS_DURATION_BOUND);
+}
+// The arms are not clear if they are tucked
+ArmsTucked::True{
+  contained_by(arms_clear.False);
 }
 // Update PlugState
 DetectPlugOnBase::Inactive{

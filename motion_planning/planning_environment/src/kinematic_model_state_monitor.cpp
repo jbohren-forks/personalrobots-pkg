@@ -69,7 +69,6 @@ void planning_environment::KinematicModelStateMonitor::setupRSM(void)
 	    if (includePose_)
 	    {
 		tf_ = new tf::TransformListener();
-		tf_->setExtrapolationLimit(ros::Duration(1.0));
 		ROS_DEBUG("Maintaining robot pose in frame '%s'", frame_id_.c_str());
 	    }
 	    else
@@ -181,7 +180,8 @@ void planning_environment::KinematicModelStateMonitor::waitForState(void) const
 
 bool planning_environment::KinematicModelStateMonitor::isStateUpdated(double sec) const
 {
-    if (sec > 0 && lastStateUpdate_ < ros::Time::now() - ros::Duration(sec))
+    // less than 10us is considered 0 
+    if (sec > 1e-5 && lastStateUpdate_ < ros::Time::now() - ros::Duration(sec))
 	return false;
     else
 	return true;

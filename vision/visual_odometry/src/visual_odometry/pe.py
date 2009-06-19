@@ -27,7 +27,12 @@ class PoseEstimator:
   estimation; this class exists to cache some values for efficiency.
   """
   def __init__(self, *camparams):
+
     self.iet = 3.0
+
+    self.rnd = random.Random()
+    self.rnd.seed(7)
+
     self.setNumRansacIterations(100)
     if camparams != ():
       self.default_camera = camera.Camera(camparams)
@@ -46,9 +51,9 @@ class PoseEstimator:
 
     # random.random is relatively slow, so run it here and keep the
     # values in r0,r1,r2.
-    self.r0 = vop.array([ random.random() for i in range(self.ransac_iterations) ])
-    self.r1 = vop.array([ random.random() for i in range(self.ransac_iterations) ])
-    self.r2 = vop.array([ random.random() for i in range(self.ransac_iterations) ])
+    self.r0 = vop.array([ self.rnd.random() for i in range(self.ransac_iterations) ])
+    self.r1 = vop.array([ self.rnd.random() for i in range(self.ransac_iterations) ])
+    self.r2 = vop.array([ self.rnd.random() for i in range(self.ransac_iterations) ])
 
   def inliers(self):
     return self.inl
@@ -91,7 +96,7 @@ class PoseEstimator:
     best_inl = []
 
     for ransac in range(self.ransac_iterations):
-      #triple = random.sample(pairs, 3)
+      #triple = self.rnd.sample(pairs, 3)
       triple = ( pairs[int(pick0[ransac])], pairs[int(pick1[ransac])], pairs[int(pick2[ransac])] )
 
       # Find a pair of xyzs, then supply them to SVD to produce a pose

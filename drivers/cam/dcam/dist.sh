@@ -14,6 +14,7 @@ cp src/libdcam/*.cpp $DIST_DIR/src/dcam
 cp src/libimwin/*.cpp $DIST_DIR/src/imwin
 cp src/ost/*.cpp $DIST_DIR/src/ost
 cp src/ost/*.h $DIST_DIR/include
+cp src/Makefile.standalone $DIST_DIR/Makefile
 cp $ROS_PACKAGE_PATH/vision/stereo_image_proc/include/*.h $DIST_DIR/include
 cp $ROS_PACKAGE_PATH/vision/stereo_image_proc/src/*.c $DIST_DIR/src/stlib
 cp $ROS_PACKAGE_PATH/vision/stereo_image_proc/src/*.cpp $DIST_DIR/src/stlib

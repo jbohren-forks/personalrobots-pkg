@@ -78,6 +78,9 @@ class Camera:
       0,         0,      1./(Tx*Fx),    -(Clx-Crx)/(Fx*Tx)
     ]
 
+  def __repr__(self):
+    return "<stereo_utils.camera Fx=%f, Fy=%f, Tx=%f, Clx=%f, Crx=%f, Cy=%f>" % self.params
+
   def pix2cam(self, u, v, d):
     """ given pixel space *(u,v,d)* returns camera space *(X,Y,Z)* """
     if 0:

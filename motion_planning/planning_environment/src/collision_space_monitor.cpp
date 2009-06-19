@@ -36,6 +36,7 @@
 
 #include "planning_environment/collision_space_monitor.h"
 #include <robot_msgs/PointStamped.h>
+#include <climits>
 
 namespace planning_environment
 {
@@ -70,7 +71,8 @@ void planning_environment::CollisionSpaceMonitor::setupCSM(void)
 
 bool planning_environment::CollisionSpaceMonitor::isMapUpdated(double sec) const
 {
-    if (sec > 0 && lastMapUpdate_ < ros::Time::now() - ros::Duration(sec))
+    // less than 10us is considered 0 
+    if (sec > 1e-5 && lastMapUpdate_ < ros::Time::now() - ros::Duration(sec))
 	return false;
     else
 	return true;

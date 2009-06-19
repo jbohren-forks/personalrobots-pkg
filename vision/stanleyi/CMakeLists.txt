@@ -22,9 +22,9 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 #gensrv()
 
 #common commands for building c++ executables and libraries
-#rospack_add_library(${PROJECT_NAME} src/example.cpp)
+rospack_add_library(descriptors descriptors.cpp)
 #target_link_libraries(${PROJECT_NAME} another_library)
 #rospack_add_boost_directories()
 #rospack_link_boost(${PROJECT_NAME} thread)
 rospack_add_executable(stanleyi stanleyi.cpp)
-#target_link_libraries(example ${PROJECT_NAME})
+target_link_libraries(stanleyi descriptors)

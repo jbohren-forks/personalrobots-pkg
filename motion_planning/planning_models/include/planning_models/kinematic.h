@@ -39,6 +39,7 @@
 
 #include "planning_models/shapes.h"
 #include "planning_models/output.h"
+
 #include <urdf/URDF.h>
 #include <LinearMath/btTransform.h>
 #include <boost/thread/mutex.hpp>
@@ -47,13 +48,14 @@
 #include <vector>
 #include <string>
 #include <map>
-#include <cassert>
 
 /** Describing a kinematic robot model loaded from URDF. Visual geometry is ignored */
 
 /** Main namespace */
 namespace planning_models
 {
+ 
+    class StateParams;
     
     /** Definition of a kinematic model. This class is not thread
 	safe, however multiple instances can be created */
@@ -430,138 +432,7 @@ namespace planning_models
 	    bool                                     inRobotFrame;
 	};
 	
-	/** A class that can hold the named parameters of this planning model */
-	class StateParams
-	{
-	public:
 
-	    StateParams(KinematicModel *model) : m_owner(model), m_mi(model->getModelInfo())
-	    {
-		assert(model->isBuilt());
-		m_params = m_mi.stateDimension > 0 ? new double[m_mi.stateDimension] : NULL;
-		setAll(0);
-		reset();
-	    }
-	    
-	    virtual ~StateParams(void)
-	    {
-		if (m_params)
-		    delete[] m_params;
-	    }
-	    
-	    /** Mark all values as unseen */
-	    void reset(void);
-
-	    /** Mark all values in a group as unseen */
-	    void resetGroup(int groupID);
-
-	    /** Mark all values in a group as unseen */
-	    void resetGroup(const std::string &group);
-
-	    /** Set all the parameters to a given value */
-	    void setAll(const double value);
-
-	    /** Set all the parameters from a group to a given value */
-	    void setAllInGroup(const double value, const std::string &group);
-	    
-	    /** Set all the parameters from a group to a given value */
-	    void setAllInGroup(const double value, int groupID);
-
-	    /** Set all planar & floating joints to 0, so that the robot is in its own frame */
-	    void setInRobotFrame(void);
-	    
-	    /** Set the parameters for the complete robot. */
-	    bool setParams(const std::vector<double> &params);
-
-	    /** Set the parameters for the complete robot. */
-	    bool setParams(const double *params);
-
-	    /** Set the parameters for a given group. Return true if
-		any change was observed in either of the set
-		values. */
-	    bool setParamsGroup(const std::vector<double> &params, const std::string &group);
-
-	    /** Set the parameters for a given group. Return true if
-		any change was observed in either of the set
-		values. */
-	    bool setParamsGroup(const std::vector<double> &params, int groupID);
-	    
-	    /** Set the parameters for a given group. Return true if
-		any change was observed in either of the set
-		values. */
-	    bool setParamsGroup(const double *params, const std::string &group);
-
-	    /** Set the parameters for a given group. Return true if
-		any change was observed in either of the set
-		values. */
-	    bool setParamsGroup(const double *params, int groupID);
-
-	    /** Given the name of a joint, set the values of the
-		parameters describing the joint. Return true if any
-		change was observed in the set value */
-	    bool setParamsJoint(const double *params, const std::string &name);
-
-	    /** Given the name of a joint, set the values of the
-		parameters describing the joint. Return true if any
-		change was observed in the set value */
-	    bool setParamsJoint(const std::vector<double> &params, const std::string &name);
-
-	    /** Given the name of a joint, get the values of the
-		parameters describing the joint. */
-	    const double* getParamsJoint(const std::string &name) const;
-	    
-	    /** Return the current value of the params */
-	    const double* getParams(void) const;
-	    
-	    /** Copy the parameters for a given group to a destination address */
-	    void copyParamsGroup(std::vector<double> &params, const std::string &group) const;
-
-	    /** Copy the parameters for a given group to a destination address */
-	    void copyParamsGroup(std::vector<double> &params, int groupID) const;
-
-	    /** Copy the parameters for a given group to a destination address */
-	    void copyParamsGroup(double *params, const std::string &group) const;
-
-	    /** Copy the parameters for a given group to a destination address */
-	    void copyParamsGroup(double *params, int groupID) const;
-	    
-	    /** Copy all parameters to a destination address */
-	    void copyParams(double *params) const;
-
-	    /** Copy all parameters to a destination address */
-	    void copyParams(std::vector<double> &params) const;
-	    
-	    /** Copy the parameters describing a given joint */
-	    void copyParamsJoint(double *params, const std::string &name) const;
-	    
-	    /** Copy the parameters describing a given joint */
-	    void copyParamsJoint(std::vector<double> &params, const std::string &name) const;
-	    
-	    /** Check if all params in a group were seen */
-	    bool seenAllGroup(const std::string &group) const;
-
-	    /** Check if all params in a group were seen */
-	    bool seenAllGroup(int groupID) const;
-
-	    /** Check if all params were seen */
-	    bool seenAll(void) const;
-	    
-	    /** Print the data from the state to screen */
-	    void print(std::ostream &out = std::cout) const;
-
-	    /** Print the missing joint names */
-	    void missing(std::ostream &out = std::cout);
-	    
-	protected:
-	    
-	    KinematicModel                      *m_owner;
-	    msg::Interface                       m_msg;
-	    ModelInfo                           &m_mi;
-	    double                              *m_params;
-	    std::map<unsigned int, bool>         m_seen;
-	};
-	
-	
 	KinematicModel(void)
 	{
 	    m_mi.stateDimension = 0;

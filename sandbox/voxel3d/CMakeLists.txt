@@ -11,5 +11,8 @@ rospack_add_library(voxel3d
 rospack_add_gtest(test/test_kernel test/test_kernel.cpp)
 target_link_libraries(test/test_kernel voxel3d)
 
+rospack_add_executable(bin/voxel_node src/voxel_node.cpp)
+target_link_libraries(bin/voxel_node voxel3d)
+
 rospack_add_executable(bin/timing src/timing.cpp)
 target_link_libraries(bin/timing voxel3d)

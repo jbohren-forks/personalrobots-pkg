@@ -52,12 +52,12 @@ inline float euc(NEWMAT::Matrix a, NEWMAT::Matrix b)
 class DorylusDataset {
  public:
   vector<object> objs_;
-  //! NEWMAT::Matrix of y_m^c values.  i.e. ymc_(c,m) = +1 if the label of training example m is c.
+  //! NEWMAT::Matrix of y_m^c values.  i.e. ymc_(c,m) = +1 if the label of training example m is c, and -1 otherwise.
   NEWMAT::Matrix ymc_;
   //! Number of classes, not including class 0.
   unsigned int nClasses_; 
   //! num_class_objs[label] = num training examples with that label.  Unlike classes_, this does include the label 0, which is used for background / unknown objects.
-  map<int, unsigned int> num_class_objs_;
+  map<int, unsigned int> num_objs_of_class_;
   //! List of labels in the dataset.  Does not include the label 0, which is used for background / unknown objects.
   vector<int> classes_;
 
@@ -75,7 +75,6 @@ class DorylusDataset {
   bool save(std::string filename);
   bool load(std::string filename, bool quiet=false);
   std::string version_string_;
-  bool testSave();
 };
 
 
@@ -86,7 +85,6 @@ class Dorylus {
   //! Pointers to weak classifiers, in the order that they were learned.
   vector<weak_classifier*> pwcs_;
   //! nClasses x nTrEx.
-  //NEWMAT::Matrix weights_;
   NEWMAT::Matrix log_weights_;
   float objective_, objective_prev_, training_err_;
   DorylusDataset *dd_;
@@ -94,23 +92,23 @@ class Dorylus {
   unsigned int nClasses_;
   vector<int> classes_;
 
-  void loadDataset(DorylusDataset *dd);
-  void normalizeWeights();
+  //! debugHook will be called each time a new weak classifier is learned. 
+  void train(int nCandidates, int max_secs, int max_wcs, void (*debugHook)(weak_classifier));
+  void useDataset(DorylusDataset *dd);
+  bool save(string filename, string *user_data_str=NULL);
+  bool load(string filename, bool quiet=false, string *user_data_str=NULL);
+  std::string status();
   bool learnWC(int nCandidates, map<string, float> max_thetas, vector<string> *desc_ignore=NULL);
+  NEWMAT::Matrix classify(object &obj, NEWMAT::Matrix **confidence = NULL);
+  float classify(DorylusDataset &dd);
   map<string, float> computeMaxThetas(const DorylusDataset &dd);
   //  float computeNewObjective(const weak_classifier& wc, const NEWMAT::Matrix& mmt, NEWMAT::Matrix** ppweights = NULL);
   float computeUtility(const weak_classifier& wc, const NEWMAT::Matrix& mmt);
   float computeObjective();
   //void train(int nCandidates, int max_secs, int max_wcs);
-  bool save(string filename, string *user_data_str=NULL);
-  bool load(string filename, bool quiet=false, string *user_data_str=NULL);
-  std::string status();
   vector<weak_classifier*> findActivatedWCs(const string &descriptor, const NEWMAT::Matrix &pt);
   NEWMAT::Matrix computeDatasetActivations(const weak_classifier& wc, const NEWMAT::Matrix& mmt);
-  NEWMAT::Matrix classify(object &obj, NEWMAT::Matrix **confidence = NULL);
-  float classify(DorylusDataset &dd);
 
-  
  Dorylus() : dd_(NULL), nClasses_(0)
     {
       version_string_ = std::string("#DORYLUS CLASSIFIER LOG v0.1");

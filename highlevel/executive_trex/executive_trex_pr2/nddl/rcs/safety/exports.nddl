@@ -50,3 +50,25 @@ class SetLaserTilt extends ROSAction {
     super(_mode);
   }
 }
+
+/**
+ * Tracks the state if the arms are tucked or not. This is a safety issue for mobility.
+ */
+class ArmsTucked extends AgentTimeline {
+  predicate True{}
+  predicate False{};
+  ArmsTucked(Mode _mode){
+    super(_mode, "False");
+  }
+};
+
+/**
+ * This will change to actually track the laser tilt configuration
+ */
+class TiltLaserReady extends AgentTimeline {
+  predicate True{}
+  predicate False{};
+  TiltLaserReady(Mode _mode){
+    super(_mode, "False");
+  }
+};

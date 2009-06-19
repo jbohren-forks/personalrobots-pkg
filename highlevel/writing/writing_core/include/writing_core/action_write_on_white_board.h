@@ -72,7 +72,7 @@ private:
   std::string arm_controller_;
 
   std_msgs::Empty empty_;
- 
+  robot_msgs::Path text_trajectory_;
   
   //robot_srvs::MoveToPose::Request req_pose_;
   //robot_srvs::MoveToPose::Response res_pose_;

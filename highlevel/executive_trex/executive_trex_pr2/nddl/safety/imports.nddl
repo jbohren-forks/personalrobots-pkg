@@ -1,0 +1,36 @@
+#include "world_model/topological_map.nddl"
+#include "rcs/exports.nddl"
+#include "rcs/nav/exports.nddl"
+#include "rcs/plugs/exports.nddl"
+#include "rcs/doors/exports.nddl"
+#include "rcs/safety/exports.nddl"
+
+// Ideally this update should be unnecessary and we just observe the state as a function of joint configuration perhaps?
+SafetyTuckArms::Inactive{
+  if(status == SUCCESS){
+    starts_during(ArmsTucked.True);
+  }
+}
+TouchDoor::Inactive{
+  starts_during(ArmsTucked.False);
+}
+
+GraspHandle::Inactive{
+  starts_during(ArmsTucked.False);
+}
+
+PlugsUntuckArms::Inactive{
+  starts_during(ArmsTucked.False);
+}
+
+/**
+ * Impacts to SetLaserTilt due to set_laser_tilt and MoveBase. Ideally we are observing these directly and not making estimates based ona actions
+ */
+SetLaserTilt::Inactive{
+  if(status == SUCCESS){
+    starts_during(TiltLaserReady.True);
+  }
+}
+MoveBase::Inactive{
+  starts_during(TiltLaserReady.False);
+}

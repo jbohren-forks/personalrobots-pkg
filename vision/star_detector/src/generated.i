@@ -7,7 +7,7 @@
 #define ABS(x)      AND(x, K(0x7fffffff))
 #define PRED(m,a,b) OR(AND((m),(a)), ANDNOT((m),(b)))
 // [1, 2, 3]
-void StarDetector::FilterResponsesGen3() {
+void __attribute__ ((force_align_arg_pointer)) StarDetector::FilterResponsesGen3() {
 __m128i w1,w2,w3,w4,w6 ;
 for (int y = 12; y < m_H - 12; ++y) { 
 float *p_prj = &CV_IMAGE_ELEM(m_projected, float, y, 12);
@@ -62,7 +62,7 @@ m_flat_p += 4;
 }}
 }
 // [1, 2, 3, 4]
-void StarDetector::FilterResponsesGen4() {
+void __attribute__ ((force_align_arg_pointer)) StarDetector::FilterResponsesGen4() {
 __m128i w1,w2,w3,w4,w6,w8 ;
 for (int y = 12; y < m_H - 12; ++y) { 
 float *p_prj = &CV_IMAGE_ELEM(m_projected, float, y, 12);
@@ -127,7 +127,7 @@ m_flat_p += 4;
 }}
 }
 // [1, 2, 3, 4, 6]
-void StarDetector::FilterResponsesGen5() {
+void __attribute__ ((force_align_arg_pointer)) StarDetector::FilterResponsesGen5() {
 __m128i w1,w2,w3,w4,w6,w8,w12 ;
 for (int y = 20; y < m_H - 20; ++y) { 
 float *p_prj = &CV_IMAGE_ELEM(m_projected, float, y, 20);
@@ -202,7 +202,7 @@ m_flat_p += 4;
 }}
 }
 // [1, 2, 3, 4, 6, 8]
-void StarDetector::FilterResponsesGen6() {
+void __attribute__ ((force_align_arg_pointer)) StarDetector::FilterResponsesGen6() {
 __m128i w1,w2,w3,w4,w6,w8,w12,w16 ;
 for (int y = 24; y < m_H - 24; ++y) { 
 float *p_prj = &CV_IMAGE_ELEM(m_projected, float, y, 24);
@@ -287,7 +287,7 @@ m_flat_p += 4;
 }}
 }
 // [1, 2, 3, 4, 6, 8, 11]
-void StarDetector::FilterResponsesGen7() {
+void __attribute__ ((force_align_arg_pointer)) StarDetector::FilterResponsesGen7() {
 __m128i w1,w2,w3,w4,w6,w8,w11,w12,w16,w22 ;
 for (int y = 36; y < m_H - 36; ++y) { 
 float *p_prj = &CV_IMAGE_ELEM(m_projected, float, y, 36);
@@ -383,7 +383,7 @@ m_flat_p += 4;
 }}
 }
 // [1, 2, 3, 4, 6, 8, 11, 16]
-void StarDetector::FilterResponsesGen8() {
+void __attribute__ ((force_align_arg_pointer)) StarDetector::FilterResponsesGen8() {
 __m128i w1,w2,w3,w4,w6,w8,w11,w12,w16,w22,w32 ;
 for (int y = 48; y < m_H - 48; ++y) { 
 float *p_prj = &CV_IMAGE_ELEM(m_projected, float, y, 48);
@@ -489,7 +489,7 @@ m_flat_p += 4;
 }}
 }
 // [1, 2, 3, 4, 6, 8, 11, 16, 23]
-void StarDetector::FilterResponsesGen9() {
+void __attribute__ ((force_align_arg_pointer)) StarDetector::FilterResponsesGen9() {
 __m128i w1,w2,w3,w4,w6,w8,w11,w12,w16,w22,w23,w32,w46 ;
 for (int y = 72; y < m_H - 72; ++y) { 
 float *p_prj = &CV_IMAGE_ELEM(m_projected, float, y, 72);
@@ -606,7 +606,7 @@ m_flat_p += 4;
 }}
 }
 // [1, 2, 3, 4, 6, 8, 11, 16, 23, 32]
-void StarDetector::FilterResponsesGen10() {
+void __attribute__ ((force_align_arg_pointer)) StarDetector::FilterResponsesGen10() {
 __m128i w1,w2,w3,w4,w6,w8,w11,w12,w16,w22,w23,w32,w46,w64 ;
 for (int y = 96; y < m_H - 96; ++y) { 
 float *p_prj = &CV_IMAGE_ELEM(m_projected, float, y, 96);
@@ -733,7 +733,7 @@ m_flat_p += 4;
 }}
 }
 // [1, 2, 3, 4, 6, 8, 11, 16, 23, 32, 45]
-void StarDetector::FilterResponsesGen11() {
+void __attribute__ ((force_align_arg_pointer)) StarDetector::FilterResponsesGen11() {
 __m128i w1,w2,w3,w4,w6,w8,w11,w12,w16,w22,w23,w32,w45,w46,w64,w90 ;
 for (int y = 136; y < m_H - 136; ++y) { 
 float *p_prj = &CV_IMAGE_ELEM(m_projected, float, y, 136);
@@ -871,7 +871,7 @@ m_flat_p += 4;
 }}
 }
 // [1, 2, 3, 4, 6, 8, 11, 16, 23, 32, 45, 64]
-void StarDetector::FilterResponsesGen12() {
+void __attribute__ ((force_align_arg_pointer)) StarDetector::FilterResponsesGen12() {
 __m128i w1,w2,w3,w4,w6,w8,w11,w12,w16,w22,w23,w32,w45,w46,w64,w90,w128 ;
 for (int y = 192; y < m_H - 192; ++y) { 
 float *p_prj = &CV_IMAGE_ELEM(m_projected, float, y, 192);

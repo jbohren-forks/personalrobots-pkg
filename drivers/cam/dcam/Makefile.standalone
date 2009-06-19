@@ -1,0 +1,75 @@
+#
+# Makefile for stereo image API
+#
+
+CC = g++
+CXX = g++
+LD = g++
+
+OPENCV_DIR = $(shell rospack find opencv_latest)
+#OPENCV_DIR = /usr/local/include/opencv
+LIBDC1394_DIR = $(shell rospack find libdc1394v2)
+#LIBDC1394_DIR = /usr/local
+DCAM_DIR = $(shell rospack find dcam)
+#DCAM_DIR = ./
+
+
+CPPFLAGS = -Wall -g -O3 -Iinclude -I/usr/local/include -I$(OPENCV_DIR)/opencv/include/opencv -I$(OPENCV_DIR)/opencv/include/ -I$(LIBDC1394_DIR)/libdc1394v2/include
+CFLAGS = -DGCC -msse2 -g -O3 -mpreferred-stack-boundary=4 -Wall -Iinclude -I/usr/local/include
+GCC = g++
+LDFLAGS = -Llib -ldcam -ldc1394 -lcv -lhighgui -lfltk -lfltk_gl -lglut -lboost_thread -Wl,-rpath,$(OPENCV_DIR)/opencv/lib -L$(OPENCV_DIR)/opencv/lib -L$(LIBDC1394_DIR)/libdc1394v2/lib -Wl,-rpath,$(LIBDC1394_DIR)/libdc1394v2/lib -Wl,-rpath,$(DCAM_DIR)/lib
+LDV3D = -Llib -lfltk -lfltk_gl -lglut
+
+SHAREDFLAGS = -shared -Wl,-soname,
+
+OSTOBJS = ost stereogui imwin im3Dwin calwin lodepng ostpng findplane
+DCAMOBJS = dcam stereodcam image stereolib stereolib2
+
+
+all:	lib/libdcam.so bin/ost bin/acquire bin/stacquire bin/v3d
+
+bin/ost: $(OSTOBJS:%=obj/%.o) 
+	$(LD) $(LDFLAGS) -o $@ $(OSTOBJS:%=obj/%.o)
+
+bin/acquire: obj/acquire.o
+	$(LD) $(LDFLAGS) -o $@ obj/acquire.o
+
+bin/stacquire: obj/stacquire.o obj/imwin.o obj/im3Dwin.o
+	$(LD) $(LDFLAGS) -o $@ obj/stacquire.o obj/imwin.o obj/im3Dwin.o
+
+bin/v3d: obj/v3d.o obj/imwin.o obj/im3Dwin.o
+	$(LD) $(LDV3D) -o $@ obj/v3d.o obj/imwin.o obj/im3Dwin.o
+
+lib/libdcam.so: $(DCAMOBJS:%=obj/%.o) 
+	$(LD) $(SHAREDFLAGS)libdcam.so -o $@ $(DCAMOBJS:%=obj/%.o)
+
+# general cpp command from src->obj
+obj/%.o:src/dcam/%.cpp
+	$(GCC) $(CPPFLAGS) -c $< -o $@
+obj/%.o:src/stlib/%.cpp
+	$(GCC) $(CPPFLAGS) -c $< -o $@
+obj/%.o:src/imwin/%.cpp
+	$(GCC) $(CPPFLAGS) -c $< -o $@
+obj/%.o:src/ost/%.cpp
+	$(GCC) $(CPPFLAGS) -c $< -o $@
+obj/%.o:src/acquire/%.cpp
+	$(GCC) $(CPPFLAGS) -c $< -o $@
+
+
+# general c command from src->obj
+obj/%.o:src/stlib/%.c
+	$(GCC) $(CFLAGS) -c $< -o $@
+
+
+test:	$(OBJECTS) test.o
+	$(LD) -o test $(OBJECTS) test.o -lyaml
+
+clean:
+	- rm obj/*.o
+	- rm bin/*
+	- rm lib/*.so
+
+dist:
+	tar -cvzf ost.tgz *.c *.cpp *.h *.yaml src/*.c src/*.cpp src/*.fl include/*.h *.vcproj *.sln Makefile data/*.bmp
+
+

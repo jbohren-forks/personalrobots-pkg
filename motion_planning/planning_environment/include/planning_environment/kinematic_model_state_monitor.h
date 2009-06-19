@@ -106,7 +106,7 @@ namespace planning_environment
 	}
 
 	/** \brief Return a pointer to the maintained robot state */
-	const planning_models::KinematicModel::StateParams* getRobotState(void) const
+	const planning_models::StateParams* getRobotState(void) const
 	{
 	    return robotState_;
 	}
@@ -138,7 +138,7 @@ namespace planning_environment
 	/** \brief Wait until a full mechanism state is received */
 	void waitForState(void) const;
 
-	/** \brief Return true if a full mechanism state has been received in the last sec seconds */
+	/** \brief Return true if a full mechanism state has been received in the last sec seconds. If sec < 10us, this function always returns true. */
 	bool isStateUpdated(double sec) const;
 
 	/** \brief Return true if the pose is included in the state */
@@ -156,29 +156,28 @@ namespace planning_environment
 	void mechanismStateCallback(const mechanism_msgs::MechanismStateConstPtr &mechanismState);
 
 
-	RobotModels                                  *rm_;
-	bool                                          includePose_;
-	planning_models::KinematicModel              *kmodel_;
-	std::string                                   planarJoint_;
-	std::string                                   floatingJoint_;
+	RobotModels                     *rm_;
+	bool                             includePose_;
+	planning_models::KinematicModel *kmodel_;
+	std::string                      planarJoint_;
+	std::string                      floatingJoint_;
 
-	ros::NodeHandle                               nh_;
-	ros::Subscriber                               mechanismStateSubscriber_;
-	tf::TransformListener                        *tf_;
+	ros::NodeHandle                  nh_;
+	ros::Subscriber                  mechanismStateSubscriber_;
+	tf::TransformListener           *tf_;
 
-	planning_models::KinematicModel::StateParams *robotState_;
-	tf::Pose                                      pose_;
-	std::string                                   robot_frame_;
-	std::string                                   frame_id_;
+	planning_models::StateParams    *robotState_;
+	tf::Pose                         pose_;
+	std::string                      robot_frame_;
+	std::string                      frame_id_;
 
-	boost::function<void(void)>                   onStateUpdate_;
+	boost::function<void(void)>      onStateUpdate_;
 
-	bool                                          havePose_;
-	bool                                          haveMechanismState_;
-	ros::Time                                     lastStateUpdate_;
+	bool                             havePose_;
+	bool                             haveMechanismState_;
+	ros::Time                        lastStateUpdate_;
     };
 
 }
 
 #endif
-

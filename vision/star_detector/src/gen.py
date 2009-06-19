@@ -76,7 +76,7 @@ for n in range(3,13):
 
   uniqs = sorted(list(set(m_filter_sizes) | set(m_filter_sizes_2)))
 
-  print "void StarDetector::FilterResponsesGen%d() {" % n
+  print "void __attribute__ ((force_align_arg_pointer)) StarDetector::FilterResponsesGen%d() {" % n
 
   if TARGET_C:
       print "int", ",".join(["w%d" % r for r in uniqs]), ";"

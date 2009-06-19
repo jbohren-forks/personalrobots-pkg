@@ -146,21 +146,27 @@ static PyObject *dcam_getImage(PyObject *self, PyObject *args)
   if (!r) {
     Py_RETURN_NONE;
   } else {
-    StereoData *stIm = ps->dev->stIm;
+      StereoData *stIm = ps->dev->stIm;
 
-    int w = stIm->imWidth;
-    int h = stIm->imHeight;
+      int w = stIm->imWidth;
+      int h = stIm->imHeight;
 
-    if (0) {
-      printf("%p\n", stIm->imLeft->imRaw);
-      printf("%p\n", stIm->imLeft->im);
-      printf("%p\n", stIm->imLeft->imColor);
-      printf("%p\n", stIm->imLeft->imRect);
-      printf("%p\n", stIm->imLeft->imRectColor);
-    }
+    assert(stIm->imLeft->imRect != NULL);
+    assert(stIm->imRight->imRect != NULL);
 
-    return Py_BuildValue("iis#s#", w, h, stIm->imLeft->imRect, w * h, stIm->imRight->imRect, w * h);
+    return Py_BuildValue("iiNN",
+                         w,
+                         h,
+                         PyBuffer_FromMemory(stIm->imLeft->imRect, w * h),
+                         PyBuffer_FromMemory(stIm->imRight->imRect, w * h));
   }
+#if 0
+  printf("%p\n", stIm->imLeft->imRaw);
+  printf("%p\n", stIm->imLeft->im);
+  printf("%p\n", stIm->imLeft->imColor);
+  printf("%p\n", stIm->imLeft->imRect);
+  printf("%p\n", stIm->imLeft->imRectColor);
+#endif
 }
 
 static PyObject *dcam_stop(PyObject *self, PyObject *args)
@@ -170,9 +176,16 @@ static PyObject *dcam_stop(PyObject *self, PyObject *args)
   Py_RETURN_NONE;
 }
 
+static PyObject *retParameters(PyObject *self, PyObject *args)
+{
+  dcam_t *ps = (dcam_t*)self;
+  return PyString_FromString(ps->dev->retParameters());
+}
+
 static struct PyMethodDef dcam_methods[] =
 {
   {"getImage", dcam_getImage, METH_VARARGS},
+  {"retParameters",     retParameters, METH_VARARGS},
   {"stop",     dcam_stop, METH_VARARGS},
   {NULL,          NULL}
 };

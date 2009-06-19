@@ -2,7 +2,6 @@
  * This file specifies the interface for actions in the plugs domain
  * @note Detection of the plug on the base is specified in the safety area.
  */
-
 class PlugDomainAction extends ROSAction{
   predicate Active{}
   predicate Inactive{}

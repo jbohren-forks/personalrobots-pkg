@@ -45,8 +45,7 @@ using namespace ros;
 namespace pr2_ik {
 
   PR2IKNode::PR2IKNode()
-      : tf_(*ros::Node::instance()),
-        dimension_(7)
+      : dimension_(7)
   {
     node_handle_.param<std::string>("~root_name", root_name_, "torso_lift_link");
     node_handle_.param<bool>("~free_angle_constraint",free_angle_constraint_,false);

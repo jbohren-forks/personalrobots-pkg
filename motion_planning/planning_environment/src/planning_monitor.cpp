@@ -36,22 +36,21 @@
 
 #include "planning_environment/planning_monitor.h"
 #include "planning_environment/kinematic_state_constraint_evaluator.h"
+#include <boost/scoped_ptr.hpp>
 
 bool planning_environment::PlanningMonitor::isEnvironmentSafe(void) const
 {
-    if (intervalCollisionMap_ > 0.0)
-	if (isMapUpdated(intervalCollisionMap_))
-	{
-	    ROS_WARN("Planning is not safe: map is not up to date");
-	    return false;
-	}
-    
-    if (intervalState_ > 0.0)
-	if (isStateUpdated(intervalState_))
-	{
-	    ROS_WARN("Planning is not safe: robot state is not up to date");
-	    return false;
-	}
+    if (!isMapUpdated(intervalCollisionMap_))
+    {
+        ROS_WARN("Planning is not safe: map not updated in the last %f seconds", intervalCollisionMap_);
+        return false;
+    }
+  
+    if (!isStateUpdated(intervalState_))
+    {
+        ROS_WARN("Planning is not safe: robot state not updated in the last %f seconds", intervalState_);
+        return false;
+    }
     return true;
 }
 
@@ -67,8 +66,9 @@ void planning_environment::PlanningMonitor::setGoalConstraints(const motion_plan
     transformConstraintsToFrame(kcPath_, getFrameId());
 }
 
-void planning_environment::PlanningMonitor::transformConstraintsToFrame(motion_planning_msgs::KinematicConstraints &kc, const std::string &target) const
+bool planning_environment::PlanningMonitor::transformConstraintsToFrame(motion_planning_msgs::KinematicConstraints &kc, const std::string &target) const
 {
+    bool res = true;
     for (unsigned int i = 0; i < kc.pose_constraint.size() ; ++i)
 	tf_->transformPose(target, kc.pose_constraint[i].pose, kc.pose_constraint[i].pose);
     
@@ -76,41 +76,44 @@ void planning_environment::PlanningMonitor::transformConstraintsToFrame(motion_p
     if (getKinematicModel()->getModelInfo().planarJoints.size() > 0 || getKinematicModel()->getModelInfo().floatingJoints.size() > 0)
     {
 	for (unsigned int i = 0; i < kc.joint_constraint.size() ; ++i)
-	    transformJoint(kc.joint_constraint[i].joint_name, 0, kc.joint_constraint[i].value, kc.joint_constraint[i].header, target);
+	    if (!transformJoint(kc.joint_constraint[i].joint_name, 0, kc.joint_constraint[i].value, kc.joint_constraint[i].header, target))
+		res = false;
     }
+    return res;
 }
 
-void planning_environment::PlanningMonitor::transformPathToFrame(motion_planning_msgs::KinematicPath &kp, const std::string &target) const
+bool planning_environment::PlanningMonitor::transformPathToFrame(motion_planning_msgs::KinematicPath &kp, const std::string &target) const
 {    
     // if there are no planar of floating transforms, there is nothing to do
     if (getKinematicModel()->getModelInfo().planarJoints.empty() && getKinematicModel()->getModelInfo().floatingJoints.empty())
     {
 	kp.header.frame_id = target;
-	return;
+	return true;
     }
     
     roslib::Header updatedHeader = kp.header;
-
+    updatedHeader.frame_id = target;
+    
     // transform start state
-    std::vector<planning_models::KinematicModel::Joint*> joints;
-    getKinematicModel()->getJoints(joints);
-    unsigned int u = 0;
-    for (unsigned int i = 0 ; i < joints.size() ; ++i)
-	if (joints[i]->usedParams > 0)
-	{
-	    roslib::Header header = kp.header;
-	    transformJoint(joints[i]->name, u, kp.start_state.vals, header, target);
-	    updatedHeader = header;	    
-	    u += joints[i]->usedParams;
-	}
-
-
+    for (unsigned int i = 0 ; i < kp.start_state.size() ; ++i)
+	if (!transformJointToFrame(kp.start_state[i], target))
+	    return false;
+    
+    
     // transform the rest of the states
 
     // get the joints this path is for
+    std::vector<planning_models::KinematicModel::Joint*> joints;
     joints.resize(kp.names.size());
     for (unsigned int j = 0 ; j < joints.size() ; ++j)
+    {
 	joints[j] = getKinematicModel()->getJoint(kp.names[j]);
+	if (joints[j] == NULL)
+	{
+	    ROS_ERROR("Unknown joint '%s' found on path", kp.names[j].c_str());
+	    return false;
+	}
+    }
     
     // iterate through the states
     for (unsigned int i = 0 ; i < kp.states.size() ; ++i)
@@ -119,24 +122,37 @@ void planning_environment::PlanningMonitor::transformPathToFrame(motion_planning
 	for (unsigned int j = 0 ; j < joints.size() ; ++j)
 	{
 	    roslib::Header header = kp.header;
-	    transformJoint(joints[j]->name, u, kp.states[i].vals, header, target);
+	    if (!transformJoint(joints[j]->name, u, kp.states[i].vals, header, target))
+		return false;
 	    updatedHeader = header;
 	    u += joints[j]->usedParams;
 	}
     }
     
     kp.header = updatedHeader;
+    return true;
 }
 
-void planning_environment::PlanningMonitor::transformJointToFrame(motion_planning_msgs::KinematicJoint &kj, const std::string &target) const
+bool planning_environment::PlanningMonitor::transformJointToFrame(motion_planning_msgs::KinematicJoint &kj, const std::string &target) const
 {
-    transformJoint(kj.joint_name, 0, kj.value, kj.header, target);
+    return transformJoint(kj.joint_name, 0, kj.value, kj.header, target);
 }
 
-void planning_environment::PlanningMonitor::transformJoint(const std::string &name, unsigned int index, std::vector<double> &params, roslib::Header &header, const std::string& target) const
+bool planning_environment::PlanningMonitor::transformJoint(const std::string &name, unsigned int index, std::vector<double> &params, roslib::Header &header, const std::string& target) const
 {
     // planar joints and floating joints may need to be transformed 
     planning_models::KinematicModel::Joint *joint = getKinematicModel()->getJoint(name);
+    if (joint == NULL)
+    {
+	ROS_ERROR("Unknown joint '%s'", name.c_str());
+	return false;
+    }
+    else
+	if (params.size() < index + joint->usedParams)
+	{
+	    ROS_ERROR("Insufficient parameters for joint '%s'", name.c_str());
+	    return false;
+	}
     
     if (dynamic_cast<planning_models::KinematicModel::PlanarJoint*>(joint))
     {
@@ -176,9 +192,10 @@ void planning_environment::PlanningMonitor::transformJoint(const std::string &na
     }   
     else
 	header.frame_id = target;
+    return true;
 }
 
-bool planning_environment::PlanningMonitor::isStateValidOnPath(const planning_models::KinematicModel::StateParams *state) const
+bool planning_environment::PlanningMonitor::isStateValidOnPath(const planning_models::StateParams *state) const
 {
     getEnvironmentModel()->lock();
     getKinematicModel()->lock();
@@ -205,7 +222,7 @@ bool planning_environment::PlanningMonitor::isStateValidOnPath(const planning_mo
     return valid;
 }
 
-bool planning_environment::PlanningMonitor::isStateValidAtGoal(const planning_models::KinematicModel::StateParams *state) const
+bool planning_environment::PlanningMonitor::isStateValidAtGoal(const planning_models::StateParams *state) const
 {   
     getEnvironmentModel()->lock();
     getKinematicModel()->lock();
@@ -240,8 +257,10 @@ bool planning_environment::PlanningMonitor::isPathValid(const motion_planning_ms
     if (path.header.frame_id != getFrameId())
     {
 	motion_planning_msgs::KinematicPath pathT = path;
-	transformPathToFrame(pathT, getFrameId());
-	return isPathValidAux(pathT);
+	if (transformPathToFrame(pathT, getFrameId()))
+	    return isPathValidAux(pathT);
+	else
+	    return false;
     }
     else
 	return isPathValidAux(path);
@@ -249,9 +268,17 @@ bool planning_environment::PlanningMonitor::isPathValid(const motion_planning_ms
 
 bool planning_environment::PlanningMonitor::isPathValidAux(const motion_planning_msgs::KinematicPath &path) const
 {    
-    planning_models::KinematicModel::StateParams *sp = getKinematicModel()->newStateParams();
-    sp->setParams(path.start_state.vals);
-
+    boost::scoped_ptr<planning_models::StateParams> sp(getKinematicModel()->newStateParams());
+    
+    for (unsigned int i = 0 ; i < path.start_state.size() ; ++i)
+	sp->setParamsJoint(path.start_state[i].value, path.start_state[i].joint_name);
+    
+    if (!sp->seenAll())
+    {
+	ROS_WARN("Incomplete start state specification in path");
+	return false;
+    }
+    
     KinematicConstraintEvaluatorSet ks;
     ks.add(getKinematicModel(), kcPath_.joint_constraint);
     ks.add(getKinematicModel(), kcPath_.pose_constraint);
@@ -269,7 +296,15 @@ bool planning_environment::PlanningMonitor::isPathValidAux(const motion_planning
     // get the joints this path is for
     std::vector<planning_models::KinematicModel::Joint*> joints(path.names.size());
     for (unsigned int j = 0 ; j < joints.size() ; ++j)
+    {
 	joints[j] = getKinematicModel()->getJoint(path.names[j]);
+	if (joints[j] == NULL)
+	{
+	    ROS_ERROR("Unknown joint '%s' found on path", path.names[j].c_str());
+	    valid = false;
+	    break;
+	}
+    }
     
     // check every state
     for (unsigned int i = 0 ; valid && i < path.states.size() ; ++i)
@@ -277,6 +312,13 @@ bool planning_environment::PlanningMonitor::isPathValidAux(const motion_planning
 	unsigned int u = 0;
 	for (unsigned int j = 0 ; j < joints.size() ; ++j)
 	{
+	    if (path.states[i].vals.size() < u + joints[j]->usedParams)
+	    {
+		ROS_ERROR("Incorrect state specification on path");
+		valid = false;
+		break;
+	    }
+	    
 	    /* copy the parameters that describe the joint */
 	    std::vector<double> params;
 	    for (unsigned int k = 0 ; k < joints[j]->usedParams ; ++k)
@@ -308,6 +350,5 @@ bool planning_environment::PlanningMonitor::isPathValidAux(const motion_planning
     getKinematicModel()->unlock();
     getEnvironmentModel()->unlock();
     
-    delete sp;
     return valid;
 }

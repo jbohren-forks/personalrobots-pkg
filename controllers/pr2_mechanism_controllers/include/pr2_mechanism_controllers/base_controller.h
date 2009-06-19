@@ -46,7 +46,7 @@
 #include <pr2_mechanism_controllers/GetBaseCommand.h>
 #include <pr2_mechanism_controllers/WheelRadiusMultiplier.h>
 
-#include <libTF/Pose3D.h>
+#include <pr2_mechanism_controllers/Pose3D.h>
 #include <urdf/URDF.h>
 
 #include <newmat10/newmat.h>
