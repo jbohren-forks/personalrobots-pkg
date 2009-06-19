@@ -45,10 +45,10 @@
 #include <vector>
 #include <math.h>
 #include <LinearMath/btQuaternion.h>
+#include <annotated_map_builder/WaitActionState.h>
+#include <annotated_map_builder/WaitActionGoal.h>
 
 using namespace std;
-
-typedef robot_msgs::PoseStamped PS;
 
 void print_usage() {
   ROS_INFO("collect_data filename\n"
@@ -96,7 +96,11 @@ int main(int argc, char** argv)
   ros::init(argc, argv, "object_modeler");
   //ros::NodeHandle n;
   
+  typedef robot_msgs::PoseStamped PS;
   robot_actions::ActionClient<PS, nav_robot_actions::MoveBaseState, PS> move_client("move_base");
+  typedef annotated_map_builder::WaitActionState WaitState;
+  typedef annotated_map_builder::WaitActionGoal WaitGoal;
+  robot_actions::ActionClient<WaitGoal, WaitState, WaitState> wait_client("wait_k_messages_action");
 
   vector<robot_msgs::Point> goal_points;
   read_poses_from_file(goal_points, "poses.txt");
@@ -115,8 +119,8 @@ int main(int argc, char** argv)
     PS goal_pose_stamped;
     goal_pose_stamped.pose = goal_pose;
     PS feedback;
-    robot_actions::ResultStatus result = move_client.execute(goal_pose_stamped, feedback, ros::Duration(30));
-    switch (result) {
+    robot_actions::ResultStatus result_move = move_client.execute(goal_pose_stamped, feedback, ros::Duration(30));
+    switch (result_move) {
     case robot_actions::SUCCESS:
       ROS_INFO("Move successful");
       break;
@@ -127,8 +131,22 @@ int main(int argc, char** argv)
       ROS_INFO("Move preempted");
       break;
     }
-    ros::Duration wait_time;
-    wait_time.fromSec(3);
-    wait_time.sleep();
+    WaitActionGoal wait_goal;
+    wait_goal.num_events = 3;
+    wait_goal.topic_name = "/stereo/raw_stereo_throttled";
+    robot_actions::ResultStatus result_wait = wait_client.execute(, feedback, ros::Duration(30));
+    case robot_actions::SUCCESS:
+      ROS_INFO("Wait successful");
+      break;
+    case robot_actions::ABORTED:
+      ROS_INFO("Wait aborted");
+      break;
+    case robot_actions::PREEMPTED:
+      ROS_INFO("Wait preempted");
+      break;
+    }
+    //ros::Duration wait_time;
+    //wait_time.fromSec(3);
+    //wait_time.sleep();
   }
 }
