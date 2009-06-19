@@ -1,0 +1,40 @@
+<launch>
+  <!-- Machines -->
+  <include file="$(find pr2_head_cart)/heada.machine" />
+
+  <!-- Description and etherCAT --> 
+  <param name="robotdesc/pr2" command="$(find xacro)/xacro.py '$(find pr2_defs)/robots/heada.xacro.xml'" />
+
+  <node machine="realtime_root" pkg="pr2_etherCAT" type="pr2_etherCAT" args="-i eth0 -x robotdesc/pr2" />
+
+  <!-- Calibration -->
+  <node pkg="mechanism_bringup" type="calibrate.py" 
+  args="$(find pr2_default_controllers)/calibration_controllers/head_cart_calibration_controller.xml" output="screen" />
+
+  <!-- Robot state publisher -->
+  <node machine="two" pkg="robot_state_publisher" type="state_publisher" name="robot_state_publisher">
+   <param name="publish_frequency" type="double" value="50.0" />
+   <param name="tf_prefix" type="string" value="" />
+ </node>
+
+  <!-- Will have APC Battery drivers in here at some point -->
+
+  <!-- Need stereo cam, projector, prosilica when they're installed -->
+
+  <!-- Hokuyo, plug in to machine 2 -->
+  <node  machine="two" pkg="hokuyo_node" type="hokuyo_node" name="tilt_hokuyo_node" args="scan:=tilt_scan">
+    <param name="port" type="string" value="/dev/ttyACM0" />
+    <param name="frameid" type="string" value="laser_tilt_link" />
+    <param name="min_ang_degrees" type="double" value="-80.0" />
+    <param name="max_ang_degrees" type="double" value="80.0" />
+    <param name="skip" type="int" value="1" />
+  </node>
+
+  <!-- Runtime Diagnostics Logging -->
+  <node pkg="rosrecord" type="rosrecord" args="-f /hwlog/heada_runtime_automatic /diagnostics" />
+
+  <!-- NTP monitoring script Warns to console if sync error -->
+  <node pkg="runtime_monitor" type="ntp_monitor.py" args="heada2" machine="realtime"/>
+  <node pkg="runtime_monitor" type="ntp_monitor.py" args="fw1 7000" machine="two"/> 
+
+</launch>

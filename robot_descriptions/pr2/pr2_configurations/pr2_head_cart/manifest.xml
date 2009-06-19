@@ -1,0 +1,16 @@
+<package>
+  <description brief="Launch files to run PR2 head on a cart">
+    This package contains the launch files and XML descriptions to run the
+    PR2 head on a cart
+  </description>
+  <author>Kevin Watts</author>
+  <license>BSD</license>
+  <review status="na" notes="" />
+  <depend package="pr2_defs" />
+  <depend package="pr2_default_controllers" />
+  <depend package="pr2_etherCAT" />
+  <depend package="hokuyo_node" />
+  <depend package="dcam" />
+  <depend package="robot_state_publisher" />
+  <depend package="prosilica_cam" />
+</package>
