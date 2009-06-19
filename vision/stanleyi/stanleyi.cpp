@@ -11,6 +11,7 @@
 #include <vector>
 #include <string>
 #include "descriptors.h"
+#include <dorylus.h>
 
 using namespace NEWMAT;
 using namespace std;
@@ -84,6 +85,7 @@ public:
     lp_.addHandler<image_msgs::Image>(string("/forearm/image_rect_color"), &copyMsg<image_msgs::Image>, (void*)(&img_msg_));
   }
 
+  void collectDataset(string bagfile, int samples_per_img);
   void viewLabels(string bagfile);
 };
 
@@ -162,18 +164,68 @@ void test_watershed(IplImage *img) {
   cvWaitKey(0);
 }  
   
-void test_patch(IplImage* img) {
-  Patch p(100, "intensity", .2);
-  Matrix* r = NULL;
-  p.compute(img, 300, 100, r,  true);
-  if(r!=NULL) {
-    cout << *r << endl;
+
+void Stanleyi::collectDataset(string bagfile, int samples_per_img) {
+  vector<ImageDescriptor*> descriptor = setupImageDescriptors();
+  bool debug = false;
+  vector<object> objs;
+
+  if(getenv("DEBUG") != NULL) {
+    cout << "Entering debug mode." << endl;
+    debug = true;
+  }
+
+  lp_.open(bagfile, ros::Time());
+
+  // -- Get data for all labeled images.
+  while(lp_.nextMsg()) {
+    // -- Get the next img with a label mask.
+    if (!img_bridge_.fromImage(img_msg_, "bgr")) 
+      continue;
+    img_ = img_bridge_.toIpl();
+    mask_ = findLabelMask(img_msg_.header.stamp.toSec());
+    if(mask_ == NULL)
+      continue;
+	
+    // -- Randomly sample points from the image and get the features.
+    srand ( time(NULL) );
+    for(int i=0; i<samples_per_img; i++) {
+      int row = rand() % img_->height;
+      int col = rand() % img_->width;
+      Matrix* result = NULL;
+      object obj;
+
+      // -- Set the label.
+      CvScalar s = cvGet2D(mask_, row, col);
+      obj.label = s.val[0];
+      if(obj.label != 0)
+	obj.label = 1;
+      
+      if(debug)
+	cout << "Label " << obj.label << endl;
+
+      for(unsigned int j=0; j<descriptor.size(); j++) {
+	// -- For now, only accept points for which all features are computable.
+	if(!descriptor[j]->compute(img_, row, col, result, debug))
+	  continue;
+	//      obj.features[descriptor[i]->name_] = *result;
+	cout << "Result is : " << endl << result << endl;
+      }
+      
+      for(unsigned int j=0; j<descriptor.size(); j++) {
+	descriptor[j]->clearPointCache();
+      }
+    }
+    
+    for(unsigned int j=0; j<descriptor.size(); j++) {
+      descriptor[j]->clearImageCache();
+    }
+
   }
 }
+  
 
-void Stanleyi::viewLabels(string bagfile) 
-{
-
+  void Stanleyi::viewLabels(string bagfile) {
   cvNamedWindow("Image", CV_WINDOW_AUTOSIZE);
   cvNamedWindow("Mask", CV_WINDOW_AUTOSIZE);
   cvNamedWindow("Feature", CV_WINDOW_AUTOSIZE);
@@ -182,18 +234,11 @@ void Stanleyi::viewLabels(string bagfile)
   while(lp_.nextMsg()) {
     if (img_bridge_.fromImage(img_msg_, "bgr")) {
       img_ = img_bridge_.toIpl();
- 
-      //seg
-      //      if(mask_ != NULL)
-      //	cvReleaseImage(&mask_);
       mask_ = findLabelMask(img_msg_.header.stamp.toSec());
-
       if(mask_ != NULL) {
 	cvShowImage("Image", img_);
 	cvShowImage("Mask", mask_);
 	test_watershed(img_);
-	test_patch(img_);
-	
 	cvWaitKey(0);
       }
     }
@@ -208,6 +253,17 @@ int main(int argc, char** argv)
     {
       cout << "Showing labels for " << argv[2] << endl;  
       s.viewLabels(string(argv[2]));
+    }
+
+  if(argc > 2 && !strcmp(argv[1], "--collectDataset"))
+    {
+      cout << "Showing a dataset for " << argv[2] << endl;  
+
+      int samples_per_img = 1000;
+      if(getenv("NSAMPLES") != NULL) 
+	samples_per_img = atoi(getenv("NSAMPLES"));
+
+      s.collectDataset(string(argv[2]), samples_per_img);
     }
   
   else 
