@@ -8,6 +8,8 @@ namespace camera_calibration {
 
 PinholeCameraModel::PinholeCameraModel()
 {
+  std::fill(K, K+9, 0.0);
+  std::fill(D, D+5, 0.0);
 }
 
 PinholeCameraModel::PinholeCameraModel(const PinholeCameraModel& other)
@@ -38,8 +40,13 @@ void PinholeCameraModel::setParameters(int width, int height, double fx,
 
 void PinholeCameraModel::setDistortion(const double* D_new)
 {
-  std::copy(D_new, D_new+9, D);
-  initUndistortMap();
+  if (D_new) {
+    std::copy(D_new, D_new+9, D);
+    initUndistortMap();
+  } else {
+    std::fill(D, D+5, 0.0);
+    distorted_ = false;
+  }
 }
 
 PinholeCameraModel PinholeCameraModel::withRoi(int x, int y, int width, int height) const

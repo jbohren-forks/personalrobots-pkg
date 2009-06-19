@@ -13,22 +13,24 @@ class Calibrater
 public:
   Calibrater();
 
+  ~Calibrater();
+
   //void useIntrinsicGuess(bool on = true);
   //void fixPrincipalPoint(bool on = true);
   //void fixAspectRatio(bool on = true);
   //void zeroTangentialDistortion(bool on = true);
   //void useDistortionCoefficients(int);
-  // setFlags?
+  void setFlags(int flags);
 
   size_t views() const;
   
   void addView(const CvPoint2D32f* img_pts, const CvPoint3D32f* obj_pts, size_t n);
 
-  void calibrate();
+  void calibrate(int image_width, int image_height);
 
-  /** @todo: per-view errors */
+  /** @todo: per-view errors, extrinsics */
   double reprojectionError() const;
-
+  
   PinholeCameraModel& model();
   const PinholeCameraModel& model() const;
 
@@ -37,8 +39,10 @@ private:
   std::vector<CvPoint3D32f> object_points_;
   std::vector<CvPoint2D32f> image_points_;
   std::vector<int> point_counts_;
-  std::vector<float> rotation_vectors_, translation_vectors_;
+  CvMat* extrinsics_;
   int flags_;
+
+  void getExtrinsics(CvMat &rot, CvMat &trans) const;
 };
 
 class CheckerboardDetector
@@ -71,6 +75,8 @@ private:
 
 
 inline size_t Calibrater::views() const { return point_counts_.size(); }
+
+inline void Calibrater::setFlags(int flags) { flags_ = flags; }
 
 inline PinholeCameraModel& Calibrater::model() { return model_; }
 inline const PinholeCameraModel& Calibrater::model() const { return model_; }
