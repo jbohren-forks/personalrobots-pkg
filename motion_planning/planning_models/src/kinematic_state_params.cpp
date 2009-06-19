@@ -40,7 +40,7 @@
 #include <sstream>
 #include <cmath>
 
-planning_models::StateParams::StateParams(KinematicModel *model) : m_owner(model), m_mi(model->getModelInfo())
+planning_models::StateParams::StateParams(KinematicModel *model) : m_owner(model), m_mi(model->getModelInfo()), m_params(NULL)
 {
     assert(model->isBuilt());
     m_params = m_mi.stateDimension > 0 ? new double[m_mi.stateDimension] : NULL;
@@ -50,10 +50,45 @@ planning_models::StateParams::StateParams(KinematicModel *model) : m_owner(model
 	setInRobotFrame();
 }
 
+planning_models::StateParams::StateParams(const StateParams &sp) : m_owner(sp.m_owner), m_mi(sp.m_mi), m_params(NULL)
+{
+    copyFrom(sp);
+}
+
 planning_models::StateParams::~StateParams(void)
 {
     if (m_params)
 	delete[] m_params;
+}
+
+planning_models::StateParams& planning_models::StateParams::operator=(const StateParams &rhs) 
+{
+    if (this != &rhs)
+	copyFrom(rhs);
+    return *this;
+}
+
+bool planning_models::StateParams::operator==(const StateParams &rhs) const
+{
+    if (m_mi.stateDimension != rhs.m_mi.stateDimension)
+	return false;
+    for (unsigned int i = 0 ; i < m_mi.stateDimension ; ++i)
+	if (fabs(m_params[i] - rhs.m_params[i]) > DBL_MIN)
+	    return false;
+    return true;
+}
+
+void planning_models::StateParams::copyFrom(const StateParams &sp)
+{
+    m_owner = sp.m_owner;
+    m_mi = sp.m_mi;
+    if (m_params)
+	delete[] m_params;    
+    m_params = m_mi.stateDimension > 0 ? new double[m_mi.stateDimension] : NULL;
+    if (m_params)
+	for (unsigned int i = 0 ; i < m_mi.stateDimension ; ++i)
+	    m_params[i] = sp.m_params[i];
+    m_seen = sp.m_seen;
 }
 
 void planning_models::StateParams::reset(void)

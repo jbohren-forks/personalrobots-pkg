@@ -56,7 +56,12 @@ namespace planning_models
     public:
 	
 	StateParams(KinematicModel *model);
+	StateParams(const StateParams &sp);
 	virtual ~StateParams(void);
+	
+	StateParams &operator=(const StateParams &rhs);
+	
+	bool operator==(const StateParams &rhs) const;
 	
 	/** \brief Mark all values as unseen */
 	void reset(void);
@@ -166,11 +171,14 @@ namespace planning_models
 	
     protected:
 	
+	/** \brief Copy data from another instance of this class */
+	void copyFrom(const StateParams &sp);
+	
 	KinematicModel                      *m_owner;
-	msg::Interface                       m_msg;
 	KinematicModel::ModelInfo           &m_mi;
 	double                              *m_params;
 	std::map<unsigned int, bool>         m_seen;
+	msg::Interface                       m_msg;
     };
     
 }

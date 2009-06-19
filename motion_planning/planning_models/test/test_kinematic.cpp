@@ -436,6 +436,7 @@ TEST(FK, OneRobot)
     tmpParam[0] = 0.1;
     sp->setParamsJoint(tmpParam, "link_a_joint");
     EXPECT_FALSE(sp->seenAll());
+    EXPECT_TRUE(sp->seenJoint("link_a_joint"));
 
     tmpParam[0] = -1.0;    
     sp->setParamsJoint(tmpParam, "link_c_joint");
@@ -450,6 +451,9 @@ TEST(FK, OneRobot)
     EXPECT_EQ(1.1, sp->getParams()[2]);
     EXPECT_EQ(0.1, sp->getParams()[3]);
     EXPECT_EQ(-1.0, sp->getParams()[4]);
+    
+    planning_models::StateParams sp_copy = *sp;
+    EXPECT_TRUE(sp_copy == *sp);
     
     delete sp;
     delete model;
