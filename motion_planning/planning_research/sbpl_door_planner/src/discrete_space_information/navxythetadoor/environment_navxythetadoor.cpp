@@ -1009,6 +1009,9 @@ void EnvironmentNAVXYTHETADOORLAT::GetActionCostDebug(int SourceX, int SourceY, 
     GetValidDoorAngles(point3D, &doorangleV, &dooranglecostV, &doorangleintV);
 //        printf("Size angles: %d, costs: %d\n",doorangleV.size(),dooranglecostV.size());
 
+    for(unsigned int p = 0; p < doorangleV.size(); p++)
+      printf("{%.2f %.2f %d %d} angle: %d dist: %.3f\n",sourcex,sourcey,SourceTheta,SourceDoorIntervalIndex, doorangleV[p], db_.getDistanceFromDoorToBase(doorangleV[p]*M_PI/180));
+
     if(bPrint){
       printf("pt %d: %f %f %f\n", i, point3D.x, point3D.y, point3D.theta);
       printf("interval active: %d %d doorcostmultiplier: %d\n", interval_active[0], interval_active[1],doorcostmultiplier);
@@ -1033,7 +1036,7 @@ void EnvironmentNAVXYTHETADOORLAT::GetActionCostDebug(int SourceX, int SourceY, 
 
             if(bPrint && doorangleintV[cind] == 1){
               printf("activating interval %d: angle %d is same as previous angle with prevdoorangleint %d\n", 
-                     doorangleintV[cind], doorangleV[cind], prevdoorangleintV[pind]); 
+                     doorangleintV[cind], doorangleV[cind], prevdoorangleintV[pind]);
             }
 
             //track the best cost
@@ -1120,19 +1123,14 @@ void EnvironmentNAVXYTHETADOORLAT::GetActionCostDebug(int SourceX, int SourceY, 
   *pBaseCost = (int)currentmaxcost;
   *pDoorCost = doorcostmultiplier;
 
-//   printf("%d\n", action->cost);
 
   //use cell cost as multiplicative factor
   if(interval_active[0] == true)
-//    *pCosttoDoorInterval0 = (currentmaxcost+1)*(doorcostmultiplier + 1);  //NO ACTION COST
-//    *pCosttoDoorInterval0 = action->cost*(currentmaxcost+1)*(doorcostmultiplier + 1);
-    *pCosttoDoorInterval0 = action->cost*(currentmaxcost+1);
+   *pCosttoDoorInterval0 = action->cost*(currentmaxcost+1); //*(doorcostmultiplier + 1);
   else
     *pCosttoDoorInterval0 = INFINITECOST;
   if(interval_active[1] == true) 
-//    *pCosttoDoorInterval1 =  (currentmaxcost+1)*(doorcostmultiplier + 1);  //NO ACTION COST
-//    *pCosttoDoorInterval1 =  action->cost*(currentmaxcost+1)*(doorcostmultiplier + 1);
-   *pCosttoDoorInterval1 =  action->cost*(currentmaxcost+1);
+   *pCosttoDoorInterval1 =  action->cost*(currentmaxcost+1); //*(doorcostmultiplier + 1);
   else
     *pCosttoDoorInterval1 = INFINITECOST;
 
@@ -1380,12 +1378,7 @@ void EnvironmentNAVXYTHETADOORLAT::GetSuccs(int SourceStateID, vector<int>* Succ
 
     //skip the invalid cells
     if(!IsValidCell(newX, newY))
-    {
-//       printf("mp #%d: newXYTheta= {%d %d %d} gridXY=%d cost=%d  NOT VALID\n",aind, newX, newY, newTheta, EnvNAVXYTHETALATCfg.Grid2D[newX][newY], nav3daction->cost);
       continue;
-    }
-//     else
-//       printf("mp #%d: newXYTheta= {%d %d %d} gridXY=%d cost=%d\n",aind, newX, newY, newTheta, EnvNAVXYTHETALATCfg.Grid2D[newX][newY], nav3daction->cost);
 
     //get cost
     //int newdoorintervals = 0; //0 - same, 1 - new interval, 2 - both old and new
@@ -1404,8 +1397,6 @@ void EnvironmentNAVXYTHETADOORLAT::GetSuccs(int SourceStateID, vector<int>* Succ
       //check reachability
       if(costtodoorinterval[dind] >= INFINITECOST)
       {
-//         printf("NOT VALID -> action_cost=%d   costtodoorinterval_0= %d   costtodoorinterval_1= %d\n",
-//                  nav3daction->cost, costtodoorinterval[0], costtodoorinterval[1]);
         continue; //impossible to reach
       }
 
@@ -1423,7 +1414,7 @@ void EnvironmentNAVXYTHETADOORLAT::GetSuccs(int SourceStateID, vector<int>* Succ
       }
       else{
         EnvNAVXYTHETADOORHashEntry_t* OutHashEntry;
-	
+
         if((OutHashEntry = GetHashEntry(newX, newY, newTheta, dind)) == NULL)
         {
           //have to create a new entry
@@ -1443,7 +1434,6 @@ void EnvironmentNAVXYTHETADOORLAT::GetSuccs(int SourceStateID, vector<int>* Succ
       }
     }//over door intervals
 
-//     printf("\n\n\n");
   }
 
 #if TIME_DEBUG

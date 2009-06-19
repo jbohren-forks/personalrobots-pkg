@@ -492,7 +492,6 @@ namespace door_base_collision_cost
       return true;
   }
 
-
   bool DoorBaseCollisionCost::checkBaseDoorIntersect(double angle)
   {
     // rotate the door
@@ -541,6 +540,200 @@ namespace door_base_collision_cost
 
     return false;
   }
+
+  void DoorBaseCollisionCost::ClosestPointOnLineSegment(robot_msgs::Point32 &l1, robot_msgs::Point32 &l2, robot_msgs::Point32 &p, robot_msgs::Point32 &sol)
+  {
+    robot_msgs::Point32 l2_l1, p_l1;
+
+    l2_l1.x = l2.x-l1.x;  //overloaded subtraction operator?
+    l2_l1.y = l2.y-l1.y;
+    p_l1.x = p.x-l1.x;
+    p_l1.y = p.y-l1.y;
+
+    double t = ((p_l1.x*l2_l1.x)+(p_l1.y*l2_l1.y)) / ((l2_l1.x*l2_l1.x)+(l2_l1.y*l2_l1.y));
+
+    if (t < 0)
+      t = 0;
+    else if (t > 1)
+      t = 1;
+
+    sol.x = l1.x+l2_l1.x*t;
+    sol.y = l1.y+l2_l1.y*t;
+  }
+
+  double DoorBaseCollisionCost::PointDistanceFromLineSeg(robot_msgs::Point32 &l1, robot_msgs::Point32 &l2, robot_msgs::Point32 &p)
+  {
+    robot_msgs::Point32 sol;
+    ClosestPointOnLineSegment(l1,l2,p,sol);
+
+    return(sqrt((p.x*sol.x)*(p.x*sol.x) + (p.y*sol.y)*(p.y*sol.y)));
+  }
+
+  double DoorBaseCollisionCost::getDistanceFromDoorToBase(double angle)
+  {
+    double dist, min_distance = 1000000;
+
+    // rotate the door
+    door_msgs::Door rotated_door = door_functions::rotateDoor(door_msg_, angle);
+
+    // get polygon of door
+    std::vector<robot_msgs::Point32> door_polygon(4);
+    std::vector<robot_msgs::Point> door_polygon64 = door_functions::getPolygon(rotated_door, door_thickness_);
+
+    //convert to type robot_msgs::Point32 to check for intersection (getPolygon returns 64-bit floats)
+    door_polygon[0].x = door_polygon64[0].x;
+    door_polygon[0].y = door_polygon64[0].y;
+
+    door_polygon[1].x = door_polygon64[1].x;
+    door_polygon[1].y = door_polygon64[1].y;
+
+    door_polygon[2].x = door_polygon64[2].x;
+    door_polygon[2].y = door_polygon64[2].y;
+
+    door_polygon[3].x = door_polygon64[3].x;
+    door_polygon[3].y = door_polygon64[3].y;
+
+    // check each corner of the robot with each line segment of the door polygon, save the shortest distance
+    for(int i = 0; i < 4; i++)
+    {
+      dist = PointDistanceFromLineSeg(rotated_door.door_p1, rotated_door.door_p2,footprint_[i]);
+      if(dist < min_distance)
+        min_distance = dist;
+    }
+
+    return min_distance;
+  }
+
+  bool DoorBaseCollisionCost::checkArmDoorCollide(double door_angle, const robot_msgs::Point32 &robot_global_position, const double &robot_global_yaw)
+  {
+    robot_msgs::Point32 global_handle_position, global_shoulder_position;
+
+    // rotate the door
+    door_msgs::Door rotated_door = door_functions::rotateDoor(door_msg_, door_angle);
+
+    transform2D(door_handle_position_, global_handle_position, door_frame_global_position_, door_frame_global_yaw_+door_angle);
+    transform2D(robot_shoulder_position_, global_shoulder_position, robot_global_position, robot_global_yaw);
+
+    //debug
+    printPoint("rotated_door.door_p1",rotated_door.door_p1);
+    printPoint("rotated_door.door_p2",rotated_door.door_p2);
+    printPoint("global_handle_position",global_handle_position);
+    printPoint("global_shoulder_position",global_shoulder_position);
+
+    return doLineSegsIntersect(rotated_door.door_p1, rotated_door.door_p2, global_shoulder_position, global_handle_position);
+  }
+
+  void DoorBaseCollisionCost::printPoint(std::string name, robot_msgs::Point32 point)
+  {
+    printf("%s: x: %.3f y: %.3f z: %.3f\n", name.c_str(), point.x, point.y, point.z);
+  }
+
+/*
+  Here are some sample "C++" implementations of these algorithms.
+
+// Copyright 2001, softSurfer (www.softsurfer.com)
+// This code may be freely used and modified for any purpose
+// providing that this copyright notice is included with it.
+// SoftSurfer makes no warranty for this code, and cannot be held
+// liable for any real or imagined damage resulting from its use.
+// Users of this code must verify correctness for their application.
+
+// Assume that classes are already given for the objects:
+//    Point and Vector with
+//        coordinates {float x, y, z;}
+//        operators for:
+//            Point  = Point ± Vector
+//            Vector = Point - Point
+//            Vector = Vector ± Vector
+//            Vector = Scalar * Vector
+//    Line and Segment with defining points {Point P0, P1;}
+//    Track with initial position and velocity vector
+//            {Point P0; Vector v;}
+//===================================================================
+
+#define SMALL_NUM  0.00000001 // anything that avoids division overflow
+// dot product (3D) which allows vector operations in arguments
+#define dot(u,v)   ((u).x * (v).x + (u).y * (v).y + (u).z * (v).z)
+#define norm(v)    sqrt(dot(v,v))  // norm = length of vector
+#define d(u,v)     norm(u-v)       // distance = norm of difference
+#define abs(x)     ((x) >= 0 ? (x) : -(x))   // absolute value
+
+//===================================================================
+
+// dist3D_Segment_to_Segment():
+//    Input:  two 3D line segments S1 and S2
+//    Return: the shortest distance between S1 and S2
+  float dist3D_Segment_to_Segment( Segment S1, Segment S2)
+  {
+    Vector   u = S1.P1 - S1.P0;
+    Vector   v = S2.P1 - S2.P0;
+    Vector   w = S1.P0 - S2.P0;
+    float    a = dot(u,u);        // always >= 0
+    float    b = dot(u,v);
+    float    c = dot(v,v);        // always >= 0
+    float    d = dot(u,w);
+    float    e = dot(v,w);
+    float    D = a*c - b*b;       // always >= 0
+    float    sc, sN, sD = D;      // sc = sN / sD, default sD = D >= 0
+    float    tc, tN, tD = D;      // tc = tN / tD, default tD = D >= 0
+
+    // compute the line parameters of the two closest points
+    if (D < SMALL_NUM) { // the lines are almost parallel
+      sN = 0.0;        // force using point P0 on segment S1
+      sD = 1.0;        // to prevent possible division by 0.0 later
+      tN = e;
+      tD = c;
+    }
+    else {                // get the closest points on the infinite lines
+      sN = (b*e - c*d);
+      tN = (a*e - b*d);
+      if (sN < 0.0) {       // sc < 0 => the s=0 edge is visible
+        sN = 0.0;
+        tN = e;
+        tD = c;
+      }
+      else if (sN > sD) {  // sc > 1 => the s=1 edge is visible
+        sN = sD;
+        tN = e + b;
+        tD = c;
+      }
+    }
+
+    if (tN < 0.0) {           // tc < 0 => the t=0 edge is visible
+      tN = 0.0;
+        // recompute sc for this edge
+      if (-d < 0.0)
+        sN = 0.0;
+      else if (-d > a)
+        sN = sD;
+      else {
+        sN = -d;
+        sD = a;
+      }
+    }
+    else if (tN > tD) {      // tc > 1 => the t=1 edge is visible
+      tN = tD;
+        // recompute sc for this edge
+      if ((-d + b) < 0.0)
+        sN = 0;
+      else if ((-d + b) > a)
+        sN = sD;
+      else {
+        sN = (-d + b);
+        sD = a;
+      }
+    }
+    // finally do the division to get sc and tc
+    sc = (abs(sN) < SMALL_NUM ? 0.0 : sN / sD);
+    tc = (abs(tN) < SMALL_NUM ? 0.0 : tN / tD);
+
+    // get the difference of the two closest points
+    Vector   dP = w + (sc * u) - (tc * v);  // = S1(sc) - S2(tc)
+
+    return norm(dP);   // return the closest distance
+  }
+//===================================================================
+*/
 
 };
 

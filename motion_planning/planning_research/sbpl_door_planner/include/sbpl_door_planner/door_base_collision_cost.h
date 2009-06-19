@@ -94,25 +94,31 @@ namespace door_base_collision_cost
 
     void getDesiredDoorAngles(const std::vector<int> &desired_door_anglesV, std::vector<int> &local_desired_door_angles);
 
+    double getDistanceFromDoorToBase(double angle);
+
+    bool checkArmDoorCollide(double door_angle, const robot_msgs::Point32 &robot_global_position, const double &robot_global_yaw);
+
+    void printPoint(std::string name, robot_msgs::Point32 point);
+
     private:
 
-    void transform2DInverse(const robot_msgs::Point32 &point_in, 
-                                  robot_msgs::Point32 &point_out, 
-                            const robot_msgs::Point32 &frame, 
+    void transform2DInverse(const robot_msgs::Point32 &point_in,
+                                  robot_msgs::Point32 &point_out,
+                            const robot_msgs::Point32 &frame,
                             const double &frame_yaw);
 
-    void transform2D(const robot_msgs::Point32 &point_in, 
-                           robot_msgs::Point32 &point_out, 
-                     const robot_msgs::Point32 &frame, 
+    void transform2D(const robot_msgs::Point32 &point_in,
+                           robot_msgs::Point32 &point_out,
+                     const robot_msgs::Point32 &frame,
                      const double &frame_yaw);
 
 
-    unsigned char findWorkspaceCost(const robot_msgs::Point32 &robot_position, 
-                                    const double &robot_yaw, 
+    unsigned char findWorkspaceCost(const robot_msgs::Point32 &robot_position,
+                                    const double &robot_yaw,
                                     const double &door_angle);
 
-    bool  findAngleLimits(const double max_radius, 
-                          const robot_msgs::Point32 &point, 
+    bool  findAngleLimits(const double max_radius,
+                          const robot_msgs::Point32 &point,
                           double &angle);
 
 
@@ -149,6 +155,14 @@ namespace door_base_collision_cost
     bool doLineSegsIntersect(robot_msgs::Point32 a, robot_msgs::Point32 b, robot_msgs::Point32 c, robot_msgs::Point32 d);
 
     bool checkBaseDoorIntersect(double angle);
+
+    void ClosestPointOnLineSegment(robot_msgs::Point32 &l1, robot_msgs::Point32 &l2, robot_msgs::Point32 &p, robot_msgs::Point32 &sol);
+
+    double PointDistanceFromLineSeg(robot_msgs::Point32 &l1, robot_msgs::Point32 &l2, robot_msgs::Point32 &p);
+
+//     bool doArmSwitchHandle(double door_angle);
+
+//     void printPoint(std::string name, robot_msgs::Point32 point);
 
   };
 }
