@@ -214,8 +214,63 @@ TEST(laser_scan, transformLaserScanToPointCloudWithChannels)
   
   double tolerance = 1e-6;
   laser_scan::LaserProjection projector;  
-  //\todo add more permutations
-  laser_scan::LaserScan scan = build_constant_scan(1.0, 1.0, -M_PI/2, M_PI/2, M_PI/180, ros::Duration(1/40));
+
+  double min_angle = -M_PI/2;
+  double max_angle = M_PI/2;
+  double angle_increment = M_PI/180;
+
+  double range = 1.0;
+  double intensity = 1.0;
+
+  ros::Duration scan_time = ros::Duration(1/40);
+  ros::Duration increment_time = ros::Duration(1/400);
+
+
+  std::vector<double> ranges, intensities, min_angles, max_angles, angle_increments;
+  std::vector<ros::Duration> increment_times, scan_times;
+
+  tf::Permuter permuter;
+
+  ranges.push_back(1.0);
+  ranges.push_back(2.0);
+  ranges.push_back(3.0);
+  ranges.push_back(4.0);
+  ranges.push_back(5.0);
+  permuter.addOption(ranges, &range);
+
+  intensities.push_back(1.0);
+  intensities.push_back(2.0);
+  intensities.push_back(3.0);
+  intensities.push_back(4.0);
+  intensities.push_back(5.0);
+  permuter.addOption(intensities, &intensity);
+
+  min_angles.push_back(-M_PI);
+  min_angles.push_back(-M_PI/1.5);
+  min_angles.push_back(-M_PI/2);
+  min_angles.push_back(-M_PI/4);
+  min_angles.push_back(-M_PI/8);
+  permuter.addOption(min_angles, &min_angle);
+
+  max_angles.push_back(M_PI);
+  max_angles.push_back(M_PI/1.5);
+  max_angles.push_back(M_PI/2);
+  max_angles.push_back(M_PI/4);
+  max_angles.push_back(M_PI/8);
+  permuter.addOption(max_angles, &max_angle);
+
+  scan_times.push_back(ros::Duration(1/40));
+  scan_times.push_back(ros::Duration(1/20));
+  scan_times.push_back(ros::Duration(1/10));
+  scan_times.push_back(ros::Duration(1/5));
+  scan_times.push_back(ros::Duration(1/100));
+
+  permuter.addOption(scan_times, &scan_time);
+
+  while (permuter.step())
+  {
+    //printf("%f %f %f %f %f %f\n", range, intensity, min_angle, max_angle, angle_increment, scan_time.toSec());
+  laser_scan::LaserScan scan = build_constant_scan(range, intensity, min_angle, max_angle, angle_increment, scan_time);
   scan.header.frame_id = "laser_frame";
 
   robot_msgs::PointCloud cloud_out;
@@ -246,8 +301,8 @@ TEST(laser_scan, transformLaserScanToPointCloudWithChannels)
     EXPECT_NEAR(cloud_out.chan[2].vals[i], scan.ranges[i], tolerance);//ranges
     EXPECT_NEAR(cloud_out.chan[3].vals[i], (float)i * scan.time_increment, tolerance);//timestamps
   };
+  }
 }
-
 int main(int argc, char **argv){
   testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
