@@ -1,0 +1,9 @@
+This node requires apcupsd to be running. A sample configuration file for
+the SmartUps 100XL is included in the apcupsd.conf file. On Ubuntu, copy
+this file into /etc/apcupsd, and then start apcupsd.
+
+sudo apt-get install apcupsd
+sudo cp apcupsd.conf /etc/apcupsd
+sudo /etc/init.d/apcupsd start
+
+apcupsd's possible error messages will appear in /var/log/messages
