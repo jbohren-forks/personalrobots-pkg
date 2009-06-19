@@ -29,36 +29,78 @@
 
 // Author: Stuart Glaser
 
-#include <vector>
+#include "ros/ros.h"
+#include "ros/node_handle.h"
+#include "tf/transform_listener.h"
+#include "voxel3d/voxel3d.h"
 
-class Voxel3d
+#include "robot_msgs/PointCloud.h"
+
+int world_to_voxel(double x)
+{
+  return (int)(x * 100.0) + 100;
+}
+
+class VoxelNode
 {
 public:
-  const static unsigned char CLEAR;
-
-  Voxel3d(int size1, int size2, int size3);
-  ~Voxel3d();
-
-  unsigned char &operator()(int i, int j, int k) {
-    return data_[ref(i,j,k)];
-  }
-  const unsigned char &operator()(int i, int j, int k) const {
-    return data_[ref(i,j,k)];
+  VoxelNode(const ros::NodeHandle &node)
+    : node_(node), TF(*node_.getNode()), voxel_(200,200,200)
+  {
+    node_.param("~frame", frame_, std::string("torso_lift_link"));
+    sub_cloud_ = node_.subscribe("cloud", 1, &VoxelNode::cloudCB, this);
   }
 
-  void reset();
-
-  void putObstacle(int i, int j, int k);
+  ~VoxelNode()
+  {
+    sub_cloud_.shutdown();
+  }
 
 private:
-  std::vector<unsigned char> data_;
-  int size1_, size2_, size3_;
-  int stride1_, stride2_;
+  ros::NodeHandle node_;
+  std::string frame_;
+  tf::TransformListener TF;
+  ros::Subscriber sub_cloud_;
 
-  inline int ref(int i, int j, int k) const {
-    return k * stride2_ + j * stride1_ + i;
+  Voxel3d voxel_;
+
+  void cloudCB(const robot_msgs::PointCloudConstPtr &msg_orig)
+  {
+    try
+    {
+      ros::Time start = ros::Time::now();
+
+      robot_msgs::PointCloud msg;
+      TF.transformPointCloud(frame_, *msg_orig, msg);
+      ROS_INFO("Transform took %lf seconds", (ros::Time::now() - start).toSec());
+      start = ros::Time::now();
+
+      voxel_.reset();
+
+      for (size_t i = 0; i < msg.pts.size(); ++i)
+      {
+        int x = world_to_voxel(msg.pts[i].x);
+        int y = world_to_voxel(msg.pts[i].y);
+        int z = world_to_voxel(msg.pts[i].z);
+        voxel_.putObstacle(x, y, z);
+      }
+      ros::Duration d = ros::Time::now() - start;
+      ROS_INFO("Took %lf seconds", (ros::Time::now() - start).toSec());
+    }
+    catch (tf::TransformException ex)
+    {
+      ROS_ERROR("Transform exception: %s", ex.what());
+    }
   }
 
-  //std::vector<unsigned char> kernel_;
-  unsigned char *kernel_;
 };
+
+
+int main(int argc, char** argv)
+{
+  ros::init(argc, argv, "voxel");
+  ros::NodeHandle node;
+  VoxelNode v(node);
+  ros::spin();
+  return 0;
+}

@@ -79,13 +79,13 @@ void Voxel3d::reset()
 
 void Voxel3d::putObstacle(int i, int j, int k)
 {
-  if ((*this)(i,j,k) == 0)
-    return;
-
   // Doesn't do points near the edges
   if (i < 8 || i >= size1_ - 8 ||
       j < 8 || j >= size2_ - 8 ||
       k < 8 || k >= size3_ - 8)
+    return;
+
+  if ((*this)(i,j,k) == 0)
     return;
 
   // (i,j,k) corresponds to (8,8,8) in the kernel
