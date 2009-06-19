@@ -379,7 +379,6 @@ DoorController::OpenDoor{
   // for failure.
   contains(move_base_door.Active cmd_move_base_door);
   leq(cmd_move_base_door.max_duration, MOVE_BASE_DOOR_DURATION_BOUND);
-  eq(cmd_move_base_door.status, SUCCESS);
   // Introduce a stop action that will preempt children
   cmd_move_base_door before(stop_action.Active cmd_stop_action);
   // A time point for when we are done with the door
@@ -410,9 +409,19 @@ DoorController::OpenDoor{
   ends(release_handle.Active cmd_rh);
   precedes(end_time, cmd_rh.start);
   eq(cmd_rh.status, SUCCESS);
-  // Transition to completion
-  meets(Inactive s);
-  eq(s.status, SUCCESS);
+
+  // Workaround
+  ResultStatus status_copy;
+  eq(cmd_move_base_door.status, status_copy);
+  if(status_copy == SUCCESS){
+    // Transition to completion
+    meets(Inactive s);
+    eq(s.status, SUCCESS);
+  }
+  else{
+    meets(OpenDoor s);
+    eq(s.use_handle, false);
+  }
 }
 
 /************************************************************************
