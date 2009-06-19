@@ -96,13 +96,16 @@ namespace image_msgs
 
     bool fromImage(const Image& rosimg, std::string encoding = "")
     {
+      unsigned int depth;
       if (rosimg.depth == "uint8")
       {
+        depth = IPL_DEPTH_8U;
         cvInitImageHeader(rosimg_, cvSize(rosimg.uint8_data.layout.dim[1].size, rosimg.uint8_data.layout.dim[0].size),
                           IPL_DEPTH_8U, rosimg.uint8_data.layout.dim[2].size);
         cvSetData(rosimg_, const_cast<uint8_t*>(&(rosimg.uint8_data.data[0])), rosimg.uint8_data.layout.dim[1].stride);
         img_ = rosimg_;
       } else if (rosimg.depth == "uint16") {
+        depth = IPL_DEPTH_16U;
         cvInitImageHeader(rosimg_, cvSize(rosimg.uint16_data.layout.dim[1].size, rosimg.uint16_data.layout.dim[0].size),
                           IPL_DEPTH_16U, rosimg.uint16_data.layout.dim[2].size);
         cvSetData(rosimg_, const_cast<uint16_t*>(&(rosimg.uint16_data.data[0])), rosimg.uint16_data.layout.dim[1].stride*sizeof(uint16_t));
@@ -115,31 +118,31 @@ namespace image_msgs
       {
         if (encoding == "bgr" && rosimg.encoding == "rgb")
         {
-          reallocIfNeeded(&cvtimg_, IPL_DEPTH_8U, 3);
+          reallocIfNeeded(&cvtimg_, depth, 3);
           cvCvtColor(rosimg_, cvtimg_, CV_RGB2BGR);
           img_ = cvtimg_;
         }
         else if (encoding == "rgb" && rosimg.encoding == "bgr")
         {
-          reallocIfNeeded(&cvtimg_, IPL_DEPTH_8U, 3);
+          reallocIfNeeded(&cvtimg_, depth, 3);
           cvCvtColor(rosimg_, cvtimg_, CV_BGR2RGB);
           img_ = cvtimg_;
         }
         else if (encoding == "bgr" && rosimg.encoding == "mono" )
         {
-          reallocIfNeeded(&cvtimg_, IPL_DEPTH_8U, 3);
+          reallocIfNeeded(&cvtimg_, depth, 3);
           cvCvtColor(rosimg_, cvtimg_, CV_GRAY2BGR);
           img_ = cvtimg_;
         }
         else if (encoding == "mono" && rosimg.encoding == "rgb" )
         {
-          reallocIfNeeded(&cvtimg_, IPL_DEPTH_8U, 1);
+          reallocIfNeeded(&cvtimg_, depth, 1);
           cvCvtColor(rosimg_, cvtimg_, CV_RGB2GRAY);
           img_ = cvtimg_;
         }
         else if (encoding == "mono" && rosimg.encoding == "bgr" )
         {
-          reallocIfNeeded(&cvtimg_, IPL_DEPTH_8U, 1);
+          reallocIfNeeded(&cvtimg_, depth, 1);
           cvCvtColor(rosimg_, cvtimg_, CV_BGR2GRAY);
           img_ = cvtimg_;
         }
