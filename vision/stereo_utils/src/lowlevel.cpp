@@ -259,7 +259,7 @@ PyObject *buffer(PyObject *self, PyObject *args)
   if (!PyArg_ParseTuple(args, "i", &size))
     return NULL;
   char *original = new char[size + 16];
-  char *ptr = (char*)(((int)original + 15) & ~15);
+  char *ptr = (char*)(((int)(long)original + 15) & ~15);
   return Py_BuildValue("NL", PyBuffer_FromReadWriteMemory(ptr, size), (long long)original);
 }
 
