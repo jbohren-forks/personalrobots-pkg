@@ -82,7 +82,7 @@ class ScanShadowsFilter
     ////////////////////////////////////////////////////////////////////////////////
     ScanShadowsFilter () : laser_max_range_ (DBL_MAX), notifier_(NULL)
     {
-      tf_ = new tf::TransformListener(*ros::Node::instance(), true) ;
+      tf_ = new tf::TransformListener() ;
 
       ros::Node::instance()->param ("~filter_min_angle", min_angle_, 10.0);
       ros::Node::instance()->param ("~filter_max_angle", max_angle_, 170.0);

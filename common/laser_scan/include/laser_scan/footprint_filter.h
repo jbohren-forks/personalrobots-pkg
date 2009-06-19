@@ -56,7 +56,7 @@ template <typename T>
 class LaserScanFootprintFilter : public filters::FilterBase<laser_scan::LaserScan>
 {
 public:
-  LaserScanFootprintFilter(): tf_(*ros::Node::instance()){}
+  LaserScanFootprintFilter(){}
 
   bool configure()
   {

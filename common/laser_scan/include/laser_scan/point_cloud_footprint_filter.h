@@ -54,7 +54,7 @@ template <typename T>
 class PointCloudFootprintFilter : public filters::FilterBase<robot_msgs::PointCloud>
 {
 public:
-  PointCloudFootprintFilter(): tf_(*ros::Node::instance()){}
+  PointCloudFootprintFilter() {}
 
   bool configure()
   {
