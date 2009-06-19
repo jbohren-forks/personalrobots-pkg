@@ -29,6 +29,7 @@
 
 // Author: Stuart Glaser
 
+#include "boost/scoped_ptr.hpp"
 #include "ros/ros.h"
 #include "ros/node_handle.h"
 #include "tf/transform_listener.h"
@@ -45,9 +46,14 @@ class VoxelNode
 {
 public:
   VoxelNode(const ros::NodeHandle &node)
-    : node_(node), TF(*node_.getNode()), voxel_(200,200,200)
+    : node_(node), TF(*node_.getNode())
   {
     node_.param("~frame", frame_, std::string("torso_lift_link"));
+
+    bool visualize;
+    node_.param("~visualize", visualize, false);
+    voxel_.reset(new Voxel3d(200,200,200, 0.01, tf::Vector3(-1,-1,-1), visualize));
+
     sub_cloud_ = node_.subscribe("cloud", 1, &VoxelNode::cloudCB, this);
   }
 
@@ -62,7 +68,7 @@ private:
   tf::TransformListener TF;
   ros::Subscriber sub_cloud_;
 
-  Voxel3d voxel_;
+  boost::scoped_ptr<Voxel3d> voxel_;
 
   void cloudCB(const robot_msgs::PointCloudConstPtr &msg_orig)
   {
@@ -75,15 +81,9 @@ private:
       ROS_INFO("Transform took %lf seconds", (ros::Time::now() - start).toSec());
       start = ros::Time::now();
 
-      voxel_.reset();
+      voxel_->reset();
+      voxel_->updateWorld(msg);
 
-      for (size_t i = 0; i < msg.pts.size(); ++i)
-      {
-        int x = world_to_voxel(msg.pts[i].x);
-        int y = world_to_voxel(msg.pts[i].y);
-        int z = world_to_voxel(msg.pts[i].z);
-        voxel_.putObstacle(x, y, z);
-      }
       ros::Duration d = ros::Time::now() - start;
       ROS_INFO("Took %lf seconds", (ros::Time::now() - start).toSec());
     }

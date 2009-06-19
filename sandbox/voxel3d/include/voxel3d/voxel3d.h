@@ -30,14 +30,20 @@
 // Author: Stuart Glaser
 
 #include <vector>
+#include "ros/node_handle.h"
+#include "tf/transform_datatypes.h"
+#include "robot_msgs/PointCloud.h"
 
 class Voxel3d
 {
 public:
   const static unsigned char CLEAR;
 
-  Voxel3d(int size1, int size2, int size3);
+  Voxel3d(int size1, int size2, int size3, double resolution, const tf::Vector3 &origin,
+          bool visualize = false);
   ~Voxel3d();
+
+  void updateWorld(const robot_msgs::PointCloud &cloud);
 
   unsigned char &operator()(int i, int j, int k) {
     return data_[ref(i,j,k)];
@@ -54,7 +60,23 @@ private:
   std::vector<unsigned char> data_;
   int size1_, size2_, size3_;
   int stride1_, stride2_;
+  double resolution_;  // meters/cell
+  tf::Vector3 origin_;
 
+  bool visualize_;
+  ros::Publisher pub_viz_;
+  ros::Time last_visualized_;
+
+  void worldToGrid(double wx, double wy, double wz, int &gx, int &gy, int &gz) const {
+    gx = (int)((wx - origin_.x()) / resolution_);
+    gy = (int)((wy - origin_.y()) / resolution_);
+    gz = (int)((wz - origin_.z()) / resolution_);
+  }
+  void gridToWorld(int gx, int gy, int gz, double &wx, double &wy, double &wz) const {
+    wx = gx * resolution_ + origin_.x();
+    wy = gy * resolution_ + origin_.y();
+    wz = gz * resolution_ + origin_.z();
+  }
   inline int ref(int i, int j, int k) const {
     return k * stride2_ + j * stride1_ + i;
   }
