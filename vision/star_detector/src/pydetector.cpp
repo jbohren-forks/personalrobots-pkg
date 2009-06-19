@@ -31,8 +31,8 @@ PyObject *detect(PyObject *self, PyObject *args)
     star_detector_t *sd = (star_detector_t*)self;
     Py_ssize_t im_size;
     char *imdata;
-    if (PyString_AsStringAndSize(PyTuple_GetItem(args,0), &imdata, &im_size) == -1)
-        return NULL;
+    if (!PyArg_ParseTuple(args, "s#", &imdata, &im_size))
+      return NULL;
     if (im_size != (sd->xsize * sd->ysize)) {
         PyErr_SetString(PyExc_TypeError, "Image size mismatch");
         return NULL;
