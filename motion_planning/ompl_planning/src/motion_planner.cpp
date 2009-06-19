@@ -81,8 +81,7 @@ public:
 	    for (unsigned int i = 0 ; i < mlist.size() ; ++i)
 		ROS_INFO("  * %s", mlist[i].c_str());    
 
-	    planningMonitor_->waitForState();
-	    execute = !mlist.empty() && planningMonitor_->haveState();
+	    execute = !mlist.empty();
 	    
 	    if (execute)
 		ROS_INFO("Motion planning running in frame '%s'", planningMonitor_->getFrameId().c_str());
@@ -163,6 +162,14 @@ public:
     
     void setupPlanningModels(void)
     {
+	bool verbose_collisions;	
+	nodeHandle_.param("~verbose_collisions", verbose_collisions, false);
+	if (verbose_collisions)
+	{
+	    planningMonitor_->getEnvironmentModel()->setVerbose(true);
+	    ROS_WARN("Verbose collisions is enabled");
+	}
+	
 	ROS_DEBUG("=======================================");	
 	std::stringstream ss;
 	collisionModels_->getKinematicModel()->printModelInfo(ss);
