@@ -6,11 +6,12 @@
 import stereo_utils.lowlevel as LO
 import Image as Image
 
-scratch = " " * (640 * 480)
+scratch,_ = LO.buffer(640 * 480)
 
 class Frame:
   """ 
-  base class for all stereo frames.  kwargs *feature_detector* and *descriptor_scheme* specify classes from laputia.
+  base class for all stereo frames.  Mandatory kwargs *feature_detector* and *descriptor_scheme* specify classes for feature detection and descriptor matching respectively.
+  Optional kwarg *disparity_range* specifies the disparity range, default is 64.
   """
 
   def __init__(self, **kwargs):
@@ -18,6 +19,7 @@ class Frame:
     self.feature_detector = kwargs['feature_detector']
     self.desc = None
     self.descriptor_scheme = kwargs['descriptor_scheme']
+    self.disparity_range = kwargs.get('disparity_range', 64)
 
   def features(self):
     """
@@ -114,10 +116,14 @@ class SparseStereoFrame(Frame):
     self.use_grad_img = use_grad_img
     (w, h) = self.size
 
-    self.lgrad = " " * (w * h)
+    self.buffers = []
+
+    self.lgrad,b = LO.buffer(w * h)
+    self.buffers.append(b)
     LO.ost_do_prefilter_norm(self.rawdata, self.lgrad, w, h, 31, scratch)
 
-    self.rgrad = " " * (w * h)
+    self.rgrad,b = LO.buffer(w * h)
+    self.buffers.append(b)
     LO.ost_do_prefilter_norm(rf.tostring(), self.rgrad, w, h, 31, scratch)
 
   def lookup_disparity(self, x, y):
@@ -137,10 +143,14 @@ class SparseStereoFrame(Frame):
     assert x == int(x)
     assert y == int(y)
     #dlen = max(16, min(x, 64))
-    dlen = 64
+    dlen = self.disparity_range
     v = LO.ost_do_stereo_sparse(refpat, rimg, x, y, w, h, 31, dlen, 10, 15)
 
     if v < 0:
       return None
     else:
       return v / 16.
+
+  def __del__(self):
+    for b in self.buffers:
+      LO.release(b)
