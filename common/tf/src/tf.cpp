@@ -122,7 +122,7 @@ void Transformer::setTransform(const Stamped<btTransform>& transform, const std:
   }
   else 
   {
-    ROS_WARN("TF_OLD_DATA ignoring data from the past for frame %s at time %g according to authority %s\nPossible reasons are listed at ", transform.frame_id_.c_str(), transform.stamp_.toSec(), authority);
+    ROS_WARN("TF_OLD_DATA ignoring data from the past for frame %s at time %g according to authority %s\nPossible reasons are listed at ", transform.frame_id_.c_str(), transform.stamp_.toSec(), authority.c_str());
   }
 };
 
