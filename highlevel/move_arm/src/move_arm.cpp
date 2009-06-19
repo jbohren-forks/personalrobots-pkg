@@ -145,33 +145,8 @@ namespace move_arm
 		ROS_INFO("Converting pose constraint to joint constraint using IK...");
 		
 		std::vector<double> solution;
-		bool foundIKsolution = false;
-		unsigned int IKsteps = 0;
-		while (IKsteps < 5 && !foundIKsolution)
+		if (computeIK(req.goal_constraints.pose_constraint[0].pose, solution))
 		{
-		    if (!computeIK(req.goal_constraints.pose_constraint[0].pose, solution))
-			break;
-		    
-		    // if IK did not fail, check if the state is valid
-		    planning_models::StateParams spTest(*planningMonitor_->getRobotState());
-		    unsigned int n = 0;		    
-		    for (unsigned int i = 0 ; i < arm_joint_names_.size() ; ++i)
-		    {
-			unsigned int u = planningMonitor_->getKinematicModel()->getJoint(arm_joint_names_[i])->usedParams;
-			for (unsigned int j = 0 ; j < u ; ++j)
-			{
-			    std::vector<double> params(solution.begin() + n, solution.begin() + n + u);
-			    spTest.setParamsJoint(params, arm_joint_names_[i]);
-			}
-			n += u;			
-		    }
-		    if (planningMonitor_->isStateValidAtGoal(&spTest))
-			foundIKsolution = true;
-		    IKsteps++;
-		}
-		
-		if (foundIKsolution)
-		{	    
 		    unsigned int n = 0;
 		    for (unsigned int i = 0 ; i < arm_joint_names_.size() ; ++i)
 		    {
@@ -477,21 +452,51 @@ namespace move_arm
 		request.data.positions.push_back(params[j]);
 	}
 	
-	ros::ServiceClient client = node_handle_.serviceClient<manipulation_srvs::IKService>(ARM_IK_NAME);
-	
-	if (client.call(request, response))
-	{ 
-	    ROS_DEBUG("Obtained IK solution");
-	    solution = response.solution;
-	    for(unsigned int i = 0; i < solution.size() ; ++i)
-		ROS_DEBUG("%f", solution[i]);
-	    return true;      
-	}
-	else
+	ros::ServiceClient client = node_handle_.serviceClient<manipulation_srvs::IKService>(ARM_IK_NAME, true);
+	bool validSolution = false;
+	int ikSteps = 0;
+	while (ikSteps < 5 && !validSolution)
 	{
-	    ROS_ERROR("IK service failed");
-	    return false;
+	    ikSteps++;
+	    if (client.call(request, response))
+	    { 
+		ROS_DEBUG("Obtained IK solution");
+		solution = response.solution;
+		if (solution.size() != request.data.positions.size())
+		{
+		    ROS_ERROR("Incorrect number of elements in IK output");
+		    return false;
+		}
+		
+		for(unsigned int i = 0; i < solution.size() ; ++i)
+		    ROS_DEBUG("%f", solution[i]);
+		
+		// if IK did not fail, check if the state is valid
+		planning_models::StateParams spTest(*planningMonitor_->getRobotState());
+		unsigned int n = 0;		    
+		for (unsigned int i = 0 ; i < arm_joint_names_.size() ; ++i)
+		{
+		    unsigned int u = planningMonitor_->getKinematicModel()->getJoint(arm_joint_names_[i])->usedParams;
+		    for (unsigned int j = 0 ; j < u ; ++j)
+		    {
+			std::vector<double> params(solution.begin() + n, solution.begin() + n + u);
+			spTest.setParamsJoint(params, arm_joint_names_[i]);
+		    }
+		    n += u;			
+		}
+		if (planningMonitor_->isStateValidAtGoal(&spTest))
+		    validSolution = true;
+		else
+		    request.data.positions = solution;
+	    }
+	    else
+	    {
+		ROS_ERROR("IK service failed");
+		return false;
+	    }
 	}
+	
+	return validSolution;
     }
     
 }
