@@ -62,7 +62,10 @@ int main(int argc, char** argv)
       fprintf(stderr, "Flash read error\n");
       return -1;
     }
-    fwrite(buffer, FLASH_PAGE_SIZE, 1, stdout);
+    if (fwrite(buffer, FLASH_PAGE_SIZE, 1, stdout) < FLASH_PAGE_SIZE)
+    {
+      fprintf(stderr, "error: fwrite wrote less than requested. Image will be corrupt.");
+    }
   }
   
   printf("\n");

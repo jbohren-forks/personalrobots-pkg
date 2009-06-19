@@ -56,7 +56,7 @@ int discover(const std::string &if_name, bool verbose, bool report_rp_filter)
   // the user's secutity preferences?
   std::string rp_str = "sysctl net.ipv4.conf."+if_name+".rp_filter|grep -q 0||sysctl -q -w net.ipv4.conf."+if_name+".rp_filter=0 2> /dev/null";
   int retval = system(rp_str.c_str());
-  if (retval == -1 || !WIFEXITED(retval) || WEXITSTATUS(retval) && report_rp_filter)
+  if ((retval == -1 || !WIFEXITED(retval) || WEXITSTATUS(retval)) && report_rp_filter)
   {
     fprintf(stderr, "Unable to set rp_filter to 0 on interface %s. Camera discovery is likely to fail.\n", if_name.c_str());
   }
