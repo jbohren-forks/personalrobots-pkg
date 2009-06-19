@@ -37,11 +37,11 @@
 #include <costmap_2d/costmap_2d_publisher.h>
 
 namespace costmap_2d {
-  Costmap2DPublisher::Costmap2DPublisher(ros::Node& ros_node, double publish_frequency, std::string global_frame, std::string topic_prefix) 
+  Costmap2DPublisher::Costmap2DPublisher(ros::NodeHandle& ros_node, double publish_frequency, std::string global_frame) 
     : ros_node_(ros_node), global_frame_(global_frame), 
-    topic_prefix_(topic_prefix), visualizer_thread_(NULL), active_(false), new_data_(false){
-    ros_node_.advertise<visualization_msgs::Polyline>("~" + topic_prefix_ + "/raw_obstacles", 1);
-    ros_node_.advertise<visualization_msgs::Polyline>("~" + topic_prefix_ + "/inflated_obstacles", 1);
+    visualizer_thread_(NULL), active_(false), new_data_(false){
+    raw_obs_pub_ = ros_node_.advertise<visualization_msgs::Polyline>("~raw_obstacles", 1);
+    inf_obs_pub_ = ros_node_.advertise<visualization_msgs::Polyline>("~inflated_obstacles", 1);
     visualizer_thread_ = new boost::thread(boost::bind(&Costmap2DPublisher::mapPublishLoop, this, publish_frequency));
   }
 
@@ -119,7 +119,7 @@ namespace costmap_2d {
       obstacle_msg.points[i].z = 0;
     }
 
-    ros_node_.publish("~" + topic_prefix_ + "/raw_obstacles", obstacle_msg);
+    raw_obs_pub_.publish(obstacle_msg);
 
     // Now do inflated obstacles in blue
     pointCount = inflated_obstacles.size();
@@ -135,7 +135,7 @@ namespace costmap_2d {
       obstacle_msg.points[i].z = 0;
     }
 
-    ros_node_.publish("~" + topic_prefix_ + "/inflated_obstacles", obstacle_msg);
+    inf_obs_pub_.publish(obstacle_msg);
   }
 
 };

@@ -43,12 +43,8 @@ using namespace robot_actions;
 
 namespace move_base {
 
-  double sign(double x){
-    return x < 0.0 ? -1.0 : 1.0;
-  }
-
-  MoveBase::MoveBase(ros::Node& ros_node, tf::TransformListener& tf) :
-    Action<robot_msgs::PoseStamped, robot_msgs::PoseStamped>(ros_node.getName()), ros_node_(ros_node), tf_(tf),
+  MoveBase::MoveBase(std::string name, tf::TransformListener& tf) :
+    Action<robot_msgs::PoseStamped, robot_msgs::PoseStamped>(name), tf_(tf),
     tc_(NULL), planner_costmap_ros_(NULL), controller_costmap_ros_(NULL), 
     planner_(NULL), valid_plan_(false), new_plan_(false), attempted_rotation_(false), attempted_costmap_reset_(false),
     done_half_rotation_(false), done_full_rotation_(false), escaping_(false) {
@@ -57,78 +53,29 @@ namespace move_base {
     std::string global_planner, local_planner;
     ros_node_.param("~base_global_planner", global_planner, std::string("NavfnROS"));
     ros_node_.param("~base_local_planner", local_planner, std::string("TrajectoryPlannerROS"));
-    ros_node_.param("~navfn/costmap/robot_base_frame", robot_base_frame_, std::string("base_link"));
-    ros_node_.param("~navfn/costmap/global_frame", global_frame_, std::string("/map"));
+    ros_node_.param("~global_costmap/robot_base_frame", robot_base_frame_, std::string("base_link"));
+    ros_node_.param("~global_costmap/global_frame", global_frame_, std::string("/map"));
     ros_node_.param("~controller_frequency", controller_frequency_, 20.0);
     ros_node_.param("~planner_patience", planner_patience_, 5.0);
     ros_node_.param("~controller_patience", controller_patience_, 15.0);
 
     //for comanding the base
-    ros_node_.advertise<robot_msgs::PoseDot>("cmd_vel", 1);
-    ros_node_.advertise<visualization_msgs::Marker>( "visualization_marker", 0 );
+    vel_pub_ = ros_node_.advertise<robot_msgs::PoseDot>("cmd_vel", 1);
+    vis_pub_ = ros_node_.advertise<visualization_msgs::Marker>( "visualization_marker", 0 );
 
     //we'll assume the radius of the robot to be consistent with what's specified for the costmaps
-    ros_node_.param("~base_local_planner/costmap/inscribed_radius", inscribed_radius_, 0.325);
-    ros_node_.param("~base_local_planner/costmap/circumscribed_radius", circumscribed_radius_, 0.46);
+    ros_node_.param("~local_costmap/inscribed_radius", inscribed_radius_, 0.325);
+    ros_node_.param("~local_costmap/circumscribed_radius", circumscribed_radius_, 0.46);
     ros_node_.param("~clearing_radius", clearing_radius_, circumscribed_radius_);
 
-    robot_msgs::Point pt;
-    double padding;
-    ros_node_.param("~footprint_padding", padding, 0.01);
-
-    //grab the footprint from the parameter server if possible
-    XmlRpc::XmlRpcValue footprint_list;
-    if(ros_node_.getParam("~footprint", footprint_list)){
-      //make sure we have a list of lists
-      ROS_ASSERT_MSG(footprint_list.getType() == XmlRpcValue::TypeArray && footprint_list.size() > 2, 
-          "The footprint must be specified as list of lists on the parameter server eg: [[x1, y1], [x2, y2], ..., [xn, yn]]");
-      for(int i = 0; i < footprint_list.size(); ++i){
-        //make sure we have a list of lists of size 2
-        XmlRpc::XmlRpcValue point = footprint_list[i];
-        ROS_ASSERT_MSG(point.getType() == XmlRpc::XmlRpcValue::TypeArray && point.size() == 2, 
-            "The footprint must be specified as list of lists on the parameter server eg: [[x1, y1], [x2, y2], ..., [xn, yn]]");
-
-        //make sure that the value we're looking at is either a double or an int
-        ROS_ASSERT(point[0].getType() == XmlRpc::XmlRpcValue::TypeInt || point[0].getType() == XmlRpc::XmlRpcValue::TypeDouble);
-        pt.x = point[0].getType() == XmlRpc::XmlRpcValue::TypeInt ? (int)(point[0]) : (double)(point[0]);
-        pt.x += sign(pt.x) * padding;
-
-        //make sure that the value we're looking at is either a double or an int
-        ROS_ASSERT(point[1].getType() == XmlRpc::XmlRpcValue::TypeInt || point[1].getType() == XmlRpc::XmlRpcValue::TypeDouble);
-        pt.y = point[1].getType() == XmlRpc::XmlRpcValue::TypeInt ? (int)(point[1]) : (double)(point[1]);
-        pt.y += sign(pt.y) * padding;
-
-        footprint_.push_back(pt);
-        
-      }
-    }
-    else{
-      //if no explicit footprint is set on the param server... create a square footprint
-      pt.x = inscribed_radius_ + padding;
-      pt.y = -1 * (inscribed_radius_ + padding);
-      footprint_.push_back(pt);
-      pt.x = -1 * (inscribed_radius_ + padding);
-      pt.y = -1 * (inscribed_radius_ + padding);
-      footprint_.push_back(pt);
-      pt.x = -1 * (inscribed_radius_ + padding);
-      pt.y = inscribed_radius_ + padding;
-      footprint_.push_back(pt);
-      pt.x = inscribed_radius_ + padding;
-      pt.y = inscribed_radius_ + padding;
-      footprint_.push_back(pt);
-
-      //give the robot a nose
-      pt.x = circumscribed_radius_;
-      pt.y = 0;
-      footprint_.push_back(pt);
-    }
+    ros_node_.param("~shutdown_costmaps", shutdown_costmaps_, false);
 
     //create the ros wrapper for the planner's costmap... and initializer a pointer we'll use with the underlying map
-    planner_costmap_ros_ = new Costmap2DROS(ros_node_, tf_, std::string("navfn"), footprint_);
+    planner_costmap_ros_ = new Costmap2DROS("global_costmap", tf_);
 
     //initialize the global planner
     try {
-      planner_ = nav_robot_actions::BGPFactory::Instance().CreateObject(global_planner, ros_node_, tf_, *planner_costmap_ros_);
+      planner_ = nav_robot_actions::BGPFactory::Instance().CreateObject(global_planner, global_planner, *planner_costmap_ros_);
     } catch (Loki::DefaultFactoryError<std::string, nav_robot_actions::BaseGlobalPlanner>::Exception)
     {
       ROS_ASSERT_MSG(false, "Cannot create the desired global planner because it is not registered with the factory");
@@ -137,12 +84,12 @@ namespace move_base {
     ROS_INFO("MAP SIZE: %d, %d", planner_costmap_ros_->cellSizeX(), planner_costmap_ros_->cellSizeY());
 
     //create the ros wrapper for the controller's costmap... and initializer a pointer we'll use with the underlying map
-    controller_costmap_ros_ = new Costmap2DROS(ros_node_, tf_, std::string("base_local_planner"), footprint_);
+    controller_costmap_ros_ = new Costmap2DROS("local_costmap", tf_);
 
     //create a local planner
     try {
       tc_ = nav_robot_actions::BLPFactory::Instance().CreateObject(local_planner, 
-          ros_node_, tf_, *controller_costmap_ros_, footprint_);
+          local_planner, tf_, *controller_costmap_ros_);
     } catch (Loki::DefaultFactoryError<std::string, nav_robot_actions::BaseLocalPlanner>::Exception)
     {
       ROS_ASSERT_MSG(false, "Cannot create the desired local planner because it is not registered with the factory");
@@ -155,7 +102,12 @@ namespace move_base {
     planner_costmap_ros_->clearNonLethalWindow(circumscribed_radius_ * 2, circumscribed_radius_ * 2);
     controller_costmap_ros_->clearNonLethalWindow(circumscribed_radius_ * 2, circumscribed_radius_ * 2);
 
-    //TODO:spawn planning thread here?
+    //if we shutdown our costmaps when we're deactivated... we'll do that now
+    if(shutdown_costmaps_){
+      planner_costmap_ros_->stop();
+      controller_costmap_ros_->stop();
+    }
+
   }
 
   void MoveBase::clearCostmapWindows(double size_x, double size_y){
@@ -225,6 +177,15 @@ namespace move_base {
       return false;
     }
 
+    tf::Stamped<tf::Pose> global_pose;
+    if(!planner_costmap_ros_->getRobotPose(global_pose)){
+      ROS_ERROR("move_base cannot make a plan for you because it could not get the start pose of the robot");
+      return false;
+    }
+
+    robot_msgs::PoseStamped start;
+    tf::PoseStampedTFToMsg(global_pose, start);
+
     //update the copy of the costmap the planner uses
     clearCostmapWindows(2 * clearing_radius_, 2 * clearing_radius_);
 
@@ -239,7 +200,7 @@ namespace move_base {
     while(!found_legal && p.pose.position.y <= req.goal.pose.position.y + req.tolerance){
       p.pose.position.x = req.goal.pose.position.x - req.tolerance;
       while(!found_legal && p.pose.position.x <= req.goal.pose.position.x + req.tolerance){
-        if(planner_->makePlan(p, global_plan)){
+        if(planner_->makePlan(start, p, global_plan)){
           if(!global_plan.empty()){
             global_plan.push_back(p);
             found_legal = true;
@@ -291,7 +252,7 @@ namespace move_base {
     marker.color.r = 0.0;
     marker.color.g = 1.0;
     marker.color.b = 0.0;
-    ros_node_.publish("visualization_marker", marker);
+    vis_pub_.publish(marker);
   }
 
   void MoveBase::makePlan(const robot_msgs::PoseStamped& goal){
@@ -299,8 +260,15 @@ namespace move_base {
     if(planner_costmap_ros_ == NULL)
       return;
 
+    tf::Stamped<tf::Pose> global_pose;
+    if(!planner_costmap_ros_->getRobotPose(global_pose))
+      return;
+
+    robot_msgs::PoseStamped start;
+    tf::PoseStampedTFToMsg(global_pose, start);
+
     std::vector<robot_msgs::PoseStamped> global_plan;
-    bool valid_plan = planner_->makePlan(goal, global_plan);
+    bool valid_plan = planner_->makePlan(start, goal, global_plan);
 
     //sometimes the planner returns zero length plans and reports success
     if(global_plan.empty()){
@@ -353,6 +321,12 @@ namespace move_base {
   }
 
   robot_actions::ResultStatus MoveBase::execute(const robot_msgs::PoseStamped& goal, robot_msgs::PoseStamped& feedback){
+    //if we shutdown our costmaps when we're deactivated... we need to start them back up now
+    if(shutdown_costmaps_){
+      planner_costmap_ros_->start();
+      controller_costmap_ros_->start();
+    }
+
     //on activation... we'll reset our costmaps
     clearCostmapWindows(2 * clearing_radius_, 2 * clearing_radius_);
 
@@ -391,7 +365,7 @@ namespace move_base {
         cmd_vel.vel.vy = 0.0;
         cmd_vel.ang_vel.vz = 0.0;
         //give the base the velocity command
-        ros_node_.publish("cmd_vel", cmd_vel);
+        vel_pub_.publish(cmd_vel);
         r.sleep();
         continue;
       }
@@ -407,6 +381,11 @@ namespace move_base {
           if(!tc_->updatePlan(global_plan_)){
             resetState();
             ROS_WARN("move_base aborted because it failed to pass the plan from the planner to the controller");
+            //if we shutdown our costmaps when we're deactivated... we'll do that now
+            if(shutdown_costmaps_){
+              planner_costmap_ros_->stop();
+              controller_costmap_ros_->stop();
+            }
             return robot_actions::ABORTED;
           }
         }
@@ -433,8 +412,14 @@ namespace move_base {
             resetState();
             valid_control = false;
           }
-          else
+          else{
+            //if we shutdown our costmaps when we're deactivated... we'll do that now
+            if(shutdown_costmaps_){
+              planner_costmap_ros_->stop();
+              controller_costmap_ros_->stop();
+            }
             return robot_actions::SUCCESS;
+          }
         }
 
         //if we can't rotate to clear out space... just say we've done them and try to reset to the static map
@@ -452,7 +437,7 @@ namespace move_base {
       }
 
       //give the base the velocity command
-      ros_node_.publish("cmd_vel", cmd_vel);
+      vel_pub_.publish(cmd_vel);
 
       //if we don't have a valid control... we need to re-plan explicitly
       if(!valid_control){
@@ -471,6 +456,11 @@ namespace move_base {
             resetState();
             resetCostmaps(circumscribed_radius_ * 2, circumscribed_radius_ * 2);
             ROS_WARN("move_base aborting because the controller could not find valid velocity commands for over %.4f seconds", patience.toSec());
+            //if we shutdown our costmaps when we're deactivated... we'll do that now
+            if(shutdown_costmaps_){
+              planner_costmap_ros_->stop();
+              controller_costmap_ros_->stop();
+            }
             return robot_actions::ABORTED;
           }
         }
@@ -482,6 +472,11 @@ namespace move_base {
           if(attempted_costmap_reset_ && done_full_rotation_){
             resetState();
             ROS_WARN("move_base aborting because the planner could not find a valid plan, even after reseting the map and attempting in place rotation");
+            //if we shutdown our costmaps when we're deactivated... we'll do that now
+            if(shutdown_costmaps_){
+              planner_costmap_ros_->stop();
+              controller_costmap_ros_->stop();
+            }
             return robot_actions::ABORTED;
           }
 
@@ -507,6 +502,11 @@ namespace move_base {
             }
             catch(tf::TransformException& ex){
               ROS_ERROR("This tf error should never happen, %s", ex.what());
+              //if we shutdown our costmaps when we're deactivated... we'll do that now
+              if(shutdown_costmaps_){
+                planner_costmap_ros_->stop();
+                controller_costmap_ros_->stop();
+              }
               return robot_actions::ABORTED;
               
             }
@@ -540,7 +540,12 @@ namespace move_base {
     cmd_vel.vel.vy = 0.0;
     cmd_vel.ang_vel.vz = 0.0;
     //give the base the velocity command
-    ros_node_.publish("cmd_vel", cmd_vel);
+    vel_pub_.publish(cmd_vel);
+    //if we shutdown our costmaps when we're deactivated... we'll do that now
+    if(shutdown_costmaps_){
+      planner_costmap_ros_->stop();
+      controller_costmap_ros_->stop();
+    }
     return robot_actions::PREEMPTED;
   }
 
@@ -571,7 +576,7 @@ namespace move_base {
       cmd_vel.vel.vy = 0.0;
       cmd_vel.ang_vel.vz = 0.0;
       //give the base the velocity command
-      ros_node_.publish("cmd_vel", cmd_vel);
+      vel_pub_.publish(cmd_vel);
 
       r.sleep();
     }
@@ -588,20 +593,18 @@ namespace move_base {
 };
 
 int main(int argc, char** argv){
-  ros::init(argc, argv);
-  ros::Node ros_node("move_base");
-  tf::TransformListener tf(ros_node, true, ros::Duration(10));
+  ros::init(argc, argv, "move_base");
+  tf::TransformListener tf(ros::Duration(10));
+  ros::NodeHandle n;
   
-  move_base::MoveBase move_base(ros_node, tf);
+  move_base::MoveBase move_base(n.getName(), tf);
   robot_actions::ActionRunner runner(20.0);
   runner.connect<robot_msgs::PoseStamped, nav_robot_actions::MoveBaseState, robot_msgs::PoseStamped>(move_base);
   runner.run();
 
   //ros::MultiThreadedSpinner s;
-  //ros::spin(s);
+  ros::spin();
   
-  ros_node.spin();
-
   return(0);
 
 }

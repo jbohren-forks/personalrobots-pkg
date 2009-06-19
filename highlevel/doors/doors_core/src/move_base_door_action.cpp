@@ -90,7 +90,7 @@ namespace nav
     if(!ros_node_.hasParam("~costmap/robot_base_frame")) ros_node_.setParam("~costmap/robot_base_frame", std::string("base_link"));
 
     //create the ros wrapper for the planner's costmap... and initializer a pointer we'll use with the underlying map
-    planner_cost_map_ros_ = new Costmap2DROS(ros_node_, tf_, "");
+    planner_cost_map_ros_ = new Costmap2DROS("costmap", tf_);
     planner_cost_map_ros_->getCostmapCopy(planner_cost_map_);
 
     //we'll stop our costmap from running until we are activated

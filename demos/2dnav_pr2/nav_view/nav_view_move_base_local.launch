@@ -2,10 +2,10 @@
   <master auto="start"/>
   <node pkg="nav_view" type="nav_view" respawn="false">
   <remap from="goal" to="/move_base_local/activate" />
-  <remap from="raw_obstacles" to="/move_base_local/base_local_planner/costmap/raw_obstacles" />
-  <remap from="inflated_obstacles" to="/move_base_local/base_local_planner/costmap/inflated_obstacles" />
-  <remap from="gui_path" to="/move_base_local/navfn/plan" />
-  <remap from="local_path" to="/move_base_local/base_local_planner/local_plan" />
-  <remap from="robot_footprint" to="/move_base_local/base_local_planner/robot_footprint"/>
+  <remap from="raw_obstacles" to="/move_base_local/local_costmap/raw_obstacles" />
+  <remap from="inflated_obstacles" to="/move_base_local/local_costmap/inflated_obstacles" />
+  <remap from="gui_path" to="/move_base_local/NavfnROS/plan" />
+  <remap from="local_path" to="/move_base_local/TrajectoryPlannerROS/local_plan" />
+  <remap from="robot_footprint" to="/move_base_local/TrajectoryPlannerROS/robot_footprint"/>
   </node>
 </launch>

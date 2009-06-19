@@ -40,29 +40,21 @@ namespace navfn {
   //register this factory with the ros BaseGlobalPlanner factory
   ROS_REGISTER_BGP(NavfnROS);
 
-  NavfnROS::NavfnROS(ros::Node& ros_node, tf::TransformListener& tf, costmap_2d::Costmap2DROS& costmap_ros) 
-    : ros_node_(ros_node), tf_(tf), 
-  costmap_ros_(costmap_ros), planner_(costmap_ros.cellSizeX(), costmap_ros.cellSizeY()) {
+  NavfnROS::NavfnROS(std::string name, costmap_2d::Costmap2DROS& costmap_ros) 
+    : ros_node_(name), costmap_ros_(costmap_ros), planner_(costmap_ros.cellSizeX(), costmap_ros.cellSizeY()) {
     //get an initial copy of the costmap
     costmap_ros_.getCostmapCopy(costmap_);
 
     //advertise our plan visualization
-    ros_node_.advertise<visualization_msgs::Polyline>("~navfn/plan", 1);
+    plan_pub_ = ros_node_.advertise<visualization_msgs::Polyline>("~plan", 1);
 
     //read parameters for the planner
-    ros_node_.param("~/navfn/costmap/global_frame", global_frame_, std::string("/map"));
-    ros_node_.param("~/navfn/costmap/robot_base_frame", robot_base_frame_, std::string("base_link"));
-    ros_node_.param("~/navfn/transform_tolerance", transform_tolerance_, 0.2);
+    global_frame_ = costmap_ros_.globalFrame();
     
-    //we need to make sure that the transform between the robot base frame and the global frame is available
-    while(!tf_.canTransform(global_frame_, robot_base_frame_, ros::Time(), ros::Duration(5.0))){
-      ROS_WARN("Waiting on transform from %s to %s to become available before running the planner", robot_base_frame_.c_str(), global_frame_.c_str());
-    }
-
     //we'll get the parameters for the robot radius from the costmap we're associated with
-    ros_node_.param("~navfn/costmap/inscribed_radius", inscribed_radius_, 0.325);
-    ros_node_.param("~navfn/costmap/circumscribed_radius", circumscribed_radius_, 0.46);
-    ros_node_.param("~navfn/costmap/inflation_radius", inflation_radius_, 0.55);
+    inscribed_radius_ = costmap_ros_.inscribedRadius();
+    circumscribed_radius_ = costmap_ros_.circumscribedRadius();
+    inflation_radius_ = costmap_ros_.inflationRadius();
   }
 
   bool NavfnROS::validPointPotential(const robot_msgs::Point& world_point){
@@ -120,64 +112,39 @@ namespace navfn {
 
   }
 
-  bool NavfnROS::makePlan(const robot_msgs::PoseStamped& goal, std::vector<robot_msgs::PoseStamped>& plan){
+  bool NavfnROS::makePlan(const robot_msgs::PoseStamped& start, 
+      const robot_msgs::PoseStamped& goal, std::vector<robot_msgs::PoseStamped>& plan){
     //make sure that we have the latest copy of the costmap and that we clear the footprint of obstacles
     costmap_ros_.clearRobotFootprint();
     costmap_ros_.getCostmapCopy(costmap_);
 
+    //get a handle to the global namespace
+    ros::NodeHandle global_handle;
+
     //until tf can handle transforming things that are way in the past... we'll require the goal to be in our global frame
-    
-
-    if(ros_node_.mapName(goal.header.frame_id) != ros_node_.mapName(global_frame_)){
-      ROS_ERROR("The goal passed to this planner must be in the %s frame.  It is instead in the %s frame.", 
-                ros_node_.mapName(global_frame_).c_str(), ros_node_.mapName(goal.header.frame_id).c_str());
+    if(global_handle.mapName(goal.header.frame_id) != global_handle.mapName(global_frame_)){
+      ROS_ERROR("The goal pose passed to this planner must be in the %s frame.  It is instead in the %s frame.", 
+                global_handle.mapName(global_frame_).c_str(), global_handle.mapName(goal.header.frame_id).c_str());
       return false;
     }
 
-    //get the pose of the robot in the global frame
-    tf::Stamped<tf::Pose> robot_pose, global_pose, orig_goal, goal_pose;
-
-    //convert the goal message into tf::Stamped<tf::Pose>
-    tf::PoseStampedMsgToTF(goal, orig_goal);
-
-    global_pose.setIdentity();
-    robot_pose.setIdentity();
-    robot_pose.frame_id_ = robot_base_frame_;
-    ros::Time current_time = ros::Time::now(); // save time for checking tf delay later
-    robot_pose.stamp_ = ros::Time();
-    try{
-      //transform both the goal and pose of the robot to the global frame
-      tf_.transformPose(global_frame_, robot_pose, global_pose);
-      tf_.transformPose(global_frame_, orig_goal, goal_pose);
-    }
-    catch(tf::LookupException& ex) {
-      ROS_ERROR("No Transform available Error: %s\n", ex.what());
-      return false;
-    }
-    catch(tf::ConnectivityException& ex) {
-      ROS_ERROR("Connectivity Error: %s\n", ex.what());
-      return false;
-    }
-    catch(tf::ExtrapolationException& ex) {
-      ROS_ERROR("Extrapolation Error: %s\n", ex.what());
-      return false;
-    }
-    // check global pose timeout
-    if (current_time.toSec() - global_pose.stamp_.toSec() > transform_tolerance_) {
-      ROS_ERROR("NavfnROS transform timeout. Current time: %.4f, global_pose stamp: %.4f, tolerance: %.4f",
-          current_time.toSec() ,global_pose.stamp_.toSec() ,transform_tolerance_);
+    if(global_handle.mapName(start.header.frame_id) != global_handle.mapName(global_frame_)){
+      ROS_ERROR("The start pose passed to this planner must be in the %s frame.  It is instead in the %s frame.", 
+                global_handle.mapName(global_frame_).c_str(), global_handle.mapName(start.header.frame_id).c_str());
       return false;
     }
 
-    double wx = global_pose.getOrigin().x();
-    double wy = global_pose.getOrigin().y();
+    double wx = start.pose.position.x;
+    double wy = start.pose.position.y;
 
     unsigned int mx, my;
     if(!costmap_.worldToMap(wx, wy, mx, my))
       return false;
 
     //clear the starting cell within the costmap because we know it can't be an obstacle
-    clearRobotCell(global_pose, mx, my);
+    tf::Stamped<tf::Pose> start_pose;
+    tf::PoseStampedMsgToTF(start, start_pose);
+    clearRobotCell(start_pose, mx, my);
 
     planner_.setCostmap(costmap_.getCharMap());
 
@@ -185,8 +152,8 @@ namespace navfn {
     map_start[0] = mx;
     map_start[1] = my;
 
-    wx = goal_pose.getOrigin().x();
-    wy = goal_pose.getOrigin().y();
+    wx = goal.pose.position.x;
+    wy = goal.pose.position.y;
 
     if(!costmap_.worldToMap(wx, wy, mx, my))
       return false;
@@ -251,6 +218,6 @@ namespace navfn {
     gui_path_msg.color.b = b;
     gui_path_msg.color.a = a;
 
-    ros_node_.publish("~navfn/plan", gui_path_msg);
+    plan_pub_.publish(gui_path_msg);
   }
 };

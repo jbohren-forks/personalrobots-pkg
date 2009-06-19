@@ -68,41 +68,19 @@ namespace people_aware_nav {
     ros_node_.param("~base_local_planner/costmap/inscribed_radius", inscribed_radius_, 0.325);
     ros_node_.param("~base_local_planner/costmap/circumscribed_radius", circumscribed_radius_, 0.46);
 
-    robot_msgs::Point pt;
-    double padding;
-    ros_node_.param("~footprint_padding", padding, 0.01);
-    //create a square footprint
-    pt.x = inscribed_radius_ + padding;
-    pt.y = -1 * (inscribed_radius_ + padding);
-    footprint_.push_back(pt);
-    pt.x = -1 * (inscribed_radius_ + padding);
-    pt.y = -1 * (inscribed_radius_ + padding);
-    footprint_.push_back(pt);
-    pt.x = -1 * (inscribed_radius_ + padding);
-    pt.y = inscribed_radius_ + padding;
-    footprint_.push_back(pt);
-    pt.x = inscribed_radius_ + padding;
-    pt.y = inscribed_radius_ + padding;
-    footprint_.push_back(pt);
-
-    //give the robot a nose
-    pt.x = circumscribed_radius_;
-    pt.y = 0;
-    footprint_.push_back(pt);
-
     //create the ros wrapper for the planner's costmap... and initializer a pointer we'll use with the underlying map
-    planner_costmap_ros_ = new Costmap2DROS(ros_node_, tf_, std::string("navfn"), footprint_);
+    planner_costmap_ros_ = new Costmap2DROS("global_costmap", tf_);
     planner_costmap_ros_->getCostmapCopy(planner_costmap_);
 
     //initialize the NavFn planner
-    planner_ = new NavfnROS(ros_node_, tf_, *planner_costmap_ros_);
+    planner_ = new NavfnROS("NavfnROS", *planner_costmap_ros_);
     ROS_INFO("MAP SIZE: %d, %d", planner_costmap_.cellSizeX(), planner_costmap_.cellSizeY());
 
     //create the ros wrapper for the controller's costmap... and initializer a pointer we'll use with the underlying map
-    controller_costmap_ros_ = new Costmap2DROS(ros_node_, tf_, std::string("base_local_planner"), footprint_);
+    controller_costmap_ros_ = new Costmap2DROS("local_costmap", tf_);
 
     //create a trajectory controller
-    tc_ = new TrajectoryPlannerROS(ros_node_, tf_, *controller_costmap_ros_, footprint_);
+    tc_ = new TrajectoryPlannerROS("TrajectoryPlannerROS", tf_, *controller_costmap_ros_);
 
     //initially clear any unknown space around the robot
     planner_costmap_ros_->clearNonLethalWindow(circumscribed_radius_ * 2, circumscribed_radius_ * 2);
@@ -153,8 +131,16 @@ void MoveBaseConstrained::makePlan(const PoseStamped& goal, const Polygon3D& for
     //since we have a controller that knows the full footprint of the robot... we may as well clear it
     //tc_->clearRobotFootprint(planner_costmap_); //now done in sensors
 
+    tf::Stamped<tf::Pose> global_pose;
+    if(!planner_costmap_ros_->getRobotPose(global_pose)){
+      return;
+    }
+
+    robot_msgs::PoseStamped start;
+    tf::PoseStampedTFToMsg(global_pose, start);
+
     std::vector<robot_msgs::PoseStamped> global_plan;
-    bool valid_plan = planner_->makePlan(goal, global_plan);
+    bool valid_plan = planner_->makePlan(start, goal, global_plan);
 
     //sometimes the planner returns zero length plans and reports success
     if(global_plan.empty()){

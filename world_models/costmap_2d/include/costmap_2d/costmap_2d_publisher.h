@@ -36,7 +36,7 @@
 *********************************************************************/
 #ifndef COSTMAP_COSTMAP_2D_PUBLISHER_H_
 #define COSTMAP_COSTMAP_2D_PUBLISHER_H_
-#include <ros/node.h>
+#include <ros/ros.h>
 #include <ros/console.h>
 #include <costmap_2d/costmap_2d.h>
 #include <costmap_2d/rate.h>
@@ -46,7 +46,7 @@
 namespace costmap_2d {
   class Costmap2DPublisher {
     public:
-      Costmap2DPublisher(ros::Node& ros_node, double publish_frequency, std::string global_frame, std::string topic_prefix = std::string(""));
+      Costmap2DPublisher(ros::NodeHandle& ros_node, double publish_frequency, std::string global_frame);
       ~Costmap2DPublisher();
 
       void publishCostmap();
@@ -56,12 +56,13 @@ namespace costmap_2d {
     private:
       void mapPublishLoop(double frequency);
 
-      ros::Node& ros_node_;
-      std::string global_frame_,topic_prefix_;
+      ros::NodeHandle& ros_node_;
+      std::string global_frame_;
       boost::thread* visualizer_thread_; ///< @brief A thread for publising to the visualizer
       std::vector< std::pair<double, double> > raw_obstacles_, inflated_obstacles_;
       boost::recursive_mutex lock_; ///< @brief A lock
       bool active_, new_data_;
+      ros::Publisher raw_obs_pub_, inf_obs_pub_;
   };
 };
 #endif

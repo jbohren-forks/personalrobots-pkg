@@ -58,18 +58,17 @@ namespace nav_robot_actions {
   typedef Loki::SingletonHolder
   <
     Loki::Factory< BaseLocalPlanner, std::string, 
-      Loki::Seq< ros::Node&, 
+      Loki::Seq< std::string, 
       tf::TransformListener&, 
-      costmap_2d::Costmap2DROS&, 
-      std::vector<robot_msgs::Point>  > >,
+      costmap_2d::Costmap2DROS& > >,
     Loki::CreateUsingNew,
     Loki::LongevityLifetime::DieAsSmallObjectParent
   > BLPFactory;
 
 #define ROS_REGISTER_BLP(c) \
-  nav_robot_actions::BaseLocalPlanner* ROS_New_##c(ros::Node& ros_node, tf::TransformListener& tf, \
-      costmap_2d::Costmap2DROS& costmap_ros, std::vector<robot_msgs::Point> footprint){ \
-    return new c(ros_node, tf, costmap_ros, footprint); \
+  nav_robot_actions::BaseLocalPlanner* ROS_New_##c(std::string name, tf::TransformListener& tf, \
+      costmap_2d::Costmap2DROS& costmap_ros){ \
+    return new c(name, tf, costmap_ros); \
   }  \
   class RosBLP##c { \
     public: \
