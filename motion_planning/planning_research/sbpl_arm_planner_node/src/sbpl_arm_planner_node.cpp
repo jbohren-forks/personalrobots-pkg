@@ -42,13 +42,24 @@ SBPLArmPlannerNode::SBPLArmPlannerNode(std::string node_name):ros::Node(node_nam
   param ("~forward_search", forward_search_, true);
   param ("~use_collision_map",use_collision_map_,false);
   param ("~search_mode", search_mode_, true);
-  param ("~num_joints", num_joints_, 7);
   param<std::string>("~planner_type", planner_type_, "cartesian"); //"cartesian" or "joint_space"
   param ("~torso_arm_offset_x", torso_arm_offset_x_, 0.0);
   param ("~torso_arm_offset_y", torso_arm_offset_y_, 0.0);
   param ("~torso_arm_offset_z", torso_arm_offset_z_, 0.0);
   param<std::string>("~collision_map_topic", collision_map_topic_, "collision_map");
 
+  // joints to plan for
+  param ("~num_joints", num_joints_, 7);
+  joint_names_.resize(num_joints_);
+  param<std::string>("~joint_name_0", joint_names_[0], "r_shoulder_pan_joint");
+  param<std::string>("~joint_name_1", joint_names_[1], "r_shoulder_lift_joint");
+  param<std::string>("~joint_name_2", joint_names_[2], "r_upper_arm_roll_joint");
+  param<std::string>("~joint_name_3", joint_names_[3], "r_elbow_flex_joint");
+  param<std::string>("~joint_name_4", joint_names_[4], "r_forearm_roll_joint");
+  param<std::string>("~joint_name_5", joint_names_[5], "r_wrist_flex_joint");
+  param<std::string>("~joint_name_6", joint_names_[6], "r_wrist_roll_joint");
+
+  // main planning service
   advertiseService("plan_kinematic_path", &SBPLArmPlannerNode::planKinematicPath, this);
 
   // collision map
@@ -193,13 +204,14 @@ void SBPLArmPlannerNode::getSBPLCollisionMap()
 }
 
 /** set start configuration */
-bool SBPLArmPlannerNode::setStart(const motion_planning_msgs::KinematicJoint &start_state)
+bool SBPLArmPlannerNode::setStart(const motion_planning_msgs::KinematicState &start_state)
 {
-  double sbpl_start[num_joints_];
+  double* sbpl_start;
+  sbpl_start = new double[start_state.get_vals_size()];
 
-  for(int i=0; i< num_joints_; i++)
+  for(unsigned int i=0; i< start_state.get_vals_size(); i++)
   {
-    sbpl_start[i] = start_state.value[i];
+    sbpl_start[i] = (double)(start_state.vals[i]);
   }
 
   ROS_INFO("[setStart] start: %1.2f %1.2f %1.2f %1.2f %1.2f %1.2f %1.2f", sbpl_start[0],sbpl_start[1],sbpl_start[2],sbpl_start[3],sbpl_start[4],sbpl_start[5],sbpl_start[6]);
@@ -251,6 +263,8 @@ bool SBPLArmPlannerNode::setGoalPosition(const std::vector<motion_planning_msgs:
     sbpl_tolerance[i][1]  = goals[i].orientation_distance;
 
     sbpl_type[i] = goals[i].type;
+
+    ROS_INFO("goal %d: xyz: %.2f %.2f %.2f rpy: %.2f %.2f %.2f  distance tolerance %.2f orientation distance %.2f", i, sbpl_goal[i][0],sbpl_goal[i][1],sbpl_goal[i][2],sbpl_goal[i][3],sbpl_goal[i][4],sbpl_goal[i][5],sbpl_goal[i][6], sbpl_tolerance[i][0],sbpl_tolerance[i][1]);
   }
 
   pr2_arm_env_.SetGoalPosition(sbpl_goal, sbpl_tolerance, sbpl_type);
@@ -310,7 +324,22 @@ bool SBPLArmPlannerNode::planToState(motion_planning_srvs::KinematicPlan::Reques
   ROS_INFO("[planToState] goal state: %.2f %.2f %.2f %.2f %.2f %.2f %.2f",
          req.goal_constraints.joint_constraint[0].value[0],req.goal_constraints.joint_constraint[0].value[1],req.goal_constraints.joint_constraint[0].value[2],req.goal_constraints.joint_constraint[0].value[3],req.goal_constraints.joint_constraint[0].value[4],req.goal_constraints.joint_constraint[0].value[5],req.goal_constraints.joint_constraint[0].value[6]);
 
-  if(setStart(req.start_state[0]))
+  motion_planning_msgs::KinematicState start;
+  start.set_vals_size(num_joints_);
+  unsigned int i, nind = 0;
+  for(i = 0; i < req.get_start_state_size(); i++)
+  {
+    if(joint_names_[nind].compare(req.start_state[i].joint_name) == 0)
+    {
+      start.set_vals_size(1);
+      start.vals[nind] = req.start_state[i].value[0];
+      nind++;
+    }
+    if(nind == num_joints_)
+      break;
+  }
+
+  if(setStart(start))
   {
     if(setGoalState(req.goal_constraints.joint_constraint))
     {
@@ -355,47 +384,68 @@ bool SBPLArmPlannerNode::planToPosition(motion_planning_srvs::KinematicPlan::Req
 //     printf("start_state %d: %d values\n",req.get_start_state_size(), req.start_state[i].get_value_size());
 //   }
 
+  unsigned int i;
   motion_planning_msgs::KinematicPath arm_path;
   tf::TransformListener tf_pose;
   std::string torso_frame = "torso_lift_link";
   std::vector<robot_msgs::Pose> pose_torso_frame(req.goal_constraints.get_pose_constraint_size());
   std::vector<motion_planning_msgs::PoseConstraint> pose_constraint_torso_link(req.goal_constraints.get_pose_constraint_size());
 
-  for(unsigned int i=0; i<req.goal_constraints.get_pose_constraint_size(); i++)
+  for(i=0; i<req.goal_constraints.get_pose_constraint_size(); i++)
   {
     pose_constraint_torso_link[i] = req.goal_constraints.pose_constraint[i];
-    tf_pose.transformPose(torso_frame,pose_constraint_torso_link[i].pose,pose_constraint_torso_link[i].pose);
+    tf_pose.transformPose(torso_frame, pose_constraint_torso_link[i].pose, pose_constraint_torso_link[i].pose);
   }
 
   ROS_INFO("[planToPosition] start state: %.2f %.2f %.2f %.2f %.2f %.2f %.2f",
-           req.start_state[30].value[0],req.start_state[31].value[0],req.start_state[32].value[0],
-           req.start_state[33].value[0],req.start_state[34].value[0],req.start_state[35].value[0],req.start_state[36].value[0]);
+           req.start_state[28].value[0],req.start_state[29].value[0],req.start_state[30].value[0],
+           req.start_state[31].value[0],req.start_state[32].value[0],req.start_state[33].value[0],req.start_state[34].value[0]);
   ROS_INFO("[planToPosition] goal position: %.2f %.2f %.2f %.2f %.2f %.2f %.2f",
            req.goal_constraints.pose_constraint[0].pose.pose.position.x, req.goal_constraints.pose_constraint[0].pose.pose.position.y,req.goal_constraints.pose_constraint[0].pose.pose.position.z,
            req.goal_constraints.pose_constraint[0].pose.pose.orientation.x,req.goal_constraints.pose_constraint[0].pose.pose.orientation.y,req.goal_constraints.pose_constraint[0].pose.pose.orientation.z,req.goal_constraints.pose_constraint[0].pose.pose.orientation.w);
 
-  if(setStart(req.start_state[0]))
+  motion_planning_msgs::KinematicState start;
+  start.set_vals_size(num_joints_);
+  int nind = 0;
+  for(i = 0; i < req.get_start_state_size(); i++)
+  {
+    if(joint_names_[nind].compare(req.start_state[i].joint_name) == 0)
+    {
+      start.vals[nind] = req.start_state[i].value[0];
+      nind++;
+    }
+    if(nind == num_joints_)
+      break;
+  }
+
+//   ROS_INFO("[planToPosition] start state sent to planner: %.2f %.2f %.2f %.2f %.2f %.2f %.2f",
+// 	     start.vals[0],start.vals[1],start.vals[2],start.vals[3],start.vals[4],start.vals[5],start.vals[6]);
+
+  if(setStart(start))
   {
     if(setGoalPosition(pose_constraint_torso_link))
     {
       if(plan(arm_path))
       {
-        ROS_INFO("[planToPosition] Planning successful.");
-        res.path = arm_path;
-        res.path.model_id = "right_arm";
-        res.path.header.stamp = ros::Time::now();
-        res.path.set_names_size(7);
-        res.path.names[0] = "r_shoulder_pan_joint";
-        res.path.names[1] = "r_shoulder_lift_joint";
-        res.path.names[2] = "r_upper_arm_roll_joint";
-        res.path.names[3] = "r_elbow_flex_joint";
-        res.path.names[4] = "r_forearm_roll_joint";
-        res.path.names[5] = "r_wrist_flex_joint";
-        res.path.names[6] = "r_wrist_roll_joint";
-        res.path.header.frame_id = "torso_lift_link";
-        res.path.start_state.set_vals_size(req.get_start_state_size());
-        for(unsigned int j = 0; j < req.get_start_state_size(); j++)
-          res.path.start_state.vals[j] = req.start_state[j].value[0];
+	ROS_INFO("[planToPosition] Planning successful.");
+	res.path = arm_path;
+	res.path.model_id = req.params.model_id;
+	res.path.header.stamp = ros::Time::now();
+	res.path.header.frame_id = req.start_state[0].header.frame_id;
+
+	res.path.set_times_size(res.path.get_states_size());
+	res.path.times[0] = 0;
+	for(i = 1; i < res.path.get_states_size(); i++)
+	  res.path.times[i] = res.path.times[i-1] + 0.001;
+
+	res.path.set_names_size(num_joints_);
+	for(i = 0; i < (unsigned int)num_joints_; i++)
+	  res.path.names[i] = joint_names_[i];
+
+	res.path.start_state = req.start_state;
+	res.unsafe = 0;
+	res.approximate = 0;
+	res.distance = 0;
 
         return true;
       }
@@ -430,7 +480,6 @@ bool SBPLArmPlannerNode::planKinematicPath(motion_planning_srvs::KinematicPlan::
   }
   else
   {
-    ROS_INFO("[planKinematicPath] plan to Position called...");
     if(!planToPosition(req, res))
       return false;
   }

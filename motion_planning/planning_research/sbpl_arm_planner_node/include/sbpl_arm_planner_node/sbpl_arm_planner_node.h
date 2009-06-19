@@ -99,6 +99,8 @@ namespace sbpl_arm_planner_node
 
       std::string arm_name_;
 
+      std::vector<std::string> joint_names_;
+
       robot_msgs::CollisionMap collision_map_;
 
       robot_msgs::CollisionMap sbpl_collision_map_;
@@ -115,7 +117,7 @@ namespace sbpl_arm_planner_node
 
       bool initializePlannerAndEnvironment();
 
-      bool setStart(const motion_planning_msgs::KinematicJoint &start_state);
+      bool setStart(const motion_planning_msgs::KinematicState &start_state);
 
       bool setGoalPosition(const std::vector<motion_planning_msgs::PoseConstraint, std::allocator<motion_planning_msgs::PoseConstraint> > &goals);
 
