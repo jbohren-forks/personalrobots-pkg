@@ -43,9 +43,9 @@
 
 /** Messages needed for trajectory control and collision map**/
 #include <robot_msgs/Pose.h>
-#include <robot_msgs/JointTraj.h>
+#include <manipulation_msgs/JointTraj.h>
 #include <robot_msgs/CollisionMap.h>
-#include <robot_msgs/JointTrajPoint.h>
+#include <manipulation_msgs/JointTrajPoint.h>
 #include <motion_planning_msgs/KinematicPath.h>
 #include <motion_planning_msgs/KinematicState.h>
 #include <motion_planning_msgs/PoseConstraint.h>

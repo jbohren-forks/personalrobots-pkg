@@ -264,7 +264,8 @@ bool SBPLArmPlannerNode::setGoalPosition(const std::vector<motion_planning_msgs:
 
     sbpl_type[i] = goals[i].type;
 
-    ROS_INFO("goal %d: xyz: %.2f %.2f %.2f rpy: %.2f %.2f %.2f  distance tolerance %.2f orientation distance %.2f", i, sbpl_goal[i][0],sbpl_goal[i][1],sbpl_goal[i][2],sbpl_goal[i][3],sbpl_goal[i][4],sbpl_goal[i][5],sbpl_goal[i][6], sbpl_tolerance[i][0],sbpl_tolerance[i][1]);
+    ROS_INFO("goal %d: xyz: %.2f %.2f %.2f rpy: %.2f %.2f %.2f  distance tolerance %.2f orientation distance %.2f", 
+	     i, sbpl_goal[i][0],sbpl_goal[i][1],sbpl_goal[i][2],sbpl_goal[i][3],sbpl_goal[i][4],sbpl_goal[i][5], sbpl_tolerance[i][0],sbpl_tolerance[i][1]);
   }
 
   pr2_arm_env_.SetGoalPosition(sbpl_goal, sbpl_tolerance, sbpl_type);
@@ -326,7 +327,8 @@ bool SBPLArmPlannerNode::planToState(motion_planning_srvs::KinematicPlan::Reques
 
   motion_planning_msgs::KinematicState start;
   start.set_vals_size(num_joints_);
-  unsigned int i, nind = 0;
+  unsigned int i;
+  int nind = 0;
   for(i = 0; i < req.get_start_state_size(); i++)
   {
     if(joint_names_[nind].compare(req.start_state[i].joint_name) == 0)
