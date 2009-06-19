@@ -33,7 +33,7 @@
 
 TEST(TestKernel, TestSetAndGet)
 {
-  Voxel3d v(32, 32, 32);
+  Voxel3d v(32, 32, 32, 1.0, tf::Vector3(0,0,0));
   v(1, 1, 1) = 5;
   v(12, 10, 4) = 12;
   EXPECT_EQ(5, v(1,1,1));
@@ -46,7 +46,7 @@ TEST(TestKernel, TestSetAndGet)
 
 TEST(TestKernel, TestOnePoint)
 {
-  Voxel3d v(64, 64, 64);
+  Voxel3d v(64, 64, 64, 1.0, tf::Vector3(0,0,0));
 
   v.putObstacle(32, 32, 32);
   EXPECT_EQ(0, v(32,32,32));
@@ -60,7 +60,7 @@ TEST(TestKernel, TestUnderflow)
   const int SIZE = 2000;
   char before[SIZE];
   memset(before, 0, SIZE);
-  Voxel3d v(32, 32, 32);
+  Voxel3d v(32, 32, 32, 1.0, tf::Vector3(0,0,0));
   v.putObstacle(0,0,0);
   for (int i = 0; i < SIZE; ++i)
     EXPECT_EQ(0, before[i]);
