@@ -146,16 +146,8 @@ namespace laser_scan
 
     //downsize if necessary
     cloud_out.set_pts_size (count);
-    if (count == 0)
-    {
-      cloud_out.set_chan_size (0);
-    }
-    else
-    {
-      for (unsigned int d = 0; d < cloud_out.get_chan_size (); d++)
-        cloud_out.chan[d].set_vals_size(count);
-    }
- 
+    for (unsigned int d = 0; d < cloud_out.get_chan_size (); d++)
+      cloud_out.chan[d].set_vals_size(count);
   };
 
   const boost::numeric::ublas::matrix<double>& LaserProjection::getUnitVectors(float angle_min, float angle_max, float angle_increment)

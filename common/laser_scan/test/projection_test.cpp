@@ -136,11 +136,13 @@ TEST(laser_scan, projectLaserWithChannels)
 
   tf::Permuter permuter;
 
+  ranges.push_back(-1.0);
   ranges.push_back(1.0);
   ranges.push_back(2.0);
   ranges.push_back(3.0);
   ranges.push_back(4.0);
   ranges.push_back(5.0);
+  ranges.push_back(100.0);
   permuter.addOption(ranges, &range);
 
   intensities.push_back(1.0);
@@ -194,7 +196,12 @@ TEST(laser_scan, projectLaserWithChannels)
   projector.projectLaser(scan, cloud_out, -1.0, false, laser_scan::MASK_INTENSITY | laser_scan::MASK_INDEX | laser_scan::MASK_DISTANCE | laser_scan::MASK_TIMESTAMP);
   EXPECT_EQ(cloud_out.chan.size(), (unsigned int)4);
 
-  EXPECT_EQ(scan.ranges.size(), cloud_out.get_pts_size());
+  unsigned int valid_points = 0;
+  for (unsigned int i = 0; i < scan.ranges.size(); i++)
+    if (scan.ranges[i] <= PROJECTION_TEST_RANGE_MAX && scan.ranges[i] >= PROJECTION_TEST_RANGE_MIN)
+      valid_points ++;    
+  EXPECT_EQ(valid_points, cloud_out.get_pts_size());
+
   for (unsigned int i = 0; i < cloud_out.pts.size(); i++)
   {
     EXPECT_NEAR(cloud_out.pts[i].x , scan.ranges[i] * cos(scan.angle_min + i * scan.angle_increment), tolerance);
@@ -231,11 +238,13 @@ TEST(laser_scan, transformLaserScanToPointCloudWithChannels)
 
   tf::Permuter permuter;
 
+  ranges.push_back(-1.0);
   ranges.push_back(1.0);
   ranges.push_back(2.0);
   ranges.push_back(3.0);
   ranges.push_back(4.0);
   ranges.push_back(5.0);
+  ranges.push_back(100.0);
   permuter.addOption(ranges, &range);
 
   intensities.push_back(1.0);
@@ -290,7 +299,12 @@ TEST(laser_scan, transformLaserScanToPointCloudWithChannels)
   projector.transformLaserScanToPointCloud(scan.header.frame_id, cloud_out, scan, tf, laser_scan::MASK_INTENSITY | laser_scan::MASK_INDEX | laser_scan::MASK_DISTANCE | laser_scan::MASK_TIMESTAMP);
   EXPECT_EQ(cloud_out.chan.size(), (unsigned int)4);
 
-  EXPECT_EQ(scan.ranges.size(), cloud_out.get_pts_size());
+  unsigned int valid_points = 0;
+  for (unsigned int i = 0; i < scan.ranges.size(); i++)
+    if (scan.ranges[i] <= PROJECTION_TEST_RANGE_MAX && scan.ranges[i] >= PROJECTION_TEST_RANGE_MIN)
+      valid_points ++;    
+  EXPECT_EQ(valid_points, cloud_out.get_pts_size());
+
   for (unsigned int i = 0; i < cloud_out.pts.size(); i++)
   {
     EXPECT_NEAR(cloud_out.pts[i].x , scan.ranges[i] * cos(scan.angle_min + i * scan.angle_increment), tolerance);
