@@ -80,22 +80,33 @@ class TimeCache
 
   bool getData(ros::Time time, TransformStorage & data_out); //returns false if data unavailable (should be thrown as lookup exception
 
-  void insertData(const TransformStorage& new_data)
+  bool insertData(const TransformStorage& new_data)
+  {
+    
+    boost::mutex::scoped_lock lock(storage_lock_);
+    
+    std::list<TransformStorage >::iterator storage_it = storage_.begin();
+    
+    if(storage_it != storage_.end())
     {
-      
-      boost::mutex::scoped_lock lock(storage_lock_);
-
-      std::list<TransformStorage >::iterator storage_it = storage_.begin();
-      while(storage_it != storage_.end())
+      if (storage_it->stamp_ > new_data.stamp_ + max_storage_time_)
       {
-        if (storage_it->stamp_ <= new_data.stamp_)
-          break;
-        storage_it++;
+        return false;
       }
-      storage_.insert(storage_it, new_data);
+    }
+    
+    
+    while(storage_it != storage_.end())
+    {
+      if (storage_it->stamp_ <= new_data.stamp_)
+        break;
+      storage_it++;
+    }
+    storage_.insert(storage_it, new_data);
 
-      pruneList();
-    };
+    pruneList();
+    return true;
+  };
 
 
   void interpolate(const TransformStorage& one, const TransformStorage& two, ros::Time time, TransformStorage& output);  

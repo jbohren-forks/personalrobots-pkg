@@ -183,7 +183,28 @@ Use \ref tf_monitor
 
 Use \ref tf_echo
 
-@subsection Extrapolation Exceptions
+@subsection old_data TF_OLD_DATA
+ - What does a warning about TF_OLD_DATA mean?
+
+TF_OLD_DATA errors mean that a transform is attempted to be added to the system, 
+but the data is greater than cache_time_ before the most recent data
+recieved for this link.  
+
+ - What is the most common reason to see  TF_OLD_DATA errors?
+
+The most common cause of TF_OLD_DATA warnings are if rostime has gone backwards.
+This can be caused by restarting a bag playback or restarting a simulator.  
+The fix for this is to send an Empty message the topic /reset_time, there is a button in rviz 
+to do this.  
+
+ - Is there any other way to see TF_OLD_DATA warnings?
+
+Yes, if there there is any outdated or delayed source of transforms this may appear. 
+The error message will tell you what is the authority which is sending the 
+outdated data.  If it is running in a ros node you can use viewFrames.py to 
+determine the more recent authority. See \ref viewFrames.
+
+@subsection extrapolation_exceptions Extrapolation Exceptions
  - I'm seeing an ExtrapolationException which is always X seconds in
 the past.  Why?
 
