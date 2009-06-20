@@ -61,6 +61,7 @@ Uses (name type):
 
  **/
 
+#include <cstdio>
 #include "ros/node.h"
 #include "ros/console.h"
 #include "robot_srvs/StaticMap.h"
