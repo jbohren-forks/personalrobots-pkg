@@ -36,6 +36,7 @@
 #include <OGRE/OgreQuaternion.h>
 #include <OGRE/OgreEntity.h>
 #include <OGRE/OgreMaterialManager.h>
+#include <stdint.h>
 
 namespace ogre_tools
 {
