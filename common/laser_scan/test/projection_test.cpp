@@ -196,9 +196,6 @@ TEST(laser_scan, projectLaser)
 
   scan_times.push_back(ros::Duration(1/40));
   scan_times.push_back(ros::Duration(1/20));
-  scan_times.push_back(ros::Duration(1/10));
-  scan_times.push_back(ros::Duration(1/5));
-  scan_times.push_back(ros::Duration(1/100));
 
   permuter.addOption(scan_times, &scan_time);
 
@@ -313,9 +310,6 @@ TEST(laser_scan, transformLaserScanToPointCloud)
 
   scan_times.push_back(ros::Duration(1/40));
   scan_times.push_back(ros::Duration(1/20));
-  scan_times.push_back(ros::Duration(1/10));
-  scan_times.push_back(ros::Duration(1/5));
-  scan_times.push_back(ros::Duration(1/100));
 
   permuter.addOption(scan_times, &scan_time);
 

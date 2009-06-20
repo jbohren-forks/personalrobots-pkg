@@ -155,7 +155,7 @@ namespace laser_scan
     if (angle_min >= angle_max)
     {
       std::stringstream ss;
-      ss << "LaserProjection min angle greater than max angle (%f)";
+      ss << "LaserProjection min angle " << angle_min << " greater than max angle "<< angle_max;
       ROS_ERROR("%s", ss.str().c_str());
       throw std::runtime_error(ss.str()); //This would result in a bad alloc anyway so throwing instead
     }
