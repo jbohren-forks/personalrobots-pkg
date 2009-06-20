@@ -443,21 +443,32 @@ namespace move_arm
 	
 	request.data.pose_stamped = pose_stamped_msg;
 	request.data.joint_names = arm_joint_names_;
-	request.data.positions.clear();
-	for(unsigned int i = 0; i < arm_joint_names_.size() ; ++i)
-	{
-	    const double *params = planningMonitor_->getRobotState()->getParamsJoint(arm_joint_names_[i]);
-	    const unsigned int u = planningMonitor_->getKinematicModel()->getJoint(arm_joint_names_[i])->usedParams;
-	    for (unsigned int j = 0 ; j < u ; ++j)
-		request.data.positions.push_back(params[j]);
-	}
-	
+
 	ros::ServiceClient client = node_handle_.serviceClient<manipulation_srvs::IKService>(ARM_IK_NAME, true);
 	bool validSolution = false;
 	int ikSteps = 0;
 	while (ikSteps < 5 && !validSolution)
 	{
+	    request.data.positions.clear();
+	    planning_models::StateParams *sp = NULL;
+	    if (ikSteps == 0)
+		sp = new planning_models::StateParams(*planningMonitor_->getRobotState());
+	    else
+	    {
+		sp = new planning_models::StateParams(planningMonitor_->getKinematicModel());
+		sp->randomState();
+	    }
 	    ikSteps++;
+	    
+	    for(unsigned int i = 0; i < arm_joint_names_.size() ; ++i)
+	    {
+		const double *params = sp->getParamsJoint(arm_joint_names_[i]);
+		const unsigned int u = planningMonitor_->getKinematicModel()->getJoint(arm_joint_names_[i])->usedParams;
+		for (unsigned int j = 0 ; j < u ; ++j)
+		    request.data.positions.push_back(params[j]);
+	    }
+	    delete sp;
+	    
 	    if (client.call(request, response))
 	    { 
 		ROS_DEBUG("Obtained IK solution");
@@ -503,7 +514,7 @@ namespace move_arm
 
 int main(int argc, char** argv)
 {
-    ros::init(argc, argv, "move_arm");  
+    ros::init(argc, argv, "move_arm", ros::init_options::AnonymousName);  
     ros::Node xx; // hack to get action to work
     
     move_arm::MoveArm move_arm;

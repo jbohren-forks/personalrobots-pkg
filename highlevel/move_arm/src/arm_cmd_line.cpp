@@ -63,6 +63,7 @@ void printHelp(void)
     std::cout << "   - current <config>        : set <config> to the current position of the arm" << std::endl;
     std::cout << "   - diff <config>           : show the difference from current position of the arm to <config>" << std::endl;
     std::cout << "   - go <config>             : sends the command <config> to the arm" << std::endl;
+    std::cout << "   - go <px> <py> <pz>       : move the end effector to pose (<px>, <py>, <pz>, 0, 0, 0, 1)" << std::endl;
     std::cout << "   - <config>[<idx>] = <val> : sets the joint specified by <idx> to <val> in <config>" << std::endl;
     std::cout << "   - <config2> = <config1>   : copy <config1> to <config2>" << std::endl;
     std::cout << "   - <config>                : same as show(<config>)" << std::endl;
@@ -103,6 +104,27 @@ void setupGoal(const std::vector<std::string> &names, pr2_robot_actions::MoveArm
     }
 }
 
+void setupGoalEEf(const std::string &link, double x, double y, double z, pr2_robot_actions::MoveArmGoal &goal)
+{
+    goal.goal_constraints.pose_constraint.resize(1);
+    goal.goal_constraints.pose_constraint[0].type = motion_planning_msgs::PoseConstraint::POSITION_XYZ + motion_planning_msgs::PoseConstraint::ORIENTATION_RPY;
+    goal.goal_constraints.pose_constraint[0].link_name = link;
+    goal.goal_constraints.pose_constraint[0].pose.header.stamp = ros::Time::now();
+    goal.goal_constraints.pose_constraint[0].pose.header.frame_id = "base_link";
+    goal.goal_constraints.pose_constraint[0].pose.pose.position.x = x;
+    goal.goal_constraints.pose_constraint[0].pose.pose.position.y = y;	
+    goal.goal_constraints.pose_constraint[0].pose.pose.position.z = z;	
+    
+    goal.goal_constraints.pose_constraint[0].pose.pose.orientation.x = 0.0;
+    goal.goal_constraints.pose_constraint[0].pose.pose.orientation.y = 0.0;
+    goal.goal_constraints.pose_constraint[0].pose.pose.orientation.z = 0.0;
+    goal.goal_constraints.pose_constraint[0].pose.pose.orientation.w = 1.0;
+    
+    goal.goal_constraints.pose_constraint[0].position_distance = 0.0001;
+    goal.goal_constraints.pose_constraint[0].orientation_distance = 0.01;
+    goal.goal_constraints.pose_constraint[0].orientation_importance = 0.001;
+}
+
 void setConfig(const planning_models::StateParams *sp, const std::vector<std::string> &names, pr2_robot_actions::MoveArmGoal &goal)
 {
     setupGoal(names, goal);
@@ -129,7 +151,7 @@ void setConfigJoint(const unsigned int pos, const double value, pr2_robot_action
 
 int main(int argc, char **argv)
 {
-    ros::init(argc, argv, "cmd_line_move_arm", ros::init_options::NoSigintHandler);
+    ros::init(argc, argv, "cmd_line_move_arm", ros::init_options::NoSigintHandler | ros::init_options::AnonymousName);
     
     std::string arm = "r";
     if (argc >= 2)
@@ -153,6 +175,8 @@ int main(int argc, char **argv)
     
 
     planning_environment::RobotModels rm("robot_description");
+    if (!rm.loadedModels())
+	return 0;
     planning_environment::KinematicModelStateMonitor km(&rm);
     km.waitForState();
     
@@ -228,7 +252,34 @@ int main(int argc, char **argv)
 	    std::string config = cmd.substr(3);
 	    boost::trim(config);
 	    if (goals.find(config) == goals.end())
-		std::cout << "Configuration '" << config << "' not found" << std::endl;
+	    {
+		std::stringstream ss(config);
+		double x, y, z;
+		bool err = true;
+		if (ss.good() && !ss.eof())
+		{
+		    ss >> x;
+		    if (ss.good() && !ss.eof())
+		    {
+			ss >> y;
+			if (ss.good() && !ss.eof())
+			{
+			    ss >> z;
+			    err = false;
+			    std::string link = km.getKinematicModel()->getJoint(names.back())->after->name;
+			    std::cout << "Moving " << link << " to " << x << ", " << y << ", " << z << ", 0, 0, 0, 1..." << std::endl;
+			    pr2_robot_actions::MoveArmGoal g;
+			    setupGoalEEf(link, x, y, z, g);
+			    if (move_arm.execute(g, feedback, ros::Duration(10.0)) != robot_actions::SUCCESS)
+				std::cerr << "Failed achieving goal" << std::endl;
+			    else
+				std::cout << "Success!" << std::endl;
+			}
+		    }
+		}
+		if (err)
+		    std::cout << "Configuration '" << config << "' not found" << std::endl;
+	    }
 	    else
 	    {
 		std::cout << "Moving to " << config << "..." << std::endl;
