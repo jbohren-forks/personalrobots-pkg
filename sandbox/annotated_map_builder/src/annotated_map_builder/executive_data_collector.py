@@ -58,7 +58,7 @@ import annotated_map_builder.target_poses
 
 
 class ExecutiveDataCollector:
-  def __init__(self, goals, chrg_stations, navigator, batt_monitor, unstuck, manual_charger, capture_waiter, move_head_adapter, cycle_time):
+  def __init__(self, goals, chrg_stations, navigator, batt_monitor, unstuck, manual_charger, capture_waiter, move_head_adapter, move_head_adapter2, cycle_time):
     self.goals = goals
     #self.capture_configs=capture_configs
     self.chrg_stations = chrg_stations
@@ -66,6 +66,7 @@ class ExecutiveDataCollector:
     self.batt_monitor = batt_monitor
     self.capture_waiter = capture_waiter;
     self.move_head_adapter = move_head_adapter;
+    self.move_head_adapter2 = move_head_adapter2;
     self.cycle_time = cycle_time
 
     self.state = "nav"
@@ -80,7 +81,7 @@ class ExecutiveDataCollector:
     self.stuck = False
 
   def legalStates(self):
-    return self.navigator.legalState() and self.batt_monitor.legalState() and self.capture_waiter.legalState() and self.move_head_adapter.legalState()
+    return self.navigator.legalState() and self.batt_monitor.legalState() and self.capture_waiter.legalState() and self.move_head_adapter.legalState() and self.move_head_adapter2.legalState()
 
 
   def selectNextGoal(self):
@@ -134,12 +135,15 @@ class ExecutiveDataCollector:
           self.state = "capture"
           self.capture_waiter.sendGoal();
           print "nav --> capture"
+          self.move_head_adapter.sendPreempt(); 
+          self.move_head_adapter2.sendGoal(); 
 
         elif self.navigator.aborted() or (not self.navigator.active() and self.current_goal == None) or self.navigator.timeUp():
           print "Aborted:",self.current_goal
           self.selectNextGoal();
-          self.move_head_adapter.sendGoal(); 
           self.navigator.sendGoal(self.current_goal, "/map")
+          self.move_head_adapter.sendGoal(); 
+          self.move_head_adapter2.sendPreempt(); 
           print "nav --> nav"
 
         elif not self.navigator.active() and self.current_goal != None:
@@ -153,8 +157,10 @@ class ExecutiveDataCollector:
           #self.capture_waiter.sendDefaultHeadConfig()
 
           self.state="nav"
-          self.selectNextGoal();
           self.move_head_adapter.sendGoal(); 
+          self.move_head_adapter2.sendPreempt(); 
+
+          self.selectNextGoal();
           self.navigator.sendGoal(self.current_goal, "/map")
           print "capture --> nav"
         #else:
@@ -210,6 +216,10 @@ class ExecutiveDataCollector:
         print("Waiting on %s to be published" % (self.move_head_adapter.state_topic_))
         rospy.logout("Waiting on %s to be published" % (self.move_head_adapter.state_topic_))
 
+      if not self.move_head_adapter2.legalState():
+        print("Waiting on %s to be published" % (self.move_head_adapter2.state_topic_))
+        rospy.logout("Waiting on %s to be published" % (self.move_head_adapter2.state_topic_))
+
       if not self.capture_waiter.legalState():
         print("Waiting on %s to be published" % (self.capture_waiter.state_topic_))
         rospy.logout("Waiting on %s to be published" % (self.capture_waiter.state_topic_))
@@ -254,6 +264,7 @@ if __name__ == '__main__':
     #multi_config_waiter=WaitForMultipleHeadConfigsAdapter(capture_configs,capture_waiter);
 
     move_head_adapter=MoveHeadAdapter("/move_head/move_head_action",-1);
+    move_head_adapter2=MoveHeadAdapter("/move_head2/move_head_action",-1);
 
     hc_goal_topic_ = "/head_controller/set_command_array"
     hc_pub = rospy.Publisher(hc_goal_topic_, JointCmd)
@@ -291,7 +302,7 @@ if __name__ == '__main__':
         #  thNew-=4*pi2
 
 
-    executive = ExecutiveDataCollector(new_goals, chrg_stations, navigator, batt_monitor, unstuck, manual_charger, capture_waiter, move_head_adapter, 1.0)
+    executive = ExecutiveDataCollector(new_goals, chrg_stations, navigator, batt_monitor, unstuck, manual_charger, capture_waiter, move_head_adapter,move_head_adapter2, 1.0)
     executive.run()
   except KeyboardInterrupt, e:
     pass

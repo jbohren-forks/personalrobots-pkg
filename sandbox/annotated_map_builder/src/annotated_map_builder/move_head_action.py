@@ -58,10 +58,10 @@ class MoveHeadAction:
 
     self.nn=node_name;#HACK
 
-    self.goals_sub_ = rospy.Subscriber(self.nn+"/request", MoveHeadGoal, self.onGoal)
-    self.preempt_sub_ = rospy.Subscriber(self.nn+"/preempt",Empty, self.onPreempt)
+    self.goals_sub_ = rospy.Subscriber(rospy.resolve_name(node_name)+"/request", MoveHeadGoal, self.onGoal)
+    self.preempt_sub_ = rospy.Subscriber(rospy.resolve_name(node_name)+"/preempt",Empty, self.onPreempt)
 
-    self.state_pub_ = rospy.Publisher(self.nn+"/feedback", MoveHeadState)
+    self.state_pub_ = rospy.Publisher(rospy.resolve_name(node_name)+"/feedback", MoveHeadState)
 
     self.head_goal_topic_ = "/head_controller/set_command_array"
     self.head_pub_ = rospy.Publisher(self.head_goal_topic_, JointCmd)
@@ -74,6 +74,7 @@ class MoveHeadAction:
     except:
       self.time_limit_=1e9;
 
+    self.current_goal_=MoveHeadGoal();
     self.postStatus();
 
 
@@ -86,7 +87,13 @@ class MoveHeadAction:
 
     self.state="idle"
 
-    self.head_configs_=rospy.get_param("~head_configs");
+    self.head_configs_=eval(rospy.get_param("~head_configs"));
+
+    print self.head_configs_
+    try:
+      self.use_random_=rospy.get_param("~use_random");
+    except:
+      self.use_random_=0;
     print self.head_configs_
 
     self.current_config_ = 0
@@ -104,7 +111,8 @@ class MoveHeadAction:
     return self.msg_wait_count_down_==0;
 
 
-  def onPreempt(self):
+  def onPreempt(self,msg):
+    print "preempt",self.nn,self.current_goal_
     self.status.value=robot_actions.msg.ActionStatus.PREEMPTED;
     self.state="idle"
 
@@ -116,6 +124,8 @@ class MoveHeadAction:
 
 
   def onGoal(self,msg):
+    print "g",self.nn
+    self.current_goal_=msg;
     self.start_time_ = rospy.get_time()
     self.pursuit_time = rospy.get_time() - self.start_time_
     self.status.value=ActionStatus.ACTIVE;
@@ -131,9 +141,12 @@ class MoveHeadAction:
     return self.capture_waiter_.legalState()
 
   def selectNextConfig(self):
-    self.current_config_ += 1
-    if self.current_config_>=len(self.head_configs_):
-      self.current_config_=0;
+    if self.use_random_==1:
+      self.current_config_ =random.randint(0, len(self.head_configs_) - 1);
+    else:
+      self.current_config_ += 1
+      if self.current_config_>=len(self.head_configs_):
+        self.current_config_=0;
 
   def doCycle(self):
     if self.timeUp():
@@ -165,6 +178,8 @@ class MoveHeadAction:
   def postStatus(self):
     success_msg=MoveHeadState();
     success_msg.status=self.status;
+    success_msg.goal=self.current_goal_;
+    success_msg.header.stamp=rospy.get_rostime();
     self.state_pub_.publish(success_msg);
     
   def timeUp(self):
@@ -173,12 +188,12 @@ class MoveHeadAction:
 
 
   def sendHeadConfig(self):
-    
-      joint_cmds=JointCmd();
-      joint_cmds.names=[ "head_pan_joint", "head_tilt_joint"];
-      joint_cmds.positions=self.head_configs_[self.current_config_];
-
-      self.head_pub_.publish(joint_cmds);
+    if self.status.value!=robot_actions.msg.ActionStatus.ACTIVE:
+      return
+    joint_cmds=JointCmd();
+    joint_cmds.names=[ "head_pan_joint", "head_tilt_joint"];
+    joint_cmds.positions=self.head_configs_[self.current_config_];
+    self.head_pub_.publish(joint_cmds);
 
 
 
@@ -188,7 +203,7 @@ if __name__ == '__main__':
     rospy.init_node("move_head_action")
     w=MoveHeadAction("move_head_action");
     w_thread=threading.Thread(None,w.spin)
-    w_thread.run()
+    w_thread.start()
     
     rospy.spin();
 

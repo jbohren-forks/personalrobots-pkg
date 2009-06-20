@@ -52,12 +52,12 @@ class WaitForKMessagesAction:
   def __init__(self,node_name):
 
     self.nn=node_name;#HACK
-
+    self.nn=rospy.get_caller_id();
     #try:
     #  self.message_topic_ = rospy.get_param("topic");
     #except:
     #  self.message_topic_ = "/stereo/raw_stereo_throttled"
-    self.message_topic_ = "topic" #use remap
+    self.message_topic_ = "/stereo/raw_stereo_throttled" #use remap
 
     self.goals_sub_ = rospy.Subscriber(self.nn+"/request", WaitActionGoal, self.onGoal)
     print self.goals_sub_
@@ -66,22 +66,23 @@ class WaitForKMessagesAction:
     self.state_pub_ = rospy.Publisher(self.nn+"/feedback", WaitActionState)
 
     try:
-      self.time_limit_ = rospy.get_param("time_limit");
+      self.time_limit_ = rospy.get_param("~time_limit");
     except:
       self.time_limit_ = 10;
 
     self.status=ActionStatus();
     self.status.value=ActionStatus.RESET
+    self.current_goal_=WaitActionGoal();
     self.postStatus();
 
     self.topic_sub_ = rospy.Subscriber(self.message_topic_, RawStereo, self.update)
 
     try:
-      self.wait_count_=rospy.get_param("count")
+      self.wait_count_=rospy.get_param("~count")
     except:
       self.wait_count_=3;
     
-    print "INIT done"
+    print "INIT done",      self.wait_count_
 
 
   def update(self,msg):
@@ -123,6 +124,7 @@ class WaitForKMessagesAction:
 
   def onGoal(self,msg):
     print msg
+    self.current_goal_=msg;
     self.wait_count_=msg.num_events
     self.message_topic_=msg.topic_name
 
@@ -150,6 +152,8 @@ class WaitForKMessagesAction:
   def postStatus(self):
     success_msg=WaitActionState();
     success_msg.status=self.status;
+    success_msg.goal=self.current_goal_;
+    success_msg.header.stamp=rospy.get_rostime();
     self.state_pub_.publish(success_msg);
     
   def timeUp(self):
@@ -163,7 +167,7 @@ if __name__ == '__main__':
     rospy.init_node("wait_k_msg_action")
     w=WaitForKMessagesAction("wait_k_messages_action");
     w_thread=threading.Thread(None,w.spin)
-    w_thread.run()
+    w_thread.start()
     
     rospy.spin();
 

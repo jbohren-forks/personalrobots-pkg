@@ -39,6 +39,7 @@ roslib.load_manifest('annotated_map_builder')
 import rospy
 
 from annotated_map_builder.msg import *
+from std_msgs.msg import *
 
 class MoveHeadAdapter:
   def __init__(self, action_name, timeout=10.0):
@@ -49,6 +50,7 @@ class MoveHeadAdapter:
 
     rospy.Subscriber(self.state_topic_, MoveHeadState, self.update)
     self.pub_ = rospy.Publisher(self.action_name_+"/request", MoveHeadGoal)
+    self.preempt_pub_ = rospy.Publisher(self.action_name_+"/preempt", Empty)
     self.time_limit_ = timeout
     self.state=None
 
@@ -70,6 +72,13 @@ class MoveHeadAdapter:
     self.start_time_ = rospy.get_time()
     goal = MoveHeadGoal()
     self.pub_.publish(goal)
+
+  def sendPreempt(self):
+    print "Preempt head",self.action_name_
+    goal = Empty()
+    while self.active():
+      self.preempt_pub_.publish(goal)
+      rospy.sleep(0.1);
 
 
   def legalState(self):
