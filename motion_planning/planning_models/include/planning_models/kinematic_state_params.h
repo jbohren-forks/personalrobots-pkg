@@ -63,6 +63,13 @@ namespace planning_models
 	
 	bool operator==(const StateParams &rhs) const;
 	
+	/** \brief Construct a default state: each value at 0.0, if
+	    within bounds. Otherwise, select middle point. */
+	void defaultState(void);
+	
+	/** \brief Construct a random state */
+	void randomState(void);
+
 	/** \brief Mark all values as unseen */
 	void reset(void);
 	

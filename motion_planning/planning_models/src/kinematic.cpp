@@ -64,15 +64,9 @@ planning_models::KinematicModel::ModelInfo& planning_models::KinematicModel::get
 
 void planning_models::KinematicModel::defaultState(void)
 {
-    /* The default state of the robot. Place each value at 0.0, if
-       within bounds. Otherwise, select middle point. */
-    double params[m_mi.stateDimension];
-    for (unsigned int i = 0 ; i < m_mi.stateDimension ; ++i)
-	if (m_mi.stateBounds[2 * i] <= 0.0 && m_mi.stateBounds[2 * i + 1] >= 0.0)
-	    params[i] = 0.0;
-	else
-	    params[i] = (m_mi.stateBounds[2 * i] + m_mi.stateBounds[2 * i + 1]) / 2.0;
-    computeTransforms(params);
+    StateParams sp(this);
+    sp.defaultState();
+    computeTransforms(sp.getParams());
 }
 
 void planning_models::KinematicModel::computeTransforms(const double *params)

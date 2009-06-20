@@ -39,6 +39,7 @@
 #include <algorithm>
 #include <sstream>
 #include <cmath>
+#include <cstdlib>
 
 planning_models::StateParams::StateParams(KinematicModel *model) : m_owner(model), m_mi(model->getModelInfo()), m_params(NULL)
 {
@@ -89,6 +90,27 @@ void planning_models::StateParams::copyFrom(const StateParams &sp)
 	for (unsigned int i = 0 ; i < m_mi.stateDimension ; ++i)
 	    m_params[i] = sp.m_params[i];
     m_seen = sp.m_seen;
+}
+
+void planning_models::StateParams::defaultState(void)
+{
+    for (unsigned int i = 0 ; i < m_mi.stateDimension ; ++i)
+    {
+	if (m_mi.stateBounds[2 * i] <= 0.0 && m_mi.stateBounds[2 * i + 1] >= 0.0)
+	    m_params[i] = 0.0;
+	else
+	    m_params[i] = (m_mi.stateBounds[2 * i] + m_mi.stateBounds[2 * i + 1]) / 2.0;
+	m_seen[i] = true;
+    }
+}
+
+void planning_models::StateParams::randomState(void)
+{   
+    for (unsigned int i = 0 ; i < m_mi.stateDimension ; ++i)
+    {
+	m_params[i] = (m_mi.stateBounds[2 * i + 1] - m_mi.stateBounds[2 * i]) * ((double)rand() / (RAND_MAX + 1.0)) +  m_mi.stateBounds[2 * i];
+	m_seen[i] = true;
+    }
 }
 
 void planning_models::StateParams::reset(void)

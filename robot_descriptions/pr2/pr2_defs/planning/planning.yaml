@@ -5,6 +5,7 @@ group_list:
   base
   left_arm
   right_arm
+  arms
 
 ## the definition of each group
 groups:
@@ -43,6 +44,29 @@ groups:
     planner_configs:
       RRTConfig2 SBLConfig2 KPIECEConfig2r
       
+  arms:
+    links:
+      l_shoulder_pan_link
+      l_shoulder_lift_link
+      l_upper_arm_roll_link
+      l_upper_arm_link
+      l_elbow_flex_link
+      l_forearm_roll_link
+      l_forearm_link
+      l_wrist_flex_link
+      l_wrist_roll_link
+      r_shoulder_pan_link
+      r_shoulder_lift_link
+      r_upper_arm_roll_link
+      r_upper_arm_link
+      r_elbow_flex_link
+      r_forearm_roll_link
+      r_forearm_link
+      r_wrist_flex_link
+      r_wrist_roll_link
+    planner_configs:
+      RRTConfig2 SBLConfig2 
+
 ## the planner configurations; each config must have a type, which specifies
 ## the planner to be used; other parameters can be specified as well, depending 
 ## on the planner
