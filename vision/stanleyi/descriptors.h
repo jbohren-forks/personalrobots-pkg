@@ -9,12 +9,13 @@
 #include <newmat10/newmatio.h>
 #include <math.h>
 
+#include <list>
 
 class ImageDescriptor {
  public:
   string name_;
   unsigned int result_size_;
-  
+
   virtual bool compute(IplImage* img, int r, int c, NEWMAT::Matrix** result, bool debug) = 0;
   virtual void display(const NEWMAT::Matrix& result) = 0;
   virtual void clearPointCache() = 0;
@@ -70,7 +71,28 @@ class PatchStatistic : public ImageDescriptor {
   void clearPointCache() {}
   void clearImageCache() {}
 };
- 
+
+class SuperpixelStatistic : public ImageDescriptor {
+ public:
+  map<int, list<CvPoint> > index_;
+  IplImage* seg_;
+  SuperpixelStatistic* provider_;
+  int seed_spacing_;
+
+  SuperpixelStatistic(int seed_spacing, SuperpixelStatistic* provider);
+  //! Computes superpixels and puts into seg_, and computes the superpixel to pixel index.
+  void segment(IplImage* img, bool debug);
+};
+
+class SuperpixelColorHistogram : public SuperpixelStatistic {
+ public:
+  
+  SuperpixelColorHistogram();
+  bool compute(IplImage* img, int r, int c, NEWMAT::Matrix** result, bool debug);
+  void display(const NEWMAT::Matrix& result) {}
+  void clearPointCache() {}
+  void clearImageCache();
+};
 
 vector<ImageDescriptor*> setupImageDescriptors();
 void whiten(NEWMAT::Matrix* m);

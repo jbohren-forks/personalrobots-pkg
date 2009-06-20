@@ -251,7 +251,101 @@ void PatchStatistic::display(const NEWMAT::Matrix& result) {
   cout << name_ << " is " << result << endl;
 }
 
+/***************************************************************************
+***********  ImageDescriptor::SuperpixelStatistic
+****************************************************************************/
 
+SuperpixelStatistic::SuperpixelStatistic(int seed_spacing, SuperpixelStatistic* provider) :
+  seed_spacing_(seed_spacing_), provider_(provider)
+{
+}
+
+void SuperpixelStatistic::segment(IplImage* img, bool debug) {
+    // -- Create a grid of seed points.
+  seg_ = cvCreateImage( cvGetSize(img), IPL_DEPTH_32S, 1 );
+  cvZero(seg_);
+  int label = 0;
+  for(int r=0; r<seg_->height; r++) {
+    long* ptr = (long*)(seg_->imageData + r * seg_->widthStep);
+    for(int c=0; c<seg_->width; c++) {
+      if(c%seed_spacing_==0 && r%seed_spacing_==0) {
+	*ptr = label;
+	label++;
+      }
+      ptr++;
+
+    }
+  }
+
+
+  double t = (double)cvGetTickCount();
+  cvWatershed( img, seg_ );
+  t = (double)cvGetTickCount() - t;
+
+  // -- Compute the index.
+  for(int r=0; r<seg_->height; r++) {
+    long* ptr = (long*)(seg_->imageData + r * seg_->widthStep);
+    for(int c=0; c<seg_->width; c++) {
+      index_[*ptr].push_back(cvPoint(c,r));
+      ptr++;
+    }
+  }
+  
+
+
+  if(debug) {
+    printf( "exec time = %gms\n", t/(cvGetTickFrequency()*1000.) );
+  
+    // -- Display the results.
+    CvMat* color_tab;
+    color_tab = cvCreateMat( 1, label, CV_8UC3 );
+    CvRNG rng = cvRNG(-1);
+    for(int i = 0; i < label; i++ )
+      {
+	uchar* ptr = color_tab->data.ptr + i*3;
+	ptr[0] = (uchar)(cvRandInt(&rng)%180 + 50);
+	ptr[1] = (uchar)(cvRandInt(&rng)%180 + 50);
+	ptr[2] = (uchar)(cvRandInt(&rng)%180 + 50);
+      }
+  
+    // paint the watershed image
+    IplImage* wshed = cvCloneImage( img );
+    IplImage* img_gray = cvCloneImage( img );
+    cvZero( wshed );
+    IplImage* marker_mask = cvCreateImage( cvGetSize(img), 8, 1 );
+    cvCvtColor( img, marker_mask, CV_BGR2GRAY );
+    cvCvtColor( marker_mask, img_gray, CV_GRAY2BGR );
+
+    for(int i = 0; i < seg_->height; i++ )
+      for(int j = 0; j < seg_->width; j++ )
+	{
+	  int idx = CV_IMAGE_ELEM( seg_, int, i, j );
+	  uchar* dst = &CV_IMAGE_ELEM( wshed, uchar, i, j*3 );
+	  if( idx == -1 )
+	    dst[0] = dst[1] = dst[2] = (uchar)255;
+	  else if( idx <= 0 || idx > label )
+	    dst[0] = dst[1] = dst[2] = (uchar)0; // should not get here
+	  else
+	    {
+	      uchar* ptr = color_tab->data.ptr + (idx-1)*3;
+	      dst[0] = ptr[0]; dst[1] = ptr[1]; dst[2] = ptr[2];
+	    }
+	}
+
+    cvAddWeighted( wshed, 0.5, img_gray, 0.5, 0, wshed );
+    cvNamedWindow("Watershed", CV_WINDOW_AUTOSIZE);
+    cvShowImage( "Watershed", wshed );
+
+    cvWaitKey(0);
+    cvReleaseMat(&color_tab);
+    cvReleaseImage(&wshed);
+    cvReleaseImage(&marker_mask);
+  }
+}
+  
+/***************************************************************************
+***********  ImageDescriptor::SuperpixelStatistic::SuperpixelColorHistogram
+****************************************************************************/
 
 
 
