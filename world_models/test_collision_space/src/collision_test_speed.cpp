@@ -54,8 +54,10 @@ public:
 	delete cm_;
     }
 
-    void run(void)
+    void testPointCloud(void)
     {
+	if (!cm_->loadedModels())
+	    return;	
 	collision_space::EnvironmentModel *em = cm_->getODECollisionModel().get();
 	em->setSelfCollision(false);
 	
@@ -121,7 +123,7 @@ int main(int argc, char **argv)
     ros::init(argc, argv, "CollisionTestSpeed");
 
     CollisionTestSpeed cts;
-    cts.run();
+    cts.testPointCloud();
 
     return 0;
 }
