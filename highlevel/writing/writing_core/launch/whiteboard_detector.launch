@@ -1,7 +1,7 @@
 <launch>
 
  <node pkg="writing_core" name="whiteboard_detector" type="whiteboard_detector" respawn="false" output="screen">
-    <param name="full_cloud_topic" value="plug_snapshot_cloud" />
+    <param name="full_cloud_topic" value="whiteboard_snapshot_cloud" />
     <param name="min_height" value="0.8" />
 </node>
 

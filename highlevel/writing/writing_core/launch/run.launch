@@ -1,0 +1,16 @@
+<launch>
+
+  <include file="$(find pr2_alpha)/$(env ROBOT).machine" />
+
+<!-- controllers-->
+  <include file="$(find writing_core)/config/controllers.launch" />
+
+
+<!-- perception-->
+  <include file="$(find writing_core)/launch/perception.launch" />
+
+<!-- writing_core -->
+<!--  <include file="$(find writing_core)/launch/writing_actions.launch" />-->
+
+
+</launch>
