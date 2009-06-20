@@ -86,36 +86,59 @@ void test_getUnitVectors (float angle_min, float angle_max, float angle_incremen
 
 TEST(laser_scan, getUnitVectors)
 {
-  test_getUnitVectors(0, M_PI, M_PI/2.0);
-  test_getUnitVectors(-M_PI, M_PI, M_PI/100.0);
-  test_getUnitVectors(M_PI, 2.0 * M_PI, M_PI/40.0);
+  double min_angle = -M_PI/2;
+  double max_angle = M_PI/2;
+  double angle_increment = M_PI/180;
 
-  test_getUnitVectors(-M_PI * 3.0/4.0, 3.0/4.0*M_PI, M_PI/180.0); // 270 @ one degree 
-  test_getUnitVectors(-M_PI * 3.0/4.0, 3.0/4.0*M_PI, M_PI/360.0); // 270 @ half degree
-  test_getUnitVectors(-M_PI * 3.0/4.0, 3.0/4.0*M_PI, M_PI/720.0); // 270 @ quarter degree
+  std::vector<double> min_angles, max_angles, angle_increments;
+
+  tf::Permuter permuter;
+  min_angles.push_back(-M_PI);
+  min_angles.push_back(-M_PI/1.5);
+  min_angles.push_back(-M_PI/2);
+  min_angles.push_back(-M_PI/4);
+  min_angles.push_back(-M_PI/8);
+  min_angles.push_back(M_PI);
+  min_angles.push_back(M_PI/1.5);
+  min_angles.push_back(M_PI/2);
+  min_angles.push_back(M_PI/4);
+  min_angles.push_back(M_PI/8);
+  permuter.addOption(min_angles, &min_angle);
+
+  max_angles.push_back(M_PI);
+  max_angles.push_back(M_PI/1.5);
+  max_angles.push_back(M_PI/2);
+  max_angles.push_back(M_PI/4);
+  max_angles.push_back(M_PI/8);
+  max_angles.push_back(-M_PI);
+  max_angles.push_back(-M_PI/1.5);
+  max_angles.push_back(-M_PI/2);
+  max_angles.push_back(-M_PI/4);
+  max_angles.push_back(-M_PI/8);
+  permuter.addOption(max_angles, &max_angle);
+
+  angle_increments.push_back(M_PI/180); // one degree
+  angle_increments.push_back(M_PI/360); // half degree
+  angle_increments.push_back(M_PI/720); // quarter degree
+  permuter.addOption(angle_increments, &angle_increment);
+
+
+  while (permuter.step())
+  {
+    try
+    {
+      test_getUnitVectors(min_angle, max_angle, angle_increment);
+    }
+    catch (std::runtime_error &ex)
+    {
+      if (min_angle < max_angle)
+        EXPECT_FALSE(ex.what());
+    }
+  }
 }
+
 
 TEST(laser_scan, projectLaser)
-{
-  double tolerance = 1e-6;
-  laser_scan::LaserProjection projector;  
-  //\todo add more permutations
-  laser_scan::LaserScan scan = build_constant_scan(1.0, 1.0, -M_PI/2, M_PI/2, M_PI/180, ros::Duration(1/40));
-
-  robot_msgs::PointCloud cloud_out;
-  projector.projectLaser(scan, cloud_out);
-
-  EXPECT_EQ(scan.ranges.size(), cloud_out.get_pts_size());
-  for (unsigned int i = 0; i < cloud_out.pts.size(); i++)
-  {
-    EXPECT_NEAR(cloud_out.pts[i].x , scan.ranges[i] * cos(scan.angle_min + i * scan.angle_increment), tolerance);
-    EXPECT_NEAR(cloud_out.pts[i].y , scan.ranges[i] * sin(scan.angle_min + i * scan.angle_increment), tolerance);
-    EXPECT_NEAR(cloud_out.pts[i].z, 0, tolerance);
-  };
-  
-}
-
-TEST(laser_scan, projectLaserWithChannels)
 {
   double tolerance = 1e-6;
   laser_scan::LaserProjection projector;  
@@ -166,6 +189,11 @@ TEST(laser_scan, projectLaserWithChannels)
   max_angles.push_back(M_PI/8);
   permuter.addOption(max_angles, &max_angle);
 
+  angle_increments.push_back(M_PI/180); // one degree
+  angle_increments.push_back(M_PI/360); // half degree
+  angle_increments.push_back(M_PI/720); // quarter degree
+  permuter.addOption(angle_increments, &angle_increment);
+
   scan_times.push_back(ros::Duration(1/40));
   scan_times.push_back(ros::Duration(1/20));
   scan_times.push_back(ros::Duration(1/10));
@@ -176,7 +204,9 @@ TEST(laser_scan, projectLaserWithChannels)
 
   while (permuter.step())
   {
-    //printf("%f %f %f %f %f %f\n", range, intensity, min_angle, max_angle, angle_increment, scan_time.toSec());
+    try
+    {    
+      //printf("%f %f %f %f %f %f\n", range, intensity, min_angle, max_angle, angle_increment, scan_time.toSec());
   laser_scan::LaserScan scan = build_constant_scan(range, intensity, min_angle, max_angle, angle_increment, scan_time);
 
   robot_msgs::PointCloud cloud_out;
@@ -212,9 +242,15 @@ TEST(laser_scan, projectLaserWithChannels)
     EXPECT_NEAR(cloud_out.chan[2].vals[i], scan.ranges[i], tolerance);//ranges
     EXPECT_NEAR(cloud_out.chan[3].vals[i], (float)i * scan.time_increment, tolerance);//timestamps
   };
+    }
+    catch (std::runtime_error &ex)
+    {
+      if (min_angle < max_angle)
+        EXPECT_FALSE(ex.what());
+    }
   }
 }
-TEST(laser_scan, transformLaserScanToPointCloudWithChannels)
+TEST(laser_scan, transformLaserScanToPointCloud)
 {
 
   tf::Transformer tf;
@@ -259,14 +295,21 @@ TEST(laser_scan, transformLaserScanToPointCloudWithChannels)
   min_angles.push_back(-M_PI/2);
   min_angles.push_back(-M_PI/4);
   min_angles.push_back(-M_PI/8);
-  permuter.addOption(min_angles, &min_angle);
+  
 
   max_angles.push_back(M_PI);
   max_angles.push_back(M_PI/1.5);
   max_angles.push_back(M_PI/2);
   max_angles.push_back(M_PI/4);
   max_angles.push_back(M_PI/8);
+
+  permuter.addOption(min_angles, &min_angle);
   permuter.addOption(max_angles, &max_angle);
+
+  angle_increments.push_back(M_PI/180); // one degree
+  angle_increments.push_back(M_PI/360); // half degree
+  angle_increments.push_back(M_PI/720); // quarter degree
+  permuter.addOption(angle_increments, &angle_increment);
 
   scan_times.push_back(ros::Duration(1/40));
   scan_times.push_back(ros::Duration(1/20));
@@ -278,6 +321,8 @@ TEST(laser_scan, transformLaserScanToPointCloudWithChannels)
 
   while (permuter.step())
   {
+    try
+    {    
     //printf("%f %f %f %f %f %f\n", range, intensity, min_angle, max_angle, angle_increment, scan_time.toSec());
   laser_scan::LaserScan scan = build_constant_scan(range, intensity, min_angle, max_angle, angle_increment, scan_time);
   scan.header.frame_id = "laser_frame";
@@ -315,6 +360,12 @@ TEST(laser_scan, transformLaserScanToPointCloudWithChannels)
     EXPECT_NEAR(cloud_out.chan[2].vals[i], scan.ranges[i], tolerance);//ranges
     EXPECT_NEAR(cloud_out.chan[3].vals[i], (float)i * scan.time_increment, tolerance);//timestamps
   };
+    }
+    catch (std::runtime_error &ex)
+    {
+      if (min_angle < max_angle)
+        EXPECT_FALSE(ex.what());
+    }
   }
 }
 int main(int argc, char **argv){
