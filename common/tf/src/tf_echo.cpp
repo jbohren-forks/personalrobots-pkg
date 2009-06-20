@@ -27,9 +27,9 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <cstdio>
 #include "tf/transform_listener.h"
 #include "ros/node.h"
-
 
 class echoListener
 {

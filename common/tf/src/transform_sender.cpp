@@ -27,6 +27,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <cstdio>
 #include "tf/transform_broadcaster.h"
 
 class TransformSender
