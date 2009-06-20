@@ -198,18 +198,25 @@ void Stanleyi::collectDataset(string bagfile, int samples_per_img) {
       // -- Set the label.
       CvScalar s = cvGet2D(mask_, row, col);
       obj.label = s.val[0];
-      if(obj.label != 0)
+      if(obj.label != 0) {
 	obj.label = 1;
+      }
       
       if(debug)
 	cout << "Label " << obj.label << endl;
 
       for(unsigned int j=0; j<descriptor.size(); j++) {
 	// -- For now, only accept points for which all features are computable.
-	if(!descriptor[j]->compute(img_, row, col, result, debug))
+	bool success;
+	if(obj.label == 1 && getenv("DEBUG_POSITIVES") != NULL) 
+	  success = descriptor[j]->compute(img_, row, col, &result, true);
+	else
+	  success = descriptor[j]->compute(img_, row, col, &result, debug);
+
+	if(!success)
 	  continue;
+
 	//      obj.features[descriptor[i]->name_] = *result;
-	cout << "Result is : " << endl << result << endl;
       }
       
       for(unsigned int j=0; j<descriptor.size(); j++) {
