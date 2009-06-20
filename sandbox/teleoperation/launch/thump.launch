@@ -1,0 +1,17 @@
+<launch>
+
+<!-- Set the remote machines -->
+  <machine name="harder_root" user="root" address="harder" ros-root="/home/thump" ros-package-path="/home/thump" default="never" />
+
+
+<!-- Start up the THUMP node -->
+  <node machine="harder_root" pkg="thumpnode" type="thumpnode">
+    <remap from="command_pose_left"  to="/l_arm_cartesian_pose_controller/command"/>
+    <remap from="command_pose_right" to="/r_arm_cartesian_pose_controller/command"/>
+    <remap from="feedback_pose_left"  to="/l_arm_cartesian_pose_controller/state/pose"/>
+    <remap from="feedback_pose_right" to="/r_arm_cartesian_pose_controller/state/pose"/>
+  </node>
+
+
+</launch>
+
