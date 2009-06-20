@@ -48,6 +48,9 @@ rospack_link_boost(bin/ros_diffdrive thread)
 
 rospack_add_library(urdf2gazebo src/urdf2gazebo.cpp)
 
+rospack_add_executable(bin/xml2factory src/xml2factory.cpp)
+target_link_libraries(bin/xml2factory)
+
 rospack_add_executable(bin/urdf2factory src/urdf2factory.cpp)
 target_link_libraries(bin/urdf2factory urdf2gazebo)
 
