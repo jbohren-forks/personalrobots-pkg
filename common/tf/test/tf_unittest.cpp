@@ -55,7 +55,18 @@ void generate_rand_vectors(double scale, uint64_t runs, std::vector<double>& xva
 
 using namespace tf;
 
+TEST(tf, setTransformNoInsertOnSelfReference)
+{
+  tf::Transformer mTR(true);
+  Stamped<btTransform> tranStamped(btTransform(btQuaternion(0,0,0), btVector3(0,0,0)), ros::Time().fromNSec(10.0), "same_frame", "other_frame");
+  mTR.setTransform(tranStamped);
 
+  tranStamped.parent_id_ = "same_frame";
+  mTR.setTransform(tranStamped);
+  //This would fail if the second setting was inserted first into the list for the tree would be malformed.  
+  EXPECT_TRUE(mTR.canTransform("same_frame", "other_frame", ros::Time().fromNSec(10)));
+
+}
 
 TEST(tf, TransformTransformsCartesian)
 {

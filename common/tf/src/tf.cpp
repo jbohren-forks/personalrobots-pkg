@@ -115,6 +115,11 @@ void Transformer::clear()
 
 void Transformer::setTransform(const Stamped<btTransform>& transform, const std::string& authority)
 {
+  if (transform.frame_id_ == transform.parent_id_)
+  {
+    ROS_ERROR("TF_SELF_TRANSFORM: Ignoring transform with parent_id and frame_id both set to %s from authority: %s", transform.frame_id_.c_str(), authority.c_str());
+      return;
+  }
   unsigned int frame_number = lookupOrInsertFrameNumber(transform.frame_id_);
   if (getFrame(frame_number)->insertData(TransformStorage(transform, lookupOrInsertFrameNumber(transform.parent_id_))))
   {

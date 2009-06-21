@@ -72,6 +72,9 @@ int main(int argc, char ** argv)
 
   ros::Duration sleeper(atof(argv[9])/1000.0);
 
+  if (strcmp(argv[7], argv[8]) == 0)
+    ROS_FATAL("target_frame and source frame are the same (%s, %s) this cannot work", argv[7], argv[8]);
+
   TransformSender tf_sender(atof(argv[1]), atof(argv[2]), atof(argv[3]),
                             atof(argv[4]), atof(argv[5]), atof(argv[6]),
                             ros::Time::now() + sleeper, //Future dating to allow slower sending w/o timeout
