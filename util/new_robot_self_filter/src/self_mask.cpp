@@ -78,10 +78,12 @@ bool robot_self_filter::SelfMask::configure(bool accurate)
     return true;
 }
 
+void robot_self_filter::SelfMask::getLinkFrames(std::vector<std::string> &frames) const
+{
+    for (unsigned int i = 0 ; i < bodies_.size() ; ++i)
+	frames.push_back(bodies_[i].name);
+}
 
-/** \brief Compute the mask for a given pointcloud. If a mask element is true, the point
-    is outside the robot
-*/
 void robot_self_filter::SelfMask::mask(const robot_msgs::PointCloud& data_in, std::vector<bool> &mask)
 {
     mask.resize(data_in.pts.size());

@@ -35,16 +35,19 @@
 /** \author Ioan Sucan */
 
 #include <ros/ros.h>
-#include "robot_self_filter/self_see_filter.h"
+#include "robot_self_filter/self_mask.h"
+#include <tf/message_notifier.h>
 
 class SelfFilter
 {
 public:
 
-    SelfFilter(void)
+    SelfFilter(void) : sf_(tf_), mn_(tf_, boost::bind(&SelfFilter::cloudCallback, this, _1), "cloud_in", "", 1)
     {
-	sf_.configure();
-	pointCloudSubscriber_ = nh_.subscribe("cloud_in", 1, &SelfFilter::cloudCallback, this);
+	sf_.configure(false);
+	std::vector<std::string> frames;
+	sf_.getLinkFrames(frames);
+	mn_.setTargetFrame(frames);
 	pointCloudPublisher_ = nh_.advertise<robot_msgs::PointCloud>("cloud_out", 1);
     }
     
@@ -53,16 +56,46 @@ private:
     void cloudCallback(const robot_msgs::PointCloudConstPtr &cloud)
     {
 	robot_msgs::PointCloud out;
+	std::vector<bool> mask;
 	ros::WallTime tm = ros::WallTime::now();
-	sf_.update(*cloud, out);
+	sf_.mask(*cloud, mask);
 	double sec = (ros::WallTime::now() - tm).toSec();
 	ROS_DEBUG("Self filter: reduced %d points to %d points in %f seconds", (int)cloud->pts.size(), (int)out.pts.size(), sec);
+	fillResult(*cloud, mask, out);
 	pointCloudPublisher_.publish(out);
     }
+
+    void fillResult(const robot_msgs::PointCloud& data_in, const std::vector<bool> &keep, robot_msgs::PointCloud& data_out)
+    {
+	const unsigned int np = data_in.pts.size();
+	
+	// fill in output data 
+	data_out.header = data_in.header;	  
+	
+	data_out.pts.resize(0);
+	data_out.pts.reserve(np);
+	
+	data_out.chan.resize(data_in.chan.size());
+	for (unsigned int i = 0 ; i < data_out.chan.size() ; ++i)
+	{
+	    ROS_ASSERT(data_in.chan[i].vals.size() == data_in.pts.size());
+	    data_out.chan[i].name = data_in.chan[i].name;
+	    data_out.chan[i].vals.reserve(data_in.chan[i].vals.size());
+	}
+	
+	for (unsigned int i = 0 ; i < np ; ++i)
+	    if (keep[i])
+	    {
+		data_out.pts.push_back(data_in.pts[i]);
+		for (unsigned int j = 0 ; j < data_out.chan.size() ; ++j)
+		    data_out.chan[j].vals.push_back(data_in.chan[j].vals[i]);
+	    }
+    }
     
-    filters::SelfFilter<robot_msgs::PointCloud> sf_;
+    tf::TransformListener                       tf_;
+    robot_self_filter::SelfMask                 sf_;
+    tf::MessageNotifier<robot_msgs::PointCloud> mn_;
     ros::Publisher                              pointCloudPublisher_;
-    ros::Subscriber                             pointCloudSubscriber_;
     ros::NodeHandle                             nh_;
 };
 

@@ -35,6 +35,7 @@
 #include <collision_space/bodies.h>
 #include <tf/transform_listener.h>
 #include <string>
+#include <vector>
 
 namespace robot_self_filter
 {
@@ -85,7 +86,9 @@ namespace robot_self_filter
 	 */
 	void mask(const robot_msgs::PointCloud& data_in, std::vector<bool> &mask);
 	
-
+	/** Get the set of frames that correspond to the links */
+	void getLinkFrames(std::vector<std::string> &frames) const;
+	
     private:
 
 	void identityPoses(void);
