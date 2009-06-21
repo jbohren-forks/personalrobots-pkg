@@ -422,7 +422,7 @@ int planning_models::KinematicModel::getGroupID(const std::string &group) const
     std::map<std::string, int>::const_iterator pos = m_groupsMap.find(group);
     if (pos == m_groupsMap.end())
     {
-	m_msg.error("Group " + group + " not found");
+	m_msg.error("Group '" + group + "' not found");
 	return -1;
     }
     else
