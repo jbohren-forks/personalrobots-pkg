@@ -36,6 +36,7 @@
 
 #include "planning_environment/collision_space_monitor.h"
 #include <robot_msgs/PointStamped.h>
+#include <boost/bind.hpp>
 #include <climits>
 
 namespace planning_environment
@@ -52,6 +53,10 @@ void planning_environment::CollisionSpaceMonitor::setupCSM(void)
     onBeforeMapUpdate_ = NULL;
     onAfterMapUpdate_  = NULL;
     onAfterAttachBody_ = NULL;
+    
+    attachedBodyNotifier_   = NULL;
+    collisionMapNotifier_ = NULL;
+    
     haveMap_ = false;
 
     if (!tf_)
@@ -59,12 +64,13 @@ void planning_environment::CollisionSpaceMonitor::setupCSM(void)
     
     collisionSpace_ = cm_->getODECollisionModel().get();
     
-    collisionMapSubscriber_ = nh_.subscribe("collision_map", 1, &CollisionSpaceMonitor::collisionMapCallback, this);
+    collisionMapNotifier_ = new tf::MessageNotifier<robot_msgs::CollisionMap>(*tf_, boost::bind(&CollisionSpaceMonitor::collisionMapCallback, this, _1), "collision_map", getFrameId(), 1);
     ROS_DEBUG("Listening to collision_map");
 
     if (cm_->loadedModels())
     {
-	attachBodySubscriber_ = nh_.subscribe("attach_object", 1, &CollisionSpaceMonitor::attachObjectCallback, this);
+	attachedBodyNotifier_ = new tf::MessageNotifier<robot_msgs::AttachedObject>(*tf_, boost::bind(&CollisionSpaceMonitor::attachObjectCallback, this, _1), "attach_object", "", 1);
+	attachedBodyNotifier_->setTargetFrame(cm_->getCollisionCheckLinks());
 	ROS_DEBUG("Listening to attach_object");
     }
 }

@@ -40,6 +40,7 @@
 #include "planning_environment/collision_models.h"
 #include "planning_environment/kinematic_model_state_monitor.h"
 
+#include <tf/message_notifier.h>
 #include <robot_msgs/CollisionMap.h>
 #include <robot_msgs/AttachedObject.h>
 
@@ -75,6 +76,10 @@ namespace planning_environment
 	
 	virtual ~CollisionSpaceMonitor(void)
 	{
+	    if (collisionMapNotifier_)
+		delete collisionMapNotifier_;
+	    if (attachedBodyNotifier_)
+		delete attachedBodyNotifier_;
 	}
 
 	collision_space::EnvironmentModel* getEnvironmentModel(void) const
@@ -142,8 +147,8 @@ namespace planning_environment
 	
 	bool                                                           haveMap_;
 	ros::Time                                                      lastMapUpdate_;	
-	ros::Subscriber                                                attachBodySubscriber_;
-	ros::Subscriber                                                collisionMapSubscriber_;
+	tf::MessageNotifier<robot_msgs::CollisionMap>                 *collisionMapNotifier_;
+	tf::MessageNotifier<robot_msgs::AttachedObject>               *attachedBodyNotifier_;
 	
 	boost::function<void(const robot_msgs::CollisionMapConstPtr)>  onBeforeMapUpdate_;
 	boost::function<void(const robot_msgs::CollisionMapConstPtr)>  onAfterMapUpdate_;
