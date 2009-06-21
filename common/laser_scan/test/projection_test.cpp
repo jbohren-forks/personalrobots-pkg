@@ -69,7 +69,7 @@ laser_scan::LaserScan build_constant_scan(double range, double intensity,
 
 void test_getUnitVectors (float angle_min, float angle_max, float angle_increment)
 {
-  double tolerance = 1e-6;
+  double tolerance = 1e-12;
   laser_scan::LaserProjection projector;  
   
   const boost::numeric::ublas::matrix<double> & mat = projector.getUnitVectors(angle_min, angle_max, angle_increment);
@@ -80,7 +80,8 @@ void test_getUnitVectors (float angle_min, float angle_max, float angle_incremen
   {
     EXPECT_NEAR(angles::normalize_angle(atan2(mat(1,i), mat(0,i))),
                 angles::normalize_angle(angle_min + i * angle_increment),
-                tolerance);
+                tolerance); // check expected angle
+    EXPECT_NEAR(1.0, mat(1,i)*mat(1,i) + mat(0,i)*mat(0,i), tolerance); //make sure normalized
   }
 }
 
@@ -140,7 +141,7 @@ TEST(laser_scan, getUnitVectors)
 
 TEST(laser_scan, projectLaser)
 {
-  double tolerance = 1e-6;
+  double tolerance = 1e-5;
   laser_scan::LaserProjection projector;  
 
   double min_angle = -M_PI/2;
@@ -252,7 +253,7 @@ TEST(laser_scan, transformLaserScanToPointCloud)
 
   tf::Transformer tf;
   
-  double tolerance = 1e-6;
+  double tolerance = 1e-5;
   laser_scan::LaserProjection projector;  
 
   double min_angle = -M_PI/2;
