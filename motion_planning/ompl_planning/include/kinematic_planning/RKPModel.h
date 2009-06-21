@@ -45,6 +45,7 @@
 #include "kinematic_planning/ompl_planner/RKPESTSetup.h"
 #include "kinematic_planning/ompl_planner/RKPIKSBLSetup.h"
 #include "kinematic_planning/ompl_planner/RKPKPIECESetup.h"
+#include "kinematic_planning/ompl_planner/RKPLBKPIECESetup.h"
 #include "kinematic_planning/ompl_planner/RKPIKKPIECESetup.h"
 
 #include <boost/shared_ptr.hpp>
@@ -81,6 +82,7 @@ namespace kinematic_planning
 	void addSBL(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options);
 	void addIKSBL(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options);
 	void addKPIECE(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options);
+	void addLBKPIECE(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options);
 	void addIKKPIECE(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options);
 	
     };

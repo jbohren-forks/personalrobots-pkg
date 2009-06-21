@@ -34,47 +34,25 @@
 
 /** \author Ioan Sucan */
 
-#include "kinematic_planning/ompl_planner/RKPSBLSetup.h"
+#ifndef KINEMATIC_PLANNING_OMPL_PLANNER_RKP_LBKPIECE_SETUP_
+#define KINEMATIC_PLANNING_OMPL_PLANNER_RKP_LBKPIECE_SETUP_
 
-kinematic_planning::RKPSBLSetup::RKPSBLSetup(RKPModelBase *m) : RKPPlannerSetup(m)
+#include "kinematic_planning/ompl_planner/RKPPlannerSetup.h"
+#include <ompl/extension/samplingbased/kinematic/extension/kpiece/LBKPIECE1.h>
+
+namespace kinematic_planning
 {
-    name = "SBL";	    
-    priority = 10;
-}
-
-kinematic_planning::RKPSBLSetup::~RKPSBLSetup(void)
-{
-    if (dynamic_cast<ompl::sb::SBL*>(mp))
-    {
-	ompl::base::ProjectionEvaluator *pe = dynamic_cast<ompl::sb::SBL*>(mp)->getProjectionEvaluator();
-	if (pe)
-	    delete pe;
-    }
-}
-
-bool kinematic_planning::RKPSBLSetup::setup(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options)
-{
-    preSetup(options);
     
-    ompl::sb::SBL *sbl = new ompl::sb::SBL(si);
-    mp                 = sbl;	
-    
-    if (options->hasParam("range"))
+    class RKPLBKPIECESetup : public RKPPlannerSetup
     {
-	sbl->setRange(options->getParamDouble("range", sbl->getRange()));
-	ROS_DEBUG("Range is set to %g", sbl->getRange());
-    }
+    public:
+	
+        RKPLBKPIECESetup(RKPModelBase *m);
+	virtual ~RKPLBKPIECESetup(void);
+	virtual bool setup(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options);	
+    };
 
-    sbl->setProjectionEvaluator(getProjectionEvaluator(options));
+} // kinematic_planning
+
+#endif
     
-    if (sbl->getProjectionEvaluator() == NULL)
-    {
-	ROS_WARN("Adding %s failed: need to set both 'projection' and 'celldim' for %s", name.c_str(), model->groupName.c_str());
-	return false;
-    }
-    else
-    {
-	postSetup(options);
-	return true;
-    }
-}

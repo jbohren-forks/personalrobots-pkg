@@ -77,13 +77,14 @@ namespace kinematic_planning
 	
 	RKPModelBase                                              *model;
 	
-	std::string                                                name;
-	ompl::sb::Planner                                         *mp;
-	ompl::sb::GAIK                                            *gaik;
-	ompl::sb::SpaceInformationKinematic                       *si;
-	ompl::base::StateValidityChecker                          *svc;
-	std::map<std::string, ompl::base::StateDistanceEvaluator*> sde;
-	ompl::sb::PathSmootherKinematic                           *smoother;
+	std::string                                                name;       // name of planner
+	ompl::sb::Planner                                         *mp;         // pointer to OMPL instance of planner
+	int                                                        priority;   // priority of this planner when automatically selecting planners
+	ompl::sb::GAIK                                            *gaik;       // tool for performing general IK
+	ompl::sb::SpaceInformationKinematic                       *si;         // space information for the planner
+	ompl::base::StateValidityChecker                          *svc;        // the state validation routine
+	std::map<std::string, ompl::base::StateDistanceEvaluator*> sde;        // list of available distance evaluators
+	ompl::sb::PathSmootherKinematic                           *smoother;   // pointer to an OMPL path smoother 
 
     };
 

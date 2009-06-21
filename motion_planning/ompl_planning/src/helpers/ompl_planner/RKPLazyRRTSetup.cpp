@@ -40,6 +40,7 @@
 kinematic_planning::RKPLazyRRTSetup::RKPLazyRRTSetup(RKPModelBase *m) : RKPPlannerSetup(m)
 {
     name = "LazyRRT";
+    priority = 2;
 }
 
 kinematic_planning::RKPLazyRRTSetup::~RKPLazyRRTSetup(void)

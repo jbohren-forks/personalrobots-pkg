@@ -63,7 +63,7 @@ namespace move_arm
     {	
 	node_handle_.param<std::string>("~arm", arm_, std::string());
 	node_handle_.param<bool>("~perform_ik", perform_ik_, true);
-
+	
 	// monitor robot
 	collisionModels_ = new planning_environment::CollisionModels("robot_description");
 	planningMonitor_ = new planning_environment::PlanningMonitor(collisionModels_);
@@ -112,7 +112,6 @@ namespace move_arm
 	
 	
 	req.params.model_id = arm_;              // the model to plan for (should be defined in planning.yaml)
-	req.params.planner_id = "KPIECE";        // this is optional; the planning node should be able to pick a planner
 	req.params.distance_metric = "L2Square"; // the metric to be used in the robot's state space
 	
 	// this volume is only needed if planar or floating joints move in the space

@@ -47,6 +47,7 @@ kinematic_planning::RKPPlannerSetup::RKPPlannerSetup(RKPModelBase *m)
     si = NULL;
     svc = NULL;
     smoother = NULL;
+    priority = 0;
 }
 
 kinematic_planning::RKPPlannerSetup::~RKPPlannerSetup(void)

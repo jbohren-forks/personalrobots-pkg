@@ -34,40 +34,40 @@
 
 /** \author Ioan Sucan */
 
-#include "kinematic_planning/ompl_planner/RKPSBLSetup.h"
+#include "kinematic_planning/ompl_planner/RKPLBKPIECESetup.h"
 
-kinematic_planning::RKPSBLSetup::RKPSBLSetup(RKPModelBase *m) : RKPPlannerSetup(m)
+kinematic_planning::RKPLBKPIECESetup::RKPLBKPIECESetup(RKPModelBase *m) : RKPPlannerSetup(m)
 {
-    name = "SBL";	    
-    priority = 10;
+    name = "LBKPIECE";	    
+    priority = 11;
 }
 
-kinematic_planning::RKPSBLSetup::~RKPSBLSetup(void)
+kinematic_planning::RKPLBKPIECESetup::~RKPLBKPIECESetup(void)
 {
-    if (dynamic_cast<ompl::sb::SBL*>(mp))
+    if (dynamic_cast<ompl::sb::LBKPIECE1*>(mp))
     {
-	ompl::base::ProjectionEvaluator *pe = dynamic_cast<ompl::sb::SBL*>(mp)->getProjectionEvaluator();
+	ompl::base::ProjectionEvaluator *pe = dynamic_cast<ompl::sb::LBKPIECE1*>(mp)->getProjectionEvaluator();
 	if (pe)
 	    delete pe;
     }
 }
 
-bool kinematic_planning::RKPSBLSetup::setup(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options)
+bool kinematic_planning::RKPLBKPIECESetup::setup(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options)
 {
     preSetup(options);
     
-    ompl::sb::SBL *sbl = new ompl::sb::SBL(si);
-    mp                 = sbl;	
+    ompl::sb::LBKPIECE1 *kpiece = new ompl::sb::LBKPIECE1(si);
+    mp                          = kpiece;
     
     if (options->hasParam("range"))
     {
-	sbl->setRange(options->getParamDouble("range", sbl->getRange()));
-	ROS_DEBUG("Range is set to %g", sbl->getRange());
+	kpiece->setRange(options->getParamDouble("range", kpiece->getRange()));
+	ROS_DEBUG("Range is set to %g", kpiece->getRange());
     }
 
-    sbl->setProjectionEvaluator(getProjectionEvaluator(options));
+    kpiece->setProjectionEvaluator(getProjectionEvaluator(options));
     
-    if (sbl->getProjectionEvaluator() == NULL)
+    if (kpiece->getProjectionEvaluator() == NULL)
     {
 	ROS_WARN("Adding %s failed: need to set both 'projection' and 'celldim' for %s", name.c_str(), model->groupName.c_str());
 	return false;

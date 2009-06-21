@@ -54,11 +54,17 @@ bool kinematic_planning::RKPRequestHandler::isRequestValid(ModelMap &models, mot
     
     /* if the user did not specify a planner, use the first available one */
     if (req.params.planner_id.empty())
-    {
-	if (!m->planners.empty())
-	    req.params.planner_id = m->planners.begin()->first;
-    }
-
+	for (std::map<std::string, RKPPlannerSetup*>::const_iterator it = m->planners.begin() ; it != m->planners.end() ; ++it)
+	    if ((req.goal_constraints.pose_constraint.empty() && (it->second->mp->getType() & ompl::sb::PLAN_TO_GOAL_STATE) != 0) ||
+		(!req.goal_constraints.pose_constraint.empty() && (it->second->mp->getType() & ompl::sb::PLAN_TO_GOAL_REGION) != 0))
+	    {
+		if (req.params.planner_id.empty())
+		    req.params.planner_id = it->first;
+		else
+		    if (m->planners[req.params.planner_id]->priority < it->second->priority)
+			req.params.planner_id = it->first;
+	    }
+    
     /* check if desired planner exists */
     std::map<std::string, RKPPlannerSetup*>::iterator plannerIt = m->planners.find(req.params.planner_id);
     if (plannerIt == m->planners.end())

@@ -13,6 +13,7 @@ rospack_add_library(ompl_planning_helpers src/helpers/ompl_planner/RKPPlannerSet
                                           src/helpers/ompl_planner/RKPRRTSetup.cpp
                                           src/helpers/ompl_planner/RKPIKKPIECESetup.cpp
                                           src/helpers/ompl_planner/RKPKPIECESetup.cpp
+                                          src/helpers/ompl_planner/RKPLBKPIECESetup.cpp
                                           src/helpers/ompl_planner/RKPSBLSetup.cpp
                                           src/helpers/ompl_extensions/RKPGoalDefinitions.cpp
                                           src/helpers/ompl_extensions/RKPSpaceInformation.cpp

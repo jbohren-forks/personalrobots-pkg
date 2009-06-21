@@ -58,13 +58,16 @@ void kinematic_planning::RKPModel::createMotionPlanningInstances(std::vector< bo
 			if (type == "KPIECE")
 			    addKPIECE(cfgs[i]);
 			else
-			    if (type == "IKSBL")
-				addIKSBL(cfgs[i]);
+			    if (type == "LBKPIECE")
+				addLBKPIECE(cfgs[i]);
 			    else
-				if (type == "IKKPIECE")
-				    addIKKPIECE(cfgs[i]);
+				if (type == "IKSBL")
+				    addIKSBL(cfgs[i]);
 				else
-				    ROS_WARN("Unknown planner type: %s", type.c_str());
+				    if (type == "IKKPIECE")
+					addIKKPIECE(cfgs[i]);
+				    else
+					ROS_WARN("Unknown planner type: %s", type.c_str());
     }
 }
 
@@ -116,6 +119,15 @@ void kinematic_planning::RKPModel::addIKSBL(boost::shared_ptr<planning_environme
 void kinematic_planning::RKPModel::addKPIECE(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options)
 {
     RKPPlannerSetup *kpiece = new RKPKPIECESetup(dynamic_cast<RKPModelBase*>(this));
+    if (kpiece->setup(options))
+	planners[kpiece->name] = kpiece;
+    else
+	delete kpiece;
+}
+
+void kinematic_planning::RKPModel::addLBKPIECE(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options)
+{
+    RKPPlannerSetup *kpiece = new RKPLBKPIECESetup(dynamic_cast<RKPModelBase*>(this));
     if (kpiece->setup(options))
 	planners[kpiece->name] = kpiece;
     else
