@@ -42,6 +42,7 @@ import threading
 import math
 
 from diagnostic_msgs.msg import DiagnosticMessage
+from mechanism_msgs.msg import MechanismState
 from roslib import rostime
 from joint_calibration_monitor.generic_joint_monitor import *
 
