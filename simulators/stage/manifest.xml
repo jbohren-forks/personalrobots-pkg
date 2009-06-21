@@ -34,6 +34,7 @@ way.  This package also provides stageros, a ROS node that uses Stage.
 <rosdep name="gtk2"/>
 <rosdep name="fltk"/>
 <rosdep name="pkg-config"/>
+<rosdep name="libjpeg"/>
 </package>
 
 
