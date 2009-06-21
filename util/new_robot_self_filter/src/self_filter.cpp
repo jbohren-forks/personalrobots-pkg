@@ -60,9 +60,9 @@ private:
 	ros::WallTime tm = ros::WallTime::now();
 	sf_.mask(*cloud, mask);
 	double sec = (ros::WallTime::now() - tm).toSec();
-	ROS_DEBUG("Self filter: reduced %d points to %d points in %f seconds", (int)cloud->pts.size(), (int)out.pts.size(), sec);
 	fillResult(*cloud, mask, out);
 	pointCloudPublisher_.publish(out);
+	ROS_DEBUG("Self filter: reduced %d points to %d points in %f seconds", (int)cloud->pts.size(), (int)out.pts.size(), sec);
     }
 
     void fillResult(const robot_msgs::PointCloud& data_in, const std::vector<bool> &keep, robot_msgs::PointCloud& data_out)
