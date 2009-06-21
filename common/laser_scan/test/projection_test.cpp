@@ -69,7 +69,7 @@ laser_scan::LaserScan build_constant_scan(double range, double intensity,
 
 void test_getUnitVectors (float angle_min, float angle_max, float angle_increment)
 {
-  double tolerance = 1e-12;
+  double tolerance = 1e-6;
   laser_scan::LaserProjection projector;  
   
   const boost::numeric::ublas::matrix<double> & mat = projector.getUnitVectors(angle_min, angle_max, angle_increment);
