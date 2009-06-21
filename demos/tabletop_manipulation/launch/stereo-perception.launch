@@ -3,7 +3,7 @@
   <include file="$(find pr2_defs)/pr2_planning_environment.launch" />
   <include file="$(find stereo_image_proc)/stereo.launch" />
   
-  <node pkg="new_robot_self_filter" type="self_filter" args="robot_description:=robotdesc/pr2 full_cloud:=stereo/cloud" respawn="true" output="screen" />
+  <node pkg="new_robot_self_filter" type="self_filter" args="robot_description:=robotdesc/pr2 cloud_in:=stereo/cloud cloud_out:=full_cloud_filtered" respawn="true" output="screen" />
   
   <include file="$(find collision_map)/collision_map.launch" />
   
