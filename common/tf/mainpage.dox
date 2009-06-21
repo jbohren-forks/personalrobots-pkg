@@ -183,6 +183,15 @@ Use \ref tf_monitor
 
 Use \ref tf_echo
 
+@subsection old_data TF_SELF_TRANSFORM
+ - What does a warning about TF_SELF_TRANFORM mean?
+
+TF_SELF_TRANSFORM errors occur when a transform is published with 
+itself listed as its parent.  TF will ignore this information for it 
+is impossible to be your own parent.  
+This means that there is a problem with the source of that transform
+which is listed as the authority in the error message. 
+
 @subsection old_data TF_OLD_DATA
  - What does a warning about TF_OLD_DATA mean?
 
