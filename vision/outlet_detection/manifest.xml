@@ -26,6 +26,7 @@
   <depend package="visualization_msgs" />
 
 
+  <sysdepend os="ubuntu" version="8.04-hardy" package="libatlas3gf-sse2" />
   <sysdepend os="ubuntu" version="8.04-hardy" package="python-matplotlib" />
   <sysdepend os="ubuntu" version="7.10-gutsy" package="python-matplotlib" />
   <sysdepend os="centos" version="5.2" package="python-matplotlib" />
