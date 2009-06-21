@@ -224,6 +224,7 @@ int main(int argc, char **argv)
 	{
 	    std::cout << "  Allowed execution time is " << allowed_time << " seconds" << std::endl;
 	}
+	else
 	if (cmd.substr(0, 5) == "time " && cmd.length() > 5)
 	{
 	    std::stringstream ss(cmd.substr(5));
