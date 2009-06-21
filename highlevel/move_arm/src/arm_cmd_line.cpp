@@ -52,9 +52,11 @@
 void printHelp(void)
 {
     std::cout << "Basic commands:" << std::endl;
-    std::cout << "   - help : this screen" << std::endl;
-    std::cout << "   - list : prints the list of arm joints" << std::endl;
-    std::cout << "   - quit : quits this program" << std::endl;
+    std::cout << "   - help       : this screen" << std::endl;
+    std::cout << "   - list       : prints the list of arm joints" << std::endl;
+    std::cout << "   - time       : shows the allowed execution time for arm movement" << std::endl;
+    std::cout << "   - time <val> : sets the allowed execution time for arm movement" << std::endl;
+    std::cout << "   - quit       : quits this program" << std::endl;
     std::cout << "Arm configuration commands:" << std::endl;
     std::cout << "   - show                    : shows the available configs" << std::endl;
     std::cout << "   - show <config>           : shows the values in <config>" << std::endl;
@@ -183,7 +185,8 @@ int main(int argc, char **argv)
     std::cout << std::endl << std::endl << "Using joints:" << std::endl;
     printJoints(names);
     std::cout << std::endl;
-    
+    double allowed_time = 10.0;
+
     while (nh.ok() && std::cin.good() && !std::cin.eof())
     {
 	std::cout << "command> ";
@@ -215,6 +218,22 @@ int main(int argc, char **argv)
 	    pr2_robot_actions::MoveArmGoal temp;
 	    setConfig(km.getRobotState(), names, temp);
 	    printConfig(temp);
+	}
+	else
+	if (cmd == "time")
+	{
+	    std::cout << "  Allowed execution time is " << allowed_time << " seconds" << std::endl;
+	}
+	if (cmd.substr(0, 5) == "time " && cmd.length() > 5)
+	{
+	    std::stringstream ss(cmd.substr(5));
+	    if (ss.good() && !ss.eof())
+	        ss >> allowed_time;
+	    else
+	        std::cerr << "Unable to parse time value " << ss.str() << std::endl;
+	    if (allowed_time <= 0.0)
+	        allowed_time = 10.0;
+	    std::cout << "  Allowed execution time is " << allowed_time << " seconds" << std::endl;
 	}
 	else
 	if (cmd == "clear")
@@ -270,7 +289,7 @@ int main(int argc, char **argv)
 			    std::cout << "Moving " << link << " to " << x << ", " << y << ", " << z << ", 0, 0, 0, 1..." << std::endl;
 			    pr2_robot_actions::MoveArmGoal g;
 			    setupGoalEEf(link, x, y, z, g);
-			    if (move_arm.execute(g, feedback, ros::Duration(10.0)) != robot_actions::SUCCESS)
+			    if (move_arm.execute(g, feedback, ros::Duration(allowed_time)) != robot_actions::SUCCESS)
 				std::cerr << "Failed achieving goal" << std::endl;
 			    else
 				std::cout << "Success!" << std::endl;

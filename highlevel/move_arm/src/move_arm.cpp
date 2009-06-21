@@ -63,11 +63,11 @@ namespace move_arm
     {	
 	node_handle_.param<std::string>("~arm", arm_, std::string());
 	node_handle_.param<bool>("~perform_ik", perform_ik_, true);
-	
+
 	// monitor robot
 	collisionModels_ = new planning_environment::CollisionModels("robot_description");
 	planningMonitor_ = new planning_environment::PlanningMonitor(collisionModels_);
-	
+
 	if (collisionModels_->getKinematicModel()->getGroupID(arm_) < 0)
 	{
 	    valid_ = false;
@@ -182,6 +182,7 @@ namespace move_arm
 	ros::ServiceClient clientCancel = node_handle_.serviceClient<pr2_mechanism_controllers::TrajectoryCancel>(CONTROL_CANCEL_NAME, true);
 
 	int                trajectoryId = -1;
+	bool               approx       = false;
 	ros::Duration      eps(0.01);
 	while (true)
 	{
@@ -225,6 +226,7 @@ namespace move_arm
 				    ROS_ERROR("Received path in unknown frame: '%s'", res.path.header.frame_id.c_str());
 				else
 				{
+				    approx = res.approximate;
 				    if (res.approximate)
 					ROS_INFO("Approximate path was found. Distance to goal is: %f", res.distance);
 				    ROS_INFO("Received path with %u states from motion planner", (unsigned int)res.path.states.size());
@@ -343,7 +345,16 @@ namespace move_arm
 		{
 		    // we are done; exit with success
 		    if (send_traj_query_res.done == pr2_mechanism_controllers::TrajectoryQuery::Response::State_Done)
+		    {
+		        if (approx && !planningMonitor_->isStateValidAtGoal(planningMonitor_->getRobotState()))
+			{
+			    ROS_INFO("Completed approximate path. Trying again to reach goal...");
+			    feedback = pr2_robot_actions::MoveArmState::PLANNING;	
+			    update(feedback);
+			    continue;
+			}
 			break;
+		    }
 		    // something bad happened in the execution
 		    if (send_traj_query_res.done != pr2_mechanism_controllers::TrajectoryQuery::Response::State_Active && 
 			send_traj_query_res.done != pr2_mechanism_controllers::TrajectoryQuery::Response::State_Queued)
@@ -364,8 +375,10 @@ namespace move_arm
 	}
 	
 	if (result == robot_actions::SUCCESS)
-	    ROS_INFO("Trajectory execution is complete");
-	
+	    ROS_INFO("Goal was reached");
+	else
+	    ROS_INFO("Goal was not reached");
+
 	return result;
     }
 
