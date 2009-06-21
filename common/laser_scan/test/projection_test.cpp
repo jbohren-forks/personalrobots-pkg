@@ -78,8 +78,9 @@ void test_getUnitVectors (float angle_min, float angle_max, float angle_incremen
 
   for (unsigned int i = 0; i < mat.size2(); i++)
   {
-    EXPECT_NEAR(angles::normalize_angle(atan2(mat(1,i), mat(0,i))),
-                angles::normalize_angle(angle_min + i * angle_increment),
+    EXPECT_NEAR(angles::shortest_anglular_distance(atan2(mat(1,i), mat(0,i)),
+                                                   angle_min + i * angle_increment),
+                0,
                 tolerance); // check expected angle
     EXPECT_NEAR(1.0, mat(1,i)*mat(1,i) + mat(0,i)*mat(0,i), tolerance); //make sure normalized
   }
