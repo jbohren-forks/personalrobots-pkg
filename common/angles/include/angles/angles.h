@@ -64,7 +64,7 @@ namespace angles
    * \brief normalize_angle_positive
    *
    *        Normalizes the angle to be 0 to 2*M_PI
-   *        It takes and returns native units.
+   *        It takes and returns radians.
    */
   static inline double normalize_angle_positive(double angle)
   {
@@ -76,7 +76,7 @@ namespace angles
    * \brief normalize
    *
    * Normalizes the angle to be -M_PI circle to +M_PI circle
-   * It takes and returns native units.
+   * It takes and returns radians.
    *
    */    
   static inline double normalize_angle(double angle)
@@ -93,11 +93,10 @@ namespace angles
    * \brief shortest_angular_distance
    *
    * Given 2 angles, this returns the shortest angular
-   * difference.  The inputs and ouputs are of course native
-   * units.
+   * difference.  The inputs and ouputs are of course radians.
    *
-   * As an example, if native units are degrees, the result
-   * would always be -180 <= result <= 180.  Adding the result
+   * The result
+   * would always be -pi <= result <= pi.  Adding the result
    * to "from" will always get you an equivelent angle to "to".
    */
     
