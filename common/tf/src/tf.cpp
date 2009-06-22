@@ -113,13 +113,40 @@ void Transformer::clear()
   }
 }
 
-void Transformer::setTransform(const Stamped<btTransform>& transform, const std::string& authority)
+bool Transformer::setTransform(const Stamped<btTransform>& transform, const std::string& authority)
 {
+  bool error_exists = false;
   if (transform.frame_id_ == transform.parent_id_)
   {
-    ROS_ERROR("TF_SELF_TRANSFORM: Ignoring transform with parent_id and frame_id both set to %s from authority: %s", transform.frame_id_.c_str(), authority.c_str());
-      return;
+    ROS_ERROR("TF_SELF_TRANSFORM: Ignoring transform from authority \"%s\" with parent_id and frame_id  \"%s\" because they are the same",  authority.c_str(), transform.frame_id_.c_str());
+    error_exists = true;
   }
+  
+  if (transform.frame_id_ == "")
+  {
+    ROS_ERROR("TF_NO_FRAME_ID: Ignoring transform from authority \"%s\" because frame_id not set ", authority.c_str());
+    error_exists = true;
+  }
+
+  if (transform.parent_id_ == "")
+  {
+    ROS_ERROR("TF_NO_PARENT_ID: Ignoring transform with frame_id \"%s\"  from authority \"%s\" because parent_id not set", transform.frame_id_.c_str(), authority.c_str());
+    error_exists = true;
+  }
+
+  if (std::isnan(transform.getOrigin().x()) || std::isnan(transform.getOrigin().y()) || std::isnan(transform.getOrigin().z())||
+      std::isnan(transform.getRotation().x()) ||       std::isnan(transform.getRotation().y()) ||       std::isnan(transform.getRotation().z()) ||       std::isnan(transform.getRotation().w()))
+  {
+    ROS_ERROR("TF_NAN_INPUT: Ignoring transform for frame_id \"%s\" from authority \"%s\" because of a nan value in the transform (%f %f %f) (%f %f %f %f)", 
+              transform.frame_id_.c_str(), authority.c_str(),
+              transform.getOrigin().x(), transform.getOrigin().y(), transform.getOrigin().z(), 
+              transform.getRotation().x(), transform.getRotation().y(), transform.getRotation().z(), transform.getRotation().w()
+              );
+    error_exists = true;
+  }    
+
+  if (error_exists)
+    return false;
   unsigned int frame_number = lookupOrInsertFrameNumber(transform.frame_id_);
   if (getFrame(frame_number)->insertData(TransformStorage(transform, lookupOrInsertFrameNumber(transform.parent_id_))))
   {
@@ -128,7 +155,9 @@ void Transformer::setTransform(const Stamped<btTransform>& transform, const std:
   else 
   {
     ROS_WARN("TF_OLD_DATA ignoring data from the past for frame %s at time %g according to authority %s\nPossible reasons are listed at ", transform.frame_id_.c_str(), transform.stamp_.toSec(), authority.c_str());
+    return false; 
   }
+  return true;
 };
 
 

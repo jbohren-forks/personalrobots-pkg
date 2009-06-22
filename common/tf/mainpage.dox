@@ -213,6 +213,31 @@ The error message will tell you what is the authority which is sending the
 outdated data.  If it is running in a ros node you can use viewFrames.py to 
 determine the more recent authority. See \ref viewFrames.
 
+@subsection tf_self_transform TF_SELF_TRANSFORM 
+ - What does the error TF_SELF_TRANSFORM mean? 
+
+The TF_SELF_TRANSFORM error means that a transform was published or input 
+which has the parent_id set the same as the parent_id.  This transform 
+will be ignored by TF.
+
+@subsection tf_no_frame_id TF_NO_FRAME_ID
+ - What does the error TF_NO_FRAME_ID mean?
+
+The TF_NO_FRAME_ID error means that a transform was attempted to be set
+with an empty frame_id.  This transform will be ignored by TF. 
+
+@subsection tf_no_parent_id TF_NO_PARENT_ID
+ - What does the error TF_NO_PARENT_ID mean?
+
+The TF_NO_PARENT_ID error means that a transform was attempted to be set
+with an empty parent_id.  This transform will be ignored by TF. 
+
+@subsection tf_nan_input
+ - What does the error TF_NAN_INPUT mean?
+
+The TF_NAN_INPUT error means that a transform was attempted to be set
+with a nan value.  This transform will be ignored by TF. 
+
 @subsection extrapolation_exceptions Extrapolation Exceptions
  - I'm seeing an ExtrapolationException which is always X seconds in
 the past.  Why?

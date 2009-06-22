@@ -55,17 +55,37 @@ void generate_rand_vectors(double scale, uint64_t runs, std::vector<double>& xva
 
 using namespace tf;
 
-TEST(tf, setTransformNoInsertOnSelfReference)
+TEST(tf, setTransformNoInsertOnSelfTransform)
+{
+  tf::Transformer mTR(true);
+  Stamped<btTransform> tranStamped(btTransform(btQuaternion(0,0,0), btVector3(0,0,0)), ros::Time().fromNSec(10.0), "same_frame", "same_frame");
+  EXPECT_FALSE(mTR.setTransform(tranStamped));
+}
+
+TEST(tf, setTransformNoInsertWithNan)
 {
   tf::Transformer mTR(true);
   Stamped<btTransform> tranStamped(btTransform(btQuaternion(0,0,0), btVector3(0,0,0)), ros::Time().fromNSec(10.0), "same_frame", "other_frame");
-  mTR.setTransform(tranStamped);
+  EXPECT_TRUE(mTR.setTransform(tranStamped));
 
-  tranStamped.parent_id_ = "same_frame";
-  mTR.setTransform(tranStamped);
-  //This would fail if the second setting was inserted first into the list for the tree would be malformed.  
-  EXPECT_TRUE(mTR.canTransform("same_frame", "other_frame", ros::Time().fromNSec(10)));
+  tranStamped.setOrigin(tf::Point(1.0,1.0,0.0/0.0));
+  EXPECT_TRUE(std::isnan(tranStamped.getOrigin().z()));
+  EXPECT_FALSE(mTR.setTransform(tranStamped));
 
+}
+
+TEST(tf, setTransformNoInsertWithNoFrameID)
+{
+  tf::Transformer mTR(true);
+  Stamped<btTransform> tranStamped(btTransform(btQuaternion(0,0,0), btVector3(0,0,0)), ros::Time().fromNSec(10.0), "", "parent_frame");
+  EXPECT_FALSE(mTR.setTransform(tranStamped));
+}
+
+TEST(tf, setTransformNoInsertWithNoParentID)
+{
+  tf::Transformer mTR(true);
+  Stamped<btTransform> tranStamped(btTransform(btQuaternion(0,0,0), btVector3(0,0,0)), ros::Time().fromNSec(10.0), "my_frame", "");
+  EXPECT_FALSE(mTR.setTransform(tranStamped));
 }
 
 TEST(tf, TransformTransformsCartesian)

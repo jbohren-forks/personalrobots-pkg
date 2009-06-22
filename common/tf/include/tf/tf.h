@@ -99,7 +99,12 @@ public:
   /** \brief Clear all data */
   void clear();
 
-  void setTransform(const Stamped<btTransform>& transform, const std::string & authority = "default_authority");
+  /** \brief Add transform information to the tf data structure 
+   * \param transform The transform to store
+   * \param authority The source of the information for this transform 
+   * returns true unless an error occured
+   */
+  bool setTransform(const Stamped<btTransform>& transform, const std::string & authority = "default_authority");
 
   /*********** Accessors *************/
 
