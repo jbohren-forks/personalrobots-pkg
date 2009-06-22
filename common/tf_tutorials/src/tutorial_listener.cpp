@@ -142,12 +142,11 @@ int main(int argc, char ** argv)
     //Notifier
     ROS_INFO("This class will buffer messages coming in on topic objects and provide a callback when they can be transformed into target frame canaveral");
     NotifierUsingClass notifier_callback_class(tfl);   
-    tf::MessageNotifier<robot_msgs::PoseStamped>* notifier = new tf::MessageNotifier<robot_msgs::PoseStamped>(&tfl, 
-                                                                                                       &node, 
-                                                                                                       boost::bind(&NotifierUsingClass::notifierCallback, &notifier_callback_class, _1), //callback function
-                                                                                                       std::string("object"), //topic
-                                                                                                       std::string("canaveral"), //target_frame
-                                                                                                       100); //queue size
+    tf::MessageNotifier<robot_msgs::PoseStamped>* notifier = new tf::MessageNotifier<robot_msgs::PoseStamped>(tfl,
+                                                                                                              boost::bind(&NotifierUsingClass::notifierCallback, &notifier_callback_class, _1), //callback function
+                                                                                                              std::string("object"), //topic
+                                                                                                              std::string("canaveral"), //target_frame
+                                                                                                              100); //queue size
 
           
     sleep(10);
