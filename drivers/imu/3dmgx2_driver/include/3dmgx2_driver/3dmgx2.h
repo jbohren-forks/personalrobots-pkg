@@ -128,9 +128,18 @@ namespace ms_3dmgx2_driver
       CMD_TEMPERATURES             =  0xD1,
       CMD_GYROSTAB_ANGRATE_MAG     =  0xD2,
       CMD_DELVEL_DELANG_MAG        =  0xD3,
+      CMD_DEV_ID_STR               =  0xEA,
       CMD_STOP_CONTINUOUS          =  0xFA
     };
 
+    //! Enumeration of possible identifier strings for the getDeviceIdentifierString command.
+
+    enum id_string {
+      ID_MODEL_NUMBER   = 0,
+      ID_SERIAL_NUMBER  = 1,
+      ID_DEVICE_NAME    = 2,
+      ID_DEVICE_OPTIONS = 3
+    };
 
     //! Constructor
     IMU();
@@ -226,6 +235,14 @@ namespace ms_3dmgx2_driver
      * \param fix_off  Fixed time offset in seconds
      */
     void setFixedOffset(double fix_off) {fixed_offset = fix_off;};
+
+    //! Read one of the device identifier strings
+    /*!
+     * \param type Indicates which identifier string to read
+     * \param id Array that gets filled with the identifier string
+     * \return True if successful
+     */
+    bool getDeviceIdentifierString(id_string type, char id[17]);
 
   private:
     //! Send a command to the IMU and wait for a reply

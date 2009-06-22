@@ -391,6 +391,28 @@ ms_3dmgx2_driver::IMU::receiveEuler(uint64_t *time, double *roll, double *pitch,
   imu_time  = extractTime(rep + 13);
   *time = filterTime(imu_time, sys_time);
 }
+    
+////////////////////////////////////////////////////////////////////////////////
+// Receive Device Identifier String
+
+bool ms_3dmgx2_driver::IMU::getDeviceIdentifierString(id_string type, char id[17])
+{
+  uint8_t cmd[2];
+  uint8_t rep[20];
+
+  cmd[0] = CMD_DEV_ID_STR;
+  cmd[1] = type;
+
+  transact(cmd, sizeof(cmd), rep, sizeof(rep));
+  
+  if (cmd[0] != CMD_DEV_ID_STR || cmd[1] != type)
+    return false;
+
+  id[16] = 0;
+  memcpy(id, cmd+2, 16);
+
+  return true;
+}
 
 
 ////////////////////////////////////////////////////////////////////////////////
