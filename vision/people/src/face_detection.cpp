@@ -184,7 +184,7 @@ public:
 
     ROS_INFO_STREAM_NAMED("face_detector","Advertised people_tracker_measurements");
 
-    vis_pub_ = nh_.advertise<visualization_msgs::Marker>("~face_marker",0);
+    vis_pub_ = nh_.advertise<visualization_msgs::Marker>("visualization_marker",0);
 
     // Advertise the rectangles to draw if stereo_view is running.
     if (do_display_ == "remote") {
@@ -444,7 +444,7 @@ public:
 	  marker.pose.orientation.y = 0.0;
 	  marker.pose.orientation.z = 0.0;
 	  marker.pose.orientation.w = 1.0;
-	  marker.scale.x = 1;
+	  marker.scale.x = 0.1;
 	  marker.scale.y = 0.1;
 	  marker.scale.z = 0.1;
 	  marker.color.a = 1.0;
@@ -452,6 +452,9 @@ public:
 	  marker.color.g = 1.0;
 	  marker.color.b = 0.0;
 	  vis_pub_.publish(marker);
+	}
+	else {
+	  ROS_DEBUG_STREAM_NAMED("face_detector","The detection didn't have a valid size, so it wasn't visualized.");
 	}
 
 	// Image display 
