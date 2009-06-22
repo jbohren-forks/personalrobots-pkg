@@ -1,0 +1,17 @@
+<launch>
+
+  <node pkg="image_view" type="image_view" name="view_left">
+    <remap from="image" to="/laser_head_grabber/left"  />
+    <param name="~autosize" type="bool" value="true" />
+  </node>
+
+  <node pkg="image_view" type="image_view" name="view_right">
+    <remap from="image" to="/laser_head_grabber/right" />
+    <param name="~autosize" type="bool" value="true" />
+  </node>
+
+  <node pkg="image_view" type="image_view" name="view_laser">
+    <remap from="image" to="/laser_head_grabber/laser" />
+    <param name="~autosize" type="bool" value="true" />
+  </node>
+</launch>
