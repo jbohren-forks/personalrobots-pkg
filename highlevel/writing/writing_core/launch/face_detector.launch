@@ -1,0 +1,10 @@
+<launch>
+
+  <group ns="people">
+    <param name="face_detector/do_continuous" type="bool" value="false" />
+    <param name="face_detector/do_publish_faces_of_unknown_size" type="bool" value="false" />
+    <param name="face_detector/output" type="string" value="none" />
+  </group>
+  <node machine="four" pkg="people" type="face_detector" args="$(find people)/face_detection_nodes.txt" output="screen"/>
+
+</launch>
