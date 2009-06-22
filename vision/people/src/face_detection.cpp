@@ -103,8 +103,6 @@ public:
   ros::Subscriber pos_sub_;
   TopicSynchronizer sync_; /**< Stereo topic synchronizer. */
 
-  ros::Subscriber blah_sub_;
-
   // Publishers
   ros::Publisher pos_pub_;
   ros::Publisher vis_pub_;
@@ -123,6 +121,7 @@ public:
   double *reliabilities_; /**< Reliability of the predictions. This should depend on the training file used. */
 
   bool external_init_; 
+
   struct RestampedPositionMeasurement {
     ros::Time restamp;
     people::PositionMeasurement pos;
@@ -140,20 +139,18 @@ public:
   bool run_detector_;
   bool do_publish_unknown_;
 
-  FaceDetector(int num_filenames, string *names, string *haar_filenames, double *reliabilities, bool use_depth, bool external_init) : 
+  FaceDetector(int num_filenames, string *names, string *haar_filenames, double *reliabilities) : 
     BIGDIST_M(1000000.0),
-    sync_(&FaceDetector::imageCBAll, this),
     cv_image_left_(NULL),
     cv_image_disp_(NULL),
     cv_image_disp_out_(NULL),
-    use_depth_(use_depth),
+    sync_(&FaceDetector::imageCBAll,this),
     cam_model_(0),
     people_(0),
     num_filenames_(num_filenames),
     names_(names),
     haar_filenames_(haar_filenames),
     reliabilities_(reliabilities),
-    external_init_(external_init),
     quit_(false)
   { 
     
@@ -167,6 +164,8 @@ public:
     nh_.param("~face_detector/do_display",do_display_,std::string("none"));
     nh_.param("~face_detector/do_continuous",do_continuous_,true);
     nh_.param("~face_detector/do_publish_faces_of_unknown_size",do_publish_unknown_,false);
+    nh_.param("~face_detector/use_depth",use_depth_,true);
+    nh_.param("~face_detector/use_external_init",external_init_,true);
     run_detector_ = do_continuous_;
 
     people_ = new People();
@@ -317,12 +316,12 @@ public:
     gettimeofday(&timeofday,NULL);
     ros::Time endtdetect = ros::Time().fromNSec(1e9*timeofday.tv_sec + 1e3*timeofday.tv_usec);
     ros::Duration diffdetect = endtdetect - starttdetect;
-    ROS_DEBUG_STREAM_NAMED("face_detector","Detection duration = " << diffdetect.toSec() << "sec");
-
-    image_msgs::ColoredLines all_cls;
-    vector<image_msgs::ColoredLine> lines;   
+    ROS_DEBUG_STREAM_NAMED("face_detector","Detection duration = " << diffdetect.toSec() << "sec");   
 
     bool published = false;
+
+    image_msgs::ColoredLines all_cls;
+    vector<image_msgs::ColoredLine> lines;
 
     if (faces_vector.size() > 0 ) {
 
@@ -351,10 +350,6 @@ public:
 	}
       } 
       // End filter face position update
-
-      if (do_display_ == "remote"){
-	lines.resize(4*faces_vector.size());
-      }
 
       // Associate the found faces with previously seen faces, and publish all good face centers.
       Box2D3D *one_face;
@@ -411,13 +406,25 @@ public:
 
       } // end for iface
       pos_lock.unlock();
+
       // Clean out all of the distances in the pos_list_
       for (it = pos_list_.begin(); it != pos_list_.end(); it++) {
 	(*it).second.dist = BIGDIST_M;
       }
       // Done associating faces.
 
-      // Draw an appropriately colored rectangle on the display image.
+
+      // If you don't want continuous processing and you've found at least one face, turn off the detector.
+      if (!do_continuous_ && published) run_detector_ = false;
+
+      /******** Everything from here until the end of the function is for display *********/
+
+      // Draw an appropriately colored rectangle on the display image and in the visualizer.
+
+      if (do_display_ == "remote"){
+	lines.resize(4*faces_vector.size());
+      }
+
       for (uint iface = 0; iface < faces_vector.size(); iface++) {
 	one_face = &faces_vector[iface];	
 	
@@ -444,7 +451,7 @@ public:
 	  marker.color.r = 0.0;
 	  marker.color.g = 1.0;
 	  marker.color.b = 0.0;
-	  vis_pub_.publish(marker );
+	  vis_pub_.publish(marker);
 	}
 
 	// Image display 
@@ -529,9 +536,6 @@ public:
     }
     // Done display
 
-    // If you don't want continuous processing and you've found at least one face, turn off the detector.
-    if (!do_continuous_ && published) run_detector_ = false;
-
   }
 
 
@@ -570,15 +574,10 @@ public:
 int main(int argc, char **argv)
 {
   ros::init(argc, argv);
-  bool use_depth = true;
-  bool external_init = true;
 
   if (argc < 2) {
     cerr << "A path to the file containing the experiment list is required.\n" << endl;
     return 0;
-  }
-  if (argc >= 3) {
-    external_init = atoi(argv[2]);
   }
 
   ifstream expfile(argv[1]);
@@ -603,7 +602,7 @@ int main(int argc, char **argv)
 
   ros::init(argc,argv,"face_detection");
 
-  people::FaceDetector fd(numlines, names, haar_filenames, reliabilities, use_depth, external_init);
+  people::FaceDetector fd(numlines, names, haar_filenames, reliabilities);
 
   fd.spin();
   
