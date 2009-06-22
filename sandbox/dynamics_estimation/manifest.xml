@@ -1,0 +1,22 @@
+<package>
+  <description brief="dynamics_estimation">
+
+     dynamics_estimation
+
+  </description>
+  <author>Mrinal Kalakrishnan/ kalakris@willowgarage.com</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://pr.willowgarage.com/wiki/dynamics_estimation</url>
+  
+  <depend package="roscpp" />
+  <depend package="rosrecord" />
+  <depend package="std_msgs" />
+  <depend package="robot_msgs" />
+  <depend package="kdl" />
+  <depend package="mechanism_model" />
+  <depend package="hardware_interface" />
+  
+</package>
+
+

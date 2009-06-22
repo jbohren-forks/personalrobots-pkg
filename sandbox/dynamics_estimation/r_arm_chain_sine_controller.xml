@@ -1,0 +1,36 @@
+<?xml version="1.0"?>
+<controllers>
+  <controller name="r_arm_chain_sine_controller" type="JointChainSineController">
+    <chain root="torso_lift_link" tip="r_gripper_tool_frame"
+	min_freq="0.3" max_freq="0.6" freq_randomness="0.01" />
+ 
+<!--   <cartesian_constraint min="-10 -10 -10" max="10 10 0.2" />
+    <cartesian_constraint min="-10 -0.3 -10" max="0.1 10 10" /> -->
+
+    <!-- PID gains for individual joints -->
+    <joint name="r_shoulder_pan_joint" >
+      <pid p="140.0" d="30.0" i="0.8" iClamp="100.0" />
+    </joint>
+    <joint name="r_shoulder_lift_joint" >
+      <pid p="70.0" d="20.0" i="0.0" iClamp="100.0" />
+    </joint>
+    <joint name="r_upper_arm_roll_joint" >
+      <pid p="50.0" d="5.0" i="0.2" iClamp="100.0" />
+    </joint>
+    <joint name="r_elbow_flex_joint" >
+      <pid p="100.0" d="5.0" i="0.5" iClamp="100.0" />
+    </joint>
+    <joint name="r_forearm_roll_joint" >
+      <pid p="10.0" d="2.0" i="0.1" iClamp="10.0" />
+    </joint>
+    <joint name="r_wrist_flex_joint" >
+      <pid p="10.0" d="0.5" i="0.1" iClamp="10.0" />
+    </joint>
+    <joint name="r_wrist_roll_joint" >
+      <pid p="10.0" d="0.5" i="0.1" iClamp="10.0" />
+    </joint>
+  </controller>
+
+</controllers>
+
+
