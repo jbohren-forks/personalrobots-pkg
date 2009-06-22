@@ -52,10 +52,12 @@
   </pr2_arm>
   <pr2_gripper side="r" parent="r_wrist_roll_link" />
 
+  <!--
   <pr2_arm side="l" reflect="1" parent="torso_lift_link">
     <origin xyz="0.0 0.188 0.0" rpy="0 0 0" />
   </pr2_arm>
   <pr2_gripper side="l" parent="l_wrist_roll_link" />
+  -->
 
   <pr2_ptz side="r" reflect="-1" parent="torso_lift_link">
     <origin xyz="0.0 -0.1975 0.2265" rpy="0 0 0" />
