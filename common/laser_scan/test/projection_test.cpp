@@ -78,7 +78,7 @@ void test_getUnitVectors (float angle_min, float angle_max, float angle_incremen
 
   for (unsigned int i = 0; i < mat.size2(); i++)
   {
-    EXPECT_NEAR(angles::shortest_anglular_distance(atan2(mat(1,i), mat(0,i)),
+    EXPECT_NEAR(angles::shortest_angular_distance(atan2(mat(1,i), mat(0,i)),
                                                    angle_min + i * angle_increment),
                 0,
                 tolerance); // check expected angle
