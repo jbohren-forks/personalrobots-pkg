@@ -1,0 +1,29 @@
+<launch>
+
+
+
+     <param name="target_frame" value="map"/>
+
+     <node pkg="annotated_planar_patch_map" type="annotation2d_lifter_to_tagged_patch_map_node" 
+     	   name="annotation_lifter" respawn="false" output="screen">
+
+	   <param name="target_frame" value="map"/>
+	   
+	   <remap from="planar_map" to="/patch_maps/map_l2"/>
+	   <remap from="stereo_info" to="/stereo/stereo_info"/>
+
+	   <param name="~max_extrapolation_distance" value="0.5"/>
+	   <param name="max_extrapolation_distance" value="0.5"/>
+
+	   <param name="min_num_indist_tolerance" value="1"/>
+	   <param name="max_allowed_num_outdist_tolerance" value="0"/>
+	   <param name="dist_tolerance" value="-1000.0"/>
+	   <param name="max_depth" value="5.0"/>
+	   <param name="min_depth" value="0.1"/>
+     </node>	   
+
+
+
+
+
+</launch>

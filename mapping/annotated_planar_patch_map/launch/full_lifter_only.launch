@@ -1,0 +1,27 @@
+<launch>
+  <node pkg="annotated_planar_patch_map" type="annotation_lifter_node" 
+     	   name="annotation_lifter" respawn="false" output="screen" >
+
+
+	   <remap from="bagserver-current" to="hist"/>
+
+	   <param name="fixed_frame" value="map"/>
+	   
+	   <remap from="build_map" to="/blank_map_server/build_map"/>
+	   <remap from="stereo_info" to="/hist/stereo/stereo_info"/>
+	   <remap from="/tf_message" to="/hist/tf_message"/>
+	   <remap from="/reset_time" to="/hist/reset_time"/>
+
+	   <param name="tf_tolerance_secs" value="0.5"/>
+
+	   <param name="min_num_indist_tolerance" value="1"/>
+	   <param name="max_allowed_num_outdist_tolerance" value="2"/>
+	   <param name="dist_tolerance" value="-1.0"/>
+	   <param name="max_depth" value="5.0"/>
+	   <param name="min_depth" value="0.1"/>
+
+	   <param name="interval_before" value="10.0"/>
+	   <param name="interval_after" value="10.0"/>
+     </node>	   
+
+</launch>

@@ -1,0 +1,8 @@
+<launch>
+
+     <node pkg="annotated_planar_patch_map" type="image_value_node"  name="im_val" respawn="false" output="screen">
+        <remap from="cam_info" to="/stereo/left/cam_info" />
+        <remap from="annotated_map" to="/patch_maps/map_l2" />
+     </node>
+
+</launch>

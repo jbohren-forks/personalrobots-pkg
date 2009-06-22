@@ -35,8 +35,8 @@
 * Author: Alexander Sorokin
 *********************************************************************/
 
-#ifndef ANNOTATED_MAP_PROJECTION_LIB_H
-#define ANNOTATED_MAP_PROJECTION_LIB_H
+#ifndef ANNOTATED_MAP_LIB_H
+#define ANNOTATED_MAP_LIB_H
 
 
 #include <string>
@@ -50,43 +50,22 @@
 #include <tf/transform_listener.h>
 
 #include <robot_msgs/PolygonalMap.h>
-#include <image_msgs/StereoInfo.h>
-#include <image_msgs/CamInfo.h>
 #include <annotated_map_msgs/TaggedPolygonalMap.h>
 #include <annotated_map_msgs/TaggedPolygon3D.h>
 
 #include <cv_mech_turk/ExternalAnnotation.h>
 
-namespace annotated_planar_patch_map
-{
-namespace projection
+namespace annotated_map_lib
 {
 
-void projectPolygonalMap(const image_msgs::StereoInfo& stereo_info_, const robot_msgs::PolygonalMap& transformed_map_3D, robot_msgs::PolygonalMap &transformed_map_2D);
 
-void projectPolygonPoints(double* projection,double img_w, double img_h, robot_msgs::Polygon3D polyIn,robot_msgs::Polygon3D& polyOut);
-void projectPolygonPointsNOP(double* projection,double img_w, double img_h, robot_msgs::Polygon3D polyIn,robot_msgs::Polygon3D& polyOut);
+std::vector<int> computeCorrespondence(const annotated_map_msgs::TaggedPolygonalMap& map,const annotated_map_msgs::TaggedPolygonalMap& map, double max_radius);
 
-void projectAnyObject(const image_msgs::StereoInfo& stereo_info_, const annotated_map_msgs::TaggedPolygonalMap& transformed_map_3D, annotated_map_msgs::TaggedPolygonalMap &transformed_map_2D);
-
-void projectAnyObject(const image_msgs::CamInfo& stereo_info_, const annotated_map_msgs::TaggedPolygonalMap& transformed_map_3D, annotated_map_msgs::TaggedPolygonalMap &transformed_map_2D);
-
-void projectAnyObjectNOP(const image_msgs::CamInfo& stereo_info_, const annotated_map_msgs::TaggedPolygonalMap& transformed_map_3D, annotated_map_msgs::TaggedPolygonalMap &transformed_map_2D);
-
-/* !
- * \brief Finds which polygons are visible in the current view. The polygons should be transformed 
- *        by the projection. The last coordinate should be depth for depth checking to work.
- *
- * @param map - the map, which polygons are checked. Should be projected into the camera frame.
-p * @param viewport - [minX, maxX, minY, maxY, minZ, maxZ];
- */
-std::vector<int> getVisibleProjectedPolygons(const annotated_map_msgs::TaggedPolygonalMap& map,
-                                             const std::vector<double>& viewport); 
+void transferAnnotations(const annotated_map_msgs::TaggedPolygonalMap& map,annotated_map_msgs::TaggedPolygonalMap& map,double max_radius);
 
 
-bool checkPolyInside(const robot_msgs::Polygon3D& poly,const std::vector<double>& viewport);
 
-} 
+
 } //end namespace
 
 

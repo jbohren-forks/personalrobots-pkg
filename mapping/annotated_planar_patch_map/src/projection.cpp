@@ -78,6 +78,7 @@ void annotated_planar_patch_map::projection::projectPolygonalMap(const image_msg
     transformed_map_2D.polygons[iPoly]=newPoly;
   }
 }
+
   
 
 void annotated_planar_patch_map::projection::projectPolygonPoints(double* projection,double img_w,double img_h,robot_msgs::Polygon3D polyIn,robot_msgs::Polygon3D& polyOut)
@@ -122,8 +123,16 @@ void annotated_planar_patch_map::projection::projectPolygonPoints(double* projec
     //new_pt.y = projected_pt.y();
     //new_pt.z = projected_pt.z();
 
-    new_pt.x= new_pt.x*(img_w/2) +img_w/2;
-    new_pt.y= new_pt.y*(img_h/2) +img_w/2;
+    if(projected_pt.z!=0)
+    {
+      //new_pt.x= new_pt.x*(img_w) +img_w/2;
+      //new_pt.y= new_pt.y*(img_h) +img_h/2;
+    }
+    else
+    {
+      new_pt.x= 1e10;
+      new_pt.y= 1e10;
+    }
     //new_pt.x= new_pt.x*stereo_info_.width;
     //new_pt.y= new_pt.y*stereo_info_.height;	
     /*printf("\t\tProjected from (%f, %f, %f) to (%f, %f)\n",
@@ -132,7 +141,97 @@ void annotated_planar_patch_map::projection::projectPolygonPoints(double* projec
   }
 }
 
+void annotated_planar_patch_map::projection::projectPolygonPointsNOP(double* projection,double img_w,double img_h,robot_msgs::Polygon3D polyIn,robot_msgs::Polygon3D& polyOut)
+{
+  //Project all points of all polygons
+  unsigned int num_pts = polyIn.get_points_size();
+  polyOut.set_points_size(num_pts);
+  for(unsigned int iPt = 0; iPt<num_pts; iPt++)
+  {
+    robot_msgs::Point32 &mpt=polyIn.points[iPt];
+    tf::Vector3 pt(-mpt.y,-mpt.z,mpt.x);
+    //Vector3 projected_pt=projection * pt;
+    
+    robot_msgs::Point32 projected_pt;
+    projected_pt.x=
+      projection[0]*pt.x()+
+      projection[4]*pt.y()+
+      projection[8]*pt.z()+
+      projection[12]*1;
+    projected_pt.y=
+      projection[1]*pt.x()+
+      projection[5]*pt.y()+
+      projection[9]*pt.z()+
+      projection[13]*1;
+    projected_pt.z=
+      projection[2]*pt.x()+
+      projection[6]*pt.y()+
+      projection[10]*pt.z()+
+      projection[14]*1;
+    /*double s=
+      projection[3]*pt.x()+
+      projection[7]*pt.y()+
+      projection[11]*pt.z()+
+      projection[15]*1;*/
+
+    robot_msgs::Point32 &new_pt=polyOut.points[iPt];
+    new_pt.x= projected_pt.x;
+    new_pt.y= projected_pt.y;
+    new_pt.z = projected_pt.z;
+    new_pt.z = pt.z();
+    //new_pt.x = projected_pt.x();
+    //new_pt.y = projected_pt.y();
+    //new_pt.z = projected_pt.z();
+
+
+    new_pt.x= -mpt.x*(img_w/2) +img_w/2;
+    new_pt.y= -mpt.z*(img_h/2) +img_h/2;
+    //new_pt.x= new_pt.x*stereo_info_.width;
+    //new_pt.y= new_pt.y*stereo_info_.height;	
+    printf("\t\tProjected from (%f, %f, %f) to (%f, %f)\n",
+      mpt.x,mpt.y,mpt.z,
+      new_pt.x,new_pt.y);
+  }
+}
+
 void annotated_planar_patch_map::projection::projectAnyObject(const image_msgs::StereoInfo& stereo_info, const annotated_map_msgs::TaggedPolygonalMap& transformed_map_3D, annotated_map_msgs::TaggedPolygonalMap &transformed_map_2D)
+{
+  bool bSame = (&transformed_map_3D == &transformed_map_2D);
+
+  //Get projections matrix
+  double projection[16];
+  for(int i=0;i<16;i++)
+    projection[i]=stereo_info.RP[i];
+
+
+  //Project all points of all polygons
+  unsigned int num_polygons = transformed_map_3D.get_polygons_size();
+  transformed_map_2D.set_polygons_size(num_polygons);
+  for(unsigned int iPoly = 0; iPoly<num_polygons; iPoly++)
+  {
+    //create new polygon 2D (z=1)
+    robot_msgs::Polygon3D newPoly;
+    projectPolygonPoints(projection,double(stereo_info.width),double(stereo_info.height),transformed_map_3D.polygons[iPoly].polygon,newPoly);
+
+    //put the polygon into 2D map
+    transformed_map_2D.polygons[iPoly].polygon=newPoly;
+    if (!bSame)
+    {
+      transformed_map_2D.polygons[iPoly].tags=transformed_map_3D.polygons[iPoly].tags;
+      transformed_map_2D.polygons[iPoly].tags_chan=transformed_map_3D.polygons[iPoly].tags_chan;
+      transformed_map_2D.polygons[iPoly].name=transformed_map_3D.polygons[iPoly].name;
+    }
+
+  }
+  if (! bSame )
+  {
+    transformed_map_2D.header = transformed_map_3D.header;
+  }
+}
+
+
+
+void annotated_planar_patch_map::projection::projectAnyObjectNOP(const image_msgs::CamInfo& stereo_info, const annotated_map_msgs::TaggedPolygonalMap& transformed_map_3D, annotated_map_msgs::TaggedPolygonalMap &transformed_map_2D)
 {
   bool bSame = (&transformed_map_3D == &transformed_map_2D);
 
@@ -140,8 +239,61 @@ void annotated_planar_patch_map::projection::projectAnyObject(const image_msgs::
   //tf::Transform projection;
   //btScalar tmp_proj[16];
   double projection[16];
-  for(int i=0;i<16;i++)
-    projection[i]=stereo_info.RP[i];
+  int i;
+  for(i=0;i<12;i++)
+    projection[i]=stereo_info.P[i];
+  //for(i=0;i<16;i++)
+  //    projection[i]=stereo_info.P[i];
+
+  for(;i<16;i++)
+    projection[i]=0;
+
+  //tmp_proj[i]=stereo_info.RP[i];
+
+  //projection.setFromOpenGLMatrix(tmp_proj);
+
+  //Project all points of all polygons
+  unsigned int num_polygons = transformed_map_3D.get_polygons_size();
+  transformed_map_2D.set_polygons_size(num_polygons);
+  for(unsigned int iPoly = 0; iPoly<num_polygons; iPoly++)
+  {
+    //create new polygon 2D (z=1)
+    robot_msgs::Polygon3D newPoly;
+    projectPolygonPointsNOP(projection,double(stereo_info.width),double(stereo_info.height),transformed_map_3D.polygons[iPoly].polygon,newPoly);
+
+    //put the polygon into 2D map
+    transformed_map_2D.polygons[iPoly].polygon=newPoly;
+    if (!bSame)
+    {
+      transformed_map_2D.polygons[iPoly].tags=transformed_map_3D.polygons[iPoly].tags;
+      transformed_map_2D.polygons[iPoly].tags_chan=transformed_map_3D.polygons[iPoly].tags_chan;
+      transformed_map_2D.polygons[iPoly].name=transformed_map_3D.polygons[iPoly].name;
+    }
+
+  }
+  if (! bSame )
+  {
+    transformed_map_2D.header = transformed_map_3D.header;
+  }
+}
+
+void annotated_planar_patch_map::projection::projectAnyObject(const image_msgs::CamInfo& stereo_info, const annotated_map_msgs::TaggedPolygonalMap& transformed_map_3D, annotated_map_msgs::TaggedPolygonalMap &transformed_map_2D)
+{
+  bool bSame = (&transformed_map_3D == &transformed_map_2D);
+
+  //Get projections matrix
+  //tf::Transform projection;
+  //btScalar tmp_proj[16];
+  double projection[16];
+  int i;
+  //for(i=0;i<12;i++)
+  //  projection[i]=stereo_info.P[i];
+  for(i=0;i<16;i++)
+    projection[i]=stereo_info.P[i];
+
+  for(;i<16;i++)
+    projection[i]=0;
+
   //tmp_proj[i]=stereo_info.RP[i];
 
   //projection.setFromOpenGLMatrix(tmp_proj);

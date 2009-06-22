@@ -81,7 +81,6 @@ void transformAnyObject(const std::string & target_frame,
 boost::numeric::ublas::matrix<double> transformAsMatrix(const tf::Transform& bt);
 
 
-
 template<class T>
 void transformAnyObject(const std::string & target_frame, 
                         tf::TransformListener *tf_listener,
@@ -90,6 +89,31 @@ void transformAnyObject(const std::string & target_frame,
 {
   tf::Stamped<tf::Transform> transform;
   tf_listener->lookupTransform(target_frame, object_in.header.frame_id, object_in.header.stamp, transform);
+  
+  annotated_map_lib::transformAnyObject(target_frame, (const tf::Transform*)&transform, object_in, object_out);
+}
+
+template<class T>
+void transformAnyObject(const std::string & target_frame, 
+                        tf::TransformListener *tf_listener,
+                        const T * object_in, 
+                        T & object_out)
+{
+  transformAnyObject(target_frame, 
+                          tf_listener,
+                          * object_in, 
+                          object_out);
+}
+
+template<class T>
+void transformAnyObject(const std::string & target_frame, 
+                        const ros::Time& target_time,
+                        tf::TransformListener *tf_listener,
+                        const T & object_in, 
+                        T & object_out)
+{
+  tf::Stamped<tf::Transform> transform;
+  tf_listener->lookupTransform(target_frame, object_in.header.frame_id, target_time, transform);
   
   annotated_map_lib::transformAnyObject(target_frame, (const tf::Transform*)&transform, object_in, object_out);
 }
@@ -112,6 +136,11 @@ void transformAnyObject(const std::string& target_frame,
   annotated_map_lib::transformAnyObject(target_frame, (const tf::Transform*)&transform, object_in, object_out);
   
 }
+
+
+
+void copyPolygonTags(const annotated_map_msgs::TaggedPolygon3D &polyIn,annotated_map_msgs::TaggedPolygon3D &polyOut);
+
 
 
 /* !
@@ -157,6 +186,7 @@ bool doesQueryMatchAny(std::vector<std::string> query,const annotated_map_msgs::
 
 
 bool doesQueryMatchAll(std::vector<std::string> query,const annotated_map_msgs::TaggedPolygon3D& poly);
+
 
 
 robot_msgs::Point32 computeMean(const robot_msgs::Polygon3D& poly);

@@ -56,6 +56,7 @@
 #include <annotated_map_msgs/TaggedPolygon3D.h>
 
 #include "annotated_planar_patch_map/annotated_map_lib.h"
+#include "annotated_planar_patch_map/projection.h"
 
 
 #include "ros/ros.h"
@@ -70,7 +71,7 @@ protected:
 
   tf::TransformListener *tf_;
 
-  annotated_map_msgs::TaggedPolygonalMapConstPtr& last_map_;
+  annotated_map_msgs::TaggedPolygonalMapConstPtr last_map_;
 
   image_msgs::CamInfoConstPtr cam_info_;
 
@@ -83,7 +84,7 @@ public:
 
   void init()
   {
-    tf_ = new tf::TransformListener( *this, true);
+    tf_ = new tf::TransformListener( *node_handle_.getNode(), true);
 
     subs_.push_back(node_handle_.subscribe<annotated_map_msgs::TaggedPolygonalMap>("annotated_map", 1000, &ImageValueNode::mapCallback, this));
     subs_.push_back(node_handle_.subscribe<image_msgs::CamInfo>("cam_info", 500, &ImageValueNode::caminfoCallback, this));
@@ -104,24 +105,24 @@ public:
     annotated_map_msgs::TaggedPolygonalMap transformed_map;
     annotated_map_msgs::TaggedPolygonalMap projected_map;
 
-    annotated_map_lib::transformAnyObject(cam_info_.header.frame_id,
+    annotated_map_lib::transformAnyObject(cam_info_->header.frame_id,
 					  tf_,
-					  last_map_,transformed_map);
+					  *last_map_,transformed_map);
 
     annotated_planar_patch_map::projection::projectAnyObject(
-				  cam_info_,
+				  *cam_info_,
 				  transformed_map,
 				  projected_map);
 
     std::vector<double> viewport;
     viewport.resize(4);
-    viewport[0]=-cam_info_.width/2;
-    viewport[1]= cam_info_.width/2;
-    viewport[2]=-cam_info_.height/2;
-    viewport[3]= cam_info_.height/2;
+    viewport[0]=-cam_info_->width/2;
+    viewport[1]= cam_info_->width/2;
+    viewport[2]=-cam_info_->height/2;
+    viewport[3]= cam_info_->height/2;
     //viewport[4]= 0.0;
     //viewport[5]= 4.0;
-    std::vector<int> visible_polygons=getVisibleProjectedPolygons(projected_map,
+    std::vector<int> visible_polygons = annotated_planar_patch_map::projection::getVisibleProjectedPolygons(projected_map,
 								  viewport);
     ROS_INFO("Num visible polygons %d",visible_polygons.size());
     
@@ -154,11 +155,11 @@ public:
 
 int main(int argc, char **argv)
 {
-  ros::init(argc, argv, "annotated_map_info");
+  ros::init(argc, argv, "image_value_node");
   ros::NodeHandle n;
 
-  AnnotatedMapInfo info(n);
-  info.init();
+  ImageValueNode vn(n);
+  vn.init();
 
   ros::spin();
 

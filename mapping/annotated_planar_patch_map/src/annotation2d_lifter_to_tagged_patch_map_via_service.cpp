@@ -54,6 +54,8 @@
 
 #include <robot_msgs/PolygonalMap.h>
 #include <image_msgs/StereoInfo.h>
+#include <image_msgs/CamInfo.h>
+#include "tf/message_notifier.h"
 
 #include <cv_mech_turk/ExternalAnnotation.h>
 #include <annotated_map_msgs/TaggedPolygonalMap.h>
@@ -62,71 +64,90 @@
 #include "annotated_planar_patch_map/annotated_map_lib.h"
 #include "annotated_planar_patch_map/projection.h"
 
+#include "annotated_planar_patch_map/BuildAnnotatedMap.h"
+#include "bagserver/History.h"
+
+
 using namespace std;
 using namespace tf;
 
+void printTaggedPolygon3D(annotated_map_msgs::TaggedPolygonalMap transformed_map,std::string tag);
 
-class Annotation2DLifterToPlanarPatchMap : public ros::Node
+class Annotation2DLifterToTaggedPatchMapSVC : public ros::Node
 {
+
+  ros::NodeHandle n_;
+  ros::Publisher lifted_pub_;
+  ros::Subscriber annotation_sub_;
+
 public:
-  Annotation2DLifterToPlanarPatchMap() : ros::Node("annotation2d_lifter_to_planar_patch_map") 
+  Annotation2DLifterToTaggedPatchMapSVC() 
+  {
+  }
+
+  void init()
   {
 
     out_topic_name_=std::string("poly_object_map");
 
-    tf_ = new tf::TransformListener( *this, true);
+    /*NOTE: this tf_ will be listening to the BAGSERVER TIME! */
+    tf_ = new tf::TransformListener( *this, true, ros::Duration(30.0));
 
-    param( std::string("target_frame"), target_frame_, std::string("odom"));
+    param( std::string("~fixed_frame"), fixed_frame_, std::string("map"));
+    ROS_INFO_STREAM("Fixed frame is " <<fixed_frame_);
 
-    param( std::string("dist_tolerance"), dist_tolerance_, -10.0);
-    param( std::string("min_num_indist_tolerance"), min_num_indist_tolerance_, 1);
-    param( std::string("max_allowed_num_outdist_tolerance"), max_allowed_num_outdist_tolerance_, 10000);
+    /*Geometry location tolerance */
+    param( std::string("~dist_tolerance"), dist_tolerance_, -10.0);
+    param( std::string("~min_num_indist_tolerance"), min_num_indist_tolerance_, 1);
+    param( std::string("~max_allowed_num_outdist_tolerance"), max_allowed_num_outdist_tolerance_, 10000);
 
-    param( std::string("max_depth"), max_depth_, 10.0);
-    param( std::string("min_depth"), min_depth_, 0.0);
-
-
-    subscribe( std::string("stereo_info"), stereo_info_, &Annotation2DLifterToPlanarPatchMap::handleStereoInfo, 500);
-    subscribe( std::string("annotations_2d"), annotation2d_object_, &Annotation2DLifterToPlanarPatchMap::handleAnnotation, 500);
-    subscribe( std::string("planar_map"), unlabeled_map_, &Annotation2DLifterToPlanarPatchMap::handleUnlabeledMap, 500);
+    /*Geometry location tolerance */
+    param( std::string("~max_depth"), max_depth_, 10.0);
+    param( std::string("~min_depth"), min_depth_, 0.0);
 
 
-    advertise<annotated_map_msgs::TaggedPolygonalMap>(out_topic_name_,1);
+    /*Geometry querying config */
+    double interval;
+    param( std::string("~interval_before"), interval, 1.0);
+    interval_before_image_=ros::Duration(interval);
 
+    param( std::string("~interval_after"), interval, 1.0);
+    interval_after_image_=ros::Duration(interval);
+
+
+    n_.getNode()->subscribe( std::string("annotations_2d"), annotation2d_object_, &Annotation2DLifterToTaggedPatchMapSVC::handleAnnotation, 500);
+    n_.getNode()->subscribe( std::string("stereo_info"), stereo_info_, &Annotation2DLifterToTaggedPatchMapSVC::handleStereoInfo, 500);
+    //n_.getNode()->subscribe( std::string("scam_info"), stereo_info_, &Annotation2DLifterToTaggedPatchMapSVC::handleStereoInfo, 500);
+
+    // **** Get the TF Notifier Tolerance ****
     double tf_tolerance_secs ;
     ros::Node::instance()->param("~tf_tolerance_secs", tf_tolerance_secs, 0.0) ;
     if (tf_tolerance_secs < 0)
       ROS_ERROR("Parameter tf_tolerance_secs<0 (%f)", tf_tolerance_secs) ;
     ROS_INFO("tf Tolerance: %f seconds", tf_tolerance_secs) ;    
+
     tf_->setExtrapolationLimit(ros::Duration(tf_tolerance_secs)) ;
-
-
+    
+    lifted_pub_=n_.advertise<annotated_map_msgs::TaggedPolygonalMap>(out_topic_name_,1);
   };
-  void handleUnlabeledMap()
-  {
-    printf("Unlabeled map\n");
-  }
+
+  //void handleStereoInfo(image_msgs::StereoInfoConstPtr si)
   void handleStereoInfo()
   {
-    //printf("StereoInfo\n");
-  }
-  void handleAnnotation()
-  {
+    ROS_INFO("StereoInfo\n");
     try
     {
+      //stereo_info_;
 
-      printf("Annotation\n");
-      for (unsigned int i=0;i<annotation2d_object_.get_polygons_size();i++)
+      if( annotation2d_object_.reference_time != stereo_info_.header.stamp)
       {
-	cv_mech_turk::AnnotationPolygon &poly=annotation2d_object_.polygons[i];
-	for (unsigned int iP=0;iP<poly.get_control_points_size();iP++)
-        {
-	  printf("\t\tAnnotation (%f, %f)\n",
-		 poly.control_points[iP].x,
-		 poly.control_points[iP].y);
-	}
+        ROS_ERROR_STREAM("Times mismatch: " << annotation2d_object_.reference_time << " v.s. " <<stereo_info_.header.stamp );
+        return;
       }
 
+
+      ros::Duration d = ros::Duration(1, 0);
+      d.sleep();
 
       annotated_map_msgs::TaggedPolygonalMap polymapOut;
       liftAnnotation(annotation2d_object_,polymapOut);
@@ -138,43 +159,82 @@ public:
 	printf("\tfirst polygon has %d pts\n", polymapOut.polygons[0].polygon.get_points_size());
 	publish( out_topic_name_, polymapOut);     
       }
+
     }
     catch (TransformException& ex)
     {
       ROS_ERROR("Failure to transform detected object:: %s\n", ex.what());
     }
+  }
 
+  void handleAnnotation()
+  {
+    ROS_INFO("A");
+    //Now we got the annotation, but haven't got the stereo information
+    //Get if from the bagserver
+    /*
+    bagserver::History::Request req;
+    bagserver::History::Response resp;
+    req.begin = annotation2d_object_.reference_time-ros::Duration(5);
+    req.end = annotation2d_object_.reference_time+ros::Duration(5);
+    req.topic = "/tf_message,/laser_tilt_controller/laser_scanner_signal,/tilt_laser";
+    ros::service::call("bagserver-current",req,resp);
 
-  };
+    ros::Duration d = ros::Duration(1, 0);
+    d.sleep();*/
+
+    bagserver::History::Request req2;
+    bagserver::History::Response resp2;
+    req2.begin = annotation2d_object_.reference_time-ros::Duration(0.2);
+    req2.end = annotation2d_object_.reference_time+ros::Duration(0.2);
+    req2.topic = "*";
+    ros::service::call("bagserver-current",req2,resp2);
+
+    //Put the annotation in the hashtable?
+  }
+
   void liftAnnotation(cv_mech_turk::ExternalAnnotation annotation2d_object_,annotated_map_msgs::TaggedPolygonalMap& polymapOut)
   {
 
-    robot_msgs::PolygonalMap transformed_map_3D;
-    robot_msgs::PolygonalMap transformed_map_3D_fixed_frame;
-    robot_msgs::PolygonalMap transformed_map_2D;
+    annotated_map_msgs::TaggedPolygonalMap transformed_map_3D;
+    annotated_map_msgs::TaggedPolygonalMap transformed_map_3D_fixed_frame;
+    annotated_map_msgs::TaggedPolygonalMap transformed_map_2D;
 
-    //Get the 3D map into the coordinate frame of the camera
-    ROS_DEBUG("Transform 3D map to frame: %s",annotation2d_object_.reference_frame.c_str());
-    annotated_map_lib::transformAnyObject(annotation2d_object_.reference_frame,tf_,unlabeled_map_,transformed_map_3D);
+    annotated_planar_patch_map::BuildAnnotatedMap::Request  req;
+    annotated_planar_patch_map::BuildAnnotatedMap::Response res;
+    req.begin = annotation2d_object_.reference_time-interval_before_image_;
+    req.end = annotation2d_object_.reference_time+interval_after_image_;
+    if (!ros::service::call("build_map", req, res))
+    {
+      ROS_ERROR("Can't build a map");
+    }
+    
+    ROS_DEBUG_STREAM("Got data in "<<     res.map.header.frame_id << " frame");
+    //annotated_map_lib::transformAnyObject(annotation2d_object_.reference_frame,annotation2d_object_.reference_time,tf_,res.map,transformed_map_3D);
+    annotated_map_lib::transformAnyObject(annotation2d_object_.reference_frame,annotation2d_object_.reference_time,tf_,res.map,transformed_map_3D);
 
-    ROS_DEBUG("Transform 3D map to frame: %s",target_frame_.c_str());
-    annotated_map_lib::transformAnyObject(target_frame_,tf_,unlabeled_map_,transformed_map_3D_fixed_frame);
+    ROS_DEBUG("Transform 3D map to frame: %s",fixed_frame_.c_str());
+    annotated_map_lib::transformAnyObject(fixed_frame_,annotation2d_object_.reference_time,tf_,res.map,transformed_map_3D_fixed_frame);
 
     ROS_DEBUG("Project map");
     //Project the 3D map into the image coordinates
-    annotated_planar_patch_map::projection::projectPolygonalMap(stereo_info_,transformed_map_3D,transformed_map_2D);
+    annotated_planar_patch_map::projection::projectAnyObject(stereo_info_,transformed_map_3D,transformed_map_2D);
 
 
     ROS_DEBUG("Bind map");    
     //Bind 2D annotations to the projected 3D map and lift the annotations into 3D
     bindAnnotationsToMap(annotation2d_object_,transformed_map_3D_fixed_frame,transformed_map_2D,polymapOut);
     polymapOut.header.stamp=annotation2d_object_.reference_time;
-    polymapOut.header.frame_id=target_frame_;
+    polymapOut.header.frame_id=fixed_frame_;
+
+
+    printTaggedPolygon3D(transformed_map_3D,"cam");
+    printTaggedPolygon3D(transformed_map_2D,"proj");
+    printAnnotations2D( annotation2d_object_);
       
   }
 
-
-  void bindAnnotationsToMap(cv_mech_turk::ExternalAnnotation annotation2d_object, robot_msgs::PolygonalMap transformed_map_3D, robot_msgs::PolygonalMap transformed_map_2D,annotated_map_msgs::TaggedPolygonalMap &polymapOut)
+  void bindAnnotationsToMap(cv_mech_turk::ExternalAnnotation annotation2d_object, annotated_map_msgs::TaggedPolygonalMap transformed_map_3D, annotated_map_msgs::TaggedPolygonalMap transformed_map_2D,annotated_map_msgs::TaggedPolygonalMap &polymapOut)
   {
 
     //CvMemStorage* storage = cvCreateMemStorage();
@@ -200,7 +260,7 @@ public:
         pt.x=poly.control_points[iP].x;
         pt.y=poly.control_points[iP].y;
         //cvSeqPush( poly_annotation, &pt );
-
+        printf("p: %f, %f\n",pt.x,pt.y);
         CV_MAT_ELEM( *poly_annotation, CvPoint2D32f, 0, iP ) = pt;
 
       }
@@ -211,17 +271,18 @@ public:
       unsigned int num_3D_poly=transformed_map_3D.get_polygons_size();
       std::vector<int> overlap;
       overlap.reserve(num_3D_poly);
-	
+      printf("%d n3dp\n",num_3D_poly);	
+
       int num_overlap=0;
       for(unsigned int iPoly = 0; iPoly<num_3D_poly; iPoly++)
       {
         //we're checking this one
-        robot_msgs::Polygon3D &map_poly=transformed_map_2D.polygons[iPoly];
+        robot_msgs::Polygon3D &map_poly=transformed_map_2D.polygons[iPoly].polygon;
         int num_in=0,num_out=0;
         for(unsigned int iPt=0;iPt<map_poly.get_points_size();iPt++)
         {
 
-          bool in_depth=(map_poly.points[iPt].z <= max_depth_) && (map_poly.points[iPt].z >= min_depth_);
+          bool in_depth=true || (map_poly.points[iPt].z <= max_depth_) && (map_poly.points[iPt].z >= min_depth_);
           if(! in_depth)
           {
             num_out++;
@@ -240,10 +301,11 @@ public:
           {
             num_out++;
           }
+          //printf("%g ", dist);
 	    
         }
-        if(num_in>= min_num_indist_tolerance_ && 
-           num_out< max_allowed_num_outdist_tolerance_)
+        if( (num_in>= min_num_indist_tolerance_ && 
+                     num_out< max_allowed_num_outdist_tolerance_))
         {
           overlap[iPoly]=1;
           num_overlap++;
@@ -277,7 +339,7 @@ public:
         newPoly.tags_chan[0].set_vals_size(1);
         newPoly.tags_chan[0].vals[0]=1.0;
 
-        newPoly.polygon=transformed_map_3D.polygons[iPoly];
+        newPoly.polygon=transformed_map_3D.polygons[iPoly].polygon;
 	    
         //append polygon to the map
         polymapOut.polygons[iPolyAdd+old_num_polygons]=newPoly;
@@ -326,7 +388,7 @@ public:
 
 
 
-  void printPolygon3D(robot_msgs::PolygonalMap transformed_map,std::string tag)
+  void printTaggedPolygon3D(annotated_map_msgs::TaggedPolygonalMap transformed_map,std::string tag)
   {
 
     std::string fname=std::string("/u/sorokin/bags/run_may_21/dump/polygons3D__")+tag+std::string(".txt");
@@ -339,7 +401,7 @@ public:
     for(unsigned int iPoly = 0; iPoly<num_3D_poly; iPoly++)
     {
       //we're checking this one
-      robot_msgs::Polygon3D &map_poly=transformed_map.polygons[iPoly];
+      robot_msgs::Polygon3D &map_poly=transformed_map.polygons[iPoly].polygon;
       for(unsigned int iPt=0;iPt<map_poly.get_points_size();iPt++){
         fprintf(fOut,"%f %f %f\n",map_poly.points[iPt].x,
                 map_poly.points[iPt].y,
@@ -355,19 +417,26 @@ public:
 
 protected:
   tf::TransformListener *tf_;
+  tf::MessageNotifier<image_msgs::StereoInfo>* scan_notifier_ ;
 
   cv_mech_turk::ExternalAnnotation annotation2d_object_;
-  robot_msgs::PolygonalMap unlabeled_map_;
   image_msgs::StereoInfo stereo_info_;
+  //image_msgs::CamInfo stereo_info_;
 
-  std::string target_frame_;
+  std::string fixed_frame_;
 
   std::string out_topic_name_;
 
+  /** @brief intervals in which to collect geometry for the annotations */
+  ros::Duration interval_after_image_;
+  ros::Duration interval_before_image_;
 
-  double dist_tolerance_; //in pixels
+  /** @brief Reject anything outside of this range */
   double min_depth_; //in meters?
   double max_depth_; //in meters?
+
+
+  double dist_tolerance_; //in pixels
   int min_num_indist_tolerance_; //in vertices
   int max_allowed_num_outdist_tolerance_; //in vertices
 
@@ -379,9 +448,10 @@ int main(int argc, char **argv)
 
   try
   {
-    Annotation2DLifterToPlanarPatchMap lifter;
+    Annotation2DLifterToTaggedPatchMapSVC lifter;
+    lifter.init();
 
-    lifter.spin();
+    ros::spin();
   }
   catch(std::runtime_error& e)
   {
@@ -390,4 +460,10 @@ int main(int argc, char **argv)
   
   return 0;
 }
+
+
+
+
+
+
 

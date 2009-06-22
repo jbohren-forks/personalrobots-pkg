@@ -108,11 +108,11 @@ void annotated_map_lib::transformAnyObject(const std::string & target_frame,
   //Override the positions
   polymapOut.header.frame_id = target_frame;
   
-};
+}
 
 
 
-void transformAnyObject(const std::string & target_frame, 
+void annotated_map_lib::transformAnyObject(const std::string & target_frame, 
                         const tf::Transform* net_transform, 
                         const annotated_map_msgs::TaggedPolygonalMap & polymapIn, 
                         annotated_map_msgs::TaggedPolygonalMap & polymapOut)
@@ -183,7 +183,13 @@ void transformAnyObject(const std::string & target_frame,
 
 }
 
-void transformAnyObject(const std::string & target_frame, 
+void annotated_map_lib::copyPolygonTags(const annotated_map_msgs::TaggedPolygon3D &polyIn,annotated_map_msgs::TaggedPolygon3D &polyOut)
+{
+  polyOut.tags=polyIn.tags;
+  polyOut.tags_chan=polyIn.tags_chan;
+}
+
+void annotated_map_lib::transformAnyObject(const std::string & target_frame, 
                         const tf::Transform* net_transform, 
                         const annotated_map_msgs::TaggedPolygon3D & polyIn, 
                         annotated_map_msgs::TaggedPolygon3D & polyOut)
@@ -284,7 +290,7 @@ double annotated_map_lib::getMapAreaWithTagsMatchAll(const annotated_map_msgs::T
  *
  *
  */
-double getMapAreaWithTagsMatchAny(const annotated_map_msgs::TaggedPolygonalMap& map,std::vector<std::string> query_tags)
+double annotated_map_lib::getMapAreaWithTagsMatchAny(const annotated_map_msgs::TaggedPolygonalMap& map,std::vector<std::string> query_tags)
 {
   double tot_area=0;
   unsigned int num_poly=map.polygons.size();

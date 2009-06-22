@@ -31,5 +31,18 @@
      <param name="query" value="outlet"/>
      </node>
 
+     <node pkg="annotated_planar_patch_map" type="annotated_map_query_snapshotter"  name="am_snapshotter_q5" respawn="false" output="screen">
+     <remap from="query_annotated_map" to="/annotated_map/query_map" />
+     <remap from="full_map" to="/labeled_maps/whiteboard" />
+
+     <param name="query" value="whiteboard"/>
+     </node>
+
+     <node pkg="annotated_planar_patch_map" type="annotated_map_snapshotter"  name="am_l1_snapshotter" respawn="false" output="screen">
+        <remap from="build_annotated_map" to="/annotated_map/build_map" />
+        <remap from="full_map" to="/annotated_maps/snapshot_l1" />
+	<param name="snapshot_mode" value="rolling"/>
+	<param name="snapshot_timeout" value="60.0"/>
+     </node>
 
 </launch>

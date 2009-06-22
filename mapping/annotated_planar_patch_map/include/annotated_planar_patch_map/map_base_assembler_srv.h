@@ -203,7 +203,7 @@ private:
   ROS_INFO("tf Tolerance: %f seconds", tf_tolerance_secs) ;
 
   // ***** Start Listening to Data *****
-  scan_notifier_ = new tf::MessageNotifier<T>(tf_, ros::Node::instance(), boost::bind(&MapBaseAssemblerSrv<T,F>::scansCallback, this, _1), "/poly_object_map", fixed_frame_, 10) ;
+  scan_notifier_ = new tf::MessageNotifier<T>(tf_, ros::Node::instance(), boost::bind(&MapBaseAssemblerSrv<T,F>::scansCallback, this, _1), "poly_object_map", fixed_frame_, 10) ;
   scan_notifier_->setTolerance(ros::Duration(tf_tolerance_secs)) ;
 
 }
@@ -320,6 +320,7 @@ private:
   scan_hist_mutex_.unlock() ;
 
   ROS_DEBUG("Aggregate map results: Aggregated from index %u->%u. BufferSize: %u", start_index, past_end_index, scan_hist_.size()) ;
+  ROS_DEBUG_STREAM("Sending data in "<<     resp.map.header.frame_id << " frame");
   return true ;
 }
 

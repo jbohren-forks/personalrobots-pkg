@@ -16,6 +16,23 @@
      </node>
 
 
+     <node pkg="annotated_planar_patch_map" type="annotated_map_info"  name="am_info3" respawn="false" output="screen">
+        <remap from="annotated_map" to="/poly_object_map" />
+     </node>
+
+     <node pkg="annotated_planar_patch_map" type="annotated_map_info"  name="am_info3_door" respawn="false" output="screen">
+        <remap from="annotated_map" to="/labeled_maps/door" />
+     </node>
+
+     <node pkg="annotated_planar_patch_map" type="annotated_map_info"  name="am_info3_floor" respawn="false" output="screen">
+        <remap from="annotated_map" to="/labeled_maps/floor" />
+     </node>
+
+     <node pkg="annotated_planar_patch_map" type="annotated_map_info"   respawn="false" output="screen">
+        <remap from="annotated_map" to="/labeled_maps/wall" />
+     </node>
+
+
 
 
 </launch>

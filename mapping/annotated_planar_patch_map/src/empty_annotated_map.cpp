@@ -80,7 +80,9 @@ public:
 
     tf_ = new tf::TransformListener( *node_handle_.getNode(), true);
 
-    node_handle_.param( std::string("target_frame"), target_frame_, std::string("odom"));
+    node_handle_.param( std::string("~fixed_frame"), fixed_frame_, std::string("ERROR_NO_NAME")) ;
+  if (fixed_frame_ == "ERROR_NO_NAME")
+    ROS_ERROR("Need to set parameter fixed_frame") ;
 
     sub_=node_handle_.subscribe<robot_msgs::PolygonalMap>("planar_map", 100, &EmptyAnnotatedMap::handleUnlabeledMap, this);
 
@@ -96,7 +98,7 @@ public:
       annotated_map_msgs::TaggedPolygonalMap polymapOut;
 
       robot_msgs::PolygonalMap transformed_map_3D;
-      annotated_map_lib::transformAnyObject(target_frame_,tf_,*unlabeled_map,transformed_map_3D);
+      annotated_map_lib::transformAnyObject(fixed_frame_,tf_,*unlabeled_map,transformed_map_3D);
 
       unsigned int num_polygons = transformed_map_3D.get_polygons_size();
       if(num_polygons==0)
@@ -119,7 +121,7 @@ public:
         //append polygon to the map
         polymapOut.polygons[iPoly]=newPoly;
       }
-      polymapOut.header.frame_id=target_frame_;
+      polymapOut.header.frame_id=fixed_frame_;
       polymapOut.header.stamp=unlabeled_map->header.stamp;
 
       pub_.publish(polymapOut);     
@@ -136,7 +138,7 @@ public:
 protected:
   tf::TransformListener *tf_;
 
-  std::string target_frame_;
+  std::string fixed_frame_;
 
   std::string out_topic_name_;
 

@@ -1,0 +1,15 @@
+<launch>
+
+
+
+
+   <node pkg="bagserver" type="bagserver_srv.py" 
+     	   name="hist" respawn="false" output="screen">
+
+	   <param name="namespace" value="hist"/>
+	   <param name="index" value="/u/prdata/annotated_maps/prg_jun_12/index/raw.index"/>
+     </node>
+
+
+
+</launch>
