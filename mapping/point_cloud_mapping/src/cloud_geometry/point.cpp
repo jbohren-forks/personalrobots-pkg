@@ -179,7 +179,10 @@ namespace cloud_geometry
                  div_b.x, div_b.y, div_b.z, div_b.x * div_b.y * div_b.z * sizeof (Leaf));
     }
 
-    for (unsigned int cl = 0; cl < leaves.size (); cl++)
+    unsigned long leaves_size = div_b.x * div_b.y * div_b.z;
+    if (leaves_size != leaves.size())
+      ROS_ERROR("That's odd: %u != %u", leaves_size, leaves.size());
+    for (unsigned int cl = 0; cl < leaves_size; cl++)
     {
       if (leaves[cl].nr_points > 0)
       {
@@ -207,7 +210,7 @@ namespace cloud_geometry
 
     // Second pass: go over all leaves and compute centroids
     int nr_p = 0;
-    for (unsigned int cl = 0; cl < leaves.size (); cl++)
+    for (unsigned int cl = 0; cl < leaves_size; cl++)
     {
       if (leaves[cl].nr_points > 0)
       {
