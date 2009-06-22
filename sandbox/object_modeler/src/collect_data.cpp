@@ -122,7 +122,10 @@ int main(int argc, char** argv)
     goal_pose.orientation = direction(*i, target);
     PS goal_pose_stamped;
     goal_pose_stamped.pose = goal_pose;
+    goal_pose_stamped.header.stamp = ros::Time::now();
+    goal_pose_stamped.header.frame_id = "/map";
     PS move_feedback;
+    ROS_INFO("Sending move command");
     robot_actions::ResultStatus result_move = move_client.execute(goal_pose_stamped, move_feedback, ros::Duration(30));
     switch (result_move) {
     case robot_actions::SUCCESS:
@@ -153,8 +156,10 @@ int main(int argc, char** argv)
       break;
       }*/
   
+    ROS_INFO("Waiting 3 seconds");
     ros::Duration wait_time;
     wait_time.fromSec(3);
     wait_time.sleep();
-    }
+    ROS_INFO("Done waiting");
+  }
 }
