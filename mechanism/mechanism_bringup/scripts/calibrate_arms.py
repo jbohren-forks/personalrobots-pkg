@@ -232,7 +232,7 @@ if __name__ == '__main__':
     
     if len(sys.argv) > 1:
         #xmls = [slurp(filename) for filename in sys.argv[1:]]
-        xmls = [os.popen2("rosrun xacro xacro.py %s" % f)[1].read() for f in sys.argv[1:]]
+        xmls = [os.popen2("rosrun xacro xacro.py %s" % f)[1].read() for f in rospy.myargv()[1:]]
 
         # Poor man's xml splicer
         for i in range(len(xmls) - 1):
