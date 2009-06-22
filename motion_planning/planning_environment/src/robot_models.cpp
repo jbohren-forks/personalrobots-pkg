@@ -128,7 +128,7 @@ void planning_environment::RobotModels::loadRobot(void)
 	}
     }
     else
-	ROS_ERROR("Robot model '%s' not found!", description_.c_str());
+	ROS_ERROR("Robot model '%s' not found! Did you remap 'robot_description'?", description_.c_str());
 }
 
 

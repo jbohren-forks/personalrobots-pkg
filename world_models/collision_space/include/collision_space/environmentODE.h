@@ -42,10 +42,13 @@
 
 namespace collision_space
 {
-    
+    	
     /** A class describing an environment for a kinematic robot using ODE */
     class EnvironmentModelODE : public EnvironmentModel
-    {
+    {     
+	
+	friend void nearCallbackFn(void *data, dGeomID o1, dGeomID o2);
+	
     public:
 		
         EnvironmentModelODE(void) : EnvironmentModel()
@@ -78,7 +81,10 @@ namespace collision_space
 
 	/** Check if a model is in collision */
 	virtual bool isCollision(void);
-	
+
+	/** Check if a model is in self collision */
+	virtual bool isSelfCollision(void);
+
 	/** Remove all obstacles from collision model */
 	virtual void clearObstacles(void);
 
@@ -220,8 +226,9 @@ namespace collision_space
 	    std::vector<dGeomID>                   geom;
 	    bool                                   enabled;
 	    planning_models::KinematicModel::Link *link;
+	    unsigned int                           index;
 	};
-	
+
 	struct ModelInfo
 	{
 	    std::vector< kGeom* >                    linkGeom;

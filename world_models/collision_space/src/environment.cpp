@@ -44,6 +44,35 @@ void collision_space::EnvironmentModel::setVerbose(bool verbose)
 void collision_space::EnvironmentModel::addRobotModel(const boost::shared_ptr<planning_models::KinematicModel> &model, const std::vector<std::string> &links, double scale, double padding)
 {
     m_robotModel = model;
+    m_collisionLinks = links;
+    m_selfCollisionTest.resize(links.size());
+    for (unsigned int i = 0 ; i < links.size() ; ++i)
+    {
+	m_selfCollisionTest[i].resize(links.size(), false);
+	m_collisionLinkIndex[links[i]] = i;
+    }
+}
+
+void collision_space::EnvironmentModel::addSelfCollisionGroup(std::vector<std::string> &links)
+{
+    for (unsigned int i = 0 ; i < links.size() ; ++i)
+    {
+	if (m_collisionLinkIndex.find(links[i]) == m_collisionLinkIndex.end())
+	{
+	    m_msg.error("Unknown link '%s'", links[i].c_str());
+	    continue;
+	}
+	for (unsigned int j = i + 1 ; j < links.size() ; ++j)
+	{
+	    if (m_collisionLinkIndex.find(links[j]) == m_collisionLinkIndex.end())
+	    {
+		m_msg.error("Unknown link '%s'", links[j].c_str());
+		continue;
+	    }
+	    m_selfCollisionTest[m_collisionLinkIndex[links[i]]][m_collisionLinkIndex[links[j]]] = true;
+	    m_selfCollisionTest[m_collisionLinkIndex[links[j]]][m_collisionLinkIndex[links[i]]] = true;
+	}
+    }
 }
 
 void collision_space::EnvironmentModel::lock(void)

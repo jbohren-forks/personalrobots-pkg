@@ -103,6 +103,11 @@ public:
 	for (unsigned int i = 0 ; i < K ; ++i)
 	    em->isCollision();
 	ROS_INFO("%f collision tests per second (with self collision checking)", (double)K/(ros::WallTime::now() - tm).toSec());
+
+	tm = ros::WallTime::now();
+	for (unsigned int i = 0 ; i < K ; ++i)
+	    em->isSelfCollision();
+	ROS_INFO("%f collision tests per second (only self collision checking)", (double)K/(ros::WallTime::now() - tm).toSec());
     }
 
 protected:

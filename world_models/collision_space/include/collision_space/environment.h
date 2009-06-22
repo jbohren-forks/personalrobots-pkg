@@ -93,7 +93,7 @@ namespace collision_space
 	bool getSelfCollision(void) const;
 			
 	/** Add a group of links to be checked for self collision */
-	virtual void addSelfCollisionGroup(std::vector<std::string> &links) = 0;
+	virtual void addSelfCollisionGroup(std::vector<std::string> &links);
 
 	/** Enable/Disable collision checking for specific links. Return the previous value of the state (1 or 0) if succesful; -1 otherwise */
 	virtual int setCollisionCheck(const std::string &link, bool state) = 0;
@@ -123,7 +123,10 @@ namespace collision_space
 
 	/** Check if a model is in collision. Contacts are not computed */
 	virtual bool isCollision(void) = 0;
-
+	
+	/** Check for self collision. Contacts are not computed */
+	virtual bool isSelfCollision(void) = 0;
+	
 	/** Get the list of contacts (collisions) */
 	virtual bool getCollisionContacts(std::vector<Contact> &contacts, unsigned int max_count = 1) = 0;
 
@@ -161,6 +164,10 @@ namespace collision_space
     protected:
         
 	boost::mutex                                       m_lock;
+	std::vector<std::string>                           m_collisionLinks;
+	std::map<std::string, unsigned int>                m_collisionLinkIndex;
+	std::vector< std::vector<bool> >                   m_selfCollisionTest;
+	
 	bool                                               m_selfCollision;
 	bool                                               m_verbose;
 	planning_models::msg::Interface                    m_msg;

@@ -7,6 +7,8 @@ collision_links:
   torso_lift_link
   head_pan_link
   head_tilt_link
+  laser_tilt_mount_link
+  base_laser
   r_shoulder_pan_link
   r_shoulder_lift_link
   r_upper_arm_roll_link
@@ -28,7 +30,7 @@ self_collision_groups: scg_r
 ## -- for right arm; self-collision if any link in 'a' collides with some link in 'b'
 scg_r:
   a: r_forearm_link r_gripper_palm_link r_gripper_l_finger_link r_gripper_r_finger_link r_gripper_l_finger_tip_link r_gripper_r_finger_tip_link
-  b: base_link torso_lift_link laser_tilt_mount_link head_tilt_link
+  b: base_link base_laser torso_lift_link laser_tilt_mount_link head_tilt_link
 
 ## list of links that the robot can see with its sensors (used to remove 
 ## parts of the robot from scanned data)
@@ -47,6 +49,7 @@ self_see:
   r_shoulder_pan_link
   r_shoulder_lift_link
   torso_lift_link
+  base_laser
   base_link
   
 
