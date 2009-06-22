@@ -88,7 +88,7 @@ int main(int argc, char **argv)
     if (argc >= 9)
     {
         std::string name = std::string(argv[8]);
-        ROS_ERROR("Model Name: %s %d\n",name.c_str(),name.find(std::string("__log:")));
+        ROS_DEBUG("Model Name: %s %d\n",name.c_str(),name.find(std::string("__log:")));
         if (name.find(std::string("__log:")) == -1)
             robot_model_name = name;
     }
