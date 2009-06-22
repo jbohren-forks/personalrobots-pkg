@@ -1,0 +1,17 @@
+<package>
+  <description brief="python_actions">
+
+     python_actions
+
+  </description>
+  <author>James Bowman/ jamesb@willowgarage.com</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://pr.willowgarage.com/wiki/python_actions</url>
+  <depend package="robot_actions"/>
+  <depend package="rospy"/>
+  <depend package="robot_msgs"/>
+
+</package>
+
+

@@ -1,0 +1,4 @@
+<launch>
+  <node pkg="python_actions" type="tiny.py" output="screen" />
+  <node pkg="python_actions" type="exec" output="screen" />
+</launch>
