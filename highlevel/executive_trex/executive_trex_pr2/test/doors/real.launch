@@ -1,4 +1,7 @@
 <launch>
+  <!-- Reset controllers to their original state -->
+  <include file="$(find milestone2_actions)/reset_controllers.launch" />
+
   <master auto="start"/>
   <param name="/trex/enable_detect_plug_on_base" value="true"/>
   <param name="/trex/enable_base_state_publisher" value="true"/>
@@ -9,7 +12,7 @@
   <node pkg="executive_trex_pr2" type="stub_ros_container" respawn="false" />
   <node pkg="executive_trex_pr2" type="actions" respawn="false" />
 
-  <param name="/trex/input_file" value="playback.doorman.cfg"/>
+  <param name="/trex/input_file" value="doorman.cfg"/>
 
   <include file="$(find executive_trex_pr2)/test/trex_config.launch" />
 </launch>
