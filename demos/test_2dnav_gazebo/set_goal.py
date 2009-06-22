@@ -327,6 +327,9 @@ class NavStackTest(unittest.TestCase):
             print "========================"
             tmpoqi = quaternion_inverse(self.odom_qi)
             odom_q_delta = quaternion_multiply(tmpoqi,self.odom_q)
+            print "debug odom_qi:" , self.odom_qi
+            print "debug tmpoqi:" ,  tmpoqi
+            print "debug odom_q_delta:" ,  odom_q_delta
             print "odom delta:" , euler_from_quaternion(odom_q_delta)
             # compute delta in p3d from initial pose
             tmppqi = quaternion_inverse(self.p3d_qi)
