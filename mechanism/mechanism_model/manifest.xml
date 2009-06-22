@@ -15,6 +15,7 @@
 <depend package="bullet" />
 <depend package="loki" />
 <depend package="angles" />
+<depend package="kdl" />
 <url>http://pr.willowgarage.com</url>
 <export>
   <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -lmechanism_model -Wl,-rpath,${prefix}/lib -lloki"/>
