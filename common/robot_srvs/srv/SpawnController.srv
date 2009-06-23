@@ -1,5 +1,6 @@
 string xml_config
+uint8 autostart
 ---
-uint8[] ok
+int8[] ok
 string[] name
 string[] error
