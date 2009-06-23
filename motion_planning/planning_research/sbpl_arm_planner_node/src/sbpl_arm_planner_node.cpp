@@ -47,7 +47,7 @@ SBPLArmPlannerNode::SBPLArmPlannerNode(std::string node_name):ros::Node(node_nam
   param ("~torso_arm_offset_y", torso_arm_offset_y_, 0.0);
   param ("~torso_arm_offset_z", torso_arm_offset_z_, 0.0);
   param<std::string>("robotdesc/pr2", pr2_desc_, "NONE"); //set smarter default
-  param<std::string>("~collision_map_topic", collision_map_topic_, "collision_map");
+  param<std::string>("~collision_map_topic", collision_map_topic_, "collision_map_occ");
 
   // joints to plan for
   param ("~num_joints", num_joints_, 7);
@@ -147,9 +147,9 @@ void SBPLArmPlannerNode::collisionMapCallback()
   for(unsigned int i=0; i < collision_map_.boxes.size(); i++)
   {
     sbpl_boxes[i].resize(6);
-    sbpl_boxes[i][0] = collision_map_.boxes[i].center.x - torso_arm_offset_x_;
-    sbpl_boxes[i][1] = collision_map_.boxes[i].center.y - torso_arm_offset_y_;
-    sbpl_boxes[i][2] = collision_map_.boxes[i].center.z - torso_arm_offset_z_;
+    sbpl_boxes[i][0] = collision_map_.boxes[i].center.x; // - torso_arm_offset_x_;
+    sbpl_boxes[i][1] = collision_map_.boxes[i].center.y; // - torso_arm_offset_y_;
+    sbpl_boxes[i][2] = collision_map_.boxes[i].center.z; // - torso_arm_offset_z_;
 
     sbpl_boxes[i][3] = collision_map_.boxes[i].extents.x;
     sbpl_boxes[i][4] = collision_map_.boxes[i].extents.y;
@@ -158,6 +158,24 @@ void SBPLArmPlannerNode::collisionMapCallback()
 //     printf("[SBPLArmPlannerNode] obstacle %i: %.3f %.3f %.3f %.3f %.3f %.3f\n",i,sbpl_boxes[i][0],sbpl_boxes[i][1],
 //            sbpl_boxes[i][2],sbpl_boxes[i][3],sbpl_boxes[i][4],sbpl_boxes[i][5]);
   }
+
+  std::vector<double> robot_base(6);
+  robot_base[0] = .2;
+  robot_base[1] = -.188;
+  robot_base[2] = -.45;
+  robot_base[3] = .04;
+  robot_base[4] = .04;
+  robot_base[5] = .04;
+
+  for(double x = .2; x < .3; x += .01)
+    for(double y = -.3; y < .3; y += .02)
+      for(double z = -.5; z > -.75; z -= .04)
+      {
+	robot_base[0] = x;
+	robot_base[1] = y;
+	robot_base[2] = z;
+	sbpl_boxes.push_back(robot_base);
+      }
 
   //NOTE: clear map for dynamic obstacle support
   pr2_arm_env_.ClearEnv();
@@ -171,13 +189,13 @@ void SBPLArmPlannerNode::getSBPLCollisionMap()
 {
     std::vector<std::vector<double> > sbpl_cubes = (*(pr2_arm_env_.getCollisionMap()));
 
-//     for(unsigned int i=0; i < sbpl_cubes.size(); i++)
-//     {
-//         printf("[getSBPLCollisionMap] cube %i:, ",i);
-//         for(unsigned int k=0; k < sbpl_cubes[i].size(); k++)
-//             printf("%.3f ", sbpl_cubes[i][k]);
-//         printf("\n");
-//     }
+    for(unsigned int i=0; i < sbpl_cubes.size(); i++)
+    {
+        printf("[getSBPLCollisionMap] cube %i:, ",i);
+        for(unsigned int k=0; k < sbpl_cubes[i].size(); k++)
+            printf("%.3f ", sbpl_cubes[i][k]);
+        printf("\n");
+    }
 
     sbpl_collision_map_.header.frame_id = "torso_lift_link";
     sbpl_collision_map_.header.stamp = ros::Time::now();
@@ -260,7 +278,7 @@ bool SBPLArmPlannerNode::setGoalPosition(const std::vector<motion_planning_msgs:
     sbpl_goal[i][4] = pitch;
     sbpl_goal[i][5] = yaw;
 
-    sbpl_tolerance[i][0]  = .031; // goals[i].position_distance;
+    sbpl_tolerance[i][0]  = .021; // goals[i].position_distance;
     sbpl_tolerance[i][1]  = .4;  // goals[i].orientation_distance;
 
     ROS_INFO("OVERRIDING GOAL TOLERANCES. position_distance = %.3f m, orientation_distance = %.3f rad", sbpl_tolerance[i][0], sbpl_tolerance[i][1]);
@@ -494,13 +512,25 @@ bool SBPLArmPlannerNode::planToPosition(motion_planning_srvs::KinematicPlan::Req
 /** call back function */
 bool SBPLArmPlannerNode::planKinematicPath(motion_planning_srvs::KinematicPlan::Request &req, motion_planning_srvs::KinematicPlan::Response &res)
 {
+  ROS_INFO("Callback called\n");
+
   if(planner_type_ == "joint_space")
   {
+    if(req.goal_constraints.get_joint_constraint_size() <= 0)
+    {
+      ROS_INFO("There are no joint_constraints in the request message");
+      return false;
+    }
     if(!planToState(req, res))
       return false;
   }
   else
   {
+    if(req.goal_constraints.get_pose_constraint_size() <= 0)
+    {
+      ROS_INFO("There are no pose_constraints in the request message");
+      return false;
+    }
     if(!planToPosition(req, res))
       return false;
   }
