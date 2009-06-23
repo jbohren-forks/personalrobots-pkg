@@ -40,7 +40,7 @@ import time
 from robot_actions.msg import NoArgumentsActionState
 from robot_actions.msg import ActionStatus
 
-UNDEFINED = ActionStatus.UNDEFINED
+RESET = ActionStatus.RESET
 ACTIVE = ActionStatus.ACTIVE
 PREEMPTED = ActionStatus.PREEMPTED
 SUCCESS = ActionStatus.SUCCESS
@@ -53,7 +53,7 @@ class Action:
     self.nn = node_name
     self.rate = rate
 
-    self.status = UNDEFINED
+    self.status = RESET
     self.preempted = False
     self.goalmsg = goalmsg
     self.statemsg = statemsg
