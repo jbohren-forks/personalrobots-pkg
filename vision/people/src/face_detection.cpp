@@ -108,6 +108,9 @@ public:
   ros::Publisher vis_pub_;
   ros::Publisher clines_pub_;
 
+// Service
+ros::ServiceServer service_server_;
+
   string do_display_; /**< Type of display, none/local/remote */
   IplImage *cv_image_disp_out_; /**< Display image. */
 
@@ -161,11 +164,11 @@ public:
     }
 
     // Parameters
-    nh_.param("~face_detector/do_display",do_display_,std::string("none"));
-    nh_.param("~face_detector/do_continuous",do_continuous_,true);
-    nh_.param("~face_detector/do_publish_faces_of_unknown_size",do_publish_unknown_,false);
-    nh_.param("~face_detector/use_depth",use_depth_,true);
-    nh_.param("~face_detector/use_external_init",external_init_,true);
+    nh_.param("/people/face_detector/do_display",do_display_,std::string("none"));
+    nh_.param("/people/face_detector/do_continuous",do_continuous_,true);
+    nh_.param("/people/face_detector/do_publish_faces_of_unknown_size",do_publish_unknown_,false);
+    nh_.param("/people/face_detector/use_depth",use_depth_,true);
+    nh_.param("/people/face_detector/use_external_init",external_init_,true);
     run_detector_ = do_continuous_;
 
     people_ = new People();
@@ -197,7 +200,7 @@ public:
       ROS_INFO_STREAM_NAMED("face_detector","Subscribed to the person filter messages.");
     }
 
-    nh_.advertiseService("start_detection",&FaceDetector::startDetection,this);
+    service_server_ = nh_.advertiseService("start_detection",&FaceDetector::startDetection,this);
 
   }
 
