@@ -93,7 +93,7 @@ int
   switchlist.start_controllers.clear();  switchlist.stop_controllers.clear();
   switchlist.start_controllers.push_back("head_controller");
   if (switch_controllers.execute(switchlist, empty, switch_timeout) != robot_actions::SUCCESS) return -1;
-  if (find_helper.execute(empty, find_helper_pose_msg, Duration(200.0)) != robot_actions::SUCCESS) return -2;
+  if (find_helper.execute(empty, find_helper_pose_msg, Duration(100.0)) != robot_actions::SUCCESS) return -2;
 
   return 0;
 }

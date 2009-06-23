@@ -75,7 +75,8 @@ int
     find_helper("find_helper");
   robot_actions::ActionClient<robot_msgs::PoseStamped, nav_robot_actions::MoveBaseState, robot_msgs::PoseStamped>
     move_base_local("move_base_local");
-  
+  robot_actions::ActionClient<std_msgs::Empty, robot_actions::NoArgumentsActionState, std_msgs::Empty>
+    start_tilt_laser("set_laser_tilt");
   
 
   Duration(1.0).sleep();
@@ -109,18 +110,19 @@ int
   if (find_helper.execute(empty, find_helper_pose_msg, Duration(200.0)) != robot_actions::SUCCESS) return -2;
 
   // Determines the desired base position
-  tf::Pose helper_pose;
-  tf::PoseMsgToTF(find_helper_pose_msg.pose, helper_pose);
+  //tf::Pose helper_pose;
+  //tf::PoseMsgToTF(find_helper_pose_msg.pose, helper_pose);
 
-  tf::Pose desi_offset(tf::Quaternion(0,0,0), tf::Vector3(-1.5, 0.0, 0.0));
-  tf::Pose target = coarse_outlet_pose * desi_offset;
+  //tf::Pose desi_offset(tf::Quaternion(0,0,0), tf::Vector3(-1.5, 0.0, 0.0));
+  //tf::Pose target = coarse_outlet_pose * desi_offset;
 
-  robot_msgs::PoseStamped target_msg;
-  target_msg.header.frame_id = find_helper_pose_msg.header.frame_id;
-  tf::PoseTFToMsg(target, target_msg.pose);
+  //robot_msgs::PoseStamped target_msg;
+  //target_msg.header.frame_id = find_helper_pose_msg.header.frame_id;
+  //tf::PoseTFToMsg(target, target_msg.pose);
 
   // Executes move base
-  if (move_base_local.execute(target_msg, target_msg, Duration(500.0)) != robot_actions::SUCCESS) return -4;
+  if (start_tilt_laser.execute(empty, empty, Duration(20.0)) != robot_actions::SUCCESS) return -1;
+  if (move_base_local.execute(find_helper_pose_msg, find_helper_pose_msg, Duration(500.0)) != robot_actions::SUCCESS) return -4;
 
 
   return 0;
