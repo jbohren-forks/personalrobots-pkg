@@ -10,15 +10,15 @@
 
 <!-- Laser tilt controller -->
   <param name="laser_tilt_controller/autostart" type="bool" value="false" />
-  <node pkg="mechanism_control" type="spawner.py" args="$(find pr2_experimental_controllers)/laser_tilt/laser_tilt_controller.xml" />
+  <node pkg="mechanism_control" type="spawner.py" args="--stopped $(find pr2_experimental_controllers)/laser_tilt/laser_tilt_controller.xml" />
 
 <!-- Head controller -->
   <param name="head_controller/autostart" type="bool" value="false" />
-  <node pkg="mechanism_control" type="spawner.py" args="$(find pr2_default_controllers)/head_pan_tilt_controller.xml" />
+  <node pkg="mechanism_control" type="spawner.py" args="--stopped $(find pr2_default_controllers)/head_pan_tilt_controller.xml" />
 
 <!-- Gripper position controller -->
   <param name="r_gripper_position_controller/autostart" type="bool" value="false" />
-  <node pkg="mechanism_control" type="spawner.py" args="$(find pr2_default_controllers)/r_gripper_position_controller.xml" />
+  <node pkg="mechanism_control" type="spawner.py" args="--stopped $(find pr2_default_controllers)/r_gripper_position_controller.xml" />
 
 <!-- Joint Trajectory controller -->
   <group ns="r_arm_joint_trajectory_controller" clear_params="true">
@@ -32,9 +32,8 @@
     <param name="r_forearm_roll_joint/goal_reached_threshold" value="0.25" type="double" />
     <param name="r_wrist_flex_joint/goal_reached_threshold" value="0.25" type="double" />
     <param name="r_wrist_roll_joint/goal_reached_threshold" value="0.25" type="double" /> 
-    <param name="autostart" type="bool" value="false" /> 
   </group>
-  <node pkg="mechanism_control" type="spawner.py" args="$(find pr2_default_controllers)/r_arm_joint_trajectory_controller.xml" />
+  <node pkg="mechanism_control" type="spawner.py" args="--stopped $(find pr2_default_controllers)/r_arm_joint_trajectory_controller.xml" />
 
 <!-- Cartesian wrench controller -->
   <group ns="r_arm_cartesian_wrench_controller" clear_params="true">
@@ -45,7 +44,6 @@
 
 <!-- Cartesian twist controller -->
   <group ns="r_arm_cartesian_twist_controller" clear_params="true">
-    <param name="autostart" type="bool" value="false" />
     <param name="root_name" type="string" value="torso_lift_link" />
     <param name="tip_name" type="string" value="r_gripper_tool_frame" />
     <param name="output" type="string" value="r_arm_cartesian_wrench_controller" />
@@ -68,7 +66,6 @@
 
 <!-- Cartesian pose controller -->
   <group ns="r_arm_cartesian_pose_controller" clear_params="true">
-    <param name="autostart" type="bool" value="false" />
     <param name="root_name" type="string" value="torso_lift_link" />
     <param name="tip_name" type="string" value="r_gripper_tool_frame" />
     <param name="output" type="string" value="r_arm_cartesian_twist_controller" />
@@ -79,6 +76,6 @@
     <param name="i_clamp" value="0.5" />
   </group>
 
-<node pkg="mechanism_control" type="spawner.py" args="$(find pr2_default_controllers)/r_arm_cartesian_wrench_controller.xml $(find pr2_default_controllers)/r_arm_cartesian_twist_controller.xml $(find pr2_default_controllers)/r_arm_cartesian_pose_controller.xml" output="screen" />
+<node pkg="mechanism_control" type="spawner.py" args="--stopped $(find pr2_default_controllers)/r_arm_cartesian_wrench_controller.xml $(find pr2_default_controllers)/r_arm_cartesian_twist_controller.xml $(find pr2_default_controllers)/r_arm_cartesian_pose_controller.xml" output="screen" />
 
 </launch>
