@@ -50,6 +50,7 @@ public:
 
   void syncCB()
   {
+    ROS_INFO("syncCB called");
     boost::lock_guard<boost::mutex> guard(sync_mutex);
 
     cvShowImage(wnd_name, display_image.Ipl());

@@ -51,6 +51,7 @@ public:
   bool request_view(std_srvs::Empty::Request& req,
                     std_srvs::Empty::Response& rsp)
   {
+    ROS_INFO("View requested");
     request_mutex.lock();
     request_made = true;
     request_mutex.unlock();
