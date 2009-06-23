@@ -44,6 +44,7 @@ import math
 
 from std_msgs.msg import Empty
 from people.msg import PositionMeasurement
+from people.srv import StartDetection
 
 from robot_actions.msg import NoArgumentsActionState
 import pr2_robot_actions.msg
@@ -63,7 +64,7 @@ class FindHelperAction(python_actions.Action):
 
     self.head_controller_publisher = rospy.Publisher(self.head_controller + "/set_command_array", robot_msgs.msg.JointCmd)
     self.people_sub = rospy.Subscriber("/people/face_detector/people_tracker_measurements", PositionMeasurement, self.people_position_measurement)
-    self.face_det = rospy.ServiceProxy('start_detection', Empty)
+    self.face_det = rospy.ServiceProxy('start_detection', StartDetection)
 
   def people_position_measurement(self, msg):
     print "people_position_measurement:"
