@@ -52,11 +52,10 @@ from skeleton import Skeleton
 
 import cv
 
-import dcam
-
 class RealSource:
 
   def __init__(self):
+    import dcam
     self.dc = dcam.dcam()
 
   def cam(self):
@@ -139,6 +138,8 @@ class Demo:
       cv.MoveWindow("Camera", 0, 500)
 
   def handleFrame(self):
+    r = False
+
     (w,h,li,ri) = self.source.getImage()
 
     self.f = SparseStereoFrame(li, ri, feature_detector = self.fd, descriptor_scheme = self.ds)
@@ -149,6 +150,7 @@ class Demo:
     if self.vo.inl < 20:
       self.connected = False
       self.f.pose = Pose()
+      self.snail_trail = []
 
     # Add a frame to graph if:
     #   Frame zero, or
@@ -177,7 +179,7 @@ class Demo:
       self.last_added_pose = self.f.pose
       self.snail_trail = []
 
-    self.snail_trail.append(self.vo.pose)
+    self.snail_trail.append(self.f.pose)
 
     if self.camera_preview:
       # Run the OpenCV preview
@@ -195,13 +197,27 @@ class Demo:
       cv.ResetImageROI(self.cvim)
 
       green = cv.RGB(0,255,0)
+      red = cv.RGB(255,0,0)
+      def half(p):
+        return (p[0] / 2, p[1] / 2)
       for (x,y,d) in self.f.features():
-        cv.Circle(self.cvim, (x/2, y/2), 2, green)
+        cv.Circle(self.cvim, half((x, y)), 2, green)
         d = int(d)
         cv.Line(self.cvim, ((w+x-d)/2, y/2 - 2), ((w+x-d)/2, y/2 + 2), green)
+      a_features = self.vo.keyframe.features()
+      b_features = self.f.features()
+      inliers = set([ (b,a) for (a,b) in self.vo.pe.inl])
+      outliers = set(self.vo.pairs) - inliers
+      for (a,b) in inliers:
+        cv.Line(self.cvim, half(b_features[b]), half(a_features[a]), green)
+      for (a,b) in outliers:
+        cv.Line(self.cvim, half(b_features[b]), half(a_features[a]), red)
 
       cv.ShowImage("Camera", self.cvim)
-      cv.WaitKey(10)
+      if cv.WaitKey(10) == 27:
+        r = True
+
+    return r
 
   def anchor(self):
     """ Return the current pose of the most recently added skeleton node """
@@ -209,7 +225,10 @@ class Demo:
     return self.skel.newpose(id)
 
   def optimize(self):
-    self.skel.optimize()
+    self.skel.optimize(duration = 0.05)
+
+  def ioptimize(self):
+    self.skel.ioptimize()
 
   def report(self):
     print
@@ -224,7 +243,7 @@ class Demo:
     if len(self.skel.nodes) == 0:
       return self.vo.pose
     else:
-      return self.anchor() * (~demo.snail_trail[0] * self.snail_trail[-1])
+      return self.anchor() * (~self.snail_trail[0] * self.snail_trail[-1])
 
 while False:
   demo.handleFrame()
@@ -337,7 +356,8 @@ def DrawGLScene():
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
   if demo.running != 0:
-    demo.handleFrame()
+    if demo.handleFrame():
+      sys.exit()
     demo.running -= 1
 
   glMatrixMode(GL_MODELVIEW)
@@ -354,9 +374,12 @@ def DrawGLScene():
 
   # Draw the snail trail
 
-  if demo.connected:
+  if True: # demo.connected:
     anchor = demo.anchor()
-    glColor3f(0, 1, 0)
+    if demo.connected:
+      glColor3f(0, 1, 0)
+    else:
+      glColor3f(1, 0, 0)
     glBegin(GL_LINE_STRIP)
     for p in demo.snail_trail:
       relpose = anchor * (~demo.snail_trail[0] * p)
@@ -494,17 +517,17 @@ class MouseLook:
     self.z = M[2,3]
 
   def frob(self):
+    t = time.time()
+    delta = t - self.last
+    self.last = t
+
+    self.v_fwd += delta * self.a_fwd
+    if self.a_fwd:
+      self.v_fwd *= 0.99
+    else:
+      self.v_fwd *= 0.7
+
     if self.mode == 0:
-      t = time.time()
-      delta = t - self.last
-      self.last = t
-
-      self.v_fwd += delta * self.a_fwd
-      if self.a_fwd:
-        self.v_fwd *= 0.99
-      else:
-        self.v_fwd *= 0.7
-
       self.v_rgt += delta * self.a_rgt
       if self.a_rgt:
         self.v_rgt *= 0.99
@@ -521,7 +544,7 @@ class MouseLook:
     else:
       x,y,z = demo.pose().xform(0,0,0)
       self.x = -x
-      self.y = 10
+      self.y -= self.v_fwd * delta
       self.z = z
       self.th = 0
       self.phi = -math.pi / 2
@@ -540,6 +563,9 @@ class MouseLook:
 
     if k == 'o':
       demo.optimize()
+
+    if k == 'i':
+      demo.ioptimize()
 
     if k == '\r':
       self.fullscreen = not self.fullscreen
@@ -565,6 +591,8 @@ class MouseLook:
 
     if k == 'm':
       self.mode = (self.mode + 1) % 2
+      if self.mode == 0:
+        self.y = 10
     if self.mode == 0:
       glutWarpPointer(320,240)
       glutSetCursor(GLUT_CURSOR_NONE)
@@ -589,6 +617,10 @@ class MouseLook:
     elif k == GLUT_KEY_RIGHT:
       self.turn_r(th_inc)
 
+  def zoom(self, d):
+    if self.mode == 1:
+      self.y += d
+
   def passive(self, x, y):
     if self.mode == 0:
       if x != 320 or y != 240:
@@ -596,7 +628,7 @@ class MouseLook:
         self.turn_u((y - 240) * 0.001)
         glutWarpPointer(320,240)
 
-ml = MouseLook(0,0,4)
+ml = MouseLook(0,10,4)
 
 def keyPressed(*args):
   global window
@@ -628,6 +660,13 @@ def updateMV():
     glLoadMatrixf(L)
   #print "GL has:\n", glGetFloatv(GL_MODELVIEW_MATRIX)
 
+def mouse(button, state, x, y):
+  print button, state, x, y
+  if button == 3 and state == 1:
+    ml.zoom(-1)
+  if button == 4 and state == 1:
+    ml.zoom(1)
+
 def every():
   ml.frob()
   updateMV()
@@ -657,6 +696,7 @@ def main():
   glutKeyboardFunc(keyPressed)
   glutKeyboardUpFunc(keyUnpressed)
   glutSpecialFunc(specialKeyPressed)
+  glutMouseFunc(mouse)
   glutIgnoreKeyRepeat(True)
   glutPassiveMotionFunc(ml.passive)
 
