@@ -1,0 +1,13 @@
+<stack name="geometery" version="0.1">
+  <description brief="geometery and math libraries">
+    The basis geometric and math libraries used in ros.
+  </description>
+  <author>Maintained by Tully Foote tfoote@willowgarage.com</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://pr.willowgarage.com/wiki/ROS</url>
+  <depend stack="ros" version="0.5"/>
+  <depend stack="common_msgs" version="0.5"/>
+  <depend stack="common" version="0.5"/>
+</stack>
+
