@@ -76,6 +76,7 @@ extern "C" {
 
 //#define do_prefilter do_prefilter_norm
 #define do_prefilter do_prefilter_fast
+//#define do_prefilter do_prefilter_xsobel
 
 void
 do_prefilter_norm(uint8_t *im,	// input image
@@ -96,6 +97,16 @@ do_prefilter_fast(uint8_t *im,	// input image
 //  __attribute__ ((force_align_arg_pointer)) // align to 16 bytes
 #endif
 ;
+
+void
+do_prefilter_xsobel(uint8_t *im, // input image
+	  uint8_t *ftim,	// feature image output
+	  int xim, int yim,	// size of image
+	  uint8_t ftzero,	// feature offset from zero
+	  uint8_t *buf		// buffer storage
+	  );
+
+
 
 
 // algorithm requires buffers to be passed in

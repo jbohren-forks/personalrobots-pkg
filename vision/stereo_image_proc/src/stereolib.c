@@ -152,6 +152,89 @@ do_prefilter_norm(uint8_t *im,	// input image
 
 
 //
+// x-oriented Sobel prefilter
+// feature values are unsigned bytes, offset at <ftzero> 
+// buffer <buf> is not used
+//
+// image aligned at 16 bytes
+// feature output aligned at 16 bytes
+//
+
+void
+do_prefilter_xsobel(uint8_t *im, // input image
+	  uint8_t *ftim,	// feature image output
+	  int xim, int yim,	// size of image
+	  uint8_t ftzero,	// feature offset from zero
+	  uint8_t *buf		// buffer storage
+	  )
+{
+  int i,j;
+  uint8_t *impp, *impc, *impn;
+  uint8_t *ftimp;
+  int v;
+
+  // image ptrs
+  ftim += xim + 1;		// do we offset output too????
+
+  // loop over rows
+  for (j=1; j<yim-1; j++, im+=xim, ftim+=xim)
+    {
+      impp = im;
+      impc = im+xim;
+      impn = im+xim+xim;
+      ftimp = ftim;
+      for (i=1; i<xim-1; i++, impp+=4, impc+=4, impn+=4) // loop over line
+	    {
+	      // xsobel filter is -1 -2 -1; 0 0 0; 1 2 1
+	      v = *(impc+2)*2 - *(impc)*2 + *(impp+2) -
+		*(impp) + *(impn+2) - *(impn);
+	      v = v >> 0;	// normalize
+	      if (v < -ftzero)
+		v = 0;
+	      else if (v > ftzero)
+		v = ftzero+ftzero;
+	      else
+		v = v + ftzero;
+	      *ftimp++ = (uint8_t)v;
+
+	      v = *(impc+3)*2 - *(impc+1)*2 + *(impp+3) -
+		*(impp+1) + *(impn+3) - *(impn+1);
+	      v = v >> 0;	// normalize
+	      if (v < -ftzero)
+		v = 0;
+	      else if (v > ftzero)
+		v = ftzero+ftzero;
+	      else
+		v = v + ftzero;
+	      *ftimp++ = (uint8_t)v;
+
+	      v = *(impc+4)*2 - *(impc+2)*2 + *(impp+4) -
+		*(impp+2) + *(impn+4) - *(impn+2);
+	      v = v >> 0;	// normalize
+	      if (v < -ftzero)
+		v = 0;
+	      else if (v > ftzero)
+		v = ftzero+ftzero;
+	      else
+		v = v + ftzero;
+	      *ftimp++ = (uint8_t)v;
+
+	      v = *(impc+5)*2 - *(impc+3)*2 + *(impp+5) -
+		*(impp+3) + *(impn+5) - *(impn+3);
+	      v = v >> 0;	// normalize
+	      if (v < -ftzero)
+		v = 0;
+	      else if (v > ftzero)
+		v = ftzero+ftzero;
+	      else
+		v = v + ftzero;
+	      *ftimp++ = (uint8_t)v;
+	    }
+    }
+}
+
+
+//
 // stereo routines
 //
 
