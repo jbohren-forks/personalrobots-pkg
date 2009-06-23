@@ -109,7 +109,7 @@ if __name__ == '__main__':
     if side == 'l' or side == 'left':
       # tuck traj for left arm
       set_params_left()
-      mechanism.spawn_controller(xml_for_left.read())
+      mechanism.spawn_controller(xml_for_left.read(),1 )
       controllers.append('left_arm/trajectory_controller')
 
       positions = [[0.4,0.0,0.0,-2.25,0.0,0.0,0.0], [0.0,1.57,1.57,-2.25,0.0,0.0,0.0]]  
@@ -120,7 +120,7 @@ if __name__ == '__main__':
     elif side == 'r' or side == 'right':
       # tuck traj for right arm
       set_params_right()
-      resp = mechanism.spawn_controller(xml_for_right.read())
+      resp = mechanism.spawn_controller(xml_for_right.read(),1)
       controllers.append('right_arm/trajectory_controller')
       positions = [[-0.4,0.0,0.0,-1.57,0.0,0.0,0.0], [0.0,1.57,-1.57,-1.57,0.0,0.0,0.0]]    
       go('right', positions)
@@ -131,10 +131,10 @@ if __name__ == '__main__':
       # Both arms
       # Holds left arm up at shoulder lift
       set_params_left()
-      resp = mechanism.spawn_controller(xml_for_left.read())
+      resp = mechanism.spawn_controller(xml_for_left.read(),1)
 
       set_params_right()
-      resp = mechanism.spawn_controller(xml_for_right.read())
+      resp = mechanism.spawn_controller(xml_for_right.read(),1)
 
       controllers.append('right_arm/trajectory_controller')
       controllers.append('left_arm/trajectory_controller')
