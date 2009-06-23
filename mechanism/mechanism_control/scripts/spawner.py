@@ -40,7 +40,7 @@ from mechanism_control import mechanism
 from robot_srvs.srv import SpawnController, KillController
 
 def print_usage(exit_code = 0):
-    print 'spawner.py <controllers_config>'
+    print 'spawner.py [--stopped] <controllers_config>'
     sys.exit(exit_code)
 
 rospy.wait_for_service('spawn_controller')
@@ -72,20 +72,26 @@ if __name__ == '__main__':
         print_usage()
     rospy.init_node('spawner', anonymous=True)
 
+    autostart = 1
+    argstart = 1
+    if argv[1] == '--stopped':
+        autostart = 0
+        argstart = 2
+
     # Override rospy's signal handling.  We'll invoke rospy's handler after
     # we're done shutting down.
     import signal
     prev_handler = signal.getsignal(signal.SIGINT)
     signal.signal(signal.SIGINT, shutdown)
 
-    for c in range(1,len(argv)):
+    for c in range(argstart,len(argv)):
         f = open(argv[c])
         xml = f.read()
         f.close()
-        resp = spawn_controller(xml)
+        resp = spawn_controller(xml, autostart)
 
         for r in range(len(resp.ok)):
-            if resp.ok[r] == chr(1):
+            if resp.ok[r] != 0:
                 spawned.append(resp.name[r])
             else:
                 print "Failed to spawn %s" % resp.name[r]
