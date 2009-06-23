@@ -34,14 +34,14 @@
  *
  *********************************************************************/
 
-//#include <boost/thread/thread.hpp>
 
 #include <ros/node.h>
 #include <robot_actions/action_client.h>
 
 // Msgs
 #include <std_msgs/Empty.h>
-
+#include <robot_msgs/PoseStamped.h>
+ 
 // State Msgs
 #include <robot_actions/NoArgumentsActionState.h>
 #include <pr2_robot_actions/FindHelperState.h>
@@ -61,15 +61,14 @@ int
   ros::init(argc, argv);
 
   ros::Node node("test_find_helper");
-  //boost::thread_group threads_;
 
   pr2_robot_actions::SwitchControllers switchlist;
   std_msgs::Empty empty;
-  robot_msgs::PointStamped point;
+  robot_msgs::PoseStamped find_helper_pose_msg;
 
   Duration switch_timeout = Duration(4.0);
 
-  robot_actions::ActionClient<std_msgs::Empty, pr2_robot_actions::FindHelperState, robot_msgs::PointStamped> 
+  robot_actions::ActionClient<std_msgs::Empty, pr2_robot_actions::FindHelperState, robot_msgs::PoseStamped> 
     find_helper("find_helper");
   robot_actions::ActionClient<pr2_robot_actions::SwitchControllers, pr2_robot_actions::SwitchControllersState,  std_msgs::Empty>
     switch_controllers("switch_controllers");
@@ -94,7 +93,7 @@ int
   switchlist.start_controllers.clear();  switchlist.stop_controllers.clear();
   switchlist.start_controllers.push_back("head_controller");
   if (switch_controllers.execute(switchlist, empty, switch_timeout) != robot_actions::SUCCESS) return -1;
-  if (find_helper.execute(empty, point, Duration(200.0)) != robot_actions::SUCCESS) return -2;
+  if (find_helper.execute(empty, find_helper_pose_msg, Duration(200.0)) != robot_actions::SUCCESS) return -2;
 
   return 0;
 }
