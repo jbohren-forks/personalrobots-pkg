@@ -77,9 +77,14 @@ public:
 	
 	// resolution
 	nh_.param<double>("~resolution", bi_.resolution, 0.015);
+
+	// when occluded obstacles are raytraced, keep boxes from occluded space within a given radius
+	nh_.param<int>("~radius", bi_.radius, 1);
 	
-	ROS_INFO("Maintaining occlusion map in frame '%s', with origin at (%f, %f, %f) and dimension (%f, %f, %f), resolution of %f; sensor is at (%f, %f, %f), fixed fame is '%s'.",
-		 robotFrame_.c_str(), bi_.dimensionX, bi_.dimensionY, bi_.dimensionZ, bi_.originX, bi_.originY, bi_.originZ, bi_.resolution, bi_.sensorX, bi_.sensorY, bi_.sensorZ, fixedFrame_.c_str());
+	ROS_INFO("Maintaining occlusion map in frame '%s', with origin at (%f, %f, %f) and dimension (%f, %f, %f), resolution of %f; "
+		 "sensor is at (%f, %f, %f), fixed fame is '%s', radius for raytraced occlusions is %d.",
+		 robotFrame_.c_str(), bi_.dimensionX, bi_.dimensionY, bi_.dimensionZ, bi_.originX, bi_.originY, bi_.originZ, bi_.resolution,
+		 bi_.sensorX, bi_.sensorY, bi_.sensorZ, fixedFrame_.c_str(), bi_.radius);
 	
 	// compute some useful values
 	bi_.sx = (int)(0.5 + (bi_.sensorX - bi_.originX) / bi_.resolution);
@@ -137,13 +142,16 @@ private:
 	    return a.z < b.z;
 	}
     };
-    
+
+    // parameters & precomputed values for the box that represents the collision map
+    // around the robot
     struct BoxInfo
     {    
 	double dimensionX, dimensionY, dimensionZ;
 	double originX, originY, originZ;
 	double sensorX, sensorY, sensorZ;
 	double resolution;
+	int radius;
 	int sx, sy, sz;
 	int minX, minY, minZ;
 	int maxX, maxY, maxZ;
@@ -193,14 +201,27 @@ private:
 	    {
 		constructCollisionMap(out, mask, false, self);
 	    }
+#pragma omp section
+	    {
+		// try to transform the previous map (if it exists) to the new frame
+		if (!currentMap_.empty())
+		    if (!transformMap(currentMap_, header_, out.header))
+			currentMap_.clear();
+		header_ = out.header;
+	    }
 	}
 	
-	// try to transform the previous map (if it exists) to the new frame
-	if (!currentMap_.empty())
-	    if (!transformMap(currentMap_, header_, out.header))
-		currentMap_.clear();
-	header_ = out.header;
+	// update map
+	updateMap(obstacles, self);
+
+	double sec = (ros::WallTime::now() - tm).toSec();
+	ROS_INFO("Updated collision map with %d points at %f Hz", currentMap_.size(), 1.0/sec);
 	
+	publishCollisionMap(currentMap_);
+    }
+
+    void updateMap(CMap &obstacles, CMap &self)
+    {
 	if (currentMap_.empty())
 	{
 	    // if we have no previous information, the map is simply what we see + we assume space hidden by self is obstructed
@@ -251,13 +272,8 @@ private:
 			   std::inserter(currentMap_, currentMap_.begin()),
 			   CollisionPointOrder()); 
 	}
-	
-	double sec = (ros::WallTime::now() - tm).toSec();
-	
-	ROS_INFO("Updated collision map with %d points at %f Hz", currentMap_.size(), 1.0/sec);
-	
-	publishCollisionMap(currentMap_);
     }
+    
 
     bool transformMap(CMap &map, const roslib::Header &from, const roslib::Header &to)
     {
@@ -317,6 +333,11 @@ private:
 			      boost::bind(&CollisionMapperOcc::findOcclusionsInMapAux, this, &previous, &keep, &lock, _1, _2, _3));
     }
     
+    int collisionPointDistance(const CollisionPoint &a, const CollisionPoint &b) const
+    {
+	return abs(a.x - b.x) + abs(a.y - b.y) + abs(a.z - b.z);
+    }
+    
     bool findOcclusionsInMapAux(CMap *previous, CMap *keep, boost::mutex *lock, int x, int y, int z)
     {
 	CollisionPoint p;
@@ -324,15 +345,39 @@ private:
 	p.y = y;
 	p.z = z;
 
-	// if we are occluding this point, remember it
-	if (previous->find(p) != previous->end())
-	{
-	    lock->lock();
-	    keep->insert(p);
-	    lock->unlock();
-	    // we can terminate
-	    return true;
-	}
+
+	CMap::iterator u = previous->lower_bound(p);
+	// if we are occluding this set of points point, remember it
+	if (u != previous->end())
+	    if (collisionPointDistance(p, *u) <= bi_.radius)
+	    {
+		// we insert all points within distance 1
+		CMap::iterator d = u;
+		lock->lock();
+		if (d != previous->begin())
+		{
+		    --d;
+		    while (collisionPointDistance(p, *d) <= bi_.radius)
+		    {
+			keep->insert(*d);
+			--d;
+			if (d == previous->begin())
+			    break;
+		    }
+		}
+		
+		while (collisionPointDistance(p, *u) <= bi_.radius)
+		{
+		    keep->insert(*u);
+		    ++u;
+		    if (u == previous->end())
+			break;
+		}
+		lock->unlock();
+		
+		// we can terminate
+		return true;
+	    }
 	
 	return true;
     }
