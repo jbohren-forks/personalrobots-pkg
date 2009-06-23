@@ -4,20 +4,20 @@
   <include file="$(find move_arm)/move_rarm.launch"/>
   <node pkg="mechanism_control" type="spawner.py" args="$(find pr2_default_controllers)/r_arm_joint_trajectory_controller.xml" />
 
-  <param name="r_arm_joint_trajectory_controller/r_shoulder_pan_joint/goal_reached_threshold" value="0.025" />
-  <param name="r_arm_joint_trajectory_controller/r_shoulder_lift_joint/goal_reached_threshold" value="0.025" />
-  <param name="r_arm_joint_trajectory_controller/r_upper_arm_roll_joint/goal_reached_threshold" value="0.025" />
-  <param name="r_arm_joint_trajectory_controller/r_elbow_flex_joint/goal_reached_threshold" value="0.025" />
-  <param name="r_arm_joint_trajectory_controller/r_forearm_roll_joint/goal_reached_threshold" value="0.025" />
-  <param name="r_arm_joint_trajectory_controller/r_wrist_flex_joint/goal_reached_threshold" value="0.025" />
-  <param name="r_arm_joint_trajectory_controller/r_wrist_roll_joint/goal_reached_threshold" value="0.025" />
+  <param name="r_arm_joint_trajectory_controller/r_shoulder_pan_joint/goal_reached_threshold" value="0.1" />
+  <param name="r_arm_joint_trajectory_controller/r_shoulder_lift_joint/goal_reached_threshold" value="0.1" />
+  <param name="r_arm_joint_trajectory_controller/r_upper_arm_roll_joint/goal_reached_threshold" value="0.1" />
+  <param name="r_arm_joint_trajectory_controller/r_elbow_flex_joint/goal_reached_threshold" value="0.1" />
+  <param name="r_arm_joint_trajectory_controller/r_forearm_roll_joint/goal_reached_threshold" value="0.1" />
+  <param name="r_arm_joint_trajectory_controller/r_wrist_flex_joint/goal_reached_threshold" value="0.1" />
+  <param name="r_arm_joint_trajectory_controller/r_wrist_roll_joint/goal_reached_threshold" value="0.1" />
 
-  <param name="r_arm_joint_trajectory_controller/r_shoulder_pan_joint/joint_error_threshold" value="0.05" />
-  <param name="r_arm_joint_trajectory_controller/r_shoulder_lift_joint/joint_error_threshold" value="0.05" />
-  <param name="r_arm_joint_trajectory_controller/r_upper_arm_roll_joint/joint_error_threshold" value="0.05" />
-  <param name="r_arm_joint_trajectory_controller/r_elbow_flex_joint/joint_error_threshold" value="0.05" />
-  <param name="r_arm_joint_trajectory_controller/r_forearm_roll_joint/joint_error_threshold" value="0.05" />
-  <param name="r_arm_joint_trajectory_controller/r_wrist_flex_joint/joint_error_threshold" value="0.05" />
-  <param name="r_arm_joint_trajectory_controller/r_wrist_roll_joint/joint_error_threshold" value="0.05" />
+  <param name="r_arm_joint_trajectory_controller/r_shoulder_pan_joint/joint_error_threshold" value="0.1" />
+  <param name="r_arm_joint_trajectory_controller/r_shoulder_lift_joint/joint_error_threshold" value="0.1" />
+  <param name="r_arm_joint_trajectory_controller/r_upper_arm_roll_joint/joint_error_threshold" value="0.1" />
+  <param name="r_arm_joint_trajectory_controller/r_elbow_flex_joint/joint_error_threshold" value="0.1" />
+  <param name="r_arm_joint_trajectory_controller/r_forearm_roll_joint/joint_error_threshold" value="0.1" />
+  <param name="r_arm_joint_trajectory_controller/r_wrist_flex_joint/joint_error_threshold" value="0.1" />
+  <param name="r_arm_joint_trajectory_controller/r_wrist_roll_joint/joint_error_threshold" value="0.1" />
 
 </launch>
