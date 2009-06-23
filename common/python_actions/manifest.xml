@@ -11,6 +11,7 @@
   <depend package="robot_actions"/>
   <depend package="rospy"/>
   <depend package="robot_msgs"/>
+  <depend package="std_msgs"/>  
 
 </package>
 

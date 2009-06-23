@@ -37,6 +37,7 @@ import rospy
 import threading
 import time
 
+from std_msgs.msg import Empty
 from robot_actions.msg import NoArgumentsActionState
 from robot_actions.msg import ActionStatus
 
@@ -67,8 +68,8 @@ class Action:
   def run(self):
 
     self.goals_sub_ = rospy.Subscriber(self.nn + "/activate", self.goalmsg, self.onGoal)
-    self.pre_sub_ = rospy.Subscriber(self.nn + "/preempt", self.feedbackmsg, self.onPreempt)
-    self.state_pub_ = rospy.Publisher(self.nn + "/feedback", NoArgumentsActionState)
+    self.pre_sub_ = rospy.Subscriber(self.nn + "/preempt", Empty, self.onPreempt)
+    self.state_pub_ = rospy.Publisher(self.nn + "/feedback", self.statemsg)
 
     self.feedback_thread = threading.Thread(target = self.actionStatusPublisher)
     self.feedback_thread.start()
