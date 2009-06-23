@@ -13,6 +13,7 @@ source `rospack find trex`/TREX/devConfig
 
 cd `rospack find trex`/TREX
 
+echo "Building nddl.jar with jam"
 # Build the nddl jar file used to parse input files
 jam  -q nddl.jar
 
@@ -26,8 +27,7 @@ fi
 # 1. library name
 # 2. jam flags
 function run_jam {
-  echo $1
-  echo $2
+  echo "Running jam with command" $1 " and options" $2
   if [ `uname` = Darwin ]; then
     jam $2  -q $1.dylib
   else
