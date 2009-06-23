@@ -32,10 +32,10 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #
 
-## Set head and gripper poses
+## Set head poses
 
 PKG = 'test_pr2_sensors_gazebo'
-NAME = 'set_pose'
+NAME = 'set_head_pose'
 
 import math
 import roslib
@@ -50,21 +50,16 @@ from std_msgs.msg import *
 from pr2_mechanism_controllers.msg import *
 
 
-CMD_POS_1      =  0.02
-CMD_POS_2      = -0.2
-CMD_POS_3      =  0.2
+CMD_POS_PAN      = -0.2
+CMD_POS_TILT     =  0.2
 
 if __name__ == '__main__':
-    pub_l_gripper = rospy.Publisher("/l_gripper_controller/set_command", Float64)
-    pub_r_gripper = rospy.Publisher("/r_gripper_controller/set_command", Float64)
     pub_head_pan  = rospy.Publisher("/head_pan_controller/set_command", Float64)
     pub_head_tilt = rospy.Publisher("/head_tilt_controller/set_command", Float64)
     rospy.init_node(NAME, anonymous=True)
     timeout_t = time.time() + 20.0 #publish for 20 seconds then stop
     while time.time() < timeout_t:
-        pub_l_gripper.publish(Float64(CMD_POS_1))
-        pub_r_gripper.publish(Float64(CMD_POS_1))
-        pub_head_pan.publish(Float64(CMD_POS_2))
-        pub_head_tilt.publish(Float64(CMD_POS_3))
+        pub_head_pan.publish(Float64(CMD_POS_PAN))
+        pub_head_tilt.publish(Float64(CMD_POS_TILT))
         time.sleep(0.2)
 
