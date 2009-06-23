@@ -284,8 +284,16 @@ bool SBPLArmPlannerNode::setGoalPosition(const std::vector<motion_planning_msgs:
 /** set joint space goals */
 bool SBPLArmPlannerNode::setGoalState(const std::vector<motion_planning_msgs::JointConstraint> &joint_constraint)
 {
-  ROS_INFO("[setGoalState] setting %d possible goal states...", joint_constraint.size());\
-  
+  int nind = 0;
+  unsigned int i =0;
+  std::vector<std::vector<double> > sbpl_goal(1);
+  std::vector<std::vector<double> > sbpl_tolerance_above(1);
+  std::vector<std::vector<double> > sbpl_tolerance_below(1);
+  //NOTE temporary - fix this
+  sbpl_goal[0].resize(num_joints_);;
+  sbpl_tolerance_above[0].resize(num_joints_);
+  sbpl_tolerance_below[0].resize(num_joints_);
+
   for(unsigned int i = 0; i < joint_constraint.size(); i++)
   {
     ROS_INFO("joint_constraint %d: %s",i, joint_constraint[i].joint_name.c_str());
@@ -293,41 +301,19 @@ bool SBPLArmPlannerNode::setGoalState(const std::vector<motion_planning_msgs::Jo
       ROS_INFO("%.3f ",joint_constraint[i].value[k]);
   }
 
-  unsigned int i =0;
-  std::vector<std::vector<double> > sbpl_goal(1, 7);
-  std::vector<std::vector<double> > sbpl_tolerance_above(1, 7);
-  std::vector<std::vector<double> > sbpl_tolerance_below(1, 7);
-  int nind = 0;
   for(i = 0; i < joint_constraint.size(); i++)
   {
     if(joint_names_[nind].compare(joint_constraint[i].joint_name) == 0)
     {
       sbpl_goal[0][nind] = joint_constraint[i].value[0];
-//       sbpl_tolerance_above[nind].resize(joint_constraint[i].get_toleranceAbove_size());
+      sbpl_tolerance_above[nind].resize(joint_constraint[i].get_toleranceAbove_size());
       sbpl_tolerance_above[0][nind] = joint_constraint[i].toleranceAbove[0];
-
-//       sbpl_tolerance_below[nind].resize(joint_constraint[i].get_toleranceBelow_size());
       sbpl_tolerance_below[0][nind] = joint_constraint[i].toleranceBelow[0];
-
       nind++;
     }
     if(nind == num_joints_)
       break;
   }
-
-//   for(i = 0; i < sbpl_goal.size(); i++)
-//   {
-//     sbpl_goal[i].resize(joint_constraint[i].get_value_size());
-//     sbpl_goal[i] = joint_constraint[i].value;
-// 
-//     sbpl_tolerance_above[i].resize(joint_constraint[i].get_toleranceAbove_size());
-//     sbpl_tolerance_above[i] = joint_constraint[i].toleranceAbove;
-// 
-//     sbpl_tolerance_below[i].resize(joint_constraint[i].get_toleranceBelow_size());
-//     sbpl_tolerance_below[i] = joint_constraint[i].toleranceBelow;
-//     
-//     ROS_INFO("goal %d has %d joint positions.",joint_constraint[i].get_value_size());
-//   }
 
   pr2_arm_env_.SetGoalConfiguration(sbpl_goal,sbpl_tolerance_above,sbpl_tolerance_below);
 
