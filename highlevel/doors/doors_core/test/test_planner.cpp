@@ -81,9 +81,9 @@ int
   door.travel_dir.x = 1.0;
   door.travel_dir.y = 0.0;
   door.travel_dir.z = 0.0;
-//  door.rot_dir = door_msgs::Door::ROT_DIR_COUNTERCLOCKWISE;
-  door.rot_dir = door_msgs::Door::ROT_DIR_CLOCKWISE;
-  door.hinge = door_msgs::Door::HINGE_P2;
+  door.rot_dir = door_msgs::Door::ROT_DIR_COUNTERCLOCKWISE;
+//  door.rot_dir = door_msgs::Door::ROT_DIR_CLOCKWISE;
+  door.hinge = door_msgs::Door::HINGE_P1;
   door.header.frame_id = "base_footprint";
     
   pr2_robot_actions::SwitchControllers switchlist;
@@ -110,7 +110,7 @@ int
   door_msgs::Door tmp_door;
 
   cout << "before " << door << endl;
-
+  cout << "frame id " << door.header.frame_id << endl;
   // tuck arm
   switchlist.start_controllers.clear();  switchlist.stop_controllers.clear();
   switchlist.start_controllers.push_back("r_arm_joint_trajectory_controller");
@@ -124,10 +124,12 @@ int
   if (switch_controllers.execute(switchlist, empty, timeout_short) != robot_actions::SUCCESS) return -1;
   while (detect_door.execute(door, tmp_door, timeout_long) != robot_actions::SUCCESS)
   {};
+  cout << "frame id in returned message is" << tmp_door.header.frame_id << endl;
   door = tmp_door;
-  cout << "detect door " << door << endl;
+  cout << "detected door " << door << endl;
+  cout << "frame id is" << door.header.frame_id << endl;
   bool open_by_pushing = (door.latch_state == door_msgs::Door::UNLATCHED);
-
+  open_by_pushing = false;
   // detect handle if door is latched
   if (!open_by_pushing){
     switchlist.start_controllers.clear();  switchlist.stop_controllers.clear();
@@ -196,18 +198,18 @@ int
     switchlist.stop_controllers.push_back("r_arm_constraint_cartesian_trajectory_controller");
     switchlist.stop_controllers.push_back("r_arm_constraint_cartesian_pose_controller");
     switchlist.stop_controllers.push_back("r_arm_constraint_cartesian_twist_controller");
-//    switchlist.start_controllers.push_back("r_arm_cartesian_tff_controller");
-//    cout << "Switching controllers for unlatch handle" << endl;
+    switchlist.start_controllers.push_back("r_arm_cartesian_tff_controller");
+    cout << "Switching controllers for unlatch handle" << endl;
     if (switch_controllers.execute(switchlist, empty, timeout_short) != robot_actions::SUCCESS) return -1;
 
     cout << "Switching controllers finished" << endl;
 
-//    if (unlatch_handle.execute(door, tmp_door, timeout_long) != robot_actions::SUCCESS) return -1;
-//    cout << "Unlatch handle finished" << endl;
+    if (unlatch_handle.execute(door, tmp_door, timeout_long) != robot_actions::SUCCESS) return -1;
+    cout << "Unlatch handle finished" << endl;
 
     // open door in separate thread
     switchlist.start_controllers.clear();  switchlist.stop_controllers.clear();
-    //  switchlist.stop_controllers.push_back("r_arm_cartesian_tff_controller");
+    switchlist.stop_controllers.push_back("r_arm_cartesian_tff_controller");
     switchlist.stop_controllers.push_back("r_arm_constraint_cartesian_wrench_controller");
     switchlist.start_controllers.push_back("r_arm_joint_trajectory_controller");
     if (switch_controllers.execute(switchlist, empty, timeout_short) != robot_actions::SUCCESS) return -1;
