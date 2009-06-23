@@ -28,6 +28,9 @@
  */
 
 #include <boost/thread/mutex.hpp>
+#include <kdl_parser/tree_parser.hpp>
+#include <kdl/jntarray.hpp>
+#include <kdl/chainfksolverpos_recursive.hpp>
 
 // #include <robot_kinematics/robot_kinematics.h>
 
@@ -40,7 +43,7 @@
 
 #define INVALID_NUMBER 999
 
-#define NUM_TRANS_MATRICES 360 //precomputed matrices
+#define NUM_TRANS_MATRICES 1440 //precomputed matrices
 
 // using namespace robot_kinematics;
 // using namespace KDL;
@@ -143,6 +146,8 @@ typedef struct ENV_ROBARM_CONFIG
 
 /* ARM DESCRIPTION */
 
+    std::string robot_desc;
+
     //DH Parameters
     double DH_alpha[NUMOFLINKS];
     double DH_a[NUMOFLINKS];
@@ -166,9 +171,10 @@ typedef struct ENV_ROBARM_CONFIG
     int arm_length;
 
     //for kinematic library use
-    /*RobotKinematics pr2_kin;
-    SerialChain *right_arm;
-    JntArray *pr2_config;*/
+    KDL::JntArray jnt_pos_in;
+    KDL::Frame p_out;
+    KDL::ChainFkSolverPos_recursive *jnt_to_pose_solver;
+    KDL::Chain arm_chain;
 
 /* Planner Parameters/Options */
 
@@ -318,7 +324,7 @@ public:
      * @param eCfg pointer to file describing the environment
      * @param pCfg pointer to file with the Arm planner parameters
      */
-    bool InitEnvFromFilePtr(FILE* eCfg, FILE* pCfg);
+    bool InitEnvFromFilePtr(FILE* eCfg, FILE* pCfg, const std::string &robot_desc);
 
     //this should be removed  - it returns the planner Epsilon
     double GetEpsilon();
@@ -360,6 +366,7 @@ public:
     bool SetGoalConfiguration(const std::vector <std::vector<double> > &goals, const std::vector<std::vector<double> > &tolerance_above, const std::vector<std::vector<double> > &tolerance_below);
     void SetGoalConfigurationTolerance(const std::vector<std::vector<double> > &tolerance_above, const std::vector<std::vector<double> > &tolerance_below);
 
+    void ComputeEndEffectorPos(double angles[NUMOFLINKS], double xyz_m[3], double rpy_r[3]);
 private:
 
     //member data
@@ -445,7 +452,7 @@ private:
     void ComputeForwardKinematics_DH(double angles[NUMOFLINKS]);
     void RPY2Rot(double roll, double pitch, double yaw, double Rot[3][3]);
 
-    // void InitializeKinNode();
+    void InitKDLChain(const char *fKDL);
     void ComputeForwardKinematics_ROS(double *angles, int f_num, double *x, double *y, double *z);
 
     /* JOINT SPACE PLANNING */
