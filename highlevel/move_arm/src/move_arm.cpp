@@ -61,7 +61,7 @@ namespace move_arm
 
     MoveArm::MoveArm(void) : Action<pr2_robot_actions::MoveArmGoal, int32_t>("move_arm")
     {	
-	node_handle_.param<std::string>("~arm", arm_, std::string());
+	node_handle_.param<std::string>("/move_arm/arm", arm_, std::string());
 	node_handle_.param<bool>("~perform_ik", perform_ik_, true);
 	
 	// monitor robot
