@@ -21,11 +21,7 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 #uncomment if you have defined services
 #gensrv()
 
-#common commands for building c++ executables and libraries
-#rospack_add_library(${PROJECT_NAME} src/example.cpp)
-#target_link_libraries(${PROJECT_NAME} another_library)
-#rospack_add_boost_directories()
-#rospack_link_boost(${PROJECT_NAME} thread)
-#rospack_add_executable(example examples/example.cpp)
-#target_link_libraries(example ${PROJECT_NAME})
+
 rospack_add_executable(test_find_helper src/test_find_helper.cpp)
+
+rospack_add_executable(test_move_to_helper src/test_move_to_helper.cpp)

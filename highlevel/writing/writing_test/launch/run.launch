@@ -9,8 +9,10 @@
 <!-- perception-->
   <include file="$(find writing_test)/launch/perception.launch" />
 
-<!-- writing_core -->
-<!--  <include file="$(find writing_core)/launch/writing_actions.launch" />-->
+<!-- writing_core actions -->
+  <include file="$(find writing_core)/launch/writing_actions.launch" />
+
+<!-- writing related nodes -->
 <!--  <include file="$(find writing_core)/launch/whiteboard_detector.launch" />-->
   <include file="$(find writing_core)/launch/face_detector.launch" />
 

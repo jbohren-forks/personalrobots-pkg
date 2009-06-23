@@ -40,11 +40,13 @@
 
 // Msgs
 #include <std_msgs/Empty.h>
+#include <robot_msgs/PoseStamped.h>
 
 // State Msgs
 #include <robot_actions/NoArgumentsActionState.h>
 #include <pr2_robot_actions/FindHelperState.h>
 #include <pr2_robot_actions/SwitchControllersState.h>
+#include <nav_robot_actions/MoveBaseState.h>
 
 using namespace ros;
 using namespace std;
