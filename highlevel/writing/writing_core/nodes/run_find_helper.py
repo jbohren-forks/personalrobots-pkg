@@ -55,6 +55,7 @@ import python_actions
 class FindHelperAction(python_actions.Action):
 
   def __init__(self, *args):
+    python_actions.Action.__init__(self, args[0], args[1], args[2], args[3])
     name = args[0]
     try:
       self.head_controller = rospy.get_param(name + "/head_controller")
@@ -63,8 +64,8 @@ class FindHelperAction(python_actions.Action):
       rospy.set_param(name + "/head_controller", self.head_controller)
 
     self.head_controller_publisher = rospy.Publisher(self.head_controller + "/set_command_array", robot_msgs.msg.JointCmd)
-    self.people_sub = rospy.Subscriber("/people/face_detector/people_tracker_measurements", PositionMeasurement, self.people_position_measurement)
-    self.face_det = rospy.ServiceProxy('start_detection', StartDetection)
+    self.people_sub = rospy.Subscriber("/face_detection/people_tracker_measurements", PositionMeasurement, self.people_position_measurement)
+    self.face_det = rospy.ServiceProxy('/start_detection', StartDetection)
 
   def people_position_measurement(self, msg):
     print "people_position_measurement:"
@@ -79,14 +80,20 @@ class FindHelperAction(python_actions.Action):
     for angle in search_pattern:
       for timer in range(60): # in tenths
         time.sleep(0.1)
-
-        jc = robot_msgs.msg.JointCmd.names = [ "head_pan_joint", "head_tilt_joint" ]
-        jc = robot_msgs.msg.JointCmd.positions = [ angle, 0.0 ]
-        self.head_controller.publish(jc)
+        print angle, timer
+        jc = robot_msgs.msg.JointCmd()
+        jc.names = [ "head_pan_joint", "head_tilt_joint" ]
+        jc.efforts = [ 0.0, 0.0 ]
+        jc.velocity = [ 0.0, 0.0 ]
+        jc.acc = [ 0.0, 0.0 ]
+        jc.positions = [ angle, 0.0 ]
+        self.head_controller_publisher.publish(jc)
 
         if timer == 10:
+          print "detecting face"
           # Run the face detector
-          self.face_det()
+          self.face_det(1)
+          print "returned from service call"
         if self.isPreemptRequested():
           return python_actions.PREEMPTED
         self.update()
@@ -101,7 +108,7 @@ class FindHelperAction(python_actions.Action):
 
     return python_actions.ABORTED
 
-sys.exit()
+#sys.exit()
 
 if __name__ == '__main__':
 

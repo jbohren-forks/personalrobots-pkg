@@ -3,7 +3,7 @@
   <include file="$(find pr2_alpha)/$(env ROBOT).machine" />
 
 <!-- controllers-->
-  <include file="$(find writing_core)/config/controllers.launch" />
+  <include file="$(find writing_core)/launch/controllers.launch" />
 
 
 <!-- perception-->
@@ -11,7 +11,7 @@
 
 <!-- writing_core -->
 <!--  <include file="$(find writing_core)/launch/writing_actions.launch" />-->
-  <include file="$(find writing_core)/launch/whiteboard_detector.launch" />
+<!--  <include file="$(find writing_core)/launch/whiteboard_detector.launch" />-->
   <include file="$(find writing_core)/launch/face_detector.launch" />
 
 
