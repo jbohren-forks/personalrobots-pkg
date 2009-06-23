@@ -48,7 +48,10 @@ public:
 	std::vector<std::string> frames;
 	sf_.getLinkFrames(frames);
 	mn_.setTargetFrame(frames);
+	nh_.param<std::string>("/self_filter/annotate", annotate_, std::string());
 	pointCloudPublisher_ = nh_.advertise<robot_msgs::PointCloud>("cloud_out", 1);
+	if (!annotate_.empty())
+	    ROS_INFO("Self filter is adding annotation channel '%s'", annotate_.c_str());
     }
     
 private:
@@ -68,28 +71,52 @@ private:
     void fillResult(const robot_msgs::PointCloud& data_in, const std::vector<bool> &keep, robot_msgs::PointCloud& data_out)
     {
 	const unsigned int np = data_in.pts.size();
-	
-	// fill in output data 
-	data_out.header = data_in.header;	  
-	
-	data_out.pts.resize(0);
-	data_out.pts.reserve(np);
-	
-	data_out.chan.resize(data_in.chan.size());
-	for (unsigned int i = 0 ; i < data_out.chan.size() ; ++i)
+
+	if (annotate_.empty())
 	{
-	    ROS_ASSERT(data_in.chan[i].vals.size() == data_in.pts.size());
-	    data_out.chan[i].name = data_in.chan[i].name;
-	    data_out.chan[i].vals.reserve(data_in.chan[i].vals.size());
-	}
-	
-	for (unsigned int i = 0 ; i < np ; ++i)
-	    if (keep[i])
+	    // fill in output data with points that are NOT on the robot
+	    data_out.header = data_in.header;	  
+	    
+	    data_out.pts.resize(0);
+	    data_out.pts.reserve(np);
+	    
+	    data_out.chan.resize(data_in.chan.size());
+	    for (unsigned int i = 0 ; i < data_out.chan.size() ; ++i)
 	    {
-		data_out.pts.push_back(data_in.pts[i]);
-		for (unsigned int j = 0 ; j < data_out.chan.size() ; ++j)
-		    data_out.chan[j].vals.push_back(data_in.chan[j].vals[i]);
+		ROS_ASSERT(data_in.chan[i].vals.size() == data_in.pts.size());
+		data_out.chan[i].name = data_in.chan[i].name;
+		data_out.chan[i].vals.reserve(data_in.chan[i].vals.size());
 	    }
+	    
+	    for (unsigned int i = 0 ; i < np ; ++i)
+		if (keep[i])
+		{
+		    data_out.pts.push_back(data_in.pts[i]);
+		    for (unsigned int j = 0 ; j < data_out.chan.size() ; ++j)
+			data_out.chan[j].vals.push_back(data_in.chan[j].vals[i]);
+		}
+	}
+	else
+	{
+	    // add annotation for points
+	    data_out = data_in;
+	    int c = -1;
+	    for (unsigned int i = 0 ; i < data_out.chan.size() ; ++i)
+		if (data_out.chan[i].name == annotate_)
+		{
+		    c = i;
+		    break;
+		}
+	    if (c < 0)
+	    {
+		c = data_out.chan.size();
+		data_out.chan.resize(c + 1);
+		data_out.chan[c].name = annotate_;
+	    }
+	    data_out.chan[c].vals.resize(np);
+	    for (unsigned int i = 0 ; i < np ; ++i)
+		data_out.chan[c].vals[i] = keep[i] ? 1.0f : -1.0f;
+	}
     }
     
     tf::TransformListener                       tf_;
@@ -97,6 +124,7 @@ private:
     tf::MessageNotifier<robot_msgs::PointCloud> mn_;
     ros::Publisher                              pointCloudPublisher_;
     ros::NodeHandle                             nh_;
+    std::string                                 annotate_;
 };
 
     
