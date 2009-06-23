@@ -105,30 +105,25 @@ void MechanismControl::publishDiagnostics()
 
     for (size_t i = 0; i < controllers.size(); ++i)
     {
-      if (controllers[i].state != EMPTY)
-      {
-        ++active;
-        double m = extract_result<tag::max>(controllers[i].stats->acc);
-        controllers[i].stats->max1.push_back(m);
-        controllers[i].stats->max = std::max(m, controllers[i].stats->max);
-        std::string state;
-        if (controllers[i].c->state_ == RUNNING)
-          state = "Running";
-        else if (controllers[i].c->state_ == INITIALIZED)
-          state = "Stopped";
-        else
-          state = "Unknown";
-        ADD_STRING_FMT(controllers[i].name,
-                       "%.4f (avg) %.4f (stdev) %.4f (max) %.4f (1-min max) %.4f (life max) %s (state)",
-                       mean(controllers[i].stats->acc)*1e6,
-                       sqrt(variance(controllers[i].stats->acc))*1e6,
-                       m*1e6,
-                       *std::max_element(controllers[i].stats->max1.begin(), controllers[i].stats->max1.end())*1e6,
-                       controllers[i].stats->max*1e6,
-                       state.c_str());
-
-        controllers[i].stats->acc = blank_statistics;  // clear
-      }
+      ++active;
+      double m = extract_result<tag::max>(controllers[i].stats->acc);
+      controllers[i].stats->max1.push_back(m);
+      controllers[i].stats->max = std::max(m, controllers[i].stats->max);
+      std::string state;
+      if (controllers[i].c->isRunning())
+        state = "Running";
+      else
+        state = "Stopped";
+      ADD_STRING_FMT(controllers[i].name,
+                     "%.4f (avg) %.4f (stdev) %.4f (max) %.4f (1-min max) %.4f (life max) %s (state)",
+                     mean(controllers[i].stats->acc)*1e6,
+                     sqrt(variance(controllers[i].stats->acc))*1e6,
+                     m*1e6,
+                     *std::max_element(controllers[i].stats->max1.begin(), controllers[i].stats->max1.end())*1e6,
+                     controllers[i].stats->max*1e6,
+                     state.c_str());
+      
+      controllers[i].stats->acc = blank_statistics;  // clear
     }
 
 #define REPORT_STATS(stats_, label) \
@@ -176,18 +171,10 @@ void MechanismControl::update()
   // Start with controller that was last added
   for (int i=controllers.size()-1; i>=0; i--)
   {
-    if (controllers[i].state != EMPTY)
-    {
-      if (controllers[i].state == INITIALIZED)
-      {
-        controllers[i].state = RUNNING;
-        controllers[i].c->starting();
-      }
-      double start = realtime_gettime();
-      controllers[i].c->updateRequest();
-      double end = realtime_gettime();
-      controllers[i].stats->acc(end - start);
-    }
+    double start = realtime_gettime();
+    controllers[i].c->updateRequest();
+    double end = realtime_gettime();
+    controllers[i].stats->acc(end - start);
   }
   double end_update = realtime_gettime();
   update_stats_.acc(end_update - start_update);
@@ -252,49 +239,192 @@ void MechanismControl::getControllerNames(std::vector<std::string> &names)
   std::vector<ControllerSpec> &controllers = controllers_lists_[current_controllers_list_];
   for (size_t i = 0; i < controllers.size(); ++i)
   {
-    if (controllers[i].state != EMPTY)
-    {
-      names.push_back(controllers[i].name);
-    }
+    names.push_back(controllers[i].name);
   }
 }
 
-bool MechanismControl::spawnController(const std::string &type,
-                                       const std::string &name,
-                                       TiXmlElement *config)
+bool MechanismControl::spawnController(const std::string& xml_string, 
+                                       std::vector<int8_t>& ok,
+                                       std::vector<std::string>& name)
 {
-  std::vector<AddReq> add_reqs;
-  std::vector<RemoveReq> remove_reqs;
+  TiXmlDocument doc;
+  doc.Parse(xml_string.c_str());
 
-  add_reqs.resize(1);
-  add_reqs[0].name = name;
-  add_reqs[0].type = type;
-  add_reqs[0].config = config;
+  std::vector<int8_t> oks;
+  std::vector<std::string> names;
 
-  changeControllers(remove_reqs, add_reqs);
-  if (!add_reqs[0].success)
+  TiXmlElement *config = doc.RootElement();
+  if (!config)
+  {
+    ROS_ERROR("The XML given to SpawnController could not be parsed");
     return false;
+  }
+  if (config->ValueStr() != "controllers" &&
+      config->ValueStr() != "controller")
+  {
+    ROS_ERROR("The XML given to SpawnController must have either \"controller\" or \
+\"controllers\" as the root tag");
+    return false;
+  }
+
+  if (config->ValueStr() == "controllers")
+  {
+    config = config->FirstChildElement("controller");
+  }
+
+  size_t last = 0;
+  for (; config; config = config->NextSiblingElement("controller"))
+  {
+    ok.resize(last+1);
+    name.resize(last+1);
+    ok[last] = spawnController(config, name[last]);
+    last++;
+  }  
+
   return true;
 }
+
+
+bool MechanismControl::spawnController(TiXmlElement *config, std::string& name)
+{
+  // lock controllers
+  boost::mutex::scoped_lock guard(controllers_lock_);
+
+  // parse name from xml
+  if (!config->Attribute("name"))
+  {
+    ROS_ERROR("Could not spawn a controller because no name was given");
+    name = "Could not parse name";
+    return false;
+  }
+  name = config->Attribute("name");
+
+  // parse type from xml
+  if (!config->Attribute("type"))
+  {
+    ROS_ERROR("Could not spawn controller named \"%s\" because no type was given", name.c_str());
+    return false;
+  }
+  std::string type = config->Attribute("type");
+
+  // get reference to controller list
+  int free_controllers_list = (current_controllers_list_ + 1) % 2;
+  while (free_controllers_list == used_by_realtime_)
+    usleep(200);
+  std::vector<ControllerSpec>
+    &from = controllers_lists_[current_controllers_list_],
+    &to = controllers_lists_[free_controllers_list];
+  to.clear();
+
+  // Copy the running controllers from the 'from' list to the 'to' list
+  for (size_t i = 0; i < from.size(); ++i)
+    to.push_back(from[i]);
+
+  // Checks that we're not duplicating controllers
+  for (size_t j = 0; j < to.size(); ++j)
+  {
+    if (to[j].name == name)
+    {
+      to.clear();
+      ROS_ERROR("A controller named \"%s\" already exists", name.c_str());
+      return false;
+    }
+  }
+
+  // Constructs the controller
+  controller::Controller *c = NULL;
+  try {
+    c = controller::ControllerFactory::Instance().CreateObject(type);
+  } 
+  catch (Loki::DefaultFactoryError<std::string, controller::Controller>::Exception)
+  {}
+  if (c == NULL)
+  {
+    to.clear();
+    ROS_ERROR("Could not spawn controller '%s' because controller type '%s' does not exist",
+              name.c_str(), type.c_str());
+    return false;
+  }
+
+  // Initializes the controller
+  bool initialized = c->initXmlRequest(state_, config, name);
+  if (!initialized)
+  {
+    to.clear();
+    delete c;
+    ROS_ERROR("Initializing controller \"%s\" failed", name.c_str());
+    return false;
+  }
+
+  // Adds the controller to the new list
+  to.resize(to.size() + 1);
+  to[to.size()-1].name = name;
+  to[to.size()-1].c.reset(c);
+
+  // Success!  Swaps in the new set of controllers.
+  int former_current_controllers_list_ = current_controllers_list_;
+  current_controllers_list_ = free_controllers_list;
+
+  // Destroys the old controllers list when the realtime thread is finished with it.
+  while (used_by_realtime_ == former_current_controllers_list_)
+    usleep(200);
+  from.clear();
+
+  return true;
+}
+
+
 
 bool MechanismControl::killController(const std::string &name)
 {
-  std::vector<AddReq> add_reqs;
-  std::vector<RemoveReq> remove_reqs;
+  // lock the controllers
+  boost::mutex::scoped_lock guard(controllers_lock_);
 
-  remove_reqs.resize(1);
-  remove_reqs[0].name = name;
+  // get reference to controller list
+  int free_controllers_list = (current_controllers_list_ + 1) % 2;
+  while (free_controllers_list == used_by_realtime_)
+    usleep(200);
+  std::vector<ControllerSpec>
+    &from = controllers_lists_[current_controllers_list_],
+    &to = controllers_lists_[free_controllers_list];
+  to.clear();
 
-  changeControllers(remove_reqs, add_reqs);
-  if (!remove_reqs[0].success)
+  // Transfers the running controllers over, skipping the one to be removed.
+  bool removed = false;
+  for (size_t i = 0; i < from.size(); ++i)
+  {
+    if (from[i].name == name)
+      removed = true;
+    else
+      to.push_back(from[i]);
+  }
+
+  // Fails if we could not remove the controllers
+  if (!removed)
+  {
+    to.clear();
+    ROS_ERROR("Could not find controller named \"%s\" to remove", name.c_str());
     return false;
+  }
+
+  // Success!  Swaps in the new set of controllers.
+  int former_current_controllers_list_ = current_controllers_list_;
+  current_controllers_list_ = free_controllers_list;
+
+  // Destroys the old controllers list when the realtime thread is finished with it.
+  while (used_by_realtime_ == former_current_controllers_list_)
+    usleep(200);
+  from.clear();
+
   return true;
 }
+
 
 
 bool MechanismControl::switchController(const std::vector<std::string>& start_controllers,
                                         const std::vector<std::string>& stop_controllers)
 {
+  // lock controllers
   boost::mutex::scoped_lock guard(controllers_lock_);
 
   controller::Controller* ct;
@@ -302,7 +432,11 @@ bool MechanismControl::switchController(const std::vector<std::string>& start_co
   for (unsigned int i=0; i<stop_controllers.size(); i++)
   {
     ct = getControllerByName(stop_controllers[i]);
-    if (ct == NULL) return false;
+    if (ct == NULL){
+      ROS_ERROR("Could not stop controller with name %s because no controller with this name exists",
+                stop_controllers[i].c_str());
+      return false;
+    }
     stop_request_.push_back(ct);
   }
 
@@ -310,7 +444,11 @@ bool MechanismControl::switchController(const std::vector<std::string>& start_co
   for (unsigned int i=0; i<start_controllers.size(); i++)
   {
     ct = getControllerByName(start_controllers[i]);
-    if (ct == NULL) return false;
+    if (ct == NULL){
+      ROS_ERROR("Could not start controller with name %s because no controller with this name exists",
+                start_controllers[i].c_str());
+      return false;
+    }
     start_request_.push_back(ct);
   }
 
@@ -321,166 +459,24 @@ bool MechanismControl::switchController(const std::vector<std::string>& start_co
   while (please_switch_)
     usleep(100);
 
-  if (switch_success_)
-    ROS_INFO("MechanismControl: switching successful: result = %i", switch_success_);
-  else
-    ROS_INFO("MechanismControl: switching failed: result = %i", switch_success_);
-
   //controllers_lock_.unlock();
   guard.unlock();
-
-  if (switch_success_)
-    ROS_INFO("MechanismControl: switching successful: result = %i", switch_success_);
-  else
-    ROS_INFO("MechanismControl: switching failed: result = %i", switch_success_);
 
   return switch_success_;
 }
 
 
-void MechanismControl::changeControllers(std::vector<RemoveReq> &remove_reqs,
-                                         std::vector<AddReq> &add_reqs,
-                                         const int strictness)
-{
-  //timespec start_time, end_time;
-  //clock_gettime(CLOCK_REALTIME, &start_time);
-  double start_time, end_time;
-  start_time = realtime_gettime();
 
 
-  for (size_t i = 0; i < remove_reqs.size(); ++i)
-    remove_reqs[i].success = false;
-  for (size_t i = 0; i < add_reqs.size(); ++i)
-    add_reqs[i].success = false;
 
-  boost::mutex::scoped_lock guard(controllers_lock_);
 
-  int free_controllers_list = (current_controllers_list_ + 1) % 2;
-  while (free_controllers_list == used_by_realtime_)
-    usleep(200);
-  std::vector<ControllerSpec>
-    &from = controllers_lists_[current_controllers_list_],
-    &to = controllers_lists_[free_controllers_list];
-  to.clear();
 
-  // Transfers the running controllers over, skipping the ones to be removed.
-  for (size_t i = 0; i < from.size(); ++i)
-  {
-    bool found = false;
-    for (size_t j = 0; j < remove_reqs.size(); ++j)
-    {
-      if (from[i].name == remove_reqs[j].name)
-      {
-        remove_reqs[j].success = true;
-        found = true;
-        break;
-      }
-    }
 
-    if (!found)
-      to.push_back(from[i]);
-  }
 
-  // Fails if we could not remove all the controllers
-  if (strictness >= 2)
-  {
-    for (size_t i = 0; i < remove_reqs.size(); ++i)
-    {
-      if (!remove_reqs[i].success)
-        return;
-    }
-  }
 
-  // Adds the new controllers
-  std::vector<controller::Controller*> just_added;
-  for (size_t i = 0; i < add_reqs.size(); ++i)
-  {
-    // Checks that we're not duplicating controllers
-    bool exists = false;
-    for (size_t j = 0; j < to.size(); ++j)
-    {
-      if (to[j].name == add_reqs[i].name)
-      {
-        exists = true;
-      }
-    }
-    if (exists)
-    {
-      ROS_ERROR("A controller named \"%s\" already exists", add_reqs[i].name.c_str());
-      continue;
-    }
-
-    // Constructs the controller
-    controller::Controller *c = NULL;
-    try {
-      c = controller::ControllerFactory::Instance().CreateObject(add_reqs[i].type);
-    } catch (Loki::DefaultFactoryError<std::string, controller::Controller>::Exception)
-    {
-      // Do nothing, c is already NULL
-    }
-    if (c == NULL)
-    {
-      ROS_ERROR("Could not spawn controller '%s' because controller type '%s' does not exist",
-                add_reqs[i].name.c_str(), add_reqs[i].type.c_str());
-      continue;
-    }
-    //timespec init_start, init_end;
-    double init_start, init_end;
-    //clock_gettime(CLOCK_REALTIME, &init_start);
-    init_start = realtime_gettime();
-    bool initialized = c->initXmlRequest(state_, add_reqs[i].config, add_reqs[i].name);
-    //clock_gettime(CLOCK_REALTIME, &init_end);
-    init_end = realtime_gettime();
-    //double duration = 1.0e3 * (init_end.tv_sec - init_start.tv_sec) +
-      //double(init_end.tv_nsec)/1.0e6 - double(init_start.tv_nsec)/1.0e6;
-    double duration = 1.0e3 * (init_end - init_start);
-    ROS_DEBUG("  Initialized %s in %.3lf ms", add_reqs[i].name.c_str(), duration);
-    if (!initialized)
-    {
-      delete c;
-      continue;
-    }
-
-    // Adds the controller to the new list
-    to.resize(to.size() + 1);
-    to[to.size()-1].name = add_reqs[i].name;
-    to[to.size()-1].c.reset(c);
-    to[to.size()-1].state = INITIALIZED;
-    add_reqs[i].success = true;
-    just_added.push_back(c);
-  }
-
-  // Fails if we could not add all the controllers
-  if (strictness >= 1)
-  {
-    for (size_t i = 0; i < add_reqs.size(); ++i)
-    {
-      if (!add_reqs[i].success)
-      {
-        // FAIL
-        to.clear();
-        return;
-      }
-    }
-  }
-
-  // Success!  Swaps in the new set of controllers.
-  int former_current_controllers_list_ = current_controllers_list_;
-  current_controllers_list_ = free_controllers_list;
-  //clock_gettime(CLOCK_REALTIME, &end_time);
-  end_time = realtime_gettime();
-
-  // Destroys the old controllers list when the realtime thread is finished with it.
-  while (used_by_realtime_ == former_current_controllers_list_)
-    usleep(200);
-  from.clear();
-
-  //double duration = 1.0e3 * (end_time.tv_sec - start_time.tv_sec) +
-    //double(end_time.tv_nsec)/1.0e6 - double(start_time.tv_nsec)/1.0e6;
-  double duration = 1.0e3 * (end_time - start_time);
-  ROS_DEBUG("Controller replacement took %.3lf ms", duration);
-}
-
+// -----------------------------
+// -------- NODE ---------------
+// -----------------------------
 
 MechanismControlNode::MechanismControlNode(MechanismControl *mc)
   : mc_(mc),
@@ -619,84 +615,48 @@ bool MechanismControlNode::listControllerTypes(
   return true;
 }
 
-bool MechanismControlNode::spawnController(
-  robot_srvs::SpawnController::Request &req,
-  robot_srvs::SpawnController::Response &resp)
-{
-  TiXmlDocument doc;
-  doc.Parse(req.xml_config.c_str());
-
-  std::vector<uint8_t> oks;
-  std::vector<std::string> names;
-
-  TiXmlElement *config = doc.RootElement();
-  if (!config)
-  {
-    ROS_ERROR("The XML given to SpawnController could not be parsed");
-    return false;
-  }
-  if (config->ValueStr() != "controllers" &&
-      config->ValueStr() != "controller")
-  {
-    ROS_ERROR("The XML given to SpawnController must have either \"controller\" or \
-\"controllers\" as the root tag");
-    return false;
-  }
-
-  if (config->ValueStr() == "controllers")
-  {
-    config = config->FirstChildElement("controller");
-  }
-
-  std::vector<MechanismControl::AddReq> add_reqs;
-  std::vector<MechanismControl::RemoveReq> remove_reqs;
-
-  for (; config; config = config->NextSiblingElement("controller"))
-  {
-    bool ok = true;
-
-    if (!config->Attribute("type"))
-    {
-      ROS_ERROR("Could not spawn a controller because no type was given");
-      ok = false;
-    }
-    else if (!config->Attribute("name"))
-    {
-      ROS_ERROR("Could not spawn a controller because no name was given");
-      ok = false;
-    }
-    else
-    {
-      int last = add_reqs.size();
-      add_reqs.resize(last + 1);
-      add_reqs[last].type = config->Attribute("type");
-      add_reqs[last].name = config->Attribute("name");
-      add_reqs[last].config = config;
-    }
-  }
-
-  mc_->changeControllers(remove_reqs, add_reqs);
-
-  resp.ok.resize(add_reqs.size());
-  resp.name.resize(add_reqs.size());
-  for (size_t i = 0; i < add_reqs.size(); ++i)
-  {
-    resp.name[i] = add_reqs[i].name;
-    resp.ok[i] = add_reqs[i].success;
-  }
-
-  return true;
-}
 
 bool MechanismControlNode::listControllers(
   robot_srvs::ListControllers::Request &req,
   robot_srvs::ListControllers::Response &resp)
 {
+  // lock services
+  boost::mutex::scoped_lock guard(services_lock_);
   std::vector<std::string> controllers;
 
   (void) req;
   mc_->getControllerNames(controllers);
+
+  for (size_t i=0; i<controllers.size(); i++){
+    if (mc_->getControllerByName(controllers[i])->isRunning())
+      controllers[i] += "  --> Running";
+    else
+      controllers[i] += "  --> Stopped";
+  }
   resp.set_controllers_vec(controllers);
+  return true;
+}
+
+
+bool MechanismControlNode::spawnController(
+  robot_srvs::SpawnController::Request &req,
+  robot_srvs::SpawnController::Response &resp)
+{
+  // lock services
+  boost::mutex::scoped_lock guard(services_lock_);
+
+  // spawn controllers
+  if (!mc_->spawnController(req.xml_config, resp.ok, resp.name))
+    return false;
+
+  // start controllers if autostart true
+  if (req.autostart){
+    std::vector<std::string> start_list, stop_list;
+    for (size_t i=0; i<resp.ok.size(); i++)
+      if (resp.ok[i]) start_list.push_back(resp.name[i]);
+    if (!start_list.empty())
+      return mc_->switchController(start_list, stop_list);
+  }
   return true;
 }
 
@@ -704,81 +664,9 @@ bool MechanismControlNode::killController(
   robot_srvs::KillController::Request &req,
   robot_srvs::KillController::Response &resp)
 {
+  // lock services
+  boost::mutex::scoped_lock guard(services_lock_);
   resp.ok = mc_->killController(req.name);
-  return true;
-}
-
-bool MechanismControlNode::killAndSpawnControllers(
-  robot_srvs::KillAndSpawnControllers::Request &req,
-  robot_srvs::KillAndSpawnControllers::Response &resp)
-{
-  std::vector<MechanismControl::AddReq> add_reqs;
-  std::vector<MechanismControl::RemoveReq> remove_reqs;
-
-  TiXmlDocument doc;
-  doc.Parse(req.add_config.c_str());
-
-  TiXmlElement *config = doc.RootElement();
-  if (!config)
-  {
-    ROS_ERROR("The XML given to SpawnController could not be parsed");
-    return false;
-  }
-  if (config->ValueStr() != "controllers" &&
-      config->ValueStr() != "controller")
-  {
-    ROS_ERROR("The XML given to SpawnController must have either \"controller\" or \
-\"controllers\" as the root tag");
-    return false;
-  }
-
-  if (config->ValueStr() == "controllers")
-  {
-    config = config->FirstChildElement("controller");
-  }
-
-  for (; config; config = config->NextSiblingElement("controller"))
-  {
-    bool ok = true;
-
-    if (!config->Attribute("type"))
-    {
-      ROS_ERROR("Could not spawn a controller because no type was given");
-      ok = false;
-    }
-    else if (!config->Attribute("name"))
-    {
-      ROS_ERROR("Could not spawn a controller because no name was given");
-      ok = false;
-    }
-    else
-    {
-      int last = add_reqs.size();
-      add_reqs.resize(last + 1);
-      add_reqs[last].type = config->Attribute("type");
-      add_reqs[last].name = config->Attribute("name");
-      add_reqs[last].config = config;
-    }
-  }
-
-  remove_reqs.resize(req.kill_name.size());
-  for (size_t i = 0; i < req.kill_name.size(); ++i)
-    remove_reqs[i].name = req.kill_name[i];
-
-  mc_->changeControllers(remove_reqs, add_reqs);
-
-  resp.add_ok.resize(add_reqs.size());
-  resp.add_name.resize(add_reqs.size());
-  for (size_t i = 0; i < add_reqs.size(); ++i)
-  {
-    resp.add_name[i] = add_reqs[i].name;
-    resp.add_ok[i] = add_reqs[i].success;
-  }
-
-  resp.kill_ok.resize(remove_reqs.size());
-  for (size_t i = 0; i < remove_reqs.size(); ++i)
-    resp.kill_ok[i] = remove_reqs[i].success;
-
   return true;
 }
 
@@ -786,6 +674,44 @@ bool MechanismControlNode::switchController(
   robot_srvs::SwitchController::Request &req,
   robot_srvs::SwitchController::Response &resp)
 {
+  // lock services
+  boost::mutex::scoped_lock guard(services_lock_);
+
   resp.ok = mc_->switchController(req.start_controllers, req.stop_controllers);
+  return true;
+}
+
+bool MechanismControlNode::killAndSpawnControllers(robot_srvs::KillAndSpawnControllers::Request &req,
+                                                   robot_srvs::KillAndSpawnControllers::Response &res)
+{
+  // lock services
+  boost::mutex::scoped_lock guard(services_lock_);
+
+  // spawn controllers
+  std::vector<std::string> spawn_name;
+  std::vector<int8_t> spawn_ok;
+  if (!mc_->spawnController(req.add_config, spawn_ok, spawn_name))
+    return false;
+  bool spawn_success = true;
+  for (size_t i=0; i<spawn_ok.size(); i++){
+    if (!spawn_ok[i]){
+      spawn_success = false;
+      mc_->killController(spawn_name[i]);
+    }
+  }
+  if (!spawn_success) return false;
+
+  // switch controllers
+  if (!mc_->switchController(spawn_name, req.kill_name)){
+    // kill controllers that were spawned
+    for (size_t i=0; i<spawn_name.size(); i++)
+      mc_->killController(spawn_name[i]);
+    return false;
+  }
+
+  // kill controllers
+  for (size_t i=0; i<req.kill_name.size(); i++)
+    mc_->killController(req.kill_name[i]);
+
   return true;
 }

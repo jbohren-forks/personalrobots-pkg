@@ -79,7 +79,8 @@ public:
   // Non real-time functions
   bool initXml(TiXmlElement* config);
   void getControllerNames(std::vector<std::string> &v);
-  bool spawnController(const std::string &type, const std::string &name, TiXmlElement *config);
+  bool spawnController(const std::string &xml_string, 
+                       std::vector<int8_t>& ok, std::vector<std::string>& name);
   bool killController(const std::string &name);
   bool switchController(const std::vector<std::string>& start_controllers,
                         const std::vector<std::string>& stop_controllers);
@@ -113,9 +114,6 @@ public:
     std::string name;
     bool success;  // Response
   };
-  void changeControllers(std::vector<RemoveReq> &remove_reqs,
-                         std::vector<AddReq> &add_reqs,
-                         const int strictness = 0);
 
   mechanism::Robot model_;
   mechanism::RobotState *state_;
@@ -137,16 +135,14 @@ private:
     Statistics() : max(0), max1(60) {}
   };
 
-  enum {EMPTY, INITIALIZED = 1, RUNNING};
   struct ControllerSpec {
     std::string name;
     boost::shared_ptr<controller::Controller> c;
-    int state;
     boost::shared_ptr<Statistics> stats;
 
-    ControllerSpec() : state(EMPTY), stats(new Statistics) {}
+    ControllerSpec() : stats(new Statistics) {}
     ControllerSpec(const ControllerSpec &spec)
-      : name(spec.name), c(spec.c), state(spec.state), stats(spec.stats) {}
+      : name(spec.name), c(spec.c), stats(spec.stats) {}
   };
 
   boost::mutex controllers_lock_;
@@ -158,6 +154,7 @@ private:
   Statistics post_update_stats_;
   realtime_tools::RealtimePublisher<diagnostic_msgs::DiagnosticMessage> publisher_;
   void publishDiagnostics();
+  bool spawnController(TiXmlElement *config, std::string& name);
   std::vector<controller::Controller*> start_request_, stop_request_;
   bool please_switch_;
 
@@ -181,8 +178,6 @@ public:
                            robot_srvs::ListControllerTypes::Response &resp);
   bool listControllers(robot_srvs::ListControllers::Request &req,
                        robot_srvs::ListControllers::Response &resp);
-  bool spawnController(robot_srvs::SpawnController::Request &req,
-                       robot_srvs::SpawnController::Response &resp);
   bool killAndSpawnControllers(robot_srvs::KillAndSpawnControllers::Request &req,
                                robot_srvs::KillAndSpawnControllers::Response &resp);
   bool switchController(robot_srvs::SwitchController::Request &req,
@@ -190,6 +185,9 @@ public:
 
 private:
   ros::Node *node_;
+
+  bool spawnController(robot_srvs::SpawnController::Request &req,
+                       robot_srvs::SpawnController::Response &resp);
 
   bool killController(robot_srvs::KillController::Request &req,
                       robot_srvs::KillController::Response &resp);
@@ -201,6 +199,7 @@ private:
   const char* const mechanism_state_topic_;
   realtime_tools::RealtimePublisher<mechanism_msgs::MechanismState> publisher_;
 
+  boost::mutex services_lock_;
   AdvertisedServiceGuard list_controllers_guard_, list_controller_types_guard_,
     spawn_controller_guard_, kill_controller_guard_, switch_controller_guard_,
     kill_and_spawn_controllers_guard_;
