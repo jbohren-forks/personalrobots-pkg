@@ -579,7 +579,6 @@ ros::ServiceServer service_server_;
 // Main
 int main(int argc, char **argv)
 {
-  ros::init(argc, argv);
 
   if (argc < 2) {
     cerr << "A path to the file containing the experiment list is required.\n" << endl;
