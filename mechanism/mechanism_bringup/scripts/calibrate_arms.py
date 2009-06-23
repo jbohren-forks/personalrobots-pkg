@@ -48,6 +48,7 @@ from time import sleep
 roslib.load_manifest('mechanism_bringup')
 import rospy
 from std_msgs.msg import *
+import std_srvs.srv
 from robot_srvs.srv import *
 
 from robot_mechanism_controllers.srv import *
@@ -166,6 +167,16 @@ def set_controller(controller, command):
     pub = rospy.Publisher('/' + controller + '/set_command', Float64,
                               SendMessageOnSubscribe(Float64(command)))
 
+def calibrate_imu():
+    print "Calibrating IMU"
+    try:
+        rospy.wait_for_service('/imu/calibrate', 5)
+        calibrate = rospy.ServiceProxy('/imu/calibrate', std_srvs.srv.Empty)
+        calibrate(timeout=20) # This should take 10 seconds
+        return True
+    except:
+        print "IMU calibration failed: %s"%sys.exc_info()[0]
+        return False
 
 if __name__ == '__main__':
     rospy.wait_for_service('spawn_controller')
@@ -254,5 +265,11 @@ if __name__ == '__main__':
                     break # Go to next controller if no exception
                 except:
                     print "Failed to kill controller %s on try %d" % (name, i)
+    
+    imustatus = calibrate_imu()
+    
+    if not imustatus:
+        print "Mechanism calibration complete, but IMU calibration failed."
+        sys.exit(1)
 
     print "Calibration complete"
