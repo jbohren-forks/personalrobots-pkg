@@ -7,6 +7,7 @@
   <param name="right_arm/sbpl_planner/forward_search" value="true" />
   <param name="right_arm/sbpl_planner/search_mode" value="true" />
   <param name="right_arm/sbpl_planner/num_joints" value="7" />
+  <param name="right_arm/sbpl_planner/planner_type" value="cartesian" />
 
   <param name="right_arm/sbpl_planner/torso_arm_offset_x" value="0.0" />
   <param name="right_arm/sbpl_planner/torso_arm_offset_y" value="-0.188" />

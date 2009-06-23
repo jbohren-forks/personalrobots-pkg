@@ -77,6 +77,8 @@ namespace sbpl_arm_planner_node
 
       std::string planner_type_;
 
+      std::string pr2_desc_;
+
       double torso_arm_offset_x_;
 
       double torso_arm_offset_y_;
