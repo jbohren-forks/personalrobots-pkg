@@ -115,6 +115,13 @@ namespace pr2_ik {
     PoseStampedMsgToTF(request.data.pose_stamped, pose_stamped);
     ROS_DEBUG("Converted pose command to tf");
     // convert to reference frame of root link of the chain
+
+    if (!tf_.canTransform(root_name_,pose_stamped.frame_id_,pose_stamped.stamp_)) 
+    {
+      ROS_ERROR("pr2_ik:: Cannot transform from %s to %s",pose_stamped.frame_id_.c_str(),root_name_.c_str());
+      return false;
+    }
+ 
     tf_.transformPose(root_name_, pose_stamped, pose_stamped);
     ROS_DEBUG("Converted tf command to root name");
     PoseTFToKDL(pose_stamped, pose_desired_);
