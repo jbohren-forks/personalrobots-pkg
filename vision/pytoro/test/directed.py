@@ -27,6 +27,7 @@ class TestDirected(unittest.TestCase):
     # Consistent graph has zero error
     g = TreeOptimizer3()
     g.initializeOnlineOptimization()
+    print "HERE"
     g.addIncrementalEdge(0, 1, (1, 0, 0), (0, 0, 0))
     g.addIncrementalEdge(1, 0, (-1, 0, 0), (0, 0, 0))
     self.assert_(g.error() == 0.0)
@@ -49,9 +50,9 @@ class TestDirected(unittest.TestCase):
     g1.initializeOnlineOptimization()
 
 if __name__ == '__main__':
-  if 1:
+  if 0:
     rostest.unitrun('pytoro', 'directed', TestDirected)
   else:
     suite = unittest.TestSuite()
-    #suite.addTest(TestDirected('test_simple'))
+    suite.addTest(TestDirected('test_simple'))
     unittest.TextTestRunner(verbosity=2).run(suite)

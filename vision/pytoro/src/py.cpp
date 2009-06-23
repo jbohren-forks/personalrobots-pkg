@@ -41,7 +41,28 @@ PyObject *pginitializeOnlineIterations(PyObject *self, PyObject *args)
 PyObject *pgiterate(PyObject *self, PyObject *args)
 {
   TreeOptimizer3 *to = ((treeoptimizer3_t*)self)->to;
-  to->iterate();
+
+  PyObject *ovset = NULL;
+  int flag = 0;
+  if (!PyArg_ParseTuple(args, "|Oi", &ovset, &flag))
+    return NULL;
+
+  if (!ovset) {
+    to->iterate();
+  } else {
+    TreePoseGraph3::VertexSet vset;
+    PyObject *fi = PySequence_Fast(ovset, "vset");
+    if (fi == NULL)
+      return 0;
+    for (Py_ssize_t i = 0; i < PySequence_Fast_GET_SIZE(fi); i++) {
+      long vi = PyInt_AsLong(PySequence_Fast_GET_ITEM(fi, i));
+      vset.insert(to->vertex(vi));
+    }
+    Py_DECREF(fi);
+    TreePoseGraph3::EdgeSet* eset=to->affectedEdges(vset);
+    to->iterate(eset, flag);
+  }
+
   Py_RETURN_NONE;
 }
 
