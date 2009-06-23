@@ -108,8 +108,8 @@ public:
   ros::Publisher vis_pub_;
   ros::Publisher clines_pub_;
 
-// Service
-ros::ServiceServer service_server_;
+  // Service
+  ros::ServiceServer service_server_;
 
   string do_display_; /**< Type of display, none/local/remote */
   IplImage *cv_image_disp_out_; /**< Display image. */
@@ -201,6 +201,9 @@ ros::ServiceServer service_server_;
     }
 
     service_server_ = nh_.advertiseService("start_detection",&FaceDetector::startDetection,this);
+
+    ros::MultiThreadedSpinner s(2);
+    ros::spin(s);
 
   }
 
@@ -537,6 +540,7 @@ ros::ServiceServer service_server_;
       cvCvtScale(cv_image_disp_,cv_image_disp_out_,4.0/dispinfo_->dpp);
       cvShowImage("Face detector: Face Detection",cv_image_left_);
       cvShowImage("Face detector: Disparity",cv_image_disp_out_);
+      cvWaitKey(2);
  
       cv_mutex_.unlock();
     }
@@ -548,7 +552,7 @@ ros::ServiceServer service_server_;
   /*!
    *\brief Wait for completion, wait for user input, display images.
    */
-  bool spin() {
+  bool spin2() {
 
 
     while (nh_.ok() && !quit_) {
@@ -609,7 +613,7 @@ int main(int argc, char **argv)
 
   people::FaceDetector fd(numlines, names, haar_filenames, reliabilities);
 
-  fd.spin();
+  //fd.spin();
   
   return 0;
 }
