@@ -1,0 +1,33 @@
+<launch>
+  <param name="/use_sim_time" value="true" />
+  <!-- send pr2.xml to param server -->
+  <param name="robotdesc/pr2" command="$(find xacro)/xacro.py '$(find pr2_defs)/robots/pr2.xacro.xml'" />
+  <param name="ikea_cup"      textfile="$(find gazebo_robot_description)/gazebo_objects/ikea_cup.model" />
+  <param name="china_cup"      textfile="$(find gazebo_robot_description)/gazebo_objects/china_cup.model" />
+  <param name="wine"      textfile="$(find gazebo_robot_description)/gazebo_objects/000.580.67.model" />
+  <param name="bowl"      textfile="$(find gazebo_robot_description)/gazebo_objects/001.327.79.model" />
+  <param name="coffee_cup"      textfile="$(find gazebo_robot_description)/gazebo_objects/coffee_cup.model" />
+
+  <!-- start gazebo -->
+  <node pkg="gazebo" type="gazebo" args="-n $(find gazebo_robot_description)/gazebo_worlds/empty.world" respawn="false" output="screen">
+    <env name="LD_LIBRARY_PATH" value="$(find gazebo_plugin)/lib:$(find gazebo)/gazebo/lib:$(find Cg)/Cg/lib:$(optenv LD_LIBRARY_PATH)" />
+    <env name="GAZEBO_RESOURCE_PATH" value="$(find gazebo_robot_description):$(find gazebo)/gazebo/share/gazebo" />
+    <env name="OGRE_RESOURCE_PATH" value="$(find ogre)/ogre/lib/OGRE" />
+  </node>
+
+  <!-- push robotdesc/pr2 to factory and spawn robot in gazebo -->
+  <node pkg="gazebo_plugin" type="urdf2factory" args="robotdesc/pr2 -2 0 0 0 0" respawn="false" output="screen" />
+  <node pkg="gazebo_plugin" type="xml2factory" args="ikea_cup 0 -.8 0 0 0 0 ikea_cup" respawn="false" output="screen" />
+  <node pkg="gazebo_plugin" type="xml2factory" args="china_cup 1.0 0 0 0 0 0 china_cup" respawn="false" output="screen" />
+  <node pkg="gazebo_plugin" type="xml2factory" args="wine 2 0.0 0 0 0 0 wine" respawn="false" output="screen" />
+  <node pkg="gazebo_plugin" type="xml2factory" args="bowl 0 0.0 0 0 0 0 bowl" respawn="false" output="screen" />
+  <node pkg="gazebo_plugin" type="xml2factory" args="coffee_cup 0 .8 0 0 0 0 coffee_cup" respawn="false" output="screen" />
+
+  <!-- Robot state publisher -->
+  <node pkg="robot_state_publisher" type="state_publisher" name="robot_state_publisher">
+    <param name="publish_frequency" type="double" value="50.0" />
+    <param name="tf_prefix" type="string" value="" />
+  </node>
+
+</launch>
+
