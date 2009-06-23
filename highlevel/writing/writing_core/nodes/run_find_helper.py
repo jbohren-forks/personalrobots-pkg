@@ -91,7 +91,11 @@ class FindHelperAction(python_actions.Action):
         self.update()
         if self.found:
           self.feedback.header = self.found.header
-          self.feedback.point = self.found.pos
+          self.feedback.pose.position = self.found.pos
+          self.feedback.pose.orientation.x = 0.0
+          self.feedback.pose.orientation.y = 0.0
+          self.feedback.pose.orientation.z = 0.0
+          self.feedback.pose.orientation.w = 1.0
           return python_actions.SUCCESS
 
     return python_actions.ABORTED
@@ -103,7 +107,7 @@ if __name__ == '__main__':
   try:
 
     rospy.init_node("find_helper")
-    w = FindHelperAction("find_helper", Empty, pr2_robot_actions.msg.FindHelperState, robot_msgs.msg.PointStamped)
+    w = FindHelperAction("find_helper", Empty, pr2_robot_actions.msg.FindHelperState, robot_msgs.msg.PoseStamped)
     w.run()
     rospy.spin();
 
