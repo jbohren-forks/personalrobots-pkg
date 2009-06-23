@@ -4,7 +4,7 @@
       -->
     <param name="videre_mode" type="str" value="rectified"/>
     <!-- params for the stereo_image_proc node -->
-    <param name="exposure" type="int" value="0"/>
+    <param name="exposure" type="int" value="20"/>
     <param name="exposure_auto" type="bool" value="false"/>
 
     <!-- <param name="brightness" type="int" value="5"/ -->

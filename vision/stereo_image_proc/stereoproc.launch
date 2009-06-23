@@ -9,13 +9,6 @@
          rectified:     Rectification on chip
                         Provides: all 3 images available but no color
           -->
-  <param name="stereo/videre_mode" type="str" value="none"/>
-  <param name="stereo/do_colorize" type="bool" value="True"/>
-  <param name="stereo/do_rectify" type="bool" value="True"/>
-  <param name="stereo/do_stereo" type="bool" value="True"/>
-  <param name="stereo/do_calc_points" type="bool" value="True"/>
-  <param name="stereo/do_keep_coords" type="bool" value="True"/>
-
   <!-- stereo processing parameters
        texture_thresh:  Threshold for removing bad disparities based on texture
                         Default value: 30
@@ -32,9 +25,16 @@
        num_disp:        Number of disparities (pixels)
                         Default value: 64
        -->
-
-  <param name="stereo/num_disp" type="int" value="64"/>
-
- <node pkg="stereo_image_proc" type="stereoproc" respawn="false" output="screen"/>
+  <group ns="stereo">
+    <node pkg="stereo_image_proc" type="stereoproc" respawn="false" output="screen" name="stereoproc">
+      <param name="videre_mode" type="str" value="none"/>
+      <param name="do_colorize" type="bool" value="True"/>
+      <param name="do_rectify" type="bool" value="True"/>
+      <param name="do_stereo" type="bool" value="True"/>
+      <param name="do_calc_points" type="bool" value="True"/>
+      <param name="do_keep_coords" type="bool" value="True"/>
+      <param name="num_disp" type="int" value="64"/>
+    </node>
+  </group>
 </launch>
 

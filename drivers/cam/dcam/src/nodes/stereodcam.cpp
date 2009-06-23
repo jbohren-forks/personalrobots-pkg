@@ -163,8 +163,6 @@ class StereoDcamNode : public ros::Node
 
   std_msgs::Empty check_params_msg_;
 
-  std::string stereo_name_;
-
 public:
 
   dcam::StereoDcam* stcam_;
@@ -184,30 +182,28 @@ public:
     diagnostic_.add( timestamp_diag_ );
     diagnostic_.addUpdater( &StereoDcamNode::freqStatus );
 
-    stereo_name_ = mapName("stereo") + std::string("/");
-
     // If there is a camera...
     if (num_cams > 0)
     {
       // Check our gui parameter, or else use first camera
       uint64_t guid;
-      if (hasParam(stereo_name_+ std::string("guid")))
+      if (hasParam("~guid"))
       {
         string guid_str;
-        getParam(stereo_name_ + std::string("guid"), guid_str);
+        getParam("~guid", guid_str);
         
         guid = strtoll(guid_str.c_str(), NULL, 16);
       } else {
         guid = dcam::getGuid(0);
       }
 
-      param(stereo_name_ + std::string("frame_id"), frame_id_, string("stereo"));
+      param("~frame_id", frame_id_, string("stereo"));
 
 
       // Get the ISO speed parameter if available
       string str_speed;
       dc1394speed_t speed;
-      param(stereo_name_ + std::string("speed"), str_speed, string("S400"));
+      param("~speed", str_speed, string("S400"));
       if (str_speed == string("S100"))
         speed = DC1394_ISO_SPEED_100;
       else if (str_speed == string("S200"))
@@ -218,7 +214,7 @@ public:
       // Get the FPS parameter if available;
       double dbl_fps;
       dc1394framerate_t fps;
-      param(stereo_name_ + std::string("fps"), dbl_fps, 30.0);
+      param("~fps", dbl_fps, 30.0);
       desired_freq_ = dbl_fps;
       if (dbl_fps >= 240.0)
         fps = DC1394_FRAMERATE_240;
@@ -243,7 +239,7 @@ public:
       // Get the videre processing mode if available:
       string str_videre_mode;
       videre_proc_mode_t videre_mode = PROC_MODE_NONE;  
-      param(stereo_name_ + std::string("videre_mode"), str_videre_mode, string("none"));
+      param("~videre_mode", str_videre_mode, string("none"));
       if (str_videre_mode == string("rectified"))
         videre_mode = PROC_MODE_RECTIFIED;
       else if (str_videre_mode == string("disparity"))
@@ -259,14 +255,14 @@ public:
 
       // Fetch the camera string and send it to the parameter server if people want it (they shouldn't)
       std::string params(stcam_->getParameters());
-      setParam(stereo_name_ + std::string("params"), params);
+      setParam("~params", params);
 
-      setParam(stereo_name_ + std::string("exposure_max"), (int)stcam_->expMax);
-      setParam(stereo_name_ + std::string("exposure_min"), (int)stcam_->expMin);
-      setParam(stereo_name_ + std::string("gain_max"), (int)stcam_->gainMax);
-      setParam(stereo_name_ + std::string("gain_min"), (int)stcam_->gainMin);
-      setParam(stereo_name_ + std::string("brightness_max"), (int)stcam_->brightMax);
-      setParam(stereo_name_ + std::string("brightness_min"), (int)stcam_->brightMin);
+      setParam("~exposure_max", (int)stcam_->expMax);
+      setParam("~exposure_min", (int)stcam_->expMin);
+      setParam("~gain_max", (int)stcam_->gainMax);
+      setParam("~gain_min", (int)stcam_->gainMin);
+      setParam("~brightness_max", (int)stcam_->brightMax);
+      setParam("~brightness_min", (int)stcam_->brightMin);
 
       // Configure camera
       stcam_->setFormat(mode, fps, speed);
@@ -277,9 +273,9 @@ public:
       stcam_->setSpeckleDiff(10);
       stcam_->setCompanding(true);
 
-      advertise<image_msgs::RawStereo>(stereo_name_ + std::string("raw_stereo"), 1);
+      advertise<image_msgs::RawStereo>("raw_stereo", 1);
 
-      subscribe(stereo_name_ + std::string("check_params"), check_params_msg_, &StereoDcamNode::checkParams, 1);
+      subscribe("~check_params", check_params_msg_, &StereoDcamNode::checkParams, 1);
 
       // Start the camera
       stcam_->start();
@@ -302,32 +298,32 @@ public:
 
   void checkAndSetAll()
   {
-    checkAndSetIntBool("exposure",       boost::bind(&dcam::Dcam::setExposure,      stcam_, _1, _2));
-    checkAndSetIntBool("gain",           boost::bind(&dcam::Dcam::setGain,          stcam_, _1, _2));
-    checkAndSetIntBool("brightness",     boost::bind(&dcam::Dcam::setBrightness,    stcam_, _1, _2));
-    checkAndSetBool("companding",        boost::bind(&dcam::Dcam::setCompanding,    stcam_, _1));
-    checkAndSetBool("hdr",               boost::bind(&dcam::Dcam::setHDR,           stcam_, _1));
-    checkAndSetBool("unique_check",      boost::bind(&dcam::StereoDcam::setUniqueCheck,      stcam_, _1));
-    checkAndSetInt("texture_thresh",     boost::bind(&dcam::StereoDcam::setTextureThresh, stcam_, _1));
-    checkAndSetInt("unique_thresh",      boost::bind(&dcam::StereoDcam::setUniqueThresh,  stcam_, _1));
-    checkAndSetInt("smoothness_thresh",  boost::bind(&dcam::StereoDcam::setSmoothnessThresh,  stcam_, _1));
-    checkAndSetInt("horopter",           boost::bind(&dcam::StereoDcam::setHoropter,      stcam_, _1));
-    checkAndSetInt("speckle_size",       boost::bind(&dcam::StereoDcam::setSpeckleSize,      stcam_, _1));
-    checkAndSetInt("speckle_diff",       boost::bind(&dcam::StereoDcam::setSpeckleDiff,      stcam_, _1));
-    checkAndSetInt("corr_size",          boost::bind(&dcam::StereoDcam::setCorrsize,      stcam_, _1));
-    checkAndSetInt("num_disp",           boost::bind(&dcam::StereoDcam::setNumDisp,      stcam_, _1));
+    checkAndSetIntBool("~exposure",       boost::bind(&dcam::Dcam::setExposure,      stcam_, _1, _2));
+    checkAndSetIntBool("~gain",           boost::bind(&dcam::Dcam::setGain,          stcam_, _1, _2));
+    checkAndSetIntBool("~brightness",     boost::bind(&dcam::Dcam::setBrightness,    stcam_, _1, _2));
+    checkAndSetBool("~companding",        boost::bind(&dcam::Dcam::setCompanding,    stcam_, _1));
+    checkAndSetBool("~hdr",               boost::bind(&dcam::Dcam::setHDR,           stcam_, _1));
+    checkAndSetBool("~unique_check",      boost::bind(&dcam::StereoDcam::setUniqueCheck,      stcam_, _1));
+    checkAndSetInt("~texture_thresh",     boost::bind(&dcam::StereoDcam::setTextureThresh, stcam_, _1));
+    checkAndSetInt("~unique_thresh",      boost::bind(&dcam::StereoDcam::setUniqueThresh,  stcam_, _1));
+    checkAndSetInt("~smoothness_thresh",  boost::bind(&dcam::StereoDcam::setSmoothnessThresh,  stcam_, _1));
+    checkAndSetInt("~horopter",           boost::bind(&dcam::StereoDcam::setHoropter,      stcam_, _1));
+    checkAndSetInt("~speckle_size",       boost::bind(&dcam::StereoDcam::setSpeckleSize,      stcam_, _1));
+    checkAndSetInt("~speckle_diff",       boost::bind(&dcam::StereoDcam::setSpeckleDiff,      stcam_, _1));
+    checkAndSetInt("~corr_size",          boost::bind(&dcam::StereoDcam::setCorrsize,      stcam_, _1));
+    checkAndSetInt("~num_disp",           boost::bind(&dcam::StereoDcam::setNumDisp,      stcam_, _1));
   }
 
   void checkAndSetIntBool(std::string param_name, boost::function<void(int, bool)> setfunc)
   {
-    if (hasParam(stereo_name_ +  param_name) || hasParam(stereo_name_ +  param_name + std::string("_auto")))
+    if (hasParam(param_name) || hasParam(param_name + std::string("_auto")))
     {
 
       int val = 0;
       bool isauto = false;
 
-      param( stereo_name_ +  param_name, val, 0);
-      param( stereo_name_ +  param_name + std::string("_auto"), isauto, false);
+      param( param_name, val, 0);
+      param( param_name + std::string("_auto"), isauto, false);
     
       int testval = (val * (!isauto));
 
@@ -343,11 +339,11 @@ public:
 
   void checkAndSetBool(std::string param_name, boost::function<bool(bool)> setfunc)
   {
-    if (hasParam(stereo_name_ +  param_name))
+    if (hasParam(param_name))
     {
       bool on = false;
 
-      param(stereo_name_ +  param_name, on, false);
+      param(param_name, on, false);
     
 
       std::map<std::string, int>::iterator cacheval = paramcache_.find(param_name);
@@ -362,12 +358,12 @@ public:
 
   void checkAndSetInt(std::string param_name, boost::function<bool(int)> setfunc)
   {
-    if (hasParam(stereo_name_ +  param_name))
+    if (hasParam(param_name))
     {
 
       int val = 0;
 
-      param(stereo_name_ +  param_name, val, 0);
+      param( param_name, val, 0);
 
       std::map<std::string, int>::iterator cacheval = paramcache_.find(param_name);
 
@@ -409,7 +405,7 @@ public:
                                                  // Doing this as a stopgap
                                                  // measure.
     timestamp_diag_.tick(raw_stereo_.header.stamp);
-    publish(stereo_name_ + std::string("raw_stereo"), raw_stereo_);
+    publish("raw_stereo", raw_stereo_);
 
     count_++;
     return true;

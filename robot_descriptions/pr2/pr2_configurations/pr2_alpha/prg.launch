@@ -76,17 +76,8 @@
   <node pkg="runtime_monitor" type="disk_usage.py" args="$(optenv HOME /home)" machine="three"/>
   <node pkg="runtime_monitor" type="disk_usage.py" args="$(optenv HOME /home)" machine="four"/>   
 
-<!-- Stereo cam -->
-  <group ns="stereo">
-    <param name="videre_mode" type="str" value="none"/>
-    <param name="exposure_auto" type="bool" value="True" />
-    <param name="gain_auto" type="bool" value="True" />
-    <param name="brightness_auto" type="bool" value="True" />
-    <param name="fps" type="double" value="15.0"/>
-    <param name="frame_id" type="string" value="stereo_optical_frame"/>
-    <param name="num_disp" value="128"/>
-  </group>
-  <node machine="four" pkg="dcam" type="stereodcam" respawn="false"/>
+  <!-- Videre Stereo cam -->
+  <include file="$(find pr2_alpha)/stereo.launch" />
 
   <!-- Plug to chessboard offsets -->
   <group ns="plug_detector">

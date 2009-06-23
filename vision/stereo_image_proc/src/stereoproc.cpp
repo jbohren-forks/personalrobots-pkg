@@ -75,28 +75,23 @@ class StereoProc : public ros::Node
 
   string frame_id_;
 
-  std::string stereo_name_;
-
 public:
 
   cam::StereoData* stdata_;
 
   StereoProc() : ros::Node("stereoproc"), diagnostic_(this), count_(0), stdata_(NULL)
   {
-
-    stereo_name_ = mapName("stereo") + std::string("/");
-
     diagnostic_.addUpdater( &StereoProc::freqStatus );
 
-    param(stereo_name_ + std::string("do_colorize"), do_colorize_, false);
+    param("~do_colorize", do_colorize_, false);
 
-    param(stereo_name_ + std::string("do_rectify"), do_rectify_, false);
+    param("~do_rectify", do_rectify_, false);
 
-    param(stereo_name_ + std::string("do_stereo"), do_stereo_, false);
+    param("~do_stereo", do_stereo_, false);
 
-    param(stereo_name_ + std::string("do_calc_points"), do_calc_points_, false);
+    param("~do_calc_points", do_calc_points_, false);
 
-    param(stereo_name_ + std::string("do_keep_coords"), do_keep_coords_, false);
+    param("~do_keep_coords", do_keep_coords_, false);
 
     if (do_keep_coords_) {
     	ROS_INFO("I'm keeping the image coordonate in the point cloud\n");
@@ -115,38 +110,38 @@ public:
     //    stdata_->setSpeckleDiff(10);
 
     int unique_thresh;
-    param(stereo_name_ + "unique_thresh", unique_thresh, 36);
+    param("~unique_thresh", unique_thresh, 36);
     stdata_->setTextureThresh(unique_thresh);
 
     int texture_thresh;
-    param(stereo_name_ + "texture_thresh", texture_thresh, 30);
+    param("~texture_thresh", texture_thresh, 30);
     stdata_->setUniqueThresh(texture_thresh);
 
     int speckle_size;
-    param(stereo_name_ + "speckle_size", speckle_size, 100);
+    param("~speckle_size", speckle_size, 100);
     stdata_->setSpeckleRegionSize(speckle_size);
 
     int speckle_diff;
-    param(stereo_name_ + "speckle_diff", speckle_diff, 10);
+    param("~speckle_diff", speckle_diff, 10);
     stdata_->setSpeckleDiff(speckle_diff);
     
     int smoothness_thresh;
-    if (getParam(stereo_name_ + "smoothness_thresh", smoothness_thresh))
+    if (getParam("~smoothness_thresh", smoothness_thresh))
       stdata_->setSmoothnessThresh(smoothness_thresh);
 
     int horopter;
-    if (getParam(stereo_name_ + "horopter", horopter))
+    if (getParam("~horopter", horopter))
       stdata_->setHoropter(horopter);
 
     int corr_size;
-    if (getParam(stereo_name_ + "corr_size", corr_size))
+    if (getParam("~corr_size", corr_size))
       stdata_->setCorrSize(corr_size);
 
     int num_disp;
-    if (getParam(stereo_name_ + "num_disp", num_disp))
+    if (getParam("~num_disp", num_disp))
       stdata_->setNumDisp(num_disp);
 
-    subscribe(stereo_name_ + std::string("raw_stereo"), raw_stereo_, &StereoProc::rawCb, 1);
+    subscribe("raw_stereo", raw_stereo_, &StereoProc::rawCb, 1);
   }
 
   ~StereoProc()
@@ -190,8 +185,8 @@ public:
 
   void publishCam()
   {
-    publishImages(stereo_name_ + std::string("left/"), stdata_->imLeft);
-    publishImages(stereo_name_ + std::string("right/"), stdata_->imRight);
+    publishImages("left/", stdata_->imLeft);
+    publishImages("right/", stdata_->imRight);
 
     if (stdata_->hasDisparity)
     {
@@ -217,7 +212,7 @@ public:
       disparity_info_.speckle_region_size = stdata_->speckleRegionSize;
       disparity_info_.unique_check = stdata_->unique_check;
 
-      publish(stereo_name_ + std::string("disparity_info"), disparity_info_);
+      publish("disparity_info", disparity_info_);
 
       fillImage(img_,  "disparity",
                 stdata_->imHeight, stdata_->imWidth, 1,
@@ -226,7 +221,7 @@ public:
 
       img_.header.stamp = raw_stereo_.header.stamp;
       img_.header.frame_id = raw_stereo_.header.frame_id;
-      publish(stereo_name_ + std::string("disparity"), img_);
+      publish("disparity", img_);
     }
 
     if (do_calc_points_)
@@ -266,7 +261,7 @@ public:
         }
       }
 
-      publish(stereo_name_ + std::string("cloud"), cloud_);
+      publish("cloud", cloud_);
     }
 
     stereo_info_.header.stamp = raw_stereo_.header.stamp;
@@ -278,7 +273,7 @@ public:
     memcpy((char*)(&stereo_info_.Om[0]), (char*)(stdata_->Om),  3*sizeof(double));
     memcpy((char*)(&stereo_info_.RP[0]), (char*)(stdata_->RP), 16*sizeof(double));
 
-    publish(stereo_name_ + std::string("stereo_info"), stereo_info_);
+    publish("stereo_info", stereo_info_);
   }
 
   void publishImages(std::string base_name, cam::ImageData* img_data)
@@ -391,19 +386,19 @@ public:
 
   void advertiseCam()
   {
-    advertise<image_msgs::StereoInfo>(stereo_name_ + std::string("stereo_info"), 1);
+    advertise<image_msgs::StereoInfo>("stereo_info", 1);
 
-    advertiseImages(stereo_name_ + std::string("left/"), stdata_->imLeft);
-    advertiseImages(stereo_name_ + std::string("right/"), stdata_->imRight);
+    advertiseImages("left/", stdata_->imLeft);
+    advertiseImages("right/", stdata_->imRight);
 
     if (stdata_->hasDisparity)
     {
-      advertise<image_msgs::DisparityInfo>(stereo_name_ + std::string("disparity_info"), 1);
-      advertise<image_msgs::Image>(stereo_name_ + std::string("disparity"), 1);
+      advertise<image_msgs::DisparityInfo>("disparity_info", 1);
+      advertise<image_msgs::Image>("disparity", 1);
     }
 
     if (do_calc_points_)
-      advertise<robot_msgs::PointCloud>(stereo_name_ + std::string("cloud"),1);
+      advertise<robot_msgs::PointCloud>("cloud",1);
   }
 
 
