@@ -36,8 +36,4 @@
     <cpp cflags="-I${prefix}/build/ann_1.1.1/include" lflags="-Wl,-rpath,${prefix}/build/ann_1.1.1/lib -L${prefix}/build/ann_1.1.1/lib -lANN" />
     <doxymaker external="http://www.cs.umd.edu/~mount/ANN/Files/1.1.1/ANNmanual_1.1.1.pdf"/>
   </export>
-
-  <sysdepend os="ubuntu" version="7.04-feisty" package="wget"/>
-  <sysdepend os="ubuntu" version="8.04-hardy" package="wget"/>
-
 </package>

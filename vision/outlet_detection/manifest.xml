@@ -41,4 +41,7 @@
   <sysdepend os="ubuntu" version="7.04-feisty" package="python-imaging"/>
   <sysdepend os="ubuntu" version="8.04-hardy" package="python-imaging"/>
   <sysdepend os="ubuntu" version="8.10-intrepid" package="python-imaging"/>
+  <rosdep name="python-imaging"/>
+  <rosdep name="python-matplotlib"/>
+  <rosdep name="atlas"/>
 </package>

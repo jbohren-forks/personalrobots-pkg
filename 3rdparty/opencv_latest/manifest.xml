@@ -29,5 +29,10 @@ in a way that can be managed by the ROS dependency system.
 <sysdepend os="ubuntu" version="8.04-hardy" package="libgraphicsmagick++1-dev"/>
 <sysdepend os="ubuntu" version="9.04-jaunty" package="libswscale-dev"/>
 <versioncontrol type="svn" url="https://opencvlibrary.svn.sourceforge.net/svnroot/opencvlibrary/tags/latest_tested_snapshot/opencv"/>
+<rosdep name="libavformat"/>
+<rosdep name="libavcodec"/>
+<rosdep name="libjasper"/>
+<rosdep name="libswscale"/>
+<rosdep name="libgraphicsmagick++"/>
 </package>
 

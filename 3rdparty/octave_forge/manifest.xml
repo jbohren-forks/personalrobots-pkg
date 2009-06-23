@@ -17,7 +17,7 @@
   <sysdepend os="ubuntu" version="7.04-feisty" package="octave2.9-headers"/>
   <sysdepend os="ubuntu" version="8.04-hardy" package="octave3.0"/>
   <sysdepend os="ubuntu" version="8.04-hardy" package="octave3.0-headers"/>
-
+  <rosdep name="octave"/>
 </package>
 
 

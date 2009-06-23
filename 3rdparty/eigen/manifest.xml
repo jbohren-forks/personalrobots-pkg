@@ -61,8 +61,4 @@
     <cpp cflags="-I${prefix}/build/eigen2" lflags="" />
     <doxymaker external="http://eigen.tuxfamily.org/api/"/>
   </export>
-  
-  <sysdepend os="ubuntu" version="7.04-feisty" package="wget"/>
-  <sysdepend os="ubuntu" version="8.04-hardy" package="wget"/>
-
 </package>

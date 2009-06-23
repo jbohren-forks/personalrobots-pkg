@@ -11,5 +11,6 @@ Provides an easy way of editing properties in wxWidgets.
 </export>
 <sysdepend os="ubuntu" version="7.04-feisty" package="libwxgtk2.8-dev"/>
 <sysdepend os="ubuntu" version="8.04-hardy" package="libwxgtk2.8-dev"/>
+<rosdep name="wxwidgets"/>
 </package>
 

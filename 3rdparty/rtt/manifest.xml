@@ -15,12 +15,6 @@ in a way that can be managed by the ROS dependency system.
   <cpp cflags="-I${prefix}/rtt/include -DOROCOS_TARGET=gnulinux" lflags="-Wl,-rpath,-L${prefix}/rtt/lib -lorocos-rtt-gnulinux -L${prefix}/rtt/lib  -lpthread"/>
   <doxymaker external="http://www.orocos.org/rtt" />
 </export>
-<sysdepend os="ubuntu" version="7.04-feisty" package="subversion"/>
-<sysdepend os="ubuntu" version="8.04-hardy" package="subversion"/>
-<sysdepend os="ubuntu" version="7.04-feisty" package="libboost-dev"/>
-<sysdepend os="ubuntu" version="7.10-gutsy" package="libboost-dev=1.34.1-2ubuntu1"/>
-<sysdepend os="ubuntu" version="7.04-feisty" package="libboost-dev"/>
-<sysdepend os="ubuntu" version="8.04-hardy" package="libboost-dev"/>
 <versioncontrol type="svn" url="http://svn.mech.kuleuven.be/repos/orocos/trunk/rtt"/>
 </package>
 

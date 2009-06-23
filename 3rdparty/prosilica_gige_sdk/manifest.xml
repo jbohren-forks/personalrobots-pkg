@@ -11,6 +11,4 @@ The Prosilica GigE Linux SDK allows users to control and capture images from Pro
 <export>
   <cpp lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lPvAPI" cflags="-I${prefix}/include"/>
 </export>
-<sysdepend os="ubuntu" version="7.04-feisty" package="wget"/>
-<sysdepend os="ubuntu" version="8.04-hardy" package="wget"/>
 </package>

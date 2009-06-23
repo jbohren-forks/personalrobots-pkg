@@ -61,7 +61,4 @@
     <cpp cflags="-I${prefix}/build/cminpack-1.0.2" lflags="-Wl,-rpath,${prefix}/build/cminpack-1.0.2 -L${prefix}/build/cminpack-1.0.2 -lminpack" />
   </export>
 
-  <sysdepend os="ubuntu" version="7.04-feisty" package="wget"/>
-  <sysdepend os="ubuntu" version="8.04-hardy" package="wget"/>
-
 </package>

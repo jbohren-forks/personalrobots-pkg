@@ -16,6 +16,10 @@
   <sysdepend os="debian" version="4.0-etch" package="autoconf"/>
   <sysdepend os="debian" version="4.0-etch" package="automake"/>
   <sysdepend os="debian" version="4.0-etch" package="libtool"/>
+  <rosdep name="automake"/>
+  <rosdep name="autoconf"/>
+  <rosdep name="libtool"/>
+  <rosdep name="libpng"/>
   <export>
     <cpp cflags="-I${prefix}/local/include" lflags="-Wl,-rpath,${prefix}/local/lib -L${prefix}/local/lib -lsunflower" />
     <doxymaker external="http://libsunflower.sourceforge.net/"/>

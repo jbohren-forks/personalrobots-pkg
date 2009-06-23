@@ -31,4 +31,5 @@
 	 lflags="-Wl,-rpath,${prefix}/lib/ -L${prefix}/lib -lrobot_mechanism_controllers" />
   </export>
   <sysdepend os="ubuntu" version="8.04-hardy" package="libltdl3-dev"/>
+  <rosdep name="libtool"/>
 </package>

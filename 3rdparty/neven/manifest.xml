@@ -12,7 +12,7 @@
 
   <sysdepend os="ubuntu" version="7.04-feisty" package="git"/>
   <sysdepend os="ubuntu" version="8.04-hardy"  package="git"/>
-
+  <rosdep name="git"/>
   <url>http://android.git.kernel.org/?p=platform/external/neven.git;a=summary</url>
   <versioncontrol type="git" url="git://android.git.kernel.org/platform/external/neven.git"/>
 </package>

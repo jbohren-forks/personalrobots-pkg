@@ -32,6 +32,7 @@
 <depend package="visualization_msgs" />
 <sysdepend os="ubuntu" version="7.04-feisty" package="python-numpy"/>
 <sysdepend os="ubuntu" version="8.04-hardy" package="python-numpy"/>
+<rosdep name="python-numpy"/>
 <export>
 <cpp cflags="-I${prefix}/msg/cpp"/>
 </export>

@@ -16,7 +16,6 @@ FreeImage is an Open Source library project for developers who would like to sup
 </export>
 <sysdepend os="ubuntu" version="7.04-feisty" package="unzip"/>
 <sysdepend os="ubuntu" version="8.04-hardy" package="unzip"/>
-<sysdepend os="ubuntu" version="7.04-feisty" package="wget"/>
-<sysdepend os="ubuntu" version="8.04-hardy" package="wget"/>
+<rosdep name="unzip"/>
 </package>
 

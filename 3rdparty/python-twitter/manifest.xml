@@ -8,4 +8,5 @@
   <versioncontrol type="svn" url="http://python-twitter.googlecode.com/svn/trunk/"/>
   <sysdepend os="ubuntu" version="7.04-feisty" package="python-simplejson"/>
   <sysdepend os="ubuntu" version="8.04-hardy" package="python-simplejson"/>
+  <rosdep name="python-simplejson"/>
 </package>
