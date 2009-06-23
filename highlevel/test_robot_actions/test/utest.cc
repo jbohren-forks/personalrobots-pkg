@@ -17,9 +17,10 @@ using namespace std_msgs;
 class MyAction: public robot_actions::Action<Float32, Float32> {
 public:
 
-  MyAction(std::string name): robot_actions::Action<Float32, Float32>(name), _use_deactivate_wait(false) {}
+  MyAction(std::string name): robot_actions::Action<Float32, Float32>(name), _use_deactivate_wait(false), _handled_preempt(false) {}
 
   bool _use_deactivate_wait;
+  bool _handled_preempt;
 
   const static int FAIL_IF = 30;
 
@@ -63,6 +64,11 @@ private:
 
     return waitForDeactivation(feedback);
   }
+
+  virtual void handlePreempt() {
+    _handled_preempt = true;
+  }
+
 };
 
 /**
@@ -108,6 +114,7 @@ TEST(robot_actions, action_with_simple_container){
   // Activate
   a.activate(g);
   ASSERT_EQ(c._status.value, foo.ACTIVE);
+  ASSERT_EQ(a._handled_preempt, false);
 
   // Sleep for longer than the goal. Should be finished
   ros::Duration d; 
@@ -123,6 +130,7 @@ TEST(robot_actions, action_with_simple_container){
   a.preempt();
   d.sleep();
   ASSERT_EQ(c._status.value == foo.PREEMPTED, true);
+  ASSERT_EQ(a._handled_preempt, true);
   ASSERT_EQ(c._value < g.data, true);
 
   // Message adapter connects an action to a ros message context

@@ -78,6 +78,11 @@ namespace robot_actions {
      * @param feedback The feedback message. At the end of the function, this will be published.
      */
     virtual ResultStatus execute(const Goal& goal, Feedback& feedback) = 0;
+
+    /**
+     * @brief Blocking, user specified code for preemption. By defualt, it does nothing. Please keep in mind that this function will be called on termination.
+     */
+    virtual void handlePreempt() {}
     
     /**
      * @brief Called by the user to check if the action has a new goal.
@@ -117,6 +122,7 @@ namespace robot_actions {
      */
     void preempt() {
       _preempt_request = true; 
+      handlePreempt();
       ROS_DEBUG("[%s]Preempt requested\n", getName().c_str());
       while(isActive()) {
 	ros::Duration d; d.fromSec(0.001);
@@ -190,7 +196,7 @@ namespace robot_actions {
     }
 
     virtual ~Action(){
-      ROS_ASSERT_MSG(_terminated, "Actions must be terminated before they are deleted, or there will be a segfault. In this case, action '%s' terminated was terminated before it was deleted.", _name.c_str());
+      ROS_ASSERT_MSG(_terminated, "Actions must be terminated before they are deleted, or there will be a segfault. In this case, action '%s' was not terminated before it was deleted.", _name.c_str());
       if(_action_thread != NULL){
 	_action_thread->join();
 	delete _action_thread;
