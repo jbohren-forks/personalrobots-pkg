@@ -70,6 +70,11 @@
   <node pkg="runtime_monitor" type="ntp_monitor.py" args="fw1 7000" machine="two"/> 
   <node pkg="runtime_monitor" type="ntp_monitor.py" args="prg2" machine="three"/>
   <node pkg="runtime_monitor" type="ntp_monitor.py" args="prg2" machine="four"/>   
+<!-- Disk usage monitoring script Warns to console if disk full -->
+  <node pkg="runtime_monitor" type="disk_usage.py" args="$(optenv HOME /home)" machine="realtime"/>
+  <node pkg="runtime_monitor" type="disk_usage.py" args="$(optenv HOME /home)" machine="two"/> 
+  <node pkg="runtime_monitor" type="disk_usage.py" args="$(optenv HOME /home)" machine="three"/>
+  <node pkg="runtime_monitor" type="disk_usage.py" args="$(optenv HOME /home)" machine="four"/>   
 
 <!-- Stereo cam -->
   <group ns="stereo">

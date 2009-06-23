@@ -70,5 +70,11 @@
   <node pkg="runtime_monitor" type="ntp_monitor.py" args="pre2" machine="three"/>
   <node pkg="runtime_monitor" type="ntp_monitor.py" args="pre2" machine="four"/>
 
+<!-- Disk usage monitoring script Warns to console if disk full -->
+  <node pkg="runtime_monitor" type="disk_usage.py" args="$(optenv HOME /home)" machine="realtime"/>
+  <node pkg="runtime_monitor" type="disk_usage.py" args="$(optenv HOME /home)" machine="two"/> 
+  <node pkg="runtime_monitor" type="disk_usage.py" args="$(optenv HOME /home)" machine="three"/>
+  <node pkg="runtime_monitor" type="disk_usage.py" args="$(optenv HOME /home)" machine="four"/>   
+
 </launch>
 
