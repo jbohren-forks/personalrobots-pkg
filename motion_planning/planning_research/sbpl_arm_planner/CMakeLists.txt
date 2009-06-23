@@ -5,7 +5,6 @@ set(ROS_BUILD_TYPE Release)
 
 rospack(sbpl_arm_planner)
 rospack_add_boost_directories()
-# gensrv()
 
 
 include_directories(${PROJECT_SOURCE_DIR}/code)
@@ -25,7 +24,6 @@ rospack_add_executable(planPath src/plan_path.cpp
 
 target_link_libraries(planPath sbpl_arm_planner)
 rospack_link_boost(planPath thread)
-
 
 # rospack_add_executable(getGoals src/getValidGoalPositions.cpp)
 # target_link_libraries(getGoals sbpl_arm_planner)

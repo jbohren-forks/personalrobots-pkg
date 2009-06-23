@@ -147,6 +147,9 @@ typedef struct ENV_ROBARM_CONFIG
 /* ARM DESCRIPTION */
 
     std::string robot_desc;
+    double gripper_m[3];
+
+    short unsigned int num_joints;
 
     //DH Parameters
     double DH_alpha[NUMOFLINKS];
@@ -184,6 +187,7 @@ typedef struct ENV_ROBARM_CONFIG
     std::vector <GoalPos> EndEffGoals;
     std::vector <GoalConfig> JointSpaceGoals;
     std::vector <std::vector <double> > ParsedGoals;
+    std::vector <std::vector <double> >  ParsedGoalTolerance;
 
     //actual coords of goal - shouldn't be here
     short unsigned int goalcoords[NUMOFLINKS];
@@ -400,7 +404,7 @@ private:
 
     //bounds/error checking
     int IsValidCoord(short unsigned int coord[NUMOFLINKS], short unsigned int endeff_pos[3], short unsigned int wrist_pos[3], short unsigned int elbow_pos[3], double orientation[3][3]);    
-    int IsValidLineSegment(double x0, double y0, double z0, double x1, double y1, double z1, char ***Grid3D, vector<CELLV>* pTestedCells);
+//     int IsValidLineSegment(double x0, double y0, double z0, double x1, double y1, double z1, char ***Grid3D, vector<CELLV>* pTestedCells);
     int IsValidLineSegment(short unsigned int x0, short unsigned int y0, short unsigned int z0, short unsigned int x1, short unsigned int y1, short unsigned int z1, char ***Grid3D, vector<CELLV>* pTestedCells);
     bool IsValidCell(int X, int Y, int Z);
     bool IsWithinMapCell(int X, int Y, int Z);
