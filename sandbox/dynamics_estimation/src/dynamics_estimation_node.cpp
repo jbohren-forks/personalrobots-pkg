@@ -151,7 +151,7 @@ int DynamicsEstimationNode::run()
   return 0;
 }
 
-void DynamicsEstimationNode::mechanismStateCallback(const boost::shared_ptr<robot_msgs::MechanismState const>& mechanism_state)
+void DynamicsEstimationNode::mechanismStateCallback(const boost::shared_ptr<mechanism_msgs::MechanismState const>& mechanism_state)
 {
   // a safety guard to prevent accidental buffer overrun
   if (finished_data_collection_)
@@ -214,9 +214,9 @@ bool DynamicsEstimationNode::loadDataFromBagFile()
   return true;
 }
 
-void DynamicsEstimationNode::mechanismStatePlayerCallback(std::string name, robot_msgs::MechanismState* m, ros::Time play_time, ros::Time record_time, void* n)
+void DynamicsEstimationNode::mechanismStatePlayerCallback(std::string name, mechanism_msgs::MechanismState* m, ros::Time play_time, ros::Time record_time, void* n)
 {
-  boost::shared_ptr<const robot_msgs::MechanismState> m_ptr(new robot_msgs::MechanismState(*m));
+  boost::shared_ptr<const mechanism_msgs::MechanismState> m_ptr(new mechanism_msgs::MechanismState(*m));
   mechanismStateCallback(m_ptr);
 }
 

@@ -38,7 +38,7 @@
 #define DYNAMICS_ESTIMATION_NODE_H_
 
 #include <ros/ros.h>
-#include <robot_msgs/MechanismState.h>
+#include <mechanism_msgs/MechanismState.h>
 #include <vector>
 #include <dynamics_estimation/trajectory_point.h>
 #include <mechanism_model/robot.h>
@@ -74,12 +74,12 @@ public:
   /**
    * Callback for mechanism state messages
    */
-  void mechanismStateCallback(const boost::shared_ptr<robot_msgs::MechanismState const>& mechanism_state);
+  void mechanismStateCallback(const boost::shared_ptr<mechanism_msgs::MechanismState const>& mechanism_state);
 
   /**
    * Callback for mechanism state messages loaded from a bag file
    */
-  void mechanismStatePlayerCallback(std::string name, robot_msgs::MechanismState* m, ros::Time play_time, ros::Time record_time, void* n);
+  void mechanismStatePlayerCallback(std::string name, mechanism_msgs::MechanismState* m, ros::Time play_time, ros::Time record_time, void* n);
 
 private:
   ros::NodeHandle node_handle_;                         /**< ROS Node Handle */
