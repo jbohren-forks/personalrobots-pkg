@@ -169,6 +169,7 @@ public:
     self_test_.setPretest(&ImuNode::pretest);
     self_test_.addTest(&ImuNode::InterruptionTest);
     self_test_.addTest(&ImuNode::ConnectTest);
+    self_test_.addTest(&ImuNode::ReadIDTest);
     self_test_.addTest(&ImuNode::GyroBiasTest);
     self_test_.addTest(&ImuNode::StreamedDataTest);
     self_test_.addTest(&ImuNode::GravityTest);
@@ -203,7 +204,6 @@ public:
         ROS_INFO("Not calibrating the IMU sensor. Use the calibrate service to calibrate it before use.");
       }
 
-
       ROS_INFO("Initializing IMU time with offset %f.", offset_);
 
       imu.initTime(offset_);
@@ -218,7 +218,7 @@ public:
 
     } catch (ms_3dmgx2_driver::Exception& e) {
       error_count_++;
-      ROS_INFO("Exception thrown while starting IMU.\n %s", e.what());
+      ROS_ERROR("Exception thrown while starting IMU.\n %s", e.what());
       return -1;
     }
 
@@ -282,9 +282,7 @@ public:
       reading.header.frame_id = frameid_;
 
       starttime = ros::Time::now().toSec();
-      //ROS_DEBUG("About to publish imu_data");
       imu_data_pub_.publish(reading);
-      //ROS_DEBUG("Done publishing imu_data");
       endtime = ros::Time::now().toSec();
       if (endtime - starttime > 0.025)
         ROS_WARN("Publishing took %f ms. Nominal is 10 ms.", 1000 * (endtime - starttime));
@@ -359,6 +357,20 @@ public:
 
     status.level = 0;
     status.message = "Connected successfully.";
+  }
+
+  void ReadIDTest(diagnostic_msgs::DiagnosticStatus& status)
+  {
+    char id[17];
+
+    status.name = "Read ID Test";
+
+    imu.getDeviceIdentifierString(ms_3dmgx2_driver::IMU::ID_SERIAL_NUMBER, id);
+
+    self_test_.setID(id);
+    
+    status.level = 0;
+    status.message = "Read Successfully";
   }
 
   void GyroBiasTest(diagnostic_msgs::DiagnosticStatus& status)
