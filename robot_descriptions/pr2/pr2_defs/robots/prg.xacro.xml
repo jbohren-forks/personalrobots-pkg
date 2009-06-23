@@ -79,7 +79,7 @@
   <include filename="$(find pr2_defs)/robots/pr2_groups.xml" />
 
   <!-- Kinematic chains -->
-  <chain root="torso_lift_link" tip="l_wrist_roll_link" />
+  <!--chain root="torso_lift_link" tip="l_wrist_roll_link" /-->
   <chain root="torso_lift_link" tip="r_wrist_roll_link" />
 
 </robot>
