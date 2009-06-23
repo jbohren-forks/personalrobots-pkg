@@ -1,0 +1,14 @@
+<launch>
+
+  <!-- 0. Set ROBOT= prg/prf/pre -->
+  <!-- 1. Launch PRx.launch -->
+  <!-- 2. Run "turckurm.py r" -->
+  <!-- 3. Launch this -->
+
+	<include file="$(find annotated_map_builder)/data_collector_passive.launch" />
+	<include file="$(find annotated_map_builder)/data_collector_passive2.launch" />
+	<include file="$(find annotated_map_builder)/data_collector_record.launch" />
+
+	<include file="$(find annotated_map_builder)/data_collector_active.launch" />
+
+</launch>
