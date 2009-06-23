@@ -53,6 +53,12 @@
       <geometry name="base_collision_geom">
         <box size="20 20 0.01" />
       </geometry>
+      <map name="base_collision" flag="gazebo">
+        <elem key="mu1" value="10.0" />
+        <elem key="mu2" value="10.0" />
+        <elem key="kp"  value="10000000.0" />
+        <elem key="kd"  value="1.0" />
+      </map>
     </collision>
   </link>
 
