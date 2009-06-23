@@ -15,5 +15,5 @@
   <depend package="robot_srvs" />
   <depend package="visualization_msgs" />
   <depend package="point_cloud_mapping" />
-  <depend package="new_robot_self_filter" />
+  <depend package="robot_self_filter" />
 </package>

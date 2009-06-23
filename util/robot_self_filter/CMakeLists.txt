@@ -10,7 +10,7 @@ include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
 
 set(ROS_BUILD_TYPE Release)
 
-rospack(new_robot_self_filter)
+rospack(robot_self_filter)
 
 rospack_add_library(new_robot_self_filter src/self_mask.cpp)
 rospack_add_openmp_flags(new_robot_self_filter)
