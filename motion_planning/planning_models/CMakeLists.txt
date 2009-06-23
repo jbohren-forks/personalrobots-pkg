@@ -7,7 +7,6 @@ set(ROS_BUILD_TYPE Debug)
 
 rospack_add_library(planning_models src/kinematic.cpp
 				    src/kinematic_state_params.cpp
-                                    src/load_mesh.cpp
 				    src/output.cpp)
 
 # Unit tests

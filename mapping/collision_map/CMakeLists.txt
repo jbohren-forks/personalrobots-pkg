@@ -79,3 +79,5 @@ set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 
 rospack_add_executable(collision_map_node src/collision_map.cpp)
 rospack_add_executable(collision_map_buffer_node src/collision_map_buffer.cpp)
+rospack_add_executable(collision_map_occ_node src/collision_map_occ.cpp)
+rospack_add_openmp_flags(collision_map_occ_node)

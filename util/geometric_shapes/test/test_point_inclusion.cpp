@@ -34,13 +34,13 @@
 
 /** \Author Ioan Sucan */
 
-#include <collision_space/bodies.h>
+#include <geometric_shapes/bodies.h>
 #include <gtest/gtest.h>
 
 TEST(SpherePointContainment, SimpleInside)
 {
-    planning_models::shapes::Sphere shape(1.0);
-    collision_space::bodies::Body* sphere = new collision_space::bodies::Sphere(&shape);
+    shapes::Sphere shape(1.0);
+    bodies::Body* sphere = new bodies::Sphere(&shape);
     sphere->setScale(1.05);
     bool contains = sphere->containsPoint(0,0,1.0);
     delete sphere;
@@ -49,8 +49,8 @@ TEST(SpherePointContainment, SimpleInside)
 
 TEST(SpherePointContainment, SimpleOutside)
 { 
-    planning_models::shapes::Sphere shape(1.0);
-    collision_space::bodies::Body* sphere = new collision_space::bodies::Sphere(&shape);
+    shapes::Sphere shape(1.0);
+    bodies::Body* sphere = new bodies::Sphere(&shape);
     sphere->setScale(0.95);
     bool contains = sphere->containsPoint(0,0,1.0);
     delete sphere;
@@ -59,8 +59,8 @@ TEST(SpherePointContainment, SimpleOutside)
 
 TEST(SpherePointContainment, ComplexInside)
 { 
-    planning_models::shapes::Sphere shape(1.0);
-    collision_space::bodies::Body* sphere = new collision_space::bodies::Sphere(&shape);
+    shapes::Sphere shape(1.0);
+    bodies::Body* sphere = new bodies::Sphere(&shape);
     sphere->setScale(0.95);
     btTransform pose;
     pose.setIdentity();    
@@ -73,8 +73,8 @@ TEST(SpherePointContainment, ComplexInside)
 
 TEST(SpherePointContainment, ComplexOutside)
 {   
-    planning_models::shapes::Sphere shape(1.0);
-    collision_space::bodies::Body* sphere = new collision_space::bodies::Sphere(&shape);
+    shapes::Sphere shape(1.0);
+    bodies::Body* sphere = new bodies::Sphere(&shape);
     sphere->setScale(0.95);
     btTransform pose;
     pose.setIdentity();    
@@ -88,8 +88,8 @@ TEST(SpherePointContainment, ComplexOutside)
 
 TEST(BoxPointContainment, SimpleInside)
 {    
-    planning_models::shapes::Box shape(1.0, 2.0, 3.0);
-    collision_space::bodies::Body* box = new collision_space::bodies::Box(&shape);
+    shapes::Box shape(1.0, 2.0, 3.0);
+    bodies::Body* box = new bodies::Box(&shape);
     box->setScale(0.95);
     bool contains = box->containsPoint(0,0,1.0);
     delete box;
@@ -99,8 +99,8 @@ TEST(BoxPointContainment, SimpleInside)
 
 TEST(BoxPointContainment, SimpleOutside)
 {
-    planning_models::shapes::Box shape(1.0, 2.0, 3.0);
-    collision_space::bodies::Body* box = new collision_space::bodies::Box(&shape);
+    shapes::Box shape(1.0, 2.0, 3.0);
+    bodies::Body* box = new bodies::Box(&shape);
     box->setScale(0.95);
     bool contains = box->containsPoint(0,0,3.0);
     delete box;
@@ -110,8 +110,8 @@ TEST(BoxPointContainment, SimpleOutside)
 
 TEST(BoxPointContainment, ComplexInside)
 {  
-    planning_models::shapes::Box shape(1.0, 1.0, 1.0);
-    collision_space::bodies::Body* box = new collision_space::bodies::Box(&shape);
+    shapes::Box shape(1.0, 1.0, 1.0);
+    bodies::Body* box = new bodies::Box(&shape);
     box->setScale(1.01);
     btTransform pose;
     pose.setIdentity();    
@@ -127,8 +127,8 @@ TEST(BoxPointContainment, ComplexInside)
 
 TEST(BoxPointContainment, ComplexOutside)
 {    
-    planning_models::shapes::Box shape(1.0, 1.0, 1.0);
-    collision_space::bodies::Body* box = new collision_space::bodies::Box(&shape);
+    shapes::Box shape(1.0, 1.0, 1.0);
+    bodies::Body* box = new bodies::Box(&shape);
     box->setScale(1.01);
     btTransform pose;
     pose.setIdentity();    
@@ -144,8 +144,8 @@ TEST(BoxPointContainment, ComplexOutside)
 
 TEST(CylinderPointContainment, SimpleInside)
 {
-    planning_models::shapes::Cylinder shape(1.0, 4.0);
-    collision_space::bodies::Body* cylinder = new collision_space::bodies::Cylinder(&shape);
+    shapes::Cylinder shape(1.0, 4.0);
+    bodies::Body* cylinder = new bodies::Cylinder(&shape);
     cylinder->setScale(1.05);
     bool contains = cylinder->containsPoint(0, 0, 2.0);
     delete cylinder;
@@ -155,8 +155,8 @@ TEST(CylinderPointContainment, SimpleInside)
 
 TEST(CylinderPointContainment, SimpleOutside)
 {
-    planning_models::shapes::Cylinder shape(1.0, 4.0);
-    collision_space::bodies::Body* cylinder = new collision_space::bodies::Cylinder(&shape);
+    shapes::Cylinder shape(1.0, 4.0);
+    bodies::Body* cylinder = new bodies::Cylinder(&shape);
     cylinder->setScale(0.95);
     bool contains = cylinder->containsPoint(0,0,2.0);
     delete cylinder;

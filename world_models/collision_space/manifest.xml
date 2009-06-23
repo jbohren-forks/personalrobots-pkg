@@ -8,6 +8,7 @@
   <review status="unreviewed" notes=""/>
 
   <depend package="planning_models"/>
+  <depend package="geometric_shapes"/>
   <depend package="opende"/>
   <depend package="bullet"/>
 

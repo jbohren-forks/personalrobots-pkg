@@ -238,7 +238,7 @@ namespace collision_space
 	    std::vector< std::vector<unsigned int> > selfCollision;
 	};
 	
-	dGeomID createODEGeom(dSpaceID space, planning_models::shapes::Shape *shape, double scale, double padding) const;
+	dGeomID createODEGeom(dSpaceID space, shapes::Shape *shape, double scale, double padding) const;
 	void    updateGeom(dGeomID geom, btTransform &pose) const;	
 	void    freeMemory(void);	
 	

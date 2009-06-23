@@ -88,26 +88,26 @@ void collision_space::EnvironmentModelODE::addRobotModel(const boost::shared_ptr
     }
 }
 
-dGeomID collision_space::EnvironmentModelODE::createODEGeom(dSpaceID space, planning_models::shapes::Shape *shape, double scale, double padding) const
+dGeomID collision_space::EnvironmentModelODE::createODEGeom(dSpaceID space, shapes::Shape *shape, double scale, double padding) const
 {
     dGeomID g = NULL;
     switch (shape->type)
     {
-    case planning_models::shapes::Shape::SPHERE:
+    case shapes::Shape::SPHERE:
 	{
-	    g = dCreateSphere(space, static_cast<planning_models::shapes::Sphere*>(shape)->radius * scale + padding);
+	    g = dCreateSphere(space, static_cast<shapes::Sphere*>(shape)->radius * scale + padding);
 	}
 	break;
-    case planning_models::shapes::Shape::BOX:
+    case shapes::Shape::BOX:
 	{
-	    const double *size = static_cast<planning_models::shapes::Box*>(shape)->size;
+	    const double *size = static_cast<shapes::Box*>(shape)->size;
 	    g = dCreateBox(space, size[0] * scale + padding, size[1] * scale + padding, size[2] * scale + padding);
 	}	
 	break;
-    case planning_models::shapes::Shape::CYLINDER:
+    case shapes::Shape::CYLINDER:
 	{
-	    g = dCreateCylinder(space, static_cast<planning_models::shapes::Cylinder*>(shape)->radius * scale + padding,
-				static_cast<planning_models::shapes::Cylinder*>(shape)->length * scale + padding);
+	    g = dCreateCylinder(space, static_cast<shapes::Cylinder*>(shape)->radius * scale + padding,
+				static_cast<shapes::Cylinder*>(shape)->length * scale + padding);
 	}
 	break;
     default:

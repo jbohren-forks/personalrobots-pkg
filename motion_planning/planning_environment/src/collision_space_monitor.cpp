@@ -219,7 +219,7 @@ void planning_environment::CollisionSpaceMonitor::attachObjectCallback(const rob
 	    link->attachedBodies[j]->attachTrans.setOrigin(btVector3(centerP.point.x, centerP.point.y, centerP.point.z));
 	    
 	    // this is a HACK! we should have orientation
-	    planning_models::shapes::Box *box = new planning_models::shapes::Box();
+	    shapes::Box *box = new shapes::Box();
 	    box->size[0] = attachedObject->objects[i].max_bound.x - attachedObject->objects[i].min_bound.x;
 	    box->size[1] = attachedObject->objects[i].max_bound.y - attachedObject->objects[i].min_bound.y;
 	    box->size[2] = attachedObject->objects[i].max_bound.z - attachedObject->objects[i].min_bound.z;

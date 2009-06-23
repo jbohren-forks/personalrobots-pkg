@@ -6,13 +6,6 @@ set(ROS_BUILD_TYPE Release)
 
 rospack_add_boost_directories()
 
-rospack_add_library(collision_space src/bodies.cpp
-				    src/environment.cpp
+rospack_add_library(collision_space src/environment.cpp
 				    src/environmentODE.cpp)	
 rospack_link_boost(collision_space thread)
-
-
-# Unit tests
-rospack_add_gtest(test_point_inclusion test/test_point_inclusion.cpp)
-rospack_link_boost(test_point_inclusion thread)
-target_link_libraries(test_point_inclusion collision_space)

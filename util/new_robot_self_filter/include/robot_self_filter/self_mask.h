@@ -32,7 +32,7 @@
 
 #include <robot_msgs/PointCloud.h>
 #include <planning_environment/robot_models.h>
-#include <collision_space/bodies.h>
+#include <geometric_shapes/bodies.h>
 #include <tf/transform_listener.h>
 #include <string>
 #include <vector>
@@ -50,9 +50,9 @@ namespace robot_self_filter
 	
 	struct SeeLink
 	{
-	    std::string                    name;
-	    collision_space::bodies::Body* body;
-	    btTransform                    constTransf;
+	    std::string   name;
+	    bodies::Body *body;
+	    btTransform   constTransf;
 	};
 	
 	struct SortBodies
@@ -79,34 +79,36 @@ namespace robot_self_filter
 		    delete bodies_[i].body;
 	}
 	
-	bool configure(bool accurate);
+	bool configure(void);
 	
 	/** \brief Compute the mask for a given pointcloud. If a mask element is true, the point
 	    is outside the robot
 	 */
 	void mask(const robot_msgs::PointCloud& data_in, std::vector<bool> &mask);
 	
+	/** \brief Assume subsequent calls to getMask() will be in the frame passed to this function */
+	void assumeFrame(const roslib::Header& header);
+	
+	/** \brief Get the mask value for an individual point. No
+	    setup is performed, assumeFrame() should be called before use */
+	bool getMask(double x, double y, double z) const;
+	
 	/** Get the set of frames that correspond to the links */
 	void getLinkFrames(std::vector<std::string> &frames) const;
 	
     private:
 
-	void identityPoses(void);
 	void computeBoundingSpheres(void);
 	
-	void maskAccurate(const robot_msgs::PointCloud& data_in, const robot_msgs::ChannelFloat32& times, std::vector<bool> &mask);
 	void maskSimple(const robot_msgs::PointCloud& data_in, std::vector<bool> &mask);
 	
-	planning_environment::RobotModels                    rm_;
-	tf::TransformListener                               &tf_;
-	ros::NodeHandle                                      nh_;
+	planning_environment::RobotModels   rm_;
+	tf::TransformListener              &tf_;
+	ros::NodeHandle                     nh_;
 	
-	std::vector<SeeLink>                                 bodies_;
-	std::vector<double>                                  bspheresRadius2_;
-	std::vector<collision_space::bodies::BoundingSphere> bspheres_;
-	bool                                                 bodiesAtIdentity_;
-	
-	bool                                                 accurate_;
+	std::vector<SeeLink>                bodies_;
+	std::vector<double>                 bspheresRadius2_;
+	std::vector<bodies::BoundingSphere> bspheres_;
 	
     };
     

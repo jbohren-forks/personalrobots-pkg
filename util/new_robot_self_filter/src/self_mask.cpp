@@ -32,10 +32,8 @@
 #include <climits>
 #include <ros/console.h>
 
-bool robot_self_filter::SelfMask::configure(bool accurate)
+bool robot_self_filter::SelfMask::configure(void)
 {
-    accurate_ = accurate;
-    
     std::vector<std::string> links = rm_.getSelfSeeLinks();
     double scale = rm_.getSelfSeeScale();
     double padd  = rm_.getSelfSeePadding();
@@ -46,7 +44,7 @@ bool robot_self_filter::SelfMask::configure(bool accurate)
     for (unsigned int i = 0 ; i < links.size() ; ++i)
     {
 	SeeLink sl;
-	sl.body = collision_space::bodies::createBodyFromShape(rm_.getKinematicModel()->getLink(links[i])->shape);
+	sl.body = bodies::createBodyFromShape(rm_.getKinematicModel()->getLink(links[i])->shape);
 	if (sl.body)
 	{
 	    sl.name = links[i];
@@ -70,7 +68,6 @@ bool robot_self_filter::SelfMask::configure(bool accurate)
     
     bspheres_.resize(bodies_.size());
     bspheresRadius2_.resize(bodies_.size());
-    bodiesAtIdentity_ = false;
     
     for (unsigned int i = 0 ; i < bodies_.size() ; ++i)
 	ROS_INFO("Self mask includes link %s with volume %f", bodies_[i].name.c_str(), bodies_[i].body->computeVolume());
@@ -90,40 +87,7 @@ void robot_self_filter::SelfMask::mask(const robot_msgs::PointCloud& data_in, st
     if (bodies_.empty())
 	std::fill(mask.begin(), mask.end(), true);
     else
-    {
-	if (accurate_)
-	{
-	    int chan = -1;
-	    for (unsigned int i = 0 ; i < data_in.chan.size() ; ++i)
-		if (data_in.chan[i].name == "stamps")
-		{
-		    chan = i;
-		    break;
-		}
-	    if (chan < 0)
-		maskSimple(data_in, mask);
-	    else
-	    {
-		ROS_ASSERT(data_in.chan[chan].vals.size() == data_in.pts.size());
-		maskAccurate(data_in, data_in.chan[chan], mask);
-	    }
-	}
-	else
-	    maskSimple(data_in, mask);
-    }
-}
-
-void robot_self_filter::SelfMask::identityPoses(void)
-{
-    if (!bodiesAtIdentity_)
-    {
-	// put all links at origin & lookup the needed transforms
-	const unsigned int bs = bodies_.size();
-	for (unsigned int i = 0 ; i < bs ; ++i)
-	    bodies_[i].body->setPose(bodies_[i].constTransf);
-	computeBoundingSpheres();
-	bodiesAtIdentity_ = true;
-    }
+	maskSimple(data_in, mask);
 }
 
 void robot_self_filter::SelfMask::computeBoundingSpheres(void)
@@ -136,72 +100,27 @@ void robot_self_filter::SelfMask::computeBoundingSpheres(void)
     }
 }
 
-void robot_self_filter::SelfMask::maskAccurate(const robot_msgs::PointCloud& data_in, const robot_msgs::ChannelFloat32& times, std::vector<bool> &mask)
+void robot_self_filter::SelfMask::assumeFrame(const roslib::Header& header)
 {
-    float maxT = *std::max_element(times.vals.begin(), times.vals.end());
-    if (maxT <= FLT_MIN)
-    {
-	ROS_WARN("'stamps' channel contains invalid data");
-	maskSimple(data_in, mask);
-	return;
-    }
-    
-    // put all links at origin
-    identityPoses();
-    
     const unsigned int bs = bodies_.size();
-    const unsigned int np = data_in.pts.size();
     
-    ros::Time timeStart = data_in.header.stamp;
-    ros::Time timeEnd = timeStart + ros::Duration(maxT);
-    std::vector< std::pair< btVector3, btVector3 > >       origs(bs);
-    std::vector< std::pair< btQuaternion, btQuaternion > > quats(bs);
-    tf::Stamped<btTransform> transf;
-    
-    // lookup the needed transforms
+    // place the links in the assumed frame 
     for (unsigned int i = 0 ; i < bs ; ++i)
     {
-	if (tf_.canTransform(bodies_[i].name, data_in.header.frame_id, timeStart))
-	    tf_.lookupTransform(bodies_[i].name, data_in.header.frame_id, timeStart, transf);
+	// find the transform between the link's frame and the pointcloud frame
+	tf::Stamped<btTransform> transf;
+	if (tf_.canTransform(header.frame_id, bodies_[i].name, header.stamp))
+	    tf_.lookupTransform(header.frame_id, bodies_[i].name, header.stamp, transf);
 	else
 	{
 	    transf.setIdentity();
-	    ROS_ERROR("Unable to lookup transform from '%s' to '%s' at start time", data_in.header.frame_id.c_str(), bodies_[i].name.c_str());
+	    ROS_ERROR("Unable to lookup transform from %s to %s", bodies_[i].name.c_str(), header.frame_id.c_str());
 	}
-	quats[i].first = transf.getRotation();
-	origs[i].first = transf.getOrigin();
 	
-	if (tf_.canTransform(bodies_[i].name, data_in.header.frame_id, timeEnd))
-	    tf_.lookupTransform(bodies_[i].name, data_in.header.frame_id, timeEnd, transf);
-	else
-	{
-	    transf.setIdentity();
-	    ROS_ERROR("Unable to lookup transform from '%s' to '%s' at end time", data_in.header.frame_id.c_str(), bodies_[i].name.c_str());
-	}
-	quats[i].second = transf.getRotation();
-	origs[i].second = transf.getOrigin();
+	// set it for each body; we also include the offset specified in URDF
+	bodies_[i].body->setPose(transf * bodies_[i].constTransf);
     }
-    
-    // we now decide which points we keep
-#pragma omp parallel for schedule(dynamic)
-    for (int i = 0 ; i < (int)np ; ++i)
-    {
-	// this point is the cloud's frame
-	btVector3 pt = btVector3(btScalar(data_in.pts[i].x), btScalar(data_in.pts[i].y), btScalar(data_in.pts[i].z));
-	btScalar time01  = times.vals[i] / maxT;
-	btScalar time01i = 1.0 - time01;
-	
-	bool out = true;
-	for (unsigned int j = 0 ; out && j < bs ; ++j)
-	{
-	    // find the transform to bring the point to the link frame
-	    btTransform t(quats[j].first.slerp(quats[j].second, time01i),
-			  origs[j].first * time01i + origs[j].second * time01);
-	    out = !bodies_[j].body->containsPoint(t * pt);
-	}
-	
-	mask[i] = out;
-    }
+    computeBoundingSpheres();
 }
 
 void robot_self_filter::SelfMask::maskSimple(const robot_msgs::PointCloud& data_in, std::vector<bool> &mask)
@@ -209,30 +128,11 @@ void robot_self_filter::SelfMask::maskSimple(const robot_msgs::PointCloud& data_
     const unsigned int bs = bodies_.size();
     const unsigned int np = data_in.pts.size();
     
-    // mark that links are no longer at origin
-    bodiesAtIdentity_ = false;
-    
-    // place the links in the frame of the pointcloud
-    for (unsigned int i = 0 ; i < bs ; ++i)
-    {
-	// find the transform between the link's frame and the pointcloud frame
-	tf::Stamped<btTransform> transf;
-	if (tf_.canTransform(data_in.header.frame_id, bodies_[i].name, data_in.header.stamp))
-	    tf_.lookupTransform(data_in.header.frame_id, bodies_[i].name, data_in.header.stamp, transf);
-	else
-	{
-	    transf.setIdentity();
-	    ROS_ERROR("Unable to lookup transform from %s to %s", bodies_[i].name.c_str(), data_in.header.frame_id.c_str());
-	}
-	
-	// set it for each body; we also include the offset specified in URDF
-	bodies_[i].body->setPose(transf * bodies_[i].constTransf);
-    }
-    computeBoundingSpheres();
+    assumeFrame(data_in.header);
     
     // compute a sphere that bounds the entire robot
-    collision_space::bodies::BoundingSphere bound;
-    collision_space::bodies::mergeBoundingSpheres(bspheres_, bound);	  
+    bodies::BoundingSphere bound;
+    bodies::mergeBoundingSpheres(bspheres_, bound);	  
     btScalar radiusSquared = bound.radius * bound.radius;
     
     // we now decide which points we keep
@@ -247,4 +147,14 @@ void robot_self_filter::SelfMask::maskSimple(const robot_msgs::PointCloud& data_
 	
 	mask[i] = out;
     }
+}
+
+bool robot_self_filter::SelfMask::getMask(double x, double y, double z) const
+{
+    btVector3 pt = btVector3(btScalar(x), btScalar(y), btScalar(z));
+    const unsigned int bs = bodies_.size();
+    bool out = true;
+    for (unsigned int j = 0 ; out && j < bs ; ++j)
+	out = !bodies_[j].body->containsPoint(pt);
+    return out;
 }

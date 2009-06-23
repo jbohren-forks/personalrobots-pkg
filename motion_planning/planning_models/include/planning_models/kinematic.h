@@ -37,7 +37,7 @@
 #ifndef PLANNING_MODELS_KINEMATIC_ROBOT_MODEL_
 #define PLANNING_MODELS_KINEMATIC_ROBOT_MODEL_
 
-#include "planning_models/shapes.h"
+#include <geometric_shapes/shapes.h>
 #include "planning_models/output.h"
 
 #include <urdf/URDF.h>

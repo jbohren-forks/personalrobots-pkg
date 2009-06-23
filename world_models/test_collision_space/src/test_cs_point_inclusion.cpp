@@ -38,17 +38,10 @@
 #include <ros/ros.h>
 #include <algorithm>
 #include <visualization_msgs/Marker.h>
-#include <collision_space/bodies.h>
-using namespace collision_space;
+#include <geometric_shapes/bodies.h>
 
 const int TEST_TIMES  = 3;
 const int TEST_POINTS = 100000;
-
-namespace planning_models
-{
-    shapes::Mesh* create_mesh_from_vertices(const std::vector<btVector3> &source);
-    //    shapes::Mesh* create_mesh_from_binary_stl(const char *name);
-}
 
 class TestVM
 {
@@ -91,7 +84,7 @@ public:
 	m_vmPub.publish(mk);
     }
 
-    void testShape(collision_space::bodies::Body *s)
+    void testShape(bodies::Body *s)
     {
 	for (int i = 0 ; i < TEST_POINTS ; ++i)
 	{
@@ -104,7 +97,7 @@ public:
 	}
     }
 
-    void setShapeTransformAndMarker(collision_space::bodies::Body *s,
+    void setShapeTransformAndMarker(bodies::Body *s,
 				    visualization_msgs::Marker &mk)
     {
 	btTransform t;
@@ -148,11 +141,11 @@ public:
 
     void testSphere(void)
     {
-	planning_models::shapes::Sphere shape(2.0);
-	collision_space::bodies::Body *s = new collision_space::bodies::Sphere(&shape);
+	shapes::Sphere shape(2.0);
+	bodies::Body *s = new bodies::Sphere(&shape);
 	printf("Sphere volume = %f\n", s->computeVolume());
 	
-	collision_space::bodies::BoundingSphere sphere;
+	bodies::BoundingSphere sphere;
 	s->computeBoundingSphere(sphere);
 	
 	printf("Bounding radius = %f\n", sphere.radius);
@@ -176,11 +169,11 @@ public:
 
     void testBox(void)
     {
-	planning_models::shapes::Box shape(2.0, 1.33, 1.5);
-	collision_space::bodies::Body *s = new collision_space::bodies::Box(&shape);
+	shapes::Box shape(2.0, 1.33, 1.5);
+	bodies::Body *s = new bodies::Box(&shape);
 	printf("Box volume = %f\n", s->computeVolume());
 	
-	collision_space::bodies::BoundingSphere sphere;
+	bodies::BoundingSphere sphere;
 	s->computeBoundingSphere(sphere);
 	
 	printf("Bounding radius = %f\n", sphere.radius);
@@ -205,11 +198,11 @@ public:
 
     void testCylinder(void)
     {
-	planning_models::shapes::Cylinder shape(0.5, 2.5);
-	collision_space::bodies::Body *s = new collision_space::bodies::Cylinder(&shape);
+	shapes::Cylinder shape(0.5, 2.5);
+	bodies::Body *s = new bodies::Cylinder(&shape);
 	printf("Cylinder volume = %f\n", s->computeVolume());
 		
-	collision_space::bodies::BoundingSphere sphere;
+	bodies::BoundingSphere sphere;
 	s->computeBoundingSphere(sphere);
 	
 	printf("Bounding radius = %f\n", sphere.radius);
@@ -256,12 +249,12 @@ public:
 	pts[10] = v2;
 	pts[11] = v3;
 
-	//	planning_models::shapes::Mesh *shape = planning_models::create_mesh_from_binary_stl("base.stl");
-	planning_models::shapes::Mesh *shape = planning_models::create_mesh_from_vertices(pts);
-	collision_space::bodies::Body *s = new collision_space::bodies::ConvexMesh(shape);
+	//	shapes::Mesh *shape = shapes::create_mesh_from_binary_stl("base.stl");
+	shapes::Mesh *shape = shapes::create_mesh_from_vertices(pts);
+	bodies::Body *s = new bodies::ConvexMesh(shape);
 	printf("Mesh volume = %f\n", s->computeVolume());
 	
-	collision_space::bodies::BoundingSphere sphere;
+	bodies::BoundingSphere sphere;
 	s->computeBoundingSphere(sphere);
 	
 	printf("Bounding radius = %f\n", sphere.radius);

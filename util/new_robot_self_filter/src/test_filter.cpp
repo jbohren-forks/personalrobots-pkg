@@ -45,7 +45,7 @@ public:
     TestSelfFilter(void) : sf_(tf_)
     {
 	id_ = 1;
-	sf_.configure(false);
+	sf_.configure();
 	vmPub_ = nodeHandle_.advertise<visualization_msgs::Marker>("visualization_marker", 10240);
     }
     

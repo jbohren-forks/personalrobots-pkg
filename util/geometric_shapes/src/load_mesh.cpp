@@ -34,15 +34,13 @@
 
 #include <cstdio>
 #include <cmath>
-#include <LinearMath/btVector3.h>
 #include <algorithm>
-#include <vector>
 #include <set>
-#include "planning_models/shapes.h"
+#include "geometric_shapes/shapes.h"
 
 // \author Ioan Sucan ;  based on stl_to_mesh 
 
-namespace planning_models
+namespace shapes
 {
 
     struct myVertex

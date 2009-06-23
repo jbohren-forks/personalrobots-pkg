@@ -9,6 +9,7 @@
   <url>http://pr.willowgarage.com/wiki/RobotDescriptionFormat</url>
 
   <depend package="wg_robot_description_parser"/>
+  <depend package="geometric_shapes"/>
   <depend package="bullet"/>
 
   <export>
