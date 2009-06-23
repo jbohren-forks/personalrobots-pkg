@@ -409,7 +409,7 @@ bool ms_3dmgx2_driver::IMU::getDeviceIdentifierString(id_string type, char id[17
     return false;
 
   id[16] = 0;
-  memcpy(id, cmd+2, 16);
+  memcpy(id, rep+2, 16);
 
   return true;
 }

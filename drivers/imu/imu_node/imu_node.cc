@@ -194,6 +194,17 @@ public:
     {
       imu.openPort(port.c_str());
 
+      char dev_name[17];
+      char dev_model_num[17];
+      char dev_serial_num[17];
+      char dev_opt[17];
+      imu.getDeviceIdentifierString(ms_3dmgx2_driver::IMU::ID_DEVICE_NAME, dev_name);
+      imu.getDeviceIdentifierString(ms_3dmgx2_driver::IMU::ID_MODEL_NUMBER, dev_model_num);
+      imu.getDeviceIdentifierString(ms_3dmgx2_driver::IMU::ID_SERIAL_NUMBER, dev_serial_num);
+      imu.getDeviceIdentifierString(ms_3dmgx2_driver::IMU::ID_DEVICE_OPTIONS, dev_opt);
+      ROS_INFO("Connected to IMU [%s] model [%s] s/n [%s] options [%s]",
+          dev_name, dev_model_num, dev_serial_num, dev_opt);
+
       if (autocalibrate_)
       {
         calibrate_request_ = true;
@@ -219,6 +230,7 @@ public:
     } catch (ms_3dmgx2_driver::Exception& e) {
       error_count_++;
       ROS_ERROR("Exception thrown while starting IMU.\n %s", e.what());
+      diagnostic_.broadcast(2, "Error opening IMU.");
       return -1;
     }
 
