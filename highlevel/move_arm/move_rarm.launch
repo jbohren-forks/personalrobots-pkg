@@ -11,6 +11,6 @@
 
    <remap from="motion_plan" to="plan_kinematic_path" />
 
-   <param name="arm" value="right_arm" />
+   <param name="arm" type="string" value="right_arm" />
   </node>
 </launch>
