@@ -1,0 +1,4 @@
+<launch>
+  <node pkg="writing_core" type="run_find_helper.py" output="screen" />
+ 
+</launch>
