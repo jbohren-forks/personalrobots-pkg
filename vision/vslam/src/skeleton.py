@@ -12,6 +12,7 @@ import numpy
 import cPickle as pickle
 import math
 import os
+import time
 
 class minimum_frame:
   def __init__(self, id, kp, descriptors):
@@ -298,7 +299,9 @@ class Skeleton:
       self.edges.add( (previd, this.id) )
       self.timer['toro add'].start()
       vtop = self.pg.addIncrementalEdge(previd, this.id, relpose.xform(0,0,0), relpose.euler(), inf)
-      self.vset.add(vtop)
+      self.vset.add(previd)
+      self.vset.add(this.id)
+      print self.vset
       print "ADDED VO CONSTRAINT", previd, this.id, inf
       self.timer['toro add'].stop()
       #print "added node at", this.pose.xform(0,0,0), "in graph as", self.newpose(this.id).xform(0,0,0)
@@ -332,21 +335,36 @@ class Skeleton:
     self.edges -= set(self.weak_edges)
     self.weak_edges = []
 
-  def optimize(self, iters = 1000):
+  def ioptimize(self):
+    """ incremental optimization step """
+    print "incremental:"
+    self.pg.initializeOnlineIterations()
+    self.vset = set(self.nodes)
+    for i in range(100):
+      self.pg.iterate(self.vset, True)
+    self.pg.recomputeAllTransformations()
+    self.vset = set()
+    print
+
+  def optimize(self, iters = None, duration = None):
 
     self.pg.initializeOnlineIterations()
 
-    print "pg.error", self.pg.error()
-    for j in range(1):
+    starting_error = self.pg.error()
+    if iters:
       for i in range(iters):
-        #print "iter", i, "pg.error", self.pg.error()
         self.pg.iterate()
-      print "pg.error", self.pg.error()
-    #self.pg.recomputeAllTransformations()
-    #self.pg.save("render5.graph")
+    elif duration:
+      started = time.time()
+      while (time.time() - started) < duration:
+        print "optimizing"
+        self.pg.iterate()
+    print "Error changed from", starting_error, "to", self.pg.error()
+    self.pg.recomputeAllTransformations()
 
   def newpose(self, id):
     try:
+      self.pg.recomputeAllTransformations()
       xyz,euler = self.pg.vertex(id)
       p = from_xyz_euler(xyz, euler)
     except:
