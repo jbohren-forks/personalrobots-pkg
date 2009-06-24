@@ -34,7 +34,6 @@
 
 /* Author: Wim Meeussen */
 
-#include <tinyxml/tinyxml.h>
 #include <boost/algorithm/string.hpp>
 #include "kdl_parser/tree_parser.hpp"
 
@@ -50,7 +49,7 @@ bool getAtribute(TiXmlElement *xml, const string& name, string& attr)
   if (!xml) return false;
   const char *attr_char = xml->Attribute(name.c_str());
   if (!attr_char){
-    cout << "No " << name << " found in xml" << endl;
+    cerr << "No " << name << " found in xml" << endl;
     return false;
   }
   attr = string(attr_char);
@@ -76,11 +75,11 @@ bool getVector(TiXmlElement *vector_xml, const string& field, Vector& vector)
   }
 
   if (pos != 3) {
-    cout << "Vector did not contain 3 pieces:" << endl; 
+    cerr << "Vector did not contain 3 pieces:" << endl; 
     pos = 1;
     for (unsigned int i = 0; i < pieces.size(); ++i){
       if (pieces[i] != ""){
-        cout << "  " << pos << ": '" << pieces[i] << "'" << endl;
+        cerr << "  " << pos << ": '" << pieces[i] << "'" << endl;
         pos++;
       }
     }
@@ -105,9 +104,9 @@ static bool getFrame(TiXmlElement *frame_xml, Frame& frame)
 {
   Vector origin, rpy;
   if (!getVector(frame_xml, "xyz", origin)) 
-  {cout << "Frame does not have xyz" << endl; return false;}
+  {cerr << "Frame does not have xyz" << endl; return false;}
   if (!getVector(frame_xml, "rpy", rpy)) 
-  {cout << "Frame does not have rpy" << endl; return false;}
+  {cerr << "Frame does not have rpy" << endl; return false;}
 
   frame = Frame(Rotation::RPY(rpy(0), rpy(1), rpy(2)), origin);
   return true;
@@ -133,13 +132,13 @@ bool getInertia(TiXmlElement *inertia_xml, RigidBodyInertia& inertia)
 {
   Vector cog;
   if (!getVector(inertia_xml->FirstChildElement("com"), "xyz", cog)) 
-  {cout << "Inertia does not specify center of gravity" << endl; return false;}
+  {cerr << "Inertia does not specify center of gravity" << endl; return false;}
   double mass = 0.0;
   if (!getValue(inertia_xml->FirstChildElement("mass"), "value", mass)) 
-  {cout << "Inertia does not specify mass" << endl; return false;}
+  {cerr << "Inertia does not specify mass" << endl; return false;}
   RotationalInertia rot_inertia;
   if (!getRotInertia(inertia_xml->FirstChildElement("inertia"), rot_inertia)) 
-  {cout << "Inertia does not specify rotational inertia" << endl; return false;}
+  {cerr << "Inertia does not specify rotational inertia" << endl; return false;}
   inertia = RigidBodyInertia(mass, cog, rot_inertia);
   return true;
 }
@@ -151,13 +150,13 @@ bool getJoint(TiXmlElement *joint_xml, Joint& joint)
   // get joint type
   string joint_type;
   if (!getAtribute(joint_xml, "type", joint_type)) 
-  {cout << "Joint does not have type" << endl; return false;}
+  {cerr << "Joint does not have type" << endl; return false;}
 
   if (joint_type == "revolute"){
     Vector axis, origin;
     // mandatory axis
     if (!getVector(joint_xml->FirstChildElement("axis"), "xyz", axis)) 
-    {cout << "Revolute joint does not spacify axis" << endl; return false;}
+    {cerr << "Revolute joint does not spacify axis" << endl; return false;}
     // optional origin
     if (!getVector(joint_xml->FirstChildElement("anchor"), "xyz", origin)) 
       origin = Vector::Zero();
@@ -167,7 +166,7 @@ bool getJoint(TiXmlElement *joint_xml, Joint& joint)
     Vector axis, origin;
     // mandatory axis
     if (!getVector(joint_xml->FirstChildElement("axis"), "xyz", axis))
-    {cout << "Prismatic joint does not spacify axis" << endl; return false;};
+    {cerr << "Prismatic joint does not spacify axis" << endl; return false;};
     // optional origin
     if (!getVector(joint_xml->FirstChildElement("anchor"), "xyz", origin)) 
       origin = Vector::Zero();
@@ -177,7 +176,7 @@ bool getJoint(TiXmlElement *joint_xml, Joint& joint)
     joint = Joint(Joint::None);
   }
   else{
-    cout << "Unknown joint type '" << joint_type << "'. Using fixed joint instead" << endl;
+    cerr << "Unknown joint type '" << joint_type << "'. Using fixed joint instead" << endl;
     joint = Joint(Joint::None);
   }
 
@@ -190,18 +189,18 @@ bool getSegment(TiXmlElement *segment_xml, map<string, Joint>& joints, Segment& 
   // get mandetory frame
   Frame frame;
   if (!getFrame(segment_xml->FirstChildElement("origin"), frame)) 
-  {cout << "Segment does not have origin" << endl; return false;}
+  {cerr << "Segment does not have origin" << endl; return false;}
 
   // get mandetory joint
   if (!getAtribute(segment_xml->FirstChildElement("joint"), "name", joint_name)) 
-  {cout << "Segment does not specify joint name" << endl; return false;}
+  {cerr << "Segment does not specify joint name" << endl; return false;}
 
   Joint joint;
   map<string, Joint>::iterator it = joints.find(joint_name);
   if (it != joints.end())
     joint = it->second;
   else if (getJoint(segment_xml->FirstChildElement("joint"), joint));
-  else {cout << "Could not find joint " << joint_name << " in segment" << endl; return false;}
+  else {cerr << "Could not find joint " << joint_name << " in segment" << endl; return false;}
 
   if (joint.getType() != Joint::None)
     joint = Joint(frame*(joint.JointOrigin()), joint.JointAxis(), joint.getType());
@@ -225,7 +224,7 @@ void addChildrenToTree(const string& root, const map<string, Segment>& segments,
     for (map<string, string>::const_iterator p=parents.begin(); p!=parents.end(); p++)
       if (p->second == root) addChildrenToTree(p->first, segments, parents, tree);
   }
-  else {cout << "Failed to add segment to tree" << endl;}
+  else {cerr << "Failed to add segment to tree" << endl;}
 }
 
 
@@ -243,11 +242,11 @@ bool getTree(TiXmlElement *robot, Tree& tree, map<string, string>& joint_segment
     // get joint name
     string joint_name;
     if (!getAtribute(joint_xml, "name", joint_name)) 
-    {cout << "Joint does not have name" << endl; return false;}
+    {cerr << "Joint does not have name" << endl; return false;}
 
     // build joint
     if (!getJoint(joint_xml, joint)) 
-    {cout << "Constructing joint " << joint_name << " failed" << endl; return false;}
+    {cerr << "Constructing joint " << joint_name << " failed" << endl; return false;}
     joints[joint_name] = joint;
   }
 
@@ -261,17 +260,17 @@ bool getTree(TiXmlElement *robot, Tree& tree, map<string, string>& joint_segment
     // get segment name
     string segment_name;
     if (!getAtribute(segment_xml, "name", segment_name)) 
-    {cout << "Segment does not have name" << endl; return false;}
+    {cerr << "Segment does not have name" << endl; return false;}
 
     // get segment parent
     string segment_parent;
     if (!getAtribute(segment_xml->FirstChildElement("parent"), "name", segment_parent)) 
-    {cout << "Segment " << segment_name << " does not have parent" << endl; return false;}
+    {cerr << "Segment " << segment_name << " does not have parent" << endl; return false;}
 
     // build segment
     string joint_name;
     if (!getSegment(segment_xml, joints, segment, joint_name)) 
-    {cout << "Constructing segment " << segment_name << " failed" << endl; return false;}
+    {cerr << "Constructing segment " << segment_name << " failed" << endl; return false;}
     joint_segment_mapping[joint_name] = segment_name;
     segments[segment_name] = segment;
     parents[segment_name] = segment_parent;
@@ -286,7 +285,7 @@ bool getTree(TiXmlElement *robot, Tree& tree, map<string, string>& joint_segment
       if (s == --(segments.end())) root = p->first;
     }
   }
-  cout << "renaming parent of root segment '" << root << "' from " << parents[root] << " to root" << endl;
+  cerr << "renaming parent of root segment '" << root << "' from " << parents[root] << " to root" << endl;
   parents[root] = "root";
 
   // add all segments to tree
@@ -304,7 +303,7 @@ bool treeFromFile(const string& file, Tree& tree, map<string, string>& joint_seg
   urdf_xml.LoadFile(file);
   TiXmlElement *root = urdf_xml.FirstChildElement("robot");
   if (!root){
-    cout << "Could not parse the xml" << endl;
+    cerr << "Could not parse the xml" << endl;
     return false;
   }
   return getTree(root, tree, joint_segment_mapping);
@@ -317,10 +316,17 @@ bool treeFromString(const string& xml, Tree& tree, map<string, string>& joint_se
   urdf_xml.Parse(xml.c_str());
   TiXmlElement *root = urdf_xml.FirstChildElement("robot");
   if (!root){
-    cout << "Could not parse the xml" << endl;
+    cerr << "Could not parse the xml" << endl;
     return false;
   }
   return getTree(root, tree, joint_segment_mapping);
 }
+
+
+bool treeFromXml(TiXmlElement *root, Tree& tree, map<string, string>& joint_segment_mapping)
+{
+  return getTree(root, tree, joint_segment_mapping);
+}
+
 }
 

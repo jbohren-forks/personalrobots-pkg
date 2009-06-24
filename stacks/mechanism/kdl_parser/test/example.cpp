@@ -34,6 +34,8 @@
 
 /* Author: Wim Meeussen */
 
+#include <kdl/chainfksolverpos_recursive.hpp>
+#include <kdl/frames_io.hpp>
 #include "kdl_parser/tree_parser.hpp"
 #include <iostream>
 
@@ -47,8 +49,27 @@ int main()
   map<string, string> segment_joint_mapping;
   if (!treeFromFile("pr2_desc.xml", my_tree, segment_joint_mapping)) return -1;
 
-  Chain chain = my_tree.getChain("torso_lift_link", "r_gripper_tool_frame");
-  cout << "Got chain with " << chain.getNrOfJoints() << " joints and " << chain.getNrOfSegments() << " segments" << endl;
+  Chain chain1 = my_tree.getChain("l_gripper_palm_link", "r_gripper_palm_link");
+  Chain chain2 = my_tree.getChain("r_gripper_palm_link", "l_gripper_palm_link");
+  cout << "Got chain1 with " << chain1.getNrOfJoints() << " joints and " << chain1.getNrOfSegments() << " segments" << endl;
+  cout << "Got chain2 with " << chain2.getNrOfJoints() << " joints and " << chain2.getNrOfSegments() << " segments" << endl;
+
+  JntArray jnt1(chain1.getNrOfJoints());
+  JntArray jnt2(chain1.getNrOfJoints());
+  for (int i=0; i<(int)chain1.getNrOfJoints(); i++){
+    jnt1(i) = (i+1)*2;
+    jnt2((int)chain1.getNrOfJoints()-i-1) = -jnt1(i);
+  }
+  for (int i=0; i<(int)chain1.getNrOfJoints(); i++)
+    cout << "jnt 1 -- jnt 2  " << jnt1(i) << " -- " << jnt2(i) << endl;
+
+  ChainFkSolverPos_recursive solver1(chain1);
+  ChainFkSolverPos_recursive solver2(chain2);
+  Frame f1, f2;
+  solver1.JntToCart(jnt1, f1);
+  solver2.JntToCart(jnt2, f2);
+  cout << "frame 1 " << f1 << endl;
+  cout << "frame 2 " << f2.Inverse() << endl;
 
   for (map<string, string>::const_iterator it=segment_joint_mapping.begin(); it!=segment_joint_mapping.end(); it++)
     cout << "mapping joint " << it->first << " on segment " << it->second << endl;

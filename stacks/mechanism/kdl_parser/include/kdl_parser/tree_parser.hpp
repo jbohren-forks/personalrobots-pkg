@@ -39,6 +39,7 @@
 
 #include <kdl/tree.hpp>
 #include <string>
+#include <tinyxml/tinyxml.h>
 
 using namespace std;
 
@@ -46,7 +47,7 @@ namespace KDL{
 
 bool treeFromFile(const string& file, Tree& tree, std::map<std::string, std::string>& joint_segment_mapping);
 bool treeFromString(const string& xml, Tree& tree, std::map<std::string, std::string>& joint_segment_mapping);
-
+bool treeFromXml(TiXmlElement *root, Tree& tree, std::map<std::string, std::string>& joint_segment_mapping);
 }
 
 #endif
