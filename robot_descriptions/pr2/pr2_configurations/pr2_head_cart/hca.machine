@@ -1,8 +1,8 @@
 <launch>
-  <machine name="realtime" address="heada1" ros-root="$(env ROS_ROOT)" 
+  <machine name="realtime" address="hca1" ros-root="$(env ROS_ROOT)" 
 ros-package-path="$(env ROS_PACKAGE_PATH)" />
   <machine name="realtime_root" user="root" address="heada" 
 ros-root="$(env ROS_ROOT)" ros-package-path="$(env ROS_PACKAGE_PATH)" default="never"/> 
-  <machine name="two" address="heada2" ros-root="$(env ROS_ROOT)" 
+  <machine name="two" address="hca2" ros-root="$(env ROS_ROOT)" 
 ros-package-path="$(env ROS_PACKAGE_PATH)" default="true" />
 </launch>

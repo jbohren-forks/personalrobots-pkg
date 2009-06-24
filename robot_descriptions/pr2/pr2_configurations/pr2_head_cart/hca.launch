@@ -1,9 +1,9 @@
 <launch>
   <!-- Machines -->
-  <include file="$(find pr2_head_cart)/heada.machine" />
+  <include file="$(find pr2_head_cart)/hca.machine" />
 
   <!-- Description and etherCAT --> 
-  <param name="robotdesc/pr2" command="$(find xacro)/xacro.py '$(find pr2_defs)/robots/heada.xacro.xml'" />
+  <param name="robotdesc/pr2" command="$(find xacro)/xacro.py '$(find pr2_defs)/robots/hca.xacro.xml'" />
 
   <node machine="realtime_root" pkg="pr2_etherCAT" type="pr2_etherCAT" args="-i eth0 -x robotdesc/pr2" />
 
@@ -31,10 +31,10 @@
   </node>
 
   <!-- Runtime Diagnostics Logging -->
-  <node pkg="rosrecord" type="rosrecord" args="-f /hwlog/heada_runtime_automatic /diagnostics" />
+  <node pkg="rosrecord" type="rosrecord" args="-f /hwlog/hca_runtime_automatic /diagnostics" />
 
   <!-- NTP monitoring script Warns to console if sync error -->
-  <node pkg="runtime_monitor" type="ntp_monitor.py" args="heada2" machine="realtime"/>
+  <node pkg="runtime_monitor" type="ntp_monitor.py" args="hca2" machine="realtime"/>
   <node pkg="runtime_monitor" type="ntp_monitor.py" args="fw1 7000" machine="two"/> 
 
 </launch>
