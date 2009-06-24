@@ -242,8 +242,8 @@ if __name__ == '__main__':
     xml = ''
     
     if len(sys.argv) > 1:
-        #xmls = [slurp(filename) for filename in sys.argv[1:]]
-        xmls = [os.popen2("rosrun xacro xacro.py %s" % f)[1].read() for f in rospy.myargv()[1:]]
+       xacro_cmd = roslib.packages.get_pkg_dir('xacro', True) + '/xacro.py'
+       xmls = [os.popen2(xacro_cmd + " %s" % f)[1].read() for f in rospy.myargv()[1:]]
 
         # Poor man's xml splicer
         for i in range(len(xmls) - 1):
@@ -270,6 +270,6 @@ if __name__ == '__main__':
     
     if not imustatus:
         print "Mechanism calibration complete, but IMU calibration failed."
-        sys.exit(1)
+        sys.exit(3)
 
     print "Calibration complete"

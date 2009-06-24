@@ -48,15 +48,6 @@ from robot_srvs.srv import *
 from robot_mechanism_controllers.srv import *
 import std_srvs.srv
 
-def slurp(filename):
-    f = open(filename)
-    stuff = f.read()
-    f.close()
-    return stuff
-
-
-
-
 def calibrate(config):
     spawn_controller = rospy.ServiceProxy('spawn_controller', SpawnController)
     kill_controller = rospy.ServiceProxy('kill_controller', KillController)
@@ -64,14 +55,14 @@ def calibrate(config):
     success = True
 
     # Spawns the controllers
-    resp = spawn_controller(config)
+    resp = spawn_controller(config, 1)
 
     # Accumulates the list of spawned controllers
     launched = []
-    print "OKs: " + ','.join([str(ord(ok)) for ok in resp.ok])
+    print "OKs: " + ','.join([str(ok) for ok in resp.ok])
     try:
         for i in range(len(resp.ok)):
-            if ord(resp.ok[i]) == 0:
+            if resp.ok[i] == 0:
                 print "Failed: %s" % resp.name[i]
                 success = False
             else:
@@ -98,8 +89,8 @@ def calibrate(config):
 def calibrate_imu():
     print "Calibrating IMU"
     try:
-        rospy.wait_for_service('/imu/calibrate', 5)
-        calibrate = rospy.ServiceProxy('/imu/calibrate', std_srvs.srv.Empty)
+        rospy.wait_for_service('imu/calibrate', 5)
+        calibrate = rospy.ServiceProxy('imu/calibrate', std_srvs.srv.Empty)
         calibrate(timeout=20) # This should take 10 seconds
         return True
     except:
@@ -115,18 +106,8 @@ def main():
     xml = ''
 
     if len(sys.argv) > 1:
-        #xmls = [slurp(filename) for filename in sys.argv[1:]]
-
-        # Hack to remove bad args
-        args = []
-        for arg in sys.argv[1:]:
-            if arg.find(':=') < 0:
-                args.append(arg)
-
-        xmls = [os.popen2("rosrun xacro xacro.py %s" % f)[1].read() for f in args]
-
-        # Use this once rospy.myargv() works
-        # xmls = [os.popen2("rosrun xacro xacro.py %s" % f)[1].read() for f in rospy.myargv()[1:]]
+        xacro_cmd = roslib.packages.get_pkg_dir('xacro', True) + '/xacro.py'
+        xmls = [os.popen2(xacro_cmd + " %s" % f)[1].read() for f in rospy.myargv()[1:]]
 
         # Poor man's xml splicer
         for i in range(len(xmls) - 1):
@@ -140,11 +121,11 @@ def main():
     imustatus = calibrate_imu()
 
     if not calibrate(xml):
-        sys.exit(1)
+        sys.exit(3)
 
     if not imustatus:
         print "Mechanism calibration complete, but IMU calibration failed."
-        sys.exit(1)
+        sys.exit(2)
     
     print "Calibration complete"
 
