@@ -700,13 +700,3 @@ namespace costmap_2d {
   }
 
 };
-
-int main(int argc, char** argv){
-  ros::init(argc, argv, "costmap_tester");
-  tf::TransformListener tf(ros::Duration(10));
-  costmap_2d::Costmap2DROS tester("costmap", tf);
-  ros::spin();
-
-  return(0);
-
-}

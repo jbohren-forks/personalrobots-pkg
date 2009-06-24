@@ -126,6 +126,23 @@ There are a number of parameters that can be used to configure the costmap_2d::C
   </ul>
 </li>
 <br><br>
+<li><b>~costmap/map_type</b>, <i>string</i> <br>What map type to use. "voxel" or "costmap" are the supported types.</li>
+<br><br>
+<li> 
+  <b>The following parameters are only used if map_type is set to "voxel"</b><br><br>
+  <ul>
+  <li><b>~costmap/origin_z</b>, <i>double</i> <br>The z origin of the map</li>
+  <br><br>
+  <li><b>~costmap/z_resolution</b>, <i>double</i> <br>The z resolution of the map</li>
+  <br><br>
+  <li><b>~costmap/z_voxels</b>, <i>int</i> <br>The number of voxels to in each vertical column</li>
+  <br><br>
+  <li><b>~costmap/unknown_threshold</b>, <i>int</i> <br>The number of unmarked cells allowed in a column considered to be "known"</li>
+  <br><br>
+  <li><b>~costmap/mark_threshold</b>, <i>int</i> <br>The number of marked cells allowed in a column considered to be "free"</li>
+  </ul>
+</li>
+<br><br>
 <li><b>~costmap/scaling_factor</b>, <i>double</i> <br>A scaling factor to apply to cost values during inflation, shoud be in the range [0, 1]</li>
 <br><br>
 <li><b>~costmap/lethal_cost_threshold</b>, <i>int</i> <br>The threshold value at which to consider a cost lethal when reading in a map</li>
