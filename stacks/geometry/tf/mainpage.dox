@@ -183,7 +183,7 @@ Use \ref tf_monitor
 
 Use \ref tf_echo
 
-@subsection old_data TF_SELF_TRANSFORM
+@subsection tf_self_transform TF_SELF_TRANSFORM
  - What does a warning about TF_SELF_TRANFORM mean?
 
 TF_SELF_TRANSFORM errors occur when a transform is published with 
@@ -213,13 +213,6 @@ The error message will tell you what is the authority which is sending the
 outdated data.  If it is running in a ros node you can use viewFrames.py to 
 determine the more recent authority. See \ref viewFrames.
 
-@subsection tf_self_transform TF_SELF_TRANSFORM 
- - What does the error TF_SELF_TRANSFORM mean? 
-
-The TF_SELF_TRANSFORM error means that a transform was published or input 
-which has the parent_id set the same as the parent_id.  This transform 
-will be ignored by TF.
-
 @subsection tf_no_frame_id TF_NO_FRAME_ID
  - What does the error TF_NO_FRAME_ID mean?
 
@@ -232,7 +225,7 @@ with an empty frame_id.  This transform will be ignored by TF.
 The TF_NO_PARENT_ID error means that a transform was attempted to be set
 with an empty parent_id.  This transform will be ignored by TF. 
 
-@subsection tf_nan_input
+@subsection tf_nan_input TF_NAN_INPUT
  - What does the error TF_NAN_INPUT mean?
 
 The TF_NAN_INPUT error means that a transform was attempted to be set
@@ -263,6 +256,22 @@ on sim time, while part is running without simtime.  Make sure that all
 nodes are started while time is being published.  And set the param 
 "/using_sim_time" to true so that on startup there will not be a race 
 condition for what mode ros::Time is running in.  
+
+@subsection connectivity_exceptions ConnectivityException
+ - What does a connectivityException tell me about my robot?
+
+A ConnectivityException says that it is not possible to transform
+between the requested frame_ids.  
+
+ - What are common sources of ConnectivityExceptions?
+
+The most common source of a ConnectivityException is that a tf 
+authority is not publishing an intermediate transform required 
+to get between the source and target frame.  If you are running
+a large launch script look carefully for any nodes crashing 
+or failing to start.  The best utility to see what is being
+published is viewFrames.py see \ref viewFrames for usage.
+
 
 @subsection datatypes_questions Data Types
  - What is the difference between a tf::Transform and a tf::Pose, or
