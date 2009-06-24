@@ -39,6 +39,7 @@
 #include <ros/console.h>
 #include <sys/time.h>
 #include <math.h>
+#include <cstdio>
 
 using namespace std;
 using namespace robot_msgs;
