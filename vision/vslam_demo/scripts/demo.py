@@ -39,6 +39,7 @@ import tf.transformations as transformations
 import sys
 import math
 import time
+from math import *
 
 ########################################################################
 
@@ -117,19 +118,25 @@ class Demo:
     self.source = source
     self.inlier_history = []
     self.label = 0
+    self.skel_dist_thresh = 0.5;        # in meters
 
     # These variables can be tweaked:
 
-    self.fd = FeatureDetectorFast(300)
-#    self.fd = FeatureDetectorStar(300)
+#   self.fd = FeatureDetectorFast(300)
+    self.fd = FeatureDetectorStar(500)
     self.ds = DescriptorSchemeCalonder()
     self.camera_preview = True
     self.vo = VisualOdometer(self.stereo_cam,
                              scavenge = False,
+                             position_keypoint_thresh = 1.0,
+                             angle_keypoint_thresh = 10*pi/180,
                              sba=None,
-                             num_ransac_iters=200,
+                             num_ransac_iters=500,
                              inlier_error_threshold = 3.0)
-    self.skel = Skeleton(self.stereo_cam, descriptor_scheme = self.ds, optimize_after_addition = False)
+    self.skel = Skeleton(self.stereo_cam,
+                         link_thresh = 100,
+                         descriptor_scheme = self.ds,
+                         optimize_after_addition = False)
     self.skel.node_vdist = 0
     self.running = -1                   # run forever
 
@@ -142,7 +149,11 @@ class Demo:
 
     (w,h,li,ri) = self.source.getImage()
 
-    self.f = SparseStereoFrame(li, ri, feature_detector = self.fd, descriptor_scheme = self.ds)
+    self.f = SparseStereoFrame(li, ri,
+                               disparity_range = 96,
+                               feature_detector = self.fd,
+                               descriptor_scheme = self.ds)
+
     self.vo.handle_frame(self.f)
     self.inlier_history = self.inlier_history[-20:] + [self.vo.inl]
     # If the VO inlier count falls below 20, we're not well-connected for this link
@@ -167,7 +178,7 @@ class Demo:
         self.label += 1
       else:
         relpose = ~self.last_added_pose * self.f.pose
-        if relpose.distance() > 0.5:
+        if relpose.distance() > self.skel_dist_thresh:
           add_to_graph = "Connected and distance thresh passed"
 
     if add_to_graph:
@@ -177,6 +188,8 @@ class Demo:
       self.connected = True
       self.last_added_pose = self.f.pose
       self.snail_trail = []
+      self.ioptimize(10)
+
 
     self.snail_trail.append(self.f.pose)
 
@@ -207,6 +220,7 @@ class Demo:
       b_features = self.f.features()
       inliers = set([ (b,a) for (a,b) in self.vo.pe.inl])
       outliers = set(self.vo.pairs) - inliers
+      cv.String("abcd")
       for (a,b) in inliers:
         cv.Line(self.cvim, half(b_features[b]), half(a_features[a]), green)
       for (a,b) in outliers:
@@ -224,11 +238,10 @@ class Demo:
     return self.skel.newpose(id)
 
   def optimize(self):
-    #self.skel.optimize(duration = 0.05)
     self.skel.optimize(1000)
 
-  def ioptimize(self):
-    self.skel.ioptimize()
+  def ioptimize(self,iters = 30):
+    self.skel.ioptimize(iters)
 
   def report(self):
     print
