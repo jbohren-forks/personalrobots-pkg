@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<robot name="pr2"
+<robot name="door"
        xmlns:xi="http://www.w3.org/2001/XInclude"
        xmlns:gazebo="http://playerstage.sourceforge.net/gazebo/xmlschema/#gz"
        xmlns:model="http://playerstage.sourceforge.net/gazebo/xmlschema/#model"
@@ -48,37 +48,71 @@
     <joint_properties damping="10" friction="0.0" />
   </joint>
   
-  <joint name="floor_joint" type="planar" /> 
+  <joint name="floor1_joint" type="planar" /> 
+  <joint name="floor2_joint" type="fixed" /> 
   <joint name="wall1_joint" type="fixed" />
   <joint name="wall2_joint" type="fixed" />
 
   <!-- link blocks -->
-  <link name="floor_link">
+  <link name="floor1_link">
     <parent name="world" />
-    <origin xyz="${wall_x_loc} 0.65 0.01" rpy="0 0 0" />
-    <joint name="floor_joint" />
+    <origin xyz="${wall_x_loc} 0.65 ${0.0-0.01004}" rpy="0 0 0" />
+    <joint name="floor1_joint" />
     <inertial>
       <mass value="100" />
-      <com xyz="0 0 0.001" />
+      <com xyz="0 0 0.0" />
       <inertia ixx="10" ixy="0"  ixz="0"
                iyy="10" iyz="0"
                izz="10" />
     </inertial> 
     <visual>
-      <origin xyz="0 0 0.001" rpy="0 0 0" />
+      <origin xyz="0 8 0.001" rpy="0 0 0" />
       <map name="gazebo_material" flag="gazebo">
         <elem key="material" value="PR2/Grey" />
       </map>
-      <geometry name="floor_visual_geom">
-        <mesh scale="4 4 0.002" />
+      <geometry name="floor1_visual_geom">
+        <mesh scale="8 8 0.002" />
       </geometry>
     </visual> 
     <collision>
-      <origin xyz="0 0 0.001" rpy="0.0 0.0 0.0" />
-      <geometry name="floor_collision_geom">
-        <box size="4 4 0.002" />
+      <origin xyz="0 8 0.001" rpy="0.0 0.0 0.0" />
+      <geometry name="floor1_collision_geom">
+        <box size="8 8 0.002" />
       </geometry>
-      <map name="friction_coefficients" flag="gazebo">
+      <map name="floor1_friction_coefficients" flag="gazebo">
+        <elem key="mu1" value="50.0" />
+        <elem key="mu2" value="50.0" />
+        <elem key="kp"  value="100000000.0" />
+        <elem key="kd"  value="1.0" />
+      </map>
+    </collision>
+  </link>
+  <link name="floor2_link">
+    <parent name="floor1_link" />
+    <origin xyz="0 -8 0" rpy="0 0 0" />
+    <joint name="floor2_joint" />
+    <inertial>
+      <mass value="100" />
+      <com xyz="0 0 0.0" />
+      <inertia ixx="10" ixy="0"  ixz="0"
+               iyy="10" iyz="0"
+               izz="10" />
+    </inertial> 
+    <visual>
+      <origin xyz="0 -4 0.000" rpy="0 0 0" />
+      <map name="gazebo_material" flag="gazebo">
+        <elem key="material" value="PR2/Grey" />
+      </map>
+      <geometry name="floor2_visual_geom">
+        <mesh scale="8 8 0.002" />
+      </geometry>
+    </visual> 
+    <collision>
+      <origin xyz="0 -4 0.000" rpy="0.0 0.0 0.0" />
+      <geometry name="floor2_collision_geom">
+        <box size="8 8 0.002" />
+      </geometry>
+      <map name="floor2_friction_coefficients" flag="gazebo">
         <elem key="mu1" value="50.0" />
         <elem key="mu2" value="50.0" />
         <elem key="kp"  value="100000000.0" />
@@ -88,7 +122,7 @@
   </link>
 
   <link name="wall1_link">
-    <parent name="floor_link" />
+    <parent name="floor1_link" />
     <origin xyz="0 0.0 0" rpy="0 0 0" />
     <joint name="wall1_joint" />
     <inertial>
@@ -116,13 +150,14 @@
         <elem key="laserRetro" value="3000" />
       </map>
     </collision>
-    <map name="door_gravity" flag="gazebo">
+    <map name="wall1_prop" flag="gazebo">
       <elem key="selfCollide" value="true" />
+      <elem key="turnGravityOff" value="true" />
     </map>
   </link>
 
   <link name="wall2_link">
-    <parent name="floor_link" />
+    <parent name="floor1_link" />
     <origin xyz="0 -1.02 0.0" rpy="0 0 0" />
     <joint name="wall2_joint" />
     <inertial>
@@ -150,8 +185,9 @@
         <elem key="laserRetro" value="3500" />
       </map>
     </collision>
-    <map name="door_gravity" flag="gazebo">
+    <map name="wall2_prop" flag="gazebo">
       <elem key="selfCollide" value="true" />
+      <elem key="turnGravityOff" value="true" />
     </map>
   </link>
   
