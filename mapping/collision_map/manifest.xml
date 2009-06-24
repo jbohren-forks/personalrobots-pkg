@@ -3,7 +3,7 @@
     A node providing a map of the occupied space around the robot as discretized boxes (center, dimension), useful for collision detection. 
   </description>
 
-  <author>Radu Bogdan Rusu</author>
+  <author>Radu Bogdan Rusu, Ioan Sucan</author>
   <license>BSD</license>
   <url>http://pr.willowgarage.com</url>
   <review status="experimental" notes="beta"/>
