@@ -64,6 +64,16 @@ Index: ConvexDecomposition/ConvexDecomposition.cpp
  #include "vlookup.h"
  #include "splitplane.h"
  #include "meshvolume.h"
+@@ -760,3 +760,3 @@
+-  					assert( fcount >= 3 && fcount <= 4);
+-  					assert( bcount >= 3 && bcount <= 4);
+-
++  					if ( fcount >= 3 && fcount <= 4)
++  					if ( bcount >= 3 && bcount <= 4)
++  					{
+@@ -777,1 +777,1 @@
+-
++           }
 Index: ConvexDecomposition/splitplane.cpp
 ===================================================================
 --- ConvexDecomposition/splitplane.cpp	(revision 8299)
