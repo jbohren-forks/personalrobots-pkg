@@ -1,5 +1,6 @@
 <launch>
- <group name="gazebo">
+  <param name="/use_sim_time" value="true" />
+
    <!-- start gazebo -->
    <node pkg="gazebo" type="gazebo" args="$(find gazebo_robot_description)/gazebo_worlds/empty.world" respawn="false" output="screen">
      <env name="LD_LIBRARY_PATH" value="$(find gazebo_plugin)/lib:$(find gazebo)/gazebo/lib:$(find Cg)/Cg/lib:$(find ogre)/ogre/lib:$(find opende)/opende/lib:$(optenv LD_LIBRARY_PATH)" />
@@ -30,6 +31,6 @@
     <param name="tf_prefix" type="string" value="" />
   </node>
 
- </group>
+
 </launch>
  
