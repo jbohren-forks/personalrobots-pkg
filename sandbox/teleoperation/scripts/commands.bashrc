@@ -46,9 +46,9 @@ function robmanual()
 function robstream()
 {
     if [[${PR} == prf]]; then
-	env PRCAM=${PR3} ${HOME}/ros/ros-pkg/sandbox/teleoperation/launch/camstream.launch &
+	env PRCAM=${PR3} roslaunch ${HOME}/ros/ros-pkg/sandbox/teleoperation/launch/camstream.launch &
     else
-	env PRCAM=${PR4} ${HOME}/ros/ros-pkg/sandbox/teleoperation/launch/camstream.launch &
+	env PRCAM=${PR4} roslaunch ${HOME}/ros/ros-pkg/sandbox/teleoperation/launch/camstream.launch &
     fi	
 }
 

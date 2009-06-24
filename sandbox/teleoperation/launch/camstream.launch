@@ -19,10 +19,10 @@
     <param name="frame_id" type="string" value="stereo_optical_frame"/>
   </group>
 
-  <node machine="four"  pkg="dcam"              type="stereodcam" respawn="false"/>
-  <node machine="four"  pkg="stereo_image_proc" type="stereoproc" respawn="false"/>
+  <node machine="camera"  pkg="dcam"              type="stereodcam" respawn="false"/>
+  <node machine="camera"  pkg="stereo_image_proc" type="stereoproc" respawn="false"/>
 
-  <node machine="four"  pkg="jpeg"              type="encoder">
+  <node machine="camera"  pkg="jpeg"              type="encoder">
     <remap from="raw_image" to="/stereo/left/image_rect"/>
   </node>
 
