@@ -1,0 +1,18 @@
+<package>
+  <description brief="costmap_2d_tutorials">
+
+     Tutorials for the costmap_2d package.
+
+  </description>
+  <author>Eitan Marder-Eppstein</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://pr.willowgarage.com/wiki/costmap_2d_tutorials</url>
+  <depend package="costmap_2d"/>
+  <depend package="stage"/>
+  <depend package="fake_localization"/>
+  <depend package="nav_view"/>
+
+</package>
+
+
