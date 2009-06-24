@@ -56,9 +56,9 @@ rospack_add_executable(test_executive
 		       test/test_executive.cpp
                       )
 
-rospack_add_executable(test_planner
-		       test/test_planner.cpp
-                      )
+#rospack_add_executable(test_planner
+#		       test/test_planner.cpp
+#                      )
 
 rospack_add_executable(move_base_door
                        src/move_base_door_action.cpp

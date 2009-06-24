@@ -49,12 +49,12 @@
 #include <nav_robot_actions/MoveBaseState.h>
 #include <door_functions/door_functions.h>
 
+#include <pr2_robot_actions/MoveArmGoal.h>
+#include <pr2_robot_actions/MoveArmState.h>
 
 using namespace ros;
 using namespace std;
 using namespace door_functions;
-
-
 
 
 // -----------------------------------
@@ -106,6 +106,7 @@ int
   robot_actions::ActionClient<door_msgs::Door, pr2_robot_actions::DoorActionState, door_msgs::Door> move_base_door("move_base_door");
   robot_actions::ActionClient<door_msgs::Door, pr2_robot_actions::DoorActionState, door_msgs::Door> sbpl_door_planner("sbpl_door_planner");
   robot_actions::ActionClient<robot_msgs::PoseStamped, nav_robot_actions::MoveBaseState, robot_msgs::PoseStamped> move_base_local("move_base_local");
+  robot_actions::ActionClient<pr2_robot_actions::MoveArmGoal, pr2_robot_actions::MoveArmState, int32_t> move_arm("move_arm");
 
   door_msgs::Door tmp_door;
 
@@ -239,6 +240,82 @@ int
     if (switch_controllers.execute(switchlist, empty, timeout_short) != robot_actions::SUCCESS) return -1;
     if (release_handle.execute(door, door, timeout_long) != robot_actions::SUCCESS) return -1;
   }
+
+  ROS_INFO("Door angle is now : %f",getDoorAngle(tmp_door));
+
+  if(fabs(getDoorAngle(tmp_door)) < (M_PI/2.0-0.3))
+  {
+    // Repeat the door opening
+    // First use move arm to grasp the other handle
+    // Then use the door opening code to open the door
+    switchlist.start_controllers.push_back("r_arm_joint_trajectory_controller");
+    switchlist.stop_controllers.push_back("r_arm_constraint_cartesian_trajectory_controller");
+    switchlist.stop_controllers.push_back("r_arm_constraint_cartesian_pose_controller");
+    switchlist.stop_controllers.push_back("r_arm_constraint_cartesian_twist_controller");
+    switchlist.stop_controllers.push_back("r_arm_constraint_cartesian_wrench_controller");
+    if (switch_controllers.execute(switchlist, empty, timeout_short) != robot_actions::SUCCESS) return -1;
+
+    tf::Stamped<tf::Pose> handle_pose = getHandlePose(tmp_door,-1);
+    robot_msgs::PoseStamped handle_msg;
+    handle_pose.stamp_ = ros::Time::now();
+    PoseStampedTFToMsg(handle_pose, handle_msg);
+
+    int32_t feedback_move_arm;
+    pr2_robot_actions::MoveArmGoal goal_move_arm;
+    pr2_robot_actions::MoveArmState state;
+    
+    goal_move_arm.goal_constraints.set_pose_constraint_size(1);
+
+    goal_move_arm.goal_constraints.pose_constraint[0].pose = handle_msg;
+    goal_move_arm.goal_constraints.pose_constraint[0].pose.header.stamp = ros::Time::now();
+    goal_move_arm.goal_constraints.pose_constraint[0].pose.header.frame_id = "torso_lift_link";
+    
+    goal_move_arm.goal_constraints.pose_constraint[0].link_name = "r_wrist_roll_link";
+    goal_move_arm.goal_constraints.pose_constraint[0].position_distance = 0.01;
+    goal_move_arm.goal_constraints.pose_constraint[0].orientation_distance = 0.01;
+    goal_move_arm.goal_constraints.pose_constraint[0].orientation_importance = 0.1;
+    goal_move_arm.goal_constraints.pose_constraint[0].type = motion_planning_msgs::PoseConstraint::POSITION_XYZ + 
+      motion_planning_msgs::PoseConstraint::ORIENTATION_RPY;    
+    if(move_arm.execute(goal_move_arm,feedback_move_arm,timeout_long) != robot_actions::SUCCESS) return -1;    
+
+
+    // grasp handle
+    switchlist.start_controllers.clear();  switchlist.stop_controllers.clear();
+    switchlist.stop_controllers.push_back("r_arm_joint_trajectory_controller");
+
+    switchlist.start_controllers.push_back("r_arm_constraint_cartesian_trajectory_controller");
+    switchlist.start_controllers.push_back("r_arm_constraint_cartesian_pose_controller");
+    switchlist.start_controllers.push_back("r_arm_constraint_cartesian_twist_controller");
+    switchlist.start_controllers.push_back("r_arm_constraint_cartesian_wrench_controller");
+    if (switch_controllers.execute(switchlist, empty, timeout_short) != robot_actions::SUCCESS) return -1;
+    if (grasp_handle.execute(tmp_door, tmp_door, timeout_long) != robot_actions::SUCCESS) return -1;
+
+    cout << "Controllers for door planner ready" << endl;
+
+    // move through door
+    pr2_robot_actions::Pose2D pose2d;
+    switchlist.start_controllers.clear();  switchlist.stop_controllers.clear();
+    if (switch_controllers.execute(switchlist, empty, timeout_short) != robot_actions::SUCCESS) return -1;
+    if (sbpl_door_planner.execute(tmp_door, tmp_door) != robot_actions::SUCCESS) return -1;
+    cout << "Door planner done" << endl;
+  }
+    
+  // release handle
+  if (!open_by_pushing){
+    switchlist.start_controllers.clear();  switchlist.stop_controllers.clear();
+
+    switchlist.stop_controllers.push_back("r_arm_joint_trajectory_controller");
+
+    switchlist.start_controllers.push_back("r_arm_constraint_cartesian_trajectory_controller");
+    switchlist.start_controllers.push_back("r_arm_constraint_cartesian_pose_controller");
+    switchlist.start_controllers.push_back("r_arm_constraint_cartesian_twist_controller");
+    switchlist.start_controllers.push_back("r_arm_constraint_cartesian_wrench_controller");
+
+    if (switch_controllers.execute(switchlist, empty, timeout_short) != robot_actions::SUCCESS) return -1;
+    if (release_handle.execute(tmp_door, tmp_door, timeout_long) != robot_actions::SUCCESS) return -1;
+  }
+
+
 
   // tuck arm
   switchlist.start_controllers.clear();  switchlist.stop_controllers.clear();
