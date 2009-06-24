@@ -393,16 +393,18 @@ robot_actions::ResultStatus SBPLDoorPlanner::execute(const door_msgs::Door& door
   {
     ROS_INFO("Publishing path");
     publishPath(path,"global_plan",1.0,0.0,0.0,0.0);
-    ros::Duration d;
-    d.fromSec(10.0);
-    d.sleep();
-    publishPath(path,"global_plan",1.0,0.0,0.0,0.0);
   }
 
   handle_hinge_distance_ = getHandleHingeDistance(door_env_.door);
 
   manipulation_msgs::JointTraj new_path;
   processPlan(path,new_path);
+
+  feedback = door;
+  if(new_path.points.size() != path.points.size())
+  {
+    feedback = rotateDoor(door,new_path.points.back().positions[3]-getFrameAngle(door_env_.door));
+  }
 
   if(animate_ && !isPreemptRequested())
   {
@@ -485,8 +487,77 @@ void SBPLDoorPlanner::processPlan(const manipulation_msgs::JointTraj &path, mani
     return_path.points.push_back(additional_point);    
     ROS_INFO("Additional point: %f %f %f %f",additional_point.positions[0],additional_point.positions[1],additional_point.positions[2],additional_point.positions[3]);
   }
-
+  //Break the plan up into two parts
+  int switch_arm_index = -1;
+  for(int i=0; i < (int)return_path.points.size(); i++)
+  {
+    if(checkArmDoorCollide(return_path.points[i]))
+    {
+      switch_arm_index = i;
+      break;
+    }
+  }
+  switch_arm_index = std::max(switch_arm_index-10,0);
+  if(switch_arm_index > 0)
+  {
+    ROS_INFO("Breaking plan into two parts: %d,%d",switch_arm_index,return_path.points.size()-switch_arm_index);
+    return_path.points.resize(switch_arm_index);
+  }
 }
+
+bool SBPLDoorPlanner::checkArmDoorCollide(const manipulation_msgs::JointTrajPoint &waypoint)
+{
+  robot_msgs::Point32 global_shoulder_position;
+
+  // rotate the door
+  door_msgs::Door rotated_door = door_functions::rotateDoor(door_env_.door, waypoint.positions[3]-getFrameAngle(door_env_.door));
+
+  //global handle position
+  tf::Stamped<tf::Pose>  global_handle_position_tf = getGlobalHandlePosition(door_env_.door, waypoint.positions[3]);
+
+  robot_msgs::PoseStamped handle_msg;
+  robot_msgs::Point32 handle_position;
+  global_handle_position_tf.stamp_ = ros::Time::now();
+  PoseStampedTFToMsg(global_handle_position_tf, handle_msg);
+  //get shoulder in global frame
+  global_shoulder_position.x = waypoint.positions[0] + (door_env_.shoulder.x*cos(waypoint.positions[2])-door_env_.shoulder.y*sin(waypoint.positions[2]));
+  global_shoulder_position.y = waypoint.positions[1] + (door_env_.shoulder.x*sin(waypoint.positions[2])+door_env_.shoulder.y*cos(waypoint.positions[2]));
+
+  handle_position.x = handle_msg.pose.position.x;
+  handle_position.y = handle_msg.pose.position.y;
+  handle_position.z = handle_msg.pose.position.z;
+
+  //debug
+//  printPoint("rotated_door.door_p1",rotated_door.door_p1);
+//  printPoint("rotated_door.door_p2",rotated_door.door_p2);
+//  printPoint("global_handle_position",global_handle_position);
+//  printPoint("global_shoulder_position",global_shoulder_position);
+
+  return doLineSegsIntersect(rotated_door.door_p1, rotated_door.door_p2, global_shoulder_position, handle_position);
+}
+
+bool SBPLDoorPlanner::doLineSegsIntersect(robot_msgs::Point32 a, robot_msgs::Point32 b, robot_msgs::Point32 c, robot_msgs::Point32 d)
+{
+  double b_a[2], c_d[2], c_a[2];
+  b_a[0] = b.x-a.x;
+  b_a[1] = b.y-a.y;
+
+  c_d[0] = c.x-d.x;
+  c_d[1] = c.y-d.y;
+
+  c_a[0] = c.x-a.x;
+  c_a[1] = c.y-a.y;
+
+  double det = (b_a[0]*c_d[1]) - (b_a[1]*c_d[0]);
+  double t = ((c_a[0]*c_d[1]) - (c_a[1]*c_d[0])) / det;
+  double u = ((b_a[0]*c_a[1]) - (b_a[1]*c_a[0])) / det;
+
+  if ((t<0)||(u<0)||(t>1)||(u>1))
+    return false;
+  else
+    return true;
+}
+
 
 void SBPLDoorPlanner::animate(const manipulation_msgs::JointTraj &path)
 {
@@ -512,16 +583,6 @@ void SBPLDoorPlanner::publishGripper(const double &angle)
   door_msgs::Door result = rotateDoor(door_env_.door,angle);
   robot_msgs::PoseStamped gripper_msg;
   double yaw = getDoorAngle(result);
-/*  gripper_msg.pose.position.x = result.handle.x;
-  gripper_msg.pose.position.y = result.handle.y;
-  gripper_msg.pose.position.z = result.handle.z;
-
-  tf::Quaternion quat_trans = tf::Quaternion(yaw,0.0,0.0);
-  gripper_msg.pose.orientation.x = quat_trans.x();
-  gripper_msg.pose.orientation.y = quat_trans.y();
-  gripper_msg.pose.orientation.z = quat_trans.z();
-  gripper_msg.pose.orientation.w = quat_trans.w();
-*/
   tf::Stamped<tf::Pose> gripper_pose = getGlobalHandlePosition(door_env_.door,angle);
   gripper_pose.stamp_ = ros::Time::now();
   PoseStampedTFToMsg(gripper_pose, gripper_msg);
@@ -545,23 +606,6 @@ void SBPLDoorPlanner::publishGripper(const double &angle)
 
 tf::Stamped<tf::Pose> SBPLDoorPlanner::getGlobalHandlePosition(const door_msgs::Door &door_in, const double &angle)
 {
-/*  tf::Stamped<tf::Pose> handle_pose;
-
-  door_msgs::Door result = rotateDoor(door_in,angle);
-  robot_msgs::PoseStamped gripper_msg;
-  double yaw = getDoorAngle(result) + getFrameAngle(result);
-  gripper_msg.pose.position.x = result.handle.x;
-  gripper_msg.pose.position.y = result.handle.y;
-  gripper_msg.pose.position.z = result.handle.z;
-
-  tf::Quaternion quat_trans = tf::Quaternion(yaw,0.0,0.0);
-  gripper_msg.pose.orientation.x = quat_trans.x();
-  gripper_msg.pose.orientation.y = quat_trans.y();
-  gripper_msg.pose.orientation.z = quat_trans.z();
-  gripper_msg.pose.orientation.w = quat_trans.w();
-
-  PoseStampedMsgToTF(gripper_msg,handle_pose);
-*/
   door_msgs::Door door = door_in;
   door.header.stamp = ros::Time::now();
   tf::Stamped<tf::Pose> handle_pose = getGripperPose(door,angle,handle_hinge_distance_);
@@ -596,14 +640,13 @@ void SBPLDoorPlanner::publishPath(const manipulation_msgs::JointTraj &path, std:
       gui_path_msg.points[i].y = path.points[i].positions[1];
       gui_path_msg.points[i].z = path.points[i].positions[2];
     }
+    gui_path_msg.color.r = r;
+    gui_path_msg.color.g = g;
+    gui_path_msg.color.b = b;
+    gui_path_msg.color.a = a;
+
+    ros_node_.publish("~" + topic, gui_path_msg);
   }
-
-  gui_path_msg.color.r = r;
-  gui_path_msg.color.g = g;
-  gui_path_msg.color.b = b;
-  gui_path_msg.color.a = a;
-
-  ros_node_.publish("~" + topic, gui_path_msg);
 }
 
 bool SBPLDoorPlanner::updateGlobalPose()
@@ -682,7 +725,6 @@ bool SBPLDoorPlanner::clearRobotFootprint(costmap_2d::Costmap2D& cost_map)
   cost_map.reinflateWindow(global_pose_2D_.x, global_pose_2D_.y, max_inflation_dist, max_inflation_dist);
   return true;
 }
-
 
 void SBPLDoorPlanner::publishFootprint(const pr2_robot_actions::Pose2D &position, std::string topic, double r, double g, double b)
 {

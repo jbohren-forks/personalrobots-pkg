@@ -940,11 +940,11 @@ void EnvironmentNAVXYTHETADOORLAT::GetActionCost(int SourceX, int SourceY, int S
   */
   //use cell cost as multiplicative factor
   if(interval_active[0] == true)    
-    *pCosttoDoorInterval0 = action->cost*(currentmaxcost+1)*(doorcostmultiplier + 1); 
+    *pCosttoDoorInterval0 = action->cost*(currentmaxcost+1);//*(doorcostmultiplier + 1); 
   else
     *pCosttoDoorInterval0 = INFINITECOST;
   if(interval_active[1] == true)     
-    *pCosttoDoorInterval1 =  action->cost*(currentmaxcost+1)*(doorcostmultiplier + 1); 
+    *pCosttoDoorInterval1 =  action->cost*(currentmaxcost+1);//*(doorcostmultiplier + 1); 
   else
     *pCosttoDoorInterval1 = INFINITECOST;
 
@@ -1009,9 +1009,9 @@ void EnvironmentNAVXYTHETADOORLAT::GetActionCostDebug(int SourceX, int SourceY, 
     GetValidDoorAngles(point3D, &doorangleV, &dooranglecostV, &doorangleintV);
 //        printf("Size angles: %d, costs: %d\n",doorangleV.size(),dooranglecostV.size());
 
-    for(unsigned int p = 0; p < doorangleV.size(); p++)
+    /*   for(unsigned int p = 0; p < doorangleV.size(); p++)
       printf("{%.2f %.2f %d %d} angle: %d dist: %.3f\n",sourcex,sourcey,SourceTheta,SourceDoorIntervalIndex, doorangleV[p], db_.getDistanceFromDoorToBase(doorangleV[p]*M_PI/180));
-
+    */
     if(bPrint){
       printf("pt %d: %f %f %f\n", i, point3D.x, point3D.y, point3D.theta);
       printf("interval active: %d %d doorcostmultiplier: %d\n", interval_active[0], interval_active[1],doorcostmultiplier);

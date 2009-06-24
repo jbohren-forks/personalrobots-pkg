@@ -171,6 +171,12 @@ class SBPLDoorPlanner : public robot_actions::Action<door_msgs::Door, door_msgs:
 
   void animate(const manipulation_msgs::JointTraj &path);
 
+  /**
+   * @brief  Returns the global handle position of the door given a door message and a local angle (in the frame of the door)
+   * @param door The door message to use
+   * @param local_angle The local angle through which the door has rotated (in radians). 0 represents a closed door and (+/-)M_PI/2.0 represents 
+   * @return The tf::Stamped pose representing the pose of the handle
+   */
   tf::Stamped<tf::Pose> getGlobalHandlePosition(const door_msgs::Door &door, const double &local_angle);
 
   double getHandleHingeDistance(const door_msgs::Door &door);
@@ -194,5 +200,9 @@ class SBPLDoorPlanner : public robot_actions::Action<door_msgs::Door, door_msgs:
   void processPlan(const manipulation_msgs::JointTraj &path, manipulation_msgs::JointTraj &return_path);
 
   bool do_control_;
+
+  bool checkArmDoorCollide(const manipulation_msgs::JointTrajPoint &waypoint);
+
+  bool doLineSegsIntersect(robot_msgs::Point32 a, robot_msgs::Point32 b, robot_msgs::Point32 c, robot_msgs::Point32 d);
 
 };
