@@ -635,6 +635,12 @@ class MouseLook:
     if k == '/':
       demo.report()
 
+    if k == 'S':
+      print "SAVING\n"
+      time.sleep(1)
+      demo.skel.pg.save("demo_snapshot.toro")
+      time.sleep(1)
+
     if k == 'P':
       print "\nPAUSING\n"
       if demo.running:
