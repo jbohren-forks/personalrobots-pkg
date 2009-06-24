@@ -86,7 +86,6 @@ namespace door_functions{
     return angle;
   }
 
-
   tf::Stamped<tf::Pose> getGripperPose(const door_msgs::Door& door, double angle, double dist)
   {
     Vector x_axis(1,0,0);
@@ -118,6 +117,50 @@ namespace door_functions{
     return gripper_pose;  
   }
 
+  tf::Stamped<tf::Pose> getHandlePose(const door_msgs::Door& door, int side)
+  {
+    Vector x_axis(1,0,0);
+    
+    double dist = sqrt(pow(door.frame_p1.x - door.handle.x,2)+pow(door.frame_p1.y - door.handle.y,2));
+    if(door.hinge == door_msgs::Door::HINGE_P2)
+    {
+      dist = sqrt(pow(door.frame_p2.x - door.handle.x,2)+pow(door.frame_p2.y - door.handle.y,2));
+    }
+    double angle = getDoorAngle(door);
+
+    // get hinge point
+    Vector hinge, frame_vec;
+    if (door.hinge == door_msgs::Door::HINGE_P1){
+      hinge = Vector(door.door_p1.x, door.door_p1.y, door.door_p1.z);
+      frame_vec = Vector(door.frame_p2.x - door.frame_p1.x, door.frame_p2.y - door.frame_p1.y, door.frame_p2.z - door.frame_p1.z);
+    }
+    else if (door.hinge == door_msgs::Door::HINGE_P2){
+      hinge = Vector(door.door_p2.x, door.door_p2.y, door.door_p2.z);
+      frame_vec = Vector(door.frame_p1.x - door.frame_p2.x, door.frame_p1.y - door.frame_p2.y, door.frame_p1.z - door.frame_p2.z);
+    }
+
+    // get gripper pos
+    frame_vec.Normalize();
+    frame_vec = frame_vec * dist;
+    Rotation rot_angle = Rotation::RotZ(angle);
+    Vector handle_pos = hinge + (rot_angle * frame_vec);
+    
+    tf::Stamped<tf::Pose> handle_pose;
+    Vector normal_frame = getFrameNormal(door);
+    if(side == -1)
+    {
+      normal_frame = -normal_frame;
+    }
+    handle_pose.frame_id_ = door.header.frame_id;
+    handle_pose.stamp_ = door.header.stamp;
+    handle_pose.setOrigin( tf::Vector3(handle_pos(0), handle_pos(1), gripper_height));
+    handle_pose.setRotation( tf::Quaternion(getVectorAngle(x_axis, normal_frame)+angle, 0, 0) ); 
+    
+    tf::Pose gripper_rotate(tf::Quaternion(0.0,0.0,M_PI/2.0),tf::Vector3(0.0,0.0,0.0));
+    handle_pose.mult(handle_pose,gripper_rotate);
+    return handle_pose;  
+  }
+
   double getDoorAngle(const door_msgs::Door& door)
   {
     Vector frame_vec(door.frame_p1.x-door.frame_p2.x, door.frame_p1.y-door.frame_p2.y, door.frame_p1.z-door.frame_p2.z);
@@ -126,10 +169,10 @@ namespace door_functions{
 
     // validity check
     if (door.rot_dir == door_msgs::Door::ROT_DIR_CLOCKWISE && angle > eps_angle)
-      ROS_ERROR("Door angle is positive, but door message specifies it turns clockwise");
+      ROS_DEBUG("Door angle is positive, but door message specifies it turns clockwise");
 
     if (door.rot_dir == door_msgs::Door::ROT_DIR_COUNTERCLOCKWISE && angle < -eps_angle)
-      ROS_ERROR("Door angle is negative, but door message specifies it turns counter-clockwise");
+      ROS_DEBUG("Door angle is negative, but door message specifies it turns counter-clockwise");
 
     return angle;
   }

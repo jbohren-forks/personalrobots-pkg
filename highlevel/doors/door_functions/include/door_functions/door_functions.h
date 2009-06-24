@@ -45,6 +45,7 @@ namespace door_functions{
 /// get robot and gripper pose
   tf::Stamped<tf::Pose> getRobotPose(const door_msgs::Door& door, double dist);
   tf::Stamped<tf::Pose> getGripperPose(const door_msgs::Door& door, double angle, double dist);
+  tf::Stamped<tf::Pose> getHandlePose(const door_msgs::Door& door, int side=1);
   double getNearestDoorAngle(const tf::Pose& robot_pose, const door_msgs::Door& door, double robot_dist, double touch_dist);
 
 /// get the door angle
