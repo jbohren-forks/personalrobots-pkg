@@ -1,0 +1,23 @@
+<launch>
+  <param name="/use_sim_time" value="true" />
+   <!-- send head_cart.xml to param server -->
+  <param name="robotdesc/pr2" command="$(find xacro)/xacro.py '$(find pr2_defs)/robots/hca.xacro.xml'" />
+
+  <!-- start gazebo -->
+  <node pkg="gazebo" type="gazebo" args="-n $(find gazebo_robot_description)/gazebo_worlds/simple.world" respawn="false" output="screen">
+    <env name="LD_LIBRARY_PATH" value="$(find gazebo_plugin)/lib:$(find gazebo)/gazebo/lib:$(find Cg)/Cg/lib:$(optenv LD_LIBRARY_PATH)" />
+    <env name="GAZEBO_RESOURCE_PATH" value="$(find gazebo_robot_description):$(find gazebo)/gazebo/share/gazebo" />
+    <env name="OGRE_RESOURCE_PATH" value="$(find ogre)/ogre/lib/OGRE" />
+  </node>
+
+  <!-- push robotdesc/pr2 to factory and spawn robot in gazebo -->
+  <node pkg="gazebo_plugin" type="urdf2factory" args="robotdesc/pr2" respawn="false" output="screen" />
+
+  <!-- Robot state publisher -->
+  <node pkg="robot_state_publisher" type="state_publisher" name="robot_state_publisher">
+    <param name="publish_frequency" type="double" value="50.0" />
+    <param name="tf_prefix" type="string" value="" />
+  </node>
+
+</launch>
+
