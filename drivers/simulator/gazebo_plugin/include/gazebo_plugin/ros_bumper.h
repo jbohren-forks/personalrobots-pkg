@@ -33,7 +33,7 @@
 #include <gazebo/Param.hh>
 
 // ros messages
-#include <ros/node.h>
+#include <ros/ros.h>
 #include "boost/thread/mutex.hpp"
 #include <std_msgs/String.h>
 #include <robot_msgs/Vector3Stamped.h>
@@ -96,7 +96,8 @@ namespace gazebo
 
 
     /// \brief pointer to ros node
-    private: ros::Node *rosnode;
+    private: ros::NodeHandle* rosnode_;
+    private: ros::Publisher info_pub_,force_pub_;
 
     /// \brief set topic name of broadcast
     private: ParamT<std::string> *bumperTopicNameP;

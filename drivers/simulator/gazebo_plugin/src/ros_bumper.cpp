@@ -35,6 +35,7 @@
 #include <gazebo/ControllerFactory.hh>
 #include <gazebo/Simulator.hh>
 #include <gazebo/Body.hh>
+#include <gazebo/Body.hh>
 
 using namespace gazebo;
 
@@ -54,17 +55,10 @@ RosBumper::RosBumper(Entity *parent )
   this->bumperTopicNameP = new ParamT<std::string>("bumperTopicName", "bumper", 0);
   Param::End();
 
-  rosnode = ros::g_node; // comes from where?
   int argc = 0;
   char** argv = NULL;
-  if (rosnode == NULL)
-  {
-    // this only works for a single camera.
-    ros::init(argc,argv);
-    rosnode = new ros::Node("ros_gazebo",ros::Node::DONT_HANDLE_SIGINT);
-    ROS_INFO("Starting node in bumper");
-  }
-
+  ros::init(argc,argv,"ros_bumper");
+  this->rosnode_ = new ros::NodeHandle();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -72,6 +66,7 @@ RosBumper::RosBumper(Entity *parent )
 RosBumper::~RosBumper()
 {
   delete this->bumperTopicNameP;
+  delete this->rosnode_;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -84,8 +79,8 @@ void RosBumper::LoadChild(XMLConfigNode *node)
            this->bumperTopicName.c_str());
   //std::cout << " publishing contact/collisions to topic name: " << this->bumperTopicName << std::endl;
 
-  rosnode->advertise<std_msgs::String>(this->bumperTopicName+std::string("/info"),100);
-  rosnode->advertise<robot_msgs::Vector3Stamped>(this->bumperTopicName+std::string("/force"),100);
+  this->info_pub_ = this->rosnode_->advertise<std_msgs::String>(this->bumperTopicName+std::string("/info"),100);
+  this->force_pub_ = this->rosnode_->advertise<robot_msgs::Vector3Stamped>(this->bumperTopicName+std::string("/force"),100);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -145,8 +140,8 @@ void RosBumper::UpdateChild()
       this->forceMsg.vector.y = (1.0-eps)*this->forceMsg.vector.y + eps*contact_forces.f1[1];
       this->forceMsg.vector.z = (1.0-eps)*this->forceMsg.vector.z + eps*contact_forces.f1[2];
 
-      rosnode->publish(this->bumperTopicName+std::string("/info"),this->bumperMsg);
-      rosnode->publish(this->bumperTopicName+std::string("/force"),this->forceMsg);
+      this->info_pub_.publish(this->bumperMsg);
+      this->force_pub_.publish(this->forceMsg);
     }
   }
 

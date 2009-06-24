@@ -96,22 +96,17 @@ RosProsilica::RosProsilica(Entity *parent)
   this->distortion_t2P  = new ParamT<double>("distortion_t2" ,0, 0);
   Param::End();
 
-  rosnode = ros::g_node; // comes from where?
   int argc = 0;
   char** argv = NULL;
-  if (rosnode == NULL)
-  {
-    ros::init(argc,argv);
-    rosnode = new ros::Node("ros_gazebo",ros::Node::DONT_HANDLE_SIGINT);
-    ROS_DEBUG("Starting node in prosilica plugin");
-  }
-
+  ros::init(argc,argv,"ros_prosilica");
+  this->rosnode_ = new ros::NodeHandle();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // Destructor
 RosProsilica::~RosProsilica()
 {
+  delete this->rosnode_;
   delete this->imageTopicNameP;
   delete this->imageRectTopicNameP;
   delete this->camInfoTopicNameP;
@@ -166,11 +161,11 @@ void RosProsilica::LoadChild(XMLConfigNode *node)
   this->distortion_t2 = this->distortion_t2P->GetValue();
 
   ROS_DEBUG("prosilica image topic name %s", this->imageTopicName.c_str());
-  rosnode->advertise<image_msgs::Image>(this->imageTopicName,1);
-  rosnode->advertise<image_msgs::Image>(this->imageRectTopicName,1);
-  rosnode->advertise<image_msgs::CamInfo>(this->camInfoTopicName,1);
-  rosnode->advertiseService(this->camInfoServiceName,&RosProsilica::camInfoService, this, 0);
-  rosnode->advertiseService(this->pollServiceName,&RosProsilica::triggeredGrab, this, 0);
+  this->image_pub_ = this->rosnode_->advertise<image_msgs::Image>(this->imageTopicName,1);
+  this->image_rect_pub_ = this->rosnode_->advertise<image_msgs::Image>(this->imageRectTopicName,1);
+  this->cam_info_pub_ = this->rosnode_->advertise<image_msgs::CamInfo>(this->camInfoTopicName,1);
+  this->cam_info_ser_ = this->rosnode_->advertiseService(this->camInfoServiceName,&RosProsilica::camInfoService, this);
+  this->poll_ser_ = this->rosnode_->advertiseService(this->pollServiceName,&RosProsilica::triggeredGrab, this);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -315,8 +310,8 @@ bool RosProsilica::triggeredGrab(prosilica_cam::PolledImage::Request &req,
               (void*)src );
     // publish to ros, thumbnails and rect image?
     /// @todo: don't bother if there are no subscribers
-    if (this->rosnode->numSubscribers(this->imageTopicName) > 0)
-      rosnode->publish(this->imageTopicName,this->imageMsg);
+    if (this->image_pub_.getNumSubscribers() > 0)
+      this->image_pub_.publish(this->imageMsg);
 
     image_msgs::CvBridge img_bridge_;
     img_bridge_.fromImage(this->imageMsg,this->format.c_str());
@@ -391,11 +386,6 @@ void RosProsilica::UpdateChild()
 // Finalize the controller
 void RosProsilica::FiniChild()
 {
-  rosnode->unadvertise(this->imageTopicName);
-  rosnode->unadvertise(this->imageRectTopicName);
-  rosnode->unadvertise(this->camInfoTopicName);
-  rosnode->unadvertiseService(this->camInfoServiceName);
-  rosnode->unadvertiseService(this->pollServiceName);
   this->myParent->SetActive(false);
 }
 

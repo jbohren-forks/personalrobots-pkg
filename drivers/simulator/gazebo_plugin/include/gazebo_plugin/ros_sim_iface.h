@@ -27,7 +27,7 @@
 #ifndef ROS_SIM_IFACE_HH
 #define ROS_SIM_IFACE_HH
 
-#include <ros/node.h>
+#include <ros/ros.h>
 #include "boost/thread/mutex.hpp"
 #include <gazebo/Controller.hh>
 #include <gazebo/Param.hh>
@@ -91,16 +91,14 @@ class RosSimIface : public Controller
   protected: virtual void FiniChild();
 
   /// \brief call back when a PoseWithRatesStamped message is published
-  private: void UpdateObjectPose();
+  private: void UpdateObjectPose(const robot_msgs::PoseWithRatesStampedConstPtr& poseMsg);
 
   /// \brief A pointer to the parent entity
   private: Entity *myParent;
 
   /// \brief A pointer to the ROS node.  A node will be instantiated if it does not exist.
-  private: ros::Node *rosnode;
-
-  /// \brief ROS PoseWithRatesStamped message
-  private: robot_msgs::PoseWithRatesStamped poseMsg;
+  private: ros::NodeHandle* rosnode_;
+  private: ros::Subscriber sub_;
 
   /// \brief A mutex to lock access to fields that are used in ROS message callbacks
   private: boost::mutex lock;

@@ -67,23 +67,17 @@ RosPTZ::RosPTZ(Entity *parent)
   this->stateTopicNameP = new ParamT<std::string>("stateTopicName","PTZ_state",0);
   Param::End();
 
-  rosnode = ros::g_node; // comes from where?
   int argc = 0;
   char** argv = NULL;
-  if (rosnode == NULL)
-  {
-    // this only works for a single camera.
-    ros::init(argc,argv);
-    rosnode = new ros::Node("ros_gazebo",ros::Node::DONT_HANDLE_SIGINT);
-    ROS_DEBUG("Starting node in camera");
-  }
-
+  ros::init(argc,argv,"ros_ptz");
+  this->rosnode_ = new ros::NodeHandle();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // Destructor
 RosPTZ::~RosPTZ()
 {
+  delete this->rosnode_;
   //if (this->panJoint)
   //  delete this->panJoint;
   //if (this->tiltJoint)
@@ -124,8 +118,8 @@ void RosPTZ::LoadChild(XMLConfigNode *node)
   ROS_DEBUG(" publishing state topic for ptz %s", this->stateTopicName.c_str());
   ROS_DEBUG(" subscribing command topic for ptz %s", this->commandTopicName.c_str());
 
-  rosnode->advertise<axis_cam::PTZActuatorState>(this->stateTopicName,10);
-  rosnode->subscribe( commandTopicName, PTZControlMessage, &RosPTZ::PTZCommandReceived,this,10);
+  this->pub_ = this->rosnode_->advertise<axis_cam::PTZActuatorState>(this->stateTopicName,10);
+  this->sub_ = this->rosnode_->subscribe(this->commandTopicName.c_str(), 10, &RosPTZ::PTZCommandReceived,this);
 
   if (!this->panJoint)
     gzthrow("couldn't get pan hinge joint");
@@ -135,11 +129,11 @@ void RosPTZ::LoadChild(XMLConfigNode *node)
 
 }
 
-void RosPTZ::PTZCommandReceived()
+void RosPTZ::PTZCommandReceived(const axis_cam::PTZActuatorCmdConstPtr& in)
 {
   this->lock.lock();
-  this->cmdPan  = PTZControlMessage.pan.cmd*M_PI/180.0;
-  this->cmdTilt = PTZControlMessage.tilt.cmd*M_PI/180.0;
+  this->cmdPan  = in->pan.cmd*M_PI/180.0;
+  this->cmdTilt = in->tilt.cmd*M_PI/180.0;
   this->lock.unlock();
 }
 
@@ -211,8 +205,6 @@ void RosPTZ::UpdateChild()
 // Finalize the controller
 void RosPTZ::FiniChild()
 {
-  rosnode->unadvertise(this->stateTopicName);
-  rosnode->unsubscribe(commandTopicName); // FIXME: only unsubscribe if subscribed?
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -229,7 +221,7 @@ void RosPTZ::PutPTZData()
   PTZStateMessage.tilt.pos_valid=1;
   PTZStateMessage.tilt.pos      = RTOD(this->tiltJoint->GetAngle());
   // publish topic
-  this->rosnode->publish(this->stateTopicName,PTZStateMessage);
+  this->pub_.publish(PTZStateMessage);
   this->lock.unlock();
 
 }

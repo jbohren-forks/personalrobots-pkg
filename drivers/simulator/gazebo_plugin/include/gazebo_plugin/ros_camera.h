@@ -27,7 +27,7 @@
 #ifndef ROS_CAMERA_HH
 #define ROS_CAMERA_HH
 
-#include <ros/node.h>
+#include <ros/ros.h>
 #include "boost/thread/mutex.hpp"
 #include <image_msgs/Image.h>
 #include <gazebo/Param.hh>
@@ -118,7 +118,8 @@ class RosCamera : public Controller
   private: MonoCameraSensor *myParent;
 
   /// \brief A pointer to the ROS node.  A node will be instantiated if it does not exist.
-  private: ros::Node *rosnode;
+  private: ros::NodeHandle* rosnode_;
+  private: ros::Publisher pub_;
 
   /// \brief ROS image message
   private: image_msgs::Image imageMsg;

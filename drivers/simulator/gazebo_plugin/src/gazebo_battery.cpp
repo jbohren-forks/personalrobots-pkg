@@ -55,31 +55,26 @@ namespace gazebo {
      if (!this->parent_model_)
         gzthrow("GazeboBattery controller requires a Model as its parent");
 
-    rosnode_ = ros::g_node; // comes from where?
-    int argc = 0;
-    char** argv = NULL;
-    if (rosnode_ == NULL)
-    {
-      // this only works for a single camera.
-      ros::init(argc,argv);
-      rosnode_ = new ros::Node("ros_gazebo",ros::Node::DONT_HANDLE_SIGINT);
-      ROS_DEBUG("Starting node in P3D");
-    }
+     int argc = 0;
+     char** argv = NULL;
+     ros::init(argc,argv,"gazebo_battery");
+     this->rosnode_ = new ros::NodeHandle();
   }
 
   GazeboBattery::~GazeboBattery()
   {
+     delete this->rosnode_;
   }
 
   void GazeboBattery::LoadChild(XMLConfigNode *node)
   {
     this->stateTopicName_ = node->GetString("stateTopicName","battery_state",0);
-    rosnode_->advertise<robot_msgs::BatteryState>(this->stateTopicName_,10);
+    this->pub_ = this->rosnode_->advertise<robot_msgs::BatteryState>(this->stateTopicName_,10);
     //this->diagnosticMessageTopicName_ = node->GetString("diagnosticMessageTopicName","diagnostic",0);
-    //rosnode_->advertise<diagnostic_msgs::DiagnosticMessage>(this->diagnosticMessageTopicName_,10);
+    //this->diag_pub_ = this->rosnode_->advertise<diagnostic_msgs::DiagnosticMessage>(this->diagnosticMessageTopicName_,10);
 
     /// faking the plug and unplug of robot
-    rosnode_->subscribe("plugged_in",this->plug_msg_,&GazeboBattery::SetPlug,this,10);
+    this->sub_ = this->rosnode_->subscribe("plugged_in",10,&GazeboBattery::SetPlug,this);
 
     this->default_consumption_rate_       = node->GetDouble("default_consumption_rate",-10.0,0);
     this->full_capacity_       = node->GetDouble("full_charge_energy",0.0,0);
@@ -91,10 +86,10 @@ namespace gazebo {
     this->battery_state_rate_  = node->GetDouble("dbattery_state_rate_",1.0,0);
   }
 
-  void GazeboBattery::SetPlug()
+  void GazeboBattery::SetPlug(const gazebo_plugin::PlugCommandConstPtr& plug_msg)
   {
     this->lock_.lock();
-    if (this->plug_msg_.status == "the robot is very much plugged into the wall")
+    if (plug_msg->status == "the robot is very much plugged into the wall")
       this->consumption_rate_ = this->default_charge_rate_ + this->default_consumption_rate_;
     else
       this->consumption_rate_ = this->default_consumption_rate_;
@@ -138,7 +133,7 @@ namespace gazebo {
     this->battery_state_.power_consumption = this->consumption_rate_;
 
     this->lock_.lock();
-    this->rosnode_->publish(this->stateTopicName_,this->battery_state_);
+    this->pub_.publish(this->battery_state_);
     this->lock_.unlock();
     
     /**********************************************************/
@@ -153,7 +148,7 @@ namespace gazebo {
     //this->diagnostic_message_.set_status_size(1);
     //this->diagnostic_message_.status[0] = this->diagnostic_status_;
     //this->lock_.lock();
-    //this->rosnode_->publish(this->diagnosticMessageTopicName_,diagnostic_message_);
+    //this->diag_pub_.publish(this->diagnosticMessageTopicName_,diagnostic_message_);
     //this->lock_.unlock();
 
     this->last_time_    = this->current_time_;
@@ -162,11 +157,6 @@ namespace gazebo {
   void GazeboBattery::FiniChild()
   {
     ROS_DEBUG("Calling FiniChild in GazeboBattery");
-
-    rosnode_->unadvertise(this->stateTopicName_);
-    //rosnode_->unadvertise(this->diagnosticMessageTopicName_);
-    rosnode_->unsubscribe("plugged_in");
-
   }
 
 

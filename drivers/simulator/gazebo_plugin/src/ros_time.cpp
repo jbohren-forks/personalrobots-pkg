@@ -48,28 +48,25 @@ RosTime::RosTime(Entity *parent)
     : Controller(parent)
 {
 
-    rosnode_ = ros::g_node; // comes from where?
-    int argc = 0;
-    char** argv = NULL;
-    if (rosnode_ == NULL)
-    {
-      // this only works for a single camera.
-      ros::init(argc,argv);
-      rosnode_ = new ros::Node("ros_gazebo",ros::Node::DONT_HANDLE_SIGINT);
-      ROS_DEBUG("Starting node in RosTime");
-    }
+  int argc = 0;
+  char** argv = NULL;
+  ros::init(argc,argv,"ros_time");
 
-    // for rostime
-    rosnode_->advertise<roslib::Time>("time",10);
+  this->rosnode_ = new ros::NodeHandle();
 
-    // broadcasting sim time, so set parameter
-    rosnode_->setParam("/use_sim_time", true);
+  // for rostime
+  this->pub_ = this->rosnode_->advertise<roslib::Time>("time",10);
+
+  // broadcasting sim time, so set parameter, this should really be in the launch script param tag, so it's set before nodes start
+  this->rosnode_->setParam("/use_sim_time", true);
+
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // Destructor
 RosTime::~RosTime()
 {
+  delete this->rosnode_;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -101,7 +98,7 @@ void RosTime::UpdateChild()
     this->lock.lock();
     timeMsg.rostime.sec  = (unsigned long)floor(currentTime);
     timeMsg.rostime.nsec = (unsigned long)floor(  1e9 * (  currentTime - timeMsg.rostime.sec) );
-    rosnode_->publish("time",timeMsg);
+    this->pub_.publish(timeMsg);
     this->lock.unlock();
 }
 
@@ -109,7 +106,6 @@ void RosTime::UpdateChild()
 // Finalize the controller
 void RosTime::FiniChild()
 {
-  rosnode_->unadvertise("time");
 }
 
 

@@ -57,23 +57,17 @@ RosBlockLaser::RosBlockLaser(Entity *parent)
 
   // set parent sensor to active automatically
   this->myParent->SetActive(true);
-
-  rosnode = ros::g_node; // comes from where?  common.h exports as global variable
   int argc = 0;
   char** argv = NULL;
-  if (rosnode == NULL)
-  {
-    // start a ros node if none exist
-    ros::init(argc,argv);
-    rosnode = new ros::Node("ros_gazebo",ros::Node::DONT_HANDLE_SIGINT);
-    ROS_DEBUG("Starting node in laser");
-  }
+  ros::init(argc,argv,"ros_block_laser");
+  this->rosnode_ = new ros::NodeHandle();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // Destructor
 RosBlockLaser::~RosBlockLaser()
 {
+  delete this->rosnode_;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -82,7 +76,7 @@ void RosBlockLaser::LoadChild(XMLConfigNode *node)
 {
   this->topicName = node->GetString("topicName","default_ros_laser",0); //read from xml file
   ROS_DEBUG("================= %s", this->topicName.c_str());
-  rosnode->advertise<robot_msgs::PointCloud>(this->topicName,10);
+  this->pub_ = this->rosnode_->advertise<robot_msgs::PointCloud>(this->topicName,10);
   this->frameName = node->GetString("frameName","default_ros_laser",0); //read from xml file
   this->gaussianNoise = node->GetDouble("gaussianNoise",0.0,0); //read from xml file
 
@@ -120,7 +114,6 @@ void RosBlockLaser::UpdateChild()
 // Finalize the controller
 void RosBlockLaser::FiniChild()
 {
-  rosnode->unadvertise(this->topicName);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -244,7 +237,7 @@ void RosBlockLaser::PutLaserData()
   }
 
   // send data out via ros message
-  rosnode->publish(this->topicName,this->cloudMsg);
+  this->pub_.publish(this->cloudMsg);
 
 
 

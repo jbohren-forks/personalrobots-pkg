@@ -58,25 +58,21 @@ RosLaser::RosLaser(Entity *parent)
   // set parent sensor to active automatically
   this->myParent->SetActive(true);
 
-  rosnode = ros::g_node; // comes from where?  common.h exports as global variable
-  int argc = 0;
-  char** argv = NULL;
-  if (rosnode == NULL)
-  {
-    // start a ros node if none exist
-    ros::init(argc,argv);
-    rosnode = new ros::Node("ros_gazebo",ros::Node::DONT_HANDLE_SIGINT);
-    ROS_DEBUG("Starting node in laser");
-  }
   this->hokuyo_min_intensity = 101.0;
   ROS_WARN("WARNING: ros_laser plugin artifically sets minimum intensity to %f due to cutoff in hokuyo filters."
            , this->hokuyo_min_intensity);
+
+  int argc = 0;
+  char** argv = NULL;
+  ros::init(argc,argv,"ros_laser");
+  this->rosnode_ = new ros::NodeHandle();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // Destructor
 RosLaser::~RosLaser()
 {
+  delete this->rosnode_;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -85,7 +81,7 @@ void RosLaser::LoadChild(XMLConfigNode *node)
 {
   this->topicName = node->GetString("topicName","default_ros_laser",0); //read from xml file
   ROS_DEBUG("================= %s", this->topicName.c_str());
-  rosnode->advertise<laser_scan::LaserScan>(this->topicName,10);
+  this->pub_ = this->rosnode_->advertise<laser_scan::LaserScan>(this->topicName,10);
   this->frameName = node->GetString("frameName","default_ros_laser",0); //read from xml file
   this->gaussianNoise = node->GetDouble("gaussianNoise",0.0,0); //read from xml file
 }
@@ -107,7 +103,6 @@ void RosLaser::UpdateChild()
 // Finalize the controller
 void RosLaser::FiniChild()
 {
-  rosnode->unadvertise(this->topicName);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -182,7 +177,7 @@ void RosLaser::PutLaserData()
   }
 
   // send data out via ros message
-  rosnode->publish(this->topicName,this->laserMsg);
+  this->pub_.publish(this->laserMsg);
   this->lock.unlock();
 
 }

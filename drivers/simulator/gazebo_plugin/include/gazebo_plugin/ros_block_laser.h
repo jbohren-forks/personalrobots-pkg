@@ -30,7 +30,7 @@
 
 #include <gazebo/Controller.hh>
 
-#include <ros/node.h>
+#include <ros/ros.h>
 #include "boost/thread/mutex.hpp"
 #include <robot_msgs/PointCloud.h>
 
@@ -159,7 +159,8 @@ class RosBlockLaser : public Controller
   private: RaySensor *myParent;
 
   /// \brief pointer to ros node
-  private: ros::Node *rosnode;
+  private: ros::NodeHandle* rosnode_;
+  private: ros::Publisher pub_;
 
   /// \brief ros message
   private: robot_msgs::PointCloud cloudMsg;

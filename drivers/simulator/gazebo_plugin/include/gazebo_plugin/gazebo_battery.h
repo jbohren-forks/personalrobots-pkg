@@ -39,7 +39,7 @@
 #include <diagnostic_msgs/DiagnosticMessage.h>
 #include <diagnostic_msgs/DiagnosticStatus.h>
 #include <gazebo_plugin/PlugCommand.h>
-#include <ros/node.h>
+#include <ros/ros.h>
 #include <boost/thread/mutex.hpp>
 
 namespace gazebo
@@ -115,7 +115,9 @@ private:
   diagnostic_msgs::DiagnosticStatus diagnostic_status_;
 
   /// \brief pointer to ros node
-  private: ros::Node *rosnode_;
+  private: ros::NodeHandle* rosnode_;
+  private: ros::Publisher pub_;
+  private: ros::Subscriber sub_;
 
   /// \brief battery state topic name
   private: std::string stateTopicName_;
@@ -155,8 +157,7 @@ private:
   private: double default_consumption_rate_;
 
   /// \brief listen to ROS to see if we are charging
-  private: void SetPlug();
-  private: gazebo_plugin::PlugCommand plug_msg_;
+  private: void SetPlug(const gazebo_plugin::PlugCommandConstPtr& plug_msg);
 
 };
 

@@ -56,17 +56,6 @@ RosSimIface::RosSimIface(Entity *parent)
   if (!this->myParent)
     gzthrow("RosSimIface controller requires an Entity as its parent");
 
-
-  rosnode = ros::g_node; // comes from where?
-  int argc = 0;
-  char** argv = NULL;
-  if (rosnode == NULL)
-  {
-    ros::init(argc,argv);
-    rosnode = new ros::Node("ros_gazebo",ros::Node::DONT_HANDLE_SIGINT);
-    ROS_DEBUG("Starting node in simiface");
-  }
-
   Param::Begin(&this->parameters);
   this->topicNameP = new ParamT<std::string>("topicName","simiface_pose", 0);
   this->frameNameP = new ParamT<std::string>("frameName","map", 0);
@@ -76,12 +65,18 @@ RosSimIface::RosSimIface(Entity *parent)
   this->velP  = new ParamT<Vector3>("vel" ,Vector3(0,0,0), 0);
   this->angVelP  = new ParamT<Vector3>("angVel" ,Vector3(0,0,0), 0);
   Param::End();
+
+  int argc = 0;
+  char** argv = NULL;
+  ros::init(argc,argv,"ros_sim_iface");
+  this->rosnode_ = new ros::NodeHandle();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // Destructor
 RosSimIface::~RosSimIface()
 {
+  delete this->rosnode_;
 
   delete this->topicNameP;
   delete this->frameNameP;
@@ -121,19 +116,19 @@ void RosSimIface::InitChild()
 {
 
   ROS_DEBUG("ros simiface subscribing to %s", this->topicName.c_str());
-  rosnode->subscribe( this->topicName, poseMsg, &RosSimIface::UpdateObjectPose, this, 10);
+  this->sub_ = this->rosnode_->subscribe(this->topicName.c_str(), 10, &RosSimIface::UpdateObjectPose,this);
 
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // Update the controller
-void RosSimIface::UpdateObjectPose()
+void RosSimIface::UpdateObjectPose(const robot_msgs::PoseWithRatesStampedConstPtr& poseMsg)
 {
 
   this->lock.lock();
   // copy data into pose
-  this->poseMsg.header.frame_id = this->frameName;
-  this->poseMsg.header.stamp.fromSec(floor(Simulator::Instance()->GetSimTime()));
+  //poseMsg->header.frame_id = this->frameName;
+  //poseMsg->header.stamp.fromSec(floor(Simulator::Instance()->GetSimTime()));
 
   gazebo::Client *client = new gazebo::Client();
   gazebo::SimulationIface *simIface = new gazebo::SimulationIface();
@@ -169,13 +164,13 @@ void RosSimIface::UpdateObjectPose()
   gazebo::SimulationRequestData *request = &(simIface->data->requests[simIface->data->requestCount++]);
   request->type = gazebo::SimulationRequestData::SET_POSE3D;
   memcpy(request->modelName, this->modelName.c_str(), this->modelName.size());
-  request->modelPose.pos.x = this->poseMsg.pos.position.x;
-  request->modelPose.pos.y = this->poseMsg.pos.position.y;
-  request->modelPose.pos.z = this->poseMsg.pos.position.z;
-  Quatern quat = Quatern(this->poseMsg.pos.orientation.w,
-                         this->poseMsg.pos.orientation.x,
-                         this->poseMsg.pos.orientation.y,
-                         this->poseMsg.pos.orientation.z);
+  request->modelPose.pos.x = poseMsg->pos.position.x;
+  request->modelPose.pos.y = poseMsg->pos.position.y;
+  request->modelPose.pos.z = poseMsg->pos.position.z;
+  Quatern quat = Quatern(poseMsg->pos.orientation.w,
+                         poseMsg->pos.orientation.x,
+                         poseMsg->pos.orientation.y,
+                         poseMsg->pos.orientation.z);
   Vector3 euler = quat.GetAsEuler();
   request->modelPose.roll  = euler.x;
   request->modelPose.pitch = euler.y;
@@ -210,7 +205,6 @@ void RosSimIface::UpdateChild()
 // Finalize the controller
 void RosSimIface::FiniChild()
 {
-  rosnode->unsubscribe(this->topicName);
 }
 
 

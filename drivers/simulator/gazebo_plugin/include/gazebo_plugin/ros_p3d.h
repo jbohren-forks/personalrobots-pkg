@@ -32,7 +32,7 @@
 #include <gazebo/Model.hh>
 #include <gazebo/Body.hh>
 
-#include <ros/node.h>
+#include <ros/ros.h>
 #include "boost/thread/mutex.hpp"
 #include <robot_msgs/PoseWithRatesStamped.h>
 
@@ -118,7 +118,8 @@ namespace gazebo
 
 
       /// \brief pointer to ros node
-      private: ros::Node *rosnode;
+      private: ros::NodeHandle* rosnode_;
+      private: ros::Publisher pub_;
 
       /// \brief ros message
       private: robot_msgs::PoseWithRatesStamped poseMsg;

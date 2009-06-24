@@ -41,7 +41,7 @@
 #include <gazebo/gazebo.h>
 #include <gazebo/GazeboError.hh>
 
-#include "ros/node.h"
+#include "ros/ros.h"
 
 void usage(const char *progname)
 {
@@ -117,7 +117,7 @@ int main(int argc, char **argv)
     /// Open the Factory interface
     try
     {
-      factoryIface->Open(client, "factory_iface");
+      factoryIface->Open(client, "factory_model::factory_iface");
     }
     catch (gazebo::GazeboError e)
     {
@@ -129,11 +129,11 @@ int main(int argc, char **argv)
     std::string xml_param_name = std::string(argv[1]);
 
     // Load parameter server string for pr2 robot description
-    ros::init(argc,argv);
-    ros::Node* rosnode = new ros::Node(xml_param_name.c_str(),ros::Node::DONT_HANDLE_SIGINT);
+    ros::init(argc,argv,"xml2factory");
+    ros::NodeHandle rosnode;
     ROS_INFO("-------------------- starting node for pr2 param server factory \n");
     std::string xml_content;
-    rosnode->getParam(xml_param_name.c_str(),xml_content);
+    rosnode.getParam(xml_param_name.c_str(),xml_content);
     ROS_DEBUG("%s content\n%s\n", xml_param_name.c_str(), xml_content.c_str());
 
     if (xml_content.c_str()==NULL)
@@ -182,8 +182,6 @@ int main(int argc, char **argv)
       }
       factoryIface->Unlock();
     }
-
-    rosnode->shutdown();
 
     return 0;
 }

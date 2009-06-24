@@ -79,18 +79,6 @@ RosStereoCamera::RosStereoCamera(Entity *parent)
   this->baselineP  = new ParamT<double>("baseline" ,0.05, 0); // distance from left to right camera
   Param::End();
 
-  // get ros node instance if it exists
-  rosnode = ros::g_node;
-  int argc = 0;
-  char** argv = NULL;
-  if (rosnode == NULL)
-  {
-    // this only works for a single camera.
-    ros::init(argc,argv);
-    rosnode = new ros::Node("ros_gazebo",ros::Node::DONT_HANDLE_SIGINT);
-    ROS_DEBUG("Starting node in stereo camera");
-  }
-
   // RawStereo.msg
   this->leftImageMsg  = &(this->rawStereoMsg.left_image);
   this->rightImageMsg = &(this->rawStereoMsg.right_image);
@@ -98,12 +86,18 @@ RosStereoCamera::RosStereoCamera(Entity *parent)
   this->rightCamInfoMsg = &(this->rawStereoMsg.right_info);
   this->stereoInfoMsg = &(this->rawStereoMsg.stereo_info);
   ROS_DEBUG("stereo: done with constuctor");
+
+  int argc = 0;
+  char** argv = NULL;
+  ros::init(argc,argv,"ros_stereo_camera");
+  this->rosnode_ = new ros::NodeHandle();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // Destructor
 RosStereoCamera::~RosStereoCamera()
 {
+  delete this->rosnode_;
   delete this->leftCameraNameP;
   delete this->rightCameraNameP;
   delete this->frameNameP;
@@ -174,7 +168,7 @@ void RosStereoCamera::InitChild()
 
   // advertise node topics
   ROS_DEBUG("stereo: advertise topicName %s\n",this->topicName.c_str());
-  rosnode->advertise<image_msgs::RawStereo>(this->topicName, 1);
+  this->pub_ = this->rosnode_->advertise<image_msgs::RawStereo>(this->topicName, 1);
 
   // iterate through children of the model parent to find left and right camera sensors
   std::vector<Entity*> sibling = this->myParent->GetChildren();
@@ -241,7 +235,6 @@ void RosStereoCamera::UpdateChild()
 // Finalize the controller
 void RosStereoCamera::FiniChild()
 {
-  rosnode->unadvertise(this->topicName);
   this->leftCamera->SetActive(false);
   this->rightCamera->SetActive(false);
 }
@@ -260,7 +253,7 @@ void RosStereoCamera::PutCameraData()
   if (left_src && right_src)
   {
     /// @todo: don't bother if there are no subscribers
-    if (this->rosnode->numSubscribers(this->topicName) > 0)
+    if (this->pub_.getNumSubscribers() > 0)
     {
       this->lock.lock();
       // setup header
@@ -411,7 +404,7 @@ void RosStereoCamera::PutCameraData()
       // fill uint8 has_disparity
       this->rawStereoMsg.has_disparity = 0;
       // publish to ros
-      rosnode->publish(this->topicName,this->rawStereoMsg);
+      this->pub_.publish(this->rawStereoMsg);
       this->lock.unlock();
     }
 

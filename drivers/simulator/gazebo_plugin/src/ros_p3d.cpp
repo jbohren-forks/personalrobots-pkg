@@ -51,22 +51,17 @@ RosP3D::RosP3D(Entity *parent )
    if (!this->myParent)
       gzthrow("RosP3D controller requires a Model as its parent");
 
-  rosnode = ros::g_node; // comes from where?
   int argc = 0;
   char** argv = NULL;
-  if (rosnode == NULL)
-  {
-    // this only works for a single camera.
-    ros::init(argc,argv);
-    rosnode = new ros::Node("ros_gazebo",ros::Node::DONT_HANDLE_SIGINT);
-    ROS_DEBUG("Starting node in RosP3D");
-  }
+  ros::init(argc,argv,"ros_p3d");
+  this->rosnode_ = new ros::NodeHandle();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // Destructor
 RosP3D::~RosP3D()
 {
+  delete this->rosnode_;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -89,7 +84,7 @@ void RosP3D::LoadChild(XMLConfigNode *node)
 
   ROS_DEBUG("==== topic name for RosP3D ======== %s", this->topicName.c_str());
   if (this->topicName != "")
-    rosnode->advertise<robot_msgs::PoseWithRatesStamped>(this->topicName,10);
+    this->pub_ = this->rosnode_->advertise<robot_msgs::PoseWithRatesStamped>(this->topicName,10);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -180,7 +175,7 @@ void RosP3D::UpdateChild()
     this->poseMsg.acc.ang_acc.az    = this->aeul.z + this->GaussianKernel(0,this->gaussianNoise) ;
 
     // publish to ros
-    rosnode->publish(this->topicName,this->poseMsg);
+    this->pub_.publish(this->poseMsg);
   }
 
   this->lock.unlock();
@@ -193,8 +188,6 @@ void RosP3D::UpdateChild()
 // Finalize the controller
 void RosP3D::FiniChild()
 {
-  if (this->topicName != "")
-    rosnode->unadvertise(this->topicName);
 }
 
 //////////////////////////////////////////////////////////////////////////////

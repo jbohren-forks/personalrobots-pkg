@@ -49,27 +49,22 @@ GZ_REGISTER_DYNAMIC_CONTROLLER("ros_f3d", RosF3D);
 RosF3D::RosF3D(Entity *parent )
    : Controller(parent)
 {
-   this->myParent = dynamic_cast<Model*>(this->parent);
+  this->myParent = dynamic_cast<Model*>(this->parent);
 
-   if (!this->myParent)
-      gzthrow("RosF3D controller requires a Model as its parent");
+  if (!this->myParent)
+    gzthrow("RosF3D controller requires a Model as its parent");
 
-  rosnode = ros::g_node; // comes from where?
   int argc = 0;
   char** argv = NULL;
-  if (rosnode == NULL)
-  {
-    // this only works for a single camera.
-    ros::init(argc,argv);
-    rosnode = new ros::Node("ros_gazebo",ros::Node::DONT_HANDLE_SIGINT);
-    ROS_DEBUG("Starting node in RosF3D");
-  }
+  ros::init(argc,argv,"ros_f3d");
+  this->rosnode_ = new ros::NodeHandle();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // Destructor
 RosF3D::~RosF3D()
 {
+  delete this->rosnode_;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -84,7 +79,7 @@ void RosF3D::LoadChild(XMLConfigNode *node)
   this->frameName = node->GetString("frameName", "", 1);
 
   ROS_DEBUG("==== topic name for RosF3D ======== %s", this->topicName.c_str());
-  rosnode->advertise<robot_msgs::Vector3Stamped>(this->topicName,10);
+  this->pub_ = this->rosnode_->advertise<robot_msgs::Vector3Stamped>(this->topicName,10);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -122,7 +117,7 @@ void RosF3D::UpdateChild()
   //          << "  f: " << force
   //          << "  t: " << torque << std::endl;
   // publish to ros
-  rosnode->publish(this->topicName,this->vector3Msg);
+  this->pub_.publish(this->vector3Msg);
   this->lock.unlock();
 
 }
@@ -131,5 +126,4 @@ void RosF3D::UpdateChild()
 // Finalize the controller
 void RosF3D::FiniChild()
 {
-  rosnode->unadvertise(this->topicName);
 }

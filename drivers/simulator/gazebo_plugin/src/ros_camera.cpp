@@ -65,22 +65,17 @@ RosCamera::RosCamera(Entity *parent)
   this->frameNameP = new ParamT<std::string>("frameName","stereo_link", 0);
   Param::End();
 
-  rosnode = ros::g_node; //@todo: change to handles
   int argc = 0;
   char** argv = NULL;
-  if (rosnode == NULL)
-  {
-    ros::init(argc,argv);
-    rosnode = new ros::Node("ros_gazebo",ros::Node::DONT_HANDLE_SIGINT);
-    ROS_DEBUG("Starting node in camera");
-  }
-
+  ros::init(argc,argv,"ros_camera");
+  this->rosnode_ = new ros::NodeHandle();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // Destructor
 RosCamera::~RosCamera()
 {
+  delete this->rosnode_;
   delete this->topicNameP;
   delete this->frameNameP;
 }
@@ -95,7 +90,7 @@ void RosCamera::LoadChild(XMLConfigNode *node)
   this->frameName = this->frameNameP->GetValue();
 
   ROS_DEBUG("================= %s", this->topicName.c_str());
-  rosnode->advertise<image_msgs::Image>(this->topicName,1);
+  this->pub_ = this->rosnode_->advertise<image_msgs::Image>(this->topicName,1);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -140,7 +135,6 @@ void RosCamera::UpdateChild()
 // Finalize the controller
 void RosCamera::FiniChild()
 {
-  rosnode->unadvertise(this->topicName);
   this->myParent->SetActive(false);
 }
 
@@ -171,7 +165,7 @@ void RosCamera::PutCameraData()
     //double tmpT2;
 
     /// @todo: don't bother if there are no subscribers
-    if (this->rosnode->numSubscribers(this->topicName) > 0)
+    if (this->pub_.getNumSubscribers() > 0)
     {
       // copy from src to imageMsg
       fillImage(this->imageMsg           ,"image_raw" ,
@@ -182,7 +176,7 @@ void RosCamera::PutCameraData()
       //tmpT2 = Simulator::Instance()->GetWallTime();
 
       // publish to ros
-      rosnode->publish(this->topicName,this->imageMsg);
+      this->pub_.publish(this->imageMsg);
     }
 
     //double tmpT3 = Simulator::Instance()->GetWallTime();

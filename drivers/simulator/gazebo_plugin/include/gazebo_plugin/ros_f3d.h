@@ -32,7 +32,7 @@
 #include <gazebo/Model.hh>
 #include <gazebo/Body.hh>
 
-#include <ros/node.h>
+#include <ros/ros.h>
 #include <boost/thread/mutex.hpp>
 #include <robot_msgs/Vector3Stamped.h>
 
@@ -95,7 +95,8 @@ class RosF3D : public Controller
 
 
   /// \brief A pointer to the ROS node.  A node will be instantiated if it does not exist.
-  private: ros::Node *rosnode;
+  private: ros::NodeHandle* rosnode_;
+  private: ros::Publisher pub_;
 
   /// \brief ROS Vector3Stamped message
   private: robot_msgs::Vector3Stamped vector3Msg;

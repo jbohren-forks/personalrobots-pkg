@@ -28,7 +28,7 @@
 #ifndef ROS_STEREO_CAMERA_HH
 #define ROS_STEREO_CAMERA_HH
 
-#include <ros/node.h>
+#include <ros/ros.h>
 #include "boost/thread/mutex.hpp"
 
 #include <gazebo/Generic_Camera.hh>
@@ -159,7 +159,8 @@ class RosStereoCamera : public Controller
   private: double baseline;
 
   /// \brief pointer to ros node
-  private: ros::Node *rosnode;
+  private: ros::NodeHandle* rosnode_;
+  private: ros::Publisher pub_;
 
   /// \brief ros message
   /// \brief construct raw stereo message

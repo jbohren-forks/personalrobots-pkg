@@ -61,28 +61,22 @@ GazeboMechanismControl::GazeboMechanismControl(Entity *parent)
   this->robotParamP = new ParamT<std::string>("robotParam", "robotdesc/pr2", 0);
   Param::End();
 
-  rosnode_ = ros::g_node; // comes from where?
-  int argc = 0;
-  char** argv = NULL;
-  if (rosnode_ == NULL)
-  {
-    // this only works for a single camera.
-    ros::init(argc,argv);
-    rosnode_ = new ros::Node("ros_gazebo",ros::Node::DONT_HANDLE_SIGINT);
-    ROS_DEBUG("Starting node in Gazebo Mechanism Control");
-  }
-
   if (getenv("CHECK_SPEEDUP"))
   {
     wall_start = Simulator::Instance()->GetWallTime();
     sim_start  = Simulator::Instance()->GetSimTime();
   }
 
+  int argc = 0;
+  char** argv = NULL;
+  ros::init(argc,argv,"gazebo_mechanism_control");
+  this->rosnode_ = new ros::NodeHandle();
 }
 
 GazeboMechanismControl::~GazeboMechanismControl()
 {
   delete this->robotParamP;
+  delete this->rosnode_;
 }
 
 void GazeboMechanismControl::LoadChild(XMLConfigNode *node)

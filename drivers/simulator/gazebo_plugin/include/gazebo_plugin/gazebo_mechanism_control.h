@@ -157,7 +157,7 @@ private:
   /*
    *  \brief pointer to ros node
    */
-  ros::Node *rosnode_;
+  ros::NodeHandle* rosnode_;
 
   /*
    *  \brief tmp vars for performance checking
@@ -165,8 +165,8 @@ private:
   double wall_start, sim_start;
 
   /// \brief set topic name of robotdesc parameter
-  private: ParamT<std::string> *robotParamP;
-  private: std::string robotParam;
+  ParamT<std::string> *robotParamP;
+  std::string robotParam;
 
 };
 

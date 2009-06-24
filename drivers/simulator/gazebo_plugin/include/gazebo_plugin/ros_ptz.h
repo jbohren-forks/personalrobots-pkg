@@ -33,7 +33,7 @@
 #include <gazebo/Model.hh>
 
 // ros messages
-#include <ros/node.h>
+#include <ros/ros.h>
 #include "boost/thread/mutex.hpp"
 
 // messages for controlling ptz
@@ -146,13 +146,15 @@ namespace gazebo
     private: ParamT<std::string> *stateTopicNameP;
 
     /// \brief pointer to ros node
-    private: ros::Node *rosnode;
+    private: ros::NodeHandle* rosnode_;
+    private: ros::Publisher pub_;
+    private: ros::Subscriber sub_;
+
     /// \brief ros message
     private: axis_cam::PTZActuatorState PTZStateMessage;
-    private: axis_cam::PTZActuatorCmd   PTZControlMessage;
 
     /// \brief receive message
-    private: void PTZCommandReceived();
+    private: void PTZCommandReceived(const axis_cam::PTZActuatorCmdConstPtr& in);
 
     /// \brief topic name
     private: std::string commandTopicName;

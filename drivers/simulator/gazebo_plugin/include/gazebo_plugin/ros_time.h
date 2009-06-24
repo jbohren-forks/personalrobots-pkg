@@ -31,7 +31,7 @@
 #include <gazebo/Body.hh>
 #include <gazebo/World.hh>
 
-#include <ros/node.h>
+#include <ros/ros.h>
 #include "boost/thread/mutex.hpp"
 
 // roscpp - used for broadcasting time over ros
@@ -121,8 +121,11 @@ class RosTime : public Controller
 
   /// \brief A mutex to lock access to fields that are used in message callbacks
   private: boost::mutex lock;
+
   /// \brief pointer to ros node
-  ros::Node *rosnode_;
+  private: ros::NodeHandle* rosnode_;
+  private: ros::Publisher pub_;
+
   roslib::Time timeMsg;
 
 };
