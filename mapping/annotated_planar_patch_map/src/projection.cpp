@@ -89,44 +89,30 @@ void annotated_planar_patch_map::projection::projectPolygonPoints(double* projec
   for(unsigned int iPt = 0; iPt<num_pts; iPt++)
   {
     robot_msgs::Point32 &mpt=polyIn.points[iPt];
-    tf::Vector3 pt(-mpt.y,-mpt.z,mpt.x);
+    tf::Vector3 pt(mpt.y,-mpt.z,mpt.x);
     //Vector3 projected_pt=projection * pt;
     
     robot_msgs::Point32 projected_pt;
     projected_pt.x=
-      projection[0]*pt.x()+
-      projection[4]*pt.y()+
-      projection[8]*pt.z()+
-      projection[12]*1;
+      projection[0]*pt.x()/pt.z()+
+      projection[4]*pt.y()/pt.z()+
+      projection[8];
+
     projected_pt.y=
-      projection[1]*pt.x()+
-      projection[5]*pt.y()+
-      projection[9]*pt.z()+
-      projection[13]*1;
-    projected_pt.z=
-      projection[2]*pt.x()+
-      projection[6]*pt.y()+
-      projection[10]*pt.z()+
-      projection[14]*1;
-    /*double s=
-      projection[3]*pt.x()+
-      projection[7]*pt.y()+
-      projection[11]*pt.z()+
-      projection[15]*1;*/
+      projection[1]*pt.x()/pt.z()+
+      projection[5]*pt.y()/pt.z()+
+      projection[9];
+    projected_pt.z=pt.z();
+    //projection[2]*pt.x()/pt.z()+
+    // projection[6]*pt.y()/pt.z()+
+    // projection[10];
 
     robot_msgs::Point32 &new_pt=polyOut.points[iPt];
-    new_pt.x= projected_pt.x;
-    new_pt.y= projected_pt.y;
-    new_pt.z = projected_pt.z;
-    new_pt.z = pt.z();
-    //new_pt.x = projected_pt.x();
-    //new_pt.y = projected_pt.y();
-    //new_pt.z = projected_pt.z();
-
     if(projected_pt.z!=0)
     {
-      //new_pt.x= new_pt.x*(img_w) +img_w/2;
-      //new_pt.y= new_pt.y*(img_h) +img_h/2;
+      new_pt.x= projected_pt.x;
+      new_pt.y= projected_pt.y;
+      new_pt.z = pt.z();
     }
     else
     {
@@ -288,7 +274,7 @@ void annotated_planar_patch_map::projection::projectAnyObject(const image_msgs::
   int i;
   //for(i=0;i<12;i++)
   //  projection[i]=stereo_info.P[i];
-  for(i=0;i<16;i++)
+  for(i=0;i<12;i++)
     projection[i]=stereo_info.P[i];
 
   for(;i<16;i++)

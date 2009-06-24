@@ -170,7 +170,7 @@ public:
     annotated_map_msgs::TaggedPolygonalMap transformed_map_3D_fixed_frame;
     annotated_map_msgs::TaggedPolygonalMap transformed_map_2D;
 
-    ROS_INFO_STREAM("Lifting annotation for " << annotation2d_object_->reference_time << " at caminfo frame " <<cam_info_->header.stamp );
+    ROS_INFO_STREAM("Lifting annotation for " << annotation2d_object_->reference_time << " at caminfo frame " <<cam_info_->header.stamp << " unlabeled map has " << unlabeled_map_->polygons.size() << " polygons");
     //Get the 3D map into the coordinate frame of the camera
     ROS_DEBUG("Transform 3D map to frame: %s",annotation2d_object_->reference_frame.c_str());
     annotated_map_lib::transformAnyObject(annotation2d_object_->reference_frame,annotation2d_object_->reference_time,tf_,*unlabeled_map_,transformed_map_3D);
@@ -199,7 +199,11 @@ public:
 
     //CvMemStorage* storage = cvCreateMemStorage();
 
-      ROS_DEBUG("\tAnnotation has %d polygons",annotation->get_polygons_size());
+    ROS_DEBUG("\tAnnotation has %d polygons",annotation->get_polygons_size());
+    int removed_by_viewport=0;
+    int removed_by_outlier_count=0;
+    int removed_pts_by_depth=0;
+
     for(unsigned int iAnnotatedPolygon=0;iAnnotatedPolygon<annotation->get_polygons_size();iAnnotatedPolygon++)
     {
       const cv_mech_turk::AnnotationPolygon &poly=annotation->polygons[iAnnotatedPolygon];    
@@ -207,6 +211,7 @@ public:
       unsigned int pt_count=poly.get_control_points_size();
       if(pt_count<3)
       {
+        removed_by_viewport++;
         continue;
       }
       CvMat* poly_annotation = cvCreateMat( 1, pt_count , CV_32FC2 );
@@ -238,6 +243,7 @@ public:
           bool in_depth= (map_poly.points[iPt].z <= max_depth_) && (map_poly.points[iPt].z >= min_depth_);
           if(! in_depth)
           {
+            removed_pts_by_depth++;
             num_out++;
             continue;
           }
@@ -256,7 +262,7 @@ public:
 	    
         }
         if(num_in>= min_num_indist_tolerance_ && 
-           num_out< max_allowed_num_outdist_tolerance_)
+           num_out<= max_allowed_num_outdist_tolerance_)
         {
           overlap[iPoly]=1;
           num_overlap++;
@@ -264,6 +270,8 @@ public:
         }
         else
         {
+          removed_by_outlier_count++;
+
           overlap[iPoly]=0;
         }
       }
@@ -301,9 +309,13 @@ public:
       }
       cvReleaseMat( &poly_annotation );
 
+      ROS_DEBUG_STREAM("\tRemoved by viewport " << double(removed_by_viewport));
+      ROS_DEBUG_STREAM("\tRemoved by outlier " << double(removed_pts_by_depth));
+      ROS_DEBUG_STREAM("\tRemoved by outlier " << double(removed_by_outlier_count));
+
     } 
     //cvClearMemStorage( storage );
- 
+
     printf("Polymap size %d\n",polymapOut.get_polygons_size());
   }
 

@@ -1,0 +1,66 @@
+
+4  annotations_2d
+   1244650245.101118001
+	floor
+	wall
+	window
+	window
+	whiteboard
+	wall
+	wall
+	wall
+
+	It's a view of the Saachin's office. Door is not visible, there's whiteboard, floor and window is marked.
+
+   1244650266.779796001
+	wall
+	wall
+	door
+	door-handle
+	floor
+	
+	It's a hallway corner leading to the lunch room. The exit door is visible. The door on the right is visible.
+
+
+   1244650280.378953001
+	floor
+	wall
+	door
+	door
+	door
+	door 
+	wall
+
+	Hallways corner leading to the lunch room. Only 1 door (on the left) is visible. 
+	
+   1244650291.852798001
+	wall
+	wall
+	floor
+
+	long hallway view. From lunchroom exit towards white lab. Mostly walls and carpet. A corner of the glass is visible.
+
+Browse images:    
+http://vm6.willowgarage.com:8080/mt/ordered_results/hit_id/prg-jun-10-L1p/p1/
+
+Frame 1:
+
+http://vm6.willowgarage.com:8080/code/task.html?swf=label_generic&extid=ad4305c3-d286-4199-b8ee-50cda660f389-2&session=prg-jun-10-L1p&task=w-env-layer-1p&video=prg-jun-10-L1p&frame=349df93c-c680-4675-a6f5-543387095882&img_base=http://vm6.willowgarage.com:8080/&mode=display2&swf_w=700&swf_h=700&instructions=http%3A//pr.willowgarage.com/wiki/ROS/mturk/instructions/w-env-layer-1&frame=349df93c-c680-4675-a6f5-543387095882&original_name=/tmp/submit_imagesimages/prg-jun-10-L1p/foo-1244650245.101118000.jpg&image_size=640,480&frame_id=stereo_l_stereo_camera_frame&ref_time=1244650245.101118000&topic_in=/hist/stereo/left/image_rect&topic_out=/annotation&annotationURL=mt/submission_data_xml/5539/ad4305c3-d286-4199-b8ee-50cda660f389-2/
+
+Frame 2:
+
+http://vm6.willowgarage.com:8080/code/task.html?swf=label_generic&extid=76fbab3d-f09c-41f2-86ff-b0f3f9ac729f-3&session=prg-jun-10-L1p&task=w-env-layer-1p&video=prg-jun-10-L1p&frame=629f629f-2dda-4dc2-a29e-2478ccdf8b7f&img_base=http://vm6.willowgarage.com:8080/&mode=display2&swf_w=700&swf_h=700&instructions=http%3A//pr.willowgarage.com/wiki/ROS/mturk/instructions/w-env-layer-1&frame=629f629f-2dda-4dc2-a29e-2478ccdf8b7f&original_name=/tmp/submit_imagesimages/prg-jun-10-L1p/foo-1244650266.779796000.jpg&image_size=640,480&frame_id=stereo_l_stereo_camera_frame&ref_time=1244650266.779796000&topic_in=/hist/stereo/left/image_rect&topic_out=/annotation&annotationURL=mt/submission_data_xml/5633/76fbab3d-f09c-41f2-86ff-b0f3f9ac729f-3/
+
+Frame 3:
+
+http://vm6.willowgarage.com:8080/code/task.html?swf=label_generic&extid=d0194acb-2e06-45dc-80e1-1c88fa6ccd0e-4&session=prg-jun-10-L1p&task=w-env-layer-1p&video=prg-jun-10-L1p&frame=f04ff4cf-501e-4c96-a3fc-695979c1845d&img_base=http://vm6.willowgarage.com:8080/&mode=display2&swf_w=700&swf_h=700&instructions=http%3A//pr.willowgarage.com/wiki/ROS/mturk/instructions/w-env-layer-1&frame=f04ff4cf-501e-4c96-a3fc-695979c1845d&original_name=/tmp/submit_imagesimages/prg-jun-10-L1p/foo-1244650280.378953000.jpg&image_size=640,480&frame_id=stereo_l_stereo_camera_frame&ref_time=1244650280.378953000&topic_in=/hist/stereo/left/image_rect&topic_out=/annotation&annotationURL=mt/submission_data_xml/5529/d0194acb-2e06-45dc-80e1-1c88fa6ccd0e-4/
+
+Frame 4:
+
+http://vm6.willowgarage.com:8080/code/task.html?swf=label_generic&extid=d5f97cfd-1d27-47b2-a94c-2d753b1534f5-5&session=prg-jun-10-L1p&task=w-env-layer-1p&video=prg-jun-10-L1p&frame=84902ade-3567-45a3-9fed-b90fd4d7a000&img_base=http://vm6.willowgarage.com:8080/&mode=display2&swf_w=700&swf_h=700&instructions=http%3A//pr.willowgarage.com/wiki/ROS/mturk/instructions/w-env-layer-1&frame=84902ade-3567-45a3-9fed-b90fd4d7a000&original_name=/tmp/submit_imagesimages/prg-jun-10-L1p/foo-1244650291.852798000.jpg&image_size=640,480&frame_id=stereo_l_stereo_camera_frame&ref_time=1244650291.852798000&topic_in=/hist/stereo/left/image_rect&topic_out=/annotation&annotationURL=mt/submission_data_xml/5532/d5f97cfd-1d27-47b2-a94c-2d753b1534f5-5/
+
+
+	
+41 laser_scanner_signal
+
+41 cloud

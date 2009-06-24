@@ -1,0 +1,10 @@
+<launch>
+
+<node pkg="rosrecord" type="rosplay" args="-r 2 -b 100 $(find annotated_planar_patch_map)/test_data/full_2009-06-22-15-40-19-topic.bag"/>
+
+
+<test pkg="annotated_planar_patch_map" type="test_content.py" test-name="test_message_content" >
+
+</test>
+
+</launch>
