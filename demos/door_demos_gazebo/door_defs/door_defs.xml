@@ -223,6 +223,7 @@
     <map name="door_gravity" flag="gazebo">
       <elem key="turnGravityOff" value="true" />
       <elem key="selfCollide" value="true" />
+      <elem key="dampingFactor" value="0.01" />
     </map>
   </link>
 
@@ -258,6 +259,7 @@
     <map name="handle_gravity" flag="gazebo">
       <elem key="turnGravityOff" value="true" />
       <elem key="selfCollide" value="true" />
+      <elem key="dampingFactor" value="0.01" />
     </map>
   </link>
 
