@@ -146,7 +146,6 @@ class Demo:
     self.vo.handle_frame(self.f)
     self.inlier_history = self.inlier_history[-20:] + [self.vo.inl]
     # If the VO inlier count falls below 20, we're not well-connected for this link
-    print "===> inl", self.vo.inl
     if self.vo.inl < 20:
       self.connected = False
       self.f.pose = Pose()
@@ -225,7 +224,8 @@ class Demo:
     return self.skel.newpose(id)
 
   def optimize(self):
-    self.skel.optimize(duration = 0.05)
+    #self.skel.optimize(duration = 0.05)
+    self.skel.optimize(1000)
 
   def ioptimize(self):
     self.skel.ioptimize()
@@ -274,6 +274,11 @@ def InitGL(Width, Height):				# We call this right after our OpenGL window is cr
   # glDisable(GL_DEPTH_TEST)				# Enables Depth Testing
   glShadeModel(GL_SMOOTH)				# Enables Smooth Color Shading
 
+  glFogf(GL_FOG_START, 10.0)
+  glFogf(GL_FOG_END, 200.0)
+  glFogi(GL_FOG_MODE, GL_LINEAR)
+  glEnable(GL_FOG)
+
                                                         # Enable AA lines
   glEnable(GL_LINE_SMOOTH)
   glEnable(GL_BLEND)
@@ -282,7 +287,7 @@ def InitGL(Width, Height):				# We call this right after our OpenGL window is cr
   glMatrixMode(GL_PROJECTION)
   glLoadIdentity()					# Reset The Projection Matrix
                                                         # Calculate The Aspect Ratio Of The Window
-  gluPerspective(45.0, float(Width)/float(Height), 0.1, 100.0)
+  gluPerspective(45.0, float(Width)/float(Height), 0.1, 200.0)
 
   glMatrixMode(GL_MODELVIEW)
 
@@ -350,130 +355,166 @@ def poseMultMatrix(pose):
   glMultMatrixf(sum(M.T.tolist(), []))
 
 
+# Display list names
+LIST_EVERYTHING = 1   # The whole scene, used when paused
+LIST_FURNITURE  = 2   # Fixed background stuff
 
-def DrawGLScene():
-  glClearColor(0, 0, 0, 1)
-  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+class GLDemo(Demo):
+  def __init__(*args):
+    self = args[0]
+    self.dl_ready = False    # display list ready
+    Demo.__init__(*args)
 
-  if demo.running != 0:
-    if demo.handleFrame():
-      sys.exit()
-    demo.running -= 1
+  def redraw(self):
+    glClearColor(0, 0, 0, 1)
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
-  glMatrixMode(GL_MODELVIEW)
+    if demo.running != 0:
+      if demo.handleFrame():
+        sys.exit()
+      demo.running -= 1
 
-  # Draw the home cube with a gray floor
+    glMatrixMode(GL_MODELVIEW)
 
-  glColor3f(1, 1, 1)
-  draw_cube()
-  glColor3f(.3, .3, .3)
-  glBegin(GL_QUADS)
-  for x,z in [ (-1,-1), (-1,1), (1,1), (1,-1) ]:
-    glVertex3f(x, -1, z)
-  glEnd()
-
-  # Draw the snail trail
-
-  if True: # demo.connected:
-    anchor = demo.anchor()
-    if demo.connected:
-      glColor3f(0, 1, 0)
-    else:
-      glColor3f(1, 0, 0)
-    glBegin(GL_LINE_STRIP)
-    for p in demo.snail_trail:
-      relpose = anchor * (~demo.snail_trail[0] * p)
-      x,y,z = relpose.xform(0,0,0)
-      glVertex3f(-x, -y, z)
-    glEnd()
-
-  # Draw the skeleton edges as thick lines
-
-  def label2color(l):
-    # most recent N get N distinctive colors
-    # older labels get the same color
-    fresh_colors = [
-      (153,255,0),
-      (255,230,0),
-      (255,102,0) ]
-    old_color = (153,102,0)
-
-    if (demo.label - l) < len(fresh_colors):
-      return fresh_colors[l % len(fresh_colors)]
-    else:
-      return old_color
-
-  glLineWidth(3)
-
-  edges_plain = {}  # edges that are the same color
-  edges_cross = []  # cross track edges
-  edges_weak = []
-
-  for i0,i1 in demo.skel.edges:
-    l0 = demo.skel.node_labels[i0]
-    l1 = demo.skel.node_labels[i1]
-    if l0 == l1:
-      edges_plain.setdefault(l0, [])
-      edges_plain[l0].append((i0,i1))
-    else:
-      if (i0,i1) in demo.skel.weak_edges:
-        edges_weak.append((i0,i1))
+    if demo.running == 0:
+      if not self.dl_ready:
+        glNewList(LIST_EVERYTHING, GL_COMPILE_AND_EXECUTE)
       else:
-        edges_cross.append((i0,i1))
+        glCallList(LIST_EVERYTHING)
+        glutSwapBuffers()
+        return
+    else:
+      self.dl_ready = False
 
-  xformed = dict([(i, demo.skel.newpose(i).xform(0,0,0)) for i in demo.skel.nodes])
+    # Draw the home cube with a gray floor
 
-  def draw_edge(i0,i1):
-    (x,y,z) = xformed[i0]
-    glVertex3f(-x,-y,z)
-    (x,y,z) = xformed[i1]
-    glVertex3f(-x,-y,z)
+    if glIsList(LIST_FURNITURE):
+      glCallList(LIST_FURNITURE)
+    else:
+      glNewList(LIST_FURNITURE, GL_COMPILE_AND_EXECUTE)
+      glColor3f(1, 1, 1)
+      draw_cube()
+      glColor3f(.3, .3, .3)
+      glBegin(GL_QUADS)
+      for x,z in [ (-1,-1), (-1,1), (1,1), (1,-1) ]:
+        glVertex3f(x, -1, z)
+      glEnd()
+      glBegin(GL_LINES)
+      for x in range(-100, 100):
+        for z in range(-100, 100):
+          glVertex3f(x-.1, -1, z)
+          glVertex3f(x+.1, -1, z)
+          glVertex3f(x, -1, z+.1)
+          glVertex3f(x, -1, z-.1)
+      glEnd()
+      glEndList()
 
-  glLineWidth(3)
+    # Draw the snail trail
 
-  for l,vv in edges_plain.items():
-    glColor3ub(*label2color(l))
+    if True: # demo.connected:
+      anchor = demo.anchor()
+      if demo.connected:
+        glColor3f(0, 1, 0)
+      else:
+        glColor3f(1, 0, 0)
+      glBegin(GL_LINE_STRIP)
+      for p in demo.snail_trail:
+        relpose = anchor * (~demo.snail_trail[0] * p)
+        x,y,z = relpose.xform(0,0,0)
+        glVertex3f(-x, -y, z)
+      glEnd()
+
+    # Draw the skeleton edges as thick lines
+
+    def label2color(l):
+      # most recent N get N distinctive colors
+      # older labels get the same color
+      fresh_colors = [
+        (153,255,0),
+        (255,230,0),
+        (255,102,0) ]
+      old_color = (153,102,0)
+
+      if (demo.label - l) < len(fresh_colors):
+        return fresh_colors[l % len(fresh_colors)]
+      else:
+        return old_color
+
+    glLineWidth(3)
+
+    edges_plain = {}  # edges that are the same color
+    edges_cross = []  # cross track edges
+    edges_weak = []
+
+    for i0,i1 in demo.skel.edges:
+      l0 = demo.skel.node_labels[i0]
+      l1 = demo.skel.node_labels[i1]
+      if l0 == l1:
+        edges_plain.setdefault(l0, [])
+        edges_plain[l0].append((i0,i1))
+      else:
+        if (i0,i1) in demo.skel.weak_edges:
+          edges_weak.append((i0,i1))
+        else:
+          edges_cross.append((i0,i1))
+
+    xformed = dict([(i, demo.skel.newpose(i).xform(0,0,0)) for i in demo.skel.nodes])
+
+    def draw_edge(i0,i1):
+      (x,y,z) = xformed[i0]
+      glVertex3f(-x,-y,z)
+      (x,y,z) = xformed[i1]
+      glVertex3f(-x,-y,z)
+
+    glLineWidth(3)
+
+    for l,vv in edges_plain.items():
+      glColor3ub(*label2color(l))
+      glBegin(GL_LINES)
+      for (i0,i1) in vv:
+        draw_edge(i0, i1)
+      glEnd()
+
+    glColor3f(.3, .3, 1)
     glBegin(GL_LINES)
-    for (i0,i1) in vv:
+    for i0,i1 in edges_cross:
       draw_edge(i0, i1)
     glEnd()
 
-  glColor3f(.3, .3, 1)
-  glBegin(GL_LINES)
-  for i0,i1 in edges_cross:
-    draw_edge(i0, i1)
-  glEnd()
+    glLineStipple(3, 0x5555)
+    glEnable(GL_LINE_STIPPLE)
+    glBegin(GL_LINES)
+    for i0,i1 in edges_weak:
+      draw_edge(i0, i1)
+    glEnd()
+    glDisable(GL_LINE_STIPPLE)
+      
+    glLineWidth(1)
+      
+    # Draw the skeleton nodes as frustums
 
-  glLineStipple(3, 0x5555)
-  glEnable(GL_LINE_STIPPLE)
-  glBegin(GL_LINES)
-  for i0,i1 in edges_weak:
-    draw_edge(i0, i1)
-  glEnd()
-  glDisable(GL_LINE_STIPPLE)
-    
-  glLineWidth(1)
-    
-  # Draw the skeleton nodes as frustums
+    for id in demo.skel.nodes:
+      l0 = demo.skel.node_labels[id]
+      glColor3ub(*label2color(l0))
 
-  for id in demo.skel.nodes:
-    l0 = demo.skel.node_labels[id]
-    glColor3ub(*label2color(l0))
+      glPushMatrix()
+      poseMultMatrix(demo.skel.newpose(id))
+      draw_view()
+      glPopMatrix()
 
-    glPushMatrix()
-    poseMultMatrix(demo.skel.newpose(id))
-    draw_view()
-    glPopMatrix()
+    if 0:
+      glTranslatef(0, 0.5, 0)
+    else:
+      poseMultMatrix(demo.pose())
 
-  if 0:
-    glTranslatef(0, 0.5, 0)
-  else:
-    poseMultMatrix(demo.pose())
+    glColor3f(1, 1, 1)
+    draw_camera()
 
-  glColor3f(1, 1, 1)
-  draw_camera()
+    if demo.running == 0 and not self.dl_ready:
+      glEndList()
+      self.dl_ready = True
 
-  glutSwapBuffers()
+    glutSwapBuffers()
 
 class MouseLook:
 
@@ -492,9 +533,14 @@ class MouseLook:
     self.last = time.time()
     self.mode = 1
     self.fullscreen = False
+    self.th = 0
+    self.phi = -math.pi / 2
 
   def matrix(self):
-    R = transformations.euler_matrix(self.phi, self.th, 0)
+    if self.mode == 0:
+      R = transformations.euler_matrix(self.phi, self.th, 0)
+    else:
+      R = transformations.euler_matrix(self.phi, 0, self.th)
     T = transformations.translation_matrix([self.x, self.y, self.z])
     M = numpy.dot(T, R)
     return M
@@ -546,8 +592,6 @@ class MouseLook:
       self.x = -x
       self.y -= self.v_fwd * delta
       self.z = z
-      self.th = 0
-      self.phi = -math.pi / 2
 
   def unkey(self, k):
     if k == 'w':
@@ -593,6 +637,8 @@ class MouseLook:
       self.mode = (self.mode + 1) % 2
       if self.mode == 0:
         self.y = 10
+        self.th = 0
+        self.phi = -math.pi / 2
     if self.mode == 0:
       glutWarpPointer(320,240)
       glutSetCursor(GLUT_CURSOR_NONE)
@@ -627,6 +673,19 @@ class MouseLook:
         self.turn_r((x - 320) * 0.001)
         self.turn_u((y - 240) * 0.001)
         glutWarpPointer(320,240)
+
+  def start_drag(self, x, y):
+    self.drag_th = self.th
+    self.drag_phi = self.phi
+    self.drag_x = x
+    self.drag_y = y
+
+  def stop_drag(self, x, y):
+    pass
+
+  def drag(self, x, y):
+    self.th = self.drag_th + -0.001 * (x - self.drag_x)
+    self.phi = self.drag_phi + 0.001 * (y - self.drag_y)
 
 ml = MouseLook(0,10,4)
 
@@ -666,13 +725,27 @@ def mouse(button, state, x, y):
     ml.zoom(-1)
   if button == 4 and state == 1:
     ml.zoom(1)
+  if button == 0:
+    if state == 0:
+      ml.start_drag(x, y)
+    else:
+      ml.stop_drag(x, y)
+
+def mouse_motion(x, y):
+  ml.drag(x, y)
 
 def every():
   ml.frob()
   updateMV()
-  DrawGLScene()
+  demo.redraw()
+
+if len(sys.argv) == 1:
+  demo = GLDemo(RealSource())
+else:
+  demo = GLDemo(FakeSource(sys.argv[1]))
 
 def main():
+
   global window
   glutInit(sys.argv)
 
@@ -697,6 +770,7 @@ def main():
   glutKeyboardUpFunc(keyUnpressed)
   glutSpecialFunc(specialKeyPressed)
   glutMouseFunc(mouse)
+  glutMotionFunc(mouse_motion)
   glutIgnoreKeyRepeat(True)
   glutPassiveMotionFunc(ml.passive)
 
@@ -704,11 +778,6 @@ def main():
   updateMV()
 
   glutMainLoop()
-
-if len(sys.argv) == 1:
-  demo = Demo(RealSource())
-else:
-  demo = Demo(FakeSource(sys.argv[1]))
 
 print "-" * 80
 print
