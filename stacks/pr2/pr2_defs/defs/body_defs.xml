@@ -71,7 +71,7 @@
 
   <macro name="torso_calibrator">
     <controller type="JointCalibrationControllerNode"
-                name="cal_torso" topic="cal_torso">
+                name="cal_torso_lift" topic="cal_torso">
       <calibrate joint="torso_lift_joint"
                  actuator="torso_lift_motor"
                  transmission="torso_lift_trans"
@@ -83,7 +83,7 @@
 <!-- Calibrates the torso by moving to the upper limit -->
 <macro name="torso_limit_calibrator">
  <controller type="JointLimitCalibrationControllerNode"
-    name="cal_torso" topic="cal_torso">
+    name="cal_torso_lift" topic="cal_torso">
    <calibrate joint="torso_lift_joint"
               actuator="torso_lift_motor"
               transmission="torso_lift_trans"
