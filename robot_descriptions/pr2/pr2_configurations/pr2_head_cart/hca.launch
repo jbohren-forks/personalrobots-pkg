@@ -9,7 +9,7 @@
 
   <!-- Calibration -->
   <node pkg="mechanism_bringup" type="calibrate.py" 
-  args="$(find pr2_default_controllers)/calibration_controllers/head_cart_calibration_controller.xml" output="screen" />
+  args="$(find pr2_default_controllers)/calibration_controllers/hca_calibration_controller.xml" output="screen" />
 
   <!-- Robot state publisher -->
   <node machine="two" pkg="robot_state_publisher" type="state_publisher" name="robot_state_publisher">
