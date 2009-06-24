@@ -129,7 +129,7 @@ int main(int argc, char **argv)
     std::string xml_param_name = std::string(argv[1]);
 
     // Load parameter server string for pr2 robot description
-    ros::init(argc,argv,"xml2factory");
+    ros::init(argc,argv,"xml2factory",ros::init_options::AnonymousName);
     ros::NodeHandle rosnode;
     ROS_INFO("-------------------- starting node for pr2 param server factory \n");
     std::string xml_content;

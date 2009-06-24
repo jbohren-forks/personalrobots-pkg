@@ -50,7 +50,7 @@ RosTime::RosTime(Entity *parent)
 
   int argc = 0;
   char** argv = NULL;
-  ros::init(argc,argv,"ros_time");
+  ros::init(argc,argv,"ros_time",ros::init_options::AnonymousName);
 
   this->rosnode_ = new ros::NodeHandle();
 

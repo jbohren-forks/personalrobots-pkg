@@ -69,7 +69,7 @@ GazeboMechanismControl::GazeboMechanismControl(Entity *parent)
 
   int argc = 0;
   char** argv = NULL;
-  ros::init(argc,argv,"gazebo_mechanism_control");
+  ros::init(argc,argv,"gazebo_mechanism_control",ros::init_options::AnonymousName);
   this->rosnode_ = new ros::NodeHandle();
 }
 

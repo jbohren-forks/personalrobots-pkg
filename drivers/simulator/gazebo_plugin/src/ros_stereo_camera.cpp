@@ -89,7 +89,7 @@ RosStereoCamera::RosStereoCamera(Entity *parent)
 
   int argc = 0;
   char** argv = NULL;
-  ros::init(argc,argv,"ros_stereo_camera");
+  ros::init(argc,argv,"ros_stereo_camera",ros::init_options::AnonymousName);
   this->rosnode_ = new ros::NodeHandle();
 }
 
