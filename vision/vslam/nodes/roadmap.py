@@ -62,7 +62,7 @@ class RoadmapServer:
     rospy.init_node('roadmap_server')
     stereo_cam = camera.Camera((389.0, 389.0, 89.23 * 1e-3, 323.42, 323.42, 274.95))
     self.skel = Skeleton(stereo_cam)
-    if len(args) > 1:
+    if False:
       self.skel.load(args[1])
       self.skel.optimize()
       self.startframe = 100000
