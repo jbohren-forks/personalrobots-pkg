@@ -37,9 +37,11 @@ class Skeleton:
     self.nodes = set()
     self.edges = set()
     self.weak_edges = []
+    self.link_thresh = 100              # how many inliers needed to add in a long-range link
     if 1:
       self.pg = TreeOptimizer3()
       self.vset = set()
+      self.oldvset = set()
     else:
       import faketoro
       self.pg = faketoro.faketoro()
@@ -56,6 +58,8 @@ class Skeleton:
         self.ds = a
       elif k == 'optimize_after_addition':
         self.optimize_after_addition = a
+      elif k == 'link_thresh':
+        self.link_thresh = a
     if self.ds == None:
       self.ds = DescriptorSchemeCalonder()
 
@@ -273,7 +277,8 @@ class Skeleton:
       previd = max(self.nodes)
 
       # Ignore the node if there are less than node_vist frames since the previous node
-      if (connected == 1) and (this.id - previd) < self.node_vdist:
+      # Treat fill data like regular links
+      if (connected != -1) and (this.id - previd) < self.node_vdist:
         return False
 
       if (connected == 1) and self.prev_pose:
@@ -301,7 +306,7 @@ class Skeleton:
       vtop = self.pg.addIncrementalEdge(previd, this.id, relpose.xform(0,0,0), relpose.euler(), inf)
       self.vset.add(previd)
       self.vset.add(this.id)
-      print self.vset
+#      print self.vset
       print "ADDED VO CONSTRAINT", previd, this.id, inf
       self.timer['toro add'].stop()
       #print "added node at", this.pose.xform(0,0,0), "in graph as", self.newpose(this.id).xform(0,0,0)
@@ -335,16 +340,20 @@ class Skeleton:
     self.edges -= set(self.weak_edges)
     self.weak_edges = []
 
-  def ioptimize(self):
+  def ioptimize(self, iters = 30):
     """ incremental optimization step """
     print "incremental:"
+    started = time.time()
     self.pg.initializeOnlineIterations()
+    self.vset = set(self.nodes) - self.oldvset # just take the new nodes
     self.vset = set(self.nodes)
-    for i in range(100):
+    print set(self.nodes) - self.oldvset
+    for i in range(iters):
       self.pg.iterate(self.vset, True)
     self.pg.recomputeAllTransformations()
+    print "Time: "+str(time.time()-started)+"\n"
+    self.oldvset = set(self.nodes)
     self.vset = set()
-    print
 
   def optimize(self, iters = None, duration = None):
 
@@ -389,7 +398,7 @@ class Skeleton:
     id0 = this
     # print coll
     for inl,obs,id1 in coll:
-      if 40 <= inl:
+      if self.link_thresh <= inl:
         old_error = self.pg.error()
         self.addConstraint(id0, id1, obs)
         # print "ADDED CONSTRAINT", id0, id1, "error changed from", old_error, "to", self.pg.error()

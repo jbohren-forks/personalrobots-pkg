@@ -30,7 +30,7 @@ cfile = open(sys.argv[1],'r');
 # make dictionary of poses
 dcs = {}  # dictionary for IMU poses
 for line in cfile:
-    a = line.split();
+    a = line.split()
     pose = [float(a[5]), float(a[6]), float(a[7]), float(a[8]), float(a[9]), float(a[10])]
     dcs[int(a[1])] = pose
     if (fstart < 0):
