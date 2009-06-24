@@ -1,6 +1,6 @@
 Index: server/physics/Body.hh
 ===================================================================
---- server/physics/Body.hh	(revision 7888)
+--- server/physics/Body.hh	(revision 7891)
 +++ server/physics/Body.hh	(working copy)
 @@ -259,6 +259,8 @@
      protected: ParamT<double> *iyzP;
@@ -13,7 +13,7 @@ Index: server/physics/Body.hh
    /// \}
 Index: server/physics/Geom.cc
 ===================================================================
---- server/physics/Geom.cc	(revision 7888)
+--- server/physics/Geom.cc	(revision 7891)
 +++ server/physics/Geom.cc	(working copy)
 @@ -250,7 +250,7 @@
  
@@ -26,7 +26,7 @@ Index: server/physics/Geom.cc
        dGeomTransformSetGeom( this->transId, this->geomId );
 Index: server/physics/Body.cc
 ===================================================================
---- server/physics/Body.cc	(revision 7888)
+--- server/physics/Body.cc	(revision 7891)
 +++ server/physics/Body.cc	(working copy)
 @@ -242,6 +242,10 @@
      }
@@ -41,7 +41,7 @@ Index: server/physics/Body.cc
  
 Index: worlds/bandit.world
 ===================================================================
---- worlds/bandit.world	(revision 7888)
+--- worlds/bandit.world	(revision 7891)
 +++ worlds/bandit.world	(working copy)
 @@ -16,7 +16,7 @@
    <verbosity>5</verbosity>
@@ -63,7 +63,7 @@ Index: worlds/bandit.world
        <attach>
 Index: worlds/test_stacks_with_rays.world
 ===================================================================
---- worlds/test_stacks_with_rays.world	(revision 7888)
+--- worlds/test_stacks_with_rays.world	(revision 7891)
 +++ worlds/test_stacks_with_rays.world	(working copy)
 @@ -28,7 +28,7 @@
      <cfm>0.0000000001</cfm>
@@ -76,7 +76,7 @@ Index: worlds/test_stacks_with_rays.world
  
 Index: worlds/test_stacks.world
 ===================================================================
---- worlds/test_stacks.world	(revision 7888)
+--- worlds/test_stacks.world	(revision 7891)
 +++ worlds/test_stacks.world	(working copy)
 @@ -28,7 +28,7 @@
      <cfm>0.0000000001</cfm>
@@ -89,7 +89,7 @@ Index: worlds/test_stacks.world
  
 Index: CMakeLists.txt
 ===================================================================
---- CMakeLists.txt	(revision 7888)
+--- CMakeLists.txt	(revision 7891)
 +++ CMakeLists.txt	(working copy)
 @@ -30,7 +30,7 @@
  SET (gazebocontroller_sources_desc "List of controller sources" 
