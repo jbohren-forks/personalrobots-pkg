@@ -25,68 +25,17 @@ import xml.dom.minidom
 from xml.dom.minidom import Node
 
 
-def build_request(theurl, fields, files, txheaders=None):
-  content_type, body = encode_multipart_formdata(fields, files)
-  if not txheaders: txheaders = {}
-  txheaders['Content-type'] = content_type
-  txheaders['Content-length'] = str(len(body))
-  return urllib2.Request(theurl, body, txheaders)
-
-def encode_multipart_formdata(fields, files, BOUNDARY = '-----'+mimetools.choose_boundary()+'-----'):
-
-    """ Encodes fields and files for uploading.
-
-    fields is a sequence of (name, value) elements for regular form fields - or a dictionary.
-
-    files is a sequence of (name, filename, value) elements for data to be uploaded as files.
-
-    Return (content_type, body) ready for urllib2.Request instance
-
-    You can optionally pass in a boundary string to use or we'll let mimetools provide one.
-
-    """    
-
-    CRLF = '\r\n'
-
-    L = []
-
-    if isinstance(fields, dict):
-        fields = fields.items()
-
-    for (key, value) in fields:
-        L.append('--' + BOUNDARY)
-        L.append('Content-Disposition: form-data; name="%s"' % key)
-        L.append('')
-        L.append(value)
-
-    for (key, filename, value) in files:
-        filetype = mimetypes.guess_type(filename)[0] or 'application/octet-stream'
-        L.append('--' + BOUNDARY)
-        L.append('Content-Disposition: form-data; name="%s"; filename="%s"' % (key, filename))
-        L.append('Content-Length: %s' % len(value))
-        L.append('Content-Type: %s' % filetype)
-        L.append('Content-Transfer-Encoding: binary')
-        L.append('')
-        L.append(value)
-
-    L.append('--' + BOUNDARY + '--')
-    L.append('')
-    body = CRLF.join(L)
-
-    content_type = 'multipart/form-data; boundary=%s' % BOUNDARY        # XXX what if no files are encoded
-
-    return content_type, body
-
 
 class MechFetchResults:
-  def __init__(self, srv_name, target_session, output_dir, target_image_size):
-
+  def __init__(self, srv_name, target_session, output_dir, image_output_dir=None,target_image_size=None):
 
     self.srv_name = srv_name
     self.target_session = target_session
     self.output_dir = output_dir
 
     self.target_image_size=target_image_size
+
+    self.image_output_dir=image_output_dir
 
     self.cj = cookielib.CookieJar()
     self.opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(self.cj))
@@ -131,14 +80,13 @@ class MechFetchResults:
 
 
   def fetch_results(self):
-    url= "http://"+self.srv_name + "/mt/session_images2/%s/" % (self.target_session, )
+    url= "http://"+self.srv_name + "/mt/session_images3/%s/" % (self.target_session )
 
-    #input = build_request(url, [], [])
     try:
         print url
         fp = urllib2.urlopen(url)
         response = fp.read()              
-        #print response
+
     except urllib2.URLError, reason:
         print reason
         return None
@@ -149,45 +97,60 @@ class MechFetchResults:
     if not os.path.exists(self.output_dir):
         os.makedirs(self.output_dir)
 
-    print "Beginning to download %d results" %(len(results))
+    print "Starting to download %d results" %(len(results))
     nOk=0;
     nFail=0;
-    for idx,(img,url) in enumerate(results):
+    for idx,(server,annotation_path,session,image_id,image_frame_id,image_time,image_topic) in enumerate(results):
         if idx % 20 ==0:
             print "%d of %d" % (idx,len(results))
 
+        full_annotation_path=os.path.join(self.output_dir,session);
+        if not os.path.exists(full_annotation_path):
+          os.makedirs(full_annotation_path)
 
-        fName=img.replace(".jpg",".xml").replace("/","__").replace("\\","__");
-        full_filename=os.path.join(self.output_dir,fName);
+        full_annotation_filename=os.path.join(full_annotation_path,image_time+'.xml');
+
+        image_output_path=os.path.join(self.image_output_dir,session);
+        if not os.path.exists(image_output_path):
+          os.makedirs(image_output_path);
+        image_filename=os.path.join(image_output_path,image_time+'.jpg');
 
         #Maybe add this later
-        #if os.path.exists(full_filename):
+        #if os.path.exists(full_annotation_filename):
         #    continue
 
-        
         try:
+            if not os.path.exists(image_filename):
+              image_url=server+"frames/"+session+"/"+image_id+".jpg";
+              print image_filename,image_url
+              os.system("wget -O %s %s" % (image_filename,image_url))
+
+            if annotation_path[0]=='/':
+              annotation_path=annotation_path[1:]
+            url= server + annotation_path
             fp = urllib2.urlopen(url)
             response = fp.read()
             fp.close();
 
 	    try:
-                if self.target_image_size:
-                  if self.target_image_size=="TRUESIZE":
-                    im=Image.open(img);
-                    response=self.convert_xml2image(response,im.size);
-                  else:
-                    response=self.convert_xml2image(response,self.target_image_size);
+              if self.target_image_size:
+                target_size=self.target_image_size
+              else:
+                im=Image.open(image_filename);
+                target_size=im.size;
+
+              response=self.convert_xml2image(response,target_size);
             
-                fXml=open(full_filename,'w')
-                print >>fXml,response
-                fXml.close()
-                nOk=nOk+1
+              fXml=open(full_annotation_filename,'w')
+              print >>fXml,response
+              fXml.close()
+              nOk=nOk+1
             except ValueError, reason:
-                print img,reason
-                nFail=nFail+1
+              print image_id,reason
+              nFail=nFail+1
         except urllib2.URLError, reason:
-            print img,reason
-            nFail=nFail+1
+          print image_id,reason
+          nFail=nFail+1
             
     print "%d annotations retreived, %d failed" % (nOk,nFail)
 
@@ -240,7 +203,10 @@ def main(argv, stdout, environ):
   if not output_folder:
     output_folder=os.path.join("results",target_session);
 
-  mech = MechFetchResults(srv_name, target_session, output_folder, target_size)
+  annotations_output_folder=os.path.join(output_folder,"annotations")  
+  images_output_folder=os.path.join(output_folder,"images")  
+
+  mech = MechFetchResults(srv_name, target_session, annotations_output_folder, images_output_folder)
 
   mech.fetch_results()
 

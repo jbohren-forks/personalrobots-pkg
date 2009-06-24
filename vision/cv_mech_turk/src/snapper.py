@@ -69,7 +69,7 @@ class Snapper:
     try:
       self.target_session=rospy.get_param("~session")
     except:
-      self.target_session="prf-2009-05-21-22-29-00-p"
+      self.target_session="demo-session-L1s"
 
     try:
       self.block_submit=rospy.get_param("~block_submit")
@@ -122,7 +122,7 @@ class Snapper:
     full_fn=os.path.join(self.img_dir,fn);
     i.save(full_fn)
 
-    if not self.block_submit=="1":
+    if not self.block_submit==1:
       ext_id = self.mech.submit(full_fn,{'image_size':"640,480",
                                          'topic_in':rospy.resolve_name('image'),
                                          'topic_out':rospy.resolve_name('annotation'),
@@ -135,11 +135,6 @@ class Snapper:
       rospy.loginfo("Submission to session %s blocked by parameter ~block_submit=1", self.target_session)
       print "Submission blocked to session %s by parameter ~block_submit=1" % self.target_session
       ext_id="n/a"
-
-
-    #print full_fn
-    #time.sleep(1.0)
-
 
 
 
