@@ -220,7 +220,7 @@ class Demo:
       b_features = self.f.features()
       inliers = set([ (b,a) for (a,b) in self.vo.pe.inl])
       outliers = set(self.vo.pairs) - inliers
-      cv.String("abcd")
+#      cv.String("abcd")
       for (a,b) in inliers:
         cv.Line(self.cvim, half(b_features[b]), half(a_features[a]), green)
       for (a,b) in outliers:
