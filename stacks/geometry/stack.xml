@@ -1,5 +1,5 @@
-<stack name="geometery" version="0.1">
-  <description brief="geometery and math libraries">
+<stack name="geometry" version="0.1">
+  <description brief="geometry and math libraries">
     The basis geometric and math libraries used in ros.
   </description>
   <author>Maintained by Tully Foote tfoote@willowgarage.com</author>
