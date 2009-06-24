@@ -49,6 +49,7 @@
 #include "opencv/cxcore.h"
 #include "opencv/cv.h"
 #include "opencv/highgui.h"
+#include "opencv/cv.hpp"
 
 #include "ros/node.h"
 #include "image_msgs/StereoInfo.h"
@@ -437,32 +438,39 @@ public:
 	}
 
 
-	void rotateHomogeniousPointsInROI_1(const CvMat *xyzd,
-	                                    CvMat *_rot_trans, CvRect roi,
-	                                    CvMat* output)
-	{
-	    CV_Assert(roi.x >= 0 && roi.width >= 0 && roi.x + roi.width <= xyzd->cols &&
-	        roi.y >= 0 && roi.height >= 0 && roi.y + roi.height <= xyzd->rows);
-	    CV_Assert(output->cols == roi.width && output->rows == roi.height &&
-	        CV_ARE_TYPES_EQ(output, xyzd) && CV_MAT_TYPE(output->type) == CV_32FC4);
-	    CV_Assert(_rot_trans->cols == CV_MAT_CN(output->type) &&
-	        _rot_trans->rows == _rot_trans->cols &&
-	        (CV_MAT_TYPE(_rot_trans->type) == CV_32F ||
-	        CV_MAT_TYPE(_rot_trans->type) == CV_64F));
-	    Mat4x4f M;
-	    CvMat _M = cvMat(4, 4, CV_32F, &M[0]);
-	    cvConvert(_rot_trans, &_M);
+//	void rotateHomogeniousPointsInROI_1(const CvMat *xyzd,
+//	                                    CvMat *_rot_trans, CvRect roi,
+//	                                    CvMat* output)
+//	{
+//	    CV_Assert(roi.x >= 0 && roi.width >= 0 && roi.x + roi.width <= xyzd->cols &&
+//	        roi.y >= 0 && roi.height >= 0 && roi.y + roi.height <= xyzd->rows);
+//	    CV_Assert(output->cols == roi.width && output->rows == roi.height &&
+//	        CV_ARE_TYPES_EQ(output, xyzd) && CV_MAT_TYPE(output->type) == CV_32FC4);
+//	    CV_Assert(_rot_trans->cols == CV_MAT_CN(output->type) &&
+//	        _rot_trans->rows == _rot_trans->cols &&
+//	        (CV_MAT_TYPE(_rot_trans->type) == CV_32F ||
+//	        CV_MAT_TYPE(_rot_trans->type) == CV_64F));
+//	    Mat4x4f M;
+//	    CvMat _M = cvMat(4, 4, CV_32F, &M[0]);
+//	    cvConvert(_rot_trans, &_M);
+//
+//	    for(int i = 0; i < roi.height; i++)
+//	    {
+//	        const cv::Vec4f* src = (const cv::Vec4f*)(xyzd->data.ptr + xyzd->step*(roi.y + i)) + roi.x;
+//	        cv::Vec4f* dst = (cv::Vec4f*)(output->data.ptr + output->step*i);
+//	        for(int j = 0; j < roi.width; j++)
+//	            dst[j] = transform4x4(M, src[j]);
+//	    }
+//	}
 
-	    for(int i = 0; i < roi.height; i++)
-	    {
-	        const cv::Vec4f* src = (const cv::Vec4f*)(xyzd->data.ptr + xyzd->step*(roi.y + i)) + roi.x;
-	        cv::Vec4f* dst = (cv::Vec4f*)(output->data.ptr + output->step*i);
-	        for(int j = 0; j < roi.width; j++)
-	            dst[j] = transform4x4(M, src[j]);
-	    }
-	}
-
-	void rotateHomogeniousPointsInROI_2(const CvMat *xyzd,
+	/**
+	 * \brief Using the XYZA structure rotate points using _rot_trans within roi and return in output
+	 * @param xyzd          2D, 4 Channel float X,Y,Z,A grid of 3D points
+	 * @param _rot_trans    4x4 float rotation and translation matrix
+	 * @param roi           rectangular region of interest
+	 * @param output        2D, 4 Channel float X,Y,Z,A grid, size of roi rotated, translated output
+	 */
+	void rotateHomogeniousPointsInROI(const CvMat *xyzd,
 	                                    CvMat *_rot_trans, CvRect roi,
 	                                    CvMat* output)
 	{
@@ -479,187 +487,168 @@ public:
 
 
 
-	void prnMat4x4(CvMat *M, char * C )
+	/**
+	 * \breif Print out a (hopefully small) float matrix with with lable string C
+	 * @param M   2D float matrix with 1,2,3 or 4 channels
+	 * @param C   char string label to print first
+	 */
+	void prnMatF(CvMat *M, char * C)
 	{
-		printf("\n%s:\n",C);
-		float *f = M->data.fl;
-		for(int r = 0; r<4; ++r){
-			for(int c = 0; c<4; ++c){
-				printf("%f ",*f++);
-			}
-			printf("\n");
-		}
-	}
-
-	void prnMat4x4C4(CvMat *M, char * C, int d = 5 )
-	{
+		int d = M->cols;
+		int chans = 1;
+		int type = M->type;
+		if(type == CV_32FC2) chans = 2;
+		if(type == CV_32FC3) chans = 3;
+		if(type == CV_32FC4) chans = 4;
 		printf("\n%s:\n",C);
 		float *f = M->data.fl;
 		for(int r = 0; r<d; ++r){
 			for(int c = 0; c<d; ++c){
-				printf("[%f, ",*f++);
-				printf("%f, ",*f++);
-				printf("%f, ",*f++);
-				printf("%f], ",*f++);
+				printf("[");
+				for(int ch = 0; ch<chans; ++ch){
+					printf("%f, ",*f++);
+				}
+				printf("], ");
 			}
 			printf("\n");
 		}
 	}
 
+	/**
+	 * \brief This function will be in OpenCV, returns rotation of norman n to Z axis
+	 * @param n  Normal vector in A,B,C form
+	 * @return   Rotation Mat
+	 */
+	cv::Mat rotationFromNormal(cv::Vec3f n)
+	{
+	    cv::Mat _out(3,3,CV_32F);
+	    float* out = (float*)_out.data;
+	    double pitch = atan2(n[0], n[2]);
+	    double pmat[] = { cos(pitch), 0, -sin(pitch) ,
+	                        0      , 1,      0      ,
+	                     sin(pitch), 0,  cos(pitch) };
 
-	int computeRTtoCameraFromNormal(CvPoint3D32f pt3d, CvPoint3D32f n, CvMat *RT, CvMat *R = NULL )
+	    double roll = atan2((double)n[1], n[0] * pmat[3*2+0] + n[2] * pmat[3*2+2]);
+
+	    double rmat[] = { 1,     0,         0,
+	                     0, cos(roll), -sin(roll) ,
+	                     0, sin(roll),  cos(roll) };
+
+	    for(int i = 0; i < 3; ++i)
+	        for(int j = 0; j < 3; ++j)
+	            out[3*i+j] = (float)(rmat[3*i+0]*pmat[3*0+j] +
+	                rmat[3*i+1]*pmat[3*1+j] + rmat[3*i+2]*pmat[3*2+j]);
+	    return _out;
+	}
+
+//	CvMat foo;
+//	Mat bar = &foo;
+//
+//	of course, no & needed if foo is already a pointer
+//	CvMat* foo = cvCreateMat(3, 3, CV_32F);
+//	Mat bar = foo;
+//
+//	Mat bar;
+//	. . . data ...
+//	CvMat foo = bar;
+
+	/**
+	 * \brief Compute RT matrix from a normal n and point pt3d to the Z axis and camera origin
+	 * @param pt3d  The 3D point location of type CvPoint3D32f
+	 * @param n     The normal at that point of type CvPoint3D32f
+	 * @param RT    4x4 float matrix pointer will be filled with Rotation and Translation
+	 * @param R     4x4 float matrix pointer will be filled with just the rotation matrix
+	 * @return      0=OK, -3=>RT NULL or of wrong format, -4=>R NULL or of wrong format
+	 */
+	int computeRTtoCameraFromNormal(CvPoint3D32f pt3d, CvPoint3D32f n, CvMat *RT, CvMat *R )
 	{
 		//CHECKS
 		if((RT->rows) != 4 || (RT->cols) != 4) return -3;
 		int mtype =  cvGetElemType(RT);
 		if(mtype != CV_32FC1) return -3;
-		if(R){
-			if((R->rows) != 4 || (R->cols) != 4) return -4;
-			mtype =  cvGetElemType(R);
-			if(mtype != CV_32FC1) return -4;
-			cvSetZero(R);
-			cvSet2D(R, 3, 3, cvScalar(1.0));
-		}
 		cvSetZero(RT);
+		if((R->rows) != 4 || (R->cols) != 4) return -4;
+		mtype =  cvGetElemType(R);
+		if(mtype != CV_32FC1) return -4;
+		cvSetZero(R);
+		cvSet2D(R, 3, 3, cvScalar(1.0));
+
 		//SET TRANSLATION PART (cvSet uses the order (y,x)
 		//debug
-		pt3d.x = 1.0;pt3d.y = 2.0; pt3d.z = 3.0;
-		n.x = 1.0; n.y = 1.732050808; n.z = 1.0;
+//		pt3d.x = 1.0;pt3d.y = 2.0; pt3d.z = 3.0;
+//		n.x = 1.0; n.y = 1.732050808; n.z = 1.0;
+//		n.x = 1.0; n.y = 1.0; n.z = 1.0;
 		cvSet2D(RT, 0, 3, cvScalar(-pt3d.x));
 		cvSet2D(RT, 1, 3, cvScalar(-pt3d.y));
 		cvSet2D(RT, 2, 3, cvScalar(-pt3d.z));
 		cvSet2D(RT, 3, 3, cvScalar(1.0));
-//		CvMat *T = cvCloneMat(RT);
-//		cvSet2D(T, 0, 0, cvScalar(1.0));
-//		cvSet2D(T, 1, 1, cvScalar(1.0));
-//		cvSet2D(T, 2, 2, cvScalar(1.0));
-//		prnMat4x4(T, "T");
 
-		//SET ROTATION PARTS
-		CvMat *Rx,*Ry,*Rz, *Rzx;
-		Rx = cvCreateMat(4,4,CV_32FC1);
-		Ry = cvCreateMat(4,4,CV_32FC1);
-		Rz = cvCreateMat(4,4,CV_32FC1);
-		Rzx = cvCreateMat(4,4,CV_32FC1);
-		cvSetZero(Rx);
-		cvSetZero(Ry);
-		cvSetZero(Rz);
-		cvSetZero(Rzx);
-		//Find the angles
+		cv::Vec3f N;
+		N[0] = n.x;
+		N[1] = n.y;
+		N[2] = n.z;
 
-		//MAKE THE Z ROTATION MATRIX (ROTATE INTO THE YZ PLANE)
-		float rxy = sqrt(n.x*n.x + n.y*n.y); //normed for rotatinon in the x,y plane aka about the z axis
-		float Theta_to_y =  -acos(n.y/rxy);    // This is the angle to rotate to get to the y,z plane
-//		printf("rxy=%f, theta_to_y= %f\n",rxy,Theta_to_y);
-		float cos_theta = (float)cos(Theta_to_y);
-		float sin_theta = (float)sin(Theta_to_y);
-		cvSet2D(Rz, 3, 3 ,cvScalar(1.0));
-		cvSet2D(Rz, 2, 2, cvScalar(1.0));
-		cvSet2D(Rz, 0, 0, cvScalar(cos_theta));
-		cvSet2D(Rz, 0, 1, cvScalar(sin_theta));
-		cvSet2D(Rz, 1, 0, cvScalar(-sin_theta));
-		cvSet2D(Rz, 1, 1, cvScalar(cos_theta));
-//		prnMat4x4(Rz,"Rz");
+		//COMPUTE NORMAL ROTATION TO ALIGN WITH Z AXIS AND COPY IT OUT
+		CvMat tR = rotationFromNormal(N);
+//		prnMat3x3(&tR, "R matrix = ");
+		for(int i = 0; i<3; ++i)
+			for(int j = 0; j<3; ++j){
+				cvSet2D(R,i,j,cvGet2D(&tR,i,j));
+				cvSet2D(RT,i,j,cvGet2D(&tR,i,j));
+			}
+		prnMatF(RT,"RT = R+T:");
 
-		//MAKE THE X ROTATION MATRIX (ROTATE ONTO THE Z AXIS)
-		CvMat *z2x = cvCreateMat(1,1,CV_32FC4);
-		*(z2x->data.fl) = n.x;
-		*(z2x->data.fl + 1) = n.y;
-		*(z2x->data.fl + 2) = n.z;
-		*(z2x->data.fl + 3) = 1.0;
-//		prnMat4x4C4(z2x, "Point pre rotate", 1 );
-		rotateHomogeniousPointsInROI_2(z2x, Rz, cvRect(0,0,1,1), z2x);
-//		prnMat4x4C4(z2x, "Point post rotate", 1 );
-		n.x = *(z2x->data.fl); //This is just for consistency
-		n.y = *(z2x->data.fl + 1);
-		n.z = *(z2x->data.fl + 2);
-		cvReleaseMat(&z2x);
-		float ryz = sqrt(n.y*n.y + n.z*n.z);
-		float phi_to_z = -acos(n.z/ryz);
-//		ryz = sqrt(2*2 + 1);
-//		phi_to_z = -acos(1.0/ryz);
-//		printf("ryz=%f, phi_to_z= %f\n",ryz,phi_to_z);
-		float cos_phi = (float)cos(phi_to_z);
-		float sin_phi = (float)sin(phi_to_z);
-		cvSet2D(Rx, 3, 3, cvScalar(1.0));
-		cvSet2D(Rx, 0, 0, cvScalar(1.0));
-		cvSet2D(Rx, 1, 1, cvScalar(cos_phi));
-		cvSet2D(Rx, 1, 2, cvScalar(sin_phi));
-		cvSet2D(Rx, 2, 1, cvScalar(-sin_phi));
-		cvSet2D(Rx, 2, 2, cvScalar(cos_phi));
-//		prnMat4x4(Rx,"Rx");
-
-		//MAKE THE Y ROTATION MATRIX (WE DON'T REALLY CARE ABOUT ITS ORIENTATION
-		cvSet2D(Ry, 0,  0, cvScalar(1.0));
-		cvSet2D(Ry, 1,  1, cvScalar(1.0));
-		cvSet2D(Ry, 2,  2, cvScalar(1.0));
-		cvSet2D(Ry, 3,  3, cvScalar(1.0));
-//		prnMat4x4(Ry,"Ry");
-
-		//COMBINE
-		cvMatMul(Rx, Rz, Rzx );
-		if(R) cvAdd(Rzx,R,R);
-		cvAdd(Rzx,RT,RT);
-//		cvMatMul(Rzx, Ry, Rz);
-//		cvAdd(Rz,RT,RT);
-//		prnMat4x4(RT,"Rzxy+T");
-
-		//debug -- test this
-	    CvMat* points = cvCreateMat(5, 5, CV_32FC4);
-	    CvMat* norms =  cvCreateMat(5, 5, CV_32FC4);
-	    CvMat* points_out = cvCreateMat(5, 5, CV_32FC4);
-	    CvMat* norms_out = cvCreateMat(5, 5, CV_32FC4);
-		n.x = 1.0; n.y = 1.732050808; n.z = 1.0;
-
-	    float *pp = points->data.fl;
-	    float *pn = norms->data.fl;
-	    for(int i = 0; i< 25; ++i, pp+=4, pn+=4) {
-	    	*pp =  pt3d.x;
-	    	*(pp+1) = pt3d.y;
-	    	*(pp+2) = pt3d.z;
-	    	*(pp+3) = 1.0;
-	    	*pn =  n.x;
-	    	*(pn+1) = n.y;
-	    	*(pn+2) = n.z;
-	    	*(pn+3) = 1.0;
-	    }
-	    cvSet2D(points, 0, 0, cvScalar(1.0, 0.0, 0.0, 0.0));
-	    cvSet2D(points, 1, 0, cvScalar(0.0, 1.0, 0.0, 0.0));
-	    cvSet2D(points, 2, 0, cvScalar(0.0, 0.0, 1.0, 0.0));
-	    cvSet2D(norms, 0, 0, cvScalar(1.0, 0.0, 0.0, 0.0));
-	    cvSet2D(norms, 1, 0, cvScalar(0.0, 1.0, 0.0, 0.0));
-	    cvSet2D(norms, 2, 0, cvScalar(0.0, 0.0, 1.0, 0.0));
-	    prnMat4x4C4(norms,"norms in");
-		prnMat4x4(Rzx,"Rzx");
-
-
-	    rotateHomogeniousPointsInROI_1(norms, Rzx, cvRect(0,0,5,5), norms_out);
-	    prnMat4x4C4(norms_out,"Normals just by Rzx1");
-	    rotateHomogeniousPointsInROI_2(norms, Rzx, cvRect(0,0,5,5), norms_out);
-	    prnMat4x4C4(norms_out,"Normals just by Rzx2");
-
-	    rotateHomogeniousPointsInROI_1(points, RT, cvRect(0,0,5,5), points_out);
-	    prnMat4x4C4(points_out,"Points by RT1");
-	    rotateHomogeniousPointsInROI_2(points, RT, cvRect(0,0,5,5), points_out);
-	    prnMat4x4C4(points_out,"Points by RT2");
-
-
-//	    printf("\n\nRotation matrix test:\n");
+//		//debug -- test this
+//	    CvMat* points = cvCreateMat(4, 4, CV_32FC4);
+//	    CvMat* norms =  cvCreateMat(4, 4, CV_32FC4);
+//	    CvMat* points_out = cvCreateMat(4, 4, CV_32FC4);
+//	    CvMat* norms_out = cvCreateMat(4, 4, CV_32FC4);
+////		n.x = -1.0; n.y = -1.732050808; n.z = -1.0;
+////		n.x = 1.0; n.y = 1.0; n.z = 1.0;
+//	    float *pp = points->data.fl;
+//	    float *pn = norms->data.fl;
+//	    for(int i = 0; i< 16; ++i, pp+=4, pn+=4) {
+//	    	*pp =  pt3d.x;
+//	    	*(pp+1) = pt3d.y;
+//	    	*(pp+2) = pt3d.z;
+//	    	*(pp+3) = 1.0;
+//	    	*pn =  n.x;
+//	    	*(pn+1) = n.y;
+//	    	*(pn+2) = n.z;
+//	    	*(pn+3) = 1.0;
+//	    }
+//	    cvSet2D(points, 0, 0, cvScalar(1.0, 0.0, 0.0, 0.0)); //first 3 points are test
+//	    cvSet2D(points, 1, 0, cvScalar(0.0, 1.0, 0.0, 0.0));
+//	    cvSet2D(points, 2, 0, cvScalar(0.0, 0.0, 1.0, 0.0));
+//	    cvSet2D(points, 3, 0, cvScalar(0.0, 0.0, 0.0, 1.0));
+//	    cvSet2D(norms, 0, 0, cvScalar(1.732050808, 0.0, 0.0, 0.0));
+//	    cvSet2D(norms, 1, 0, cvScalar(0.0, 1.0, 0.0, 0.0));
+//	    cvSet2D(norms, 2, 0, cvScalar(0.0, 0.0, 1.0, 0.0));
+//	    cvSet2D(norms, 3, 0, cvScalar(0.0, 0.0, 0.0, 1.0));
+//	    prnMat(norms,"norms in",4);
+//	    rotateHomogeniousPointsInROI_2(norms, R, cvRect(0,0,4,4), norms_out);
+//	    prnMat(norms_out,"Normals rotateed by R",4);
 //
-//	    pp = points->data.fl;
-//	    pn = norms->data.fl;
-//	    float *ppo = points_out->data.fl;
-//	    float *pno = norms_out->data.fl;
 //
-//	    printf("point: (%f, %f, %f) => (%f, %f, %f)\n",*pp, *(pp+1), *(pp+2), *ppo, *(ppo+1), *(ppo+2));
-//	    printf("norms: (%f, %f, %f) => (%f, %f, %f)\n",*pn, *(pn+1), *(pn+2), *pno, *(pno+1), *(pno+2));
-//		printf("\n");
-
-		cvReleaseMat(&points);
-		cvReleaseMat(&norms);
-		cvReleaseMat(&points_out);
-		cvReleaseMat(&norms_out);
-
+//	    rotateHomogeniousPointsInROI_2(points, RT, cvRect(0,0,4,4), points_out);
+//	    prnMat(points_out,"Points by RT",4);
+//
+//
+////	    printf("\n\nRotation matrix test:\n");
+////
+////	    pp = points->data.fl;
+////	    pn = norms->data.fl;
+////	    float *ppo = points_out->data.fl;
+////	    float *pno = norms_out->data.fl;
+////
+////	    printf("point: (%f, %f, %f) => (%f, %f, %f)\n",*pp, *(pp+1), *(pp+2), *ppo, *(ppo+1), *(ppo+2));
+////	    printf("norms: (%f, %f, %f) => (%f, %f, %f)\n",*pn, *(pn+1), *(pn+2), *pno, *(pno+1), *(pno+2));
+////		printf("\n");
+//
+//		cvReleaseMat(&points);
+//		cvReleaseMat(&norms);
+//		cvReleaseMat(&points_out);
+//		cvReleaseMat(&norms_out);
 
 //		printf("x=1.7, y= 1, z=1.7. Theta_11 should be 30");
 //		printf("RADIANS: ul,ur/ll,lr: [%f, %f]/[%f, %f]\n",Theta_xm1_1,Theta_x11,-Theta_xm1_1,-Theta_x11);
@@ -667,18 +656,13 @@ public:
 //		printf("cos(ul,ur/ll,lr): [%f, %f]/[%f, %f]\n",(float)cos(Theta_xm1_1),(float)cos(Theta_x11),(float)cos(-Theta_xm1_1),(float)cos(-Theta_x11));
 //		printf("neg angle cos(ul,ur/ll,lr): [%f, %f]/[%f, %f]\n",(float)cos(-Theta_xm1_1),(float)cos(-Theta_x11),(float)cos(Theta_xm1_1),(float)cos(Theta_x11));
 
-		cvReleaseMat(&Rx);
-		cvReleaseMat(&Ry);
-		cvReleaseMat(&Rz);
-		cvReleaseMat(&Rzx);
 		return 0;
-
 	}
 
 	  //!!!! This function SHOULD BE REPLACED with a native plane fit from a grid, for now, use Radu           !!!!
 	  //!!!! Note that I've already done the work of finding normals, so collecting them into planes is simple !!!!
 	  /**
-	   * \brief
+	   * \brief From an XYZA depth grid, mark points that are part of a plannar surface
 	   * @param xyza        X,Y,Z,A matrix.  Found plane points marked in order of size -1, -2 ...; -10K=>point not with in z_min or z_max; 0=>invalid point; >0 => outlier (object) points
 	   * @param z_min		minimum depth from camera to consider
 	   * @param z_max		maximum depth from camera to consider
@@ -711,7 +695,7 @@ public:
 				  if((*(fptr+2) < z_min)||(*(fptr+2) > z_max))
 				  {
 					  zoutcnt++;
-					  if(!(zoutcnt/16))  printf("(%d,%d): zout(%d) = %f || ",x,y,zoutcnt,*(fptr+1));
+//					  if(!(zoutcnt/16))  printf("(%d,%d): zout(%d) = %f || ",x,y,zoutcnt,*(fptr+1));
 					  *(fptr+3) = -10000.0; //Indicates out of range
 					  continue;
 				  }
@@ -724,7 +708,7 @@ public:
 			  }
 //			  printf("\n");
 		  }
-		  printf("\n");//Points pushed back = %d = %d = %d\n",(int)pc.pts.size(),(int)indices_in_bounds.size(),offsets.size());
+//		  printf("\n");//Points pushed back = %d = %d = %d\n",(int)pc.pts.size(),(int)indices_in_bounds.size(),offsets.size());
 
 		  //FIND THE PLANES
 		  vector<vector<int> > indices;
@@ -813,10 +797,12 @@ public:
 	 * @param normal_pt3d           RETURN X,Y,Z location of the normal at p
 	 * @param normals		        RETURN normals in A,B,C form
 	 * @param normal_angles			RETURN normals in angular (0-360 degree) form: (rot around Z, rotation from X,Y plane)
-	 * @return                      Index of median normal, OR: -1,median computation failure, -2,invalid dimensions, -3,no trainges, -4,no matrix
+	 * @param quality				RETURN 1.0 = perfect quality: found_triangles/num_triangles(that is, v.size())
+	 * @return                      Index of median normal, OR: -1,median computation failure, -2,invalid dimensions, -3,no trainges, -4,no center point
 	 */
-	int computeNormals(const CvMat *xyzd, const CvPoint &p, vector<triangle_offsets> &v, float radius_sqr,
-			vector<float> &normal_pt3d, vector<vector<float> > &normals, vector<vector<float> > &normal_angles)
+	int computeNormalAtPt(const CvMat *xyzd, const CvPoint &p, const vector<triangle_offsets> &v, float radius_sqr,
+			vector<float> &normal_pt3d, vector<vector<float> > &normals, vector<vector<float> > &normal_angles,
+			float &quality)
 	{
 		//SET UP AND CHECKS
 		if(!xyzd) return -5; //No matrix
@@ -827,7 +813,7 @@ public:
 		if((col_offset >= cols)||(row_offset >= rows)||(col_offset < 0)||(row_offset < 0)) return -2; //Invalid dimensions
 		float *dat_start = xyzd->data.fl;         //
 		float *dat_end = dat_start + rows*cols*4; //End of data range
-		float *dat = dat_start + rows*row_offset*4 + col_offset*4; //Point to p (x,y) offset into xyzd
+		float *dat = dat_start + cols*row_offset*4 + col_offset*4; //Point to p (x,y) offset into xyzd
 		int num_triangles = (int)v.size();
 		if(num_triangles <= 0) return -3; //No triangles
 		normal_pt3d.clear();
@@ -839,7 +825,6 @@ public:
 		if(*(dat+3) < 0.0000001) return -4; //No center point
 		float Xd,Yd,Zd; //Distances from center point (Xpt,Ypt,Zpt)
 		normal_pt3d.push_back(Xpt); normal_pt3d.push_back(Ypt); normal_pt3d.push_back(Zpt); //Enter normal point location
-//		printf("In computeNormals\n");
 		for(int i = 0; i<num_triangles; ++i)
 		{
 //			printf("triangle #%d, ",i);
@@ -902,8 +887,70 @@ public:
 		}
 		int median_index = -1;
 		vector<float> median = findMedianND(normal_angles,median_index);
+		quality = (float)(normals.size())/(float)num_triangles;
 		return median_index;
 	}
+
+
+
+
+    int computeNormals(const CvMat *xyza, CvMat *xyzn, CvRect roi, vector<triangle_offsets> &Trioffs,
+    		float radius_sqr, float quality, int skip = 1)
+    {
+    	//CHECK STUFF
+    	if(!xyza) return -1;
+        if(CV_32FC4 != cvGetElemType(xyza)) return -1;
+    	if(!xyzn) return -2;
+        if(CV_32FC4 != cvGetElemType(xyzn)) return -2;
+    	int rows = xyza->rows;
+    	int cols = xyza->cols;
+    	if(rows <= 0 || rows != xyzn->rows || cols <= 0 || cols != xyzn->cols) return -2;
+        int rx = roi.x;
+        if(rx < 0) rx = 0;
+        if(rx >= cols) rx = cols - 1;
+        int rw = rx + roi.width;
+        if(rw < rx) rw = rx;
+        int ry = roi.y;
+        if(ry < 0) ry = 0;
+        if(ry >= rows) ry = rows - 1;
+        int rh = ry + roi.height;
+        if(rh < ry) rh = ry;
+        if(rw > cols) rw = cols;
+        if(rh > rows) rh = rows;
+        if((int)Trioffs.size() == 0) return -4;
+        if(skip <= 0) skip = 1;
+        printf("rx,w,ry,h=%d,%d, %d,%d\n",rx,rw,ry,rh);
+
+        //SET UP TO COMPUTE NORMALS
+        cvSetZero(xyzn);
+		vector<float> normal_pt3d;
+		vector<vector<float> > normals;
+		vector<vector<float> > normal_angles;
+		float *fptr,*nfptr;
+		int x,y,nindex,jumpby = skip*4;
+		float quality_ret;
+		int ret = 0;
+
+		//COMPUTE GRID OF NORMALS
+		for(y = ry; y<rh; y += skip)
+		{
+			nfptr = xyzn->data.fl + y*4*cols + rx*4; //Start out pointing to the correct position
+			fptr = xyza->data.fl + y*4*cols + rx*4; //Start out pointing to the correct position
+			for(x = rx; x<rw; x += skip, nfptr += jumpby, fptr += jumpby)
+			{
+					nindex = computeNormalAtPt(xyza, cvPoint(x,y), Trioffs, radius_sqr,
+							normal_pt3d, normals, normal_angles, quality_ret);
+					if (nindex>=0 && quality_ret >= quality) {
+						*nfptr     = normals[nindex][0]; //A
+						*(nfptr+1) = normals[nindex][1]; //B
+						*(nfptr+2) = normals[nindex][2]; //C
+						*(nfptr+3) = (float)nindex;
+						++ret;
+					}
+			}
+		}
+		return ret;
+    }
 
 	/**
 	 * \brief Finds the median of a set of multi-dimensional points v.
@@ -919,7 +966,7 @@ public:
 		int med_dim; //Number of dimensions
 		if((med_dim = (int)median.size()) == 0) return median; // no size means error
 		int M = (int)v.size();
-		if(M < 1) return median; //No points to calculate
+		if(M < 1) {median.clear(); return median;} //No points to calculate
 		vector<bool> b(M,false);
 		float std_radius = 0.0;
 		vector<float> p(med_dim, 0.0);
@@ -927,7 +974,7 @@ public:
 //		printf("avg_radius = %f, std_radius=%f\n",avg_radius,std_radius);
 		if(avg_radius > 99999999.0) return median;  //Oh well, center of mass is best we can do ...
 		avg_radius += std_radius;
-		//FIND THE MEDIAN BY, BASICALLY, MEANSHIFT ... MODIFIED BY JUMPING TOO THE NEAREST POINT EACH LOOP
+		//FIND THE MEDIAN BY, BASICALLY, MEANSHIFT ... MODIFIED BY JUMPING TO THE NEAREST POINT EACH LOOP
 		float dist;
 		for(int i = 0; i<7; ++i) //Stop when distance changed is low or after 7 interations
 		{
@@ -1078,6 +1125,7 @@ public:
 	 */
 	vector<float> findClosestPointToPinV(const vector<vector<float> > &v, vector<float> &p, vector<bool> &b, int &index)
 	{
+		index = -1;
 		int M = (int)v.size();
 		int D = (int)p.size();
 		vector<float> closest_point;
@@ -1086,7 +1134,7 @@ public:
 //		printf("findClosestPoint: p(%f, %f) M=%d, D=%d, v[0].size=%d\n",p[0],p[1],M,D,(int)v[0].size());
 		closest_point.resize(D,0.0);
 		float point_dist, min_dist = 9999999999.0, dist = 0.0;
-		index = -1;
+
 		for(int i=0; i<M; ++i)
 		{
 //			printf("i(%d): ",i);
@@ -1254,9 +1302,6 @@ public:
           return 0;
        }
 
-
-
-
     /**
      * \brief Converts an X,Y,Z stereo point cloud containing originating pixels (x,y) to a floating point 3 channel image I
      * @param I    Floating point 3 channel image with width and height able to contain the point cloud
@@ -1315,12 +1360,7 @@ public:
 		}
         return 0;
      }
-
-
-
-
 };
-
 
 
 template <typename T>
@@ -1349,7 +1389,6 @@ public:
 	{
 		return at(r.x+r.width+1,r.y+r.height+1)-at(r.x+r.width+1,r.y)-at(r.x,r.y+r.height+1)+at(r.x,r.y);
 	}
-
 };
 
 
@@ -1375,28 +1414,22 @@ public:
 	{
 		return data_+index*width_;
 	}
-
 };
 
+void on_mouse_feature_location(int event, int x, int y, int flags, void* param);
 void on_edges_low(int);
 void on_edges_high(int);
 void on_depth_near(int);
 void on_depth_far(int);
-
-
 void on_num_triangles(int val);
 void on_tri_radius_max(int val);
 void on_tri_radius_min(int val);
-
-
-
+void on_quality(int val);
 
 
 class RecognitionLambertian : public ros::Node
 {
 public:
-
-
 	image_msgs::Image limage;
 	image_msgs::Image rimage;
 	image_msgs::Image dimage;
@@ -1415,6 +1448,9 @@ public:
 	IplImage* disp;
 	IplImage* disp_clone;
 	IplImage* color_depth;
+
+	CvMat *M;  //Will hold X,Y,Z,A data.  Here, A <= 0 means no or bad data
+	CvMat *nM; //Will hold A,B,C,A data.  Here, A <= 0 means no or bad data
 
 	TopicSynchronizer<RecognitionLambertian> sync;
 
@@ -1448,12 +1484,17 @@ public:
 	float max_scale;
 	int count_scale;
 
+	int quality_thresh;
+
 
 	CvHaarClassifierCascade* cascade;
 	CvMemStorage* storage;
 
     RecognitionLambertian()
-    :ros::Node("stereo_view"), left(NULL), right(NULL), disp(NULL), disp_clone(NULL), color_depth(NULL), sync(this, &RecognitionLambertian::image_cb_all, ros::Duration().fromSec(0.1), &RecognitionLambertian::image_cb_timeout)
+    :ros::Node("stereo_view"), left(NULL), right(NULL), disp(NULL), disp_clone(NULL),
+    color_depth(NULL), sync(this, &RecognitionLambertian::image_cb_all,
+    		ros::Duration().fromSec(0.1), &RecognitionLambertian::image_cb_timeout),
+    		M(NULL), nM(NULL)
     {
         tf_ = new tf::TransformListener(*this);
         // define node parameters
@@ -1497,9 +1538,13 @@ public:
         	num_triangles = 18;
         	tri_radius_max = 21;
         	tri_radius_min = 8;
+        	quality_thresh = 2; //on 20 scale
            	cvCreateTrackbar("num_tri","color_depth",&num_triangles,   25,&on_num_triangles);
            	cvCreateTrackbar("max_tri_R","color_depth",&tri_radius_max,50,&on_tri_radius_max);
            	cvCreateTrackbar("min_tri_R","color_depth",&tri_radius_min,30,&on_tri_radius_min);
+           	cvCreateTrackbar("quality","color_depth",&quality_thresh,20,&on_quality);
+           	//MOUSE FEATURE INTERACTION
+           	cvSetMouseCallback("color_depth", on_mouse_feature_location, 0);
          }
 
 
@@ -1868,9 +1913,6 @@ private:
     }
 
 
-
-
-
     void runRecognitionLambertian()
     {
         // acquire cv_mutex lock
@@ -1879,11 +1921,8 @@ private:
         // goes to sleep until some images arrive
 //        images_ready.wait(images_lock);
 //        printf("Woke up, processing images\n");
-
-
         // do useful stuff
     	doChamferMatching(left);
-
     }
 
 
@@ -1962,26 +2001,10 @@ private:
     			}
     		}
     	}
-
-
-//    	int f = 1;
-//    	if (truncate>0) f = 255/truncate;
-//    	// display image
-//    	IplImage *dt_image = cvCreateImage(s, IPL_DEPTH_8U, 1);
-//		unsigned char* dt_p = (unsigned char*)dt_image->imageData;
-//
-//		for (int i=0;i<w*h;++i) {
-//			dt_p[i] = f*dt.data_[i];
-//    	}
-//
-//    	cvNamedWindow("dt",1);
-//    	cvShowImage("dt",dt_image);
-//    	cvReleaseImage(&dt_image);
-
     }
 
 
-
+    //NOT USED
     /**
      * \brief Filters a cloud point, retains only points coming from a specific region in the disparity image
      *
@@ -2019,7 +2042,6 @@ private:
 
         return result;
     }
-
 
 
     /**
@@ -2141,7 +2163,7 @@ private:
 				if (x >= rect.x && x < rect.x + rect.width && y >= rect.y && y
 						< rect.y + rect.height) {
 					z -= start_depth;
-					if (z < 0.0)
+					if (z <= 0.0)
 						continue;
 					z *= zfrac;
 					if (z <= 256.0) {
@@ -2224,20 +2246,15 @@ private:
             if(disp != NULL)
                 cvReleaseImage(&disp);
 
-//            disp = cvCreateImage(cvGetSize(dbridge.toIpl()), IPL_DEPTH_8U, 1);
             disp = cvCloneImage(dbridge.toIpl());
-//            cvCvtScale(dbridge.toIpl(), disp, 4.0 / dispinfo.dpp);
         }
 
         cloud = cloud_fetch;
 
-//        images_ready.notify_all();
         runRecognitionLambertian();
         printf("image_cb_all->displayColorDephtImage\n");
         displayColorDepthImage();
     }
-
-
 
 public:
 	/**
@@ -2260,7 +2277,6 @@ public:
 			cv_mutex.unlock();
 			usleep(10000);
 		}
-
 		return true;
 	}
 
@@ -2269,116 +2285,108 @@ public:
 		doChamferMatching(left);
 	}
 
+#define subsample 5  //skip factor for normal computation
     void displayColorDepthImage()
     {
     	CvRect R = cvRect(0,0,color_depth->width, color_depth->height);
      	float Dn = depth_near/10.0;
     	float Df = depth_far/10.0;
+    	float quality = (float)quality_thresh/20.0;
+    	if(M)
+        	cvReleaseMat( &M );
+    	if(nM)
+        	cvReleaseMat(&nM);
     	CvMat *M = cvCreateMat( color_depth->height, color_depth->width, CV_32FC4 );
+    	CvMat *nM = cvCreateMat( color_depth->height, color_depth->width, CV_32FC4 ); //Holds normals
+    	//FILL THE POINT CLOUD
     	StereoPointCloudProcessing spc;
     	spc.pointCloud2PointMat(M, R, cloud);
+
+    	//COMPUTE PLANES:
     	vector<vector<double> > models;
-    	int num_pts = color_depth->height*color_depth->width/16;
-  	    int npl= spc.segmentPlanesFromXYZAGrid(M, 0.0, 50.0, num_pts, 10, models);
-
-
-  	    CvMat *RT = cvCreateMat(4,4,CV_32FC1);
-  		spc.computeRTtoCameraFromNormal(cvPoint3D32f(1.0,2.0,3.0), cvPoint3D32f(3.0,2.0,1.0), RT );
-  		cvReleaseMat(&RT);
-
-  	    printf("Number of planes found = %d, models = %d\n",npl, (int)models.size());
-//    	spc.makePlaneData(M, 0.3, 0.4, 500.0, 320, 240, 1.0); //Visualize this
+    	int num_pts = color_depth->height*color_depth->width/20;
+  	    int npl= spc.segmentPlanesFromXYZAGrid(M, 0.0, 50.0, num_pts, 10, models); //M has planes marked out
+ 	    printf("Number of planes found = %d, models = %d\n",npl, (int)models.size());
     	colorDepthImageFromMat(color_depth,M,R,Dn,Df);
 
+    	//PRE-COMPUTE TRIANGLE OFFSETS TO USE
 		vector<triangle_offsets> Trioffs = spc.computeNTriangleOffsets(num_triangles, 640, tri_radius_max, tri_radius_min);
-		vector<float> normal_pt3d;
-		vector<vector<float> > normals;
-		vector<vector<float> > normal_angles;
-		vector<Vector3 > coef;
+		ROS_INFO("triangle offsets: %d\n",Trioffs.size());
 
+		//COMPUTE NORMALS
+  	    int num_norms = spc.computeNormals(M, nM, R, Trioffs, 400.0, quality, subsample);
+  	    printf("Number of normals = %d\n",num_norms);
+  	    if(num_norms < 0) return;
+
+//  	    CvMat *RT = cvCreateMat(4,4,CV_32FC1);
+//  	    CvMat *Rot = cvCreateMat(4,4,CV_32FC1);;
+//  	    printf("spc.computeRTtoCameraFromNormal\n");
+//  		spc.computeRTtoCameraFromNormal(cvPoint3D32f(1.0,2.0,3.0), cvPoint3D32f(3.0,2.0,1.0), RT, Rot );
+//  		cvReleaseMat(&RT);
+//  		cvReleaseMat(&Rot);
+
+  	    //SET UP:
+  	    int rx = R.x;
+  	    int ry = R.y;
+  	    int rw = rx + R.width;
+  	    int rh = ry + R.height;
+  	    float *fM,*fnM;
+  	    int jumpby = subsample*4;
+  	    int cols = color_depth->width;
+		vector<Vector3 > coef;
 		PointCloud points;
 		points.header.frame_id = cloud.header.frame_id;
 		points.header.stamp = cloud.header.stamp;
-
-
-		ROS_INFO("triangle offsets: %d\n",Trioffs.size());
-
 		Vector3 v3;
 		Point32 p3;
 
+		//Send normals to rviz
+		for (int y=ry;y<rh;y+=subsample)
+		{
+			fM = M->data.fl + 4*y*cols + rx*4;
+			fnM = nM->data.fl + 4*y*cols + rx*4;
+			for (int x=rx;x<rw;x+=subsample, fM += jumpby, fnM += jumpby )
+			{
+				int nindex =  (int)(*(fnM + 3));
 
-		for (int y=0;y<480;y+=5) {
-			for (int x=0;x<640;x+=5) {
-
-				int nindex =  spc.computeNormals(M, cvPoint(x,y), Trioffs, 400.0, normal_pt3d, normals, normal_angles);
-
-//				printf("nindex: %d\n", nindex);
 				if (nindex>=0) {
-					p3.x = normal_pt3d[0];
-					p3.y = normal_pt3d[1];
-					p3.z = normal_pt3d[2];
 
-					v3.x = normals[nindex][0];
-					v3.y = normals[nindex][1];
-					v3.z = normals[nindex][2];
+					p3.x = *fM;
+					p3.y = *(fM + 1);
+					p3.z = *(fM+2);
+					v3.x = *fnM;
+					v3.y = *(fnM + 1);
+					v3.z = *(fnM + 2);
 					points.pts.push_back(p3);
 					coef.push_back(v3);
-
-//					printf("\n------------------------------------------------------------------------\n");
-//					printf("sizes (N=9) TriOffsize=%d[%d, %d, %d] [[%d, %d]]\n",Trioffs.size(),normal_pt3d.size(),normals.size(),normal_angles.size(),
-//							normals[0].size(),normal_angles[0].size());
-//					printf("X,Y,Z=(%f, %f, %f)\n",normal_pt3d[0],normal_pt3d[1], normal_pt3d[2]);
-//					printf("nindex=%d, A=%f, B=%f, C=%f",nindex, normals[nindex][0],normals[nindex][1],normals[nindex][2]);
-//					printf("Angles = (%f, %f)\n",normal_angles[nindex][0],normal_angles[nindex][1]);
-//					printf("------------------------------------------------------------------------\n");
-
 				}
 			}
 		}
 
-
 		publishNormals(this, points, coef, -0.04);
-
-//    	vector<float> p1(2);
-//    	vector<vector<float> > ps(8,p1);
-//    	ps[0][0] = 1;
-//    	ps[0][1] = 0;
-//    	ps[1][0] = 0;
-//    	ps[1][1] = 1;
-//    	ps[2][0] = 0.5;
-//    	ps[2][1] = 0.5;
-//       	ps[3][0] = 3.2;
-//		ps[3][1] = 2.7;
-//		ps[4][0] = 3.4;
-//		ps[4][1] = 3.0;
-//		ps[5][0] = 3.1;
-//		ps[5][1] = 2.6;
-//		ps[6][0] = 4.4;
-//		ps[6][1] = 4.0;
-//		ps[7][0] = 4.1;
-//		ps[7][1] = 4.6;
-//    	int median_index = 1000;
-//    	vector<float> med = spc.findMedianND(ps,median_index);
-//    	printf("ps[1][1]=%f, Median index = %d\n",ps[1][1],median_index);
-//    	printf("size of return vector = %d\n",(int)(med.size()));
-//    	printf("med (%f, %f)\n",med[0],med[1]);
-
-
-//    	int ret_toM = spc.pointCloud2PointMat(M, R, cloud);
-//    	int ret_toI = colorDepthImageFromMat(color_depth,M,R,Dn,Df);
-//    	printf("ret_toM=%d, ret_toI=%d\n",ret_toM,ret_toI);
-    	cvReleaseMat( &M );
-       	spc.computeTriangeOffsets(100,5,2);
-       	spc.computeTriangeOffsets(100,2,1);
-       	spc.computeTriangeOffsets(100,10,5);
 
 //    	colorDepthImage(color_depth,R,Dn,Df);
 //    	printf("colorDepthImage ret = %d",r);
     	cvShowImage("color_depth",color_depth);
     }
+
+    void do_mouse(int event, int x, int y)
+    {
+    	if(event == CV_EVENT_LBUTTONUP){
+    		cvCircle(color_depth, cvPoint(x,y), 10, CV_RGB(255,255,255), 2);
+        	cvShowImage("color_depth",color_depth);
+    	}
+    }
 };
 
 RecognitionLambertian* node;
+
+void on_mouse_feature_location(int event, int x, int y, int flags, void* param)
+{
+	node->do_mouse(event,x,y);
+}
+
+
 
 void on_edges_low(int value)
 {
@@ -2421,6 +2429,13 @@ void on_tri_radius_min(int val)
 	node->tri_radius_min = val;
 	node->displayColorDepthImage();
 }
+
+void on_quality(int val)
+{
+	node->quality_thresh = val;
+	node->displayColorDepthImage();
+}
+
 int main(int argc, char **argv)
 {
 	for(int i = 0; i<argc; ++i)
