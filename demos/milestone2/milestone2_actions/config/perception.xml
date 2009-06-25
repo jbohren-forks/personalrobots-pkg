@@ -7,13 +7,15 @@
 
   <!-- Stereo image processing -->
   <group ns="stereo">
-    <param name="do_colorize" type="bool" value="True"/>
-    <param name="do_rectify" type="bool" value="True"/>
-    <param name="do_stereo" type="bool" value="True"/>
-    <param name="do_calc_points" type="bool" value="True"/>
-    <param name="do_keep_coords" type="bool" value="True"/>
+    <node pkg="stereo_image_proc" type="stereoproc" respawn="false" machine="four" name="stereoproc">
+      <param name="do_colorize"    type="bool" value="True"/>
+      <param name="do_rectify"     type="bool" value="True"/>
+      <param name="do_stereo"      type="bool" value="True"/>
+      <param name="do_calc_points" type="bool" value="True"/>
+      <param name="do_keep_coords" type="bool" value="True"/>
+    </node>
   </group>
-  <node pkg="stereo_image_proc" type="stereoproc" respawn="false" machine="four" />
+
   <!-- Downsampled version for remove viewing -->
   <node pkg="mux" type="throttle" args="1.0 stereo/cloud stereo/cloud_throttled" machine="four"/>
 
