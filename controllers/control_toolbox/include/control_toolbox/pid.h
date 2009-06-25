@@ -36,6 +36,7 @@
 
 
 #include <string>
+#include "ros/node_handle.h"
 
 class TiXmlElement;
 
@@ -115,6 +116,7 @@ public:
 
   bool initParam(const std::string& prefix);
   bool initXml(TiXmlElement *config);
+  bool init(const ros::NodeHandle &n);
 
   /*!
    * \brief Reset the state of this PID controller
