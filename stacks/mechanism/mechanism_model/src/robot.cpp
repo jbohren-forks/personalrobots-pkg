@@ -85,17 +85,6 @@ bool Robot::initXml(TiXmlElement *root)
       delete link;
   }
 
-  // For now, we only care about the sensors as links.
-  for (xit = root->FirstChildElement("sensor"); xit;
-       xit = xit->NextSiblingElement("sensor"))
-  {
-    Link *link = new Link;
-    if (link->initXml(xit, this))
-      links_.push_back(link);
-    else
-      delete link;
-  }
-
   /// @todo add checks here to see if MCN is setup correctly, or have a good viewer
 
   return true;
