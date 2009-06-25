@@ -138,7 +138,10 @@ void EthercatHardware::init(char *interface, bool allow_unprogrammed, bool motor
     {
       if (!sh->to_state(EC_OP_STATE))
       {
-        ROS_FATAL("Unable to initialize slave #%d, product code: %d", slave, sh->get_product_code());
+        int product_code = sh->get_product_code();
+        ROS_FATAL("Unable to initialize slave #%d, product code: %d (0x%X)", slave, product_code, product_code);
+        if (product_code)
+          ROS_FATAL("Note: 0xBADDBADD indicates that the device does not know its product code.");
         ROS_BREAK();
       }
       num_actuators += slaves_[slave]->has_actuator_;
@@ -146,7 +149,11 @@ void EthercatHardware::init(char *interface, bool allow_unprogrammed, bool motor
     }
     else
     {
-      ROS_FATAL("Unable to configure slave #%d, product code: %d, revision: %d", slave, sh->get_product_code(), sh->get_revision());
+      uint32_t product_code = sh->get_product_code();
+      uint32_t revision = sh->get_revision();
+      ROS_FATAL("Unable to configure slave #%d, product code: %d (0x%X), revision: %d (0x%X)", slave, product_code, product_code, revision, revision);
+      if (product_code == 0xbaddbadd || revision == 0xbaddbadd)
+        ROS_FATAL("Note: 0xBADDBADD indicates that the device does not know its product code or revision.");
       ROS_FATAL("Perhaps you should power-cycle the MCBs");
       ROS_BREAK();
     }
