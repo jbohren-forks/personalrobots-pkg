@@ -142,7 +142,7 @@ class Demo:
 
     if self.camera_preview:
       cv.NamedWindow("Camera")
-      cv.MoveWindow("Camera", 0, 500)
+      cv.MoveWindow("Camera", 0, 700)
 
   def handleFrame(self):
     r = False
@@ -258,6 +258,12 @@ class Demo:
     else:
       return self.anchor() * (~self.snail_trail[0] * self.snail_trail[-1])
 
+  def map_size(self):
+    xyz = [demo.skel.newpose(i).xform(0,0,0) for i in demo.skel.nodes]
+    xrange = max([x for (x,y,z) in xyz]) - min([x for (x,y,z) in xyz])
+    zrange = max([z for (x,y,z) in xyz]) - min([z for (x,y,z) in xyz])
+    return max(xrange, zrange)
+
 while False:
   demo.handleFrame()
   print demo.skel.nodes
@@ -279,6 +285,8 @@ window = 0
 
 import numpy
 
+screensize = ( 640, 480)
+
 def InitGL(Width, Height):				# We call this right after our OpenGL window is created.
   glClearColor(0.0, 0.0, 0.0, 0.0)	                # This Will Clear The Background Color To Black
   glClearDepth(1.0)					# Enables Clearing Of The Depth Buffer
@@ -288,7 +296,7 @@ def InitGL(Width, Height):				# We call this right after our OpenGL window is cr
   glShadeModel(GL_SMOOTH)				# Enables Smooth Color Shading
 
   glFogf(GL_FOG_START, 10.0)
-  glFogf(GL_FOG_END, 200.0)
+  glFogf(GL_FOG_END, 700.0)
   glFogi(GL_FOG_MODE, GL_LINEAR)
   glEnable(GL_FOG)
 
@@ -300,7 +308,7 @@ def InitGL(Width, Height):				# We call this right after our OpenGL window is cr
   glMatrixMode(GL_PROJECTION)
   glLoadIdentity()					# Reset The Projection Matrix
                                                         # Calculate The Aspect Ratio Of The Window
-  gluPerspective(45.0, float(Width)/float(Height), 0.1, 200.0)
+  gluPerspective(45.0, float(Width)/float(Height), 0.1, 1000.0)
 
   glMatrixMode(GL_MODELVIEW)
 
@@ -312,7 +320,9 @@ def ReSizeGLScene(Width, Height):
   glViewport(0, 0, Width, Height)		        # Reset The Current Viewport And Perspective Transformation
   glMatrixMode(GL_PROJECTION)
   glLoadIdentity()
-  gluPerspective(45.0, float(Width)/float(Height), 0.1, 100.0)
+  gluPerspective(45.0, float(Width)/float(Height), 0.1, 1000.0)
+  global screensize
+  screensize = (Width, Height)
 
 def draw_cube():
   glBegin(GL_LINES)
@@ -372,7 +382,40 @@ def poseMultMatrix(pose):
 LIST_EVERYTHING = 1   # The whole scene, used when paused
 LIST_FURNITURE  = 2   # Fixed background stuff
 
+def draw_logo():
+  glMatrixMode(GL_MODELVIEW)
+  glPushMatrix()
+  glLoadIdentity()
+  glMatrixMode(GL_PROJECTION)
+  glPushMatrix()
+  glLoadIdentity()
+
+  glEnable(GL_TEXTURE_2D)
+  glBindTexture(GL_TEXTURE_2D, demo.textures[ml.mode])
+
+  w = 2 * (32. / screensize[0])
+  h = 2 * (32. / screensize[1])
+  glColor3f(1.0, 1.0, 1.0)
+  glBegin(GL_QUADS)
+  glTexCoord2f(0,1)
+  glVertex3f(-1, -1,0)
+  glTexCoord2f(1,1)
+  glVertex3f(-1+w, -1,0)
+  glTexCoord2f(1,0)
+  glVertex3f(-1+w, -1+h,0)
+  glTexCoord2f(0,0)
+  glVertex3f(-1, -1+h,0)
+  glEnd()
+
+  glDisable(GL_TEXTURE_2D)
+
+  glMatrixMode(GL_PROJECTION)
+  glPopMatrix()
+  glMatrixMode(GL_MODELVIEW)
+  glPopMatrix()
+
 class GLDemo(Demo):
+
   def __init__(*args):
     self = args[0]
     self.dl_ready = False    # display list ready
@@ -394,6 +437,7 @@ class GLDemo(Demo):
         glNewList(LIST_EVERYTHING, GL_COMPILE_AND_EXECUTE)
       else:
         glCallList(LIST_EVERYTHING)
+        draw_logo()
         glutSwapBuffers()
         return
     else:
@@ -527,6 +571,8 @@ class GLDemo(Demo):
       glEndList()
       self.dl_ready = True
 
+    draw_logo()
+
     glutSwapBuffers()
 
 class MouseLook:
@@ -580,24 +626,26 @@ class MouseLook:
     delta = t - self.last
     self.last = t
 
+    damp_weak = math.pow(0.99, delta)
+    damp_strong = math.pow(0.01, delta)
     self.v_fwd += delta * self.a_fwd
     if self.a_fwd:
-      self.v_fwd *= 0.99
+      self.v_fwd *= damp_weak
     else:
-      self.v_fwd *= 0.7
+      self.v_fwd *= damp_strong
 
     if self.mode == 0:
       self.v_rgt += delta * self.a_rgt
       if self.a_rgt:
-        self.v_rgt *= 0.99
+        self.v_rgt *= damp_weak
       else:
-        self.v_rgt *= 0.7
+        self.v_rgt *= damp_strong
 
       self.v_clm += delta * self.a_clm
       if self.a_clm:
-        self.v_clm *= 0.99
+        self.v_clm *= damp_weak
       else:
-        self.v_clm *= 0.7
+        self.v_clm *= damp_strong
 
       self.translate(self.v_rgt * delta, self.v_clm * delta, -self.v_fwd * delta)
     else:
@@ -654,7 +702,7 @@ class MouseLook:
 
     if k == 'm':
       self.mode = (self.mode + 1) % 2
-      if self.mode == 0:
+      if self.mode == 1:
         self.y = 10
         self.th = 0
         self.phi = -math.pi / 2
@@ -664,27 +712,28 @@ class MouseLook:
     else:
       glutSetCursor(GLUT_CURSOR_INHERIT)
 
+    factor = demo.map_size()
+    print "factor", factor
+
     th_inc = 0.05
     if k == 'w':
-      self.a_fwd = 2
+      self.a_fwd = 2 * factor
     elif k == 's':
-      self.a_fwd = -2
+      self.a_fwd = -2 * factor
     elif k == 'a':
-      self.a_rgt = -2
+      self.a_rgt = -2 * factor
     elif k == 'd':
-      self.a_rgt = 2
+      self.a_rgt = 2 * factor
     elif k == ' ':
-      self.a_clm = 2
+      self.a_clm = 2 * factor
     elif k == 'c':
-      self.a_clm = -2
-    elif k == GLUT_KEY_LEFT:
-      self.turn_r(-th_inc)
-    elif k == GLUT_KEY_RIGHT:
-      self.turn_r(th_inc)
+      self.a_clm = -2 * factor
 
   def zoom(self, d):
     if self.mode == 1:
       self.y += d
+    else:
+      self.v_fwd = -7 * d
 
   def passive(self, x, y):
     if self.mode == 0:
@@ -739,7 +788,6 @@ def updateMV():
   #print "GL has:\n", glGetFloatv(GL_MODELVIEW_MATRIX)
 
 def mouse(button, state, x, y):
-  print button, state, x, y
   if button == 3 and state == 1:
     ml.zoom(-1)
   if button == 4 and state == 1:
@@ -757,6 +805,9 @@ def every():
   ml.frob()
   updateMV()
   demo.redraw()
+
+import Image
+import ImageFont, ImageDraw
 
 if len(sys.argv) == 1:
   demo = GLDemo(RealSource())
@@ -795,6 +846,21 @@ def main():
 
   InitGL(640, 480)
   updateMV()
+
+  demo.textures = glGenTextures(2)
+
+  for i,txt in [ (0, "M"), (1, "A") ]:
+    glBindTexture(GL_TEXTURE_2D, demo.textures[i])
+    im = Image.new("L", (1024, 1024))
+    draw = ImageDraw.Draw(im)
+    font = ImageFont.truetype("/usr/share/fonts/truetype/freefont/FreeSans.ttf", 1024-64)
+    (w,h) = font.getsize(txt)
+    draw.pieslice((32,32,1024-32,1024-32), 0, 360, fill = 255)
+    draw.text(((1024-w)/2, (1024-h)/2+100), txt, font=font, fill=0)
+    im32 = im.resize((512, 512), Image.ANTIALIAS).resize((256, 256), Image.ANTIALIAS).resize((128, 128), Image.ANTIALIAS).resize((64, 64), Image.ANTIALIAS).resize((32, 33), Image.ANTIALIAS)
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE8, 32, 32, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, im32.tostring())
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST)
 
   glutMainLoop()
 
