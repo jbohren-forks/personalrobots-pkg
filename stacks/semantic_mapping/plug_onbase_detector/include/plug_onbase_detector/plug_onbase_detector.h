@@ -47,6 +47,7 @@
 #include <robot_msgs/PointCloud.h>
 #include <robot_msgs/Polygon3D.h>
 #include <robot_msgs/PolygonalMap.h>
+#include <plugs_msgs/PlugStow.h>
 
 // Sample Consensus
 #include <point_cloud_mapping/sample_consensus/sac.h>
@@ -75,7 +76,7 @@
 
 #include <sys/time.h>
 
-#include <robot_msgs/PlugStow.h>
+
 
 using namespace std;
 using namespace std_msgs;
@@ -99,7 +100,7 @@ class PlugOnBaseDetector
     // ROS messages
     PointCloud cloud_, cloud_tr_;
     PointCloud cloud_annotated_;
-    PlugStow p_stow_;
+    plugs_msgs::PlugStow p_stow_;
 
     PointStamped viewpoint_cloud_;
     tf::TransformListener tf_;
@@ -144,7 +145,7 @@ class PlugOnBaseDetector
       // Subscribe to the topic
       node_.subscribe (cloud_topic, cloud_, &PlugOnBaseDetector::callback, this, 1);
 
-      node_.advertise<PlugStow> ("~plug_stow_info", 1);
+      node_.advertise<plugs_msgs::PlugStow> ("~plug_stow_info", 1);
 
       // We want to publish an annotated point cloud for debugging purposes
       if (publish_debug_)
