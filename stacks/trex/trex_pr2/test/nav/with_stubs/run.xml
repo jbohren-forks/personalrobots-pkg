@@ -7,7 +7,7 @@
 
 
   <param name="/trex/input_file" value="driver.cfg"/>
-  <param name="/trex/path" value="$(find trex_pr2)/cfg:$(find executive_trex_pr2)/cfg"/>
+  <param name="/trex/path" value="$(find trex_pr2)/cfg:$(find trex_ros)/cfg"/>
   <param name="/trex/start_dir" value="$(find trex_pr2)/test/nav/with_stubs"/>
   <param name="/trex/time_limit" value="60"/>
   <param name="/trex/log_dir" value="$(find trex_pr2)/logs"/>

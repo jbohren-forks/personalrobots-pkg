@@ -5,7 +5,7 @@ int main(int argc, char** argv){
   ros::Node n("trex_test_client");
 
   // This request is for all outlets that are reachable
-  executive_trex_pr2::ExecuteGoals::Request req;
+  trex_ros::ExecuteGoals::Request req;
   req.outlet_ids.push_back(1);
   req.outlet_ids.push_back(4);
   req.outlet_ids.push_back(6);
@@ -19,6 +19,6 @@ int main(int argc, char** argv){
   req.outlet_ids.push_back(39);
   req.outlet_ids.push_back(40);
 
-  executive_trex_pr2::ExecuteGoals::Response resp;
+  trex_ros::ExecuteGoals::Response resp;
   ROS_ASSERT(ros::service::call("execute_goals", req, resp));
 }
