@@ -4,12 +4,13 @@
 #include "ros/ros.h"
 #include "ros/node.h"
 #include "executive_trex_pr2/executive.h"
-#include "executive_trex_pr2/ExecuteGoals.h"
+#include "trex_ros/ExecuteGoals.h"
 
 #include "DbCore.hh"
 
 using namespace TREX;
 using namespace EUROPA;
+using namespace trex_ros;
 namespace executive_trex_pr2 {
 
   /**

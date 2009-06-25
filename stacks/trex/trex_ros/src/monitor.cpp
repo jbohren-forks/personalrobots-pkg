@@ -5,7 +5,7 @@
 #include "Domains.hh"
 #include "executive_trex_pr2/executive.h"
 #include <vector>
-#include <executive_trex_pr2/TrexMonitor.h>
+#include <trex_ros/TrexMonitor.h>
 
 namespace TREX {
 
@@ -32,7 +32,7 @@ namespace TREX {
 	ROS_ERROR("No topic for monitor, setting default: %s.", m_topic_name.c_str());
       }
       ros::NodeHandle node_handle;
-      ros::Publisher m_pub = node_handle.advertise<executive_trex_pr2::TrexMonitor>(m_topic_name, 10);
+      ros::Publisher m_pub = node_handle.advertise<trex_ros::TrexMonitor>(m_topic_name, 10);
     }
 
     ~Monitor() { 
@@ -40,7 +40,7 @@ namespace TREX {
     }
 
     void notify(Observation const &obs) {
-      executive_trex_pr2::TrexMonitor msg;
+      trex_ros::TrexMonitor msg;
       msg.timeline = obs.getObjectName().c_str();
       msg.set_variable_names_size(obs.countParameters());
       msg.set_variable_values_size(obs.countParameters());

@@ -6,7 +6,7 @@ roslaunch 2dnav_stage_movebase_empty_room.launch
 
 <launch>
 
-  <node pkg="executive_trex_pr2" type="fake_battery_controller.py">
+  <node pkg="trex_ros" type="fake_battery_controller.py">
     <remap from="battery_state" to="bogus_battery_state"/>
   </node>
   <node pkg="highlevel_controllers" type="recharge_controller">
