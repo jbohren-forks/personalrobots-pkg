@@ -1,1 +1,1 @@
-export PATH=`rospack find executive_trex_pr2`/bin:$PATH
+export PATH=`rospack find trex_ros`/bin:$PATH

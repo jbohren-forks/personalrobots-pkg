@@ -1,7 +1,7 @@
-#include <executive_trex_pr2/adapter_utilities.h>
+#include <trex_ros/adapter_utilities.h>
 #include <tf/transform_listener.h>
 
-namespace executive_trex_pr2 {
+namespace trex_ros {
 			     
 
 

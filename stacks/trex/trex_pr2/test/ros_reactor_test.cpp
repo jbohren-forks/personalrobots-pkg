@@ -1,4 +1,4 @@
-#include <executive_trex_pr2/ros_reactor.h>
+#include <trex_ros/ros_reactor.h>
 
 int main(int argc, char** argv){
   ros::init(argc, argv);

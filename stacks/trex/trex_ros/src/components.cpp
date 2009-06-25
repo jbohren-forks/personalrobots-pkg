@@ -1,4 +1,4 @@
-#include "executive_trex_pr2/components.h"
+#include "trex_ros/components.h"
 #include "GoalManager.hh"
 #include "PlanDatabase.hh"
 #include "Token.hh"
@@ -9,13 +9,13 @@
 #include "Timeline.hh"
 #include "Agent.hh"
 #include "Utilities.hh"
-#include "executive_trex_pr2/calc_angle_diff_constraint.h"
-#include "executive_trex_pr2/calc_distance_constraint.h"
+#include "trex_ros/calc_angle_diff_constraint.h"
+#include "trex_ros/calc_distance_constraint.h"
 #include "plugs_functions/plugs_functions.h"
 #include "OrienteeringSolver.hh"
 #include "Utilities.hh"
 #include "LabelStr.hh"
-#include <executive_trex_pr2/ros_reactor.h>
+#include <trex_ros/ros_reactor.h>
 #include <tf/transform_listener.h>
 #include <math.h>
 
@@ -383,7 +383,7 @@ namespace TREX{
 
   void initROSExecutive(bool playback){
     initTREX();
-    new TeleoReactor::ConcreteFactory<executive_trex_pr2::ROSReactor>("ROSReactor");
+    new TeleoReactor::ConcreteFactory<trex_ros::ROSReactor>("ROSReactor");
     new ROSSchema(playback);
   }
 

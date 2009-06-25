@@ -43,7 +43,7 @@
 #include <boost/thread.hpp>
 #include <cstdlib>
 
-namespace executive_trex_pr2 {
+namespace trex_pr2 {
 
   class StopAction: public robot_actions::Action<std_msgs::String, std_msgs::Empty> {
   public:
@@ -119,10 +119,10 @@ namespace executive_trex_pr2 {
 
 int main(int argc, char** argv){ 
   ros::init(argc, argv);
-  ros::Node node("executive_trex_pr2/robot_actions");
+  ros::Node node("trex_pr2/robot_actions");
 
   // Allocate an action runner with an update rate of 10 Hz
-  executive_trex_pr2::StopAction stop_action;
+  trex_pr2::StopAction stop_action;
   robot_actions::ActionRunner runner(10.0);
   runner.connect<std_msgs::String, pr2_robot_actions::StopActionState, std_msgs::Empty>(stop_action);
 

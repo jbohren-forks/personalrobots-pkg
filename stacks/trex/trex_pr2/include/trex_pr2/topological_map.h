@@ -18,14 +18,14 @@
 #include "UnboundVariableDecisionPoint.hh"
 #include "GoalManager.hh"
 #include <topological_map/topological_map.h>
-#include <executive_trex_pr2/logger.h>
+#include <trex_ros/logger.h>
 #include <door_msgs/Door.h>
 #include <robot_msgs/Pose.h>
 
 using namespace EUROPA;
 using namespace TREX;
 
-namespace executive_trex_pr2 {
+namespace trex_pr2 {
   
   class TopologicalGoalManager: public TREX::GoalManager {
   public:

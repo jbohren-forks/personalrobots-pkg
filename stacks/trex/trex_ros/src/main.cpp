@@ -85,17 +85,17 @@ Publishes to (name/type):
 
 #include "TestMonitor.hh"
 #include "Nddl.hh"
-#include "executive_trex_pr2/components.h"
-#include "executive_trex_pr2/logger.h"
+#include "trex_ros/components.h"
+#include "trex_ros/logger.h"
 #include "Agent.hh"
-#include "executive_trex_pr2/logclock.h"
+#include "trex_ros/logclock.h"
 #include "Debug.hh"
 #include "Utilities.hh"
 #include <signal.h>
 #include <unistd.h>
 #include <signal.h>
 
-#include "executive_trex_pr2/executive.h"
+#include "trex_ros/executive.h"
 
 
 
@@ -116,7 +116,7 @@ Publishes to (name/type):
 
 TREX::ExecutiveId executive;
 
-namespace executive_trex_pr2 {
+namespace trex_ros {
 
   /**
    * @brief Utilty to check for an argument in an arg list
@@ -296,7 +296,7 @@ TEST(trex, validateOutput){
 
 int trexMain(int argc, char **argv)
 {
-  using namespace executive_trex_pr2;
+  using namespace trex_ros;
 
   signal(SIGINT,  &TREX::signalHandler);
   signal(SIGTERM, &TREX::signalHandler);
@@ -307,7 +307,7 @@ int trexMain(int argc, char **argv)
   ros::NodeHandle node_handle;
 
   // Display help if requested
-  if(executive_trex_pr2::isArg(argc, argv, "--help")){
+  if(trex_ros::isArg(argc, argv, "--help")){
     std::cout << "\n";
     std::cout << "Welcome! TREX is an executive for supervisory  control of an autonomous system. TREX requires the following ROS parameters:\n";
     std::cout << "* trex/input_file: An xml file that defines the agent control configuration.\n";
@@ -330,9 +330,9 @@ int trexMain(int argc, char **argv)
   int success = 0;
 
   // Process input arguments
-  g_playback = executive_trex_pr2::isArg(argc, argv, "--playback");
-  g_hyper = executive_trex_pr2::isArg(argc, argv, "--hyper");
-  g_console = executive_trex_pr2::isArg(argc, argv, "--console");
+  g_playback = trex_ros::isArg(argc, argv, "--playback");
+  g_hyper = trex_ros::isArg(argc, argv, "--hyper");
+  g_console = trex_ros::isArg(argc, argv, "--console");
 
   // Hyper and playback make different assumptions about the execution steps in each tick
   if (g_playback && g_hyper) {
@@ -374,7 +374,7 @@ int trexMain(int argc, char **argv)
   executive = TREX::ExecutiveId::noId();
 
   // Parse command line arguments to see if we must apply test case validation
-  if(executive_trex_pr2::isArg(argc, argv, "--gtest")){
+  if(trex_ros::isArg(argc, argv, "--gtest")){
     testing::InitGoogleTest(&argc, argv);
     success = RUN_ALL_TESTS();
   }

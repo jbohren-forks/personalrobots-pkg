@@ -1,13 +1,14 @@
 #include <trex_pr2/door_domain_constraints.h>
-#include <executive_trex_pr2/adapter_utilities.h>
-#include <executive_trex_pr2/components.h>
+#include <trex_ros/adapter_utilities.h>
+#include <trex_ros/components.h>
 #include <door_functions/door_functions.h>
 
 #include "Debug.hh"
 
 using namespace TREX;
+using namespace trex_ros;
 
-namespace executive_trex_pr2 {
+namespace trex_pr2 {
 
   //*******************************************************************************************
   GetRobotPoseForDoorConstraint::GetRobotPoseForDoorConstraint(const LabelStr& name,

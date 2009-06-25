@@ -10,7 +10,7 @@
 #include "Agent.hh"
 #include "Debug.hh"
 #include "LogManager.hh"
-#include "executive_trex_pr2/logger.h"
+#include "trex_ros/logger.h"
 
 
 int trexMain(int argc, char** argv);

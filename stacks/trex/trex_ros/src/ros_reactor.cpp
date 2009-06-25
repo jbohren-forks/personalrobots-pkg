@@ -1,4 +1,4 @@
-#include "executive_trex_pr2/ros_reactor.h"
+#include "trex_ros/ros_reactor.h"
 #include "Agent.hh"
 #include "Observer.hh"
 #include "Object.hh"
@@ -8,7 +8,7 @@
 #include "Domains.hh"
 #include "ConstrainedVariable.hh"
 
-namespace executive_trex_pr2{ 	
+namespace trex_ros{ 	
 
   /**
    * ROS Reactors will always log, to support playback. This is achieved by setting parameters in the

@@ -31,17 +31,17 @@
 #include <ros/console.h>
 
 #include "Nddl.hh"
-#include "executive_trex_pr2/components.h"
-#include "executive_trex_pr2/logger.h"
+#include "trex_ros/components.h"
+#include "trex_ros/logger.h"
 #include "Agent.hh"
-#include "executive_trex_pr2/logclock.h"
+#include "trex_ros/logclock.h"
 #include "Debug.hh"
 #include "Utilities.hh"
 #include <signal.h>
 #include <unistd.h>
 #include <signal.h>
 
-#include "executive_trex_pr2/executive.h"
+#include "trex_ros/executive.h"
 
 
 

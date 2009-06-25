@@ -15,7 +15,7 @@
 
 using namespace EUROPA;
 
-namespace executive_trex_pr2 {
+namespace trex_pr2 {
 
   /**
    * @brief A function to compute the base position. Can be derived from the door detection code which already implemented this.

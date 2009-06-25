@@ -35,7 +35,7 @@
 
 ## Publish fake battery outputs at 10HZ
 
-PKG = 'executive_trex_pr2' # this package name
+PKG = 'trex_ros' # this package name
 NAME = 'fake_battery_controller'
 
 import roslib; roslib.load_manifest(PKG) 

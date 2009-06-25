@@ -1,5 +1,5 @@
 #include "Assembly.hh"
-#include "executive_trex_pr2/components.h"
+#include "trex_ros/components.h"
 #include <trex_pr2/topological_map.h>
 #include <trex_pr2/door_domain_constraints.h>
 
@@ -45,43 +45,43 @@ namespace TREX {
     
     // Register topological map constraints
     REGISTER_CONSTRAINT(constraintEngine->getCESchema(),
-			executive_trex_pr2::MapInitializeFromFileConstraint, "map_initialize_from_file", "Default");
+			trex_pr2::MapInitializeFromFileConstraint, "map_initialize_from_file", "Default");
     REGISTER_CONSTRAINT(constraintEngine->getCESchema(),
-			executive_trex_pr2::MapGetNextMoveConstraint, "map_get_next_move", "Default");
+			trex_pr2::MapGetNextMoveConstraint, "map_get_next_move", "Default");
     REGISTER_CONSTRAINT(constraintEngine->getCESchema(),
-			executive_trex_pr2::MapConnectorConstraint, "map_connector", "Default");
+			trex_pr2::MapConnectorConstraint, "map_connector", "Default");
     REGISTER_CONSTRAINT(constraintEngine->getCESchema(),
-			executive_trex_pr2::MapGetRegionFromPositionConstraint, "map_get_region_from_position", "Default");
+			trex_pr2::MapGetRegionFromPositionConstraint, "map_get_region_from_position", "Default");
     REGISTER_CONSTRAINT(constraintEngine->getCESchema(),
-			executive_trex_pr2::MapGetDoorwayFromPointsConstraint, "map_get_doorway_from_points", "Default");
+			trex_pr2::MapGetDoorwayFromPointsConstraint, "map_get_doorway_from_points", "Default");
     REGISTER_CONSTRAINT(constraintEngine->getCESchema(),
-			executive_trex_pr2::MapIsDoorwayConstraint, "map_is_doorway", "Default");
+			trex_pr2::MapIsDoorwayConstraint, "map_is_doorway", "Default");
     REGISTER_CONSTRAINT(constraintEngine->getCESchema(),
-			executive_trex_pr2::MapGetDoorStateConstraint, "map_get_door_state", "Default");
+			trex_pr2::MapGetDoorStateConstraint, "map_get_door_state", "Default");
     REGISTER_CONSTRAINT(constraintEngine->getCESchema(),
-			executive_trex_pr2::MapNotifyDoorBlockedConstraint, "map_notify_door_blocked", "Default");
+			trex_pr2::MapNotifyDoorBlockedConstraint, "map_notify_door_blocked", "Default");
     REGISTER_CONSTRAINT(constraintEngine->getCESchema(),
-			executive_trex_pr2::MapGetNearestOutletConstraint, "map_get_nearest_outlet", "Default");
+			trex_pr2::MapGetNearestOutletConstraint, "map_get_nearest_outlet", "Default");
     REGISTER_CONSTRAINT(constraintEngine->getCESchema(),
-			executive_trex_pr2::MapGetOutletStateConstraint, "map_get_outlet_state", "Default");
+			trex_pr2::MapGetOutletStateConstraint, "map_get_outlet_state", "Default");
     REGISTER_CONSTRAINT(constraintEngine->getCESchema(),
-			executive_trex_pr2::MapGetOutletApproachPoseConstraint, "map_get_outlet_approach_pose", "Default");
+			trex_pr2::MapGetOutletApproachPoseConstraint, "map_get_outlet_approach_pose", "Default");
     REGISTER_CONSTRAINT(constraintEngine->getCESchema(),
-			executive_trex_pr2::MapNotifyOutletBlockedConstraint, "map_notify_outlet_blocked", "Default");
+			trex_pr2::MapNotifyOutletBlockedConstraint, "map_notify_outlet_blocked", "Default");
     REGISTER_CONSTRAINT(constraintEngine->getCESchema(),
-			executive_trex_pr2::MapGetNearestConnectorConstraint, "map_get_nearest_connector", "Default");
+			trex_pr2::MapGetNearestConnectorConstraint, "map_get_nearest_connector", "Default");
     REGISTER_CONSTRAINT(constraintEngine->getCESchema(),
-			executive_trex_pr2::MapGetDoorApproachPoseConstraint, "map_get_door_approach_pose", "Default");
+			trex_pr2::MapGetDoorApproachPoseConstraint, "map_get_door_approach_pose", "Default");
     
     // Register functions for calculations in the door domain
     REGISTER_CONSTRAINT(constraintEngine->getCESchema(),
-			executive_trex_pr2::GetRobotPoseForDoorConstraint, "door_get_robot_pose_for_door", "Default");
+			trex_pr2::GetRobotPoseForDoorConstraint, "door_get_robot_pose_for_door", "Default");
     
     // Register SOLVER components for topological map.
     EUROPA::SOLVERS::ComponentFactoryMgr* cfm = (EUROPA::SOLVERS::ComponentFactoryMgr*)assembly.getComponent("ComponentFactoryMgr");
-    REGISTER_FLAW_FILTER(cfm, executive_trex_pr2::MapConnectorFilter, MapConnectorFilter);
-    REGISTER_FLAW_HANDLER(cfm, executive_trex_pr2::MapConnectorSelector, MapConnectorSelector);
-    REGISTER_FLAW_MANAGER(cfm, executive_trex_pr2::TopologicalGoalManager, TopologicalGoalManager);
+    REGISTER_FLAW_FILTER(cfm, trex_pr2::MapConnectorFilter, MapConnectorFilter);
+    REGISTER_FLAW_HANDLER(cfm, trex_pr2::MapConnectorSelector, MapConnectorSelector);
+    REGISTER_FLAW_MANAGER(cfm, trex_pr2::TopologicalGoalManager, TopologicalGoalManager);
   }
   REGISTER_SCHEMA(registerPr2Components);
 }

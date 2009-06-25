@@ -64,7 +64,7 @@ fi
 
 
 FLAGS=`rospack export --lang=nddl --attrib=iflags $PACKAGE_NAME`
-PATH=`rospack find executive_trex_pr2`
+PATH=`rospack find trex_ros`
 
 if [ $PRINT_DEBUG -ne 0 ] ; then
     echo "Using nddl flags from $PACKAGE_NAME."

@@ -1,4 +1,4 @@
-#include "executive_trex_pr2/ros_state_adapter.h"
+#include "trex_ros/ros_state_adapter.h"
 #include "Domains.hh"
 #include <deprecated_msgs/RobotBase2DOdom.h>
 

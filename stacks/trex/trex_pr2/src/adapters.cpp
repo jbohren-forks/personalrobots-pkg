@@ -36,13 +36,12 @@
  */
 
 
-#include <executive_trex_pr2/adapter_utilities.h>
+#include <trex_ros/adapter_utilities.h>
 #include <trex_pr2/adapters.h>
-#include "executive_trex_pr2/ros_action_adapter.h"
-#include "executive_trex_pr2/ros_state_adapter.h"
+#include "trex_ros/ros_action_adapter.h"
+#include "trex_ros/ros_state_adapter.h"
 
-using namespace executive_trex_pr2;
-
+using namespace trex_ros;
 namespace TREX {
 
   /***********************************************************************

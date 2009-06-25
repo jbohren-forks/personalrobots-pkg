@@ -11,13 +11,13 @@ using namespace EUROPA;
 using namespace TREX;
 
 #include <trex_pr2/topological_map.h>
-#include <executive_trex_pr2/components.h>
+#include <trex_ros/components.h>
 #include <ros/console.h>
 #include <tf/transform_datatypes.h>
 #include <kdl/frames.hpp>
 #include <kdl/frames_io.hpp>
 
-namespace executive_trex_pr2 {
+namespace trex_pr2 {
 
   TopologicalGoalManager::TopologicalGoalManager(const TiXmlElement& configData) : GoalManager(configData){}
 

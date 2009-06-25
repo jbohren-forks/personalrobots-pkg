@@ -9,11 +9,11 @@
 
 #include <ros/console.h>
 #include <door_msgs/Door.h>
-#include <executive_trex_pr2/topological_map.h>
+#include <trex_pr2/topological_map.h>
 #include <set>
 #include <gtest/gtest.h>
 
-using namespace executive_trex_pr2;
+using namespace trex_pr2;
 using namespace TREX;
 using namespace EUROPA;
 

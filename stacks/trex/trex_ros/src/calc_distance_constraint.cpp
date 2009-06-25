@@ -1,4 +1,4 @@
-#include "executive_trex_pr2/calc_distance_constraint.h"
+#include "trex_ros/calc_distance_constraint.h"
 #include <math.h>
 
 namespace TREX {

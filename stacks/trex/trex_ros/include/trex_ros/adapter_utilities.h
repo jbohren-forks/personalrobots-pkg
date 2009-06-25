@@ -18,7 +18,7 @@
 using namespace EUROPA;
 using namespace TREX;
 
-namespace executive_trex_pr2 {
+namespace trex_ros {
 
   /**
    * @brief A class to scope a set of ros - TREX conversion utilities
