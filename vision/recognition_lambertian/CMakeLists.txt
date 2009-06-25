@@ -6,7 +6,7 @@ set(ROS_BUILD_TYPE RelWithDebInfo)
 rospack(recognition_lambertian)
 rospack_add_boost_directories()
 
-#gensrv()
+gensrv()
 #genmsg()
 
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)

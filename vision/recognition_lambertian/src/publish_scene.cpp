@@ -48,6 +48,9 @@
 #include <robot_msgs/PointCloud.h>
 
 #include <image_msgs/Image.h>
+#include <image_msgs/CamInfo.h>
+#include <image_msgs/DisparityInfo.h>
+
 #include <opencv_latest/CvBridge.h>
 #include <image_msgs/FillImage.h>
 #include <std_msgs/String.h>
@@ -75,6 +78,8 @@ protected:
 	Image left_;
 	Image right_;
 	Image disp_;
+	CamInfo left_caminfo_;
+	DisparityInfo dispinfo_;
 
 
 	boost::mutex data_mutex;
@@ -90,6 +95,8 @@ public:
 	string left_topic_;
 	string right_topic_;
 	string disp_topic_;
+	string left_caminfo_topic_;
+	string dispinfo_topic_;
 	double rate_;
 
 
@@ -103,10 +110,14 @@ public:
 		left_topic_ = "stereo/left/image_rect";
 		right_topic_ = "stereo/right/image_rect";
 		disp_topic_ = "stereo/disparity";
+		left_caminfo_topic_ = "stereo/left/cam_info";
+		dispinfo_topic_ = "stereo/disparity_info";
 		node_.advertise<robot_msgs::PointCloud> (cloud_topic_.c_str (), 1);
 		node_.advertise<image_msgs::Image> (left_topic_.c_str (), 1);
 		node_.advertise<image_msgs::Image> (right_topic_.c_str (), 1);
 		node_.advertise<image_msgs::Image> (disp_topic_.c_str (), 1);
+		node_.advertise<image_msgs::CamInfo> (left_caminfo_topic_.c_str (), 1);
+		node_.advertise<image_msgs::DisparityInfo> (dispinfo_topic_.c_str (), 1);
 		ROS_INFO ("Publishing data on topic %s.", node_.mapName (cloud_topic_).c_str ());
 
 
@@ -249,6 +260,27 @@ public:
 			disp_.header.frame_id = tf_frame_;
 			node_.publish (disp_topic_.c_str(), disp_);
 
+			left_caminfo_.P[0] = -1;
+			left_caminfo_.header.stamp = stamp;
+			left_caminfo_.header.frame_id = tf_frame_;
+			left_caminfo_.P[0] = 725.00002432;
+			left_caminfo_.P[1] = 0.0;
+			left_caminfo_.P[2] = 321.35299836;
+			left_caminfo_.P[3] = 0.0;
+			left_caminfo_.P[4] = 0.0;
+			left_caminfo_.P[5] = 725.00002432;
+			left_caminfo_.P[6] = 210.43089442;
+			left_caminfo_.P[7] = 0;
+			left_caminfo_.P[8] = 0;
+			left_caminfo_.P[9] = 0;
+			left_caminfo_.P[10] = 1;
+			left_caminfo_.P[11] = 0;
+			node_.publish (left_caminfo_topic_.c_str(), left_caminfo_);
+
+			dispinfo_.header.stamp = stamp;
+			dispinfo_.header.frame_id = tf_frame_;
+			dispinfo_.dpp = 4.0;
+			node_.publish(dispinfo_topic_.c_str(), dispinfo_);
 
 //			image_msgs::CvBridge disp_bridge;
 //			disp_bridge.fromImage(disp_);

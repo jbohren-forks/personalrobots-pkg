@@ -1,0 +1,4 @@
+robot_msgs/PointCloud cloud
+---
+string object
+robot_msgs/PoseStamped pose

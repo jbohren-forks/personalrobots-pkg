@@ -87,6 +87,7 @@
 #include <boost/thread.hpp>
 
 #include "chamfer_matching/chamfer_matching.h"
+#include "recognition_lambertian/ModelFit.h"
 //#include "flann.h"
 
 using namespace robot_msgs;
@@ -135,6 +136,7 @@ public:
 //	TopicSynchronizer<RecognitionLambertian> sync;
 
 	tf::TransformListener tf_;
+	tf::TransformBroadcaster broadcaster_;
 	TopicSynchronizer sync_;
 
 	// minimum height to look at (in base_link frame)
@@ -229,7 +231,6 @@ private:
 		if(lbridge.fromImage(*limage, "bgr")) {
 			left = lbridge.toIpl();
 		}
-		cvShowImage("left", left);
 	}
 
 	void rightImageCallback(const image_msgs::Image::ConstPtr& image)
@@ -593,7 +594,6 @@ private:
 
 		tf_.setTransform(table_pose_frame);
 
-		tf::TransformBroadcaster broadcaster_;
 		broadcaster_.sendTransform(table_pose_frame);
 	}
 
@@ -694,52 +694,6 @@ private:
 
 		marker_pub_.publish(marker);
 	}
-
-//	class NNIndexer
-//	{
-//		float* points;
-//		FLANN_INDEX index;
-//		const PointCloud& cloud_;
-//	public:
-//		NNIndexer(const PointCloud& cloud) : cloud_(cloud)
-//		{
-//			int size = cloud.get_pts_size();
-//			points = new float[size*2];
-//			for (int i=0;i<size;++i) {
-//				points[2*i] = cloud.pts[i].x;
-//				points[2*i+1] = cloud.pts[i].y;
-//			}
-//			FLANNParameters params;
-//			params.algorithm = KDTREE;
-//			params.trees = 1;
-//			params.log_level = LOG_ERROR;
-//			params.log_destination = NULL;
-//			params.target_precision = -1;
-//
-//			float speedup = 0;
-//			index = flann_build_index(points, size, 2, &speedup, &params);
-//		}
-//
-//		~NNIndexer()
-//		{
-//			delete[] points;
-//			flann_free_index(index, NULL);
-//		}
-//
-//
-//		int radiusSearch(const Point32& p, float radius, vector<int>& indices)
-//		{
-//			float q[2];
-//			q[0] = p.x;
-//			q[1] = p.y;
-//			vector<float> dists(indices.size());
-//			int nn_count = flann_radius_search(index, q, &indices[0], &dists[0], indices.size(), radius*radius, -1, NULL);
-//
-//			return nn_count;
-//		}
-//
-//	};
-
 
 	class NNGridIndexer
 	{
@@ -855,21 +809,7 @@ private:
 	}
 
 
-//	double meanShiftIteration(const PointCloud& pc, NNIndexer& index, vector<Point32>& centers, vector<Point32>& means, float step, vector<int>& indices)
-//	{
-//		double total_dist = 0;
-//		for (size_t i=0;i<centers.size();++i) {
-//
-//			int count = index.radiusSearch(centers[i], step, indices);
-//			Point32 mean = computeMean(pc, indices, count);
-//			double dist = dist2D(mean, centers[i]);
-//			total_dist += dist;
-//			means[i] = mean;
-//		}
-//		return total_dist;
-//	}
-
-	double meanShiftIteration2(const PointCloud& pc, NNGridIndexer& index, vector<Point32>& centers, vector<Point32>& means, float step)
+	double meanShiftIteration(const PointCloud& pc, NNGridIndexer& index, vector<Point32>& centers, vector<Point32>& means, float step)
 	{
 		double total_dist = 0;
 		for (size_t i=0;i<centers.size();++i) {
@@ -1022,10 +962,10 @@ private:
 		while (total_dist>0.001) {
 
 			if (odd) {
-				total_dist = meanShiftIteration2(cloud, index, means, centers, step);
+				total_dist = meanShiftIteration(cloud, index, means, centers, step);
 			}
 			else {
-				total_dist = meanShiftIteration2(cloud, index, centers, means, step);
+				total_dist = meanShiftIteration(cloud, index, centers, means, step);
 			}
 			odd = !odd;
 			iter++;
@@ -1076,35 +1016,9 @@ private:
 		return pp;
 	}
 
-
-	void getCameraIntrinsics(image_msgs::CamInfo& lcinfo)
-	{
-		lcinfo = *lcinfo_;
-//
-//
-//
-//		lcinfo.header.frame_id = cloud->header.frame_id;
-//		lcinfo.header.stamp = cloud->header.stamp;
-//
-//		lcinfo.P[0] = 725.00002432;
-//		lcinfo.P[1] = 0.0;
-//		lcinfo.P[2] = 321.35299836;
-//		lcinfo.P[3] = 0.0;
-//		lcinfo.P[4] = 0.0;
-//		lcinfo.P[5] = 725.00002432;
-//		lcinfo.P[6] = 210.43089442;
-//		lcinfo.P[7] = 0;
-//		lcinfo.P[8] = 0;
-//		lcinfo.P[9] = 0;
-//		lcinfo.P[10] = 1;
-//		lcinfo.P[11] = 0;
-	}
-
 	void projectClusters(const PointCloud& objects_table_frame, const vector<Point32>& clusters)
 	{
-		image_msgs::CamInfo lcinfo;
-		getCameraIntrinsics(lcinfo);
-
+		const image_msgs::CamInfo& lcinfo = *lcinfo_;
 
 		Point pp[8];
 		for (size_t i=0;i<clusters.size();++i) {
@@ -1182,6 +1096,16 @@ private:
 
 		for (size_t k=0;k<objects.size();++k) {
 			object_pub_.publish(objects[k]);
+
+			recognition_lambertian::ModelFit::Request req;
+			recognition_lambertian::ModelFit::Response resp;
+
+			if (ros::service::call("recognition_lambertian/model_fit", req, resp)) {
+				ROS_INFO("Service call succeeded");
+			}
+			else {
+				ROS_INFO("Service call failed");
+			}
 		}
 	}
 
@@ -1257,6 +1181,9 @@ private:
 		vector<PointCloud> objects;
 		getObjects(objects_table_frame, clusters, objects);
 
+
+
+
 		publishObjects(objects);
 
 		objects_pub_.publish(objects_table_frame);
@@ -1264,8 +1191,7 @@ private:
 		// reproject bboxes in image
 //		projectClusters(objects_table_frame, clusters);
 
-		image_msgs::CamInfo lcinfo;
-		getCameraIntrinsics(lcinfo);
+		const image_msgs::CamInfo& lcinfo = *lcinfo_;
 
 		locations.resize(clusters.size());
 		scales.resize(clusters.size());
@@ -1312,7 +1238,6 @@ private:
 		// goes to sleep until some images arrive
 		//        images_ready.wait(images_lock);
 		//        printf("Woke up, processing images\n");
-
 
 		vector<CvPoint> positions;
 		vector<float> scales;
