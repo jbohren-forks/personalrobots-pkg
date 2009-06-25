@@ -35,7 +35,7 @@ rospack_add_executable(test_preempt_service test/test_preempt_service.cpp)
 # Helper macro
 macro(rostest_door_handle _test_name)
     rospack_download_test_data(http://pr.willowgarage.com/data/door_handle_detector/${_test_name}.bag test/${_test_name}.bag)
-    rospack_add_rostest_future(test/${_test_name}.launch)
+    rospack_add_rostest(test/${_test_name}.launch)
 endmacro(rostest_door_handle)
 
 # We use the point_cloud_cropper in the tests, to simulate a narrow scan of

@@ -48,7 +48,7 @@
 #include "opencv/cv.h"
 #include "opencv/highgui.h"
 
-#include "ros/node.h"
+#include "ros/ros.h"
 #include "image_msgs/StereoInfo.h"
 #include "image_msgs/DisparityInfo.h"
 #include "image_msgs/CamInfo.h"
@@ -66,11 +66,10 @@
 // transform library
 #include <tf/transform_listener.h>
 
-#include <topic_synchronizer/topic_synchronizer.h>
+#include <topic_synchronizer2/topic_synchronizer.h>
 
-#include "CvStereoCamModel.h"
+//#include "CvStereoCamModel.h"
 
-#include <boost/thread.hpp>
 
 using namespace std;
 using namespace robot_msgs;
@@ -105,45 +104,60 @@ public:
 
 };
 
-class HandleDetector : public ros::Node
+class HandleDetector
 {
 public:
 
+	ros::NodeHandle nh_;
 
-	image_msgs::Image limage;
-	image_msgs::Image rimage;
-	image_msgs::Image dimage;
-	image_msgs::StereoInfo stinfo;
-	image_msgs::DisparityInfo dispinfo;
-	image_msgs::CamInfo rcinfo;
-	image_msgs::CvBridge lbridge;
-	image_msgs::CvBridge rbridge;
-	image_msgs::CvBridge dbridge;
+	image_msgs::ImageConstPtr limage_;
+	image_msgs::ImageConstPtr rimage_;
+	image_msgs::ImageConstPtr dimage_;
+	image_msgs::StereoInfoConstPtr stinfo_;
+	image_msgs::DisparityInfoConstPtr dispinfo_;
+	image_msgs::CamInfoConstPtr rcinfo_;
 
-	robot_msgs::PointCloud cloud_fetch;
-	robot_msgs::PointCloud cloud;
+	image_msgs::CvBridge lbridge_;
+	image_msgs::CvBridge rbridge_;
+	image_msgs::CvBridge dbridge_;
 
-	IplImage* left;
-	IplImage* right;
-	IplImage* disp;
-	IplImage* disp_clone;
+//	robot_msgs::PointCloud cloud_fetch;
+	robot_msgs::PointCloudConstPtr cloud_;
 
-	TopicSynchronizer<HandleDetector> sync;
+	IplImage* left_;
+	IplImage* right_;
+	IplImage* disp_;
+	IplImage* disp_clone_;
 
-	boost::mutex cv_mutex;
-	boost::condition_variable images_ready;
 
-	tf::TransformListener *tf_;
+
+	ros::Subscriber left_image_sub_;
+	ros::Subscriber left_caminfo_sub_;
+	ros::Subscriber right_image_sub_;
+	ros::Subscriber right_caminfo_sub_;
+	ros::Subscriber disparity_sub_;
+	ros::Subscriber cloud_sub_;
+	ros::Subscriber dispinfo_sub_;
+	ros::Subscriber stereoinfo_sub_;
+
+	ros::ServiceServer detect_service_;
+	ros::ServiceServer preempt_service_;
+
+	ros::Publisher marker_pub_;
+
+	TopicSynchronizer sync_;
+
+	tf::TransformListener tf_;
 
 
 	// minimum height to look at (in base_footprint frame)
-	double min_height;
+	double min_height_;
 	// maximum height to look at (in base_footprint frame)
-	double max_height;
+	double max_height_;
 	// no. of frames to detect handle in
-	int frames_no;
+	int frames_no_;
 	// display stereo images ?
-	bool display;
+	bool display_;
 
 	bool preempted_;
 	bool got_images_;
@@ -157,61 +171,38 @@ public:
 	CvMemStorage* storage;
 
     HandleDetector()
-    :ros::Node("stereo_view"), left(NULL), right(NULL), disp(NULL), disp_clone(NULL), sync(this, &HandleDetector::image_cb_all, ros::Duration().fromSec(0.1), &HandleDetector::image_cb_timeout)
+		: left_(NULL), right_(NULL), disp_(NULL), disp_clone_(NULL), sync_(&HandleDetector::syncCallback, this)
     {
-        tf_ = new tf::TransformListener(*this);
         // define node parameters
-
-
-        param("~min_height", min_height, 0.8);
-        param("~max_height", max_height, 1.2);
-        param("~frames_no", frames_no, 10);
-        param("~timeout", image_timeout_, 3.0);		// timeout (in seconds) until an image must be received, otherwise abort
-
-
-        param("~display", display, false);
+    	nh_.param("~min_height", min_height_, 0.8);
+    	nh_.param("~max_height", max_height_, 1.2);
+    	nh_.param("~frames_no", frames_no_, 10);
+    	nh_.param("~timeout", image_timeout_, 3.0);		// timeout (in seconds) until an image must be received, otherwise abort
+    	nh_.param("~display", display_, false);
         stringstream ss;
         ss << getenv("ROS_ROOT") << "/../ros-pkg/mapping/door_handle_detector/data/";
         string path = ss.str();
         string cascade_classifier;
-        param<string>("~cascade_classifier", cascade_classifier, path + "handles_data.xml");
+        nh_.param<string>("~cascade_classifier", cascade_classifier, path + "handles_data.xml");
 
-        if(display){
+        if(display_){
             cvNamedWindow("left", CV_WINDOW_AUTOSIZE);
             //cvNamedWindow("right", CV_WINDOW_AUTOSIZE);
             cvNamedWindow("disparity", CV_WINDOW_AUTOSIZE);
             cvNamedWindow("disparity_original", CV_WINDOW_AUTOSIZE);
         }
 
-//        subscribeStereoData();
-
         // load a cascade classifier
         loadClassifier(cascade_classifier);
         // invalid location until we get a detection
 
-//        advertise<robot_msgs::PointStamped>("handle_detector/handle_location", 1);
-        advertise<visualization_msgs::Marker>("visualization_marker", 1);
-        advertiseService("door_handle_vision_detector", &HandleDetector::detectHandleSrv, this);
-        advertiseService("door_handle_vision_preempt", &HandleDetector::preempt, this);
+		marker_pub_ = nh_.advertise<visualization_msgs::Marker>("visualization_marker",1);
+        detect_service_ = nh_.advertiseService("door_handle_vision_detector", &HandleDetector::detectHandleSrv, this);
+        preempt_service_ = nh_.advertiseService("door_handle_vision_preempt", &HandleDetector::preempt, this);
     }
 
     ~HandleDetector()
     {
-        if(left){
-            cvReleaseImage(&left);
-        }
-        if(right){
-            cvReleaseImage(&right);
-        }
-        if(disp){
-            cvReleaseImage(&disp);
-        }
-        if(storage){
-            cvReleaseMemStorage(&storage);
-        }
-        unadvertise("visualization_marker");
-        unadvertiseService("door_handle_vision_detector");
-        unadvertiseService("door_handle_vision_preempt");
     }
 
 private:
@@ -228,37 +219,74 @@ private:
 
     void subscribeStereoData()
     {
-
-    	sync.reset();
-        std::list<std::string> left_list;
-        left_list.push_back(std::string("stereo/left/image_rect_color"));
-        left_list.push_back(std::string("stereo/left/image_rect"));
-        sync.subscribe(left_list, limage, 1);
-
-        //		std::list<std::string> right_list;
-        //		right_list.push_back(std::string("stereo/right/image_rect_color"));
-        //		right_list.push_back(std::string("stereo/right/image_rect"));
-        //		sync.subscribe(right_list, rimage, 1);
-
-        sync.subscribe("stereo/disparity", dimage, 1);
-        sync.subscribe("stereo/stereo_info", stinfo, 1);
-        sync.subscribe("stereo/disparity_info", dispinfo, 1);
-        sync.subscribe("stereo/right/cam_info", rcinfo, 1);
-        sync.subscribe("stereo/cloud", cloud_fetch, 1);
-        sync.ready();
-//        sleep(1);
+		left_image_sub_ = nh_.subscribe("stereo/left/image_rect", 1, sync_.synchronize(&HandleDetector::leftImageCallback, this));
+		right_caminfo_sub_ = nh_.subscribe("stereo/right/cam_info", 1, sync_.synchronize(&HandleDetector::rightCamInfoCallback, this));
+		disparity_sub_ = nh_.subscribe("stereo/disparity", 1, sync_.synchronize(&HandleDetector::disparityImageCallback, this));
+		cloud_sub_ = nh_.subscribe("stereo/cloud", 1, sync_.synchronize(&HandleDetector::cloudCallback, this));
+		dispinfo_sub_ = nh_.subscribe("stereo/disparity_info", 1, sync_.synchronize(&HandleDetector::dispinfoCallback, this));
+		stereoinfo_sub_ = nh_.subscribe("stereo/stereo_info", 1, sync_.synchronize(&HandleDetector::stereoinfoCallback, this));
     }
+
+
 
     void unsubscribeStereoData()
     {
-        unsubscribe("stereo/left/image_rect_color");
-        unsubscribe("stereo/left/image_rect");
-        unsubscribe("stereo/disparity");
-        unsubscribe("stereo/stereo_info");
-        unsubscribe("stereo/disparity_info");
-        unsubscribe("stereo/right/cam_info");
-        unsubscribe("stereo/cloud");
+    	left_image_sub_.shutdown();
+    	right_caminfo_sub_.shutdown();
+    	disparity_sub_.shutdown();
+    	cloud_sub_.shutdown();
+    	dispinfo_sub_.shutdown();
+    	stereoinfo_sub_.shutdown();
     }
+
+
+	void syncCallback()
+	{
+		if (disp_!=NULL) {
+			cvReleaseImage(&disp_);
+		}
+		if(dbridge_.fromImage(*dimage_)) {
+			disp_ = cvCreateImage(cvGetSize(dbridge_.toIpl()), IPL_DEPTH_8U, 1);
+			cvCvtScale(dbridge_.toIpl(), disp_, 4.0/dispinfo_->dpp);
+		}
+
+		got_images_ = true;
+	}
+
+	void rightCamInfoCallback(const image_msgs::CamInfo::ConstPtr& info)
+	{
+		rcinfo_ = info;
+	}
+
+	void leftImageCallback(const image_msgs::Image::ConstPtr& image)
+	{
+		limage_ = image;
+		if(lbridge_.fromImage(*limage_, "bgr")) {
+			left_ = lbridge_.toIpl();
+		}
+	}
+
+	void disparityImageCallback(const image_msgs::Image::ConstPtr& image)
+	{
+		dimage_ = image;
+	}
+
+	void dispinfoCallback(const image_msgs::DisparityInfo::ConstPtr& dinfo)
+	{
+		dispinfo_ = dinfo;
+	}
+
+	void stereoinfoCallback(const image_msgs::StereoInfo::ConstPtr& info)
+	{
+		stinfo_ = info;
+	}
+
+	void cloudCallback(const robot_msgs::PointCloud::ConstPtr& point_cloud)
+	{
+		cloud_ = point_cloud;
+	}
+
+
 
     /////////////////////////////////////////////////
     // Analyze the disparity image that values should not be too far off from one another
@@ -305,30 +333,6 @@ private:
     }
 
     /**
-     * \brief Transforms a disparity image pixel to real-world point
-     *
-     * @param cam_model Camera model
-     * @param x coordinate in the disparity image
-     * @param y coordinate in the disparity image
-     * @param d disparity pixel value
-     * @return point in 3D space
-     */
-    robot_msgs::Point disparityTo3D(CvStereoCamModel & cam_model, int x, int y, double d)
-    {
-        CvMat *uvd = cvCreateMat(1, 3, CV_32FC1);
-        cvmSet(uvd, 0, 0, x);
-        cvmSet(uvd, 0, 1, y);
-        cvmSet(uvd, 0, 2, d);
-        CvMat *xyz = cvCreateMat(1, 3, CV_32FC1);
-        cam_model.dispToCart(uvd, xyz);
-        robot_msgs::Point result;
-        result.x = cvmGet(xyz, 0, 0);
-        result.y = cvmGet(xyz, 0, 1);
-        result.z = cvmGet(xyz, 0, 2);
-        return result;
-    }
-
-    /**
 	 * \brief Computes distance between two 3D points
 	 *
 	 * @param a
@@ -339,46 +343,6 @@ private:
     {
         return sqrt((a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y) + (a.z - b.z) * (a.z - b.z));
     }
-
-    /**
-     * \brief Computes size and center of ROI in real-world
-     *
-     * Given a disparity images and a ROI in the image this function computes the approximate real-world size
-     * and center of the ROI.
-     *
-     * This function is just an approximation, it uses the mean value of the disparity in the ROI and assumes
-     * the ROI is flat region perpendicular on the camera z axis. It could be improved by finding a dominant plane
-     * in the and using only those disparity values.
-     *
-     * @param R
-     * @param meanDisparity
-     * @param dx
-     * @param dy
-     * @param center
-     */
-    void getROIDimensions(const CvRect& r, double & dx, double & dy, robot_msgs::Point & center)
-    {
-        // initialize stereo camera model
-//        double Fx = rcinfo.P[0];
-//        double Fy = rcinfo.P[5];
-//        double Clx = rcinfo.P[2];
-//        double Crx = Clx;
-//        double Cy = rcinfo.P[6];
-//        double Tx = -rcinfo.P[3] / Fx;
-//        CvStereoCamModel cam_model(Fx, Fy, Tx, Clx, Crx, Cy, 4.0 / (double)dispinfo.dpp);
-//
-//        double mean = 0;
-//        disparitySTD(disp, r, mean);
-//
-//        robot_msgs::Point p1 = disparityTo3D(cam_model, r.x, r.y, mean);
-//        robot_msgs::Point p2 = disparityTo3D(cam_model, r.x + r.width, r.y, mean);
-//        robot_msgs::Point p3 = disparityTo3D(cam_model, r.x, r.y + r.height, mean);
-//        center = disparityTo3D(cam_model, r.x + r.width / 2, r.y + r.height / 2, mean);
-//        dx = distance3D(p1, p2);
-//        dy = distance3D(p1, p3);
-    }
-
-
 
 
 	struct Stats {
@@ -507,49 +471,8 @@ private:
         marker.scale.x = marker.scale.y = marker.scale.z = 0.1;
         marker.color.g = 1.0;
         marker.color.a = 1.0;
-        publish("visualization_marker", marker);
+        marker_pub_.publish(marker);
     }
-
-
-
-//    void showPlaneMarker(CvScalar plane, robot_msgs::PointCloud pc)
-//    {
-//
-//    	double min_d = 10000;
-//    	int min_i = -1;
-//    	for (size_t i=0;i<pc.pts.size();++i) {
-//			float dist = fabs(plane.val[0]*pc.pts[i].x+plane.val[1]*pc.pts[i].y+plane.val[2]*pc.pts[i].z+plane.val[3]);
-//			if (dist<min_d) {
-//				min_d = dist;
-//				min_i = i;
-//			}
-//    	}
-//
-//
-//        visualization_msgs::VisualizationMarker marker;
-//        marker.header.frame_id = pc.header.frame_id;
-//        marker.header.stamp = pc.header.stamp;
-//        marker.id = 1211;
-//        marker.type = visualization_msgs::VisualizationMarker::SPHERE;
-//        marker.action = visualization_msgs::VisualizationMarker::ADD;
-//        marker.x = pc.pts[min_i].x;
-//        marker.y = pc.pts[min_i].y;
-//        marker.z = pc.pts[min_i].z;
-//        marker.yaw = 0.0;
-//        marker.pitch = 0.0;
-//        marker.roll = 0.0;
-//        marker.xScale = 0.1;
-//        marker.yScale = 0.1;
-//        marker.zScale = 0.1;
-//        marker.alpha = 255;
-//        marker.r = 255;
-//        marker.g = 0;
-//        marker.b = 0;
-//        publish("visualization_marker", marker);
-//
-//        printf("Show marker at: (%f,%f,%f)", marker.x, marker.y, marker.z);
-//    }
-
 
 
     CvPoint getDisparityCenter(CvRect& r)
@@ -557,14 +480,14 @@ private:
 		CvMoments moments;
 		double M00, M01, M10;
 
-        cvSetImageROI(disp, r);
-        cvSetImageCOI(disp, 1);
-    	cvMoments(disp,&moments,1);
+        cvSetImageROI(disp_, r);
+        cvSetImageCOI(disp_, 1);
+    	cvMoments(disp_,&moments,1);
     	M00 = cvGetSpatialMoment(&moments,0,0);
     	M10 = cvGetSpatialMoment(&moments,1,0);
     	M01 = cvGetSpatialMoment(&moments,0,1);
-        cvResetImageROI(disp);
-        cvSetImageCOI(disp, 0);
+        cvResetImageROI(disp_);
+        cvSetImageCOI(disp_, 0);
 
         CvPoint center;
         center.x = r.x+(int)(M10/M00);
@@ -576,9 +499,9 @@ private:
 
     void tryShrinkROI(CvRect& r)
     {
-        cvSetImageROI(disp, r);
+        cvSetImageROI(disp_, r);
     	IplImage* integral_patch = cvCreateImage(cvSize(r.width+1, r.height+1), IPL_DEPTH_32S, 1);
-    	cvIntegral(disp, integral_patch);
+    	cvIntegral(disp_, integral_patch);
     	IndexedIplImage<int> ipatch(integral_patch);
 
     	CvRect r2 = r;
@@ -614,7 +537,7 @@ private:
     	r2.height = r.y-r2.y+p.y;
 
     	r = r2;
-        cvResetImageROI(disp);
+        cvResetImageROI(disp_);
         cvReleaseImage(&integral_patch);
 
     }
@@ -636,22 +559,22 @@ private:
     		return false;
     	}
 
-    	cvSetImageROI(disp, r);
-    	cvSetImageCOI(disp, 1);
+    	cvSetImageROI(disp_, r);
+    	cvSetImageCOI(disp_, 1);
     	int cnt;
     	const float nz_fraction = 0.1;
-    	cnt = cvCountNonZero(disp);
+    	cnt = cvCountNonZero(disp_);
     	if (cnt < nz_fraction * r.width * r.height){
-    		cvResetImageROI(disp);
-    		cvSetImageCOI(disp, 0);
+    		cvResetImageROI(disp_);
+    		cvSetImageCOI(disp_, 0);
     		return false;
     	}
-    	cvResetImageROI(disp);
-    	cvSetImageCOI(disp, 0);
+    	cvResetImageROI(disp_);
+    	cvSetImageCOI(disp_, 0);
 
 
     	// compute least-squares handle plane
-    	robot_msgs::PointCloud pc = filterPointCloud(cloud,r);
+    	robot_msgs::PointCloud pc = filterPointCloud(*cloud_,r);
     	CvScalar plane = estimatePlaneLS(pc);
 
     	cnt = 0;
@@ -676,7 +599,6 @@ private:
     	Stats zstats;
     	pointCloudStatistics(pc, xstats, ystats, zstats );
     	double dx, dy;
-//    	getROIDimensions(r, dx, dy, p);
     	dx = xstats.max - xstats.min;
     	dy = ystats.max - ystats.min;
     	if(dx > 0.25 || dy > 0.15){
@@ -685,17 +607,17 @@ private:
     	}
 
     	robot_msgs::PointStamped pin, pout;
-    	pin.header.frame_id = cloud.header.frame_id;
-    	pin.header.stamp = cloud.header.stamp;
+    	pin.header.frame_id = cloud_->header.frame_id;
+    	pin.header.stamp = cloud_->header.stamp;
     	pin.point.x = xstats.mean;
     	pin.point.y = ystats.mean;
     	pin.point.z = zstats.mean;
-        if (!tf_->canTransform("base_footprint", pin.header.frame_id, pin.header.stamp, ros::Duration(5.0))){
+        if (!tf_.canTransform("base_footprint", pin.header.frame_id, pin.header.stamp, ros::Duration(5.0))){
           ROS_ERROR("Cannot transform from base_footprint to %s", pin.header.frame_id.c_str());
           return false;
         }
-        tf_->transformPoint("base_footprint", pin, pout);
-    	if(pout.point.z > max_height || pout.point.z < min_height){
+        tf_.transformPoint("base_footprint", pin, pout);
+    	if(pout.point.z > max_height_ || pout.point.z < min_height_){
     		printf("Height not within admissable range: %f\n", pout.point.z);
     		return false;
     	}
@@ -711,8 +633,8 @@ private:
      */
     void findHandleCascade(vector<CvRect> & handle_rect)
     {
-        IplImage *gray = cvCreateImage(cvSize(left->width, left->height), 8, 1);
-        cvCvtColor(left, gray, CV_BGR2GRAY);
+        IplImage *gray = cvCreateImage(cvSize(left_->width, left_->height), 8, 1);
+        cvCvtColor(left_, gray, CV_BGR2GRAY);
         cvEqualizeHist(gray, gray);
         cvClearMemStorage(storage);
         if(cascade){
@@ -727,14 +649,14 @@ private:
 
                 if(handlePossibleHere(*r)){
                     handle_rect.push_back(*r);
-                    if(display){
-                        cvRectangle(left, cvPoint(r->x, r->y), cvPoint(r->x + r->width, r->y + r->height), CV_RGB(255, 255, 0));
-                        cvRectangle(disp, cvPoint(r->x, r->y), cvPoint(r->x + r->width, r->y + r->height), CV_RGB(255, 255, 255));
+                    if(display_){
+                        cvRectangle(left_, cvPoint(r->x, r->y), cvPoint(r->x + r->width, r->y + r->height), CV_RGB(255, 255, 0));
+                        cvRectangle(disp_, cvPoint(r->x, r->y), cvPoint(r->x + r->width, r->y + r->height), CV_RGB(255, 255, 255));
                     }
                 }
                 else{
-                	if (display) {
-                		cvRectangle(left, cvPoint(r->x, r->y), cvPoint(r->x + r->width, r->y + r->height), CV_RGB(255, 0, 0));
+                	if (display_) {
+                		cvRectangle(left_, cvPoint(r->x, r->y), cvPoint(r->x + r->width, r->y + r->height), CV_RGB(255, 0, 0));
                 	}
                 }
             }
@@ -831,38 +753,35 @@ private:
     	bbox.height = (int) sizes[max_ind].second;
 
 
-    	PointCloud outlet_cloud = filterPointCloud(cloud, bbox);
+    	PointCloud outlet_cloud = filterPointCloud(*cloud_, bbox);
 
     	Stats xstats;
     	Stats ystats;
     	Stats zstats;
     	pointCloudStatistics(outlet_cloud, xstats, ystats, zstats );
-//    	double dx, dy;
-//        robot_msgs::Point p;
-//        getROIDimensions(bbox, dx, dy, p);
 
         robot_msgs::PointStamped handle_stereo;
 
-        handle_stereo.header.frame_id = cloud.header.frame_id;
-        handle_stereo.header.stamp = cloud.header.stamp;
+        handle_stereo.header.frame_id = cloud_->header.frame_id;
+        handle_stereo.header.stamp = cloud_->header.stamp;
         handle_stereo.point.x = xstats.mean;
         handle_stereo.point.y = ystats.mean;
         handle_stereo.point.z = zstats.mean;
 
-        if (!tf_->canTransform(handle.header.frame_id, handle_stereo.header.frame_id,
+        if (!tf_.canTransform(handle.header.frame_id, handle_stereo.header.frame_id,
                                handle_stereo.header.stamp, ros::Duration(5.0))){
           ROS_ERROR("Cannot transform from %s to %s", handle.header.frame_id.c_str(),
                     handle_stereo.header.frame_id.c_str());
           return false;
         }
-        tf_->transformPoint(handle.header.frame_id, handle_stereo, handle);
+        tf_.transformPoint(handle.header.frame_id, handle_stereo, handle);
 
         ROS_INFO("Clustered Handle at: (%d,%d,%d,%d)", bbox.x,bbox.y,bbox.width, bbox.height);
 
 
-        if(display){
-        	cvRectangle(left, cvPoint(bbox.x, bbox.y), cvPoint(bbox.x + bbox.width, bbox.y + bbox.height), CV_RGB(0, 255, 0));
-        	cvShowImage("left", left);
+        if(display_){
+        	cvRectangle(left_, cvPoint(bbox.x, bbox.y), cvPoint(bbox.x + bbox.width, bbox.y + bbox.height), CV_RGB(0, 255, 0));
+        	cvShowImage("left", left_);
         }
         showHandleMarker(handle_stereo);
 
@@ -881,9 +800,7 @@ private:
     	vector<CvRect> handle_rect;
 
         // acquire cv_mutex lock
-        boost::unique_lock<boost::mutex> images_lock(cv_mutex);
-
-        for (int i=0;i<frames_no;++i) {
+        for (int i=0;i<frames_no_;++i) {
 
 //        	printf("Waiting for images\n");
         	// block until images are available to process
@@ -891,25 +808,24 @@ private:
         	preempted_ = false;
         	start_image_wait_ = ros::Time::now();
         	while (!got_images_ && !preempted_) {
-        		images_ready.wait(images_lock);
+        		usleep(10000);
+        		ros::spinOnce();
         	}
         	if (preempted_) break;
 
-//        	printf("Woke up, processing images\n");
-
-        	if(display){
+        	if(display_){
         		// show original disparity
-        		cvShowImage("disparity_original", disp);
+        		cvShowImage("disparity_original", disp_);
         	}
         	// eliminate from disparity locations that cannot contain a handle
         	applyPositionPrior();
         	// run cascade classifier
         	findHandleCascade(handle_rect);
-        	if(display){
+        	if(display_){
         		// show filtered disparity
-        		cvShowImage("disparity", disp);
+        		cvShowImage("disparity", disp_);
         		// show left image
-        		cvShowImage("left", left);
+        		cvShowImage("left", left_);
         	}
         }
 
@@ -923,6 +839,7 @@ private:
     bool detectHandleSrv(door_handle_detector::DoorsDetector::Request & req, door_handle_detector::DoorsDetector::Response & resp)
     {
 
+    	ROS_INFO("door_handle_detector_vision: Service called");
         robot_msgs::PointStamped handle;
         handle.header.frame_id = req.door.header.frame_id;   // want handle in the same frame as the door
     	subscribeStereoData();
@@ -934,13 +851,13 @@ private:
         }
         robot_msgs::PointStamped handle_transformed;
         // transform the point in the expected frame
-        if (!tf_->canTransform(req.door.header.frame_id, handle.header.frame_id,
+        if (!tf_.canTransform(req.door.header.frame_id, handle.header.frame_id,
                                handle.header.stamp, ros::Duration(5.0))){
           ROS_ERROR("Cannot transform from %s to %s", handle.header.frame_id.c_str(),
                     req.door.header.frame_id.c_str());
           return false;
         }
-        tf_->transformPoint(req.door.header.frame_id, handle, handle_transformed);
+        tf_.transformPoint(req.door.header.frame_id, handle, handle_transformed);
         if(found){
             resp.doors.resize(1);
             resp.doors[0] = req.door;
@@ -960,43 +877,9 @@ private:
     bool preempt(std_srvs::Empty::Request& req, std_srvs::Empty::Response& resp)
     {
     	ROS_INFO("Preempting.");
-        boost::lock_guard<boost::mutex> lock(cv_mutex);
     	preempted_ = true;
-    	images_ready.notify_all();
-
     	return true;
     }
-
-
-//    robot_msgs::PointCloud filterPointCloud(const CvRect & rect)
-//    {
-//        robot_msgs::PointCloud result;
-//        result.header.frame_id = cloud.header.frame_id;
-//        result.header.stamp = cloud.header.stamp;
-//        int xchan = -1;
-//        int ychan = -1;
-//        for(size_t i = 0;i < cloud.chan.size();++i){
-//            if(cloud.chan[i].name == "x"){
-//                xchan = i;
-//            }
-//            if(cloud.chan[i].name == "y"){
-//                ychan = i;
-//            }
-//        }
-//
-//        if(xchan != -1 && ychan != -1){
-//            for(size_t i = 0;i < cloud.pts.size();++i){
-//                int x = (int)(cloud.chan[xchan].vals[i]);
-//                int y = (int)(cloud.chan[ychan].vals[i]);
-//                if(x >= rect.x && x < rect.x + rect.width && y >= rect.y && y < rect.y + rect.height){
-//                    result.pts.push_back(cloud.pts[i]);
-//                }
-//            }
-//
-//        }
-//
-//        return result;
-//    }
 
     /**
      * \brief Computes a least-squares estimate of a plane.
@@ -1044,11 +927,11 @@ private:
     void applyPositionPrior()
     {
         robot_msgs::PointCloud base_cloud;
-        if (!tf_->canTransform("base_footprint", cloud.header.frame_id, cloud.header.stamp, ros::Duration(5.0))){
-          ROS_ERROR("Cannot transform from base_footprint to %s", cloud.header.frame_id.c_str());
+        if (!tf_.canTransform("base_footprint", cloud_->header.frame_id, cloud_->header.stamp, ros::Duration(5.0))){
+          ROS_ERROR("Cannot transform from base_footprint to %s", cloud_->header.frame_id.c_str());
           return;
         }
-        tf_->transformPointCloud("base_footprint", cloud, base_cloud);
+        tf_.transformPointCloud("base_footprint", *cloud_, base_cloud);
         int xchan = -1;
         int ychan = -1;
         for(size_t i = 0;i < base_cloud.chan.size();++i){
@@ -1061,8 +944,8 @@ private:
         }
 
         if(xchan != -1 && ychan != -1){
-            unsigned char *pd = (unsigned char*)(disp->imageData);
-            int ws = disp->widthStep;
+            unsigned char *pd = (unsigned char*)(disp_->imageData);
+            int ws = disp_->widthStep;
             for(size_t i = 0;i < base_cloud.get_pts_size();++i){
                 robot_msgs::Point32 crt_point = base_cloud.pts[i];
                 int x = (int)(base_cloud.chan[xchan].vals[i]);
@@ -1070,7 +953,7 @@ private:
 
 				// pointer to the current pixel
 				unsigned char* crt_pd = pd+y*ws+x;
-				if (crt_point.z>max_height || crt_point.z<min_height) {
+				if (crt_point.z>max_height_ || crt_point.z<min_height_) {
 					*crt_pd = 0;
 				}
 			}
@@ -1081,89 +964,21 @@ private:
 	}
 
 
-    /**
-     * Callback from topic synchronizer, timeout
-     * @param t
-     */
-    void image_cb_timeout(ros::Time t)
-    {
-        boost::lock_guard<boost::mutex> lock(cv_mutex);
-        if(limage.header.stamp != t) {
-//            printf("Timed out waiting for left image\n");
-        }
-
-        if(dimage.header.stamp != t) {
-//            printf("Timed out waiting for disparity image\n");
-        }
-
-        if(stinfo.header.stamp != t) {
-//            printf("Timed out waiting for stereo info\n");
-        }
-
-        if(cloud_fetch.header.stamp != t) {
-//        	printf("Timed out waiting for point cloud\n");
-        }
-        if ((ros::Time::now()-start_image_wait_) > ros::Duration(image_timeout_)) {
-        	ROS_INFO("No images for %f seconds, timing out...", image_timeout_);
-        	preempted_ = true;
-        	images_ready.notify_all();
-        }
-    }
-
-
-    /**
-     * Callback from topic synchronizer, images ready to be consumed
-     * @param t
-     */
-    void image_cb_all(ros::Time t)
-    {
-        // obtain lock on vision data
-        boost::lock_guard<boost::mutex> lock(cv_mutex);
-
-        if(lbridge.fromImage(limage, "bgr")){
-            if(left != NULL)
-                cvReleaseImage(&left);
-
-            left = cvCloneImage(lbridge.toIpl());
-        }
-        if(rbridge.fromImage(rimage, "bgr")){
-            if(right != NULL)
-                cvReleaseImage(&right);
-
-            right = cvCloneImage(rbridge.toIpl());
-        }
-        if(dbridge.fromImage(dimage)){
-            if(disp != NULL)
-                cvReleaseImage(&disp);
-
-            disp = cvCreateImage(cvGetSize(dbridge.toIpl()), IPL_DEPTH_8U, 1);
-            cvCvtScale(dbridge.toIpl(), disp, 4.0 / dispinfo.dpp);
-        }
-
-        cloud = cloud_fetch;
-
-        got_images_ = true;
-        images_ready.notify_all();
-    }
-
-
-
 public:
 	/**
-	 * Needed for OpenCV event loop, to show images
-	 * @return
-	 */
+	* Needed for OpenCV event loop, to show images
+	* @return
+	*/
 	bool spin()
 	{
-		while (ok())
+		while (nh_.ok())
 		{
-			cv_mutex.lock();
-			int key = cvWaitKey(3)&0x00FF;
-			if(key == 27) //ESC
-				break;
-
-			cv_mutex.unlock();
-			usleep(10000);
+			if (display_) {
+				int key = cvWaitKey(100)&0x00FF;
+				if(key == 27) //ESC
+					break;
+			}
+			ros::spinOnce();
 		}
 
 		return true;
@@ -1175,9 +990,9 @@ int main(int argc, char **argv)
 	for(int i = 0; i<argc; ++i)
 		cout << "(" << i << "): " << argv[i] << endl;
 
-	ros::init(argc, argv);
-	HandleDetector view;
-	view.spin();
+	ros::init(argc, argv,"handle_detector_vision");
+	HandleDetector detector;
+	detector.spin();
 
 	return 0;
 }

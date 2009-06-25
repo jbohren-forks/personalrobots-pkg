@@ -10,7 +10,7 @@
 
   <depend package="roscpp" />
   <depend package="tf"/>
-  <depend package="topic_synchronizer"/>
+  <depend package="topic_synchronizer2"/>
 
   <depend package="kdl" />
   <depend package="opencv_latest"/>
