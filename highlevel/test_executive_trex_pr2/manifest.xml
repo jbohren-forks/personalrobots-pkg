@@ -10,7 +10,7 @@
  <url>http://pr.willowgarage.com</url>
 
  <!--depend package="highlevel_controllers"/ Removed see ticket:1235-->
- <depend package="executive_trex_pr2"/>
+ <depend package="trex_pr2"/>
  <depend package="fake_localization"/>
  <depend package="map_server"/>
  <depend package="nav_view"/>

@@ -5,5 +5,5 @@
   <review status="na" notes=""/>
   <url>http://pr.willowgarage.com/wiki/FIXME</url>
 
-  <depend package="executive_trex_pr2"/>
+  <depend package="trex_pr2"/>
 </package>
