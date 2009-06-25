@@ -4,6 +4,7 @@
   <author>John Hsu, David Li, Melonee Wise, Stuart Glaser</author>
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
+  <depend package="kdl_parser"/>
   <depend package="rospy"/>
   <depend package="mechanism_model" />
   <depend package="mechanism_control" />

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Willow Garage, Inc.
+ * Copyright (c) 2008, Ruben Smits and Willow Garage, Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -29,142 +29,189 @@
 
 /*
  * Author: Wim Meeussen
+ *         Ruben Smits
  */
 
-#include "robot_mechanism_controllers/cartesian_twist_controller_ik.h"
+#include <robot_mechanism_controllers/cartesian_twist_controller_ik.h>
 #include <algorithm>
-#include <kdl/chainfksolvervel_recursive.hpp>
+#include <mechanism_control/mechanism_control.h>
 
+#include <kdl/chainfksolvervel_recursive.hpp>
+#include <kdl/chainiksolvervel_wdls.hpp>
+#include <kdl/kinfam_io.hpp>
 
 using namespace KDL;
 
 namespace controller {
 
-ROS_REGISTER_CONTROLLER(CartesianTwistControllerIk)
+  ROS_REGISTER_CONTROLLER(CartesianTwistControllerIk)
 
-CartesianTwistControllerIk::CartesianTwistControllerIk()
+  CartesianTwistControllerIk::CartesianTwistControllerIk()
   : node_(ros::Node::instance()),
     robot_state_(NULL),
     jnt_to_twist_solver_(NULL),
     twist_to_jnt_solver_(NULL)
-{}
+  {}
 
 
 
-CartesianTwistControllerIk::~CartesianTwistControllerIk()
-{
-  node_->unsubscribe(controller_name_ + "/command");
-
-  for (unsigned int i=0; i<kdl_chain_.getNrOfJoints(); i++)
-    if (joint_vel_controllers_[i]) delete joint_vel_controllers_[i];
-}
-
-
-
-bool CartesianTwistControllerIk::initXml(mechanism::RobotState *robot_state, TiXmlElement *config)
-{
-  // get the controller name from xml file
-  controller_name_ = config->Attribute("name") ? config->Attribute("name") : "";
-  if (controller_name_ == ""){
-    ROS_ERROR("CartesianTwistIkController: No controller name given in xml file");
-    return false;
+  CartesianTwistControllerIk::~CartesianTwistControllerIk()
+  {
+    node_->unsubscribe(controller_name_ + "/command");
   }
 
-  // get name of root and tip from the parameter server
-  std::string root_name, tip_name;
-  if (!node_->getParam(controller_name_+"/root_name", root_name)){
-    ROS_ERROR("CartesianTwistIkController: No root name found on parameter server");
-    return false;
- }
-  if (!node_->getParam(controller_name_+"/tip_name", tip_name)){
-    ROS_ERROR("CartesianTwistIkController: No tip name found on parameter server");
-    return false;
-  }
 
-  // test if we got robot pointer
-  assert(robot_state);
-  robot_state_ = robot_state;
 
-  // create robot chain from root to tip
-  if (!chain_.init(robot_state->model_, root_name, tip_name))
-    return false;
-  chain_.toKDL(kdl_chain_);
-
-  // create solver
-  jnt_to_twist_solver_.reset(new ChainFkSolverVel_recursive(kdl_chain_));
-  twist_to_jnt_solver_.reset(new ChainIkSolverVel_pinv(kdl_chain_));
-  jnt_pos_.resize(kdl_chain_.getNrOfJoints());
-  jnt_vel_.resize(kdl_chain_.getNrOfJoints());
-
-  // get pid controller parameters
-  control_toolbox::Pid pid_joint;
-  if (!pid_joint.initParam(controller_name_+"/joint")) return false;
-
-  // create and initialize joint velocity controllers
-  for (unsigned int i=0 ;i<kdl_chain_.getNrOfJoints(); i++)
-    joint_vel_controllers_.push_back(new JointVelocityController);
-  for (unsigned int i=0 ;i<kdl_chain_.getNrOfJoints(); i++){
-    if (!joint_vel_controllers_[i]->init(robot_state, chain_.getJointName(i), pid_joint))
+  bool CartesianTwistControllerIk::initXml(mechanism::RobotState *robot_state, TiXmlElement *config)
+  {
+    std::cout<<"CartesianTwistControllerIk::initXml"<<std::endl;
+    // get the controller name from xml file
+    controller_name_ = config->Attribute("name") ? config->Attribute("name") : "";
+    if (controller_name_ == ""){
+      ROS_ERROR("CartesianTwistIkController: No controller name given in xml file");
       return false;
+    }
+
+    // get name of root and tip from the parameter server
+    std::string root_name, tip_name;
+    double damping,threshold;
+    if (!node_->getParam(controller_name_+"/root_name", root_name)){
+      ROS_ERROR("CartesianTwistIkController: No root name found on parameter server");
+      return false;
+    }
+    if (!node_->getParam(controller_name_+"/tip_name", tip_name)){
+      ROS_ERROR("CartesianTwistIkController: No tip name found on parameter server");
+      return false;
+    }
+    if (!node_->getParam(controller_name_+"/damping", damping)){
+      ROS_ERROR("CartesianTwistIkController: No damping found on parameter server");
+      return false;
+    }
+    if (!node_->getParam(controller_name_+"/threshold", threshold)){
+      ROS_ERROR("CartesianTwistIkController: No threshold found on parameter server");
+      return false;
+    }
+
+    // test if we got robot pointer
+    assert(robot_state);
+    robot_state_ = robot_state;
+
+    // create robot chain from root to tip
+    if (!chain_.init(robot_state->model_, root_name, tip_name))
+      return false;
+    chain_.toKDL(kdl_chain_);
+
+    // create solver
+    jnt_to_twist_solver_.reset(new ChainFkSolverVel_recursive(kdl_chain_));
+    twist_to_jnt_solver_.reset(new ChainIkSolverVel_wdls(kdl_chain_,threshold));
+    jnt_posvel_.resize(kdl_chain_.getNrOfJoints());
+
+    ((ChainIkSolverVel_wdls*)twist_to_jnt_solver_.get())->setLambda(damping);
+
+    // get pid controller parameters
+    control_toolbox::Pid pid_joint;
+    if (!pid_joint.initParam(controller_name_+"/joint")) return false;
+
+    // constructs 3 identical pid controllers: for the x,y and z translations
+    control_toolbox::Pid pid_controller;
+    if (!pid_controller.initParam(controller_name_+"/fb_trans")) return false;
+    for (unsigned int i=0; i<3; i++)
+      fb_pid_controller_.push_back(pid_controller);
+
+    // constructs 3 identical pid controllers: for the x,y and z rotations
+    if (!pid_controller.initParam(controller_name_+"/fb_rot")) return false;
+    for (unsigned int i=0; i<3; i++)
+      fb_pid_controller_.push_back(pid_controller);
+
+    // get a pointer to the id controller
+    MechanismControl* mc;
+    if (!MechanismControl::Instance(mc)){
+      ROS_ERROR("CartesianTwistController: could not get instance to mechanism control");
+      return false;
+    }
+    std::string output;
+    if (!node_->getParam(controller_name_+"/output", output)){
+      ROS_ERROR("CartesianTwistController: No output name found on parameter server");
+      return false;
+    }
+    if (!mc->getControllerByName<JointInverseDynamicsController>(output, id_controller_)){
+      ROS_ERROR("CartesianTwistController: could not connect to id controller");
+      return false;
+    }
+
+    // subscribe to twist commands
+    node_->subscribe(controller_name_ + "/command", twist_msg_,
+		     &CartesianTwistControllerIk::command, this, 1);
+
+    return true;
   }
 
-  // subscribe to twist commands
-  node_->subscribe(controller_name_ + "/command", twist_msg_,
-		   &CartesianTwistControllerIk::command, this, 1);
-
-  return true;
-}
 
 
+  bool CartesianTwistControllerIk::starting()
+  {
+    std::cout<<"CartesianTwistControllerIk::starting"<<std::endl;
+    // reset pid controllers
+    for (unsigned int i=0; i<6; i++)
+      fb_pid_controller_[i].reset();
 
-bool CartesianTwistControllerIk::starting()
-{
-  // time
-  last_time_ = robot_state_->hw_->current_time_;
+    // time
+    last_time_ = robot_state_->hw_->current_time_;
 
-  // set disired twist to 0
-  twist_desi_ = Twist::Zero();
+    // set disired twist to 0
+    twist_desi_ = Twist::Zero();
 
-  // start joint velocity controllers
-  bool res = true;
-  for (unsigned int i=0 ;i<kdl_chain_.getNrOfJoints(); i++)
-    if (!joint_vel_controllers_[i]->starting()) res = false;
-
-  return res;
-}
-
-
-void CartesianTwistControllerIk::update()
-{
-  // check if joints are calibrated
-  if (!chain_.allCalibrated(robot_state_->joint_states_)) return;
-
-  // get the joint positions
-  chain_.getPositions(robot_state_->joint_states_, jnt_pos_);
-
-  // calculate joint velocities
-  twist_to_jnt_solver_->CartToJnt(jnt_pos_, twist_desi_, jnt_vel_);
-
-  // send joint velocities to joint velocity controllers
-  for (unsigned int i=0; i<kdl_chain_.getNrOfJoints(); i++){
-    joint_vel_controllers_[i]->setCommand(jnt_vel_(i));
-    joint_vel_controllers_[i]->update();
+    return true;
   }
 
-}
+
+  void CartesianTwistControllerIk::update()
+  {
+    //std::cout<<"CartesianTwistControllerIk::update"<<std::endl;
+    // check if joints are calibrated
+    if (!chain_.allCalibrated(robot_state_->joint_states_)) return;
+
+    // get time
+    double time = robot_state_->hw_->current_time_;
+    double dt = time - last_time_;
+    last_time_ = time;
+
+    // get the joint positions
+    chain_.getVelocities(robot_state_->joint_states_, jnt_posvel_);
+
+    //Calculate error on the twist
+    FrameVel twist;
+    jnt_to_twist_solver_->JntToCart(jnt_posvel_, twist);
+    twist_meas_ = twist.deriv();
+    error = twist_meas_ - twist_desi_;
 
 
-void CartesianTwistControllerIk::command()
-{
-  // convert to twist command
-  twist_desi_.vel(0) = twist_msg_.vel.x;
-  twist_desi_.vel(1) = twist_msg_.vel.y;
-  twist_desi_.vel(2) = twist_msg_.vel.z;
-  twist_desi_.rot(0) = twist_msg_.rot.x;
-  twist_desi_.rot(1) = twist_msg_.rot.y;
-  twist_desi_.rot(2) = twist_msg_.rot.z;
-}
+    // pid feedback on the twist
+    for (unsigned int i=0; i<3; i++)
+      twist_out_.vel(i) = (twist_desi_.vel(i) * ff_trans_) + fb_pid_controller_[i].updatePid(error.vel(i), dt);
+
+    for (unsigned int i=0; i<3; i++)
+      twist_out_.rot(i) = (twist_desi_.rot(i) * ff_rot_) + fb_pid_controller_[i+3].updatePid(error.rot(i), dt);
+
+    // calculate joint velocities
+    twist_to_jnt_solver_->CartToJnt(jnt_posvel_.q, twist_desi_, jnt_posvel_.qdot);
+
+    id_controller_->jnt_posvelacc_desi_.qdot=jnt_posvel_.qdot;
+  }
+
+
+  void CartesianTwistControllerIk::command()
+  {
+    // convert to twist command
+    twist_desi_.vel(0) = twist_msg_.vel.x;
+    twist_desi_.vel(1) = twist_msg_.vel.y;
+    twist_desi_.vel(2) = twist_msg_.vel.z;
+    twist_desi_.rot(0) = twist_msg_.rot.x;
+    twist_desi_.rot(1) = twist_msg_.rot.y;
+    twist_desi_.rot(2) = twist_msg_.rot.z;
+  }
 
 
 
 }; // namespace
+

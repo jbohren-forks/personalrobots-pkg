@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Ruben Smits and Willow Garage, Inc.
+ * Copyright (c) 2009, Ruben Smits
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -10,7 +10,7 @@
  *     * Redistributions in binary form must reproduce the above copyright
  *       notice, this list of conditions and the following disclaimer in the
  *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of the Willow Garage, Inc. nor the names of its
+ *     * Neither the name of Ruben Smits nor the names of its
  *       contributors may be used to endorse or promote products derived from
  *       this software without specific prior written permission.
  *
@@ -28,35 +28,41 @@
  */
 
 /*
- * Author: Wim Meeussen
- *         Ruben Smits
+ * Author: Ruben Smits
+ * based on cartesian_wrench_controller.h by Wim Meeussen for Willow Garage Inc.
  */
 
-#ifndef CARTESIAN_TWIST_CONTROLLER_IK_H
-#define CARTESIAN_TWIST_CONTROLLER_IK_H
+#ifndef ID_CONTROLLER_CONTROLLER_H
+#define ID_CONTROLLER_CONTROLLER_H
+
+
+
+
 
 #include <vector>
-#include <boost/scoped_ptr.hpp>
 #include <kdl/chain.hpp>
 #include <kdl/frames.hpp>
-#include <kdl/chainfksolver.hpp>
-#include <kdl/chainiksolver.hpp>
+#include <kdl/jntarrayacc.hpp>
+
 #include <ros/node.h>
-#include <robot_msgs/Twist.h>
+#include <std_msgs/Float64MultiArray.h>
 #include <mechanism_model/controller.h>
 #include <mechanism_model/chain.h>
 #include <tf/transform_datatypes.h>
-#include <control_toolbox/pid.h>
+#include <diagnostic_msgs/DiagnosticMessage.h>
+#include <realtime_tools/realtime_publisher.h>
+#include <boost/scoped_ptr.hpp>
+#include <filters/filter_chain.h>
+#include <kdl/chainidsolver_recursive_newton_euler.hpp>
 
-#include "robot_mechanism_controllers/joint_inverse_dynamics_controller.h"
 
 namespace controller {
 
-  class CartesianTwistControllerIk : public Controller
+  class JointInverseDynamicsController : public Controller
   {
   public:
-    CartesianTwistControllerIk();
-    ~CartesianTwistControllerIk();
+    JointInverseDynamicsController();
+    ~JointInverseDynamicsController();
 
     bool initXml(mechanism::RobotState *robot_state, TiXmlElement *config);
 
@@ -66,31 +72,39 @@ namespace controller {
     void command();
 
     // input of the controller
-    KDL::Twist twist_desi_;
+    KDL::JntArrayAcc jnt_posvelacc_desi_;
+    KDL::Wrenches sgmnt_forces_;
 
   private:
-    KDL::Twist twist_meas_,error,twist_out_;
-  
+    int counter;
+    bool publishDiagnostics(int level, const std::string& message);
+
+    double last_time_;
     ros::Node* node_;
     std::string controller_name_;
-    double last_time_,ff_trans_,ff_rot_;
-
-    // pid controllers
-    std::vector<control_toolbox::Pid> fb_pid_controller_;
-
-    // robot description
     mechanism::RobotState *robot_state_;
     mechanism::Chain chain_;
+  
+    //For the inverse dynamics:
+    KDL::Chain kdl_chain_;
+    boost::scoped_ptr<KDL::ChainIdSolver_RNE> id_solver_;
+    
+    //For the acceleration controller
+    KDL::JntArray jnt_acc_out_,jnt_tau_;
+    KDL::JntArrayVel jnt_posvel_meas_;
+    KDL::JntArrayAcc jnt_posvelacc_control_;
+    double Kp_acc_,Kv_acc_,Kf_acc_,Kp_tau_,Kv_tau_;
+    diagnostic_msgs::DiagnosticMessage diagnostics_;
+    realtime_tools::RealtimePublisher <diagnostic_msgs::DiagnosticMessage> diagnostics_publisher_;
+    ros::Time diagnostics_time_;
+    ros::Duration diagnostics_interval_;
 
-    // kdl stuff for kinematics
-    KDL::Chain             kdl_chain_;
-    boost::scoped_ptr<KDL::ChainFkSolverVel> jnt_to_twist_solver_;
-    boost::scoped_ptr<KDL::ChainIkSolverVel> twist_to_jnt_solver_;
-    KDL::JntArrayVel          jnt_posvel_;
+    std::vector<double> jnt_msg_std_,jnt_eff_std_;
+    std_msgs::Float64MultiArray jnt_vel_msg_;
+    std_msgs::Float64MultiArray jnt_msg_;
 
-    JointInverseDynamicsController* id_controller_;
-
-    robot_msgs::Twist twist_msg_;
+    //filters::FilterChain<double> *acc_vel_filter_,*vel_filter_,*acc_filter_;
+    
   };
 
 } // namespace

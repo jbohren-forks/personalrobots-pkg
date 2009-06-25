@@ -13,12 +13,13 @@ set(_srcs
     src/cartesian_twist_controller.cpp
     src/cartesian_twist_controller_ik.cpp
     src/cartesian_wrench_controller.cpp
+    src/cartesian_hybrid_controller.cpp
     src/dynamic_loader_controller.cpp
     src/joint_effort_controller.cpp
     src/joint_position_controller.cpp
     src/joint_position_smoothing_controller.cpp
     src/joint_velocity_controller.cpp
-    src/cartesian_hybrid_controller.cpp
+    src/joint_inverse_dynamics_controller.cpp
     src/joint_autotuner.cpp
     src/joint_pd_controller.cpp
     src/joint_calibration_controller.cpp
