@@ -25,8 +25,8 @@
    <!-- uncomment for visualization -->
    <!--
    <node pkg="rviz" type="rviz" output="screen"/>
-   -->
   <include file="$(find gazebo_robot_description)/launch/light.launch" />
+   -->
 
   <!-- Robot state publisher -->
   <node pkg="robot_state_publisher" type="state_publisher" name="robot_state_publisher">
