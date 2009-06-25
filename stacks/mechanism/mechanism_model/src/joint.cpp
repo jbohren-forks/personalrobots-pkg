@@ -187,7 +187,7 @@ bool Joint::initXml(TiXmlElement *elt)
   TiXmlElement *prop_el = elt->FirstChildElement("joint_properties");
   if (!prop_el)
   {
-    ROS_WARN("Joint \"%s\" did not specify any joint properties, default to 0.\n", name_.c_str());
+    ROS_INFO("Joint \"%s\" did not specify any joint properties, default to 0.\n", name_.c_str());
     joint_damping_coefficient_ = 0.0;
     joint_friction_coefficient_ = 0.0;
   }
