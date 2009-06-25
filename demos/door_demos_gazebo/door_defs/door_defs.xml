@@ -82,7 +82,7 @@
       <map name="floor1_friction_coefficients" flag="gazebo">
         <elem key="mu1" value="50.0" />
         <elem key="mu2" value="50.0" />
-        <elem key="kp"  value="100000000.0" />
+        <elem key="kp"  value="1000000000.0" />
         <elem key="kd"  value="1.0" />
       </map>
     </collision>
@@ -147,7 +147,7 @@
         <box size="0.4 10 2" />
       </geometry>
       <map name="wall1_intensity" flag="gazebo">
-        <elem key="laserRetro" value="3000" />
+        <elem key="laserRetro" value="1000" />
       </map>
     </collision>
     <map name="wall1_prop" flag="gazebo">
@@ -182,7 +182,7 @@
         <box size="0.4 10 2" />
       </geometry>
       <map name="wall2_intensity" flag="gazebo">
-        <elem key="laserRetro" value="3500" />
+        <elem key="laserRetro" value="1500" />
       </map>
     </collision>
     <map name="wall2_prop" flag="gazebo">
@@ -196,11 +196,11 @@
     <origin xyz="0 0 0.05" rpy="0 0 0" />
     <joint name="door_joint" />
     <inertial >
-      <mass value="10" />
+      <mass value="30" />
       <com xyz="0.0 -0.5 1.0" /> 
       <inertia  ixx="1.0" ixy="0.0"  ixz="0.0"
                 iyy="1.0" iyz="0.0"
-                izz="1.0" />
+                izz="3.0" />
     </inertial>
     <visual >
       <origin xyz="0.0 -0.5 1.0" rpy="0 0 ${M_PI}" />
@@ -217,7 +217,7 @@
         <box size="0.1 1.0 2.0" />
       </geometry>
       <map name="door_intensity" flag="gazebo">
-        <elem key="laserRetro" value="2500" />
+        <elem key="laserRetro" value="2000" />
       </map>
     </collision>
     <map name="door_gravity" flag="gazebo">
@@ -234,9 +234,9 @@
     <inertial >
       <mass value="0.1" />
       <com xyz="0.0 ${handle_length/2-0.01} 0.0" /> 
-      <inertia  ixx="0.01"  ixy="0.0"  ixz="0.0"
-                iyy="0.01" iyz="0.0"
-                izz="0.001" />
+      <inertia  ixx="0.1"  ixy="0.0"  ixz="0.0"
+                iyy="0.1" iyz="0.0"
+                izz="0.01" />
     </inertial>
     <visual >
       <origin xyz="0.0 ${handle_length/2-0.01} 0.0" rpy="${1*M_PI/2} 0 0" />
@@ -255,11 +255,17 @@
       <map name="handle_intensity" flag="gazebo">
         <elem key="laserRetro" value="3900.0" />
       </map>
+      <map name="handle_friction_coefficients" flag="gazebo">
+        <elem key="mu1" value="50.0" />
+        <elem key="mu2" value="50.0" />
+        <elem key="kp"  value="100000000.0" />
+        <elem key="kd"  value="1.0" />
+      </map>
     </collision>
     <map name="handle_gravity" flag="gazebo">
       <elem key="turnGravityOff" value="true" />
       <elem key="selfCollide" value="true" />
-      <elem key="dampingFactor" value="0.01" />
+      <elem key="dampingFactor" value="0.05" />
     </map>
   </link>
 
@@ -416,6 +422,15 @@
           <frameName>map</frameName>
           <interface:position name="p3d_door_position"/>
       </controller:ros_p3d>
+
+      <!--
+      <controller:gazebo_mechanism_control name="door_mechanism_control" plugin="libgazebo_mechanism_control.so">
+        <alwaysOn>true</alwaysOn>
+        <updateRate>1000.0</updateRate>
+        <interface:audio name="gazebo_mechanism_control_dummy_iface" />
+      </controller:gazebo_mechanism_control>
+      -->
+
     </verbatim>
   </map>
 
