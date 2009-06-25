@@ -199,6 +199,9 @@ bool JointVelocityControllerNode::initXml(mechanism::RobotState *robot, TiXmlEle
   node_->advertiseService(service_prefix_ + "/get_command", &JointVelocityControllerNode::getCommand, this);
   guard_get_command_.set(service_prefix_ + "/get_command");
 
+  pid_tuner_.add(&c_->pid_controller_);
+  pid_tuner_.advertise(service_prefix_);
+
   return true;
 }
 void JointVelocityControllerNode::setCommand()
