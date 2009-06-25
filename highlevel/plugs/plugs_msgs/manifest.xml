@@ -8,7 +8,7 @@
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
   <url>http://pr.willowgarage.com/wiki/plugs_msgs</url>
-
+  <depend package="robot_msgs"/>
 </package>
 
 
