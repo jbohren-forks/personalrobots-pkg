@@ -56,6 +56,33 @@ void calcPCAFeatures(vector<IplImage*>& patches, const char* filename)
     cvReleaseMat(&eigenvectors);
 }
 
+void eigenvector2image(CvMat* eigenvector, IplImage* img)
+{
+    CvRect roi = cvGetImageROI(img);
+    if(img->depth == 32)
+    {
+        for(int y = 0; y < roi.height; y++)
+        {
+            for(int x = 0; x < roi.width; x++)
+            {
+                float val = cvmGet(eigenvector, 0, roi.width*y + x);
+                *((float*)(img->imageData + (roi.y + y)*img->widthStep) + roi.x + x) = val;
+            }
+        }
+    }
+    else
+    {
+        for(int y = 0; y < roi.height; y++)
+        {
+            for(int x = 0; x < roi.width; x++)
+            {
+                float val = cvmGet(eigenvector, 0, roi.width*y + x);
+                img->imageData[(roi.y + y)*img->widthStep + roi.x + x] = (unsigned char)val;
+            }
+        }
+    }
+}
+
 void loadPCAFeatures(const char* path, vector<IplImage*>& patches)
 {
     const int file_count = 20;
@@ -70,8 +97,8 @@ void loadPCAFeatures(const char* path, vector<IplImage*>& patches)
         
         for(int j = 0; j < (int)features.size(); j++)
         {
-            const int patch_width = 12;
-            const int patch_height = 12;
+            const int patch_width = 24;
+            const int patch_height = 24;
             
             CvPoint center = features[j].center;
             

@@ -21,12 +21,13 @@ void drawLine(IplImage* image, CvPoint p1, CvPoint p2, CvScalar color, int thick
 }
 
 void detect_outlets_2x1_one_way(IplImage* test_image, const CvOneWayDescriptorBase* descriptors, 
-                                vector<feature_t>& holes, const char* output_path, const char* output_filename)
+                                vector<feature_t>& holes, IplImage* color_image, 
+                                const char* output_path, const char* output_filename)
 {
     
     IplImage* image = cvCreateImage(cvSize(test_image->width, test_image->height), IPL_DEPTH_8U, 3);
     cvCvtColor(test_image, image, CV_GRAY2RGB);
-    IplImage* image1 = cvCloneImage(image);
+    IplImage* image1 = cvCloneImage(color_image);
     
     int64 time1 = cvGetTickCount();
     
@@ -42,8 +43,8 @@ void detect_outlets_2x1_one_way(IplImage* test_image, const CvOneWayDescriptorBa
     DrawFeatures(test_image_features, features);
     
     vector<feature_t> hole_candidates;
-    int patch_width = descriptors->GetPatchSize().width;
-    int patch_height = descriptors->GetPatchSize().height; 
+    int patch_width = descriptors->GetPatchSize().width/2;
+    int patch_height = descriptors->GetPatchSize().height/2; 
     for(int i = 0; i < (int)features.size(); i++)
     {
         CvPoint center = features[i].center;
@@ -57,14 +58,29 @@ void detect_outlets_2x1_one_way(IplImage* test_image, const CvOneWayDescriptorBa
             continue;
         }
         
-        if(abs(center.x - 1129) < 10 && abs(center.y - 1325) < 10)
+        if(abs(center.x - 988/2) < 10 && abs(center.y - 1203/2) < 10)
+        {
+            int w = 1;
+        }
+/*        else
+        {
+            continue;
+        }
+*/        
+        int desc_idx = -1;
+        int pose_idx = -1;
+        float distance = 0;
+//        printf("i = %d\n", i);
+        if(i == 331)
         {
             int w = 1;
         }
         
-        int desc_idx = -1;
-        int pose_idx = -1;
-        float distance = 0;
+#if 0
+        cvNamedWindow("1", 1);
+        cvShowImage("1", test_image);
+        cvWaitKey(0);
+#endif
         descriptors->FindDescriptor(test_image, desc_idx, pose_idx, distance);
         
         CvPoint center_new = descriptors->GetDescriptor(desc_idx)->GetCenter();

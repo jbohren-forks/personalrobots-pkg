@@ -1014,6 +1014,20 @@ int outlet_template_t::load(const char* filename)
         m_pca_config = string(pca_config);
     }
     
+    node = cvGetFileNodeByName(fs, 0, "pca hr config");
+    if(node)
+    {
+        const char* pca_hr_config = cvReadString(node);
+        m_pca_hr_config = string(pca_hr_config);
+    }
+    
+    node = cvGetFileNodeByName(fs, 0, "pca descriptors");
+    if(node)
+    {
+        const char* pca_desc_config = cvReadString(node);
+        m_pca_desc_config = string(pca_desc_config);
+    }
+
     node = cvGetFileNodeByName(fs, 0, "patch width");
     if(node)
     {

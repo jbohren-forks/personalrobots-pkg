@@ -21,6 +21,7 @@ using namespace std;
 #include <highgui.h>
 #include <ml.h>
 
+#include "outlet_detection/pca_features.h"
 #include "outlet_detection/learning.h"
 #include "star_detector/detector.h"
 #include "outlet_detection/outlet_detector.h"
@@ -39,7 +40,7 @@ int LoadCameraParams(char* filename, CvMat** intrinsic_matrix, CvMat** distortio
 }
 
 int main(int argc,char** argv)
-{
+{    
 	char path[1024], config_filename[1024], camera_filename[1024], output_path[1024], 
         train_path[1024], train_config[1024], pca_config[1024];
     
@@ -54,6 +55,13 @@ int main(int argc,char** argv)
 	strcpy(path, argv[1]);
 	strcpy(config_filename, argv[2]);
 	strcpy(camera_filename, argv[3]);
+    
+#if 0
+    vector<IplImage*> patches;
+    loadPCAFeatures(path, patches);
+    calcPCAFeatures(patches, "pca_features_large.yml");
+    return 0;
+#endif
     
     outlet_template_t outlet_template;
     if(argc == 5)

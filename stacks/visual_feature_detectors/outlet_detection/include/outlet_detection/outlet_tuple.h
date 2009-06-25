@@ -118,7 +118,7 @@ public:
         
         m_base = 0;
         m_pose_count = 500;
-        m_patch_size = cvSize(12, 12);
+        m_patch_size = cvSize(24, 24);
         m_outlet_color = outlet_color;
 	};
 	
@@ -141,18 +141,20 @@ public:
 	};
     
     void load_one_way_descriptor_base(CvSize patch_size, int pose_count, const char* train_path, 
-                                  const char* train_config, const char* pca_config)
+                                  const char* train_config, const char* pca_config, const char* pca_hr_config = 0)
     {
         m_train_path = string(train_path);
         m_train_config = string(train_config);
         m_pca_config = string(pca_config);
+        if(pca_hr_config) m_pca_hr_config = string(pca_hr_config);
         create_one_way_descriptor_base();
     }
 
     void create_one_way_descriptor_base()
     {
         m_base = new CvOneWayDescriptorBase(m_patch_size, m_pose_count, m_train_path.c_str(), 
-                                            m_train_config.c_str(), m_pca_config.c_str());
+                                            m_train_config.c_str(), m_pca_config.c_str(), m_pca_hr_config.c_str(), 
+                                            m_pca_desc_config.c_str());
     }
 
     const CvOneWayDescriptorBase* get_one_way_descriptor_base() const {return m_base;};
@@ -170,6 +172,8 @@ protected:
     string m_train_path;
     string m_train_config;
     string m_pca_config;
+    string m_pca_hr_config;
+    string m_pca_desc_config;
     CvSize m_patch_size;
     int m_pose_count;
     outlet_color_t m_outlet_color;

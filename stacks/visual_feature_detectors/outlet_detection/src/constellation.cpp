@@ -235,7 +235,7 @@ void DetectObjectConstellation(const vector<feature_t>& train, const vector<feat
     
     for(int i = 0; i < test_feature_count; i++) indices[i] = -1;
     
-    if(test_feature_count > 10)
+    if(test_feature_count > 9)
     {
         printf("The number of features is %d, exiting...\n", test_feature_count);
         return;

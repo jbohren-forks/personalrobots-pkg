@@ -95,12 +95,16 @@ public:
     CvOneWayDescriptor();
     ~CvOneWayDescriptor();
     
-    void Allocate(int num_samples, IplImage* frontal);
-    void GenerateSamples(int num_samples, IplImage* frontal);
+    void Allocate(int num_samples, CvSize size, int nChannels);
+    void GenerateSamples(int num_samples, IplImage* frontal, int norm = 0);
     void GenerateSamplesWithTransforms(int num_samples, IplImage* frontal);
+    void GenerateSamplesFast(IplImage* frontal, CvMat* pca_hr_avg, 
+                                                 CvMat* pca_hr_eigenvectors, CvOneWayDescriptor* pca_descriptors);
     void SetTransforms(CvAffinePose* poses, CvMat** transforms);
     void CalcInitialPose(CvRect roi);
-    void Initialize(int num_samples, IplImage* frontal, const char* image_name = 0, CvPoint center = cvPoint(0, 0));
+    void Initialize(int num_samples, IplImage* frontal, const char* image_name = 0, CvPoint center = cvPoint(0, 0), int norm = 0);
+    void InitializeFast(int num_samples, IplImage* frontal, const char* image_name, CvPoint center,
+                                            CvMat* pca_hr_avg, CvMat* pca_hr_eigenvectors, CvOneWayDescriptor* pca_descriptors);
     void ProjectPCASample(IplImage* patch, CvMat* avg, CvMat* eigenvectors, CvMat* pca_coeffs);
     void InitializePCACoeffs(CvMat* avg, CvMat* eigenvectors);
     void EstimatePosePCA(IplImage* patch, int& pose_idx, float& distance, CvMat* avg = 0, CvMat* eigenvalues = 0);
@@ -112,7 +116,9 @@ public:
     void CalcInitialPose();
     
     void Save(const char* path);
-    
+    int ReadByName(CvFileStorage* fs, CvFileNode* parent, const char* name);
+    void Write(CvFileStorage* fs, const char* name);
+
     // returns the index of the closest patch
     void EstimatePose(IplImage* patch, int& pose_idx, float& distance);
     
@@ -133,22 +139,30 @@ protected:
 class CvOneWayDescriptorBase
 {
 public:
-    CvOneWayDescriptorBase(CvSize patch_size, int pose_count, const char* train_path, const char* train_config, const char* pca_config);
+    CvOneWayDescriptorBase(CvSize patch_size, int pose_count, const char* train_path, const char* train_config, 
+                           const char* pca_config, const char* pca_hr_config = 0, const char* pca_desc_config = 0);
     ~CvOneWayDescriptorBase();
     
     CvSize GetPatchSize() const {return m_patch_size;};
     int GetPoseCount() const {return m_pose_count;};
     
     void LoadTrainingFeatures(const char* train_image_filename, const char* train_image_filename1);
+    void CreatePCADescriptors();
     
     const CvOneWayDescriptor* GetDescriptor(int desc_idx) const {return &m_descriptors[desc_idx];};
     void FindDescriptor(IplImage* patch, int& desc_idx, int& pose_idx, float& distance) const;
     void InitializePoseTransforms();
+    void InitializeTransformsFromPoses();
+    void InitializePoses();
     
     int IsDescriptorObject(int desc_idx) const;
     int MatchPointToPart(CvPoint pt) const;
     int GetDescriptorPart(int desc_idx) const;
     const vector<feature_t>& GetTrainFeatures() const {return m_train_features;};
+    
+    int LoadPCADescriptors(const char* filename);
+    void SavePCADescriptors(const char* filename);
+
     
     
 protected:
@@ -159,6 +173,9 @@ protected:
     CvOneWayDescriptor* m_descriptors;
     CvMat* m_pca_avg;
     CvMat* m_pca_eigenvectors;
+    CvMat* m_pca_hr_avg;
+    CvMat* m_pca_hr_eigenvectors;
+    CvOneWayDescriptor* m_pca_descriptors;
     vector<feature_t> m_train_features;
     
     CvMat** m_transforms;
