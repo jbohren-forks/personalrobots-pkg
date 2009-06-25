@@ -354,7 +354,7 @@ private:
           boost::posix_time::time_duration timeout;
           // Never wait for more than 1/10th of a second
           if (time_to_go < ros::Duration().fromSec(0.1))
-            timeout = boost::posix_time::nanosec(time_to_go.toNSec());
+            timeout = boost::posix_time::microseconds(time_to_go.toNSec()/1000.);
           else
             timeout = boost::posix_time::milliseconds(100);
 
