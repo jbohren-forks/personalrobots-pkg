@@ -143,8 +143,9 @@ bool JointChainSineController::initXml(mechanism::RobotState *robot_state, TiXml
     int matchIndex=-1;
     for (int i=0; i<num_joints_; i++)
     {
-      int real_joint_index = mechanism_chain_.joint_indices_[i];
-      mechanism::Joint *joint = robot_state_->joint_states_[real_joint_index].joint_;
+      //int real_joint_index = mechanism_chain_.joint_indices_[i];
+      //robot_state_->joint_states_[real_joint_index].joint_;
+      mechanism::Joint *joint = mechanism_chain_.getJoint(i);
       if (joint->name_.compare(joint_name_c)==0)
       {
         matchIndex = i;
@@ -194,8 +195,9 @@ void JointChainSineController::initSinusoids(double min_freq, double max_freq, d
   for (int i=0; i<num_joints_; i++)
   {
     double freq = exp(log_min_freq + log_freq_add*i) + gaussian();
-    int real_joint_index = mechanism_chain_.joint_indices_[i];
-    mechanism::Joint *joint = robot_state_->joint_states_[real_joint_index].joint_;
+    //int real_joint_index = mechanism_chain_.joint_indices_[i];
+    //robot_state_->joint_states_[real_joint_index].joint_;
+    mechanism::Joint *joint = mechanism_chain_.getJoint(i);
     //cout << joint->name_ << endl;
     if (joint->type_ == mechanism::JOINT_CONTINUOUS)
     {
@@ -271,15 +273,16 @@ void JointChainSineController::update()
   // set the efforts for the joints using pid:
   for (int i=0; i<num_joints_; i++)
   {
-    int real_joint_index = mechanism_chain_.joint_indices_[i];
-    mechanism::JointState *joint_state = &robot_state_->joint_states_[real_joint_index];
+    //int real_joint_index = mechanism_chain_.joint_indices_[i];
+    //&robot_state_->joint_states_[real_joint_index];
+    mechanism::Joint *joint = mechanism_chain_.getJoint(i);
 
     // get the errors:
     double error = jnt_pos_vel_.q(i) - jnt_des_pos_vel_.q(i);
     double errord = (jnt_pos_vel_.qdot(i) - jnt_des_pos_vel_.qdot(i));
 
     // correct the position error if it's a continuous joint with wrap-arounds...
-    if(joint_state->joint_->type_ == mechanism::JOINT_CONTINUOUS)
+    if(joint->type_ == mechanism::JOINT_CONTINUOUS)
     {
       while (error < -M_PI)
       {
