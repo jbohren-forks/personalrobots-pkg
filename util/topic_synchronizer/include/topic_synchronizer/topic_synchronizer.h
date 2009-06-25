@@ -254,7 +254,7 @@ class TopicSynchronizer
    */
   TopicSynchronizer(N* obj, void (N::*callback)(ros::Time), ros::Duration timeout = ros::Duration(1.0), void (N::*timeout_callback)(ros::Time) = NULL) : node_(obj), obj_(obj), callback_(callback), timeout_callback_(timeout_callback), expected_count_(0), count_(0), done_(false)
   {
-    timeout_ = boost::posix_time::nanosec(timeout.toNSec());
+    timeout_ = boost::posix_time::microseconds(timeout.toNSec()/1000.);
   }
 
   //! Constructor
@@ -269,7 +269,7 @@ class TopicSynchronizer
    */
   TopicSynchronizer(ros::Node* node, N* obj, void (N::*callback)(ros::Time), ros::Duration timeout = ros::Duration(1.0), void (N::*timeout_callback)(ros::Time) = NULL) : node_(node), obj_(obj), callback_(callback), timeout_callback_(timeout_callback), expected_count_(0), count_(0), done_(false)
   {
-    timeout_ = boost::posix_time::nanosec(timeout.toNSec());
+    timeout_ = boost::posix_time::microseconds(timeout.toNSec()/1000.);
   }
 
   //! Destructor
