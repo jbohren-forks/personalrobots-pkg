@@ -175,6 +175,7 @@ int main( int argc, char** argv )
       std::stringstream ss;
       ss << "converted" << i;
       MeshPtr mesh = object->convertToMesh( ss.str(), ResourceGroupManager::DEFAULT_RESOURCE_GROUP_NAME );
+      mesh->buildEdgeList();
       meshSerializer->exportMesh( mesh.get(), outputFile, Serializer::ENDIAN_LITTLE );
     }
   }
