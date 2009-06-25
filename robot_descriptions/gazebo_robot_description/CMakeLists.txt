@@ -15,17 +15,27 @@ set(pr2_out_path ${CMAKE_CURRENT_SOURCE_DIR}/Media/models/pr2)
 
 MAKE_DIRECTORY(${pr2_out_path})
 
+find_path(ogre_mesh_upgrade NAMES OgreMeshUpgrade PATHS ${ogre_PACKAGE_PATH}/ogre/bin/)
+
 foreach(it ${pr2_stl_files})
   get_filename_component(basename ${it} NAME_WE)
 
   # convert to ogre files
-  add_custom_command(
-    OUTPUT ${pr2_out_path}/${basename}.mesh
-    COMMAND rosrun 
-    ARGS ogre_tools stl_to_mesh ${it} ${pr2_out_path}/${basename}.mesh
-    COMMAND ${ogre_PACKAGE_PATH}/ogre/bin/OgreMeshUpgrade 
-    ARGS ${pr2_out_path}/${basename}.mesh
-    DEPENDS ${it})
+  if (ogre_mesh_upgrade)
+    add_custom_command(
+      OUTPUT ${pr2_out_path}/${basename}.mesh
+      COMMAND rosrun 
+      ARGS ogre_tools stl_to_mesh ${it} ${pr2_out_path}/${basename}.mesh
+      COMMAND ${ogre_mesh_upgrade}/OgreMeshUpgrade
+      ARGS ${pr2_out_path}/${basename}.mesh
+      DEPENDS ${it})
+  else (ogre_mesh_upgrade)
+    add_custom_command(
+      OUTPUT ${pr2_out_path}/${basename}.mesh
+      COMMAND rosrun 
+      ARGS ogre_tools stl_to_mesh ${it} ${pr2_out_path}/${basename}.mesh
+      DEPENDS ${it})
+  endif (ogre_mesh_upgrade)
   
   set(pr2_gen_files ${pr2_gen_files} ${pr2_out_path}/${basename}.mesh)
 endforeach(it)
