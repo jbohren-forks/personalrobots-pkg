@@ -68,8 +68,6 @@
 
 #include <topic_synchronizer2/topic_synchronizer.h>
 
-//#include "CvStereoCamModel.h"
-
 
 using namespace std;
 using namespace robot_msgs;
@@ -132,13 +130,13 @@ public:
 
 
 	ros::Subscriber left_image_sub_;
-	ros::Subscriber left_caminfo_sub_;
-	ros::Subscriber right_image_sub_;
-	ros::Subscriber right_caminfo_sub_;
+//	ros::Subscriber left_caminfo_sub_;
+//	ros::Subscriber right_image_sub_;
+//	ros::Subscriber right_caminfo_sub_;
 	ros::Subscriber disparity_sub_;
 	ros::Subscriber cloud_sub_;
 	ros::Subscriber dispinfo_sub_;
-	ros::Subscriber stereoinfo_sub_;
+//	ros::Subscriber stereoinfo_sub_;
 
 	ros::ServiceServer detect_service_;
 	ros::ServiceServer preempt_service_;
@@ -199,6 +197,7 @@ public:
 		marker_pub_ = nh_.advertise<visualization_msgs::Marker>("visualization_marker",1);
         detect_service_ = nh_.advertiseService("door_handle_vision_detector", &HandleDetector::detectHandleSrv, this);
         preempt_service_ = nh_.advertiseService("door_handle_vision_preempt", &HandleDetector::preempt, this);
+        got_images_ = false;
     }
 
     ~HandleDetector()
@@ -220,11 +219,11 @@ private:
     void subscribeStereoData()
     {
 		left_image_sub_ = nh_.subscribe("stereo/left/image_rect", 1, sync_.synchronize(&HandleDetector::leftImageCallback, this));
-		right_caminfo_sub_ = nh_.subscribe("stereo/right/cam_info", 1, sync_.synchronize(&HandleDetector::rightCamInfoCallback, this));
+//		right_caminfo_sub_ = nh_.subscribe("stereo/right/cam_info", 1, sync_.synchronize(&HandleDetector::rightCamInfoCallback, this));
 		disparity_sub_ = nh_.subscribe("stereo/disparity", 1, sync_.synchronize(&HandleDetector::disparityImageCallback, this));
 		cloud_sub_ = nh_.subscribe("stereo/cloud", 1, sync_.synchronize(&HandleDetector::cloudCallback, this));
 		dispinfo_sub_ = nh_.subscribe("stereo/disparity_info", 1, sync_.synchronize(&HandleDetector::dispinfoCallback, this));
-		stereoinfo_sub_ = nh_.subscribe("stereo/stereo_info", 1, sync_.synchronize(&HandleDetector::stereoinfoCallback, this));
+//		stereoinfo_sub_ = nh_.subscribe("stereo/stereo_info", 1, sync_.synchronize(&HandleDetector::stereoinfoCallback, this));
     }
 
 
@@ -232,11 +231,12 @@ private:
     void unsubscribeStereoData()
     {
     	left_image_sub_.shutdown();
-    	right_caminfo_sub_.shutdown();
+//    	right_caminfo_sub_.shutdown();
     	disparity_sub_.shutdown();
     	cloud_sub_.shutdown();
     	dispinfo_sub_.shutdown();
-    	stereoinfo_sub_.shutdown();
+//    	stereoinfo_sub_.shutdown();
+    	sync_.reset();
     }
 
 
@@ -251,15 +251,19 @@ private:
 		}
 
 		got_images_ = true;
+
+//		ROS_INFO("got sync callback");
 	}
 
-	void rightCamInfoCallback(const image_msgs::CamInfo::ConstPtr& info)
-	{
-		rcinfo_ = info;
-	}
+//	void rightCamInfoCallback(const image_msgs::CamInfo::ConstPtr& info)
+//	{
+//		rcinfo_ = info;
+//	}
 
 	void leftImageCallback(const image_msgs::Image::ConstPtr& image)
 	{
+//		ROS_INFO("got left image callback");
+
 		limage_ = image;
 		if(lbridge_.fromImage(*limage_, "bgr")) {
 			left_ = lbridge_.toIpl();
@@ -268,25 +272,26 @@ private:
 
 	void disparityImageCallback(const image_msgs::Image::ConstPtr& image)
 	{
+//		ROS_INFO("got disparity callback");
 		dimage_ = image;
 	}
 
 	void dispinfoCallback(const image_msgs::DisparityInfo::ConstPtr& dinfo)
 	{
+//		ROS_INFO("got dispinfo callback");
 		dispinfo_ = dinfo;
 	}
 
-	void stereoinfoCallback(const image_msgs::StereoInfo::ConstPtr& info)
-	{
-		stinfo_ = info;
-	}
+//	void stereoinfoCallback(const image_msgs::StereoInfo::ConstPtr& info)
+//	{
+//		stinfo_ = info;
+//	}
 
 	void cloudCallback(const robot_msgs::PointCloud::ConstPtr& point_cloud)
 	{
+		ROS_INFO("got cloud callback");
 		cloud_ = point_cloud;
 	}
-
-
 
     /////////////////////////////////////////////////
     // Analyze the disparity image that values should not be too far off from one another
@@ -804,8 +809,6 @@ private:
 
 //        	printf("Waiting for images\n");
         	// block until images are available to process
-        	got_images_ = false;
-        	preempted_ = false;
         	start_image_wait_ = ros::Time::now();
         	while (!got_images_ && !preempted_) {
         		usleep(10000);
@@ -817,6 +820,7 @@ private:
         		// show original disparity
         		cvShowImage("disparity_original", disp_);
         	}
+        	ROS_INFO("handle_detector_vision: Running handle detection");
         	// eliminate from disparity locations that cannot contain a handle
         	applyPositionPrior();
         	// run cascade classifier
@@ -826,7 +830,10 @@ private:
         		cvShowImage("disparity", disp_);
         		// show left image
         		cvShowImage("left", left_);
+        		cvWaitKey(100);
         	}
+        	got_images_ = false;
+        	preempted_ = false;
         }
 
         bool found = decideHandlePosition(handle_rect, handle);
@@ -838,6 +845,7 @@ private:
      */
     bool detectHandleSrv(door_handle_detector::DoorsDetector::Request & req, door_handle_detector::DoorsDetector::Response & resp)
     {
+    	preempted_ = false;
 
     	ROS_INFO("door_handle_detector_vision: Service called");
         robot_msgs::PointStamped handle;
