@@ -32,3 +32,7 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 rospack_add_executable(simple_test main.cpp)
 rospack_add_library(foo lib.cpp)
 target_link_libraries(simple_test dl)
+
+rospack_add_executable(example example.cpp)
+rospack_add_library(triangle triangle.cpp)
+target_link_libraries(example dl)
