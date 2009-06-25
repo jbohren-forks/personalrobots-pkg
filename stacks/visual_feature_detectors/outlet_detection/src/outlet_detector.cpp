@@ -143,16 +143,16 @@ int detect_outlet_tuple_2x2_orange(IplImage* src, CvMat* intrinsic_matrix, CvMat
 #endif //_VERBOSE
 */		
 	}
-	cvReleaseMat(&inv_homography);
     	
 	calc_origin_scale(outlet_tuple.centers, homography, &origin, &scale);
 
 	CvMat* rotation_vector = cvCreateMat(3, 1, CV_32FC1);
 	CvMat* translation_vector = cvCreateMat(3, 1, CV_32FC1);
 	calc_camera_outlet_pose(intrinsic_matrix, 0, outlet_templ, outlet_tuple.centers, rotation_vector, translation_vector);
-	calc_outlet_coords(outlets, homography, origin, scale, rotation_vector, translation_vector);
+	calc_outlet_coords(outlets, homography, origin, scale, rotation_vector, translation_vector, inv_homography);
 	cvReleaseMat(&rotation_vector);
 	cvReleaseMat(&translation_vector);
+	cvReleaseMat(&inv_homography);
 
 	filter_outlets_size(outlets);
 	
@@ -197,18 +197,18 @@ int detect_outlet_tuple_2x1(IplImage* src, CvMat* intrinsic_matrix, CvMat* disto
                                    const char* output_path, const char* filename)
 {
     vector<feature_t> holes;
-    IplImage* red = cvCreateImage(cvSize(src->width, src->height), IPL_DEPTH_8U, 1);
-    cvSetImageCOI(src, 3);
-    cvCopy(src, red);
-    cvSetImageCOI(src, 0);
     
-    IplImage* red2 = cvCreateImage(cvSize(red->width/2, red->height/2), IPL_DEPTH_8U, 1);
-    cvResize(red, red2);
-    cvReleaseImage(&red);
-    red = red2;
+    IplImage* small = cvCreateImage(cvSize(src->width/2, src->height/2), IPL_DEPTH_8U, 3); 
+    cvResize(src, small);
     
-    detect_outlets_2x1_one_way(red, outlet_templ.get_one_way_descriptor_base(), holes, output_path, filename);
+    IplImage* red = cvCreateImage(cvSize(small->width, small->height), IPL_DEPTH_8U, 1);
+    cvSetImageCOI(small, 3);
+    cvCopy(small, red);
+    cvSetImageCOI(small, 0);
+        
+    detect_outlets_2x1_one_way(red, outlet_templ.get_one_way_descriptor_base(), holes, small, output_path, filename);
     cvReleaseImage(&red);
+    cvReleaseImage(&small);
     
     if(holes.size() == 6)
     {
