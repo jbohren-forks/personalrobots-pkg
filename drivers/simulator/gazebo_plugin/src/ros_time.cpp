@@ -59,8 +59,6 @@ RosTime::RosTime(Entity *parent)
 
   // broadcasting sim time, so set parameter, this should really be in the launch script param tag, so it's set before nodes start
   this->rosnode_->setParam("/use_sim_time", true);
-
-  this->s = new ros::MultiThreadedSpinner(4);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -101,7 +99,7 @@ void RosTime::UpdateChild()
     this->pub_.publish(timeMsg);
     this->lock.unlock();
 
-    ros::spinOnce(*this->s);
+    ros::spinOnce();
 }
 
 ////////////////////////////////////////////////////////////////////////////////

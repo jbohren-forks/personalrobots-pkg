@@ -125,7 +125,6 @@ class RosTime : public Controller
   /// \brief pointer to ros node
   private: ros::NodeHandle* rosnode_;
   private: ros::Publisher pub_;
-  private: ros::MultiThreadedSpinner* s;
 
   roslib::Time timeMsg;
 
