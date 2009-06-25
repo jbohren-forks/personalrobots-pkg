@@ -1,0 +1,15 @@
+<package>
+  <description brief="a package to experiment with providing a plugin">
+
+     a package to experiment with providing a plugin
+
+  </description>
+  <author>Tully Foote</author>
+  <license>BSD</license>
+  <review status="experimental" notes=""/>
+  <url>http://pr.willowgarage.com/wiki/pluging_provider</url>
+  <depend package="plugin_user"/>
+
+</package>
+
+
