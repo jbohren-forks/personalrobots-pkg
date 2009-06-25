@@ -481,7 +481,8 @@ bool MechanismControl::switchController(const std::vector<std::string>& start_co
 MechanismControlNode::MechanismControlNode(MechanismControl *mc)
   : mc_(mc),
     mechanism_state_topic_("mechanism_state"),
-    publisher_(mechanism_state_topic_, 1)
+    publisher_(mechanism_state_topic_, 1),
+    pub_joints_("joint_states", 1)
 {
   assert(mc != NULL);
   assert(mechanism_state_topic_);
@@ -509,6 +510,7 @@ bool MechanismControlNode::initXml(TiXmlElement *config)
     if (type == JOINT_ROTARY || type == JOINT_CONTINUOUS || type == JOINT_PRISMATIC)
       ++joints_size;
   }
+  pub_joints_.msg_.set_joints_size(joints_size);
   publisher_.msg_.set_joint_states_size(joints_size);
 
   // Counts the number of transforms
@@ -601,6 +603,31 @@ void MechanismControlNode::update()
       publisher_.msg_.time = realtime_gettime();
 
       publisher_.unlockAndPublish();
+    }
+
+    if (pub_joints_.trylock())
+    {
+      unsigned int j = 0;
+      for (unsigned int i = 0; i < mc_->model_.joints_.size(); ++i)
+      {
+        int type = mc_->state_->joint_states_[i].joint_->type_;
+        if (type == JOINT_ROTARY || type == JOINT_CONTINUOUS || type == JOINT_PRISMATIC)
+        {
+          assert(j < pub_joints_.msg_.get_joints_size());
+          mechanism_msgs::JointState *out = &pub_joints_.msg_.joints[j++];
+          mechanism::JointState *in = &mc_->state_->joint_states_[i];
+          out->name = mc_->model_.joints_[i]->name_;
+          out->position = in->position_;
+          out->velocity = in->velocity_;
+          out->applied_effort = in->applied_effort_;
+          out->commanded_effort = in->commanded_effort_;
+          out->is_calibrated = in->calibrated_;
+        }
+      }
+
+      pub_joints_.msg_.header.stamp.fromSec(realtime_gettime());
+
+      pub_joints_.unlockAndPublish();
     }
   }
 }

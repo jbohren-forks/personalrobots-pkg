@@ -59,6 +59,7 @@
 #include <robot_srvs/KillAndSpawnControllers.h>
 #include <robot_srvs/SwitchController.h>
 #include <mechanism_msgs/MechanismState.h>
+#include <mechanism_msgs/JointStates.h>
 #include <diagnostic_msgs/DiagnosticMessage.h>
 
 typedef controller::Controller* (*ControllerAllocator)();
@@ -198,6 +199,7 @@ private:
   double publish_period_, last_publish_;
   const char* const mechanism_state_topic_;
   realtime_tools::RealtimePublisher<mechanism_msgs::MechanismState> publisher_;
+  realtime_tools::RealtimePublisher<mechanism_msgs::JointStates> pub_joints_;
 
   boost::mutex services_lock_;
   AdvertisedServiceGuard list_controllers_guard_, list_controller_types_guard_,
