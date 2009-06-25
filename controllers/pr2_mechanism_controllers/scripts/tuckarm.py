@@ -34,6 +34,8 @@
 # Revision $Id: rossync 3844 2009-02-16 19:49:10Z gerkey $
 # Modified by Kevin Watts for two arm use
 
+print "*** You should probably be using the version in pr2_default_controllers ***"
+
 import roslib
 roslib.load_manifest('pr2_mechanism_controllers')
 
