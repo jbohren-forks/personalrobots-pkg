@@ -13,11 +13,12 @@
   <node pkg="robot_self_filter" type="self_filter" respawn="true" output="screen">
     <remap from="robot_description" to="robotdesc/pr2" />
     <remap from="cloud_in" to="tilt_scan_cloud" />
-    <remap from="cloud_out" to="tilt_scan_cloud_filtered" />
+    <remap from="cloud_out" to="tilt_scan_cloud_annotated" />
+    <param name="annotate" type="string" value="on_self" />
   </node>
   
   <node pkg="point_cloud_assembler" type="point_cloud_assembler_srv" output="screen"  name="point_cloud_assembler">
-    <remap from="scan_in" to="tilt_scan_cloud_filtered"/>
+    <remap from="scan_in" to="tilt_scan_cloud_annotated"/>
     <param name="tf_cache_time_secs" type="double" value="10.0" />
     <param name="tf_tolerance_secs" type="double" value="0.0" />
     <param name="max_scans" type="int" value="400" />
@@ -29,9 +30,9 @@
   <node pkg="point_cloud_assembler" type="point_cloud_snapshotter" output="screen" name="snapshotter">
     <remap from="laser_scanner_signal" to="laser_tilt_controller/laser_scanner_signal"/>
     <remap from="build_cloud" to="point_cloud_assembler/build_cloud" />
-    <remap from="full_cloud" to="full_cloud_filtered" />
+    <remap from="full_cloud" to="full_cloud_annotated" />
   </node>
   
-  <include file="$(find collision_map)/collision_map.launch" />     <!-- USE collision_map not collision_map_occ -->
+  <include file="$(find collision_map)/collision_map_occ.launch" />  
     
 </launch>

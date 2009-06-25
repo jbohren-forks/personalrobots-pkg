@@ -54,60 +54,8 @@ public:
     CollisionMapperOcc(void) : sf_(tf_),
 			       mn_(tf_, boost::bind(&CollisionMapperOcc::cloudCallback, this, _1), "cloud_in", "", 1)
     { 
-	// a frame that does not move with the robot
-	nh_.param<std::string>("~fixed_frame", fixedFrame_, "odom");
-
-	// a frame that moves with the robot
-	nh_.param<std::string>("~robot_frame", robotFrame_, "base_link");
-
-	// bounds of collision map in robot frame
-	nh_.param<double>("~dimension_x", bi_.dimensionX, 1.0);
-	nh_.param<double>("~dimension_y", bi_.dimensionY, 1.5);
-	nh_.param<double>("~dimension_z", bi_.dimensionZ, 2.0);
-
-	// origin of collision map in the robot frame
-	nh_.param<double>("~origin_x", bi_.originX, 1.1);
-	nh_.param<double>("~origin_y", bi_.originY, 0.0);
-	nh_.param<double>("~origin_z", bi_.originZ, 0.0);
+	loadParams();
 	
-	// sensor origin in robot frame
-	nh_.param<double>("~sensor_x", bi_.sensorX, 0.05);
-	nh_.param<double>("~sensor_y", bi_.sensorY, 0.0);
-	nh_.param<double>("~sensor_z", bi_.sensorZ, 1.0);
-	
-	// resolution
-	nh_.param<double>("~resolution", bi_.resolution, 0.015);
-
-	// when occluded obstacles are raytraced, keep boxes from occluded space within a given radius
-	nh_.param<int>("~radius", bi_.radius, 1);
-	
-	ROS_INFO("Maintaining occlusion map in frame '%s', with origin at (%f, %f, %f) and dimension (%f, %f, %f), resolution of %f; "
-		 "sensor is at (%f, %f, %f), fixed fame is '%s', radius for raytraced occlusions is %d.",
-		 robotFrame_.c_str(), bi_.dimensionX, bi_.dimensionY, bi_.dimensionZ, bi_.originX, bi_.originY, bi_.originZ, bi_.resolution,
-		 bi_.sensorX, bi_.sensorY, bi_.sensorZ, fixedFrame_.c_str(), bi_.radius);
-	
-	// compute some useful values
-	bi_.sx = (int)(0.5 + (bi_.sensorX - bi_.originX) / bi_.resolution);
-	bi_.sy = (int)(0.5 + (bi_.sensorY - bi_.originY) / bi_.resolution);
-	bi_.sz = (int)(0.5 + (bi_.sensorZ - bi_.originZ) / bi_.resolution);
-
-	bi_.minX = (int)(0.5 + (-bi_.dimensionX - bi_.originX) / bi_.resolution);
-	bi_.maxX = (int)(0.5 + (bi_.dimensionX - bi_.originX) / bi_.resolution);
-
-	bi_.minY = (int)(0.5 + (-bi_.dimensionY - bi_.originY) / bi_.resolution);
-	bi_.maxY = (int)(0.5 + (bi_.dimensionY - bi_.originY) / bi_.resolution);
-	
-	bi_.minZ = (int)(0.5 + (-bi_.dimensionZ - bi_.originZ) / bi_.resolution);
-	bi_.maxZ = (int)(0.5 + (bi_.dimensionZ - bi_.originZ) / bi_.resolution);
-
-	bi_.real_minX = -bi_.dimensionX + bi_.originX;
-	bi_.real_maxX =  bi_.dimensionX + bi_.originX;
-	bi_.real_minY = -bi_.dimensionY + bi_.originY;
-	bi_.real_maxY =  bi_.dimensionY + bi_.originY;
-	bi_.real_minZ = -bi_.dimensionZ + bi_.originZ;
-	bi_.real_maxZ =  bi_.dimensionZ + bi_.originZ;
-
-
 	// configure the self mask and the message notifier
 	std::vector<std::string> frames;
 	sf_.getLinkFrames(frames);
@@ -160,6 +108,92 @@ private:
     
     typedef std::set<CollisionPoint, CollisionPointOrder> CMap;
     
+    void loadParams(void)
+    {
+	// a frame that does not move with the robot
+	nh_.param<std::string>("~fixed_frame", fixedFrame_, "odom");
+
+	// a frame that moves with the robot
+	nh_.param<std::string>("~robot_frame", robotFrame_, "base_link");
+
+	// bounds of collision map in robot frame
+	nh_.param<double>("~dimension_x", bi_.dimensionX, 1.0);
+	nh_.param<double>("~dimension_y", bi_.dimensionY, 1.5);
+	nh_.param<double>("~dimension_z", bi_.dimensionZ, 2.0);
+
+	// origin of collision map in the robot frame
+	nh_.param<double>("~origin_x", bi_.originX, 1.1);
+	nh_.param<double>("~origin_y", bi_.originY, 0.0);
+	nh_.param<double>("~origin_z", bi_.originZ, 0.0);
+	
+	// sensor origin in robot frame
+	nh_.param<double>("~sensor_x", bi_.sensorX, 0.05);
+	nh_.param<double>("~sensor_y", bi_.sensorY, 0.0);
+	nh_.param<double>("~sensor_z", bi_.sensorZ, 1.0);
+	
+	// resolution
+	nh_.param<double>("~resolution", bi_.resolution, 0.015);
+
+	// when occluded obstacles are raytraced, keep boxes from occluded space within a given radius
+	nh_.param<int>("~radius", bi_.radius, 1);
+	
+	ROS_INFO("Maintaining occlusion map in frame '%s', with origin at (%f, %f, %f) and dimension (%f, %f, %f), resolution of %f; "
+		 "sensor is at (%f, %f, %f), fixed fame is '%s', radius for raytraced occlusions is %d.",
+		 robotFrame_.c_str(), bi_.dimensionX, bi_.dimensionY, bi_.dimensionZ, bi_.originX, bi_.originY, bi_.originZ, bi_.resolution,
+		 bi_.sensorX, bi_.sensorY, bi_.sensorZ, fixedFrame_.c_str(), bi_.radius);
+
+	nh_.param<std::string>("~cloud_annotation", cloud_annotation_, std::string());
+
+	// compute some useful values
+	bi_.sx = (int)(0.5 + (bi_.sensorX - bi_.originX) / bi_.resolution);
+	bi_.sy = (int)(0.5 + (bi_.sensorY - bi_.originY) / bi_.resolution);
+	bi_.sz = (int)(0.5 + (bi_.sensorZ - bi_.originZ) / bi_.resolution);
+
+	bi_.minX = (int)(0.5 + (-bi_.dimensionX - bi_.originX) / bi_.resolution);
+	bi_.maxX = (int)(0.5 + (bi_.dimensionX - bi_.originX) / bi_.resolution);
+
+	bi_.minY = (int)(0.5 + (-bi_.dimensionY - bi_.originY) / bi_.resolution);
+	bi_.maxY = (int)(0.5 + (bi_.dimensionY - bi_.originY) / bi_.resolution);
+	
+	bi_.minZ = (int)(0.5 + (-bi_.dimensionZ - bi_.originZ) / bi_.resolution);
+	bi_.maxZ = (int)(0.5 + (bi_.dimensionZ - bi_.originZ) / bi_.resolution);
+
+	bi_.real_minX = -bi_.dimensionX + bi_.originX;
+	bi_.real_maxX =  bi_.dimensionX + bi_.originX;
+	bi_.real_minY = -bi_.dimensionY + bi_.originY;
+	bi_.real_maxY =  bi_.dimensionY + bi_.originY;
+	bi_.real_minZ = -bi_.dimensionZ + bi_.originZ;
+	bi_.real_maxZ =  bi_.dimensionZ + bi_.originZ;	
+    }
+    
+    void computeCloudMask(const robot_msgs::PointCloud &cloud, std::vector<bool> &mask)
+    {
+	if (cloud_annotation_.empty())
+	    sf_.mask(cloud, mask);
+	else
+	{
+	    int c = -1;
+	    for (unsigned int i = 0 ; i < cloud.chan.size() ; ++i)
+		if (cloud.chan[i].name == cloud_annotation_)
+		{
+		    c = i;
+		    break;
+		}
+	    if (c < 0)
+	    {
+		ROS_WARN("Cloud annotation channel '%s' is missing", cloud_annotation_.c_str());
+		sf_.mask(cloud, mask);
+	    }
+	    else
+	    {
+		ROS_ASSERT(cloud.chan[c].vals.size() == cloud.pts.size());
+		mask.resize(cloud.pts.size());
+		for (unsigned int i = 0 ; i < mask.size() ; ++i)
+		    mask[i] = cloud.chan[c].vals[i] > 0.0;
+	    }
+	}
+    }
+    
     void cloudCallback(const robot_msgs::PointCloudConstPtr &cloud)
     {
 	std::vector<bool> mask;
@@ -181,7 +215,7 @@ private:
 	    {
 		// separate the received points into ones on the robot and ones that are obstacles
 		// the frame of the cloud does not matter here
-		sf_.mask(*cloud, mask);	
+		computeCloudMask(*cloud, mask);	
 	    }
 	}
 	
@@ -616,7 +650,8 @@ private:
     ros::NodeHandle                             nh_;
     ros::Publisher                              cmapPublisher_;
     roslib::Header                              header_;
-    
+    std::string                                 cloud_annotation_;
+
     CMap                                        currentMap_;
     BoxInfo                                     bi_;
     std::string                                 fixedFrame_;

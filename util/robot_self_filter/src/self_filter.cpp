@@ -47,7 +47,7 @@ public:
 	std::vector<std::string> frames;
 	sf_.getLinkFrames(frames);
 	mn_.setTargetFrame(frames);
-	nh_.param<std::string>("/self_filter/annotate", annotate_, std::string());
+	nh_.param<std::string>("~annotate", annotate_, std::string());
 	pointCloudPublisher_ = nh_.advertise<robot_msgs::PointCloud>("cloud_out", 1);
 	if (!annotate_.empty())
 	    ROS_INFO("Self filter is adding annotation channel '%s'", annotate_.c_str());
