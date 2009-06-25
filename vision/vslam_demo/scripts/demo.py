@@ -717,17 +717,17 @@ class MouseLook:
 
     th_inc = 0.05
     if k == 'w':
-      self.a_fwd = 2 * factor
+      self.a_fwd = 1 * factor
     elif k == 's':
-      self.a_fwd = -2 * factor
+      self.a_fwd = -1 * factor
     elif k == 'a':
-      self.a_rgt = -2 * factor
+      self.a_rgt = -1 * factor
     elif k == 'd':
-      self.a_rgt = 2 * factor
+      self.a_rgt = 1 * factor
     elif k == ' ':
-      self.a_clm = 2 * factor
+      self.a_clm = 1 * factor
     elif k == 'c':
-      self.a_clm = -2 * factor
+      self.a_clm = -1 * factor
 
   def zoom(self, d):
     if self.mode == 1:
