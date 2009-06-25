@@ -1,14 +1,26 @@
 <launch>
   <master auto="start"/>
   <group>
-    <node pkg="move_base" type="move_base" respawn="false" name="move_base" output="screen">
+    <include file="$(find pr2_alpha)/$(env ROBOT).machine" />
+
+    <include file="$(find 2dnav_pr2)/config/base_odom_teleop.xml" />
+    <include file="$(find 2dnav_pr2)/config/lasers_and_filters.xml" />
+    <include file="$(find 2dnav_pr2)/config/ground_plane.xml" />
+
+    <node pkg="mux" type="throttle" args="3.0 /move_base/base_local_planner/costmap/voxel_grid /move_base/base_local_planner/costmap/voxel_grid_throttled" />
+    <node pkg="move_base" type="move_base" respawn="false" name="move_base" output="screen" machine="three">
       
       <param name="footprint_padding" value="0.01" />
+      <param name="clearing_radius" value="0.59" />
+      <param name="controller_frequency" value="10.0" />
+      <param name="controller_patience" value="15.0" />
 
-      <rosparam file="$(find move_base)/config/costmap_common_params.yaml" command="load" ns="navfn" />
-      <rosparam file="$(find move_base)/config/costmap_common_params.yaml" command="load" ns="base_local_planner" />
+      <rosparam file="$(find 2dnav_pr2)/config/costmap_common_params.yaml" command="load" ns="global_costmap" />
+      <rosparam file="$(find 2dnav_pr2)/config/costmap_common_params.yaml" command="load" ns="local_costmap" />
       <rosparam file="$(find visual_nav)/launch/navfn_params.yaml" command="load" />
-      <rosparam file="$(find move_base)/move_base/base_local_planner_params.yaml" command="load" />
+      <rosparam file="$(find 2dnav_pr2)/move_base/local_costmap_params.yaml" command="load" />
+      <rosparam file="$(find visual_nav)/launch/global_costmap_params.yaml" command="load" />
+      <rosparam file="$(find 2dnav_pr2)/move_base/base_local_planner_params.yaml" command="load" />
 
     </node>
   </group>
