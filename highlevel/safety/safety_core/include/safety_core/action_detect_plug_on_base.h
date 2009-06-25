@@ -40,7 +40,7 @@
 
 
 #include <ros/node.h>
-#include <robot_msgs/PlugStow.h>
+#include <plugs_msgs/PlugStow.h>
 #include <pr2_srvs/SetPeriodicCmd.h>
 #include <std_msgs/Empty.h>
 #include <robot_actions/action.h>
@@ -48,13 +48,13 @@
 
 namespace safety_core{
 
-class DetectPlugOnBaseAction: public robot_actions::Action<std_msgs::Empty, robot_msgs::PlugStow>
+class DetectPlugOnBaseAction: public robot_actions::Action<std_msgs::Empty, plugs_msgs::PlugStow>
 {
 public:
   DetectPlugOnBaseAction(ros::Node& node);
   virtual ~DetectPlugOnBaseAction();
 
-  robot_actions::ResultStatus execute(const std_msgs::Empty& empty, robot_msgs::PlugStow& feedback);
+  robot_actions::ResultStatus execute(const std_msgs::Empty& empty, plugs_msgs::PlugStow& feedback);
 
 private:
   // average the last couple plug centroids
@@ -67,8 +67,8 @@ private:
 
   PlugOnBaseDetector::PlugOnBaseDetector* detector_;
 
-  robot_msgs::PlugStow plug_stow_;
-  robot_msgs::PlugStow plug_stow_msg;
+  plugs_msgs::PlugStow plug_stow_;
+  plugs_msgs::PlugStow plug_stow_msg;
   
   std::string laser_controller_;
   int not_found_count_;

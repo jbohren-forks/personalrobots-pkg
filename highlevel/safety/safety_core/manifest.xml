@@ -17,7 +17,7 @@
   <depend package="std_msgs" />
   <depend package="pr2_srvs" />
   <depend package="pr2_mechanism_controllers"/>
-
+  <depend package="plugs_msgs"/>
  <export>
     <cpp cflags="-I${prefix}/msg/cpp -I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib"/>
  </export>

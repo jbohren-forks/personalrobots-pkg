@@ -33,7 +33,7 @@
  *********************************************************************/
 
 // Msgs
-#include <robot_msgs/PlugStow.h>
+#include <plugs_msgs/PlugStow.h>
 #include <std_msgs/Empty.h>
 
 // Actions
@@ -60,7 +60,7 @@ int main(int argc, char** argv)
   DetectPlugOnBaseAction detect(node);
 
   robot_actions::ActionRunner runner(10.0);
-  runner.connect<std_msgs::Empty, pr2_robot_actions::DetectPlugOnBaseState, robot_msgs::PlugStow>(detect);
+  runner.connect<std_msgs::Empty, pr2_robot_actions::DetectPlugOnBaseState, plugs_msgs::PlugStow>(detect);
   runner.run();
 
   node.spin();

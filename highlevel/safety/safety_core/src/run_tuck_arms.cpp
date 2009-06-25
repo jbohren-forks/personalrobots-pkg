@@ -33,7 +33,6 @@
  *********************************************************************/
 
 // Msgs
-#include <robot_msgs/PlugStow.h>
 #include <std_msgs/Empty.h>
 
 // Actions

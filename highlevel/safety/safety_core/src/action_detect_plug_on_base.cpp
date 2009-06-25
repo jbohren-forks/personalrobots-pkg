@@ -39,7 +39,7 @@
 namespace safety_core{
 
 DetectPlugOnBaseAction::DetectPlugOnBaseAction(ros::Node& node) :
-  robot_actions::Action<std_msgs::Empty, robot_msgs::PlugStow>("detect_plug_on_base"),
+  robot_actions::Action<std_msgs::Empty, plugs_msgs::PlugStow>("detect_plug_on_base"),
   action_name_("detect_plug_on_base"),
   node_(node),
   laser_controller_("laser_tilt_controller")
@@ -63,7 +63,7 @@ DetectPlugOnBaseAction::~DetectPlugOnBaseAction()
   if(detector_) delete detector_;
 };
 
-robot_actions::ResultStatus DetectPlugOnBaseAction::execute(const std_msgs::Empty& empty, robot_msgs::PlugStow& feedback)
+robot_actions::ResultStatus DetectPlugOnBaseAction::execute(const std_msgs::Empty& empty, plugs_msgs::PlugStow& feedback)
 {
   reset();
 
