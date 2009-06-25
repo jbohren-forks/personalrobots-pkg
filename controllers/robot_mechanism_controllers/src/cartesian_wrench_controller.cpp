@@ -81,12 +81,12 @@ bool CartesianWrenchController::initXml(mechanism::RobotState *robot_state, TiXm
 
   // get the joint constraint from the parameter server
   node_->param(controller_name_+"/constraint/joint", constraint_.joint, -1);
-  node_->param(controller_name_+"/constraint/low_limit", constraint_.low_limit, 0.0);
-  node_->param(controller_name_+"/constraint/high_limit", constraint_.high_limit, 0.0);
+  node_->param(controller_name_+"/constraint/soft_limit", constraint_.soft_limit, 0.0);
+  node_->param(controller_name_+"/constraint/hard_limit", constraint_.hard_limit, 0.0);
   node_->param(controller_name_+"/constraint/stiffness", constraint_.stiffness, 0.0);
 
   ROS_INFO("Using joint %i, low limit %f, high limit %f and stiffness %f",
-	   constraint_.joint, constraint_.low_limit, constraint_.high_limit, constraint_.stiffness);
+	   constraint_.joint, constraint_.soft_limit, constraint_.hard_limit, constraint_.stiffness);
 
 
   // test if we got robot pointer
@@ -94,8 +94,10 @@ bool CartesianWrenchController::initXml(mechanism::RobotState *robot_state, TiXm
   robot_state_ = robot_state;
 
   // create robot chain from root to tip
-  if (!chain_.init(robot_state_->model_, root_name, tip_name))
+  if (!chain_.init(robot_state_->model_, root_name, tip_name)){
+    ROS_ERROR("Initializing chain from %s to %s failed", root_name.c_str(), tip_name.c_str());
     return false;
+  }
   chain_.toKDL(kdl_chain_);
 
   // create solver
@@ -160,17 +162,12 @@ void CartesianWrenchController::update()
   }
 
   // apply joint constraint
-  if (constraint_.joint >= 0 && constraint_.joint < (int)(kdl_chain_.getNrOfJoints()))
-  {
-    mechanism::Joint *joint = chain_.getJoint(constraint_.joint);
-    assert(joint);
-
-    double effort_high, effort_low;
-    effort_high = min(joint->effort_limit_,
-                      -constraint_.stiffness * (jnt_pos_(constraint_.joint) - constraint_.high_limit));
-    effort_low = max(-joint->effort_limit_,
-                     -constraint_.stiffness * (jnt_pos_(constraint_.joint) - constraint_.low_limit));
-    jnt_eff_(constraint_.joint) = max(effort_low, min(jnt_eff_(constraint_.joint), effort_high));
+  if (constraint_.joint >= 0 && constraint_.joint < (int)(kdl_chain_.getNrOfJoints())){
+    double sgn = sign(constraint_.hard_limit - constraint_.soft_limit);
+    if (sgn*(constraint_.hard_limit-jnt_pos_(constraint_.joint)) < 0)
+      jnt_eff_(constraint_.joint) = constraint_.stiffness * (constraint_.soft_limit-jnt_pos_(constraint_.joint));
+    else if (sgn*(constraint_.soft_limit-jnt_pos_(constraint_.joint)) < 0)
+      jnt_eff_(constraint_.joint) += constraint_.stiffness * (constraint_.soft_limit-jnt_pos_(constraint_.joint));
   }
 
   // set effort to joints

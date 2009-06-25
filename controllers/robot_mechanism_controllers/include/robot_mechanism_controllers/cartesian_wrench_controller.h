@@ -88,8 +88,8 @@ private:
 
   struct joint_constraint{
     int joint;
-    double low_limit;
-    double high_limit;
+    double soft_limit;
+    double hard_limit;
     double stiffness;
   };
 
