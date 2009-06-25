@@ -977,9 +977,9 @@ private:
 
 		printf("Total dist: %f\n", total_dist);
 
-		for (size_t i=0;i<clusters.size();++i) {
-			showCluster(clusters[i], step, i, cloud.header.stamp);
-		}
+//		for (size_t i=0;i<clusters.size();++i) {
+//			showCluster(clusters[i], step, i, cloud.header.stamp);
+//		}
 
 	}
 
@@ -1100,6 +1100,7 @@ private:
 			recognition_lambertian::ModelFit::Request req;
 			recognition_lambertian::ModelFit::Response resp;
 
+			req.cloud = objects[k];
 			if (ros::service::call("recognition_lambertian/model_fit", req, resp)) {
 				ROS_INFO("Service call succeeded");
 			}
