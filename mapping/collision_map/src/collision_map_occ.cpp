@@ -109,7 +109,6 @@ public:
 
 
 	// configure the self mask and the message notifier
-	sf_.configure();
 	std::vector<std::string> frames;
 	sf_.getLinkFrames(frames);
 	if (std::find(frames.begin(), frames.end(), robotFrame_) == frames.end())

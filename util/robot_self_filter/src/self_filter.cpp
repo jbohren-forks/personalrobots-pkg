@@ -44,7 +44,6 @@ public:
 
     SelfFilter(void) : sf_(tf_), mn_(tf_, boost::bind(&SelfFilter::cloudCallback, this, _1), "cloud_in", "", 1)
     {
-	sf_.configure();
 	std::vector<std::string> frames;
 	sf_.getLinkFrames(frames);
 	mn_.setTargetFrame(frames);

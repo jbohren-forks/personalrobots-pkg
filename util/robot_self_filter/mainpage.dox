@@ -2,7 +2,13 @@
 \mainpage
 \htmlinclude manifest.html
 
-\b new_robot_self_filter is ... 
+\b robot_self_filter can either remove points from a pointcloud that
+are on the robot (parts the robot can see of itself) or it can
+annotate the points by adding a channel with a name of choice that
+will have values of 1.0 (point is outside the robot) or -1.0 (point is
+on the robot)
+
+
 
 <!-- 
 In addition to providing an overview of your package,
@@ -13,7 +19,8 @@ You can then link to this documentation page from the Wiki.
 -->
 
 
-\section codeapi Code API
+<!-- \section codeapi Code API
+-->
 
 <!--
 Provide links to specific auto-generated API documentation within your
@@ -34,86 +41,80 @@ command-line, so it is VERY IMPORTANT THAT YOU LIST NAMES AS THEY
 APPEAR IN THE CODE. You should list names of every topic, service and
 parameter used in your code. There is a template below that you can
 use to document each node separately.
+-->
 
 List of nodes:
-- \b node_name1
-- \b node_name2
--->
+- \b self_filter
+- \b test_filter
 
 <!-- START: copy from here to 'END' for each node 
 
 <hr>
 
-\subsection node_name node_name
+\subsection self_filter self_filter
 
-node_name does (provide a basic description of your node)
+self_filter listents to a pointcloud on the 'cloud_in' topic and
+broadcasts a pointcloud on 'cloud_out' topic.  There are two modes of
+using this node: it can either remove points that are on the robot
+from the input cloud and only broadcast the rest, or it can annotate
+the points with another channel with a name of choice. 
+
 
 \subsubsection Usage
 \verbatim
-$ node_type1 [standard ROS args]
+$ self_filter [standard ROS params]
 \endverbatim
 
 \par Example
 
 \verbatim
-$ node_type1
+$ self_filter robot_description:=robotdesc/pr2 cloud_in:=tilt_cloud cloud_out:=tilt_cloud_filtered
 \endverbatim
 
 
 \subsubsection topics ROS topics
 
 Subscribes to:
-- \b "in": [std_msgs/FooType] description of in
+- \b "cloud_in": [robot_msgs/PointCloud] 
 
 Publishes to:
-- \b "out": [std_msgs/FooType] description of out
+- \b "cloud_out": [robot_msgs/PointCloud] 
 
 
 \subsubsection parameters ROS parameters
 
 Reads the following parameters from the parameter server
 
-- \b "~param_name" : \b [type] description of param_name
-- \b "~my_param" : \b [string] description of my_param
+- \b "~annotate" : \b [string] if specified, this channel name will be added to the input pointcloud
+and no points will be removed. The values of this channel will be only -1.0 (point on robot) and 1.0
+(point outside)
 
-Sets the following parameters on the parameter server
-
-- \b "~param_name" : \b [type] description of param_name
-
-
-\subsubsection services ROS services
-- \b "foo_service": [std_srvs/FooType] description of foo_service
+- \b "~robot_description" : \b [string] the URDF description of the robot
 
 
-END: copy for each node -->
 
+\subsection test_filter test_filter
 
-<!-- START: Uncomment if you have any command-line tools
-
-\section commandline Command-line tools
-
-This section is a catch-all for any additional tools that your package
-provides or uses that may be of use to the reader. For example:
-
-- tools/scripts (e.g. rospack, roscd)
-- roslaunch .launch files
-- xmlparam files
-
-\subsection script_name script_name
-
-Description of what this script/file does.
+test_filter randomly generates points around & inside the robot and
+uses the filter to only keep the ones inside or the ones outside. The
+kept set is then sent as a visualization messages to rviz. This
+provides a simpl means to test the filter.
 
 \subsubsection Usage
 \verbatim
-$ ./script_name [args]
+$ test_filter [standard ROS params]
 \endverbatim
 
 \par Example
 
 \verbatim
-$ ./script_name foo bar
+$ test_filter robot_description:=robotdesc/pr2
 \endverbatim
 
-END: Command-Line Tools Section -->
+\subsubsection parameters ROS parameters
+
+Reads the following parameters from the parameter server
+
+- \b "~robot_description" : \b [string] the URDF description of the robot
 
 */

@@ -68,6 +68,7 @@ namespace robot_self_filter
 	/** \brief Construct the filter */
 	SelfMask(tf::TransformListener &tf) : rm_("robot_description"), tf_(tf)
 	{
+	    configure();
 	}
 	
 	/** \brief Destructor to clean up
@@ -78,8 +79,6 @@ namespace robot_self_filter
 		if (bodies_[i].body)
 		    delete bodies_[i].body;
 	}
-	
-	bool configure(void);
 	
 	/** \brief Compute the mask for a given pointcloud. If a mask element is true, the point
 	    is outside the robot
@@ -93,13 +92,18 @@ namespace robot_self_filter
 	    setup is performed, assumeFrame() should be called before use */
 	bool getMask(double x, double y, double z) const;
 	
-	/** Get the set of frames that correspond to the links */
+	/** \brief Get the set of frames that correspond to the links */
 	void getLinkFrames(std::vector<std::string> &frames) const;
 	
     private:
 
+	/** \brief Configure the filter. */
+	bool configure(void);
+
+	/** \brief Compute bounding spheres for the checked robot links. */
 	void computeBoundingSpheres(void);
 	
+	/** \brief Perform the actual mask computation. */
 	void maskSimple(const robot_msgs::PointCloud& data_in, std::vector<bool> &mask);
 	
 	planning_environment::RobotModels   rm_;
