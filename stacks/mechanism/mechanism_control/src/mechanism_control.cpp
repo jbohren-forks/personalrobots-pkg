@@ -513,15 +513,6 @@ bool MechanismControlNode::initXml(TiXmlElement *config)
   pub_joints_.msg_.set_joints_size(joints_size);
   publisher_.msg_.set_joint_states_size(joints_size);
 
-  // Counts the number of transforms
-  int num_transforms = 0;
-  for (unsigned int i = 0; i < mc_->model_.links_.size(); ++i)
-  {
-    if (mc_->model_.links_[i]->parent_name_ != std::string("world"))
-      ++num_transforms;
-  }
-
-
   // Advertise services
   node_->advertiseService("list_controllers", &MechanismControlNode::listControllers, this);
   list_controllers_guard_.set("list_controllers");
