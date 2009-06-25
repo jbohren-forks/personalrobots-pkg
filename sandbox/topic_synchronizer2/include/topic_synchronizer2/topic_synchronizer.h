@@ -63,6 +63,7 @@ class TopicSynchronizer
 	int count_;
 	ros::Time time_;
 	boost::function<void ()> callback_;
+	boost::mutex mutex_;
 
 public:
 
@@ -100,6 +101,8 @@ public:
 	template <typename T, typename M>
 	const boost::function<void (const boost::shared_ptr<M const>&)> synchronize(void(T::*fp)(const boost::shared_ptr<M const>&), T* obj)
 	{
+	  boost::mutex::scoped_lock lock(mutex_);
+
 		expected_count_++;
 		return CallbackFunctor<T,M>(this, boost::bind(fp, obj, _1));
 	}
@@ -107,6 +110,8 @@ public:
 	template <typename T, typename M>
 	const boost::function<void (const boost::shared_ptr<M const>&)> synchronize(void(T::*fp)(const boost::shared_ptr<M const>&), const boost::shared_ptr<T>& obj)
 	{
+	  boost::mutex::scoped_lock lock(mutex_);
+
 		expected_count_++;
 		return CallbackFunctor<T,M>(this, boost::bind(fp, obj.get(), _1));
 	}
@@ -114,6 +119,8 @@ public:
 	template <typename T, typename M>
 	const boost::function<void (const boost::shared_ptr<M const>&)> synchronize(void(*fp)(const boost::shared_ptr<M const>&))
 	{
+	  boost::mutex::scoped_lock lock(mutex_);
+
 		expected_count_++;
 		return CallbackFunctor<T,M>(this, boost::function<void(const boost::shared_ptr<M>&)>(fp));
 	}
@@ -121,17 +128,20 @@ public:
 	template <typename T, typename M>
 	const boost::function<void (const boost::shared_ptr<M const>&)> synchronize(const boost::function<void (const boost::shared_ptr<M const>&)>& callback)
 	{
+	  boost::mutex::scoped_lock lock(mutex_);
 		expected_count_++;
 		return CallbackFunctor<T,M>(this, callback);
 	}
 
 	void reset()
 	{
+	  boost::mutex::scoped_lock lock(mutex_);
 		expected_count_ = 0;
 	}
 
 	void update(const ros::Time& time)
 	{
+	  boost::mutex::scoped_lock lock(mutex_);
 		if (count_==0 || time>time_) {
 			time_ = time;
 			count_ = 0;
