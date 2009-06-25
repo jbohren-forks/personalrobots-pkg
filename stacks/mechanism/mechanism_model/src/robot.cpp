@@ -33,6 +33,8 @@
 
 #include "mechanism_model/robot.h"
 #include "tinyxml/tinyxml.h"
+#include <kdl_parser/tree_parser.hpp>
+
 
 namespace mechanism {
 
@@ -40,6 +42,10 @@ bool Robot::initXml(TiXmlElement *root)
 {
   //assert(hw_);
   TiXmlElement *xit = NULL;
+
+  // Constructs the kdl tree.
+  if (!treeFromXml(root, tree_, joint_link_mapping_))
+    return false;
 
   // Constructs the joints.
   for (xit = root->FirstChildElement("joint"); xit;

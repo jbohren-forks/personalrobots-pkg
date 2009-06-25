@@ -43,72 +43,39 @@ namespace mechanism {
 class Chain
 {
 public:
-  Chain() : kdl_cached_(false) {}
+  Chain() {}
   ~Chain() {}
 
   bool init(Robot *robot, const std::string &root, const std::string &tip);
 
   void getPositions(std::vector<JointState>&, std::vector<double>&);
-  void getVelocities(std::vector<JointState>&, std::vector<double>&);
-  void getEfforts(std::vector<JointState>&, std::vector<double>&);
-  bool allCalibrated(std::vector<JointState>&);
-
-  // Constructs a KDL chain that corresponds to the mechanism chain.
-  //
-  // Be aware that frame i in the mechanism corresponds to frame i+1 in KDL.
-  void toKDL(KDL::Chain &chain);
-
   void getPositions(std::vector<JointState>&, KDL::JntArray&);
+
+  void getVelocities(std::vector<JointState>&, std::vector<double>&);
   void getVelocities(std::vector<JointState>&, KDL::JntArrayVel&);
+
+  void getEfforts(std::vector<JointState>&, std::vector<double>&);
   void getEfforts(std::vector<JointState>&, KDL::JntArray&);
 
   void setEfforts(KDL::JntArray&, std::vector<JointState>&);
+
   void addEfforts(KDL::JntArray&, std::vector<JointState>&);
 
-  // return the name of actuated joint i
-  Joint *getJoint(unsigned int actuated_joint_i);
-  std::string getJointName(unsigned int actuated_joint_i);  // Deprecated
+  bool allCalibrated(std::vector<JointState>&);
+
+  // get KDL chain
+  void toKDL(KDL::Chain &chain);
 
   std::string getLinkName(int index = -1);
-
-  std::vector<int> joint_indices_;  // ONLY joints that can be actuated (not fixed joints)
-  std::vector<int> all_joint_indices_;  // Includes fixed joints
-  std::vector<int> link_indices_;
-
-  // Unless the root is a direct ancestor of the tip, the chain likely
-  // goes up the kinematic tree and then back down again.
-  // reversed_index_ indicates where this switch occurs, pointing to
-  // the link which is the ancestor of all the other links in the
-  // chain.
-  //
-  // The switch point is important to keep track of because the Link
-  // and Joint classes specify transforms of the child link in terms
-  // of the parent link.  When we go from reversed_index_ to the tip,
-  // the transforms are correct, but when we go from the root to
-  // reversed_index_, the transforms are reversed.
-  unsigned int reversed_index_;  // TODO: Not implemented properly
+  Joint* getJoint(unsigned int actuated_joint_i);
 
 private:
   mechanism::Robot *robot_;
+  KDL::Chain kdl_chain_;
 
-  // Helper function to get the sequence of links and joints from one
-  // place on the kinematic tree until the top of the kinematic tree.
-  // The specified link is returned as the last link in the results.
-  static bool getAncestors(mechanism::Robot *robot, const std::string &link_name,
-                           std::vector<int> &links, std::vector<int> &joints);
-
-  // convert a tf::Vector3 into a KDL Vector
-  KDL::Vector toKDL(const tf::Vector3& v) const;
-
-  // convert a tf::Quaternion into a KDL Rotation
-  KDL::Rotation toKDL(const tf::Quaternion& r) const;
-
-  bool kdl_cached_;
-  void updateCachedKDL()
-  {
-    KDL::Chain c;
-    toKDL(c);
-  }
+  std::vector<int> joint_indices_;  // ONLY joints that can be actuated (not fixed joints)
+  std::vector<int> all_joint_indices_;  // Includes fixed joints
+  std::vector<std::string> link_names_;
 };
 
 }

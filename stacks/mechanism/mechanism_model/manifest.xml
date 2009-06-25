@@ -8,6 +8,7 @@
 <depend package="hardware_interface" />
 <depend package="tinyxml" />
 <depend package="wg_robot_description_parser" />
+<depend package="kdl_parser" />
 <depend package="tf" />
 <depend package="tf_conversions" />
 <depend package="std_srvs" />

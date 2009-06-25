@@ -27,68 +27,45 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-// Author: Stuart Glaser
+// Author: Stuart Glaser, Wim Meeussen
 
 #include "mechanism_model/chain.h"
 #include "tf_conversions/tf_kdl.h"
 
 namespace mechanism {
 
+using namespace std;
+
 bool Chain::init(Robot *robot, const std::string &root, const std::string &tip)
 {
+
   robot_ = robot;
 
-  // Here we find the chain of links that connects the root to the
-  // tip.  We find the common ancestor of the two, and then we link
-  // together the chain that connects the root to the ancestor and the
-  // chain that connects the tip to the ancestor.
+  // Constructs the kdl chain
+  if (!robot_->tree_.getChain(root, tip, kdl_chain_, link_names_)) return false;
 
-  std::vector<int> root_joints, root_links, tip_joints, tip_links;
-  if (!getAncestors(robot, root, root_links, root_joints))
-    return false;
-  if (!getAncestors(robot, tip, tip_links, tip_joints))
-    return false;
-
-  // Finds the first common ancestor
-  int ancestor_index = -1;  // Indexes into the root_links and tip_links arrays
-  while (ancestor_index + 1 < (int)root_links.size() &&
-         ancestor_index + 1 < (int)tip_links.size() &&
-         root_links[ancestor_index+1] == tip_links[ancestor_index+1])
-  {
-    ++ancestor_index;
-  }
-  if (ancestor_index < 0)
-  {
-    fprintf(stderr, "Chain: The links \"%s\" and \"%s\" are not connected\n",
-            root.c_str(), tip.c_str());
-    return false;
-  }
-
-  // Constructs the full chain, from root to ancestor to tip.
+  // Pulls out all the joint indices
   joint_indices_.clear();
   all_joint_indices_.clear();
-  link_indices_.clear();
-
-  for (size_t i = root_links.size() - 1; (int)i > ancestor_index; --i)
-  {
-    link_indices_.push_back(root_links[i]);
-    all_joint_indices_.push_back(root_joints[i-1]);
+  for (size_t i=0; i<link_names_.size(); i++){
+    // find joint that matches link
+    string jnt_name = "";
+    for (map<string,string>::const_iterator it=robot_->joint_link_mapping_.begin(); 
+         it!=robot_->joint_link_mapping_.end(); it++){
+      if (it->second == link_names_[i]) jnt_name = it->first;
+    }
+    if (jnt_name == ""){
+      ROS_ERROR("Could not find joint matching to link %s",link_names_[i].c_str());
+      return false;
+    }
+    int jnt_index = robot_->getJointIndex(jnt_name);
+    ROS_DEBUG("Index of joint %s at link %s is %i", jnt_name.c_str(), link_names_[i].c_str(), jnt_index);
+    if (jnt_index == -1) return false;
+    all_joint_indices_.push_back(jnt_index);
+    if (robot_->joints_[jnt_index]->type_ != JOINT_FIXED)
+      joint_indices_.push_back(jnt_index);
   }
-  reversed_index_ = link_indices_.size();
-  link_indices_.push_back(root_links[ancestor_index]); // this link will not be used
-  for (size_t i = ancestor_index + 1; i < tip_links.size(); ++i)
-  {
-    all_joint_indices_.push_back(tip_joints[i-1]);
-    link_indices_.push_back(tip_links[i]);
-  }
-  assert(all_joint_indices_.size() == link_indices_.size() - 1);
-
-  // Pulls out all the joints that are actuable (the non-fixed joints).
-  for (unsigned int i = 0; i < all_joint_indices_.size(); ++i)
-  {
-    if (robot_->joints_[all_joint_indices_[i]]->type_ != JOINT_FIXED)
-      joint_indices_.push_back(all_joint_indices_[i]);
-  }
+  ROS_DEBUG("Added %i joints", joint_indices_.size());
 
   return true;
 }
@@ -132,66 +109,7 @@ bool Chain::allCalibrated(std::vector<JointState> &js)
 
 void Chain::toKDL(KDL::Chain &chain)
 {
-  assert(robot_);
-
-  if (reversed_index_ != 0)
-    ROS_ERROR("Creating KDL tree: walking down the mechanism tree is not supported yet");
-
-  tf::Transform continuation;
-  continuation.setIdentity();
-
-  unsigned int i;
-  // construct a kdl chain from root to ancestor to tip
-  for (i = 0; i < link_indices_.size(); ++i)
-  {
-    // Here we create a KDL Segment for each part of the chain, between root and tip.
-    // A KDL Segment consists of a link and a joint. The joint is positioned at the
-    // beginning of the link, and connects this link to the previous link.
-    KDL::Frame kdl_link;
-    KDL::Vector pos;
-    KDL::Rotation rot;
-    KDL::Vector axis;
-
-    // Creates the link: a link is defined by a position and rotation,
-    // relative to the reference frame of the previous link.
-    if (i == 0){
-      kdl_link = KDL::Frame::Identity();
-    }
-    // moving from root to ancestor
-    else if (i<= reversed_index_){
-      tf::VectorTFToKDL(robot_->links_[link_indices_[i-1]]->getOffset().getOrigin(), pos);
-      tf::RotationTFToKDL(robot_->links_[link_indices_[i-1]]->getRotation().getRotation(), rot);
-      kdl_link = KDL::Frame(rot, pos).Inverse();
-    }
-    // moving from ancestor to tip
-    else{
-      tf::VectorTFToKDL(robot_->links_[link_indices_[i]]->getOffset().getOrigin(), pos);
-      tf::RotationTFToKDL(robot_->links_[link_indices_[i]]->getRotation().getRotation(), rot);
-      kdl_link = KDL::Frame(rot, pos);
-    }
-
-    // Creates the joint: a joint is defined by a position and an axis,
-    // relative to the reference frame of the previous link.
-    KDL::Joint kdl_joint;
-    if (i == 0 || robot_->joints_[all_joint_indices_[i-1]]->type_ == JOINT_FIXED){
-      kdl_joint = KDL::Joint(KDL::Joint::None);
-    }
-    // moving from ancestor to tip
-    else if (i<= reversed_index_){
-      tf::VectorTFToKDL(robot_->joints_[all_joint_indices_[i-1]]->axis_, axis);
-      kdl_joint = KDL::Joint(KDL::Vector::Zero(), kdl_link.M * axis * -1, KDL::Joint::RotAxis);
-    }
-    // moving from ancestor to tip
-    else{
-      tf::VectorTFToKDL(robot_->joints_[all_joint_indices_[i-1]]->axis_, axis);
-      kdl_joint = KDL::Joint(kdl_link.p, axis, KDL::Joint::RotAxis);
-  }
-
-    // Combines the link and the joint into a segment, and adds the segment to the chain
-    chain.addSegment(KDL::Segment(kdl_joint, kdl_link /*, inertia, com*/));
-  }
-
-  kdl_cached_ = true;
+  chain = kdl_chain_;
 }
 
 
@@ -234,58 +152,18 @@ void Chain::addEfforts(KDL::JntArray& a, std::vector<JointState>& s)
 }
 
 
-bool Chain::getAncestors(mechanism::Robot* robot, const std::string &link_name,
-                         std::vector<int> &links, std::vector<int> &joints)
-{
-  int current_link = -1;
-  int current_joint = -1;
-
-  // Works up the kinematic tree from the chain's root.
-  current_link = robot->getLinkIndex(link_name);
-  if (current_link < 0)
-  {
-    fprintf(stderr, "Chain could not find link: %s\n", link_name.c_str());
-    return false;
-  }
-  links.push_back(current_link);
-  while (true)
-  {
-    current_joint = robot->getJointIndex(robot->links_[current_link]->joint_name_);
-    if (current_joint < 0)
-      break;  // Top of the kinematic tree
-    current_link = robot->getLinkIndex(robot->links_[current_link]->parent_name_);
-    if (current_link < 0)
-      break;
-    joints.push_back(current_joint);
-    links.push_back(current_link);
-  }
-
-  std::reverse(links.begin(), links.end());
-  std::reverse(joints.begin(), joints.end());
-
-  assert(joints.size() == links.size() - 1);
-
-  return true;
-}
-
-
 Joint *Chain::getJoint(unsigned int actuated_joint_i)
 {
   return robot_->joints_[joint_indices_[actuated_joint_i]];
-}
-
-std::string Chain::getJointName(unsigned int actuated_joint_i)
-{
-  return getJoint(actuated_joint_i)->name_;
 }
 
 
 std::string Chain::getLinkName(int index)
 {
   if (index == -1)
-    index = link_indices_.size() - 1;
+    index = link_names_.size() - 1;
 
-  return robot_->links_[link_indices_[index]]->name_;
+  return link_names_[index];
 }
 
 
