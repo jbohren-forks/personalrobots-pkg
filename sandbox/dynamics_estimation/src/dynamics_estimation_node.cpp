@@ -110,7 +110,7 @@ bool DynamicsEstimationNode::init()
   // initialize the joint_name_to_index_ mapping:
   for (int i=0; i<num_joints_; i++)
   {
-    std::string name = mechanism_chain_.getJointName(i);
+    std::string name = mechanism_chain_.getJoint(i)->name_;
     joint_name_to_index_.insert(std::make_pair(name,i));
   }
 
