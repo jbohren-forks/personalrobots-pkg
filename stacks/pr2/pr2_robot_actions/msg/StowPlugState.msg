@@ -6,7 +6,7 @@ Header header
 robot_actions/ActionStatus status
 
 # Goal
-robot_msgs/PlugStow goal
+plugs_msgs/PlugStow goal
 
 # Feedback
 std_msgs/Empty feedback

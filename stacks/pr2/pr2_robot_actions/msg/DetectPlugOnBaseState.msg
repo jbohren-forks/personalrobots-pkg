@@ -7,4 +7,4 @@ robot_actions/ActionStatus status
 std_msgs/Empty goal
 
 # Feedback
-robot_msgs/PlugStow feedback
+plugs_msgs/PlugStow feedback
