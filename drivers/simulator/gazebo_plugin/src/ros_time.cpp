@@ -50,7 +50,7 @@ RosTime::RosTime(Entity *parent)
 
   int argc = 0;
   char** argv = NULL;
-  ros::init(argc,argv,"ros_time",ros::init_options::AnonymousName);
+  ros::init(argc,argv,"gazebo");
 
   this->rosnode_ = new ros::NodeHandle();
 
@@ -60,6 +60,7 @@ RosTime::RosTime(Entity *parent)
   // broadcasting sim time, so set parameter, this should really be in the launch script param tag, so it's set before nodes start
   this->rosnode_->setParam("/use_sim_time", true);
 
+  this->s = new ros::MultiThreadedSpinner(4);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -96,10 +97,11 @@ void RosTime::UpdateChild()
     /*                                                             */
     /***************************************************************/
     this->lock.lock();
-    timeMsg.rostime.sec  = (unsigned long)floor(currentTime);
-    timeMsg.rostime.nsec = (unsigned long)floor(  1e9 * (  currentTime - timeMsg.rostime.sec) );
+    timeMsg.rostime.fromSec(currentTime);
     this->pub_.publish(timeMsg);
     this->lock.unlock();
+
+    ros::spinOnce(*this->s);
 }
 
 ////////////////////////////////////////////////////////////////////////////////

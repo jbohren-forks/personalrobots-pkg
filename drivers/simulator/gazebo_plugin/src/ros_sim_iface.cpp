@@ -68,7 +68,7 @@ RosSimIface::RosSimIface(Entity *parent)
 
   int argc = 0;
   char** argv = NULL;
-  ros::init(argc,argv,"ros_sim_iface",ros::init_options::AnonymousName);
+  ros::init(argc,argv,"gazebo");
   this->rosnode_ = new ros::NodeHandle();
 }
 
