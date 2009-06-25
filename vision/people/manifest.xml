@@ -34,7 +34,7 @@
 <sysdepend os="ubuntu" version="8.04-hardy" package="python-numpy"/>
 <rosdep name="python-numpy"/>
 <export>
-<cpp cflags="-I${prefix}/msg/cpp"/>
+<cpp cflags="-I${prefix}/msg/cpp -I${prefix}/srv/cpp"/>
 </export>
 </package>
 
