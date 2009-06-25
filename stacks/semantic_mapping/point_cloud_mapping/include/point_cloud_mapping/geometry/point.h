@@ -72,6 +72,7 @@ namespace cloud_geometry
   }
 
   int getChannelIndex (const robot_msgs::PointCloud &points, std::string channel_name);
+  int getChannelIndex (robot_msgs::PointCloudConstPtr points, std::string channel_name);
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   /** \brief Create a quick copy of a point and its associated channels and return the data as a float vector.
@@ -343,6 +344,9 @@ namespace cloud_geometry
                              std::vector<Leaf> &leaves, int d_idx, double cut_distance = DBL_MAX);
 
   void downsamplePointCloud (const robot_msgs::PointCloud &points, robot_msgs::PointCloud &points_down, robot_msgs::Point leaf_size,
+                             std::vector<Leaf> &leaves, int d_idx, double cut_distance = DBL_MAX);
+
+  void downsamplePointCloud (robot_msgs::PointCloudConstPtr points, robot_msgs::PointCloud &points_down, robot_msgs::Point leaf_size,
                              std::vector<Leaf> &leaves, int d_idx, double cut_distance = DBL_MAX);
 
   void downsamplePointCloud (const robot_msgs::PointCloud &points, robot_msgs::PointCloud &points_down, robot_msgs::Point leaf_size);
