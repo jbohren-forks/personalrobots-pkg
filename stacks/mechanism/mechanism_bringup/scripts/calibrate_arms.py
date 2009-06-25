@@ -242,8 +242,8 @@ if __name__ == '__main__':
     xml = ''
     
     if len(sys.argv) > 1:
-       xacro_cmd = roslib.packages.get_pkg_dir('xacro', True) + '/xacro.py'
-       xmls = [os.popen2(xacro_cmd + " %s" % f)[1].read() for f in rospy.myargv()[1:]]
+        xacro_cmd = roslib.packages.get_pkg_dir('xacro', True) + '/xacro.py'
+        xmls = [os.popen2(xacro_cmd + " %s" % f)[1].read() for f in rospy.myargv()[1:]]
 
         # Poor man's xml splicer
         for i in range(len(xmls) - 1):
