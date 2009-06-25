@@ -5,7 +5,7 @@
 
   <group ns="stereo">
     <!-- Start the 1394 videre camera driver -->
-    <node machine="stereo" pkg="dcam" type="stereodcam" respawn="false" >
+    <node machine="stereo" pkg="dcam" type="stereodcam" respawn="false" name="stereodcam" >
       <param name="videre_mode" type="str" value="none"/>
       <param name="fps" type="double" value="15.0"/>
       <param name="frame_id" type="string" value="stereo_optical_frame"/>
