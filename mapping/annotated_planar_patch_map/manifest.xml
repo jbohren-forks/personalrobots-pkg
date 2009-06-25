@@ -18,6 +18,7 @@
 
   <depend package="annotated_map_msgs"/>
   <depend package="pr2_mechanism_controllers"/>
+  <depend package="rostest"/>
 
   <export>
     <cpp cflags="-I${prefix}/srv/cpp -I${prefix}/include" />

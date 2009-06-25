@@ -1,0 +1,24 @@
+<launch>
+
+  <node pkg="annotated_planar_patch_map" type="annotation2d_lifter_to_tagged_patch_map_node" 
+     	name="annotation_lifter" respawn="false" output="screen"
+	launch-prefix="xterm -e gdb --args"
+	>
+    
+    <param name="fixed_frame" value="map"/>
+    
+    <remap from="planar_map" to="/patch_maps/empty"/>
+    <remap from="cam_info" to="/stereo/left/cam_info"/>
+    
+    <param name="~max_extrapolation_distance" value="0.5"/>
+    <param name="max_extrapolation_distance" value="0.5"/>
+    
+    <param name="min_num_indist_tolerance" value="1"/>
+    <param name="max_allowed_num_outdist_tolerance" value="0"/>
+    <param name="dist_tolerance" value="0.0"/>
+    <param name="max_depth" value="5.0"/>
+    <param name="min_depth" value="0.1"/>
+  </node>	   
+
+
+</launch>

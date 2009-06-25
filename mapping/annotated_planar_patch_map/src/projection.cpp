@@ -37,7 +37,7 @@
 
 #include <boost/numeric/ublas/matrix.hpp>
 
-#include "cv.h"
+#include <opencv/cv.h>
 
 #include "point_cloud_mapping/geometry/areas.h"
 #include "annotated_planar_patch_map/projection.h"
@@ -80,6 +80,55 @@ void annotated_planar_patch_map::projection::projectPolygonalMap(const image_msg
 }
 
   
+void annotated_planar_patch_map::projection::projectAnyObject(const image_msgs::CamInfo& cam_info,robot_msgs::Polygon3D polyIn,robot_msgs::Polygon3D& polyOut)
+{
+  //Projection setup
+  CvMat *K_ = cvCreateMat(3, 3, CV_64FC1);
+  memcpy((char*)(K_->data.db), (char*)(&cam_info.K[0]), 9 * sizeof(double));
+
+  double zeros[] = {0, 0, 0};
+  CvMat rotation_vector = cvMat(3, 1, CV_64FC1, zeros);
+  CvMat translation_vector = cvMat(3, 1, CV_64FC1, zeros);
+  double point[2] = {0.0, 0.0};
+
+
+  //Input/output points
+  unsigned int num_pts = polyIn.get_points_size();
+  polyOut.set_points_size(num_pts);
+
+  CvMat* object_points = cvCreateMat( 1, num_pts , CV_64FC3 );
+  CvMat* image_points = cvCreateMat( 1, num_pts , CV_64FC2 );
+
+  for (unsigned int iP=0;iP<num_pts;iP++){
+    CvPoint3D64f pt;
+    pt.x=-polyIn.points[iP].y;
+    pt.y=-polyIn.points[iP].z;
+    pt.z= polyIn.points[iP].x;
+    
+    CV_MAT_ELEM( *object_points, CvPoint3D64f, 0, iP ) = pt;
+
+  }
+  //Project them
+  cvProjectPoints2(object_points, &rotation_vector, &translation_vector,
+                   K_, NULL, image_points);
+
+  //Put them back
+  for(unsigned int iPt = 0; iPt<num_pts; iPt++)
+  {
+    CvPoint2D64f &img_pt=CV_MAT_ELEM( *image_points, CvPoint2D64f, 0, iPt );
+
+    robot_msgs::Point32 &old_pt=polyIn.points[iPt];
+    robot_msgs::Point32 &new_pt=polyOut.points[iPt];
+    new_pt.x=img_pt.x;
+    new_pt.y=img_pt.y;
+    new_pt.z=old_pt.x; //I mean, this is the "z" - distance from the image
+  }
+
+  cvReleaseMat(&K_);
+  cvReleaseMat(&object_points);
+  cvReleaseMat(&image_points);
+}
+
 
 void annotated_planar_patch_map::projection::projectPolygonPoints(double* projection,double img_w,double img_h,robot_msgs::Polygon3D polyIn,robot_msgs::Polygon3D& polyOut)
 {
@@ -263,26 +312,9 @@ void annotated_planar_patch_map::projection::projectAnyObjectNOP(const image_msg
   }
 }
 
-void annotated_planar_patch_map::projection::projectAnyObject(const image_msgs::CamInfo& stereo_info, const annotated_map_msgs::TaggedPolygonalMap& transformed_map_3D, annotated_map_msgs::TaggedPolygonalMap &transformed_map_2D)
+void annotated_planar_patch_map::projection::projectAnyObject(const image_msgs::CamInfo& cam_info, const annotated_map_msgs::TaggedPolygonalMap& transformed_map_3D, annotated_map_msgs::TaggedPolygonalMap &transformed_map_2D)
 {
   bool bSame = (&transformed_map_3D == &transformed_map_2D);
-
-  //Get projections matrix
-  //tf::Transform projection;
-  //btScalar tmp_proj[16];
-  double projection[16];
-  int i;
-  //for(i=0;i<12;i++)
-  //  projection[i]=stereo_info.P[i];
-  for(i=0;i<12;i++)
-    projection[i]=stereo_info.P[i];
-
-  for(;i<16;i++)
-    projection[i]=0;
-
-  //tmp_proj[i]=stereo_info.RP[i];
-
-  //projection.setFromOpenGLMatrix(tmp_proj);
 
   //Project all points of all polygons
   unsigned int num_polygons = transformed_map_3D.get_polygons_size();
@@ -291,7 +323,8 @@ void annotated_planar_patch_map::projection::projectAnyObject(const image_msgs::
   {
     //create new polygon 2D (z=1)
     robot_msgs::Polygon3D newPoly;
-    projectPolygonPoints(projection,double(stereo_info.width),double(stereo_info.height),transformed_map_3D.polygons[iPoly].polygon,newPoly);
+
+    projectAnyObject(cam_info,transformed_map_3D.polygons[iPoly].polygon,newPoly);
 
     //put the polygon into 2D map
     transformed_map_2D.polygons[iPoly].polygon=newPoly;
@@ -307,6 +340,7 @@ void annotated_planar_patch_map::projection::projectAnyObject(const image_msgs::
   {
     transformed_map_2D.header = transformed_map_3D.header;
   }
+
 }
   
 

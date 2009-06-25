@@ -62,14 +62,23 @@ namespace annotated_planar_patch_map
 namespace projection
 {
 
+void projectAnyObject(const image_msgs::CamInfo& cam_info,robot_msgs::Polygon3D polyIn,robot_msgs::Polygon3D& polyOut);
+
+void projectAnyObject(const image_msgs::StereoInfo& stereo_info_, const annotated_map_msgs::TaggedPolygonalMap& transformed_map_3D, annotated_map_msgs::TaggedPolygonalMap &transformed_map_2D);
+
+void projectAnyObject(const image_msgs::CamInfo& stereo_info_, const annotated_map_msgs::TaggedPolygonalMap& transformed_map_3D, annotated_map_msgs::TaggedPolygonalMap &transformed_map_2D);
+
+
+
+
+
 void projectPolygonalMap(const image_msgs::StereoInfo& stereo_info_, const robot_msgs::PolygonalMap& transformed_map_3D, robot_msgs::PolygonalMap &transformed_map_2D);
 
 void projectPolygonPoints(double* projection,double img_w, double img_h, robot_msgs::Polygon3D polyIn,robot_msgs::Polygon3D& polyOut);
 void projectPolygonPointsNOP(double* projection,double img_w, double img_h, robot_msgs::Polygon3D polyIn,robot_msgs::Polygon3D& polyOut);
 
-void projectAnyObject(const image_msgs::StereoInfo& stereo_info_, const annotated_map_msgs::TaggedPolygonalMap& transformed_map_3D, annotated_map_msgs::TaggedPolygonalMap &transformed_map_2D);
 
-void projectAnyObject(const image_msgs::CamInfo& stereo_info_, const annotated_map_msgs::TaggedPolygonalMap& transformed_map_3D, annotated_map_msgs::TaggedPolygonalMap &transformed_map_2D);
+
 
 void projectAnyObjectNOP(const image_msgs::CamInfo& stereo_info_, const annotated_map_msgs::TaggedPolygonalMap& transformed_map_3D, annotated_map_msgs::TaggedPolygonalMap &transformed_map_2D);
 

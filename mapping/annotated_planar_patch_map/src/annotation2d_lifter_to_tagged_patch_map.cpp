@@ -173,7 +173,9 @@ public:
     ROS_INFO_STREAM("Lifting annotation for " << annotation2d_object_->reference_time << " at caminfo frame " <<cam_info_->header.stamp << " unlabeled map has " << unlabeled_map_->polygons.size() << " polygons");
     //Get the 3D map into the coordinate frame of the camera
     ROS_DEBUG("Transform 3D map to frame: %s",annotation2d_object_->reference_frame.c_str());
+
     annotated_map_lib::transformAnyObject(annotation2d_object_->reference_frame,annotation2d_object_->reference_time,tf_,*unlabeled_map_,transformed_map_3D);
+    //annotated_map_lib::transformAnyObject(cam_info_->header.frame_id,annotation2d_object_->reference_time,tf_,*unlabeled_map_,transformed_map_3D);
 
     ROS_DEBUG("Transform 3D map to frame: %s",target_frame_.c_str());
     annotated_map_lib::transformAnyObject(target_frame_,annotation2d_object_->reference_time,tf_,*unlabeled_map_,transformed_map_3D_fixed_frame);
