@@ -54,6 +54,7 @@
 #include "topic_synchronizer2/topic_synchronizer.h"
 #include "tf/transform_listener.h"
 #include "visualization_msgs/Marker.h"
+#include "visualization_msgs/MarkerArray.h"
 #include "people/StartDetection.h"
 
 #include "opencv/cxcore.h"
@@ -105,8 +106,12 @@ public:
 
   // Publishers
   ros::Publisher pos_pub_;
-  ros::Publisher vis_pub_;
+  ros::Publisher vis_pub_add_;
+  ros::Publisher vis_pub_sub_;
   ros::Publisher clines_pub_;
+  visualization_msgs::MarkerArray markers_add_;
+  visualization_msgs::MarkerArray markers_sub_;
+
 
   // Service
   ros::ServiceServer service_server_;
@@ -136,7 +141,7 @@ public:
 
   tf::TransformListener tf_;
 
-  boost::mutex cv_mutex_, pos_mutex_;
+  boost::mutex cv_mutex_, pos_mutex_, limage_mutex_, dimage_mutex_;
 
   bool do_continuous_;
   bool run_detector_;
@@ -187,7 +192,8 @@ public:
 
     ROS_INFO_STREAM_NAMED("face_detector","Advertised people_tracker_measurements");
 
-    vis_pub_ = nh_.advertise<visualization_msgs::Marker>("visualization_marker",0);
+    vis_pub_add_ = nh_.advertise<visualization_msgs::MarkerArray>("visualization_marker_array",0);
+    vis_pub_sub_ = nh_.advertise<visualization_msgs::MarkerArray>("visualization_marker_array",0);
 
     // Advertise the rectangles to draw if stereo_view is running.
     if (do_display_ == "remote") {
@@ -202,9 +208,10 @@ public:
 
     service_server_ = nh_.advertiseService("start_detection",&FaceDetector::startDetection,this);
 
-    ros::MultiThreadedSpinner s(2);
-    ros::spin(s);
-
+    //ros::MultiThreadedSpinner s(3);
+    //ros::spin(s);
+    ros::spin();
+    
   }
 
   ~FaceDetector()
@@ -226,6 +233,7 @@ public:
   // Start the detector running. It will automatically stop running when at least one face is found.
   bool startDetection(people::StartDetection::Request &req, people::StartDetection::Response &resp)
   {
+    ROS_DEBUG("In service call");
     run_detector_ = true;
     return true;
   }
@@ -257,12 +265,20 @@ public:
   }
 
   void leftImageCallback(const image_msgs::ImageConstPtr& image_ptr) 
-  {
+  {    
+    // Only run the detector if in continuous mode or a service call was made.
+    //  if (!run_detector_) 
+    //  return;
+    boost::mutex::scoped_lock llock(limage_mutex_);
     limage_ = image_ptr;
   }
 
   void dispImageCallback(const image_msgs::ImageConstPtr& image_ptr)
-  {
+  {    
+    // Only run the detector if in continuous mode or a service call was made.
+    //    if (!run_detector_) 
+    //  return;
+    boost::mutex::scoped_lock dlock(dimage_mutex_);
     dimage_ = image_ptr;
   }
 
@@ -286,7 +302,13 @@ public:
    */
   void imageCBAll()
   {
-
+    image_msgs::ImageConstPtr limage, dimage;
+    {
+      boost::mutex::scoped_lock llock(limage_mutex_);
+      boost::mutex::scoped_lock dlock(dimage_mutex_);
+      limage = limage_;
+      dimage = dimage_;
+    }
     // Only run the detector if in continuous mode or a service call was made.
     if (!run_detector_) 
       return;
@@ -297,7 +319,7 @@ public:
  
     CvSize im_size;
 
-    if (lbridge_.fromImage(*limage_,"bgr") && dbridge_.fromImage(*dimage_)) {
+    if (lbridge_.fromImage(*limage,"bgr") && dbridge_.fromImage(*dimage)) {
       cv_image_left_ = lbridge_.toIpl();
       cv_image_disp_ = dbridge_.toIpl();
     }
@@ -328,6 +350,13 @@ public:
 
     image_msgs::ColoredLines all_cls;
     vector<image_msgs::ColoredLine> lines;
+    // Clear out the old visualization markers. 
+    markers_sub_.markers.clear();
+    markers_sub_.markers = markers_add_.markers;
+    for (vector<visualization_msgs::Marker>::iterator im = markers_sub_.markers.begin(); im != markers_sub_.markers.end(); im++ ) {
+      im->action = visualization_msgs::Marker::DELETE;
+    }
+    markers_add_.markers.clear();
 
     if (faces_vector.size() > 0 ) {
 
@@ -335,7 +364,7 @@ public:
       boost::mutex::scoped_lock pos_lock(pos_mutex_);
       map<string, RestampedPositionMeasurement>::iterator it;
       for (it = pos_list_.begin(); it != pos_list_.end(); it++) {
-	if ((limage_->header.stamp - (*it).second.restamp) > ros::Duration().fromSec(5.0)) {
+	if ((limage->header.stamp - (*it).second.restamp) > ros::Duration().fromSec(5.0)) {
 	  // Position is too old, kill the person.
 	  pos_list_.erase(it);
 	}
@@ -345,8 +374,8 @@ public:
 	  tf::PointMsgToTF((*it).second.pos.pos, pt);
 	  tf::Stamped<tf::Point> loc(pt, (*it).second.pos.header.stamp, (*it).second.pos.header.frame_id);
 	  try {
-     	    tf_.transformPoint(limage_->header.frame_id, limage_->header.stamp, loc, "odom_combined", loc);
-	    (*it).second.pos.header.stamp = limage_->header.stamp;
+     	    tf_.transformPoint(limage->header.frame_id, limage->header.stamp, loc, "odom_combined", loc);
+	    (*it).second.pos.header.stamp = limage->header.stamp;
 	    (*it).second.pos.pos.x = loc[0];
             (*it).second.pos.pos.y = loc[1];
             (*it).second.pos.pos.z = loc[2];
@@ -369,12 +398,12 @@ public:
 	  std::string id = "";
 
 	  // Convert the face format to a PositionMeasurement msg.
-	  pos.header.stamp = limage_->header.stamp;
+	  pos.header.stamp = limage->header.stamp;
 	  pos.name = names_[0]; 
 	  pos.pos.x = one_face->center3d.val[0]; 
 	  pos.pos.y = one_face->center3d.val[1];
 	  pos.pos.z = one_face->center3d.val[2]; 
-	  pos.header.frame_id = limage_->header.frame_id;//"stereo_optical_frame";
+	  pos.header.frame_id = limage->header.frame_id;//"stereo_optical_frame";
 	  pos.reliability = reliabilities_[0];
 	  pos.initialization = 1;//0;
 	  pos.covariance[0] = 0.04; pos.covariance[1] = 0.0;  pos.covariance[2] = 0.0;
@@ -395,7 +424,7 @@ public:
 	  }
 	  if (close_it != pos_list_.end()) {
 	    if (mindist < (*close_it).second.dist) {
-	      (*close_it).second.restamp = limage_->header.stamp;
+	      (*close_it).second.restamp = limage->header.stamp;
 	      (*close_it).second.dist = mindist;
 	      (*close_it).second.pos = pos;
 	    }
@@ -431,33 +460,36 @@ public:
 	lines.resize(4*faces_vector.size());
       }
 
+      int ngood = 0;
+
       for (uint iface = 0; iface < faces_vector.size(); iface++) {
 	one_face = &faces_vector[iface];	
 	
 	// Visualization markers
 	if (one_face->status == "good") {
-	  visualization_msgs::Marker marker;
-	  marker.header.frame_id = limage_->header.frame_id;
-	  marker.header.stamp = limage_->header.stamp;
-	  marker.ns = "people";
-	  marker.id = 0;
-	  marker.type = visualization_msgs::Marker::SPHERE;
-	  marker.action = visualization_msgs::Marker::ADD;
-	  marker.pose.position.x = one_face->center3d.val[0];
-	  marker.pose.position.y = one_face->center3d.val[1];
-	  marker.pose.position.z = one_face->center3d.val[2];
-	  marker.pose.orientation.x = 0.0;
-	  marker.pose.orientation.y = 0.0;
-	  marker.pose.orientation.z = 0.0;
-	  marker.pose.orientation.w = 1.0;
-	  marker.scale.x = 0.1;
-	  marker.scale.y = 0.1;
-	  marker.scale.z = 0.1;
-	  marker.color.a = 1.0;
-	  marker.color.r = 0.0;
-	  marker.color.g = 1.0;
-	  marker.color.b = 0.0;
-	  vis_pub_.publish(marker);
+	  visualization_msgs::Marker m;
+	  m.header.frame_id = limage->header.frame_id;
+	  m.header.stamp = limage->header.stamp;
+	  m.ns = "people";
+	  m.id = 0;
+	  m.type = visualization_msgs::Marker::SPHERE;
+	  m.action = visualization_msgs::Marker::ADD;
+	  m.pose.position.x = one_face->center3d.val[0];
+	  m.pose.position.y = one_face->center3d.val[1];
+	  m.pose.position.z = one_face->center3d.val[2];
+	  m.pose.orientation.x = 0.0;
+	  m.pose.orientation.y = 0.0;
+	  m.pose.orientation.z = 0.0;
+	  m.pose.orientation.w = 1.0;
+	  m.scale.x = 0.2;
+	  m.scale.y = 0.2;
+	  m.scale.z = 0.2;
+	  m.color.a = 1.0;
+	  m.color.r = 0.0;
+	  m.color.g = 1.0;
+	  m.color.b = 0.0;
+	  markers_add_.markers.push_back(m);
+	  ngood ++;
 	}
 	else {
 	  ROS_DEBUG_STREAM_NAMED("face_detector","The detection didn't have a valid size, so it wasn't visualized.");
@@ -511,25 +543,29 @@ public:
 	    lines[4*iface+3].y0 = one_face->box2d.y; 
 	    lines[4*iface+3].y1 = one_face->box2d.y + one_face->box2d.height;
 
-	    lines[4*iface].header.stamp = limage_->header.stamp;
-	    lines[4*iface+1].header.stamp = limage_->header.stamp;
-	    lines[4*iface+2].header.stamp = limage_->header.stamp;
-	    lines[4*iface+3].header.stamp = limage_->header.stamp;
-	    lines[4*iface].header.frame_id = limage_->header.frame_id;
-	    lines[4*iface+1].header.frame_id = limage_->header.frame_id;
-	    lines[4*iface+2].header.frame_id = limage_->header.frame_id;
-	    lines[4*iface+3].header.frame_id = limage_->header.frame_id;
+	    lines[4*iface].header.stamp = limage->header.stamp;
+	    lines[4*iface+1].header.stamp = limage->header.stamp;
+	    lines[4*iface+2].header.stamp = limage->header.stamp;
+	    lines[4*iface+3].header.stamp = limage->header.stamp;
+	    lines[4*iface].header.frame_id = limage->header.frame_id;
+	    lines[4*iface+1].header.frame_id = limage->header.frame_id;
+	    lines[4*iface+2].header.frame_id = limage->header.frame_id;
+	    lines[4*iface+3].header.frame_id = limage->header.frame_id;
 	  
 	  }
 	} // End if do_display_
       } // End for iface
+
     } // End if faces_vector.size()>0
+
+    vis_pub_sub_.publish(markers_sub_);
+    vis_pub_add_.publish(markers_add_);
 
     // Display
     if (do_display_ == "remote") {
-      all_cls.header.stamp = limage_->header.stamp;
+      all_cls.header.stamp = limage->header.stamp;
       all_cls.label = "face_detection";
-      all_cls.header.frame_id = limage_->header.frame_id;
+      all_cls.header.frame_id = limage->header.frame_id;
       all_cls.lines = lines;
       clines_pub_.publish(all_cls);
     }
