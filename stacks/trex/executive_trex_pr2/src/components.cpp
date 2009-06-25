@@ -15,8 +15,6 @@
 #include "OrienteeringSolver.hh"
 #include "Utilities.hh"
 #include "LabelStr.hh"
-#include <executive_trex_pr2/topological_map.h>
-#include <executive_trex_pr2/door_domain_constraints.h>
 #include <executive_trex_pr2/ros_reactor.h>
 #include <tf/transform_listener.h>
 #include <math.h>
@@ -52,93 +50,79 @@ namespace TREX{
     exit(0);
   }
 
-  /**
-   * @brief A base class constraint for posting an equality relation across matching
-   * paramaters in a pair of tokens.
-   * @note This could go back to the EUROPA constraint engine
-   */
-  class ParamEqConstraint: public Constraint{
-  public:
-    ParamEqConstraint(const LabelStr& name,
-		       const LabelStr& propagatorName,
-		       const ConstraintEngineId& constraintEngine,
-		      const std::vector<ConstrainedVariableId>& variables,
-		      const char* param_names)
-      : Constraint(name, propagatorName, constraintEngine, makeNewScope(param_names, variables)){}
-
-  private:
-
-    /**
-     * @brief Takes a ':' delimited list of param names to use in applying the quality relation
-     */
-    std::vector<ConstrainedVariableId> makeNewScope(const char* param_names, const std::vector<ConstrainedVariableId>& variables ){
-      static const char* DELIMITER(":");
-
-      // If already mapped, then return without modification. This is the case when merging
-      if(variables.size() > 2)
-	return variables;
-
-      // Otherwise swap for parameters of both tokens
-      std::vector<ConstrainedVariableId> new_scope;
-      LabelStr param_names_lbl(param_names);
-      unsigned int param_count = param_names_lbl.countElements(DELIMITER);
-      for(unsigned int i = 0; i < param_count; i++){
-	LabelStr param_name = param_names_lbl.getElement(i, DELIMITER);
-	ConstrainedVariableId var_a = getVariableByName(variables[0], param_name);
-	ConstrainedVariableId var_b = getVariableByName(variables[1], param_name);
-	checkError(var_a.isValid(), "In param_eq constrint - no variable for " << param_name.toString() << " for " << parentOf(variables[0])->toLongString() << " in /n" << toString());
-	checkError(var_b.isValid(), "In param_eq constrint - no variable for " << param_name.toString() << " for " << parentOf(variables[1])->toLongString()<< " in /n" << toString());
-
-	// Insert the pair
-	new_scope.push_back(var_a);
-	new_scope.push_back(var_b);
-      }
-
-      return new_scope;
+  ParamEqConstraint::ParamEqConstraint(const LabelStr& name,
+				       const LabelStr& propagatorName,
+				       const ConstraintEngineId& constraintEngine,
+				       const std::vector<ConstrainedVariableId>& variables,
+				       const char* param_names)
+    : Constraint(name, propagatorName, constraintEngine, makeNewScope(param_names, variables)){}
+  
+  
+  std::vector<ConstrainedVariableId> TREX::ParamEqConstraint::makeNewScope(const char* param_names, const std::vector<ConstrainedVariableId>& variables ){
+    static const char* DELIMITER(":");
+    
+    // If already mapped, then return without modification. This is the case when merging
+    if(variables.size() > 2)
+      return variables;
+    
+    // Otherwise swap for parameters of both tokens
+    std::vector<ConstrainedVariableId> new_scope;
+    LabelStr param_names_lbl(param_names);
+    unsigned int param_count = param_names_lbl.countElements(DELIMITER);
+    for(unsigned int i = 0; i < param_count; i++){
+      LabelStr param_name = param_names_lbl.getElement(i, DELIMITER);
+      ConstrainedVariableId var_a = getVariableByName(variables[0], param_name);
+      ConstrainedVariableId var_b = getVariableByName(variables[1], param_name);
+      checkError(var_a.isValid(), "In param_eq constrint - no variable for " << param_name.toString() << " for " << parentOf(variables[0])->toLongString() << " in /n" << toString());
+      checkError(var_b.isValid(), "In param_eq constrint - no variable for " << param_name.toString() << " for " << parentOf(variables[1])->toLongString()<< " in /n" << toString());
+      
+      // Insert the pair
+      new_scope.push_back(var_a);
+      new_scope.push_back(var_b);
     }
-
-    EntityId parentOf(const ConstrainedVariableId& var){
-      // If it has a parent, that parent should be a token
-      if(var->parent().isId()){
-	return TREX::getParentToken(var);
-      }
-
-      checkError(var->lastDomain().isSingleton(), var->toString() << " should be bound.");
-      return var->lastDomain().getSingletonValue();
+    
+    return new_scope;
+  }
+  
+  EntityId TREX::ParamEqConstraint::parentOf(const ConstrainedVariableId& var){
+    // If it has a parent, that parent should be a token
+    if(var->parent().isId()){
+      return TREX::getParentToken(var);
     }
-
-    ConstrainedVariableId getVariableByName(const ConstrainedVariableId& var, const LabelStr& param_name){
-      // If it has a parent, that parent should be a token
-      if(var->parent().isId()){
-	const TokenId& token = TREX::getParentToken(var);
-	return token->getVariable(param_name);
-      }
-
-      checkError(var->lastDomain().isSingleton(), var->toString() << " should be bound.");
-      ObjectId object = var->lastDomain().getSingletonValue();
-      std::string object_name = object->getName().toString() + "." + param_name.toString();
-      return object->getVariable(object_name.c_str());
+    
+    checkError(var->lastDomain().isSingleton(), var->toString() << " should be bound.");
+    return var->lastDomain().getSingletonValue();
+  }
+  
+  ConstrainedVariableId TREX::ParamEqConstraint::getVariableByName(const ConstrainedVariableId& var, const LabelStr& param_name){
+    // If it has a parent, that parent should be a token
+    if(var->parent().isId()){
+      const TokenId& token = TREX::getParentToken(var);
+      return token->getVariable(param_name);
     }
-
-    void handleExecute(){
-      debugMsg("trex:debug:propagation:param_eq",  "BEFORE: " << toString());
-
-      unsigned int param_count = getScope().size() / 2;
-      for(unsigned int i = 0; i < param_count; i++){
-	unsigned int index = i * 2;
-	AbstractDomain& dom_a = getCurrentDomain(getScope()[index]);
-	AbstractDomain& dom_b = getCurrentDomain(getScope()[index+1]);
-
-	if(dom_a.intersect(dom_b) && dom_a.isEmpty())
-	  return;
-      }
-
-      debugMsg("trex:debug:propagation:param_eq",  "AFTER: " << toString());
+    
+    checkError(var->lastDomain().isSingleton(), var->toString() << " should be bound.");
+    ObjectId object = var->lastDomain().getSingletonValue();
+    std::string object_name = object->getName().toString() + "." + param_name.toString();
+    return object->getVariable(object_name.c_str());
+  }
+  
+  void TREX::ParamEqConstraint::handleExecute(){
+    debugMsg("trex:debug:propagation:param_eq",  "BEFORE: " << toString());
+    
+    unsigned int param_count = getScope().size() / 2;
+    for(unsigned int i = 0; i < param_count; i++){
+      unsigned int index = i * 2;
+      AbstractDomain& dom_a = getCurrentDomain(getScope()[index]);
+      AbstractDomain& dom_b = getCurrentDomain(getScope()[index+1]);
+      
+      if(dom_a.intersect(dom_b) && dom_a.isEmpty())
+	return;
     }
-
-    const TokenId _target_token;
-    const TokenId _source_token;
-  };
+    
+    debugMsg("trex:debug:propagation:param_eq",  "AFTER: " << toString());
+  }
+  
 
 
   class CalcOrConstraint: public Constraint {
@@ -178,28 +162,8 @@ namespace TREX{
     }
   };
 
-  class DoorMsgEqConstraint: public ParamEqConstraint {
-  public:
-    DoorMsgEqConstraint(const LabelStr& name,
-			const LabelStr& propagatorName,
-			const ConstraintEngineId& constraintEngine,
-			const std::vector<ConstrainedVariableId>& variables)
-      : ParamEqConstraint(name, propagatorName, constraintEngine, variables,
-			  "frame_id:time_stamp:latch_state:frame_p1_x:frame_p1_y:frame_p1_z:frame_p2_x:frame_p2_y:frame_p2_z:height:hinge:rot_dir:door_p1_x:door_p1_y:door_p1_z:door_p2_x:door_p2_y:door_p2_z:handle_x:handle_y:handle_z:travel_dir_x:travel_dir_y:travel_dir_z")
-    {}
-  };
 
-  class PlugStowMsgEqConstraint: public ParamEqConstraint {
-  public:
-    PlugStowMsgEqConstraint(const LabelStr& name,
-			const LabelStr& propagatorName,
-			const ConstraintEngineId& constraintEngine,
-			const std::vector<ConstrainedVariableId>& variables)
-      : ParamEqConstraint(name, propagatorName, constraintEngine, variables,
-			  "frame_id:time_stamp:stowed:x:y:z")
-    {}
-  };
-
+ 
   class PointMsgEqConstraint: public ParamEqConstraint {
   public:
     PointMsgEqConstraint(const LabelStr& name,
@@ -222,16 +186,6 @@ namespace TREX{
     {}
   };
 
-  class MapPoseMsgEqConstraint: public ParamEqConstraint {
-  public:
-    MapPoseMsgEqConstraint(const LabelStr& name,
-			   const LabelStr& propagatorName,
-			   const ConstraintEngineId& constraintEngine,
-			   const std::vector<ConstrainedVariableId>& variables)
-      : ParamEqConstraint(name, propagatorName, constraintEngine, variables,
-			  "frame_id:x:y:z:qx:qy:qz:qw")
-    {}
-  };
 
   class TFGetRobotPoseConstraint: public Constraint {
   public:
@@ -391,6 +345,8 @@ namespace TREX{
     AbstractDomain& m_target;
   };
 
+  std::vector<SchemaFunction> _g_ros_schemas;
+
   class ROSSchema: public Assembly::Schema {
   public:
     ROSSchema(bool playback):m_playback(playback){}
@@ -410,52 +366,14 @@ namespace TREX{
       REGISTER_CONSTRAINT(constraintEngine->getCESchema(), CalcAngleDiffConstraint, "calcAngleDiff", "Default");
       REGISTER_CONSTRAINT(constraintEngine->getCESchema(), TREX::AllBoundsSetConstraint, "all_bounds_set", "Default");
 
-      // Constraints for message binding
-      REGISTER_CONSTRAINT(constraintEngine->getCESchema(), TREX::PlugStowMsgEqConstraint, "eq_plug_stow_msg", "Default");
+      // Eq Constr
       REGISTER_CONSTRAINT(constraintEngine->getCESchema(), TREX::PointMsgEqConstraint, "eq_point_msg", "Default");
       REGISTER_CONSTRAINT(constraintEngine->getCESchema(), TREX::PoseMsgEqConstraint, "eq_pose_msg", "Default");
-      REGISTER_CONSTRAINT(constraintEngine->getCESchema(), TREX::MapPoseMsgEqConstraint, "eq_map_pose_msg", "Default");
-      REGISTER_CONSTRAINT(constraintEngine->getCESchema(), TREX::DoorMsgEqConstraint, "eq_door_msg", "Default");
 
-      // Register topological map constraints
-      REGISTER_CONSTRAINT(constraintEngine->getCESchema(),
-			  executive_trex_pr2::MapInitializeFromFileConstraint, "map_initialize_from_file", "Default");
-      REGISTER_CONSTRAINT(constraintEngine->getCESchema(),
-			  executive_trex_pr2::MapGetNextMoveConstraint, "map_get_next_move", "Default");
-      REGISTER_CONSTRAINT(constraintEngine->getCESchema(),
-			  executive_trex_pr2::MapConnectorConstraint, "map_connector", "Default");
-      REGISTER_CONSTRAINT(constraintEngine->getCESchema(),
-			  executive_trex_pr2::MapGetRegionFromPositionConstraint, "map_get_region_from_position", "Default");
-      REGISTER_CONSTRAINT(constraintEngine->getCESchema(),
-			  executive_trex_pr2::MapGetDoorwayFromPointsConstraint, "map_get_doorway_from_points", "Default");
-      REGISTER_CONSTRAINT(constraintEngine->getCESchema(),
-			  executive_trex_pr2::MapIsDoorwayConstraint, "map_is_doorway", "Default");
-      REGISTER_CONSTRAINT(constraintEngine->getCESchema(),
-			  executive_trex_pr2::MapGetDoorStateConstraint, "map_get_door_state", "Default");
-      REGISTER_CONSTRAINT(constraintEngine->getCESchema(),
-			  executive_trex_pr2::MapNotifyDoorBlockedConstraint, "map_notify_door_blocked", "Default");
-      REGISTER_CONSTRAINT(constraintEngine->getCESchema(),
-			  executive_trex_pr2::MapGetNearestOutletConstraint, "map_get_nearest_outlet", "Default");
-      REGISTER_CONSTRAINT(constraintEngine->getCESchema(),
-			  executive_trex_pr2::MapGetOutletStateConstraint, "map_get_outlet_state", "Default");
-      REGISTER_CONSTRAINT(constraintEngine->getCESchema(),
-			  executive_trex_pr2::MapGetOutletApproachPoseConstraint, "map_get_outlet_approach_pose", "Default");
-      REGISTER_CONSTRAINT(constraintEngine->getCESchema(),
-			  executive_trex_pr2::MapNotifyOutletBlockedConstraint, "map_notify_outlet_blocked", "Default");
-      REGISTER_CONSTRAINT(constraintEngine->getCESchema(),
-			  executive_trex_pr2::MapGetNearestConnectorConstraint, "map_get_nearest_connector", "Default");
-      REGISTER_CONSTRAINT(constraintEngine->getCESchema(),
-			  executive_trex_pr2::MapGetDoorApproachPoseConstraint, "map_get_door_approach_pose", "Default");
-
-      // Register functions for calculations in the door domain
-      REGISTER_CONSTRAINT(constraintEngine->getCESchema(),
-			  executive_trex_pr2::GetRobotPoseForDoorConstraint, "door_get_robot_pose_for_door", "Default");
-
-      // Register SOLVER components for topological map.
-      EUROPA::SOLVERS::ComponentFactoryMgr* cfm = (EUROPA::SOLVERS::ComponentFactoryMgr*)assembly.getComponent("ComponentFactoryMgr");
-      REGISTER_FLAW_FILTER(cfm, executive_trex_pr2::MapConnectorFilter, MapConnectorFilter);
-      REGISTER_FLAW_HANDLER(cfm, executive_trex_pr2::MapConnectorSelector, MapConnectorSelector);
-      REGISTER_FLAW_MANAGER(cfm, executive_trex_pr2::TopologicalGoalManager, TopologicalGoalManager);
+      //Create User-defined stuff.
+      for (unsigned int i = 0; i < _g_ros_schemas.size(); i++) {
+	_g_ros_schemas[i](m_playback, assembly);
+      }
     }
 
   private:

@@ -12,7 +12,11 @@
 #include "LogManager.hh"
 #include "executive_trex_pr2/logger.h"
 
+
+int trexMain(int argc, char** argv);
+
 namespace TREX{
+
   class Executive;
   typedef EUROPA::Id<Executive> ExecutiveId;
 

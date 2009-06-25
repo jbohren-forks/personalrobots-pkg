@@ -20,11 +20,11 @@
   <depend package="door_msgs" />
   <depend package="deprecated_msgs" />
   <depend package="gtest" />
+  <depend package="executive_trex_pr2" />
 
   <export>
-    <nddl iflags="-I${prefix}/nddl -I${prefix}/deprecated -I${prefix}"/>
-    <cpp cflags="-I${prefix}/srv/cpp -I${prefix}/include/"
-	 lflags="-L${prefix}/lib -Wl,-rpath,${prefix}/lib "/>
+    <nddl iflags="-I${prefix}/nddl  -I${prefix}/deprecated  -I${prefix} "/>
+    <cpp cflags="-I${prefix}/srv/cpp"/>
   </export>
 
   <rosdep name="jam"/>

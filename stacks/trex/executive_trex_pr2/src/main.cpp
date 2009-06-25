@@ -294,7 +294,7 @@ TEST(trex, validateOutput){
   ASSERT_EQ(success, true);
 }
 
-int main(int argc, char **argv)
+int trexMain(int argc, char **argv)
 {
   using namespace executive_trex_pr2;
 

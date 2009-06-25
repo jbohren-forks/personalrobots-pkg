@@ -1,0 +1,5 @@
+<launch>
+  <master auto="start"/>
+  <param name="/trex/start_dir" value="$(find trex_pr2)/test/master/domain_tests/master.1"/>
+  <include file="$(find trex_pr2)/test/master/sim.launch" />
+</launch>
