@@ -3889,7 +3889,8 @@ void EnvironmentROBARM3D::InitKDLChain(const char *fKDL)
     exit(1);
   }
 
-  EnvROBARMCfg.arm_chain = my_tree.getChain("torso_lift_link", "r_wrist_roll_link");
+  std::vector<std::string> links;
+  my_tree.getChain("torso_lift_link", "r_wrist_roll_link", EnvROBARMCfg.arm_chain, links);
   EnvROBARMCfg.jnt_to_pose_solver = new KDL::ChainFkSolverPos_recursive(EnvROBARMCfg.arm_chain);
   EnvROBARMCfg.jnt_pos_in.resize(EnvROBARMCfg.arm_chain.getNrOfJoints());
 
