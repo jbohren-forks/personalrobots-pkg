@@ -24,8 +24,4 @@ public:
   virtual double area() const = 0;
 };
 
-// the types of the class factories
-typedef polygon* create_t();
-typedef void destroy_t(polygon*);
-
 #endif

@@ -11,17 +11,6 @@ public:
 };
 
 
-
-// the class factories
-
-extern "C" polygon* create() {
-  return new triangle;
-}
-
-extern "C" void destroy(polygon* p) {
-  delete p;
-}
-
 POCO_BEGIN_MANIFEST(polygon)
 
 POCO_EXPORT_CLASS(triangle)
