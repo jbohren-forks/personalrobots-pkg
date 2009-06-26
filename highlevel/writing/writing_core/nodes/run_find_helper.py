@@ -92,7 +92,7 @@ class FindHelperAction(python_actions.Action):
         if timer == 10:
           print "detecting face"
           # Run the face detector
-          self.face_det(1)
+          self.face_det()
           print "returned from service call"
         if self.isPreemptRequested():
           return python_actions.PREEMPTED
