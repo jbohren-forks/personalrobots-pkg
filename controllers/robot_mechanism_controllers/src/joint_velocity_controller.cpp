@@ -47,7 +47,8 @@ JointVelocityController::JointVelocityController()
 
 JointVelocityController::~JointVelocityController()
 {
-  sub_command_.shutdown();
+  if ((void*)sub_command_)
+    sub_command_.shutdown();
 }
 
 bool JointVelocityController::init(mechanism::RobotState *robot, const std::string &joint_name,
