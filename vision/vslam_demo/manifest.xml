@@ -7,10 +7,13 @@
   <author>James Bowman/ jamesb@willowgarage.com</author>
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
+  <url>http://pr.willowgarage.com/wiki/vslam_demo</url>
+
   <depend package="vslam"/>
   <depend package="dcam"/>
   <depend package="tf"/>
-  <url>http://pr.willowgarage.com/wiki/vslam_demo</url>
+
+  <sysdepend os="ubuntu" version="8.04-hardy" package="python-opengl"/>
 
 </package>
 
