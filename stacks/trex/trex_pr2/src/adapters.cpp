@@ -259,14 +259,14 @@ namespace TREX {
   /***********************************************************************
    * @brief DetectPlugOnBase 
    **********************************************************************/
-  class DetectPlugOnBaseAdapter: public ROSActionAdapter<std_msgs::Empty, pr2_robot_actions::DetectPlugOnBaseState, robot_msgs::PlugStow> {
+  class DetectPlugOnBaseAdapter: public ROSActionAdapter<std_msgs::Empty, pr2_robot_actions::DetectPlugOnBaseState, plugs_msgs::PlugStow> {
   public:
 
     DetectPlugOnBaseAdapter(const LabelStr& agentName, const TiXmlElement& configData)
-      : ROSActionAdapter<std_msgs::Empty, pr2_robot_actions::DetectPlugOnBaseState, robot_msgs::PlugStow>(agentName, configData){
+      : ROSActionAdapter<std_msgs::Empty, pr2_robot_actions::DetectPlugOnBaseState, plugs_msgs::PlugStow>(agentName, configData){
     }
 
-    virtual void fillInactiveObservationParameters(const robot_msgs::PlugStow& msg, ObservationByValue* obs){
+    virtual void fillInactiveObservationParameters(const plugs_msgs::PlugStow& msg, ObservationByValue* obs){
       AdapterUtilities::read(*obs, msg);
     }
   };
@@ -277,18 +277,18 @@ namespace TREX {
   /***********************************************************************
    * @brief MoveAndGraspPlug 
    **********************************************************************/
-  class MoveAndGraspPlugAdapter: public ROSActionAdapter<robot_msgs::PlugStow, pr2_robot_actions::MoveAndGraspPlugState, std_msgs::Empty> {
+  class MoveAndGraspPlugAdapter: public ROSActionAdapter<plugs_msgs::PlugStow, pr2_robot_actions::MoveAndGraspPlugState, std_msgs::Empty> {
   public:
 
     MoveAndGraspPlugAdapter(const LabelStr& agentName, const TiXmlElement& configData)
-      : ROSActionAdapter<robot_msgs::PlugStow, pr2_robot_actions::MoveAndGraspPlugState, std_msgs::Empty>(agentName, configData){
+      : ROSActionAdapter<plugs_msgs::PlugStow, pr2_robot_actions::MoveAndGraspPlugState, std_msgs::Empty>(agentName, configData){
     }
 
-    virtual void fillActiveObservationParameters(const robot_msgs::PlugStow& msg, ObservationByValue* obs){
+    virtual void fillActiveObservationParameters(const plugs_msgs::PlugStow& msg, ObservationByValue* obs){
       AdapterUtilities::read(*obs, msg);
     }
 
-    virtual void fillDispatchParameters(robot_msgs::PlugStow& msg, const TokenId& goalToken){
+    virtual void fillDispatchParameters(plugs_msgs::PlugStow& msg, const TokenId& goalToken){
       AdapterUtilities::write(goalToken, msg);
     }
   };
@@ -300,18 +300,18 @@ namespace TREX {
   /***********************************************************************
    * @brief StowPlug 
    **********************************************************************/
-  class StowPlugAdapter: public ROSActionAdapter<robot_msgs::PlugStow, pr2_robot_actions::StowPlugState, std_msgs::Empty> {
+  class StowPlugAdapter: public ROSActionAdapter<plugs_msgs::PlugStow, pr2_robot_actions::StowPlugState, std_msgs::Empty> {
   public:
 
     StowPlugAdapter(const LabelStr& agentName, const TiXmlElement& configData)
-      : ROSActionAdapter<robot_msgs::PlugStow, pr2_robot_actions::StowPlugState, std_msgs::Empty>(agentName, configData){
+      : ROSActionAdapter<plugs_msgs::PlugStow, pr2_robot_actions::StowPlugState, std_msgs::Empty>(agentName, configData){
     }
 
-    virtual void fillDispatchParameters(robot_msgs::PlugStow& msg, const TokenId& goalToken){
+    virtual void fillDispatchParameters(plugs_msgs::PlugStow& msg, const TokenId& goalToken){
       AdapterUtilities::write(goalToken, msg);
     }
 
-    virtual void fillActiveObservationParameters(const robot_msgs::PlugStow& msg, ObservationByValue* obs){
+    virtual void fillActiveObservationParameters(const plugs_msgs::PlugStow& msg, ObservationByValue* obs){
       AdapterUtilities::read(*obs, msg);
     }
   };

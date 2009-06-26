@@ -18,6 +18,7 @@
   <depend package="mechanism_msgs" />
   <depend package="kdl" />
   <depend package="door_msgs" />
+  <depend package="plugs_msgs" />
   <depend package="deprecated_msgs" />
   <depend package="gtest" />
   <depend package="trex_ros" />

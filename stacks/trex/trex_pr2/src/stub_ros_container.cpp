@@ -291,17 +291,17 @@ int main(int argc, char** argv){
     runner.connect<door_msgs::Door, pr2_robot_actions::DoorActionState, door_msgs::Door>(release_handle);
 
   /* Action stubs for plugs */
-  trex_pr2::StubAction<std_msgs::Empty, robot_msgs::PlugStow> detect_plug_on_base("detect_plug_on_base");
+  trex_pr2::StubAction<std_msgs::Empty, plugs_msgs::PlugStow> detect_plug_on_base("detect_plug_on_base");
   if (getComponentParam("/trex/enable_detect_plug_on_base"))
-    runner.connect<std_msgs::Empty, pr2_robot_actions::DetectPlugOnBaseState, robot_msgs::PlugStow>(detect_plug_on_base);
+    runner.connect<std_msgs::Empty, pr2_robot_actions::DetectPlugOnBaseState, plugs_msgs::PlugStow>(detect_plug_on_base);
 
-  trex_pr2::StubAction<robot_msgs::PlugStow, std_msgs::Empty> move_and_grasp_plug("move_and_grasp_plug");
+  trex_pr2::StubAction<plugs_msgs::PlugStow, std_msgs::Empty> move_and_grasp_plug("move_and_grasp_plug");
   if (getComponentParam("/trex/enable_move_and_grasp_plug"))
-    runner.connect<robot_msgs::PlugStow, pr2_robot_actions::MoveAndGraspPlugState, std_msgs::Empty>(move_and_grasp_plug);
+    runner.connect<plugs_msgs::PlugStow, pr2_robot_actions::MoveAndGraspPlugState, std_msgs::Empty>(move_and_grasp_plug);
 
-  trex_pr2::StubAction<robot_msgs::PlugStow, std_msgs::Empty> stow_plug("stow_plug");
+  trex_pr2::StubAction<plugs_msgs::PlugStow, std_msgs::Empty> stow_plug("stow_plug");
   if (getComponentParam("/trex/enable_stow_plug"))
-    runner.connect<robot_msgs::PlugStow, pr2_robot_actions::StowPlugState, std_msgs::Empty>(stow_plug);
+    runner.connect<plugs_msgs::PlugStow, pr2_robot_actions::StowPlugState, std_msgs::Empty>(stow_plug);
 
   trex_pr2::SimpleStubAction<std_msgs::Empty> plugs_untuck_arms("plugs_untuck_arms");
   if (getComponentParam("/trex/enable_plugs_untuck_arms"))

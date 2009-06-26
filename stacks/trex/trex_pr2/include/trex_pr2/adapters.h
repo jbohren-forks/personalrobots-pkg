@@ -46,7 +46,7 @@
 #include <robot_msgs/Pose.h>
 #include <door_msgs/Door.h>
 #include <robot_msgs/BatteryState.h>
-#include <robot_msgs/PlugStow.h>
+#include <plugs_msgs/PlugStow.h>
 #include <robot_actions/action_runner.h>
 #include <robot_actions/action.h>
 #include <robot_actions/NoArgumentsActionState.h>
