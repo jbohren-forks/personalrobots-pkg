@@ -181,6 +181,10 @@ public:
     }
   }
 
+private:
+  Controller(const Controller &c);
+  Controller& operator =(const Controller &c);
+
 };
 
 }
