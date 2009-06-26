@@ -664,7 +664,7 @@ namespace cloud_geometry
           continue;
 
         std::vector<int> seed_queue;
-        seed_queue.reserve (indices.size ());
+//        seed_queue.reserve (indices.size ());
         int sq_idx = 0;
         seed_queue.push_back (i);
 
@@ -721,6 +721,101 @@ namespace cloud_geometry
       // Destroy the tree
       delete tree;
     }
+
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /** \brief Decompose a region of space into clusters based on the euclidean distance between points, and the normal
+      * angular deviation
+      * \NOTE: assumes normalized point normals !
+      * \param points the point cloud message
+      * \param tolerance the spatial tolerance as a measure in the L2 Euclidean space
+      * \param clusters the resultant clusters containing point indices
+      * \param nx_idx the index of the channel containing the X component of the normal (use -1 to disable the check)
+      * \param ny_idx the index of the channel containing the Y component of the normal (use -1 to disable the check)
+      * \param nz_idx the index of the channel containing the Z component of the normal (use -1 to disable the check)
+      * \param eps_angle the maximum allowed difference between normals in degrees for cluster/region growing
+      *                  (only valid if nx_idx && ny_idx && nz_idx != -1)
+      * \param min_pts_per_cluster minimum number of points that a cluster may contain (default = 1)
+      */
+    void
+      extractEuclideanClusters (const robot_msgs::PointCloud &points, double tolerance,
+                                std::vector<std::vector<int> > &clusters,
+                                int nx_idx, int ny_idx, int nz_idx, double eps_angle, unsigned int min_pts_per_cluster)
+    {
+      // Create a tree for these points
+      cloud_kdtree::KdTree* tree = new cloud_kdtree::KdTreeANN (points);
+
+      int nr_points = points.pts.size ();
+      // Create a bool vector of processed point indices, and initialize it to false
+      std::vector<bool> processed;
+      processed.resize (nr_points, false);
+
+      std::vector<int> nn_indices;
+      std::vector<float> nn_distances;
+      // Process all points in the indices vector
+      for (int i = 0; i < nr_points; i++)
+      {
+        if (processed[i])
+          continue;
+
+        std::vector<int> seed_queue;
+        int sq_idx = 0;
+        seed_queue.push_back (i);
+
+        processed[i] = true;
+
+        while (sq_idx < (int)seed_queue.size ())
+        {
+          // Search for sq_idx
+          tree->radiusSearch (seed_queue.at (sq_idx), tolerance, nn_indices, nn_distances);
+
+          for (unsigned int j = 1; j < nn_indices.size (); j++)       // nn_indices[0] should be sq_idx
+          {
+            if (processed.at (nn_indices[j]))                         // Has this point been processed before ?
+              continue;
+
+            processed[nn_indices[j]] = true;
+            if (nx_idx != -1)                                         // Are point normals present ?
+            {
+              // [-1;1]
+              double dot_p = points.chan[nx_idx].vals[i] * points.chan[nx_idx].vals[nn_indices[j]] +
+                             points.chan[ny_idx].vals[i] * points.chan[ny_idx].vals[nn_indices[j]] +
+                             points.chan[nz_idx].vals[i] * points.chan[nz_idx].vals[nn_indices[j]];
+              if ( fabs (acos (dot_p)) < eps_angle )
+              {
+                processed[nn_indices[j]] = true;
+                seed_queue.push_back (nn_indices[j]);
+              }
+            }
+            // If normal information is not present, perform a simple Euclidean clustering
+            else
+            {
+              processed[nn_indices[j]] = true;
+              seed_queue.push_back (nn_indices[j]);
+            }
+          }
+
+          sq_idx++;
+        }
+
+        // If this queue is satisfactory, add to the clusters
+        if (seed_queue.size () >= min_pts_per_cluster)
+        {
+          std::vector<int> r (seed_queue.size ());
+          for (unsigned int j = 0; j < seed_queue.size (); j++)
+            r[j] = seed_queue[j];
+
+          // Remove duplicates
+          sort (r.begin (), r.end ());
+          r.erase (unique (r.begin (), r.end ()), r.end ());
+
+          clusters.push_back (r);
+        }
+      }
+
+      // Destroy the tree
+      delete tree;
+    }
+	
 
   }
 }

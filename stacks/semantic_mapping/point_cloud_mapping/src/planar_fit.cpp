@@ -327,9 +327,9 @@ class PlanarFit
           vector<vector<int> > clusters;
 
           if (radius_or_knn_ != 0)                  // did we estimate normals ?
-            findClusters (cloud_down_, euclidean_cluster_distance_tolerance_, clusters, 0, 1, 2, euclidean_cluster_angle_tolerance_, euclidean_cluster_min_pts_);
+            cloud_geometry::nearest::extractEuclideanClusters (cloud_down_, euclidean_cluster_distance_tolerance_, clusters, 0, 1, 2, euclidean_cluster_angle_tolerance_, euclidean_cluster_min_pts_);
           else                                      // if not, set nx_idx to -1 and perform a pure Euclidean clustering
-            findClusters (cloud_down_, euclidean_cluster_distance_tolerance_, clusters, -1, 1, 2, euclidean_cluster_angle_tolerance_, euclidean_cluster_min_pts_);
+            cloud_geometry::nearest::extractEuclideanClusters (cloud_down_, euclidean_cluster_distance_tolerance_, clusters, -1, 1, 2, euclidean_cluster_angle_tolerance_, euclidean_cluster_min_pts_);
           ROS_INFO ("Clustering done. Number of clusters extracted: %d in %g seconds.", (int)clusters.size (), (ros::Time::now () - ts1).toSec ());
 
           ts = ros::Time::now ();
@@ -352,9 +352,9 @@ class PlanarFit
           vector<vector<int> > clusters;
 
           if (radius_or_knn_ != 0)                  // did we estimate normals ?
-            findClusters (cloud_, euclidean_cluster_distance_tolerance_, clusters, 0, 1, 2, euclidean_cluster_angle_tolerance_, euclidean_cluster_min_pts_);
+            cloud_geometry::nearest::extractEuclideanClusters (cloud_, euclidean_cluster_distance_tolerance_, clusters, 0, 1, 2, euclidean_cluster_angle_tolerance_, euclidean_cluster_min_pts_);
           else                                      // if not, set nx_idx to -1 and perform a pure Euclidean clustering
-            findClusters (cloud_, euclidean_cluster_distance_tolerance_, clusters, -1, 1, 2, euclidean_cluster_angle_tolerance_, euclidean_cluster_min_pts_);
+            cloud_geometry::nearest::extractEuclideanClusters (cloud_, euclidean_cluster_distance_tolerance_, clusters, -1, 1, 2, euclidean_cluster_angle_tolerance_, euclidean_cluster_min_pts_);
           ROS_INFO ("Clustering done. Number of clusters extracted: %d in %g seconds.", (int)clusters.size (), (ros::Time::now () - ts1).toSec ());
 
           ts = ros::Time::now ();
@@ -479,101 +479,6 @@ class PlanarFit
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    /** \brief Decompose a region of space into clusters based on the euclidean distance between points, and the normal
-      * angular deviation
-      * \NOTE: assumes normalized point normals !
-      * \param points pointer to the point cloud message
-      * \param tolerance the spatial tolerance as a measure in the L2 Euclidean space
-      * \param clusters the resultant clusters
-      * \param nx_idx the index of the channel containing the X component of the normal
-      * \param ny_idx the index of the channel containing the Y component of the normal
-      * \param nz_idx the index of the channel containing the Z component of the normal
-      * \param eps_angle the maximum allowed difference between normals in degrees for cluster/region growing
-      * \param min_pts_per_cluster minimum number of points that a cluster may contain (default = 1)
-      */
-    void
-      findClusters (PointCloud &points, double tolerance, vector<vector<int> > &clusters,
-                    int nx_idx, int ny_idx, int nz_idx,
-                    double eps_angle, unsigned int min_pts_per_cluster = 1)
-    {
-      // Create a tree for these points
-      cloud_kdtree::KdTree* tree = new cloud_kdtree::KdTreeANN (points);
-
-      int nr_points = points.pts.size ();
-      // Create a bool vector of processed point indices, and initialize it to false
-      vector<bool> processed;
-      processed.resize (nr_points, false);
-
-      vector<int> nn_indices;
-      vector<float> nn_distances;
-      // Process all points in the indices vector
-      for (int i = 0; i < nr_points; i++)
-      {
-        if (processed[i])
-          continue;
-
-        vector<int> seed_queue;
-        int sq_idx = 0;
-        seed_queue.push_back (i);
-
-        processed[i] = true;
-
-        while (sq_idx < (int)seed_queue.size ())
-        {
-          // Search for sq_idx
-          tree->radiusSearch (seed_queue.at (sq_idx), tolerance, nn_indices, nn_distances);
-
-          for (unsigned int j = 1; j < nn_indices.size (); j++)       // nn_indices[0] should be sq_idx
-          {
-            if (processed.at (nn_indices[j]))                         // Has this point been processed before ?
-              continue;
-
-            processed[nn_indices[j]] = true;
-            if (nx_idx != -1)                                         // Are point normals present ?
-            {
-              // [-1;1]
-              double dot_p = points.chan[nx_idx].vals[i] * points.chan[nx_idx].vals[nn_indices[j]] +
-                             points.chan[ny_idx].vals[i] * points.chan[ny_idx].vals[nn_indices[j]] +
-                             points.chan[nz_idx].vals[i] * points.chan[nz_idx].vals[nn_indices[j]];
-              if ( fabs (acos (dot_p)) < eps_angle )
-              {
-                processed[nn_indices[j]] = true;
-                seed_queue.push_back (nn_indices[j]);
-              }
-            }
-            // If normal information is not present, perform a simple Euclidean clustering
-            else
-            {
-              processed[nn_indices[j]] = true;
-              seed_queue.push_back (nn_indices[j]);
-            }
-          }
-
-          sq_idx++;
-        }
-
-        // If this queue is satisfactory, add to the clusters
-        if (seed_queue.size () >= min_pts_per_cluster)
-        {
-          vector<int> r (seed_queue.size ());
-          for (unsigned int j = 0; j < seed_queue.size (); j++)
-            r[j] = seed_queue[j];
-
-          // Remove duplicates
-          sort (r.begin (), r.end ());
-          r.erase (unique (r.begin (), r.end ()), r.end ());
-
-          clusters.push_back (r);
-        }
-      }
-
-      // Destroy the tree
-      delete tree;
-    }
-	
-
-
-    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     /** \brief Publish the normals as cute little lines
       * \NOTE: assumes normalized point normals !
       * \param points pointer to the point cloud message
@@ -583,48 +488,47 @@ class PlanarFit
       * \param length the length of the normal lines
       * \param width the width of the normal lines
       */
-  
-  void publishNormalLines (PointCloud &points, int nx_idx, int ny_idx, int nz_idx, double length, double width)
-  {
-    visualization_msgs::Marker marker;
-    marker.header.frame_id = "base_link";
-    marker.header.stamp = ros::Time();
-    marker.ns = "normal_lines_ns";
-    marker.id = 0;
-    marker.type = visualization_msgs::Marker::LINE_LIST;
-    marker.action = visualization_msgs::Marker::ADD;
-    marker.pose.position.x = 0;
-    marker.pose.position.y = 0;
-    marker.pose.position.z = 0;
-    marker.pose.orientation.x = 0.0;
-    marker.pose.orientation.y = 0.0;
-    marker.pose.orientation.z = 0.0;
-    marker.pose.orientation.w = 1.0;
-    marker.scale.x = width;
-    marker.scale.y = 1;
-    marker.scale.z = 1;
-    marker.color.a = 1.0;
-    marker.color.r = 1.0;
-    marker.color.g = 1.0;
-    marker.color.b = 1.0;
+    void
+      publishNormalLines (PointCloud &points, int nx_idx, int ny_idx, int nz_idx, double length, double width)
+    {
+      visualization_msgs::Marker marker;
+      marker.header.frame_id = "base_link";
+      marker.header.stamp = ros::Time();
+      marker.ns = "normal_lines_ns";
+      marker.id = 0;
+      marker.type = visualization_msgs::Marker::LINE_LIST;
+      marker.action = visualization_msgs::Marker::ADD;
+      marker.pose.position.x = 0;
+      marker.pose.position.y = 0;
+      marker.pose.position.z = 0;
+      marker.pose.orientation.x = 0.0;
+      marker.pose.orientation.y = 0.0;
+      marker.pose.orientation.z = 0.0;
+      marker.pose.orientation.w = 1.0;
+      marker.scale.x = width;
+      marker.scale.y = 1;
+      marker.scale.z = 1;
+      marker.color.a = 1.0;
+      marker.color.r = 1.0;
+      marker.color.g = 1.0;
+      marker.color.b = 1.0;
 
-    int nr_points = points.pts.size();
-    
-    marker.points.resize(2 * nr_points);
-    for (int i = 0; i < nr_points; i++)
+      int nr_points = points.pts.size ();
+      
+      marker.points.resize (2 * nr_points);
+      for (int i = 0; i < nr_points; i++)
       {
-	marker.points[2*i].x = points.pts[i].x;
-	marker.points[2*i].y = points.pts[i].y;
-	marker.points[2*i].z = points.pts[i].z;
-	marker.points[2*i+1].x = points.pts[i].x + points.chan[nx_idx].vals[i] * length;
-	marker.points[2*i+1].y = points.pts[i].y + points.chan[ny_idx].vals[i] * length;
-	marker.points[2*i+1].z = points.pts[i].z + points.chan[nz_idx].vals[i] * length;
+        marker.points[2*i].x = points.pts[i].x;
+        marker.points[2*i].y = points.pts[i].y;
+        marker.points[2*i].z = points.pts[i].z;
+        marker.points[2*i+1].x = points.pts[i].x + points.chan[nx_idx].vals[i] * length;
+        marker.points[2*i+1].y = points.pts[i].y + points.chan[ny_idx].vals[i] * length;
+        marker.points[2*i+1].z = points.pts[i].z + points.chan[nz_idx].vals[i] * length;
       }
 
-    node_.publish("visualization_marker", marker);
-
-    ROS_INFO ("Published %d normal lines", nr_points);
-  }
+      node_.publish ("visualization_marker", marker);
+      ROS_INFO ("Published %d normal lines", nr_points);
+    }
 };
 
 /* ---[ */
