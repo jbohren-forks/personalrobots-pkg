@@ -125,7 +125,7 @@ class Demo:
 #   self.fd = FeatureDetectorFast(300)
     self.fd = FeatureDetectorStar(500)
     self.ds = DescriptorSchemeCalonder()
-    self.camera_preview = True
+    self.camera_preview = False
     self.vo = VisualOdometer(self.stereo_cam,
                              scavenge = False,
                              position_keypoint_thresh = 1.0,
@@ -193,8 +193,8 @@ class Demo:
 
     self.snail_trail.append(self.f.pose)
 
-    if self.camera_preview:
-      # Run the OpenCV preview
+    # Render the camera view using OpenCV, then load it into an OpenGL texture
+    if True:
       if not self.cvim:
         self.cvim = cv.CreateImage((w,h/2), cv.IPL_DEPTH_8U, 3)
 
@@ -208,24 +208,29 @@ class Demo:
 
       cv.ResetImageROI(self.cvim)
 
-      green = cv.RGB(0,255,0)
-      red = cv.RGB(255,0,0)
-      def half(p):
-        return (p[0] / 2, p[1] / 2)
-      for (x,y,d) in self.f.features():
-        cv.Circle(self.cvim, half((x, y)), 2, green)
-        d = int(d)
-        cv.Line(self.cvim, ((w+x-d)/2, y/2 - 2), ((w+x-d)/2, y/2 + 2), green)
-      a_features = self.vo.keyframe.features()
-      b_features = self.f.features()
-      inliers = set([ (b,a) for (a,b) in self.vo.pe.inl])
-      outliers = set(self.vo.pairs) - inliers
-#      cv.String("abcd")
-      for (a,b) in inliers:
-        cv.Line(self.cvim, half(b_features[b]), half(a_features[a]), green)
-      for (a,b) in outliers:
-        cv.Line(self.cvim, half(b_features[b]), half(a_features[a]), red)
+      def annotate(cvim):
+        green = cv.RGB(0,255,0)
+        red = cv.RGB(0,0,255)
+        def half(p):
+          return (p[0] / 2, p[1] / 2)
+        for (x,y,d) in self.f.features():
+          cv.Circle(cvim, half((x, y)), 2, green)
+          d = int(d)
+          cv.Line(cvim, ((w+x-d)/2, y/2 - 2), ((w+x-d)/2, y/2 + 2), green)
+        a_features = self.vo.keyframe.features()
+        b_features = self.f.features()
+        inliers = set([ (b,a) for (a,b) in self.vo.pe.inl])
+        outliers = set(self.vo.pairs) - inliers
+        for (a,b) in inliers:
+          cv.Line(cvim, half(b_features[b]), half(a_features[a]), green)
+        for (a,b) in outliers:
+          cv.Line(cvim, half(b_features[b]), half(a_features[a]), red)
 
+      annotate(self.cvim)
+      glBindTexture(GL_TEXTURE_2D, demo.textures[2])
+      glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, 640, 240, 0, GL_RGB, GL_UNSIGNED_BYTE, self.cvim.tostring())
+
+    if self.camera_preview:
       cv.ShowImage("Camera", self.cvim)
       if cv.WaitKey(10) == 27:
         r = True
@@ -285,7 +290,8 @@ window = 0
 
 import numpy
 
-screensize = ( 640, 480)
+BOTTOM_2D_HEIGHT = 240
+screensize = ( 640, 480 + BOTTOM_2D_HEIGHT)
 
 def InitGL(Width, Height):				# We call this right after our OpenGL window is created.
   glClearColor(0.0, 0.0, 0.0, 0.0)	                # This Will Clear The Background Color To Black
@@ -308,7 +314,7 @@ def InitGL(Width, Height):				# We call this right after our OpenGL window is cr
   glMatrixMode(GL_PROJECTION)
   glLoadIdentity()					# Reset The Projection Matrix
                                                         # Calculate The Aspect Ratio Of The Window
-  gluPerspective(45.0, float(Width)/float(Height), 0.1, 1000.0)
+  gluPerspective(45.0, float(Width)/float(Height-BOTTOM_2D_HEIGHT), 0.1, 1000.0)
 
   glMatrixMode(GL_MODELVIEW)
 
@@ -317,10 +323,11 @@ def ReSizeGLScene(Width, Height):
   if Height == 0:					# Prevent A Divide By Zero If The Window Is Too Small 
     Height = 1
 
-  glViewport(0, 0, Width, Height)		        # Reset The Current Viewport And Perspective Transformation
   glMatrixMode(GL_PROJECTION)
   glLoadIdentity()
+  # gluPerspective(45.0, float(Width)/float(Height-BOTTOM_2D_HEIGHT), 0.1, 1000.0)
   gluPerspective(45.0, float(Width)/float(Height), 0.1, 1000.0)
+  print '----> aspect ----', float(Width)/float(Height-BOTTOM_2D_HEIGHT)
   global screensize
   screensize = (Width, Height)
 
@@ -382,6 +389,18 @@ def poseMultMatrix(pose):
 LIST_EVERYTHING = 1   # The whole scene, used when paused
 LIST_FURNITURE  = 2   # Fixed background stuff
 
+def square(x0, y0, x1, y1):
+  glBegin(GL_QUADS)
+  glTexCoord2f(0,1)
+  glVertex3f(x0, y0,0)
+  glTexCoord2f(1,1)
+  glVertex3f(x1, y0,0)
+  glTexCoord2f(1,0)
+  glVertex3f(x1, y1,0)
+  glTexCoord2f(0,0)
+  glVertex3f(x0, y1,0)
+  glEnd()
+
 def draw_logo():
   glMatrixMode(GL_MODELVIEW)
   glPushMatrix()
@@ -394,18 +413,33 @@ def draw_logo():
   glBindTexture(GL_TEXTURE_2D, demo.textures[ml.mode])
 
   w = 2 * (32. / screensize[0])
-  h = 2 * (32. / screensize[1])
+  h = 2 * (32. / (screensize[1] - BOTTOM_2D_HEIGHT))
   glColor3f(1.0, 1.0, 1.0)
-  glBegin(GL_QUADS)
-  glTexCoord2f(0,1)
-  glVertex3f(-1, -1,0)
-  glTexCoord2f(1,1)
-  glVertex3f(-1+w, -1,0)
-  glTexCoord2f(1,0)
-  glVertex3f(-1+w, -1+h,0)
-  glTexCoord2f(0,0)
-  glVertex3f(-1, -1+h,0)
-  glEnd()
+  square(-1, -1, -1+w, -1+h)
+
+  glDisable(GL_TEXTURE_2D)
+
+  glMatrixMode(GL_PROJECTION)
+  glPopMatrix()
+  glMatrixMode(GL_MODELVIEW)
+  glPopMatrix()
+
+def draw_image():
+  glMatrixMode(GL_MODELVIEW)
+  glPushMatrix()
+  glLoadIdentity()
+  glMatrixMode(GL_PROJECTION)
+  glPushMatrix()
+  glLoadIdentity()
+
+  glColor3f(1,1,1)
+  glEnable(GL_TEXTURE_2D)
+
+  w = 3 * (32. / screensize[0])
+  h = 2 * (32. / screensize[1])
+
+  glBindTexture(GL_TEXTURE_2D, demo.textures[2])
+  square(-1, -1, 1, 1)
 
   glDisable(GL_TEXTURE_2D)
 
@@ -422,6 +456,19 @@ class GLDemo(Demo):
     Demo.__init__(*args)
 
   def redraw(self):
+    w,h = screensize
+    glMatrixMode(GL_PROJECTION)
+    glLoadIdentity()
+    gluPerspective(45.0, float(w)/float(h-BOTTOM_2D_HEIGHT), 0.1, 1000.0)
+    glMatrixMode(GL_MODELVIEW)
+    glViewport(0, BOTTOM_2D_HEIGHT, w, h-BOTTOM_2D_HEIGHT)
+    self.redraw_3d()
+    glViewport(0, 0, w, BOTTOM_2D_HEIGHT)
+    draw_image()
+    
+    glutSwapBuffers()
+    
+  def redraw_3d(self):
     glClearColor(0, 0, 0, 1)
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
@@ -438,7 +485,6 @@ class GLDemo(Demo):
       else:
         glCallList(LIST_EVERYTHING)
         draw_logo()
-        glutSwapBuffers()
         return
     else:
       self.dl_ready = False
@@ -573,8 +619,6 @@ class GLDemo(Demo):
 
     draw_logo()
 
-    glutSwapBuffers()
-
 class MouseLook:
 
   def __init__(self, x, y, z):
@@ -678,7 +722,7 @@ class MouseLook:
         glutFullScreen()
       else:
         glutPositionWindow(0, 0)
-        glutReshapeWindow(640, 480)
+        glutReshapeWindow(640, 480 + BOTTOM_2D_HEIGHT)
 
     if k == '/':
       demo.report()
@@ -821,7 +865,7 @@ def main():
 
   glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE | GLUT_DEPTH)
 
-  glutInitWindowSize(640, 480)
+  glutInitWindowSize(640, 480 + BOTTOM_2D_HEIGHT)
 
   glutInitWindowPosition(0, 0)
 
@@ -844,10 +888,15 @@ def main():
   glutIgnoreKeyRepeat(True)
   glutPassiveMotionFunc(ml.passive)
 
-  InitGL(640, 480)
+  InitGL(640, 480 + BOTTOM_2D_HEIGHT)
   updateMV()
 
-  demo.textures = glGenTextures(2)
+  demo.textures = glGenTextures(100)
+
+  for h in demo.textures:
+    glBindTexture(GL_TEXTURE_2D, h)
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST)
 
   for i,txt in [ (0, "M"), (1, "A") ]:
     glBindTexture(GL_TEXTURE_2D, demo.textures[i])
@@ -859,8 +908,6 @@ def main():
     draw.text(((1024-w)/2, (1024-h)/2+100), txt, font=font, fill=0)
     im32 = im.resize((512, 512), Image.ANTIALIAS).resize((256, 256), Image.ANTIALIAS).resize((128, 128), Image.ANTIALIAS).resize((64, 64), Image.ANTIALIAS).resize((32, 33), Image.ANTIALIAS)
     glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE8, 32, 32, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, im32.tostring())
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST)
 
   glutMainLoop()
 
