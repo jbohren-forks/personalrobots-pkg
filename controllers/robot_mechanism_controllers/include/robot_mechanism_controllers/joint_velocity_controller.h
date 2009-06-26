@@ -48,10 +48,19 @@
         <pid p="1.0" i="2.0" d="3.0" iClamp="4.0" /><br>
       </joint><br>
     </controller><br>
+
+     Configuration:
+     <controller name>:
+       type: "JointVelocityController"
+       joint: "<joint_name>"
+       pid: { p: <p_gain>, i: <i_gain>, d: <d_gain>, i_clamp: <i_clamp> }
+
+
 */
 /***************************************************/
 
 #include <ros/node.h>
+#include <ros/node_handle.h>
 
 #include "mechanism_model/controller.h"
 #include "control_toolbox/pid.h"
@@ -86,6 +95,7 @@ public:
    */
   bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
   bool init(mechanism::RobotState *robot, const std::string &joint_name, const control_toolbox::Pid &pid);
+  bool init(mechanism::RobotState *robot, const ros::NodeHandle &n);
 
   /*!
    * \brief Give set position of the joint for next update: revolute (angle) and prismatic (position)
@@ -113,11 +123,20 @@ public:
   double dt_;
 
 private:
+  ros::NodeHandle node_;
   mechanism::RobotState *robot_;                  /**< Pointer to robot structure. */
   control_toolbox::Pid pid_controller_;           /**< Internal PID controller. */
   double last_time_;                              /**< Last time stamp of update. */
+  int loop_count_;
   double command_;                                /**< Last commanded position. */
   friend class JointVelocityControllerNode;
+
+  boost::scoped_ptr<
+    realtime_tools::RealtimePublisher<
+      robot_mechanism_controllers::JointControllerState> > controller_state_publisher_ ;
+
+  ros::Subscriber sub_command_;
+  void setCommandCB(const std_msgs::Float64ConstPtr& msg);
 };
 
 /***************************************************/
@@ -161,6 +180,7 @@ private:
   JointVelocityController *c_;                 /**< The controller. */
   control_toolbox::PidGainsSetter pid_tuner_;
 
+   int count;
 };
 }
 

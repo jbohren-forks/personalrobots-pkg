@@ -48,6 +48,7 @@
 #include <tinyxml/tinyxml.h>
 #include <std_srvs/Empty.h>
 #include <ros/node.h>
+#include <ros/node_handle.h>
 
 namespace controller
 {
@@ -76,16 +77,17 @@ typedef Loki::SingletonHolder
   static RosController##c ROS_CONTROLLER_##c;
 
 
-
 class Controller
 {
 public:
   enum {CONSTRUCTED, INITIALIZED, RUNNING};
   int state_;
+  bool autostart_;
 
   Controller()
   {
     state_ = CONSTRUCTED;
+    autostart_ = true;
   }
   virtual ~Controller()
   {
@@ -97,6 +99,7 @@ public:
   virtual void update(void) = 0;
   virtual bool stopping() {return true;}
   virtual bool initXml(mechanism::RobotState *robot, TiXmlElement *config) = 0;
+  virtual bool init(mechanism::RobotState *robot, const ros::NodeHandle &n) { return false; };
 
   bool isRunning()
   {
@@ -137,6 +140,27 @@ public:
     return ret;
   }
 
+  bool initRequest(mechanism::RobotState *robot, const ros::NodeHandle &n)
+  {
+    if (state_ != CONSTRUCTED)
+      return false;
+    else
+    {
+      // initialize
+      if (!init(robot, n))
+        return false;
+      state_ = INITIALIZED;
+
+      // autostart if needed
+      ros::NodeHandle nn;
+      nn.param("~autostart", autostart_, true);
+      if (autostart_ && !startRequest())
+        return false;
+
+      return true;
+    }
+  }
+
   bool initXmlRequest(mechanism::RobotState *robot, TiXmlElement *config, std::string controller_name)
   {
     if (state_ != CONSTRUCTED)
@@ -147,6 +171,11 @@ public:
       if (!initXml(robot, config))
         return false;
       state_ = INITIALIZED;
+
+      // autostart if needed
+      ros::Node::instance()->param(controller_name+"/autostart", autostart_, true);
+      if (autostart_ && !startRequest())
+        return false;
 
       return true;
     }
