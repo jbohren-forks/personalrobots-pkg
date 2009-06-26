@@ -22,13 +22,13 @@ wiped: Makefile
 	touch wiped
 
 clean:
-	-rm -rf $(SOURCE_DIR) lib
+	-rm -rf $(SOURCE_DIR) build/lib
 	rm -f *~ installed
 
 .PHONY : clean wipe
 
 wipe: clean
 	rm -f $(TARBALL) 
-	rm -rf lib build
+	rm -rf build
 
 
