@@ -30,6 +30,7 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 #include <csignal>
+#include <cstdio>
 #include <sicklms-1.0/SickLMS.hh>
 #include "ros/node.h"
 #include "laser_scan/LaserScan.h"
