@@ -27,7 +27,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-// Author: Stuart Glaser
+/** \author: Stuart Glaser */
 
 #ifndef REALTIME_TOOLS_RECORDER_H
 #define REALTIME_TOOLS_RECORDER_H
@@ -43,16 +43,35 @@
 
 namespace mechanism {
 
+/** \brief Recorder provides support for streaming data out of
+ * realtime without overloading ROS.
+ *
+ * The data is packed into a mechanism_msgs/BufferedData message, and
+ * published at 10Hz.
+ */
 class Recorder
 {
 public:
   Recorder();
   ~Recorder();
 
-  // Call channel
+  /**@brief Declares a channel of data
+   * This method should NOT be called after init().
+   *
+   * \param index The index number of the channel.  This should match the index used with record()
+   * \param name The desired channel name, which will be used to label data sent over ROS.
+   */
   void channel(unsigned int index, const std::string &name);
+
+  /**
+   * Spins up the publishing thread and begins sending out data.
+   */
   bool init(mechanism::RobotState *robot, const ros::NodeHandle &node, const std::string &topic = "trace");
 
+  /**@brief Call record in realtime on each data value.  init() must have already been called.
+   * \param index The channel index, corresponding to the index given to channel()
+   * \param value The value to report
+   */
   void record(unsigned int index, float value);
 
 private:
