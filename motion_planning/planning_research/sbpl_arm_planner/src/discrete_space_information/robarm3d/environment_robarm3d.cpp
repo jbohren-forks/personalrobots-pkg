@@ -64,7 +64,7 @@
 #define WRIST_ROLL 6
 
 //temporary hack to figure out if obstacles are in the arm's reachable workspace (meters)
-#define ARM_WORKSPACE 1.0
+#define ARM_WORKSPACE 1.1
 
 // number of successors to each cell (for dyjkstra's heuristic)
 #define DIRECTIONS 26
@@ -1281,7 +1281,6 @@ void EnvironmentROBARM3D::AddObstacleToGrid(double* obstacle, int type, char*** 
 {
 
     int x, y, z, pX_max, pX_min, pY_max, pY_min, pZ_max, pZ_min;
-//     int padding_c = EnvROBARMCfg.padding*2 / gridcell_m + 0.5;  //why multiplied by 2?
     int padding_c = (EnvROBARMCfg.padding / gridcell_m) + 0.5;
     short unsigned int obstacle_c[6] = {0}, obs_c[3];
     int dims_c[3] = {EnvROBARMCfg.EnvWidth_c, EnvROBARMCfg.EnvHeight_c, EnvROBARMCfg.EnvDepth_c};
@@ -1355,7 +1354,6 @@ void EnvironmentROBARM3D::AddObstacleToGrid(double* obstacle, int type, char*** 
 //     printf("[AddObstacleToGrid] %d %d %d %d %d %d (cells)\n",pX_min,pX_max,pY_min,pY_max,pZ_min,pZ_max);
 
     // assign the cells occupying the obstacle to ObstacleCost
-
     for (x = pX_min; x <= pX_max; x++)
     {
         for (y = pY_min; y <= pY_max; y++)
@@ -1392,7 +1390,7 @@ void EnvironmentROBARM3D::AddObstacleToGrid(double* obstacle, int type, char*** 
         EnvROBARMCfg.cubes.back()[4] = ((double)pY_max - (double)pY_min)*gridcell_m;
         EnvROBARMCfg.cubes.back()[5] = ((double)pZ_max - (double)pZ_min)*gridcell_m;
     }
-
+/*
     //variable cell costs
     if(EnvROBARMCfg.variable_cell_costs)
     {
@@ -1470,6 +1468,7 @@ void EnvironmentROBARM3D::AddObstacleToGrid(double* obstacle, int type, char*** 
             }
         }
     }
+*/
 }
 
 //returns 1 if end effector within space, 0 otherwise
@@ -1866,10 +1865,17 @@ int EnvironmentROBARM3D::IsValidCoord(short unsigned int coord[NUMOFLINKS], shor
 //         }
     }
 
+    //get position of gripper in torso_lift_link frame
+    gripper[0] = (endeff[0] + (orientation[0][0]*EnvROBARMCfg.gripper_m[0] + orientation[0][1]*EnvROBARMCfg.gripper_m[1] + orientation[0][2]*EnvROBARMCfg.gripper_m[2]) / grid_cell_m) + 0.5;
+    gripper[1] = (endeff[1] + (orientation[1][0]*EnvROBARMCfg.gripper_m[0] + orientation[1][1]*EnvROBARMCfg.gripper_m[1] + orientation[1][2]*EnvROBARMCfg.gripper_m[2]) / grid_cell_m) + 0.5;
+    gripper[2] = (endeff[2] + (orientation[2][0]*EnvROBARMCfg.gripper_m[0] + orientation[2][1]*EnvROBARMCfg.gripper_m[1] + orientation[2][2]*EnvROBARMCfg.gripper_m[2]) / grid_cell_m) + 0.5;;
+
+
     //bounds checking on upper bound of map - should really only check end effector not other joints
     if(endeff[0] >= grid_dims[0] || endeff[1] >= grid_dims[1] || endeff[2] >= grid_dims[2] ||
         wrist[0] >= grid_dims[0] || wrist[1] >= grid_dims[1] || wrist[2] >= grid_dims[2] ||
-        elbow[0] >= grid_dims[0] || elbow[1] >= grid_dims[1] || elbow[2] >= grid_dims[2])
+        elbow[0] >= grid_dims[0] || elbow[1] >= grid_dims[1] || elbow[2] >= grid_dims[2] ||
+        gripper[0] >= grid_dims[0] || gripper[1] >= grid_dims[1] || gripper[2] >= grid_dims[2])
     {
 	// check_collision_time += clock() - currenttime;
 	return 0;
@@ -1878,21 +1884,18 @@ int EnvironmentROBARM3D::IsValidCoord(short unsigned int coord[NUMOFLINKS], shor
     //check if joints are hitting obstacle - is not needed because IsValidLineSegment checks it
     if(Grid3D[endeff[0]][endeff[1]][endeff[2]] >= EnvROBARMCfg.ObstacleCost ||
         Grid3D[wrist[0]][wrist[1]][wrist[2]] >= EnvROBARMCfg.ObstacleCost ||
-        Grid3D[elbow[0]][elbow[1]][elbow[2]] >= EnvROBARMCfg.ObstacleCost)
+        Grid3D[elbow[0]][elbow[1]][elbow[2]] >= EnvROBARMCfg.ObstacleCost ||
+        Grid3D[gripper[0]][gripper[1]][gripper[2]] >= EnvROBARMCfg.ObstacleCost)
     {
 	// check_collision_time += clock() - currenttime;
 	return 0;
     }
 
-    //get position of gripper in torso_lift_link frame
-    gripper[0] = (endeff[0] + (orientation[0][0]*EnvROBARMCfg.gripper_m[0] + orientation[0][1]*EnvROBARMCfg.gripper_m[1] + orientation[0][2]*EnvROBARMCfg.gripper_m[2]) / grid_cell_m) + 0.5;
-    gripper[1] = (endeff[1] + (orientation[1][0]*EnvROBARMCfg.gripper_m[0] + orientation[1][1]*EnvROBARMCfg.gripper_m[1] + orientation[1][2]*EnvROBARMCfg.gripper_m[2]) / grid_cell_m) + 0.5;
-    gripper[2] = (endeff[2] + (orientation[2][0]*EnvROBARMCfg.gripper_m[0] + orientation[2][1]*EnvROBARMCfg.gripper_m[1] + orientation[2][2]*EnvROBARMCfg.gripper_m[2]) / grid_cell_m) + 0.5;;
 
     //check the validity of the corresponding arm links (line segments)
     if(!IsValidLineSegment(shoulder[0],shoulder[1],shoulder[2], elbow[0],elbow[1],elbow[2], Grid3D, pTestedCells) ||
 	!IsValidLineSegment(elbow[0],elbow[1],elbow[2],wrist[0],wrist[1],wrist[2], Grid3D, pTestedCells) ||
-// 	!IsValidLineSegment(wrist[0],wrist[1],wrist[2],endeff[0],endeff[1], endeff[2], Grid3D, pTestedCells) ||
+	!IsValidLineSegment(wrist[0],wrist[1],wrist[2],endeff[0],endeff[1], endeff[2], Grid3D, pTestedCells) ||
 	!IsValidLineSegment(endeff[0],endeff[1], endeff[2], gripper[0],gripper[1],gripper[2], Grid3D, pTestedCells))
     {
 	if(pTestedCells == NULL)
@@ -3075,9 +3078,9 @@ bool EnvironmentROBARM3D::SetGoalPosition(const std::vector <std::vector<double>
     EnvROBARMCfg.EndEffGoals[i].xyz_lr[2] = EnvROBARMCfg.EndEffGoals[i].xyz[2] * (EnvROBARMCfg.GridCellWidth / EnvROBARMCfg.LowResGridCellWidth);
 
     // check if goals are within arms length
-    if(fabs(EnvROBARMCfg.EndEffGoals[i].pos[0]) >= EnvROBARMCfg.arm_length ||
-       fabs(EnvROBARMCfg.EndEffGoals[i].pos[1]) >= EnvROBARMCfg.arm_length ||
-       fabs(EnvROBARMCfg.EndEffGoals[i].pos[2]) >= EnvROBARMCfg.arm_length)
+    if(fabs(EnvROBARMCfg.EndEffGoals[i].pos[0] - EnvROBARMCfg.BaseX_m) >= EnvROBARMCfg.arm_length ||
+       fabs(EnvROBARMCfg.EndEffGoals[i].pos[1] - EnvROBARMCfg.BaseY_m) >= EnvROBARMCfg.arm_length ||
+       fabs(EnvROBARMCfg.EndEffGoals[i].pos[2] - EnvROBARMCfg.BaseZ_m) >= EnvROBARMCfg.arm_length)
     {
       printf("End effector goal position (%.2f %.2f %.2f) is out of bounds.\n",EnvROBARMCfg.EndEffGoals[i].pos[0],EnvROBARMCfg.EndEffGoals[i].pos[1],EnvROBARMCfg.EndEffGoals[i].pos[2]);
 
@@ -3143,10 +3146,10 @@ bool EnvironmentROBARM3D::SetGoalPosition(const std::vector <std::vector<double>
   EnvROBARMCfg.bGoalIsSet = true;
 
   for(unsigned int i = 0; i < EnvROBARMCfg.EndEffGoals.size(); i++)
-    printf("goal %i:  grid: %u %u %u (cells)  xyz:%.2f %.2f %.2f (meters)  rpy: %1.2f %1.2f %1.2f (radians)  type: %d rpy_tolerance: %.3f\n", i ,
+    printf("goal %i:  grid: %u %u %u (cells)  xyz:%.2f %.2f %.2f (meters)  (tol: %.3f) rpy: %1.2f %1.2f %1.2f (radians) (tol: %.3f) type: %d \n", i ,
            EnvROBARMCfg.EndEffGoals[i].xyz[0], EnvROBARMCfg.EndEffGoals[i].xyz[1],EnvROBARMCfg.EndEffGoals[i].xyz[2],
-           EnvROBARMCfg.EndEffGoals[i].pos[0],EnvROBARMCfg.EndEffGoals[i].pos[1],EnvROBARMCfg.EndEffGoals[i].pos[2],
-           EnvROBARMCfg.EndEffGoals[i].rpy[0],EnvROBARMCfg.EndEffGoals[i].rpy[1],EnvROBARMCfg.EndEffGoals[i].rpy[2], type[i], tolerances[i][1]);
+	   EnvROBARMCfg.EndEffGoals[i].pos[0],EnvROBARMCfg.EndEffGoals[i].pos[1],EnvROBARMCfg.EndEffGoals[i].pos[2],tolerances[i][0],
+    EnvROBARMCfg.EndEffGoals[i].rpy[0],EnvROBARMCfg.EndEffGoals[i].rpy[1],EnvROBARMCfg.EndEffGoals[i].rpy[2], tolerances[i][1], type[i]);
 
   return true;
 }
@@ -3299,6 +3302,7 @@ bool EnvironmentROBARM3D::SetGoalConfiguration(const std::vector <std::vector<do
   return true;
 }
 
+/** set goal configuration tolerance(s) - tolerance is in radians */
 void EnvironmentROBARM3D::SetGoalConfigurationTolerance(const std::vector<std::vector<double> > &tolerance_above, const std::vector<std::vector<double> > &tolerance_below)
 {
   for(unsigned int i = 0; i < EnvROBARMCfg.JointSpaceGoals.size(); i++)
@@ -3398,7 +3402,7 @@ void EnvironmentROBARM3D::AddObstacles(const vector<vector <double> > &obstacles
       //check if obstacle has 6 parameters --> {X,Y,Z,W,H,D}
       if(obstacles[i].size() < 6)
       {
-        // printf("[AddObstacles] Obstacle %i has too few parameters.Skipping it.\n",i);
+        printf("[AddObstacles] Obstacles %i has too few parameters.Skipping it.\n",i);
         continue;
       }
 
@@ -3414,7 +3418,7 @@ void EnvironmentROBARM3D::AddObstacles(const vector<vector <double> > &obstacles
          EnvROBARMCfg.arm_length < fabs(obstacles[i][1]) - obstacles[i][4] - EnvROBARMCfg.padding ||
          EnvROBARMCfg.arm_length < fabs(obstacles[i][2]) - obstacles[i][5] - EnvROBARMCfg.padding)
       {
-        // printf("[AddObstacles] Obstacle %i, centered at (%1.3f %1.3f %1.3f), is out of the arm's workspace.\n",i,obstacles[i][0],obstacles[i][1],obstacles[i][2]);
+//         printf("[AddObstacles] Obstacle %i, centered at (%1.3f %1.3f %1.3f), is out of the arm's workspace.\n",i,obstacles[i][0],obstacles[i][1],obstacles[i][2]);
         continue;
       }
       else
