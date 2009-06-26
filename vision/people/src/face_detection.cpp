@@ -55,6 +55,8 @@
 #include "tf/transform_listener.h"
 #include "visualization_msgs/Marker.h"
 #include "visualization_msgs/MarkerArray.h"
+#include "robot_msgs/PointCloud.h"
+#include "robot_msgs/Point32.h"
 #include "people/StartDetection.h"
 
 #include "opencv/cxcore.h"
@@ -111,6 +113,7 @@ public:
   ros::Publisher clines_pub_;
   visualization_msgs::MarkerArray markers_add_;
   visualization_msgs::MarkerArray markers_sub_;
+  ros::Publisher cloud_pub_;
 
 
   // Service
@@ -192,8 +195,9 @@ public:
 
     ROS_INFO_STREAM_NAMED("face_detector","Advertised people_tracker_measurements");
 
-    vis_pub_add_ = nh_.advertise<visualization_msgs::MarkerArray>("visualization_marker_array",0);
-    vis_pub_sub_ = nh_.advertise<visualization_msgs::MarkerArray>("visualization_marker_array",0);
+    //vis_pub_add_ = nh_.advertise<visualization_msgs::MarkerArray>("visualization_marker_array",0);
+    //vis_pub_sub_ = nh_.advertise<visualization_msgs::MarkerArray>("visualization_marker_array",0);
+    cloud_pub_ = nh_.advertise<robot_msgs::PointCloud>("~people_cloud",0);
 
     // Advertise the rectangles to draw if stereo_view is running.
     if (do_display_ == "remote") {
@@ -358,6 +362,12 @@ public:
     }
     markers_add_.markers.clear();
 
+
+    int ngood = 0;
+    robot_msgs::PointCloud cloud;
+    cloud.header.stamp = limage->header.stamp;
+    cloud.header.frame_id = limage->header.frame_id;
+
     if (faces_vector.size() > 0 ) {
 
       // Transform the positions of the known faces and remove anyone who hasn't had an update in a long time.
@@ -460,8 +470,6 @@ public:
 	lines.resize(4*faces_vector.size());
       }
 
-      int ngood = 0;
-
       for (uint iface = 0; iface < faces_vector.size(); iface++) {
 	one_face = &faces_vector[iface];	
 	
@@ -489,6 +497,14 @@ public:
 	  m.color.g = 1.0;
 	  m.color.b = 0.0;
 	  markers_add_.markers.push_back(m);
+
+
+	  robot_msgs::Point32 p;
+	  p.x = one_face->center3d.val[0];
+	  p.y = one_face->center3d.val[1];
+	  p.z = one_face->center3d.val[2];
+	  cloud.pts.push_back(p);
+
 	  ngood ++;
 	}
 	else {
@@ -558,8 +574,12 @@ public:
 
     } // End if faces_vector.size()>0
 
-    vis_pub_sub_.publish(markers_sub_);
-    vis_pub_add_.publish(markers_add_);
+    ROS_DEBUG_STREAM_NAMED("face_detector","Number of faces found: " << faces_vector.size() << ", number with good depth and size: " << ngood);
+
+    //vis_pub_sub_.publish(markers_sub_);
+    //vis_pub_add_.publish(markers_add_);
+    if (cloud.pts.size() > 0) 
+      cloud_pub_.publish(cloud);
 
     // Display
     if (do_display_ == "remote") {
