@@ -129,6 +129,54 @@
   <property name="stereo_ry" value="0.00" />
   <property name="stereo_rz" value="0.00" />
 
+  <!-- Made by Kevin for double stereo camera for PR-2 Beta. -->
+  <!-- Needs calibration verification, and CAD check. -->
+  <macro name="double_stereo_camera" params="name parent *origin">
+    <!-- Define link to stereo cameras, set origin relative to that -->
+    <joint name="${name}_fixed_joint" type="fixed" />
+    <link name="${name}_link">
+      <parent="${parent}" />
+      <insert_block name="origin" />
+      <joint name="${name}_fixed_joint" />
+      <inertial>
+	<!-- Needs verification with CAD -->	
+	<mass value="0.05" />
+	<com xyz="0 0 0" />
+	<inertia ixx="0.001" ixy="0.0" ixz="0.0"
+		 iyy="0.001" iyz="0.0" izz="0.01" />
+      </inertial>
+
+      <!-- Should probably get real visuals here at some point -->
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <map name="gazebo_material" flag="gazebo">
+          <elem key="material" value="PR2/Blue" />
+        </map>
+        <geometry name="${name}_double_stereo_visual">
+          <mesh scale="0.01 0.01 0.01" />
+        </geometry>
+      </visual>
+
+      <collision>
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <geometry name="${name}_double_stereo_collision">
+          <box size="0.01 0.01 0.01" />
+        </geometry>
+      </collision>
+    </link>
+
+    
+    <!-- Wide camera is on robot right (hca1), narrow on left (hca2)? -->
+    <!-- 15mm offset from center needs check with CAD -->
+    <stereo_camera parent="${name}_link" name="${name}_wide" >
+      <origin xyz="0 -0.015 0" rpy="0 0 0" />
+    </stereo_camera>
+
+    <stereo_camera parent="${name}_link" name="${name}_narrow" >
+      <origin xyz="0 0.015 0" rpy="0 0 0" />
+    </stereo_camera>
+  </macro>
+
   <macro name="stereo_camera" params="name parent *origin">
     
     <joint name="${name}_fixed_joint" type="fixed" />
