@@ -27,6 +27,7 @@
   <depend package="forearm_cam" />
   <depend package="robot_state_publisher" />
   <depend package="prosilica_cam" />
+  <depend package="teleop_pr2" />
   <depend package="mechanism_bringup" />
   <!-- For testing -->
   <depend package="std_msgs"/>
