@@ -100,7 +100,7 @@ class Action:
 
     self.feedback_cond.acquire()
 
-    while True:
+    while not rospy.is_shutdown():
       msg = self.statemsg()
       msg.status.value = self.status
       msg.goal = self.goal
