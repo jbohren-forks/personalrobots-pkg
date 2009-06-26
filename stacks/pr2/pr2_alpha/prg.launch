@@ -58,6 +58,9 @@
   <node machine="three" name="prosilica" pkg="prosilica_cam" type="prosilica_node" output="screen" respawn="true"/>
   -->
 
+<!-- Sound  -->
+  <node pkg="sound_play" type="soundplay_node.py" machine="one" />
+
 <!-- Runtime Diagnostics Logging -->
   <node pkg="rosrecord" type="rosrecord" args="-f /hwlog/prg_runtime_automatic /diagnostics" />
 
