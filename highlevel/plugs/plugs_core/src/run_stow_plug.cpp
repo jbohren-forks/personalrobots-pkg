@@ -33,15 +33,15 @@
  *********************************************************************/
 
 // Msgs
-#include <robot_msgs/PlugStow.h>
+#include <plugs_msgs/PlugStow.h>
 #include <std_msgs/Empty.h>
-
-// Actions
-#include <plugs_core/action_stow_plug.h>
 
 // State Msgs
 #include <robot_actions/NoArgumentsActionState.h>
 #include <pr2_robot_actions/StowPlugState.h>
+
+//Action
+#include <plugs_core/action_stow_plug.h>
 
 #include <robot_actions/action.h>
 #include <robot_actions/action_runner.h>
@@ -60,7 +60,7 @@ int main(int argc, char** argv)
   StowPlugAction stow_plug;
 
   robot_actions::ActionRunner runner(10.0);
-  runner.connect<robot_msgs::PlugStow, pr2_robot_actions::StowPlugState, std_msgs::Empty>(stow_plug);
+  runner.connect<plugs_msgs::PlugStow, pr2_robot_actions::StowPlugState, std_msgs::Empty>(stow_plug);
   runner.run();
 
   node.spin();

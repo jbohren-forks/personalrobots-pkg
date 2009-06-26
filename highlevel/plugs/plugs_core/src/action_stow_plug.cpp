@@ -40,7 +40,7 @@ namespace plugs_core
 {
 
 StowPlugAction::StowPlugAction() :
-  robot_actions::Action<robot_msgs::PlugStow, std_msgs::Empty>("stow_plug"),
+  robot_actions::Action<plugs_msgs::PlugStow, std_msgs::Empty>("stow_plug"),
   action_name_("stow_plug"),
   node_(ros::Node::instance()),
   gripper_controller_("r_gripper_position_controller"),
@@ -71,7 +71,7 @@ StowPlugAction::~StowPlugAction()
 {
 };
 
-robot_actions::ResultStatus StowPlugAction::execute(const robot_msgs::PlugStow& plug_stow, std_msgs::Empty& feedback)
+robot_actions::ResultStatus StowPlugAction::execute(const plugs_msgs::PlugStow& plug_stow, std_msgs::Empty& feedback)
 {
   ROS_DEBUG("%s: executing.", action_name_.c_str());
   plug_stow_ = plug_stow;

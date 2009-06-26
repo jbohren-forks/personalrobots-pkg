@@ -43,7 +43,7 @@
 
 // Msgs
 #include <robot_mechanism_controllers/JointControllerState.h>
-#include <robot_msgs/PlugStow.h>
+#include <plugs_msgs/PlugStow.h>
 #include <std_msgs/Empty.h>
 #include <std_msgs/Float64.h>
 
@@ -56,13 +56,13 @@
 
 namespace plugs_core{
 
-class StowPlugAction: public robot_actions::Action<robot_msgs::PlugStow, std_msgs::Empty>
+class StowPlugAction: public robot_actions::Action<plugs_msgs::PlugStow, std_msgs::Empty>
 {
 public:
   StowPlugAction();
   ~StowPlugAction();
 
-  virtual robot_actions::ResultStatus execute(const robot_msgs::PlugStow& plug_stow, std_msgs::Empty&);
+  virtual robot_actions::ResultStatus execute(const plugs_msgs::PlugStow& plug_stow, std_msgs::Empty&);
 
 private:
   
@@ -79,7 +79,7 @@ private:
   std::string arm_controller_;
 
   std_msgs::Empty empty_;
-  robot_msgs::PlugStow plug_stow_;
+  plugs_msgs::PlugStow plug_stow_;
  
   
   robot_srvs::MoveToPose::Request req_pose_;

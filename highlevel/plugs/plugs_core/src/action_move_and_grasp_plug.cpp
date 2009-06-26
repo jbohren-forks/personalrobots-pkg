@@ -40,7 +40,7 @@ namespace plugs_core
 {
 
 MoveAndGraspPlugAction::MoveAndGraspPlugAction() :
-  robot_actions::Action<robot_msgs::PlugStow, std_msgs::Empty>("move_and_grasp_plug"),
+  robot_actions::Action<plugs_msgs::PlugStow, std_msgs::Empty>("move_and_grasp_plug"),
   action_name_("move_and_grasp_plug"),
   node_(ros::Node::instance()),
   gripper_controller_("r_gripper_position_controller"),
@@ -72,7 +72,7 @@ MoveAndGraspPlugAction::~MoveAndGraspPlugAction()
 {
 };
 
-robot_actions::ResultStatus MoveAndGraspPlugAction::execute(const robot_msgs::PlugStow& plug_stow, std_msgs::Empty& feedback)
+robot_actions::ResultStatus MoveAndGraspPlugAction::execute(const plugs_msgs::PlugStow& plug_stow, std_msgs::Empty& feedback)
 {
   ROS_DEBUG("%s: executing.", action_name_.c_str());
   plug_stow_ = plug_stow;

@@ -44,7 +44,7 @@
 #include <robot_actions/action_client.h>
 
 // Msgs
-#include <robot_msgs/PlugStow.h>
+#include <plugs_msgs/PlugStow.h>
 #include <std_msgs/Empty.h>
 
 // State Msgs
@@ -55,18 +55,6 @@
 #include <pr2_robot_actions/SwitchControllersState.h>
 #include <pr2_robot_actions/DetectPlugOnBaseState.h>
 #include <pr2_robot_actions/PlugInState.h>
-
-// Actions
-#include <safety_core/action_detect_plug_on_base.h>
-#include <safety_core/action_tuck_arms.h>
-#include <plugs_core/action_untuck_arms.h>
-#include <plugs_core/action_move_and_grasp_plug.h>
-#include <plugs_core/action_detect_outlet_fine.h>
-#include <plugs_core/action_detect_outlet_coarse.h>
-#include <plugs_core/action_localize_plug_in_gripper.h>
-#include <plugs_core/action_plug_in.h>
-#include <plugs_core/action_stow_plug.h>
-#include <plugs_core/action_unplug.h>
 
 using namespace ros;
 using namespace std;
@@ -92,7 +80,7 @@ int
 
   pr2_robot_actions::SwitchControllers switchlist;
   std_msgs::Empty empty;
-  robot_msgs::PlugStow plug_stow;
+  plugs_msgs::PlugStow plug_stow;
   robot_msgs::PointStamped point;
   robot_msgs::PoseStamped pose;
 
@@ -108,14 +96,14 @@ int
   robot_actions::ActionClient<std_msgs::Empty, robot_actions::NoArgumentsActionState, std_msgs::Empty> tuck_arm("safety_tuck_arms");
   robot_actions::ActionClient<pr2_robot_actions::SwitchControllers, pr2_robot_actions::SwitchControllersState,  std_msgs::Empty> switch_controllers("switch_controllers");
   robot_actions::ActionClient<std_msgs::Empty, robot_actions::NoArgumentsActionState, std_msgs::Empty> untuck_arm("plugs_untuck_arms");
-  robot_actions::ActionClient<std_msgs::Empty, pr2_robot_actions::DetectPlugOnBaseState, robot_msgs::PlugStow> detect_plug_on_base("detect_plug_on_base");
-  robot_actions::ActionClient<robot_msgs::PlugStow, pr2_robot_actions::MoveAndGraspPlugState, std_msgs::Empty> move_and_grasp_plug("move_and_grasp_plug");
+  robot_actions::ActionClient<std_msgs::Empty, pr2_robot_actions::DetectPlugOnBaseState, plugs_msgs::PlugStow> detect_plug_on_base("detect_plug_on_base");
+  robot_actions::ActionClient<plugs_msgs::PlugStow, pr2_robot_actions::MoveAndGraspPlugState, std_msgs::Empty> move_and_grasp_plug("move_and_grasp_plug");
   robot_actions::ActionClient<robot_msgs::PointStamped, pr2_robot_actions::DetectOutletState, robot_msgs::PoseStamped> detect_outlet_fine("detect_outlet_fine");
   robot_actions::ActionClient<std_msgs::Empty, robot_actions::NoArgumentsActionState, std_msgs::Empty> localize_plug_in_gripper("localize_plug_in_gripper");
   robot_actions::ActionClient<std_msgs::Int32, pr2_robot_actions::PlugInState, std_msgs::Empty>
     plug_in("plug_in");
   robot_actions::ActionClient<std_msgs::Empty, robot_actions::NoArgumentsActionState, std_msgs::Empty> unplug("unplug");
-  robot_actions::ActionClient< robot_msgs::PlugStow, pr2_robot_actions::StowPlugState, std_msgs::Empty> stow_plug("stow_plug");
+  robot_actions::ActionClient< plugs_msgs::PlugStow, pr2_robot_actions::StowPlugState, std_msgs::Empty> stow_plug("stow_plug");
 
   Duration(1.0).sleep();
 

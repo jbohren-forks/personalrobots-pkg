@@ -43,7 +43,6 @@
 
 // Msgs
 #include <robot_mechanism_controllers/JointControllerState.h>
-#include <robot_msgs/PlugStow.h>
 #include <std_msgs/Empty.h>
 #include <std_msgs/Float64.h>
 

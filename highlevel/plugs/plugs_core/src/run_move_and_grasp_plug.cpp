@@ -34,6 +34,7 @@
 
 // Msgs
 #include <std_msgs/Empty.h>
+#include <plugs_msgs/PlugStow.h>
 
 // Actions
 #include <plugs_core/action_move_and_grasp_plug.h>
@@ -59,7 +60,7 @@ int main(int argc, char** argv)
   MoveAndGraspPlugAction move_and_grasp;
 
   robot_actions::ActionRunner runner(10.0);
-  runner.connect<robot_msgs::PlugStow, pr2_robot_actions::MoveAndGraspPlugState, std_msgs::Empty>(move_and_grasp);
+  runner.connect<plugs_msgs::PlugStow, pr2_robot_actions::MoveAndGraspPlugState, std_msgs::Empty>(move_and_grasp);
   runner.run();
 
   node.spin();
