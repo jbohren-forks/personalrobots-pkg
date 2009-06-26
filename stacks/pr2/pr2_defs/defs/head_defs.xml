@@ -135,7 +135,7 @@
     <!-- Define link to stereo cameras, set origin relative to that -->
     <joint name="${name}_fixed_joint" type="fixed" />
     <link name="${name}_link">
-      <parent="${parent}" />
+      <parent name="${parent}" />
       <insert_block name="origin" />
       <joint name="${name}_fixed_joint" />
       <inertial>
