@@ -3,6 +3,7 @@
 
 #include "trex_ros/adapter_utilities.h"
 #include <plugs_msgs/PlugStow.h>
+#include <door_msgs/Door.h>
 
 using namespace EUROPA;
 using namespace TREX;
@@ -17,6 +18,16 @@ namespace trex_pr2 {
    */
   class Pr2AdapterUtilities : AdapterUtilities {
   public:
+    /**
+     * @brief Stuff token data into a door message
+     */
+    static void write(const TokenId& token, door_msgs::Door& msg);
+
+    /**
+     * @brief Read door message into the observation
+     */
+    static void read(ObservationByValue& obs, const door_msgs::Door& msg);
+
     /**
      * @brief Read plug stow message
      */

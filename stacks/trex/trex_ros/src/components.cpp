@@ -11,7 +11,6 @@
 #include "Utilities.hh"
 #include "trex_ros/calc_angle_diff_constraint.h"
 #include "trex_ros/calc_distance_constraint.h"
-#include "plugs_functions/plugs_functions.h"
 #include "OrienteeringSolver.hh"
 #include "Utilities.hh"
 #include "LabelStr.hh"

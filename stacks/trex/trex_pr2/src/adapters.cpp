@@ -57,15 +57,15 @@ namespace TREX {
     }
     
     virtual void fillActiveObservationParameters(const door_msgs::Door& msg, ObservationByValue* obs){
-      AdapterUtilities::read(*obs, msg);
+      Pr2AdapterUtilities::read(*obs, msg);
     }
 
     virtual void fillInactiveObservationParameters(const door_msgs::Door& msg, ObservationByValue* obs){ 
-      AdapterUtilities::read(*obs, msg);
+      Pr2AdapterUtilities::read(*obs, msg);
     }
 
     void fillDispatchParameters(door_msgs::Door& msg, const TokenId& goalToken){
-      AdapterUtilities::write(goalToken, msg);
+      Pr2AdapterUtilities::write(goalToken, msg);
     }
   }; 
 

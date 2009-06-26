@@ -1,5 +1,6 @@
 #include <trex_pr2/door_domain_constraints.h>
 #include <trex_ros/adapter_utilities.h>
+#include <trex_pr2/pr2_adapter_utilities.h>
 #include <trex_ros/components.h>
 #include <door_functions/door_functions.h>
 
@@ -57,7 +58,7 @@ namespace trex_pr2 {
 
     // Now make the calculation - How this works without knowledge of robot position is beyond me. Have to check with Wim.
     door_msgs::Door msg;
-    AdapterUtilities::write(_token_id, msg);
+    Pr2AdapterUtilities::write(_token_id, msg);
     tf::Stamped<tf::Pose> tf_stamped_pose = door_functions::getRobotPose(msg, _range.getSingletonValue());
 
     // Extract xy, and theta, which is yaw

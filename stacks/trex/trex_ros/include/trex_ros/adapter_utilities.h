@@ -9,7 +9,6 @@
 #include <robot_msgs/Pose.h>
 #include <robot_msgs/Point32.h>
 #include <std_msgs/String.h>
-#include <door_msgs/Door.h>
 //#include <pr2_robot_actions/ServoToOutlet.h> //Not used?
 #include <robot_msgs/PointStamped.h>
 #include <robot_msgs/PoseStamped.h>
@@ -34,16 +33,6 @@ namespace trex_ros {
      * frame is found. Assumes the parameter name is 'frame_id'.
      */
     static std::string getFrame(const TokenId& token);
-
-    /**
-     * @brief Stuff token data into a door message
-     */
-    static void write(const TokenId& token, door_msgs::Door& msg);
-
-    /**
-     * @brief Read door message into the observation
-     */
-    static void read(ObservationByValue& obs, const door_msgs::Door& msg);
 
     /**
      * @brief Read point stamped message
