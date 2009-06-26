@@ -78,10 +78,10 @@
   <node pkg="runtime_monitor" type="ntp_monitor.py" args="prf2" machine="four"/>
 
 <!-- Disk usage monitoring script Warns to console if disk full -->
-  <node pkg="runtime_monitor" type="disk_usage.py" args="$(optenv HOME /home)" machine="realtime"/>
-  <node pkg="runtime_monitor" type="disk_usage.py" args="$(optenv HOME /home)" machine="two"/> 
-  <node pkg="runtime_monitor" type="disk_usage.py" args="$(optenv HOME /home)" machine="three"/>
-  <node pkg="runtime_monitor" type="disk_usage.py" args="$(optenv HOME /home)" machine="four"/>   
+  <node pkg="pr2_computer_monitor" type="disk_usage.py" args="$(optenv HOME /home)" machine="realtime"/>
+  <node pkg="pr2_computer_monitor" type="disk_usage.py" args="$(optenv HOME /home)" machine="two"/> 
+  <node pkg="pr2_computer_monitor" type="disk_usage.py" args="$(optenv HOME /home)" machine="three"/>
+  <node pkg="pr2_computer_monitor" type="disk_usage.py" args="$(optenv HOME /home)" machine="four"/>   
 
   <!-- Plug to chessboard offsets -->
   <group ns="plug_detector">
