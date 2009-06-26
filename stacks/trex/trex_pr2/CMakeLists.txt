@@ -56,7 +56,8 @@ rospack_add_nddl("test/master/m2/no_arms/pr2.mechanism_control.nddl")
 rospack_add_nddl("test/master/m2/high_level_sim/pr2.rcs.sim.nddl")
 rospack_add_nddl("test/master/m2_remote_interface/pr2.master.nddl")
 
-set(TREX_FILES src/pr2_components.cpp
+set(TREX_FILES src/pr2_adapter_utilities.cpp
+	       src/pr2_components.cpp
 	       src/topological_map.cpp
 	       src/door_domain_constraints.cpp
 	       src/adapters.cpp)

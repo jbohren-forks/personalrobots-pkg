@@ -86,23 +86,6 @@ namespace trex_ros {
     read<double>("travel_dir_z", obs, msg.travel_dir.z);
   }
 
-  void AdapterUtilities::read(ObservationByValue& obs, const plugs_msgs::PlugStow& msg){
-    setHeader(msg, obs);
-    read<bool>("stowed", obs, msg.stowed);
-    read<double>("x", obs, msg.plug_centroid.x);
-    read<double>("y", obs, msg.plug_centroid.y);
-    read<double>("z", obs, msg.plug_centroid.z);
-  }
-
-  void AdapterUtilities::write(const TokenId& token, plugs_msgs::PlugStow& msg){
-    getHeader(msg, token);
-
-    write<int8_t>("stowed", token, msg.stowed);
-    write<double>("x", token, msg.plug_centroid.x);
-    write<double>("y", token, msg.plug_centroid.y);
-    write<double>("z", token, msg.plug_centroid.z);
-  }
-
   void AdapterUtilities::read(ObservationByValue& obs, const robot_msgs::PointStamped& msg){
     setHeader(msg, obs);
     readPoint(obs, msg.point.x, msg.point.y, msg.point.z);

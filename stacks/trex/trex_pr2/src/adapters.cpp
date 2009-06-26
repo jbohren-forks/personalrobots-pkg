@@ -37,11 +37,13 @@
 
 
 #include <trex_ros/adapter_utilities.h>
+#include <trex_pr2/pr2_adapter_utilities.h>
 #include <trex_pr2/adapters.h>
 #include "trex_ros/ros_action_adapter.h"
 #include "trex_ros/ros_state_adapter.h"
 
 using namespace trex_ros;
+using namespace trex_pr2;
 namespace TREX {
 
   /***********************************************************************
@@ -267,7 +269,7 @@ namespace TREX {
     }
 
     virtual void fillInactiveObservationParameters(const plugs_msgs::PlugStow& msg, ObservationByValue* obs){
-      AdapterUtilities::read(*obs, msg);
+      Pr2AdapterUtilities::read(*obs, msg);
     }
   };
 
@@ -285,11 +287,11 @@ namespace TREX {
     }
 
     virtual void fillActiveObservationParameters(const plugs_msgs::PlugStow& msg, ObservationByValue* obs){
-      AdapterUtilities::read(*obs, msg);
+      Pr2AdapterUtilities::read(*obs, msg);
     }
 
     virtual void fillDispatchParameters(plugs_msgs::PlugStow& msg, const TokenId& goalToken){
-      AdapterUtilities::write(goalToken, msg);
+      Pr2AdapterUtilities::write(goalToken, msg);
     }
   };
 
@@ -308,11 +310,11 @@ namespace TREX {
     }
 
     virtual void fillDispatchParameters(plugs_msgs::PlugStow& msg, const TokenId& goalToken){
-      AdapterUtilities::write(goalToken, msg);
+      Pr2AdapterUtilities::write(goalToken, msg);
     }
 
     virtual void fillActiveObservationParameters(const plugs_msgs::PlugStow& msg, ObservationByValue* obs){
-      AdapterUtilities::read(*obs, msg);
+      Pr2AdapterUtilities::read(*obs, msg);
     }
   };
 
