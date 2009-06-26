@@ -1,0 +1,417 @@
+Index: ode/src/quickstep.cpp
+===================================================================
+--- ode/src/quickstep.cpp	(revision 1675)
++++ ode/src/quickstep.cpp	(working copy)
+@@ -33,6 +33,8 @@
+ #include "lcp.h"
+ #include "util.h"
+ 
++#include <iostream>
++
+ #define ALLOCA dALLOCA16
+ 
+ typedef const dReal *dRealPtr;
+@@ -66,6 +68,9 @@
+ 
+ #define RANDOMLY_REORDER_CONSTRAINTS 1
+ 
++
++//#define TIMING
++
+ //****************************************************************************
+ // special matrix multipliers
+ 
+@@ -142,7 +147,7 @@
+ 
+ 
+ // compute out = inv(M)*J'*in.
+-#if 0
++#if WARM_STARTING
+ static void multiply_invM_JT (int m, int nb, dRealMutablePtr iMJ, int *jb,
+ 	dRealMutablePtr in, dRealMutablePtr out)
+ {
+@@ -431,6 +436,13 @@
+ 	dIASSERT ((j+k-1)==m); // -1 since k was started at 1 and not 0
+ #endif
+ 
++//#define MONITOR
++#ifdef MONITOR
++        printf("checking convergence\n");
++        printf(" iter   rms    max    i_max  lambda    i_max_lambda    index   \n");
++        printf("-----------------------------------------------------------------------------------\n");
++#endif
++
+ 	for (int iteration=0; iteration < num_iterations; iteration++) {
+ 
+ #ifdef REORDER_CONSTRAINTS
+@@ -470,6 +482,7 @@
+ 		memcpy (last_lambda,lambda,m*sizeof(dReal));
+ #endif
+ #ifdef RANDOMLY_REORDER_CONSTRAINTS
++		//if (1) {
+ 		if ((iteration & 7) == 0) {
+ 			for (i=1; i<m; ++i) {
+ 				IndexError tmp = order[i];
+@@ -480,6 +493,24 @@
+ 		}
+ #endif
+ 
++//#define USE_SSE
++#ifdef USE_SSE
++                typedef float v4sf __attribute__ ((mode(V4SF)));
++
++                v4sf v_fc41,v_fc42,v_J41,v_J42,v_iMJ41,v_iMJ42;
++                v4sf v_fc241,v_fc242,v_J241,v_J242,v_iMJ241,v_iMJ242;
++                float f_delta41[4],f_delta42[4];
++
++                v4sf v_delta;
++                float f_delta[4];
++
++                v4sf v_lo;
++                float f_lo[4];
++                v4sf v_hi;
++                float f_hi[4];
++                v4sf v_lambda;
++                float f_lambda[4];
++
+ 		for (int i=0; i<m; i++) {
+ 			// @@@ potential optimization: we could pre-sort J and iMJ, thereby
+ 			//     linearizing access to those arrays. hmmm, this does not seem
+@@ -499,7 +530,10 @@
+ 			// already been computed.
+ 			dReal hi_act, lo_act;
+ 			if (findex[index] >= 0) {
+-				hi_act = dFabs (hi[index] * lambda[findex[index]]);
++				if (lambda[findex[index]]>0)
++                                  hi_act = dFabs (hi[index] * lambda[findex[index]]);
++				else
++                                  hi_act = 0;
+ 				lo_act = -hi_act;
+ 			} else {
+ 				hi_act = hi[index];
+@@ -511,7 +545,140 @@
+ 			dReal delta = b[index] - lambda[index]*Ad[index];
+ 			dRealMutablePtr fc_ptr = fc + 6*b1;
+ 
++
+ 			// @@@ potential optimization: SIMD-ize this and the b2 >= 0 case
++			v_fc41 = __builtin_ia32_loadups(&fc_ptr[0]);
++			v_fc42 = __builtin_ia32_loadups(&fc_ptr[2]);
++			v_J41 = __builtin_ia32_loadups(&J_ptr[0]);
++			v_J42 = __builtin_ia32_loadups(&J_ptr[2]);
++			__builtin_ia32_storeups(f_delta41,__builtin_ia32_mulps(v_fc41,v_J41));
++			__builtin_ia32_storeups(f_delta42,__builtin_ia32_mulps(v_fc42,v_J42));
++			delta -= (f_delta41[0]+f_delta41[1]+f_delta41[2]+f_delta41[3]+f_delta42[2]+f_delta42[3]);
++
++			// @@@ potential optimization: handle 1-body constraints in a separate
++			//     loop to avoid the cost of test & jump?
++			if (b2 >= 0) {
++				fc_ptr = fc + 6*b2;
++                                v_fc241 = __builtin_ia32_loadups(&fc_ptr[0]);
++                                v_fc242 = __builtin_ia32_loadups(&fc_ptr[2]);
++                                v_J241 = __builtin_ia32_loadups(&J_ptr[6]);
++                                v_J242 = __builtin_ia32_loadups(&J_ptr[8]);
++                                __builtin_ia32_storeups(f_delta41,__builtin_ia32_mulps(v_fc241,v_J241));
++                                __builtin_ia32_storeups(f_delta42,__builtin_ia32_mulps(v_fc242,v_J242));
++                                delta -= (f_delta41[0]+f_delta41[1]+f_delta41[2]+f_delta41[3]+f_delta42[2]+f_delta42[3]);
++
++			}
++
++			// compute lambda and clamp it to [lo,hi].
++			// @@@ potential optimization: does SSE have clamping instructions
++			//     to save test+jump penalties here?
++
++			// assigning new lambda and clamping delta
++                        // repeat values
++                        f_delta[0] =f_delta[1] =f_delta[2] =f_delta[3] =delta;
++                        f_lambda[0]=f_lambda[1]=f_lambda[2]=f_lambda[3]=lambda[index];
++
++                        f_lo[0]    =f_lo[1]    =f_lo[2]    =f_lo[3]    =lo_act;
++                        f_hi[0]    =f_hi[1]    =f_hi[2]    =f_hi[3]    =hi_act;
++
++			v_delta  = __builtin_ia32_loadups(&f_delta[0]);
++			v_lambda = __builtin_ia32_loadups(&f_lambda[0]);
++			v_lo     = __builtin_ia32_loadups(&f_lo[0]);
++			v_hi     = __builtin_ia32_loadups(&f_hi[0]);
++
++			// clamp and update lambda,delta
++			v_delta = __builtin_ia32_maxps(v_delta,__builtin_ia32_subps(v_lo,v_lambda));
++			v_delta = __builtin_ia32_minps(v_delta,__builtin_ia32_subps(v_hi,v_lambda));
++			v_lambda = __builtin_ia32_addps(v_lambda,v_delta);
++
++			__builtin_ia32_storeups(f_delta,v_delta);
++			delta = f_delta[0];
++
++			__builtin_ia32_storeups(f_lambda,v_lambda);
++			lambda[index] = f_lambda[0];
++
++			//@@@ a trick that may or may not help
++			//dReal ramp = (1-((dReal)(iteration+1)/(dReal)num_iterations));
++			//delta *= ramp;
++
++			// update fc.
++			// @@@ potential optimization: SIMD for this and the b2 >= 0 case
++			fc_ptr = fc + 6*b1;
++
++
++			//v_fc41 = __builtin_ia32_loadups(&fc_ptr[0]); // already loaded
++			//v_fc42 = __builtin_ia32_loadups(&fc_ptr[2]); // already loaded
++
++			v_iMJ41 = __builtin_ia32_loadups(&iMJ_ptr[0]);
++			v_iMJ42 = __builtin_ia32_loadups(&iMJ_ptr[2]);
++
++			v_fc41 = __builtin_ia32_addps(v_fc41,__builtin_ia32_mulps(v_delta,v_iMJ41));
++			v_fc42 = __builtin_ia32_addps(v_fc42,__builtin_ia32_mulps(v_delta,v_iMJ42));
++
++			__builtin_ia32_storeups(&fc_ptr[0],v_fc41);
++			__builtin_ia32_storeups(&fc_ptr[2],v_fc42);
++			
++			// @@@ potential optimization: handle 1-body constraints in a separate
++			//     loop to avoid the cost of test & jump?
++			if (b2 >= 0) {
++				fc_ptr = fc + 6*b2;
++
++                                v_iMJ241 = __builtin_ia32_loadups(&iMJ_ptr[6]);
++                                v_iMJ242 = __builtin_ia32_loadups(&iMJ_ptr[8]);
++
++                                v_fc241 = __builtin_ia32_addps(v_fc241,__builtin_ia32_mulps(v_delta,v_iMJ241));
++                                v_fc242 = __builtin_ia32_addps(v_fc242,__builtin_ia32_mulps(v_delta,v_iMJ242));
++
++                                __builtin_ia32_storeups(&fc_ptr[0],v_fc241);
++                                __builtin_ia32_storeups(&fc_ptr[2],v_fc242);
++
++			}
++		}
++#else
++
++#ifdef MONITOR
++                double rms_delta = 0;
++                double max_delta = 0;
++                int    i_max_delta = 0;
++                double max_lambda = 0;
++                int    i_max_lambda = 0;
++                int    index_max_lambda = 0;
++#endif
++		for (int i=0; i<m; i++) {
++			// @@@ potential optimization: we could pre-sort J and iMJ, thereby
++			//     linearizing access to those arrays. hmmm, this does not seem
++			//     like a win, but we should think carefully about our memory
++			//     access pattern.
++
++			int index = order[i].index;
++			J_ptr = J + index*12;
++			iMJ_ptr = iMJ + index*12;
++
++			// set the limits for this constraint. 
++			// this is the place where the QuickStep method differs from the
++			// direct LCP solving method, since that method only performs this
++			// limit adjustment once per time step, whereas this method performs
++			// once per iteration per constraint row.
++			// the constraints are ordered so that all lambda[] values needed have
++			// already been computed.
++			dReal hi_act, lo_act;
++			if (findex[index] >= 0) {
++				if (lambda[findex[index]]>0)
++                                  hi_act = dFabs (hi[index] * lambda[findex[index]]);
++				else
++                                  hi_act = 0;
++				lo_act = -hi_act;
++			} else {
++				hi_act = hi[index];
++				lo_act = lo[index];
++			}
++
++			int b1 = jb[index*2];
++			int b2 = jb[index*2+1];
++			dReal delta = b[index] - lambda[index]*Ad[index];
++			dRealMutablePtr fc_ptr = fc + 6*b1;
++
++			// @@@ potential optimization: SIMD-ize this and the b2 >= 0 case
+ 			delta -=fc_ptr[0] * J_ptr[0] + fc_ptr[1] * J_ptr[1] +
+ 				fc_ptr[2] * J_ptr[2] + fc_ptr[3] * J_ptr[3] +
+ 				fc_ptr[4] * J_ptr[4] + fc_ptr[5] * J_ptr[5];
+@@ -540,6 +707,21 @@
+ 				lambda[index] = new_lambda;
+ 			}
+ 
++#ifdef MONITOR
++                        /// checking convergence
++                        //printf("index %5d lambda %10f\n",index,lambda[index]);
++                        double tmp_delta = fabs(delta); //fabs(delta)/std::max(fabs(lambda[index]),0.0001);
++                        rms_delta += tmp_delta;
++                        if (max_delta < tmp_delta)
++                        {
++                            max_delta = tmp_delta;
++                            i_max_delta = i;
++                            max_lambda = lambda[index];
++                            i_max_lambda = i;
++                            index_max_lambda = index;
++                        }
++
++#endif
+ 			//@@@ a trick that may or may not help
+ 			//dReal ramp = (1-((dReal)(iteration+1)/(dReal)num_iterations));
+ 			//delta *= ramp;
+@@ -565,6 +747,10 @@
+ 				fc_ptr[5] += delta * iMJ_ptr[11];
+ 			}
+ 		}
++#ifdef MONITOR
++		printf("%5d %20f %20f %5d %20f %5d %5d\n",iteration,rms_delta,max_delta,i_max_delta,max_lambda,i_max_lambda,index_max_lambda);
++#endif
++#endif
+ 	}
+ }
+ 
+@@ -591,6 +777,11 @@
+ 	// frame, and compute the rotational force and add it to the torque
+ 	// accumulator. I and invI are a vertical stack of 3x4 matrices, one per body.
+         dRealAllocaArray (invI,3*4*nb);
++#define TEST
++#ifdef TEST
++        dRealAllocaArray (tmpI,3*4*nb);
++        dRealAllocaArray (tmpM,1*4*nb);
++#endif
+ 	for (i=0; i<nb; i++) {
+ 		dMatrix3 tmp;
+ 
+@@ -598,6 +789,14 @@
+ 		dMULTIPLY2_333 (tmp,body[i]->invI,body[i]->posr.R);
+ 		dMULTIPLY0_333 (invI+i*12,body[i]->posr.R,tmp);
+ 
++#ifdef TEST
++		memcpy (tmpI+i*12, body[i]->mass.I,3*4*sizeof(dReal));
++		tmpM[i*4+0] = body[i]->mass.mass;
++		tmpM[i*4+1] = body[i]->mass.c[0];
++		tmpM[i*4+2] = body[i]->mass.c[1];
++		tmpM[i*4+3] = body[i]->mass.c[2];
++#endif
++
+         if (body[i]->flags & dxBodyGyroscopic) {
+             dMatrix3 I;
+             // compute inertia tensor in global frame
+@@ -698,6 +897,48 @@
+ 				mfb += info[i].m;
+ 		}
+ 
++#ifdef TEST
++		// options:
++		// split J, solve each block in parallel
++		// move J setup into SOR_LCP
++		// solve each of JinvMJT in thread groups
++#endif
++
++
++
++#ifdef TEST
++		// normalize J
++                for (i=0;i<m;i++) {
++                  double sum=0;
++                  //printf(" J = [");
++                  for (j=0; j<12; j++) {
++                    sum += J[i*12+j]*J[i*12+j];
++                    //printf(" %f",J[i*12+j]);
++                  }
++                  //printf("]\nsum %f\n",sum);
++                  if (sum != 0)
++                  for (j=0; j<12; j++) {
++                    J[i*12+j] =J[i*12+j]/sum;
++                  }
++                }
++#endif
++#ifdef TEST
++#if 0
++                FILE* ftmpI = fopen("/tmp/tmpI.mat","a");
++		//std::cout << " tmpI " << tmpI << std::endl;
++                fprintf(ftmpI,"\n");
++                dPrintMatrix(tmpI,3*nb,4,"%10.4f",ftmpI);
++                fclose(ftmpI);
++
++                FILE* ftmpM = fopen("/tmp/tmpM.mat","a");
++		//std::cout << " tmpM " << tmpM << std::endl;
++                fprintf(ftmpM,"\n");
++                dPrintMatrix(tmpM,nb,4,"%10.4f",ftmpM);
++                fclose(ftmpM);
++#endif
++#endif
++
++
+ 		// we need a copy of Jacobian for joint feedbacks
+ 		// because it gets destroyed by SOR solver
+ 		// instead of saving all Jacobian, we can save just rows
+@@ -762,6 +1003,75 @@
+ 		dRealAllocaArray (cforce,nb*6);
+ 		SOR_LCP (m,nb,J,jb,body,invI,lambda,cforce,rhs,lo,hi,cfm,findex,&world->qs);
+ 
++#ifdef TIMING
++		std::cout << " m: total constraint dimention " << m
++		          << " nb: number of bounded variables " << nb
++		          << " nub: number of unbounded variables " << nb
++		          << " jb: array of body numbers for each joint row " << jb
++		          << " lo " << lo
++		          << " hi " << hi
++		          << " findex " << findex
++                          << std::endl;
++
++                FILE* fJ = fopen("/tmp/J.mat","a");
++		//std::cout << " J " << J << std::endl;
++                fprintf(fJ,"\n");
++                dPrintMatrix(Jcopy,m,12,"%10.4f",fJ);
++                fclose(fJ);
++
++                FILE* finvI = fopen("/tmp/invI.mat","a");
++		//std::cout << " invI " << invI << std::endl;
++                fprintf(finvI,"\n");
++                dPrintMatrix(invI,3*nb,4,"%10.4f",finvI);
++                fclose(finvI);
++
++                FILE* fc = fopen("/tmp/c.mat","a");
++		//std::cout << " c " << c << std::endl;
++                fprintf(fc,"\n");
++                dPrintMatrix(c,1,m,"%10.4f",fc);
++                fclose(fc);
++
++                FILE* flambda = fopen("/tmp/lambda.mat","a");
++		//std::cout << " lambda " << lambda << std::endl;
++                fprintf(flambda,"\n");
++                dPrintMatrix(lambda,1,m,"%10.4f",flambda);
++                fclose(flambda);
++
++                FILE* fcforce = fopen("/tmp/cforce.mat","a");
++                fprintf(fcforce,"\n");
++		//std::cout << " cforce " << cforce << std::endl;
++                dPrintMatrix(cforce,nb,6,"%10.4f",fcforce);
++                fclose(fcforce);
++
++                FILE* frhs = fopen("/tmp/rhs.mat","a");
++		//std::cout << " rhs " << rhs << std::endl;
++                fprintf(frhs,"\n");
++                dPrintMatrix(rhs,1,m,"%10.4f",frhs);
++                fclose(frhs);
++
++                // constraint forc mixing vector
++                FILE* flo = fopen("/tmp/lo.mat","a");
++		//std::cout << " lo " << lo << std::endl;
++                fprintf(flo,"\n");
++                dPrintMatrix(lo,1,m,"%10.4f",flo);
++                fclose(flo);
++
++                // constraint forc mixing vector
++                FILE* fhi = fopen("/tmp/hi.mat","a");
++		//std::cout << " hi " << hi << std::endl;
++                fprintf(fhi,"\n");
++                dPrintMatrix(hi,1,m,"%10.4f",fhi);
++                fclose(fhi);
++
++                // constraint forc mixing vector
++                FILE* fcfm = fopen("/tmp/cfm.mat","a");
++		//std::cout << " cfm " << cfm << std::endl;
++                fprintf(fcfm,"\n");
++                dPrintMatrix(cfm,1,m,"%10.4f",fcfm);
++                fclose(fcfm);
++#endif
++
++
+ #ifdef WARM_STARTING
+ 		// save lambda for the next iteration
+ 		//@@@ note that this doesn't work for contact joints yet, as they are
