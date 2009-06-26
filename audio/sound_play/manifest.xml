@@ -10,6 +10,7 @@
 <depend package="robot_msgs" />
 <sysdepend os="ubuntu" version="8.04-hardy" package="festival"/>
 <sysdepend os="ubuntu" version="8.04-hardy" package="python-pygame"/>
+<sysdepend os="ubuntu" version="8.04-hardy" package="festvox-kallpc16k"/>
 </package>
 
 
