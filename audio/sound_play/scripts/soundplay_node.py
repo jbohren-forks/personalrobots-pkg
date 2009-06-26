@@ -168,7 +168,7 @@ class soundplay:
                     sound = self.builtinsounds[data.sound]
                 sound.command(data.command)
         except:
-            logger.debug('Exception in callback: %s'%sys.exc_info()[0])
+            logger.debug('Exception in callback: %s'%(sys.exc_info()[0]))
         finally:
             self.mutex.release()
 

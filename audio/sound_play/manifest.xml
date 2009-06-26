@@ -8,6 +8,8 @@
 <depend package="roscpp" />
 <depend package="roslib" />
 <depend package="robot_msgs" />
+<sysdepend os="ubuntu" version="8.04-hardy" package="festival"/>
+<sysdepend os="ubuntu" version="8.04-hardy" package="python-pygame"/>
 </package>
 
 
