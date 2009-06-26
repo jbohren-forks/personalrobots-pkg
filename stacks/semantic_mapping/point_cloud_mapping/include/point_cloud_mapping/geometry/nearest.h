@@ -254,6 +254,8 @@ namespace cloud_geometry
 
     void computeOrganizedPointCloudNormals (robot_msgs::PointCloud &points, const robot_msgs::PointCloud &surface, int k, int downsample_factor, int width, int height, const robot_msgs::Point32 &viewpoint);
 
+    void extractEuclideanClusters (const robot_msgs::PointCloud &points, const std::vector<int> &indices, double tolerance, std::vector<std::vector<int> > &clusters,
+                                   int nx_idx, int ny_idx, int nz_idx, double eps_angle, unsigned int min_pts_per_cluster);
   }
 }
 
