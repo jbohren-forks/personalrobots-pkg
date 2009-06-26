@@ -51,32 +51,44 @@ class CollisionMapperOcc
 {
 public:
     
-    CollisionMapperOcc(void) : sf_(tf_),
-			       mn_(tf_, boost::bind(&CollisionMapperOcc::cloudCallback, this, _1), "cloud_in", "", 1)
+    CollisionMapperOcc(void) : sf_(tf_)			       
     { 
+	// read ROS params
 	loadParams();
+	
+	// advertise our topic
+	cmapPublisher_ = nh_.advertise<robot_msgs::CollisionMap>("collision_map_occ", 1);
+
+	// create a message notifier (and enable subscription)
+	mn_ = new tf::MessageNotifier<robot_msgs::PointCloud>(tf_, boost::bind(&CollisionMapperOcc::cloudCallback, this, _1), "cloud_in", "", 1);
 	
 	// configure the self mask and the message notifier
 	std::vector<std::string> frames;
 	sf_.getLinkFrames(frames);
 	if (std::find(frames.begin(), frames.end(), robotFrame_) == frames.end())
 	    frames.push_back(robotFrame_);
-	mn_.setTargetFrame(frames);
-	
-	// advertise our topic
-	cmapPublisher_ = nh_.advertise<robot_msgs::CollisionMap>("collision_map_occ", 1);
+	mn_->setTargetFrame(frames);
+    }
+    
+    ~CollisionMapperOcc(void)
+    {
+	delete mn_;
     }
     
 private:
     
     struct CollisionPoint
     {
+	CollisionPoint(void) {}
+	CollisionPoint(int _x, int _y, int _z) : x(_x), y(_y), z(_z) {}
+	
 	int x, y, z;
     };
-    
+
+    // define an order on points
     struct CollisionPointOrder
     {
-	bool operator()(const CollisionPoint &a, const CollisionPoint &b)
+	bool operator()(const CollisionPoint &a, const CollisionPoint &b) const
 	{
 	    if (a.x < b.x)
 		return true;
@@ -89,6 +101,13 @@ private:
 	    return a.z < b.z;
 	}
     };
+
+    int collisionPointDistance(const CollisionPoint &a, const CollisionPoint &b) const
+    {
+	return std::max(abs(a.x - b.x), std::max(abs(a.y - b.y), abs(a.z - b.z)));
+    }
+    
+    typedef std::set<CollisionPoint, CollisionPointOrder> CMap;
 
     // parameters & precomputed values for the box that represents the collision map
     // around the robot
@@ -105,8 +124,6 @@ private:
 	double real_minX, real_minY, real_minZ;
 	double real_maxX, real_maxY, real_maxZ;
     };
-    
-    typedef std::set<CollisionPoint, CollisionPointOrder> CMap;
     
     void loadParams(void)
     {
@@ -149,14 +166,14 @@ private:
 	bi_.sy = (int)(0.5 + (bi_.sensorY - bi_.originY) / bi_.resolution);
 	bi_.sz = (int)(0.5 + (bi_.sensorZ - bi_.originZ) / bi_.resolution);
 
-	bi_.minX = (int)(0.5 + (-bi_.dimensionX - bi_.originX) / bi_.resolution);
-	bi_.maxX = (int)(0.5 + (bi_.dimensionX - bi_.originX) / bi_.resolution);
+	bi_.minX = (int)(0.5 + (-bi_.dimensionX - bi_.originX) / bi_.resolution) - 1;
+	bi_.maxX = (int)(0.5 + (bi_.dimensionX - bi_.originX) / bi_.resolution) + 1;
 
-	bi_.minY = (int)(0.5 + (-bi_.dimensionY - bi_.originY) / bi_.resolution);
-	bi_.maxY = (int)(0.5 + (bi_.dimensionY - bi_.originY) / bi_.resolution);
+	bi_.minY = (int)(0.5 + (-bi_.dimensionY - bi_.originY) / bi_.resolution) - 1;
+	bi_.maxY = (int)(0.5 + (bi_.dimensionY - bi_.originY) / bi_.resolution) + 1;
 	
-	bi_.minZ = (int)(0.5 + (-bi_.dimensionZ - bi_.originZ) / bi_.resolution);
-	bi_.maxZ = (int)(0.5 + (bi_.dimensionZ - bi_.originZ) / bi_.resolution);
+	bi_.minZ = (int)(0.5 + (-bi_.dimensionZ - bi_.originZ) / bi_.resolution) - 1;
+	bi_.maxZ = (int)(0.5 + (bi_.dimensionZ - bi_.originZ) / bi_.resolution) + 1;
 
 	bi_.real_minX = -bi_.dimensionX + bi_.originX;
 	bi_.real_maxX =  bi_.dimensionX + bi_.originX;
@@ -250,7 +267,7 @@ private:
 	double sec = (ros::WallTime::now() - tm).toSec();
 	ROS_INFO("Updated collision map with %d points at %f Hz", currentMap_.size(), 1.0/sec);
 	
-	publishCollisionMap(currentMap_);
+	publishCollisionMap(currentMap_, cmapPublisher_);
     }
 
     void updateMap(CMap &obstacles, CMap &self)
@@ -258,8 +275,10 @@ private:
 	if (currentMap_.empty())
 	{
 	    // if we have no previous information, the map is simply what we see + we assume space hidden by self is obstructed
+	    // we ignore points that were previously occluded by robot but are now free due to motion
 	    CMap occ_self;
-	    findSelfOcclusion(self, occ_self);
+	    CMap dummy;
+	    findSelfOcclusion(self, occ_self, dummy);
 	    std::set_union(obstacles.begin(), obstacles.end(), 
 			   occ_self.begin(), occ_self.end(),
 			   std::inserter(currentMap_, currentMap_.begin()),
@@ -267,7 +286,8 @@ private:
 	}
 	else
 	{
-	    CMap occ_self;
+	    CMap occ_current;
+	    CMap occ_moving;
 	    CMap diff;
 
 #pragma omp parallel sections
@@ -275,28 +295,33 @@ private:
 #pragma omp section
 		{
 		    // find the set of points under the parts seen by the sensor
-		    findSelfOcclusion(self, occ_self);
+		    findSelfOcclusion(self, occ_current, occ_moving);
 		}
 #pragma omp section
 		{
-		    // find the new obstacles that could be occluding information
-		    std::set_difference(obstacles.begin(), obstacles.end(), 
-					currentMap_.begin(), currentMap_.end(),
-					std::inserter(diff, diff.begin()),
-					CollisionPointOrder());
+		    // find the points from the old map that are no longer visible
+		    set_difference(currentMap_.begin(), currentMap_.end(), obstacles.begin(), obstacles.end(),
+				   std::inserter(diff, diff.begin()), CollisionPointOrder());
 		}
 	    }
 	    
+	    // take the union of points causing self occlusion
+	    CMap occ_self;
+	    std::set_union(occ_current.begin(), occ_current.end(), 
+			   occ_moving.begin(), occ_moving.end(),
+			   std::inserter(occ_self, occ_self.begin()),
+			   CollisionPointOrder());
+	    
 	    // this is the set of points that could be occluding information
 	    CMap occ;	    
-	    std::set_union(diff.begin(), diff.end(), 
+	    std::set_union(obstacles.begin(), obstacles.end(), 
 			   occ_self.begin(), occ_self.end(),
 			   std::inserter(occ, occ.begin()),
 			   CollisionPointOrder());
-	    
-	    // find the points in the previous map that are now occluded
+
+	    // find the points in the previous map that are now occluded (raytracing)
 	    CMap keep;
-	    findOcclusionsInMap(currentMap_, occ, keep);
+	    findOcclusionsInMap(diff, occ, keep);
 	    
 	    // the new map is the new set of obstacles + occluded information
 	    currentMap_.clear();
@@ -307,11 +332,8 @@ private:
 	}
     }
     
-
     bool transformMap(CMap &map, const roslib::Header &from, const roslib::Header &to)
     {
-	return true;
-	
 	if (tf_.canTransform(to.frame_id, to.stamp, from.frame_id, from.stamp, fixedFrame_))
 	{
 	    tf::Stamped<btTransform> transf;
@@ -330,10 +352,9 @@ private:
 		p = transf * p;
 		if (p.x() > bi_.real_minX && p.x() < bi_.real_maxX && p.y() > bi_.real_minY && p.y() < bi_.real_maxY && p.z() > bi_.real_minZ && p.z() < bi_.real_maxZ)
 		{
-		    CollisionPoint c;
-		    c.x = (int)(0.5 + (p.x() - bi_.originX) / bi_.resolution);
-		    c.y = (int)(0.5 + (p.y() - bi_.originY) / bi_.resolution);
-		    c.z = (int)(0.5 + (p.z() - bi_.originZ) / bi_.resolution);
+		    CollisionPoint c((int)(0.5 + (p.x() - bi_.originX) / bi_.resolution),
+				     (int)(0.5 + (p.y() - bi_.originY) / bi_.resolution),
+				     (int)(0.5 + (p.z() - bi_.originZ) / bi_.resolution));
 		    map.insert(c);
 		}
 	    }
@@ -347,81 +368,60 @@ private:
 	}
     }
     
-    void findOcclusionsInMap(CMap &previous, const CMap &occ, CMap &keep)
+    void findOcclusionsInMap(const CMap &possiblyOccluded, const CMap &occluding, CMap &keep)
     {
 	// OpenMP need an int as the lookup variable, but for set,
 	// this is not possible, so we copy to a vector
-	const int n = occ.size();
+	const int n = possiblyOccluded.size();
 	std::vector<CollisionPoint> pts(n);
-	std::copy(occ.begin(), occ.end(), pts.begin());
-
-	// we are doing OpenMP parallelism, but we use a mutex to synchronize
-	boost::mutex lock;
+	std::copy(possiblyOccluded.begin(), possiblyOccluded.end(), pts.begin());
 	
 #pragma omp parallel for schedule(dynamic)
 	for (int i = 0 ; i < n ; ++i)
+	{
 	    // run this function in a visitor pattern (it calls the callback at every cell it finds along the line)
-	    bresenham_line_3D(bi_.sx, bi_.sy, bi_.sz, pts[i].x, pts[i].y, pts[i].z,
-			      bi_.minX, bi_.minY, bi_.minZ, bi_.maxX, bi_.maxY, bi_.maxZ,
-			      boost::bind(&CollisionMapperOcc::findOcclusionsInMapAux, this, &previous, &keep, &lock, _1, _2, _3));
-    }
-    
-    int collisionPointDistance(const CollisionPoint &a, const CollisionPoint &b) const
-    {
-	return abs(a.x - b.x) + abs(a.y - b.y) + abs(a.z - b.z);
-    }
-    
-    bool findOcclusionsInMapAux(CMap *previous, CMap *keep, boost::mutex *lock, int x, int y, int z)
-    {
-	CollisionPoint p;
-	p.x = x;
-	p.y = y;
-	p.z = z;
-
-
-	CMap::iterator u = previous->lower_bound(p);
-	// if we are occluding this set of points point, remember it
-	if (u != previous->end())
-	    if (collisionPointDistance(p, *u) <= bi_.radius)
+	    // we start at a possibly occluded point and go towards the sensor
+	    // if we hit a point in the occluding set, we have an occluded point. Otherwise, the point was part of a 
+	    // moving obstacle so we ignore it
+	    int result = 0;
+	    bresenham_line_3D(pts[i].x, pts[i].y, pts[i].z, bi_.sx, bi_.sy, bi_.sz, 
+			      boost::bind(&CollisionMapperOcc::findOcclusionsInMapAux, this, &occluding, &result, _1, _2, _3));
+	    if (result == 1)
 	    {
-		// we insert all points within distance 1
-		CMap::iterator d = u;
-		lock->lock();
-		if (d != previous->begin())
+#pragma omp critical
 		{
-		    --d;
-		    while (collisionPointDistance(p, *d) <= bi_.radius)
-		    {
-			keep->insert(*d);
-			--d;
-			if (d == previous->begin())
-			    break;
-		    }
+		    keep.insert(pts[i]);
 		}
-		
-		while (collisionPointDistance(p, *u) <= bi_.radius)
-		{
-		    keep->insert(*u);
-		    ++u;
-		    if (u == previous->end())
-			break;
-		}
-		lock->unlock();
-		
-		// we can terminate
+	    }
+	}
+    }
+    
+    bool findOcclusionsInMapAux(const CMap *occluding, int *result, int x, int y, int z)
+    {
+	CollisionPoint p(x, y, z);
+	CMap::const_iterator it = occluding->lower_bound(p);
+	
+	if (it != occluding->end())
+	{
+	    if (collisionPointDistance(*it, p) <= bi_.radius)
+	    {
+		// we hit a point that is occluding, our start point is occluded
+		*result = 1;
 		return true;
 	    }
-	
-	return true;
+	}
+	// continue looking
+	return false;
     }
     
-    void findSelfOcclusion(const CMap &self, CMap &occ)
+    void findSelfOcclusion(const CMap &self, CMap &occ_current, CMap &occ_moving)
     {
 	// tell the self filter the frame in which we call getMask()
 	sf_.assumeFrame(header_);
 	
 	// we are doing OpenMP parallelism, but we use a mutex to synchronize
-	boost::mutex lock;
+	boost::mutex lock_current;
+	boost::mutex lock_moving;
 
 	// OpenMP need an int as the lookup variable, but for set,
 	// this is not possible, so we copy to a vector
@@ -436,46 +436,70 @@ private:
 	    // run this function in a visitor pattern (it calls the callback at every cell it finds along the line)
 	    bresenham_line_3D(bi_.sx, bi_.sy, bi_.sz, pts[i].x, pts[i].y, pts[i].z,
 			      bi_.minX, bi_.minY, bi_.minZ, bi_.maxX, bi_.maxY, bi_.maxZ,
-			      boost::bind(&CollisionMapperOcc::findSelfOcclusionAux, this, &occ, &state, &lock, _1, _2, _3));
+			      boost::bind(&CollisionMapperOcc::findSelfOcclusionAux, this, &occ_current, &occ_moving, &state, &lock_current, &lock_moving, _1, _2, _3));
 	}
     }
     
-    bool findSelfOcclusionAux(CMap *occ, int *state, boost::mutex *lock, int x, int y, int z)
+    bool findSelfOcclusionAux(CMap *occ_current, CMap *occ_moving, int *state, boost::mutex *lock_current, boost::mutex *lock_moving, int x, int y, int z)
     {
-	// this is the point in the robotFrame_
-	bool out = sf_.getMask(x * bi_.resolution + bi_.originX, y * bi_.resolution + bi_.originY, z * bi_.resolution + bi_.originZ);
-	
-	// if we are already inside the robot, we mark the fact we want to stop when we are outside
-	if (out == false)
+	if (*state == 16)
 	{
-	    *state = 8;
-	    return false;
+	    // here we have the option of adding further points in the occluded space
+	    // but for now, we stop
+
+	    return true;
 	}
 	else
 	{
-	    // if we are now outside, but have seen the inside, we have a point we need to add to the collision map
-	    if (*state == 8)
+	    // this is the point in the robotFrame_; check if it is currently inside the robot
+	    bool out = sf_.getMask(x * bi_.resolution + bi_.originX, y * bi_.resolution + bi_.originY, z * bi_.resolution + bi_.originZ);
+	    
+	    // if we are already inside the robot, we mark the fact we want to stop when we are outside
+	    if (out == false)
 	    {
-		CollisionPoint c;
-		c.x = x;
-		c.y = y;
-		c.z = z;
-		lock->lock();
-		occ->insert(c);
-		lock->unlock();
-		return true;
+		*state = 8;
+		return false;
 	    }
 	    else
-		// if we have not seen the inside, but we are outside, it could be we are just above the obstacle,
-		// so we check the next cell along the line as well
-		if (*state == 0)
+	    {
+		// if we are now outside, but have seen the inside, we have a point we need to add to the collision map
+		if (*state == 8)
 		{
-		    *state = 1;
-		    return false;		
+		    CollisionPoint c(x, y, z);
+		    lock_current->lock();
+		    occ_current->insert(c);
+		    lock_current->unlock();
+		    
+		    // mark that we are now outside the robot and have added a first point
+		    *state = 16;
+
+		    // continue looking on the ray
+		    return false;
 		}
 		else
-		    // at this point, the ray is probably barely touching the padding of the arm, so it is safe to ignore
-		    return true;
+		    // if we have not seen the inside, but we are outside, it could be we are just above the obstacle,
+		    // so we check the next cell along the line as well
+		    if (*state == 0)
+		    {
+			*state = 1;
+
+			// continue further on the ray
+			return false;		
+		    }
+		    else
+		    {
+			// if we get to this point, it means the point was in self collision, but it no longer is
+			// so at least a part of the robot has moved; we will need to raytrace from this point later on
+			// and check if we are occluding anything
+			CollisionPoint c(x, y, z);
+			lock_moving->lock();
+			occ_moving->insert(c);
+			lock_moving->unlock();
+
+			// and we stop looking on this ray
+			return true;
+		    }
+	    }
 	}
     }
     
@@ -504,12 +528,30 @@ private:
     /* Form the line (x1, y1, z1) -> (x2, y2, z2) and generate points on it starting at (x2, y2, z2)
      * until it reaches a boundary of the box (minX, minY, minZ) -> (maxX, maxY, maxZ).
      * If the callback returns true, the segment is stopped */
+
+    void bresenham_line_3D(int x1, int y1, int z1, int x2, int y2, int z2,
+			   const boost::function<bool(int, int, int)> &callback) const
+    {
+	int pixel[3];
+	int dx, dy, dz;
+	
+	pixel[0] = x1;
+	pixel[1] = y1;
+	pixel[2] = z1;
+	
+	dx = x2 - x1;
+	dy = y2 - y1;
+	dz = z2 - z1;
+	
+	bresenham_line_3D(dx, dy, dz, pixel, callback);
+    }
+
     void bresenham_line_3D(int x1, int y1, int z1, int x2, int y2, int z2,
 			   int minX, int minY, int minZ, int maxX, int maxY, int maxZ,
 			   const boost::function<bool(int, int, int)> &callback) const
     {
-	int i, dx, dy, dz, l, m, n, x_inc, y_inc, z_inc, err_1, err_2, dx2, dy2, dz2;
 	int pixel[3];
+	int dx, dy, dz;
 	
 	pixel[0] = x2;
 	pixel[1] = y2;
@@ -552,6 +594,13 @@ private:
 	    dy *= c;
 	    dz *= c;
 	}
+	
+	bresenham_line_3D(dx, dy, dz, pixel, callback);
+    }
+    
+    void bresenham_line_3D(int dx, int dy, int dz, int pixel[3], const boost::function<bool(int, int, int)> &callback) const
+    {
+	int i, l, m, n, x_inc, y_inc, z_inc, err_1, err_2, dx2, dy2, dz2;
 	
 	x_inc = (dx < 0) ? -1 : 1;
 	l = abs(dx);
@@ -621,7 +670,7 @@ private:
 	callback(pixel[0], pixel[1], pixel[2]);
     }
     
-    void publishCollisionMap(const CMap &map) const
+    void publishCollisionMap(const CMap &map, ros::Publisher &pub) const
     {
 	robot_msgs::CollisionMap cmap;
 	cmap.header = header_;
@@ -639,23 +688,24 @@ private:
 	    box.center.z = cp.z * bi_.resolution + bi_.originZ;
 	    cmap.boxes.push_back(box);
 	}
-	cmapPublisher_.publish(cmap);
+	pub.publish(cmap);
 	
 	ROS_DEBUG("Published collision map with %u boxes", ms);
     }
 
-    tf::TransformListener                       tf_;
-    robot_self_filter::SelfMask                 sf_;
-    tf::MessageNotifier<robot_msgs::PointCloud> mn_;
-    ros::NodeHandle                             nh_;
-    ros::Publisher                              cmapPublisher_;
-    roslib::Header                              header_;
-    std::string                                 cloud_annotation_;
-
-    CMap                                        currentMap_;
-    BoxInfo                                     bi_;
-    std::string                                 fixedFrame_;
-    std::string                                 robotFrame_;
+    tf::TransformListener                        tf_;
+    robot_self_filter::SelfMask                  sf_;
+    tf::MessageNotifier<robot_msgs::PointCloud> *mn_;
+    ros::NodeHandle                              nh_;
+    ros::Publisher                               cmapPublisher_;
+    roslib::Header                               header_;
+    std::string                                  cloud_annotation_;
+    
+    CMap                                         currentMap_;
+    
+    BoxInfo                                      bi_;
+    std::string                                  fixedFrame_;
+    std::string                                  robotFrame_;
     
 };  
 
