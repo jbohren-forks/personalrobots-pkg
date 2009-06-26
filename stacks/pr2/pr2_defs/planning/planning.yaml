@@ -28,7 +28,7 @@ groups:
       l_wrist_flex_link
       l_wrist_roll_link
     planner_configs:
-      RRTConfig2 SBLConfig2 LBKPIECEConfig1 KPIECEConfig2l
+      RRTConfig2 SBLConfig2 KPIECEConfig2l LBKPIECEConfig2l
 
   right_arm:
     links:
@@ -42,7 +42,7 @@ groups:
       r_wrist_flex_link
       r_wrist_roll_link
     planner_configs:
-      RRTConfig2 SBLConfig2 LBKPIECEConfig1 KPIECEConfig2r
+      RRTConfig2 SBLConfig2 KPIECEConfig2r LBKPIECEConfig2r
       
   arms:
     links:
@@ -116,3 +116,13 @@ planner_configs:
     type: LBKPIECE
     projection: 5 6
     celldim: 0.1 0.1
+
+  LBKPIECEConfig2r:
+    type: LBKPIECE
+    projection: link r_wrist_roll_link
+    celldim: 0.1 0.1 0.1
+
+  LBKPIECEConfig2l:
+    type: LBKPIECE
+    projection: link l_wrist_roll_link
+    celldim: 0.1 0.1 0.1
