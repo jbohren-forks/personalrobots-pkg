@@ -1,5 +1,7 @@
 #include "polygon.hpp"
 #include <cmath>
+#include "Poco/SharedLibrary.h" 
+#include "Poco/ClassLibrary.h"
 
 class triangle : public polygon {
 public:
@@ -7,6 +9,7 @@ public:
     return side_length_ * side_length_ * sqrt(3) / 2;
   }
 };
+
 
 
 // the class factories
@@ -18,3 +21,9 @@ extern "C" polygon* create() {
 extern "C" void destroy(polygon* p) {
   delete p;
 }
+
+POCO_BEGIN_MANIFEST(polygon)
+
+POCO_EXPORT_CLASS(triangle)
+
+POCO_END_MANIFEST 

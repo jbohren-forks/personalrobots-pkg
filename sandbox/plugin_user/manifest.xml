@@ -9,6 +9,11 @@
   <review status="experimental" notes=""/>
   <url>http://pr.willowgarage.com/wiki/plugin_user</url>
 
+  <export>
+    <cpp cflags="-I${prefix}"/>
+  </export>
+
+  <rosdep name="libpoco"/>
 </package>
 
 

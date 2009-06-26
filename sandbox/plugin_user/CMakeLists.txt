@@ -35,4 +35,4 @@ target_link_libraries(simple_test dl)
 
 rospack_add_executable(example example.cpp)
 rospack_add_library(triangle triangle.cpp)
-target_link_libraries(example dl)
+target_link_libraries(example dl PocoUtil)
