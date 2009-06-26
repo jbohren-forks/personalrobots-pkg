@@ -124,13 +124,13 @@ bool Pid::initXml(TiXmlElement *config)
 bool Pid::init(const ros::NodeHandle &node)
 {
   ros::NodeHandle n(node);
-  if (!n.getParam("~p", p_gain_)) {
+  if (!n.getParam("p", p_gain_)) {
     ROS_ERROR("No p gain specified for pid.  Namespace: %s", n.getNamespace().c_str());
     return false;
   }
-  n.param("~i", i_gain_, 0.0);
-  n.param("~d", d_gain_, 0.0);
-  n.param("~i_clamp", i_max_, 0.0);
+  n.param("i", i_gain_, 0.0);
+  n.param("d", d_gain_, 0.0);
+  n.param("i_clamp", i_max_, 0.0);
   i_min_ = -i_max_;
 
   reset();
