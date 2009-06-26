@@ -38,7 +38,7 @@
 #define KINEMATIC_PLANNING_OMPL_PLANNER_RKP_EST_SETUP_
 
 #include "kinematic_planning/ompl_planner/RKPPlannerSetup.h"
-#include <ompl/extension/samplingbased/kinematic/extension/est/EST.h>
+#include <ompl/extension/kinematic/extension/est/EST.h>
 
 namespace kinematic_planning
 {

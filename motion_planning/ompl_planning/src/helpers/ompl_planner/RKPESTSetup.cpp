@@ -45,9 +45,9 @@ kinematic_planning::RKPESTSetup::RKPESTSetup(RKPModelBase *m) : RKPPlannerSetup(
 
 kinematic_planning::RKPESTSetup::~RKPESTSetup(void)
 {
-    if (dynamic_cast<ompl::sb::EST*>(mp))
+    if (dynamic_cast<ompl::kinematic::EST*>(mp))
     {
-	ompl::base::ProjectionEvaluator *pe = dynamic_cast<ompl::sb::EST*>(mp)->getProjectionEvaluator();
+	ompl::base::ProjectionEvaluator *pe = dynamic_cast<ompl::kinematic::EST*>(mp)->getProjectionEvaluator();
 	if (pe)
 	    delete pe;
     }
@@ -57,8 +57,8 @@ bool kinematic_planning::RKPESTSetup::setup(boost::shared_ptr<planning_environme
 {
     preSetup(options);
     
-    ompl::sb::EST *est = new ompl::sb::EST(si);
-    mp                 = est;	
+    ompl::kinematic::EST *est = new ompl::kinematic::EST(si);
+    mp                        = est;	
 
     if (options->hasParam("range"))
     {

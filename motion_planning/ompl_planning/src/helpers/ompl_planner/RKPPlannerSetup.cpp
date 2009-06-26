@@ -71,7 +71,7 @@ kinematic_planning::RKPPlannerSetup::~RKPPlannerSetup(void)
 void kinematic_planning::RKPPlannerSetup::setupDistanceEvaluators(void)
 {
     assert(si);
-    sde["L2Square"] = new ompl::sb::L2SquareStateDistanceEvaluator(si);
+    sde["L2Square"] = new ompl::base::L2SquareStateDistanceEvaluator(si);
 }
 	
 ompl::base::ProjectionEvaluator* kinematic_planning::RKPPlannerSetup::getProjectionEvaluator(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options) const
@@ -99,7 +99,7 @@ ompl::base::ProjectionEvaluator* kinematic_planning::RKPPlannerSetup::getProject
 		ss >> comp;
 		projection.push_back(comp);
 	    }
-	    pe = new ompl::sb::OrthogonalProjectionEvaluator(projection);
+	    pe = new ompl::base::OrthogonalProjectionEvaluator(projection);
 	}
 	
 	std::vector<double> cdim;
@@ -128,11 +128,11 @@ void kinematic_planning::RKPPlannerSetup::preSetup(boost::shared_ptr<planning_en
     svc      = new StateValidityPredicate(si_rkp, model);
     si->setStateValidityChecker(svc);
     
-    smoother = new ompl::sb::PathSmootherKinematic(si);
+    smoother = new ompl::kinematic::PathSmootherKinematic(si);
     smoother->setMaxSteps(50);
     smoother->setMaxEmptySteps(4);
 
-    gaik     = new ompl::sb::GAIK(si);
+    gaik     = new ompl::kinematic::GAIK(si);
 }
 
 void kinematic_planning::RKPPlannerSetup::postSetup(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options)

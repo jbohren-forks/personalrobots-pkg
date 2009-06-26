@@ -38,7 +38,7 @@
 #define KINEMATIC_PLANNING_OMPL_PLANNER_RKP_RRT_SETUP_
 
 #include "kinematic_planning/ompl_planner/RKPPlannerSetup.h"
-#include <ompl/extension/samplingbased/kinematic/extension/rrt/RRT.h>
+#include <ompl/extension/kinematic/extension/rrt/RRT.h>
 
 namespace kinematic_planning
 {

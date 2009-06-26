@@ -44,9 +44,9 @@
 #include "kinematic_planning/ompl_extensions/RKPDistanceEvaluators.h"
 #include "kinematic_planning/ompl_extensions/RKPGoalDefinitions.h"
 
-#include <ompl/extension/samplingbased/Planner.h>
-#include <ompl/extension/samplingbased/kinematic/PathSmootherKinematic.h>
-#include <ompl/extension/samplingbased/kinematic/extension/ik/GAIK.h>
+#include <ompl/base/Planner.h>
+#include <ompl/extension/kinematic/PathSmootherKinematic.h>
+#include <ompl/extension/kinematic/extension/ik/GAIK.h>
 
 #include <planning_environment/robot_models.h>
 
@@ -78,13 +78,13 @@ namespace kinematic_planning
 	RKPModelBase                                              *model;
 	
 	std::string                                                name;       // name of planner
-	ompl::sb::Planner                                         *mp;         // pointer to OMPL instance of planner
+	ompl::base::Planner                                       *mp;         // pointer to OMPL instance of planner
 	int                                                        priority;   // priority of this planner when automatically selecting planners
-	ompl::sb::GAIK                                            *gaik;       // tool for performing general IK
-	ompl::sb::SpaceInformationKinematic                       *si;         // space information for the planner
+	ompl::kinematic::GAIK                                     *gaik;       // tool for performing general IK
+	ompl::kinematic::SpaceInformationKinematic                *si;         // space information for the planner
 	ompl::base::StateValidityChecker                          *svc;        // the state validation routine
 	std::map<std::string, ompl::base::StateDistanceEvaluator*> sde;        // list of available distance evaluators
-	ompl::sb::PathSmootherKinematic                           *smoother;   // pointer to an OMPL path smoother 
+	ompl::kinematic::PathSmootherKinematic                    *smoother;   // pointer to an OMPL path smoother 
 
     };
 

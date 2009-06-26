@@ -38,7 +38,7 @@
 #define KINEMATIC_PLANNING_OMPL_PLANNER_RKP_LAZY_RRT_SETUP_
 
 #include "kinematic_planning/ompl_planner/RKPPlannerSetup.h"
-#include <ompl/extension/samplingbased/kinematic/extension/rrt/LazyRRT.h>
+#include <ompl/extension/kinematic/extension/rrt/LazyRRT.h>
 
 namespace kinematic_planning
 {

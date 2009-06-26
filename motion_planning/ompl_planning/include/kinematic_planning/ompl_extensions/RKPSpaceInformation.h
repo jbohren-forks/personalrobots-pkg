@@ -37,7 +37,7 @@
 #ifndef KINEMATIC_PLANNING_RKP_SPACE_INFORMATION_
 #define KINEMATIC_PLANNING_RKP_SPACE_INFORMATION_
 
-#include <ompl/extension/samplingbased/kinematic/SpaceInformationKinematic.h>
+#include <ompl/extension/kinematic/SpaceInformationKinematic.h>
 #include <motion_planning_msgs/JointConstraint.h>
 #include "kinematic_planning/RKPModelBase.h"
 #include <boost/shared_ptr.hpp>
@@ -47,7 +47,7 @@ namespace kinematic_planning
 {
     
     /** This class configures an instance of SpaceInformationKinematic with data from a KinematicModel */
-    class SpaceInformationRKPModel : public ompl::sb::SpaceInformationKinematic
+    class SpaceInformationRKPModel : public ompl::kinematic::SpaceInformationKinematic
     {
     public:
         SpaceInformationRKPModel(RKPModelBase *model) : SpaceInformationKinematic()
@@ -80,12 +80,12 @@ namespace kinematic_planning
 	void checkResolution(void);
 	bool checkBounds(void);
 	
-	std::vector<ompl::sb::StateComponent> m_basicStateComponent;
-	double                                m_divisions;
-	planning_models::KinematicModel      *m_kmodel;
-	int                                   m_groupID;
-	std::vector<int>                      m_floatingJoints;
-	std::vector<int>                      m_planarJoints;
+	std::vector<ompl::base::StateComponent> m_basicStateComponent;
+	double                                  m_divisions;
+	planning_models::KinematicModel        *m_kmodel;
+	int                                     m_groupID;
+	std::vector<int>                        m_floatingJoints;
+	std::vector<int>                        m_planarJoints;
 	
     };    
     

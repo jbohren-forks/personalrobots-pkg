@@ -37,8 +37,8 @@
 #ifndef KINEMATIC_PLANNING_RKP_PROJECTION_EVALUATORS
 #define KINEMATIC_PLANNING_RKP_PROJECTION_EVALUATORS
 
-#include <ompl/extension/samplingbased/ProjectionEvaluator.h>
-#include <ompl/extension/samplingbased/kinematic/SpaceInformationKinematic.h>
+#include <ompl/base/ProjectionEvaluator.h>
+#include <ompl/extension/kinematic/SpaceInformationKinematic.h>
 #include "kinematic_planning/RKPModelBase.h"
 
 namespace kinematic_planning
@@ -63,8 +63,7 @@ namespace kinematic_planning
 	/** Compute the projection as an array of double values */
 	virtual void operator()(const ompl::base::State *state, double *projection) const
 	{  
-	    const ompl::sb::State *kstate = static_cast<const ompl::sb::State*>(state);
-	    model_->kmodel->computeTransformsGroup(kstate->values, model_->groupID);
+	    model_->kmodel->computeTransformsGroup(state->values, model_->groupID);
 	    const btVector3 &origin = link_->globalTrans.getOrigin();
 	    projection[0] = origin.x();
 	    projection[1] = origin.y();

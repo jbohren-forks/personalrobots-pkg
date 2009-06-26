@@ -50,8 +50,8 @@ bool kinematic_planning::RKPRRTSetup::setup(boost::shared_ptr<planning_environme
 {
     preSetup(options);
     
-    ompl::sb::RRT *rrt = new ompl::sb::RRT(si);
-    mp                 = rrt;
+    ompl::kinematic::RRT *rrt = new ompl::kinematic::RRT(si);
+    mp                        = rrt;
     
     if (options->hasParam("range"))
     {

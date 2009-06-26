@@ -73,7 +73,7 @@ namespace kinematic_planning
 	
 	/** Compute the actual motion plan. Return true if computed plan was trivial (start state already in goal region) */
 	bool callPlanner(RKPPlannerSetup *psetup, int times, double allowed_time, bool interpolate,
-			 ompl::sb::PathKinematic* &bestPath, double &bestDifference, bool &approximate);
+			 ompl::kinematic::PathKinematic* &bestPath, double &bestDifference, bool &approximate);
 	
     };
     

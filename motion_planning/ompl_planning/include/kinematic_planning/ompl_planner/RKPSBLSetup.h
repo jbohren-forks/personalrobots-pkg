@@ -38,7 +38,7 @@
 #define KINEMATIC_PLANNING_OMPL_PLANNER_RKP_SBL_SETUP_
 
 #include "kinematic_planning/ompl_planner/RKPPlannerSetup.h"
-#include <ompl/extension/samplingbased/kinematic/extension/sbl/SBL.h>
+#include <ompl/extension/kinematic/extension/sbl/SBL.h>
 
 namespace kinematic_planning
 {

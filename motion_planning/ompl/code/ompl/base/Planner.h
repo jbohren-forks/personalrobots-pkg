@@ -48,6 +48,13 @@ namespace ompl
     namespace base
     {
 	
+	enum PlannerType
+	    {
+		PLAN_UNKNOWN        = 0,
+		PLAN_TO_GOAL_STATE  = 1,
+		PLAN_TO_GOAL_REGION = 2
+	    };
+	
 	/** Base class for a planner */
 	class Planner
 	{
@@ -59,6 +66,7 @@ namespace ompl
 	    {
 		m_si    = si;
 		m_setup = false;
+		m_type = PLAN_UNKNOWN;
 	    }
 	    
 	    /** Destructor */
@@ -72,19 +80,25 @@ namespace ompl
 	    /** Clear all internal datastructures */
 	    virtual void clear(void) = 0;
 	    
+	    /** A problem is trivial if the given starting state already
+		in the goal region, so we need no motion planning. startID
+		will be set to the index of the starting state that
+		satisfies the goal. The distance to the goal can
+		optionally be returned as well. */
+	    virtual bool isTrivial(unsigned int *startID = NULL, double *distance = NULL) const;
+	    
+	    /** Return the type of the motion planner. This is useful if
+		the planner wants to advertise what type of problems it
+		can solve */
+	    PlannerType getType(void) const;
+	    
 	    /** Perform extra configuration steps, if needed */
-	    virtual void setup(void)
-	    {
-		if (!m_si->isSetup())
-		    m_msg.error("Space information setup should have been called before planner setup was called");
-		if (m_setup)
-		    m_msg.error("Planner setup called multiple times");		
-		m_setup = true;
-	    }
+	    virtual void setup(void);
 	    
 	protected:
 	    
 	    SpaceInformation *m_si;
+	    PlannerType       m_type;	
 	    bool              m_setup;
 	    msg::Interface    m_msg;
 	};    

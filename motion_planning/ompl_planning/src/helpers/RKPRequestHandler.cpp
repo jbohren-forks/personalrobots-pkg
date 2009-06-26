@@ -55,8 +55,8 @@ bool kinematic_planning::RKPRequestHandler::isRequestValid(ModelMap &models, mot
     /* if the user did not specify a planner, use the first available one */
     if (req.params.planner_id.empty())
 	for (std::map<std::string, RKPPlannerSetup*>::const_iterator it = m->planners.begin() ; it != m->planners.end() ; ++it)
-	    if ((req.goal_constraints.pose_constraint.empty() && (it->second->mp->getType() & ompl::sb::PLAN_TO_GOAL_STATE) != 0) ||
-		(!req.goal_constraints.pose_constraint.empty() && (it->second->mp->getType() & ompl::sb::PLAN_TO_GOAL_REGION) != 0))
+	    if ((req.goal_constraints.pose_constraint.empty() && (it->second->mp->getType() & ompl::base::PLAN_TO_GOAL_STATE) != 0) ||
+		(!req.goal_constraints.pose_constraint.empty() && (it->second->mp->getType() & ompl::base::PLAN_TO_GOAL_REGION) != 0))
 	    {
 		if (req.params.planner_id.empty())
 		    req.params.planner_id = it->first;
@@ -134,7 +134,7 @@ void kinematic_planning::RKPRequestHandler::configure(const planning_models::Sta
     
     /* set the starting state */
     const unsigned int dim = psetup->si->getStateDimension();
-    ompl::sb::State *start = new ompl::sb::State(dim);
+    ompl::base::State *start = new ompl::base::State(dim);
     
     if (psetup->model->groupID >= 0)
     {
@@ -200,8 +200,8 @@ bool kinematic_planning::RKPRequestHandler::computePlan(ModelMap &models, const 
     configure(start, req, psetup);
     
     /* compute actual motion plan */
-    ompl::sb::PathKinematic *bestPath       = NULL;
-    double                   bestDifference = 0.0;
+    ompl::kinematic::PathKinematic *bestPath       = NULL;
+    double                          bestDifference = 0.0;
     
     psetup->model->collisionSpace->lock();
     psetup->model->kmodel->lock();
@@ -251,7 +251,7 @@ bool kinematic_planning::RKPRequestHandler::computePlan(ModelMap &models, const 
 
 /** Compute the actual motion plan. Return true if computed plan was trivial (start state already in goal region) */
 bool kinematic_planning::RKPRequestHandler::callPlanner(RKPPlannerSetup *psetup, int times, double allowed_time, bool interpolate,
-							ompl::sb::PathKinematic* &bestPath, double &bestDifference, bool &approximate)
+							ompl::kinematic::PathKinematic* &bestPath, double &bestDifference, bool &approximate)
 {
     if (times <= 0)
     {
@@ -259,8 +259,8 @@ bool kinematic_planning::RKPRequestHandler::callPlanner(RKPPlannerSetup *psetup,
 	return false;
     }
     
-    if (dynamic_cast<ompl::sb::GoalRegion*>(psetup->si->getGoal()))
-	ROS_DEBUG("Goal threshold is %g", dynamic_cast<ompl::sb::GoalRegion*>(psetup->si->getGoal())->threshold);
+    if (dynamic_cast<ompl::base::GoalRegion*>(psetup->si->getGoal()))
+	ROS_DEBUG("Goal threshold is %g", dynamic_cast<ompl::base::GoalRegion*>(psetup->si->getGoal())->threshold);
     
     unsigned int t_index = 0;
     double t_distance = 0.0;
@@ -275,12 +275,12 @@ bool kinematic_planning::RKPRequestHandler::callPlanner(RKPPlannerSetup *psetup,
 	/* we want to maintain the invariant that a path will
 	   at least consist of start & goal states, so we copy
 	   the start state twice */
-	bestPath = new ompl::sb::PathKinematic(psetup->si);
+	bestPath = new ompl::kinematic::PathKinematic(psetup->si);
 	
-	ompl::sb::State *s0 = new ompl::sb::State(psetup->si->getStateDimension());
-	ompl::sb::State *s1 = new ompl::sb::State(psetup->si->getStateDimension());
-	psetup->si->copyState(s0, static_cast<ompl::sb::State*>(psetup->si->getStartState(t_index)));
-	psetup->si->copyState(s1, static_cast<ompl::sb::State*>(psetup->si->getStartState(t_index)));
+	ompl::base::State *s0 = new ompl::base::State(psetup->si->getStateDimension());
+	ompl::base::State *s1 = new ompl::base::State(psetup->si->getStateDimension());
+	psetup->si->copyState(s0, psetup->si->getStartState(t_index));
+	psetup->si->copyState(s1, psetup->si->getStartState(t_index));
 	bestPath->states.push_back(s0);
 	bestPath->states.push_back(s1);
     }
@@ -304,7 +304,7 @@ bool kinematic_planning::RKPRequestHandler::callPlanner(RKPPlannerSetup *psetup,
 	    if (ok)
 	    {
 		ros::WallTime startTime = ros::WallTime::now();
-		ompl::sb::PathKinematic *path = static_cast<ompl::sb::PathKinematic*>(goal->getSolutionPath());
+		ompl::kinematic::PathKinematic *path = static_cast<ompl::kinematic::PathKinematic*>(goal->getSolutionPath());
 		psetup->smoother->smoothMax(path);
 		double tsmooth = (ros::WallTime::now() - startTime).toSec();
 		ROS_DEBUG("          Smoother spent %g seconds (%g seconds in total)", tsmooth, tsmooth + tsolve);		    

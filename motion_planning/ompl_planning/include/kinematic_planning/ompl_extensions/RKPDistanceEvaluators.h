@@ -37,7 +37,7 @@
 #ifndef KINEMATIC_PLANNING_RKP_DISTANCE_EVALUATORS
 #define KINEMATIC_PLANNING_RKP_DISTANCE_EVALUATORS
 
-#include <ompl/extension/samplingbased/kinematic/SpaceInformationKinematic.h>
+#include <ompl/extension/kinematic/SpaceInformationKinematic.h>
 #include "kinematic_planning/RKPModelBase.h"
 
 namespace kinematic_planning

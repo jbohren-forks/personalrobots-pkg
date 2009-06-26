@@ -39,7 +39,7 @@
 
 double kinematic_planning::GoalToState::distanceGoal(const ompl::base::State *s) const
 {
-    const double *vals = static_cast<const ompl::sb::State*>(s)->values;
+    const double *vals = s->values;
     for (int i = 0 ; i < dim_; ++i)
 	if (bounds_[i].first > vals[i])
 	    cVals_[i] = stateVals_[i] + bounds_[i].first - vals[i];
@@ -48,7 +48,7 @@ double kinematic_planning::GoalToState::distanceGoal(const ompl::base::State *s)
 		cVals_[i] = stateVals_[i] + vals[i] - bounds_[i].second;
 	    else
 		cVals_[i] = stateVals_[i];
-    return static_cast<ompl::sb::SpaceInformation*>(m_si)->distance(static_cast<const ompl::sb::State*>(compState_), static_cast<const ompl::sb::State*>(state));
+    return m_si->distance(compState_, state);
 }
 
 const std::vector< std::pair<double, double> >& kinematic_planning::GoalToState::getBounds(void) const
@@ -58,14 +58,14 @@ const std::vector< std::pair<double, double> >& kinematic_planning::GoalToState:
 
 void kinematic_planning::GoalToState::print(std::ostream &out) const
 {
-    ompl::sb::GoalState::print(out);
+    ompl::base::GoalState::print(out);
     out << "Joint constraints: " << std::endl;
     for (int i = 0 ; i < dim_ ; ++i)
 	out << "[" << bounds_[i].first << ", " << bounds_[i].second << "] ";
     out << std::endl;
 }
 	
-void kinematic_planning::GoalToState::setup(ompl::sb::SpaceInformationKinematic *si, RKPModelBase *model, const std::vector<motion_planning_msgs::JointConstraint> &jc) 
+void kinematic_planning::GoalToState::setup(ompl::kinematic::SpaceInformationKinematic *si, RKPModelBase *model, const std::vector<motion_planning_msgs::JointConstraint> &jc) 
 {
     dim_ = si->getStateDimension();
     
@@ -112,13 +112,13 @@ void kinematic_planning::GoalToState::setup(ompl::sb::SpaceInformationKinematic 
 	    break;
 	}
     
-    compState_ = new ompl::sb::State(dim_);
-    cVals_ = static_cast<ompl::sb::State*>(compState_)->values;
+    compState_ = new ompl::base::State(dim_);
+    cVals_ = compState_->values;
     
     // compute the middle state
     if (state == NULL)
-	state = new ompl::sb::State(dim_);
-    stateVals_ = static_cast<ompl::sb::State*>(state)->values;
+	state = new ompl::base::State(dim_);
+    stateVals_ = state->values;
     
     for (int i = 0 ; i < dim_ ; ++i)
     {
@@ -141,13 +141,13 @@ void kinematic_planning::GoalToState::setup(ompl::sb::SpaceInformationKinematic 
 
 double kinematic_planning::GoalToPosition::distanceGoal(const ompl::base::State *state) const
 {
-    return evaluateGoalAux(static_cast<const ompl::sb::State*>(state), NULL);
+    return evaluateGoalAux(state, NULL);
 }
 
 bool kinematic_planning::GoalToPosition::isSatisfied(const ompl::base::State *state, double *dist) const
 {
     std::vector<bool> decision;
-    double d = evaluateGoalAux(static_cast<const ompl::sb::State*>(state), &decision);
+    double d = evaluateGoalAux(state, &decision);
     if (dist)
 	*dist = d;
     
@@ -159,13 +159,13 @@ bool kinematic_planning::GoalToPosition::isSatisfied(const ompl::base::State *st
 
 void kinematic_planning::GoalToPosition::print(std::ostream &out) const
 {
-    ompl::sb::GoalRegion::print(out);
+    ompl::base::GoalRegion::print(out);
     out << "Pose constraints:" << std::endl;
     for (unsigned int i = 0 ; i < pce_.size() ; ++i)
 	pce_[i]->print(out);
 }
 	
-double kinematic_planning::GoalToPosition::evaluateGoalAux(const ompl::sb::State *state, std::vector<bool> *decision) const
+double kinematic_planning::GoalToPosition::evaluateGoalAux(const ompl::base::State *state, std::vector<bool> *decision) const
 {
     update(state);
     
@@ -184,7 +184,7 @@ double kinematic_planning::GoalToPosition::evaluateGoalAux(const ompl::sb::State
     return distance;
 }
 
-void kinematic_planning::GoalToPosition::update(const ompl::sb::State *state) const
+void kinematic_planning::GoalToPosition::update(const ompl::base::State *state) const
 {
     model_->kmodel->computeTransformsGroup(state->values, model_->groupID);
     model_->collisionSpace->updateRobotModel();
@@ -209,9 +209,9 @@ bool kinematic_planning::GoalToMultipleConstraints::isSatisfied(const ompl::base
 	return gs_.isSatisfied(state) && gp_.isSatisfied(state);
 }
 
-void kinematic_planning::GoalToMultipleConstraints::sampleNearGoal(ompl::sb::State *s)
+void kinematic_planning::GoalToMultipleConstraints::sampleNearGoal(ompl::base::State *s)
 {
-    sCore_.sampleNear(s, static_cast<ompl::sb::State*>(gs_.state), rho_);
+    sCore_.sampleNear(s, gs_.state, rho_);
 }
 
 void kinematic_planning::GoalToMultipleConstraints::print(std::ostream &out) const
@@ -220,7 +220,7 @@ void kinematic_planning::GoalToMultipleConstraints::print(std::ostream &out) con
     gp_.print(out);
 }
 
-ompl::base::Goal* kinematic_planning::computeGoalFromConstraints(ompl::sb::SpaceInformationKinematic *si, RKPModelBase *model, const motion_planning_msgs::KinematicConstraints &kc)
+ompl::base::Goal* kinematic_planning::computeGoalFromConstraints(ompl::kinematic::SpaceInformationKinematic *si, RKPModelBase *model, const motion_planning_msgs::KinematicConstraints &kc)
 {
     if (kc.joint_constraint.empty() && kc.pose_constraint.empty())
     {

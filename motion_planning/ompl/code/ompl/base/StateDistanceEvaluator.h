@@ -46,6 +46,7 @@ namespace ompl
     namespace base
     {
 	
+	class SpaceInformation;
 	
 	/** Abstract definition for a class evaluating distance between states. The () operator must be defined. */
 	class StateDistanceEvaluator
@@ -59,8 +60,22 @@ namespace ompl
 	    virtual double operator()(const State *state1, const State *state2) const = 0;
 	};
 	
+	/** Definition of a distance evaluator: the square of the L2 norm */
+	class L2SquareStateDistanceEvaluator : public StateDistanceEvaluator
+	{
+	public:
+	    L2SquareStateDistanceEvaluator(SpaceInformation *si) : StateDistanceEvaluator(), m_si(si)
+	    {
+	    }
+	    
+	    virtual double operator()(const State *state1, const State *state2) const;
+	    
+	protected:
+	    
+	    SpaceInformation *m_si;	    
+	};
     }
-
+    
 }
 
 #endif

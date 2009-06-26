@@ -44,9 +44,9 @@ kinematic_planning::RKPLBKPIECESetup::RKPLBKPIECESetup(RKPModelBase *m) : RKPPla
 
 kinematic_planning::RKPLBKPIECESetup::~RKPLBKPIECESetup(void)
 {
-    if (dynamic_cast<ompl::sb::LBKPIECE1*>(mp))
+    if (dynamic_cast<ompl::kinematic::LBKPIECE1*>(mp))
     {
-	ompl::base::ProjectionEvaluator *pe = dynamic_cast<ompl::sb::LBKPIECE1*>(mp)->getProjectionEvaluator();
+	ompl::base::ProjectionEvaluator *pe = dynamic_cast<ompl::kinematic::LBKPIECE1*>(mp)->getProjectionEvaluator();
 	if (pe)
 	    delete pe;
     }
@@ -56,8 +56,8 @@ bool kinematic_planning::RKPLBKPIECESetup::setup(boost::shared_ptr<planning_envi
 {
     preSetup(options);
     
-    ompl::sb::LBKPIECE1 *kpiece = new ompl::sb::LBKPIECE1(si);
-    mp                          = kpiece;
+    ompl::kinematic::LBKPIECE1 *kpiece = new ompl::kinematic::LBKPIECE1(si);
+    mp                                 = kpiece;
     
     if (options->hasParam("range"))
     {

@@ -35,7 +35,6 @@
 /** \author Ioan Sucan */
 
 #include "kinematic_planning/ompl_planner/RKPLazyRRTSetup.h"
-#include <ompl/extension/samplingbased/kinematic/extension/rrt/LazyRRT.h>
 
 kinematic_planning::RKPLazyRRTSetup::RKPLazyRRTSetup(RKPModelBase *m) : RKPPlannerSetup(m)
 {
@@ -51,8 +50,8 @@ bool kinematic_planning::RKPLazyRRTSetup::setup(boost::shared_ptr<planning_envir
 {
     preSetup(options);
     
-    ompl::sb::LazyRRT *rrt = new ompl::sb::LazyRRT(si);
-    mp                     = rrt;    
+    ompl::kinematic::LazyRRT *rrt = new ompl::kinematic::LazyRRT(si);
+    mp                            = rrt;    
 
     if (options->hasParam("range"))
     {

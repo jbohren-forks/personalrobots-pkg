@@ -37,7 +37,7 @@
 #ifndef KINEMATIC_PLANNING_RKP_STATE_VALIDATOR
 #define KINEMATIC_PLANNING_RKP_STATE_VALIDATOR
 
-#include <ompl/extension/samplingbased/State.h>
+#include <ompl/base/State.h>
 #include <ompl/base/StateValidityChecker.h>
 #include <collision_space/environment.h>
 #include <planning_environment/kinematic_state_constraint_evaluator.h>
@@ -58,10 +58,9 @@ namespace kinematic_planning
 	
 	virtual bool operator()(const ompl::base::State *s) const
 	{
-	    const double *state = static_cast<const ompl::sb::State*>(s)->values;
-	    model_->kmodel->computeTransformsGroup(state, model_->groupID);
+	    model_->kmodel->computeTransformsGroup(s->values, model_->groupID);
 	    
-	    bool valid = kce_.decide(state, model_->groupID);
+	    bool valid = kce_.decide(s->values, model_->groupID);
 	    if (valid)
 	    {
 		model_->collisionSpace->updateRobotModel();

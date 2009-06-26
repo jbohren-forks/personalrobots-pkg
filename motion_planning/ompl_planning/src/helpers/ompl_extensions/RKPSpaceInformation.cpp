@@ -49,14 +49,14 @@ void kinematic_planning::SpaceInformationRKPModel::setupRKP(void)
     {	
 	int p = m_kmodel->getModelInfo().groupStateIndexList[m_groupID][i] * 2;
 	
-	if (m_stateComponent[i].type == ompl::sb::StateComponent::UNKNOWN)
+	if (m_stateComponent[i].type == ompl::base::StateComponent::UNKNOWN)
 	{
 	    planning_models::KinematicModel::RevoluteJoint *rj = 
 		dynamic_cast<planning_models::KinematicModel::RevoluteJoint*>(m_kmodel->getJoint(m_kmodel->getModelInfo().parameterName[p]));
 	    if (rj && rj->continuous)
-		m_stateComponent[i].type = ompl::sb::StateComponent::WRAPPING_ANGLE;
+		m_stateComponent[i].type = ompl::base::StateComponent::WRAPPING_ANGLE;
 	    else
-		m_stateComponent[i].type = ompl::sb::StateComponent::NORMAL;
+		m_stateComponent[i].type = ompl::base::StateComponent::NORMAL;
 	}
 	
 	m_stateComponent[i].minValue   = m_kmodel->getModelInfo().stateBounds[p    ];
@@ -67,7 +67,7 @@ void kinematic_planning::SpaceInformationRKPModel::setupRKP(void)
 	    if (m_kmodel->getModelInfo().floatingJoints[j] == p)
 	    {
 		m_floatingJoints.push_back(i);
-		m_stateComponent[i + 3].type = ompl::sb::StateComponent::QUATERNION;
+		m_stateComponent[i + 3].type = ompl::base::StateComponent::QUATERNION;
 		break;
 	    }
 	
@@ -75,7 +75,7 @@ void kinematic_planning::SpaceInformationRKPModel::setupRKP(void)
 	    if (m_kmodel->getModelInfo().planarJoints[j] == p)
 	    {
 		m_planarJoints.push_back(i);
-		m_stateComponent[i + 2].type = ompl::sb::StateComponent::WRAPPING_ANGLE;
+		m_stateComponent[i + 2].type = ompl::base::StateComponent::WRAPPING_ANGLE;
 		break;		    
 	    }
     }
