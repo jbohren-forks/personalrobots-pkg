@@ -1,16 +1,16 @@
 <launch>
-   <node pkg="move_arm" type="move_arm" args="robot_description:=robotdesc/pr2" output="screen">    
-   
-   <remap from="collision_map" to="collision_map_occ"/>
-   <remap from="arm_ik" to="pr2_ik_node/ik_service" />	
-   <remap from="arm_ik_query" to="pr2_ik_node/ik_query" />
-
-   <remap from="controller_start"  to="r_arm_joint_trajectory_controller/TrajectoryStart" />
-   <remap from="controller_query"  to="r_arm_joint_trajectory_controller/TrajectoryQuery" />
-   <remap from="controller_cancel" to="r_arm_joint_trajectory_controller/TrajectoryCancel" />
-
-   <remap from="motion_plan" to="plan_kinematic_path" />
-
-   <param name="arm" type="string" value="right_arm" />
+  <node pkg="move_arm" type="move_arm" args="robot_description:=robotdesc/pr2" output="screen">    
+    
+    <remap from="collision_map" to="collision_map_occ"/>
+    <remap from="arm_ik" to="pr2_ik_node/ik_service" />	
+    <remap from="arm_ik_query" to="pr2_ik_node/ik_query" />
+    
+    <remap from="controller_start"  to="r_arm_joint_trajectory_controller/TrajectoryStart" />
+    <remap from="controller_query"  to="r_arm_joint_trajectory_controller/TrajectoryQuery" />
+    <remap from="controller_cancel" to="r_arm_joint_trajectory_controller/TrajectoryCancel" />
+    
+    <remap from="motion_plan" to="plan_kinematic_path" />
+    
+    <param name="arm" type="string" value="right_arm" />
   </node>
 </launch>
