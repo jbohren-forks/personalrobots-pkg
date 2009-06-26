@@ -1,0 +1,22 @@
+<package>
+  <description brief="Gripper Control Toolbox">
+    The control toolbox contains modules that is useful for controlling the gripper.
+  </description>
+  <author>Matthew Piccoli</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes="None"/>
+  <url>http://pr.willowgarage.com</url>
+  <repository>http://pr.willowgarage.com/repos</repository>
+  <depend package="roscpp" />
+  <depend package="roslib" />
+  <depend package="mechanism_model" />
+  <depend package="robot_mechanism_controllers" />
+  <depend package="std_msgs" />
+  <depend package="pr2_mechanism_controllers" />
+  
+  <export>
+    <cpp cflags="-I${prefix}/include -I${prefix}/msg/cpp"
+    lflags='-Wl,-rpath, -lpr2_gripper_controller'/>
+  </export>
+
+</package>

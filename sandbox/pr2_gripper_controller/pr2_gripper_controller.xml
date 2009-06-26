@@ -1,0 +1,7 @@
+<?xml version="1.0"?>
+
+<controllers>
+  <controller name="r_gripper" type="Pr2GripperController">
+  </controller>
+</controllers>
+
