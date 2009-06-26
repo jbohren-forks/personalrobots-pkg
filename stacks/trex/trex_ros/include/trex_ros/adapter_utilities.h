@@ -10,7 +10,7 @@
 #include <robot_msgs/Point32.h>
 #include <std_msgs/String.h>
 #include <door_msgs/Door.h>
-#include <robot_msgs/PlugStow.h>
+#include <plugs_msgs/PlugStow.h>
 //#include <pr2_robot_actions/ServoToOutlet.h> //Not used?
 #include <robot_msgs/PointStamped.h>
 #include <robot_msgs/PoseStamped.h>
@@ -49,7 +49,7 @@ namespace trex_ros {
     /**
      * @brief Read plug stow message
      */
-    static void read(ObservationByValue& obs, const robot_msgs::PlugStow& msg);
+    static void read(ObservationByValue& obs, const plugs_msgs::PlugStow& msg);
     
     /**
      * @brief Read point stamped message
@@ -64,7 +64,7 @@ namespace trex_ros {
     /**
      * @brief Stuff token data into a plug stow message
      */
-    static void write(const TokenId& token, robot_msgs::PlugStow& msg);
+    static void write(const TokenId& token, plugs_msgs::PlugStow& msg);
 
     /**
      * @brief Stuff token data into a point stamped message
