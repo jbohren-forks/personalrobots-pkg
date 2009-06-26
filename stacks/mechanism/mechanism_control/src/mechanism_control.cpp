@@ -122,7 +122,7 @@ void MechanismControl::publishDiagnostics()
                      *std::max_element(controllers[i].stats->max1.begin(), controllers[i].stats->max1.end())*1e6,
                      controllers[i].stats->max*1e6,
                      state.c_str());
-      
+
       controllers[i].stats->acc = blank_statistics;  // clear
     }
 
@@ -243,7 +243,7 @@ void MechanismControl::getControllerNames(std::vector<std::string> &names)
   }
 }
 
-bool MechanismControl::spawnController(const std::string& xml_string, 
+bool MechanismControl::spawnController(const std::string& xml_string,
                                        std::vector<int8_t>& ok,
                                        std::vector<std::string>& name)
 {
@@ -279,7 +279,7 @@ bool MechanismControl::spawnController(const std::string& xml_string,
     name.resize(last+1);
     ok[last] = spawnController(config, name[last]);
     last++;
-  }  
+  }
 
   return true;
 }
@@ -298,14 +298,6 @@ bool MechanismControl::spawnController(TiXmlElement *config, std::string& name)
     return false;
   }
   name = config->Attribute("name");
-
-  // parse type from xml
-  if (!config->Attribute("type"))
-  {
-    ROS_ERROR("Could not spawn controller named \"%s\" because no type was given", name.c_str());
-    return false;
-  }
-  std::string type = config->Attribute("type");
 
   // get reference to controller list
   int free_controllers_list = (current_controllers_list_ + 1) % 2;
@@ -333,27 +325,55 @@ bool MechanismControl::spawnController(TiXmlElement *config, std::string& name)
 
   // Constructs the controller
   controller::Controller *c = NULL;
-  try {
-    c = controller::ControllerFactory::Instance().CreateObject(type);
-  } 
-  catch (Loki::DefaultFactoryError<std::string, controller::Controller>::Exception)
-  {}
-  if (c == NULL)
+  bool initialized = false;
+
+  // Tries initializing the controller in the new way (with NodeHandles)
+  std::string type;
+  ros::NodeHandle c_node(ros::NodeHandle(), name);
+  if (c_node.getParam("type", type))
   {
-    to.clear();
-    ROS_ERROR("Could not spawn controller '%s' because controller type '%s' does not exist",
-              name.c_str(), type.c_str());
-    return false;
+    try {
+      c = controller::ControllerFactory::Instance().CreateObject(type);
+
+      initialized = c->initRequest(state_, c_node);
+      if (!initialized)
+        delete c;
+    } catch(Loki::DefaultFactoryError<std::string, controller::Controller>::Exception)
+    {}
   }
 
-  // Initializes the controller
-  bool initialized = c->initXmlRequest(state_, config, name);
   if (!initialized)
   {
-    to.clear();
-    delete c;
-    ROS_ERROR("Initializing controller \"%s\" failed", name.c_str());
-    return false;
+    // parse type from xml
+    if (!config->Attribute("type"))
+    {
+      ROS_ERROR("Could not spawn controller named \"%s\" because no type was given", name.c_str());
+      return false;
+    }
+    type = config->Attribute("type");
+
+    try {
+      c = controller::ControllerFactory::Instance().CreateObject(type);
+    }
+    catch (Loki::DefaultFactoryError<std::string, controller::Controller>::Exception)
+    {}
+    if (c == NULL)
+    {
+      to.clear();
+      ROS_ERROR("Could not spawn controller '%s' because controller type '%s' does not exist",
+                name.c_str(), type.c_str());
+      return false;
+    }
+
+    // Initializes the controller
+    initialized = c->initXmlRequest(state_, config, name);
+    if (!initialized)
+    {
+      to.clear();
+      delete c;
+      ROS_ERROR("Initializing controller \"%s\" failed", name.c_str());
+      return false;
+    }
   }
 
   // Adds the controller to the new list
