@@ -11,12 +11,29 @@
 
 #include <list>
 
+class Histogram {
+public:
+  vector<float> bins_;
+  Histogram(int nBins, float min, float max);
+  bool insert(float val);
+  void normalize();
+  void print();
+  void clear();
+
+private:
+  vector<float> boundaries_;
+  int nBins_;
+  float min_;
+  float max_;
+  float bin_size_;
+};
+
 class ImageDescriptor {
  public:
   string name_;
   unsigned int result_size_;
 
-  virtual bool compute(IplImage* img, int r, int c, NEWMAT::Matrix** result, bool debug) = 0;
+  virtual bool compute(IplImage* img, int row, int col, NEWMAT::Matrix** result, bool debug) = 0;
   virtual void display(const NEWMAT::Matrix& result) = 0;
   virtual void clearPointCache() = 0;
   virtual void clearImageCache() = 0;
@@ -40,7 +57,7 @@ class Patch : public ImageDescriptor {
 
   Patch(int raw_size, float scale);
   //! Common patch constructor computation.
-  bool preCompute(IplImage* img, int r, int c, bool debug);
+  bool preCompute(IplImage* img, int row, int col, bool debug);
   //virtual void display(const NEWMAT::Matrix& result) {}
   void clearPointCache();
   //virtual void clearImageCache();
@@ -53,7 +70,7 @@ class IntensityPatch : public Patch {
   bool whiten_;
 
   IntensityPatch(int raw_size, float scale, bool whiten);
-  bool compute(IplImage* img, int r, int c, NEWMAT::Matrix** result, bool debug);
+  bool compute(IplImage* img, int row, int col, NEWMAT::Matrix** result, bool debug);
   void display(const NEWMAT::Matrix& result) {}
   void clearImageCache() {}
 };
@@ -66,7 +83,7 @@ class PatchStatistic : public ImageDescriptor {
   Patch* patch_;
 
   PatchStatistic(string type, Patch* patch);
-  bool compute(IplImage* img, int r, int c, NEWMAT::Matrix** result, bool debug);
+  bool compute(IplImage* img, int row, int col, NEWMAT::Matrix** result, bool debug);
   void display(const NEWMAT::Matrix& result);
   void clearPointCache() {}
   void clearImageCache() {}
@@ -75,20 +92,31 @@ class PatchStatistic : public ImageDescriptor {
 class SuperpixelStatistic : public ImageDescriptor {
  public:
   map<int, list<CvPoint> > index_;
-  IplImage* seg_;
-  SuperpixelStatistic* provider_;
   int seed_spacing_;
+  //! Scaling factor to apply to the image when computing the segmentation.
+  float scale_;
+  //! Pointer to an object from which the segmentation can be gotten.  
+  SuperpixelStatistic* seg_provider_;
+  IplImage* seg_;
 
-  SuperpixelStatistic(int seed_spacing, SuperpixelStatistic* provider);
-  //! Computes superpixels and puts into seg_, and computes the superpixel to pixel index.
+  SuperpixelStatistic(int seed_spacing, float scale, SuperpixelStatistic* provider);
+  //! Computes superpixels and puts into seg_, and computes the superpixel to pixel index.  Is called automatically, if necessary, by the compute(.) function.
   void segment(IplImage* img, bool debug);
 };
 
 class SuperpixelColorHistogram : public SuperpixelStatistic {
  public:
-  
-  SuperpixelColorHistogram();
-  bool compute(IplImage* img, int r, int c, NEWMAT::Matrix** result, bool debug);
+  IplImage* hsv_;
+  IplImage* hue_;
+  IplImage* sat_;
+  IplImage* val_;
+  int nBins_;
+  string type_;
+  SuperpixelColorHistogram* hsv_provider_;
+  map<int, Histogram*> histograms_;
+
+  SuperpixelColorHistogram(int seed_spacing, float scale, int nBins, string type, SuperpixelStatistic* seg_provider=NULL, SuperpixelColorHistogram* hsv_provider_=NULL);
+  bool compute(IplImage* img, int row, int col, NEWMAT::Matrix** result, bool debug);
   void display(const NEWMAT::Matrix& result) {}
   void clearPointCache() {}
   void clearImageCache();
@@ -118,7 +146,7 @@ class Hog : public ImageDescriptor {
   HOGDescriptor cvHog;
 
   Hog(Patch* patch);
-  bool compute(IplImage* img, int r, int c, NEWMAT::Matrix** result, bool debug);
+  bool compute(IplImage* img, int row, int col, NEWMAT::Matrix** result, bool debug);
   void display(const NEWMAT::Matrix& result) {}
   void clearPointCache() {}
   void clearImageCache() {}

@@ -28,3 +28,6 @@ rospack_add_library(descriptors descriptors.cpp)
 #rospack_link_boost(${PROJECT_NAME} thread)
 rospack_add_executable(stanleyi stanleyi.cpp)
 target_link_libraries(stanleyi descriptors)
+
+#rospack_add_executable(demhist demhist.c)
+#rospack_add_executable(ex7-1 ex7-1.cpp)
