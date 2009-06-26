@@ -1,4 +1,7 @@
 #include "polygon.hpp"
+//#include "Poco/SharedLibrary.h" 
+#include "Poco/ClassLibrary.h"
+
 #include <cmath>
 
 class square : public polygon {
@@ -9,12 +12,8 @@ public:
 };
 
 
-// the class factories
+POCO_BEGIN_MANIFEST(polygon)
 
-extern "C" polygon* create() {
-  return new square;
-}
+POCO_EXPORT_CLASS(square)
 
-extern "C" void destroy(polygon* p) {
-  delete p;
-}
+POCO_END_MANIFEST 

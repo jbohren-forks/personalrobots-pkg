@@ -10,6 +10,10 @@
   <url>http://pr.willowgarage.com/wiki/pluging_provider</url>
   <depend package="plugin_user"/>
 
+  <export>
+    <filter plugin="${prefix}/lib/libsquare"/>
+  </export>
+
 </package>
 
 

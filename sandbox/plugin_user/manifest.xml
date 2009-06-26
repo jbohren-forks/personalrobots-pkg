@@ -9,8 +9,11 @@
   <review status="experimental" notes=""/>
   <url>http://pr.willowgarage.com/wiki/plugin_user</url>
 
+  <depend package="roslib"/>
+
   <export>
     <cpp cflags="-I${prefix}"/>
+    <filter plugin="${prefix}/lib/libtriangle"/>
   </export>
 
   <rosdep name="libpoco"/>
