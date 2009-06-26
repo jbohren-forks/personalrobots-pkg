@@ -3,7 +3,7 @@
     These are packages that primarily process laser / range data.
   </description>
   <version>0.1</version>
-  <author>Radu Rusu rusu@willowgarage.com,
+  <author>Radu Bogdan Rusu rusu@willowgarage.com,
           Marius Muja mariusm@willowgarage.com
   </author>
   <license>BSD</license>

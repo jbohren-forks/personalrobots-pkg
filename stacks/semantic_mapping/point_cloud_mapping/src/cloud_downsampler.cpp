@@ -40,7 +40,7 @@
  **/
 
 // ROS core
-#include <ros/node.h>
+#include <ros/ros.h>
 // ROS messages
 #include <robot_msgs/Point.h>
 #include <robot_msgs/PointCloud.h>
@@ -56,42 +56,45 @@ using namespace robot_msgs;
 class CloudDownsampler
 {
   protected:
-    ros::Node& node_;
+    ros::NodeHandle nh_;
 
   public:
 
     // ROS messages
-    PointCloud cloud_, cloud_down_;
+    PointCloud cloud_down_, cloud_in_;
 
     vector<cloud_geometry::Leaf> leaves_;
+
+    ros::Subscriber cloud_sub_;
+    ros::Publisher cloud_down_pub_;
 
     // Parameters
     Point leaf_width_;
     double cut_distance_;
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    CloudDownsampler (ros::Node& anode) : node_ (anode)
+    CloudDownsampler ()
     {
-      node_.param ("~leaf_width_x", leaf_width_.x, 0.025);      // 2.5cm radius by default
-      node_.param ("~leaf_width_y", leaf_width_.y, 0.025);      // 2.5cm radius by default
-      node_.param ("~leaf_width_z", leaf_width_.z, 0.025);      // 2.5cm radius by default
+      nh_.param ("~leaf_width_x", leaf_width_.x, 0.025);      // 2.5cm radius by default
+      nh_.param ("~leaf_width_y", leaf_width_.y, 0.025);      // 2.5cm radius by default
+      nh_.param ("~leaf_width_z", leaf_width_.z, 0.025);      // 2.5cm radius by default
 
       ROS_INFO ("Using a default leaf of size: %g,%g,%g.", leaf_width_.x, leaf_width_.y, leaf_width_.z);
 
-      node_.param ("~cut_distance", cut_distance_, 10.0);         // 10m by default
+      nh_.param ("~cut_distance", cut_distance_, 10.0);         // 10m by default
 
       string cloud_topic ("tilt_laser_cloud");
 
-      vector<pair<string, string> > t_list;
-      node_.getPublishedTopics (&t_list);
+      ros::VP_string t_list;
+      nh_.getPublishedTopics (t_list);
       for (vector<pair<string, string> >::iterator it = t_list.begin (); it != t_list.end (); it++)
       {
         if (it->first.find (cloud_topic) == string::npos)
           ROS_WARN ("Trying to subscribe to %s, but the topic doesn't exist!", cloud_topic.c_str ());
       }
 
-      node_.subscribe (cloud_topic, cloud_, &CloudDownsampler::cloud_cb, this, 1);
-      node_.advertise<PointCloud> ("cloud_downsampled", 1);
+      cloud_sub_ = nh_.subscribe (cloud_topic, 1, &CloudDownsampler::cloud_cb, this);
+      cloud_down_pub_ = nh_.advertise<PointCloud> ("cloud_downsampled", 1);
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -99,23 +102,24 @@ class CloudDownsampler
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Callback
-    void cloud_cb ()
+    void cloud_cb (const PointCloudConstPtr& cloud)
     {
-      ROS_INFO ("Received %d data points.", (int)cloud_.pts.size ());
-      if (cloud_.pts.size () == 0)
+      ROS_INFO ("Received %d data points.", (int)cloud->pts.size ());
+      if (cloud->pts.size () == 0)
         return;
+      PointCloudConstPtr cloud_in = cloud;
 
       timeval t1, t2;
       gettimeofday (&t1, NULL);
 
-      int d_idx = cloud_geometry::getChannelIndex (cloud_, "distances");
-      cloud_geometry::downsamplePointCloud (cloud_, cloud_down_, leaf_width_, leaves_, d_idx, cut_distance_);
+      int d_idx = cloud_geometry::getChannelIndex (cloud_in, "distances");
+      cloud_geometry::downsamplePointCloud (cloud_in, cloud_down_, leaf_width_, leaves_, d_idx, cut_distance_);
 
       gettimeofday (&t2, NULL);
       double time_spent = t2.tv_sec + (double)t2.tv_usec / 1000000.0 - (t1.tv_sec + (double)t1.tv_usec / 1000000.0);
       ROS_INFO ("Cloud downsampled in %g seconds. Number of points left: %d.", time_spent, (int)cloud_down_.pts.size ());
 
-      node_.publish ("cloud_downsampled", cloud_down_);
+      cloud_down_pub_.publish (cloud_down_);
     }
 };
 
@@ -123,14 +127,11 @@ class CloudDownsampler
 int
   main (int argc, char** argv)
 {
-  ros::init (argc, argv);
+  ros::init (argc, argv, "cloud_downsampler_node");
 
-  ros::Node ros_node ("cloud_downsampler_node");
-
-  CloudDownsampler p (ros_node);
-  ros_node.spin ();
+  CloudDownsampler p;
+  ros::spin ();
 
   return (0);
 }
 /* ]--- */
-

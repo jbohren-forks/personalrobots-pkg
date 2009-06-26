@@ -252,6 +252,8 @@ namespace cloud_geometry
     void computePointCloudNormals (robot_msgs::PointCloud &points, int k, const robot_msgs::PointStamped &viewpoint);
     void computePointCloudNormals (robot_msgs::PointCloud &points, double radius, const robot_msgs::PointStamped &viewpoint);
 
+    void computeOrganizedPointCloudNormals (robot_msgs::PointCloud &points, const robot_msgs::PointCloud &surface, int k, int downsample_factor, int width, int height, const robot_msgs::Point32 &viewpoint);
+
   }
 }
 

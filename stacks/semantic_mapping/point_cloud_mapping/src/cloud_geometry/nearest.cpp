@@ -550,5 +550,82 @@ namespace cloud_geometry
       delete kdtree;                                          // Delete the kd-tree
     }
 
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /** \brief Estimate the point normals and surface curvatures for a given organized point cloud dataset (points)
+      * using the data from a different point cloud (surface) for least-squares planar estimation.
+      *
+      * \note The main difference between this method and its \a computePointCloudNormals () sibblings is that 
+      * assumptions are being made regarding the organization of points in the cloud. For example, point clouds
+      * acquired using camera sensors are assumed to be row-major, and the width and height of the depth image
+      * are assumed to be known, etc.
+      * \param points the input point cloud (on output, 4 extra channels will be added: \a nx, \a ny, \a nz, and \a curvatures)
+      * \param surface the point cloud data to use for least-squares planar estimation
+      * \param k the windowing factor (i.e., how many pixels in the depth image in all directions should the neighborhood of a point contain)
+      * \param downsample_factor factor for downsampling the input data, i.e., take every Nth row and column in the depth image
+      * \param width the width in pixels of the depth image
+      * \param height the height in pixels of the depth image
+      * \param viewpoint the viewpoint where the cloud was acquired from (used for normal flip)
+      */
+    void
+      computeOrganizedPointCloudNormals (robot_msgs::PointCloud &points, const robot_msgs::PointCloud &surface,
+                                         int k, int downsample_factor, int width, int height, const robot_msgs::Point32 &viewpoint)
+    {
+      // Reduce by a factor of N
+      int nr_points = lrint (ceil (width / (double)downsample_factor)) *
+                      lrint (ceil (height / (double)downsample_factor));
+      int orig_dims = points.chan.size ();
+      points.chan.resize (orig_dims + 4);                     // Reserve space for 4 channels: nx, ny, nz, curvature
+      points.chan[orig_dims + 0].name = "nx";
+      points.chan[orig_dims + 1].name = "ny";
+      points.chan[orig_dims + 2].name = "nz";
+      points.chan[orig_dims + 3].name = "curvatures";
+      points.pts.resize (nr_points);
+      // Reserve space for 4 channels: nx, ny, nz, curvature
+      for (unsigned int d = orig_dims; d < points.chan.size (); d++)
+        points.chan[d].vals.resize (nr_points);
+
+      // Reserve enough space for the neighborhood
+      std::vector<int> nn_indices ((k + k + 1) * (k + k + 1));
+      Eigen::Vector4d plane_parameters;
+      double curvature;
+
+      int j = 0;
+//#pragma omp parallel for schedule(dynamic)
+      for (int i = 0; i < (int)surface.pts.size (); i++)
+      {
+        // Obtain the <u,v> pixel values
+        int u = i / width;
+        int v = i % width;
+
+        // Get every Nth pixel in both rows, cols
+        if ((u % downsample_factor != 0) || (v % downsample_factor != 0))
+          continue;
+
+        // Copy the data
+        points.pts[j] = surface.pts[i];
+
+        // Get all point neighbors in a k x k window
+        for (int l = 0, x = -k; x < k+1; x++)
+        {
+          for (int y = -k; y < k+1; y++)
+          {
+            int idx = (u+x) * width + (v+y);
+            if (idx > 0 && idx < (int)surface.pts.size ())
+              nn_indices[l++] = idx;
+          }
+        }
+
+        // Compute the point normals (nx, ny, nz), surface curvature estimates (c)
+        cloud_geometry::nearest::computePointNormal (surface, nn_indices, plane_parameters, curvature);
+        cloud_geometry::angles::flipNormalTowardsViewpoint (plane_parameters, surface.pts[i], viewpoint);
+
+        points.chan[orig_dims + 0].vals[j] = plane_parameters (0);
+        points.chan[orig_dims + 1].vals[j] = plane_parameters (1);
+        points.chan[orig_dims + 2].vals[j] = plane_parameters (2);
+        points.chan[orig_dims + 3].vals[j] = curvature;
+        j++;
+      }
+    }
+
   }
 }
