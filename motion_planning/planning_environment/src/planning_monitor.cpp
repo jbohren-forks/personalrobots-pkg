@@ -63,7 +63,7 @@ void planning_environment::PlanningMonitor::setPathConstraints(const motion_plan
 void planning_environment::PlanningMonitor::setGoalConstraints(const motion_planning_msgs::KinematicConstraints &kc)
 {
     kcGoal_ = kc;
-    transformConstraintsToFrame(kcPath_, getFrameId());
+    transformConstraintsToFrame(kcGoal_, getFrameId());
 }
 
 bool planning_environment::PlanningMonitor::transformConstraintsToFrame(motion_planning_msgs::KinematicConstraints &kc, const std::string &target) const
