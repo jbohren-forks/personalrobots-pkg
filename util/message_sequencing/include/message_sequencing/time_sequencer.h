@@ -296,7 +296,7 @@ private:
       return (*it)->header.stamp;
     } else {
       // Otherwise return maximum time in future  (This code will break in the year 2554)
-      return ros::Time().fromNSec(UINT64_MAX);
+      return ros::TIME_MAX;
     }
   }
 
@@ -337,7 +337,7 @@ private:
 
     V_Message local_queue;
 
-    ros::Time next_time = ros::Time().fromNSec(UINT64_MAX);
+    ros::Time next_time = ros::TIME_MAX;
 
     while (!destructing_)
     {

@@ -6,7 +6,7 @@
   <depend package="roscpp" />
   <depend package="robot_msgs" />
   <export>
-    <cpp cflags="-I${prefix}/include -D__STDC_LIMIT_MACROS" lflags="-L${prefix}/lib -lmessageseq"/>
+    <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -lmessageseq"/>
   </export>
   <url>http://pr.willowgarage.com/wiki/message_sequencing</url>
 </package>
