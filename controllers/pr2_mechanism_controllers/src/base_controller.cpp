@@ -796,7 +796,8 @@ void BaseController::computeStall()
   {
     caster_speed_error_[i] = fabs(base_casters_[i].joint_state_->velocity_ - steer_velocity_desired_[i]);
     caster_speed_filtered_[i] = alpha_stall_*caster_speed_filtered_[i] + (1-alpha_stall_)*base_casters_[i].joint_state_->velocity_;
-
+    caster_speed_[i] = base_casters_[i].joint_state_->velocity_;
+  
     if(fabs(caster_speed_[i]) < caster_speed_threshold_ &&  fabs(caster_position_error_[i]) > caster_position_error_threshold_ && fabs(base_casters_[i].joint_state_->applied_effort_) > caster_effort_threshold_)
     {
         caster_stuck_[i] = 1;

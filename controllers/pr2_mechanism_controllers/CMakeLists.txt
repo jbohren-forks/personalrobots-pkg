@@ -5,7 +5,7 @@ set(ROS_BUILD_TYPE Release)
 rospack(pr2_mechanism_controllers)
 genmsg()
 gensrv()
-#rospack_add_library(pr2_controllers src/base_controller.cpp src/laser_scanner_controller.cpp  src/arm_position_controller.cpp src/arm_velocity_controller.cpp src/arm_pd_controller.cpp src/head_pan_tilt_controller.cpp)
+#rospack_add_library(pr2_controllers src/base_controller.cpp src/laser_scanner_controller.cpp  src/arm_position_controller.cpp src/arm_velocity_controller.cpp src/arm_pd_controller.cpp src/head_pan_tilt_controller.cpp src/base_kinematics.cpp src/pr2_base_controller.cpp src/pr2_odometry.cpp)
 
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 
@@ -28,9 +28,10 @@ rospack_add_library( pr2_mechanism_controllers
   src/arm_trajectory_controller.cpp
   src/whole_body_trajectory_controller.cpp
   src/joint_trajectory_controller.cpp
+  src/base_kinematics.cpp
+  src/pr2_gripper_controller.cpp
   src/pr2_odometry.cpp
   src/pr2_base_controller.cpp
-  src/base_kinematics.cpp
   src/Pose3D.cpp
   )
 rospack_link_boost(pr2_mechanism_controllers thread)

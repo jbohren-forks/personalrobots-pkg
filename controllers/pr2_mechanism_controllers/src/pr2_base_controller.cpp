@@ -74,7 +74,6 @@ Pr2BaseController::~Pr2BaseController()
 
 bool Pr2BaseController::initXml(mechanism::RobotState *robot, TiXmlElement *config)
 {
-  ROS_INFO("starting Pr2BaseController::initXml");
   base_kin_.initXml(robot, config);
   if(state_publisher_ != NULL)// Make sure that we don't memory leak if initXml gets called twice
     delete state_publisher_;
@@ -112,30 +111,27 @@ bool Pr2BaseController::initXml(mechanism::RobotState *robot, TiXmlElement *conf
    double kd_;
    double ki_clamp;*/
   //casters
-  ROS_INFO("resizing caster_controller_");
   caster_controller_.resize(base_kin_.num_casters_);
   for(int i = 0; i < base_kin_.num_casters_; i++)
   {
     control_toolbox::Pid p_i_d;
-    state_publisher_->msg_.joint_name[i] = base_kin_.caster_[i].name_ + "joint";
+    state_publisher_->msg_.joint_name[i] = base_kin_.caster_[i].name_;
     /*ros::Node::instance()->param<double>(base_kin_.caster_[i].name_ + "/p",kp_,3.0);
      ros::Node::instance()->param<double>(base_kin_.caster_[i].name_ + "/i",ki_,0.1);
      ros::Node::instance()->param<double>(base_kin_.caster_[i].name_ + "/d",kd_,0.0);
      ros::Node::instance()->param<double>(base_kin_.caster_[i].name_ + "/i_clamp",ki_clamp,4.0);*/
     //tmp.init(base_kin_.robot_state_, base_kin_.caster_[i].name_ + "joint", control_toolbox::Pid(kp_,ki_,kd_,ki_clamp));
     //caster_controller_.push_back(tmp);//TODO::make this not copy!!!!!!!
-    ROS_INFO("making initParam");
     p_i_d.initParam(base_kin_.name_ + "/" + base_kin_.caster_[i].name_ + "/");
     caster_controller_[i] = new JointVelocityController();
-    ROS_INFO("initing controller");
-    caster_controller_[i]->init(base_kin_.robot_state_, base_kin_.caster_[i].name_ + "joint", p_i_d);
+    caster_controller_[i]->init(base_kin_.robot_state_, base_kin_.caster_[i].name_, p_i_d);
   }
   //wheels
   wheel_controller_.resize(base_kin_.num_wheels_);
   for(int j = 0; j < base_kin_.num_wheels_; j++)
   {
     control_toolbox::Pid p_i_d;
-    state_publisher_->msg_.joint_name[j + base_kin_.num_casters_] = base_kin_.wheel_[j].name_ + "joint";
+    state_publisher_->msg_.joint_name[j + base_kin_.num_casters_] = base_kin_.wheel_[j].name_;
     /*ros::Node::instance()->param<double>(base_kin_.wheel_[j].name_ + "/kp",kp_,2.0);
      ros::Node::instance()->param<double>(base_kin_.wheel_[j].name_ + "/ki",ki_,0.01);
      ros::Node::instance()->param<double>(base_kin_.wheel_[j].name_ + "/kd",kd_,0.0);
@@ -144,9 +140,8 @@ bool Pr2BaseController::initXml(mechanism::RobotState *robot, TiXmlElement *conf
     //wheel_controller_.push_back(tmp);//TODO::make this not copy!!!!!!!
     p_i_d.initParam(base_kin_.name_ + "/" + base_kin_.wheel_[j].name_ + "/");
     wheel_controller_[j] = new JointVelocityController();
-    wheel_controller_[j]->init(base_kin_.robot_state_, base_kin_.wheel_[j].name_ + "joint", p_i_d);
+    wheel_controller_[j]->init(base_kin_.robot_state_, base_kin_.wheel_[j].name_, p_i_d);
   }
-  ROS_INFO("ending Pr2BaseController::initXml");
   return true;
 }
 
@@ -168,21 +163,19 @@ void Pr2BaseController::setCommand(robot_msgs::PoseDot cmd_vel)
   cmd_vel_t_.ang_vel.vz = filters::clamp(cmd_vel.ang_vel.vz, -max_vel_.ang_vel.vz, max_vel_.ang_vel.vz);
   cmd_received_timestamp_ = base_kin_.robot_state_->hw_->current_time_;
 
-#if 0
-  ROS_INFO("BaseController:: command received: %f %f %f",cmd_vel.vel.vx,cmd_vel.vel.vy,cmd_vel.ang_vel.vz);
-  ROS_INFO("BaseController:: command current: %f %f %f", cmd_vel_.vel.vx,cmd_vel_.vel.vy,cmd_vel_.ang_vel.vz);
-  ROS_INFO("BaseController:: clamped vel: %f", clamped_vel_mag);
-  ROS_INFO("BaseController:: vel: %f", vel_mag);
+  ROS_DEBUG("BaseController:: command received: %f %f %f",cmd_vel.vel.vx,cmd_vel.vel.vy,cmd_vel.ang_vel.vz);
+  ROS_DEBUG("BaseController:: command current: %f %f %f", cmd_vel_.vel.vx,cmd_vel_.vel.vy,cmd_vel_.ang_vel.vz);
+  ROS_DEBUG("BaseController:: clamped vel: %f", clamped_vel_mag);
+  ROS_DEBUG("BaseController:: vel: %f", vel_mag);
 
   for(int i=0; i < (int) base_kin_.num_wheels_; i++)
   {
-    ROS_INFO("BaseController:: wheel speed cmd:: %d %f",i,(base_kin_.wheel_[i].direction_multiplier_*base_kin_.wheel_[i].wheel_speed_cmd_));
+    ROS_DEBUG("BaseController:: wheel speed cmd:: %d %f",i,(base_kin_.wheel_[i].direction_multiplier_*base_kin_.wheel_[i].wheel_speed_cmd_));
   }
   for(int i=0; i < (int) base_kin_.num_casters_; i++)
   {
-    ROS_INFO("BaseController:: caster speed cmd:: %d %f",i,(base_kin_.caster_[i].steer_velocity_desired_));
+    ROS_DEBUG("BaseController:: caster speed cmd:: %d %f",i,(base_kin_.caster_[i].steer_velocity_desired_));
   }
-#endif
   new_cmd_available_ = true;
 }
 

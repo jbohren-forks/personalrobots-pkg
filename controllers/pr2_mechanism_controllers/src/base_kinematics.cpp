@@ -47,18 +47,18 @@ void Wheel::initXml(mechanism::RobotState *robot_state, TiXmlElement *config)
   wheel_speed_error_ = 0;
   wheel_speed_cmd_ = 0;
   wheel_speed_actual_ = 0;
-	
-  name_ = config->Attribute("name");
-  mechanism::Link *link = robot_state->model_->getLink(name_ + "link");
-  joint_ = robot_state->getJointState(link->joint_name_);
+
+  mechanism::Link *link = robot_state->model_->getLink(config->Attribute("name"));
+  name_ = link->joint_name_;
+  joint_ = robot_state->getJointState(name_);
   tf::Transform offset = link->getOffset();
   offset_.x = offset.getOrigin().x();
   offset_.y = offset.getOrigin().y();
   offset_.z = offset.getOrigin().z();
   ros::Node::instance()->param<double>(name_ + "/wheel_radius_scaler",wheel_radius_scaler_,1.0); 
   #if 0
-    ROS_INFO("Loading wheel: %s",name_.c_str());
-    ROS_INFO("offset_.x: %f, offset_.y: %f, offset_.z: %f", offset_.x, offset_.y, offset_.z);
+    ROS_DEBUG("Loading wheel: %s",name_.c_str());
+    ROS_DEBUG("offset_.x: %f, offset_.y: %f, offset_.z: %f", offset_.x, offset_.y, offset_.z);
   #endif
 }
 
@@ -75,17 +75,16 @@ void Caster::initXml(mechanism::RobotState *robot_state, TiXmlElement *config)
   num_children_ = 0;
 	
   name_ = config->Attribute("name");
-  mechanism::Link *link = robot_state->model_->getLink(name_ + "link");
-  joint_ = robot_state->getJointState(link->joint_name_);
+  mechanism::Link *link = robot_state->model_->getLink(config->Attribute("name"));
+  name_ = link->joint_name_;
+  joint_ = robot_state->getJointState(name_);
   tf::Transform offset = link->getOffset();
   offset_.x = offset.getOrigin().x();
   offset_.y = offset.getOrigin().y();
   offset_.z = offset.getOrigin().z();
   TiXmlElement *elt = config->FirstChildElement(parent_->xml_wheel_name_);
-  #if 0
-    ROS_INFO("Loading caster: %s: my parent is: %s",name_.c_str(), parent_->name_.c_str());
-    ROS_INFO("offset_.x: %f, offset_.y: %f, offset_.z: %f", offset_.x, offset_.y, offset_.z);
-  #endif
+  ROS_DEBUG("Loading caster: %s: my parent is: %s",name_.c_str(), parent_->name_.c_str());
+  ROS_DEBUG("offset_.x: %f, offset_.y: %f, offset_.z: %f", offset_.x, offset_.y, offset_.z);
   
   while(elt){
     Wheel tmp;
