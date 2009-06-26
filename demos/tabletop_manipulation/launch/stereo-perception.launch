@@ -3,8 +3,13 @@
   <include file="$(find pr2_defs)/pr2_planning_environment.launch" />
   <include file="$(find stereo_image_proc)/stereoproc.launch" />
   
-  <node pkg="robot_self_filter" type="self_filter" args="robot_description:=robotdesc/pr2 cloud_in:=stereo/cloud cloud_out:=full_cloud_filtered" respawn="true" output="screen" />
+  <node pkg="robot_self_filter" type="self_filter" respawn="true" output="screen">
+    <remap from="robot_description" to="robotdesc/pr2" />
+    <remap from="cloud_in" to="stereo/cloud" />
+    <remap from="cloud_out" to="full_cloud_annotated" />
+    <param name="annotate" type="string" value="on_self" />
+  </node>
   
-  <include file="$(find collision_map)/collision_map.launch" />
+  <include file="$(find collision_map)/collision_map_occ.launch" />
  
 </launch>
