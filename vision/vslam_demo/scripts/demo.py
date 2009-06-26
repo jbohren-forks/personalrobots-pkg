@@ -757,7 +757,6 @@ class MouseLook:
       glutSetCursor(GLUT_CURSOR_INHERIT)
 
     factor = demo.map_size()
-    print "factor", factor
 
     th_inc = 0.05
     if k == 'w':
