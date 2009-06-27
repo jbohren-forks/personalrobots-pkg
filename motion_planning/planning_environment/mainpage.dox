@@ -18,20 +18,33 @@ You can then link to this documentation page from the Wiki.
 
 \section codeapi Code API
 
-<!--
-Provide links to specific auto-generated API documentation within your
-package that is of particular interest to a reader. Doxygen will
-document pretty much every part of your code, so do your best here to
-point the reader to the actual API.
+The intended use for this package is to instantiante one of the two
+model classes and potentially one of the monitor classes.
+
+The model classes are:
+- \b RobotModels : allows the instantiation of various robot models (for example, a kinematic one) based on data from the parameter server. The URDF robot description and the .yaml files describing collision and planning information are assumed to be loaded.
+
+- \b CollisionModels : allows the instantiation of various robot models (for example, a kinematic one) and various collision spaces, based on data from the parameter server. This class inherits from \b RobotModels. The URDF robot description and the .yaml files describing collision and planning information are assumed to be loaded.
+
+<hr>
+
+The monitor classes are:
+- \b KinematicModelStateMonitor : monitors the kinematic state of the robot. Optionally, monitors the base location. It uses the 'mechanism_state' topic.
+- \b CollisionSpaceMonitor : same as \b KinematicModelStateMonitor except it also monitors the state of the collision environment. It uses the 'collision_map' topic to receive new full maps and the 'collision_map_update' to receive updates. Attaching objects to robot links is possible using the 'attach_object' topic.
+- \b PlanningMonitor : same as \b CollisionSpaceMonitor except it also offers the ability to evaluate kinematic constraints and check paths and states for validity.
+
+      <!-- Provide links to specific auto-generated API
+documentation within your package that is of particular interest to a
+reader. Doxygen will document pretty much every part of your code, so
+do your best here to point the reader to the actual API.
 
 If your codebase is fairly large or has different sets of APIs, you
 should use the doxygen 'group' tag to keep these APIs together. For
 example, the roscpp documentation has 'libros' group.
 -->
 
-\section rosapi ROS API
+<!-- \section rosapi ROS API
 
-<!--
 Names are very important in ROS because they can be remapped on the
 command-line, so it is VERY IMPORTANT THAT YOU LIST NAMES AS THEY
 APPEAR IN THE CODE. You should list names of every topic, service and

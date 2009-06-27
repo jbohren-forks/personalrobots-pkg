@@ -67,6 +67,9 @@ void planning_environment::CollisionSpaceMonitor::setupCSM(void)
     collisionMapNotifier_ = new tf::MessageNotifier<robot_msgs::CollisionMap>(*tf_, boost::bind(&CollisionSpaceMonitor::collisionMapCallback, this, _1), "collision_map", getFrameId(), 1);
     ROS_DEBUG("Listening to collision_map");
 
+    collisionMapUpdateNotifier_ = new tf::MessageNotifier<robot_msgs::CollisionMap>(*tf_, boost::bind(&CollisionSpaceMonitor::collisionMapUpdateCallback, this, _1), "collision_map_update", getFrameId(), 1);
+    ROS_DEBUG("Listening to collision_map_update");
+
     if (cm_->loadedModels())
     {
 	attachedBodyNotifier_ = new tf::MessageNotifier<robot_msgs::AttachedObject>(*tf_, boost::bind(&CollisionSpaceMonitor::attachObjectCallback, this, _1), "attach_object", "", 1);
@@ -99,7 +102,17 @@ void planning_environment::CollisionSpaceMonitor::waitForMap(void) const
 	ROS_INFO("Map received!");
 }
 
+void planning_environment::CollisionSpaceMonitor::collisionMapUpdateCallback(const robot_msgs::CollisionMapConstPtr &collisionMap)
+{
+    updateCollisionSpace(collisionMap, false);
+}
+
 void planning_environment::CollisionSpaceMonitor::collisionMapCallback(const robot_msgs::CollisionMapConstPtr &collisionMap)
+{
+    updateCollisionSpace(collisionMap, true);
+}
+
+void planning_environment::CollisionSpaceMonitor::updateCollisionSpace(const robot_msgs::CollisionMapConstPtr &collisionMap, bool clear)
 {
     int n = collisionMap->get_boxes_size();
     ROS_DEBUG("Received %d points (collision map)", n);
@@ -164,7 +177,8 @@ void planning_environment::CollisionSpaceMonitor::collisionMapCallback(const rob
     }
     
     collisionSpace_->lock();
-    collisionSpace_->clearObstacles();
+    if (clear)
+	collisionSpace_->clearObstacles();
     collisionSpace_->addPointCloud(n, data);
     collisionSpace_->unlock();
     

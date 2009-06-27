@@ -68,39 +68,39 @@ namespace planning_environment
 	{
 	}
 
-	/** Return true if recent enough data is available so that planning is considered safe */
+	/** \brief Return true if recent enough data is available so that planning is considered safe */
 	bool isEnvironmentSafe(void) const;
 	
-	/** Check if the full state of the robot is valid */
+	/** \brief Check if the full state of the robot is valid */
 	bool isStateValidOnPath(const planning_models::StateParams *state) const;
 
-	/** Check if the full state of the robot is valid */
+	/** \brief Check if the full state of the robot is valid */
 	bool isStateValidAtGoal(const planning_models::StateParams *state) const;
 	
-	/** Check if the path is valid */
+	/** \brief Check if the path is valid */
 	bool isPathValid(const motion_planning_msgs::KinematicPath &path) const;
 	
-	/** Set the kinematic constraints the monitor should use when checking a path */
+	/** \brief Set the kinematic constraints the monitor should use when checking a path */
 	void setPathConstraints(const motion_planning_msgs::KinematicConstraints &kc);
 
-	/** Set the kinematic constraints the monitor should use when checking a path's last state (the goal) */
+	/** \brief Set the kinematic constraints the monitor should use when checking a path's last state (the goal) */
 	void setGoalConstraints(const motion_planning_msgs::KinematicConstraints &kc);
 	
-	/** Transform the frames in which constraints are specified to the one requested */
+	/** \brief Transform the frames in which constraints are specified to the one requested */
 	bool transformConstraintsToFrame(motion_planning_msgs::KinematicConstraints &kc, const std::string &target) const;
 	
-	/** Transform the kinematic path to the frame requested */
+	/** \brief Transform the kinematic path to the frame requested */
 	bool transformPathToFrame(motion_planning_msgs::KinematicPath &kp, const std::string &target) const;
 
-	/** Transform the kinematic joint to the frame requested */
+	/** \brief Transform the kinematic joint to the frame requested */
 	bool transformJointToFrame(motion_planning_msgs::KinematicJoint &kj, const std::string &target) const;
 	
     protected:
 	
-	/** Transform the joint parameters (if needed) to a target frame */
+	/** \brief Transform the joint parameters (if needed) to a target frame */
 	bool transformJoint(const std::string &name, unsigned int index, std::vector<double> &params, roslib::Header &header, const std::string& target) const;
 	
-	/** Check the path assuming it is in the frame of the model */
+	/** \brief Check the path assuming it is in the frame of the model */
 	bool isPathValidAux(const motion_planning_msgs::KinematicPath &path) const;
 	
 	motion_planning_msgs::KinematicConstraints kcPath_;

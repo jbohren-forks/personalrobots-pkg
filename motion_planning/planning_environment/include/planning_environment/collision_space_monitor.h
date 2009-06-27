@@ -78,6 +78,8 @@ namespace planning_environment
 	{
 	    if (collisionMapNotifier_)
 		delete collisionMapNotifier_;
+	    if (collisionMapUpdateNotifier_)
+		delete collisionMapUpdateNotifier_;
 	    if (attachedBodyNotifier_)
 		delete attachedBodyNotifier_;
 	}
@@ -139,7 +141,9 @@ namespace planning_environment
     protected:
 	
 	void setupCSM(void);
+	void updateCollisionSpace(const robot_msgs::CollisionMapConstPtr &collisionMap, bool clear);
 	void collisionMapCallback(const robot_msgs::CollisionMapConstPtr &collisionMap);
+	void collisionMapUpdateCallback(const robot_msgs::CollisionMapConstPtr &collisionMap);
 	void attachObjectCallback(const robot_msgs::AttachedObjectConstPtr &attachedObject);
 	
 	CollisionModels                                               *cm_;
@@ -148,6 +152,7 @@ namespace planning_environment
 	bool                                                           haveMap_;
 	ros::Time                                                      lastMapUpdate_;	
 	tf::MessageNotifier<robot_msgs::CollisionMap>                 *collisionMapNotifier_;
+	tf::MessageNotifier<robot_msgs::CollisionMap>                 *collisionMapUpdateNotifier_;
 	tf::MessageNotifier<robot_msgs::AttachedObject>               *attachedBodyNotifier_;
 	
 	boost::function<void(const robot_msgs::CollisionMapConstPtr)>  onBeforeMapUpdate_;
