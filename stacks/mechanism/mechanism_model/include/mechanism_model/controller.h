@@ -82,12 +82,10 @@ class Controller
 public:
   enum {CONSTRUCTED, INITIALIZED, RUNNING};
   int state_;
-  bool autostart_;
 
   Controller()
   {
     state_ = CONSTRUCTED;
-    autostart_ = true;
   }
   virtual ~Controller()
   {
@@ -151,12 +149,6 @@ public:
         return false;
       state_ = INITIALIZED;
 
-      // autostart if needed
-      ros::NodeHandle nn;
-      nn.param("~autostart", autostart_, true);
-      if (autostart_ && !startRequest())
-        return false;
-
       return true;
     }
   }
@@ -171,11 +163,6 @@ public:
       if (!initXml(robot, config))
         return false;
       state_ = INITIALIZED;
-
-      // autostart if needed
-      ros::Node::instance()->param(controller_name+"/autostart", autostart_, true);
-      if (autostart_ && !startRequest())
-        return false;
 
       return true;
     }
