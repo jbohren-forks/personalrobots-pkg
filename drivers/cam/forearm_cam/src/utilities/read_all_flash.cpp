@@ -59,12 +59,15 @@ int main(int argc, char** argv)
       fflush(stderr);
     }
     if (pr2FlashRead(camera, i, buffer) != 0) {
-      fprintf(stderr, "Flash read error\n");
-      return -1;
+      printf("r");
+      if (pr2FlashRead(camera, i, buffer) != 0) {
+        fprintf(stderr, "Flash read error\n");
+        return -1;
+      }
     }
-    if (fwrite(buffer, FLASH_PAGE_SIZE, 1, stdout) < FLASH_PAGE_SIZE)
+    if (fwrite(buffer, FLASH_PAGE_SIZE, 1, stdout) != 1)
     {
-      fprintf(stderr, "error: fwrite wrote less than requested. Image will be corrupt.");
+      fprintf(stderr, "error: fwrite did not write one item. Image will be corrupt.\n");
     }
   }
   

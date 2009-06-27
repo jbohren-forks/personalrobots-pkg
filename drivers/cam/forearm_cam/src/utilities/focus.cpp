@@ -89,8 +89,8 @@ void callback(const image_msgs::ImageConstPtr& msg)
     {                
       int a = (x + y) & 1;
 
-      if (a == 0)
-        continue;
+      //if (a == 0)
+      //  continue;
         
       int i = y * width + x;
       int i1 = i + width - 1;
@@ -115,11 +115,64 @@ void callback(const image_msgs::ImageConstPtr& msg)
   fflush(stdout);
 }
 
+void callback2(const image_msgs::ImageConstPtr& msg)
+{
+  int width = msg->uint8_data.layout.dim[1].size;
+  int height = msg->uint8_data.layout.dim[0].size;
+
+  if (oldwidth != width || oldheight != height)
+  {
+    oldwidth = width;
+    oldheight = height;
+    for (int i = 0; i < width * height; i++)
+      base[i] = 0;
+    fprintf(stderr, "Resetting base. Show a black screen!\n");
+  }
+
+  /*assert(width * height < BASESIZE);
+
+  for (int i = 0; i < width * height; i++)
+    if (base[i] > msg->uint8_data.data[i])
+      base[i] = msg->uint8_data.data[i];
+  */
+  printf("set yrange [0:255]\n");
+  printf("set terminal x11\n");
+  printf("plot \"-\" using 0:1 with lines\n");
+  for (int y = 0; y < height - 1; y++)
+  {
+    int max = 0;
+
+    for (int x = 1; x < width - 1; x++)
+    {                
+      int a = (x + y) & 1;
+
+      if (a == 0)
+        continue;
+        
+      int i = y * width + x;
+      int i1 = i + width - 1;
+      int i2 = i1 + 2;
+      int p = msg->uint8_data.data[i] - base[i];
+      int p1 = msg->uint8_data.data[i1] - base[i1];
+      int p2 = msg->uint8_data.data[i2] - base[i2];
+
+      int d1 = abs(p - p1);
+      int d2 = abs(p - p2);
+
+      if (d1 > max) max = d1;
+      if (d2 > max) max = d2;
+    }
+    printf("%i\n", max);
+  }
+  printf("e\n\n");
+  fflush(stdout);
+}
+
 int main(int argc, char **argv)
 {
   ros::init(argc, argv, "forearm_node");
   ros::NodeHandle nh;
-  ros::Subscriber sub = nh.subscribe("image", 2, callback);
+  ros::Subscriber sub = nh.subscribe("image", 1, callback2);
   ros::spin();
   return 0;
 }

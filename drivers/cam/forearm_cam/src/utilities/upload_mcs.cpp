@@ -231,6 +231,8 @@ int write_flash(char *if_name, char *ip_address, int sn)
   }
 
   ROS_INFO("Writing to flash. DO NOT ABORT OR TURN OFF CAMERA!!");
+  
+  unsigned char buff[FLASH_PAGE_SIZE];
 
   for (int page = 0; page < (firmwarelen + FLASH_PAGE_SIZE - 1) / FLASH_PAGE_SIZE; 
       page++)
@@ -243,11 +245,40 @@ int write_flash(char *if_name, char *ip_address, int sn)
 
     int addr = page * FLASH_PAGE_SIZE;
 
-    if (pr2FlashWrite(camera, page, (uint8_t *) firmware + addr) != 0) {
-      ROS_FATAL("Flash write error on page %i.", page);
-      ROS_FATAL("If you reset the camera it will probably not come up.");
-      ROS_FATAL("Try reflashing NOW, to possibly avoid a hard JTAG reflash.");
-      return -2;
+    for (int i = 0; ; i++)
+    {
+      if (i > 20) {
+        ROS_FATAL("Flash write error on page %i.", page);
+        ROS_FATAL("If you reset the camera it will probably not come up.");
+        ROS_FATAL("Try reflashing NOW, to possibly avoid a hard JTAG reflash.");
+        return -2;
+      }
+      
+      if (pr2FlashWrite(camera, page, (uint8_t *) firmware + addr) != 0)
+      {
+        printf("w");
+        fflush(stdout);
+        sleep(1);
+        continue;
+      }
+
+      if (pr2FlashRead(camera, page, (uint8_t *) buff) != 0)
+      {
+        printf("r");
+        fflush(stdout);
+        sleep(1);
+        continue;
+      }
+      
+      if (memcmp(buff, firmware + addr, FLASH_PAGE_SIZE)) 
+      {
+        printf("c");
+        fflush(stdout);
+        sleep(1);
+        continue;
+      }
+
+      break;
     }
   }
   fprintf(stderr, "\n");
@@ -257,7 +288,6 @@ int write_flash(char *if_name, char *ip_address, int sn)
   for (int page = 0; page < (firmwarelen + FLASH_PAGE_SIZE - 1) / FLASH_PAGE_SIZE; 
       page++)
   {
-    unsigned char buff[FLASH_PAGE_SIZE];
     if (page % 100 == 0)
     {
       fprintf(stderr, ".");
@@ -281,6 +311,8 @@ int write_flash(char *if_name, char *ip_address, int sn)
     }
   }
   fprintf(stderr, "\n");
+  
+  ROS_INFO("Success!");
 
   return 0;
 }
@@ -307,5 +339,4 @@ int main(int argc, char **argv)
 
   write_flash(if_name, ip_address, sn);  
   
-  ROS_INFO("Success!");
 }
