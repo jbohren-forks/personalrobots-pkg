@@ -1,7 +1,10 @@
 <launch>
-  <node pkg="move_arm" type="move_arm" args="robot_description:=robotdesc/pr2" output="screen">    
-    
-    <remap from="collision_map" to="collision_map_occ"/>
+  <node pkg="move_arm" type="move_arm" output="screen">    
+
+    <remap from="robot_description" to="robotdesc/pr2" />
+    <remap from="collision_map" to="collision_map_occ" />
+    <remap from="collision_map_update" to="collision_map_occ_update" />
+
     <remap from="arm_ik" to="pr2_ik_node/ik_service" />	
     <remap from="arm_ik_query" to="pr2_ik_node/ik_query" />
     
