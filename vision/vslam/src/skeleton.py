@@ -347,7 +347,7 @@ class Skeleton:
     self.pg.initializeOnlineIterations()
     self.vset = set(self.nodes) - self.oldvset # just take the new nodes
     self.vset = set(self.nodes)
-    print set(self.nodes) - self.oldvset
+#    print set(self.nodes) - self.oldvset
     for i in range(iters):
       self.pg.iterate(self.vset, True)
     self.pg.recomputeAllTransformations()
@@ -394,7 +394,7 @@ class Skeleton:
   def add_links(self, this, far):
     self.timer['gcc'].start()
     coll = [ self.PE(this, f) + (f,) for f in far ]
-    print coll
+#    print coll
     self.timer['gcc'].stop()
     id0 = this
     # print coll
