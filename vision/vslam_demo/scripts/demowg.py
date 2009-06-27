@@ -43,6 +43,10 @@ from math import *
 
 ########################################################################
 
+# parameters set for indoor tracking
+
+########################################################################
+
 from visual_odometry.visualodometer import VisualOdometer, Pose, from_xyz_euler
 from stereo_utils.stereo import ComputedDenseStereoFrame, SparseStereoFrame
 from stereo_utils.descriptor_schemes import DescriptorSchemeCalonder, DescriptorSchemeSAD
@@ -118,18 +122,19 @@ class Demo:
     self.source = source
     self.inlier_history = []
     self.label = 0
-    self.skel_dist_thresh = 0.1;        # in meters
+    self.skel_dist_thresh = 0.5;        # in meters
 
     # These variables can be tweaked:
 
     self.fd = FeatureDetectorFast(300)
-#    self.fd = FeatureDetectorStar(500)
-    self.ds = DescriptorSchemeCalonder()
+#    self.fd = FeatureDetectorStar(300)
+    self.ds = DescriptorSchemeCalonder(32,16) # set up lower sequential search window
     self.camera_preview = False
     self.vo = VisualOdometer(self.stereo_cam,
                              scavenge = False,
-                             position_keypoint_thresh = 0.1,
-                             angle_keypoint_thresh = 3*pi/180,
+                             position_keypoint_thresh = 0.3,
+                             angle_keypoint_thresh = 10*pi/180,
+                             inlier_thresh = 100,
                              sba=None,
                              num_ransac_iters=500,
                              inlier_error_threshold = 3.0)
@@ -244,7 +249,7 @@ class Demo:
     return self.skel.newpose(id)
 
   def optimize(self):
-    self.skel.optimize(1000)
+    self.skel.optimize(2000)
 
   def ioptimize(self,iters = 30):
     self.skel.ioptimize(iters)
