@@ -62,7 +62,7 @@ def main():
     spawn_controller = rospy.ServiceProxy('spawn_controller', SpawnController)
     kill_controller = rospy.ServiceProxy('kill_controller', KillController)
 
-    resp = spawn_controller(xml_for(joint))
+    resp = spawn_controller(xml_for(joint), 1)
     if len(resp.ok) < 1 or not resp.ok[0]:
         print "Failed to spawn effort controller"
         sys.exit(1)
