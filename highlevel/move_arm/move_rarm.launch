@@ -15,5 +15,8 @@
     <remap from="motion_plan" to="plan_kinematic_path" />
     
     <param name="arm" type="string" value="right_arm" />
+    <param name="refresh_interval_collision_map" type="double" value="5.0" />
+    <param name="refresh_interval_kinematic_state" type="double" value="1.0" />
+
   </node>
 </launch>

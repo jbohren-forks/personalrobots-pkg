@@ -291,7 +291,10 @@ bool planning_environment::PlanningMonitor::isPathValidAux(const motion_planning
     
     getEnvironmentModel()->lock();
     getKinematicModel()->lock();
-    
+
+    bool vlevel = getEnvironmentModel()->getVerbose();
+    getEnvironmentModel()->setVerbose(verbose);
+       
     // figure out the poses of the robot model
     getKinematicModel()->computeTransforms(sp->getParams());
     // update the collision space
@@ -362,6 +365,7 @@ bool planning_environment::PlanningMonitor::isPathValidAux(const motion_planning
 	    ROS_INFO("isPathValid: Goal state does not satisfy constraints");
     }
     
+    getEnvironmentModel()->setVerbose(vlevel);
     getKinematicModel()->unlock();
     getEnvironmentModel()->unlock();
     
