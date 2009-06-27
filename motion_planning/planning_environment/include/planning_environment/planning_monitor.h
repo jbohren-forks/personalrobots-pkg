@@ -56,12 +56,12 @@ namespace planning_environment
 	
 	PlanningMonitor(CollisionModels *cm, std::string frame_id) : CollisionSpaceMonitor(static_cast<CollisionModels*>(cm), frame_id)
 	{
-	    nh_.param<double>("~refresh_interval_collision_map", intervalCollisionMap_, 0.0);
-	    nh_.param<double>("~refresh_interval_kinematic_state", intervalState_, 0.0);
+	    loadParams();
 	}
 	
 	PlanningMonitor(CollisionModels *cm) : CollisionSpaceMonitor(static_cast<CollisionModels*>(cm))
 	{
+	    loadParams();
 	}
 	
 	virtual ~PlanningMonitor(void)
@@ -96,7 +96,10 @@ namespace planning_environment
 	bool transformJointToFrame(motion_planning_msgs::KinematicJoint &kj, const std::string &target) const;
 	
     protected:
-	
+
+	/** \brief Load ROS parameters */
+	void loadParams(void);
+
 	/** \brief Transform the joint parameters (if needed) to a target frame */
 	bool transformJoint(const std::string &name, unsigned int index, std::vector<double> &params, roslib::Header &header, const std::string& target) const;
 	

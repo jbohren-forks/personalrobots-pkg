@@ -38,6 +38,12 @@
 #include "planning_environment/kinematic_state_constraint_evaluator.h"
 #include <boost/scoped_ptr.hpp>
 
+void planning_environment::PlanningMonitor::loadParams(void)
+{
+    nh_.param<double>("~refresh_interval_collision_map", intervalCollisionMap_, 0.0);
+    nh_.param<double>("~refresh_interval_kinematic_state", intervalState_, 0.0);
+}
+
 bool planning_environment::PlanningMonitor::isEnvironmentSafe(void) const
 {
     if (!isMapUpdated(intervalCollisionMap_))
