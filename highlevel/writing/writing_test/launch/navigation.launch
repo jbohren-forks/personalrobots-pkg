@@ -12,4 +12,36 @@
   <include file="$(find 2dnav_pr2)/config/map_server.xml" />
   <include file="$(find 2dnav_pr2)/move_base/move_base.xml" />
 
+<!-- joystick -->
+  <param name="axis_vx" value="3" type="int"/>
+  <param name="axis_vy" value="2" type="int"/>
+  <param name="axis_vw" value="0" type="int"/>
+  <param name="pan" value="4" type="int"/>
+  <param name="tilt" value="5" type="int"/>
+  <param name="max_vw" value="1.0" />
+  <param name="max_vx" value="0.6" />
+  <param name="max_vy" value="0.6" />
+  <param name="max_vw_run" value="1.4" />
+  <param name="max_vx_run" value="1.0" />
+  <param name="max_vy_run" value="1.0" />
+  <param name="run_button" value="5" type="int" />
+  <param name="torso_dn_button" value="1" type="int" />
+  <param name="torso_up_button" value="3" type="int" />
+  <param name="joy_msg_timeout" value="100.0"/>
+  <param name="deadman_button" value="4" type="int"/>
+  <node pkg="teleop_base" type="teleop_base" output="screen" args="--deadman_no_publish" respawn="true" machine="four"/>
+
+<!-- Robot pose ekf -->
+  <node pkg="robot_pose_ekf" type="robot_pose_ekf" args="robot_pose_ekf" machine="four" name="robot_pose_ekf">
+    <param name="freq" value="30.0"/>
+    <param name="sensor_timeout" value="1.0"/>
+    <param name="odom_used" value="true"/>
+    <param name="imu_used" value="true"/>
+    <param name="vo_used" value="false"/>
+  </node>
+
+  <node pkg="tf" machine="two" type="change_notifier"/>
+
+
+
 </launch>

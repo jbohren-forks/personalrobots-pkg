@@ -5,9 +5,13 @@
 <!-- controllers-->
   <include file="$(find writing_test)/launch/controllers.launch" />
 
-
+<!--navigation-->
+  <include file="$(find writing_test)/launch/navigation.launch" />
 <!-- perception-->
   <include file="$(find writing_test)/launch/perception.launch" />
+
+<!-- safety_core actions -->
+  <node machine="four" pkg="safety_core" type="run_tuck_arms" output="screen" respawn="true" />
 
 <!-- writing_core actions -->
   <include file="$(find writing_core)/launch/writing_actions.launch" />

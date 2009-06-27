@@ -1,11 +1,41 @@
 <launch>
 
   <!-- Stereo Camera -->
-  <group ns="stereo">
-    <param name="do_rectify" type="bool" value="true"/>
-    <param name="do_stereo" type="bool" value="true" />
+  <group ns="stereo">\
+    <node machine="four" pkg="stereo_image_proc" type="stereoproc" args="" output="screen" name="stereoproc">
+      <param name="do_rectify" type="bool" value="true"/>
+      <param name="do_stereo" type="bool" value="true" />
+    </node>
   </group>
-  <node machine="four" pkg="stereo_image_proc" type="stereoproc" args="" output="screen"/>
+
+ <!-- Filter for tilt laser shadowing/veiling -->
+  <node pkg="laser_scan" type="scan_to_cloud" respawn="true" machine="three" name="tilt_shadow_filter">
+    <param name="scan_filters" textfile="$(find laser_scan)/default_scan_shadows.xml" />
+    <param name="cloud_filters" textfile="$(find laser_scan)/point_cloud_footprint.filters.xml" />
+    <param name="scan_topic" value="tilt_scan" />
+    <param name="cloud_topic" value="tilt_scan_filtered" />  
+    <param name="high_fidelity" value="true" />
+  </node>
+
+  <!-- Filter for base laser shadowing/veiling -->
+  <node pkg="laser_scan" type="scan_to_cloud" respawn="true" machine="three" name="base_shadow_filter" >
+    <param name="scan_filters" textfile="$(find laser_scan)/default_scan_shadows.xml" />
+    <param name="cloud_filters" textfile="$(find laser_scan)/point_cloud_footprint.filters.xml" />
+    <param name="scan_topic" value="base_scan" />
+    <param name="cloud_topic" value="base_scan_marking" />
+  </node>
+
+ <!-- Laser scan assembler for tilt laser -->
+  <node pkg="point_cloud_assembler" type="laser_scan_assembler_srv" output="screen" name="laser_scan_assembler" respawn="true">
+    <remap from="scan_in" to="tilt_scan"/>
+    <param name="filters" textfile="$(find laser_scan)/default_scan_shadows.xml" />
+    <param name="tf_cache_time_secs" type="double" value="10.0" />
+    <param name="max_scans" type="int" value="1000" />
+    <param name="ignore_laser_skew" type="bool" value="true" />
+    <param name="fixed_frame" type="string" value="odom_combined" />
+    <param name="downsample_factor" type="int" value="1" />
+  </node>
+
 
   <!-- Whiteboard detection -->
   <node pkg="point_cloud_assembler" type="laser_scan_assembler_srv" output="screen"  name="laser_scan_assembler" respawn="true">

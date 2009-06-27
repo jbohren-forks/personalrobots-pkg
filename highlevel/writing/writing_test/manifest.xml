@@ -18,7 +18,9 @@
   <depend package="move_base"/>
   <depend package="safety_core"/>
   <depend package="nav_robot_actions"/>
-
+  <depend package="point_cloud_assembler"/>
+  <depend package="2dnav_pr2"/>
+  
 
 </package>
 
