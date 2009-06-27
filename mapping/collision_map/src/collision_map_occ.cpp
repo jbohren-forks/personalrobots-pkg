@@ -59,6 +59,8 @@ public:
 	// advertise our topics: full map and updates
 	cmapPublisher_ = nh_.advertise<robot_msgs::CollisionMap>("collision_map_occ", 1);
 	cmapUpdPublisher_ = nh_.advertise<robot_msgs::CollisionMap>("collision_map_occ_update", 1);
+	if (publishOcclusion_)
+  	    occPublisher_ = nh_.advertise<robot_msgs::CollisionMap>("collision_map_occ_occlusion", 1);
 
 	// create a message notifier (and enable subscription) for both the full map and for the updates
 	mnCloud_ = new tf::MessageNotifier<robot_msgs::PointCloud>(tf_, boost::bind(&CollisionMapperOcc::cloudCallback, this, _1), "cloud_in", "", 1);
@@ -164,6 +166,7 @@ private:
 		 bi_.sensorX, bi_.sensorY, bi_.sensorZ, fixedFrame_.c_str(), bi_.radius);
 
 	nh_.param<std::string>("~cloud_annotation", cloud_annotation_, std::string());
+	nh_.param<bool>("~publish_occlusion", publishOcclusion_, false);
 
 	// compute some useful values
 	bi_.sx = (int)(0.5 + (bi_.sensorX - bi_.originX) / bi_.resolution);
@@ -249,8 +252,8 @@ private:
 	set_difference(obstacles.begin(), obstacles.end(), currentMap_.begin(), currentMap_.end(),
 		       std::inserter(diff, diff.begin()), CollisionPointOrder());
 	mapProcessing_.unlock();
-	
-	publishCollisionMap(diff, cmapUpdPublisher_);
+	if (!diff.empty())
+	    publishCollisionMap(diff, cmapUpdPublisher_);
     }
     
     void cloudCallback(const robot_msgs::PointCloudConstPtr &cloud)
@@ -374,6 +377,8 @@ private:
 			   keep.begin(), keep.end(),
 			   std::inserter(currentMap_, currentMap_.begin()),
 			   CollisionPointOrder()); 
+	    if (publishOcclusion_)
+	        publishCollisionMap(keep, occPublisher_);
 	}
     }
     
@@ -745,9 +750,11 @@ private:
     ros::NodeHandle                              nh_;
     ros::Publisher                               cmapPublisher_;
     ros::Publisher                               cmapUpdPublisher_;
+    ros::Publisher                               occPublisher_;
     roslib::Header                               header_;
     std::string                                  cloud_annotation_;
-    
+    bool                                         publishOcclusion_;
+
     boost::mutex                                 mapProcessing_;
     CMap                                         currentMap_;
     
@@ -760,7 +767,7 @@ private:
 int main (int argc, char** argv)
 {
     ros::init(argc, argv, "collision_map_occ");
-    
+
     CollisionMapperOcc cm;
 
     ros::spin();
