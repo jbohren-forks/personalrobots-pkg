@@ -258,21 +258,21 @@ bool planning_environment::PlanningMonitor::isStateValidAtGoal(const planning_mo
 }
 
 
-bool planning_environment::PlanningMonitor::isPathValid(const motion_planning_msgs::KinematicPath &path) const
+bool planning_environment::PlanningMonitor::isPathValid(const motion_planning_msgs::KinematicPath &path, bool verbose) const
 {
     if (path.header.frame_id != getFrameId())
     {
 	motion_planning_msgs::KinematicPath pathT = path;
 	if (transformPathToFrame(pathT, getFrameId()))
-	    return isPathValidAux(pathT);
+	  return isPathValidAux(pathT, verbose);
 	else
 	    return false;
     }
     else
-	return isPathValidAux(path);
+      return isPathValidAux(path, verbose);
 }
 
-bool planning_environment::PlanningMonitor::isPathValidAux(const motion_planning_msgs::KinematicPath &path) const
+bool planning_environment::PlanningMonitor::isPathValidAux(const motion_planning_msgs::KinematicPath &path, bool verbose) const
 {    
     boost::scoped_ptr<planning_models::StateParams> sp(getKinematicModel()->newStateParams());
     
@@ -339,10 +339,17 @@ bool planning_environment::PlanningMonitor::isPathValidAux(const motion_planning
 	
 	// check for collision
 	valid = !getEnvironmentModel()->isCollision();
-    
+
+	if (verbose && !valid)
+	    ROS_INFO("isPathValid: State %d is in collision", i);
+
 	// check for validity
 	if (valid)
+	{
 	    valid = ks.decide(sp->getParams());
+	    if (verbose && !valid)
+	        ROS_INFO("isPathValid: State %d does not satisfy constraints", i);
+	}
     }
 
     // if we got to the last state, we also check the goal constraints
@@ -351,6 +358,8 @@ bool planning_environment::PlanningMonitor::isPathValidAux(const motion_planning
 	ks.add(getKinematicModel(), kcGoal_.joint_constraint);
 	ks.add(getKinematicModel(), kcGoal_.pose_constraint);
 	valid = ks.decide(sp->getParams());
+	if (verbose && !valid)
+	    ROS_INFO("isPathValid: Goal state does not satisfy constraints");
     }
     
     getKinematicModel()->unlock();

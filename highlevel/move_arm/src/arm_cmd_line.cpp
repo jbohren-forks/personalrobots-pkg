@@ -303,7 +303,7 @@ int main(int argc, char **argv)
 	    else
 	    {
 		std::cout << "Moving to " << config << "..." << std::endl;
-		if (move_arm.execute(goals[config], feedback, ros::Duration(10.0)) != robot_actions::SUCCESS)
+		if (move_arm.execute(goals[config], feedback, ros::Duration(allowed_time)) != robot_actions::SUCCESS)
 		    std::cerr << "Failed achieving goal" << std::endl;
 		else
 		    std::cout << "Success!" << std::endl;

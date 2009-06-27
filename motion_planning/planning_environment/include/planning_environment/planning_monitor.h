@@ -78,7 +78,7 @@ namespace planning_environment
 	bool isStateValidAtGoal(const planning_models::StateParams *state) const;
 	
 	/** \brief Check if the path is valid */
-	bool isPathValid(const motion_planning_msgs::KinematicPath &path) const;
+	bool isPathValid(const motion_planning_msgs::KinematicPath &path, bool verbose) const;
 	
 	/** \brief Set the kinematic constraints the monitor should use when checking a path */
 	void setPathConstraints(const motion_planning_msgs::KinematicConstraints &kc);
@@ -104,7 +104,7 @@ namespace planning_environment
 	bool transformJoint(const std::string &name, unsigned int index, std::vector<double> &params, roslib::Header &header, const std::string& target) const;
 	
 	/** \brief Check the path assuming it is in the frame of the model */
-	bool isPathValidAux(const motion_planning_msgs::KinematicPath &path) const;
+	bool isPathValidAux(const motion_planning_msgs::KinematicPath &path, bool verbose) const;
 	
 	motion_planning_msgs::KinematicConstraints kcPath_;
 	motion_planning_msgs::KinematicConstraints kcGoal_;

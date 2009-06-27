@@ -183,6 +183,7 @@ namespace move_arm
 	int                trajectoryId = -1;
 	bool               approx       = false;
 	ros::Duration      eps(0.01);
+	ros::Duration      epsLong(0.1);
 	while (true)
 	{
 	    // if we have to stop, do so
@@ -210,7 +211,10 @@ namespace move_arm
 		if (clientPlan.call(req, res))
 		{
 		    if (res.path.states.empty())
-			ROS_WARN("Unable to plan path to desired goal");
+		    {
+		        ROS_WARN("Unable to plan path to desired goal");
+			epsLong.sleep();
+		    }
 		    else
 		    {
 			if (res.unsafe)
@@ -250,12 +254,15 @@ namespace move_arm
 	    if (isPreemptRequested() || !node_handle_.ok())
 		result = robot_actions::PREEMPTED;
 
+	    // if preeemt was requested while we are planning, terminate
+	    if (result != robot_actions::SUCCESS && feedback == pr2_robot_actions::MoveArmState::PLANNING)
+	        break;
 
 	    // stop the robot if we need to
 	    if (feedback == pr2_robot_actions::MoveArmState::MOVING)
 	    {
 		bool safe = planningMonitor_->isEnvironmentSafe();
-		bool valid = planningMonitor_->isPathValid(currentPath_);
+		bool valid = planningMonitor_->isPathValid(currentPath_, true);
 		if (result == robot_actions::PREEMPTED || !safe || !valid)
 		{
 		    if (result == robot_actions::PREEMPTED)
