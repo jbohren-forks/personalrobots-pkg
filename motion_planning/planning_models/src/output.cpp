@@ -38,6 +38,7 @@
 #include <boost/thread/mutex.hpp>
 #include <iostream>
 #include <cstdlib>
+#include <cstdio>
 
 static planning_models::msg::OutputHandlerSTD _defaultOutputHandler;
 static planning_models::msg::OutputHandler   *OUTPUT_HANDLER = static_cast<planning_models::msg::OutputHandler*>(&_defaultOutputHandler);
