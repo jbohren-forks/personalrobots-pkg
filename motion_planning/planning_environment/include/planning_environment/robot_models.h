@@ -82,7 +82,7 @@ namespace planning_environment
 	
 	RobotModels(const std::string &description)
 	{
-	    description_ = nh_.mapName(description);
+	    description_ = nh_.resolveName(description);
 	    loaded_models_ = false;
 	    loadRobot();
 	}
