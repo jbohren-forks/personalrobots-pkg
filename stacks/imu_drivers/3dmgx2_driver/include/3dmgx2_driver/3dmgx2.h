@@ -30,6 +30,7 @@
 
 #include <fstream>
 #include <stdexcept>
+#include <stdint.h>
 
 namespace ms_3dmgx2_driver
 {
