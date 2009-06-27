@@ -1,3 +1,4 @@
+#include <cstdio>
 #include "laser_scan/LaserScan.h"
 #include "ros/node.h"
 #include "tf/transform_listener.h"
