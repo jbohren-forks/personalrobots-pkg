@@ -108,7 +108,7 @@ void kinematic_planning::GoalToState::setup(ompl::kinematic::SpaceInformationKin
     for (int i = 0 ; i < dim_ ; ++i)
 	if (bounds_[i].first > bounds_[i].second)
 	{
-	    ROS_ERROR("Inconsistent set of joint constraints");
+	    ROS_ERROR("Inconsistent set of joint constraints at joint with index %d", i);
 	    break;
 	}
     

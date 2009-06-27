@@ -211,11 +211,6 @@ private:
     // planning data
     ModelMap                                                        models_;
     RKPRequestHandler                                               requestHandler_;
-
-    // intervals for determining whether the monitored state & map are up to date
-    double                                                          intervalCollisionMap_;
-    double                                                          intervalState_;
-    
 };
 
 class OutputHandlerROScon : public ompl::msg::OutputHandler

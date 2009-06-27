@@ -186,7 +186,7 @@ bool kinematic_planning::SpaceInformationRKPModel::checkBounds(void)
 	if (m_stateComponent[i].minValue > m_stateComponent[i].maxValue)
 	{
 	    valid = false;
-	    ROS_ERROR("Inconsistent set of joint constraints imposed on path. Sampling will not find any valid states");
+	    ROS_ERROR("Inconsistent set of joint constraints imposed on path at index %d. Sampling will not find any valid states", i);
 	    break;
 	}
     return valid;

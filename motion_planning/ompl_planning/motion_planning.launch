@@ -1,8 +1,11 @@
 
 <launch> 
-	<node pkg="ompl_planning" type="motion_planner" args="robot_description:=robotdesc/pr2 collision_map:=collision_map_occ" respawn="true" output="screen">
-	      <param name="refresh_interval_collision_map" type="double" value="0.0" />
-	      <param name="refresh_interval_kinematic_state" type="double" value="0.0" />
-	      <param name="verbose_collisions" type="bool" value="false" />
-	</node>
+  <node pkg="ompl_planning" type="motion_planner" respawn="true" output="screen">
+    <remap from="robot_description" to="robotdesc/pr2" />
+    <remap from="collision_map" to="collision_map_occ" />
+    <remap from="collision_map_update" to="collision_map_occ_update" />
+    <param name="refresh_interval_collision_map" type="double" value="0.0" />
+    <param name="refresh_interval_kinematic_state" type="double" value="0.0" />
+    <param name="verbose_collisions" type="bool" value="false" />
+  </node>
 </launch>
