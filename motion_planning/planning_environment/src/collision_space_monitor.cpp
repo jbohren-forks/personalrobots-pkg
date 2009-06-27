@@ -104,7 +104,8 @@ void planning_environment::CollisionSpaceMonitor::waitForMap(void) const
 
 void planning_environment::CollisionSpaceMonitor::collisionMapUpdateCallback(const robot_msgs::CollisionMapConstPtr &collisionMap)
 {
-    updateCollisionSpace(collisionMap, false);
+    if (collisionMap->boxes.size() > 0)
+       updateCollisionSpace(collisionMap, false);
 }
 
 void planning_environment::CollisionSpaceMonitor::collisionMapCallback(const robot_msgs::CollisionMapConstPtr &collisionMap)
@@ -115,6 +116,7 @@ void planning_environment::CollisionSpaceMonitor::collisionMapCallback(const rob
 void planning_environment::CollisionSpaceMonitor::updateCollisionSpace(const robot_msgs::CollisionMapConstPtr &collisionMap, bool clear)
 {
     int n = collisionMap->get_boxes_size();
+    
     ROS_DEBUG("Received %d points (collision map)", n);
     
     if (onBeforeMapUpdate_ != NULL)
@@ -124,7 +126,7 @@ void planning_environment::CollisionSpaceMonitor::updateCollisionSpace(const rob
     bool transform = !frame_id_.empty() && collisionMap->header.frame_id != frame_id_;
     
     ros::WallTime startTime = ros::WallTime::now();
-    double *data = new double[4 * n];	
+    double *data = n > 0 ? new double[4 * n] : NULL;	
 
     if (transform)
     {
@@ -179,10 +181,12 @@ void planning_environment::CollisionSpaceMonitor::updateCollisionSpace(const rob
     collisionSpace_->lock();
     if (clear)
 	collisionSpace_->clearObstacles();
-    collisionSpace_->addPointCloud(n, data);
+    if (n > 0)
+        collisionSpace_->addPointCloud(n, data);
     collisionSpace_->unlock();
     
-    delete[] data;
+    if (data)
+       delete[] data;
     
     double tupd = (ros::WallTime::now() - startTime).toSec();
     ROS_DEBUG("Updated map model in %f seconds", tupd);
