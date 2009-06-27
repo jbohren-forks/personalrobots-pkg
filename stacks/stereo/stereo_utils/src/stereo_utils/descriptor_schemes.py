@@ -17,8 +17,14 @@ class DescriptorScheme(TimedClass):
 
   timing = []
 
-  def __init__(self):
+# Has two search windows, one for sequential matching and one for
+#   wide-baseline matching
+  def __init__(self, xs=64, ys=32, wxs = 64, wys = 32):
     TimedClass.__init__(self, self.timing + ['Match'])
+    self.xs = xs
+    self.ys = ys
+    self.wxs = wxs
+    self.wys = wys
 
   def name(self):
     return self.__class__.__name__
@@ -33,7 +39,7 @@ class DescriptorScheme(TimedClass):
     """
     pass
 
-  def match0(self, af0kp, af0descriptors, af1kp, af1descriptors):
+  def match0(self, af0kp, af0descriptors, af1kp, af1descriptors, wide = False):
     """
     Given keypoints and descriptors for af0 and af1, returns
     a list of pairs *(a,b)*, where
@@ -43,6 +49,13 @@ class DescriptorScheme(TimedClass):
 
     if af0kp == [] or af1kp == []:
       return []
+    if wide:
+      xs = self.wxs
+      ys = self.wys
+    else:
+      xs = self.xs
+      ys = self.ys
+
     self.calls += 1
     self.timer['Match'].start()
     Xs = vop.array([k[0] for k in af1kp])
@@ -50,8 +63,8 @@ class DescriptorScheme(TimedClass):
     pairs = []
     matcher = self.desc2matcher(af1descriptors)
     for (i,(ki,di)) in enumerate(zip(af0kp, af0descriptors)):
-      predX = (abs(Xs - ki[0]) < 64)
-      predY = (abs(Ys - ki[1]) < 32)
+      predX = (abs(Xs - ki[0]) < xs)
+      predY = (abs(Ys - ki[1]) < ys)
       hits = vop.where(predX & predY, 1, 0).tostring()
       best = self.search(di, matcher, hits)
       if best != None:
@@ -88,7 +101,7 @@ class DescriptorSchemeCalonder(DescriptorScheme):
   """
   timing = [ 'BuildMatcher', 'Collect' ]
 
-  def __init__(self):
+  def __init__(self, *args):
     self.cl = calonder.classifier()
     #self.cl.setThreshold(0.0)
     search = [ '/u/prdata/calonder_trees/current.rtc', '/u/jamesb/current.rtc', None ]
@@ -99,7 +112,7 @@ class DescriptorSchemeCalonder(DescriptorScheme):
       if os.access(filename, os.R_OK):
         self.cl.read(filename)
         break
-    DescriptorScheme.__init__(self)
+    DescriptorScheme.__init__(self, *args)
 
   def collect0(self, frame, kp):
     self.timer['Collect'].start()
