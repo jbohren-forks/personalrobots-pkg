@@ -136,7 +136,7 @@ def transform_stamped_bt_to_msg(bt):
     msg = robot_msgs.msg.TransformStamped()
     msg.transform = transform_bt_to_msg(bt.transform)
     msg.header.frame_id = bt.frame_id
-    msg.header.stamp = bt.stamp
+    msg.header.stamp = roslib.rostime.Time(bt._sec, bt._nsec)
     msg.parent_id = bt.parent_id
     return msg
 
@@ -171,7 +171,7 @@ def pose_stamped_bt_to_msg(bt):
     msg = robot_msgs.msg.PoseStamped()
     msg.pose = pose_bt_to_msg(bt.pose)
     msg.header.frame_id = bt.frame_id
-    msg.header.stamp = bt.stamp
+    msg.header.stamp = roslib.rostime.Time(bt._sec, bt._nsec)
     return msg
 
 def point_msg_to_bt(msg):
