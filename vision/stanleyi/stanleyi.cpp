@@ -187,6 +187,11 @@ void Stanleyi::collectDataset(string bagfile, int samples_per_img) {
     if(mask_ == NULL)
       continue;
 	
+    // -- Aim the descriptor functions at the new image.
+    for(unsigned int j=0; j<descriptor.size(); j++) {
+      descriptor[j]->setImage(img_);
+    }
+
     // -- Randomly sample points from the image and get the features.
     srand ( time(NULL) );
     for(int i=0; i<samples_per_img; i++) {
@@ -194,6 +199,11 @@ void Stanleyi::collectDataset(string bagfile, int samples_per_img) {
       int col = rand() % img_->width;
       Matrix* result = NULL;
       object obj;
+
+      // -- Aim the descriptor functions at the new point.
+      for(unsigned int j=0; j<descriptor.size(); j++) {
+	descriptor[j]->setPoint(row, col);
+      }
 
       // -- Set the label.
       CvScalar s = cvGet2D(mask_, row, col);
@@ -205,29 +215,22 @@ void Stanleyi::collectDataset(string bagfile, int samples_per_img) {
       if(debug)
 	cout << "Label " << obj.label << endl;
 
+
+      // -- Compute all the descriptors.
       for(unsigned int j=0; j<descriptor.size(); j++) {
 	// -- For now, only accept points for which all features are computable.
 	bool success;
 	if(obj.label == 1 && getenv("DEBUG_POSITIVES") != NULL) 
-	  success = descriptor[j]->compute(img_, row, col, &result, true);
+	  success = descriptor[j]->compute(&result, true);
 	else
-	  success = descriptor[j]->compute(img_, row, col, &result, debug);
+	  success = descriptor[j]->compute(&result, debug);
 
 	if(!success)
 	  continue;
 
 	//      obj.features[descriptor[i]->name_] = *result;
       }
-      
-      for(unsigned int j=0; j<descriptor.size(); j++) {
-	descriptor[j]->clearPointCache();
-      }
     }
-    
-    for(unsigned int j=0; j<descriptor.size(); j++) {
-      descriptor[j]->clearImageCache();
-    }
-
   }
 }
   

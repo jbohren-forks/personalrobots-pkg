@@ -22,16 +22,16 @@ vector<ImageDescriptor*> setupImageDescriptors() {
   SuperpixelColorHistogram* sch2 = new SuperpixelColorHistogram(5, 0.5, 25, string("hue"), NULL, sch1);
   d.push_back(sch1);
   d.push_back(sch2);
-  d.push_back(new SuperpixelColorHistogram(20, 0.5, 25, string("sat"), sch1, sch1));
-  d.push_back(new SuperpixelColorHistogram(20, 0.5, 25, string("val"), sch1, sch1));
-  d.push_back(new SuperpixelColorHistogram(5, 0.5, 25, string("sat"), sch2, sch1));
-  d.push_back(new SuperpixelColorHistogram(5, 0.5, 25, string("val"), sch2, sch1));
-  d.push_back(new SuperpixelColorHistogram(20, 0.5, 10, string("hue"), sch1, sch1));
-  d.push_back(new SuperpixelColorHistogram(20, 0.5, 10, string("sat"), sch1, sch1));
-  d.push_back(new SuperpixelColorHistogram(20, 0.5, 10, string("val"), sch1, sch1));
-  d.push_back(new SuperpixelColorHistogram(5, 0.5, 10, string("hue"), sch2, sch1));
-  d.push_back(new SuperpixelColorHistogram(5, 0.5, 10, string("sat"), sch2, sch1));
-  d.push_back(new SuperpixelColorHistogram(5, 0.5, 10, string("val"), sch2, sch1));
+//   d.push_back(new SuperpixelColorHistogram(20, 0.5, 25, string("sat"), sch1, sch1));
+//   d.push_back(new SuperpixelColorHistogram(20, 0.5, 25, string("val"), sch1, sch1));
+//   d.push_back(new SuperpixelColorHistogram(5, 0.5, 25, string("sat"), sch2, sch1));
+//   d.push_back(new SuperpixelColorHistogram(5, 0.5, 25, string("val"), sch2, sch1));
+//   d.push_back(new SuperpixelColorHistogram(20, 0.5, 10, string("hue"), sch1, sch1));
+//   d.push_back(new SuperpixelColorHistogram(20, 0.5, 10, string("sat"), sch1, sch1));
+//   d.push_back(new SuperpixelColorHistogram(20, 0.5, 10, string("val"), sch1, sch1));
+//   d.push_back(new SuperpixelColorHistogram(5, 0.5, 10, string("hue"), sch2, sch1));
+//   d.push_back(new SuperpixelColorHistogram(5, 0.5, 10, string("sat"), sch2, sch1));
+//   d.push_back(new SuperpixelColorHistogram(5, 0.5, 10, string("val"), sch2, sch1));
 
   //  d.push_back(new SuperpixelColorHistogram(5, 0.5, 16));
   //d.push_back(new SuperpixelColorHistogram(20, 0.25, 10));
@@ -60,19 +60,30 @@ void whiten(Matrix* m) {
 *************  ImageDescriptor
 ****************************************************************************/
 
-void ImageDescriptor::commonDebug(IplImage* img, int row, int col) {
-  IplImage* display = cvCloneImage(img);
+void ImageDescriptor::setImage(IplImage* img) {
+  img_ = img;
+  clearImageCache();
+}
+
+void ImageDescriptor::setPoint(int row, int col) {
+  row_ = row;
+  col_ = col;
+  clearPointCache();
+}
+
+void ImageDescriptor::commonDebug() {
+  IplImage* display = cvCloneImage(img_);
   cvResetImageROI(display);
   CvFont* numbFont = new CvFont();
   cvInitFont( numbFont, CV_FONT_VECTOR0, 1.0f, 1.0f, 0, 1);
-  cvPutText(display, "+", cvPoint(col,row), numbFont, cvScalar(0,0,255));
+  cvPutText(display, "+", cvPoint(col_,row_), numbFont, cvScalar(0,0,255));
   cvNamedWindow("Input Image");
   cvShowImage("Input Image", display);
   cvWaitKey(0);
   cvReleaseImage(&display);
 }
 
-bool ImageDescriptor::compute(IplImage* img, int row, int col, Matrix** result, bool debug) {
+bool ImageDescriptor::compute(Matrix** result, bool debug) {
   return false;
 }
 
@@ -101,7 +112,7 @@ Patch::Patch(int raw_size, float scale)
   name_.assign(buf);
 }
 
-bool Patch::preCompute(IplImage* img, int row, int col, bool debug) {
+bool Patch::preCompute(bool debug) {
   if(debug)
     cout << "Computing " << name_ << endl;
   
@@ -111,16 +122,16 @@ bool Patch::preCompute(IplImage* img, int row, int col, bool debug) {
 
   // -- Catch edge cases.
   int half = ceil((float)raw_size_ / 2.0);
-  if(row-half < 0 || row+half >= img->height || col-half < 0 || col+half >= img->width) {
-    cout << "Out of bounds; size: " << raw_size_ << ", row: " << row << ", col: " << col << endl;
+  if(row_-half < 0 || row_+half >= img_->height || col_-half < 0 || col_+half >= img_->width) {
+    cout << "Out of bounds; size: " << raw_size_ << ", row: " << row_ << ", col_: " << col_ << endl;
     return false;
   }
   
   // -- Get the scaled patch.
-  //cout << "Setting roi to " << row-half << " " << col-half << " " << raw_size_ << endl;
-  cvSetImageROI(img, cvRect(col-half, row-half, raw_size_, raw_size_));
-  scaled_patch_ = cvCreateImage(cvSize(size_, size_), img->depth, img->nChannels);
-  cvResize(img, scaled_patch_,CV_INTER_AREA);
+  //cout << "Setting roi to " << row_-half << " " << col_-half << " " << raw_size_ << endl;
+  cvSetImageROI(img_, cvRect(col_-half, row_-half, raw_size_, raw_size_));
+  scaled_patch_ = cvCreateImage(cvSize(size_, size_), img_->depth, img_->nChannels);
+  cvResize(img_, scaled_patch_,CV_INTER_AREA);
   
   return true;
 }
@@ -149,9 +160,9 @@ IntensityPatch::IntensityPatch(int raw_size, float scale, bool whiten)
   result_size_ = size_ * size_;
 }
 
-bool IntensityPatch::compute(IplImage* img, int row, int col, NEWMAT::Matrix** result, bool debug) {
+bool IntensityPatch::compute(NEWMAT::Matrix** result, bool debug) {
   //Do common patch processing.  
-  if(!preCompute(img, row, col, debug))
+  if(!preCompute(debug))
     return false;
 
 
@@ -185,13 +196,13 @@ bool IntensityPatch::compute(IplImage* img, int row, int col, NEWMAT::Matrix** r
     cvResize(final_patch_, final_patch_rescaled, CV_INTER_NN);
     cvNamedWindow(name_.c_str());
     cvShowImage(name_.c_str(), final_patch_rescaled);
-    commonDebug(img, row, col);
+    commonDebug();
 
     cvReleaseImage(&final_patch_rescaled);
   }
    
   // -- Clean up.
-  cvResetImageROI(img);
+  cvResetImageROI(img_);
   return true;
 }
 
@@ -213,7 +224,7 @@ PatchStatistic::PatchStatistic(string type, Patch* patch) :
   }
 }
 
-bool PatchStatistic::compute(IplImage* img, int row, int col, NEWMAT::Matrix** result, bool debug) {
+bool PatchStatistic::compute(NEWMAT::Matrix** result, bool debug) {
 
   if(patch_ == NULL) {
     cout << "patch_ was null" << endl;
@@ -260,7 +271,7 @@ bool PatchStatistic::compute(IplImage* img, int row, int col, NEWMAT::Matrix** r
     display(**result);
 //     cvNamedWindow("fp");
 //     cvShowImage("fp", fp);
-    commonDebug(img, row, col);
+    commonDebug();
   }
 
   return true;
@@ -282,12 +293,12 @@ SuperpixelStatistic::SuperpixelStatistic(int seed_spacing, float scale, Superpix
   name_ = string(buf);
 }
 
-void SuperpixelStatistic::segment(IplImage* img, bool debug) {
+void SuperpixelStatistic::segment(bool debug) {
   ROS_DEBUG_COND(seg_ != NULL, "seg_ is not null, but is being recreated anyway!");
   
   // -- Downsample image.
-  IplImage* img_small = cvCreateImage(cvSize(((float)img->width)*scale_, ((float)img->height)*scale_), img->depth, img->nChannels);
-  cvResize(img, img_small, CV_INTER_AREA);
+  IplImage* img_small = cvCreateImage(cvSize(((float)img_->width)*scale_, ((float)img_->height)*scale_), img_->depth, img_->nChannels);
+  cvResize(img_, img_small, CV_INTER_AREA);
 
   // -- Create a grid of seed points.
   IplImage* seg_small = cvCreateImage( cvGetSize(img_small), IPL_DEPTH_32S, 1 );
@@ -350,7 +361,7 @@ void SuperpixelStatistic::segment(IplImage* img, bool debug) {
   }
 
   // -- Enlarge segmentation back to size of image.
-  seg_ = cvCreateImage( cvGetSize(img), IPL_DEPTH_32S, 1 );
+  seg_ = cvCreateImage( cvGetSize(img_), IPL_DEPTH_32S, 1 );
   cvResize(seg_small, seg_, CV_INTER_NN);
 
   // -- Compute the index.
@@ -379,11 +390,11 @@ void SuperpixelStatistic::segment(IplImage* img, bool debug) {
       }
   
     // paint the watershed image
-    IplImage* wshed = cvCloneImage( img );
-    IplImage* img_gray = cvCloneImage( img );
+    IplImage* wshed = cvCloneImage( img_ );
+    IplImage* img_gray = cvCloneImage( img_ );
     cvZero( wshed );
-    IplImage* marker_mask = cvCreateImage( cvGetSize(img), 8, 1 );
-    cvCvtColor( img, marker_mask, CV_BGR2GRAY );
+    IplImage* marker_mask = cvCreateImage( cvGetSize(img_), 8, 1 );
+    cvCvtColor( img_, marker_mask, CV_BGR2GRAY );
     cvCvtColor( marker_mask, img_gray, CV_GRAY2BGR );
 
     for(int i = 0; i < seg_->height; i++ )
@@ -437,10 +448,10 @@ SuperpixelColorHistogram::SuperpixelColorHistogram(int seed_spacing, float scale
 //   ranges_ = &range;
 }
 
-bool SuperpixelColorHistogram::compute(IplImage* img, int row, int col, NEWMAT::Matrix** result, bool debug) {
+bool SuperpixelColorHistogram::compute(NEWMAT::Matrix** result, bool debug) {
   // -- Make sure we have access to a segmentation and other per-image computation.
   if(seg_provider_ == NULL && seg_ == NULL)
-    segment(img, debug);
+    segment(debug);
   else if(seg_provider_ != NULL && seg_ == NULL) {
     seg_ = seg_provider_->seg_;
   }
@@ -453,16 +464,16 @@ bool SuperpixelColorHistogram::compute(IplImage* img, int row, int col, NEWMAT::
      val_ = hsv_provider_->val_;
   }
   if(hsv_provider_ == NULL && hsv_ == NULL) {
-    hsv_ = cvCreateImage( cvGetSize(img), 8, 3 );
-    hue_ = cvCreateImage( cvGetSize(img), 8, 1 );
-    sat_ = cvCreateImage( cvGetSize(img), 8, 1 );
-    val_ = cvCreateImage( cvGetSize(img), 8, 1 );
-    cvCvtColor(img, hsv_, CV_BGR2HSV);
+    hsv_ = cvCreateImage( cvGetSize(img_), 8, 3 );
+    hue_ = cvCreateImage( cvGetSize(img_), 8, 1 );
+    sat_ = cvCreateImage( cvGetSize(img_), 8, 1 );
+    val_ = cvCreateImage( cvGetSize(img_), 8, 1 );
+    cvCvtColor(img_, hsv_, CV_BGR2HSV);
     cvSplit(hsv_, hue_, sat_, val_, 0);
   }
 
   // -- Get the label at this point.
-  long label = CV_IMAGE_ELEM(seg_, long, row, col);
+  long label = CV_IMAGE_ELEM(seg_, long, row_, col_);
 
 
   // -- Choose which channel we wil use.
@@ -513,7 +524,7 @@ bool SuperpixelColorHistogram::compute(IplImage* img, int row, int col, NEWMAT::
 
   // -- Opencv histograms are broken! --
   // -- Create the mask for the histogram.
-//   IplImage* mask = cvCreateImage(cvGetSize(img), IPL_DEPTH_8U, 1);
+//   IplImage* mask = cvCreateImage(cvGetSize(img_), IPL_DEPTH_8U, 1);
 //   cvZero(mask);
 //   for(int r=0; r<mask->height; r++) {
 //     uchar* mask_ptr = (uchar*)(mask->imageData + r * mask->widthStep);
@@ -549,7 +560,7 @@ bool SuperpixelColorHistogram::compute(IplImage* img, int row, int col, NEWMAT::
 //     cvShowImage("Mask", mask);
     cout << "Max val for " << type_ << " is " << max_val << endl;
     histograms_[label]->print();
-    commonDebug(img, row, col);
+    commonDebug();
   }
 
   return true;
@@ -557,6 +568,8 @@ bool SuperpixelColorHistogram::compute(IplImage* img, int row, int col, NEWMAT::
 
 //! Release seg_, etc., if this object is the one that computes them; otherwise, just nullify the pointers.
 void SuperpixelColorHistogram::clearImageCache() {
+  ROS_DEBUG("Clearing the image cache for %s", name_.c_str());
+  
 
   if(hsv_provider_ == NULL) {
     cvReleaseImage(&hsv_);
@@ -661,11 +674,11 @@ void Histogram::clear() {
 
 /*
 
-EdgePatch::compute(IplImage* img, int row, int col, NEWMAT::Matrix** result, bool debug) {
-  Patch::compute(IplImage* img, row, col, result, debug);
-  IplImage* gray = cvCreateImage(cvGetSize(img), IPL_DEPTH_8U, 1);
+EdgePatch::compute(NEWMAT::Matrix** result, bool debug) {
+  Patch::compute(IplImage* img_, row_, col_, result, debug);
+  IplImage* gray = cvCreateImage(cvGetSize(img_), IPL_DEPTH_8U, 1);
   IplImage* detail_edge = cvCloneImage(gray);
-  cvCvtColor(img, gray, CV_BGR2GRAY);
+  cvCvtCol_or(img_, gray, CV_BGR2GRAY);
   cvCanny(gray, detail_edge, thresh1_, thresh2_);
   cvNamedWindow("detail_edge");
   cvShowImage("detail_edge", detail_edge);
@@ -699,13 +712,13 @@ EdgePatch::compute(IplImage* img, int row, int col, NEWMAT::Matrix** result, boo
     cvResize(final_patch_, final_patch_rescaled, CV_INTER_NN);
     cvNamedWindow(name_.c_str());
     cvShowImage(name_.c_str(), final_patch_rescaled);
-    commonDebug(img, row, col);
+    commonDebug(img_, row_, col_);
 
     cvReleaseImage(&final_patch_rescaled);
   }
    
   // -- Clean up.
-  cvResetImageROI(img);
+  cvResetImageROI(img_);
   return true;
 }
 
@@ -725,7 +738,7 @@ Hog::Hog(Patch* patch) {
   cvHog = HOGDescriptor(cvGetSize(fp), cvSize(blocksz, blocksz), cvSize(8,8), cvSize(8,8), 1);
 }
 
-bool Hog::compute(IplImage* img, int row, int col, NEWMAT::Matrix** result, bool debug);
+bool Hog::compute(NEWMAT::Matrix** result, bool debug);
 */
 
 

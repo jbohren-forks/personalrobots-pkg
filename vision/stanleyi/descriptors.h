@@ -32,13 +32,18 @@ class ImageDescriptor {
  public:
   string name_;
   unsigned int result_size_;
+  IplImage* img_;
+  int row_;
+  int col_;
 
-  virtual bool compute(IplImage* img, int row, int col, NEWMAT::Matrix** result, bool debug) = 0;
+  virtual bool compute(NEWMAT::Matrix** result, bool debug) = 0;
   virtual void display(const NEWMAT::Matrix& result) = 0;
   virtual void clearPointCache() = 0;
   virtual void clearImageCache() = 0;
   //! Show the input image and a red + at the point at which the descriptor is being computed.
-  void commonDebug(IplImage* img, int row, int col);
+  void commonDebug();
+  void setImage(IplImage* img);
+  void setPoint(int row, int col);
 };
 
 class Patch : public ImageDescriptor {
@@ -57,7 +62,7 @@ class Patch : public ImageDescriptor {
 
   Patch(int raw_size, float scale);
   //! Common patch constructor computation.
-  bool preCompute(IplImage* img, int row, int col, bool debug);
+  bool preCompute(bool debug);
   //virtual void display(const NEWMAT::Matrix& result) {}
   void clearPointCache();
   //virtual void clearImageCache();
@@ -70,7 +75,7 @@ class IntensityPatch : public Patch {
   bool whiten_;
 
   IntensityPatch(int raw_size, float scale, bool whiten);
-  bool compute(IplImage* img, int row, int col, NEWMAT::Matrix** result, bool debug);
+  bool compute(NEWMAT::Matrix** result, bool debug);
   void display(const NEWMAT::Matrix& result) {}
   void clearImageCache() {}
 };
@@ -83,7 +88,7 @@ class PatchStatistic : public ImageDescriptor {
   Patch* patch_;
 
   PatchStatistic(string type, Patch* patch);
-  bool compute(IplImage* img, int row, int col, NEWMAT::Matrix** result, bool debug);
+  bool compute(NEWMAT::Matrix** result, bool debug);
   void display(const NEWMAT::Matrix& result);
   void clearPointCache() {}
   void clearImageCache() {}
@@ -101,7 +106,7 @@ class SuperpixelStatistic : public ImageDescriptor {
 
   SuperpixelStatistic(int seed_spacing, float scale, SuperpixelStatistic* provider);
   //! Computes superpixels and puts into seg_, and computes the superpixel to pixel index.  Is called automatically, if necessary, by the compute(.) function.
-  void segment(IplImage* img, bool debug);
+  void segment(bool debug);
 };
 
 class SuperpixelColorHistogram : public SuperpixelStatistic {
@@ -116,7 +121,7 @@ class SuperpixelColorHistogram : public SuperpixelStatistic {
   map<int, Histogram*> histograms_;
 
   SuperpixelColorHistogram(int seed_spacing, float scale, int nBins, string type, SuperpixelStatistic* seg_provider=NULL, SuperpixelColorHistogram* hsv_provider_=NULL);
-  bool compute(IplImage* img, int row, int col, NEWMAT::Matrix** result, bool debug);
+  bool compute(NEWMAT::Matrix** result, bool debug);
   void display(const NEWMAT::Matrix& result) {}
   void clearPointCache() {}
   void clearImageCache();
@@ -146,7 +151,7 @@ class Hog : public ImageDescriptor {
   HOGDescriptor cvHog;
 
   Hog(Patch* patch);
-  bool compute(IplImage* img, int row, int col, NEWMAT::Matrix** result, bool debug);
+  bool compute(NEWMAT::Matrix** result, bool debug);
   void display(const NEWMAT::Matrix& result) {}
   void clearPointCache() {}
   void clearImageCache() {}
