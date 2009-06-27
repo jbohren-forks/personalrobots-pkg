@@ -394,6 +394,7 @@ class Skeleton:
   def add_links(self, this, far):
     self.timer['gcc'].start()
     coll = [ self.PE(this, f) + (f,) for f in far ]
+    print coll
     self.timer['gcc'].stop()
     id0 = this
     # print coll
@@ -440,7 +441,7 @@ class Skeleton:
     self.timer['descriptors'].stop()
 
   def PE(self, af0, af1):
-    pairs = [ (a,b) for (a,b,_) in self.ds.match0(self.node_kp[af1], self.node_descriptors[af1], self.node_kp[af0], self.node_descriptors[af0]) ]
+    pairs = [ (a,b) for (a,b,_) in self.ds.match0(self.node_kp[af1], self.node_descriptors[af1], self.node_kp[af0], self.node_descriptors[af0],True) ]
     inl,R,T = self.pe.estimateC(self.cam, self.node_kp[af0], self.cam, self.node_kp[af1], pairs)
     if inl == 0:
       return (0, None)
