@@ -36,6 +36,11 @@
 
 #include "collision_space/environment.h"
 
+bool collision_space::EnvironmentModel::getVerbose(void) const
+{
+    return m_verbose;
+}
+
 void collision_space::EnvironmentModel::setVerbose(bool verbose)
 {
     m_verbose = verbose;

@@ -49,7 +49,7 @@
 /** Main namespace */
 namespace collision_space
 {
-    /**   
+    /** \brief   
     A class describing an environment for a kinematic robot. This is
     the base (abstract) definition. Different implementations are
     possible. The class is aware of a certain set of fixed
@@ -62,7 +62,7 @@ namespace collision_space
     {
     public:
 	
-	/** Definition of a contact point */
+	/** \brief Definition of a contact point */
 	struct Contact
 	{
 	    btVector3                              pos;     // contact position
@@ -86,19 +86,19 @@ namespace collision_space
 	/* Collision Environment Configuration                                */
 	/**********************************************************************/
 	
-	/** Set the status of self collision */
+	/** \brief Set the status of self collision */
 	void setSelfCollision(bool selfCollision);
 	
-	/** Check if self collision is enabled */
+	/** \brief Check if self collision is enabled */
 	bool getSelfCollision(void) const;
 			
-	/** Add a group of links to be checked for self collision */
+	/** \brief Add a group of links to be checked for self collision */
 	virtual void addSelfCollisionGroup(std::vector<std::string> &links);
 
-	/** Enable/Disable collision checking for specific links. Return the previous value of the state (1 or 0) if succesful; -1 otherwise */
+	/** \brief Enable/Disable collision checking for specific links. Return the previous value of the state (1 or 0) if succesful; -1 otherwise */
 	virtual int setCollisionCheck(const std::string &link, bool state) = 0;
 
-	/** Add a robot model. Ignore robot links if their name is not
+	/** \brief Add a robot model. Ignore robot links if their name is not
 	    specified in the string vector. The scale argument can be
 	    used to increase or decrease the size of the robot's
 	    bodies (multiplicative factor). The padding can be used to
@@ -106,13 +106,13 @@ namespace collision_space
 	    additive term */
 	virtual void addRobotModel(const boost::shared_ptr<planning_models::KinematicModel> &model, const std::vector<std::string> &links, double scale = 1.0, double padding = 0.0);
 
-	/** Update the positions of the geometry used in collision detection */
+	/** \brief Update the positions of the geometry used in collision detection */
 	virtual void updateRobotModel(void) = 0;
 
-	/** Update the set of bodies that are attached to the robot (re-creates them) */
+	/** \brief Update the set of bodies that are attached to the robot (re-creates them) */
 	virtual void updateAttachedBodies(void) = 0;
 		
-	/** Get the robot model */
+	/** \brief Get the robot model */
 	boost::shared_ptr<planning_models::KinematicModel> getRobotModel(void) const;
 	
 
@@ -121,13 +121,13 @@ namespace collision_space
 	/**********************************************************************/
 	
 
-	/** Check if a model is in collision. Contacts are not computed */
+	/** \brief Check if a model is in collision. Contacts are not computed */
 	virtual bool isCollision(void) = 0;
 	
-	/** Check for self collision. Contacts are not computed */
+	/** \brief Check for self collision. Contacts are not computed */
 	virtual bool isSelfCollision(void) = 0;
 	
-	/** Get the list of contacts (collisions) */
+	/** \brief Get the list of contacts (collisions) */
 	virtual bool getCollisionContacts(std::vector<Contact> &contacts, unsigned int max_count = 1) = 0;
 
 	
@@ -135,32 +135,35 @@ namespace collision_space
 	/* Collision Bodies Definition (Dynamic)                              */
 	/**********************************************************************/
 	
-	/** Remove all obstacles from collision model */
+	/** \brief Remove all obstacles from collision model */
 	virtual void clearObstacles(void) = 0;
 	
-	/** Add a point cloud to the collision space */
+	/** \brief Add a point cloud to the collision space */
 	virtual void addPointCloud(unsigned int n, const double* points) = 0;
 
 	/**********************************************************************/
 	/* Collision Bodies Definition (Static)                               */
 	/**********************************************************************/
 	
-	/** Add a plane to the collision space. Equation it satisfies is a*x+b*y+c*z = d*/
+	/** \brief Add a plane to the collision space. Equation it satisfies is a*x+b*y+c*z = d*/
 	virtual void addStaticPlane(double a, double b, double c, double d) = 0;
 
 	/**********************************************************************/
 	/* Miscellaneous Routines                                             */
 	/**********************************************************************/
 
-	/** Provide interface to a lock. Use carefully! */
+	/** \brief Provide interface to a lock. Use carefully! */
 	void lock(void);
 	
-	/** Provide interface to a lock. Use carefully! */
+	/** \brief Provide interface to a lock. Use carefully! */
 	void unlock(void);
 	
-	/** Enable/disable verbosity */
+	/** \brief Enable/disable verbosity */
 	void setVerbose(bool verbose);
-
+	
+	/** \brief Check the state of verbosity */
+	bool getVerbose(void) const;
+	
     protected:
         
 	boost::mutex                                       m_lock;
@@ -172,7 +175,7 @@ namespace collision_space
 	bool                                               m_verbose;
 	planning_models::msg::Interface                    m_msg;
 	
-	/** List of loaded robot models */	
+	/** \brief List of loaded robot models */	
 	boost::shared_ptr<planning_models::KinematicModel> m_robotModel;
 	
     };
