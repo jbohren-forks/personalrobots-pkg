@@ -46,15 +46,17 @@ from std_msgs.msg import Empty
 from people.msg import PositionMeasurement
 from people.srv import StartDetection
 
+import tf
 from robot_actions.msg import NoArgumentsActionState
 import pr2_robot_actions.msg
-
+from tf.listener import TransformListener
 import robot_msgs
 import python_actions
 
-class FindHelperAction(python_actions.Action):
+class FindHelperAction(python_actions.Action, TransformListener):
 
   def __init__(self, *args):
+    TransformListener.__init__(self)
     python_actions.Action.__init__(self, args[0], args[1], args[2], args[3])
     name = args[0]
     try:
@@ -100,10 +102,16 @@ class FindHelperAction(python_actions.Action):
         if self.found:
           self.feedback.header = self.found.header
           self.feedback.pose.position = self.found.pos
-          self.feedback.pose.orientation.x = 0.0
-          self.feedback.pose.orientation.y = 0.0
-          self.feedback.pose.orientation.z = 0.0
-          self.feedback.pose.orientation.w = 1.0
+          self.feedback.pose.position.z -= 1.0
+          self.feedback.pose.orientation.x = 0.5
+          self.feedback.pose.orientation.y = -0.5
+          self.feedback.pose.orientation.z = 0.5
+          self.feedback.pose.orientation.w = 0.5
+
+          btpose=tf.pose_stamped_msg_to_bt(self.feedback)
+          btpose = self.transform_pose("odom_combined", btpose)
+          self.feedback = tf.pose_stamped_bt_to_msg(btpose)
+          self.feedback.pose.position.z=0
           return python_actions.SUCCESS
 
     return python_actions.ABORTED
