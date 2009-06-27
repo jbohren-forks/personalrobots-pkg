@@ -1,6 +1,8 @@
 <launch>
   <node pkg="collision_map" type="collision_map_occ_node" name="collision_map_occ" respawn="true" output="screen">
     <remap from="cloud_in" to="full_cloud_annotated" />
+    <remap from="cloud_incremental_in" to="tilt_scan_cloud_annotated" />
+
     <remap from="robot_description" to="robotdesc/pr2" />
 
     <!-- tell the collision map there may be an annotation channel telling which points are on the robot -->

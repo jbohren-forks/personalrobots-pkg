@@ -56,23 +56,27 @@ public:
 	// read ROS params
 	loadParams();
 	
-	// advertise our topic
+	// advertise our topics: full map and updates
 	cmapPublisher_ = nh_.advertise<robot_msgs::CollisionMap>("collision_map_occ", 1);
+	cmapUpdPublisher_ = nh_.advertise<robot_msgs::CollisionMap>("collision_map_occ_update", 1);
 
-	// create a message notifier (and enable subscription)
-	mn_ = new tf::MessageNotifier<robot_msgs::PointCloud>(tf_, boost::bind(&CollisionMapperOcc::cloudCallback, this, _1), "cloud_in", "", 1);
-	
+	// create a message notifier (and enable subscription) for both the full map and for the updates
+	mnCloud_ = new tf::MessageNotifier<robot_msgs::PointCloud>(tf_, boost::bind(&CollisionMapperOcc::cloudCallback, this, _1), "cloud_in", "", 1);
+	mnCloudIncremental_ = new tf::MessageNotifier<robot_msgs::PointCloud>(tf_, boost::bind(&CollisionMapperOcc::cloudIncrementalCallback, this, _1), "cloud_incremental_in", "", 1);
+
 	// configure the self mask and the message notifier
 	std::vector<std::string> frames;
 	sf_.getLinkFrames(frames);
 	if (std::find(frames.begin(), frames.end(), robotFrame_) == frames.end())
 	    frames.push_back(robotFrame_);
-	mn_->setTargetFrame(frames);
+	mnCloud_->setTargetFrame(frames);
+	mnCloudIncremental_->setTargetFrame(frames);
     }
     
     ~CollisionMapperOcc(void)
     {
-	delete mn_;
+	delete mnCloud_;
+	delete mnCloudIncremental_;
     }
     
 private:
@@ -211,8 +215,48 @@ private:
 	}
     }
     
+    void cloudIncrementalCallback(const robot_msgs::PointCloudConstPtr &cloud)
+    {
+	if (!mapProcessing_.try_lock())
+	    return;
+	
+	std::vector<bool> mask;
+	robot_msgs::PointCloud out;
+	ros::WallTime tm = ros::WallTime::now();
+
+#pragma omp parallel sections
+	{
+
+#pragma omp section
+	    {
+		// transform the pointcloud to the robot frame
+		// since we need the points in this frame (around the robot)
+		// to compute the collision map
+		tf_.transformPointCloud(robotFrame_, *cloud, out);
+	    }
+	    
+#pragma omp section
+	    {
+		// separate the received points into ones on the robot and ones that are obstacles
+		// the frame of the cloud does not matter here
+		computeCloudMask(*cloud, mask);	
+	    }
+	}
+	
+	CMap obstacles;
+	constructCollisionMap(out, mask, true,  obstacles);
+	CMap diff;
+	set_difference(obstacles.begin(), obstacles.end(), currentMap_.begin(), currentMap_.end(),
+		       std::inserter(diff, diff.begin()), CollisionPointOrder());
+	mapProcessing_.unlock();
+	
+	publishCollisionMap(diff, cmapUpdPublisher_);
+    }
+    
     void cloudCallback(const robot_msgs::PointCloudConstPtr &cloud)
     {
+	mapProcessing_.lock();
+	
 	std::vector<bool> mask;
 	robot_msgs::PointCloud out;
 	ros::WallTime tm = ros::WallTime::now();
@@ -268,6 +312,7 @@ private:
 	ROS_INFO("Updated collision map with %d points at %f Hz", currentMap_.size(), 1.0/sec);
 	
 	publishCollisionMap(currentMap_, cmapPublisher_);
+	mapProcessing_.unlock();
     }
 
     void updateMap(CMap &obstacles, CMap &self)
@@ -695,12 +740,15 @@ private:
 
     tf::TransformListener                        tf_;
     robot_self_filter::SelfMask                  sf_;
-    tf::MessageNotifier<robot_msgs::PointCloud> *mn_;
+    tf::MessageNotifier<robot_msgs::PointCloud> *mnCloud_;
+    tf::MessageNotifier<robot_msgs::PointCloud> *mnCloudIncremental_;
     ros::NodeHandle                              nh_;
     ros::Publisher                               cmapPublisher_;
+    ros::Publisher                               cmapUpdPublisher_;
     roslib::Header                               header_;
     std::string                                  cloud_annotation_;
     
+    boost::mutex                                 mapProcessing_;
     CMap                                         currentMap_;
     
     BoxInfo                                      bi_;
