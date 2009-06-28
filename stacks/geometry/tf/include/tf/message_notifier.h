@@ -134,7 +134,8 @@ public:
   {
     target_frames_.resize(1);
     target_frames_[0] = target_frame;
-
+    target_frames_string_ = target_frame;
+    
     setTopic(topic);
 
     tf_subscriber_ = node_.subscribe<tfMessage>("/tf_message", 1,
