@@ -193,6 +193,13 @@ namespace move_arm
 	    // if we have to plan, do so
 	    if (result == robot_actions::SUCCESS && feedback == pr2_robot_actions::MoveArmState::PLANNING)
 	    {
+
+	        if (!planningMonitor_->isEnvironmentSafe())
+		{
+		    ROS_WARN("Environment is not safe. Will not issue request for planning");
+		    epsLong.sleep();
+		    continue;
+		}
 		
 		// fill in start state with current one
 		std::vector<planning_models::KinematicModel::Joint*> joints;
@@ -279,21 +286,7 @@ namespace move_arm
 			pr2_mechanism_controllers::TrajectoryCancel::Request  send_traj_cancel_req;
 			pr2_mechanism_controllers::TrajectoryCancel::Response send_traj_cancel_res;
 			send_traj_cancel_req.trajectoryid = trajectoryId;
-			if (clientCancel.call(send_traj_cancel_req, send_traj_cancel_res))
-			{
-			    // check if indeed the trajectory was canceled
-			    pr2_mechanism_controllers::TrajectoryQuery::Request  send_traj_query_req;
-			    pr2_mechanism_controllers::TrajectoryQuery::Response send_traj_query_res;
-			    send_traj_query_req.trajectoryid = trajectoryId;
-			    if (clientQuery.call(send_traj_query_req, send_traj_query_res))
-			    {
-				if (send_traj_query_res.done == pr2_mechanism_controllers::TrajectoryQuery::Response::State_Active)
-				    ROS_WARN("Unable to confirm canceling trajectory %d. Continuing...", trajectoryId);
-			    }
-			    else
-				ROS_ERROR("Unable to query trajectory %d. Continuing...", trajectoryId);
-			}
-			else
+			if (!clientCancel.call(send_traj_cancel_req, send_traj_cancel_res))
 			    ROS_ERROR("Unable to cancel trajectory %d. Continuing...", trajectoryId);
 			trajectoryId = -1;
 		    }
