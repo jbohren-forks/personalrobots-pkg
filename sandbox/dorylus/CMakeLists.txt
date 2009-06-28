@@ -29,4 +29,4 @@ rospack_add_library(dorylus dorylus.cpp)
 rospack_add_executable(test_dorylus test_dorylus.cpp)
 target_link_libraries(test_dorylus dorylus)
 
-rospack_add_link_flags(dorylus "-lprofiler")
+#rospack_add_link_flags(dorylus "-lprofiler")
