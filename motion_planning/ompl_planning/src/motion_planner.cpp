@@ -152,6 +152,9 @@ public:
 	    startState->print(ss);
 	    ROS_DEBUG("Complete starting state:\n%s", ss.str().c_str());
 	    st = requestHandler_.computePlan(models_, startState, req, res);
+	    if (st)
+	        if (!planningMonitor_->isPathValid(res.path, true))
+		    ROS_ERROR("Reported solution appears to have already become invalidated");
 	    delete startState;
 	}
 	else
