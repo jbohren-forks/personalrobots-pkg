@@ -15,6 +15,7 @@ class Histogram {
 public:
   vector<float> bins_;
   Histogram(int nBins, float min, float max);
+  int nInsertions_;
   bool insert(float val);
   void normalize();
   void print();
@@ -96,7 +97,7 @@ class PatchStatistic : public ImageDescriptor {
 
 class SuperpixelStatistic : public ImageDescriptor {
  public:
-  map<int, list<CvPoint> > index_;
+  vector< list<CvPoint> > *index_;
   int seed_spacing_;
   //! Scaling factor to apply to the image when computing the segmentation.
   float scale_;
@@ -118,7 +119,9 @@ class SuperpixelColorHistogram : public SuperpixelStatistic {
   int nBins_;
   string type_;
   SuperpixelColorHistogram* hsv_provider_;
-  map<int, Histogram*> histograms_;
+  //! histograms_[s] corresponds to the histogram for segment s of the segmentation. (s=0 is always left NULL).
+  vector<Histogram*> histograms_;
+  bool hists_reserved_;
 
   SuperpixelColorHistogram(int seed_spacing, float scale, int nBins, string type, SuperpixelStatistic* seg_provider=NULL, SuperpixelColorHistogram* hsv_provider_=NULL);
   bool compute(NEWMAT::Matrix** result, bool debug);

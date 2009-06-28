@@ -12,27 +12,34 @@ using namespace NEWMAT;
 
 vector<ImageDescriptor*> setupImageDescriptors() {
   vector<ImageDescriptor*> d;
+  // -- Features used for test2 and test
+  SuperpixelColorHistogram* sch1 = new SuperpixelColorHistogram(20, 0.5, 25, string("hue"));
+  SuperpixelColorHistogram* sch2 = new SuperpixelColorHistogram(5, 0.5, 25, string("hue"), NULL, sch1);
+  d.push_back(sch1);
+  d.push_back(sch2);
+  d.push_back(new SuperpixelColorHistogram(20, 0.5, 25, string("sat"), sch1, sch1));
+  d.push_back(new SuperpixelColorHistogram(20, 0.5, 25, string("val"), sch1, sch1));
+  d.push_back(new SuperpixelColorHistogram(5, 0.5, 25, string("sat"), sch2, sch1));
+  d.push_back(new SuperpixelColorHistogram(5, 0.5, 25, string("val"), sch2, sch1));
+  d.push_back(new SuperpixelColorHistogram(20, 0.5, 10, string("hue"), sch1, sch1));
+  d.push_back(new SuperpixelColorHistogram(20, 0.5, 10, string("sat"), sch1, sch1));
+  d.push_back(new SuperpixelColorHistogram(20, 0.5, 10, string("val"), sch1, sch1));
+  d.push_back(new SuperpixelColorHistogram(5, 0.5, 10, string("hue"), sch2, sch1));
+  d.push_back(new SuperpixelColorHistogram(5, 0.5, 10, string("sat"), sch2, sch1));
+  d.push_back(new SuperpixelColorHistogram(5, 0.5, 10, string("val"), sch2, sch1));
+
+//   SuperpixelColorHistogram* sch1 = new SuperpixelColorHistogram(20, 0.5, 25, string("hue"));
+//   SuperpixelColorHistogram* sch2 = new SuperpixelColorHistogram(5, 0.5, 25, string("hue"), NULL, sch1);
+//   d.push_back(sch1);
+//   d.push_back(sch2);
+
+  // -- Old examples.
 //   d.push_back(new IntensityPatch(50, 1, true));
 //   d.push_back(new PatchStatistic(string("variance"), (Patch*)d.back()));
 //   d.push_back(new IntensityPatch(40, .5, true));
 //   d.push_back(new IntensityPatch(20, 1, true));
 //   d.push_back(new IntensityPatch(80, .25, true));
 //   d.push_back(new IntensityPatch(120, 1.0/6.0, true));
-  SuperpixelColorHistogram* sch1 = new SuperpixelColorHistogram(20, 0.5, 25, string("hue"));
-  SuperpixelColorHistogram* sch2 = new SuperpixelColorHistogram(5, 0.5, 25, string("hue"), NULL, sch1);
-  d.push_back(sch1);
-  d.push_back(sch2);
-//   d.push_back(new SuperpixelColorHistogram(20, 0.5, 25, string("sat"), sch1, sch1));
-//   d.push_back(new SuperpixelColorHistogram(20, 0.5, 25, string("val"), sch1, sch1));
-//   d.push_back(new SuperpixelColorHistogram(5, 0.5, 25, string("sat"), sch2, sch1));
-//   d.push_back(new SuperpixelColorHistogram(5, 0.5, 25, string("val"), sch2, sch1));
-//   d.push_back(new SuperpixelColorHistogram(20, 0.5, 10, string("hue"), sch1, sch1));
-//   d.push_back(new SuperpixelColorHistogram(20, 0.5, 10, string("sat"), sch1, sch1));
-//   d.push_back(new SuperpixelColorHistogram(20, 0.5, 10, string("val"), sch1, sch1));
-//   d.push_back(new SuperpixelColorHistogram(5, 0.5, 10, string("hue"), sch2, sch1));
-//   d.push_back(new SuperpixelColorHistogram(5, 0.5, 10, string("sat"), sch2, sch1));
-//   d.push_back(new SuperpixelColorHistogram(5, 0.5, 10, string("val"), sch2, sch1));
-
   //  d.push_back(new SuperpixelColorHistogram(5, 0.5, 16));
   //d.push_back(new SuperpixelColorHistogram(20, 0.25, 10));
   return d;
@@ -291,10 +298,63 @@ SuperpixelStatistic::SuperpixelStatistic(int seed_spacing, float scale, Superpix
   char buf[100];
   sprintf(buf, "SuperpixelStatistic_seedSpacing%d_scale%g", seed_spacing_, scale_);
   name_ = string(buf);
+
+  if(seg_provider_ == NULL)
+    index_ = new vector< list<CvPoint> >;
+  else
+    index_ = NULL;
+}
+
+
+void inPaintNN(IplImage* img) {
+  // -- Remove -1 (boundary) entries by nearest neighbor.
+  bool all_assigned = false;
+  while(!all_assigned) {
+    all_assigned = true;
+    for(int r=0; r<img->height; r++) {
+      long* ptr = (long*)(img->imageData + r * img->widthStep);
+      for(int c=0; c<img->width; c++) {
+	if(*ptr >= 1) {
+	  ptr++;
+	  continue;
+	}	
+
+	if(c<img->width-1 && ptr[1] > 0) {
+	  *ptr = ptr[1];
+	  ptr++; 
+	  continue;
+	}
+	if(c>0 && ptr[-1] > 0) {
+	  *ptr = ptr[-1];
+	  ptr++; 
+	  continue;
+	}
+	if(r>0) {
+	  long* ptr2 = (long*)(img->imageData + (r-1) * img->widthStep);
+	  if(ptr2[c] > 0) {
+	    *ptr = ptr2[c];
+	    ptr++; 
+	    continue;
+	  }
+	}
+	if(r<img->height-1) {
+	  long* ptr2 = (long*)(img->imageData + (r+1) * img->widthStep);
+	  if(ptr2[c] > 0) {
+	    *ptr = ptr2[c];
+	    ptr++; 
+	    continue;
+	  }
+	}
+	all_assigned = false;
+	ptr++;
+      }
+    }
+  }
 }
 
 void SuperpixelStatistic::segment(bool debug) {
   ROS_DEBUG_COND(seg_ != NULL, "seg_ is not null, but is being recreated anyway!");
+  ROS_DEBUG("Running superpixel segmentation: %s", name_.c_str());
   
   // -- Downsample image.
   IplImage* img_small = cvCreateImage(cvSize(((float)img_->width)*scale_, ((float)img_->height)*scale_), img_->depth, img_->nChannels);
@@ -319,56 +379,61 @@ void SuperpixelStatistic::segment(bool debug) {
   double t = (double)cvGetTickCount();
   cvWatershed( img_small, seg_small );
   t = (double)cvGetTickCount() - t;
+  inPaintNN(seg_small);
 
-  // -- Remove -1 (boundary) entries by nearest neighbor.
+  // -- Check.
   for(int r=0; r<seg_small->height; r++) {
     long* ptr = (long*)(seg_small->imageData + r * seg_small->widthStep);
     for(int c=0; c<seg_small->width; c++) {
-      if(*ptr < 1) {
-	if(c<seg_small->width-1 && ptr[1] > 0) {
-	  *ptr = ptr[1];
-	  ptr++; 
-	  continue;
-	}
-	else if(c>0 && ptr[-1] > 0) {
-	  *ptr = ptr[-1];
-	  ptr++; 
-	  continue;
-	}
-	else if(r>0) {
-	  long* ptr2 = (long*)(seg_small->imageData + r-1 * seg_small->widthStep);
-	  if(ptr2[c] > 0) {
-	    *ptr = ptr2[c];
-	    ptr++; 
-	    continue;
-	  }
-	}
-	else if(r<seg_small->height-1) {
-	  long* ptr2 = (long*)(seg_small->imageData + r+1 * seg_small->widthStep);
-	  if(ptr2[c] > 0) {
-	    *ptr = ptr2[c];
-	    ptr++; 
-	    continue;
-	  }
-	}
-	else {
-	  cout << "j" << endl;
-	  ROS_DEBUG("This should not happen!");
-	}
-      }
-      ptr++;
+      ROS_DEBUG_COND(*ptr >= label, "%ld, max label %ld, for row %d and col %d\n", *ptr, label, r, c);
+      ROS_ASSERT(*ptr >= 1);
+      ROS_ASSERT(*ptr < label);
     }
   }
+
+
 
   // -- Enlarge segmentation back to size of image.
   seg_ = cvCreateImage( cvGetSize(img_), IPL_DEPTH_32S, 1 );
   cvResize(seg_small, seg_, CV_INTER_NN);
 
-  // -- Compute the index.
+
+  // -- Check. 
+//   IplImage* negs = cvCreateImage( cvGetSize(seg_), 8, 1 );
+//   for(int r=0; r<seg_->height; r++) {
+//     long* ptr = (long*)(seg_->imageData + r * seg_->widthStep);
+//     uchar* negs_ptr = (uchar*)(negs->imageData + r * negs->widthStep);
+//     for(int c=0; c<seg_->width; c++) {
+//       if(*ptr == -1)
+// 	*negs_ptr = 255;
+//       else
+// 	*negs_ptr = 0;
+//     }
+//   }
+
+//   cvNamedWindow("negs");
+//   cvShowImage("negs", negs);
+//   cvWaitKey(0);
+
   for(int r=0; r<seg_->height; r++) {
     long* ptr = (long*)(seg_->imageData + r * seg_->widthStep);
     for(int c=0; c<seg_->width; c++) {
-      index_[*ptr].push_back(cvPoint(c,r));
+      ROS_ASSERT(*ptr >= 1);
+      ROS_ASSERT(*ptr < label);
+    }
+  }
+
+
+  // -- Compute the index.
+  index_->resize(label+1);
+  for(int r=0; r<seg_->height; r++) {
+    long* ptr = (long*)(seg_->imageData + r * seg_->widthStep);
+    for(int c=0; c<seg_->width; c++) {
+      if(*ptr == -1) {
+	ROS_FATAL("Some boundary points have still not been eliminated!");
+	continue;
+      }
+      (*index_)[*ptr].push_back(cvPoint(c,r));
       ptr++;
     }
   }
@@ -432,7 +497,7 @@ void SuperpixelStatistic::segment(bool debug) {
 ****************************************************************************/
 
 SuperpixelColorHistogram::SuperpixelColorHistogram(int seed_spacing, float scale, int nBins, string type, SuperpixelStatistic* seg_provider, SuperpixelColorHistogram* hsv_provider) :
-  SuperpixelStatistic(seed_spacing, scale, seg_provider), nBins_(nBins), type_(type), hsv_provider_(hsv_provider)
+  SuperpixelStatistic(seed_spacing, scale, seg_provider), nBins_(nBins), type_(type), hsv_provider_(hsv_provider), hists_reserved_(false)
 {
   char buf[100];
   sprintf(buf, "_colorHistogram_type:%s_nBins%d", type_.c_str(), nBins);
@@ -440,6 +505,8 @@ SuperpixelColorHistogram::SuperpixelColorHistogram(int seed_spacing, float scale
   cout << "Creating " << name_ << endl;
 
   result_size_ = nBins_;
+
+  
 
   // -- Set up ranges_ for histogram computation.
 //   float* range = (float*) malloc(sizeof(float)*2);
@@ -449,21 +516,22 @@ SuperpixelColorHistogram::SuperpixelColorHistogram(int seed_spacing, float scale
 }
 
 bool SuperpixelColorHistogram::compute(NEWMAT::Matrix** result, bool debug) {
-  // -- Make sure we have access to a segmentation and other per-image computation.
+  // -- Make sure we have access to a segmentation.
   if(seg_provider_ == NULL && seg_ == NULL)
     segment(debug);
   else if(seg_provider_ != NULL && seg_ == NULL) {
     seg_ = seg_provider_->seg_;
+    index_ = seg_provider_->index_;
   }
 
   // -- Make sure we have access to HSV image.
-  else if(hsv_provider_ != NULL && hsv_ == NULL) {
-     hsv_ = hsv_provider_->hsv_;
-     hue_ = hsv_provider_->hue_;
-     sat_ = hsv_provider_->sat_;
-     val_ = hsv_provider_->val_;
+  if(hsv_provider_ != NULL && hsv_ == NULL) {
+    hsv_ = hsv_provider_->hsv_;
+    hue_ = hsv_provider_->hue_;
+    sat_ = hsv_provider_->sat_;
+    val_ = hsv_provider_->val_;
   }
-  if(hsv_provider_ == NULL && hsv_ == NULL) {
+  else if(hsv_provider_ == NULL && hsv_ == NULL) {
     hsv_ = cvCreateImage( cvGetSize(img_), 8, 3 );
     hue_ = cvCreateImage( cvGetSize(img_), 8, 1 );
     sat_ = cvCreateImage( cvGetSize(img_), 8, 1 );
@@ -472,9 +540,19 @@ bool SuperpixelColorHistogram::compute(NEWMAT::Matrix** result, bool debug) {
     cvSplit(hsv_, hue_, sat_, val_, 0);
   }
 
-  // -- Get the label at this point.
-  long label = CV_IMAGE_ELEM(seg_, long, row_, col_);
+  //  ROS_DEBUG("hsv_ for %s is %p", name_.c_str(), hsv_);
+  //  ROS_DEBUG("hsv_provider_ for %s is %p", name_.c_str(), hsv_provider_);
 
+  ROS_ASSERT(hsv_ != NULL);
+  ROS_ASSERT(hue_ != NULL);
+  ROS_ASSERT(sat_ != NULL);
+  ROS_ASSERT(val_ != NULL);
+
+
+  // -- Get the label at this point.
+  int label = CV_IMAGE_ELEM(seg_, long, row_, col_);
+  if(label == -1) 
+    return false;
 
   // -- Choose which channel we wil use.
   IplImage* channel=NULL;
@@ -490,37 +568,62 @@ bool SuperpixelColorHistogram::compute(NEWMAT::Matrix** result, bool debug) {
   else 
     ROS_ERROR("Bad SuperpixelColorHistogram type.");
 
+  // -- Make sure we have access to the histogram data for this point.
+  if(!hists_reserved_) {
+    histograms_ = vector<Histogram*>(index_->size()+1, NULL);
+//     histograms_.reserve();
+//     histograms_.assign(histograms_.begin(), histograms_.end(), NULL);
+    hists_reserved_ = true;
+  }
+
   // -- Compute the histogram by hand if we need to.
-  float max_val=0;
-  map<int, Histogram*>::iterator hit = histograms_.find(label);
-  if(hit == histograms_.end()) {
+
+  if(histograms_[label] == NULL) {
+    ROS_DEBUG("Computing hist for %s for label %d", name_.c_str(), label);
     Histogram* h = new Histogram(nBins_, 0, max);
-    for(int r=0; r<channel->height; r++) {
-      uchar* ptr = (uchar*)(channel->imageData + r * channel->widthStep);
-      long* seg_ptr = (long*)(seg_->imageData + r * seg_->widthStep);
-      for(int c=0; c<channel->width; c++) {
-	//cout << (int)*ptr << " ";
-	if(max_val < *ptr) max_val = *ptr;
-	if(*seg_ptr == label) {
-	  if(!h->insert(*ptr)) {
-	    ROS_WARN("Insertion failed for val = %d.", *ptr);
-	    cout << "Hello?" << endl;
-	  }
-	}
-	seg_ptr++;
-	ptr++;
+
+    const list<CvPoint>& l = (*index_)[label];
+    list<CvPoint>::const_iterator lit;
+    for(lit = l.begin(); lit != l.end(); lit++) {
+      if(!h->insert(CV_IMAGE_ELEM(channel, uchar, lit->y, lit->x))) {
+	ROS_FATAL("Insertion failed");
       }
     }
+      
+
+
+    // -- Slow method of filling histogram.
+  //   for(int r=0; r<channel->height; r++) {
+//       uchar* ptr = (uchar*)(channel->imageData + r * channel->widthStep);
+//       long* seg_ptr = (long*)(seg_->imageData + r * seg_->widthStep);
+//       for(int c=0; c<channel->width; c++) {
+// 	//cout << (int)*ptr << " ";
+// 	if(max_val < *ptr) max_val = *ptr;
+// 	if(*seg_ptr == label) {
+// 	  if(!h->insert(*ptr)) {
+// 	    ROS_WARN("Insertion failed for val = %d.", *ptr);
+// 	    cout << "Hello?" << endl;
+// 	  }
+// 	}
+// 	seg_ptr++;
+// 	ptr++;
+//       }
+//     }
     h->normalize();
     histograms_[label] = h;
   }
- 
+
+//   cout << histograms_.size() << " and " << label << endl;
+//   histograms_[label]->print();
 
   // -- Copy into result.
   Matrix* res = new Matrix(result_size_,1);
   for(unsigned int i=1; i<=result_size_; i++) {
+    //ROS_DEBUG("Copying label %d, bin %d", label, i-1);
     (*res)(i,1) = histograms_[label]->bins_[i-1];
   }
+
+  *result = res;
 
   // -- Opencv histograms are broken! --
   // -- Create the mask for the histogram.
@@ -558,7 +661,7 @@ bool SuperpixelColorHistogram::compute(NEWMAT::Matrix** result, bool debug) {
     // -- Show the mask.
 //     cvNamedWindow("Mask");
 //     cvShowImage("Mask", mask);
-    cout << "Max val for " << type_ << " is " << max_val << endl;
+    cout << name_ << " ";
     histograms_[label]->print();
     commonDebug();
   }
@@ -568,9 +671,9 @@ bool SuperpixelColorHistogram::compute(NEWMAT::Matrix** result, bool debug) {
 
 //! Release seg_, etc., if this object is the one that computes them; otherwise, just nullify the pointers.
 void SuperpixelColorHistogram::clearImageCache() {
-  ROS_DEBUG("Clearing the image cache for %s", name_.c_str());
+  //ROS_DEBUG("Clearing the image cache for %s", name_.c_str());
   
-
+  
   if(hsv_provider_ == NULL) {
     cvReleaseImage(&hsv_);
     cvReleaseImage(&hue_);
@@ -589,16 +692,18 @@ void SuperpixelColorHistogram::clearImageCache() {
   else
     seg_ = NULL;
 
-  map<int, Histogram*>::iterator hit;
-  for(hit = histograms_.begin(); hit != histograms_.end(); hit++) {
-    delete hit->second;
+
+  // -- Clean up histograms.
+  for(unsigned int i=0; i<histograms_.size(); i++) {
+    delete histograms_[i];
   }
   histograms_.clear();
+  hists_reserved_ = false;
 }
 
 
 Histogram::Histogram(int nBins, float min, float max) 
-  : nBins_(nBins), min_(min), max_(max)
+  : nInsertions_(0), nBins_(nBins), min_(min), max_(max)
 {
   bin_size_ = (max_ - min_) / (float)nBins_;
   boundaries_.reserve(nBins_+1);
@@ -623,6 +728,7 @@ Histogram::Histogram(int nBins, float min, float max)
 
 //! Temporary, slow version.
 bool Histogram::insert(float val) {
+  nInsertions_++;
   for(unsigned int i=0; i<boundaries_.size() - 1; i++) {
     if (boundaries_[i] <= val && boundaries_[i+1] + .001 >= val) {
       bins_[i]++;
@@ -647,7 +753,7 @@ void Histogram::normalize() {
 }
 
 void Histogram::print() {
-  cout << "Histogram: ";
+  cout << "Histogram (" << nInsertions_ << " insertions): " << endl;
   for(unsigned int i=0; i<bins_.size(); i++) {
     cout << bins_[i] << " ";
   }
@@ -658,6 +764,7 @@ void Histogram::clear() {
   for(unsigned int i=0; i<bins_.size(); i++) {
     bins_[i] = 0;
   }
+  nInsertions_ = 0;
 }
   
   
