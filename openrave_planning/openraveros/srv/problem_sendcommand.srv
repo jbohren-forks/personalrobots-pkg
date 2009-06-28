@@ -10,6 +10,9 @@ string cmd
 # with the rest of the primitives. If 0, called in a different thread. (default is 1)
 #uint8 sync
 
+# if nonzero, locks the environment before calling SendCommand
+uint8 envlock
+
 ---
 # the concatenated output of all the problems that the command is sent to
 string output

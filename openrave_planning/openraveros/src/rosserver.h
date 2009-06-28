@@ -34,11 +34,12 @@ class ROSServer : public RaveServerBase
     class LockEnvironment
     {
     public:
-        LockEnvironment(ROSServer* pserv) : _pserv(pserv) { _pserv->GetEnv()->LockPhysics(true); }
-        ~LockEnvironment() { _pserv->GetEnv()->LockPhysics(false); }
+        LockEnvironment(ROSServer* pserv) : _penv(pserv->GetEnv()) { _penv->LockPhysics(true); }
+        LockEnvironment(EnvironmentBase* penv) : _penv(penv) { _penv->LockPhysics(true); }
+        ~LockEnvironment() { _penv->LockPhysics(false); }
 
     private:
-        ROSServer* _pserv;
+        EnvironmentBase* _penv;
     };
 
     class FIGURE
@@ -83,8 +84,11 @@ class ROSServer : public RaveServerBase
     class SendProblemWorker : public ServerWorker
     {
     public:
-    SendProblemWorker(boost::shared_ptr<ProblemInstance> prob, const string& cmd, string& out, bool& bSuccessful) : _prob(prob), _cmd(cmd), _out(out), _bSuccessful(bSuccessful) {}
+    SendProblemWorker(boost::shared_ptr<ProblemInstance> prob, const string& cmd, string& out, bool& bSuccessful, bool bLockEnv) : _prob(prob), _cmd(cmd), _out(out), _bSuccessful(bSuccessful), _bLockEnv(bLockEnv) {}
         virtual void work() {
+            boost::shared_ptr<LockEnvironment> plock;
+            if( _bLockEnv )
+                plock.reset(new LockEnvironment(_prob->GetEnv()));
             _bSuccessful = _prob->SendCommand(_cmd.c_str(),_out);
         }
 
@@ -93,6 +97,7 @@ class ROSServer : public RaveServerBase
         const string& _cmd;
         string& _out;
         bool& _bSuccessful;
+        bool _bLockEnv;
     };
 
     class LoadProblemWorker : public ServerWorker
@@ -165,7 +170,7 @@ class ROSServer : public RaveServerBase
 
 public:
         ROSServer(int nSessionId, SetViewerFunc* psetviewer, EnvironmentBase* penv, const string& physicsengine, const string& collisionchecker, const string& viewer)
-            : RaveServerBase(penv), _nSessionId(nSessionId), _nNextFigureId(1), _nNextPlannerId(1), _nNextProblemId(1) {
+            : RaveServerBase(penv), _nSessionId(nSessionId), _nNextFigureId(1), _nNextPlannerId(1), _nNextProblemId(1), _iWorkerId(0) {
         _psetviewer.reset(psetviewer);
         _bThreadDestroyed = false;
         _bCloseClient = false;
@@ -227,18 +232,29 @@ public:
         {
             boost::mutex::scoped_lock lock(_mutexWorker);
             listlocalworkers.swap(_listWorkers);
+            _iWorkerId++;
         }
 
         listlocalworkers.clear();
+
+        boost::mutex::scoped_lock lock(_mutexWorker);
+        _iWorkerId++;
         _conditionWorkers.notify_all();
     }
 
     virtual void AddWorker(ServerWorker* pworker, bool bWait=true)
     {
         boost::mutex::scoped_lock lock(_mutexWorker);
+        int iWorkerId = _iWorkerId;
+
         _listWorkers.push_back(boost::shared_ptr<WorkExecutor>(new WorkExecutor(pworker)));
-        if( bWait )
-            _conditionWorkers.wait(lock);
+        if( bWait ) {
+            while(1) {
+                _conditionWorkers.wait(lock);
+                if( _iWorkerId >= iWorkerId+2 )
+                    break;
+            }
+        }
     }
 
     virtual bool IsInit()
@@ -1213,7 +1229,7 @@ public:
             return false;
 
         bool bSuccessful = false;
-        AddWorker(new SendProblemWorker(itprob->second,req.cmd,res.output,bSuccessful), true);
+        AddWorker(new SendProblemWorker(itprob->second,req.cmd,res.output,bSuccessful,req.envlock), true);
         return bSuccessful;
     }
 
@@ -1602,4 +1618,5 @@ private:
     boost::mutex _mutexWorker;
     list<boost::shared_ptr<WorkExecutor> > _listWorkers;
     boost::condition _conditionWorkers;
+    int _iWorkerId;
 };
