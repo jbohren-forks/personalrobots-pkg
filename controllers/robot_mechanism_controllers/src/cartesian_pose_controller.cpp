@@ -49,12 +49,11 @@ namespace controller {
 ROS_REGISTER_CONTROLLER(CartesianPoseController)
 
 CartesianPoseController::CartesianPoseController()
-: node_(ros::Node::instance()),
-  robot_state_(NULL),
+: robot_state_(NULL),
   jnt_to_pose_solver_(NULL),
   state_error_publisher_(NULL),
   state_pose_publisher_(NULL),
-  tf_(*node_),
+  tf_(*ros::Node::instance()),
   command_notifier_(NULL)
 {}
 
@@ -65,20 +64,29 @@ CartesianPoseController::~CartesianPoseController()
 bool CartesianPoseController::initXml(mechanism::RobotState *robot_state, TiXmlElement *config)
 {
   // get the controller name from xml file
-  controller_name_ = config->Attribute("name") ? config->Attribute("name") : "";
-  if (controller_name_ == ""){
+  std::string controller_name = config->Attribute("name") ? config->Attribute("name") : "";
+  if (controller_name == ""){
     ROS_ERROR("CartesianPoseController: No controller name given in xml file");
     return false;
   }
 
+  return init(robot_state, controller_name);
+}
+
+bool CartesianPoseController::init(mechanism::RobotState *robot_state, const ros::NodeHandle &n)
+{
+  node_ = n;
+
   // get name of root and tip from the parameter server
   std::string tip_name;
-  if (!node_->getParam(controller_name_+"/root_name", root_name_)){
-    ROS_ERROR("CartesianPoseController: No root name found on parameter server");
+  if (!node_.getParam("root_name", root_name_)){
+    ROS_ERROR("CartesianPoseController: No root name found on parameter server (namespace: %s)",
+              node_.getNamespace().c_str());
     return false;
   }
-  if (!node_->getParam(controller_name_+"/tip_name", tip_name)){
-    ROS_ERROR("CartesianPoseController: No tip name found on parameter server");
+  if (!node_.getParam("tip_name", tip_name)){
+    ROS_ERROR("CartesianPoseController: No tip name found on parameter server (namespace: %s)",
+              node_.getNamespace().c_str());
     return false;
   }
 
@@ -97,7 +105,7 @@ bool CartesianPoseController::initXml(mechanism::RobotState *robot_state, TiXmlE
 
   // create 6 identical pid controllers for x, y and z translation, and x, y, z rotation
   control_toolbox::Pid pid_controller;
-  if (!pid_controller.initParam(controller_name_)) return false;
+  if (!pid_controller.init(node_)) return false;
   for (unsigned int i=0; i<6; i++)
     pid_controller_.push_back(pid_controller);
 
@@ -108,8 +116,8 @@ bool CartesianPoseController::initXml(mechanism::RobotState *robot_state, TiXmlE
     return false;
   }
   string output;
-  if (!node_->getParam(controller_name_+"/output", output)){
-    ROS_ERROR("No ouptut name found on parameter server");
+  if (!node_.getParam("output", output)){
+    ROS_ERROR("No ouptut name found on parameter server (namespace: %s)", node_.getNamespace().c_str());
     return false;
   }
   if (!mc->getControllerByName<CartesianTwistController>(output, twist_controller_)){
@@ -118,16 +126,15 @@ bool CartesianPoseController::initXml(mechanism::RobotState *robot_state, TiXmlE
   }
 
   // subscribe to pose commands
-  command_notifier_.reset(new MessageNotifier<robot_msgs::PoseStamped>(&tf_, node_,
+  command_notifier_.reset(new MessageNotifier<robot_msgs::PoseStamped>(&tf_, ros::Node::instance(),
                                                                        boost::bind(&CartesianPoseController::command, this, _1),
-                                                                       controller_name_ + "/command", root_name_, 10));
+                                                                       node_.getNamespace() + "/command", root_name_, 10));
   // realtime publisher for control state
-  state_error_publisher_.reset(new realtime_tools::RealtimePublisher<robot_msgs::Twist>(controller_name_+"/state/error", 1));
-  state_pose_publisher_.reset(new realtime_tools::RealtimePublisher<robot_msgs::PoseStamped>(controller_name_+"/state/pose", 1));
+  state_error_publisher_.reset(new realtime_tools::RealtimePublisher<robot_msgs::Twist>(node_, "state/error", 1));
+  state_pose_publisher_.reset(new realtime_tools::RealtimePublisher<robot_msgs::PoseStamped>(node_, "state/pose", 1));
 
   return true;
 }
-
 
 bool CartesianPoseController::starting()
 {

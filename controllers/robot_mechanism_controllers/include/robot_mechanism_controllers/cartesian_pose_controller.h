@@ -57,6 +57,7 @@ public:
   ~CartesianPoseController();
 
   bool initXml(mechanism::RobotState *robot_state, TiXmlElement *config);
+  bool init(mechanism::RobotState *robot, const ros::NodeHandle &n);
 
   bool starting();
   void update();
@@ -76,16 +77,16 @@ private:
   void poseToFrame(const tf::Pose& pose, KDL::Frame& frame);
   void frameToPose(const KDL::Frame& frame, tf::Pose& pose);
 
-  ros::Node* node_;
+  ros::NodeHandle node_;
   std::string controller_name_, root_name_;
   double last_time_;
 
   // robot structure
-  mechanism::RobotState *robot_state_;       
+  mechanism::RobotState *robot_state_;
   mechanism::Chain chain_;
 
   // pid controllers
-  std::vector<control_toolbox::Pid> pid_controller_;     
+  std::vector<control_toolbox::Pid> pid_controller_;
 
   // kdl stuff for kinematics
   KDL::Chain             kdl_chain_;
