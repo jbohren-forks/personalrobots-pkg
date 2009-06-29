@@ -49,16 +49,8 @@
 namespace planning_environment
 {
 
-    /** @b CollisionSpaceMonitor is a class which in addition to being aware of a robot model,
+    /** \brief @b CollisionSpaceMonitor is a class which in addition to being aware of a robot model,
 	is also aware of a collision space.
-       
-	<hr>
-	
-	@section topic ROS topics
-	
-	Subscribes to (name/type):
-	- @b "collision_map"/CollisionMap : data describing the 3D environment
-	- @b "attach_object"/AttachedObject : data describing an object to be attached to a link
     */
     class CollisionSpaceMonitor : public KinematicModelStateMonitor
     {

@@ -39,11 +39,11 @@
 
 using namespace kinematic_planning;
 
-class KinematicPlanning 
+class OMPLPlanning 
 {
 public:
     
-    KinematicPlanning(void)
+    OMPLPlanning(void)
     {	
 	// register with ROS
 	collisionModels_ = new planning_environment::CollisionModels("robot_description");
@@ -55,11 +55,11 @@ public:
 	else
 	    planningMonitor_ = new planning_environment::PlanningMonitor(collisionModels_);
 	
-	planKinematicPathService_ = nodeHandle_.advertiseService("plan_kinematic_path", &KinematicPlanning::planToGoal, this);
+	planKinematicPathService_ = nodeHandle_.advertiseService("plan_kinematic_path", &OMPLPlanning::planToGoal, this);
     }
     
     /** Free the memory */
-    ~KinematicPlanning(void)
+    ~OMPLPlanning(void)
     {
 	for (std::map<std::string, RKPModel*>::iterator i = models_.begin() ; i != models_.end() ; i++)
 	    delete i->second;
@@ -257,7 +257,7 @@ int main(int argc, char **argv)
     OutputHandlerROScon rosconOutputHandler;	
     ompl::msg::useOutputHandler(&rosconOutputHandler);
     
-    KinematicPlanning planner;
+    OMPLPlanning planner;
     planner.run();
     
     return 0;

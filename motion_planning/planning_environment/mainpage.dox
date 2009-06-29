@@ -43,8 +43,9 @@ should use the doxygen 'group' tag to keep these APIs together. For
 example, the roscpp documentation has 'libros' group.
 -->
 
-<!-- \section rosapi ROS API
+\section rosapi ROS API
 
+<!--
 Names are very important in ROS because they can be remapped on the
 command-line, so it is VERY IMPORTANT THAT YOU LIST NAMES AS THEY
 APPEAR IN THE CODE. You should list names of every topic, service and
@@ -74,29 +75,36 @@ $ node_type1 [standard ROS args]
 \verbatim
 $ node_type1
 \endverbatim
-
+-->
 
 \subsubsection topics ROS topics
 
 Subscribes to:
-- \b "in": [std_msgs/FooType] description of in
-
-Publishes to:
-- \b "out": [std_msgs/FooType] description of out
-
+- @b "mechanism_state"/MechanismState : the parameters describing the robot's current state
+- @b "collision_map"/CollisionMap : data describing the 3D environment
+- @b "collision_map_update"/CollisionMap : updates to data describing the 3D environment
+- @b "attach_object"/AttachedObject : data describing an object to be attached to a link
 
 \subsubsection parameters ROS parameters
 
 Reads the following parameters from the parameter server
 
-- \b "~param_name" : \b [type] description of param_name
-- \b "~my_param" : \b [string] description of my_param
+Reads the following parameters from the parameter server
+- @b "~refresh_interval_collision_map"/double : if more than this interval passes, the maintained map is considered invalid
+
+- @b "~refresh_interval_kinematic_state"/double : if more than this interval passes, the maintained kinematic state is considered invalid
+
+- @b "~bounding_planes"/string : a sequence of plane equations specified as "a1 b1 c1 d1 a2 b2 c2 d2 ..." where each plane is defined by the equation ax+by+cz+d=0
+
+- @b "~box_scale"/double : boxes from the collision map are approximated with spheres using the extents of the boxes. The maximum extent of the box is multiplied by the constant specified by this parameter to obtain the radius of the sphere approximating the box
+
+A robot description and its corresponding planning and collision descriptions are assumed to be loaded on the parameter server as well.
 
 Sets the following parameters on the parameter server
 
-- \b "~param_name" : \b [type] description of param_name
+- Sets the parameters it reads to default values
 
-
+<!--
 \subsubsection services ROS services
 - \b "foo_service": [std_srvs/FooType] description of foo_service
 

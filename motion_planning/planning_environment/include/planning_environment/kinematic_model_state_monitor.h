@@ -48,17 +48,9 @@
 namespace planning_environment
 {
 
-    /** @b KinematicModelStateMonitor is a class that monitors the robot state for the kinematic model defined in @b RobotModels
-           If the pose is not included, the robot state is the frame of the link it attaches to the world. If the pose is included,
-	   the frame of the robot is the one in which the pose is published.
-       <hr>
-
-       @section topic ROS topics
-
-       Subscribes to (name/type):
-       - @b "mechanism_model"/MechanismModel : position for each of the robot's joints
-       - @b "localized_pose"/PoseWithCovariance : localized robot pose
-
+    /** \brief @b KinematicModelStateMonitor is a class that monitors the robot state for the kinematic model defined in @b RobotModels
+	If the pose is not included, the robot state is the frame of the link it attaches to the world. If the pose is included,
+	the frame of the robot is the one in which the pose is published.
     */
     class KinematicModelStateMonitor
     {

@@ -45,7 +45,7 @@
 namespace planning_environment
 {
 
-    /** @b PlanningMonitor is a class which in addition to being aware
+    /** \breif @b PlanningMonitor is a class which in addition to being aware
 	of a robot model, and the collision model is also aware of
 	constraints and can check the validity of states and paths.
     */
