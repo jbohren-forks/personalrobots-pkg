@@ -46,7 +46,16 @@ class JointState;
 
 class Joint{
 public:
-  Joint() : reference_position_(0), has_safety_limits_(false), safety_length_min_(0), safety_length_max_(0){}
+  Joint() :
+    type_(0),
+    joint_limit_min_(0.0), joint_limit_max_(0.0),
+    effort_limit_(0.0), velocity_limit_(0.0),
+    joint_damping_coefficient_(0.0), joint_friction_coefficient_(0.0),
+    reference_position_(0.0),
+    has_safety_limits_(false),
+    k_position_limit_(0.0), k_velocity_limit_(0.0),
+    spring_constant_min_(0.0), damping_constant_min_(0.0), safety_length_min_(0.0),
+    spring_constant_max_(0.0), damping_constant_max_(0.0), safety_length_max_(0.0) {}
   ~Joint() {}
 
   void enforceLimits(JointState *s);
@@ -103,7 +112,8 @@ public:
 
   bool calibrated_;
 
-  JointState() : joint_(NULL), commanded_effort_(0), calibrated_(false) {}
+  JointState() : joint_(NULL), position_(0.0), velocity_(0.0), applied_effort_(0.0),
+                 commanded_effort_(0), calibrated_(false) {}
   JointState(const JointState &s)
     : joint_(s.joint_), position_(s.position_), velocity_(s.velocity_),
       applied_effort_(s.applied_effort_), commanded_effort_(s.commanded_effort_), calibrated_(s.calibrated_)
