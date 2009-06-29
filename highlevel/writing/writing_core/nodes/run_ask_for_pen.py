@@ -54,19 +54,19 @@ class FindHelperAction(python_actions.Action):
 
   def __init__(self, *args):
     python_actions.Action.__init__(self, args[0], args[1], args[2], args[3])
-    name = args[0]
+    self.name = args[0]
     
     try:
-      self.gripper_controller = rospy.get_param(name + "/gripper_controller")
+      self.gripper_controller = rospy.get_param(self.name + "/gripper_controller")
     except KeyError:
       self.gripper_controller = "r_gripper_position_controller"
-      rospy.set_param(name + "/gripper_controller", self.gripper_controller)
+      rospy.set_param(self.name + "/gripper_controller", self.gripper_controller)
 
     try:
-      self.arm_controller = rospy.get_param(name + "/arm_controller")
+      self.arm_controller = rospy.get_param(self.name + "/arm_controller")
     except KeyError:
       self.arm_controller = "r_arm_cartesian_trajectory_controller"
-      rospy.set_param(name + "/arm_controller", self.arm_controller)
+      rospy.set_param(self.name + "/arm_controller", self.arm_controller)
 
     self.gripper_controller_publisher = rospy.Publisher(self.gripper_controller + "/set_command", std_msgs.msg.Float64)
 
@@ -81,36 +81,31 @@ class FindHelperAction(python_actions.Action):
     mtp = robot_srvs.srv.MoveToPoseRequest()
     mtp.header.stamp = rospy.get_rostime()
     mtp.header.frame_id = "torso_lift_link"
-    mtp.pose.position.x =
-    mtp.pose.position.y =
-    mtp.pose.position.z =
-    mtp.pose.orientation.x =
-    mtp.pose.orientation.y =
-    mtp.pose.orientation.z =
-    mtp.pose.orientation.w =
+    mtp.pose.position.x =0.56
+    mtp.pose.position.y =-0.10
+    mtp.pose.position.z =0.40
+    mtp.pose.orientation.x =0.891
+    mtp.pose.orientation.y =0.181
+    mtp.pose.orientation.z =0.412
+    mtp.pose.orientation.w =-0.029
 
     #move the arm 
     try:
       move_arm = rospy.ServiceProxy(self.arm_controller + "/move_to", robot_srvs.srv.MoveToPose)
-      resp = move_arm()
+      resp = move_arm(mtp)
     except rospy.ServiceException, e:
       rospy.logerr("%s: failed to call move to service call.", self.name)  
       rospy.logdebug("%s: aborted.", self.name) 
       return python_actions.ABORTED  
     
-    if self.isPreemptRequested():
-      rospy.logdebug("%s: preempted.", self.name)
-      return python_actions.PREEMPTED
-
     #ask for the pen by opening and closing the gripper
-    self.gripper_controller_publisher(std_msgs.msg.Float64(0.4))
-    time.sleep(0.5)
-    self.gripper_controller_publisher(std_msgs.msg.Float64(0.35))
-    time.sleep(0.5)
-    self.gripper_controller_publisher(std_msgs.msg.Float64(0.4))
+    for d in [0.4,0.35,0.4]:
+      self.gripper_controller_publisher(std_msgs.msg.Float64(d))
+      time.sleep(0.5)
+      if self.isPreemptRequested():
+        rospy.logdebug("%s: preempted.", self.name)
+        return python_actions.PREEMPTED
 
-    self.update()
-      
     rospy.logdebug("%s: succeeded.", self.name)   
     return python_actions.SUCCESS
         

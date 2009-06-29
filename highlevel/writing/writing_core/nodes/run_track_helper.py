@@ -52,12 +52,12 @@ class FindHelperAction(python_actions.Action):
 
   def __init__(self, *args):
     python_actions.Action.__init__(self, args[0], args[1], args[2], args[3])
-    name = args[0]
+    self.name = args[0]
     try:
-      self.head_controller = rospy.get_param(name + "/head_controller")
+      self.head_controller = rospy.get_param(self.name + "/head_controller")
     except KeyError:
       self.head_controller = "head_controller"
-      rospy.set_param(name + "/head_controller", self.head_controller)
+      rospy.set_param(self.name + "/head_controller", self.head_controller)
 
     self.head_controller_publisher = rospy.Publisher(self.head_controller + "/head_track_point", robot_msgs.msg.PointStamped)
 
@@ -70,7 +70,7 @@ class FindHelperAction(python_actions.Action):
 
     self.head_controller_publisher.publish(htp)
 
-    while(!self.isPreemptRequested()):
+    while not self.isPreemptRequested():
       time.sleep(0.1)
       
       htp.header.stamp = rospy.get_rostime()

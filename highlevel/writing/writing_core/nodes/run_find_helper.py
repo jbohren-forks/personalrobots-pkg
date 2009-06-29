@@ -57,12 +57,12 @@ class FindHelperAction(python_actions.Action, TransformListener):
   def __init__(self, *args):
     TransformListener.__init__(self)
     python_actions.Action.__init__(self, args[0], args[1], args[2], args[3])
-    name = args[0]
+    self.name = args[0]
     try:
-      self.head_controller = rospy.get_param(name + "/head_controller")
+      self.head_controller = rospy.get_param(self.name + "/head_controller")
     except KeyError:
       self.head_controller = "head_controller"
-      rospy.set_param(name + "/head_controller", self.head_controller)
+      rospy.set_param(self.name + "/head_controller", self.head_controller)
 
     self.head_controller_publisher = rospy.Publisher(self.head_controller + "/set_command_array", robot_msgs.msg.JointCmd)
     self.people_sub = rospy.Subscriber("/face_detection/people_tracker_measurements", PositionMeasurement, self.people_position_measurement)
