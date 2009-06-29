@@ -65,14 +65,18 @@ class FindHelperAction(python_actions.Action):
   def execute(self, goal):
 
     rospy.logdebug("%s: executing.", self.name)
+    htp = robot_msgs.msg.PointStamped()
+    htp.header = goal.header
+    htp.point = goal.pose.position
+
+    self.head_controller_publisher.publish(htp)
+
     while(!self.isPreemptRequested()):
       time.sleep(0.1)
-
-      htp = robot_msgs.msg.PointStamped()
-      htp.header = goal.header
-      htp.point = goal.pose.position
-
+      
+      htp.header.stamp = rospy.get_rostime()
       self.head_controller_publisher.publish(htp)
+      
       self.update()
 
     rospy.logdebug("%s: preempted.", self.name)    
