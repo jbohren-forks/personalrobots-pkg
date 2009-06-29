@@ -332,8 +332,15 @@ namespace collision_space
 	    EnvironmentModelODE::kGeom* kg1 = reinterpret_cast<EnvironmentModelODE::kGeom*>(dGeomGetData(o1));
 	    EnvironmentModelODE::kGeom* kg2 = reinterpret_cast<EnvironmentModelODE::kGeom*>(dGeomGetData(o2));
 	    if (kg1 && kg2)
+	    {
 		if (cdata->selfCollisionTest->at(kg1->index)[kg2->index] == false)
 		    return;
+		else
+		{
+		    cdata->link1 = kg1->link;
+		    cdata->link2 = kg2->link;
+		}
+	    }
 	}
 	
 	if (cdata->contacts)

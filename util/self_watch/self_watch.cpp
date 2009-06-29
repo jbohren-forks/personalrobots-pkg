@@ -68,6 +68,8 @@ protected:
 	    m_envModels = boost::shared_ptr<planning_environment::CollisionModels>(new planning_environment::CollisionModels("robot_description", m_scaling, m_padding));
 	    m_kmodel = m_envModels->getKinematicModel();
 	    m_collisionSpace = m_envModels->getODECollisionModel();
+	    m_collisionSpace->setSelfCollision(true);
+	    m_collisionSpace->setVerbose(true);
 
 	    // create a state that can be used to monitor the
 	    // changes in the joints of the kinematic model
@@ -129,11 +131,11 @@ protected:
 
 	if (contacts.size() > 0)
 	{
-	    ROS_WARN("Collision found in %g seconds", (ros::WallTime::now() - start_time).toSec());
+	    ROS_WARN("Collision found in %g seconds", (ros::WallTime::now() - start_time).toSec());	    
 	    for (unsigned int i = 0 ; i < contacts.size() ; ++i)
 	    {
-		ROS_INFO("Collision between link '%s' and '%s'", contacts[i].link1->name.c_str(), contacts[i].link2 ? contacts[i].link2->name.c_str() : "ENVIRONMENT");
-		ROS_INFO("Contact point (in robot frame): (%g, %g, %g)", contacts[i].pos.x(), contacts[i].pos.y(), contacts[i].pos.z());
+		ROS_INFO("Collision between link '%s' and '%s'", contacts[i].link1 ? contacts[i].link1->name.c_str() : "ENVIRONMENT", contacts[i].link2 ? contacts[i].link2->name.c_str() : "ENVIRONMENT");
+		ROS_INFO("Contact point (in frame %s): (%g, %g, %g)", m_stateMonitor->getFrameId().c_str(), contacts[i].pos.x(), contacts[i].pos.y(), contacts[i].pos.z());
 		ROS_INFO("Contact normal: (%g, %g, %g)", contacts[i].normal.x(), contacts[i].normal.y(), contacts[i].normal.z());
 		ROS_INFO("Contact depth: %g", contacts[i].depth);
 	    }
