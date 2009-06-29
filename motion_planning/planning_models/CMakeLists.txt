@@ -8,6 +8,7 @@ set(ROS_BUILD_TYPE Debug)
 rospack_add_library(planning_models src/kinematic.cpp
 				    src/kinematic_state_params.cpp
 				    src/output.cpp)
+rospack_link_boost(planning_models thread)
 
 # Unit tests
 rospack_add_gtest(test_kinematic test/test_kinematic.cpp)
