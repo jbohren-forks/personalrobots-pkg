@@ -38,7 +38,7 @@
 #include <kdl/chain.hpp>
 #include <kdl/frames.hpp>
 #include <kdl/chainjnttojacsolver.hpp>
-#include <ros/node.h>
+#include <ros/node_handle.h>
 #include <robot_msgs/Wrench.h>
 #include <mechanism_model/controller.h>
 #include <mechanism_model/chain.h>
@@ -57,11 +57,10 @@ public:
   ~CartesianWrenchController();
 
   bool initXml(mechanism::RobotState *robot_state, TiXmlElement *config);
+  bool init(mechanism::RobotState *robot, const ros::NodeHandle &n);
 
   bool starting();
   void update();
-
-  void command();
 
   // input of the controller
   KDL::Wrench wrench_desi_;
@@ -69,8 +68,11 @@ public:
 private:
   bool publishDiagnostics(int level, const std::string& message);
 
-  ros::Node* node_;
-  std::string controller_name_;
+  ros::NodeHandle node_;
+  ros::Subscriber sub_command_;
+  void command(const robot_msgs::WrenchConstPtr& wrench_msg);
+
+  //std::string controller_name_;
   mechanism::RobotState *robot_state_;
   mechanism::Chain chain_;
 
@@ -83,8 +85,6 @@ private:
   realtime_tools::RealtimePublisher <diagnostic_msgs::DiagnosticMessage> diagnostics_publisher_;
   ros::Time diagnostics_time_;
   ros::Duration diagnostics_interval_;
-
-  robot_msgs::Wrench wrench_msg_;
 
   struct joint_constraint{
     int joint;

@@ -43,8 +43,7 @@ namespace controller {
 ROS_REGISTER_CONTROLLER(CartesianWrenchController)
 
 CartesianWrenchController::CartesianWrenchController()
-: node_(ros::Node::instance()),
-  robot_state_(NULL),
+: robot_state_(NULL),
   jnt_to_jac_solver_(NULL),
   diagnostics_publisher_("/diagnostics", 2)
 {}
@@ -53,7 +52,7 @@ CartesianWrenchController::CartesianWrenchController()
 
 CartesianWrenchController::~CartesianWrenchController()
 {
-  node_->unsubscribe(controller_name_ + "/command");
+  sub_command_.shutdown();
 }
 
 
@@ -62,36 +61,45 @@ CartesianWrenchController::~CartesianWrenchController()
 bool CartesianWrenchController::initXml(mechanism::RobotState *robot_state, TiXmlElement *config)
 {
   // get the controller name from xml file
-  controller_name_ = config->Attribute("name") ? config->Attribute("name") : "";
-  if (controller_name_ == ""){
+  std::string controller_name = config->Attribute("name") ? config->Attribute("name") : "";
+  if (controller_name == ""){
     ROS_ERROR("CartesianWrenchController: No controller name given in xml file");
     return false;
   }
 
+  return init(robot_state, ros::NodeHandle(controller_name));
+}
+
+bool CartesianWrenchController::init(mechanism::RobotState *robot, const ros::NodeHandle &n)
+{
+  // test if we got robot pointer
+  assert(robot);
+  robot_state_ = robot;
+
+  node_ = n;
+
   // get name of root and tip from the parameter server
   std::string root_name, tip_name;
-  if (!node_->getParam(controller_name_+"/root_name", root_name)){
-    ROS_ERROR("CartesianWrenchController: No root name found on parameter server");
+  if (!node_.getParam("root_name", root_name)){
+    ROS_ERROR("CartesianWrenchController: No root name found on parameter server (namespace: %s)",
+              node_.getNamespace().c_str());
     return false;
   }
-  if (!node_->getParam(controller_name_+"/tip_name", tip_name)){
-    ROS_ERROR("CartesianWrenchController: No tip name found on parameter server");
+  if (!node_.getParam("tip_name", tip_name)){
+    ROS_ERROR("CartesianWrenchController: No tip name found on parameter server (namespace: %s)",
+              node_.getNamespace().c_str());
     return false;
   }
 
   // get the joint constraint from the parameter server
-  node_->param(controller_name_+"/constraint/joint", constraint_.joint, -1);
-  node_->param(controller_name_+"/constraint/soft_limit", constraint_.soft_limit, 0.0);
-  node_->param(controller_name_+"/constraint/hard_limit", constraint_.hard_limit, 0.0);
-  node_->param(controller_name_+"/constraint/stiffness", constraint_.stiffness, 0.0);
+  node_.param("constraint/joint", constraint_.joint, -1);
+  node_.param("constraint/soft_limit", constraint_.soft_limit, 0.0);
+  node_.param("constraint/hard_limit", constraint_.hard_limit, 0.0);
+  node_.param("constraint/stiffness", constraint_.stiffness, 0.0);
 
   ROS_INFO("Using joint %i, low limit %f, high limit %f and stiffness %f",
 	   constraint_.joint, constraint_.soft_limit, constraint_.hard_limit, constraint_.stiffness);
 
-
-  // test if we got robot pointer
-  assert(robot_state);
-  robot_state_ = robot_state;
 
   // create robot chain from root to tip
   if (!chain_.init(robot_state_->model_, root_name, tip_name)){
@@ -122,12 +130,11 @@ bool CartesianWrenchController::initXml(mechanism::RobotState *robot_state, TiXm
 
 
   // subscribe to wrench commands
-  node_->subscribe(controller_name_ + "/command", wrench_msg_,
-		   &CartesianWrenchController::command, this, 1);
+  sub_command_ = node_.subscribe<robot_msgs::Wrench>
+    ("command", 1, &CartesianWrenchController::command, this);
 
   return true;
 }
-
 
 bool CartesianWrenchController::starting()
 {
@@ -196,15 +203,15 @@ bool CartesianWrenchController::publishDiagnostics(int level, const std::string&
 
 
 
-void CartesianWrenchController::command()
+void CartesianWrenchController::command(const robot_msgs::WrenchConstPtr& wrench_msg)
 {
   // convert to wrench command
-  wrench_desi_.force(0) = wrench_msg_.force.x;
-  wrench_desi_.force(1) = wrench_msg_.force.y;
-  wrench_desi_.force(2) = wrench_msg_.force.z;
-  wrench_desi_.torque(0) = wrench_msg_.torque.x;
-  wrench_desi_.torque(1) = wrench_msg_.torque.y;
-  wrench_desi_.torque(2) = wrench_msg_.torque.z;
+  wrench_desi_.force(0) = wrench_msg->force.x;
+  wrench_desi_.force(1) = wrench_msg->force.y;
+  wrench_desi_.force(2) = wrench_msg->force.z;
+  wrench_desi_.torque(0) = wrench_msg->torque.x;
+  wrench_desi_.torque(1) = wrench_msg->torque.y;
+  wrench_desi_.torque(2) = wrench_msg->torque.z;
 }
 
 }; // namespace
