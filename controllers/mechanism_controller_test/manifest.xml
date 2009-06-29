@@ -9,6 +9,10 @@
   <depend package="hardware_interface" />
   <depend package="wg_robot_description_parser" />
   <depend package="mechanism_control" />
+
+  <!-- The controllers packages for testing -->
+  <depend package="robot_mechanism_controllers" />
+
   <url>http://pr.willowgarage.com</url>
   <repository>http://pr.willowgarage.com/repos</repository>
   <export>
