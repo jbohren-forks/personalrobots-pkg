@@ -32,7 +32,8 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
-#pragma once
+#ifndef JOINT_VELOCITY_CONTROLLER_H
+#define JOINT_VELOCITY_CONTROLLER_H
 
 /***************************************************/
 /*! \class controller::JointVelocityController
@@ -184,3 +185,4 @@ private:
 };
 }
 
+#endif

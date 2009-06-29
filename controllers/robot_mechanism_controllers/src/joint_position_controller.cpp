@@ -37,13 +37,13 @@
 
 
 using namespace std;
-using namespace controller;
 
+namespace controller {
 
 ROS_REGISTER_CONTROLLER(JointPositionController)
 
 JointPositionController::JointPositionController()
-: joint_state_(NULL), initialized_(false), robot_(NULL), last_time_(0), command_(0)
+: loop_count_(0), joint_state_(NULL), initialized_(false), robot_(NULL), last_time_(0), command_(0)
 {
 }
 
@@ -97,6 +97,31 @@ bool JointPositionController::initXml(mechanism::RobotState *robot, TiXmlElement
 
   return init(robot, joint_name, pid);
 }
+
+bool JointPositionController::init(mechanism::RobotState *robot, const ros::NodeHandle &n)
+{
+  assert(robot);
+  node_ = n;
+
+  std::string joint_name;
+  if (!node_.getParam("joint", joint_name)) {
+    ROS_ERROR("No joint given (namespace: %s)", node_.getNamespace().c_str());
+    return false;
+  }
+
+  control_toolbox::Pid pid;
+  if (!pid.init(ros::NodeHandle(node_, "pid")))
+    return false;
+
+  controller_state_publisher_.reset(
+    new realtime_tools::RealtimePublisher<robot_mechanism_controllers::JointControllerState>
+    (node_, "state", 1));
+
+  sub_command_ = node_.subscribe<std_msgs::Float64>("set_command", 1, &JointPositionController::setCommandCB, this);
+
+  return init(robot, joint_name, pid);
+}
+
 
 void JointPositionController::setGains(const double &p, const double &i, const double &d, const double &i_max, const double &i_min)
 {
@@ -159,9 +184,32 @@ void JointPositionController::update()
   joint_state_->commanded_effort_ = pid_controller_.updatePid(error, dt_);
   //joint_state_->commanded_effort_ = pid_controller_.updatePid(error, joint_state_->velocity_, dt_);
 
+  if(loop_count_ % 10 == 0)
+  {
+    if(controller_state_publisher_ && controller_state_publisher_->trylock())
+    {
+      controller_state_publisher_->msg_.set_point = command_;
+      controller_state_publisher_->msg_.process_value = joint_state_->velocity_;
+      controller_state_publisher_->msg_.error = error;
+      controller_state_publisher_->msg_.time_step = dt_;
 
+      double dummy;
+      getGains(controller_state_publisher_->msg_.p,
+               controller_state_publisher_->msg_.i,
+               controller_state_publisher_->msg_.d,
+               controller_state_publisher_->msg_.i_clamp,
+               dummy);
+      controller_state_publisher_->unlockAndPublish();
+    }
+  }
+  loop_count_++;
 
   last_time_ = time;
+}
+
+void JointPositionController::setCommandCB(const std_msgs::Float64ConstPtr& msg)
+{
+  command_ = msg->data;
 }
 
 //------ Joint Position controller node --------
@@ -205,7 +253,7 @@ void JointPositionControllerNode::update()
       tuning_publisher_->msg_.count       = count;
 
       tuning_publisher_->unlockAndPublish();
-    } 
+    }
   }
 
   if(count % 10 == 0)
@@ -281,6 +329,4 @@ bool JointPositionControllerNode::getCommand(robot_srvs::GetValue::Request &req,
   return true;
 }
 
-
-
-
+}

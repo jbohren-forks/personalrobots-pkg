@@ -32,7 +32,8 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
-#pragma once
+#ifndef JOINT_POSITION_CONTROLLER_H
+#define JOINT_POSITION_CONTROLLER_H
 
 /***************************************************/
 /*! \class controller::JointPositionController
@@ -79,14 +80,9 @@ public:
   JointPositionController();
   ~JointPositionController();
 
- /*!
-   * \brief Functional way to initialize limits and gains.
-   * \param pid Pid gain values.
-   * \param joint_name Name of joint we want to control.
-   * \param *robot The robot.
-   */
   bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
   bool init(mechanism::RobotState *robot, const std::string &joint_name,const control_toolbox::Pid &pid);
+  bool init(mechanism::RobotState *robot, const ros::NodeHandle &n);
 
   /*!
    * \brief Give set position of the joint for next update: revolute (angle) and prismatic (position)
@@ -114,11 +110,21 @@ public:
 
 
 private:
+  int loop_count_;
   bool initialized_;
   mechanism::RobotState *robot_;              /**< Pointer to robot structure. */
   control_toolbox::Pid pid_controller_;       /**< Internal PID controller. */
   double last_time_;                          /**< Last time stamp of update. */
   double command_;                            /**< Last commanded position. */
+
+  ros::NodeHandle node_;
+
+  boost::scoped_ptr<
+    realtime_tools::RealtimePublisher<
+      robot_mechanism_controllers::JointControllerState> > controller_state_publisher_ ;
+
+  ros::Subscriber sub_command_;
+  void setCommandCB(const std_msgs::Float64ConstPtr& msg);
 
   friend class JointPositionControllerNode;
 };
@@ -168,3 +174,4 @@ private:
 };
 }
 
+#endif
