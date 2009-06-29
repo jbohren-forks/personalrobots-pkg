@@ -451,8 +451,11 @@ vector<weak_classifier*>* Dorylus::findActivatedWCs(const string &descriptor, co
   activated->reserve(wcs.size());
 
   for(unsigned int t=0; t<wcs.size(); t++) {
-    if(euc(pt, wcs[t].center) <= wcs[t].theta)
-      activated->push_back(&wcs[t]);
+    if(max_wc_ > 0 && wcs[t].id <= max_wc_) {
+      if(euc(pt, wcs[t].center) <= wcs[t].theta) {
+	activated->push_back(&wcs[t]);
+      }
+    }
   }
   return activated;
 }
@@ -919,11 +922,11 @@ Matrix Dorylus::classify(object &obj, Matrix **confidence) {
   for(bit = battery_.begin(); bit != battery_.end(); bit++) {
     string descriptor = bit->first;
     if(obj.features.find(descriptor) == obj.features.end()) {
-      cout << "Skipping " << descriptor << " descriptor, as the object has no feature of that type." << endl;
+      //cout << "Skipping " << descriptor << " descriptor, as the object has no feature of that type." << endl;
       continue;
     }
     if(find(exclude_descriptors_.begin(), exclude_descriptors_.end(), descriptor) != exclude_descriptors_.end()) {
-      cout << "Skipping " << descriptor << " descriptor, as it is on the exclude list." << endl;
+      //cout << "Skipping " << descriptor << " descriptor, as it is on the exclude list." << endl;
       continue;
     }
     Matrix* f = obj.features[descriptor];
@@ -932,6 +935,7 @@ Matrix Dorylus::classify(object &obj, Matrix **confidence) {
       for(unsigned int a = 0; a<act->size(); a++) {
 	response += (*act)[a]->vals;
       }
+      delete act;
     }
   }
 

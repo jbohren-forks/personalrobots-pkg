@@ -52,16 +52,16 @@ void whiten(MatrixXf* m) {
     *m = *m / sqrt(var);
     
     // -- Check.
-    var = 0;
-    for(int i=0; i<m->rows(); i++) {
-      (*m)(i,0) = (*m)(i,0);
-      var += pow((*m)(i,0), 2);
-    }
-    var /= m->rows();
-    if(abs(var-1) >= 1e-3) {
-      cout << "var " << var << endl;
-      assert(abs(var-1) < 1e-3);
-    }
+//     var = 0;
+//     for(int i=0; i<m->rows(); i++) {
+//       (*m)(i,0) = (*m)(i,0);
+//       var += pow((*m)(i,0), 2);
+//     }
+//     var /= m->rows();
+//     if(abs(var-1) >= 1e-3) {
+//       cout << "var " << var << endl;
+//       assert(abs(var-1) < 1e-3);
+//     }
   }
 
   assert(!isnan((*m)(0,0)));
@@ -135,7 +135,7 @@ bool Patch::preCompute(bool debug) {
   // -- Catch edge cases.
   int half = ceil((float)raw_size_ / 2.0);
   if(row_-half < 0 || row_+half >= img_->height || col_-half < 0 || col_+half >= img_->width) {
-    cout << "Out of bounds; size: " << raw_size_ << ", row: " << row_ << ", col_: " << col_ << endl;
+    //cout << "Out of bounds; size: " << raw_size_ << ", row: " << row_ << ", col_: " << col_ << endl;
     return false;
   }
   
@@ -298,16 +298,11 @@ void PatchStatistic::display(const MatrixXf& result) {
 ****************************************************************************/
 
 SuperpixelStatistic::SuperpixelStatistic(int seed_spacing, float scale, SuperpixelStatistic* seg_provider) :
-  seed_spacing_(seed_spacing), scale_(scale), seg_provider_(seg_provider), seg_(NULL)
+  index_(NULL), seed_spacing_(seed_spacing), scale_(scale), seg_provider_(seg_provider), seg_(NULL)
 {
   char buf[100];
   sprintf(buf, "SuperpixelStatistic_seedSpacing%d_scale%g", seed_spacing_, scale_);
   name_ = string(buf);
-
-  if(seg_provider_ == NULL)
-    index_ = new vector< vector<CvPoint> >;
-  else
-    index_ = NULL;
 }
 
 
@@ -507,7 +502,7 @@ void SuperpixelStatistic::segment(bool debug) {
 ****************************************************************************/
 
 SuperpixelColorHistogram::SuperpixelColorHistogram(int seed_spacing, float scale, int nBins, string type, SuperpixelStatistic* seg_provider, SuperpixelColorHistogram* hsv_provider) :
-  SuperpixelStatistic(seed_spacing, scale, seg_provider), nBins_(nBins), type_(type), hsv_provider_(hsv_provider), hists_reserved_(false)
+  SuperpixelStatistic(seed_spacing, scale, seg_provider), hsv_(NULL), hue_(NULL), sat_(NULL), val_(NULL), nBins_(nBins), type_(type), hsv_provider_(hsv_provider), hists_reserved_(false)
 {
   char buf[100];
   sprintf(buf, "_colorHistogram_type:%s_nBins%d", type_.c_str(), nBins);
@@ -525,10 +520,19 @@ SuperpixelColorHistogram::SuperpixelColorHistogram(int seed_spacing, float scale
 //   ranges_ = &range;
 }
 
+SuperpixelColorHistogram::~SuperpixelColorHistogram() {
+  cout << "Destroying SuperpixelColorHistogram" << endl;
+  clearPointCache();
+  clearImageCache();
+}
+
+
 bool SuperpixelColorHistogram::compute(MatrixXf** result, bool debug) {
   // -- Make sure we have access to a segmentation.
-  if(seg_provider_ == NULL && seg_ == NULL)
+  if(seg_provider_ == NULL && seg_ == NULL) {
+    index_ = new vector< vector<CvPoint> >;
     segment(debug);
+  }
   else if(seg_provider_ != NULL && seg_ == NULL) {
     seg_ = seg_provider_->seg_;
     index_ = seg_provider_->index_;
@@ -688,8 +692,7 @@ bool SuperpixelColorHistogram::compute(MatrixXf** result, bool debug) {
 
 //! Release seg_, etc., if this object is the one that computes them; otherwise, just nullify the pointers.
 void SuperpixelColorHistogram::clearImageCache() {
-  //ROS_DEBUG("Clearing the image cache for %s", name_.c_str());
-  
+  ROS_DEBUG("Clearing the image cache for %s", name_.c_str());
   
   if(hsv_provider_ == NULL) {
     cvReleaseImage(&hsv_);
@@ -704,15 +707,24 @@ void SuperpixelColorHistogram::clearImageCache() {
     val_ = NULL;
   }
 
-  if(seg_provider_ == NULL)
+  // -- Clean up index and seg_.
+  if(seg_provider_ == NULL) {
     cvReleaseImage(&seg_);
-  else
+    if(index_) {
+      cout << "Deleting index in " << name_ << endl;
+      delete index_;
+    }
+  }
+  else {
     seg_ = NULL;
+    index_ = NULL;
+  }
 
 
   // -- Clean up histograms.
   for(unsigned int i=0; i<histograms_.size(); i++) {
-    delete histograms_[i];
+    if(histograms_[i])
+      delete histograms_[i];
   }
   histograms_.clear();
   hists_reserved_ = false;

@@ -33,13 +33,18 @@ vector<ImageDescriptor*> setupImageDescriptors() {
   d.push_back(sch3);
   d.push_back(sch4);
 
-  d.push_back(new IntensityPatch(50, 1, true));
-  d.push_back(new PatchStatistic(string("variance"), (Patch*)d.back()));
   d.push_back(new IntensityPatch(40, .5, true));
   d.push_back(new IntensityPatch(20, 1, true));
   d.push_back(new IntensityPatch(80, .25, true));
   d.push_back(new IntensityPatch(120, 1.0/6.0, true));
   return d;
+}
+
+void releaseImageDescriptors(vector<ImageDescriptor*>* desc) {
+  for(int i=0; i<desc->size(); i++) {
+    delete (*desc)[i];
+  }
+  desc->clear();
 }
 
 
@@ -50,11 +55,6 @@ NEWMAT::Matrix* eigen2Newmat(const MatrixXf& eig) {
       (*m)(i+1, j+1) = eig(i,j);
     }
   }
-  
-//   cout << "Comparison: " << endl;
-//   cout << m->t() << endl;
-//   cout << eig.transpose() << endl;
-
   return m;
 }
 
@@ -132,6 +132,15 @@ public:
     descriptor_ = setupImageDescriptors();
   }
 
+  ~Stanleyi() {
+    cout << "Destroying stanleyi." << endl;
+    releaseImageDescriptors(&descriptor_);
+//     if(img_)
+//       cvReleaseImage(&img_);
+    if(mask_)
+      cvReleaseImage(&mask_);
+  }
+
   void collectDataset(string bagfile, int samples_per_img, string save_name);
   void viewLabels(string bagfile);
   void classifyVideoVis(string bagfile, Dorylus& d, int samples_per_img);
@@ -161,13 +170,14 @@ object* Stanleyi::computeFeaturesAtRandomPoint(int* row, int* col, bool debug) {
   bool success = false;
   for(unsigned int j=0; j<descriptor_.size(); j++) {
     // -- For now, only accept points for which all features are computable.
-    if(obj->label == 1 && getenv("DEBUG_POSITIVES") != NULL) 
+    if(mask_ != NULL && obj->label == 1 && getenv("DEBUG_POSITIVES") != NULL) 
       success = descriptor_[j]->compute(&result, true);
     else
       success = descriptor_[j]->compute(&result, debug);
 
     if(!success) {
-      ROS_WARN("Descriptor %s failed.", descriptor_[j]->name_.c_str());
+      //ROS_WARN("Descriptor %s failed.", descriptor_[j]->name_.c_str());
+      delete obj;
       return NULL;
     }
 
@@ -219,8 +229,10 @@ void Stanleyi::collectDataset(string bagfile, int samples_per_img, string save_n
       object* obj = computeFeaturesAtRandomPoint(NULL, NULL, debug);
 
       // -- Add the object to the dataset.
-      if(obj != NULL)
+      if(obj != NULL) {
 	objs.push_back(*obj);
+	delete obj;
+      }
 	
     }
   }
@@ -232,8 +244,11 @@ void Stanleyi::collectDataset(string bagfile, int samples_per_img, string save_n
   
 
 void Stanleyi::classifyVideoVis(string bagfile, Dorylus& d, int samples_per_img) {
-  vector<ImageDescriptor*> desc = setupImageDescriptors();
-  d.exclude_descriptors_.push_back(desc[4]->name_);
+  //vector<ImageDescriptor*> desc = setupImageDescriptors();
+  //d.exclude_descriptors_.push_back(desc[4]->name_);
+  if(getenv("MAX_WC") != NULL)
+    d.max_wc_ = atoi(getenv("MAX_WC"));
+  
 
   cvNamedWindow("Classification Visualization", CV_WINDOW_AUTOSIZE);
   
@@ -243,6 +258,8 @@ void Stanleyi::classifyVideoVis(string bagfile, Dorylus& d, int samples_per_img)
   object* obj = NULL;
   NEWMAT::Matrix response_nm;
   int frame_num = 0;
+  CvVideoWriter* writer = NULL;
+
 
   int skip_frames = 184;
   if(getenv("SKIP_FRAMES") != NULL) 
@@ -260,9 +277,12 @@ void Stanleyi::classifyVideoVis(string bagfile, Dorylus& d, int samples_per_img)
     if (!img_bridge_.fromImage(img_msg_, "bgr"))
       break;
   
-    
     img_ = img_bridge_.toIpl();
     vis = cvCloneImage(img_);
+
+    if(writer == NULL) {
+      writer = cvCreateVideoWriter("output.mpg", CV_FOURCC('P','I','M','1'), 30, cvGetSize(img_));
+    }
 
     IplImage* mask = findLabelMask(img_msg_.header.stamp.toSec());
     if(getenv("DEBUG_POSITIVES") != NULL &&  mask == NULL)
@@ -279,6 +299,7 @@ void Stanleyi::classifyVideoVis(string bagfile, Dorylus& d, int samples_per_img)
       if(!obj)
 	continue;
       response_nm = d.classify(*obj);
+      delete obj;
 
       if(mask) {
 	CvScalar s = cvGet2D(mask, row, col);
@@ -305,19 +326,24 @@ void Stanleyi::classifyVideoVis(string bagfile, Dorylus& d, int samples_per_img)
 	  cvCircle(mask, cvPoint(col, row), 2, cvScalar(0,0,255), 2);
       }
     }
+
     if(mask) {
       cvNamedWindow("Mask", CV_WINDOW_AUTOSIZE);
       cvShowImage("Mask", mask);
       printf("TP: %d, TN: %d, FP: %d, FN: %d\n", tp, tn, fp, fn);
     }
 
+    cvWriteFrame(writer, vis);
+
     cout << "Showing results for frame " << frame_num << endl;
     cvShowImage("Classification Visualization", vis);
     if(cvWaitKey(0) == 'q') {
-      return;
+      break;
     }
+
+
+    cvReleaseImage(&vis);
   }
-   
 }
 
 

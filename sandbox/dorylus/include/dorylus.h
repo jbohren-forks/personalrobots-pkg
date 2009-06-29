@@ -37,12 +37,20 @@ typedef struct
 
 string displayWeakClassifier(const weak_classifier &wc);
 
-typedef struct
-{
+class object {
+ public:
   //! 0 = Background.
   int label;
   map<string, NEWMAT::Matrix*> features;
-} object;
+
+  object() {}
+  ~object() {
+    map<string, NEWMAT::Matrix*>::iterator fit;
+    for(fit=features.begin(); fit!=features.end(); fit++) {
+      delete fit->second;
+    }
+  }
+};
 
 string displayObject(const object& obj);
 
@@ -107,6 +115,8 @@ class Dorylus {
   unsigned int nClasses_;
   vector<int> classes_;
   vector<string> exclude_descriptors_;
+  //! Prevents classifier from using any weak classifier learned after this number of weak classifiers.  If 0, no limit.
+  int max_wc_;
 
   //! debugHook will be called each time a new weak classifier is learned. 
   void train(int nCandidates, int max_secs, int max_wcs, void (*debugHook)(weak_classifier)=NULL);
@@ -125,7 +135,7 @@ class Dorylus {
   vector<weak_classifier*>* findActivatedWCs(const string &descriptor, const NEWMAT::Matrix &pt);
   NEWMAT::Matrix computeDatasetActivations(const weak_classifier& wc, const NEWMAT::Matrix& mmt);
 
- Dorylus() : dd_(NULL), nClasses_(0)
+ Dorylus() : dd_(NULL), nClasses_(0), max_wc_(0)
     {
       version_string_ = std::string("#DORYLUS CLASSIFIER LOG v0.1");
     }

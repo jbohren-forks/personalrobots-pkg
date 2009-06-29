@@ -48,6 +48,7 @@ class ImageDescriptor {
   void commonDebug();
   void setImage(IplImage* img);
   void setPoint(int row, int col);
+  virtual ~ImageDescriptor() {};
 };
 
 class Patch : public ImageDescriptor {
@@ -132,6 +133,7 @@ class SuperpixelColorHistogram : public SuperpixelStatistic {
   void display(const Eigen::MatrixXf& result) {}
   void clearPointCache() {}
   void clearImageCache();
+  ~SuperpixelColorHistogram();
 };
 
 std::vector<ImageDescriptor*> setupImageDescriptors();
