@@ -37,7 +37,7 @@
 
 #include "angles/angles.h"
 
-#include "tf/option_permutations.h"
+#include "rostest/permuter.h"
 
 #define PROJECTION_TEST_RANGE_MIN (0.23)
 #define PROJECTION_TEST_RANGE_MAX (40.0) 
@@ -94,7 +94,7 @@ TEST(laser_scan, getUnitVectors)
 
   std::vector<double> min_angles, max_angles, angle_increments;
 
-  tf::Permuter permuter;
+  rostest::Permuter permuter;
   min_angles.push_back(-M_PI);
   min_angles.push_back(-M_PI/1.5);
   min_angles.push_back(-M_PI/2);
@@ -105,7 +105,7 @@ TEST(laser_scan, getUnitVectors)
   min_angles.push_back(M_PI/2);
   min_angles.push_back(M_PI/4);
   min_angles.push_back(M_PI/8);
-  permuter.addOption(min_angles, &min_angle);
+  permuter.addOptionSet(min_angles, &min_angle);
 
   max_angles.push_back(M_PI);
   max_angles.push_back(M_PI/1.5);
@@ -117,12 +117,12 @@ TEST(laser_scan, getUnitVectors)
   max_angles.push_back(-M_PI/2);
   max_angles.push_back(-M_PI/4);
   max_angles.push_back(-M_PI/8);
-  permuter.addOption(max_angles, &max_angle);
+  permuter.addOptionSet(max_angles, &max_angle);
 
   angle_increments.push_back(M_PI/180); // one degree
   angle_increments.push_back(M_PI/360); // half degree
   angle_increments.push_back(M_PI/720); // quarter degree
-  permuter.addOption(angle_increments, &angle_increment);
+  permuter.addOptionSet(angle_increments, &angle_increment);
 
 
   while (permuter.step())
@@ -159,7 +159,7 @@ TEST(laser_scan, projectLaser)
   std::vector<double> ranges, intensities, min_angles, max_angles, angle_increments;
   std::vector<ros::Duration> increment_times, scan_times;
 
-  tf::Permuter permuter;
+  rostest::Permuter permuter;
 
   ranges.push_back(-1.0);
   ranges.push_back(1.0);
@@ -168,38 +168,38 @@ TEST(laser_scan, projectLaser)
   ranges.push_back(4.0);
   ranges.push_back(5.0);
   ranges.push_back(100.0);
-  permuter.addOption(ranges, &range);
+  permuter.addOptionSet(ranges, &range);
 
   intensities.push_back(1.0);
   intensities.push_back(2.0);
   intensities.push_back(3.0);
   intensities.push_back(4.0);
   intensities.push_back(5.0);
-  permuter.addOption(intensities, &intensity);
+  permuter.addOptionSet(intensities, &intensity);
 
   min_angles.push_back(-M_PI);
   min_angles.push_back(-M_PI/1.5);
   min_angles.push_back(-M_PI/2);
   min_angles.push_back(-M_PI/4);
   min_angles.push_back(-M_PI/8);
-  permuter.addOption(min_angles, &min_angle);
+  permuter.addOptionSet(min_angles, &min_angle);
 
   max_angles.push_back(M_PI);
   max_angles.push_back(M_PI/1.5);
   max_angles.push_back(M_PI/2);
   max_angles.push_back(M_PI/4);
   max_angles.push_back(M_PI/8);
-  permuter.addOption(max_angles, &max_angle);
+  permuter.addOptionSet(max_angles, &max_angle);
 
   angle_increments.push_back(M_PI/180); // one degree
   angle_increments.push_back(M_PI/360); // half degree
   angle_increments.push_back(M_PI/720); // quarter degree
-  permuter.addOption(angle_increments, &angle_increment);
+  permuter.addOptionSet(angle_increments, &angle_increment);
 
   scan_times.push_back(ros::Duration(1/40));
   scan_times.push_back(ros::Duration(1/20));
 
-  permuter.addOption(scan_times, &scan_time);
+  permuter.addOptionSet(scan_times, &scan_time);
 
   while (permuter.step())
   {
@@ -271,7 +271,7 @@ TEST(laser_scan, transformLaserScanToPointCloud)
   std::vector<double> ranges, intensities, min_angles, max_angles, angle_increments;
   std::vector<ros::Duration> increment_times, scan_times;
 
-  tf::Permuter permuter;
+  rostest::Permuter permuter;
 
   ranges.push_back(-1.0);
   ranges.push_back(1.0);
@@ -280,14 +280,14 @@ TEST(laser_scan, transformLaserScanToPointCloud)
   ranges.push_back(4.0);
   ranges.push_back(5.0);
   ranges.push_back(100.0);
-  permuter.addOption(ranges, &range);
+  permuter.addOptionSet(ranges, &range);
 
   intensities.push_back(1.0);
   intensities.push_back(2.0);
   intensities.push_back(3.0);
   intensities.push_back(4.0);
   intensities.push_back(5.0);
-  permuter.addOption(intensities, &intensity);
+  permuter.addOptionSet(intensities, &intensity);
 
   min_angles.push_back(-M_PI);
   min_angles.push_back(-M_PI/1.5);
@@ -302,18 +302,18 @@ TEST(laser_scan, transformLaserScanToPointCloud)
   max_angles.push_back(M_PI/4);
   max_angles.push_back(M_PI/8);
 
-  permuter.addOption(min_angles, &min_angle);
-  permuter.addOption(max_angles, &max_angle);
+  permuter.addOptionSet(min_angles, &min_angle);
+  permuter.addOptionSet(max_angles, &max_angle);
 
   angle_increments.push_back(M_PI/180); // one degree
   angle_increments.push_back(M_PI/360); // half degree
   angle_increments.push_back(M_PI/720); // quarter degree
-  permuter.addOption(angle_increments, &angle_increment);
+  permuter.addOptionSet(angle_increments, &angle_increment);
 
   scan_times.push_back(ros::Duration(1/40));
   scan_times.push_back(ros::Duration(1/20));
 
-  permuter.addOption(scan_times, &scan_time);
+  permuter.addOptionSet(scan_times, &scan_time);
 
   while (permuter.step())
   {
