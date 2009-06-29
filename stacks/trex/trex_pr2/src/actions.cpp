@@ -42,6 +42,7 @@
 #include <robot_actions/action.h>
 #include <boost/thread.hpp>
 #include <cstdlib>
+#include <ros/node.h>
 
 namespace trex_pr2 {
 

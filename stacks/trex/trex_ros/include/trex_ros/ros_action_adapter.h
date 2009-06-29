@@ -6,6 +6,7 @@
 #include "TokenVariable.hh"
 #include "Domains.hh"
 #include <std_msgs/Empty.h>
+#include <ros/node.h>
 
 namespace TREX {
 

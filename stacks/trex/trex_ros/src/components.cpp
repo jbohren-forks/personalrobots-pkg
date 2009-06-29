@@ -345,6 +345,7 @@ namespace TREX{
   };
 
   std::vector<SchemaFunction> _g_ros_schemas;
+  std::vector<FactoryFunction> _g_ros_factories;
 
   class ROSSchema: public Assembly::Schema {
   public:
@@ -383,6 +384,9 @@ namespace TREX{
   void initROSExecutive(bool playback){
     initTREX();
     new TeleoReactor::ConcreteFactory<trex_ros::ROSReactor>("ROSReactor");
+    for (unsigned int i = 0; i < _g_ros_factories.size(); i++) {
+      _g_ros_factories[i](playback);
+    }
     new ROSSchema(playback);
   }
 

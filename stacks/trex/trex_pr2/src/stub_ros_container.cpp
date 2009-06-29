@@ -43,6 +43,7 @@
 #include <robot_actions/action.h>
 #include <boost/thread.hpp>
 #include <cstdlib>
+#include <ros/node.h>
 
 /**
  * @note This file is temporary. Normally we would not declare and define all these actions together. Just

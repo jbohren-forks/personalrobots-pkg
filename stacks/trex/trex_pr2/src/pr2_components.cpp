@@ -84,9 +84,13 @@ namespace TREX {
     REGISTER_FLAW_FILTER(cfm, trex_pr2::MapConnectorFilter, MapConnectorFilter);
     REGISTER_FLAW_HANDLER(cfm, trex_pr2::MapConnectorSelector, MapConnectorSelector);
     REGISTER_FLAW_MANAGER(cfm, trex_pr2::TopologicalGoalManager, TopologicalGoalManager);
+  }
 
+  void registerPr2Factory(bool playback) {
     // Register special reactors
     new TREX::TeleoReactor::ConcreteFactory<trex_pr2::MasterReactor>("MasterReactor");
   }
+
   REGISTER_SCHEMA(registerPr2Components);
+  REGISTER_FACTORY(registerPr2Factory);
 }

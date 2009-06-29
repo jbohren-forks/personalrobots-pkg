@@ -13,8 +13,10 @@ using namespace EUROPA;
 
 namespace TREX {
   typedef void (*SchemaFunction)(bool, const Assembly&);
+  typedef void (*FactoryFunction)(bool);
 
   extern std::vector<SchemaFunction> _g_ros_schemas;
+  extern std::vector<FactoryFunction> _g_ros_factories;
 
 #define REGISTER_SCHEMA(type)						\
   void _do_not_use_schema##_##type(bool playback, const Assembly &a) {	\
@@ -29,6 +31,18 @@ namespace TREX {
   _do_not_use_AutoGenClass##_##type					\
     _do_not_use_AutoGenClass##_##type::_instance;
 
+#define REGISTER_FACTORY(type)						\
+  void _do_not_use_factory##_##type(bool playback) {			\
+    type(playback); }							\
+  class _do_not_use_AutoGenClass##_##type {				\
+  public:								\
+    _do_not_use_AutoGenClass##_##type() {				\
+      _g_ros_factories.push_back(&(_do_not_use_factory##_##type));	\
+    }									\
+    static _do_not_use_AutoGenClass##_##type _instance;			\
+  };									\
+  _do_not_use_AutoGenClass##_##type					\
+    _do_not_use_AutoGenClass##_##type::_instance;
 
   void signalHandler(int signalNo);
 
