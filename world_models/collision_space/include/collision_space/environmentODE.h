@@ -154,7 +154,7 @@ namespace collision_space
 	    
 	    struct SortByXLow
 	    {
-		bool operator()(const Geom *a, const Geom *b) 
+		bool operator()(const Geom *a, const Geom *b) const
 		{
 		    if (a->aabb[0] < b->aabb[0])
 			return true;
@@ -164,7 +164,7 @@ namespace collision_space
 	    
 	    struct SortByYLow
 	    {
-		bool operator()(const Geom *a, const Geom *b) 
+		bool operator()(const Geom *a, const Geom *b) const
 		{
 		    if (a->aabb[2] < b->aabb[2])
 			return true;
@@ -174,7 +174,7 @@ namespace collision_space
 	    
 	    struct SortByZLow
 	    {
-		bool operator()(const Geom *a, const Geom *b) 
+		bool operator()(const Geom *a, const Geom *b) const
 		{
 		    if (a->aabb[4] < b->aabb[4])
 			return true;
@@ -184,7 +184,7 @@ namespace collision_space
 	    
 	    struct SortByXTest
 	    {
-		bool operator()(const Geom *a, const Geom *b)
+		bool operator()(const Geom *a, const Geom *b) const
 		{
 		    if (a->aabb[1] < b->aabb[0])
 			return true;
@@ -194,7 +194,7 @@ namespace collision_space
 	    
 	    struct SortByYTest
 	    {
-		bool operator()(const Geom *a, const Geom *b)
+		bool operator()(const Geom *a, const Geom *b) const
 		{
 		    if (a->aabb[3] < b->aabb[2])
 			return true;
@@ -204,7 +204,7 @@ namespace collision_space
 	    
 	    struct SortByZTest
 	    {
-		bool operator()(const Geom *a, const Geom *b)
+		bool operator()(const Geom *a, const Geom *b) const
 		{
 		    if (a->aabb[5] < b->aabb[4])
 			return true;
