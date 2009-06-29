@@ -1,35 +1,36 @@
+/** ros_reactor.h
+ * ROSReactor is a TREX DeliberaiveReactor that can broadcast it's plan over the
+ * ROS messaging system.
+ */
+
 #ifndef H_ROSReactor
 #define H_ROSReactor
 
 #include "ros/ros.h"
 #include "ros/node.h"
+
 #include "trex_ros/executive.h"
-#include "trex_ros/ExecuteGoals.h"
+#include "trex_ros/PlanDescription.h"
 
 #include "DbCore.hh"
 
-using namespace TREX;
-using namespace EUROPA;
-using namespace trex_ros;
 namespace trex_ros {
 
   /**
    * @brief Extends a deliberative reactor to enable it to be taskable over ROS
    */
-  class ROSReactor: public DbCore {
+  class ROSReactor: public TREX::DbCore {
   public:
-    ROSReactor(const LabelStr& agentName, const TiXmlElement& configData);
+    ROSReactor(const EUROPA::LabelStr& agentName, const TiXmlElement& configData);
 
     virtual ~ROSReactor();
-
-    bool executeGoals(ExecuteGoals::Request &req, ExecuteGoals::Response &resp);
 
   protected:
 
     /**
      * @brief Used to hook up observer for dispatch of observations and servers for dispatch of goals
      */
-    virtual void handleInit(TICK initialTick, const std::map<double, ServerId>& serversByTimeline, const ObserverId& observer);
+    virtual void handleInit(TREX::TICK initialTick, const std::map<double, TREX::ServerId>& serversByTimeline, const TREX::ObserverId& observer);
 
     /**
      * @brief Must adress new tick and conduct appropriate propagation and dispatch
@@ -51,10 +52,34 @@ namespace trex_ros {
      */
     virtual void resume();
 
+  protected:
+
+    /**
+     * @brief Allows derived classes to lock the mutex during callbacks
+     */
+    void lock();
+
+    /**
+     * @brief Allows derived classes to unlock the mutex during callbacks
+     */
+    void unlock();
+
   private:
     ros::NodeHandle node_handle_;
-    ros::ServiceServer service_server_;
+    ros::Publisher plan_pub_;
     boost::recursive_mutex lock_;
+
+    /**
+     * @brief Populate a TimelineDescription message
+     */
+    void fillTimelineDescriptionMsg(
+	const DbCore::PlanDescription::TimelineDescription tlDesc,
+	trex_ros::TimelineDescription &tlDescMsg);
+
+    /**
+     * @brief Plublish the plan over ROS
+     */
+    void publishPlan();
   };
 }
 #endif
