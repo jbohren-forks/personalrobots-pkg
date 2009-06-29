@@ -10,25 +10,9 @@ USING_PART_OF_NAMESPACE_EIGEN
 
 
 //! This is an example of how to set up the descriptors.  Using this one is ill-advised as it may change without notice.
-vector<ImageDescriptor*> setupImageDescriptors() {
+vector<ImageDescriptor*> setupImageDescriptorsExample() {
   vector<ImageDescriptor*> d;
-  // -- Features used for test2 and test
-//   SuperpixelColorHistogram* sch1 = new SuperpixelColorHistogram(20, 0.5, 25, string("hue"));
-//   SuperpixelColorHistogram* sch2 = new SuperpixelColorHistogram(5, 0.5, 25, string("hue"), NULL, sch1);
-//   d.push_back(sch1);
-//   d.push_back(sch2);
-//   d.push_back(new SuperpixelColorHistogram(20, 0.5, 25, string("sat"), sch1, sch1));
-//   d.push_back(new SuperpixelColorHistogram(20, 0.5, 25, string("val"), sch1, sch1));
-//   d.push_back(new SuperpixelColorHistogram(5, 0.5, 25, string("sat"), sch2, sch1));
-//   d.push_back(new SuperpixelColorHistogram(5, 0.5, 25, string("val"), sch2, sch1));
-//   d.push_back(new SuperpixelColorHistogram(20, 0.5, 10, string("hue"), sch1, sch1));
-//   d.push_back(new SuperpixelColorHistogram(20, 0.5, 10, string("sat"), sch1, sch1));
-//   d.push_back(new SuperpixelColorHistogram(20, 0.5, 10, string("val"), sch1, sch1));
-//   d.push_back(new SuperpixelColorHistogram(5, 0.5, 10, string("hue"), sch2, sch1));
-//   d.push_back(new SuperpixelColorHistogram(5, 0.5, 10, string("sat"), sch2, sch1));
-//   d.push_back(new SuperpixelColorHistogram(5, 0.5, 10, string("val"), sch2, sch1));
 
-  // -- Features used for test3.
   SuperpixelColorHistogram* sch1 = new SuperpixelColorHistogram(20, 0.5, 50, string("hue"));
   SuperpixelColorHistogram* sch2 = new SuperpixelColorHistogram(5, 0.5, 50, string("hue"), NULL, sch1);
   SuperpixelColorHistogram* sch3 = new SuperpixelColorHistogram(5, 1, 50, string("hue"), NULL, sch1);
@@ -39,60 +23,48 @@ vector<ImageDescriptor*> setupImageDescriptors() {
   d.push_back(sch3);
   d.push_back(sch4);
 
-
-
-  // -- Old examples.
-//   d.push_back(new IntensityPatch(50, 1, true));
-//   d.push_back(new PatchStatistic(string("variance"), (Patch*)d.back()));
-//   d.push_back(new IntensityPatch(40, .5, true));
-//   d.push_back(new IntensityPatch(20, 1, true));
-//   d.push_back(new IntensityPatch(80, .25, true));
-//   d.push_back(new IntensityPatch(120, 1.0/6.0, true));
-  //  d.push_back(new SuperpixelColorHistogram(5, 0.5, 16));
-  //d.push_back(new SuperpixelColorHistogram(20, 0.25, 10));
+  d.push_back(new IntensityPatch(50, 1, true));
+  d.push_back(new PatchStatistic(string("variance"), (Patch*)d.back()));
+  d.push_back(new IntensityPatch(40, .5, true));
+  d.push_back(new IntensityPatch(20, 1, true));
+  d.push_back(new IntensityPatch(80, .25, true));
+  d.push_back(new IntensityPatch(120, 1.0/6.0, true));
   return d;
 }
-
-
-// void whiten(NEWMAT::Matrix* m) {
-//   float var=0.0;
-//   float mean = m->Sum() / m->Nrows();
-
-//   if(mean == 0.0) //This should only happen if the feature is the zero vector.
-//     return;
-
-//   for(int i=1; i<=m->Nrows(); i++) {
-//     (*m)(i,1) = (*m)(i,1) - mean;
-//     var += pow((*m)(i,1), 2);
-//   }
-//   var /= m->Nrows();
-//   Matrix div(1,1); div = 1/(sqrt(var));
-//   *m = KP(*m, div);
-// }
 
 
 void whiten(MatrixXf* m) {
   float var=0.0;
   float mean = m->sum() / m->rows();
-  if(mean == 0.0) //This should only happen if the feature is the zero vector.
-    return;
 
   for(int i=0; i<m->rows(); i++) {
     (*m)(i,0) = (*m)(i,0) - mean;
     var += pow((*m)(i,0), 2);
   }
   var /= m->rows();
-  *m = *m / sqrt(var);
-
-  // -- Check.
-  assert(abs(m->sum() / m->rows()) < 1e-3);
-  var = 0;
-  for(int i=0; i<m->rows(); i++) {
-    (*m)(i,0) = (*m)(i,0);
-    var += pow((*m)(i,0), 2);
+  if(abs(m->sum() / m->rows()) > 1e-2) {
+    cout << "mean: " << m->sum() / m->rows() << endl;
+    cout << m->transpose() << endl;
+    assert(abs(m->sum() / m->rows()) <= 1e-3);
   }
-  var /= m->rows();
-  assert(abs(var-1) < 1e-3);
+
+  if(var != 0.0) { 
+    *m = *m / sqrt(var);
+    
+    // -- Check.
+    var = 0;
+    for(int i=0; i<m->rows(); i++) {
+      (*m)(i,0) = (*m)(i,0);
+      var += pow((*m)(i,0), 2);
+    }
+    var /= m->rows();
+    if(abs(var-1) >= 1e-3) {
+      cout << "var " << var << endl;
+      assert(abs(var-1) < 1e-3);
+    }
+  }
+
+  assert(!isnan((*m)(0,0)));
 }
 
 
@@ -215,7 +187,7 @@ bool IntensityPatch::compute(MatrixXf** result, bool debug) {
   for(int r=0; r<final_patch_->height; r++) {
     uchar* ptr = (uchar*)(final_patch_->imageData + r * final_patch_->widthStep);
     for(int c=0; c<final_patch_->width; c++) {
-      (*res)(idx+1, 1) = *ptr;
+      (*res)(idx, 0) = *ptr;
       ptr++;
       idx++;
     }
@@ -304,7 +276,7 @@ bool PatchStatistic::compute(MatrixXf** result, bool debug) {
     //cout << "Total pts " << (double)(fp->height * fp->width) << endl;
     var /= (double)(fp->height * fp->width);
     
-    (**result)(1,1) = var;
+    (**result)(0,0) = var;
   }
 
   if(debug) {
