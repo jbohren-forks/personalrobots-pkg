@@ -451,7 +451,7 @@ int main(int argc, char** argv)
   int samples_per_img = 1000;
   int nCandidates = 2;
   int max_secs = 0;
-  int max_wcs = 2;
+  int max_wcs = 0;
   if(getenv("NSAMPLES") != NULL) 
     samples_per_img = atoi(getenv("NSAMPLES"));
   if(getenv("NCAND") != NULL) 

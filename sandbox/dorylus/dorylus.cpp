@@ -212,7 +212,7 @@ bool DorylusDataset::load(string filename, bool quiet)
 	objs.push_back(*pobj);
 	delete pobj; pobj = NULL;
       }
-      pobj = new object;
+      pobj = new object();
       getline(f, line);
       istringstream iss_label(line);
       iss_label >> pobj->label;
@@ -451,7 +451,7 @@ vector<weak_classifier*>* Dorylus::findActivatedWCs(const string &descriptor, co
   activated->reserve(wcs.size());
 
   for(unsigned int t=0; t<wcs.size(); t++) {
-    if(max_wc_ > 0 && wcs[t].id <= max_wc_) {
+    if(max_wc_ == 0 || max_wc_ > 0 && wcs[t].id <= max_wc_) {
       if(euc(pt, wcs[t].center) <= wcs[t].theta) {
 	activated->push_back(&wcs[t]);
       }

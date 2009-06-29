@@ -47,7 +47,8 @@ class object {
   ~object() {
     map<string, NEWMAT::Matrix*>::iterator fit;
     for(fit=features.begin(); fit!=features.end(); fit++) {
-      delete fit->second;
+      //TODO: which Newmat function?
+      //fit->second->Release();
     }
   }
 };
