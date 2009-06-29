@@ -1,24 +1,116 @@
+#First, we need to set frame_ids for the costmap. The global_frame refers to the
+#operating frame of the costmap, and the robot_base_frame refers to the frame of
+#the base link of the robot. Here, we'll set them to "map" and "base_link"
+#respectively.
 global_frame: /map
 robot_base_frame: base_link
+
+#Next, we'll set the some frequency parameters for the costmap. The first is the
+#update_frequency. This controls how often sensor data from the world should bet
+#put into the costmap. The higher this parameter is set, the more current the
+#costmap's world will be. However, keep in mind that with more frequent updates
+#also comes more CPU usage. We'll use a value of 5Hz as our update rate. The
+#second frequency parameter that we can set on the costmap is how often to
+#publish visualization data. We'll set that to 2Hz.
 update_frequency: 5.0
 publish_frequency: 2.0
+
+#The transform_tolerance parameter is used to define the latency we are willing to accept
+#on transforms from the robot_base_frame to the global_frame of the costmap. We'll set this
+#to 0.3 seconds.
 transform_tolerance: 0.3
+
+#The obstacle_range parameter defines at what distance we will start to use sensor data
+#to place obstacles into the costmap. We'll set it to 2.5 meters here which means that we'll 
+#put in sensor hits that are up to 2.5 meters away from us.
 obstacle_range: 2.5
+
+#The max_obstacle_height parameter defines the maximum height of an obstacle for the costmap.
+#We'll set it to 2.0 meters for our robot.
 max_obstacle_height: 2.0
+
+#The raytrace_range parameter sets how far we'll look out from the robot when raytracing freeespace.
+#Here we'll set it to be 3.0 meters. Its suggested to set this parameter to be equal or greater to
+#the obstacle_range parameter above to ensure that freespace is cleared out correctly.
 raytrace_range: 3.0
+
+#The following three parameters are used for inflation of obstacles within the costmap. The inscribed
+#radius should be set to the radius of the inner circle of the robot. The circumscribed radius should
+#be set to the radius of the outer circle of the robot. The inflation radius should be set to the maximum
+#distance from obstacles at which cost information is desired. 
 inscribed_radius: 0.325
 circumscribed_radius: 0.46
 inflation_radius: 0.55
 
+#The observation_topics list allows users of a Costmap2DROS object to specify what topics should be used
+#in conjunction with the underlying Costmap2D object. Topics should be listed here, separated by spaces and
+#should be configured in their individual namespaces as shown below. Each topic in this list will be subscribed
+#to and managed by the Costmap2DROS object subject to its configuration settings.
 observation_topics: base_scan
-base_scan: {sensor_frame: frame_from_message, data_type: LaserScan, expected_update_rate: 0.2,
-  observation_persistance: 0.0, marking: true, clearing: true, max_obstacle_height: 0.4, min_obstacle_height: 0.08}
 
+#This is an example of topic configuration for the base_scan topic listed in the observation_topics list above.
+#Notice that the base scan receives its own namespace to read its configuration from. 
+base_scan: 
+#The sensor_frame parameter specifies what frame the origin of the sensor is
+#assumed to be in. The special value "frame_from_message" infers the origin
+#frame from the frame_id sent in each message over the base_scan topic. Any
+#other string will override the frame_id sent in the message.
+  sensor_frame: frame_from_message
+
+#The data_type parameter specifies what message type to expect for the topic. The
+#two supported message types at this point are LaserScan and PointCloud.
+  data_type: LaserScan
+
+#The expected_update_rate parameter specifies the delay between messages that the Costmap2DROS 
+#object will tolerate. For example, we expect that the base_scan should come in at 20Hz, which is
+#0.05 seconds between messages. However, we are willing to tolerate some jitter and want
+#to be warned when the time between messages exceeds 0.2 seconds.
+  expected_update_rate: 0.2
+
+#The observation_persistence parameter controls how long a message/observation from the topic persists
+#in its associated observation buffer. In this case, we'll set the persistence to 0.0 seconds meaning
+#we'll only keep the latest scan. This is fine for the base_scan because it is a planar laser that updates
+#at 20Hz. However, consider the case where we have an actuated sensor, such as a tilting laser. In that
+#case, we would set the observation_persistence to be equal to the tilting period. So, if the laser takes
+#2 seconds to do a full sweep of the world, we'll want to set the observation_persistence parameter to 2
+#seconds to make sure that we keep scans for that amount of time.
+  observation_persistence: 0.0
+
+#The marking and clearing parameters specify what functions the topic should be used for. If marking is set
+#to true, observations from the topic will be put into the costmap as obstacles. If marking is set to 
+#false, observations from the topic won't be put into the costmap as obstacles. If clearing is set to true,
+#observations from the topic will be used to clear out freespace in the costmap. If clearing is set to false,
+#observations from the topic won't be used to clear out freespace. In the case of the base_scan, we want to 
+#both put obstacles in and clear obstacles from the costmap so we'll set both clearing and marking to be true.
+  marking: true
+  clearing: true
+
+#The max_obstacle_height parameter specifies the maximum height reading from a sensor to be considered when
+#either clearing or marking. The min_obstacle_height parameter specifies the minimum height reading from a
+#sensor to be considered when clearing or marking. The base_scan corresponds to a planar laser sensor, so it
+#doesn't matter what we set these values to as long as the actual height of the laser falls in-between them.
+  max_obstacle_height: 0.4 
+  min_obstacle_height: 0.08
+
+#This parameter controls whether or not the Costmap2DROS object should initialize itself from the static map.
+#If this parameter is set to true, the Costmap2DROS object will make a service call to the map_server and
+#initialize itself based on the map returned. If the static_map parameter is set to false, the Costmap2DROS
+#object will be initialized only with the data that it receives from its sensors. Since we want to demonstrate
+#creating costmaps of arbitrary sizes, we'll set static_map to false here.
 static_map: false
+
+#When the rolling_window parameter is set to true, the Costmap2DROS object will always maintain a map that is
+#centered around the current position of the robot. As the robot moves in the world, so too will the costmap.
+#This means that the edges of the costmap will be clipped as the robot moves. If this parameter is not set, the
+#map will stay fixed at its original origin. If the robot moves off the map in this situation, the costmap will
+#not move with it. All queries to regions outside of the costmap will return errors.
 rolling_window: true
+
+#The width and height parameters set the width and height of the costmap in meters. To keep a map of 10 meters
+#by 10 meters with the robot at the center, we'll set the values accordingly.
 width: 10.0
 height: 10.0
-resolution: 0.05
+resolution: 0.025
 
 map_type: voxel
 origin_z: 0.0

@@ -27,7 +27,7 @@ int main(argc, char** argv){
 
   //set parameters before construction of the Costmap2DROS object... we'll use the base laser to add data to this costmap
   ros_node_.setParam("~costmap/observation_topics", "base_scan");
-  ros_node_.setParam("~costmap/base_scan/observation_persistance", 0.0);
+  ros_node_.setParam("~costmap/base_scan/observation_persistence", 0.0);
   ros_node_.setParam("~costmap/base_scan/expected_update_rate", 0.2);
   ros_node_.setParam("~costmap/base_scan/data_type", "LaserScan");
   ros_node_.setParam("~costmap/base_scan/clearing", "true");
@@ -91,7 +91,7 @@ There are a number of parameters that can be used to configure the costmap_2d::C
   <ul>
   <li><b>~topic_name/sensor_frame</b>, <i>string</i> <br>The frame of the origin of the sensor. Set to "frame_from_message" to attempt to read the frame from sensor data.</li>
   <br><br>
-  <li><b>~topic_name/observation_persistance</b>, <i>double</i> <br>How long to keep each sensor reading in seconds. A value of 0.0 will only keep the most recent reading.</li>
+  <li><b>~topic_name/observation_persistence</b>, <i>double</i> <br>How long to keep each sensor reading in seconds. A value of 0.0 will only keep the most recent reading.</li>
   <br><br>
   <li><b>~topic_name/expected_update_rate</b>, <i>double</i> <br>How often to expect a reading from a sensor in secongs. A value of 0.0 will allow infinite time between readings.</li>
   <br><br>

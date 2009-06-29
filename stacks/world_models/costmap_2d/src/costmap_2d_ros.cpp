@@ -87,7 +87,7 @@ namespace costmap_2d {
       double observation_keep_time, expected_update_rate, min_obstacle_height, max_obstacle_height;
       std::string sensor_frame, data_type;
       ros_node_.param("~" + topic + "/sensor_frame", sensor_frame, std::string("frame_from_message"));
-      ros_node_.param("~" + topic + "/observation_persistance", observation_keep_time, 0.0);
+      ros_node_.param("~" + topic + "/observation_persistence", observation_keep_time, 0.0);
       ros_node_.param("~" + topic + "/expected_update_rate", expected_update_rate, 0.0);
       ros_node_.param("~" + topic + "/data_type", data_type, std::string("PointCloud"));
       ros_node_.param("~" + topic + "/min_obstacle_height", min_obstacle_height, 0.05);
@@ -111,7 +111,7 @@ namespace costmap_2d {
       if(clearing)
         clearing_buffers_.push_back(observation_buffers_.back());
 
-      ROS_DEBUG("Created an observation buffer for topic %s, expected update rate: %.2f, observation persistance: %.2f", topic.c_str(), expected_update_rate, observation_keep_time);
+      ROS_DEBUG("Created an observation buffer for topic %s, expected update rate: %.2f, observation persistence: %.2f", topic.c_str(), expected_update_rate, observation_keep_time);
 
       //create a callback for the topic
       if(data_type == "LaserScan"){

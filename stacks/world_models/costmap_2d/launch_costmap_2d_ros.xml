@@ -30,13 +30,13 @@
       <param name="costmap/observation_topics" value="tilt_scan" />
 
       <param name="costmap/base_scan/sensor_frame" value="frame_from_message" />
-      <param name="costmap/base_scan/observation_persistance" value="0.0" />
+      <param name="costmap/base_scan/observation_persistence" value="0.0" />
       <param name="costmap/base_scan/expected_update_rate" value="0.2" />
       <param name="costmap/base_scan/data_type" value="LaserScan" />
       <param name="costmap/base_scan/clearing" value="true" />
 
       <param name="costmap/tilt_scan/sensor_frame" value="frame_from_message" />
-      <param name="costmap/tilt_scan/observation_persistance" value="10.0" />
+      <param name="costmap/tilt_scan/observation_persistence" value="10.0" />
       <param name="costmap/tilt_scan/expected_update_rate" value="0.2" />
       <param name="costmap/tilt_scan/data_type" value="LaserScan" />
       <param name="costmap/tilt_scan/clearing" value="true" />

@@ -2,8 +2,6 @@
 \mainpage
 \htmlinclude manifest.html
 
-\b costmap_2d_tutorials is ... 
-
 <!-- 
 In addition to providing an overview of your package,
 this is the section where the specification and design/architecture 
@@ -12,8 +10,29 @@ wiki, it should be transferred here once your package starts to take shape.
 You can then link to this documentation page from the Wiki. 
 -->
 
+\b costmap_2d_tutorials provides example code for the costmap_2d package.
+Specifically, it details the construction of a Costmap2DROS object and its use. 
 
-\section codeapi Code API
+\section overview Overview
+There are two main ways to use a costmap_2d::Costmap2DROS object. The first is to create a costmap::Costmap2D
+object and manage updating it yourself. The second, and encouraged method, is
+to use a ROS wrapper (costmap_2d::Costmap2DROS) for the costmap that manages the map for 
+you, but allows you to get a copy of the underlying costmap_2d::Costmap2D object at any time.
+See below for an example of costmap_2d::Costmap2DROS construction and configuration.
+
+\section construction Costmap2DROS Construction
+Constructing a costmap_2d::Costmap2DROS object is a simple as passing in a name and a reference to a tf::TransformListener.
+All the configuration of the costmap_2d::Costmap2DROS is handled by setting parameters on the parameter sever.
+\dontinclude src/costmap_test.cpp
+\skip main
+\until }
+
+\section configuration Costmap2DROS Configuration
+Each costmap_2d::Costmap2DROS object can be configured via the parameter server. 
+Below is an example configuration of a simple costmap that subscribes to the "base_laser"
+sensor.
+
+\include launch_example/costmap_params.yaml 
 
 <!--
 Provide links to specific auto-generated API documentation within your

@@ -58,7 +58,7 @@ namespace costmap_2d {
       /**
        * @brief  Constructs an observation buffer
        * @param  topic_name The topic of the observations, used as an identifier for error and warning messages
-       * @param  observation_keep_time Defines the persistance of observations in seconds, 0 means only keep the latest
+       * @param  observation_keep_time Defines the persistence of observations in seconds, 0 means only keep the latest
        * @param  expected_update_rate How often this buffer is expected to be updated, 0 means there is no limit
        * @param  min_obstacle_height The minimum height of a hitpoint to be considered legal
        * @param  max_obstacle_height The minimum height of a hitpoint to be considered legal
