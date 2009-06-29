@@ -43,10 +43,7 @@ import sys
 import math
 
 from std_msgs.msg import Empty
-from people.msg import PositionMeasurement
-from people.srv import StartDetection
 
-from robot_actions.msg import NoArgumentsActionState
 import pr2_robot_actions.msg
 
 import robot_msgs

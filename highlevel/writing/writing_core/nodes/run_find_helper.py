@@ -47,7 +47,6 @@ from people.msg import PositionMeasurement
 from people.srv import StartDetection
 
 import tf
-from robot_actions.msg import NoArgumentsActionState
 import pr2_robot_actions.msg
 from tf.listener import TransformListener
 import robot_msgs
