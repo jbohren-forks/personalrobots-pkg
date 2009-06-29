@@ -115,8 +115,8 @@ def main():
           rot_p = float(sys.argv[i+2])
           rot_y = float(sys.argv[i+3])
 
-    pub_pose = rospy.Publisher("/set_plug_pose", PoseWithRatesStamped)
-    rospy.Subscriber("/plug_pose_ground_truth", PoseWithRatesStamped, p3dInput)
+    pub_pose = rospy.Publisher("set_plug_pose", PoseWithRatesStamped)
+    rospy.Subscriber("plug_pose_ground_truth", PoseWithRatesStamped, p3dInput)
 
     rospy.init_node(NAME, anonymous=True)
 
