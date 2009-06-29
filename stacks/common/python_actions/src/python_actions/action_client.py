@@ -32,15 +32,16 @@
 #*  POSSIBILITY OF SUCH DAMAGE.
 #***********************************************************
 
+import roslib
+roslib.load_manifest('writing_core')
 import rospy
 
-import threading
-import time
 import Queue
+import time
 
-from std_msgs.msg import Empty
-from robot_actions.msg import NoArgumentsActionState
 from robot_actions.msg import ActionStatus
+import robot_msgs.msg
+from std_msgs.msg import Empty
 
 RESET = ActionStatus.RESET
 ACTIVE = ActionStatus.ACTIVE
@@ -48,72 +49,72 @@ PREEMPTED = ActionStatus.PREEMPTED
 SUCCESS = ActionStatus.SUCCESS
 ABORTED = ActionStatus.ABORTED
 
-class Action:
+class ActionClient:
 
   def __init__(self, node_name, goalmsg, statemsg, feedbackmsg, rate = 10.0):
 
     self.nn = node_name
-    self.rate = rate
 
-    self.status = RESET
-    self.preempted = False
     self.goalmsg = goalmsg
     self.statemsg = statemsg
     self.feedbackmsg = feedbackmsg
 
-    self.goal  = goalmsg()
-    self.feedback  = feedbackmsg()
+    self.goals_pub_ = rospy.Publisher(self.nn + "/activate", self.goalmsg)
+    self.pre_pub_   = rospy.Publisher(self.nn + "/preempt", Empty)
+    self.state_pub_ = rospy.Subscriber(self.nn + "/feedback", self.statemsg, self.onFeedback)
 
     self.feedback_queue = Queue.Queue()
 
-  def run(self):
-
-    self.goals_sub_ = rospy.Subscriber(self.nn + "/activate", self.goalmsg, self.onGoal)
-    self.pre_sub_ = rospy.Subscriber(self.nn + "/preempt", Empty, self.onPreempt)
-    self.state_pub_ = rospy.Publisher(self.nn + "/feedback", self.statemsg)
-
-    self.thread0 = threading.Thread(target = self.actionStatusTick)
-    self.thread0.start()
-    self.feedback_thread = threading.Thread(target = self.actionStatusPublisher)
-    self.feedback_thread.start()
-
-  def onGoal(self, goal):
-
-    self.goal = goal
-    self.preempted = False
-    self.status = ACTIVE
-    self.update()
-    r = self.execute(goal)
-    assert r in [ SUCCESS, PREEMPTED, ABORTED ]
-    self.status = r
-    self.update()
-
-  def onPreempt(self, msg):
-    self.preempted = True
-
-  def isPreemptRequested(self):
-    return self.preempted
-
-  def update(self):
-    """ Push the current state onto the feedback message queue """
-    msg = self.statemsg()
-    msg.status.value = self.status
-    msg.goal = self.goal
-    msg.feedback = self.feedback
+  def onFeedback(self, msg):
     self.feedback_queue.put(msg)
 
-  def actionStatusTick(self):
+  def preempt(self):
+    self.pre_pub_.publish(Empty())
 
-    while not rospy.is_shutdown():
-      self.update()
-      time.sleep(1.0 / self.rate)
-    self.update() # Wake up the publisher thread
+  def execute(self, goal, timeout = 1.0):
+    fbmsg = self.feedback_queue.get()
+    while not self.feedback_queue.empty():
+      fbmsg = self.feedback_queue.get()
 
-  def actionStatusPublisher(self):
+    if not (fbmsg.status.value in [RESET, PREEMPTED, SUCCESS, ABORTED]):
+     print 'unexpected status'
+     assert 0
 
-    while not rospy.is_shutdown():
-      msg = self.feedback_queue.get()
-      self.state_pub_.publish(msg)
+    self.goals_pub_.publish(goal)
+    state_machine = 'g'
+    sent_preempt = False
 
-  def execute(self, goal):
-    assert 0, "Users of Action should override the execute method"
+    t_preempt = time.time() + timeout
+    t = time.time()
+    while True:
+      assert state_machine in ['g', 'a']
+
+      # If this client has not yet sent preempt, wait with a timeout.
+      # But if this client has already sent preempt, wait indefinitely.
+      if t < t_preempt and not sent_preempt:
+        try:
+          fbmsg = self.feedback_queue.get(True, t_preempt - t)
+        except Queue.Empty:
+          pass
+      else:
+        if not sent_preempt:
+          sent_preempt = True
+          self.pre_pub_.publish()
+        fbmsg = self.feedback_queue.get()
+
+      # 'g'  Goal issued, waiting for action to go active
+      # 'a'  Seen active state, waiting for SUCCESS/ABORTED/PREEMPTED
+      if state_machine == 'g':
+        if fbmsg.status.value == ACTIVE:
+          state_machine = 'a'
+      elif state_machine == 'a':
+        if fbmsg.status.value == SUCCESS:
+          return SUCCESS, fbmsg.feedback
+        if fbmsg.status.value == ABORTED:
+          return ABORTED, fbmsg.feedback
+        if fbmsg.status.value == PREEMPTED:
+          return PREEMPTED, None
+        if fbmsg.status.value != ACTIVE:
+          print 'unexpected status after ACTIVE'
+          assert 0
+      t = time.time()
