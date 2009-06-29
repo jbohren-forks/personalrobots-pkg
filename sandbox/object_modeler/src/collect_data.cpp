@@ -44,9 +44,13 @@
 #include <string>
 #include <vector>
 #include <math.h>
+
+#ifndef BT_EULER_DEFAULT_ZYX
+#error It looks like the bullet package was compiled without BT_EULER_DEFAULT_ZYX set
+#endif
 #include <LinearMath/btQuaternion.h>
-#include <annotated_map_builder/WaitActionState.h>
-#include <annotated_map_builder/WaitActionGoal.h>
+//#include <annotated_map_builder/WaitActionState.h>
+//#include <annotated_map_builder/WaitActionGoal.h>
 
 using namespace std;
 
@@ -77,13 +81,21 @@ void read_poses_from_file(vector<robot_msgs::Point> &result, const string &filen
 }
 
 robot_msgs::Quaternion direction(robot_msgs::Point position, robot_msgs::Point target) {
+  // By default bullet uses the 'XYZ' convention where rotation around Z is
+  // called 'roll', but we compiled the bullet library with the
+  // BT_EULER_DEFAULT_ZYX parameter set, so the 'ZYX' convention is used
+  // instead. It calls the rotation around Z 'yaw', which better
+  // corresponds to the convention used for the robot pose. To ensure
+  // unambiguous conversion I do not allow compilation unless BT_EULER_DEFAULT_ZYX
+  // is set. It should be because we export this parameter to anything that
+  // depends on bullet.
   double vec_x = target.x - position.x;
   double vec_y = target.y - position.y;
   double yaw = atan2(vec_y, vec_x);
   robot_msgs::Quaternion result;
   btQuaternion dir(yaw, 0, 0);
   result.x = dir.getX();
-  result.y = dir.getY();  // WARNING! MAY NOT USE THE SAME CONVENTION
+  result.y = dir.getY();
   result.z = dir.getZ();
   result.w = dir.getW();
   return result;
@@ -100,9 +112,9 @@ int main(int argc, char** argv)
   ROS_DEBUG("Declaring action clients");
   typedef robot_msgs::PoseStamped PS;
   robot_actions::ActionClient<PS, nav_robot_actions::MoveBaseState, PS> move_client("move_base");
-  typedef annotated_map_builder::WaitActionState WaitState;
-  typedef annotated_map_builder::WaitActionGoal WaitGoal;
-  robot_actions::ActionClient<WaitGoal, WaitState, WaitState> wait_client("wait_k_messages_action");
+  //typedef annotated_map_builder::WaitActionState WaitState;
+  //typedef annotated_map_builder::WaitActionGoal WaitGoal;
+  //robot_actions::ActionClient<WaitGoal, WaitState, WaitState> wait_client("wait_k_messages_action");
   
   ROS_DEBUG("Reading way points");
   vector<robot_msgs::Point> goal_points;
@@ -126,7 +138,7 @@ int main(int argc, char** argv)
     goal_pose_stamped.header.frame_id = "/map";
     PS move_feedback;
     ROS_INFO("Sending move command");
-    robot_actions::ResultStatus result_move = move_client.execute(goal_pose_stamped, move_feedback, ros::Duration(30));
+    robot_actions::ResultStatus result_move = move_client.execute(goal_pose_stamped, move_feedback, ros::Duration(60));
     switch (result_move) {
     case robot_actions::SUCCESS:
       ROS_INFO("Move successful");
