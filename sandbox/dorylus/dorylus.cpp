@@ -63,20 +63,23 @@ string DorylusDataset::displayYmc() {
 
 string DorylusDataset::displayFeatures() {
   ostringstream oss (ostringstream::out);
-  map<string, Matrix*>::iterator it;
   for(unsigned int i=0; i<objs_.size(); i++) {
-    object& obj = objs_[i];
     oss << "Object " << i << " " << endl;
-    for(it = obj.features.begin(); it!=obj.features.end(); it++) {
-      Matrix* v = it->second;
-      oss << it->first << " descriptor " << endl;
-      oss << *v;
-    }
+    oss << displayObject(objs_[i]);
   }
-
   return oss.str();
 }
-  
+
+string displayObject(const object& obj) {
+  map<string, Matrix*>::const_iterator it;
+  ostringstream oss (ostringstream::out);
+  for(it = obj.features.begin(); it!=obj.features.end(); it++) {
+    Matrix* v = it->second;
+    oss << it->first << " descriptor " << endl;
+    oss << *v;
+  }
+  return oss.str();
+}
 
 std::string Dorylus::status()
 {
@@ -442,13 +445,14 @@ void Dorylus::useDataset(DorylusDataset *dd) {
  classes_ = dd->classes_;
 }
 
-vector<weak_classifier*> Dorylus::findActivatedWCs(const string &descriptor, const Matrix &pt) {
+vector<weak_classifier*>* Dorylus::findActivatedWCs(const string &descriptor, const Matrix &pt) {
   vector<weak_classifier> &wcs = battery_[descriptor];
-  vector<weak_classifier*> activated;
+  vector<weak_classifier*> *activated = new vector<weak_classifier*>;
+  activated->reserve(wcs.size());
 
   for(unsigned int t=0; t<wcs.size(); t++) {
     if(euc(pt, wcs[t].center) <= wcs[t].theta)
-      activated.push_back(&wcs[t]);
+      activated->push_back(&wcs[t]);
   }
   return activated;
 }
@@ -920,9 +924,9 @@ Matrix Dorylus::classify(object &obj, Matrix **confidence) {
     }
     Matrix* f = obj.features[descriptor];
     for(int n = 1; n<=f->Ncols(); n++) {
-      vector<weak_classifier*> act = findActivatedWCs(descriptor, f->Column(n));
-      for(unsigned int a = 0; a<act.size(); a++) {
-	response += act[a]->vals;
+      vector<weak_classifier*> *act = findActivatedWCs(descriptor, f->Column(n));
+      for(unsigned int a = 0; a<act->size(); a++) {
+	response += (*act)[a]->vals;
       }
     }
   }

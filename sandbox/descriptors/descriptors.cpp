@@ -1,6 +1,4 @@
 #include "descriptors.h"
-#include "ros/console.h"
-#include "ros/assert.h"
 
 using namespace std;
 USING_PART_OF_NAMESPACE_EIGEN
@@ -11,6 +9,7 @@ USING_PART_OF_NAMESPACE_EIGEN
 *****************************************************************************/
 
 
+//! This is an example of how to set up the descriptors.  Using this one is ill-advised as it may change without notice.
 vector<ImageDescriptor*> setupImageDescriptors() {
   vector<ImageDescriptor*> d;
   // -- Features used for test2 and test
@@ -84,6 +83,16 @@ void whiten(MatrixXf* m) {
   }
   var /= m->rows();
   *m = *m / sqrt(var);
+
+  // -- Check.
+  assert(abs(m->sum() / m->rows()) < 1e-3);
+  var = 0;
+  for(int i=0; i<m->rows(); i++) {
+    (*m)(i,0) = (*m)(i,0);
+    var += pow((*m)(i,0), 2);
+  }
+  var /= m->rows();
+  assert(abs(var-1) < 1e-3);
 }
 
 
@@ -450,7 +459,7 @@ void SuperpixelStatistic::segment(bool debug) {
   // -- Reserve space for the index.
   int nPixels = seg_->height * seg_->width;
   index_->resize(label+1);
-  for(int i=0; i<index_->size(); i++) {
+  for(unsigned int i=0; i<index_->size(); i++) {
     (*index_)[i].reserve((nPixels / label) * 2);
   }
 

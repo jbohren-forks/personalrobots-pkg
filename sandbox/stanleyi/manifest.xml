@@ -12,8 +12,10 @@
   <depend package="opencv_latest"/>
   <depend package="eigen"/>
   <depend package="rosrecord"/>
+  <depend package="descriptors"/>
+
   <export>
-    <cpp cflags="-I${prefix}" lflags="-L${prefix}/lib -ldescriptors"/>
+    <cpp cflags="-I${prefix}" lflags="-L${prefix}/lib"/>
   </export>
 
 

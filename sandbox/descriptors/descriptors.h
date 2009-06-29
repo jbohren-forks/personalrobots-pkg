@@ -4,12 +4,13 @@
 #include "opencv/highgui.h"
 #include "opencv/cvaux.hpp"
 #include <string>
-//#include <newmat10/newmat.h>
-//#include <newmat10/newmatio.h>
 #include <Eigen/Core>
 #include <math.h>
 #include <list>
 #include <vector>
+#include "ros/console.h"
+#include "ros/assert.h"
+
 
 class Histogram {
 public:

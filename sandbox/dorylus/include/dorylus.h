@@ -18,6 +18,8 @@
 
 #include <float.h>
 #include <math.h>
+#include <cmath>
+
 
 typedef struct
 {
@@ -42,11 +44,24 @@ typedef struct
   map<string, NEWMAT::Matrix*> features;
 } object;
 
+string displayObject(const object& obj);
 
 inline float euc(NEWMAT::Matrix a, NEWMAT::Matrix b)
 {
   assert(a.Ncols() == 1 && b.Ncols() == 1);
-  return (a-b).NormFrobenius();
+  assert(a.Nrows() == b.Nrows());
+
+  NEWMAT::Real* pa = a.Store();
+  NEWMAT::Real* pb = b.Store();
+  float r = 0;
+  for(int i=0; i<a.Nrows(); i++) {
+    r += pow((float)((*pa) - (*pb)), 2);
+    pa++;
+    pb++;
+  }
+
+  //assert(abs((float)((a-b).NormFrobenius() - sqrt(r))) < 1e-3);  
+  return sqrt(r);
 }
 
 class DorylusDataset {
@@ -106,7 +121,7 @@ class Dorylus {
   float computeUtility(const weak_classifier& wc, const NEWMAT::Matrix& mmt);
   float computeObjective();
   //void train(int nCandidates, int max_secs, int max_wcs);
-  vector<weak_classifier*> findActivatedWCs(const string &descriptor, const NEWMAT::Matrix &pt);
+  vector<weak_classifier*>* findActivatedWCs(const string &descriptor, const NEWMAT::Matrix &pt);
   NEWMAT::Matrix computeDatasetActivations(const weak_classifier& wc, const NEWMAT::Matrix& mmt);
 
  Dorylus() : dd_(NULL), nClasses_(0)
