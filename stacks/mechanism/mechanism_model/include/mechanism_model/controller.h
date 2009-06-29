@@ -96,8 +96,8 @@ public:
   virtual bool starting() { return true; }
   virtual void update(void) = 0;
   virtual bool stopping() {return true;}
-  virtual bool initXml(mechanism::RobotState *robot, TiXmlElement *config) = 0;
-  virtual bool init(mechanism::RobotState *robot, const ros::NodeHandle &n) { return false; };
+  virtual bool initXml(mechanism::RobotState *robot, TiXmlElement *config) { return false; }
+  virtual bool init(mechanism::RobotState *robot, const ros::NodeHandle &n) { return false; }
 
   bool isRunning()
   {
