@@ -82,7 +82,7 @@ void Recorder::record(unsigned int index, float value)
 {
   if (!robot_)
     return; // init wasn't called
-  assert(index > 0 && index < msg_[filling_].channels.size());
+  assert(index >= 0 && index < msg_[filling_].channels.size());
 
   int ms = (int)fmod(robot_->hw_->current_time_ * 1000.0, 1000.0);
   if (ms % 100 == 0)
