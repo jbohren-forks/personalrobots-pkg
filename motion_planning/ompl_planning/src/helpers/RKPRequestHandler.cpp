@@ -195,16 +195,16 @@ bool kinematic_planning::RKPRequestHandler::computePlan(ModelMap &models, const 
     
     // get the planner setup
     RKPPlannerSetup *psetup = m->planners[req.params.planner_id];
-    
+        
+    psetup->model->collisionSpace->lock();
+    psetup->model->kmodel->lock();
+
     // configure the planner
     configure(start, req, psetup);
     
     /* compute actual motion plan */
     ompl::kinematic::PathKinematic *bestPath       = NULL;
     double                          bestDifference = 0.0;
-    
-    psetup->model->collisionSpace->lock();
-    psetup->model->kmodel->lock();
     
     bool approximate = false;    
     callPlanner(psetup, req.times, req.allowed_time, true, bestPath, bestDifference, approximate);
