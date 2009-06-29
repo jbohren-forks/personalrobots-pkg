@@ -193,6 +193,10 @@ if __name__ == '__main__':
     # for joint position controllers
     
     # Wrist and forearm calibrated with forearm_calibrator in arm_defs.xml
+    
+    imustatus = calibrate_imu()
+    if not imustatus:
+        print "IMU Calibration failed."
         
     print "Calibrating shoulder pan" 
     calibrate(xml_for_cal("r_shoulder_pan", 1.0, 7, 0.5, 0, 1.0))
@@ -266,10 +270,8 @@ if __name__ == '__main__':
                 except:
                     print "Failed to kill controller %s on try %d" % (name, i)
     
-    imustatus = calibrate_imu()
-    
     if not imustatus:
         print "Mechanism calibration complete, but IMU calibration failed."
-        sys.exit(3)
-
+        sys.exit(2)
+    
     print "Calibration complete"

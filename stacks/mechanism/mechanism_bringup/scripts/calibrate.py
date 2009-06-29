@@ -103,6 +103,10 @@ def main():
 
     rospy.init_node('calibration', anonymous=True)
 
+    imustatus = calibrate_imu()
+    if not imustatus:
+        print "IMU Calibration failed."
+        
     xml = ''
 
     if len(sys.argv) > 1:
