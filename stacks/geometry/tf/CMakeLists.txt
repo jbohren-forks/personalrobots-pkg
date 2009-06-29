@@ -27,7 +27,6 @@ target_link_libraries(test/tf_unittest_future tf)
 rospack_add_gtest(test/cache_unittest test/cache_unittest.cpp)
 target_link_libraries(test/cache_unittest tf)
 
-rospack_add_gtest(test/test_permuter test/test_permuter.cpp)
 
 ### Benchmarking
 rospack_add_gtest_future(test/tf_benchmark test/tf_benchmark.cpp)
