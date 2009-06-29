@@ -44,6 +44,8 @@
 #include <robot_msgs/CollisionMap.h>
 #include <robot_msgs/AttachedObject.h>
 
+#include <boost/thread/mutex.hpp>
+
 namespace planning_environment
 {
 
@@ -148,6 +150,8 @@ namespace planning_environment
 	
 	CollisionModels                                               *cm_;
 	collision_space::EnvironmentModel                             *collisionSpace_;
+	double                                                         boxScale_;
+	boost::mutex                                                   mapUpdateLock_;
 	
 	bool                                                           haveMap_;
 	ros::Time                                                      lastMapUpdate_;	

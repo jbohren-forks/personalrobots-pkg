@@ -42,9 +42,9 @@
 namespace planning_environment
 {
     
-    static inline double radiusOfBox(const robot_msgs::Point32 &point)
+    static inline double maxCoord(const robot_msgs::Point32 &point)
     {
-	return std::max(std::max(point.x, point.y), point.z) * 1.73;
+	return std::max(std::max(point.x, point.y), point.z);
     }
 }
 
@@ -62,19 +62,22 @@ void planning_environment::CollisionSpaceMonitor::setupCSM(void)
     if (!tf_)
 	tf_ = new tf::TransformListener();
     
+    // the factor by which a boxes maximum extent is multiplied to get the radius of the sphere to be placed in the collision space
+    nh_.param<double>("~box_scale", boxScale_, 2.0);
+    
     collisionSpace_ = cm_->getODECollisionModel().get();
     
     collisionMapNotifier_ = new tf::MessageNotifier<robot_msgs::CollisionMap>(*tf_, boost::bind(&CollisionSpaceMonitor::collisionMapCallback, this, _1), "collision_map", getFrameId(), 1);
-    ROS_DEBUG("Listening to collision_map");
+    ROS_DEBUG("Listening to collision_map using message notifier with target frame %s", collisionMapNotifier_->getTargetFramesString().c_str());
 
     collisionMapUpdateNotifier_ = new tf::MessageNotifier<robot_msgs::CollisionMap>(*tf_, boost::bind(&CollisionSpaceMonitor::collisionMapUpdateCallback, this, _1), "collision_map_update", getFrameId(), 1);
-    ROS_DEBUG("Listening to collision_map_update");
+    ROS_DEBUG("Listening to collision_map_update using message notifier with target frame %s", collisionMapUpdateNotifier_->getTargetFramesString().c_str());
 
     if (cm_->loadedModels())
     {
 	attachedBodyNotifier_ = new tf::MessageNotifier<robot_msgs::AttachedObject>(*tf_, boost::bind(&CollisionSpaceMonitor::attachObjectCallback, this, _1), "attach_object", "", 1);
 	attachedBodyNotifier_->setTargetFrame(cm_->getCollisionCheckLinks());
-	ROS_DEBUG("Listening to attach_object");
+	ROS_DEBUG("Listening to attach_object using message notifier with target frame %s", attachedBodyNotifier_->getTargetFramesString().c_str());
     }
 }
 
@@ -115,6 +118,8 @@ void planning_environment::CollisionSpaceMonitor::collisionMapCallback(const rob
 
 void planning_environment::CollisionSpaceMonitor::updateCollisionSpace(const robot_msgs::CollisionMapConstPtr &collisionMap, bool clear)
 {
+    boost::mutex::scoped_lock lock(mapUpdateLock_);
+    
     int n = collisionMap->get_boxes_size();
     
     ROS_DEBUG("Received %d points (collision map)", n);
@@ -124,7 +129,7 @@ void planning_environment::CollisionSpaceMonitor::updateCollisionSpace(const rob
 
     // we want to make sure the frame the robot model is kept in is the same as the frame of the collisionMap
     bool transform = !frame_id_.empty() && collisionMap->header.frame_id != frame_id_;
-    
+
     ros::WallTime startTime = ros::WallTime::now();
     double *data = n > 0 ? new double[4 * n] : NULL;	
 
@@ -158,7 +163,7 @@ void planning_environment::CollisionSpaceMonitor::updateCollisionSpace(const rob
 	    data[i4 + 1] = pso.point.y;
 	    data[i4 + 2] = pso.point.z;
 	    
-	    data[i4 + 3] = radiusOfBox(collisionMap->boxes[i].extents);
+	    data[i4 + 3] = maxCoord(collisionMap->boxes[i].extents) * boxScale_;
 	}
 	
 	if (err)
@@ -166,6 +171,7 @@ void planning_environment::CollisionSpaceMonitor::updateCollisionSpace(const rob
     }
     else
     {
+
 #pragma omp parallel for
 	for (int i = 0 ; i < n ; ++i)
 	{
@@ -174,15 +180,17 @@ void planning_environment::CollisionSpaceMonitor::updateCollisionSpace(const rob
 	    data[i4 + 1] = collisionMap->boxes[i].center.y;
 	    data[i4 + 2] = collisionMap->boxes[i].center.z;
 	    
-	    data[i4 + 3] = radiusOfBox(collisionMap->boxes[i].extents);
+	    data[i4 + 3] = maxCoord(collisionMap->boxes[i].extents) * boxScale_;
 	}
     }
     
     collisionSpace_->lock();
+
     if (clear)
 	collisionSpace_->clearObstacles();
     if (n > 0)
         collisionSpace_->addPointCloud(n, data);
+
     collisionSpace_->unlock();
     
     if (data)

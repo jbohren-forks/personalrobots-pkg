@@ -30,7 +30,7 @@ The model classes are:
 
 The monitor classes are:
 - \b KinematicModelStateMonitor : monitors the kinematic state of the robot. Optionally, monitors the base location. It uses the 'mechanism_state' topic.
-- \b CollisionSpaceMonitor : same as \b KinematicModelStateMonitor except it also monitors the state of the collision environment. It uses the 'collision_map' topic to receive new full maps and the 'collision_map_update' to receive updates. Attaching objects to robot links is possible using the 'attach_object' topic.
+- \b CollisionSpaceMonitor : same as \b KinematicModelStateMonitor except it also monitors the state of the collision environment. It uses the 'collision_map' topic to receive new full maps and the 'collision_map_update' to receive updates. Attaching objects to robot links is possible using the 'attach_object' topic. The '~box_scale' parameter is used as the constant that gets multiplied to a box's maximum extent to obtain the radius of the sphere used in collision checking.
 - \b PlanningMonitor : same as \b CollisionSpaceMonitor except it also offers the ability to evaluate kinematic constraints and check paths and states for validity.
 
       <!-- Provide links to specific auto-generated API
