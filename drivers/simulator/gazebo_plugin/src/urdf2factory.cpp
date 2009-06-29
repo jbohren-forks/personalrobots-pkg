@@ -53,7 +53,7 @@ void usage(const char *progname)
 {
     printf("\nUsage: %s xml_param_name [initial x y z roll pitch yaw gazebo_model_name]\n", progname);
     printf("  For example: urdf2factory robot_descriptions 0 0 1 0 0 90 pr3_model\n\n");
-    printf("  Note: gazebo_model_name defaults to pr2_model.\n\n");
+    printf("  Note: gazebo_model_name defaults to name of the robot descriptions parameter.\n\n");
 }
 
 int main(int argc, char **argv)
@@ -83,7 +83,7 @@ int main(int argc, char **argv)
         initial_rz = atof(argv[7]);
     }
 
-    std::string robot_model_name("pr2_model");
+    std::string robot_model_name(argv[1]);
     // make sure this is not the ros-generated commandline log filename
     if (argc >= 9)
     {
@@ -92,6 +92,8 @@ int main(int argc, char **argv)
         if (name.find(std::string("__log:")) == -1)
             robot_model_name = name;
     }
+    // get rid of slahses
+    std::replace(robot_model_name.begin(),robot_model_name.end(),'/','_');
 
 
     // connect to gazebo
