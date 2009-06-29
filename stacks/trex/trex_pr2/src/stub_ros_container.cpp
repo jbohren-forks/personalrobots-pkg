@@ -172,7 +172,7 @@ namespace trex_pr2 {
   public:
     BaseStatePublisher(const std::string& update_topic, double update_rate)
       : StatePublisher<robot_msgs::PoseStamped>(robot_msgs::PoseStamped(), update_topic, update_rate), 
-	_tf(*ros::Node::instance(), true, ros::Duration(10)){
+	_tf(ros::Duration(10)){
     }
 
   protected:
