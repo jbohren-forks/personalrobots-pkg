@@ -46,7 +46,7 @@ typedef struct
 
 string displayObject(const object& obj);
 
-inline float euc(NEWMAT::Matrix a, NEWMAT::Matrix b)
+inline float euc(const NEWMAT::Matrix& a, const NEWMAT::Matrix& b)
 {
   assert(a.Ncols() == 1 && b.Ncols() == 1);
   assert(a.Nrows() == b.Nrows());
@@ -106,6 +106,7 @@ class Dorylus {
   string version_string_;
   unsigned int nClasses_;
   vector<int> classes_;
+  vector<string> exclude_descriptors_;
 
   //! debugHook will be called each time a new weak classifier is learned. 
   void train(int nCandidates, int max_secs, int max_wcs, void (*debugHook)(weak_classifier)=NULL);

@@ -19,6 +19,30 @@ USING_PART_OF_NAMESPACE_EIGEN
 using namespace std;
 
 
+//! This is an example of how to set up the descriptors.  Using this one is ill-advised as it may change without notice.
+vector<ImageDescriptor*> setupImageDescriptors() {
+  vector<ImageDescriptor*> d;
+
+  SuperpixelColorHistogram* sch1 = new SuperpixelColorHistogram(20, 0.5, 50, string("hue"));
+  SuperpixelColorHistogram* sch2 = new SuperpixelColorHistogram(5, 0.5, 50, string("hue"), NULL, sch1);
+  SuperpixelColorHistogram* sch3 = new SuperpixelColorHistogram(5, 1, 50, string("hue"), NULL, sch1);
+  SuperpixelColorHistogram* sch4 = new SuperpixelColorHistogram(5, .25, 50, string("hue"), NULL, sch1);
+
+  d.push_back(sch1);
+  d.push_back(sch2);
+  d.push_back(sch3);
+  d.push_back(sch4);
+
+  d.push_back(new IntensityPatch(50, 1, true));
+  d.push_back(new PatchStatistic(string("variance"), (Patch*)d.back()));
+  d.push_back(new IntensityPatch(40, .5, true));
+  d.push_back(new IntensityPatch(20, 1, true));
+  d.push_back(new IntensityPatch(80, .25, true));
+  d.push_back(new IntensityPatch(120, 1.0/6.0, true));
+  return d;
+}
+
+
 NEWMAT::Matrix* eigen2Newmat(const MatrixXf& eig) {
   NEWMAT::Matrix *m = new NEWMAT::Matrix(eig.rows(), eig.cols());
   for(int i=0; i<eig.rows(); i++) {
@@ -208,8 +232,12 @@ void Stanleyi::collectDataset(string bagfile, int samples_per_img, string save_n
   
 
 void Stanleyi::classifyVideoVis(string bagfile, Dorylus& d, int samples_per_img) {
+  vector<ImageDescriptor*> desc = setupImageDescriptors();
+  d.exclude_descriptors_.push_back(desc[4]->name_);
+
   cvNamedWindow("Classification Visualization", CV_WINDOW_AUTOSIZE);
   
+
   int row = 0, col = 0;
   IplImage* vis = NULL;
   object* obj = NULL;

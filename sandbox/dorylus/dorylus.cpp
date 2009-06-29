@@ -919,7 +919,11 @@ Matrix Dorylus::classify(object &obj, Matrix **confidence) {
   for(bit = battery_.begin(); bit != battery_.end(); bit++) {
     string descriptor = bit->first;
     if(obj.features.find(descriptor) == obj.features.end()) {
-      cout << "Skipping " << descriptor << " descriptor." << endl;
+      cout << "Skipping " << descriptor << " descriptor, as the object has no feature of that type." << endl;
+      continue;
+    }
+    if(find(exclude_descriptors_.begin(), exclude_descriptors_.end(), descriptor) != exclude_descriptors_.end()) {
+      cout << "Skipping " << descriptor << " descriptor, as it is on the exclude list." << endl;
       continue;
     }
     Matrix* f = obj.features[descriptor];
