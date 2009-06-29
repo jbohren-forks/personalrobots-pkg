@@ -40,14 +40,12 @@ namespace mechanism {
 
 bool Robot::initXml(TiXmlElement *root)
 {
-  //assert(hw_);
-  TiXmlElement *xit = NULL;
-
   // Constructs the kdl tree.
   if (!treeFromXml(root, tree_, joint_link_mapping_))
     return false;
 
   // Constructs the joints.
+  TiXmlElement *xit = NULL;
   for (xit = root->FirstChildElement("joint"); xit;
        xit = xit->NextSiblingElement("joint"))
   {

@@ -37,6 +37,7 @@
 #include "test_helpers.h"
 
 using namespace mechanism;
+using namespace std;
 
 
 // Just three links
@@ -46,50 +47,35 @@ protected:
   ShortChainTest() : hw(0) {}
   virtual ~ShortChainTest() {}
 
-  virtual void SetUp()
-  {
-    model.links_.push_back(quickLink("a", "world", "", tf::Vector3(0,0,0), tf::Vector3(0,0,0)));
-
-    model.joints_.push_back(quickJoint("ab", tf::Vector3(1,-1,0)));
-    model.links_.push_back(quickLink("b", "a", "ab", tf::Vector3(1,0,0), tf::Vector3(0,0,0)));
-
-    model.joints_.push_back(quickJoint("bc", tf::Vector3(1,0,0)));
-    model.links_.push_back(quickLink("c", "b", "bc", tf::Vector3(1,0,0), tf::Vector3(0,0,0)));
-
-    state.reset(new RobotState(&model, &hw));
-  }
+  virtual void SetUp() {}
 
   virtual void TearDown() {}
 
-  Robot model;
   HardwareInterface hw;
-  boost::scoped_ptr<RobotState> state;
 };
 
 TEST_F(ShortChainTest, FKShouldMatchOnShortChainWhenStraight)
 {
-  Chain chain;
-  EXPECT_TRUE(chain.init(&model, "a", "c"));
-  EXPECT_EQ(0, chain.link_indices_[0]);
-  EXPECT_EQ(1, chain.link_indices_[1]);
-  EXPECT_EQ(2, chain.link_indices_[2]);
-  EXPECT_EQ(0, chain.joint_indices_[0]);
-  EXPECT_EQ(1, chain.joint_indices_[1]);
+  TiXmlDocument urdf_xml;
+  urdf_xml.LoadFile("pr2_desc.xml");
+  TiXmlElement *root = urdf_xml.FirstChildElement("robot");
+  ASSERT_TRUE(root != NULL);
+  Robot model;
+  ASSERT_TRUE(model.initXml(root));
+  RobotState state(&model, &hw);
 
+  // extract chain
+  Chain chain;
+  EXPECT_TRUE(chain.init(&model, "fl_caster_l_wheel_link", "r_gripper_palm_link"));
   KDL::Chain kdl;
   chain.toKDL(kdl);
-  //for (unsigned int i=0; i<kdl.getNrOfJoints(); i++)
-  //  cout << "kdl chain contains joint " << chain.getJointName(i) << endl;
-
-
-  ASSERT_EQ(model.links_.size(), kdl.getNrOfSegments());
-  ASSERT_EQ(model.joints_.size(), kdl.getNrOfJoints());
-
-  setJoint(state.get(), 0, M_PI/4);
-  setJoint(state.get(), 1, M_PI/4);
+  unsigned int nr_segments = 13;
+  unsigned int nr_joints = 10;
+  ASSERT_EQ(nr_segments, kdl.getNrOfSegments());
+  ASSERT_EQ(nr_joints, kdl.getNrOfJoints());
 
   KDL::JntArray jnts(model.joints_.size());
-  chain.getPositions(state->joint_states_, jnts);
+  chain.getPositions(state.joint_states_, jnts);
 }
 
 int main(int argc, char **argv){
