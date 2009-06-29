@@ -130,33 +130,33 @@ TEST_F(TestEKF, test)
   ASSERT_TRUE(node_->unsubscribe("odom"));
 
   // check if callback was called enough times
-  ASSERT_TRUE(ekf_counter_ > 200);
+  EXPECT_GT(ekf_counter_, 200);
 
   // check if time interval is correct
-  ASSERT_TRUE(Duration(ekf_msg_.header.stamp - ekf_time_begin_).toSec() < ekf_duration * 1.25);
-  ASSERT_TRUE(Duration(ekf_msg_.header.stamp - ekf_time_begin_).toSec() > ekf_duration * 0.85);
+  EXPECT_LT(Duration(ekf_msg_.header.stamp - ekf_time_begin_).toSec(), ekf_duration * 1.25);
+  EXPECT_GT(Duration(ekf_msg_.header.stamp - ekf_time_begin_).toSec(), ekf_duration * 0.85);
 
   // check if ekf time is same as odom time
-  ASSERT_TRUE(Duration(ekf_time_begin_ - odom_time_begin_).toSec() < 1.0);
-  ASSERT_TRUE(Duration(ekf_time_begin_ - odom_time_begin_).toSec() > -1.0);
-  ASSERT_TRUE(Duration(ekf_msg_.header.stamp - odom_msg_.header.stamp).toSec() < 1.0);
-  ASSERT_TRUE(Duration(ekf_msg_.header.stamp - odom_msg_.header.stamp).toSec() > -1.0);
+  EXPECT_LT(Duration(ekf_time_begin_ - odom_time_begin_).toSec(), 1.0);
+  EXPECT_GT(Duration(ekf_time_begin_ - odom_time_begin_).toSec(), -1.0);
+  EXPECT_LT(Duration(ekf_msg_.header.stamp - odom_msg_.header.stamp).toSec(), 1.0);
+  EXPECT_GT(Duration(ekf_msg_.header.stamp - odom_msg_.header.stamp).toSec(), -1.0);
 
   // check filter result
-  ASSERT_TRUE(ekf_begin_.pose.position.x > 0.038043 - EPS_trans);
-  ASSERT_TRUE(ekf_begin_.pose.position.x < 0.038043 + EPS_trans);
-  ASSERT_TRUE(ekf_begin_.pose.position.y > -0.001618 - EPS_trans);
-  ASSERT_TRUE(ekf_begin_.pose.position.y < -0.001618 + EPS_trans);
-  ASSERT_TRUE(ekf_begin_.pose.position.z > 0.000000 - EPS_trans);
-  ASSERT_TRUE(ekf_begin_.pose.position.z < 0.000000 + EPS_trans);
-  ASSERT_TRUE(ekf_begin_.pose.orientation.x > 0.000000 - EPS_rot);
-  ASSERT_TRUE(ekf_begin_.pose.orientation.x < 0.000000 + EPS_rot);
-  ASSERT_TRUE(ekf_begin_.pose.orientation.y > 0.000000 - EPS_rot);
-  ASSERT_TRUE(ekf_begin_.pose.orientation.y < 0.000000 + EPS_rot);
-  ASSERT_TRUE(ekf_begin_.pose.orientation.z > 0.088400 - EPS_rot);
-  ASSERT_TRUE(ekf_begin_.pose.orientation.z < 0.088400 + EPS_rot);
-  ASSERT_TRUE(ekf_begin_.pose.orientation.w > 0.996085 - EPS_rot);
-  ASSERT_TRUE(ekf_begin_.pose.orientation.w < 0.996085 + EPS_rot);
+  EXPECT_GT(ekf_begin_.pose.position.x, 0.038043 - EPS_trans);
+  EXPECT_LT(ekf_begin_.pose.position.x, 0.038043 + EPS_trans);
+  EXPECT_GT(ekf_begin_.pose.position.y, -0.001618 - EPS_trans);
+  EXPECT_LT(ekf_begin_.pose.position.y, -0.001618 + EPS_trans);
+  EXPECT_GT(ekf_begin_.pose.position.z, 0.000000 - EPS_trans);
+  EXPECT_LT(ekf_begin_.pose.position.z, 0.000000 + EPS_trans);
+  EXPECT_GT(ekf_begin_.pose.orientation.x, 0.000000 - EPS_rot);
+  EXPECT_LT(ekf_begin_.pose.orientation.x, 0.000000 + EPS_rot);
+  EXPECT_GT(ekf_begin_.pose.orientation.y, 0.000000 - EPS_rot);
+  EXPECT_LT(ekf_begin_.pose.orientation.y, 0.000000 + EPS_rot);
+  EXPECT_GT(ekf_begin_.pose.orientation.z, 0.088400 - EPS_rot);
+  EXPECT_LT(ekf_begin_.pose.orientation.z, 0.088400 + EPS_rot);
+  EXPECT_GT(ekf_begin_.pose.orientation.w, 0.996085 - EPS_rot);
+  EXPECT_LT(ekf_begin_.pose.orientation.w, 0.996085 + EPS_rot);
 
   SUCCEED();
 }

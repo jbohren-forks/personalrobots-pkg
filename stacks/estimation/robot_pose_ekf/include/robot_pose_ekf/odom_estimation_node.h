@@ -95,42 +95,43 @@ namespace estimation
  * pose measurement. The VO is more accurate in tracking orientation changes than in position changes. 
 */
 
-class OdomEstimationNode: public ros::Node
+typedef boost::shared_ptr<deprecated_msgs::RobotBase2DOdom const> OdomConstPtr;
+typedef boost::shared_ptr<robot_msgs::PoseWithRatesStamped const> ImuConstPtr;
+typedef boost::shared_ptr<robot_msgs::PoseDot const> VelConstPtr;
+
+class OdomEstimationNode
 {
 public:
   /// constructor
-  OdomEstimationNode(const std::string& node_name);
+  OdomEstimationNode();
 
   /// destructor
   virtual ~OdomEstimationNode();
 
   /// callback function for vel data
-  void velCallback();
+  void velCallback(const VelConstPtr& vel);
 
   /// callback function for odo data
-  void odomCallback();
+  void odomCallback(const OdomConstPtr& odom);
 
   /// callback function for imu data
-  void imuCallback();
+  void imuCallback(const ImuConstPtr& imu);
 
   /// callback function for vo data
   void voCallback(const tf::MessageNotifier<robot_msgs::VOPose>::MessagePtr& vo);
 
   /// filter loop
-  void spin();
+  void spin(const ros::TimerEvent& e);
 
 
 private:
-  std::string node_name_;
+  ros::NodeHandle node_;
+  ros::Timer timer_;
+  ros::Publisher pose_pub_;
+  ros::Subscriber cmd_vel_sub_, odom_sub_, imu_sub_;
 
   /// ekf filter
   OdomEstimation my_filter_;
-
-  // messages to receive
-  robot_msgs::PoseDot               vel_;  
-  deprecated_msgs::RobotBase2DOdom       odom_;  
-  robot_msgs::PoseWithRatesStamped  imu_;  
-  robot_msgs::VOPose              vo_;  
 
   // estimated robot pose message to send
   robot_msgs::PoseWithCovariance  output_; 
@@ -153,7 +154,7 @@ private:
   bool vel_active_, odom_active_, imu_active_, vo_active_;
   bool odom_used_, imu_used_, vo_used_;
   bool odom_initializing_, imu_initializing_, vo_initializing_;
-  double freq_, timeout_;
+  double timeout_;
 
   // mutex
   boost::mutex odom_mutex_, imu_mutex_, vo_mutex_, vel_mutex_;
