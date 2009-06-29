@@ -73,12 +73,13 @@ void planning_environment::CollisionSpaceMonitor::setupCSM(void)
     nh_.param<std::string>("~bounding_planes", planes, std::string());
     std::stringstream ss(planes);
     std::vector<double> planeValues;
-    while (ss.good() && !ss.eof())
-    {
-	double value;
-	ss >> value;
-	planeValues.push_back(value);
-    }
+    if (!planes.empty())
+	while (ss.good() && !ss.eof())
+	{
+	    double value;
+	    ss >> value;
+	    planeValues.push_back(value);
+	}
     if (planeValues.size() % 4 != 0)
 	ROS_WARN("~bounding_planes must be a list of 4-tuples (a b c d) that define planes ax+by+cz+d=0");
     else

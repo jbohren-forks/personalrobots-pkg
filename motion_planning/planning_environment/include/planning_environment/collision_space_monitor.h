@@ -86,6 +86,7 @@ namespace planning_environment
 		delete attachedBodyNotifier_;
 	}
 
+	/** \brief Return the instance of the environment model maintained */
 	collision_space::EnvironmentModel* getEnvironmentModel(void) const
 	{
 	    return collisionSpace_;
@@ -101,6 +102,14 @@ namespace planning_environment
 	tf::TransformListener *getTransformListener(void) const
 	{
 	    return tf_;
+	}
+
+	/** \brief Return the scaling employed when creating spheres
+	    from boxes in a collision map. The radius of a sphere is
+	    this scaling multiplied by the largest extent of the box */
+	double getBoxScale(void) const
+	{
+	    return boxScale_;
 	}
 	
 	/** \brief Define a callback for before updating a map */
