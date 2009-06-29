@@ -3,7 +3,8 @@
 #include "ros/assert.h"
 
 using namespace std;
-using namespace NEWMAT;
+USING_PART_OF_NAMESPACE_EIGEN
+
 
 /****************************************************************************
 *************  Generally Useful Functions
@@ -13,25 +14,33 @@ using namespace NEWMAT;
 vector<ImageDescriptor*> setupImageDescriptors() {
   vector<ImageDescriptor*> d;
   // -- Features used for test2 and test
-  SuperpixelColorHistogram* sch1 = new SuperpixelColorHistogram(20, 0.5, 25, string("hue"));
-  SuperpixelColorHistogram* sch2 = new SuperpixelColorHistogram(5, 0.5, 25, string("hue"), NULL, sch1);
-  d.push_back(sch1);
-  d.push_back(sch2);
-  d.push_back(new SuperpixelColorHistogram(20, 0.5, 25, string("sat"), sch1, sch1));
-  d.push_back(new SuperpixelColorHistogram(20, 0.5, 25, string("val"), sch1, sch1));
-  d.push_back(new SuperpixelColorHistogram(5, 0.5, 25, string("sat"), sch2, sch1));
-  d.push_back(new SuperpixelColorHistogram(5, 0.5, 25, string("val"), sch2, sch1));
-  d.push_back(new SuperpixelColorHistogram(20, 0.5, 10, string("hue"), sch1, sch1));
-  d.push_back(new SuperpixelColorHistogram(20, 0.5, 10, string("sat"), sch1, sch1));
-  d.push_back(new SuperpixelColorHistogram(20, 0.5, 10, string("val"), sch1, sch1));
-  d.push_back(new SuperpixelColorHistogram(5, 0.5, 10, string("hue"), sch2, sch1));
-  d.push_back(new SuperpixelColorHistogram(5, 0.5, 10, string("sat"), sch2, sch1));
-  d.push_back(new SuperpixelColorHistogram(5, 0.5, 10, string("val"), sch2, sch1));
-
 //   SuperpixelColorHistogram* sch1 = new SuperpixelColorHistogram(20, 0.5, 25, string("hue"));
 //   SuperpixelColorHistogram* sch2 = new SuperpixelColorHistogram(5, 0.5, 25, string("hue"), NULL, sch1);
 //   d.push_back(sch1);
 //   d.push_back(sch2);
+//   d.push_back(new SuperpixelColorHistogram(20, 0.5, 25, string("sat"), sch1, sch1));
+//   d.push_back(new SuperpixelColorHistogram(20, 0.5, 25, string("val"), sch1, sch1));
+//   d.push_back(new SuperpixelColorHistogram(5, 0.5, 25, string("sat"), sch2, sch1));
+//   d.push_back(new SuperpixelColorHistogram(5, 0.5, 25, string("val"), sch2, sch1));
+//   d.push_back(new SuperpixelColorHistogram(20, 0.5, 10, string("hue"), sch1, sch1));
+//   d.push_back(new SuperpixelColorHistogram(20, 0.5, 10, string("sat"), sch1, sch1));
+//   d.push_back(new SuperpixelColorHistogram(20, 0.5, 10, string("val"), sch1, sch1));
+//   d.push_back(new SuperpixelColorHistogram(5, 0.5, 10, string("hue"), sch2, sch1));
+//   d.push_back(new SuperpixelColorHistogram(5, 0.5, 10, string("sat"), sch2, sch1));
+//   d.push_back(new SuperpixelColorHistogram(5, 0.5, 10, string("val"), sch2, sch1));
+
+  // -- Features used for test3.
+  SuperpixelColorHistogram* sch1 = new SuperpixelColorHistogram(20, 0.5, 50, string("hue"));
+  SuperpixelColorHistogram* sch2 = new SuperpixelColorHistogram(5, 0.5, 50, string("hue"), NULL, sch1);
+  SuperpixelColorHistogram* sch3 = new SuperpixelColorHistogram(5, 1, 50, string("hue"), NULL, sch1);
+  SuperpixelColorHistogram* sch4 = new SuperpixelColorHistogram(5, .25, 50, string("hue"), NULL, sch1);
+
+  d.push_back(sch1);
+  d.push_back(sch2);
+  d.push_back(sch3);
+  d.push_back(sch4);
+
+
 
   // -- Old examples.
 //   d.push_back(new IntensityPatch(50, 1, true));
@@ -46,20 +55,35 @@ vector<ImageDescriptor*> setupImageDescriptors() {
 }
 
 
-void whiten(Matrix* m) {
+// void whiten(NEWMAT::Matrix* m) {
+//   float var=0.0;
+//   float mean = m->Sum() / m->Nrows();
+
+//   if(mean == 0.0) //This should only happen if the feature is the zero vector.
+//     return;
+
+//   for(int i=1; i<=m->Nrows(); i++) {
+//     (*m)(i,1) = (*m)(i,1) - mean;
+//     var += pow((*m)(i,1), 2);
+//   }
+//   var /= m->Nrows();
+//   Matrix div(1,1); div = 1/(sqrt(var));
+//   *m = KP(*m, div);
+// }
+
+
+void whiten(MatrixXf* m) {
   float var=0.0;
-  float mean = m->Sum() / m->Nrows();
+  float mean = m->sum() / m->rows();
   if(mean == 0.0) //This should only happen if the feature is the zero vector.
     return;
 
-  for(int i=1; i<=m->Nrows(); i++) {
-    (*m)(i,1) = (*m)(i,1) - mean;
-    var += pow((*m)(i,1), 2);
+  for(int i=0; i<m->rows(); i++) {
+    (*m)(i,0) = (*m)(i,0) - mean;
+    var += pow((*m)(i,0), 2);
   }
-  var /= m->Nrows();
-
-  Matrix div(1,1); div = 1/(sqrt(var));
-  *m = KP(*m, div);
+  var /= m->rows();
+  *m = *m / sqrt(var);
 }
 
 
@@ -90,11 +114,11 @@ void ImageDescriptor::commonDebug() {
   cvReleaseImage(&display);
 }
 
-bool ImageDescriptor::compute(Matrix** result, bool debug) {
+bool ImageDescriptor::compute(MatrixXf** result, bool debug) {
   return false;
 }
 
-void ImageDescriptor::display(const NEWMAT::Matrix& result) {
+void ImageDescriptor::display(const MatrixXf& result) {
   cout << "Displaying..." << endl;
 }
 
@@ -167,7 +191,7 @@ IntensityPatch::IntensityPatch(int raw_size, float scale, bool whiten)
   result_size_ = size_ * size_;
 }
 
-bool IntensityPatch::compute(NEWMAT::Matrix** result, bool debug) {
+bool IntensityPatch::compute(MatrixXf** result, bool debug) {
   //Do common patch processing.  
   if(!preCompute(debug))
     return false;
@@ -175,7 +199,7 @@ bool IntensityPatch::compute(NEWMAT::Matrix** result, bool debug) {
 
   final_patch_ = cvCreateImage(cvSize(size_, size_), IPL_DEPTH_8U, 1);
   cvCvtColor(scaled_patch_, final_patch_, CV_BGR2GRAY);
-  Matrix* res = new Matrix(result_size_,1);
+  MatrixXf* res = new MatrixXf(result_size_,1);
 
   // -- Convert ipl to Newmat.
   int idx=0;
@@ -197,7 +221,7 @@ bool IntensityPatch::compute(NEWMAT::Matrix** result, bool debug) {
   // -- Display for debugging.
   if(debug) {
     cout << name_ << " dump: ";
-    cout << (**result).t() << endl;
+    cout << (**result) << endl;
       
     IplImage* final_patch_rescaled = cvCreateImage(cvSize(500,500), IPL_DEPTH_8U, 1);
     cvResize(final_patch_, final_patch_rescaled, CV_INTER_NN);
@@ -231,7 +255,7 @@ PatchStatistic::PatchStatistic(string type, Patch* patch) :
   }
 }
 
-bool PatchStatistic::compute(NEWMAT::Matrix** result, bool debug) {
+bool PatchStatistic::compute(MatrixXf** result, bool debug) {
 
   if(patch_ == NULL) {
     cout << "patch_ was null" << endl;
@@ -244,7 +268,7 @@ bool PatchStatistic::compute(NEWMAT::Matrix** result, bool debug) {
 
   IplImage* fp = patch_->final_patch_;
   if(type_.compare("variance") == 0) {  
-    (*result) = new Matrix(1,1);
+    (*result) = new MatrixXf(1,1);
 
     // -- Get the mean.
     double mean = 0.0;
@@ -284,7 +308,7 @@ bool PatchStatistic::compute(NEWMAT::Matrix** result, bool debug) {
   return true;
 }
 
-void PatchStatistic::display(const NEWMAT::Matrix& result) {
+void PatchStatistic::display(const MatrixXf& result) {
   cout << name_ << " is " << result << endl;
 }
 
@@ -300,7 +324,7 @@ SuperpixelStatistic::SuperpixelStatistic(int seed_spacing, float scale, Superpix
   name_ = string(buf);
 
   if(seg_provider_ == NULL)
-    index_ = new vector< list<CvPoint> >;
+    index_ = new vector< vector<CvPoint> >;
   else
     index_ = NULL;
 }
@@ -423,9 +447,14 @@ void SuperpixelStatistic::segment(bool debug) {
     }
   }
 
+  // -- Reserve space for the index.
+  int nPixels = seg_->height * seg_->width;
+  index_->resize(label+1);
+  for(int i=0; i<index_->size(); i++) {
+    (*index_)[i].reserve((nPixels / label) * 2);
+  }
 
   // -- Compute the index.
-  index_->resize(label+1);
   for(int r=0; r<seg_->height; r++) {
     long* ptr = (long*)(seg_->imageData + r * seg_->widthStep);
     for(int c=0; c<seg_->width; c++) {
@@ -515,7 +544,7 @@ SuperpixelColorHistogram::SuperpixelColorHistogram(int seed_spacing, float scale
 //   ranges_ = &range;
 }
 
-bool SuperpixelColorHistogram::compute(NEWMAT::Matrix** result, bool debug) {
+bool SuperpixelColorHistogram::compute(MatrixXf** result, bool debug) {
   // -- Make sure we have access to a segmentation.
   if(seg_provider_ == NULL && seg_ == NULL)
     segment(debug);
@@ -536,6 +565,7 @@ bool SuperpixelColorHistogram::compute(NEWMAT::Matrix** result, bool debug) {
     hue_ = cvCreateImage( cvGetSize(img_), 8, 1 );
     sat_ = cvCreateImage( cvGetSize(img_), 8, 1 );
     val_ = cvCreateImage( cvGetSize(img_), 8, 1 );
+    if(type_.compare("hue") == 0 || type_.compare("sat") == 0 || type_.compare("val") == 0)
     cvCvtColor(img_, hsv_, CV_BGR2HSV);
     cvSplit(hsv_, hue_, sat_, val_, 0);
   }
@@ -579,14 +609,16 @@ bool SuperpixelColorHistogram::compute(NEWMAT::Matrix** result, bool debug) {
   // -- Compute the histogram by hand if we need to.
 
   if(histograms_[label] == NULL) {
-    ROS_DEBUG("Computing hist for %s for label %d", name_.c_str(), label);
+    //ROS_DEBUG("Computing hist for %s for label %d", name_.c_str(), label);
     Histogram* h = new Histogram(nBins_, 0, max);
 
-    const list<CvPoint>& l = (*index_)[label];
-    list<CvPoint>::const_iterator lit;
+    const vector<CvPoint>& l = (*index_)[label];
+    vector<CvPoint>::const_iterator lit;
     for(lit = l.begin(); lit != l.end(); lit++) {
       if(!h->insert(CV_IMAGE_ELEM(channel, uchar, lit->y, lit->x))) {
-	ROS_FATAL("Insertion failed");
+	ROS_FATAL("Insertion failed for %u ", CV_IMAGE_ELEM(channel, uchar, lit->y, lit->x));
+	h->printBoundaries();
+	ROS_BREAK();
       }
     }
       
@@ -617,13 +649,15 @@ bool SuperpixelColorHistogram::compute(NEWMAT::Matrix** result, bool debug) {
 //   histograms_[label]->print();
 
   // -- Copy into result.
-  Matrix* res = new Matrix(result_size_,1);
-  for(unsigned int i=1; i<=result_size_; i++) {
+  MatrixXf* res = new MatrixXf(result_size_,1);
+  for(unsigned int i=0; i<result_size_; i++) {
     //ROS_DEBUG("Copying label %d, bin %d", label, i-1);
-    (*res)(i,1) = histograms_[label]->bins_[i-1];
+    (*res)(i,0) = histograms_[label]->bins_[i];
   }
 
   *result = res;
+  
+
 
   // -- Opencv histograms are broken! --
   // -- Create the mask for the histogram.
@@ -662,7 +696,9 @@ bool SuperpixelColorHistogram::compute(NEWMAT::Matrix** result, bool debug) {
 //     cvNamedWindow("Mask");
 //     cvShowImage("Mask", mask);
     cout << name_ << " ";
+    histograms_[label]->printBoundaries();
     histograms_[label]->print();
+    histograms_[label]->printGraph();
     commonDebug();
   }
 
@@ -713,6 +749,7 @@ Histogram::Histogram(int nBins, float min, float max)
     boundaries_.push_back(b);
     b += bin_size_;
   } 
+  boundaries_.push_back(max);
 
   bins_.reserve(nBins_);
   for(int i=0; i<nBins; i++) {
@@ -760,6 +797,35 @@ void Histogram::print() {
   cout << endl;
 }
 
+void Histogram::printGraph() {
+  Histogram h2 = *this;
+  h2.normalize();
+
+  cout << "Histogram (" << nInsertions_ << " insertions) graph: " << endl;
+  for(float row=1; row >= 0; row=row-.1) {
+    for(unsigned int i=0; i<h2.bins_.size(); i++) {
+      if(h2.bins_[i] >= row)
+	cout << "*";
+      else
+	cout << " ";
+    }
+    cout << endl;
+  }
+  for(unsigned int i=0; i<h2.bins_.size(); i++) {
+    cout << "-";
+  }
+  cout << endl;
+}
+
+
+void Histogram::printBoundaries() {
+  cout << "Histogram Boundaries: " << endl;
+  for(unsigned int i=0; i<boundaries_.size(); i++) {
+    cout << boundaries_[i] << " ";
+  }
+  cout << endl;
+}
+
 void Histogram::clear() {
   for(unsigned int i=0; i<bins_.size(); i++) {
     bins_[i] = 0;
@@ -781,7 +847,7 @@ void Histogram::clear() {
 
 /*
 
-EdgePatch::compute(NEWMAT::Matrix** result, bool debug) {
+EdgePatch::compute(MatrixXf** result, bool debug) {
   Patch::compute(IplImage* img_, row_, col_, result, debug);
   IplImage* gray = cvCreateImage(cvGetSize(img_), IPL_DEPTH_8U, 1);
   IplImage* detail_edge = cvCloneImage(gray);
@@ -845,7 +911,7 @@ Hog::Hog(Patch* patch) {
   cvHog = HOGDescriptor(cvGetSize(fp), cvSize(blocksz, blocksz), cvSize(8,8), cvSize(8,8), 1);
 }
 
-bool Hog::compute(NEWMAT::Matrix** result, bool debug);
+bool Hog::compute(MatrixXf** result, bool debug);
 */
 
 

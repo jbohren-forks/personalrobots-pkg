@@ -1,3 +1,4 @@
+
 #include <iostream>
 #include <image_msgs/Image.h>
 #include <rosrecord/Player.h>
@@ -13,9 +14,25 @@
 #include "descriptors.h"
 #include <dorylus.h>
 
-using namespace NEWMAT;
+USING_PART_OF_NAMESPACE_EIGEN
+//using namespace NEWMAT;
 using namespace std;
 
+
+NEWMAT::Matrix* eigen2Newmat(const MatrixXf& eig) {
+  NEWMAT::Matrix *m = new NEWMAT::Matrix(eig.rows(), eig.cols());
+  for(int i=0; i<eig.rows(); i++) {
+    for(int j=0; j<eig.cols(); j++) {
+      (*m)(i+1, j+1) = eig(i,j);
+    }
+  }
+  
+//   cout << "Comparison: " << endl;
+//   cout << m->t() << endl;
+//   cout << eig.transpose() << endl;
+
+  return m;
+}
 
 template <class T>
 void copyMsg(string name, T* m, ros::Time t, ros::Time t_no_use, void* n)
@@ -99,7 +116,7 @@ public:
 object* Stanleyi::computeFeaturesAtRandomPoint(int* row, int* col, bool debug) {
   int r = rand() % img_->height;
   int c = rand() % img_->width;
-  Matrix* result = NULL;
+  MatrixXf* result = NULL;
   object* obj = new object;
 
   // -- Aim the descriptor functions at the new point.
@@ -130,8 +147,10 @@ object* Stanleyi::computeFeaturesAtRandomPoint(int* row, int* col, bool debug) {
       return NULL;
     }
 
-    obj->features[descriptor_[j]->name_] = result;
     ROS_ASSERT(result != NULL);
+    // -- Convert to Newmat until Dorylus is switched.
+    obj->features[descriptor_[j]->name_] = eigen2Newmat(*result);
+    delete result;
   }
 
 
@@ -194,7 +213,7 @@ void Stanleyi::classifyVideoVis(string bagfile, Dorylus& d, int samples_per_img)
   int row = 0, col = 0;
   IplImage* vis = NULL;
   object* obj = NULL;
-  Matrix response;
+  NEWMAT::Matrix response_nm;
   int frame_num = 0;
 
   int skip_frames = 184;
@@ -231,23 +250,23 @@ void Stanleyi::classifyVideoVis(string bagfile, Dorylus& d, int samples_per_img)
       obj = computeFeaturesAtRandomPoint(&row, &col);
       if(!obj)
 	continue;
-      response = d.classify(*obj);
+      response_nm = d.classify(*obj);
 
       if(mask) {
 	CvScalar s = cvGet2D(mask, row, col);
-	cout << s.val[0] << " " << s.val[1] << " " << s.val[2] << " " << s.val[3] << endl;
+	//cout << s.val[0] << " " << s.val[1] << " " << s.val[2] << " " << s.val[3] << endl;
 	int label = s.val[0];
-	if(label != 0 && response(1,1) > 0)
+	if(label != 0 && response_nm(1,1) > 0)
 	  tp++;
-	else if(label == 0 && response(1,1) > 0)
+	else if(label == 0 && response_nm(1,1) > 0)
 	  fp++;
-	else if(label == 0 && response(1,1) <= 0)
+	else if(label == 0 && response_nm(1,1) <= 0)
 	  tn++;
-	else// if(label == 0 && response(1,1) > 0)
+	else// if(label == 0 && response_nm(1,1) > 0)
 	  fn++;
       }
 
-      if(response(1,1) > 0) {
+      if(response_nm(1,1) > 0) {
 	cvCircle(vis, cvPoint(col, row), 2, cvScalar(0,255,0), 2);
 	if(mask)
 	  cvCircle(mask, cvPoint(col, row), 2, cvScalar(0,255,0), 2);

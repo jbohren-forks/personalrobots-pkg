@@ -3,26 +3,28 @@
 #include "opencv/cv.h"
 #include "opencv/highgui.h"
 #include "opencv/cvaux.hpp"
-#include <vector>
 #include <string>
-#include <newmat10/newmat.h>
-#include <newmat10/newmatio.h>
+//#include <newmat10/newmat.h>
+//#include <newmat10/newmatio.h>
+#include <Eigen/Core>
 #include <math.h>
-
 #include <list>
+#include <vector>
 
 class Histogram {
 public:
-  vector<float> bins_;
+  std::vector<float> bins_;
   Histogram(int nBins, float min, float max);
   int nInsertions_;
   bool insert(float val);
   void normalize();
   void print();
+  void printGraph();
+  void printBoundaries();
   void clear();
 
 private:
-  vector<float> boundaries_;
+  std::vector<float> boundaries_;
   int nBins_;
   float min_;
   float max_;
@@ -31,14 +33,14 @@ private:
 
 class ImageDescriptor {
  public:
-  string name_;
+  std::string name_;
   unsigned int result_size_;
   IplImage* img_;
   int row_;
   int col_;
 
-  virtual bool compute(NEWMAT::Matrix** result, bool debug) = 0;
-  virtual void display(const NEWMAT::Matrix& result) = 0;
+  virtual bool compute(Eigen::MatrixXf** result, bool debug) = 0;
+  virtual void display(const Eigen::MatrixXf& result) = 0;
   virtual void clearPointCache() = 0;
   virtual void clearImageCache() = 0;
   //! Show the input image and a red + at the point at which the descriptor is being computed.
@@ -64,7 +66,7 @@ class Patch : public ImageDescriptor {
   Patch(int raw_size, float scale);
   //! Common patch constructor computation.
   bool preCompute(bool debug);
-  //virtual void display(const NEWMAT::Matrix& result) {}
+  //virtual void display(const Eigen::MatrixXf& result) {}
   void clearPointCache();
   //virtual void clearImageCache();
   ~Patch() {}  
@@ -76,28 +78,29 @@ class IntensityPatch : public Patch {
   bool whiten_;
 
   IntensityPatch(int raw_size, float scale, bool whiten);
-  bool compute(NEWMAT::Matrix** result, bool debug);
-  void display(const NEWMAT::Matrix& result) {}
+  bool compute(Eigen::MatrixXf** result, bool debug);
+  void display(const Eigen::MatrixXf& result) {}
   void clearImageCache() {}
 };
 
 class PatchStatistic : public ImageDescriptor {
  public:
   //! "variance"
-  string type_;
+  std::string type_;
   //! Pointer to Patch object which will contain the final_patch_ to compute the statistic on.
   Patch* patch_;
 
-  PatchStatistic(string type, Patch* patch);
-  bool compute(NEWMAT::Matrix** result, bool debug);
-  void display(const NEWMAT::Matrix& result);
+  PatchStatistic(std::string type, Patch* patch);
+  bool compute(Eigen::MatrixXf** result, bool debug);
+  void display(const Eigen::MatrixXf& result);
   void clearPointCache() {}
   void clearImageCache() {}
 };
 
 class SuperpixelStatistic : public ImageDescriptor {
  public:
-  vector< list<CvPoint> > *index_;
+  //! (*index_)[i] returns the vector of CvPoints for segment i of the image.
+  std::vector< std::vector<CvPoint> > *index_;
   int seed_spacing_;
   //! Scaling factor to apply to the image when computing the segmentation.
   float scale_;
@@ -117,21 +120,21 @@ class SuperpixelColorHistogram : public SuperpixelStatistic {
   IplImage* sat_;
   IplImage* val_;
   int nBins_;
-  string type_;
+  std::string type_;
   SuperpixelColorHistogram* hsv_provider_;
   //! histograms_[s] corresponds to the histogram for segment s of the segmentation. (s=0 is always left NULL).
-  vector<Histogram*> histograms_;
+  std::vector<Histogram*> histograms_;
   bool hists_reserved_;
 
-  SuperpixelColorHistogram(int seed_spacing, float scale, int nBins, string type, SuperpixelStatistic* seg_provider=NULL, SuperpixelColorHistogram* hsv_provider_=NULL);
-  bool compute(NEWMAT::Matrix** result, bool debug);
-  void display(const NEWMAT::Matrix& result) {}
+  SuperpixelColorHistogram(int seed_spacing, float scale, int nBins, std::string type, SuperpixelStatistic* seg_provider=NULL, SuperpixelColorHistogram* hsv_provider_=NULL);
+  bool compute(Eigen::MatrixXf** result, bool debug);
+  void display(const Eigen::MatrixXf& result) {}
   void clearPointCache() {}
   void clearImageCache();
 };
 
-vector<ImageDescriptor*> setupImageDescriptors();
-void whiten(NEWMAT::Matrix* m);
+std::vector<ImageDescriptor*> setupImageDescriptors();
+void whiten(Eigen::MatrixXf* m);
 
 
 /*
@@ -154,8 +157,8 @@ class Hog : public ImageDescriptor {
   HOGDescriptor cvHog;
 
   Hog(Patch* patch);
-  bool compute(NEWMAT::Matrix** result, bool debug);
-  void display(const NEWMAT::Matrix& result) {}
+  bool compute(Eigen::MatrixXf** result, bool debug);
+  void display(const Eigen::MatrixXf& result) {}
   void clearPointCache() {}
   void clearImageCache() {}
   ~Hog() {}
