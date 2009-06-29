@@ -5,9 +5,9 @@
   <include file="$(find pr2_alpha)/pre.machine" />
 
 <!-- pr2_etherCAT -->
-  <node machine="realtime_root" pkg="pr2_etherCAT" type="pr2_etherCAT" args="-i eth0 -x /robotdesc/pr2"/>
+  <node machine="realtime_root" pkg="pr2_etherCAT" type="pr2_etherCAT" args="-i ecat0 -x /robotdesc/pr2"/>
 
-<!-- PR2 Calibration -->
-  <include file="$(find pr2_alpha)/calibrate_pre.launch" />
-  
+  <node pkg="mechanism_bringup" type="calibrate_pr2.py"
+        args="$(find pr2_default_controllers)/calibration_controllers/pre_calibration_controller.xml"
+        output="screen" />  
 </launch>

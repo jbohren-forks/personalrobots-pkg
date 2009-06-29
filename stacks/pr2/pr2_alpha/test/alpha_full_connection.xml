@@ -3,7 +3,7 @@
      set to the robot's base name (e.g., pre, prf, prg). -->
 <launch>
 
-  <include file="$(find pr2_alpha)/test/pre.machine" />
+  <include file="$(find pr2_alpha)/test/alpha.machine" />
 
   <node machine="realtime" pkg="pr2_alpha" type="subpub.py"
         args="realtime realtime_root two three four"/>

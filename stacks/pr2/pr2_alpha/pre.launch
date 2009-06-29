@@ -5,10 +5,10 @@
 
 <!-- Joystick -->
   <param name="joy/deadzone" value="5000"/>
-  <node machine="four" pkg="joy" type="joy"  respawn="true"/>
+  <node machine="two" pkg="joy" type="joy"  respawn="true"/>
 
 <!-- Power Board Control Node -->
-  <node pkg="pr2_power_board" type="power_node"  respawn="true"/>
+  <node machine="two" pkg="pr2_power_board" type="power_node"  respawn="true"/>
 
 <!-- Robot state publisher -->
  <node machine="two" pkg="robot_state_publisher" type="state_publisher" name="robot_state_publisher">
@@ -18,6 +18,7 @@
 
 <!-- Battery Monitor -->
   <node machine="two" pkg="ocean_battery_driver" type="monitor" respawn="true"/>
+
 <!-- Battery Assertions -->
 <include file="$(find ocean_battery_driver)/expected_batteries.launch"/>
 
@@ -30,7 +31,7 @@
   </node>
 
 <!-- Tilt Laser -->
-  <node  machine="three" pkg="hokuyo_node" type="hokuyo_node" name="tilt_hokuyo_node" args="scan:=tilt_scan">
+  <node  machine="realtime" pkg="hokuyo_node" type="hokuyo_node" name="tilt_hokuyo_node" args="scan:=tilt_scan">
     <param name="port" type="string" value="/dev/ttyACM0" />
     <param name="frameid" type="string" value="laser_tilt_link" />
     <param name="min_ang_degrees" type="double" value="-80.0" />
@@ -45,28 +46,30 @@
   <param name="imu/autostart" type="bool" value="true" />
   <param name="imu/frameid"  type="string" value="imu" />
   <param name="imu/autocalibrate" type="bool" value="false" />
-  <node machine="four" pkg="imu_node" type="imu_node" output="screen"/>
+  <node machine="realtime" pkg="imu_node" type="imu_node" output="screen"/>
 
-<!-- Videre Stereo cam -->
+<!-- Videre Stereo cam 
   <include file="$(find pr2_alpha)/stereo.launch" />
-
-<!-- Sound  -->
+-->
+<!-- Sound  
   <node pkg="sound_play" type="soundplay_node.py" machine="three" />
+-->
 
 <!-- Runtime Diagnostics Logging -->
   <node pkg="rosrecord" type="rosrecord" args="-f /hwlog/pre_runtime_automatic /diagnostics" />
 
-<!-- NTP monitoring script Warns to console if sync error -->
+<!-- NTP monitoring script Warns to console if sync error 
   <node pkg="runtime_monitor" type="ntp_monitor.py" args="pre2" machine="realtime"/>
   <node pkg="runtime_monitor" type="ntp_monitor.py" args="fw1 7000" machine="two"/> 
-  <node pkg="runtime_monitor" type="ntp_monitor.py" args="pre2" machine="three"/>
-  <node pkg="runtime_monitor" type="ntp_monitor.py" args="pre2" machine="four"/>
+-->
 
-<!-- Disk usage monitoring script Warns to console if disk full -->
-  <node pkg="pr2_computer_monitor" type="disk_usage.py" args="$(optenv HOME /home)" machine="realtime"/>
-  <node pkg="pr2_computer_monitor" type="disk_usage.py" args="$(optenv HOME /home)" machine="two"/> 
-  <node pkg="pr2_computer_monitor" type="disk_usage.py" args="$(optenv HOME /home)" machine="three"/>
-  <node pkg="pr2_computer_monitor" type="disk_usage.py" args="$(optenv HOME /home)" machine="four"/>   
+  <!-- Disk usage monitoring script Warns to console if disk full -->
+  <node pkg="pr2_computer_monitor" type="hd_monitor.py" args="$(optenv HOME /home) /dev/sda" machine="realtime_root"/>
+  <node pkg="pr2_computer_monitor" type="hd_monitor.py" args="$(optenv HOME /home) /dev/sda /dev/sdb" machine="two_root"/> 
+
+  <!-- Monitor CPU temp, usage -->
+  <node pkg="pr2_computer_monitor" type="cpu_monitor.py" machine="realtime_root" />
+  <node pkg="pr2_computer_monitor" type="cpu_monitor.py" machine="two_root" />
 
 </launch>
 
