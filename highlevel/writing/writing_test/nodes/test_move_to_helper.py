@@ -46,6 +46,7 @@ import robot_msgs.msg
 from std_msgs.msg import Empty
 
 import python_actions
+import threading
 
 if __name__ == '__main__':
 
@@ -93,6 +94,7 @@ if __name__ == '__main__':
     tuck_arm.preempt()
     find_helper.preempt()
     move_base_local.preempt()
+    track_helper.preempt()
 
     time.sleep(2)
 
@@ -128,17 +130,28 @@ if __name__ == '__main__':
     if as != python_actions.SUCCESS:
       sys.exit(-1);
 
+    print "===> Found person:", helper_p
+    time.sleep(1)
+
     as,_ = start_tilt_laser.execute(Empty(), 20.0)
     if as != python_actions.SUCCESS:
       sys.exit(-1);
+
+    print "===> Started laser"
+    time.sleep(1)
+
+    th = threading.Thread(target = lambda: track_helper.execute(helper_p, 500.0))
+    th.start()
+
+    print "===> track_helper started"
+    time.sleep(1)
 
     as,_ = move_base_local(helper_p, 500.0)
     if as != python_actions.SUCCESS:
       sys.exit(-1);
 
-    as,_ = track_helper(helper_p, 500.0)
-    if as != python_actions.SUCCESS:
-      sys.exit(-1);
+    print "===> reached target point"
+    track_helper.preempt()
 
   except KeyboardInterrupt, e:
 
