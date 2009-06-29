@@ -83,7 +83,9 @@ if __name__ == '__main__':
                          robot_msgs.msg.PoseStamped,
                          pr2_robot_actions.msg.TrackHelperState,
                          Empty)
-    w = python_actions.ActionClient("generate_text_trajectory",
+    ask_for_pen = python_actions.ActionClient("ask_for_pen", Empty, robot_actions.msg.NoArgumentsActionState, Empty)
+
+    generate_text_trajectory = python_actions.ActionClient("generate_text_trajectory",
                                     pr2_robot_actions.msg.TextGoal,
                                     pr2_robot_actions.msg.GenerateTextTrajectoryState,
                                     robot_msgs.msg.Path)
@@ -103,28 +105,35 @@ if __name__ == '__main__':
     class Preempt(Exception):
       pass
 
-    switchlist = pr2_robot_actions.msg.SwitchControllers()
-    switchlist.stop_controllers = [ "r_arm_joint_trajectory_controller", "head_controller", "laser_tilt_controller"]
-    switchlist.start_controllers = []
-    as,_ = switch_controllers.execute(switchlist, 4.0)
-    if as != python_actions.SUCCESS:
+    controllers = [
+       "r_arm_cartesian_trajectory_controller",
+       "r_arm_joint_trajectory_controller",
+       "r_gripper_position_controller",
+       "head_controller",
+       "laser_tilt_controller"]
+
+
+    def stop_start(stp, strt):
+      switchlist = pr2_robot_actions.msg.SwitchControllers()
+      switchlist.stop_controllers = stp
+      switchlist.start_controllers = strt
+      as,_ = switch_controllers.execute(switchlist, 4.0)
+      if as != python_actions.SUCCESS:
       sys.exit(-1);
 
-    if 0:
-      state, path = w.execute(pr2_robot_actions.msg.TextGoal("klak", robot_msgs.msg.Point(10,20,0), 30))
-      print "EXECUTE returned", state #, path
-      #for p in path.poses:
-      #  print p.pose.position
+    stop_start(controllers, [])
 
-    switchlist.stop_controllers = []
-    switchlist.start_controllers = [ "r_arm_joint_trajectory_controller", "head_controller", "laser_tilt_controller"]
-    as,_ = switch_controllers.execute(switchlist, 4.0)
-    if as != python_actions.SUCCESS:
-      sys.exit(-1);
-
+    stop_start([], ["r_arm_joint_trajectory_controller"])
     as,_ = tuck_arm.execute(Empty(), 20.0)
     if as != python_actions.SUCCESS:
       sys.exit(-1);
+
+    stop_start(["r_arm_joint_trajectory_controller"], ["r_gripper_position_controller", "r_arm_cartesian_trajectory_controller"])
+    as,_ = ask_for_pen.execute(Empty(), 20.0)
+    if as != python_actions.SUCCESS:
+      sys.exit(-1);
+
+    sys.exit(0)
 
     as,helper_p = find_helper.execute(Empty(), 200.0)
     if as != python_actions.SUCCESS:
@@ -152,6 +161,12 @@ if __name__ == '__main__':
 
     print "===> reached target point"
     track_helper.preempt()
+
+    if 0:
+      state, path = w.execute(pr2_robot_actions.msg.TextGoal("klak", robot_msgs.msg.Point(10,20,0), 30))
+      print "EXECUTE returned", state #, path
+      #for p in path.poses:
+      #  print p.pose.position
 
   except KeyboardInterrupt, e:
 
