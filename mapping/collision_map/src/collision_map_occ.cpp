@@ -334,16 +334,17 @@ private:
 	}
 	else
 	{
-	    CMap occ_current;
-	    CMap occ_moving;
 	    CMap diff;
-
+	    CMap occ;
 #pragma omp parallel sections
 	    {
 #pragma omp section
 		{
-		    // find the set of points under the parts seen by the sensor
-		    findSelfOcclusion(self, occ_current, occ_moving);
+		    // this is the set of points that could be occluding information (the new collision map)
+		    std::set_union(obstacles.begin(), obstacles.end(), 
+				   self.begin(), self.end(),
+				   std::inserter(occ, occ.begin()),
+				   CollisionPointOrder());
 		}
 #pragma omp section
 		{
@@ -353,20 +354,6 @@ private:
 		}
 	    }
 	    
-	    // take the union of points causing self occlusion
-	    CMap occ_self;
-	    std::set_union(occ_current.begin(), occ_current.end(), 
-			   occ_moving.begin(), occ_moving.end(),
-			   std::inserter(occ_self, occ_self.begin()),
-			   CollisionPointOrder());
-	    
-	    // this is the set of points that could be occluding information
-	    CMap occ;	    
-	    std::set_union(obstacles.begin(), obstacles.end(), 
-			   occ_self.begin(), occ_self.end(),
-			   std::inserter(occ, occ.begin()),
-			   CollisionPointOrder());
-
 	    // find the points in the previous map that are now occluded (raytracing)
 	    CMap keep;
 	    findOcclusionsInMap(diff, occ, keep);
@@ -376,7 +363,9 @@ private:
 	    std::set_union(obstacles.begin(), obstacles.end(), 
 			   keep.begin(), keep.end(),
 			   std::inserter(currentMap_, currentMap_.begin()),
-			   CollisionPointOrder()); 
+			   CollisionPointOrder());
+
+	    // this can be used for debugging 
 	    if (publishOcclusion_)
 	        publishCollisionMap(keep, occPublisher_);
 	}
@@ -434,8 +423,9 @@ private:
 	    // if we hit a point in the occluding set, we have an occluded point. Otherwise, the point was part of a 
 	    // moving obstacle so we ignore it
 	    int result = 0;
+	    int state  = -1;
 	    bresenham_line_3D(pts[i].x, pts[i].y, pts[i].z, bi_.sx, bi_.sy, bi_.sz, 
-			      boost::bind(&CollisionMapperOcc::findOcclusionsInMapAux, this, &occluding, &result, _1, _2, _3));
+			      boost::bind(&CollisionMapperOcc::findOcclusionsInMapAux, this, &occluding, &state, &result, _1, _2, _3));
 	    if (result == 1)
 	    {
 #pragma omp critical
@@ -446,20 +436,27 @@ private:
 	}
     }
     
-    bool findOcclusionsInMapAux(const CMap *occluding, int *result, int x, int y, int z)
+    bool findOcclusionsInMapAux(const CMap *occluding, int *state, int *result, int x, int y, int z)
     {
-	CollisionPoint p(x, y, z);
-	CMap::const_iterator it = occluding->lower_bound(p);
-	
-	if (it != occluding->end())
+	// we want to ignore the first few cells 
+	if (*state <= bi_.radius)
+	    *state = *state + 1;
+	else
 	{
-	    if (collisionPointDistance(*it, p) <= bi_.radius)
+	    CollisionPoint p(x, y, z);
+	    CMap::const_iterator it = occluding->lower_bound(p);
+	    
+	    if (it != occluding->end())
 	    {
-		// we hit a point that is occluding, our start point is occluded
-		*result = 1;
-		return true;
+		if (collisionPointDistance(*it, p) <= bi_.radius)
+		{
+		    // we hit a point that is occluding, our start point is occluded
+		    *result = 1;
+		    return true;
+		}
 	    }
 	}
+	
 	// continue looking
 	return false;
     }
