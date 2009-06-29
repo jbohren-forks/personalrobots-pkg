@@ -30,11 +30,13 @@
 // #include <yaml-cpp/include/yaml.h>
 #include <boost/thread/mutex.hpp>
 #include <sbpl_arm_planner/headers.h>
+#include "boost/scoped_ptr.hpp"
 #include <fstream>
 
 #define PI_CONST 3.141592653
 #define DEG2RAD(d) ((d)*(PI_CONST/180.0))
 #define RAD2DEG(r) ((r)*(180.0/PI_CONST))
+#define SMALL_NUM  0.00000001 // anything that avoids division overflow
 
 // cost multiplier
 #define COSTMULT 1000.0
@@ -2198,10 +2200,8 @@ bool EnvironmentROBARM3D::InitializeEnv(const char* sEnvFile)
     }
     else
     {
-//       vector<vector<double> > tolerance(1,vector<double>(2,.6));
       vector<int> type(1,0);
       type[0] = (1 | 256);
-//       tolerance[0][0] = .031;
       if(!SetGoalPosition(EnvROBARMCfg.ParsedGoals,EnvROBARMCfg.ParsedGoalTolerance,type))
       {
         printf("Failed to set goal positions.\n");
@@ -2261,8 +2261,11 @@ bool EnvironmentROBARM3D::InitGeneral()
 {
     //initialize forward kinematics
     if (!EnvROBARMCfg.use_DH)
-        //initialize kdl chain
-      InitKDLChain(EnvROBARMCfg.robot_desc.c_str());
+    {
+      //initialize kdl chain
+      if(!InitKDLChain(EnvROBARMCfg.robot_desc.c_str()))
+	return false;
+    }
     else
         //pre-compute DH Transformations
         ComputeDHTransformations();
@@ -3882,7 +3885,7 @@ void EnvironmentROBARM3D::OutputPlanningStats()
 /*------------------------------------------------------------------------*/
                         /* Forward Kinematics*/
 /*------------------------------------------------------------------------*/
-void EnvironmentROBARM3D::InitKDLChain(const char *fKDL)
+bool EnvironmentROBARM3D::InitKDLChain(const char *fKDL)
 {
   KDL::Tree my_tree;
   std::map<string, string> segment_joint_mapping;
@@ -3894,13 +3897,15 @@ void EnvironmentROBARM3D::InitKDLChain(const char *fKDL)
   }
 
   std::vector<std::string> links;
-  my_tree.getChain("torso_lift_link", "r_wrist_roll_link", EnvROBARMCfg.arm_chain, links);
+  if (!my_tree.getChain("torso_lift_link", "r_wrist_roll_link", EnvROBARMCfg.arm_chain, links))
+  {
+    printf("Error: could not fetch the KDL chain for the desired manipulator. Exiting.\n"); 
+    return false;
+  }
   EnvROBARMCfg.jnt_to_pose_solver = new KDL::ChainFkSolverPos_recursive(EnvROBARMCfg.arm_chain);
   EnvROBARMCfg.jnt_pos_in.resize(EnvROBARMCfg.arm_chain.getNrOfJoints());
 
-  //   std::cout << "Got chain with " << EnvROBARMCfg.arm_chain.getNrOfJoints() << " joints and " << EnvROBARMCfg.arm_chain.getNrOfSegments() << " segments" << std::endl;
-  //   for (std::map<string, string>::const_iterator it=segment_joint_mapping.begin(); it!=segment_joint_mapping.end(); it++)
-  //   cout << "mapping joint " << it->first << " on segment " << it->second << endl;
+  return true;
 }
 
 //pre-compute DH matrices for all 7 frames with NUM_TRANS_MATRICES degree resolution 
@@ -4675,5 +4680,102 @@ int EnvironmentROBARM3D::GetJointSpaceHeuristic(int FromStateID, int ToStateID)
            EnvROBARMCfg.JointSpaceGoals[closest_goal].pos[6],sqrt(sum),h);
 #endif
     return h;
+}
+
+double EnvironmentROBARM3D::distanceBetween3DLineSegments(const short unsigned int l1a[],const short unsigned int l1b[],
+				                          const short unsigned int l2a[],const short unsigned int l2b[])
+{
+  // Copyright 2001, softSurfer (www.softsurfer.com)
+// This code may be freely used and modified for any purpose
+// providing that this copyright notice is included with it.
+// SoftSurfer makes no warranty for this code, and cannot be held
+// liable for any real or imagined damage resulting from its use.
+// Users of this code must verify correctness for their application.
+
+  double u[3];
+  double v[3];
+  double w[3];
+  double dP[3];
+
+  u[0] = l1b[0] - l1a[0];
+  u[1] = l1b[1] - l1a[1];
+  u[2] = l1b[2] - l1a[2];
+
+  v[0] = l2b[0] - l2a[0];
+  v[1] = l2b[1] - l2a[1];
+  v[2] = l2b[2] - l2a[2];
+
+  w[0] = l1a[0] - l2a[0];
+  w[1] = l1a[1] - l2a[1];
+  w[2] = l1a[2] - l2a[2];
+
+  double a = u[0] * u[0] + u[1] * u[1] + u[2] * u[2]; // always >= 0
+  double b = u[0] * v[0] + u[1] * v[1] + u[2] * v[2]; // dot(u,v);
+  double c = v[0] * v[0] + v[1] * v[1] + v[2] * v[2]; // dot(v,v);        // always >= 0
+  double d = u[0] * w[0] + u[1] * w[1] + u[2] * w[2]; // dot(u,w);
+  double e = v[0] * w[0] + v[1] * w[1] + v[2] * w[2]; // dot(v,w);
+  double D = a*c - b*b;       // always >= 0
+  double sc, sN, sD = D;      // sc = sN / sD, default sD = D >= 0
+  double tc, tN, tD = D;      // tc = tN / tD, default tD = D >= 0
+
+    // compute the line parameters of the two closest points
+  if (D < SMALL_NUM) { // the lines are almost parallel
+    sN = 0.0;        // force using point P0 on segment S1
+    sD = 1.0;        // to prevent possible division by 0.0 later
+    tN = e;
+    tD = c;
+  }
+  else {                // get the closest points on the infinite lines
+    sN = (b*e - c*d);
+    tN = (a*e - b*d);
+    if (sN < 0.0) {       // sc < 0 => the s=0 edge is visible
+      sN = 0.0;
+      tN = e;
+      tD = c;
+    }
+    else if (sN > sD) {  // sc > 1 => the s=1 edge is visible
+      sN = sD;
+      tN = e + b;
+      tD = c;
+    }
+  }
+
+  if (tN < 0.0) {           // tc < 0 => the t=0 edge is visible
+    tN = 0.0;
+        // recompute sc for this edge
+    if (-d < 0.0)
+      sN = 0.0;
+    else if (-d > a)
+      sN = sD;
+    else {
+      sN = -d;
+      sD = a;
+    }
+  }
+  else if (tN > tD) {      // tc > 1 => the t=1 edge is visible
+    tN = tD;
+        // recompute sc for this edge
+    if ((-d + b) < 0.0)
+      sN = 0;
+    else if ((-d + b) > a)
+      sN = sD;
+    else {
+      sN = (-d + b);
+      sD = a;
+    }
+  }
+
+  // finally do the division to get sc and tc
+  sc = (fabs(sN) < SMALL_NUM ? 0.0 : sN / sD);
+  tc = (fabs(tN) < SMALL_NUM ? 0.0 : tN / tD);
+
+  // get the difference of the two closest points
+  // dP = w + (sc * u) - (tc * v);  // = S1(sc) - S2(tc)
+
+  dP[0] = w[0] + (sc * u[0]) - (tc * v[0]);
+  dP[1] = w[1] + (sc * u[1]) - (tc * v[1]);
+  dP[2] = w[2] + (sc * u[2]) - (tc * v[2]);
+
+  return  sqrt(dP[0]*dP[0] + dP[1]*dP[1] + dP[2]*dP[2]);   // return the closest distance
 }
 

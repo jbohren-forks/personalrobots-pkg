@@ -404,7 +404,6 @@ private:
 
     //bounds/error checking
     int IsValidCoord(short unsigned int coord[NUMOFLINKS], short unsigned int endeff_pos[3], short unsigned int wrist_pos[3], short unsigned int elbow_pos[3], double orientation[3][3]);    
-//     int IsValidLineSegment(double x0, double y0, double z0, double x1, double y1, double z1, char ***Grid3D, vector<CELLV>* pTestedCells);
     int IsValidLineSegment(short unsigned int x0, short unsigned int y0, short unsigned int z0, short unsigned int x1, short unsigned int y1, short unsigned int z1, char ***Grid3D, vector<CELLV>* pTestedCells);
     bool IsValidCell(int X, int Y, int Z);
     bool IsWithinMapCell(int X, int Y, int Z);
@@ -456,7 +455,7 @@ private:
     void ComputeForwardKinematics_DH(double angles[NUMOFLINKS]);
     void RPY2Rot(double roll, double pitch, double yaw, double Rot[3][3]);
 
-    void InitKDLChain(const char *fKDL);
+    bool InitKDLChain(const char *fKDL);
     void ComputeForwardKinematics_ROS(double *angles, int f_num, double *x, double *y, double *z);
 
     /* JOINT SPACE PLANNING */
@@ -466,6 +465,9 @@ private:
     void ParseYAMLFile(const char* sParamFile);
 
     bool isGoalPosition(const short unsigned int endeff[3], const double orientation[3][3], const GoalPos &goal, const double &axis_angle);
+
+    double distanceBetween3DLineSegments(const short unsigned int l1a[],const short unsigned int l1b[],
+					 const short unsigned int l2a[],const short unsigned int l2b[]);
 };
 
 #endif
