@@ -122,7 +122,7 @@ protected:
 	    const robot_msgs::Point32 &point = collisionMap->boxes[i].center;
 	    const robot_msgs::Point32 &extents = collisionMap->boxes[i].extents;
 	    sendPoint(point.x, point.y, point.z,
-		      std::max(std::max(extents.x, extents.y), extents.z) * 1.73,
+		      std::max(std::max(extents.x, extents.y), extents.z) * collisionSpaceMonitor_->getBoxScale(),
 		      collisionMap->header, 1);
 	}
     }
