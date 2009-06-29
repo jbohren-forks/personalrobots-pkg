@@ -17,6 +17,6 @@
     <param name="arm" type="string" value="left_arm" />
     <param name="refresh_interval_collision_map" type="double" value="5.0" />
     <param name="refresh_interval_kinematic_state" type="double" value="1.0" />
-
+    <param name="bounding_planes" type="string" value="0 0 1 -0.01" />
   </node>
 </launch>
