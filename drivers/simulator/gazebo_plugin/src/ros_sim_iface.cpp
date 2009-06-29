@@ -39,6 +39,7 @@
 #include <gazebo/XMLConfig.hh>
 #include <gazebo/Simulator.hh>
 #include <gazebo/gazebo.h>
+#include <gazebo/World.hh>
 #include <gazebo/GazeboError.hh>
 #include <gazebo/ControllerFactory.hh>
 
@@ -126,68 +127,12 @@ void RosSimIface::UpdateObjectPose(const robot_msgs::PoseWithRatesStampedConstPt
 {
 
   this->lock.lock();
-  // copy data into pose
-  //poseMsg->header.frame_id = this->frameName;
-  //poseMsg->header.stamp.fromSec(floor(Simulator::Instance()->GetSimTime()));
 
-  gazebo::Client *client = new gazebo::Client();
-  gazebo::SimulationIface *simIface = new gazebo::SimulationIface();
-
-  int serverId = 0;
-
-  /// Connect to the libgazebo server
-  try
-  {
-    client->ConnectWait(serverId, GZ_CLIENT_ID_USER_FIRST);
-  }
-  catch (gazebo::GazeboError e)
-  {
-    std::cout << "Gazebo error: Unable to connect\n" << e << "\n";
-    //return -1;
-  }
-
-  /// Open the Simulation Interface
-  try
-  {
-    simIface->Open(client, "default");
-  }
-  catch (std::string e)
-  {
-    std::cout << "Gazebo error: Unable to connect to the sim interface\n" << e << "\n";
-    //return -1;
-  }
-
-  //simIface->data->reset = 1;
-
-  simIface->Lock(1);
-
-  gazebo::SimulationRequestData *request = &(simIface->data->requests[simIface->data->requestCount++]);
-  request->type = gazebo::SimulationRequestData::SET_POSE3D;
-  memcpy(request->modelName, this->modelName.c_str(), this->modelName.size());
-  request->modelPose.pos.x = poseMsg->pos.position.x;
-  request->modelPose.pos.y = poseMsg->pos.position.y;
-  request->modelPose.pos.z = poseMsg->pos.position.z;
-  Quatern quat = Quatern(poseMsg->pos.orientation.w,
-                         poseMsg->pos.orientation.x,
-                         poseMsg->pos.orientation.y,
-                         poseMsg->pos.orientation.z);
-  Vector3 euler = quat.GetAsEuler();
-  request->modelPose.roll  = euler.x;
-  request->modelPose.pitch = euler.y;
-  request->modelPose.yaw   = euler.z;
-
-  simIface->Unlock();
-
-  // Example of resetting the simulator
-  /*simIface->Lock(1);
-  simIface->data->reset = 1;
-  simIface->Unlock();
-  */
-
-  usleep(1000000);
-
-  simIface->Close();
-  delete simIface;
+  Model* model = gazebo::World::Instance()->GetModelByName(this->modelName);
+  Vector3 pos(poseMsg->pos.position.x,poseMsg->pos.position.y,poseMsg->pos.position.z);
+  Quatern rot(poseMsg->pos.orientation.w,poseMsg->pos.orientation.x,poseMsg->pos.orientation.y,poseMsg->pos.orientation.z);
+  Pose3d modelPose(pos,rot);
+  model->SetPose(modelPose);
 
   this->lock.unlock();
 }
