@@ -263,7 +263,7 @@ void JointPositionControllerNode::update()
       double command, p,i,d,i_min,i_max;
       c_->getCommand(command);
       controller_state_publisher_->msg_.set_point = command;
-      controller_state_publisher_->msg_.process_value = c_->joint_state_->velocity_;
+      controller_state_publisher_->msg_.process_value = c_->joint_state_->position_;
       controller_state_publisher_->msg_.error = c_->joint_state_->position_ - command;
       controller_state_publisher_->msg_.time_step = c_->dt_;
 
