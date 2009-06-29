@@ -99,7 +99,7 @@ class apcupsdConnection:
             raise
 
     def connect(self):
-        print "connecting to "+self.host+":"+str(self.port)
+        #print "connecting to "+self.host+":"+str(self.port)
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.sock.connect((self.host, self.port))
 
@@ -155,10 +155,10 @@ class batteryStateGenerator:
         use_new_cap = False
         if new_estimate_quality > 1000 and \
                 abs(energy_capacity_estimate - self.capacity) / self.capacity > 0.1:
-            print "UPS capacity has changed from %e to %e."%(self.capacity, energy_capacity_estimate)
+            #print "UPS capacity has changed from %e to %e."%(self.capacity, energy_capacity_estimate)
             use_new_cap = True
         if new_estimate_quality > self.estimate_quality:
-            print "UPS capacity refined from %e to %e, inv_quality %e."%(self.capacity, energy_capacity_estimate, 1/new_estimate_quality)
+            #print "UPS capacity refined from %e to %e, inv_quality %e."%(self.capacity, energy_capacity_estimate, 1/new_estimate_quality)
             use_new_cap = True
             
         if use_new_cap:    
