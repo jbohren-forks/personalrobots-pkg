@@ -38,7 +38,7 @@
 
 kinematic_planning::RKPRRTSetup::RKPRRTSetup(RKPModelBase *m) : RKPPlannerSetup(m)
 {
-    name = "RRT";
+    name = "kinematic::RRT";
     priority = 2;
 }
 

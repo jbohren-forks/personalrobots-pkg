@@ -43,35 +43,35 @@ void kinematic_planning::RKPModel::createMotionPlanningInstances(std::vector< bo
     for (unsigned int i = 0 ; i < cfgs.size() ; ++i)
     {
 	std::string type = cfgs[i]->getParamString("type");
-	if (type == "RRT")
-	    addRRT(cfgs[i]);
+	if (type == "kinematic::RRT")
+	    add_kRRT(cfgs[i]);
 	else
-	    if (type == "LazyRRT")
-		addLazyRRT(cfgs[i]);
+	    if (type == "kinematic::LazyRRT")
+		add_kLazyRRT(cfgs[i]);
 	    else
-		if (type == "EST")
-		    addEST(cfgs[i]);
+		if (type == "kinematic::EST")
+		    add_kEST(cfgs[i]);
 		else
-		    if (type == "SBL")
-			addSBL(cfgs[i]);
+		    if (type == "kinematic::SBL")
+			add_kSBL(cfgs[i]);
 		    else
-			if (type == "KPIECE")
-			    addKPIECE(cfgs[i]);
+			if (type == "kinematic::KPIECE")
+			    add_kKPIECE(cfgs[i]);
 			else
-			    if (type == "LBKPIECE")
-				addLBKPIECE(cfgs[i]);
+			    if (type == "kinematic::LBKPIECE")
+				add_kLBKPIECE(cfgs[i]);
 			    else
-				if (type == "IKSBL")
-				    addIKSBL(cfgs[i]);
+				if (type == "kinematic::IKSBL")
+				    add_kIKSBL(cfgs[i]);
 				else
-				    if (type == "IKKPIECE")
-					addIKKPIECE(cfgs[i]);
+				    if (type == "kinematic::IKKPIECE")
+					add_kIKKPIECE(cfgs[i]);
 				    else
 					ROS_WARN("Unknown planner type: %s", type.c_str());
     }
 }
 
-void kinematic_planning::RKPModel::addRRT(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options)
+void kinematic_planning::RKPModel::add_kRRT(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options)
 {
     RKPPlannerSetup *rrt = new RKPRRTSetup(dynamic_cast<RKPModelBase*>(this));
     if (rrt->setup(options))
@@ -80,7 +80,7 @@ void kinematic_planning::RKPModel::addRRT(boost::shared_ptr<planning_environment
 	delete rrt;
 }
 
-void kinematic_planning::RKPModel::addLazyRRT(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options)
+void kinematic_planning::RKPModel::add_kLazyRRT(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options)
 {
     RKPPlannerSetup *rrt = new RKPLazyRRTSetup(dynamic_cast<RKPModelBase*>(this));
     if (rrt->setup(options))
@@ -89,7 +89,7 @@ void kinematic_planning::RKPModel::addLazyRRT(boost::shared_ptr<planning_environ
 	delete rrt;
 }
 
-void kinematic_planning::RKPModel::addEST(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options)
+void kinematic_planning::RKPModel::add_kEST(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options)
 {
     RKPPlannerSetup *est = new RKPESTSetup(dynamic_cast<RKPModelBase*>(this));
     if (est->setup(options))
@@ -98,7 +98,7 @@ void kinematic_planning::RKPModel::addEST(boost::shared_ptr<planning_environment
 	delete est;
 }
 
-void kinematic_planning::RKPModel::addSBL(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options)
+void kinematic_planning::RKPModel::add_kSBL(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options)
 {
     RKPPlannerSetup *sbl = new RKPSBLSetup(dynamic_cast<RKPModelBase*>(this));
     if (sbl->setup(options))
@@ -107,7 +107,7 @@ void kinematic_planning::RKPModel::addSBL(boost::shared_ptr<planning_environment
 	delete sbl;
 }
 
-void kinematic_planning::RKPModel::addIKSBL(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options)
+void kinematic_planning::RKPModel::add_kIKSBL(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options)
 {
     RKPPlannerSetup *sbl = new RKPIKSBLSetup(dynamic_cast<RKPModelBase*>(this));
     if (sbl->setup(options))
@@ -116,7 +116,7 @@ void kinematic_planning::RKPModel::addIKSBL(boost::shared_ptr<planning_environme
 	delete sbl;
 }
 
-void kinematic_planning::RKPModel::addKPIECE(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options)
+void kinematic_planning::RKPModel::add_kKPIECE(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options)
 {
     RKPPlannerSetup *kpiece = new RKPKPIECESetup(dynamic_cast<RKPModelBase*>(this));
     if (kpiece->setup(options))
@@ -125,7 +125,7 @@ void kinematic_planning::RKPModel::addKPIECE(boost::shared_ptr<planning_environm
 	delete kpiece;
 }
 
-void kinematic_planning::RKPModel::addLBKPIECE(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options)
+void kinematic_planning::RKPModel::add_kLBKPIECE(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options)
 {
     RKPPlannerSetup *kpiece = new RKPLBKPIECESetup(dynamic_cast<RKPModelBase*>(this));
     if (kpiece->setup(options))
@@ -135,7 +135,7 @@ void kinematic_planning::RKPModel::addLBKPIECE(boost::shared_ptr<planning_enviro
 }
 
 
-void kinematic_planning::RKPModel::addIKKPIECE(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options)
+void kinematic_planning::RKPModel::add_kIKKPIECE(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options)
 {
     RKPPlannerSetup *kpiece = new RKPIKKPIECESetup(dynamic_cast<RKPModelBase*>(this));
     if (kpiece->setup(options))

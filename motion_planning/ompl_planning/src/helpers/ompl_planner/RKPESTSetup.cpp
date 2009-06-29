@@ -39,7 +39,7 @@
 
 kinematic_planning::RKPESTSetup::RKPESTSetup(RKPModelBase *m) : RKPPlannerSetup(m)
 {
-    name = "EST";
+    name = "kinematic::EST";
     priority = 1;
 }
 

@@ -38,7 +38,7 @@
 
 kinematic_planning::RKPKPIECESetup::RKPKPIECESetup(RKPModelBase *m) : RKPPlannerSetup(m)
 {
-    name = "KPIECE";	    
+    name = "kinematic::KPIECE";	    
     priority = 3;
 }
 

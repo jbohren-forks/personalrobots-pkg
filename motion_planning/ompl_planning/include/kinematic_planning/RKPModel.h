@@ -76,14 +76,14 @@ namespace kinematic_planning
 	
     protected:
 	
-	void addRRT(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options);
-	void addLazyRRT(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options);
-	void addEST(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options);
-	void addSBL(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options);
-	void addIKSBL(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options);
-	void addKPIECE(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options);
-	void addLBKPIECE(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options);
-	void addIKKPIECE(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options);
+	void add_kRRT(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options);
+	void add_kLazyRRT(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options);
+	void add_kEST(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options);
+	void add_kSBL(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options);
+	void add_kIKSBL(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options);
+	void add_kKPIECE(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options);
+	void add_kLBKPIECE(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options);
+	void add_kIKKPIECE(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options);
 	
     };
     

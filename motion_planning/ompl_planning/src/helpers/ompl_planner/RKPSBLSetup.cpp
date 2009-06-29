@@ -38,7 +38,7 @@
 
 kinematic_planning::RKPSBLSetup::RKPSBLSetup(RKPModelBase *m) : RKPPlannerSetup(m)
 {
-    name = "SBL";	    
+    name = "kinematic::SBL";	    
     priority = 10;
 }
 

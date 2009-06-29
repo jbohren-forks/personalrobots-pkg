@@ -38,7 +38,7 @@
 
 kinematic_planning::RKPIKSBLSetup::RKPIKSBLSetup(RKPModelBase *m) : RKPPlannerSetup(m)
 {
-    name = "IKSBL";	 
+    name = "kinematic::IKSBL";	 
     priority = 4;
 }
 

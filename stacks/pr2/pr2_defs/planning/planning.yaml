@@ -74,55 +74,55 @@ groups:
 planner_configs:
   
   RRTConfig1:
-    type: RRT
+    type: kinematic::RRT
     range: 0.75
 
   LazyRRTConfig1:
-    type: LazyRRT
+    type: kinematic::LazyRRT
     range: 0.75
 
   SBLConfig1:
-    type: SBL
+    type: kinematic::SBL
     projection: 0 1
     celldim: 1 1
     range: 0.5
     
   KPIECEConfig1:
-    type: KPIECE
+    type: kinematic::KPIECE
     projection: 0 1
     celldim: 1 1
     range: 0.5
     
   RRTConfig2:
-    type: RRT
+    type: kinematic::RRT
     range: 0.75
 
   SBLConfig2:
-    type: SBL
+    type: kinematic::SBL
     projection: 5 6
     celldim: 0.1 0.1
   
   KPIECEConfig2l:
-    type: KPIECE
+    type: kinematic::KPIECE
     projection: link l_wrist_roll_link
     celldim: 0.1 0.1 0.1
 
   KPIECEConfig2r:
-    type: KPIECE
+    type: kinematic::KPIECE
     projection: link r_wrist_roll_link
     celldim: 0.1 0.1 0.1
 
   LBKPIECEConfig1:
-    type: LBKPIECE
+    type: kinematic::LBKPIECE
     projection: 5 6
     celldim: 0.1 0.1
 
   LBKPIECEConfig2r:
-    type: LBKPIECE
+    type: kinematic::LBKPIECE
     projection: link r_wrist_roll_link
     celldim: 0.1 0.1 0.1
 
   LBKPIECEConfig2l:
-    type: LBKPIECE
+    type: kinematic::LBKPIECE
     projection: link l_wrist_roll_link
     celldim: 0.1 0.1 0.1
