@@ -38,69 +38,138 @@
 #include <OGRE/OgreMaterialManager.h>
 #include <OGRE/OgreBillboardSet.h>
 #include <OGRE/OgreBillboard.h>
+#include <OGRE/OgreTexture.h>
+#include <OGRE/OgreTextureManager.h>
 
 #include <sstream>
 
-#define MAX_POINTS_PER_BBS (65535)
-#define MAX_BILLBOARDS_PER_BBS (65535/4)
+#define VERTEX_BUFFER_CAPACITY (36 * 1024 * 10)
+#define SIZE_PARAMETER 0
+#define ALPHA_PARAMETER 1
+#define PICK_COLOR_PARAMETER 2
+#define NORMAL_PARAMETER 3
+#define UP_PARAMETER 4
 
 namespace ogre_tools
 {
 
+static float g_point_vertices[3] =
+{
+  0.0f, 0.0f, 0.0f
+};
+
+static float g_billboard_vertices[6*3] =
+{
+  -0.5f, 0.5f, 0.0f,
+  -0.5f, -0.5f, 0.0f,
+  0.5f, 0.5f, 0.0f,
+  0.5f, 0.5f, 0.0f,
+  -0.5f, -0.5f, 0.0f,
+  0.5f, -0.5f, 0.0f,
+};
+
+static float g_billboard_sphere_vertices[3*3] =
+{
+  0.0f, 1.5f, 0.0f,
+  -1.5f, -1.5f, 0.0f,
+  1.5f, -1.5f, 0.0f,
+};
+
+static float g_box_vertices[6*6*3] =
+{
+  // front
+  -0.5f, 0.5f, -0.5f,
+  -0.5f, -0.5f, -0.5f,
+  0.5f, 0.5f, -0.5f,
+  0.5f, 0.5f, -0.5f,
+  -0.5f, -0.5f, -0.5f,
+  0.5f, -0.5f, -0.5f,
+
+  // back
+  -0.5f, 0.5f, 0.5f,
+  0.5f, 0.5f, 0.5f,
+  -0.5f, -0.5f, 0.5f,
+  0.5f, 0.5f, 0.5f,
+  0.5f, -0.5f, 0.5f,
+  -0.5f, -0.5f, 0.5f,
+
+  // right
+  0.5, 0.5, 0.5,
+  0.5, 0.5, -0.5,
+  0.5, -0.5, 0.5,
+  0.5, 0.5, -0.5,
+  0.5, -0.5, -0.5,
+  0.5, -0.5, 0.5,
+
+  // left
+  -0.5, 0.5, 0.5,
+  -0.5, -0.5, 0.5,
+  -0.5, 0.5, -0.5,
+  -0.5, 0.5, -0.5,
+  -0.5, -0.5, 0.5,
+  -0.5, -0.5, -0.5,
+
+  // top
+  -0.5, 0.5, -0.5,
+  0.5, 0.5, -0.5,
+  -0.5, 0.5, 0.5,
+  0.5, 0.5, -0.5,
+  0.5, 0.5, 0.5,
+  -0.5, 0.5, 0.5,
+
+  // bottom
+  -0.5, -0.5, -0.5,
+  -0.5, -0.5, 0.5,
+  0.5, -0.5, -0.5,
+  0.5, -0.5, -0.5,
+  -0.5, -0.5, 0.5,
+  0.5, -0.5, 0.5,
+};
+
 Ogre::String PointCloud::sm_Type = "PointCloud";
 
-PointCloud::PointCloud( Ogre::SceneManager* scene_manager, Ogre::SceneNode* parent )
-: scene_manager_( scene_manager )
-, bounding_radius_( 0.0f )
+PointCloud::PointCloud()
+: bounding_radius_( 0.0f )
 , point_count_( 0 )
-, points_per_bbs_( MAX_BILLBOARDS_PER_BBS )
-, use_points_( false )
-, billboard_width_( 0.01f )
-, billboard_height_( 0.01f )
-, billboard_type_( Ogre::BBT_POINT )
 , common_direction_( Ogre::Vector3::NEGATIVE_UNIT_Z )
 , common_up_vector_( Ogre::Vector3::UNIT_Y )
 , color_by_index_(false)
+, current_mode_supports_geometry_shader_(false)
 {
-  if ( parent )
-  {
-    scene_node_ = parent->createChildSceneNode();
-  }
-  else
-  {
-    scene_node_ = scene_manager_->getRootSceneNode()->createChildSceneNode();
-  }
-
-  scene_node_->attachObject( this );
-
   std::stringstream ss;
   static int count = 0;
   ss << "PointCloudMaterial" << count++;
-  material_name_ = ss.str();
-  material_ = Ogre::MaterialManager::getSingleton().create( material_name_, Ogre::ResourceGroupManager::DEFAULT_RESOURCE_GROUP_NAME );
-  material_->setReceiveShadows(false);
-  material_->getTechnique(0)->setLightingEnabled(false);
-  material_->setCullingMode( Ogre::CULL_NONE );
+  point_material_ = Ogre::MaterialManager::getSingleton().getByName("ogre_tools/PointCloudPoint");
+  point_material_ = point_material_->clone(ss.str() + "Point");
+  billboard_material_ = Ogre::MaterialManager::getSingleton().getByName("ogre_tools/PointCloudBillboard");
+  billboard_material_ = billboard_material_->clone(ss.str() + "Billboard");
+  billboard_sphere_material_ = Ogre::MaterialManager::getSingleton().getByName("ogre_tools/PointCloudBillboardSphere");
+  billboard_sphere_material_ = billboard_sphere_material_->clone(ss.str() + "BillboardSphere");
+  billboard_common_facing_material_ = Ogre::MaterialManager::getSingleton().getByName("ogre_tools/PointCloudBillboardCommonFacing");
+  billboard_common_facing_material_ = billboard_common_facing_material_->clone(ss.str() + "BillboardCommonFacing");
+  box_material_ = Ogre::MaterialManager::getSingleton().getByName("ogre_tools/PointCloudBox");
+  box_material_ = box_material_->clone(ss.str() + "Box");
+
+  point_material_->load();
+  billboard_material_->load();
+  billboard_sphere_material_->load();
+  billboard_common_facing_material_->load();
+  box_material_->load();
 
   setAlpha( 1.0f );
+  setRenderMode(RM_BILLBOARD_SPHERES);
+  setDimensions(0.01f, 0.01f, 0.01f);
 
   clear();
 }
 
 PointCloud::~PointCloud()
 {
-  V_BillboardSet::iterator bbs_it = billboard_sets_.begin();
-  V_BillboardSet::iterator bbs_end = billboard_sets_.end();
-  for ( ; bbs_it != bbs_end; ++bbs_it )
-  {
-    delete (*bbs_it);
-  }
-  billboard_sets_.clear();
-
-  scene_node_->detachObject(this);
-  scene_manager_->destroySceneNode( scene_node_->getName() );
-
-  material_->unload();
+  point_material_->unload();
+  billboard_material_->unload();
+  billboard_sphere_material_->unload();
+  billboard_common_facing_material_->unload();
+  box_material_->unload();
 }
 
 const Ogre::AxisAlignedBox& PointCloud::getBoundingBox() const
@@ -113,7 +182,7 @@ float PointCloud::getBoundingRadius() const
   return bounding_radius_;
 }
 
-void PointCloud::getWorldTransforms( Ogre::Matrix4* xform ) const
+void PointCloud::getWorldTransforms(Ogre::Matrix4* xform) const
 {
   *xform = _getParentNodeFullTransform();
 }
@@ -121,149 +190,214 @@ void PointCloud::getWorldTransforms( Ogre::Matrix4* xform ) const
 void PointCloud::clear()
 {
   point_count_ = 0;
-  bounding_box_.setExtents( -10000.0f, -10000.0f, -10000.0f, 10000.0f, 10000.0f, 10000.0f );
-  bounding_radius_ = 30000.0f;
+  bounding_box_.setNull();
+  bounding_radius_ = 0.0f;
 
-  V_BillboardSet::iterator bbs_it = billboard_sets_.begin();
-  V_BillboardSet::iterator bbs_end = billboard_sets_.end();
-  for ( ; bbs_it != bbs_end; ++bbs_it )
+  V_PointCloudRenderable::iterator it = renderables_.begin();
+  V_PointCloudRenderable::iterator end = renderables_.end();
+  for (; it != end; ++it)
   {
-    (*bbs_it)->setVisible( false );
+    (*it)->getRenderOperation()->vertexData->vertexStart = 0;
+    (*it)->getRenderOperation()->vertexData->vertexCount = 0;
+  }
+
+  if (getParentSceneNode())
+  {
+    getParentSceneNode()->needUpdate();
   }
 }
 
-void PointCloud::setCloudVisible( bool visible )
+void PointCloud::regenerateAll()
 {
-  scene_node_->setVisible( visible );
+  if (point_count_ == 0)
+  {
+    return;
+  }
+
+  V_Point points;
+  points.swap(points_);
+  uint32_t count = point_count_;
+
+  clear();
+
+  addPoints(&points.front(), count);
 }
 
 void PointCloud::setColorByIndex(bool set)
 {
   color_by_index_ = set;
+
+  regenerateAll();
 }
 
-void PointCloud::setUsePoints( bool usePoints )
+void PointCloud::setRenderMode(RenderMode mode)
 {
-  use_points_ = usePoints;
+  render_mode_ = mode;
 
-  if ( usePoints )
+  if (mode == RM_POINTS)
   {
-    points_per_bbs_ = MAX_POINTS_PER_BBS;
+    current_material_ = point_material_;
+  }
+  else if (mode == RM_BILLBOARDS)
+  {
+    current_material_ = billboard_material_;
+  }
+  else if (mode == RM_BILLBOARD_SPHERES)
+  {
+    current_material_ = billboard_sphere_material_;
+  }
+  else if (mode == RM_BILLBOARDS_COMMON_FACING)
+  {
+    current_material_ = billboard_common_facing_material_;
+  }
+  else if (mode == RM_BOXES)
+  {
+    current_material_ = box_material_;
+  }
+
+  current_material_->load();
+
+  //ROS_INFO("Best technique [%s] [gp=%s]", current_material_->getBestTechnique()->getName().c_str(), current_material_->getBestTechnique()->getPass(0)->getGeometryProgramName().c_str());
+
+  bool geom_support_changed = false;
+  Ogre::Technique* best = current_material_->getBestTechnique();
+  if (best)
+  {
+    if (current_material_->getBestTechnique()->getName() == "gp")
+    {
+      if (!current_mode_supports_geometry_shader_)
+      {
+        geom_support_changed = true;
+      }
+
+      current_mode_supports_geometry_shader_ = true;
+
+      //ROS_INFO("Using geometry shader");
+    }
+    else
+    {
+      if (current_mode_supports_geometry_shader_)
+      {
+        geom_support_changed = true;
+      }
+
+      current_mode_supports_geometry_shader_ = false;
+    }
   }
   else
   {
-    points_per_bbs_ = MAX_BILLBOARDS_PER_BBS;
+    geom_support_changed = true;
+    current_mode_supports_geometry_shader_ = false;
+
+    ROS_ERROR("No techniques available for material [%s]", current_material_->getName().c_str());
   }
 
-  V_BillboardSet::iterator bbs_it = billboard_sets_.begin();
-  V_BillboardSet::iterator bbs_end = billboard_sets_.end();
-  for ( ; bbs_it != bbs_end; ++bbs_it )
+  if (geom_support_changed)
   {
-    Ogre::BillboardSet* bbs = *bbs_it;
-
-    bbs->setPointRenderingEnabled( usePoints );
-    bbs->setPoolSize( points_per_bbs_ );
+    renderables_.clear();
   }
+
+  V_PointCloudRenderable::iterator it = renderables_.begin();
+  V_PointCloudRenderable::iterator end = renderables_.end();
+  for (; it != end; ++it)
+  {
+    (*it)->setMaterial(current_material_->getName());
+  }
+
+  regenerateAll();
 }
 
-void PointCloud::setBillboardDimensions( float width, float height )
+void PointCloud::setDimensions(float width, float height, float depth)
 {
-  billboard_width_ = width;
-  billboard_height_ = height;
-  V_BillboardSet::iterator bbs_it = billboard_sets_.begin();
-  V_BillboardSet::iterator bbs_end = billboard_sets_.end();
-  for ( ; bbs_it != bbs_end; ++bbs_it )
-  {
-    Ogre::BillboardSet* bbs = *bbs_it;
+  width_ = width;
+  height_ = height;
+  depth_ = depth;
 
-    bbs->setDefaultDimensions( width, height );
+  Ogre::Vector4 size(width_, height_, depth_, 0.0f);
+
+  V_PointCloudRenderable::iterator it = renderables_.begin();
+  V_PointCloudRenderable::iterator end = renderables_.end();
+  for (; it != end; ++it)
+  {
+    (*it)->setCustomParameter(SIZE_PARAMETER, size);
   }
 }
 
-void PointCloud::setBillboardType( int type )
-{
-  billboard_type_ = type;
-
-  V_BillboardSet::iterator bbs_it = billboard_sets_.begin();
-  V_BillboardSet::iterator bbs_end = billboard_sets_.end();
-  for ( ; bbs_it != bbs_end; ++bbs_it )
-  {
-    Ogre::BillboardSet* bbs = *bbs_it;
-
-    bbs->setBillboardType( (Ogre::BillboardType)billboard_type_ );
-  }
-}
-
-void PointCloud::setCommonDirection( const Ogre::Vector3& vec )
+void PointCloud::setCommonDirection(const Ogre::Vector3& vec)
 {
   common_direction_ = vec;
 
-  V_BillboardSet::iterator bbs_it = billboard_sets_.begin();
-  V_BillboardSet::iterator bbs_end = billboard_sets_.end();
-  for ( ; bbs_it != bbs_end; ++bbs_it )
+  V_PointCloudRenderable::iterator it = renderables_.begin();
+  V_PointCloudRenderable::iterator end = renderables_.end();
+  for (; it != end; ++it)
   {
-    Ogre::BillboardSet* bbs = *bbs_it;
-
-    bbs->setCommonDirection( vec );
+    (*it)->setCustomParameter(NORMAL_PARAMETER, Ogre::Vector4(vec));
   }
 }
 
-void PointCloud::setCommonUpVector( const Ogre::Vector3& vec )
+void PointCloud::setCommonUpVector(const Ogre::Vector3& vec)
 {
   common_up_vector_ = vec;
 
-  V_BillboardSet::iterator bbs_it = billboard_sets_.begin();
-  V_BillboardSet::iterator bbs_end = billboard_sets_.end();
-  for ( ; bbs_it != bbs_end; ++bbs_it )
+  V_PointCloudRenderable::iterator it = renderables_.begin();
+  V_PointCloudRenderable::iterator end = renderables_.end();
+  for (; it != end; ++it)
   {
-    Ogre::BillboardSet* bbs = *bbs_it;
-
-    bbs->setCommonUpVector( vec );
+    (*it)->setCustomParameter(UP_PARAMETER, Ogre::Vector4(vec));
   }
 }
 
-void PointCloud::setAlpha( float alpha )
+void setAlphaBlending(const Ogre::MaterialPtr& mat)
+{
+  mat->getBestTechnique()->setSceneBlending( Ogre::SBT_TRANSPARENT_ALPHA );
+  mat->getBestTechnique()->setDepthWriteEnabled( false );
+}
+
+void setReplace(const Ogre::MaterialPtr& mat)
+{
+  mat->getBestTechnique()->setSceneBlending( Ogre::SBT_REPLACE );
+  mat->getBestTechnique()->setDepthWriteEnabled( true );
+}
+
+void PointCloud::setAlpha(float alpha)
 {
   alpha_ = alpha;
 
-  if ( alpha_ < 0.9998 )
+  if ( alpha < 0.9998 )
   {
-    material_->getTechnique(0)->setSceneBlending( Ogre::SBT_TRANSPARENT_ALPHA );
-    material_->getTechnique(0)->setDepthWriteEnabled( false );
+    setAlphaBlending(point_material_);
+    setAlphaBlending(billboard_material_);
+    setAlphaBlending(billboard_sphere_material_);
+    setAlphaBlending(billboard_common_facing_material_);
+    setAlphaBlending(box_material_);
   }
   else
   {
-    material_->getTechnique(0)->setSceneBlending( Ogre::SBT_REPLACE );
-    material_->getTechnique(0)->setDepthWriteEnabled( true );
+    setReplace(point_material_);
+    setReplace(billboard_material_);
+    setReplace(billboard_sphere_material_);
+    setReplace(billboard_common_facing_material_);
+    setReplace(box_material_);
+  }
+
+  Ogre::Vector4 alpha4(alpha_, alpha_, alpha_, alpha_);
+  V_PointCloudRenderable::iterator it = renderables_.begin();
+  V_PointCloudRenderable::iterator end = renderables_.end();
+  for (; it != end; ++it)
+  {
+    (*it)->setCustomParameter(ALPHA_PARAMETER, alpha4);
   }
 }
 
-Ogre::BillboardSet* PointCloud::createBillboardSet()
+void PointCloud::addPoints(Point* points, uint32_t num_points)
 {
-  static uint32_t count = 0;
-  std::stringstream name;
-  name << "ogre_tools::PointCloud BillboardSet" << count++;
+  if (num_points == 0)
+  {
+    return;
+  }
 
-  Ogre::BillboardSet* bbs = new Ogre::BillboardSet( name.str(), 0, true );
-  bbs->setPointRenderingEnabled( use_points_ );
-  bbs->setDefaultDimensions( billboard_width_, billboard_height_ );
-  bbs->setBillboardsInWorldSpace(false);
-  bbs->setBillboardOrigin( Ogre::BBO_CENTER );
-  bbs->setBillboardRotationType( Ogre::BBR_VERTEX );
-  bbs->setMaterialName( material_name_ );
-  bbs->setCullIndividually( false );
-  bbs->setPoolSize( points_per_bbs_ );
-  bbs->setBillboardType( (Ogre::BillboardType)billboard_type_ );
-  bbs->setCommonDirection( common_direction_ );
-  bbs->setCommonUpVector( common_up_vector_ );
+  Ogre::Root* root = Ogre::Root::getSingletonPtr();
 
-  scene_node_->attachObject( bbs );
-
-  return bbs;
-}
-
-void PointCloud::addPoints( Point* points, uint32_t num_points )
-{
   if ( points_.size() < point_count_ + num_points )
   {
     points_.resize( point_count_ + num_points );
@@ -272,123 +406,320 @@ void PointCloud::addPoints( Point* points, uint32_t num_points )
   Point* begin = &points_.front() + point_count_;
   memcpy( begin, points, sizeof( Point ) * num_points );
 
-  // update bounding box and radius
-  /*uint32_t totalPoints = point_count_ + num_points;
-  for ( uint32_t i = point_count_; i < totalPoints; ++i )
+  uint32_t vpp = getVerticesPerPoint();
+  Ogre::RenderOperation::OperationType op_type;
+  if (current_mode_supports_geometry_shader_)
   {
-    Point& p = points_[i];
+    op_type = Ogre::RenderOperation::OT_POINT_LIST;
+  }
+  else
+  {
+    if (render_mode_ == RM_POINTS)
+    {
+      op_type = Ogre::RenderOperation::OT_POINT_LIST;
+    }
+    else
+    {
+      op_type = Ogre::RenderOperation::OT_TRIANGLE_LIST;
+    }
+  }
 
-    Ogre::Vector3 pos( p.m_X, p.m_Y, p.m_Z );
+  float* vertices = 0;
+  if (current_mode_supports_geometry_shader_)
+  {
+    vertices = g_point_vertices;
+  }
+  else
+  {
+    if (render_mode_ == RM_POINTS)
+    {
+      vertices = g_point_vertices;
+    }
+    else if (render_mode_ == RM_BILLBOARDS)
+    {
+      vertices = g_billboard_vertices;
+    }
+    else if (render_mode_ == RM_BILLBOARD_SPHERES)
+    {
+      vertices = g_billboard_sphere_vertices;
+    }
+    else if (render_mode_ == RM_BILLBOARDS_COMMON_FACING)
+    {
+      vertices = g_billboard_vertices;
+    }
+    else if (render_mode_ == RM_BOXES)
+    {
+      vertices = g_box_vertices;
+    }
+  }
+
+  PointCloudRenderablePtr rend;
+  Ogre::HardwareVertexBufferSharedPtr vbuf;
+  void* vdata = 0;
+  Ogre::RenderOperation* op = 0;
+  float* fptr = 0;
+
+  Ogre::AxisAlignedBox aabb;
+  aabb.setNull();
+  uint32_t current_vertex_count = 0;
+  bounding_radius_ = 0.0f;
+  uint32_t vertex_size = 0;
+  for (uint32_t current_point = 0; current_point < num_points; ++current_point)
+  {
+    while (current_vertex_count >= VERTEX_BUFFER_CAPACITY || !rend)
+    {
+      if (rend)
+      {
+        ROS_ASSERT(current_vertex_count == VERTEX_BUFFER_CAPACITY);
+
+        op->vertexData->vertexCount = VERTEX_BUFFER_CAPACITY - op->vertexData->vertexStart;
+        ROS_ASSERT(op->vertexData->vertexCount + op->vertexData->vertexStart <= VERTEX_BUFFER_CAPACITY);
+        vbuf->unlock();
+        rend->setBoundingBox(aabb);
+      }
+
+      rend = getOrCreateRenderable();
+      vbuf = rend->getBuffer();
+      vdata = vbuf->lock(Ogre::HardwareBuffer::HBL_NO_OVERWRITE);
+
+      op = rend->getRenderOperation();
+      op->operationType = op_type;
+      current_vertex_count = op->vertexData->vertexStart + op->vertexData->vertexCount;
+
+      vertex_size = op->vertexData->vertexDeclaration->getVertexSize(0);
+      uint32_t data_pos = current_vertex_count * vertex_size;
+      fptr = (float*)((uint8_t*)vdata + data_pos);
+
+      aabb.setNull();
+    }
+
+    const Point& p = points[current_point];
+    float x = p.x;
+    float y = p.y;
+    float z = p.z;
+    uint32_t color = p.color;
+
+    if (color_by_index_)
+    {
+      // convert to ColourValue, so we can then convert to the rendersystem-specific color type
+      color = (current_point + point_count_ + 1);
+      Ogre::ColourValue c;
+      c.a = 1.0f;
+      c.r = ((color >> 16) & 0xff) / 255.0f;
+      c.g = ((color >> 8) & 0xff) / 255.0f;
+      c.b = (color & 0xff) / 255.0f;
+      root->convertColourValue(c, &color);
+    }
+
+    Ogre::Vector3 pos(x, y, z);
+    aabb.merge(pos);
     bounding_box_.merge( pos );
+    bounding_radius_ = std::max( bounding_radius_, pos.squaredLength() );
 
-    bounding_radius_ = std::max( bounding_radius_, pos.length() );
-  }*/
+    for (uint32_t j = 0; j < vpp; ++j, ++current_vertex_count)
+    {
+      *fptr++ = x;
+      *fptr++ = y;
+      *fptr++ = z;
+
+      if (!current_mode_supports_geometry_shader_)
+      {
+        *fptr++ = vertices[(j*3)];
+        *fptr++ = vertices[(j*3) + 1];
+        *fptr++ = vertices[(j*3) + 2];
+      }
+
+      uint32_t* iptr = (uint32_t*)fptr;
+      *iptr = color;
+      ++fptr;
+
+      ROS_ASSERT((uint8_t*)fptr <= (uint8_t*)vdata + VERTEX_BUFFER_CAPACITY * vertex_size);
+    }
+  }
+
+  op->vertexData->vertexCount = current_vertex_count - op->vertexData->vertexStart;
+  rend->setBoundingBox(aabb);
+  ROS_ASSERT(op->vertexData->vertexCount + op->vertexData->vertexStart <= VERTEX_BUFFER_CAPACITY);
+
+  vbuf->unlock();
 
   point_count_ += num_points;
+
+  shrinkRenderables();
+
+  if (getParentSceneNode())
+  {
+    getParentSceneNode()->needUpdate();
+  }
 }
 
-void PointCloud::popPoints( uint32_t num_points )
+void PointCloud::popPoints(uint32_t num_points)
 {
+  uint32_t vpp = getVerticesPerPoint();
+
   ROS_ASSERT(num_points <= point_count_);
   points_.erase(points_.begin(), points_.begin() + num_points);
 
   point_count_ -= num_points;
-}
 
-void PointCloud::_notifyCurrentCamera( Ogre::Camera* camera )
-{
-  MovableObject::_notifyCurrentCamera( camera );
-
-
-  V_BillboardSet::iterator bbs_it = billboard_sets_.begin();
-  V_BillboardSet::iterator bbs_end = billboard_sets_.end();
-  for ( ; bbs_it != bbs_end; ++bbs_it )
+  // Now clear out popped points
+  uint32_t popped_count = 0;
+  while (popped_count < num_points * vpp)
   {
-    (*bbs_it)->_notifyCurrentCamera( camera );
+    PointCloudRenderablePtr rend = renderables_.front();
+    Ogre::RenderOperation* op = rend->getRenderOperation();
+
+    uint32_t popped = std::min((size_t)(num_points * vpp - popped_count), op->vertexData->vertexCount);
+    op->vertexData->vertexStart += popped;
+    op->vertexData->vertexCount -= popped;
+
+    popped_count += popped;
+
+    if (op->vertexData->vertexCount == 0)
+    {
+      renderables_.erase(renderables_.begin(), renderables_.begin() + 1);
+
+      op->vertexData->vertexStart = 0;
+      renderables_.push_back(rend);
+    }
   }
-}
+  ROS_ASSERT(popped_count == num_points * vpp);
 
-void PointCloud::_updateRenderQueue( Ogre::RenderQueue* queue )
-{
-  if ( point_count_ == 0 )
+  // reset bounds
+  bounding_box_.setNull();
+  bounding_radius_ = 0.0f;
+  for (uint32_t i = 0; i < point_count_; ++i)
   {
-    V_BillboardSet::iterator bbs_it = billboard_sets_.begin();
-    V_BillboardSet::iterator bbs_end = billboard_sets_.end();
-    for ( ; bbs_it != bbs_end; ++bbs_it )
-    {
-      (*bbs_it)->setVisible( false );
-    }
-    return;
-  }
-
-    // Update billboard set geometry
-  Ogre::Billboard bb;
-  uint32_t points_in_current = 0;
-  uint32_t current_bbs = 0;
-  Ogre::BillboardSet* bbs = NULL;
-  uint32_t index = 1;
-  V_BillboardSet used;
-  for ( uint32_t i = 0; i < point_count_; ++i, ++points_in_current, ++index )
-  {
-    bool new_bbs = false;
-    if ( points_in_current > points_per_bbs_ )
-    {
-      bbs->endBillboards();
-
-      points_in_current = 0;
-      ++current_bbs;
-
-      new_bbs = true;
-    }
-
-    if ( current_bbs >= billboard_sets_.size() )
-    {
-      bbs = createBillboardSet();
-      billboard_sets_.push_back( bbs );
-
-      new_bbs = true;
-    }
-
-    if ( new_bbs || !bbs )
-    {
-      bbs = billboard_sets_[ current_bbs ];
-      bbs->beginBillboards( std::min<uint32_t>( point_count_ - i, points_per_bbs_ ) );
-
-      bbs->setVisible( true );
-
-      used.push_back( bbs );
-    }
-
     Point& p = points_[i];
+    Ogre::Vector3 pos(p.x, p.y, p.z);
+    bounding_box_.merge(pos);
+    bounding_radius_ = std::max(bounding_radius_, pos.squaredLength());
+  }
 
-    bb.mPosition.x = p.x_;
-    bb.mPosition.y = p.y_;
-    bb.mPosition.z = p.z_;
+  shrinkRenderables();
 
-    if (!color_by_index_)
+  if (getParentSceneNode())
+  {
+    getParentSceneNode()->needUpdate();
+  }
+}
+
+void PointCloud::shrinkRenderables()
+{
+  while (!renderables_.empty())
+  {
+    PointCloudRenderablePtr rend = renderables_.back();
+    Ogre::RenderOperation* op = rend->getRenderOperation();
+    if (op->vertexData->vertexCount == 0)
     {
-      bb.mColour.r = p.r_;
-      bb.mColour.g = p.g_;
-      bb.mColour.b = p.b_;
-      bb.mColour.a = alpha_;
+      renderables_.pop_back();
     }
     else
     {
-      bb.mColour.r = ((index >> 16) & 0xff) / 255.0f;
-      bb.mColour.g = ((index >> 8) & 0xff) / 255.0f;
-      bb.mColour.b = (index & 0xff) / 255.0f;
-      bb.mColour.a = 0.0f;
+      break;
+    }
+  }
+}
+
+void PointCloud::_notifyCurrentCamera(Ogre::Camera* camera)
+{
+  MovableObject::_notifyCurrentCamera( camera );
+}
+
+void PointCloud::_updateRenderQueue(Ogre::RenderQueue* queue)
+{
+  V_PointCloudRenderable::iterator it = renderables_.begin();
+  V_PointCloudRenderable::iterator end = renderables_.end();
+  for (; it != end; ++it)
+  {
+    queue->addRenderable((*it).get());
+  }
+}
+
+void PointCloud::_notifyAttached(Ogre::Node *parent, bool isTagPoint)
+{
+  MovableObject::_notifyAttached(parent, isTagPoint);
+}
+
+uint32_t PointCloud::getVerticesPerPoint()
+{
+  if (current_mode_supports_geometry_shader_)
+  {
+    return 1;
+  }
+
+  if (render_mode_ == RM_POINTS)
+  {
+    return 1;
+  }
+
+  if (render_mode_ == RM_BILLBOARDS)
+  {
+    return 6;
+  }
+
+  if (render_mode_ == RM_BILLBOARDS_COMMON_FACING)
+    {
+      return 6;
     }
 
-    bbs->injectBillboard(bb);
-  }
-
-  bbs->endBillboards();
-
-  for ( uint32_t i = current_bbs + 1; i < billboard_sets_.size(); ++i )
+  if (render_mode_ == RM_BILLBOARD_SPHERES)
   {
-    billboard_sets_[i]->setVisible( false );
+    return 3;
   }
+
+  if (render_mode_ == RM_BOXES)
+  {
+    return 36;
+  }
+
+  return 1;
+}
+
+void PointCloud::setPickColor(const Ogre::ColourValue& color)
+{
+  pick_color_ = color;
+  Ogre::Vector4 pick_col(pick_color_.r, pick_color_.g, pick_color_.b, pick_color_.a);
+
+  V_PointCloudRenderable::iterator it = renderables_.begin();
+  V_PointCloudRenderable::iterator end = renderables_.end();
+  for (; it != end; ++it)
+  {
+    (*it)->setCustomParameter(PICK_COLOR_PARAMETER, pick_col);
+  }
+}
+
+PointCloudRenderablePtr PointCloud::getOrCreateRenderable()
+{
+  V_PointCloudRenderable::iterator it = renderables_.begin();
+  V_PointCloudRenderable::iterator end = renderables_.end();
+  for (; it != end; ++it)
+  {
+    const PointCloudRenderablePtr& rend = *it;
+    Ogre::RenderOperation* op = rend->getRenderOperation();
+    if (op->vertexData->vertexCount + op->vertexData->vertexStart < VERTEX_BUFFER_CAPACITY)
+    {
+      return rend;
+    }
+  }
+
+  PointCloudRenderablePtr rend(new PointCloudRenderable(this, !current_mode_supports_geometry_shader_));
+  rend->setMaterial(current_material_->getName());
+  Ogre::Vector4 size(width_, height_, depth_, 0.0f);
+  Ogre::Vector4 alpha(alpha_, 0.0f, 0.0f, 0.0f);
+  Ogre::Vector4 pick_col(pick_color_.r, pick_color_.g, pick_color_.b, pick_color_.a);
+  rend->setCustomParameter(SIZE_PARAMETER, size);
+  rend->setCustomParameter(ALPHA_PARAMETER, alpha);
+  rend->setCustomParameter(PICK_COLOR_PARAMETER, pick_col);
+  rend->setCustomParameter(NORMAL_PARAMETER, Ogre::Vector4(common_direction_));
+  rend->setCustomParameter(UP_PARAMETER, Ogre::Vector4(common_up_vector_));
+  if (getParentSceneNode())
+  {
+    getParentSceneNode()->attachObject(rend.get());
+  }
+  renderables_.push_back(rend);
+
+  return rend;
 }
 
 #if (OGRE_VERSION_MAJOR >= 1 && OGRE_VERSION_MINOR >= 6)
@@ -397,5 +728,86 @@ void PointCloud::visitRenderables(Ogre::Renderable::Visitor* visitor, bool debug
 
 }
 #endif
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+PointCloudRenderable::PointCloudRenderable(PointCloud* parent, bool use_tex_coords)
+: parent_(parent)
+{
+  // Initialize render operation
+  mRenderOp.operationType = Ogre::RenderOperation::OT_POINT_LIST;
+  mRenderOp.useIndexes = false;
+  mRenderOp.vertexData = new Ogre::VertexData;
+  mRenderOp.vertexData->vertexStart = 0;
+  mRenderOp.vertexData->vertexCount = 0;
+
+  Ogre::VertexDeclaration *decl = mRenderOp.vertexData->vertexDeclaration;
+  size_t offset = 0;
+
+  decl->addElement(0, offset, Ogre::VET_FLOAT3, Ogre::VES_POSITION);
+  offset += Ogre::VertexElement::getTypeSize(Ogre::VET_FLOAT3);
+
+  if (use_tex_coords)
+  {
+    decl->addElement(0, offset, Ogre::VET_FLOAT3, Ogre::VES_TEXTURE_COORDINATES, 0);
+    offset += Ogre::VertexElement::getTypeSize(Ogre::VET_FLOAT3);
+  }
+
+  decl->addElement(0, offset, Ogre::VET_COLOUR, Ogre::VES_DIFFUSE);
+
+  Ogre::HardwareVertexBufferSharedPtr vbuf =
+    Ogre::HardwareBufferManager::getSingleton().createVertexBuffer(
+      mRenderOp.vertexData->vertexDeclaration->getVertexSize(0),
+      VERTEX_BUFFER_CAPACITY,
+      Ogre::HardwareBuffer::HBU_DYNAMIC);
+
+  // Bind buffer
+  mRenderOp.vertexData->vertexBufferBinding->setBinding(0, vbuf);
+}
+
+PointCloudRenderable::~PointCloudRenderable()
+{
+  delete mRenderOp.vertexData;
+  delete mRenderOp.indexData;
+}
+
+Ogre::HardwareVertexBufferSharedPtr PointCloudRenderable::getBuffer()
+{
+  return mRenderOp.vertexData->vertexBufferBinding->getBuffer(0);
+}
+
+void PointCloudRenderable::_notifyCurrentCamera(Ogre::Camera* camera)
+{
+  SimpleRenderable::_notifyCurrentCamera( camera );
+}
+
+Ogre::Real PointCloudRenderable::getBoundingRadius(void) const
+{
+  return Ogre::Math::Sqrt(std::max(mBox.getMaximum().squaredLength(), mBox.getMinimum().squaredLength()));
+}
+
+Ogre::Real PointCloudRenderable::getSquaredViewDepth(const Ogre::Camera* cam) const
+{
+  Ogre::Vector3 vMin, vMax, vMid, vDist;
+   vMin = mBox.getMinimum();
+   vMax = mBox.getMaximum();
+   vMid = ((vMax - vMin) * 0.5) + vMin;
+   vDist = cam->getDerivedPosition() - vMid;
+
+   return vDist.squaredLength();
+}
+
+void PointCloudRenderable::getWorldTransforms(Ogre::Matrix4* xform) const
+{
+   *xform = m_matWorldTransform * parent_->getParentNode()->_getFullTransform();
+}
+
+const Ogre::LightList& PointCloudRenderable::getLights() const
+{
+  return parent_->queryLights();
+}
 
 } // namespace ogre_tools

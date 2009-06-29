@@ -1,0 +1,24 @@
+struct Output
+{
+  float4 color : COLOR;
+};
+
+Output pointCloudBoxFP_main(float4 color : COLOR,
+                            float3 tex : TEXCOORD0)
+{
+  half combined = abs(tex.x) + abs(tex.y) + abs(tex.z);
+  half factor = (1.5 - combined) / 1.5;
+  
+  float3 col = lerp(half3(0.8, 0.8, 0.8) * color.xyz, color.xyz, factor);
+  
+  Output OUT;
+  OUT.color = float4(col.rgb, color.a);
+  return OUT;
+}
+
+Output pointCloudBoxFP_Selection_main(float4 color : COLOR)
+{
+  Output OUT;
+  OUT.color = float4(color.rgb, 1.0);
+  return OUT;
+}

@@ -30,28 +30,58 @@
 #ifndef OGRE_TOOLS_OGRE_POINT_CLOUD_H
 #define OGRE_TOOLS_OGRE_POINT_CLOUD_H
 
+#include <OGRE/OgreSimpleRenderable.h>
 #include <OGRE/OgreMovableObject.h>
 #include <OGRE/OgreString.h>
 #include <OGRE/OgreAxisAlignedBox.h>
 #include <OGRE/OgreVector3.h>
 #include <OGRE/OgreMaterial.h>
+#include <OGRE/OgreColourValue.h>
+#include <OGRE/OgreRoot.h>
+#include <OGRE/OgreHardwareBufferManager.h>
 
 #include <stdint.h>
 
 #include <vector>
+
+#include <boost/shared_ptr.hpp>
 
 namespace Ogre
 {
 class SceneManager;
 class ManualObject;
 class SceneNode;
-class BillboardSet;
 class RenderQueue;
 class Camera;
+class RenderSystem;
+class Matrix4;
 }
 
 namespace ogre_tools
 {
+
+class PointCloud;
+class PointCloudRenderable : public Ogre::SimpleRenderable
+{
+public:
+  PointCloudRenderable(PointCloud* parent, bool use_tex_coords);
+  ~PointCloudRenderable();
+
+  Ogre::RenderOperation* getRenderOperation() { return &mRenderOp; }
+  Ogre::HardwareVertexBufferSharedPtr getBuffer();
+
+  virtual Ogre::Real getBoundingRadius(void) const;
+  virtual Ogre::Real getSquaredViewDepth(const Ogre::Camera* cam) const;
+  virtual void _notifyCurrentCamera(Ogre::Camera* camera);
+  virtual void getWorldTransforms(Ogre::Matrix4* xform) const;
+  virtual const Ogre::LightList& getLights() const;
+
+private:
+  Ogre::MaterialPtr material_;
+  PointCloud* parent_;
+};
+typedef boost::shared_ptr<PointCloudRenderable> PointCloudRenderablePtr;
+typedef std::vector<PointCloudRenderablePtr> V_PointCloudRenderable;
 
 /**
  * \class PointCloud
@@ -66,7 +96,16 @@ namespace ogre_tools
 class PointCloud : public Ogre::MovableObject
 {
 public:
-  PointCloud( Ogre::SceneManager* manager, Ogre::SceneNode* parent = NULL );
+  enum RenderMode
+  {
+    RM_POINTS,
+    RM_BILLBOARDS,
+    RM_BILLBOARD_SPHERES,
+    RM_BILLBOARDS_COMMON_FACING,
+    RM_BOXES,
+  };
+
+  PointCloud();
   ~PointCloud();
 
   /**
@@ -80,14 +119,16 @@ public:
    */
   struct Point
   {
-    Point() {}
-    Point( float x, float y, float z, float r, float g, float b ) : x_( x ), y_( y ), z_( z ), r_( r ), g_( g ), b_( b ) {}
-    float x_;
-    float y_;
-    float z_;
-    float r_;
-    float g_;
-    float b_;
+    inline void setColor(float r, float g, float b)
+    {
+      Ogre::Root* root = Ogre::Root::getSingletonPtr();
+      root->convertColourValue(Ogre::ColourValue(r, g, b), &color);
+    }
+
+    float x;
+    float y;
+    float z;
+    uint32_t color;
   };
 
   /**
@@ -105,23 +146,16 @@ public:
   void popPoints( uint32_t num_points );
 
   /**
-   * \brief Set whether to use points for rendering rather than billboards
-   * @param usePoints If true, will use point rendering instead of billboards
+   * \brief Set what type of rendering primitives should be used, currently points, billboards and boxes are supported
    */
-  void setUsePoints( bool usePoints );
+  void setRenderMode(RenderMode mode);
   /**
    * \brief Set the dimensions of the billboards used to render each point
-   * @param width Width of the billboards
-   * @param height Height of the billboards
-   * @note Only applicable if point rendering is off
+   * @param width Width
+   * @param height Height
+   * @note width/height are only applicable to billboards and boxes, depth is only applicable to boxes
    */
-  void setBillboardDimensions( float width, float height );
-
-  /**
-   * \brief Set the billboard type... see Ogre::BillboardType
-   * @param type The type
-   */
-  void setBillboardType( int type );
+  void setDimensions( float width, float height, float depth );
 
   /// See Ogre::BillboardSet::setCommonDirection
   void setCommonDirection( const Ogre::Vector3& vec );
@@ -130,55 +164,55 @@ public:
 
   void setAlpha( float alpha );
 
-  void setCloudVisible( bool visible );
-
-  const Ogre::MaterialPtr& getMaterial() { return material_; }
-
+  void setPickColor(const Ogre::ColourValue& color);
   void setColorByIndex(bool set);
 
-  // overrides from MovableObject
   virtual const Ogre::String& getMovableType() const { return sm_Type; }
   virtual const Ogre::AxisAlignedBox& getBoundingBox() const;
   virtual float getBoundingRadius() const;
   virtual void getWorldTransforms( Ogre::Matrix4* xform ) const;
   virtual void _updateRenderQueue( Ogre::RenderQueue* queue );
   virtual void _notifyCurrentCamera( Ogre::Camera* camera );
+  virtual void _notifyAttached(Ogre::Node *parent, bool isTagPoint=false);
 #if (OGRE_VERSION_MAJOR >= 1 && OGRE_VERSION_MINOR >= 6)
   virtual void visitRenderables(Ogre::Renderable::Visitor* visitor, bool debugRenderables);
 #endif
 
 private:
-  /**
-   * Creates an Ogre BillboardSet with the correct settings
-   * @return A BillboardSet
-   */
-  Ogre::BillboardSet* createBillboardSet();
 
-  Ogre::SceneManager* scene_manager_;       ///< The scene manager this point cloud is associated with
-  Ogre::SceneNode* scene_node_;             ///< The scene node this point cloud is attached to
+  uint32_t getVerticesPerPoint();
+  PointCloudRenderablePtr getOrCreateRenderable();
+  void regenerateAll();
+  void shrinkRenderables();
+
   Ogre::AxisAlignedBox bounding_box_;       ///< The bounding box of this point cloud
   float bounding_radius_;                   ///< The bounding radius of this point cloud
-
-  typedef std::vector<Ogre::BillboardSet*> V_BillboardSet;
-  V_BillboardSet billboard_sets_;           ///< The billboard sets we've allocated
 
   typedef std::vector<Point> V_Point;
   V_Point points_;                          ///< The list of points we're displaying.  Allocates to a high-water-mark.
   uint32_t point_count_;                    ///< The number of points currently in #points_
-  uint32_t points_per_bbs_;                 ///< The number of points we can display per BillboardSet.  Changes based on the rendering style (point vs. billboard)
 
-  bool use_points_;                         ///< Are we rendering as points?
-  float billboard_width_;                   ///< Billboard width
-  float billboard_height_;                  ///< Billboard height
-  int billboard_type_;                      ///< Billboard type: see Ogre::BillboardType enum
+  RenderMode render_mode_;
+  float width_;                             ///< width
+  float height_;                            ///< height
+  float depth_;                             ///< depth
   Ogre::Vector3 common_direction_;          ///< See Ogre::BillboardSet::setCommonDirection
   Ogre::Vector3 common_up_vector_;          ///< See Ogre::BillboardSet::setCommonUpVector
 
-  std::string material_name_;
-  Ogre::MaterialPtr material_;
+  Ogre::MaterialPtr point_material_;
+  Ogre::MaterialPtr billboard_material_;
+  Ogre::MaterialPtr billboard_sphere_material_;
+  Ogre::MaterialPtr billboard_common_facing_material_;
+  Ogre::MaterialPtr box_material_;
+  Ogre::MaterialPtr current_material_;
   float alpha_;
 
   bool color_by_index_;
+
+  V_PointCloudRenderable renderables_;
+
+  bool current_mode_supports_geometry_shader_;
+  Ogre::ColourValue pick_color_;
 
   static Ogre::String sm_Type;              ///< The "renderable type" used by Ogre
 };

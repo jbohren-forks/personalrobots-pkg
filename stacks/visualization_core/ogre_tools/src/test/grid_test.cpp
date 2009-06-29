@@ -46,6 +46,8 @@
 #include <OGRE/OgreViewport.h>
 #include <OGRE/OgreLight.h>
 
+#include <ros/time.h>
+
 #ifdef __WXMAC__
 #include <ApplicationServices/ApplicationServices.h>
 #endif
@@ -62,9 +64,9 @@ public:
   , right_mouse_down_( false )
   , mouse_x_( 0 )
   , mouse_y_( 0 )
+  , render_timer_(this)
   {
     ogre_tools::initializeOgre();
-    ogre_tools::initializeResources( ogre_tools::V_string() );
 
     root_ = Ogre::Root::getSingletonPtr();
 
@@ -72,22 +74,27 @@ public:
     {
         scene_manager_ = root_->createSceneManager( Ogre::ST_GENERIC, "TestSceneManager" );
 
-        m_WXRenderWindow = new ogre_tools::wxOgreRenderWindow( root_, this );
-        m_WXRenderWindow->SetSize( this->GetSize() );
+        render_panel_ = new ogre_tools::wxOgreRenderWindow( root_, this );
+        render_panel_->SetSize( this->GetSize() );
+        render_panel_->setAutoRender(false);
+
+        ogre_tools::initializeResources( ogre_tools::V_string() );
 
         camera_ = new ogre_tools::OrbitCamera( scene_manager_ );
         camera_->setPosition( 0, 0, 15 );
         camera_->getOgreCamera()->setNearClipDistance( 0.1 );
 
-        m_WXRenderWindow->getViewport()->setCamera( camera_->getOgreCamera() );
+        render_panel_->getViewport()->setCamera( camera_->getOgreCamera() );
 
         Ogre::Light* directional_light = scene_manager_->createLight( "MainDirectional" );
         directional_light->setType( Ogre::Light::LT_DIRECTIONAL );
         directional_light->setDirection( Ogre::Vector3( 0, -1, 1 ) );
         directional_light->setDiffuseColour( Ogre::ColourValue( 1.0f, 1.0f, 1.0f ) );
 
+#if 0
         ogre_tools::Grid* grid = new ogre_tools::Grid( scene_manager_, NULL, ogre_tools::Grid::Lines, 10, 1.0f, 0.02, Ogre::ColourValue(1.0f, 1.0f, 1.0f, 0.5f));
         grid->setHeight(4);
+
 
         ogre_tools::BillboardLine* line = new ogre_tools::BillboardLine( scene_manager_, NULL );
         line->setMaxPointsPerLine(105);
@@ -129,26 +136,43 @@ public:
         arrow->setOrientation( Ogre::Quaternion::IDENTITY );
         //arrow->setOrientation( Ogre::Quaternion( Ogre::Degree( 45 ), Ogre::Vector3::UNIT_X ) );
         //arrow->setScale( Ogre::Vector3( 1.0f, 1.0f, 3.0f ) );
+#endif
 
-        /*ogre_tools::PointCloud* pointCloud = new ogre_tools::PointCloud( scene_manager_ );
+#if 01
+        Ogre::SceneNode* scene_node = scene_manager_->getRootSceneNode()->createChildSceneNode();
+        ogre_tools::PointCloud* pointCloud = new ogre_tools::PointCloud();
+        pointCloud->setDimensions(0.05f, 0.05f, 0.05f);
+        //pointCloud->setColorByIndex(true);
+        pointCloud->setRenderMode(PointCloud::RM_BILLBOARDS_COMMON_FACING);
+        pointCloud->setCommonDirection(Ogre::Vector3(0.0, 1.0, 0.0));
+        pointCloud->setCommonUpVector(Ogre::Vector3(0.0, 0.0, -1.0));
+        pointCloud->setAlpha(1.0);
         std::vector<ogre_tools::PointCloud::Point> points;
-        points.resize( 1000000 );
-        for ( int32_t i = 0; i < 1000; ++i )
+        int32_t xcount = 100;
+        int32_t ycount = 10;
+        int32_t zcount = 10;
+        points.resize(xcount * ycount * zcount);
+        float factor = 0.1f;
+        for (int32_t x = 0; x < xcount; ++x)
         {
-            for ( int32_t j = 0; j < 1000; ++j )
+          for (int32_t y = 0; y < ycount; ++y)
+          {
+            for (int32_t z = 0; z < zcount; ++z)
             {
-                ogre_tools::PointCloud::Point& point = points[ 1000*j + i ];
-                point.m_X = j / 10.0f;
-                point.m_Y = i / 10.0f;
-                point.m_Z = 0;
+              int32_t index = (ycount*zcount*x) + zcount*y + z;
+              ogre_tools::PointCloud::Point& point = points[index];
+              point.x = x * factor;
+              point.y = y * factor;
+              point.z = z * factor;
 
-                point.r_ = abs(i) % 3 == 0 ? 1.0f : 0.0f;
-                point.g_ = abs(i) % 3 == 1 ? 1.0f : 0.0f;
-                point.b_ = abs(i) % 3 == 2 ? 1.0f : 0.0f;
+              point.setColor(abs(y) % 3 == 0 ? 1.0f : 0.0f, abs(y) % 3 == 1 ? 1.0f : 0.0f, abs(y) % 3 == 2 ? 1.0f : 0.0f);
             }
+          }
         }
 
-        pointCloud->AddPoints( &points.front(), 1000000 );*/
+        pointCloud->addPoints( &points.front(), points.size() );
+        scene_node->attachObject(pointCloud);
+#endif
     }
     catch ( Ogre::Exception& e )
     {
@@ -156,29 +180,40 @@ public:
         exit(1);
     }
 
-    m_WXRenderWindow->Connect( wxEVT_LEFT_DOWN, wxMouseEventHandler( MyFrame::OnMouseEvents ), NULL, this );
-    m_WXRenderWindow->Connect( wxEVT_MIDDLE_DOWN, wxMouseEventHandler( MyFrame::OnMouseEvents ), NULL, this );
-    m_WXRenderWindow->Connect( wxEVT_RIGHT_DOWN, wxMouseEventHandler( MyFrame::OnMouseEvents ), NULL, this );
-    m_WXRenderWindow->Connect( wxEVT_MOTION, wxMouseEventHandler( MyFrame::OnMouseEvents ), NULL, this );
-    m_WXRenderWindow->Connect( wxEVT_LEFT_UP, wxMouseEventHandler( MyFrame::OnMouseEvents ), NULL, this );
-    m_WXRenderWindow->Connect( wxEVT_MIDDLE_UP, wxMouseEventHandler( MyFrame::OnMouseEvents ), NULL, this );
-    m_WXRenderWindow->Connect( wxEVT_RIGHT_UP, wxMouseEventHandler( MyFrame::OnMouseEvents ), NULL, this );
-    m_WXRenderWindow->Connect( wxEVT_MOUSEWHEEL, wxMouseEventHandler( MyFrame::OnMouseEvents ), NULL, this );
+    render_panel_->Connect( wxEVT_LEFT_DOWN, wxMouseEventHandler( MyFrame::OnMouseEvents ), NULL, this );
+    render_panel_->Connect( wxEVT_MIDDLE_DOWN, wxMouseEventHandler( MyFrame::OnMouseEvents ), NULL, this );
+    render_panel_->Connect( wxEVT_RIGHT_DOWN, wxMouseEventHandler( MyFrame::OnMouseEvents ), NULL, this );
+    render_panel_->Connect( wxEVT_MOTION, wxMouseEventHandler( MyFrame::OnMouseEvents ), NULL, this );
+    render_panel_->Connect( wxEVT_LEFT_UP, wxMouseEventHandler( MyFrame::OnMouseEvents ), NULL, this );
+    render_panel_->Connect( wxEVT_MIDDLE_UP, wxMouseEventHandler( MyFrame::OnMouseEvents ), NULL, this );
+    render_panel_->Connect( wxEVT_RIGHT_UP, wxMouseEventHandler( MyFrame::OnMouseEvents ), NULL, this );
+    render_panel_->Connect( wxEVT_MOUSEWHEEL, wxMouseEventHandler( MyFrame::OnMouseEvents ), NULL, this );
+
+    render_timer_.Start(33);
+    Connect( render_timer_.GetId(), wxEVT_TIMER, wxTimerEventHandler( MyFrame::onRenderTimer ), NULL, this );
   }
 
   ~MyFrame()
   {
-    m_WXRenderWindow->Disconnect( wxEVT_LEFT_DOWN, wxMouseEventHandler( MyFrame::OnMouseEvents ), NULL, this );
-    m_WXRenderWindow->Disconnect( wxEVT_MIDDLE_DOWN, wxMouseEventHandler( MyFrame::OnMouseEvents ), NULL, this );
-    m_WXRenderWindow->Disconnect( wxEVT_RIGHT_DOWN, wxMouseEventHandler( MyFrame::OnMouseEvents ), NULL, this );
-    m_WXRenderWindow->Disconnect( wxEVT_MOTION, wxMouseEventHandler( MyFrame::OnMouseEvents ), NULL, this );
-    m_WXRenderWindow->Disconnect( wxEVT_LEFT_UP, wxMouseEventHandler( MyFrame::OnMouseEvents ), NULL, this );
-    m_WXRenderWindow->Disconnect( wxEVT_MIDDLE_UP, wxMouseEventHandler( MyFrame::OnMouseEvents ), NULL, this );
-    m_WXRenderWindow->Disconnect( wxEVT_RIGHT_UP, wxMouseEventHandler( MyFrame::OnMouseEvents ), NULL, this );
-    m_WXRenderWindow->Disconnect( wxEVT_MOUSEWHEEL, wxMouseEventHandler( MyFrame::OnMouseEvents ), NULL, this );
+    render_timer_.Stop();
+    render_panel_->Disconnect( wxEVT_LEFT_DOWN, wxMouseEventHandler( MyFrame::OnMouseEvents ), NULL, this );
+    render_panel_->Disconnect( wxEVT_MIDDLE_DOWN, wxMouseEventHandler( MyFrame::OnMouseEvents ), NULL, this );
+    render_panel_->Disconnect( wxEVT_RIGHT_DOWN, wxMouseEventHandler( MyFrame::OnMouseEvents ), NULL, this );
+    render_panel_->Disconnect( wxEVT_MOTION, wxMouseEventHandler( MyFrame::OnMouseEvents ), NULL, this );
+    render_panel_->Disconnect( wxEVT_LEFT_UP, wxMouseEventHandler( MyFrame::OnMouseEvents ), NULL, this );
+    render_panel_->Disconnect( wxEVT_MIDDLE_UP, wxMouseEventHandler( MyFrame::OnMouseEvents ), NULL, this );
+    render_panel_->Disconnect( wxEVT_RIGHT_UP, wxMouseEventHandler( MyFrame::OnMouseEvents ), NULL, this );
+    render_panel_->Disconnect( wxEVT_MOUSEWHEEL, wxMouseEventHandler( MyFrame::OnMouseEvents ), NULL, this );
 
-    m_WXRenderWindow->Destroy();
-    delete root_;
+    render_panel_->Destroy();
+  }
+
+  void onRenderTimer(wxTimerEvent&)
+  {
+    ros::WallTime start = ros::WallTime::now();
+    root_->renderOneFrame();
+    ros::WallTime end = ros::WallTime::now();
+    //printf("Render took [%f] msec\n", (end - start).toSec() * 1000.0f);
   }
 
 private:
@@ -245,25 +280,18 @@ private:
 
         handled = true;
       }
-
-      if ( handled )
-      {
-        m_WXRenderWindow->Refresh();
-      }
     }
 
     if ( event.GetWheelRotation() != 0 )
     {
       camera_->scrollWheel( event.GetWheelRotation(), event.CmdDown(), event.AltDown(), event.ShiftDown() );
-
-      m_WXRenderWindow->Refresh();
     }
   }
 
   Ogre::Root* root_;
   Ogre::SceneManager* scene_manager_;
 
-  ogre_tools::wxOgreRenderWindow* m_WXRenderWindow;
+  ogre_tools::wxOgreRenderWindow* render_panel_;
 
   ogre_tools::Grid* grid_;
   ogre_tools::CameraBase* camera_;
@@ -274,6 +302,8 @@ private:
   bool right_mouse_down_;
   int mouse_x_;
   int mouse_y_;
+
+  wxTimer render_timer_;
 };
 
 // our normal wxApp-derived class, as usual
@@ -298,6 +328,7 @@ public:
 
   int OnExit()
   {
+    cleanupOgre();
       return 0;
   }
 };

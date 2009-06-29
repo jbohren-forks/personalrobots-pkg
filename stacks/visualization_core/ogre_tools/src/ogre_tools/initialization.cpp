@@ -30,9 +30,9 @@ void initializeOgre()
     if ( !has_plugin_cfg )
     {
       root->loadPlugin( "RenderSystem_GL" );
-      root->loadPlugin( "Plugin_CgProgramManager" );
       root->loadPlugin( "Plugin_OctreeSceneManager" );
       root->loadPlugin( "Plugin_ParticleFX" );
+      root->loadPlugin( "Plugin_CgProgramManager" );
     }
 
     // Taken from gazebo
@@ -66,7 +66,11 @@ void initializeOgre()
 
     std::string ogre_tools_path = ros::getPackagePath(ROS_PACKAGE_NAME);
     Ogre::ResourceGroupManager::getSingleton().addResourceLocation( ogre_tools_path + "/media", "FileSystem", ROS_PACKAGE_NAME );
+    Ogre::ResourceGroupManager::getSingleton().addResourceLocation( ogre_tools_path + "/media/fonts", "FileSystem", ROS_PACKAGE_NAME );
     Ogre::ResourceGroupManager::getSingleton().addResourceLocation( ogre_tools_path + "/media/models", "FileSystem", ROS_PACKAGE_NAME );
+    Ogre::ResourceGroupManager::getSingleton().addResourceLocation( ogre_tools_path + "/media/materials", "FileSystem", ROS_PACKAGE_NAME );
+    Ogre::ResourceGroupManager::getSingleton().addResourceLocation( ogre_tools_path + "/media/materials/scripts", "FileSystem", ROS_PACKAGE_NAME );
+    Ogre::ResourceGroupManager::getSingleton().addResourceLocation( ogre_tools_path + "/media/materials/programs", "FileSystem", ROS_PACKAGE_NAME );
   }
   catch ( Ogre::Exception& e )
   {
