@@ -146,7 +146,7 @@ void planning_models::KinematicModel::PlanarJoint::updateVariableTransform(const
 {
     // this will need to be updated to deal with 'ground plane'; right now all code assumes we move on the ground;
     // moving on a ramp will cause problems
-    btVector3 newOrigin(btScalar(params[0]), btScalar(params[1]), btScalar(0.0));
+    btVector3 newOrigin((btScalar)params[0], (btScalar)params[1], btScalar(0.0));
     varTrans.setOrigin(newOrigin);
     btVector3 newAxis(btScalar(0.0), btScalar(0.0), btScalar(1.0));
     btQuaternion newQuat(newAxis, btScalar(params[2]));    
