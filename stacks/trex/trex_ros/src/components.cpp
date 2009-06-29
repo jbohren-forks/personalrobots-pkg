@@ -37,7 +37,7 @@ namespace TREX{
   }
 
   tf::TransformListener& getTransformListener(){
-    static tf::TransformListener tf(*ros::Node::instance(), true, ros::Duration(10));
+    static tf::TransformListener tf(ros::Duration(10));
     return tf;
   }
 
