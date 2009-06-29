@@ -117,7 +117,7 @@ int main(int argc, char **argv)
     /// Open the Factory interface
     try
     {
-      factoryIface->Open(client, "factory_model::factory_iface");
+      factoryIface->Open(client, "default");
     }
     catch (gazebo::GazeboError e)
     {

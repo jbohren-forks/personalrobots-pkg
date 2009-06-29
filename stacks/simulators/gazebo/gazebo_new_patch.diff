@@ -1,8 +1,8 @@
 Index: server/physics/Body.hh
 ===================================================================
---- server/physics/Body.hh	(revision 7891)
+--- server/physics/Body.hh	(revision 7929)
 +++ server/physics/Body.hh	(working copy)
-@@ -259,6 +259,8 @@
+@@ -268,6 +268,8 @@
      protected: ParamT<double> *iyzP;
      protected: bool customMassMatrix;
      protected: double cx,cy,cz,bodyMass,ixx,iyy,izz,ixy,ixz,iyz;
@@ -13,9 +13,9 @@ Index: server/physics/Body.hh
    /// \}
 Index: server/physics/Geom.cc
 ===================================================================
---- server/physics/Geom.cc	(revision 7891)
+--- server/physics/Geom.cc	(revision 7929)
 +++ server/physics/Geom.cc	(working copy)
-@@ -250,7 +250,7 @@
+@@ -249,7 +249,7 @@
  
    if (this->placeable && !this->IsStatic())
    {
@@ -26,7 +26,7 @@ Index: server/physics/Geom.cc
        dGeomTransformSetGeom( this->transId, this->geomId );
 Index: server/physics/Body.cc
 ===================================================================
---- server/physics/Body.cc	(revision 7891)
+--- server/physics/Body.cc	(revision 7929)
 +++ server/physics/Body.cc	(working copy)
 @@ -242,6 +242,10 @@
      }
@@ -41,7 +41,7 @@ Index: server/physics/Body.cc
  
 Index: worlds/bandit.world
 ===================================================================
---- worlds/bandit.world	(revision 7891)
+--- worlds/bandit.world	(revision 7929)
 +++ worlds/bandit.world	(working copy)
 @@ -16,7 +16,7 @@
    <verbosity>5</verbosity>
@@ -61,42 +61,3 @@ Index: worlds/bandit.world
        <static>false</static>
  
        <attach>
-Index: worlds/test_stacks_with_rays.world
-===================================================================
---- worlds/test_stacks_with_rays.world	(revision 7891)
-+++ worlds/test_stacks_with_rays.world	(working copy)
-@@ -28,7 +28,7 @@
-     <cfm>0.0000000001</cfm>
-     <erp>0.2</erp>
-     <quickStep>true</quickStep>
--    <quickStepIters>10</quickStepIters>
-+    <quickStepIters>100</quickStepIters>
-     <quickStepW>1.3</quickStepW>
-   </physics:ode>
- 
-Index: worlds/test_stacks.world
-===================================================================
---- worlds/test_stacks.world	(revision 7891)
-+++ worlds/test_stacks.world	(working copy)
-@@ -28,7 +28,7 @@
-     <cfm>0.0000000001</cfm>
-     <erp>0.1</erp>
-     <quickStep>true</quickStep>
--    <quickStepIters>30</quickStepIters>
-+    <quickStepIters>20</quickStepIters>
-     <quickStepW>1.3</quickStepW>
-   </physics:ode>
- 
-Index: CMakeLists.txt
-===================================================================
---- CMakeLists.txt	(revision 7891)
-+++ CMakeLists.txt	(working copy)
-@@ -30,7 +30,7 @@
- SET (gazebocontroller_sources_desc "List of controller sources" 
-      CACHE INTERNAL "Gazebo controller sources list description" FORCE)
- 
--SET (OGRE_VERSION 1.6.2 CACHE INTERNAL "Ogre version requirement" FORCE)
-+SET (OGRE_VERSION 1.6.1 CACHE INTERNAL "Ogre version requirement" FORCE)
- 
- SET (FREEIMAGE_MAJOR_VERSION 3 CACHE INTERNAL "FreeImage major version requirement" FORCE)
- SET (FREEIMAGE_MINOR_VERSION 10 CACHE INTERNAL "FreeImage minor version requirement" FORCE)
