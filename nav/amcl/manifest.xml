@@ -9,6 +9,7 @@
   <depend package="tf" />
   <depend package="robot_srvs" />
   <depend package="robot_msgs" />
+  <depend package="nav_msgs" />
   <depend package="std_srvs" />
   <depend package="laser_scan" />
   <depend package="visualization_msgs"/>

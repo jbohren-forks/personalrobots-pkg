@@ -66,7 +66,7 @@ Subscribes to (name type):
 
 Publishes to (name type):
 - @b "amcl_pose" robot_msgs/PoseWithCovariance : robot's estimated pose in the map, with covariance
-- @b "particlecloud" robot_msgs/ParticleCloud : the set of pose estimates being maintained by the filter.
+- @b "particlecloud" nav_msgs/ParticleCloud : the set of pose estimates being maintained by the filter.
 - @b "tf_message" tf/tfMessage : publishes the transform from "odom" (which can be remapped via the ~odom_frame_id parameter) to "map"
 - @b "gui_laser" visualization_msgs/Polyline : re-projected laser scans (for visualization)
 
@@ -158,7 +158,7 @@ model.  The fifth parameter capture the tendency of the robot to translate
 // Messages that I need
 #include "laser_scan/LaserScan.h"
 #include "robot_msgs/PoseWithCovariance.h"
-#include "robot_msgs/ParticleCloud.h"
+#include "nav_msgs/ParticleCloud.h"
 #include "robot_msgs/Pose.h"
 #include "robot_srvs/StaticMap.h"
 #include "std_srvs/Empty.h"
@@ -440,7 +440,7 @@ AmclNode::AmclNode() :
                                     laser_likelihood_max_dist);
 
   ros::Node::instance()->advertise<robot_msgs::PoseWithCovariance>("amcl_pose",2);
-  ros::Node::instance()->advertise<robot_msgs::ParticleCloud>("particlecloud",2);
+  ros::Node::instance()->advertise<nav_msgs::ParticleCloud>("particlecloud",2);
   ros::Node::instance()->advertise<visualization_msgs::Polyline>("gui_laser",2);
   ros::Node::instance()->advertiseService("global_localization",
                                           &AmclNode::globalLocalizationCallback,
@@ -726,7 +726,7 @@ AmclNode::laserReceived(const tf::MessageNotifier<laser_scan::LaserScan>::Messag
 
     // Publish the resulting cloud
     // TODO: set maximum rate for publishing
-    robot_msgs::ParticleCloud cloud_msg;
+    nav_msgs::ParticleCloud cloud_msg;
     cloud_msg.set_particles_size(set->sample_count);
     for(int i=0;i<set->sample_count;i++)
     {
