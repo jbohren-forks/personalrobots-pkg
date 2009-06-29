@@ -108,7 +108,7 @@ free, default 0.196
 #include "ros/ros.h"
 #include "ros/console.h"
 #include "map_server/image_loader.h"
-#include "robot_msgs/MapMetaData.h"
+#include "nav_msgs/MapMetaData.h"
 
 class MapServer
 {
@@ -134,7 +134,7 @@ class MapServer
       meta_data_message_ = map_resp_.map.info;
 
       service = n.advertiseService("static_map", &MapServer::mapCallback, this);
-      pub = n.advertise<robot_msgs::MapMetaData>("map_metadata", 1,
+      pub = n.advertise<nav_msgs::MapMetaData>("map_metadata", 1,
                                                  boost::bind(&MapServer::metadataSubscriptionCallback, *this, _1));
     }
 
@@ -164,7 +164,7 @@ class MapServer
       pub.publish( meta_data_message_ );
     }
 
-    robot_msgs::MapMetaData meta_data_message_;
+    nav_msgs::MapMetaData meta_data_message_;
 };
 
 int main(int argc, char **argv)
