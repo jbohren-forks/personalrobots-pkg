@@ -37,6 +37,7 @@
 #include "planning_environment/collision_space_monitor.h"
 #include <robot_msgs/PointStamped.h>
 #include <boost/bind.hpp>
+#include <sstream>
 #include <climits>
 
 namespace planning_environment
@@ -62,10 +63,30 @@ void planning_environment::CollisionSpaceMonitor::setupCSM(void)
     if (!tf_)
 	tf_ = new tf::TransformListener();
     
+    collisionSpace_ = cm_->getODECollisionModel().get();
+
     // the factor by which a boxes maximum extent is multiplied to get the radius of the sphere to be placed in the collision space
     nh_.param<double>("~box_scale", boxScale_, 2.0);
     
-    collisionSpace_ = cm_->getODECollisionModel().get();
+    // a list of static planes bounding the environment
+    std::string planes;
+    nh_.param<std::string>("~bounding_planes", planes, std::string());
+    std::stringstream ss(planes);
+    std::vector<double> planeValues;
+    while (ss.good() && !ss.eof())
+    {
+	double value;
+	ss >> value;
+	planeValues.push_back(value);
+    }
+    if (planeValues.size() % 4 != 0)
+	ROS_WARN("~bounding_planes must be a list of 4-tuples (a b c d) that define planes ax+by+cz+d=0");
+    else
+	for (unsigned int i = 0 ; i < planeValues.size() / 4 ; ++i)
+	{
+	    collisionSpace_->addStaticPlane(planeValues[i * 4], planeValues[i * 4 + 1], planeValues[i * 4 + 2], planeValues[i * 4 + 3]);
+	    ROS_INFO("Added static plane %fx + %fy + %fz + %f = 0", planeValues[i * 4], planeValues[i * 4 + 1], planeValues[i * 4 + 2], planeValues[i * 4 + 3]);
+	}
     
     collisionMapNotifier_ = new tf::MessageNotifier<robot_msgs::CollisionMap>(*tf_, boost::bind(&CollisionSpaceMonitor::collisionMapCallback, this, _1), "collision_map", getFrameId(), 1);
     ROS_DEBUG("Listening to collision_map using message notifier with target frame %s", collisionMapNotifier_->getTargetFramesString().c_str());
