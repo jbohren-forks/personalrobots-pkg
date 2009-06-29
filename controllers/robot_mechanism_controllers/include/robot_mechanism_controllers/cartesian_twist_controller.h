@@ -55,11 +55,10 @@ public:
   ~CartesianTwistController();
 
   bool initXml(mechanism::RobotState *robot_state, TiXmlElement *config);
+  bool init(mechanism::RobotState *robot, const ros::NodeHandle &n);
 
   bool starting();
   void update();
-
-  void command();
 
   // input of the controller
   KDL::Twist twist_desi_, twist_meas_;
@@ -68,12 +67,13 @@ private:
   // output of the controller
   KDL::Wrench wrench_out_;
 
-  ros::Node* node_;
-  std::string controller_name_;
+  ros::NodeHandle node_;
+  ros::Subscriber sub_command_;
+  void command(const robot_msgs::TwistConstPtr& twist_msg);
   double last_time_, ff_trans_, ff_rot_;
 
   // pid controllers
-  std::vector<control_toolbox::Pid>fb_pid_controller_;
+  std::vector<control_toolbox::Pid> fb_pid_controller_;
 
   // robot description
   mechanism::RobotState *robot_state_;

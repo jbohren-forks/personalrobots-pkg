@@ -71,8 +71,6 @@ private:
   ros::NodeHandle node_;
   ros::Subscriber sub_command_;
   void command(const robot_msgs::WrenchConstPtr& wrench_msg);
-
-  //std::string controller_name_;
   mechanism::RobotState *robot_state_;
   mechanism::Chain chain_;
 
