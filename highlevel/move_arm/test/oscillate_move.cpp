@@ -48,9 +48,8 @@
 int main(int argc, char **argv)
 {
     ros::init(argc, argv, "test_move_arm");
-    
-    ros::Node hack; // hack
-    
+    ros::NodeHandle nh;
+
     robot_actions::ActionClient<pr2_robot_actions::MoveArmGoal, pr2_robot_actions::MoveArmState, int32_t> move_arm("move_arm");
     
     int32_t                         feedback;
@@ -105,8 +104,6 @@ int main(int argc, char **argv)
     goalB.goal_constraints.joint_constraint[0].value[0] = -2.0;
     goalB.goal_constraints.joint_constraint[3].value[0] = -0.1;
     goalB.goal_constraints.joint_constraint[5].value[0] = 0.15;
-
-    ros::NodeHandle nh;
     
     while (nh.ok())
     {
