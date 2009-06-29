@@ -131,10 +131,6 @@ class GenerateTextTrajectoryAction(python_actions.Action):
 
   def execute(self, goal):
 
-    print goal.text
-    print goal.extent
-    print goal.scale
-
     points = [(0, 0, 1)]
     for t in traject(goal.text):
       points += [(t[0][0], t[0][1],1)] + [(x,y,0) for (x,y) in t] + [(t[-1][0], t[-1][1],1)]
