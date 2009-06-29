@@ -39,24 +39,24 @@
     <joint name="floor_joint" />
     <inertial>
       <mass value="100" />
-      <com xyz="0 0 0.001" />
+      <com xyz="4 0 0.001" />
       <inertia ixx="10" ixy="0"  ixz="0"
                iyy="10" iyz="0"
                izz="10" />
     </inertial> 
     <visual>
-      <origin xyz="0 0 0.001" rpy="0 0 0" />
+      <origin xyz="4 0 0.001" rpy="0 0 0" />
       <map name="gazebo_material" flag="gazebo">
         <elem key="material" value="Gazebo/Grey" />
       </map>
       <geometry name="floor_visual_geom">
-        <mesh scale="4 4 0.002" />
+        <mesh scale="8 8 0.002" />
       </geometry>
     </visual> 
     <collision>
-      <origin xyz="0 0 0.001" rpy="0.0 0.0 0.0" />
+      <origin xyz="4 0 0.001" rpy="0.0 0.0 0.0" />
       <geometry name="floor_collision_geom">
-        <box size="4 4 0.002" />
+        <box size="8 8 0.002" />
       </geometry>
       <map name="friction_coefficients" flag="gazebo">
         <elem key="mu1" value="50.0" />

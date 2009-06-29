@@ -8,7 +8,7 @@
 
   <!-- send plug_only.xml to param server and spawn robot-->
   <param name="robotdesc/plug" command="$(find xacro)/xacro.py '$(find plug_in_gazebo)/robots/plug_only.xacro.xml'" />
-  <node pkg="gazebo_plugin" type="urdf2factory" args="robotdesc/plug" respawn="false" output="screen" />
+  <node pkg="gazebo_plugin" type="urdf2factory" args="robotdesc/plug 0 0 0 0 0 0 plug" respawn="false" output="screen" />
 
   <param name="robotdesc/pr2" command="$(find xacro)/xacro.py '$(find plug_in_gazebo)/robots/outlet_only.xacro.xml'" />
   <node pkg="gazebo_plugin" type="urdf2factory" args="robotdesc/pr2" respawn="false" output="screen" />

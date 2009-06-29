@@ -1,7 +1,7 @@
 <launch>
     <include file="$(find pr2_alpha)/$(env ROBOT).machine" />
     <!-- start gazebo -->
-    <node pkg="gazebo" type="gazebo" args="-n $(find gazebo_robot_description)/gazebo_worlds/empty.world" respawn="false" output="screen" machine="five">
+    <node pkg="gazebo" type="gazebo" args="-n $(find gazebo_robot_description)/gazebo_worlds/empty.world" respawn="false" output="screen" >
       <env name="LD_LIBRARY_PATH" value="$(find gazebo_plugin)/lib:$(find gazebo)/gazebo/lib:$(find Cg)/Cg/lib:$(optenv LD_LIBRARY_PATH)" />
       <env name="GAZEBO_RESOURCE_PATH" value="$(find gazebo_robot_description):$(find gazebo)/gazebo/share/gazebo" />
       <env name="OGRE_RESOURCE_PATH" value="$(find ogre)/ogre/lib/OGRE" />
@@ -9,15 +9,18 @@
 
     <!-- send pr2.xml to param server -->
     <!-- push robotdesc/pr2 to factory and spawn robot in gazebo -->
-    <param name="robotdesc/pr2" command="$(find xacro)/xacro.py '$(find plug_in_gazebo)/robots/pr2_and_outlet.xacro.xml'" />
-    <node pkg="gazebo_plugin" type="urdf2factory" args="robotdesc/pr2" respawn="false" output="screen" machine="five" />
+    <param ns="pr2" name="robotdesc/pr2" command="$(find xacro)/xacro.py '$(find pr2_defs)/robots/pr2.xacro.xml'" />
+    <node pkg="gazebo_plugin" type="urdf2factory" args="robotdesc/pr2" respawn="false" output="screen" />
 
     <param name="robotdesc/plug" command="$(find xacro)/xacro.py '$(find plug_in_gazebo)/robots/plug_only.xacro.xml'" />
-    <node pkg="gazebo_plugin" type="urdf2factory" args="robotdesc/plug" respawn="false" output="screen" machine="five" />
+    <node pkg="gazebo_plugin" type="urdf2factory" args="robotdesc/plug 0 0 0 0 0 0 plug" respawn="false" output="screen" />
+
+    <param name="robotdesc/outlet" command="$(find xacro)/xacro.py '$(find plug_in_gazebo)/robots/outlet_only.xacro.xml'" />
+    <node pkg="gazebo_plugin" type="urdf2factory" args="robotdesc/outlet 0 0 0 0 0 0 outlet" respawn="false" output="screen" />
 
 
     <node pkg="pr2_mechanism_controllers" type="tuckarm.py" args="l" output="screen" />
-    <node pkg="plug_in_gazebo" type="set_plug.py" args=" -xyz 0.25 0 0.282 -rpy 0 0 -1.57" respawn="false" output="screen" machine="five" />
+    <node pkg="plug_in_gazebo" type="set_plug.py" args=" -xyz 0.25 0 0.282 -rpy 0 0 -1.57" respawn="false" output="screen" />
 
     <!-- uncomment for visualization -->
     <!--

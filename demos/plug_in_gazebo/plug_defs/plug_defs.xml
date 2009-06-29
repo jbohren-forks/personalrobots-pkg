@@ -15,9 +15,9 @@
 
   <property name="M_PI" value="3.1415926535897931" />
 
-  <property name="plug_x_loc" value="0.5" />
+  <property name="plug_x_loc" value="0.24" />
   <property name="plug_y_loc" value="0.0" />
-  <property name="plug_z_loc" value="1.0" />
+  <property name="plug_z_loc" value="0.29" />
   <property name="plug_x_size" value="0.07" />
   <property name="plug_y_size" value="0.025" />
   <property name="plug_z_size" value="0.03" />
@@ -58,6 +58,11 @@
         <elem key="kd"  value="1.0" />
       </map>
     </collision>
+    <map name="plug_gravity" flag="gazebo">
+      <elem key="turnGravityOff" value="true" />
+      <elem key="selfCollide" value="true" />
+      <elem key="dampingFactor" value="0.05" />
+    </map>
   </link>
 
   <map name="sensor" flag="gazebo">
@@ -71,10 +76,11 @@
           <frameName>map</frameName>
           <interface:position name="p3d_plug_position"/>
       </controller:ros_p3d>
+      <!--
       <controller:ros_sim_iface name="sim_iface_plug_controller" plugin="libros_sim_iface.so">
           <alwaysOn>true</alwaysOn>
           <updateRate>1.0</updateRate>
-          <modelName>robotdesc_plug</modelName>
+          <modelName>plug</modelName>
           <topicName>set_plug_pose</topicName>
           <frameName>map</frameName>
           <xyz>0 0 0</xyz>
@@ -83,6 +89,7 @@
           <angVel>0 0 0</angVel>
           <interface:position name="sim_iface_plug_position"/>
       </controller:ros_sim_iface>
+      -->
     </verbatim>
   </map>
 
