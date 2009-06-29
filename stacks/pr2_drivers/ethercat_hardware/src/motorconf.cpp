@@ -113,6 +113,7 @@ void init(char *interface)
     else if (sh->get_product_code() == WG06::PRODUCT_CODE)
     {
       WG06 *dev = new WG06();
+      dev->use_ros_ = false;
       dev->configure(startAddress, sh);
       devices.push_back(dev);
     }

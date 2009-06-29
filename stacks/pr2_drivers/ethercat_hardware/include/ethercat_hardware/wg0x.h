@@ -332,7 +332,7 @@ struct WG06Pressure
 class WG06 : public WG0X
 {
 public:
-  WG06() : WG0X(true, sizeof(WG0XCommand), sizeof(WG0XStatus)+sizeof(WG06Pressure)), last_pressure_time_(0) {}
+  WG06() : WG0X(true, sizeof(WG0XCommand), sizeof(WG0XStatus)+sizeof(WG06Pressure)), use_ros_(true), last_pressure_time_(0) {}
   ~WG06();
   int initialize(Actuator *, bool allow_unprogrammed=true, bool motor_model=false);
   void convertState(ActuatorState &state, unsigned char *current_buffer, unsigned char *last_buffer);
@@ -340,6 +340,7 @@ public:
   {
     PRODUCT_CODE = 6805006
   };
+  bool use_ros_;
 private:
   uint32_t last_pressure_time_;
   realtime_tools::RealtimePublisher<ethercat_hardware::PressureState> *pressure_publisher_;

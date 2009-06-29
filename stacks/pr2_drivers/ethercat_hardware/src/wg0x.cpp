@@ -190,7 +190,7 @@ int WG06::initialize(Actuator *actuator, bool allow_unprogrammed, bool motor_mod
 {
   int retval = WG0X::initialize(actuator, motor_model);
   
-  if (!retval)
+  if (!retval && use_ros_)
   {
     string topic = "pressure";
     if (!actuator->name_.empty())
@@ -359,7 +359,7 @@ void WG06::convertState(ActuatorState &state, unsigned char *current_buffer, uns
 
   if (p->timestamp_ != last_pressure_time_)
   {
-    if (pressure_publisher_->trylock())
+    if (pressure_publisher_ && pressure_publisher_->trylock())
     {
       pressure_publisher_->msg_.header.stamp = ros::Time(realtime_gettime());
       pressure_publisher_->msg_.set_data0_size(22);
