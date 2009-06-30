@@ -64,12 +64,13 @@ class ActionClient:
     self.state_pub_ = rospy.Subscriber(self.nn + "/feedback", self.statemsg, self.onFeedback)
 
     self.feedback_queue = Queue.Queue()
-
-  def onFeedback(self, msg):
-    self.feedback_queue.put(msg)
+    self.preempt()
 
   def preempt(self):
     self.pre_pub_.publish(Empty())
+
+  def onFeedback(self, msg):
+    self.feedback_queue.put(msg)
 
   def execute(self, goal, timeout = 1.0):
     fbmsg = self.feedback_queue.get()
