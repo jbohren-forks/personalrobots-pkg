@@ -1,0 +1,9 @@
+# this service wraps the transformVector method in TransformListener (both versions).
+# if fixed_frame is empty the non-interpolating version is called and time is ignored.
+
+string target_frame
+time   target_time 
+robot_msgs/Vector3Stamped vin
+string fixed_frame
+---
+robot_msgs/Vector3Stamped vout

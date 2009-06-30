@@ -1,0 +1,9 @@
+# this service wraps the transformPointCloud method in TransformListener (both versions).
+# if fixed_frame is empty the non-interpolating version is called and time is ignored.
+
+string target_frame
+time   target_time 
+robot_msgs/PointCloud pcin
+string fixed_frame
+---
+robot_msgs/PointCloud pcout
