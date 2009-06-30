@@ -65,7 +65,7 @@ SBPLArmPlannerNode::SBPLArmPlannerNode(std::string node_name):ros::Node(node_nam
 
   // collision map
   subscribe(collision_map_topic_, collision_map_, &SBPLArmPlannerNode::collisionMapCallback,1);
-  advertise<robot_msgs::CollisionMap> ("sbpl_collision_map", 1);
+  advertise<mapping_msgs::CollisionMap> ("sbpl_collision_map", 1);
 
   //initialize planner
   planner_ = new ARAPlanner(&pr2_arm_env_, forward_search_);

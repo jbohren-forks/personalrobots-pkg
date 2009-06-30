@@ -35,6 +35,7 @@
 using namespace std;
 using namespace robot_msgs;
 using namespace door_msgs;
+using namespace mapping_msgs;
 using namespace ros;
 using namespace door_handle_detector;
 using namespace door_functions;

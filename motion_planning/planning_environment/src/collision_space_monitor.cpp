@@ -89,10 +89,10 @@ void planning_environment::CollisionSpaceMonitor::setupCSM(void)
 	    ROS_INFO("Added static plane %fx + %fy + %fz + %f = 0", planeValues[i * 4], planeValues[i * 4 + 1], planeValues[i * 4 + 2], planeValues[i * 4 + 3]);
 	}
     
-    collisionMapNotifier_ = new tf::MessageNotifier<robot_msgs::CollisionMap>(*tf_, boost::bind(&CollisionSpaceMonitor::collisionMapCallback, this, _1), "collision_map", getFrameId(), 1);
+    collisionMapNotifier_ = new tf::MessageNotifier<mapping_msgs::CollisionMap>(*tf_, boost::bind(&CollisionSpaceMonitor::collisionMapCallback, this, _1), "collision_map", getFrameId(), 1);
     ROS_DEBUG("Listening to collision_map using message notifier with target frame %s", collisionMapNotifier_->getTargetFramesString().c_str());
 
-    collisionMapUpdateNotifier_ = new tf::MessageNotifier<robot_msgs::CollisionMap>(*tf_, boost::bind(&CollisionSpaceMonitor::collisionMapUpdateCallback, this, _1), "collision_map_update", getFrameId(), 1);
+    collisionMapUpdateNotifier_ = new tf::MessageNotifier<mapping_msgs::CollisionMap>(*tf_, boost::bind(&CollisionSpaceMonitor::collisionMapUpdateCallback, this, _1), "collision_map_update", getFrameId(), 1);
     ROS_DEBUG("Listening to collision_map_update using message notifier with target frame %s", collisionMapUpdateNotifier_->getTargetFramesString().c_str());
 
     if (cm_->loadedModels())
@@ -127,18 +127,18 @@ void planning_environment::CollisionSpaceMonitor::waitForMap(void) const
 	ROS_INFO("Map received!");
 }
 
-void planning_environment::CollisionSpaceMonitor::collisionMapUpdateCallback(const robot_msgs::CollisionMapConstPtr &collisionMap)
+void planning_environment::CollisionSpaceMonitor::collisionMapUpdateCallback(const mapping_msgs::CollisionMapConstPtr &collisionMap)
 {
     if (collisionMap->boxes.size() > 0)
        updateCollisionSpace(collisionMap, false);
 }
 
-void planning_environment::CollisionSpaceMonitor::collisionMapCallback(const robot_msgs::CollisionMapConstPtr &collisionMap)
+void planning_environment::CollisionSpaceMonitor::collisionMapCallback(const mapping_msgs::CollisionMapConstPtr &collisionMap)
 {
     updateCollisionSpace(collisionMap, true);
 }
 
-void planning_environment::CollisionSpaceMonitor::updateCollisionSpace(const robot_msgs::CollisionMapConstPtr &collisionMap, bool clear)
+void planning_environment::CollisionSpaceMonitor::updateCollisionSpace(const mapping_msgs::CollisionMapConstPtr &collisionMap, bool clear)
 {
     boost::mutex::scoped_lock lock(mapUpdateLock_);
     

@@ -40,7 +40,7 @@
 /** Messages needed for trajectory control and collision map**/
 #include <robot_msgs/Pose.h>
 #include <manipulation_msgs/JointTraj.h>
-#include <robot_msgs/CollisionMap.h>
+#include <mapping_msgs/CollisionMap.h>
 #include <manipulation_msgs/JointTrajPoint.h>
 
 /** sbpl planner include files **/
@@ -78,7 +78,7 @@ namespace sbpl_arm_check_path
 
       std::string node_name_;
 
-      robot_msgs::CollisionMap collision_map_;
+      mapping_msgs::CollisionMap collision_map_;
 
       MDPConfig mdp_cfg_;
 

@@ -27,7 +27,7 @@
 #define COLLISIONMAP_MOCAP_SYSTEM
 
 #include "rossensorsystem.h"
-#include <robot_msgs/CollisionMap.h>
+#include <mapping_msgs/CollisionMap.h>
 
 // used to update objects through a mocap system
 class CollisionMapXMLID
@@ -36,16 +36,16 @@ public:
     static const char* GetXMLId() { return "collisionmap"; }
 };
 
-class CollisionMapSystem : public ROSSensorSystem<robot_msgs::CollisionMap, CollisionMapXMLID>
+class CollisionMapSystem : public ROSSensorSystem<mapping_msgs::CollisionMap, CollisionMapXMLID>
 {
 public:
     CollisionMapSystem(EnvironmentBase* penv)
-        : ROSSensorSystem<robot_msgs::CollisionMap, CollisionMapXMLID>(penv), _robotid(0), _nNextId(1), _bEnableCollisions(true)
+        : ROSSensorSystem<mapping_msgs::CollisionMap, CollisionMapXMLID>(penv), _robotid(0), _nNextId(1), _bEnableCollisions(true)
     {
     }
     virtual ~CollisionMapSystem() {
         stopsubscriptions(); // need to stop the subscriptions because the virtual destructor will not call the overridden stopsubscriptions
-        ROSSensorSystem<robot_msgs::CollisionMap, CollisionMapXMLID>::Destroy();
+        ROSSensorSystem<mapping_msgs::CollisionMap, CollisionMapXMLID>::Destroy();
     }
 
     virtual bool Init(istream& sinput)
@@ -88,7 +88,7 @@ public:
 private:
     virtual void startsubscriptions()
     {
-        ROSSensorSystem<robot_msgs::CollisionMap, CollisionMapXMLID>::startsubscriptions();
+        ROSSensorSystem<mapping_msgs::CollisionMap, CollisionMapXMLID>::startsubscriptions();
         
         if( _bSubscribed ) {
             boost::mutex::scoped_lock lock(_mutex);
@@ -117,7 +117,7 @@ private:
 
     virtual void stopsubscriptions()
     {
-        ROSSensorSystem<robot_msgs::CollisionMap, CollisionMapXMLID>::stopsubscriptions();
+        ROSSensorSystem<mapping_msgs::CollisionMap, CollisionMapXMLID>::stopsubscriptions();
         _tf.reset();
     }
 

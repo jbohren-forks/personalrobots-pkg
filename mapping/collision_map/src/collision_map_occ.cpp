@@ -36,7 +36,7 @@
 
 #include <ros/ros.h>
 #include <robot_msgs/PointCloud.h>
-#include <robot_msgs/CollisionMap.h>
+#include <mapping_msgs/CollisionMap.h>
 #include <tf/transform_listener.h>
 #include <tf/message_notifier.h>
 #include <robot_self_filter/self_mask.h>
@@ -57,10 +57,10 @@ public:
 	loadParams();
 	
 	// advertise our topics: full map and updates
-	cmapPublisher_ = nh_.advertise<robot_msgs::CollisionMap>("collision_map_occ", 1);
-	cmapUpdPublisher_ = nh_.advertise<robot_msgs::CollisionMap>("collision_map_occ_update", 1);
+	cmapPublisher_ = nh_.advertise<mapping_msgs::CollisionMap>("collision_map_occ", 1);
+	cmapUpdPublisher_ = nh_.advertise<mapping_msgs::CollisionMap>("collision_map_occ_update", 1);
 	if (publishOcclusion_)
-  	    occPublisher_ = nh_.advertise<robot_msgs::CollisionMap>("collision_map_occ_occlusion", 1);
+  	    occPublisher_ = nh_.advertise<mapping_msgs::CollisionMap>("collision_map_occ_occlusion", 1);
 
 	// create a message notifier (and enable subscription) for both the full map and for the updates
 	mnCloud_ = new tf::MessageNotifier<robot_msgs::PointCloud>(tf_, boost::bind(&CollisionMapperOcc::cloudCallback, this, _1), "cloud_in", "", 1);
@@ -719,14 +719,14 @@ private:
     
     void publishCollisionMap(const CMap &map, ros::Publisher &pub) const
     {
-	robot_msgs::CollisionMap cmap;
+	mapping_msgs::CollisionMap cmap;
 	cmap.header = header_;
 	const unsigned int ms = map.size();
 	
 	for (CMap::const_iterator it = map.begin() ; it != map.end() ; ++it)
 	{
 	    const CollisionPoint &cp = *it;
-	    robot_msgs::OrientedBoundingBox box;
+	    mapping_msgs::OrientedBoundingBox box;
 	    box.extents.x = box.extents.y = box.extents.z = bi_.resolution;
 	    box.axis.x = box.axis.y = 0.0; box.axis.z = 1.0;
 	    box.angle = 0.0;

@@ -73,7 +73,7 @@ public:
 
 protected:
 
-    void afterWorldUpdate(const robot_msgs::CollisionMapConstPtr &collisionMap)
+    void afterWorldUpdate(const mapping_msgs::CollisionMapConstPtr &collisionMap)
     {
 	last_ = -1;
     }

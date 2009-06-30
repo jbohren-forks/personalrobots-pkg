@@ -19,6 +19,7 @@
     <depend package="door_handle_detector"/>
     <depend package="door_functions"/>
     <depend package="door_msgs"/>
+    <depend package="mapping_msgs"/>
     <depend package="pr2_ik"/>
   <url></url>
 

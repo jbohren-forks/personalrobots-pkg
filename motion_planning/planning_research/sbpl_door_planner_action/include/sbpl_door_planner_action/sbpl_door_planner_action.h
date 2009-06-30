@@ -46,7 +46,7 @@
 #include <robot_msgs/Pose.h>
 #include <manipulation_msgs/JointTraj.h>
 #include <manipulation_msgs/JointTrajPoint.h>
-#include <robot_msgs/CollisionMap.h>
+#include <mapping_msgs/CollisionMap.h>
 
 // Costmap used for the map representation
 #include <costmap_2d/costmap_2d_ros.h>

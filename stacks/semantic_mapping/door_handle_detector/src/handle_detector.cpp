@@ -35,6 +35,7 @@
 using namespace std;
 using namespace ros;
 using namespace robot_msgs;
+using namespace mapping_msgs;
 using namespace door_msgs;
 using namespace door_handle_detector;
 using namespace door_functions;
@@ -271,7 +272,7 @@ bool HandleDetector::detectHandle (const door_msgs::Door& door, PointCloud point
   }
   node_->publish ("~door_outliers", cloud_regions);
 
-  robot_msgs::PolygonalMap pmap;
+  PolygonalMap pmap;
   pmap.header = pointcloud.header;
   pmap.polygons.resize (1);         // Allocate space for the handle polygonal representation
   pmap.polygons[0] = polygon;

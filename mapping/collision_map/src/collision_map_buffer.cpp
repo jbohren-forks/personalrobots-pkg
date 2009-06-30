@@ -54,8 +54,8 @@ dimension, orientation) useful for collision detection.
 
 #include <boost/thread/mutex.hpp>
 
-#include <robot_msgs/OrientedBoundingBox.h>
-#include <robot_msgs/CollisionMap.h>
+#include <mapping_msgs/OrientedBoundingBox.h>
+#include <mapping_msgs/CollisionMap.h>
 #include <tabletop_srvs/RecordStaticMapTrigger.h>
 #include <tabletop_srvs/SubtractObjectFromCollisionMap.h>
 
@@ -64,7 +64,7 @@ dimension, orientation) useful for collision detection.
 
 using namespace std;
 using namespace robot_msgs;
-using namespace robot_msgs;
+using namespace mapping_msgs;
 using namespace tabletop_srvs;
 using namespace visualization_msgs;
 

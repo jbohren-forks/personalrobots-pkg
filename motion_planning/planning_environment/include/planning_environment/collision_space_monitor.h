@@ -41,7 +41,7 @@
 #include "planning_environment/kinematic_model_state_monitor.h"
 
 #include <tf/message_notifier.h>
-#include <robot_msgs/CollisionMap.h>
+#include <mapping_msgs/CollisionMap.h>
 #include <tabletop_msgs/AttachedObject.h>
 
 #include <boost/thread/mutex.hpp>
@@ -105,13 +105,13 @@ namespace planning_environment
 	}
 	
 	/** \brief Define a callback for before updating a map */
-	void setOnBeforeMapUpdateCallback(const boost::function<void(const robot_msgs::CollisionMapConstPtr)> &callback)
+	void setOnBeforeMapUpdateCallback(const boost::function<void(const mapping_msgs::CollisionMapConstPtr)> &callback)
 	{
 	    onBeforeMapUpdate_ = callback;
 	}
 
 	/** \brief Define a callback for after updating a map */
-	void setOnAfterMapUpdateCallback(const boost::function<void(const robot_msgs::CollisionMapConstPtr)> &callback)
+	void setOnAfterMapUpdateCallback(const boost::function<void(const mapping_msgs::CollisionMapConstPtr)> &callback)
 	{
 	    onAfterMapUpdate_ = callback;
 	}
@@ -144,25 +144,25 @@ namespace planning_environment
     protected:
 	
 	void setupCSM(void);
-	void updateCollisionSpace(const robot_msgs::CollisionMapConstPtr &collisionMap, bool clear);
-	void collisionMapCallback(const robot_msgs::CollisionMapConstPtr &collisionMap);
-	void collisionMapUpdateCallback(const robot_msgs::CollisionMapConstPtr &collisionMap);
+	void updateCollisionSpace(const mapping_msgs::CollisionMapConstPtr &collisionMap, bool clear);
+	void collisionMapCallback(const mapping_msgs::CollisionMapConstPtr &collisionMap);
+	void collisionMapUpdateCallback(const mapping_msgs::CollisionMapConstPtr &collisionMap);
 	void attachObjectCallback(const tabletop_msgs::AttachedObjectConstPtr &attachedObject);
 	
-	CollisionModels                                               *cm_;
-	collision_space::EnvironmentModel                             *collisionSpace_;
-	double                                                         boxScale_;
-	boost::mutex                                                   mapUpdateLock_;
+	CollisionModels                                                *cm_;
+	collision_space::EnvironmentModel                              *collisionSpace_;
+	double                                                          boxScale_;
+	boost::mutex                                                    mapUpdateLock_;
 	
-	bool                                                           haveMap_;
-	ros::Time                                                      lastMapUpdate_;	
-	tf::MessageNotifier<robot_msgs::CollisionMap>                 *collisionMapNotifier_;
-	tf::MessageNotifier<robot_msgs::CollisionMap>                 *collisionMapUpdateNotifier_;
-	tf::MessageNotifier<tabletop_msgs::AttachedObject>            *attachedBodyNotifier_;
+	bool                                                            haveMap_;
+	ros::Time                                                       lastMapUpdate_;	
+	tf::MessageNotifier<mapping_msgs::CollisionMap>                *collisionMapNotifier_;
+	tf::MessageNotifier<mapping_msgs::CollisionMap>                *collisionMapUpdateNotifier_;
+	tf::MessageNotifier<tabletop_msgs::AttachedObject>             *attachedBodyNotifier_;
 	
-	boost::function<void(const robot_msgs::CollisionMapConstPtr)>  onBeforeMapUpdate_;
-	boost::function<void(const robot_msgs::CollisionMapConstPtr)>  onAfterMapUpdate_;
-	boost::function<void(planning_models::KinematicModel::Link*)>  onAfterAttachBody_;
+	boost::function<void(const mapping_msgs::CollisionMapConstPtr)> onBeforeMapUpdate_;
+	boost::function<void(const mapping_msgs::CollisionMapConstPtr)> onAfterMapUpdate_;
+	boost::function<void(planning_models::KinematicModel::Link*)>   onAfterAttachBody_;
     
     };
     

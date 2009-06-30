@@ -75,7 +75,7 @@ public:
 
 protected:
 
-    void afterWorldUpdate(const robot_msgs::CollisionMapConstPtr &collisionMap)
+    void afterWorldUpdate(const mapping_msgs::CollisionMapConstPtr &collisionMap)
     {
 	unsigned int n = collisionMap->get_boxes_size();
 	for (unsigned int i = 0 ; i < n ; ++i)

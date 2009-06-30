@@ -58,8 +58,8 @@ sizes.
 
 #include <boost/thread/mutex.hpp>
 
-#include <robot_msgs/OrientedBoundingBox.h>
-#include <robot_msgs/CollisionMap.h>
+#include <mapping_msgs/OrientedBoundingBox.h>
+#include <mapping_msgs/CollisionMap.h>
 
 #include <tf/transform_listener.h>
 #include <sys/time.h>
@@ -67,6 +67,7 @@ sizes.
 using namespace std;
 using namespace std_msgs;
 using namespace robot_msgs;
+using namespace mapping_msgs;
 
 struct Leaf
 {
