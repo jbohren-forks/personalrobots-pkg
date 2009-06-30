@@ -104,13 +104,15 @@ class MechFetchResults:
         if idx % 20 ==0:
             print "%d of %d" % (idx,len(results))
 
-        full_annotation_path=os.path.join(self.output_dir,session);
+        #full_annotation_path=os.path.join(self.output_dir,session);
+        full_annotation_path=self.output_dir;
         if not os.path.exists(full_annotation_path):
           os.makedirs(full_annotation_path)
 
         full_annotation_filename=os.path.join(full_annotation_path,image_time+'.xml');
 
-        image_output_path=os.path.join(self.image_output_dir,session);
+        #image_output_path=os.path.join(self.image_output_dir,session);
+        image_output_path=self.image_output_dir;
         if not os.path.exists(image_output_path):
           os.makedirs(image_output_path);
         image_filename=os.path.join(image_output_path,image_time+'.jpg');
