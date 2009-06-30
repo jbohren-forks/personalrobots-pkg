@@ -30,82 +30,78 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 #include <csignal>
-#include <cstdio>
 #include <sicklms-1.0/SickLMS.hh>
-#include "ros/node.h"
-#include "sensor_msgs/LaserScan.h"
+#include "ros/ros.h"
+#include "laser_scan/LaserScan.h"
 using namespace SickToolbox;
 using namespace std;
 
-bool got_ctrlc = false;
-void ctrlc_handler(int)
+void publish_scan(ros::Publisher *pub, uint32_t *values, uint32_t num_values, 
+                  double scale, ros::Time start, bool inverted)
 {
-  got_ctrlc = true;
+  static int scan_count = 0;
+  static double last_print_time = 0;
+  laser_scan::LaserScan scan_msg;
+  scan_msg.header.frame_id = "base_laser";
+  scan_count++;
+  ros::Time t = start;
+  double t_d = t.toSec();
+  if (t_d > last_print_time + 1)
+  {
+    last_print_time = t_d;
+    printf("publishing scan %d\n", scan_count);
+  }
+  if (inverted) {
+    scan_msg.angle_min = M_PI/2;
+    scan_msg.angle_max = -M_PI/2;
+  } else {
+    scan_msg.angle_min = -M_PI/2; 
+    scan_msg.angle_max = M_PI/2; 
+  }
+  scan_msg.angle_increment = (scan_msg.angle_max - scan_msg.angle_min) / (double)(num_values-1); 
+  //scan_msg.time_increment = 1.0 / 37.5; 
+  scan_msg.time_increment = 1.0 / 75.0; //37.5; 
+  scan_msg.range_min = 0;
+  if (scale == 0.01)
+    scan_msg.range_max = 81;
+  else if (scale == 0.001)
+    scan_msg.range_max = 8.1;
+  scan_msg.set_ranges_size(num_values);
+  scan_msg.header.stamp = t;
+  for (size_t i = 0; i < num_values; i++)
+    scan_msg.ranges[i] = (float)values[i] * (float)scale;
+/*  
+  static double prev_time = 0;
+  double cur_time = ros::Time::now().toSec();
+  if (rand() % 10 == 0)
+    printf("%f\n", cur_time - prev_time);
+  prev_time = cur_time;
+*/
+  pub->publish(scan_msg);
 }
-
-class SickNode : public ros::Node
-{
-public:
-  sensor_msgs::LaserScan scan_msg;
-  int scan_count;
-  string port;
-  int baud;
-  bool inverted;
-  double last_print_time;
-  SickNode() : ros::Node("sicklms"), scan_count(0), last_print_time(0)
-  {
-    scan_msg.header.frame_id = "base_laser";
-    advertise<sensor_msgs::LaserScan>("scan", 1);
-    param("sicklms/port", port, string("/dev/ttyUSB0"));
-    param("sicklms/baud", baud, 500000);
-    param("sicklms/inverted", inverted, true);
-  }
-  void publish_scan(uint32_t *values, uint32_t num_values, double scale, ros::Time start)
-  {
-    scan_count++;
-    ros::Time t = start;
-    double t_d = t.toSec();
-    if (t_d > last_print_time + 1)
-    {
-      last_print_time = t_d;
-      printf("publishing scan %d\n", scan_count);
-    }
-    if (inverted) {
-      scan_msg.angle_min = M_PI/2;
-      scan_msg.angle_max = -M_PI/2;
-    } else {
-      scan_msg.angle_min = -M_PI/2; 
-      scan_msg.angle_max = M_PI/2; 
-    }
-    scan_msg.angle_increment = (scan_msg.angle_max - scan_msg.angle_min) / (double)(num_values-1); 
-    scan_msg.time_increment = 0; // fix this
-    scan_msg.range_min = 0;
-    if (scale == 0.01)
-      scan_msg.range_max = 81;
-    else if (scale == 0.001)
-      scan_msg.range_max = 8.1;
-    scan_msg.set_ranges_size(num_values);
-    scan_msg.header.stamp = t;
-    for (size_t i = 0; i < num_values; i++)
-      scan_msg.ranges[i] = (float)values[i] * (float)scale;
-    publish("scan", scan_msg);
-  }
-};
 
 int main(int argc, char **argv)
 {
-  ros::init(argc, argv);
-  SickNode lms_node;
-  SickLMS::sick_lms_baud_t desired_baud = SickLMS::IntToSickBaud(lms_node.baud);
+  ros::init(argc, argv, "sicklms");
+  string port;
+  int baud;
+  bool inverted;
+
+  ros::NodeHandle nh;
+  ros::Publisher scan_pub = nh.advertise<laser_scan::LaserScan>("scan", 1);
+  nh.param("sicklms/port", port, string("/dev/ttyUSB0"));
+  nh.param("sicklms/baud", baud, 500000);
+  nh.param("sicklms/inverted", inverted, true);
+
+  SickLMS::sick_lms_baud_t desired_baud = SickLMS::IntToSickBaud(baud);
   if (desired_baud == SickLMS::SICK_BAUD_UNKNOWN)
   {
     fprintf(stderr, "baud rate must be in {9600, 19200, 38400, 500000}\n");
     return 1;
   }
-  signal(SIGINT, ctrlc_handler);
   uint32_t values[SickLMS::SICK_MAX_NUM_MEASUREMENTS] = {0};
   uint32_t num_values = 0;
-  SickLMS sick_lms(lms_node.port);
+  SickLMS sick_lms(port);
   double scale = 0;
 
   try
@@ -128,11 +124,12 @@ int main(int argc, char **argv)
   }
   try
   {
-    while (!got_ctrlc)
+    while (ros::ok())
     {
       ros::Time start = ros::Time::now();
       sick_lms.GetSickScan(values, num_values);
-      lms_node.publish_scan(values, num_values, scale, start); 
+      publish_scan(&scan_pub, values, num_values, scale, start, inverted); 
+      ros::spinOnce();
     }
   }
   catch (...)
