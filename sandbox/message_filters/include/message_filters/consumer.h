@@ -40,26 +40,29 @@
 #define MESSAGE_FILTERS_CONSUMER_H_
 
 #include <boost/thread.hpp>
-#include "sensor_msgs/CamInfo.h"
+#include <boost/signals.hpp>
+
+#include <ros/console.h>
 
 namespace message_filters
 {
 
 // A really easy 'filter' that simply consumes data
+template<class M>
 class Consumer
 {
 public:
+  typedef boost::shared_ptr<M const> MPtr;
 
-  template<class T>
-
-  /**
-   * Links Consumer's input to some provider's output.
-   * \param provider The filter from which we want to receive data
-   */
-  void subscribe(T& provider)
+  template<class A>
+  Consumer(A& a)
   {
-    printf("Called Subscribe\n") ;
-    provider.addOutputCallback(boost::bind(&Consumer::processData, this, _1)) ;
+    conn_ = a.connect(boost::bind(&Consumer<M>::processData, this, _1));
+  }
+
+  ~Consumer()
+  {
+    conn_.disconnect();
   }
 
   /**
@@ -67,14 +70,14 @@ public:
    * involve pushing data onto queues, and pushing it along the pipeline into
    * another filter
    */
-  void processData(const sensor_msgs::CamInfoConstPtr& msg)
+  void processData(const MPtr& msg)
   {
-    printf("%u - Called Consumer Callback!\n", (*msg).header.seq) ;
+    ROS_INFO("Called Consumer Callback!") ;
   }
 
 private:
 
-
+  boost::signals::connection conn_;
 } ;
 
 }

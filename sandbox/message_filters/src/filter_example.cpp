@@ -33,16 +33,19 @@
 *********************************************************************/
 
 #include "ros/ros.h"
-#include "robot_msgs/PointStamped.h"
-#include "robot_msgs/PointCloud.h"
-#include "sensor_msgs/CamInfo.h"
+#include "std_msgs/String.h"
 #include "message_filters/topic_synchronizer_filter.h"
-#include "message_filters/sync_helper.h"
+#include "message_filters/subscriber.h"
 #include "message_filters/consumer.h"
 #include "message_filters/msg_cache.h"
 
 using namespace std ;
 using namespace message_filters ;
+
+void callback(const std_msgs::String::ConstPtr& msg)
+{
+  ROS_INFO("Received message [%s]", msg->data.c_str());
+}
 
 int main(int argc, char** argv)
 {
@@ -53,14 +56,10 @@ int main(int argc, char** argv)
   //TopicSynchronizerFilter<robot_msgs::PointStamped, robot_msgs::PointCloud> filter ;
 
   // Define the source 'node'
-  SyncHelper<sensor_msgs::CamInfo> sync_helper("stereo/left/cam_info/", 10, nh) ;
-
-  Consumer consumer ;
-  // Link the consumer to the output of sync_helper
-  consumer.subscribe(sync_helper) ;
-
-  MsgCache<sensor_msgs::CamInfo> cache(10) ;
-  cache.subscribe(sync_helper) ;
+  Subscriber<std_msgs::String> sub(nh, "chatter", 10);
+  Consumer<std_msgs::String> consumer(sub);
+  MsgCache<std_msgs::String> cache(sub, 10);
+  cache.connect(callback);
 
   ros::spin() ;
 

@@ -42,6 +42,7 @@
 #include <deque>
 #include "boost/thread.hpp"
 #include "boost/shared_ptr.hpp"
+#include <boost/signals.hpp>
 #include "ros/time.h"
 
 namespace message_filters
@@ -57,11 +58,20 @@ template<class M>
 class MsgCache
 {
 public:
-  typedef boost::shared_ptr<M const> MsgPtr ;
+  typedef boost::shared_ptr<M const> MConstPtr ;
+  typedef boost::function<void(const MConstPtr&)> Callback;
+  typedef boost::signal<void(const MConstPtr&)> Signal;
 
-  MsgCache(unsigned int cache_size = 1)
+  template<class A>
+  MsgCache(A& a, unsigned int cache_size = 1)
   {
     setCacheSize(cache_size) ;
+    incoming_connection_ = a.connect(boost::bind(&MsgCache::addToCache, this, _1));
+  }
+
+  ~MsgCache()
+  {
+    incoming_connection_.disconnect();
   }
 
   /**
@@ -79,47 +89,34 @@ public:
     cache_size_ = cache_size ;
   }
 
-
-  template<class T>
-  /**
-   * Links Consumer's input to some provider's output.
-   * \param provider The filter from which we want to receive data
-   */
-  void subscribe(T& provider)
+  boost::signals::connection connect(const Callback& callback)
   {
-    //printf("Called MsgCache Subscribe\n") ;
-    provider.addOutputCallback(boost::bind(&MsgCache::addToCache, this, _1)) ;
+    boost::mutex::scoped_lock lock(signal_mutex_);
+    return signal_.connect(callback);
   }
 
   /**
    * Add the most recent message to the cache, and pop off any elements that are too old.
    * This method is registered with a data provider when subscribe is called.
    */
-  void addToCache(const MsgPtr& msg)
+  void addToCache(const MConstPtr& msg)
   {
     //printf("  Cache Size: %u\n", cache_.size()) ;
-    cache_lock_.lock() ;
+    {
+      boost::mutex::scoped_lock lock(cache_lock_);
 
-    while (cache_.size() >= cache_size_)                       // Keep popping off old data until we have space for a new msg
-      cache_.pop_front() ;                                     // The front of the deque has the oldest elem, so we can get rid of it
+      while (cache_.size() >= cache_size_)                       // Keep popping off old data until we have space for a new msg
+        cache_.pop_front() ;                                     // The front of the deque has the oldest elem, so we can get rid of it
 
-    cache_.push_back(msg) ;                                    // Add the newest message to the back of the deque
-    cache_lock_.unlock() ;
+      cache_.push_back(msg) ;                                    // Add the newest message to the back of the deque
+    }
 
-    // Sequentially call each registered call
-    for (unsigned int i=0; i<output_callbacks_.size(); i++)
-      output_callbacks_[i]() ;
+    {
+      boost::mutex::scoped_lock lock(signal_mutex_);
+      // Sequentially call each registered call
+      signal_(msg);
+    }
   }
-
-  /**
-   * Called by another filter that wants the output of this filter
-   * \param callback The function that is called when data is available
-   */
-  void addOutputCallback(const boost::function<void()>& callback)
-  {
-    output_callbacks_.push_back(callback) ;
-  }
-
 
   /**
    * Receive a vector of messages that occur between a start and end time (inclusive).
@@ -128,9 +125,9 @@ public:
    * \param start The start of the requested interval
    * \param end The end of the requested interval
    */
-  std::vector<MsgPtr> getInterval(const ros::Time& start, const ros::Time& end)
+  std::vector<MConstPtr> getInterval(const ros::Time& start, const ros::Time& end)
   {
-    cache_lock_.lock() ;
+    boost::mutex::scoped_lock lock(cache_lock_);
 
     // Find the starting index. (Find the first index after [or at] the start of the interval)
     unsigned int start_index = 0 ;
@@ -148,14 +145,12 @@ public:
       end_index++ ;
     }
 
-    std::vector<MsgPtr> interval_elems ;
+    std::vector<MConstPtr> interval_elems ;
     interval_elems.reserve(end_index - start_index) ;
     for (unsigned int i=start_index; i<end_index; i++)
     {
       interval_elems.push_back(cache_[i]) ;
     }
-
-    cache_lock_.unlock() ;
 
     return interval_elems ;
   }
@@ -165,11 +160,12 @@ public:
    * \param time Time that must occur right after the returned elem
    * \returns shared_ptr to the newest elem that occurs before 'time'. NULL if doesn't exist
    */
-  MsgPtr getElemBeforeTime(const ros::Time& time)
+  MConstPtr getElemBeforeTime(const ros::Time& time)
   {
-    MsgPtr out ;
+    boost::mutex::scoped_lock lock(cache_lock_);
 
-    cache_lock_.lock() ;
+    MConstPtr out ;
+
     unsigned int i=0 ;
     int elem_index = -1 ;
     while (i<cache_.size() &&
@@ -182,8 +178,6 @@ public:
     if (elem_index >= 0)
       out = cache_[elem_index] ;
 
-    cache_lock_.unlock() ;
-
     return out ;
   }
 
@@ -192,11 +186,11 @@ public:
    * \param time Time that must occur right before the returned elem
    * \returns shared_ptr to the oldest elem that occurs after 'time'. NULL if doesn't exist
    */
-  MsgPtr getElemAfterTime(const ros::Time& time)
+  MConstPtr getElemAfterTime(const ros::Time& time)
   {
-    MsgPtr out ;
+    boost::mutex::scoped_lock lock(cache_lock_);
 
-    cache_lock_.lock() ;
+    MConstPtr out ;
 
     int i=cache_.size()-1 ;
     int elem_index = -1 ;
@@ -212,8 +206,6 @@ public:
     else
       out.reset() ;
 
-    cache_lock_.unlock() ;
-
     return out ;
   }
 
@@ -222,24 +214,25 @@ public:
    */
   ros::Time getLatestTime()
   {
+    boost::mutex::scoped_lock lock(cache_lock_);
+
     ros::Time latest_time(0, 0) ;
 
-    cache_lock_.lock() ;
     if (cache_.size() > 0)
       latest_time = cache_.back()->header.stamp ;
-    cache_lock_.unlock() ;
 
     return latest_time ;
   }
 
 private:
   boost::mutex cache_lock_ ;            //!< Lock for cache_
-  std::deque<MsgPtr > cache_ ;          //!< Cache for the messages
+  std::deque<MConstPtr > cache_ ;          //!< Cache for the messages
   unsigned int cache_size_ ;            //!< Maximum number of elements allowed in the cache.
 
-  //! Array of callbacks to be called whenever new data is received
-  std::vector<boost::function<void()> > output_callbacks_ ;
-} ;
+  boost::signals::connection incoming_connection_;
+  Signal signal_;
+  boost::mutex signal_mutex_;
+};
 
 }
 

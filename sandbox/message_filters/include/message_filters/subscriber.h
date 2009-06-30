@@ -1,7 +1,7 @@
 /*********************************************************************
 * Software License Agreement (BSD License)
 *
-*  Copyright (c) 2008, Willow Garage, Inc.
+*  Copyright (c) 2009, Willow Garage, Inc.
 *  All rights reserved.
 *
 *  Redistribution and use in source and binary forms, with or without
@@ -32,67 +32,58 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
-/*! \mainpage
- *  \htmlinclude manifest.html
- */
+#ifndef MESSAGE_FILTERS_SUBSCRIBER_H
+#define MESSAGE_FILTERS_SUBSCRIBER_H
 
-#ifndef MESSAGE_FILTERS_SYNC_HELPER_H_
-#define MESSAGE_FILTERS_SYNC_HELPER_H_
+#include <ros/ros.h>
 
-#include <boost/thread.hpp>
-#include <vector>
+#include <boost/signals.hpp>
+#include <boost/thread/mutex.hpp>
+#include <boost/noncopyable.hpp>
 
 namespace message_filters
 {
 
-template <class M>
-class SyncHelper
+template<class M>
+class Subscriber : public boost::noncopyable
 {
 public:
+  typedef boost::shared_ptr<M const> MConstPtr;
+  typedef boost::function<void(const MConstPtr&)> Callback;
+  typedef boost::signal<void(const MConstPtr&)> Signal;
 
-  /**
-   * Used to link ROS messages to a filter system
-   * \param topic The topic that we want to subscribe to
-   * \param queue_size Defines the queue size in the subscribe call
-   * \param nh Node handle
-   */
-  SyncHelper(const std::string& topic, uint32_t queue_size, ros::NodeHandle& nh)
+  Subscriber(ros::NodeHandle& nh, const std::string& topic, uint32_t queue_size, const ros::TransportHints& transport_hints = ros::TransportHints(), ros::CallbackQueueInterface* callback_queue = 0)
   {
-    sub_ = nh.subscribe(topic, queue_size, &SyncHelper<M>::msgHandler, this) ;
+    ros::SubscribeOptions ops;
+    ops.init<M>(topic, queue_size, boost::bind(&Subscriber<M>::cb, this, _1));
+    ops.callback_queue = callback_queue;
+    ops.transport_hints = transport_hints;
+    sub_ = nh.subscribe(ops);
   }
 
-  /**
-   *  Ros subscribe callback. Receives messages, and then pushes them to all the
-   *  output callbacks
-   */
-  void msgHandler(const boost::shared_ptr<M const>& msg)
+  ~Subscriber()
   {
-    printf("%u - Called SyncHelper Callback!\n", msg->header.seq) ;
-
-    // Sequentially call each registered call
-    for (unsigned int i=0; i<output_callbacks_.size(); i++)
-      output_callbacks_[i](msg) ;
+    sub_.shutdown();
   }
 
-  /**
-   * Called by another filter that wants the output of this filter
-   * \param callback The function that is called when data is available
-   */
-  void addOutputCallback(const boost::function<void(const boost::shared_ptr<M const>&)>& callback)
+  boost::signals::connection connect(const Callback& callback)
   {
-    output_callbacks_.push_back(callback) ;
+    boost::mutex::scoped_lock lock(signal_mutex_);
+    return signal_.connect(callback);
   }
 
 private:
-  ros::Subscriber sub_ ;
+  void cb(const MConstPtr& m)
+  {
+    boost::mutex::scoped_lock lock(signal_mutex_);
+    signal_(m);
+  }
 
-  //! Vector of callbacks that need to be called, whenever data is ready.
-  std::vector<boost::function<void(const boost::shared_ptr<M const>&)> > output_callbacks_ ;
-
-} ;
+  ros::Subscriber sub_;
+  Signal signal_;
+  boost::mutex signal_mutex_;
+};
 
 }
 
-
-
-#endif  // MESSAGE_FILTERS_SYNC_HELPER_H_
+#endif
