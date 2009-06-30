@@ -8,7 +8,7 @@ gensrv()
 
 rospack_add_boost_directories()
 
-# To build the executive's config
+# To build the executive's config. This is currently not used.
 macro(create_nddl_config)
     if(NOT ROSPACK_NDDL_PATH)
         _rospack_invoke(${PROJECT_NAME} ${_prefix} ROSPACK_NDDL_PATH export --lang=nddl --attrib=iflags)
@@ -23,10 +23,54 @@ macro(create_nddl_config)
 	       "</configuration>\n")
 endmacro(create_nddl_config)
 
-create_nddl_config()
 
+# To build exec input files
+setup_nddl()
 
+# Shared files
+rospack_add_nddl("test/pr2.safety.nddl")
+rospack_add_nddl("test/pr2.mechanism_control.nddl")
 
+# Nav Tests
+rospack_add_nddl("test/nav/pr2.driver.nddl")
+rospack_add_nddl("test/nav/sim/move.0/pr2.rcs.sim.nddl")
+
+# Door Tests
+rospack_add_nddl("test/doors/single_action_test/pr2.doorman.nddl")
+rospack_add_nddl("test/doors/without_map/pr2.doorman.nddl")
+rospack_add_nddl("test/doors/with_map/pr2.doorman.nddl")
+rospack_add_nddl("test/doors/open_door.0/pr2.doorman.nddl")
+rospack_add_nddl("test/doors/open_door.0/pr2.rcs.sim.nddl")
+rospack_add_nddl("test/doors/open_door.1/pr2.doorman.nddl")
+rospack_add_nddl("test/doors/open_door.1/pr2.rcs.sim.nddl")
+
+# Plug Tests
+rospack_add_nddl("test/plugs/pr2.rcs.sim.nddl")
+rospack_add_nddl("test/plugs/single_action_test/pr2.recharger.nddl")
+rospack_add_nddl("test/plugs/recharge.0/pr2.recharger.nddl")
+rospack_add_nddl("test/plugs/recharge.1/pr2.recharger.nddl")
+
+# Mechanism Control Tests
+rospack_add_nddl("test/mechanism_control/pr2.mechanism_control.nddl")
+rospack_add_nddl("test/mechanism_control/pr2.rcs.sim.nddl")
+
+# Master Tests
+rospack_add_nddl("test/master/pr2.rcs.sim.nddl")
+rospack_add_nddl("test/master/pr2.driver.nddl")
+rospack_add_nddl("test/master/pr2.doorman.nddl")
+rospack_add_nddl("test/master/pr2.recharger.nddl")
+rospack_add_nddl("test/master/domain_tests/master.0/pr2.master.nddl")
+rospack_add_nddl("test/master/domain_tests/master.1/pr2.master.nddl")
+rospack_add_nddl("test/master/domain_tests/master.2/pr2.master.nddl")
+rospack_add_nddl("test/master/domain_tests/master.3/pr2.master.nddl")
+rospack_add_nddl("test/master/domain_tests/master.4/pr2.master.nddl")
+rospack_add_nddl("test/master/m2/pr2.master.nddl")
+rospack_add_nddl("test/master/m2/no_plugs/pr2.rcs.sim.plugs.nddl")
+rospack_add_nddl("test/master/m2/no_plugs/pr2.recharger.nddl")
+rospack_add_nddl("test/master/m2/no_plugs/no_arms/pr2.mechanism_control.nddl")
+rospack_add_nddl("test/master/m2/no_arms/pr2.mechanism_control.nddl")
+rospack_add_nddl("test/master/m2/high_level_sim/pr2.rcs.sim.nddl")
+rospack_add_nddl("test/master/m2_remote_interface/pr2.master.nddl")
 
 set(TREX_FILES src/pr2_adapter_utilities.cpp
 	       src/pr2_components.cpp
