@@ -1,0 +1,538 @@
+#!/usr/bin/env python
+# Software License Agreement (BSD License)
+#
+# Copyright (c) 2008, Willow Garage, Inc.
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+#
+#  * Redistributions of source code must retain the above copyright
+#    notice, this list of conditions and the following disclaimer.
+#  * Redistributions in binary form must reproduce the above
+#    copyright notice, this list of conditions and the following
+#    disclaimer in the documentation and/or other materials provided
+#    with the distribution.
+#  * Neither the name of the Willow Garage nor the names of its
+#    contributors may be used to endorse or promote products derived
+#    from this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+# FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+# COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+# BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+# ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
+
+__doc__ = """
+trex_gui
+GUI for TREX."""
+
+# ROS Stuff
+PKG = 'trex_gui' # this package name
+NAME = 'trex_gui'
+
+import roslib; roslib.load_manifest(PKG)
+import rospy
+from trex_ros.msg import *
+
+# Python Stuff
+import colorsys
+import random
+import sys
+import time
+import wx
+import math
+
+ID_ABOUT=101
+ID_EXIT=110
+
+###############################################################################
+# Token
+###############################################################################
+class Token():
+  def __init__(self, token, timeline):
+    self.name = token.name
+    self.start = token.start
+    self.end = token.end
+    self.timeline = timeline
+
+class Timeline():
+  def __init__(self, name, index, color='#333333'):
+    # Constant properties
+    self.name = name
+    self.index = index
+    self.color = color
+    
+    # Data
+    self.tokens = []
+
+    # Drawing counters
+    self.earliest_start = 0
+
+class Plan():
+  def __init__(self, name, timelines):
+    self.name = name
+    self.timelines = timelines
+
+
+###############################################################################
+# TimelineLabelCanvas 
+###############################################################################
+class TimelineLabelCanvas(wx.ScrolledWindow):
+  def __init__(self, parent, id=wx.ID_ANY ):
+    wx.ScrolledWindow.__init__(self, parent, id=wx.ID_ANY, style=wx.VSCROLL|wx.FULL_REPAINT_ON_RESIZE|wx.ALWAYS_SHOW_SB)
+    
+    # Store members
+    self.reactor = parent
+
+    # Set up scrolling
+    self.EnableScrolling(True,True)
+    self.SetVirtualSize(size = (200, 400))
+    self.SetScrollRate(1,1)
+
+    # Bind repaint events
+    self.Bind(wx.EVT_ERASE_BACKGROUND, self.OnEraseBackground)
+    self.Bind(wx.EVT_PAINT, self.OnPaint)
+
+  def OnEraseBackground(self, event):
+    pass
+
+  def OnPaint(self, event):
+    if self.reactor.plan_desc.name is not '':
+      # Capture the controller states
+      self.tick_scale = self.reactor.trex_frame.tick_scale.GetValue()/10.0
+
+      # Update virtual size
+      self.SetVirtualSize(size=(200, len(self.reactor.plan.timelines)*(self.reactor.TIMELINE_HEIGHT+self.reactor.TIMELINE_SPACE)))
+
+      # Paint
+      dc = wx.PaintDC(self)
+      self.DoPrepareDC(dc) 
+      dc.Clear()
+
+      self.tl_index = 0
+
+      # Draw labels
+      for timeline in self.reactor.plan_desc.internal + self.reactor.plan_desc.external:
+	self.draw_label(dc,timeline.name)
+	self.tl_index = self.tl_index+1
+
+  def draw_label(self, dc, name):
+    tl_origin_x = 0
+    tl_origin_y = (self.reactor.TIMELINE_HEIGHT+self.reactor.TIMELINE_SPACE)*self.tl_index
+
+    dc.SetPen(wx.Pen('#4c4c4c', 0, wx.SOLID))
+    dc.DrawRectangle(-10, tl_origin_y, 250, self.reactor.TIMELINE_HEIGHT)
+
+    dc.SetFont(wx.Font(10, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL,wx.FONTWEIGHT_NORMAL, False))
+    w,h = dc.GetTextExtent(name)
+    dc.DrawText(name,tl_origin_x+200-w-5,tl_origin_y+1)
+
+
+###############################################################################
+# TimelineTokenCanvas 
+###############################################################################
+class TimelineTokenCanvas(wx.ScrolledWindow):
+  def __init__(self, parent, id=wx.ID_ANY ):
+    wx.ScrolledWindow.__init__(self, parent, id=wx.ID_ANY, style=wx.VSCROLL|wx.HSCROLL|wx.ALWAYS_SHOW_SB|wx.FULL_REPAINT_ON_RESIZE)
+
+    # Store members
+    self.reactor = parent
+    
+    # Set up scrolling
+    self.EnableScrolling(True,True)
+    self.SetVirtualSize(size = (10, 10))
+    self.SetScrollRate(1,1)
+
+    # Set to scroll to the frontier by default
+    self.scroll_to_frontier = True
+
+    # Set up so that the scroll bar sticks to the frontier
+    self.Bind(wx.EVT_SCROLLWIN, self.OnScrollWin)
+
+    # Bind repaint events
+    self.Bind(wx.EVT_ERASE_BACKGROUND, self.OnEraseBackground)
+    self.Bind(wx.EVT_PAINT, self.OnPaint)
+
+  def OnButton(self, event, source):
+    print source
+
+  def OnEraseBackground(self, event):
+    pass
+
+  def OnScrollWin(self, event):
+    # If we were close enough to the frontier, stick to it
+    dist_from_edge = abs(self.GetViewStart()[0] - (self.GetVirtualSize()[0] - self.GetScrollPageSize(wx.SB_HORIZONTAL)))
+    if  dist_from_edge < self.tick_ahead:
+      self.scroll_to_frontier = True
+    else:
+      self.scroll_to_frontier = False
+    event.Skip()
+
+  def OnPaint(self, event):
+    if self.reactor.plan_desc.name is not '':
+      # Get the current tick
+      self.tick = self.reactor.plan_desc.tick
+      self.reactor.trex_frame.SetStatusText("Tick %d" % (self.tick))
+
+      # Capture the control states
+      self.tick_scale = self.reactor.trex_frame.tick_scale.GetValue()/10.0
+      self.tick_ahead = self.reactor.trex_frame.tick_ahead.GetValue()
+      self.tick_behind = self.reactor.trex_frame.tick_behind.GetValue()
+
+      # Update scrollbars
+      self.tick_window = (self.tick_behind+self.tick, self.tick+self.tick_ahead)
+      virtsize = (self.tick_scale*(self.tick_behind + self.tick_ahead))
+      self.SetVirtualSize(size=(virtsize, len(self.reactor.plan.timelines)*(self.reactor.TIMELINE_HEIGHT+self.reactor.TIMELINE_SPACE)))
+
+      # Scroll to the execution frontier if requested
+      if self.scroll_to_frontier:
+	self.Scroll(self.tick_scale*self.tick_behind,self.GetViewStart()[1])
+
+      # Paint
+      dc = wx.PaintDC(self)
+      self.DoPrepareDC(dc) 
+      self.SetBackgroundColour('BLACK')
+      dc.Clear()
+
+      #self.tl_index = 0
+
+      # Draw execution frontier
+      dc.SetPen(wx.Pen('#FFFFFF', 0, wx.TRANSPARENT))
+      dc.SetBrush(wx.Brush('#AAAAAA'))
+      dc.DrawRectangle(self.tick_scale*self.tick_behind, 0, self.tick_scale*self.tick_ahead, 4000)
+
+
+      # Draw the tokens in each timeline
+      dc.SetPen(wx.Pen('#FFFFFF', 0, wx.SOLID))
+      dc.SetTextForeground(wx.Colour(255,255,255,255))
+
+      # Initialize earliest start tick
+      earliest_start = 0
+
+      for token in self.reactor.alltokens:
+	splitname = token.name.split('.')[1]
+	dc.SetFont(wx.Font(10, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL,wx.FONTWEIGHT_NORMAL, False))
+	w,h = dc.GetTextExtent(splitname)
+	w_ticks = (w+8)/float(self.tick_scale)
+
+	# Expand tokens to metric time, if set
+	if self.reactor.trex_frame.expand_metric_time.GetValue():
+	  w_ticks = token.end[0] - token.start[0]
+
+	# First, calculate the token virtual tick width
+	tok_width_name = w_ticks
+	tok_width_sync = abs(token.timeline.earliest_start - earliest_start)
+
+	tok_width = max(tok_width_name, tok_width_sync)
+
+	# Calculate the token origin
+	tok_end = token.timeline.earliest_start
+
+	# Increment earliest start for nex token
+	token.timeline.earliest_start = token.timeline.earliest_start - tok_width
+	earliest_start = min(earliest_start, token.timeline.earliest_start)
+
+	# Second, calculate the pixel width (this is based on the tick-pixel scale)
+
+	# Calculate the position top-right corner of the token
+	tok_x0 = math.ceil(self.tick_scale*(tok_end+self.tick_behind))
+	tok_y0 = math.ceil((self.reactor.TIMELINE_HEIGHT+self.reactor.TIMELINE_SPACE)*token.timeline.index)
+
+	# Draw token
+	dc.SetBrush(wx.Brush(token.timeline.color))
+	dc.DrawRectangle(tok_x0, tok_y0, -(self.tick_scale*tok_width), self.reactor.TIMELINE_HEIGHT)
+
+	# Draw label
+	dc.DrawText(splitname,tok_x0-w-5,tok_y0+1)
+
+      '''
+      dc.SetTextForeground(wx.Colour(255,255,255,255))
+      for timeline in self.reactor.plan_desc.internal:
+	self.draw_timeline(dc)
+	dc.SetPen(wx.Pen('#CCCCCC', 0, wx.SOLID))
+	dc.SetBrush(wx.Brush(self.reactor.color))
+	for token in timeline.tokens:
+	  self.draw_token(dc,token)
+	self.tl_index = self.tl_index+1
+
+      for timeline in self.reactor.plan_desc.external:
+	self.draw_timeline(dc)
+	tlcolor = self.reactor.trex_frame.get_tl_color(timeline.name)
+	dc.SetPen(wx.Pen('#CCCCCC', 0, wx.SOLID))
+	dc.SetBrush(wx.Brush(tlcolor))
+	# determine if this timeline belongs to another rosreactor
+	for token in timeline.tokens:
+	  self.draw_token(dc,token)
+	self.tl_index = self.tl_index+1
+      '''
+      
+  def draw_timeline(self, dc):
+    dc.SetPen(wx.Pen('#AAAAAA', 0, wx.TRANSPARENT))
+    dc.SetBrush(wx.Brush('#AAAAAA'))
+    tok_y0 = math.ceil((self.reactor.TIMELINE_HEIGHT+8)*self.tl_index)
+    dc.DrawRectangle(0, tok_y0, self.tick_scale*(self.tick_behind + self.tick_ahead), self.reactor.TIMELINE_HEIGHT)
+
+  def draw_token(self, dc, token):
+    tok_x0 = math.ceil(self.tick_scale*(token.end[0] - (self.tick-self.tick_behind)))
+    tok_y0 = math.ceil((self.reactor.TIMELINE_HEIGHT+8)*self.tl_index)
+
+    tok_width = math.ceil(self.tick_scale*(token.end[0]-token.start[0]))
+    tok_width = min(tok_width, self.tick_scale*(self.tick_behind+self.tick_ahead))
+
+    # Draw token
+    dc.DrawRectangle(tok_x0, tok_y0, -max(1,tok_width), self.reactor.TIMELINE_HEIGHT)
+
+    # label
+    splitname = token.name.split('.')[1]
+    dc.SetFont(wx.Font(10, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL,wx.FONTWEIGHT_NORMAL, False))
+    w,h = dc.GetTextExtent(splitname)
+    dc.DrawText(splitname,tok_x0-w-5,tok_y0+1)
+
+
+###############################################################################
+# ReactorPanel 
+# This class creates a reactor view which shows timeline labels and tokens
+###############################################################################
+class ReactorPanel(wx.Panel):
+  def __init__(self, parent, trex_frame, color, id=wx.ID_ANY):
+    wx.Panel.__init__(self, parent, id)
+
+    self.trex_frame = trex_frame
+    self.color = color
+    self.plan_desc = PlanDescription()
+
+    self.TIMELINE_HEIGHT = 20
+    self.TIMELINE_SPACE = 8
+    self.synced = True
+
+    # Timeline label sub-panel
+    self.labels_p = TimelineLabelCanvas(self)
+
+    # Timeline sub-panel
+    self.timelines_p = TimelineTokenCanvas(self)
+
+    # Sizer
+    vbox = wx.FlexGridSizer(1,2,0,0)
+    vbox.Add(self.labels_p, 1, wx.EXPAND, 0)
+    vbox.Add(self.timelines_p, 1, wx.EXPAND, 0)
+    self.labels_p.SetMinSize((220,10))
+    vbox.AddGrowableRow(0,1)
+    vbox.AddGrowableCol(1,1)
+    self.SetSizer(vbox)
+
+    # Synchronize scrolling
+    self.labels_p.Bind(wx.EVT_SCROLLWIN ,self.sync_vscroll)
+    self.timelines_p.Bind(wx.EVT_SCROLLWIN ,self.sync_vscroll)
+
+  def sync_vscroll(self,event):
+    if self.synced and event.GetOrientation() is wx.VERTICAL:
+      self.synced = False
+      if event.GetEventObject() is self.timelines_p:
+	self.labels_p.GetEventHandler().ProcessEvent(event)
+      else:
+	self.timelines_p.GetEventHandler().ProcessEvent(event)
+    self.synced = True
+    event.Skip()
+
+  def subscribe(self,topic):
+    # Subscribe to plan topic
+    print 'Subscribing to "%s\"' % (topic)
+    rospy.Subscriber(topic, PlanDescription, self.update_plan, topic)
+
+  def update_plan(self, plan_desc, arg):
+    # Load new data
+    self.plan_desc = plan_desc
+    self.plan = Plan(plan_desc.name, [])
+    
+    # Get a sorted list of all token start times
+    alltokens = []
+
+    # Find latest-starting token
+    for tl_desc in plan_desc.internal+plan_desc.external:
+      # Create new timeline with name and row index
+      tlcolor = self.trex_frame.get_tl_color(tl_desc.name)
+      tl = Timeline(tl_desc.name, len(self.plan.timelines), color=tlcolor)
+      for token_desc in tl_desc.tokens:
+	# Append this token to the full token list
+	alltokens.append(Token(token_desc,tl))
+      self.plan.timelines.append(tl)
+
+    # Sort tokens in decreasing order by start time
+    tokencmp = lambda x,y: cmp(x.start[0], y.start[0])
+    self.alltokens = sorted(alltokens, tokencmp, reverse=True)
+
+    # Make sure this reactor is selected before we repaint it
+    if self is self.trex_frame.reactors_nb.GetCurrentPage():
+      wx.PostEvent(self.labels_p,wx.PaintEvent())
+      wx.PostEvent(self.timelines_p,wx.PaintEvent())
+
+
+###############################################################################
+# TREXFrame 
+###############################################################################
+class TREXFrame(wx.Frame):
+  def __init__(self, parent, id, title):
+    wx.Frame.__init__(self, parent, id, title, size=(1024,480))
+
+    # Initialization
+    self.reactor_panels = []
+
+    font = wx.SystemSettings_GetFont(wx.SYS_SYSTEM_FONT)
+    font.SetPointSize(9)
+
+    self.CreateStatusBar()
+
+    # Menu bar
+    self.create_menu_bar()
+
+    # Main split
+    mainsplit = wx.SplitterWindow(self)
+    # Reactor pane
+    reactors_panel = wx.Panel(mainsplit)
+    reactors_box = wx.BoxSizer(wx.HORIZONTAL)
+    self.reactors_nb = wx.Notebook(reactors_panel, -1, style=wx.NB_BOTTOM)
+    self.reactors_colorlist = []
+    self.reactors_imagelist = wx.ImageList(16,16)
+    self.reactors_nb.SetImageList(self.reactors_imagelist)
+    random.seed(23)
+
+    reactors_box.Add(self.reactors_nb, 1, wx.EXPAND | wx.ALL, 0)
+    reactors_panel.SetSizer(reactors_box)
+
+    # Controls
+    self.controls_panel = wx.ScrolledWindow(mainsplit)
+    controls_box = wx.BoxSizer(wx.VERTICAL)
+
+    ##################
+    time_sizer = wx.StaticBoxSizer(wx.StaticBox(self.controls_panel, -1, 'Time Options'), orient=wx.VERTICAL)
+    self.expand_metric_time = wx.CheckBox(self.controls_panel, -1, 'Expand tokens to metric time', style=wx.RB_GROUP)
+    time_sizer.Add(self.expand_metric_time)
+
+    # Controls for lookahead and lookbehind 
+    panel1 = wx.Panel(self.controls_panel, -1)
+    grid1 = wx.GridSizer(3, 2)
+    self.tick_behind = wx.SpinCtrl(panel1, min=1, max=10000, initial=300)
+    self.tick_ahead = wx.SpinCtrl(panel1,  min=1, max=1000, initial=25)
+    self.tick_scale = wx.SpinCtrl(panel1,  min=1, max=10000, initial=20)
+
+    grid1.Add(wx.StaticText(panel1, -1, 'Lookbehind: ', (5, 5)), 0,  wx.ALIGN_CENTER_VERTICAL)
+    grid1.Add(self.tick_behind)
+    grid1.Add(wx.StaticText(panel1, -1, 'Lookahead: ', (5, 5)), 0, wx.ALIGN_CENTER_VERTICAL)
+    grid1.Add(self.tick_ahead)
+    grid1.Add(wx.StaticText(panel1, -1, 'Tick Size: ', (5, 5)), 0, wx.ALIGN_CENTER_VERTICAL)
+    grid1.Add(self.tick_scale)
+
+    panel1.SetSizer(grid1)
+
+    time_sizer.Add(panel1, 0, wx.BOTTOM | wx.TOP, 9)
+    controls_box.Add(time_sizer, 1)
+    #################
+    disp_sizer = wx.StaticBoxSizer(wx.StaticBox(self.controls_panel, -1, 'Display Options'), orient=wx.VERTICAL)
+
+    # Controls for display
+    disp_sizer.Add(wx.CheckBox(self.controls_panel, -1, 'Show garbage collected tokens', style=wx.RB_GROUP))
+    disp_sizer.Add(wx.CheckBox(self.controls_panel, -1, 'Show all token labels', style=wx.RB_GROUP))
+
+    controls_box.Add(disp_sizer, 1)
+    #################
+
+    disp_sizer = wx.StaticBoxSizer(wx.StaticBox(self.controls_panel, -1, 'Reactor Options'), orient=wx.VERTICAL)
+
+    # Controls for display
+    disp_sizer.Add(wx.ColourPickerCtrl(self.controls_panel, -1))
+
+    controls_box.Add(disp_sizer, 1)
+    #################
+    self.controls_panel.SetSizer(controls_box)
+
+    # Load into mainsplit
+    mainsplit.SplitVertically(reactors_panel,self.controls_panel,-250)
+    mainsplit.SetSashGravity(1.0)
+
+    # Center and show the window
+    self.Centre()
+    self.Show(True)
+  
+  def create_menu_bar(self):
+    filemenu=wx.Menu()
+    filemenu.Append(ID_ABOUT,"&About","Information about this program")
+    filemenu.AppendSeparator()
+    filemenu.Append(ID_EXIT, "E&xit","Terminate the program")
+
+    menuBar = wx.MenuBar()
+    menuBar.Append(filemenu,"&File")
+    self.SetMenuBar(menuBar)
+
+  def add_reactor_panel(self, topic):
+    # Generate an icon for this reactor
+    cs = wx.EmptyBitmap(16,16)
+    dc = wx.MemoryDC(cs)
+
+
+    rgb = colorsys.hsv_to_rgb(len(self.reactor_panels)/float(self.n_reactors),0.3,0.4)
+    color = "#%02x%02x%02x" % (255*rgb[0], 255*rgb[1], 255*rgb[2]) 
+    self.reactors_colorlist.append(color)
+    dc.SetBrush(wx.Brush(color))
+    dc.DrawRectangle(0,0,16,16)
+    dc.SelectObject(wx.NullBitmap)
+
+    # Create a new reactor panel, and subscribe to its topic
+    new_panel = ReactorPanel(self.reactors_nb, self, color, wx.ID_ANY)
+    new_panel.subscribe(topic)
+
+    icon_index = self.reactors_imagelist.Add(cs)
+    # Store the new panel, and add it to the notebook
+    self.reactor_panels.append(new_panel)
+    self.reactors_nb.AddPage(new_panel, topic.split('/')[1],imageId=icon_index)
+
+  def get_tl_color(self, name):
+    for reactor in self.reactor_panels:
+      for tl in reactor.plan_desc.internal:
+	if tl.name == name:
+	  return reactor.color
+    return '#333333'
+
+    
+###############################################################################
+# MainApp 
+# Main ROS App
+###############################################################################
+class MainApp(wx.App):
+  def OnInit(self):
+    # Create a TREXFrame
+    self.frame = TREXFrame(None, wx.ID_ANY, "T-REX")
+  
+    # Get all topics broadcasting PlanDescriptions
+    plan_topics = [topic[0] for topic in rospy.get_published_topics() if topic[1]=='trex_ros/PlanDescription']
+    # Subscribe to them and create ReactorPanel structures
+    self.frame.n_reactors = len(plan_topics)
+    for topic in plan_topics:
+      self.frame.add_reactor_panel(topic)
+
+    self.frame.Show(True)
+    self.SetTopWindow(self.frame)
+    return True
+
+  # Callback for registering new plan data
+  def update_plan(self, data, arg):
+    #print "got plan from %s!" % data.name
+    pass
+
+if __name__=='__main__':
+  # Initialize node
+  rospy.init_node("trex_gui")
+
+  # Spawn window
+  app = MainApp()
+
+  # Run GUI
+  app.MainLoop()

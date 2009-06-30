@@ -1,0 +1,19 @@
+<package>
+    <description brief="TREX Visualizer">
+    
+      This is a realtime visualizer for TREX
+    
+    </description>
+    <author>Jonathan Bohren</author>
+    <license>BSD</license>
+    <review status="unreviewed" notes=""/>
+    <url>http://pr.willowgarage.com/wiki/ROS</url>
+    <depend package="rospy"/>
+    <depend package="roslib"/>
+    <depend package="trex_ros"/>
+    
+    <sysdepend os="ubuntu" version="7.04-feisty" package="libwxgtk2.8-dev"/>
+    <sysdepend os="ubuntu" version="8.04-hardy" package="libwxgtk2.8-dev"/>
+    <sysdepend os="ubuntu" version="8.04-hardy" package="python-wxgtk2.8"/>
+</package>
+
