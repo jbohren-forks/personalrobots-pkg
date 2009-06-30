@@ -11,17 +11,24 @@ Index: ode/src/quickstep.cpp
  #define ALLOCA dALLOCA16
  
  typedef const dReal *dRealPtr;
-@@ -66,6 +68,9 @@
+@@ -56,7 +58,7 @@
+ // and the optimal order is somewhat problem dependent.
+ // @@@ try the leaf->root ordering.
+ 
+-//#define REORDER_CONSTRAINTS 1
++#define REORDER_CONSTRAINTS 1
+ 
+ 
+ // for the SOR method:
+@@ -66,6 +68,7 @@
  
  #define RANDOMLY_REORDER_CONSTRAINTS 1
  
 +
-+//#define TIMING
-+
  //****************************************************************************
  // special matrix multipliers
  
-@@ -142,7 +147,7 @@
+@@ -142,7 +145,7 @@
  
  
  // compute out = inv(M)*J'*in.
@@ -30,11 +37,11 @@ Index: ode/src/quickstep.cpp
  static void multiply_invM_JT (int m, int nb, dRealMutablePtr iMJ, int *jb,
  	dRealMutablePtr in, dRealMutablePtr out)
  {
-@@ -431,6 +436,13 @@
+@@ -431,6 +434,13 @@
  	dIASSERT ((j+k-1)==m); // -1 since k was started at 1 and not 0
  #endif
  
-+//#define MONITOR
++#undef MONITOR
 +#ifdef MONITOR
 +        printf("checking convergence\n");
 +        printf(" iter   rms    max    i_max  lambda    i_max_lambda    index   \n");
@@ -44,7 +51,7 @@ Index: ode/src/quickstep.cpp
  	for (int iteration=0; iteration < num_iterations; iteration++) {
  
  #ifdef REORDER_CONSTRAINTS
-@@ -470,6 +482,7 @@
+@@ -470,6 +480,7 @@
  		memcpy (last_lambda,lambda,m*sizeof(dReal));
  #endif
  #ifdef RANDOMLY_REORDER_CONSTRAINTS
@@ -52,11 +59,11 @@ Index: ode/src/quickstep.cpp
  		if ((iteration & 7) == 0) {
  			for (i=1; i<m; ++i) {
  				IndexError tmp = order[i];
-@@ -480,6 +493,24 @@
+@@ -480,6 +491,24 @@
  		}
  #endif
  
-+//#define USE_SSE
++#undef USE_SSE
 +#ifdef USE_SSE
 +                typedef float v4sf __attribute__ ((mode(V4SF)));
 +
@@ -77,19 +84,19 @@ Index: ode/src/quickstep.cpp
  		for (int i=0; i<m; i++) {
  			// @@@ potential optimization: we could pre-sort J and iMJ, thereby
  			//     linearizing access to those arrays. hmmm, this does not seem
-@@ -499,7 +530,10 @@
+@@ -499,7 +528,10 @@
  			// already been computed.
  			dReal hi_act, lo_act;
  			if (findex[index] >= 0) {
 -				hi_act = dFabs (hi[index] * lambda[findex[index]]);
-+				if (lambda[findex[index]]>0)
++				if (dFabs(lambda[findex[index]])>0)
 +                                  hi_act = dFabs (hi[index] * lambda[findex[index]]);
 +				else
 +                                  hi_act = 0;
  				lo_act = -hi_act;
  			} else {
  				hi_act = hi[index];
-@@ -511,7 +545,140 @@
+@@ -511,7 +543,140 @@
  			dReal delta = b[index] - lambda[index]*Ad[index];
  			dRealMutablePtr fc_ptr = fc + 6*b1;
  
@@ -211,10 +218,10 @@ Index: ode/src/quickstep.cpp
 +			// already been computed.
 +			dReal hi_act, lo_act;
 +			if (findex[index] >= 0) {
-+				if (lambda[findex[index]]>0)
-+                                  hi_act = dFabs (hi[index] * lambda[findex[index]]);
++				if (hi[index] == dInfinity) // for the case lambda is 0, dInfinity*0 = ???
++                                  hi_act = dInfinity;
 +				else
-+                                  hi_act = 0;
++                                  hi_act = dFabs (hi[index] * lambda[findex[index]]);
 +				lo_act = -hi_act;
 +			} else {
 +				hi_act = hi[index];
@@ -230,7 +237,7 @@ Index: ode/src/quickstep.cpp
  			delta -=fc_ptr[0] * J_ptr[0] + fc_ptr[1] * J_ptr[1] +
  				fc_ptr[2] * J_ptr[2] + fc_ptr[3] * J_ptr[3] +
  				fc_ptr[4] * J_ptr[4] + fc_ptr[5] * J_ptr[5];
-@@ -540,6 +707,21 @@
+@@ -540,6 +705,21 @@
  				lambda[index] = new_lambda;
  			}
  
@@ -252,7 +259,7 @@ Index: ode/src/quickstep.cpp
  			//@@@ a trick that may or may not help
  			//dReal ramp = (1-((dReal)(iteration+1)/(dReal)num_iterations));
  			//delta *= ramp;
-@@ -565,6 +747,10 @@
+@@ -565,6 +745,10 @@
  				fc_ptr[5] += delta * iMJ_ptr[11];
  			}
  		}
@@ -263,23 +270,23 @@ Index: ode/src/quickstep.cpp
  	}
  }
  
-@@ -591,6 +777,11 @@
+@@ -591,6 +775,11 @@
  	// frame, and compute the rotational force and add it to the torque
  	// accumulator. I and invI are a vertical stack of 3x4 matrices, one per body.
          dRealAllocaArray (invI,3*4*nb);
-+#define TEST
-+#ifdef TEST
++#define CHECK_MASS
++#ifdef CHECK_MASS
 +        dRealAllocaArray (tmpI,3*4*nb);
 +        dRealAllocaArray (tmpM,1*4*nb);
 +#endif
  	for (i=0; i<nb; i++) {
  		dMatrix3 tmp;
  
-@@ -598,6 +789,14 @@
+@@ -598,6 +787,14 @@
  		dMULTIPLY2_333 (tmp,body[i]->invI,body[i]->posr.R);
  		dMULTIPLY0_333 (invI+i*12,body[i]->posr.R,tmp);
  
-+#ifdef TEST
++#ifdef CHECK_MASS
 +		memcpy (tmpI+i*12, body[i]->mass.I,3*4*sizeof(dReal));
 +		tmpM[i*4+0] = body[i]->mass.mass;
 +		tmpM[i*4+1] = body[i]->mass.c[0];
@@ -290,11 +297,21 @@ Index: ode/src/quickstep.cpp
          if (body[i]->flags & dxBodyGyroscopic) {
              dMatrix3 I;
              // compute inertia tensor in global frame
-@@ -698,6 +897,48 @@
+@@ -698,6 +895,63 @@
  				mfb += info[i].m;
  		}
  
-+#ifdef TEST
++#define DEBUG_MATRICES
++#ifdef DEBUG_MATRICES
++                FILE* fJo = fopen("/tmp/Jo.mat","a");
++		//std::cout << " J " << J << std::endl;
++                fprintf(fJo,"\n");
++                dPrintMatrix(J,m,12,"%10.4f",fJo);
++                fclose(fJo);
++#endif
++
++#undef JSPLIT
++#ifdef JSPLIT
 +		// options:
 +		// split J, solve each block in parallel
 +		// move J setup into SOR_LCP
@@ -303,7 +320,8 @@ Index: ode/src/quickstep.cpp
 +
 +
 +
-+#ifdef TEST
++#undef JNORMALIZE
++#ifdef JNORMALIZE
 +		// normalize J
 +                for (i=0;i<m;i++) {
 +                  double sum=0;
@@ -312,6 +330,7 @@ Index: ode/src/quickstep.cpp
 +                    sum += J[i*12+j]*J[i*12+j];
 +                    //printf(" %f",J[i*12+j]);
 +                  }
++                  sum = sqrt(sum);
 +                  //printf("]\nsum %f\n",sum);
 +                  if (sum != 0)
 +                  for (j=0; j<12; j++) {
@@ -319,8 +338,8 @@ Index: ode/src/quickstep.cpp
 +                  }
 +                }
 +#endif
-+#ifdef TEST
-+#if 0
++
++#ifdef CHECK_MASS
 +                FILE* ftmpI = fopen("/tmp/tmpI.mat","a");
 +		//std::cout << " tmpI " << tmpI << std::endl;
 +                fprintf(ftmpI,"\n");
@@ -333,17 +352,97 @@ Index: ode/src/quickstep.cpp
 +                dPrintMatrix(tmpM,nb,4,"%10.4f",ftmpM);
 +                fclose(ftmpM);
 +#endif
-+#endif
 +
++
++#define JNORMALIZE_MASS
++#ifndef JNORMALIZE_MASS
++		// skip making a copy till we mass normalize
 +
  		// we need a copy of Jacobian for joint feedbacks
  		// because it gets destroyed by SOR solver
  		// instead of saving all Jacobian, we can save just rows
-@@ -762,6 +1003,75 @@
+@@ -712,8 +966,8 @@
+                       mfb += info[i].m;
+                     }
+ 		}
++#endif
+ 
+-
+ 		// create an array of body numbers for each joint row
+ 		int *jb_ptr = jb;
+ 		for (i=0; i<nj; i++) {
+@@ -727,6 +981,66 @@
+ 		}
+ 		dIASSERT (jb_ptr == jb+2*m);
+ 
++#ifdef JNORMALIZE_MASS
++		// normalize J by smaller of two masses
++
++		// setup mass matrices for each constraint row
++		dReal minM; // minimum of masses from two joint bodies
++
++                dRealMutablePtr min_I_ptr;
++                dRealMutablePtr tmp_J_ptr = J;
++
++                for (i=0;i<m;i++) {
++                  // for every constraint i,
++                  //   find the corresponding mass matrices
++                  //   find the smaller of the 2( or 1 ) mass matrices
++                  int b1 = jb[i*2];
++                  int b2 = jb[i*2+1];
++                  min_I_ptr = body[b1]->mass.I;
++                  minM = body[b1]->mass.mass;
++
++                  if (b2 >= 0)
++                  {
++                    dRealMutablePtr tmp_I_ptr = body[b2]->mass.I;
++                    dReal minD1 = std::min(std::min(dFabs(min_I_ptr[0]),dFabs(min_I_ptr[5])),dFabs(min_I_ptr[10])); //min of diagonals of b1
++                    dReal minD2 = std::min(std::min(dFabs(tmp_I_ptr[0]),dFabs(tmp_I_ptr[5])),dFabs(tmp_I_ptr[10])); //min of diagonals of b2
++                    if (minD1 > minD2)
++                      min_I_ptr = body[b2]->mass.I;
++
++                    minM = std::min(minM,body[b2]->mass.mass);
++                  }
++                  // scale J
++                  for (j=0; j<3; j++) tmp_J_ptr[i*12+j] = minM*tmp_J_ptr[i*12+j];
++                  dMULTIPLY0_331 (tmp_J_ptr+i*12+3, min_I_ptr, tmp_J_ptr+i*12+3);
++                  if (b2 >= 0)
++                  {
++                    for (j=0; j<3; j++) tmp_J_ptr[i*12+j+6] = minM*tmp_J_ptr[i*12+j+6];
++                    dMULTIPLY0_331 (tmp_J_ptr+i*12+9, min_I_ptr, tmp_J_ptr+i*12+9);
++                  }
++
++                }
++
++                // make a copyt of J after mass normalizing
++                dReal *Jcopy = NULL;
++                if (mfb > 0) {
++                  Jcopy = (dReal*) ALLOCA (mfb*12*sizeof(dReal));
++                  mfb = 0;
++                  for (i=0; i<nj; i++)
++                    if (joint[i]->feedback) {
++                      memcpy(Jcopy+mfb*12, J+ofs[i]*12, info[i].m*12*sizeof(dReal));
++                      mfb += info[i].m;
++                    }
++		}
++#endif
++
++#ifdef DEBUG_MATRICES
++                FILE* fJ = fopen("/tmp/J.mat","a");
++		//std::cout << " J " << J << std::endl;
++                fprintf(fJ,"\n");
++                dPrintMatrix(J,m,12,"%10.4f",fJ);
++                fclose(fJ);
++#endif
++
+ 		// compute the right hand side `rhs'
+ 		IFTIMING (dTimerNow ("compute rhs");)
+ 		dRealAllocaArray (tmp1,nb*6);
+@@ -762,6 +1076,69 @@
  		dRealAllocaArray (cforce,nb*6);
  		SOR_LCP (m,nb,J,jb,body,invI,lambda,cforce,rhs,lo,hi,cfm,findex,&world->qs);
  
-+#ifdef TIMING
++#ifdef DEBUG_MATRICES
 +		std::cout << " m: total constraint dimention " << m
 +		          << " nb: number of bounded variables " << nb
 +		          << " nub: number of unbounded variables " << nb
@@ -352,12 +451,6 @@ Index: ode/src/quickstep.cpp
 +		          << " hi " << hi
 +		          << " findex " << findex
 +                          << std::endl;
-+
-+                FILE* fJ = fopen("/tmp/J.mat","a");
-+		//std::cout << " J " << J << std::endl;
-+                fprintf(fJ,"\n");
-+                dPrintMatrix(Jcopy,m,12,"%10.4f",fJ);
-+                fclose(fJ);
 +
 +                FILE* finvI = fopen("/tmp/invI.mat","a");
 +		//std::cout << " invI " << invI << std::endl;
