@@ -1,5 +1,4 @@
 #include <trex_ros/adapter_utilities.h>
-#include <tf/transform_listener.h>
 
 namespace trex_ros {
 			     
@@ -72,17 +71,6 @@ namespace trex_ros {
   void AdapterUtilities::write(const StringDomain& dom, std_msgs::String& msg){
     msg.data = (dom.isSingleton() ? LabelStr(dom.getSingletonValue()).toString() : "");
     condDebugMsg(!dom.isSingleton(), "trex:warning:dispatching", "Reducing unbound paramater " << dom.toString() << " to ''");
-  }
-
-  void AdapterUtilities::get2DPose(const robot_msgs::Pose& pose, double& x, double& y, double& th){
-    tf::Stamped<tf::Pose> tf_pose;
-    tf::PoseMsgToTF(pose, tf_pose);
-    x = tf_pose.getOrigin().x();
-    y = tf_pose.getOrigin().y();
-    double useless_pitch, useless_roll;
-    tf_pose.getBasis().getEulerZYX(th, useless_pitch, useless_roll);
-    debugMsg("ros:debug:synchronization:get2DPose", 
-	     "Extracted base pose to (x=" << x << ", y=" << y << ", th=" << th << ")");
   }
 
   std::string AdapterUtilities::getFrame(const TokenId& token){

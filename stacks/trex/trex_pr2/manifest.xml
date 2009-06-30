@@ -22,6 +22,7 @@
   <depend package="deprecated_msgs" />
   <depend package="gtest" />
   <depend package="trex_ros" />
+  <depend package="tf" />
 
   <export>
     <nddl iflags="-I${prefix}/nddl  -I${prefix}/deprecated  -I${prefix} "/>

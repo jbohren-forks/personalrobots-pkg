@@ -5,6 +5,7 @@
 using namespace trex_ros;
 
 namespace trex_pr2 {
+  
   /**
    * Write token to the message
    */

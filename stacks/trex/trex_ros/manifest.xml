@@ -10,7 +10,6 @@
   <depend package="std_msgs" />
   <depend package="robot_msgs" />
   <depend package="gtest" />
-  <depend package="tf" />
 
   <export>
     <nddl iflags="-I${prefix}/nddl -I${prefix}/deprecated -I${prefix}"/>
