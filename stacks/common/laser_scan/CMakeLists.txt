@@ -23,3 +23,4 @@ target_link_libraries (scan_to_cloud laser_scan)
 
 rospack_add_gtest(test/projection_test test/projection_test.cpp)
 target_link_libraries (test/projection_test laser_scan)
+

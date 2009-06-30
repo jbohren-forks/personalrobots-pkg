@@ -38,7 +38,7 @@
 #include "dense_laser_assembler/Float32MultiArrayStamped.h"
 #include "robot_msgs/PointCloud.h"
 #include "robot_msgs/Point32.h"
-#include "laser_scan/LaserScan.h"
+#include "sensor_msgs/LaserScan.h"
 
 #include "topic_synchronizer/topic_synchronizer.h"
 
@@ -162,7 +162,7 @@ public:
 
   }
 
-  inline float pointingAngle(const laser_scan::LaserScan& info, const float& ray)
+  inline float pointingAngle(const sensor_msgs::LaserScan& info, const float& ray)
   {
     return info.angle_min + info.angle_increment * ray;
   }
@@ -198,7 +198,7 @@ private:
   robot_msgs::PointCloud pixel_corners_;
   dense_laser_assembler::Float32MultiArrayStamped dense_range_;
   dense_laser_assembler::Float32MultiArrayStamped joint_info_;
-  laser_scan::LaserScan scan_info_;
+  sensor_msgs::LaserScan scan_info_;
 
 };
 

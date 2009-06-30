@@ -18,7 +18,7 @@ way.  This package also provides stageros, a ROS node that uses Stage.
   <depend package="roscpp" />
   <depend package="std_msgs" />
   <depend package="deprecated_msgs" />
-  <depend package="laser_scan" />
+  <depend package="sensor_msgs" />
   <depend package="tf" />
 
 <sysdepend os="ubuntu" version="8.04-hardy" package="autoconf"/>

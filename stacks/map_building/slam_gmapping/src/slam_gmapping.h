@@ -30,7 +30,7 @@
 /* Author: Brian Gerkey */
 
 #include "ros/node.h"
-#include "laser_scan/LaserScan.h"
+#include "sensor_msgs/LaserScan.h"
 #include "robot_srvs/StaticMap.h"
 #include "tf/transform_listener.h"
 
@@ -58,7 +58,7 @@ class SlamGMapping
     GMapping::OdometrySensor* gsp_odom_;
 
     bool got_first_scan_;
-    laser_scan::LaserScan scan_;
+    sensor_msgs::LaserScan scan_;
 
     bool got_map_;
     robot_srvs::StaticMap::Response map_;
@@ -67,8 +67,8 @@ class SlamGMapping
 
     void updateMap();
     bool getOdomPose(GMapping::OrientedPoint& gmap_pose, const ros::Time& t);
-    bool initMapper(const laser_scan::LaserScan& scan);
-    bool addScan(const laser_scan::LaserScan& scan);
+    bool initMapper(const sensor_msgs::LaserScan& scan);
+    bool addScan(const sensor_msgs::LaserScan& scan);
     
     // Parameters used by GMapping
     double maxUrange_;

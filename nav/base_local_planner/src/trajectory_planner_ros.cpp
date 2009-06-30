@@ -44,7 +44,6 @@
 using namespace std;
 using namespace robot_msgs;
 using namespace costmap_2d;
-using namespace laser_scan;
 
 namespace base_local_planner {
   //register this base local planner with the BaseLocalPlanner factory

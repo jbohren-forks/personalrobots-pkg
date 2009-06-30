@@ -46,7 +46,7 @@ from numpy import *
 
 import rospy
 from roslib import rostime
-from laser_scan.msg import LaserScan
+from sensor_msgs.msg import LaserScan
 from mechanism_msgs.msg import MechanismState
 from checkerboard_detector.msg import ObjectDetection
 import copy

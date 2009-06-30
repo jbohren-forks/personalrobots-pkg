@@ -40,7 +40,7 @@
 #include <set>
 
 #include "filters/filter_base.h"
-#include <laser_scan/LaserScan.h>
+#include <sensor_msgs/LaserScan.h>
 #include "angles/angles.h"
 
 namespace laser_scan{
@@ -109,7 +109,7 @@ public:
    * \param scan_in the input LaserScan message
    * \param scan_out the output LaserScan message
    */
-  bool update(const std::vector<laser_scan::LaserScan>& scans_in, std::vector<laser_scan::LaserScan>& scans_out)
+  bool update(const std::vector<sensor_msgs::LaserScan>& scans_in, std::vector<sensor_msgs::LaserScan>& scans_out)
   {
     if (scans_in.size() != 1)
     {
@@ -123,8 +123,8 @@ public:
     }
     
     //Local references for ease of use
-    const laser_scan::LaserScan& scan_in = scans_in[0];
-    laser_scan::LaserScan& scan_out = scans_out[0];
+    const sensor_msgs::LaserScan& scan_in = scans_in[0];
+    sensor_msgs::LaserScan& scan_out = scans_out[0];
 
     //copy across all data first
     scan_out = scan_in;
@@ -163,8 +163,8 @@ public:
   ////////////////////////////////////////////////////////////////////////////////
 
 } ;
-typedef laser_scan::LaserScan laser_scan_laser_scan;
-FILTERS_REGISTER_FILTER(ScanShadowsFilter, laser_scan_laser_scan);
+typedef sensor_msgs::LaserScan sensor_msgs_laser_scan;
+FILTERS_REGISTER_FILTER(ScanShadowsFilter, sensor_msgs_laser_scan);
 }
 
 #endif //LASER_SCAN_SHADOWS_FILTER_H

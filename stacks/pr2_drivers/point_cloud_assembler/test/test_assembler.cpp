@@ -38,12 +38,12 @@
 #include <gtest/gtest.h>
 #include "ros/node.h"
 #include "robot_msgs/PointCloud.h"
-#include "laser_scan/LaserScan.h"
+#include "sensor_msgs/LaserScan.h"
 #include "boost/thread.hpp"
 
 using namespace ros;
 using namespace robot_msgs;
-using namespace laser_scan;
+using namespace sensor_msgs;
 
 
 static const unsigned int last_seq = 76500 ;

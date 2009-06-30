@@ -39,7 +39,7 @@ import sys
 import rospy
 import threading
 from time import sleep
-from laser_scan.msg import *
+from sensor_msgs.msg import LaserScan
 from robot_msgs.msg import *
 from mechanism_msgs.msg import MechanismState
 from std_msgs.msg import *

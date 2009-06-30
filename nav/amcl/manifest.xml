@@ -12,8 +12,8 @@
   <depend package="nav_msgs" />
   <depend package="nav_srvs" />
   <depend package="std_srvs" />
-  <depend package="laser_scan" />
   <depend package="visualization_msgs"/>
+  <depend package="sensor_msgs" />
   
   <!-- For tests -->
   <depend package="map_server"/>

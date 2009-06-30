@@ -43,7 +43,7 @@ This is useful for ground plane extraction
 
 
 #include "filters/filter_base.h"
-#include "laser_scan/LaserScan.h"
+#include "sensor_msgs/LaserScan.h"
 #include "tf/transform_listener.h"
 #include "robot_msgs/PointCloud.h"
 #include "ros/ros.h"
@@ -53,7 +53,7 @@ namespace laser_scan
 {
 
 template <typename T>
-class LaserScanFootprintFilter : public filters::FilterBase<laser_scan::LaserScan>
+class LaserScanFootprintFilter : public filters::FilterBase<sensor_msgs::LaserScan>
 {
 public:
   LaserScanFootprintFilter(){}
@@ -69,7 +69,7 @@ public:
 
   }
 
-  bool update(const std::vector<laser_scan::LaserScan>& data_in, std::vector<laser_scan::LaserScan>& data_out)
+  bool update(const std::vector<sensor_msgs::LaserScan>& data_in, std::vector<sensor_msgs::LaserScan>& data_out)
   {
     if (data_in.size() != 1 || data_out.size() != 1)
     {
@@ -77,8 +77,8 @@ public:
       return false;
     }
     
-    const LaserScan& input_scan = data_in[0];
-    LaserScan& filtered_scan = data_out[0];
+    const sensor_msgs::LaserScan& input_scan = data_in[0];
+    sensor_msgs::LaserScan& filtered_scan = data_out[0];
 
 
     filtered_scan = input_scan ;
@@ -134,7 +134,8 @@ private:
   double inscribed_radius_;
 } ;
 
-FILTERS_REGISTER_FILTER(LaserScanFootprintFilter, LaserScan);
+typedef sensor_msgs::LaserScan sensor_msgs_laser_scan;
+FILTERS_REGISTER_FILTER(LaserScanFootprintFilter, sensor_msgs_laser_scan);
 }
 
 #endif // LASER_SCAN_FOOTPRINT_FILTER_H

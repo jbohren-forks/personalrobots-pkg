@@ -42,13 +42,13 @@
 
 
 #include "filters/filter_base.h"
-#include "laser_scan/LaserScan.h"
+#include "sensor_msgs/LaserScan.h"
 
 namespace laser_scan
 {
 
 template <typename T>
-class LaserScanIntensityFilter : public filters::FilterBase<laser_scan::LaserScan>
+class LaserScanIntensityFilter : public filters::FilterBase<sensor_msgs::LaserScan>
 {
 public:
 
@@ -69,7 +69,7 @@ public:
 
   }
 
-  bool update(const std::vector<laser_scan::LaserScan>& data_in, std::vector<laser_scan::LaserScan>& data_out)
+  bool update(const std::vector<sensor_msgs::LaserScan>& data_in, std::vector<sensor_msgs::LaserScan>& data_out)
   {
     if (data_in.size() != 1 || data_out.size() != 1)
     {
@@ -77,8 +77,8 @@ public:
       return false;
     }
     
-    const LaserScan& input_scan = data_in[0];
-    LaserScan& filtered_scan = data_out[0];
+    const sensor_msgs::LaserScan& input_scan = data_in[0];
+    sensor_msgs::LaserScan& filtered_scan = data_out[0];
 
     const double hist_max = 4*12000.0 ;
     const int num_buckets = 24 ;
@@ -115,8 +115,8 @@ public:
     return true;
   }
 } ;
-typedef laser_scan::LaserScan laser_scan_laser_scan;
-FILTERS_REGISTER_FILTER(LaserScanIntensityFilter, laser_scan_laser_scan);
+typedef sensor_msgs::LaserScan sensor_msgs_laser_scan;
+FILTERS_REGISTER_FILTER(LaserScanIntensityFilter, sensor_msgs_laser_scan);
 }
 
 #endif // LASER_SCAN_INTENSITY_FILTER_H

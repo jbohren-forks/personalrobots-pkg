@@ -28,11 +28,11 @@
 // POSSIBILITY OF SUCH DAMAGE.
 //////////////////////////////////////////////////////////////////////////////
 
-#include "laser_scan/LaserScan.h"
+#include "sensor_msgs/LaserScan.h"
 #include <string>
 #include "rosrecord/Player.h"
 
-void scan_callback(std::string name, laser_scan::LaserScan *scan, 
+void scan_callback(std::string name, sensor_msgs::LaserScan *scan, 
                    ros::Time t, ros::Time t_no_use, void* f)
 {
   FILE* file = (FILE*)f;
@@ -65,7 +65,7 @@ int main(int argc, char **argv)
   ros::record::Player player;
   player.open(std::string(argv[1]), ros::Time());
   FILE* file = fopen((std::string(argv[2])+".txt").c_str() , "w");
-  player.addHandler<laser_scan::LaserScan>(std::string(argv[2]), &scan_callback, file);
+  player.addHandler<sensor_msgs::LaserScan>(std::string(argv[2]), &scan_callback, file);
   while(player.nextMsg()) { }
   fclose(file);
   return 0;

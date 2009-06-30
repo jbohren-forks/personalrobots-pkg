@@ -75,7 +75,7 @@
 
 // Clouds and scans
 #include <robot_msgs/PointCloud.h>
-#include <laser_scan/LaserScan.h>
+#include <sensor_msgs/LaserScan.h>
 #include <laser_scan/laser_scan.h>
 
 
@@ -104,8 +104,8 @@ public:
   laser_scan::LaserProjection projector_; // Used to project laser scans into point clouds
 
   tf::TransformListener *tf_;
-  tf::MessageNotifier<laser_scan::LaserScan>* message_notifier_;
-  filters::FilterChain<laser_scan::LaserScan> filter_chain_;
+  tf::MessageNotifier<sensor_msgs::LaserScan>* message_notifier_;
+  filters::FilterChain<sensor_msgs::LaserScan> filter_chain_;
 
   /********** Parameters from the param server *******/
   std::string base_laser_topic_; // Topic for the laser scan message.
@@ -156,7 +156,7 @@ public:
     node_->advertise<robot_msgs::PointCloud>("parallel_lines_model",0);
 
     // Subscribe to the scans.
-    message_notifier_ = new tf::MessageNotifier<laser_scan::LaserScan> (tf_, node_, boost::bind(&HallwayTracker::laserCallBack, this, _1), base_laser_topic_.c_str(), fixed_frame_, 1);
+    message_notifier_ = new tf::MessageNotifier<sensor_msgs::LaserScan> (tf_, node_, boost::bind(&HallwayTracker::laserCallBack, this, _1), base_laser_topic_.c_str(), fixed_frame_, 1);
     message_notifier_->setTolerance(ros::Duration(.02));
   }
 
@@ -170,9 +170,9 @@ public:
   /**
    * \brief Laser callback. Processes a laser scan by converting it into a point cloud, removing points that are too far away, finding two parallel lines and publishing the results.
    */
-  void laserCallBack(const tf::MessageNotifier<laser_scan::LaserScan>::MessagePtr& scan_msg)
+  void laserCallBack(const tf::MessageNotifier<sensor_msgs::LaserScan>::MessagePtr& scan_msg)
   {
-    laser_scan::LaserScan filtered_scan;
+    sensor_msgs::LaserScan filtered_scan;
     filter_chain_.update (*scan_msg, filtered_scan);
 
 

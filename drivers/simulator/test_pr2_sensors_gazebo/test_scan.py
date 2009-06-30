@@ -46,7 +46,7 @@ roslib.load_manifest('rostest')
 import sys, unittest
 import os, os.path, threading, time
 import rospy, rostest
-from laser_scan.msg import *
+from sensor_msgs.msg import LaserScan
 
 TEST_DURATION  = 15
 ERROR_TOL      = 0.05

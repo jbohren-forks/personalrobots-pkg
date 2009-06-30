@@ -47,7 +47,7 @@
 #include <tf/message_notifier.h>
 #include <tf/transform_listener.h>
 
-#include <laser_scan/LaserScan.h>
+#include <sensor_msgs/LaserScan.h>
 #include <laser_scan/laser_scan.h>
 
 #include <robot_msgs/PointCloud.h>
@@ -67,7 +67,7 @@ class CostmapTester {
       
       base_scan_buffer_ = new ObservationBuffer(0.0, 0.2, tf_, "map", "base_laser");
 
-      base_scan_notifier_ = new MessageNotifier<laser_scan::LaserScan>(&tf_, &ros_node,
+      base_scan_notifier_ = new MessageNotifier<sensor_msgs::LaserScan>(&tf_, &ros_node,
           boost::bind(&CostmapTester::baseScanCallback, this, _1, (int) 1),
           "base_scan", global_frame_, 50);
 
@@ -116,7 +116,7 @@ class CostmapTester {
       delete base_scan_buffer_;
     }
 
-    void baseScanCallback(const tf::MessageNotifier<laser_scan::LaserScan>::MessagePtr& message, int i){
+    void baseScanCallback(const tf::MessageNotifier<sensor_msgs::LaserScan>::MessagePtr& message, int i){
       //project the laser into a point cloud
       PointCloud base_cloud;
       base_cloud.header = message->header;
@@ -262,7 +262,7 @@ class CostmapTester {
     }
 
     ros::Node& ros_node_;
-    tf::MessageNotifier<laser_scan::LaserScan>* base_scan_notifier_; ///< @brief Used to guarantee that a transform is available for base scans
+    tf::MessageNotifier<sensor_msgs::LaserScan>* base_scan_notifier_; ///< @brief Used to guarantee that a transform is available for base scans
     tf::TransformListener tf_; ///< @brief Used for transforming point clouds
     laser_scan::LaserProjection projector_; ///< @brief Used to project laser scans into point clouds
     boost::recursive_mutex lock_; ///< @brief A lock for accessing data in callbacks safely

@@ -32,7 +32,7 @@
 
 #include <ros/ros.h>
 #include <boost/thread/mutex.hpp>
-#include <laser_scan/LaserScan.h>
+#include <sensor_msgs/LaserScan.h>
 
 namespace gazebo
 {
@@ -45,7 +45,7 @@ namespace gazebo
   \brief ROS Laser Scanner Controller Plugin
   
   This controller gathers range data from a simulated ray sensor, publishes range data through
-    laser_scan::LaserScan ROS topic.
+    sensor_msgs::LaserScan ROS topic.
 
   Example Usage:
   \verbatim
@@ -81,7 +81,7 @@ namespace gazebo
 /**
     \brief ROS laser scan controller.
            \li Starts a ROS node if none exists.
-           \li Simulates a laser range sensor and publish laser_scan::LaserScan.msg over ROS.
+           \li Simulates a laser range sensor and publish sensor_msgs::LaserScan.msg over ROS.
            \li Example Usage:
   \verbatim
     <model:physical name="ray_model">
@@ -145,7 +145,7 @@ class RosLaser : public Controller
   private: ros::Publisher pub_;
 
   /// \brief ros message
-  private: laser_scan::LaserScan laserMsg;
+  private: sensor_msgs::LaserScan laserMsg;
  
   /// \brief topic name
   private: std::string topicName;

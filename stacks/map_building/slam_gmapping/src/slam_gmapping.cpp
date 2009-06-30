@@ -140,7 +140,7 @@ SlamGMapping::getOdomPose(GMapping::OrientedPoint& gmap_pose, const ros::Time& t
 }
 
 bool
-SlamGMapping::initMapper(const laser_scan::LaserScan& scan)
+SlamGMapping::initMapper(const sensor_msgs::LaserScan& scan)
 {
   // Get the laser's pose, relative to base.
   tf::Stamped<tf::Pose> ident;
@@ -219,7 +219,7 @@ SlamGMapping::initMapper(const laser_scan::LaserScan& scan)
 }
 
 bool
-SlamGMapping::addScan(const laser_scan::LaserScan& scan)
+SlamGMapping::addScan(const sensor_msgs::LaserScan& scan)
 {
   GMapping::OrientedPoint gmap_pose;
   if(!getOdomPose(gmap_pose, scan.header.stamp))

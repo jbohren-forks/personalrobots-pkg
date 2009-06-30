@@ -42,11 +42,11 @@
 #define PROJECTION_TEST_RANGE_MIN (0.23)
 #define PROJECTION_TEST_RANGE_MAX (40.0) 
 
-laser_scan::LaserScan build_constant_scan(double range, double intensity, 
+sensor_msgs::LaserScan build_constant_scan(double range, double intensity, 
                                           double ang_min, double ang_max, double ang_increment,
                                           ros::Duration scan_time)
 {
-  laser_scan::LaserScan scan;
+  sensor_msgs::LaserScan scan;
   scan.header.stamp = ros::Time::now();
   scan.header.frame_id = "laser_frame";
   scan.angle_min = ang_min;
@@ -206,7 +206,7 @@ TEST(laser_scan, projectLaser)
     try
     {    
       //printf("%f %f %f %f %f %f\n", range, intensity, min_angle, max_angle, angle_increment, scan_time.toSec());
-  laser_scan::LaserScan scan = build_constant_scan(range, intensity, min_angle, max_angle, angle_increment, scan_time);
+  sensor_msgs::LaserScan scan = build_constant_scan(range, intensity, min_angle, max_angle, angle_increment, scan_time);
 
   robot_msgs::PointCloud cloud_out;
   projector.projectLaser(scan, cloud_out, -1.0, false, laser_scan::MASK_INDEX);
@@ -320,7 +320,7 @@ TEST(laser_scan, transformLaserScanToPointCloud)
     try
     {    
     //printf("%f %f %f %f %f %f\n", range, intensity, min_angle, max_angle, angle_increment, scan_time.toSec());
-  laser_scan::LaserScan scan = build_constant_scan(range, intensity, min_angle, max_angle, angle_increment, scan_time);
+  sensor_msgs::LaserScan scan = build_constant_scan(range, intensity, min_angle, max_angle, angle_increment, scan_time);
   scan.header.frame_id = "laser_frame";
 
   robot_msgs::PointCloud cloud_out;

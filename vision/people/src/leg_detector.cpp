@@ -47,7 +47,7 @@
 #include "rosrecord/Player.h"
 
 #include "people/PositionMeasurement.h"
-#include "laser_scan/LaserScan.h"
+#include "sensor_msgs/LaserScan.h"
 #include "roslib/Header.h"
 
 #include "tf/transform_listener.h"
@@ -221,7 +221,7 @@ public:
   int feature_id_;
 
   MessageNotifier<people::PositionMeasurement>*  people_notifier_;
-  MessageNotifier<laser_scan::LaserScan>*  laser_notifier_;
+  MessageNotifier<sensor_msgs::LaserScan>*  laser_notifier_;
 
   LegDetector() : 
     Node("laser_processor"), 
@@ -247,7 +247,7 @@ public:
     people_notifier_ = new MessageNotifier<people::PositionMeasurement>(&tfl_, this,  
 									    boost::bind(&LegDetector::peopleCallback, this, _1), 
 									    "people_tracker_filter", fixed_frame, 10);
-    laser_notifier_ = new MessageNotifier<laser_scan::LaserScan>(&tfl_, this,  
+    laser_notifier_ = new MessageNotifier<sensor_msgs::LaserScan>(&tfl_, this,  
 							       boost::bind(&LegDetector::laserCallback, this, _1), 
 							       "scan", fixed_frame, 10);
 
@@ -457,7 +457,7 @@ public:
 
 
 
-  void laserCallback(const MessageNotifier<laser_scan::LaserScan>::MessagePtr& scan)
+  void laserCallback(const MessageNotifier<sensor_msgs::LaserScan>::MessagePtr& scan)
   {
     ScanProcessor processor(*scan, mask_);
 

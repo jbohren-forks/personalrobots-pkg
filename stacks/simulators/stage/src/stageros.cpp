@@ -89,7 +89,7 @@ Publishes to (name / type):
 // roscpp
 #include <ros/node.h>
 #include "boost/thread/mutex.hpp"
-#include <laser_scan/LaserScan.h>
+#include <sensor_msgs/LaserScan.h>
 #include <deprecated_msgs/RobotBase2DOdom.h>
 #include <robot_msgs/PoseWithRatesStamped.h>
 #include <robot_msgs/PoseDot.h>
@@ -109,7 +109,7 @@ class StageNode : public ros::Node
   private:
     // Messages that we'll send or receive
     robot_msgs::PoseDot *velMsgs;
-    laser_scan::LaserScan *laserMsgs;
+    sensor_msgs::LaserScan *laserMsgs;
     deprecated_msgs::RobotBase2DOdom *odomMsgs;
     robot_msgs::PoseWithRatesStamped *groundTruthMsgs;
     roslib::Time timeMsg;
@@ -228,7 +228,7 @@ StageNode::StageNode(int argc, char** argv, bool gui, const char* fname) :
   ROS_INFO("found %d position model(s) in the file", numRobots);
 
   this->velMsgs = new robot_msgs::PoseDot[numRobots];
-  this->laserMsgs = new laser_scan::LaserScan[numRobots];
+  this->laserMsgs = new sensor_msgs::LaserScan[numRobots];
   this->odomMsgs = new deprecated_msgs::RobotBase2DOdom[numRobots];
   this->groundTruthMsgs = new robot_msgs::PoseWithRatesStamped[numRobots];
 }
@@ -261,7 +261,7 @@ StageNode::SubscribeModels()
       puts("no position");
       return(-1);
     }
-    advertise<laser_scan::LaserScan>(mapName(BASE_SCAN,r), 10);
+    advertise<sensor_msgs::LaserScan>(mapName(BASE_SCAN,r), 10);
     advertise<deprecated_msgs::RobotBase2DOdom>(mapName(ODOM,r), 10);
     advertise<robot_msgs::PoseWithRatesStamped>(
                                         mapName(BASE_POSE_GROUND_TRUTH,r), 10);

@@ -115,7 +115,7 @@ namespace costmap_2d {
 
       //create a callback for the topic
       if(data_type == "LaserScan"){
-        observation_notifiers_.push_back(new tf::MessageNotifier<laser_scan::LaserScan>(tf_, 
+        observation_notifiers_.push_back(new tf::MessageNotifier<sensor_msgs::LaserScan>(tf_, 
               boost::bind(&Costmap2DROS::laserScanCallback, this, _1, observation_buffers_.back()), topic, global_frame_, 50));
         observation_notifiers_.back()->setTolerance(ros::Duration(0.05));
       }
@@ -375,7 +375,7 @@ namespace costmap_2d {
       observation_buffers_.push_back(buffer);
   }
 
-  void Costmap2DROS::laserScanCallback(const tf::MessageNotifier<laser_scan::LaserScan>::MessagePtr& message, ObservationBuffer* buffer){
+  void Costmap2DROS::laserScanCallback(const tf::MessageNotifier<sensor_msgs::LaserScan>::MessagePtr& message, ObservationBuffer* buffer){
     //project the laser into a point cloud
     robot_msgs::PointCloud base_cloud;
     base_cloud.header = message->header;

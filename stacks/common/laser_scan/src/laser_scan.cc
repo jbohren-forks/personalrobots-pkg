@@ -34,7 +34,7 @@ namespace laser_scan
 {
 
   void
-    LaserProjection::projectLaser (const laser_scan::LaserScan& scan_in, robot_msgs::PointCloud & cloud_out, double range_cutoff, 
+    LaserProjection::projectLaser (const sensor_msgs::LaserScan& scan_in, robot_msgs::PointCloud & cloud_out, double range_cutoff, 
                                    bool preservative, int mask)
   {
     boost::numeric::ublas::matrix<double> ranges(2, scan_in.get_ranges_size());
@@ -194,7 +194,7 @@ namespace laser_scan
   };
 
   void
-    LaserProjection::transformLaserScanToPointCloud (const std::string &target_frame, robot_msgs::PointCloud &cloud_out, const laser_scan::LaserScan &scan_in,
+    LaserProjection::transformLaserScanToPointCloud (const std::string &target_frame, robot_msgs::PointCloud &cloud_out, const sensor_msgs::LaserScan &scan_in,
                                                      tf::Transformer& tf, int mask, bool preservative)
   {
     cloud_out.header = scan_in.header;

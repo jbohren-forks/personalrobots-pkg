@@ -38,7 +38,7 @@
 #include <laser_scan/scan_shadows_filter.h>
 
 #include "laser_scan/laser_scan.h"
-#include "laser_scan/LaserScan.h"
+#include "sensor_msgs/LaserScan.h"
 #include "point_cloud_assembler/base_assembler_srv.h"
 
 
@@ -59,10 +59,10 @@ namespace point_cloud_assembler
  * \section services ROS Services
  * - "~build_cloud" - Inhertited from point_cloud_assembler::BaseAssemblerSrv
  */
-class LaserScanAssemblerSrv : public BaseAssemblerSrv<laser_scan::LaserScan>
+class LaserScanAssemblerSrv : public BaseAssemblerSrv<sensor_msgs::LaserScan>
 {
 public:
-  LaserScanAssemblerSrv() : BaseAssemblerSrv<laser_scan::LaserScan>("laser_scan_assembler")
+  LaserScanAssemblerSrv() : BaseAssemblerSrv<sensor_msgs::LaserScan>("laser_scan_assembler")
   {
     // ***** Set Laser Projection Method *****
     ros::Node::instance()->param("~ignore_laser_skew", ignore_laser_skew_, true) ;
@@ -79,12 +79,12 @@ public:
 
   }
 
-  unsigned int GetPointsInScan(const LaserScan& scan)
+  unsigned int GetPointsInScan(const sensor_msgs::LaserScan& scan)
   {
     return scan.get_ranges_size() ;
   }
 
-  void ConvertToCloud(const string& fixed_frame_id, const LaserScan& scan_in, PointCloud& cloud_out)
+  void ConvertToCloud(const string& fixed_frame_id, const sensor_msgs::LaserScan& scan_in, PointCloud& cloud_out)
   {
     // apply filters on laser scan
     filter_chain_.update (scan_in, scan_filtered_);
@@ -108,8 +108,8 @@ private:
   bool ignore_laser_skew_ ;
   laser_scan::LaserProjection projector_ ;
 
-  filters::FilterChain<laser_scan::LaserScan> filter_chain_;
-  mutable LaserScan scan_filtered_;
+  filters::FilterChain<sensor_msgs::LaserScan> filter_chain_;
+  mutable sensor_msgs::LaserScan scan_filtered_;
 
 };
 

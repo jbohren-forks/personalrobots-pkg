@@ -56,10 +56,8 @@
 #include <robot_msgs/PoseDot.h>
 #include <robot_msgs/Point.h>
 
-#include <laser_scan/LaserScan.h>
 #include <tf/message_notifier.h>
 #include <tf/transform_listener.h>
-#include <laser_scan/laser_scan.h>
 
 #include <boost/thread.hpp>
 

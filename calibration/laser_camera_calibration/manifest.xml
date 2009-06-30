@@ -11,7 +11,7 @@
   <review status="unreviewed" notes=""/>
   <depend package="robot_msgs"/>
   <depend package="std_msgs"/>
-  <depend package="laser_scan"/>
+  <depend package="sensor_msgs"/>
   <depend package="rospy"/>
   <depend package="rosoct"/>
   <depend package="openraveros"/>

@@ -14,7 +14,7 @@
   <depend package="std_msgs"/>
   <depend package="robot_msgs"/>
   <depend package="mechanism_msgs" />
-  <depend package="laser_scan"/>
+  <depend package="sensor_msgs"/>
   <depend package="pr2_mechanism_controllers"/>
   <depend package="image_msgs" />
   <depend package="mechanism_msgs" />

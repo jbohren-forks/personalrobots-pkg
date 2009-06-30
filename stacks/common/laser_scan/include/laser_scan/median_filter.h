@@ -36,7 +36,7 @@
 
 #include "boost/thread/mutex.hpp"
 #include "boost/scoped_ptr.hpp"
-#include "laser_scan/LaserScan.h"
+#include "sensor_msgs/LaserScan.h"
 
 #include "filters/median.h"
 #include "filters/mean.h"
@@ -62,7 +62,7 @@ public:
    * \param scan_in The new scan to filter
    * \param scan_out The filtered scan
    */
-  bool update(const std::vector<laser_scan::LaserScan>& scan_in, std::vector<laser_scan::LaserScan>& scan_out);
+  bool update(const std::vector<sensor_msgs::LaserScan>& scan_in, std::vector<sensor_msgs::LaserScan>& scan_out);
 
 
 private:
@@ -70,7 +70,7 @@ private:
   unsigned int num_ranges_; /// How many data point are in each row
 
   boost::mutex data_lock; /// Protection from multi threaded programs
-  laser_scan::LaserScan temp_scan_; /** \todo cache only shallow info not full scan */
+  sensor_msgs::LaserScan temp_scan_; /** \todo cache only shallow info not full scan */
 
   filters::FilterChain<float> * range_filter_;
   filters::FilterChain<float> * intensity_filter_;
@@ -78,9 +78,9 @@ private:
   boost::scoped_ptr<TiXmlElement>  latest_xml_;
 };
 
-typedef laser_scan::LaserScan laser_scan_laser_scan;
+typedef sensor_msgs::LaserScan sensor_msgs_laser_scan;
 
-FILTERS_REGISTER_FILTER(LaserMedianFilter, laser_scan_laser_scan);
+FILTERS_REGISTER_FILTER(LaserMedianFilter, sensor_msgs_laser_scan);
 
 template <typename T>
 LaserMedianFilter<T>::LaserMedianFilter():
@@ -122,7 +122,7 @@ LaserMedianFilter<T>::~LaserMedianFilter()
 };
 
 template <typename T>
-bool LaserMedianFilter<T>::update(const std::vector<laser_scan::LaserScan>& data_in, std::vector<laser_scan::LaserScan>& data_out)
+bool LaserMedianFilter<T>::update(const std::vector<sensor_msgs::LaserScan>& data_in, std::vector<sensor_msgs::LaserScan>& data_out)
 {
   if (!this->configured_) 
   {
@@ -134,8 +134,8 @@ bool LaserMedianFilter<T>::update(const std::vector<laser_scan::LaserScan>& data
     ROS_ERROR("LaserMedianFilter is not vectorized");
     return false;
   }
-  const laser_scan::LaserScan & scan_in = data_in[0];
-  laser_scan::LaserScan & scan_out = data_out[0];
+  const sensor_msgs::LaserScan & scan_in = data_in[0];
+  sensor_msgs::LaserScan & scan_out = data_out[0];
   
   boost::mutex::scoped_lock lock(data_lock);
   scan_out = scan_in; ///Quickly pass through all data \todo don't copy data too

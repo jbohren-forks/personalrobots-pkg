@@ -61,7 +61,7 @@ $ amcl scan:=base_scan
 @section topic ROS topics
 
 Subscribes to (name type):
-- @b "scan" laser_scan/LaserScan : laser scans
+- @b "scan" sensor_msgs/LaserScan : laser scans
 - @b "tf_message" tf/tfMessage : transforms
 
 Publishes to (name type):
@@ -156,7 +156,7 @@ model.  The fifth parameter capture the tendency of the robot to translate
 #include "ros/node.h"
 
 // Messages that I need
-#include "laser_scan/LaserScan.h"
+#include "sensor_msgs/LaserScan.h"
 #include "robot_msgs/PoseWithCovariance.h"
 #include "nav_msgs/ParticleCloud.h"
 #include "robot_msgs/Pose.h"
@@ -231,7 +231,7 @@ class AmclNode
     // Message callbacks
     bool globalLocalizationCallback(std_srvs::Empty::Request& req,
                                     std_srvs::Empty::Response& res);
-    void laserReceived(const tf::MessageNotifier<laser_scan::LaserScan>::MessagePtr& laser_scan);
+    void laserReceived(const tf::MessageNotifier<sensor_msgs::LaserScan>::MessagePtr& laser_scan);
     void initialPoseReceived();
 
     double getYaw(tf::Pose& t);
@@ -254,7 +254,7 @@ class AmclNode
     double resolution;
     bool have_laser_pose;
 
-    tf::MessageNotifier<laser_scan::LaserScan>* laser_scan_notifer;
+    tf::MessageNotifier<sensor_msgs::LaserScan>* laser_scan_notifer;
 
     // Particle filter
     pf_t *pf_;
@@ -446,7 +446,7 @@ AmclNode::AmclNode() :
                                           &AmclNode::globalLocalizationCallback,
                                           this);
   laser_scan_notifer =
-          new tf::MessageNotifier<laser_scan::LaserScan>
+          new tf::MessageNotifier<sensor_msgs::LaserScan>
           (tf_, ros::Node::instance(),
            boost::bind(&AmclNode::laserReceived,
                        this, _1),
@@ -578,7 +578,7 @@ AmclNode::globalLocalizationCallback(std_srvs::Empty::Request& req,
 }
 
 void
-AmclNode::laserReceived(const tf::MessageNotifier<laser_scan::LaserScan>::MessagePtr& laser_scan)
+AmclNode::laserReceived(const tf::MessageNotifier<sensor_msgs::LaserScan>::MessagePtr& laser_scan)
 {
   // Do we have the base->base_laser Tx yet?
   if(!have_laser_pose)

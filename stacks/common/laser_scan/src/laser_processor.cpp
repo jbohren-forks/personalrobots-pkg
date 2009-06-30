@@ -40,7 +40,7 @@ using namespace ros;
 using namespace std;
 using namespace laser_scan;
 
-Sample* Sample::Extract(int ind, laser_scan::LaserScan& scan)
+Sample* Sample::Extract(int ind, sensor_msgs::LaserScan& scan)
 {
   Sample* s = new Sample;
 
@@ -112,7 +112,7 @@ tf::Point SampleSet::center()
 }
 
 
-void ScanMask::addScan(laser_scan::LaserScan& scan)
+void ScanMask::addScan(sensor_msgs::LaserScan& scan)
 {
   if (!filled)
   {
@@ -169,7 +169,7 @@ bool ScanMask::hasSample(Sample* s, float thresh)
 
 
 
-ScanProcessor::ScanProcessor(laser_scan::LaserScan& scan, ScanMask& mask_, float mask_threshold)
+ScanProcessor::ScanProcessor(sensor_msgs::LaserScan& scan, ScanMask& mask_, float mask_threshold)
 {
   scan_ = scan;
 

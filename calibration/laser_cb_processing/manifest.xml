@@ -10,7 +10,7 @@
   <depend package="topic_synchronizer" />
   <depend package="robot_msgs" />
   <depend package="opencv_latest" />
-  <depend package="laser_scan" />
+  <depend package="sensor_msgs" />
   <depend package="dense_laser_assembler" />
   
   <!-- For the pr2 tilt-laser projector -->

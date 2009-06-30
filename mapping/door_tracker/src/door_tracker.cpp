@@ -80,7 +80,7 @@
 #include <sys/time.h>
 
 // Clouds and scans
-#include <laser_scan/LaserScan.h>
+#include <sensor_msgs/LaserScan.h>
 #include <laser_scan/laser_scan.h>
 
 //Filters
@@ -109,7 +109,7 @@ class DoorTracker
 
     tf::TransformListener *tf_;
 
-    tf::MessageNotifier<laser_scan::LaserScan>* message_notifier_;
+    tf::MessageNotifier<sensor_msgs::LaserScan>* message_notifier_;
 
     door_msgs::Door door_msg_;
 
@@ -121,7 +121,7 @@ class DoorTracker
 
     bool active_;
 
-    filters::FilterChain<laser_scan::LaserScan> filter_chain_;
+    filters::FilterChain<sensor_msgs::LaserScan> filter_chain_;
 
     tf::Stamped<tf::Pose> global_pose_;
 
@@ -352,7 +352,7 @@ class DoorTracker
         node_->advertise<door_msgs::Door>( "~door_message", 0 );
         node_->advertiseService ("~doors_detector", &DoorTracker::detectDoorService, this);
 
-        message_notifier_ = new tf::MessageNotifier<laser_scan::LaserScan> (tf_, node_,  boost::bind(&DoorTracker::laserCallBack, this, _1), base_laser_topic_.c_str (), fixed_frame_, 1);
+        message_notifier_ = new tf::MessageNotifier<sensor_msgs::LaserScan> (tf_, node_,  boost::bind(&DoorTracker::laserCallBack, this, _1), base_laser_topic_.c_str (), fixed_frame_, 1);
         message_notifier_->setTolerance(ros::Duration(.02));
         active_ = true;
       }
@@ -406,7 +406,7 @@ class DoorTracker
 
 
 
-    void laserCallBack(const tf::MessageNotifier<laser_scan::LaserScan>::MessagePtr& scan_msg)
+    void laserCallBack(const tf::MessageNotifier<sensor_msgs::LaserScan>::MessagePtr& scan_msg)
     {
       if(!active_)
         return;
@@ -417,7 +417,7 @@ class DoorTracker
       cloud_msg_mutex_.lock();
 
       done_detection_  = false;
-      laser_scan::LaserScan filtered_scan;
+      sensor_msgs::LaserScan filtered_scan;
       filter_chain_.update (*scan_msg, filtered_scan);
       // Transform into a PointCloud message
       int mask = laser_scan::MASK_INTENSITY | laser_scan::MASK_DISTANCE | laser_scan::MASK_INDEX | laser_scan::MASK_TIMESTAMP;

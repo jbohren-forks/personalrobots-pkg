@@ -1,5 +1,5 @@
 #include <cstdio>
-#include "laser_scan/LaserScan.h"
+#include "sensor_msgs/LaserScan.h"
 #include "ros/node.h"
 #include "tf/transform_listener.h"
 
@@ -53,7 +53,7 @@ class Test
   private:
     ros::Node* node_;
     tf::TransformListener* tf_;
-    laser_scan::LaserScan scan_;
+    sensor_msgs::LaserScan scan_;
 };
 
 int

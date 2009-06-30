@@ -33,9 +33,6 @@
 *********************************************************************/
 
 
-#include "laser_scan/laser_scan.h"
-
-#include "laser_scan/LaserScan.h"
 #include "point_cloud_assembler/base_assembler_srv.h"
 
 
@@ -46,7 +43,7 @@ namespace point_cloud_assembler
 {
 
 /**
- * \brief Maintains a history of laser scans and generates a point cloud upon request
+ * \brief Maintains a history of incremental point clouds (usually from laser scans) and generates a point cloud upon request
  * \todo Clean up the doxygen part of this header
  * params
  *  * (Several params are inherited from BaseAssemblerSrv)

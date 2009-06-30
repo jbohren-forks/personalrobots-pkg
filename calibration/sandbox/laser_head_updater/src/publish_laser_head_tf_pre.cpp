@@ -39,7 +39,7 @@
 #include "tf/tfMessage.h"
 #include "tf/transform_datatypes.h"
 #include "mechanism_msgs/MechanismState.h"
-#include "laser_scan/LaserScan.h"
+#include "sensor_msgs/LaserScan.h"
 #include "image_msgs/RawStereo.h"
 
 class LaserHeadKinematics
@@ -57,7 +57,7 @@ public:
                         this) ;
 
     // Tilt Scan Updates
-    laser_pub_ = nh.advertise<laser_scan::LaserScan>("tilt_scan_cal", 100) ;
+    laser_pub_ = nh.advertise<sensor_msgs::LaserScan>("tilt_scan_cal", 100) ;
     laser_sub_ = nh.subscribe("tilt_scan", 100,
                               &LaserHeadKinematics::updateTiltScan, this) ;
 
@@ -76,9 +76,9 @@ public:
     stereo_pub_.publish(msg_out) ;
   }
 
-  void updateTiltScan(const laser_scan::LaserScanConstPtr& msg_in)
+  void updateTiltScan(const sensor_msgs::LaserScanConstPtr& msg_in)
   {
-    laser_scan::LaserScan msg_out ;
+    sensor_msgs::LaserScan msg_out ;
     msg_out = *msg_in ;
     msg_out.header.frame_id = "laser_tilt_link_cal" ;
     laser_pub_.publish(msg_out) ;

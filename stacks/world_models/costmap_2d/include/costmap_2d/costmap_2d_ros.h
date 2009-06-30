@@ -56,7 +56,7 @@
 #include <tf/message_notifier.h>
 #include <tf/transform_listener.h>
 
-#include <laser_scan/LaserScan.h>
+#include <sensor_msgs/LaserScan.h>
 #include <laser_scan/laser_scan.h>
 
 #include <robot_msgs/PointCloud.h>
@@ -116,7 +116,7 @@ namespace costmap_2d {
        * @param message The message returned from a message notifier 
        * @param buffer A pointer to the observation buffer to update
        */
-      void laserScanCallback(const tf::MessageNotifier<laser_scan::LaserScan>::MessagePtr& message, ObservationBuffer* buffer);
+      void laserScanCallback(const tf::MessageNotifier<sensor_msgs::LaserScan>::MessagePtr& message, ObservationBuffer* buffer);
 
       /**
        * @brief  A callback to handle buffering PointCloud messages
