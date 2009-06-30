@@ -159,14 +159,21 @@ def set_controller(controller, command):
                               SendMessageOnSubscribe(Float64(command)))
 
 def calibrate_imu():
-    rospy.logout("Calibrating IMU")
+    print "Waiting up to 20s for IMU calibration to complete."
+    endtime = rospy.get_time() + 20
     try:
-        rospy.wait_for_service('imu/calibrate', 5)
-        calibrate = rospy.ServiceProxy('imu/calibrate', std_srvs.srv.Empty)
-        calibrate(timeout=20) # This should take 10 seconds
-        return True
+        rospy.wait_for_service('imu/is_calibrated', 20)
+        is_calibrated = rospy.ServiceProxy('imu/is_calibrated',GetByte)
+        while True:
+            maxtime = max(1,endtime - rospy.get_time())
+            if is_calibrated(timeout=maxtime):
+                return True
+            if rospy.get_time() > endtime:
+                rospy.logerr("Timed out waiting for IMU calibration.")
+                return False
+            rospy.sleep(1)
     except:
-        rospy.logout("IMU calibration failed: %s"%sys.exc_info()[0])
+        rospy.logerr("Wait for IMU calibration failed: %s"%sys.exc_info()[0])
         return False
 
 if __name__ == '__main__':
@@ -183,7 +190,7 @@ if __name__ == '__main__':
 
     imustatus = calibrate_imu()
     if not imustatus:
-        rospy.logerr("IMU Calibration failed.")
+        print "IMU Calibration may have failed."
     
     # Check sign on torso lift controller
     calibrate(xml_for_cal("torso_lift", -10, 2000000, 0, 10000, 12000))
@@ -263,4 +270,4 @@ if __name__ == '__main__':
         print "Mechanism calibration complete, but IMU calibration failed."
         sys.exit(2)
     
-    rospy.logout("Calibration complete")
+    print "Calibration complete"

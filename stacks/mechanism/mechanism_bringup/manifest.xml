@@ -6,5 +6,4 @@
   <depend package="robot_mechanism_controllers"/>
   <depend package="pr2_mechanism_controllers"/>
   <depend package="robot_srvs"/>
-  <depend package="std_srvs"/>
 </package>
