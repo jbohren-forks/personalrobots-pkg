@@ -49,30 +49,29 @@
 #include <string>
 #include <map>
 
-/** Describing a kinematic robot model loaded from URDF. Visual geometry is ignored */
 
-/** Main namespace */
+/** \brief Main namespace */
 namespace planning_models
 {
  
     class StateParams;
     
-    /** Definition of a kinematic model. This class is not thread
+    /** \brief Definition of a kinematic model. This class is not thread
 	safe, however multiple instances can be created */
     class KinematicModel
     {
     public:
 	
-	/** Forward definition of a joint */
+	/** \brief Forward definition of a joint */
 	class Joint;
 	
-	/** Forward definition of a link */
+	/** \brief Forward definition of a link */
 	class Link;
 	
-	/** Forward definition of a robot */
+	/** \brief Forward definition of a robot */
 	class Robot;
 	
-	/** A joint from the robot. Contains the transform applied by the joint type */
+	/** \brief A joint from the robot. Contains the transform applied by the joint type */
 	class Joint
 	{
 	    friend class KinematicModel;	    
@@ -92,27 +91,27 @@ namespace planning_models
 	    }
 
 
-	    /** Name of the joint */
+	    /** \brief Name of the joint */
 	    std::string       name;
 	    
-	    /** The robot that owns this joint */
+	    /** \brief The robot that owns this joint */
 	    Robot            *owner;
 
-	    /** the links that this joint connects */	    
+	    /** \brief the links that this joint connects */	    
 	    Link             *before;
 	    Link             *after;
 	    
-	    /** The range of indices in the parameter vector that
+	    /** \brief The range of indices in the parameter vector that
 		needed to access information about the position of this
 		joint */
 	    unsigned int      usedParams;
 	    
-	    /** Bitvector identifying which groups this joint is part of */
+	    /** \brief Bitvector identifying which groups this joint is part of */
 	    std::vector<bool> inGroup;
 
 	protected:
 
-	    /** the local transform (computed by forward kinematics) */
+	    /** \brief the local transform (computed by forward kinematics) */
 	    btTransform       varTrans;
 
 	    /* Compute the parameter names from this joint; the
@@ -121,30 +120,30 @@ namespace planning_models
 	       vector of parameters */
 	    unsigned int computeParameterNames(unsigned int pos);
 
-	    /** Update varTrans if this joint is part of the group indicated by groupID
+	    /** \brief Update varTrans if this joint is part of the group indicated by groupID
 	     *  and recompute globalTrans using varTrans */
 	    const double* computeTransform(const double *params, int groupID);
 	    
-	    /** Update the value of VarTrans using the information from params */
+	    /** \brief Update the value of VarTrans using the information from params */
 	    virtual void updateVariableTransform(const double *params) = 0;
 
-	    /** Extract the information needed by the joint given the URDF description */
+	    /** \brief Extract the information needed by the joint given the URDF description */
 	    virtual void extractInformation(const robot_desc::URDF::Link *urdfLink, Robot *robot) = 0;
 	};
 
-	/** A fixed joint */
+	/** \brief A fixed joint */
 	class FixedJoint : public Joint
 	{
 	protected:
 	    
-	    /** Update the value of varTrans using the information from params */
+	    /** \brief Update the value of varTrans using the information from params */
 	    virtual void updateVariableTransform(const double *params);
 
-	    /** Extract the information needed by the joint given the URDF description */
+	    /** \brief Extract the information needed by the joint given the URDF description */
 	    virtual void extractInformation(const robot_desc::URDF::Link *urdfLink, Robot *robot);
 	};
 
-	/** A planar joint */
+	/** \brief A planar joint */
 	class PlanarJoint : public Joint
 	{
 	public:
@@ -155,14 +154,14 @@ namespace planning_models
 	    }
 
 	protected:
-	    /** Update the value of varTrans using the information from params */
+	    /** \brief Update the value of varTrans using the information from params */
 	    virtual void updateVariableTransform(const double *params);
 
-	    /** Extract the information needed by the joint given the URDF description */
+	    /** \brief Extract the information needed by the joint given the URDF description */
 	    virtual void extractInformation(const robot_desc::URDF::Link *urdfLink, Robot *robot);
 	};
 
-	/** A floating joint */
+	/** \brief A floating joint */
 	class FloatingJoint : public Joint
 	{
 	public:
@@ -174,14 +173,14 @@ namespace planning_models
 
 	protected:
 
-	    /** Update the value of varTrans using the information from params */
+	    /** \brief Update the value of varTrans using the information from params */
 	    virtual void updateVariableTransform(const double *params);
 
-	    /** Extract the information needed by the joint given the URDF description */
+	    /** \brief Extract the information needed by the joint given the URDF description */
 	    virtual void extractInformation(const robot_desc::URDF::Link *urdfLink, Robot *robot);
 	};
 
-	/** A prismatic joint */
+	/** \brief A prismatic joint */
 	class PrismaticJoint : public Joint
 	{
 	public:
@@ -196,15 +195,15 @@ namespace planning_models
 	    double    limit[2];
 
 	protected:
-	    /** Update the value of varTrans using the information from params */
+	    /** \brief Update the value of varTrans using the information from params */
 	    virtual void updateVariableTransform(const double *params);
 
-	    /** Extract the information needed by the joint given the URDF description */
+	    /** \brief Extract the information needed by the joint given the URDF description */
 	    virtual void extractInformation(const robot_desc::URDF::Link *urdfLink, Robot *robot);
 	    
 	};
 	
-	/** A revolute joint */
+	/** \brief A revolute joint */
 	class RevoluteJoint : public Joint
 	{
 	public:
@@ -223,15 +222,15 @@ namespace planning_models
 
 	protected:
 
-	    /** Update the value of varTrans using the information from params */
+	    /** \brief Update the value of varTrans using the information from params */
 	    virtual void updateVariableTransform(const double *params);
 
-	    /** Extract the information needed by the joint given the URDF description */
+	    /** \brief Extract the information needed by the joint given the URDF description */
 	    virtual void extractInformation(const robot_desc::URDF::Link *urdfLink, Robot *robot);
 
 	};
 	
-	/** Class defining bodies that can be attached to robot
+	/** \brief Class defining bodies that can be attached to robot
 	    links. This is useful when handling objects picked up by
 	    the robot. */
 	class AttachedBody
@@ -252,22 +251,22 @@ namespace planning_models
 		    delete shape;
 	    }
 	    
-	    /** The constant transform applied to the link (needs to be specified by user) */
+	    /** \brief The constant transform applied to the link (needs to be specified by user) */
 	    btTransform         attachTrans;
 
-	    /** The geometry of the attached body */
+	    /** \brief The geometry of the attached body */
 	    shapes::Shape*      shape;
 
-	    /** The global transform for this link (computed by forward kinematics) */
+	    /** \brief The global transform for this link (computed by forward kinematics) */
 	    btTransform         globalTrans;
 	    
 	protected:
-	    /** recompute globalTrans */
+	    /** \brief recompute globalTrans */
 	    void computeTransform(btTransform &parentTrans);
 	};
 	
 	
-	/** A link from the robot. Contains the constant transform applied to the link and its geometry */
+	/** \brief A link from the robot. Contains the constant transform applied to the link and its geometry */
 	class Link
 	{
 	    friend class KinematicModel;
@@ -294,36 +293,36 @@ namespace planning_models
 		    delete attachedBodies[i];
 	    }
 
-	    /** Name of the link */
+	    /** \brief Name of the link */
 	    std::string                name;
 
-	    /** The model that owns this link */
+	    /** \brief The model that owns this link */
 	    Robot                     *owner;
 
-	    /** Joint that connects this link to the parent link */
+	    /** \brief Joint that connects this link to the parent link */
 	    Joint                     *before;
 	    
-	    /** List of descending joints (each connects to a child link) */
+	    /** \brief List of descending joints (each connects to a child link) */
 	    std::vector<Joint*>        after;
 	    
-	    /** The constant transform applied to the link (local) */
+	    /** \brief The constant transform applied to the link (local) */
 	    btTransform                constTrans;
 	    
-	    /** The constant transform applied to the collision geometry of the link (local) */
+	    /** \brief The constant transform applied to the collision geometry of the link (local) */
 	    btTransform                constGeomTrans;
 	    
-	    /** The geometry of the link */
+	    /** \brief The geometry of the link */
 	    shapes::Shape             *shape;
 	    
-	    /** Attached bodies */
+	    /** \brief Attached bodies */
 	    std::vector<AttachedBody*> attachedBodies;	    
 	    
 	    /* ----------------- Computed data -------------------*/
 	    
-	    /** The global transform this link forwards (computed by forward kinematics) */
+	    /** \brief The global transform this link forwards (computed by forward kinematics) */
 	    btTransform                globalTransFwd;
 
-	    /** The global transform for this link (computed by forward kinematics) */
+	    /** \brief The global transform for this link (computed by forward kinematics) */
 	    btTransform                globalTrans;
 
 	protected:
@@ -331,15 +330,15 @@ namespace planning_models
 	    /* compute the parameter names from this link */
 	    unsigned int computeParameterNames(unsigned int pos);
 
-	    /** recompute globalTrans */
+	    /** \brief recompute globalTrans */
 	    const double* computeTransform(const double *params, int groupID);
 
-	    /** Extract the information needed by the joint given the URDF description */
+	    /** \brief Extract the information needed by the joint given the URDF description */
 	    void extractInformation(const robot_desc::URDF::Link *urdfLink, Robot *robot);
 	    
 	};
 	
-	/** A robot structure */
+	/** \brief A robot structure */
 	struct Robot
 	{
 	    Robot(KinematicModel *model)
@@ -356,38 +355,38 @@ namespace planning_models
 		    delete chain;
 	    }
 	    
-	    /** The model that owns this robot */
+	    /** \brief The model that owns this robot */
 	    KinematicModel     *owner;
 	    
-	    /** A transform that is applied to the entire robot */
+	    /** \brief A transform that is applied to the entire robot */
 	    btTransform         rootTransform;
 
-	    /** List of links in the robot */
+	    /** \brief List of links in the robot */
 	    std::vector<Link*>  links;
 
-	    /** List of joints in the robot */
+	    /** \brief List of joints in the robot */
 	    std::vector<Joint*> joints;
 	    
-	    /** The first joint in the robot -- the root */
+	    /** \brief The first joint in the robot -- the root */
 	    Joint              *chain;	    
 
-	    /** Number of parameters needed to define the joints */
+	    /** \brief Number of parameters needed to define the joints */
 	    unsigned int        stateDimension;
 	    
-	    /** The bounding box for the set of parameters describing the
+	    /** \brief The bounding box for the set of parameters describing the
 	     *  joints.  This array contains 2 * stateDimension elements:
 	     *  positions 2*i and 2*i+1 define the minimum and maximum
 	     *  values for the parameter. If both minimum and maximum are
 	     *  set to 0, the parameter is unbounded. */
 	    std::vector<double> stateBounds;
 	    
-	    /** The list of index values where floating joints
+	    /** \brief The list of index values where floating joints
 		start. These joints need special attention in motion
 		planning, so the indices are provided here for
 		convenience. */
 	    std::vector<int>    floatingJoints;
 
-	    /** The list of index values where planar joints
+	    /** \brief The list of index values where planar joints
 		start. These joints need special attention in motion
 		planning, so the indices are provided here for
 		convenience. */
@@ -403,32 +402,32 @@ namespace planning_models
 	    
 	};
 
-	/** State information */
+	/** \brief State information */
 	struct ModelInfo
 	{
-	    /** Cumulative list of floating joints */
+	    /** \brief Cumulative list of floating joints */
 	    std::vector<int>    floatingJoints;
 	    
-	    /** Cumulative list of planar joints */
+	    /** \brief Cumulative list of planar joints */
 	    std::vector<int>    planarJoints;
 	    
-	    /** Cumulative state dimension */
+	    /** \brief Cumulative state dimension */
 	    unsigned int        stateDimension;
 	    
-	    /** Cumulative state bounds */
+	    /** \brief Cumulative state bounds */
 	    std::vector<double> stateBounds;
 	    
-	    /** A map defining the parameter names in the complete state */
+	    /** \brief A map defining the parameter names in the complete state */
 	    std::map<std::string, unsigned int>      parameterIndex;
 	    std::map<unsigned int, std::string>      parameterName;
 	    
-	    /** Cumulative index list */
+	    /** \brief Cumulative index list */
 	    std::vector< std::vector<unsigned int> > groupStateIndexList;
 	    
-	    /** Cumulative list of group roots */
+	    /** \brief Cumulative list of group roots */
 	    std::vector< std::vector<Joint*> >       groupChainStart;
 
-	    /** True if this model has been set in the robot frame */
+	    /** \brief True if this model has been set in the robot frame */
 	    bool                                     inRobotFrame;
 	};
 	
@@ -455,79 +454,79 @@ namespace planning_models
 	void         setVerbose(bool verbose);	
 	
 
-	/** General the model name **/
+	/** \brief General the model name **/
 	const std::string& getModelName(void) const;
 	
-	/** Get the number of robots in the model */
+	/** \brief Get the number of robots in the model */
 	unsigned int getRobotCount(void) const;
 
-	/** Get the datastructure associated to a specific robot */
+	/** \brief Get the datastructure associated to a specific robot */
 	Robot*       getRobot(unsigned int index) const;
 
-	/** Get the array of planning groups, indexed by their group ID */
+	/** \brief Get the array of planning groups, indexed by their group ID */
 	void         getGroups(std::vector<std::string> &groups) const;
 	
-	/** Get the number of groups */
+	/** \brief Get the number of groups */
 	unsigned int getGroupCount(void) const;
 	
-	/** Get the group ID of a group */
+	/** \brief Get the group ID of a group */
 	int          getGroupID(const std::string &group) const;
 	
-	/** Get a link by its name */
+	/** \brief Get a link by its name */
 	Link*        getLink(const std::string &link) const;
 
-	/** Get the array of links, in no particular order */
+	/** \brief Get the array of links, in no particular order */
 	void         getLinks(std::vector<Link*> &links) const;
 
-	/** Get a joint by its name */
+	/** \brief Get a joint by its name */
 	Joint*       getJoint(const std::string &joint) const;
 
-	/** Get the array of joints, ordered in the same way as in the state vector */
+	/** \brief Get the array of joints, ordered in the same way as in the state vector */
 	void         getJoints(std::vector<Joint*> &joints) const;
 
-	/** Get the names of the joints in a specific group. Only joints with paramteres are returned and the order is the 
+	/** \brief Get the names of the joints in a specific group. Only joints with paramteres are returned and the order is the 
 	    same as in the group state */
 	void         getJointsInGroup(std::vector<std::string> &names, int groupID) const;
 	
-	/** Get the names of the joints in a specific group. Only joints with parameters are returned and the order is the 
+	/** \brief Get the names of the joints in a specific group. Only joints with parameters are returned and the order is the 
 	    same as in the group state */
 	void         getJointsInGroup(std::vector<std::string> &names, const std::string &name) const;
 
-	/** Return the index of a joint in the complete state vector */
+	/** \brief Return the index of a joint in the complete state vector */
 	int getJointIndex(const std::string &name) const;
 
-	/** Get the index for the parameter of a joint in a given group */
+	/** \brief Get the index for the parameter of a joint in a given group */
 	int getJointIndexInGroup(const std::string &name, const std::string &group) const;
 
-	/** Get the index for the parameter of a joint in a given group */
+	/** \brief Get the index for the parameter of a joint in a given group */
 	int getJointIndexInGroup(const std::string &name, int groupID) const;
 
-	/** Returns the dimension of the group (as a state, not number of joints) */
+	/** \brief Returns the dimension of the group (as a state, not number of joints) */
 	unsigned int getGroupDimension(int groupID) const;
 	
-	/** Returns the dimension of the group (as a state, not number of joints) */
+	/** \brief Returns the dimension of the group (as a state, not number of joints) */
 	unsigned int getGroupDimension(const std::string &name) const;
 
-	/** Bring the robot to a default state */
+	/** \brief Bring the robot to a default state */
 	void defaultState(void);
 
-	/** Apply the transforms to a group, based on the params */
+	/** \brief Apply the transforms to a group, based on the params */
 	void computeTransformsGroup(const double *params, int groupID);
 
-	/** Apply the transforms to the entire robot, based on the params */
+	/** \brief Apply the transforms to the entire robot, based on the params */
 	void computeTransforms(const double *params);
 	
-	/** Add transforms to the rootTransform such that the robot is in its planar/floating link frame.
+	/** \brief Add transforms to the rootTransform such that the robot is in its planar/floating link frame.
 	 *  Such a transform is needed only if the root joint of the robot is planar or floating */
 	void reduceToRobotFrame(void);
 
-	/** Provide interface to a lock. Use carefully! */
+	/** \brief Provide interface to a lock. Use carefully! */
 	void lock(void)
 	{
 	    m_lock.lock();
 	}
 	
-	/** Provide interface to a lock. Use carefully! */
+	/** \brief Provide interface to a lock. Use carefully! */
 	void unlock(void)
 	{
 	    m_lock.unlock();
@@ -541,7 +540,7 @@ namespace planning_models
 	
     protected:
 	
-	/** The name of the model */
+	/** \brief The name of the model */
 	std::string                                       m_name;
 	ModelInfo                                         m_mi;
 	
@@ -564,22 +563,22 @@ namespace planning_models
     private:
 	
 
-	/** Build the needed datastructure for a joint */
+	/** \brief Build the needed datastructure for a joint */
 	void buildChainJ(Robot *robot, Link  *parent, Joint *joint, const robot_desc::URDF::Link *urdfLink, const robot_desc::URDF &model);
 
-	/** Build the needed datastructure for a link */
+	/** \brief Build the needed datastructure for a link */
 	void buildChainL(Robot *robot, Joint *parent, Link  *link,  const robot_desc::URDF::Link *urdfLink, const robot_desc::URDF &model);
 
-	/** Construct the list of groups the model knows about (the ones marked with the 'plan' attribute) */
+	/** \brief Construct the list of groups the model knows about (the ones marked with the 'plan' attribute) */
 	void constructGroupList();
 	
 	/* compute the parameter names  */
 	void computeParameterNames(void);
 
-	/** Get the index for the parameter of a joint in a given group */
+	/** \brief Get the index for the parameter of a joint in a given group */
 	int getJointIndexInGroupSlow(const std::string &name, int groupID) const;
 	
-	/** Allocate a joint of appropriate type, depending on the loaded link */
+	/** \brief Allocate a joint of appropriate type, depending on the loaded link */
 	Joint* createJoint(const robot_desc::URDF::Link* urdfLink);
 	
     };

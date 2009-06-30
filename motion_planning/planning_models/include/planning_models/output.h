@@ -40,17 +40,23 @@
 #include <string>
 #include <cstdarg>
 
-/** Main namespace */
+/** \brief Main namespace */
 namespace planning_models
 {
     
-    /** Message namespace */
+    /** \brief Message namespace. Code in this namespace is used to
+	forward information/warnings/errors to the user by using
+	output handlers. The library uses an Interface to send such
+	messages. The Interface in turn uses an instance of an
+	OutputHandler to publish this data. By default, data goes to
+	STDOUT and STDERR */
     namespace msg
     {
 	
-	/** The piece of code that desires interaction with an action
-	    or an output handler should use an instance of this
-	    class */
+	/** \brief The piece of code that desires interaction with an
+	    output handler should use an instance of this
+	    class. Multiple instances of this class will use the same
+	    OutputHandler */
 	class Interface
 	{
 	public: 
@@ -74,7 +80,9 @@ namespace planning_models
 	    
 	};
 	
-	/** Generic class to handle output from a piece of code */
+	/** \brief Generic class to handle output from a piece of
+	    code. An instance of an output handler is used by the
+	    Interface instances */
 	class OutputHandler
 	{
 	public:
@@ -87,19 +95,20 @@ namespace planning_models
 	    {
 	    }
 
-	    /** Print an error message: "Error: ...." */
+	    /** \brief Print an error message: "Error: ...." */
 	    virtual void error(const std::string &text) = 0;
 
-	    /** Print an warning message: "Warning: ...." */
+	    /** \brief Print an warning message: "Warning: ...." */
 	    virtual void warn(const std::string &text) = 0;
 
-	    /** Print some information: "Information: ...." */
+	    /** \brief Print some information: "Information: ...." */
 	    virtual void inform(const std::string &text) = 0;
 	    
-	    /** Print a simple message */
+	    /** \brief Print a simple message */
 	    virtual void message(const std::string &text) = 0;
 	};
-
+	
+	/** \brief Default output handler: prints to STDOUT and STDERR */
 	class OutputHandlerSTD : public OutputHandler
 	{
 	public:
@@ -108,23 +117,28 @@ namespace planning_models
 	    {
 	    }
 	    
-	    /** Print an error message: "Error: ...." */
+	    /** \brief Print an error message: "Error: ...." */
 	    virtual void error(const std::string &text);
 	    
-	    /** Print an warning message: "Warning: ...." */
+	    /** \brief Print an warning message: "Warning: ...." */
 	    virtual void warn(const std::string &text);
 
-	    /** Print some information: "Information: ...." */
+	    /** \brief Print some information: "Information: ...." */
 	    virtual void inform(const std::string &text);
 	    
-	    /** Print a simple message */
+	    /** \brief Print a simple message */
 	    virtual void message(const std::string &text);
 	    
 	    
 	};
 
+	/** \brief Disable all output */
 	void noOutputHandler(void);
+
+	/** \brief Direct output to this handler */
 	void useOutputHandler(OutputHandler *oh);
+
+	/** \brief Get the address of the active handler */
 	OutputHandler* getOutputHandler(void);
     }
     

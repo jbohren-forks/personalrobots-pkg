@@ -44,9 +44,8 @@
 #include <map>
 #include <iostream>
 
-/** Maintaining a kinematic state */
 
-/** Main namespace */
+/** \brief Main namespace */
 namespace planning_models
 {
     
