@@ -45,11 +45,16 @@ function robmanual()
 
 function robstream()
 {
-    if [[${PR} == prf]]; then
-	env PRCAM=${PR3} roslaunch ${HOME}/ros/ros-pkg/sandbox/teleoperation/launch/camstream.launch &
-    else
-	env PRCAM=${PR4} roslaunch ${HOME}/ros/ros-pkg/sandbox/teleoperation/launch/camstream.launch &
-    fi	
+#    if [[ ${PR} == prf ]]; then
+#	env PRCAM=${PR3} roslaunch ${HOME}/ros/ros-pkg/sandbox/teleoperation/launch/camstream.launch &
+#    else
+#	env PRCAM=${PR4} roslaunch ${HOME}/ros/ros-pkg/sandbox/teleoperation/launch/camstream.launch &
+#    fi	
+    if [[ `ssh ${PR4} ls -al /dev/raw1394` != crw-rw-rw-* ]]; then
+	echo "FIXING camera (/dev/raw1394) permissions!!!"
+	ssh root@${PR4} chmod o+rw /dev/raw1394
+    fi
+    roslaunch ${HOME}/ros/ros-pkg/sandbox/teleoperation/launch/camstream.launch &
 }
 
 function robtele()
@@ -57,7 +62,7 @@ function robtele()
     echo "KILL TUCKARM"
     roslaunch `rospack find pr2_alpha`/teleop_base_spaceball.launch &
     roslaunch ${HOME}/ros/ros-pkg/sandbox/teleoperation/launch/telearms.launch &
-    robstream
+#    robstream
 }
 
 
@@ -87,6 +92,10 @@ function conspacenavd()
 
 function conviz()
 {
+    if [[ `ls -al /dev/nvidiactl` != crw-rw-rw-* ]]; then
+	echo "FIXING NVIDIA (/dev/nvidiactl) permissions!!!"
+	sudo chmod o+rw /dev/nvidia*
+    fi
     rosrun rviz rviz &
     # rosrun poseviz poseviz pose:=/r_arm_cartesian_pose_controller/state/pose &
     # rosrun poseviz poseviz pose:=/thumpnode/command_pose_right &
@@ -101,7 +110,11 @@ function conwatch()
 
 function contele()
 {
+    if [[ `ls -al /dev/input/js0` != crw-rw-rw-* ]]; then
+	echo "FIXING joystick (/dev/input/js0) permissions!!!"
+	sudo chmod o+rw /dev/input/js0
+    fi
     rosrun joy joy __name:=foot _dev:=/dev/input/js0 _deadzone:=0 joy:=foot &
     rosrun spacenav_node spacenav_node &
-    conwatch
+#    conwatch
 }

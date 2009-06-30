@@ -1,29 +1,40 @@
 <launch>
 
-<!-- Set the remote machines -->
-  <machine name="camera" address="$(env PRCAM)" ros-root="$(env ROS_ROOT)" ros-package-path="$(env ROS_PACKAGE_PATH)" />
+  <!-- Set the remote machines -->
+  <machine name="camera" address="$(env PR4)" ros-root="$(env ROS_ROOT)" ros-package-path="$(env ROS_PACKAGE_PATH)" />
 
-
-<!-- Stereo parameters -->
+  <!-- Group the camera and processing under /stereo -->
   <group ns="stereo">
-    <param name="videre_mode" type="str" value="none"/>
-    <param name="do_colorize" type="bool" value="True"/>
-    <param name="do_rectify" type="bool" value="True"/>
-    <param name="do_stereo" type="bool" value="False"/>
-    <param name="do_calc_points" type="bool" value="False"/>
-    <param name="do_keep_coords" type="bool" value="False"/>
-    <param name="exposure_auto" type="bool" value="True" />
-    <param name="gain_auto" type="bool" value="True" />
-    <param name="brightness_auto" type="bool" value="True" />
-    <param name="fps" type="double" value="15.0"/>
-    <param name="frame_id" type="string" value="stereo_optical_frame"/>
+
+    <!-- Stereo Camera (Videre) is already started in the main launch file. -->
+    <!--
+    <node machine="camera" pkg="dcam" type="stereodcam" respawn="false" >
+      <param name="videre_mode" type="str" value="none"/>
+      <param name="fps" type="double" value="15.0"/>
+      <param name="frame_id" type="string" value="stereo_optical_frame"/>
+      <param name="exposure_auto" type="bool" value="true"/>
+      <param name="brightness_auto" type="bool" value="true"/>
+      <param name="gain_auto" type="bool" value="true"/>
+    </node>
+    -->
+
+    <!-- Stereo Processing -->
+    <node machine="camera" pkg="stereo_image_proc" type="stereoproc"
+          respawn="false" output="screen" name="stereoproc">
+      <param name="do_colorize" type="bool" value="true"/>
+      <param name="do_rectify" type="bool" value="true"/>
+      <!-- For teleoperation, set do_stereo, do_calc_points, do_keep_coords all to false! -->
+      <param name="do_stereo" type="bool" value="false"/>
+      <param name="do_calc_points" type="bool" value="false"/>
+      <param name="do_keep_coords" type="bool" value="false"/>
+    </node>
   </group>
 
-  <node machine="camera"  pkg="dcam"              type="stereodcam" respawn="false"/>
-  <node machine="camera"  pkg="stereo_image_proc" type="stereoproc" respawn="false"/>
-
-  <node machine="camera"  pkg="jpeg"              type="encoder">
+  <!-- Encode the image in jpeg format -->
+  <node machine="camera" pkg="jpeg" type="encoder">
     <remap from="raw_image" to="/stereo/left/image_rect"/>
   </node>
 
 </launch>
+
+
