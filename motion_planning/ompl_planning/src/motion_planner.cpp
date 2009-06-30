@@ -34,10 +34,10 @@
 
 /** \author Ioan Sucan */
 
-#include "kinematic_planning/RKPModel.h"
-#include "kinematic_planning/RKPRequestHandler.h"
+#include "ompl_planning/Model.h"
+#include "ompl_planning/RequestHandler.h"
 
-using namespace kinematic_planning;
+using namespace ompl_planning;
 
 class OMPLPlanning 
 {
@@ -61,7 +61,7 @@ public:
     /** Free the memory */
     ~OMPLPlanning(void)
     {
-	for (std::map<std::string, RKPModel*>::iterator i = models_.begin() ; i != models_.end() ; i++)
+	for (std::map<std::string, Model*>::iterator i = models_.begin() ; i != models_.end() ; i++)
 	    delete i->second;
 	delete planningMonitor_;
 	delete collisionModels_;
@@ -184,7 +184,7 @@ public:
 	
 	for (std::map< std::string, std::vector<std::string> >::iterator it = groups.begin(); it != groups.end() ; ++it)
 	{
-	    RKPModel *model = new RKPModel();
+	    Model *model = new Model();
 	    model->planningMonitor = planningMonitor_;
 	    model->collisionSpace = planningMonitor_->getEnvironmentModel();
 	    model->kmodel = planningMonitor_->getKinematicModel();
@@ -198,22 +198,22 @@ public:
 
     void knownModels(std::vector<std::string> &model_ids)
     {
-	for (std::map<std::string, RKPModel*>::const_iterator i = models_.begin() ; i != models_.end() ; ++i)
+	for (std::map<std::string, Model*>::const_iterator i = models_.begin() ; i != models_.end() ; ++i)
 	    model_ids.push_back(i->first);
     }
 
 private:
     
     // ROS interface 
-    ros::NodeHandle                                                 nodeHandle_;
-    planning_environment::CollisionModels                          *collisionModels_;
-    planning_environment::PlanningMonitor                          *planningMonitor_;
-    ros::ServiceServer                                              planKinematicPathService_;
+    ros::NodeHandle                        nodeHandle_;
+    planning_environment::CollisionModels *collisionModels_;
+    planning_environment::PlanningMonitor *planningMonitor_;
+    ros::ServiceServer                     planKinematicPathService_;
 
 
     // planning data
-    ModelMap                                                        models_;
-    RKPRequestHandler                                               requestHandler_;
+    ModelMap                               models_;
+    RequestHandler                         requestHandler_;
 };
 
 class OutputHandlerROScon : public ompl::msg::OutputHandler

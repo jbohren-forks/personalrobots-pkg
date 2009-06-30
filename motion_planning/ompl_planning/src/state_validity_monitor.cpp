@@ -39,45 +39,6 @@
 @b StateValidityMonitor is a node capable of verifying if the current
 state of the robot is valid or not.
 
-<hr>
-
-@section usage Usage
-@verbatim
-$ state_validity_monitor robot_model [standard ROS args]
-@endverbatim
-
-@par Example
-
-@verbatim
-$ state_validity_monitor robotdesc/pr2
-@endverbatim
-
-<hr>
-
-@section topic ROS topics
-
-Subscribes to (name/type):
-- None
-
-Publishes to (name/type):
-- @b "state_validity"/Byte : 1 if state is valid, 0 if it is invalid
-
-<hr>
-
-@section services ROS services
-
-Uses (name/type):
-- None
-
-Provides (name/type):
-- None
-
-
-<hr>
-
-@section parameters ROS parameters
-- None
-
 **/
 
 #include <planning_environment/collision_space_monitor.h>

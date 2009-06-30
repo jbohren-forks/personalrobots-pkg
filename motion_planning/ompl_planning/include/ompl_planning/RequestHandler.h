@@ -32,50 +32,51 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
-/* \author Ioan Sucan */
+/** \author Ioan Sucan */
 
-#ifndef OMPL_BASE_PATH_
-#define OMPL_BASE_PATH_
+#ifndef OMPL_PLANNING_REQUEST_HANDLER_
+#define OMPL_PLANNING_REQUEST_HANDLER_
 
-#include "ompl/base/General.h"
+#include "ompl_planning/Model.h"
+#include <motion_planning_srvs/KinematicPlan.h>
 
-namespace ompl
-{
-    namespace base
+/** \brief Main namespace */
+namespace ompl_planning
+{    
+   
+    /** \brief This class represents a basic request to a motion
+	planner. */
+
+    class RequestHandler
     {
-	class SpaceInformation;
+    public:
 	
-	/** \brief Abstract definition of a path */
-	class Path
+	RequestHandler(void)
 	{
-	public:
-	    
-	    /** \brief Constructor. A path must always know the space information it is part of */
-	    Path(SpaceInformation *si)
-	    {
-		m_si = si;
-	    }
-	    
-	    /** \brief Destructor */
-	    virtual ~Path(void)
-	    {
-	    }
-	    
-	    /** \brief Returns the space information this path is part of */
-	    SpaceInformation* getSpaceInformation(void) const
-	    {
-		return m_si;
-	    }
-	    
-	    /** \brief Return the length of a path */
-	    virtual double length(void) const = 0;
-	    
-	protected:
-	    
-	    SpaceInformation *m_si;
-	};
+	}
 	
-    }
-}
+	~RequestHandler(void)
+	{
+	}
+	
+	bool isRequestValid(ModelMap &models, motion_planning_srvs::KinematicPlan::Request &req);
+
+	/* \brief Check and compute a motion plan. Return true if the plan was succesfully computed */
+	bool computePlan(ModelMap &models, const planning_models::StateParams *start, motion_planning_srvs::KinematicPlan::Request &req, motion_planning_srvs::KinematicPlan::Response &res);
+	
+	
+    protected:
+
+	/** \brief Set up all the data needed by motion planning based on a request and lock the planner setup
+	 *  using this data */
+	void configure(const planning_models::StateParams *startState, motion_planning_srvs::KinematicPlan::Request &req, PlannerSetup *psetup);
+	
+	/** \brief Compute the actual motion plan. Return true if computed plan was trivial (start state already in goal region) */
+	bool callPlanner(PlannerSetup *psetup, int times, double allowed_time, bool interpolate,
+			 ompl::base::Path* &bestPath, double &bestDifference, bool &approximate);
+	
+    };
+    
+} // ompl_planning
 
 #endif

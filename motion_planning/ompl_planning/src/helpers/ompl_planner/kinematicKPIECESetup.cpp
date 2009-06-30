@@ -32,50 +32,56 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
-/* \author Ioan Sucan */
+/** \author Ioan Sucan */
 
-#ifndef OMPL_BASE_PATH_
-#define OMPL_BASE_PATH_
+#include "ompl_planning/planners/kinematicKPIECESetup.h"
 
-#include "ompl/base/General.h"
-
-namespace ompl
+ompl_planning::kinematicKPIECESetup::kinematicKPIECESetup(ModelBase *m) : PlannerSetup(m)
 {
-    namespace base
+    name = "kinematic::KPIECE";	    
+    priority = 3;
+}
+
+ompl_planning::kinematicKPIECESetup::~kinematicKPIECESetup(void)
+{
+    if (dynamic_cast<ompl::kinematic::KPIECE1*>(mp))
     {
-	class SpaceInformation;
-	
-	/** \brief Abstract definition of a path */
-	class Path
-	{
-	public:
-	    
-	    /** \brief Constructor. A path must always know the space information it is part of */
-	    Path(SpaceInformation *si)
-	    {
-		m_si = si;
-	    }
-	    
-	    /** \brief Destructor */
-	    virtual ~Path(void)
-	    {
-	    }
-	    
-	    /** \brief Returns the space information this path is part of */
-	    SpaceInformation* getSpaceInformation(void) const
-	    {
-		return m_si;
-	    }
-	    
-	    /** \brief Return the length of a path */
-	    virtual double length(void) const = 0;
-	    
-	protected:
-	    
-	    SpaceInformation *m_si;
-	};
-	
+	ompl::base::ProjectionEvaluator *pe = dynamic_cast<ompl::kinematic::KPIECE1*>(mp)->getProjectionEvaluator();
+	if (pe)
+	    delete pe;
     }
 }
 
-#endif
+bool ompl_planning::kinematicKPIECESetup::setup(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options)
+{
+    preSetup(options);
+    
+    ompl::kinematic::KPIECE1 *kpiece = new ompl::kinematic::KPIECE1(dynamic_cast<ompl::kinematic::SpaceInformationKinematic*>(si));
+    mp                               = kpiece;	
+    
+    if (options->hasParam("range"))
+    {
+	kpiece->setRange(options->getParamDouble("range", kpiece->getRange()));
+	ROS_DEBUG("Range is set to %g", kpiece->getRange());
+    }
+    
+    if (options->hasParam("goal_bias"))
+    {
+	kpiece->setGoalBias(options->getParamDouble("goal_bias", kpiece->getGoalBias()));
+	ROS_DEBUG("Goal bias is set to %g", kpiece->getGoalBias());
+    }
+    
+    kpiece->setProjectionEvaluator(getProjectionEvaluator(options));
+    
+    if (kpiece->getProjectionEvaluator() == NULL)
+    {
+	ROS_WARN("Adding %s failed: need to set both 'projection' and 'celldim' for %s", name.c_str(), model->groupName.c_str());
+	return false;
+    }
+    else
+    {
+	postSetup(options);
+	return true;
+    }
+}
+

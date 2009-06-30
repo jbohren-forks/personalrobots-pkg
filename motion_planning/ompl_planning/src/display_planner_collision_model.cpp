@@ -39,45 +39,6 @@
 @b DisplayPlannerCollisionModel is a node that displays the state of
 the robot's collision space, as seen by the planner
 
-<hr>
-
-@section usage Usage
-@verbatim
-$ display_planner_collision_model [standard ROS args]
-@endverbatim
-
-@par Example
-
-@verbatim
-$ display_planner_collision_model robot_description:=robotdesc/pr2
-@endverbatim
-
-<hr>
-
-@section topic ROS topics
-
-Subscribes to (name/type):
-- None
-
-Publishes to (name/type):
-- @b "visualization_marker"/visualization_msgs::Marker
-
-<hr>
-
-@section services ROS services
-
-Uses (name/type):
-- None
-
-Provides (name/type):
-- None
-
-
-<hr>
-
-@section parameters ROS parameters
-- None
-
 **/
 
 #include <planning_environment/collision_space_monitor.h>

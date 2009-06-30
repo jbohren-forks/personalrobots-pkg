@@ -32,50 +32,49 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
-/* \author Ioan Sucan */
+/** \author Ioan Sucan */
 
-#ifndef OMPL_BASE_PATH_
-#define OMPL_BASE_PATH_
+#include "ompl_planning/planners/kinematicSBLSetup.h"
 
-#include "ompl/base/General.h"
-
-namespace ompl
+ompl_planning::kinematicSBLSetup::kinematicSBLSetup(ModelBase *m) : PlannerSetup(m)
 {
-    namespace base
+    name = "kinematic::SBL";	    
+    priority = 10;
+}
+
+ompl_planning::kinematicSBLSetup::~kinematicSBLSetup(void)
+{
+    if (dynamic_cast<ompl::kinematic::SBL*>(mp))
     {
-	class SpaceInformation;
-	
-	/** \brief Abstract definition of a path */
-	class Path
-	{
-	public:
-	    
-	    /** \brief Constructor. A path must always know the space information it is part of */
-	    Path(SpaceInformation *si)
-	    {
-		m_si = si;
-	    }
-	    
-	    /** \brief Destructor */
-	    virtual ~Path(void)
-	    {
-	    }
-	    
-	    /** \brief Returns the space information this path is part of */
-	    SpaceInformation* getSpaceInformation(void) const
-	    {
-		return m_si;
-	    }
-	    
-	    /** \brief Return the length of a path */
-	    virtual double length(void) const = 0;
-	    
-	protected:
-	    
-	    SpaceInformation *m_si;
-	};
-	
+	ompl::base::ProjectionEvaluator *pe = dynamic_cast<ompl::kinematic::SBL*>(mp)->getProjectionEvaluator();
+	if (pe)
+	    delete pe;
     }
 }
 
-#endif
+bool ompl_planning::kinematicSBLSetup::setup(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options)
+{
+    preSetup(options);
+    
+    ompl::kinematic::SBL *sbl = new ompl::kinematic::SBL(dynamic_cast<ompl::kinematic::SpaceInformationKinematic*>(si));
+    mp                        = sbl;	
+    
+    if (options->hasParam("range"))
+    {
+	sbl->setRange(options->getParamDouble("range", sbl->getRange()));
+	ROS_DEBUG("Range is set to %g", sbl->getRange());
+    }
+
+    sbl->setProjectionEvaluator(getProjectionEvaluator(options));
+    
+    if (sbl->getProjectionEvaluator() == NULL)
+    {
+	ROS_WARN("Adding %s failed: need to set both 'projection' and 'celldim' for %s", name.c_str(), model->groupName.c_str());
+	return false;
+    }
+    else
+    {
+	postSetup(options);
+	return true;
+    }
+}

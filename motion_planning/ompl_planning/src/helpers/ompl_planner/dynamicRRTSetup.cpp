@@ -32,50 +32,41 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
-/* \author Ioan Sucan */
+/** \author Ioan Sucan */
 
-#ifndef OMPL_BASE_PATH_
-#define OMPL_BASE_PATH_
+#include "ompl_planning/planners/dynamicRRTSetup.h"
 
-#include "ompl/base/General.h"
-
-namespace ompl
+ompl_planning::dynamicRRTSetup::dynamicRRTSetup(ModelBase *m) : PlannerSetup(m)
 {
-    namespace base
-    {
-	class SpaceInformation;
-	
-	/** \brief Abstract definition of a path */
-	class Path
-	{
-	public:
-	    
-	    /** \brief Constructor. A path must always know the space information it is part of */
-	    Path(SpaceInformation *si)
-	    {
-		m_si = si;
-	    }
-	    
-	    /** \brief Destructor */
-	    virtual ~Path(void)
-	    {
-	    }
-	    
-	    /** \brief Returns the space information this path is part of */
-	    SpaceInformation* getSpaceInformation(void) const
-	    {
-		return m_si;
-	    }
-	    
-	    /** \brief Return the length of a path */
-	    virtual double length(void) const = 0;
-	    
-	protected:
-	    
-	    SpaceInformation *m_si;
-	};
-	
-    }
+    name = "dynamic::RRT";
+    priority = 2;
 }
 
-#endif
+ompl_planning::dynamicRRTSetup::~dynamicRRTSetup(void)
+{
+}
+
+bool ompl_planning::dynamicRRTSetup::setup(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options)
+{
+    preSetup(options);
+    
+    ompl::dynamic::RRT *rrt = new ompl::dynamic::RRT(dynamic_cast<ompl::dynamic::SpaceInformationControlsIntegrator*>(si));
+    mp                      = rrt;
+    
+    if (options->hasParam("range"))
+    {
+	rrt->setRange(options->getParamDouble("range", rrt->getRange()));
+	ROS_DEBUG("Range is set to %g", rrt->getRange());
+    }
+    
+    if (options->hasParam("goal_bias"))
+    {
+	rrt->setGoalBias(options->getParamDouble("goal_bias", rrt->getGoalBias()));
+	ROS_DEBUG("Goal bias is set to %g", rrt->getGoalBias());
+    }
+
+    postSetup(options);
+    
+    return true;
+}
+

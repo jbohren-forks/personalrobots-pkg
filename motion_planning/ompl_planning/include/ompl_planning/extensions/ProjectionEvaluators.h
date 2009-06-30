@@ -32,50 +32,50 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
-/* \author Ioan Sucan */
+/** \author Ioan Sucan */
 
-#ifndef OMPL_BASE_PATH_
-#define OMPL_BASE_PATH_
+#ifndef OMPL_PLANNING_EXTENSIONS_PROJECTION_EVALUATORS_
+#define OMPL_PLANNING_EXTENSIONS_PROJECTION_EVALUATORS_
 
-#include "ompl/base/General.h"
+#include <ompl/base/ProjectionEvaluator.h>
+#include "ompl_planning/ModelBase.h"
 
-namespace ompl
+namespace ompl_planning
 {
-    namespace base
+
+    class LinkPositionProjectionEvaluator : public ompl::base::ProjectionEvaluator
     {
-	class SpaceInformation;
-	
-	/** \brief Abstract definition of a path */
-	class Path
+    public:
+
+        LinkPositionProjectionEvaluator(ModelBase *model, const std::string &linkName) : ompl::base::ProjectionEvaluator()
 	{
-	public:
-	    
-	    /** \brief Constructor. A path must always know the space information it is part of */
-	    Path(SpaceInformation *si)
-	    {
-		m_si = si;
-	    }
-	    
-	    /** \brief Destructor */
-	    virtual ~Path(void)
-	    {
-	    }
-	    
-	    /** \brief Returns the space information this path is part of */
-	    SpaceInformation* getSpaceInformation(void) const
-	    {
-		return m_si;
-	    }
-	    
-	    /** \brief Return the length of a path */
-	    virtual double length(void) const = 0;
-	    
-	protected:
-	    
-	    SpaceInformation *m_si;
-	};
+	    model_ = model;
+	    link_  = model_->kmodel->getLink(linkName);
+	}
 	
-    }
+	/** Return the dimension of the projection defined by this evaluator */
+	virtual unsigned int getDimension(void) const
+	{
+	    return 3;
+	}
+		
+	/** Compute the projection as an array of double values */
+	virtual void operator()(const ompl::base::State *state, double *projection) const
+	{  
+	    model_->kmodel->computeTransformsGroup(state->values, model_->groupID);
+	    const btVector3 &origin = link_->globalTrans.getOrigin();
+	    projection[0] = origin.x();
+	    projection[1] = origin.y();
+	    projection[2] = origin.z();
+	}
+	
+    protected:
+	
+	ModelBase                             *model_;
+	planning_models::KinematicModel::Link *link_;
+	
+    };
+    
 }
 
 #endif

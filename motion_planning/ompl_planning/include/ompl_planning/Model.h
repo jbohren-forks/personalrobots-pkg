@@ -32,50 +32,57 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
-/* \author Ioan Sucan */
+/** \author Ioan Sucan */
 
-#ifndef OMPL_BASE_PATH_
-#define OMPL_BASE_PATH_
+#ifndef OMPL_PLANNING_MODEL_
+#define OMPL_PLANNING_MODEL_
 
-#include "ompl/base/General.h"
+#include "ompl_planning/ModelBase.h"
+#include "ompl_planning/planners/PlannerSetup.h"
 
-namespace ompl
+#include <boost/shared_ptr.hpp>
+#include <string>
+#include <map>
+
+namespace ompl_planning
 {
-    namespace base
+    
+    class Model : public ModelBase
     {
-	class SpaceInformation;
-	
-	/** \brief Abstract definition of a path */
-	class Path
+    public:
+        Model(void) : ModelBase()
 	{
-	public:
-	    
-	    /** \brief Constructor. A path must always know the space information it is part of */
-	    Path(SpaceInformation *si)
-	    {
-		m_si = si;
-	    }
-	    
-	    /** \brief Destructor */
-	    virtual ~Path(void)
-	    {
-	    }
-	    
-	    /** \brief Returns the space information this path is part of */
-	    SpaceInformation* getSpaceInformation(void) const
-	    {
-		return m_si;
-	    }
-	    
-	    /** \brief Return the length of a path */
-	    virtual double length(void) const = 0;
-	    
-	protected:
-	    
-	    SpaceInformation *m_si;
-	};
+	}
 	
-    }
-}
+	virtual ~Model(void)
+	{
+	    for (std::map<std::string, PlannerSetup*>::iterator i = planners.begin(); i != planners.end() ; ++i)
+		if (i->second)
+		    delete i->second;
+	}
+	
+	/* instantiate the planners that can be used  */
+	void createMotionPlanningInstances(std::vector< boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> > cfgs);
+	
+	std::map<std::string, PlannerSetup*> planners;
+	
+    protected:
+	
+	void add_kRRT(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options);
+	void add_kLazyRRT(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options);
+	void add_kEST(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options);
+	void add_kSBL(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options);
+	void add_kIKSBL(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options);
+	void add_kKPIECE(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options);
+	void add_kLBKPIECE(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options);
+	void add_kIKKPIECE(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options);
+	
+	void add_dRRT(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options);
+    };
+    
+    typedef std::map<std::string, Model*> ModelMap;
+    
+} // ompl_planning
 
 #endif
+

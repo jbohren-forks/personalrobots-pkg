@@ -32,50 +32,11 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
-/* \author Ioan Sucan */
+/** \author Ioan Sucan */
 
-#ifndef OMPL_BASE_PATH_
-#define OMPL_BASE_PATH_
+#ifndef OMPL_PLANNING_EXTENSIONS_DISTANCE_EVALUATORS_
+#define OMPL_PLANNING_EXTENSIONS_DISTANCE_EVALUATORS_
 
-#include "ompl/base/General.h"
-
-namespace ompl
-{
-    namespace base
-    {
-	class SpaceInformation;
-	
-	/** \brief Abstract definition of a path */
-	class Path
-	{
-	public:
-	    
-	    /** \brief Constructor. A path must always know the space information it is part of */
-	    Path(SpaceInformation *si)
-	    {
-		m_si = si;
-	    }
-	    
-	    /** \brief Destructor */
-	    virtual ~Path(void)
-	    {
-	    }
-	    
-	    /** \brief Returns the space information this path is part of */
-	    SpaceInformation* getSpaceInformation(void) const
-	    {
-		return m_si;
-	    }
-	    
-	    /** \brief Return the length of a path */
-	    virtual double length(void) const = 0;
-	    
-	protected:
-	    
-	    SpaceInformation *m_si;
-	};
-	
-    }
-}
+#include <ompl/base/StateDistanceEvaluator.h>
 
 #endif

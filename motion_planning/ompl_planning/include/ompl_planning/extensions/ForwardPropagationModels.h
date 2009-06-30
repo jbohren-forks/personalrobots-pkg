@@ -32,50 +32,48 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
-/* \author Ioan Sucan */
+/** \author Ioan Sucan */
 
-#ifndef OMPL_BASE_PATH_
-#define OMPL_BASE_PATH_
+#ifndef OMPL_PLANNING_EXTENSIONS_FORWARD_PROPAGATION_MODELS_
+#define OMPL_PLANNING_EXTENSIONS_FORWARD_PROPAGATION_MODELS_
 
-#include "ompl/base/General.h"
+#include <ompl/base/StateForwardPropagator.h>
+#include <ompl/extension/dynamic/SpaceInformationControlsIntegrator.h>
+#include <boost/bind.hpp>
 
-namespace ompl
+namespace ompl_planning
 {
-    namespace base
+    
+    /** \brief Propagate forward using Euler's method */
+    class EulerMethod
     {
-	class SpaceInformation;
+    public:
 	
-	/** \brief Abstract definition of a path */
-	class Path
+	EulerMethod(const boost::function<void(const ompl::base::State*, const ompl::base::Control*, double*)> &ode, const unsigned int dim) : ode_(ode), dim_(dim)
 	{
-	public:
-	    
-	    /** \brief Constructor. A path must always know the space information it is part of */
-	    Path(SpaceInformation *si)
-	    {
-		m_si = si;
-	    }
-	    
-	    /** \brief Destructor */
-	    virtual ~Path(void)
-	    {
-	    }
-	    
-	    /** \brief Returns the space information this path is part of */
-	    SpaceInformation* getSpaceInformation(void) const
-	    {
-		return m_si;
-	    }
-	    
-	    /** \brief Return the length of a path */
-	    virtual double length(void) const = 0;
-	    
-	protected:
-	    
-	    SpaceInformation *m_si;
-	};
+	}
 	
-    }
+	void step(const ompl::base::State *begin, const ompl::base::Control *ctrl, const double resolution, ompl::base::State *end) const;
+	
+    private:
+	
+	const boost::function<void(const ompl::base::State*, const ompl::base::Control*, double*)> &ode_;
+	const unsigned int                                                                          dim_;
+    };
+    
+    
+    /** \brief Base definition for a class that does forward propagation for a specific robot model */
+    class ForwardPropagationModel : public ompl::base::StateForwardPropagator
+    {
+    public:
+	
+	virtual void controlDefinition(std::vector<ompl::base::ControlComponent> &controlComponent, unsigned int *controlDimension,
+				       unsigned int *minDuration, unsigned int *maxDuration, double *resolution) = 0;
+
+	std::string name;
+    };
+    
 }
+
 
 #endif

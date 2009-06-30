@@ -32,50 +32,27 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
-/* \author Ioan Sucan */
+/** \author Ioan Sucan */
 
-#ifndef OMPL_BASE_PATH_
-#define OMPL_BASE_PATH_
+#ifndef OMPL_PLANNING_PLANNERS_KINEMATIC_EST_SETUP_
+#define OMPL_PLANNING_PLANNERS_KINEMATIC_EST_SETUP_
 
-#include "ompl/base/General.h"
+#include "ompl_planning/planners/PlannerSetup.h"
+#include <ompl/extension/kinematic/extension/est/EST.h>
 
-namespace ompl
+namespace ompl_planning
 {
-    namespace base
+    
+    class kinematicESTSetup : public PlannerSetup
     {
-	class SpaceInformation;
+    public:
 	
-	/** \brief Abstract definition of a path */
-	class Path
-	{
-	public:
-	    
-	    /** \brief Constructor. A path must always know the space information it is part of */
-	    Path(SpaceInformation *si)
-	    {
-		m_si = si;
-	    }
-	    
-	    /** \brief Destructor */
-	    virtual ~Path(void)
-	    {
-	    }
-	    
-	    /** \brief Returns the space information this path is part of */
-	    SpaceInformation* getSpaceInformation(void) const
-	    {
-		return m_si;
-	    }
-	    
-	    /** \brief Return the length of a path */
-	    virtual double length(void) const = 0;
-	    
-	protected:
-	    
-	    SpaceInformation *m_si;
-	};
-	
-    }
-}
+        kinematicESTSetup(ModelBase *m);
+	virtual ~kinematicESTSetup(void);
+	virtual bool setup(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options);
+    };
+    
+} // ompl_planning
 
 #endif
+    
