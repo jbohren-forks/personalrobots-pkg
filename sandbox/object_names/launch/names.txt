@@ -1,0 +1,21 @@
+#A few standard ones
+
+1    error
+2    floor
+3    wall
+4    outlet
+5    door
+6    door-handle
+7    obstacle
+8    cabinet
+9    whiteboard
+10   window
+11   robot
+
+#People definitions are here
+100  person
+101  person/head
+102  person/arm
+103  person/torso
+104  person/leg
+105  person/foot

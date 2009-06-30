@@ -1,0 +1,21 @@
+<package>
+  <description brief="object_names">
+
+     Object names service maps between object names and object IDs. 
+     Float32 object ids are used to annotated point clouds with object labels. 
+
+  </description>
+  <author>Alex Sorokin</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://pr.willowgarage.com/wiki/object_names</url>
+  <depend package="rospy"/>
+  <depend package="rostest"/>
+
+  <export>
+    <cpp cflags="-I${prefix}/srv/cpp "/>
+
+  </export>
+</package>
+
+

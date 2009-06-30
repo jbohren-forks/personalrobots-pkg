@@ -1,0 +1,9 @@
+<launch>
+
+  <node pkg="object_names" type="simple_name_server.py" name="name_server" output="screen">
+    <param name="index_name" value="$(find object_names)/launch/names.txt"/>
+  </node>
+
+  <test test-name="test_names" pkg="object_names" type="test_names.py" >
+  </test>
+</launch>
