@@ -34,7 +34,9 @@ for PACKAGE in $PACKAGES; do
     for d in $DIRS; do
 	HEADERS=`find $d -maxdepth 1 -type f -regex ".*\.hh?$"`
 	if [ "$HEADERS" ]; then
-	    cp -p $HEADERS $INCLUDE_DIR/$PACKAGE/
+	    for HEADER in $HEADERS; do
+		ln $HEADER $INCLUDE_DIR/$PACKAGE/`basename $HEADER`
+	    done
 	fi
     done
     echo "Warning, this is not the real include directory. It will be deleted and recreated by make every run. Includes should be next to .cc files." > $INCLUDE_DIR/$PACKAGE/WARNING.txt
