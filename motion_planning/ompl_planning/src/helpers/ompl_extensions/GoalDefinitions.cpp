@@ -109,7 +109,7 @@ void ompl_planning::GoalToState::setup(ompl::base::SpaceInformation *si, ModelBa
     for (int i = 0 ; i < dim_ ; ++i)
 	if (bounds_[i].first > bounds_[i].second)
 	{
-	    ROS_ERROR("Inconsistent set of joint constraints at joint with index %d", i);
+	    ROS_ERROR("Inconsistent set of joint constraints at state component with index %d", i);
 	    break;
 	}
     

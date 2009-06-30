@@ -251,6 +251,8 @@ void ompl_planning::SpaceInformationDynamicModel::configureOMPLSpace(ModelBase *
     assert(propagationModel_);
     propagationModel_->controlDefinition(m_controlComponent, &m_controlDimension, 
 					 &m_minControlDuration, &m_maxControlDuration, &m_resolution);
+    
+    m_stateForwardPropagator = propagationModel_;
 }
 
 void ompl_planning::SpaceInformationDynamicModel::setPlanningVolume(double x0, double y0, double z0, double x1, double y1, double z1)

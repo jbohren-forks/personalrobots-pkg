@@ -57,8 +57,8 @@ namespace ompl_planning
 	
     private:
 	
-	const boost::function<void(const ompl::base::State*, const ompl::base::Control*, double*)> &ode_;
-	const unsigned int                                                                          dim_;
+	boost::function<void(const ompl::base::State*, const ompl::base::Control*, double*)> ode_;
+	unsigned int                                                                         dim_;
     };
     
     

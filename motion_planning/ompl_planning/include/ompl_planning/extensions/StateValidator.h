@@ -99,6 +99,10 @@ namespace ompl_planning
 	void clearConstraints(void)
 	{
 	    kce_.clear();
+	    if (ksi_)
+		ksi_->clearJointConstraints();
+	    if (dsi_)
+		dsi_->clearJointConstraints();
 	}
 	
 	const planning_environment::KinematicConstraintEvaluatorSet& getKinematicConstraintEvaluatorSet(void) const
