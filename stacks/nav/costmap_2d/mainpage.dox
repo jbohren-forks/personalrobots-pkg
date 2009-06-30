@@ -11,35 +11,8 @@ There are two main ways to use this package. The first is to create a costmap_2d
 object and manage updating it yourself. The second, and encouraged method, is
 to use a ROS wrapper (costmap_2d::Costmap2DROS) for the costmap that manages the map for
 you, but allows you to get a copy of the underlying costmap_2d::Costmap2D object at any
-time. See below for an example of costmap_2d::Costmap2DROS construction and configuration.
-
-@subsection construction Costmap2DROS Construction
-To construct a costmap_2d::Costmap2DROS object, pass it a reference to a ros::Node and a tf::TransformListener
-@verbatim
-#include <ros/node.h>
-#include <tf/transform_listener.h>
-#include <costmap_2d/costmap_2d_ros.h>
-
-int main(argc, char** argv){
-  ros::init(arc,argv);
-  ros::Node ros_node("costmap_runner");
-  tf::TransformListener tf(ros_node, true, ros::Duration(10));
-
-  //set parameters before construction of the Costmap2DROS object... we'll use the base laser to add data to this costmap
-  ros_node_.setParam("~costmap/observation_topics", "base_scan");
-  ros_node_.setParam("~costmap/base_scan/observation_persistence", 0.0);
-  ros_node_.setParam("~costmap/base_scan/expected_update_rate", 0.2);
-  ros_node_.setParam("~costmap/base_scan/data_type", "LaserScan");
-  ros_node_.setParam("~costmap/base_scan/clearing", "true");
-
-  //construct the costmap
-  costmap_2d::Costmap2DROS costmap_updater(ros_node, tf);
-
-  //do something here
-  ros_node.spin();
-  return(0);
-}
-@endverbatim
+time. For an example of costmap_2d::Costmap2DROS construction and configuration please see the
+<a href="../../costmap_2d_tutorials/html">costmap_2d_tutorials</a> package.
 
 @subsection example_use Using the Underlying Costmap2D
 To get a copy of the underlying costmap_2d::Costmap2D object, call the
@@ -143,7 +116,8 @@ There are a number of parameters that can be used to configure the costmap_2d::C
   </ul>
 </li>
 <br><br>
-<li><b>~scaling_factor</b>, <i>double</i> <br>A scaling factor to apply to cost values during inflation, shoud be in the range [0, 1]</li>
+<li><b>~cost_scaling_factor</b>, <i>double</i> <br>A scaling factor to apply to cost values during inflation. The cost function is computed
+as follows: exp(-1.0 * cost_scaling_factor * (distance_from_obstacle - inscribed_radius)) * max_cost</li>
 <br><br>
 <li><b>~lethal_cost_threshold</b>, <i>int</i> <br>The threshold value at which to consider a cost lethal when reading in a map</li>
 </ul>
