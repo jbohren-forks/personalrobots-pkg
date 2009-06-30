@@ -243,7 +243,7 @@ int main(int argc, char** argv){
   
   /* Add action stubs for doors */
 
-  trex_pr2::StubAction<robot_msgs::PoseStamped, int8_t> check_path("check_path");
+  trex_pr2::StubAction<robot_msgs::PoseStamped, int8_t> check_path("check_path", 0); //Note: this zero here means that all doors are shut.
   if (getComponentParam("/trex/enable_check_path"))
     runner.connect<robot_msgs::PoseStamped, pr2_robot_actions::CheckPathState, int8_t>(check_path);
 
