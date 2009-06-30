@@ -40,6 +40,7 @@
 #include <robot_actions/message_adapter.h>
 #include <boost/thread.hpp>
 #include <ros/console.h>
+#include "ros/ros.h"
 
 namespace robot_actions {
 
@@ -112,6 +113,7 @@ namespace robot_actions {
     double _update_rate; /*!< The duration for each control cycle */
     boost::thread* _update_thread; /*!< Thread running the planner loop */
     std::vector<AbstractAdapter*> _adapters; /*!< Collection of action adapters to run */
+    ros::NodeHandle _node;
   };
 }
 

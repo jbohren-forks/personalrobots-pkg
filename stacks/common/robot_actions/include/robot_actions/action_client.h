@@ -78,31 +78,41 @@ namespace robot_actions {
 
 
   private:
-    void callbackHandler(); // Just a no-op
+    void callbackHandler(const boost::shared_ptr<State const> &input); // Just a no-op
     State _state_update_msg;
     const std::string _goal_topic;
     const std::string _preempt_topic;
     const std::string _feedback_topic;
     bool _is_active;
+    ros::NodeHandle _node;
+    ros::Publisher _goal_publisher, _preempt_publisher;
+    ros::Subscriber _feedback_subscriber;
   };
+
+  template <class Goal, class State, class Feedback>
+    void ActionClient<Goal, State, Feedback>::callbackHandler(const boost::shared_ptr<State const>& input) {
+    _state_update_msg = *input;
+    _is_active = (_state_update_msg.status.value == _state_update_msg.status.ACTIVE);
+  }
+
 
   template <class Goal, class State, class Feedback>
   ActionClient<Goal, State, Feedback>::ActionClient(const std::string& name)
     : _goal_topic(name + "/activate"), _preempt_topic(name + "/preempt"), _feedback_topic(name + "/feedback"),_is_active(false){
 
     // Subscribe to state updates
-    ros::Node::instance()->subscribe(_feedback_topic, _state_update_msg, &ActionClient<Goal, State, Feedback>::callbackHandler,  this, 1);
+    _feedback_subscriber = _node.subscribe(_feedback_topic, 1, &ActionClient<Goal, State, Feedback>::callbackHandler, this);
 
     // Advertize goal requests. 
-    ros::Node::instance()->advertise<Goal>(_goal_topic, 1);
+    _goal_publisher = _node.advertise<Goal>(_goal_topic, 1);
 
     // Advertize goal preemptions.
-    ros::Node::instance()->advertise<std_msgs::Empty>(_preempt_topic, 1);
+    _preempt_publisher = _node.advertise<std_msgs::Empty>(_preempt_topic, 1);
 
     // wait until we have at least 1 subscriber per advertised topic
     ros::Time start_time = ros::Time::now();
     ros::Duration timeout(10.0);
-    while (ros::Node::instance()->numSubscribers(_goal_topic) < 1 || ros::Node::instance()->numSubscribers(_preempt_topic) < 1 ){
+    while (_goal_publisher.getNumSubscribers() < 1 || _preempt_publisher.getNumSubscribers() < 1 ){
       if (ros::Time::now() > start_time+timeout){
 	ROS_ERROR("Action client did not receive subscribers on the %s or %s topic", _goal_topic.c_str(), _preempt_topic.c_str());
 	break;
@@ -113,9 +123,6 @@ namespace robot_actions {
 
   template <class Goal, class State, class Feedback>
     ActionClient<Goal, State, Feedback>::~ActionClient(){
-    ros::Node::instance()->unadvertise(_goal_topic);
-    ros::Node::instance()->unadvertise(_preempt_topic);
-    ros::Node::instance()->unsubscribe(_state_update_msg);
   }
 
   template <class Goal, class State, class Feedback>
@@ -127,7 +134,7 @@ namespace robot_actions {
     ResultStatus result = robot_actions::PREEMPTED;
 
     // Post the goal
-    ros::Node::instance()->publish(_goal_topic, goal);
+    _goal_publisher.publish(goal);
 
     // Wait for activation. If we do not activate in time, we will preempt. Will not block for preemption
     // callback since the action may be bogus.
@@ -140,7 +147,7 @@ namespace robot_actions {
       if(duration_bound != NO_DURATION_BOUND){
 	ros::Duration elapsed_time = ros::Time::now() - start_time;
 	if(elapsed_time > duration_bound){
-	  ros::Node::instance()->publish(_preempt_topic, std_msgs::Empty());
+	  _preempt_publisher.publish(std_msgs::Empty());
 	  return result;
 	}
       }
@@ -153,7 +160,7 @@ namespace robot_actions {
       if(duration_bound != NO_DURATION_BOUND){
 	ros::Duration elapsed_time = ros::Time::now() - start_time;
 	if(elapsed_time > duration_bound){
-	  ros::Node::instance()->publish(_preempt_topic, std_msgs::Empty());
+	  _preempt_publisher.publish(std_msgs::Empty());
 	}
       }
 
@@ -173,15 +180,10 @@ namespace robot_actions {
   ResultStatus ActionClient<Goal, State, Feedback>::execute(const Goal& goal, Feedback& feedback){
     return execute(goal, feedback, ros::Duration());
   }
-  
-  template <class Goal, class State, class Feedback>
-  void ActionClient<Goal, State, Feedback>::callbackHandler(){
-    _is_active = (_state_update_msg.status.value == _state_update_msg.status.ACTIVE);
-  }
 
   template <class Goal, class State, class Feedback>
   void ActionClient<Goal, State, Feedback>::preempt(){
-    ros::Node::instance()->publish(_preempt_topic, std_msgs::Empty());
+    _preempt_publisher.publish(std_msgs::Empty());
   }
 
 }

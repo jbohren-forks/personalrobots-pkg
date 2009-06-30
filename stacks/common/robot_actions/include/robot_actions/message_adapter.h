@@ -41,7 +41,7 @@
 #include <robot_actions/ActionStatus.h>
 #include <std_msgs/Empty.h>
 #include <boost/thread.hpp>
-#include <ros/node.h>
+#include <ros/ros.h>
 #include <ros/console.h>
 #include <boost/thread.hpp>
 
@@ -128,22 +128,19 @@ namespace robot_actions {
       _action.connect(boost::bind(&MessageAdapter<Goal, State, Feedback>::notify, this, _1, _2, _3));
 
       // Advertize state updates
-      ros::Node::instance()->advertise<State>(_feedback_topic, QUEUE_MAX());
+      _feedback_publisher = _node.advertise<State>(_feedback_topic, QUEUE_MAX());
 
       // Subscribe to goal requests. 
-      ros::Node::instance()->subscribe(_goal_topic, _request_msg, &MessageAdapter<Goal, State, Feedback>::requestHandler,  this, 1);
+      _goal_subscriber = _node.subscribe<Goal>(_goal_topic, 1, &MessageAdapter<Goal, State, Feedback>::requestHandler, this);
 
       // Subscribe to goal preemptions.
-      ros::Node::instance()->subscribe(_preempt_topic, _preemption_msg, &MessageAdapter<Goal, State, Feedback>::preemptionHandler,  this, 1);
+      _preempt_subscriber = _node.subscribe<std_msgs::Empty>(_preempt_topic, 1, &MessageAdapter<Goal, State, Feedback>::preemptionHandler, this);
     }
 
     /**
      * @brief Do ROS cleanup
      */
     virtual ~MessageAdapter(){
-      ros::Node::instance()->unsubscribe(_request_msg);
-      ros::Node::instance()->unsubscribe(_preemption_msg);
-      ros::Node::instance()->unadvertise(_feedback_topic);
     }
 
     // Call back invoked from the action. Packages up as a state message and ships
@@ -152,7 +149,7 @@ namespace robot_actions {
       state_msg.status = status;
       state_msg.goal = goal;
       state_msg.feedback = feedback;
-      ros::Node::instance()->publish(_feedback_topic, state_msg);
+      _feedback_publisher.publish(state_msg);
     }
 
     virtual void publish(){
@@ -172,7 +169,8 @@ namespace robot_actions {
     /**
      * @brief Handle a new request.
      */
-    void requestHandler(){
+    void requestHandler(const boost::shared_ptr<Goal const> &input){
+      _request_msg = *input;
       if(isOk()){
 	_action.activate(_request_msg);
       }
@@ -181,7 +179,8 @@ namespace robot_actions {
     /**
      * @brief Handle a preemption. Will ignore the request unless the action is currently active. Delegates to subclass for details.
      */
-    void preemptionHandler(){
+    void preemptionHandler(const boost::shared_ptr<std_msgs::Empty const> &input){
+      _preemption_msg = *input;
       if(isOk())
 	_action.preempt();
     }
@@ -199,6 +198,9 @@ namespace robot_actions {
     Goal _request_msg; /*!< Message populated by handler for a request */
     std_msgs::Empty _preemption_msg; /*!< Message populated by handler for a preemption. */
     State _state_msg; /*!< Message published. */
+    ros::NodeHandle _node; /*!< Node handle */
+    ros::Subscriber _goal_subscriber, _preempt_subscriber; /*!< Subscribers */
+    ros::Publisher _feedback_publisher; /*!< publisher */
   };
 
 }

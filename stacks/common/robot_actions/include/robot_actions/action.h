@@ -49,9 +49,10 @@
 #include <robot_actions/ActionStatus.h>
 #include <boost/bind.hpp>
 #include <boost/thread.hpp>
-#include <ros/node.h>
 #include <diagnostic_msgs/DiagnosticMessage.h>
-#include "ros/assert.h" 
+#include "ros/assert.h"
+#include "ros/ros.h"
+
 
 namespace robot_actions {
 
@@ -192,7 +193,8 @@ namespace robot_actions {
     Action(const std::string& name)
       : _name(name), _preempt_request(false), _result_status(SUCCESS), _terminated(false), _action_thread(NULL), _callback(NULL),_diagnostics_statuses(1){
       _status.value = ActionStatus::RESET; 
-      ros::Node::instance()->advertise<diagnostic_msgs::DiagnosticMessage> ("/diagnostics", 1) ;
+      _node = new ros::NodeHandle();
+      _diagnostics_publisher = _node->advertise<diagnostic_msgs::DiagnosticMessage> ("/diagnostics", 1) ;
     }
 
     virtual ~Action(){
@@ -201,7 +203,7 @@ namespace robot_actions {
 	_action_thread->join();
 	delete _action_thread;
       }
-      ros::Node::instance()->unadvertise("/diagnostics") ;
+      delete _node;
     }
 
     /**
@@ -292,7 +294,7 @@ namespace robot_actions {
       _diagnostics_statuses[0] = diagnostics_status;
       _diagnostics_message.status = _diagnostics_statuses;
       _diagnostics_message.header.stamp = ros::Time::now();
-      ros::Node::instance()->publish("/diagnostics",_diagnostics_message);
+      _diagnostics_publisher.publish(_diagnostics_message);
 
     }
 
@@ -309,6 +311,8 @@ namespace robot_actions {
     boost::function< void(const ActionStatus&, const Goal&, const Feedback&) > _callback; /*!< Callback function for sending updates */
     diagnostic_msgs::DiagnosticMessage _diagnostics_message;
     std::vector<diagnostic_msgs::DiagnosticStatus> _diagnostics_statuses;
+    ros::NodeHandle *_node;
+    ros::Publisher _diagnostics_publisher;
   };
 }
 #endif

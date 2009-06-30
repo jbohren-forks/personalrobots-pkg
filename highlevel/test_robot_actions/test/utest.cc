@@ -5,6 +5,7 @@
 #include <std_msgs/Float32.h>
 #include <test_robot_actions/TestState.h>
 #include <gtest/gtest.h>
+#include <ros/ros.h>
 
 using namespace robot_actions;
 using namespace test_robot_actions;
@@ -296,16 +297,22 @@ TEST(robot_actions, scalability_test){
 
 }
 
+void spinThread() {
+  ros::spin();
+}
+
 int main(int argc, char** argv){  
-  ros::init(argc, argv);
-  
-  ros::Node node("robot_actions_test");
+  ros::init(argc, argv, "robot_actions_test");
+
+  ros::NodeHandle n;
+
+  boost::thread* spinthread = new boost::thread(boost::bind(&spinThread));
 
   testing::InitGoogleTest(&argc, argv);
 
   int result = RUN_ALL_TESTS();
 
-  node.shutdown();
+  delete spinthread;
 
   return result;
 }

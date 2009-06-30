@@ -39,7 +39,6 @@
 namespace robot_actions {
 
   ActionRunner::ActionRunner(double update_rate): _initialized(false), _terminated(false), _update_rate(update_rate), _update_thread(NULL){
-
     ROS_ASSERT(_update_rate > 0);
 
     // Start the action_runner_thread
@@ -82,7 +81,7 @@ namespace robot_actions {
   }
 
   void ActionRunner::updateLoop(){
-    while(ros::Node::instance()->ok() && !isTerminated()) {
+    while(_node.ok() && !isTerminated()) {
       ros::Time curr = ros::Time::now();
 
       if(_initialized){
