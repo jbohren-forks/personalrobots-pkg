@@ -43,7 +43,7 @@
 namespace collision_space
 {
     	
-    /** A class describing an environment for a kinematic robot using ODE */
+    /** \brief A class describing an environment for a kinematic robot using ODE */
     class EnvironmentModelODE : public EnvironmentModel
     {     
 	
@@ -64,37 +64,37 @@ namespace collision_space
 	    dCloseODE();
 	}
 	
-	/** The space ID for the objects that can be changed in the
+	/** \brief The space ID for the objects that can be changed in the
 	    map. clearObstacles will invalidate this ID. Collision
 	    checking on this space is optimized for many small
 	    objects. */
 	dSpaceID getODESpace(void) const;
 
-	/** Return the space ID for the space in which static objects are added */
+	/** \brief Return the space ID for the space in which static objects are added */
 	dSpaceID getODEBasicGeomSpace(void) const;
 
-	/** Return the space ID for the space in which the robot model is instanciated */
+	/** \brief Return the space ID for the space in which the robot model is instanciated */
 	dSpaceID getModelODESpace(void) const;
 	
-	/** Get the list of contacts (collisions) */
+	/** \brief Get the list of contacts (collisions) */
 	virtual bool getCollisionContacts(std::vector<Contact> &contacts, unsigned int max_count = 1);
 
-	/** Check if a model is in collision */
+	/** \brief Check if a model is in collision */
 	virtual bool isCollision(void);
 
-	/** Check if a model is in self collision */
+	/** \brief Check if a model is in self collision */
 	virtual bool isSelfCollision(void);
 
-	/** Remove all obstacles from collision model */
+	/** \brief Remove all obstacles from collision model */
 	virtual void clearObstacles(void);
 
-	/** Add a point cloud to the collision space */
+	/** \brief Add a point cloud to the collision space */
 	virtual void addPointCloud(unsigned int n, const double *points); 
 
-	/** Add a plane to the collision space. Equation it satisfies is a*x+b*y+c*z = d*/
+	/** \brief Add a plane to the collision space. Equation it satisfies is a*x+b*y+c*z = d*/
 	virtual void addStaticPlane(double a, double b, double c, double d);
 
-	/** Add a robot model. Ignore robot links if their name is not
+	/** \brief Add a robot model. Ignore robot links if their name is not
 	    specified in the string vector. The scale argument can be
 	    used to increase or decrease the size of the robot's
 	    bodies (multiplicative factor). The padding can be used to
@@ -102,21 +102,21 @@ namespace collision_space
 	    additive term */
 	virtual void addRobotModel(const boost::shared_ptr<planning_models::KinematicModel> &model, const std::vector<std::string> &links, double scale = 1.0, double padding = 0.0);
 
-	/** Update the positions of the geometry used in collision detection */
+	/** \brief Update the positions of the geometry used in collision detection */
 	virtual void updateRobotModel(void);
 
-	/** Update the set of bodies that are attached to the robot (re-creates them) */
+	/** \brief Update the set of bodies that are attached to the robot (re-creates them) */
 	virtual void updateAttachedBodies(void);
 
-	/** Add a group of links to be checked for self collision */
+	/** \brief Add a group of links to be checked for self collision */
 	virtual void addSelfCollisionGroup(std::vector<std::string> &links);
 
-	/** Enable/Disable collision checking for specific links. Return the previous value of the state (1 or 0) if succesful; -1 otherwise */
+	/** \brief Enable/Disable collision checking for specific links. Return the previous value of the state (1 or 0) if succesful; -1 otherwise */
 	virtual int setCollisionCheck(const std::string &link, bool state);
 	
     protected:
 	
-	/** Internal function for collision detection */
+	/** \brief Internal function for collision detection */
 	void testCollision(void *data);
 	void testSelfCollision(void *data);
 	void testStaticBodyCollision(void *data);

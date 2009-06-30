@@ -46,7 +46,7 @@
 #include <string>
 
 
-/** Main namespace */
+/** \brief Main namespace */
 namespace collision_space
 {
     /** \brief   
@@ -65,11 +65,16 @@ namespace collision_space
 	/** \brief Definition of a contact point */
 	struct Contact
 	{
-	    btVector3                              pos;     // contact position
-	    btVector3                              normal;  // normal unit vector at contact 
-	    double                                 depth;   // depth (penetration between bodies)
-	    planning_models::KinematicModel::Link *link1;   // first link involved in contact
-	    planning_models::KinematicModel::Link *link2;   // if the contact is between two links, this is not NULL
+	    /** \brief contact position */
+	    btVector3                              pos;     
+	    /** \brief normal unit vector at contact */
+	    btVector3                              normal;  
+	    /** \brief depth (penetration between bodies) */
+	    double                                 depth;
+	    /** \brief first link involved in contact */
+	    planning_models::KinematicModel::Link *link1; 
+	    /** \brief if the contact is between two links, this is not NULL */
+	    planning_models::KinematicModel::Link *link2; 
 	};
 	
 	EnvironmentModel(void)
