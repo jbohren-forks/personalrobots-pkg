@@ -33,9 +33,9 @@
     <inertial>
       <mass value="0.1" />
       <com xyz="0 0 0.0" />
-      <inertia ixx="0.1" ixy="0"  ixz="0"
-               iyy="0.1" iyz="0"
-               izz="0.1" />
+      <inertia ixx="1.0" ixy="0"  ixz="0"
+               iyy="1.0" iyz="0"
+               izz="1.0" />
     </inertial> 
     <visual>
       <origin xyz="0 0 0.0" rpy="0 0 0" />
@@ -51,17 +51,17 @@
       <geometry name="plug_collision_geom">
         <box size="${plug_x_size} ${plug_y_size} ${plug_z_size}" />
       </geometry>
-      <map name="friction_coefficients" flag="gazebo">
-        <elem key="mu1" value="50.0" />
-        <elem key="mu2" value="50.0" />
+      <map name="plug_collision_properties" flag="gazebo">
+        <elem key="mu1" value="500.0" />
+        <elem key="mu2" value="500.0" />
         <elem key="kp"  value="100000000.0" />
         <elem key="kd"  value="1.0" />
       </map>
     </collision>
     <map name="plug_gravity" flag="gazebo">
-      <elem key="turnGravityOff" value="true" />
+      <elem key="turnGravityOff" value="false" />
       <elem key="selfCollide" value="true" />
-      <elem key="dampingFactor" value="0.05" />
+      <elem key="dampingFactor" value="0.5" />
     </map>
   </link>
 

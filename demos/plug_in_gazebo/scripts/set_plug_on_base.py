@@ -35,7 +35,7 @@
 ## Gazebo send plug position topic for ros_sim_iface consumption
 
 PKG = 'plug_in_gazebo'
-NAME = 'set_plug'
+NAME = 'set_plug_on_base'
 
 import math
 import roslib
@@ -66,40 +66,59 @@ def shortest_angular_distance(angle_from, angle_to):
       angle_diff = -(2*math.pi - angle_diff)
     return normalize_angle(angle_diff)
 
-xyz_x = 0;
-xyz_y = 0;
-xyz_z = 0;
-rot_r = 0;
-rot_p = 0;
-rot_y = 0;
-test_timeout = 50;
+xyz = [0,0,0]
+rpy = [0,0,0]
+test_timeout = 5000;
 tolerance = 0.01;
-object_moved = False
+magnetic_cutoff = 0.01;
+goal_reached = False
+in_magnet_range = True;
 
-def p3dInput(p3d):
-    global xyz_x,xyz_y,xyz_z,rot_r,rot_p,rot_y,object_moved
-    if not object_moved:
+x_origin = 0.0
+y_origin = 0.0
+z_origin = 0.0
+
+magnet_p = [0,0,0]
+magnet_e = [0,0,0]
+magnet_q = [1,0,0,0]
+
+def  plugP3DInput(p3d):
+    global xyz,rpy,goal_reached
+    if not goal_reached:
       p3d_x = p3d.pos.position.x
       p3d_y = p3d.pos.position.y
       p3d_z = p3d.pos.position.z
-      p3d_rw = p3d.pos.orientation.w
-      p3d_rx = p3d.pos.orientation.x
-      p3d_ry = p3d.pos.orientation.y
-      p3d_rz = p3d.pos.orientation.z
+      p3d_qw = p3d.pos.orientation.w
+      p3d_qx = p3d.pos.orientation.x
+      p3d_qy = p3d.pos.orientation.y
+      p3d_qz = p3d.pos.orientation.z
 
       # check plug position from goal
-      e = euler_from_quaternion([p3d_rx,p3d_ry,p3d_rz,p3d_rw])
+      e = euler_from_quaternion([p3d_qx,p3d_qy,p3d_qz,p3d_qw])
       if tolerance > 0:
-        if abs(p3d_x - xyz_x) < tolerance and \
-           abs(p3d_y - xyz_y) < tolerance and \
-           abs(p3d_z - xyz_z) < tolerance and \
-           abs(rot_r - e[0])  < tolerance and \
-           abs(rot_p - e[1])  < tolerance and \
-           abs(rot_y - e[2])  < tolerance:
-            object_moved = True
+        if abs(p3d_x - xyz[0]) < tolerance and \
+           abs(p3d_y - xyz[1]) < tolerance and \
+           abs(p3d_z - xyz[2]) < tolerance and \
+           abs(rpy[0] - e[0])  < tolerance and \
+           abs(rpy[1] - e[1])  < tolerance and \
+           abs(rpy[2] - e[2])  < tolerance:
+            goal_reached = True
+
+      if magnetic_cutoff > 0:
+        if abs(p3d_x - xyz[0]) > magnetic_cutoff and \
+           abs(p3d_y - xyz[1]) > magnetic_cutoff and \
+           abs(p3d_z - xyz[2]) > magnetic_cutoff:
+            in_magnet_range = False
+
+def  magnetP3DInput(p3d):
+    global xyz,rpy,goal_reached,magnet_p,magnet_q,magnet_e
+    if not goal_reached:
+      magnet_p = [p3d.pos.position.x - x_origin, p3d.pos.position.y - y_origin, p3d.pos.position.z - z_origin]
+      magnet_q = [p3d.pos.orientation.x, p3d.pos.orientation.y, p3d.pos.orientation.z, p3d.pos.orientation.w]
+      magnet_e = euler_from_quaternion([magnet_q[0],magnet_q[1],magnet_q[2],magnet_q[3]])
 
 def main():
-    global xyz_x, xyz_y, xyz_z, rot_r, rot_p, rot_y, test_timeout, object_moved
+    global xyz, rpy, test_timeout, goal_reached
 
     # get goal from commandline
     for i in range(0,len(sys.argv)):
@@ -108,34 +127,35 @@ def main():
           test_timeout = float(sys.argv[i+1])
       if sys.argv[i] == '-xyz':
         if len(sys.argv) > i+3:
-          xyz_x = float(sys.argv[i+1])
-          xyz_y = float(sys.argv[i+2])
-          xyz_z = float(sys.argv[i+3])
+          xyz = [float(sys.argv[i+1]), float(sys.argv[i+2]), float(sys.argv[i+3])]
       if sys.argv[i] == '-rpy':
         if len(sys.argv) > i+3:
-          rot_r = float(sys.argv[i+1])
-          rot_p = float(sys.argv[i+2])
-          rot_y = float(sys.argv[i+3])
+          rpy = [float(sys.argv[i+1]), float(sys.argv[i+2]), float(sys.argv[i+3])]
+      if sys.argv[i] == '-mag':
+        if len(sys.argv) > i+1:
+          magnetic_cutoff = float(sys.argv[i+1])
       if sys.argv[i] == '-tol':
         if len(sys.argv) > i+1:
           tolerance = float(sys.argv[i+1])
 
     pub_pose = rospy.Publisher("set_plug_pose", PoseWithRatesStamped)
-    rospy.Subscriber("plug_pose_ground_truth", PoseWithRatesStamped, p3dInput)
+    rospy.Subscriber("plug_pose_ground_truth", PoseWithRatesStamped, plugP3DInput)
+    rospy.Subscriber("plug_magnet_pose_ground_truth", PoseWithRatesStamped, magnetP3DInput)
 
     rospy.init_node(NAME, anonymous=True)
 
     timeout_t = time.time() + test_timeout
 
     # wait for result
-    while not object_moved and not rospy.is_shutdown() and time.time() < timeout_t:
+    while not goal_reached and not rospy.is_shutdown() and time.time() < timeout_t:
+      if in_magnet_range:
         #create a temp header for publishers
         h = rospy.Header();
         h.stamp = rospy.get_rostime();
         h.frame_id = "map"
         # publish pose
-        p = Point(xyz_x,xyz_y,xyz_z)
-        tmpq = quaternion_from_euler(rot_r,rot_p,rot_y,'rxyz')
+        p = Point(xyz[0]+magnet_p[0],xyz[1]+magnet_p[1],xyz[2]+magnet_p[2])
+        tmpq = quaternion_multiply(quaternion_from_euler(rpy[0],rpy[1],rpy[2],'rxyz'),magnet_q)
         q = Quaternion(tmpq[0],tmpq[1],tmpq[2],tmpq[3])
         pose = Pose(p,q)
         poseWithRatesStamped = PoseWithRatesStamped(h,pose,PoseDot(),PoseDDot());
