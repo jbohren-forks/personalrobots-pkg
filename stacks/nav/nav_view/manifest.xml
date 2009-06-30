@@ -3,7 +3,7 @@
   <author>Morgan Quigley, Brian Gerkey and Josh Faust</author>
   <license>BSD</license>
   <review status="proposal cleared" notes=""/>
-  <url>http://pr.willowgarage.com/wiki/move_base</url>
+  <url>http://pr.willowgarage.com/wiki/nav_view</url>
   <depend package="roscpp"/>
   <depend package="nav_srvs"/>
   <depend package="robot_srvs"/>

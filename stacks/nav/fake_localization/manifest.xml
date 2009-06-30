@@ -3,7 +3,7 @@
   <author>Ioan A. Sucan</author>
   <license>BSD</license>
   <review status="proposal cleared" notes=""/>
-  <url>http://pr.willowgarage.com/wiki/move_base</url>
+  <url>http://pr.willowgarage.com/wiki/fake_localization</url>
   <depend package="roscpp" />
   <depend package="rosconsole" />
   <depend package="nav_msgs" />
