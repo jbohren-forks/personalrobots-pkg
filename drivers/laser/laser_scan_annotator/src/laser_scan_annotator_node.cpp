@@ -35,6 +35,7 @@
 #include "boost/thread.hpp"
 
 using namespace std ;
+using namespace sensor_msgs ;
 
 namespace laser_scan_annotator
 {
