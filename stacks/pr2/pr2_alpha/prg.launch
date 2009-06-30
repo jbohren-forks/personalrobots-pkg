@@ -17,7 +17,7 @@
  </node>
 
 <!-- Battery Monitor -->
-  <node machine="two" pkg="ocean_battery_driver" type="monitor" respawn="true"/>
+  <node machine="two" pkg="ocean_battery_driver" type="monitor" respawn="false"/>
 <!-- Battery Assertions -->
 <include file="$(find ocean_battery_driver)/expected_batteries.launch"/>
 
