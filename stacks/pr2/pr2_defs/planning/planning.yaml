@@ -14,7 +14,7 @@ groups:
     links:
       base_link
     planner_configs:
-      RRTConfig1 LazyRRTConfig1 SBLConfig1 KPIECEConfig1
+      RRTkConfig1 RRTdConfig1 LazyRRTkConfig1 SBLkConfig1 KPIECEkConfig1
 
   left_arm:
     links:
@@ -28,7 +28,7 @@ groups:
       l_wrist_flex_link
       l_wrist_roll_link
     planner_configs:
-      RRTConfig2 SBLConfig2 KPIECEConfig2l LBKPIECEConfig2l
+      RRTkConfig2 SBLkConfig2 KPIECEkConfig2l LBKPIECEkConfig2l
 
   right_arm:
     links:
@@ -42,7 +42,7 @@ groups:
       r_wrist_flex_link
       r_wrist_roll_link
     planner_configs:
-      RRTConfig2 SBLConfig2 KPIECEConfig2r LBKPIECEConfig2r
+      RRTkConfig2 SBLkConfig2 KPIECEkConfig2r LBKPIECEkConfig2r
       
   arms:
     links:
@@ -65,7 +65,7 @@ groups:
       r_wrist_flex_link
       r_wrist_roll_link
     planner_configs:
-      RRTConfig2 SBLConfig2 
+      RRTkConfig2 SBLkConfig2 
 
 ## the planner configurations; each config must have a type, which specifies
 ## the planner to be used; other parameters can be specified as well, depending 
@@ -73,56 +73,60 @@ groups:
 
 planner_configs:
   
-  RRTConfig1:
+  RRTkConfig1:
     type: kinematic::RRT
     range: 0.75
 
-  LazyRRTConfig1:
+  RRTdConfig1:
+    type: dynamic::RRT
+    range: 0.75
+
+  LazyRRTkConfig1:
     type: kinematic::LazyRRT
     range: 0.75
 
-  SBLConfig1:
+  SBLkConfig1:
     type: kinematic::SBL
     projection: 0 1
     celldim: 1 1
     range: 0.5
     
-  KPIECEConfig1:
+  KPIECEkConfig1:
     type: kinematic::KPIECE
     projection: 0 1
     celldim: 1 1
     range: 0.5
     
-  RRTConfig2:
+  RRTkConfig2:
     type: kinematic::RRT
     range: 0.75
 
-  SBLConfig2:
+  SBLkConfig2:
     type: kinematic::SBL
     projection: 5 6
     celldim: 0.1 0.1
   
-  KPIECEConfig2l:
+  KPIECEkConfig2l:
     type: kinematic::KPIECE
     projection: link l_wrist_roll_link
     celldim: 0.1 0.1 0.1
 
-  KPIECEConfig2r:
+  KPIECEkConfig2r:
     type: kinematic::KPIECE
     projection: link r_wrist_roll_link
     celldim: 0.1 0.1 0.1
 
-  LBKPIECEConfig1:
+  LBKPIECEkConfig1:
     type: kinematic::LBKPIECE
     projection: 5 6
     celldim: 0.1 0.1
 
-  LBKPIECEConfig2r:
+  LBKPIECEkConfig2r:
     type: kinematic::LBKPIECE
     projection: link r_wrist_roll_link
     celldim: 0.1 0.1 0.1
 
-  LBKPIECEConfig2l:
+  LBKPIECEkConfig2l:
     type: kinematic::LBKPIECE
     projection: link l_wrist_roll_link
     celldim: 0.1 0.1 0.1
