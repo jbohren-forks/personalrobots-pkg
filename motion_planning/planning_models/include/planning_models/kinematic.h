@@ -74,7 +74,8 @@ namespace planning_models
 	/** \brief A joint from the robot. Contains the transform applied by the joint type */
 	class Joint
 	{
-	    friend class KinematicModel;	    
+	    friend class KinematicModel;	
+	    friend class Link;
 	public:
 	    Joint(void)
 	    {
@@ -236,7 +237,7 @@ namespace planning_models
 	class AttachedBody
 	{
 	    friend class KinematicModel;
-	    
+	    friend class Link;
 	public:
 	    
 	    AttachedBody(void)
@@ -270,6 +271,7 @@ namespace planning_models
 	class Link
 	{
 	    friend class KinematicModel;
+	    friend class Joint;
 	public:
 
 	    Link(void)
