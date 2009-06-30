@@ -2,7 +2,8 @@
 #include<dorylus.h>
 
 using namespace std;
-using namespace NEWMAT;
+//using namespace NEWMAT;
+USING_PART_OF_NAMESPACE_EIGEN
 
 float newtonSingle(const Function &fcn, const Gradient &grad, const Hessian &hes, float minDelta) {
   float delta = 1e10;
@@ -21,7 +22,7 @@ float newtonSingle(const Function &fcn, const Gradient &grad, const Hessian &hes
 }
 
 
-void DorylusDataset::setObjs(const vector<object> &objs)
+void DorylusDataset::setObjs(const vector<object*> &objs)
 {
   //num_objs_of_class_ contains the number of bg objs.  classes_ does NOT, nor does nClasses_
   objs_ = objs;
@@ -31,22 +32,22 @@ void DorylusDataset::setObjs(const vector<object> &objs)
   // -- Get num_objs_of_class_, classes_, and nClasses_.
   for(unsigned int m=0; m<objs.size(); m++) {
     // Don't count label=0 as a class!
-    if(num_objs_of_class_.find(objs[m].label) == num_objs_of_class_.end() && objs[m].label != 0)
-      classes_.push_back(objs[m].label);
-    num_objs_of_class_[objs[m].label] = 0;
+    if(num_objs_of_class_.find(objs[m]->label) == num_objs_of_class_.end() && objs[m]->label != 0)
+      classes_.push_back(objs[m]->label);
+    num_objs_of_class_[objs[m]->label] = 0;
   }
   for(unsigned int m=0; m<objs.size(); m++) {
-    num_objs_of_class_[objs[m].label]++;
+    num_objs_of_class_[objs[m]->label]++;
   }
   nClasses_ = classes_.size();
 
 
   // -- Construct ymc_
-  ymc_ = Matrix(nClasses_, objs.size());
+  ymc_ = NEWMAT::Matrix(nClasses_, objs.size());
   for(unsigned int m=0; m<objs.size(); m++) {
     for(unsigned int c=0; c<nClasses_; c++) {
       //If the label is 0 (BG), make all y_m^c's be -1.
-      if(objs_[m].label == (int)classes_[c] && objs_[m].label != 0) {
+      if(objs_[m]->label == (int)classes_[c] && objs_[m]->label != 0) {
 	ymc_(c+1,m+1) = 1;
       }
       else
@@ -61,22 +62,23 @@ string DorylusDataset::displayYmc() {
   return oss.str();
 }
 
-string DorylusDataset::displayFeatures() {
+string DorylusDataset::displayObjects() {
   ostringstream oss (ostringstream::out);
   for(unsigned int i=0; i<objs_.size(); i++) {
     oss << "Object " << i << " " << endl;
-    oss << displayObject(objs_[i]);
+    oss << displayObject(*objs_[i]);
   }
   return oss.str();
 }
 
 string displayObject(const object& obj) {
-  map<string, Matrix*>::const_iterator it;
+  map<string, MatrixXf*>::const_iterator it;
   ostringstream oss (ostringstream::out);
+  oss << "Object with label " << obj.label << ":" << endl;
   for(it = obj.features.begin(); it!=obj.features.end(); it++) {
-    Matrix* v = it->second;
+    MatrixXf* v = it->second;
     oss << it->first << " descriptor " << endl;
-    oss << *v;
+    oss << *v << endl;
   }
   return oss.str();
 }
@@ -110,17 +112,17 @@ std::string DorylusDataset::status()
   oss << "DorylusDataset status: \n";
   oss << "  nClasses: " << nClasses_ << "\n";
   oss << "  nObjects: " << objs_.size() << "\n";
-  oss << "  nDescriptors: " << objs_[0].features.size() << "\n";
+  oss << "  nDescriptors: " << objs_[0]->features.size() << "\n";
   oss << "  num_objs_of_class_: " << "\n";
   for(map<int, unsigned int>::iterator it=num_objs_of_class_.begin(); it != num_objs_of_class_.end(); it++) {
     oss << "    class " << (*it).first << ": " << (*it).second << " objects. \n";
   }
 
-  map<string, Matrix*>::iterator fit;
+  map<string, MatrixXf*>::iterator fit;
   map<string, int> nPts;
   for(unsigned int m=0; m<objs_.size(); m++) {
-    for(fit = objs_[m].features.begin(); fit != objs_[m].features.end(); fit++) {
-      nPts[fit->first] += fit->second->Ncols();
+    for(fit = objs_[m]->features.begin(); fit != objs_[m]->features.end(); fit++) {
+      nPts[fit->first] += fit->second->cols();
     }
   }
 
@@ -145,18 +147,18 @@ bool DorylusDataset::save(string filename)
   f << version_string_ << endl;
   float buf;
   for(unsigned int i=0; i<objs_.size(); i++) {
-    object& obj = objs_[i];
+    object* obj = objs_[i];
     f << "New object." << endl;
-    f << obj.label << endl;
-    map<string, Matrix*>::iterator it;
-    for(it = obj.features.begin(); it!=obj.features.end(); it++) {
-      Matrix* v = it->second;
+    f << obj->label << endl;
+    map<string, MatrixXf*>::iterator it;
+    for(it = obj->features.begin(); it!=obj->features.end(); it++) {
+      MatrixXf* v = it->second;
       f << "New descriptor." << endl;
       f << it->first << endl;
-      f << v->Nrows() << endl;
-      f << v->Ncols() << endl;
-      for(int k=1; k<=v->Ncols(); k++) {
-	for(int m=1; m<=v->Nrows(); m++) {
+      f << v->rows() << endl;
+      f << v->cols() << endl;
+      for(int k=0; k<v->cols(); k++) {
+	for(int m=0; m<v->rows(); m++) {
 	  buf = (*v)(m,k);
 	  f.write((char*)&buf, sizeof(float));
 	}
@@ -188,7 +190,7 @@ bool DorylusDataset::load(string filename, bool quiet)
 
   cout << "Loading " << filename << endl;
 
-  vector<object> objs;
+  vector<object*> objs;
   int nRows, nCols;
   string descriptor;
   object *pobj = NULL;
@@ -198,8 +200,8 @@ bool DorylusDataset::load(string filename, bool quiet)
 
     if(line.size() == 0) {
       if(pobj) {
-	objs.push_back(*pobj);
-	delete pobj; pobj = NULL;
+	objs.push_back(pobj);
+	pobj = NULL;
       }
       else {
 	cerr << "no object??" << endl;
@@ -209,8 +211,8 @@ bool DorylusDataset::load(string filename, bool quiet)
 
     else if(line.compare(string("New object.")) == 0) {
       if(pobj) {
-	objs.push_back(*pobj);
-	delete pobj; pobj = NULL;
+	objs.push_back(pobj);
+	pobj = NULL;
       }
       pobj = new object();
       getline(f, line);
@@ -228,12 +230,12 @@ bool DorylusDataset::load(string filename, bool quiet)
       iss_ncols >> nCols;
 
       float buf;
-      Matrix v(nRows, nCols);
-      pobj->features[descriptor] = new Matrix(nRows, nCols);
+      //What was this?  NEWMAT::Matrix v(nRows, nCols);
+      pobj->features[descriptor] = new MatrixXf(nRows, nCols);
       for(int i=0; i<nCols; i++) {
 	for (int j=0; j<nRows; j++) {
-	  f.read((char*)&buf, sizeof(float)); //TODO: Make sure we can't mix floats and doubles with Newmat.
-	  (*(pobj->features[descriptor]))(j+1, i+1) = buf;
+	  f.read((char*)&buf, sizeof(float)); 
+	  (*(pobj->features[descriptor]))(j, i) = buf;
 	}
       }
 
@@ -278,9 +280,9 @@ bool Dorylus::save(string filename, string *user_data_str)
       f << "ID" << endl << wcs[t].id << endl;
       f << bit->first << endl;
       f << "Theta" << endl << wcs[t].theta << endl;
-      f << "Center" << endl << wcs[t].center.Nrows() << endl;
-      for(int i=1; i<=wcs[t].center.Nrows(); i++) {
-	buf = wcs[t].center(i,1);
+      f << "Center" << endl << wcs[t].center.rows() << endl;
+      for(int i=0; i<wcs[t].center.rows(); i++) {
+	buf = wcs[t].center(i,0);
 	f.write((char*)&buf, sizeof(float));
       }
       f << endl;
@@ -397,10 +399,10 @@ bool Dorylus::load(string filename, bool quiet, string *user_data_str)
       int nElements;
       iss_nEle >> nElements;
       float buf;
-      pwc->center = Matrix(nElements, 1);
+      pwc->center = MatrixXf(nElements, 1);
       for(int i=0; i<nElements; i++) {
 	f.read((char*)&buf, sizeof(float));
-	pwc->center(i+1,1) = buf;
+	pwc->center(i,0) = buf;
       }
       getline(f, line); //Move off the line with the data.
 
@@ -411,7 +413,7 @@ bool Dorylus::load(string filename, bool quiet, string *user_data_str)
       getline(f, line);
       istringstream iss_nEleVals(line);
       iss_nEleVals >> nClasses_;
-      pwc->vals = Matrix(nClasses_, 1);
+      pwc->vals = NEWMAT::Matrix(nClasses_, 1);
       for(unsigned int i=0; i<nClasses_; i++) {
 	f.read((char*)&buf, sizeof(float));
 	pwc->vals(i+1,1) = buf;
@@ -434,7 +436,7 @@ bool Dorylus::load(string filename, bool quiet, string *user_data_str)
 void Dorylus::useDataset(DorylusDataset *dd) {
   dd_ = dd;
 
-  log_weights_ = Matrix(dd_->nClasses_, dd_->objs_.size());
+  log_weights_ = NEWMAT::Matrix(dd_->nClasses_, dd_->objs_.size());
   for(int i=1; i<=log_weights_.Nrows(); i++) {
     for(int j=1; j<=log_weights_.Ncols(); j++) {
       log_weights_(i,j) = 0;
@@ -445,7 +447,7 @@ void Dorylus::useDataset(DorylusDataset *dd) {
  classes_ = dd->classes_;
 }
 
-vector<weak_classifier*>* Dorylus::findActivatedWCs(const string &descriptor, const Matrix &pt) {
+vector<weak_classifier*>* Dorylus::findActivatedWCs(const string &descriptor, const MatrixXf &pt) {
   vector<weak_classifier> &wcs = battery_[descriptor];
   vector<weak_classifier*> *activated = new vector<weak_classifier*>;
   activated->reserve(wcs.size());
@@ -463,8 +465,10 @@ vector<weak_classifier*>* Dorylus::findActivatedWCs(const string &descriptor, co
 void Dorylus::train(int nCandidates, int max_secs, int max_wcs, void (*debugHook)(weak_classifier)) {
   time_t start, end;
   time(&start);
-  
-  cout << "Objective: " << computeObjective() << endl;
+  float obj, obj2;
+
+  obj = computeObjective();
+  cout << "Objective: " << obj << endl;
   cout << "Objective (from classify()): " << classify(*dd_) << endl;
     	  
   map<string, float> max_thetas = computeMaxThetas(*dd_);
@@ -478,7 +482,11 @@ void Dorylus::train(int nCandidates, int max_secs, int max_wcs, void (*debugHook
     time(&end);
     if(debugHook != NULL)
       debugHook(*pwcs_.back());
-    cout << "Objective: " << computeObjective() << endl;
+
+    obj2 = computeObjective();
+    cout << "Objective: " << obj2 << endl;
+
+    assert(obj2 < obj);
 
     if(difftime(end,start) > max_secs)
       break;
@@ -505,29 +513,29 @@ bool Dorylus::learnWC(int nCandidates, map<string, float> max_thetas, vector<str
       continue;
     nNonBGObjs += it->second;
   }
-  Matrix non_bg_weights = Matrix(nClasses_, nNonBGObjs);
+  NEWMAT::Matrix non_bg_weights = NEWMAT::Matrix(nClasses_, nNonBGObjs);
   int m=0;
   for(int col=1; col<=nNonBGObjs; col++) {
-    while(dd_->objs_[m].label==0) {
+    while(dd_->objs_[m]->label==0) {
       m++;
     }
     non_bg_weights.Column(col) = log_weights_.Column(m+1);
     m++;
   }
-  Real* pwts = non_bg_weights.Store();
+  NEWMAT::Real* pwts = non_bg_weights.Store();
   for(unsigned int i=0; i<nClasses_ * nNonBGObjs; i++) {
     pwts[i] = exp(pwts[i]);
   }
 
   // -- Choose wc candidates from the distribution of weights over the objects.
-  vector<weak_classifier> cand;
+  vector<weak_classifier*> cand;
   for(int iCand=0; iCand<nCandidates; iCand++) {
     float dice = (float)rand() / (float)RAND_MAX * non_bg_weights.Sum(); //The weights aren't necessarily normalized.
     float w = 0.0;
     int obj_id=-1;
     int m=0;
     for(int i=0; i<non_bg_weights.Ncols(); i++, m++) {
-      while(dd_->objs_[m].label == 0)
+      while(dd_->objs_[m]->label == 0)
 	m++;
       w = non_bg_weights.Column(i+1).Sum();
       dice -= w;
@@ -539,14 +547,14 @@ bool Dorylus::learnWC(int nCandidates, map<string, float> max_thetas, vector<str
     assert(obj_id >= 0);
 
     // -- Get a random descriptor from the object.
-    map<string, Matrix*> &ft = dd_->objs_[obj_id].features;
-    Matrix* v;
+    map<string, MatrixXf*> &ft = dd_->objs_[obj_id]->features;
+    MatrixXf* v;
     string desc;
     while(true) {
       int desc_id = rand() % (int)ft.size();
 
 
-      map<string, Matrix*>::iterator it = ft.begin();
+      map<string, MatrixXf*>::iterator it = ft.begin();
       for(int i=0; i<desc_id; i++) {
 	it++;
       }
@@ -565,71 +573,71 @@ bool Dorylus::learnWC(int nCandidates, map<string, float> max_thetas, vector<str
     }
 
     //Get a random feature.
-    int feature_id = (rand() % (int)v->Ncols()) + 1;
+    int feature_id = (rand() % (int)v->cols());
 
     //Make the weak classifier.
-    weak_classifier wc;
-    wc.descriptor = desc;
-    wc.center = v->Column(feature_id);
+    weak_classifier* wc = new weak_classifier;
+    wc->descriptor = desc;
+    wc->center = v->col(feature_id);
     cand.push_back(wc);
   }
   cout << "Added " << nCandidates << " candidate wcs" << endl;
 
 
   // -- For all candidates, try several thetas and get their utilities.
-//   Matrix best_weights, *pweights=NULL;
-//   Matrix **ppweights = &pweights;
+//   NEWMAT::Matrix best_weights, *pweights=NULL;
+//   NEWMAT::Matrix **ppweights = &pweights;
 //  float objective = computeObjective();
   float max_util = 0.0;
-  Matrix best_mmt;
+  NEWMAT::Matrix best_mmt;
   bool found_better = false;
   for(unsigned int i=0; i<cand.size(); i++) {
 
     // -- Get the distances from this candidate to all other points.
-    vector<Matrix> dists;
+    vector<NEWMAT::Matrix> dists;
     int nPts = 0;
     dists.reserve(dd_->objs_.size());
     for(unsigned int j=0; j<dd_->objs_.size(); j++) {
-      Matrix* f = dd_->objs_[j].features[cand[i].descriptor];
-      dists.push_back(Matrix(1, f->Ncols()));
-      nPts += f->Ncols();
+      MatrixXf* f = dd_->objs_[j]->features[cand[i]->descriptor];
+      dists.push_back(NEWMAT::Matrix(1, f->cols()));
+      nPts += f->cols();
     }
 
     int j=0,k=0;
-    Matrix *f;
+    MatrixXf *f;
 
     for(j=0; j<(int)dd_->objs_.size(); j++) {
-      f = dd_->objs_[j].features[cand[i].descriptor];
-      for(k=1; k<=f->Ncols(); k++) {
-	dists[j](1, k) = euc(f->Column(k), cand[i].center);
+      f = dd_->objs_[j]->features[cand[i]->descriptor];
+      for(k=1; k<=f->cols(); k++) {
+	dists[j](1, k) = euc(f->col(k-1), cand[i]->center);
       }
     }
 
 
-    cand[i].theta = 0;
+    cand[i]->theta = 0;
     for(int iTheta=0; iTheta<nThetas; iTheta++) {
-      float MAX_THETA = max_thetas[cand[i].descriptor];
+      float MAX_THETA = max_thetas[cand[i]->descriptor];
 
       // -- Rejection sampling to take small thetas more often.
       while(true) {
-	cand[i].theta = ((float)rand() / (float)RAND_MAX) * MAX_THETA;
-	float probability = -2 / (MAX_THETA * MAX_THETA) * cand[i].theta + 2 / MAX_THETA;
+	cand[i]->theta = ((float)rand() / (float)RAND_MAX) * MAX_THETA;
+	float probability = -2 / (MAX_THETA * MAX_THETA) * cand[i]->theta + 2 / MAX_THETA;
 	float random = (float)rand() / (float)RAND_MAX;
 	if(random < probability)
 	  break;
       }
 
       //Get the M_m^t, number of points in the hypersphere for each object.
-      Matrix mmt(1,dd_->objs_.size()); mmt=0.0;
+      NEWMAT::Matrix mmt(1,dd_->objs_.size()); mmt=0.0;
       for(unsigned int j=0; j<dists.size(); j++) {
 	for(int k=1; k<=dists[j].Ncols(); k++) {
-	  if(dists[j](1,k) < cand[i].theta)
+	  if(dists[j](1,k) < cand[i]->theta)
 	    mmt(1, j+1)++;
 	}
       }
 
 //       // -- AdaBoost: Use Newton's method to solve for the a_t^c's.
-//       cand[i].vals = Matrix(dd_->nClasses_, 1); cand[i].vals = 0.0;
+//       cand[i]->vals = NEWMAT::Matrix(dd_->nClasses_, 1); cand[i]->vals = 0.0;
 //       for(unsigned int c=0; c<dd_->nClasses_; c++) {
 // 	//TODO: Check if the function is unbounded below.
 
@@ -637,23 +645,23 @@ bool Dorylus::learnWC(int nCandidates, map<string, float> max_thetas, vector<str
 // 	Gradient grad(this, mmt, c);
 // 	Hessian hes(this, mmt, c);
 
-// 	cand[i].vals(c+1,1) = newtonSingle(fcn, grad, hes, 1e-6);
+// 	cand[i]->vals(c+1,1) = newtonSingle(fcn, grad, hes, 1e-6);
 //       }
 
       // -- GentleBoost: take a single newton step to set the a_t^c's.
-      cand[i].vals = Matrix(dd_->nClasses_, 1); cand[i].vals = 0.0;
+      cand[i]->vals = NEWMAT::Matrix(dd_->nClasses_, 1); cand[i]->vals = 0.0;
 
       int idx=0;
       int M = dd_->objs_.size();
-      Real* pmmt = mmt.Store();
-      Real* pymc = dd_->ymc_.Store();
-      Real* plog_weights_ = log_weights_.Store();
-      Matrix numerators(nClasses_,1);
-      Matrix denominators(nClasses_,1);
+      NEWMAT::Real* pmmt = mmt.Store();
+      NEWMAT::Real* pymc = dd_->ymc_.Store();
+      NEWMAT::Real* plog_weights_ = log_weights_.Store();
+      NEWMAT::Matrix numerators(nClasses_,1);
+      NEWMAT::Matrix denominators(nClasses_,1);
       numerators = 0.0;
       denominators = 0.0;
-      Real* pnums = numerators.Store();
-      Real* pdens = denominators.Store();
+      NEWMAT::Real* pnums = numerators.Store();
+      NEWMAT::Real* pdens = denominators.Store();
       for(int m=0; m<M; m++) {
 	if(pmmt[m] == 0)
 	  continue;
@@ -664,29 +672,29 @@ bool Dorylus::learnWC(int nCandidates, map<string, float> max_thetas, vector<str
 	}
 
 // 	// -- Non-negative responses test.
-// 	if(cand[i].vals(c+1,1) < 0) {
-// 	  cand[i].vals(c+1,1) = 0;
+// 	if(cand[i]->vals(c+1,1) < 0) {
+// 	  cand[i]->vals(c+1,1) = 0;
 // 	}
 
       }
       for(unsigned int c=0; c<dd_->nClasses_; c++) {
 	if(pdens[c]==0)
-	  cand[i].vals(c+1,1) = 0;
+	  cand[i]->vals(c+1,1) = 0;
 	else
-	  cand[i].vals(c+1,1) = pnums[c] / pdens[c];
+	  cand[i]->vals(c+1,1) = pnums[c] / pdens[c];
       }
 
 
       //Get the utility.
   //     float new_objective = computeNewObjective(cand[i], mmt, ppweights);
 //       float util = objective - new_objective;
-      float util = computeUtility(cand[i], mmt);
+      float util = computeUtility(*cand[i], mmt);
       //      cout << "util " << util << " " << util2 << endl;
 
       if(util > max_util) {
 	found_better = true;
 	max_util = util;
-	best = cand[i];
+	best = *cand[i];
 	//best_weights = **ppweights;
 	best_mmt = mmt;
       }
@@ -700,6 +708,9 @@ bool Dorylus::learnWC(int nCandidates, map<string, float> max_thetas, vector<str
     cout << "Did not find a weak classifier that improves the classification!" << endl;
     return false;
   }
+
+  cout << "Found wc with utility " << max_util << endl;
+
   // -- Add the best to the strong classifier.
   best.id = pwcs_.size()+1;
   battery_[best.descriptor].push_back(best);
@@ -731,48 +742,48 @@ bool Dorylus::learnWC(int nCandidates, map<string, float> max_thetas, vector<str
 map<string, float> Dorylus::computeMaxThetas(const DorylusDataset &dd) {
   map<string, float> max_thetas;
   map<string, float> variances;
-  map<string, Matrix> means;
+  map<string, VectorXf> means;
   map<string, float> nPts;
 
   // -- Get the means and the nPts for each descriptor space.
   for(unsigned int m=0; m<dd.objs_.size(); m++) {
-    map<string, Matrix*>::const_iterator fit = dd.objs_[m].features.begin();
-    for(; fit!=dd.objs_[m].features.end(); fit++) {
+    map<string, MatrixXf*>::const_iterator fit = dd.objs_[m]->features.begin();
+    for(; fit!=dd.objs_[m]->features.end(); fit++) {
       string const& descr = fit->first;
-      Matrix* f = fit->second;
+      MatrixXf* f = fit->second;
       if(means.find(descr) == means.end()) {
-	means[descr] = Matrix(f->Nrows(), 1);
-	means[descr] = 0.0;
+	means[descr] = VectorXf::Zero(f->rows());
       }
       if(nPts.find(descr) == nPts.end())
 	nPts[descr] = 0;
 
-      for(int k=1; k<=f->Ncols(); k++) {
-	means[descr] += f->Column(k);
+      for(int k=0; k<f->cols(); k++) {
+	means[descr] += f->col(k);
 	nPts[descr]++;
       }
     }
   }
 
-  map<string, Matrix>::iterator mit;
+  map<string, VectorXf>::iterator mit;
   for(mit = means.begin(); mit != means.end(); mit++) {
-    Matrix div(1,1); div = 1 / nPts[mit->first];
-    mit->second = KP(mit->second, div);
+    mit->second = mit->second / nPts[mit->first];
+//     NEWMAT::Matrix div(1,1); div = 1 / nPts[mit->first];
+//     mit->second = KP(mit->second, div);
   }
 
   // -- Get the variances for each descriptor space.
   for(unsigned int m=0; m<dd.objs_.size(); m++) {
-    map<string, Matrix*>::const_iterator fit = dd.objs_[m].features.begin();
-    for(; fit!=dd.objs_[m].features.end(); fit++) {
+    map<string, MatrixXf*>::const_iterator fit = dd.objs_[m]->features.begin();
+    for(; fit!=dd.objs_[m]->features.end(); fit++) {
       string const& descr = fit->first;
       if(variances.find(descr) == variances.end())
 	variances[descr] = 0;
 
-      Matrix* f = fit->second;
-      for(int k=1; k<=f->Ncols(); k++) {
-	Matrix zeroed = f->Column(k) - means[descr];
+      MatrixXf* f = fit->second;
+      for(int k=0; k<f->cols(); k++) {
+	VectorXf zeroed = f->col(k) - means[descr];
 	//cout << "zeroed = " << zeroed<<endl;
-	variances[descr] += DotProduct(zeroed, zeroed);
+	variances[descr] += zeroed.dot(zeroed);
       }
     }
   }
@@ -804,7 +815,7 @@ string displayWeakClassifier(const weak_classifier &wc) {
 
 float Dorylus::computeObjective() {
   float obj=0;
-  Real* plog_weights = log_weights_.Store();
+  NEWMAT::Real* plog_weights = log_weights_.Store();
   for(int i=0; i<log_weights_.Nrows() * log_weights_.Ncols(); i++) {
     obj += exp(plog_weights[i]);
   }
@@ -813,8 +824,8 @@ float Dorylus::computeObjective() {
 }
 
 //mmt is a M_m^t specific to this weak classifier and this dataset.
-Matrix Dorylus::computeDatasetActivations(const weak_classifier& wc, const Matrix& mmt) {
-  Matrix act(dd_->nClasses_, dd_->objs_.size()); act = 0.0;
+NEWMAT::Matrix Dorylus::computeDatasetActivations(const weak_classifier& wc, const NEWMAT::Matrix& mmt) {
+  NEWMAT::Matrix act(dd_->nClasses_, dd_->objs_.size()); act = 0.0;
 
   for(unsigned int m=0; m<dd_->objs_.size(); m++) {
 
@@ -824,7 +835,7 @@ Matrix Dorylus::computeDatasetActivations(const weak_classifier& wc, const Matri
     }
   }
 
-  Matrix act2(dd_->nClasses_, dd_->objs_.size());
+  NEWMAT::Matrix act2(dd_->nClasses_, dd_->objs_.size());
   act2 = wc.vals * mmt;
 
   for(unsigned int m=0; m<dd_->objs_.size(); m++) {
@@ -841,7 +852,7 @@ Matrix Dorylus::computeDatasetActivations(const weak_classifier& wc, const Matri
 }
 
 
-float Dorylus::computeUtility(const weak_classifier& wc, const Matrix& mmt) {
+float Dorylus::computeUtility(const weak_classifier& wc, const NEWMAT::Matrix& mmt) {
 //   float util=0;
 //   for(unsigned int m=0; m<dd_->objs_.size(); m++) {
 //     if(mmt(1, m+1) == 0)
@@ -851,10 +862,10 @@ float Dorylus::computeUtility(const weak_classifier& wc, const Matrix& mmt) {
 //     }
 //   }
 
-  Real* pvals = wc.vals.Store();
-  Real* pmmt = mmt.Store();
-  Real* pymc = dd_->ymc_.Store();
-  Real* plog_weights_ = log_weights_.Store();
+  NEWMAT::Real* pvals = wc.vals.Store();
+  NEWMAT::Real* pmmt = mmt.Store();
+  NEWMAT::Real* pymc = dd_->ymc_.Store();
+  NEWMAT::Real* plog_weights_ = log_weights_.Store();
   float util=0;
   int idx;
   int M = dd_->objs_.size();
@@ -867,15 +878,15 @@ float Dorylus::computeUtility(const weak_classifier& wc, const Matrix& mmt) {
     }
   }
 
-  return util;
+  return util / (M * dd_->nClasses_);
 }
 
 
-// float Dorylus::computeNewObjective(const weak_classifier& wc, const Matrix& mmt, Matrix** new_weights) {
-//   Matrix weights = weights_;
-//   Matrix log_weights = log_weights_;
-//   //Matrix act = computeDatasetActivations(wc, mmt);
-//   Matrix act;
+// float Dorylus::computeNewObjective(const weak_classifier& wc, const NEWMAT::Matrix& mmt, NEWMAT::Matrix** new_weights) {
+//   NEWMAT::Matrix weights = weights_;
+//   NEWMAT::Matrix log_weights = log_weights_;
+//   //NEWMAT::Matrix act = computeDatasetActivations(wc, mmt);
+//   NEWMAT::Matrix act;
 //   act = wc.vals * mmt;
 
 
@@ -906,15 +917,15 @@ float Dorylus::computeUtility(const weak_classifier& wc, const Matrix& mmt) {
 //   }
 
 //   if(new_weights != NULL) {
-//     *new_weights = new Matrix;
+//     *new_weights = new NEWMAT::Matrix;
 //     **new_weights = weights;
 //   }
 
 //   return weights.Sum();
 // }
 
-Matrix Dorylus::classify(object &obj, Matrix **confidence) {
-  Matrix response(nClasses_, 1); response = 0.0;
+NEWMAT::Matrix Dorylus::classify(object &obj, NEWMAT::Matrix **confidence) {
+  NEWMAT::Matrix response(nClasses_, 1); response = 0.0;
   if(battery_.size() == 0)
     return response;
 
@@ -929,9 +940,9 @@ Matrix Dorylus::classify(object &obj, Matrix **confidence) {
       //cout << "Skipping " << descriptor << " descriptor, as it is on the exclude list." << endl;
       continue;
     }
-    Matrix* f = obj.features[descriptor];
-    for(int n = 1; n<=f->Ncols(); n++) {
-      vector<weak_classifier*> *act = findActivatedWCs(descriptor, f->Column(n));
+    MatrixXf* f = obj.features[descriptor];
+    for(int n = 0; n<f->cols(); n++) {
+      vector<weak_classifier*> *act = findActivatedWCs(descriptor, f->col(n));
       for(unsigned int a = 0; a<act->size(); a++) {
 	response += (*act)[a]->vals;
       }
@@ -945,10 +956,10 @@ Matrix Dorylus::classify(object &obj, Matrix **confidence) {
 float Dorylus::classify(DorylusDataset &dd) {
 
   float objective=0.0;
-  Matrix response(nClasses_, 1);
+  NEWMAT::Matrix response(nClasses_, 1);
   for(unsigned int m=0; m<dd.objs_.size(); m++) {
-    object &obj = dd.objs_[m];
-    response = classify(obj);
+    object *obj = dd.objs_[m];
+    response = classify(*obj);
     assert((int)nClasses_ == response.Nrows());
     for(unsigned int c=0; c<nClasses_; c++) {
       objective += exp(-dd.ymc_(c+1, m+1 ) * response(c+1,1));

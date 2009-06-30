@@ -9,6 +9,7 @@
   <review status="unreviewed" notes=""/>
   <url>http://pr.willowgarage.com/wiki/dorylus</url>
   <depend package="newmat10"/>
+  <depend package="eigen"/>
   <export>
     <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -ldorylus"/>
   </export>

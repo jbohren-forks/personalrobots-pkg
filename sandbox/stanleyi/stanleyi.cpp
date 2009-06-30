@@ -1,4 +1,4 @@
-
+#include <dorylus.h>
 #include <iostream>
 #include <image_msgs/Image.h>
 #include <rosrecord/Player.h>
@@ -12,7 +12,7 @@
 #include <vector>
 #include <string>
 #include "descriptors.h"
-#include <dorylus.h>
+
 
 USING_PART_OF_NAMESPACE_EIGEN
 //using namespace NEWMAT;
@@ -41,21 +41,10 @@ vector<ImageDescriptor*> setupImageDescriptors() {
 }
 
 void releaseImageDescriptors(vector<ImageDescriptor*>* desc) {
-  for(int i=0; i<desc->size(); i++) {
+  for(unsigned int i=0; i<desc->size(); i++) {
     delete (*desc)[i];
   }
   desc->clear();
-}
-
-
-NEWMAT::Matrix* eigen2Newmat(const MatrixXf& eig) {
-  NEWMAT::Matrix *m = new NEWMAT::Matrix(eig.rows(), eig.cols());
-  for(int i=0; i<eig.rows(); i++) {
-    for(int j=0; j<eig.cols(); j++) {
-      (*m)(i+1, j+1) = eig(i,j);
-    }
-  }
-  return m;
 }
 
 template <class T>
@@ -182,9 +171,7 @@ object* Stanleyi::computeFeaturesAtRandomPoint(int* row, int* col, bool debug) {
     }
 
     ROS_ASSERT(result != NULL);
-    // -- Convert to Newmat until Dorylus is switched.
-    obj->features[descriptor_[j]->name_] = eigen2Newmat(*result);
-    delete result;
+    obj->features[descriptor_[j]->name_] = result;
   }
 
 
@@ -197,7 +184,7 @@ object* Stanleyi::computeFeaturesAtRandomPoint(int* row, int* col, bool debug) {
 
 void Stanleyi::collectDataset(string bagfile, int samples_per_img, string save_name) {
   bool debug = false;
-  vector<object> objs;
+  vector<object*> objs;
 
   if(getenv("DEBUG") != NULL) {
     cout << "Entering debug mode." << endl;
@@ -230,8 +217,7 @@ void Stanleyi::collectDataset(string bagfile, int samples_per_img, string save_n
 
       // -- Add the object to the dataset.
       if(obj != NULL) {
-	objs.push_back(*obj);
-	delete obj;
+	objs.push_back(obj);
       }
 	
     }

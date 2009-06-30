@@ -1,11 +1,14 @@
 #ifndef DORYLUS_H
 #define DORYLUS_H
 
+//#include <Eigen/StdVector>
 #include <limits>
 
 #include <iomanip>
 #include <newmat10/newmat.h>
 #include <newmat10/newmatio.h>
+#include <Eigen/Core>
+#include <Eigen/Array>
 
 #include <iostream>
 #include <vector>
@@ -21,11 +24,22 @@
 #include <cmath>
 
 
+NEWMAT::Matrix* eigen2Newmat(const Eigen::MatrixXf& eig) {
+  NEWMAT::Matrix *m = new NEWMAT::Matrix(eig.rows(), eig.cols());
+  for(int i=0; i<eig.rows(); i++) {
+    for(int j=0; j<eig.cols(); j++) {
+      (*m)(i+1, j+1) = eig(i,j);
+    }
+  }
+  return m;
+}
+
+
 typedef struct
 {
   //! The name of the descriptor this weak classifier is concerned with.
   string descriptor;
-  NEWMAT::Matrix center;
+  Eigen::MatrixXf center;
   float theta;
   //! The a_t^c's, i.e. the values of the weak classifier responses.
   NEWMAT::Matrix vals;
@@ -41,14 +55,15 @@ class object {
  public:
   //! 0 = Background.
   int label;
-  map<string, NEWMAT::Matrix*> features;
+  map<string, Eigen::MatrixXf*> features;
 
   object() {}
   ~object() {
-    map<string, NEWMAT::Matrix*>::iterator fit;
+    map<string, Eigen::MatrixXf*>::iterator fit;
     for(fit=features.begin(); fit!=features.end(); fit++) {
       //TODO: which Newmat function?
       //fit->second->Release();
+      delete fit->second;
     }
   }
 };
@@ -73,9 +88,19 @@ inline float euc(const NEWMAT::Matrix& a, const NEWMAT::Matrix& b)
   return sqrt(r);
 }
 
+inline float euc(const Eigen::MatrixXf& a, const Eigen::MatrixXf& b)
+{
+  assert(a.cols() == 1 && b.cols() == 1);
+  assert(a.rows() == b.rows());
+
+  Eigen::MatrixXf c = (a - b).cwise().pow(2);
+  return sqrt(c.sum());
+}
+
+
 class DorylusDataset {
  public:
-  vector<object> objs_;
+  vector<object*> objs_;
   //! NEWMAT::Matrix of y_m^c values.  i.e. ymc_(c,m) = +1 if the label of training example m is c, and -1 otherwise.
   NEWMAT::Matrix ymc_;
   //! Number of classes, not including class 0.
@@ -92,10 +117,10 @@ class DorylusDataset {
   }
 
   std::string status();
-  std::string displayFeatures();
+  std::string displayObjects();
   std::string displayYmc();
 
-  void setObjs(const vector<object> &objs);
+  void setObjs(const vector<object*> &objs);
   bool save(std::string filename);
   bool load(std::string filename, bool quiet=false);
   std::string version_string_;
@@ -133,7 +158,7 @@ class Dorylus {
   float computeUtility(const weak_classifier& wc, const NEWMAT::Matrix& mmt);
   float computeObjective();
   //void train(int nCandidates, int max_secs, int max_wcs);
-  vector<weak_classifier*>* findActivatedWCs(const string &descriptor, const NEWMAT::Matrix &pt);
+  vector<weak_classifier*>* findActivatedWCs(const string &descriptor, const Eigen::MatrixXf &pt);
   NEWMAT::Matrix computeDatasetActivations(const weak_classifier& wc, const NEWMAT::Matrix& mmt);
 
  Dorylus() : dd_(NULL), nClasses_(0), max_wc_(0)
