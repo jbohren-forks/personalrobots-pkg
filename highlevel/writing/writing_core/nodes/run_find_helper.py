@@ -116,8 +116,10 @@ class FindHelperAction(python_actions.Action, TransformListener):
 
           ps0 = tf.pose_stamped_bt_to_msg(self.transform_pose("odom_combined", tf.pose_stamped_msg_to_bt(ps0)))
           ps1 = tf.pose_stamped_bt_to_msg(self.transform_pose("odom_combined", tf.pose_stamped_msg_to_bt(ps1)))
-
-          self.feedback = ps1
+          ps1.pose.position.z = 0# put the goal on the ground
+          self.feedback.helper_head=ps0
+          self.feedback.helper_zone=ps1
+        
 
           rospy.logdebug("%s: succeeded.", self.name)
           return python_actions.SUCCESS
@@ -132,7 +134,7 @@ if __name__ == '__main__':
   try:
 
     rospy.init_node("find_helper")
-    w = FindHelperAction("find_helper", Empty, pr2_robot_actions.msg.FindHelperState, robot_msgs.msg.PoseStamped)
+    w = FindHelperAction("find_helper", Empty, pr2_robot_actions.msg.FindHelperState, pr2_robot_actions.msg.FindHelperResult)
     w.run()
     rospy.spin();
 
