@@ -10,4 +10,4 @@ robot_actions/ActionStatus status
 std_msgs/Empty goal
 
 # Feedback
-robot_msgs/PoseStamped feedback
+pr2_robot_actions/FindHelperResult feedback

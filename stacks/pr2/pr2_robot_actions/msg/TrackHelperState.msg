@@ -7,7 +7,7 @@ Header header
 robot_actions/ActionStatus status
 
 # Goal
-robot_msgs/PointStamped goal
+robot_msgs/PoseStamped goal
 
 # Feedback
 std_msgs/Empty feedback
