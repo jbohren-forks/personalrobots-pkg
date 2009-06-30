@@ -27,6 +27,11 @@ All the configuration of the costmap_2d::Costmap2DROS is handled by setting para
 \skip main
 \until }
 
+\section use Costmap2DROS Use
+To get a copy of the underlying costmap_2d::Costmap2D object, call the getCostmapCopy method. The copy may be used by the
+user without affecting the update rate of the map. Responsibility for the costmap_2d::Costmap2D copy also lies with the
+user.
+
 \section configuration Costmap2DROS Configuration
 Each costmap_2d::Costmap2DROS object can be configured via the parameter server. 
 Below is an example configuration of a simple costmap that subscribes to the "base_laser"

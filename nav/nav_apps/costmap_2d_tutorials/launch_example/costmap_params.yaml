@@ -110,14 +110,44 @@ rolling_window: true
 #by 10 meters with the robot at the center, we'll set the values accordingly.
 width: 10.0
 height: 10.0
+
+#This parameter sets the resolution of the costmap in meters/cell. To get a costmap with 2.5cm resolution, we'll set
+#this parameter to 0.025 meters/cell.
 resolution: 0.025
 
+#This parameter specifies whether to use a 2D or 3D version of the costmap. To use the 3D version, recommended, use
+#"voxel," to use the 2D version use "costmap."
 map_type: voxel
+
+#The following three parameters set the origin of the costmap in the X, Y, and Z dimensions.
+origin_x: 0.0
+origin_y: 0.0
 origin_z: 0.0
+
+#This parameter sets the vertical resolution of each voxel in meters/cell. To get voxels of height 20cm, we'll set this
+#parameter to 0.2 meters/cell.
 z_resolution: 0.2
+
+#The z_voxels parameter specifies how many voxels to use vertically in the grid. The efficient voxel grid implementation we
+#use only supports 16 levels of voxels. In this case, we want a voxel grid that is 2.0 meters tall, so with our z_resolution
+#set to 0.2 meters/cell, we need 10 voxel levels to cover our desired height.
 z_voxels: 10
+
+#The unknown_threshold is used to define a tolerance for the number of voxel cells that can be unknown in a column before the
+#column itself is considered unknown. In this case, we don't care about unknown space. In fact, the base laser will only ever
+#clear out one cell in our voxel column. Therefore, we'll set the unknown threshold to be equal to the number of cells in a 
+#voxel column.
 unknown_threshold: 10
+
+#The mark_threshold is used to define a tolerance for the number of voxel cells that can be marked in a column before the
+#column itself is considered marked. Here, we want no tolerance for marked cells hanging alone in a column, so we'll set the
+#mark_threshold to be 0.
 mark_threshold: 0
 
+#This parameter sets the scaling factor that should be applied to costs during inflation. The cost function is computed as
+#follows: exp(-1.0 * cost_scaling_factor * (distance_from_obstacle - inscribed_radius)) * max_cost
 cost_scaling_factor: 10.0
+
+#This parameter sets the threshold for considering a value to be lethal when reading in the static map. Since we aren't using
+#the static map in this example, this parameter won't actually be used.
 lethal_cost_threshold: 100

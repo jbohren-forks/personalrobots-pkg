@@ -38,6 +38,15 @@
 #include "costmap_2d/costmap_2d_ros.h"
 #include "tf/transform_listener.h"
 
+void doSomething(const ros::TimerEvent& e, costmap_2d::Costmap2DROS& costmap_ros){
+  //get a copy of the underlying costmap
+  costmap_2d::Costmap2D costmap;
+  costmap_ros.getCostmapCopy(costmap);
+
+  //do whatever you want with the map here
+  ROS_INFO("The size of the map in meters is: (%.2f, %.2f)", costmap.metersSizeX(), costmap.metersSizeY());
+}
+
 int main(int argc, char** argv){
   //initialize ROS
   ros::init(argc, argv, "costmap_tester");
@@ -45,8 +54,15 @@ int main(int argc, char** argv){
   //create a Transform Listener
   tf::TransformListener tf(ros::Duration(10));
   
-  //create a ROS wrapper for the costmap which will configure itself based on parameters
-  costmap_2d::Costmap2DROS costmap_updater("costmap", tf);
+  //create a ROS wrapper for the costmap, passing it a name and a reference to a TransformListener
+  //which will configure itself based on parameters
+  costmap_2d::Costmap2DROS costmap_ros("costmap", tf);
+
+  //we'll need a node handle
+  ros::NodeHandle n;
+
+  //create a timer for our silly print callback that will call it once a second
+  ros::Timer timer = n.createTimer(ros::Duration(1.0), boost::bind(doSomething, _1, boost::ref(costmap_ros)));
   
   //start processing data
   ros::spin();
