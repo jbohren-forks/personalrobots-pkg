@@ -56,8 +56,8 @@ dimension, orientation) useful for collision detection.
 
 #include <robot_msgs/OrientedBoundingBox.h>
 #include <robot_msgs/CollisionMap.h>
-#include <robot_srvs/RecordStaticMapTrigger.h>
-#include <robot_srvs/SubtractObjectFromCollisionMap.h>
+#include <tabletop_srvs/RecordStaticMapTrigger.h>
+#include <tabletop_srvs/SubtractObjectFromCollisionMap.h>
 
 #include <tf/transform_listener.h>
 #include <sys/time.h>
@@ -65,7 +65,7 @@ dimension, orientation) useful for collision detection.
 using namespace std;
 using namespace robot_msgs;
 using namespace robot_msgs;
-using namespace robot_srvs;
+using namespace tabletop_srvs;
 using namespace visualization_msgs;
 
 struct Leaf

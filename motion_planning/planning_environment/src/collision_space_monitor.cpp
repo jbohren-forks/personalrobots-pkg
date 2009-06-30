@@ -97,7 +97,7 @@ void planning_environment::CollisionSpaceMonitor::setupCSM(void)
 
     if (cm_->loadedModels())
     {
-	attachedBodyNotifier_ = new tf::MessageNotifier<robot_msgs::AttachedObject>(*tf_, boost::bind(&CollisionSpaceMonitor::attachObjectCallback, this, _1), "attach_object", "", 1);
+	attachedBodyNotifier_ = new tf::MessageNotifier<tabletop_msgs::AttachedObject>(*tf_, boost::bind(&CollisionSpaceMonitor::attachObjectCallback, this, _1), "attach_object", "", 1);
 	attachedBodyNotifier_->setTargetFrame(cm_->getCollisionCheckLinks());
 	ROS_DEBUG("Listening to attach_object using message notifier with target frame %s", attachedBodyNotifier_->getTargetFramesString().c_str());
     }
@@ -227,7 +227,7 @@ void planning_environment::CollisionSpaceMonitor::updateCollisionSpace(const rob
 	onAfterMapUpdate_(collisionMap);
 }
 
-void planning_environment::CollisionSpaceMonitor::attachObjectCallback(const robot_msgs::AttachedObjectConstPtr &attachedObject)
+void planning_environment::CollisionSpaceMonitor::attachObjectCallback(const tabletop_msgs::AttachedObjectConstPtr &attachedObject)
 {
     collisionSpace_->lock();
     planning_models::KinematicModel::Link *link = kmodel_->getLink(attachedObject->link_name);

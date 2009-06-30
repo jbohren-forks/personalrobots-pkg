@@ -42,7 +42,7 @@
 
 #include <tf/message_notifier.h>
 #include <robot_msgs/CollisionMap.h>
-#include <robot_msgs/AttachedObject.h>
+#include <tabletop_msgs/AttachedObject.h>
 
 #include <boost/thread/mutex.hpp>
 
@@ -147,7 +147,7 @@ namespace planning_environment
 	void updateCollisionSpace(const robot_msgs::CollisionMapConstPtr &collisionMap, bool clear);
 	void collisionMapCallback(const robot_msgs::CollisionMapConstPtr &collisionMap);
 	void collisionMapUpdateCallback(const robot_msgs::CollisionMapConstPtr &collisionMap);
-	void attachObjectCallback(const robot_msgs::AttachedObjectConstPtr &attachedObject);
+	void attachObjectCallback(const tabletop_msgs::AttachedObjectConstPtr &attachedObject);
 	
 	CollisionModels                                               *cm_;
 	collision_space::EnvironmentModel                             *collisionSpace_;
@@ -158,7 +158,7 @@ namespace planning_environment
 	ros::Time                                                      lastMapUpdate_;	
 	tf::MessageNotifier<robot_msgs::CollisionMap>                 *collisionMapNotifier_;
 	tf::MessageNotifier<robot_msgs::CollisionMap>                 *collisionMapUpdateNotifier_;
-	tf::MessageNotifier<robot_msgs::AttachedObject>               *attachedBodyNotifier_;
+	tf::MessageNotifier<tabletop_msgs::AttachedObject>            *attachedBodyNotifier_;
 	
 	boost::function<void(const robot_msgs::CollisionMapConstPtr)>  onBeforeMapUpdate_;
 	boost::function<void(const robot_msgs::CollisionMapConstPtr)>  onAfterMapUpdate_;

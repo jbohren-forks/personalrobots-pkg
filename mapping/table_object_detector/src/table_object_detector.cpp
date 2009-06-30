@@ -70,14 +70,15 @@
 
 #include <sys/time.h>
 
-#include <robot_srvs/FindTable.h>
-#include <robot_msgs/Table.h>
-#include <robot_msgs/ObjectOnTable.h>
+#include <tabletop_srvs/FindTable.h>
+#include <tabletop_msgs/Table.h>
+#include <tabletop_msgs/ObjectOnTable.h>
 
 using namespace std;
 using namespace std_msgs;
 using namespace robot_msgs;
-using namespace robot_srvs;
+using namespace tabletop_msgs;
+using namespace tabletop_srvs;
 
 // Comparison operator for a vector of vectors
 bool

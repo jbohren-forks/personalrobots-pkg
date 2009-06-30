@@ -19,6 +19,8 @@
   <depend package="manipulation_msgs" />
   <depend package="motion_planning_msgs" />
   <depend package="motion_planning_srvs" />
+  <depend package="tabletop_msgs" />
+  <depend package="tabletop_srvs" />
   <depend package="move_base" />
   <depend package="move_arm" />
   <depend package="pr2_ik" />
