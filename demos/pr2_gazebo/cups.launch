@@ -19,6 +19,5 @@
   <node pkg="gazebo_plugin" type="xml2factory" args="bowl 0 0.0 0 0 0 0 bowl" respawn="false" output="screen" />
   <node pkg="gazebo_plugin" type="xml2factory" args="coffee_cup 0 .8 0 0 0 0 coffee_cup" respawn="false" output="screen" />
 
-  <include file="$(find gazebo_robot_description)/launch/light.launch" />
 </launch>
 
