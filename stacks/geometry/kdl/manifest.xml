@@ -8,7 +8,7 @@ in a way that can be managed by the ROS dependency system.
 <author>Ruben Smits, Erwin Aertbelien</author>
 <license>LGPL</license>
 <review status="3rdparty" notes=""/>
-<url>http://www.orocos.org/kdl</url>
+<url>http://pr.willowgarage.com/wiki/KDL</url>
 <export>
   <cpp cflags="-I${prefix}/kdl/include" lflags="-Wl,-rpath,${prefix}/kdl/lib  -L${prefix}/kdl/lib -lorocos-kdl"/>
   <doxymaker external="http://www.orocos.org/kdl" />
