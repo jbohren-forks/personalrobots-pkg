@@ -52,7 +52,7 @@ using namespace annotated_planar_patch_map::projection;
  * 
  */
 
-void annotated_planar_patch_map::projection::projectPolygonalMap(const sensor_msgs::StereoInfo& stereo_info, const robot_msgs::PolygonalMap& transformed_map_3D, robot_msgs::PolygonalMap &transformed_map_2D)
+void annotated_planar_patch_map::projection::projectPolygonalMap(const sensor_msgs::StereoInfo& stereo_info, const mapping_msgs::PolygonalMap& transformed_map_3D, mapping_msgs::PolygonalMap &transformed_map_2D)
 {
 
   //Get projections matrix
