@@ -52,13 +52,14 @@
 namespace bodies
 {
     
+    /** \brief Definition of a sphere that bounds another object */
     struct BoundingSphere
     {
 	btVector3 center;
 	double    radius;
     };
     
-    /** A body is a shape + its pose. Point inclusion can be
+    /** \brief A body is a shape + its pose. Point inclusion can be
 	tested, volumes and bounding spheres can be computed.*/
     class Body
     {
@@ -75,7 +76,7 @@ namespace bodies
 	{
 	}
 	
-	/** If the dimension of the body should be scaled, this
+	/** \brief If the dimension of the body should be scaled, this
 	    method sets the scale. Default is 1.0 */
 	void setScale(double scale)
 	{
@@ -83,13 +84,13 @@ namespace bodies
 	    updateInternalData();
 	}
 	
-	/** Retrieve the current scale */
+	/** \brief Retrieve the current scale */
 	double getScale(void) const
 	{
 	    return m_scale;
 	}
 	
-	/** If constant padding should be added to the body, this
+	/** \brief If constant padding should be added to the body, this
 	    method sets the padding. Default is 0.0 */
 	void setPadding(double padd)
 	{
@@ -97,46 +98,46 @@ namespace bodies
 	    updateInternalData();
 	}
 	
-	/** Retrieve the current padding */
+	/** \brief Retrieve the current padding */
 	double getPadding(void) const
 	{
 	    return m_padding;
 	}
 	
-	/** Set the pose of the body. Default is identity */
+	/** \brief Set the pose of the body. Default is identity */
 	void setPose(const btTransform &pose)
 	{
 	    m_pose = pose;
 	    updateInternalData();
 	}
 	
-	/** Retrieve the pose of the body */
+	/** \brief Retrieve the pose of the body */
 	const btTransform& getPose(void) const
 	{
 	    return m_pose;
 	}
 	
-	/** Set the dimensions of the body (from corresponding shape) */
+	/** \brief Set the dimensions of the body (from corresponding shape) */
 	void setDimensions(const shapes::Shape *shape)
 	{
 	    useDimensions(shape);
 	    updateInternalData();
 	}
 	
-	/** Check is a point is inside the body */
+	/** \brief Check is a point is inside the body */
 	bool containsPoint(double x, double y, double z) const
 	{
 	    return containsPoint(btVector3(btScalar(x), btScalar(y), btScalar(z)));
 	}
 	
-	/** Check is a point is inside the body */
+	/** \brief Check is a point is inside the body */
 	virtual bool containsPoint(const btVector3 &p) const = 0;	
 	
-	/** Compute the volume of the body. This method includes
+	/** \brief Compute the volume of the body. This method includes
 	    changes induced by scaling and padding */
 	virtual double computeVolume(void) const = 0;
 	
-	/** Compute the bounding radius for the body, in its current
+	/** \brief Compute the bounding radius for the body, in its current
 	    pose. Scaling and padding are accounted for. */
 	virtual void computeBoundingSphere(BoundingSphere &sphere) const = 0;
 	
@@ -150,6 +151,7 @@ namespace bodies
 	double      m_padding;	    
     };
     
+    /** \brief Definition of a sphere */
     class Sphere : public Body
     {
     public:
@@ -181,7 +183,8 @@ namespace bodies
 	double    m_radiusU;
 	double    m_radius2;		    
     };
-    
+
+    /** \brief Definition of a cylinder */
     class Cylinder : public Body
     {
     public:
@@ -221,7 +224,7 @@ namespace bodies
 	double    m_radius2;
     };
     
-    
+    /** \brief Definition of a box */
     class Box : public Body
     {
     public: 
@@ -262,7 +265,7 @@ namespace bodies
 	double    m_radiusB;
     };
     
-    
+    /** \brief Definition of a convex mesh. Convex hull is computed for a given shape::Mesh */
     class ConvexMesh : public Body
     {
     public:
@@ -305,10 +308,10 @@ namespace bodies
     };
     
     
-    /** Create a body from a given shape */
+    /** \brief Create a body from a given shape */
     Body* createBodyFromShape(const shapes::Shape *shape);
     
-    /** Compute a bounding sphere to enclose a set of bounding spheres */
+    /** \brief Compute a bounding sphere to enclose a set of bounding spheres */
     void mergeBoundingSpheres(const std::vector<BoundingSphere> &spheres, BoundingSphere &mergedSphere);
     
 }

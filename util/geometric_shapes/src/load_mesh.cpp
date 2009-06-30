@@ -43,55 +43,58 @@
 namespace shapes
 {
 
-    struct myVertex
+    namespace detail
     {
-	btVector3    point;
-	unsigned int index;
-    };
-    
-    struct ltVertexValue
-    {
-	bool operator()(const myVertex &p1, const myVertex &p2) const
+	struct myVertex
 	{
-	    const btVector3 &v1 = p1.point;
-	    const btVector3 &v2 = p2.point;
-	    if (v1.getX() < v2.getX())
-		return true;
-	    if (v1.getX() > v2.getX())
-		return false;
-	    if (v1.getY() < v2.getY())
-		return true;
-	    if (v1.getY() > v2.getY())
-		return false;
-	    if (v1.getZ() < v2.getZ())
-		return true;
-	    return false;
-	}
-    };
-
-    struct ltVertexIndex
-    {
-	bool operator()(const myVertex &p1, const myVertex &p2) const
+	    btVector3    point;
+	    unsigned int index;
+	};
+	
+	struct ltVertexValue
 	{
-	    return p1.index < p2.index;
-	}
-    };
+	    bool operator()(const myVertex &p1, const myVertex &p2) const
+	    {
+		const btVector3 &v1 = p1.point;
+		const btVector3 &v2 = p2.point;
+		if (v1.getX() < v2.getX())
+		    return true;
+		if (v1.getX() > v2.getX())
+		    return false;
+		if (v1.getY() < v2.getY())
+		    return true;
+		if (v1.getY() > v2.getY())
+		    return false;
+		if (v1.getZ() < v2.getZ())
+		    return true;
+		return false;
+	    }
+	};
+	
+	struct ltVertexIndex
+	{
+	    bool operator()(const myVertex &p1, const myVertex &p2) const
+	    {
+		return p1.index < p2.index;
+	    }
+	};
+    }
     
     shapes::Mesh* create_mesh_from_vertices(const std::vector<btVector3> &source)
     {
 	if (source.size() < 3)
 	    return NULL;
 	
-	std::set<myVertex, ltVertexValue> vertices;
+	std::set<detail::myVertex, detail::ltVertexValue> vertices;
 	std::vector<unsigned int>         triangles;
 	
 	for (unsigned int i = 0 ; i < source.size() / 3 ; ++i)
 	{
 	    // check if we have new vertices
-	    myVertex vt;
+	    detail::myVertex vt;
 	    
 	    vt.point = source[3 * i];
-	    std::set<myVertex, ltVertexValue>::iterator p1 = vertices.find(vt);
+	    std::set<detail::myVertex, detail::ltVertexValue>::iterator p1 = vertices.find(vt);
 	    if (p1 == vertices.end())
 	    {
 		vt.index = vertices.size();
@@ -102,7 +105,7 @@ namespace shapes
 	    triangles.push_back(vt.index);		
 	    
 	    vt.point = source[3 * i + 1];
-	    std::set<myVertex, ltVertexValue>::iterator p2 = vertices.find(vt);
+	    std::set<detail::myVertex, detail::ltVertexValue>::iterator p2 = vertices.find(vt);
 	    if (p2 == vertices.end())
 	    {
 		vt.index = vertices.size();
@@ -113,7 +116,7 @@ namespace shapes
 	    triangles.push_back(vt.index);		
 	    
 	    vt.point = source[3 * i + 2];
-	    std::set<myVertex, ltVertexValue>::iterator p3 = vertices.find(vt);
+	    std::set<detail::myVertex, detail::ltVertexValue>::iterator p3 = vertices.find(vt);
 	    if (p3 == vertices.end())
 	    {
 		vt.index = vertices.size();
@@ -126,9 +129,9 @@ namespace shapes
 	}
 	
 	// sort our vertices
-	std::vector<myVertex> vt;
+	std::vector<detail::myVertex> vt;
 	vt.insert(vt.begin(), vertices.begin(), vertices.end());
-	std::sort(vt.begin(), vt.end(), ltVertexIndex());
+	std::sort(vt.begin(), vt.end(), detail::ltVertexIndex());
 	
 	// copy the data to a mesh structure 
 	unsigned int nt = triangles.size() / 3;

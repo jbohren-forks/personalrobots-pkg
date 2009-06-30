@@ -41,10 +41,14 @@
 #include <vector>
 #include <LinearMath/btVector3.h>
 
+/** Definition of various shapes. No properties such as position are
+    included. These are simply the descriptions and dimensions of
+    shapes. */
+
 namespace shapes
 {
     
-    /** A basic definition of a shape. Shapes to be centered at origin */
+    /** \brief A basic definition of a shape. Shapes are considered centered at origin */
     class Shape
     {		    
     public:	    
@@ -62,7 +66,7 @@ namespace shapes
 	
     };
     
-    /** Definition of a sphere */
+    /** \brief Definition of a sphere */
     class Sphere : public Shape
     {
     public:
@@ -81,7 +85,7 @@ namespace shapes
 	double radius; 
     };
     
-    /** Definition of a cylinder */
+    /** \brief Definition of a cylinder */
     class Cylinder : public Shape
     {
     public:
@@ -101,7 +105,7 @@ namespace shapes
 	double length, radius; 
     };
     
-    /** Definition of a box */
+    /** \brief Definition of a box */
     class Box : public Shape
     {
     public:
@@ -119,11 +123,11 @@ namespace shapes
 	    size[2] = z;
 	}
 	
-	/** x, y, z */
+	/** \brief x, y, z */
 	double size[3]; 
     };
     
-    /** Definition of a mesh */
+    /** \brief Definition of a mesh */
     class Mesh : public Shape
     {
     public:
@@ -157,19 +161,33 @@ namespace shapes
 		delete[] normals;
 	}
 	
-	unsigned int  vertexCount;       // the number of available vertices
-	double       *vertices;          // the position for each vertex 
-	// vertex k has values at index (3k, 3k+1, 3k+2) = (x,y,z)
+	/** \brief the number of available vertices */
+	unsigned int  vertexCount;       
+
+	/** \brief the position for each vertex vertex k has values at
+	 * index (3k, 3k+1, 3k+2) = (x,y,z) */
+	double       *vertices;          
+
+	/** \brief the number of triangles formed with the vertices */
+	unsigned int  triangleCount;     
+
+	/** \brief the vertex indices for each triangle
+	 * triangle k has vertices at index (3k, 3k+1, 3k+2) = (v1, v2, v3) */
+	unsigned int *triangles;
 	
-	unsigned int  triangleCount;     // the number of triangles formed with the vertices
-	unsigned int *triangles;         // the vertex indices for each triangle
-	// triangle k has vertices at index (3k, 3k+1, 3k+2) = (v1, v2, v3)
-	
-	double       *normals;           // the normal to each triangle
-	// unit vector represented as (x,y,z) 
+	/** \brief the normal to each triangle unit vector represented
+	    as (x,y,z)  */
+	double       *normals;       
     };
     
+    /** \brief Load a mesh from a set of vertices. Every 3 vertices
+	are considered a triangle. Repeating vertices are identified
+	and the set of triangle indices is constructed. The normal at
+	each triangle is also computed */
     Mesh* create_mesh_from_vertices(const std::vector<btVector3> &source);
+
+    /** \brief Load a mesh from a binary STL file. Normals are
+	recomputed and repeating vertices are identified. */
     Mesh* create_mesh_from_binary_stl(const char *filename);
 }
 
