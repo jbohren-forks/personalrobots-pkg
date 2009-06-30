@@ -70,6 +70,10 @@ public:
     int chomp_joint_index_;                                     /** Joint index for CHOMP */
     std::string joint_name_;                                    /** Name of the joint */
     std::string link_name_;                                     /** Name of the corresponding link (from planning.yaml) */
+    bool wrap_around;                                           /** Does this joint wrap-around? */
+    bool has_joint_limits;                                      /** Are there joint limits? */
+    double joint_limit_min;                                     /** Minimum joint angle value */
+    double joint_limit_max;                                     /** Maximum joint angle value */
   };
 
   /**
@@ -104,13 +108,40 @@ public:
    */
   const planning_environment::RobotModels* getRobotModels() const;
 
+  /**
+   * \brief Gets the number of joints in the KDL tree
+   */
+  int getNumKDLJoints() const;
+
+  /**
+   * \brief Gets the KDL tree
+   */
+  const KDL::Tree* getKDLTree() const;
+
+  /**
+   * \brief Gets the KDL joint number from the URDF joint name
+   *
+   * \return -1 if the joint name is not found
+   */
+  int urdfNameToKdlNumber(std::string urdf_name) const;
+
+  /**
+   * \brief Gets the URDF joint name from the KDL joint number
+   *
+   * \return "" if the number does not have a name
+   */
+  const std::string kdlNumberToUrdfName(int kdl_number) const;
+
 private:
   ros::NodeHandle node_handle_;                                 /**< ROS Node handle */
   planning_environment::RobotModels *robot_models_;             /**< Robot model */
 
   KDL::Tree kdl_tree_;                                          /**< The KDL tree of the entire robot */
+  int num_kdl_joints_;                                          /**< Total number of joints in the KDL tree */
   std::map<std::string, std::string> joint_segment_mapping_;    /**< Joint -> Segment mapping for KDL tree */
   std::map<std::string, std::string> segment_joint_mapping_;    /**< Segment -> Joint mapping for KDL tree */
+  std::vector<std::string> kdl_number_to_urdf_name_;            /**< Mapping from KDL joint number to URDF joint name */
+  std::map<std::string, int> urdf_name_to_kdl_number_;          /**< Mapping from URDF joint name to KDL joint number */
   std::map<std::string, ChompPlanningGroup> planning_groups_;   /**< Planning group information */
 };
 
@@ -128,6 +159,33 @@ inline const ChompRobotModel::ChompPlanningGroup* ChompRobotModel::getPlanningGr
 inline const planning_environment::RobotModels* ChompRobotModel::getRobotModels() const
 {
   return robot_models_;
+}
+
+inline int ChompRobotModel::getNumKDLJoints() const
+{
+  return num_kdl_joints_;
+}
+
+inline const KDL::Tree* ChompRobotModel::getKDLTree() const
+{
+  return &kdl_tree_;
+}
+
+inline int ChompRobotModel::urdfNameToKdlNumber(std::string urdf_name) const
+{
+  std::map<std::string, int>::const_iterator it = urdf_name_to_kdl_number_.find(urdf_name);
+  if (it!=urdf_name_to_kdl_number_.end())
+    return it->second;
+  else
+    return -1;
+}
+
+inline const std::string ChompRobotModel::kdlNumberToUrdfName(int kdl_number) const
+{
+  if (kdl_number<0 || kdl_number>=num_kdl_joints_)
+    return std::string("");
+  else
+    return kdl_number_to_urdf_name_[kdl_number];
 }
 
 } // namespace chomp

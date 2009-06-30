@@ -84,6 +84,8 @@ private:
   ros::ServiceServer plan_kinematic_path_service_;      /**< The planning service */
 
   ChompRobotModel chomp_robot_model_;                   /**< Chomp Robot Model */
+  double trajectory_duration_;                          /**< Default duration of the planned motion */
+  double trajectory_discretization_;                    /**< Default discretization of the planned motion */
 
 };
 

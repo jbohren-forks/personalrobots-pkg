@@ -32,4 +32,5 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 rospack_add_executable(chomp_planner_node
 	src/chomp_planner_node.cpp
 	src/chomp_robot_model.cpp
+	src/chomp_trajectory.cpp
 )

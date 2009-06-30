@@ -35,7 +35,11 @@
 /** \author Mrinal Kalakrishnan */
 
 #include <chomp_motion_planner/chomp_planner_node.h>
+#include <chomp_motion_planner/chomp_trajectory.h>
+#include <chomp_motion_planner/chomp_utils.h>
 #include <kdl_parser/tree_parser.hpp>
+#include <kdl/jntarray.hpp>
+#include <angles/angles.h>
 
 #include <map>
 #include <vector>
@@ -57,8 +61,14 @@ bool ChompPlannerNode::init()
   if (!chomp_robot_model_.init())
     return false;
 
+  // load in some default parameters
+  node_handle_.param("trajectory_duration", trajectory_duration_, 1.0);
+  node_handle_.param("trajectory_discretization", trajectory_discretization_, 0.01);
+
   // advertise the planning service
   plan_kinematic_path_service_ = node_handle_.advertiseService("plan_kinematic_path", &ChompPlannerNode::planKinematicPath, this);
+
+  ROS_INFO("Initalized CHOMP planning service...");
 
   return true;
 }
@@ -75,7 +85,71 @@ int ChompPlannerNode::run()
 
 bool ChompPlannerNode::planKinematicPath(motion_planning_srvs::KinematicPlan::Request &req, motion_planning_srvs::KinematicPlan::Response &res)
 {
-  cout << "Got planning request\n";
+  // get the planning group:
+  const ChompRobotModel::ChompPlanningGroup* group = chomp_robot_model_.getPlanningGroup(req.params.model_id);
+
+  if (group==NULL)
+  {
+    ROS_ERROR("Could not load planning group %s", req.params.model_id.c_str());
+    return false;
+  }
+
+  ChompTrajectory trajectory(&chomp_robot_model_, trajectory_duration_, trajectory_discretization_);
+
+  // set the start state:
+  jointMsgToArray(req.start_state, trajectory(0), chomp_robot_model_);
+
+  // set the goal state equal to start state, and override the joints specified in the goal
+  // joint constraints
+  int goal_index = trajectory.getNumPoints()-1;
+  trajectory(goal_index) = trajectory(0);
+  jointMsgToArray(req.goal_constraints.joint_constraint, trajectory(goal_index), chomp_robot_model_);
+
+  // fix the goal to move the shortest angular distance for wrap-around joints:
+  for (int i=0; i<group->num_joints_; i++)
+  {
+    if (group->chomp_joints_[i].wrap_around)
+    {
+      int kdl_index = group->chomp_joints_[i].kdl_joint_index_;
+      double start = trajectory(0, kdl_index);
+      double end = trajectory(goal_index, kdl_index);
+      trajectory(goal_index,kdl_index) = start + angles::shortest_angular_distance(start, end);
+    }
+  }
+
+  // fill in an initial quintic spline trajectory
+  trajectory.fillInMinJerk(0, goal_index);
+
+  // assume that the trajectory is now optimized, fill in the output structure:
+  res.distance = 0.0;
+  res.path.model_id = req.params.model_id;
+  res.unsafe = 0;
+  res.approximate = 0;
+  res.path.start_state = req.start_state;
+
+  // fill in joint names:
+  res.path.names.resize(group->num_joints_);
+  for (int i=0; i<group->num_joints_; i++)
+  {
+    res.path.names[i] = group->chomp_joints_[i].joint_name_;
+  }
+
+  res.path.header = req.start_state[0].header; // @TODO this is probably a hack
+
+  // fill in the entire trajectory
+  res.path.times.resize(trajectory.getNumPoints());
+  res.path.states.resize(trajectory.getNumPoints());
+  for (int i=0; i<=goal_index; i++)
+  {
+    res.path.times[i] = i*trajectory.getDiscretization();
+    res.path.states[i].vals.resize(group->num_joints_);
+    for (int j=0; j<group->num_joints_; j++)
+    {
+      int kdl_joint_index = chomp_robot_model_.urdfNameToKdlNumber(res.path.names[j]);
+      res.path.states[i].vals[j] = trajectory(i, kdl_joint_index);
+    }
+  }
+
   return true;
 }
 

@@ -72,26 +72,36 @@ bool ChompRobotModel::init()
   }
 
   // Construct the KDL tree
-  treeFromString(urdf_string, kdl_tree_, joint_segment_mapping_);
+  if (!treeFromString(urdf_string, kdl_tree_, joint_segment_mapping_))
+  {
+    ROS_ERROR("Failed to construct KDL tree from URDF.");
+    return false;
+  }
+  num_kdl_joints_ = kdl_tree_.getNrOfJoints();
 
+  kdl_number_to_urdf_name_.resize(num_kdl_joints_);
   // Create the inverse mapping - KDL segment to joint name
+  // (at the same time) Create a mapping from KDL numbers to URDF joint names and vice versa
   for (map<string, string>::iterator it = joint_segment_mapping_.begin(); it!= joint_segment_mapping_.end(); ++it)
   {
-    segment_joint_mapping_.insert(make_pair(it->second, it->first));
+    std::string joint_name = it->first;
+    std::string segment_name = it->second;
+    segment_joint_mapping_.insert(make_pair(segment_name, joint_name));
+    int kdl_number = kdl_tree_.getSegment(segment_name)->second.q_nr;
+    kdl_number_to_urdf_name_[kdl_number] = joint_name;
+    urdf_name_to_kdl_number_.insert(make_pair(joint_name, kdl_number));
   }
 
   // initialize the planning groups
   std::map<std::string, std::vector<std::string> > groups = robot_models_->getPlanningGroups();
   for (std::map< std::string, std::vector<std::string> >::iterator it = groups.begin(); it != groups.end() ; ++it)
   {
-    cout << it->first << endl;
     ChompPlanningGroup group;
     group.num_links_ = it->second.size();
     group.num_joints_ = 0;
     group.link_names_.resize(group.num_links_);
     for (int i=0; i<group.num_links_; i++)
     {
-      //cout << "\t" << it->second[i] << endl;
       std::string link_name = it->second[i];
       group.link_names_[i] = link_name;
       const KDL::Segment* segment = &(kdl_tree_.getSegment(link_name)->second.segment);
@@ -104,7 +114,27 @@ bool ChompRobotModel::init()
         joint.kdl_joint_ = &(segment->getJoint());
         joint.link_name_ = link_name;
         joint.joint_name_ = segment_joint_mapping_[link_name];
-        cout << "\t" << joint.joint_name_ << endl;
+
+        planning_models::KinematicModel::Joint* kin_model_joint = robot_models_->getKinematicModel()->getJoint(joint.joint_name_);
+        if (planning_models::KinematicModel::RevoluteJoint* revolute_joint = dynamic_cast<planning_models::KinematicModel::RevoluteJoint*>(kin_model_joint))
+        {
+          joint.wrap_around = revolute_joint->continuous;
+          joint.has_joint_limits = !(joint.wrap_around);
+          joint.joint_limit_min = revolute_joint->limit[0];
+          joint.joint_limit_max = revolute_joint->limit[1];
+        }
+        else if (planning_models::KinematicModel::PrismaticJoint* prismatic_joint = dynamic_cast<planning_models::KinematicModel::PrismaticJoint*>(kin_model_joint))
+        {
+          joint.wrap_around = false;
+          joint.has_joint_limits = true;
+          joint.joint_limit_min = prismatic_joint->limit[0];
+          joint.joint_limit_max = prismatic_joint->limit[1];
+        }
+        else
+        {
+          ROS_WARN("CHOMP cannot handle floating or planar joints yet. Please redefine them as combinations of prismatic and revolute joints.");
+        }
+
         group.num_joints_++;
         group.chomp_joints_.push_back(joint);
       }
