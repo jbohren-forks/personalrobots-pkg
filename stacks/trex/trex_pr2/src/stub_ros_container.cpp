@@ -117,7 +117,7 @@ namespace trex_pr2 {
       ROS_ASSERT(_update_rate > 0);
 
       // Register publisher
-      ros::Node::instance()->advertise<State>(_update_topic, 1);
+      _pub = _node_handle.advertise<State>(_update_topic, 1);
 
       // Start the update
       _update_thread = new boost::thread(boost::bind(&StatePublisher<State>::updateLoop, this));
@@ -138,7 +138,7 @@ namespace trex_pr2 {
       ros::Duration sleep_time(1/_update_rate);
       while (!_terminated){
 	update(_state);
-	ros::Node::instance()->publish(_update_topic, _state);
+	_pub.publish(_state);
 	sleep_time.sleep();
       }
     }
@@ -148,6 +148,8 @@ namespace trex_pr2 {
     const std::string _update_topic;
     const double _update_rate;
     boost::thread* _update_thread;
+    ros::NodeHandle _node_handle;
+    ros::Publisher _pub;
   };
 
   class StubBaseStatePublisher: public StatePublisher<robot_msgs::PoseStamped>{
@@ -218,8 +220,9 @@ namespace trex_pr2 {
  * Test if a component should be created, according to ros params.
  */
 bool getComponentParam(std::string name) {
+  static ros::NodeHandle node_handle;
   bool value = false;
-  ros::Node::instance()->param(name, value, value);
+  node_handle.param(name, value, value);
   ROS_INFO("Parameter for %s is %d", name.c_str(), value);
   return value;
 }
@@ -227,8 +230,8 @@ bool getComponentParam(std::string name) {
 
 
 int main(int argc, char** argv){ 
-  ros::init(argc, argv);
-  ros::Node node("trex_pr2/action_container");
+  ros::init(argc, argv, "trex_pr2/action_container");
+  ros::NodeHandle node_handle;
 
   // Create state publishers, if parameters are set
   trex_pr2::StatePublisher<robot_msgs::PoseStamped>* base_state_publisher = NULL;
@@ -369,7 +372,7 @@ int main(int argc, char** argv){
   // Miscellaneous
   runner.run();
 
-  node.spin();
+  ros::spin();
 
   if (base_state_publisher)
     delete base_state_publisher;
