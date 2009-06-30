@@ -1,0 +1,20 @@
+<package>
+  <description brief="calibration_msgs">
+     Messages for collecting datasets to perform various robot calibrations.
+  </description>
+  <author>Vijay Pradeep / vpradeep@willowgarage.com</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://pr.willowgarage.com/wiki/calibration_msgs</url>
+
+  <depend package="std_msgs" />
+  <depend package="robot_msgs" />
+  <depend package="image_msgs" />
+
+  <export>
+    <cpp cflags="-I${prefix}/msg/cpp" />
+  </export>
+
+</package>
+
+

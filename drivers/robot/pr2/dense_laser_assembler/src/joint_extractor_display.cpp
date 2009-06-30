@@ -32,32 +32,44 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
+/*! \mainpage
+ *  \htmlinclude manifest.html
+ */
+
 #include "ros/ros.h"
-#include "robot_msgs/PointStamped.h"
-#include "robot_msgs/PointCloud.h"
-#include "image_msgs/CamInfo.h"
-#include "message_filters/topic_synchronizer_filter.h"
-#include "message_filters/sync_helper.h"
-#include "message_filters/consumer.h"
+#include "dense_laser_assembler/joint_extractor.h"
 
 using namespace std ;
-using namespace message_filters ;
+//using namespace message_filters ;
+using namespace dense_laser_assembler ;
+
+
+
+void display_joints(vector<string> joint_names, const boost::shared_ptr<JointExtractor::JointArray const>& joint_array_ptr)
+{
+  printf("Joints:\n") ;
+  for (unsigned int i=0; i< joint_names.size(); i++)
+  {
+    printf("  %s: %f\n", joint_names[i].c_str(), joint_array_ptr->positions[i]) ;
+  }
+
+}
 
 int main(int argc, char** argv)
 {
-  ros::init(argc, argv, "sync_test") ;
+  ros::init(argc, argv, "joint_extractor_display") ;
 
   ros::NodeHandle nh ;
 
-  //TopicSynchronizerFilter<robot_msgs::PointStamped, robot_msgs::PointCloud> filter ;
+  vector<string> joint_names ;
+  joint_names.push_back("laser_tilt_mount_joint") ;
+  joint_names.push_back("torso_lift_link") ;
 
-  // Define the source 'node'
-  SyncHelper<image_msgs::CamInfo> sync_helper("stereo/left/cam_info/", 10, nh) ;
+  JointExtractor joint_extractor(joint_names) ;
 
-  Consumer consumer ;
+  joint_extractor.addOutputCallback(boost::bind(&display_joints, joint_names, _1) ) ;
 
-  // Link the consumer to the output of sync_helper
-  consumer.subscribe(sync_helper) ;
+  ros::Subscriber sub = nh.subscribe("mechanism_state", 1, &JointExtractor::processMechState, &joint_extractor) ;
 
   ros::spin() ;
 
