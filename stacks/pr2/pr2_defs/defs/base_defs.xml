@@ -426,6 +426,12 @@
         <geometry name="${name}_collision">
           <box size="${base_size_x} ${base_size_y} ${base_size_z}" />
         </geometry>
+      <map name="base_collision_properties" flag="gazebo">
+        <elem key="mu1" value="500.0" />
+        <elem key="mu2" value="500.0" />
+        <elem key="kp"  value="100000000.0" />
+        <elem key="kd"  value="1.0" />
+      </map>
       </collision>
       <map name="bumper_sensor" flag="gazebo">
         <verbatim key="sensor_base_bumper">
@@ -504,6 +510,55 @@
         </verbatim>
       </map>
     </link>
+
+    <joint name="plug_magnet_joint" type="fixed">
+      <axis xyz="0 1 0" />
+      <anchor xyz="0 0 0" />
+    </joint>
+
+    <link name="plug_magnet" type="laser">
+      <parent name="${name}_link" />
+      <origin xyz="0.20 0 0.235" rpy="0 0 0" />
+      <joint name="plug_magnet_joint" />
+      <inertial>
+        <mass value="0.1" />
+        <com xyz="0 0 0.0" />
+        <inertia ixx="0.1" ixy="0" ixz="0" iyy="0.1" iyz="0" izz="0.1" />
+      </inertial>
+
+      <visual>
+        <origin xyz="0 0 0.0" rpy="0 0 0" />
+        <map name="gazebo_material" flag="gazebo">
+          <elem key="material" value="PR2/Red" />
+        </map>
+        <geometry name="plug_magnet_visual">
+          <mesh scale="0.001 0.001 0.001"/>
+        </geometry>
+      </visual>
+
+      <collision>
+        <origin xyz="0 0 0.0" rpy="0 0 0" />
+        <geometry name="plug_magnet_collision">
+          <box size=".001 .001 .001" />
+        </geometry>
+      </collision>
+
+    </link>
+    <map name="sensor" flag="gazebo">
+      <verbatim key="sensor_plug_magnet_p3d">
+        <controller:ros_p3d name="p3d_plug_magnet_controller" plugin="libros_p3d.so">
+          <alwaysOn>true</alwaysOn>
+          <updateRate>100.0</updateRate>
+          <bodyName>plug_magnet</bodyName>
+          <topicName>plug_magnet_pose_ground_truth</topicName>
+          <gaussianNoise>0.01</gaussianNoise>
+          <frameName>map</frameName>
+          <xyzOffsets>0 0 0</xyzOffsets> <!-- initialize odometry for fake localization-->
+          <rpyOffsets>0 0 0</rpyOffsets>
+          <interface:position name="p3d_plug_magnet_position"/>
+        </controller:ros_p3d>
+      </verbatim>
+    </map>
 
 
     <pr2_caster suffix="fl" parent="${name}_link">
