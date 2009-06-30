@@ -48,23 +48,74 @@ import robot_msgs.msg
 from std_msgs.msg import Empty
 import python_actions
 
+import pr2_robot_actions.msg
+import robot_actions.msg
+import nav_robot_actions.msg
+
+class Switcher:
+
+  def __init__(self, all):
+    self.all = set(all)
+    self.on = set()
+    self.switch_controllers = python_actions.ActionClient("switch_controllers",
+                                                     pr2_robot_actions.msg.SwitchControllers,
+                                                     pr2_robot_actions.msg.SwitchControllersState, 
+                                                     Empty)
+    time.sleep(2.0)
+    self.update(set())
+
+  def turn_on(self, controllers):
+    assert set(controllers) < self.all, "Unknown controller"
+    self.update(self.on | set(controllers))
+
+  def turn_off(self, controllers):
+    assert controllers < all, "Unknown controller"
+    self.update(self.on - set(controllers))
+
+  # Sugar
+
+  def __iadd__(self, other):
+    self.turn_on(set([other]))
+
+  def __isub__(self, other):
+    self.turn_off(set([other]))
+
+  # List has changed, so send an action to "switch_controllers"
+  def update(self, newon):
+    self.on = newon
+    switchlist = pr2_robot_actions.msg.SwitchControllers()
+    switchlist.stop_controllers = sorted(self.all - self.on)
+    switchlist.start_controllers = sorted(self.on)
+    as,_ = self.switch_controllers.execute(switchlist, 4.0)
+    #if as != python_actions.SUCCESS:
+    #  sys.exit(-1);
+
+class Abort(Exception):
+  pass
+class Preempt(Exception):
+  pass
+
+def act(action, goal, timeout):
+  as,fb = action.execute(goal, timeout)
+  if as == python_actions.SUCCESS:
+    return fb
+  elif as == python_actions.ABORTED:
+    raise Abort
+  elif as == python_actions.PREEMPTED:
+    raise Preempt
+  else:
+    assert 0, ("Unexpected action status %d" % as)
+
 if __name__ == '__main__':
 
   try:
 
-    import pr2_robot_actions.msg
-    import robot_actions.msg
-    import nav_robot_actions.msg
-
     rospy.init_node("test_move_to_helper")
-    switch_controllers = python_actions.ActionClient("switch_controllers",
-                                                     pr2_robot_actions.msg.SwitchControllers,
-                                                     pr2_robot_actions.msg.SwitchControllersState, 
-                                                     Empty)
     tuck_arm = python_actions.ActionClient("safety_tuck_arms",
                                            Empty,
                                            robot_actions.msg.NoArgumentsActionState,
                                            Empty)
+
     find_helper = python_actions.ActionClient("find_helper",
                                               Empty,
                                               pr2_robot_actions.msg.FindHelperState,
@@ -79,75 +130,40 @@ if __name__ == '__main__':
                                         Empty,
                                         robot_actions.msg.NoArgumentsActionState,
                                         Empty)
+
     track_helper = python_actions.ActionClient("track_helper",
                          robot_msgs.msg.PoseStamped,
                          pr2_robot_actions.msg.TrackHelperState,
                          Empty)
+
     ask_for_pen = python_actions.ActionClient("ask_for_pen", Empty, robot_actions.msg.NoArgumentsActionState, Empty)
+    ask_for_pen.preempt()
 
     generate_text_trajectory = python_actions.ActionClient("generate_text_trajectory",
                                     pr2_robot_actions.msg.TextGoal,
                                     pr2_robot_actions.msg.GenerateTextTrajectoryState,
                                     robot_msgs.msg.Path)
-    time.sleep(2)
-
-    # Preempt all of the actions
-    switch_controllers.preempt()
-    tuck_arm.preempt()
-    find_helper.preempt()
-    move_base_local.preempt()
-    track_helper.preempt()
+    generate_text_trajectory.preempt()
 
     time.sleep(2)
 
-    class Abort(Exception):
-      pass
-    class Preempt(Exception):
-      pass
-
-    def act(action, goal, timeout):
-      as,fb = action.execute(goal, timeout)
-      if as == python_actions.SUCCESS:
-        return fb
-      elif as == python_actions.ABORTED:
-        raise Abort
-      elif as == python_actions.PREEMPTED:
-        raise Preempt
-      else:
-        assert 0, ("Unexpected action status %d" % as)
-
-    def stop_start(stp, strt):
-      switchlist = pr2_robot_actions.msg.SwitchControllers()
-      switchlist.stop_controllers = stp
-      switchlist.start_controllers = strt
-      print "STOP", stp, "START", strt
-      as,_ = switch_controllers.execute(switchlist, 4.0)
-      if as != python_actions.SUCCESS:
-        sys.exit(-1);
-
-    all_controllers = [
-       "r_gripper_position_controller",
-       "head_controller",
-       "laser_tilt_controller",
-       "r_arm_joint_trajectory_controller",
+    r_arm_cartesian_controllers = set([
        "r_arm_cartesian_trajectory_controller",
        "r_arm_cartesian_pose_controller",
        "r_arm_cartesian_twist_controller",
        "r_arm_cartesian_wrench_controller",
-       ]
+       ])
+    all_controllers = set([
+       "r_gripper_position_controller",
+       "head_controller",
+       "laser_tilt_controller",
+       "r_arm_joint_trajectory_controller"]) | r_arm_cartesian_controllers
+    sw = Switcher(all_controllers)
 
-    stop_start(all_controllers, [])
-
-    stop_start([], ["r_arm_joint_trajectory_controller"])
+    sw += "r_arm_joint_trajectory_controller"
     act(tuck_arm, Empty(), 20.0)
-
-    stop_start(["r_arm_joint_trajectory_controller"],
-               ["r_gripper_position_controller",
-               "r_arm_cartesian_trajectory_controller",
-               "r_arm_cartesian_pose_controller",
-               "r_arm_cartesian_twist_controller",
-               "r_arm_cartesian_wrench_controller",
-               ])
+    sw -= "r_arm_joint_trajectory_controller"
+    sw.turn_on(r_arm_cartesian_controllers)
 
     stop_start([], ["head_controller"])
     helper_head = act(find_helper, Empty(), 200.0)
@@ -157,15 +173,14 @@ if __name__ == '__main__':
 
 
 
-
-
-    stop_start([], ["laser_tilt_controller"])
+    sw += "laser_tilt_controller"
     act(start_tilt_laser, Empty(), 20.0)
 
     print "===> Started laser"
     time.sleep(1)
 
-    track_helper_thread = threading.Thread(target = lambda: track_helper.execute(helper_head, 500.0))
+    sw += "head_controller"
+    track_helper_thread = threading.Thread(target = lambda: track_helper.execute(helper_p, 500.0))
     track_helper_thread.start()
 
     print "===> track_helper started"
