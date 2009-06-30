@@ -5,7 +5,7 @@
   <review status="unreviewed" notes=""/>
   <depend package="roscpp" />
   <depend package="std_msgs" />
-  <depend package="image_msgs" />
+  <depend package="sensor_msgs" />
   <depend package="opencv_latest" />
   <depend package="diagnostic_updater" />
   <depend package="forearm_cam" />

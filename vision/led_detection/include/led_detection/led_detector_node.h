@@ -45,8 +45,8 @@
 #include "tf/transform_listener.h"
 
 
-#include "image_msgs/Image.h"
-#include "image_msgs/CamInfo.h"
+#include "sensor_msgs/Image.h"
+#include "sensor_msgs/CamInfo.h"
 #include "robot_msgs/PointStamped.h"
 #include "topic_synchronizer/topic_synchronizer.h"
 
@@ -80,9 +80,9 @@ private:
   bool publish_debug_ ;         //!< Flag defining if we should publish a debugging image
   bool use_led_pose_ ;          //!< True: Use LED pose via TF to help find LED.  False: Ignore prior information
 
-  image_msgs::Image image_msg_ ;
-  image_msgs::CamInfo cam_info_msg_ ;
-  image_msgs::Image debug_image_msg_ ;
+  sensor_msgs::Image image_msg_ ;
+  sensor_msgs::CamInfo cam_info_msg_ ;
+  sensor_msgs::Image debug_image_msg_ ;
 };
 
 

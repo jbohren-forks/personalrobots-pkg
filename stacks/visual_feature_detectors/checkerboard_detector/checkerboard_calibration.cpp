@@ -32,7 +32,7 @@
 #include "opencv/cv.h"
 #include "opencv/highgui.h"
 #include "opencv_latest/CvBridge.h"
-#include "image_msgs/Image.h"
+#include "sensor_msgs/Image.h"
 #include "math.h"
 
 #include <sys/timeb.h>    // ftime(), struct timeb
@@ -56,8 +56,8 @@ public:
         vector<CvPoint2D32f> corners;
     };
 
-    image_msgs::Image _imagemsg;
-    image_msgs::CvBridge _cvbridge;
+    sensor_msgs::Image _imagemsg;
+    sensor_msgs::CvBridge _cvbridge;
     
     int display;
     CHECKERBOARD _checkerboard; // grid points for every checkerboard

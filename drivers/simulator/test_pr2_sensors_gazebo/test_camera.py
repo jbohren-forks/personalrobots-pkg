@@ -45,8 +45,8 @@ roslib.load_manifest('rostest')
 import sys, unittest
 import os, os.path, threading, time
 import rospy, rostest
-from image_msgs.msg import Image as image_msg
-from image_msgs.msg import CamInfo as caminfo_msg
+from sensor_msgs.msg import Image as image_msg
+from sensor_msgs.msg import CamInfo as caminfo_msg
 from PIL import Image      as pili
 from PIL import ImageChops as pilic
 

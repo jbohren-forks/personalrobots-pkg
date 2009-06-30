@@ -45,8 +45,8 @@
 
 #include "kinematic_calibration/Capture.h"
 #include "robot_msgs/MechanismState.h"
-#include "image_msgs/Image.h"
-#include "image_msgs/CamInfo.h"
+#include "sensor_msgs/Image.h"
+#include "sensor_msgs/CamInfo.h"
 #include "topic_synchronizer/topic_synchronizer.h"
 #include "tinyxml/tinyxml.h"
 
@@ -78,7 +78,7 @@ public:
     lock_.unlock() ;
   }
 
-  image_msgs::ImagePointStamped& getMsg()
+  sensor_msgs::ImagePointStamped& getMsg()
   {
     return msg_ ;
   }
@@ -100,7 +100,7 @@ public:
     return latest_time ;
   }
 
-  void findClosestBefore(const ros::Time& time, image_msgs::ImagePointStamped& data_out)
+  void findClosestBefore(const ros::Time& time, sensor_msgs::ImagePointStamped& data_out)
   {
     lock_.lock() ;
     cache_.findClosestBefore(time, data_out) ;
@@ -116,7 +116,7 @@ private:
 
   ImagePointCache cache_ ;
   boost::mutex lock_ ;
-  image_msgs::ImagePointStamped msg_ ;
+  sensor_msgs::ImagePointStamped msg_ ;
 } ;
 
 class CameraCalSampler

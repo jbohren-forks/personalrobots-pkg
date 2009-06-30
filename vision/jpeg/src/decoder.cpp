@@ -32,8 +32,8 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
-#include <image_msgs/Image.h>
-#include <image_msgs/FillImage.h>
+#include <sensor_msgs/Image.h>
+#include <sensor_msgs/FillImage.h>
 #include <sensor_msgs/CompressedImage.h>
 #include <ros/ros.h>
 
@@ -47,7 +47,7 @@ unsigned char *rawBuffer = NULL;
 unsigned int rawBufferSize = 0;
 
 std::string pubTopicName = "decompressed_image";
-image_msgs::Image decompressedImageMessage;
+sensor_msgs::Image decompressedImageMessage;
 
 int frameCount = 0;
 
@@ -131,7 +131,7 @@ int main(int argc, char **argv)
   rawSub = nodeHandle.subscribe("jpeg_image", 1, imageCB);
 
   // Create the raw jpeg publisher to output raw images
-  rawPub = nodeHandle.advertise<image_msgs::Image>(pubTopicName,1);
+  rawPub = nodeHandle.advertise<sensor_msgs::Image>(pubTopicName,1);
 
   // Run it baby
   ros::spin();

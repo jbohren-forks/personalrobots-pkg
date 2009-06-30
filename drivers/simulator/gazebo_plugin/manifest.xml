@@ -17,7 +17,7 @@
   <depend package="rospy"/>  
   <depend package="std_msgs" />
   <depend package="mechanism_msgs" />
-  <depend package="image_msgs" />
+  <depend package="sensor_msgs" />
   <depend package="opencv_latest" />
   <depend package="sensor_msgs" />
   <depend package="pr2_msgs" />

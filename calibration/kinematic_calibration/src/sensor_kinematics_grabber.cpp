@@ -44,9 +44,9 @@
 #include "std_msgs/Empty.h"
 #include "robot_msgs/PointCloud.h"
 
-#include "image_msgs/RawStereo.h"
-#include "image_msgs/Image.h"
-#include "image_msgs/CamInfo.h"
+#include "sensor_msgs/RawStereo.h"
+#include "sensor_msgs/Image.h"
+#include "sensor_msgs/CamInfo.h"
 
 #include "kinematic_calibration/CalibrationData2.h"
 
@@ -87,15 +87,15 @@ public:
   std_msgs::Empty capture_msg_ ;
 
   // Dcam messages
-  image_msgs::RawStereo raw_stereo_ ;
-  image_msgs::RawStereo safe_raw_stereo_ ;
+  sensor_msgs::RawStereo raw_stereo_ ;
+  sensor_msgs::RawStereo safe_raw_stereo_ ;
   boost::mutex raw_stereo_lock_ ;
 
   // HiRes Camera messages
-  image_msgs::Image hi_res_image_ ;
-  image_msgs::Image safe_hi_res_image_ ;
-  image_msgs::CamInfo hi_res_info_ ;
-  image_msgs::CamInfo safe_hi_res_info_ ;
+  sensor_msgs::Image hi_res_image_ ;
+  sensor_msgs::Image safe_hi_res_image_ ;
+  sensor_msgs::CamInfo hi_res_info_ ;
+  sensor_msgs::CamInfo safe_hi_res_info_ ;
   boost::mutex hi_res_lock_ ;
 
   // Point Cloud Messages

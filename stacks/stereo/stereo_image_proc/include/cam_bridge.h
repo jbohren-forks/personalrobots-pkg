@@ -35,13 +35,13 @@
 #ifndef CAM_BRIDGE_HH
 #define CAM_BRIDGE_HH
 
-#include "image_msgs/RawStereo.h"
-#include "image_msgs/FillImage.h"
+#include "sensor_msgs/RawStereo.h"
+#include "sensor_msgs/FillImage.h"
 #include "image.h"
 
 namespace cam_bridge
 {
-  void CamDataToRawStereo(cam::ImageData* im, image_msgs::Image& im_msg, image_msgs::CamInfo& info_msg, uint8_t& type)
+  void CamDataToRawStereo(cam::ImageData* im, sensor_msgs::Image& im_msg, sensor_msgs::CamInfo& info_msg, uint8_t& type)
   {
     if (im->imRawType != COLOR_CODING_NONE)
     {
@@ -49,7 +49,7 @@ namespace cam_bridge
                 im->imHeight, im->imWidth, 1,
                 "mono", "uint8",
                 im->imRaw );
-      type = image_msgs::RawStereo::IMAGE_RAW;
+      type = sensor_msgs::RawStereo::IMAGE_RAW;
     }
     else if (im->imType != COLOR_CODING_NONE)
     {
@@ -57,7 +57,7 @@ namespace cam_bridge
                 im->imHeight, im->imWidth, 1,
                 "mono", "uint8",
                 im->im );
-      type = image_msgs::RawStereo::IMAGE;
+      type = sensor_msgs::RawStereo::IMAGE;
     }
     else if (im->imColorType != COLOR_CODING_NONE && im->imColorType == COLOR_CODING_RGBA8)
     {
@@ -65,7 +65,7 @@ namespace cam_bridge
                 im->imHeight, im->imWidth, 4,
                 "rgba", "uint8",
                 im->imColor );
-      type = image_msgs::RawStereo::IMAGE_COLOR;
+      type = sensor_msgs::RawStereo::IMAGE_COLOR;
     }
     else if (im->imColorType != COLOR_CODING_NONE && im->imColorType == COLOR_CODING_RGB8)
     {
@@ -73,7 +73,7 @@ namespace cam_bridge
                 im->imHeight, im->imWidth, 3,
                 "rgb", "uint8",
                 im->imColor );
-      type = image_msgs::RawStereo::IMAGE_COLOR;
+      type = sensor_msgs::RawStereo::IMAGE_COLOR;
     }
     else if (im->imRectType != COLOR_CODING_NONE)
     {
@@ -81,7 +81,7 @@ namespace cam_bridge
                 im->imHeight, im->imWidth, 1,
                 "mono", "uint8",
                 im->imRect );
-      type = image_msgs::RawStereo::IMAGE_RECT;
+      type = sensor_msgs::RawStereo::IMAGE_RECT;
     }
     else if (im->imRectColorType != COLOR_CODING_NONE && im->imRectColorType == COLOR_CODING_RGBA8)
     {
@@ -89,7 +89,7 @@ namespace cam_bridge
                 im->imHeight, im->imWidth, 4,
                 "rgba", "uint8",
                 im->imRectColor );
-      type = image_msgs::RawStereo::IMAGE_RECT_COLOR;
+      type = sensor_msgs::RawStereo::IMAGE_RECT_COLOR;
     }
     else if (im->imRectColorType != COLOR_CODING_NONE && im->imRectColorType == COLOR_CODING_RGB8)
     {
@@ -97,7 +97,7 @@ namespace cam_bridge
                 im->imHeight, im->imWidth, 3,
                 "rgb", "uint8",
                 im->imRectColor );
-      type = image_msgs::RawStereo::IMAGE_RECT_COLOR;
+      type = sensor_msgs::RawStereo::IMAGE_RECT_COLOR;
     }
 
     info_msg.height = im->imHeight;
@@ -109,7 +109,7 @@ namespace cam_bridge
     memcpy((char*)(&info_msg.P[0]), (char*)(im->P), 12*sizeof(double));
   }
 
-  void StereoDataToRawStereo(cam::StereoData* stIm, image_msgs::RawStereo& raw_stereo)
+  void StereoDataToRawStereo(cam::StereoData* stIm, sensor_msgs::RawStereo& raw_stereo)
   {
     raw_stereo.header.stamp = ros::Time().fromNSec(stIm->imLeft->im_time * 1000);
 
@@ -183,7 +183,7 @@ namespace cam_bridge
     memcpy((char*)(*d), (char*)(&arr.data[0]), new_size);
   }
 
-  void RawStereoToCamData(image_msgs::Image& im_msg, image_msgs::CamInfo& info_msg, uint8_t type, cam::ImageData* im)
+  void RawStereoToCamData(sensor_msgs::Image& im_msg, sensor_msgs::CamInfo& info_msg, uint8_t type, cam::ImageData* im)
   {
 
     im->imRawType = COLOR_CODING_NONE;
@@ -192,37 +192,37 @@ namespace cam_bridge
     im->imRectType = COLOR_CODING_NONE;
     im->imRectColorType = COLOR_CODING_NONE;
 
-    if (type == image_msgs::RawStereo::IMAGE_RAW)
+    if (type == sensor_msgs::RawStereo::IMAGE_RAW)
     {
       extractImage(im_msg.uint8_data, &im->imRawSize, &im->imRaw);
       im->imRawType = COLOR_CODING_BAYER8_GRBG;
     }
-    else if (type == image_msgs::RawStereo::IMAGE)
+    else if (type == sensor_msgs::RawStereo::IMAGE)
     {
       extractImage(im_msg.uint8_data, &im->imSize, &im->im);
       im->imType = COLOR_CODING_MONO8;
     }
-    else if (type == image_msgs::RawStereo::IMAGE_COLOR && im_msg.encoding == "rgba")
+    else if (type == sensor_msgs::RawStereo::IMAGE_COLOR && im_msg.encoding == "rgba")
     {
       extractImage(im_msg.uint8_data, &im->imColorSize, &im->imColor);
       im->imColorType = COLOR_CODING_RGBA8;
     }
-    else if (type == image_msgs::RawStereo::IMAGE_COLOR && im_msg.encoding == "rgb")
+    else if (type == sensor_msgs::RawStereo::IMAGE_COLOR && im_msg.encoding == "rgb")
     {
       extractImage(im_msg.uint8_data, &im->imColorSize, &im->imColor);
       im->imColorType = COLOR_CODING_RGB8;
     }
-    else if (type == image_msgs::RawStereo::IMAGE_RECT)
+    else if (type == sensor_msgs::RawStereo::IMAGE_RECT)
     {
       extractImage(im_msg.uint8_data, &im->imRectSize, &im->imRect);
       im->imRectType = COLOR_CODING_MONO8;
     }
-    else if (type == image_msgs::RawStereo::IMAGE_RECT_COLOR && im_msg.encoding == "rgba")
+    else if (type == sensor_msgs::RawStereo::IMAGE_RECT_COLOR && im_msg.encoding == "rgba")
     {
       extractImage(im_msg.uint8_data, &im->imRectColorSize, &im->imRectColor);
       im->imRectColorType = COLOR_CODING_RGBA8;
     }
-    else if (type == image_msgs::RawStereo::IMAGE_RECT_COLOR && im_msg.encoding == "rgb")
+    else if (type == sensor_msgs::RawStereo::IMAGE_RECT_COLOR && im_msg.encoding == "rgb")
     {
       extractImage(im_msg.uint8_data, &im->imRectColorSize, &im->imRectColor);
       im->imRectColorType = COLOR_CODING_RGB8;
@@ -245,7 +245,7 @@ namespace cam_bridge
     im->hasRectification = true;
   }
 
-  void RawStereoToStereoData(image_msgs::RawStereo& raw_stereo, cam::StereoData* stIm)
+  void RawStereoToStereoData(sensor_msgs::RawStereo& raw_stereo, cam::StereoData* stIm)
   {
     stIm->imLeft->im_time = raw_stereo.header.stamp.toNSec() / 1000;
     stIm->imRight->im_time = raw_stereo.header.stamp.toNSec() / 1000;

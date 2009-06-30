@@ -11,7 +11,7 @@
   <depend package="std_msgs"/>
   <depend package="deprecated_msgs"/>
   <depend package="robot_msgs"/>
-  <depend package="image_msgs"/>
+  <depend package="sensor_msgs"/>
   <depend package="eigen"/>
   <depend package="opencv_latest"/>
   <depend package="stereo_utils"/>

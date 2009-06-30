@@ -40,7 +40,7 @@
 using namespace stereo_checkerboard_detector ;
 using namespace std ;
 
-bool MonoCheckerboardHelper::getCorners(image_msgs::Image& image, vector<robot_msgs::Point>& ros_corners)
+bool MonoCheckerboardHelper::getCorners(sensor_msgs::Image& image, vector<robot_msgs::Point>& ros_corners)
 {
   // Always process checkerboard images as mono images
   if (!img_bridge_.fromImage(image, "mono"))

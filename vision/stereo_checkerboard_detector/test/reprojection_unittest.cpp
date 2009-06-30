@@ -81,8 +81,8 @@ TEST(CHECKERBOARD_DETECTOR, reprojection_easy)
 {
   ReprojectionHelper helper ;
 
-  image_msgs::CamInfo left_info ;
-  image_msgs::CamInfo right_info ;
+  sensor_msgs::CamInfo left_info ;
+  sensor_msgs::CamInfo right_info ;
   double L[12] = {500,   0, 320, 0,
                     0, 500, 240, 0,
                     0,   0,   1, 0 } ;

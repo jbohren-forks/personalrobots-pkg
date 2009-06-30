@@ -1,2 +1,2 @@
 ---
-image_msgs/CamInfo cam_info
+sensor_msgs/CamInfo cam_info

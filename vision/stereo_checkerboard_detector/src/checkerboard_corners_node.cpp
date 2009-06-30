@@ -35,7 +35,7 @@
 //! \author Vijay Pradeep
 
 #include "ros/ros.h"
-#include "image_msgs/Image.h"
+#include "sensor_msgs/Image.h"
 #include "robot_msgs/PointCloud.h"
 //#include "stereo_checkerboard_detector/mono_checkerboard_helper.h"
 #include "opencv_latest/CvBridge.h"
@@ -53,7 +53,7 @@ public:
     setSize(6,8) ;
 
     corners_pub_ = nh_.advertise<robot_msgs::PointCloud>("corners", 10) ;
-    debug_pub_   = nh_.advertise<image_msgs::Image>("~debug_image", 1) ;
+    debug_pub_   = nh_.advertise<sensor_msgs::Image>("~debug_image", 1) ;
 
     image_sub_   = nh_.subscribe("image", 1, &CheckerboardCornersNode::imageCallback, this) ;
 
@@ -66,7 +66,7 @@ public:
     // helper_.setSize(w,h) ;
   }
 
-  void imageCallback(const image_msgs::ImageConstPtr& msg)
+  void imageCallback(const sensor_msgs::ImageConstPtr& msg)
   {
     // Always process checkerboard images as mono images
     if (!img_bridge_.fromImage(*msg, "mono"))
@@ -161,11 +161,11 @@ private:
   ros::Publisher corners_pub_ ;
   ros::Publisher debug_pub_ ;
 
-  image_msgs::CvBridge img_bridge_ ;
+  sensor_msgs::CvBridge img_bridge_ ;
 
   bool debug_on_ ;
   CvSize board_size_ ;
-  image_msgs::Image debug_image_ ;
+  sensor_msgs::Image debug_image_ ;
 } ;
 
 int main(int argc, char** argv)

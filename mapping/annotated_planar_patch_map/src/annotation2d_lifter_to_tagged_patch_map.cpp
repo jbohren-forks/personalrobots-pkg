@@ -53,8 +53,8 @@
 
 
 #include <robot_msgs/PolygonalMap.h>
-#include <image_msgs/StereoInfo.h>
-#include <image_msgs/CamInfo.h>
+#include <sensor_msgs/StereoInfo.h>
+#include <sensor_msgs/CamInfo.h>
 
 #include <cv_mech_turk/ExternalAnnotation.h>
 #include <annotated_map_msgs/TaggedPolygonalMap.h>
@@ -92,7 +92,7 @@ public:
 
   
 
-    caminfo_sub_ = n_.subscribe<image_msgs::CamInfo>( std::string("cam_info"), 100, boost::bind(&Annotation2DLifterToTaggedPatchMap::handleCamInfo, this,_1));
+    caminfo_sub_ = n_.subscribe<sensor_msgs::CamInfo>( std::string("cam_info"), 100, boost::bind(&Annotation2DLifterToTaggedPatchMap::handleCamInfo, this,_1));
     annotation_sub_ = n_.subscribe<cv_mech_turk::ExternalAnnotation>( std::string("annotations_2d"), 100, boost::bind(&Annotation2DLifterToTaggedPatchMap::handleAnnotation, this,_1));
     unlabeled_map_sub_ = n_.subscribe<annotated_map_msgs::TaggedPolygonalMap>( std::string("planar_map"), 100, boost::bind(&Annotation2DLifterToTaggedPatchMap::handleUnlabeledMap, this,_1));
 
@@ -112,7 +112,7 @@ public:
     unlabeled_map_=ptrMap;
     printf("Unlabeled map\n");
   }
-  void handleCamInfo(const image_msgs::CamInfoConstPtr ptrInfo)
+  void handleCamInfo(const sensor_msgs::CamInfoConstPtr ptrInfo)
   {
     boost::mutex::scoped_lock lock(lift_mutex_);
     cam_info_=ptrInfo;
@@ -396,7 +396,7 @@ protected:
 
   cv_mech_turk::ExternalAnnotationConstPtr annotation2d_object_;
   annotated_map_msgs::TaggedPolygonalMapConstPtr unlabeled_map_;
-  image_msgs::CamInfoConstPtr cam_info_;
+  sensor_msgs::CamInfoConstPtr cam_info_;
 
 
 

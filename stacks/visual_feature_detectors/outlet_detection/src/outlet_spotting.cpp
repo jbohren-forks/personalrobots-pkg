@@ -49,11 +49,11 @@
 #include "opencv/highgui.h"
 
 #include "ros/node.h"
-#include "image_msgs/StereoInfo.h"
-#include "image_msgs/DisparityInfo.h"
-#include "image_msgs/CamInfo.h"
-#include "image_msgs/Image.h"
-#include "image_msgs/RawStereo.h"
+#include "sensor_msgs/StereoInfo.h"
+#include "sensor_msgs/DisparityInfo.h"
+#include "sensor_msgs/CamInfo.h"
+#include "sensor_msgs/Image.h"
+#include "sensor_msgs/RawStereo.h"
 #include "robot_msgs/PointCloud.h"
 #include "robot_msgs/Point32.h"
 #include "robot_msgs/PoseStamped.h"
@@ -130,17 +130,17 @@ class OutletSpotting : public ros::Node
 {
 public:
 
-	image_msgs::Image limage;
-//	image_msgs::Image rimage;
-	image_msgs::Image dimage;
-	image_msgs::StereoInfo stinfo;
-	image_msgs::DisparityInfo dispinfo;
-	image_msgs::CamInfo rcinfo;
-	image_msgs::RawStereo raw_stereo;
+	sensor_msgs::Image limage;
+//	sensor_msgs::Image rimage;
+	sensor_msgs::Image dimage;
+	sensor_msgs::StereoInfo stinfo;
+	sensor_msgs::DisparityInfo dispinfo;
+	sensor_msgs::CamInfo rcinfo;
+	sensor_msgs::RawStereo raw_stereo;
 
-	image_msgs::CvBridge lbridge;
-//	image_msgs::CvBridge rbridge;
-	image_msgs::CvBridge dbridge;
+	sensor_msgs::CvBridge lbridge;
+//	sensor_msgs::CvBridge rbridge;
+	sensor_msgs::CvBridge dbridge;
 
 	robot_msgs::PointCloud cloud;
 	robot_msgs::PointCloud cloud_fetch;
@@ -209,7 +209,7 @@ public:
         advertiseService("~coarse_outlet_detect", &OutletSpotting::outletSpottingService, this);
 
         if (debug) {
-        	advertise<image_msgs::RawStereo>("~raw_stereo",1);
+        	advertise<sensor_msgs::RawStereo>("~raw_stereo",1);
         }
 
 	}

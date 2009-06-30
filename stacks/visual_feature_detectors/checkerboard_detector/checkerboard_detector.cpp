@@ -32,8 +32,8 @@
 #include "opencv/cv.h"
 #include "opencv/highgui.h"
 #include "opencv_latest/CvBridge.h"
-#include "image_msgs/CamInfo.h"
-#include "image_msgs/Image.h"
+#include "sensor_msgs/CamInfo.h"
+#include "sensor_msgs/Image.h"
 #include "checkerboard_detector/ObjectDetection.h"
 #include "math.h"
 
@@ -55,10 +55,10 @@ public:
         vector<CvPoint2D32f> corners;
     };
 
-    image_msgs::CamInfo _caminfomsg;
-    image_msgs::Image _imagemsg;
+    sensor_msgs::CamInfo _caminfomsg;
+    sensor_msgs::Image _imagemsg;
     checkerboard_detector::ObjectDetection _objdetmsg;
-    image_msgs::CvBridge _cvbridge;
+    sensor_msgs::CvBridge _cvbridge;
     string frame_id; // tf frame id
     
     int display, uidnext;

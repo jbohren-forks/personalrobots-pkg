@@ -42,7 +42,7 @@ function pf_detector_node(tag,model_file,interval,scale,do_display)
 %pf_detector_node('person','/wg/stor5/sorokin/ros/ros-pkg/sandbox/pf_object_detector/models/VOC2008/person_final.mat','10','1.0')
 
 rosoct();
-rosoct_add_msgs('image_msgs');
+rosoct_add_msgs('sensor_msgs');
 rosoct_add_msgs('rosoct');
 rosoct_add_msgs('people');
 
@@ -94,7 +94,7 @@ gModel.interval=gInterval;
 suc = rosoct_advertise('objects_2d',@people_PositionMeasurement, 1);
 suc = rosoct_advertise('objects_2d_str',@rosoct_String, 1);
 
-rosoct_subscribe(['/stereo/left/image'], @image_msgs_Image, @run_detector_on_msg, 1);
+rosoct_subscribe(['/stereo/left/image'], @sensor_msgs_Image, @run_detector_on_msg, 1);
 
 while 1
   numprocessed = rosoct_worker()

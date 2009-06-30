@@ -47,12 +47,12 @@
 
 #include <robot_msgs/PointCloud.h>
 
-#include <image_msgs/Image.h>
-#include <image_msgs/CamInfo.h>
-#include <image_msgs/DisparityInfo.h>
+#include <sensor_msgs/Image.h>
+#include <sensor_msgs/CamInfo.h>
+#include <sensor_msgs/DisparityInfo.h>
 
 #include <opencv_latest/CvBridge.h>
-#include <image_msgs/FillImage.h>
+#include <sensor_msgs/FillImage.h>
 #include <std_msgs/String.h>
 
 #include <point_cloud_mapping/cloud_io.h>
@@ -60,7 +60,7 @@
 #include <tf/transform_broadcaster.h>
 
 using namespace std;
-using namespace image_msgs;
+using namespace sensor_msgs;
 
 class PublishScene
 {
@@ -113,11 +113,11 @@ public:
 		left_caminfo_topic_ = "stereo/left/cam_info";
 		dispinfo_topic_ = "stereo/disparity_info";
 		node_.advertise<robot_msgs::PointCloud> (cloud_topic_.c_str (), 1);
-		node_.advertise<image_msgs::Image> (left_topic_.c_str (), 1);
-		node_.advertise<image_msgs::Image> (right_topic_.c_str (), 1);
-		node_.advertise<image_msgs::Image> (disp_topic_.c_str (), 1);
-		node_.advertise<image_msgs::CamInfo> (left_caminfo_topic_.c_str (), 1);
-		node_.advertise<image_msgs::DisparityInfo> (dispinfo_topic_.c_str (), 1);
+		node_.advertise<sensor_msgs::Image> (left_topic_.c_str (), 1);
+		node_.advertise<sensor_msgs::Image> (right_topic_.c_str (), 1);
+		node_.advertise<sensor_msgs::Image> (disp_topic_.c_str (), 1);
+		node_.advertise<sensor_msgs::CamInfo> (left_caminfo_topic_.c_str (), 1);
+		node_.advertise<sensor_msgs::DisparityInfo> (dispinfo_topic_.c_str (), 1);
 		ROS_INFO ("Publishing data on topic %s.", node_.mapName (cloud_topic_).c_str ());
 
 
@@ -282,7 +282,7 @@ public:
 			dispinfo_.dpp = 4.0;
 			node_.publish(dispinfo_topic_.c_str(), dispinfo_);
 
-//			image_msgs::CvBridge disp_bridge;
+//			sensor_msgs::CvBridge disp_bridge;
 //			disp_bridge.fromImage(disp_);
 //			cvNamedWindow("disparity", 1);
 //			cvShowImage("disparity", disp_bridge.toIpl());

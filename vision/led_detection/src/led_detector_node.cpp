@@ -76,7 +76,7 @@ LedDetectionNode::LedDetectionNode(ros::Node* node) : node_(node),
   sync_.subscribe("cam_info", cam_info_msg_, 1) ;
 
   node_->advertise<kinematic_calibration::ImagePointStamped>("~led", 10) ; //!todo Magic #
-  node_->advertise<image_msgs::Image>("~debug_image", 1) ;
+  node_->advertise<sensor_msgs::Image>("~debug_image", 1) ;
 
   sync_.ready() ;
 

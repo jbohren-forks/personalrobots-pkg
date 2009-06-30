@@ -56,7 +56,7 @@ $ pf_detector_node
 \subsubsection topics ROS topics
 
 Subscribes to:
-- \b "image": [image_msgs/Image] The image to run a detector on. Right now we assume a grayscale.
+- \b "image": [sensor_msgs/Image] The image to run a detector on. Right now we assume a grayscale.
 
 Publishes to:
 - \b "objects_plain": [people/PositionMeasurement.msg], Uses only x/y part of the message. The data is in image coordinates. Covariance is set to a quarter of the box width.

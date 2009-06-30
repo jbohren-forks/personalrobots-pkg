@@ -42,16 +42,16 @@
 
 #include <ros/ros.h>
 
-#include <image_msgs/Image.h>
+#include <sensor_msgs/Image.h>
 #include <opencv_latest/CvBridge.h>
 
 #include <neven/neven.h>
 
-image_msgs::CvBridge g_img_bridge;
+sensor_msgs::CvBridge g_img_bridge;
 
 neven::FaceDetector* fd;
 
-void imageCB(const image_msgs::ImageConstPtr& image)
+void imageCB(const sensor_msgs::ImageConstPtr& image)
 {
   if (g_img_bridge.fromImage(*image, "mono"))
   {

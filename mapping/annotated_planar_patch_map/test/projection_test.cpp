@@ -46,7 +46,7 @@ TEST(annotated_map, projectPolygon)
   robot_msgs::Polygon3D input_polygon;  
   robot_msgs::Polygon3D projected_polygon;  
 
-  image_msgs::CamInfo cam_info;
+  sensor_msgs::CamInfo cam_info;
 
   robot_msgs::Point32 pt;
 

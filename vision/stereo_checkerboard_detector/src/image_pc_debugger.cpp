@@ -41,7 +41,7 @@
 #include "opencv/cv.h"
 #include "opencv_latest/CvBridge.h"
 #include "robot_msgs/PointCloud.h"
-#include "image_msgs/CamInfo.h"
+#include "sensor_msgs/CamInfo.h"
 #include "topic_synchronizer/topic_synchronizer.h"
 
 using namespace std ;
@@ -61,7 +61,7 @@ public:
     sync_.subscribe("stereo/left/cam_info",  info_msg_,   1) ;
     sync_.subscribe("cb_corners",pc_msg_, 1) ;
 
-    node_->advertise<image_msgs::Image>("pc_debug",1) ;
+    node_->advertise<sensor_msgs::Image>("pc_debug",1) ;
 
     sync_.ready() ;
   }
@@ -100,7 +100,7 @@ public:
       cvCircle(cv_debug, cv_pts[i], 5, cvScalar(0,255,0), 1) ;
 
     // Convert openCV image into a ROS Message
-    image_msgs::Image ros_debug_ ;
+    sensor_msgs::Image ros_debug_ ;
     img_bridge_.fromIpltoRosImage(cv_debug, ros_debug_) ;
     node_->publish("pc_debug", ros_debug_) ;
 
@@ -130,10 +130,10 @@ public:
 private:
   ros::Node* node_ ;
   TopicSynchronizer<ImagePcDebugger> sync_ ;
-  image_msgs::CvBridge img_bridge_ ;
+  sensor_msgs::CvBridge img_bridge_ ;
 
-  image_msgs::Image image_msg_ ;
-  image_msgs::CamInfo info_msg_ ;
+  sensor_msgs::Image image_msg_ ;
+  sensor_msgs::CamInfo info_msg_ ;
   robot_msgs::PointCloud pc_msg_ ;
 
 

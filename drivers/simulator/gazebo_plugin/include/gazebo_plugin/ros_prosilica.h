@@ -34,8 +34,8 @@
 
 // image components
 #include "opencv_latest/CvBridge.h"
-#include "image_msgs/Image.h"
-#include "image_msgs/CamInfo.h"
+#include "sensor_msgs/Image.h"
+#include "sensor_msgs/CamInfo.h"
 
 // prosilica components
 #include "prosilica/prosilica.h"
@@ -53,7 +53,7 @@ namespace gazebo
 
   \brief Ros Camera Plugin Controller.
   
-  This is a controller that collects data from a Camera Sensor and populates a libgazebo camera interface as well as publish a ROS image_msgs::Image (under the field \b \<topicName\>). This controller should only be used as a child of a camera sensor (see example below.
+  This is a controller that collects data from a Camera Sensor and populates a libgazebo camera interface as well as publish a ROS sensor_msgs::Image (under the field \b \<topicName\>). This controller should only be used as a child of a camera sensor (see example below.
 
   Example Usage:
   \verbatim
@@ -79,7 +79,7 @@ namespace gazebo
 
     \brief RosProsilica Controller.
            \li Starts a ROS node if none exists. \n
-           \li Simulates a generic camera and broadcast image_msgs::Image topic over ROS.
+           \li Simulates a generic camera and broadcast sensor_msgs::Image topic over ROS.
            \li Example Usage:
   \verbatim
   <model:physical name="camera_model">
@@ -143,11 +143,11 @@ class RosProsilica : public Controller
 
   /// \brief ros message
   /// \brief construct raw stereo message
-  private: image_msgs::Image imageMsg;
-  private: image_msgs::Image imageRectMsg;
-  private: image_msgs::Image *roiImageMsg;
-  private: image_msgs::CamInfo *camInfoMsg;
-  private: image_msgs::CamInfo *roiCamInfoMsg;
+  private: sensor_msgs::Image imageMsg;
+  private: sensor_msgs::Image imageRectMsg;
+  private: sensor_msgs::Image *roiImageMsg;
+  private: sensor_msgs::CamInfo *camInfoMsg;
+  private: sensor_msgs::CamInfo *roiCamInfoMsg;
 
 
   /// \brief Parameters

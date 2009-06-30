@@ -45,7 +45,7 @@ Stereodcam is a driver primarily for communicating with the Videre stereocameras
 @section behavior Behavior
 
 The Stereodcam node outputs a "raw_stereo" message, defined in the
-"image_msgs" package.  This message may either contain a left and
+"sensor_msgs" package.  This message may either contain a left and
 right image, or, in the event of STOC processing, will contain a left
 image and disparity image.  It additionally contains the relevant
 intrinsic and extrinsic parameters for computing stereo.
@@ -85,7 +85,7 @@ Subscribes to (name/type):
 - @b "stereo/check_params" : std_msgs/Empty : signal to recheck all of the parameters
 
 Publishes to (name : type : description):
-- @b "stereo/raw_stereo" : image_msgs/RawStereo : raw stereo information from camera
+- @b "stereo/raw_stereo" : sensor_msgs/RawStereo : raw stereo information from camera
 
 <hr>
 
@@ -133,7 +133,7 @@ The camera will read from the following parameters:
 
 #include "ros/node.h"
 
-#include "image_msgs/RawStereo.h"
+#include "sensor_msgs/RawStereo.h"
 #include "cam_bridge.h"
 
 #include <diagnostic_updater/diagnostic_updater.h>
@@ -150,7 +150,7 @@ void sigsegv_handler(int sig);
 
 class StereoDcamNode : public ros::Node
 {
-  image_msgs::RawStereo    raw_stereo_;
+  sensor_msgs::RawStereo    raw_stereo_;
   DiagnosticUpdater<StereoDcamNode> diagnostic_;
   diagnostic_updater::TimeStampStatus timestamp_diag_;
 
@@ -273,7 +273,7 @@ public:
       stcam_->setSpeckleDiff(10);
       stcam_->setCompanding(true);
 
-      advertise<image_msgs::RawStereo>("raw_stereo", 1);
+      advertise<sensor_msgs::RawStereo>("raw_stereo", 1);
 
       subscribe("~check_params", check_params_msg_, &StereoDcamNode::checkParams, 1);
 

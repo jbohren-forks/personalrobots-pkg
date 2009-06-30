@@ -4,7 +4,7 @@
 #include "camera_calibration/CalibrationPattern.h"
 
 #include <ros/ros.h>
-#include <image_msgs/Image.h>
+#include <sensor_msgs/Image.h>
 #include <std_srvs/Empty.h>
 #include <topic_synchronizer2/topic_synchronizer.h>
 
@@ -18,14 +18,14 @@ class CalibrationClient {
 public:
   ros::NodeHandle n;
   
-  image_msgs::CvBridge bridge;
+  sensor_msgs::CvBridge bridge;
   TopicSynchronizer sync;
   ros::Subscriber pattern_sub;
   ros::Subscriber image_sub;
 
   boost::mutex sync_mutex;
   camera_calibration::CalibrationPatternConstPtr pattern;
-  image_msgs::ImageConstPtr image;
+  sensor_msgs::ImageConstPtr image;
 
   camera_calibration::Calibrater calibrater;
 
@@ -62,7 +62,7 @@ public:
     pattern = msg;
   }
 
-  void imageCB(const image_msgs::ImageConstPtr& msg)
+  void imageCB(const sensor_msgs::ImageConstPtr& msg)
   {
     boost::lock_guard<boost::mutex> guard(sync_mutex);
     image = msg;

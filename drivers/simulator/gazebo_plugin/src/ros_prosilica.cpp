@@ -44,9 +44,9 @@
 #include "gazebo/MonoCameraSensor.hh"
 
 
-#include <image_msgs/Image.h>
-#include <image_msgs/CamInfo.h>
-#include <image_msgs/FillImage.h>
+#include <sensor_msgs/Image.h>
+#include <sensor_msgs/CamInfo.h>
+#include <sensor_msgs/FillImage.h>
 #include <diagnostic_updater/diagnostic_updater.h>
 
 #include <opencv_latest/CvBridge.h>
@@ -161,9 +161,9 @@ void RosProsilica::LoadChild(XMLConfigNode *node)
   this->distortion_t2 = this->distortion_t2P->GetValue();
 
   ROS_DEBUG("prosilica image topic name %s", this->imageTopicName.c_str());
-  this->image_pub_ = this->rosnode_->advertise<image_msgs::Image>(this->imageTopicName,1);
-  this->image_rect_pub_ = this->rosnode_->advertise<image_msgs::Image>(this->imageRectTopicName,1);
-  this->cam_info_pub_ = this->rosnode_->advertise<image_msgs::CamInfo>(this->camInfoTopicName,1);
+  this->image_pub_ = this->rosnode_->advertise<sensor_msgs::Image>(this->imageTopicName,1);
+  this->image_rect_pub_ = this->rosnode_->advertise<sensor_msgs::Image>(this->imageRectTopicName,1);
+  this->cam_info_pub_ = this->rosnode_->advertise<sensor_msgs::CamInfo>(this->camInfoTopicName,1);
   this->cam_info_ser_ = this->rosnode_->advertiseService(this->camInfoServiceName,&RosProsilica::camInfoService, this);
   this->poll_ser_ = this->rosnode_->advertiseService(this->pollServiceName,&RosProsilica::triggeredGrab, this);
 }
@@ -313,7 +313,7 @@ bool RosProsilica::triggeredGrab(prosilica_cam::PolledImage::Request &req,
     if (this->image_pub_.getNumSubscribers() > 0)
       this->image_pub_.publish(this->imageMsg);
 
-    image_msgs::CvBridge img_bridge_;
+    sensor_msgs::CvBridge img_bridge_;
     img_bridge_.fromImage(this->imageMsg,this->format.c_str());
 
     //cvNamedWindow("showme",CV_WINDOW_AUTOSIZE);

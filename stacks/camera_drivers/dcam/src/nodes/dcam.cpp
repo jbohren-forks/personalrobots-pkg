@@ -37,10 +37,10 @@
 #include "dcam/dcam.h"
 
 #include "ros/node.h"
-#include "image_msgs/Image.h"
-#include "image_msgs/FillImage.h"
-#include "image_msgs/CamInfo.h"
-#include "image_msgs/StereoInfo.h"
+#include "sensor_msgs/Image.h"
+#include "sensor_msgs/FillImage.h"
+#include "sensor_msgs/CamInfo.h"
+#include "sensor_msgs/StereoInfo.h"
 #include "robot_msgs/PointCloud.h"
 
 #include <diagnostic_updater/diagnostic_updater.h>
@@ -54,8 +54,8 @@ class DcamNode : public ros::Node
 {
   bool do_rectify_;
 
-  image_msgs::Image        img_;
-  image_msgs::CamInfo      cam_info_;
+  sensor_msgs::Image        img_;
+  sensor_msgs::CamInfo      cam_info_;
 
   DiagnosticUpdater<DcamNode> diagnostic_;
   diagnostic_updater::TimeStampStatus timestamp_diag_;
@@ -286,22 +286,22 @@ public:
 
   void advertiseImages(std::string base_name, cam::ImageData* img_data)
   {
-    advertise<image_msgs::CamInfo>(base_name + std::string("cam_info"), 1);
+    advertise<sensor_msgs::CamInfo>(base_name + std::string("cam_info"), 1);
 
     if (img_data->imRawType != COLOR_CODING_NONE)
-      advertise<image_msgs::Image>(base_name + std::string("image_raw"), 1);
+      advertise<sensor_msgs::Image>(base_name + std::string("image_raw"), 1);
 
     if (img_data->imType != COLOR_CODING_NONE)
-      advertise<image_msgs::Image>(base_name + std::string("image"), 1);
+      advertise<sensor_msgs::Image>(base_name + std::string("image"), 1);
 
     if (img_data->imColorType != COLOR_CODING_NONE)
-      advertise<image_msgs::Image>(base_name + std::string("image_color"), 1);
+      advertise<sensor_msgs::Image>(base_name + std::string("image_color"), 1);
 
     if (img_data->imRectType != COLOR_CODING_NONE)
-      advertise<image_msgs::Image>(base_name + std::string("image_rect"), 1);
+      advertise<sensor_msgs::Image>(base_name + std::string("image_rect"), 1);
 
     if (img_data->imRectColorType != COLOR_CODING_NONE)
-      advertise<image_msgs::Image>(base_name + std::string("image_rect_color"), 1);
+      advertise<sensor_msgs::Image>(base_name + std::string("image_rect_color"), 1);
 
   }
 

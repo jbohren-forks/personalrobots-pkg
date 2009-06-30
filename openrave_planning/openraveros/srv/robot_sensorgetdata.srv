@@ -19,5 +19,5 @@ float32[] laserpos
 float32[] laserint
 
 ## camera
-image_msgs/CamInfo caminfo # camera calibration parameters and where camera is
-image_msgs/Image camimage # camera image
+sensor_msgs/CamInfo caminfo # camera calibration parameters and where camera is
+sensor_msgs/Image camimage # camera image

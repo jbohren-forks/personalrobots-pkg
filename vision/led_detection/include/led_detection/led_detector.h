@@ -40,8 +40,8 @@
 
 #include "opencv_latest/CvBridge.h"
 
-#include "image_msgs/Image.h"
-#include "image_msgs/CamInfo.h"
+#include "sensor_msgs/Image.h"
+#include "sensor_msgs/CamInfo.h"
 #include "kinematic_calibration/ImagePoint.h"
 #include "robot_msgs/Pose.h"
 
@@ -65,9 +65,9 @@ public:
    * \return True: LED was found
    *         False: LED was not found
    */
-  bool findLed(image_msgs::Image& image, const image_msgs::CamInfo& info,
+  bool findLed(sensor_msgs::Image& image, const sensor_msgs::CamInfo& info,
                const robot_msgs::Pose* led_pose,
-               kinematic_calibration::ImagePoint& led_pix, image_msgs::Image& debug_image) ;
+               kinematic_calibration::ImagePoint& led_pix, sensor_msgs::Image& debug_image) ;
 
   /**
    * \brief Does the 'heavy lifting' and openCV calls for finding the LED in an image.
@@ -80,13 +80,13 @@ public:
    * \return True: LED was found
    *         False: LED was not found
    */
-  bool findLed(const IplImage* image, const image_msgs::CamInfo& info,
+  bool findLed(const IplImage* image, const sensor_msgs::CamInfo& info,
                const robot_msgs::Pose* led_pose,
                kinematic_calibration::ImagePoint& led_pix, IplImage* debug_image) ;
 
 private:
 
-  image_msgs::CvBridge img_bridge_ ;
+  sensor_msgs::CvBridge img_bridge_ ;
 
 } ;
 

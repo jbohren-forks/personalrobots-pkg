@@ -40,7 +40,7 @@ import sys
 
 from kinematic_calibration.msg_cache import MsgCache
 from kinematic_calibration.msg import *
-from image_msgs.msg import *
+from sensor_msgs.msg import *
 from roslib import rostime
 
 class ImagePointStats() :

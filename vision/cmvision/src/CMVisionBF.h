@@ -26,7 +26,7 @@
 
 #include <ros/ros.h>
 #include <ros/node.h>
-#include <image_msgs/Image.h>
+#include <sensor_msgs/Image.h>
 
 #include "opencv/cv.h"
 #include "opencv_latest/CvBridge.h"
@@ -60,8 +60,8 @@ namespace color_blob_track
     public: void imageCB();
 
     private: ros::Node *node;
-    private: image_msgs::Image image;
-    private: image_msgs::CvBridge imageBridge;
+    private: sensor_msgs::Image image;
+    private: sensor_msgs::CvBridge imageBridge;
 
     private: bool  debugOn;
     private: uint16_t width;

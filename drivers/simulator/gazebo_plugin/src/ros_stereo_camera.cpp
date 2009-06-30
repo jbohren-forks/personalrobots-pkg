@@ -41,8 +41,8 @@
 #include <gazebo/MonoCameraSensor.hh>
 #include <gazebo/Body.hh>
 
-#include "image_msgs/Image.h"
-#include "image_msgs/FillImage.h"
+#include "sensor_msgs/Image.h"
+#include "sensor_msgs/FillImage.h"
 
 using namespace gazebo;
 
@@ -168,7 +168,7 @@ void RosStereoCamera::InitChild()
 
   // advertise node topics
   ROS_DEBUG("stereo: advertise topicName %s\n",this->topicName.c_str());
-  this->pub_ = this->rosnode_->advertise<image_msgs::RawStereo>(this->topicName, 1);
+  this->pub_ = this->rosnode_->advertise<sensor_msgs::RawStereo>(this->topicName, 1);
 
   // iterate through children of the model parent to find left and right camera sensors
   std::vector<Entity*> sibling = this->myParent->GetChildren();

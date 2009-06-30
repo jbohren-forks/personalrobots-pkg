@@ -36,8 +36,8 @@
 #define TRACKER_BASE_H
 
 #include <ros/node.h>
-#include <image_msgs/Image.h>
-#include <image_msgs/CamInfo.h>
+#include <sensor_msgs/Image.h>
+#include <sensor_msgs/CamInfo.h>
 #include <opencv_latest/CvBridge.h>
 #include <prosilica_cam/PolledImage.h>
 #include <tf/transform_broadcaster.h>
@@ -85,9 +85,9 @@ protected:
   prosilica_cam::PolledImage::Response res_;
   std::string image_service_;
   std::string cam_info_service_;
-  image_msgs::Image &img_;
-  image_msgs::CamInfo &cam_info_;
-  image_msgs::CvBridge img_bridge_;
+  sensor_msgs::Image &img_;
+  sensor_msgs::CamInfo &cam_info_;
+  sensor_msgs::CvBridge img_bridge_;
   std::string pose_topic_name_;
   tf::TransformBroadcaster tf_broadcaster_;
   tf::TransformListener tf_listener_;
@@ -101,7 +101,7 @@ protected:
   double resize_factor_failed_;
   int target_roi_size_;
 
-  image_msgs::Image display_img_;
+  sensor_msgs::Image display_img_;
   std::string display_topic_name_;
 
   /*bool*/ int save_failures_;

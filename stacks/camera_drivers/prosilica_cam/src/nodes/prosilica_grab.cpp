@@ -8,7 +8,7 @@
 
 static char wndname[] = "Captured image";
 
-image_msgs::CvBridge bridge;
+sensor_msgs::CvBridge bridge;
 
 // NOTE: res must be global! CvBridge assumes it can just point
 //       to the pixel data in the image message.

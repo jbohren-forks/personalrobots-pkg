@@ -10,7 +10,7 @@
   <url>http://pr.willowgarage.com/wiki/image_publisher</url>
 
   <depend package="roscpp"/>
-  <depend package="image_msgs"/>
+  <depend package="sensor_msgs"/>
   <depend package="sensor_msgs"/>
   <depend package="opencv_latest"/>
 

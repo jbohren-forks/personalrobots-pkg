@@ -52,10 +52,10 @@
 #include "opencv/cv.hpp"
 
 #include "ros/node.h"
-#include "image_msgs/StereoInfo.h"
-#include "image_msgs/DisparityInfo.h"
-#include "image_msgs/CamInfo.h"
-#include "image_msgs/Image.h"
+#include "sensor_msgs/StereoInfo.h"
+#include "sensor_msgs/DisparityInfo.h"
+#include "sensor_msgs/CamInfo.h"
+#include "sensor_msgs/Image.h"
 #include "robot_msgs/PointCloud.h"
 #include "robot_msgs/Point32.h"
 #include "robot_msgs/Vector3.h"
@@ -1430,15 +1430,15 @@ void on_quality(int val);
 class RecognitionLambertian : public ros::Node
 {
 public:
-	image_msgs::Image limage;
-	image_msgs::Image rimage;
-	image_msgs::Image dimage;
-	image_msgs::StereoInfo stinfo;
-	image_msgs::DisparityInfo dispinfo;
-	image_msgs::CamInfo rcinfo;
-	image_msgs::CvBridge lbridge;
-	image_msgs::CvBridge rbridge;
-	image_msgs::CvBridge dbridge;
+	sensor_msgs::Image limage;
+	sensor_msgs::Image rimage;
+	sensor_msgs::Image dimage;
+	sensor_msgs::StereoInfo stinfo;
+	sensor_msgs::DisparityInfo dispinfo;
+	sensor_msgs::CamInfo rcinfo;
+	sensor_msgs::CvBridge lbridge;
+	sensor_msgs::CvBridge rbridge;
+	sensor_msgs::CvBridge dbridge;
 
 	robot_msgs::PointCloud cloud_fetch;
 	robot_msgs::PointCloud cloud;

@@ -11,7 +11,7 @@
 #include "opencv/highgui.h"
 
 #include "ros/ros.h"
-#include "image_msgs/Image.h"
+#include "sensor_msgs/Image.h"
 #include "opencv_latest/CvBridge.h"
 #include <stdlib.h>
 
@@ -22,7 +22,7 @@ class MTManualSelectNode
 {
 public:
 
-  image_msgs::CvBridge cv_bridge;
+  sensor_msgs::CvBridge cv_bridge;
 
   int image_counter_; 		
  
@@ -40,7 +40,7 @@ public:
   void init()
   {
     // Advertise the Images for annotation
-    img_to_annotate_pub_ = n_.advertise<image_msgs::Image>("image_to_annotate",0);
+    img_to_annotate_pub_ = n_.advertise<sensor_msgs::Image>("image_to_annotate",0);
     // Subscribe to the Images that we display
     img_to_display_sub_ = n_.subscribe(std::string("/stereo/left/image"),  (unsigned int)10, &MTManualSelectNode::onImage,this);
     // Retrieve internal message parameter, or else set default to 'pong! '
@@ -60,11 +60,11 @@ public:
 
 
 
-  void onImage(const image_msgs::ImageConstPtr& msg)
+  void onImage(const sensor_msgs::ImageConstPtr& msg)
   {
     printf("On Image\n");
 
-    const image_msgs::Image& image_msg=*msg;
+    const sensor_msgs::Image& image_msg=*msg;
     IplImage *cv_img_to_label;
 
     cv_bridge.fromImage(image_msg);

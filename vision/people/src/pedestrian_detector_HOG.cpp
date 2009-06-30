@@ -41,10 +41,10 @@
 #include "ros/console.h"
 #include "CvStereoCamModel.h"
 #include <people/PositionMeasurement.h>
-#include "image_msgs/StereoInfo.h"
-#include "image_msgs/DisparityInfo.h"
-#include "image_msgs/CamInfo.h"
-#include "image_msgs/Image.h"
+#include "sensor_msgs/StereoInfo.h"
+#include "sensor_msgs/DisparityInfo.h"
+#include "sensor_msgs/CamInfo.h"
+#include "sensor_msgs/Image.h"
 #include "opencv_latest/CvBridge.h"
 #include "visualization_msgs/ColoredLines.h"
 #include "topic_synchronizer/topic_synchronizer.h"
@@ -78,13 +78,13 @@ namespace people
     ros::Node *node_;
 
     // Images and conversion
-    image_msgs::Image limage_;
-    image_msgs::Image dimage_;
-    image_msgs::StereoInfo stinfo_;
-    image_msgs::DisparityInfo dispinfo_;
-    image_msgs::CamInfo rcinfo_;
-    image_msgs::CvBridge lbridge_;
-    image_msgs::CvBridge dbridge_;
+    sensor_msgs::Image limage_;
+    sensor_msgs::Image dimage_;
+    sensor_msgs::StereoInfo stinfo_;
+    sensor_msgs::DisparityInfo dispinfo_;
+    sensor_msgs::CamInfo rcinfo_;
+    sensor_msgs::CvBridge lbridge_;
+    sensor_msgs::CvBridge dbridge_;
     TopicSynchronizer<PedestrianDetectorHOG> *sync_;
 
     tf::TransformListener *tf_;

@@ -40,7 +40,7 @@
 #include "ros/node.h"
 #include "ros/console.h"
 #include "color_calib.h"
-#include "image_msgs/Image.h"
+#include "sensor_msgs/Image.h"
 #include "opencv_latest/CvBridge.h"
 
 #include "opencv/cxcore.h"
@@ -69,8 +69,8 @@ namespace image_segmentation
       ros::Node *node_;
 
       // Images and conversion
-      image_msgs::Image limage_;
-      image_msgs::CvBridge lbridge_;
+      sensor_msgs::Image limage_;
+      sensor_msgs::CvBridge lbridge_;
       color_calib::Calibration *lcolor_cal_;
 
       bool calib_color_;

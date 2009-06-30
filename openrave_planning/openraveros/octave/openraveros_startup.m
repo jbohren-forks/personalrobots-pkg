@@ -48,7 +48,7 @@ if( isempty(openraveros_initialized))
     rosoct_add_msgs('openraveros');
     rosoct_add_srvs('openraveros');
 
-    addpath(fullfile(rosoct_findpackage('image_msgs'),'octave'));
+    addpath(fullfile(rosoct_findpackage('sensor_msgs'),'octave'));
 
     rosoct('shutdown'); % restart the client
     openraveros_initialized = 1;

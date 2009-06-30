@@ -43,7 +43,7 @@ from robot_msgs.msg import *
 from std_msgs.msg import *
 from dense_laser_assembler.msg import *
 from pr2_mechanism_controllers.msg import *
-from image_msgs.msg import *
+from sensor_msgs.msg import *
 
 
 # Takes the dense laser scan data and converts it into images to can be viewed in
@@ -64,7 +64,7 @@ def rescale(x, max_val) :
     return chr(int((2**8-1)*a/(upper_lim-lower_lim)))
 
 def intensity_callback(msg) :
-    image = image_msgs.msg.Image()
+    image = sensor_msgs.msg.Image()
     image.header = msg.header
     image.label  = 'intensity'
     image.encoding = 'mono'
@@ -76,7 +76,7 @@ def intensity_callback(msg) :
     intensity_pub.publish(image)
 
 def range_callback(msg) :
-    image = image_msgs.msg.Image()
+    image = sensor_msgs.msg.Image()
     image.header = msg.header
     image.label  = 'range'
     image.encoding = 'mono'

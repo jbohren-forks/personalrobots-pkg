@@ -28,7 +28,7 @@ import copy
 # stuff for keypress check
 import termios, fcntl, sys, os, select
 
-from image_msgs.msg import RawStereo
+from sensor_msgs.msg import RawStereo
 from stereo import DenseStereoFrame, SparseStereoFrame
 from visualodometer import VisualOdometer, Pose, DescriptorSchemeCalonder, DescriptorSchemeSAD, FeatureDetectorFast, FeatureDetector4x4, FeatureDetectorStar, FeatureDetectorHarris
 import fast

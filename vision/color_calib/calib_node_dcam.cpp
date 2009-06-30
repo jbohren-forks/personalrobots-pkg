@@ -40,7 +40,7 @@
 #include "opencv/highgui.h"
 #include "ros/node.h"
 #include "boost/thread/mutex.hpp"
-#include "image_msgs/Image.h"
+#include "sensor_msgs/Image.h"
 #include "opencv_latest/CvBridge.h"
 
 #include <sys/stat.h>
@@ -53,8 +53,8 @@ using namespace color_calib;
 class ColorCalib : public ros::Node
 {
 public:
-  image_msgs::Image image;
-  image_msgs::CvBridge bridge;
+  sensor_msgs::Image image;
+  sensor_msgs::CvBridge bridge;
 
   boost::mutex cv_mutex;
 

@@ -44,8 +44,8 @@
 #include <gazebo/ControllerFactory.hh>
 #include <gazebo/MonoCameraSensor.hh>
 
-#include "image_msgs/Image.h"
-#include "image_msgs/FillImage.h"
+#include "sensor_msgs/Image.h"
+#include "sensor_msgs/FillImage.h"
 using namespace gazebo;
 
 GZ_REGISTER_DYNAMIC_CONTROLLER("ros_camera", RosCamera);
@@ -90,7 +90,7 @@ void RosCamera::LoadChild(XMLConfigNode *node)
   this->frameName = this->frameNameP->GetValue();
 
   ROS_DEBUG("================= %s", this->topicName.c_str());
-  this->pub_ = this->rosnode_->advertise<image_msgs::Image>(this->topicName,1);
+  this->pub_ = this->rosnode_->advertise<sensor_msgs::Image>(this->topicName,1);
 }
 
 ////////////////////////////////////////////////////////////////////////////////

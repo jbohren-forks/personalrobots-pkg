@@ -6,7 +6,7 @@
   <depend package="roscpp" />
   <depend package="std_msgs" />
   <depend package="robot_msgs" />
-  <depend package="image_msgs" />
+  <depend package="sensor_msgs" />
   <depend package="diagnostic_updater" />
   <depend package="opencv_latest" />
   <depend package="stereo_image_proc" />

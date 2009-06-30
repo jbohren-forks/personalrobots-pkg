@@ -43,7 +43,7 @@
 
 
 using namespace led_detection ;
-using namespace image_msgs ;
+using namespace sensor_msgs ;
 using namespace kinematic_calibration ;
 using namespace robot_msgs ;
 
@@ -73,7 +73,7 @@ static void fillImageHelperCV(T& m, const IplImage* frame)
  * \param ros_image output: The location of the destination image
  */
 
-bool toRosImage(const IplImage* pcvimage, image_msgs::Image& imagemsg)
+bool toRosImage(const IplImage* pcvimage, sensor_msgs::Image& imagemsg)
 {
   imagemsg.label = "mylabel";
   switch(pcvimage->nChannels)
@@ -168,7 +168,7 @@ bool LedDetector::findLed(Image& image, const CamInfo& info, const Pose* led_pos
   return true ;
 }
 
-bool LedDetector::findLed(const IplImage* image, const image_msgs::CamInfo& info,
+bool LedDetector::findLed(const IplImage* image, const sensor_msgs::CamInfo& info,
                           const robot_msgs::Pose* led_pose,
                           kinematic_calibration::ImagePoint& led_pix, IplImage* debug_image)
 {

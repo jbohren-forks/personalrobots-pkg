@@ -45,7 +45,7 @@ from visual_odometry.visualodometer import VisualOdometer, Pose
 from stereo_utils.descriptor_schemes import DescriptorSchemeCalonder, DescriptorSchemeSAD
 from stereo_utils.feature_detectors import FeatureDetectorFast, FeatureDetector4x4, FeatureDetectorStar, FeatureDetectorHarris
 from skeleton import Skeleton
-import image_msgs.msg
+import sensor_msgs.msg
 import robot_msgs.msg
 
 from stereo_utils import camera
@@ -76,7 +76,7 @@ class RoadmapServer:
     time.sleep(1)
     self.send_map()
 
-    rospy.Subscriber('/stereo/raw_stereo', image_msgs.msg.RawStereo, self.handle_raw_stereo, queue_size=2, buff_size=7000000)
+    rospy.Subscriber('/stereo/raw_stereo', sensor_msgs.msg.RawStereo, self.handle_raw_stereo, queue_size=2, buff_size=7000000)
 
   def send_map(self):
     p = vslam.msg.Roadmap()

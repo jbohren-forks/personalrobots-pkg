@@ -9,7 +9,7 @@
 
   <depend package="std_msgs" />
   <depend package="robot_msgs" />
-  <depend package="image_msgs" />
+  <depend package="sensor_msgs" />
 
   <export>
     <cpp cflags="-I${prefix}/msg/cpp" />

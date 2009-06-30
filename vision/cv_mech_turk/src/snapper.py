@@ -45,8 +45,8 @@ import getopt
 
 from math import *
 
-from image_msgs.msg import RawStereo
-import image_msgs.msg
+from sensor_msgs.msg import RawStereo
+import sensor_msgs.msg
 import rospy
 import Image
 
@@ -103,7 +103,7 @@ class Snapper:
     self.img_mode=img_mode;
 
 
-    self.sub=rospy.Subscriber('image', image_msgs.msg.Image, self.handle_image)
+    self.sub=rospy.Subscriber('image', sensor_msgs.msg.Image, self.handle_image)
   
   def handle_image(self, msg):
     rospy.loginfo("Snapper image")

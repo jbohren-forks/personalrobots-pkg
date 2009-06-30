@@ -4,7 +4,7 @@
 #include "camera_calibration/CalibrationPattern.h"
 
 #include <ros/ros.h>
-#include <image_msgs/Image.h>
+#include <sensor_msgs/Image.h>
 #include <opencv_latest/CvBridge.h>
 #include <std_srvs/Empty.h>
 #include <boost/thread.hpp>
@@ -13,7 +13,7 @@ class CalibrationServer {
 public:
   ros::NodeHandle n;
   
-  image_msgs::CvBridge bridge;
+  sensor_msgs::CvBridge bridge;
   camera_calibration::CheckerboardDetector detector;
   ros::Publisher pattern_pub;
   ros::Subscriber raw_sub;
@@ -58,7 +58,7 @@ public:
     return true;
   }
 
-  void image_cb(const image_msgs::ImageConstPtr& msg)
+  void image_cb(const sensor_msgs::ImageConstPtr& msg)
   {
     camera_calibration::CalibrationPattern pattern_msg;
     pattern_msg.header = msg->header;

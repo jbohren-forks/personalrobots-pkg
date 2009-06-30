@@ -5,12 +5,12 @@
 Header header
 
 # Stereocam Sensor Data
-image_msgs/Image left_image
-image_msgs/Image right_image
-image_msgs/Image disparity_image
-image_msgs/StereoInfo stereo_info
-image_msgs/CamInfo left_info
-image_msgs/CamInfo right_info
+sensor_msgs/Image left_image
+sensor_msgs/Image right_image
+sensor_msgs/Image disparity_image
+sensor_msgs/StereoInfo stereo_info
+sensor_msgs/CamInfo left_info
+sensor_msgs/CamInfo right_info
 
 # Mechanism State - Stores the robots joint angles
 mechanism_msgs/MechanismState mechanism_state

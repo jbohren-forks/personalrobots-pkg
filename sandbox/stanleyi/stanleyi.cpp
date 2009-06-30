@@ -1,6 +1,6 @@
 #include <dorylus.h>
 #include <iostream>
-#include <image_msgs/Image.h>
+#include <sensor_msgs/Image.h>
 #include <rosrecord/Player.h>
 #include "opencv/cxcore.h"
 #include "opencv/cv.h"
@@ -105,8 +105,8 @@ class Stanleyi
 {
 public:
   ros::record::Player lp_;
-  image_msgs::Image img_msg_;
-  image_msgs::CvBridge img_bridge_;
+  sensor_msgs::Image img_msg_;
+  sensor_msgs::CvBridge img_bridge_;
   IplImage* img_;
   IplImage* mask_;
   vector<ImageDescriptor*> descriptor_;
@@ -117,7 +117,7 @@ public:
   Stanleyi()
     : img_(NULL), mask_(NULL)
   {
-    lp_.addHandler<image_msgs::Image>(string("/forearm/image_rect_color"), &copyMsg<image_msgs::Image>, (void*)(&img_msg_));
+    lp_.addHandler<sensor_msgs::Image>(string("/forearm/image_rect_color"), &copyMsg<sensor_msgs::Image>, (void*)(&img_msg_));
     descriptor_ = setupImageDescriptors();
   }
 

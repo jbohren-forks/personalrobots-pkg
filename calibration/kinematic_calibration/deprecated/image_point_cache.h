@@ -40,7 +40,7 @@
 
 #include "kinematic_calibration/msg_cache.h"
 
-#include "image_msgs/ImagePointStamped.h"
+#include "sensor_msgs/ImagePointStamped.h"
 #include "kinematic_calibration/Interval.h"
 
 #include "tinyxml/tinyxml.h"
@@ -49,10 +49,10 @@ namespace kinematic_calibration
 {
 
 
-class ImagePointCache : public MsgCache<image_msgs::ImagePointStamped>
+class ImagePointCache : public MsgCache<sensor_msgs::ImagePointStamped>
 {
 public:
-  ImagePointCache(unsigned int N=1) : MsgCache<image_msgs::ImagePointStamped>(N)
+  ImagePointCache(unsigned int N=1) : MsgCache<sensor_msgs::ImagePointStamped>(N)
   {
 
   }
@@ -65,7 +65,7 @@ public:
   bool isStable(Interval interval, unsigned int min_samples, double pos_tolerance)
   {
 
-    std::deque<image_msgs::ImagePointStamped>::iterator it ;
+    std::deque<sensor_msgs::ImagePointStamped>::iterator it ;
     it = storage_.begin() ;
 
     double led_min_x, led_min_y ;

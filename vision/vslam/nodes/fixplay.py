@@ -41,7 +41,7 @@ import getopt
 from math import *
 
 import rospy
-import image_msgs.msg
+import sensor_msgs.msg
 import std_msgs.msg
 
 from reader import reader
@@ -49,13 +49,13 @@ from reader import reader
 def main(args):
   rospy.init_node('play')
 
-  pub = rospy.Publisher("/stereo/raw_stereo", image_msgs.msg.RawStereo)
+  pub = rospy.Publisher("/stereo/raw_stereo", sensor_msgs.msg.RawStereo)
   r = reader(args[1])
   f = 20543
   r.seek(f)
   for cam,l_image,r_image in r.next():
     (Fx, Fy, Tx, Clx, Crx, Cy) = cam.params
-    p = image_msgs.msg.RawStereo()
+    p = sensor_msgs.msg.RawStereo()
 
     w,h = l_image.size
     p.stereo_info.width = w

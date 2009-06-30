@@ -5,7 +5,7 @@
 Header header
 
 # Raw Stereocam Sensor Data
-image_msgs/RawStereo raw_stereo
+sensor_msgs/RawStereo raw_stereo
 
 # Mechanism State - Stores the robots joint angles
 mechanism_msgs/MechanismState mechanism_state

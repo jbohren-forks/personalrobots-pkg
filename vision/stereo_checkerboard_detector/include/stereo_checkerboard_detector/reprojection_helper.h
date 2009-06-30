@@ -40,7 +40,7 @@
 #include <vector>
 #include "opencv/cv.h"
 #include "robot_msgs/Point.h"
-#include "image_msgs/CamInfo.h"
+#include "sensor_msgs/CamInfo.h"
 
 namespace stereo_checkerboard_detector
 {
@@ -86,14 +86,14 @@ public:
    * \param ros_xyz Output vector with reprojected points from uvd, using ROS messages
    */
   void reproject(const std::vector<robot_msgs::Point>& uvd,
-                 const image_msgs::CamInfo& left_info,
-                 const image_msgs::CamInfo& right_info,
+                 const sensor_msgs::CamInfo& left_info,
+                 const sensor_msgs::CamInfo& right_info,
                  std::vector<robot_msgs::Point>& xyz) ;
 
 
   void reproject(const CvMat* uvd,
-                 const image_msgs::CamInfo& left_info,
-                 const image_msgs::CamInfo& right_info,
+                 const sensor_msgs::CamInfo& left_info,
+                 const sensor_msgs::CamInfo& right_info,
                  CvMat* xyz) ;
 
 
@@ -102,8 +102,8 @@ public:
    * \param left_info CamInfo message holding intrinsics for the left camera, using ROS messages
    * \param right_info CamInfo message holding intrinsics for the right camera, using ROS messages
    */
-  void buildQ(const image_msgs::CamInfo& left_info,
-              const image_msgs::CamInfo& right_info,
+  void buildQ(const sensor_msgs::CamInfo& left_info,
+              const sensor_msgs::CamInfo& right_info,
               CvMat* Q) ;
 
 

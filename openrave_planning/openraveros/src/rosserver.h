@@ -26,8 +26,8 @@
 
 #include "openraveros.h"
 
-#include "image_msgs/Image.h"
-#include "image_msgs/CamInfo.h"
+#include "sensor_msgs/Image.h"
+#include "sensor_msgs/CamInfo.h"
 
 class ROSServer : public RaveServerBase
 {

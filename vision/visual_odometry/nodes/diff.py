@@ -42,14 +42,14 @@ from math import *
 
 import rospy
 
-import image_msgs.msg
+import sensor_msgs.msg
 import robot_msgs.msg
 
 class diff:
   def __init__(self):
     self.prev_a = 0
     self.prev_b = 0
-    rospy.Subscriber('/stereo/raw_stereo', image_msgs.msg.RawStereo, self.handle_a, queue_size=2, buff_size=7000000)
+    rospy.Subscriber('/stereo/raw_stereo', sensor_msgs.msg.RawStereo, self.handle_a, queue_size=2, buff_size=7000000)
     rospy.Subscriber('/vo', robot_msgs.msg.VOPose, self.handle_b, queue_size=2, buff_size=7000000)
 
   def handle_a(self, msg):

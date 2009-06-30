@@ -37,9 +37,9 @@
 #include "image.h"
 #include "cam_bridge.h"
 
-#include "image_msgs/Image.h"
-#include "image_msgs/FillImage.h"
-#include "image_msgs/CamInfo.h"
+#include "sensor_msgs/Image.h"
+#include "sensor_msgs/FillImage.h"
+#include "sensor_msgs/CamInfo.h"
 
 #include <boost/thread.hpp>
 
@@ -52,12 +52,12 @@ class ImageProc
   bool do_colorize_;
   bool do_rectify_;
 
-  image_msgs::Image raw_img_;
-  image_msgs::CamInfo cam_info_;
+  sensor_msgs::Image raw_img_;
+  sensor_msgs::CamInfo cam_info_;
   bool have_cam_info_;
   boost::mutex cam_info_mutex_;
 
-  image_msgs::Image img_;
+  sensor_msgs::Image img_;
 
   std::string cam_name_;
 
@@ -87,7 +87,7 @@ public:
   {
     boost::lock_guard<boost::mutex> guard(cam_info_mutex_);
 
-    cam_bridge::RawStereoToCamData(raw_img_, cam_info_, image_msgs::RawStereo::IMAGE_RAW, &img_data_);
+    cam_bridge::RawStereoToCamData(raw_img_, cam_info_, sensor_msgs::RawStereo::IMAGE_RAW, &img_data_);
     img_data_.imRawType = COLOR_CODING_BAYER8_BGGR;
 
     if (do_colorize_) {
@@ -155,10 +155,10 @@ public:
 
   void advertiseImages()
   {
-    node_.advertise<image_msgs::Image>(cam_name_ + "image", 1);
-    node_.advertise<image_msgs::Image>(cam_name_ + "image_color", 1);
-    node_.advertise<image_msgs::Image>(cam_name_ + "image_rect", 1);
-    node_.advertise<image_msgs::Image>(cam_name_ + "image_rect_color", 1);
+    node_.advertise<sensor_msgs::Image>(cam_name_ + "image", 1);
+    node_.advertise<sensor_msgs::Image>(cam_name_ + "image_color", 1);
+    node_.advertise<sensor_msgs::Image>(cam_name_ + "image_rect", 1);
+    node_.advertise<sensor_msgs::Image>(cam_name_ + "image_rect_color", 1);
   }
 };
 

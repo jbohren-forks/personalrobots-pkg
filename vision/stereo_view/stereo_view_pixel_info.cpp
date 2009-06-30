@@ -50,10 +50,10 @@
 #include "opencv/highgui.h"
 
 #include "ros/node.h"
-#include "image_msgs/DisparityInfo.h"
-#include "image_msgs/StereoInfo.h"
-#include "image_msgs/Image.h"
-#include "image_msgs/CamInfo.h"
+#include "sensor_msgs/DisparityInfo.h"
+#include "sensor_msgs/StereoInfo.h"
+#include "sensor_msgs/Image.h"
+#include "sensor_msgs/CamInfo.h"
 #include "visualization_msgs/ColoredLines.h"
 #include "visualization_msgs/ColoredLine.h"
 
@@ -70,9 +70,9 @@ using namespace std;
 struct MouseCallbackParams {
   IplImage* limage;
   IplImage* disp;
-  image_msgs::DisparityInfo* dispinfo;
-  image_msgs::StereoInfo* stinfo;
-  image_msgs::CamInfo* rcaminfo;
+  sensor_msgs::DisparityInfo* dispinfo;
+  sensor_msgs::StereoInfo* stinfo;
+  sensor_msgs::CamInfo* rcaminfo;
 };
 
 //boost::mutex cv_mutex;
@@ -149,16 +149,16 @@ class StereoView : public ros::Node
 {
 public:
 
-  image_msgs::Image limage; /**< Left camera image msg. */
-  image_msgs::Image rimage; /**< Right camera image msg. */
-  image_msgs::Image dimage; /**< Disparity camera image msg. */
-  image_msgs::DisparityInfo dispinfo; /**< Stereo info msg. */
-  image_msgs::StereoInfo stinfo; /**< Stereo info msg. */
-  image_msgs::CamInfo rcaminfo; /**< Right camera info msg. */
+  sensor_msgs::Image limage; /**< Left camera image msg. */
+  sensor_msgs::Image rimage; /**< Right camera image msg. */
+  sensor_msgs::Image dimage; /**< Disparity camera image msg. */
+  sensor_msgs::DisparityInfo dispinfo; /**< Stereo info msg. */
+  sensor_msgs::StereoInfo stinfo; /**< Stereo info msg. */
+  sensor_msgs::CamInfo rcaminfo; /**< Right camera info msg. */
 
-  image_msgs::CvBridge lbridge; /**< CvBridge for the left camera. */
-  image_msgs::CvBridge rbridge; /**< CvBridge for the right camera. */
-  image_msgs::CvBridge dbridge; /**< CvBridge for the disparity image. */
+  sensor_msgs::CvBridge lbridge; /**< CvBridge for the left camera. */
+  sensor_msgs::CvBridge rbridge; /**< CvBridge for the right camera. */
+  sensor_msgs::CvBridge dbridge; /**< CvBridge for the disparity image. */
   visualization_msgs::ColoredLines cls;
   map<string,visualization_msgs::ColoredLines> map_cls;
 

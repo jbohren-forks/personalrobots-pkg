@@ -48,10 +48,10 @@
 
 
 #include "ros/node.h"
-#include "image_msgs/DisparityInfo.h"
-#include "image_msgs/StereoInfo.h"
-#include "image_msgs/Image.h"
-#include "image_msgs/CamInfo.h"
+#include "sensor_msgs/DisparityInfo.h"
+#include "sensor_msgs/StereoInfo.h"
+#include "sensor_msgs/Image.h"
+#include "sensor_msgs/CamInfo.h"
 
 //#include "CvStereoCamModel.h"
 
@@ -61,7 +61,7 @@
 
 
 //  to get and use camera info ...
-//#include "image_msgs/CamInfo.h"
+//#include "sensor_msgs/CamInfo.h"
 //#include "CvStereoCamModel.h"
 // ... //
 
@@ -136,16 +136,16 @@ class StereoView : public ros::Node
 {
 public:
 
-  image_msgs::Image limage;
-  image_msgs::Image rimage;
-  image_msgs::Image dimage;
-  image_msgs::StereoInfo stinfo;
-  image_msgs::DisparityInfo dispinfo;
+  sensor_msgs::Image limage;
+  sensor_msgs::Image rimage;
+  sensor_msgs::Image dimage;
+  sensor_msgs::StereoInfo stinfo;
+  sensor_msgs::DisparityInfo dispinfo;
 
-  image_msgs::CvBridge lbridge;
-  image_msgs::CvBridge rbridge;
-  image_msgs::CvBridge dbridge;
-  image_msgs::CamInfo rcaminfo; /**< Right camera info msg. */
+  sensor_msgs::CvBridge lbridge;
+  sensor_msgs::CvBridge rbridge;
+  sensor_msgs::CvBridge dbridge;
+  sensor_msgs::CamInfo rcaminfo; /**< Right camera info msg. */
 
   robot_msgs::PointCloud cloud, cloudIsTex, cloudNoTex;
 

@@ -49,10 +49,10 @@
 #include "opencv/highgui.h"
 
 #include "ros/ros.h"
-#include "image_msgs/StereoInfo.h"
-#include "image_msgs/DisparityInfo.h"
-#include "image_msgs/CamInfo.h"
-#include "image_msgs/Image.h"
+#include "sensor_msgs/StereoInfo.h"
+#include "sensor_msgs/DisparityInfo.h"
+#include "sensor_msgs/CamInfo.h"
+#include "sensor_msgs/Image.h"
 #include "robot_msgs/PointCloud.h"
 #include "robot_msgs/Point32.h"
 #include "robot_msgs/PointStamped.h"
@@ -108,16 +108,16 @@ public:
 
 	ros::NodeHandle nh_;
 
-	image_msgs::ImageConstPtr limage_;
-	image_msgs::ImageConstPtr rimage_;
-	image_msgs::ImageConstPtr dimage_;
-	image_msgs::StereoInfoConstPtr stinfo_;
-	image_msgs::DisparityInfoConstPtr dispinfo_;
-	image_msgs::CamInfoConstPtr rcinfo_;
+	sensor_msgs::ImageConstPtr limage_;
+	sensor_msgs::ImageConstPtr rimage_;
+	sensor_msgs::ImageConstPtr dimage_;
+	sensor_msgs::StereoInfoConstPtr stinfo_;
+	sensor_msgs::DisparityInfoConstPtr dispinfo_;
+	sensor_msgs::CamInfoConstPtr rcinfo_;
 
-	image_msgs::CvBridge lbridge_;
-	image_msgs::CvBridge rbridge_;
-	image_msgs::CvBridge dbridge_;
+	sensor_msgs::CvBridge lbridge_;
+	sensor_msgs::CvBridge rbridge_;
+	sensor_msgs::CvBridge dbridge_;
 
 //	robot_msgs::PointCloud cloud_fetch;
 	robot_msgs::PointCloudConstPtr cloud_;
@@ -255,12 +255,12 @@ private:
 //		ROS_INFO("got sync callback");
 	}
 
-//	void rightCamInfoCallback(const image_msgs::CamInfo::ConstPtr& info)
+//	void rightCamInfoCallback(const sensor_msgs::CamInfo::ConstPtr& info)
 //	{
 //		rcinfo_ = info;
 //	}
 
-	void leftImageCallback(const image_msgs::Image::ConstPtr& image)
+	void leftImageCallback(const sensor_msgs::Image::ConstPtr& image)
 	{
 //		ROS_INFO("got left image callback");
 
@@ -270,19 +270,19 @@ private:
 		}
 	}
 
-	void disparityImageCallback(const image_msgs::Image::ConstPtr& image)
+	void disparityImageCallback(const sensor_msgs::Image::ConstPtr& image)
 	{
 //		ROS_INFO("got disparity callback");
 		dimage_ = image;
 	}
 
-	void dispinfoCallback(const image_msgs::DisparityInfo::ConstPtr& dinfo)
+	void dispinfoCallback(const sensor_msgs::DisparityInfo::ConstPtr& dinfo)
 	{
 //		ROS_INFO("got dispinfo callback");
 		dispinfo_ = dinfo;
 	}
 
-//	void stereoinfoCallback(const image_msgs::StereoInfo::ConstPtr& info)
+//	void stereoinfoCallback(const sensor_msgs::StereoInfo::ConstPtr& info)
 //	{
 //		stinfo_ = info;
 //	}

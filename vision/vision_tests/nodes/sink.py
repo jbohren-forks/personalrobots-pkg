@@ -44,7 +44,7 @@ import random
 
 import rospy
 
-import image_msgs.msg
+import sensor_msgs.msg
 
 class sink:
 
@@ -56,7 +56,7 @@ class sink:
     t0 = threading.Thread(target=self.sink_raw_stereo, args=())
     t0.start()
     self.massive = " " * 25000000
-    rospy.Subscriber('/stereo/raw_stereo', image_msgs.msg.RawStereo, self.handle_raw_stereo, queue_size=2, buff_size=8000000)
+    rospy.Subscriber('/stereo/raw_stereo', sensor_msgs.msg.RawStereo, self.handle_raw_stereo, queue_size=2, buff_size=8000000)
 
   def handle_raw_stereo(self, msg):
 

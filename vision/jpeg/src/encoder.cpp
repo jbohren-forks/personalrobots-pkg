@@ -32,7 +32,7 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
-#include <image_msgs/Image.h>
+#include <sensor_msgs/Image.h>
 #include <opencv_latest/CvBridge.h>
 #include <ros/ros.h>
 
@@ -43,7 +43,7 @@
 
 #include "jpeg.h"
 
-image_msgs::CvBridge g_img_bridge;
+sensor_msgs::CvBridge g_img_bridge;
 
 ros::Publisher jpegPub;
 
@@ -57,7 +57,7 @@ sensor_msgs::CompressedImage compressedImageMessage;
 
 ////////////////////////////////////////////////////////////////////////////////
 // Image callback
-void imageCB(const image_msgs::ImageConstPtr &image)
+void imageCB(const sensor_msgs::ImageConstPtr &image)
 {
   CvSize size;
   uint32_t width;

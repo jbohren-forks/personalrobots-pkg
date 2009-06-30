@@ -65,10 +65,10 @@
 
 #include "ros/ros.h"
 //#include "ros/node.h"
-#include "image_msgs/StereoInfo.h"
-#include "image_msgs/DisparityInfo.h"
-#include "image_msgs/CamInfo.h"
-#include "image_msgs/Image.h"
+#include "sensor_msgs/StereoInfo.h"
+#include "sensor_msgs/DisparityInfo.h"
+#include "sensor_msgs/CamInfo.h"
+#include "sensor_msgs/Image.h"
 #include "robot_msgs/PointCloud.h"
 #include "robot_msgs/Point32.h"
 #include "robot_msgs/PointStamped.h"
@@ -102,16 +102,16 @@ public:
 
 	ros::NodeHandle nh_;
 
-	image_msgs::ImageConstPtr limage;
-	image_msgs::ImageConstPtr rimage;
-	image_msgs::ImageConstPtr dimage;
-	image_msgs::StereoInfoConstPtr stinfo;
-	image_msgs::DisparityInfoConstPtr dispinfo;
-	image_msgs::CamInfo rcinfo;
-	image_msgs::CamInfoConstPtr lcinfo_;
-	image_msgs::CvBridge lbridge;
-	image_msgs::CvBridge rbridge;
-	image_msgs::CvBridge dbridge;
+	sensor_msgs::ImageConstPtr limage;
+	sensor_msgs::ImageConstPtr rimage;
+	sensor_msgs::ImageConstPtr dimage;
+	sensor_msgs::StereoInfoConstPtr stinfo;
+	sensor_msgs::DisparityInfoConstPtr dispinfo;
+	sensor_msgs::CamInfo rcinfo;
+	sensor_msgs::CamInfoConstPtr lcinfo_;
+	sensor_msgs::CvBridge lbridge;
+	sensor_msgs::CvBridge rbridge;
+	sensor_msgs::CvBridge dbridge;
 
 
 	ros::Subscriber left_image_sub_;
@@ -220,12 +220,12 @@ private:
 		runRecognitionLambertian();
 	}
 
-	void leftCamInfoCallback(const image_msgs::CamInfo::ConstPtr& info)
+	void leftCamInfoCallback(const sensor_msgs::CamInfo::ConstPtr& info)
 	{
 		lcinfo_ = info;
 	}
 
-	void leftImageCallback(const image_msgs::Image::ConstPtr& image)
+	void leftImageCallback(const sensor_msgs::Image::ConstPtr& image)
 	{
 		limage = image;
 		if(lbridge.fromImage(*limage, "bgr")) {
@@ -233,7 +233,7 @@ private:
 		}
 	}
 
-	void rightImageCallback(const image_msgs::Image::ConstPtr& image)
+	void rightImageCallback(const sensor_msgs::Image::ConstPtr& image)
 	{
 		rimage = image;
 		if(rbridge.fromImage(*rimage, "bgr")) {
@@ -241,12 +241,12 @@ private:
 		}
 	}
 
-	void disparityImageCallback(const image_msgs::Image::ConstPtr& image)
+	void disparityImageCallback(const sensor_msgs::Image::ConstPtr& image)
 	{
 		dimage = image;
 	}
 
-	void dispinfoCallback(const image_msgs::DisparityInfo::ConstPtr& dinfo)
+	void dispinfoCallback(const sensor_msgs::DisparityInfo::ConstPtr& dinfo)
 	{
 		dispinfo = dinfo;
 	}
@@ -990,7 +990,7 @@ private:
 	 * @param point The 3D point
 	 * @return Projected point
 	 */
-	Point project3DPointIntoImage(const image_msgs::CamInfo& cam_info, PointStamped point)
+	Point project3DPointIntoImage(const sensor_msgs::CamInfo& cam_info, PointStamped point)
 	{
 		PointStamped image_point;
 		tf_.transformPoint(cam_info.header.frame_id, point, image_point);
@@ -1018,7 +1018,7 @@ private:
 
 	void projectClusters(const PointCloud& objects_table_frame, const vector<Point32>& clusters)
 	{
-		const image_msgs::CamInfo& lcinfo = *lcinfo_;
+		const sensor_msgs::CamInfo& lcinfo = *lcinfo_;
 
 		Point pp[8];
 		for (size_t i=0;i<clusters.size();++i) {
@@ -1192,7 +1192,7 @@ private:
 		// reproject bboxes in image
 //		projectClusters(objects_table_frame, clusters);
 
-		const image_msgs::CamInfo& lcinfo = *lcinfo_;
+		const sensor_msgs::CamInfo& lcinfo = *lcinfo_;
 
 		locations.resize(clusters.size());
 		scales.resize(clusters.size());

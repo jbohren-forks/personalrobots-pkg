@@ -10,7 +10,7 @@
 #include "opencv/cv.h"
 #include "opencv/highgui.h"
 #include "ros/node.h"
-#include "image_msgs/Image.h"
+#include "sensor_msgs/Image.h"
 #include "opencv_latest/CvBridge.h"
 #include <stdlib.h>
 
@@ -20,8 +20,8 @@ using namespace ros;
 class CvMTurk : public Node
 {
 public:
-  image_msgs::Image image_msg;
-  image_msgs::CvBridge cv_bridge;
+  sensor_msgs::Image image_msg;
+  sensor_msgs::CvBridge cv_bridge;
   //Parameters
   char cmd[1024];   		//Will hold commands to run submit_img.py
   char object_name[256]; 	//Will hold the object's base name (do not append endings) DEFAULT: Default0000

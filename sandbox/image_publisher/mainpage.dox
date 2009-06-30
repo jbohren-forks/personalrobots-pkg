@@ -49,10 +49,10 @@ $ encoder image:=/camera/image
 \subsubsection topics ROS topics
 
 Subscribes to:
-- \b "[image]": [image_msgs/Image] raw image
+- \b "[image]": [sensor_msgs/Image] raw image
 
 Publishes to:
-- \b "[image]_thumbnail": [image_msgs/Image] thumbnail image
+- \b "[image]_thumbnail": [sensor_msgs/Image] thumbnail image
 - \b "[image]_compressed": [sensor_msgs/CompressedImage] compressed image
 
 \subsubsection parameters ROS parameters
@@ -90,5 +90,5 @@ Subscribes to:
 - \b "compressed": [sensor_msgs/CompressedImage] compressed image
 
 Publishes to:
-- \b "decompressed": [image_msgs/Image] decompressed image
+- \b "decompressed": [sensor_msgs/Image] decompressed image
 */

@@ -40,7 +40,7 @@
 #define MESSAGE_FILTERS_CONSUMER_H_
 
 #include <boost/thread.hpp>
-#include "image_msgs/CamInfo.h"
+#include "sensor_msgs/CamInfo.h"
 
 namespace message_filters
 {
@@ -67,7 +67,7 @@ public:
    * involve pushing data onto queues, and pushing it along the pipeline into
    * another filter
    */
-  void processData(const image_msgs::CamInfoConstPtr& msg)
+  void processData(const sensor_msgs::CamInfoConstPtr& msg)
   {
     printf("%u - Called Consumer Callback!\n", (*msg).header.seq) ;
   }

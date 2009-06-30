@@ -7,7 +7,7 @@
   <review status="unreviewed" notes=""/>
   <depend package="opencv_latest"/>
   <depend package="std_srvs"/>
-  <depend package="image_msgs"/>
+  <depend package="sensor_msgs"/>
   <depend package="image_utils"/>
   <depend package="roscpp"/>
   <depend package="tf"/>

@@ -35,9 +35,9 @@
 // TODO: doxygen mainpage
 
 #include <ros/node.h>
-#include <image_msgs/Image.h>
-#include <image_msgs/CamInfo.h>
-#include <image_msgs/FillImage.h>
+#include <sensor_msgs/Image.h>
+#include <sensor_msgs/CamInfo.h>
+#include <sensor_msgs/FillImage.h>
 #include <opencv_latest/CvBridge.h>
 #include <diagnostic_updater/diagnostic_updater.h>
 #include "diagnostic_msgs/DiagnosticStatus.h"
@@ -67,10 +67,10 @@ private:
   bool running_;
 
   // ROS messages
-  image_msgs::Image img_, rect_img_;
-  image_msgs::CvBridge img_bridge_, rect_img_bridge_;
-  image_msgs::CamInfo cam_info_;
-  image_msgs::Image thumbnail_;
+  sensor_msgs::Image img_, rect_img_;
+  sensor_msgs::CvBridge img_bridge_, rect_img_bridge_;
+  sensor_msgs::CamInfo cam_info_;
+  sensor_msgs::Image thumbnail_;
   int thumbnail_size_;
   std::string frame_id_;
   
@@ -237,15 +237,15 @@ public:
 
     cam_->setRoiToWholeFrame();
     
-    node_.advertise<image_msgs::Image>("~image", 1);
+    node_.advertise<sensor_msgs::Image>("~image", 1);
     if (calibrated_) {
-      node_.advertise<image_msgs::Image>("~image_rect", 1);
-      node_.advertise<image_msgs::CamInfo>("~cam_info", 1);
+      node_.advertise<sensor_msgs::Image>("~image_rect", 1);
+      node_.advertise<sensor_msgs::CamInfo>("~cam_info", 1);
       node_.advertiseService("~cam_info_service", &ProsilicaNode::camInfoService, this, 0);
     }
 
     node_.param("~thumbnail_size", thumbnail_size_, 128);
-    node_.advertise<image_msgs::Image>("~thumbnail", 1);
+    node_.advertise<sensor_msgs::Image>("~thumbnail", 1);
 
     diagnostic_.addUpdater( &ProsilicaNode::freqStatus );
     diagnostic_.addUpdater( &ProsilicaNode::frameStatistics );
@@ -519,8 +519,8 @@ public:
     if (!frame)
       return false;
 
-    image_msgs::Image &image = calibrated_ ? img_ : res.image;
-    image_msgs::Image &rect_image = calibrated_ ? res.image : rect_img_;
+    sensor_msgs::Image &image = calibrated_ ? img_ : res.image;
+    sensor_msgs::Image &rect_image = calibrated_ ? res.image : rect_img_;
     bool success = processFrame(frame, image, rect_image, res.cam_info);
     if (success)
       publishTopics(image, rect_image, res.cam_info);
@@ -536,7 +536,7 @@ private:
     return patternStrings[pattern];
   }
 
-  static void setBgrLayout(image_msgs::Image &image, int width, int height)
+  static void setBgrLayout(sensor_msgs::Image &image, int width, int height)
   {
     image.label = "image";
     image.encoding = "bgr";
@@ -554,7 +554,7 @@ private:
     image.uint8_data.data.resize(height * (width * 3));
   }
   
-  static bool frameToImage(tPvFrame* frame, image_msgs::Image &image)
+  static bool frameToImage(tPvFrame* frame, sensor_msgs::Image &image)
   {
     // NOTE: 16-bit formats and Yuv444 not supported
     switch (frame->Format)
@@ -602,7 +602,7 @@ private:
     return true;
   }
 
-  bool rectifyFrame(tPvFrame* frame, image_msgs::Image &img, image_msgs::Image &rect_img)
+  bool rectifyFrame(tPvFrame* frame, sensor_msgs::Image &img, sensor_msgs::Image &rect_img)
   {
     // Currently assume BGR format so bridge.toIpl() image points to msg data buffer
     if (img.encoding != "bgr") {
@@ -655,8 +655,8 @@ private:
     return true;
   }
   
-  bool processFrame(tPvFrame* frame, image_msgs::Image &img, image_msgs::Image &rect_img,
-                    image_msgs::CamInfo &cam_info)
+  bool processFrame(tPvFrame* frame, sensor_msgs::Image &img, sensor_msgs::Image &rect_img,
+                    sensor_msgs::CamInfo &cam_info)
   {
     ros::Time time = ros::Time::now();
     
@@ -696,8 +696,8 @@ private:
     return true;
   }
 
-  void publishTopics(image_msgs::Image &img, image_msgs::Image &rect_img,
-                     image_msgs::CamInfo &cam_info)
+  void publishTopics(sensor_msgs::Image &img, sensor_msgs::Image &rect_img,
+                     sensor_msgs::CamInfo &cam_info)
   {
     node_.publish("~image", img);
     if (calibrated_) {

@@ -43,8 +43,8 @@
 #include "std_msgs/Empty.h"
 #include "robot_msgs/PointCloud.h"
 
-#include "image_msgs/Image.h"
-#include "image_msgs/CamInfo.h"
+#include "sensor_msgs/Image.h"
+#include "sensor_msgs/CamInfo.h"
 
 #include "kinematic_calibration/CalSnapshot.h"
 
@@ -88,15 +88,15 @@ public:
   boost::mutex stereo_lock_ ;
   ADD_MSG(robot_msgs::PointCloud, corners_left_) ;
   ADD_MSG(robot_msgs::PointCloud, corners_right_) ;
-  ADD_MSG(image_msgs::Image, left_debug_) ;
-  ADD_MSG(image_msgs::Image, right_debug_) ;
-  ADD_MSG(image_msgs::CamInfo, left_info_) ;
-  ADD_MSG(image_msgs::CamInfo, right_info_) ;
+  ADD_MSG(sensor_msgs::Image, left_debug_) ;
+  ADD_MSG(sensor_msgs::Image, right_debug_) ;
+  ADD_MSG(sensor_msgs::CamInfo, left_info_) ;
+  ADD_MSG(sensor_msgs::CamInfo, right_info_) ;
 
   // Laser Messages
   boost::mutex laser_lock_ ;
   ADD_MSG(robot_msgs::PointCloud, laser_measurement_) ;
-  ADD_MSG(image_msgs::Image, laser_debug_) ;
+  ADD_MSG(sensor_msgs::Image, laser_debug_) ;
 
   // Empty message used for callbacks
   std_msgs::Empty capture_msg_ ;
@@ -118,9 +118,9 @@ public:
     waiting_for_keypress_ = false ;
 
     node_->advertise<CalSnapshot>("~snapshots", 1) ;
-    node_->advertise<image_msgs::Image>("~left", 1) ;
-    node_->advertise<image_msgs::Image>("~right", 1) ;
-    node_->advertise<image_msgs::Image>("~laser", 1) ;
+    node_->advertise<sensor_msgs::Image>("~left", 1) ;
+    node_->advertise<sensor_msgs::Image>("~right", 1) ;
+    node_->advertise<sensor_msgs::Image>("~laser", 1) ;
 
     node_->subscribe("mechanism_state", mech_state_, &LaserHeadGrabber::mechStateCallback, this, 1) ;
 
@@ -391,7 +391,7 @@ public:
     return sample ;
   }
 
-  SensorSample buildCamInfoSample(const image_msgs::CamInfo& info, const string& sensor, const string& target)
+  SensorSample buildCamInfoSample(const sensor_msgs::CamInfo& info, const string& sensor, const string& target)
   {
     SensorSample sample ;
     sample.sensor = sensor ;

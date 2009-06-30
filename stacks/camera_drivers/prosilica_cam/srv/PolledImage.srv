@@ -4,5 +4,5 @@ uint32 region_y
 uint32 width
 uint32 height
 ---
-image_msgs/Image image
-image_msgs/CamInfo cam_info
+sensor_msgs/Image image
+sensor_msgs/CamInfo cam_info

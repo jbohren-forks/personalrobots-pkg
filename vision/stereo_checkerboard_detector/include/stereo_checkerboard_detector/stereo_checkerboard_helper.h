@@ -82,8 +82,8 @@ public:
    *
    * \todo const-ify images, once cv_bridge is const correct
    */
-  bool findCheckerboard(image_msgs::Image& left, image_msgs::Image& right,
-                        const image_msgs::CamInfo& left_info, const image_msgs::CamInfo& right_info) ;
+  bool findCheckerboard(sensor_msgs::Image& left, sensor_msgs::Image& right,
+                        const sensor_msgs::CamInfo& left_info, const sensor_msgs::CamInfo& right_info) ;
 
 
   /**
@@ -112,12 +112,12 @@ public:
     pose = pose_ ;
   }
 
-  const image_msgs::Image& getLeftDebug()
+  const sensor_msgs::Image& getLeftDebug()
   {
     return left_ros_debug_ ;
   }
 
-  const image_msgs::Image& getRightDebug()
+  const sensor_msgs::Image& getRightDebug()
   {
     return right_ros_debug_ ;
   }
@@ -129,11 +129,11 @@ private:
   ReprojectionHelper reproj_helper_ ;
   CheckerboardPoseHelper pose_helper_ ;
 
-  image_msgs::CvBridge left_bridge_ ;
-  image_msgs::CvBridge right_bridge_ ;
+  sensor_msgs::CvBridge left_bridge_ ;
+  sensor_msgs::CvBridge right_bridge_ ;
 
-  image_msgs::Image left_ros_debug_ ;
-  image_msgs::Image right_ros_debug_ ;
+  sensor_msgs::Image left_ros_debug_ ;
+  sensor_msgs::Image right_ros_debug_ ;
 
   //! Stores 2D corner locations in pixel coordinates
   std::vector<robot_msgs::Point> left_xy_ ;

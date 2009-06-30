@@ -44,10 +44,10 @@
 
 #include "CvStereoCamModel.h"
 #include <people/PositionMeasurement.h>
-#include "image_msgs/StereoInfo.h"
-#include "image_msgs/DisparityInfo.h"
-#include "image_msgs/CamInfo.h"
-#include "image_msgs/Image.h"
+#include "sensor_msgs/StereoInfo.h"
+#include "sensor_msgs/DisparityInfo.h"
+#include "sensor_msgs/CamInfo.h"
+#include "sensor_msgs/Image.h"
 #include "opencv_latest/CvBridge.h"
 #include "visualization_msgs/ColoredLine.h"
 #include "visualization_msgs/ColoredLines.h"
@@ -88,12 +88,12 @@ public:
   ros::NodeHandle nh_;
 
   // Images and conversion
-  image_msgs::ImageConstPtr limage_; /**< Left image msg. */
-  image_msgs::ImageConstPtr dimage_; /**< Disparity image msg. */
-  image_msgs::DisparityInfoConstPtr dispinfo_; /**< Disparity info msg. */
-  image_msgs::CamInfoConstPtr rcinfo_; /**< Right camera info msg. */
-  image_msgs::CvBridge lbridge_; /**< ROS->OpenCV bridge for the left image. */
-  image_msgs::CvBridge dbridge_; /**< ROS->OpenCV bridge for the disparity image. */
+  sensor_msgs::ImageConstPtr limage_; /**< Left image msg. */
+  sensor_msgs::ImageConstPtr dimage_; /**< Disparity image msg. */
+  sensor_msgs::DisparityInfoConstPtr dispinfo_; /**< Disparity info msg. */
+  sensor_msgs::CamInfoConstPtr rcinfo_; /**< Right camera info msg. */
+  sensor_msgs::CvBridge lbridge_; /**< ROS->OpenCV bridge for the left image. */
+  sensor_msgs::CvBridge dbridge_; /**< ROS->OpenCV bridge for the disparity image. */
 
   IplImage *cv_image_left_; /**< Left image. */
   IplImage *cv_image_disp_; /**< Disparity image. */
@@ -268,7 +268,7 @@ public:
 
   }
 
-  void leftImageCallback(const image_msgs::ImageConstPtr& image_ptr) 
+  void leftImageCallback(const sensor_msgs::ImageConstPtr& image_ptr) 
   {    
     // Only run the detector if in continuous mode or a service call was made.
     //  if (!run_detector_) 
@@ -277,7 +277,7 @@ public:
     limage_ = image_ptr;
   }
 
-  void dispImageCallback(const image_msgs::ImageConstPtr& image_ptr)
+  void dispImageCallback(const sensor_msgs::ImageConstPtr& image_ptr)
   {    
     // Only run the detector if in continuous mode or a service call was made.
     //    if (!run_detector_) 
@@ -286,12 +286,12 @@ public:
     dimage_ = image_ptr;
   }
 
-  void dispInfoCallback(const image_msgs::DisparityInfoConstPtr &info_ptr)
+  void dispInfoCallback(const sensor_msgs::DisparityInfoConstPtr &info_ptr)
   {
     dispinfo_ = info_ptr;
   }
 
-  void rcamInfoCallback(const image_msgs::CamInfoConstPtr &info_ptr)
+  void rcamInfoCallback(const sensor_msgs::CamInfoConstPtr &info_ptr)
   {
     rcinfo_ = info_ptr;
   }
@@ -306,7 +306,7 @@ public:
    */
   void imageCBAll()
   {
-    image_msgs::ImageConstPtr limage, dimage;
+    sensor_msgs::ImageConstPtr limage, dimage;
     {
       boost::mutex::scoped_lock llock(limage_mutex_);
       boost::mutex::scoped_lock dlock(dimage_mutex_);

@@ -53,7 +53,7 @@
 
 
 #include <robot_msgs/PolygonalMap.h>
-#include <image_msgs/StereoInfo.h>
+#include <sensor_msgs/StereoInfo.h>
 
 #include <cv_mech_turk/ExternalAnnotation.h>
 #include <annotated_map_msgs/TaggedPolygonalMap.h>
@@ -358,7 +358,7 @@ protected:
 
   cv_mech_turk::ExternalAnnotation annotation2d_object_;
   robot_msgs::PolygonalMap unlabeled_map_;
-  image_msgs::StereoInfo stereo_info_;
+  sensor_msgs::StereoInfo stereo_info_;
 
   std::string target_frame_;
 

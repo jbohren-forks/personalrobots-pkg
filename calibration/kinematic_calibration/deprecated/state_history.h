@@ -40,7 +40,7 @@
 
 #include "robot_msgs/MechanismState.h"
 #include "robot_msgs/PointStamped.h"
-#include "image_msgs/Image.h"
+#include "sensor_msgs/Image.h"
 #include "kinematic_calibration/CameraCalSample.h"
 
 #include <limits>
@@ -80,8 +80,8 @@ public:
     std::vector<double> joint_min(joint_map.size(),  numeric_limits<double>::max()) ;
     std::vector<double> joint_max(joint_map.size(), -numeric_limits<double>::max()) ;
 
-    std::vector<image_msgs::ImagePoint> led_min(storage_.begin()->get_points_size()) ;
-    std::vector<image_msgs::ImagePoint> led_max(storage_.begin()->get_points_size()) ;
+    std::vector<sensor_msgs::ImagePoint> led_min(storage_.begin()->get_points_size()) ;
+    std::vector<sensor_msgs::ImagePoint> led_max(storage_.begin()->get_points_size()) ;
 
     for (unsigned int i=0; i<storage_.begin()->get_points_size(); i++)
     {

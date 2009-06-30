@@ -33,7 +33,7 @@
 *********************************************************************/
 
 #include <ros/ros.h>
-#include <image_msgs/Image.h>
+#include <sensor_msgs/Image.h>
 #include <diagnostic_updater/publisher.h>
 
 #define BASESIZE 1000000
@@ -58,7 +58,7 @@ inline void insert(int *max, int val)
   max[i - 1] = val;
 }
 
-void callback(const image_msgs::ImageConstPtr& msg)
+void callback(const sensor_msgs::ImageConstPtr& msg)
 {
   int width = msg->uint8_data.layout.dim[1].size;
   int height = msg->uint8_data.layout.dim[0].size;
@@ -115,7 +115,7 @@ void callback(const image_msgs::ImageConstPtr& msg)
   fflush(stdout);
 }
 
-void callback2(const image_msgs::ImageConstPtr& msg)
+void callback2(const sensor_msgs::ImageConstPtr& msg)
 {
   int width = msg->uint8_data.layout.dim[1].size;
   int height = msg->uint8_data.layout.dim[0].size;

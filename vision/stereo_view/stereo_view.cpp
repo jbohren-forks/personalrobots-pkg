@@ -41,9 +41,9 @@
 #include "opencv/highgui.h"
 
 #include "ros/node.h"
-#include "image_msgs/StereoInfo.h"
-#include "image_msgs/DisparityInfo.h"
-#include "image_msgs/Image.h"
+#include "sensor_msgs/StereoInfo.h"
+#include "sensor_msgs/DisparityInfo.h"
+#include "sensor_msgs/Image.h"
 
 
 #include "color_calib.h"
@@ -58,15 +58,15 @@ class StereoView : public ros::Node
 {
 public:
 
-  image_msgs::Image limage;
-  image_msgs::Image rimage;
-  image_msgs::Image dimage;
-  image_msgs::StereoInfo stinfo;
-  image_msgs::DisparityInfo dinfo;
+  sensor_msgs::Image limage;
+  sensor_msgs::Image rimage;
+  sensor_msgs::Image dimage;
+  sensor_msgs::StereoInfo stinfo;
+  sensor_msgs::DisparityInfo dinfo;
 
-  image_msgs::CvBridge lbridge;
-  image_msgs::CvBridge rbridge;
-  image_msgs::CvBridge dbridge;
+  sensor_msgs::CvBridge lbridge;
+  sensor_msgs::CvBridge rbridge;
+  sensor_msgs::CvBridge dbridge;
 
   color_calib::Calibration lcal;
   color_calib::Calibration rcal;

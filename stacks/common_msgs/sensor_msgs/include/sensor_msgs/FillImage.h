@@ -35,9 +35,9 @@
 #ifndef FILLIMAGE_HH
 #define FILLIMAGE_HH
 
-#include "image_msgs/Image.h"
+#include "sensor_msgs/Image.h"
 
-namespace image_msgs
+namespace sensor_msgs
 {
 
   template <class M>

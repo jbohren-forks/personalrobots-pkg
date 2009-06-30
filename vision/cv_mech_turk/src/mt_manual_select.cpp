@@ -26,13 +26,13 @@
  */
 
 #include "ros/ros.h"
-#include "image_msgs/Image.h"
+#include "sensor_msgs/Image.h"
 
 /**
  * This tutorial demonstrates simple receipt of messages over the ROS system.
  */
 
-void imageCallback(const image_msgs::ImageConstPtr& msg)
+void imageCallback(const sensor_msgs::ImageConstPtr& msg)
 {
   ROS_INFO("I heard an image: []");
 }

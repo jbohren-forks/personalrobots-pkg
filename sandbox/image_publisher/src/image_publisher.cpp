@@ -43,8 +43,8 @@ ImagePublisher::ImagePublisher(const std::string& topic, const ros::NodeHandle& 
     republishing_(republishing)
 {
   if (!republishing_)
-    image_pub_ = node_handle_.advertise<image_msgs::Image>(topic, 1);
-  thumbnail_pub_ = node_handle_.advertise<image_msgs::Image>(topic + "_thumbnail", 1);
+    image_pub_ = node_handle_.advertise<sensor_msgs::Image>(topic, 1);
+  thumbnail_pub_ = node_handle_.advertise<sensor_msgs::Image>(topic + "_thumbnail", 1);
   compressed_pub_ = node_handle_.advertise<sensor_msgs::CompressedImage>(topic + "_compressed", 1);
 }
 
@@ -73,7 +73,7 @@ std::string ImagePublisher::getTopicCompressed() //const
   return compressed_pub_.getTopic();
 }
 
-void ImagePublisher::publish(const image_msgs::Image& message) //const
+void ImagePublisher::publish(const sensor_msgs::Image& message) //const
 {
   if (!republishing_)
     image_pub_.publish(message);
@@ -108,7 +108,7 @@ void ImagePublisher::publish(const image_msgs::Image& message) //const
   }
   
   if (thumb_subscribers > 0) {
-    image_msgs::Image thumbnail;
+    sensor_msgs::Image thumbnail;
     thumbnail.header = message.header;
     thumbnail.label = message.label;
     publishThumbnailImage(thumbnail);
@@ -123,7 +123,7 @@ void ImagePublisher::publish(const image_msgs::Image& message) //const
   }
 }
 
-void ImagePublisher::publish(const image_msgs::ImageConstPtr& message) //const
+void ImagePublisher::publish(const sensor_msgs::ImageConstPtr& message) //const
 {
   publish(*message);
 }
@@ -135,7 +135,7 @@ void ImagePublisher::shutdown()
   compressed_pub_.shutdown();
 }
 
-void ImagePublisher::publishThumbnailImage(image_msgs::Image& thumbnail) //const
+void ImagePublisher::publishThumbnailImage(sensor_msgs::Image& thumbnail) //const
 {
   // Update settings from parameter server
   int thumbnail_size = 128;
@@ -153,7 +153,7 @@ void ImagePublisher::publishThumbnailImage(image_msgs::Image& thumbnail) //const
   cvResize(image, buffer.Ipl());
 
   // Set up message and publish
-  if (image_msgs::CvBridge::fromIpltoRosImage(buffer.Ipl(), thumbnail)) {
+  if (sensor_msgs::CvBridge::fromIpltoRosImage(buffer.Ipl(), thumbnail)) {
     thumbnail_pub_.publish(thumbnail);
   } else {
     ROS_ERROR("Unable to create thumbnail image message");

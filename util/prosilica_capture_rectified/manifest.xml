@@ -12,7 +12,7 @@
   <depend package="robot_msgs" />
   <depend package="std_msgs" />
   <depend package="opencv_latest"/>
-  <depend package="image_msgs"/>
+  <depend package="sensor_msgs"/>
   <depend package="tf"/>
   <depend package="prosilica_cam"/>
   <depend package="eigen"/>

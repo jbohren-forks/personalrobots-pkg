@@ -42,7 +42,7 @@ import threading
 #from pr2_mechanism_controllers.srv import *
 
 #from robot_msgs.msg import *
-#from image_msgs.msg import *
+#from sensor_msgs.msg import *
 
 class MsgCache() :
     def __init__(self, max_len) :

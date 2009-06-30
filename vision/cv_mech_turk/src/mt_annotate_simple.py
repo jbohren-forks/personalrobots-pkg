@@ -45,8 +45,8 @@ import getopt
 
 from math import *
 
-from image_msgs.msg import RawStereo
-import image_msgs.msg
+from sensor_msgs.msg import RawStereo
+import sensor_msgs.msg
 import rospy
 import Image
 
@@ -100,7 +100,7 @@ def main(argv, stdout, environ):
   rospy.init_node('mt_annotate_simple')
 
   s = Snapper()
-  rospy.Subscriber('image_to_annotate', image_msgs.msg.Image, s.handle_raw_stereo, queue_size=2, buff_size=7000000)
+  rospy.Subscriber('image_to_annotate', sensor_msgs.msg.Image, s.handle_raw_stereo, queue_size=2, buff_size=7000000)
   rospy.spin()
   
                

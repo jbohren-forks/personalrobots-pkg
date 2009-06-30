@@ -83,7 +83,7 @@ public :
    * \return True if found.  False otherwise
    * \todo make image a 'const reference' once openCV calls are const-ified
    */
-  bool getCorners(image_msgs::Image& image, std::vector<robot_msgs::Point>& corners) ;
+  bool getCorners(sensor_msgs::Image& image, std::vector<robot_msgs::Point>& corners) ;
 
   /**
    * Finding checkerboard corner points in an IPL image from a single camera
@@ -96,7 +96,7 @@ public :
 private :
   CvSize board_size_ ;                   //!< Size of the checkboard
   CvSize search_win_size_ ;             //!< Size of search window for subpixel corner finder
-  image_msgs::CvBridge img_bridge_ ;    //!< Converts ROS image messages into IPL images
+  sensor_msgs::CvBridge img_bridge_ ;    //!< Converts ROS image messages into IPL images
 } ;
 
 

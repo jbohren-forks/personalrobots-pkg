@@ -33,7 +33,7 @@
 *********************************************************************/
 
 #include <ros/ros.h>
-#include <image_msgs/Image.h>
+#include <sensor_msgs/Image.h>
 #include <sensor_msgs/CompressedImage.h>
 #include <opencv_latest/CvBridge.h>
 
@@ -96,12 +96,12 @@ public:
   /*!
    * \brief Publish an image on the topics associated with this ImagePublisher.
    */
-  void publish(const image_msgs::Image& message) /*const*/;
+  void publish(const sensor_msgs::Image& message) /*const*/;
 
   /*!
    * \brief Publish an image on the topics associated with this ImagePublisher.
    */
-  void publish(const image_msgs::ImageConstPtr& message) /*const*/;
+  void publish(const sensor_msgs::ImageConstPtr& message) /*const*/;
 
   /*!
    * \brief Shutdown the advertisements associated with this ImagePublisher.
@@ -109,14 +109,14 @@ public:
   void shutdown();
 
 private:
-  void publishThumbnailImage(image_msgs::Image& thumbnail) /*const*/;
+  void publishThumbnailImage(sensor_msgs::Image& thumbnail) /*const*/;
   void publishCompressedImage(sensor_msgs::CompressedImage& compressed) /*const*/;
   
   ros::NodeHandle node_handle_;
   ros::Publisher image_pub_;
   ros::Publisher thumbnail_pub_;
   ros::Publisher compressed_pub_;
-  mutable image_msgs::CvBridge cv_bridge_;
+  mutable sensor_msgs::CvBridge cv_bridge_;
 
   bool republishing_;
 };

@@ -32,10 +32,10 @@ $ rosrun jpeg encode
 @subsubsection topics ROS topics
 
 Subscribes to:
-- @b "raw_image": [image_msgs/Image] A raw image to compress
+- @b "raw_image": [sensor_msgs/Image] A raw image to compress
 
 Publishes to:
-- @b "jpg_image": [image_msgs/CompressedImage] The compressed image
+- @b "jpg_image": [sensor_msgs/CompressedImage] The compressed image
 
 
 @subsubsection services ROS services
@@ -60,10 +60,10 @@ $ rosrun jpeg decode
 @subsubsection topics ROS topics
 
 Subscribes to:
-- @b "jpeg_image": [image_msgs/CompressedImage] This is the jpeg image
+- @b "jpeg_image": [sensor_msgs/CompressedImage] This is the jpeg image
 
 Publishes to:
-- @b "decompressed_image": [image_msgs/Image] This is the decompressed image
+- @b "decompressed_image": [sensor_msgs/Image] This is the decompressed image
 
 
 <!-- END: copy for each node -->

@@ -70,7 +70,7 @@ using namespace robot_msgs;
 
 class ProsilicaCapture {
 
-	image_msgs::CvBridge bridge;
+	sensor_msgs::CvBridge bridge;
 	IplImage* image;
 	IplImage* rectified;
 

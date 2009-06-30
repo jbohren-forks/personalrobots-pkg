@@ -67,8 +67,8 @@ public:
     node_->advertise<robot_msgs::PointCloud>("cb_corners_left", 1) ;
     node_->advertise<robot_msgs::PointCloud>("cb_corners_right", 1) ;
     node_->advertise<robot_msgs::PoseStamped>("cb_pose", 1) ;
-    node_->advertise<image_msgs::Image>("left_cb_debug",1) ;
-    node_->advertise<image_msgs::Image>("right_cb_debug",1) ;
+    node_->advertise<sensor_msgs::Image>("left_cb_debug",1) ;
+    node_->advertise<sensor_msgs::Image>("right_cb_debug",1) ;
     node->advertise<visualization_msgs::Marker>( "visualization_marker", 0 );
 
     sync_.ready() ;
@@ -217,10 +217,10 @@ private :
   StereoCheckerboardHelper cb_helper_ ;
   TopicSynchronizer<StereoCheckerboardNode> sync_ ;
 
-  image_msgs::Image left_image_msg_ ;
-  image_msgs::CamInfo left_info_msg_ ;
-  image_msgs::Image right_image_msg_ ;
-  image_msgs::CamInfo right_info_msg_ ;
+  sensor_msgs::Image left_image_msg_ ;
+  sensor_msgs::CamInfo left_info_msg_ ;
+  sensor_msgs::Image right_image_msg_ ;
+  sensor_msgs::CamInfo right_info_msg_ ;
 } ;
 
 

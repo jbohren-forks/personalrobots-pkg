@@ -14,7 +14,7 @@ Generate color calibration matrix from macbeth chart.
 <depend package="image_utils"/>
 <depend package="filters"/>
 <depend package="opencv_latest"/>
-<depend package="image_msgs"/>
+<depend package="sensor_msgs"/>
   <export>
     <cpp cflags="-I${prefix}" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lcolorcalib"/>
   </export>

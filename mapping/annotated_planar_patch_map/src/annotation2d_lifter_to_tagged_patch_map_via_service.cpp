@@ -53,8 +53,8 @@
 
 
 #include <robot_msgs/PolygonalMap.h>
-#include <image_msgs/StereoInfo.h>
-#include <image_msgs/CamInfo.h>
+#include <sensor_msgs/StereoInfo.h>
+#include <sensor_msgs/CamInfo.h>
 #include "tf/message_notifier.h"
 
 #include <cv_mech_turk/ExternalAnnotation.h>
@@ -131,7 +131,7 @@ public:
     lifted_pub_=n_.advertise<annotated_map_msgs::TaggedPolygonalMap>(out_topic_name_,1);
   };
 
-  //void handleStereoInfo(image_msgs::StereoInfoConstPtr si)
+  //void handleStereoInfo(sensor_msgs::StereoInfoConstPtr si)
   void handleStereoInfo()
   {
     ROS_INFO("StereoInfo\n");
@@ -417,11 +417,11 @@ public:
 
 protected:
   tf::TransformListener *tf_;
-  tf::MessageNotifier<image_msgs::StereoInfo>* scan_notifier_ ;
+  tf::MessageNotifier<sensor_msgs::StereoInfo>* scan_notifier_ ;
 
   cv_mech_turk::ExternalAnnotation annotation2d_object_;
-  image_msgs::StereoInfo stereo_info_;
-  //image_msgs::CamInfo stereo_info_;
+  sensor_msgs::StereoInfo stereo_info_;
+  //sensor_msgs::CamInfo stereo_info_;
 
   std::string fixed_frame_;
 

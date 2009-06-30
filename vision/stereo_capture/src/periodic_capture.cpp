@@ -54,10 +54,10 @@
 
 // ros & ros messages & ros services
 #include "ros/node.h"
-#include "image_msgs/StereoInfo.h"
-#include "image_msgs/DisparityInfo.h"
-#include "image_msgs/CamInfo.h"
-#include "image_msgs/Image.h"
+#include "sensor_msgs/StereoInfo.h"
+#include "sensor_msgs/DisparityInfo.h"
+#include "sensor_msgs/CamInfo.h"
+#include "sensor_msgs/Image.h"
 #include "robot_msgs/PointCloud.h"
 #include "robot_msgs/Point32.h"
 #include "robot_msgs/PoseStamped.h"
@@ -78,17 +78,17 @@ class PeriodicCapture : public ros::Node
 {
 public:
 
-	image_msgs::Image limage_;
-	image_msgs::Image rimage_;
-	image_msgs::Image dimage_;
-	image_msgs::StereoInfo stinfo_;
-	image_msgs::DisparityInfo dispinfo_;
-	image_msgs::CamInfo lcinfo_;
-	image_msgs::CamInfo rcinfo_;
+	sensor_msgs::Image limage_;
+	sensor_msgs::Image rimage_;
+	sensor_msgs::Image dimage_;
+	sensor_msgs::StereoInfo stinfo_;
+	sensor_msgs::DisparityInfo dispinfo_;
+	sensor_msgs::CamInfo lcinfo_;
+	sensor_msgs::CamInfo rcinfo_;
 
-	image_msgs::CvBridge lbridge_;
-	image_msgs::CvBridge rbridge_;
-	image_msgs::CvBridge dbridge_;
+	sensor_msgs::CvBridge lbridge_;
+	sensor_msgs::CvBridge rbridge_;
+	sensor_msgs::CvBridge dbridge_;
 
 	robot_msgs::PointCloud cloud_;
 	robot_msgs::PointCloud cloud_fetch_;

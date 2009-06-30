@@ -46,7 +46,7 @@ from std_msgs.msg import *
 from dense_laser_assembler.msg import *
 from pr2_mechanism_controllers.msg import *
 from dense_laser_assembler.dense_laser_cache import DenseLaserCache
-from image_msgs.msg import *
+from sensor_msgs.msg import *
 
 # Globals
 laser_cache = [ ]
@@ -146,7 +146,7 @@ def interval_req_callback(scans) :
     info_pub.publish(info_msg)
     joint_pos_pub.publish(joint_msg)
 
-    #image = image_msgs.msg.Image()
+    #image = sensor_msgs.msg.Image()
 
     #image.header = msg_header
     #image.label  = 'intensity'

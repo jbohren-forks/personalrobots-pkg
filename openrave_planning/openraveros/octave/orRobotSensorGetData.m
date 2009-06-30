@@ -42,7 +42,7 @@ switch(data.type)
         data.P = reshape(res.caminfo.P,[3 4]);
         data.T = inv([inv(data.KK)*data.P; 0 0 0 1]);
         data.T = data.T(1:3,:);
-        data.I = image_msgs_processImage(res.camimage);
+        data.I = sensor_msgs_processImage(res.camimage);
     otherwise
         error('unknown type')
 end

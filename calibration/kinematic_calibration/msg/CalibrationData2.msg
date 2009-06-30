@@ -5,7 +5,7 @@
 Header header
 
 # Raw Stereocam Sensor Data
-image_msgs/RawStereo raw_stereo
+sensor_msgs/RawStereo raw_stereo
 
 # Mechanism State - Stores the robots joint angles
 mechanism_msgs/MechanismState mechanism_state
@@ -17,5 +17,5 @@ robot_msgs/PointCloud laser_cloud
 mocap_msgs/MocapSnapshot mocap_snapshot
 
 # Data from multiple monocular cameras
-image_msgs/Image[] image
-image_msgs/CamInfo[] cam_info
+sensor_msgs/Image[] image
+sensor_msgs/CamInfo[] cam_info

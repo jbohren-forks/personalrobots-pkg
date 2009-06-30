@@ -38,8 +38,8 @@
 #include <libusbSR.h>
 #include <ros/ros.h>
 #include <robot_msgs/PointCloud.h>
-#include <image_msgs/Image.h>
-#include <image_msgs/FillImage.h>
+#include <sensor_msgs/Image.h>
+#include <sensor_msgs/FillImage.h>
 
 
 #define MODE (AM_MEDIAN | AM_COR_FIX_PTRN | AM_SW_ANF | AM_SR3K_2TAP_PROC | AM_MEDIANCROSS)
@@ -61,7 +61,7 @@ namespace sr3000 {
 
       unsigned int rows_, cols_, inr_;
       robot_msgs::PointCloud cam_cloud_;
-      image_msgs::Image img_;
+      sensor_msgs::Image img_;
 
       int auto_illumination_, integration_time_, modulation_freq_, amp_threshold_;
       bool publish_point_cloud_, publish_dist_img_, publish_int_img_;
@@ -132,10 +132,10 @@ namespace sr3000 {
       cloud_pub = n.advertise<robot_msgs::PointCloud>("sr3000_cloud", 1);
 
     if(publish_dist_img_)
-      dist_pub = n.advertise<image_msgs::Image>("sr3000_distance", 1);
+      dist_pub = n.advertise<sensor_msgs::Image>("sr3000_distance", 1);
     
     if(publish_int_img_)
-      int_pub = n.advertise<image_msgs::Image>("sr3000_intensity", 1);
+      int_pub = n.advertise<sensor_msgs::Image>("sr3000_intensity", 1);
 
     ros::Rate r(10);
     while(n.ok()){

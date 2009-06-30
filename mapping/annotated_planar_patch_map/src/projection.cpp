@@ -52,7 +52,7 @@ using namespace annotated_planar_patch_map::projection;
  * 
  */
 
-void annotated_planar_patch_map::projection::projectPolygonalMap(const image_msgs::StereoInfo& stereo_info, const robot_msgs::PolygonalMap& transformed_map_3D, robot_msgs::PolygonalMap &transformed_map_2D)
+void annotated_planar_patch_map::projection::projectPolygonalMap(const sensor_msgs::StereoInfo& stereo_info, const robot_msgs::PolygonalMap& transformed_map_3D, robot_msgs::PolygonalMap &transformed_map_2D)
 {
 
   //Get projections matrix
@@ -80,7 +80,7 @@ void annotated_planar_patch_map::projection::projectPolygonalMap(const image_msg
 }
 
   
-void annotated_planar_patch_map::projection::projectAnyObject(const image_msgs::CamInfo& cam_info,robot_msgs::Polygon3D polyIn,robot_msgs::Polygon3D& polyOut)
+void annotated_planar_patch_map::projection::projectAnyObject(const sensor_msgs::CamInfo& cam_info,robot_msgs::Polygon3D polyIn,robot_msgs::Polygon3D& polyOut)
 {
   //Projection setup
   CvMat *K_ = cvCreateMat(3, 3, CV_64FC1);
@@ -229,7 +229,7 @@ void annotated_planar_patch_map::projection::projectPolygonPointsNOP(double* pro
   }
 }
 
-void annotated_planar_patch_map::projection::projectAnyObject(const image_msgs::StereoInfo& stereo_info, const annotated_map_msgs::TaggedPolygonalMap& transformed_map_3D, annotated_map_msgs::TaggedPolygonalMap &transformed_map_2D)
+void annotated_planar_patch_map::projection::projectAnyObject(const sensor_msgs::StereoInfo& stereo_info, const annotated_map_msgs::TaggedPolygonalMap& transformed_map_3D, annotated_map_msgs::TaggedPolygonalMap &transformed_map_2D)
 {
   bool bSame = (&transformed_map_3D == &transformed_map_2D);
 
@@ -266,7 +266,7 @@ void annotated_planar_patch_map::projection::projectAnyObject(const image_msgs::
 
 
 
-void annotated_planar_patch_map::projection::projectAnyObjectNOP(const image_msgs::CamInfo& stereo_info, const annotated_map_msgs::TaggedPolygonalMap& transformed_map_3D, annotated_map_msgs::TaggedPolygonalMap &transformed_map_2D)
+void annotated_planar_patch_map::projection::projectAnyObjectNOP(const sensor_msgs::CamInfo& stereo_info, const annotated_map_msgs::TaggedPolygonalMap& transformed_map_3D, annotated_map_msgs::TaggedPolygonalMap &transformed_map_2D)
 {
   bool bSame = (&transformed_map_3D == &transformed_map_2D);
 
@@ -312,7 +312,7 @@ void annotated_planar_patch_map::projection::projectAnyObjectNOP(const image_msg
   }
 }
 
-void annotated_planar_patch_map::projection::projectAnyObject(const image_msgs::CamInfo& cam_info, const annotated_map_msgs::TaggedPolygonalMap& transformed_map_3D, annotated_map_msgs::TaggedPolygonalMap &transformed_map_2D)
+void annotated_planar_patch_map::projection::projectAnyObject(const sensor_msgs::CamInfo& cam_info, const annotated_map_msgs::TaggedPolygonalMap& transformed_map_3D, annotated_map_msgs::TaggedPolygonalMap &transformed_map_2D)
 {
   bool bSame = (&transformed_map_3D == &transformed_map_2D);
 

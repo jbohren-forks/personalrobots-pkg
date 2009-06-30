@@ -69,7 +69,7 @@ TrackerBase::~TrackerBase()
 void TrackerBase::activate()
 {
   node_.advertise<robot_msgs::PoseStamped>(pose_topic_name_, 1);
-  node_.advertise<image_msgs::Image>(display_topic_name_, 1);
+  node_.advertise<sensor_msgs::Image>(display_topic_name_, 1);
 
   boost::thread t(boost::bind(&TrackerBase::spin, this));
   active_thread_.swap(t);
@@ -140,7 +140,7 @@ void TrackerBase::processImage()
   // Visual feedback
   if (node_.numSubscribers(display_topic_name_) > 0) {
     display_img_.encoding = "rgb"; // TODO: temporary hack
-    image_msgs::CvBridge::fromIpltoRosImage(getDisplayImage(success), display_img_);
+    sensor_msgs::CvBridge::fromIpltoRosImage(getDisplayImage(success), display_img_);
     display_img_.encoding = "bgr";
     node_.publish(display_topic_name_, display_img_);
   }

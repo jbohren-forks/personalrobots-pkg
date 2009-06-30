@@ -35,7 +35,7 @@
 #include "ros/ros.h"
 #include "robot_msgs/PointStamped.h"
 #include "robot_msgs/PointCloud.h"
-#include "image_msgs/CamInfo.h"
+#include "sensor_msgs/CamInfo.h"
 #include "message_filters/topic_synchronizer_filter.h"
 #include "message_filters/sync_helper.h"
 #include "message_filters/consumer.h"
@@ -53,13 +53,13 @@ int main(int argc, char** argv)
   //TopicSynchronizerFilter<robot_msgs::PointStamped, robot_msgs::PointCloud> filter ;
 
   // Define the source 'node'
-  SyncHelper<image_msgs::CamInfo> sync_helper("stereo/left/cam_info/", 10, nh) ;
+  SyncHelper<sensor_msgs::CamInfo> sync_helper("stereo/left/cam_info/", 10, nh) ;
 
   Consumer consumer ;
   // Link the consumer to the output of sync_helper
   consumer.subscribe(sync_helper) ;
 
-  MsgCache<image_msgs::CamInfo> cache(10) ;
+  MsgCache<sensor_msgs::CamInfo> cache(10) ;
   cache.subscribe(sync_helper) ;
 
   ros::spin() ;

@@ -39,9 +39,9 @@
 // @todo Do the triggering based on a stream of incoming timestamps.
 
 #include <ros/node.h>
-#include <image_msgs/Image.h>
-#include <image_msgs/CamInfo.h>
-#include <image_msgs/FillImage.h>
+#include <sensor_msgs/Image.h>
+#include <sensor_msgs/CamInfo.h>
+#include <sensor_msgs/FillImage.h>
 #include <diagnostic_updater/diagnostic_updater.h>
 #include <diagnostic_updater/update_functions.h>
 #include <diagnostic_updater/publisher.h>
@@ -181,8 +181,8 @@ class ForearmNode
 private:
   ros::NodeHandle &node_handle_;
   IpCamList* camera_;
-  image_msgs::Image image_;
-  image_msgs::CamInfo cam_info_;
+  sensor_msgs::Image image_;
+  sensor_msgs::CamInfo cam_info_;
   bool calibrated_;
   std::string frame_id_;
 
@@ -210,7 +210,7 @@ private:
 
   diagnostic_updater::Updater diagnostic_;
   
-  diagnostic_updater::DiagnosedPublisher<image_msgs::Image> cam_pub_;
+  diagnostic_updater::DiagnosedPublisher<sensor_msgs::Image> cam_pub_;
   ros::Publisher cam_info_pub_;
   ros::ServiceClient trig_service_;
   
@@ -250,7 +250,7 @@ public:
   ForearmNode(ros::NodeHandle &nh)
     : node_handle_(nh), camera_(NULL), started_video_(false),
       diagnostic_(ros::NodeHandle()), 
-      cam_pub_(node_handle_.advertise<image_msgs::Image>("~image_raw", 1), 
+      cam_pub_(node_handle_.advertise<sensor_msgs::Image>("~image_raw", 1), 
           diagnostic_,
           diagnostic_updater::FrequencyStatusParam(&desired_freq_, &desired_freq_, 0.05), 
           diagnostic_updater::TimeStampStatusParam()),
@@ -669,9 +669,9 @@ public:
     
     // Receive frames through callback
     // TODO: start this in separate thread?
-    //cam_pub_ = node_handle_.advertise<image_msgs::Image>("~image_raw", 1);
+    //cam_pub_ = node_handle_.advertise<sensor_msgs::Image>("~image_raw", 1);
     if (calibrated_)
-      cam_info_pub_ = node_handle_.advertise<image_msgs::CamInfo>("~cam_info", 1);
+      cam_info_pub_ = node_handle_.advertise<sensor_msgs::CamInfo>("~cam_info", 1);
     
     open_ = true;;
   }
