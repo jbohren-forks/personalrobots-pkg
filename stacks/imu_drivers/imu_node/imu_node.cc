@@ -68,8 +68,9 @@ Publishes to (name / type):
 <hr>
 
 @section services
- - @b "~self_test"    :  SelfTest service provided by SelfTest helper class
- - @b "~calibrate"    :  Calibrate the gyro's biases. The gyro must not move during calibration
+ - @b "~self_test"     :  SelfTest service provided by SelfTest helper class
+ - @b "~calibrate"     :  Calibrate the gyro's biases. The gyro must not move during calibration
+ - @b "~is_calibrated" :  Indicates if the gyro is calibrated 
 
 <hr>
 
@@ -99,6 +100,7 @@ Reads the following parameters from the parameter server
 
 #include "robot_msgs/PoseWithRatesStamped.h"
 #include "std_srvs/Empty.h"
+#include "robot_srvs/GetByte.h"
 
 #include "tf/transform_datatypes.h"
 #include "imu_node/AddOffset.h"
@@ -124,6 +126,7 @@ public:
   ros::Publisher imu_data_pub_;
   ros::ServiceServer add_offset_serv_;
   ros::ServiceServer calibrate_serv_;
+  ros::ServiceServer is_calibrated_serv_;
 
   bool running;
 
@@ -138,6 +141,10 @@ public:
   string frameid_;
   
   double offset_;
+    
+  double bias_x_;
+  double bias_y_;
+  double bias_z_;
 
   double desired_freq_;
   diagnostic_updater::FrequencyStatus freq_diag_;
@@ -151,6 +158,7 @@ public:
 
     add_offset_serv_ = node_handle_.advertiseService("imu/add_offset", &ImuNode::addOffset, this);
     calibrate_serv_ = node_handle_.advertiseService("imu/calibrate", &ImuNode::calibrate, this);
+    is_calibrated_serv_ = node_handle_.advertiseService("imu/is_calibrated", &ImuNode::is_calibrated, this);
 
     node_handle_.param("~autocalibrate", autocalibrate_, true);
     
@@ -161,6 +169,8 @@ public:
     cmd = ms_3dmgx2_driver::IMU::CMD_ACCEL_ANGRATE_ORIENT;
     
     running = false;
+
+    bias_x_ = bias_y_ = bias_z_ = 0;
 
     node_handle_.param("~frameid", frameid_, string("imu"));
 
@@ -389,22 +399,18 @@ public:
   {
     status.name = "Gyro Bias Test";
 
-    double bias_x;
-    double bias_y;
-    double bias_z;
-    
-    imu.initGyros(&bias_x, &bias_y, &bias_z);
+    imu.initGyros(&bias_x_, &bias_y_, &bias_z_);
 
     status.level = 0;
     status.message = "Successfully calculated gyro biases.";
 
     status.set_values_size(3);
     status.values[0].label = "Bias_X";
-    status.values[0].value = bias_x;
+    status.values[0].value = bias_x_;
     status.values[1].label = "Bias_Y";
-    status.values[1].value = bias_y;
+    status.values[1].value = bias_y_;
     status.values[2].label = "Bias_Z";
-    status.values[2].value = bias_z;
+    status.values[2].value = bias_z_;
 
   }
 
@@ -543,9 +549,15 @@ public:
   void calibrationStatus(diagnostic_updater::DiagnosticStatusWrapper& status)
   {
     if (calibrated_)
+    {
       status.summary(0, "Gyro is calibrated");
+      status.addv("X bias", bias_x_);
+      status.addv("Y bias", bias_y_);
+      status.addv("Z bias", bias_z_);
+    }
     else
       status.summary(2, "Gyro not calibrated");
+
   }
 
   bool addOffset(imu_node::AddOffset::Request &req, imu_node::AddOffset::Response &resp)
@@ -580,12 +592,19 @@ public:
     return true;
   }
   
+  bool is_calibrated(robot_srvs::GetByte::Request &req, robot_srvs::GetByte::Response &resp)
+  {
+    resp.v = calibrated_;
+
+    return true;
+  }
+  
   void calibrate_req_check()
   {
     if (calibrate_request_)
     {
       ROS_INFO("Calibrating IMU gyros.");
-      imu.initGyros();
+      imu.initGyros(&bias_x_, &bias_y_, &bias_z_);
       calibrated_ = true;
       calibrate_request_ = false;
       ROS_INFO("IMU gyro calibration completed.");
