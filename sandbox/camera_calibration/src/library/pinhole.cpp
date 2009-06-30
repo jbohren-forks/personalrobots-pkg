@@ -119,6 +119,13 @@ bool PinholeCameraModel::parse(const std::string& buffer, const std::string& for
   return success;
 }
 
+void PinholeCameraModel::fillCamInfo(sensor_msgs::CamInfo &info) const
+{
+  std::copy(K, K+9, &info.K[0]);
+  std::copy(D, D+5, &info.D[0]);
+  /** @todo: set R, P? */
+}
+
 void PinholeCameraModel::initUndistortMap()
 {
   distorted_ = D[0]!=0.0 || D[1]!=0.0 || D[2]!=0.0 || D[3]!=0.0 || D[4]!=0.0;

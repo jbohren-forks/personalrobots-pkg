@@ -6,6 +6,7 @@
 #include <string>
 #include <opencv/cv.h>
 #include <opencv/cvwimage.h>
+#include <sensor_msgs/CamInfo.h>
 
 namespace camera_calibration {
 
@@ -65,6 +66,8 @@ public:
   virtual bool load(const std::string& file_name);
   virtual bool save(const std::string& file_name) const;
   virtual bool parse(const std::string& buffer, const std::string& format = "ini");
+
+  virtual void fillCamInfo(sensor_msgs::CamInfo &info) const;
 
 protected:
   std::string camera_name_;
