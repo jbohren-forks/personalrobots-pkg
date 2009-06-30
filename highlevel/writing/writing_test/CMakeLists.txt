@@ -22,6 +22,6 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 #gensrv()
 
 
-rospack_add_executable(test_find_helper src/test_find_helper.cpp)
+#rospack_add_executable(test_find_helper src/test_find_helper.cpp)
 
-rospack_add_executable(test_move_to_helper src/test_move_to_helper.cpp)
+#rospack_add_executable(test_move_to_helper src/test_move_to_helper.cpp)

@@ -40,7 +40,7 @@
 
 // Msgs
 #include <std_msgs/Empty.h>
-#include <robot_msgs/PoseStamped.h>
+#include <pr2_robot_actions/FindHelperResult.h>
 
 // State Msgs
 #include <robot_actions/NoArgumentsActionState.h>
@@ -65,7 +65,7 @@ int
 
   pr2_robot_actions::SwitchControllers switchlist;
   std_msgs::Empty empty;
-  robot_msgs::PoseStamped find_helper_pose_msg;
+ pr2_robot_actions:FindHelperResult find_helper_pose_msg;
 
   Duration switch_timeout = Duration(4.0);
 
@@ -73,7 +73,7 @@ int
     switch_controllers("switch_controllers");
   robot_actions::ActionClient<std_msgs::Empty, robot_actions::NoArgumentsActionState, std_msgs::Empty>
     tuck_arm("safety_tuck_arms");
-  robot_actions::ActionClient<std_msgs::Empty, pr2_robot_actions::FindHelperState, robot_msgs::PoseStamped> 
+  robot_actions::ActionClient<std_msgs::Empty, pr2_robot_actions::FindHelperState, pr2_robot_actions::FindHelperResult> 
     find_helper("find_helper");
   robot_actions::ActionClient<robot_msgs::PoseStamped, nav_robot_actions::MoveBaseState, robot_msgs::PoseStamped>
     move_base_local("move_base_local");
@@ -124,7 +124,7 @@ int
 
   // Executes move base
   if (start_tilt_laser.execute(empty, empty, Duration(20.0)) != robot_actions::SUCCESS) return -1;
-  if (move_base_local.execute(find_helper_pose_msg, find_helper_pose_msg, Duration(500.0)) != robot_actions::SUCCESS) return -4;
+  if (move_base_local.execute(find_helper_pose_msg.zone, find_helper_pose_msg.zone, Duration(500.0)) != robot_actions::SUCCESS) return -4;
 
 
   return 0;

@@ -69,16 +69,18 @@ class Switcher:
     self.update(self.on | set(controllers))
 
   def turn_off(self, controllers):
-    assert controllers < all, "Unknown controller"
+    assert set(controllers) < self.all, "Unknown controller"
     self.update(self.on - set(controllers))
 
   # Sugar
 
   def __iadd__(self, other):
     self.turn_on(set([other]))
+    return self
 
   def __isub__(self, other):
     self.turn_off(set([other]))
+    return self
 
   # List has changed, so send an action to "switch_controllers"
   def update(self, newon):
@@ -119,7 +121,7 @@ if __name__ == '__main__':
     find_helper = python_actions.ActionClient("find_helper",
                                               Empty,
                                               pr2_robot_actions.msg.FindHelperState,
-                                              robot_msgs.msg.PoseStamped)
+                                              pr2_robot_actions.msg.FindHelperResult)
 
     move_base_local = python_actions.ActionClient("move_base_local",
                                                   robot_msgs.msg.PoseStamped,
@@ -162,16 +164,13 @@ if __name__ == '__main__':
 
     sw += "r_arm_joint_trajectory_controller"
     act(tuck_arm, Empty(), 20.0)
-    sw -= "r_arm_joint_trajectory_controller"
-    sw.turn_on(r_arm_cartesian_controllers)
 
-    stop_start([], ["head_controller"])
-    helper_head = act(find_helper, Empty(), 200.0)
+    sw += "head_controller"
+    helper = act(find_helper, Empty(), 200.0)
 
-    print "===> Found person:", helper_head
+    print "===> Found person:", helper
+
     time.sleep(1)
-
-
 
     sw += "laser_tilt_controller"
     act(start_tilt_laser, Empty(), 20.0)
@@ -179,19 +178,21 @@ if __name__ == '__main__':
     print "===> Started laser"
     time.sleep(1)
 
-    sw += "head_controller"
-    track_helper_thread = threading.Thread(target = lambda: track_helper.execute(helper_p, 500.0))
+    track_helper_thread = threading.Thread(target = lambda: track_helper.execute(helper.helper_head, 500.0))
     track_helper_thread.start()
 
     print "===> track_helper started"
     time.sleep(1)
 
-    act(move_base_local, helper_head, 500.0)
+    act(move_base_local, helper.helper_zone, 500.0)
 
     print "===> reached target point"
     track_helper.preempt()
 #    track_helper_thread.join()
 
+    sw -= "r_arm_joint_trajectory_controller"
+    sw.turn_on(r_arm_cartesian_controllers)
+    sw += "r_gripper_position_controller"
     act(ask_for_pen, Empty(), 20.0)
 
     if 0:

@@ -1,5 +1,9 @@
 <launch>
 
+  <node pkg="mux" type="throttle" args="3.0 base_scan base_scan_throttled" />
+  <node pkg="mux" type="throttle" args="3.0 tilt_scan tilt_scan_throttled" />
+
+
   <!-- Stereo Camera -->
   <group ns="stereo">\
     <node machine="four" pkg="stereo_image_proc" type="stereoproc" args="" output="screen" name="stereoproc">
