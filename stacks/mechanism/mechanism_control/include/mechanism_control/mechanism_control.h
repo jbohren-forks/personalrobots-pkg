@@ -52,12 +52,12 @@
 #include <realtime_tools/realtime_publisher.h>
 #include <misc_utils/advertised_service_guard.h>
 
-#include <robot_srvs/ListControllerTypes.h>
-#include <robot_srvs/ListControllers.h>
-#include <robot_srvs/SpawnController.h>
-#include <robot_srvs/KillController.h>
-#include <robot_srvs/KillAndSpawnControllers.h>
-#include <robot_srvs/SwitchController.h>
+#include <mechanism_msgs/ListControllerTypes.h>
+#include <mechanism_msgs/ListControllers.h>
+#include <mechanism_msgs/SpawnController.h>
+#include <mechanism_msgs/KillController.h>
+#include <mechanism_msgs/KillAndSpawnControllers.h>
+#include <mechanism_msgs/SwitchController.h>
 #include <mechanism_msgs/MechanismState.h>
 #include <mechanism_msgs/JointStates.h>
 #include <diagnostic_msgs/DiagnosticMessage.h>
@@ -80,7 +80,7 @@ public:
   // Non real-time functions
   bool initXml(TiXmlElement* config);
   void getControllerNames(std::vector<std::string> &v);
-  bool spawnController(const std::string &xml_string, 
+  bool spawnController(const std::string &xml_string,
                        std::vector<int8_t>& ok, std::vector<std::string>& name);
   bool killController(const std::string &name);
   bool switchController(const std::vector<std::string>& start_controllers,
@@ -175,23 +175,23 @@ public:
 
   void update();  // Must be realtime safe
 
-  bool listControllerTypes(robot_srvs::ListControllerTypes::Request &req,
-                           robot_srvs::ListControllerTypes::Response &resp);
-  bool listControllers(robot_srvs::ListControllers::Request &req,
-                       robot_srvs::ListControllers::Response &resp);
-  bool killAndSpawnControllers(robot_srvs::KillAndSpawnControllers::Request &req,
-                               robot_srvs::KillAndSpawnControllers::Response &resp);
-  bool switchController(robot_srvs::SwitchController::Request &req,
-                        robot_srvs::SwitchController::Response &resp);
+  bool listControllerTypes(mechanism_msgs::ListControllerTypes::Request &req,
+                           mechanism_msgs::ListControllerTypes::Response &resp);
+  bool listControllers(mechanism_msgs::ListControllers::Request &req,
+                       mechanism_msgs::ListControllers::Response &resp);
+  bool killAndSpawnControllers(mechanism_msgs::KillAndSpawnControllers::Request &req,
+                               mechanism_msgs::KillAndSpawnControllers::Response &resp);
+  bool switchController(mechanism_msgs::SwitchController::Request &req,
+                        mechanism_msgs::SwitchController::Response &resp);
 
 private:
   ros::Node *node_;
 
-  bool spawnController(robot_srvs::SpawnController::Request &req,
-                       robot_srvs::SpawnController::Response &resp);
+  bool spawnController(mechanism_msgs::SpawnController::Request &req,
+                       mechanism_msgs::SpawnController::Response &resp);
 
-  bool killController(robot_srvs::KillController::Request &req,
-                      robot_srvs::KillController::Response &resp);
+  bool killController(mechanism_msgs::KillController::Request &req,
+                      mechanism_msgs::KillController::Response &resp);
 
   bool getController(const std::string& name, int& id);
 

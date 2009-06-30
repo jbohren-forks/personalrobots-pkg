@@ -32,8 +32,8 @@
  */
 
 #include "robot_mechanism_controllers/dynamic_loader_controller.h"
-#include "robot_srvs/SpawnController.h"
-#include "robot_srvs/KillController.h"
+#include "mechanism_msgs/SpawnController.h"
+#include "mechanism_msgs/KillController.h"
 #include <iostream>
 
 #include <boost/thread.hpp>
@@ -57,8 +57,8 @@ DynamicLoaderController::~DynamicLoaderController()
 
 void DynamicLoaderController::unloadLibrary(std::vector<std::string> names, lt_dlhandle handle)
 {
-  robot_srvs::KillController::Request req;
-  robot_srvs::KillController::Response resp;
+  mechanism_msgs::KillController::Request req;
+  mechanism_msgs::KillController::Response resp;
 
   BOOST_FOREACH(std::string &name, names) {
     req.name = name;
@@ -71,8 +71,8 @@ void DynamicLoaderController::unloadLibrary(std::vector<std::string> names, lt_d
 
 void DynamicLoaderController::loadLibrary(std::string &xml)
 {
-  robot_srvs::SpawnController::Request req;
-  robot_srvs::SpawnController::Response resp;
+  mechanism_msgs::SpawnController::Request req;
+  mechanism_msgs::SpawnController::Response resp;
 
   req.xml_config = xml;
 

@@ -5,7 +5,7 @@ roslib.load_manifest('robot_mechanism_controllers')
 
 import rospy, sys
 from robot_mechanism_controllers.srv import *
-from robot_srvs.srv import *
+from mechanism_msgs.srv import *
 from std_msgs.msg import *
 from time import sleep
 

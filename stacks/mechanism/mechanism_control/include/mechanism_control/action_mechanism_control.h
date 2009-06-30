@@ -1,13 +1,13 @@
   /*********************************************************************
  * Software License Agreement (BSD License)
- * 
+ *
  *  Copyright (c) 2008, Willow Garage, Inc.
  *  All rights reserved.
- * 
+ *
  *  Redistribution and use in source and binary forms, with or without
  *  modification, are permitted provided that the following conditions
  *  are met:
- * 
+ *
  *   * Redistributions of source code must retain the above copyright
  *     notice, this list of conditions and the following disclaimer.
  *   * Redistributions in binary form must reproduce the above
@@ -17,7 +17,7 @@
  *   * Neither the name of Willow Garage nor the names of its
  *     contributors may be used to endorse or promote products derived
  *     from this software without specific prior written permission.
- * 
+ *
  *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  *  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  *  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -37,7 +37,7 @@
 
 
 #include <ros/node.h>
-#include <robot_srvs/SwitchController.h>
+#include <mechanism_msgs/SwitchController.h>
 #include <std_msgs/Empty.h>
 #include <pr2_robot_actions/SwitchControllers.h>
 #include <pr2_robot_actions/SwitchControllersState.h>
@@ -49,10 +49,10 @@ namespace mechanism_control{
 
 class ActionMechanismControl: public robot_actions::Action<pr2_robot_actions::SwitchControllers, std_msgs::Empty>{
 
-public: 
+public:
   ActionMechanismControl(ros::Node& node);
   ~ActionMechanismControl();
-  
+
   virtual robot_actions::ResultStatus execute(const pr2_robot_actions::SwitchControllers& c, std_msgs::Empty&);
 
 

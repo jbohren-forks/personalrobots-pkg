@@ -644,8 +644,8 @@ void MechanismControlNode::update()
 }
 
 bool MechanismControlNode::listControllerTypes(
-  robot_srvs::ListControllerTypes::Request &req,
-  robot_srvs::ListControllerTypes::Response &resp)
+  mechanism_msgs::ListControllerTypes::Request &req,
+  mechanism_msgs::ListControllerTypes::Response &resp)
 {
   (void) req;
   std::vector<std::string> types = controller::ControllerFactory::Instance().RegisteredIds();
@@ -655,8 +655,8 @@ bool MechanismControlNode::listControllerTypes(
 
 
 bool MechanismControlNode::listControllers(
-  robot_srvs::ListControllers::Request &req,
-  robot_srvs::ListControllers::Response &resp)
+  mechanism_msgs::ListControllers::Request &req,
+  mechanism_msgs::ListControllers::Response &resp)
 {
   // lock services
   boost::mutex::scoped_lock guard(services_lock_);
@@ -677,8 +677,8 @@ bool MechanismControlNode::listControllers(
 
 
 bool MechanismControlNode::spawnController(
-  robot_srvs::SpawnController::Request &req,
-  robot_srvs::SpawnController::Response &resp)
+  mechanism_msgs::SpawnController::Request &req,
+  mechanism_msgs::SpawnController::Response &resp)
 {
   // lock services
   boost::mutex::scoped_lock guard(services_lock_);
@@ -699,8 +699,8 @@ bool MechanismControlNode::spawnController(
 }
 
 bool MechanismControlNode::killController(
-  robot_srvs::KillController::Request &req,
-  robot_srvs::KillController::Response &resp)
+  mechanism_msgs::KillController::Request &req,
+  mechanism_msgs::KillController::Response &resp)
 {
   // lock services
   boost::mutex::scoped_lock guard(services_lock_);
@@ -709,8 +709,8 @@ bool MechanismControlNode::killController(
 }
 
 bool MechanismControlNode::switchController(
-  robot_srvs::SwitchController::Request &req,
-  robot_srvs::SwitchController::Response &resp)
+  mechanism_msgs::SwitchController::Request &req,
+  mechanism_msgs::SwitchController::Response &resp)
 {
   // lock services
   boost::mutex::scoped_lock guard(services_lock_);
@@ -719,8 +719,8 @@ bool MechanismControlNode::switchController(
   return true;
 }
 
-bool MechanismControlNode::killAndSpawnControllers(robot_srvs::KillAndSpawnControllers::Request &req,
-                                                   robot_srvs::KillAndSpawnControllers::Response &res)
+bool MechanismControlNode::killAndSpawnControllers(mechanism_msgs::KillAndSpawnControllers::Request &req,
+                                                   mechanism_msgs::KillAndSpawnControllers::Response &res)
 {
   // lock services
   boost::mutex::scoped_lock guard(services_lock_);

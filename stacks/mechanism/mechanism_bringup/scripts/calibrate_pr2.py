@@ -46,7 +46,7 @@ from time import sleep
 roslib.load_manifest('mechanism_bringup')
 import rospy
 from std_msgs.msg import *
-from robot_srvs.srv import *
+from mechanism_msgs.srv import *
 
 from robot_mechanism_controllers.srv import *
 from robot_mechanism_controllers import controllers
@@ -59,8 +59,8 @@ class SendMessageOnSubscribe(rospy.SubscribeListener):
 
     def peer_subscribe(self, topic_name, topic_publish, peer_publish):
         peer_publish(self.msg)
-        sleep(0.1)  
-        # TODO: change this line when flushing messages is implemented                                                                             
+        sleep(0.1)
+        # TODO: change this line when flushing messages is implemented
       #  rospy.signal_shutdown("Done")
        # sys.exit(0)
 
@@ -111,9 +111,9 @@ def calibrate(config):
                     break # Go to next controller if no exception
                 except:
                     print "Failed to kill controller %s on try %d" % (name, i)
-            
+
 #
-# Functions make xml code for controllers 
+# Functions make xml code for controllers
 #
 def xml_for_cal(name, velocity, p, i, d, iClamp):
     return """
@@ -121,7 +121,7 @@ def xml_for_cal(name, velocity, p, i, d, iClamp):
 <calibrate joint="%s_joint" actuator="%s_motor"
 transmission="%s_trans" velocity="%d" />
 <pid p="%d" i="%d" d="%d" iClamp="%d" />
-</controller>""" % (name, name, name, name, name, velocity, p, i, d, iClamp)  
+</controller>""" % (name, name, name, name, name, velocity, p, i, d, iClamp)
 
 def xml_for_hold(name, p, i, d, iClamp):
     return """
@@ -134,15 +134,15 @@ def xml_for_wrist(side):
     return """
 <controller name="cal_%s_wrist"  type="WristCalibrationControllerNode">
 <calibrate transmission="%s_wrist_trans"
-actuator_l="%s_wrist_l_motor" actuator_r="%s_wrist_r_motor" 
-flex_joint="%s_wrist_flex_joint" roll_joint="%s_wrist_roll_joint" 
+actuator_l="%s_wrist_l_motor" actuator_r="%s_wrist_r_motor"
+flex_joint="%s_wrist_flex_joint" roll_joint="%s_wrist_roll_joint"
 velocity="1.5" />
 <pid p="4.0" i="0.2" d="0" iClamp="2.0" />
 </controller>""" % (side, side, side, side, side, side)
 
 def hold_joint(name, p, i, d, iClamp, holding):
     # Try to launch 3x
-    # If launched, add to list of holding controllers and return true 
+    # If launched, add to list of holding controllers and return true
     for i in range(1,4):
         try:
             resp = spawn_controller(xml_for_hold(name, p, i, d, iClamp), 1)
@@ -182,7 +182,7 @@ if __name__ == '__main__':
     rospy.init_node('calibration', anonymous=True)
 
     holding = [] # Tracks which controllers are holding joints by name
-    
+
     # Calibrate all joints sequentially
     # Hold joints after they're calibrated.
     # Can set desired joint position by using name + /set_command service
@@ -190,8 +190,8 @@ if __name__ == '__main__':
 
     imustatus = calibrate_imu()
     if not imustatus:
-        print "IMU Calibration may have failed."
-    
+        rospy.logerr("IMU Calibration failed.")
+
     # Check sign on torso lift controller
     calibrate(xml_for_cal("torso_lift", -10, 2000000, 0, 10000, 12000))
     hold_joint("torso_lift", 1000000, 0.0, 10000, 1000000, holding)
@@ -212,7 +212,7 @@ if __name__ == '__main__':
 
     set_controller("r_elbow_flex_controller", float(-2.0))
     set_controller("l_elbow_flex_controller", float(-2.0))
-    
+
     upperarm_roll_name = "r_upper_arm_roll"
     calibrate(xml_for_cal(upperarm_roll_name, 1.0, 6, 0.2, 0, 2))
     hold_joint(upperarm_roll_name, 25, 2, 1.0, 1.0, holding)
@@ -228,7 +228,7 @@ if __name__ == '__main__':
 
     hold_joint("r_shoulder_lift", 60, 10, 5, 4, holding)
     hold_joint("l_shoulder_lift", 60, 10, 5, 4, holding)
-    
+
     set_controller("r_shoulder_lift_controller", float(1.0))
     set_controller("l_shoulder_lift_controller", float(1.0))
 
@@ -236,10 +236,10 @@ if __name__ == '__main__':
     torso_pub = rospy.Publisher('torso_lift_controller/set_command', Float64)
     torso_pub.publish(Float64(float(0.0)))
     sleep(1.5)
-    
+
     # Calibrate other controllers given
     xml = ''
-    
+
     if len(sys.argv) > 1:
         xacro_cmd = roslib.packages.get_pkg_dir('xacro', True) + '/xacro.py'
 
@@ -253,7 +253,7 @@ if __name__ == '__main__':
     else:
         print "Reading from stdin..."
         xml = sys.stdin.read()
-        
+
     try:
         calibrate(xml)
     finally:
@@ -265,9 +265,9 @@ if __name__ == '__main__':
                     break # Go to next controller if no exception
                 except:
                     rospy.logerr("Failed to kill controller %s on try %d" % (name, i))
-    
+
     if not imustatus:
         print "Mechanism calibration complete, but IMU calibration failed."
         sys.exit(2)
-    
-    print "Calibration complete"
+
+    rospy.logout("Calibration complete")

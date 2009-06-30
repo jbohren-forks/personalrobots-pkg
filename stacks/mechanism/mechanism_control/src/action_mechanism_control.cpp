@@ -1,13 +1,13 @@
   /*********************************************************************
  * Software License Agreement (BSD License)
- * 
+ *
  *  Copyright (c) 2008, Willow Garage, Inc.
  *  All rights reserved.
- * 
+ *
  *  Redistribution and use in source and binary forms, with or without
  *  modification, are permitted provided that the following conditions
  *  are met:
- * 
+ *
  *   * Redistributions of source code must retain the above copyright
  *     notice, this list of conditions and the following disclaimer.
  *   * Redistributions in binary form must reproduce the above
@@ -17,7 +17,7 @@
  *   * Neither the name of Willow Garage nor the names of its
  *     contributors may be used to endorse or promote products derived
  *     from this software without specific prior written permission.
- * 
+ *
  *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  *  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  *  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -41,24 +41,24 @@ using namespace std;
 
 namespace mechanism_control{
 
-ActionMechanismControl::ActionMechanismControl(Node& node): 
+ActionMechanismControl::ActionMechanismControl(Node& node):
   robot_actions::Action<pr2_robot_actions::SwitchControllers, std_msgs::Empty>("switch_controllers")
 {};
-  
-  
+
+
 ActionMechanismControl::~ActionMechanismControl(){};
-  
-  
+
+
 robot_actions::ResultStatus ActionMechanismControl::execute(const pr2_robot_actions::SwitchControllers& c, std_msgs::Empty&)
 {
-  ROS_INFO("ActionMechanismControl: received request to start %i controllers and stop %i controllers", 
+  ROS_INFO("ActionMechanismControl: received request to start %i controllers and stop %i controllers",
            c.start_controllers.size(), c.stop_controllers.size());
   for (unsigned int i=0; i<c.start_controllers.size(); i++)
     ROS_INFO("ActionMechanismControl:   - starting controller %s", c.start_controllers[i].c_str());
   for (unsigned int i=0; i<c.stop_controllers.size(); i++)
     ROS_INFO("ActionMechanismControl:   - stopping controller %s", c.stop_controllers[i].c_str());
-  robot_srvs::SwitchController::Request req;
-  robot_srvs::SwitchController::Response resp;
+  mechanism_msgs::SwitchController::Request req;
+  mechanism_msgs::SwitchController::Response resp;
   req.start_controllers = c.start_controllers;
   req.stop_controllers  = c.stop_controllers;
   if (!ros::service::call("switch_controller", req, resp)){

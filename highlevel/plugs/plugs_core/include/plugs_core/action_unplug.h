@@ -48,7 +48,7 @@
 #include "robot_mechanism_controllers/CartesianHybridState.h"
 
 // Srvs
-#include <robot_srvs/SwitchController.h>
+#include <mechanism_msgs/SwitchController.h>
 
 //TF
 #include <tf/transform_listener.h>

@@ -44,7 +44,7 @@ from time import sleep
 roslib.load_manifest('mechanism_bringup')
 import rospy
 from std_msgs.msg import *
-from robot_srvs.srv import *
+from mechanism_msgs.srv import *
 from robot_mechanism_controllers.srv import *
 
 def calibrate(config):
@@ -136,7 +136,7 @@ def main():
     if not imustatus:
         print "Mechanism calibration complete, but IMU calibration failed."
         sys.exit(2)
-    
+
     print "Calibration complete"
 
 if __name__ == '__main__':

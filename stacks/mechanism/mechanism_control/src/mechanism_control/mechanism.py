@@ -6,7 +6,7 @@ import roslib; roslib.load_manifest('mechanism_control')
 import sys
 
 import rospy
-from robot_srvs.srv import *
+from mechanism_msgs.srv import *
 import std_srvs.srv
 
 def list_controller_types():
@@ -54,9 +54,9 @@ def start_stop_controller(name, st):
     resp = s.call(SwitchControllerRequest(start, stop))
     if resp.ok == 1:
         if st:
-            print "Started %s successfully" % name    
-        else:    
-            print "Stopped %s successfully" % name        
+            print "Started %s successfully" % name
+        else:
+            print "Stopped %s successfully" % name
     else:
         if st:
             print "Error when starting ", name

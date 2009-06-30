@@ -42,7 +42,7 @@ roslib.load_manifest('mechanism_control')
 import rospy
 from std_msgs.msg import *
 from mechanism_control import mechanism
-from robot_srvs.srv import SpawnController, KillController
+from mechanism_msgs.srv import SpawnController, KillController
 
 
 def xml_for(joint):
