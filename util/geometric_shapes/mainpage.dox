@@ -2,7 +2,7 @@
 \mainpage
 \htmlinclude manifest.html
 
-\b geometric_shapes is a package containing the definition of simple shapes such as spheres, boxes, cylinders and meshes. Routines like tests for point inclusion or volume computation are also available. 
+\b geometric_shapes is a package containing the definition of simple shapes such as spheres, boxes, cylinders and meshes. These shapes can be converted into bodies and routines like tests for point inclusion or volume computation are also available. 
 
 <!-- 
 In addition to providing an overview of your package,
@@ -14,6 +14,8 @@ You can then link to this documentation page from the Wiki.
 
 
 \section codeapi Code API
+- see shapes
+- see bodies
 
 <!--
 Provide links to specific auto-generated API documentation within your
@@ -26,7 +28,7 @@ should use the doxygen 'group' tag to keep these APIs together. For
 example, the roscpp documentation has 'libros' group.
 -->
 
-\section rosapi ROS API
+<!-- \section rosapi ROS API -->
 
 <!--
 Names are very important in ROS because they can be remapped on the
