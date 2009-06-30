@@ -42,13 +42,13 @@ int ChainFkSolverPosFull_recursive::JntToCart(const JntArray& q_in, std::vector<
 
     if(q_in.rows()!=chain.getNrOfJoints())
         return -1;
-    else if(segmentNr>chain.getNrOfSegments())
+    else if(segmentNr>int(chain.getNrOfSegments()))
         return -1;
-    else if (p_out_vec.size() < segmentNr)
+    else if (int(p_out_vec.size()) < segmentNr)
         return -1;
     else{
         int j=0;
-        for(unsigned int i=0;i<segmentNr;i++){
+        for(int i=0;i<segmentNr;i++){
             if(chain.getSegment(i).getJoint().getType()!=Joint::None){
                 p_out = p_out*chain.getSegment(i).pose(q_in(j));
                 j++;

@@ -43,13 +43,13 @@ int ChainFkSolverVelFull_recursive::JntToCart(const JntArrayVel& in, std::vector
 
     if(!(in.q.rows()==chain.getNrOfJoints()&&in.qdot.rows()==chain.getNrOfJoints()))
         return -1;
-    else if(segmentNr>chain.getNrOfSegments())
+    else if(segmentNr>int(chain.getNrOfSegments()))
         return -1;
-    else if (out_vec.size() < segmentNr)
+    else if (int(out_vec.size()) < segmentNr)
         return -1;
     else{
         int j=0;
-        for (unsigned int i=0;i<segmentNr;i++) {
+        for (int i=0;i<segmentNr;i++) {
             //Calculate new Frame_base_ee
             if(chain.getSegment(i).getJoint().getType()!=Joint::None){
                 out=out*FrameVel(chain.getSegment(i).pose(in.q(j)),
