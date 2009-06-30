@@ -1,0 +1,5 @@
+<controller name="l_gripper_position_controller" type="JointPositionControllerNode">
+  <joint name="l_gripper_joint" >
+    <pid p="600.0" i="10" d="0.02" iClamp="0.04" \>
+  </joint>                                                                    
+</controller>
