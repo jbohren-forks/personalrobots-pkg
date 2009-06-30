@@ -89,21 +89,21 @@ class NavStackTest(unittest.TestCase):
 
         self.odom_xi = 0
         self.odom_yi = 0
-        self.odom_qi = [0,0,0,0]
+        self.odom_qi = [1,0,0,0]
         self.odom_initialized = False;
 
         self.odom_x = 0
         self.odom_y = 0
-        self.odom_q = [0,0,0,0]
+        self.odom_q = [1,0,0,0]
 
         self.p3d_xi = 0
         self.p3d_yi = 0
-        self.p3d_qi = [0,0,0,0]
+        self.p3d_qi = [1,0,0,0]
         self.p3d_initialized = False;
 
         self.p3d_x = 0
         self.p3d_y = 0
-        self.p3d_q = [0,0,0,0]
+        self.p3d_q = [1,0,0,0]
 
         # default parameters
         self.nav_t_tol    = 0.1
