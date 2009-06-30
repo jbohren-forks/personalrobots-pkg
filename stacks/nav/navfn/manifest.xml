@@ -1,7 +1,8 @@
 <package>
- <description brief="a fast interpolated navigation function">
+ <description brief="A fast interpolated navigation function">
+  A fast interpolated navigation function that can be computed using an A* heuristic or Dijkstra.
  </description>
- <author>Kurt Konolige</author>
+ <author>Kurt Konolige, Eitan Marder-Eppstein</author>
  <license>BSD</license>
  <review status="unreviewed" notes=""/>
  <url>http://pr.willowgarage.com</url>

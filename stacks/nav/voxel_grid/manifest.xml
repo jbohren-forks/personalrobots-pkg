@@ -1,5 +1,5 @@
 <package>
-<description>3d voxel grid library.  Uses single-bit 
+<description brief="3D Voxel Grid">3d voxel grid library.  Uses single-bit 
 representation of voxels</description>
 <author>Eitan Marder-Eppstein, Eric Berger</author>
 <license>BSD</license>

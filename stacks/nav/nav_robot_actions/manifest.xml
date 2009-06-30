@@ -1,5 +1,7 @@
 <package>
-  <description brief="This package contains core interfaces for navigation robot actions"/>
+  <description brief="Navigation specific robot actions">
+    This package contains core interfaces for navigation specific robot actions.
+  </description>
  <author>Eitan Marder-Eppstein</author>
  <license>BSD</license>
  <review status="unreviewed" notes=""/>
