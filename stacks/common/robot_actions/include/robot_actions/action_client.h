@@ -109,6 +109,11 @@ namespace robot_actions {
     // Advertize goal preemptions.
     _preempt_publisher = _node.advertise<std_msgs::Empty>(_preempt_topic, 1);
 
+    //Wait until a non-zero time
+    while (ros::Time::now() == ros::Time(0.0)) {
+      ros::Duration(0.001).sleep();
+    }
+
     // wait until we have at least 1 subscriber per advertised topic
     ros::Time start_time = ros::Time::now();
     ros::Duration timeout(10.0);
