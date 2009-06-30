@@ -96,11 +96,11 @@ namespace TREX {
 
     double ping_frequency(1.0);
     double update_rate(1.0);
-    std::string input_file;
-    std::string path;
+    std::string input_file = "";
+    std::string path = "";
     int time_limit(0);
-    std::string start_dir;
-    std::string log_dir;
+    std::string start_dir = "";
+    std::string log_dir = "";
     double broadcast_plan_rate(0.0);
     node_handle.param("/trex/ping_frequency", ping_frequency, ping_frequency);
     node_handle.param("/trex/update_rate", update_rate, update_rate);
@@ -110,6 +110,10 @@ namespace TREX {
     node_handle.param("/trex/start_dir", start_dir, start_dir);
     node_handle.param("/trex/log_dir", log_dir, log_dir);
     node_handle.param("/trex/broadcast_plan_rate", broadcast_plan_rate, broadcast_plan_rate);
+
+    checkError(log_dir != "", "You must set /trex/log_dir");
+    checkError(start_dir != "", "You must set /trex/start_dir");
+    checkError(input_file != "", "You must set /trex/input_file");
 
     // Bind the watchdog loop sleep time from input controller frequency
     if(ping_frequency > 0)
