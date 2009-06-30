@@ -3,6 +3,8 @@
 representation of voxels</description>
 <author>Eitan Marder-Eppstein, Eric Berger</author>
 <license>BSD</license>
+<review status="proposal cleared" notes=""/>
+<url>http://pr.willowgarage.com/wiki/voxel_grid</url>
 <depend package="rosconsole"/>
 <export>
   <cpp cflags="-I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lvoxel_grid"/>

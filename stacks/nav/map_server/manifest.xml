@@ -6,8 +6,8 @@
   </description>
   <author>Brian Gerkey, Tony Pratkanis</author>
   <license>BSD</license>
-  <review status="unreviewed" notes="API review in progress (Brian)"/>
-  <url>http://pr.willowgarage.com</url>
+  <review status="proposal_cleared" notes="API review in progress (Brian)"/>
+  <url>http://pr.willowgarage.com/wiki/map_server</url>
   <depend package="rosconsole"/>
   <depend package="roscpp"/>
   <depend package="rospy" />

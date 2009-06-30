@@ -2,7 +2,8 @@
   <description brief="fake localization">A ROS node that simply forwards odometry information.</description>
   <author>Ioan A. Sucan</author>
   <license>BSD</license>
-  <review status="unreviewed" notes=""/>
+  <review status="proposal cleared" notes=""/>
+  <url>http://pr.willowgarage.com/wiki/move_base</url>
   <depend package="roscpp" />
   <depend package="rosconsole" />
   <depend package="nav_msgs" />

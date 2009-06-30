@@ -2,7 +2,8 @@
   <description>A graphical interface for 2-D navigation.</description>
   <author>Morgan Quigley, Brian Gerkey and Josh Faust</author>
   <license>BSD</license>
-  <review status="unreviewed" notes=""/>
+  <review status="proposal cleared" notes=""/>
+  <url>http://pr.willowgarage.com/wiki/move_base</url>
   <depend package="roscpp"/>
   <depend package="nav_srvs"/>
   <depend package="robot_srvs"/>

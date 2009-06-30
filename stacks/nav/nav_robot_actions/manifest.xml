@@ -4,8 +4,8 @@
   </description>
  <author>Eitan Marder-Eppstein</author>
  <license>BSD</license>
- <review status="unreviewed" notes=""/>
- <url>http://pr.willowgarage.com</url>
+ <review status="proposal cleared" notes=""/>
+ <url>http://pr.willowgarage.com/wiki/nav_robot_actions</url>
 
  <depend package="robot_actions"/>
  <depend package="std_msgs"/>

@@ -4,8 +4,8 @@
  </description>
  <author>Kurt Konolige, Eitan Marder-Eppstein</author>
  <license>BSD</license>
- <review status="unreviewed" notes=""/>
- <url>http://pr.willowgarage.com</url>
+ <review status="proposal cleared" notes=""/>
+ <url>http://pr.willowgarage.com/wiki/navfn</url>
  <depend package="rosconsole"/>
  <depend package="roscpp"/>
  <depend package="robot_msgs"/>

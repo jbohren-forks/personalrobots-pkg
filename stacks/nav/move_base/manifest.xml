@@ -4,8 +4,8 @@
   </description>
  <author>Eitan Marder-Eppstein</author>
  <license>BSD</license>
- <review status="unreviewed" notes=""/>
- <url>http://pr.willowgarage.com</url>
+ <review status="proposal cleared" notes=""/>
+ <url>http://pr.willowgarage.com/wiki/move_base</url>
 
  <depend package="roscpp"/>
  <depend package="rosconsole"/>
