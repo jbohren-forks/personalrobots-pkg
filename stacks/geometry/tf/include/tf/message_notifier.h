@@ -29,8 +29,8 @@
 
 /** \author Josh Faust */
 
-#ifndef MESSAGE_NOTIFIER_H
-#define MESSAGE_NOTIFIER_H
+#ifndef TF_MESSAGE_NOTIFIER_H
+#define TF_MESSAGE_NOTIFIER_H
 
 #include <ros/ros.h>
 #include <tf/tf.h>
@@ -111,7 +111,7 @@ public:
    * \param callback The function to call when a message is ready to be transformed
    * \param topic The topic to listen on
    * \param target_frame The frame we need to be able to transform to before a message is ready
-   * \param queue_size The number of messages to keep around waiting for transform data.  
+   * \param queue_size The number of messages to keep around waiting for transform data.
    * \note A queue size of 0 means infinite, which can be dangerous
    */
   MessageNotifier(Transformer& tf, Callback callback,
@@ -135,7 +135,7 @@ public:
     target_frames_.resize(1);
     target_frames_[0] = target_frame;
     target_frames_string_ = target_frame;
-    
+
     setTopic(topic);
 
     tf_subscriber_ = node_.subscribe<tfMessage>("/tf_message", 1,
@@ -170,7 +170,7 @@ public:
     target_frames_[0] = target_frame;
 
     setTopic(topic);
-    
+
     tf_subscriber_ = node_.subscribe<tfMessage>("/tf_message", 1,
                                   boost::bind(&MessageNotifier::incomingTFMessage, this, _1));
 
@@ -186,7 +186,7 @@ public:
                         successful_transform_count_, failed_transform_count_, failed_out_the_back_count_, transform_message_count_, incoming_message_count_, dropped_message_count_);
 
     unsubscribeFromMessage();
-    
+
 
     // Tell the worker thread that we're destructing
     destructing_ = true;
@@ -293,7 +293,7 @@ public:
   {
     if (!topic_.empty())
     {
-      subscriber_ = node_.subscribe<MessageT>(topic_, queue_size_, 
+      subscriber_ = node_.subscribe<MessageT>(topic_, queue_size_,
                                               boost::bind(&MessageNotifier::incomingMessage,  this, _1));
     }
   }

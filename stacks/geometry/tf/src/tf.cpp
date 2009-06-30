@@ -121,7 +121,7 @@ bool Transformer::setTransform(const Stamped<btTransform>& transform, const std:
     ROS_ERROR("TF_SELF_TRANSFORM: Ignoring transform from authority \"%s\" with parent_id and frame_id  \"%s\" because they are the same",  authority.c_str(), transform.frame_id_.c_str());
     error_exists = true;
   }
-  
+
   if (transform.frame_id_ == "")
   {
     ROS_ERROR("TF_NO_FRAME_ID: Ignoring transform from authority \"%s\" because frame_id not set ", authority.c_str());
@@ -137,13 +137,13 @@ bool Transformer::setTransform(const Stamped<btTransform>& transform, const std:
   if (std::isnan(transform.getOrigin().x()) || std::isnan(transform.getOrigin().y()) || std::isnan(transform.getOrigin().z())||
       std::isnan(transform.getRotation().x()) ||       std::isnan(transform.getRotation().y()) ||       std::isnan(transform.getRotation().z()) ||       std::isnan(transform.getRotation().w()))
   {
-    ROS_ERROR("TF_NAN_INPUT: Ignoring transform for frame_id \"%s\" from authority \"%s\" because of a nan value in the transform (%f %f %f) (%f %f %f %f)", 
+    ROS_ERROR("TF_NAN_INPUT: Ignoring transform for frame_id \"%s\" from authority \"%s\" because of a nan value in the transform (%f %f %f) (%f %f %f %f)",
               transform.frame_id_.c_str(), authority.c_str(),
-              transform.getOrigin().x(), transform.getOrigin().y(), transform.getOrigin().z(), 
+              transform.getOrigin().x(), transform.getOrigin().y(), transform.getOrigin().z(),
               transform.getRotation().x(), transform.getRotation().y(), transform.getRotation().z(), transform.getRotation().w()
               );
     error_exists = true;
-  }    
+  }
 
   if (error_exists)
     return false;
@@ -152,11 +152,17 @@ bool Transformer::setTransform(const Stamped<btTransform>& transform, const std:
   {
     frame_authority_[frame_number] = authority;
   }
-  else 
+  else
   {
     ROS_WARN("TF_OLD_DATA ignoring data from the past for frame %s at time %g according to authority %s\nPossible reasons are listed at ", transform.frame_id_.c_str(), transform.stamp_.toSec(), authority.c_str());
-    return false; 
+    return false;
   }
+
+  {
+    boost::mutex::scoped_lock lock(transforms_changed_mutex_);
+    transforms_changed_();
+  }
+
   return true;
 };
 
@@ -179,7 +185,7 @@ void Transformer::lookupTransform(const std::string& target_frame, const std::st
 
     transform.frame_id_ = target_frame;
     return;
-  }    
+  }
 
   //  printf("Mapped Source: %s \nMapped Target: %s\n", mapped_source_frame.c_str(), mapped_target_frame.c_str());
   int retval = NO_ERROR;
@@ -194,7 +200,7 @@ void Transformer::lookupTransform(const std::string& target_frame, const std::st
   TransformLists t_list;
 
   if (retval == NO_ERROR)
-    try 
+    try
     {
       retval = lookupLists(lookupFrameNumber( mapped_target_frame), temp_time, lookupFrameNumber( mapped_source_frame), t_list, &error_string);
     }
@@ -219,8 +225,8 @@ void Transformer::lookupTransform(const std::string& target_frame, const std::st
     if (time == ros::Time())// Using latest common time if we extrapolate this means that one of the links is out of date
     {
       ss << "Could not find a common time " << mapped_source_frame << " and " << mapped_target_frame <<".";
-      throw ConnectivityException(ss.str());      
-    }    
+      throw ConnectivityException(ss.str());
+    }
     else
     {
       ss << " When trying to transform between " << mapped_source_frame << " and " << mapped_target_frame <<".";
@@ -250,7 +256,7 @@ void Transformer::lookupTransform(const std::string& target_frame,const ros::Tim
 
 
 bool Transformer::canTransform(const std::string& target_frame, const std::string& source_frame,
-                               const ros::Time& time, 
+                               const ros::Time& time,
                                const ros::Duration& timeout, const ros::Duration& polling_sleep_duration) const
 {
   ros::Time start_time = ros::Time::now();
@@ -274,7 +280,7 @@ bool Transformer::canTransform(const std::string& target_frame, const std::strin
 
   //break out early if no op transform
   if (mapped_source_frame == mapped_target_frame) return true;
-  
+
   if (local_time == ros::Time())
     if (NO_ERROR != getLatestCommonTime(mapped_source_frame, mapped_target_frame, local_time, NULL)) // set time if zero
       {
@@ -286,7 +292,7 @@ bool Transformer::canTransform(const std::string& target_frame, const std::strin
   TransformLists t_list;
   ///\todo check return
   int retval;
-  try 
+  try
   {
     retval = lookupLists(lookupFrameNumber( mapped_target_frame), local_time, lookupFrameNumber( mapped_source_frame), t_list, NULL);
   }
@@ -294,7 +300,7 @@ bool Transformer::canTransform(const std::string& target_frame, const std::strin
   {
     return false;
   }
-  
+
 
   ///\todo WRITE HELPER FUNCITON TO RETHROW
   if (retval != NO_ERROR)
@@ -313,7 +319,7 @@ bool Transformer::canTransform(const std::string& target_frame, const std::strin
     {
       return false;
     }
-  
+
   return true;
 };
 
@@ -324,7 +330,7 @@ bool Transformer::canTransform(const std::string& target_frame,const ros::Time& 
 };
 
 bool Transformer::canTransform(const std::string& target_frame,const ros::Time& target_time, const std::string& source_frame,
-			       const ros::Time& source_time, const std::string& fixed_frame, 
+			       const ros::Time& source_time, const std::string& fixed_frame,
                                const ros::Duration& timeout, const ros::Duration& polling_sleep_duration) const
 {
   return canTransform(target_frame, fixed_frame, target_time, timeout, polling_sleep_duration) && canTransform(fixed_frame, source_frame, source_time, timeout, polling_sleep_duration);
@@ -343,7 +349,7 @@ bool Transformer::getParent(const std::string& frame_id, ros::Time time, std::st
   {
     return false;
   }
-    
+
   TransformStorage temp;
   if (! cache->getData(time, temp))     return false;
   if (temp.parent_id_ == "NO_PARENT")   return false;
@@ -352,7 +358,7 @@ bool Transformer::getParent(const std::string& frame_id, ros::Time time, std::st
 
 };
 
-void Transformer::setExtrapolationLimit(const ros::Duration& distance) 
+void Transformer::setExtrapolationLimit(const ros::Duration& distance)
 {
   max_extrapolation_distance_ = distance;
 }
@@ -362,7 +368,7 @@ int Transformer::getLatestCommonTime(const std::string& source, const std::strin
   time = ros::Time(UINT_MAX, 999999999);///\todo replace with ros::TIME_MAX when it is merged from stable
   int retval;
   TransformLists lists;
-  try 
+  try
   {
     retval = lookupLists(lookupFrameNumber(dest), ros::Time(), lookupFrameNumber(source), lists, error_string);
   }
@@ -380,7 +386,7 @@ int Transformer::getLatestCommonTime(const std::string& source, const std::strin
       time = ros::Time::now();
       return retval;
     }
-      
+
     for (unsigned int i = 0; i < lists.inverseTransforms.size(); i++)
     {
       if (time > lists.inverseTransforms[i].stamp_)
@@ -562,7 +568,7 @@ int Transformer::lookupLists(unsigned int target_frame, ros::Time time, unsigned
       return CONNECTIVITY_ERROR;//throw(ConnectivityException(ss.str()));
     }
 
-    try 
+    try
     {
       if (lookupFrameNumber(lists.inverseTransforms.back().parent_id_) != target_frame)
       {
@@ -593,7 +599,7 @@ int Transformer::lookupLists(unsigned int target_frame, ros::Time time, unsigned
     return CONNECTIVITY_ERROR;//    throw(ConnectivityException(ss.str()));
   }
   /* Make sure that we don't have a no parent at the top */
-  try 
+  try
   {
     if (lookupFrameNumber(lists.inverseTransforms.back().frame_id_) == 0 || lookupFrameNumber( lists.forwardTransforms.back().frame_id_) == 0)
     {
@@ -652,7 +658,7 @@ bool Transformer::test_extrapolation(const ros::Time& target_time, const Transfo
             if ( max_extrapolation_distance_ > ros::Duration(0))
             {
               ss << "This is greater than the max_extrapolation_distance of "
-                 << (max_extrapolation_distance_).toSec() <<"."; 
+                 << (max_extrapolation_distance_).toSec() <<".";
             }
           }
         }
@@ -669,7 +675,7 @@ bool Transformer::test_extrapolation(const ros::Time& target_time, const Transfo
             if ( max_extrapolation_distance_ > ros::Duration(0))
             {
               ss << "This is greater than the max_extrapolation_distance of "
-                 << (max_extrapolation_distance_).toSec() <<"."; 
+                 << (max_extrapolation_distance_).toSec() <<".";
             }
           }
         }
@@ -686,7 +692,7 @@ bool Transformer::test_extrapolation(const ros::Time& target_time, const Transfo
             if ( max_extrapolation_distance_ > ros::Duration(0))
             {
               ss << "This is greater than the max_extrapolation_distance of "
-                 << (max_extrapolation_distance_).toSec() <<"."; 
+                 << (max_extrapolation_distance_).toSec() <<".";
             }
         }
       }
@@ -706,7 +712,7 @@ bool Transformer::test_extrapolation(const ros::Time& target_time, const Transfo
             if ( max_extrapolation_distance_ > ros::Duration(0))
             {
               ss << "This is greater than the max_extrapolation_distance of "
-                 << (max_extrapolation_distance_).toSec() <<"."; 
+                 << (max_extrapolation_distance_).toSec() <<".";
             }
           }
         }
@@ -723,7 +729,7 @@ bool Transformer::test_extrapolation(const ros::Time& target_time, const Transfo
           if ( max_extrapolation_distance_ > ros::Duration(0))
           {
             ss << "This is greater than the max_extrapolation_distance of "
-               << (max_extrapolation_distance_).toSec() <<"."; 
+               << (max_extrapolation_distance_).toSec() <<".";
           }
         }
       }
@@ -739,14 +745,14 @@ bool Transformer::test_extrapolation(const ros::Time& target_time, const Transfo
           if ( max_extrapolation_distance_ > ros::Duration(0))
           {
             ss << "This is greater than the max_extrapolation_distance of "
-               << (max_extrapolation_distance_).toSec() <<"."; 
+               << (max_extrapolation_distance_).toSec() <<".";
           }
         }
       }
     }
-  
+
   if (error_string) ss << " See http://pr.willowgarage.com/pr-docs/ros-packages/tf/html/faq.html for more info.";
-  
+
   if (error_string) *error_string = ss.str();
   return retval;
 
@@ -861,7 +867,7 @@ std::string Transformer::allFramesAsDot() const
   TransformStorage temp;
 
   ros::Time current_time = ros::Time::now();
-  
+
   if (frames_.size() ==1)
     mstream <<"\"no tf data recieved\"";
 
@@ -882,21 +888,21 @@ std::string Transformer::allFramesAsDot() const
       if (it != frame_authority_.end())
         authority = it->second;
 
-      double rate = getFrame(counter)->getListLength() / std::max((getFrame(counter)->getLatestTimestamp().toSec() - 
+      double rate = getFrame(counter)->getListLength() / std::max((getFrame(counter)->getLatestTimestamp().toSec() -
                                                                    getFrame(counter)->getOldestTimestamp().toSec() ), 0.0001);
 
       mstream << std::fixed; //fixed point notation
       mstream.precision(3); //3 decimal places
-      mstream << "\"" << frameIDs_reverse[counter]   << "\"" << " -> " 
+      mstream << "\"" << frameIDs_reverse[counter]   << "\"" << " -> "
               << "\"" << frameIDs_reverse[parent_id] << "\"" << "[label=\""
               << "Authority: " << authority << "\\n"
               << getFrame(counter)->getListLength() << " Readings averaging " << rate <<" Hz\\n"
-              << " Latest reading: \\n" << getFrame(counter)->getLatestTimestamp().toSec() 
+              << " Latest reading: \\n" << getFrame(counter)->getLatestTimestamp().toSec()
               << " ( " << (current_time - getFrame(counter)->getLatestTimestamp()).toSec()
               <<" seconds ago )\\n"
-              << " Oldest reading:\\n" 
+              << " Oldest reading:\\n"
               << getFrame(counter)->getOldestTimestamp().toSec()
-              << " ( " << (current_time - getFrame(counter)->getOldestTimestamp()).toSec() 
+              << " ( " << (current_time - getFrame(counter)->getOldestTimestamp()).toSec()
               <<" seconds ago )\\n"
               <<"\"];" <<std::endl;
     }
@@ -1051,7 +1057,11 @@ void Transformer::transformPose(const std::string& target_frame, const ros::Time
   //  stamped_out.parent_id_ = stamped_in.parent_id_;//only useful for transforms
 };
 
-
+boost::signals::connection Transformer::addTransformChangedListener(boost::function<void(void)> callback)
+{
+  boost::mutex::scoped_lock lock(transforms_changed_mutex_);
+  return transforms_changed_.connect(callback);
+}
 
 /*
 void Transformer::transformTransform(const std::string& target_frame,
