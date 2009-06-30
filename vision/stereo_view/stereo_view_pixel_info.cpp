@@ -54,8 +54,8 @@
 #include "image_msgs/StereoInfo.h"
 #include "image_msgs/Image.h"
 #include "image_msgs/CamInfo.h"
-#include "image_msgs/ColoredLines.h"
-#include "image_msgs/ColoredLine.h"
+#include "visualization_msgs/ColoredLines.h"
+#include "visualization_msgs/ColoredLine.h"
 
 #include "CvStereoCamModel.h"
 
@@ -159,8 +159,8 @@ public:
   image_msgs::CvBridge lbridge; /**< CvBridge for the left camera. */
   image_msgs::CvBridge rbridge; /**< CvBridge for the right camera. */
   image_msgs::CvBridge dbridge; /**< CvBridge for the disparity image. */
-  image_msgs::ColoredLines cls;
-  map<string,image_msgs::ColoredLines> map_cls;
+  visualization_msgs::ColoredLines cls;
+  map<string,visualization_msgs::ColoredLines> map_cls;
 
   color_calib::Calibration lcal; /**< Color calibration for the left image. */
   color_calib::Calibration rcal; /**< Color calibration for the right image. */
@@ -213,7 +213,7 @@ public:
     sync.subscribe("stereo/right/cam_info", rcaminfo, 1);
     sync.ready();
 
-    subscribe<image_msgs::ColoredLines>("lines_to_draw",cls,&StereoView::line_cb,1);
+    subscribe<visualization_msgs::ColoredLines>("lines_to_draw",cls,&StereoView::line_cb,1);
   }
 
   ~StereoView()
@@ -234,10 +234,10 @@ public:
 
     boost::mutex::scoped_lock linelock(lines_mutex_);
     // Find if there's already a message with this label.
-    map<string,image_msgs::ColoredLines>::iterator it = map_cls.find(cls.label);
+    map<string,visualization_msgs::ColoredLines>::iterator it = map_cls.find(cls.label);
     if (it == map_cls.end()) {
       // If not, inset this new message into the map.
-      map_cls.insert(pair<string,image_msgs::ColoredLines>(cls.label,cls));
+      map_cls.insert(pair<string,visualization_msgs::ColoredLines>(cls.label,cls));
     }
     else {
       // If so, overwrite the old list of lines.
@@ -275,7 +275,7 @@ public:
 
       boost::mutex::scoped_lock linelock(lines_mutex_);
       // Draw the lines on the image.
-      map<string,image_msgs::ColoredLines>::iterator it;
+      map<string,visualization_msgs::ColoredLines>::iterator it;
       for (it = map_cls.begin(); it != map_cls.end(); it++) {
 			for (uint il=0; il<it->second.lines.size(); il++) {
 			  cvLine(lcalimage, 

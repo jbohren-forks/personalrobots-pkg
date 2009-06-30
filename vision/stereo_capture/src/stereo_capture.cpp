@@ -46,19 +46,12 @@
 #include "opencv/cv.h"
 #include "opencv/highgui.h"
 
-//#include "ros/node.h"
-//#include "image_msgs/StereoInfo.h"
-//#include "image_msgs/DisparityInfo.h"
-//#include "image_msgs/Image.h"
-
 
 #include "ros/node.h"
 #include "image_msgs/DisparityInfo.h"
 #include "image_msgs/StereoInfo.h"
 #include "image_msgs/Image.h"
 #include "image_msgs/CamInfo.h"
-#include "image_msgs/ColoredLines.h"
-#include "image_msgs/ColoredLine.h"
 
 //#include "CvStereoCamModel.h"
 

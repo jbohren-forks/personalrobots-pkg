@@ -49,7 +49,6 @@
 #include "image_msgs/CamInfo.h"
 #include "image_msgs/Image.h"
 #include "opencv_latest/CvBridge.h"
-#include "image_msgs/ColoredLines.h"
 #include "topic_synchronizer/topic_synchronizer.h"
 #include "tf/transform_listener.h"
 

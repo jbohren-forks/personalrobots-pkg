@@ -49,8 +49,8 @@
 #include "image_msgs/CamInfo.h"
 #include "image_msgs/Image.h"
 #include "opencv_latest/CvBridge.h"
-#include "image_msgs/ColoredLine.h"
-#include "image_msgs/ColoredLines.h"
+#include "visualization_msgs/ColoredLine.h"
+#include "visualization_msgs/ColoredLines.h"
 #include "topic_synchronizer2/topic_synchronizer.h"
 #include "tf/transform_listener.h"
 #include "visualization_msgs/Marker.h"
@@ -201,7 +201,7 @@ public:
 
     // Advertise the rectangles to draw if stereo_view is running.
     if (do_display_ == "remote") {
-      clines_pub_ = nh_.advertise<image_msgs::ColoredLines>("lines_to_draw",1);
+      clines_pub_ = nh_.advertise<visualization_msgs::ColoredLines>("lines_to_draw",1);
       ROS_INFO_STREAM_NAMED("face_detector","Advertising colored lines to draw remotely.");
     }
     // Subscribe to filter measurements.
@@ -352,8 +352,8 @@ public:
 
     bool published = false;
 
-    image_msgs::ColoredLines all_cls;
-    vector<image_msgs::ColoredLine> lines;
+    visualization_msgs::ColoredLines all_cls;
+    vector<visualization_msgs::ColoredLine> lines;
     // Clear out the old visualization markers. 
     markers_sub_.markers.clear();
     markers_sub_.markers = markers_add_.markers;

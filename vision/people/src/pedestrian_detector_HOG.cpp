@@ -46,7 +46,7 @@
 #include "image_msgs/CamInfo.h"
 #include "image_msgs/Image.h"
 #include "opencv_latest/CvBridge.h"
-#include "image_msgs/ColoredLines.h"
+#include "visualization_msgs/ColoredLines.h"
 #include "topic_synchronizer/topic_synchronizer.h"
 #include "tf/transform_listener.h"
 #include <tf/message_notifier.h>
@@ -120,7 +120,7 @@ namespace people
 
       // Advertise the display boxes.
       if (do_display_) {
-	node_->advertise<image_msgs::ColoredLines>("lines_to_draw",1);
+	node_->advertise<visualization_msgs::ColoredLines>("lines_to_draw",1);
 	ROS_INFO_STREAM_NAMED("pedestrian_detector_HOG","Advertising colored lines to draw remotely.");
 	//cv::namedWindow("people detector", 1);
       }
