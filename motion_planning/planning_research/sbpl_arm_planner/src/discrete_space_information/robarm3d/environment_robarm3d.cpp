@@ -563,14 +563,6 @@ void EnvironmentROBARM3D::ReadConfiguration(FILE* fCfg)
             EnvROBARMCfg.BaseZ_m = atof(sTemp);
             ContXYZ2Cell(EnvROBARMCfg.BaseX_m, EnvROBARMCfg.BaseY_m, EnvROBARMCfg.BaseZ_m, &(EnvROBARMCfg.BaseX_c), &(EnvROBARMCfg.BaseY_c), &(EnvROBARMCfg.BaseZ_c)); 
         }
-        else if(strcmp(sTemp, "linklengths(meters):") == 0)
-        {
-            for(i = 0; i < NUMOFLINKS; i++)
-            {
-                fscanf(fCfg, "%s", sTemp);
-                EnvROBARMCfg.LinkLength_m[i] = atof(sTemp);
-            }
-        }
         else if(strcmp(sTemp, "linkstartangles(degrees):") == 0)
         {
             for(i = 0; i < NUMOFLINKS; i++)
@@ -673,7 +665,6 @@ void EnvironmentROBARM3D::ReadConfiguration(FILE* fCfg)
             {
                 fscanf(fCfg, "%s", sTemp);
                 EnvROBARMCfg.DH_a[i] = atof(sTemp);
-//                 EnvROBARMCfg.LinkLength_m[i] = atof(sTemp);
             }
         }
         else if(strcmp(sTemp, "linkoffset(meters):") == 0)
@@ -1474,60 +1465,46 @@ void EnvironmentROBARM3D::AddObstacleToGrid(double* obstacle, int type, char*** 
 }
 
 //returns 1 if end effector within space, 0 otherwise
-int EnvironmentROBARM3D::ComputeEndEffectorPos(double angles[NUMOFLINKS], short unsigned int endeff[3], short unsigned int wrist[3], short unsigned int elbow[3], double orientation[3][3])
+int EnvironmentROBARM3D::ComputeEndEffectorPos(const double angles[], short unsigned int endeff[3], short unsigned int wrist[3], short unsigned int elbow[3], double orientation[3][3])
 {
-    num_forwardkinematics++;
-//     clock_t currenttime = clock();
     double x,y,z;
     int retval = 1;
 
     //convert angles from positive values in radians (from 0->6.28) to centered around 0 (not really needed)
-    for (int i = 0; i < NUMOFLINKS; i++)
-    {
-        if(angles[i] >= PI_CONST)
-            angles[i] = -2.0*PI_CONST + angles[i];
-    }
+//     for (int i = 0; i < NUMOFLINKS; i++)
+//     {
+//         if(angles[i] >= PI_CONST)
+//             angles[i] = -2.0*PI_CONST + angles[i];
+//     }
 
     //use DH or Kinematics Library for forward kinematics
     if(EnvROBARMCfg.use_DH)
     {
         ComputeForwardKinematics_DH(angles);
 
-//         printf("shoulder: %1.4f %1.4f %1.4f\n",EnvROBARMCfg.BaseX_m,EnvROBARMCfg.BaseY_m,EnvROBARMCfg.BaseZ_m);
         //get position of elbow
         x = EnvROBARM.Trans[0][3][ELBOW_JOINT] + EnvROBARMCfg.BaseX_m;
         y = EnvROBARM.Trans[1][3][ELBOW_JOINT] + EnvROBARMCfg.BaseY_m;
         z = EnvROBARM.Trans[2][3][ELBOW_JOINT] + EnvROBARMCfg.BaseZ_m;
-//         printf("elbow: %1.4f %1.4f %1.4f\n",x,y,z);
         ContXYZ2Cell(x, y, z, &(elbow[0]), &(elbow[1]), &(elbow[2]));
 
         //get position of wrist
         x = EnvROBARM.Trans[0][3][WRIST_JOINT] + EnvROBARMCfg.BaseX_m;
         y = EnvROBARM.Trans[1][3][WRIST_JOINT] + EnvROBARMCfg.BaseY_m;
         z = EnvROBARM.Trans[2][3][WRIST_JOINT] + EnvROBARMCfg.BaseZ_m;
-//         printf("wrist: %1.4f %1.4f %1.4f\n",x,y,z);
         ContXYZ2Cell(x, y, z, &(wrist[0]), &(wrist[1]), &(wrist[2]));
 
         //get position of gripper
         x = EnvROBARM.Trans[0][3][ENDEFF] + EnvROBARMCfg.BaseX_m;
         y = EnvROBARM.Trans[1][3][ENDEFF] + EnvROBARMCfg.BaseY_m;
         z = EnvROBARM.Trans[2][3][ENDEFF] + EnvROBARMCfg.BaseZ_m;
-//         printf("endeff: %1.4f %1.4f %1.4f\n",x,y,z);
         ContXYZ2Cell(x, y, z, &(endeff[0]),&(endeff[1]),&(endeff[2]));
-
-
-//         printf("[ComputeEndEffectorPos] endeff: (%u %u %u)  wrist: (%u %u %u) elbow: (%u %u %u)\n",endeff[0],endeff[1],endeff[2],wrist[0],wrist[1],wrist[2],elbow[0],elbow[1],elbow[2]);
 
         // if end effector is out of bounds then return 0
         if(endeff[0] >= EnvROBARMCfg.EnvWidth_c || endeff[1] >= EnvROBARMCfg.EnvHeight_c || endeff[2] >= EnvROBARMCfg.EnvDepth_c)
-        {
-            printf("[ComputeEndEffectorPos] endeff: (%u %u %u)  wrist: (%u %u %u) elbow: (%u %u %u)\n",endeff[0],endeff[1],endeff[2],wrist[0],wrist[1],wrist[2],elbow[0],elbow[1],elbow[2]);
-            retval =  0;
-        }
-
-//         DH_time += clock() - currenttime;
+	  retval =  0;
     }
-    else    //use Kinematics Library
+    else    //use KDL Chain
     {
         //get position of elbow
         ComputeForwardKinematics_ROS(angles, 5, &x, &y, &z);
@@ -1543,8 +1520,7 @@ int EnvironmentROBARM3D::ComputeEndEffectorPos(double angles[NUMOFLINKS], short 
 
         // check upper bounds
         if(endeff[0] >= EnvROBARMCfg.EnvWidth_c || endeff[1] >= EnvROBARMCfg.EnvHeight_c || endeff[2] >= EnvROBARMCfg.EnvDepth_c)
-            retval =  0;
-//         KL_time += clock() - currenttime;
+	 retval =  0;
     }
 
     //store the orientation of gripper
@@ -1554,25 +1530,23 @@ int EnvironmentROBARM3D::ComputeEndEffectorPos(double angles[NUMOFLINKS], short 
 
     // check if orientation of gripper is upright (for the whole path)
     if(EnvROBARMCfg.enforce_upright_gripper)
-    {
-        if (EnvROBARM.Trans[2][0][7] < 1.0 - EnvROBARMCfg.gripper_orientation_moe)
-            retval = 0;
-    }
+      if (EnvROBARM.Trans[2][0][7] < 1.0 - EnvROBARMCfg.gripper_orientation_moe)
+	retval = 0;
 
     return retval;
 }
 
 //returns end effector position in meters
-int EnvironmentROBARM3D::ComputeEndEffectorPos(double angles[NUMOFLINKS], double endeff_m[3])
+int EnvironmentROBARM3D::ComputeEndEffectorPos(const double angles[], double endeff_m[3])
 {
     int retval = 1;
 
     //convert angles from positive values in radians (from 0->6.28) to centered around 0
-    for (int i = 0; i < NUMOFLINKS; i++)
-    {
-        if(angles[i] >= PI_CONST)
-            angles[i] = -2.0*PI_CONST + angles[i];
-    }
+//     for (int i = 0; i < NUMOFLINKS; i++)
+//     {
+//         if(angles[i] >= PI_CONST)
+//             angles[i] = -2.0*PI_CONST + angles[i];
+//     }
 
     //use DH or Kinematics Library for forward kinematics
     if(EnvROBARMCfg.use_DH)
@@ -1591,16 +1565,16 @@ int EnvironmentROBARM3D::ComputeEndEffectorPos(double angles[NUMOFLINKS], double
 }
 
 //returns end effector position in meters
-void EnvironmentROBARM3D::ComputeEndEffectorPos(double angles[NUMOFLINKS], double xyz_m[3], double rpy_r[3])
+void EnvironmentROBARM3D::ComputeEndEffectorPos(const double angles[], double xyz_m[3], double rpy_r[3])
 {
   double Rot[3][3];
 
-    //convert angles from positive values in radians (from 0->6.28) to centered around 0
-  for (int i = 0; i < NUMOFLINKS; i++)
-  {
-    if(angles[i] >= PI_CONST)
-      angles[i] = -2.0*PI_CONST + angles[i];
-  }
+  //convert angles from positive values in radians (from 0->6.28) to centered around 0
+//   for (int i = 0; i < NUMOFLINKS; i++)
+//   {
+//     if(angles[i] >= PI_CONST)
+//       angles[i] = -2.0*PI_CONST + angles[i];
+//   }
 
   //use DH or Kinematics Library for forward kinematics
   if(EnvROBARMCfg.use_DH)
@@ -1625,17 +1599,17 @@ void EnvironmentROBARM3D::ComputeEndEffectorPos(double angles[NUMOFLINKS], doubl
 }
 
 //returns end effector position in cells
-int EnvironmentROBARM3D::ComputeEndEffectorPos(double angles[NUMOFLINKS], short unsigned int endeff[3])
+int EnvironmentROBARM3D::ComputeEndEffectorPos(const double angles[], short unsigned int endeff[3])
 {
     int retval = 1;
     double endeff_m[3];
 
     //convert angles from positive values in radians (from 0->6.28) to centered around 0
-    for (int i = 0; i < NUMOFLINKS; i++)
-    {
-        if(angles[i] >= PI_CONST)
-            angles[i] = -2.0*PI_CONST + angles[i];
-    }
+//     for (int i = 0; i < NUMOFLINKS; i++)
+//     {
+//         if(angles[i] >= PI_CONST)
+//             angles[i] = -2.0*PI_CONST + angles[i];
+//     }
 
     //use DH or Kinematics Library for forward kinematics
     if(EnvROBARMCfg.use_DH)
@@ -1656,55 +1630,8 @@ int EnvironmentROBARM3D::ComputeEndEffectorPos(double angles[NUMOFLINKS], short 
 
 //if pTestedCells is NULL, then the tested points are not saved and it is more
 //efficient as it returns as soon as it sees first invalid point
-/*
-int EnvironmentROBARM3D::IsValidLineSegment(double x0, double y0, double z0, double x1, double y1, double z1, char*** Grid3D, vector<CELLV>* pTestedCells)
-{
-    bresenham_param_t params;
-    int nX, nY, nZ; 
-    short unsigned int nX0, nY0, nZ0, nX1, nY1, nZ1;
-    int retvalue = 1;
-    CELLV tempcell;
-
-    //make sure the line segment is inside the environment
-    if(x0 < 0 || x0 >= EnvROBARMCfg.EnvWidth_m || x1 < 0 || x1 >= EnvROBARMCfg.EnvWidth_m ||
-       y0 < 0 || y0 >= EnvROBARMCfg.EnvHeight_m || y1 < 0 || y1 >= EnvROBARMCfg.EnvHeight_m ||
-       z0 < 0 || z0 >= EnvROBARMCfg.EnvDepth_m || z1 < 0 || z1 >= EnvROBARMCfg.EnvDepth_m)
-    {
-        return 0;
-    }
-
-    ContXYZ2Cell(x0, y0, z0, &nX0, &nY0, &nZ0);
-    ContXYZ2Cell(x1, y1, z1, &nX1, &nY1, &nZ1);
-
-    //iterate through the points on the segment
-    get_bresenham_parameters3d(nX0, nY0, nZ0, nX1, nY1, nZ1, &params);
-    do {
-        get_current_point3d(&params, &nX, &nY, &nZ);
-
-        if(Grid3D[nX][nY][nZ] >= EnvROBARMCfg.ObstacleCost)
-        {
-            if(pTestedCells == NULL)
-                return 0;
-            else
-                retvalue = 0;
-        }
-
-            //insert the tested point
-        if(pTestedCells)
-        {
-            tempcell.bIsObstacle = (Grid3D[nX][nY][nZ] >= EnvROBARMCfg.ObstacleCost);
-            tempcell.x = nX;
-            tempcell.y = nY;
-            tempcell.z = nZ;
-            pTestedCells->push_back(tempcell);
-        }
-    } while (get_next_point3d(&params));
-
-    return retvalue;
-}
-*/
-
-int EnvironmentROBARM3D::IsValidLineSegment(short unsigned int x0, short unsigned int y0, short unsigned int z0, short unsigned int x1, short unsigned int y1, short unsigned int z1, char*** Grid3D, vector<CELLV>* pTestedCells)
+int EnvironmentROBARM3D::IsValidLineSegment(short unsigned int x0, short unsigned int y0, short unsigned int z0, short unsigned int x1,
+					    short unsigned int y1, short unsigned int z1, char*** Grid3D, vector<CELLV>* pTestedCells)
 {
     bresenham_param_t params;
     int nX, nY, nZ; 
@@ -2679,10 +2606,11 @@ void EnvironmentROBARM3D::PrintEnv_Config(FILE* fOut)
 
 void EnvironmentROBARM3D::PrintHeader(FILE* fOut)
 {
-    fprintf(fOut, "%d\n", NUMOFLINKS);
-    for(int i = 0; i < NUMOFLINKS; i++)
-        fprintf(fOut, "%.3f ", EnvROBARMCfg.LinkLength_m[i]);
-    fprintf(fOut, "\n");
+  fprintf(fOut, "PrintHeader() has not yet been defined.\n");
+//     fprintf(fOut, "%d\n", NUMOFLINKS);
+//     for(int i = 0; i < NUMOFLINKS; i++)
+//         fprintf(fOut, "%.3f ", EnvROBARMCfg.LinkLength_m[i]);
+//     fprintf(fOut, "\n");
 }
 
 void EnvironmentROBARM3D::GetSuccs(int SourceStateID, vector<int>* SuccIDV, vector<int>* CostV)
@@ -3883,8 +3811,9 @@ void EnvironmentROBARM3D::OutputPlanningStats()
 
 
 /*------------------------------------------------------------------------*/
-                        /* Forward Kinematics*/
+                        /* Forward Kinematics */
 /*------------------------------------------------------------------------*/
+/** Initialize the KDL Chain used for forward kinematics */
 bool EnvironmentROBARM3D::InitKDLChain(const char *fKDL)
 {
   KDL::Tree my_tree;
@@ -3978,7 +3907,7 @@ void EnvironmentROBARM3D::ComputeDHTransformations()
 }
 
 //uses DH convention
-void EnvironmentROBARM3D::ComputeForwardKinematics_DH(double angles[NUMOFLINKS])
+void EnvironmentROBARM3D::ComputeForwardKinematics_DH(const double angles[])
 {
     double sum, theta[NUMOFLINKS];
     int t,x,y,k;
@@ -4111,8 +4040,8 @@ void EnvironmentROBARM3D::ComputeForwardKinematics_DH(double angles[NUMOFLINKS])
     }
 }
 
-// KDL chain
-void EnvironmentROBARM3D::ComputeForwardKinematics_ROS(double *angles, int f_num, double *x, double *y, double*z)
+/** Compute forward kinematics for an array of joints using a KDL chain */
+void EnvironmentROBARM3D::ComputeForwardKinematics_ROS(const double angles[], int f_num, double *x, double *y, double*z)
 {
   for(int i=0; i<NUMOFLINKS; i++)
     EnvROBARMCfg.jnt_pos_in(i)=angles[i];
@@ -4136,7 +4065,7 @@ void EnvironmentROBARM3D::ComputeForwardKinematics_ROS(double *angles, int f_num
   *z = EnvROBARMCfg.p_out.p[2] + EnvROBARMCfg.BaseZ_m;
 }
 
-//pre-compute action costs
+/** pre-compute action costs */
 void EnvironmentROBARM3D::ComputeActionCosts()
 {
     int i,x,y;
@@ -4157,6 +4086,7 @@ void EnvironmentROBARM3D::ComputeActionCosts()
     }
 }
 
+/** pre-compute cost per cell traversed and cost per radian */
 void EnvironmentROBARM3D::ComputeCostPerCell()
 {
     double angles[NUMOFLINKS],start_angles[NUMOFLINKS]={0};
@@ -4240,7 +4170,7 @@ void EnvironmentROBARM3D::ComputeCostPerCell()
     }
 }
 
-// compute cost per radian for the cartesian planner
+/** compute cost per radian (orientation-wise) for the cartesian planner */
 void EnvironmentROBARM3D::ComputeCostPerRadian()
 {
     short unsigned int endeff[3],wrist[3],elbow[3], largest_action = 0;
@@ -4322,6 +4252,7 @@ double EnvironmentROBARM3D::getAngularEuclDist(double rpy1[3], double rpy2[3])
     return sqrt(rdiff*rdiff + pdiff*pdiff + ydiff*ydiff);
 }
 
+/** convert RPY into a rotation matrix */
 void EnvironmentROBARM3D::RPY2Rot(double roll, double pitch, double yaw, double Rot[3][3])
 {
     double cosr, cosp, cosy, sinr, sinp, siny;
@@ -4346,7 +4277,7 @@ void EnvironmentROBARM3D::RPY2Rot(double roll, double pitch, double yaw, double 
     Rot[2][2] = cosp*cosr;
 }
 
-//copied from getEulerZYX() in Bullet physics library
+/** convert a rotation matrix into the RPY format (copied from getEulerZYX() in Bullet physics library) */
 void EnvironmentROBARM3D::getRPY(double Rot[3][3], double* roll, double* pitch, double* yaw, int solution_number)
 {
     double delta,rpy1[3],rpy2[3];
@@ -4407,6 +4338,7 @@ void EnvironmentROBARM3D::getRPY(double Rot[3][3], double* roll, double* pitch, 
     }
 }
 
+/*
 void EnvironmentROBARM3D::getValidPositions(int num_pos, FILE* fOut)
 {
     double jnt_pos_in[7];
@@ -4414,7 +4346,7 @@ void EnvironmentROBARM3D::getValidPositions(int num_pos, FILE* fOut)
     short unsigned int endeff[3], wrist[3], elbow[3];
     double r,p,y,orientation[3][3];
 
-    /* initialize random seed: */
+    // initialize a random seed
     srand ( time(NULL) );
 
     for(int n = 0; n < num_pos; n++)
@@ -4434,6 +4366,7 @@ void EnvironmentROBARM3D::getValidPositions(int num_pos, FILE* fOut)
         fprintf(fOut, "%.2f %.2f %.2f %.2f %.2f %.2f\n",xyz[0],xyz[1],xyz[2],r,p,y);
     }
 }
+*/
 
 double EnvironmentROBARM3D::gen_rand(double min, double max)
 {

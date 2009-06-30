@@ -27,26 +27,22 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+/** Author: Benjamin Cohen /bcohen@willowgarage.com **/
+
 #include <boost/thread/mutex.hpp>
 #include <kdl_parser/tree_parser.hpp>
 #include <kdl/jntarray.hpp>
 #include <kdl/chainfksolverpos_recursive.hpp>
-
-// #include <robot_kinematics/robot_kinematics.h>
 
 #ifndef __ENVIRONMENT_ROBARM3D_H_
 #define __ENVIRONMENT_ROBARM3D_H_
 
 #define NUMOFLINKS 7
 
-#define UNIFORM_COST 1      //all the joint actions have the same costs when set
-
-#define INVALID_NUMBER 999
+#define UNIFORM_COST 1      // all the joint actions have the same costs when set
 
 #define NUM_TRANS_MATRICES 1440 //precomputed matrices
 
-// using namespace robot_kinematics;
-// using namespace KDL;
 
 /**
 
@@ -62,7 +58,7 @@ Motion planner for Robotic Arm based on the SBPL. It is capable of finding the s
  **/
 
 
-// coords - used to pass around lists of valid cells
+/** coords - used to pass around lists of valid cells */
 typedef struct
 {
     short unsigned int x;
@@ -71,7 +67,7 @@ typedef struct
     bool bIsObstacle;
 }CELLV;
 
-//state structure for Dykstra's Algorithm
+/** state structure for Dykstra's Algorithm */
 typedef struct STATE3D_t
 {
     unsigned int g;
@@ -81,6 +77,7 @@ typedef struct STATE3D_t
     short unsigned int z;
 } State3D;
 
+/** struct that contains the necessary cartesian goal description */
 typedef struct GOAL_POSITION
 {
   int type;
@@ -92,6 +89,7 @@ typedef struct GOAL_POSITION
   double rpy_tolerance;
 } GoalPos;
 
+/** struct that contains the necessary joint space goal description */
 typedef struct GOAL_CONFIGURATION
 {
   std::vector <double> pos;
@@ -99,7 +97,7 @@ typedef struct GOAL_CONFIGURATION
   std::vector <double> tolerance_below;
 } GoalConfig;
 
-// robot arm physical configuration structure
+/** struct that contains robot arm physical configuration & description of the environment */
 typedef struct ENV_ROBARM_CONFIG
 {
 /* Environment Description */
@@ -132,7 +130,7 @@ typedef struct ENV_ROBARM_CONFIG
     //flag determines if the environment has been initialized or not
     bool bInitialized;
 
-    //3D grid of world space 
+    /*------------- Heuristic & Collision Checking -------------*/
     char*** Grid3D;
     char*** LowResGrid3D;
     double GridCellWidth;           // cells are square (width=height=depth)
@@ -144,8 +142,19 @@ typedef struct ENV_ROBARM_CONFIG
     std::vector<std::vector<double> > cubes;
     std::vector<std::vector<double> > sbpl_cubes;
 
-/* ARM DESCRIPTION */
+    //cost of cells on grid of obstacles and close to obstacles
+    char ObstacleCost;
+    char medObstacleCost;
+    char lowObstacleCost;
+    int medCostRadius_c;
+    int lowCostRadius_c;
 
+    //mutexes to protect temporary & planning maps
+    boost::mutex mCopyingGrid;
+    boost::mutex mPlanning;
+
+
+    /*------------- Manipulator Description -------------*/
     std::string robot_desc;
     double gripper_m[3];
 
@@ -158,9 +167,7 @@ typedef struct ENV_ROBARM_CONFIG
     double DH_theta[NUMOFLINKS];
 
     //robot arm dimensions/positions
-    double LinkLength_m[NUMOFLINKS];
     double LinkStartAngles_d[NUMOFLINKS];
-    double LinkGoalAngles_d[NUMOFLINKS];
 
     //Motor Limits
     double PosMotorLimits[NUMOFLINKS];
@@ -232,17 +239,6 @@ typedef struct ENV_ROBARM_CONFIG
     double cost_per_mm;
     double cost_per_rad;
 
-    //cost of cells on grid of obstacles and close to obstacles
-    char ObstacleCost;
-    char medObstacleCost;
-    char lowObstacleCost;
-    int medCostRadius_c;
-    int lowCostRadius_c;
-
-    //mutexes to protect temporary & planning maps
-    boost::mutex mCopyingGrid;
-    boost::mutex mPlanning;
-
     //for precomputing cos/sin & DH matrices 
     double cos_r[360];
     double sin_r[360];
@@ -250,7 +246,7 @@ typedef struct ENV_ROBARM_CONFIG
 
 } EnvROBARMConfig_t;
 
-// hash entry that contains end effector coordinates
+/** hash entry that contains end effector coordinates */
 typedef struct ENVROBARMHASHENTRY
 {
     int stateID;                            //hash entry ID number
@@ -261,7 +257,7 @@ typedef struct ENVROBARMHASHENTRY
     double axis_angle;
 } EnvROBARMHashEntry_t;
 
-// main structure that stores environment data used in planning
+/** main structure that stores environment data used in planning */
 typedef struct
 {
     EnvROBARMHashEntry_t* goalHashEntry;
@@ -282,12 +278,10 @@ typedef struct
 }EnvironmentROBARM3D_t;
 
 
-/**
- * Environment to be used when planning for a Robotic Arm using the SBPL.
- */
+/** Environment to be used when planning for a Robotic Arm using the SBPL. */
 class EnvironmentROBARM3D: public DiscreteSpaceInformation 
 {
-public:
+  public:
 
     EnvironmentROBARM3D();
     ~EnvironmentROBARM3D(){};
@@ -333,9 +327,8 @@ public:
     //this should be removed  - it returns the planner Epsilon
     double GetEpsilon();
 
-    //called by SBPL planner
+    /** functions needed by SBPL planner */
     int GetFromToHeuristic(int FromStateID, int ToStateID);
-//     int GetFromToHeuristic(int FromStateID, int ToStateID, double axis_angle);
     int GetJointSpaceHeuristic(int FromStateID, int ToStateID);
     int GetGoalHeuristic(int stateID);
     int GetStartHeuristic(int stateID);
@@ -346,53 +339,51 @@ public:
     void StateID2Angles(int stateID, double* angles_r);
     int	 SizeofCreatedEnv();
 
-    //printing
+    /** output */
     void PrintState(int stateID, bool bVerbose, FILE* fOut=NULL);
     void PrintEnv_Config(FILE* fOut);
     void PrintHeurGrid();
     void PrintTimeStat(FILE* fOut);
     void OutputPlanningStats();
 
-    //old function - needed when using KDL for collision detection - will eventually be removed
-    // void CloseKinNode();
-
-    void AddObstacles(const std::vector <std::vector <double> > &obstacles);
+    /** used when debugging & taking statistics (remove these functions once everything is solidified) */
+    void ComputeEndEffectorPos(const double angles[], double xyz_m[3], double rpy_r[3]);    
     void getRPY(double Rot[3][3], double* roll, double* pitch, double* yaw, int solution_number);
-    std::vector<std::vector<double> >* getCollisionMap();
     int GetFromToHeuristic(int FromStateID, int ToStateID, FILE* fOut);
-
-    void getValidPositions(int num_pos, FILE* fOut);
+    // void getValidPositions(int num_pos, FILE* fOut);
     double gen_rand(double min, double max);
 
+    /** used by sbpl_arm_planner_node */
+    std::vector<std::vector<double> >* getCollisionMap();
+    void AddObstacles(const std::vector <std::vector <double> > &obstacles);
     bool SetGoalPosition(const std::vector <std::vector<double> > &goals, const std::vector<std::vector<double> > &tolerances, const std::vector<int> &type);
     void SetGoalPositionTolerance(const std::vector <std::vector<double> > &tolerance);
     void SetGoalPositionType(const std::vector <int> &goal_type);
     bool SetGoalConfiguration(const std::vector <std::vector<double> > &goals, const std::vector<std::vector<double> > &tolerance_above, const std::vector<std::vector<double> > &tolerance_below);
     void SetGoalConfigurationTolerance(const std::vector<std::vector<double> > &tolerance_above, const std::vector<std::vector<double> > &tolerance_below);
 
-    void ComputeEndEffectorPos(double angles[NUMOFLINKS], double xyz_m[3], double rpy_r[3]);
-private:
+  private:
 
-    //member data
+    /** member data */
     EnvROBARMConfig_t EnvROBARMCfg;          /**< environment configuration struct (stores environment details)> */
     EnvironmentROBARM3D_t EnvROBARM;
 
-    //hash table
+    /** hash table */
     unsigned int GETHASHBIN(short unsigned int* coord, int numofcoord);
-    void PrintHashTableHist();
+    bool AreEquivalent(int State1ID, int State2ID);
     EnvROBARMHashEntry_t* GetHashEntry(short unsigned int* coord, int numofcoord, short unsigned int action, bool bIsGoal);
     EnvROBARMHashEntry_t* CreateNewHashEntry(short unsigned int* coord, int numofcoord, short unsigned int endeff[3], short unsigned int action, double orientation[3][3]);
 
-    //initialization
-    void ReadParamsFile(FILE* fCfg);
-    void ReadConfiguration(FILE* fCfg);
+    /** initialization */
     void InitializeEnvConfig();
     void InitializeEnvGrid();
     bool InitializeEnvironment();
-    void AddObstacleToGrid(double* obstacle, int type, char*** grid, double gridcell_m);
     bool InitGeneral();
+    void ReadParamsFile(FILE* fCfg);
+    void ReadConfiguration(FILE* fCfg);
+    void ParseYAMLFile(const char* sParamFile);
 
-    //coordinate frame/angle functions
+    /** coordinate frame/angle functions */
     void DiscretizeAngles();
     void Cell2ContXYZ(int x, int y, int z, double *pX, double *pY, double *pZ);
     void Cell2ContXYZ(int x, int y, int z, double *pX, double *pY, double *pZ, double gridcell_m);
@@ -402,25 +393,29 @@ private:
     void ContXYZ2Cell(double* xyz, double gridcellwidth, int dims_c[3], short unsigned int *pXYZ);
     void HighResGrid2LowResGrid(short unsigned int * XYZ_hr, short unsigned int * XYZ_lr);
 
-    //bounds/error checking
+    /** collision checking */
     int IsValidCoord(short unsigned int coord[NUMOFLINKS], short unsigned int endeff_pos[3], short unsigned int wrist_pos[3], short unsigned int elbow_pos[3], double orientation[3][3]);    
     int IsValidLineSegment(short unsigned int x0, short unsigned int y0, short unsigned int z0, short unsigned int x1, short unsigned int y1, short unsigned int z1, char ***Grid3D, vector<CELLV>* pTestedCells);
-    bool IsValidCell(int X, int Y, int Z);
-    bool IsWithinMapCell(int X, int Y, int Z);
-    bool AreEquivalent(int State1ID, int State2ID);
     void UpdateEnvironment();
+    void AddObstacleToGrid(double* obstacle, int type, char*** grid, double gridcell_m);
+    double distanceBetween3DLineSegments(const short unsigned int l1a[],const short unsigned int l1b[],
+					 const short unsigned int l2a[],const short unsigned int l2b[]);
 
-    //cost functions
+    /** planning */
+    void GetJointSpaceSuccs(int SourceStateID, vector<int>* SuccIDV, vector<int>* CostV);
+    bool isGoalPosition(const short unsigned int endeff[3], const double orientation[3][3], const GoalPos &goal, const double &axis_angle);
+
+    /** costs */
     int cost(short unsigned int state1coord[], short unsigned int state2coord[]); 
     int cost(EnvROBARMHashEntry_t* HashEntry1, EnvROBARMHashEntry_t* HashEntry2, bool bState2IsGoal);
     int GetEdgeCost(int FromStateID, int ToStateID);
     void ComputeActionCosts();
     void ComputeCostPerCell();
-    double getAngularEuclDist(double rpy1[3], double rpy2[3]);
     void ComputeCostPerRadian();
 
-    //output
+    /** output */
     void PrintHeader(FILE* fOut);
+    void PrintHashTableHist();
     void PrintAbridgedConfiguration();
     void PrintConfiguration(FILE* fOut);
     void printangles(FILE* fOut, short unsigned int* coord, bool bGoal, bool bVerbose, bool bLocal);
@@ -429,7 +424,7 @@ private:
     void OutputActions(FILE* fOut);
     void PrintAnglesWithAction(FILE* fOut, EnvROBARMHashEntry_t* HashEntry, bool bGoal, bool bVerbose, bool bLocal);
 
-    //compute heuristic
+    /** heuristic */
     void getDistancetoGoal(int* HeurGrid, int goalx, int goaly, int goalz);
     void ComputeHeuristicValues();
     void ReInitializeState3D(State3D* state);
@@ -437,37 +432,25 @@ private:
     void Create3DStateSpace(State3D**** statespace3D);
     void Delete3DStateSpace(State3D**** statespace3D);
     int XYZTO3DIND(int x, int y, int z);
-//     void Search3DwithQueue(State3D*** statespace, int* HeurGrid, std::vector <std::vector<short unsigned int> >* EndEffGoals_c);
     void Search3DwithQueue(State3D*** statespace, int* HeurGrid, const vector< GoalPos> &Goals);
-//     void Search3DwithQueue(State3D*** statespace, int* HeurGrid, short unsigned  int searchstartx, short unsigned int searchstarty, short unsigned int searchstartz);
-//     void Search3DwithHeap(State3D*** statespace, int* HeurGrid, int searchstartx, int searchstarty, int searchstartz);
 
-    // distance functions
+    /** distance */
     int GetDistToClosestGoal(short unsigned int* xyz, int *goal_num);
     double GetDistToClosestGoal(double *xyz,int *goal_num);
-    void GetAxisAngle(double R1[3][3], double R2[3][3], double* angle);
+    double getAngularEuclDist(double rpy1[3], double rpy2[3]);
 
-    //forward kinematics
-    int ComputeEndEffectorPos(double angles[NUMOFLINKS], double endeff_m[3]);
-    int ComputeEndEffectorPos(double angles[NUMOFLINKS], short unsigned int endeff[3]);
-    int ComputeEndEffectorPos(double angles[NUMOFLINKS], short unsigned int endeff[3], short unsigned int wrist[3], short unsigned int elbow[3], double orientation[3][3]);
-    void ComputeDHTransformations();
-    void ComputeForwardKinematics_DH(double angles[NUMOFLINKS]);
+    /** angles */
+    void GetAxisAngle(double R1[3][3], double R2[3][3], double* angle);
     void RPY2Rot(double roll, double pitch, double yaw, double Rot[3][3]);
 
+    /** forward kinematics */
+    void ComputeDHTransformations();
     bool InitKDLChain(const char *fKDL);
-    void ComputeForwardKinematics_ROS(double *angles, int f_num, double *x, double *y, double *z);
-
-    /* JOINT SPACE PLANNING */
-    void GetJointSpaceSuccs(int SourceStateID, vector<int>* SuccIDV, vector<int>* CostV);
-
-    // void CheckParamServer();
-    void ParseYAMLFile(const char* sParamFile);
-
-    bool isGoalPosition(const short unsigned int endeff[3], const double orientation[3][3], const GoalPos &goal, const double &axis_angle);
-
-    double distanceBetween3DLineSegments(const short unsigned int l1a[],const short unsigned int l1b[],
-					 const short unsigned int l2a[],const short unsigned int l2b[]);
+    int ComputeEndEffectorPos(const double angles[], double endeff_m[3]);
+    int ComputeEndEffectorPos(const double angles[], short unsigned int endeff[3]);
+    int ComputeEndEffectorPos(const double angles[], short unsigned int endeff[3], short unsigned int wrist[3], short unsigned int elbow[3], double orientation[3][3]);
+    void ComputeForwardKinematics_DH(const double angles[]);
+    void ComputeForwardKinematics_ROS(const double angles[], int f_num, double *x, double *y, double *z);
 };
 
 #endif
