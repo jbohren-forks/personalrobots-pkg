@@ -49,7 +49,7 @@
 #include <tf/transform_datatypes.h>
 #include <tf/transform_listener.h>
 
-#include <robot_msgs/PolygonalMap.h>
+#include <mapping_msgs/PolygonalMap.h>
 #include <sensor_msgs/StereoInfo.h>
 
 #include <annotated_map_msgs/TaggedPolygonalMap.h>
@@ -84,20 +84,20 @@ public:
   if (fixed_frame_ == "ERROR_NO_NAME")
     ROS_ERROR("Need to set parameter fixed_frame") ;
 
-    sub_=node_handle_.subscribe<robot_msgs::PolygonalMap>("planar_map", 100, &EmptyAnnotatedMap::handleUnlabeledMap, this);
+    sub_=node_handle_.subscribe<mapping_msgs::PolygonalMap>("planar_map", 100, &EmptyAnnotatedMap::handleUnlabeledMap, this);
 
     pub_=node_handle_.advertise<annotated_map_msgs::TaggedPolygonalMap>(out_topic_name_,1);
   };
 
 
-  void handleUnlabeledMap(const robot_msgs::PolygonalMapConstPtr& unlabeled_map)
+  void handleUnlabeledMap(const mapping_msgs::PolygonalMapConstPtr& unlabeled_map)
   {
 
     try
     {
       annotated_map_msgs::TaggedPolygonalMap polymapOut;
 
-      robot_msgs::PolygonalMap transformed_map_3D;
+      mapping_msgs::PolygonalMap transformed_map_3D;
       annotated_map_lib::transformAnyObject(fixed_frame_,tf_,*unlabeled_map,transformed_map_3D);
 
       unsigned int num_polygons = transformed_map_3D.get_polygons_size();

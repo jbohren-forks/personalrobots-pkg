@@ -49,7 +49,7 @@
 #include <tf/transform_datatypes.h>
 #include <tf/transform_listener.h>
 
-#include <robot_msgs/PolygonalMap.h>
+#include <mapping_msgs/PolygonalMap.h>
 #include <sensor_msgs/StereoInfo.h>
 #include <sensor_msgs/CamInfo.h>
 #include <annotated_map_msgs/TaggedPolygonalMap.h>
@@ -72,7 +72,7 @@ void projectAnyObject(const sensor_msgs::CamInfo& stereo_info_, const annotated_
 
 
 
-void projectPolygonalMap(const sensor_msgs::StereoInfo& stereo_info_, const robot_msgs::PolygonalMap& transformed_map_3D, robot_msgs::PolygonalMap &transformed_map_2D);
+void projectPolygonalMap(const sensor_msgs::StereoInfo& stereo_info_, const mapping_msgs::PolygonalMap& transformed_map_3D, mapping_msgs::PolygonalMap &transformed_map_2D);
 
 void projectPolygonPoints(double* projection,double img_w, double img_h, robot_msgs::Polygon3D polyIn,robot_msgs::Polygon3D& polyOut);
 void projectPolygonPointsNOP(double* projection,double img_w, double img_h, robot_msgs::Polygon3D polyIn,robot_msgs::Polygon3D& polyOut);

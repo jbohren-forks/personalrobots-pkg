@@ -45,8 +45,8 @@ using namespace annotated_map_lib;
 
 void annotated_map_lib::transformAnyObject(const std::string & target_frame, 
                                            const tf::Transform* net_transform, 
-                                           const robot_msgs::PolygonalMap & polymapIn, 
-                                           robot_msgs::PolygonalMap & polymapOut)
+                                           const mapping_msgs::PolygonalMap & polymapIn, 
+                                           mapping_msgs::PolygonalMap & polymapOut)
 {
   boost::numeric::ublas::matrix<double> transform = transformAsMatrix(*net_transform);
   

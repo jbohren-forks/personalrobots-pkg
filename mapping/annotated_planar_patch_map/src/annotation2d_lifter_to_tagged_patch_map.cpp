@@ -52,7 +52,7 @@
 #include <cv.h>
 
 
-#include <robot_msgs/PolygonalMap.h>
+#include <mapping_msgs/PolygonalMap.h>
 #include <sensor_msgs/StereoInfo.h>
 #include <sensor_msgs/CamInfo.h>
 
@@ -353,7 +353,7 @@ public:
 
 
 
-  void printPolygon3D(robot_msgs::PolygonalMap transformed_map,std::string tag)
+  void printPolygon3D(mapping_msgs::PolygonalMap transformed_map,std::string tag)
   {
 
     std::string fname=std::string("/u/sorokin/bags/run_may_21/dump/polygons3D__")+tag+std::string(".txt");

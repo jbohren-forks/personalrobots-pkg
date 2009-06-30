@@ -46,7 +46,7 @@
 // ROS messages
 #include <robot_msgs/PointCloud.h>
 #include <robot_msgs/Polygon3D.h>
-#include <robot_msgs/PolygonalMap.h>
+#include <mapping_msgs/PolygonalMap.h>
 #include <plugs_msgs/PlugStow.h>
 
 // Sample Consensus
@@ -81,6 +81,7 @@
 using namespace std;
 using namespace std_msgs;
 using namespace robot_msgs;
+using namespace mapping_msgs;
 
 // Comparison operator for a vector of vectors
 inline bool

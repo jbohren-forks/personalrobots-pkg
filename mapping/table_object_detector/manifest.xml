@@ -16,4 +16,5 @@
   <depend package="robot_srvs" />
   <depend package="tabletop_msgs" />
   <depend package="tabletop_srvs" />
+  <depend package="mapping_msgs" />
 </package>

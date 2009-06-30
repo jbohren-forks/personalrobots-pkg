@@ -46,7 +46,7 @@ histogram and matches it using HIK (the Histogram Intersection Kernel) to a "dat
 // ROS messages
 #include <robot_msgs/PointCloud.h>
 #include <robot_msgs/Polygon3D.h>
-#include <robot_msgs/PolygonalMap.h>
+#include <mapping_msgs/PolygonalMap.h>
 
 // Sample Consensus
 #include <point_cloud_mapping/sample_consensus/sac.h>
@@ -66,6 +66,7 @@ histogram and matches it using HIK (the Histogram Intersection Kernel) to a "dat
 
 using namespace std;
 using namespace robot_msgs;
+using namespace mapping_msgs;
 
 class ConvexPatchHistogram
 {

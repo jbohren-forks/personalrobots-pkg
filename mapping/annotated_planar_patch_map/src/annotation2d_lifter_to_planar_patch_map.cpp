@@ -52,7 +52,7 @@
 #include <cv.h>
 
 
-#include <robot_msgs/PolygonalMap.h>
+#include <mapping_msgs/PolygonalMap.h>
 #include <sensor_msgs/StereoInfo.h>
 
 #include <cv_mech_turk/ExternalAnnotation.h>
@@ -149,9 +149,9 @@ public:
   void liftAnnotation(cv_mech_turk::ExternalAnnotation annotation2d_object_,annotated_map_msgs::TaggedPolygonalMap& polymapOut)
   {
 
-    robot_msgs::PolygonalMap transformed_map_3D;
-    robot_msgs::PolygonalMap transformed_map_3D_fixed_frame;
-    robot_msgs::PolygonalMap transformed_map_2D;
+    mapping_msgs::PolygonalMap transformed_map_3D;
+    mapping_msgs::PolygonalMap transformed_map_3D_fixed_frame;
+    mapping_msgs::PolygonalMap transformed_map_2D;
 
     //Get the 3D map into the coordinate frame of the camera
     ROS_DEBUG("Transform 3D map to frame: %s",annotation2d_object_.reference_frame.c_str());
@@ -174,7 +174,7 @@ public:
   }
 
 
-  void bindAnnotationsToMap(cv_mech_turk::ExternalAnnotation annotation2d_object, robot_msgs::PolygonalMap transformed_map_3D, robot_msgs::PolygonalMap transformed_map_2D,annotated_map_msgs::TaggedPolygonalMap &polymapOut)
+  void bindAnnotationsToMap(cv_mech_turk::ExternalAnnotation annotation2d_object, mapping_msgs::PolygonalMap transformed_map_3D, mapping_msgs::PolygonalMap transformed_map_2D,annotated_map_msgs::TaggedPolygonalMap &polymapOut)
   {
 
     //CvMemStorage* storage = cvCreateMemStorage();
@@ -326,7 +326,7 @@ public:
 
 
 
-  void printPolygon3D(robot_msgs::PolygonalMap transformed_map,std::string tag)
+  void printPolygon3D(mapping_msgs::PolygonalMap transformed_map,std::string tag)
   {
 
     std::string fname=std::string("/u/sorokin/bags/run_may_21/dump/polygons3D__")+tag+std::string(".txt");
@@ -357,7 +357,7 @@ protected:
   tf::TransformListener *tf_;
 
   cv_mech_turk::ExternalAnnotation annotation2d_object_;
-  robot_msgs::PolygonalMap unlabeled_map_;
+  mapping_msgs::PolygonalMap unlabeled_map_;
   sensor_msgs::StereoInfo stereo_info_;
 
   std::string target_frame_;

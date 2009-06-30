@@ -48,7 +48,7 @@
 #include <cv.h>
 
 
-#include <robot_msgs/PolygonalMap.h>
+#include <mapping_msgs/PolygonalMap.h>
 #include <sensor_msgs/StereoInfo.h>
 
 #include <cv_mech_turk/ExternalAnnotation.h>

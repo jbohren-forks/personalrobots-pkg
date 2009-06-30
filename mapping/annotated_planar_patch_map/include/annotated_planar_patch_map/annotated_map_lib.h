@@ -49,7 +49,7 @@
 #include <tf/transform_datatypes.h>
 #include <tf/transform_listener.h>
 
-#include <robot_msgs/PolygonalMap.h>
+#include <mapping_msgs/PolygonalMap.h>
 #include <annotated_map_msgs/TaggedPolygonalMap.h>
 #include <annotated_map_msgs/TaggedPolygon3D.h>
 
@@ -63,8 +63,8 @@ namespace annotated_map_lib
 //This will generate compile time error if you got no implementation.
 void transformAnyObject(const std::string & target_frame, 
                         const tf::Transform* net_transform, 
-                        const robot_msgs::PolygonalMap & polymap_in, 
-                        robot_msgs::PolygonalMap & polymap_out);
+                        const mapping_msgs::PolygonalMap & polymap_in, 
+                        mapping_msgs::PolygonalMap & polymap_out);
 
 
 void transformAnyObject(const std::string & target_frame, 

@@ -52,7 +52,7 @@
 #include <cv.h>
 
 
-#include <robot_msgs/PolygonalMap.h>
+#include <mapping_msgs/PolygonalMap.h>
 #include <sensor_msgs/StereoInfo.h>
 #include <sensor_msgs/CamInfo.h>
 #include "tf/message_notifier.h"

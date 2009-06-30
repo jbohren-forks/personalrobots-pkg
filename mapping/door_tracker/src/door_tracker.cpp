@@ -48,7 +48,7 @@
 
 #include <robot_msgs/PointCloud.h>
 #include <robot_msgs/Polygon3D.h>
-#include <robot_msgs/PolygonalMap.h>
+#include <mapping_msgs/PolygonalMap.h>
 
 #include <robot_msgs/Point32.h>
 #include <door_msgs/Door.h>
@@ -89,6 +89,7 @@
 
 using namespace std;
 using namespace robot_msgs;
+using namespace mapping_msgs;
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Comparison operator for a vector of vectors
