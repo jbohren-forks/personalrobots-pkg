@@ -106,7 +106,7 @@ if __name__ == '__main__':
       pass
 
     def act(action, goal, timeout):
-      as,fb = switch_controllers.execute(switchlist, 4.0)
+      as,fb = action.execute(goal, timeout)
       if as == python_actions.SUCCESS:
         return fb
       elif as == python_actions.ABORTED:
@@ -120,9 +120,10 @@ if __name__ == '__main__':
       switchlist = pr2_robot_actions.msg.SwitchControllers()
       switchlist.stop_controllers = stp
       switchlist.start_controllers = strt
+      print "STOP", stp, "START", strt
       as,_ = switch_controllers.execute(switchlist, 4.0)
-      #if as != python_actions.SUCCESS:
-      #  sys.exit(-1);
+      if as != python_actions.SUCCESS:
+        sys.exit(-1);
 
     all_controllers = [
        "r_gripper_position_controller",
@@ -148,31 +149,35 @@ if __name__ == '__main__':
                "r_arm_cartesian_wrench_controller",
                ])
 
-    act(ask_for_pen, Empty(), 20.0)
+    stop_start([], ["head_controller"])
+    helper_head = act(find_helper, Empty(), 200.0)
 
-    sys.exit(0)
-
-    helper_p = act(find_helper, Empty(), 200.0)
-
-    print "===> Found person:", helper_p
+    print "===> Found person:", helper_head
     time.sleep(1)
 
+
+
+
+
+    stop_start([], ["laser_tilt_controller"])
     act(start_tilt_laser, Empty(), 20.0)
 
     print "===> Started laser"
     time.sleep(1)
 
-    track_helper_thread = threading.Thread(target = lambda: track_helper.execute(helper_p, 500.0))
+    track_helper_thread = threading.Thread(target = lambda: track_helper.execute(helper_head, 500.0))
     track_helper_thread.start()
 
     print "===> track_helper started"
     time.sleep(1)
 
-    act(move_base_local, helper_p, 500.0)
+    act(move_base_local, helper_head, 500.0)
 
     print "===> reached target point"
     track_helper.preempt()
-    track_helper_thread.join()
+#    track_helper_thread.join()
+
+    act(ask_for_pen, Empty(), 20.0)
 
     if 0:
       state, path = w.execute(pr2_robot_actions.msg.TextGoal("klak", robot_msgs.msg.Point(10,20,0), 30))

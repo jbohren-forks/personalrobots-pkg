@@ -76,6 +76,20 @@
     <param name="i_clamp" value="0.5" />
   </group>
 
-<node pkg="mechanism_control" type="spawner.py" args="--stopped $(find pr2_default_controllers)/r_arm_cartesian_wrench_controller.xml $(find pr2_default_controllers)/r_arm_cartesian_twist_controller.xml $(find pr2_default_controllers)/r_arm_cartesian_pose_controller.xml" output="screen" />
+
+<!-- Cartesian trajectory controller -->
+  <group ns="r_arm_cartesian_trajectory_controller" clear_params="true">
+    <param name="root_name" type="string" value="torso_lift_link" />
+    <param name="tip_name" type="string" value="r_gripper_tool_frame" />
+    <param name="output" type="string" value="r_arm_cartesian_pose_controller" />
+
+    <param name="max_vel_trans" value="0.15" />
+    <param name="max_vel_rot" value="0.3" />
+    <param name="max_acc_trans" value="0.4" />
+    <param name="max_acc_rot" value="0.6" />
+  </group>
+
+
+<node pkg="mechanism_control" type="spawner.py" args="--stopped $(find pr2_default_controllers)/r_arm_cartesian_wrench_controller.xml $(find pr2_default_controllers)/r_arm_cartesian_twist_controller.xml $(find pr2_default_controllers)/r_arm_cartesian_pose_controller.xml $(find pr2_default_controllers)/r_arm_cartesian_trajectory_controller.xml" output="screen" />
 
 </launch>
