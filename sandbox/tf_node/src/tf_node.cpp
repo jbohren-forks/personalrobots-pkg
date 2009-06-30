@@ -24,11 +24,14 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
+#include <map>
 
 #include "ros/ros.h"
+
 #include "tf/tf.h"
 #include "tf/exceptions.h"
 #include "tf/transform_listener.h"
+#include "tf/message_notifier.h"
 
 #include "tf/FrameGraph.h"
 
@@ -37,6 +40,9 @@
 #include "robot_msgs/PoseStamped.h"
 #include "robot_msgs/QuaternionStamped.h"
 #include "robot_msgs/Vector3Stamped.h"
+
+#include "tf_node/StartTransforming.h"
+#include "tf_node/StopTransforming.h"
 
 #include "tf_node/TransformPoint.h"
 #include "tf_node/TransformPointCloud.h"
@@ -48,6 +54,9 @@
 using namespace tf_node;
 
 tf::TransformListener *tl;
+tf::Transformer       *trf;
+ros::NodeHandle       *nh;
+
 
 bool getFramesCallback(tf::FrameGraph::Request &req, 
 		       tf::FrameGraph::Response &res) {
@@ -129,24 +138,147 @@ bool transformVectorCallback(TransformVector::Request &req,
   return true;
 }
 
+
+//template<class MessageT>
+//void doTransform(const std::string &target_frame, MessageT &in, MessageT &out);
+
+void doTransform(const std::string &target_frame, const robot_msgs::PointStamped &in, robot_msgs::PointStamped &out) {
+  tl->transformPoint(target_frame, in, out);
+}
+
+void doTransform(const std::string &target_frame, const robot_msgs::PointCloud &in, robot_msgs::PointCloud &out) {
+  tl->transformPointCloud(target_frame, in, out);
+}
+
+void doTransform(const std::string &target_frame, const robot_msgs::PoseStamped &in, robot_msgs::PoseStamped &out) {
+  tl->transformPose(target_frame, in, out);
+}
+
+void doTransform(const std::string &target_frame, const robot_msgs::QuaternionStamped &in, robot_msgs::QuaternionStamped &out) {
+  tl->transformQuaternion(target_frame, in, out);
+}
+
+void doTransform(const std::string &target_frame, const robot_msgs::Vector3Stamped &in, robot_msgs::Vector3Stamped &out) {
+  tl->transformVector(target_frame, in, out);
+}
+
+
+class GenericTopicTransformer {
+public:
+  GenericTopicTransformer() {}
+  virtual ~GenericTopicTransformer() {}
+};
+
+template<class MessageT>
+class TopicTransformer : public GenericTopicTransformer {
+public:
+  TopicTransformer(const std::string &in_topic, 
+		   const std::string &out_topic,  
+		   const std::string &target_frame,
+		   uint32_t queue_size) 
+    : _target_frame(target_frame),
+      _pub      (nh->advertise<MessageT>(out_topic, queue_size)),
+      _notifier (*trf, boost::bind(&TopicTransformer<MessageT>::callback, this, _1), 
+		 in_topic, target_frame, queue_size),
+      _out      ()
+  {
+    //    ros::Duration d(1,0);
+    //_notifier.setTolerance(d);
+  }
+
+private:
+  void callback(const boost::shared_ptr<const MessageT> message) {
+    ROS_INFO("callback");
+      try {
+         doTransform(_target_frame, *message, _out);
+	 _pub.publish(_out);
+      } catch (tf::TransformException &e) {
+         ROS_ERROR(e.what());
+      }
+  }
+
+  const std::string _target_frame;
+  ros::Publisher _pub;
+  tf::MessageNotifier<MessageT> _notifier;
+  MessageT _out;
+  
+};
+
+std::map<std::string, boost::shared_ptr<GenericTopicTransformer> > transformers;
+
+
+void startTransformingCallback(const boost::shared_ptr<StartTransforming const> &msg) {
+  if (transformers.find(msg->out_topic) != transformers.end()) {
+    ROS_ERROR((msg->out_topic + " is already being published.").c_str());
+    return;
+  }
+  switch (msg->type) {
+
+  case StartTransforming::point:
+    transformers[msg->out_topic] = boost::shared_ptr<GenericTopicTransformer>(new TopicTransformer<robot_msgs::PointStamped>(msg->in_topic, msg->out_topic, msg->target_frame, msg->queue_size));
+    break;
+
+  case StartTransforming::point_cloud:
+    transformers[msg->out_topic] = boost::shared_ptr<GenericTopicTransformer>(new TopicTransformer<robot_msgs::PointCloud>(msg->in_topic, msg->out_topic, msg->target_frame, msg->queue_size));   
+    break;
+
+  case StartTransforming::pose:
+    transformers[msg->out_topic] = boost::shared_ptr<GenericTopicTransformer>(new TopicTransformer<robot_msgs::PoseStamped>(msg->in_topic, msg->out_topic, msg->target_frame, msg->queue_size));
+    break;
+
+  case StartTransforming::vector:
+    transformers[msg->out_topic] = boost::shared_ptr<GenericTopicTransformer>(new TopicTransformer<robot_msgs::Vector3Stamped>(msg->in_topic, msg->out_topic, msg->target_frame, msg->queue_size));	    
+    break;
+
+  case StartTransforming::quaternion:
+    transformers[msg->out_topic] = boost::shared_ptr<GenericTopicTransformer>(new TopicTransformer<robot_msgs::QuaternionStamped>(msg->in_topic, msg->out_topic, msg->target_frame, msg->queue_size));
+    break;
+
+  default:
+    ROS_ERROR("Unknown message type");
+    return;
+  }
+  ROS_INFO((msg->in_topic + " will now be transformed into " + msg->out_topic).c_str());
+}
+
+void stopTransformingCallback(const boost::shared_ptr<StopTransforming const> &msg) {
+  int n_removed = transformers.erase(msg->out_topic);
+  if (n_removed == 0) {
+    ROS_ERROR((msg->out_topic + " is not a currently published transformer.").c_str());
+  } else {
+    ROS_INFO((msg->out_topic + " will no longer be published.").c_str());
+  }
+}
+
+
+
+
 int main(int argc, char **argv)
 {
   ros::init(argc, argv, "tf_node");
 
-  ros::NodeHandle n;
+  nh = new ros::NodeHandle();
 
   // Use default arguments
-  tl = new tf::TransformListener(); //*(n.getNode()));
+  tl = new tf::TransformListener();
+  trf = new tf::Transformer();
 
-  ros::ServiceServer f  = n.advertiseService("get_tf_frames",         &getFramesCallback);
-  ros::ServiceServer p  = n.advertiseService("transform_point",       &transformPointCallback);
-  ros::ServiceServer pc = n.advertiseService("transform_point_cloud", &transformPointCloudCallback);
-  ros::ServiceServer ps = n.advertiseService("transform_pose",        &transformPoseCallback);
-  ros::ServiceServer q  = n.advertiseService("transform_quaternion",  &transformQuaternionCallback);
-  ros::ServiceServer v  = n.advertiseService("transform_vector",      &transformVectorCallback);
+  ros::ServiceServer f  = nh->advertiseService("get_tf_frames",         &getFramesCallback);
+  ros::ServiceServer p  = nh->advertiseService("transform_point",       &transformPointCallback);
+  ros::ServiceServer pc = nh->advertiseService("transform_point_cloud", &transformPointCloudCallback);
+  ros::ServiceServer ps = nh->advertiseService("transform_pose",        &transformPoseCallback);
+  ros::ServiceServer q  = nh->advertiseService("transform_quaternion",  &transformQuaternionCallback);
+  ros::ServiceServer v  = nh->advertiseService("transform_vector",      &transformVectorCallback);
 
+  // These don't seem to be working right now ...
+  ros::Subscriber startTransformer = nh->subscribe("start_transforming", 20, &startTransformingCallback);
+  ros::Subscriber stopTransforming = nh->subscribe("stop_transforming", 20,  &stopTransformingCallback);
 
   ros::spin();
+
+  delete nh;
+  delete tl;
+  delete trf;
 
   return 0;
 }
