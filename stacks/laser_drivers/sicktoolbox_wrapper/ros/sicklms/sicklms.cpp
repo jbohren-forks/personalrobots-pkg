@@ -32,7 +32,7 @@
 #include <csignal>
 #include <sicklms-1.0/SickLMS.hh>
 #include "ros/ros.h"
-#include "laser_scan/LaserScan.h"
+#include "sensor_msgs/LaserScan.h"
 using namespace SickToolbox;
 using namespace std;
 
@@ -41,7 +41,7 @@ void publish_scan(ros::Publisher *pub, uint32_t *values, uint32_t num_values,
 {
   static int scan_count = 0;
   static double last_print_time = 0;
-  laser_scan::LaserScan scan_msg;
+  sensor_msgs::LaserScan scan_msg;
   scan_msg.header.frame_id = "base_laser";
   scan_count++;
   ros::Time t = start;
@@ -88,7 +88,7 @@ int main(int argc, char **argv)
   bool inverted;
 
   ros::NodeHandle nh;
-  ros::Publisher scan_pub = nh.advertise<laser_scan::LaserScan>("scan", 1);
+  ros::Publisher scan_pub = nh.advertise<sensor_msgs::LaserScan>("scan", 1);
   nh.param("sicklms/port", port, string("/dev/ttyUSB0"));
   nh.param("sicklms/baud", baud, 500000);
   nh.param("sicklms/inverted", inverted, true);
