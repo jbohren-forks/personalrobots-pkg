@@ -46,7 +46,7 @@
 #include <ethercat_hardware/ethercat_hardware.h>
 #include <urdf/parser.h>
 
-#include <ros/node.h>
+#include <ros/ros.h>
 #include <std_srvs/Empty.h>
 #include <pr2_etherCAT/RealtimeStats.h>
 
@@ -69,6 +69,8 @@ static struct
   bool motor_model_;
   bool stats;
 } g_options;
+
+std::string g_robot_desc;
 
 void Usage(string msg = "")
 {
@@ -126,6 +128,15 @@ static void publishDiagnostics(realtime_tools::RealtimePublisher<diagnostic_msgs
     g_stats.ec_acc = zero;
     g_stats.mc_acc = zero;
 
+    static bool first = true;
+    if (first)
+    {
+      first = false;
+      s.label = "Robot Description";
+      s.value = g_robot_desc;
+      strings.push_back(s);
+    }
+
 #define ADD_STRING_FMT(lab, fmt, ...) \
   s.label = (lab); \
   { char buf[1024]; \
@@ -169,6 +180,7 @@ static inline double now()
 
 void *controlLoop(void *)
 {
+  ros::NodeHandle node;
   realtime_tools::RealtimePublisher<diagnostic_msgs::DiagnosticMessage> publisher("/diagnostics", 2);
   realtime_tools::RealtimePublisher<pr2_etherCAT::RealtimeStats> *rtpublisher = 0;
   accumulator_set<double, stats<tag::max, tag::mean> > acc;
@@ -177,9 +189,6 @@ void *controlLoop(void *)
   {
     rtpublisher = new realtime_tools::RealtimePublisher<pr2_etherCAT::RealtimeStats> ("/realtime", 2);
   }
-
-  // Publish one-time before entering real-time to pre-allocate message vectors
-  publishDiagnostics(publisher);
 
   // Initialize the hardware interface
   EthercatHardware ec;
@@ -199,14 +208,12 @@ void *controlLoop(void *)
   else
   {
     ROS_INFO("Xml file not found, reading from parameter server\n");
-    assert(ros::Node::instance());
-    std::string result;
-    if (ros::Node::instance()->getParam(g_options.xml_, result))
-      xml.Parse(result.c_str());
+    if (node.getParam(g_options.xml_, g_robot_desc))
+      xml.Parse(g_robot_desc.c_str());
     else
     {
       ROS_FATAL("Could not load the xml from parameter server: %s\n", g_options.xml_);
-      exit(1);
+      return (void *)-1;
     }
   }
   TiXmlElement *root_element = xml.RootElement();
@@ -214,7 +221,7 @@ void *controlLoop(void *)
   if (!root || !root_element)
   {
       ROS_FATAL("Could not parse the xml from %s\n", g_options.xml_);
-      exit(1);
+      return (void *)-1;
   }
   urdf::normalizeXml(root_element);
 
@@ -223,6 +230,9 @@ void *controlLoop(void *)
 
   // Initialize mechanism control from robot description
   mcn.initXml(root);
+
+  // Publish one-time before entering real-time to pre-allocate message vectors
+  publishDiagnostics(publisher);
 
   // Set to realtime scheduler for this thread
   struct sched_param thread_param;
@@ -459,7 +469,7 @@ int main(int argc, char *argv[])
   if (setupPidFile() < 0) return -1;
 
   // Initialize ROS and parse command-line arguments
-  ros::init(argc, argv);
+  ros::init(argc, argv, "pr2_etherCAT");
 
   // Parse options
   g_options.program_ = argv[0];
@@ -516,8 +526,7 @@ int main(int argc, char *argv[])
   if (!g_options.xml_)
     Usage("You must specify a robot description XML file");
 
-  ros::Node *node = new ros::Node("pr2_etherCAT",
-                                  ros::Node::DONT_HANDLE_SIGINT);
+  ros::NodeHandle node;
 
   // Catch attempts to quit
   signal(SIGTERM, quitRequested);
@@ -527,9 +536,9 @@ int main(int argc, char *argv[])
   // Catch if we fall back to secondary mode
   signal(SIGXCPU, warnOnSecondary);
 
-  node->advertiseService("shutdown", shutdownService);
-  node->advertiseService("reset_motors", resetMotorsService);
-  node->advertiseService("halt_motors", haltMotorsService);
+  node.advertiseService("shutdown", shutdownService);
+  node.advertiseService("reset_motors", resetMotorsService);
+  node.advertiseService("halt_motors", haltMotorsService);
 
   //Start thread
   int rv;
@@ -539,12 +548,10 @@ int main(int argc, char *argv[])
     ROS_BREAK();
   }
 
-  pthread_join(controlThread, 0);
+  pthread_join(controlThread, (void **)&rv);
 
   // Cleanup pid file
   cleanupPidFile();
 
-  delete node;
-
-  return 0;
+  return rv;
 }
