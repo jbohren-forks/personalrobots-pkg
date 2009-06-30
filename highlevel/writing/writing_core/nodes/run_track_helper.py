@@ -48,7 +48,7 @@ import pr2_robot_actions.msg
 import robot_msgs
 import python_actions
 
-class FindHelperAction(python_actions.Action):
+class TrackHelperAction(python_actions.Action):
 
   def __init__(self, *args):
     python_actions.Action.__init__(self, args[0], args[1], args[2], args[3])
@@ -73,6 +73,7 @@ class FindHelperAction(python_actions.Action):
     while not self.isPreemptRequested():
       time.sleep(0.1)
       
+     # print htp.header.frame_id, htp.point.x, htp.point.y, htp.point.z
       htp.header.stamp = rospy.get_rostime()
       self.head_controller_publisher.publish(htp)
       
@@ -80,8 +81,6 @@ class FindHelperAction(python_actions.Action):
 
     rospy.logdebug("%s: preempted.", self.name)    
     return python_actions.PREEMPTED
-        
-        
 
 #sys.exit()
 

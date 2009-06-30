@@ -45,12 +45,14 @@ import math
 from std_msgs.msg import Empty
 
 from robot_actions.msg import NoArgumentsActionState
+import robot_actions.msg
+import std_msgs.msg
 import pr2_robot_actions.msg
-import robot_msgs
-import robot_srvs
+import robot_msgs.msg
+import robot_srvs.srv
 import python_actions
 
-class FindHelperAction(python_actions.Action):
+class AskForPenAction(python_actions.Action):
 
   def __init__(self, *args):
     python_actions.Action.__init__(self, args[0], args[1], args[2], args[3])
@@ -76,9 +78,9 @@ class FindHelperAction(python_actions.Action):
     rospy.logdebug("%s: executing.", self.name)
 
     #open the gripper 
-    self.gripper_controller_publisher(std_msgs.msg.Float64(0.35))
+    self.gripper_controller_publisher.publish(std_msgs.msg.Float64(0.0))
 
-    mtp = robot_srvs.srv.MoveToPoseRequest()
+    mtp = robot_msgs.msg.PoseStamped()
     mtp.header.stamp = rospy.get_rostime()
     mtp.header.frame_id = "torso_lift_link"
     mtp.pose.position.x =0.56
@@ -88,23 +90,32 @@ class FindHelperAction(python_actions.Action):
     mtp.pose.orientation.y =0.181
     mtp.pose.orientation.z =0.412
     mtp.pose.orientation.w =-0.029
-
+    twist = robot_msgs.msg.Twist()
     #move the arm 
     try:
       move_arm = rospy.ServiceProxy(self.arm_controller + "/move_to", robot_srvs.srv.MoveToPose)
-      resp = move_arm(mtp)
+      resp = move_arm(mtp,twist)
+      print resp
     except rospy.ServiceException, e:
       rospy.logerr("%s: failed to call move to service call.", self.name)  
       rospy.logdebug("%s: aborted.", self.name) 
       return python_actions.ABORTED  
-    
+    if 0:
     #ask for the pen by opening and closing the gripper
-    for d in [0.4,0.35,0.4]:
-      self.gripper_controller_publisher(std_msgs.msg.Float64(d))
-      time.sleep(0.5)
-      if self.isPreemptRequested():
-        rospy.logdebug("%s: preempted.", self.name)
-        return python_actions.PREEMPTED
+      for d in [0.4,0.2,0.4]:
+        for i in range(10):
+          self.gripper_controller_publisher.publish(std_msgs.msg.Float64(d))
+        time.sleep(2.0)
+        if self.isPreemptRequested():
+          rospy.logdebug("%s: preempted.", self.name)
+          return python_actions.PREEMPTED
+
+    styarted = time.time():w
+
+    while (time.time() - started) < 3.0:
+      d = 0.04 + math.sin(time.time()*3)*0.02
+      time.sleep(0.02)
+      self.gripper_controller_publisher.publish(std_msgs.msg.Float64(d))
 
     rospy.logdebug("%s: succeeded.", self.name)   
     return python_actions.SUCCESS
@@ -118,7 +129,7 @@ if __name__ == '__main__':
   try:
 
     rospy.init_node("ask_for_pen")
-    w = TrackHelperAction("ask_for_pen", Empty, robot_actions.msg.NoArgumentsActionState, Empty)
+    w = AskForPenAction("ask_for_pen", Empty, robot_actions.msg.NoArgumentsActionState, Empty)
     w.run()
     rospy.spin();
 

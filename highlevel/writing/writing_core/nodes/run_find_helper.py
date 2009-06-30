@@ -97,18 +97,28 @@ class FindHelperAction(python_actions.Action, TransformListener):
           return python_actions.PREEMPTED
         self.update()
         if self.found:
-          self.feedback.header = self.found.header
-          self.feedback.pose.position = self.found.pos
-          self.feedback.pose.position.z -= 1.0
-          self.feedback.pose.orientation.x = 0.5
-          self.feedback.pose.orientation.y = -0.5
-          self.feedback.pose.orientation.z = 0.5
-          self.feedback.pose.orientation.w = 0.5
+          ps0 = robot_msgs.msg.PoseStamped()
+          ps0.header = self.found.header
+          ps0.pose.position = self.found.pos
+          ps0.pose.orientation.x = 0.5
+          ps0.pose.orientation.y = -0.5
+          ps0.pose.orientation.z = 0.5
+          ps0.pose.orientation.w = 0.5
 
-          btpose=tf.pose_stamped_msg_to_bt(self.feedback)
-          btpose = self.transform_pose("odom_combined", btpose)
-          self.feedback = tf.pose_stamped_bt_to_msg(btpose)
-          #self.feedback.pose.position.z=0
+          ps1 = robot_msgs.msg.PoseStamped()
+          ps1.header = self.found.header
+          ps1.pose.position = self.found.pos
+          ps1.pose.position.z -= 1.0
+          ps1.pose.orientation.x = 0.5
+          ps1.pose.orientation.y = -0.5
+          ps1.pose.orientation.z = 0.5
+          ps1.pose.orientation.w = 0.5
+
+          ps0 = tf.pose_stamped_bt_to_msg(self.transform_pose("odom_combined", tf.pose_stamped_msg_to_bt(ps0)))
+          ps1 = tf.pose_stamped_bt_to_msg(self.transform_pose("odom_combined", tf.pose_stamped_msg_to_bt(ps1)))
+
+          self.feedback = ps1
+
           rospy.logdebug("%s: succeeded.", self.name)
           return python_actions.SUCCESS
 
