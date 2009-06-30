@@ -38,7 +38,6 @@ import sys
 
 import roslib
 roslib.load_manifest('robot_mechanism_controllers')
-roslib.load_manifest('mechanism_control')
 import rospy
 from std_msgs.msg import *
 from mechanism_control import mechanism
@@ -69,12 +68,12 @@ def main():
     spawn_controller = rospy.ServiceProxy('spawn_controller', SpawnController)
     kill_controller = rospy.ServiceProxy('kill_controller', KillController)
 
-    resp = spawn_controller(xml_for(joint, p, i, d, iClamp))
+    resp = spawn_controller(xml_for(joint, p, i, d, iClamp), 1)
     if len(resp.ok) < 1 or not resp.ok[0]:
         print "Failed to spawn position controller"
         sys.exit(1)
 
-    pub = rospy.Publisher("/%s/set_command" % CONTROLLER_NAME, Float64)
+    pub = rospy.Publisher("%s/set_command" % CONTROLLER_NAME, Float64)
 
     try:
         print "Enter positions:"
