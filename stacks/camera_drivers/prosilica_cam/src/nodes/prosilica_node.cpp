@@ -39,8 +39,10 @@
 #include <sensor_msgs/CamInfo.h>
 #include <sensor_msgs/FillImage.h>
 #include <opencv_latest/CvBridge.h>
+#include <camera_calibration/pinhole.h>
+#include <image_publisher/image_publisher.h>
 #include <diagnostic_updater/diagnostic_updater.h>
-#include "diagnostic_msgs/DiagnosticStatus.h"
+#include <diagnostic_msgs/DiagnosticStatus.h>
 
 #include <cv.h>
 #include <cvwimage.h>
@@ -75,11 +77,9 @@ private:
   std::string frame_id_;
   
   // Calibration data
-  double D_[5], K_[9], R_[9], P_[12];
-  CvMat Dmat_, Kmat_, Rmat_, Pmat_;
-  cv::WImageBuffer1_f undistortX_, undistortY_;
-  cv::WImageBuffer1_f roiUndistortX_, roiUndistortY_;
-  unsigned int region_x_, region_y_;
+  camera_calibration::PinholeCameraModel model_;
+  //camera_calibration::PinholeCameraModel roi_model_;
+  //unsigned int region_x_, region_y_;
   bool calibrated_;
 
   // Diagnostics
@@ -602,7 +602,8 @@ private:
     return true;
   }
 
-  bool rectifyFrame(tPvFrame* frame, sensor_msgs::Image &img, sensor_msgs::Image &rect_img)
+  bool rectifyFrame(tPvFrame* frame, sensor_msgs::Image &img, sensor_msgs::Image &rect_img,
+                    sensor_msgs::CamInfo &cam_info)
   {
     // Currently assume BGR format so bridge.toIpl() image points to msg data buffer
     if (img.encoding != "bgr") {
@@ -617,41 +618,24 @@ private:
       ROS_WARN("Couldn't rectify frame, failed to convert");
       return false;
     }
-    IplImage *xMap = NULL, *yMap = NULL;
+    IplImage* raw = img_bridge_.toIpl();
+    IplImage* rect = rect_img_bridge_.toIpl();
 
-    // If whole frame captured, use the full undistort maps
-    if (frame->Width  == (unsigned long)undistortX_.Width() &&
-        frame->Height == (unsigned long)undistortX_.Height()) {
+    // Undistort using full frame model or ROI model
+    if (frame->Width  == (unsigned long)model_.width() &&
+        frame->Height == (unsigned long)model_.height()) {
       assert(frame->RegionX == 0 && frame->RegionY == 0);
-      xMap = undistortX_.Ipl();
-      yMap = undistortY_.Ipl();
+      
+      model_.undistort(raw, rect);
+      model_.fillCamInfo(cam_info);
     }
-    // Try to reuse cached ROI undistort maps
-    else if (!roiUndistortX_.IsNull() && !roiUndistortY_.IsNull() &&
-             frame->Width  == (unsigned long)roiUndistortX_.Width() &&
-             frame->Height == (unsigned long)roiUndistortX_.Height() &&
-             frame->RegionX == region_x_ && frame->RegionY == region_y_) {
-      xMap = roiUndistortX_.Ipl();
-      yMap = roiUndistortY_.Ipl();
-    }
-    // Compute new ROI undistort maps
     else {
-      region_x_ = frame->RegionX;
-      region_y_ = frame->RegionY;
-      roiUndistortX_.Allocate(frame->Width, frame->Height);
-      cvSubS(undistortX_.View(region_x_, region_y_, frame->Width, frame->Height).Ipl(),
-             cvScalar(region_x_), roiUndistortX_.Ipl());
-      roiUndistortY_.Allocate(frame->Width, frame->Height);
-      cvSubS(undistortY_.View(region_x_, region_y_, frame->Width, frame->Height).Ipl(),
-             cvScalar(region_y_), roiUndistortY_.Ipl());
-
-      xMap = roiUndistortX_.Ipl();
-      yMap = roiUndistortY_.Ipl();
+      camera_calibration::PinholeCameraModel roi_model =
+        model_.withRoi(frame->RegionX, frame->RegionY, frame->Width, frame->Height);
+      roi_model.undistort(raw, rect);
+      roi_model.fillCamInfo(cam_info);
     }
 
-    // Rectify image
-    cvRemap( img_bridge_.toIpl(), rect_img_bridge_.toIpl(),
-             xMap, yMap, CV_INTER_LINEAR | CV_WARP_FILL_OUTLIERS );
     return true;
   }
   
@@ -667,29 +651,13 @@ private:
     img.header.frame_id = frame_id_;
     
     if (calibrated_) {
-      if (!rectifyFrame(frame, img, rect_img))
+      if (!rectifyFrame(frame, img, rect_img, cam_info))
         return false;
 
       rect_img.header.stamp = time;
       rect_img.header.frame_id = frame_id_;
       cam_info.header.stamp = time;
       cam_info.header.frame_id = frame_id_;
-      
-      // Camera info (uses full-frame width/height)
-      cam_info.width = undistortY_.Width();
-      cam_info.height = undistortX_.Height();
-
-      memcpy((char*)(&cam_info.D[0]), (char*)D_, sizeof(D_));
-      memcpy((char*)(&cam_info.K[0]), (char*)K_, sizeof(K_));
-      memcpy((char*)(&cam_info.R[0]), (char*)R_, sizeof(R_));
-      memcpy((char*)(&cam_info.P[0]), (char*)P_, sizeof(P_));
-
-      // If using ROI, need to translate principal point
-      if (frame->RegionX != 0 || frame->RegionY != 0) {
-        cam_info.K[2] -= frame->RegionX; //cx
-        cam_info.K[5] -= frame->RegionY; //cy
-        // TODO: cam_info.R, cam_info.P
-      }
     }
 
     count_++;
@@ -731,75 +699,12 @@ private:
 
   void loadIntrinsics()
   {
-    calibrated_ = false;
-    
     // Retrieve contents of user memory
     std::string buffer(prosilica::Camera::USER_MEMORY_SIZE, '\0');
     cam_->readUserMemory(&buffer[0], prosilica::Camera::USER_MEMORY_SIZE);
 
-    // Separate into lines
-    typedef boost::tokenizer<boost::char_separator<char> > Tok;
-    boost::char_separator<char> sep("\n");
-    Tok tok(buffer, sep);
-
-    // Check "header"
-    Tok::iterator iter = tok.begin();
-    if (*iter++ != "# Prosilica camera intrinsics")
-      return;
-
-    // Read calibration matrices
-    int width = 0, height = 0;
-    int items_read = 0;
-    static const int EXPECTED_ITEMS = 9 + 5 + 9 + 12;
-    for (Tok::iterator ie = tok.end(); iter != ie; ++iter) {
-      if (*iter == "width") {
-        ++iter;
-        width = atoi(iter->c_str());
-      }
-      else if (*iter == "height") {
-        ++iter;
-        height = atoi(iter->c_str());
-      }
-      else if (*iter == "camera matrix")
-        for (int i = 0; i < 3; ++i) {
-          ++iter;
-          items_read += sscanf(iter->c_str(), "%lf %lf %lf",
-                               &K_[3*i], &K_[3*i+1], &K_[3*i+2]);
-        }
-      else if (*iter == "distortion") {
-        ++iter;
-        items_read += sscanf(iter->c_str(), "%lf %lf %lf %lf %lf",
-                             D_, D_+1, D_+2, D_+3, D_+4);
-      }
-      else if (*iter == "rectification")
-        for (int i = 0; i < 3; ++i) {
-          ++iter;
-          items_read += sscanf(iter->c_str(), "%lf %lf %lf",
-                               &R_[3*i], &R_[3*i+1], &R_[3*i+2]);
-        }
-      else if (*iter == "projection")
-        for (int i = 0; i < 3; ++i) {
-          ++iter;
-          items_read += sscanf(iter->c_str(), "%lf %lf %lf %lf",
-                               &P_[4*i], &P_[4*i+1], &P_[4*i+2], &P_[4*i+3]);
-        }
-    }
-
-    // Check we got everything
-    if (items_read != EXPECTED_ITEMS || width == 0 || height == 0)
-      return;
-
-    // Set up OpenCV structures
-    cvInitMatHeader(&Kmat_, 3, 3, CV_64FC1, K_);
-    cvInitMatHeader(&Dmat_, 1, 5, CV_64FC1, D_);
-    cvInitMatHeader(&Rmat_, 3, 3, CV_64FC1, R_);
-    cvInitMatHeader(&Pmat_, 3, 4, CV_64FC1, P_);
-
-    undistortX_.Allocate(width, height);
-    undistortY_.Allocate(width, height);
-    cvInitUndistortMap( &Kmat_, &Dmat_, undistortX_.Ipl(), undistortY_.Ipl() );
-
-    calibrated_ = true;
+    // Parse calibration file
+    calibrated_ = model_.parse(buffer);
   }
 
   void normalizeCallback(tPvFrame* frame)
