@@ -53,18 +53,17 @@ static const double scan_speed  = 0.1; // [m/sec]
 static const double scan_height = 0.4; //[m]
 static const unsigned int max_retries = 5;
 
-DetectHandleNoCameraAction::DetectHandleNoCameraAction(Node& node, tf::TransformListener& tf): 
+DetectHandleNoCameraAction::DetectHandleNoCameraAction(tf::TransformListener& tf): 
   robot_actions::Action<door_msgs::Door, door_msgs::Door>("detect_handle_no_camera"),
-  node_(node),
   tf_(tf)
 {
-  node_.advertise<robot_msgs::PointStamped>("head_controller/head_track_point",10);
+  NodeHandle node;
+  pub_ = node.advertise<robot_msgs::PointStamped>("head_controller/head_track_point",10);
 };
 
 
 DetectHandleNoCameraAction::~DetectHandleNoCameraAction()
 {
-  node_.unadvertise("head_controller/head_track_point");
 };
 
 
@@ -241,7 +240,7 @@ bool DetectHandleNoCameraAction::cameraDetection(const door_msgs::Door& door_in,
        << door_pnt.point.x << " " 
        << door_pnt.point.y << " " 
        <<  door_pnt.point.z << endl;
-  node_.publish("head_controller/head_track_point", door_pnt);
+  pub_.publish(door_pnt);
   ros::Duration().fromSec(2).sleep();
 
   // detect handle

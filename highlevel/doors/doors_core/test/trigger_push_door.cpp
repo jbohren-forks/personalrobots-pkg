@@ -54,10 +54,9 @@ using namespace door_handle_detector;
 int
   main (int argc, char **argv)
 {
-  ros::init(argc, argv);
+  ros::init(argc, argv, "trigger_push_door");
 
-  ros::Node node("name");
-  tf::TransformListener tf(node);
+  tf::TransformListener tf;
 
   door_msgs::Door door;
   door.frame_p1.x = 1.0;
@@ -75,7 +74,7 @@ int
   door.hinge = door_msgs::Door::HINGE_P2;
   door.header.frame_id = "odom_combined";
 
-  door_handle_detector::PushDoorAction push_door(node, tf);
+  door_handle_detector::PushDoorAction push_door(tf);
   robot_actions::ActionRunner runner(10.0);
   runner.connect<door_msgs::Door, pr2_robot_actions::DoorActionState, door_msgs::Door>(push_door);
   runner.run();

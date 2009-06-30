@@ -54,21 +54,24 @@
 
 namespace door_handle_detector{
 
+typedef boost::shared_ptr<robot_msgs::PoseStamped const> PoseConstPtr;
+
 class ReleaseHandleAction: public robot_actions::Action<door_msgs::Door, door_msgs::Door>
 {
 public:
-  ReleaseHandleAction(ros::Node& node, tf::TransformListener& tf);
+  ReleaseHandleAction(tf::TransformListener& tf);
   ~ReleaseHandleAction();
 
   virtual robot_actions::ResultStatus execute(const door_msgs::Door& goal, door_msgs::Door& feedback);
 
-  void poseCallback();
+  void poseCallback(const PoseConstPtr& pose);
 
 
 private:
-  ros::Node& node_;
+  ros::NodeHandle node_;
+  ros::Publisher gripper_publisher_;
+
   tf::TransformListener& tf_; 
-  robot_msgs::PoseStamped pose_msg_;
   tf::Stamped<tf::Pose> gripper_pose_;
   bool pose_received_;
   boost::mutex pose_mutex_;

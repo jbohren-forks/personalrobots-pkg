@@ -51,21 +51,17 @@ static const double push_vel  = 10.0 * M_PI/180.0;  // 10 [deg/sec]
 
 
 
-PushDoorAction::PushDoorAction(Node& node, tf::TransformListener& tf) : 
+PushDoorAction::PushDoorAction(tf::TransformListener& tf) : 
   robot_actions::Action<door_msgs::Door, door_msgs::Door>("push_door"), 
-  node_(node),
   tf_(tf)
 {
-  node_.advertise<std_msgs::Float64>("r_gripper_effort_controller/command",10);
-  node_.advertise<robot_msgs::PoseStamped>("r_arm_constraint_cartesian_pose_controller/command",20);
+  gripper_pub_ = node_.advertise<std_msgs::Float64>("r_gripper_effort_controller/command",10);
+  pose_pub_ = node_.advertise<robot_msgs::PoseStamped>("r_arm_constraint_cartesian_pose_controller/command",20);
 };
 
 
 PushDoorAction::~PushDoorAction()
-{
-  node_.unadvertise("r_gripper_effort_controller/command");
-  node_.unadvertise("r_arm_constraint_cartesian_pose_controller/command");
-};
+{};
 
 
 
@@ -87,18 +83,17 @@ robot_actions::ResultStatus PushDoorAction::execute(const door_msgs::Door& goal,
   // close the gripper 
   std_msgs::Float64 gripper_msg;
   gripper_msg.data = -20.0;
-  node_.publish("r_gripper_effort_controller/command", gripper_msg);
+  gripper_pub_.publish(gripper_msg);
   
   // start monitoring gripper pose
   pose_state_received_ = false;
-  node_.subscribe("r_arm_constraint_cartesian_pose_controller/state/pose", pose_msg_,  &PushDoorAction::poseCallback, this, 1);
+  Subscriber sub = node_.subscribe("r_arm_constraint_cartesian_pose_controller/state/pose", 1,  &PushDoorAction::poseCallback, this);
   Duration timeout = Duration().fromSec(3.0);
   Duration poll = Duration().fromSec(0.1);
   Time start_time = ros::Time::now();
   while (!pose_state_received_){
     if (start_time + timeout < ros::Time::now()){
       ROS_ERROR("failed to receive pose state");
-      node_.unsubscribe("r_arm_constraint_cartesian_pose_controller/state/pose");
       return robot_actions::ABORTED;
     }
     poll.sleep();
@@ -128,7 +123,7 @@ robot_actions::ResultStatus PushDoorAction::execute(const door_msgs::Door& goal,
     gripper_pose = getGripperPose(goal_tr, angle, push_dist);
     gripper_pose.stamp_ = Time::now();
     PoseStampedTFToMsg(gripper_pose, gripper_pose_msg);
-    node_.publish("r_arm_constraint_cartesian_pose_controller/command", gripper_pose_msg);
+    pose_pub_.publish(gripper_pose_msg);
 
     // increase angle when pose error is small enough
     boost::mutex::scoped_lock lock(pose_mutex_);
@@ -136,15 +131,14 @@ robot_actions::ResultStatus PushDoorAction::execute(const door_msgs::Door& goal,
       angle += angle_step;
   }
   ROS_ERROR("preempted");
-  node_.unsubscribe("r_arm_constraint_cartesian_pose_controller/state/pose");
   return robot_actions::PREEMPTED;
 }
 
 
-void PushDoorAction::poseCallback()
+void PushDoorAction::poseCallback(const PoseConstPtr& pose)
 {
   boost::mutex::scoped_lock lock(pose_mutex_);
-  PoseStampedMsgToTF(pose_msg_, pose_state_);
+  PoseStampedMsgToTF(*pose, pose_state_);
   pose_state_received_ = true;
 }
 

@@ -52,7 +52,7 @@ using namespace std;
 int
   main (int argc, char **argv)
 {
-  ros::init(argc, argv);
+  ros::init(argc, argv, "trigger_check_path");
 
   robot_msgs::PoseStamped pose;
   pose.header.frame_id = "base_footprint";
@@ -64,9 +64,8 @@ int
   pose.pose.orientation.z = 0.0;
   pose.pose.orientation.w = 1.0;
 
-  ros::Node node("trigger_check_path");
-  tf::TransformListener tf(node);
-  door_handle_detector::CheckPathAction check_path(node, tf);
+  tf::TransformListener tf;
+  door_handle_detector::CheckPathAction check_path(tf);
   robot_actions::ActionRunner runner(10.0);
   runner.connect<robot_msgs::PoseStamped, pr2_robot_actions::CheckPathState, int8_t>(check_path);
   runner.run();

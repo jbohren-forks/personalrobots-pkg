@@ -47,9 +47,8 @@ using namespace door_functions;
 static const string fixed_frame = "map";
 
 
-CheckPathAction::CheckPathAction(Node& node, tf::TransformListener& tf) : 
+CheckPathAction::CheckPathAction(tf::TransformListener& tf) : 
   robot_actions::Action<robot_msgs::PoseStamped, int8_t>("check_path"), 
-  node_(node),
   tf_(tf)
 {};
 

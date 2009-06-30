@@ -52,7 +52,7 @@ static const string fixed_frame = "odom_combined";
 
 
 
-DetectDoorAction::DetectDoorAction(Node& node, tf::TransformListener& tf):
+DetectDoorAction::DetectDoorAction(tf::TransformListener& tf):
   robot_actions::Action<door_msgs::Door, door_msgs::Door>("detect_door"),
   tf_(tf)
 {};

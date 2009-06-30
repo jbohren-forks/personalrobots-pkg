@@ -55,14 +55,14 @@ namespace door_handle_detector{
 class TouchDoorAction: public robot_actions::Action<door_msgs::Door, door_msgs::Door>
 {
 public:
-  TouchDoorAction(ros::Node& node, tf::TransformListener& tf);
+  TouchDoorAction(tf::TransformListener& tf);
   ~TouchDoorAction();
 
   virtual robot_actions::ResultStatus execute(const door_msgs::Door& goal, door_msgs::Door& feedback);
 
 
 private:
-  ros::Node& node_;
+  ros::Publisher pub_;
   tf::TransformListener& tf_; 
 
   robot_srvs::MoveToPose::Request  req_moveto;

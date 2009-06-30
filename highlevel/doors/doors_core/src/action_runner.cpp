@@ -61,21 +61,21 @@ using namespace door_handle_detector;
 
 int main(int argc, char** argv)
 {
-  ros::init(argc,argv); 
+  ros::init(argc,argv,"door_domain_action_runer"); 
 
   ros::Node node("action_runner_door_domain");
-  tf::TransformListener tf(node);
+  tf::TransformListener tf;
 
-  DetectDoorAction detect_door(node, tf);
-  DetectHandleAction detect_handle(node, tf);
-  CheckPathAction check_path(node, tf);
-  GraspHandleAction grasp(node, tf);
-  DetectHandleNoCameraAction detect_handle_no_camera(node, tf);
-  OpenDoorAction open(node, tf);
-  PushDoorAction push(node, tf);
-  TouchDoorAction touch(node, tf);
-  ReleaseHandleAction release(node, tf);
-  UnlatchHandleAction unlatch(node, tf);
+  DetectDoorAction detect_door(tf);
+  DetectHandleAction detect_handle(tf);
+  CheckPathAction check_path(tf);
+  GraspHandleAction grasp(tf);
+  DetectHandleNoCameraAction detect_handle_no_camera(tf);
+  OpenDoorAction open(tf);
+  PushDoorAction push(tf);
+  TouchDoorAction touch(tf);
+  ReleaseHandleAction release(tf);
+  UnlatchHandleAction unlatch(tf);
 
   robot_actions::ActionRunner runner(10.0);
   runner.connect<door_msgs::Door, pr2_robot_actions::DoorActionState, door_msgs::Door>(detect_door);

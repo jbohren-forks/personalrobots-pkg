@@ -54,10 +54,8 @@ using namespace door_handle_detector;
 int
   main (int argc, char **argv)
 {
-  ros::init(argc, argv);
-
-  ros::Node node("name");
-  tf::TransformListener tf(node);
+  ros::init(argc, argv, "trigger_doors_opener");
+  tf::TransformListener tf;
 
   door_msgs::Door my_door_;
 
@@ -69,7 +67,7 @@ int
   my_door_.hinge = -1;
   my_door_.header.frame_id = "base_footprint";
 
-  door_handle_detector::OpenDoorAction door_opener(node, tf);
+  door_handle_detector::OpenDoorAction door_opener(tf);
   robot_actions::ActionRunner runner(10.0);
   runner.connect<door_msgs::Door, pr2_robot_actions::DoorActionState, door_msgs::Door>(door_opener);
   runner.run();

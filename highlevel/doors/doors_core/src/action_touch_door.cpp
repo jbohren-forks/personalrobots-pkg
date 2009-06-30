@@ -49,19 +49,17 @@ static const double touch_dist = 0.65;
 
 
 
-TouchDoorAction::TouchDoorAction(Node& node, tf::TransformListener& tf) : 
+TouchDoorAction::TouchDoorAction(tf::TransformListener& tf) : 
   robot_actions::Action<door_msgs::Door, door_msgs::Door>("touch_door"), 
-  node_(node),
   tf_(tf)
 {
-  node_.advertise<std_msgs::Float64>("r_gripper_effort_controller/command",10);
+  NodeHandle node;
+  pub_ = node.advertise<std_msgs::Float64>("r_gripper_effort_controller/command",10);
 };
 
 
 TouchDoorAction::~TouchDoorAction()
-{
-  node_.unadvertise("r_gripper_effort_controller/command");
-};
+{};
 
 
 
@@ -89,7 +87,7 @@ robot_actions::ResultStatus TouchDoorAction::execute(const door_msgs::Door& goal
   // close the gripper while moving to touch the door
   std_msgs::Float64 gripper_msg;
   gripper_msg.data = -20.0;
-  node_.publish("r_gripper_effort_controller/command", gripper_msg);
+  pub_.publish(gripper_msg);
   
   // get gripper position that is feasable for the robot arm
   Stamped<Pose> shoulder_pose; tf_.lookupTransform(goal_tr.header.frame_id, "r_shoulder_pan_link", Time(), shoulder_pose);

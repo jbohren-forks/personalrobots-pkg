@@ -48,20 +48,18 @@ using namespace door_functions;
 static const string fixed_frame = "odom_combined";
 
 
-OpenDoorAction::OpenDoorAction(Node& node, tf::TransformListener& tf) :
+OpenDoorAction::OpenDoorAction(tf::TransformListener& tf) :
   robot_actions::Action<door_msgs::Door, door_msgs::Door>("open_door"),
-  node_(node),
   tf_(tf)
 {
-  node_.advertise<manipulation_msgs::TaskFrameFormalism>("r_arm_cartesian_tff_controller/command", 10);
+  NodeHandle node;
+  tff_pub_ = node.advertise<manipulation_msgs::TaskFrameFormalism>("r_arm_cartesian_tff_controller/command", 10);
 };
 
 
 
 OpenDoorAction::~OpenDoorAction()
-{
-  node_.unadvertise("r_arm_cartesian_tff_controller/command");
-};
+{};
 
 
 
@@ -88,7 +86,7 @@ robot_actions::ResultStatus OpenDoorAction::execute(const door_msgs::Door& goal,
   
   // open door
   while (!isPreemptRequested()){
-    node_.publish("r_arm_cartesian_tff_controller/command", tff_door_);
+    tff_pub_.publish(tff_door_);
     Duration(0.1).sleep();
   }
 

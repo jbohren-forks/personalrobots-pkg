@@ -47,12 +47,11 @@ static const string fixed_frame = "odom_combined";
 
 
 
-ReleaseHandleAction::ReleaseHandleAction(Node& node, tf::TransformListener& tf) : 
+ReleaseHandleAction::ReleaseHandleAction(tf::TransformListener& tf) : 
   robot_actions::Action<door_msgs::Door, door_msgs::Door>("release_handle"), 
-  node_(node),
   tf_(tf)
 {
-  node_.advertise<std_msgs::Float64>("r_gripper_effort_controller/command",10);
+  gripper_publisher_ = node_.advertise<std_msgs::Float64>("r_gripper_effort_controller/command",10);
 };
 
 
@@ -66,7 +65,7 @@ robot_actions::ResultStatus ReleaseHandleAction::execute(const door_msgs::Door& 
   ROS_INFO("ReleaseHandleAction: execute");
 
   // subscribe to the robot pose state message
-  node_.subscribe("r_arm_constraint_cartesian_pose_controller/state/pose", pose_msg_,  &ReleaseHandleAction::poseCallback, this, 1);
+  Subscriber sub = node_.subscribe("r_arm_constraint_cartesian_pose_controller/state/pose", 1,  &ReleaseHandleAction::poseCallback, this);
   pose_received_ = false;
  
   // open the gripper during 4 seconds
@@ -75,12 +74,11 @@ robot_actions::ResultStatus ReleaseHandleAction::execute(const door_msgs::Door& 
   gripper_msg.data = 20.0;
   for (unsigned int i=0; i<100; i++){
     Duration().fromSec(4.0/100.0).sleep();
-    node_.publish("r_gripper_effort_controller/command", gripper_msg);
+    gripper_publisher_.publish(gripper_msg);
     if (isPreemptRequested()) {
       gripper_msg.data = 0.0;
-      node_.publish("r_gripper_effort_controller/command", gripper_msg);
+      gripper_publisher_.publish(gripper_msg);
       ROS_ERROR("ReleaseHandleAction: preempted");
-      node_.unsubscribe("r_arm_constraint_cartesian_pose_controller/state/pose");
       return robot_actions::PREEMPTED;
     }
   }
@@ -93,12 +91,10 @@ robot_actions::ResultStatus ReleaseHandleAction::execute(const door_msgs::Door& 
   while (!pose_received_){
     if (start_time + timeout < ros::Time::now()){
       ROS_ERROR("ReleaseHandleAction: failed to receive robot pose");
-      node_.unsubscribe("r_arm_constraint_cartesian_pose_controller/state/pose");
       return robot_actions::ABORTED;
     }
     poll.sleep();
   }
-  node_.unsubscribe("r_arm_constraint_cartesian_pose_controller/state/pose");
   boost::mutex::scoped_lock lock(pose_mutex_);
 
 
@@ -124,10 +120,10 @@ robot_actions::ResultStatus ReleaseHandleAction::execute(const door_msgs::Door& 
 }
 
 
-void ReleaseHandleAction::poseCallback()
+void ReleaseHandleAction::poseCallback(const PoseConstPtr& pose)
 {
   boost::mutex::scoped_lock lock(pose_mutex_);
-  PoseStampedMsgToTF(pose_msg_, gripper_pose_);
+  PoseStampedMsgToTF(*pose, gripper_pose_);
   pose_received_ = true;
 }
 

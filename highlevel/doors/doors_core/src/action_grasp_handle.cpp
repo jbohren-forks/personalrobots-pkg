@@ -49,12 +49,12 @@ static const string fixed_frame = "odom_combined";
 
 
 
-GraspHandleAction::GraspHandleAction(Node& node, tf::TransformListener& tf) : 
+GraspHandleAction::GraspHandleAction(tf::TransformListener& tf) : 
   robot_actions::Action<door_msgs::Door, door_msgs::Door>("grasp_handle"), 
-  node_(node),
   tf_(tf)
 {
-  node_.advertise<std_msgs::Float64>("r_gripper_effort_controller/command",10);
+  NodeHandle node;
+  pub_ = node.advertise<std_msgs::Float64>("r_gripper_effort_controller/command",10);
 };
 
 
@@ -93,7 +93,7 @@ robot_actions::ResultStatus GraspHandleAction::execute(const door_msgs::Door& go
   // open the gripper while moving in front of the door
   std_msgs::Float64 gripper_msg;
   gripper_msg.data = 20.0;
-  node_.publish("r_gripper_effort_controller/command", gripper_msg);
+  pub_.publish(gripper_msg);
   
   // move gripper in front of door
   gripper_pose.setOrigin( Vector3(handle(0) + (normal(0) * -0.15), handle(1) + (normal(1) * -0.15), handle(2) + (normal(2) * -0.15)));
@@ -137,12 +137,12 @@ robot_actions::ResultStatus GraspHandleAction::execute(const door_msgs::Door& go
   
   // close the gripper during 4 seconds
   gripper_msg.data = -20.0;
-  node_.publish("r_gripper_effort_controller/command", gripper_msg);
+  pub_.publish(gripper_msg);
   for (unsigned int i=0; i<100; i++){
     Duration().fromSec(4.0/100.0).sleep();
     if (isPreemptRequested()) {
       gripper_msg.data = 0.0;
-      node_.publish("r_gripper_effort_controller/command", gripper_msg);
+      pub_.publish(gripper_msg);
       ROS_ERROR("GraspHandleAction: preempted");
       return robot_actions::PREEMPTED;
     }
