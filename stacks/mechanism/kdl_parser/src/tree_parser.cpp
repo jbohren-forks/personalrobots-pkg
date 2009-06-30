@@ -276,6 +276,11 @@ bool getTree(TiXmlElement *robot, Tree& tree, map<string, string>& joint_segment
     parents[segment_name] = segment_parent;
   }
 
+  // fail if no segments were found
+  if (segments.empty()){
+    cerr << "Did not find any segments" << endl;
+    return false;
+  }
   
   // find the root segment: the parent segment that does not exist
   string root;
@@ -285,7 +290,8 @@ bool getTree(TiXmlElement *robot, Tree& tree, map<string, string>& joint_segment
       if (s == --(segments.end())) root = p->first;
     }
   }
-  cerr << "renaming parent of root segment '" << root << "' from " << parents[root] << " to root" << endl;
+  cout << root << " is root segment " << endl;
+  cout << "renaming parent of root segment '" << root << "' from " << parents[root] << " to root" << endl;
   parents[root] = "root";
 
   // add all segments to tree
