@@ -21,6 +21,8 @@ target_link_libraries(dense_laser_assembler_srv dense_laser_assembler)
 
 rospack_add_executable(dense_laser_snapshotter src/dense_laser_snapshotter.cpp)
 
+rospack_add_executable(laser_imager src/laser_imager.cpp)
+
 #rospack_add_executable(talker src/talker.cpp)
 #rospack_add_executable(listener src/listener.cpp)
 

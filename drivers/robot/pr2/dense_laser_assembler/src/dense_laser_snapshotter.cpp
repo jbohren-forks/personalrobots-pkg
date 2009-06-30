@@ -88,7 +88,7 @@ public:
 
 
       if (!ros::service::call("dense_laser_assembler_srv/build_laser_snapshot", req, resp))
-	ROS_ERROR("Failed to call service on dense laser assembler.");
+        ROS_ERROR("Failed to call service on dense laser assembler.");
 
       printf("Displaying Data") ;
       printf("header.stamp: %f\n", resp.snapshot.header.stamp.toSec()) ;
