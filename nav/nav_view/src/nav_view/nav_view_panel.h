@@ -32,7 +32,7 @@
 
 #include "nav_view_panel_generated.h"
 
-#include "robot_msgs/ParticleCloud.h"
+#include "nav_msgs/ParticleCloud.h"
 #include "robot_msgs/PoseStamped.h"
 #include "visualization_msgs/Polyline.h"
 #include "robot_msgs/PoseWithCovariance.h"
@@ -205,7 +205,7 @@ protected:
   int map_height_;
   Ogre::TexturePtr map_texture_;
 
-  robot_msgs::ParticleCloud cloud_;
+  nav_msgs::ParticleCloud cloud_;
   robot_msgs::PoseStamped goal_;
   visualization_msgs::Polyline path_line_;
   visualization_msgs::Polyline local_path_;

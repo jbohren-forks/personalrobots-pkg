@@ -106,7 +106,7 @@ parameters.
 #include <robot_msgs/PoseDot.h>
 #include <robot_msgs/PointCloud.h>
 #include <laser_scan/LaserScan.h>
-#include <robot_srvs/StaticMap.h>
+#include <nav_srvs/StaticMap.h>
 
 // For GUI debug
 #include <visualization_msgs/Polyline.h>
@@ -295,8 +295,8 @@ WavefrontNode::WavefrontNode() :
   gui_publish_rate = ros::Duration(1.0/tmp);
 
   // get map via RPC
-  robot_srvs::StaticMap::Request  req;
-  robot_srvs::StaticMap::Response resp;
+  nav_srvs::StaticMap::Request  req;
+  nav_srvs::StaticMap::Response resp;
   puts("Requesting the map...");
   while(!ros::service::call("/static_map", req, resp))
   {

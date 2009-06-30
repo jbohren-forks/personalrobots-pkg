@@ -57,14 +57,14 @@ $ map_saver static_map:=dynamic_map
 @section topic ROS services
 
 Uses (name type):
-- @b static_map robot_srvs/StaticMap : map service.
+- @b static_map nav_srvs/StaticMap : map service.
 
  **/
 
 #include <cstdio>
 #include "ros/node.h"
 #include "ros/console.h"
-#include "robot_srvs/StaticMap.h"
+#include "nav_srvs/StaticMap.h"
 #include "LinearMath/btMatrix3x3.h"
 using namespace std;
  
@@ -84,8 +84,8 @@ class MapGenerator
       ros::Node n("map_generator");
       const static std::string servname = "static_map";
       ROS_INFO("Requesting the map from %s...", n.mapName(servname).c_str());
-      robot_srvs::StaticMap::Request  req;
-      robot_srvs::StaticMap::Response resp;
+      nav_srvs::StaticMap::Request  req;
+      nav_srvs::StaticMap::Response resp;
       while(n.ok() && !ros::service::call(servname, req, resp))
       {
         ROS_WARN("request to %s failed; trying again...", n.mapName(servname).c_str());

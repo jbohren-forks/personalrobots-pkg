@@ -31,7 +31,7 @@
 
 #include "ogre_tools/wx_ogre_render_window.h"
 
-#include "robot_srvs/StaticMap.h"
+#include "nav_srvs/StaticMap.h"
 
 #include "ros/common.h"
 #include "ros/node.h"
@@ -199,8 +199,8 @@ void NavViewPanel::onRender( wxCommandEvent& event )
 
 void NavViewPanel::loadMap()
 {
-  robot_srvs::StaticMap::Request  req;
-  robot_srvs::StaticMap::Response resp;
+  nav_srvs::StaticMap::Request  req;
+  nav_srvs::StaticMap::Response resp;
   printf("Requesting the map...\n");
   if( !ros::service::call("/static_map", req, resp) )
   {

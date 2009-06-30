@@ -5,6 +5,7 @@
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
   <depend package="robot_msgs"/>
+  <depend package="nav_msgs"/>
   <export>
     <cpp cflags="-I${prefix}/srv/cpp"/>
   </export>

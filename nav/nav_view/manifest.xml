@@ -4,7 +4,9 @@
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
   <depend package="roscpp"/>
+  <depend package="nav_srvs"/>
   <depend package="robot_srvs"/>
+  <depend package="nav_msgs"/>
   <depend package="tf"/>
   <depend package="ogre"/>
   <depend package="ogre_tools"/>

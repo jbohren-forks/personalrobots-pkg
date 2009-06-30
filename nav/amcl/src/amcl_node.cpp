@@ -160,7 +160,7 @@ model.  The fifth parameter capture the tendency of the robot to translate
 #include "robot_msgs/PoseWithCovariance.h"
 #include "nav_msgs/ParticleCloud.h"
 #include "robot_msgs/Pose.h"
-#include "robot_srvs/StaticMap.h"
+#include "nav_srvs/StaticMap.h"
 #include "std_srvs/Empty.h"
 #include "visualization_msgs/Polyline.h"
 
@@ -462,8 +462,8 @@ AmclNode::requestMap()
   ROS_ASSERT(map);
 
   // get map via RPC
-  robot_srvs::StaticMap::Request  req;
-  robot_srvs::StaticMap::Response resp;
+  nav_srvs::StaticMap::Request  req;
+  nav_srvs::StaticMap::Response resp;
   ROS_INFO("Requesting the map...");
   while(!ros::service::call("static_map", req, resp))
   {

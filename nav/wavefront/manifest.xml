@@ -5,7 +5,7 @@
   <review status="unreviewed" notes=""/>
   <depend package="roscpp" />
   <depend package="laser_scan" />
-  <depend package="robot_srvs" />
+  <depend package="nav_srvs" />
   <depend package="robot_msgs" />
   <depend package="robot_actions" />
   <depend package="nav_robot_actions" />

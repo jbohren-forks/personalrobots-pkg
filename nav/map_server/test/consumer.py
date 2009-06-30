@@ -41,7 +41,7 @@ roslib.load_manifest(PKG)
 import sys, unittest, time
 
 import rospy, rostest
-from robot_srvs.srv import *
+from nav_srvs.srv import StaticMap
 
 class TestConsumer(unittest.TestCase):
     def __init__(self, *args):

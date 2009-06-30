@@ -70,7 +70,7 @@ map_server mymap.png 0.1
 @section services ROS services
 
 Offers (name/type):
-- @b "static_map"/robot_srvs::StaticMap : Retrieve the map via this service
+- @b "static_map"/nav_srvs::StaticMap : Retrieve the map via this service
 
 @section parameters ROS parameters
 
@@ -144,8 +144,8 @@ class MapServer
     ros::ServiceServer service;
 
     /** Callback invoked when someone requests our service */
-    bool mapCallback(robot_srvs::StaticMap::Request  &req,
-                     robot_srvs::StaticMap::Response &res )
+    bool mapCallback(nav_srvs::StaticMap::Request  &req,
+                     nav_srvs::StaticMap::Response &res )
     {
       // request is empty; we ignore it
 
@@ -157,7 +157,7 @@ class MapServer
 
     /** The map response is cached here, to be sent out to service callers
      */
-    robot_srvs::StaticMap::Response map_resp_;
+    nav_srvs::StaticMap::Response map_resp_;
 
     void metadataSubscriptionCallback(const ros::SingleSubscriberPublisher& pub)
     {
