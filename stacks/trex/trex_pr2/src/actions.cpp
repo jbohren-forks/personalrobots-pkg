@@ -46,6 +46,14 @@
 
 namespace trex_pr2 {
 
+  /*
+   * @brief StopAction is used for stopping actions whose stopping conditions
+   * rely on observations that are only available from the high-level. The M2
+   * doorman, for example, uses a force controller to open the door. This is
+   * only stopped once the nav can find a path through the doorway, at which
+   * point, the executive preempts the open_door action, because it has
+   * actually succeeded.
+   */
   class StopAction: public robot_actions::Action<std_msgs::String, std_msgs::Empty> {
   public:
 
