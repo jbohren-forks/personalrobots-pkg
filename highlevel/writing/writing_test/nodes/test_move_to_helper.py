@@ -40,13 +40,13 @@ import rospy
 
 import Queue
 import time
+import sys
+import threading
 
 from robot_actions.msg import ActionStatus
 import robot_msgs.msg
 from std_msgs.msg import Empty
-
 import python_actions
-import threading
 
 if __name__ == '__main__':
 
@@ -105,62 +105,74 @@ if __name__ == '__main__':
     class Preempt(Exception):
       pass
 
-    controllers = [
-       "r_arm_cartesian_trajectory_controller",
-       "r_arm_joint_trajectory_controller",
-       "r_gripper_position_controller",
-       "head_controller",
-       "laser_tilt_controller"]
-
+    def act(action, goal, timeout):
+      as,fb = switch_controllers.execute(switchlist, 4.0)
+      if as == python_actions.SUCCESS:
+        return fb
+      elif as == python_actions.ABORTED:
+        raise Abort
+      elif as == python_actions.PREEMPTED:
+        raise Preempt
+      else:
+        assert 0, ("Unexpected action status %d" % as)
 
     def stop_start(stp, strt):
       switchlist = pr2_robot_actions.msg.SwitchControllers()
       switchlist.stop_controllers = stp
       switchlist.start_controllers = strt
       as,_ = switch_controllers.execute(switchlist, 4.0)
-      if as != python_actions.SUCCESS:
-      sys.exit(-1);
+      #if as != python_actions.SUCCESS:
+      #  sys.exit(-1);
 
-    stop_start(controllers, [])
+    all_controllers = [
+       "r_gripper_position_controller",
+       "head_controller",
+       "laser_tilt_controller",
+       "r_arm_joint_trajectory_controller",
+       "r_arm_cartesian_trajectory_controller",
+       "r_arm_cartesian_pose_controller",
+       "r_arm_cartesian_twist_controller",
+       "r_arm_cartesian_wrench_controller",
+       ]
+
+    stop_start(all_controllers, [])
 
     stop_start([], ["r_arm_joint_trajectory_controller"])
-    as,_ = tuck_arm.execute(Empty(), 20.0)
-    if as != python_actions.SUCCESS:
-      sys.exit(-1);
+    act(tuck_arm, Empty(), 20.0)
 
-    stop_start(["r_arm_joint_trajectory_controller"], ["r_gripper_position_controller", "r_arm_cartesian_trajectory_controller"])
-    as,_ = ask_for_pen.execute(Empty(), 20.0)
-    if as != python_actions.SUCCESS:
-      sys.exit(-1);
+    stop_start(["r_arm_joint_trajectory_controller"],
+               ["r_gripper_position_controller",
+               "r_arm_cartesian_trajectory_controller",
+               "r_arm_cartesian_pose_controller",
+               "r_arm_cartesian_twist_controller",
+               "r_arm_cartesian_wrench_controller",
+               ])
+
+    act(ask_for_pen, Empty(), 20.0)
 
     sys.exit(0)
 
-    as,helper_p = find_helper.execute(Empty(), 200.0)
-    if as != python_actions.SUCCESS:
-      sys.exit(-1);
+    helper_p = act(find_helper, Empty(), 200.0)
 
     print "===> Found person:", helper_p
     time.sleep(1)
 
-    as,_ = start_tilt_laser.execute(Empty(), 20.0)
-    if as != python_actions.SUCCESS:
-      sys.exit(-1);
+    act(start_tilt_laser, Empty(), 20.0)
 
     print "===> Started laser"
     time.sleep(1)
 
-    th = threading.Thread(target = lambda: track_helper.execute(helper_p, 500.0))
-    th.start()
+    track_helper_thread = threading.Thread(target = lambda: track_helper.execute(helper_p, 500.0))
+    track_helper_thread.start()
 
     print "===> track_helper started"
     time.sleep(1)
 
-    as,_ = move_base_local(helper_p, 500.0)
-    if as != python_actions.SUCCESS:
-      sys.exit(-1);
+    act(move_base_local, helper_p, 500.0)
 
     print "===> reached target point"
     track_helper.preempt()
+    track_helper_thread.join()
 
     if 0:
       state, path = w.execute(pr2_robot_actions.msg.TextGoal("klak", robot_msgs.msg.Point(10,20,0), 30))
