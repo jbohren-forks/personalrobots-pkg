@@ -65,7 +65,7 @@
 #include <vslam/Roadmap.h>
 #include <visual_nav/exceptions.h>
 #include <visual_nav/VisualNavGoal.h>
-
+#include <sensor_msgs/LaserScan.h>
 
 using std::string;
 using std::vector;
@@ -73,7 +73,6 @@ using robot_msgs::PoseStamped;
 using robot_msgs::Point;
 using robot_msgs::PointStamped;
 using robot_msgs::Point32;
-using laser_scan::LaserScan;
 using ros::Duration;
 using vslam::Roadmap;
 using visualization_msgs::Polyline;
@@ -98,7 +97,7 @@ using ros::Node;
 
 typedef map<int, NodeId> IdMap;
 typedef shared_ptr<PointSet> PointsPtr;
-typedef MessageNotifier<LaserScan> Notifier;
+typedef MessageNotifier<sensor_msgs::LaserScan> Notifier;
 typedef shared_ptr<Notifier> NotifierPtr;
 
 
