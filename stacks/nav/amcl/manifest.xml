@@ -4,7 +4,8 @@
   <url>http://pr.willowgarage.com/wiki/amcl</url>
   <author>Brian P. Gerkey</author>
   <license>LGPL</license>
-  <review status="unreviewed" notes="API review in progress (Brian)"/>
+  <review status="proposal cleared" notes="API review in progress (Brian)"/>
+  <url>http://pr.willowgarage.com/wiki/amcl</url>
   <depend package="roscpp" />
   <depend package="tf" />
   <depend package="robot_srvs" />
