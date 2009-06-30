@@ -1,0 +1,22 @@
+<package>
+  <description brief="rf_detector">
+
+     rf_detector
+
+  </description>
+  <author>Min Sun</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://pr.willowgarage.com/wiki/rf_detector</url>
+  <depend package="roscpp"/>
+  <depend package="opencv_latest"/>
+  <depend package="topic_synchronizer2"/>
+  <depend package="std_msgs" />
+  <depend package="image_msgs"/>
+    <export>
+      <cpp cflags="-I${prefix}/include/"/>
+    </export>
+
+</package>
+
+
