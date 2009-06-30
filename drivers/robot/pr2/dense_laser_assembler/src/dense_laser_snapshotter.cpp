@@ -104,9 +104,9 @@ public:
         printf("   %u: %f\n", i, resp.snapshot.scan_start[i].toSec()) ;
       }*/
 
-      /*printf("About to publish\n") ;
+      printf("About to publish\n") ;
       snapshot_pub_.publish(resp.snapshot) ;
-      printf("Done publishing\n") ;*/
+      printf("Done publishing\n") ;
 
       prev_signal_ = *cur_signal ;
     }

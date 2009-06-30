@@ -40,7 +40,7 @@ using namespace boost ;
 namespace dense_laser_assembler
 {
 
-bool verifyMetadata(const calibration_msgs::DenseLaserSnapshot& snapshot, const laser_scan::LaserScan& scan) ;
+bool verifyMetadata(const calibration_msgs::DenseLaserSnapshot& snapshot, const sensor_msgs::LaserScan& scan) ;
 
 bool buildDenseLaserSnapshot(const vector<shared_ptr<const JointTaggedLaserScan> >& scans,
                              const vector<string>& joint_names,
@@ -136,7 +136,7 @@ static const double eps = 1e-9 ;
     return false ; \
 }
 
-bool verifyMetadata(const calibration_msgs::DenseLaserSnapshot& snapshot, const laser_scan::LaserScan& scan)
+bool verifyMetadata(const calibration_msgs::DenseLaserSnapshot& snapshot, const sensor_msgs::LaserScan& scan)
 {
   CHECK(angle_min) ;
   CHECK(angle_max) ;

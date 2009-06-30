@@ -40,7 +40,7 @@
 #define DENSE_LASER_ASSEMBLER_LASER_SCAN_TAGGER_H_
 
 #include <deque>
-#include "laser_scan/LaserScan.h"
+#include "sensor_msgs/LaserScan.h"
 #include "message_filters/msg_cache.h"
 #include "dense_laser_assembler/joint_extractor.h"
 #include "boost/shared_ptr.hpp"
@@ -56,7 +56,7 @@ public:
   struct TaggedLaserScan
   {
     roslib::Header header ;
-    laser_scan::LaserScanConstPtr scan ;
+    sensor_msgs::LaserScanConstPtr scan ;
     boost::shared_ptr<const T> before ;
     boost::shared_ptr<const T> after ;
   } ;
@@ -89,7 +89,7 @@ public:
   /**
    * Adds the laser scan onto the queue of scans that need to be matched with the stamped data
    */
-  void processLaserScan(const laser_scan::LaserScanConstPtr& msg)
+  void processLaserScan(const sensor_msgs::LaserScanConstPtr& msg)
   {
 
     queue_lock_.lock() ;
@@ -124,7 +124,7 @@ public:
     {
       did_something = false ;   // Haven't done anything yet
 
-      const laser_scan::LaserScanConstPtr& elem = queue_.front() ;
+      const sensor_msgs::LaserScanConstPtr& elem = queue_.front() ;
 
       ros::Time scan_start = elem->header.stamp ;
       ros::Time scan_end   = elem->header.stamp + ros::Duration().fromSec(elem->time_increment*elem->ranges.size()) ;
@@ -169,7 +169,7 @@ public:
 
 
 private:
-  std::deque<laser_scan::LaserScanConstPtr> queue_ ;    //!< Incoming queue of laser scans
+  std::deque<sensor_msgs::LaserScanConstPtr> queue_ ;    //!< Incoming queue of laser scans
   boost::mutex queue_lock_ ;                            //!< Mutex for queue
   unsigned int max_queue_size_ ;                        //!< Max # of laser scans to queue up for processing
 
