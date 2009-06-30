@@ -39,7 +39,7 @@
 
 // Messages
 #include "calibration_msgs/DenseLaserSnapshot.h"
-#include "pr2_mechanism_controllers/LaserScannerSignal.h"
+#include "pr2_msgs/LaserScannerSignal.h"
 
 
 using namespace dense_laser_assembler ;
@@ -64,7 +64,7 @@ public:
 
   }
 
-  void scannerSignalCallback(const pr2_mechanism_controllers::LaserScannerSignalConstPtr& cur_signal)
+  void scannerSignalCallback(const pr2_msgs::LaserScannerSignalConstPtr& cur_signal)
   {
     if (cur_signal->signal == 128 || cur_signal->signal == 129)       // These codes imply that this is the first signal during a given profile type
       first_time_ = true ;
@@ -117,7 +117,7 @@ private:
   ros::Subscriber signal_sub_ ;
   ros::Publisher snapshot_pub_ ;
 
-  pr2_mechanism_controllers::LaserScannerSignal prev_signal_;
+  pr2_msgs::LaserScannerSignal prev_signal_;
 
   bool first_time_ ;
 } ;

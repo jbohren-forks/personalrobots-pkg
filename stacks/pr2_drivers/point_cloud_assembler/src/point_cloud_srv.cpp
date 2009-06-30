@@ -40,7 +40,7 @@
 
 // Messages
 #include "robot_msgs/PointCloud.h"
-#include "pr2_mechanism_controllers/LaserScannerSignal.h"
+#include "pr2_msgs/LaserScannerSignal.h"
 
 #include <boost/thread/mutex.hpp>
 
@@ -63,7 +63,7 @@ using namespace std;
 class PointCloudSrv : public ros::Node
 {
 private:
-  pr2_mechanism_controllers::LaserScannerSignal laser_scanner_signal_;
+  pr2_msgs::LaserScannerSignal laser_scanner_signal_;
   ros::Time laser_time_;
   boost::mutex laser_mutex_;
 

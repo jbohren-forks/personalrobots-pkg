@@ -573,7 +573,7 @@ bool LaserScannerControllerNode::initXml(mechanism::RobotState *robot, TiXmlElem
 
   if (publisher_ != NULL)               // Make sure that we don't memory leak if initXml gets called twice
     delete publisher_ ;
-  publisher_ = new realtime_tools::RealtimePublisher <pr2_mechanism_controllers::LaserScannerSignal> (service_prefix_ + "/laser_scanner_signal", 1) ;
+  publisher_ = new realtime_tools::RealtimePublisher <pr2_msgs::LaserScannerSignal> (service_prefix_ + "/laser_scanner_signal", 1) ;
 
   return true;
 }

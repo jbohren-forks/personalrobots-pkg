@@ -39,7 +39,7 @@
 
 // Messages
 #include "robot_msgs/PointCloud.h"
-#include "pr2_mechanism_controllers/LaserScannerSignal.h"
+#include "pr2_msgs/LaserScannerSignal.h"
 
 using namespace robot_msgs ;
 
@@ -58,8 +58,8 @@ class PointCloudSnapshotter
 
 public:
 
-  pr2_mechanism_controllers::LaserScannerSignal prev_signal_;
-  pr2_mechanism_controllers::LaserScannerSignal cur_signal_;
+  pr2_msgs::LaserScannerSignal prev_signal_;
+  pr2_msgs::LaserScannerSignal cur_signal_;
 
   bool first_time_ ;
 

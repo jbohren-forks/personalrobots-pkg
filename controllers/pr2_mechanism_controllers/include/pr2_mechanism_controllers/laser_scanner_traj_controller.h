@@ -45,7 +45,7 @@
 #include "filters/transfer_function.h"
 
 // Messages
-#include <pr2_mechanism_controllers/LaserScannerSignal.h>
+#include <pr2_msgs/LaserScannerSignal.h>
 #include <pr2_msgs/PeriodicCmd.h>
 #include <pr2_mechanism_controllers/TrackLinkCmd.h>
 #include <pr2_msgs/LaserTrajCmd.h>
@@ -155,9 +155,9 @@ private:
   pr2_msgs::LaserTrajCmd traj_cmd_ ;
   pr2_mechanism_controllers::TrackLinkCmd track_link_cmd_ ;
 
-  pr2_mechanism_controllers::LaserScannerSignal m_scanner_signal_ ;              //!< Stores the message that we want to send at the end of each sweep, and halfway through each sweep
+  pr2_msgs::LaserScannerSignal m_scanner_signal_ ;              //!< Stores the message that we want to send at the end of each sweep, and halfway through each sweep
   bool need_to_send_msg_ ;                                                       //!< Tracks whether we still need to send out the m_scanner_signal_ message.
-  realtime_tools::RealtimePublisher <pr2_mechanism_controllers::LaserScannerSignal>* publisher_ ;  //!< Publishes the m_scanner_signal msg from the update() realtime loop
+  realtime_tools::RealtimePublisher <pr2_msgs::LaserScannerSignal>* publisher_ ; //!< Publishes the m_scanner_signal msg from the update() realtime loop
 };
 
 }

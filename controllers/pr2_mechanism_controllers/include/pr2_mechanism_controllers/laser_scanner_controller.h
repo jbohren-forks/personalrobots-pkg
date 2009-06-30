@@ -42,7 +42,7 @@
 #include <realtime_tools/realtime_publisher.h>
 
 // Messages
-#include <pr2_mechanism_controllers/LaserScannerSignal.h>
+#include <pr2_msgs/LaserScannerSignal.h>
 
 // Services
 #include <robot_mechanism_controllers/SetCommand.h>
@@ -258,9 +258,9 @@ private:
   bool first_time_ ;
 
   LaserScannerController::ProfileExecutionState prev_profile_exec_state_ ;       //!< Store the previous profileExecutionState. Need this to compare to the current state to detect transitions
-  pr2_mechanism_controllers::LaserScannerSignal m_scanner_signal_ ;              //!< Stores the message that we want to send at the end of each sweep, and halfway through each sweep
+  pr2_msgs::LaserScannerSignal m_scanner_signal_ ;                               //!< Stores the message that we want to send at the end of each sweep, and halfway through each sweep
   bool need_to_send_msg_ ;                                                       //!< Tracks whether we still need to send out the m_scanner_signal_ message.
-  realtime_tools::RealtimePublisher <pr2_mechanism_controllers::LaserScannerSignal>* publisher_ ;  //!< Publishes the m_scanner_signal msg from the update() realtime loop
+  realtime_tools::RealtimePublisher <pr2_msgs::LaserScannerSignal>* publisher_ ; //!< Publishes the m_scanner_signal msg from the update() realtime loop
 };
 }
 
