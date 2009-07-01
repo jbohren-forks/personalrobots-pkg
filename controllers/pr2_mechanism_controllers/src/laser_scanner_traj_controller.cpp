@@ -228,6 +228,12 @@ double LaserScannerTrajController::getProfileDuration()
   return traj_duration_ ;
 }
 
+int LaserScannerTrajController::getCurProfileSegment()
+{
+  double cur_time = getCurProfileTime() ;
+  return traj_.findTrajectorySegment(cur_time) ;
+}
+
 bool LaserScannerTrajController::setTrajectory(const std::vector<trajectory::Trajectory::TPoint>& traj_points, double max_rate, double max_acc, std::string interp)
 {
   while (!traj_lock_.try_lock())
@@ -404,6 +410,7 @@ bool LaserScannerTrajController::setTrajCmd(const pr2_msgs::LaserTrajCmd& traj_c
 ROS_REGISTER_CONTROLLER(LaserScannerTrajControllerNode)
 LaserScannerTrajControllerNode::LaserScannerTrajControllerNode(): node_(ros::Node::instance()), c_()
 {
+  prev_profile_segment_ = -1 ;
   need_to_send_msg_ = false ;                                           // Haven't completed a sweep yet, so don't need to send a msg
   publisher_ = NULL ;                                                   // We don't know our topic yet, so we can't build it
 }
@@ -428,28 +435,19 @@ void LaserScannerTrajControllerNode::update()
 {
   c_.update() ;
 
-  double cur_profile_time = c_.getCurProfileTime() ;
+  int cur_profile_segment = c_.getCurProfileSegment() ;
 
-  // Check if we crossed the middle point of our profile
-  if (cur_profile_time  >= c_.getProfileDuration()/2.0 &&
-      prev_profile_time_ < c_.getProfileDuration()/2.0)
+  if (cur_profile_segment != prev_profile_segment_)
   {
     // Should we be populating header.stamp here? Or, we can simply let ros take care of the timestamp
     ros::Time cur_time ;
     cur_time.fromSec(robot_->hw_->current_time_) ;
     m_scanner_signal_.header.stamp = cur_time ;
-    m_scanner_signal_.signal = 0 ;
+    m_scanner_signal_.signal = cur_profile_segment ;
     need_to_send_msg_ = true ;
   }
-  else if (cur_profile_time < prev_profile_time_)        // Check if we wrapped around
-  {
-    ros::Time cur_time ;
-    cur_time.fromSec(robot_->hw_->current_time_) ;
-    m_scanner_signal_.header.stamp = cur_time ;
-    m_scanner_signal_.signal = 1 ;
-    need_to_send_msg_ = true ;
-  }
-  prev_profile_time_ = cur_profile_time ;
+
+  prev_profile_segment_ = cur_profile_segment ;
 
   // Use the realtime_publisher to try to send the message.
   //   If it fails sending, it's not a big deal, since we can just try again 1 ms later. No one will notice.
@@ -462,8 +460,6 @@ void LaserScannerTrajControllerNode::update()
       publisher_->unlockAndPublish() ;
       need_to_send_msg_ = false ;
     }
-    //printf("tilt_laser: Signal trigger (%u)\n", m_scanner_signal_.signal) ;
-    //std::cout << std::flush ;
   }
 }
 
@@ -491,7 +487,7 @@ bool LaserScannerTrajControllerNode::initXml(mechanism::RobotState *robot, TiXml
     delete publisher_ ;
   publisher_ = new realtime_tools::RealtimePublisher <pr2_msgs::LaserScannerSignal> (service_prefix_ + "/laser_scanner_signal", 1) ;
 
-  prev_profile_time_ = 0.0 ;
+  prev_profile_segment_ = -1 ;
 
   ROS_INFO("Successfully spawned %s", service_prefix_.c_str()) ;
 
@@ -508,6 +504,7 @@ bool LaserScannerTrajControllerNode::setPeriodicSrv(pr2_srvs::SetPeriodicCmd::Re
   else
   {
     res.start_time = ros::Time::now();
+    prev_profile_segment_ = -1 ;
     return true;
   }
 }
@@ -515,6 +512,7 @@ bool LaserScannerTrajControllerNode::setPeriodicSrv(pr2_srvs::SetPeriodicCmd::Re
 void LaserScannerTrajControllerNode::setPeriodicCmd()
 {
   c_.setPeriodicCmd(cmd_) ;
+  prev_profile_segment_ = -1 ;
 }
 
 bool LaserScannerTrajControllerNode::setTrajSrv(pr2_srvs::SetLaserTrajCmd::Request &req,
@@ -527,6 +525,7 @@ bool LaserScannerTrajControllerNode::setTrajSrv(pr2_srvs::SetLaserTrajCmd::Reque
   else
   {
     res.start_time = ros::Time::now();
+    prev_profile_segment_ = -1 ;
     return true;
   }
 }
@@ -535,6 +534,7 @@ bool LaserScannerTrajControllerNode::setTrajSrv(pr2_srvs::SetLaserTrajCmd::Reque
 void LaserScannerTrajControllerNode::setTrajCmd()
 {
   c_.setTrajCmd(traj_cmd_) ;
+  prev_profile_segment_ = -1 ;
 }
 
 /*void LaserScannerTrajControllerNode::setTrackLinkCmd()

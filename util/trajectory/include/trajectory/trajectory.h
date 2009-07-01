@@ -211,6 +211,14 @@ namespace trajectory
 
     void setJointWraps(int index);
 
+    /*! 
+       \brief finds the trajectory segment corresponding to a particular time 
+       \param input time (in seconds)
+       \return segment index 
+    */
+    int findTrajectorySegment(double time);
+
+
     protected:
 
     std::string interp_method_; /** string representation of interpolation method */
@@ -319,13 +327,6 @@ namespace trajectory
        \param segment start time
     */
     void sampleBlendedLinear(TPoint &tp, double time, const TCoeff &tc, double segment_start_time);
-
-    /*! 
-       \brief finds the trajectory segment corresponding to a particular time 
-       \param input time (in seconds)
-       \return segment index 
-    */
-    inline int findTrajectorySegment(double time);
 
     double calculateMinTimeCubic(double q0, double q1, double v0, double v1, double vmax, int index);
 

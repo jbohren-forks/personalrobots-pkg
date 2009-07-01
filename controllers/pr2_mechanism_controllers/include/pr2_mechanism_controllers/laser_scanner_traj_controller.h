@@ -86,6 +86,8 @@ public:
   inline double getCurProfileTime() ;
   //! \brief Returns the length (in seconds) of our current profile
   inline double getProfileDuration() ;
+  //! \brief Returns the current trajectory segment we're executing in our current profile
+  inline int getCurProfileSegment() ;
 
 private:
 
@@ -149,7 +151,7 @@ private:
   mechanism::RobotState *robot_ ;
   std::string service_prefix_ ;
 
-  double prev_profile_time_ ;                                                    //!< The time in the current profile when update() was last called
+  int prev_profile_segment_ ;                                                    //!< The segment in the current profile when update() was last called
 
   pr2_msgs::PeriodicCmd cmd_ ;
   pr2_msgs::LaserTrajCmd traj_cmd_ ;

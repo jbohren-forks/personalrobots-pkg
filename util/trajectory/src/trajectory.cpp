@@ -258,7 +258,7 @@ void Trajectory::addPoint(const TPoint tp)
   parameterize();
 }
 
-inline int Trajectory::findTrajectorySegment(double time)
+int Trajectory::findTrajectorySegment(double time)
 {
   int result = 0;
 
