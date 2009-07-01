@@ -53,7 +53,7 @@ using namespace std;
  *
  * Minimization is done using the Graph Boost Library
  *
- * This is a modified version of a class originally written by Vladimir Kolmogorov,
+ * This implementation is based on a class originally written by Vladimir Kolmogorov,
  * implementing the graph structure as described in:
  *  What Energy Functions can be Minimized via Graph Cuts?
  *  Vladimir Kolmogorov and Ramin Zabih.
