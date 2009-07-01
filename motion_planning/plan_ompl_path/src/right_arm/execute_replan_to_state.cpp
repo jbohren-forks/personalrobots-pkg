@@ -42,12 +42,14 @@
 #include <planning_environment/kinematic_model_state_monitor.h>
 
 // service for (re)planning to a state
-#include <motion_planning_srvs/KinematicPlan.h>
+#include <motion_planning_srvs/MotionPlan.h>
 
 // messages to interact with the trajectory controller
 #include <manipulation_msgs/JointTraj.h>
 
 #include <std_srvs/Empty.h>
+
+#include <iostream>
 
 static const std::string GROUPNAME = "right_arm";
     
@@ -64,6 +66,7 @@ public:
 	
 	// we use the topic for sending commands to the controller, so we need to advertise it
 	jointCommandPublisher_ = nh_.advertise<manipulation_msgs::JointTraj>("right_arm/trajectory_controller/trajectory_command", 1);
+	displayPathPublisher_ =  nh_.advertise<motion_planning_msgs::KinematicPath>("display_kinematic_path", 1);
     }
         
     ~Example(void)
@@ -72,14 +75,14 @@ public:
 	delete rm_;
     }
     
-    void runExample(void)
+    void runExampleArm(void)
     {
 	// construct the request for the motion planner
-	motion_planning_srvs::KinematicPlan::Request req;
+	motion_planning_srvs::MotionPlan::Request req;
 	
 	req.params.model_id = GROUPNAME;
 	req.params.distance_metric = "L2Square";
-	req.params.planner_id = "KPIECE";
+	req.params.planner_id = "kinematic::KPIECE";
 	req.times = 50;
 
 	
@@ -109,13 +112,76 @@ public:
 	req.allowed_time = 1.0;
 	
 	// define the service messages
-	motion_planning_srvs::KinematicPlan::Response res;
+	motion_planning_srvs::MotionPlan::Response res;
 	
-	ros::ServiceClient client = nh_.serviceClient<motion_planning_srvs::KinematicPlan>("plan_kinematic_path");
+	ros::ServiceClient client = nh_.serviceClient<motion_planning_srvs::MotionPlan>("plan_kinematic_path");
 	if (client.call(req, res))
 	{
 	    
 	    sendArmCommand(res.path, GROUPNAME);
+	}
+	else
+	    ROS_ERROR("Service 'plan_kinematic_path' failed");
+    }
+
+    void runExampleBase(void)
+    {
+	// construct the request for the motion planner
+	motion_planning_srvs::MotionPlan::Request req;
+	
+	req.params.model_id = "base";
+	req.params.distance_metric = "L2Square";
+	req.params.planner_id = "dynamic::RRT";
+
+	req.params.volumeMin.x = -8;
+	req.params.volumeMin.y = -8;
+	req.params.volumeMin.z = 0;
+
+	req.params.volumeMax.x = 8;
+	req.params.volumeMax.y = 8;
+	req.params.volumeMax.z = 0;
+
+	req.times = 1;
+
+	
+	req.goal_constraints.joint_constraint.resize(1);
+	req.goal_constraints.joint_constraint[0].header.stamp = ros::Time::now();
+	req.goal_constraints.joint_constraint[0].header.frame_id = "base_link";
+	req.goal_constraints.joint_constraint[0].joint_name = "base_joint";
+	req.goal_constraints.joint_constraint[0].value.resize(3);
+	req.goal_constraints.joint_constraint[0].toleranceAbove.resize(3);
+	req.goal_constraints.joint_constraint[0].toleranceBelow.resize(3);
+
+	req.goal_constraints.joint_constraint[0].value[0] = 0.0;
+	req.goal_constraints.joint_constraint[0].toleranceBelow[0] = 0.0;
+	req.goal_constraints.joint_constraint[0].toleranceAbove[0] = 0.0;
+
+	req.goal_constraints.joint_constraint[0].value[1] = 1.0;
+	req.goal_constraints.joint_constraint[0].toleranceBelow[1] = 0.0;
+	req.goal_constraints.joint_constraint[0].toleranceAbove[1] = 0.0;
+
+	req.goal_constraints.joint_constraint[0].value[2] = 0.0;
+	req.goal_constraints.joint_constraint[0].toleranceBelow[2] = 0.0;
+	req.goal_constraints.joint_constraint[0].toleranceAbove[2] = 0.0;
+
+
+	// allow 1 second computation time
+	req.allowed_time = 10.0;
+	
+	// define the service messages
+	motion_planning_srvs::MotionPlan::Response res;
+	
+	ros::ServiceClient client = nh_.serviceClient<motion_planning_srvs::MotionPlan>("plan_kinematic_path");
+	if (client.call(req, res))
+	{
+	    displayPathPublisher_.publish(res.path);
+	    std::cout << "Path with " << res.path.get_states_size() << " states";
+	    for (unsigned int i = 0 ; i < res.path.get_states_size() ; ++i)
+	    {	    
+		for (unsigned int j = 0 ; j < res.path.states[i].get_vals_size() ; ++j)
+		    std::cout << " " << res.path.states[i].vals[j];
+		std::cout << std::endl;
+	    }
 	}
 	else
 	    ROS_ERROR("Service 'plan_kinematic_path' failed");
@@ -125,7 +191,9 @@ public:
     {
 	if (rm_->loadedModels())
 	{
-	    runExample();
+	    sleep(1);
+	    
+	    runExampleBase();
 	    ros::spin();
 	}
     }
@@ -158,6 +226,7 @@ protected:
     bool                                              robot_stopped_;
     ros::NodeHandle                                   nh_;
     ros::Publisher                                    jointCommandPublisher_;
+    ros::Publisher                                    displayPathPublisher_;
     planning_environment::RobotModels                *rm_;
     planning_environment::KinematicModelStateMonitor *kmsm_;
     
