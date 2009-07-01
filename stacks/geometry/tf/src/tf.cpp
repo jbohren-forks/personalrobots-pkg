@@ -229,7 +229,8 @@ void Transformer::lookupTransform(const std::string& target_frame, const std::st
     }
     else
     {
-      ss << " When trying to transform between " << mapped_source_frame << " and " << mapped_target_frame <<".";
+      ss << " When trying to transform between " << mapped_source_frame << " and " << mapped_target_frame <<"."
+         << " See http://pr.willowgarage.com/pr-docs/ros-packages/tf/html/faq.html" << std::endl;
       throw ExtrapolationException(error_string + ss.str());
     }
     }
@@ -533,24 +534,24 @@ int Transformer::lookupLists(unsigned int target_frame, ros::Time time, unsigned
       if (error_string)
       {
         std::stringstream ss;
-        ss<< "No Common ParentD between "<< lookupFrameString(target_frame) <<" and " << lookupFrameString(source_frame)
+        ss<< "No Common Parent Case D between "<< lookupFrameString(target_frame) <<" and " << lookupFrameString(source_frame)
           << std::endl << allFramesAsString() << std::endl;
         *error_string = ss.str();
       }
-      return CONNECTIVITY_ERROR;//throw(ConnectivityException(ss.str()));
+      return CONNECTIVITY_ERROR;
     }
 
-    if (last_forward != source_frame)
+    if (last_forward != source_frame)  //\todo match with case A
     {
       if (error_string)
       {
         std::stringstream ss;
-        ss<< "No Common ParentC between " << lookupFrameString(target_frame) <<" and " << lookupFrameString(source_frame)
+        ss<< "No Common Parent Case C between " << lookupFrameString(target_frame) <<" and " << lookupFrameString(source_frame)
           << std::endl << allFramesAsString() << std::endl << lists.forwardTransforms.size() << " forward length"
           << " with " << lookupFrameString(last_forward) << std::endl;
         *error_string = ss.str();
       }
-      return CONNECTIVITY_ERROR;//throw(ConnectivityException(ss.str()));
+      return CONNECTIVITY_ERROR;
     }
     else return 0;
   }
@@ -558,14 +559,14 @@ int Transformer::lookupLists(unsigned int target_frame, ros::Time time, unsigned
   if (lists.forwardTransforms.size() == 0)
   {
     if (lists.inverseTransforms.size() == 0)  //If it's going to itself it's already been caught
-    {
+    {//\todo remove THis is the same as case D
       if (error_string)
       {
         std::stringstream ss;
-        ss<< "No Common ParentB between "<< lookupFrameString(target_frame) <<" and " << lookupFrameString(source_frame) << std::endl << allFramesAsString() << std::endl;
+        ss<< "No Common Parent Case B between "<< lookupFrameString(target_frame) <<" and " << lookupFrameString(source_frame) << std::endl << allFramesAsString() << std::endl;
         *error_string = ss.str();
       }
-      return CONNECTIVITY_ERROR;//throw(ConnectivityException(ss.str()));
+      return CONNECTIVITY_ERROR;
     }
 
     try
@@ -573,9 +574,9 @@ int Transformer::lookupLists(unsigned int target_frame, ros::Time time, unsigned
       if (lookupFrameNumber(lists.inverseTransforms.back().parent_id_) != target_frame)
       {
         std::stringstream ss;
-      ss<< "No Common ParentA between "<< lookupFrameString(target_frame) <<" and " << lookupFrameString(source_frame)  << std::endl << allFramesAsString() << std::endl << lists.inverseTransforms.back().parent_id_ << std::endl;
+      ss<< "No Common Parent Case A between "<< lookupFrameString(target_frame) <<" and " << lookupFrameString(source_frame)  << std::endl << allFramesAsString() << std::endl << lists.inverseTransforms.back().parent_id_ << std::endl;
       if (error_string) *error_string = ss.str();
-      return CONNECTIVITY_ERROR;//throw(ConnectivityException(ss.str()));
+      return CONNECTIVITY_ERROR;
     }
     else return 0;
     }
@@ -596,7 +597,7 @@ int Transformer::lookupLists(unsigned int target_frame, ros::Time time, unsigned
       ss<< "No Common Parent, at top of search between "<< lookupFrameString(target_frame) <<" and " << lookupFrameString(source_frame)  << std::endl << allFramesAsString() << std::endl;
       *error_string = ss.str();
     }
-    return CONNECTIVITY_ERROR;//    throw(ConnectivityException(ss.str()));
+    return CONNECTIVITY_ERROR;
   }
   /* Make sure that we don't have a no parent at the top */
   try
@@ -604,7 +605,7 @@ int Transformer::lookupLists(unsigned int target_frame, ros::Time time, unsigned
     if (lookupFrameNumber(lists.inverseTransforms.back().frame_id_) == 0 || lookupFrameNumber( lists.forwardTransforms.back().frame_id_) == 0)
     {
       if (error_string) *error_string = "NO_PARENT at top of tree";
-      return CONNECTIVITY_ERROR;//    throw(ConnectivityException("NO_PARENT at top of tree"));
+      return CONNECTIVITY_ERROR;
     }
 
 

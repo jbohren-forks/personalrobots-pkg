@@ -249,13 +249,27 @@ in all parts of the system.  Depending on the setup is is possible for
 data to be available before all the transforms necessary are available.  
 The recommended way to deal with this is to use a tf::MessageNotifier.
 
- - I'm seeing a huge (~1.2E9 second) extrapolation error.  What's up?
+ - I'm seeing a huge (~1.2E9 second) extrapolation error, why is that?
 
 Most likely this is a problem that part of the ROS system is running 
 on sim time, while part is running without simtime.  Make sure that all
 nodes are started while time is being published.  And set the param 
 "/using_sim_time" to true so that on startup there will not be a race 
 condition for what mode ros::Time is running in.  
+
+@subsection lookup_exception LookupException
+ - What does a LookupException mean? 
+
+A LookupException is thrown in the case that a frame id requested
+does not exist in the tf tree.  
+
+ - What does "Recursed too deep into graph" mean?
+
+This error is thrown when tf finds itself taking more than MAX_GRAPH_DEPTH 
+steps to try to find the top of the tree.  This is set high enough that the
+only common reason to hit this point is if the graph has a cycle in it.  
+Look at the rest of the error message and see if any cycles exist.  
+The program \ref tf_monitor will show who is publishing which transform.  
 
 @subsection connectivity_exceptions ConnectivityException
  - What does a connectivityException tell me about my robot?
@@ -271,6 +285,26 @@ to get between the source and target frame.  If you are running
 a large launch script look carefully for any nodes crashing 
 or failing to start.  The best utility to see what is being
 published is viewFrames.py see \ref viewFrames for usage.
+
+ - What do the different versions of ConnectivityExceptions mean?
+
+  - NO_PARENT at top of tree means that one or both of the target and source
+frame ids has NO_PARENT set as it's parent_id.  
+  - No Common Parent Case A is when the forward transform list is zero length
+and the top of the inverse transform list is not the target frame_id. 
+  - No Common Parent Case B is when the forward and inverse transform lists
+are both zero length, but the target and source frame_ids are not the same.  
+  - No Common Parent Case C is when the end of the forward transform list 
+is not equal to the source_frame, but the inverse list is zero length.
+  - No Common Parent Case D is the same as B.
+
+ - What does "Could not find a common time" mean?
+
+This will be thrown when  using getLatestCommonTime 
+(usually done by passing a time of 0 to the tf API) 
+if the frames exist and are connected
+but there are no overlapping data in time.  Often this is caused by
+one or more frames stopping being published.  
 
 
 @subsection datatypes_questions Data Types
