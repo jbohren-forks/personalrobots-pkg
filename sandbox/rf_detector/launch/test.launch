@@ -1,6 +1,7 @@
 
 <launch>
 
+ <include file="$(find stereo_image_proc)/stereoproc.launch" />
  <node pkg="rf_detector" name="rf_detector" type="rf_detector" respawn="false" output="screen">
    <param name="~RFmodel_filename" type="str" value="/wg/stor5/msun/workspace/RFVoting/testzone/Shoe/Train/RF.model" />
    <param name="~FgBgProb_filename" type="str" value="/wg/stor5/msun/workspace/RFVoting/testzone/Shoe/Train/FgBgPRob.txt" />
