@@ -34,7 +34,7 @@
 
 // TODO: doxygen mainpage
 
-#include <ros/node.h>
+#include <ros/ros.h>
 #include <sensor_msgs/Image.h>
 #include <sensor_msgs/CamInfo.h>
 #include <sensor_msgs/FillImage.h>
@@ -61,7 +61,12 @@
 class ProsilicaNode
 {
 private:
-  ros::Node &node_;
+  ros::NodeHandle nh_;
+  ImagePublisher img_pub_;
+  ImagePublisher rect_pub_;
+  ros::Publisher info_pub_;
+  ros::ServiceServer info_srv_;
+  ros::ServiceServer poll_srv_;
 
   // Camera
   boost::scoped_ptr<prosilica::Camera> cam_;
@@ -78,8 +83,6 @@ private:
   
   // Calibration data
   camera_calibration::PinholeCameraModel model_;
-  //camera_calibration::PinholeCameraModel roi_model_;
-  //unsigned int region_x_, region_y_;
   bool calibrated_;
 
   // Diagnostics
@@ -97,9 +100,13 @@ private:
   int consecutive_stable_exposures_;
 
 public:
-  ProsilicaNode(ros::Node &node)
-    : node_(node), cam_(NULL), running_(false),
-      diagnostic_(this, node_), count_(0),
+  ProsilicaNode(const ros::NodeHandle& node_handle)
+    : nh_(node_handle),
+      img_pub_(nh_),
+      rect_pub_(nh_),
+      cam_(NULL), running_(false),
+      diagnostic_(this, nh_),
+      count_(0),
       frames_dropped_total_(0), frames_completed_total_(0),
       frames_dropped_acc_(WINDOW_SIZE),
       frames_completed_acc_(WINDOW_SIZE),
@@ -115,12 +122,12 @@ public:
     unsigned long guid = 0;
 
     // Specify which frame to add to message header
-    node_.param("~frame_id", frame_id_, std::string("NO_FRAME")) ;
+    nh_.param("~frame_id", frame_id_, std::string("NO_FRAME")) ;
 
     // Acquisition control
     size_t buffer_size;
     std::string mode_str;
-    node_.param("~acquisition_mode", mode_str, std::string("Continuous"));
+    nh_.param("~acquisition_mode", mode_str, std::string("Continuous"));
     if (mode_str == std::string("Continuous")) {
       mode_ = prosilica::Continuous;
       // TODO: tighter bound than this minimal check
@@ -134,22 +141,22 @@ public:
     }
     else {
       ROS_FATAL("Unknown setting");
-      node_.shutdown();
+      nh_.shutdown();
       return;
     }
 
     // Determine which camera to use
-    if (node_.hasParam("~guid"))
+    if (nh_.hasParam("~guid"))
     {
       std::string guid_str;
-      node_.getParam("~guid", guid_str);
+      nh_.getParam("~guid", guid_str);
       guid = strtol(guid_str.c_str(), NULL, 0);
     }
       
-    if (node_.hasParam("~ip_address"))
+    if (nh_.hasParam("~ip_address"))
     {
       std::string ip_str;
-      node_.getParam("~ip_address", ip_str);
+      nh_.getParam("~ip_address", ip_str);
       cam_.reset( new prosilica::Camera(ip_str.c_str(), buffer_size) );
       
       // Verify Guid is the one expected
@@ -178,7 +185,7 @@ public:
     // Feature control
     bool auto_expose = true;
     std::string auto_setting;
-    node_.param("~exposure_auto", auto_setting, std::string("Auto"));
+    nh_.param("~exposure_auto", auto_setting, std::string("Auto"));
     if (auto_setting == std::string("Auto"))
       cam_->setExposure(0, prosilica::Auto);
     else if (auto_setting == std::string("AutoOnce"))
@@ -186,16 +193,16 @@ public:
     else if (auto_setting == std::string("Manual"))
     {
       int val;
-      node_.getParam("~exposure", val);
+      nh_.getParam("~exposure", val);
       cam_->setExposure(val, prosilica::Manual);
       auto_expose = false;
     } else {
       ROS_FATAL("Unknown setting");
-      node_.shutdown();
+      nh_.shutdown();
       return;
     }
     
-    node_.param("~gain_auto", auto_setting, std::string("Auto"));
+    nh_.param("~gain_auto", auto_setting, std::string("Auto"));
     if (auto_setting == std::string("Auto"))
       cam_->setGain(0, prosilica::Auto);
     else if (auto_setting == std::string("AutoOnce"))
@@ -203,15 +210,15 @@ public:
     else if (auto_setting == std::string("Manual"))
     {
       int val;
-      node_.getParam("~gain", val);
+      nh_.getParam("~gain", val);
       cam_->setGain(val, prosilica::Manual);
     } else {
       ROS_FATAL("Unknown setting");
-      node_.shutdown();
+      nh_.shutdown();
       return;
     }
     
-    node_.param("~whitebal_auto", auto_setting, std::string("Auto"));
+    nh_.param("~whitebal_auto", auto_setting, std::string("Auto"));
     if (auto_setting == std::string("Auto"))
       cam_->setWhiteBalance(0, 0, prosilica::Auto);
     else if (auto_setting == std::string("AutoOnce"))
@@ -219,12 +226,12 @@ public:
     else if (auto_setting == std::string("Manual"))
     {
       int blue, red;
-      node_.getParam("~whitebal_blue", blue);
-      node_.getParam("~whitebal_red", red);
+      nh_.getParam("~whitebal_blue", blue);
+      nh_.getParam("~whitebal_red", red);
       cam_->setWhiteBalance(blue, red, prosilica::Manual);
     } else {
       ROS_FATAL("Unknown setting");
-      node_.shutdown();
+      nh_.shutdown();
       return;
     }
 
@@ -237,15 +244,12 @@ public:
 
     cam_->setRoiToWholeFrame();
     
-    node_.advertise<sensor_msgs::Image>("~image", 1);
+    img_pub_.advertise("~image");
     if (calibrated_) {
-      node_.advertise<sensor_msgs::Image>("~image_rect", 1);
-      node_.advertise<sensor_msgs::CamInfo>("~cam_info", 1);
-      node_.advertiseService("~cam_info_service", &ProsilicaNode::camInfoService, this, 0);
+      rect_pub_.advertise("~image_rect");
+      info_pub_ = nh_.advertise<sensor_msgs::CamInfo>("~cam_info", 1);
+      info_srv_ = nh_.advertiseService<>("~cam_info_service", &ProsilicaNode::camInfoService, this);
     }
-
-    node_.param("~thumbnail_size", thumbnail_size_, 128);
-    node_.advertise<sensor_msgs::Image>("~thumbnail", 1);
 
     diagnostic_.addUpdater( &ProsilicaNode::freqStatus );
     diagnostic_.addUpdater( &ProsilicaNode::frameStatistics );
@@ -271,7 +275,7 @@ public:
 
     cam_->start(mode_);
     if (mode_ == prosilica::Triggered)
-      node_.advertiseService("~poll", &ProsilicaNode::triggeredGrab, this, 0);
+      poll_srv_ = nh_.advertiseService<>("~poll", &ProsilicaNode::triggeredGrab, this);
     
     running_ = true;
 
@@ -284,7 +288,7 @@ public:
       return 0;
 
     if (mode_ == prosilica::Triggered)
-      node_.unadvertiseService("~poll");
+      poll_srv_.shutdown();
     cam_->stop();
     
     running_ = false;
@@ -470,7 +474,7 @@ public:
     // Start up the camera
     start();
     
-    while (node_.ok())
+    while (nh_.ok())
     {
       usleep(100000);
       diagnostic_.update();
@@ -667,25 +671,10 @@ private:
   void publishTopics(sensor_msgs::Image &img, sensor_msgs::Image &rect_img,
                      sensor_msgs::CamInfo &cam_info)
   {
-    node_.publish("~image", img);
+    img_pub_.publish(img);
     if (calibrated_) {
-      node_.publish("~image_rect", rect_img);
-      node_.publish("~cam_info", cam_info);
-    }
-
-    if (node_.numSubscribers("~thumbnail") > 0) {
-      int width  = img.uint8_data.layout.dim[1].size;
-      int height = img.uint8_data.layout.dim[0].size;
-      float aspect = std::sqrt((float)width / height);
-      int scaled_width  = thumbnail_size_ * aspect + 0.5;
-      int scaled_height = thumbnail_size_ / aspect + 0.5;
-      
-      setBgrLayout(thumbnail_, scaled_width, scaled_height);
-      if (!rect_img_bridge_.fromImage(thumbnail_, "bgr"))
-        return;
-      cvResize(img_bridge_.toIpl(), rect_img_bridge_.toIpl());
-
-      node_.publish("~thumbnail", thumbnail_);
+      rect_pub_.publish(rect_img);
+      info_pub_.publish(cam_info);
     }
   }
   
@@ -741,9 +730,9 @@ private:
 
 int main(int argc, char **argv)
 {
-  ros::init(argc, argv);
-  ros::Node n("prosilica");
-  ProsilicaNode pn(n);
+  ros::init(argc, argv, "prosilica");
+  ros::NodeHandle nh;
+  ProsilicaNode pn(nh);
   pn.spin();
 
   return 0;
