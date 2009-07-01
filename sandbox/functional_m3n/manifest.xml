@@ -21,6 +21,6 @@
   <depend package="point_cloud_mapping" />
 
   <export>
-    <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -lfunctional_m3n" />
+    <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -lfm3n" />
   </export>
 </package>

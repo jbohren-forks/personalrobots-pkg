@@ -8,8 +8,8 @@ rospack_add_boost_directories()
 
 #add_definitions(-Wall -O3 -DNDEBUG -march=pentium4 -mfpmath=sse -mmmx -msse -msse2 -msse3)
 
-rospack_add_executable (bin/test_fm3n examples/test_fm3n.cpp)
-target_link_libraries (bin/test_fm3n fm3n)
+#rospack_add_executable (bin/test_fm3n examples/test_fm3n.cpp)
+#target_link_libraries (bin/test_fm3n fm3n)
 
 # ---[ Functional Max-Margin Markov Network library
 rospack_add_library (fm3n

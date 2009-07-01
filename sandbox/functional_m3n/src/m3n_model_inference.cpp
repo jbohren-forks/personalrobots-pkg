@@ -34,6 +34,8 @@
 
 #include <functional_m3n/m3n_model.h>
 
+#include <functional_m3n/logging/m3n_logging.h>
+
 using namespace std;
 
 // --------------------------------------------------------------
@@ -214,6 +216,7 @@ int M3NModel::inferPrivate(const RandomField& random_field,
   }
 
   ROS_INFO("successful inference: %f %f", curr_energy, prev_energy);
+  printClassificationRates(nodes, inferred_labels, training_labels_);
   return ret_val;
 }
 
