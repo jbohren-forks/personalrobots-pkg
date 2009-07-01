@@ -17,6 +17,8 @@
 
 cd `rospack find trex`
 
+echo "Copying Includes"
+
 rm -r include 2> /dev/null
 mkdir include
 INCLUDE_DIR="`pwd`/include"
