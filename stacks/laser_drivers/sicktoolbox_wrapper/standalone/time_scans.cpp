@@ -30,6 +30,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
 // POSSIBILITY OF SUCH DAMAGE.
 
+#include <cstdlib>
 #include <csignal>
 #include <stdint.h>
 #include <cstdio>
@@ -72,20 +73,14 @@ int main(int argc, char **argv)
   }
   try
   {
+    ros::Time prev_scan_time = ros::Time::now();
     while (!got_ctrlc)
     {
       sick_lms.GetSickScan(values, num_values);
-      // print 12 ranges to the console
-      /*
-      int inc = num_values / 11;
-      printf("%5d %5d %5d %5d %5d %5d %5d %5d %5d %5d %5d %5d\n", 
-             values[0],     values[inc], 
-             values[2*inc], values[3*inc],
-             values[4*inc], values[5*inc],
-             values[6*inc], values[7*inc],
-             values[8*inc], values[9*inc],
-             values[10*inc], values[num_values-1]);
-      */
+      ros::Time t = ros::Time::now();
+      double delta = t.toSec() - prev_scan_time.toSec();
+      printf("%f (%f)\n", delta, 1.0 / delta);
+      prev_scan_time = t;
     }
   }
   catch (...)
