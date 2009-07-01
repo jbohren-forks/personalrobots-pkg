@@ -214,11 +214,11 @@ bool ompl_planning::RequestHandler::computePlan(ModelMap &models, const planning
     configure(start, req, psetup);
     
     /* compute actual motion plan */
-    ompl::base::Path *bestPath       = NULL;
-    double            bestDifference = 0.0;
-    
-    bool approximate = false;    
-    callPlanner(psetup, req.times, req.allowed_time, bestPath, bestDifference, approximate);
+    Solution sol;
+    sol.path = NULL;
+    sol.difference = 0.0;
+    sol.approximate = false;
+    callPlanner(psetup, req.times, req.allowed_time, sol);
     
     psetup->model->collisionSpace->unlock();
     psetup->model->kmodel->unlock();
@@ -227,17 +227,16 @@ bool ompl_planning::RequestHandler::computePlan(ModelMap &models, const planning
     psetup->si->clearStartStates();	
 
     /* copy the solution to the result */
-    if (bestPath)
+    if (sol.path)
     {
-	fillResult(psetup, start, res, bestPath, bestDifference, approximate);
-	delete bestPath;
+	fillResult(psetup, start, res, sol);
+	delete sol.path;
     }
     
     return true;
 }
 
-void ompl_planning::RequestHandler::fillResult(PlannerSetup *psetup, const planning_models::StateParams *start, motion_planning_srvs::KinematicPlan::Response &res,
-					       ompl::base::Path* bestPath, double bestDifference, bool approximate)
+void ompl_planning::RequestHandler::fillResult(PlannerSetup *psetup, const planning_models::StateParams *start, motion_planning_srvs::KinematicPlan::Response &res, const Solution &sol)
 {   
     std::vector<planning_models::KinematicModel::Joint*> joints;
     psetup->model->kmodel->getJoints(joints);
@@ -249,7 +248,7 @@ void ompl_planning::RequestHandler::fillResult(PlannerSetup *psetup, const plann
 	start->copyParamsJoint(res.path.start_state[i].value, joints[i]->name);
     }
     
-    ompl::kinematic::PathKinematic *kpath = dynamic_cast<ompl::kinematic::PathKinematic*>(bestPath);
+    ompl::kinematic::PathKinematic *kpath = dynamic_cast<ompl::kinematic::PathKinematic*>(sol.path);
     if (kpath)
     {
 	res.path.states.resize(kpath->states.size());
@@ -266,7 +265,8 @@ void ompl_planning::RequestHandler::fillResult(PlannerSetup *psetup, const plann
 		res.path.states[i].vals[j] = kpath->states[i]->values[j];
 	}
     }
-    ompl::dynamic::PathDynamic *dpath = dynamic_cast<ompl::dynamic::PathDynamic*>(bestPath);
+    
+    ompl::dynamic::PathDynamic *dpath = dynamic_cast<ompl::dynamic::PathDynamic*>(sol.path);
     if (dpath)
     {
 	res.path.states.resize(dpath->states.size());
@@ -285,12 +285,11 @@ void ompl_planning::RequestHandler::fillResult(PlannerSetup *psetup, const plann
     }
     assert(kpath || dpath);
     
-    res.distance = bestDifference;
-    res.approximate = approximate ? 1 : 0;
+    res.distance = sol.difference;
+    res.approximate = sol.approximate ? 1 : 0;
 }
 
-bool ompl_planning::RequestHandler::callPlanner(PlannerSetup *psetup, int times, double allowed_time,
-						ompl::base::Path* &bestPath, double &bestDifference, bool &approximate)
+bool ompl_planning::RequestHandler::callPlanner(PlannerSetup *psetup, int times, double allowed_time, Solution &sol)
 {
     if (times <= 0)
     {
@@ -308,8 +307,8 @@ bool ompl_planning::RequestHandler::callPlanner(PlannerSetup *psetup, int times,
     if (result)
     {
 	ROS_INFO("Solution already achieved");
-	bestDifference = t_distance;
-	approximate = false;
+	sol.difference = t_distance;
+	sol.approximate = false;
 	
 	/* we want to maintain the invariant that a path will
 	   at least consist of start & goal states, so we copy
@@ -321,13 +320,13 @@ bool ompl_planning::RequestHandler::callPlanner(PlannerSetup *psetup, int times,
 	psetup->si->copyState(s1, psetup->si->getStartState(t_index));
 	kpath->states.push_back(s0);
 	kpath->states.push_back(s1);
-	bestPath = kpath;
+	sol.path = kpath;
     }
     else
     {		
 	/* do the planning */
-	bestPath = NULL;
-	bestDifference = 0.0;
+	sol.path = NULL;
+	sol.difference = 0.0;
 	double totalTime = 0.0;
 	ompl::base::Goal *goal = psetup->si->getGoal();
 	
@@ -356,16 +355,16 @@ bool ompl_planning::RequestHandler::callPlanner(PlannerSetup *psetup, int times,
 		    }
 		}		
 		
-		if (bestPath == NULL || bestDifference > goal->getDifference() || 
-		    (bestPath && bestDifference == goal->getDifference() && bestPath->length() > goal->getSolutionPath()->length()))
+		if (sol.path == NULL || sol.difference > goal->getDifference() || 
+		    (sol.path && sol.difference == goal->getDifference() && sol.path->length() > goal->getSolutionPath()->length()))
 		{
-		    if (bestPath)
-			delete bestPath;
-		    bestPath = goal->getSolutionPath();
-		    bestDifference = goal->getDifference();
-		    approximate = goal->isApproximate();
+		    if (sol.path)
+			delete sol.path;
+		    sol.path = goal->getSolutionPath();
+		    sol.difference = goal->getDifference();
+		    sol.approximate = goal->isApproximate();
 		    goal->forgetSolutionPath();
-		    ROS_DEBUG("          Obtained better solution: distance is %f", bestDifference);
+		    ROS_DEBUG("          Obtained better solution: distance is %f", sol.difference);
 		}
 	    }
 

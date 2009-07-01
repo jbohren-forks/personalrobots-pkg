@@ -89,15 +89,22 @@ namespace ompl_planning
 	
     private:
 
+	struct Solution
+	{
+	    ompl::base::Path *path;
+	    double            difference;
+	    bool              approximate;
+	};	
+	
 	/** \brief Set up all the data needed by motion planning based on a request and lock the planner setup
 	 *  using this data */
 	void configure(const planning_models::StateParams *startState, motion_planning_srvs::KinematicPlan::Request &req, PlannerSetup *psetup);
 	
 	/** \brief Compute the actual motion plan. Return true if computed plan was trivial (start state already in goal region) */
-	bool callPlanner(PlannerSetup *psetup, int times, double allowed_time, ompl::base::Path* &bestPath, double &bestDifference, bool &approximate);
+	bool callPlanner(PlannerSetup *psetup, int times, double allowed_time, Solution &sol);
 
 	/** \brief Fill the response with solution data */
-	void fillResult(PlannerSetup *psetup, const planning_models::StateParams *start, motion_planning_srvs::KinematicPlan::Response &res, ompl::base::Path* bestPath, double bestDifference, bool approximate);
+	void fillResult(PlannerSetup *psetup, const planning_models::StateParams *start, motion_planning_srvs::KinematicPlan::Response &res, const Solution &sol);
 
 	/** \brief Send visualization markers */
 	void display(PlannerSetup *psetup);
