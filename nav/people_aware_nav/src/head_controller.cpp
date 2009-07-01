@@ -74,7 +74,7 @@ public:
     do_continuous_ = false;
     have_goal_ = false;
 
-    node_.advertise<PointStamped>("head_track_point",1);
+    node_.advertise<PointStamped>("/head_controller/head_track_point",1);
 
     node_.advertiseService ("look_straight_ahead", &HeadController::lookStraightAhead, this);
     node_.advertiseService ("glance_at", &HeadController::glanceAt, this);
@@ -108,7 +108,8 @@ public:
   bool glanceAt(people_aware_nav::GlanceAt::Request &req, people_aware_nav::GlanceAt::Response& resp) {
 
     do_continuous_ = false; // Turn off track point publishing
-    node_.publish("head_track_point",req.point_stamped);
+    node_.publish("/head_controller/head_track_point",req.point_stamped);
+    usleep(300000);
     if (state_== TRACK) {
       lookAtGoal(); // Look at the goal once with a reasonable speed before passing it back to the continuous publication.
       do_continuous_ = true;
@@ -159,20 +160,20 @@ private:
     if (speed < 0.0) {
       // As fast as possible
       PointStamped p;
-      p.header.frame_id = "base_link";
+      p.header.frame_id = "head_pan_link";
       p.point.x = 1;
       p.point.y = 0;
-      p.point.z = 1.5;
-      node_.publish("head_track_point",p);
+      p.point.z = 0;
+      node_.publish("/head_controller/head_track_point",p);
     }
     else {
       // Change this to include the speed.
       PointStamped p;
-      p.header.frame_id = "base_link";
+      p.header.frame_id = "head_pan_link";
       p.point.x = 1;
       p.point.y = 0;
-      p.point.z = 1.5;
-      node_.publish("head_track_point",p);
+      p.point.z = 0;
+      node_.publish("/head_controller/head_track_point",p);
     }
   }
 
@@ -187,14 +188,14 @@ private:
       PointStamped p;
       p.header.frame_id = goal_pose_.header.frame_id;
       p.point = goal_pose_.pose.position;
-      node_.publish("head_track_point",p);
+      node_.publish("/head_controller/head_track_point",p);
     }
     else {
       // Change this to include the speed.
       PointStamped p;
       p.header.frame_id = goal_pose_.header.frame_id;
       p.point = goal_pose_.pose.position;
-      node_.publish("head_track_point",p);
+      node_.publish("/head_controller/head_track_point",p);
     }
   }
 
