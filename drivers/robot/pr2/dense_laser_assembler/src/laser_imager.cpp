@@ -38,7 +38,7 @@
  */
 
 #include <ros/ros.h>
-#include "image_msgs/Image.h"
+#include "sensor_msgs/Image.h"
 #include "calibration_msgs/DenseLaserSnapshot.h"
 
 using namespace std ;
@@ -55,14 +55,14 @@ public:
   LaserImager()
   {
     sub_ = n_.subscribe("dense_laser_snapshot", 1, &LaserImager::snapshotCallback, this) ;
-    intensity_pub_ = n_.advertise<image_msgs::Image> ("dense_laser_intensity", 1) ;
-    range_pub_ = n_.advertise<image_msgs::Image> ("dense_laser_intensity", 1) ;
+    intensity_pub_ = n_.advertise<sensor_msgs::Image> ("dense_laser_intensity", 1) ;
+    range_pub_ = n_.advertise<sensor_msgs::Image> ("dense_laser_intensity", 1) ;
 
   }
 
   void snapshotCallback(const calibration_msgs::DenseLaserSnapshotConstPtr& msg)
   {
-    image_msgs::Image image ;
+    sensor_msgs::Image image ;
     const unsigned int N = msg->num_scans * msg->readings_per_scan ;
 
 
