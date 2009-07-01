@@ -22,7 +22,8 @@
   <property name="outlet_height" value="0.3" />
   <property name="outlet_size_w" value="0.11431" />
   <property name="outlet_size_h" value="0.11567" />
-  <property name="jack_size"     value="0.03" />
+  <property name="jack_width"    value="0.033" />
+  <property name="jack_height"   value="0.028" />
 
   <!-- joint blocks -->
   <joint name="floor_joint" type="planar" /> 
@@ -105,7 +106,7 @@
   
   <link name="outlet_link">
     <parent name="wall_link" />
-    <origin xyz="-0.21 0.0 ${-1.0+outlet_height}" rpy="0 0 0" />
+    <origin xyz="-0.20 0.0 ${-1.0+outlet_height}" rpy="0 0 0" />
     <joint name="outlet_joint" />
     <inertial >
       <mass value="1" />
@@ -117,16 +118,16 @@
     <visual >
       <origin xyz="0.0 0.0 0.0" rpy="0 0 0" />
       <map name="gazebo_material" flag="gazebo">
-        <elem key="material" value="PR2/White" />
+        <elem key="material" value="PR2/Outlet" />
       </map>
       <geometry name="outlet_visual">
-        <mesh scale="0.02 ${outlet_size_w} ${outlet_size_h}" />
+        <mesh scale="0.01 ${outlet_size_w} ${outlet_size_h}" />
       </geometry>
     </visual>
     <collision >
       <origin xyz="0.0 0.0 0.0" rpy="0 0 0" />
       <geometry name="outlet_collision_geom">
-        <box size="0.02 ${outlet_size_w} ${outlet_size_h}" />
+        <box size="0.01 ${outlet_size_w} ${outlet_size_h}" />
       </geometry>
       <map name="outlet_intensity" flag="gazebo">
         <elem key="laserRetro" value="10.0" />
@@ -138,6 +139,7 @@
     </map>
   </link>
 
+  <!--
   <link name="jack1_link">
     <parent name="outlet_link" />
     <origin xyz="-0.006 ${-jack_offset_y} ${-jack_offset_z}" rpy="0 0 0" />
@@ -152,16 +154,16 @@
     <visual >
       <origin xyz="0.0 0.0 0.0" rpy="0 0 0" />
       <map name="gazebo_material" flag="gazebo">
-        <elem key="material" value="Gazebo/Red" />
+        <elem key="material" value="PR2/Jack" />
       </map>
       <geometry name="jack1_visual">
-        <mesh scale="0.01 ${jack_size} ${jack_size}" />
+        <mesh scale="0.01 ${jack_width} ${jack_height}" />
       </geometry>
     </visual>
     <collision >
       <origin xyz="0.0 0.0 0.0" rpy="0 0 0" />
       <geometry name="jack1_collision_geom">
-        <box size="0.01 ${jack_size} ${jack_size}" />
+        <box size="0.01 ${jack_width} ${jack_height}" />
       </geometry>
       <map name="jack1_intensity" flag="gazebo">
         <elem key="laserRetro" value="10.0" />
@@ -187,16 +189,16 @@
     <visual >
       <origin xyz="0.0 0.0 0.0" rpy="0 0 0" />
       <map name="gazebo_material" flag="gazebo">
-        <elem key="material" value="Gazebo/Red" />
+        <elem key="material" value="PR2/Jack" />
       </map>
       <geometry name="jack2_visual">
-        <mesh scale="0.01 ${jack_size} ${jack_size}" />
+        <mesh scale="0.01 ${jack_width} ${jack_height}" />
       </geometry>
     </visual>
     <collision >
       <origin xyz="0.0 0.0 0.0" rpy="0 0 0" />
       <geometry name="jack2_collision_geom">
-        <box size="0.01 ${jack_size} ${jack_size}" />
+        <box size="0.01 ${jack_width} ${jack_height}" />
       </geometry>
       <map name="jack2_intensity" flag="gazebo">
         <elem key="laserRetro" value="10.0" />
@@ -222,16 +224,16 @@
     <visual >
       <origin xyz="0.0 0.0 0.0" rpy="0 0 0" />
       <map name="gazebo_material" flag="gazebo">
-        <elem key="material" value="Gazebo/Red" />
+        <elem key="material" value="PR2/Jack" />
       </map>
       <geometry name="jack3_visual">
-        <mesh scale="0.01 ${jack_size} ${jack_size}" />
+        <mesh scale="0.01 ${jack_width} ${jack_height}" />
       </geometry>
     </visual>
     <collision >
       <origin xyz="0.0 0.0 0.0" rpy="0 0 0" />
       <geometry name="jack3_collision_geom">
-        <box size="0.01 ${jack_size} ${jack_size}" />
+        <box size="0.01 ${jack_width} ${jack_height}" />
       </geometry>
       <map name="jack3_intensity" flag="gazebo">
         <elem key="laserRetro" value="10.0" />
@@ -257,16 +259,16 @@
     <visual >
       <origin xyz="0.0 0.0 0.0" rpy="0 0 0" />
       <map name="gazebo_material" flag="gazebo">
-        <elem key="material" value="Gazebo/Red" />
+        <elem key="material" value="PR2/Jack" />
       </map>
       <geometry name="jack4_visual">
-        <mesh scale="0.01 ${jack_size} ${jack_size}" />
+        <mesh scale="0.01 ${jack_width} ${jack_height}" />
       </geometry>
     </visual>
     <collision >
       <origin xyz="0.0 0.0 0.0" rpy="0 0 0" />
       <geometry name="jack4_collision_geom">
-        <box size="0.01 ${jack_size} ${jack_size}" />
+        <box size="0.01 ${jack_width} ${jack_height}" />
       </geometry>
       <map name="jack4_intensity" flag="gazebo">
         <elem key="laserRetro" value="10.0" />
@@ -277,6 +279,7 @@
       <elem key="selfCollide" value="true" />
     </map>
   </link>
+  -->
 
 
   <map name="sensor" flag="gazebo">

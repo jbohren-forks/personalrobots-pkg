@@ -59,7 +59,7 @@
       </map>
     </collision>
     <map name="plug_gravity" flag="gazebo">
-      <elem key="turnGravityOff" value="false" />
+      <elem key="turnGravityOff" value="true" />
       <elem key="selfCollide" value="true" />
       <elem key="dampingFactor" value="0.5" />
     </map>
