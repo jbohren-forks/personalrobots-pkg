@@ -38,7 +38,7 @@
  *
  * @author Conor McGann
  */
-#include <trex_pr2/adapters.h>
+#include <trex_pr2/pr2_adapters.h>
 #include <tf/transform_listener.h>
 #include <robot_actions/action.h>
 #include <boost/thread.hpp>

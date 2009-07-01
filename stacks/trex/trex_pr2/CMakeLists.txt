@@ -17,7 +17,7 @@ set(TREX_FILES src/pr2_adapter_utilities.cpp
 	       src/pr2_components.cpp
 	       src/topological_map.cpp
 	       src/door_domain_constraints.cpp
-	       src/adapters.cpp
+	       src/pr2_adapters.cpp
 	       src/master_reactor.cpp)
 
 # trexdebug builds with a large number of run-time error checking running which is expensive

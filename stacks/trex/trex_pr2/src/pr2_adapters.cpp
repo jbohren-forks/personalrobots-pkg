@@ -38,7 +38,7 @@
 
 #include <trex_ros/adapter_utilities.h>
 #include <trex_pr2/pr2_adapter_utilities.h>
-#include <trex_pr2/adapters.h>
+#include <trex_pr2/pr2_adapters.h>
 #include "trex_ros/ros_action_adapter.h"
 #include "trex_ros/ros_state_adapter.h"
 
