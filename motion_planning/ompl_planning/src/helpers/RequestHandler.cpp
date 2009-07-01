@@ -181,8 +181,7 @@ void ompl_planning::RequestHandler::configure(const planning_models::StateParams
 	}
     }
 
-    if (SpaceInformationKinematicModel *s = dynamic_cast<SpaceInformationKinematicModel*>(psetup->si))
-	s->fixInvalidInputStates(rhoStart, rhoGoal, 100);
+    psetup->si->fixInvalidInputStates(rhoStart, rhoGoal, 100);
     
     /* print some information */
     ROS_DEBUG("=======================================");
