@@ -12,6 +12,7 @@
   <depend package="ogre"/>
   <depend package="ogre_tools"/>
   <depend package="visualization_msgs"/>
+  <depend package="message_filters"/>
   
   <cpp cflags="-I${prefix}/src/" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lnav_view"/>
   <python path="${prefix}/lib/"/>

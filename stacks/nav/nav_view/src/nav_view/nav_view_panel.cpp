@@ -31,15 +31,11 @@
 
 #include "ogre_tools/wx_ogre_render_window.h"
 
-#include "nav_srvs/StaticMap.h"
+#include "robot_srvs/StaticMap.h"
 
-#include "ros/common.h"
-#include "ros/node.h"
 #include <tf/transform_listener.h>
 
 #include <OGRE/Ogre.h>
-
-#include "ogre_tools/axes.h"
 
 #include "tools.h"
 
@@ -79,28 +75,9 @@ NavViewPanel::NavViewPanel( wxWindow* parent )
 , mouse_x_(0)
 , mouse_y_(0)
 , scale_(10.0f)
-, new_cloud_( false )
-, new_gui_path_( false )
-, new_local_path_( false )
-, new_robot_footprint_( false )
-, new_inflated_obstacles_( false )
-, new_raw_obstacles_( false )
-, new_gui_laser_( false )
-, new_occ_diff_( false )
 , current_tool_( NULL )
 {
-  ros_node_ = ros::Node::instance();
-
-  /// @todo This should go away once creation of the ros::Node is more well-defined
-  if (!ros_node_)
-  {
-    int argc = 0;
-    ros::init( argc, 0 );
-    ros_node_ = new ros::Node( "nav_view_panel", ros::Node::DONT_HANDLE_SIGINT );
-  }
-  ROS_ASSERT( ros_node_ );
-
-  tf_client_ = new tf::TransformListener( *ros_node_ );
+  tf_client_ = new tf::TransformListener();
 
   scene_manager_ = ogre_root_->createSceneManager( Ogre::ST_GENERIC );
   root_node_ = scene_manager_->getRootSceneNode()->createChildSceneNode();
@@ -116,17 +93,29 @@ NavViewPanel::NavViewPanel( wxWindow* parent )
 
   render_panel_->getViewport()->setCamera( camera_ );
 
-  ros_node_->param("/global_frame_id", global_frame_id_, std::string("/map"));
+  nh_.param("/global_frame_id", global_frame_id_, std::string("/map"));
 
-  ros_node_->advertise<robot_msgs::PoseStamped>("goal", 1);
-  ros_node_->advertise<robot_msgs::PoseWithCovariance>("initialpose", 1);
-  ros_node_->subscribe("particlecloud", cloud_, &NavViewPanel::incomingParticleCloud, this, 1);
-  ros_node_->subscribe("gui_path", path_line_, &NavViewPanel::incomingGuiPath, this, 1);
-  ros_node_->subscribe("local_path", local_path_, &NavViewPanel::incomingLocalPath, this, 1);
-  ros_node_->subscribe("robot_footprint", robot_footprint_, &NavViewPanel::incomingRobotFootprint, this, 1);
-  ros_node_->subscribe("inflated_obstacles", inflated_obstacles_, &NavViewPanel::incomingInflatedObstacles, this, 1);
-  ros_node_->subscribe("raw_obstacles", raw_obstacles_, &NavViewPanel::incomingRawObstacles, this, 1);
-  ros_node_->subscribe("gui_laser", laser_scan_, &NavViewPanel::incomingGuiLaser, this, 1);
+  particle_cloud_sub_ = nh_.subscribe("particlecloud", 1, &NavViewPanel::incomingParticleCloud, this);
+
+  gui_path_sub_.subscribe(nh_, "gui_path", 2);
+  local_path_sub_.subscribe(nh_, "local_path", 2);
+  robot_footprint_sub_.subscribe(nh_, "robot_footprint", 2);
+  inflated_obs_sub_.subscribe(nh_, "inflated_obstacles", 2);
+  raw_obs_sub_.subscribe(nh_, "raw_obstacles", 2);
+  gui_laser_sub_.subscribe(nh_, "gui_laser", 2);
+  gui_path_filter_ = PolylineFilterPtr(new PolylineFilter(gui_path_sub_, *tf_client_, global_frame_id_, 2));
+  local_path_filter_ = PolylineFilterPtr(new PolylineFilter(local_path_sub_, *tf_client_, global_frame_id_, 2));
+  robot_footprint_filter_ = PolylineFilterPtr(new PolylineFilter(robot_footprint_sub_, *tf_client_, global_frame_id_, 2));
+  inflated_obs_filter_ = PolylineFilterPtr(new PolylineFilter(inflated_obs_sub_, *tf_client_, global_frame_id_, 2));
+  raw_obs_filter_ = PolylineFilterPtr(new PolylineFilter(raw_obs_sub_, *tf_client_, global_frame_id_, 2));
+  gui_laser_filter_ = PolylineFilterPtr(new PolylineFilter(gui_laser_sub_, *tf_client_, global_frame_id_, 2));
+
+  gui_path_filter_->connect(boost::bind(&NavViewPanel::incomingGuiPath, this, _1));
+  local_path_filter_->connect(boost::bind(&NavViewPanel::incomingLocalPath, this, _1));
+  robot_footprint_filter_->connect(boost::bind(&NavViewPanel::incomingRobotFootprint, this, _1));
+  inflated_obs_filter_->connect(boost::bind(&NavViewPanel::incomingInflatedObstacles, this, _1));
+  raw_obs_filter_->connect(boost::bind(&NavViewPanel::incomingRawObstacles, this, _1));
+  gui_laser_filter_->connect(boost::bind(&NavViewPanel::incomingGuiLaser, this, _1));
 
   render_panel_->Connect( wxEVT_LEFT_DOWN, wxMouseEventHandler( NavViewPanel::onRenderWindowMouseEvents ), NULL, this );
   render_panel_->Connect( wxEVT_MIDDLE_DOWN, wxMouseEventHandler( NavViewPanel::onRenderWindowMouseEvents ), NULL, this );
@@ -169,15 +158,19 @@ NavViewPanel::~NavViewPanel()
   render_panel_->Disconnect( wxEVT_RIGHT_UP, wxMouseEventHandler( NavViewPanel::onRenderWindowMouseEvents ), NULL, this );
   render_panel_->Disconnect( wxEVT_MOUSEWHEEL, wxMouseEventHandler( NavViewPanel::onRenderWindowMouseEvents ), NULL, this );
 
-  ros_node_->unadvertise("goal");
-  ros_node_->unadvertise("initialpose");
-  ros_node_->unsubscribe("particlecloud", &NavViewPanel::incomingParticleCloud, this);
-  ros_node_->unsubscribe("gui_path", &NavViewPanel::incomingGuiPath, this);
-  ros_node_->unsubscribe("local_path", &NavViewPanel::incomingLocalPath, this);
-  ros_node_->unsubscribe("robot_footprint", &NavViewPanel::incomingRobotFootprint, this);
-  ros_node_->unsubscribe("inflated_obstacles", &NavViewPanel::incomingInflatedObstacles, this);
-  ros_node_->unsubscribe("raw_obstacles", &NavViewPanel::incomingRawObstacles, this);
-  ros_node_->unsubscribe("gui_laser", &NavViewPanel::incomingGuiLaser, this);
+  particle_cloud_sub_.shutdown();
+  gui_path_sub_.unsubscribe();
+  local_path_sub_.unsubscribe();
+  robot_footprint_sub_.unsubscribe();
+  inflated_obs_sub_.unsubscribe();
+  raw_obs_sub_.unsubscribe();
+  gui_laser_sub_.unsubscribe();
+  gui_path_filter_.reset();
+  local_path_filter_.reset();
+  robot_footprint_filter_.reset();
+  inflated_obs_filter_.reset();
+  raw_obs_filter_.reset();
+  gui_laser_filter_.reset();
 
   delete update_timer_;
   delete current_tool_;
@@ -199,19 +192,24 @@ void NavViewPanel::onRender( wxCommandEvent& event )
 
 void NavViewPanel::loadMap()
 {
-  nav_srvs::StaticMap::Request  req;
-  nav_srvs::StaticMap::Response resp;
-  printf("Requesting the map...\n");
+  robot_srvs::StaticMap::Request  req;
+  robot_srvs::StaticMap::Response resp;
+  ROS_INFO("Requesting the map...\n");
   if( !ros::service::call("/static_map", req, resp) )
   {
-    printf("request failed\n");
+    ROS_INFO("request failed\n");
 
     return;
   }
-  printf("Received a %d X %d map @ %.3f m/pix\n",
+  ROS_INFO("Received a %d X %d map @ %.3f m/pix\n",
          resp.map.info.width,
          resp.map.info.height,
          resp.map.info.resolution);
+
+  if (resp.map.info.width * resp.map.info.height == 0)
+  {
+    return;
+  }
 
   map_resolution_ = resp.map.info.resolution;
 
@@ -219,7 +217,7 @@ void NavViewPanel::loadMap()
   map_width_ = resp.map.info.width;//(int)pow(2,ceil(log2(resp.map.info.width)));
   map_height_ = resp.map.info.height;//(int)pow(2,ceil(log2(resp.map.info.height)));
 
-  //printf("Padded dimensions to %d X %d\n", map_width_, map_height_);
+  //ROS_INFO("Padded dimensions to %d X %d\n", map_width_, map_height_);
 
   // Expand it to be RGB data
   int pixels_size = map_width_ * map_height_ * 3;
@@ -364,42 +362,9 @@ void NavViewPanel::onUpdate( wxTimerEvent& event )
     }
   }
 
-  if ( new_cloud_ )
-  {
-    processParticleCloud();
-  }
-
-  if ( new_gui_path_ )
-  {
-    processGuiPath();
-  }
-
-  if ( new_local_path_ )
-  {
-    processLocalPath();
-  }
-
-  if ( new_robot_footprint_ )
-  {
-    processRobotFootprint();
-  }
-
-  if ( new_inflated_obstacles_ )
-  {
-    processInflatedObstacles();
-  }
-
-  if ( new_raw_obstacles_ )
-  {
-    processRawObstacles();
-  }
-
-  if ( new_gui_laser_ )
-  {
-    processGuiLaser();
-  }
-
   updateRadiusPosition();
+
+  ros::spinOnce();
 }
 
 void NavViewPanel::createRadiusObject()
@@ -453,11 +418,63 @@ void NavViewPanel::updateRadiusPosition()
   }
 }
 
-void NavViewPanel::processParticleCloud()
+void NavViewPanel::createObjectFromPolyLine( Ogre::ManualObject*& object, const visualization_msgs::Polyline& path, Ogre::RenderOperation::OperationType op, float depth, bool loop )
 {
-  cloud_.lock();
-  new_cloud_ = false;
+  if ( !object )
+  {
+    static int count = 0;
+    std::stringstream ss;
+    ss << "NavViewPathLine" << count++;
+    object = scene_manager_->createManualObject( ss.str() );
+    Ogre::SceneNode* node = root_node_->createChildSceneNode();
+    node->attachObject( object );
+  }
 
+  object->clear();
+
+  Ogre::ColourValue color( path.color.r, path.color.g, path.color.b );
+  size_t num_points = path.points.size();
+
+  if ( num_points > 0 )
+  {
+    object->estimateVertexCount( num_points);
+    object->begin( "BaseWhiteNoLighting", op );
+    for( size_t i=0; i < num_points; ++i)
+    {
+      tf::Stamped<tf::Point> point;
+      tf::PointMsgToTF(path.points[i], point);
+      point.frame_id_ = path.header.frame_id;
+      point.stamp_ = path.header.stamp;
+
+      tf_client_->transformPoint(global_frame_id_, point, point);
+
+      object->position(point.x(), point.y(), point.z());
+      object->colour( color );
+    }
+
+    if ( loop )
+    {
+      tf::Stamped<tf::Point> point;
+      tf::PointMsgToTF(path.points[0], point);
+      point.frame_id_ = path.header.frame_id;
+      point.stamp_ = path.header.stamp;
+
+      tf_client_->transformPoint(global_frame_id_, point, point);
+
+      object->position(point.x(), point.y(), point.z());
+      object->colour( color );
+    }
+
+    object->end();
+
+    object->getParentSceneNode()->setPosition( Ogre::Vector3( 0.0f, 0.0f, depth ) );
+  }
+
+  queueRender();
+}
+
+void NavViewPanel::incomingParticleCloud(const robot_msgs::ParticleCloud::ConstPtr& msg)
+{
   if ( !cloud_object_ )
   {
     static int count = 0;
@@ -471,14 +488,14 @@ void NavViewPanel::processParticleCloud()
   cloud_object_->clear();
 
   Ogre::ColourValue color( 1.0f, 0.0f, 0.0f, 1.0f );
-  int num_particles = cloud_.get_particles_size();
+  int num_particles = msg->particles.size();
   cloud_object_->estimateVertexCount( num_particles * 8 );
   cloud_object_->begin( "BaseWhiteNoLighting", Ogre::RenderOperation::OT_LINE_LIST );
   for( int i=0; i < num_particles; ++i)
   {
-    Ogre::Vector3 pos( cloud_.particles[i].position.x, cloud_.particles[i].position.y, cloud_.particles[i].position.z );
+    Ogre::Vector3 pos( msg->particles[i].position.x, msg->particles[i].position.y, msg->particles[i].position.z );
     tf::Quaternion orientation;
-    tf::QuaternionMsgToTF(cloud_.particles[i].orientation, orientation);
+    tf::QuaternionMsgToTF(msg->particles[i].orientation, orientation);
     double yaw, pitch, roll;
     btMatrix3x3(orientation).getEulerZYX(yaw, pitch, roll);
     Ogre::Quaternion orient( Ogre::Quaternion( Ogre::Radian( yaw ), Ogre::Vector3::UNIT_Z ) );
@@ -501,134 +518,39 @@ void NavViewPanel::processParticleCloud()
   }
   cloud_object_->end();
 
-
   cloud_object_->getParentSceneNode()->setPosition( Ogre::Vector3( 0.0f, 0.0f, CLOUD_DEPTH ) );
 
-  cloud_.unlock();
-
   queueRender();
 }
 
-void NavViewPanel::createObjectFromPolyLine( Ogre::ManualObject*& object, visualization_msgs::Polyline& path, Ogre::RenderOperation::OperationType op, float depth, bool loop )
+void NavViewPanel::incomingGuiPath(const visualization_msgs::Polyline::ConstPtr& msg)
 {
-  path.lock();
-
-  if ( !object )
-  {
-    static int count = 0;
-    std::stringstream ss;
-    ss << "NavViewPathLine" << count++;
-    object = scene_manager_->createManualObject( ss.str() );
-    Ogre::SceneNode* node = root_node_->createChildSceneNode();
-    node->attachObject( object );
-  }
-
-  object->clear();
-
-  Ogre::ColourValue color( path.color.r, path.color.g, path.color.b );
-  int num_points = path.get_points_size();
-
-  if ( num_points > 0 )
-  {
-    object->estimateVertexCount( num_points);
-    object->begin( "BaseWhiteNoLighting", op );
-    for( int i=0; i < num_points; ++i)
-    {
-      object->position(path.points[i].x, path.points[i].y, path.points[i].z);
-      object->colour( color );
-    }
-
-    if ( loop )
-    {
-      object->position(path.points[0].x, path.points[0].y, path.points[0].z);
-      object->colour( color );
-    }
-
-    object->end();
-
-    object->getParentSceneNode()->setPosition( Ogre::Vector3( 0.0f, 0.0f, depth ) );
-  }
-
-  path.unlock();
-
-  queueRender();
+  createObjectFromPolyLine( path_line_object_, *msg, Ogre::RenderOperation::OT_LINE_LIST, PATH_LINE_DEPTH, false );
 }
 
-void NavViewPanel::processGuiPath()
+void NavViewPanel::incomingLocalPath(const visualization_msgs::Polyline::ConstPtr& msg)
 {
-  new_gui_path_ = false;
-
-  createObjectFromPolyLine( path_line_object_, path_line_, Ogre::RenderOperation::OT_LINE_LIST, PATH_LINE_DEPTH, false );
+  createObjectFromPolyLine( local_path_object_, *msg, Ogre::RenderOperation::OT_LINE_LIST, LOCAL_PATH_DEPTH, false );
 }
 
-void NavViewPanel::processLocalPath()
+void NavViewPanel::incomingRobotFootprint(const visualization_msgs::Polyline::ConstPtr& msg)
 {
-  new_local_path_ = false;
-
-  createObjectFromPolyLine( local_path_object_, local_path_, Ogre::RenderOperation::OT_LINE_LIST, LOCAL_PATH_DEPTH, false );
+  createObjectFromPolyLine( footprint_object_, *msg, Ogre::RenderOperation::OT_LINE_LIST, FOOTPRINT_DEPTH, true );
 }
 
-void NavViewPanel::processRobotFootprint()
+void NavViewPanel::incomingInflatedObstacles(const visualization_msgs::Polyline::ConstPtr& msg)
 {
-  new_robot_footprint_ = false;
-
-  createObjectFromPolyLine( footprint_object_, robot_footprint_, Ogre::RenderOperation::OT_LINE_LIST, FOOTPRINT_DEPTH, true );
+  createObjectFromPolyLine( inflated_obstacles_object_, *msg, Ogre::RenderOperation::OT_POINT_LIST, INFLATED_OBSTACLES_DEPTH, false );
 }
 
-void NavViewPanel::processInflatedObstacles()
+void NavViewPanel::incomingRawObstacles(const visualization_msgs::Polyline::ConstPtr& msg)
 {
-  new_inflated_obstacles_ = false;
-
-  createObjectFromPolyLine( inflated_obstacles_object_, inflated_obstacles_, Ogre::RenderOperation::OT_POINT_LIST, INFLATED_OBSTACLES_DEPTH, false );
+  createObjectFromPolyLine( raw_obstacles_object_, *msg, Ogre::RenderOperation::OT_POINT_LIST, RAW_OBSTACLES_DEPTH, false );
 }
 
-void NavViewPanel::processRawObstacles()
+void NavViewPanel::incomingGuiLaser(const visualization_msgs::Polyline::ConstPtr& msg)
 {
-  new_raw_obstacles_ = false;
-
-  createObjectFromPolyLine( raw_obstacles_object_, raw_obstacles_, Ogre::RenderOperation::OT_POINT_LIST, RAW_OBSTACLES_DEPTH, false );
-}
-
-void NavViewPanel::processGuiLaser()
-{
-  new_gui_laser_ = false;
-
-  createObjectFromPolyLine( laser_scan_object_, laser_scan_, Ogre::RenderOperation::OT_POINT_LIST, LASER_SCAN_DEPTH, false );
-}
-
-void NavViewPanel::incomingParticleCloud()
-{
-  new_cloud_ = true;
-}
-
-void NavViewPanel::incomingGuiPath()
-{
-  new_gui_path_ = true;
-}
-
-void NavViewPanel::incomingLocalPath()
-{
-  new_local_path_ = true;
-}
-
-void NavViewPanel::incomingRobotFootprint()
-{
-  new_robot_footprint_ = true;
-}
-
-void NavViewPanel::incomingInflatedObstacles()
-{
-  new_inflated_obstacles_ = true;
-}
-
-void NavViewPanel::incomingRawObstacles()
-{
-  new_raw_obstacles_ = true;
-}
-
-void NavViewPanel::incomingGuiLaser()
-{
-  new_gui_laser_ = true;
+  createObjectFromPolyLine( laser_scan_object_, *msg, Ogre::RenderOperation::OT_POINT_LIST, LASER_SCAN_DEPTH, false );
 }
 
 void NavViewPanel::onRenderWindowMouseEvents( wxMouseEvent& event )

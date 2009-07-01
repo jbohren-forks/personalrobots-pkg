@@ -44,7 +44,6 @@ namespace nav_view
 
 Tool::Tool( NavViewPanel* panel )
 : scene_manager_( panel->getSceneManager() )
-, ros_node_( panel->getROSNode() )
 , panel_( panel )
 {
 
@@ -88,7 +87,8 @@ PoseTool::PoseTool( NavViewPanel* panel, bool goal )
 , state_( Position )
 , is_goal_( goal )
 {
-
+  goal_pub_ = nh_.advertise<robot_msgs::PoseStamped>("goal", 1);
+  pose_pub_ = nh_.advertise<robot_msgs::PoseWithCovariance>("initialpose", 1);
 }
 
 PoseTool::~PoseTool()
@@ -167,7 +167,7 @@ int PoseTool::processMouseEvent( wxMouseEvent& event, int last_x, int last_y, fl
             goal.pose.orientation.x, goal.pose.orientation.y, goal.pose.orientation.z, goal.pose.orientation.w, angle);
         goal.header.stamp = ros::Time::now();
         goal.header.frame_id = "/map";
-        ros_node_->publish( "goal", goal );
+        goal_pub_.publish( goal );
       }
       else
       {
@@ -180,7 +180,7 @@ int PoseTool::processMouseEvent( wxMouseEvent& event, int last_x, int last_y, fl
         pose.covariance[6*1+1] = 0.5 * 0.5;
         pose.covariance[6*3+3] = M_PI/12.0 * M_PI/12.0;
         ROS_INFO( "setting pose: %.3f %.3f %.3f\n", pos_.x, pos_.y, angle );
-        ros_node_->publish( "initialpose", pose );
+        pose_pub_.publish( pose );
       }
 
       flags |= Finished;

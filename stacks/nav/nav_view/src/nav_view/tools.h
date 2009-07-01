@@ -32,6 +32,8 @@
 
 #include <OGRE/OgreVector3.h>
 
+#include <ros/ros.h>
+
 namespace Ogre
 {
 class SceneManager;
@@ -70,7 +72,7 @@ public:
   virtual int processMouseEvent( wxMouseEvent& event, int last_x, int last_y, float& scale ) = 0;
 protected:
   Ogre::SceneManager* scene_manager_;
-  ros::Node* ros_node_;
+  ros::NodeHandle nh_;
   NavViewPanel* panel_;
 };
 
@@ -105,6 +107,9 @@ protected:
   Ogre::Vector3 pos_;
 
   bool is_goal_;
+
+  ros::Publisher goal_pub_;
+  ros::Publisher pose_pub_;
 };
 
 } // nav_view

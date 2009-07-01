@@ -32,7 +32,7 @@
 
 #include "nav_view_panel_generated.h"
 
-#include "nav_msgs/ParticleCloud.h"
+#include "robot_msgs/ParticleCloud.h"
 #include "robot_msgs/PoseStamped.h"
 #include "visualization_msgs/Polyline.h"
 #include "robot_msgs/PoseWithCovariance.h"
@@ -40,6 +40,10 @@
 #include <OGRE/OgreTexture.h>
 #include <OGRE/OgreMaterial.h>
 #include <OGRE/OgreRenderOperation.h>
+
+#include <message_filters/subscriber.h>
+#include <message_filters/tf.h>
+#include <ros/ros.h>
 
 #include <list>
 
@@ -104,12 +108,6 @@ Publishes to (name / type):
 - None
 
  **/
-
-namespace ros
-{
-class Node;
-}
-
 namespace ogre_tools
 {
 class wxOgreRenderWindow;
@@ -151,7 +149,6 @@ public:
   Ogre::Camera* getCamera() { return camera_; }
   Ogre::SceneNode* getRootNode() { return root_node_; }
   ogre_tools::wxOgreRenderWindow* getRenderPanel() { return render_panel_; }
-  ros::Node* getROSNode() { return ros_node_; }
   float getMapResolution() { return map_resolution_; }
   int getMapWidth() { return map_width_; }
   int getMapHeight() { return map_height_; }
@@ -167,28 +164,20 @@ protected:
 
   void loadMap();
   void clearMap();
-  void incomingParticleCloud();
-  void incomingGuiPath();
-  void incomingLocalPath();
-  void incomingRobotFootprint();
-  void incomingInflatedObstacles();
-  void incomingRawObstacles();
-  void incomingGuiLaser();
-
-  void processParticleCloud();
-  void processGuiPath();
-  void processLocalPath();
-  void processRobotFootprint();
-  void processInflatedObstacles();
-  void processRawObstacles();
-  void processGuiLaser();
+  void incomingParticleCloud(const robot_msgs::ParticleCloud::ConstPtr& msg);
+  void incomingGuiPath(const visualization_msgs::Polyline::ConstPtr& msg);
+  void incomingLocalPath(const visualization_msgs::Polyline::ConstPtr& msg);
+  void incomingRobotFootprint(const visualization_msgs::Polyline::ConstPtr& msg);
+  void incomingInflatedObstacles(const visualization_msgs::Polyline::ConstPtr& msg);
+  void incomingRawObstacles(const visualization_msgs::Polyline::ConstPtr& msg);
+  void incomingGuiLaser(const visualization_msgs::Polyline::ConstPtr& msg);
 
   void onRenderWindowMouseEvents( wxMouseEvent& event );
 
   void createRadiusObject();
   void updateRadiusPosition();
 
-  void createObjectFromPolyLine( Ogre::ManualObject*& object, visualization_msgs::Polyline& path, Ogre::RenderOperation::OperationType op, float depth, bool loop );
+  void createObjectFromPolyLine( Ogre::ManualObject*& object, const visualization_msgs::Polyline& path, Ogre::RenderOperation::OperationType op, float depth, bool loop );
 
   void createTransientObject();
 
@@ -197,7 +186,7 @@ protected:
   Ogre::Camera* camera_;
   ogre_tools::wxOgreRenderWindow* render_panel_;
 
-  ros::Node* ros_node_;
+  ros::NodeHandle nh_;
   tf::TransformListener* tf_client_;
 
   float map_resolution_;
@@ -205,14 +194,22 @@ protected:
   int map_height_;
   Ogre::TexturePtr map_texture_;
 
-  nav_msgs::ParticleCloud cloud_;
-  robot_msgs::PoseStamped goal_;
-  visualization_msgs::Polyline path_line_;
-  visualization_msgs::Polyline local_path_;
-  visualization_msgs::Polyline robot_footprint_;
-  visualization_msgs::Polyline laser_scan_;
-  visualization_msgs::Polyline inflated_obstacles_;
-  visualization_msgs::Polyline raw_obstacles_;
+  ros::Subscriber particle_cloud_sub_;
+
+  typedef tf::MessageFilter<visualization_msgs::Polyline> PolylineFilter;
+  typedef boost::shared_ptr<PolylineFilter> PolylineFilterPtr;
+  message_filters::Subscriber<visualization_msgs::Polyline> gui_path_sub_;
+  PolylineFilterPtr gui_path_filter_;
+  message_filters::Subscriber<visualization_msgs::Polyline> local_path_sub_;
+  PolylineFilterPtr local_path_filter_;
+  message_filters::Subscriber<visualization_msgs::Polyline> robot_footprint_sub_;
+  PolylineFilterPtr robot_footprint_filter_;
+  message_filters::Subscriber<visualization_msgs::Polyline> inflated_obs_sub_;
+  PolylineFilterPtr inflated_obs_filter_;
+  message_filters::Subscriber<visualization_msgs::Polyline> raw_obs_sub_;
+  PolylineFilterPtr raw_obs_filter_;
+  message_filters::Subscriber<visualization_msgs::Polyline> gui_laser_sub_;
+  PolylineFilterPtr gui_laser_filter_;
 
   Ogre::ManualObject* map_object_;
   Ogre::MaterialPtr map_material_;
@@ -236,15 +233,6 @@ protected:
 
   // Global frame (usually "map")
   std::string global_frame_id_;
-
-  bool new_cloud_;
-  bool new_gui_path_;
-  bool new_local_path_;
-  bool new_robot_footprint_;
-  bool new_inflated_obstacles_;
-  bool new_raw_obstacles_;
-  bool new_gui_laser_;
-  bool new_occ_diff_;
 
   wxTimer* update_timer_;
 

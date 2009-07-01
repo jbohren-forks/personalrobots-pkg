@@ -35,6 +35,7 @@
 
 #include "ros/node.h"
 #include "ros/common.h"
+#include <ros/package.h>
 
 #include "ogre_tools/initialization.h"
 
@@ -57,16 +58,7 @@ public:
 
     root_ = Ogre::Root::getSingletonPtr();
 
-    std::string mediaPath = ros::getPackagePath( "gazebo_robot_description" );
-    mediaPath += "/world/Media/";
-    ogre_tools::V_string paths;
-    paths.push_back( mediaPath );
-    paths.push_back( mediaPath + "materials" );
-    paths.push_back( mediaPath + "materials/scripts" );
-    paths.push_back( mediaPath + "materials/programs" );
-    paths.push_back( mediaPath + "materials/textures" );
-
-    ogre_tools::initializeResources( paths );
+    ogre_tools::initializeResources( ogre_tools::V_string() );
 
   }
 
@@ -101,8 +93,8 @@ public:
       printf( "argv[%d]: %s\n", i, localArgv[i] );
     }
 
-    ros::init(argc, localArgv);
-    new ros::Node( "nav_view", ros::Node::DONT_HANDLE_SIGINT );
+    ros::init(argc, localArgv, "nav_view");
+    ros::NodeHandle nh;
 
     wxFrame* frame = new MyFrame(NULL);
     SetTopWindow(frame);
