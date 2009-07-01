@@ -83,7 +83,7 @@ int ChompPlannerNode::run()
   return 0;
 }
 
-bool ChompPlannerNode::planKinematicPath(motion_planning_srvs::KinematicPlan::Request &req, motion_planning_srvs::KinematicPlan::Response &res)
+bool ChompPlannerNode::planKinematicPath(motion_planning_srvs::MotionPlan::Request &req, motion_planning_srvs::MotionPlan::Response &res)
 {
   // get the planning group:
   const ChompRobotModel::ChompPlanningGroup* group = chomp_robot_model_.getPlanningGroup(req.params.model_id);

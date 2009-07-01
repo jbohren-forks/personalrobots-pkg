@@ -78,7 +78,7 @@ Subscribes to:
 
 \subsubsection services ROS services
 
-- @b "plan_kinematic_path"/KinematicPlan : given a robot model, starting and goal states,
+- @b "plan_kinematic_path"/MotionPlan : given a robot model, starting and goal states,
   this service computes a collision free path.
 
 

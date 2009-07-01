@@ -128,7 +128,7 @@ public:
 	return NULL;
     }
     
-    bool planToGoal(motion_planning_srvs::KinematicPlan::Request &req, motion_planning_srvs::KinematicPlan::Response &res)
+    bool planToGoal(motion_planning_srvs::MotionPlan::Request &req, motion_planning_srvs::MotionPlan::Response &res)
     {
 	ROS_INFO("Received request for planning");
 	bool st = false;

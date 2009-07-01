@@ -39,7 +39,7 @@
 #include <ros/console.h>
 #include <sstream>
 
-bool ompl_planning::RequestHandler::isRequestValid(ModelMap &models, motion_planning_srvs::KinematicPlan::Request &req)
+bool ompl_planning::RequestHandler::isRequestValid(ModelMap &models, motion_planning_srvs::MotionPlan::Request &req)
 {   
     ModelMap::const_iterator pos = models.find(req.params.model_id);
     
@@ -114,7 +114,7 @@ bool ompl_planning::RequestHandler::isRequestValid(ModelMap &models, motion_plan
     return true;
 }
 
-void ompl_planning::RequestHandler::configure(const planning_models::StateParams *startState, motion_planning_srvs::KinematicPlan::Request &req, PlannerSetup *psetup)
+void ompl_planning::RequestHandler::configure(const planning_models::StateParams *startState, motion_planning_srvs::MotionPlan::Request &req, PlannerSetup *psetup)
 {
     /* clear memory */
     psetup->si->clearGoal();
@@ -194,7 +194,7 @@ void ompl_planning::RequestHandler::configure(const planning_models::StateParams
 }
 
 bool ompl_planning::RequestHandler::computePlan(ModelMap &models, const planning_models::StateParams *start, 
-						motion_planning_srvs::KinematicPlan::Request &req, motion_planning_srvs::KinematicPlan::Response &res)
+						motion_planning_srvs::MotionPlan::Request &req, motion_planning_srvs::MotionPlan::Response &res)
 {
     if (!isRequestValid(models, req))
 	return false;
@@ -236,7 +236,7 @@ bool ompl_planning::RequestHandler::computePlan(ModelMap &models, const planning
     return true;
 }
 
-void ompl_planning::RequestHandler::fillResult(PlannerSetup *psetup, const planning_models::StateParams *start, motion_planning_srvs::KinematicPlan::Response &res, const Solution &sol)
+void ompl_planning::RequestHandler::fillResult(PlannerSetup *psetup, const planning_models::StateParams *start, motion_planning_srvs::MotionPlan::Response &res, const Solution &sol)
 {   
     std::vector<planning_models::KinematicModel::Joint*> joints;
     psetup->model->kmodel->getJoints(joints);

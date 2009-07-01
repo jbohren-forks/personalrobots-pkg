@@ -38,7 +38,7 @@
 #define CHOMP_PLANNER_NODE_H_
 
 #include <ros/ros.h>
-#include <motion_planning_srvs/KinematicPlan.h>
+#include <motion_planning_srvs/MotionPlan.h>
 #include <chomp_motion_planner/chomp_robot_model.h>
 
 namespace chomp
@@ -77,7 +77,7 @@ public:
   /**
    * \brief Main entry point for motion planning (callback for the plan_kinematic_path service)
    */
-  bool planKinematicPath(motion_planning_srvs::KinematicPlan::Request &req, motion_planning_srvs::KinematicPlan::Response &res);
+  bool planKinematicPath(motion_planning_srvs::MotionPlan::Request &req, motion_planning_srvs::MotionPlan::Response &res);
 
 private:
   ros::NodeHandle node_handle_;                         /**< ROS Node handle */

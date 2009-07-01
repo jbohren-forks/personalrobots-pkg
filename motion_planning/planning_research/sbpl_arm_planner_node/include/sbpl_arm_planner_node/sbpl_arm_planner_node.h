@@ -55,7 +55,7 @@
 
 /** services **/
 #include <sbpl_arm_planner_node/PlanPathSrv.h>
-#include <motion_planning_srvs/KinematicPlan.h>
+#include <motion_planning_srvs/MotionPlan.h>
 
 namespace sbpl_arm_planner_node
 {
@@ -70,7 +70,7 @@ namespace sbpl_arm_planner_node
 
       ~SBPLArmPlannerNode();
 
-      bool planKinematicPath(motion_planning_srvs::KinematicPlan::Request &req, motion_planning_srvs::KinematicPlan::Response &res);
+      bool planKinematicPath(motion_planning_srvs::MotionPlan::Request &req, motion_planning_srvs::MotionPlan::Response &res);
 
 
      private:
@@ -125,8 +125,8 @@ namespace sbpl_arm_planner_node
 
       bool setGoalState(const std::vector<motion_planning_msgs::JointConstraint> &joint_constraint);
 
-      bool planToState(motion_planning_srvs::KinematicPlan::Request &req, motion_planning_srvs::KinematicPlan::Response &res);
-      bool planToPosition(motion_planning_srvs::KinematicPlan::Request &req, motion_planning_srvs::KinematicPlan::Response &res);
+      bool planToState(motion_planning_srvs::MotionPlan::Request &req, motion_planning_srvs::MotionPlan::Response &res);
+      bool planToPosition(motion_planning_srvs::MotionPlan::Request &req, motion_planning_srvs::MotionPlan::Response &res);
 
       bool plan(motion_planning_msgs::KinematicPath &arm_path);
 

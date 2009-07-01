@@ -346,7 +346,7 @@ bool SBPLArmPlannerNode::setGoalState(const std::vector<motion_planning_msgs::Jo
 }
 
 /** plan to joint space goal */
-bool SBPLArmPlannerNode::planToState(motion_planning_srvs::KinematicPlan::Request &req, motion_planning_srvs::KinematicPlan::Response &res)
+bool SBPLArmPlannerNode::planToState(motion_planning_srvs::MotionPlan::Request &req, motion_planning_srvs::MotionPlan::Response &res)
 {
   motion_planning_msgs::KinematicPath arm_path;
 
@@ -406,7 +406,7 @@ bool SBPLArmPlannerNode::planToState(motion_planning_srvs::KinematicPlan::Reques
 }
 
 /** plan to cartesian goal(s) */
-bool SBPLArmPlannerNode::planToPosition(motion_planning_srvs::KinematicPlan::Request &req, motion_planning_srvs::KinematicPlan::Response &res)
+bool SBPLArmPlannerNode::planToPosition(motion_planning_srvs::MotionPlan::Request &req, motion_planning_srvs::MotionPlan::Response &res)
 {
 //   for(unsigned int i=0; i < req.get_start_state_size(); i++)
 //   {
@@ -510,7 +510,7 @@ bool SBPLArmPlannerNode::planToPosition(motion_planning_srvs::KinematicPlan::Req
 }
 
 /** call back function */
-bool SBPLArmPlannerNode::planKinematicPath(motion_planning_srvs::KinematicPlan::Request &req, motion_planning_srvs::KinematicPlan::Response &res)
+bool SBPLArmPlannerNode::planKinematicPath(motion_planning_srvs::MotionPlan::Request &req, motion_planning_srvs::MotionPlan::Response &res)
 {
   ROS_INFO("Callback called\n");
 
