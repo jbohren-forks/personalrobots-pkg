@@ -138,6 +138,7 @@ class FeatureDetector4x4:
 class FeatureDetectorHarris(FeatureDetector):
   """
   Feature detector using Harris Corners via OpenCV's `GoodFeaturesToTrack` function.
+  http://opencv.willowgarage.com/documentation/image_processing.html#cvCornerHarris
   """
 
   default_thresh = 0.130
