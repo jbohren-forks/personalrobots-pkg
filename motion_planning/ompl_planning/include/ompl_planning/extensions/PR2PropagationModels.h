@@ -57,10 +57,10 @@ namespace ompl_planning
 	{
 	    *dimension = 2;
 	    component.resize(*dimension);
-	    component[0].type = ompl::base::ControlComponent::NORMAL;
+	    component[0].type = ompl::base::ControlComponent::LINEAR;
 	    component[0].minValue = -0.2;
 	    component[0].maxValue = 1.5;
-	    component[1].type = ompl::base::ControlComponent::NORMAL;
+	    component[1].type = ompl::base::ControlComponent::LINEAR;
 	    component[1].minValue = -0.5;
 	    component[1].maxValue =  0.5;
 	    

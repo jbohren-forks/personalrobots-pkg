@@ -60,7 +60,7 @@ void ompl_planning::SpaceInformationKinematicModel::configureOMPLSpace(ModelBase
 	    if (rj && rj->continuous)
 		m_stateComponent[i].type = ompl::base::StateComponent::WRAPPING_ANGLE;
 	    else
-		m_stateComponent[i].type = ompl::base::StateComponent::NORMAL;
+		m_stateComponent[i].type = ompl::base::StateComponent::LINEAR;
 	}
 	
 	m_stateComponent[i].minValue   = kmodel_->getModelInfo().stateBounds[p    ];
@@ -218,7 +218,7 @@ void ompl_planning::SpaceInformationDynamicModel::configureOMPLSpace(ModelBase *
 	    if (rj && rj->continuous)
 		m_stateComponent[i].type = ompl::base::StateComponent::WRAPPING_ANGLE;
 	    else
-		m_stateComponent[i].type = ompl::base::StateComponent::NORMAL;
+		m_stateComponent[i].type = ompl::base::StateComponent::LINEAR;
 	}
 	
 	m_stateComponent[i].minValue   = kmodel_->getModelInfo().stateBounds[p    ];
