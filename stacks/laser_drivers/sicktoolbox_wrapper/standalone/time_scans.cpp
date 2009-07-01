@@ -31,12 +31,10 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 #include <csignal>
-extern "C" {
-// not everyone has <cstdint>
 #include <stdint.h>
-}
 #include <cstdio>
 #include <sicklms-1.0/SickLMS.hh>
+#include "ros/time.h"
 using namespace SickToolbox;
 using namespace std;
 
@@ -78,6 +76,7 @@ int main(int argc, char **argv)
     {
       sick_lms.GetSickScan(values, num_values);
       // print 12 ranges to the console
+      /*
       int inc = num_values / 11;
       printf("%5d %5d %5d %5d %5d %5d %5d %5d %5d %5d %5d %5d\n", 
              values[0],     values[inc], 
@@ -86,6 +85,7 @@ int main(int argc, char **argv)
              values[6*inc], values[7*inc],
              values[8*inc], values[9*inc],
              values[10*inc], values[num_values-1]);
+      */
     }
   }
   catch (...)
