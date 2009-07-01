@@ -69,6 +69,12 @@ namespace planning_models
 	/** \brief Construct a random state */
 	void randomState(void);
 
+	/** \brief Perturb state. Each dimension is perturbed by a factor of its range */
+	void perturbState(double factor);
+	
+	/** \brief Update parameters so that they are within the specified bounds */
+	void enforceBounds(void);
+	
 	/** \brief Mark all values as unseen */
 	void reset(void);
 	

@@ -113,6 +113,25 @@ void planning_models::StateParams::randomState(void)
     }
 }
 
+void planning_models::StateParams::perturbState(double factor)
+{   
+    for (unsigned int i = 0 ; i < m_mi.stateDimension ; ++i)
+	m_params[i] += factor * (m_mi.stateBounds[2 * i + 1] - m_mi.stateBounds[2 * i]) * (2.0 * ((double)rand() / (RAND_MAX + 1.0)) - 1.0);
+    enforceBounds();
+}
+
+void planning_models::StateParams::enforceBounds(void)
+{  
+    for (unsigned int i = 0 ; i < m_mi.stateDimension ; ++i)
+    {
+	if (m_params[i] > m_mi.stateBounds[2 * i + 1])
+	    m_params[i] = m_mi.stateBounds[2 * i + 1];
+	else
+	    if (m_params[i] < m_mi.stateBounds[2 * i])
+		m_params[i] = m_mi.stateBounds[2 * i];
+    }
+}
+
 void planning_models::StateParams::reset(void)
 {
     for (unsigned int i = 0 ; i < m_mi.stateDimension ; ++i)
