@@ -1,5 +1,5 @@
 <package>
-  <description>Kinematic motion planning using OMPL</description>
+  <description>Sampling-based motion planning using OMPL</description>
   <author>Ioan A. Sucan</author>
   <license>BSD</license>
   <review status="unreviewed" notes=""/>

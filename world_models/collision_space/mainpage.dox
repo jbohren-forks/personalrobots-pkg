@@ -2,27 +2,16 @@
 \mainpage
 \htmlinclude manifest.html
 
-\b collision_space is used to represent collisions between a given robot model and the environment. Self collision checking is performed and contact positions and normals can be computed.
+@section summary Summary 
 
-<!-- 
-In addition to providing an overview of your package,
-this is the section where the specification and design/architecture 
-should be detailed. While the original specification may be done on the
-wiki, it should be transferred here once your package starts to take shape.
-You can then link to this documentation page from the Wiki. 
--->
+\b collision_space is used to represent collisions between a given
+robot model (as in <a href="../../planning_models/html">planning_models</a>) and the
+environment. Self collision checking is performed and contact
+positions and normals can be computed.
 
 
-<!--
-Provide links to specific auto-generated API documentation within your
-package that is of particular interest to a reader. Doxygen will
-document pretty much every part of your code, so do your best here to
-point the reader to the actual API.
-
-If your codebase is fairly large or has different sets of APIs, you
-should use the doxygen 'group' tag to keep these APIs together. For
-example, the roscpp documentation has 'libros' group.
--->
+An abstract interface (collision_space::EnvironmentModel) is provided
+to a set of collision checking libraries.
 
 
 */

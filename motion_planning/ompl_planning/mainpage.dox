@@ -2,42 +2,42 @@
 \mainpage
 \htmlinclude manifest.html
 
-@b ompl_planning is a node capable of planning kinematic paths for
-a set of robot models. Each robot model is a complete model specified
-in URDF or consists of an URDF group.
+@section summary Summary
+
+@b ompl_planning is a node capable of planning kinematic paths for a
+set of robot models. Each robot model is a group of links/joints from a
+URDF file, not necessarily the complete robot model. The available
+models (groups of links) are defined as described in the
+<a href="../../planning_environment/html">planning_environment</a> package.
 
 Organization:
- - there are multiple models (a model is a group of links/joints we plan for)
- - there are multiple planners that can be used for each model
- - there are multiple types of planning requests
 
-The code is mostly implemented in the included RKP* files (ROS
-Kinematic Planning). There exists one basic class (RKPRequestHandler)
-that can handle different requests.
+ - there are multiple models (defined by @b group_list as in <a href="../../planning_environment/html">planning_environment</a>)
 
-A model is defined for each loaded URDF model, and for each of the
-URDF groups marked for planning. This model includes a kinematic
-model, a collision space (shared between models) and a set of
-planners. If a planner is used for different models, it is
-instantiated each time. Since planners may require different
-setup/configuration code, there exists a base class that defines the
-functionality and an inherited class for each type of planner that can
-be instantiated. The planners are associated to string names:
-kinematic::RRT, kinematic::LazyRRT, kinematic::EST, kinematic::SBL,
-kinematic::IKSBL. These string names can be used for the planner_id
-component of the planning request. If no planner_id is specified, an
-appropriate planner is automatically selected. This is in fact the
-prefered use.
+ - there are multiple planners that can be used for each model (defined by @b planner_configs as in <a href="../../planning_environment/html">planning_environment</a>)
+
+
+For each model, a kinematic structure (as in <a
+href="../../planning_models/html">planning_models</a>), a collision
+space (as in <a href="../../collision_space/html">collision_space</a>)
+and a set of planners (from <a href="../../ompl/html">ompl</a>) are
+maintained. The collision space is shared between models.  If a
+planner is used for different models, it is instantiated each
+time. 
+
+The planners are associated to string names: kinematic::RRT,
+kinematic::LazyRRT, kinematic::EST, kinematic::SBL, kinematic::IKSBL,
+kinematic::KPIECE, dynamic::RRT. These string names can be used for
+the @b planner_id component of the planning request. If no @b
+planner_id is specified, an appropriate planner is automatically
+selected. This is in fact the preferred use.
 
 When checking states for validity, a resolution at which paths are
 check needs to be defined. To make things easier for the user, this
-parameter is computed by default by the SpaceInformationRKPModel
-class. The current settings work fine for the PR2, but if another
-robot is to be used, different settings man need to be used.
-
-\todo
-- Find a better way to specify resolution for state validity
-checking.
+parameter is computed by default by the
+ompl_planning::SpaceInformationKinematicModel class. The current
+settings work fine for the PR2, but if another robot is to be used,
+different settings may need to be employed.
 
 <!--
 \section codeapi Code API
@@ -71,10 +71,10 @@ $ ompl_planning robot_description:=pr2/robot_description
 \subsubsection topics ROS topics
 
 Subscribes to:
-- only topics PlanningMonitor from planning_environment package subscribes to
+- only topics planning_environment::PlanningMonitor from <a href="../../planning_environment/html">planning_environment</a> package subscribes to
 
 \subsubsection parameters ROS parameters
-- "~planning_frame_id"/string : if the default frame is not to be used when planning, this parameter allows changing that frame. 
+- @b "~planning_frame_id"/string : if the default frame is not to be used when planning, this parameter allows changing that frame. 
 
 \subsubsection services ROS services
 

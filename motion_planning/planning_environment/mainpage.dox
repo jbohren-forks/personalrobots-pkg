@@ -2,19 +2,160 @@
 \mainpage
 \htmlinclude manifest.html
 
+@section summary Summary
+
 \b planning_environment is a library that allows users to instantiate
 robot models and collision models based on data from the parameter
 server with minimal user input. Additionally, state information for
 both robot models and collision environments can be monitored.
 
-<!-- 
-In addition to providing an overview of your package,
-this is the section where the specification and design/architecture 
-should be detailed. While the original specification may be done on the
-wiki, it should be transferred here once your package starts to take shape.
-You can then link to this documentation page from the Wiki. 
--->
+@section conventions Conventions
 
+A URDF robot description is assumed to be loaded on the parameter
+server. The name of the parameter under which this description exists
+is taken as an argument to class constructors.  Additionally, .yaml
+files describing the collision and planning information should be
+loaded on the parameter server under the same prefix as the robot
+description.
+
+The collision.yaml file should define the follwing:
+
+ - the robot links (same names as in the URDF description) that should be considered for collision checking under @b collision_links
+
+ - the self collision groups under @b self_collision_groups
+
+ - the set of robot links that the robot can perceive with its sensors @b self_see ; (scaling and padding for these links is set with @b self_see_scale, @b self_see_padd)
+
+
+An example collision.yaml file:
+
+@verbatim
+
+## links for which collision checking with the environment should be performed
+collision_links:
+  base_link
+  torso_lift_link
+  head_pan_link
+  head_tilt_link
+  laser_tilt_mount_link
+  base_laser
+  ...
+
+## self collision is performed between groups of links; the names for the groups can be anything, but they must contain 'a' and 'b' as subgroups
+self_collision_groups: scg_r scg_l
+
+## -- for right arm; self-collision if any link in 'a' collides with some link in 'b'
+scg_r:
+  a: r_forearm_link r_gripper_palm_link r_gripper_l_finger_link r_gripper_r_finger_link r_gripper_l_finger_tip_link r_gripper_r_finger_tip_link
+  b: base_link base_laser torso_lift_link laser_tilt_mount_link head_tilt_link
+
+## -- for left arm; self-collision if any link in 'a' collides with some link in 'b'
+scg_l:
+  a: l_forearm_link l_gripper_palm_link l_gripper_l_finger_link l_gripper_r_finger_link l_gripper_l_finger_tip_link l_gripper_r_finger_tip_link
+  b: base_link base_laser torso_lift_link laser_tilt_mount_link head_tilt_link 
+
+## list of links that the robot can see with its sensors (used to remove 
+## parts of the robot from scanned data)
+self_see:
+  r_upper_arm_link
+  r_upper_arm_roll_link
+  r_elbow_flex_link
+  r_forearm_link
+  r_forearm_roll_link
+  ...
+
+## The padding to be added for the body parts the robot can see
+self_see_padd: 0.1
+
+## The scaling to be considered for the body parts the robot can see
+self_see_scale: 1.0
+
+@endverbatim
+
+
+The planning.yaml file defines the groups of links/joints motion planning can be performed for and contains the following:
+
+ - the names of the groups (the model ID's) planning is done for, under @b group_list. This is important as motion planners will use these names as input.
+
+ - the definition of each of the groups is under @b groups. Each definition contains 
+    - @b links : the names of the robot links to plan for; the actuated joints are the ones that connect the links with their parents, as described in the URDF
+    - @b planner_configs : these are names of configurations for planners; each planner configuration contains a planner-specific set of parameters. The only parameter that must exist is 'type', which specified the planner to be used.
+
+ - the content of each planning configuration under @ b planner_configs
+
+
+An example planning.yaml file:
+
+@verbatim
+
+## the list of groups for which motion planning can be performed
+group_list:
+  base
+  left_arm
+  ...
+
+## the definition of each group
+groups:
+
+  base:
+    links:
+      base_link
+    planner_configs:
+      RRTkConfig1 RRTdConfig1 SBLkConfig1 KPIECEkConfig1
+
+  left_arm:
+    links:
+      l_shoulder_pan_link
+      l_shoulder_lift_link
+      l_upper_arm_roll_link
+      l_upper_arm_link
+      l_elbow_flex_link
+      l_forearm_roll_link
+      l_forearm_link
+      l_wrist_flex_link
+      l_wrist_roll_link
+    planner_configs:
+      SBLkConfig2 LBKPIECEkConfig2l
+
+  ...
+
+## the planner configurations; each config must have a type, which specifies
+## the planner to be used; other parameters can be specified as well, depending 
+## on the planner
+
+planner_configs:
+  
+  RRTkConfig1:
+    type: kinematic::RRT
+    range: 0.75
+
+  RRTdConfig1:
+    type: dynamic::RRT
+    range: 0.75
+
+  SBLkConfig1:
+    type: kinematic::SBL
+    projection: 0 1
+    celldim: 1 1
+    range: 0.5
+
+  KPIECEkConfig1:
+    type: kinematic::KPIECE
+    projection: 0 1
+    celldim: 1 1
+    range: 0.5
+
+  SBLkConfig2:
+    type: kinematic::SBL
+    projection: 5 6
+    celldim: 0.1 0.1
+
+  LBKPIECEkConfig2l:
+    type: kinematic::LBKPIECE
+    projection: link l_wrist_roll_link
+    celldim: 0.1 0.1 0.1
+
+@endverbatim
 
 \section codeapi Code API
 
@@ -22,122 +163,43 @@ The intended use for this package is to instantiante one of the two
 model classes and potentially one of the monitor classes.
 
 The model classes are:
-- \b RobotModels : allows the instantiation of various robot models (for example, a kinematic one) based on data from the parameter server. The URDF robot description and the .yaml files describing collision and planning information are assumed to be loaded.
+- \b planning_environment::RobotModels : allows the instantiation of various robot models (for example, a kinematic one) based on data from the parameter server. The URDF robot description and the .yaml files describing collision and planning information are assumed to be loaded.
 
-- \b CollisionModels : allows the instantiation of various robot models (for example, a kinematic one) and various collision spaces, based on data from the parameter server. This class inherits from \b RobotModels. The URDF robot description and the .yaml files describing collision and planning information are assumed to be loaded.
+- \b planning_environment::CollisionModels : allows the instantiation of various robot models (for example, a kinematic one) and various collision spaces, based on data from the parameter server. This class inherits from \b planning_environment::RobotModels. The URDF robot description and the .yaml files describing collision and planning information are assumed to be loaded.
 
 <hr>
 
 The monitor classes are:
-- \b KinematicModelStateMonitor : monitors the kinematic state of the robot. Optionally, monitors the base location. It uses the 'mechanism_state' topic.
-- \b CollisionSpaceMonitor : same as \b KinematicModelStateMonitor except it also monitors the state of the collision environment. It uses the 'collision_map' topic to receive new full maps and the 'collision_map_update' to receive updates. Attaching objects to robot links is possible using the 'attach_object' topic. The '~box_scale' parameter is used as the constant that gets multiplied to a box's maximum extent to obtain the radius of the sphere used in collision checking.
-- \b PlanningMonitor : same as \b CollisionSpaceMonitor except it also offers the ability to evaluate kinematic constraints and check paths and states for validity.
-
-      <!-- Provide links to specific auto-generated API
-documentation within your package that is of particular interest to a
-reader. Doxygen will document pretty much every part of your code, so
-do your best here to point the reader to the actual API.
-
-If your codebase is fairly large or has different sets of APIs, you
-should use the doxygen 'group' tag to keep these APIs together. For
-example, the roscpp documentation has 'libros' group.
--->
+- \b planning_environment::KinematicModelStateMonitor : monitors the kinematic state of the robot. Optionally, monitors the base location. It uses the 'mechanism_state' topic.
+- \b planning_environment::CollisionSpaceMonitor : same as \b planning_environment::KinematicModelStateMonitor except it also monitors the state of the collision environment. It uses the 'collision_map' topic to receive new full maps and the 'collision_map_update' to receive updates. Attaching objects to robot links is possible using the 'attach_object' topic. The '~box_scale' parameter is used as the constant that gets multiplied to a box's maximum extent to obtain the radius of the sphere used in collision checking.
+- \b planning_environment::PlanningMonitor : same as \b planning_environment::CollisionSpaceMonitor except it also offers the ability to evaluate kinematic constraints and check paths and states for validity.
 
 \section rosapi ROS API
 
-<!--
-Names are very important in ROS because they can be remapped on the
-command-line, so it is VERY IMPORTANT THAT YOU LIST NAMES AS THEY
-APPEAR IN THE CODE. You should list names of every topic, service and
-parameter used in your code. There is a template below that you can
-use to document each node separately.
-
-List of nodes:
-- \b node_name1
-- \b node_name2
--->
-
-<!-- START: copy from here to 'END' for each node 
-
-<hr>
-
-\subsection node_name node_name
-
-node_name does (provide a basic description of your node)
-
-\subsubsection Usage
-\verbatim
-$ node_type1 [standard ROS args]
-\endverbatim
-
-\par Example
-
-\verbatim
-$ node_type1
-\endverbatim
--->
-
-\subsubsection topics ROS topics
+\subsection topics ROS topics
 
 Subscribes to:
-- @b "mechanism_state"/MechanismState : the parameters describing the robot's current state
-- @b "collision_map"/CollisionMap : data describing the 3D environment
-- @b "collision_map_update"/CollisionMap : updates to data describing the 3D environment
-- @b "attach_object"/AttachedObject : data describing an object to be attached to a link
+ - @b "mechanism_state"/MechanismState : the parameters describing the robot's current state
+ - @b "collision_map"/CollisionMap : data describing the 3D environment
+ - @b "collision_map_update"/CollisionMap : updates (additive) to data describing the 3D environment
+ - @b "attach_object"/AttachedObject : data describing an object to be attached to a link
 
-\subsubsection parameters ROS parameters
-
-Reads the following parameters from the parameter server
+\subsection parameters ROS parameters
 
 Reads the following parameters from the parameter server
-- @b "~refresh_interval_collision_map"/double : if more than this interval passes, the maintained map is considered invalid
+ - @b "~refresh_interval_collision_map"/double : if more than this interval passes, the maintained map is considered invalid
 
-- @b "~refresh_interval_kinematic_state"/double : if more than this interval passes, the maintained kinematic state is considered invalid
+ - @b "~refresh_interval_kinematic_state"/double : if more than this interval passes, the maintained kinematic state is considered invalid
 
-- @b "~bounding_planes"/string : a sequence of plane equations specified as "a1 b1 c1 d1 a2 b2 c2 d2 ..." where each plane is defined by the equation ax+by+cz+d=0
+ - @b "~bounding_planes"/string : a sequence of plane equations specified as "a1 b1 c1 d1 a2 b2 c2 d2 ..." where each plane is defined by the equation ax+by+cz+d=0
 
-- @b "~box_scale"/double : boxes from the collision map are approximated with spheres using the extents of the boxes. The maximum extent of the box is multiplied by the constant specified by this parameter to obtain the radius of the sphere approximating the box
+ - @b "~box_scale"/double : boxes from the collision map are approximated with spheres using the extents of the boxes. The maximum extent of the box is multiplied by the constant specified by this parameter to obtain the radius of the sphere approximating the box
 
 A robot description and its corresponding planning and collision descriptions are assumed to be loaded on the parameter server as well.
 
 Sets the following parameters on the parameter server
 
-- Sets the parameters it reads to default values
+ - Sets the parameters it reads to default values
 
-<!--
-\subsubsection services ROS services
-- \b "foo_service": [std_srvs/FooType] description of foo_service
-
-
-END: copy for each node -->
-
-
-<!-- START: Uncomment if you have any command-line tools
-
-\section commandline Command-line tools
-
-This section is a catch-all for any additional tools that your package
-provides or uses that may be of use to the reader. For example:
-
-- tools/scripts (e.g. rospack, roscd)
-- roslaunch .launch files
-- xmlparam files
-
-\subsection script_name script_name
-
-Description of what this script/file does.
-
-\subsubsection Usage
-\verbatim
-$ ./script_name [args]
-\endverbatim
-
-\par Example
-
-\verbatim
-$ ./script_name foo bar
-\endverbatim
-
-END: Command-Line Tools Section -->
 
 */
