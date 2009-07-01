@@ -2,7 +2,16 @@
 \mainpage
 \htmlinclude manifest.html
 
-\b move_arm is ... 
+@section summary Summary
+
+\b move_arm is an action to move the arm. Motion planning is performed and the execution of the path is being monitored. When/if the path becomes invalid, a now plan is requested.
+
+Currently things are changing so looking at the source code is
+best. Essentially, parameters, topic and service names need to resolve
+to what is available (in terms of inverse kinematics, motion planning,
+etc).
+
+Also, see the documentation for the <a href="../../planning_environment/html">planning_environment</a> package
 
 <!-- 
 In addition to providing an overview of your package,
