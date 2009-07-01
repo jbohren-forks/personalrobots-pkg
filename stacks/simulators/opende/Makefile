@@ -6,6 +6,7 @@ SVN_REVISION = -r 1675
 
 SVN_PATCH = opende_patch.diff
 #SVN_PATCH = quickstep.patch
+#SVN_PATCH = test_patch.diff
 
 ifeq ($(WITH_DRAWSTUFF), yes)
 CFG_OPTIONS += --with-drawstuff=X11
@@ -28,6 +29,7 @@ INTEL_LD_FLAGS     =  LDFLAGS='-Wl,-rpath,/opt/intel/cc/10.1.008/lib,-rpath,$(RO
 INTEL_LD_FLAGS_OMP =  LDFLAGS='-Wl,-rpath,/opt/intel/cc/10.1.008/lib,-rpath,$(ROOT)/lib -L/opt/intel/cc/10.1.008/lib -L$(ROOT)/lib -lguide -lcxaguard -limf -lsvml -lirc -lpthread -lintlc -lompstub -liomp5 -lomp_db'
 
 GCC_FLAGS     = CXXFLAGS='-DNDEBUG -O3 -fPIC -I$(ROOT)/include' CFLAGS='-DNDEBUG -O3 -fPIC -I$(ROOT)/include -I$(ROOT)/usr/include' LDFLAGS='-L$(ROOT)/lib'
+#GCC_FLAGS     = CXXFLAGS='-DNDEBUG -msse -fopenmp -O3 -fPIC -I$(ROOT)/include' CFLAGS='-DNDEBUG -msse -fopenmp -O3 -fPIC -I$(ROOT)/include -I$(ROOT)/usr/include' LDFLAGS='-L$(ROOT)/lib -lgomp'
 
 #CONFIGURE_FLAGS = $(CFG_OPTIONS) $(INTEL_OPTIONS) $(INTEL_C_FLAGS) $(INTEL_LD_FLAGS)
 CONFIGURE_FLAGS = $(CFG_OPTIONS) $(GCC_FLAGS)
