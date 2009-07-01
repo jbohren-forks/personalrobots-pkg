@@ -71,7 +71,7 @@ public:
   typedef boost::shared_ptr<Signal> SignalPtr;
   typedef boost::weak_ptr<Signal> SignalWPtr;
 
-  MessageFilter(Transformer& tf, const std::string& target_frame, uint32_t queue_size, ros::NodeHandle& nh = ros::NodeHandle(), ros::Duration max_rate = ros::Duration(0.01), ros::Duration min_rate = ros::Duration(0.1))
+  MessageFilter(Transformer& tf, const std::string& target_frame, uint32_t queue_size, ros::NodeHandle nh = ros::NodeHandle(), ros::Duration max_rate = ros::Duration(0.01), ros::Duration min_rate = ros::Duration(0.1))
   : tf_(tf)
   , nh_(nh)
   , min_rate_(min_rate)
@@ -82,7 +82,7 @@ public:
   }
 
   template<class F>
-  MessageFilter(F& f, Transformer& tf, const std::string& target_frame, uint32_t queue_size, ros::NodeHandle& nh = ros::NodeHandle(), ros::Duration max_rate = ros::Duration(0.01), ros::Duration min_rate = ros::Duration(0.1))
+  MessageFilter(F& f, Transformer& tf, const std::string& target_frame, uint32_t queue_size, ros::NodeHandle nh = ros::NodeHandle(), ros::Duration max_rate = ros::Duration(0.01), ros::Duration min_rate = ros::Duration(0.1))
   : tf_(tf)
   , nh_(nh)
   , min_rate_(min_rate)
