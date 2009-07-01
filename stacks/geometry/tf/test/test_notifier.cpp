@@ -563,12 +563,12 @@ TEST(MessageNotifier, setTolerance)
 int main(int argc, char** argv)
 {
 	testing::InitGoogleTest(&argc, argv);
-	ros::init(argc, argv);
-	g_node = new ros::Node("test_notifier");
+	ros::init(argc, argv, "test_notifier", ros::init_options::AnonymousName);
+	g_node = new ros::Node();
 	g_node->advertise<robot_msgs::PointStamped>("test_message", 0);
 	g_node->advertise<robot_msgs::PointStamped>("test_message2", 0);
 
-	g_tf = new TransformListener(*g_node);
+	g_tf = new TransformListener();
 	g_broadcaster = new TransformBroadcaster();
 
 	int ret = RUN_ALL_TESTS();

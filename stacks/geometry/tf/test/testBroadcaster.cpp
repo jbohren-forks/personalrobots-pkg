@@ -64,13 +64,13 @@ private:
 int main(int argc, char ** argv)
 {
   //Initialize ROS
-  ros::init(argc, argv);
+  ros::init(argc, argv, "testBroadcaster", ros::init_options::AnonymousName);
 
   //Construct/initialize the server
   testBroadcaster myTestBroadcaster;
 
-  ros::NodeHandle node; //\todo replace with ros::ok() after 0.5.2 release
-  while(node.ok())//Check if a Ctrl-C or other shutdown command has been recieved
+  ros::NodeHandle node; 
+  while(ros::ok())//Check if a Ctrl-C or other shutdown command has been recieved
   {
       //Send some data
       myTestBroadcaster.test();
