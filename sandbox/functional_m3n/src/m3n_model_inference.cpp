@@ -53,6 +53,7 @@ int M3NModel::infer(const RandomField& random_field,
     return -1;
   }
 
+  loss_augmented_inference_ = false; // only use during learning
   return inferPrivate(random_field, inferred_labels, max_iterations);
 }
 
@@ -171,9 +172,8 @@ int M3NModel::inferPrivate(const RandomField& random_field,
           }
           else if (curr_clique_order == 2)
           {
-            // TODO
-            //ret_val = addEdgeEnergy(curr_clique, submodenergmin, inferred_labeling, alpha_label);
-            abort();
+            ret_val = addEdgeEnergy(*curr_clique, cs_idx, *energy_func, energy_vars, inferred_labels,
+                alpha_label);
           }
           else
           {
@@ -215,7 +215,6 @@ int M3NModel::inferPrivate(const RandomField& random_field,
     }
   }
 
-  ROS_INFO("successful inference: %f %f", curr_energy, prev_energy);
   printClassificationRates(nodes, inferred_labels, training_labels_);
   return ret_val;
 }
@@ -240,11 +239,85 @@ int M3NModel::addNodeEnergy(const RandomField::Node& node,
     return -1;
   }
 
-  // TODO replace
-  //energy_func.addUnary(energy_var, 0.1 + (rand() % 100), 0.1 + (rand() % 100));
+  // Implement hamming loss margin (during training only)
+  if (loss_augmented_inference_)
+  {
+    if (node.getLabel() != curr_label)
+    {
+      curr_score += 1.0;
+    }
+    if (node.getLabel() != alpha_label)
+    {
+      alpha_score += 1.0;
+    }
+  }
 
-  // Warning, this follows that ALPHA_VALUE == 0
-   energy_func.addUnary(energy_var, alpha_score, curr_score);
+  // WARNING, this follows that ALPHA_VALUE == 0
+  // max +score = min -score
+  energy_func.addUnary(energy_var, -alpha_score, -curr_score);
+  return 0;
+}
+
+// --------------------------------------------------------------
+/*! See function definition.  Assumes edge contains only 2 nodes */
+// --------------------------------------------------------------
+int M3NModel::addEdgeEnergy(const RandomField::Clique& edge,
+                            const unsigned int clique_set_idx,
+                            SubmodularEnergyMin& energy_func,
+                            const map<unsigned int, SubmodularEnergyMin::EnergyVar>& energy_vars,
+                            const map<unsigned int, unsigned int>& curr_labeling,
+                            const unsigned int alpha_label)
+{
+  // Retrieve the ids of the node in the edge
+  const list<unsigned int>& node_ids = edge.getNodeIDs();
+  unsigned int node1_id = node_ids.front();
+  unsigned int node2_id = node_ids.back();
+
+  // Retrieve the nodes current labels
+  unsigned int node1_label = curr_labeling.find(node1_id)->second;
+  unsigned int node2_label = curr_labeling.find(node2_id)->second;
+
+  double E00 = 0.0;
+  double E01 = 0.0;
+  double E10 = 0.0;
+  double E11 = 0.0;
+
+  // Compute score if both nodes switch to alpha (0)
+  if (computePotential(edge, clique_set_idx, alpha_label, E00) < 0)
+  {
+    return -1;
+  }
+
+  // Compute score if node1 switches to alpha (0) & node2 stays the same (1)
+  if (node2_label == alpha_label)
+  {
+    // reuse computation
+    E01 = E00;
+  }
+
+  // Compute score if node1 stays the same (1) & node2 switches to alpha (0)
+  if (node1_label == alpha_label)
+  {
+    // reuse computation
+    E10 = E00;
+  }
+
+  // Compute score if both nodes stay the same (1)
+  if (node1_label == node2_label)
+  {
+    if (computePotential(edge, clique_set_idx, node1_label, E11) < 0)
+    {
+      return -1;
+    }
+  }
+
+  // WARNING, this follows that ALPHA_VALUE == 0
+  // max +score = min -score
+  if (energy_func.addPairwise(energy_vars.find(node1_id)->first, energy_vars.find(node2_id)->first, -E00,
+      -E01, -E10, -E11) < 0)
+  {
+    return -1;
+  }
   return 0;
 }
 

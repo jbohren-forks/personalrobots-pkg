@@ -58,6 +58,7 @@ void M3NModel::clear()
   node_stacked_feature_start_idx_.clear();
   clique_set_stacked_feature_start_idx_.clear();
 
+  loss_augmented_inference_ = false;
   training_labels_.clear();
   robust_potts_params_.clear();
 

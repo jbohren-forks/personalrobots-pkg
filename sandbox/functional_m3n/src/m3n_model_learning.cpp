@@ -106,6 +106,10 @@ int M3NModel::train(const vector<const RandomField*>& training_rfs, const M3NPar
   double gt_residual = 0.0;
   double infer_residual = 0.0;
 
+  // Learn with loss-augmented inference to act as a margin
+  // (currently using hamming loss only)
+  loss_augmented_inference_ = true;
+
   // -------------------------------------------
   // Train for the specified number of iterations
   for (unsigned int t = 0 ; t < nbr_iterations ; t++)

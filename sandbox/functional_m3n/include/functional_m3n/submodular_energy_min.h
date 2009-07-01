@@ -386,7 +386,8 @@ inline void SubmodularEnergyMin::add_tweights(const EnergyVar& x,
   // Make negative weights/capacities to be positive
   // This will not affect the solution of the variables,
   // but will change the value, so we need to offset.
-  double min_val = min(cap_source_to_x, cap_x_to_sink);
+  // (Subtract a little due to avoid precision errors)
+  double min_val = min(cap_source_to_x, cap_x_to_sink) - 1e-5;
   if (min_val < 0.0)
   {
     cap_source_to_x -= min_val;
