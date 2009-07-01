@@ -1,0 +1,1 @@
+rospack_add_executable(genlog_dpslam genlog_dpslam.cpp)
