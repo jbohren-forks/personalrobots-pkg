@@ -153,7 +153,7 @@ int M3NModel::inferPrivate(const RandomField& random_field,
       use_random_init_labeling = false;
 
       // -------------------------------------------
-      // Iterate over clique sets
+      // Iterate over clique sets to compute cliques' scores
       for (unsigned int cs_idx = 0 ; ret_val == 0 && cs_idx < nbr_clique_sets ; cs_idx++)
       {
         // -------------------------------------------

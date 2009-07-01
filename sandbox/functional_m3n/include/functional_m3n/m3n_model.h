@@ -157,10 +157,45 @@ class M3NModel
     // ===================================================================
     //@{
 
+    // --------------------------------------------------------------
+    /*!
+     * \brief Verifies this M3NModel can handle the labels contained in the
+     *        given RandomFields.
+     *
+     * \param training_rfs The RandomFields containing the labels this classifier should handle
+     *
+     * \return 0 on success, otherwise negative value on error
+     */
+    // --------------------------------------------------------------
     int extractVerifyLabelsFeatures(const vector<const RandomField*>& training_rfs);
+
+    // --------------------------------------------------------------
+    /*!
+     * \brief Computes the functional gradient residual for high-order cliques.
+     *
+     * \param truncation_param The Robust Potts truncation factor for the clique
+     * \param clique_order The order of the clique
+     * \param nbr_mode_label The number of nodes in the clique containing the mode label
+     *
+     * \return The functional gradient residual
+     */
+    // --------------------------------------------------------------
     double calcFuncGradResidual(const double truncation_param,
                                 const unsigned int clique_order,
                                 const unsigned int nbr_mode_label);
+
+    // --------------------------------------------------------------
+    /*!
+     * \brief Instantiates the specified RegressorWrapper
+     *
+     * \param m3n_params Parameters specifying the type of RegressorWrapper and
+     *                   its parameters
+     *
+     * \warning Assumes parameters for the RegressorWrapper are valid.
+     *
+     * \return the instantiated RegressorWrapper on success, otherwise NULL on error
+     */
+    // --------------------------------------------------------------
     RegressorWrapper* instantiateRegressor(const M3NParams& m3n_params);
     //@}
 
@@ -177,7 +212,32 @@ class M3NModel
                      map<unsigned int, unsigned int>& inferred_labels,
                      unsigned int max_iterations = 0);
 
+    // --------------------------------------------------------------
+    /*!
+     * \brief Computes the potential value for assigning the node the specified label
+     *
+     * \param node The node containing its features
+     * \param label The label to assign node
+     * \param potential_val Reference to hold the computed potential value
+     *
+     * \return 0 on success, otherwise negative value on error
+     */
+    // --------------------------------------------------------------
     int computePotential(const RandomField::Node& node, const unsigned int label, double& potential_val);
+
+    // --------------------------------------------------------------
+    /*!
+     * \brief Computes the potential value for assigning all the nodes within the
+     *        clique the specified label
+     *
+     * \param clique The clique containing its features
+     * \param clique_set_idx The clique set index of clique
+     * \param label The label to assign all the nodes in the clique
+     * \param potential_val Reference to hold the computed potential value
+     *
+     * \return 0 on success, otherwise negative value on error
+     */
+    // --------------------------------------------------------------
     int computePotential(const RandomField::Clique& clique,
                          const unsigned int clique_set_idx,
                          const unsigned int label,

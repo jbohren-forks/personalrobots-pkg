@@ -127,7 +127,7 @@ class SubmodularEnergyMin
      * \return 0 on success, otherwise negative value on error
      */
     // --------------------------------------------------------------
-    void addPairwise(const EnergyVar& x, const EnergyVar& y, double E00, double E01, double E10, double E11);
+    int addPairwise(const EnergyVar& x, const EnergyVar& y, double E00, double E01, double E10, double E11);
 
     // TODO
     void addPnPotts();
@@ -267,12 +267,12 @@ inline void SubmodularEnergyMin::addUnary(const EnergyVar& x, double E0, double 
 // --------------------------------------------------------------
 /*! See function definition */
 // --------------------------------------------------------------
-inline void SubmodularEnergyMin::addPairwise(const EnergyVar& x,
-                                             const EnergyVar& y,
-                                             double A,
-                                             double B,
-                                             double C,
-                                             double D)
+inline int SubmodularEnergyMin::addPairwise(const EnergyVar& x,
+                                            const EnergyVar& y,
+                                            double A,
+                                            double B,
+                                            double C,
+                                            double D)
 {
   // 0 = source
   // 1 = sink
@@ -287,8 +287,8 @@ inline void SubmodularEnergyMin::addPairwise(const EnergyVar& x,
   /* check submodularity */
   if ((A + D) > (B + C))
   {
-    assert(false);
-    // TODO: throw exception
+    ROS_ERROR("Function is not submodular.  This should hold true: %f + %f <= %f + %f", A, D, B, C);
+    return -1;
   }
 
   /* 
@@ -333,6 +333,7 @@ inline void SubmodularEnergyMin::addPairwise(const EnergyVar& x,
   {
     create_dedge(x, y, B, C);
   }
+  return 0;
 }
 
 // --------------------------------------------------------------
