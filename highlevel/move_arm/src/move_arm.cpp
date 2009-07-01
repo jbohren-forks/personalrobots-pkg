@@ -130,6 +130,10 @@ namespace move_arm
 	if (perform_ik_)
 	    alterRequestUsingIK(req);
 	
+	// tell the planning monitor about the constraints we will be following
+	planningMonitor_->setPathConstraints(req.path_constraints);
+	planningMonitor_->setGoalConstraints(req.goal_constraints);
+
 	ResultStatus result = robot_actions::SUCCESS;
 	
 	feedback = pr2_robot_actions::MoveArmState::PLANNING;
