@@ -35,10 +35,10 @@
 /** \author Ioan Sucan */
 
 #include "ompl_planning/RequestHandler.h"
+#include <visualization_msgs/Marker.h>
 #include <ros/console.h>
 #include <sstream>
 
-/** Check if request looks valid  */
 bool ompl_planning::RequestHandler::isRequestValid(ModelMap &models, motion_planning_srvs::KinematicPlan::Request &req)
 {   
     ModelMap::const_iterator pos = models.find(req.params.model_id);
@@ -218,7 +218,7 @@ bool ompl_planning::RequestHandler::computePlan(ModelMap &models, const planning
     double            bestDifference = 0.0;
     
     bool approximate = false;    
-    callPlanner(psetup, req.times, req.allowed_time, true, bestPath, bestDifference, approximate);
+    callPlanner(psetup, req.times, req.allowed_time, bestPath, bestDifference, approximate);
     
     psetup->model->collisionSpace->unlock();
     psetup->model->kmodel->unlock();
@@ -229,61 +229,67 @@ bool ompl_planning::RequestHandler::computePlan(ModelMap &models, const planning
     /* copy the solution to the result */
     if (bestPath)
     {
-	std::vector<planning_models::KinematicModel::Joint*> joints;
-	psetup->model->kmodel->getJoints(joints);
-	res.path.start_state.resize(joints.size());
-	for (unsigned int i = 0 ; i < joints.size() ; ++i)
-	{
-	    res.path.start_state[i].header = res.path.header;
-	    res.path.start_state[i].joint_name = joints[i]->name;
-	    start->copyParamsJoint(res.path.start_state[i].value, joints[i]->name);
-	}
-	
-	ompl::kinematic::PathKinematic *kpath = dynamic_cast<ompl::kinematic::PathKinematic*>(bestPath);
-	if (kpath)
-	{
-	    res.path.states.resize(kpath->states.size());
-	    res.path.times.resize(kpath->states.size());
-	    res.path.names.clear();
-	    psetup->model->kmodel->getJointsInGroup(res.path.names, psetup->model->groupID);
-	    
-	    const unsigned int dim = psetup->si->getStateDimension();
-	    for (unsigned int i = 0 ; i < kpath->states.size() ; ++i)
-	    {
-		res.path.times[i] = i * 0.02;
-		res.path.states[i].vals.resize(dim);
-		for (unsigned int j = 0 ; j < dim ; ++j)
-		    res.path.states[i].vals[j] = kpath->states[i]->values[j];
-	    }
-	}
-	ompl::dynamic::PathDynamic *dpath = dynamic_cast<ompl::dynamic::PathDynamic*>(bestPath);
-	if (dpath)
-	{
-	    res.path.states.resize(dpath->states.size());
-	    res.path.times.resize(dpath->states.size());
-	    res.path.names.clear();
-	    psetup->model->kmodel->getJointsInGroup(res.path.names, psetup->model->groupID);
-	    
-	    const unsigned int dim = psetup->si->getStateDimension();
-	    for (unsigned int i = 0 ; i < dpath->states.size() ; ++i)
-	    {
-		res.path.times[i] = i * 0.02;
-		res.path.states[i].vals.resize(dim);
-		for (unsigned int j = 0 ; j < dim ; ++j)
-		    res.path.states[i].vals[j] = dpath->states[i]->values[j];
-	    }
-	}
-	assert(kpath || dpath);
-	
-	res.distance = bestDifference;
-	res.approximate = approximate ? 1 : 0;
+	fillResult(psetup, start, res, bestPath, bestDifference, approximate);
 	delete bestPath;
     }
     
     return true;
 }
 
-bool ompl_planning::RequestHandler::callPlanner(PlannerSetup *psetup, int times, double allowed_time, bool interpolate,
+void ompl_planning::RequestHandler::fillResult(PlannerSetup *psetup, const planning_models::StateParams *start, motion_planning_srvs::KinematicPlan::Response &res,
+					       ompl::base::Path* bestPath, double bestDifference, bool approximate)
+{   
+    std::vector<planning_models::KinematicModel::Joint*> joints;
+    psetup->model->kmodel->getJoints(joints);
+    res.path.start_state.resize(joints.size());
+    for (unsigned int i = 0 ; i < joints.size() ; ++i)
+    {
+	res.path.start_state[i].header = res.path.header;
+	res.path.start_state[i].joint_name = joints[i]->name;
+	start->copyParamsJoint(res.path.start_state[i].value, joints[i]->name);
+    }
+    
+    ompl::kinematic::PathKinematic *kpath = dynamic_cast<ompl::kinematic::PathKinematic*>(bestPath);
+    if (kpath)
+    {
+	res.path.states.resize(kpath->states.size());
+	res.path.times.resize(kpath->states.size());
+	res.path.names.clear();
+	psetup->model->kmodel->getJointsInGroup(res.path.names, psetup->model->groupID);
+	
+	const unsigned int dim = psetup->si->getStateDimension();
+	for (unsigned int i = 0 ; i < kpath->states.size() ; ++i)
+	{
+	    res.path.times[i] = i * 0.02;
+	    res.path.states[i].vals.resize(dim);
+	    for (unsigned int j = 0 ; j < dim ; ++j)
+		res.path.states[i].vals[j] = kpath->states[i]->values[j];
+	}
+    }
+    ompl::dynamic::PathDynamic *dpath = dynamic_cast<ompl::dynamic::PathDynamic*>(bestPath);
+    if (dpath)
+    {
+	res.path.states.resize(dpath->states.size());
+	res.path.times.resize(dpath->states.size());
+	res.path.names.clear();
+	psetup->model->kmodel->getJointsInGroup(res.path.names, psetup->model->groupID);
+	
+	const unsigned int dim = psetup->si->getStateDimension();
+	for (unsigned int i = 0 ; i < dpath->states.size() ; ++i)
+	{
+	    res.path.times[i] = i * 0.02;
+	    res.path.states[i].vals.resize(dim);
+	    for (unsigned int j = 0 ; j < dim ; ++j)
+		res.path.states[i].vals[j] = dpath->states[i]->values[j];
+	}
+    }
+    assert(kpath || dpath);
+    
+    res.distance = bestDifference;
+    res.approximate = approximate ? 1 : 0;
+}
+
+bool ompl_planning::RequestHandler::callPlanner(PlannerSetup *psetup, int times, double allowed_time,
 						ompl::base::Path* &bestPath, double &bestDifference, bool &approximate)
 {
     if (times <= 0)
@@ -346,8 +352,7 @@ bool ompl_planning::RequestHandler::callPlanner(PlannerSetup *psetup, int times,
 			psetup->smoother->smoothMax(path);
 			double tsmooth = (ros::WallTime::now() - startTime).toSec();
 			ROS_DEBUG("          Smoother spent %g seconds (%g seconds in total)", tsmooth, tsmooth + tsolve);
-			if (interpolate)
-			    dynamic_cast<SpaceInformationKinematicModel*>(psetup->si)->interpolatePath(path);
+			dynamic_cast<SpaceInformationKinematicModel*>(psetup->si)->interpolatePath(path);
 		    }
 		}		
 		
@@ -363,10 +368,79 @@ bool ompl_planning::RequestHandler::callPlanner(PlannerSetup *psetup, int times,
 		    ROS_DEBUG("          Obtained better solution: distance is %f", bestDifference);
 		}
 	    }
+
+	    if (debug_)
+		display(psetup);
+	    
 	    psetup->mp->clear();	    
 	}
 	
 	ROS_DEBUG("Total planning time: %g; Average planning time: %g", totalTime, (totalTime / (double)times));
     }
     return result;
+}
+
+void ompl_planning::RequestHandler::enableDebugMode(int idx1, int idx2, int idx3)
+{
+    px_ = idx1;
+    py_ = idx2;
+    pz_ = idx3;
+    debug_ = true;
+    displayPublisher_ = nh_.advertise<visualization_msgs::Marker>("visualization_marker", 1);
+}
+
+void ompl_planning::RequestHandler::disableDebugMode(void)
+{
+    debug_ = false;
+    displayPublisher_.shutdown();
+}
+
+void ompl_planning::RequestHandler::display(PlannerSetup *psetup)
+{
+    int dim = psetup->si->getStateDimension();
+    if (px_ >= dim || py_ >= dim || pz_ >= dim)
+    {
+	ROS_WARN("Display projection out of bounds. Not publishing markers");
+	return;
+    }
+    
+    std::vector<const ompl::base::State*> states;
+    psetup->mp->getStates(states);
+    
+    if (states.empty())
+	return;
+    
+    visualization_msgs::Marker mk;        
+    mk.header.stamp = psetup->model->planningMonitor->lastStateUpdate();
+    mk.header.frame_id = psetup->model->planningMonitor->getFrameId();
+    mk.ns = nh_.getName();
+    mk.id = 1;    
+    mk.type = visualization_msgs::Marker::POINTS;
+    mk.action = visualization_msgs::Marker::ADD;
+    mk.lifetime = ros::Duration(0);
+    mk.color.a = 1.0;
+    mk.color.r = 1.0;
+    mk.color.g = 0.04;
+    mk.color.b = 0.04;
+    mk.pose.position.x = 0;
+    mk.pose.position.y = 0;
+    mk.pose.position.z = 0;
+    mk.pose.orientation.x = 0;
+    mk.pose.orientation.y = 0;
+    mk.pose.orientation.z = 0;
+    mk.pose.orientation.w = 1;
+    mk.scale.x = 0.01;
+    mk.scale.y = 0.01;
+    mk.scale.z = 0.01;
+    mk.points.resize(states.size());
+    
+    for (unsigned int i = 0 ; i < states.size() ; ++i)
+    {
+	mk.points[i].x = px_ >= 0 ? states[i]->values[px_] : 0.0;
+	mk.points[i].y = py_ >= 0 ? states[i]->values[py_] : 0.0;
+	mk.points[i].z = pz_ >= 0 ? states[i]->values[pz_] : 0.0;
+    }
+    
+    displayPublisher_.publish(mk);
+    ROS_INFO("Published %d points in the diffusion tree", (int)states.size());
 }

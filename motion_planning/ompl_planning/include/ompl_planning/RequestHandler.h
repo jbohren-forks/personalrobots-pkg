@@ -38,6 +38,7 @@
 #define OMPL_PLANNING_REQUEST_HANDLER_
 
 #include "ompl_planning/Model.h"
+#include <ros/ros.h>
 #include <motion_planning_srvs/KinematicPlan.h>
 
 /** \brief Main namespace */
@@ -53,27 +54,62 @@ namespace ompl_planning
 	
 	RequestHandler(void)
 	{
+	    debug_ = false;
+	    px_ = py_ = pz_ = -1;
 	}
 	
 	~RequestHandler(void)
 	{
 	}
 	
+	/** \brief Enable debug mode. Display markers consisting of a 1-D orthogonal projection of states */
+	void enableDebugMode(int idx)
+	{
+	    enableDebugMode(idx, -1, -1);
+	}
+
+	/** \brief Enable debug mode. Display markers consisting of a 2-D orthogonal projection of states */
+	void enableDebugMode(int idx1, int idx2)
+	{
+	    enableDebugMode(idx1, idx2, -1);
+	}
+
+	/** \brief Enable debug mode. Display markers consisting of a 3-D orthogonal projection of states */
+	void enableDebugMode(int idx1, int idx2, int idx3);
+	
+	/** \brief Disable debug mode */
+	void disableDebugMode(void);
+	
+	/** \brief Check if the request is valid */
 	bool isRequestValid(ModelMap &models, motion_planning_srvs::KinematicPlan::Request &req);
 
-	/* \brief Check and compute a motion plan. Return true if the plan was succesfully computed */
+	/** \brief Check and compute a motion plan. Return true if the plan was succesfully computed */
 	bool computePlan(ModelMap &models, const planning_models::StateParams *start, motion_planning_srvs::KinematicPlan::Request &req, motion_planning_srvs::KinematicPlan::Response &res);
 	
 	
-    protected:
+    private:
 
 	/** \brief Set up all the data needed by motion planning based on a request and lock the planner setup
 	 *  using this data */
 	void configure(const planning_models::StateParams *startState, motion_planning_srvs::KinematicPlan::Request &req, PlannerSetup *psetup);
 	
 	/** \brief Compute the actual motion plan. Return true if computed plan was trivial (start state already in goal region) */
-	bool callPlanner(PlannerSetup *psetup, int times, double allowed_time, bool interpolate,
-			 ompl::base::Path* &bestPath, double &bestDifference, bool &approximate);
+	bool callPlanner(PlannerSetup *psetup, int times, double allowed_time, ompl::base::Path* &bestPath, double &bestDifference, bool &approximate);
+
+	/** \brief Fill the response with solution data */
+	void fillResult(PlannerSetup *psetup, const planning_models::StateParams *start, motion_planning_srvs::KinematicPlan::Response &res, ompl::base::Path* bestPath, double bestDifference, bool approximate);
+
+	/** \brief Send visualization markers */
+	void display(PlannerSetup *psetup);
+	
+	/** \brief If true, broadcast tree structure as a set of visualization markers */
+	bool debug_;
+	
+	/** \brief The orthogonal projection to take when displaying states */
+	int  px_, py_, pz_;
+	
+	ros::Publisher  displayPublisher_;	
+	ros::NodeHandle nh_;
 	
     };
     
