@@ -60,6 +60,14 @@ bool planning_environment::PlanningMonitor::isEnvironmentSafe(void) const
     return true;
 }
 
+void planning_environment::PlanningMonitor::clearConstraints(void)
+{
+    kcPath_.joint_constraint.clear();
+    kcPath_.pose_constraint.clear();
+    kcGoal_.joint_constraint.clear();
+    kcGoal_.pose_constraint.clear();
+}
+
 void planning_environment::PlanningMonitor::setPathConstraints(const motion_planning_msgs::KinematicConstraints &kc)
 {
     kcPath_ = kc;
@@ -355,16 +363,6 @@ bool planning_environment::PlanningMonitor::isPathValidAux(const motion_planning
 	}
     }
 
-    // if we got to the last state, we also check the goal constraints
-    if (valid)
-    {
-	ks.add(getKinematicModel(), kcGoal_.joint_constraint);
-	ks.add(getKinematicModel(), kcGoal_.pose_constraint);
-	valid = ks.decide(sp->getParams());
-	if (verbose && !valid)
-	    ROS_INFO("isPathValid: Goal state does not satisfy constraints");
-    }
-    
     getEnvironmentModel()->setVerbose(vlevel);
     getKinematicModel()->unlock();
     getEnvironmentModel()->unlock();

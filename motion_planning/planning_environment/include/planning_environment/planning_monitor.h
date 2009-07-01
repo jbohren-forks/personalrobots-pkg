@@ -77,7 +77,7 @@ namespace planning_environment
 	/** \brief Check if the full state of the robot is valid */
 	bool isStateValidAtGoal(const planning_models::StateParams *state) const;
 	
-	/** \brief Check if the path is valid */
+	/** \brief Check if the path is valid. Path constraints are considered, but goal constraints are not  */
 	bool isPathValid(const motion_planning_msgs::KinematicPath &path, bool verbose) const;
 	
 	/** \brief Set the kinematic constraints the monitor should use when checking a path */
@@ -85,6 +85,9 @@ namespace planning_environment
 
 	/** \brief Set the kinematic constraints the monitor should use when checking a path's last state (the goal) */
 	void setGoalConstraints(const motion_planning_msgs::KinematicConstraints &kc);
+	
+	/** \brief Clear previously set constraints */
+	void clearConstraints(void);
 	
 	/** \brief Transform the frames in which constraints are specified to the one requested */
 	bool transformConstraintsToFrame(motion_planning_msgs::KinematicConstraints &kc, const std::string &target) const;
