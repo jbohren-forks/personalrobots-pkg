@@ -3,7 +3,7 @@
 
     Implementation of Max-Margin Markov Networks using functional gradient boosting
     as described in Munoz et al., "Contextual Classification with Functional Max-Margin
-    Markov Networksl", CVPR 2009.
+    Markov Networks", CVPR 2009.
 
   </description>
 

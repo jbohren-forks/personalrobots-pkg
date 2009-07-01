@@ -44,21 +44,36 @@
 
 using namespace std;
 
-// Prints out classification rates per label
+// --------------------------------------------------------------
+/**
+ * \file m3n_logging.h
+ *
+ * \brief Functions for printing and logging statistics from the classifier
+ */
+// --------------------------------------------------------------
+
+// --------------------------------------------------------------
+/**
+ * \brief Prints out classification rates per label
+ */
+// --------------------------------------------------------------
 void printClassificationRates(const map<unsigned int, RandomField::Node*>& nodes, const map<unsigned int,
     unsigned int>& inferred_labels, const vector<unsigned int>& labels)
 {
-  // label -> counters
-  map<unsigned int, unsigned int> total_label_count;
-  map<unsigned int, unsigned int> correct_label_count;
+  // Initialize counters for each label
+  // (map: label -> counter)
+  map<unsigned int, unsigned int> total_label_count; // how many nodes with gt label
+  map<unsigned int, unsigned int> correct_label_count; // how many correctly classified
   for (unsigned int i = 0 ; i < labels.size() ; i++)
   {
     total_label_count[labels[i]] = 0;
     correct_label_count[labels[i]] = 0;
   }
 
+  // Holds the total number of nodes correctly classified
   unsigned int nbr_correct = 0;
 
+  // Count the total and per-label number correctly classified
   unsigned int curr_node_id = 0;
   unsigned int curr_gt_label = 0;
   unsigned int curr_infer_label = 0;
@@ -78,9 +93,10 @@ void printClassificationRates(const map<unsigned int, RandomField::Node*>& nodes
     }
   }
 
+  // Print statistics
   ROS_INFO("Total correct: %u / %u = %f", nbr_correct, nodes.size(), static_cast<double>(nbr_correct)/static_cast<double>(nodes.size()));
   stringstream ss;
-  ss << "Label distribution. ";
+  ss << "Label distribution: ";
   unsigned int curr_label = 0;
   for (unsigned int i = 0 ; i < labels.size() ; i++)
   {
@@ -88,7 +104,6 @@ void printClassificationRates(const map<unsigned int, RandomField::Node*>& nodes
     ss << "[" << curr_label << ": " << correct_label_count[curr_label] << "/"
         << total_label_count[curr_label] << "]  ";
   }
-
   ROS_INFO("%s", ss.str().c_str());
 }
 

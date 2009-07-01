@@ -72,10 +72,10 @@ class FeatureDescriptor
 // --------------------------------------------------------------
 //* RandomField
 /**
- * \brief Class to represent a random field over a point cloud
+ * \brief Class representing a random field of primitives to classify
  *
  * Conceptually, nodes are the primitives things you wish to classify and
- * cliques describe regions/groups of primitives.
+ * cliques describe regions/groups of interacting primitives.
  */
 // --------------------------------------------------------------
 class RandomField
@@ -186,6 +186,12 @@ class RandomField
     vector<map<unsigned int, Clique*> > clique_sets_;
 
   public:
+    // --------------------------------------------------------------
+    //* GenericClique
+    /**
+     * \brief Generic properties of any Node or Clique in the RandomField
+     */
+    // --------------------------------------------------------------
     class GenericClique
     {
       public:

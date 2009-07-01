@@ -64,27 +64,27 @@ class RegressionTreeWrapper: public RegressorWrapper
      *
      * See RegressionTreeWrapperParams for default values
      *
-     * \param feature_dim The total (stacked) feature dimension used
-     *                    by this regression tree
+     * \param stacked_feature_dim The total (stacked) feature dimension used
+     *                            by this regression tree
      *
      * \warning This regression tree is forever bound to these parameters
      */
     // --------------------------------------------------------------
-    RegressionTreeWrapper(unsigned int feature_dim);
+    RegressionTreeWrapper(unsigned int stacked_feature_dim);
 
     // --------------------------------------------------------------
     /**
      * \brief Create regression tree with specified parameters.
      *
-     * \param feature_dim The total (stacked) feature dimension used
-     *                    by this regression tree
+     * \param stacked_feature_dim The total (stacked) feature dimension used
+     *                            by this regression tree
      * \param rtree_params Regression tree parameters
      *
      * \warning No check is done to ensure the parameters are valid
      * \warning This regression tree is forever bound to these parameters
      */
     // --------------------------------------------------------------
-    RegressionTreeWrapper(unsigned int feature_dim, const RegressionTreeWrapperParams& rtree_params);
+    RegressionTreeWrapper(unsigned int stacked_feature_dim, const RegressionTreeWrapperParams& rtree_params);
 
     virtual ~RegressionTreeWrapper();
 

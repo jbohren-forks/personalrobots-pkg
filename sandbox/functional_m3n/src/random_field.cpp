@@ -253,24 +253,24 @@ RandomField::Clique::Clique(const unsigned int rf_id)
 // --------------------------------------------------------------
 /*! See function definition */
 // --------------------------------------------------------------
-void RandomField::Clique::addNode(const Node& node)
+void RandomField::Clique::addNode(const Node& new_node)
 {
   // Update centroid
   double prev_order = static_cast<double> (node_ids_.size());
   double new_order = prev_order + 1.0;
-  x_ = (x_ * prev_order + node.getX()) / new_order;
-  y_ = (y_ * prev_order + node.getY()) / new_order;
-  z_ = (z_ * prev_order + node.getZ()) / new_order;
+  x_ = (x_ * prev_order + new_node.getX()) / new_order;
+  y_ = (y_ * prev_order + new_node.getY()) / new_order;
+  z_ = (z_ * prev_order + new_node.getZ()) / new_order;
 
   // Add node id to list
-  node_ids_.push_back(node.getRandomFieldID());
+  node_ids_.push_back(new_node.getRandomFieldID());
 
   // Add label->node_id to mapping
-  if (labels_to_node_ids_.count(node.getLabel()) == 0)
+  if (labels_to_node_ids_.count(new_node.getLabel()) == 0)
   {
-    labels_to_node_ids_[node.getLabel()] = list<unsigned int> ();
+    labels_to_node_ids_[new_node.getLabel()] = list<unsigned int> ();
   }
-  labels_to_node_ids_[node.getLabel()].push_back(node.getRandomFieldID());
+  labels_to_node_ids_[new_node.getLabel()].push_back(new_node.getRandomFieldID());
 }
 
 // --------------------------------------------------------------

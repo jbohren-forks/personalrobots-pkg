@@ -117,18 +117,18 @@ class M3NModel
      *
      *  Edges always follow the Potts model.
      *
-     * \param rf The RandomField to classify, containing Nodes and Cliques
+     * \param random_field The RandomField to classify, containing Nodes and Cliques
      * \param inferred_labels Mapping node_id -> inferred labels.  If
      * \param max_iterations (Optional) The max number of alpha-expansions to perform.  0 indicates to run
      *                       until convergence.
-     * \param use_auxillary (Optional) Use auxillary problems (rrr cvpr 08) TODO
      *
      * \return 0 on success, otherwise negative value on error
      */
     // --------------------------------------------------------------
-    int infer(const RandomField& rf,
+    int infer(const RandomField& random_field,
               map<unsigned int, unsigned int>& inferred_labels,
               unsigned int max_iterations = 0);
+    // TODO auxially, projection (RRR)
 
     // --------------------------------------------------------------
     /*!
@@ -173,7 +173,7 @@ class M3NModel
      * \brief See infer().  This method does not ensure the model is trained already.
      */
     // --------------------------------------------------------------
-    int inferPrivate(const RandomField& rf,
+    int inferPrivate(const RandomField& random_field,
                      map<unsigned int, unsigned int>& inferred_labels,
                      unsigned int max_iterations = 0);
 
