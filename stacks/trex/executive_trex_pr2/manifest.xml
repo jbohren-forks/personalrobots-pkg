@@ -1,7 +1,0 @@
-<package>
-  <description>This package is temporary. Since the NDDL rule is in the stable branch, fixed, and references the nddl_depends.py script, this temporary package was added.</description>
-  <author>Tony Pratkanis</author>
-  <license>BSD</license>
-  <review status="unreviewed" notes=""/>
-
-</package>
