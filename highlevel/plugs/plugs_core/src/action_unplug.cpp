@@ -35,6 +35,7 @@
 
 #include <plugs_core/action_unplug.h>
 #include <std_msgs/Float64.h>
+#include "robot_srvs/SwitchController.h"
 #include <ros/ros.h> //For the NodeHandle API 
 
 #define BACKOFF 0.06
