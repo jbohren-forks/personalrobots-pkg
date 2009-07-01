@@ -34,7 +34,6 @@
 
 #include "ros/ros.h"
 #include "std_msgs/String.h"
-#include "message_filters/topic_synchronizer_filter.h"
 #include "message_filters/subscriber.h"
 #include "message_filters/consumer.h"
 #include "message_filters/msg_cache.h"
