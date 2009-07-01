@@ -8,7 +8,7 @@
 #include "opencv/cxcore.h"
 #include "opencv/cvaux.h"
 #include "opencv_latest/CvBridge.h"
-#include "sensor_msgs/Image.h"
+#include "image_msgs/Image.h"
 #include "write.h"
 #include "hog.h"
 
@@ -42,8 +42,8 @@ public:
     Size padding;
 
     TopicSynchronizer sync_;
-    sensor_msgs::ImageConstPtr limage;
-    sensor_msgs::CvBridge lbridge;
+    image_msgs::ImageConstPtr limage;
+    image_msgs::CvBridge lbridge;
     ros::Subscriber left_image_sub_;
 
     rf_detector(): sync_(&rf_detector::syncCallback, this)
@@ -93,7 +93,7 @@ public:
     }
 
 private:
-    void leftImageCallback(const sensor_msgs::Image::ConstPtr& image)
+    void leftImageCallback(const image_msgs::Image::ConstPtr& image)
     {
             limage = image;
             if(lbridge.fromImage(*limage, "bgr")) {
