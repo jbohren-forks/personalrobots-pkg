@@ -72,6 +72,9 @@ void ompl_planning::SpaceInformationKinematicModel::configureOMPLSpace(ModelBase
 	    {
 		floatingJoints_.push_back(i);
 		m_stateComponent[i + 3].type = ompl::base::StateComponent::QUATERNION;
+		m_stateComponent[i + 4].type = ompl::base::StateComponent::QUATERNION;
+		m_stateComponent[i + 5].type = ompl::base::StateComponent::QUATERNION;
+		m_stateComponent[i + 6].type = ompl::base::StateComponent::QUATERNION;
 		break;
 	    }
 	
@@ -229,6 +232,9 @@ void ompl_planning::SpaceInformationDynamicModel::configureOMPLSpace(ModelBase *
 	    {
 		floatingJoints_.push_back(i);
 		m_stateComponent[i + 3].type = ompl::base::StateComponent::QUATERNION;
+		m_stateComponent[i + 4].type = ompl::base::StateComponent::QUATERNION;
+		m_stateComponent[i + 5].type = ompl::base::StateComponent::QUATERNION;
+		m_stateComponent[i + 6].type = ompl::base::StateComponent::QUATERNION;
 		break;
 	    }
 	
