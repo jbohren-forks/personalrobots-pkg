@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 2.4.6)
 
-# To build the executive's config. This is currently not used.
+# To build the executive's config.
 macro(create_nddl_config)
     if(NOT ROSPACK_NDDL_PATH)
         _rospack_invoke(${PROJECT_NAME} ${_prefix} ROSPACK_NDDL_PATH export --lang=nddl --attrib=iflags)
