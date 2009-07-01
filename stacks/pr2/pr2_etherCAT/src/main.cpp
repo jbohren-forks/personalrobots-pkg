@@ -181,13 +181,13 @@ static inline double now()
 void *controlLoop(void *)
 {
   ros::NodeHandle node;
-  realtime_tools::RealtimePublisher<diagnostic_msgs::DiagnosticMessage> publisher("/diagnostics", 2);
+  realtime_tools::RealtimePublisher<diagnostic_msgs::DiagnosticMessage> publisher(node, "/diagnostics", 2);
   realtime_tools::RealtimePublisher<pr2_etherCAT::RealtimeStats> *rtpublisher = 0;
   accumulator_set<double, stats<tag::max, tag::mean> > acc;
 
   if (g_options.stats)
   {
-    rtpublisher = new realtime_tools::RealtimePublisher<pr2_etherCAT::RealtimeStats> ("/realtime", 2);
+    rtpublisher = new realtime_tools::RealtimePublisher<pr2_etherCAT::RealtimeStats> (node, "/realtime", 2);
   }
 
   // Initialize the hardware interface

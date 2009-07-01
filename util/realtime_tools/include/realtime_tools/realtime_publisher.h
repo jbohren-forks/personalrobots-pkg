@@ -70,7 +70,7 @@ private:
 public:
 
   // Deprecated
-  RealtimePublisher(const std::string &topic, int queue_size)
+  __attribute__((deprecated)) RealtimePublisher(const std::string &topic, int queue_size)
     : topic_(topic), is_running_(false), keep_running_(false), turn_(REALTIME)
   {
     construct(queue_size);
