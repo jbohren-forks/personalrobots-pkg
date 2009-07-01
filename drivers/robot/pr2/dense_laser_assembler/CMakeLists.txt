@@ -13,8 +13,8 @@ set(ROS_BUILD_TYPE Debug)
 rospack(dense_laser_assembler)
 
 rospack_add_library(dense_laser_assembler src/build_dense_laser_snapshot.cpp)
-rospack_add_executable(dense_laser_assembler_srv src/dense_laser_assembler_srv.cpp)
-target_link_libraries(dense_laser_assembler_srv dense_laser_assembler)
+#rospack_add_executable(dense_laser_assembler_srv src/dense_laser_assembler_srv.cpp)
+#target_link_libraries(dense_laser_assembler_srv dense_laser_assembler)
 
 #rospack_add_executable(joint_extractor_display src/joint_extractor_display.cpp)
 #rospack_add_executable(tagged_laser_cache_display src/tagged_laser_cache_display.cpp)
