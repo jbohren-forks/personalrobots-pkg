@@ -12,7 +12,7 @@
   <depend package="opencv_latest"/>
   <depend package="topic_synchronizer2"/>
   <depend package="std_msgs" />
-  <depend package="image_msgs"/>
+  <depend package="sensor_msgs"/>
     <export>
       <cpp cflags="-I${prefix}/include/"/>
     </export>

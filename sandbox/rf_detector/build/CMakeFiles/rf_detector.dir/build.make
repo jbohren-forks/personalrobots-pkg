@@ -55,7 +55,7 @@ CMakeFiles/rf_detector.dir/depend.make.mark: /u/msun/ros/ros/3rdparty/xmlrpc++/m
 CMakeFiles/rf_detector.dir/depend.make.mark: /u/msun/ros/ros/core/rosconsole/manifest.xml
 CMakeFiles/rf_detector.dir/depend.make.mark: /u/msun/ros/ros/core/roscpp/manifest.xml
 CMakeFiles/rf_detector.dir/depend.make.mark: /u/msun/ros/ros/std_msgs/manifest.xml
-CMakeFiles/rf_detector.dir/depend.make.mark: /u/msun/ros/ros-pkg/stacks/common/image_msgs/manifest.xml
+CMakeFiles/rf_detector.dir/depend.make.mark: /u/msun/ros/ros-pkg/stacks/common/sensor_msgs/manifest.xml
 CMakeFiles/rf_detector.dir/depend.make.mark: /u/msun/ros/ros-pkg/stacks/opencv/opencv_latest/manifest.xml
 CMakeFiles/rf_detector.dir/depend.make.mark: /u/msun/ros/ros-pkg/sandbox/topic_synchronizer2/manifest.xml
 
@@ -69,7 +69,7 @@ CMakeFiles/rf_detector.dir/src/RFDetector.o: /u/msun/ros/ros/3rdparty/xmlrpc++/m
 CMakeFiles/rf_detector.dir/src/RFDetector.o: /u/msun/ros/ros/core/rosconsole/manifest.xml
 CMakeFiles/rf_detector.dir/src/RFDetector.o: /u/msun/ros/ros/core/roscpp/manifest.xml
 CMakeFiles/rf_detector.dir/src/RFDetector.o: /u/msun/ros/ros/std_msgs/manifest.xml
-CMakeFiles/rf_detector.dir/src/RFDetector.o: /u/msun/ros/ros-pkg/stacks/common/image_msgs/manifest.xml
+CMakeFiles/rf_detector.dir/src/RFDetector.o: /u/msun/ros/ros-pkg/stacks/common/sensor_msgs/manifest.xml
 CMakeFiles/rf_detector.dir/src/RFDetector.o: /u/msun/ros/ros-pkg/stacks/opencv/opencv_latest/manifest.xml
 CMakeFiles/rf_detector.dir/src/RFDetector.o: /u/msun/ros/ros-pkg/sandbox/topic_synchronizer2/manifest.xml
 	$(CMAKE_COMMAND) -E cmake_progress_report /wg/stor5/msun/ros/ros-pkg/sandbox/rf_detector/build/CMakeFiles $(CMAKE_PROGRESS_1)
@@ -101,7 +101,7 @@ CMakeFiles/rf_detector.dir/depend.make.mark: /u/msun/ros/ros/3rdparty/xmlrpc++/m
 CMakeFiles/rf_detector.dir/depend.make.mark: /u/msun/ros/ros/core/rosconsole/manifest.xml
 CMakeFiles/rf_detector.dir/depend.make.mark: /u/msun/ros/ros/core/roscpp/manifest.xml
 CMakeFiles/rf_detector.dir/depend.make.mark: /u/msun/ros/ros/std_msgs/manifest.xml
-CMakeFiles/rf_detector.dir/depend.make.mark: /u/msun/ros/ros-pkg/stacks/common/image_msgs/manifest.xml
+CMakeFiles/rf_detector.dir/depend.make.mark: /u/msun/ros/ros-pkg/stacks/common/sensor_msgs/manifest.xml
 CMakeFiles/rf_detector.dir/depend.make.mark: /u/msun/ros/ros-pkg/stacks/opencv/opencv_latest/manifest.xml
 CMakeFiles/rf_detector.dir/depend.make.mark: /u/msun/ros/ros-pkg/sandbox/topic_synchronizer2/manifest.xml
 
@@ -115,7 +115,7 @@ CMakeFiles/rf_detector.dir/src/hog.o: /u/msun/ros/ros/3rdparty/xmlrpc++/manifest
 CMakeFiles/rf_detector.dir/src/hog.o: /u/msun/ros/ros/core/rosconsole/manifest.xml
 CMakeFiles/rf_detector.dir/src/hog.o: /u/msun/ros/ros/core/roscpp/manifest.xml
 CMakeFiles/rf_detector.dir/src/hog.o: /u/msun/ros/ros/std_msgs/manifest.xml
-CMakeFiles/rf_detector.dir/src/hog.o: /u/msun/ros/ros-pkg/stacks/common/image_msgs/manifest.xml
+CMakeFiles/rf_detector.dir/src/hog.o: /u/msun/ros/ros-pkg/stacks/common/sensor_msgs/manifest.xml
 CMakeFiles/rf_detector.dir/src/hog.o: /u/msun/ros/ros-pkg/stacks/opencv/opencv_latest/manifest.xml
 CMakeFiles/rf_detector.dir/src/hog.o: /u/msun/ros/ros-pkg/sandbox/topic_synchronizer2/manifest.xml
 	$(CMAKE_COMMAND) -E cmake_progress_report /wg/stor5/msun/ros/ros-pkg/sandbox/rf_detector/build/CMakeFiles $(CMAKE_PROGRESS_2)
@@ -147,7 +147,7 @@ CMakeFiles/rf_detector.dir/depend.make.mark: /u/msun/ros/ros/3rdparty/xmlrpc++/m
 CMakeFiles/rf_detector.dir/depend.make.mark: /u/msun/ros/ros/core/rosconsole/manifest.xml
 CMakeFiles/rf_detector.dir/depend.make.mark: /u/msun/ros/ros/core/roscpp/manifest.xml
 CMakeFiles/rf_detector.dir/depend.make.mark: /u/msun/ros/ros/std_msgs/manifest.xml
-CMakeFiles/rf_detector.dir/depend.make.mark: /u/msun/ros/ros-pkg/stacks/common/image_msgs/manifest.xml
+CMakeFiles/rf_detector.dir/depend.make.mark: /u/msun/ros/ros-pkg/stacks/common/sensor_msgs/manifest.xml
 CMakeFiles/rf_detector.dir/depend.make.mark: /u/msun/ros/ros-pkg/stacks/opencv/opencv_latest/manifest.xml
 CMakeFiles/rf_detector.dir/depend.make.mark: /u/msun/ros/ros-pkg/sandbox/topic_synchronizer2/manifest.xml
 
@@ -161,7 +161,7 @@ CMakeFiles/rf_detector.dir/src/RandomForest.o: /u/msun/ros/ros/3rdparty/xmlrpc++
 CMakeFiles/rf_detector.dir/src/RandomForest.o: /u/msun/ros/ros/core/rosconsole/manifest.xml
 CMakeFiles/rf_detector.dir/src/RandomForest.o: /u/msun/ros/ros/core/roscpp/manifest.xml
 CMakeFiles/rf_detector.dir/src/RandomForest.o: /u/msun/ros/ros/std_msgs/manifest.xml
-CMakeFiles/rf_detector.dir/src/RandomForest.o: /u/msun/ros/ros-pkg/stacks/common/image_msgs/manifest.xml
+CMakeFiles/rf_detector.dir/src/RandomForest.o: /u/msun/ros/ros-pkg/stacks/common/sensor_msgs/manifest.xml
 CMakeFiles/rf_detector.dir/src/RandomForest.o: /u/msun/ros/ros-pkg/stacks/opencv/opencv_latest/manifest.xml
 CMakeFiles/rf_detector.dir/src/RandomForest.o: /u/msun/ros/ros-pkg/sandbox/topic_synchronizer2/manifest.xml
 	$(CMAKE_COMMAND) -E cmake_progress_report /wg/stor5/msun/ros/ros-pkg/sandbox/rf_detector/build/CMakeFiles $(CMAKE_PROGRESS_3)
@@ -193,7 +193,7 @@ CMakeFiles/rf_detector.dir/depend.make.mark: /u/msun/ros/ros/3rdparty/xmlrpc++/m
 CMakeFiles/rf_detector.dir/depend.make.mark: /u/msun/ros/ros/core/rosconsole/manifest.xml
 CMakeFiles/rf_detector.dir/depend.make.mark: /u/msun/ros/ros/core/roscpp/manifest.xml
 CMakeFiles/rf_detector.dir/depend.make.mark: /u/msun/ros/ros/std_msgs/manifest.xml
-CMakeFiles/rf_detector.dir/depend.make.mark: /u/msun/ros/ros-pkg/stacks/common/image_msgs/manifest.xml
+CMakeFiles/rf_detector.dir/depend.make.mark: /u/msun/ros/ros-pkg/stacks/common/sensor_msgs/manifest.xml
 CMakeFiles/rf_detector.dir/depend.make.mark: /u/msun/ros/ros-pkg/stacks/opencv/opencv_latest/manifest.xml
 CMakeFiles/rf_detector.dir/depend.make.mark: /u/msun/ros/ros-pkg/sandbox/topic_synchronizer2/manifest.xml
 
@@ -207,7 +207,7 @@ CMakeFiles/rf_detector.dir/src/write.o: /u/msun/ros/ros/3rdparty/xmlrpc++/manife
 CMakeFiles/rf_detector.dir/src/write.o: /u/msun/ros/ros/core/rosconsole/manifest.xml
 CMakeFiles/rf_detector.dir/src/write.o: /u/msun/ros/ros/core/roscpp/manifest.xml
 CMakeFiles/rf_detector.dir/src/write.o: /u/msun/ros/ros/std_msgs/manifest.xml
-CMakeFiles/rf_detector.dir/src/write.o: /u/msun/ros/ros-pkg/stacks/common/image_msgs/manifest.xml
+CMakeFiles/rf_detector.dir/src/write.o: /u/msun/ros/ros-pkg/stacks/common/sensor_msgs/manifest.xml
 CMakeFiles/rf_detector.dir/src/write.o: /u/msun/ros/ros-pkg/stacks/opencv/opencv_latest/manifest.xml
 CMakeFiles/rf_detector.dir/src/write.o: /u/msun/ros/ros-pkg/sandbox/topic_synchronizer2/manifest.xml
 	$(CMAKE_COMMAND) -E cmake_progress_report /wg/stor5/msun/ros/ros-pkg/sandbox/rf_detector/build/CMakeFiles $(CMAKE_PROGRESS_4)
@@ -239,7 +239,7 @@ CMakeFiles/rf_detector.dir/depend.make.mark: /u/msun/ros/ros/3rdparty/xmlrpc++/m
 CMakeFiles/rf_detector.dir/depend.make.mark: /u/msun/ros/ros/core/rosconsole/manifest.xml
 CMakeFiles/rf_detector.dir/depend.make.mark: /u/msun/ros/ros/core/roscpp/manifest.xml
 CMakeFiles/rf_detector.dir/depend.make.mark: /u/msun/ros/ros/std_msgs/manifest.xml
-CMakeFiles/rf_detector.dir/depend.make.mark: /u/msun/ros/ros-pkg/stacks/common/image_msgs/manifest.xml
+CMakeFiles/rf_detector.dir/depend.make.mark: /u/msun/ros/ros-pkg/stacks/common/sensor_msgs/manifest.xml
 CMakeFiles/rf_detector.dir/depend.make.mark: /u/msun/ros/ros-pkg/stacks/opencv/opencv_latest/manifest.xml
 CMakeFiles/rf_detector.dir/depend.make.mark: /u/msun/ros/ros-pkg/sandbox/topic_synchronizer2/manifest.xml
 
@@ -253,7 +253,7 @@ CMakeFiles/rf_detector.dir/src/stdafx.o: /u/msun/ros/ros/3rdparty/xmlrpc++/manif
 CMakeFiles/rf_detector.dir/src/stdafx.o: /u/msun/ros/ros/core/rosconsole/manifest.xml
 CMakeFiles/rf_detector.dir/src/stdafx.o: /u/msun/ros/ros/core/roscpp/manifest.xml
 CMakeFiles/rf_detector.dir/src/stdafx.o: /u/msun/ros/ros/std_msgs/manifest.xml
-CMakeFiles/rf_detector.dir/src/stdafx.o: /u/msun/ros/ros-pkg/stacks/common/image_msgs/manifest.xml
+CMakeFiles/rf_detector.dir/src/stdafx.o: /u/msun/ros/ros-pkg/stacks/common/sensor_msgs/manifest.xml
 CMakeFiles/rf_detector.dir/src/stdafx.o: /u/msun/ros/ros-pkg/stacks/opencv/opencv_latest/manifest.xml
 CMakeFiles/rf_detector.dir/src/stdafx.o: /u/msun/ros/ros-pkg/sandbox/topic_synchronizer2/manifest.xml
 	$(CMAKE_COMMAND) -E cmake_progress_report /wg/stor5/msun/ros/ros-pkg/sandbox/rf_detector/build/CMakeFiles $(CMAKE_PROGRESS_5)
@@ -285,7 +285,7 @@ CMakeFiles/rf_detector.dir/depend.make.mark: /u/msun/ros/ros/3rdparty/xmlrpc++/m
 CMakeFiles/rf_detector.dir/depend.make.mark: /u/msun/ros/ros/core/rosconsole/manifest.xml
 CMakeFiles/rf_detector.dir/depend.make.mark: /u/msun/ros/ros/core/roscpp/manifest.xml
 CMakeFiles/rf_detector.dir/depend.make.mark: /u/msun/ros/ros/std_msgs/manifest.xml
-CMakeFiles/rf_detector.dir/depend.make.mark: /u/msun/ros/ros-pkg/stacks/common/image_msgs/manifest.xml
+CMakeFiles/rf_detector.dir/depend.make.mark: /u/msun/ros/ros-pkg/stacks/common/sensor_msgs/manifest.xml
 CMakeFiles/rf_detector.dir/depend.make.mark: /u/msun/ros/ros-pkg/stacks/opencv/opencv_latest/manifest.xml
 CMakeFiles/rf_detector.dir/depend.make.mark: /u/msun/ros/ros-pkg/sandbox/topic_synchronizer2/manifest.xml
 
@@ -299,7 +299,7 @@ CMakeFiles/rf_detector.dir/src/librf/discrete_dist.o: /u/msun/ros/ros/3rdparty/x
 CMakeFiles/rf_detector.dir/src/librf/discrete_dist.o: /u/msun/ros/ros/core/rosconsole/manifest.xml
 CMakeFiles/rf_detector.dir/src/librf/discrete_dist.o: /u/msun/ros/ros/core/roscpp/manifest.xml
 CMakeFiles/rf_detector.dir/src/librf/discrete_dist.o: /u/msun/ros/ros/std_msgs/manifest.xml
-CMakeFiles/rf_detector.dir/src/librf/discrete_dist.o: /u/msun/ros/ros-pkg/stacks/common/image_msgs/manifest.xml
+CMakeFiles/rf_detector.dir/src/librf/discrete_dist.o: /u/msun/ros/ros-pkg/stacks/common/sensor_msgs/manifest.xml
 CMakeFiles/rf_detector.dir/src/librf/discrete_dist.o: /u/msun/ros/ros-pkg/stacks/opencv/opencv_latest/manifest.xml
 CMakeFiles/rf_detector.dir/src/librf/discrete_dist.o: /u/msun/ros/ros-pkg/sandbox/topic_synchronizer2/manifest.xml
 	$(CMAKE_COMMAND) -E cmake_progress_report /wg/stor5/msun/ros/ros-pkg/sandbox/rf_detector/build/CMakeFiles $(CMAKE_PROGRESS_6)
@@ -331,7 +331,7 @@ CMakeFiles/rf_detector.dir/depend.make.mark: /u/msun/ros/ros/3rdparty/xmlrpc++/m
 CMakeFiles/rf_detector.dir/depend.make.mark: /u/msun/ros/ros/core/rosconsole/manifest.xml
 CMakeFiles/rf_detector.dir/depend.make.mark: /u/msun/ros/ros/core/roscpp/manifest.xml
 CMakeFiles/rf_detector.dir/depend.make.mark: /u/msun/ros/ros/std_msgs/manifest.xml
-CMakeFiles/rf_detector.dir/depend.make.mark: /u/msun/ros/ros-pkg/stacks/common/image_msgs/manifest.xml
+CMakeFiles/rf_detector.dir/depend.make.mark: /u/msun/ros/ros-pkg/stacks/common/sensor_msgs/manifest.xml
 CMakeFiles/rf_detector.dir/depend.make.mark: /u/msun/ros/ros-pkg/stacks/opencv/opencv_latest/manifest.xml
 CMakeFiles/rf_detector.dir/depend.make.mark: /u/msun/ros/ros-pkg/sandbox/topic_synchronizer2/manifest.xml
 
@@ -345,7 +345,7 @@ CMakeFiles/rf_detector.dir/src/librf/random_forest.o: /u/msun/ros/ros/3rdparty/x
 CMakeFiles/rf_detector.dir/src/librf/random_forest.o: /u/msun/ros/ros/core/rosconsole/manifest.xml
 CMakeFiles/rf_detector.dir/src/librf/random_forest.o: /u/msun/ros/ros/core/roscpp/manifest.xml
 CMakeFiles/rf_detector.dir/src/librf/random_forest.o: /u/msun/ros/ros/std_msgs/manifest.xml
-CMakeFiles/rf_detector.dir/src/librf/random_forest.o: /u/msun/ros/ros-pkg/stacks/common/image_msgs/manifest.xml
+CMakeFiles/rf_detector.dir/src/librf/random_forest.o: /u/msun/ros/ros-pkg/stacks/common/sensor_msgs/manifest.xml
 CMakeFiles/rf_detector.dir/src/librf/random_forest.o: /u/msun/ros/ros-pkg/stacks/opencv/opencv_latest/manifest.xml
 CMakeFiles/rf_detector.dir/src/librf/random_forest.o: /u/msun/ros/ros-pkg/sandbox/topic_synchronizer2/manifest.xml
 	$(CMAKE_COMMAND) -E cmake_progress_report /wg/stor5/msun/ros/ros-pkg/sandbox/rf_detector/build/CMakeFiles $(CMAKE_PROGRESS_7)
@@ -377,7 +377,7 @@ CMakeFiles/rf_detector.dir/depend.make.mark: /u/msun/ros/ros/3rdparty/xmlrpc++/m
 CMakeFiles/rf_detector.dir/depend.make.mark: /u/msun/ros/ros/core/rosconsole/manifest.xml
 CMakeFiles/rf_detector.dir/depend.make.mark: /u/msun/ros/ros/core/roscpp/manifest.xml
 CMakeFiles/rf_detector.dir/depend.make.mark: /u/msun/ros/ros/std_msgs/manifest.xml
-CMakeFiles/rf_detector.dir/depend.make.mark: /u/msun/ros/ros-pkg/stacks/common/image_msgs/manifest.xml
+CMakeFiles/rf_detector.dir/depend.make.mark: /u/msun/ros/ros-pkg/stacks/common/sensor_msgs/manifest.xml
 CMakeFiles/rf_detector.dir/depend.make.mark: /u/msun/ros/ros-pkg/stacks/opencv/opencv_latest/manifest.xml
 CMakeFiles/rf_detector.dir/depend.make.mark: /u/msun/ros/ros-pkg/sandbox/topic_synchronizer2/manifest.xml
 
@@ -391,7 +391,7 @@ CMakeFiles/rf_detector.dir/src/librf/tree_node.o: /u/msun/ros/ros/3rdparty/xmlrp
 CMakeFiles/rf_detector.dir/src/librf/tree_node.o: /u/msun/ros/ros/core/rosconsole/manifest.xml
 CMakeFiles/rf_detector.dir/src/librf/tree_node.o: /u/msun/ros/ros/core/roscpp/manifest.xml
 CMakeFiles/rf_detector.dir/src/librf/tree_node.o: /u/msun/ros/ros/std_msgs/manifest.xml
-CMakeFiles/rf_detector.dir/src/librf/tree_node.o: /u/msun/ros/ros-pkg/stacks/common/image_msgs/manifest.xml
+CMakeFiles/rf_detector.dir/src/librf/tree_node.o: /u/msun/ros/ros-pkg/stacks/common/sensor_msgs/manifest.xml
 CMakeFiles/rf_detector.dir/src/librf/tree_node.o: /u/msun/ros/ros-pkg/stacks/opencv/opencv_latest/manifest.xml
 CMakeFiles/rf_detector.dir/src/librf/tree_node.o: /u/msun/ros/ros-pkg/sandbox/topic_synchronizer2/manifest.xml
 	$(CMAKE_COMMAND) -E cmake_progress_report /wg/stor5/msun/ros/ros-pkg/sandbox/rf_detector/build/CMakeFiles $(CMAKE_PROGRESS_8)
@@ -423,7 +423,7 @@ CMakeFiles/rf_detector.dir/depend.make.mark: /u/msun/ros/ros/3rdparty/xmlrpc++/m
 CMakeFiles/rf_detector.dir/depend.make.mark: /u/msun/ros/ros/core/rosconsole/manifest.xml
 CMakeFiles/rf_detector.dir/depend.make.mark: /u/msun/ros/ros/core/roscpp/manifest.xml
 CMakeFiles/rf_detector.dir/depend.make.mark: /u/msun/ros/ros/std_msgs/manifest.xml
-CMakeFiles/rf_detector.dir/depend.make.mark: /u/msun/ros/ros-pkg/stacks/common/image_msgs/manifest.xml
+CMakeFiles/rf_detector.dir/depend.make.mark: /u/msun/ros/ros-pkg/stacks/common/sensor_msgs/manifest.xml
 CMakeFiles/rf_detector.dir/depend.make.mark: /u/msun/ros/ros-pkg/stacks/opencv/opencv_latest/manifest.xml
 CMakeFiles/rf_detector.dir/depend.make.mark: /u/msun/ros/ros-pkg/sandbox/topic_synchronizer2/manifest.xml
 
@@ -437,7 +437,7 @@ CMakeFiles/rf_detector.dir/src/librf/instance_set.o: /u/msun/ros/ros/3rdparty/xm
 CMakeFiles/rf_detector.dir/src/librf/instance_set.o: /u/msun/ros/ros/core/rosconsole/manifest.xml
 CMakeFiles/rf_detector.dir/src/librf/instance_set.o: /u/msun/ros/ros/core/roscpp/manifest.xml
 CMakeFiles/rf_detector.dir/src/librf/instance_set.o: /u/msun/ros/ros/std_msgs/manifest.xml
-CMakeFiles/rf_detector.dir/src/librf/instance_set.o: /u/msun/ros/ros-pkg/stacks/common/image_msgs/manifest.xml
+CMakeFiles/rf_detector.dir/src/librf/instance_set.o: /u/msun/ros/ros-pkg/stacks/common/sensor_msgs/manifest.xml
 CMakeFiles/rf_detector.dir/src/librf/instance_set.o: /u/msun/ros/ros-pkg/stacks/opencv/opencv_latest/manifest.xml
 CMakeFiles/rf_detector.dir/src/librf/instance_set.o: /u/msun/ros/ros-pkg/sandbox/topic_synchronizer2/manifest.xml
 	$(CMAKE_COMMAND) -E cmake_progress_report /wg/stor5/msun/ros/ros-pkg/sandbox/rf_detector/build/CMakeFiles $(CMAKE_PROGRESS_9)
@@ -469,7 +469,7 @@ CMakeFiles/rf_detector.dir/depend.make.mark: /u/msun/ros/ros/3rdparty/xmlrpc++/m
 CMakeFiles/rf_detector.dir/depend.make.mark: /u/msun/ros/ros/core/rosconsole/manifest.xml
 CMakeFiles/rf_detector.dir/depend.make.mark: /u/msun/ros/ros/core/roscpp/manifest.xml
 CMakeFiles/rf_detector.dir/depend.make.mark: /u/msun/ros/ros/std_msgs/manifest.xml
-CMakeFiles/rf_detector.dir/depend.make.mark: /u/msun/ros/ros-pkg/stacks/common/image_msgs/manifest.xml
+CMakeFiles/rf_detector.dir/depend.make.mark: /u/msun/ros/ros-pkg/stacks/common/sensor_msgs/manifest.xml
 CMakeFiles/rf_detector.dir/depend.make.mark: /u/msun/ros/ros-pkg/stacks/opencv/opencv_latest/manifest.xml
 CMakeFiles/rf_detector.dir/depend.make.mark: /u/msun/ros/ros-pkg/sandbox/topic_synchronizer2/manifest.xml
 
@@ -483,7 +483,7 @@ CMakeFiles/rf_detector.dir/src/librf/tree.o: /u/msun/ros/ros/3rdparty/xmlrpc++/m
 CMakeFiles/rf_detector.dir/src/librf/tree.o: /u/msun/ros/ros/core/rosconsole/manifest.xml
 CMakeFiles/rf_detector.dir/src/librf/tree.o: /u/msun/ros/ros/core/roscpp/manifest.xml
 CMakeFiles/rf_detector.dir/src/librf/tree.o: /u/msun/ros/ros/std_msgs/manifest.xml
-CMakeFiles/rf_detector.dir/src/librf/tree.o: /u/msun/ros/ros-pkg/stacks/common/image_msgs/manifest.xml
+CMakeFiles/rf_detector.dir/src/librf/tree.o: /u/msun/ros/ros-pkg/stacks/common/sensor_msgs/manifest.xml
 CMakeFiles/rf_detector.dir/src/librf/tree.o: /u/msun/ros/ros-pkg/stacks/opencv/opencv_latest/manifest.xml
 CMakeFiles/rf_detector.dir/src/librf/tree.o: /u/msun/ros/ros-pkg/sandbox/topic_synchronizer2/manifest.xml
 	$(CMAKE_COMMAND) -E cmake_progress_report /wg/stor5/msun/ros/ros-pkg/sandbox/rf_detector/build/CMakeFiles $(CMAKE_PROGRESS_10)

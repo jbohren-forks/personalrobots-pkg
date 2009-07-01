@@ -586,7 +586,7 @@ CMakeFiles/rf_detector.dir/src/RFDetector.o: /opt/ros/include/log4cxx/spi/logger
 CMakeFiles/rf_detector.dir/src/RFDetector.o: /opt/ros/include/log4cxx/spi/loggerrepository.h
 CMakeFiles/rf_detector.dir/src/RFDetector.o: /opt/ros/include/log4cxx/spi/optionhandler.h
 CMakeFiles/rf_detector.dir/src/RFDetector.o: /u/msun/ros/ros-pkg/sandbox/topic_synchronizer2/include/topic_synchronizer2/topic_synchronizer.h
-CMakeFiles/rf_detector.dir/src/RFDetector.o: /u/msun/ros/ros-pkg/stacks/common/image_msgs/msg/cpp/image_msgs/Image.h
+CMakeFiles/rf_detector.dir/src/RFDetector.o: /u/msun/ros/ros-pkg/stacks/common/sensor_msgs/msg/cpp/sensor_msgs/Image.h
 CMakeFiles/rf_detector.dir/src/RFDetector.o: /u/msun/ros/ros-pkg/stacks/opencv/opencv_latest/include/opencv_latest/CvBridge.h
 CMakeFiles/rf_detector.dir/src/RFDetector.o: /u/msun/ros/ros-pkg/stacks/opencv/opencv_latest/opencv/include/opencv/cv.h
 CMakeFiles/rf_detector.dir/src/RFDetector.o: /u/msun/ros/ros-pkg/stacks/opencv/opencv_latest/opencv/include/opencv/cv.hpp
