@@ -1,7 +1,6 @@
 <launch>
 
   <!-- this file is here as an example, however, if you did not rosmake pr2_gazebo, this launch script will not work -->
-  <!-- I added this file here as an example, however, if you did not rosmake pr2_gazebo, this launch script will not work -->
 
   <include file="$(find pr2_alpha)/sim.machine" />
 
@@ -79,3 +78,84 @@
 
 </launch>
 
+=======
+<launch>
+
+  <!-- this file is here as an example, however, if you did not rosmake pr2_gazebo, this launch script will not work -->
+  <!-- I added this file here as an example, however, if you did not rosmake pr2_gazebo, this launch script will not work -->
+
+  <include file="$(find pr2_alpha)/sim.machine" />
+
+<!-- start Gazebo -->
+  <param name="/use_sim_time" value="true" />
+  <param name="robotdesc/pr2" command="$(find xacro)/xacro.py '$(find pr2_defs)/robots/prf.xacro.xml'" />
+  <node pkg="gazebo" type="gazebo" args="$(find gazebo_robot_description)/gazebo_worlds/empty.world" respawn="false" output="screen">
+    <env name="LD_LIBRARY_PATH" value="$(find gazebo_plugin)/lib:$(find gazebo)/gazebo/lib:$(find Cg)/Cg/lib:$(optenv LD_LIBRARY_PATH)" />
+    <env name="GAZEBO_RESOURCE_PATH" value="$(find gazebo_robot_description):$(find gazebo)/gazebo/share/gazebo" />
+    <env name="OGRE_RESOURCE_PATH" value="$(find ogre)/ogre/lib/OGRE" />
+  </node>
+  <node pkg="gazebo_plugin" type="urdf2factory" args="robotdesc/pr2" respawn="false" output="screen" />
+
+
+<!-- Joystick -->
+  <!-- uncomment if you have joystick plugged in
+  <param name="joy/deadzone" value="5000"/>
+  <node machine="four" pkg="joy" type="joy"  respawn="true"/>
+  -->
+
+
+<!-- Robot state publisher -->
+ <node machine="two" pkg="robot_state_publisher" type="state_publisher" name="robot_state_publisher">
+   <param name="publish_frequency" type="double" value="50.0" />
+   <param name="tf_prefix" type="string" value="" />
+ </node>
+
+<!-- Battery Monitor -->
+  <!-- battery plugin in gazebo -->
+
+<!-- Base Laser -->
+  <!-- as gazebo_plugin -->
+
+<!-- Tilt Laser -->
+  <!-- as gazebo_plugin -->
+
+<!-- imu -->
+  <!-- as gazebo_plugin -->
+
+  <!-- Videre Stereo cam -->
+  <!-- as gazebo_plugin -->
+
+  <!-- Prosilica camera setup -->
+  <!-- as gazebo_plugin -->
+
+<!-- Forearm Camera -->
+  <!-- can be loaded as gazebo_plugin, if you want this, add the map/verbatim blocks in urdf -->
+
+<!-- Sound  -->
+  <!-- n/a in gazebo -->
+
+<!-- Runtime Diagnostics Logging -->
+  <!--node pkg="rosrecord" type="rosrecord" args="-f /hwlog/prf_runtime_automatic /diagnostics" /-->
+
+<!-- Joint Calibration Monitor -->
+  <!-- n/a in gazebo -->
+
+<!-- NTP monitoring script Warns to console if sync error -->
+  <!-- n/a in gazebo -->
+
+<!-- Disk usage monitoring script Warns to console if disk full -->
+  <!-- n/a in gazebo -->
+
+  <!-- Plug to chessboard offsets -->
+  <!-- this looks like a hack for milestone2, plugging in stuff? -->
+  <group ns="plug_detector">
+    <param name="plug_position_x" value="0.01" />
+    <param name="plug_position_y" value="-0.005" />
+    <param name="plug_position_z" value="0.016" />
+    <param name="plug_orientation_x" value="0.71428" />
+    <param name="plug_orientation_y" value="-0.69958" />
+    <param name="plug_orientation_z" value="0.00588" />
+    <param name="plug_orientation_w" value="0.01906" />
+  </group>
+
+</launch>
