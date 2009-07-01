@@ -37,7 +37,6 @@
 *********************************************************************/
 #include <move_arm/move_arm.h>
 
-#include <motion_planning_srvs/KinematicPlan.h>
 #include <pr2_mechanism_controllers/TrajectoryStart.h>
 #include <pr2_mechanism_controllers/TrajectoryQuery.h>
 #include <pr2_mechanism_controllers/TrajectoryCancel.h>
@@ -128,47 +127,8 @@ namespace move_arm
 	// do not spend more than this amount of time
 	req.allowed_time = 0.5;
 
-	// change pose constraints to joint constraints, if possible and so desired
-	if (perform_ik_ &&                                           // IK is enabled,
-	    req.goal_constraints.joint_constraint.empty() &&         // we have no joint constraints on the goal,
-	    req.goal_constraints.pose_constraint.size() == 1 &&      // we have a single pose constraint on the goal
-	    req.goal_constraints.pose_constraint[0].type == motion_planning_msgs::PoseConstraint::POSITION_XYZ +
-	    motion_planning_msgs::PoseConstraint::ORIENTATION_RPY && // that is active on all 6 DOFs
-	    req.goal_constraints.pose_constraint[0].position_distance < 0.1 && // and the desired position and
-	    req.goal_constraints.pose_constraint[0].orientation_distance < 0.1) // orientation distances are small
-	{
-	    planning_models::KinematicModel::Link *link = planningMonitor_->getKinematicModel()->getLink(req.goal_constraints.pose_constraint[0].link_name);
-	    if (link && link->before && link->before->name == arm_joint_names_.back())
-	    {
-		// we can do ik can turn the pose constraint into a joint one
-		ROS_INFO("Converting pose constraint to joint constraint using IK...");
-		
-		std::vector<double> solution;
-		if (computeIK(req.goal_constraints.pose_constraint[0].pose, solution))
-		{
-		    unsigned int n = 0;
-		    for (unsigned int i = 0 ; i < arm_joint_names_.size() ; ++i)
-		    {
-			motion_planning_msgs::JointConstraint jc;
-			jc.joint_name = arm_joint_names_[i];
-			jc.header.frame_id = req.goal_constraints.pose_constraint[0].pose.header.frame_id;
-			jc.header.stamp = planningMonitor_->lastStateUpdate();
-			unsigned int u = planningMonitor_->getKinematicModel()->getJoint(arm_joint_names_[i])->usedParams;
-			for (unsigned int j = 0 ; j < u ; ++j)
-			{
-			    jc.value.push_back(solution[n + j]);
-			    jc.toleranceAbove.push_back(0.0);
-			    jc.toleranceBelow.push_back(0.0);
-			}
-			n += u;			
-			req.goal_constraints.joint_constraint.push_back(jc);
-		    }
-		    req.goal_constraints.pose_constraint.clear();
-		}
-		else
-		    ROS_WARN("Unable to compute IK");
-	    }
-	}
+	if (perform_ik_)
+	    alterRequestUsingIK(req);
 	
 	ResultStatus result = robot_actions::SUCCESS;
 	
@@ -201,19 +161,8 @@ namespace move_arm
 		    continue;
 		}
 		
-		// fill in start state with current one
-		std::vector<planning_models::KinematicModel::Joint*> joints;
-		planningMonitor_->getKinematicModel()->getJoints(joints);
-		
-		req.start_state.resize(joints.size());
-		for (unsigned int i = 0 ; i < joints.size() ; ++i)
-		{
-		    req.start_state[i].header.frame_id = planningMonitor_->getFrameId();
-		    req.start_state[i].header.stamp = planningMonitor_->lastStateUpdate();
-		    req.start_state[i].joint_name = joints[i]->name;
-		    planningMonitor_->getRobotState()->copyParamsJoint(req.start_state[i].value, joints[i]->name);
-		}
-		
+		fillStartState(req.start_state);
+
 		// call the planner and decide whether to use the path 
 		if (clientPlan.call(req, res))
 		{
@@ -383,6 +332,7 @@ namespace move_arm
 
     void MoveArm::fillTrajectoryPath(const motion_planning_msgs::KinematicPath &path, manipulation_msgs::JointTraj &traj)
     {
+	/// \todo Joint controller does not take joint names; make sure we set them when the controller is updated
 	traj.points.resize(path.states.size());
 	for (unsigned int i = 0 ; i < path.states.size() ; ++i)
 	{
@@ -445,6 +395,114 @@ namespace move_arm
 	    ROS_WARN("The group joints are not in the same order as the controller expects");
 	
 	return true;
+    }
+    
+    bool MoveArm::fillStartState(std::vector<motion_planning_msgs::KinematicJoint> &start_state)
+    {
+	bool result = true;
+	
+	// get the current state
+	planning_models::StateParams st(*planningMonitor_->getRobotState());
+	
+	// just in case the system is a bit outside bounds, we enforce the bounds
+	st.enforceBounds();
+	
+	// if the state is not valid, we try to fix it
+	if (!planningMonitor_->isStateValidOnPath(&st))
+	{
+	    // try 2% change in each component
+	    planning_models::StateParams temp(st);
+	    int count = 0;
+	    do 
+	    {
+		temp = st;
+		temp.perturbState(0.02);
+		count++;
+	    } while (!planningMonitor_->isStateValidOnPath(&temp) && count < 50);
+	    
+	    // try 10% change in each component
+	    if (!planningMonitor_->isStateValidOnPath(&temp))
+	    {
+		count = 0;
+		do 
+		{
+		    temp = st;
+		    temp.perturbState(0.1);
+		    count++;
+		} while (!planningMonitor_->isStateValidOnPath(&temp) && count < 50);
+	    }
+	    
+	    if (planningMonitor_->isStateValidOnPath(&temp))
+		st = temp;
+	    else
+	    {
+		result = false;
+		ROS_ERROR("Starting state for the robot is in collision and attempting to fix it failed");
+	    }
+	}
+	
+	// fill in start state with current one
+	std::vector<planning_models::KinematicModel::Joint*> joints;
+	planningMonitor_->getKinematicModel()->getJoints(joints);
+	
+	start_state.resize(joints.size());
+	for (unsigned int i = 0 ; i < joints.size() ; ++i)
+	{
+	    start_state[i].header.frame_id = planningMonitor_->getFrameId();
+	    start_state[i].header.stamp = planningMonitor_->lastStateUpdate();
+	    start_state[i].joint_name = joints[i]->name;
+	    st.copyParamsJoint(start_state[i].value, joints[i]->name);
+	}
+	
+	return result;
+    }
+    
+    bool MoveArm::alterRequestUsingIK(motion_planning_srvs::KinematicPlan::Request &req)
+    {
+	bool result = false;
+	
+	// change pose constraints to joint constraints, if possible and so desired
+	if (req.goal_constraints.joint_constraint.empty() &&         // we have no joint constraints on the goal,
+	    req.goal_constraints.pose_constraint.size() == 1 &&      // we have a single pose constraint on the goal
+	    req.goal_constraints.pose_constraint[0].type == motion_planning_msgs::PoseConstraint::POSITION_XYZ +
+	    motion_planning_msgs::PoseConstraint::ORIENTATION_RPY && // that is active on all 6 DOFs
+	    req.goal_constraints.pose_constraint[0].position_distance < 0.1 && // and the desired position and
+	    req.goal_constraints.pose_constraint[0].orientation_distance < 0.1) // orientation distances are small
+	{
+	    planning_models::KinematicModel::Link *link = planningMonitor_->getKinematicModel()->getLink(req.goal_constraints.pose_constraint[0].link_name);
+	    if (link && link->before && link->before->name == arm_joint_names_.back())
+	    {
+		// we can do ik can turn the pose constraint into a joint one
+		ROS_INFO("Converting pose constraint to joint constraint using IK...");
+		
+		std::vector<double> solution;
+		if (computeIK(req.goal_constraints.pose_constraint[0].pose, solution))
+		{
+		    unsigned int n = 0;
+		    for (unsigned int i = 0 ; i < arm_joint_names_.size() ; ++i)
+		    {
+			motion_planning_msgs::JointConstraint jc;
+			jc.joint_name = arm_joint_names_[i];
+			jc.header.frame_id = req.goal_constraints.pose_constraint[0].pose.header.frame_id;
+			jc.header.stamp = planningMonitor_->lastStateUpdate();
+			unsigned int u = planningMonitor_->getKinematicModel()->getJoint(arm_joint_names_[i])->usedParams;
+			for (unsigned int j = 0 ; j < u ; ++j)
+			{
+			    jc.value.push_back(solution[n + j]);
+			    jc.toleranceAbove.push_back(0.0);
+			    jc.toleranceBelow.push_back(0.0);
+			}
+			n += u;			
+			req.goal_constraints.joint_constraint.push_back(jc);
+		    }
+		    req.goal_constraints.pose_constraint.clear();
+		    result = true;
+		}
+		else
+		    ROS_WARN("Unable to compute IK");
+	    }
+	}
+	return result;
     }
     
     bool MoveArm::computeIK(const robot_msgs::PoseStamped &pose_stamped_msg, std::vector<double> &solution)
