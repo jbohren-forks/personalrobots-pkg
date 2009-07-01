@@ -252,7 +252,7 @@ void HeadServoingControllerNode::headTrackPoint()
   tf::Stamped<tf::Point> pan_point;
 
   try{
-    TF.transformPoint("head_pan",point, pan_point);
+    TF.transformPoint("head_pan_link",point, pan_point);
   }
   catch(tf::TransformException& ex){
     ROS_WARN("Transform Exception %s", ex.what());
