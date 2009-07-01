@@ -15,6 +15,11 @@
   <node pkg="gazebo_plugin" type="urdf2factory" args="robotdesc/pr2 -5 -15 0 0 90" respawn="false" output="screen" />
   <node pkg="gazebo_plugin" type="xml2factory" args="wg_walls -25.65 -25.65 0 0 0 0 wg_walls" respawn="false" output="screen" />
 
+  <!-- Joystick uncomment if you have joystick
+  <param name="joy/deadzone" value="5000"/>
+  <node machine="four" pkg="joy" type="joy"  respawn="true"/>
+  -->
+
   <!-- Robot state publisher -->
   <node pkg="robot_state_publisher" type="state_publisher" name="robot_state_publisher">
     <param name="publish_frequency" type="double" value="50.0" />
