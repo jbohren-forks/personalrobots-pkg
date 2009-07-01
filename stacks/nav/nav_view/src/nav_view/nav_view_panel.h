@@ -42,7 +42,7 @@
 #include <OGRE/OgreRenderOperation.h>
 
 #include <message_filters/subscriber.h>
-#include <message_filters/tf.h>
+#include <tf/message_filter.h>
 #include <ros/ros.h>
 
 #include <list>

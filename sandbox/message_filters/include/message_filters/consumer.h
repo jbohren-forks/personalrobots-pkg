@@ -52,7 +52,7 @@ template<class M>
 class Consumer
 {
 public:
-  typedef boost::shared_ptr<M const> MPtr;
+  typedef boost::shared_ptr<M const> MConstPtr;
 
   template<class A>
   Consumer(A& a)
@@ -70,7 +70,7 @@ public:
    * involve pushing data onto queues, and pushing it along the pipeline into
    * another filter
    */
-  void processData(const MPtr& msg)
+  void processData(const MConstPtr& msg)
   {
     ROS_INFO("Called Consumer Callback!") ;
   }
