@@ -37,19 +37,29 @@
 #include <opencv/cvwimage.h>
 #include <opencv/highgui.h>
 
+ImagePublisher::ImagePublisher(const ros::NodeHandle& node_handle)
+  : node_handle_(node_handle)
+{
+}
+
 ImagePublisher::ImagePublisher(const std::string& topic, const ros::NodeHandle& node_handle,
                                bool republishing)
-  : node_handle_(node_handle),
-    republishing_(republishing)
+  : node_handle_(node_handle)
 {
-  if (!republishing_)
-    image_pub_ = node_handle_.advertise<sensor_msgs::Image>(topic, 1);
-  thumbnail_pub_ = node_handle_.advertise<sensor_msgs::Image>(topic + "_thumbnail", 1);
-  compressed_pub_ = node_handle_.advertise<sensor_msgs::CompressedImage>(topic + "_compressed", 1);
+  advertise(topic, republishing);
 }
 
 ImagePublisher::~ImagePublisher()
 {
+}
+
+void ImagePublisher::advertise(const std::string& topic, bool republishing)
+{
+  republishing_ = republishing;
+  if (!republishing_)
+    image_pub_ = node_handle_.advertise<sensor_msgs::Image>(topic, 1);
+  thumbnail_pub_ = node_handle_.advertise<sensor_msgs::Image>(topic + "_thumbnail", 1);
+  compressed_pub_ = node_handle_.advertise<sensor_msgs::CompressedImage>(topic + "_compressed", 1);
 }
 
 uint32_t ImagePublisher::getNumSubscribers() //const

@@ -54,6 +54,12 @@
 class ImagePublisher
 {
 public:
+
+  /*!
+   * \brief Constructor
+   */
+  ImagePublisher(const ros::NodeHandle& node_handle);
+  
   /*!
    * \brief Constructor
    *
@@ -66,6 +72,8 @@ public:
                  bool republishing = false);
 
   ~ImagePublisher();
+
+  void advertise(const std::string& topic, bool republishing = false);
 
   /*!
    * \brief Returns the number of subscribers that are currently connected to
