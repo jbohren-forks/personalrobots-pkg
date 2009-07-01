@@ -214,6 +214,34 @@ material PR2/Plug
   }
 }
 
+material PR2/Jack
+{
+  technique
+  {
+    pass
+    {
+      texture_unit
+      {
+        texture jack_texture.jpg
+      }
+    }
+  }
+}
+
+material PR2/Outlet
+{
+  technique
+  {
+    pass
+    {
+      texture_unit
+      {
+        texture outlet_texture.jpg
+      }
+    }
+  }
+}
+
 
 material PR2/White
 {
