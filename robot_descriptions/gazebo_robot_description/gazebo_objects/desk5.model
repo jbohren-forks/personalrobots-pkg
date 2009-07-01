@@ -3,7 +3,7 @@
     <xyz>0 0 0</xyz>
     <rpy>0 0 0</rpy>
     <body:box name="desk3">
-        <xyz>0 0 0.375</xyz>
+        <xyz>0 0 0.001</xyz>
         <rpy>0 0 0</rpy>
         <geom:box name="desk3top_geom">
             <kp>100000000.0</kp>

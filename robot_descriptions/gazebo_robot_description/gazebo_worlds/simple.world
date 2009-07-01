@@ -104,7 +104,7 @@
 
   <!-- The small cylinder "cup" -->
   <model:physical name="cylinder1_model">
-    <xyz>   2.5    0.0    1.5</xyz>
+    <xyz>   2.35   0.0    0.7115</xyz>
     <rpy>   0.0    0.0    0.0</rpy>
     <body:cylinder name="cylinder1_body">
       <geom:cylinder name="cylinder1_geom">
@@ -139,7 +139,7 @@
 
   <!-- The small box "cup" -->
   <model:physical name="object1">
-    <xyz>2.28  -0.21  0</xyz>
+    <xyz>1.28  -0.21  0</xyz>
     <rpy>0.0 0.0 0.0 </rpy>
     <include embedded="true">
       <xi:include href="../gazebo_objects/object1.model" />
