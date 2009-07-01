@@ -1,17 +1,10 @@
 <launch>
-  <param name="/use_sim_time" value="true" />
+  <include file="$(find gazebo)/launch/empty_world.launch" />
   <!-- send pr2.xml to param server -->
   <param name="ikea_cup"      textfile="$(find gazebo_robot_description)/gazebo_objects/ikea_cup.model" />
   <param name="wine"      textfile="$(find gazebo_robot_description)/gazebo_objects/000.580.67.model" />
   <param name="bowl"      textfile="$(find gazebo_robot_description)/gazebo_objects/001.327.79.model" />
   <param name="coffee_cup"      textfile="$(find gazebo_robot_description)/gazebo_objects/coffee_cup.model" />
-
-  <!-- start gazebo -->
-  <node pkg="gazebo" type="gazebo" args="-n $(find gazebo_robot_description)/gazebo_worlds/empty.world" respawn="false" output="screen">
-    <env name="LD_LIBRARY_PATH" value="$(find gazebo_plugin)/lib:$(find gazebo)/gazebo/lib:$(find Cg)/Cg/lib:$(optenv LD_LIBRARY_PATH)" />
-    <env name="GAZEBO_RESOURCE_PATH" value="$(find gazebo_robot_description):$(find gazebo)/gazebo/share/gazebo" />
-    <env name="OGRE_RESOURCE_PATH" value="$(find ogre)/ogre/lib/OGRE" />
-  </node>
 
   <!-- push robotdesc/pr2 to factory and spawn robot in gazebo -->
   <node pkg="gazebo_plugin" type="xml2factory" args="ikea_cup 0 -.8 0 0 0 0 ikea_cup" respawn="false" output="screen" />

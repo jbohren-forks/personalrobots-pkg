@@ -13,7 +13,6 @@
   <depend package="trex_pr2"/>
   <depend package="robot_pose_ekf"/>
   <depend package="pr2_gazebo"/>
-  <depend package="pr2_prototype1_gazebo"/>
   <depend package="tf"/>
   <depend package="point_cloud_assembler"/>
   <depend package="std_msgs"/>

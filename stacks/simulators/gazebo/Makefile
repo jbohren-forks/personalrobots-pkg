@@ -5,23 +5,15 @@ TEST_INSTALL_DIR = $(shell rospack find gazebo)/test-gazebo
 
 SVN_DIR = gazebo-svn
 SVN_URL = https://playerstage.svn.sourceforge.net/svnroot/playerstage/code/gazebo/trunk
-SVN_REVISION = -r 7929
+SVN_REVISION = -r 7937
 SVN_PATCH =  gazebo_new_patch.diff
 include $(shell rospack find mk)/svn_checkout.mk
-
-#SVN_URL = https://playerstage.svn.sourceforge.net/svnroot/playerstage/code/gazebo/branches/ogre-1.4.9
-#SVN_REVISION = -r 7599
-#SVN_PATCH = gazebo_patch.diff
 
 OGRE_PKG = $(shell rospack find ogre)/ogre/lib/pkgconfig
 PLAYER_PKG = $(shell rospack find player)/player/lib/pkgconfig
 ODE_PKG = $(shell rospack find opende)/opende/lib/pkgconfig
 FI_PKG = $(shell rospack find freeimage)/freeimage/lib/pkgconfig
 ODE_PATH = $(shell rospack find opende)/opende/bin
-
-#FREEIMAGE_INCLUDE_DIR = $(shell rospack find freeimage)/freeimage/include
-#FREEIMAGE_LIBRARY_DIR = $(shell rospack find freeimage)/freeimage/lib
-#FREEIMAGE_LIBRARY = $(shell rospack find freeimage)/freeimage/lib/libfreeimage.so
 
 BOOST_INCLUDE_DIRS = $(shell rosboost-cfg --include_dirs)
 BOOST_LIBRARY_DIRS = $(shell rosboost-cfg --lib_dirs signals,thread)
@@ -51,11 +43,6 @@ CMAKE_ARGS = -D CMAKE_BUILD_TYPE=RELEASE \
 						 -D bullet_math_dirs=$(BULLET_MATH_DIRS) \
 						 -D CMAKE_CXX_LINK_FLAGS="-lfltk -lfltk_gl"\
 						 -D ENABLE_SHADOWS=ON
-						 #-D freeimage_include_dir=$(FREEIMAGE_INCLUDE_DIR) \
-						 #-D freeimage_library_dir=$(FREEIMAGE_LIBRARY_DIR) \
-						 #-D freeimage_library=$(FREEIMAGE_LIBRARY) \
-
-
 
 CMAKE_CMD = $(PKG_PATHS) $(PATHS) $(CMAKE) $(CMAKE_ARGS)
 

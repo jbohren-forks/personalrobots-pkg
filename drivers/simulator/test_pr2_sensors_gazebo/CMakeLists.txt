@@ -19,10 +19,10 @@ endif(CMAKE_SYSTEM_PROCESSOR MATCHES "i686" OR
       CMAKE_SYSTEM_PROCESSOR MATCHES "unknown")
 
 if(CMAKE_SYSTEM_NAME MATCHES "Linux" AND _is32bit)
-rospack_add_rostest(test_scan.xml)
-rospack_add_rostest(test_camera.xml)
-rospack_add_rostest(hztest_pr2_scan.xml)
-rospack_add_rostest(hztest_pr2_image.xml)
+rospack_add_rostest(test_scan.launch)
+rospack_add_rostest(test_camera.launch)
+rospack_add_rostest(hztest_pr2_scan.launch)
+rospack_add_rostest(hztest_pr2_image.launch)
 endif(CMAKE_SYSTEM_NAME MATCHES "Linux" AND _is32bit)
 
 

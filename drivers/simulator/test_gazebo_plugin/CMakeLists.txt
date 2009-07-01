@@ -19,7 +19,7 @@ endif(CMAKE_SYSTEM_PROCESSOR MATCHES "i686" OR
 
 if(CMAKE_SYSTEM_NAME MATCHES "Linux" AND _is32bit)
 
-rospack_add_rostest(test_pendulum.xml)
+rospack_add_rostest(test_pendulum.launch)
 
 endif(CMAKE_SYSTEM_NAME MATCHES "Linux" AND _is32bit)
 
