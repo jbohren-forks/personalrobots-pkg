@@ -426,12 +426,12 @@
         <geometry name="${name}_collision">
           <box size="${base_size_x} ${base_size_y} ${base_size_z}" />
         </geometry>
-      <map name="base_collision_properties" flag="gazebo">
-        <elem key="mu1" value="500.0" />
-        <elem key="mu2" value="500.0" />
-        <elem key="kp"  value="100000000.0" />
-        <elem key="kd"  value="1.0" />
-      </map>
+        <map name="base_collision_properties" flag="gazebo">
+          <elem key="mu1" value="500.0" />
+          <elem key="mu2" value="500.0" />
+          <elem key="kp"  value="100000000.0" />
+          <elem key="kd"  value="1.0" />
+        </map>
       </collision>
       <map name="bumper_sensor" flag="gazebo">
         <verbatim key="sensor_base_bumper">
@@ -518,7 +518,7 @@
 
     <link name="plug_magnet" type="laser">
       <parent name="${name}_link" />
-      <origin xyz="0.20 0 0.235" rpy="0 0 0" />
+      <origin xyz="0.18 0 0.235" rpy="0 0 0" />
       <joint name="plug_magnet_joint" />
       <inertial>
         <mass value="0.1" />
