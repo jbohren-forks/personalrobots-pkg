@@ -44,14 +44,20 @@
 
 using namespace std;
 
+// Prints out classification rates per label
 void printClassificationRates(const map<unsigned int, RandomField::Node*>& nodes, const map<unsigned int,
     unsigned int>& inferred_labels, const vector<unsigned int>& labels)
 {
   // label -> counters
   map<unsigned int, unsigned int> total_label_count;
   map<unsigned int, unsigned int> correct_label_count;
+  for (unsigned int i = 0 ; i < labels.size() ; i++)
+  {
+    total_label_count[labels[i]] = 0;
+    correct_label_count[labels[i]] = 0;
+  }
 
-  unsigned int nbr_correct;
+  unsigned int nbr_correct = 0;
 
   unsigned int curr_node_id = 0;
   unsigned int curr_gt_label = 0;
@@ -72,16 +78,18 @@ void printClassificationRates(const map<unsigned int, RandomField::Node*>& nodes
     }
   }
 
-  ROS_INFO("Total correct: %u/%u=%f", nbr_correct, nodes.size(), static_cast<double>(nbr_correct)/static_cast<double>(nodes.size()));
+  ROS_INFO("Total correct: %u / %u = %f", nbr_correct, nodes.size(), static_cast<double>(nbr_correct)/static_cast<double>(nodes.size()));
   stringstream ss;
   ss << "Label distribution. ";
   unsigned int curr_label = 0;
   for (unsigned int i = 0 ; i < labels.size() ; i++)
   {
     curr_label = labels[i];
-    ss << "[" << curr_label << ": " << correct_label_count[curr_label] << "/" << total_label_count[curr_label] << "]  ";
+    ss << "[" << curr_label << ": " << correct_label_count[curr_label] << "/"
+        << total_label_count[curr_label] << "]  ";
   }
-  ROS_INFO("%s", ss.str());
+
+  ROS_INFO("%s", ss.str().c_str());
 }
 
 #endif
