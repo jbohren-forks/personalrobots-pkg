@@ -71,6 +71,16 @@ public:
   typedef boost::shared_ptr<Signal> SignalPtr;
   typedef boost::weak_ptr<Signal> SignalWPtr;
 
+  MessageFilter(Transformer& tf, const std::string& target_frame, uint32_t queue_size, ros::NodeHandle& nh = ros::NodeHandle(), ros::Duration max_rate = ros::Duration(0.01), ros::Duration min_rate = ros::Duration(0.1))
+  : tf_(tf)
+  , nh_(nh)
+  , min_rate_(min_rate)
+  , max_rate_(max_rate)
+  , queue_size_(queue_size)
+  {
+
+  }
+
   template<class F>
   MessageFilter(F& f, Transformer& tf, const std::string& target_frame, uint32_t queue_size, ros::NodeHandle& nh = ros::NodeHandle(), ros::Duration max_rate = ros::Duration(0.01), ros::Duration min_rate = ros::Duration(0.1))
   : tf_(tf)
@@ -78,27 +88,32 @@ public:
   , min_rate_(min_rate)
   , max_rate_(max_rate)
   , queue_size_(queue_size)
-  , message_count_(0)
-  , new_transforms_(false)
-  , successful_transform_count_(0)
-  , failed_transform_count_(0)
-  , failed_out_the_back_count_(0)
-  , transform_message_count_(0)
-  , incoming_message_count_(0)
-  , dropped_message_count_(0)
-  , time_tolerance_(0.0)
   {
+    init();
+
     target_frames_.resize(1);
     target_frames_[0] = target_frame;
     target_frames_string_ = target_frame;
 
-    message_connection_ = f.connect(boost::bind(&MessageFilter::incomingMessage, this, _1));
     tf_connection_ = tf.addTransformChangedListener(boost::bind(&MessageFilter::transformsChanged, this));
+
+    subscribeTo(f);
 
     if (min_rate > ros::Duration(0))
     {
       min_rate_timer_ = nh_.createTimer(min_rate, &MessageFilter::minRateTimerCallback, this);
     }
+  }
+
+  template<class F>
+  void subscribeTo(F& f)
+  {
+    if (message_connection_.connected())
+    {
+      message_connection_.disconnect();
+    }
+
+    message_connection_ = f.connect(boost::bind(&MessageFilter::incomingMessage, this, _1));
   }
 
   /**
@@ -207,6 +222,19 @@ public:
   }
 
 private:
+
+  void init()
+  {
+    message_count_ = 0;
+    new_transforms_ = false;
+    successful_transform_count_ = 0;
+    failed_transform_count_ = 0;
+    failed_out_the_back_count_ = 0;
+    transform_message_count_ = 0;
+    incoming_message_count_ = 0;
+    dropped_message_count_ = 0;
+    time_tolerance_ = ros::Duration(0.0);
+  }
 
   typedef std::list<MConstPtr> L_Message;
 
@@ -337,6 +365,8 @@ private:
 
   void testMessages()
   {
+    last_test_time_ = ros::Time::now();
+
     if (!messages_.empty() && getTargetFramesString() == " ")
     {
       ROS_WARN_NAMED("message_notifier", "MessageFilter [target=%s]: empty target frame", getTargetFramesString().c_str());

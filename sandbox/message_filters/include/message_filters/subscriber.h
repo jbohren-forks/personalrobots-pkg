@@ -54,16 +54,25 @@ public:
 
   Subscriber(ros::NodeHandle& nh, const std::string& topic, uint32_t queue_size, const ros::TransportHints& transport_hints = ros::TransportHints(), ros::CallbackQueueInterface* callback_queue = 0)
   {
-    ros::SubscribeOptions ops;
-    ops.init<M>(topic, queue_size, boost::bind(&Subscriber<M>::cb, this, _1));
-    ops.callback_queue = callback_queue;
-    ops.transport_hints = transport_hints;
-    sub_ = nh.subscribe(ops);
+    subscribeTo(nh, topic, queue_size, transport_hints, callback_queue);
+  }
+
+  Subscriber()
+  {
   }
 
   ~Subscriber()
   {
     sub_.shutdown();
+  }
+
+  void subscribeTo(ros::NodeHandle& nh, const std::string& topic, uint32_t queue_size, const ros::TransportHints& transport_hints = ros::TransportHints(), ros::CallbackQueueInterface* callback_queue = 0)
+  {
+    ros::SubscribeOptions ops;
+    ops.init<M>(topic, queue_size, boost::bind(&Subscriber<M>::cb, this, _1));
+    ops.callback_queue = callback_queue;
+    ops.transport_hints = transport_hints;
+    sub_ = nh.subscribe(ops);
   }
 
   boost::signals::connection connect(const Callback& callback)
