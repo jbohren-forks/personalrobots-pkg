@@ -69,6 +69,15 @@ public:
     incoming_connection_ = a.connect(boost::bind(&MsgCache::addToCache, this, _1));
   }
 
+  /**
+   * Initializes a MsgCache without specifying a parent filter. This implies that in
+   * order to populate the cache, the user then has to call addToCache themselves
+   */
+  MsgCache(unsigned int cache_size = 1)
+  {
+    setCacheSize(cache_size);
+  }
+
   ~MsgCache()
   {
     incoming_connection_.disconnect();
