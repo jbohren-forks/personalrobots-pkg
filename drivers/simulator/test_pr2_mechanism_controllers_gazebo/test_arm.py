@@ -63,21 +63,21 @@ POS_TARGET_TOL      = 0.01  #empirical test result john - 20090110
 TEST_TIMEOUT    = 100.0
 
 # pre-recorded poses for above commands
-TARGET_PALM_TX     =  0.155904378267
-TARGET_PALM_TY     =  -0.284510282483
-TARGET_PALM_TZ     =  0.745640692268
-TARGET_PALM_QX     =  -0.12484217292
-TARGET_PALM_QY     =  -0.276612397838
-TARGET_PALM_QZ     =  -0.696065775523
-TARGET_PALM_QW     =  0.650686137372
+TARGET_PALM_TX     =  0.156316138959
+TARGET_PALM_TY     =  -0.284177711643
+TARGET_PALM_TZ     =  0.757624598007
+TARGET_PALM_QX     =  -0.12467355047
+TARGET_PALM_QY     =  -0.276678037061
+TARGET_PALM_QZ     =  -0.695681958097
+TARGET_PALM_QW     =  0.651100900629
 
-TARGET_FNGR_TX     = 0.155969249528
-TARGET_FNGR_TY     = -0.34905965841
-TARGET_FNGR_TZ     = 0.788914435708
-TARGET_FNGR_QX     = -0.148793579384
-TARGET_FNGR_QY     = -0.264505209737
-TARGET_FNGR_QZ     = -0.636004870454
-TARGET_FNGR_QW     = 0.709503537352
+TARGET_FNGR_TX     =  0.156759233269
+TARGET_FNGR_TY     =  -0.348547362861
+TARGET_FNGR_TZ     =  0.800898854584
+TARGET_FNGR_QX     =  -0.147981169339
+TARGET_FNGR_QY     =  -0.264942859118
+TARGET_FNGR_QZ     =  -0.637177716527
+TARGET_FNGR_QW     =  0.708457064673
 
 class ArmTest(unittest.TestCase):
     def __init__(self, *args):
@@ -113,10 +113,10 @@ class ArmTest(unittest.TestCase):
                     abs(p3d.pos.position.z - TARGET_FNGR_TZ)
 
         #target pose rotation matrix
-        target_rm = rotation_matrix_from_quaternion([TARGET_FNGR_QX  \
-                                                    ,TARGET_FNGR_QY  \
-                                                    ,TARGET_FNGR_QZ  \
-                                                    ,TARGET_FNGR_QW])
+        target_q = [TARGET_FNGR_QX  \
+                   ,TARGET_FNGR_QY  \
+                   ,TARGET_FNGR_QZ  \
+                   ,TARGET_FNGR_QW]
 
         #p3d pose quaternion
         p3d_q     = [p3d.pos.orientation.x  \
@@ -125,7 +125,7 @@ class ArmTest(unittest.TestCase):
                     ,p3d.pos.orientation.w]
 
         # get error euler angles by inverting the target rotation matrix and multiplying by p3d quaternion
-        target_q_inv = quaternion_from_rotation_matrix( linalg.inv(target_rm) )
+        target_q_inv = quaternion_inverse(target_q)
         rot_euler = euler_from_quaternion( quaternion_multiply(p3d_q, target_q_inv) )
         rot_error = abs( rot_euler[0] ) + \
                     abs( rot_euler[1] ) + \
@@ -157,10 +157,10 @@ class ArmTest(unittest.TestCase):
                     abs(p3d.pos.position.z - TARGET_PALM_TZ)
 
         #target pose rotation matrix
-        target_rm = rotation_matrix_from_quaternion([TARGET_PALM_QX  \
-                                                    ,TARGET_PALM_QY  \
-                                                    ,TARGET_PALM_QZ  \
-                                                    ,TARGET_PALM_QW])
+        target_q = [TARGET_PALM_QX  \
+                   ,TARGET_PALM_QY  \
+                   ,TARGET_PALM_QZ  \
+                   ,TARGET_PALM_QW]
 
         #p3d pose quaternion
         p3d_q     = [p3d.pos.orientation.x  \
@@ -169,7 +169,7 @@ class ArmTest(unittest.TestCase):
                     ,p3d.pos.orientation.w]
 
         # get error euler angles by inverting the target rotation matrix and multiplying by p3d quaternion
-        target_q_inv = quaternion_from_rotation_matrix( linalg.inv(target_rm) )
+        target_q_inv = quaternion_inverse(target_q)
         rot_euler = euler_from_quaternion( quaternion_multiply(p3d_q, target_q_inv) )
         rot_error = abs( rot_euler[0] ) + \
                     abs( rot_euler[1] ) + \
