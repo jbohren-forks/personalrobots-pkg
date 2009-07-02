@@ -34,7 +34,7 @@
 <param name="head_button" value="6" type="int" />
 
 <param name="deadman_button" value="4" type="int"/>
-<node pkg="teleop_base" type="teleop_base" output="screen"/>
+<node pkg="teleop_pr2" type="teleop_pr2" output="screen"/>
   </group>
 
 
