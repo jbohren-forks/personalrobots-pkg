@@ -106,8 +106,8 @@ namespace move_arm
 	    return robot_actions::ABORTED;
 	}
 	
-	motion_planning_srvs::KinematicPlan::Request  req;
-	motion_planning_srvs::KinematicPlan::Response res;
+	motion_planning_srvs::MotionPlan::Request  req;
+	motion_planning_srvs::MotionPlan::Response res;
 	
 	
 	req.params.model_id = arm_;              // the model to plan for (should be defined in planning.yaml)
@@ -139,7 +139,7 @@ namespace move_arm
 	feedback = pr2_robot_actions::MoveArmState::PLANNING;
 	update(feedback);
 	
-	ros::ServiceClient clientPlan   = node_handle_.serviceClient<motion_planning_srvs::KinematicPlan>(MOTION_PLAN_NAME, true);
+	ros::ServiceClient clientPlan   = node_handle_.serviceClient<motion_planning_srvs::MotionPlan>(MOTION_PLAN_NAME, true);
 	ros::ServiceClient clientStart  = node_handle_.serviceClient<pr2_mechanism_controllers::TrajectoryStart>(CONTROL_START_NAME, true);
 	ros::ServiceClient clientQuery  = node_handle_.serviceClient<pr2_mechanism_controllers::TrajectoryQuery>(CONTROL_QUERY_NAME, true);
 	ros::ServiceClient clientCancel = node_handle_.serviceClient<pr2_mechanism_controllers::TrajectoryCancel>(CONTROL_CANCEL_NAME, true);
@@ -461,7 +461,7 @@ namespace move_arm
 	return result;
     }
     
-    bool MoveArm::alterRequestUsingIK(motion_planning_srvs::KinematicPlan::Request &req)
+    bool MoveArm::alterRequestUsingIK(motion_planning_srvs::MotionPlan::Request &req)
     {
 	bool result = false;
 	

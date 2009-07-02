@@ -44,7 +44,7 @@
 #include <manipulation_msgs/JointTraj.h>
 #include <pr2_robot_actions/MoveArmState.h>
 #include <pr2_robot_actions/MoveArmGoal.h>
-#include <motion_planning_srvs/KinematicPlan.h>
+#include <motion_planning_srvs/MotionPlan.h>
 
 #include <ros/ros.h>
 #include <planning_environment/planning_monitor.h>
@@ -99,7 +99,7 @@ namespace move_arm
 
 	bool fillStartState(std::vector<motion_planning_msgs::KinematicJoint> &start);	
 	void fillTrajectoryPath(const motion_planning_msgs::KinematicPath &path, manipulation_msgs::JointTraj &traj);
-	bool alterRequestUsingIK(motion_planning_srvs::KinematicPlan::Request &req);
+	bool alterRequestUsingIK(motion_planning_srvs::MotionPlan::Request &req);
 	bool computeIK(const robot_msgs::PoseStamped &pose_stamped_msg, std::vector<double> &solution);
     };
 }
