@@ -303,6 +303,7 @@ namespace move_arm
 			    ROS_INFO("Completed approximate path. Trying again to reach goal...");
 			    feedback = pr2_robot_actions::MoveArmState::PLANNING;	
 			    update(feedback);
+			    trajectoryId = -1;
 			    continue;
 			}
 			break;
