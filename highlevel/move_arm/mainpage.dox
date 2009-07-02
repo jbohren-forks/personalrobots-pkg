@@ -5,124 +5,50 @@
 @section summary Summary
 
 \b move_arm is an action to move the arm. Motion planning is performed and the execution of the path is being monitored. When/if the path becomes invalid, a now plan is requested.
-
-Currently things are changing so looking at the source code is
-best. Essentially, parameters, topic and service names need to resolve
-to what is available (in terms of inverse kinematics, motion planning,
-etc).
+For more details on the planning stack, see <a href="http://pr.willowgarage.com/wiki/Motion_Planning_Software_Stack">Motion Planning Software Stack</a>.
 
 Also, see the documentation for the <a href="../../planning_environment/html">planning_environment</a> package
 
-<!-- 
-In addition to providing an overview of your package,
-this is the section where the specification and design/architecture 
-should be detailed. While the original specification may be done on the
-wiki, it should be transferred here once your package starts to take shape.
-You can then link to this documentation page from the Wiki. 
--->
-
-
-\section codeapi Code API
-
-<!--
-Provide links to specific auto-generated API documentation within your
-package that is of particular interest to a reader. Doxygen will
-document pretty much every part of your code, so do your best here to
-point the reader to the actual API.
-
-If your codebase is fairly large or has different sets of APIs, you
-should use the doxygen 'group' tag to keep these APIs together. For
-example, the roscpp documentation has 'libros' group.
--->
 
 \section rosapi ROS API
 
-<!--
-Names are very important in ROS because they can be remapped on the
-command-line, so it is VERY IMPORTANT THAT YOU LIST NAMES AS THEY
-APPEAR IN THE CODE. You should list names of every topic, service and
-parameter used in your code. There is a template below that you can
-use to document each node separately.
-
 List of nodes:
-- \b node_name1
-- \b node_name2
--->
-
-<!-- START: copy from here to 'END' for each node 
+- \b move_arm : the actual robot action
+- \b arm_cmd_line : a command line interface to handle arm states and send requests to move_arm
+- \b oscillate_move : simple test that moves the arm between two predefined positions
 
 <hr>
 
-\subsection node_name node_name
+All these nodes only take standard ROS arguments
 
-node_name does (provide a basic description of your node)
+\subsection topics ROS Topics
+ - same as <a href="../../planning_environment/html">planning_environment</a> 
 
-\subsubsection Usage
-\verbatim
-$ node_type1 [standard ROS args]
-\endverbatim
+\subsection params ROS Parameters
+ - parameters that <a href="../../planning_environment/html">planning_environment</a> needs 
+ - \b "~perform_ik"/bool : enable/disable performing IK for motion plans that only use a Pose Constraint for the end effector
+ - \b "~arm"/string : the name of the planning group (as in <a href="../../planning_environment/html">planning_environment</a>) that contains the arm links
 
-\par Example
+\subsection services ROS Services
 
-\verbatim
-$ node_type1
-\endverbatim
+ - \b "controller_start"/string : the name of the service to start the trajectory controller
+ - \b "controller_query"/string : the name of the service to query the trajectory controller
+ - \b "controller_cancel"/string : the name of the service to cancel a trajectory
+ - \b "motion_plan"/string : the name of the service to plan motions
+ - \b "arm_ik"/string : the name of the service to perform inverse kinematics, if one is available
+ - \b "arm_ik_query"/string : the name of the service to query the inverse kinematics node, if one is available. This is used to make sure the joints IK is performed for are the same as the joints planning is done for.
 
+\subsection running Running 
 
-\subsubsection topics ROS topics
+In order to run, 'move_arm' needs a robot description (together with
+its planning and collision description) to be loaded. In addition to
+this, the 'planning_environment' should be receiving both state and
+map information constantly, so that the environment is considered
+known.  A node that can perform motion planning needs to be running
+and a controller for the arm need to be running as well.  Running a
+node that can perform inverse kinematics is optional.  
 
-Subscribes to:
-- \b "in": [std_msgs/FooType] description of in
-
-Publishes to:
-- \b "out": [std_msgs/FooType] description of out
-
-
-\subsubsection parameters ROS parameters
-
-Reads the following parameters from the parameter server
-
-- \b "~param_name" : \b [type] description of param_name
-- \b "~my_param" : \b [string] description of my_param
-
-Sets the following parameters on the parameter server
-
-- \b "~param_name" : \b [type] description of param_name
-
-
-\subsubsection services ROS services
-- \b "foo_service": [std_srvs/FooType] description of foo_service
-
-
-END: copy for each node -->
-
-
-<!-- START: Uncomment if you have any command-line tools
-
-\section commandline Command-line tools
-
-This section is a catch-all for any additional tools that your package
-provides or uses that may be of use to the reader. For example:
-
-- tools/scripts (e.g. rospack, roscd)
-- roslaunch .launch files
-- xmlparam files
-
-\subsection script_name script_name
-
-Description of what this script/file does.
-
-\subsubsection Usage
-\verbatim
-$ ./script_name [args]
-\endverbatim
-
-\par Example
-
-\verbatim
-$ ./script_name foo bar
-\endverbatim
-
-END: Command-Line Tools Section -->
+Example launch files that start all the necessary parts exist in the
+<a href="../../tabletop_scripts/html">tabletop manipulation demo</a>.
 
 */
