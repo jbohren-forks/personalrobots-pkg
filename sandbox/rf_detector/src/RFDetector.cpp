@@ -43,7 +43,7 @@
 #include "opencv/cxcore.h"
 #include "opencv/cvaux.h"
 #include "opencv_latest/CvBridge.h"
-#include "image_msgs/Image.h"
+#include "sensor_msgs/Image.h"
 #include "write.h"
 #include "hog.h"
 #include "ObjectInPerspective.h"
@@ -57,7 +57,7 @@
 #include <point_cloud_mapping/sample_consensus/lmeds.h>
 #include <point_cloud_mapping/geometry/projections.h>
 
-#include "image_msgs/CamInfo.h"
+#include "sensor_msgs/CamInfo.h"
 #include "robot_msgs/PointCloud.h"
 #include "robot_msgs/Point32.h"
 #include "robot_msgs/PointStamped.h"
@@ -103,9 +103,9 @@ public:
     tf::TransformListener tf_;
 	tf::TransformBroadcaster broadcaster_;
     TopicSynchronizer sync_;
-    image_msgs::ImageConstPtr limage;
-    image_msgs::CvBridge lbridge;
-    image_msgs::CamInfoConstPtr lcinfo_;
+    sensor_msgs::ImageConstPtr limage;
+    sensor_msgs::CvBridge lbridge;
+    sensor_msgs::CamInfoConstPtr lcinfo_;
 
     ros::Subscriber left_image_sub_;
     ros::Subscriber left_caminfo_image_sub_;
@@ -229,7 +229,7 @@ public:
 
 private:
 
-    void leftImageCallback(const image_msgs::Image::ConstPtr& image)
+    void leftImageCallback(const sensor_msgs::Image::ConstPtr& image)
     {
             limage = image;
             if(lbridge.fromImage(*limage, "bgr")) {
@@ -239,7 +239,7 @@ private:
             }
     }
 
-    void leftCamInfoCallback(const image_msgs::CamInfo::ConstPtr& info)
+    void leftCamInfoCallback(const sensor_msgs::CamInfo::ConstPtr& info)
 	{
 		lcinfo_ = info;
 	}

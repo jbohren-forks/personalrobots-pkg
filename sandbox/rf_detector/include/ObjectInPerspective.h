@@ -41,7 +41,7 @@
 #include "opencv/cxcore.h"
 #include "opencv/cvaux.h"
 #include "opencv_latest/CvBridge.h"
-#include "image_msgs/Image.h"
+#include "sensor_msgs/Image.h"
 #include <point_cloud_mapping/geometry/angles.h>
 #include <point_cloud_mapping/sample_consensus/sac_model_plane.h>
 #include <point_cloud_mapping/sample_consensus/sac_model_oriented_plane.h>
@@ -52,7 +52,7 @@
 //#include <point_cloud_mapping/geometry/statistics.h>
 #include <point_cloud_mapping/geometry/projections.h>
 
-#include "image_msgs/CamInfo.h"
+#include "sensor_msgs/CamInfo.h"
 #include "robot_msgs/PointCloud.h"
 #include "robot_msgs/Point32.h"
 #include "robot_msgs/PointStamped.h"
@@ -77,7 +77,7 @@ void addTableFrame( robot_msgs::PointStamped origin, const vector<double>& plane
 
 float GetCameraHeight(const robot_msgs::PointCloud& pc, tf::TransformListener& tf_);
 
-float CalHorizontalLine( const robot_msgs::PointCloud& cloud, vector<double> plane_coeff, const image_msgs::CamInfo& lcinfo, tf::TransformListener& tf_);
+float CalHorizontalLine( const robot_msgs::PointCloud& cloud, vector<double> plane_coeff, const sensor_msgs::CamInfo& lcinfo, tf::TransformListener& tf_);
 
 void filterClusters(const robot_msgs::PointCloud& cloud, vector<robot_msgs::Point32>& centers, vector<robot_msgs::Point32>& clusters);
 
@@ -89,6 +89,6 @@ void findClusters2(const robot_msgs::PointCloud& cloud, vector<robot_msgs::Point
 
 float findObjectPositionsFromStereo(const robot_msgs::PointCloud& cloud, vector<CvPoint>& locations, vector<CvPoint>& obj_bottom,
         vector<float>& scales, vector<float>& scales_msun, tf::TransformListener& tf_, tf::TransformBroadcaster& broadcaster_,
-        const image_msgs::CamInfo& lcinfo);
+        const sensor_msgs::CamInfo& lcinfo);
 
-robot_msgs::Point project3DPointIntoImage(const image_msgs::CamInfo& cam_info, robot_msgs::PointStamped point, tf::TransformListener& tf_);
+robot_msgs::Point project3DPointIntoImage(const sensor_msgs::CamInfo& cam_info, robot_msgs::PointStamped point, tf::TransformListener& tf_);
