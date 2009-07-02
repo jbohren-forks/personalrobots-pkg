@@ -93,7 +93,7 @@ public:
 
     std::list<std::string> left_list;
     left_list.push_back(mapName("stereo") + std::string("/left/image_rect_color"));
-    left_list.push_back(mapName("stereo") + std::string("/left/image_rect"));
+    //   left_list.push_back(mapName("stereo") + std::string("/left/image_rect"));
 
 
     std::list<std::string> right_list;
