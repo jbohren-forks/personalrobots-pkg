@@ -162,7 +162,7 @@ int PoseTool::processMouseEvent( wxMouseEvent& event, int last_x, int last_y, fl
       {
         tf::Stamped<tf::Pose> p = tf::Stamped<tf::Pose>(tf::Pose(tf::Quaternion(angle, 0.0, 0.0), tf::Point(pos_.x, pos_.y, 0.0)), ros::Time::now(), panel_->getGlobalFrame());
         robot_msgs::PoseStamped goal;
-        tf::poseStampedTFToMsg(p, goal);
+        tf::PoseStampedTFToMsg(p, goal);
         printf("setting goal: Position(%.3f, %.3f, %.3f), Orientation(%.3f, %.3f, %.3f, %.3f) = Angle: %.3f\n", goal.pose.position.x, goal.pose.position.y, goal.pose.position.z,
             goal.pose.orientation.x, goal.pose.orientation.y, goal.pose.orientation.z, goal.pose.orientation.w, angle);
         goal.header.stamp = ros::Time::now();
@@ -174,7 +174,7 @@ int PoseTool::processMouseEvent( wxMouseEvent& event, int last_x, int last_y, fl
         robot_msgs::PoseWithCovariance pose;
         pose.pose.position.x = pos_.x;
         pose.pose.position.y = pos_.y;
-        tf::quaternionTFToMsg(tf::Quaternion(angle, 0.0, 0.0),
+        tf::QuaternionTFToMsg(tf::Quaternion(angle, 0.0, 0.0),
                               pose.pose.orientation);
         pose.covariance[6*0+0] = 0.5 * 0.5;
         pose.covariance[6*1+1] = 0.5 * 0.5;
