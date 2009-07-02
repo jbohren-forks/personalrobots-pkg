@@ -30,3 +30,4 @@ gensrv()
 #target_link_libraries(example ${PROJECT_NAME})
 
 rospack_add_rostest(test/test_names.launch)
+rospack_add_rostest(test/test_colors.xml)

@@ -11,6 +11,7 @@
   <url>http://pr.willowgarage.com/wiki/object_names</url>
   <depend package="rospy"/>
   <depend package="rostest"/>
+  <depend package="std_msgs"/>
 
   <export>
     <cpp cflags="-I${prefix}/srv/cpp "/>

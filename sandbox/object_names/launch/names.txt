@@ -1,5 +1,5 @@
 #A few standard ones
-
+   
 1    error
 2    floor
 3    wall

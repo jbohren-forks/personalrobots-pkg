@@ -1,0 +1,14 @@
+#A few standard ones
+
+255 0 0      error
+0 127 0      floor
+127 127 0    wall
+0 255 0      outlet
+0 0 127	     door
+0 0 255      door-handle
+255 0 0	     obstacle
+127 0 127    cabinet
+255 255 255  whiteboard
+255 0 255    window
+127 127 127  robot
+
