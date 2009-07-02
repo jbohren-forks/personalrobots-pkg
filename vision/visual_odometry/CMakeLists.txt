@@ -14,7 +14,6 @@ rospack_add_library(visual_odometry_lowlevel_py src/py.cpp src/LevMarqTransform.
 
 set_target_properties(visual_odometry_lowlevel_py PROPERTIES OUTPUT_NAME visual_odometry_lowlevel PREFIX "_")
 rospack_add_compile_flags(visual_odometry_lowlevel_py -g -O3 -Wno-missing-field-initializers -msse3)
-target_link_libraries(visual_odometry_lowlevel_py fltk)
 
 # a non-ros testing program
 #rospack_add_executable(test/testVisOdom test/CvTest3DPoseEstimate.cpp test/testVisOdom.cpp)
