@@ -387,7 +387,9 @@ private:
 #pragma omp parallel for
 	    for (int i = 0 ; i < n ; ++i)
 	    {
-		btVector3 p(pts[i].x * bi_.resolution + bi_.originX, pts[i].y * bi_.resolution + bi_.originY, pts[i].z * bi_.resolution + bi_.originZ);
+		btVector3 p(((double)pts[i].x - 0.5) * bi_.resolution + bi_.originX,
+			    ((double)pts[i].y - 0.5) * bi_.resolution + bi_.originY,
+			    ((double)pts[i].z - 0.5) * bi_.resolution + bi_.originZ);
 		p = transf * p;
 		if (p.x() > bi_.real_minX && p.x() < bi_.real_maxX && p.y() > bi_.real_minY && p.y() < bi_.real_maxY && p.z() > bi_.real_minZ && p.z() < bi_.real_maxZ)
 		{
