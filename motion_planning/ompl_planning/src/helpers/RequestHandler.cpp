@@ -38,6 +38,7 @@
 #include <visualization_msgs/Marker.h>
 #include <ros/console.h>
 #include <sstream>
+#include <cstdlib>
 
 bool ompl_planning::RequestHandler::isRequestValid(ModelMap &models, motion_planning_srvs::MotionPlan::Request &req)
 {   
@@ -61,7 +62,8 @@ bool ompl_planning::RequestHandler::isRequestValid(ModelMap &models, motion_plan
 		if (req.params.planner_id.empty())
 		    req.params.planner_id = it->first;
 		else
-		    if (m->planners[req.params.planner_id]->priority < it->second->priority)
+		    if (m->planners[req.params.planner_id]->priority < it->second->priority ||
+			(m->planners[req.params.planner_id]->priority == it->second->priority && random() % 2 == 1))
 			req.params.planner_id = it->first;
 	    }
     
