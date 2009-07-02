@@ -83,7 +83,7 @@ class MechFetchResults:
     doc = xml.dom.minidom.parseString(response)
     
     msg=ExternalAnnotation();
-    msg.task="willow-env-4"
+    msg.task="w-env-layer-1p"
     msg.reference_frame=self.ref_frame
     msg.reference_topic=self.ref_topic
 
@@ -92,6 +92,8 @@ class MechFetchResults:
     msg.reference_time.nsecs=int(nsecs);
     msg.header.stamp.secs=msg.reference_time.secs;
     msg.header.stamp.nsecs=msg.reference_time.nsecs+1;
+    msg.header.frame_id=self.ref_frame;
+
     msg.quality=0.2
     msg.boxes=[]
     for box in doc.getElementsByTagName("bbox"):

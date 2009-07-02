@@ -1,0 +1,30 @@
+<launch>
+
+
+
+
+
+
+
+<!-- send image to snapshotter -->
+<node pkg="cv_mech_turk" type="snapper.py" name="snap" output="screen">
+
+   <param name="server"  value="vm7.willowgarage.com:8080" />
+   <param name="session"  value="demo-any-object-s" />
+   <param name="frame"  value="stereo_l_stereo_camera_frame" />
+   <param name="img_dir"  value="/tmp/submit_images/" />
+
+   <param name="block_submit"  value="0" />
+
+   <remap from="image"  to="/stereoproc/left/image" />
+
+</node>
+
+
+<!-- register the annotation message publisher to our rostopic -->
+<node pkg="cv_mech_turk" type="link_topic.py" name="ext_link" output="screen">
+      <param name="uri" value="http://vm7.willowgarage.com:8080/mt/rospublishers/" />
+</node>
+
+
+</launch>
