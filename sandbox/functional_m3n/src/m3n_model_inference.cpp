@@ -116,10 +116,10 @@ int M3NModel::inferPrivate(const RandomField& random_field,
   // -------------------------------------------
   // Loop until hit max number of iterations and not done
   int ret_val = 0;
-  bool done = false; // will be set true once energy doesnt change
+  bool done = false;
   for (unsigned int t = 0 ; ret_val == 0 && !done && t < max_iterations ; t++)
   {
-    done = true;
+    done = true; // will be set false if energy changes
     // -------------------------------------------
     // Alpha-expand over each label
     for (unsigned int label_idx = 0 ; ret_val == 0 && label_idx < nbr_labels ; label_idx++)

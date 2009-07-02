@@ -16,6 +16,7 @@ rospack_add_library (fm3n
 			src/m3n_model_learning.cpp
 			src/regressors/regression_tree_wrapper.cpp
 			src/m3n_params.cpp
+			src/random_field_construction.cpp
                       )
 
 # check for OpenMP

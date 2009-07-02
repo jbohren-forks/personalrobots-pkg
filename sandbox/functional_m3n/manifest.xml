@@ -14,11 +14,11 @@
 
   <depend package="roscpp" />
   <depend package="robot_msgs" />
-  <depend package="angles" />
   <depend package="eigen" />
   <depend package="ANN" />
   <depend package="opencv_latest" />
   <depend package="point_cloud_mapping" />
+  <depend package="descriptors_3d" />
 
   <export>
     <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -lfm3n" />

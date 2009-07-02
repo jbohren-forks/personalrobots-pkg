@@ -47,26 +47,30 @@
 #include <point_cloud_mapping/kdtree/kdtree.h>
 #include <point_cloud_mapping/geometry/nearest.h>
 
+#include <descriptors_3d/descriptors_3d.h>
+
 using namespace std;
 
 // TODO TEMPO
-class FeatureDescriptor
-{
-  public:
-    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+/*
+ class FeatureDescriptor
+ {
+ public:
+ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
-    FeatureDescriptor(double f)
-    {
-      feature_vals[0] = f;
-      feature_vals[1] = 1.0;
-    }
+ FeatureDescriptor(double f)
+ {
+ feature_vals[0] = f;
+ feature_vals[1] = 1.0;
+ }
 
-    unsigned int getDimension()
-    {
-      return 2;
-    }
-    Eigen::Vector2d feature_vals;
-};
+ unsigned int getDimension()
+ {
+ return 2;
+ }
+ Eigen::Vector2d feature_vals;
+ };
+ */
 // TODO TEMPO
 
 // --------------------------------------------------------------
@@ -195,6 +199,8 @@ class RandomField
     class GenericClique
     {
       public:
+        GenericClique();
+
         virtual ~GenericClique() = 0;
 
         // --------------------------------------------------------------
@@ -239,16 +245,6 @@ class RandomField
 
         // --------------------------------------------------------------
         /*!
-         * \brief Returns the features associated with this Node
-         */
-        // --------------------------------------------------------------
-        inline const vector<const FeatureDescriptor*>& getFeatures() const
-        {
-          return features_;
-        }
-
-        // --------------------------------------------------------------
-        /*!
          * \brief Returns the values of the features contained in the descriptors in vector format
          */
         // --------------------------------------------------------------
@@ -274,8 +270,6 @@ class RandomField
         double y_;
         double z_;
 
-        // TODO maintain these jointly
-        vector<const FeatureDescriptor*> features_;
         double* feature_vals_;
         unsigned int nbr_feature_vals_;
     };

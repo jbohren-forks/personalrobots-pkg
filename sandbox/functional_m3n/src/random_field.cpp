@@ -160,55 +160,6 @@ void RandomField::create(const robot_msgs::PointCloud& primitives, cloud_kdtree:
   createNodes(primitives, data_kdtree);
 }
 
-// --------------------------------------------------------------
-/*! See function definition */
-// --------------------------------------------------------------
-void RandomField::createNodes(const robot_msgs::PointCloud& primitives, cloud_kdtree::KdTree& data_kdtree)
-
-{
-  unsigned int poop = 1;
-
-  unsigned int LABEL10 = 10;
-  unsigned int LABEL69 = 69;
-
-  double curvature = 0.0;
-  Eigen::Vector4d plane_parameters;
-
-  Node* new_node = NULL;
-
-  unsigned int nbr_primitives = primitives.pts.size();
-  vector<int> neighbor_indices;
-  vector<float> neighbor_distances;
-  for (unsigned int i = 0 ; i < nbr_primitives ; i++)
-  {
-    const robot_msgs::Point32& curr_pt = primitives.pts[i];
-
-    neighbor_indices.clear();
-    neighbor_distances.clear();
-    if (data_kdtree.radiusSearch(curr_pt, 0.15, neighbor_indices, neighbor_distances))
-    {
-      cloud_geometry::nearest::computePointNormal(primitives, neighbor_indices, plane_parameters, curvature);
-
-      if (curr_pt.z > 1.0) {
-        new_node = new Node(curr_pt.x, curr_pt.y, curr_pt.z, poop, LABEL10);
-      } else {
-        new_node = new Node(curr_pt.x, curr_pt.y, curr_pt.z, poop, LABEL69);
-      }
-      rf_nodes_[poop] = new_node;
-      poop++;
-
-      vector<const FeatureDescriptor*>& curr_descrips = new_node->features_;
-      FeatureDescriptor* blah = new FeatureDescriptor(curr_pt.z);
-      curr_descrips.resize(1);
-      curr_descrips[0] = blah;
-      new_node->feature_vals_ = blah->feature_vals.data();
-      new_node->nbr_feature_vals_ = 2;
-    }
-  }
-
-  // TODO: after each created feature, call vectorizeFeatureVals()
-}
-
 // -----------------------------------------------------------------------------------------------------------
 // RandomField::GenericClique, RandomField::Node, RandomField::Clique definitions below
 // -----------------------------------------------------------------------------------------------------------
@@ -216,11 +167,26 @@ void RandomField::createNodes(const robot_msgs::PointCloud& primitives, cloud_kd
 // --------------------------------------------------------------
 /*! See function definition */
 // --------------------------------------------------------------
+RandomField::GenericClique::GenericClique()
+{
+  rf_id_ = 0;
+  x_ = 0.0;
+  y_ = 0.0;
+  z_ = 0.0;
+
+  feature_vals_ = NULL;
+  nbr_feature_vals_ = 0;
+}
+
 // --------------------------------------------------------------
 /*! See function definition */
 // --------------------------------------------------------------
 RandomField::GenericClique::~GenericClique()
 {
+  if (feature_vals_ != NULL)
+  {
+    delete feature_vals_;
+  }
 }
 
 // --------------------------------------------------------------
