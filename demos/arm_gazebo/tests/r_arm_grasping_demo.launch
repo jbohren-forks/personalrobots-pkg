@@ -37,8 +37,6 @@
     -->
     <!--include file="$(find arm_gazebo)/tests/debug_plot.launch"/-->
 
-    <include file="$(find gazebo_robot_description)/launch/light.launch"/>
-
     <param name="robotdesc/table" command="$(find xacro)/xacro.py '$(find examples_gazebo)/table_defs/table_defs.xml'" />
     <node pkg="gazebo_plugin" type="urdf2factory" args="robotdesc/table 0 0 0.01 0 0 0 table_model" respawn="false" output="screen" />
 
