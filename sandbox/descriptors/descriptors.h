@@ -51,6 +51,26 @@ class ImageDescriptor {
   virtual ~ImageDescriptor() {};
 };
 
+class IntegralImageDescriptor : public ImageDescriptor {
+ public:
+  IplImage* ii_;
+  IplImage* gray_;
+  IntegralImageDescriptor* ii_provider_;
+  
+
+  IntegralImageDescriptor(IntegralImageDescriptor* ii_provider);
+  ~IntegralImageDescriptor();
+  void integrate();
+  void clearImageCache();
+  void clearPointCache() {}
+  bool integrateRect(float* result, int row_offset, int col_offset, int half_height, int half_width);
+
+};
+
+/* class IntegralImageTexture : public IntegralImageDescriptor { */
+/*  public: */
+/*   int filt */
+
 class Patch : public ImageDescriptor {
  public:
   //! Length of the sides of the patch, before scaling.
@@ -113,6 +133,7 @@ class SuperpixelStatistic : public ImageDescriptor {
   SuperpixelStatistic(int seed_spacing, float scale, SuperpixelStatistic* provider);
   //! Computes superpixels and puts into seg_, and computes the superpixel to pixel index.  Is called automatically, if necessary, by the compute(.) function.
   void segment(bool debug);
+  IplImage* createSegmentMask(long label, CvRect* rect);
 };
 
 class SuperpixelColorHistogram : public SuperpixelStatistic {
@@ -126,7 +147,10 @@ class SuperpixelColorHistogram : public SuperpixelStatistic {
   SuperpixelColorHistogram* hsv_provider_;
   //! histograms_[s] corresponds to the histogram for segment s of the segmentation. (s=0 is always left NULL).
   std::vector<Histogram*> histograms_;
+  std::vector<CvHistogram*> histograms_cv_;
   bool hists_reserved_;
+  float max_val_;
+  IplImage* channel_;
 
   SuperpixelColorHistogram(int seed_spacing, float scale, int nBins, std::string type, SuperpixelStatistic* seg_provider=NULL, SuperpixelColorHistogram* hsv_provider_=NULL);
   bool compute(Eigen::MatrixXf** result, bool debug);
@@ -134,6 +158,8 @@ class SuperpixelColorHistogram : public SuperpixelStatistic {
   void clearPointCache() {}
   void clearImageCache();
   ~SuperpixelColorHistogram();
+  void computeHistogram(long label);
+  void computeHistogramCV(long label); 
 };
 
 std::vector<ImageDescriptor*> setupImageDescriptors();
