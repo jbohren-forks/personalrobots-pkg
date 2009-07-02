@@ -2,118 +2,23 @@
 \mainpage
 \htmlinclude manifest.html
 
-\b tabletop_scripts is ... 
+\section summary Summary 
 
-<!-- 
-In addition to providing an overview of your package,
-this is the section where the specification and design/architecture 
-should be detailed. While the original specification may be done on the
-wiki, it should be transferred here once your package starts to take shape.
-You can then link to this documentation page from the Wiki. 
--->
-
-
-\section codeapi Code API
-
-<!--
-Provide links to specific auto-generated API documentation within your
-package that is of particular interest to a reader. Doxygen will
-document pretty much every part of your code, so do your best here to
-point the reader to the actual API.
-
-If your codebase is fairly large or has different sets of APIs, you
-should use the doxygen 'group' tag to keep these APIs together. For
-example, the roscpp documentation has 'libros' group.
--->
-
-\section rosapi ROS API
-
-<!--
-Names are very important in ROS because they can be remapped on the
-command-line, so it is VERY IMPORTANT THAT YOU LIST NAMES AS THEY
-APPEAR IN THE CODE. You should list names of every topic, service and
-parameter used in your code. There is a template below that you can
-use to document each node separately.
-
-List of nodes:
-- \b node_name1
-- \b node_name2
--->
-
-<!-- START: copy from here to 'END' for each node 
+\b tabletop_scripts is where the scripts for tabletop manipulation demo live
 
 <hr>
 
-\subsection node_name node_name
+Other sources of information:
+ - <a href="http://pr.willowgarage.com/wiki/Motion_Planning_Software_Stack">Motion Planning Software Stack</a>
+ - <a href="../../move_arm/html">move_arm</a> package.
 
-node_name does (provide a basic description of your node)
+\section launch Launch files
 
-\subsubsection Usage
-\verbatim
-$ node_type1 [standard ROS args]
-\endverbatim
-
-\par Example
-
-\verbatim
-$ node_type1
-\endverbatim
-
-
-\subsubsection topics ROS topics
-
-Subscribes to:
-- \b "in": [std_msgs/FooType] description of in
-
-Publishes to:
-- \b "out": [std_msgs/FooType] description of out
-
-
-\subsubsection parameters ROS parameters
-
-Reads the following parameters from the parameter server
-
-- \b "~param_name" : \b [type] description of param_name
-- \b "~my_param" : \b [string] description of my_param
-
-Sets the following parameters on the parameter server
-
-- \b "~param_name" : \b [type] description of param_name
-
-
-\subsubsection services ROS services
-- \b "foo_service": [std_srvs/FooType] description of foo_service
-
-
-END: copy for each node -->
-
-
-<!-- START: Uncomment if you have any command-line tools
-
-\section commandline Command-line tools
-
-This section is a catch-all for any additional tools that your package
-provides or uses that may be of use to the reader. For example:
-
-- tools/scripts (e.g. rospack, roscd)
-- roslaunch .launch files
-- xmlparam files
-
-\subsection script_name script_name
-
-Description of what this script/file does.
-
-\subsubsection Usage
-\verbatim
-$ ./script_name [args]
-\endverbatim
-
-\par Example
-
-\verbatim
-$ ./script_name foo bar
-\endverbatim
-
-END: Command-Line Tools Section -->
+ - launch/simulation.launch : start the simulator. If on the robot, use a launch file from pr2_alpha instead.
+ - launch/laser-perception.launch : start the laser perception pipeline (instead of stereo perception)
+ - launch/stereo-perception.launch : start the stereo perception pipeline (instead of laser perception)
+ - launch/larm.launch : start move arm, ik and cotroller for the left arm
+ - launch/rarm.launch : start move arm, ik and cotroller for the right arm
+ - launch/ompl_planning.launch : start the motion planning node
 
 */
