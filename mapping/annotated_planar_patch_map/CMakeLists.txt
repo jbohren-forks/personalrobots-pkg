@@ -55,18 +55,27 @@ target_link_libraries(annotated_map_assembler_srv annotated_map_lib)
 rospack_add_executable(annotated_map_snapshotter src/annotated_map_snapshotter.cpp)
 rospack_add_executable(annotated_map_query_snapshotter src/annotated_map_query_snapshotter.cpp)
 
+rospack_add_executable(annotation_pcd_lifter_node src/annotation2d_lifter_to_pcd_via_service.cpp)
+target_link_libraries(annotation_pcd_lifter_node annotated_map_lib)
+
+
+
+
+rospack_add_executable(pcd_assembler_srv src/pcd_assembler_srv.cpp)
+target_link_libraries(pcd_assembler_srv)
+
+
+
 
 rospack_add_executable(empty_annotated_map src/empty_annotated_map.cpp)
 target_link_libraries(empty_annotated_map annotated_map_lib)
 
-
 #rospack_add_gtest(test/projection_test test/projection_test.cpp)
 #target_link_libraries(test/projection_test annotated_map_lib)
+
 
 #The data is currently in /u/prdata/annotated_maps/prg_jun_10/test/
 #rospack_download_test_data(http://pr.willowgarage.com/data/${PROJECT_NAME}/full_2009-06-22-15-40-19-topic.bag test_data/full_2009-06-22-15-40-19-topic.bag)
 #The test is commented out because the data can't be downloaded
 #rospack_add_rostest_future(test/test_content.launch)
-
-
 

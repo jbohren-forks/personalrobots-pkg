@@ -55,6 +55,7 @@
 #include <mapping_msgs/PolygonalMap.h>
 #include <sensor_msgs/StereoInfo.h>
 #include <sensor_msgs/CamInfo.h>
+#include <std_msgs/ColorRGBA.h>
 #include "tf/message_notifier.h"
 
 #include <cv_mech_turk/ExternalAnnotation.h>
@@ -65,359 +66,426 @@
 #include "annotated_planar_patch_map/projection.h"
 
 #include "annotated_planar_patch_map/BuildAnnotatedMap.h"
+#include "annotated_planar_patch_map/rolling_history.h"
+
 #include "bagserver/History.h"
+
+#include "object_names/Name2Float.h"
+#include "object_names/Name2Color.h"
+
+#include "point_cloud_assembler/BuildCloud.h"
 
 
 using namespace std;
 using namespace tf;
 
-void printTaggedPolygon3D(annotated_map_msgs::TaggedPolygonalMap transformed_map,std::string tag);
 
-class Annotation2DLifterToTaggedPatchMapSVC : public ros::Node
+class AnnotationLifterToPcdViaService
 {
 
-  ros::NodeHandle n_;
-  ros::Publisher lifted_pub_;
-  ros::Subscriber annotation_sub_;
-
 public:
-  Annotation2DLifterToTaggedPatchMapSVC() 
+  AnnotationLifterToPcdViaService() 
   {
   }
+
 
   void init()
   {
+    boost::mutex::scoped_lock lock(lift_mutex_);
 
-    out_topic_name_=std::string("poly_object_map");
 
-    /*NOTE: this tf_ will be listening to the BAGSERVER TIME! */
-    tf_ = new tf::TransformListener( *this, true, ros::Duration(30.0));
+    out_topic_name_=std::string("annotated_cloud");
 
-    param( std::string("~fixed_frame"), fixed_frame_, std::string("map"));
+
+    n_.param( std::string("~fixed_frame"), fixed_frame_, std::string("map"));
     ROS_INFO_STREAM("Fixed frame is " <<fixed_frame_);
 
-    /*Geometry location tolerance */
-    param( std::string("~dist_tolerance"), dist_tolerance_, -10.0);
-    param( std::string("~min_num_indist_tolerance"), min_num_indist_tolerance_, 1);
-    param( std::string("~max_allowed_num_outdist_tolerance"), max_allowed_num_outdist_tolerance_, 10000);
+    n_.param( std::string("~local_fixed_frame"), local_fixed_frame_, std::string("odom_combined"));
+    ROS_INFO_STREAM("Local fixed frame is " <<local_fixed_frame_);
 
-    /*Geometry location tolerance */
-    param( std::string("~max_depth"), max_depth_, 10.0);
-    param( std::string("~min_depth"), min_depth_, 0.0);
+    /*Geometry location tolerance -ignored now*/
+    n_.param( std::string("~dist_tolerance"), dist_tolerance_, -10.0); 
 
+    n_.param( std::string("~max_depth"), max_depth_, 5.0);
+    n_.param( std::string("~min_depth"), min_depth_, 0.01);
+
+
+    n_.param( std::string("~use_color"), use_colors_, false);
+    n_.param( std::string("~annotate_reprojection"), annotate_reprojection_, false);
+    n_.param( std::string("~annotate_image_id"), annotate_image_id_, false);
+
+
+    /*How much to wait with lifting*/
+    double delay;
+    n_.param( std::string("~lifting_delay"), delay, 0.0);
+    lifting_delay_=ros::Duration(delay);
+    ROS_INFO_STREAM("Lifting delay:"<< lifting_delay_);
+        
 
     /*Geometry querying config */
     double interval;
-    param( std::string("~interval_before"), interval, 1.0);
+    n_.param( std::string("~interval_before"), interval, 1.0);
     interval_before_image_=ros::Duration(interval);
 
-    param( std::string("~interval_after"), interval, 1.0);
+    n_.param( std::string("~interval_after"), interval, 1.0);
     interval_after_image_=ros::Duration(interval);
 
 
-    n_.getNode()->subscribe( std::string("annotations_2d"), annotation2d_object_, &Annotation2DLifterToTaggedPatchMapSVC::handleAnnotation, 500);
-    n_.getNode()->subscribe( std::string("stereo_info"), stereo_info_, &Annotation2DLifterToTaggedPatchMapSVC::handleStereoInfo, 500);
-    //n_.getNode()->subscribe( std::string("scam_info"), stereo_info_, &Annotation2DLifterToTaggedPatchMapSVC::handleStereoInfo, 500);
+
 
     // **** Get the TF Notifier Tolerance ****
-    double tf_tolerance_secs ;
-    ros::Node::instance()->param("~tf_tolerance_secs", tf_tolerance_secs, 0.0) ;
+    /*double tf_tolerance_secs ;
+    n_.param("~tf_tolerance_secs", tf_tolerance_secs, 0.0) ;
     if (tf_tolerance_secs < 0)
       ROS_ERROR("Parameter tf_tolerance_secs<0 (%f)", tf_tolerance_secs) ;
-    ROS_INFO("tf Tolerance: %f seconds", tf_tolerance_secs) ;    
-    //scan_notifier_ = new tf::MessageNotifier<sensor_msgs::StereoInfo>(tf_, n_.getNode(), boost::bind(&Annotation2DLifterToTaggedPatchMapSVC::handleStereoInfo, this, _1), "stereo_info", fixed_frame_, 10) ;
-    tf_->setExtrapolationLimit(ros::Duration(tf_tolerance_secs)) ;
-    
+      ROS_INFO("tf Tolerance: %f seconds", tf_tolerance_secs) ;    */
+
+    tf_ = boost::shared_ptr<tf::TransformListener>(new tf::TransformListener());
+
     lifted_pub_=n_.advertise<robot_msgs::PointCloud>(out_topic_name_,1);
+    
+    annotation_notifier_=new tf::MessageNotifier<cv_mech_turk::ExternalAnnotation>(*tf_,
+                                                                                   boost::bind(&AnnotationLifterToPcdViaService::handleAnnotation, this,_1),
+                                                                                   std::string("annotations_2d"),
+                                                                                   fixed_frame_,
+                                                                                   4000);
+
+    annotation_notifier_->setTolerance(lifting_delay_+ros::Duration(0.1));
+
+    typedef annotated_planar_patch_map::RollingHistory<sensor_msgs::CamInfo> cam_hist_type;
+
+
+    boost::shared_ptr<cam_hist_type> cam_hist_lookup(new cam_hist_type("cam_info","~cam_info_hist/"));
+    cam_hist_ = cam_hist_lookup;
+
+
   };
 
-  //void handleStereoInfo(sensor_msgs::StereoInfoConstPtr si)
-  void handleStereoInfo()
+
+  void handleAnnotation(const boost::shared_ptr<cv_mech_turk::ExternalAnnotation> annotation)
   {
-    ROS_INFO("StereoInfo\n");
-    try
+    try{
+    ROS_INFO_STREAM("Annotation " << annotation->header.stamp);
+
+    //const image_msgs::CamInfoConstPtr cam_info = cam_hist_->getMsgAtExactTime(annotation->header.stamp);
+    const sensor_msgs::CamInfoConstPtr cam_info = cam_hist_->getMsgNearTime(annotation->header.stamp,ros::Duration(0.01));
+
+    if(cam_info==NULL)
     {
-      //stereo_info_;
-
-      if( annotation2d_object_.reference_time != stereo_info_.header.stamp)
-      {
-        ROS_ERROR_STREAM("Times mismatch: " << annotation2d_object_.reference_time << " v.s. " <<stereo_info_.header.stamp );
-        return;
-      }
-
-
-      ros::Duration d = ros::Duration(1, 0);
-      d.sleep();
-
-      annotated_map_msgs::TaggedPolygonalMap polymapOut;
-      liftAnnotation(annotation2d_object_,polymapOut);
-
-      printf("Sending polymap with %d polygons\n", polymapOut.get_polygons_size());
-
-      if(polymapOut.get_polygons_size()>0)
-      {
-	printf("\tfirst polygon has %d pts\n", polymapOut.polygons[0].polygon.get_points_size());
-	publish( out_topic_name_, polymapOut);     
-      }
-
+      ROS_WARN_STREAM("Ignoring annotation at "<< annotation->header.stamp << ". Failed to get cam info. ");
+      return;
     }
-    catch (TransformException& ex)
+
+    point_cloud_assembler::BuildCloud::Request req;
+    point_cloud_assembler::BuildCloud::Response resp;
+    req.begin = annotation->reference_time-interval_before_image_;
+    req.end = annotation->reference_time+interval_after_image_;
+
+    ros::service::call("build-cloud",req,resp);
+
+    liftAndSend(annotation, cam_info, resp.cloud);
+    }
+    catch(std::runtime_error& e)
     {
-      ROS_ERROR("Failure to transform detected object:: %s\n", ex.what());
+      ROS_ERROR_STREAM("Caught exception while processing annotation " << annotation->header.stamp );
+      ROS_ERROR_STREAM("\t" << e.what() );
     }
   }
 
-  void handleAnnotation()
+  void liftAndSend(const boost::shared_ptr<cv_mech_turk::ExternalAnnotation const> annotation, 
+                   const boost::shared_ptr<sensor_msgs::CamInfo const> cam_info, 
+                   const robot_msgs::PointCloud& cloud)
   {
-    ROS_INFO("A");
-    //Now we got the annotation, but haven't got the stereo information
-    //Get if from the bagserver
-    bagserver::History::Request req;
-    bagserver::History::Response resp;
-    req.begin = annotation2d_object_.reference_time-ros::Duration(0.2);
-    req.end = annotation2d_object_.reference_time+ros::Duration(0.2);
-    ros::service::call("bagserver-current",req,resp);
+    robot_msgs::PointCloud transformed_map_3D;
+    robot_msgs::PointCloud transformed_map_3D_fixed;
+    robot_msgs::PointCloud transformed_map_2D;
+    robot_msgs::PointCloud map_final;
 
-    //Put the annotation in the hashtable?
-  }
+    ROS_INFO_STREAM("Lifting \n\tannotation "<< annotation->header.frame_id);
+    ROS_INFO_STREAM("\t cam_info "<< cam_info->header.frame_id);
+    ROS_INFO_STREAM("\t cloud "<< cloud.header.frame_id);
+    tf_->transformPointCloud(annotation->reference_frame,annotation->reference_time,cloud,local_fixed_frame_,transformed_map_3D);
 
-  void liftAnnotation(cv_mech_turk::ExternalAnnotation annotation2d_object_,annotated_map_msgs::TaggedPolygonalMap& polymapOut)
-  {
+    tf_->transformPointCloud(fixed_frame_,annotation->reference_time,cloud,local_fixed_frame_,transformed_map_3D_fixed);
 
-    annotated_map_msgs::TaggedPolygonalMap transformed_map_3D;
-    annotated_map_msgs::TaggedPolygonalMap transformed_map_3D_fixed_frame;
-    annotated_map_msgs::TaggedPolygonalMap transformed_map_2D;
+    annotated_planar_patch_map::projection::projectAnyObject(*cam_info, transformed_map_3D,transformed_map_2D);
 
-    annotated_planar_patch_map::BuildAnnotatedMap::Request  req;
-    annotated_planar_patch_map::BuildAnnotatedMap::Response res;
-    req.begin = annotation2d_object_.reference_time-interval_before_image_;
-    req.end = annotation2d_object_.reference_time+interval_after_image_;
-    if (!ros::service::call("build_map", req, res))
+    ROS_INFO("\t cloud sizes %d/%d/%d/%d ",cloud.pts.size(),transformed_map_3D.pts.size(),transformed_map_3D.pts.size(),transformed_map_3D_fixed.pts.size());
+    bindAnnotations(annotation,transformed_map_2D,transformed_map_3D_fixed,map_final);
+
+    if(map_final.pts.size()>0)
     {
-      ROS_ERROR("Can't build a map");
+      ROS_INFO("Lifting produced point cloud with %d points", map_final.pts.size());
+      lifted_pub_.publish(map_final);
     }
-    
-    ROS_DEBUG_STREAM("Got data in "<<     res.map.header.frame_id << " frame");
-    //annotated_map_lib::transformAnyObject(annotation2d_object_.reference_frame,annotation2d_object_.reference_time,tf_,res.map,transformed_map_3D);
-    annotated_map_lib::transformAnyObject(annotation2d_object_.reference_frame,annotation2d_object_.reference_time,tf_,res.map,transformed_map_3D);
-
-    ROS_DEBUG("Transform 3D map to frame: %s",fixed_frame_.c_str());
-    annotated_map_lib::transformAnyObject(fixed_frame_,annotation2d_object_.reference_time,tf_,res.map,transformed_map_3D_fixed_frame);
-
-    ROS_DEBUG("Project map");
-    //Project the 3D map into the image coordinates
-    annotated_planar_patch_map::projection::projectAnyObject(stereo_info_,transformed_map_3D,transformed_map_2D);
-
-
-    ROS_DEBUG("Bind map");    
-    //Bind 2D annotations to the projected 3D map and lift the annotations into 3D
-    bindAnnotationsToMap(annotation2d_object_,transformed_map_3D_fixed_frame,transformed_map_2D,polymapOut);
-    polymapOut.header.stamp=annotation2d_object_.reference_time;
-    polymapOut.header.frame_id=fixed_frame_;
-
-
-    printTaggedPolygon3D(transformed_map_3D,"cam");
-    printTaggedPolygon3D(transformed_map_2D,"proj");
-    printAnnotations2D( annotation2d_object_);
-      
+    else
+    {
+      ROS_WARN("Lifting produced empty point cloud");
+    }
   }
 
-  void bindAnnotationsToMap(cv_mech_turk::ExternalAnnotation annotation2d_object, annotated_map_msgs::TaggedPolygonalMap transformed_map_3D, annotated_map_msgs::TaggedPolygonalMap transformed_map_2D,annotated_map_msgs::TaggedPolygonalMap &polymapOut)
+
+  void bindAnnotations(cv_mech_turk::ExternalAnnotationConstPtr annotation, 
+                       const robot_msgs::PointCloud& map_2D, const robot_msgs::PointCloud& map_3D, 
+                       robot_msgs::PointCloud& map_final)
   {
 
-    //CvMemStorage* storage = cvCreateMemStorage();
+    // Allocate overlap buffer to store 1-1 correspondence
+    unsigned int num_3D_pts=map_3D.pts.size();
+    printf("%d n3dp\n",num_3D_pts);	
 
-    printf("Num annotations %d\n",annotation2d_object_.get_polygons_size());
-    for(unsigned int iAnnotatedPolygon=0;iAnnotatedPolygon<annotation2d_object_.get_polygons_size();iAnnotatedPolygon++)
+
+    std::vector<int> overlap;
+    overlap.reserve(num_3D_pts);
+
+    // Initialize it to 0 - no correspondence
+    for(unsigned int iPt = 0; iPt<num_3D_pts; iPt++)
     {
-      cv_mech_turk::AnnotationPolygon &poly=annotation2d_object_.polygons[iAnnotatedPolygon];    
+      overlap[iPt]=0;
+    }
+
+    // Go over all annotated polygons and assign points to polygons on first-come-first-served basis
+    ROS_INFO("Num annotations %d\n",annotation->polygons.size());
+    unsigned int num_poly=annotation->polygons.size();
+
+    std::vector<float> object_labels;
+    object_labels.reserve(num_poly);
+
+    std::vector<std_msgs::ColorRGBA> object_colors;
+    if(use_colors_)
+    {
+      object_colors.reserve(num_poly);
+    }
+
+    int num_in=0;
+    for(unsigned int iAnnotatedPolygon=0;iAnnotatedPolygon<num_poly;iAnnotatedPolygon++)
+    {
+      const cv_mech_turk::AnnotationPolygon &poly=annotation->polygons[iAnnotatedPolygon];    
 	
       unsigned int pt_count=poly.get_control_points_size();
       if(pt_count<3)
       {
+        //Ignore these
         continue;
       }
+
+      float object_id=1.0;
+      object_names::Name2Float::Request req;
+      object_names::Name2Float::Response resp;
+      req.name=poly.object_name;
+
+      ros::service::call("name_to_float",req,resp);
+
+      object_id=resp.id;
+      if(object_id<0.1) //i.e. ==0
+      {
+        ROS_WARN_STREAM("Unknown object " << poly.object_name );
+        continue;
+      }
+      object_labels[iAnnotatedPolygon]=object_id;
+
+      if(use_colors_)
+      {
+        object_names::Name2Color::Request req;
+        object_names::Name2Color::Response resp;
+        req.name=poly.object_name;
+        
+        ros::service::call("name_to_color",req,resp);
+        object_colors[iAnnotatedPolygon]=resp.color;
+      }
+
+
+      //Convert polygon to CV MAT
+      ROS_DEBUG_STREAM("cvCreateMat( 1, " << pt_count <<" , CV_32FC2 );");
       CvMat* poly_annotation = cvCreateMat( 1, pt_count , CV_32FC2 );
-      //CvSeq* poly_annotation = cvCreateSeq( CV_SEQ_KIND_GENERIC|CV_32FC2, 
-      //				      sizeof(CvSeq),
-      //				      sizeof(CvPoint2D32f), storage );
-      //printf("%0x\n",(unsigned int)(void*)poly_annotation);
 
       for (unsigned int iP=0;iP<pt_count;iP++){
         CvPoint2D32f pt;
         pt.x=poly.control_points[iP].x;
         pt.y=poly.control_points[iP].y;
-        //cvSeqPush( poly_annotation, &pt );
-        printf("p: %f, %f\n",pt.x,pt.y);
         CV_MAT_ELEM( *poly_annotation, CvPoint2D32f, 0, iP ) = pt;
-
       }
 
-      //CvPoint2D32f* pt1=(CvPoint2D32f*)cvGetSeqElem( poly_annotation, 1 );
-      //printf("p: %f, %f\n",pt1->x,pt1->y);
-
-      unsigned int num_3D_poly=transformed_map_3D.get_polygons_size();
-      std::vector<int> overlap;
-      overlap.reserve(num_3D_poly);
-      printf("%d n3dp\n",num_3D_poly);	
-
-      int num_overlap=0;
-      for(unsigned int iPoly = 0; iPoly<num_3D_poly; iPoly++)
+      //Test each point, whether it's inside the polygon or not.
+      for(unsigned int iPt = 0; iPt<num_3D_pts; iPt++)
       {
-        //we're checking this one
-        robot_msgs::Polygon3D &map_poly=transformed_map_2D.polygons[iPoly].polygon;
-        int num_in=0,num_out=0;
-        for(unsigned int iPt=0;iPt<map_poly.get_points_size();iPt++)
-        {
-
-          bool in_depth=true || (map_poly.points[iPt].z <= max_depth_) && (map_poly.points[iPt].z >= min_depth_);
-          if(! in_depth)
-          {
-            num_out++;
-            continue;
-          }
-          CvPoint2D32f pt;
-          pt.x=map_poly.points[iPt].x;
-          pt.y=map_poly.points[iPt].y;
-          double dist = cvPointPolygonTest( poly_annotation, pt, 0 );
-
-          if(dist>dist_tolerance_)
-          {
-            num_in++;
-          }
-          else
-          {
-            num_out++;
-          }
-          //printf("%g ", dist);
-	    
-        }
-        if( (num_in>= min_num_indist_tolerance_ && 
-                     num_out< max_allowed_num_outdist_tolerance_))
-        {
-          overlap[iPoly]=1;
-          num_overlap++;
-          printf("in %d out %d\n",num_in,num_out);
-        }
-        else
-        {
-          overlap[iPoly]=0;
-        }
-      }
-
-      unsigned int num_polygons_to_add = num_overlap;
-      unsigned int old_num_polygons = polymapOut.get_polygons_size();
-      polymapOut.set_polygons_size(old_num_polygons+num_polygons_to_add);
-
-      printf("Num to add: %d\n",num_polygons_to_add);
-
-      int iPolyAdd=0;
-      for(unsigned int iPoly = 0; iPoly<num_3D_poly; iPoly++)
-      {
-        if(!overlap[iPoly])
+        if(overlap[iPt])
           continue;
 
-        printf("%d\n",iPoly);
-        //create new tagged polygon
-        annotated_map_msgs::TaggedPolygon3D newPoly;
-        newPoly.set_tags_size(1);
-        newPoly.tags[0]=poly.object_name;
-        newPoly.set_tags_chan_size(1);
-        newPoly.tags_chan[0].name=std::string("hits"); //num labeled
-        newPoly.tags_chan[0].set_vals_size(1);
-        newPoly.tags_chan[0].vals[0]=1.0;
-
-        newPoly.polygon=transformed_map_3D.polygons[iPoly].polygon;
-	    
-        //append polygon to the map
-        polymapOut.polygons[iPolyAdd+old_num_polygons]=newPoly;
-        //printf("\tAdded polygon with %d points\n", polymapOut.polygons[iPoly+old_num_polygons].polygon.get_points_size());      
-
-        iPolyAdd++;
-
-      }
+        bool in_depth=(map_2D.pts[iPt].z <= max_depth_) && (map_2D.pts[iPt].z >= min_depth_);
+        if(! in_depth)
+        {
+          continue;
+        }
+        CvPoint2D32f pt;
+        pt.x=map_2D.pts[iPt].x;
+        pt.y=map_2D.pts[iPt].y;
+        ROS_DEBUG_STREAM("cvPointPolygonTest");
+        double dist = cvPointPolygonTest( poly_annotation, pt, 1 );
+        
+        if(dist>dist_tolerance_)
+        {
+          //If the point is inside the polygon, assign it to this annotation.
+          num_in++;
+          overlap[iPt]=iAnnotatedPolygon;
+        }
+      }      
       cvReleaseMat( &poly_annotation );
-
-    } 
-    //cvClearMemStorage( storage );
- 
-    printf("Polymap size %d\n",polymapOut.get_polygons_size());
-  }
+    }
 
 
-  void printAnnotations2D(cv_mech_turk::ExternalAnnotation annotation2d_object)
-  {
-
-    FILE* fOut=fopen("/u/sorokin/bags/run_may_21/dump/annotations2D.txt","w");
-    ROS_DEBUG("\tAnnotation map has %d polygons",annotation2d_object_.get_polygons_size());    
-    for(unsigned int iAnnotatedPolygon=0;iAnnotatedPolygon<annotation2d_object_.get_polygons_size();iAnnotatedPolygon++)
+    map_final.header=map_3D.header;
+    map_final.pts.resize(num_in);
+    std::string new_channel_name=std::string("ann-")+annotation->task;
+    unsigned int nC=map_3D.chan.size();
+    unsigned int nCout=nC+1;
+    if(annotate_reprojection_)
     {
-      cv_mech_turk::AnnotationPolygon &poly=annotation2d_object_.polygons[iAnnotatedPolygon];    
-	
-      unsigned int pt_count=poly.get_control_points_size();
-      ROS_DEBUG("\tPoly %d has %d points\n",iAnnotatedPolygon,pt_count);
-
-      if(pt_count<3)
-      {
-        continue;
-      }
-      for (unsigned int iP=0;iP<pt_count;iP++)
-      {
-        fprintf(fOut,"%f %f\n",
-                poly.control_points[iP].x,  
-                poly.control_points[iP].y);
-
-      }
-      fprintf(fOut,"0 0\n");
-    } 
-    ROS_DEBUG("\tClosing the file");
-    fclose(fOut);
-  }
-
-
-
-  void printTaggedPolygon3D(annotated_map_msgs::TaggedPolygonalMap transformed_map,std::string tag)
-  {
-
-    std::string fname=std::string("/u/sorokin/bags/run_may_21/dump/polygons3D__")+tag+std::string(".txt");
-    FILE* fOut=fopen(fname.c_str(),"w");
-
-    unsigned int num_3D_poly=transformed_map.get_polygons_size();
-    std::vector<int> overlap;
-    overlap.reserve(num_3D_poly);
-    
-    for(unsigned int iPoly = 0; iPoly<num_3D_poly; iPoly++)
+      nCout+=3;
+    }
+    if(use_colors_)
     {
-      //we're checking this one
-      robot_msgs::Polygon3D &map_poly=transformed_map.polygons[iPoly].polygon;
-      for(unsigned int iPt=0;iPt<map_poly.get_points_size();iPt++){
-        fprintf(fOut,"%f %f %f\n",map_poly.points[iPt].x,
-                map_poly.points[iPt].y,
-                map_poly.points[iPt].z);
+      nCout+=3;      
+    }
+    if(annotate_image_id_)
+    {
+      nCout+=1;
+    }
+    map_final.chan.resize(nCout);
 
-      }
-      fprintf(fOut,"0 0 0\n");
-    } 
-    fclose(fOut);
+    for(unsigned int iC=0;iC<nC;iC++)
+    {
+      map_final.chan[iC].vals.resize(num_in);
+      map_final.chan[iC].name=map_3D.chan[iC].name;
+    }
+
+    unsigned int free_channel=nC;
+    unsigned int new_channel_id = free_channel;
+    free_channel++;
+    unsigned int chan_X_id = -1;
+    unsigned int chan_Y_id = -1;
+    unsigned int chan_Z_id = -1;
+    unsigned int chan_R_id = -1;
+    unsigned int chan_G_id = -1;
+    unsigned int chan_B_id = -1;
+    unsigned int chan_IMG_id = -1;
+    if(annotate_reprojection_)
+    {
+       chan_X_id = free_channel;
+       free_channel++;
+       chan_Y_id = free_channel;
+       free_channel++;
+       chan_Z_id = free_channel;
+       free_channel++;
+    }
+    if(use_colors_)
+    {
+       chan_R_id = free_channel;
+       free_channel++;
+       chan_G_id = free_channel;
+       free_channel++;
+       chan_B_id = free_channel;
+       free_channel++;
+    }
+    if(annotate_image_id_)
+    {
+       chan_IMG_id = free_channel;
+       free_channel++;
+    }
+
+
+
+    map_final.chan[new_channel_id].name=new_channel_name;
+    map_final.chan[new_channel_id].vals.resize(num_in);
+
+    if(annotate_reprojection_)
+    {
+      map_final.chan[chan_X_id].name="imgX";
+      map_final.chan[chan_X_id].vals.resize(num_in);
+      map_final.chan[chan_Y_id].name="imgY";
+      map_final.chan[chan_Y_id].vals.resize(num_in);
+      map_final.chan[chan_Z_id].name="imgZ";
+      map_final.chan[chan_Z_id].vals.resize(num_in);
+    }
+    if(use_colors_)
+    {
+      map_final.chan[chan_R_id].name="r";
+      map_final.chan[chan_R_id].vals.resize(num_in);
+      map_final.chan[chan_G_id].name="g";
+      map_final.chan[chan_G_id].vals.resize(num_in);
+      map_final.chan[chan_B_id].name="b";
+      map_final.chan[chan_B_id].vals.resize(num_in);
+    }
+
+    if(annotate_image_id_)
+    {
+      map_final.chan[chan_IMG_id].name="img_id";
+      map_final.chan[chan_IMG_id].vals.resize(num_in);
+    }
+
+    unsigned int iOut=0;
+    for(unsigned int iPt = 0; iPt<num_3D_pts; iPt++)
+    {
+        if(overlap[iPt]==0)
+          continue;
+
+        for(unsigned int iC=0;iC<nC;iC++)
+        {
+          map_final.chan[iC].vals[iOut]=map_3D.chan[iC].vals[iPt];
+        }        
+        map_final.chan[new_channel_id].vals[iOut] = object_labels[overlap[iPt]];
+        if(annotate_reprojection_)
+        {        
+          map_final.chan[chan_X_id].vals[iOut] = map_2D.pts[iPt].x;
+          map_final.chan[chan_Y_id].vals[iOut] = map_2D.pts[iPt].y;
+          map_final.chan[chan_Z_id].vals[iOut] = map_2D.pts[iPt].z;
+        }
+        if(use_colors_)
+        {
+          const std_msgs::ColorRGBA& color=object_colors[overlap[iPt]];
+          map_final.chan[chan_R_id].vals[iOut] = color.r;
+          map_final.chan[chan_G_id].vals[iOut] = color.g;
+          map_final.chan[chan_B_id].vals[iOut] = color.b;
+        }
+        if(annotate_image_id_)
+        {
+          ROS_ERROR("Image IDs are not supported yet");
+        }
+        map_final.pts[iOut] = map_3D.pts[iPt];
+        iOut++;
+    }
   }
-
 
 
 protected:
-  tf::TransformListener *tf_;
-  tf::MessageNotifier<sensor_msgs::StereoInfo>* scan_notifier_ ;
 
-  cv_mech_turk::ExternalAnnotation annotation2d_object_;
-  sensor_msgs::StereoInfo stereo_info_;
-  //sensor_msgs::CamInfo stereo_info_;
+  ros::NodeHandle n_;
+  ros::Publisher lifted_pub_;
 
+  boost::shared_ptr<tf::TransformListener> tf_;
+  tf::MessageNotifier<cv_mech_turk::ExternalAnnotation>* annotation_notifier_ ;
+  boost::shared_ptr<annotated_planar_patch_map::RollingHistory<sensor_msgs::CamInfo> > cam_hist_;
+
+  boost::mutex lift_mutex_;
+
+  bool annotate_reprojection_;
+  bool use_colors_;
+  bool annotate_image_id_;
+
+  /** @brief The frame to which the map is transformed */
   std::string fixed_frame_;
 
+  /** @brief The frame used to aggregate local snapshots */
+  std::string local_fixed_frame_;
+
+  /** @brief The topic name to send the resulting cloud */
   std::string out_topic_name_;
 
   /** @brief intervals in which to collect geometry for the annotations */
   ros::Duration interval_after_image_;
   ros::Duration interval_before_image_;
+
+  ros::Duration lifting_delay_;
 
   /** @brief Reject anything outside of this range */
   double min_depth_; //in meters?
@@ -436,7 +504,7 @@ int main(int argc, char **argv)
 
   try
   {
-    Annotation2DLifterToTaggedPatchMapSVC lifter;
+    AnnotationLifterToPcdViaService lifter;
     lifter.init();
 
     ros::spin();

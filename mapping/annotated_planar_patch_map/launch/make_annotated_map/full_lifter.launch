@@ -30,6 +30,10 @@
    
   <node pkg="planar_patch_map" type="planar_patch_map_node" >
     <remap from="/tilt_laser_cloud" to="/snapshot_cloud"/>
+      <param name="sac_min_points_per_cell" value="5"/>
+      <param name="distance_min" value="0.05"/>
+      <param name="distance_max" value="10"/>
+
   </node>
 
   <!-- A converter from planar_patch_map to a blank annotated map -->

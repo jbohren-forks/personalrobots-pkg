@@ -66,13 +66,15 @@ void projectAnyObject(const sensor_msgs::CamInfo& cam_info,robot_msgs::Polygon3D
 
 void projectAnyObject(const sensor_msgs::StereoInfo& stereo_info_, const annotated_map_msgs::TaggedPolygonalMap& transformed_map_3D, annotated_map_msgs::TaggedPolygonalMap &transformed_map_2D);
 
-void projectAnyObject(const sensor_msgs::CamInfo& stereo_info_, const annotated_map_msgs::TaggedPolygonalMap& transformed_map_3D, annotated_map_msgs::TaggedPolygonalMap &transformed_map_2D);
 
+void projectAnyObject(const sensor_msgs::CamInfo& cam_info_, const annotated_map_msgs::TaggedPolygonalMap& transformed_map_3D, annotated_map_msgs::TaggedPolygonalMap &transformed_map_2D);
 
+void projectAnyObject(const sensor_msgs::CamInfo& cam_info_, const robot_msgs::PointCloud& source_3D, robot_msgs::PointCloud& target_2D);
 
 
 
 void projectPolygonalMap(const sensor_msgs::StereoInfo& stereo_info_, const mapping_msgs::PolygonalMap& transformed_map_3D, mapping_msgs::PolygonalMap &transformed_map_2D);
+
 
 void projectPolygonPoints(double* projection,double img_w, double img_h, robot_msgs::Polygon3D polyIn,robot_msgs::Polygon3D& polyOut);
 void projectPolygonPointsNOP(double* projection,double img_w, double img_h, robot_msgs::Polygon3D polyIn,robot_msgs::Polygon3D& polyOut);

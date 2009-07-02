@@ -6,7 +6,7 @@
 
 
 	   <remap from="planar_map" to="/patch_maps/empty"/>	 
-	   <remap from="cam_info" to="/stereo/left/cam_info"/>	 
+	   <remap from="cam_info" to="/stereoproc/left/cam_info"/>	 
 
 	   <param name="fixed_frame" value="map"/>
 	   

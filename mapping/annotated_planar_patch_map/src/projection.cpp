@@ -79,8 +79,7 @@ void annotated_planar_patch_map::projection::projectPolygonalMap(const sensor_ms
   }
 }
 
-  
-void annotated_planar_patch_map::projection::projectAnyObject(const sensor_msgs::CamInfo& cam_info,robot_msgs::Polygon3D polyIn,robot_msgs::Polygon3D& polyOut)
+void annotated_planar_patch_map::projection::projectAnyObject(const sensor_msgs::CamInfo& cam_info,robot_msgs::Polygon3D polyIn,robot_msgs::Polygon3D& polyOut)  
 {
   //Projection setup
   CvMat *K_ = cvCreateMat(3, 3, CV_64FC1);
@@ -95,6 +94,8 @@ void annotated_planar_patch_map::projection::projectAnyObject(const sensor_msgs:
   //Input/output points
   unsigned int num_pts = polyIn.get_points_size();
   polyOut.set_points_size(num_pts);
+  if(num_pts==0)
+    return;
 
   CvMat* object_points = cvCreateMat( 1, num_pts , CV_64FC3 );
   CvMat* image_points = cvCreateMat( 1, num_pts , CV_64FC2 );
@@ -128,6 +129,66 @@ void annotated_planar_patch_map::projection::projectAnyObject(const sensor_msgs:
   cvReleaseMat(&object_points);
   cvReleaseMat(&image_points);
 }
+
+
+void annotated_planar_patch_map::projection::projectAnyObject(const sensor_msgs::CamInfo& cam_info,const robot_msgs::PointCloud& source_3D,robot_msgs::PointCloud& target_2D)
+{
+  //Projection setup
+  CvMat *K_ = cvCreateMat(3, 3, CV_64FC1);
+  memcpy((char*)(K_->data.db), (char*)(&cam_info.K[0]), 9 * sizeof(double));
+
+  double zeros[] = {0, 0, 0};
+  CvMat rotation_vector = cvMat(3, 1, CV_64FC1, zeros);
+  CvMat translation_vector = cvMat(3, 1, CV_64FC1, zeros);
+  //double point[2] = {0.0, 0.0};
+
+
+  //Input/output points
+  unsigned int num_pts = source_3D.pts.size();
+  target_2D.set_pts_size(num_pts);
+
+  CvMat* object_points = cvCreateMat( 1, num_pts , CV_64FC3 );
+  CvMat* image_points = cvCreateMat( 1, num_pts , CV_64FC2 );
+
+  for (unsigned int iP=0;iP<num_pts;iP++){
+    CvPoint3D64f pt;
+    pt.x=-source_3D.pts[iP].y;
+    pt.y=-source_3D.pts[iP].z;
+    pt.z= source_3D.pts[iP].x;
+    
+    CV_MAT_ELEM( *object_points, CvPoint3D64f, 0, iP ) = pt;
+
+  }
+  //Project them
+  cvProjectPoints2(object_points, &rotation_vector, &translation_vector,
+                   K_, NULL, image_points);
+
+  //Put them back
+  for(unsigned int iPt = 0; iPt<num_pts; iPt++)
+  {
+    CvPoint2D64f &img_pt=CV_MAT_ELEM( *image_points, CvPoint2D64f, 0, iPt );
+
+    const robot_msgs::Point32 &old_pt=source_3D.pts[iPt];
+    robot_msgs::Point32 &new_pt=target_2D.pts[iPt];
+    new_pt.x=img_pt.x;
+    new_pt.y=img_pt.y;
+    new_pt.z=old_pt.x; //I mean, this is the "z" - distance from the image
+  }
+
+  cvReleaseMat(&K_);
+  cvReleaseMat(&object_points);
+  cvReleaseMat(&image_points);
+}
+
+
+
+
+
+
+
+
+
+
 
 
 void annotated_planar_patch_map::projection::projectPolygonPoints(double* projection,double img_w,double img_h,robot_msgs::Polygon3D polyIn,robot_msgs::Polygon3D& polyOut)
