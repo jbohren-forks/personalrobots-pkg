@@ -8,19 +8,20 @@
    <param name="~ViewIdBinary_filename" type="str" value="/wg/stor5/msun/workspace/RFVoting/testzone/Shoe/Train/ViewIdsBinary" />
    <param name="~NormVotesBinary_filename" type="str" value="/wg/stor5/msun/workspace/RFVoting/testzone/Shoe/Train/NormVotesBinary" />
    <param name="~MaxViewId" type="int" value="8" />
-   <param name="~Scale" type="double" value="1.05" />
-   <param name="~hitThreshold" type="double" value="0.9" />
-   <param name="~VisualizeFlag" type="bool" value="false" />
    <param name="~ObjHeight2winHeightRatio" type="double" value="3" />
    <param name="~MeanShiftMaxIter" type="int" value="50" />
-   <param name="~winSize_width" type="int" value="50" />
-   <param name="~winSize_height" type="int" value="50" />
-   <param name="~winStride_width" type="int" value="8" />
-   <param name="~winStride_height" type="int" value="8" />
    <param name="~numCellPerWin_width" type="int" value="5" />
    <param name="~numCellPerWin_height" type="int" value="5" />
    <param name="~numCellPerBlock_width" type="int" value="3" />
    <param name="~numCellPerBlock_height" type="int" value="3" />
+   <!-- parameter for use to play independent of training -->
+   <param name="~Scale" type="double" value="1.05" />
+   <param name="~hitThreshold" type="double" value="0.9" />
+   <param name="~VisualizeFlag" type="bool" value="false" />
+   <param name="~winSize_width" type="int" value="25" />
+   <param name="~winSize_height" type="int" value="25" />
+   <param name="~winStride_width" type="int" value="8" />
+   <param name="~winStride_height" type="int" value="8" />
    <param name="~padding_width" type="int" value="0" />
    <param name="~padding_height" type="int" value="0" />
    <param name="~ObjectInPerspectiveFlag" type="bool" value="true" />

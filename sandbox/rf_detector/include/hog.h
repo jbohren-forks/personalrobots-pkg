@@ -92,7 +92,7 @@ struct HogFast
                                   Vector<Point>& foundIds,
                                   vector< float>& foundConfs, vector<int>& ScaleChangeBoundary,
                                   double hitThreshold=0, Size winStride=Size(),
-                                  Size padding=Size(), double scale=1.05,
+                                  Size padding=Size(), double scale=1.05, double startScale=1., double endScale=1000.,
                                   int groupThreshold=2, float ObjHeight2winHeightRatio=3);
     void computeGradient(const Mat& img, Mat& grad, Mat& angleOfs,
                                  Size paddingTL=Size(), Size paddingBR=Size()) const;
@@ -100,7 +100,7 @@ struct HogFast
 
     void cast_vots( Mat& Img, Vector<Rect>& rect, Vector<Point>& treeInfo, vector<float>& conf,
         vector< int>& scale_count, vector< vector<float> >& NormVotes, vector<int>& ViewIds, int MaxViewId, vector<double>& AvergeKernel,
-        int nCandidatePerDim, Size winStride, float winHeight2sinStrideRatio, float Scale, int MeanShiftMaxIter, vector< Vector<Rect> >& ObjCenterWindowsAll, vector< vector<float> >& ObjCenterConfAll, bool VisualizationFlag);
+        int nCandidatePerDim, Size winStride, float winHeight2sinStrideRatio, float Scale, double StartScale, int MeanShiftMaxIter, vector< Vector<Rect> >& ObjCenterWindowsAll, vector< vector<float> >& ObjCenterConfAll, bool VisualizationFlag);
 
     static Vector<float> getDefaultPeopleDetector();
 

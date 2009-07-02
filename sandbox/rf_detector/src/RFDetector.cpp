@@ -38,6 +38,7 @@
 #include "topic_synchronizer2/topic_synchronizer.h"
 #include <sstream>
 #include <string>
+#include <math.h>
 #include "opencv/cv.h"
 #include "opencv/highgui.h"
 #include "opencv/cxcore.h"
@@ -134,6 +135,7 @@ public:
     // readin binary files
     vector< vector< float> > vecNotmVotes;
     vector< int> vecViewIds;
+    float BiggestWidth2HeightRatio;
 
     rf_detector(): sync_(&rf_detector::syncCallback, this)
     {
@@ -190,8 +192,14 @@ public:
     // readin binary files
     readFloattext( NormVotesBinary_filename, vecNotmVotes);
     readIntegertext( ViewIdBinary_filename, vecViewIds);
-    cout << vecNotmVotes.size() << " " << vecNotmVotes.at(0).size() << endl;
-    cout << vecViewIds.size() << endl;
+    BiggestWidth2HeightRatio = 0;
+    for (unsigned int i=0; i< vecNotmVotes.at(2).size();i++){
+        if ( vecNotmVotes.at(2).at(i) > BiggestWidth2HeightRatio)
+            BiggestWidth2HeightRatio = vecNotmVotes.at(2).at(i);
+    }
+    cout << "BiggestWidth2HeightRatio "<< BiggestWidth2HeightRatio << endl;
+//    cout << vecNotmVotes.size() << " " << vecNotmVotes.at(0).size() << endl;
+//    cout << vecViewIds.size() << endl;
 
     // initialize the hog descriptor
     hog.winSize = winSize;
@@ -260,8 +268,10 @@ private:
             Rect roi;
             roi.x = 0;
             roi.y = 0;
-            run_rf_detector(left, nCandPerView, objBbxes, objBbxesConf, viewIds);
-            cout << "going to plot det" << endl;
+            double startScale=1.;
+            double endScale=1000.;
+            run_rf_detector(left, nCandPerView, startScale, endScale, objBbxes, objBbxesConf, viewIds);
+//            cout << "going to plot det" << endl;
             PlotDetection(left_objbbx, roi, objBbxes, objBbxesConf, viewIds);
         }
         cout << "syncCallback" << endl;
@@ -271,7 +281,7 @@ private:
         char buffer [50];
         cout << "number bbxes " << objBbxes.size() << endl;
         for (unsigned int j=0; j< objBbxes.size(); j++){
-                cout << "draw rect "<< endl;
+//                cout << "draw rect "<< endl;
                 sprintf(buffer,"C:%.5g,V:%d",objBbxesConf[j],viewIds[j]);
                 objBbxes[j].x+=roi.x;
                 objBbxes[j].y+=roi.y;
@@ -280,10 +290,18 @@ private:
 		    }
     }
 
+    void CheckRange(int& Value, int MinValue, int MaxValue){
+        if ( Value < MinValue){
+            Value = MinValue;
+        }else if( Value > MaxValue){
+            Value = MaxValue;
+        }
+    }
+
     void runObjectInPerspectiveDetection(){
 
         //test rf tree
-        cout << "num of trees " << hog.rf.GetNumTrees() << endl;
+//        cout << "num of trees " << hog.rf.GetNumTrees() << endl;
 
         vector<CvPoint> positions;
 		vector<CvPoint> obj_bottom;
@@ -300,27 +318,57 @@ private:
         viewIds.resize(positions.size());
 		for (unsigned int i=0; i<positions.size(); i++){
 		    // getting roi
+            Point pt_tl;
+            Point pt_br;
             Rect roi;
-            roi.height = scales_msun[i]*obj_physical_height*1.5;//hack 2
+            int ObjCanonicalHeight = (int)scales_msun[i]*obj_physical_height;
+            roi.height = ObjCanonicalHeight;//*pow(Scale,3);//hack 2
+            cout << "ObjCanHeight " << ObjCanonicalHeight << "ObjBiggesHeight " << roi.height << endl;
+            // set scaleStart scaleEnd
+            double startScale = ObjCanonicalHeight/ObjHeight2winHeightRatio/winSize.height;
+            double endScale = roi.height/ObjHeight2winHeightRatio/winSize.height;
+            if (endScale <1.)
+                continue;
+            if (startScale <1.)
+                startScale = 1.;
+
             roi.y = obj_bottom[i].y-roi.height;
-            roi.width = roi.height;
+            roi.width = roi.height*BiggestWidth2HeightRatio;
             roi.x = obj_bottom[i].x-roi.width/2;
+            pt_tl.x = roi.x;
+            pt_tl.y = roi.y;
+            pt_br.x = roi.x+roi.width;
+            pt_br.y = roi.y+roi.height;
+            // check if roi
+            Size leftSize = left.size();
+            CheckRange(pt_tl.x,0,leftSize.width-1);
+            CheckRange(pt_br.x,0,leftSize.width-1);
+            CheckRange(pt_tl.y,0,leftSize.height-1);
+            CheckRange(pt_br.y,0,leftSize.height-1);
+            roi.x = pt_tl.x;
+            roi.y = pt_tl.y;
+            roi.width = pt_br.x-pt_tl.x;
+            roi.height = pt_br.y-pt_tl.y;
+            if (roi.width < winSize.width|| roi.height < winSize.height){
+                continue;
+            }
 
 		    // get focused_img
             Mat focused_img( left, roi);
             rectangle(left_objbbx, roi.tl(), roi.br(), Scalar(255,0,0), 1);
 
 		    // modify scale search range
-		    run_rf_detector(focused_img, nCandPerView, objBbxes[i], objBbxesConf[i], viewIds[i]);
+		    cout << "iput scale" << startScale << " "<< endScale << endl;
+		    run_rf_detector(focused_img, nCandPerView, startScale, endScale, objBbxes[i], objBbxesConf[i], viewIds[i]);
 
-            cout << "going to plot det" << endl;
+//            cout << "going to plot det" << endl;
             PlotDetection(left_objbbx, roi, objBbxes[i], objBbxesConf[i], viewIds[i]);
         }
         imshow("left_objbbx", left_objbbx);
         cvWaitKey(500);
     }
 
-    void run_rf_detector(Mat& img, int nCandPerView, vector<Rect>& objBbxes, vector<float>& objBbxesConf, vector<int>& viewIds)
+    void run_rf_detector(Mat& img, int nCandPerView, double startScale, double endScale, vector<Rect>& objBbxes, vector<float>& objBbxesConf, vector<int>& viewIds)
     {
 
         Vector< Rect > found;
@@ -331,9 +379,10 @@ private:
         // run the detector with default parameters. to get a higher hit-rate
         // (and more false alarms, respectively), decrease the hitThreshold and
         // groupThreshold (set groupThreshold to 0 to turn off the grouping completely).
-        hog.detectMultiScale(img, found, foundIds, foundConfs, ScaleChangeBoundary, hitThreshold, winStride, padding, Scale, groupThreshold, ObjHeight2winHeightRatio);
+        hog.detectMultiScale(img, found, foundIds, foundConfs, ScaleChangeBoundary, hitThreshold, winStride, padding,
+            Scale, startScale, endScale, groupThreshold, ObjHeight2winHeightRatio);
         t = (double)cv::getTickCount() - t;
-        printf("feature plus RF time = %gms\n", t*1000./cv::getTickFrequency());
+        printf("%d features plus RF time = %gms\n", found.size(),t*1000./cv::getTickFrequency());
 
         // get data ready for voting
         vector< Vector<Rect> > ObjCenterWindowsAll;
@@ -341,7 +390,7 @@ private:
         t = (double)cv::getTickCount();
         hog.cast_vots( img, found, foundIds, foundConfs, ScaleChangeBoundary,
             vecNotmVotes, vecViewIds, MaxViewId, AvergeKernel, nCandidatePerDim,
-             winStride, ObjHeight2sinStrideRatio, Scale, MeanShiftMaxIter, ObjCenterWindowsAll,
+             winStride, ObjHeight2sinStrideRatio, Scale, startScale, MeanShiftMaxIter, ObjCenterWindowsAll,
              ObjCenterConfAll, VisualizeFlag);
         t = (double)cv::getTickCount() - t;
         printf("voting time = %gms\n", t*1000./cv::getTickFrequency());
@@ -355,6 +404,8 @@ private:
         for (int viewId = 0; viewId < MaxViewId; viewId++){
             // sort the ObjCenter by Conf
             ObjCenterInd.clear();
+            //msun debug
+            cout << "num cand bbx per view " << ObjCenterConfAll[viewId].size() << endl;
             for ( unsigned int i = 0; i< ObjCenterConfAll[viewId].size(); i++)
                 ObjCenterInd.push_back(i);
             vector<float>* tmp = &ObjCenterConfAll[viewId];
@@ -367,7 +418,7 @@ private:
             }else{
                 nCandPerView_new = nCandPerView;
             }
-            cout << "number detection "<< ObjCenterConfAll[viewId].size() << "nCandPerView_new "<< nCandPerView_new << endl;
+//            cout << "number detection "<< ObjCenterConfAll[viewId].size() << "nCandPerView_new "<< nCandPerView_new << endl;
             for( int i = 0; i < nCandPerView_new;i++)//(int)ObjCenterWindowsAll[viewId].size(); i++ )//
             {
 
@@ -375,7 +426,7 @@ private:
                 objBbxesConf_.push_back(ObjCenterConfAll[viewId][ObjCenterInd[i]]);
                 viewIds_.push_back(viewId);
                 //msun debug
-                cout << "viewId "<< viewId <<"candidate " << i << endl;
+//                cout << "viewId "<< viewId <<"candidate " << i << endl;
 //                sprintf(buffer,"C:%.5g,V:%d",ObjCenterConfAll[viewId][ObjCenterInd[i]],viewId);
 //                ImgClone = img.clone();
 //                Rect r =
@@ -388,8 +439,8 @@ private:
 
         }
 
-        cout << "number bbxes " << objBbxesConf_.size() << endl;
-        cout << "number viewIds " << viewIds_.size() << endl;
+//        cout << "number bbxes " << objBbxesConf_.size() << endl;
+//        cout << "number viewIds " << viewIds_.size() << endl;
         ObjCenterInd.clear();
         for ( unsigned int i = 0; i< objBbxesConf_.size(); i++)
             ObjCenterInd.push_back(i);

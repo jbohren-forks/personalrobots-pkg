@@ -38,6 +38,7 @@
 #include "write.h"
 #include "opencv/cv.h"
 using namespace cv;
+using namespace std;
 
 size_t HogFast::getDescriptorSize() const
 {
@@ -861,13 +862,13 @@ void HogFast::detectMultiScale(
     const Mat& img, Vector<Rect>& foundLocations, Vector<Point>& foundIds,
     vector< float>& foundConfs, vector<int>& ScaleChangeBoundary,
     double hitThreshold, Size winStride, Size padding,
-    double scale0, int groupThreshold, float ObjHeight2winHeightRatio)
+    double scale0, double startScale, double endScale, int groupThreshold, float ObjHeight2winHeightRatio)
 {
 //    namedWindow( "VotesMap", 1 );
 //    imshow("agregate votes", img);
 //    waitKey(0);
 
-    double scale = 1.;
+    double scale = startScale;
     foundLocations.clear();
     int i, levels = 0;
     const int maxLevels = 64;
@@ -886,12 +887,15 @@ void HogFast::detectMultiScale(
         levelScale[levels] = scale;
         if( cvRound(img.cols/scale) < (float)winSize.width*ObjHeight2winHeightRatio ||
             cvRound(img.rows/scale) < (float)winSize.height*ObjHeight2winHeightRatio ||
-            scale0 <= 1 )
+            scale0 <= 1 || scale > endScale)
             break;
         scale *= scale0;
     }
     levels = std::max(levels, 1);
     levelScale.resize(levels);
+
+    // check scale
+    cout << "levels " << levels << "minScale " <<levelScale[0] << "maxScale " << levelScale[levels-1] <<endl;
 
     ScaleChangeBoundary.resize(levels);
     {
@@ -1036,15 +1040,15 @@ void AddWeighted( float* ptr1, float weight1, float* ptr2, float weight2, IplIma
 
 void HogFast::cast_vots( Mat& Img, Vector<Rect>& part_rect, Vector<Point>& treeInfo, vector<float>& conf,
     vector< int>& scale_count, vector< vector<float> >& NormVotes, vector<int>& ViewIds, int MaxViewId, vector<double>& AvergeKernel,
-    int nCandidatePerDim, Size winStride, float winHeight2sinStrideRatio, float Scale, int MeanShiftMaxIter,
+    int nCandidatePerDim, Size winStride, float winHeight2sinStrideRatio, float Scale, double StartScale,int MeanShiftMaxIter,
     vector< Vector<Rect> >& ObjCenterWindowsAll, vector< vector<float> > & ObjCenterConfAll, bool VisualizationFlag)
 {
 
     // magic number zone
     int LowResMapSizePerDim = 2*nCandidatePerDim;// in each dim twice the dimesion, so in total 4 times of the num of candidates
     int LowResMapSizeArea = LowResMapSizePerDim*LowResMapSizePerDim;
-    int scaleIdStart = 1;
-    int scaleIdEndMargin = 1;
+    int scaleIdStart = 0;// previsou 1
+    int scaleIdEndMargin = 0;// previsou 1
     int MeanShiftwindow2winStrideRatio = 5;// window.width/winStride.width = 5;
     float ObjHeight2MeanShiftwindowRatio = winHeight2sinStrideRatio/(float)(MeanShiftwindow2winStrideRatio);
     CvTermCriteria TermCriteria_ = cvTermCriteria( CV_TERMCRIT_EPS | CV_TERMCRIT_ITER, MeanShiftMaxIter, 0.1 );// MeanShift stopping criteria
@@ -1145,8 +1149,9 @@ void HogFast::cast_vots( Mat& Img, Vector<Rect>& part_rect, Vector<Point>& treeI
         for (unsigned int PatchCount = 1; PatchCount < patchIdptr->size(); PatchCount++)// loop through patches
         {
             patchId = patchIdptr->at(PatchCount);
-            if (patchId >= nPatches)
-                cout << patchId << endl;
+            if (patchId >= nPatches){
+                cout << patchId << "possible bug" <<endl;
+            }
             viewId = ViewIds[ patchId]-1;
             if (viewId < 0) // backgroud patch so skip
                 continue;
@@ -1174,6 +1179,14 @@ void HogFast::cast_vots( Mat& Img, Vector<Rect>& part_rect, Vector<Point>& treeI
     }
 
     // do mean-shift
+    cout << "do mean-shift" << endl;
+    for (int vv = 0; vv < MaxViewId; vv++){
+        int cc = 0;
+        for (int ss = 0; ss < nScale; ss++){
+            cc+=SampleCount[ss][vv];
+        }
+        cout <<" number of votes per view" << cc << endl;
+    }
     CvMat* targetVoteMap  = cvCreateMat( ImgSize.height, ImgSize.width, CV_32FC1);
     cvZero(targetVoteMap);
     vector<int> LowResInds;
@@ -1203,8 +1216,8 @@ void HogFast::cast_vots( Mat& Img, Vector<Rect>& part_rect, Vector<Point>& treeI
     bool SmallerFlag;
 
     for ( viewId = 0; viewId < MaxViewId; viewId++){
-        window.width = winStride.width*MeanShiftwindow2winStrideRatio*pow(Scale,scaleIdStart);
-        window.height = winStride.height*MeanShiftwindow2winStrideRatio*pow(Scale,scaleIdStart);
+        window.width = winStride.width*MeanShiftwindow2winStrideRatio*pow(Scale,scaleIdStart)*StartScale;
+        window.height = winStride.height*MeanShiftwindow2winStrideRatio*pow(Scale,scaleIdStart)*StartScale;
         for ( scaleId = scaleIdStart; scaleId < nScale-scaleIdEndMargin; scaleId++){ // the biggest and smallest scale is only used for averaging
             // skip the one with zero sample
             count = SampleCount[scaleId][viewId];
@@ -1216,12 +1229,28 @@ void HogFast::cast_vots( Mat& Img, Vector<Rect>& part_rect, Vector<Point>& treeI
                     LowResInds.at(i) = i;
 
                 // form average probImg
-                cvAddWeighted( VotesMap[scaleId+1][viewId], AvergeKernel[0],
+                if (scaleId == 0){
+                    if (scaleId==nScale-1){
+                        targetVoteMap = VotesMap[scaleId][viewId];
+                    }else{
+//                    cout << "start add" << endl;
+                    cvAddWeighted( VotesMap[scaleId][viewId], AvergeKernel[1],
+                            VotesMap[scaleId+1][viewId], AvergeKernel[1],
+                            0.0, targetVoteMap);
+//                    cout << "end add" << endl;
+                    }
+                }else if (scaleId==nScale-1){
+                    cvAddWeighted( VotesMap[scaleId][viewId], AvergeKernel[1],
+                            VotesMap[scaleId-1][viewId], AvergeKernel[1],
+                            0.0, targetVoteMap);
+                }else{
+                    cvAddWeighted( VotesMap[scaleId+1][viewId], AvergeKernel[0],
                             VotesMap[scaleId-1][viewId], AvergeKernel[0],
                             0.0, targetVoteMap);
-                cvAddWeighted( VotesMap[scaleId][viewId], AvergeKernel[1],
+                    cvAddWeighted( VotesMap[scaleId][viewId], AvergeKernel[1],
                             targetVoteMap, 1.0,
                             0.0, targetVoteMap);
+                }
 
                 //LOOP THROUGH DIFFERENT initialize window
                 vecLowResVotesPtr =& vecLowResVotes[scaleId][viewId];
@@ -1252,6 +1281,9 @@ void HogFast::cast_vots( Mat& Img, Vector<Rect>& part_rect, Vector<Point>& treeI
                     ObjCenterWindows.push_back( Rect(comp.rect));
                     ObjCenterConf.push_back( comp.area);
                 }
+
+//                cout <<"nCandidatePerDim*nCandidatePerDim" << nCandidatePerDim*nCandidatePerDim << "real " << ObjCenterWindows.size()<< endl;
+
                 // do connected component within each scale
                 nclasses = partition(ObjCenterWindows, labels, SimilarRects( RectOverlapRatio));
                 nlabels = (int)labels.size();
@@ -1277,6 +1309,8 @@ void HogFast::cast_vots( Mat& Img, Vector<Rect>& part_rect, Vector<Point>& treeI
                     ObjCenterConfAll[viewId].push_back( rweights[i]);
                     ScaleIdCacheAll[viewId].push_back( scaleId);
                 }
+            }else{
+                    cout << " skip mode finding" << endl;
             }
             window.width = window.width*Scale;
             window.height = window.height*Scale;
@@ -1305,6 +1339,8 @@ void HogFast::cast_vots( Mat& Img, Vector<Rect>& part_rect, Vector<Point>& treeI
                 ScaleIdCache[cls] = ScaleIdCacheAll[viewId][i];
             }
         }
+
+        cout << "num sep bbx per view" << nclasses << endl;
         // now on change the Object Center Windows to object bounding boxes
         ObjCenterWindowsAll[viewId].clear();
         ObjCenterConfAll[viewId].clear();
@@ -1327,6 +1363,9 @@ void HogFast::cast_vots( Mat& Img, Vector<Rect>& part_rect, Vector<Point>& treeI
             Rect Objbbx;
             Point ObjCenter( rrects[i].x+rrects[i].width, rrects[i].y+rrects[i].height);
             Objbbx.height = rrects[i].height*ObjHeight2MeanShiftwindowRatio;
+
+            cout << rrects[i].height <<" " << ObjHeight2MeanShiftwindowRatio << endl;
+
             Objbbx.width = Objbbx.height*getMedian( Smaller, Bigger, SmallerFlag);
             Objbbx.x = ObjCenter.x-Objbbx.width/2;
             Objbbx.y = ObjCenter.y-Objbbx.height/2;
