@@ -437,10 +437,10 @@ private:
 };
 
 // check that message constants match OpenRAVE constants
-BOOST_STATIC_ASSERT(EnvironmentBase::Clone_Bodies==openrave_session::Request::CloneBodies);
-BOOST_STATIC_ASSERT(EnvironmentBase::Clone_Viewer==openrave_session::Request::CloneViewer);
-BOOST_STATIC_ASSERT(EnvironmentBase::Clone_Simulation==openrave_session::Request::CloneSimulation);
-BOOST_STATIC_ASSERT(EnvironmentBase::Clone_RealControllers==openrave_session::Request::CloneRealControllers);
+BOOST_STATIC_ASSERT(Clone_Bodies==openrave_session::Request::CloneBodies);
+BOOST_STATIC_ASSERT(Clone_Viewer==openrave_session::Request::CloneViewer);
+BOOST_STATIC_ASSERT(Clone_Simulation==openrave_session::Request::CloneSimulation);
+BOOST_STATIC_ASSERT(Clone_RealControllers==openrave_session::Request::CloneRealControllers);
 
 BOOST_STATIC_ASSERT(ActiveDOFs::DOF_X==RobotBase::DOF_X);
 BOOST_STATIC_ASSERT(ActiveDOFs::DOF_Y==RobotBase::DOF_Y);
