@@ -1,0 +1,6 @@
+# This service call queries boolean state of a node. This service call
+# should not cause any side effects so that it can be called at any time
+# for diagnostic purposes.
+
+---
+byte v

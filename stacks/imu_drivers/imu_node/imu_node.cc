@@ -100,7 +100,7 @@ Reads the following parameters from the parameter server
 
 #include "robot_msgs/PoseWithRatesStamped.h"
 #include "std_srvs/Empty.h"
-#include "robot_srvs/GetByte.h"
+#include "imu_node/GetBoolStatus.h"
 
 #include "tf/transform_datatypes.h"
 #include "imu_node/AddOffset.h"
@@ -592,7 +592,7 @@ public:
     return true;
   }
   
-  bool is_calibrated(robot_srvs::GetByte::Request &req, robot_srvs::GetByte::Response &resp)
+  bool is_calibrated(imu_node::GetBoolStatus::Request &req, imu_node::GetBoolStatus::Response &resp)
   {
     resp.v = calibrated_;
 
