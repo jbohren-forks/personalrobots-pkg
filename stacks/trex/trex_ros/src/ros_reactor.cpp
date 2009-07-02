@@ -86,6 +86,8 @@ namespace trex_ros{
       DbCore::PlanDescription::TokenDescription const &tokDesc = *tokit;
       trex_ros::TokenDescription tokDescMsg;
 
+      tokDescMsg.key = tokDesc.key;
+
       tokDescMsg.name = tokDesc.name.toString();
 
       tokDescMsg.start[0] = tokDesc.start[0];
