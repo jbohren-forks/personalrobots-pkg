@@ -46,6 +46,7 @@ import rospy
 from std_msgs.msg import *
 from mechanism_msgs.srv import *
 from robot_mechanism_controllers.srv import *
+from imu_node.srv import GetBoolStatus
 
 def calibrate(config):
     spawn_controller = rospy.ServiceProxy('spawn_controller', SpawnController)
@@ -90,7 +91,7 @@ def calibrate_imu():
     endtime = rospy.get_time() + 20
     try:
         rospy.wait_for_service('imu/is_calibrated', 20)
-        is_calibrated = rospy.ServiceProxy('imu/is_calibrated',GetByte)
+        is_calibrated = rospy.ServiceProxy('imu/is_calibrated',GetBoolStatus)
         while True:
             maxtime = max(1,endtime - rospy.get_time())
             if is_calibrated(timeout=maxtime):
