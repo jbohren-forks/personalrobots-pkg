@@ -56,3 +56,37 @@ Index: server/physics/ode/ODEPhysics.cc
  
    Param::Begin(&this->parameters);
    this->globalCFMP = new ParamT<double>("cfm", 10e-5, 0);
+Index: server/Model.cc
+===================================================================
+--- server/Model.cc	(revision 7937)
++++ server/Model.cc	(working copy)
+@@ -26,6 +26,9 @@
+ 
+ //#include <boost/python.hpp>
+ 
++#include <boost/thread/recursive_mutex.hpp>
++#include "Simulator.hh"
++
+ #include <sstream>
+ #include <iostream>
+ 
+@@ -260,6 +263,7 @@
+   //this->SetLaserRetro( **this->laserRetroP);
+ 
+   // Create the graphics iface handler
++  boost::recursive_mutex::scoped_lock lock(*Simulator::Instance()->GetMRMutex());
+   this->graphicsHandler = new GraphicsIfaceHandler();
+   this->graphicsHandler->Load(this->GetScopedName(), this);
+ 
+Index: server/World.cc
+===================================================================
+--- server/World.cc	(revision 7937)
++++ server/World.cc	(working copy)
+@@ -229,6 +229,7 @@
+ // Primarily used to update the graphics interfaces
+ void World::GraphicsUpdate()
+ {
++  boost::recursive_mutex::scoped_lock lock(*Simulator::Instance()->GetMRMutex());
+   this->graphics->Update();
+ 
+   // Update all the models
