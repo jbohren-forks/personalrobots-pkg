@@ -31,10 +31,11 @@
 #include <cmath>
 #include "ros/node.h"
 #include "sensor_msgs/LaserScan.h"
-#include "deprecated_msgs/RobotBase2DOdom.h"
+#include "robot_msgs/PoseStamped.h"
 #include <vector>
 #include <string>
 #include "rosrecord/Player.h"
+#include "tf/tf.h"
 using std::vector;
 using std::string;
 
@@ -42,12 +43,18 @@ FILE *clog = NULL;
 FILE *test_log = NULL;
 double prev_x = 0, prev_y = 0, prev_th = 0, dumb_rv = 0, dumb_tv = 0, prev_time;
 
-void odom_callback(string name, deprecated_msgs::RobotBase2DOdom* odom, ros::Time t, ros::Time t_no_use, void* n)
+void odom_callback(string name, robot_msgs::PoseStamped * odom, ros::Time t, ros::Time t_no_use, void* n)
 {
   double rel_time = t.toSec();
 
   static bool vel_init = false;
   static double yaw_offset = 0;
+
+  //double th = 2 * asin(odom->pose.orientation.z);
+  btScalar yaw, pitch, roll;
+  btTransform T(btQuaternion(0, 0, odom->pose.orientation.z, odom->pose.orientation.w));
+  T.getBasis().getEulerZYX(yaw, pitch, roll);
+  double th = yaw;
 
   if (!vel_init)
   {
@@ -58,7 +65,7 @@ void odom_callback(string name, deprecated_msgs::RobotBase2DOdom* odom, ros::Tim
   }
   else
   {
-    double next_th = odom->pos.th + yaw_offset;
+    double next_th = th + yaw_offset;
     if (fabs(next_th - prev_th) > M_PI)
     {
       if (next_th > prev_th)
@@ -66,21 +73,22 @@ void odom_callback(string name, deprecated_msgs::RobotBase2DOdom* odom, ros::Tim
       else
         yaw_offset += 2 * M_PI;
     }
-    odom->pos.th += yaw_offset;
+    th += yaw_offset;
     double dt = rel_time - prev_time;
-    double dx = odom->pos.x - prev_x;
-    double dy = odom->pos.y - prev_y;
-    dumb_rv = (odom->pos.th - prev_th) / dt;
-    dumb_tv = sqrt(dx*dx + dy*dy) / dt;
+    double dx = odom->pose.position.x - prev_x;
+    double dy = odom->pose.position.y - prev_y;
+    dumb_rv = (th - prev_th) / dt;
+    dumb_tv = 0;//sqrt(dx*dx + dy*dy) / dt;
     fprintf(test_log, "%f %f %f %f %f %f\n", 
-            odom->pos.x, odom->pos.y, odom->pos.th, dumb_tv, dumb_rv, dt);
+            odom->pose.position.x, odom->pose.position.y,
+            th, dumb_tv, dumb_rv, dt);
   }
-  prev_x  = odom->pos.x;
-  prev_y  = odom->pos.y;
-  prev_th = odom->pos.th;
+  prev_x  = odom->pose.position.x;
+  prev_y  = odom->pose.position.y;
+  prev_th = th;
   prev_time = rel_time;
   fprintf(clog, "ODOM %f %f %f %f %f 0 %f logsetta %f\n", 
-          odom->pos.x, odom->pos.y, odom->pos.th,
+          odom->pose.position.x, odom->pose.position.y, th,
           dumb_tv, dumb_rv, rel_time, rel_time);
 }
 
@@ -127,8 +135,8 @@ int main(int argc, char **argv)
 
   player.open(files, ros::Time());
 
-  player.addHandler<deprecated_msgs::RobotBase2DOdom>(string("/odom"), &odom_callback, NULL);
-  player.addHandler<sensor_msgs::LaserScan>(string("/scan"), &scan_callback, NULL);
+  player.addHandler<robot_msgs::PoseStamped>(string("odom"), &odom_callback, NULL);
+  player.addHandler<sensor_msgs::LaserScan>(string("scan"), &scan_callback, NULL);
 
   clog = fopen("carmen.txt", "w");
 
