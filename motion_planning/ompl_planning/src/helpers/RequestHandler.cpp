@@ -72,6 +72,7 @@ bool ompl_planning::RequestHandler::isRequestValid(ModelMap &models, motion_plan
     for (std::map<std::string, PlannerSetup*>::iterator it = m->planners.begin() ; it != m->planners.end() ; ++it)
 	if (it->first.find(req.params.planner_id) != std::string::npos)
 	{
+	    req.params.planner_id = it->first;
 	    plannerIt = it;
 	    break;
 	}

@@ -66,6 +66,13 @@ namespace ompl_planning
 	
 	virtual bool operator()(const ompl::base::State *s) const
 	{
+	    // for dynamic state spaces, we may get outside bounds
+	    if (dsi_)
+	    {
+		if (!dsi_->satisfiesBounds(s))
+		    return false;
+	    }
+	    
 	    model_->kmodel->computeTransformsGroup(s->values, model_->groupID);
 	    
 	    bool valid = kce_.decide(s->values, model_->groupID);

@@ -72,15 +72,6 @@ namespace ompl_planning
 	virtual void operator()(const ompl::base::State *begin, const ompl::base::Control *ctrl, double resolution, ompl::base::State *end) const 
 	{
 	    m_.step(begin, ctrl, resolution, end);
-	    unsigned int dim = si_->getStateDimension();
-	    
-	    for (unsigned int i = 0 ; i < dim ; ++i)
-	    {
-		if (end->values[i] - ompl::STATE_EPSILON > si_->getStateComponent(i).maxValue)
-		    end->values[i] = si_->getStateComponent(i).maxValue;
-		if (end->values[i] + ompl::STATE_EPSILON < si_->getStateComponent(i).minValue)
-		    end->values[i] = si_->getStateComponent(i).minValue;
-	    }
 	}
 	
     private:
