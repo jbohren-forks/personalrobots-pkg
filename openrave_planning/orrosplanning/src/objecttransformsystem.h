@@ -168,7 +168,6 @@ private:
                         tnew = trobot * GetTransform(poseout.pose);
                     }
                     catch(std::runtime_error& ex) {
-                        RAVELOG_INFOA("wtf\n");
                         try {
                             // try getting the latest value by passing a 0 timestamp
                             posestamped.header.stamp = ros::Time();
@@ -176,7 +175,7 @@ private:
                             tnew = trobot * GetTransform(poseout.pose);
                         }
                         catch(std::runtime_error& ex) {
-                            RAVELOG_WARNA("failed to get tf frames %s (body link:%s) for object %s, error: %s\n",posestamped.header.frame_id.c_str(), strrobotbaselink.c_str(), itobj->type.c_str(), ex.what());
+                            RAVELOG_WARNA("failed to get tf frames %s (body link:%s) for object %s\n",posestamped.header.frame_id.c_str(), strrobotbaselink.c_str(), itobj->type.c_str());
                             continue;//tnew = GetTransform(itobj->pose);
                         }
                     }

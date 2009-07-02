@@ -207,13 +207,16 @@ public:
         return new SimpleXMLReader(NULL, atts);
     }
 
-    SimpleSensorSystem(EnvironmentBase* penv) : SensorSystemBase(penv), _expirationtime(2,0)
+    SimpleSensorSystem(EnvironmentBase* penv) : SensorSystemBase(penv), _expirationtime(2,0), _bShutdown(false)
     {
         RegisterXMLReader(GetEnv()); // just in case, register again
+        _threadUpdate = boost::thread(boost::bind(&SimpleSensorSystem::_UpdateBodiesThread,this));
     }
 
     virtual ~SimpleSensorSystem() {
         Destroy();
+        _bShutdown = true;
+        _threadUpdate.join();
     }
 
     virtual bool Init(istream& sinput)
@@ -415,9 +418,24 @@ protected:
         }
     }
 
+    virtual void _UpdateBodiesThread()
+    {
+        list< SNAPSHOT > listbodies;
+
+        while(!_bShutdown) {
+            {
+                boost::mutex::scoped_lock lock(_mutex);
+                UpdateBodies(listbodies);
+            }
+            usleep(10000); // 10ms
+        }
+    }
+
     map<int,boost::shared_ptr<BODY> > _mapbodies;
     boost::mutex _mutex;
     ros::Duration _expirationtime;
+    boost::thread _threadUpdate;
+    bool _bShutdown;
 };
 
 #ifdef RAVE_REGISTER_BOOST
