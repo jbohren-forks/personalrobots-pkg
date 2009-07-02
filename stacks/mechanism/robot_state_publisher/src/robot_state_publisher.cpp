@@ -94,7 +94,7 @@ bool RobotStatePublisher::publishTransforms(const map<string, double>& joint_pos
       trans.header.stamp = time;
       trans.header.frame_id = tf::remap(tf_prefix_, f->first);
       trans.parent_id = root->first;
-      tf::TransformTFToMsg(tf_frame, trans.transform);
+      tf::transformTFToMsg(tf_frame, trans.transform);
 	tf_msg_.transforms[i++] = trans;
     }
   }

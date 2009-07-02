@@ -147,7 +147,7 @@ bool CartesianTrajectoryController::moveTo(const robot_msgs::PoseStamped& pose, 
 
   // convert message to transform
   Stamped<Pose> pose_stamped;
-  PoseStampedMsgToTF(pose, pose_stamped);
+  poseStampedMsgToTF(pose, pose_stamped);
 
   // convert to reference frame of root link of the controller chain
   Duration timeout = Duration().fromSec(2.0);

@@ -434,7 +434,7 @@ private:
 
         tf::Pose tf_pose;
 
-        tf::PoseMsgToTF(pose.pose,tf_pose);
+        tf::poseMsgToTF(pose.pose,tf_pose);
         tf::Point point(-1,0,0);
         tf::Point normal = tf_pose*point;
 
@@ -658,31 +658,31 @@ private:
 
 		tf::Pose tf_pose;
 		tf::Point tf_point;
-		tf::PoseMsgToTF(pose.pose,tf_pose);
+		tf::poseMsgToTF(pose.pose,tf_pose);
 
 		tf_point = tf::Point(0,extent,extent);
 		tf_point = tf_pose*tf_point;
 		base_p1.header.stamp = base_cloud_.header.stamp;
 		base_p1.header.frame_id = base_cloud_.header.frame_id;
-		tf::PointTFToMsg(tf_point,base_p1.point);
+		tf::pointTFToMsg(tf_point,base_p1.point);
 
 		tf_point = tf::Point(0,-extent,extent);
 		tf_point = tf_pose*tf_point;
 		base_p2.header.stamp = base_cloud_.header.stamp;
 		base_p2.header.frame_id = base_cloud_.header.frame_id;
-		tf::PointTFToMsg(tf_point,base_p2.point);
+		tf::pointTFToMsg(tf_point,base_p2.point);
 
 		tf_point = tf::Point(0,extent,-extent);
 		tf_point = tf_pose*tf_point;
 		base_p3.header.stamp = base_cloud_.header.stamp;
 		base_p3.header.frame_id = base_cloud_.header.frame_id;
-		tf::PointTFToMsg(tf_point,base_p3.point);
+		tf::pointTFToMsg(tf_point,base_p3.point);
 
 		tf_point = tf::Point(0,-extent,-extent);
 		tf_point = tf_pose*tf_point;
 		base_p4.header.stamp = base_cloud_.header.stamp;
 		base_p4.header.frame_id = base_cloud_.header.frame_id;
-		tf::PointTFToMsg(tf_point,base_p4.point);
+		tf::pointTFToMsg(tf_point,base_p4.point);
 
 		Point p1 = project3DPointIntoImage(lcinfo, base_p1);
 		Point p2 = project3DPointIntoImage(lcinfo, base_p2);
@@ -1179,7 +1179,7 @@ private:
 
 			// add wall_frame to tf
 			tf::Pose tf_wall_pose;
-			tf::PoseMsgToTF(wall_pose.pose, tf_wall_pose);
+			tf::poseMsgToTF(wall_pose.pose, tf_wall_pose);
 			tf::Stamped<tf::Pose> wall_pose_frame(tf_wall_pose, wall_pose.header.stamp, "wall_frame", wall_pose.header.frame_id);
 			tf_->setTransform(wall_pose_frame);
 
@@ -1215,7 +1215,7 @@ private:
 			// find the nearest base_laser_point
 			wall_pose.pose.position = nearestPoint(base_cloud_, origin_in_base_laser_frame.point);
 
-//			tf::PoseMsgToTF(wall_pose.pose, tf_wall_pose);
+//			tf::poseMsgToTF(wall_pose.pose, tf_wall_pose);
 //			tf::Stamped<tf::Pose> wall_pose_frame2(tf_wall_pose, wall_pose.header.stamp, "wall_frame", wall_pose.header.frame_id);
 //			tf_->setTransform(wall_pose_frame2);
 

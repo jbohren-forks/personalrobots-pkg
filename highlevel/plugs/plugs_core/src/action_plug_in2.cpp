@@ -75,7 +75,7 @@ double getOffset(int id)
   }
 }
 
-void PoseTFToMsg(const tf::Pose &p, robot_msgs::Twist &t)
+void poseTFToMsg(const tf::Pose &p, robot_msgs::Twist &t)
 {
   t.vel.x = p.getOrigin().x();
   t.vel.y = p.getOrigin().y();
@@ -83,7 +83,7 @@ void PoseTFToMsg(const tf::Pose &p, robot_msgs::Twist &t)
   btMatrix3x3(p.getRotation()).getEulerYPR(t.rot.x, t.rot.y, t.rot.z);
 }
 
-void PoseMsgToTF(const robot_msgs::Twist &t, tf::Pose &p)
+void poseMsgToTF(const robot_msgs::Twist &t, tf::Pose &p)
 {
   p.getOrigin()[0] = t.vel.x;
   p.getOrigin()[1] = t.vel.y;
@@ -252,7 +252,7 @@ robot_actions::ResultStatus PlugInAction::execute(const std_msgs::Int32& outlet_
         tff_msg.mode.rot.x = 3;
         tff_msg.mode.rot.y = 3;
         tff_msg.mode.rot.z = 3;
-        PoseTFToMsg(target, tff_msg.value);
+        poseTFToMsg(target, tff_msg.value);
         node_.publish(arm_controller_ + "/command", tff_msg);
         ros::Duration(1.0).sleep(); // Settle
       }
@@ -276,7 +276,7 @@ robot_actions::ResultStatus PlugInAction::execute(const std_msgs::Int32& outlet_
       tff_msg.mode.rot.x = 3;
       tff_msg.mode.rot.y = 3;
       tff_msg.mode.rot.z = 3;
-      PoseTFToMsg(desi, tff_msg.value);
+      poseTFToMsg(desi, tff_msg.value);
       tff_msg.value.vel.x = SPEED;
       node_.publish(arm_controller_ + "/command", tff_msg);
 
@@ -345,7 +345,7 @@ robot_actions::ResultStatus PlugInAction::execute(const std_msgs::Int32& outlet_
       tff_msg.mode.rot.x = 3;
       tff_msg.mode.rot.y = 3;
       tff_msg.mode.rot.z = 3;
-      PoseTFToMsg(desi, tff_msg.value);
+      poseTFToMsg(desi, tff_msg.value);
       tff_msg.value.vel.x = first_x - 0.03;
       //tff_msg.value.vel.x = removal_speed;
       node_.publish(arm_controller_ + "/command", tff_msg);
@@ -501,7 +501,7 @@ void PlugInAction::plugMeasurementCB(const tf::MessageNotifier<robot_msgs::PoseS
   if (from_viz_lock_.try_lock())
   {
     //boost::mutex::scoped_lock(from_viz_lock_);
-    tf::PoseStampedMsgToTF(viz_offset_msg, viz_offset_from_viz_);
+    tf::poseStampedMsgToTF(viz_offset_msg, viz_offset_from_viz_);
     mech_offset_from_viz_ = mech_offset;
     updated_from_viz_ = true;
     from_viz_lock_.unlock();
@@ -517,7 +517,7 @@ void PlugInAction::controllerStateCB()
 
   if (from_c_lock_.try_lock())
   {
-    PoseMsgToTF(c_state_msg_.last_pose_meas, pose_from_mech_);
+    poseMsgToTF(c_state_msg_.last_pose_meas, pose_from_mech_);
     from_c_lock_.unlock();
   }
 }
@@ -530,8 +530,8 @@ void PlugInAction::controllerStateCB()
   tff_msg_.header.stamp = msg->header.stamp;
 
   tf::Pose viz_offset;
-  tf::PoseMsgToTF(viz_offset_msg.pose, viz_offset);
-  PoseTFToMsg(viz_offset, state_msg.viz_offset);
+  tf::poseMsgToTF(viz_offset_msg.pose, viz_offset);
+  poseTFToMsg(viz_offset, state_msg.viz_offset);
   double standoff = std::max(MIN_STANDOFF, viz_offset.getOrigin().length()  * 2.5/4.0);
 
   // Computes the offset for movement
@@ -540,7 +540,7 @@ void PlugInAction::controllerStateCB()
   viz_offset_desi.getOrigin().setX(-standoff);
   viz_offset_desi.getOrigin().setY(0.0);
   viz_offset_desi.getOrigin().setZ(0.0);
-  PoseTFToMsg(viz_offset.inverse() * viz_offset_desi, state_msg.viz_error);
+  poseTFToMsg(viz_offset.inverse() * viz_offset_desi, state_msg.viz_error);
   mech_offset_desi_ = viz_offset.inverse() * viz_offset_desi * mech_offset_;
 
   prev_state_ = g_state_;

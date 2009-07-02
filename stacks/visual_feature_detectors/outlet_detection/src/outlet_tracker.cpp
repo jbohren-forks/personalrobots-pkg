@@ -222,7 +222,7 @@ void OutletTracker::publishOutletMarker(const tf::Point* holes)
 
   marker.points.resize(12);
   for (unsigned i = 0; i < 12; ++i) {
-    tf::PointTFToMsg(holes[i], marker.points[i]);
+    tf::pointTFToMsg(holes[i], marker.points[i]);
   }
   
   node_.publish("visualization_marker", marker);
@@ -253,7 +253,7 @@ void OutletTracker::publishRayMarker(const tf::Point &outlet_position)
   marker.color.b = 0.0;
 
   marker.points.resize(2); // first is origin
-  tf::PointTFToMsg(outlet_position, marker.points[1]);
+  tf::pointTFToMsg(outlet_position, marker.points[1]);
 
   node_.publish("visualization_marker", marker);
 }

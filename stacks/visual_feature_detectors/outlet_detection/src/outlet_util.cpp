@@ -191,7 +191,7 @@ bool getWallPoseFromBaseLaser(const PointCloud& pc, const PointStamped& near_poi
 	btQuaternion orientation;
 	rotation.getRotation(orientation);
 	tf::Transform tf_pose(orientation, position);
-	tf::PoseTFToMsg(tf_pose, wall_pose.pose);
+	tf::poseTFToMsg(tf_pose, wall_pose.pose);
 
 	return true;
 }

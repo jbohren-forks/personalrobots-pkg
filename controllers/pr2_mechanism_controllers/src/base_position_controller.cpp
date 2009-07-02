@@ -164,7 +164,7 @@ void BasePositionControllerNode::setPoseCommand(robot_msgs::PoseStamped cmd)
   tf_.transformPose(odom_frame_name_, cmd, pose_odom) ;
 
   tf::Quaternion orientation_odom ;               // Orientation in the odometric frame
-  tf::QuaternionMsgToTF(pose_odom.pose.orientation, orientation_odom) ;
+  tf::quaternionMsgToTF(pose_odom.pose.orientation, orientation_odom) ;
 
   // For convenience, use 1-Letter names for quaternion terms
   const double& w = orientation_odom.w() ;

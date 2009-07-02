@@ -366,8 +366,8 @@ TEST(data, Vector3Conversions)
     btVector3 btv = btVector3(xvalues[i], yvalues[i], zvalues[i]);
     btVector3 btv_out = btVector3(0,0,0);
     robot_msgs::Vector3 msgv;
-    Vector3TFToMsg(btv, msgv);
-    Vector3MsgToTF(msgv, btv_out);
+    vector3TFToMsg(btv, msgv);
+    vector3MsgToTF(msgv, btv_out);
     EXPECT_NEAR(btv.x(), btv_out.x(), epsilon);
     EXPECT_NEAR(btv.y(), btv_out.y(), epsilon);
     EXPECT_NEAR(btv.z(), btv_out.z(), epsilon);
@@ -389,8 +389,8 @@ TEST(data, Vector3StampedConversions)
     Stamped<btVector3> btv = Stamped<btVector3>(btVector3(xvalues[i], yvalues[i], zvalues[i]), ros::Time().fromNSec(1), "no frame");
     Stamped<btVector3> btv_out;
     robot_msgs::Vector3Stamped msgv;
-    Vector3StampedTFToMsg(btv, msgv);
-    Vector3StampedMsgToTF(msgv, btv_out);
+    vector3StampedTFToMsg(btv, msgv);
+    vector3StampedMsgToTF(msgv, btv_out);
     EXPECT_NEAR(btv.x(), btv_out.x(), epsilon);
     EXPECT_NEAR(btv.y(), btv_out.y(), epsilon);
     EXPECT_NEAR(btv.z(), btv_out.z(), epsilon);
@@ -413,8 +413,8 @@ TEST(data, QuaternionConversions)
     btQuaternion btv = btQuaternion(xvalues[i], yvalues[i], zvalues[i]);
     btQuaternion btv_out = btQuaternion(0,0,0);
     robot_msgs::Quaternion msgv;
-    QuaternionTFToMsg(btv, msgv);
-    QuaternionMsgToTF(msgv, btv_out);
+    quaternionTFToMsg(btv, msgv);
+    quaternionMsgToTF(msgv, btv_out);
     EXPECT_NEAR(btv.x(), btv_out.x(), epsilon);
     EXPECT_NEAR(btv.y(), btv_out.y(), epsilon);
     EXPECT_NEAR(btv.z(), btv_out.z(), epsilon);
@@ -437,8 +437,8 @@ TEST(data, QuaternionStampedConversions)
     Stamped<btQuaternion> btv = Stamped<btQuaternion>(btQuaternion(xvalues[i], yvalues[i], zvalues[i]), ros::Time().fromNSec(1), "no frame");
     Stamped<btQuaternion> btv_out;
     robot_msgs::QuaternionStamped msgv;
-    QuaternionStampedTFToMsg(btv, msgv);
-    QuaternionStampedMsgToTF(msgv, btv_out);
+    quaternionStampedTFToMsg(btv, msgv);
+    quaternionStampedMsgToTF(msgv, btv_out);
     EXPECT_NEAR(btv.x(), btv_out.x(), epsilon);
     EXPECT_NEAR(btv.y(), btv_out.y(), epsilon);
     EXPECT_NEAR(btv.z(), btv_out.z(), epsilon);
@@ -464,8 +464,8 @@ TEST(data, TransformConversions)
     btTransform btv = btTransform(btQuaternion(xvalues2[i], yvalues2[i], zvalues2[i]), btVector3(xvalues[i], yvalues[i], zvalues[i]));
     btTransform btv_out;
     robot_msgs::Transform msgv;
-    TransformTFToMsg(btv, msgv);
-    TransformMsgToTF(msgv, btv_out);
+    transformTFToMsg(btv, msgv);
+    transformMsgToTF(msgv, btv_out);
     EXPECT_NEAR(btv.getOrigin().x(), btv_out.getOrigin().x(), epsilon);
     EXPECT_NEAR(btv.getOrigin().y(), btv_out.getOrigin().y(), epsilon);
     EXPECT_NEAR(btv.getOrigin().z(), btv_out.getOrigin().z(), epsilon);
@@ -493,8 +493,8 @@ TEST(data, TransformStampedConversions)
     Stamped<btTransform> btv = Stamped<btTransform>(btTransform(btQuaternion(xvalues2[i], yvalues2[i], zvalues2[i]), btVector3(xvalues[i], yvalues[i], zvalues[i])), ros::Time().fromNSec(1), "no frame");
     Stamped<btTransform> btv_out;
     robot_msgs::TransformStamped msgv;
-    TransformStampedTFToMsg(btv, msgv);
-    TransformStampedMsgToTF(msgv, btv_out);
+    transformStampedTFToMsg(btv, msgv);
+    transformStampedMsgToTF(msgv, btv_out);
     EXPECT_NEAR(btv.getOrigin().x(), btv_out.getOrigin().x(), epsilon);
     EXPECT_NEAR(btv.getOrigin().y(), btv_out.getOrigin().y(), epsilon);
     EXPECT_NEAR(btv.getOrigin().z(), btv_out.getOrigin().z(), epsilon);

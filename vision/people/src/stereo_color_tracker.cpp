@@ -350,7 +350,7 @@ namespace people
       if (on_robot_) {  
 	for (it = current_pos_list_.begin(); it != current_pos_list_.end(); it++) {
 	  tf::Point pt;
-	  tf::PointMsgToTF((*it).second.pos.pos, pt);
+	  tf::pointMsgToTF((*it).second.pos.pos, pt);
 	  tf::Stamped<tf::Point> loc(pt, (*it).second.pos.header.stamp, (*it).second.pos.header.frame_id);
 	  try
 	    {

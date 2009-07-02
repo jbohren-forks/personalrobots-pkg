@@ -206,7 +206,7 @@ public:
     m_currentPos.pose.position.x = x;
     m_currentPos.pose.position.y = y;
     // Leave z as zero
-    tf::QuaternionTFToMsg(tf::Quaternion(yaw, 0.0, 0.0),
+    tf::quaternionTFToMsg(tf::Quaternion(yaw, 0.0, 0.0),
                           m_currentPos.pose.orientation);
     // Leave covariance as zero
     publish("amcl_pose", m_currentPos);

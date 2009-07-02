@@ -99,7 +99,7 @@ robot_actions::ResultStatus GraspHandleAction::execute(const door_msgs::Door& go
   gripper_pose.setOrigin( Vector3(handle(0) + (normal(0) * -0.15), handle(1) + (normal(1) * -0.15), handle(2) + (normal(2) * -0.15)));
   gripper_pose.setRotation( Quaternion(getVectorAngle(x_axis, normal), 0, M_PI/2.0) ); 
   gripper_pose.stamp_ = Time::now();
-  PoseStampedTFToMsg(gripper_pose, req_moveto.pose);
+  poseStampedTFToMsg(gripper_pose, req_moveto.pose);
 
   ROS_INFO("GraspHandleAction: move in front of handle");
   if (!ros::service::call("r_arm_constraint_cartesian_trajectory_controller/move_to", req_moveto, res_moveto)){
@@ -119,7 +119,7 @@ robot_actions::ResultStatus GraspHandleAction::execute(const door_msgs::Door& go
   gripper_pose.setOrigin( Vector3(handle(0) + (normal(0) * 0.05 ), handle(1) + (normal(1) * 0.05),  handle(2) + (normal(2) * 0.05)));
   gripper_pose.setRotation( Quaternion(getVectorAngle(x_axis, normal), 0, M_PI/2.0) ); 
   gripper_pose.stamp_ = Time::now();
-  PoseStampedTFToMsg(gripper_pose, req_moveto.pose);
+  poseStampedTFToMsg(gripper_pose, req_moveto.pose);
   //req_moveto.tolerance.vel.x = 0.1;
   //req_moveto.tolerance.vel.y = 0.1;
   //req_moveto.tolerance.vel.z = 0.1;

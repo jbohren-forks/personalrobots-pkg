@@ -529,19 +529,19 @@ void PlanarObjectDetector::publishObjectMarker(float w,float h)
 
   tf::Point pt(0,0,0);
   robot_msgs::Point pt_msg;
-  tf::PointTFToMsg(pt, pt_msg);
+  tf::pointTFToMsg(pt, pt_msg);
   marker.points.push_back(pt_msg);
 
   tf::Point pt2(1,0,0);
-  tf::PointTFToMsg(pt2, pt_msg);
+  tf::pointTFToMsg(pt2, pt_msg);
   marker.points.push_back(pt_msg);
 
   tf::Point pt3(1,1,0);
-  tf::PointTFToMsg(pt3, pt_msg);
+  tf::pointTFToMsg(pt3, pt_msg);
   marker.points.push_back(pt_msg);
 
   tf::Point pt4(0,1,0);
-  tf::PointTFToMsg(pt4, pt_msg);
+  tf::pointTFToMsg(pt4, pt_msg);
   marker.points.push_back(pt_msg);
 
   
@@ -581,19 +581,19 @@ void PlanarObjectDetector::publishObjectMarker2(float x,float y,float z)
 
   tf::Point pt(x+0,y+0,z+0);
   robot_msgs::Point pt_msg;
-  tf::PointTFToMsg(pt, pt_msg);
+  tf::pointTFToMsg(pt, pt_msg);
   marker.points.push_back(pt_msg);
 
   tf::Point pt2(x+1,y+0,z+0);
-  tf::PointTFToMsg(pt2, pt_msg);
+  tf::pointTFToMsg(pt2, pt_msg);
   marker.points.push_back(pt_msg);
 
   tf::Point pt3(x+1,y+1,z+0);
-  tf::PointTFToMsg(pt3, pt_msg);
+  tf::pointTFToMsg(pt3, pt_msg);
   marker.points.push_back(pt_msg);
 
   tf::Point pt4(0,1,0);
-  tf::PointTFToMsg(pt4, pt_msg);
+  tf::pointTFToMsg(pt4, pt_msg);
   marker.points.push_back(pt_msg);
 
   

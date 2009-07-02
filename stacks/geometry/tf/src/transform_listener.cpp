@@ -109,9 +109,9 @@ void TransformListener::transformQuaternion(const std::string& target_frame,
     robot_msgs::QuaternionStamped& msg_out) const
 {
   Stamped<Quaternion> pin, pout;
-  QuaternionStampedMsgToTF(msg_in, pin);
+  quaternionStampedMsgToTF(msg_in, pin);
   transformQuaternion(target_frame, pin, pout);
-  QuaternionStampedTFToMsg(pout, msg_out);
+  quaternionStampedTFToMsg(pout, msg_out);
 }
 
 void TransformListener::transformVector(const std::string& target_frame,
@@ -119,9 +119,9 @@ void TransformListener::transformVector(const std::string& target_frame,
     robot_msgs::Vector3Stamped& msg_out) const
 {
   Stamped<Vector3> pin, pout;
-  Vector3StampedMsgToTF(msg_in, pin);
+  vector3StampedMsgToTF(msg_in, pin);
   transformVector(target_frame, pin, pout);
-  Vector3StampedTFToMsg(pout, msg_out);
+  vector3StampedTFToMsg(pout, msg_out);
 }
 
 void TransformListener::transformPoint(const std::string& target_frame,
@@ -129,9 +129,9 @@ void TransformListener::transformPoint(const std::string& target_frame,
     robot_msgs::PointStamped& msg_out) const
 {
   Stamped<Point> pin, pout;
-  PointStampedMsgToTF(msg_in, pin);
+  pointStampedMsgToTF(msg_in, pin);
   transformPoint(target_frame, pin, pout);
-  PointStampedTFToMsg(pout, msg_out);
+  pointStampedTFToMsg(pout, msg_out);
 }
 
 void TransformListener::transformPose(const std::string& target_frame,
@@ -139,18 +139,18 @@ void TransformListener::transformPose(const std::string& target_frame,
     robot_msgs::PoseStamped& msg_out) const
 {
   Stamped<Pose> pin, pout;
-  PoseStampedMsgToTF(msg_in, pin);
+  poseStampedMsgToTF(msg_in, pin);
   transformPose(target_frame, pin, pout);
-  PoseStampedTFToMsg(pout, msg_out);
+  poseStampedTFToMsg(pout, msg_out);
 }
 void TransformListener::transformQuaternion(const std::string& target_frame, const ros::Time& target_time,
     const robot_msgs::QuaternionStamped& msg_in,
     const std::string& fixed_frame, robot_msgs::QuaternionStamped& msg_out) const
 {
   Stamped<Quaternion> pin, pout;
-  QuaternionStampedMsgToTF(msg_in, pin);
+  quaternionStampedMsgToTF(msg_in, pin);
   transformQuaternion(target_frame, target_time, pin, fixed_frame, pout);
-  QuaternionStampedTFToMsg(pout, msg_out);
+  quaternionStampedTFToMsg(pout, msg_out);
 }
 
 void TransformListener::transformVector(const std::string& target_frame, const ros::Time& target_time,
@@ -158,9 +158,9 @@ void TransformListener::transformVector(const std::string& target_frame, const r
     const std::string& fixed_frame, robot_msgs::Vector3Stamped& msg_out) const
 {
   Stamped<Vector3> pin, pout;
-  Vector3StampedMsgToTF(msg_in, pin);
+  vector3StampedMsgToTF(msg_in, pin);
   transformVector(target_frame, target_time, pin, fixed_frame, pout);
-  Vector3StampedTFToMsg(pout, msg_out);
+  vector3StampedTFToMsg(pout, msg_out);
 }
 
 void TransformListener::transformPoint(const std::string& target_frame, const ros::Time& target_time,
@@ -168,9 +168,9 @@ void TransformListener::transformPoint(const std::string& target_frame, const ro
     const std::string& fixed_frame, robot_msgs::PointStamped& msg_out) const
 {
   Stamped<Point> pin, pout;
-  PointStampedMsgToTF(msg_in, pin);
+  pointStampedMsgToTF(msg_in, pin);
   transformPoint(target_frame, target_time, pin, fixed_frame, pout);
-  PointStampedTFToMsg(pout, msg_out);
+  pointStampedTFToMsg(pout, msg_out);
 }
 
 void TransformListener::transformPose(const std::string& target_frame, const ros::Time& target_time,
@@ -178,9 +178,9 @@ void TransformListener::transformPose(const std::string& target_frame, const ros
     const std::string& fixed_frame, robot_msgs::PoseStamped& msg_out) const
 {
   Stamped<Pose> pin, pout;
-  PoseStampedMsgToTF(msg_in, pin);
+  poseStampedMsgToTF(msg_in, pin);
   transformPose(target_frame, target_time, pin, fixed_frame, pout);
-  PoseStampedTFToMsg(pout, msg_out);
+  poseStampedTFToMsg(pout, msg_out);
 }
 
 void TransformListener::transformPointCloud(const std::string & target_frame, const robot_msgs::PointCloud & cloudIn, robot_msgs::PointCloud & cloudOut) const
@@ -259,7 +259,7 @@ void TransformListener::subscription_callback(const tf::tfMessageConstPtr& msg)
   for (unsigned int i = 0; i < msg_in.transforms.size(); i++)
   {
     Stamped<Transform> trans;
-    TransformStampedMsgToTF(msg_in.transforms[i], trans);
+    transformStampedMsgToTF(msg_in.transforms[i], trans);
     try
     {
       std::map<std::string, std::string>* msg_header_map = msg_in.__connection_header.get();

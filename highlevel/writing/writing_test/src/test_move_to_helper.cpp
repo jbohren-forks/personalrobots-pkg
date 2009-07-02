@@ -113,14 +113,14 @@ int
 
   // Determines the desired base position
   //tf::Pose helper_pose;
-  //tf::PoseMsgToTF(find_helper_pose_msg.pose, helper_pose);
+  //tf::poseMsgToTF(find_helper_pose_msg.pose, helper_pose);
 
   //tf::Pose desi_offset(tf::Quaternion(0,0,0), tf::Vector3(-1.5, 0.0, 0.0));
   //tf::Pose target = coarse_outlet_pose * desi_offset;
 
   //robot_msgs::PoseStamped target_msg;
   //target_msg.header.frame_id = find_helper_pose_msg.header.frame_id;
-  //tf::PoseTFToMsg(target, target_msg.pose);
+  //tf::poseTFToMsg(target, target_msg.pose);
 
   // Executes move base
   if (start_tilt_laser.execute(empty, empty, Duration(20.0)) != robot_actions::SUCCESS) return -1;

@@ -220,7 +220,7 @@ public:
     if (setface) {
 
       tf::Point pt;
-      tf::PointMsgToTF(init_pos_.pos, pt);
+      tf::pointMsgToTF(init_pos_.pos, pt);
       tf::Stamped<tf::Point> loc(pt, init_pos_.header.stamp, init_pos_.header.frame_id);
       try
       {

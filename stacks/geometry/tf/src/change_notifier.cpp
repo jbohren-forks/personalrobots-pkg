@@ -77,7 +77,7 @@ int main(int argc, char** argv)
           pose_out.getRotation().angle(last_sent_pose.getRotation()) > angular_update_distance )
       {
         last_sent_pose = pose_out;
-        tf::PoseStampedTFToMsg(pose_out, msg);
+        tf::poseStampedTFToMsg(pose_out, msg);
         node.publish(topic_name, msg);
       }
       

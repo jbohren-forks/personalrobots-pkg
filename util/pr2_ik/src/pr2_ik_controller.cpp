@@ -90,7 +90,7 @@ namespace pr2_ik {
     pose_stamped_msg.pose = pose_msg_in.pose;
     pose_stamped_msg.header = pose_msg_in.header;
 
-    PoseStampedMsgToTF(pose_stamped_msg, pose_stamped);
+    poseStampedMsgToTF(pose_stamped_msg, pose_stamped);
     ROS_DEBUG("Converted pose command to tf");
 
     // convert to reference frame of root link of the chain

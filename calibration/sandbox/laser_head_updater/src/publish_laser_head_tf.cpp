@@ -159,25 +159,25 @@ public:
     // Laser Chain
     msg.transforms[0].parent_id = "torso_lift_link" ;
     msg.transforms[0].header.frame_id = "laser_tilt_mount_link_cal" ;
-    tf::TransformTFToMsg(laser_initial_T_*laser_joint_T, msg.transforms[0].transform) ;
+    tf::transformTFToMsg(laser_initial_T_*laser_joint_T, msg.transforms[0].transform) ;
 
     msg.transforms[1].parent_id = "laser_tilt_mount_link_cal" ;
     msg.transforms[1].header.frame_id = "laser_tilt_link_cal" ;
-    tf::TransformTFToMsg(laser_final_T_, msg.transforms[1].transform) ;
+    tf::transformTFToMsg(laser_final_T_, msg.transforms[1].transform) ;
 
     // Head Chain
     msg.transforms[2].parent_id = "torso_lift_link" ;
     msg.transforms[2].header.frame_id = "head_pan_link_cal" ;
-    tf::TransformTFToMsg(head_initial_T_*pan_joint_T, msg.transforms[2].transform) ;
+    tf::transformTFToMsg(head_initial_T_*pan_joint_T, msg.transforms[2].transform) ;
 
     msg.transforms[3].parent_id = "head_pan_link_cal" ;
     msg.transforms[3].header.frame_id = "head_tilt_link_cal" ;
-    //tf::TransformTFToMsg(after_pan_T_*tilt_joint_T, msg.transforms[3].transform) ;
-    tf::TransformTFToMsg(after_pan_T_*tilt_joint_T, msg.transforms[3].transform) ;
+    //tf::transformTFToMsg(after_pan_T_*tilt_joint_T, msg.transforms[3].transform) ;
+    tf::transformTFToMsg(after_pan_T_*tilt_joint_T, msg.transforms[3].transform) ;
 
     msg.transforms[4].parent_id = "head_tilt_link_cal" ;
     msg.transforms[4].header.frame_id = "stereo_optical_frame_cal" ;
-    tf::TransformTFToMsg(after_tilt_T_, msg.transforms[4].transform) ;
+    tf::transformTFToMsg(after_tilt_T_, msg.transforms[4].transform) ;
 
     tf_pub_.publish(msg) ;
     //printf("done!\n") ;

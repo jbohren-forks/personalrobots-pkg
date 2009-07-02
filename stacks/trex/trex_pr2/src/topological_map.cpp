@@ -1012,7 +1012,7 @@ TopologicalMapAdapter::TopologicalMapAdapter(std::istream& in, const std::string
     double dx = outlet_info.x - approach_pose.position.x;
     double dy = outlet_info.y - approach_pose.position.y;
     double heading = atan2(dy, dx);
-    tf::QuaternionTFToMsg (tf::Quaternion(heading, 0.0, 0.0), approach_pose.orientation);
+    tf::quaternionTFToMsg (tf::Quaternion(heading, 0.0, 0.0), approach_pose.orientation);
   }
 
   /**
@@ -1032,7 +1032,7 @@ TopologicalMapAdapter::TopologicalMapAdapter(std::istream& in, const std::string
     orientation.x = x - p.x;
     orientation.y = y - p.y;
     orientation.z = 0;
-    tf::QuaternionTFToMsg(tf::Quaternion(atan2(orientation.y,orientation.x), 0.0, 0.0), approach_pose.orientation);
+    tf::quaternionTFToMsg(tf::Quaternion(atan2(orientation.y,orientation.x), 0.0, 0.0), approach_pose.orientation);
   }
 
   void TopologicalMapAdapter::observeOutletBlocked(unsigned int outlet_id){
@@ -1195,8 +1195,8 @@ robot_msgs::Pose RotatePose180(robot_msgs::Pose input){
   robot_msgs::Pose output;
   output.position = input.position;
   tf::Quaternion orientation;
-  tf::QuaternionMsgToTF(input.orientation, orientation);
-  tf::QuaternionTFToMsg(tf::Quaternion(M_PI, 0, 0) * orientation, output.orientation);
+  tf::quaternionMsgToTF(input.orientation, orientation);
+  tf::quaternionTFToMsg(tf::Quaternion(M_PI, 0, 0) * orientation, output.orientation);
   return output;
 }
 

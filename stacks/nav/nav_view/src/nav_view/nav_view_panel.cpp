@@ -443,7 +443,7 @@ void NavViewPanel::createObjectFromPolyLine( Ogre::ManualObject*& object, const 
     for( size_t i=0; i < num_points; ++i)
     {
       tf::Stamped<tf::Point> point;
-      tf::PointMsgToTF(path.points[i], point);
+      tf::pointMsgToTF(path.points[i], point);
       point.frame_id_ = path.header.frame_id;
       point.stamp_ = path.header.stamp;
 
@@ -456,7 +456,7 @@ void NavViewPanel::createObjectFromPolyLine( Ogre::ManualObject*& object, const 
     if ( loop )
     {
       tf::Stamped<tf::Point> point;
-      tf::PointMsgToTF(path.points[0], point);
+      tf::pointMsgToTF(path.points[0], point);
       point.frame_id_ = path.header.frame_id;
       point.stamp_ = path.header.stamp;
 
@@ -496,7 +496,7 @@ void NavViewPanel::incomingParticleCloud(const nav_msgs::ParticleCloud::ConstPtr
   {
     Ogre::Vector3 pos( msg->particles[i].position.x, msg->particles[i].position.y, msg->particles[i].position.z );
     tf::Quaternion orientation;
-    tf::QuaternionMsgToTF(msg->particles[i].orientation, orientation);
+    tf::quaternionMsgToTF(msg->particles[i].orientation, orientation);
     double yaw, pitch, roll;
     btMatrix3x3(orientation).getEulerZYX(yaw, pitch, roll);
     Ogre::Quaternion orient( Ogre::Quaternion( Ogre::Radian( yaw ), Ogre::Vector3::UNIT_Z ) );

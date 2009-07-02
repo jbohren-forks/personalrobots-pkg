@@ -144,7 +144,7 @@ int
 
   // approach door
   robot_msgs::PoseStamped goal_msg;
-  tf::PoseStampedTFToMsg(getRobotPose(door, -0.6), goal_msg);
+  tf::poseStampedTFToMsg(getRobotPose(door, -0.6), goal_msg);
   cout << "move to pose " << goal_msg.pose.position.x << ", " << goal_msg.pose.position.y << ", "<< goal_msg.pose.position.z << endl;
   switchlist.start_controllers.clear();  switchlist.stop_controllers.clear();
   if (switch_controllers.execute(switchlist, empty, timeout_short) != robot_actions::SUCCESS) return -1;
@@ -258,7 +258,7 @@ int
     tf::Stamped<tf::Pose> handle_pose = getHandlePose(tmp_door,-1);
     robot_msgs::PoseStamped handle_msg;
     handle_pose.stamp_ = ros::Time::now();
-    PoseStampedTFToMsg(handle_pose, handle_msg);
+    poseStampedTFToMsg(handle_pose, handle_msg);
 
     int32_t feedback_move_arm;
     pr2_robot_actions::MoveArmGoal goal_move_arm;

@@ -188,7 +188,7 @@ void CartesianPoseController::update()
       if (state_pose_publisher_->trylock()){
 	Pose tmp;
 	frameToPose(pose_meas_, tmp);
-	PoseStampedTFToMsg(Stamped<Pose>(tmp, ros::Time::now(), root_name_), state_pose_publisher_->msg_);
+	poseStampedTFToMsg(Stamped<Pose>(tmp, ros::Time::now(), root_name_), state_pose_publisher_->msg_);
         state_pose_publisher_->unlockAndPublish();
       }
     }
@@ -213,7 +213,7 @@ void CartesianPoseController::command(const tf::MessageNotifier<robot_msgs::Pose
 {
   // convert message to transform
   Stamped<Pose> pose_stamped;
-  PoseStampedMsgToTF(*pose_msg, pose_stamped);
+  poseStampedMsgToTF(*pose_msg, pose_stamped);
 
   // convert to reference frame of root link of the controller chain
   tf_.transformPose(root_name_, pose_stamped, pose_stamped);

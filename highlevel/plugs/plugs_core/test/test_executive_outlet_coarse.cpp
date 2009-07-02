@@ -73,13 +73,13 @@ robot_msgs::Pose transformOutletPose(robot_msgs::Pose outletPose, float value)
     tf::Pose tf_pose;
     robot_msgs::Pose final_pose;
 
-    tf::PoseMsgToTF(outletPose,tf_pose);
+    tf::poseMsgToTF(outletPose,tf_pose);
     tf::Point point(-value,0,0);
     tf::Point new_origin = tf_pose*point;
 
     tf_pose.setOrigin(new_origin);
 
-    tf::PoseTFToMsg(tf_pose,final_pose);
+    tf::poseTFToMsg(tf_pose,final_pose);
 
     return final_pose;
 }

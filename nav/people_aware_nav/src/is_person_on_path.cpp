@@ -154,7 +154,7 @@ public:
     // Convert the path and the person to the current time. If either is stale (too old for TF), mark them as unusable and return false.
     (*current_time) = (person_pos_.header.stamp > path_.header.stamp) ? person_pos_.header.stamp : path_.header.stamp;
     tf::Point pt;
-    tf::PointMsgToTF(person_pos_.pos, pt);
+    tf::pointMsgToTF(person_pos_.pos, pt);
     tf::Stamped<tf::Point> t_person_tf_stamped_point(pt, person_pos_.header.stamp, person_pos_.header.frame_id);
     try {   
       tf_->transformPoint(fixed_frame_, *current_time, t_person_tf_stamped_point, fixed_frame_, t_person_tf_stamped_point);

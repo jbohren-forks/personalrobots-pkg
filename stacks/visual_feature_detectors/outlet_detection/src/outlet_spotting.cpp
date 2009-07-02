@@ -631,7 +631,7 @@ private:
 
         tf::Pose tf_pose;
 
-        tf::PoseMsgToTF(pose.pose,tf_pose);
+        tf::poseMsgToTF(pose.pose,tf_pose);
         tf::Point point(-1,0,0);
         tf::Point normal = tf_pose*point;
 
@@ -967,7 +967,7 @@ private:
         btQuaternion orientation;
         rotation.getRotation(orientation);
         tf::Transform outlet_pose(orientation, position);
-        tf::PoseTFToMsg(outlet_pose, temp_pose.pose);
+        tf::poseTFToMsg(outlet_pose, temp_pose.pose);
 
 
 

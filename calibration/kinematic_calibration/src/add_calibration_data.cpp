@@ -123,15 +123,15 @@ private:
     list< pair<string, double> > calib_params ;
 
     tf::Transform stereo_final_T ;
-    tf::TransformMsgToTF(robot_cal_.stereo_final, stereo_final_T) ;
+    tf::transformMsgToTF(robot_cal_.stereo_final, stereo_final_T) ;
     getCamCorrection(calib_params, robot_, stereo_final_T, "stereo") ;
 
     tf::Transform high_res_final_T ;
-    tf::TransformMsgToTF(robot_cal_.high_res_final, high_res_final_T) ;
+    tf::transformMsgToTF(robot_cal_.high_res_final, high_res_final_T) ;
     getCamCorrection(calib_params, robot_, high_res_final_T, "high_res") ;
 
     tf::Transform head_initial_T ;
-    tf::TransformMsgToTF(robot_cal_.head_initial, head_initial_T) ;
+    tf::transformMsgToTF(robot_cal_.head_initial, head_initial_T) ;
     getHeadInitialCorrection(calib_params, robot_, head_initial_T) ;
 
 

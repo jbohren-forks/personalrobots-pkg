@@ -175,14 +175,14 @@ int
 
   // Determines the desired base position
   tf::Pose coarse_outlet_pose;
-  tf::PoseMsgToTF(coarse_outlet_pose_msg.pose, coarse_outlet_pose);
+  tf::poseMsgToTF(coarse_outlet_pose_msg.pose, coarse_outlet_pose);
 
   tf::Pose desi_offset(tf::Quaternion(0,0,0), tf::Vector3(-0.5, 0.25, 0.0));
   tf::Pose target = coarse_outlet_pose * desi_offset;
 
   robot_msgs::PoseStamped target_msg;
   target_msg.header.frame_id = coarse_outlet_pose_msg.header.frame_id;
-  tf::PoseTFToMsg(target, target_msg.pose);
+  tf::poseTFToMsg(target, target_msg.pose);
 
   // Executes move base
   if (move_base_local.execute(target_msg, target_msg, Duration(500.0)) != robot_actions::SUCCESS) return -50;

@@ -344,7 +344,7 @@ namespace estimation
       return;
     }
     transformer_.lookupTransform("base_footprint","odom", ros::Time(), tmp);
-    PoseTFToMsg(tmp, estimate.pose);
+    poseTFToMsg(tmp, estimate.pose);
 
     // header
     estimate.header.stamp = tmp.stamp_;

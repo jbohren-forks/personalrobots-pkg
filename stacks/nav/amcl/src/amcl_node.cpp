@@ -730,7 +730,7 @@ AmclNode::laserReceived(const tf::MessageNotifier<sensor_msgs::LaserScan>::Messa
     cloud_msg.set_particles_size(set->sample_count);
     for(int i=0;i<set->sample_count;i++)
     {
-      tf::PoseTFToMsg(tf::Pose(btQuaternion(set->samples[i].pose.v[2], 0, 0),
+      tf::poseTFToMsg(tf::Pose(btQuaternion(set->samples[i].pose.v[2], 0, 0),
                                btVector3(set->samples[i].pose.v[0],
                                          set->samples[i].pose.v[1], 0)),
                       cloud_msg.particles[i]);
@@ -789,7 +789,7 @@ AmclNode::laserReceived(const tf::MessageNotifier<sensor_msgs::LaserScan>::Messa
       // Copy in the pose
       p.pose.position.x = hyps[max_weight_hyp].pf_pose_mean.v[0];
       p.pose.position.y = hyps[max_weight_hyp].pf_pose_mean.v[1];
-      tf::QuaternionTFToMsg(tf::Quaternion(hyps[max_weight_hyp].pf_pose_mean.v[2], 0.0, 0.0),
+      tf::quaternionTFToMsg(tf::Quaternion(hyps[max_weight_hyp].pf_pose_mean.v[2], 0.0, 0.0),
                             p.pose.orientation);
       // Copy in the covariance, converting from 3-D to 6-D
       pf_sample_set_t* set = pf_->sets + pf_->current_set;
@@ -979,7 +979,7 @@ AmclNode::initialPoseReceived()
   }
 
   tf::Pose pose_old, pose_new;
-  tf::PoseMsgToTF(initial_pose_.pose, pose_old);
+  tf::poseMsgToTF(initial_pose_.pose, pose_old);
   pose_new = tx_odom.inverse() * pose_old;
 
   ROS_INFO("Setting pose (%.6f): %.3f %.3f %.3f",

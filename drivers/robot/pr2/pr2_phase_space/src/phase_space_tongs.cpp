@@ -109,12 +109,12 @@ public :
       if (snapshot_.bodies[i].id == left_id_)
       {
         left_found = true ;
-        tf::TransformMsgToTF(snapshot_.bodies[i].pose, left) ;
+        tf::transformMsgToTF(snapshot_.bodies[i].pose, left) ;
       }
       if (snapshot_.bodies[i].id == right_id_)
       {
         right_found = true ;
-        tf::TransformMsgToTF(snapshot_.bodies[i].pose, right) ;
+        tf::transformMsgToTF(snapshot_.bodies[i].pose, right) ;
       }
     }
 
@@ -135,7 +135,7 @@ public :
 
       tf::Stamped<tf::Pose> tf_pose(left, snapshot_.header.stamp, frame_id_) ;
       robot_msgs::PoseStamped pose_msg ;
-      tf::PoseStampedTFToMsg(tf_pose, pose_msg) ;
+      tf::poseStampedTFToMsg(tf_pose, pose_msg) ;
 
       node_->publish("tong_spacing", tong_spacing) ;
 

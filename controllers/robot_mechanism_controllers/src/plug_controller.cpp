@@ -417,7 +417,7 @@ void PlugControllerNode::update()
     {
       tf::Transform transform;
       tf::TransformKDLToTF(controller_.endeffector_frame_, transform);
-      tf::TransformTFToMsg(transform, current_frame_publisher_->msg_);
+      tf::transformTFToMsg(transform, current_frame_publisher_->msg_);
       current_frame_publisher_->unlockAndPublish() ;
      }
     if (internal_state_publisher_->trylock())
@@ -449,7 +449,7 @@ void PlugControllerNode::outletPose()
     return;
   }
   tf::Pose outlet;
-  tf::PoseMsgToTF(outlet_in_root_.pose, outlet);
+  tf::poseMsgToTF(outlet_in_root_.pose, outlet);
 
   controller_.outlet_pt_(0) = outlet.getOrigin().x();
   controller_.outlet_pt_(1) = outlet.getOrigin().y();
@@ -490,7 +490,7 @@ bool PlugControllerNode::setToolFrame(robot_srvs::SetPoseStamped::Request &req,
   }
 
   tf::Transform tool_offset;
-  tf::PoseMsgToTF(tool_offset_msg.pose, tool_offset);
+  tf::poseMsgToTF(tool_offset_msg.pose, tool_offset);
   controller_.setToolOffset(tool_offset);
   return true;
 }

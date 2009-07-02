@@ -1070,9 +1070,9 @@ void Transformer::transformTransform(const std::string& target_frame,
                                   robot_msgs::TransformStamped& msg_out)
 {
   Stamped<Transform> pin, pout;
-  TransformStampedMsgToTF(msg_in, pin);
+  transformStampedMsgToTF(msg_in, pin);
   transformTransform(target_frame, pin, pout);
-  TransformStampedTFToMsg(pout, msg_out);
+  transformStampedTFToMsg(pout, msg_out);
 }
 
 */

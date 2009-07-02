@@ -84,7 +84,7 @@ void plug_cb(const tf::MessageNotifier<robot_msgs::PoseStamped>::MessagePtr &msg
   }
 
   tf::Pose viz_offset;
-  tf::PoseMsgToTF(viz_offset_msg.pose, viz_offset);
+  tf::poseMsgToTF(viz_offset_msg.pose, viz_offset);
 
   static double last_standoff = 1.0e10;
   double standoff = std::max(MIN_STANDOFF, viz_offset.getOrigin().length()  * 2.5/4.0);

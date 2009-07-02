@@ -157,7 +157,7 @@ int
 
   // approach door
   robot_msgs::PoseStamped goal_msg;
-  tf::PoseStampedTFToMsg(getRobotPose(res_detect_door, -0.6), goal_msg);
+  tf::poseStampedTFToMsg(getRobotPose(res_detect_door, -0.6), goal_msg);
   cout << "move to pose " << goal_msg.pose.position.x << ", " << goal_msg.pose.position.y << ", "<< goal_msg.pose.position.z << endl;
   switchlist.start_controllers.clear();  switchlist.stop_controllers.clear();
   if (switch_controllers.execute(switchlist, empty, timeout_short) != robot_actions::SUCCESS) return -1;

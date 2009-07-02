@@ -17,7 +17,7 @@ public:
   : ros::Node("wavefront_cli"), state(WF_IDLE)
   {
     tf::Stamped<tf::Pose> p = tf::Stamped<tf::Pose>(tf::Pose(tf::Quaternion(th, 0.0, 0.0), tf::Point(x, y, 0.0)), ros::Time::now(), "map");
-    tf::PoseStampedTFToMsg(p, wf_goal);
+    tf::poseStampedTFToMsg(p, wf_goal);
 
     subscribe("state", wf_state, &WavefrontCLI::state_cb, 1);
     advertise("goal", wf_goal, &WavefrontCLI::goal_subscriber_callback, 1);

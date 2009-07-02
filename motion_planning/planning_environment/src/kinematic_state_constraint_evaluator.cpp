@@ -122,7 +122,7 @@ bool planning_environment::PoseConstraintEvaluator::use(const planning_models::K
     m_pc   = pc;
 
     tf::Pose pose;
-    tf::PoseMsgToTF(m_pc.pose.pose, pose);
+    tf::poseMsgToTF(m_pc.pose.pose, pose);
     pose.getBasis().getEulerYPR(m_yaw, m_pitch, m_roll);
     m_x = pose.getOrigin().x();
     m_y = pose.getOrigin().y();

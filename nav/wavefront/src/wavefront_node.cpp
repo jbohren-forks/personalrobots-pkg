@@ -385,7 +385,7 @@ WavefrontNode::goalReceived()
   this->enable = 1;
 
   if(this->enable){
-    tf::PoseStampedMsgToTF(goalMsg, this->goalPose_);
+    tf::poseStampedMsgToTF(goalMsg, this->goalPose_);
 
 
     // Populate goal data
@@ -413,7 +413,7 @@ WavefrontNode::goalReceived()
   }
 
   robot_msgs::PoseStamped pose_msg;
-  tf::PoseStampedTFToMsg(global_pose_, pose_msg);
+  tf::poseStampedTFToMsg(global_pose_, pose_msg);
 
   // Fill out and publish response
   this->pstate.feedback = pose_msg;
@@ -760,9 +760,9 @@ WavefrontNode::doOneCycle()
     this->pstate.status.value = this->pstate.status.SUCCESS;
 
   robot_msgs::PoseStamped pose_out;
-  tf::PoseStampedTFToMsg(global_pose_, pose_out);
+  tf::poseStampedTFToMsg(global_pose_, pose_out);
   this->pstate.feedback = pose_out;
-  tf::PoseStampedTFToMsg(this->goalPose_, pose_out);
+  tf::poseStampedTFToMsg(this->goalPose_, pose_out);
   this->pstate.goal = pose_out;
 
   publish("state",this->pstate);

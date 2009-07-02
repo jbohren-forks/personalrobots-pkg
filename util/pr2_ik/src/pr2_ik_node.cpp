@@ -112,7 +112,7 @@ namespace pr2_ik {
       }
 
     ROS_DEBUG("Got pose command");
-    PoseStampedMsgToTF(request.data.pose_stamped, pose_stamped);
+    poseStampedMsgToTF(request.data.pose_stamped, pose_stamped);
     ROS_DEBUG("Converted pose command to tf");
     // convert to reference frame of root link of the chain
 

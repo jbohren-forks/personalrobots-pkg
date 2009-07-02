@@ -138,7 +138,7 @@ public :
 
         // Define our starting frame
         tf::Quaternion rot_phasespace ;
-        tf::QuaternionMsgToTF(cur_body.pose.rotation, rot_phasespace) ;
+        tf::quaternionMsgToTF(cur_body.pose.rotation, rot_phasespace) ;
         tf::Point trans_phasespace(cur_body.pose.translation.x*scale_trans_[0],
                                    cur_body.pose.translation.y*scale_trans_[1],
                                    cur_body.pose.translation.z*scale_trans_[2]) ;
@@ -152,8 +152,8 @@ public :
         pose_msg.header.stamp = ros::Time() ;
         pose_msg.header.frame_id =  frame_id_ ;
 
-        tf::PointTFToMsg(pose_result.getOrigin(), pose_msg.pose.position) ;
-        tf::QuaternionTFToMsg(pose_result.getRotation(), pose_msg.pose.orientation) ;
+        tf::pointTFToMsg(pose_result.getOrigin(), pose_msg.pose.position) ;
+        tf::quaternionTFToMsg(pose_result.getRotation(), pose_msg.pose.orientation) ;
 	pose_msg.header.stamp = ros::Time::now() - ros::Duration(.5) ;
         publish("cmd", pose_msg) ;
 

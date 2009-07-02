@@ -441,7 +441,7 @@ void SBPLDoorPlanner::dispatchControl(const manipulation_msgs::JointTraj &path, 
 
     robot_msgs::PoseStamped gripper_msg;
     gripper_pose.stamp_ = ros::Time::now();
-    PoseStampedTFToMsg(gripper_pose, gripper_msg);
+    poseStampedTFToMsg(gripper_pose, gripper_msg);
 
     pr2_ik::PoseCmd cmd;
     cmd.pose = gripper_msg.pose;
@@ -518,7 +518,7 @@ bool SBPLDoorPlanner::checkArmDoorCollide(const manipulation_msgs::JointTrajPoin
   robot_msgs::PoseStamped handle_msg;
   robot_msgs::Point32 handle_position;
   global_handle_position_tf.stamp_ = ros::Time::now();
-  PoseStampedTFToMsg(global_handle_position_tf, handle_msg);
+  poseStampedTFToMsg(global_handle_position_tf, handle_msg);
   //get shoulder in global frame
   global_shoulder_position.x = waypoint.positions[0] + (door_env_.shoulder.x*cos(waypoint.positions[2])-door_env_.shoulder.y*sin(waypoint.positions[2]));
   global_shoulder_position.y = waypoint.positions[1] + (door_env_.shoulder.x*sin(waypoint.positions[2])+door_env_.shoulder.y*cos(waypoint.positions[2]));
@@ -585,7 +585,7 @@ void SBPLDoorPlanner::publishGripper(const double &angle)
   double yaw = getDoorAngle(result);
   tf::Stamped<tf::Pose> gripper_pose = getGlobalHandlePosition(door_env_.door,angle);
   gripper_pose.stamp_ = ros::Time::now();
-  PoseStampedTFToMsg(gripper_pose, gripper_msg);
+  poseStampedTFToMsg(gripper_pose, gripper_msg);
   visualization_msgs::Marker marker;
   marker.header.frame_id = gripper_msg.header.frame_id;
   marker.header.stamp = ros::Time();

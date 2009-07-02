@@ -149,7 +149,7 @@ void PlugInAction::reset()
   g_stopped_forcing_ = ros::Time::now();
 }
 
-void PoseTFToMsg(const tf::Pose &p, robot_msgs::Twist &t)
+void poseTFToMsg(const tf::Pose &p, robot_msgs::Twist &t)
 {
   t.vel.x = p.getOrigin().x();
   t.vel.y = p.getOrigin().y();
@@ -187,8 +187,8 @@ void PlugInAction::plugMeasurementCallback(const tf::MessageNotifier<robot_msgs:
   }
 
   tf::Pose viz_offset;
-  tf::PoseMsgToTF(viz_offset_msg.pose, viz_offset);
-  PoseTFToMsg(viz_offset, state_msg.viz_offset);
+  tf::poseMsgToTF(viz_offset_msg.pose, viz_offset);
+  poseTFToMsg(viz_offset, state_msg.viz_offset);
 
   // Deals with the per-outlet offsets
   {
@@ -211,7 +211,7 @@ void PlugInAction::plugMeasurementCallback(const tf::MessageNotifier<robot_msgs:
   viz_offset_desi.getOrigin().setX(-standoff);
   viz_offset_desi.getOrigin().setY(0.0);
   viz_offset_desi.getOrigin().setZ(0.0);
-  PoseTFToMsg(viz_offset.inverse() * viz_offset_desi, state_msg.viz_error);
+  poseTFToMsg(viz_offset.inverse() * viz_offset_desi, state_msg.viz_error);
   mech_offset_desi_ = viz_offset.inverse() * viz_offset_desi * mech_offset_;
 
   prev_state_ = g_state_;

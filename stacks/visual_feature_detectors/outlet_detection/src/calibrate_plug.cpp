@@ -34,7 +34,7 @@ public:
     boost::mutex::scoped_lock lock(cb_mutex_);
     if (current_target_ != Plug)
       return;
-    tf::PoseMsgToTF(plug_msg_.pose, plug_pose_);
+    tf::poseMsgToTF(plug_msg_.pose, plug_pose_);
 
     btTransform plug_in_board = plug_pose_.inverse() * camera_in_cvcam_.inverse() * outlet_pose_;
     btQuaternion R = plug_in_board.getRotation();
@@ -51,7 +51,7 @@ public:
     boost::mutex::scoped_lock lock(cb_mutex_);
     if (current_target_ != Outlet)
       return;
-    tf::PoseMsgToTF(outlet_msg_.pose, outlet_pose_);
+    tf::poseMsgToTF(outlet_msg_.pose, outlet_pose_);
 
     current_target_ = Plug;
     ROS_INFO("Waiting for plug...");

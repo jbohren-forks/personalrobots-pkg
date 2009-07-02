@@ -117,7 +117,7 @@ public:
     
     tf::Transform ground_truth_pose ;
     
-    tf::PoseMsgToTF(m_ground_truth_.pos, ground_truth_pose) ;
+    tf::poseMsgToTF(m_ground_truth_.pos, ground_truth_pose) ;
 
     //! \todo Compute yaw angle in a more stable way
     double yaw,pitch,roll ;

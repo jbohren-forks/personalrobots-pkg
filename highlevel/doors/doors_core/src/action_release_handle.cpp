@@ -101,7 +101,7 @@ robot_actions::ResultStatus ReleaseHandleAction::execute(const door_msgs::Door& 
   // move gripper away from the door
   Pose offset(Quaternion(0,0,0), Vector3(-0.2,0,0));
   Pose gripper_goal = gripper_pose_ * offset;
-  PoseStampedTFToMsg(Stamped<Pose>(gripper_goal, Time::now(), gripper_pose_.frame_id_), req_moveto.pose);
+  poseStampedTFToMsg(Stamped<Pose>(gripper_goal, Time::now(), gripper_pose_.frame_id_), req_moveto.pose);
 
   ROS_INFO("ReleaseHandleAction: move gripper away from door ");
   if (!ros::service::call("r_arm_constraint_cartesian_trajectory_controller/move_to", req_moveto, res_moveto)){
@@ -123,7 +123,7 @@ robot_actions::ResultStatus ReleaseHandleAction::execute(const door_msgs::Door& 
 void ReleaseHandleAction::poseCallback(const PoseConstPtr& pose)
 {
   boost::mutex::scoped_lock lock(pose_mutex_);
-  PoseStampedMsgToTF(*pose, gripper_pose_);
+  poseStampedMsgToTF(*pose, gripper_pose_);
   pose_received_ = true;
 }
 

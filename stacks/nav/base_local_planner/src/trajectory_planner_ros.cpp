@@ -267,11 +267,11 @@ namespace base_local_planner {
 
       for(unsigned int i = 0; i < std::min((unsigned int)global_plan_.size(), needed_path_length); ++i){
         const robot_msgs::PoseStamped& new_pose = global_plan_[i];
-        PoseStampedMsgToTF(new_pose, tf_pose);
+        poseStampedMsgToTF(new_pose, tf_pose);
         tf_pose.setData(transform * tf_pose);
         tf_pose.stamp_ = transform.stamp_;
         tf_pose.frame_id_ = global_frame_;
-        PoseStampedTFToMsg(tf_pose, newer_pose);
+        poseStampedTFToMsg(tf_pose, newer_pose);
 
         transformed_plan.push_back(newer_pose);
       }
@@ -352,7 +352,7 @@ namespace base_local_planner {
       return false;
 
     tf::Stamped<tf::Pose> goal_point;
-    tf::PoseStampedMsgToTF(transformed_plan.back(), goal_point);
+    tf::poseStampedMsgToTF(transformed_plan.back(), goal_point);
     //we assume the global goal is the last point in the global plan
     double goal_x = goal_point.getOrigin().getX();
     double goal_y = goal_point.getOrigin().getY();
@@ -429,7 +429,7 @@ namespace base_local_planner {
 
       tf::Stamped<tf::Pose> p = tf::Stamped<tf::Pose>(tf::Pose(tf::Quaternion(p_th, 0.0, 0.0), tf::Point(p_x, p_y, 0.0)), ros::Time::now(), global_frame_);
       robot_msgs::PoseStamped pose;
-      tf::PoseStampedTFToMsg(p, pose);
+      tf::poseStampedTFToMsg(p, pose);
       local_plan.push_back(pose);
     }
 

@@ -122,7 +122,7 @@ robot_actions::ResultStatus PushDoorAction::execute(const door_msgs::Door& goal,
     // define griper pose
     gripper_pose = getGripperPose(goal_tr, angle, push_dist);
     gripper_pose.stamp_ = Time::now();
-    PoseStampedTFToMsg(gripper_pose, gripper_pose_msg);
+    poseStampedTFToMsg(gripper_pose, gripper_pose_msg);
     pose_pub_.publish(gripper_pose_msg);
 
     // increase angle when pose error is small enough
@@ -138,7 +138,7 @@ robot_actions::ResultStatus PushDoorAction::execute(const door_msgs::Door& goal,
 void PushDoorAction::poseCallback(const PoseConstPtr& pose)
 {
   boost::mutex::scoped_lock lock(pose_mutex_);
-  PoseStampedMsgToTF(*pose, pose_state_);
+  poseStampedMsgToTF(*pose, pose_state_);
   pose_state_received_ = true;
 }
 

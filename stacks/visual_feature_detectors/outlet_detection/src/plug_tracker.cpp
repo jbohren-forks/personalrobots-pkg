@@ -132,7 +132,7 @@ bool PlugTracker::detectObject(tf::Transform &pose)
       return false;
     }
     tf::Transform target_tf;
-    tf::PoseMsgToTF(target, target_tf);
+    tf::poseMsgToTF(target, target_tf);
 
     // Transform to OpenCV coordinate system
     target_tf = camera_in_cvcam_.inverse() * target_tf * plug_in_board_.inverse();
@@ -240,7 +240,7 @@ void PlugTracker::publishBoardMarker(const tf::Transform &board_in_cam)
     tf::Point corner(grid_pt[0], grid_pt[1], grid_pt[2]);
     tf::Point pt = board_in_cam * corner;
     robot_msgs::Point pt_msg;
-    tf::PointTFToMsg(pt, pt_msg);
+    tf::pointTFToMsg(pt, pt_msg);
     marker.points.push_back(pt_msg);
   }
   
@@ -272,7 +272,7 @@ void PlugTracker::publishBoardRayMarker(const tf::Transform &board_in_cam)
   marker.color.b = 0.0;
 
   marker.points.resize(2); // first is origin
-  tf::PointTFToMsg(board_in_cam.getOrigin(), marker.points[1]);
+  tf::pointTFToMsg(board_in_cam.getOrigin(), marker.points[1]);
 
   node_.publish("visualization_marker", marker);
 }
@@ -303,12 +303,12 @@ void PlugTracker::publishPlugRayMarker(const tf::Transform &board_in_cam,
   marker.color.b = 1.0;
 
   marker.points.resize(2);
-  tf::PointTFToMsg(board_in_cam.getOrigin(), marker.points[0]);
-  tf::PointTFToMsg(plug_pose.getOrigin(), marker.points[1]);
+  tf::pointTFToMsg(board_in_cam.getOrigin(), marker.points[0]);
+  tf::pointTFToMsg(plug_pose.getOrigin(), marker.points[1]);
 
   node_.publish("visualization_marker", marker);
 
   marker.id = 3;
-  tf::PointTFToMsg((board_in_cam * prong_in_board_).getOrigin(), marker.points[1]);
+  tf::pointTFToMsg((board_in_cam * prong_in_board_).getOrigin(), marker.points[1]);
   node_.publish("visualization_marker", marker);
 }

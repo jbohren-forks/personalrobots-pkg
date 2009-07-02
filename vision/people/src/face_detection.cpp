@@ -381,7 +381,7 @@ public:
 	else {
 	  // Transform the person to this time. Note that the pos time is updated but not the restamp. 
 	  tf::Point pt;
-	  tf::PointMsgToTF((*it).second.pos.pos, pt);
+	  tf::pointMsgToTF((*it).second.pos.pos, pt);
 	  tf::Stamped<tf::Point> loc(pt, (*it).second.pos.header.stamp, (*it).second.pos.header.frame_id);
 	  try {
      	    tf_.transformPoint(limage->header.frame_id, limage->header.stamp, loc, "odom_combined", loc);

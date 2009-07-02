@@ -184,7 +184,7 @@ namespace move_base {
     }
 
     robot_msgs::PoseStamped start;
-    tf::PoseStampedTFToMsg(global_pose, start);
+    tf::poseStampedTFToMsg(global_pose, start);
 
     //update the copy of the costmap the planner uses
     clearCostmapWindows(2 * clearing_radius_, 2 * clearing_radius_);
@@ -265,7 +265,7 @@ namespace move_base {
       return;
 
     robot_msgs::PoseStamped start;
-    tf::PoseStampedTFToMsg(global_pose, start);
+    tf::poseStampedTFToMsg(global_pose, start);
 
     std::vector<robot_msgs::PoseStamped> global_plan;
     bool valid_plan = planner_->makePlan(start, goal, global_plan);
@@ -350,7 +350,7 @@ namespace move_base {
       //update feedback to correspond to our current position
       tf::Stamped<tf::Pose> global_pose;
       getRobotPose(goal_.header.frame_id, global_pose);
-      tf::PoseStampedTFToMsg(global_pose, feedback);
+      tf::poseStampedTFToMsg(global_pose, feedback);
 
       //push the feedback out
       update(feedback);
@@ -511,7 +511,7 @@ namespace move_base {
               
             }
 
-            PoseStampedTFToMsg(rotate_goal, rotate_goal_msg);
+            poseStampedTFToMsg(rotate_goal, rotate_goal_msg);
             global_plan_.clear();
             global_plan_.push_back(rotate_goal_msg);
             valid_plan_ = true;

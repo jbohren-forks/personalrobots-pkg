@@ -105,7 +105,7 @@ class TestDoorDetectionNode : public ros::Node
       }
     }
 
-    void PointTFToMsg32(const tf::Vector3 &in, robot_msgs::Point32 &out)
+    void pointTFToMsg32(const tf::Vector3 &in, robot_msgs::Point32 &out)
     {
       out.x = in.x();
       out.y = in.y();

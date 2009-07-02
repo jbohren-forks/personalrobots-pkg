@@ -107,7 +107,7 @@ void TrackerBase::processImage()
     robot_msgs::PoseStamped pose;
     pose.header.frame_id = "high_def_frame";
     pose.header.stamp = img_.header.stamp;
-    tf::PoseTFToMsg(transform, pose.pose);
+    tf::poseTFToMsg(transform, pose.pose);
     node_.publish(pose_topic_name_, pose);
 
     // Publish to TF
@@ -267,7 +267,7 @@ robot_msgs::Pose TrackerBase::getTargetInHighDef()
   robot_msgs::PoseStamped origin, target_in_high_def;
   tf::Transform origin_tf;
   origin_tf.setIdentity();
-  tf::PoseTFToMsg(origin_tf, origin.pose);
+  tf::poseTFToMsg(origin_tf, origin.pose);
   origin.header.frame_id = target_frame_id_;
   origin.header.stamp = ros::Time::now();
   tf_listener_.canTransform("high_def_frame", origin.header.frame_id, origin.header.stamp, ros::Duration(0.5));

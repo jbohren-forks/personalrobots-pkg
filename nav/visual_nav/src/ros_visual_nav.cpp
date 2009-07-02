@@ -438,7 +438,7 @@ void RosVisualNavigator::publishExitPoint ()
 
     goal.pose.position.x = exit_point_.x;
     goal.pose.position.y = exit_point_.y;
-    tf::QuaternionTFToMsg(tf::Quaternion(exit_point_.theta, 0, 0), goal.pose.orientation);
+    tf::quaternionTFToMsg(tf::Quaternion(exit_point_.theta, 0, 0), goal.pose.orientation);
     goal.header.frame_id = "vslam";
 
     tf_listener_.transformPose(odom_frame_, goal, odom_goal);

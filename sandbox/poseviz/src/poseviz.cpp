@@ -28,7 +28,7 @@ void receive_and_retransmit(const robot_msgs::PoseStampedConstPtr &msg)
 {
   // Record the current pose
   tf::Pose tf_pose ;
-  tf::PoseMsgToTF(msg->pose, tf_pose) ;
+  tf::poseMsgToTF(msg->pose, tf_pose) ;
 
   // Initialize the marker message
   visualization_msgs::Marker marker ;
@@ -56,7 +56,7 @@ void receive_and_retransmit(const robot_msgs::PoseStampedConstPtr &msg)
   // Publish the Y axis
   btQuaternion x_to_y(btVector3(0.0, 0.0, 1.0), M_PI/2) ;
   
-  tf::PoseTFToMsg( tf_pose*btTransform(x_to_y), marker.pose) ;
+  tf::poseTFToMsg( tf_pose*btTransform(x_to_y), marker.pose) ;
   marker.id = 1 ;
   marker.color.r = 0.0 ;
   marker.color.g = 1.0 ;
@@ -67,7 +67,7 @@ void receive_and_retransmit(const robot_msgs::PoseStampedConstPtr &msg)
   // Publish the Z axis
   btQuaternion x_to_z(btVector3(0.0,-1.0, 0.0), M_PI/2) ;
 
-  tf::PoseTFToMsg( tf_pose*btTransform(x_to_z), marker.pose) ;
+  tf::poseTFToMsg( tf_pose*btTransform(x_to_z), marker.pose) ;
   marker.id = 2 ;
   marker.color.r = 0.0 ;
   marker.color.g = 0.0 ;

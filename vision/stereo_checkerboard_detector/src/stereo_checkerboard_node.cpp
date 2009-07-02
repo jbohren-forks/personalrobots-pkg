@@ -124,7 +124,7 @@ public:
       publishMarker(pose) ;
 
       robot_msgs::PoseStamped pose_stamped_msg ;
-      tf::PoseTFToMsg(pose, pose_stamped_msg.pose) ;
+      tf::poseTFToMsg(pose, pose_stamped_msg.pose) ;
       pose_stamped_msg.header.frame_id = left_image_msg_.header.frame_id ;
       pose_stamped_msg.header.stamp = left_image_msg_.header.stamp ;
       node_->publish("cb_pose", pose_stamped_msg) ;
@@ -178,7 +178,7 @@ public:
     marker.id = 0 ;
     marker.type = visualization_msgs::Marker::ARROW ;
     marker.action = visualization_msgs::Marker::ADD ;
-    tf::PoseTFToMsg(pose, marker.pose) ;
+    tf::poseTFToMsg(pose, marker.pose) ;
     marker.scale.x = .2 ;
     marker.scale.y = .2 ;
     marker.scale.z = .2 ;
@@ -192,7 +192,7 @@ public:
     btQuaternion x_to_y(btVector3(0.0, 0.0, 1.0), M_PI/2) ;
     btQuaternion x_to_z(btVector3(0.0,-1.0, 0.0), M_PI/2) ;
 
-    tf::PoseTFToMsg( pose*btTransform(x_to_y), marker.pose) ;
+    tf::poseTFToMsg( pose*btTransform(x_to_y), marker.pose) ;
     marker.id = 1 ;
     marker.color.r = 0.0 ;
     marker.color.g = 1.0 ;
@@ -201,7 +201,7 @@ public:
     node_->publish("visualization_marker", marker) ;
 
 
-    tf::PoseTFToMsg( pose*btTransform(x_to_z), marker.pose) ;
+    tf::poseTFToMsg( pose*btTransform(x_to_z), marker.pose) ;
     marker.id = 2 ;
     marker.color.r = 0.0 ;
     marker.color.g = 0.0 ;

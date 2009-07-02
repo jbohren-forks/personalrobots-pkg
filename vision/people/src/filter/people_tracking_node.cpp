@@ -154,7 +154,7 @@ namespace estimation
       //if (closest_tracker_dist >= start_distance_min_ || message->initialization == 1){
       //if (message->initialization == 1 && trackers_.empty()){
 	tf::Point pt;
-	tf::PointMsgToTF(message->pos, pt);
+	tf::pointMsgToTF(message->pos, pt);
 	tf::Stamped<tf::Point> loc(pt, message->header.stamp, message->header.frame_id);
 	robot_state_.transformPoint("base_link",loc,loc);
 	if ((pow(loc[0],2.0) +  pow(loc[1],2.0)) < tracker_init_dist) {

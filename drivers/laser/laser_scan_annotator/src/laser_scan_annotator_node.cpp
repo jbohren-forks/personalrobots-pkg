@@ -98,7 +98,7 @@ public:
       catch(tf::TransformException e) {
         continue;
       }
-      tf::PoseStampedTFToMsg(transform, scan_annotated.poses[i]) ;
+      tf::poseStampedTFToMsg(transform, scan_annotated.poses[i]) ;
     }
 
     publish("scan_annotated", scan_annotated);

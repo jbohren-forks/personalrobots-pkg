@@ -56,7 +56,7 @@ public:
   void notifierCallback(const tf::MessageNotifier<robot_msgs::PoseStamped>::MessagePtr& message)
   {
     tf::Stamped<tf::Pose> pose;
-    tf::PoseStampedMsgToTF(*message, pose);
+    tf::poseStampedMsgToTF(*message, pose);
     ROS_INFO("Notifer Callback");
     try{
     tfl_.transformPose("canaveral", pose, pose);

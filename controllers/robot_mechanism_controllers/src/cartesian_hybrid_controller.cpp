@@ -51,7 +51,7 @@ void TransformKDLToMsg(const KDL::Frame &k, robot_msgs::Pose &m)
 {
   tf::Transform tf;
   tf::TransformKDLToTF(k, tf);
-  tf::PoseTFToMsg(tf, m);
+  tf::poseTFToMsg(tf, m);
 }
 
 void TwistKDLToMsg(const KDL::Twist &k, robot_msgs::Twist &m)
@@ -545,7 +545,7 @@ void CartesianHybridControllerNode::update()
       pub_tf_->msg_.transforms[0].parent_id = c_.chain_.getLinkName();
       tf::Transform t;
       tf::TransformKDLToTF(c_.tool_frame_offset_, t);
-      tf::TransformTFToMsg(t, pub_tf_->msg_.transforms[0].transform);
+      tf::transformTFToMsg(t, pub_tf_->msg_.transforms[0].transform);
       pub_tf_->unlockAndPublish();
     }
   }
@@ -608,7 +608,7 @@ bool CartesianHybridControllerNode::setToolFrame(
   robot_msgs::PoseStamped tool_in_tip_msg;
   tf::Transform tool_in_tip;
   TF.transformPose(c_.chain_.getLinkName(-1), req.p, tool_in_tip_msg);
-  tf::PoseMsgToTF(tool_in_tip_msg.pose, tool_in_tip);
+  tf::poseMsgToTF(tool_in_tip_msg.pose, tool_in_tip);
   tool_in_tip.setOrigin(tf::Vector3(0,0,0));
   tf::TransformTFToKDL(tool_in_tip, c_.tool_frame_offset_);
   double rpy[3]; c_.tool_frame_offset_.M.GetRPY(rpy[0], rpy[1], rpy[2]);

@@ -105,7 +105,7 @@ public :
 
         // Build Transform Message
         tf::Transform mytf;
-        tf::TransformMsgToTF(body.pose,mytf);
+        tf::transformMsgToTF(body.pose,mytf);
 
         if (publish_transform_)
           m_tfServer->sendTransform(mytf,m_currentPos.header.stamp,"base","map");

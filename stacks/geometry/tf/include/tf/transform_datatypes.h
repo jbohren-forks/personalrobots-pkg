@@ -83,7 +83,7 @@ class Stamped : public T{
 
 
 /** \brief convert Quaternion msg to Quaternion */
-static inline void QuaternionMsgToTF(const robot_msgs::Quaternion& msg, Quaternion& bt) 
+static inline void quaternionMsgToTF(const robot_msgs::Quaternion& msg, Quaternion& bt) 
 {
   bt = Quaternion(msg.x, msg.y, msg.z, msg.w); 
   if (fabs(bt.length2() - 1 ) > QUATERNION_TOLERANCE) 
@@ -93,7 +93,7 @@ static inline void QuaternionMsgToTF(const robot_msgs::Quaternion& msg, Quaterni
     }
 };
 /** \brief convert Quaternion to Quaternion msg*/
-static inline void QuaternionTFToMsg(const Quaternion& bt, robot_msgs::Quaternion& msg) 
+static inline void quaternionTFToMsg(const Quaternion& bt, robot_msgs::Quaternion& msg) 
 {
   if (fabs(bt.length2() - 1 ) > QUATERNION_TOLERANCE) 
     {
@@ -109,65 +109,65 @@ static inline void QuaternionTFToMsg(const Quaternion& bt, robot_msgs::Quaternio
 };
 
 /** \brief convert QuaternionStamped msg to Stamped<Quaternion> */
-static inline void QuaternionStampedMsgToTF(const robot_msgs::QuaternionStamped & msg, Stamped<Quaternion>& bt)
-{QuaternionMsgToTF(msg.quaternion, bt); bt.stamp_ = msg.header.stamp; bt.frame_id_ = msg.header.frame_id;};
+static inline void quaternionStampedMsgToTF(const robot_msgs::QuaternionStamped & msg, Stamped<Quaternion>& bt)
+{quaternionMsgToTF(msg.quaternion, bt); bt.stamp_ = msg.header.stamp; bt.frame_id_ = msg.header.frame_id;};
 /** \brief convert Stamped<Quaternion> to QuaternionStamped msg*/
-static inline void QuaternionStampedTFToMsg(const Stamped<Quaternion>& bt, robot_msgs::QuaternionStamped & msg)
-{QuaternionTFToMsg(bt, msg.quaternion); msg.header.stamp = bt.stamp_; msg.header.frame_id = bt.frame_id_;};
+static inline void quaternionStampedTFToMsg(const Stamped<Quaternion>& bt, robot_msgs::QuaternionStamped & msg)
+{quaternionTFToMsg(bt, msg.quaternion); msg.header.stamp = bt.stamp_; msg.header.frame_id = bt.frame_id_;};
 
 /** \brief convert Vector3 msg to Vector3 */
-static inline void Vector3MsgToTF(const robot_msgs::Vector3& msg_v, Vector3& bt_v) {bt_v = Vector3(msg_v.x, msg_v.y, msg_v.z);};
+static inline void vector3MsgToTF(const robot_msgs::Vector3& msg_v, Vector3& bt_v) {bt_v = Vector3(msg_v.x, msg_v.y, msg_v.z);};
 /** \brief convert Vector3 to Vector3 msg*/
-static inline void Vector3TFToMsg(const Vector3& bt_v, robot_msgs::Vector3& msg_v) {msg_v.x = bt_v.x(); msg_v.y = bt_v.y(); msg_v.z = bt_v.z();};
+static inline void vector3TFToMsg(const Vector3& bt_v, robot_msgs::Vector3& msg_v) {msg_v.x = bt_v.x(); msg_v.y = bt_v.y(); msg_v.z = bt_v.z();};
 
 /** \brief convert Vector3Stamped msg to Stamped<Vector3> */
-static inline void Vector3StampedMsgToTF(const robot_msgs::Vector3Stamped & msg, Stamped<Vector3>& bt)
-{Vector3MsgToTF(msg.vector, bt); bt.stamp_ = msg.header.stamp; bt.frame_id_ = msg.header.frame_id;};
+static inline void vector3StampedMsgToTF(const robot_msgs::Vector3Stamped & msg, Stamped<Vector3>& bt)
+{vector3MsgToTF(msg.vector, bt); bt.stamp_ = msg.header.stamp; bt.frame_id_ = msg.header.frame_id;};
 /** \brief convert Stamped<Vector3> to Vector3Stamped msg*/
-static inline void Vector3StampedTFToMsg(const Stamped<Vector3>& bt, robot_msgs::Vector3Stamped & msg)
-{Vector3TFToMsg(bt, msg.vector); msg.header.stamp = bt.stamp_; msg.header.frame_id = bt.frame_id_;};
+static inline void vector3StampedTFToMsg(const Stamped<Vector3>& bt, robot_msgs::Vector3Stamped & msg)
+{vector3TFToMsg(bt, msg.vector); msg.header.stamp = bt.stamp_; msg.header.frame_id = bt.frame_id_;};
 
 
 /** \brief convert Point msg to Point */
-static inline void PointMsgToTF(const robot_msgs::Point& msg_v, Point& bt_v) {bt_v = Vector3(msg_v.x, msg_v.y, msg_v.z);};
+static inline void pointMsgToTF(const robot_msgs::Point& msg_v, Point& bt_v) {bt_v = Vector3(msg_v.x, msg_v.y, msg_v.z);};
 /** \brief convert Point to Point msg*/
-static inline void PointTFToMsg(const Point& bt_v, robot_msgs::Point& msg_v) {msg_v.x = bt_v.x(); msg_v.y = bt_v.y(); msg_v.z = bt_v.z();};
+static inline void pointTFToMsg(const Point& bt_v, robot_msgs::Point& msg_v) {msg_v.x = bt_v.x(); msg_v.y = bt_v.y(); msg_v.z = bt_v.z();};
 
 /** \brief convert PointStamped msg to Stamped<Point> */
-static inline void PointStampedMsgToTF(const robot_msgs::PointStamped & msg, Stamped<Point>& bt)
-{PointMsgToTF(msg.point, bt); bt.stamp_ = msg.header.stamp; bt.frame_id_ = msg.header.frame_id;};
+static inline void pointStampedMsgToTF(const robot_msgs::PointStamped & msg, Stamped<Point>& bt)
+{pointMsgToTF(msg.point, bt); bt.stamp_ = msg.header.stamp; bt.frame_id_ = msg.header.frame_id;};
 /** \brief convert Stamped<Point> to PointStamped msg*/
-static inline void PointStampedTFToMsg(const Stamped<Point>& bt, robot_msgs::PointStamped & msg)
-{PointTFToMsg(bt, msg.point); msg.header.stamp = bt.stamp_; msg.header.frame_id = bt.frame_id_;};
+static inline void pointStampedTFToMsg(const Stamped<Point>& bt, robot_msgs::PointStamped & msg)
+{pointTFToMsg(bt, msg.point); msg.header.stamp = bt.stamp_; msg.header.frame_id = bt.frame_id_;};
 
 
 /** \brief convert Transform msg to Transform */
-static inline void TransformMsgToTF(const robot_msgs::Transform& msg, Transform& bt)
+static inline void transformMsgToTF(const robot_msgs::Transform& msg, Transform& bt)
 {bt = Transform(Quaternion(msg.rotation.x, msg.rotation.y, msg.rotation.z, msg.rotation.w), Vector3(msg.translation.x, msg.translation.y, msg.translation.z));};
 /** \brief convert Transform to Transform msg*/
-static inline void TransformTFToMsg(const Transform& bt, robot_msgs::Transform& msg)
-{Vector3TFToMsg(bt.getOrigin(), msg.translation);  QuaternionTFToMsg(bt.getRotation(), msg.rotation);};
+static inline void transformTFToMsg(const Transform& bt, robot_msgs::Transform& msg)
+{vector3TFToMsg(bt.getOrigin(), msg.translation);  quaternionTFToMsg(bt.getRotation(), msg.rotation);};
 
 /** \brief convert TransformStamped msg to Stamped<Transform> */
-static inline void TransformStampedMsgToTF(const robot_msgs::TransformStamped & msg, Stamped<Transform>& bt)
-{TransformMsgToTF(msg.transform, bt); bt.stamp_ = msg.header.stamp; bt.frame_id_ = msg.header.frame_id; bt.parent_id_ = msg.parent_id;};
+static inline void transformStampedMsgToTF(const robot_msgs::TransformStamped & msg, Stamped<Transform>& bt)
+{transformMsgToTF(msg.transform, bt); bt.stamp_ = msg.header.stamp; bt.frame_id_ = msg.header.frame_id; bt.parent_id_ = msg.parent_id;};
 /** \brief convert Stamped<Transform> to TransformStamped msg*/
-static inline void TransformStampedTFToMsg(const Stamped<Transform>& bt, robot_msgs::TransformStamped & msg)
-{TransformTFToMsg(bt, msg.transform); msg.header.stamp = bt.stamp_; msg.header.frame_id = bt.frame_id_; msg.parent_id = bt.parent_id_;};
+static inline void transformStampedTFToMsg(const Stamped<Transform>& bt, robot_msgs::TransformStamped & msg)
+{transformTFToMsg(bt, msg.transform); msg.header.stamp = bt.stamp_; msg.header.frame_id = bt.frame_id_; msg.parent_id = bt.parent_id_;};
 
 /** \brief convert Pose msg to Pose */
-static inline void PoseMsgToTF(const robot_msgs::Pose& msg, Pose& bt)
+static inline void poseMsgToTF(const robot_msgs::Pose& msg, Pose& bt)
 {bt = Transform(Quaternion(msg.orientation.x, msg.orientation.y, msg.orientation.z, msg.orientation.w), Vector3(msg.position.x, msg.position.y, msg.position.z));};
 /** \brief convert Pose to Pose msg*/
-static inline void PoseTFToMsg(const Pose& bt, robot_msgs::Pose& msg)
-{PointTFToMsg(bt.getOrigin(), msg.position);  QuaternionTFToMsg(bt.getRotation(), msg.orientation);};
+static inline void poseTFToMsg(const Pose& bt, robot_msgs::Pose& msg)
+{pointTFToMsg(bt.getOrigin(), msg.position);  quaternionTFToMsg(bt.getRotation(), msg.orientation);};
 
 /** \brief convert PoseStamped msg to Stamped<Pose> */
-static inline void PoseStampedMsgToTF(const robot_msgs::PoseStamped & msg, Stamped<Pose>& bt)
-{PoseMsgToTF(msg.pose, bt); bt.stamp_ = msg.header.stamp; bt.frame_id_ = msg.header.frame_id;};
+static inline void poseStampedMsgToTF(const robot_msgs::PoseStamped & msg, Stamped<Pose>& bt)
+{poseMsgToTF(msg.pose, bt); bt.stamp_ = msg.header.stamp; bt.frame_id_ = msg.header.frame_id;};
 /** \brief convert Stamped<Pose> to PoseStamped msg*/
-static inline void PoseStampedTFToMsg(const Stamped<Pose>& bt, robot_msgs::PoseStamped & msg)
-{PoseTFToMsg(bt, msg.pose); msg.header.stamp = bt.stamp_; msg.header.frame_id = bt.frame_id_;};
+static inline void poseStampedTFToMsg(const Stamped<Pose>& bt, robot_msgs::PoseStamped & msg)
+{poseTFToMsg(bt, msg.pose); msg.header.stamp = bt.stamp_; msg.header.frame_id = bt.frame_id_;};
 
 
 

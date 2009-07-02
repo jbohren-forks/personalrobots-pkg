@@ -344,7 +344,7 @@ bool PR2ArmNode::planSBPLPath_ioan(const robot_msgs::JointTrajPoint &joint_start
     req.value.goal_constraints[i].y = pose_goals[i].position.y;
     req.value.goal_constraints[i].z = pose_goals[i].position.z;
 
-    tf::PoseMsgToTF(pose_goals[i],tf_pose);
+    tf::poseMsgToTF(pose_goals[i],tf_pose);
     btMatrix3x3 mat = tf_pose.getBasis();
     mat.getEulerZYX(yaw,pitch,roll);
 

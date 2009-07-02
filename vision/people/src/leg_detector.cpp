@@ -272,7 +272,7 @@ public:
       return;
 
     Point pt;
-    PointMsgToTF(people_meas->pos, pt);
+    pointMsgToTF(people_meas->pos, pt);
     Stamped<Point> person_loc(pt, people_meas->header.stamp, people_meas->header.frame_id);
     person_loc[2] = 0.0; // Ignore the height of the person measurement.
     Stamped<Point> dest_loc(pt, people_meas->header.stamp, people_meas->header.frame_id); // Holder for all transformed pts.

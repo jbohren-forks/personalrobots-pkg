@@ -297,7 +297,7 @@ public:
                                    orientation[6], orientation[7], orientation[8]), 
                        btVector3(0,0,0));
 
-      tf::PoseTFToMsg(pose, reading.pos);
+      tf::poseTFToMsg(pose, reading.pos);
       
       
       reading.header.stamp = ros::Time::now().fromNSec(time);

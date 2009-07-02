@@ -105,7 +105,7 @@ class DoorCheckerboardDetectorNode : public ros::Node
       }
     }
 
-    void PointTFToMsg32(const tf::Vector3 &in, robot_msgs::Point32 &out)
+    void pointTFToMsg32(const tf::Vector3 &in, robot_msgs::Point32 &out)
     {
       out.x = in.x();
       out.y = in.y();
@@ -137,7 +137,7 @@ class DoorCheckerboardDetectorNode : public ros::Node
       {
         door_msg_.header.stamp    = checkerboard_msg_.header.stamp;
         door_msg_.header.frame_id = frame_id_;
-        tf::PoseMsgToTF(checkerboard_msg_.objects[0].pose,door_pose);
+        tf::poseMsgToTF(checkerboard_msg_.objects[0].pose,door_pose);
 
         door_p1 = Stamped<tf::Point>(door_pose*Point(-door_checkerboard_x_offset_,door_checkerboard_z_offset_,0.0),checkerboard_msg_.header.stamp, checkerboard_msg_.header.frame_id,dummy);
         door_p2 = Stamped<tf::Point>(door_pose*Point(door_width_ - door_checkerboard_x_offset_,door_checkerboard_z_offset_,0.0), checkerboard_msg_.header.stamp,  checkerboard_msg_.header.frame_id, dummy);
@@ -155,19 +155,19 @@ class DoorCheckerboardDetectorNode : public ros::Node
 
         transformTFPoint(frame_id_,door_p1,target);
         ROS_INFO("door_p1 transformed : %f %f %f", target.m_floats[0], target.m_floats[1], target.m_floats[2]);
-        PointTFToMsg32(target,door_msg_.door_p1);
+        pointTFToMsg32(target,door_msg_.door_p1);
 
         transformTFPoint(frame_id_,door_p2,target);
-        PointTFToMsg32(target,door_msg_.door_p2);
+        pointTFToMsg32(target,door_msg_.door_p2);
 
         transformTFPoint(frame_id_,frame_p1,target);
-        PointTFToMsg32(target,door_msg_.frame_p1);
+        pointTFToMsg32(target,door_msg_.frame_p1);
 
         transformTFPoint(frame_id_,frame_p2,target);
-        PointTFToMsg32(target,door_msg_.frame_p2);
+        pointTFToMsg32(target,door_msg_.frame_p2);
 
         transformTFPoint(frame_id_,handle,target);
-        PointTFToMsg32(handle,door_msg_.handle);
+        pointTFToMsg32(handle,door_msg_.handle);
 
         publish(publish_topic_,door_msg_);
       }

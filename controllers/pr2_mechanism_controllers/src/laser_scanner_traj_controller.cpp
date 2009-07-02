@@ -382,7 +382,7 @@ bool LaserScannerTrajController::setTrajCmd(const pr2_msgs::LaserTrajCmd& traj_c
     string mount_link_name = "laser_tilt_mount_link" ;
     target_link_ = robot_->getLinkState(track_link_cmd.link_name) ;
     mount_link_  = robot_->getLinkState(mount_link_name) ;
-    tf::PointMsgToTF(track_link_cmd.point, track_point_) ;
+    tf::pointMsgToTF(track_link_cmd.point, track_point_) ;
 
     if (target_link_ == NULL)
     {

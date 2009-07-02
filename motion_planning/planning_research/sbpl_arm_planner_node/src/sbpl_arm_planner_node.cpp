@@ -269,7 +269,7 @@ bool SBPLArmPlannerNode::setGoalPosition(const std::vector<motion_planning_msgs:
     sbpl_goal[i][1] = goals[i].pose.pose.position.y;// - torso_arm_offset_y_;
     sbpl_goal[i][2] = goals[i].pose.pose.position.z;// - torso_arm_offset_z_;
 
-    tf::PoseMsgToTF(goals[i].pose.pose, tf_pose);
+    tf::poseMsgToTF(goals[i].pose.pose, tf_pose);
     btMatrix3x3 mat = tf_pose.getBasis();
 
     mat.getEulerZYX(yaw,pitch,roll);
