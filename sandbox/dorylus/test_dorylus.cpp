@@ -24,16 +24,19 @@ void testDatasetSave()
   f["spinimg"] = spin;
   f["sift"] = sift;
 
-  object obj;
-  obj.label = 0;
-  obj.features = f;
-  //cout << displayObject(obj) << endl;
+  object *obj, *obj2;
+  obj = new object();
+  obj->label = 0;
+  obj->features = f;
+  //cout << obj->status() << endl;
   vector<object*> objs;
-  objs.push_back(&obj);
-  obj.label = 1;
-  //cout << displayObject(obj) << endl;
-  objs.push_back(&obj);
-  //cout << displayObject(obj) << endl;
+  objs.push_back(obj);
+
+  obj2 = new object(*obj);
+  obj2->label = 1;
+  //cout << obj->status() << endl;
+  objs.push_back(obj2);
+  //cout << obj->status() << endl;
 
 
   dd.setObjs(objs);
@@ -52,6 +55,12 @@ void testDatasetSave()
   cout << dd2.status() << endl;
   cout << dd2.displayYmc() << endl;
   cout << dd2.displayObjects() << endl;
+
+  cout << "Join test:" << endl;
+  dd.join(dd2);
+  cout << dd.status() << endl;
+  cout << dd.displayYmc() << endl;
+  cout << dd.displayObjects() << endl;
 
 }
 

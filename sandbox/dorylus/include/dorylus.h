@@ -24,6 +24,8 @@
 #include <cmath>
 
 
+
+
 NEWMAT::Matrix* eigen2Newmat(const Eigen::MatrixXf& eig) {
   NEWMAT::Matrix *m = new NEWMAT::Matrix(eig.rows(), eig.cols());
   for(int i=0; i<eig.rows(); i++) {
@@ -57,18 +59,26 @@ class object {
   int label;
   map<string, Eigen::MatrixXf*> features;
 
+
+  string status();
   object() {}
   ~object() {
     map<string, Eigen::MatrixXf*>::iterator fit;
     for(fit=features.begin(); fit!=features.end(); fit++) {
-      //TODO: which Newmat function?
-      //fit->second->Release();
       delete fit->second;
     }
   }
+
+  //! Allocates new memory for features.
+  object(const object& o) {
+    label = o.label;
+    map<string, Eigen::MatrixXf*>::const_iterator fit; 
+    for(fit = o.features.begin(); fit!=o.features.end(); fit++) {
+      features[fit->first] = new Eigen::MatrixXf(*(fit->second));
+    }
+  }    
 };
 
-string displayObject(const object& obj);
 
 inline float euc(const NEWMAT::Matrix& a, const NEWMAT::Matrix& b)
 {
@@ -93,8 +103,17 @@ inline float euc(const Eigen::MatrixXf& a, const Eigen::MatrixXf& b)
   assert(a.cols() == 1 && b.cols() == 1);
   assert(a.rows() == b.rows());
 
-  Eigen::MatrixXf c = (a - b).cwise().pow(2);
-  return sqrt(c.sum());
+  float r = 0;
+  for(int i=0; i<a.rows(); i++) {
+    r += pow(a.coeff(i,0) - b.coeff(i,0), 2);
+  }
+
+  //assert(abs((float)((a-b).NormFrobenius() - sqrt(r))) < 1e-3);  
+  return sqrt(r);
+
+  //Slow
+/*   Eigen::MatrixXf c = (a - b).cwise().pow(2); */
+/*   return sqrt(c.sum()); */
 }
 
 
@@ -109,6 +128,7 @@ class DorylusDataset {
   map<int, unsigned int> num_objs_of_class_;
   //! List of labels in the dataset.  Does not include the label 0, which is used for background / unknown objects.
   vector<int> classes_;
+  std::string version_string_;
 
  DorylusDataset() : nClasses_(0)
   {
@@ -123,7 +143,7 @@ class DorylusDataset {
   void setObjs(const vector<object*> &objs);
   bool save(std::string filename);
   bool load(std::string filename, bool quiet=false);
-  std::string version_string_;
+  bool join(const DorylusDataset& dd2);
 };
 
 

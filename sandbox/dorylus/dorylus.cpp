@@ -21,6 +21,19 @@ float newtonSingle(const Function &fcn, const Gradient &grad, const Hessian &hes
   return x;
 }
 
+bool DorylusDataset::join(const DorylusDataset& dd2)
+{
+  // -- Copy dd2's objects.
+  vector<object*> objs = objs_;
+  const vector<object*>& objs2 = dd2.objs_;
+  for(unsigned int i=0; i<objs2.size(); i++) {
+    objs.push_back(new object(*(objs2[i])));
+  }   
+  // -- Recompute ymc_, nClasses_, num_objs_of_class_, and classes_.
+  setObjs(objs);
+  return true;
+}
+
 
 void DorylusDataset::setObjs(const vector<object*> &objs)
 {
@@ -66,16 +79,16 @@ string DorylusDataset::displayObjects() {
   ostringstream oss (ostringstream::out);
   for(unsigned int i=0; i<objs_.size(); i++) {
     oss << "Object " << i << " " << endl;
-    oss << displayObject(*objs_[i]);
+    oss << objs_[i]->status();
   }
   return oss.str();
 }
 
-string displayObject(const object& obj) {
+string object::status() {
   map<string, MatrixXf*>::const_iterator it;
   ostringstream oss (ostringstream::out);
-  oss << "Object with label " << obj.label << ":" << endl;
-  for(it = obj.features.begin(); it!=obj.features.end(); it++) {
+  oss << "Object with label " << label << ":" << endl;
+  for(it = features.begin(); it!=features.end(); it++) {
     MatrixXf* v = it->second;
     oss << it->first << " descriptor " << endl;
     oss << *v << endl;
@@ -490,7 +503,7 @@ void Dorylus::train(int nCandidates, int max_secs, int max_wcs, void (*debugHook
 
     if(difftime(end,start) > max_secs)
       break;
-    if(wcs >= max_wcs)
+    if(max_wcs != 0 && wcs >= max_wcs)
       break;
   }
 
