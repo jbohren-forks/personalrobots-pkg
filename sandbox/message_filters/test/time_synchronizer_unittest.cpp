@@ -35,85 +35,78 @@
 #include <gtest/gtest.h>
 
 #include "ros/time.h"
-#include "message_filters/msg_cache.h"
+#include "message_filters/time_synchronizer.h"
 
-using namespace std ;
-using namespace message_filters ;
+using namespace message_filters;
 
 struct Header
 {
-  ros::Time stamp ;
-} ;
+  ros::Time stamp;
+};
 
 
 struct Msg
 {
-  Header header ;
-  int data ;
-} ;
+  Header header;
+  int data;
+};
+typedef boost::shared_ptr<Msg> MsgPtr;
+typedef boost::shared_ptr<Msg const> MsgConstPtr;
 
-
-
-
-void fillCacheEasy(MsgCache<Msg>& cache, unsigned int start, unsigned int end)
+class Helper
 {
-  for (unsigned int i=start; i < end; i++)
+public:
+  Helper()
+  : count_(0)
+  {}
+
+  void cb(const MsgConstPtr&, const MsgConstPtr&)
   {
-    Msg* msg = new Msg ;
-    msg->data = i ;
-    msg->header.stamp.fromSec(i*10) ;
-
-    boost::shared_ptr<Msg const> msg_ptr(msg) ;
-    cache.addToCache(msg_ptr) ;
+    ++count_;
   }
-}
 
-TEST(Cache, easyInterval)
+  int32_t count_;
+};
+
+TEST(TimeSynchronizer, immediate)
 {
-  MsgCache<Msg> cache(10) ;
-  fillCacheEasy(cache, 0, 5) ;
+  TimeSynchronizer2<Msg, Msg> sync(1);
+  Helper h;
+  sync.connect(boost::bind(&Helper::cb, &h, _1, _2));
+  MsgPtr m(new Msg);
+  m->header.stamp = ros::Time::now();
 
-  vector<boost::shared_ptr<Msg const> > interval_data = cache.getInterval(ros::Time().fromSec(5), ros::Time().fromSec(35)) ;
-
-  EXPECT_EQ(interval_data.size(), (unsigned int) 3) ;
-  EXPECT_EQ(interval_data[0]->data, 1) ;
-  EXPECT_EQ(interval_data[1]->data, 2) ;
-  EXPECT_EQ(interval_data[2]->data, 3) ;
-
-  // Look for an interval past the end of the cache
-  interval_data = cache.getInterval(ros::Time().fromSec(55), ros::Time().fromSec(65)) ;
-  EXPECT_EQ(interval_data.size(), (unsigned int) 0) ;
-
-  // Look for an interval that fell off the back of the cache
-  fillCacheEasy(cache, 5, 20) ;
-  interval_data = cache.getInterval(ros::Time().fromSec(5), ros::Time().fromSec(35)) ;
-  EXPECT_EQ(interval_data.size(), (unsigned int) 0) ;
+  sync.add0(m);
+  ASSERT_EQ(h.count_, 0);
+  sync.add1(m);
+  ASSERT_EQ(h.count_, 1);
 }
 
-TEST(Cache, easyElemBeforeAfter)
+TEST(TimeSynchronizer, multipleTimes)
 {
-  MsgCache<Msg> cache(10) ;
-  boost::shared_ptr<Msg const> elem_ptr ;
+  TimeSynchronizer2<Msg, Msg> sync(1);
+  Helper h;
+  sync.connect(boost::bind(&Helper::cb, &h, _1, _2));
+  MsgPtr m(new Msg);
+  m->header.stamp = ros::Time();
 
-  fillCacheEasy(cache, 5, 10) ;
+  sync.add0(m);
+  ASSERT_EQ(h.count_, 0);
 
-  elem_ptr = cache.getElemAfterTime( ros::Time().fromSec(85.0)) ;
-
-  ASSERT_FALSE(!elem_ptr) ;
-  EXPECT_EQ(elem_ptr->data, 9) ;
-
-  elem_ptr = cache.getElemBeforeTime( ros::Time().fromSec(85.0)) ;
-  ASSERT_FALSE(!elem_ptr) ;
-  EXPECT_EQ(elem_ptr->data, 8) ;
-
-  elem_ptr = cache.getElemBeforeTime( ros::Time().fromSec(45.0)) ;
-  EXPECT_TRUE(!elem_ptr) ;
+  m.reset(new Msg);
+  m->header.stamp = ros::Time(0.1);
+  sync.add1(m);
+  ASSERT_EQ(h.count_, 0);
+  sync.add0(m);
+  ASSERT_EQ(h.count_, 1);
 }
-
-
 
 int main(int argc, char **argv){
   testing::InitGoogleTest(&argc, argv);
+
+  ros::Time::setNow(ros::Time());
+
   return RUN_ALL_TESTS();
 }
+
 
