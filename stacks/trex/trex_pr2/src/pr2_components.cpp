@@ -269,14 +269,11 @@ namespace trex_pr2 {
   }
 
   REGISTER_SCHEMA(&trex_pr2::registerComponents);
-}
 
-namespace TREX {
-
-  void pr2registerFactories(bool playback) {
+  void registerFactories(bool playback) {
     // Register special reactors
     new TREX::TeleoReactor::ConcreteFactory<trex_pr2::MasterReactor>("MasterReactor");
   }
 
-  REGISTER_FACTORY(pr2registerFactories);
+  REGISTER_FACTORY(&trex_pr2::registerFactories);
 }
