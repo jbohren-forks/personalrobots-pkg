@@ -25,8 +25,8 @@
   <depend package="tf" />
 
   <export>
-    <nddl iflags="-I${prefix}/nddl  -I${prefix}/deprecated  -I${prefix} "/>
-    <cpp cflags="-I${prefix}/srv/cpp"/>
+    <nddl iflags="-I${prefix}/nddl  -I${prefix}/deprecated  -I${prefix}"/>
+    <cpp cflags=" -I${prefix}/include -I${prefix}/srv/cpp"/>
   </export>
 
 </package>
