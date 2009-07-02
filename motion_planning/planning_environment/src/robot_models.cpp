@@ -160,6 +160,11 @@ void planning_environment::RobotModels::getPlanningGroups(std::map< std::string,
     }
 }
 
+std::string planning_environment::RobotModels::PlannerConfig::getName(void)
+{
+    return config_;
+}
+
 bool planning_environment::RobotModels::PlannerConfig::hasParam(const std::string &param)
 {
     return nh_.hasParam(description_ + "_planning/planner_configs/" + config_ + "/" + param);

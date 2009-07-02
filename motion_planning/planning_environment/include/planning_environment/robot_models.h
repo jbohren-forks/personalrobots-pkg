@@ -68,6 +68,7 @@ namespace planning_environment
 	    {
 	    }
 	    
+	    std::string getName(void);
 	    bool        hasParam(const std::string &param);
 	    std::string getParamString(const std::string &param, const std::string &def = "");
 	    double      getParamDouble(const std::string &param, double def);
