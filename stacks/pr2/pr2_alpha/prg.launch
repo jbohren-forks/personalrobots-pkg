@@ -59,7 +59,7 @@
   -->
 
 <!-- Sound  -->
-  <node pkg="sound_play" type="soundplay_node.py" machine="four" />
+  <node pkg="sound_play" type="soundplay_node.py" machine="three" />
 
 <!-- Runtime Diagnostics Logging -->
   <node pkg="rosrecord" type="rosrecord" args="-f /hwlog/prg_runtime_automatic /diagnostics" />
