@@ -8,9 +8,12 @@
 <depend package="roscpp" />
 <depend package="roslib" />
 <depend package="robot_msgs" />
-<sysdepend os="ubuntu" version="8.04-hardy" package="festival"/>
 <sysdepend os="ubuntu" version="8.04-hardy" package="python-pygame"/>
-<sysdepend os="ubuntu" version="8.04-hardy" package="festvox-kallpc16k"/>
+<sysdepend os="ubuntu" version="8.10-hardy" package="python-pygame"/>
+<sysdepend os="ubuntu" version="8.04-hardy" package="festival"/>
+<sysdepend os="ubuntu" version="8.10-hardy" package="festival"/>
+<sysdepend os="ubuntu" version="8.04-hardy" package="festvox-don"/>
+<sysdepend os="ubuntu" version="8.10-hardy" package="festvox-don"/>
 </package>
 
 
