@@ -53,8 +53,8 @@ scg_l:
 
 ## for arms with each other; self-collision if any link in 'a' collides with some link in 'b'
 scg_lr:
-  a: r_forearm_link r_gripper_palm_link r_gripper_l_finger_link r_gripper_r_finger_link r_gripper_l_finger_tip_link r_gripper_r_finger_tip_link
-  b: l_forearm_link l_gripper_palm_link l_gripper_l_finger_link l_gripper_r_finger_link l_gripper_l_finger_tip_link l_gripper_r_finger_tip_link
+  a: r_shoulder_pan_link r_upper_arm_link r_elbow_flex_link r_forearm_link r_gripper_palm_link r_gripper_l_finger_link r_gripper_r_finger_link r_gripper_l_finger_tip_link r_gripper_r_finger_tip_link
+  b: l_shoulder_pan_link l_upper_arm_link l_elbow_flex_link l_forearm_link l_gripper_palm_link l_gripper_l_finger_link l_gripper_r_finger_link l_gripper_l_finger_tip_link l_gripper_r_finger_tip_link
 
 ## list of links that the robot can see with its sensors (used to remove 
 ## parts of the robot from scanned data)
