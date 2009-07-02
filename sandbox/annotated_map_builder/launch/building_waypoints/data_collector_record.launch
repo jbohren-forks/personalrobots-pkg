@@ -1,0 +1,18 @@
+<launch>
+  <include file="$(find pr2_alpha)/$(env ROBOT).machine" />
+
+
+  <node pkg="rosrecord" type="rosrecord" machine="four" args="-f /bags/annotated_maps/stereo_ /stereo/raw_stereo_throttled"/>
+
+  <node pkg="rosrecord" type="rosrecord" machine="two" args="-f /bags/annotated_maps/tf_ /tf_message"/>
+
+  <node pkg="rosrecord" type="rosrecord" machine="two" args="-f /bags/annotated_maps/mech_state /mechanism_state"/>
+
+  <node pkg="rosrecord" type="rosrecord" machine="two" args="-f /bags/annotated_maps/laser_ /base_scan /tilt_scan /laser_tilt_controller/laser_scanner_signal "/>
+
+  <node pkg="rosrecord" type="rosrecord" machine="two" args="-f /bags/annotated_maps/state_ /odom "/>
+
+  <node pkg="rosrecord" type="rosrecord" machine="two" args="-f /bags/annotated_maps/actionstate /wait_k_messages_action/feedback  /move_head2/wait_k_messages_action/feedback /move_head/wait_k_messages_action/feedback /head_controller/set_command_array "/>
+
+
+</launch>

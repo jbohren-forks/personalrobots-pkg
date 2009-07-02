@@ -43,7 +43,7 @@ from std_msgs.msg import *
 from robot_msgs.msg import *
 from std_msgs.msg import *
 from robot_msgs.msg import *
-from image_msgs.msg import RawStereo
+from sensor_msgs.msg import RawStereo
 
 import tf
 from battery_monitor_adapter import *
@@ -257,14 +257,14 @@ if __name__ == '__main__':
     manual_charger = ManualChargeAdapter("/request_charge")
 
     #/laser_tilt_controller/laser_scanner_signal - better!
-    capture_waiter = WaitForKMessagesAdapter("wait_k_messages_action",3,10)
+    capture_waiter = WaitForKMessagesAdapter("wait_k_messages_action",35,50)
     
     #capture_configs=[[0.0,-0.1],[-0.5, 0.3],[0.5, 0.3]];
 
     #multi_config_waiter=WaitForMultipleHeadConfigsAdapter(capture_configs,capture_waiter);
 
-    move_head_adapter=MoveHeadAdapter("/move_head/move_head_action",-1);
-    move_head_adapter2=MoveHeadAdapter("/move_head2/move_head_action",-1);
+    move_head_adapter=MoveHeadAdapter("/move_head_M/move_head_action",-1);
+    move_head_adapter2=MoveHeadAdapter("/move_head_C/move_head_action",-1);
 
     hc_goal_topic_ = "/head_controller/set_command_array"
     hc_pub = rospy.Publisher(hc_goal_topic_, JointCmd)
