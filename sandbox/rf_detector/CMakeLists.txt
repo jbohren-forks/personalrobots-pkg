@@ -31,4 +31,4 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
 #include_directories(${PROJECT_SOURCE_DIR}/include)
 
-rospack_add_executable(rf_detector src/RFDetector.cpp src/hog.cpp src/RandomForest.cpp src/write.cpp src/stdafx.cpp src/librf/discrete_dist.cpp src/librf/random_forest.cpp src/librf/tree_node.cpp src/librf/instance_set.cpp src/librf/tree.cpp)
+rospack_add_executable(rf_detector src/RFDetector.cpp src/hog.cpp src/RandomForest.cpp src/write.cpp src/stdafx.cpp src/librf/discrete_dist.cpp src/librf/random_forest.cpp src/librf/tree_node.cpp src/librf/instance_set.cpp src/librf/tree.cpp src/ObjectInPerspective.cpp)

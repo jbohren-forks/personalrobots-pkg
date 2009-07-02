@@ -1,9 +1,7 @@
-
 #include <iostream>
 #include "hog.h"
-#include "cv.h"
 #include "write.h"
-
+#include "opencv/cv.h"
 using namespace cv;
 
 size_t HogFast::getDescriptorSize() const
@@ -746,7 +744,7 @@ void HogFast::detect(const Mat& img,
 
     vector< vector<float> > vecTestFeature;
     vecTestFeature.resize(nblocks*blockHistogramSize);
-    for (int i=0; i < vecTestFeature.size();i++){
+    for (unsigned int i=0; i < vecTestFeature.size();i++){
         vecTestFeature.at(i).resize(1);
     }
 
@@ -787,7 +785,7 @@ void HogFast::detect(const Mat& img,
 //            << vecTestFeature.size()<< endl;
         rf.RFPredict(vecTestFeature, vecTestLeafNo);
 
-        for (int j=0; j < vecTestLeafNo.at(0).size(); j++){
+        for (unsigned int j=0; j < vecTestLeafNo.at(0).size(); j++){
 //            cout << vecTestLeafNo.at(0).at(j) << " ";
             int NodeId = vecTestLeafNo.at(0).at(j);
             FgBgProb_inst = FgBgProb.at(j).at(NodeId);
@@ -1020,8 +1018,8 @@ void HogFast::cast_vots( Mat& Img, Vector<Rect>& part_rect, Vector<Point>& treeI
     //parameter setting
     int nPatches = ViewIds.size() ;
     int nSamples = part_rect.size();
-//    Size ImgSize = Img.size();
-    Size ImgSize = cvGetSize(&CvMat(Img));
+    Size ImgSize = Img.size();
+//    Size ImgSize = cvGetSize(&CvMat(Img));
 
     int nScale = scale_count.size();
     vector<int> acc_scale_count;
@@ -1096,7 +1094,7 @@ void HogFast::cast_vots( Mat& Img, Vector<Rect>& part_rect, Vector<Point>& treeI
         patchIdptr = rf.get_vecpatchIds(treeId, nodeId);
         // count viewId
         int SumviewIdCount = 0;
-        for (int PatchCount = 1; PatchCount < patchIdptr->size(); PatchCount++)// loop through patches
+        for (unsigned int PatchCount = 1; PatchCount < patchIdptr->size(); PatchCount++)// loop through patches
         {
             patchId = patchIdptr->at(PatchCount);
             viewId = ViewIds[ patchId]-1;
@@ -1109,7 +1107,7 @@ void HogFast::cast_vots( Mat& Img, Vector<Rect>& part_rect, Vector<Point>& treeI
         for (int k=0; k < MaxViewId; k++)
             VoteWeights[k] = conf[SampleId]/SumviewIdCount;
 
-        for (int PatchCount = 1; PatchCount < patchIdptr->size(); PatchCount++)// loop through patches
+        for (unsigned int PatchCount = 1; PatchCount < patchIdptr->size(); PatchCount++)// loop through patches
         {
             patchId = patchIdptr->at(PatchCount);
             if (patchId >= nPatches)

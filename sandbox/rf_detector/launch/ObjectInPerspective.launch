@@ -23,6 +23,8 @@
    <param name="~numCellPerBlock_height" type="int" value="3" />
    <param name="~padding_width" type="int" value="0" />
    <param name="~padding_height" type="int" value="0" />
+   <param name="~ObjectInPerspectiveFlag" type="bool" value="true" />
+   <param name="~nCandPerView" type="int" value="1" />
  </node>
 
 </launch>

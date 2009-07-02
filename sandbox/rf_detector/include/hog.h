@@ -1,8 +1,8 @@
 
-#include "highgui.h"
-#include "cv.h"
-#include "cvaux.h"
-#include "cxcore.h"
+#include "opencv/highgui.h"
+#include "opencv/cv.h"
+#include "opencv/cvaux.h"
+#include "opencv/cxcore.h"
 #include "RandomForest.h"
 
 using namespace cv;
