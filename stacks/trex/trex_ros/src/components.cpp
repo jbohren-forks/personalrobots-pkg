@@ -263,9 +263,11 @@ namespace TREX{
       REGISTER_CONSTRAINT(constraintEngine->getCESchema(), TREX::PoseMsgEqConstraint, "eq_pose_msg", "Default");
 
       //Create User-defined stuff.
+      ROS_INFO("Creating user-defined schemas");
       for (unsigned int i = 0; i < _g_ros_schemas.size(); i++) {
 	_g_ros_schemas[i](m_playback, assembly);
       }
+      ROS_INFO("Done creating user-defined schemas");
     }
 
   private:
@@ -276,6 +278,7 @@ namespace TREX{
   void initROSExecutive(bool playback){
     initTREX();
     new TeleoReactor::ConcreteFactory<trex_ros::ROSReactor>("ROSReactor");
+    ROS_INFO("Registering user-defined teleo-reactor factories");
     for (unsigned int i = 0; i < _g_ros_factories.size(); i++) {
       _g_ros_factories[i](playback);
     }

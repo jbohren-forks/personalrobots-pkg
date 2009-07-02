@@ -1,6 +1,8 @@
 /**
  * @brief Collection of various components to use
  */
+#include "ros/ros.h"
+
 #include "Constraint.hh"
 #include "Assembly.hh"
 #include "Object.hh"
@@ -18,6 +20,26 @@ namespace TREX {
   extern std::vector<SchemaFunction> _g_ros_schemas;
   extern std::vector<FactoryFunction> _g_ros_factories;
 
+  template <SchemaFunction schema_function>
+  class RegisterSchema {
+    public:
+      RegisterSchema() {
+	// Make sure this schema has not been registered
+	for (unsigned int i = 0; i < _g_ros_schemas.size(); i++) {
+	  if(_g_ros_schemas[i] == schema_function) {
+	    ROS_ERROR("Attempting to register the same schema multiple times!");
+	    return;
+	  }
+	}
+
+	_g_ros_schemas.push_back(schema_function);
+      }
+  };
+
+#define REGISTER_SCHEMA(schema_function)\
+  TREX::RegisterSchema< schema_function > schema_register;//RegisterSchema< schema_function >::_instance;
+
+/**
 #define REGISTER_SCHEMA(type)						\
   void _do_not_use_schema##_##type(bool playback, const Assembly &a) {	\
     type(playback, a); }						\
@@ -30,7 +52,7 @@ namespace TREX {
   };									\
   _do_not_use_AutoGenClass##_##type					\
     _do_not_use_AutoGenClass##_##type::_instance;
-
+**/
 #define REGISTER_FACTORY(type)						\
   void _do_not_use_factory##_##type(bool playback) {			\
     type(playback); }							\
