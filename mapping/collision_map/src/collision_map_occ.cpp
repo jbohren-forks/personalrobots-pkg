@@ -253,7 +253,7 @@ private:
 		       std::inserter(diff, diff.begin()), CollisionPointOrder());
 	mapProcessing_.unlock();
 	if (!diff.empty())
-	    publishCollisionMap(diff, cmapUpdPublisher_);
+	    publishCollisionMap(diff, out.header, cmapUpdPublisher_);
     }
     
     void cloudCallback(const robot_msgs::PointCloudConstPtr &cloud)
@@ -314,7 +314,7 @@ private:
 	double sec = (ros::WallTime::now() - tm).toSec();
 	ROS_INFO("Updated collision map with %d points at %f Hz", currentMap_.size(), 1.0/sec);
 	
-	publishCollisionMap(currentMap_, cmapPublisher_);
+	publishCollisionMap(currentMap_, header_, cmapPublisher_);
 	mapProcessing_.unlock();
     }
 
@@ -367,7 +367,7 @@ private:
 
 	    // this can be used for debugging 
 	    if (publishOcclusion_)
-	        publishCollisionMap(keep, occPublisher_);
+	        publishCollisionMap(keep, header_, occPublisher_);
 	}
     }
     
@@ -719,10 +719,10 @@ private:
 	callback(pixel[0], pixel[1], pixel[2]);
     }
     
-    void publishCollisionMap(const CMap &map, ros::Publisher &pub) const
+    void publishCollisionMap(const CMap &map, const roslib::Header &header, ros::Publisher &pub) const
     {
 	mapping_msgs::CollisionMap cmap;
-	cmap.header = header_;
+	cmap.header = header;
 	const unsigned int ms = map.size();
 	
 	for (CMap::const_iterator it = map.begin() ; it != map.end() ; ++it)
