@@ -10,6 +10,7 @@
   <depend package="arm_gazebo" />
   <depend package="pr2_mechanism_controllers" />
   <depend package="pr2_gazebo" />
+  <depend package="pr2_ogre" />
   <depend package="gazebo_robot_description" />
   <depend package="deprecated_msgs" />
   <depend package="robot_msgs" />

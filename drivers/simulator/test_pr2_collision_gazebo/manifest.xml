@@ -8,6 +8,7 @@
   <url>http://pr.willowgarage.com/wiki/test_pr2_collision_gazebo</url>
   <depend package="gazebo_plugin"/>
   <depend package="pr2_gazebo" />
+  <depend package="pr2_ogre" />
   <depend package="gazebo_robot_description" />
   <depend package="robot_msgs" />
 </package>
