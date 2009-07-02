@@ -1,0 +1,26 @@
+<launch>
+
+  <!-- Need a stereo to get StereoInfo -->
+  <node pkg="rosrecord" type="rosplay" args="-s 3 -r 100 $(find labeled_object_detector)/test_data/ann_pcd_2009-07-02-08-21-40-topic.bag" />
+
+
+
+  <node pkg="annotated_planar_patch_map" type="pcd_assembler_srv" output="screen"
+        name="pcd_assembler" respawn="true"
+>
+
+    <remap from="scan" to="/annotated_cloud"/>
+    <param name="tf_cache_time_secs" type="double" value="30.0" />
+    <param name="max_scans" type="int" value="4000" />
+    <param name="fixed_frame" type="string" value="map" />
+  </node>
+
+  <node pkg="labeled_object_detector" type="planar_object_detector" output="screen" respawn="true"
+	launch-prefix="xterm -e gdb --args"
+>
+    <remap from="build_cloud" to="/pcd_assembler/build_cloud" />
+
+    </node>
+
+
+</launch>

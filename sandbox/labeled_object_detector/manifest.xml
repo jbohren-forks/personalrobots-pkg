@@ -1,0 +1,26 @@
+<package>
+  <description brief="labeled_object_detector">
+     Object detector for previousely labeled objects.
+  </description>
+  <author>Alex Sorokin</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://pr.willowgarage.com/wiki/labeled_object_detector</url>
+
+  <depend package="roscpp" />
+  <depend package="robot_msgs" />
+  <depend package="robot_srvs" />
+  <depend package="robot_actions" />
+  <depend package="pr2_robot_actions" />
+  <depend package="point_cloud_mapping" />
+  <depend package="point_cloud_assembler" />
+  <depend package="tf" />
+  <depend package="visualization_msgs" />
+
+  <export>
+    <cpp cflags="-I${prefix}/msg/cpp -I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib"/>
+  </export>
+
+</package>
+
+
