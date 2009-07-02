@@ -239,10 +239,12 @@ namespace move_arm
 			pr2_mechanism_controllers::TrajectoryCancel::Request  send_traj_cancel_req;
 			pr2_mechanism_controllers::TrajectoryCancel::Response send_traj_cancel_res;
 			send_traj_cancel_req.trajectoryid = trajectoryId;
-			if (!clientCancel.call(send_traj_cancel_req, send_traj_cancel_res))
+			if (clientCancel.call(send_traj_cancel_req, send_traj_cancel_res))
+			    ROS_INFO("Stopped trajectory %d", trajectoryId);
+			else
 			    ROS_ERROR("Unable to cancel trajectory %d. Continuing...", trajectoryId);
 			trajectoryId = -1;
-		    }
+		    }		    
 		    
 		    if (result != robot_actions::PREEMPTED)
 		    {
@@ -278,7 +280,7 @@ namespace move_arm
 			    result = robot_actions::ABORTED;
 			    break;
 			}
-			ROS_INFO("Sent trajectory to controller");
+			ROS_INFO("Sent trajectory %d to controller", trajectoryId);
 		    }
 		    else
 		    {
@@ -300,12 +302,13 @@ namespace move_arm
 		    {
 		        if (approx && !planningMonitor_->isStateValidAtGoal(planningMonitor_->getRobotState()))
 			{
-			    ROS_INFO("Completed approximate path. Trying again to reach goal...");
+			    ROS_INFO("Completed approximate path (trajectory %d). Trying again to reach goal...", trajectoryId);
 			    feedback = pr2_robot_actions::MoveArmState::PLANNING;	
 			    update(feedback);
 			    trajectoryId = -1;
 			    continue;
 			}
+			ROS_INFO("Completed trajectory %d", trajectoryId);
 			break;
 		    }
 		    // something bad happened in the execution
