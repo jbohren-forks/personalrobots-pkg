@@ -1,14 +1,8 @@
-(roslisp:load-message-types "robot_msgs/PointCloud" "robot_msgs/Point" "deprecated_msgs/Pose2DFloat32" 
-				"robot_msgs/PoseStamped" "std_msgs/Empty"
-				"people_aware_nav/ConstrainedGoal" "people_aware_nav/ConstrainedMoveBaseState"
-				)
-(roslisp:load-service-types "people_aware_nav/PersonOnPath")
-
 (defpackage :lane-following
   (:nicknames :lanes)
   (:use :roslisp :cl :transform-2d :sb-thread)
   (:export :main)
-  (:import-from :robot_msgs
+  (:import-from :robot_msgs-msg
 		:<Point>
 		:<ControllerStatus>
 		:x-val
@@ -18,9 +12,9 @@
 		:<Polygon3D>
 		:<PointCloud>
 		:pts-val)
-  (:import-from :deprecated_msgs
+  (:import-from :deprecated_msgs-msg
 		:<Pose2DFloat32>)
-  (:import-from :roslib
+  (:import-from :roslib-msg
 		:<Header>))
 
 
@@ -123,12 +117,12 @@
   (setq *current-goal* (list x y)
 	*move-base-result* nil)
   (publish-on-topic "/move_base/activate" 
-		    (make-instance 'people_aware_nav:<ConstrainedGoal>
+		    (make-instance 'people_aware_nav-msg:<ConstrainedGoal>
 				   :header (make-instance '<Header> :frame_id *global-frame*)
 				   :x x :y y :th th :forbidden (make-boundary *robot-pose* constrained))))
 
 (defun disable-nav ()
-  (publish-on-topic "/move_base/preempt" (make-instance 'std_msgs:<Empty>))
+  (publish-on-topic "/move_base/preempt" (make-instance 'std_msgs-msg:<Empty>))
   (ros-info pan "Disabling nav"))
 
 
@@ -145,8 +139,8 @@
 ;; Callbacks
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defparameter *abort* (symbol-code 'robot_actions:<ActionStatus> :aborted))
-(defparameter *succeed* (symbol-code 'robot_actions:<ActionStatus> :success))
+(defparameter *abort* (symbol-code 'robot_actions-msg:<ActionStatus> :aborted))
+(defparameter *succeed* (symbol-code 'robot_actions-msg:<ActionStatus> :success))
 
 ;; When state msg refers to current goal, set *move-base-result*
 (defun state-callback (state)
