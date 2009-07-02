@@ -564,11 +564,13 @@ namespace cloud_geometry
       * \param downsample_factor factor for downsampling the input data, i.e., take every Nth row and column in the depth image
       * \param width the width in pixels of the depth image
       * \param height the height in pixels of the depth image
+      * \param max_z maximum distance threshold (on Z) between the query point and its neighbors (set to -1 to ignore the check)
       * \param viewpoint the viewpoint where the cloud was acquired from (used for normal flip)
       */
     void
       computeOrganizedPointCloudNormals (robot_msgs::PointCloud &points, const robot_msgs::PointCloud &surface,
-                                         int k, int downsample_factor, int width, int height, const robot_msgs::Point32 &viewpoint)
+                                         int k, int downsample_factor, int width, int height, double max_z, 
+                                         const robot_msgs::Point32 &viewpoint)
     {
       // Reduce by a factor of N
       int nr_points = lrint (ceil (width / (double)downsample_factor)) *
@@ -605,14 +607,32 @@ namespace cloud_geometry
         points.pts[j] = surface.pts[i];
 
         // Get all point neighbors in a k x k window
-        for (int l = 0, x = -k; x < k+1; x++)
+        int l = 0;
+        for (int x = -k; x < k+1; x++)
         {
           for (int y = -k; y < k+1; y++)
           {
             int idx = (u+x) * width + (v+y);
-            if (idx > 0 && idx < (int)surface.pts.size ())
+            if (idx == i)
+              continue;
+            // If the index is not in the point cloud, continue
+            if (idx < 0 || idx >= (int)surface.pts.size ())
+              continue;
+            // If the difference in Z (depth) between the query point and the current neighbor is smaller than max_z
+            if (max_z != -1)
+            {
+              if ( fabs (points.pts[j].z - surface.pts[idx].z) <  max_z )
+                nn_indices[l++] = idx;
+            }
+            else
               nn_indices[l++] = idx;
           }
+        }
+        nn_indices.resize (l);
+        if (nn_indices.size () < 4)
+        {
+          //ROS_ERROR ("Not enough neighboring indices found for point %d (%f, %f, %f).", i, surface.pts[i].x, surface.pts[i].y, surface.pts[i].z);
+          continue;
         }
 
         // Compute the point normals (nx, ny, nz), surface curvature estimates (c)
@@ -625,6 +645,193 @@ namespace cloud_geometry
         points.chan[orig_dims + 3].vals[j] = curvature;
         j++;
       }
+    }
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /** \brief Estimate the point normals and surface curvatures for a given organized point cloud dataset (points)
+      * using the data from a different point cloud (surface) for least-squares planar estimation.
+      *
+      * \note The main difference between this method and its \a computePointCloudNormals () sibblings is that 
+      * assumptions are being made regarding the organization of points in the cloud. For example, point clouds
+      * acquired using camera sensors are assumed to be row-major, and the width and height of the depth image
+      * are assumed to be known, etc.
+      * \param points the input point cloud (on output, 4 extra channels will be added: \a nx, \a ny, \a nz, and \a curvatures)
+      * \param surface the point cloud data to use for least-squares planar estimation
+      * \param k the windowing factor (i.e., how many pixels in the depth image in all directions should the neighborhood of a point contain)
+      * \param downsample_factor factor for downsampling the input data, i.e., take every Nth row and column in the depth image
+      * \param width the width in pixels of the depth image
+      * \param height the height in pixels of the depth image
+      * \param max_z maximum distance threshold (on Z) between the query point and its neighbors (set to -1 to ignore the check)
+      * \param min_angle the minimum angle allowed between the viewpoint ray and the line formed by two subsequent points(used for filtering jump edge data)
+      * \param max_angle the maximum angle allowed between the viewpoint ray and the line formed by two subsequent points(used for filtering jump edge data)
+      * \param viewpoint the viewpoint where the cloud was acquired from (used for normal flip)
+      */
+    void
+      computeOrganizedPointCloudNormalsWithFiltering (robot_msgs::PointCloud &points, const robot_msgs::PointCloud &surface,
+                                                      int k, int downsample_factor, int width, int height, double max_z, 
+                                                      double min_angle, double max_angle, 
+                                                      const robot_msgs::Point32 &viewpoint)
+    {
+      // Reduce by a factor of N
+      int nr_points = lrint (ceil (width / (double)downsample_factor)) *
+                      lrint (ceil (height / (double)downsample_factor));
+      int orig_dims = points.chan.size ();
+      points.chan.resize (orig_dims + 4);                     // Reserve space for 4 channels: nx, ny, nz, curvature
+      points.chan[orig_dims + 0].name = "nx";
+      points.chan[orig_dims + 1].name = "ny";
+      points.chan[orig_dims + 2].name = "nz";
+      points.chan[orig_dims + 3].name = "curvatures";
+      points.pts.resize (nr_points);
+      // Reserve space for 4 channels: nx, ny, nz, curvature
+      for (unsigned int d = orig_dims; d < points.chan.size (); d++)
+        points.chan[d].vals.resize (nr_points);
+
+      // Reserve enough space for the neighborhood
+      std::vector<int> nn_indices ((k + k + 1) * (k + k + 1));
+      Eigen::Vector4d plane_parameters;
+      double curvature;
+
+      int j = 0;
+//#pragma omp parallel for schedule(dynamic)
+      for (int i = 0; i < (int)surface.pts.size (); i++)
+      {
+        // Obtain the <u,v> pixel values
+        int u = i / width;
+        int v = i % width;
+
+        // Get every Nth pixel in both rows, cols
+        if ((u % downsample_factor != 0) || (v % downsample_factor != 0))
+          continue;
+
+        // Copy the data
+        points.pts[j] = surface.pts[i];
+
+        // Get all point neighbors in a k x k window
+        int l = 0;
+        for (int x = -k; x < k+1; x++)
+        {
+          for (int y = -k; y < k+1; y++)
+          {
+            int idx = (u+x) * width + (v+y);
+            if (idx == i)
+              continue;
+
+            // If the index is not in the point cloud, continue
+            if (idx < 0 || idx >= (int)surface.pts.size ())
+              continue;
+
+            // Get the angle between the lines formed with the viewpoint
+            double angle = getAngleWithViewpoint (points.pts[j].x, points.pts[j].y, points.pts[j].z,
+                                                  surface.pts[idx].x, surface.pts[idx].y, surface.pts[idx].z,
+                                                  viewpoint.x, viewpoint.y, viewpoint.z);
+            if (angle < min_angle || angle > max_angle)
+              continue;
+
+            // If the difference in Z (depth) between the query point and the current neighbor is smaller than max_z
+            if (max_z != -1)
+            {
+              if ( fabs (points.pts[j].z - surface.pts[idx].z) <  max_z )
+                nn_indices[l++] = idx;
+            }
+            else
+              nn_indices[l++] = idx;
+         }
+        }
+        nn_indices.resize (l);
+        if (nn_indices.size () < 4)
+        {
+          //ROS_ERROR ("Not enough neighboring indices found for point %d (%f, %f, %f).", i, surface.pts[i].x, surface.pts[i].y, surface.pts[i].z);
+          continue;
+        }
+
+        // Compute the point normals (nx, ny, nz), surface curvature estimates (c)
+        cloud_geometry::nearest::computePointNormal (surface, nn_indices, plane_parameters, curvature);
+        cloud_geometry::angles::flipNormalTowardsViewpoint (plane_parameters, surface.pts[i], viewpoint);
+
+        points.chan[orig_dims + 0].vals[j] = plane_parameters (0);
+        points.chan[orig_dims + 1].vals[j] = plane_parameters (1);
+        points.chan[orig_dims + 2].vals[j] = plane_parameters (2);
+        points.chan[orig_dims + 3].vals[j] = curvature;
+        j++;
+      }
+    }
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /** \brief Filter jump edges in an organized point cloud dataset (e.g., acquired using TOF or dense stereo, etc)
+      *
+      * \NOTE the input point cloud size is assumed to have (width*height) number of points, in order!
+      * \param points the input organized point cloud data
+      * \param points_filtered the output filtered point cloud data
+      * \param k the windowing factor (i.e., how many pixels in the depth image in all directions should the neighborhood of a point contain)
+      * \param width the width in pixels of the depth image
+      * \param height the height in pixels of the depth image
+      * \param min_angle the minimum angle allowed between the viewpoint ray and the line formed by two subsequent points(used for filtering jump edge data)
+      * \param max_angle the maximum angle allowed between the viewpoint ray and the line formed by two subsequent points(used for filtering jump edge data)
+      * \param viewpoint the viewpoint where the cloud was acquired from (used for normal flip)
+      */
+    void
+      filterJumpEdges (const robot_msgs::PointCloud &points, robot_msgs::PointCloud &points_filtered, int k, int width, int height, 
+                       double min_angle, double max_angle, const robot_msgs::Point32 &viewpoint)
+    {
+      // Copy the header, and reserve the correct number of channels and points, etc
+      points_filtered.header = points.header;
+      points_filtered.pts.resize (points.pts.size ());
+      points_filtered.chan.resize (points.chan.size ());
+      for (unsigned int d = 0; d < points.chan.size (); d++)
+      {
+        points_filtered.chan[d].name = points.chan[d].name;
+        points_filtered.chan[d].vals.resize (points.chan[d].vals.size ());
+      }
+
+      int j = 0;
+//#pragma omp parallel for schedule(dynamic)
+      for (int i = 0; i < (int)points.pts.size (); i++)
+      {
+        // Obtain the <u,v> pixel values
+        int u = i / width;
+        int v = i % width;
+
+        // Get all point neighbors in a k x k window
+        bool valid_point = true;
+        for (int x = -k; x < k+1; x++)
+        {
+          if (!valid_point) 
+            break;
+          for (int y = -k; y < k+1; y++)
+          {
+            int idx = (u+x) * width + (v+y);
+            if (idx == i)
+              continue;
+
+            // If the index is not in the point cloud, continue
+            if (idx < 0 || idx >= (int)points.pts.size ())
+              continue;
+
+            // Get the angle between the lines formed with the viewpoint
+            double angle = getAngleWithViewpoint (points.pts[i].x, points.pts[i].y, points.pts[i].z,
+                                                  points.pts[idx].x, points.pts[idx].y, points.pts[idx].z,
+                                                  viewpoint.x, viewpoint.y, viewpoint.z);
+;            if (angle < min_angle || angle > max_angle)
+            {
+              valid_point = false;
+              break;
+            }
+              
+          }
+        }
+        
+        if (valid_point)
+        {
+          // Copy the data
+          points_filtered.pts[j] = points.pts[i];
+          for (unsigned int d = 0; d < points.chan.size (); d++)
+            points_filtered.chan[d].vals[j] = points.chan[d].vals[j];
+          j++;
+        }
+      }
+      points_filtered.pts.resize (j);
+      for (unsigned int d = 0; d < points.chan.size (); d++)
+        points_filtered.chan[d].vals.resize (j);
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////

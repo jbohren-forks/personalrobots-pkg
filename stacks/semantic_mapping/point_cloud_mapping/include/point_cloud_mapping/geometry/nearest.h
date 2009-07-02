@@ -232,6 +232,40 @@ namespace cloud_geometry
       computeCovarianceMatrix (points, indices, covariance_matrix, centroid);
     }
 
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /** \brief Computes the angle between the lines created from 2 points and the viewpoint: [vp->p1], [p1->p2]
+      * Returns the angle (in degrees).
+      * \param px X coordinate for the first point
+      * \param py Y coordinate for the first point
+      * \param pz Z coordinate for the first point
+      * \param qx X coordinate for the second point
+      * \param qy Y coordinate for the second point
+      * \param qz Z coordinate for the second point
+      * \param vp_x X coordinate of the viewpoint (0 by default)
+      * \param vp_y Y coordinate of the viewpoint (0 by default)
+      * \param vp_z Z coordinate of the viewpoint (0 by default)
+      */
+    inline double
+      getAngleWithViewpoint (float px, float py, float pz, float qx, float qy, float qz,
+                             float vp_x = 0, float vp_y = 0, float vp_z = 0)
+    {  
+      double dir_a[3], dir_b[3];
+      dir_a[0] = vp_x - px; dir_a[1] = vp_y - py; dir_a[2] = vp_z - pz;
+      dir_b[0] = qx   - px; dir_b[1] = qy   - py; dir_b[2] = qz   - pz;
+
+      // sqrt (sqr (x) + sqr (y) + sqr (z))
+      double norm_a = sqrt (dir_a[0]*dir_a[0] + dir_a[1]*dir_a[1] + dir_a[2]*dir_a[2]);
+      // Check for bogus 0,0,0 points
+      if (norm_a == 0) return (0);
+      double norm_b = sqrt (dir_b[0]*dir_b[0] + dir_b[1]*dir_b[1] + dir_b[2]*dir_b[2]);
+      if (norm_b == 0) return (0);
+      // dot_product (x, y)
+      double dot_pr = dir_a[0]*dir_b[0] + dir_a[1]*dir_b[1] + dir_a[2]*dir_b[2];
+      if (dot_pr != dot_pr)     // Check for NaNs  
+        return (0);
+
+      return ( acos (dot_pr / (norm_a * norm_b) ) * 180.0 / M_PI);
+    }
 
     void computeCentroid (const robot_msgs::PointCloud &points, robot_msgs::PointCloud &centroid);
     void computeCentroid (const robot_msgs::PointCloud &points, std::vector<int> &indices, robot_msgs::PointCloud &centroid);
@@ -252,13 +286,20 @@ namespace cloud_geometry
     void computePointCloudNormals (robot_msgs::PointCloud &points, int k, const robot_msgs::PointStamped &viewpoint);
     void computePointCloudNormals (robot_msgs::PointCloud &points, double radius, const robot_msgs::PointStamped &viewpoint);
 
-    void computeOrganizedPointCloudNormals (robot_msgs::PointCloud &points, const robot_msgs::PointCloud &surface, int k, int downsample_factor, int width, int height, const robot_msgs::Point32 &viewpoint);
+    void computeOrganizedPointCloudNormals (robot_msgs::PointCloud &points, const robot_msgs::PointCloud &surface, int k, int downsample_factor, int width, int height, double max_z, 
+                                            const robot_msgs::Point32 &viewpoint);
+    void computeOrganizedPointCloudNormalsWithFiltering (robot_msgs::PointCloud &points, const robot_msgs::PointCloud &surface, int k, int downsample_factor, int width, int height, 
+                                                         double max_z, double min_angle, double max_angle, const robot_msgs::Point32 &viewpoint);
 
     void extractEuclideanClusters (const robot_msgs::PointCloud &points, const std::vector<int> &indices, double tolerance, std::vector<std::vector<int> > &clusters,
                                    int nx_idx, int ny_idx, int nz_idx, double eps_angle, unsigned int min_pts_per_cluster = 1);
 
     void extractEuclideanClusters (const robot_msgs::PointCloud &points, double tolerance, std::vector<std::vector<int> > &clusters,
                                    int nx_idx, int ny_idx, int nz_idx, double eps_angle, unsigned int min_pts_per_cluster = 1);
+                                   
+    void filterJumpEdges (const robot_msgs::PointCloud &points, robot_msgs::PointCloud &points_filtered, int k, int width, int height, 
+                          double min_angle, double max_angle, const robot_msgs::Point32 &viewpoint);
+                                                                    
   }
 }
 
