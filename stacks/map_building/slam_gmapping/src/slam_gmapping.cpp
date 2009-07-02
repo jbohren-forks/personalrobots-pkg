@@ -375,8 +375,8 @@ SlamGMapping::updateMap()
 }
 
 bool 
-SlamGMapping::map_cb(robot_srvs::StaticMap::Request  &req,
-                     robot_srvs::StaticMap::Response &res)
+SlamGMapping::map_cb(nav_srvs::StaticMap::Request  &req,
+                     nav_srvs::StaticMap::Response &res)
 {
   if(got_map_ && map_.map.info.width && map_.map.info.height)
   {
