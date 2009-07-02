@@ -29,6 +29,4 @@
     <cpp cflags="-I${prefix}/srv/cpp"/>
   </export>
 
-  <rosdep name="jam"/>
-
 </package>
