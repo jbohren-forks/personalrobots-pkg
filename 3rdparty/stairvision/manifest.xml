@@ -1,0 +1,16 @@
+<package>
+<description brief="The STAIR Vision Library (latest)">
+
+This package contains the latest code from the STAIR Vision
+Library (SVL).  This ROS package does not modify the SVL in any way;
+it simply provides a convenient way to download and compile the library
+in a way that can be managed by the ROS dependency system.
+
+</description>
+<author>Stephen Gould, Ian Goodfellow, Olga Russakovsky, and many others. ROS package maintained by Ian Goodfellow.</author>
+<license>BSD</license>
+<review status="3rdparty" notes=""/>
+<url>http://stairvision.sourceforge.net</url>
+<depend package="opencv_latest" />
+</package>
+
