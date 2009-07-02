@@ -137,7 +137,7 @@ private:
       clearOldTuples();
     }
 
-    if (tuples_.size() > queue_size_)
+    if (queue_size_ > 0)
     {
       while (tuples_.size() > queue_size_)
       {
