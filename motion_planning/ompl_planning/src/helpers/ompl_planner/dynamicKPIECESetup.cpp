@@ -34,56 +34,48 @@
 
 /** \author Ioan Sucan */
 
-#ifndef OMPL_PLANNING_MODEL_
-#define OMPL_PLANNING_MODEL_
+#include "ompl_planning/planners/dynamicKPIECESetup.h"
 
-#include "ompl_planning/ModelBase.h"
-#include "ompl_planning/planners/PlannerSetup.h"
-
-#include <boost/shared_ptr.hpp>
-#include <string>
-#include <map>
-
-namespace ompl_planning
+ompl_planning::dynamicKPIECESetup::dynamicKPIECESetup(ModelBase *m) : PlannerSetup(m)
 {
-    
-    class Model : public ModelBase
-    {
-    public:
-        Model(void) : ModelBase()
-	{
-	}
-	
-	virtual ~Model(void)
-	{
-	    for (std::map<std::string, PlannerSetup*>::iterator i = planners.begin(); i != planners.end() ; ++i)
-		if (i->second)
-		    delete i->second;
-	}
-	
-	/* instantiate the planners that can be used  */
-	void createMotionPlanningInstances(std::vector< boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> > cfgs);
-	
-	std::map<std::string, PlannerSetup*> planners;
-	
-    protected:
-	
-	void add_kRRT(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options);
-	void add_kLazyRRT(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options);
-	void add_kEST(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options);
-	void add_kSBL(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options);
-	void add_kIKSBL(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options);
-	void add_kKPIECE(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options);
-	void add_kLBKPIECE(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options);
-	void add_kIKKPIECE(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options);
-	
-	void add_dRRT(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options);
-	void add_dKPIECE(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options);
-    };
-    
-    typedef std::map<std::string, Model*> ModelMap;
-    
-} // ompl_planning
+    name = "dynamic::KPIECE";	    
+    priority = 3;
+}
 
-#endif
+ompl_planning::dynamicKPIECESetup::~dynamicKPIECESetup(void)
+{
+    if (dynamic_cast<ompl::dynamic::KPIECE1*>(mp))
+    {
+	ompl::base::ProjectionEvaluator *pe = dynamic_cast<ompl::dynamic::KPIECE1*>(mp)->getProjectionEvaluator();
+	if (pe)
+	    delete pe;
+    }
+}
+
+bool ompl_planning::dynamicKPIECESetup::setup(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options)
+{
+    preSetup(options);
+    
+    ompl::dynamic::KPIECE1 *kpiece = new ompl::dynamic::KPIECE1(dynamic_cast<ompl::dynamic::SpaceInformationControlsIntegrator*>(si));
+    mp                             = kpiece;	
+    
+    if (options->hasParam("goal_bias"))
+    {
+	kpiece->setGoalBias(options->getParamDouble("goal_bias", kpiece->getGoalBias()));
+	ROS_DEBUG("Goal bias is set to %g", kpiece->getGoalBias());
+    }
+    
+    kpiece->setProjectionEvaluator(getProjectionEvaluator(options));
+    
+    if (kpiece->getProjectionEvaluator() == NULL)
+    {
+	ROS_WARN("Adding %s failed: need to set both 'projection' and 'celldim' for %s", name.c_str(), model->groupName.c_str());
+	return false;
+    }
+    else
+    {
+	postSetup(options);
+	return true;
+    }
+}
 

@@ -45,6 +45,9 @@ public:
     
     OMPLPlanning(void)
     {	
+	// display the first 3 coordinates of states in diffusion trees
+	requestHandler_.enableDebugMode(0, 1);
+	
 	// register with ROS
 	collisionModels_ = new planning_environment::CollisionModels("robot_description");
 	if (nodeHandle_.hasParam("~planning_frame_id"))

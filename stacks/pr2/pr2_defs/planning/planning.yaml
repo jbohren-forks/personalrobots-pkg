@@ -14,7 +14,7 @@ groups:
     links:
       base_link
     planner_configs:
-      RRTkConfig1 RRTdConfig1 LazyRRTkConfig1 SBLkConfig1 KPIECEkConfig1
+      RRTkConfig1 RRTdConfig1 LazyRRTkConfig1 SBLkConfig1 KPIECEkConfig1 KPIECEdConfig1
 
   left_arm:
     links:
@@ -79,7 +79,6 @@ planner_configs:
 
   RRTdConfig1:
     type: dynamic::RRT
-    range: 0.75
 
   LazyRRTkConfig1:
     type: kinematic::LazyRRT
@@ -96,7 +95,12 @@ planner_configs:
     projection: 0 1
     celldim: 1 1
     range: 0.5
-    
+
+  KPIECEdConfig1:
+    type: dynamic::KPIECE
+    projection: 0 1
+    celldim: 0.5 0.5
+
   RRTkConfig2:
     type: kinematic::RRT
     range: 0.75

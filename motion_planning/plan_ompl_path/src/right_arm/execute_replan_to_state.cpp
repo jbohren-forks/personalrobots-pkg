@@ -131,14 +131,14 @@ public:
 	
 	req.params.model_id = "base";
 	req.params.distance_metric = "L2Square";
-	req.params.planner_id = "dynamic::RRT";
+	req.params.planner_id = "dynamic::KPIECE";
 
-	req.params.volumeMin.x = -8;
-	req.params.volumeMin.y = -8;
+	req.params.volumeMin.x = -3;
+	req.params.volumeMin.y = -3;
 	req.params.volumeMin.z = 0;
 
-	req.params.volumeMax.x = 8;
-	req.params.volumeMax.y = 8;
+	req.params.volumeMax.x = 3;
+	req.params.volumeMax.y = 3;
 	req.params.volumeMax.z = 0;
 
 	req.times = 1;
@@ -153,20 +153,20 @@ public:
 	req.goal_constraints.joint_constraint[0].toleranceBelow.resize(3);
 
 	req.goal_constraints.joint_constraint[0].value[0] = 0.0;
-	req.goal_constraints.joint_constraint[0].toleranceBelow[0] = 0.0;
-	req.goal_constraints.joint_constraint[0].toleranceAbove[0] = 0.0;
+	req.goal_constraints.joint_constraint[0].toleranceBelow[0] = 0.05;
+	req.goal_constraints.joint_constraint[0].toleranceAbove[0] = 0.05;
 
 	req.goal_constraints.joint_constraint[0].value[1] = 1.0;
-	req.goal_constraints.joint_constraint[0].toleranceBelow[1] = 0.0;
-	req.goal_constraints.joint_constraint[0].toleranceAbove[1] = 0.0;
+	req.goal_constraints.joint_constraint[0].toleranceBelow[1] = 0.05;
+	req.goal_constraints.joint_constraint[0].toleranceAbove[1] = 0.05;
 
 	req.goal_constraints.joint_constraint[0].value[2] = 0.0;
-	req.goal_constraints.joint_constraint[0].toleranceBelow[2] = 0.0;
-	req.goal_constraints.joint_constraint[0].toleranceAbove[2] = 0.0;
+	req.goal_constraints.joint_constraint[0].toleranceBelow[2] = 0.1;
+	req.goal_constraints.joint_constraint[0].toleranceAbove[2] = 0.1;
 
 
 	// allow 1 second computation time
-	req.allowed_time = 10.0;
+	req.allowed_time = 20.0;
 	
 	// define the service messages
 	motion_planning_srvs::MotionPlan::Response res;

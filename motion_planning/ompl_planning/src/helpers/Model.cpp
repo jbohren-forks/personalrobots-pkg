@@ -44,6 +44,7 @@
 #include "ompl_planning/planners/kinematicLBKPIECESetup.h"
 
 #include "ompl_planning/planners/dynamicRRTSetup.h"
+#include "ompl_planning/planners/dynamicKPIECESetup.h"
 
 /* instantiate the planners that can be used  */
 void ompl_planning::Model::createMotionPlanningInstances(std::vector< boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> > cfgs)
@@ -75,6 +76,9 @@ void ompl_planning::Model::createMotionPlanningInstances(std::vector< boost::sha
 	else
 	if (type == "dynamic::RRT")
 	    add_dRRT(cfgs[i]);
+	else
+	if (type == "dynamic::KPIECE")
+	    add_dKPIECE(cfgs[i]);
 	else
 	    ROS_WARN("Unknown planner type: %s", type.c_str());
     }
@@ -137,6 +141,15 @@ void ompl_planning::Model::add_kIKSBL(boost::shared_ptr<planning_environment::Ro
 void ompl_planning::Model::add_kKPIECE(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options)
 {
     PlannerSetup *kpiece = new kinematicKPIECESetup(dynamic_cast<ModelBase*>(this));
+    if (kpiece->setup(options))
+	planners[kpiece->name] = kpiece;
+    else
+	delete kpiece;
+}
+
+void ompl_planning::Model::add_dKPIECE(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options)
+{
+    PlannerSetup *kpiece = new dynamicKPIECESetup(dynamic_cast<ModelBase*>(this));
     if (kpiece->setup(options))
 	planners[kpiece->name] = kpiece;
     else

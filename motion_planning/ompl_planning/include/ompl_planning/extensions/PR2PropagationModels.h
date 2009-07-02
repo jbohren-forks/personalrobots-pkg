@@ -58,15 +58,15 @@ namespace ompl_planning
 	    *dimension = 2;
 	    component.resize(*dimension);
 	    component[0].type = ompl::base::ControlComponent::LINEAR;
-	    component[0].minValue = -0.2;
+	    component[0].minValue = -1.0;
 	    component[0].maxValue = 1.5;
 	    component[1].type = ompl::base::ControlComponent::LINEAR;
-	    component[1].minValue = -0.5;
-	    component[1].maxValue =  0.5;
+	    component[1].minValue = -0.9;
+	    component[1].maxValue =  0.9;
 	    
-	    *resolution = 0.1;
-	    *minDuration = 1;
-	    *maxDuration = 5;
+	    *resolution = 0.05;
+	    *minDuration = 5;
+	    *maxDuration = 10;
 	}
 	
 	virtual void operator()(const ompl::base::State *begin, const ompl::base::Control *ctrl, double resolution, ompl::base::State *end) const 

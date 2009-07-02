@@ -39,7 +39,7 @@
 ompl_planning::kinematicKPIECESetup::kinematicKPIECESetup(ModelBase *m) : PlannerSetup(m)
 {
     name = "kinematic::KPIECE";	    
-    priority = 3;
+    priority = 4;
 }
 
 ompl_planning::kinematicKPIECESetup::~kinematicKPIECESetup(void)

@@ -34,56 +34,25 @@
 
 /** \author Ioan Sucan */
 
-#ifndef OMPL_PLANNING_MODEL_
-#define OMPL_PLANNING_MODEL_
+#ifndef OMPL_PLANNING_PLANNERS_DYNAMIC_KPIECE_SETUP_
+#define OMPL_PLANNING_PLANNERS_DYNAMIC_KPIECE_SETUP_
 
-#include "ompl_planning/ModelBase.h"
 #include "ompl_planning/planners/PlannerSetup.h"
-
-#include <boost/shared_ptr.hpp>
-#include <string>
-#include <map>
+#include <ompl/extension/dynamic/extension/kpiece/KPIECE1.h>
 
 namespace ompl_planning
 {
     
-    class Model : public ModelBase
+    class dynamicKPIECESetup : public PlannerSetup
     {
     public:
-        Model(void) : ModelBase()
-	{
-	}
 	
-	virtual ~Model(void)
-	{
-	    for (std::map<std::string, PlannerSetup*>::iterator i = planners.begin(); i != planners.end() ; ++i)
-		if (i->second)
-		    delete i->second;
-	}
-	
-	/* instantiate the planners that can be used  */
-	void createMotionPlanningInstances(std::vector< boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> > cfgs);
-	
-	std::map<std::string, PlannerSetup*> planners;
-	
-    protected:
-	
-	void add_kRRT(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options);
-	void add_kLazyRRT(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options);
-	void add_kEST(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options);
-	void add_kSBL(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options);
-	void add_kIKSBL(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options);
-	void add_kKPIECE(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options);
-	void add_kLBKPIECE(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options);
-	void add_kIKKPIECE(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options);
-	
-	void add_dRRT(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options);
-	void add_dKPIECE(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options);
+        dynamicKPIECESetup(ModelBase *m);
+	virtual ~dynamicKPIECESetup(void);
+	virtual bool setup(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options);
     };
-    
-    typedef std::map<std::string, Model*> ModelMap;
-    
+
 } // ompl_planning
 
 #endif
-
+    

@@ -53,16 +53,16 @@ bool ompl_planning::dynamicRRTSetup::setup(boost::shared_ptr<planning_environmen
     ompl::dynamic::RRT *rrt = new ompl::dynamic::RRT(dynamic_cast<ompl::dynamic::SpaceInformationControlsIntegrator*>(si));
     mp                      = rrt;
     
-    if (options->hasParam("range"))
-    {
-	rrt->setRange(options->getParamDouble("range", rrt->getRange()));
-	ROS_DEBUG("Range is set to %g", rrt->getRange());
-    }
-    
     if (options->hasParam("goal_bias"))
     {
 	rrt->setGoalBias(options->getParamDouble("goal_bias", rrt->getGoalBias()));
 	ROS_DEBUG("Goal bias is set to %g", rrt->getGoalBias());
+    }
+
+    if (options->hasParam("hint_bias"))
+    {
+	rrt->setHintBias(options->getParamDouble("hint_bias", rrt->getHintBias()));
+	ROS_DEBUG("Goal bias is set to %g", rrt->getHintBias());
     }
 
     postSetup(options);
