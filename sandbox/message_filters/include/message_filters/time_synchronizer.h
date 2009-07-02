@@ -85,6 +85,7 @@ public:
 
   boost::signals::connection connect(const Callback& callback)
   {
+    boost::mutex::scoped_lock lock(signal_mutex_);
     return signal_.connect(callback);
   }
 
@@ -127,9 +128,11 @@ private:
       {
         boost::mutex::scoped_lock lock(signal_mutex_);
         signal_(boost::get<0>(t), boost::get<1>(t));
+
+        last_signal_time_ = boost::get<0>(t)->header.stamp;
       }
 
-      tuples_.erase(boost::get<0>(t)->header.stamp);
+      tuples_.erase(last_signal_time_);
 
       clearOldTuples();
     }
