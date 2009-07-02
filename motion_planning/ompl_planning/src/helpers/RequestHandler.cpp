@@ -68,7 +68,14 @@ bool ompl_planning::RequestHandler::isRequestValid(ModelMap &models, motion_plan
 	    }
     
     /* check if desired planner exists */
-    std::map<std::string, PlannerSetup*>::iterator plannerIt = m->planners.find(req.params.planner_id);
+    std::map<std::string, PlannerSetup*>::iterator plannerIt = m->planners.end();
+    for (std::map<std::string, PlannerSetup*>::iterator it = m->planners.begin() ; it != m->planners.end() ; ++it)
+	if (it->first.find(req.params.planner_id) != std::string::npos)
+	{
+	    plannerIt = it;
+	    break;
+	}
+    
     if (plannerIt == m->planners.end())
     {
 	ROS_ERROR("Motion planner not found: '%s'", req.params.planner_id.c_str());
@@ -201,14 +208,14 @@ bool ompl_planning::RequestHandler::computePlan(ModelMap &models, const planning
     if (!isRequestValid(models, req))
 	return false;
     
-    ROS_INFO("Selected motion planner: '%s'", req.params.planner_id.c_str());
-    
     // find the data we need 
     Model *m = models[req.params.model_id];
     
     // get the planner setup
     PlannerSetup *psetup = m->planners[req.params.planner_id];
-        
+    
+    ROS_INFO("Selected motion planner: '%s', with priority %d", req.params.planner_id.c_str(), psetup->priority);
+    
     psetup->model->collisionSpace->lock();
     psetup->model->kmodel->lock();
 

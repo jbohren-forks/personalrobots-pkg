@@ -160,7 +160,7 @@ void planning_environment::RobotModels::getPlanningGroups(std::map< std::string,
     }
 }
 
-std::string planning_environment::RobotModels::PlannerConfig::getName(void)
+const std::string& planning_environment::RobotModels::PlannerConfig::getName(void)
 {
     return config_;
 }

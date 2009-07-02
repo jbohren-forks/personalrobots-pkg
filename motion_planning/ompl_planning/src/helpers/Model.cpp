@@ -53,114 +53,45 @@ void ompl_planning::Model::createMotionPlanningInstances(std::vector< boost::sha
     for (unsigned int i = 0 ; i < cfgs.size() ; ++i)
     {
 	std::string type = cfgs[i]->getParamString("type");
+	
 	if (type == "kinematic::RRT")
-	    add_kRRT(cfgs[i]);
+	    add_planner<kinematicRRTSetup>(cfgs[i]);
 	else
 	if (type == "kinematic::LazyRRT")
-	    add_kLazyRRT(cfgs[i]);
+	    add_planner<kinematicLazyRRTSetup>(cfgs[i]);
 	else
 	if (type == "kinematic::EST")
-	    add_kEST(cfgs[i]);
+	    add_planner<kinematicESTSetup>(cfgs[i]);
 	else
 	if (type == "kinematic::SBL")
-	    add_kSBL(cfgs[i]);
+	    add_planner<kinematicSBLSetup>(cfgs[i]);
 	else
 	if (type == "kinematic::KPIECE")
-	    add_kKPIECE(cfgs[i]);
+	    add_planner<kinematicKPIECESetup>(cfgs[i]);
 	else
 	if (type == "kinematic::LBKPIECE")
-	    add_kLBKPIECE(cfgs[i]);
+	    add_planner<kinematicLBKPIECESetup>(cfgs[i]);
 	else
 	if (type == "kinematic::IKSBL")
-	    add_kIKSBL(cfgs[i]);
+	    add_planner<kinematicIKSBLSetup>(cfgs[i]);
 	else
 	if (type == "dynamic::RRT")
-	    add_dRRT(cfgs[i]);
+	    add_planner<dynamicRRTSetup>(cfgs[i]);
 	else
 	if (type == "dynamic::KPIECE")
-	    add_dKPIECE(cfgs[i]);
+	    add_planner<dynamicKPIECESetup>(cfgs[i]);
 	else
 	    ROS_WARN("Unknown planner type: %s", type.c_str());
     }
 }
 
-void ompl_planning::Model::add_dRRT(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options)
+template<typename _T>
+void ompl_planning::Model::add_planner(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options)
 {
-    PlannerSetup *rrt = new dynamicRRTSetup(dynamic_cast<ModelBase*>(this));
-    if (rrt->setup(options))
-	planners[rrt->name] = rrt;
+    PlannerSetup *p = new _T(dynamic_cast<ModelBase*>(this));
+    if (p->setup(options))
+	planners[p->name + "[" + options->getName() + "]"] = p;
     else
-	delete rrt;
+	delete p;
 }
 
-void ompl_planning::Model::add_kRRT(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options)
-{
-    PlannerSetup *rrt = new kinematicRRTSetup(dynamic_cast<ModelBase*>(this));
-    if (rrt->setup(options))
-	planners[rrt->name] = rrt;
-    else
-	delete rrt;
-}
-
-void ompl_planning::Model::add_kLazyRRT(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options)
-{
-    PlannerSetup *rrt = new kinematicLazyRRTSetup(dynamic_cast<ModelBase*>(this));
-    if (rrt->setup(options))
-	planners[rrt->name] = rrt;
-    else
-	delete rrt;
-}
-
-void ompl_planning::Model::add_kEST(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options)
-{
-    PlannerSetup *est = new kinematicESTSetup(dynamic_cast<ModelBase*>(this));
-    if (est->setup(options))
-	planners[est->name] = est;
-    else
-	delete est;
-}
-
-void ompl_planning::Model::add_kSBL(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options)
-{
-    PlannerSetup *sbl = new kinematicSBLSetup(dynamic_cast<ModelBase*>(this));
-    if (sbl->setup(options))
-	planners[sbl->name] = sbl;
-    else
-	delete sbl;
-}
-
-void ompl_planning::Model::add_kIKSBL(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options)
-{
-    PlannerSetup *sbl = new kinematicIKSBLSetup(dynamic_cast<ModelBase*>(this));
-    if (sbl->setup(options))
-	planners[sbl->name] = sbl;
-    else
-	delete sbl;
-}
-
-void ompl_planning::Model::add_kKPIECE(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options)
-{
-    PlannerSetup *kpiece = new kinematicKPIECESetup(dynamic_cast<ModelBase*>(this));
-    if (kpiece->setup(options))
-	planners[kpiece->name] = kpiece;
-    else
-	delete kpiece;
-}
-
-void ompl_planning::Model::add_dKPIECE(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options)
-{
-    PlannerSetup *kpiece = new dynamicKPIECESetup(dynamic_cast<ModelBase*>(this));
-    if (kpiece->setup(options))
-	planners[kpiece->name] = kpiece;
-    else
-	delete kpiece;
-}
-
-void ompl_planning::Model::add_kLBKPIECE(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options)
-{
-    PlannerSetup *kpiece = new kinematicLBKPIECESetup(dynamic_cast<ModelBase*>(this));
-    if (kpiece->setup(options))
-	planners[kpiece->name] = kpiece;
-    else
-	delete kpiece;
-}

@@ -67,18 +67,10 @@ namespace ompl_planning
 	std::map<std::string, PlannerSetup*> planners;
 	
     protected:
+
+	template<typename _T>
+	void add_planner(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options);
 	
-	void add_kRRT(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options);
-	void add_kLazyRRT(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options);
-	void add_kEST(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options);
-	void add_kSBL(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options);
-	void add_kIKSBL(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options);
-	void add_kKPIECE(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options);
-	void add_kLBKPIECE(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options);
-	void add_kIKKPIECE(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options);
-	
-	void add_dRRT(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options);
-	void add_dKPIECE(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options);
     };
     
     typedef std::map<std::string, Model*> ModelMap;
