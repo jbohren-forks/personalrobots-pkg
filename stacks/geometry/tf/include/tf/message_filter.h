@@ -78,7 +78,9 @@ public:
   , max_rate_(max_rate)
   , queue_size_(queue_size)
   {
+    init();
 
+    setTargetFrame(target_frame);
   }
 
   template<class F>
@@ -91,18 +93,9 @@ public:
   {
     init();
 
-    target_frames_.resize(1);
-    target_frames_[0] = target_frame;
-    target_frames_string_ = target_frame;
-
-    tf_connection_ = tf.addTransformChangedListener(boost::bind(&MessageFilter::transformsChanged, this));
+    setTargetFrame(target_frame);
 
     subscribeTo(f);
-
-    if (min_rate > ros::Duration(0))
-    {
-      min_rate_timer_ = nh_.createTimer(min_rate, &MessageFilter::minRateTimerCallback, this);
-    }
   }
 
   template<class F>
@@ -234,6 +227,13 @@ private:
     incoming_message_count_ = 0;
     dropped_message_count_ = 0;
     time_tolerance_ = ros::Duration(0.0);
+
+    tf_connection_ = tf_.addTransformChangedListener(boost::bind(&MessageFilter::transformsChanged, this));
+
+    if (min_rate_ > ros::Duration(0))
+    {
+      min_rate_timer_ = nh_.createTimer(min_rate_, &MessageFilter::minRateTimerCallback, this);
+    }
   }
 
   typedef std::list<MConstPtr> L_Message;
@@ -405,14 +405,14 @@ private:
   /**
    * \brief Callback that happens when we receive a message on the message topic
    */
-  void incomingMessage(const MConstPtr msg)
+  void incomingMessage(const MConstPtr& msg)
   {
     enqueueMessage(msg);
   }
 
   void transformsChanged()
   {
-    if (ros::Time::now() - last_test_time_ > max_rate_)
+    if (ros::Time::now() - last_test_time_ >= max_rate_)
     {
       testMessages();
     }
