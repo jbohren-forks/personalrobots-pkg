@@ -1,0 +1,12 @@
+<launch>
+  <node pkg="move_base" type="move_base" respawn="false" name="move_base" output="screen">
+    <param name="footprint_padding" value="0.01" />
+
+    <rosparam file="$(find move_base_stage)/config/costmap_common_params.yaml" command="load" ns="global_costmap" />
+    <rosparam file="$(find move_base_stage)/config/costmap_common_params.yaml" command="load" ns="local_costmap" />
+    <rosparam file="$(find move_base_stage)/move_base/local_costmap_params.yaml" command="load" />
+    <rosparam file="$(find move_base_stage)/move_base/global_costmap_params.yaml" command="load" />
+    <rosparam file="$(find move_base_stage)/move_base/navfn_params.yaml" command="load" />
+    <rosparam file="$(find move_base_stage)/move_base/base_local_planner_params.yaml" command="load" />
+  </node>
+</launch>
