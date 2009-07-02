@@ -50,6 +50,7 @@
 #include <ros/node.h>
 #include <ros/node_handle.h>
 
+
 namespace controller
 {
 
@@ -61,17 +62,19 @@ typedef Loki::SingletonHolder
   Loki::LongevityLifetime::DieAsSmallObjectParent
 > ControllerFactory;
 
+  Loki::Factory< controller::Controller, std::string >& getControllerFactoryInstance();
 #define ROS_REGISTER_CONTROLLER(c) \
+  extern Loki::Factory< controller::Controller, std::string >& getControllerFactoryInstance(); \
   controller::Controller *ROS_New_##c() { return new c(); }             \
   class RosController##c { \
   public: \
     RosController##c() \
     { \
-      controller::ControllerFactory::Instance().Register(#c, ROS_New_##c); \
+      controller::getControllerFactoryInstance().Register(#c, ROS_New_##c); \
     } \
     ~RosController##c() \
     { \
-      controller::ControllerFactory::Instance().Unregister(#c); \
+      controller::getControllerFactoryInstance().Unregister(#c); \
     } \
   }; \
   static RosController##c ROS_CONTROLLER_##c;

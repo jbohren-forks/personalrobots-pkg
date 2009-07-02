@@ -39,6 +39,12 @@ using namespace boost::accumulators;
 
 MechanismControl* MechanismControl::mechanism_control_ = NULL;
 
+namespace controller {
+Loki::Factory< controller::Controller, std::string >& getControllerFactoryInstance()
+{
+  return controller::ControllerFactory::Instance();
+}
+}
 
 MechanismControl::MechanismControl(HardwareInterface *hw) :
   state_(NULL), hw_(hw), initialized_(0),
