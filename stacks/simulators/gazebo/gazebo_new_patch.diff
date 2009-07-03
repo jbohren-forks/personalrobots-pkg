@@ -2,7 +2,7 @@ Index: server/physics/Geom.cc
 ===================================================================
 --- server/physics/Geom.cc	(revision 7945)
 +++ server/physics/Geom.cc	(working copy)
-@@ -249,7 +249,7 @@
+@@ -249,12 +249,12 @@
  
    if (this->placeable && !this->IsStatic())
    {
@@ -11,6 +11,12 @@ Index: server/physics/Geom.cc
      {
        this->transId = dCreateGeomTransform( this->spaceId );
        dGeomTransformSetGeom( this->transId, this->geomId );
+       dGeomTransformSetInfo( this->transId, 1 );
+-      assert(dGeomGetSpace(this->geomId) == 0);
++      //assert(dGeomGetSpace(this->geomId) == 0);
+     }
+   }
+   else if ( dGeomGetSpace(this->geomId) == 0 )
 Index: server/physics/ode/ODEPhysics.cc
 ===================================================================
 --- server/physics/ode/ODEPhysics.cc	(revision 7945)

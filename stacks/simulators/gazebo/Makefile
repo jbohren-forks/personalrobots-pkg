@@ -30,19 +30,18 @@ PKG_PATHS = PKG_CONFIG_PATH=${ODE_PKG}:${FI_PKG}:${PLAYER_PKG}:${OGRE_PKG}:${PKG
 PATHS = PATH=${ODE_PATH}:${PATH}
 
 CMAKE = cmake
-CMAKE_ARGS = -D CMAKE_BUILD_TYPE=RELEASE \
-						 -D CMAKE_INSTALL_PREFIX=$(INSTALL_DIR) \
-						 -D boost_include_dirs=$(BOOST_INCLUDE_DIRS) \
-						 -D boost_library_dirs=$(BOOST_LIBRARY_DIRS) \
-						 -D boost_libraries="$(BOOST_LIBRARIES)" \
-						 -D CMAKE_BUILD_TYPE="release" \
-						 -D bullet_include_dirs=$(BULLET_INCLUDE_DIRS) \
-						 -D bullet_dynamics_dirs=$(BULLET_DYNAMICS_DIRS) \
-						 -D bullet_collision_dirs=$(BULLET_COLLISION_DIRS) \
-						 -D bullet_softbody_dirs=$(BULLET_SOFTBODY_DIRS) \
-						 -D bullet_math_dirs=$(BULLET_MATH_DIRS) \
-						 -D CMAKE_CXX_LINK_FLAGS="-lfltk -lfltk_gl"\
-						 -D ENABLE_SHADOWS=ON
+CMAKE_ARGS =	-D CMAKE_INSTALL_PREFIX=$(INSTALL_DIR) \
+		-D boost_include_dirs=$(BOOST_INCLUDE_DIRS) \
+		-D boost_library_dirs=$(BOOST_LIBRARY_DIRS) \
+		-D boost_libraries="$(BOOST_LIBRARIES)" \
+		-D CMAKE_BUILD_TYPE="release" \
+		-D bullet_include_dirs=$(BULLET_INCLUDE_DIRS) \
+		-D bullet_dynamics_dirs=$(BULLET_DYNAMICS_DIRS) \
+		-D bullet_collision_dirs=$(BULLET_COLLISION_DIRS) \
+		-D bullet_softbody_dirs=$(BULLET_SOFTBODY_DIRS) \
+		-D bullet_math_dirs=$(BULLET_MATH_DIRS) \
+		-D CMAKE_CXX_LINK_FLAGS="-lfltk -lfltk_gl"\
+		-D ENABLE_SHADOWS=ON
 
 CMAKE_CMD = $(PKG_PATHS) $(PATHS) $(CMAKE) $(CMAKE_ARGS)
 
