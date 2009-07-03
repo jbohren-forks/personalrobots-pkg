@@ -88,7 +88,9 @@ public:
 
     filtered_scan = input_scan ;
 
-    for (unsigned int i=0; i < input_scan.ranges.size(); i++)                            // Need to check ever reading in the current scan
+    for (unsigned int i=0; 
+         i < input_scan.ranges.size() && i < input_scan.intensities.size(); 
+         i++) // Need to check ever reading in the current scan
     {
       if (filtered_scan.intensities[i] <= lower_threshold_ ||                           // Is this reading below our lower threshold?
           filtered_scan.intensities[i] >= upper_threshold_)                             // Is this reading above our upper threshold?
