@@ -21,14 +21,14 @@
   <property name="table_y" value="0.0" />
   <property name="table_z" value="0.0" />
 
-  <property name="object_1_x" value="0.975" />
+  <property name="object_1_x" value="0.96" />
   <property name="object_1_y" value="0.0" />
 
   <property name="object_1_height"      value="0.12" />
   <property name="object_1_radius"      value="0.02" />
   <property name="object_1_base_height" value="0.02" />
   <property name="object_1_base_width"  value="0.15" />
-  <property name="object_1_mass"        value="0.1" /> 
+  <property name="object_1_mass"        value="1.0" /> 
   <property name="object_1_mu"          value="500.0" /> 
 
   <property name="M_PI" value="3.1415926535897931" />
@@ -260,7 +260,7 @@
     <map name="object_1_collision" flag="gazebo">
       <elem key="selfCollide">true</elem>
       <elem key="turnGravityOff">false</elem>
-      <elem key="dampingFactor">0.1</elem>
+      <elem key="dampingFactor">0.05</elem>
     </map>
   </link>
   <link name="object_1_base_link">
