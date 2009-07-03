@@ -108,16 +108,28 @@ BaseState base_state = new BaseState(External);
 M2Goals::Active{
   // Guard on the built-in variable "start"
   // This guard will be active when "start" has been closed to a singleton
-  // In other words, it will do nothing until it has been started
+  // In other words, it will require nothing until it has been started
   if(start){
+    // Introduce slave tokens
+    // These temporal constraints allocate new slave tokens:
+    //  - m2_controller.Holds "mc"
+    //  - base_state.Holds "bs"
+    // "starts" requires that m2_controller.Holds starts at the same time as m2_goals.Active
+    // "starts_during" requires that base_state.Holds starts after m2_goals.Active starts, but before it finishes
     starts(m2_controller.Holds mc);
     starts_during(base_state.Holds bs);
+
+    // Impose requirements on mc
     eq(mc.active, true);
+    // While this goal is active, we should neither be recharged nor finished
     eq(mc.recharged, false);
     eq(mc.finished, false);	
+
+    // Always synchronize the m2_controler state with basestate
     eq(mc.x, bs.x);
     eq(mc.y, bs.y);
 
+    // If the outlet_id for this goal is NO_KEY, then we don't require a recharge
     if(outlet_id == NO_KEY){
       eq(mc.recharge_required, false);
     }
@@ -131,10 +143,20 @@ M2Goals::Active{
  * If a goal aborts then we should regenerate it for later
  */
 M2Goals::Inactive{
+  // Set requirements when the m2_goals.Inactive token is created with status ABORTED
   if(status == ABORTED){
+    // Allocate slave tokens
+    // An Active token that meets this Inactive token
+    // (the token that has just aborted)
     met_by(Active p);
+    // An active token that follows this Inactive token
+    // (sometime down the line, not necessary immediately after)
     before (Active g);
+
+    // Set the token that just failed and the later token to have the same goal
     eq(g.outlet_id, p.outlet_id);
+    // Set the two slave tokens to have the same pose
+    // This is a hackish thing to account for the lack of struct / user-defined type support in NDDL
     eq_pose_msg(g.object, p.object);
   }
 }
@@ -144,6 +166,8 @@ M2Goals::Inactive{
  * It uses the doorman, driver and recharger. 
  */
 M2Controller::Holds{
+  // If the controller is inactive, require that it occurs
+  // at the same time as an Inactive token on the m2_goals timeline
   if(active == false){
     equals(m2_goals.Inactive);
   }
@@ -157,21 +181,38 @@ M2Controller::Holds{
   defaultOnCommit(x, p.x);
   defaultOnCommit(y, p.y);
 
+  // If the controller is active
   if(active == true){
+    // Allocate a slave token m2_controler.Holds to follow this Holds immediately
     meets(Holds s);
+    // Allocate a slave token m2_active
     contained_by(m2_goals.Active m2_active);
 
-    // Are we at the goal?
+    // Test if we are at the goal or not
+    // Declare a local variable distance
     float distance;
+    // Here x,y are local to m2_controler.Holds, and have been synchronized
+    // with the base_state (the external pose)
+    //
+    // This uses a constraint to close "distance" and calculates the euclidean 
+    // distance between the goal m2_active.* and the stored location
     calcDistance(distance, x, y, m2_active.x, m2_active.y);
+    // Declare a local boolean variable at_goal, and leave it open on [true, false]
     bool at_goal;
+    // This constrains at_goal to either true or false if distance is less than some proximity
     testLEQ(at_goal, distance, 0.2);
 
+    // If the controller is active and has finished
     if(finished == true){
+      // Allocate a slave token m2_inactive to immediately follow this m2_controler.Holds token
       meets(m2_goals.Inactive m2_inactive);
+      // Require the slave m2_controller.Holds that follows this m2_controller.Holds s.active = false
       eq(s.active, false);
+      // Require this only lasts for one more tick
       eq(duration, 1);
 
+      // This sets the following m2_goals slave token to either SUCCESS or ABORTED
+      // Based on whether it achived a required recharge or not
       if(recharge_required == true){
 	if(recharged == true){
 	  eq(m2_inactive.status, SUCCESS);
@@ -189,22 +230,31 @@ M2Controller::Holds{
 	}
       }
     }
+    // If the controller is active and has not yet finished
     else {
-
+      // If we are at the goal pose as estimated above
       if(at_goal == true){
+	// If a recharge is required
 	if(recharge_required == true){ 
+	  // Allocate a new slave recharger.Active token
 	  contains_start(recharger.Active cmd);
+	  // Require that this m2_controller.Holds token does not end until recharger.Active has ended
 	  concurrent(cmd.end, end);
+	  // Require the maximum duration of this delegated action cmd
 	  eq(cmd.max_duration, RECHARGER_DURATION_BOUND);
+	  // Require the outlet_id of the recharge command is the same as the currently active m2_goals token
 	  eq(cmd.outlet_id, m2_active.outlet_id);
 	}
+	// If a recharge is not required
 	else {
+	  // Create a new slave token and require that it succeeds like above
 	  meets(m2_goals.Inactive m2_inactive);
 	  eq(m2_inactive.status, SUCCESS);
 	  eq(s.active, false);
 	  eq(duration, 1);
 	}
       }
+      // If we are not at the goal pose as estimated above
       else{
 	// Take the next step towards the goal. This will either navigate to the goal, or navigate to the
 	// next connector along the way. It would be ideal to be able to specify for the nav stack that
