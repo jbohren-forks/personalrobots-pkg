@@ -133,24 +133,21 @@ public:
 	IplImage* disp;
 	IplImage* disp_clone;
 
-//	TopicSynchronizer<RecognitionLambertian> sync;
-
 	tf::TransformListener tf_;
 	tf::TransformBroadcaster broadcaster_;
 	TopicSynchronizer sync_;
 
-	// minimum height to look at (in base_link frame)
-	double min_height;
-	// maximum height to look at (in base_link frame)
-	double max_height;
-	// no. of frames to detect handle in
-	int frames_no;
 	// display stereo images ?
-	bool display;
+	bool display_;
 
 	int templates_no;
 	int edges_high;
 
+
+	int min_points_per_cluster_;
+	int max_clustering_iterations_;
+	double min_object_distance_;   // min distance between two objects
+	double min_object_height_;
 
 	ChamferMatching* cm;
 
@@ -158,17 +155,20 @@ public:
 	: left(NULL), right(NULL), disp(NULL), disp_clone(NULL), sync_(&RecognitionLambertian::syncCallback, this)
 	{
 		// define node parameters
-		nh_.param("~min_height", min_height, 0.7);
-		nh_.param("~max_height", max_height, 1.0);
-		nh_.param("~frames_no", frames_no, 7);
-		nh_.param("~display", display, false);
+		nh_.param("~display", display_, false);
+		nh_.param("~min_points_per_cluster", min_points_per_cluster_, 10);
+		nh_.param("~max_clustering_iterations", max_clustering_iterations_, 7);
+		nh_.param("~min_object_distance", min_object_distance_, 0.05);
+		nh_.param("~min_object_height", min_object_height_, 0.05);
+
+
 		string template_path;
 		nh_.param<string>("~template_path", template_path,"templates.txt");
 
 		templates_no = 10;
 		edges_high = 100;
 
-		if(display){
+		if(display_){
 			cvNamedWindow("left", CV_WINDOW_AUTOSIZE);
 			cvNamedWindow("right", CV_WINDOW_AUTOSIZE);
 			cvNamedWindow("disparity", CV_WINDOW_AUTOSIZE);
@@ -183,9 +183,6 @@ public:
 		disparity_sub_ = nh_.subscribe("stereo/disparity", 1, sync_.synchronize(&RecognitionLambertian::disparityImageCallback, this));
 		cloud_sub_ = nh_.subscribe("stereo/cloud", 1, sync_.synchronize(&RecognitionLambertian::cloudCallback, this));
 		dispinfo_sub_ = nh_.subscribe("stereo/disparity_info", 1, sync_.synchronize(&RecognitionLambertian::dispinfoCallback, this));
-
-//		sync_.setCount(4);
-
 
 		// advertise topics
 		objects_pub_ = nh_.advertise<PointCloud> ("~objects", 1);
@@ -209,6 +206,7 @@ private:
 
 	void syncCallback()
 	{
+//		ROS_INFO("Sync callback");
 		if (disp!=NULL) {
 			cvReleaseImage(&disp);
 		}
@@ -222,11 +220,14 @@ private:
 
 	void leftCamInfoCallback(const sensor_msgs::CamInfo::ConstPtr& info)
 	{
+//		ROS_INFO("Left caminfo callback");
 		lcinfo_ = info;
 	}
 
 	void leftImageCallback(const sensor_msgs::Image::ConstPtr& image)
 	{
+//		ROS_INFO("Left image callback");
+
 		limage = image;
 		if(lbridge.fromImage(*limage, "bgr")) {
 			left = lbridge.toIpl();
@@ -235,6 +236,8 @@ private:
 
 	void rightImageCallback(const sensor_msgs::Image::ConstPtr& image)
 	{
+//		ROS_INFO("Right image callback");
+
 		rimage = image;
 		if(rbridge.fromImage(*rimage, "bgr")) {
 			right = rbridge.toIpl();
@@ -243,16 +246,22 @@ private:
 
 	void disparityImageCallback(const sensor_msgs::Image::ConstPtr& image)
 	{
+//		ROS_INFO("Disparity image callback");
+
 		dimage = image;
 	}
 
 	void dispinfoCallback(const sensor_msgs::DisparityInfo::ConstPtr& dinfo)
 	{
+//		ROS_INFO("Disp info callback");
+
 		dispinfo = dinfo;
 	}
 
 	void cloudCallback(const robot_msgs::PointCloud::ConstPtr& point_cloud)
 	{
+//		ROS_INFO("Cloud callback");
+
 		cloud = point_cloud;
 	}
 
@@ -408,7 +417,7 @@ private:
 		PointCloud filtered_cloud;
 		PointCloud filtered_outside;
 
-		filterByZBounds(*cloud,0.1, 1.5 , filtered_cloud, filtered_outside );
+		filterByZBounds(*cloud,0.1, 1.2 , filtered_cloud, filtered_outside );
 
 		clearFromImage(disp, filtered_outside);
 
@@ -430,21 +439,17 @@ private:
 	}
 
 
-	PointCloud projectToPlane(const PointCloud& objects, const vector<double>& coefficients)
+	void projectToPlane(const PointCloud& objects, const vector<double>& plane, PointCloud& projected_objects)
 	{
-		// clear "under the table" points
 		vector<int> object_indices(objects.pts.size());
 		for (size_t i=0;i<objects.get_pts_size();++i) {
 			object_indices[i] = i;
 		}
 
-		PointCloud object_projections;
-		object_projections.header.stamp = cloud->header.stamp;
-		object_projections.header.frame_id = cloud->header.frame_id;
+		projected_objects.header.stamp = cloud->header.stamp;
+		projected_objects.header.frame_id = cloud->header.frame_id;
 
-		cloud_geometry::projections::pointsToPlane(objects, object_indices, object_projections, coefficients);
-
-		return object_projections;
+		cloud_geometry::projections::pointsToPlane(objects, object_indices, projected_objects, plane);
 
 	}
 
@@ -460,7 +465,7 @@ private:
 		cvCvtColor(img, gray, CV_RGB2GRAY);
 		cvCanny(gray, gray, edges_high/2, edges_high);
 
-		if (display) {
+		if (display_) {
 			cvShowImage("edges", gray);
 		}
 
@@ -477,7 +482,7 @@ private:
 
 
 
-		if(display){
+		if(display_){
 			// show filtered disparity
 			cvShowImage("disparity", disp);
 			cvShowImage("disparity_clone", disp_clone);
@@ -493,83 +498,12 @@ private:
 	}
 
 
-	void findClusters(const PointCloud& cloud)
-	{
-		const int NUM_CLUSTERS = 10;
-
-		int count = cloud.get_pts_size();
-		CvMat* points = cvCreateMat( count, 3, CV_32FC1 );
-		CvMat* clusters = cvCreateMat( count, 1, CV_32SC1 );
-
-		for (int i=0;i<count;++i) {
-			float* ptr = (float*)(points->data.ptr + i * points->step);
-			ptr[0] = cloud.pts[i].x;
-			ptr[1] = cloud.pts[i].y;
-			ptr[2] = cloud.pts[i].z;
-		}
-
-		cvKMeans2(points, NUM_CLUSTERS, clusters, cvTermCriteria( CV_TERMCRIT_EPS+CV_TERMCRIT_ITER, 10, 0.005 ),10);
-
-
-		// compute cluster sizes
-		vector<int> cluster_size(count,0);
-		for (int i=0;i<count;++i) {
-			cluster_size[clusters->data.i[i]]++;
-		}
-
-		for (int i=0;i<NUM_CLUSTERS;++i) {
-			printf("Cluster %d, size: %d\n", i, cluster_size[i]);
-		}
-
-
-		// visualize data
-		visualization_msgs::Marker marker;
-		marker.header.frame_id = cloud.header.frame_id;
-		marker.header.stamp = cloud.header.stamp;
-		marker.ns = "recognition_lambertian_clusters";
-		marker.type = visualization_msgs::Marker::POINTS;
-		marker.action = visualization_msgs::Marker::ADD;
-		marker.pose.position.x = 0;
-		marker.pose.position.y = 0;
-		marker.pose.position.z = 0;
-		marker.pose.orientation.x = 0.0;
-		marker.pose.orientation.y = 0.0;
-		marker.pose.orientation.z = 0.0;
-		marker.pose.orientation.w = 1.0;
-		marker.scale.x = 0.001;
-		marker.scale.y = 0.001;
-		marker.scale.z = 0.001;
-		marker.color.a = 1.0;
-		marker.color.r = 0.0;
-		marker.color.g = 1.0;
-		marker.color.b = 0.0;
-
-
-
-		int* clusters_ptr = clusters->data.i;
-		for (int i=0;i<NUM_CLUSTERS;++i) {
-			printf("Publishing cluster: %d\n",i);
-			marker.id = i;
-			marker.points.clear();
-			for (size_t j=0;j<cloud.get_pts_size();++j) {
-				if (clusters_ptr[j]==i) {
-					Point p;
-					p.x = cloud.pts[j].x;
-					p.y = cloud.pts[j].y;
-					p.z = cloud.pts[j].z;
-					marker.points.push_back(p);
-					marker.color.r = (i+1)&1;
-					marker.color.g = ((i+1)>>1)&1;
-					marker.color.b = ((i+1)>>2)&1;
-				}
-			}
-			marker_pub_.publish(marker);
-		}
-
-
-	}
-
-
+	/**
+	 * Adds a new "table_frame" to tf
+	 *
+	 * @param origin - origin of the frame
+	 * @param plane - the XOY plane of the new frame
+	 */
 	void addTableFrame(PointStamped origin, const vector<double>& plane)
 	{
 
@@ -697,7 +631,6 @@ private:
 
 	class NNGridIndexer
 	{
-		const PointCloud& cloud_;
 		float xmin, xmax, ymin, ymax;
 		float xd,yd;
 
@@ -706,7 +639,7 @@ private:
 		float* grid;
 
 	public:
-		NNGridIndexer(const PointCloud& cloud) : cloud_(cloud)
+		NNGridIndexer(const PointCloud& cloud)
 		{
 			xmin = cloud.pts[0].x;
 			xmax = cloud.pts[0].x;
@@ -720,8 +653,8 @@ private:
 			}
 
 			resolution = 600;
-			xd = (xmax-xmin)/resolution;
-			yd = (ymax-ymin)/resolution;
+			xd = (xmax-xmin)/(resolution-1);
+			yd = (ymax-ymin)/(resolution-1);
 
 			grid = new float[resolution*resolution];
 			memset(grid,0,resolution*resolution*sizeof(float));
@@ -817,7 +750,7 @@ private:
 			Point32 mean;
 			int count = index.computeMean(centers[i], step, mean);
 			if (count==0) {
-				printf("This should not happen\n");
+				ROS_WARN("Got empty cluster, this should not happen\n");
 			}
 			double dist = dist2D(mean, centers[i]);
 			total_dist += dist;
@@ -827,16 +760,12 @@ private:
 	}
 
 #define CLUSTER_RADIUS 0.15/2
-#define MIN_OBJ_HEIGHT 0.06
-#define MIN_OBJ_DIST 0.05
 
 
-	void filterClusters(const PointCloud& cloud, vector<Point32>& centers, vector<Point32>& clusters)
+	void filterClusters(const PointCloud& cloud, vector<Point32>& centers, vector<PointCloud>& clusters)
 	{
+		// compute cluster heights (use to prune clusters)
 		vector<double> cluster_heights(centers.size(), 0);
-
-		printf("Number of centers: %d\n", centers.size());
-
 		// compute cluster heights
 		for(size_t i=0;i<cloud.get_pts_size();++i) {
 			for (size_t j=0;j<centers.size();++j) {
@@ -846,34 +775,55 @@ private:
 			}
 		}
 
+
+		// remove overlapping clusters
+		vector<Point32> centers_pruned;
 		for (size_t i=0;i<centers.size();++i) {
-			if (cluster_heights[i]>MIN_OBJ_HEIGHT) {
+			if (cluster_heights[i]>min_object_height_) {
 
 				bool duplicate = false;
 				// check if duplicate cluster
-				for (size_t j=0;j<clusters.size();++j) {
-					if (dist2D(clusters[j],centers[i])<MIN_OBJ_DIST*MIN_OBJ_DIST) {
+				for (size_t j=0;j<centers_pruned.size();++j) {
+					if (dist2D(centers_pruned[j],centers[i])<min_object_distance_*min_object_distance_) {
 						duplicate = true;
 						break;
 					}
 				}
 				if (!duplicate) {
-					clusters.push_back(centers[i]);
-					clusters.back().z = cluster_heights[i];
+					centers_pruned.push_back(centers[i]);
+					centers_pruned.back().z = cluster_heights[i];
 				}
 			}
 		}
-		printf("Number of clusters: %d\n", clusters.size());
+
+
+		// compute clusters
+		PointCloud object;
+		object.header.frame_id = cloud.header.frame_id;
+		object.header.stamp = cloud.header.stamp;
+
+		for (size_t k=0;k<centers_pruned.size();++k) {
+			object.pts.clear();
+			for (size_t i=0;i<cloud.get_pts_size();++i) {
+				if (dist2D(centers_pruned[k],cloud.pts[i])< CLUSTER_RADIUS*CLUSTER_RADIUS ) {
+					object.pts.push_back(cloud.pts[i]);
+				}
+			}
+			clusters.push_back(object);
+		}
+
+		centers = centers_pruned;
+
+		ROS_INFO("Number of clusters: %d\n", centers_pruned.size());
 	}
 
 
-//#define KMEANS_INIT
 
-	void findClusters2(const PointCloud& cloud, vector<Point32>& clusters)
+	void findTabletopClusters(const PointCloud& cloud, vector<Point32>& centers, vector<PointCloud>& clusters)
 	{
 		if (cloud.get_pts_size()==0) return;
 
-#ifdef KMEANS_INIT
+#if 0
 		// initialize clusters using kmeans
 		const int NUM_CLUSTERS = 30;
 
@@ -914,6 +864,8 @@ private:
 		cvReleaseMat(&centers_);
 
 #else
+
+		// get x,y ranges
 		float xmin = cloud.pts[0].x;
 		float xmax = cloud.pts[0].x;
 		float ymin = cloud.pts[0].y;
@@ -929,24 +881,23 @@ private:
 		float step = CLUSTER_RADIUS;
 
 		NNGridIndexer index(cloud);
-//		vector<int> indices(cloud.get_pts_size());
 
 		// getting the initial centers
-		vector<Point32> centers;
+//		vector<Point32> centers;
 		vector<Point32> means;
 		Point32 p;
 
+		// layout initial clusters in a grid
 		double total_dist = 0;
 		for (double x = xmin;x<xmax;x+=step/2) {
 			for (double y = ymin;y<ymax;y+=step/2) {
-
 				p.x = x;
 				p.y = y;
 
 				Point32 mean;
 				int found = index.computeMean(p, step, mean);
 
-				if (found>10) {
+				if (found>min_points_per_cluster_) {
 					centers.push_back(p);
 					means.push_back(mean);
 					total_dist += dist2D(mean, p);
@@ -970,12 +921,15 @@ private:
 			odd = !odd;
 			iter++;
 
-			if (iter>7) break;
+			if (iter>max_clustering_iterations_) break;
 		}
 
 		filterClusters(cloud, centers, clusters);
 
-		printf("Total dist: %f\n", total_dist);
+
+
+
+//		printf("Total dist: %f\n", total_dist);
 
 //		for (size_t i=0;i<clusters.size();++i) {
 //			showCluster(clusters[i], step, i, cloud.header.stamp);
@@ -1091,14 +1045,22 @@ private:
 	}
 
 
-	void publishObjects(const vector<PointCloud>& objects)
+	void fitModels(const vector<PointCloud>& objects)
 	{
 
 		for (size_t k=0;k<objects.size();++k) {
-			object_pub_.publish(objects[k]);
+
+			if (display_) {
+				// publish point cloud
+				object_pub_.publish(objects[k]);
+			}
 
 			recognition_lambertian::ModelFit::Request req;
 			recognition_lambertian::ModelFit::Response resp;
+
+			if (k==0) {
+				req.reset = 1;
+			}
 
 			req.cloud = objects[k];
 			if (ros::service::call("recognition_lambertian/model_fit", req, resp)) {
@@ -1110,82 +1072,44 @@ private:
 		}
 	}
 
-	void getObjects(const PointCloud& cloud, const vector<Point32>& clusters, vector<PointCloud>& objects)
-	{
-		PointCloud object;
-
-		object.header.frame_id = cloud.header.frame_id;
-		object.header.stamp = cloud.header.stamp;
-
-		for (size_t k=0;k<clusters.size();++k) {
-			object.pts.clear();
-			for (size_t i=0;i<cloud.get_pts_size();++i) {
-				if (dist2D(clusters[k],cloud.pts[i])< CLUSTER_RADIUS*CLUSTER_RADIUS ) {
-					object.pts.push_back(cloud.pts[i]);
-				}
-			}
-			objects.push_back(object);
-		}
-	}
-
-//	void computeDescriptor(const PointCloud& cloud, const Point32& center, float step, vector<pair<float, float> >& descriptor)
-//	{
-//		int size = int((center.z/step)+1);
-//		descriptor.resize(size);
-//		vector<bool> first(size,true);
-//
-//		for (size_t i=0;i<cloud.get_pts_size();++i) {
-//			int bin = int(cloud.pts[i].z/step);
-//
-//			if (first[i]) {
-//				descriptor[i].first = dist2D(center, cloud.pts[i]);
-//				descriptor[i].second = dist2D(center, cloud.pts[i]);
-//				first[i] = false;
-//			}
-//		}
-//	}
 
 
 	void findObjectPositionsFromStereo(vector<CvPoint>& locations, vector<float>& scales)
 	{
+		// find the table plane
 		vector<double> plane;
 		PointCloud objects_pc;
 		PointCloud plane_pc;
 		filterTablePlane(plane,objects_pc,plane_pc);
 
-//		publish("~inliers", plane_pc);
-//		publish("~outliers", objects_pc);
+		// project outliers (the object on teh table) to the table plane
+		PointCloud projected_objects;
+		projectToPlane(objects_pc, plane, projected_objects);
 
 
-		PointCloud projected_objects = projectToPlane(objects_pc, plane);
-
-
+		// add table frame to tf
 		PointStamped table_point;
 		table_point.header.frame_id = projected_objects.header.frame_id;
 		table_point.header.stamp = projected_objects.header.stamp;
 		table_point.point.x = projected_objects.pts[0].x;
 		table_point.point.y = projected_objects.pts[0].y;
 		table_point.point.z = projected_objects.pts[0].z;
-
 		addTableFrame(table_point,plane);
 
+		// transform all the objects into the table frame
 		PointCloud objects_table_frame;
 		tf_.transformPointCloud("table_frame", objects_pc, objects_table_frame);
 
-		drawTableBBox(objects_table_frame);
+		if (display_) {
+			drawTableBBox(objects_table_frame);
+		}
 
-		// find clusters
-
-		vector<Point32> clusters;
-		findClusters2(objects_table_frame, clusters);
-
+		// cluster objects
+		vector<Point32> centers;
 		vector<PointCloud> objects;
-		getObjects(objects_table_frame, clusters, objects);
+		findTabletopClusters(objects_table_frame, centers, objects);
 
-
-
-
-		publishObjects(objects);
+		fitModels(objects);
 
 		objects_pub_.publish(objects_table_frame);
 
@@ -1194,17 +1118,17 @@ private:
 
 		const sensor_msgs::CamInfo& lcinfo = *lcinfo_;
 
-		locations.resize(clusters.size());
-		scales.resize(clusters.size());
-		for (size_t i=0;i<clusters.size();++i) {
+		locations.resize(centers.size());
+		scales.resize(centers.size());
+		for (size_t i=0;i<centers.size();++i) {
 			PointStamped ps;
 			ps.header.frame_id = objects_table_frame.header.frame_id;
 			ps.header.stamp = objects_table_frame.header.stamp;
 
 			// compute location
-			ps.point.x = clusters[i].x;
-			ps.point.y = clusters[i].y;
-			ps.point.z = clusters[i].z/2;
+			ps.point.x = centers[i].x;
+			ps.point.y = centers[i].y;
+			ps.point.z = centers[i].z/2;
 			Point pp = project3DPointIntoImage(lcinfo, ps);
 
 			locations[i].x = int(pp.x);
@@ -1213,14 +1137,15 @@ private:
 			// compute scale
 			ps.point.z = 0;
 			Point pp1 = project3DPointIntoImage(lcinfo, ps);
-			ps.point.z = clusters[i].z;
+			ps.point.z = centers[i].z;
 			Point pp2 = project3DPointIntoImage(lcinfo, ps);
 
 			float dist = sqrt(dist2D(pp1,pp2));
-			printf("Pixel height: %f\n", dist);
-			printf("Real height: %f\n", clusters[i].z);
-			scales[i] = dist/clusters[i].z;  // pixels per meter
-			printf("Scale: %f\n", scales[i]);
+			scales[i] = dist/centers[i].z;  // pixels per meter
+
+//			printf("Pixel height: %f\n", dist);
+//			printf("Real height: %f\n", centers[i].z);
+//			printf("Scale: %f\n", scales[i]);
 
 //			cvCircle(left, locations[i], 5, CV_RGB(0,255,0));
 
@@ -1244,7 +1169,8 @@ private:
 		vector<float> scales;
 		findObjectPositionsFromStereo(positions, scales);
 
-		doChamferMatching(left, positions, scales);
+		ROS_INFO("runRecognitionLambertian done");
+//		doChamferMatching(left, positions, scales);
 
 	}
 
