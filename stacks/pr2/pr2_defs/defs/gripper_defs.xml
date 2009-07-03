@@ -23,8 +23,8 @@
   <property name="finger_tip_kd"              value="0.0" />
   <property name="finger_tip_fm"              value="0.0" />
 
-  <property name="finger_tip_mu"              value="500.0" />
-  <property name="finger_mu"                  value="500.0" />
+  <property name="finger_tip_mu"              value="500000.0" />
+  <property name="finger_mu"                  value="500000.0" />
 
   <property name="finger_joint_effort_limit"  value="100.0" />
 
@@ -548,24 +548,6 @@
       </map>
     </link>
 
-    <map name="sensor" flag="gazebo">
-      <verbatim key="p3d_${side}_gripper_tool_frame">
-        <controller:ros_p3d name="p3d_${side}_gripper_tool_frame_controller" plugin="libros_p3d.so">
-          <alwaysOn>true</alwaysOn>
-          <updateRate>100.0</updateRate>
-          <bodyName>${side}_gripper_tool_frame</bodyName>
-          <topicName>${side}_gripper_tool_frame_pose_ground_truth</topicName>
-          <xyzOffsets>0 0 0</xyzOffsets>
-          <rpyOffsets>0 0 0</rpyOffsets>
-          <gaussianNoise>0.0</gaussianNoise>
-          <frameName>map</frameName>
-          <interface:position name="p3d_${side}_gripper_tool_frame_position_iface" />
-        </controller:ros_p3d>
-      </verbatim>
-    </map>
-
-
-
     <pr2_finger prefix="${side}_gripper" parent="${side}_gripper_palm_link" />
 
     <!-- [lr]_gripper_joint position is the gap_size/2                                       -->
@@ -715,24 +697,6 @@
         <elem key="turnGravityOff">true</elem>
       </map>
     </link>
-
-    <map name="sensor" flag="gazebo">
-      <verbatim key="p3d_${side}_gripper_tool_frame">
-        <controller:ros_p3d name="p3d_${side}_gripper_tool_frame_controller" plugin="libros_p3d.so">
-          <alwaysOn>true</alwaysOn>
-          <updateRate>100.0</updateRate>
-          <bodyName>${side}_gripper_tool_frame</bodyName>
-          <topicName>${side}_gripper_tool_frame_pose_ground_truth</topicName>
-          <xyzOffsets>0 0 0</xyzOffsets>
-          <rpyOffsets>0 0 0</rpyOffsets>
-          <gaussianNoise>0.0</gaussianNoise>
-          <frameName>map</frameName>
-          <interface:position name="p3d_${side}_gripper_tool_frame_position_iface" />
-        </controller:ros_p3d>
-      </verbatim>
-    </map>
-
-
 
     <pr2_finger prefix="${side}_gripper" parent="${side}_gripper_palm_link" />
 
