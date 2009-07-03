@@ -1,6 +1,7 @@
 <?xml version="1.0"?>
 <robot xmlns:sensor="http://playerstage.sourceforge.net/gazebo/xmlschema/#sensor"
        xmlns:controller="http://playerstage.sourceforge.net/gazebo/xmlschema/#controller"
+       xmlns:joint="http://playerstage.sourceforge.net/gazebo/xmlschema/#slider"
        xmlns:interface="http://playerstage.sourceforge.net/gazebo/xmlschema/#interface">
 
   <property name="M_PI" value="3.1415926535897931" />
@@ -23,8 +24,8 @@
   <property name="finger_tip_kd"              value="0.0" />
   <property name="finger_tip_fm"              value="0.0" />
 
-  <property name="finger_tip_mu"              value="500000.0" />
-  <property name="finger_mu"                  value="500000.0" />
+  <property name="finger_tip_mu"              value="500.0" />
+  <property name="finger_mu"                  value="500.0" />
 
   <property name="finger_joint_effort_limit"  value="100.0" />
 
@@ -90,6 +91,12 @@
         <map flag="collision" name="mesh">
           <elem key="type" value="visual"/>
         </map>
+        <map name="${prefix}_l_finger_contact" flag="gazebo">
+          <elem key="mu1" value="${finger_mu}" />
+          <elem key="mu2" value="${finger_mu}" />
+          <elem key="kp" value="1000000.0" />
+          <elem key="kd" value="1.0" />
+        </map>
       </collision>
       <map name="${prefix}_l_finger_sensor" flag="gazebo">
         <verbatim key="${prefix}_l_finger_bumper_sensor">
@@ -107,10 +114,6 @@
       </map>
       <map name="${prefix}_l_finger_gravity" flag="gazebo">
         <elem key="turnGravityOff">true</elem>
-        <elem key="mu1" value="${finger_mu}" />
-        <elem key="mu2" value="${finger_mu}" />
-        <elem key="kp" value="1000000.0" />
-        <elem key="kd" value="1.0" />
       </map>
     </link>
 
@@ -172,6 +175,12 @@
         <map flag="collision" name="mesh">
           <elem key="type" value="visual"/>
         </map>
+        <map name="${prefix}_r_finger_contact" flag="gazebo">
+          <elem key="mu1" value="${finger_mu}" />
+          <elem key="mu2" value="${finger_mu}" />
+          <elem key="kp" value="1000000.0" />
+          <elem key="kd" value="1.0" />
+        </map>
       </collision>
       <map name="${prefix}_r_finger_sensor" flag="gazebo">
         <verbatim key="${prefix}_r_finger_bumper_sensor">
@@ -189,10 +198,6 @@
       </map>
       <map name="${prefix}_r_finger_gravity" flag="gazebo">
         <elem key="turnGravityOff">true</elem>
-        <elem key="mu1" value="${finger_mu}" />
-        <elem key="mu2" value="${finger_mu}" />
-        <elem key="kp" value="1000000.0" />
-        <elem key="kd" value="1.0" />
       </map>
     </link>
 
@@ -251,6 +256,12 @@
         <map flag="collision" name="mesh">
           <elem key="type" value="visual"/>
         </map>
+        <map name="${prefix}_l_finger_tip_contact" flag="gazebo">
+          <elem key="mu1" value="${finger_tip_mu}" />
+          <elem key="mu2" value="${finger_tip_mu}" />
+          <elem key="kp"  value="10000000.0" />
+          <elem key="kd"  value="1.0" />
+        </map>
       </collision>
       <map name="${prefix}_l_finger_tip_sensor" flag="gazebo">
         <verbatim key="${prefix}_l_finger_tip_bumper_sensor">
@@ -268,10 +279,6 @@
       </map>
       <map name="${prefix}_l_finger_tip_gravity" flag="gazebo">
         <elem key="turnGravityOff">true</elem>
-        <elem key="mu1" value="${finger_tip_mu}" />
-        <elem key="mu2" value="${finger_tip_mu}" />
-        <elem key="kp"  value="10000000.0" />
-        <elem key="kd"  value="1.0" />
         <elem key="selfCollide" value="false" />
       </map>
     </link>
@@ -331,6 +338,12 @@
         <map flag="collision" name="mesh">
           <elem key="type" value="visual"/>
         </map>
+        <map name="${prefix}_r_finger_tip_contact" flag="gazebo">
+          <elem key="mu1" value="${finger_tip_mu}" />
+          <elem key="mu2" value="${finger_tip_mu}" />
+          <elem key="kp"  value="10000000.0" />
+          <elem key="kd"  value="1.0" />
+        </map>
       </collision>
       <map name="${prefix}_r_finger_tip_sensor" flag="gazebo">
         <verbatim key="${prefix}_r_finger_tip_bumper_sensor">
@@ -348,10 +361,6 @@
       </map>
       <map name="${prefix}_r_finger_tip_gravity" flag="gazebo">
         <elem key="turnGravityOff">true</elem>
-        <elem key="mu1" value="${finger_tip_mu}" />
-        <elem key="mu2" value="${finger_tip_mu}" />
-        <elem key="kp"  value="10000000.0" />
-        <elem key="kd"  value="1.0" />
         <elem key="selfCollide" value="false" />
       </map>
     </link>
@@ -439,6 +448,20 @@
           <interface:position name="f3d_${prefix}_r_finger_tip_position_iface" />
         </controller:ros_p3d>
         -->
+      </verbatim>
+    </map>
+
+    <map name="fake_gripper_slider_joint" flag="gazebo">
+      <verbatim key="fake_gripper_slider_joint">
+        <joint:slider name="${prefix}_finger_tip_slider_joint">
+            <body1>${prefix}_l_finger_tip_link</body1>
+            <body2>${prefix}_r_finger_tip_link</body2>
+            <anchor>${prefix}_l_finger_tip_link</anchor>
+            <axis>0 1 0</axis>
+            <anchorOffset>0 0 0</anchorOffset>
+            <lowStop>0</lowStop>
+            <highStop>0.08</highStop>
+        </joint:slider>
       </verbatim>
     </map>
 
@@ -561,16 +584,16 @@
       <actuator       name="${side}_gripper_motor" />
       <gap_joint      name="${side}_gripper_joint"                       mechanical_reduction="1.0" />
       <passive_joint  name="${side}_gripper_l_finger_joint"     >
-        <gazebo_mimic_pid p="0.0005" i="0.0" d="0.0" iClamp="0.0" />
+        <gazebo_mimic_pid p="0.0005" i="0.000" d="0.0" iClamp="0.0" />
       </passive_joint>
       <passive_joint  name="${side}_gripper_r_finger_joint"     >
-        <gazebo_mimic_pid p="0.0005" i="0.0" d="0.0" iClamp="0.0" />
+        <gazebo_mimic_pid p="0.0005" i="0.000" d="0.0" iClamp="0.0" />
       </passive_joint>
       <passive_joint  name="${side}_gripper_r_finger_tip_joint" >
-        <gazebo_mimic_pid p="0.000005" i="0.0" d="0.0" iClamp="0.0" />
+        <gazebo_mimic_pid p="0.000000" i="0.0" d="0.0" iClamp="0.0" />
       </passive_joint>
       <passive_joint  name="${side}_gripper_l_finger_tip_joint" >
-        <gazebo_mimic_pid p="0.000005" i="0.0" d="0.0" iClamp="0.0" />
+        <gazebo_mimic_pid p="0.000000" i="0.0" d="0.0" iClamp="0.0" />
       </passive_joint>
     </transmission>
 
@@ -665,7 +688,6 @@
       </verbatim>
     </map>
 
-
     <joint name="${side}_gripper_tool_joint" type="fixed" />
     <link name="${side}_gripper_tool_frame">
       <parent name="${side}_gripper_palm_link" />
@@ -711,16 +733,16 @@
       <actuator       name="${side}_gripper_motor" />
       <gap_joint      name="${side}_gripper_joint"                       mechanical_reduction="1.0" />
       <passive_joint  name="${side}_gripper_l_finger_joint"     >
-        <gazebo_mimic_pid p="0.000001" i="0.0" d="0.0" iClamp="0.0" />
+        <gazebo_mimic_pid p="0.0005" i="0.000" d="0.0" iClamp="0.0" />
       </passive_joint>
       <passive_joint  name="${side}_gripper_r_finger_joint"     >
-        <gazebo_mimic_pid p="0.000001" i="0.0" d="0.0" iClamp="0.0" />
+        <gazebo_mimic_pid p="0.0005" i="0.000" d="0.0" iClamp="0.0" />
       </passive_joint>
       <passive_joint  name="${side}_gripper_r_finger_tip_joint" >
-        <gazebo_mimic_pid p="0.000001" i="0.0" d="0.0" iClamp="0.0" />
+        <gazebo_mimic_pid p="0.00000" i="0.0" d="0.0" iClamp="0.0" />
       </passive_joint>
       <passive_joint  name="${side}_gripper_l_finger_tip_joint" >
-        <gazebo_mimic_pid p="0.000001" i="0.0" d="0.0" iClamp="0.0" />
+        <gazebo_mimic_pid p="0.00000" i="0.0" d="0.0" iClamp="0.0" />
       </passive_joint>
     </transmission>
 
