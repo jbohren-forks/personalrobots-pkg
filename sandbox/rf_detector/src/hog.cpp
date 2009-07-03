@@ -978,13 +978,13 @@ void HogFast::detectMultiScale(
 
 void CalMedian(float NewValue, float& SmallerValue, float& BiggerValue, bool SmallFlag){
     // we assume if Value = -Inf, it needs to initialized
-    if (SmallerValue == numeric_limits<float>::max()){
+    if (SmallerValue == std::numeric_limits<float>::max()){
         SmallerValue =NewValue;
         SmallFlag = true;
         return;
     }
 
-    if (BiggerValue == numeric_limits<float>::max()){
+    if (BiggerValue == std::numeric_limits<float>::max()){
         if (SmallerValue > NewValue){
             BiggerValue = SmallerValue;
             SmallerValue = NewValue;
@@ -1090,8 +1090,8 @@ void HogFast::cast_vots( Mat& Img, Vector<Rect>& part_rect, Vector<Point>& treeI
         for (int k=0; k<MaxViewId; k++){
             VotesMap.at(i).at(k) = cvCreateMat( ImgSize.height, ImgSize.width, CV_32FC1);
             cvZero( VotesMap.at(i).at(k) );
-            vecASMedianCandSmaller.at(i).at(k).resize(ImgArea,numeric_limits<float>::max());
-            vecASMedianCandBigger.at(i).at(k).resize(ImgArea,numeric_limits<float>::max());
+            vecASMedianCandSmaller.at(i).at(k).resize(ImgArea,std::numeric_limits<float>::max());
+            vecASMedianCandBigger.at(i).at(k).resize(ImgArea,std::numeric_limits<float>::max());
             vecASMedianCandSmallerFlag.at(i).at(k).resize(ImgArea,true);
             vecLowResVotes.at(i).at(k).resize(LowResMapSizeArea);
         }
@@ -1347,8 +1347,8 @@ void HogFast::cast_vots( Mat& Img, Vector<Rect>& part_rect, Vector<Point>& treeI
         for( int i = 0; i < nclasses; i++ )
         {
             // get median Aspect Ratio
-            Smaller = numeric_limits<float>::max();
-            Bigger = numeric_limits<float>::max();
+            Smaller = std::numeric_limits<float>::max();
+            Bigger = std::numeric_limits<float>::max();
             SmallerFlag = true;
             for (int j = int(rrects[i].y); j< int(rrects[i].y+rrects[i].height); j++)
                 for (int k = int(rrects[i].x); k< int(rrects[i].x+rrects[i].width); k++){
@@ -1356,7 +1356,7 @@ void HogFast::cast_vots( Mat& Img, Vector<Rect>& part_rect, Vector<Point>& treeI
                     float aspect_ = getMedian( vecASMedianCandSmaller[ScaleIdCache[i]][viewId][index],
                         vecASMedianCandBigger[ScaleIdCache[i]][viewId][index],
                         vecASMedianCandSmallerFlag[ScaleIdCache[i]][viewId][index]);
-                    if (aspect_ != numeric_limits<float>::max()){
+                    if (aspect_ != std::numeric_limits<float>::max()){
                         CalMedian( aspect_, Smaller, Bigger, SmallerFlag);
                     }
                 }
