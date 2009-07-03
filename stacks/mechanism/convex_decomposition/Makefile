@@ -1,7 +1,7 @@
 all: installed
 
 TARBALL = build/ConvexDecomposition.zip
-TARBALL_URL = http://www.amillionpixels.us/ConvexDecomposition.zip
+TARBALL_URL = http://pr.willowgarage.com/downloads/ConvexDecomposition.zip
 SOURCE_DIR = build/convex_decomposition
 INITIAL_DIR = build/ConvexDecomposition
 UNPACK_CMD = unzip
