@@ -68,9 +68,57 @@ public:
   int32_t count_;
 };
 
+TEST(TimeSynchronizer, compileTest2)
+{
+  NullFilter<Msg> f0, f1;
+  TimeSynchronizer<Msg, Msg> sync(f0, f1, 1);
+}
+
+TEST(TimeSynchronizer, compileTest3)
+{
+  NullFilter<Msg> f0, f1, f2;
+  TimeSynchronizer<Msg, Msg, Msg> sync(f0, f1, f2, 1);
+}
+
+TEST(TimeSynchronizer, compileTest4)
+{
+  NullFilter<Msg> f0, f1, f2, f3;
+  TimeSynchronizer<Msg, Msg, Msg, Msg> sync(f0, f1, f2, f3, 1);
+}
+
+TEST(TimeSynchronizer, compileTest5)
+{
+  NullFilter<Msg> f0, f1, f2, f3, f4;
+  TimeSynchronizer<Msg, Msg, Msg, Msg, Msg> sync(f0, f1, f2, f3, f4, 1);
+}
+
+TEST(TimeSynchronizer, compileTest6)
+{
+  NullFilter<Msg> f0, f1, f2, f3, f4, f5;
+  TimeSynchronizer<Msg, Msg, Msg, Msg, Msg, Msg> sync(f0, f1, f2, f3, f4, f5, 1);
+}
+
+TEST(TimeSynchronizer, compileTest7)
+{
+  NullFilter<Msg> f0, f1, f2, f3, f4, f5, f6;
+  TimeSynchronizer<Msg, Msg, Msg, Msg, Msg, Msg, Msg> sync(f0, f1, f2, f3, f4, f5, f6, 1);
+}
+
+TEST(TimeSynchronizer, compileTest8)
+{
+  NullFilter<Msg> f0, f1, f2, f3, f4, f5, f6, f7;
+  TimeSynchronizer<Msg, Msg, Msg, Msg, Msg, Msg, Msg, Msg> sync(f0, f1, f2, f3, f4, f5, f6, f7, 1);
+}
+
+TEST(TimeSynchronizer, compileTest9)
+{
+  NullFilter<Msg> f0, f1, f2, f3, f4, f5, f6, f7, f8;
+  TimeSynchronizer<Msg, Msg, Msg, Msg, Msg, Msg, Msg, Msg, Msg> sync(f0, f1, f2, f3, f4, f5, f6, f7, f8, 1);
+}
+
 TEST(TimeSynchronizer, immediate)
 {
-  TimeSynchronizer2<Msg, Msg> sync(1);
+  TimeSynchronizer<Msg, Msg> sync(1);
   Helper h;
   sync.connect(boost::bind(&Helper::cb, &h, _1, _2));
   MsgPtr m(new Msg);
@@ -84,7 +132,7 @@ TEST(TimeSynchronizer, immediate)
 
 TEST(TimeSynchronizer, multipleTimes)
 {
-  TimeSynchronizer2<Msg, Msg> sync(1);
+  TimeSynchronizer<Msg, Msg> sync(1);
   Helper h;
   sync.connect(boost::bind(&Helper::cb, &h, _1, _2));
   MsgPtr m(new Msg);
