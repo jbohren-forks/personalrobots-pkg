@@ -1,19 +1,6 @@
-Index: server/physics/Body.hh
-===================================================================
---- server/physics/Body.hh	(revision 7937)
-+++ server/physics/Body.hh	(working copy)
-@@ -268,6 +268,8 @@
-     protected: ParamT<double> *iyzP;
-     protected: bool customMassMatrix;
-     protected: double cx,cy,cz,bodyMass,ixx,iyy,izz,ixy,ixz,iyz;
-+
-+    private: std::string lightName;
-   };
- 
-   /// \}
 Index: server/physics/Geom.cc
 ===================================================================
---- server/physics/Geom.cc	(revision 7937)
+--- server/physics/Geom.cc	(revision 7945)
 +++ server/physics/Geom.cc	(working copy)
 @@ -249,7 +249,7 @@
  
@@ -24,31 +11,16 @@ Index: server/physics/Geom.cc
      {
        this->transId = dCreateGeomTransform( this->spaceId );
        dGeomTransformSetGeom( this->transId, this->geomId );
-Index: server/physics/Body.cc
-===================================================================
---- server/physics/Body.cc	(revision 7937)
-+++ server/physics/Body.cc	(working copy)
-@@ -242,6 +242,10 @@
-     }
-   }
- 
-+  if ((childNode = node->GetChild("light")))
-+  {
-+    this->lightName = OgreCreator::CreateLight(childNode, this->cgVisual);
-+  }
- 
-   childNode = node->GetChildByNSPrefix("sensor");
- 
 Index: server/physics/ode/ODEPhysics.cc
 ===================================================================
---- server/physics/ode/ODEPhysics.cc	(revision 7937)
+--- server/physics/ode/ODEPhysics.cc	(revision 7945)
 +++ server/physics/ode/ODEPhysics.cc	(working copy)
 @@ -66,10 +66,10 @@
    this->contactGroup = dJointGroupCreate(0);
  
    // Help prevent "popping of deeply embedded object
 -  dWorldSetContactMaxCorrectingVel(this->worldId, 10.0);
-+  dWorldSetContactMaxCorrectingVel(this->worldId, 1.0);
++  dWorldSetContactMaxCorrectingVel(this->worldId, 100.0);
  
    // This helps prevent jittering problems.
 -  dWorldSetContactSurfaceLayer(this->worldId, 0.01);
