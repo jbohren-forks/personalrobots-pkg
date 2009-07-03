@@ -71,9 +71,9 @@
         </geometry>
       </visual>
       <collision>
-        <origin xyz="0.05 0 -0.2" rpy="0 0 0" />
+        <origin xyz="0.0 0 0.0" rpy="0 0 0" />
         <geometry name="${side}_shoulder_pan_collision">
-          <box size="0.347 0.254 0.646" />
+          <mesh filename="shoulder_yaw_convex" />
         </geometry>
       </collision>
       <map name="${side}_shoulder_pan_sensor" flag="gazebo">
@@ -141,9 +141,9 @@
         </geometry>
       </visual>
       <collision>
-        <origin xyz="0 0 0" rpy="${M_PI/2} 0 0" />
+        <origin xyz="0 0 0" rpy="0 0 0" />
         <geometry name="${side}_shoulder_lift_collision">
-          <cylinder radius="${shoulder_lift_radius}" length="${shoulder_lift_length}" />
+          <mesh filename="shoulder_lift_convex" />
         </geometry>
       </collision>
       <map name="${side}_shoulder_lift_sensor" flag="gazebo">
@@ -208,7 +208,7 @@
           <elem key="material" value="PR2/RollLinks" />
         </map>
         <geometry name="${side}_upper_arm_roll_visual">
-          <mesh filename="upper_arm_roll" scale="1 1 1" />
+          <mesh filename="upper_arm_roll" />
         </geometry>
       </visual>
       <collision> <!-- TODO: collision tag should be optional -->
@@ -267,9 +267,9 @@
       </visual>
 
       <collision>
-        <origin xyz="0.3 0 0" rpy="0 0 0" />
+        <origin xyz="0 0 0" rpy="0 0 0" />
         <geometry name="${side}_upper_arm_collision">
-          <box size="0.362 0.144 0.157" />
+          <mesh filename="upper_arm_convex" />
         </geometry>
       </collision>
 
@@ -333,9 +333,9 @@
         </geometry>
       </visual>
       <collision>
-        <origin xyz="0 0 0" rpy="${M_PI/2} 0 0" />
+        <origin xyz="0 0 0" rpy="0 0 0" />
         <geometry name="${side}_elbow_flex_collision">
-          <cylinder radius="0.1" length="0.08" />
+          <mesh filename="elbow_flex_convex" />
         </geometry>
       </collision>
       <map name="${side}_elbow_flex_sensor" flag="gazebo">
@@ -439,7 +439,7 @@
           <elem key="material" value="PR2/RollLinks" />
         </map>
         <geometry name="${side}_forearm_roll_visual">
-          <mesh filename="forearm_roll" scale="1 1 1" />
+          <mesh filename="forearm_roll" />
         </geometry>
       </visual>
       <collision> <!-- TODO: collision tag should be optional -->
@@ -488,9 +488,9 @@
         </geometry>
       </visual>
       <collision>
-        <origin xyz="0.22 0 0" rpy="0 0 0" />
+        <origin xyz="0 0 0" rpy="0 0 0" />
         <geometry name="${side}_forearm_collision">
-          <box size="0.27 0.12 0.08" />
+          <mesh filename="forearm_convex" />
         </geometry>
       </collision>
       <map name="${side}_forearm_sensor" flag="gazebo">
@@ -551,9 +551,9 @@
         </geometry>
       </visual>
       <collision>
-        <origin xyz="0 0 0" rpy="${M_PI/2} 0 0" />
+        <origin xyz="0 0 0" rpy="0 0 0" />
         <geometry name="${side}_wrist_flex_collision">
-          <cylinder radius="0.033" length="0.103" />
+          <mesh filename="wrist_flex_convex" />
         </geometry>
       </collision>
       <map name="${side}_wrist_flex_sensor" flag="gazebo">

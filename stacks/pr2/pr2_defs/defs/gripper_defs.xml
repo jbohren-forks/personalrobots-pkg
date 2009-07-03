@@ -82,9 +82,9 @@
         </geometry>
       </visual>
       <collision>
-        <origin xyz="0.065 0.016 -0.00164" rpy="0 0 0" />
+        <origin xyz="0 0 0" rpy="0 0 0" />
         <geometry name="${prefix}_l_finger_collision">
-          <box size="0.04 0.03 0.049" />
+          <mesh filename="upper_finger_l_convex" />
         </geometry>
         <verbose value="Yes" />
         <map flag="collision" name="mesh">
@@ -164,9 +164,9 @@
         </geometry>
       </visual>
       <collision>
-        <origin xyz="0.065 -0.016 -0.00095" rpy="0 0 0" />
+        <origin xyz="0 0 0" rpy="0 0 0" />
         <geometry name="${prefix}_r_finger_collision">
-          <box size="0.04 0.03 0.049" />
+          <mesh filename="upper_finger_r_convex" />
         </geometry>
         <verbose value="Yes" />
         <map flag="collision" name="mesh">
@@ -243,9 +243,9 @@
         </geometry>
       </visual>
       <collision>
-        <origin xyz="0.012 -0.009 0.0" rpy="0 0 0" />
+        <origin xyz="0 0 0" rpy="0 0 0" />
         <geometry name="${prefix}_l_finger_tip_collision">
-          <box size="0.035 0.0125 0.023" />
+          <mesh filename="finger_tip_l_convex" />
         </geometry>
         <verbose value="Yes" />
         <map flag="collision" name="mesh">
@@ -323,9 +323,9 @@
         </geometry>
       </visual>
       <collision>
-        <origin xyz="0.012 0.009 0.0" rpy="0 0 0" />
+        <origin xyz="0 0 0" rpy="0 0 0" />
         <geometry name="${prefix}_r_finger_tip_collision">
-          <box size="0.035 0.0125 0.023" />
+          <mesh filename="finger_tip_r_convex" />
         </geometry>
         <verbose value="Yes" />
         <map flag="collision" name="mesh">
@@ -470,11 +470,10 @@
           <mesh filename="gripper_palm" />
         </geometry>
       </visual>
-
       <collision>
-        <origin xyz="0.08 0 0" rpy="0 0 0" />
+        <origin xyz="0 0 0" rpy="0 0 0" />
         <geometry name="${side}_gripper_palm_collision">
-          <box size="0.08 0.10 0.05" />
+          <mesh filename="gripper_palm_convex" />
         </geometry>
         <verbose value="Yes" />
         <map flag="collision" name="mesh">
@@ -639,11 +638,10 @@
           <mesh filename="gripper_palm" />
         </geometry>
       </visual>
-
       <collision>
-        <origin xyz="0.08 0 0" rpy="0 0 0" />
+        <origin xyz="0 0 0" rpy="0 0 0" />
         <geometry name="${side}_gripper_palm_collision">
-          <box size="0.08 0.10 0.05" />
+          <mesh filename="gripper_palm_convex" />
         </geometry>
         <verbose value="Yes" />
         <map flag="collision" name="mesh">
