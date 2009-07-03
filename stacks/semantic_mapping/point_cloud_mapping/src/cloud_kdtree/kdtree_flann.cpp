@@ -131,27 +131,27 @@ namespace cloud_kdtree
     p[0] = p_q.x; p[1] = p_q.y; p[2] = p_q.z;
     radius *= radius;
 
-    int neighbors_in_radius_;
-    m_lock_.lock ();
+    int neighbors_in_radius_ = flann_param_.checks;
+//    m_lock_.lock ();
 //    int neighbors_in_radius_ = ann_kd_tree_->annkFRSearch (p, radius, 0, NULL, NULL, epsilon_);
-    m_lock_.unlock ();
-
-    // No neighbors found ? Return false
-    if (neighbors_in_radius_ == 0)
-    {
-      free (p);
-      return (false);
-    }
+//    m_lock_.unlock ();
 
     if (neighbors_in_radius_  > max_nn) neighbors_in_radius_ = max_nn;
     k_indices.resize (neighbors_in_radius_);
     k_distances.resize (neighbors_in_radius_);
 
     m_lock_.lock ();
-    flann_radius_search (index_id_, p, &k_indices[0], &k_distances[0], nr_points_, radius, flann_param_.checks, &flann_param_);
+    int neighbors_found = flann_radius_search (index_id_, p, &k_indices[0], &k_distances[0], neighbors_in_radius_, radius, flann_param_.checks, &flann_param_);
     m_lock_.unlock ();
-
     free (p);
+
+    if (neighbors_found == 0) {
+      return (false);
+    }
+
+    k_indices.resize(neighbors_found);
+    k_distances.resize(neighbors_found);
+
     return (true);
   }
 
@@ -172,27 +172,28 @@ namespace cloud_kdtree
     p[0] = points.pts.at (index).x; p[1] = points.pts.at (index).y; p[2] = points.pts.at (index).z;
     radius *= radius;
 
-    int neighbors_in_radius_;
-    m_lock_.lock ();
+    int neighbors_in_radius_ = flann_param_.checks;
+//    m_lock_.lock ();
 //    int neighbors_in_radius_ = ann_kd_tree_->annkFRSearch (p, radius, 0, NULL, NULL, epsilon_);
-    m_lock_.unlock ();
-
-    // No neighbors found ? Return false
-    if (neighbors_in_radius_ == 0)
-    {
-      free (p);
-      return (false);
-    }
+//    m_lock_.unlock ();
 
     if (neighbors_in_radius_  > max_nn) neighbors_in_radius_ = max_nn;
     k_indices.resize (neighbors_in_radius_);
     k_distances.resize (neighbors_in_radius_);
 
     m_lock_.lock ();
-    flann_radius_search (index_id_, p, &k_indices[0], &k_distances[0], nr_points_, radius, flann_param_.checks, &flann_param_);
+    int neighbors_found = flann_radius_search (index_id_, p, &k_indices[0], &k_distances[0], neighbors_in_radius_,
+    		radius, flann_param_.checks, &flann_param_);
     m_lock_.unlock ();
-
     free (p);
+
+    if (neighbors_found == 0) {
+      return (false);
+    }
+
+    k_indices.resize(neighbors_found);
+    k_distances.resize(neighbors_found);
+
     return (true);
   }
 

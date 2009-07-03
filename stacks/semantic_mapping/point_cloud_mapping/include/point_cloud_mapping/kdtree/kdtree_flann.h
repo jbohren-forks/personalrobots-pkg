@@ -70,10 +70,12 @@ namespace cloud_kdtree
 
         flann_param_.trees = 1;
         flann_param_.target_precision = -1;
-        flann_param_.checks = 1024;
+        flann_param_.checks = 128;
 
         m_lock_.lock ();
+        printf("Building index\n");
         index_id_    = flann_build_index (points_, nr_points_, dim_, &speedup, &flann_param_);
+        printf("Index built\n");
         m_lock_.unlock ();
       }
 
@@ -106,7 +108,7 @@ namespace cloud_kdtree
 
         flann_param_.trees = 1;
         flann_param_.target_precision = -1;
-        flann_param_.checks = 1024;
+        flann_param_.checks = 128;
 
         m_lock_.lock ();
         index_id_    = flann_build_index (points_, nr_points_, dim_, &speedup, &flann_param_);
@@ -168,22 +170,26 @@ namespace cloud_kdtree
       {
         radius *= radius;
 
-        int neighbors_in_radius_;
-        m_lock_.lock ();
+        int neighbors_in_radius_ = flann_param_.checks;
+//        m_lock_.lock ();
         //int neighbors_in_radius_ = ann_kd_tree_->annkFRSearch (points_[index], radius, 0, NULL, NULL, epsilon_);
-        m_lock_.unlock ();
+//        m_lock_.unlock ();
 
-        // No neighbors found ? Return false
-        if (neighbors_in_radius_ == 0)
-          return (false);
-
-        if (neighbors_in_radius_  > max_nn) neighbors_in_radius_  = max_nn;
+        if (neighbors_in_radius_ > max_nn) neighbors_in_radius_  = max_nn;
         k_indices.resize (neighbors_in_radius_);
         k_distances.resize (neighbors_in_radius_);
 
         m_lock_.lock ();
-        flann_radius_search (index_id_, &points_[index], &k_indices[0], &k_distances[0], nr_points_, radius, flann_param_.checks, &flann_param_);
+        int neighbors_found = flann_radius_search (index_id_, &points_[index], &k_indices[0], &k_distances[0],
+        		neighbors_in_radius_, radius, flann_param_.checks, &flann_param_);
         m_lock_.unlock ();
+
+        if (neighbors_found == 0) {
+          return (false);
+        }
+
+        k_indices.resize(neighbors_found);
+        k_distances.resize(neighbors_found);
 
         return (true);
       }
