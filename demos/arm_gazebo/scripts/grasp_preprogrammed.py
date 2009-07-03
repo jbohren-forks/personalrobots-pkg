@@ -58,10 +58,10 @@ CMD_POS_4      =  0.0
 CMD_POS_5      =  0.0
 CMD_POS_6      =  0.0
 CMD_POS_7      =  0.0
-LOWER_Z        =  0.1
-PAN_RAD        =  0.2
+LOWER_Z        =  0.2
+PAN_RAD        =  0.5
 G_OPEN         =  0.058;
-G_CLOSE        =  0.0;
+G_CLOSE        =  0.0199;
 
 p3d_received   = False
 
@@ -71,13 +71,13 @@ def p3dReceived(stuff):
         p3d_received = True
 
 if __name__ == '__main__':
-    pub_r_shoulder_yaw   = rospy.Publisher("r_gripper_controller/set_command", Float64)
-    pub_r_shoulder_pitch = rospy.Publisher("r_gripper_controller/set_command", Float64)
-    pub_r_upper_arm_roll = rospy.Publisher("r_gripper_controller/set_command", Float64)
-    pub_r_elbow_flex     = rospy.Publisher("r_gripper_controller/set_command", Float64)
-    pub_r_forearm_roll   = rospy.Publisher("r_gripper_controller/set_command", Float64)
-    pub_r_wrist_flex     = rospy.Publisher("r_gripper_controller/set_command", Float64)
-    pub_r_wrist_roll     = rospy.Publisher("r_gripper_controller/set_command", Float64)
+    pub_r_shoulder_pan   = rospy.Publisher("r_shoulder_pan_controller/set_command", Float64)
+    pub_r_shoulder_lift  = rospy.Publisher("r_shoulder_lift_controller/set_command", Float64)
+    pub_r_upper_arm_roll = rospy.Publisher("r_upper_arm_roll_controller/set_command", Float64)
+    pub_r_elbow_flex     = rospy.Publisher("r_elbow_flex_controller/set_command", Float64)
+    pub_r_forearm_roll   = rospy.Publisher("r_forearm_roll_controller/set_command", Float64)
+    pub_r_wrist_flex     = rospy.Publisher("r_wrist_flex_controller/set_command", Float64)
+    pub_r_wrist_roll     = rospy.Publisher("r_wrist_roll_controller/set_command", Float64)
     pub_r_gripper        = rospy.Publisher("r_gripper_controller/set_command", Float64)
     rospy.Subscriber("r_gripper_palm_pose_ground_truth", PoseWithRatesStamped, p3dReceived)
     rospy.init_node(NAME, anonymous=True)
@@ -88,46 +88,100 @@ if __name__ == '__main__':
       time.sleep(1)
 
     #open gripper
-    pub_r_arm.publish(JointPosCmd(['r_shoulder_pan_joint','r_shoulder_lift_joint','r_upper_arm_roll_joint','r_elbow_flex_joint','r_forearm_roll_joint','r_wrist_flex_joint','r_wrist_roll_joint'],[CMD_POS_1,CMD_POS_2,CMD_POS_3,CMD_POS_4,CMD_POS_5,CMD_POS_6,CMD_POS_7],[0,0,0,0,0,0,0],0))
-    pub_r_gripper.publish(Float64(G_OPEN))
+    pub_r_shoulder_pan   .publish(Float64(CMD_POS_1))
+    pub_r_shoulder_lift  .publish(Float64(CMD_POS_2))
+    pub_r_upper_arm_roll .publish(Float64(CMD_POS_3))
+    pub_r_elbow_flex     .publish(Float64(CMD_POS_4))
+    pub_r_forearm_roll   .publish(Float64(CMD_POS_5))
+    pub_r_wrist_flex     .publish(Float64(CMD_POS_6))
+    pub_r_wrist_roll     .publish(Float64(CMD_POS_7))
+    pub_r_gripper        .publish(Float64(G_OPEN))
     time.sleep(8)
 
     #lower arm
-    pub_r_arm.publish(JointPosCmd(['r_shoulder_pan_joint','r_shoulder_lift_joint','r_upper_arm_rolr_joint','r_elbow_flex_joint','r_forearm_roll_joint','r_wrist_flex_joint','r_wrist_roll_joint'],[CMD_POS_1,CMD_POS_2+LOWER_Z,CMD_POS_3,CMD_POS_4,CMD_POS_5,CMD_POS_6,CMD_POS_7],[0,0,0,0,0,0,0],0))
+    pub_r_shoulder_pan   .publish(Float64(CMD_POS_1))
+    pub_r_shoulder_lift  .publish(Float64(CMD_POS_2+LOWER_Z))
+    pub_r_upper_arm_roll .publish(Float64(CMD_POS_3))
+    pub_r_elbow_flex     .publish(Float64(CMD_POS_4))
+    pub_r_forearm_roll   .publish(Float64(CMD_POS_5))
+    pub_r_wrist_flex     .publish(Float64(CMD_POS_6))
+    pub_r_wrist_roll     .publish(Float64(CMD_POS_7))
     pub_r_gripper.publish(Float64(G_OPEN))
     time.sleep(2)
 
     #close gripper
-    pub_r_arm.publish(JointPosCmd(['r_shoulder_pan_joint','r_shoulder_lift_joint','r_upper_arm_rolr_joint','r_elbow_flex_joint','r_forearm_roll_joint','r_wrist_flex_joint','r_wrist_roll_joint'],[CMD_POS_1,CMD_POS_2+LOWER_Z,CMD_POS_3,CMD_POS_4,CMD_POS_5,CMD_POS_6,CMD_POS_7],[0,0,0,0,0,0,0],0))
+    pub_r_shoulder_pan   .publish(Float64(CMD_POS_1))
+    pub_r_shoulder_lift  .publish(Float64(CMD_POS_2+LOWER_Z))
+    pub_r_upper_arm_roll .publish(Float64(CMD_POS_3))
+    pub_r_elbow_flex     .publish(Float64(CMD_POS_4))
+    pub_r_forearm_roll   .publish(Float64(CMD_POS_5))
+    pub_r_wrist_flex     .publish(Float64(CMD_POS_6))
+    pub_r_wrist_roll     .publish(Float64(CMD_POS_7))
     pub_r_gripper.publish(Float64(G_CLOSE))
     time.sleep(8)
 
     #raise arm
-    pub_r_arm.publish(JointPosCmd(['r_shoulder_pan_joint','r_shoulder_lift_joint','r_upper_arm_roll_joint','r_elbow_flex_joint','r_forearm_roll_joint','r_wrist_flex_joint','r_wrist_roll_joint'],[CMD_POS_1,CMD_POS_2,CMD_POS_3,CMD_POS_4,CMD_POS_5,CMD_POS_6,CMD_POS_7],[0,0,0,0,0,0,0],0))
+    pub_r_shoulder_pan   .publish(Float64(CMD_POS_1))
+    pub_r_shoulder_lift  .publish(Float64(CMD_POS_2))
+    pub_r_upper_arm_roll .publish(Float64(CMD_POS_3))
+    pub_r_elbow_flex     .publish(Float64(CMD_POS_4))
+    pub_r_forearm_roll   .publish(Float64(CMD_POS_5))
+    pub_r_wrist_flex     .publish(Float64(CMD_POS_6))
+    pub_r_wrist_roll     .publish(Float64(CMD_POS_7))
     pub_r_gripper.publish(Float64(G_CLOSE))
     time.sleep(2)
 
     #pan arm
-    pub_r_arm.publish(JointPosCmd(['r_shoulder_pan_joint','r_shoulder_lift_joint','r_upper_arm_roll_joint','r_elbow_flex_joint','r_forearm_roll_joint','r_wrist_flex_joint','r_wrist_roll_joint'],[CMD_POS_1+PAN_RAD,CMD_POS_2,CMD_POS_3,CMD_POS_4,CMD_POS_5,CMD_POS_6,CMD_POS_7],[0,0,0,0,0,0,0],0))
+    pub_r_shoulder_pan   .publish(Float64(CMD_POS_1+PAN_RAD))
+    pub_r_shoulder_lift  .publish(Float64(CMD_POS_2))
+    pub_r_upper_arm_roll .publish(Float64(CMD_POS_3))
+    pub_r_elbow_flex     .publish(Float64(CMD_POS_4))
+    pub_r_forearm_roll   .publish(Float64(CMD_POS_5))
+    pub_r_wrist_flex     .publish(Float64(CMD_POS_6))
+    pub_r_wrist_roll     .publish(Float64(CMD_POS_7))
     pub_r_gripper.publish(Float64(G_CLOSE))
     time.sleep(2)
 
     #lower arm
-    pub_r_arm.publish(JointPosCmd(['r_shoulder_pan_joint','r_shoulder_lift_joint','r_upper_arm_roll_joint','r_elbow_flex_joint','r_forearm_roll_joint','r_wrist_flex_joint','r_wrist_roll_joint'],[CMD_POS_1+PAN_RAD,CMD_POS_2+LOWER_Z,CMD_POS_3,CMD_POS_4,CMD_POS_5,CMD_POS_6,CMD_POS_7],[0,0,0,0,0,0,0],0))
+    pub_r_shoulder_pan   .publish(Float64(CMD_POS_1+PAN_RAD))
+    pub_r_shoulder_lift  .publish(Float64(CMD_POS_2+LOWER_Z))
+    pub_r_upper_arm_roll .publish(Float64(CMD_POS_3))
+    pub_r_elbow_flex     .publish(Float64(CMD_POS_4))
+    pub_r_forearm_roll   .publish(Float64(CMD_POS_5))
+    pub_r_wrist_flex     .publish(Float64(CMD_POS_6))
+    pub_r_wrist_roll     .publish(Float64(CMD_POS_7))
     pub_r_gripper.publish(Float64(G_CLOSE))
     time.sleep(2)
 
     #open gripper
-    pub_r_arm.publish(JointPosCmd(['r_shoulder_pan_joint','r_shoulder_lift_joint','r_upper_arm_rolr_joint','r_elbow_flex_joint','r_forearm_roll_joint','r_wrist_flex_joint','r_wrist_roll_joint'],[CMD_POS_1+PAN_RAD,CMD_POS_2+LOWER_Z,CMD_POS_3,CMD_POS_4,CMD_POS_5,CMD_POS_6,CMD_POS_7],[0,0,0,0,0,0,0],0))
+    pub_r_shoulder_pan   .publish(Float64(CMD_POS_1+PAN_RAD))
+    pub_r_shoulder_lift  .publish(Float64(CMD_POS_2+LOWER_Z))
+    pub_r_upper_arm_roll .publish(Float64(CMD_POS_3))
+    pub_r_elbow_flex     .publish(Float64(CMD_POS_4))
+    pub_r_forearm_roll   .publish(Float64(CMD_POS_5))
+    pub_r_wrist_flex     .publish(Float64(CMD_POS_6))
+    pub_r_wrist_roll     .publish(Float64(CMD_POS_7))
     pub_r_gripper.publish(Float64(G_OPEN))
     time.sleep(8)
 
     #raise arm
-    pub_r_arm.publish(JointPosCmd(['r_shoulder_pan_joint','r_shoulder_lift_joint','r_upper_arm_roll_joint','r_elbow_flex_joint','r_forearm_roll_joint','r_wrist_flex_joint','r_wrist_roll_joint'],[CMD_POS_1+PAN_RAD,CMD_POS_2,CMD_POS_3,CMD_POS_4,CMD_POS_5,CMD_POS_6,CMD_POS_7],[0,0,0,0,0,0,0],0))
+    pub_r_shoulder_pan   .publish(Float64(CMD_POS_1+PAN_RAD))
+    pub_r_shoulder_lift  .publish(Float64(CMD_POS_2))
+    pub_r_upper_arm_roll .publish(Float64(CMD_POS_3))
+    pub_r_elbow_flex     .publish(Float64(CMD_POS_4))
+    pub_r_forearm_roll   .publish(Float64(CMD_POS_5))
+    pub_r_wrist_flex     .publish(Float64(CMD_POS_6))
+    pub_r_wrist_roll     .publish(Float64(CMD_POS_7))
     pub_r_gripper.publish(Float64(G_OPEN))
     time.sleep(2)
 
     #return arm
-    pub_r_arm.publish(JointPosCmd(['r_shoulder_pan_joint','r_shoulder_lift_joint','r_upper_arm_roll_joint','r_elbow_flex_joint','r_forearm_roll_joint','r_wrist_flex_joint','r_wrist_roll_joint'],[CMD_POS_1,CMD_POS_2,CMD_POS_3,CMD_POS_4,CMD_POS_5,CMD_POS_6,CMD_POS_7],[0,0,0,0,0,0,0],0))
-    pub_r_gripper.publish(Float64(G_OPEN))
+    pub_r_shoulder_pan   .publish(Float64(CMD_POS_1))
+    pub_r_shoulder_lift  .publish(Float64(CMD_POS_2))
+    pub_r_upper_arm_roll .publish(Float64(CMD_POS_3))
+    pub_r_elbow_flex     .publish(Float64(CMD_POS_4))
+    pub_r_forearm_roll   .publish(Float64(CMD_POS_5))
+    pub_r_wrist_flex     .publish(Float64(CMD_POS_6))
+    pub_r_wrist_roll     .publish(Float64(CMD_POS_7))
+    pub_r_gripper.publish(Float64(G_CLOSE))
 

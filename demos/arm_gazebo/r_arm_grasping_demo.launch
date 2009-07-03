@@ -28,8 +28,8 @@
   <!-- Tug Arms For Navigation -->
   <!--
   <node pkg="arm_gazebo" type="grasp2.py" output="screen"/>
-  <node pkg="arm_gazebo" type="grasp_preprogrammed.py" output="screen"/>
   -->
+  <node pkg="arm_gazebo" type="grasp_preprogrammed.py" output="screen"/>
 
   <!-- for visualization -->
   <!--

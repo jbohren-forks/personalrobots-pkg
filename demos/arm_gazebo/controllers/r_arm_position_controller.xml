@@ -3,42 +3,42 @@
   <!-- right arm array -->
   <controller name="r_shoulder_pan_controller" topic="r_shoulder_pan_controller" type="JointPositionControllerNode">
     <joint name="r_shoulder_pan_joint" >
-      <pid p="2.0" d="0.1" i="0.1" iClamp="1" />
+      <pid p="200.0" d="0.1" i="0.1" iClamp="1" />
     </joint>
   </controller>
   <controller name="r_shoulder_lift_controller" topic="r_shoulder_lift_controller" type="JointPositionControllerNode">
     <joint name="r_shoulder_lift_joint" >
-      <pid p="60.0" d="0.1" i="0.1" iClamp="1" />
+      <pid p="600.0" d="0.1" i="0.1" iClamp="1" />
     </joint>
   </controller>
   <controller name="r_upper_arm_roll_controller" topic="r_upper_arm_roll_controller" type="JointPositionControllerNode">
     <joint name="r_upper_arm_roll_joint" >
-      <pid p="5.0" d="0.1" i="0.1" iClamp="1" />
+      <pid p="50.0" d="0.1" i="0.1" iClamp="1" />
     </joint>
   </controller>
   <controller name="r_elbow_flex_controller" topic="r_elbow_flex_controller" type="JointPositionControllerNode">
     <joint name="r_elbow_flex_joint" >
-      <pid p="20.0" d="0.1" i="0.1" iClamp="1" />
+      <pid p="200.0" d="0.1" i="0.1" iClamp="1" />
     </joint>
   </controller>
   <controller name="r_forearm_roll_controller" topic="r_forearm_roll_controller" type="JointPositionControllerNode">
     <joint name="r_forearm_roll_joint" >
-      <pid p="4.0" d="0.1" i="0.1" iClamp="1" />
+      <pid p="40.0" d="0.1" i="0.1" iClamp="1" />
     </joint>
   </controller>
   <controller name="r_wrist_flex_controller" topic="r_wrist_flex_controller" type="JointPositionControllerNode">
     <joint name="r_wrist_flex_joint" >
-      <pid p="5.0" d="0.1" i="0.1" iClamp="1" />
+      <pid p="50.0" d="0.1" i="0.1" iClamp="1" />
     </joint>
   </controller>
   <controller name="r_wrist_roll_controller" topic="r_wrist_roll_controller" type="JointPositionControllerNode">
     <joint name="r_wrist_roll_joint" >
-      <pid p="1.0" d="0.1" i="0.1" iClamp="1" />
+      <pid p="10.0" d="0.1" i="0.1" iClamp="1" />
     </joint>
   </controller>
   <controller name="r_gripper_controller" topic="r_gripper_controller" type="JointPositionControllerNode">
     <joint name="r_gripper_joint">
-      <pid p="10000.0" d="0.0" i="1.0" iClamp="10.0" />
+      <pid p="1000.0" d="0.0" i="1.0" iClamp="10.0" />
     </joint>
   </controller>
 </controllers>
