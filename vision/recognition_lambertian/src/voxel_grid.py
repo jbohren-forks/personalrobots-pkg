@@ -38,14 +38,14 @@ class VoxelGrid:
         self.y_res = y_res
         self.z_res = z_res
 
-        self.point_cloud = point_cloud
-        self.x_min, self.y_min, self.z_min = numpy.min(self.point_cloud,0)
-        self.x_max, self.y_max, self.z_max = numpy.max(self.point_cloud,0)        
+        self.template = point_cloud
+        self.x_min, self.y_min, self.z_min = numpy.min(point_cloud,0)
+        self.x_max, self.y_max, self.z_max = numpy.max(point_cloud,0)        
         self.x_d= (self.x_max-self.x_min)/(self.x_res-1)
         self.y_d= (self.y_max-self.y_min)/(self.y_res-1)
         self.z_d= (self.z_max-self.z_min)/(self.z_res-1)
                 
-        self.point_cloud -= (self.x_min, self.y_min, self.z_min)
+        self.point_cloud = point_cloud - (self.x_min, self.y_min, self.z_min)
         self.point_cloud /= (self.x_d,self.y_d,self.z_d)
         self.point_cloud = numpy.int32(numpy.floor(self.point_cloud))
         
@@ -64,9 +64,10 @@ class VoxelGrid:
         self.grid[:] = -1
         q = []
         for p in self.point_cloud:
+            if self.grid[p[0],p[1],p[2]] != 0:
+                q.append(p)        
             self.grid[p[0],p[1],p[2]] = 0
-            q.append(p)        
-        
+
         dir = numpy.array([ [0,0,1], [0,0,-1], [0,1,0], [0,-1,0], [1,0,0], [-1,0,0] ])
         
         while q!=[]:
@@ -83,7 +84,7 @@ class VoxelGrid:
     def match_score(self, template, location):
         
         # move template to new location
-        tmpl = template + location
+        tmpl = template - location
                 
         #transform template into grid coordinates
         tmpl -= (self.x_min,self.y_min,self.z_min)
@@ -179,17 +180,23 @@ class ModelFitNode():
         self.models = {}
 
 
+
+
     def load_models(self):
         self.model_names = []
         for f in listDirectory(self.models_dir,'.ply'):
             print "Loading: ",f
             name = os.path.splitext(os.path.split(f)[1])[0]
             obj_spec,obj = ply_import.read(f)
-            self.models[name] = numpy.array(obj['vertex']) / 1000
+            model_vertex = numpy.array(obj['vertex']) / 1000
+            self.models[name] = VoxelGrid(model_vertex,50,50,50)
             self.model_names.append(name)
         print 'Done loading'
 
-    def show_model(self, model, location, model_id=0):
+    def show_model(self, model, location, model_id=-1):
+        
+        if model_id==-1:
+            model_id = self.cnt
         
         marker = Marker()
         marker.header.stamp = rospy.get_rostime()
@@ -266,30 +273,30 @@ class ModelFitNode():
 #        print "Number of points", point_cloud.shape[0]
 #        self.show_point_cloud(req.cloud)
 
-        grid = VoxelGrid(point_cloud,50,50,50)
+        #grid = VoxelGrid(point_cloud,50,50,50)
         # get "center" of point cloud projected onto the plane
-        grid.show_grid(self.maker_pub)
+        #grid.show_grid(self.maker_pub)
         
         
         best_score = 1e10
         best_position = mean
         best_template = None
         for name in self.model_names:
-            template = self.models[name]        
+            grid = self.models[name]        
 
             for xd in frange(-0.02, 0.02, 0.01): 
                 for yd in frange(-0.02, 0.02, 0.01):
                     position = mean + (xd,yd,0)
                     print "Computing score"
-                    score = grid.match_score(template, position )
+                    score = grid.match_score(point_cloud, position )
                     print score  
                     if score<best_score:
                         best_score = score
                         best_position = position
-                        best_template = template
+                        best_template = name
         
         print "Best score", best_score
-        self.show_model(best_template, best_position)
+        self.show_model(self.models[best_template].template, best_position)
         
         return ModelFitResponse()
 
