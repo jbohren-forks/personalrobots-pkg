@@ -10,8 +10,6 @@
   </node>
   <node pkg="pr2_etherCAT" type="pr2_etherCAT" args="-i eth0 -x /robotdesc/pr2"
         output="screen"/>
-  <node pkg="mechanism_control" type="spawner.py" args="$(find pr2_default_controllers)/laser_tilt_controller.xml" />
-  <node pkg="pr2_mechanism_controllers" type="control_laser.py" args="laser_tilt_controller sine 10 .75 .25" />
   <node pkg="hokuyo_node" type="hokuyo_node" name="tile_hokuyo_node">
     <remap from="scan" to="tilt_scan"/>
     <param name="port" type="string" value="/dev/ttyACM0"/>
@@ -20,4 +18,19 @@
     <param name="max_ang_degrees" type="double" value="80.0"/>
     <param name="skip" type="int" value="1"/>
   </node>
+  <node pkg="point_cloud_assembler" type="laser_scan_assembler_srv" output="screen" name="laser_scan_assembler">
+    <remap from="scan_in" to="tilt_scan"/>
+    <param name="tf_cache_time_secs" type="double" value="20.0" />
+    <param name="tf_tolerance_secs" type="double" value="0.0" />
+    <param name="max_scans" type="int" value="800" />
+    <param name="ignore_laser_skew" type="bool" value="true" />
+    <param name="fixed_frame" type="string" value="torso_lift_link" />
+    <param name="downsample_factor" type="int" value="1" />
+  </node>
+  <node pkg="point_cloud_assembler" type="point_cloud_snapshotter" output="screen" name="snapshotter">
+    <remap from="laser_scanner_signal" to="laser_tilt_controller/laser_scanner_signal"/>
+    <remap from="build_cloud" to="laser_scan_assembler/build_cloud" />
+    <remap from="full_cloud" to="snapshot_cloud" />
+  </node>
 </launch>
+
