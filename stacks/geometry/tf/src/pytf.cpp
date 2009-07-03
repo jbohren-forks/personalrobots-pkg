@@ -36,7 +36,7 @@ static PyObject *mkTransformer(PyObject *self, PyObject *args)
   if (py_cache_time != NULL) {
     PyObject *tsr = PyObject_CallMethod(py_cache_time, "to_seconds", NULL);
     if (tsr == NULL) {
-       PyErr_SetString(PyExc_TypeError, "cache_time must have a to_seconds method, e.g. rospy.Duration");
+       PyErr_SetString(PyExc_TypeError, "'cache_time' must have a to_seconds method, e.g. rospy.Duration");
        return NULL;
     }
     cache_time.fromSec(PyFloat_AsDouble(tsr));
@@ -70,7 +70,7 @@ static PyObject *setTransform(PyObject *self, PyObject *args)
   transform.parent_id_ = PyString_AsString(PyObject_StealAttrString(py_transform, "parent_id"));
   PyObject *tsr = PyObject_CallMethod(PyObject_StealAttrString(header, "stamp"), "to_seconds", NULL);
   if (tsr == NULL) {
-     PyErr_SetString(PyExc_TypeError, "cache_time must have a to_seconds method, e.g. rospy.Duration");
+     PyErr_SetString(PyExc_TypeError, "'stamp' must have a to_seconds method, e.g. rospy.Time");
      return NULL;
   }
   transform.stamp_ = ros::Time().fromSec(PyFloat_AsDouble(tsr));
