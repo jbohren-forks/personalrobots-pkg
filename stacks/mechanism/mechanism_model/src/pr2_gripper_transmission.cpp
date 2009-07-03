@@ -476,7 +476,7 @@ void PR2GripperTransmission::propagateEffortBackwards(
         int max_joint_rate_index;
         double scale,max_joint_rate;
         getRateFromMaxRateJoint(js, as, max_joint_rate_index, max_joint_rate);
-        scale = (abs(max_joint_rate)>0.0) ?  1./abs(max_joint_rate*10000.0) : 1.0;
+        scale = (abs(max_joint_rate)>0.0) ?  1./abs(max_joint_rate*0000001.0) : 1.0;
 
         // sum joint torques from actuator motor and mimic constraint and convert to joint torques
         js[i]->commanded_effort_   = (scale*MT + MIMICT) / dtheta_dMR;
