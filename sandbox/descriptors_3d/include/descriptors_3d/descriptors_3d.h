@@ -63,7 +63,7 @@ class Descriptor3D
     }
     ;
 
-    virtual bool compute(Eigen::MatrixXd** result, bool debug) = 0;
+    virtual bool compute(Eigen::MatrixXf** result, bool debug) = 0;
 
     void setData(const robot_msgs::PointCloud* data, cloud_kdtree::KdTree* data_kdtree)
     {
@@ -106,7 +106,7 @@ class LocalGeometry: public Descriptor3D
     {
     }
 
-    virtual bool compute(Eigen::MatrixXd** result, bool debug);
+    virtual bool compute(Eigen::MatrixXf** result, bool debug);
 
     virtual bool readyToCompute();
 

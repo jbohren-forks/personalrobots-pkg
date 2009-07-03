@@ -7,10 +7,11 @@ inline bool LocalGeometry::readyToCompute()
   return data_defined_ && interest_pt_set_ && (radius_ > 0.0 || indices_ != NULL);
 }
 
-bool LocalGeometry::compute(Eigen::MatrixXd** result, bool debug)
+bool LocalGeometry::compute(Eigen::MatrixXf** result, bool debug)
 {
   if (readyToCompute() == false)
   {
+    ROS_ERROR("not ready to compute");
     return false;
   }
 
@@ -22,6 +23,7 @@ bool LocalGeometry::compute(Eigen::MatrixXd** result, bool debug)
 
     if (data_kdtree_->radiusSearch(interest_pt_idx_, radius_, neighbor_indices, neighbor_distances) == false)
     {
+      ROS_ERROR("radius search failed");
       return false;
     }
 
@@ -30,6 +32,7 @@ bool LocalGeometry::compute(Eigen::MatrixXd** result, bool debug)
 
   if (neighbor_indices.size() < 3)
   {
+    ROS_ERROR("did not have enough neighbors");
     return false;
   }
 
@@ -76,7 +79,7 @@ bool LocalGeometry::compute(Eigen::MatrixXd** result, bool debug)
     result_size_++;
   }
 
-  *result = new Eigen::MatrixXd(result_size_, 1);
+  *result = new Eigen::MatrixXf(result_size_, 1);
 
   unsigned int idx = 0;
   (**result)[idx++] = eigen_values[2];
