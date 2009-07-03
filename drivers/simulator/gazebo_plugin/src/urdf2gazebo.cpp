@@ -182,6 +182,18 @@ void URDF2Gazebo::convertLink(TiXmlElement *root, robot_desc::URDF::Link *link, 
       return;
     }
 
+    if(!link->inertial)
+    {
+      printf("ignoring link without inertial tag: %s\n", link->name.c_str());
+      return;
+    }
+
+    if(link->inertial->mass == 0.0) 
+    {
+      printf("ignoring link with zero mass: %s\n", link->name.c_str());
+      return;
+    }
+
     if (!type.empty())
     {
         /* create new body */
