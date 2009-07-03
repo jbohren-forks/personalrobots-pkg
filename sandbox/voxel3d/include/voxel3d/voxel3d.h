@@ -56,6 +56,8 @@ public:
 
   void putObstacle(int i, int j, int k);
 
+  void putWorldObstacle(double i, double j, double k);
+
 private:
   std::vector<unsigned char> data_;
   int size1_, size2_, size3_;

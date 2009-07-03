@@ -133,7 +133,7 @@ void Voxel3d::updateWorld(const robot_msgs::PointCloud &cloud)
     inf_marker.color.g = 0.0;
     inf_marker.color.b = 0.0;
     inf_marker.color.a = 0.1;
-    inf_marker.lifetime = ros::Duration(1.0);
+    inf_marker.lifetime = ros::Duration(30.0);
 
     obs_marker.points.reserve(50000);
     inf_marker.points.reserve(100000);
@@ -196,7 +196,7 @@ void Voxel3d::updateWorld(const robot_msgs::PointCloud &cloud)
             msg.markers[last].color.g = 0.0;
             msg.markers[last].color.b = 0.0;
             msg.markers[last].color.a = 0.5;
-            msg.markers[last].lifetime = ros::Duration(1.0);
+            msg.markers[last].lifetime = ros::Duration(30.0);
           }
         }
       }
@@ -271,3 +271,9 @@ void Voxel3d::putObstacle(int i, int j, int k)
   }
 }
 
+void Voxel3d::putWorldObstacle(double i, double j, double k)
+{
+  int x,y,z;
+  worldToGrid(i, j, k, x, y, z);
+  putObstacle(x, y, z);
+}
