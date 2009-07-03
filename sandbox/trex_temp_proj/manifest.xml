@@ -1,0 +1,15 @@
+<package>
+  <description>A ROS node to encapsulate the TeleoReactive Executive for task level planning and control.</description>
+  <author>TREX User</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <depend package="trex_pr2" />
+
+  <export>
+    <nddl iflags="-I${prefix}/nddl -I${prefix}"/>
+    <cpp cflags="-I${prefix}/srv/cpp"/>
+  </export>
+
+  <rosdep name="jam"/>
+
+</package>

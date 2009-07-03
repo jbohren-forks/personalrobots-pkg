@@ -1,0 +1,14 @@
+#include "TREX.nddl"
+#include "rcs/exports.nddl"
+#include "rcs/mechanism_control/exports.nddl"
+#include "rcs/nav/exports.nddl"
+#include "world_model/topological_map.nddl"
+#include "rcs/doors/exports.nddl"
+#include "run/sim/rcs.nddl"
+#include "run/sim/mechanism_control.nddl"
+#include "run/sim/safety.nddl"
+#include "run/sim/nav.nddl"
+#include "run/sim/plugs.nddl"
+#include "run/sim/doors.nddl"
+
+close();

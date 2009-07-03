@@ -1,0 +1,18 @@
+<launch>
+  <!-- Reset controllers to their original state -->
+  <include file="$(find milestone2_actions)/reset_controllers.launch" />
+
+  <master auto="start"/>
+  <param name="/trex/enable_detect_plug_on_base" value="true"/>
+  <param name="/trex/enable_base_state_publisher" value="true"/>
+  <param name="/trex/enable_move_base" value="false"/>
+  <param name="/trex/enable_notify_door_blocked" value="true"/>
+  <param name="/trex/enable_plugs_untuck_arms" value="true"/>
+  <param name="/trex/enable_set_laser_tilt" value="true"/>
+  <node pkg="trex_temp_proj" type="stub_ros_container" respawn="false" />
+  <node pkg="trex_pr2" type="actions" respawn="false" />
+
+  <param name="/trex/input_file" value="doorman.cfg"/>
+
+  <include file="$(find trex_temp_proj)/run/trex_config.launch" />
+</launch>

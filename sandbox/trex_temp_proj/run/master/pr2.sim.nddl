@@ -1,0 +1,35 @@
+#include "TREX.nddl"
+#include "world_model/topological_map.nddl"
+#include "rcs/exports.nddl"
+#include "rcs/nav/exports.nddl"
+#include "rcs/plugs/exports.nddl"
+#include "nav/exports.nddl"
+#include "plugs/exports.nddl"
+
+MoveBehavior driver = new MoveBehavior(Internal, false);
+MoveBehavior doorman = new MoveBehavior(Internal, true);
+Recharger recharger = new Recharger(Internal);
+BaseState base_state = new BaseState(Internal);
+
+Behavior::Active{
+  temporalDistance(dispatch_time, [0, 2], start);
+  meets(Inactive s);
+  eq(s.status, SUCCESS);
+}
+
+/**
+ * @brief Succeeds with the expected position
+ */
+MoveBehavior::Active{
+  meets(base_state.Holds bs);
+  eq(x, bs.x);
+  eq(y, bs.y);
+  eq(duration, 3);
+}
+
+close();
+
+// Initial conditions
+fact(base_state.Holds bs);
+bs.x = 18.55;
+bs.y = 11.76;

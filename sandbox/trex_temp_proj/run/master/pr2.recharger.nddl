@@ -1,0 +1,3 @@
+#include "plugs/recharger.nddl"
+
+close();

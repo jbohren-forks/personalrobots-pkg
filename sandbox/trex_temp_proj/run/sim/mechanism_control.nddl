@@ -1,0 +1,8 @@
+/** Just returns success, in a single tick **/
+SwitchControllers::Active{
+  eq(duration, 1);
+  meets(Inactive s);
+  eq(s.status, SUCCESS);
+}
+
+SwitchControllers switch_controllers = new SwitchControllers(Internal);

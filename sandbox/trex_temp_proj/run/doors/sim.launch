@@ -1,0 +1,6 @@
+<launch>
+  <master auto="start"/>
+  <include file="$(find trex_temp_proj)/run/trex_config.launch" />
+  <param name="/trex/input_file" value="sim.doorman.cfg"/>
+  <node pkg="trex_temp_proj" type="stub_ros_container" respawn="false" />
+</launch>

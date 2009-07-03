@@ -1,0 +1,36 @@
+<launch>
+  <!-- This launch file is included by run_real and run_stubs -->
+
+  <!-- Start a new ROS master if necessary -->
+  <master auto="start"/>
+  
+  <!-- Set the TREX search paths. -->
+  <!-- These paths are where TREX looks for config files. -->
+  <!-- We need to add the cfg from this project, trex_ros, and trex_temp_proj -->
+  <!-- Also, to build off of the pr2 baseline, we need to include trex_temp_proj/test/baseline -->
+  <param name="/trex/path" value="$(find trex_temp_proj)/cfg:$(find trex_temp_proj)/cfg:$(find trex_ros)/cfg"/>
+
+  <!-- Set the TREX search directory.-->
+  <!-- This is the directory where TREX begins looking for config files when it can't find them in the TREX path. -->
+  <!-- It begins in this directory and then moves UP the tree in search of files. -->
+  <!-- This should be set deeper in the tree -->
+  <!-- param name="/trex/start_dir" value="$(find trex_temp_proj)/cfg" -->
+
+  <!-- Set the TREX input file.-->
+  <!-- This file defines the reactors that the agent creates durign runtime -->
+  <!-- This should also be set deeper in the tree -->
+  <!-- param name="/trex/input_file" value="agent.cfg"/ -->
+
+  <!-- Set the TREX update rate (Hz) -->
+  <param name="/trex/update_rate" value="10"/>
+
+  <!-- Set the TREX time limit (FIXME:Units?) -->
+  <!--param name="/trex/time_limit" value="10" -->
+
+  <!-- Set the TREX log directory -->
+  <param name="/trex/log_dir" value="$(find trex_ros)/logs"/>
+
+  <!-- Set the TREX playback flag. -->
+  <!-- This will look for a transaction log file in the search path. -->
+  <param name="/trex/play_back" value="0"/>
+</launch>

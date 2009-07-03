@@ -1,0 +1,5 @@
+<launch>
+  <master auto="start"/>
+  <param name="/trex/start_dir" value="$(find trex_temp_proj)/run/doors/open_door.0"/>
+  <include file="$(find trex_temp_proj)/run/doors/sim.launch" />
+</launch>
