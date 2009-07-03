@@ -28,8 +28,8 @@
   <property name="object_1_radius"      value="0.02" />
   <property name="object_1_base_height" value="0.02" />
   <property name="object_1_base_width"  value="0.15" />
-  <property name="object_1_mass"        value="1.0" /> 
-  <property name="object_1_mu"          value="500000.0" /> 
+  <property name="object_1_mass"        value="0.1" /> 
+  <property name="object_1_mu"          value="500.0" /> 
 
   <property name="M_PI" value="3.1415926535897931" />
 
@@ -250,13 +250,17 @@
       <geometry name="object_1_collision_geom">
         <cylinder radius="${object_1_radius}" length="${object_1_height}" />
       </geometry>
+      <map name="object_1_contact" flag="gazebo">
+        <elem key="mu1" value="${object_1_mu}" />
+        <elem key="mu2" value="${object_1_mu}" />
+        <elem key="kp"  value="100000000.0" />
+        <elem key="kd"  value="1.0" />
+      </map>
     </collision>
     <map name="object_1_collision" flag="gazebo">
       <elem key="selfCollide">true</elem>
-      <elem key="mu1" value="${object_1_mu}" />
-      <elem key="mu2" value="${object_1_mu}" />
-      <elem key="kp"  value="100000000.0" />
-      <elem key="kd"  value="1.0" />
+      <elem key="turnGravityOff">false</elem>
+      <elem key="dampingFactor">0.1</elem>
     </map>
   </link>
   <link name="object_1_base_link">
@@ -284,13 +288,17 @@
       <geometry name="object_1_base_collision_geom">
         <box size="${object_1_base_width} ${object_1_base_width} ${object_1_base_height}" />
       </geometry>
+      <map name="object_1_base_contact" flag="gazebo">
+          <elem key="mu1" value="0.1" />
+          <elem key="mu2" value="0.1" />
+          <elem key="kp"  value="100000000.0" />
+          <elem key="kd"  value="1.0" />
+      </map>
     </collision>
     <map name="object_1_base_collision" flag="gazebo">
       <elem key="selfCollide">true</elem>
-        <elem key="mu1" value="0.1" />
-        <elem key="mu2" value="0.1" />
-        <elem key="kp"  value="100000000.0" />
-        <elem key="kd"  value="1.0" />
+      <elem key="turnGravityOff">false</elem>
+      <elem key="dampingFactor">0.1</elem>
     </map>
   </link>
 </robot>
