@@ -110,6 +110,19 @@ dGeomID collision_space::EnvironmentModelODE::createODEGeom(dSpaceID space, shap
 				static_cast<shapes::Cylinder*>(shape)->length * scale + padding);
 	}
 	break;
+    case shapes::Shape::MESH:
+	{
+	    dTriMeshDataID data = dGeomTriMeshDataCreate();
+	    shapes::Mesh *mesh = static_cast<shapes::Mesh*>(shape);
+	    int icount = mesh->triangleCount * 3;
+	    dTriIndex *indices = new dTriIndex[icount];
+	    for (int i = 0 ; i < icount ; ++i)
+		indices[i] = mesh->triangles[i];
+	    dGeomTriMeshDataBuildDouble(data, mesh->vertices, sizeof(double) * 3, mesh->vertexCount, indices, icount, sizeof(dTriIndex) * 3);
+	    delete[] indices;
+	    g = dCreateTriMesh(space, data, NULL, NULL, NULL);
+	}
+	
     default:
 	break;
     }
