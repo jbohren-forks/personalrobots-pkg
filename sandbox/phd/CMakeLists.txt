@@ -21,6 +21,11 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 #uncomment if you have defined services
 #gensrv()
 
+rospack_add_library(masters_degree masters_degree.cpp)
+rospack_add_library(thesis thesis.cpp)
+target_link_libraries(thesis masters_degree)
+rospack_add_executable(graduate graduate.cpp)
+
 #common commands for building c++ executables and libraries
 #rospack_add_library(${PROJECT_NAME} src/example.cpp)
 #target_link_libraries(${PROJECT_NAME} another_library)
