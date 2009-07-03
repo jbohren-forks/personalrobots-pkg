@@ -336,7 +336,7 @@ namespace planning_models
 	    const double* computeTransform(const double *params, int groupID);
 
 	    /** \brief Extract the information needed by the joint given the URDF description */
-	    void extractInformation(const robot_desc::URDF::Link *urdfLink, Robot *robot);
+	    void extractInformation(const robot_desc::URDF::Link *urdfLink, Robot *robot, const robot_desc::URDF &model);
 	    
 	};
 	

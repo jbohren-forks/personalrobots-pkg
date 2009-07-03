@@ -43,24 +43,25 @@ bodies::Body* bodies::createBodyFromShape(const shapes::Shape *shape)
 {
     Body *body = NULL;
     
-    switch (shape->type)
-    {
-    case shapes::Shape::BOX:
-	body = new bodies::Box(shape);
-	break;
-    case shapes::Shape::SPHERE:
-	body = new bodies::Sphere(shape);
-	break;
-    case shapes::Shape::CYLINDER:
-	body = new bodies::Cylinder(shape);
-	break;
-    case shapes::Shape::MESH:
-	body = new bodies::ConvexMesh(shape);
-	break;
-    default:
-	std::cerr << "Creating body from shape: Unknown shape type" << shape->type << std::endl;
-	break;
-    }
+    if (shape)
+	switch (shape->type)
+	{
+	case shapes::Shape::BOX:
+	    body = new bodies::Box(shape);
+	    break;
+	case shapes::Shape::SPHERE:
+	    body = new bodies::Sphere(shape);
+	    break;
+	case shapes::Shape::CYLINDER:
+	    body = new bodies::Cylinder(shape);
+	    break;
+	case shapes::Shape::MESH:
+	    body = new bodies::ConvexMesh(shape);
+	    break;
+	default:
+	    std::cerr << "Creating body from shape: Unknown shape type" << shape->type << std::endl;
+	    break;
+	}
     
     return body;
 }
@@ -315,7 +316,7 @@ void bodies::ConvexMesh::useDimensions(const shapes::Shape *shape)
 		}
 		
 		if (behindPlane > 0)
-		    std::cerr << "Approximate plane: " << behindPlane << " of " << m_vertices.size() << " points are behind the plane";
+		    std::cerr << "Approximate plane: " << behindPlane << " of " << m_vertices.size() << " points are behind the plane" << std::endl;
 		
 		m_planes.push_back(planeEquation);
 	    }

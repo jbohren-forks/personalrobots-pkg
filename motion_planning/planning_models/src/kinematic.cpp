@@ -227,7 +227,7 @@ void planning_models::KinematicModel::RevoluteJoint::extractInformation(const ro
     robot->stateBounds.push_back(limit[1]);
 }
 
-void planning_models::KinematicModel::Link::extractInformation(const robot_desc::URDF::Link *urdfLink, Robot *robot)
+void planning_models::KinematicModel::Link::extractInformation(const robot_desc::URDF::Link *urdfLink, Robot *robot, const robot_desc::URDF &model)
 {
     /* compute the geometry for this link */
     switch (urdfLink->collision->geometry->type)
@@ -259,9 +259,10 @@ void planning_models::KinematicModel::Link::extractInformation(const robot_desc:
 	break;
     case robot_desc::URDF::Link::Geometry::MESH:
 	{
-	    std::string filename = static_cast<const robot_desc::URDF::Link::Geometry::Mesh*>(urdfLink->collision->geometry->shape)->filename;
+	    std::string filename = model.getResourceLocation() + "/" + static_cast<const robot_desc::URDF::Link::Geometry::Mesh*>(urdfLink->collision->geometry->shape)->filename;
 	    if (filename.rfind(".stl") == std::string::npos)
 		filename += ".stl";
+	    std::cout << "Loading '" << filename << "'" << std::endl;	    
 	    shapes::Mesh *mesh = shapes::create_mesh_from_binary_stl(filename.c_str());
 	    shape              = mesh;
 	}
@@ -572,7 +573,9 @@ void planning_models::KinematicModel::buildChainL(Robot *robot, Joint *parent, L
     link->owner  = robot;
     robot->links.push_back(link);
     
-    link->extractInformation(urdfLink, robot);
+    link->extractInformation(urdfLink, robot, model);
+    if (link->shape == NULL)
+	m_msg.error("Unable to construct shape for link '%s'", link->name.c_str());
     
     for (unsigned int i = 0 ; i < urdfLink->children.size() ; ++i)
     {
