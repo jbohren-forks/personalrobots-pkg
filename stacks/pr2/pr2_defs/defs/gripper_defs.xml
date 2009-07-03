@@ -10,7 +10,7 @@
   <property name="gripper_min_angle" value="0.00" />
 
   <property name="finger_stop_kd"             value="1.0" />
-  <property name="finger_stop_kp"             value="100000.0" />
+  <property name="finger_stop_kp"             value="10000000.0" />
   <property name="finger_fudge_factor"        value="1.0" />
 
   <property name="finger_damping"             value="0.2" />
@@ -451,20 +451,6 @@
       </verbatim>
     </map>
 
-    <map name="fake_gripper_slider_joint" flag="gazebo">
-      <verbatim key="fake_gripper_slider_joint">
-        <joint:slider name="${prefix}_finger_tip_slider_joint">
-            <body1>${prefix}_l_finger_tip_link</body1>
-            <body2>${prefix}_r_finger_tip_link</body2>
-            <anchor>${prefix}_l_finger_tip_link</anchor>
-            <axis>0 1 0</axis>
-            <anchorOffset>0 0 0</anchorOffset>
-            <lowStop>0</lowStop>
-            <highStop>0.08</highStop>
-        </joint:slider>
-      </verbatim>
-    </map>
-
   </macro>
 
 
@@ -521,6 +507,80 @@
         <elem key="turnGravityOff">true</elem>
       </map>
     </link>
+
+
+
+    <!-- floating link for simulating gripper constraints -->
+    <joint name="${side}_gripper_float_joint" type="prismatic">
+      <limit min="-0.05" max="0.001" effort="0" />
+      <axis xyz="1 0 0" />
+      <joint_properties damping="10.0" />
+    </joint>
+    <link name="${side}_gripper_float_link">
+      <parent name="${side}_gripper_palm_link" />
+      <joint name="${side}_gripper_float_joint" />
+      <origin xyz="0.05 0 0" rpy="0 0 0" />
+      <inertial>
+        <mass value="0.01" />
+        <com xyz="0 0 0" />
+        <inertia  ixx="0.0001" ixy="0" ixz="0"
+                  iyy="0.0001" iyz="0"
+                  izz="0.0001" />
+      </inertial>
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <map name="gazebo_material" flag="gazebo">
+          <elem key="material" value="PR2/White" />
+        </map>
+        <geometry name="${side}_gripper_float_visual">
+          <mesh scale="0.001 0.001 0.001" />
+        </geometry>
+      </visual>
+      <collision>
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <geometry name="${side}_gripper_float_collision">
+          <box size="0.001 0.001 0.001" />
+        </geometry>
+        <verbose value="Yes" />
+        <map flag="collision" name="mesh">
+          <elem key="type" value="visual"/>
+        </map>
+      </collision>
+      <map name="${side}_gripper_float_gravity" flag="gazebo">
+        <elem key="turnGravityOff">true</elem>
+      </map>
+    </link>
+    <map name="${side}_fake_gripper_slider_joint" flag="gazebo">
+      <verbatim key="${side}_fake_gripper_slider_joint">
+        <joint:slider name="${side}_gripper_l_finger_tip_slider_joint">
+            <body1>${side}_gripper_l_finger_tip_link</body1>
+            <body2>${side}_gripper_float_link</body2>
+            <anchor>${side}_gripper_l_finger_tip_link</anchor>
+            <axis>0 1 0</axis>
+            <anchorOffset>0 0 0</anchorOffset>
+        </joint:slider>
+        <joint:slider name="${side}_gripper_r_finger_tip_slider_joint">
+            <body1>${side}_gripper_r_finger_tip_link</body1>
+            <body2>${side}_gripper_float_link</body2>
+            <anchor>${side}_gripper_r_finger_tip_link</anchor>
+            <axis>0 1 0</axis>
+            <anchorOffset>0 0 0</anchorOffset>
+        </joint:slider>
+        <!--
+        <joint:slider name="${side}_gripper_finger_tip_slider_joint">
+            <body1>${side}_gripper_l_finger_tip_link</body1>
+            <body2>${side}_gripper_r_finger_tip_link</body2>
+            <anchor>${side}_gripper_l_finger_tip_link</anchor>
+            <axis>0 1 0</axis>
+            <anchorOffset>0 0 0</anchorOffset>
+            <lowStop>0.0</lowStop>
+            <highStop>0.08</highStop>
+        </joint:slider>
+        -->
+      </verbatim>
+    </map>
+
+
 
     <map name="sensor" flag="gazebo">
       <verbatim key="p3d_${side}_gripper_palm">
@@ -584,10 +644,10 @@
       <actuator       name="${side}_gripper_motor" />
       <gap_joint      name="${side}_gripper_joint"                       mechanical_reduction="1.0" />
       <passive_joint  name="${side}_gripper_l_finger_joint"     >
-        <gazebo_mimic_pid p="0.0005" i="0.000" d="0.0" iClamp="0.0" />
+        <gazebo_mimic_pid p="0.0000" i="0.000" d="0.0" iClamp="0.0" />
       </passive_joint>
       <passive_joint  name="${side}_gripper_r_finger_joint"     >
-        <gazebo_mimic_pid p="0.0005" i="0.000" d="0.0" iClamp="0.0" />
+        <gazebo_mimic_pid p="0.0000" i="0.000" d="0.0" iClamp="0.0" />
       </passive_joint>
       <passive_joint  name="${side}_gripper_r_finger_tip_joint" >
         <gazebo_mimic_pid p="0.000000" i="0.0" d="0.0" iClamp="0.0" />
@@ -672,6 +732,70 @@
       </map>
     </link>
 
+
+
+    <!-- floating link for simulating gripper constraints -->
+    <joint name="${side}_gripper_float_joint" type="prismatic">
+      <limit min="-0.05" max="0.001" effort="0" />
+      <axis xyz="1 0 0" />
+      <joint_properties damping="10.0" />
+    </joint>
+    <link name="${side}_gripper_float_link">
+      <parent name="${side}_gripper_palm_link" />
+      <joint name="${side}_gripper_float_joint" />
+      <origin xyz="0.05 0 0" rpy="0 0 0" />
+      <inertial>
+        <mass value="0.01" />
+        <com xyz="0 0 0" />
+        <inertia  ixx="0.0001" ixy="0" ixz="0"
+                  iyy="0.0001" iyz="0"
+                  izz="0.0001" />
+      </inertial>
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <map name="gazebo_material" flag="gazebo">
+          <elem key="material" value="PR2/Red" />
+        </map>
+        <geometry name="${side}_gripper_float_visual">
+          <mesh scale="0.1 0.1 0.1" />
+        </geometry>
+      </visual>
+      <collision>
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <geometry name="${side}_gripper_float_collision">
+          <box size="0.001 0.001 0.001" />
+        </geometry>
+        <verbose value="Yes" />
+        <map flag="collision" name="mesh">
+          <elem key="type" value="visual"/>
+        </map>
+      </collision>
+      <map name="${side}_gripper_float_gravity" flag="gazebo">
+        <elem key="turnGravityOff">true</elem>
+      </map>
+    </link>
+    <map name="${side}_fake_gripper_slider_joint" flag="gazebo">
+      <verbatim key="${side}_fake_gripper_slider_joint">
+        <joint:slider name="${side}_gripper_l_finger_tip_slider_joint">
+            <body1>${side}_gripper_l_finger_tip_link</body1>
+            <body2>${side}_gripper_float_link</body2>
+            <anchor>${side}_gripper_l_finger_tip_link</anchor>
+            <axis>0 1 0</axis>
+            <anchorOffset>0 0 0</anchorOffset>
+        </joint:slider>
+        <joint:slider name="${side}_gripper_r_finger_tip_slider_joint">
+            <body1>${side}_gripper_r_finger_tip_link</body1>
+            <body2>${side}_gripper_float_link</body2>
+            <anchor>${side}_gripper_r_finger_tip_link</anchor>
+            <axis>0 1 0</axis>
+            <anchorOffset>0 0 0</anchorOffset>
+        </joint:slider>
+      </verbatim>
+    </map>
+
+
+
+
     <map name="sensor" flag="gazebo">
       <verbatim key="p3d_${side}_gripper_palm">
         <controller:ros_p3d name="p3d_${side}_gripper_palm_controller" plugin="libros_p3d.so">
@@ -733,10 +857,10 @@
       <actuator       name="${side}_gripper_motor" />
       <gap_joint      name="${side}_gripper_joint"                       mechanical_reduction="1.0" />
       <passive_joint  name="${side}_gripper_l_finger_joint"     >
-        <gazebo_mimic_pid p="0.0005" i="0.000" d="0.0" iClamp="0.0" />
+        <gazebo_mimic_pid p="0.0000" i="0.000" d="0.0" iClamp="0.0" />
       </passive_joint>
       <passive_joint  name="${side}_gripper_r_finger_joint"     >
-        <gazebo_mimic_pid p="0.0005" i="0.000" d="0.0" iClamp="0.0" />
+        <gazebo_mimic_pid p="0.0000" i="0.000" d="0.0" iClamp="0.0" />
       </passive_joint>
       <passive_joint  name="${side}_gripper_r_finger_tip_joint" >
         <gazebo_mimic_pid p="0.00000" i="0.0" d="0.0" iClamp="0.0" />
