@@ -30,7 +30,7 @@
 // #include <yaml-cpp/include/yaml.h>
 #include <boost/thread/mutex.hpp>
 #include <sbpl_arm_planner/headers.h>
-#include "boost/scoped_ptr.hpp"
+
 #include <fstream>
 
 #define PI_CONST 3.141592653
@@ -67,6 +67,8 @@
 
 //temporary hack to figure out if obstacles are in the arm's reachable workspace (meters)
 #define ARM_WORKSPACE 1.1
+
+#define RADIUS 7;
 
 // number of successors to each cell (for dyjkstra's heuristic)
 #define DIRECTIONS 26
@@ -257,19 +259,6 @@ EnvROBARMHashEntry_t* EnvironmentROBARM3D::CreateNewHashEntry(short unsigned int
 /*------------------------------------------------------------------------*/
                        /* Heuristic Computation */
 /*------------------------------------------------------------------------*/
-//compute straight line distance from x,y,z to every other cell
-void EnvironmentROBARM3D::getDistancetoGoal(int* HeurGrid, int goalx, int goaly, int goalz)
-{
-    for(int x = 0; x < EnvROBARMCfg.EnvWidth_c; x++)
-    {
-        for(int y = 0; y < EnvROBARMCfg.EnvHeight_c; y++)
-        {
-            for(int z = 0; z < EnvROBARMCfg.EnvDepth_c; z++)
-                HeurGrid[XYZTO3DIND(x,y,z)] = (EnvROBARMCfg.cost_per_cell)*sqrt((goalx-x)*(goalx-x) + (goaly-y)*(goaly-y) +  (goalz-z)*(goalz-z));
-        }
-    }
-}
-
 int EnvironmentROBARM3D::XYZTO3DIND(int x, int y, int z)
 {
     if(EnvROBARMCfg.lowres_collision_checking)
@@ -299,14 +288,14 @@ void EnvironmentROBARM3D::Create3DStateSpace(State3D**** statespace3D)
     int width = EnvROBARMCfg.EnvWidth_c;
     int height = EnvROBARMCfg.EnvHeight_c;
     int depth = EnvROBARMCfg.EnvDepth_c;
-    
+
     if(EnvROBARMCfg.lowres_collision_checking)
     {
         width = EnvROBARMCfg.LowResEnvWidth_c;
         height = EnvROBARMCfg.LowResEnvHeight_c;
         depth = EnvROBARMCfg.LowResEnvDepth_c;
     }
-    
+
     //allocate a statespace for 3D search
     *statespace3D = new State3D** [width];
     for (x = 0; x < width; x++)
@@ -335,7 +324,7 @@ void EnvironmentROBARM3D::Delete3DStateSpace(State3D**** statespace3D)
         height = EnvROBARMCfg.LowResEnvHeight_c;
     }
 
-	//delete the 3D statespace
+    //delete the 3D statespace
     for (x = 0; x < width; x++)
     {
         for (y = 0; y < height; y++)
@@ -361,7 +350,7 @@ void EnvironmentROBARM3D::ComputeHeuristicValues()
         hsize = XYZTO3DIND(EnvROBARMCfg.EnvWidth_c-1, EnvROBARMCfg.EnvHeight_c-1,EnvROBARMCfg.EnvDepth_c-1)+1;
 
     //allocate memory
-    EnvROBARM.Heur = new int [hsize]; 
+    EnvROBARM.Heur = new int [hsize];
 
     //now compute the heuristics for all of the goal locations
     State3D*** statespace3D;
@@ -381,6 +370,7 @@ void EnvironmentROBARM3D::Search3DwithQueue(State3D*** statespace, int* HeurGrid
     int newx, newy, newz, x,y,z;
     unsigned int g_temp;
     char*** Grid3D = EnvROBARMCfg.Grid3D;
+    boost::shared_ptr<Voxel3d> vGrid = voxel_grid;
     short unsigned int width = EnvROBARMCfg.EnvWidth_c;
     short unsigned int height = EnvROBARMCfg.EnvHeight_c;
     short unsigned int depth = EnvROBARMCfg.EnvDepth_c;
@@ -393,6 +383,7 @@ void EnvironmentROBARM3D::Search3DwithQueue(State3D*** statespace, int* HeurGrid
         depth = EnvROBARMCfg.LowResEnvDepth_c;
 
         Grid3D = EnvROBARMCfg.LowResGrid3D;
+	vGrid = lowres_voxel_grid;
     }
 
     //create a queue
@@ -454,7 +445,8 @@ void EnvironmentROBARM3D::Search3DwithQueue(State3D*** statespace, int* HeurGrid
             newz = ExpState->z + dz[d];
 
             //make sure it is inside the map and has no obstacle
-            if(0 > newx || newx >= width || 0 > newy || newy >= height || 0 > newz || newz >= depth || Grid3D[newx][newy][newz] >= EnvROBARMCfg.ObstacleCost)
+//             if(0 > newx || newx >= width || 0 > newy || newy >= height || 0 > newz || newz >= depth || Grid3D[newx][newy][newz] >= EnvROBARMCfg.ObstacleCost)
+	    if(0 > newx || newx >= width || 0 > newy || newy >= height || 0 > newz || newz >= depth || !isValidCell(newx,newy,newz,6,Grid3D, vGrid))
             {
                 continue;
             }
@@ -563,6 +555,15 @@ void EnvironmentROBARM3D::ReadConfiguration(FILE* fCfg)
             EnvROBARMCfg.BaseZ_m = atof(sTemp);
             ContXYZ2Cell(EnvROBARMCfg.BaseX_m, EnvROBARMCfg.BaseY_m, EnvROBARMCfg.BaseZ_m, &(EnvROBARMCfg.BaseX_c), &(EnvROBARMCfg.BaseY_c), &(EnvROBARMCfg.BaseZ_c)); 
         }
+	else if(strcmp(sTemp, "origin_xyz(meters):") == 0)
+	{
+	  fscanf(fCfg, "%s", sTemp);
+	  EnvROBARMCfg.origin_m[0] = atof(sTemp);
+	  fscanf(fCfg, "%s", sTemp);
+	  EnvROBARMCfg.origin_m[1] = atof(sTemp);
+	  fscanf(fCfg, "%s", sTemp);
+	  EnvROBARMCfg.origin_m[2] = atof(sTemp);
+	}
         else if(strcmp(sTemp, "linkstartangles(degrees):") == 0)
         {
             for(i = 0; i < NUMOFLINKS; i++)
@@ -970,10 +971,6 @@ bool EnvironmentROBARM3D::SetEnvParameter(char* parameter, double value)
     {
         EnvROBARMCfg.checkEndEffGoalOrientation = value;
     }
-//     else if(strcmp(parameter,"goalPosMOE") == 0)
-//     {
-//         EnvROBARMCfg.goal_moe_m = value;
-//     }
     else if(strcmp(parameter,"useFastCollisionChecking") == 0)
     {
         EnvROBARMCfg.lowres_collision_checking = value;
@@ -1047,125 +1044,142 @@ void EnvironmentROBARM3D::InitializeEnvGrid()
 
 void EnvironmentROBARM3D::DiscretizeAngles()
 {
-    int i;
-//     double HalfGridCell = EnvROBARMCfg.GridCellWidth/2.0;
-    for(i = 0; i < NUMOFLINKS; i++)
+    for(int i = 0; i < EnvROBARMCfg.num_joints; i++)
     {
-        EnvROBARMCfg.angledelta[i] = (2.0*PI_CONST) / ANGLEDELTA; 
+        EnvROBARMCfg.angledelta[i] = (2.0*PI_CONST) / ANGLEDELTA;  // if ANGLEDELTA=360  --> 0.017453293
         EnvROBARMCfg.anglevals[i] = ANGLEDELTA;
-
-//         if (EnvROBARMCfg.LinkLength_m[i] > 0)
-//             EnvROBARMCfg.angledelta[i] =  2*asin(HalfGridCell/EnvROBARMCfg.LinkLength_m[i]);
-//         else
-//             EnvROBARMCfg.angledelta[i] = ANGLEDELTA;
-
-//         EnvROBARMCfg.anglevals[i] = (int)(2.0*PI_CONST/EnvROBARMCfg.angledelta[i]+0.99999999);
     }
 }
 
 //angles are counterclockwise from 0 to 360 in radians, 0 is the center of bin 0, ...
-void EnvironmentROBARM3D::ComputeContAngles(short unsigned int coord[NUMOFLINKS], double angle[NUMOFLINKS])
+void EnvironmentROBARM3D::ComputeContAngles(const short unsigned int coord[NUMOFLINKS], double angle[NUMOFLINKS])
 {
-    int i;
-    for(i = 0; i < NUMOFLINKS; i++)
+    for(int i = 0; i < EnvROBARMCfg.num_joints; i++)
     {
-        angle[i] = coord[i]*EnvROBARMCfg.angledelta[i];
+      angle[i] = coord[i]*EnvROBARMCfg.angledelta[i];
     }
-
 }
 
-void EnvironmentROBARM3D::ComputeCoord(double angle[NUMOFLINKS], short unsigned int coord[NUMOFLINKS])
+void EnvironmentROBARM3D::ComputeCoord(const double angle[], short unsigned int coord[NUMOFLINKS])
 {
-    int i;
     double pos_angle;
 
-    for(i = 0; i < NUMOFLINKS; i++)
+    for(int i = 0; i < EnvROBARMCfg.num_joints; i++)
     {
         //NOTE: Added 3/1/09
         pos_angle = angle[i];
-        if(pos_angle < 0)
+        if(pos_angle < 0.0)
             pos_angle += 2*PI_CONST;
 
         coord[i] = (int)((pos_angle + EnvROBARMCfg.angledelta[i]*0.5)/EnvROBARMCfg.angledelta[i]);
-//         coord[i] = (int)((angle[i] + EnvROBARMCfg.angledelta[i]*0.5)/EnvROBARMCfg.angledelta[i]);
-        if(coord[i] == EnvROBARMCfg.anglevals[i])
-            coord[i] = 0;
+
+	if(coord[i] == EnvROBARMCfg.anglevals[i])
+	  coord[i] = 0;
     }
 }
 
 // convert a cell in the occupancy grid to point in real world 
 void EnvironmentROBARM3D::Cell2ContXYZ(int x, int y, int z, double *pX, double *pY, double *pZ)
 {
-    // offset the arm in the map so that it is placed in the middle of the world 
-    int xoffset_c = EnvROBARMCfg.EnvWidth_c-1 - ARM_WORKSPACE/EnvROBARMCfg.GridCellWidth;  //arm can't reach that far behind it, so offset X by arm length
-    int yoffset_c = (EnvROBARMCfg.EnvHeight_c-1) / 2;
-    int zoffset_c = (EnvROBARMCfg.EnvDepth_c-1) / 2;
+//     // offset the arm in the map so that it is placed in the middle of the world 
+//     int xoffset_c = EnvROBARMCfg.EnvWidth_c-1 - ARM_WORKSPACE/EnvROBARMCfg.GridCellWidth;  //arm can't reach that far behind it, so offset X by arm length
+//     int yoffset_c = (EnvROBARMCfg.EnvHeight_c-1) / 2;
+//     int zoffset_c = (EnvROBARMCfg.EnvDepth_c-1) / 2;
+// 
+//     *pX = (x - xoffset_c) * EnvROBARMCfg.GridCellWidth + EnvROBARMCfg.GridCellWidth*0.5;
+//     *pY = (y - yoffset_c) * EnvROBARMCfg.GridCellWidth + EnvROBARMCfg.GridCellWidth*0.5;
+//     *pZ = (z - zoffset_c) *EnvROBARMCfg.GridCellWidth + EnvROBARMCfg.GridCellWidth*0.5;
 
-    *pX = (x - xoffset_c) * EnvROBARMCfg.GridCellWidth + EnvROBARMCfg.GridCellWidth*0.5;
-    *pY = (y - yoffset_c) * EnvROBARMCfg.GridCellWidth + EnvROBARMCfg.GridCellWidth*0.5;
-    *pZ = (z - zoffset_c) *EnvROBARMCfg.GridCellWidth + EnvROBARMCfg.GridCellWidth*0.5;
+    *pX = x * EnvROBARMCfg.GridCellWidth + EnvROBARMCfg.origin_m[0];
+    *pY = y * EnvROBARMCfg.GridCellWidth + EnvROBARMCfg.origin_m[1];
+    *pZ = z * EnvROBARMCfg.GridCellWidth + EnvROBARMCfg.origin_m[2];
 }
 
 // convert a cell in the occupancy grid to point in real world
 void EnvironmentROBARM3D::Cell2ContXYZ(int x, int y, int z, double *pX, double *pY, double *pZ, double gridcell_m)
 {
-    // offset the arm in the map so that it is placed in the middle of the world 
-    int xoffset_c = ((EnvROBARMCfg.EnvWidth_m/gridcell_m)-1) - ARM_WORKSPACE/gridcell_m;  //arm can't reach that far behind it, so offset X by arm length
-    int yoffset_c = ((EnvROBARMCfg.EnvHeight_m/gridcell_m)-1) / 2;
-    int zoffset_c = ((EnvROBARMCfg.EnvDepth_m/gridcell_m-1)) / 2;
+//     // offset the arm in the map so that it is placed in the middle of the world 
+//     int xoffset_c = ((EnvROBARMCfg.EnvWidth_m/gridcell_m)-1) - ARM_WORKSPACE/gridcell_m;  //arm can't reach that far behind it, so offset X by arm length
+//     int yoffset_c = ((EnvROBARMCfg.EnvHeight_m/gridcell_m)-1) / 2;
+//     int zoffset_c = ((EnvROBARMCfg.EnvDepth_m/gridcell_m-1)) / 2;
+// 
+//     *pX = (x - xoffset_c) * gridcell_m + gridcell_m*0.5;
+//     *pY = (y - yoffset_c) * gridcell_m + gridcell_m*0.5;
+//     *pZ = (z - zoffset_c) * gridcell_m + gridcell_m*0.5;
 
-    *pX = (x - xoffset_c) * gridcell_m + gridcell_m*0.5;
-    *pY = (y - yoffset_c) * gridcell_m + gridcell_m*0.5;
-    *pZ = (z - zoffset_c) * gridcell_m + gridcell_m*0.5;
+    *pX = x * gridcell_m + EnvROBARMCfg.origin_m[0];
+    *pY = y * gridcell_m + EnvROBARMCfg.origin_m[1];
+    *pZ = z * gridcell_m + EnvROBARMCfg.origin_m[2];
 }
 
 // convert a point in real world to a cell in occupancy grid 
 void EnvironmentROBARM3D::ContXYZ2Cell(double x, double y, double z, short unsigned int *pX, short unsigned int *pY, short unsigned int *pZ)
 {
     // offset the arm in the map so that it is placed in the middle of the world
-    int xoffset_c = EnvROBARMCfg.EnvWidth_c-1  - ARM_WORKSPACE/EnvROBARMCfg.GridCellWidth;  //arm can't reach that far behind it, so offset X by arm length
-    int yoffset_c = (EnvROBARMCfg.EnvHeight_c-1) / 2;
-    int zoffset_c = (EnvROBARMCfg.EnvDepth_c-1) / 2;
+//     int xoffset_c = EnvROBARMCfg.EnvWidth_c-1  - ARM_WORKSPACE/EnvROBARMCfg.GridCellWidth;  //arm can't reach that far behind it, so offset X by arm length
+//     int yoffset_c = (EnvROBARMCfg.EnvHeight_c-1) / 2;
+//     int zoffset_c = (EnvROBARMCfg.EnvDepth_c-1) / 2;
 
     //take the nearest cell
-    *pX = (int)((x/EnvROBARMCfg.GridCellWidth) + xoffset_c);
-    if(x + (xoffset_c*EnvROBARMCfg.GridCellWidth) < 0) *pX = 0;
+//     *pX = (int)((x/EnvROBARMCfg.GridCellWidth) + xoffset_c);
+//     if(x + (xoffset_c*EnvROBARMCfg.GridCellWidth) < 0) *pX = 0;
+//     if(*pX >= EnvROBARMCfg.EnvWidth_c) *pX = EnvROBARMCfg.EnvWidth_c-1;
+// 
+//     *pY = (int)((y/EnvROBARMCfg.GridCellWidth) + yoffset_c);
+//     if(y + (yoffset_c*EnvROBARMCfg.GridCellWidth) < 0) *pY = 0;
+//     if(*pY >= EnvROBARMCfg.EnvHeight_c) *pY = EnvROBARMCfg.EnvHeight_c-1;
+// 
+//     *pZ = (int)((z/EnvROBARMCfg.GridCellWidth) + zoffset_c);
+//     if(z + (zoffset_c*EnvROBARMCfg.GridCellWidth) < 0) *pZ = 0;
+//     if(*pZ >= EnvROBARMCfg.EnvDepth_c) *pZ = EnvROBARMCfg.EnvDepth_c-1;
+
+    *pX = (int)((x - EnvROBARMCfg.origin_m[0]) / EnvROBARMCfg.GridCellWidth);
     if(*pX >= EnvROBARMCfg.EnvWidth_c) *pX = EnvROBARMCfg.EnvWidth_c-1;
 
-    *pY = (int)((y/EnvROBARMCfg.GridCellWidth) + yoffset_c);
-    if(y + (yoffset_c*EnvROBARMCfg.GridCellWidth) < 0) *pY = 0;
-    if(*pY >= EnvROBARMCfg.EnvHeight_c) *pY = EnvROBARMCfg.EnvHeight_c-1;
+    *pY = (int)((y - EnvROBARMCfg.origin_m[1]) / EnvROBARMCfg.GridCellWidth);
+    if(*pX >= EnvROBARMCfg.EnvWidth_c) *pX = EnvROBARMCfg.EnvWidth_c-1;
 
-    *pZ = (int)((z/EnvROBARMCfg.GridCellWidth) + zoffset_c);
-    if(z + (zoffset_c*EnvROBARMCfg.GridCellWidth) < 0) *pZ = 0;
+    *pZ = (int)((z - EnvROBARMCfg.origin_m[2]) / EnvROBARMCfg.GridCellWidth);
     if(*pZ >= EnvROBARMCfg.EnvDepth_c) *pZ = EnvROBARMCfg.EnvDepth_c-1;
 }
 
 void EnvironmentROBARM3D::ContXYZ2Cell(double* xyz, double gridcellwidth, int dims_c[3], short unsigned int *pXYZ)
 {
     // offset the arm in the map so that it is placed in the middle of the world
-    int xoffset_c = dims_c[0]-1 - ARM_WORKSPACE/gridcellwidth;
-    int yoffset_c = (dims_c[1]-1) / 2;
-    int zoffset_c = (dims_c[2]-1) / 2;
+//     int xoffset_c = dims_c[0]-1 - ARM_WORKSPACE/gridcellwidth;
+//     int yoffset_c = (dims_c[1]-1) / 2;
+//     int zoffset_c = (dims_c[2]-1) / 2;
+// 
+//     //take the nearest cell
+//     pXYZ[0] = (int)(xyz[0]/gridcellwidth + xoffset_c);
+//     if(xyz[0] + (xoffset_c * gridcellwidth) < 0)
+//         pXYZ[0] = 0;
+//     if(pXYZ[0] >= dims_c[0])
+//         pXYZ[0] = dims_c[0]-1;
+// 
+//     pXYZ[1] = (int)((xyz[1]/gridcellwidth) + yoffset_c);
+//     if(xyz[1] + (yoffset_c * gridcellwidth) < 0)
+//         pXYZ[1] = 0;
+//     if(pXYZ[1] >= dims_c[1])
+//         pXYZ[1] = dims_c[1]-1;
+// 
+//     pXYZ[2] = (int)((xyz[2]/gridcellwidth) + zoffset_c);
+//     if(xyz[2] + (zoffset_c * gridcellwidth) < 0) 
+//         pXYZ[2] = 0;
+//     if(pXYZ[2] >= dims_c[2]) 
+//         pXYZ[2] = dims_c[2]-1;
 
-    //take the nearest cell
-    pXYZ[0] = (int)(xyz[0]/gridcellwidth + xoffset_c);
-    if(xyz[0] + (xoffset_c * gridcellwidth) < 0)
-        pXYZ[0] = 0;
+    pXYZ[0] = (int)((xyz[0] - EnvROBARMCfg.origin_m[0]) / gridcellwidth);
     if(pXYZ[0] >= dims_c[0])
-        pXYZ[0] = dims_c[0]-1;
+      pXYZ[0] = dims_c[0]-1;
 
-    pXYZ[1] = (int)((xyz[1]/gridcellwidth) + yoffset_c);
-    if(xyz[1] + (yoffset_c * gridcellwidth) < 0)
-        pXYZ[1] = 0;
+    pXYZ[1] = (int)((xyz[1] - EnvROBARMCfg.origin_m[1]) / gridcellwidth);
     if(pXYZ[1] >= dims_c[1])
-        pXYZ[1] = dims_c[1]-1;
+      pXYZ[1] = dims_c[1]-1;
 
-    pXYZ[2] = (int)((xyz[2]/gridcellwidth) + zoffset_c);
-    if(xyz[2] + (zoffset_c * gridcellwidth) < 0) 
-        pXYZ[2] = 0;
+    pXYZ[2] = (int)((xyz[2] - EnvROBARMCfg.origin_m[2]) / gridcellwidth);
     if(pXYZ[2] >= dims_c[2]) 
-        pXYZ[2] = dims_c[2]-1;
+      pXYZ[2] = dims_c[2]-1;
 }
 
 void EnvironmentROBARM3D::HighResGrid2LowResGrid(short unsigned int * XYZ_hr, short unsigned int * XYZ_lr)
@@ -1518,6 +1532,14 @@ int EnvironmentROBARM3D::ComputeEndEffectorPos(const double angles[], short unsi
         ComputeForwardKinematics_ROS(angles, GOAL_JOINT, &x, &y, &z);
         ContXYZ2Cell(x, y, z, &(endeff[0]), &(endeff[1]), &(endeff[2]));
 
+/*
+	for(short unsigned int a = 0; a < EnvROBARMCfg.num_joints; ++a)
+	{
+          ComputeForwardKinematics_ROS(angles, a, &x, &y, &z);
+	  ContXYZ2Cell(x, y, z, &(joints[a][0]), &(joints[a][1]), &(joints[a][2]));
+	}
+*/
+
         // check upper bounds
         if(endeff[0] >= EnvROBARMCfg.EnvWidth_c || endeff[1] >= EnvROBARMCfg.EnvHeight_c || endeff[2] >= EnvROBARMCfg.EnvDepth_c)
 	 retval =  0;
@@ -1564,40 +1586,6 @@ int EnvironmentROBARM3D::ComputeEndEffectorPos(const double angles[], double end
     return retval;
 }
 
-//returns end effector position in meters
-void EnvironmentROBARM3D::ComputeEndEffectorPos(const double angles[], double xyz_m[3], double rpy_r[3])
-{
-  double Rot[3][3];
-
-  //convert angles from positive values in radians (from 0->6.28) to centered around 0
-//   for (int i = 0; i < NUMOFLINKS; i++)
-//   {
-//     if(angles[i] >= PI_CONST)
-//       angles[i] = -2.0*PI_CONST + angles[i];
-//   }
-
-  //use DH or Kinematics Library for forward kinematics
-  if(EnvROBARMCfg.use_DH)
-  {
-    //use DH or Kinematics Library for forward kinematics
-    ComputeForwardKinematics_DH(angles);
-
-    //get position of r_wrist_roll_joint
-    xyz_m[0] = EnvROBARM.Trans[0][3][ENDEFF] + EnvROBARMCfg.BaseX_m;
-    xyz_m[1] = EnvROBARM.Trans[1][3][ENDEFF] + EnvROBARMCfg.BaseY_m;
-    xyz_m[2] = EnvROBARM.Trans[2][3][ENDEFF] + EnvROBARMCfg.BaseZ_m;
-  }
-  else
-    ComputeForwardKinematics_ROS(angles, GOAL_JOINT, &(xyz_m[0]), &(xyz_m[1]), &(xyz_m[2]));
-
-  for(int y = 0; y < 3; y++)
-    for(int x = 0; x < 3; x++)
-      Rot[x][y] = EnvROBARM.Trans[x][y][ENDEFF];
-
-  getRPY(Rot,&(rpy_r[0]),&(rpy_r[1]),&(rpy_r[2]), 1);
-
-}
-
 //returns end effector position in cells
 int EnvironmentROBARM3D::ComputeEndEffectorPos(const double angles[], short unsigned int endeff[3])
 {
@@ -1634,13 +1622,14 @@ int EnvironmentROBARM3D::IsValidLineSegment(short unsigned int x0, short unsigne
 					    short unsigned int y1, short unsigned int z1, char*** Grid3D, vector<CELLV>* pTestedCells)
 {
     bresenham_param_t params;
-    int nX, nY, nZ; 
+    int nXYZ[3]; // int nX, nY, nZ;
     int retvalue = 1;
     CELLV tempcell;
 
     short unsigned int width = EnvROBARMCfg.EnvWidth_c;
     short unsigned int height = EnvROBARMCfg.EnvHeight_c;
     short unsigned int depth = EnvROBARMCfg.EnvDepth_c;
+    boost::shared_ptr<Voxel3d> vGrid = voxel_grid;
 
     //use low resolution grid if enabled
     if(EnvROBARMCfg.lowres_collision_checking)
@@ -1648,6 +1637,7 @@ int EnvironmentROBARM3D::IsValidLineSegment(short unsigned int x0, short unsigne
         width = EnvROBARMCfg.LowResEnvWidth_c;
         height = EnvROBARMCfg.LowResEnvHeight_c;
         depth = EnvROBARMCfg.LowResEnvDepth_c;
+	vGrid = lowres_voxel_grid;
     }
 
     //make sure the line segment is inside the environment - no need to check < 0
@@ -1661,23 +1651,23 @@ int EnvironmentROBARM3D::IsValidLineSegment(short unsigned int x0, short unsigne
     //iterate through the points on the segment
     get_bresenham_parameters3d(x0, y0, z0, x1, y1, z1, &params);
     do {
-        get_current_point3d(&params, &nX, &nY, &nZ);
+        get_current_point3d(&params, &(nXYZ[0]), &(nXYZ[1]), &(nXYZ[2]));
 
-        if(Grid3D[nX][nY][nZ] >= EnvROBARMCfg.ObstacleCost)
+	if(!isValidCell(nXYZ, 6, Grid3D, vGrid)) // if(Grid3D[nX][nY][nZ] >= EnvROBARMCfg.ObstacleCost)
         {
             if(pTestedCells == NULL)
                 return 0;
             else
                 retvalue = 0;
-        }
-
+	}
+	
         //insert the tested point
         if(pTestedCells)
         {
-            tempcell.bIsObstacle = (Grid3D[nX][nY][nZ] >= EnvROBARMCfg.ObstacleCost);
-            tempcell.x = nX;
-            tempcell.y = nY;
-            tempcell.z = nZ;
+	    tempcell.bIsObstacle = isValidCell(nXYZ, 6, Grid3D, vGrid); //(Grid3D[nXYZ[0]][nXYZ[1]][nXYZ[2]] >= EnvROBARMCfg.ObstacleCost);
+	    tempcell.x = nXYZ[0];
+	    tempcell.y = nXYZ[1];
+	    tempcell.z = nXYZ[2];
             pTestedCells->push_back(tempcell);
         }
     } while (get_next_point3d(&params));
@@ -1685,11 +1675,49 @@ int EnvironmentROBARM3D::IsValidLineSegment(short unsigned int x0, short unsigne
     return retvalue;
 }
 
+int EnvironmentROBARM3D::IsValidLineSegment(const short unsigned int xyz0[], const short unsigned int xyz1[], const int &radius, char*** Grid3D, const int grid_dims[], vector<CELLV>* pTestedCells)
+{
+  bresenham_param_t params;
+  int nXYZ[3];
+  int retvalue = 1;
+  CELLV tempcell;
+
+  printf("WARNING: NOT IN USE YET\n");
+  //make sure the line segment is inside the environment
+  if(xyz0[0] >= grid_dims[0] || xyz1[0] >= grid_dims[0] ||
+     xyz0[1] >= grid_dims[1] || xyz1[1] >= grid_dims[1] ||
+     xyz0[2] >= grid_dims[2] || xyz1[2] >= grid_dims[2])
+      return 0;
+
+  //iterate through the points on the segment
+  get_bresenham_parameters3d(xyz0[0], xyz0[1], xyz0[2], xyz1[0], xyz1[1], xyz1[2], &params);
+  do {
+    get_current_point3d(&params, &(nXYZ[0]), &(nXYZ[1]), &(nXYZ[2]));
+
+    if(!isValidCell(nXYZ, radius, Grid3D, voxel_grid))
+    {
+      if(pTestedCells == NULL)
+	return 0;
+      else
+	retvalue = 0;
+    }
+
+    //insert the tested point
+    if(pTestedCells)
+    {
+      tempcell.bIsObstacle = isValidCell(nXYZ, radius, Grid3D, voxel_grid);
+      tempcell.x = nXYZ[0];
+      tempcell.y = nXYZ[1];
+      tempcell.z = nXYZ[2];
+      pTestedCells->push_back(tempcell);
+    }
+  } while (get_next_point3d(&params));
+
+  return retvalue;
+}
+
 int EnvironmentROBARM3D::IsValidCoord(short unsigned int coord[NUMOFLINKS], short unsigned int endeff_pos[3], short unsigned int wrist_pos[3], short unsigned int elbow_pos[3], double orientation[3][3])
 {
-    //for stats
-    //clock_t currenttime = clock();
-
     int grid_dims[3] = {EnvROBARMCfg.EnvWidth_c, EnvROBARMCfg.EnvHeight_c, EnvROBARMCfg.EnvDepth_c};
     short unsigned int endeff[3] = {endeff_pos[0],endeff_pos[1],endeff_pos[2]};
     short unsigned int wrist[3] = {wrist_pos[0],wrist_pos[1],wrist_pos[2]};
@@ -1705,6 +1733,8 @@ int EnvironmentROBARM3D::IsValidCoord(short unsigned int coord[NUMOFLINKS], shor
     vector<CELLV>* pTestedCells = NULL;
     ComputeContAngles(coord, angles);
 
+    boost::shared_ptr<Voxel3d> vGrid = voxel_grid;
+
     //for low resolution collision checking
     if(EnvROBARMCfg.lowres_collision_checking)
     {
@@ -1713,11 +1743,12 @@ int EnvironmentROBARM3D::IsValidCoord(short unsigned int coord[NUMOFLINKS], shor
         grid_dims[2] = EnvROBARMCfg.LowResEnvDepth_c;
         Grid3D = EnvROBARMCfg.LowResGrid3D;
 	grid_cell_m = EnvROBARMCfg.LowResGridCellWidth;
-	
+
         HighResGrid2LowResGrid(endeff, endeff);
         HighResGrid2LowResGrid(wrist, wrist);
         HighResGrid2LowResGrid(elbow, elbow);
         HighResGrid2LowResGrid(shoulder, shoulder);
+	vGrid = lowres_voxel_grid;
     }
 
 
@@ -1736,7 +1767,7 @@ int EnvironmentROBARM3D::IsValidCoord(short unsigned int coord[NUMOFLINKS], shor
         if (angles_0[0] > EnvROBARMCfg.PosMotorLimits[0] || angles_0[0] < EnvROBARMCfg.NegMotorLimits[0])
         {
         #if DEBUG_VALID_COORD
-            printf("[IsValidCoord] Shoulder Pan motor limit failed: %2.3f.\n",angles_0[0]);
+            printf("[IsValidCoord] Shoulder Pan motor limit failed: %.3f (%u)\n", angles_0[0], coord[0]);
         #endif
             return 0;
         }
@@ -1744,7 +1775,7 @@ int EnvironmentROBARM3D::IsValidCoord(short unsigned int coord[NUMOFLINKS], shor
         if (angles_0[1] > EnvROBARMCfg.PosMotorLimits[1] || angles_0[1] < EnvROBARMCfg.NegMotorLimits[1])
         {
         #if DEBUG_VALID_COORD
-            printf("[IsValidCoord] Shoulder Pitch motor limit failed: %2.3f.\n",angles_0[1]);
+	   printf("[IsValidCoord] Shoulder Pitch motor limit failed: %.3f (%u)\n", angles_0[1], coord[1]);
         #endif
             return 0;
         }
@@ -1752,16 +1783,15 @@ int EnvironmentROBARM3D::IsValidCoord(short unsigned int coord[NUMOFLINKS], shor
         if (angles_0[2] > EnvROBARMCfg.PosMotorLimits[2] || angles_0[2] < EnvROBARMCfg.NegMotorLimits[2])
         {
         #if DEBUG_VALID_COORD
-            printf("[IsValidCoord] Upperarm Roll motor limit failed: %2.3f.\n",angles_0[2]);;
+	   printf("[IsValidCoord] Upper arm Roll motor limit failed: %.3f (%u)\n", angles_0[2], coord[2]);
 	#endif
             return 0;
         }
-
         //elbow flex - Down is Positive Direction
         if (angles_0[3] > EnvROBARMCfg.PosMotorLimits[3] || angles_0[3] < EnvROBARMCfg.NegMotorLimits[3])
         {
         #if DEBUG_VALID_COORD
-            printf("[IsValidCoord] Elbow Flex motor limit failed: %2.3f.\n",angles_0[3]);
+	   printf("[IsValidCoord] Elbow Flex motor limit failed: %.3f (%u)\n", angles_0[3], coord[3]);
         #endif
             return 0;
         }
@@ -1779,7 +1809,7 @@ int EnvironmentROBARM3D::IsValidCoord(short unsigned int coord[NUMOFLINKS], shor
         if (angles_0[5] > EnvROBARMCfg.PosMotorLimits[5] || angles_0[5] < EnvROBARMCfg.NegMotorLimits[5])
         {
         #if DEBUG_VALID_COORD
-            printf("[IsValidCoord] Wrist Flex motor limit failed: %2.3f.\n",angles_0[5]);
+            printf("[IsValidCoord] Wrist Flex motor limit failed: %.3f (%u)\n", angles_0[5], coord[5]);
         #endif
             return 0;
         }
@@ -1806,20 +1836,24 @@ int EnvironmentROBARM3D::IsValidCoord(short unsigned int coord[NUMOFLINKS], shor
         elbow[0] >= grid_dims[0] || elbow[1] >= grid_dims[1] || elbow[2] >= grid_dims[2] ||
         gripper[0] >= grid_dims[0] || gripper[1] >= grid_dims[1] || gripper[2] >= grid_dims[2])
     {
-	// check_collision_time += clock() - currenttime;
+    #if DEBUG_VALID_COORD
+      printf("[IsValidCoord] one of the joints is outside of the grid dimensions\n");
+    #endif
 	return 0;
     }
 
     //check if joints are hitting obstacle - is not needed because IsValidLineSegment checks it
-    if(Grid3D[endeff[0]][endeff[1]][endeff[2]] >= EnvROBARMCfg.ObstacleCost ||
-        Grid3D[wrist[0]][wrist[1]][wrist[2]] >= EnvROBARMCfg.ObstacleCost ||
-        Grid3D[elbow[0]][elbow[1]][elbow[2]] >= EnvROBARMCfg.ObstacleCost ||
-        Grid3D[gripper[0]][gripper[1]][gripper[2]] >= EnvROBARMCfg.ObstacleCost)
-    {
-	// check_collision_time += clock() - currenttime;
-	return 0;
-    }
+//     if(Grid3D[endeff[0]][endeff[1]][endeff[2]] >= EnvROBARMCfg.ObstacleCost ||
+//         Grid3D[wrist[0]][wrist[1]][wrist[2]] >= EnvROBARMCfg.ObstacleCost ||
+//         Grid3D[elbow[0]][elbow[1]][elbow[2]] >= EnvROBARMCfg.ObstacleCost ||
+//         Grid3D[gripper[0]][gripper[1]][gripper[2]] >= EnvROBARMCfg.ObstacleCost)
+//     {
+// 	return 0;
+//     }
 
+    //check if joints are hitting obstacle
+    if(!isValidCell(endeff,6,Grid3D,vGrid) || !isValidCell(wrist,6,Grid3D,vGrid) || !isValidCell(elbow,6,Grid3D,vGrid) || !isValidCell(gripper,6,Grid3D,vGrid))
+      return 0;
 
     //check the validity of the corresponding arm links (line segments)
     if(!IsValidLineSegment(shoulder[0],shoulder[1],shoulder[2], elbow[0],elbow[1],elbow[2], Grid3D, pTestedCells) ||
@@ -1836,7 +1870,6 @@ int EnvironmentROBARM3D::IsValidCoord(short unsigned int coord[NUMOFLINKS], shor
 	    printf("[IsValidCoord] endeff: (%i %i %i)\n",endeff[0],endeff[1],endeff[2]);
 	    printf("[IsValidCoord] Arm link collision checking failed.\n");
 	#endif
-	    // check_collision_time += clock() - currenttime;
 	    return 0;
 	}
 	else
@@ -1849,9 +1882,69 @@ int EnvironmentROBARM3D::IsValidCoord(short unsigned int coord[NUMOFLINKS], shor
     }
 
     // printf("[IsValidCoord] endeff: (%u %u %u) gripper (%u %u %u) \n",endeff[0],endeff[1],endeff[2],gripper[0],gripper[1],gripper[2]);
-    // check_collision_time += clock() - currenttime;
     return retvalue;
 }
+
+/*
+int EnvironmentROBARM3D::IsValidCoord(const short unsigned int coord[], const std::vector<std::vector<short unsigned int> > &joints, double orientation[3][3], char ***Grid, const short unsigned int grid_dims[])
+{
+  double *angles = new double [EnvROBARMCfg.num_joints];
+  int retvalue = 1;
+  short unsigned int gripper[3];
+  vector<CELLV>* pTestedCells = NULL;
+  ComputeContAngles(coord, angles);
+
+  int radius = 6;
+
+  // check motor position limits
+  if(EnvROBARMCfg.enforce_motor_limits)
+  {
+    //convert angles from positive values in radians (from 0->6.28) to centered around 0
+    for (int i = 0; i < EnvROBARMCfg.num_joints; i++)
+    {
+      if(angles[i] >= PI_CONST)
+	angles[i] = -2.0*PI_CONST + angles[i];
+
+      // check if joint position angle is unreachable
+      if (angles[i] > EnvROBARMCfg.PosMotorLimits[i] || angles[i] < EnvROBARMCfg.NegMotorLimits[i])
+	return 0;
+    }
+  }
+
+  //get position of gripper in torso_lift_link frame
+//   gripper[0] = (endeff[0] + (orientation[0][0]*EnvROBARMCfg.gripper_m[0] + orientation[0][1]*EnvROBARMCfg.gripper_m[1] + orientation[0][2]*EnvROBARMCfg.gripper_m[2]) / grid_cell_m) + 0.5;
+//   gripper[1] = (endeff[1] + (orientation[1][0]*EnvROBARMCfg.gripper_m[0] + orientation[1][1]*EnvROBARMCfg.gripper_m[1] + orientation[1][2]*EnvROBARMCfg.gripper_m[2]) / grid_cell_m) + 0.5;
+//   gripper[2] = (endeff[2] + (orientation[2][0]*EnvROBARMCfg.gripper_m[0] + orientation[2][1]*EnvROBARMCfg.gripper_m[1] + orientation[2][2]*EnvROBARMCfg.gripper_m[2]) / grid_cell_m) + 0.5;;
+
+  for(unsigned int a = 0; a < joints.size(); ++a)
+  {
+    //check if joint is out of bounds
+    if(joints[a][0] >= grid_dims[0] || joints[a][1] >= grid_dims[1] || joints[a][2] >= grid_dims[2])
+      return 0;
+
+    //check if joint is hitting obstacle
+    if(!isValidCell(joints[a], radius, Grid))
+      return 0;
+
+    //check if link is hitting obstacle
+    if(a > 0)
+    {
+      if(!IsValidLineSegment(joints[a-1], joints[a], radius, Grid, grid_dims, pTestedCells))
+      {
+	if(pTestedCells == NULL)
+	    return 0;
+          else
+            retvalue = 0;
+      }
+    }
+  }
+
+  delete angles;
+
+  // printf("[IsValidCoord] endeff: (%u %u %u) gripper (%u %u %u) \n",endeff[0],endeff[1],endeff[2],gripper[0],gripper[1],gripper[2]);
+  return retvalue;
+}
+*/
 
 int EnvironmentROBARM3D::cost(short unsigned int state1coord[], short unsigned int state2coord[])
 {
@@ -1861,7 +1954,7 @@ int EnvironmentROBARM3D::cost(short unsigned int state1coord[], short unsigned i
 #if UNIFORM_COST
     return 1*COSTMULT;
 #else
-//     printf("%i\n",1 * COSTMULT * (EnvROBARMCfg.Grid3D[HashEntry2->endeff[0]][HashEntry1->endeff[1]][HashEntry1->endeff[2]] + 1));
+    printf("%i\n",1 * COSTMULT * (EnvROBARMCfg.Grid3D[HashEntry2->endeff[0]][HashEntry1->endeff[1]][HashEntry1->endeff[2]] + 1));
     //temporary
     return 1*COSTMULT;
 
@@ -1885,7 +1978,7 @@ int EnvironmentROBARM3D::cost(EnvROBARMHashEntry_t* HashEntry1, EnvROBARMHashEnt
 #if UNIFORM_COST
     return 1*COSTMULT;
 #else
-//     printf("%i\n",1 * COSTMULT * (EnvROBARMCfg.Grid3D[HashEntry2->endeff[0]][HashEntry1->endeff[1]][HashEntry1->endeff[2]] + 1));
+    printf("%i\n",1 * COSTMULT * (EnvROBARMCfg.Grid3D[HashEntry2->endeff[0]][HashEntry1->endeff[1]][HashEntry1->endeff[2]] + 1));
     if(EnvROBARMCfg.lowres_collision_checking)
     {
         short unsigned int endeff[3];
@@ -1984,10 +2077,6 @@ bool EnvironmentROBARM3D::InitializeEnvironment()
     //create an empty start state
     EnvROBARM.startHashEntry = CreateNewHashEntry(coord, NUMOFLINKS, endeff, 0, orientation);
 
-    //initialize the angles of the start states
-    if(!SetStartJointConfig(EnvROBARMCfg.LinkStartAngles_d, 0))
-        printf("[InitializeEnvironment] Start state was not created.\n");
-
     //create the goal state
     EnvROBARM.goalHashEntry = CreateNewHashEntry(coord, NUMOFLINKS, endeff, 0, NULL);
 
@@ -2008,9 +2097,9 @@ bool EnvironmentROBARM3D::InitializeEnvironment()
 
 
 
-/*------------------------------------------------------------------------*/
-                /* Interface with Outside Functions */
-/*------------------------------------------------------------------------*/
+/**------------------------------------------------------------------------*/
+                /** Interface with Outside Functions */
+/**------------------------------------------------------------------------*/
 EnvironmentROBARM3D::EnvironmentROBARM3D()
 {
     /* FK & COLLISION CHECKING */
@@ -2022,7 +2111,7 @@ EnvironmentROBARM3D::EnvironmentROBARM3D()
     EnvROBARMCfg.grasped_object_length_m = .1;
     EnvROBARMCfg.enforce_upright_gripper = 0;
     EnvROBARMCfg.num_joints = 7;
-    EnvROBARMCfg.gripper_m[0] = .14;
+    EnvROBARMCfg.gripper_m[0] = .18;
     EnvROBARMCfg.gripper_m[1] = 0;
     EnvROBARMCfg.gripper_m[2] = 0;
 
@@ -2076,11 +2165,15 @@ EnvironmentROBARM3D::EnvironmentROBARM3D()
     EnvROBARMCfg.BaseZ_m = 0;
     ContXYZ2Cell(EnvROBARMCfg.BaseX_m, EnvROBARMCfg.BaseY_m, EnvROBARMCfg.BaseZ_m, &(EnvROBARMCfg.BaseX_c), &(EnvROBARMCfg.BaseY_c), &(EnvROBARMCfg.BaseZ_c));
 
+    EnvROBARMCfg.sum_heuristics = 1;
+
     /* JOINT SPACE PLANNING */
     EnvROBARMCfg.PlanInJointSpace = false;
 
     //hard coded temporarily (meters)
     EnvROBARMCfg.arm_length = ARM_WORKSPACE;
+
+    EnvROBARMCfg.default_collision_checker = true;
 }
 
 bool EnvironmentROBARM3D::InitializeEnv(const char* sEnvFile)
@@ -2111,6 +2204,10 @@ bool EnvironmentROBARM3D::InitializeEnv(const char* sEnvFile)
 
     if(!InitGeneral())
         return false;
+
+    //initialize the angles of the start states
+    if(!SetStartJointConfig(EnvROBARMCfg.LinkStartAngles_d, 0))
+      printf("[InitializeEnvironment] Start state was not created.\n");
 
     //set Environment is Initialized flag(so fk can be used)
     EnvROBARMCfg.bInitialized = true;
@@ -2164,6 +2261,10 @@ bool EnvironmentROBARM3D::InitEnvFromFilePtr(FILE* eCfg, FILE* pCfg, const std::
     if(!InitGeneral())
         return false;
 
+    //temporary
+    EnvROBARMCfg.default_collision_checker = false;
+    printf("default_collision_checker: %c\n",EnvROBARMCfg.default_collision_checker);
+
 #if VERBOSE
     //output environment data
     PrintConfiguration(stdout);
@@ -2197,6 +2298,14 @@ bool EnvironmentROBARM3D::InitGeneral()
         //pre-compute DH Transformations
         ComputeDHTransformations();
 
+    //temporary location for this
+    EnvROBARMCfg.Grid3D_dims[0] = EnvROBARMCfg.EnvWidth_c;
+    EnvROBARMCfg.Grid3D_dims[1] = EnvROBARMCfg.EnvHeight_c;
+    EnvROBARMCfg.Grid3D_dims[2] = EnvROBARMCfg.EnvDepth_c;
+    EnvROBARMCfg.LowResGrid3D_dims[0] = EnvROBARMCfg.LowResEnvWidth_c;
+    EnvROBARMCfg.LowResGrid3D_dims[1] = EnvROBARMCfg.LowResEnvHeight_c;
+    EnvROBARMCfg.LowResGrid3D_dims[2] = EnvROBARMCfg.LowResEnvDepth_c;
+
     //initialize other parameters of the environment
     InitializeEnvConfig();
 
@@ -2222,6 +2331,42 @@ bool EnvironmentROBARM3D::InitializeMDPCfg(MDPConfig *MDPCfg)
     return true;
 }
 
+double EnvironmentROBARM3D::GetEpsilon()
+{
+  return EnvROBARMCfg.epsilon;
+}
+
+//returns end effector position in meters
+int EnvironmentROBARM3D::ComputeEndEffectorPos(const double angles[], double endeff_m[3], double rpy_r[3])
+{
+  int retval = 1;
+  double orientation[3][3];
+
+  //use DH or Kinematics Library for forward kinematics
+  if(EnvROBARMCfg.use_DH)
+  {
+    ComputeForwardKinematics_DH(angles);
+    //get position of tip of gripper
+    endeff_m[0] = EnvROBARM.Trans[0][3][ENDEFF] + EnvROBARMCfg.BaseX_m;
+    endeff_m[1] = EnvROBARM.Trans[1][3][ENDEFF] + EnvROBARMCfg.BaseY_m;
+    endeff_m[2] = EnvROBARM.Trans[2][3][ENDEFF] + EnvROBARMCfg.BaseZ_m;
+  }
+  else
+    ComputeForwardKinematics_ROS(angles, GOAL_JOINT, &(endeff_m[0]), &(endeff_m[1]), &(endeff_m[2]));
+
+  //store the orientation of gripper
+  for (int i = 0; i < 3; i++)
+    for (int j = 0; j < 3; j++)
+      orientation[i][j] = EnvROBARM.Trans[i][j][ENDEFF];
+
+  getRPY(orientation, &(rpy_r[0]), &(rpy_r[1]), &(rpy_r[2]), 1);
+
+  return retval;
+}
+
+/**------------------------------------------------------------------------*/
+                /** Interface with SBPL Planners */
+/**------------------------------------------------------------------------*/
 int EnvironmentROBARM3D::GetFromToHeuristic(int FromStateID, int ToStateID)
 {
     if(EnvROBARMCfg.PlanInJointSpace)
@@ -2231,12 +2376,9 @@ int EnvironmentROBARM3D::GetFromToHeuristic(int FromStateID, int ToStateID)
     return 0;
 #endif
 
-    int heur = 0, closest_goal;
+    int heur = 0, closest_goal = 0;
     double FromEndEff_m[3];
     double edist_to_goal_m, heur_axis_angle;
-
-    //NOTE: for plotting only
-//     double heur_dij = 0.0, heur_eucl = 0.0, max_heur = 0.0;
 
     //get X, Y, Z for the state
     EnvROBARMHashEntry_t* FromHashEntry = EnvROBARM.StateID2CoordTable[FromStateID];
@@ -2256,14 +2398,14 @@ int EnvironmentROBARM3D::GetFromToHeuristic(int FromStateID, int ToStateID)
             //fetch precomputed heuristic
             heur = EnvROBARM.Heur[XYZTO3DIND(FromEndEff[0], FromEndEff[1], FromEndEff[2])];
 
-            double dist_to_goal_c = GetDistToClosestGoal(FromHashEntry->endeff, &closest_goal);
-
-            //if the distance to the goal is very small, then we need a more informative heuristic when using the lowres collision detection
-            if(dist_to_goal_c * EnvROBARMCfg.GridCellWidth < MAX_EUCL_DIJK_m)
-            {
-                if ((dist_to_goal_c * EnvROBARMCfg.cost_per_cell) > heur)
-                    heur =  dist_to_goal_c * EnvROBARMCfg.cost_per_cell;
-            }
+//             double dist_to_goal_c = GetDistToClosestGoal(FromHashEntry->endeff, &closest_goal);
+// 
+//             //if the distance to the goal is very small, then we need a more informative heuristic when using the lowres collision detection
+//             if(dist_to_goal_c * EnvROBARMCfg.GridCellWidth < MAX_EUCL_DIJK_m)
+//             {
+//                 if ((dist_to_goal_c * EnvROBARMCfg.cost_per_cell) > heur)
+//                     heur =  dist_to_goal_c * EnvROBARMCfg.cost_per_cell;
+//             }
         }
         else
             //fetch precomputed heuristic
@@ -2277,81 +2419,26 @@ int EnvironmentROBARM3D::GetFromToHeuristic(int FromStateID, int ToStateID)
     //get orientation heuristic
     if(EnvROBARMCfg.checkEndEffGoalOrientation)
     {
-      if(FromHashEntry->axis_angle > EnvROBARMCfg.EndEffGoals[0].rpy_tolerance)
-            heur_axis_angle = (FromHashEntry->axis_angle - EnvROBARMCfg.EndEffGoals[0].rpy_tolerance) * EnvROBARMCfg.cost_per_rad;
-        else
-            heur_axis_angle = FromHashEntry->axis_angle * EnvROBARMCfg.cost_per_rad;
+      if(FromHashEntry->axis_angle > EnvROBARMCfg.EndEffGoals[closest_goal].rpy_tolerance)
+        heur_axis_angle = (FromHashEntry->axis_angle - EnvROBARMCfg.EndEffGoals[0].rpy_tolerance) * EnvROBARMCfg.cost_per_rad;
+      else
+	  heur_axis_angle = FromHashEntry->axis_angle * EnvROBARMCfg.cost_per_rad;
 
-        //if close enough to goal, apply cost to gripper orientation
-        if(edist_to_goal_m < EnvROBARMCfg.ApplyRPYCost_m)
-        {
-            //use max(heuristic_xyz, heuristic_rpy)
-            if(heur_axis_angle > heur)
-            {
-                heur = heur_axis_angle;
-            }
-            //use sum(heuristic_xyz, heuristic_rpy)
-//             heur += heur_axis_angle;
-        }
+      if(EnvROBARMCfg.sum_heuristics)
+      {
+	heur += heur_axis_angle;
+      }
+      else
+      {
+	//if close enough to goal, use max heuristic
+	if(edist_to_goal_m < EnvROBARMCfg.ApplyRPYCost_m)
+	{
+	  if(heur_axis_angle > heur)
+	      heur = heur_axis_angle;
+	}
+      }
     }
     return heur;
-
-// #if DEBUG_HEURISTIC
-//         double angles[7];
-//         ComputeContAngles(FromHashEntry->coord,angles);
-//         printf("\n-----------------------------------\n");
-//         printf("%1.3f %1.3f %1.3f %1.3f %1.3f %1.3f %1.3f\n\n",
-//                 angles[0],angles[1],angles[2],angles[3],angles[4],angles[5],angles[6]);
-// #endif
-
-// #if DEBUG
-//         fprintf(fDeb, "%5i: action: %i xyz_dist: %.3f axis_angle: %.3f h_xyz: %4d h_aa: %4.0f  endeff: %3d %3d %3d used:",
-//                 FromStateID, FromHashEntry->action, edist_to_goal_m, FromHashEntry->axis_angle, heur, heur_axis_angle,
-//                 FromHashEntry->endeff[0],FromHashEntry->endeff[1],FromHashEntry->endeff[2]);
-// #endif
-
-/*NOTE: for plotting, remove later
-        heur_dij = heur;  
-        //if close enough to goal, apply cost to gripper orientation
-        if(edist_to_goal_m < EnvROBARMCfg.ApplyRPYCost_m)
-        {
-            //use max(heuristic_xyz, heuristic_rpy)
-            if(heur_axis_angle > heur)
-            {
-//                 max_heur = heur_axis_angle;
-                heur = heur_axis_angle;
-
-
-#if DEBUG
-                fprintf(fDeb, "h_aa\n");
-#endif
-            }
-
-            else
-            {
-                max_heur = heur;
-#if DEBUG
-                fprintf(fDeb, "h_xyz\n");
-#endif
-            }
-        }
-#if DEBUG
-        else
-        {
-            fprintf(fDeb, "h_xyz\n");
-        }
-#endif
-*/
-
-// #if DEBUG_HEURISTIC
-//     //NOTE: for plotting, remove later
-//     heur_eucl = edist_to_goal_m * 1000.0 * EnvROBARMCfg.cost_per_mm;
-//     fprintf(fHeur,"%f %f %f %f %d;\n", heur_dij, heur_eucl, heur_axis_angle, heur_axis_angle + heur_dij, heur);
-// #endif
-//     }
-
-//     printf("GetFromToHeuristic(#%i(%i,%i,%i) -> #%i(%i,%i,%i)) H cost: %i\n",FromStateID, FromHashEntry->endeff[0], FromHashEntry->endeff[1], FromHashEntry->endeff[2], ToStateID, ToHashEntry->endeff[0], ToHashEntry->endeff[1], ToHashEntry->endeff[2], h);
-//     return heur;
 }
 
 //for debugging. remove later
@@ -2484,11 +2571,6 @@ int EnvironmentROBARM3D::GetStartHeuristic(int stateID)
     return 0;
 }
 
-double EnvironmentROBARM3D::GetEpsilon()
-{
-    return EnvROBARMCfg.epsilon;
-}
-
 int EnvironmentROBARM3D::SizeofCreatedEnv()
 {
     return EnvROBARM.StateID2CoordTable.size();
@@ -2607,10 +2689,6 @@ void EnvironmentROBARM3D::PrintEnv_Config(FILE* fOut)
 void EnvironmentROBARM3D::PrintHeader(FILE* fOut)
 {
   fprintf(fOut, "PrintHeader() has not yet been defined.\n");
-//     fprintf(fOut, "%d\n", NUMOFLINKS);
-//     for(int i = 0; i < NUMOFLINKS; i++)
-//         fprintf(fOut, "%.3f ", EnvROBARMCfg.LinkLength_m[i]);
-//     fprintf(fOut, "\n");
 }
 
 void EnvironmentROBARM3D::GetSuccs(int SourceStateID, vector<int>* SuccIDV, vector<int>* CostV)
@@ -2677,22 +2755,24 @@ void EnvironmentROBARM3D::GetSuccs(int SourceStateID, vector<int>* SuccIDV, vect
     //iterate through successors of s (possible actions)
     for (i = actions_i_min; i < actions_i_max; i++)
     {
-        for(a = 0; a < NUMOFLINKS; a++)
+        for(a = 0; a < EnvROBARMCfg.num_joints; a++)
         {
-            if (EnvROBARMCfg.SuccActions[i][a] < 0)
+//             if (EnvROBARMCfg.SuccActions[i][a] < 0)
+	    if((HashEntry->coord[a] + int(EnvROBARMCfg.SuccActions[i][a])) < 0)
             {
-                //if the joint is at 0deg and the next action will decrement it
-                if(HashEntry->coord[a] == 0 && EnvROBARMCfg.SuccActions[i][a] != 0)
-                    succcoord[a] =  EnvROBARMCfg.anglevals[a] + EnvROBARMCfg.SuccActions[i][a];
-                //the joint's current position, when decremented by n degrees will go below 0
-                else if(HashEntry->coord[a] - EnvROBARMCfg.SuccActions[i][a] < 0)
-                    succcoord[a] =  EnvROBARMCfg.anglevals[a] + (HashEntry->coord[a] - EnvROBARMCfg.SuccActions[i][a]);
-                else
-                    succcoord[a] = (HashEntry->coord[a] + int(EnvROBARMCfg.SuccActions[i][a])) % EnvROBARMCfg.anglevals[a];
+	      succcoord[a] = ((EnvROBARMCfg.anglevals[a] + HashEntry->coord[a] + int(EnvROBARMCfg.SuccActions[i][a])) % EnvROBARMCfg.anglevals[a]);
+//                 //if the joint is at 0deg and the next action will decrement it
+//                 if(HashEntry->coord[a] == 0 && EnvROBARMCfg.SuccActions[i][a] != 0)
+//                     succcoord[a] =  EnvROBARMCfg.anglevals[a] + EnvROBARMCfg.SuccActions[i][a];
+//                 //the joint's current position, when decremented by n degrees will go below 0
+//                 else if(HashEntry->coord[a] - EnvROBARMCfg.SuccActions[i][a] < 0)
+//                     succcoord[a] =  EnvROBARMCfg.anglevals[a] + (HashEntry->coord[a] - EnvROBARMCfg.SuccActions[i][a]);
+//                 else
+//                     succcoord[a] = (HashEntry->coord[a] + int(EnvROBARMCfg.SuccActions[i][a])) % EnvROBARMCfg.anglevals[a];
             }
             else
             {
-                succcoord[a] = (HashEntry->coord[a] + int(EnvROBARMCfg.SuccActions[i][a])) % EnvROBARMCfg.anglevals[a];
+	      succcoord[a] = ((int)(HashEntry->coord[a] + int(EnvROBARMCfg.SuccActions[i][a])) % EnvROBARMCfg.anglevals[a]);
             }
         }
 
@@ -2726,7 +2806,6 @@ void EnvironmentROBARM3D::GetSuccs(int SourceStateID, vector<int>* SuccIDV, vect
             continue;
         }
 
-
         GetAxisAngle(orientation, EnvROBARM.goalHashEntry->orientation, &axis_angle);
 
         for(k = 0; k < EnvROBARMCfg.EndEffGoals.size(); k++)
@@ -2749,9 +2828,9 @@ void EnvironmentROBARM3D::GetSuccs(int SourceStateID, vector<int>* SuccIDV, vect
         }
 
         //check if hash entry already exists, if not then create one
-        if((OutHashEntry = GetHashEntry(succcoord, NUMOFLINKS, i, bSuccisGoal)) == NULL)
+	if((OutHashEntry = GetHashEntry(succcoord, EnvROBARMCfg.num_joints, i, bSuccisGoal)) == NULL)
         {
-            OutHashEntry = CreateNewHashEntry(succcoord, NUMOFLINKS, endeff, i, orientation);
+            OutHashEntry = CreateNewHashEntry(succcoord, EnvROBARMCfg.num_joints, endeff, i, orientation);
             OutHashEntry->axis_angle = axis_angle;
         }
 
@@ -2779,7 +2858,7 @@ void EnvironmentROBARM3D::GetPreds(int TargetStateID, vector<int>* PredIDV, vect
     exit(1);
 }
 
-/** check if arm configuration is at the goal */
+/** check if arm configuration is at the cartesian goal */
 bool EnvironmentROBARM3D::isGoalPosition(const short unsigned int endeff[3], const double orientation[3][3], const GoalPos &goal, const double &axis_angle)
 {
   bool bIsGoal = false;
@@ -2874,10 +2953,20 @@ bool EnvironmentROBARM3D::isGoalPosition(const short unsigned int endeff[3], con
   return false;
 }
 
+/** check if arm configuration is at the goal configuration */
+bool EnvironmentROBARM3D::isGoalState(const double angles[], const GoalConfig &goal)
+{
+  for(unsigned int a = 0; a < NUMOFLINKS; a++)
+  {
+    if(fabs(angles::shortest_angular_distance(angles[a], goal.pos[a])) > goal.tolerance_above[a])
+      return false;
+  }
+
+  return true;
+}
+
 void EnvironmentROBARM3D::SetAllActionsandAllOutcomes(CMDPSTATE* state)
 {
-
-
     printf("ERROR in EnvROBARM..function: SetAllActionsandOutcomes is undefined\n");
     exit(1);
 }
@@ -2902,13 +2991,12 @@ int EnvironmentROBARM3D::GetEdgeCost(int FromStateID, int ToStateID)
     }
 #endif
 
-	//get X, Y for the state
+    //get X, Y for the state
     EnvROBARMHashEntry_t* FromHashEntry = EnvROBARM.StateID2CoordTable[FromStateID];
     EnvROBARMHashEntry_t* ToHashEntry = EnvROBARM.StateID2CoordTable[ToStateID];
 	
 
     return cost(FromHashEntry->coord, ToHashEntry->coord);
-
 }
 
 bool EnvironmentROBARM3D::AreEquivalent(int State1ID, int State2ID)
@@ -2916,7 +3004,7 @@ bool EnvironmentROBARM3D::AreEquivalent(int State1ID, int State2ID)
     EnvROBARMHashEntry_t* HashEntry1 = EnvROBARM.StateID2CoordTable[State1ID];
     EnvROBARMHashEntry_t* HashEntry2 = EnvROBARM.StateID2CoordTable[State2ID];
 
-    for(int i = 0; i < NUMOFLINKS; i++)
+    for(short unsigned int i = 0; i < EnvROBARMCfg.num_joints; i++)
     {
         if(HashEntry1->coord[i] != HashEntry2->coord[i])
             return false;
@@ -2928,7 +3016,7 @@ bool EnvironmentROBARM3D::AreEquivalent(int State1ID, int State2ID)
 }
 
 /** set the initial manipulator joints motor positions */
-bool EnvironmentROBARM3D::SetStartJointConfig(double angles[NUMOFLINKS], bool bRad)
+bool EnvironmentROBARM3D::SetStartJointConfig(const double angles[], bool bRad)
 {
     double startangles[NUMOFLINKS];
     short unsigned int elbow[3] = {0}, wrist[3] = {0};
@@ -2936,7 +3024,7 @@ bool EnvironmentROBARM3D::SetStartJointConfig(double angles[NUMOFLINKS], bool bR
     //set initial joint configuration
     if(bRad) //input is in radians
     {
-        for(unsigned int i = 0; i < NUMOFLINKS; i++)
+        for(unsigned int i = 0; i < EnvROBARMCfg.num_joints; i++)
         {
             if(angles[i] < 0)
                 EnvROBARMCfg.LinkStartAngles_d[i] = RAD2DEG(angles[i] + PI_CONST*2.0);
@@ -2952,7 +3040,7 @@ bool EnvironmentROBARM3D::SetStartJointConfig(double angles[NUMOFLINKS], bool bR
     }
     else //input is in degrees
     {
-        for(unsigned int i = 0; i < NUMOFLINKS; i++)
+        for(unsigned int i = 0; i < EnvROBARMCfg.num_joints; i++)
         {
             if(angles[i] < 0)
                 EnvROBARMCfg.LinkStartAngles_d[i] =  angles[i] + 360.0;
@@ -2960,7 +3048,7 @@ bool EnvironmentROBARM3D::SetStartJointConfig(double angles[NUMOFLINKS], bool bR
                 EnvROBARMCfg.LinkStartAngles_d[i] =  angles[i];
         }
 	// initialize the angles of the start states
-	for(int i = 0; i < NUMOFLINKS; i++)
+	for(int i = 0; i < EnvROBARMCfg.num_joints; i++)
 	  startangles[i] = DEG2RAD(EnvROBARMCfg.LinkStartAngles_d[i]);
 
 	// compute arm position in environment
@@ -2983,9 +3071,14 @@ bool EnvironmentROBARM3D::SetGoalPosition(const std::vector <std::vector<double>
     return false;
   }
 
-  EnvROBARMCfg.mCopyingGrid.lock();
-  UpdateEnvironment();
-  EnvROBARMCfg.mCopyingGrid.unlock();
+  EnvROBARMCfg.PlanInJointSpace = false;
+
+  if(EnvROBARMCfg.default_collision_checker)
+  {
+    EnvROBARMCfg.mCopyingGrid.lock();
+    UpdateEnvironment();
+    EnvROBARMCfg.mCopyingGrid.unlock();
+  }
 
   //resize goal list
   EnvROBARMCfg.EndEffGoals.resize(goals.size());
@@ -3031,7 +3124,8 @@ bool EnvironmentROBARM3D::SetGoalPosition(const std::vector <std::vector<double>
       i--;  //temporary hack
     }
 
-    if(EnvROBARMCfg.Grid3D[EnvROBARMCfg.EndEffGoals[i].xyz[0]][EnvROBARMCfg.EndEffGoals[i].xyz[1]][EnvROBARMCfg.EndEffGoals[i].xyz[2]] >= EnvROBARMCfg.ObstacleCost)
+//     if(EnvROBARMCfg.Grid3D[EnvROBARMCfg.EndEffGoals[i].xyz[0]][EnvROBARMCfg.EndEffGoals[i].xyz[1]][EnvROBARMCfg.EndEffGoals[i].xyz[2]] >= EnvROBARMCfg.ObstacleCost)
+    if(!isValidCell((EnvROBARMCfg.EndEffGoals[i].xyz[0]), (EnvROBARMCfg.EndEffGoals[i].xyz[1]), (EnvROBARMCfg.EndEffGoals[i].xyz[2]), 8, EnvROBARMCfg.Grid3D, voxel_grid))
     {
       printf("End effector goal position (%.2f %.2f %.2f) is on an invalid cell.\n",EnvROBARMCfg.EndEffGoals[i].pos[0],EnvROBARMCfg.EndEffGoals[i].pos[1],EnvROBARMCfg.EndEffGoals[i].pos[2]);
 
@@ -3071,7 +3165,7 @@ bool EnvironmentROBARM3D::SetGoalPosition(const std::vector <std::vector<double>
   EnvROBARM.goalHashEntry->endeff[2] = EnvROBARMCfg.EndEffGoals[0].xyz[2];
   EnvROBARM.goalHashEntry->action = 0;
   RPY2Rot(EnvROBARMCfg.EndEffGoals[0].rpy[0],EnvROBARMCfg.EndEffGoals[0].rpy[1],EnvROBARMCfg.EndEffGoals[0].rpy[2],EnvROBARM.goalHashEntry->orientation);
-  for(unsigned int i=0; i<NUMOFLINKS; i++)
+  for(unsigned int i=0; i<EnvROBARMCfg.num_joints; i++)
     EnvROBARM.goalHashEntry->coord[i] = 0;
 
   EnvROBARMCfg.bGoalIsSet = true;
@@ -3129,99 +3223,111 @@ bool EnvironmentROBARM3D::SetGoalConfiguration(const std::vector <std::vector<do
     return false;
   }
 
-  EnvROBARMCfg.PlanInJointSpace = true;
+  if(goals.size() <= 0)
+  {
+    printf("[SetGoalConfiguration] Goal vector is empty. No goals set.\n");
+    return false;
+  }
 
   double angles[NUMOFLINKS], orientation[3][3];
   short unsigned  int i, k, coord[NUMOFLINKS], elbow[3] = {0}, wrist[3] = {0}, endeff[3] = {0};
+  EnvROBARMCfg.PlanInJointSpace = true;
+
+  //copy obstacles from temp map to real map
+  if(EnvROBARMCfg.default_collision_checker)
+  {
+    printf("[SetGoalConfiguration] copying temporary map to real one...\n");
+    EnvROBARMCfg.mCopyingGrid.lock();
+    UpdateEnvironment();
+    EnvROBARMCfg.mCopyingGrid.unlock();
+  }
 
   //resize goal list
   EnvROBARMCfg.JointSpaceGoals.resize(goals.size());
-
-  //copy obstacles from temp map to real map
-  printf("[SetJointSpaceGoals] copying temporary map to real one...\n");
-
-  EnvROBARMCfg.mCopyingGrid.lock();
-  UpdateEnvironment();
-  EnvROBARMCfg.mCopyingGrid.unlock();
 
   for(i = 0; i < EnvROBARMCfg.JointSpaceGoals.size(); i++)
   {
     EnvROBARMCfg.JointSpaceGoals[i].pos.resize(goals[i].size());
     EnvROBARMCfg.JointSpaceGoals[i].pos = goals[i];
 
-    printf("goals.size: %d  goals[0].size():%d\n", goals.size(),goals[0].size());
-    for(k = 0; k < NUMOFLINKS; k++)
+//     printf("goals.size: %d  goals[0].size():%d\n", goals.size(),goals[0].size());
+    for(k = 0; k < EnvROBARMCfg.num_joints; k++)
     {
       EnvROBARMCfg.JointSpaceGoals[i].pos[k] = goals[i][k];
       angles[k] = EnvROBARMCfg.JointSpaceGoals[i].pos[k];
+//       printf("%i: %.4f\n",k,angles[k]);
       if(EnvROBARMCfg.JointSpaceGoals[i].pos[k] < 0)
         angles[k] = 2*PI_CONST + EnvROBARMCfg.JointSpaceGoals[i].pos[k];
     }
 
     //get joint positions of starting configuration
     if(!ComputeEndEffectorPos(angles, endeff, wrist, elbow, orientation))
-      {
-        printf("[SetJointSpaceGoals] goal: %.2f %.2f %.2f %.2f %.2f %.2f %.2f is invalid.\n",
-              angles[0],angles[1],angles[2],angles[3],angles[4],angles[5],angles[6]);
-        printf("[SetJointSpaceGoals] goal: endeff(%u %u %u) wrist(%u %u %u) elbow(%u %u %u)\n",
-              endeff[0],endeff[1],endeff[2],wrist[0],wrist[1],wrist[2],elbow[0],elbow[1],elbow[2]);
+    {
+      printf("[SetGoalConfiguration] goal: %.2f %.2f %.2f %.2f %.2f %.2f %.2f is out of bounds.\n",
+	    angles[0],angles[1],angles[2],angles[3],angles[4],angles[5],angles[6]);
+      printf("[SetGoalConfiguration] goal: endeff(%u %u %u) wrist(%u %u %u) elbow(%u %u %u)\n",
+	    endeff[0],endeff[1],endeff[2],wrist[0],wrist[1],wrist[2],elbow[0],elbow[1],elbow[2]);
 
-        EnvROBARMCfg.JointSpaceGoals.erase(EnvROBARMCfg.JointSpaceGoals.begin()+i);
-        if(EnvROBARMCfg.JointSpaceGoals.empty())
-        {
-          EnvROBARMCfg.bGoalIsSet  = false;
-          return false;
-        }
-        else
-        {
-          printf("[SetEndEffGoals] Removed goal %i. %i goal(s) remaining.\n", i, EnvROBARMCfg.JointSpaceGoals.size());
-          continue;
-        }
+      EnvROBARMCfg.JointSpaceGoals.erase(EnvROBARMCfg.JointSpaceGoals.begin()+i);
+      if(EnvROBARMCfg.JointSpaceGoals.empty())
+      {
+	EnvROBARMCfg.bGoalIsSet  = false;
+	return false;
+      }
+      else
+      {
+	printf("[SetGoalConfiguration] Removed goal %i. %i goal(s) remaining.\n", i, EnvROBARMCfg.JointSpaceGoals.size());
+	continue;
+      }
+    }
+
+    //get coords
+    if(EnvROBARMCfg.JointSpaceGoals[i].pos[k] < 0)
+      angles[k] = 2*PI_CONST + EnvROBARMCfg.JointSpaceGoals[i].pos[k];
+    ComputeCoord(angles, coord);
+
+    //check if goal position is valid
+    if(!IsValidCoord(coord,endeff,wrist,elbow,orientation))
+    {
+      printf("[SetGoalConfiguration] goal angles: %.2f %.2f %.2f %.2f %.2f %.2f %.2f is invalid.\n",
+	    angles[0],angles[1],angles[2],angles[3],angles[4],angles[5],angles[6]);
+      printf("[SetGoalConfiguration] goal: endeff(%u %u %u) wrist(%u %u %u) elbow(%u %u %u)\n",
+	    endeff[0],endeff[1],endeff[2],wrist[0],wrist[1],wrist[2],elbow[0],elbow[1],elbow[2]);
+
+      EnvROBARMCfg.JointSpaceGoals.erase(EnvROBARMCfg.JointSpaceGoals.begin()+i);
+      if(EnvROBARMCfg.JointSpaceGoals.empty())
+      {
+	EnvROBARMCfg.bGoalIsSet  = false;
+	return false;
+      }
+      else
+      {
+	printf("[SetGoalConfiguration] Removed goal %i. %i goal(s) remaining.\n", i, EnvROBARMCfg.JointSpaceGoals.size());
+	continue;
       }
 
-      //get coords
-      ComputeCoord(angles, coord);
+      i--;
+    }
 
-      //check if goal position is valid
-      if(!IsValidCoord(coord,endeff,wrist,elbow,orientation))
+//     printf("goal is valid\n");
+
+    //set goalHashEntry info just for kicks
+    if(i == 0)
+    {
+      EnvROBARM.goalHashEntry->endeff[0] = endeff[0];
+      EnvROBARM.goalHashEntry->endeff[1] = endeff[1];
+      EnvROBARM.goalHashEntry->endeff[2] = endeff[2];
+
+      for(k=0; k < NUMOFLINKS; k++)
       {
-        printf("[SetJointSpaceGoals] goal hash entry: %.2f %.2f %.2f %.2f %.2f %.2f %.2f is invalid.\n",
-              angles[0],angles[1],angles[2],angles[3],angles[4],angles[5],angles[6]);
-        printf("[SetJointSpaceGoals] goal: endeff(%u %u %u) wrist(%u %u %u) elbow(%u %u %u)\n",
-              endeff[0],endeff[1],endeff[2],wrist[0],wrist[1],wrist[2],elbow[0],elbow[1],elbow[2]);
-
-        EnvROBARMCfg.JointSpaceGoals.erase(EnvROBARMCfg.JointSpaceGoals.begin()+i);
-        if(EnvROBARMCfg.JointSpaceGoals.empty())
-        {
-          EnvROBARMCfg.bGoalIsSet  = false;
-          return false;
-        }
-        else
-        {
-          printf("[SetEndEffGoals] Removed goal %i. %i goal(s) remaining.\n", i, EnvROBARMCfg.JointSpaceGoals.size());
-          continue;
-        }
-
-        i--;
+	EnvROBARM.goalHashEntry->coord[k] = coord[k];
       }
-
-      //set goalHashEntry info just for kicks
-      if(i == 0)
-      {
-        EnvROBARM.goalHashEntry->endeff[0] = endeff[0];
-        EnvROBARM.goalHashEntry->endeff[1] = endeff[1];
-        EnvROBARM.goalHashEntry->endeff[2] = endeff[2];
-
-        for(k=0; k < NUMOFLINKS; k++)
-        {
-          EnvROBARM.goalHashEntry->coord[k] = coord[k];
-        }
-      }
-      //set goal tolerances
-      SetGoalConfigurationTolerance(tolerance_above, tolerance_below);
+    }
+    //set goal tolerances
+    SetGoalConfigurationTolerance(tolerance_above, tolerance_below);
 
   #if DEBUG
-      printf("[SetJointSpaceGoals] goal: %.2f %.2f %.2f %.2f  %.2f %.2f %.2f tolerance: %.3f %.3f \n",
+      printf("[SetGoalConfiguration] goal: %.2f %.2f %.2f %.2f  %.2f %.2f %.2f tolerance: %.3f %.3f \n",
 	     EnvROBARMCfg.JointSpaceGoals[0].pos[0],EnvROBARMCfg.JointSpaceGoals[0].pos[1],EnvROBARMCfg.JointSpaceGoals[0].pos[2],
       EnvROBARMCfg.JointSpaceGoals[0].pos[3],EnvROBARMCfg.JointSpaceGoals[0].pos[4],EnvROBARMCfg.JointSpaceGoals[0].pos[5],EnvROBARMCfg.JointSpaceGoals[0].pos[6],
       EnvROBARMCfg.JointSpaceGoals[0].tolerance_above[0],EnvROBARMCfg.JointSpaceGoals[0].tolerance_below[0]);
@@ -3389,8 +3495,6 @@ std::vector<std::vector<double> >* EnvironmentROBARM3D::getCollisionMap()
 
    if(EnvROBARMCfg.mCopyingGrid.try_lock())
    {
-//        printf("[getCollisionMap] Acquired mutex...\n");
-
        EnvROBARMCfg.sbpl_cubes = EnvROBARMCfg.cubes;
        EnvROBARMCfg.mCopyingGrid.unlock();
    }
@@ -3810,9 +3914,9 @@ void EnvironmentROBARM3D::OutputPlanningStats()
 //--------------------------------------------------------------
 
 
-/*------------------------------------------------------------------------*/
-                        /* Forward Kinematics */
-/*------------------------------------------------------------------------*/
+/**------------------------------------------------------------------------*/
+                        /** Forward Kinematics */
+/**------------------------------------------------------------------------*/
 /** Initialize the KDL Chain used for forward kinematics */
 bool EnvironmentROBARM3D::InitKDLChain(const char *fKDL)
 {
@@ -3820,9 +3924,8 @@ bool EnvironmentROBARM3D::InitKDLChain(const char *fKDL)
   std::map<string, string> segment_joint_mapping;
   if (!treeFromString(fKDL, my_tree, segment_joint_mapping))
   {
-    printf("%s\n",fKDL);
     printf("Failed to parse tree from manipulator description file.\n");
-    exit(1);
+    return false;;
   }
 
   std::vector<std::string> links;
@@ -3837,7 +3940,7 @@ bool EnvironmentROBARM3D::InitKDLChain(const char *fKDL)
   return true;
 }
 
-//pre-compute DH matrices for all 7 frames with NUM_TRANS_MATRICES degree resolution 
+/** pre-compute DH matrices for all 7 frames with NUM_TRANS_MATRICES degree resolution */
 void EnvironmentROBARM3D::ComputeDHTransformations()
 {
     int i,n,theta;
@@ -3906,7 +4009,7 @@ void EnvironmentROBARM3D::ComputeDHTransformations()
     }
 }
 
-//uses DH convention
+/** compute forward kinematics using the DH convention and the pre-computed DH matrices*/
 void EnvironmentROBARM3D::ComputeForwardKinematics_DH(const double angles[])
 {
     double sum, theta[NUMOFLINKS];
@@ -4043,7 +4146,7 @@ void EnvironmentROBARM3D::ComputeForwardKinematics_DH(const double angles[])
 /** Compute forward kinematics for an array of joints using a KDL chain */
 void EnvironmentROBARM3D::ComputeForwardKinematics_ROS(const double angles[], int f_num, double *x, double *y, double*z)
 {
-  for(int i=0; i<NUMOFLINKS; i++)
+  for(int i = 0; i < EnvROBARMCfg.num_joints; i++)
     EnvROBARMCfg.jnt_pos_in(i)=angles[i];
 
   if(EnvROBARMCfg.jnt_to_pose_solver->JntToCart(EnvROBARMCfg.jnt_pos_in, EnvROBARMCfg.p_out, f_num) < 0)
@@ -4101,26 +4204,20 @@ void EnvironmentROBARM3D::ComputeCostPerCell()
         gridcell_size = EnvROBARMCfg.GridCellWidth;
 
     //starting at zeroed angles, find end effector position after each action
-    if(EnvROBARMCfg.use_DH)
-        ComputeEndEffectorPos(start_angles,start_endeff_m);
-    else
-        ComputeForwardKinematics_ROS(start_angles, GOAL_JOINT, &(start_endeff_m[0]), &(start_endeff_m[1]), &(start_endeff_m[2]));
+    ComputeEndEffectorPos(start_angles,start_endeff_m);
 
     //iterate through all possible actions and find the one with the minimum cost per cell
     for (int i = 0; i < EnvROBARMCfg.nSuccActions; i++)
     {
-        for(int j = 0; j < NUMOFLINKS; j++)
+        for(int j = 0; j < EnvROBARMCfg.num_joints; j++)
             angles[j] = DEG2RAD(EnvROBARMCfg.SuccActions[i][j]);// * (360.0/ANGLEDELTA));
 
         //starting at zeroed angles, find end effector position after each action
-        if(EnvROBARMCfg.use_DH)
-            ComputeEndEffectorPos(angles,endeff_m);
-        else
-	    ComputeForwardKinematics_ROS(angles, GOAL_JOINT, &(endeff_m[0]), &(endeff_m[1]), &(endeff_m[2]));
+	ComputeEndEffectorPos(angles,endeff_m);
 
         eucl_dist = sqrt((start_endeff_m[0]-endeff_m[0])*(start_endeff_m[0]-endeff_m[0]) +
-                (start_endeff_m[1]-endeff_m[1])*(start_endeff_m[1]-endeff_m[1]) +
-                (start_endeff_m[2]-endeff_m[2])*(start_endeff_m[2]-endeff_m[2]));
+                          (start_endeff_m[1]-endeff_m[1])*(start_endeff_m[1]-endeff_m[1]) +
+                          (start_endeff_m[2]-endeff_m[2])*(start_endeff_m[2]-endeff_m[2]));
 
         if (eucl_dist > max_dist)
         {
@@ -4135,39 +4232,34 @@ void EnvironmentROBARM3D::ComputeCostPerCell()
     EnvROBARMCfg.cost_sqrt3_move = sqrt(3.0)*EnvROBARMCfg.cost_per_cell;
     EnvROBARMCfg.cost_per_mm = EnvROBARMCfg.cost_per_cell / (gridcell_size * 1000);
 
-    if(EnvROBARMCfg.PlanInJointSpace)
+    //compute cost per radian for the joint space planner (this was moved here in a hackish way)
+    double max_angle = 0;
+    for (int i = 0; i < EnvROBARMCfg.nSuccActions; i++)
     {
-        //compute cost per radian
-        double max_angle = 0;
-       for (int i = 0; i < EnvROBARMCfg.nSuccActions; i++)
-       {
-            eucl_dist = 0;
+	eucl_dist = 0;
 
-            for(int a = 0; a < NUMOFLINKS; a++)
-            {
-                angle_r = DEG2RAD(EnvROBARMCfg.SuccActions[i][a]);
-                if(angle_r >= PI_CONST)
-                    angle_r = -2.0*PI_CONST + angle_r;
+	for(int a = 0; a < NUMOFLINKS; a++)
+	{
+	    angle_r = DEG2RAD(EnvROBARMCfg.SuccActions[i][a]);
+	    if(angle_r >= PI_CONST)
+		angle_r = -2.0*PI_CONST + angle_r;
 
-                eucl_dist += angles::shortest_angular_distance(angle_r, 0.0) * angles::shortest_angular_distance(angle_r, 0.0);
-            }
+	    eucl_dist += angles::shortest_angular_distance(angle_r, 0.0) * angles::shortest_angular_distance(angle_r, 0.0);
+	}
 
-            eucl_dist = sqrt(eucl_dist);
+	eucl_dist = sqrt(eucl_dist);
 
-            if (eucl_dist > max_angle)
-            {
-                max_angle = eucl_dist;
-                largest_action = i;
-            }
-        }
-
-        EnvROBARMCfg.cost_per_rad = COSTMULT * max_angle;
-        printf("Cost per Radian:  %.3f\n",EnvROBARMCfg.cost_per_rad);
+	if (eucl_dist > max_angle)
+	{
+	    max_angle = eucl_dist;
+	    largest_action = i;
+	}
     }
-    else
-    {
-        ComputeCostPerRadian();
-    }
+
+      EnvROBARMCfg.cost_per_rad_js = COSTMULT * max_angle;
+      printf("Cost per Radian (joint space planning):  %.3f\n",EnvROBARMCfg.cost_per_rad_js);
+
+      ComputeCostPerRadian();
 }
 
 /** compute cost per radian (orientation-wise) for the cartesian planner */
@@ -4386,7 +4478,7 @@ void EnvironmentROBARM3D::GetJointSpaceSuccs(int SourceStateID, vector<int>* Suc
     double orientation [3][3];
     int i, a, closest_goal;
     double angles[NUMOFLINKS], s_angles[NUMOFLINKS];
-    int at_goal_config;
+//     int at_goal_config;
 
     //to support two sets of succesor actions
     int actions_i_min = 0, actions_i_max = EnvROBARMCfg.nLowResActions;
@@ -4429,24 +4521,31 @@ void EnvironmentROBARM3D::GetJointSpaceSuccs(int SourceStateID, vector<int>* Suc
     //iterate through successors of s (possible actions)
     for (i = actions_i_min; i < actions_i_max; i++)
     {
-        for(a = 0; a < NUMOFLINKS; a++)
-        {
-            if (EnvROBARMCfg.SuccActions[i][a] < 0)
-            {
-                //if the joint is at 0deg and the next action will decrement it
-                if(HashEntry->coord[a] == 0 && EnvROBARMCfg.SuccActions[i][a] != 0)
-                    succcoord[a] =  EnvROBARMCfg.anglevals[a] + EnvROBARMCfg.SuccActions[i][a];
-                //the joint's current position, when decremented by n degrees will go below 0
-                else if(HashEntry->coord[a] - EnvROBARMCfg.SuccActions[i][a] < 0)
-                    succcoord[a] =  EnvROBARMCfg.anglevals[a] + (HashEntry->coord[a] - EnvROBARMCfg.SuccActions[i][a]);
-                else
-                    succcoord[a] = (HashEntry->coord[a] + int(EnvROBARMCfg.SuccActions[i][a])) % EnvROBARMCfg.anglevals[a];
-            }
-            else
-            {
-                succcoord[a] = (HashEntry->coord[a] + int(EnvROBARMCfg.SuccActions[i][a])) % EnvROBARMCfg.anglevals[a];
-            }
-        }
+      for(a = 0; a < EnvROBARMCfg.num_joints; a++)
+      {
+	if((HashEntry->coord[a] + int(EnvROBARMCfg.SuccActions[i][a])) < 0)
+	  succcoord[a] = ((EnvROBARMCfg.anglevals[a] + HashEntry->coord[a] + int(EnvROBARMCfg.SuccActions[i][a])) % EnvROBARMCfg.anglevals[a]);
+	else
+	  succcoord[a] = ((int)(HashEntry->coord[a] + int(EnvROBARMCfg.SuccActions[i][a])) % EnvROBARMCfg.anglevals[a]);
+      }
+//         for(a = 0; a < NUMOFLINKS; a++)
+//         {
+//             if (EnvROBARMCfg.SuccActions[i][a] < 0)
+//             {
+//                 //if the joint is at 0deg and the next action will decrement it
+//                 if(HashEntry->coord[a] == 0 && EnvROBARMCfg.SuccActions[i][a] != 0)
+//                     succcoord[a] =  EnvROBARMCfg.anglevals[a] + EnvROBARMCfg.SuccActions[i][a];
+//                 //the joint's current position, when decremented by n degrees will go below 0
+//                 else if(HashEntry->coord[a] - EnvROBARMCfg.SuccActions[i][a] < 0)
+//                     succcoord[a] =  EnvROBARMCfg.anglevals[a] + (HashEntry->coord[a] - EnvROBARMCfg.SuccActions[i][a]);
+//                 else
+//                     succcoord[a] = (HashEntry->coord[a] + int(EnvROBARMCfg.SuccActions[i][a])) % EnvROBARMCfg.anglevals[a];
+//             }
+//             else
+//             {
+//                 succcoord[a] = (HashEntry->coord[a] + int(EnvROBARMCfg.SuccActions[i][a])) % EnvROBARMCfg.anglevals[a];
+//             }
+//         }
 
         //get the successor
         EnvROBARMHashEntry_t* OutHashEntry;
@@ -4472,20 +4571,21 @@ void EnvironmentROBARM3D::GetJointSpaceSuccs(int SourceStateID, vector<int>* Suc
         //check if at goal configuration
         for(k = 0; k < EnvROBARMCfg.JointSpaceGoals.size(); k++)
         {
-            for(a = 0; a < NUMOFLINKS; a++)
-            {
-                at_goal_config = 1;
-
-                if(angles[a] >= PI_CONST)
-                    angles[a] = -2.0*PI_CONST + angles[a];
-
-                if(fabs(angles::shortest_angular_distance(angles[a], EnvROBARMCfg.JointSpaceGoals[k].pos[a])) > EnvROBARMCfg.JointSpaceGoals[k].tolerance_above[a])
-                {
-                    at_goal_config = 0;
-                    break;
-                }
-            }
-            if(at_goal_config)
+//             for(a = 0; a < NUMOFLINKS; a++)
+//             {
+//                 at_goal_config = 1;
+// 
+//                 if(angles[a] >= PI_CONST)
+//                     angles[a] = -2.0*PI_CONST + angles[a];
+// 
+//                 if(fabs(angles::shortest_angular_distance(angles[a], EnvROBARMCfg.JointSpaceGoals[k].pos[a])) > EnvROBARMCfg.JointSpaceGoals[k].tolerance_above[a])
+//                 {
+//                     at_goal_config = 0;
+//                     break;
+//                 }
+//             }
+//             if(at_goal_config)
+	    if(isGoalState(angles, EnvROBARMCfg.JointSpaceGoals[k]))
             {
                 bSuccisGoal = true;
 
@@ -4525,7 +4625,7 @@ int EnvironmentROBARM3D::GetJointSpaceHeuristic(int FromStateID, int ToStateID)
 
     int a, h = 0, closest_goal = 0;
     double FromAngles[NUMOFLINKS], ToAngles[NUMOFLINKS];
-    double ang_diff, sum = 0, min_dist = 100000000;//, sum_squared;
+    double ang_diff, sum = 0, min_dist = 100000000;
 
     //get X, Y, Z for the state
     EnvROBARMHashEntry_t* FromHashEntry = EnvROBARM.StateID2CoordTable[FromStateID];
@@ -4545,7 +4645,7 @@ int EnvironmentROBARM3D::GetJointSpaceHeuristic(int FromStateID, int ToStateID)
     for(unsigned int k = 0; k < EnvROBARMCfg.JointSpaceGoals.size(); k++)
     {
         sum = 0;
-        for(a = 0; a < NUMOFLINKS; a++)
+        for(a = 0; a < EnvROBARMCfg.num_joints; a++)
         {
             if(a == FOREARM_ROLL || a == WRIST_ROLL)
             {
@@ -4567,42 +4667,7 @@ int EnvironmentROBARM3D::GetJointSpaceHeuristic(int FromStateID, int ToStateID)
     }
 
     //heuristic = angular euclidean distance (radians)  x  Cost per radian
-    h = min_dist * EnvROBARMCfg.cost_per_rad;
-
-    //find closest goal
-//     for(int k = 0; k < EnvROBARMCfg.nJointSpaceGoals; k++)
-//     {
-//         sum = 0;
-//         for(a = 0; a < NUMOFLINKS; a++)
-//         {
-//             //shortest_angular_distance_with_limits!
-//             sum += angles::shortest_angular_distance(FromAngles[a], EnvROBARMCfg.JointSpaceGoals[k][a]);
-//         }
-// 
-//         if(sum < min_sum)
-//         {
-//             min_sum = sum;
-//             closest_goal = k; 
-//         }
-//     }
-// 
-//     //get euclidean distance
-//     sum_squared = 0;
-//     for(a=0; a < NUMOFLINKS; a++)
-//     {
-//         if(a == FOREARM_ROLL || a == WRIST_ROLL)
-//         {
-//             ang_diff = angles::shortest_angular_distance(FromAngles[a],  EnvROBARMCfg.JointSpaceGoals[closest_goal][a]);
-// //             printf("%i: continuous: %.3f, %.3f --> %.3f\n", a, ang_diff, FromAngles[a], EnvROBARMCfg.JointSpaceGoals[closest_goal][a]);
-//         }
-//         else
-//         {
-//             angles::shortest_angular_distance_with_limits(FromAngles[a],  EnvROBARMCfg.JointSpaceGoals[closest_goal][a],EnvROBARMCfg.NegMotorLimits[a],EnvROBARMCfg.PosMotorLimits[a],ang_diff);
-// //             printf("%i: limited: %.3f, %.3f --> %.3f\n", a, ang_diff, FromAngles[a], EnvROBARMCfg.JointSpaceGoals[closest_goal][a]);
-//         }
-//         sum_squared += ang_diff * ang_diff;
-//     }
-//     int h = sqrt(sum_squared) * EnvROBARMCfg.cost_per_rad;
+    h = min_dist * EnvROBARMCfg.cost_per_rad_js;
 
 #if DEBUG_JOINTSPACE_PLANNING
     printf("%i:  %.3f %.3f %.3f %.3f %.3f %.3f %.3f  -->  %.3f %.3f %.3f %.3f %.3f %.3f %.3f  ssd(rad): %.3f  h: %i\n",
@@ -4710,5 +4775,77 @@ double EnvironmentROBARM3D::distanceBetween3DLineSegments(const short unsigned i
   dP[2] = w[2] + (sc * u[2]) - (tc * v[2]);
 
   return  sqrt(dP[0]*dP[0] + dP[1]*dP[1] + dP[2]*dP[2]);   // return the closest distance
+}
+
+bool EnvironmentROBARM3D::updateVoxelGrid(const boost::shared_ptr<Voxel3d> envgrid, const boost::shared_ptr<Voxel3d> lowres_envgrid)
+{
+  // point the local planning grid to the inputted grid
+  if(EnvROBARMCfg.mCopyingGrid.try_lock())
+  {
+    voxel_grid = envgrid;
+    if(EnvROBARMCfg.lowres_collision_checking)
+      lowres_voxel_grid = lowres_envgrid;
+    EnvROBARMCfg.mCopyingGrid.unlock();
+  }
+  else
+  {
+    printf("[updateVoxelGrid] Could not acquire mutex...\n");
+    return false;
+  }
+
+  return true;
+}
+
+unsigned char EnvironmentROBARM3D::getVoxel(const int x, const int y, const int z, const boost::shared_ptr<Voxel3d> grid)
+{
+    return (*grid)(x,y,z);
+}
+
+bool EnvironmentROBARM3D::isValidCell(const int xyz[], const int &radius, char ***Grid, const boost::shared_ptr<Voxel3d> vGrid)
+{
+  if(EnvROBARMCfg.default_collision_checker)
+  {
+    if(Grid[xyz[0]][xyz[1]][xyz[2]] >= EnvROBARMCfg.ObstacleCost)
+      return false;
+  }
+  else
+  {
+    if(getVoxel(xyz[0],xyz[1],xyz[2], vGrid) <= radius)
+      return false;
+  }
+
+  return true;
+}
+
+bool EnvironmentROBARM3D::isValidCell(const int x, const int y, const int z, const int &radius, char ***Grid, const boost::shared_ptr<Voxel3d> vGrid)
+{
+  if(EnvROBARMCfg.default_collision_checker)
+  {
+    if(Grid[x][y][z] >= EnvROBARMCfg.ObstacleCost)
+      return false;
+  }
+  else
+  {
+    if(getVoxel(x,y,z, vGrid) <= radius)
+      return false;
+  }
+
+  return true;
+}
+
+bool EnvironmentROBARM3D::isValidCell(const short unsigned int xyz[], const int &radius, char ***Grid, const boost::shared_ptr<Voxel3d> vGrid)
+{
+  if(EnvROBARMCfg.default_collision_checker)
+  {
+    if(Grid[xyz[0]][xyz[1]][xyz[2]] >= EnvROBARMCfg.ObstacleCost)
+      return false;
+  }
+  else
+  {
+    if(getVoxel((int)xyz[0],(int)xyz[1],(int)xyz[2], vGrid) <= radius)
+      return false;
+  }
+
+  return true;
 }
 

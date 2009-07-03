@@ -27,12 +27,15 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-/** Author: Benjamin Cohen /bcohen@willowgarage.com **/
+/** \Author: Benjamin Cohen /bcohen@willowgarage.com **/
 
 #include <boost/thread/mutex.hpp>
 #include <kdl_parser/tree_parser.hpp>
 #include <kdl/jntarray.hpp>
 #include <kdl/chainfksolverpos_recursive.hpp>
+#include <voxel3d/voxel3d.h>
+#include "boost/scoped_ptr.hpp"
+#include "boost/shared_ptr.hpp"
 
 #ifndef __ENVIRONMENT_ROBARM3D_H_
 #define __ENVIRONMENT_ROBARM3D_H_
@@ -127,6 +130,8 @@ typedef struct ENV_ROBARM_CONFIG
     double BaseY_m;
     double BaseZ_m;
 
+    double origin_m[3];
+
     //flag determines if the environment has been initialized or not
     bool bInitialized;
 
@@ -137,6 +142,8 @@ typedef struct ENV_ROBARM_CONFIG
     double LowResGridCellWidth;     // cells are square (width=height=depth)
     char*** Grid3D_temp;
     char*** LowResGrid3D_temp;
+    short unsigned int Grid3D_dims[3];
+    short unsigned int LowResGrid3D_dims[3];
 
     //obstacles
     std::vector<std::vector<double> > cubes;
@@ -147,12 +154,12 @@ typedef struct ENV_ROBARM_CONFIG
     char medObstacleCost;
     char lowObstacleCost;
     int medCostRadius_c;
+    double padding;
     int lowCostRadius_c;
 
     //mutexes to protect temporary & planning maps
     boost::mutex mCopyingGrid;
     boost::mutex mPlanning;
-
 
     /*------------- Manipulator Description -------------*/
     std::string robot_desc;
@@ -215,11 +222,11 @@ typedef struct ENV_ROBARM_CONFIG
     bool checkEndEffGoalOrientation;
     bool object_grasped;
     bool variable_cell_costs;
+    bool sum_heuristics;
     double smoothing_weight;
-    double padding;
     double gripper_orientation_moe; //gripper orientation margin of error
     double grasped_object_length_m;
-
+    bool default_collision_checker;
     double ApplyRPYCost_m;
 
 /* Motion Primitives */
@@ -238,8 +245,9 @@ typedef struct ENV_ROBARM_CONFIG
     double cost_sqrt3_move;
     double cost_per_mm;
     double cost_per_rad;
+    double cost_per_rad_js;
 
-    //for precomputing cos/sin & DH matrices 
+    //for precomputing cos/sin & DH matrices
     double cos_r[360];
     double sin_r[360];
     double T_DH[4*NUM_TRANS_MATRICES][4][NUMOFLINKS];
@@ -283,6 +291,9 @@ class EnvironmentROBARM3D: public DiscreteSpaceInformation
 {
   public:
 
+    boost::shared_ptr<Voxel3d> voxel_grid;
+    boost::shared_ptr<Voxel3d> lowres_voxel_grid;
+
     EnvironmentROBARM3D();
     ~EnvironmentROBARM3D(){};
 
@@ -301,7 +312,7 @@ class EnvironmentROBARM3D: public DiscreteSpaceInformation
      * @param angles a list of joint angles
      * @param bRad 0: degrees  1: radians
      */
-    bool SetStartJointConfig(double angles[NUMOFLINKS], bool bRad);
+    bool SetStartJointConfig(const double angles[], bool bRad);
     /*!
      * @brief Add obstacles to the environment
      * @param obstacles a list of cubic obstacles (n x 6: {x_center, y_center, z_center, width, depth, height})
@@ -347,11 +358,11 @@ class EnvironmentROBARM3D: public DiscreteSpaceInformation
     void OutputPlanningStats();
 
     /** used when debugging & taking statistics (remove these functions once everything is solidified) */
-    void ComputeEndEffectorPos(const double angles[], double xyz_m[3], double rpy_r[3]);    
     void getRPY(double Rot[3][3], double* roll, double* pitch, double* yaw, int solution_number);
     int GetFromToHeuristic(int FromStateID, int ToStateID, FILE* fOut);
     // void getValidPositions(int num_pos, FILE* fOut);
     double gen_rand(double min, double max);
+    int ComputeEndEffectorPos(const double angles[], double endeff_m[3], double rpy_r[3]);
 
     /** used by sbpl_arm_planner_node */
     std::vector<std::vector<double> >* getCollisionMap();
@@ -361,6 +372,8 @@ class EnvironmentROBARM3D: public DiscreteSpaceInformation
     void SetGoalPositionType(const std::vector <int> &goal_type);
     bool SetGoalConfiguration(const std::vector <std::vector<double> > &goals, const std::vector<std::vector<double> > &tolerance_above, const std::vector<std::vector<double> > &tolerance_below);
     void SetGoalConfigurationTolerance(const std::vector<std::vector<double> > &tolerance_above, const std::vector<std::vector<double> > &tolerance_below);
+
+    bool updateVoxelGrid(const boost::shared_ptr<Voxel3d> envgrid, const boost::shared_ptr<Voxel3d> lowres_envgrid);
 
   private:
 
@@ -387,23 +400,30 @@ class EnvironmentROBARM3D: public DiscreteSpaceInformation
     void DiscretizeAngles();
     void Cell2ContXYZ(int x, int y, int z, double *pX, double *pY, double *pZ);
     void Cell2ContXYZ(int x, int y, int z, double *pX, double *pY, double *pZ, double gridcell_m);
-    void ComputeContAngles(short unsigned int coord[NUMOFLINKS], double angle[NUMOFLINKS]);
-    void ComputeCoord(double angle[NUMOFLINKS], short unsigned int coord[NUMOFLINKS]);
+    void ComputeContAngles(const short unsigned int coord[NUMOFLINKS], double angle[NUMOFLINKS]);
+    void ComputeCoord(const double angle[], short unsigned int coord[NUMOFLINKS]);
     void ContXYZ2Cell(double x, double y, double z, short unsigned int* pX, short unsigned int *pY, short unsigned int *pZ);
     void ContXYZ2Cell(double* xyz, double gridcellwidth, int dims_c[3], short unsigned int *pXYZ);
     void HighResGrid2LowResGrid(short unsigned int * XYZ_hr, short unsigned int * XYZ_lr);
 
     /** collision checking */
-    int IsValidCoord(short unsigned int coord[NUMOFLINKS], short unsigned int endeff_pos[3], short unsigned int wrist_pos[3], short unsigned int elbow_pos[3], double orientation[3][3]);    
+    int IsValidCoord(short unsigned int coord[NUMOFLINKS], short unsigned int endeff_pos[3], short unsigned int wrist_pos[3], short unsigned int elbow_pos[3], double orientation[3][3]);
+    int IsValidCoord(const short unsigned int coord[], const std::vector<std::vector<short unsigned int> > &joints, double orientation[3][3], char ***Grid, const short unsigned int grid_dims[]);
     int IsValidLineSegment(short unsigned int x0, short unsigned int y0, short unsigned int z0, short unsigned int x1, short unsigned int y1, short unsigned int z1, char ***Grid3D, vector<CELLV>* pTestedCells);
+    int IsValidLineSegment(const short unsigned int xyz0[], const short unsigned int xyz1[], const int &radius, char*** Grid3D, const int grid_dims[], vector<CELLV>* pTestedCells);
     void UpdateEnvironment();
     void AddObstacleToGrid(double* obstacle, int type, char*** grid, double gridcell_m);
     double distanceBetween3DLineSegments(const short unsigned int l1a[],const short unsigned int l1b[],
 					 const short unsigned int l2a[],const short unsigned int l2b[]);
+    unsigned char getVoxel(const int x, const int y, const int z, const boost::shared_ptr<Voxel3d> grid);
+    bool isValidCell(const int xyz[], const int &radius, char ***Grid, const boost::shared_ptr<Voxel3d> vGrid);
+    bool isValidCell(const short unsigned int xyz[], const int &radius, char ***Grid, const boost::shared_ptr<Voxel3d> vGrid);
+    bool isValidCell(const int x, const int y, const int z, const int &radius, char ***Grid, const boost::shared_ptr<Voxel3d> vGrid);
 
     /** planning */
     void GetJointSpaceSuccs(int SourceStateID, vector<int>* SuccIDV, vector<int>* CostV);
     bool isGoalPosition(const short unsigned int endeff[3], const double orientation[3][3], const GoalPos &goal, const double &axis_angle);
+    bool isGoalState(const double angles[], const GoalConfig &goal);
 
     /** costs */
     int cost(short unsigned int state1coord[], short unsigned int state2coord[]); 
@@ -425,7 +445,6 @@ class EnvironmentROBARM3D: public DiscreteSpaceInformation
     void PrintAnglesWithAction(FILE* fOut, EnvROBARMHashEntry_t* HashEntry, bool bGoal, bool bVerbose, bool bLocal);
 
     /** heuristic */
-    void getDistancetoGoal(int* HeurGrid, int goalx, int goaly, int goalz);
     void ComputeHeuristicValues();
     void ReInitializeState3D(State3D* state);
     void InitializeState3D(State3D* state, short unsigned int x, short unsigned int y, short unsigned int z);

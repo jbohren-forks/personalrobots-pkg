@@ -96,9 +96,9 @@ int planrobarm(int argc, char *argv[])
 //         printf("\n");
 //     }
 
-#if VERBOSE
-    environment_robarm.OutputPlanningStats();
-#endif
+// #if VERBOSE
+//     environment_robarm.OutputPlanningStats();
+// #endif
 
     return bRet;
 }
