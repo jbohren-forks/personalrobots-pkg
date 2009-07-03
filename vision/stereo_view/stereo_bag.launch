@@ -1,13 +1,16 @@
 <launch>
-    <param name="/stereo/videre_mode" type="str" value="none"/>
-    <param name="/stereo/do_colorize" type="bool" value="True"/>
-    <param name="/stereo/do_rectify" type="bool" value="True"/>
-    <param name="/stereo/do_stereo" type="bool" value="True"/>
-    <param name="/stereo/do_calc_points" type="bool" value="True"/>
-    <param name="/stereo/do_keep_points" type="bool" value="True"/>
 
 
-  <node name="stereoproc" pkg="stereo_image_proc" type="stereoproc" respawn="false" />
+<group ns="stereo">
+  <node name="stereoproc" pkg="stereo_image_proc" type="stereoproc" respawn="false" >
+    <param name="videre_mode" type="str" value="none"/>
+    <param name="do_colorize" type="bool" value="True"/>
+    <param name="do_rectify" type="bool" value="True"/>
+    <param name="do_stereo" type="bool" value="True"/>
+    <param name="do_calc_points" type="bool" value="True"/>
+    <param name="do_keep_points" type="bool" value="True"/>
+  </node>
+</group>
   <node name="stereo_view" pkg="stereo_view" type="stereo_view_pixel_info" respawn="false" output="screen"/>
   <node name="stereodcam_params" pkg="dcam" type="stereodcam_params.py" respawn="false" output="screen"/>
 </launch>
