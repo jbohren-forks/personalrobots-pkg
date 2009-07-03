@@ -1,27 +1,27 @@
 <launch>
-  <group ns="stereo">
-    <!-- params for the projector/dcam node 
-      -->
-    <param name="videre_mode" type="str" value="none"/>
-    <!-- params for the stereo_image_proc node -->
-    <param name="exposure" type="int" value="6"/>
-    <param name="exposure_auto" type="bool" value="false"/>
-    <param name="brightness" type="int" value="50"/>
-    <param name="brightness_auto" type="bool" value="true"/>
-    <param name="gain" type="int" value="10"/>
-    <param name="gain_auto" type="bool" value="true"/>
-    <param name="do_colorize" type="bool" value="false"/>
-    <param name="do_rectify" type="bool" value="True"/>
-    <param name="do_stereo" type="bool" value="false"/>
-    <param name="do_calc_points" type="bool" value="false"/>
+    <group ns="stereo">
+        <node pkg="dcam" type="stereodcam" respawn="false">
+            <param name="videre_mode" type="str" value="none"/>
+            <param name="exposure" type="int" value="6"/>
+            <param name="exposure_auto" type="bool" value="false"/>
+            <param name="brightness" type="int" value="50"/>
+            <param name="brightness_auto" type="bool" value="true"/>
+            <param name="gain" type="int" value="10"/>
+            <param name="gain_auto" type="bool" value="true"/>
+        </node>
+        <node pkg="stereo_image_proc" type="stereoproc" respawn="false">
+            <param name="do_colorize" type="bool" value="false"/>
+            <param name="do_rectify" type="bool" value="True"/>
+            <param name="do_stereo" type="bool" value="True"/>
+            <param name="do_calc_points" type="bool" value="True"/>
+            <param name="do_keep_coords" type="bool" value="True"/>
 
-    <param name="num_disp" type="int" value=80/>
-    <param name="texture_thresh" type="int" value=4/>
-    <param name="unique_thresh" type="int" value=25/>
-    <param name="corr_size" type="int" value=11/>
+            <param name="num_disp" type="int" value="128"/>
+            <param name="texture_thresh" type="int" value="4"/>
+            <param name="unique_thresh" type="int" value="25"/>
+            <param name="corr_size" type="int" value="11"/>
+        </node>
 
-  </group>
-  <node pkg="dcam" type="stereodcam" respawn="false"/>
-  <node pkg="stereo_image_proc" type="stereoproc" respawn="false"/>
+    </group>
 </launch>
 
