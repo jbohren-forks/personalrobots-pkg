@@ -121,6 +121,15 @@ add_custom_command(
 
 set(pr2_gen_files ${pr2_gen_files} ${basepath}/convex/${basename}_convex.stlb)
 
+#convert obj files back to stla, put in directory named convex
+add_custom_command(
+  OUTPUT ${basepath}/convex/${basename}_convex.stla
+  COMMAND ${ivcon_PACKAGE_PATH}/bin/ivcon
+  ARGS ${basepath}/convex/${basename}_convex.obj ${basepath}/convex/${basename}_convex.stla
+  DEPENDS ${it} ${basepath}/convex ${basepath}/convex/${basename}_convex.obj)
+
+set(pr2_gen_files ${pr2_gen_files} ${basepath}/convex/${basename}_convex.stla)
+
 #iv files
 add_custom_command(
   OUTPUT ${basepath}/${basename}.iv
