@@ -45,15 +45,13 @@ std::string tf::remap(const std::string& prefix, const std::string& frame_id)
   if (frame_id.size() > 0)
     if (frame_id[0] == '/')
     {
-      std::string stripped_frame_id = frame_id.substr(1,frame_id.length());
-      return stripped_frame_id;
+      return frame_id;
     }
   if (prefix.size() > 0)
   {
     if (prefix[0] == '/')
     {
-      std::string stripped_prefix = prefix.substr(1,prefix.length());
-      std::string composite = stripped_prefix;
+      std::string composite = prefix;
       composite.append("/");
       composite.append(frame_id);
       return composite;
@@ -61,7 +59,8 @@ std::string tf::remap(const std::string& prefix, const std::string& frame_id)
     else
     {
       std::string composite;
-      composite = prefix;
+      composite = "/";
+      composite.append(prefix);
       composite.append("/");
       composite.append(frame_id);
       return composite;
@@ -70,7 +69,10 @@ std::string tf::remap(const std::string& prefix, const std::string& frame_id)
   }
   else
   {
-    return frame_id;
+    std::string composite;
+    composite = "/";
+    composite.append(frame_id);
+    return composite;
   }
 };
 
@@ -115,46 +117,52 @@ void Transformer::clear()
 
 bool Transformer::setTransform(const Stamped<btTransform>& transform, const std::string& authority)
 {
+
+  Stamped<btTransform> mapped_transform = transform;
+  mapped_transform.frame_id_ = remap(tf_prefix_, transform.frame_id_);
+  mapped_transform.parent_id_ = remap(tf_prefix_, transform.parent_id_);
+
+ 
   bool error_exists = false;
-  if (transform.frame_id_ == transform.parent_id_)
+  if (mapped_transform.frame_id_ == mapped_transform.parent_id_)
   {
-    ROS_ERROR("TF_SELF_TRANSFORM: Ignoring transform from authority \"%s\" with parent_id and frame_id  \"%s\" because they are the same",  authority.c_str(), transform.frame_id_.c_str());
+    ROS_ERROR("TF_SELF_TRANSFORM: Ignoring transform from authority \"%s\" with parent_id and frame_id  \"%s\" because they are the same",  authority.c_str(), mapped_transform.frame_id_.c_str());
     error_exists = true;
   }
 
-  if (transform.frame_id_ == "")
+  if (mapped_transform.frame_id_ == "/")//empty frame id will be mapped to "/"
   {
     ROS_ERROR("TF_NO_FRAME_ID: Ignoring transform from authority \"%s\" because frame_id not set ", authority.c_str());
     error_exists = true;
   }
 
-  if (transform.parent_id_ == "")
+  if (mapped_transform.parent_id_ == "/")//empty parent id will be mapped to "/"
   {
-    ROS_ERROR("TF_NO_PARENT_ID: Ignoring transform with frame_id \"%s\"  from authority \"%s\" because parent_id not set", transform.frame_id_.c_str(), authority.c_str());
+    ROS_ERROR("TF_NO_PARENT_ID: Ignoring transform with frame_id \"%s\"  from authority \"%s\" because parent_id not set", mapped_transform.frame_id_.c_str(), authority.c_str());
     error_exists = true;
   }
 
-  if (std::isnan(transform.getOrigin().x()) || std::isnan(transform.getOrigin().y()) || std::isnan(transform.getOrigin().z())||
-      std::isnan(transform.getRotation().x()) ||       std::isnan(transform.getRotation().y()) ||       std::isnan(transform.getRotation().z()) ||       std::isnan(transform.getRotation().w()))
+  if (std::isnan(mapped_transform.getOrigin().x()) || std::isnan(mapped_transform.getOrigin().y()) || std::isnan(mapped_transform.getOrigin().z())||
+      std::isnan(mapped_transform.getRotation().x()) ||       std::isnan(mapped_transform.getRotation().y()) ||       std::isnan(mapped_transform.getRotation().z()) ||       std::isnan(mapped_transform.getRotation().w()))
   {
     ROS_ERROR("TF_NAN_INPUT: Ignoring transform for frame_id \"%s\" from authority \"%s\" because of a nan value in the transform (%f %f %f) (%f %f %f %f)",
-              transform.frame_id_.c_str(), authority.c_str(),
-              transform.getOrigin().x(), transform.getOrigin().y(), transform.getOrigin().z(),
-              transform.getRotation().x(), transform.getRotation().y(), transform.getRotation().z(), transform.getRotation().w()
+              mapped_transform.frame_id_.c_str(), authority.c_str(),
+              mapped_transform.getOrigin().x(), mapped_transform.getOrigin().y(), mapped_transform.getOrigin().z(),
+              mapped_transform.getRotation().x(), mapped_transform.getRotation().y(), mapped_transform.getRotation().z(), mapped_transform.getRotation().w()
               );
     error_exists = true;
   }
 
   if (error_exists)
     return false;
-  unsigned int frame_number = lookupOrInsertFrameNumber(transform.frame_id_);
-  if (getFrame(frame_number)->insertData(TransformStorage(transform, lookupOrInsertFrameNumber(transform.parent_id_))))
+  unsigned int frame_number = lookupOrInsertFrameNumber(mapped_transform.frame_id_);
+  if (getFrame(frame_number)->insertData(TransformStorage(mapped_transform, lookupOrInsertFrameNumber(mapped_transform.parent_id_))))
   {
     frame_authority_[frame_number] = authority;
   }
   else
   {
-    ROS_WARN("TF_OLD_DATA ignoring data from the past for frame %s at time %g according to authority %s\nPossible reasons are listed at ", transform.frame_id_.c_str(), transform.stamp_.toSec(), authority.c_str());
+    ROS_WARN("TF_OLD_DATA ignoring data from the past for frame %s at time %g according to authority %s\nPossible reasons are listed at ", mapped_transform.frame_id_.c_str(), mapped_transform.stamp_.toSec(), authority.c_str());
     return false;
   }
 
@@ -340,11 +348,11 @@ bool Transformer::canTransform(const std::string& target_frame,const ros::Time& 
 
 bool Transformer::getParent(const std::string& frame_id, ros::Time time, std::string& parent) const
 {
-
+  std::string mapped_frame_id = tf::remap(tf_prefix_, frame_id);
   tf::TimeCache* cache;
   try
   {
-    cache = getFrame(lookupFrameNumber(frame_id));
+    cache = getFrame(lookupFrameNumber(mapped_frame_id));
   }
   catch  (tf::LookupException &ex)
   {
@@ -366,12 +374,15 @@ void Transformer::setExtrapolationLimit(const ros::Duration& distance)
 
 int Transformer::getLatestCommonTime(const std::string& source, const std::string& dest, ros::Time & time, std::string * error_string) const
 {
+  std::string mapped_source = tf::remap(tf_prefix_, source);
+  std::string mapped_dest = tf::remap(tf_prefix_, dest);
+
   time = ros::Time(UINT_MAX, 999999999);///\todo replace with ros::TIME_MAX when it is merged from stable
   int retval;
   TransformLists lists;
   try
   {
-    retval = lookupLists(lookupFrameNumber(dest), ros::Time(), lookupFrameNumber(source), lists, error_string);
+    retval = lookupLists(lookupFrameNumber(mapped_dest), ros::Time(), lookupFrameNumber(mapped_source), lists, error_string);
   }
   catch (tf::LookupException &ex)
   {
@@ -381,7 +392,7 @@ int Transformer::getLatestCommonTime(const std::string& source, const std::strin
   }
   if (retval == NO_ERROR)
   {
-    //Set time to latest timestamp of frameid in case of target and source frame id are the same
+    //Set time to latest timestamp of frameid in case of target and mapped_source frame id are the same
     if (lists.inverseTransforms.size() == 0 && lists.forwardTransforms.size() == 0)
     {
       time = ros::Time::now();
@@ -923,7 +934,7 @@ void Transformer::getFrameStrings(std::vector<std::string> & vec) const
   //  for (std::vector< TimeCache*>::iterator  it = frames_.begin(); it != frames_.end(); ++it)
   for (unsigned int counter = 1; counter < frames_.size(); counter ++)
   {
-    vec.push_back(std::string("/") + frameIDs_reverse[counter]);
+    vec.push_back(frameIDs_reverse[counter]);
   }
   return;
 }

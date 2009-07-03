@@ -270,7 +270,7 @@ TEST(MessageNotifier, queueSize)
 
 	Counter<robot_msgs::PointStamped> c("test_message", 20);
 
-	ros::Duration().fromSec(0.2).sleep();
+	ros::Duration().fromSec(0.5).sleep();
 
 	ros::Time stamp = ros::Time::now();
 
@@ -456,7 +456,7 @@ TEST(MessageNotifier, setMultipleTargetFrame)
 		xt.sec += 10;
 
 		boost::timed_mutex::scoped_timed_lock lock(n2.mutex_, xt);
-
+                printf("HHHHHHHHHHHHHHHEEEEEEEEEEEEEEEEEEEERRRRRRRRRRRRRRRRREEEEEEEEEEEEEEEEEEE %s\n", notifier2->getTargetFramesString().c_str());
 		EXPECT_EQ(true, lock.owns_lock());
 	}
 

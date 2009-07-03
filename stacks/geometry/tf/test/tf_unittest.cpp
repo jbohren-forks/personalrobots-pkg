@@ -819,7 +819,7 @@ TEST(tf, getParent)
   for  (uint64_t i = 0; i <  children.size(); i++)
     {
       EXPECT_TRUE(mTR.getParent(children[i], ros::Time().fromNSec(10), output));
-      EXPECT_STREQ(parents[i].c_str(), output.c_str());
+      EXPECT_STREQ(tf::remap("",parents[i]).c_str(), output.c_str());
     }
   
   EXPECT_FALSE(mTR.getParent("j", ros::Time().fromNSec(10), output));
@@ -1270,38 +1270,39 @@ TEST(tf, frameExists)
 {
   Transformer mTR;
 
-  EXPECT_FALSE(mTR.frameExists("b"));;
-  EXPECT_FALSE(mTR.frameExists("parent"));
-  EXPECT_FALSE(mTR.frameExists("other"));
-  EXPECT_FALSE(mTR.frameExists("frame"));
-  mTR.setTransform(  Stamped<btTransform> (btTransform(btQuaternion(1,0,0), btVector3(0,0,0)), ros::Time().fromNSec(4000), "b",  "parent"));
+  EXPECT_FALSE(mTR.frameExists("/b"));;
+  EXPECT_FALSE(mTR.frameExists("/parent"));
+  EXPECT_FALSE(mTR.frameExists("/other"));
+  EXPECT_FALSE(mTR.frameExists("/frame"));
+  mTR.setTransform(  Stamped<btTransform> (btTransform(btQuaternion(1,0,0), btVector3(0,0,0)), ros::Time().fromNSec(4000), "/b",  "/parent"));
 
-  EXPECT_TRUE(mTR.frameExists("b"));
-  EXPECT_TRUE(mTR.frameExists("parent"));
-  EXPECT_FALSE(mTR.frameExists("other"));
-  EXPECT_FALSE(mTR.frameExists("frame"));
+  EXPECT_TRUE(mTR.frameExists("/b"));
+  EXPECT_TRUE(mTR.frameExists("/parent"));
+  EXPECT_FALSE(mTR.frameExists("/other"));
+  EXPECT_FALSE(mTR.frameExists("/frame"));
 
-  mTR.setTransform(  Stamped<btTransform> (btTransform(btQuaternion(1,1,0), btVector3(0,0,0)), ros::Time().fromNSec(4000), "other",  "frame"));
+  mTR.setTransform(  Stamped<btTransform> (btTransform(btQuaternion(1,1,0), btVector3(0,0,0)), ros::Time().fromNSec(4000), "/other",  "/frame"));
 
-  EXPECT_TRUE(mTR.frameExists("b"));
-  EXPECT_TRUE(mTR.frameExists("parent"));
-  EXPECT_TRUE(mTR.frameExists("other"));
-  EXPECT_TRUE(mTR.frameExists("frame"));
+  EXPECT_TRUE(mTR.frameExists("/b"));
+  EXPECT_TRUE(mTR.frameExists("/parent"));
+  EXPECT_TRUE(mTR.frameExists("/other"));
+  EXPECT_TRUE(mTR.frameExists("/frame"));
   
 
 }
+
 TEST(tf, remap)
 {
   //no prefix
-  EXPECT_STREQ("id", tf::remap("","id").c_str());
+  EXPECT_STREQ("/id", tf::remap("","id").c_str());
   //prefix w/o /
-  EXPECT_STREQ("asdf/id", tf::remap("asdf","id").c_str());
+  EXPECT_STREQ("/asdf/id", tf::remap("asdf","id").c_str());
   //prefix w /
-  EXPECT_STREQ("asdf/id", tf::remap("/asdf","id").c_str());
+  EXPECT_STREQ("/asdf/id", tf::remap("/asdf","id").c_str());
   // frame_id w / -> no prefix
-  EXPECT_STREQ("id", tf::remap("asdf","/id").c_str());
+  EXPECT_STREQ("/id", tf::remap("asdf","/id").c_str());
   // frame_id w / -> no prefix
-  EXPECT_STREQ("id", tf::remap("/asdf","/id").c_str());
+  EXPECT_STREQ("/id", tf::remap("/asdf","/id").c_str());
 
 }
 
@@ -1578,6 +1579,31 @@ TEST(tf, lookupTransform)
     EXPECT_FALSE("Exception improperly thrown");
   }
   
+}
+
+
+TEST(tf, getFrameStrings)
+{
+  Transformer mTR;
+
+
+  mTR.setTransform(  Stamped<btTransform> (btTransform(btQuaternion(1,0,0), btVector3(0,0,0)), ros::Time().fromNSec(4000), "/b",  "/parent"));
+  std::vector <std::string> frames_string;
+  mTR.getFrameStrings(frames_string);
+  ASSERT_EQ(frames_string.size(), 2);
+  EXPECT_STREQ(frames_string[0].c_str(), std::string("/b").c_str());
+  EXPECT_STREQ(frames_string[1].c_str(), std::string("/parent").c_str());
+
+
+  mTR.setTransform(  Stamped<btTransform> (btTransform(btQuaternion(1,1,0), btVector3(0,0,0)), ros::Time().fromNSec(4000), "/other",  "/frame"));
+  
+  mTR.getFrameStrings(frames_string);
+  ASSERT_EQ(frames_string.size(), 4);
+  EXPECT_STREQ(frames_string[0].c_str(), std::string("/b").c_str());
+  EXPECT_STREQ(frames_string[1].c_str(), std::string("/parent").c_str());
+  EXPECT_STREQ(frames_string[2].c_str(), std::string("/other").c_str());
+  EXPECT_STREQ(frames_string[3].c_str(), std::string("/frame").c_str());
+
 }
 
 int main(int argc, char **argv){

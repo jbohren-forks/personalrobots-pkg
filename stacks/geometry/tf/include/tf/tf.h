@@ -234,6 +234,11 @@ public:
    */
   boost::signals::connection addTransformChangedListener(boost::function<void(void)> callback);
 
+  /** 
+   * \brief Get the tf_prefix this is running with
+   */
+  std::string getTFPrefix() const { return tf_prefix_;};
+
 protected:
 
   /** \brief The internal storage class for ReferenceTransform.
