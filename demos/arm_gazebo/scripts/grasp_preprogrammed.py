@@ -71,8 +71,14 @@ def p3dReceived(stuff):
         p3d_received = True
 
 if __name__ == '__main__':
-    pub_r_arm = rospy.Publisher("right_arm_commands", JointPosCmd)
-    pub_r_gripper = rospy.Publisher("r_gripper_controller/set_command", Float64)
+    pub_r_shoulder_yaw   = rospy.Publisher("r_gripper_controller/set_command", Float64)
+    pub_r_shoulder_pitch = rospy.Publisher("r_gripper_controller/set_command", Float64)
+    pub_r_upper_arm_roll = rospy.Publisher("r_gripper_controller/set_command", Float64)
+    pub_r_elbow_flex     = rospy.Publisher("r_gripper_controller/set_command", Float64)
+    pub_r_forearm_roll   = rospy.Publisher("r_gripper_controller/set_command", Float64)
+    pub_r_wrist_flex     = rospy.Publisher("r_gripper_controller/set_command", Float64)
+    pub_r_wrist_roll     = rospy.Publisher("r_gripper_controller/set_command", Float64)
+    pub_r_gripper        = rospy.Publisher("r_gripper_controller/set_command", Float64)
     rospy.Subscriber("r_gripper_palm_pose_ground_truth", PoseWithRatesStamped, p3dReceived)
     rospy.init_node(NAME, anonymous=True)
 
