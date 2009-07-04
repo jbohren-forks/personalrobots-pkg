@@ -245,6 +245,11 @@ void URDF2Gazebo::convertLink(TiXmlElement *root, robot_desc::URDF::Link *link, 
                 addKeyValue(geom, "scale", values2str(3, mesh->scale));
 
                 /* set mesh file */
+                // strip extension from filename
+                std::string tmp_extension(".stl");
+                int pos1 = mesh->filename.find(tmp_extension,0);
+                mesh->filename.replace(pos1,mesh->filename.size()-pos1+1,std::string(""));
+                // add mesh filename
                 addKeyValue(geom, "mesh", "models/pr2/" + mesh->filename + ".mesh");
                 
             }

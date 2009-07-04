@@ -85,7 +85,7 @@
       <collision>
         <origin xyz="0 0 0" rpy="0 0 0" />
         <geometry name="${prefix}_l_finger_collision">
-          <mesh filename="upper_finger_l_convex" />
+          <mesh filename="convex/upper_finger_l_convex.stlb" />
         </geometry>
         <verbose value="Yes" />
         <map flag="collision" name="mesh">
@@ -169,7 +169,7 @@
       <collision>
         <origin xyz="0 0 0" rpy="0 0 0" />
         <geometry name="${prefix}_r_finger_collision">
-          <mesh filename="upper_finger_r_convex" />
+          <mesh filename="convex/upper_finger_r_convex.stlb" />
         </geometry>
         <verbose value="Yes" />
         <map flag="collision" name="mesh">
@@ -250,7 +250,7 @@
       <collision>
         <origin xyz="0 0 0" rpy="0 0 0" />
         <geometry name="${prefix}_l_finger_tip_collision">
-          <mesh filename="finger_tip_l_convex" />
+          <mesh filename="convex/finger_tip_l_convex.stlb" />
         </geometry>
         <verbose value="Yes" />
         <map flag="collision" name="mesh">
@@ -332,7 +332,7 @@
       <collision>
         <origin xyz="0 0 0" rpy="0 0 0" />
         <geometry name="${prefix}_r_finger_tip_collision">
-          <mesh filename="finger_tip_r_convex" />
+          <mesh filename="convex/finger_tip_r_convex.stlb" />
         </geometry>
         <verbose value="Yes" />
         <map flag="collision" name="mesh">
@@ -482,7 +482,7 @@
       <collision>
         <origin xyz="0 0 0" rpy="0 0 0" />
         <geometry name="${side}_gripper_palm_collision">
-          <mesh filename="gripper_palm_convex" />
+          <mesh filename="convex/gripper_palm_convex.stlb" />
         </geometry>
         <verbose value="Yes" />
         <map flag="collision" name="mesh">
@@ -707,7 +707,7 @@
       <collision>
         <origin xyz="0 0 0" rpy="0 0 0" />
         <geometry name="${side}_gripper_palm_collision">
-          <mesh filename="gripper_palm_convex" />
+          <mesh filename="convex/gripper_palm_convex.stlb" />
         </geometry>
         <verbose value="Yes" />
         <map flag="collision" name="mesh">

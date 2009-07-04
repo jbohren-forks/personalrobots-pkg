@@ -73,7 +73,7 @@
       <collision>
         <origin xyz="0.0 0 0.0" rpy="0 0 0" />
         <geometry name="${side}_shoulder_pan_collision">
-          <mesh filename="shoulder_yaw_convex" />
+          <mesh filename="convex/shoulder_yaw_convex.stlb" />
         </geometry>
       </collision>
       <map name="${side}_shoulder_pan_sensor" flag="gazebo">
@@ -143,7 +143,7 @@
       <collision>
         <origin xyz="0 0 0" rpy="0 0 0" />
         <geometry name="${side}_shoulder_lift_collision">
-          <mesh filename="shoulder_lift_convex" />
+          <mesh filename="convex/shoulder_lift_convex.stlb" />
         </geometry>
       </collision>
       <map name="${side}_shoulder_lift_sensor" flag="gazebo">
@@ -269,7 +269,7 @@
       <collision>
         <origin xyz="0 0 0" rpy="0 0 0" />
         <geometry name="${side}_upper_arm_collision">
-          <mesh filename="upper_arm_convex" />
+          <mesh filename="convex/upper_arm_convex.stlb" />
         </geometry>
       </collision>
 
@@ -335,7 +335,7 @@
       <collision>
         <origin xyz="0 0 0" rpy="0 0 0" />
         <geometry name="${side}_elbow_flex_collision">
-          <mesh filename="elbow_flex_convex" />
+          <mesh filename="convex/elbow_flex_convex.stlb" />
         </geometry>
       </collision>
       <map name="${side}_elbow_flex_sensor" flag="gazebo">
@@ -490,7 +490,7 @@
       <collision>
         <origin xyz="0 0 0" rpy="0 0 0" />
         <geometry name="${side}_forearm_collision">
-          <mesh filename="forearm_convex" />
+          <mesh filename="convex/forearm_convex.stlb" />
         </geometry>
       </collision>
       <map name="${side}_forearm_sensor" flag="gazebo">
@@ -553,7 +553,7 @@
       <collision>
         <origin xyz="0 0 0" rpy="0 0 0" />
         <geometry name="${side}_wrist_flex_collision">
-          <mesh filename="wrist_flex_convex" />
+          <mesh filename="convex/wrist_flex_convex.stlb" />
         </geometry>
       </collision>
       <map name="${side}_wrist_flex_sensor" flag="gazebo">
