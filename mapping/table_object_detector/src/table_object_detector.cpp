@@ -128,14 +128,17 @@ class TableObjectDetector
       node_.param ("~min_z_bounds", min_z_bounds_, 0.0);                      // restrict the Z dimension between 0
       node_.param ("~max_z_bounds", max_z_bounds_, 3.0);                      // and 3.0 m
 
-      node_.param ("~downsample_leaf_width_x", leaf_width_.x, 0.03);          // 3cm radius by default
-      node_.param ("~downsample_leaf_width_y", leaf_width_.y, 0.03);          // 3cm radius by default
-      node_.param ("~downsample_leaf_width_z", leaf_width_.z, 0.03);          // 3cm radius by default
+      // Use downsampling internally to estimate solutions faster.
+      {
+        node_.param ("~downsample_leaf_width_x", leaf_width_.x, 0.03);          // 3cm radius by default
+        node_.param ("~downsample_leaf_width_y", leaf_width_.y, 0.03);          // 3cm radius by default
+        node_.param ("~downsample_leaf_width_z", leaf_width_.z, 0.03);          // 3cm radius by default
+      }
       node_.param ("~search_k_closest", k_, 10);                              // 10 k-neighbors by default
 
       z_axis_.x = 0; z_axis_.y = 0; z_axis_.z = 1;
       node_.param ("~normal_eps_angle", eps_angle_, 15.0);                   // 15 degrees
-      eps_angle_ = angles::from_degrees (eps_angle_);                         // convert to radians
+      eps_angle_ = angles::from_degrees (eps_angle_);                        // convert to radians
 
       node_.param ("~region_angle_threshold", region_angle_threshold_, 30.0);   // Difference between normals in degrees for cluster/region growing
       region_angle_threshold_ = angles::from_degrees (region_angle_threshold_); // convert to radians
@@ -143,19 +146,28 @@ class TableObjectDetector
       node_.param ("~clusters_growing_tolerance", clusters_growing_tolerance_, 0.5);   // 0.5 m
       node_.param ("~clusters_min_pts", clusters_min_pts_, 10);                        // 10 points
 
-      node_.param ("~object_cluster_tolerance", object_cluster_tolerance_, 0.05);   // 5cm between two objects
-      node_.param ("~object_cluster_min_pts", object_cluster_min_pts_, 30);           // 30 points per object cluster
+      // These parameters define what we mean by "separate clusters" (e.g., separate objects).
+      {
+        node_.param ("~object_cluster_dist_tolerance", object_cluster_tolerance_, 0.05);   // 5cm between two objects
+        node_.param ("~object_cluster_min_pts", object_cluster_min_pts_, 30);              // minimum 30 points per object cluster
+      }
 
-      node_.param ("~table_min_height", table_min_height_, 0.5);              // minimum height of a table : 0.5m
-      node_.param ("~table_max_height", table_max_height_, 1.5);              // maximum height of a table : 1.5m
+      // Optimization parameters: used to reduce the search space for horizontal planar search.
+      {
+        node_.param ("~table_min_height", table_min_height_, 0.5);              // minimum height of a table : 0.5m
+        node_.param ("~table_max_height", table_max_height_, 1.5);              // maximum height of a table : 1.5m
+      }
       node_.param ("~table_delta_z", delta_z_, 0.03);                         // consider objects starting at 3cm from the table
       node_.param ("~object_min_distance_from_table", object_min_distance_from_table_, 0.10); // objects which have their support more 10cm from the table will not be considered
       ROS_DEBUG ("Using the following thresholds for table detection [min / max height]: %f / %f.", table_min_height_, table_max_height_);
 
-      node_.param ("~publish_debug", publish_debug_, true);
+      // Used to publish the results as additional messages. 
+      {
+        node_.param ("~publish_debug", publish_debug_, true);
+      }
 
       node_.param ("~input_cloud_topic", input_cloud_topic_, string ("tilt_laser_cloud"));
-      node_.advertiseService("table_object_detector", &TableObjectDetector::detectTable, this);
+      node_.advertiseService ("table_object_detector", &TableObjectDetector::detectTable, this);
 
       // This should be set to whatever the leaf_width factor is in the downsampler
       node_.param ("~sac_distance_threshold", sac_distance_threshold_, 0.03);     // 5 cm
@@ -184,7 +196,7 @@ class TableObjectDetector
     inline double
       getRGB (float r, float g, float b)
     {
-      int res = (int(r * 255) << 16) | (int(g*255) << 8) | int(b*255);
+      int res = (int (r * 255) << 16) | (int (g*255) << 8) | int (b*255);
       double rgb = *(float*)(&res);
       return (rgb);
     }
@@ -315,8 +327,7 @@ class TableObjectDetector
       }
       catch (tf::TransformException)
       {
-        ROS_ERROR ("Failed to transform table bounds from frame %s to frame %s",
-                   cloud_in_.header.frame_id.c_str(), global_frame_.c_str());
+        ROS_ERROR ("Failed to transform table bounds from frame %s to frame %s", cloud_in_.header.frame_id.c_str (), global_frame_.c_str ());
         return (false);
       }
 
@@ -472,7 +483,8 @@ class TableObjectDetector
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Callback
-    void cloud_cb (const tf::MessageNotifier<robot_msgs::PointCloud>::MessagePtr& pc)
+    void
+      cloud_cb (const tf::MessageNotifier<robot_msgs::PointCloud>::MessagePtr& pc)
     {
       //cloud_in_ = *pc;
       tf_.transformPointCloud(global_frame_, *pc, cloud_in_);
