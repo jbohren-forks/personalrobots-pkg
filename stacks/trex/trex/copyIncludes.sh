@@ -17,8 +17,6 @@
 
 cd `rospack find trex`
 
-echo "Copying Includes"
-
 rm -r include 2> /dev/null
 mkdir include
 INCLUDE_DIR="`pwd`/include"
@@ -36,9 +34,7 @@ for PACKAGE in $PACKAGES; do
     for d in $DIRS; do
 	HEADERS=`find $d -maxdepth 1 -type f -regex ".*\.hh?$"`
 	if [ "$HEADERS" ]; then
-	    for HEADER in $HEADERS; do
-		ln $HEADER $INCLUDE_DIR/$PACKAGE/`basename $HEADER`
-	    done
+	    cp -p $HEADERS $INCLUDE_DIR/$PACKAGE/
 	fi
     done
     echo "Warning, this is not the real include directory. It will be deleted and recreated by make every run. Includes should be next to .cc files." > $INCLUDE_DIR/$PACKAGE/WARNING.txt
