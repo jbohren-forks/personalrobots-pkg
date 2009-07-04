@@ -81,7 +81,7 @@ The planning.yaml file defines the groups of links/joints motion planning can be
     - @b links : the names of the robot links to plan for; the actuated joints are the ones that connect the links with their parents, as described in the URDF
     - @b planner_configs : these are names of configurations for planners; each planner configuration contains a planner-specific set of parameters. The only parameter that must exist is 'type', which specified the planner to be used.
 
- - the content of each planning configuration under @ b planner_configs
+ - the content of each planning configuration under @b planner_configs
 
 
 An example planning.yaml file:
