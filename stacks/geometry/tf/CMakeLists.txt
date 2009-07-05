@@ -101,7 +101,10 @@ set_target_properties(python_${PROJECT_NAME}
 rospack_add_pyunit_future(test/test_datatype_conversion.py)
 
 # New Python bindings
+
+link_libraries(${PYTHON_LIBRARIES})
 rospack_add_library(pytfX_py src/pytf.cpp)
-set_target_properties(pytfX_py PROPERTIES OUTPUT_NAME tfX PREFIX "_")
+find_package(PythonLibs REQUIRED)
+set_target_properties(pytfX_py PROPERTIES OUTPUT_NAME tfX PREFIX "_" SUFFIX ".so")
 target_link_libraries(pytfX_py tf)
 rospack_add_compile_flags(pytfX_py -g -Wno-missing-field-initializers -msse3)
