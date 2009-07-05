@@ -35,7 +35,7 @@
 
 #include <plugs_core/action_unplug.h>
 #include <std_msgs/Float64.h>
-#include "robot_srvs/SwitchController.h"
+#include "mechanism_msgs/SwitchController.h"
 #include <ros/ros.h> //For the NodeHandle API 
 
 #define BACKOFF 0.06
@@ -103,8 +103,8 @@ robot_actions::ResultStatus UnplugAction::execute(const std_msgs::Empty& empty, 
 
   //Start effort controller
   ros::NodeHandle n;
-  ros::ServiceClient client = n.serviceClient<robot_srvs::SwitchController>("switch_controller");
-  robot_srvs::SwitchController srv;
+  ros::ServiceClient client = n.serviceClient<mechanism_msgs::SwitchController>("switch_controller");
+  mechanism_msgs::SwitchController srv;
   srv.request.start_controllers.push_back("/r_shoulder_pan_effort");
   if(client.call(srv)){
     ROS_INFO("Enabled r_shoulder_pan_effort controller (at least the service call succeeded)");
