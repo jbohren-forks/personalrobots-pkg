@@ -59,6 +59,7 @@ bool getAtribute(TiXmlElement *xml, const string& name, string& attr)
 
 bool getVector(TiXmlElement *vector_xml, const string& field, Vector& vector)
 {
+  if (!vector_xml) return false;
   string vector_str;
   if (!getAtribute(vector_xml, field, vector_str))
     return false;
@@ -91,6 +92,7 @@ bool getVector(TiXmlElement *vector_xml, const string& field, Vector& vector)
 
 bool getValue(TiXmlElement *value_xml, const string& field, double& value)
 {
+  if (!value_xml) return false;
   string value_str;
   if (!getAtribute(value_xml, field, value_str)) return false;
 
@@ -115,6 +117,7 @@ static bool getFrame(TiXmlElement *frame_xml, Frame& frame)
 
 bool getRotInertia(TiXmlElement *rot_inertia_xml, RotationalInertia& rot_inertia)
 {
+  if (!rot_inertia_xml) return false;
   double Ixx=0, Iyy=0, Izz=0, Ixy=0, Ixz=0, Iyz=0;
   if (!getValue(rot_inertia_xml, "ixx", Ixx)) return false;
   if (!getValue(rot_inertia_xml, "iyy", Iyy)) return false;
@@ -130,6 +133,7 @@ bool getRotInertia(TiXmlElement *rot_inertia_xml, RotationalInertia& rot_inertia
 
 bool getInertia(TiXmlElement *inertia_xml, RigidBodyInertia& inertia)
 {
+  if (!inertia_xml) return false;
   Vector cog;
   if (!getVector(inertia_xml->FirstChildElement("com"), "xyz", cog)) 
   {cerr << "Inertia does not specify center of gravity" << endl; return false;}
@@ -147,6 +151,7 @@ bool getInertia(TiXmlElement *inertia_xml, RigidBodyInertia& inertia)
 
 bool getJoint(TiXmlElement *joint_xml, Joint& joint)
 {
+  if (!joint_xml) return false;
   // get joint type
   string joint_type;
   if (!getAtribute(joint_xml, "type", joint_type)) 
@@ -186,6 +191,7 @@ bool getJoint(TiXmlElement *joint_xml, Joint& joint)
 
 bool getSegment(TiXmlElement *segment_xml, map<string, Joint>& joints, Segment& segment, string& joint_name)
 {
+  if (!segment_xml) return false;
   // get mandetory frame
   Frame frame;
   if (!getFrame(segment_xml->FirstChildElement("origin"), frame)) 
@@ -228,8 +234,9 @@ void addChildrenToTree(const string& root, const map<string, Segment>& segments,
 }
 
 
-bool getTree(TiXmlElement *robot, Tree& tree, map<string, string>& joint_segment_mapping)
+bool getTree(TiXmlElement *robot_xml, Tree& tree, map<string, string>& joint_segment_mapping)
 {
+  if (!robot_xml) return false;
   // empty tree
   tree = Tree();
   joint_segment_mapping.clear();
@@ -238,7 +245,7 @@ bool getTree(TiXmlElement *robot, Tree& tree, map<string, string>& joint_segment
   TiXmlElement *joint_xml = NULL;
   Joint joint;
   map<string, Joint> joints;
-  for (joint_xml = robot->FirstChildElement("joint"); joint_xml; joint_xml = joint_xml->NextSiblingElement("joint")){
+  for (joint_xml = robot_xml->FirstChildElement("joint"); joint_xml; joint_xml = joint_xml->NextSiblingElement("joint")){
     // get joint name
     string joint_name;
     if (!getAtribute(joint_xml, "name", joint_name)) 
@@ -255,7 +262,7 @@ bool getTree(TiXmlElement *robot, Tree& tree, map<string, string>& joint_segment
   Segment segment;
   map<string, Segment> segments;
   map<string, string> parents;
-  for (segment_xml = robot->FirstChildElement("link"); segment_xml; segment_xml = segment_xml->NextSiblingElement("link")){
+  for (segment_xml = robot_xml->FirstChildElement("link"); segment_xml; segment_xml = segment_xml->NextSiblingElement("link")){
 
     // get segment name
     string segment_name;
