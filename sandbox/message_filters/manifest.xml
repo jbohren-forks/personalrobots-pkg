@@ -8,7 +8,7 @@
   <depend package="robot_msgs" />
   <depend package="sensor_msgs" />
   <export>
-    <cpp cflags="-I${prefix}/include" />
+    <cpp cflags="-I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lmessage_filters `rosboost-cfg --lflags thread,signals`" />
   </export>
   <url>http://pr.willowgarage.com/wiki/topic_synchronizer</url>
 </package>

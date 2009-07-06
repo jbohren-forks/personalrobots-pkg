@@ -49,6 +49,8 @@
 
 #include <ros/callback_queue.h>
 
+#include <message_filters/connection.h>
+
 #define TF_MESSAGEFILTER_DEBUG(fmt, ...) \
   ROS_DEBUG_NAMED("message_filter", "MessageFilter [target=%s]: "fmt, getTargetFramesString().c_str(), __VA_ARGS__)
 
@@ -101,10 +103,7 @@ public:
   template<class F>
   void subscribeTo(F& f)
   {
-    if (message_connection_.connected())
-    {
-      message_connection_.disconnect();
-    }
+    message_connection_.disconnect();
 
     message_connection_ = f.connect(boost::bind(&MessageFilter::incomingMessage, this, _1));
   }
@@ -208,10 +207,10 @@ public:
     ++incoming_message_count_;
   }
 
-  boost::signals::connection connect(const Callback& callback)
+  message_filters::Connection connect(const Callback& callback)
   {
     boost::mutex::scoped_lock lock(signal_mutex_);
-    return signal_.connect(callback);
+    return message_filters::Connection(boost::bind(&MessageFilter::disconnect, this, _1), signal_.connect(callback));
   }
 
 private:
@@ -452,6 +451,12 @@ private:
     }
   }
 
+  void disconnect(const message_filters::Connection& c)
+  {
+    boost::mutex::scoped_lock lock(signal_mutex_);
+    signal_.disconnect(c.getBoostConnection());
+  }
+
   Transformer& tf_; ///< The Transformer used to determine if transformation data is available
   ros::NodeHandle nh_; ///< The node used to subscribe to the topic
   ros::Duration min_rate_;
@@ -489,7 +494,7 @@ private:
   ros::Duration time_tolerance_; ///< Provide additional tolerance on time for messages which are stamped but can have associated duration
 
   boost::signals::connection tf_connection_;
-  boost::signals::connection message_connection_;
+  message_filters::Connection message_connection_;
 };
 
 } // namespace tf

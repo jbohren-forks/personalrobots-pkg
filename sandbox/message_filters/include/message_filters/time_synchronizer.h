@@ -46,6 +46,8 @@
 
 #include <roslib/Header.h>
 
+#include "connection.h"
+
 #define TIME_SYNCHRONIZER_MAX_MESSAGES 9
 
 namespace message_filters
@@ -64,9 +66,9 @@ class NullFilter
 public:
   typedef boost::shared_ptr<M const> MConstPtr;
   typedef boost::function<void(const MConstPtr&)> Callback;
-  boost::signals::connection connect(const Callback& cb)
+  Connection connect(const Callback& cb)
   {
-    return boost::signals::connection();
+    return Connection();
   }
 };
 
@@ -228,10 +230,10 @@ public:
   }
 
   template<class C>
-  boost::signals::connection connect(const C& callback)
+  Connection connect(const C& callback)
   {
     boost::mutex::scoped_lock lock(signal_mutex_);
-    return signal_.connect(boost::bind(callback, _1, _2, _3, _4, _5, _6, _7, _8, _9));
+    return Connection(boost::bind(&TimeSynchronizer::disconnect, this, _1), signal_.connect(boost::bind(callback, _1, _2, _3, _4, _5, _6, _7, _8, _9)));
   }
 
   void add0(const M0ConstPtr& msg)
@@ -492,6 +494,12 @@ private:
     }
   }
 
+  void disconnect(const Connection& c)
+  {
+    boost::mutex::scoped_lock lock(signal_mutex_);
+    signal_.disconnect(c.getBoostConnection());
+  }
+
   uint32_t queue_size_;
 
   typedef std::map<ros::Time, Tuple> M_TimeToTuple;
@@ -502,7 +510,7 @@ private:
   boost::mutex signal_mutex_;
   ros::Time last_signal_time_;
 
-  boost::signals::connection input_connections_[TIME_SYNCHRONIZER_MAX_MESSAGES];
+  Connection input_connections_[TIME_SYNCHRONIZER_MAX_MESSAGES];
 
   uint32_t real_type_count_;
 };

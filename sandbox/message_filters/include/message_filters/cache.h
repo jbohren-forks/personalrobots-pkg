@@ -46,6 +46,8 @@
 #include <boost/noncopyable.hpp>
 #include "ros/time.h"
 
+#include "connection.h"
+
 namespace message_filters
 {
 
@@ -104,10 +106,10 @@ public:
     cache_size_ = cache_size ;
   }
 
-  boost::signals::connection connect(const Callback& callback)
+  Connection connect(const Callback& callback)
   {
     boost::mutex::scoped_lock lock(signal_mutex_);
-    return signal_.connect(callback);
+    return Connection(boost::bind(&Cache::disconnect, this, _1), signal_.connect(callback));
   }
 
   /**
@@ -252,11 +254,17 @@ public:
   }
 
 private:
+  void disconnect(const Connection& c)
+  {
+    boost::mutex::scoped_lock lock(signal_mutex_);
+    signal_.disconnect(c.getBoostConnection());
+  }
+
   boost::mutex cache_lock_ ;            //!< Lock for cache_
   std::deque<MConstPtr > cache_ ;       //!< Cache for the messages
   unsigned int cache_size_ ;            //!< Maximum number of elements allowed in the cache.
 
-  boost::signals::connection incoming_connection_;
+  Connection incoming_connection_;
   Signal signal_;
   boost::mutex signal_mutex_;
 };

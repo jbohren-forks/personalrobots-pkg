@@ -42,6 +42,7 @@
 #include "dense_laser_assembler/joint_pv_msg_filter.h"
 #include "dense_laser_assembler/laser_scan_tagger.h"
 #include "message_filters/cache.h"
+#include "message_filters/connection.h"
 
 
 // Messages
@@ -137,7 +138,7 @@ public:
    * \brief Used to connect this MessageFilter to a callback
    * \param callback Function to be called whenever a new TaggedLaserScan message is available
    */
-  boost::signals::connection connect(const Callback& callback) ;
+  message_filters::Connection connect(const Callback& callback) ;
 
   //! \brief Not yet implemented
   void processLaserScan(const sensor_msgs::LaserScanConstPtr& msg) ;

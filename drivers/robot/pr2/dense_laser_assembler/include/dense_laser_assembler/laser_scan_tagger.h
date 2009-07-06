@@ -139,10 +139,10 @@ public:
    * \brief Connect this message filter's output to some callback
    * \param callback Function to call after we've tagged a LaserScan
    */
-  boost::signals::connection connect(const Callback& callback)
+  message_filters::Connection connect(const Callback& callback)
   {
     boost::mutex::scoped_lock lock(signal_mutex_);
-    return signal_.connect(callback);
+    return message_filters::Connection(boost::bind(&LaserScanTagger::disconnect, this, _1), signal_.connect(callback));
   }
 
   /**
@@ -213,14 +213,20 @@ public:
   }
 
 private:
+  void disconnect(const message_filters::Connection& c)
+  {
+    boost::mutex::scoped_lock lock(signal_mutex_);
+    signal_.disconnect(c.getBoostConnection());
+  }
+
   std::deque<sensor_msgs::LaserScanConstPtr> queue_ ;    //!< Incoming queue of laser scans
   boost::mutex queue_mutex_ ;                            //!< Mutex for laser scan queue
   unsigned int max_queue_size_ ;                         //!< Max # of laser scans to queue up for processing
   message_filters::Cache<T>* tag_cache_ ;             //!< Cache of the tags that we need to merge with laser data
 
   Signal signal_;
-  boost::signals::connection incoming_laser_scan_connection_;
-  boost::signals::connection incoming_tag_connection_;
+  message_filters::Connection incoming_laser_scan_connection_;
+  message_filters::Connection incoming_tag_connection_;
   boost::mutex signal_mutex_;
 } ;
 

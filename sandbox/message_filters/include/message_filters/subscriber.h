@@ -41,9 +41,17 @@
 #include <boost/thread/mutex.hpp>
 #include <boost/noncopyable.hpp>
 
+#include "connection.h"
+
 namespace message_filters
 {
 
+/**
+ * \brief ROS subscription filter.
+ *
+ * This class acts as a highest-level filter, simply passing messages from a ROS subscription through to the
+ * filters which have connected to it.
+ */
 template<class M>
 class Subscriber : public boost::noncopyable
 {
@@ -52,22 +60,49 @@ public:
   typedef boost::function<void(const MConstPtr&)> Callback;
   typedef boost::signal<void(const MConstPtr&)> Signal;
 
+  /**
+   * \brief Constructor
+   *
+   * See the ros::NodeHandle::subscribe() variants for more information on the parameters
+   *
+   * \param nh The ros::NodeHandle to use to subscribe.
+   * \param topic The topic to subscribe to.
+   * \param queue_size The subscription queue size
+   * \param transport_hints The transport hints to pass along
+   * \param callback_queue The callback queue to pass along
+   */
   Subscriber(ros::NodeHandle& nh, const std::string& topic, uint32_t queue_size, const ros::TransportHints& transport_hints = ros::TransportHints(), ros::CallbackQueueInterface* callback_queue = 0)
   {
     subscribe(nh, topic, queue_size, transport_hints, callback_queue);
   }
 
+  /**
+   * \brief Empty constructor, use subscribe() to subscribe to a topic
+   */
   Subscriber()
   {
   }
 
   ~Subscriber()
   {
-    sub_.shutdown();
+    unsubscribe();
   }
 
+  /**
+   * \brief Subscribe to a topic.
+   *
+   * If this Subscriber is already subscribed to a topic, this function will first unsubscribe.
+   *
+   * \param nh The ros::NodeHandle to use to subscribe.
+   * \param topic The topic to subscribe to.
+   * \param queue_size The subscription queue size
+   * \param transport_hints The transport hints to pass along
+   * \param callback_queue The callback queue to pass along
+   */
   void subscribe(ros::NodeHandle& nh, const std::string& topic, uint32_t queue_size, const ros::TransportHints& transport_hints = ros::TransportHints(), ros::CallbackQueueInterface* callback_queue = 0)
   {
+    unsubscribe();
+
     ros::SubscribeOptions ops;
     ops.init<M>(topic, queue_size, boost::bind(&Subscriber<M>::cb, this, _1));
     ops.callback_queue = callback_queue;
@@ -80,13 +115,25 @@ public:
     sub_.shutdown();
   }
 
-  boost::signals::connection connect(const Callback& callback)
+  /**
+   * \brief Connect a callback to this filter.  That callback will be called whenever new data arrives.
+   *
+   * \param callback A function of the same form as the message callbacks used in roscpp
+   * \return A connection object that allows you to disconnect from this
+   */
+  Connection connect(const Callback& callback)
   {
     boost::mutex::scoped_lock lock(signal_mutex_);
-    return signal_.connect(callback);
+    return Connection(boost::bind(&Subscriber::disconnect, this, _1), signal_.connect(callback));
   }
 
 private:
+  void disconnect(const Connection& c)
+  {
+    boost::mutex::scoped_lock lock(signal_mutex_);
+    signal_.disconnect(c.getBoostConnection());
+  }
+
   void cb(const MConstPtr& m)
   {
     boost::mutex::scoped_lock lock(signal_mutex_);

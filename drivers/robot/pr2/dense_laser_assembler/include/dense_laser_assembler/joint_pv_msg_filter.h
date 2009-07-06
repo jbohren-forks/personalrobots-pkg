@@ -44,6 +44,8 @@
 #include <boost/thread.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/signals.hpp>
+#include <boost/bind.hpp>
+#include <message_filters/connection.h>
 
 // Messages
 #include "dense_laser_assembler/JointPVArray.h"
@@ -100,10 +102,10 @@ public:
    * \brief Called by user wants they want to connect this MessageFilter to their own code
    * \param callback Function to be called whenever a JointPVArray message is available
    */
-  boost::signals::connection connect(const Callback& callback)
+  message_filters::Connection connect(const Callback& callback)
   {
     boost::mutex::scoped_lock lock(signal_mutex_);
-    return signal_.connect(callback);
+    return message_filters::Connection(boost::bind(&JointPVMsgFilter::disconnect, this, _1), signal_.connect(callback));
   }
 
   /**
@@ -154,11 +156,17 @@ public:
   }
 
 protected:
+  void disconnect(const message_filters::Connection& c)
+  {
+    boost::mutex::scoped_lock lock(signal_mutex_);
+    signal_.disconnect(c.getBoostConnection());
+  }
+
   boost::mutex joint_mapping_mutex_ ;
   std::vector<std::string> joint_names_ ;
 
   // Filter Connection Stuff
-  boost::signals::connection incoming_connection_;
+  message_filters::Connection incoming_connection_;
   Signal signal_;
   boost::mutex signal_mutex_;
 } ;

@@ -1,7 +1,7 @@
 /*********************************************************************
 * Software License Agreement (BSD License)
 *
-*  Copyright (c) 2008, Willow Garage, Inc.
+*  Copyright (c) 2009, Willow Garage, Inc.
 *  All rights reserved.
 *
 *  Redistribution and use in source and binary forms, with or without
@@ -32,69 +32,45 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
-/*! \mainpage
- *  \htmlinclude manifest.html
- */
+#ifndef MESSAGE_FILTERS_CONNECTION_H
+#define MESSAGE_FILTERS_CONNECTION_H
 
+#include <boost/thread/mutex.hpp>
+#include <boost/function.hpp>
 #include <boost/signals.hpp>
 
-#include "ros/ros.h"
-#include "dense_laser_assembler/joint_pv_msg_filter.h"
-//#include "dense_laser_assembler/joint_pv_diag_msg_filter.h"
-#include "dense_laser_assembler/JointPVArray.h"
-
-#include "diagnostic_updater/diagnostic_updater.h"
-
-using namespace std ;
-//using namespace message_filters ;
-using namespace dense_laser_assembler ;
-
-void display_joints(vector<string> joint_names, const JointPVArrayConstPtr& joint_array_ptr)
+namespace message_filters
 {
-  printf("Joints:\n") ;
-  for (unsigned int i=0; i< joint_names.size(); i++)
+
+class Connection
+{
+public:
+  typedef boost::function<void(const Connection&)> DisconnectFunction;
+
+  Connection();
+  Connection(const DisconnectFunction& func, boost::signals::connection conn);
+  Connection(const Connection& rhs);
+  Connection& operator=(const Connection& rhs);
+
+  void disconnect();
+
+  boost::signals::connection getBoostConnection() const;
+
+private:
+  class Impl
   {
-    printf("  %s: %f, %f\n", joint_names[i].c_str(), joint_array_ptr->pos[i], joint_array_ptr->vel[i]) ;
-  }
+  public:
+    Impl();
+    ~Impl();
+
+    DisconnectFunction disconnect_;
+    boost::signals::connection connection_;
+  };
+  typedef boost::shared_ptr<Impl> ImplPtr;
+
+  ImplPtr impl_;
+};
 
 }
 
-void diagnosticsLoop(diagnostic_updater::Updater* diagnostic)
-{
-  ros::NodeHandle nh ;
-  while(nh.ok())
-  {
-    diagnostic->update() ;
-    sleep(1) ;
-  }
-}
-
-
-int main(int argc, char** argv)
-{
-  ros::init(argc, argv, "joint_extractor_display") ;
-
-  ros::NodeHandle nh ;
-
-  vector<string> joint_names ;
-  joint_names.push_back("laser_tilt_mount_joint") ;
-  joint_names.push_back("torso_lift_link") ;
-
-  diagnostic_updater::Updater diagnostic(nh) ;
-
-  JointPVMsgFilter joint_extractor(joint_names) ;
-  //JointPVDiagMsgFilter joint_extractor(diagnostic, joint_names) ;
-
-  message_filters::Connection con = joint_extractor.connect( boost::bind(&display_joints, joint_names, _1) ) ;
-
-  ros::Subscriber sub = nh.subscribe("mechanism_state", 1, &JointPVMsgFilter::processMechState, &joint_extractor) ;
-
-  //boost::thread* diagnostic_thread ;
-  //diagnostic_thread = new boost::thread( boost::bind(&diagnosticsLoop, &diagnostic) );
-
-  ros::spin() ;
-
-  con.disconnect() ;
-
-  return 0 ;
-}
+#endif // MESSAGE_FILTERS_CONNECTION_H
