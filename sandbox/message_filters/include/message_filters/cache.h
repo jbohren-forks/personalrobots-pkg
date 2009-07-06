@@ -43,6 +43,7 @@
 #include "boost/thread.hpp"
 #include "boost/shared_ptr.hpp"
 #include <boost/signals.hpp>
+#include <boost/noncopyable.hpp>
 #include "ros/time.h"
 
 namespace message_filters
@@ -55,7 +56,7 @@ namespace message_filters
  * that the messages are being received with monotonically increasing timestamps in header.stamp.
  */
 template<class M>
-class Cache
+class Cache : public boost::noncopyable
 {
 public:
   typedef boost::shared_ptr<M const> MConstPtr ;

@@ -42,6 +42,7 @@
 #include <boost/signals.hpp>
 #include <boost/bind.hpp>
 #include <boost/type_traits/is_same.hpp>
+#include <boost/noncopyable.hpp>
 
 #include <roslib/Header.h>
 
@@ -71,7 +72,7 @@ public:
 
 template<class M0, class M1, class M2 = NullType, class M3 = NullType, class M4 = NullType,
          class M5 = NullType, class M6 = NullType, class M7 = NullType, class M8 = NullType>
-class TimeSynchronizer
+class TimeSynchronizer : public boost::noncopyable
 {
 public:
   typedef boost::shared_ptr<M0 const> M0ConstPtr;
