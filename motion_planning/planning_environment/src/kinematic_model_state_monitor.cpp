@@ -44,6 +44,7 @@ void planning_environment::KinematicModelStateMonitor::setupRSM(void)
     robotState_ = NULL;
     onStateUpdate_ = NULL;
     tf_ = NULL;
+    tfWait_ = ros::Duration(0.1);
     havePose_ = haveMechanismState_ = false;
     if (rm_->loadedModels())
     {
@@ -123,43 +124,57 @@ void planning_environment::KinematicModelStateMonitor::mechanismStateCallback(co
 	if (tf_->canTransform(frame_id_, robot_frame_, mechanismState->header.stamp))
 	{
 	    tf::Stamped<tf::Pose> transf;
-	    tf_->lookupTransform(frame_id_, robot_frame_, mechanismState->header.stamp, transf);
-	    pose_ = transf;
-
-	    if (!planarJoint_.empty())
+	    bool ok = true;
+	    try
 	    {
-		double planar_joint[3];
-		planar_joint[0] = pose_.getOrigin().x();
-		planar_joint[1] = pose_.getOrigin().y();
-
-		double yaw, pitch, roll;
-		pose_.getBasis().getEulerZYX(yaw, pitch, roll);
-		planar_joint[2] = yaw;
-
-		bool this_changed = robotState_->setParamsJoint(planar_joint, planarJoint_);
-		change = change || this_changed;
+		tf_->lookupTransform(frame_id_, robot_frame_, mechanismState->header.stamp, transf);
 	    }
-
-	    if (!floatingJoint_.empty())
+	    catch(...)
 	    {
-		double floating_joint[7];
-		floating_joint[0] = pose_.getOrigin().x();
-		floating_joint[1] = pose_.getOrigin().y();
-		floating_joint[2] = pose_.getOrigin().z();
-		btQuaternion q = pose_.getRotation();
-		floating_joint[3] = q.x();
-		floating_joint[4] = q.y();
-		floating_joint[5] = q.z();
-		floating_joint[6] = q.w();
-
-		bool this_changed = robotState_->setParamsJoint(floating_joint, floatingJoint_);
-		change = change || this_changed;
+		ok = false;
 	    }
-
-	    havePose_ = true;
+	    
+	    if (ok)
+	    {		
+		pose_ = transf;
+		
+		if (!planarJoint_.empty())
+		{
+		    double planar_joint[3];
+		    planar_joint[0] = pose_.getOrigin().x();
+		    planar_joint[1] = pose_.getOrigin().y();
+		    
+		    double yaw, pitch, roll;
+		    pose_.getBasis().getEulerZYX(yaw, pitch, roll);
+		    planar_joint[2] = yaw;
+		    
+		    bool this_changed = robotState_->setParamsJoint(planar_joint, planarJoint_);
+		    change = change || this_changed;
+		}
+		
+		if (!floatingJoint_.empty())
+		{
+		    double floating_joint[7];
+		    floating_joint[0] = pose_.getOrigin().x();
+		    floating_joint[1] = pose_.getOrigin().y();
+		    floating_joint[2] = pose_.getOrigin().z();
+		    btQuaternion q = pose_.getRotation();
+		    floating_joint[3] = q.x();
+		    floating_joint[4] = q.y();
+		    floating_joint[5] = q.z();
+		    floating_joint[6] = q.w();
+		    
+		    bool this_changed = robotState_->setParamsJoint(floating_joint, floatingJoint_);
+		    change = change || this_changed;
+		}
+		
+		havePose_ = true;
+	    }
+	    else
+		ROS_ERROR("Transforming from link '%s' to link '%s' failed", robot_frame_.c_str(), frame_id_.c_str());
 	}
 	else
-	    ROS_WARN("Unable fo find transform from link '%s' to link '%s'", robot_frame_.c_str(), frame_id_.c_str());
+	    ROS_WARN("Unable to find transform from link '%s' to link '%s'", robot_frame_.c_str(), frame_id_.c_str());
     }
 
     if (change && onStateUpdate_ != NULL)

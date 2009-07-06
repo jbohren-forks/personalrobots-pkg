@@ -84,7 +84,25 @@ bool planning_environment::PlanningMonitor::transformConstraintsToFrame(motion_p
 {
     bool res = true;
     for (unsigned int i = 0; i < kc.pose_constraint.size() ; ++i)
-	tf_->transformPose(target, kc.pose_constraint[i].pose, kc.pose_constraint[i].pose);
+    {
+	bool ok = false;
+	if (tf_->canTransform(target, kc.pose_constraint[i].pose.header.frame_id, kc.pose_constraint[i].pose.header.stamp, tfWait_))
+	{
+	    try
+	    {
+		tf_->transformPose(target, kc.pose_constraint[i].pose, kc.pose_constraint[i].pose);
+		ok = true;
+	    }
+	    catch(...)
+	    {
+	    }
+	}
+	if (!ok)
+	{
+	    ROS_ERROR("Unable to transform pose constraint on link '%s' to frame '%s'", kc.pose_constraint[i].link_name.c_str(), target.c_str());
+	    res = false;
+	}
+    }
     
     // if there are any floating or planar joints, transform them
     if (getKinematicModel()->getModelInfo().planarJoints.size() > 0 || getKinematicModel()->getModelInfo().floatingJoints.size() > 0)
@@ -175,7 +193,23 @@ bool planning_environment::PlanningMonitor::transformJoint(const std::string &na
 	pose.getBasis().setEulerYPR(params[index + 2], 0.0, 0.0);
 	pose.stamp_ = header.stamp;
 	pose.frame_id_ = header.frame_id;
-	tf_->transformPose(target, pose, pose);
+	bool ok = false;
+	if (tf_->canTransform(target, pose.frame_id_, pose.stamp_, tfWait_))
+	{
+	    try
+	    {
+		tf_->transformPose(target, pose, pose);
+		ok = true;
+	    }
+	    catch(...)
+	    {
+	    }
+	}
+	if (!ok)
+	{
+	    ROS_ERROR("Unable to transform planar joint '%s' to frame '%s'", name.c_str(), target.c_str());
+	    return false;
+	}
 	params[index + 0] = pose.getOrigin().getX();
 	params[index + 1] = pose.getOrigin().getY();
 	btScalar dummy;
@@ -192,7 +226,23 @@ bool planning_environment::PlanningMonitor::transformJoint(const std::string &na
 	pose.setRotation(q);
 	pose.stamp_ = header.stamp;
 	pose.frame_id_ = header.frame_id;
-	tf_->transformPose(target, pose, pose);
+	bool ok = false;
+	if (tf_->canTransform(target, pose.frame_id_, pose.stamp_, tfWait_))
+	{
+	    try
+	    {
+		tf_->transformPose(target, pose, pose);
+		ok = true;
+	    }
+	    catch(...)
+	    {
+	    }
+	}
+	if (!ok)
+	{
+	    ROS_ERROR("Unable to transform floating joint '%s' to frame '%s'", name.c_str(), target.c_str());
+	    return false;
+	}
 	params[index + 0] = pose.getOrigin().getX();
 	params[index + 1] = pose.getOrigin().getY();
 	params[index + 2] = pose.getOrigin().getZ();
@@ -264,7 +314,6 @@ bool planning_environment::PlanningMonitor::isStateValidAtGoal(const planning_mo
     
     return valid;    
 }
-
 
 bool planning_environment::PlanningMonitor::isPathValid(const motion_planning_msgs::KinematicPath &path, bool verbose) const
 {

@@ -158,6 +158,9 @@ namespace planning_environment
 	ros::Subscriber                  mechanismStateSubscriber_;
 	tf::TransformListener           *tf_;
 
+	/** \brief How long to wait for a TF if it is not yet available, before failing */
+	ros::Duration                    tfWait_;
+
 	planning_models::StateParams    *robotState_;
 	tf::Pose                         pose_;
 	std::string                      robot_frame_;
