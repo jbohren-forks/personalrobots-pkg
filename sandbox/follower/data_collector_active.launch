@@ -1,0 +1,8 @@
+<launch>
+  <include file="$(find pr2_alpha)/$(env ROBOT).machine" />
+
+  <node pkg="follower" type="follower" machine="two" output="screen">
+  </node>
+
+
+</launch>

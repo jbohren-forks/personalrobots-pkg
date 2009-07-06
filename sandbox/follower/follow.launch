@@ -1,0 +1,13 @@
+<launch>
+
+  <!-- 0. Set ROBOT= prg/prf/pre -->
+  <!-- 1. Launch PRx.launch -->
+  <!-- 2. Run "turckarm.py r" -->
+  <!-- 3. Launch this -->
+
+	<include file="$(find follower)/data_collector_passive.launch" />
+	<!-- include file="$(find follower)/data_collector_passive2.launch" / -->
+	<include file="$(find follower)/data_collector_record.launch" />
+	<include file="$(find follower)/data_collector_active.launch" />
+
+</launch>

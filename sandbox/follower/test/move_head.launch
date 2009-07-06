@@ -1,0 +1,19 @@
+<launch>
+  <group ns="move_head">
+  <node pkg="annotated_map_builder" type="wait_for_k_messages_action.py" output="screen" name="wait_k_messages_action">
+    <remap from="topic" to="/stereo/raw_stereo_throttled"/>
+    <param name="count" value="1" />
+  </node>
+
+
+  <node pkg="annotated_map_builder" type="move_head_action.py" name="move_head_action" output="screen">
+    <param name="wait_action" value="/move_head/wait_k_messages_action"/>  
+    <param name="head_configs" value="[[1,0.7],[-1,0.7],[0.0,0.7]]" />
+
+    <!--param name="head_configs" value="[[0.0,-0.3],[-0.7,0.3],[0.7,0.5],[-0.5,0.5],[0.5,0.3],[-0.2,0.3]]" -->
+
+    <!-- param name="head_configs" value="[[0.0,-0.1],[-0.5, 0.3],[0.5,0.3]]" -->
+    <param name="use_random" value="0"/>
+  </node>
+  </group>
+</launch>

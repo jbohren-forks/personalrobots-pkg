@@ -1,0 +1,22 @@
+<package>
+  <description>An executive-free (for now) program to follow people</description>
+  <author>Ethan Dreyfuss</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <depend package="rospy" />
+  <depend package="roscpp" />
+  <depend package="robot_srvs" />
+  <depend package="tf" />
+  <depend package="nav_robot_actions" />
+  <depend package="std_msgs" />
+  <depend package="robot_msgs" />
+  <depend package="pr2_robot_actions" />
+  <depend package="robot_actions" />
+  <depend package="milestone2_actions" />
+  <depend package="executive_python" />
+  <depend package="bagserver" />
+  <export>
+     <cpp cflags="-I${prefix}/msg/cpp -I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib"/>
+  </export>
+
+</package>
