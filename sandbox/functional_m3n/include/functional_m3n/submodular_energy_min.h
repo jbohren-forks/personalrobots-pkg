@@ -131,25 +131,86 @@ class SubmodularEnergyMin
 
     // --------------------------------------------------------------
     /*!
-     * \brief Adds a Pn Potts high-order term E(x1,..,xn) over n variables, as described
+     * \brief Adds a Pn Potts high-order term E(x_1,..,x_n) over n variables, as described
      *        in Kohli et al., "P3 & Beyond: Solving Energies with Higher Order Cliques", CVPR 2007
      *
      * If implementing alpha-expansion and using 0 to represent the alpha label and 1 for the current
      * label, then Ec0 = gamma_alpha and Ec1 = gamma (where gamma = gamma_beta if all nodes in the
      * clique are currently labeled beta, and gamma = Emax otherwise), as described in Equation 38.
      *
-     * \param energy_vars List of n energy variables
+     * \param clique_vars List of energy variables that constitute the clique
      * \param Ec0 The energy if all variables in the clique take value 0
      * \param Ec1 The energy if all variables in the clique take value 1
-     * \param Emax The max values Ec0 and Ec can take
+     * \param Emax The max energy value the clique can have
      *
      * \return 0 on success, otherwise negative value on error
      */
     // --------------------------------------------------------------
-    int addPnPotts(const list<EnergyVar>& energy_vars, double Ec0, double Ec1, double Emax);
+    int addPnPotts(const list<EnergyVar>& clique_vars, double Ec0, double Ec1, double Emax);
 
-    void addRobustPnPotts();
+    // --------------------------------------------------------------
+    /*!
+     * \brief Adds a Robust Pn Potts high-order term E(x_1,...,x_n) over n variables, as described
+     *        in Kohli et al., "Robust Higher Order Potentials for Enforcing Label Consistency", IJCV 2009
+     *
+     * This method implements the alpha-expansion move for the high-order potential. It uses a basic form
+     * of the potential where all nodes have equal weight for all labels and the truncation parameter Q is
+     * the same for all labels.
+     *
+     * This method should be called when a dominant label d in the clique can be found, that is
+     * when D > P - Q, where D is the number of nodes in the clique that take on label d,
+     * P is the number of nodes in the clique, and Q is the truncation parameter.
+     *
+     * IMPORTANT: this function assumes 0 represents the alpha-label and 1 represents the current
+     * labeling.  Ensure to call the other energy functions appropriately.
+     *
+     * \param clique_vars List of energy variables that constitute the clique
+     * \param dominant_vars List of energy variables that currently take on the clique's dominant labels
+     * \param gamma_alpha The energy if all variables in the clique take on the alpha label (value 0)
+     * \param gamma_dominant The energy if dominant variables keep their label (value 1)
+     * \param gamma_max The max energy value the clique can have
+     * \param Q The truncation parameter, it is the number of nodes that can disagree with
+     *          the dominant label.  IMPORTANT: 2Q < clique_vars.size()
+     *
+     * \return 0 on success, otherwise negative value on error
+     */
+    // --------------------------------------------------------------
+    int addRobustPottsDominantExpand0(const list<EnergyVar>& clique_vars,
+                                      const list<EnergyVar>& dominant_vars,
+                                      double gamma_alpha,
+                                      double gamma_dominant,
+                                      double gamma_max,
+                                      double Q);
 
+    // --------------------------------------------------------------
+    /*!
+     * \brief Adds a Robust Pn Potts high-order term E(x_1,...,x_n) over n variables, as described
+     *        in Kohli et al., "Robust Higher Order Potentials for Enforcing Label Consistency", IJCV 2009
+     *
+     * This method implements the alpha-expansion move for the high-order potential. It uses a basic form
+     * of the potential where all nodes have equal weight for all labels and the truncation parameter Q is
+     * the same for all labels.
+     *
+     * This method should be called when NO dominant label in the clique can be found, that is
+     * there is no label d such that D > P - Q, where D is the number of nodes in the clique that take
+     * on label d, P is the number of nodes in the clique, and Q is the truncation parameter.
+     *
+     * IMPORTANT: this function assumes 0 represents the alpha-label and 1 represents the current
+     * labeling.  Ensure to call the other energy functions appropriately.
+     *
+     * \param clique_vars List of energy variables that constitute the clique
+     * \param gamma_alpha The energy if all variables in the clique take on the alpha label (value 0)
+     * \param gamma_max The max energy value the clique can have
+     * \param Q The truncation parameter, it is the number of nodes that can disagree with
+     *          the dominant label.  IMPORTANT: 2Q < clique_vars.size()
+     *
+     * \return 0 on success, otherwise negative value on error
+     */
+    // --------------------------------------------------------------
+    int addRobustPottsNoDominantExpand0(const list<EnergyVar>& clique_vars,
+                                        double gamma_alpha,
+                                        double gamma_max,
+                                        double Q);
     // --------------------------------------------------------------
     /*!
      * \brief Minimizes the current energy function
@@ -424,7 +485,7 @@ inline void SubmodularEnergyMin::add_tweights(const EnergyVar& x,
 // --------------------------------------------------------------
 /*! See function definition */
 // --------------------------------------------------------------
-inline int SubmodularEnergyMin::addPnPotts(const list<EnergyVar>& energy_vars,
+inline int SubmodularEnergyMin::addPnPotts(const list<EnergyVar>& clique_vars,
                                            double Ec0,
                                            double Ec1,
                                            double Emax)
@@ -460,11 +521,11 @@ inline int SubmodularEnergyMin::addPnPotts(const list<EnergyVar>& energy_vars,
   add_tweights(m_t, 0.0, w_e);
 
   // add edges between extra nodes and clique nodes
-  list<EnergyVar>::const_iterator iter_energy_vars;
-  for (iter_energy_vars = energy_vars.begin(); iter_energy_vars != energy_vars.end() ; iter_energy_vars++)
+  list<EnergyVar>::const_iterator iter_clique_vars;
+  for (iter_clique_vars = clique_vars.begin(); iter_clique_vars != clique_vars.end() ; iter_clique_vars++)
   {
-    create_dedge(m_s, *iter_energy_vars, w_d, 0.0);
-    create_dedge(*iter_energy_vars, m_t, w_e, 0.0);
+    create_dedge(m_s, *iter_clique_vars, w_d, 0.0);
+    create_dedge(*iter_clique_vars, m_t, w_e, 0.0);
   }
 
   return 0;

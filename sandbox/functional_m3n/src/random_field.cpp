@@ -313,8 +313,6 @@ int RandomField::Clique::getModeLabels(unsigned int& mode1_label,
   mode2_label = RandomField::UNKNOWN_LABEL;
   mode2_count = RandomField::UNKNOWN_LABEL;
 
-  // TODO why using list?  just store counter
-
   map<unsigned int, list<unsigned int> > tempo_labels_to_node_ids;
 
   // -------------------------------------------------------
