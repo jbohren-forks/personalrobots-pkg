@@ -66,7 +66,7 @@ public:
   virtual ~MessageFilterBase(){}
   virtual void clear() = 0;
   virtual void setTargetFrame(const std::string& target_frame) = 0;
-  virtual void setTargetFrame(const std::vector<std::string>& target_frames) = 0;
+  virtual void setTargetFrames(const std::vector<std::string>& target_frames) = 0;
   virtual void setTolerance(const ros::Duration& tolerance) = 0;
 };
 
@@ -141,13 +141,13 @@ public:
   {
     std::vector<std::string> frames;
     frames.push_back(target_frame);
-    setTargetFrame(frames);
+    setTargetFrames(frames);
   }
 
   /**
    * \brief Set the frames you need to be able to transform to before getting a message callback
    */
-  void setTargetFrame(const std::vector<std::string>& target_frames)
+  void setTargetFrames(const std::vector<std::string>& target_frames)
   {
     boost::mutex::scoped_lock list_lock(messages_mutex_);
     boost::mutex::scoped_lock string_lock(target_frames_string_mutex_);

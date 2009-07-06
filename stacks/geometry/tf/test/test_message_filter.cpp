@@ -194,7 +194,7 @@ TEST(MessageFilter, multipleTargetFrames)
   std::vector<std::string> target_frames;
   target_frames.push_back("frame1");
   target_frames.push_back("frame2");
-	filter.setTargetFrame(target_frames);
+	filter.setTargetFrames(target_frames);
 
 	ros::Time stamp = ros::Time::now();
   tf::Stamped<tf::Transform> transform(btTransform(btQuaternion(0,0,0), btVector3(1,2,3)), stamp, "frame1", "frame3");
