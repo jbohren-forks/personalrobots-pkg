@@ -46,16 +46,16 @@ bodies::Body* bodies::createBodyFromShape(const shapes::Shape *shape)
     if (shape)
 	switch (shape->type)
 	{
-	case shapes::Shape::BOX:
+	case shapes::BOX:
 	    body = new bodies::Box(shape);
 	    break;
-	case shapes::Shape::SPHERE:
+	case shapes::SPHERE:
 	    body = new bodies::Sphere(shape);
 	    break;
-	case shapes::Shape::CYLINDER:
+	case shapes::CYLINDER:
 	    body = new bodies::Cylinder(shape);
 	    break;
-	case shapes::Shape::MESH:
+	case shapes::MESH:
 	    body = new bodies::ConvexMesh(shape);
 	    break;
 	default:
@@ -261,7 +261,7 @@ void bodies::ConvexMesh::useDimensions(const shapes::Shape *shape)
     HullLibrary hl;
     if (hl.CreateConvexHull(hd, hr) == QE_OK)
     {
-	std::cout << "Convex hull has " << hr.m_OutputVertices.size() << "(" << hr.mNumOutputVertices << ") vertices (down from " << mesh->vertexCount << "), " << hr.mNumFaces << " faces" << std::endl;
+	std::cout << "Convex hull has " << hr.m_OutputVertices.size() << " vertices (down from " << mesh->vertexCount << "), " << hr.mNumFaces << " faces" << std::endl;
 
 	m_vertices.reserve(hr.m_OutputVertices.size());
 	btVector3 sum(btScalar(0), btScalar(0), btScalar(0));	

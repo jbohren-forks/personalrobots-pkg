@@ -70,10 +70,17 @@ namespace bodies
 	    m_scale = 1.0;
 	    m_padding = 0.0;
 	    m_pose.setIdentity();
+	    m_type = shapes::UNKNOWN;
 	}
 	
 	virtual ~Body(void)
 	{
+	}
+	
+	/** \brief Get the type of shape this body represents */
+	shapes::ShapeType getType(void) const
+	{
+	    return m_type;
 	}
 	
 	/** \brief If the dimension of the body should be scaled, this
@@ -146,9 +153,10 @@ namespace bodies
 	virtual void updateInternalData(void) = 0;
 	virtual void useDimensions(const shapes::Shape *shape) = 0;
 	
-	btTransform m_pose;	
-	double      m_scale;
-	double      m_padding;	    
+	shapes::ShapeType m_type;
+	btTransform       m_pose;	
+	double            m_scale;
+	double            m_padding;	
     };
     
     /** \brief Definition of a sphere */
@@ -158,10 +166,12 @@ namespace bodies
 	Sphere(void) : Body()
 	{
 	    m_radius = 0.0;
+	    m_type = shapes::SPHERE;
 	}
 	
 	Sphere(const shapes::Shape *shape) : Body()
 	{
+	    m_type = shapes::SPHERE;
 	    setDimensions(shape);
 	}
 	
@@ -191,10 +201,12 @@ namespace bodies
 	Cylinder(void) : Body()
 	{
 	    m_length = m_radius = 0.0;
+	    m_type = shapes::CYLINDER;
 	}
 	
 	Cylinder(const shapes::Shape *shape) : Body()
 	{
+	    m_type = shapes::CYLINDER;
 	    setDimensions(shape);
 	}
 	
@@ -231,10 +243,12 @@ namespace bodies
 	Box(void) : Body()
 	{
 	    m_length = m_width = m_height = 0.0;
+	    m_type = shapes::BOX;
 	}
 	
 	Box(const shapes::Shape *shape) : Body()
 	{
+	    m_type = shapes::BOX;
 	    setDimensions(shape);
 	}
 	
@@ -271,12 +285,14 @@ namespace bodies
     public:
 	
 	ConvexMesh(void) : Body()
-	{
+	{	    
+	    m_type = shapes::MESH;
 	    m_meshCenter.setValue(btScalar(0), btScalar(0), btScalar(0));
 	}
 	
 	ConvexMesh(const shapes::Shape *shape) : Body()
-	{
+	{	  
+	    m_type = shapes::MESH;
 	    m_meshCenter.setValue(btScalar(0), btScalar(0), btScalar(0));
 	    setDimensions(shape);
 	}

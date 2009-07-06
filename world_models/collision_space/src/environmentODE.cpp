@@ -96,24 +96,24 @@ dGeomID collision_space::EnvironmentModelODE::createODEGeom(dSpaceID space, shap
     dGeomID g = NULL;
     switch (shape->type)
     {
-    case shapes::Shape::SPHERE:
+    case shapes::SPHERE:
 	{
 	    g = dCreateSphere(space, static_cast<shapes::Sphere*>(shape)->radius * scale + padding);
 	}
 	break;
-    case shapes::Shape::BOX:
+    case shapes::BOX:
 	{
 	    const double *size = static_cast<shapes::Box*>(shape)->size;
 	    g = dCreateBox(space, size[0] * scale + padding, size[1] * scale + padding, size[2] * scale + padding);
 	}	
 	break;
-    case shapes::Shape::CYLINDER:
+    case shapes::CYLINDER:
 	{
 	    g = dCreateCylinder(space, static_cast<shapes::Cylinder*>(shape)->radius * scale + padding,
 				static_cast<shapes::Cylinder*>(shape)->length * scale + padding);
 	}
 	break;
-    case shapes::Shape::MESH:
+    case shapes::MESH:
 	{
 	    dTriMeshDataID data = dGeomTriMeshDataCreate();
 	    shapes::Mesh *mesh = static_cast<shapes::Mesh*>(shape);

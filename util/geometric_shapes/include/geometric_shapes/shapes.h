@@ -48,6 +48,10 @@
 namespace shapes
 {
     
+    /** \brief A list of known shape types */
+    enum ShapeType { UNKNOWN, SPHERE, CYLINDER, BOX, MESH };
+    
+    
     /** \brief A basic definition of a shape. Shapes are considered centered at origin */
     class Shape
     {		    
@@ -61,9 +65,7 @@ namespace shapes
 	{
 	}
 	
-	enum { UNKNOWN, SPHERE, CYLINDER, BOX, MESH } 
-	    type;
-	
+	ShapeType type;
     };
     
     /** \brief Definition of a sphere */
