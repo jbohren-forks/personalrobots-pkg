@@ -91,6 +91,43 @@ TEST(Cache, easyInterval)
   EXPECT_EQ(interval_data.size(), (unsigned int) 0) ;
 }
 
+boost::shared_ptr<Msg const> buildMsg(double time, int data)
+{
+  Msg* msg = new Msg ;
+  msg->data = data ;
+  msg->header.stamp.fromSec(time) ;
+
+  boost::shared_ptr<Msg const> msg_ptr(msg) ;
+  return msg_ptr ;
+}
+
+TEST(Cache, easyUnsorted)
+{
+  Cache<Msg> cache(10) ;
+
+  cache.add(buildMsg(10.0, 1)) ;
+  cache.add(buildMsg(30.0, 3)) ;
+  cache.add(buildMsg(70.0, 7)) ;
+  cache.add(buildMsg( 5.0, 0)) ;
+  cache.add(buildMsg(20.0, 2)) ;
+
+  vector<boost::shared_ptr<Msg const> > interval_data = cache.getInterval(ros::Time().fromSec(3), ros::Time().fromSec(15)) ;
+
+  EXPECT_EQ(interval_data.size(), (unsigned int) 2) ;
+  EXPECT_EQ(interval_data[0]->data, 0) ;
+  EXPECT_EQ(interval_data[1]->data, 1) ;
+
+  // Grab all the data
+  interval_data = cache.getInterval(ros::Time().fromSec(0), ros::Time().fromSec(80)) ;
+  EXPECT_EQ(interval_data.size(), (unsigned int) 5) ;
+  EXPECT_EQ(interval_data[0]->data, 0) ;
+  EXPECT_EQ(interval_data[1]->data, 1) ;
+  EXPECT_EQ(interval_data[2]->data, 2) ;
+  EXPECT_EQ(interval_data[3]->data, 3) ;
+  EXPECT_EQ(interval_data[4]->data, 7) ;
+}
+
+
 TEST(Cache, easyElemBeforeAfter)
 {
   Cache<Msg> cache(10) ;

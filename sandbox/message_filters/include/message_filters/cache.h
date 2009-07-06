@@ -52,8 +52,7 @@ namespace message_filters
 /**
  * \brief Stores a time history of messages
  * Given a stream of messages, the most recent N messages are cached in a ring buffer,
- * from which time intervals of the cache can then be retrieved by the client. This assumes
- * that the messages are being received with monotonically increasing timestamps in header.stamp.
+ * from which time intervals of the cache can then be retrieved by the client.
  */
 template<class M>
 class Cache : public boost::noncopyable
@@ -124,7 +123,19 @@ public:
       while (cache_.size() >= cache_size_)                       // Keep popping off old data until we have space for a new msg
         cache_.pop_front() ;                                     // The front of the deque has the oldest elem, so we can get rid of it
 
-      cache_.push_back(msg) ;                                    // Add the newest message to the back of the deque
+      // No longer naively pushing msgs to back. Want to make sure they're sorted correctly
+      //cache_.push_back(msg) ;                                    // Add the newest message to the back of the deque
+
+      typename std::deque<MConstPtr >::reverse_iterator rev_it = cache_.rbegin();
+
+      // Keep walking backwards along deque until we hit the beginning,
+      //   or until we find a timestamp that's smaller than (or equal to) msg's timestamp
+      while(rev_it != cache_.rend() && (*rev_it)->header.stamp > msg->header.stamp)
+        rev_it++;
+
+      // Add msg to the cache
+      cache_.insert(rev_it.base(), msg);
+
     }
 
     {
