@@ -6,7 +6,7 @@ TEST_INSTALL_DIR = $(shell rospack find gazebo)/test-gazebo
 SVN_DIR = gazebo-svn
 SVN_URL = https://playerstage.svn.sourceforge.net/svnroot/playerstage/code/gazebo/trunk
 SVN_REVISION = -r 7945
-SVN_PATCH =  gazebo_new_patch.diff
+SVN_PATCH =  gazebo_new_patch.diff gazebo_user_cam_fix.diff
 include $(shell rospack find mk)/svn_checkout.mk
 
 OGRE_PKG = $(shell rospack find ogre)/ogre/lib/pkgconfig
