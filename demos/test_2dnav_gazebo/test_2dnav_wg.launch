@@ -1,8 +1,11 @@
 <launch>
   <master auto="start" />
 
-    <!-- load robot -->
-    <include file="$(find pr2_gazebo)/prototype1_wg.launch"/>
+    <!-- start up wg world -->
+    <include file="$(find gazebo)/launch/wg_world.launch"/>
+
+    <!-- start up robot -->
+    <include file="$(find pr2_gazebo)/prototype1.launch"/>
 
     <!-- load map -->
     <node pkg="map_server" type="map_server" args="$(find gazebo_robot_description)/Media/materials/textures/willowMap25mm.png 0.025" respawn="false" output="screen" />
