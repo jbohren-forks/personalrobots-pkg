@@ -576,7 +576,7 @@ inline int SubmodularEnergyMin::addRobustPottsDominantExpand0(const list<EnergyV
 
   // -------------------------------------------------
   // Equation 24
-  // theta_d = (gamma_max - gamma_d) / Q_d
+  // theta_k = (gamma_max - gamma_k) / Q_k
   double theta_dominant = (gamma_max - gamma_dominant) / Q;
   double theta_alpha = (gamma_max - gamma_alpha) / Q;
 
@@ -603,13 +603,15 @@ inline int SubmodularEnergyMin::addRobustPottsDominantExpand0(const list<EnergyV
   EnergyVar m_0 = add_vertex(graph_);
   EnergyVar m_1 = add_vertex(graph_);
 
+  // Below is implementing Equation 43 into the graph
+
   // -----------------------------------
   // r_0 * (1-m_0)
   addUnary(m_0, r_0, 0.0);
 
   // -----------------------------------
   // theta_d * m_0 * \sum(w_i*(1-t_i))
-  list<unsigned int>::const_iterator iter_vars;
+  list<EnergyVar>::const_iterator iter_vars;
   for (iter_vars = dominant_vars.begin(); iter_vars != dominant_vars.end() ; iter_vars++)
   {
     // arguments: 00, 01, 10, 11
@@ -643,7 +645,49 @@ inline int SubmodularEnergyMin::addRobustPottsNoDominantExpand0(const list<Energ
                                                                 double gamma_max,
                                                                 double Q)
 {
-  // TODO
+  double P = static_cast<double> (node_vars.size());
+
+  // -------------------------------------------------
+  // Double checks
+  // gamma_max >= gamma_alpha, gamma_dominant
+  if (gamma_alpha > (gamma_max + 1e-5))
+  {
+    ROS_ERROR("gamma_max %f should be bigger than gamma_alpha %f", gamma_max, gamma_alpha);
+    return -1;
+  }
+  // P > Q_a + Q_b for all labels a,b.
+  // We assumed all Q_k are equal
+  if ((2.0 * Q) > (P + 1e-5))
+  {
+    ROS_ERROR("P %f should be bigger than 2Q=%f", P, 2.0 * Q);
+    return -1;
+  }
+
+  // -------------------------------------------------
+  // Equation 24
+  // theta_k = (gamma_max - gamma_k) / Q_k
+  double theta_alpha = (gamma_max - gamma_alpha) / Q;
+
+  // -------------------------------------------------
+  // Equation 44
+  double r_1 = gamma_max - gamma_alpha;
+
+  EnergyVar m_1 = add_vertex(graph_);
+
+  // r1 * m_1
+  addUnary(m_1, 0.0, r_1);
+
+  // theta_alpha * (1-m_1) * \sum(w_i*t_i)
+  list<EnergyVar>::const_iterator iter_vars;
+  for (iter_vars = node_vars.begin(); iter_vars != node_vars.end() ; iter_vars++)
+  {
+    // arguments: 00, 01, 10, 11
+    addPairwise(m_1, *iter_vars, 0.0, theta_alpha, 0.0, 0.0);
+  }
+
+  // + lambda_alpha
+  const_offset_ += gamma_alpha;
+
   return 0;
 }
 #endif
