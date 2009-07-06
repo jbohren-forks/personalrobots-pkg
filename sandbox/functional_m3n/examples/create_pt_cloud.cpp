@@ -53,8 +53,8 @@ int main()
   // ----------------------------------------------------------
   ROS_INFO("Starting to train");
   M3NParams m3n_params;
-  m3n_params.setLearningRate(0.5);
-  m3n_params.setNumberOfIterations(10);
+  m3n_params.setLearningRate(0.1);
+  m3n_params.setNumberOfIterations(20);
   RegressionTreeWrapperParams regression_tree_params;
   m3n_params.setRegressorRegressionTrees(regression_tree_params);
   M3NModel m3n_model;

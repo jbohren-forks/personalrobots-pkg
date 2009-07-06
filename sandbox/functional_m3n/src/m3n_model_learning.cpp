@@ -64,7 +64,7 @@ int M3NModel::train(const vector<const RandomField*>& training_rfs, const M3NPar
   }
   double step_size = m3n_params.getLearningRate();
   unsigned int nbr_iterations = m3n_params.getNumberOfIterations();
-  const vector<double>& robust_potts_params = m3n_params.getRobustPottsParams();
+  const vector<float>& robust_potts_params = m3n_params.getRobustPottsParams();
 
   // -------------------------------------------
   // Ensure the Robust Potts truncation parameters are the same if doing online learning
@@ -256,14 +256,13 @@ int M3NModel::train(const vector<const RandomField*>& training_rfs, const M3NPar
  * Invariant: truncation_params are valid
  */
 // --------------------------------------------------------------
-float M3NModel::calcFuncGradResidual(const double truncation_param,
+float M3NModel::calcFuncGradResidual(const float truncation_param,
                                      const unsigned int clique_order,
                                      const unsigned int nbr_mode_label)
 {
   // If using Robust Potts, determine if allowed number of disagreeing nodes is allowable
   if (truncation_param > 0.0)
   {
-    // TODO truncation params should be floats
     float Q = truncation_param * static_cast<float> (clique_order);
 
     float residual = static_cast<float> (nbr_mode_label - clique_order) / Q + 1.0;

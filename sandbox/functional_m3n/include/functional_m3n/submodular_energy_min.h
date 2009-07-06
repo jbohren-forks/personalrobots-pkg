@@ -129,8 +129,25 @@ class SubmodularEnergyMin
     // --------------------------------------------------------------
     int addPairwise(const EnergyVar& x, const EnergyVar& y, double E00, double E01, double E10, double E11);
 
-    // TODO
-    void addPnPotts();
+    // --------------------------------------------------------------
+    /*!
+     * \brief Adds a Pn Potts high-order term E(x1,..,xn) over n variables, as described
+     *        in Kohli et al., "P3 & Beyond: Solving Energies with Higher Order Cliques", CVPR 2007
+     *
+     * If implementing alpha-expansion and using 0 to represent the alpha label and 1 for the current
+     * label, then Ec0 = gamma_alpha and Ec1 = gamma (where gamma = gamma_beta if all nodes in the
+     * clique are currently labeled beta, and gamma = Emax otherwise), as described in Equation 38.
+     *
+     * \param energy_vars List of n energy variables
+     * \param Ec0 The energy if all variables in the clique take value 0
+     * \param Ec1 The energy if all variables in the clique take value 1
+     * \param Emax The max values Ec0 and Ec can take
+     *
+     * \return 0 on success, otherwise negative value on error
+     */
+    // --------------------------------------------------------------
+    int addPnPotts(const list<EnergyVar>& energy_vars, double Ec0, double Ec1, double Emax);
+
     void addRobustPnPotts();
 
     // --------------------------------------------------------------
@@ -404,4 +421,52 @@ inline void SubmodularEnergyMin::add_tweights(const EnergyVar& x,
   create_dedge(x, sink_, cap_x_to_sink, 0.0);
 }
 
+// --------------------------------------------------------------
+/*! See function definition */
+// --------------------------------------------------------------
+inline int SubmodularEnergyMin::addPnPotts(const list<EnergyVar>& energy_vars,
+                                           double Ec0,
+                                           double Ec1,
+                                           double Emax)
+{
+  if (Emax - 1e-5 > Ec0)
+  {
+    ROS_ERROR("Emax %f should be less than Ec0 %f", Emax, Ec0);
+    return -1;
+  }
+
+  if (Emax - 1e-5 > Ec1)
+  {
+    ROS_ERROR("Emax %f should be less than Ec1 %f", Emax, Ec1);
+    return -1;
+  }
+
+  // calculate edge capacities
+  double kappa = Emax - Ec0 - Ec1;
+  double w_d = Ec1 + kappa;
+  double w_e = Ec0 + kappa;
+
+  // added kappa to capacities to ensure non-negative capacities,
+  // this will not change optimal solution, but will change value
+  // of min-cut so need to offset to get the true energy
+  const_offset_ -= kappa;
+
+  // declare auxiliary nodes
+  EnergyVar m_s = add_vertex(graph_);
+  EnergyVar m_t = add_vertex(graph_);
+
+  // add capacities for auxiliary nodes to source and sink
+  add_tweights(m_s, w_d, 0.0);
+  add_tweights(m_t, 0.0, w_e);
+
+  // add edges between extra nodes and clique nodes
+  list<EnergyVar>::const_iterator iter_energy_vars;
+  for (iter_energy_vars = energy_vars.begin(); iter_energy_vars != energy_vars.end() ; iter_energy_vars++)
+  {
+    create_dedge(m_s, *iter_energy_vars, w_d, 0.0);
+    create_dedge(*iter_energy_vars, m_t, w_e, 0.0);
+  }
+
+  return 0;
+}
 #endif

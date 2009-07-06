@@ -94,7 +94,7 @@ unsigned int M3NParams::getNumberOfIterations() const
 // --------------------------------------------------------------
 /*! See function definition */
 // --------------------------------------------------------------
-int M3NParams::setInferenceRobustPotts(const vector<double>& robust_potts_params)
+int M3NParams::setInferenceRobustPotts(const vector<float>& robust_potts_params)
 {
   // Verify the truncation parameters are valid:
   //   less than or equal to 0 means use Potts
@@ -115,7 +115,7 @@ int M3NParams::setInferenceRobustPotts(const vector<double>& robust_potts_params
 // --------------------------------------------------------------
 /*! See function definition */
 // --------------------------------------------------------------
-const vector<double>& M3NParams::getRobustPottsParams() const
+const vector<float>& M3NParams::getRobustPottsParams() const
 {
   return robust_potts_params_;
 }

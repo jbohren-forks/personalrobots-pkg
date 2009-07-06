@@ -324,6 +324,72 @@ int M3NModel::addEdgeEnergy(const RandomField::Clique& edge,
 // --------------------------------------------------------------
 /*! See function definition */
 // --------------------------------------------------------------
+int M3NModel::addCliqueEnergy(const RandomField::Clique& clique,
+                              const unsigned int clique_set_idx,
+                              SubmodularEnergyMin& energy_func,
+                              const map<unsigned int, SubmodularEnergyMin::EnergyVar>& energy_vars,
+                              const map<unsigned int, unsigned int>& curr_labeling,
+                              const unsigned int alpha_label)
+{
+  // TODO: assuming no robust potts for now
+  unsigned int mode1_label = 0;
+  unsigned int mode1_count = 0;
+  unsigned int mode2_label = 0;
+  unsigned int mode2_count = 0;
+
+  if (clique.getModeLabels(mode1_label, mode1_count, mode2_label, mode2_count, &curr_labeling) < 0)
+  {
+    return -1;
+  }
+
+  // -----------------------------------
+  // Compute potential if all node switch to alpha
+  double Ec0 = 0.0;
+  if (computePotential(clique, clique_set_idx, alpha_label, Ec0) < 0)
+  {
+    return -1;
+  }
+
+  // -----------------------------------
+  // Compute potential if all nodes keep their current labeling
+  // This will be non-zero only when all nodes are labeled the same.
+  double Ec1 = 0.0;
+  if (mode2_label == RandomField::UNKNOWN_LABEL)
+  {
+    if (mode1_label == alpha_label)
+    {
+      // use precomputed value
+      Ec1 = Ec0;
+    }
+    else if (computePotential(clique, clique_set_idx, mode1_label, Ec1) < 0)
+    {
+      return -1;
+    }
+  }
+
+  // -----------------------------------
+  // Create list of energy variables that represent the nodes in this clique
+  list<SubmodularEnergyMin::EnergyVar> node_vars;
+  const list<unsigned int> node_ids = clique.getNodeIDs();
+  list<unsigned int>::const_iterator iter_node_ids;
+  for (iter_node_ids = node_ids.begin(); iter_node_ids != node_ids.end() ; iter_node_ids++)
+  {
+    node_vars.push_back(energy_vars.find(*iter_node_ids)->second);
+  }
+
+  // -----------------------------------
+  // WARNING, this follows that ALPHA_VALUE == 0
+  // max +score = min -score
+  if (energy_func.addPnPotts(node_vars, -Ec0, -Ec1, 0.0) < 0)
+  {
+    return -1;
+  }
+  return 0;
+}
+
+// --------------------------------------------------------------
+/*! See function definition */
+// --------------------------------------------------------------
 int M3NModel::computePotential(const RandomField::Node& node, const unsigned int label, double& potential_val)
 {
   potential_val = 0.0;

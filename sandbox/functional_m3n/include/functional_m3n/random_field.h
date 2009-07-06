@@ -51,28 +51,6 @@
 
 using namespace std;
 
-// TODO TEMPO
-/*
- class FeatureDescriptor
- {
- public:
- EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-
- FeatureDescriptor(double f)
- {
- feature_vals[0] = f;
- feature_vals[1] = 1.0;
- }
-
- unsigned int getDimension()
- {
- return 2;
- }
- Eigen::Vector2d feature_vals;
- };
- */
-// TODO TEMPO
-
 // --------------------------------------------------------------
 //* RandomField
 /**
@@ -339,9 +317,12 @@ class RandomField
         /*!
          * \brief Returns the mode and second mode labels contained in this Clique
          *
+         * mode2_label may equal RandomField::UNKNOWN_LABEL if all nodes in the clique are
+         * labeled the same (and mode2_count will be 0)
+         *
          * \param mode1_label Reference to store the mode label
          * \param mode1_count Reference to store the number of nodes with mode1_label
-         * \param mode2_label Reference to store the 2nd mode label (may be UNKNOWN_LABEL)
+         * \param mode2_label Reference to store the 2nd mode label
          * \param mode2_count Reference to store the number of nodes with mode2_label
          * \param tempo_labeling (Optional) Instead of using internal label information to compute
          *                       modes, will act as if each contained node is labeled using this
@@ -354,7 +335,7 @@ class RandomField
                           unsigned int& mode1_count,
                           unsigned int& mode2_label,
                           unsigned int& mode2_count,
-                          map<unsigned int, unsigned int>* tempo_labeling = NULL);
+                          const map<unsigned int, unsigned int>* tempo_labeling = NULL) const;
 
       protected:
         // --------------------------------------------------------------

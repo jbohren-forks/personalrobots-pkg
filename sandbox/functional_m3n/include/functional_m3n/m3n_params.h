@@ -122,14 +122,14 @@ class M3NParams
      *                            Each value must be in the range [0, 0.5[
      */
     // --------------------------------------------------------------
-    int setInferenceRobustPotts(const vector<double>& robust_potts_params);
+    int setInferenceRobustPotts(const vector<float>& robust_potts_params);
 
     // --------------------------------------------------------------
     /**
      * \brief
      */
     // --------------------------------------------------------------
-    const vector<double>& getRobustPottsParams() const;
+    const vector<float>& getRobustPottsParams() const;
 
     //@}
 
@@ -166,7 +166,7 @@ class M3NParams
     unsigned int nbr_iterations_;
 
     // Inference related
-    vector<double> robust_potts_params_;
+    vector<float> robust_potts_params_;
 
     // Regressor related
     RegressorWrapper::algorithm_t regressor_algorithm_;

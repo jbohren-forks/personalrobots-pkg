@@ -306,12 +306,14 @@ int RandomField::Clique::getModeLabels(unsigned int& mode1_label,
                                        unsigned int& mode1_count,
                                        unsigned int& mode2_label,
                                        unsigned int& mode2_count,
-                                       map<unsigned int, unsigned int>* tempo_labeling)
+                                       const map<unsigned int, unsigned int>* tempo_labeling) const
 {
-  mode1_label = 0;
-  mode1_count = 0;
-  mode2_label = 0;
-  mode2_count = 0;
+  mode1_label = RandomField::UNKNOWN_LABEL;
+  mode1_count = RandomField::UNKNOWN_LABEL;
+  mode2_label = RandomField::UNKNOWN_LABEL;
+  mode2_count = RandomField::UNKNOWN_LABEL;
+
+  // TODO why using list?  just store counter
 
   map<unsigned int, list<unsigned int> > tempo_labels_to_node_ids;
 
@@ -319,13 +321,14 @@ int RandomField::Clique::getModeLabels(unsigned int& mode1_label,
   // Determine a mapping from label->[node_ids].
   // Recalculate if using temporary label information,
   // otherwise use internal information
-  map<unsigned int, list<unsigned int> >* labels_to_node_ids = NULL;
+  const map<unsigned int, list<unsigned int> >* labels_to_node_ids = NULL;
   if (tempo_labeling != NULL)
   {
     // populate temporary mapping: temporary_label --> [node ids]
     unsigned int curr_node_id = 0;
     unsigned int curr_tempo_node_label = 0;
-    for (list<unsigned int>::iterator iter_node_ids = node_ids_.begin() ; iter_node_ids != node_ids_.end() ; iter_node_ids++)
+    for (list<unsigned int>::const_iterator iter_node_ids = node_ids_.begin() ; iter_node_ids
+        != node_ids_.end() ; iter_node_ids++)
     {
       curr_node_id = *iter_node_ids;
 
@@ -336,7 +339,7 @@ int RandomField::Clique::getModeLabels(unsigned int& mode1_label,
         ROS_ERROR("Could not find node id %u in the temporary labeling", curr_node_id);
         return -1;
       }
-      curr_tempo_node_label = (*tempo_labeling)[curr_node_id];
+      curr_tempo_node_label = tempo_labeling->find(curr_node_id)->second;
 
       // ---------
       // Add node temporary label's list
@@ -357,10 +360,10 @@ int RandomField::Clique::getModeLabels(unsigned int& mode1_label,
   // -------------------------------------------------------
   // Iterate over each label, compare each's number of associated nodes and update modes appropriately
   unsigned int curr_count = 0;
-  for (map<unsigned int, list<unsigned int> >::iterator iter = labels_to_node_ids->begin() ; iter
+  for (map<unsigned int, list<unsigned int> >::const_iterator iter = labels_to_node_ids->begin() ; iter
       != labels_to_node_ids->end() ; iter++)
   {
-    list<unsigned int>& curr_node_list = iter->second;
+    const list<unsigned int>& curr_node_list = iter->second;
     curr_count = curr_node_list.size();
 
     // Update mode 1 if necessary

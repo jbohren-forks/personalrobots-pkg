@@ -180,7 +180,7 @@ class M3NModel
      * \return The functional gradient residual
      */
     // --------------------------------------------------------------
-    float calcFuncGradResidual(const double truncation_param,
+    float calcFuncGradResidual(const float truncation_param,
                                const unsigned int clique_order,
                                const unsigned int nbr_mode_label);
 
@@ -282,6 +282,27 @@ class M3NModel
                       const map<unsigned int, SubmodularEnergyMin::EnergyVar>& energy_vars,
                       const map<unsigned int, unsigned int>& curr_labeling,
                       const unsigned int alpha_label);
+
+    // --------------------------------------------------------------
+    /*!
+     * \brief Adds high-order clique energy term for alpha-expansion graph-cut inference
+     *
+     * \param clique The high-order clique containing its features
+     * \param clique_set_idx The clique set that the edge belongs to
+     * \param energy_func The submodular energy function minimizer
+     * \param energy_vars All variables in the energy minimizer that represents the RandomField
+     * \param curr_labeling The RandomField's current labeling
+     * \param alpha_label The alpha label to potentially expand to
+     *
+     * \return 0 on success, otherwise negative value on error
+     */
+    // --------------------------------------------------------------
+    int addCliqueEnergy(const RandomField::Clique& clique,
+                        const unsigned int clique_set_idx,
+                        SubmodularEnergyMin& energy_func,
+                        const map<unsigned int, SubmodularEnergyMin::EnergyVar>& energy_vars,
+                        const map<unsigned int, unsigned int>& curr_labeling,
+                        const unsigned int alpha_label);
     //@}
 
     bool trained_;
@@ -296,7 +317,7 @@ class M3NModel
     vector<unsigned int> training_labels_;
     bool loss_augmented_inference_;
 
-    vector<double> robust_potts_params_;
+    vector<float> robust_potts_params_;
 
     vector<pair<double, RegressorWrapper*> > regressors_;
 };
