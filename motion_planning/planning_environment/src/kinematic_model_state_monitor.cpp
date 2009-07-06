@@ -64,7 +64,7 @@ void planning_environment::KinematicModelStateMonitor::setupRSM(void)
 	    if (dynamic_cast<planning_models::KinematicModel::FloatingJoint*>(kmodel_->getRobot(0)->chain))
 		floatingJoint_ = kmodel_->getRobot(0)->chain->name;
 
-	    robot_frame_ = kmodel_->getRobot(0)->chain->after->name;
+	    robot_frame_ = "/" + kmodel_->getRobot(0)->chain->after->name;
 	    ROS_DEBUG("Robot frame is '%s'", robot_frame_.c_str());
 
 	    if (includePose_)

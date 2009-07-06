@@ -96,7 +96,7 @@ void setupGoal(const std::vector<std::string> &names, pr2_robot_actions::MoveArm
     for (unsigned int i = 0 ; i < goal.goal_constraints.joint_constraint.size(); ++i)
     {
 	goal.goal_constraints.joint_constraint[i].header.stamp = ros::Time::now();
-	goal.goal_constraints.joint_constraint[i].header.frame_id = "base_link";
+	goal.goal_constraints.joint_constraint[i].header.frame_id = "/base_link";
 	goal.goal_constraints.joint_constraint[i].joint_name = names[i];
 	goal.goal_constraints.joint_constraint[i].value.resize(1);
 	goal.goal_constraints.joint_constraint[i].toleranceAbove.resize(1);
@@ -113,7 +113,7 @@ void setupGoalEEf(const std::string &link, double x, double y, double z, pr2_rob
     goal.goal_constraints.pose_constraint[0].type = motion_planning_msgs::PoseConstraint::POSITION_XYZ + motion_planning_msgs::PoseConstraint::ORIENTATION_RPY;
     goal.goal_constraints.pose_constraint[0].link_name = link;
     goal.goal_constraints.pose_constraint[0].pose.header.stamp = ros::Time::now();
-    goal.goal_constraints.pose_constraint[0].pose.header.frame_id = "base_link";
+    goal.goal_constraints.pose_constraint[0].pose.header.frame_id = "/base_link";
     goal.goal_constraints.pose_constraint[0].pose.pose.position.x = x;
     goal.goal_constraints.pose_constraint[0].pose.pose.position.y = y;	
     goal.goal_constraints.pose_constraint[0].pose.pose.position.z = z;	
