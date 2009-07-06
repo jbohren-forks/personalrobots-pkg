@@ -555,7 +555,6 @@ SuperpixelColorHistogram::SuperpixelColorHistogram(int seed_spacing, float scale
   char buf[100];
   sprintf(buf, "_colorHistogram_type:%s_nBins%d", type_.c_str(), nBins);
   name_.append(buf);
-  cout << "Creating " << name_ << endl;
 
   result_size_ = nBins_;
 
@@ -776,31 +775,59 @@ void SuperpixelColorHistogram::clearImageCache() {
 ****************************************************************************/
  
 
-IntegralImageDescriptor::IntegralImageDescriptor(IntegralImageDescriptor* ii_provider) : ii_provider_(ii_provider)
+IntegralImageDescriptor::IntegralImageDescriptor(IntegralImageDescriptor* ii_provider) 
+  : ImageDescriptor(), ii_(NULL), ii_tilt_(NULL), gray_(NULL), ii_provider_(ii_provider)
 {
+  char buf[100];
+  sprintf(buf, "IntegralImageDescriptor");
+  name_ = string(buf);
 }
 
 IntegralImageDescriptor::~IntegralImageDescriptor() {
-  if(!ii_provider_ && ii_)
-    cvReleaseImage(&ii_);
+  if(!ii_provider_) {
+    if(ii_)
+      cvReleaseImage(&ii_);
+    if(ii_tilt_)
+      cvReleaseImage(&ii_tilt_);
+    if(gray_)
+      cvReleaseImage(&gray_);
+  }
 }
 
 void IntegralImageDescriptor::integrate() {
-  cvIntegral(img_, ii_);
+  
+  if(!img_)
+    ROS_FATAL("Trying to compute integral image of null image.");
+  if(!gray_) {
+    gray_ = cvCreateImage(cvGetSize(img_), IPL_DEPTH_8U, 1);
+    cvCvtColor(img_, gray_, CV_BGR2GRAY);
+  }
+
+  // TODO: Don't reallocate for every image.
+  CvSize sz = cvGetSize(img_);
+  sz.height++;
+  sz.width++;
+  ii_ = cvCreateImage(sz, IPL_DEPTH_32S, 1);
+  ii_tilt_ = cvCreateImage(sz, IPL_DEPTH_32S, 1);
+  cvIntegral(gray_, ii_, NULL, ii_tilt_);
 }
 
 void IntegralImageDescriptor::clearImageCache() {
   if(ii_) {
-    if(!ii_provider_)
+    if(!ii_provider_) {
       cvReleaseImage(&ii_);
-    else
+      cvReleaseImage(&ii_tilt_);
+      cvReleaseImage(&gray_);
+    }
+    else {
       ii_ = NULL;
+      ii_tilt_ = NULL;
+      gray_ = NULL;
+    }
   }
 } 
 
 bool IntegralImageDescriptor::integrateRect(float* result, int row_offset, int col_offset, int half_height, int half_width) {
-  result = NULL;
-
   // -- Check that we have an integral image.
   if(!ii_) {
     return false;
@@ -808,7 +835,7 @@ bool IntegralImageDescriptor::integrateRect(float* result, int row_offset, int c
   }
 
   // -- Check bounds.
-  int ul_x = col_ + col_offset - half_width;
+  int ul_x = col_ + col_offset - half_width; 
   int ul_y = row_ + row_offset - half_height;
   int ll_x = ul_x;
   int ll_y = row_ + row_offset + half_height;
@@ -817,27 +844,172 @@ bool IntegralImageDescriptor::integrateRect(float* result, int row_offset, int c
   int lr_x = ur_x;
   int lr_y = ll_y;
   
-  if(ul_x < 0 || ul_y < 0 || ll_y >= img_->height || ur_x >= img_->width)  
+  if(ul_x < 0 || ul_y < 0 || lr_y >= img_->height || lr_x >= img_->width)  {
+    //    ROS_DEBUG("Out of bounds. %d %d, %d %d", ul_x, ul_y, lr_x, lr_y);
     return false;
-
-  // -- Compute the rectangle sum.
-  *result =   CV_IMAGE_ELEM(ii_, float, ul_y, ul_x) \
-            + CV_IMAGE_ELEM(ii_, float, lr_y, lr_x) \
-            - CV_IMAGE_ELEM(ii_, float, ur_y, ur_x) \
-            - CV_IMAGE_ELEM(ii_, float, ll_y, ll_x);
-
-  // -- Check that it's right.
-  float check = 0;
-  for(int r=ul_y+1; r<=ll_y; r++) {
-    for(int c=ul_x+1; c<=ur_x; c++) {
-      check += CV_IMAGE_ELEM(gray_, uchar, r, c);
-    }
   }
-  ROS_ASSERT(abs(check - *result) < 1e-6);
+
+  // -- Compute the rectangle sum.  +1 is because of ii_ dfn
+  *result =   CV_IMAGE_ELEM(ii_, int, ul_y    , ul_x    ) \
+            + CV_IMAGE_ELEM(ii_, int, lr_y + 1, lr_x + 1) \
+            - CV_IMAGE_ELEM(ii_, int, ur_y    , ur_x + 1) \
+            - CV_IMAGE_ELEM(ii_, int, ll_y + 1, ll_x    );
+
+  // -- Check that it's right.  
+//   int check = 0;
+//   for(int r=ul_y; r<=ll_y; r++) {
+//     for(int c=ul_x; c<=ur_x; c++) {
+//       check += CV_IMAGE_ELEM(gray_, uchar, r, c);
+//     }
+//   }
+//   if(abs(check - *result) > 0) {
+//     cout << check - *result << " difference for computing at row " << row_ << " and col " << col_ << endl;
+//     ROS_ASSERT(0);
+//   }
 
   return true;
 }
 
+/***************************************************************************
+***********  ImageDescriptor::IntegralImageDescriptor::IntegralImageTexture
+****************************************************************************/
+IntegralImageTexture::IntegralImageTexture(int scale, IntegralImageDescriptor* ii_provider)
+  : IntegralImageDescriptor(ii_provider), scale_(scale) 
+{
+  char buf[100];
+  sprintf(buf, "_IntegralImageTexture_scale%d", scale_);
+  name_.append(buf);
+
+  //result_size_ = 17; //TextonBoost-like texture descriptors.
+  result_size_ = 21;
+}
+
+// How do I make this get called when I am calling setImage on a IntegralImageDescriptor* ?
+// void IntegralImageTexture::setImage(IplImage* img) {
+//   cvNamedWindow("x");
+//   cvShowImage("x", img);
+//   cvWaitKey(0);
+//   cvGetSize(img);
+//   ImageDescriptor::setImage(img);
+//   if(!img_)
+//     ROS_FATAL("Img is NULL in %s", name_.c_str());
+ 
+//   ROS_DEBUG("Calling IntegralImageTexture's setImage");
+// }
+
+bool IntegralImageTexture::compute(Eigen::MatrixXf** result, bool debug) {
+  if(!ii_)
+    integrate();
+  
+  int szs = 8;
+  vector<float> val(8,0);
+  vector<float> area(8,0);
+  
+  bool success=true;
+  MatrixXf* res = new MatrixXf(result_size_, 1);
+  int ctr = 0;
+
+  // -- 8 Center-surround
+  success &= integrateRect(&val[0], 0, 0, 1, 1);
+  area[0] = 9;
+  for(int i=1; i<=szs; i++) {
+    success &= integrateRect(&val[i], 0, 0, i+1, i+1); 
+    area[i] = pow((double)(2*(i+1)+1), 2);
+    (*res)(ctr,0) = (val[i-1] - val[i]) / (area[i]-area[i-1]) + val[i-1] / area[i-1];
+    ctr++;
+  }
+  
+  //5 finer grained center-surround.
+  for(unsigned int i=3; i<val.size(); i++) {
+    (*res)(ctr,0) = (2./3.) * val[i-3] / area[i-3] + (1./3.) * (val[i-2] - val[i-3]) / (area[i-2] - area[i-3]) \
+      - (1./3.) * (val[i-1] - val[i-2]) / (area[i-1] - area[i-2]) - (2./3.) * (val[i] - val[i-1]) / (area[i] - area[i-1]);
+    ctr++;
+  }
+
+  // -- Gabor Vert
+  success &= integrateRect(&val[0], 0, 1, 2, 0); 
+  success &= integrateRect(&val[1], 0, -1, 2, 0); 
+  (*res)(ctr,0) = (val[0] - val[1]) / 5.;
+  ctr++;
+
+  success &= integrateRect(&val[0], 0, 1, 5, 0); 
+  success &= integrateRect(&val[1], 0, -1, 5, 0); 
+  (*res)(ctr,0) = (val[0] - val[1]) / 11.;
+  ctr++;
+
+  success &= integrateRect(&val[0], 0, 2, 2, 1); 
+  success &= integrateRect(&val[1], 0, -2, 2, 1); 
+  (*res)(ctr,0) = (val[0] - val[1]) / 15;
+  ctr++;
+
+  success &= integrateRect(&val[0], 0, 2, 5, 1); 
+  success &= integrateRect(&val[1], 0, -2, 5, 1); 
+  (*res)(ctr,0) = (val[0] - val[1]) / 33.;
+  ctr++;
+
+  // -- Horiz
+  success &= integrateRect(&val[0], 1, 0, 0, 2); 
+  success &= integrateRect(&val[1], -1, 0, 0, 2); 
+  (*res)(ctr,0) = (val[0] - val[1]) / 5.;
+  ctr++;
+  
+  success &= integrateRect(&val[0], 1, 0, 0, 5); 
+  success &= integrateRect(&val[1], -1, 0, 0, 5); 
+  (*res)(ctr,0) = (val[0] - val[1]) / 11.;
+  ctr++;
+  
+  success &= integrateRect(&val[0], 2, 0, 1, 2); 
+  success &= integrateRect(&val[1], -2, 0, 1, 2); 
+  (*res)(ctr,0) = (val[0] - val[1]) / 15.;
+  ctr++;
+
+  success &= integrateRect(&val[0], 2, 0, 1, 5); 
+  success &= integrateRect(&val[1], -2, 0, 1, 5);
+  (*res)(ctr,0) = (val[0] - val[1]) / 33.;
+  ctr++;
+
+
+  if(!success) {
+    delete res;
+    return false;
+  }
+
+
+  // -- Check that the scaling is between -255 and 255.
+//   static vector<float> max(result_size_, -1e20);
+//   static vector<float> min(result_size_, 1e20);
+//   for(unsigned int i=0; i<result_size_; i++) {
+//     assert((*res)(i,0) <= 255 && (*res)(i,0) >= -255);
+//     if((*res)(i,0) > max[i])
+//       max[i] = (*res)(i,0);
+//     if((*res)(i,0) < min[i])
+//       min[i] = (*res)(i,0);
+//   }
+//   static int count = 0;
+//   count++;
+//   if(count % 1000 == 0) {
+//     cout << "Max: ";
+//     for(unsigned int i=0; i<result_size_; i++) {
+//       cout << max[i] << " ";
+//     }
+//     cout << endl;
+//     cout << "Min: ";
+//     for(unsigned int i=0; i<result_size_; i++) {
+//       cout << min[i] << " ";
+//     }
+//     cout << endl;
+//   }
+
+
+  *result = res;
+  if(debug) {
+    cout << name_ << " descriptor: " << res->transpose() << endl;
+    commonDebug();
+  }
+
+  return true;
+}
+  
 
 
  
@@ -959,7 +1131,7 @@ EdgePatch::compute(MatrixXf** result, bool debug) {
   Patch::compute(IplImage* img_, row_, col_, result, debug);
   IplImage* gray = cvCreateImage(cvGetSize(img_), IPL_DEPTH_8U, 1);
   IplImage* detail_edge = cvCloneImage(gray);
-  cvCvtCol_or(img_, gray, CV_BGR2GRAY);
+  cvCvtColor(img_, gray, CV_BGR2GRAY);
   cvCanny(gray, detail_edge, thresh1_, thresh2_);
   cvNamedWindow("detail_edge");
   cvShowImage("detail_edge", detail_edge);

@@ -46,14 +46,15 @@ class ImageDescriptor {
   virtual void clearImageCache() = 0;
   //! Show the input image and a red + at the point at which the descriptor is being computed.
   void commonDebug();
-  void setImage(IplImage* img);
-  void setPoint(int row, int col);
+  virtual void setImage(IplImage* img);
+  virtual void setPoint(int row, int col);
   virtual ~ImageDescriptor() {};
 };
 
 class IntegralImageDescriptor : public ImageDescriptor {
  public:
   IplImage* ii_;
+  IplImage* ii_tilt_;
   IplImage* gray_;
   IntegralImageDescriptor* ii_provider_;
   
@@ -61,15 +62,22 @@ class IntegralImageDescriptor : public ImageDescriptor {
   IntegralImageDescriptor(IntegralImageDescriptor* ii_provider);
   ~IntegralImageDescriptor();
   void integrate();
-  void clearImageCache();
-  void clearPointCache() {}
+  virtual void clearImageCache();
+  virtual void clearPointCache() = 0;
   bool integrateRect(float* result, int row_offset, int col_offset, int half_height, int half_width);
 
 };
 
-/* class IntegralImageTexture : public IntegralImageDescriptor { */
-/*  public: */
-/*   int filt */
+class IntegralImageTexture : public IntegralImageDescriptor {
+ public:
+  int scale_;
+
+  IntegralImageTexture(int scale = 1, IntegralImageDescriptor* ii_provider = NULL);
+  bool compute(Eigen::MatrixXf** result, bool debug);
+  void display(const Eigen::MatrixXf& result) {}
+  void clearPointCache() {}
+  //void setImage(IplImage* img);
+};
 
 class Patch : public ImageDescriptor {
  public:
