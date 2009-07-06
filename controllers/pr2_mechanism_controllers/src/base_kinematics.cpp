@@ -31,14 +31,14 @@
  *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
- /*
+/*
  * Author: Sachin Chitta and Matthew Piccoli
  */
-  
- #include <pr2_mechanism_controllers/base_kinematics.h>
- 
- using namespace controller;
- 
+
+#include <pr2_mechanism_controllers/base_kinematics.h>
+
+using namespace controller;
+
 void Wheel::initXml(mechanism::RobotState *robot_state, TiXmlElement *config)
 {
   wheel_stuck_ = 0;
@@ -55,11 +55,9 @@ void Wheel::initXml(mechanism::RobotState *robot_state, TiXmlElement *config)
   offset_.x = offset.getOrigin().x();
   offset_.y = offset.getOrigin().y();
   offset_.z = offset.getOrigin().z();
-  ros::Node::instance()->param<double>(name_ + "/wheel_radius_scaler",wheel_radius_scaler_,1.0); 
-  #if 0
-    ROS_DEBUG("Loading wheel: %s",name_.c_str());
-    ROS_DEBUG("offset_.x: %f, offset_.y: %f, offset_.z: %f", offset_.x, offset_.y, offset_.z);
-  #endif
+  ros::Node::instance()->param<double> (name_ + "/wheel_radius_scaler", wheel_radius_scaler_, 1.0);
+  ROS_DEBUG("Loading wheel: %s",name_.c_str());
+  ROS_DEBUG("offset_.x: %f, offset_.y: %f, offset_.z: %f", offset_.x, offset_.y, offset_.z);
 }
 
 void Caster::initXml(mechanism::RobotState *robot_state, TiXmlElement *config)
@@ -73,8 +71,7 @@ void Caster::initXml(mechanism::RobotState *robot_state, TiXmlElement *config)
   steer_velocity_desired_ = 0;
   steer_angle_actual_ = 0;
   num_children_ = 0;
-	
-  name_ = config->Attribute("name");
+
   mechanism::Link *link = robot_state->model_->getLink(config->Attribute("name"));
   name_ = link->joint_name_;
   joint_ = robot_state->getJointState(name_);
@@ -86,10 +83,11 @@ void Caster::initXml(mechanism::RobotState *robot_state, TiXmlElement *config)
   ROS_DEBUG("Loading caster: %s: my parent is: %s",name_.c_str(), parent_->name_.c_str());
   ROS_DEBUG("offset_.x: %f, offset_.y: %f, offset_.z: %f", offset_.x, offset_.y, offset_.z);
   
-  while(elt){
+  while(elt)
+  {
     Wheel tmp;
     parent_->wheel_.push_back(tmp);
-    parent_->wheel_[parent_->num_wheels_].initXml(robot_state,elt);
+    parent_->wheel_[parent_->num_wheels_].initXml(robot_state, elt);
     elt = elt->NextSiblingElement(parent_->xml_wheel_name_);
     parent_->num_wheels_++;
     num_children_++;
@@ -103,29 +101,30 @@ bool BaseKinematics::initXml(mechanism::RobotState *robot_state, TiXmlElement *c
   MAX_DT_ = 0.01;
   num_wheels_ = 0;
   num_casters_ = 0;
-	
+
   //Add parameters
-  ros::Node::instance()->param<std::string>("~xml_wheel_name",xml_wheel_name_,"wheel");
-  ros::Node::instance()->param<std::string>("~xml_caster_name",xml_caster_name_,"caster");
-  ros::Node::instance()->param<double>("~wheel_radius",wheel_radius_,0.074792);
+  ros::Node::instance()->param<std::string> ("~xml_wheel_name", xml_wheel_name_, "wheel");
+  ros::Node::instance()->param<std::string> ("~xml_caster_name", xml_caster_name_, "caster");
+  ros::Node::instance()->param<double> ("~wheel_radius", wheel_radius_, 0.074792);
   double multiplier;
-  ros::Node::instance()->param<double>(name_ + "/wheel_radius_multiplier",multiplier,1.0);
-  wheel_radius_ = wheel_radius_*multiplier;
- 	
+  ros::Node::instance()->param<double> (name_ + "/wheel_radius_multiplier", multiplier, 1.0);
+  wheel_radius_ = wheel_radius_ * multiplier;
+
   TiXmlElement *elt = config->FirstChildElement(xml_caster_name_);
   
-  while(elt){
+  while(elt)
+  {
     Caster tmp;
     caster_.push_back(tmp);
     caster_[num_casters_].parent_ = this;
-    caster_[num_casters_].initXml(robot_state,elt);
+    caster_[num_casters_].initXml(robot_state, elt);
     elt = elt->NextSiblingElement(xml_caster_name_);
     num_casters_++;
   }
   int wheel_counter = 0;
-  for(int j=0; j < num_casters_; j++)
+  for(int j = 0; j < num_casters_; j++)
   {
-    for(int i = 0; i< caster_[j].num_children_; i++)
+    for(int i = 0; i < caster_[j].num_children_; i++)
     {
       wheel_[wheel_counter].parent_ = &(caster_[j]);
       wheel_counter++;
@@ -140,18 +139,18 @@ void Wheel::updatePosition()
   robot_msgs::Point result = parent_->offset_;
   double costh = cos(parent_->joint_->position_);
   double sinth = sin(parent_->joint_->position_);
-  result.x += costh*offset_.x-sinth*offset_.y;
-  result.y += sinth*offset_.x+costh*offset_.y;
+  result.x += costh * offset_.x - sinth * offset_.y;
+  result.y += sinth * offset_.x + costh * offset_.y;
   result.z = 0.0;
   position_ = result;
 }
 
 void BaseKinematics::computeWheelPositions()
 {
-  for(int i=0; i < num_wheels_; i++)
-    {
-      wheel_[i].updatePosition();
-    }
+  for(int i = 0; i < num_wheels_; i++)
+  {
+    wheel_[i].updatePosition();
+  }
 
 }
 

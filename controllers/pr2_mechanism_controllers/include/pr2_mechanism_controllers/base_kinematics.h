@@ -31,7 +31,7 @@
  *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
- /*
+/*
  * Author: Sachin Chitta and Matthew Piccoli
  */
 
@@ -43,245 +43,245 @@
 
 namespace controller
 {
-	class Wheel;
-	class Caster;
-	class BaseKinematics;
-	/*! \class
-	\brief This class keeps track of the wheels
-	*/
-	class Wheel
-	{
-		public:
-		
-		/*!
-		* \brief JointState for this wheel joint
-		*/
-		mechanism::JointState *joint_;
-		
-		/*!
-		* \brief default offset from the parent caster before any transformations
-		*/
-		robot_msgs::Point offset_;
-		
-		/*!
-		* \brief name of the joint
-		*/
-		std::string name_;
-		/*!
-		* \brief offset_ after rotation transformation from the parent caster's position
-		*/
-		robot_msgs::Point position_;
-		
-		/*!
-		* \brief the caster on which this wheel is mounted
-		*/
-		Caster *parent_;
-				
-		/*!
-		* \brief actual wheel speeds
-		*/
-		double wheel_speed_actual_;
-				
-		/*!
-		* \brief desired wheel speed
-		*/
-		double wheel_speed_cmd_;
-				
-		/*!
-		* \brief difference between desired and actual speed
-		*/
-		double wheel_speed_error_; 
-				
-		/*!
-		* \brief wheel speed filtered with alpha
-		*/
-		double wheel_speed_filtered_; 
-		
-		/*!
-		* \brief specifies the default direction of the wheel
-		*/
-		int direction_multiplier_;
-		
-		/*!
-		* \brief remembers if the wheel is stalled
-		*/
-		int wheel_stuck_;
-		
-		/*!
-		* \brief wheel radius scale (based on the default wheel radius in Basekinematics)
-		*/
-		double wheel_radius_scaler_;
-		
-		/*!
-		* \brief Loads wheel's information from the xml description file and param server
-    * @param robot_state The robot's current state
-    * @param config Tiny xml element pointing to this wheel
-		*/
-		void initXml(mechanism::RobotState *robot_state, TiXmlElement *config);
-		
-		/*!
-		* \brief Computes 2d postion of the wheel relative to the center of the base
-		*/
-		void updatePosition();
-	};
-	
-	/*! \class
-	\brief This class keeps track of the casters
-	*/
-	class Caster
-	{
-		public:
-		
-		/*!
-		* \brief JointState for this caster joint
-		*/
-		mechanism::JointState *joint_;
-		
-		/*!
-		* \brief offset from the center of the base
-		*/
-		robot_msgs::Point offset_;
-		
-		/*!
-		* \brief name of the joint
-		*/
-		std::string name_;
-		//robot_msgs::Point position_;
-		
-		/*!
-		* \brief BaseKinematics to which this caster belongs
-		*/
-		BaseKinematics *parent_;
-    
-    /*!
-     * \brief the number of child wheels that are attached to this caster
-     */
-    int num_children_;
-		
-		/*!
-		* \brief actual caster steer angles
-		*/
-		double steer_angle_actual_;
-			
-		/*!
-		* \brief vector of desired caster steer speeds
-		*/
-		double steer_velocity_desired_;
-		
-		/*!
-		* \brief stored caster steer angles
-		*/
-		double steer_angle_stored_;
-				
-		/*!
-		* \brief difference between desired and actual angles of the casters
-		*/
-		double caster_position_error_;
-				
-		/*!
-		* \brief difference between desired and actual speeds of the casters
-		*/
-		double caster_speed_error_; 
-			
-		/*!
-		* \brief caster speed filtered with alpha
-		*/
-		double caster_speed_filtered_;
+  class Wheel;
+  class Caster;
+  class BaseKinematics;
+  /*! \class
+   \brief This class keeps track of the wheels
+   */
+  class Wheel
+  {
+    public:
 
-		/*!
-		* \brief remembers the caster's current speed
-		*/
-		double caster_speed_;
-				
-		/*!
-		* \brief remembers if the caster is stalled
-		*/
-		int caster_stuck_;
-		
-		/*!
-		* \brief Loads caster's information from the xml description file and param server
-    * @param robot_state The robot's current state
-    * @param config Tiny xml element pointing to this caster
-		*/
-		void initXml(mechanism::RobotState *robot_state, TiXmlElement *config);
-	};
-	
-	/*! \class
-	\brief This class includes common functions used by the base controller and odometry
-	*/
-	class BaseKinematics
-	{
-		public:
-		
-		/*!
-		* \brief Loads BaseKinematic's information from the xml description file and param server
-    * @param robot_state The robot's current state
-    * @param config Tiny xml element pointing to its controller
-    * @return Successful init
-		*/
-		bool initXml(mechanism::RobotState *robot_state, TiXmlElement *config);
-		
-		/*!
-		* \brief Computes 2d postion of every wheel relative to the center of the base
-		*/
-		void computeWheelPositions();
-		
-		/*!
-		* \brief Computes 2d velocity of a point at relative distance pos to another point with velocity (and rotation (z)) vel
-    * @param pos The position of the object relative to the center of rotation
-    * @param vel Velocity of the center of rotation
-    * @return Velocity at the given point
-		*/
-		robot_msgs::PoseDot pointVel2D(const robot_msgs::Point& pos, const robot_msgs::PoseDot& vel);
-		
-    /*!
-    * \brief remembers everything about the state of the robot
-    */
-		mechanism::RobotState *robot_state_;
-		
-    /*!
-    * \brief number of wheels connected to the base
-    */
-		int num_wheels_;
-    
-    /*!
-    * \brief number of casters connected to the base
-    */
-    int num_casters_;
-		
-		/*!
-		* \brief vector of every wheel attached to the base
-		*/
-		std::vector<Wheel> wheel_;
-		
-		/*!
-		* \brief vector of every caster attached to the base
-		*/
-		std::vector<Caster> caster_;
-		
-		/*!
-		* \brief default radius of each wheel 
-		*/
-		double wheel_radius_;
-		
-    /*!
-    * \brief the name of the casters in the xml file
-    */
-		std::string xml_caster_name_;
-    
-    /*!
-    * \brief the name of the wheels in the xml file
-    */
-    std::string xml_wheel_name_;
-		
-    /*!
-    * \brief name of this BaseKinematics (generally associated with whatever controller is using it)
-    */
-		std::string name_;
-		
-    /*!
-    * \brief maximum dT used in computation of interpolated velocity command
-    */
-		double MAX_DT_;
-	};
+      /*!
+       * \brief JointState for this wheel joint
+       */
+      mechanism::JointState *joint_;
+
+      /*!
+       * \brief default offset from the parent caster before any transformations
+       */
+      robot_msgs::Point offset_;
+
+      /*!
+       * \brief name of the joint
+       */
+      std::string name_;
+      /*!
+       * \brief offset_ after rotation transformation from the parent caster's position
+       */
+      robot_msgs::Point position_;
+
+      /*!
+       * \brief the caster on which this wheel is mounted
+       */
+      Caster *parent_;
+
+      /*!
+       * \brief actual wheel speeds
+       */
+      double wheel_speed_actual_;
+
+      /*!
+       * \brief desired wheel speed
+       */
+      double wheel_speed_cmd_;
+
+      /*!
+       * \brief difference between desired and actual speed
+       */
+      double wheel_speed_error_;
+
+      /*!
+       * \brief wheel speed filtered with alpha
+       */
+      double wheel_speed_filtered_;
+
+      /*!
+       * \brief specifies the default direction of the wheel
+       */
+      int direction_multiplier_;
+
+      /*!
+       * \brief remembers if the wheel is stalled
+       */
+      int wheel_stuck_;
+
+      /*!
+       * \brief wheel radius scale (based on the default wheel radius in Basekinematics)
+       */
+      double wheel_radius_scaler_;
+
+      /*!
+       * \brief Loads wheel's information from the xml description file and param server
+       * @param robot_state The robot's current state
+       * @param config Tiny xml element pointing to this wheel
+       */
+      void initXml(mechanism::RobotState *robot_state, TiXmlElement *config);
+
+      /*!
+       * \brief Computes 2d postion of the wheel relative to the center of the base
+       */
+      void updatePosition();
+  };
+
+  /*! \class
+   \brief This class keeps track of the casters
+   */
+  class Caster
+  {
+    public:
+
+      /*!
+       * \brief JointState for this caster joint
+       */
+      mechanism::JointState *joint_;
+
+      /*!
+       * \brief offset from the center of the base
+       */
+      robot_msgs::Point offset_;
+
+      /*!
+       * \brief name of the joint
+       */
+      std::string name_;
+      //robot_msgs::Point position_;
+
+      /*!
+       * \brief BaseKinematics to which this caster belongs
+       */
+      BaseKinematics *parent_;
+
+      /*!
+       * \brief the number of child wheels that are attached to this caster
+       */
+      int num_children_;
+
+      /*!
+       * \brief actual caster steer angles
+       */
+      double steer_angle_actual_;
+
+      /*!
+       * \brief vector of desired caster steer speeds
+       */
+      double steer_velocity_desired_;
+
+      /*!
+       * \brief stored caster steer angles
+       */
+      double steer_angle_stored_;
+
+      /*!
+       * \brief difference between desired and actual angles of the casters
+       */
+      double caster_position_error_;
+
+      /*!
+       * \brief difference between desired and actual speeds of the casters
+       */
+      double caster_speed_error_;
+
+      /*!
+       * \brief caster speed filtered with alpha
+       */
+      double caster_speed_filtered_;
+
+      /*!
+       * \brief remembers the caster's current speed
+       */
+      double caster_speed_;
+
+      /*!
+       * \brief remembers if the caster is stalled
+       */
+      int caster_stuck_;
+
+      /*!
+       * \brief Loads caster's information from the xml description file and param server
+       * @param robot_state The robot's current state
+       * @param config Tiny xml element pointing to this caster
+       */
+      void initXml(mechanism::RobotState *robot_state, TiXmlElement *config);
+  };
+
+  /*! \class
+   \brief This class includes common functions used by the base controller and odometry
+   */
+  class BaseKinematics
+  {
+    public:
+
+      /*!
+       * \brief Loads BaseKinematic's information from the xml description file and param server
+       * @param robot_state The robot's current state
+       * @param config Tiny xml element pointing to its controller
+       * @return Successful init
+       */
+      bool initXml(mechanism::RobotState *robot_state, TiXmlElement *config);
+
+      /*!
+       * \brief Computes 2d postion of every wheel relative to the center of the base
+       */
+      void computeWheelPositions();
+
+      /*!
+       * \brief Computes 2d velocity of a point at relative distance pos to another point with velocity (and rotation (z)) vel
+       * @param pos The position of the object relative to the center of rotation
+       * @param vel Velocity of the center of rotation
+       * @return Velocity at the given point
+       */
+      robot_msgs::PoseDot pointVel2D(const robot_msgs::Point& pos, const robot_msgs::PoseDot& vel);
+
+      /*!
+       * \brief remembers everything about the state of the robot
+       */
+      mechanism::RobotState *robot_state_;
+
+      /*!
+       * \brief number of wheels connected to the base
+       */
+      int num_wheels_;
+
+      /*!
+       * \brief number of casters connected to the base
+       */
+      int num_casters_;
+
+      /*!
+       * \brief vector of every wheel attached to the base
+       */
+      std::vector<Wheel> wheel_;
+
+      /*!
+       * \brief vector of every caster attached to the base
+       */
+      std::vector<Caster> caster_;
+
+      /*!
+       * \brief default radius of each wheel
+       */
+      double wheel_radius_;
+
+      /*!
+       * \brief the name of the casters in the xml file
+       */
+      std::string xml_caster_name_;
+
+      /*!
+       * \brief the name of the wheels in the xml file
+       */
+      std::string xml_wheel_name_;
+
+      /*!
+       * \brief name of this BaseKinematics (generally associated with whatever controller is using it)
+       */
+      std::string name_;
+
+      /*!
+       * \brief maximum dT used in computation of interpolated velocity command
+       */
+      double MAX_DT_;
+  };
 }

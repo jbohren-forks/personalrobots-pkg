@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<launch>
+
+  <!-- start up robot -->
+  <include file="$(find pr2_gazebo)/pr2_simple_office.launch"/>
+  
+  <!-- Joystick -->
+  <param name="joy/deadzone" value="5000"/>
+  <node machine="four" pkg="joy" type="joy"  respawn="true"/>
+
+  <!-- load map -->
+  <node pkg="map_server" type="map_server" args="$(find gazebo_robot_description)/Media/materials/textures/map_blank.png 0.1" respawn="true" machine="three" />
+  <!--node pkg="slam_gmapping" type="slam_gmapping" respawn="false" /-->
+
+  <!-- nav-stack -->
+  <include file="$(find 2dnav_gazebo)/2dnav-stack-fake_localization.launch"/>
+
+  <!-- for visualization -->
+  <!--include file="$(find 2dnav_pr2)/rviz/rviz_move_base.launch"/-->
+
+  <!-- for manual control -->
+  <!--node pkg="teleop_base" type="teleop_base_keyboard" respawn="false" output="screen" /-->
+  <!--node pkg="teleop_arm_keyboard" type="teleop_arm_keyboard" respawn="false" output="screen" /-->
+
+</launch>

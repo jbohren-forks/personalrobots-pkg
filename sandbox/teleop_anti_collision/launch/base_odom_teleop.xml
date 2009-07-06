@@ -1,0 +1,95 @@
+<launch>
+ <param name="base_controller/autostart" value="true"/>
+ <!--node pkg="mechanism_control" type="spawner.py" args="$(find pr2_default_controllers)/base_controller.xml" output="screen"/-->
+ <param name="base_controller/odom_publish_rate" value="10" />
+ <param name="pr2_base_controller/timeout" value="0.2" />
+ <param name="pr2_base_controller/fl_caster_rotation_joint/p" value="3.0" />
+ <param name="pr2_base_controller/fr_caster_rotation_joint/p" value="3.0" />
+ <param name="pr2_base_controller/br_caster_rotation_joint/p" value="3.0" />
+ <param name="pr2_base_controller/bl_caster_rotation_joint/p" value="3.0" />
+ <param name="pr2_base_controller/fl_caster_rotation_joint/i" value="0.1" />
+ <param name="pr2_base_controller/fr_caster_rotation_joint/i" value="0.1" />
+ <param name="pr2_base_controller/br_caster_rotation_joint/i" value="0.1" />
+ <param name="pr2_base_controller/bl_caster_rotation_joint/i" value="0.1" />
+ <param name="pr2_base_controller/fl_caster_rotation_joint/d" value="0.0" />
+ <param name="pr2_base_controller/fr_caster_rotation_joint/d" value="0.0" />
+ <param name="pr2_base_controller/br_caster_rotation_joint/d" value="0.0" />
+ <param name="pr2_base_controller/bl_caster_rotation_joint/d" value="0.0" />
+ <param name="pr2_base_controller/fl_caster_rotation_joint/i_clamp" value="4.0" />
+ <param name="pr2_base_controller/fr_caster_rotation_joint/i_clamp" value="4.0" />
+ <param name="pr2_base_controller/br_caster_rotation_joint/i_clamp" value="4.0" />
+ <param name="pr2_base_controller/bl_caster_rotation_joint/i_clamp" value="4.0" />
+ <param name="pr2_base_controller/fl_caster_l_wheel_joint/p" value="2.0" />
+ <param name="pr2_base_controller/fl_caster_r_wheel_joint/p" value="2.0" />
+ <param name="pr2_base_controller/fr_caster_l_wheel_joint/p" value="2.0" />
+ <param name="pr2_base_controller/fr_caster_r_wheel_joint/p" value="2.0" />
+ <param name="pr2_base_controller/bl_caster_l_wheel_joint/p" value="2.0" />
+ <param name="pr2_base_controller/bl_caster_r_wheel_joint/p" value="2.0" />
+ <param name="pr2_base_controller/br_caster_l_wheel_joint/p" value="2.0" />
+ <param name="pr2_base_controller/br_caster_r_wheel_joint/p" value="2.0" />
+ <param name="pr2_base_controller/fl_caster_l_wheel_joint/i" value="0.01" />
+ <param name="pr2_base_controller/fl_caster_r_wheel_joint/i" value="0.01" />
+ <param name="pr2_base_controller/fr_caster_l_wheel_joint/i" value="0.01" />
+ <param name="pr2_base_controller/fr_caster_r_wheel_joint/i" value="0.01" />
+ <param name="pr2_base_controller/bl_caster_l_wheel_joint/i" value="0.01" />
+ <param name="pr2_base_controller/bl_caster_r_wheel_joint/i" value="0.01" />
+ <param name="pr2_base_controller/br_caster_l_wheel_joint/i" value="0.01" />
+ <param name="pr2_base_controller/br_caster_r_wheel_joint/i" value="0.01" />
+ <param name="pr2_base_controller/fl_caster_l_wheel_joint/d" value="0.0" />
+ <param name="pr2_base_controller/fl_caster_r_wheel_joint/d" value="0.0" />
+ <param name="pr2_base_controller/fr_caster_l_wheel_joint/d" value="0.0" />
+ <param name="pr2_base_controller/fr_caster_r_wheel_joint/d" value="0.0" />
+ <param name="pr2_base_controller/bl_caster_l_wheel_joint/d" value="0.0" />
+ <param name="pr2_base_controller/bl_caster_r_wheel_joint/d" value="0.0" />
+ <param name="pr2_base_controller/br_caster_l_wheel_joint/d" value="0.0" />
+ <param name="pr2_base_controller/br_caster_r_wheel_joint/d" value="0.0" />
+ <param name="pr2_base_controller/fl_caster_l_wheel_joint/i_clamp" value="0.4" />
+ <param name="pr2_base_controller/fl_caster_r_wheel_joint/i_clamp" value="0.4" />
+ <param name="pr2_base_controller/fr_caster_l_wheel_joint/i_clamp" value="0.4" />
+ <param name="pr2_base_controller/fr_caster_r_wheel_joint/i_clamp" value="0.4" />
+ <param name="pr2_base_controller/bl_caster_l_wheel_joint/i_clamp" value="0.4" />
+ <param name="pr2_base_controller/bl_caster_r_wheel_joint/i_clamp" value="0.4" />
+ <param name="pr2_base_controller/br_caster_l_wheel_joint/i_clamp" value="0.4" />
+ <param name="pr2_base_controller/br_caster_r_wheel_joint/i_clamp" value="0.4" />
+ <param name="pr2_base_controller/max_accel_.acc.ax" value="2.0" />
+ <param name="pr2_base_controller/max_accel_.acc.ay" value="2.0" />
+ <param name="pr2_base_controller/max_accel_.ang_acc.az" value="2.0" />
+ <node pkg="mechanism_control" type="spawner.py" args="$(find pr2_default_controllers)/pr2_base_controller.xml" output="screen"/>
+ <node pkg="mechanism_control" type="spawner.py" args="$(find pr2_default_controllers)/pr2_base_odometry.xml" output="screen"/>
+ 
+ <node pkg="mechanism_control" type="spawner.py" args="$(find pr2_default_controllers)/torso_lift_vel_controller.xml" output="screen" />
+ 
+ <node pkg="backup_safetysound" type="backingup.py" machine="four" />
+ 
+ <!-- The robot pose EKF is launched with the base controller-->
+ <param name="robot_pose_ekf/freq" value="30.0"/>
+ <param name="robot_pose_ekf/sensor_timeout" value="1.0"/>
+ <param name="robot_pose_ekf/odom_used" value="true"/>
+ <param name="robot_pose_ekf/imu_used" value="true"/>
+ <param name="robot_pose_ekf/vo_used" value="false"/>
+ <node pkg="robot_pose_ekf" type="robot_pose_ekf" args="robot_pose_ekf"></node>
+ 
+ <param name="axis_vx" value="3" type="int"/>
+ <param name="axis_vy" value="2" type="int"/>
+ <param name="axis_vw" value="0" type="int"/>
+ <param name="pan" value="4" type="int"/>
+ <param name="tilt" value="5" type="int"/>
+ <param name="max_vw" value="0.785" />
+ <param name="max_vx" value="1.0" />
+ <param name="max_vy" value="0.4" />
+ 
+ <param name="max_vw_run" value="1.4" />
+ <param name="max_vx_run" value="1.0" />
+ <param name="max_vy_run" value="1.0" />
+ <param name="run_button" value="5" type="int" />
+ <param name="torso_dn_button" value="1" type="int" />
+ <param name="torso_up_button" value="3" type="int" />
+ 
+ <param name="send_cmd_hz" value = "10.0" type="double" />
+ <param name="joy_msg_timeout" value="-1.0"/>
+ <param name="deadman_button" value="4" type="int"/>
+ <node pkg="teleop_anti_collision" type="teleop_goal_projection" output="screen" args="--deadman_no_publish" respawn="true" machine="four">
+  <remap from="goal" to="/move_base/activate" />
+ </node>
+
+</launch>

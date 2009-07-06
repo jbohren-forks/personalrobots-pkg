@@ -40,7 +40,7 @@
 #include <termios.h>
 #include <pr2_mechanism_controllers/GripperControllerCmd.h>
 
-//TODO::would these #defines conflict with others?  Change to const int?
+//TODO::#ifndef PACKAGE_PATH_FILE_H me!
 #define KEYCODE_0 0x30
 #define KEYCODE_1 0x31
 #define KEYCODE_2 0x32
