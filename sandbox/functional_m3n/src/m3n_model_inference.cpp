@@ -166,21 +166,26 @@ int M3NModel::inferPrivate(const RandomField& random_field,
           curr_clique_order = curr_clique->getOrder();
           if (curr_clique_order < 2)
           {
-            ROS_ERROR("Clique with id %u in clique-set %u has order %u. This should not happen",
+            ROS_WARN("Clique with id %u in clique-set %u has order %u. This should not happen...skipping it",
                 iter_cliques->first, cs_idx, curr_clique_order);
-            ret_val = -1;
+            continue;
           }
+          // add edge potential (assuming all edges are associative)
           else if (curr_clique_order == 2)
           {
             ret_val = addEdgeEnergy(*curr_clique, cs_idx, *energy_func, energy_vars, inferred_labels,
                 alpha_label);
           }
+          // add high-order clique potential
           else
           {
+            // add Robust Pn Potts
             if (robust_potts_params_[cs_idx] > 1e-5)
             {
-              // TODO
+              ret_val = addCliqueEnergyRobustPotts(*curr_clique, cs_idx, *energy_func, energy_vars,
+                  inferred_labels, alpha_label);
             }
+            // add Pn Potts
             else
             {
               ret_val = addCliqueEnergyPotts(*curr_clique, cs_idx, *energy_func, energy_vars,
@@ -231,13 +236,20 @@ int M3NModel::addNodeEnergy(const RandomField::Node& node,
                             const unsigned int curr_label,
                             const unsigned int alpha_label)
 {
+  // Compute scores for assigning specified labels
   double curr_score = 0.0;
   double alpha_score = 0.0;
-  if (computePotential(node, curr_label, curr_score) < 0)
+  if (computePotential(node, alpha_label, alpha_score) < 0)
   {
     return -1;
+
   }
-  if (computePotential(node, alpha_label, alpha_score) < 0)
+  if (curr_label == alpha_label)
+  {
+    // reuse computation
+    curr_score = alpha_score;
+  }
+  else if (computePotential(node, curr_label, curr_score) < 0)
   {
     return -1;
   }
@@ -308,7 +320,12 @@ int M3NModel::addEdgeEnergy(const RandomField::Clique& edge,
   // Compute score if both nodes stay the same (1)
   if (node1_label == node2_label)
   {
-    if (computePotential(edge, clique_set_idx, node1_label, E11) < 0)
+    if (node1_label == alpha_label)
+    {
+      // reuse computation
+      E11 = E00;
+    }
+    else if (computePotential(edge, clique_set_idx, node1_label, E11) < 0)
     {
       return -1;
     }
@@ -349,7 +366,7 @@ int M3NModel::addCliqueEnergyPotts(const RandomField::Clique& clique,
 
   // -----------------------------------
   // Compute potential if all nodes keep their current labeling
-  if (clique.getModeLabels(mode1_label, mode1_count, mode2_label, mode2_count, &curr_labeling) < 0)
+  if (clique.getModeLabels(mode1_label, mode1_count, mode2_label, mode2_count, NULL, &curr_labeling) < 0)
   {
     return -1;
   }
@@ -371,7 +388,7 @@ int M3NModel::addCliqueEnergyPotts(const RandomField::Clique& clique,
   // -----------------------------------
   // Create list of energy variables that represent the nodes in this clique
   list<SubmodularEnergyMin::EnergyVar> node_vars;
-  const list<unsigned int> node_ids = clique.getNodeIDs();
+  const list<unsigned int>& node_ids = clique.getNodeIDs();
   list<unsigned int>::const_iterator iter_node_ids;
   for (iter_node_ids = node_ids.begin(); iter_node_ids != node_ids.end() ; iter_node_ids++)
   {
@@ -386,6 +403,105 @@ int M3NModel::addCliqueEnergyPotts(const RandomField::Clique& clique,
     return -1;
   }
   return 0;
+}
+
+// --------------------------------------------------------------
+/*! See function definition */
+// --------------------------------------------------------------
+int M3NModel::addCliqueEnergyRobustPotts(const RandomField::Clique& clique,
+                                         const unsigned int clique_set_idx,
+                                         SubmodularEnergyMin& energy_func,
+                                         const map<unsigned int, SubmodularEnergyMin::EnergyVar>& energy_vars,
+                                         const map<unsigned int, unsigned int>& curr_labeling,
+                                         const unsigned int alpha_label)
+{
+  unsigned int mode1_label = 0;
+  unsigned int mode1_count = 0;
+  unsigned int mode2_label = 0;
+  unsigned int mode2_count = 0;
+
+  // -----------------------------------
+  // Compute potential if all node switch to alpha
+  double gamma_alpha = 0.0;
+  if (computePotential(clique, clique_set_idx, alpha_label, gamma_alpha) < 0)
+  {
+    return -1;
+  }
+
+  // -----------------------------------
+  // Determine whether a dominant label can be found.
+  // (Note: it must be the mode1_label if it exists).
+  // If the dominant label exists, then compute the clique potential as if all nodes
+  // in the clique were assigned that label
+  list<unsigned int> dominant_node_ids;
+  if (clique.getModeLabels(mode1_label, mode1_count, mode2_label, mode2_count, &dominant_node_ids,
+      &curr_labeling) < 0)
+  {
+    return -1;
+  }
+  double D = static_cast<double> (dominant_node_ids.size());
+  double P = static_cast<double> (mode1_count);
+  double Q = static_cast<double> (robust_potts_params_[clique_set_idx]) * P;
+  bool do_dominant = false;
+  double gamma_dominant = -1.0;
+  if ((D - 1e-5) > (P - Q)) // condition if dominant label exists
+  {
+    // use precomputed value if the dominant label is the alpha label
+    if (mode1_label == alpha_label)
+    {
+      gamma_dominant = gamma_alpha;
+    }
+    else if (computePotential(clique, clique_set_idx, mode1_label, gamma_dominant) < 0)
+    {
+      return -1;
+    }
+    do_dominant = true;
+  }
+
+  // -----------------------------------
+  // Create list of energy variables of the nodes in the clique.
+  // Also save another list containing the variables of just the
+  // dominant nodes, if indicated to.
+  list<unsigned int>::iterator iter_dominant_node_ids;
+  if (do_dominant)
+  {
+    iter_dominant_node_ids = dominant_node_ids.begin();
+  }
+  else
+  {
+    iter_dominant_node_ids = dominant_node_ids.end();
+  }
+  list<SubmodularEnergyMin::EnergyVar> node_vars;
+  list<SubmodularEnergyMin::EnergyVar> dominant_vars;
+  const list<unsigned int>& node_ids = clique.getNodeIDs();
+  list<unsigned int>::const_iterator iter_node_ids;
+  for (iter_node_ids = node_ids.begin(); iter_node_ids != node_ids.end() ; iter_node_ids++)
+  {
+    // save energy variable of all nodes in the clique
+    node_vars.push_back(energy_vars.find(*iter_node_ids)->second);
+
+    // save the energy variables of only the nodes that take on the dominant label
+    if (iter_dominant_node_ids != dominant_node_ids.end())
+    {
+      dominant_vars.push_back(energy_vars.find(*iter_dominant_node_ids)->second);
+      iter_dominant_node_ids++;
+    }
+  }
+
+  // -----------------------------------
+  // WARNING, this follows that ALPHA_VALUE == 0
+  // max +score = min -score
+  int ret_val = 0;
+  if (do_dominant)
+  {
+    ret_val = energy_func.addRobustPottsDominantExpand0(node_vars, dominant_vars, -gamma_alpha,
+        -gamma_dominant, 0.0, Q);
+  }
+  else
+  {
+    ret_val = energy_func.addRobustPottsNoDominantExpand0(node_vars, -gamma_alpha, 0.0, Q);
+  }
+  return ret_val;
 }
 
 // --------------------------------------------------------------

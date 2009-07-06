@@ -211,6 +211,7 @@ class SubmodularEnergyMin
                                         double gamma_alpha,
                                         double gamma_max,
                                         double Q);
+
     // --------------------------------------------------------------
     /*!
      * \brief Minimizes the current energy function
@@ -528,6 +529,28 @@ inline int SubmodularEnergyMin::addPnPotts(const list<EnergyVar>& clique_vars,
     create_dedge(*iter_clique_vars, m_t, w_e, 0.0);
   }
 
+  return 0;
+}
+
+// --------------------------------------------------------------
+/*! See function definition */
+// --------------------------------------------------------------
+inline int SubmodularEnergyMin::addRobustPottsDominantExpand0(const list<EnergyVar>& clique_vars, const list<
+    EnergyVar>& dominant_vars, double gamma_alpha, double gamma_dominant, double gamma_max, double Q)
+{
+  // TODO
+  return 0;
+}
+
+// --------------------------------------------------------------
+/*! See function definition */
+// --------------------------------------------------------------
+inline int SubmodularEnergyMin::addRobustPottsNoDominantExpand0(const list<EnergyVar>& clique_vars,
+                                                                double gamma_alpha,
+                                                                double gamma_max,
+                                                                double Q)
+{
+  // TODO
   return 0;
 }
 #endif

@@ -303,6 +303,13 @@ class M3NModel
                              const map<unsigned int, SubmodularEnergyMin::EnergyVar>& energy_vars,
                              const map<unsigned int, unsigned int>& curr_labeling,
                              const unsigned int alpha_label);
+
+    int addCliqueEnergyRobustPotts(const RandomField::Clique& clique,
+                                   const unsigned int clique_set_idx,
+                                   SubmodularEnergyMin& energy_func,
+                                   const map<unsigned int, SubmodularEnergyMin::EnergyVar>& energy_vars,
+                                   const map<unsigned int, unsigned int>& curr_labeling,
+                                   const unsigned int alpha_label);
     //@}
 
     bool trained_;

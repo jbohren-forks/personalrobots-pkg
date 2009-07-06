@@ -306,6 +306,7 @@ int RandomField::Clique::getModeLabels(unsigned int& mode1_label,
                                        unsigned int& mode1_count,
                                        unsigned int& mode2_label,
                                        unsigned int& mode2_count,
+                                       list<unsigned int>* mode1_node_ids,
                                        const map<unsigned int, unsigned int>* tempo_labeling) const
 {
   mode1_label = RandomField::UNKNOWN_LABEL;
@@ -381,6 +382,13 @@ int RandomField::Clique::getModeLabels(unsigned int& mode1_label,
       mode2_label = iter->first; // label
       mode2_count = curr_count;
     }
+  }
+
+  // -------------------------------------------------------
+  // Save node ids that are labeled mode1_label if indicated
+  if (mode1_node_ids != NULL)
+  {
+    *mode1_node_ids = labels_to_node_ids->find(mode1_label)->second;
   }
 
   return 0;

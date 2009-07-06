@@ -192,7 +192,7 @@ int M3NModel::train(const vector<const RandomField*>& training_rfs, const M3NPar
           }
           if (iter_cliques->second->getModeLabels(curr_clique_infer_mode1_label,
               curr_clique_infer_mode1_count, curr_clique_infer_mode2_label, curr_clique_infer_mode2_count,
-              &curr_inferred_labeling) < 0)
+              NULL, &curr_inferred_labeling) < 0)
           {
             return -1;
           }

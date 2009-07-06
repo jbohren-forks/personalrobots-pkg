@@ -324,6 +324,7 @@ class RandomField
          * \param mode1_count Reference to store the number of nodes with mode1_label
          * \param mode2_label Reference to store the 2nd mode label
          * \param mode2_count Reference to store the number of nodes with mode2_label
+         * \param mode1_node_ids (Optional) Pointer to store list of node ids that are labeled mode1_label
          * \param tempo_labeling (Optional) Instead of using internal label information to compute
          *                       modes, will act as if each contained node is labeled using this
          *                       map of node_id -> label.  Use NULL to not use.
@@ -335,6 +336,7 @@ class RandomField
                           unsigned int& mode1_count,
                           unsigned int& mode2_label,
                           unsigned int& mode2_count,
+                          list<unsigned int>* mode1_node_ids = NULL,
                           const map<unsigned int, unsigned int>* tempo_labeling = NULL) const;
 
       protected:
