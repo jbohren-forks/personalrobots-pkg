@@ -91,7 +91,7 @@ public:
   : queue_size_(queue_size)
   {
     determineRealTypeCount();
-    subscribeTo(f0, f1);
+    connectTo(f0, f1);
   }
 
   template<class F0, class F1, class F2>
@@ -99,7 +99,7 @@ public:
   : queue_size_(queue_size)
   {
     determineRealTypeCount();
-    subscribeTo(f0, f1, f2);
+    connectTo(f0, f1, f2);
   }
 
   template<class F0, class F1, class F2, class F3>
@@ -107,7 +107,7 @@ public:
   : queue_size_(queue_size)
   {
     determineRealTypeCount();
-    subscribeTo(f0, f1, f2, f3);
+    connectTo(f0, f1, f2, f3);
   }
 
   template<class F0, class F1, class F2, class F3, class F4>
@@ -115,7 +115,7 @@ public:
   : queue_size_(queue_size)
   {
     determineRealTypeCount();
-    subscribeTo(f0, f1, f2, f3, f4);
+    connectTo(f0, f1, f2, f3, f4);
   }
 
   template<class F0, class F1, class F2, class F3, class F4, class F5>
@@ -123,7 +123,7 @@ public:
   : queue_size_(queue_size)
   {
     determineRealTypeCount();
-    subscribeTo(f0, f1, f2, f3, f4, f5);
+    connectTo(f0, f1, f2, f3, f4, f5);
   }
 
   template<class F0, class F1, class F2, class F3, class F4, class F5, class F6>
@@ -131,7 +131,7 @@ public:
   : queue_size_(queue_size)
   {
     determineRealTypeCount();
-    subscribeTo(f0, f1, f2, f3, f4, f5, f6);
+    connectTo(f0, f1, f2, f3, f4, f5, f6);
   }
 
   template<class F0, class F1, class F2, class F3, class F4, class F5, class F6, class F7>
@@ -139,7 +139,7 @@ public:
   : queue_size_(queue_size)
   {
     determineRealTypeCount();
-    subscribeTo(f0, f1, f2, f3, f4, f5, f6, f7);
+    connectTo(f0, f1, f2, f3, f4, f5, f6, f7);
   }
 
   template<class F0, class F1, class F2, class F3, class F4, class F5, class F6, class F7, class F8>
@@ -147,7 +147,7 @@ public:
   : queue_size_(queue_size)
   {
     determineRealTypeCount();
-    subscribeTo(f0, f1, f2, f3, f4, f5, f6, f7, f8);
+    connectTo(f0, f1, f2, f3, f4, f5, f6, f7, f8);
   }
 
   TimeSynchronizer(uint32_t queue_size)
@@ -162,56 +162,56 @@ public:
   }
 
   template<class F0, class F1>
-  void subscribeTo(F0& f0, F1& f1)
+  void connectTo(F0& f0, F1& f1)
   {
     NullFilter<M2> f2;
-    subscribeTo(f0, f1, f2);
+    connectTo(f0, f1, f2);
   }
 
   template<class F0, class F1, class F2>
-  void subscribeTo(F0& f0, F1& f1, F2& f2)
+  void connectTo(F0& f0, F1& f1, F2& f2)
   {
     NullFilter<M3> f3;
-    subscribeTo(f0, f1, f2, f3);
+    connectTo(f0, f1, f2, f3);
   }
 
   template<class F0, class F1, class F2, class F3>
-  void subscribeTo(F0& f0, F1& f1, F2& f2, F3& f3)
+  void connectTo(F0& f0, F1& f1, F2& f2, F3& f3)
   {
     NullFilter<M4> f4;
-    subscribeTo(f0, f1, f2, f3, f4);
+    connectTo(f0, f1, f2, f3, f4);
   }
 
   template<class F0, class F1, class F2, class F3, class F4>
-  void subscribeTo(F0& f0, F1& f1, F2& f2, F3& f3, F4& f4)
+  void connectTo(F0& f0, F1& f1, F2& f2, F3& f3, F4& f4)
   {
     NullFilter<M5> f5;
-    subscribeTo(f0, f1, f2, f3, f4, f5);
+    connectTo(f0, f1, f2, f3, f4, f5);
   }
 
   template<class F0, class F1, class F2, class F3, class F4, class F5>
-  void subscribeTo(F0& f0, F1& f1, F2& f2, F3& f3, F4& f4, F5& f5)
+  void connectTo(F0& f0, F1& f1, F2& f2, F3& f3, F4& f4, F5& f5)
   {
     NullFilter<M6> f6;
-    subscribeTo(f0, f1, f2, f3, f4, f5, f6);
+    connectTo(f0, f1, f2, f3, f4, f5, f6);
   }
 
   template<class F0, class F1, class F2, class F3, class F4, class F5, class F6>
-  void subscribeTo(F0& f0, F1& f1, F2& f2, F3& f3, F4& f4, F5& f5, F6& f6)
+  void connectTo(F0& f0, F1& f1, F2& f2, F3& f3, F4& f4, F5& f5, F6& f6)
   {
     NullFilter<M7> f7;
-    subscribeTo(f0, f1, f2, f3, f4, f5, f6, f7);
+    connectTo(f0, f1, f2, f3, f4, f5, f6, f7);
   }
 
   template<class F0, class F1, class F2, class F3, class F4, class F5, class F6, class F7>
-  void subscribeTo(F0& f0, F1& f1, F2& f2, F3& f3, F4& f4, F5& f5, F6& f6, F7& f7)
+  void connectTo(F0& f0, F1& f1, F2& f2, F3& f3, F4& f4, F5& f5, F6& f6, F7& f7)
   {
     NullFilter<M8> f8;
-    subscribeTo(f0, f1, f2, f3, f4, f5, f6, f7, f8);
+    connectTo(f0, f1, f2, f3, f4, f5, f6, f7, f8);
   }
 
   template<class F0, class F1, class F2, class F3, class F4, class F5, class F6, class F7, class F8>
-  void subscribeTo(F0& f0, F1& f1, F2& f2, F3& f3, F4& f4, F5& f5, F6& f6, F7& f7, F8& f8)
+  void connectTo(F0& f0, F1& f1, F2& f2, F3& f3, F4& f4, F5& f5, F6& f6, F7& f7, F8& f8)
   {
     disconnectAll();
 
