@@ -62,6 +62,7 @@ class Token():
     self.name = token.name
     self.start = token.start
     self.end = token.end
+    self.key = token.key
     self.timeline = timeline
 
 class Timeline():
@@ -76,6 +77,7 @@ class Timeline():
 
     # Drawing counters
     self.earliest_start = 0
+    self.latest_end = 0
 
 class Plan():
   def __init__(self, name, timelines):
@@ -96,7 +98,7 @@ class TimelineLabelCanvas(wx.ScrolledWindow):
     # Set up scrolling
     self.EnableScrolling(True,True)
     self.SetVirtualSize(size = (200, 400))
-    self.SetScrollRate(1,1)
+    self.SetScrollRate(1,self.reactor.TIMELINE_HEIGHT+self.reactor.TIMELINE_SPACE)
 
     # Bind repaint events
     self.Bind(wx.EVT_ERASE_BACKGROUND, self.OnEraseBackground)
@@ -114,7 +116,7 @@ class TimelineLabelCanvas(wx.ScrolledWindow):
       self.SetVirtualSize(size=(200, len(self.reactor.plan.timelines)*(self.reactor.TIMELINE_HEIGHT+self.reactor.TIMELINE_SPACE)))
 
       # Paint
-      dc = wx.PaintDC(self)
+      dc = wx.BufferedPaintDC(self)
       self.DoPrepareDC(dc) 
       dc.Clear()
 
@@ -150,7 +152,7 @@ class TimelineTokenCanvas(wx.ScrolledWindow):
     # Set up scrolling
     self.EnableScrolling(True,True)
     self.SetVirtualSize(size = (10, 10))
-    self.SetScrollRate(1,1)
+    self.SetScrollRate(1,self.reactor.TIMELINE_HEIGHT+self.reactor.TIMELINE_SPACE)
 
     # Set to scroll to the frontier by default
     self.scroll_to_frontier = True
@@ -198,7 +200,7 @@ class TimelineTokenCanvas(wx.ScrolledWindow):
 	self.Scroll(self.tick_scale*self.tick_behind,self.GetViewStart()[1])
 
       # Paint
-      dc = wx.PaintDC(self)
+      dc = wx.BufferedPaintDC(self)
       self.DoPrepareDC(dc) 
       self.SetBackgroundColour('BLACK')
       dc.Clear()
@@ -213,67 +215,110 @@ class TimelineTokenCanvas(wx.ScrolledWindow):
 
       # Draw the tokens in each timeline
       dc.SetPen(wx.Pen('#FFFFFF', 0, wx.SOLID))
-      dc.SetTextForeground(wx.Colour(255,255,255,255))
 
       # Initialize earliest start tick
       earliest_start = 0
+      latest_end = 0
 
+      font_label = wx.Font(10, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL,wx.FONTWEIGHT_NORMAL, False, 'Andale Mono')
+      font_times = wx.Font(8, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL,wx.FONTWEIGHT_NORMAL, False, 'Andale Mono')
+
+      '''
       for token in self.reactor.alltokens:
-	splitname = token.name.split('.')[1]
-	dc.SetFont(wx.Font(10, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL,wx.FONTWEIGHT_NORMAL, False))
-	w,h = dc.GetTextExtent(splitname)
-	w_ticks = (w+8)/float(self.tick_scale)
-
 	# Expand tokens to metric time, if set
 	if self.reactor.trex_frame.expand_metric_time.GetValue():
-	  w_ticks = token.end[0] - token.start[0]
+	  dc.SetTextForeground(wx.Colour(255,255,255,255))
+	  for timeline in self.reactor.plan_desc.internal:
+	    self.draw_timeline(dc)
+	    dc.SetPen(wx.Pen('#CCCCCC', 0, wx.SOLID))
+	    dc.SetBrush(wx.Brush(self.reactor.color))
+	    for token in timeline.tokens:
+	      self.draw_token(dc,token)
+	    self.tl_index = self.tl_index+1
 
-	# First, calculate the token virtual tick width
-	tok_width_name = w_ticks
-	tok_width_sync = abs(token.timeline.earliest_start - earliest_start)
+	  for timeline in self.reactor.plan_desc.external:
+	    self.draw_timeline(dc)
+	    tlcolor = self.reactor.trex_frame.get_tl_color(timeline.name)
+	    dc.SetPen(wx.Pen('#CCCCCC', 0, wx.SOLID))
+	    dc.SetBrush(wx.Brush(tlcolor))
+	    # determine if this timeline belongs to another rosreactor
+	    for token in timeline.tokens:
+	      self.draw_token(dc,token)
+	    self.tl_index = self.tl_index+1
+	else:
+	'''
+      for token in self.reactor.planned_tokens + self.reactor.started_tokens:
+	# Create the label string, and get the length of the label
+	label_str = " %s " % (token.name.split('.')[1])#, int(str(token.key)))
+	dc.SetFont(font_label)
+	w_label, h_ = dc.GetTextExtent(label_str)
 
-	tok_width = max(tok_width_name, tok_width_sync)
+	end_str = "[%d, %d]" % (token.start[0], token.end[0])
+	dc.SetFont(font_times)
+	w_end_str, h_ = dc.GetTextExtent(end_str)
 
-	# Calculate the token origin
-	tok_end = token.timeline.earliest_start
+	# Get the max width of the label
+	tok_width_label = max(w_label,w_end_str)
 
-	# Increment earliest start for nex token
-	token.timeline.earliest_start = token.timeline.earliest_start - tok_width
-	earliest_start = min(earliest_start, token.timeline.earliest_start)
+	# Switch draw behavior if this token has started or is planned
+	HORZ_OFFSET = 2000
+	if token.start[0] == token.start[1]:
+	  # Has started
+	  # Calculate the token pixel width
+	  # Get the width if this token were to be drawn between the latest point on this timeline, and the earliest point for all timelines
+	  tok_width_sync = abs(token.timeline.earliest_start - earliest_start)
 
-	# Second, calculate the pixel width (this is based on the tick-pixel scale)
+	  # Get the larger of the two widths
+	  tok_width = 5 + max(tok_width_label, tok_width_sync)
 
-	# Calculate the position top-right corner of the token
-	tok_x0 = math.ceil(self.tick_scale*(tok_end+self.tick_behind))
-	tok_y0 = math.ceil((self.reactor.TIMELINE_HEIGHT+self.reactor.TIMELINE_SPACE)*token.timeline.index)
+	  # Calculate the token end point
+	  # This is the start of the earliest token on the timeline that this token is being drawn onto
+	  tok_end = token.timeline.earliest_start
+
+	  # Increment earliest start for this timelines
+	  token.timeline.earliest_start = token.timeline.earliest_start - tok_width
+	  # Set the new earliest start for all timelines
+	  earliest_start = min(earliest_start, token.timeline.earliest_start)
+
+	  # Calculate the position top-right corner of the token
+	  tok_x0 = HORZ_OFFSET+math.ceil(tok_end)
+	  tok_y0 = math.ceil((self.reactor.TIMELINE_HEIGHT+self.reactor.TIMELINE_SPACE)*token.timeline.index)
+	else:
+	  # Is planned
+	  # Calculate the token pixel width
+	  # Get the width if this token were to be drawn between the latest point on this timeline, and the earliest point for all timelines
+	  tok_width_sync = abs(latest_end - token.timeline.latest_end)
+
+	  # Get the larger of the two widths
+	  tok_width = 5 + max(tok_width_label, tok_width_sync)
+
+	  # Calculate the token end point
+	  # This is the start of the earliest token on the timeline that this token is being drawn onto
+	  tok_start = token.timeline.latest_end
+
+	  # Increment earliest start for this timelines
+	  token.timeline.latest_end = token.timeline.latest_end + tok_width
+	  # Set the new earliest start for all timelines
+	  latest_end = max(latest_end, token.timeline.latest_end)
+
+	  # Calculate the position top-right corner of the token
+	  tok_x0 = HORZ_OFFSET+math.ceil(tok_start+tok_width)
+	  tok_y0 = math.ceil((self.reactor.TIMELINE_HEIGHT+self.reactor.TIMELINE_SPACE)*token.timeline.index)
 
 	# Draw token
+	# Set the color for the appropriate reactors
 	dc.SetBrush(wx.Brush(token.timeline.color))
-	dc.DrawRectangle(tok_x0, tok_y0, -(self.tick_scale*tok_width), self.reactor.TIMELINE_HEIGHT)
+	# Draw the token rectangle
+	dc.DrawRectangle(tok_x0, tok_y0, -tok_width, self.reactor.TIMELINE_HEIGHT)
+	# Draw the token label
+	dc.SetFont(font_label)
+	dc.SetTextForeground(wx.Colour(255,255,255,255))
+	dc.DrawText(label_str,tok_x0-w_label,tok_y0)
 
-	# Draw label
-	dc.DrawText(splitname,tok_x0-w-5,tok_y0+1)
-
-      '''
-      dc.SetTextForeground(wx.Colour(255,255,255,255))
-      for timeline in self.reactor.plan_desc.internal:
-	self.draw_timeline(dc)
-	dc.SetPen(wx.Pen('#CCCCCC', 0, wx.SOLID))
-	dc.SetBrush(wx.Brush(self.reactor.color))
-	for token in timeline.tokens:
-	  self.draw_token(dc,token)
-	self.tl_index = self.tl_index+1
-
-      for timeline in self.reactor.plan_desc.external:
-	self.draw_timeline(dc)
-	tlcolor = self.reactor.trex_frame.get_tl_color(timeline.name)
-	dc.SetPen(wx.Pen('#CCCCCC', 0, wx.SOLID))
-	dc.SetBrush(wx.Brush(tlcolor))
-	# determine if this timeline belongs to another rosreactor
-	for token in timeline.tokens:
-	  self.draw_token(dc,token)
-	self.tl_index = self.tl_index+1
-      '''
+	# Draw the time bounds
+	dc.SetFont(font_times)
+	dc.SetTextForeground(wx.Colour(64,64,64,255))
+	dc.DrawText(end_str,tok_x0-w_end_str,tok_y0+self.reactor.TIMELINE_HEIGHT)
       
   def draw_timeline(self, dc):
     dc.SetPen(wx.Pen('#AAAAAA', 0, wx.TRANSPARENT))
@@ -311,7 +356,7 @@ class ReactorPanel(wx.Panel):
     self.plan_desc = PlanDescription()
 
     self.TIMELINE_HEIGHT = 20
-    self.TIMELINE_SPACE = 8
+    self.TIMELINE_SPACE = 20
     self.synced = True
 
     # Timeline label sub-panel
@@ -338,8 +383,10 @@ class ReactorPanel(wx.Panel):
       self.synced = False
       if event.GetEventObject() is self.timelines_p:
 	self.labels_p.GetEventHandler().ProcessEvent(event)
+	wx.PostEvent(self.labels_p,wx.PaintEvent())
       else:
 	self.timelines_p.GetEventHandler().ProcessEvent(event)
+	wx.PostEvent(self.timelines_p,wx.PaintEvent())
     self.synced = True
     event.Skip()
 
@@ -354,7 +401,8 @@ class ReactorPanel(wx.Panel):
     self.plan = Plan(plan_desc.name, [])
     
     # Get a sorted list of all token start times
-    alltokens = []
+    started_tokens = []
+    planned_tokens = [] 
 
     # Find latest-starting token
     for tl_desc in plan_desc.internal+plan_desc.external:
@@ -363,12 +411,17 @@ class ReactorPanel(wx.Panel):
       tl = Timeline(tl_desc.name, len(self.plan.timelines), color=tlcolor)
       for token_desc in tl_desc.tokens:
 	# Append this token to the full token list
-	alltokens.append(Token(token_desc,tl))
+	if token_desc.start[0] == token_desc.start[1]:
+	  started_tokens.append(Token(token_desc,tl))
+	else:
+	  planned_tokens.insert(0,Token(token_desc,tl))
       self.plan.timelines.append(tl)
 
-    # Sort tokens in decreasing order by start time
     tokencmp = lambda x,y: cmp(x.start[0], y.start[0])
-    self.alltokens = sorted(alltokens, tokencmp, reverse=True)
+    # Sort started tokens in decreasing order by start time
+    self.started_tokens = sorted(started_tokens, tokencmp, reverse=True)
+    # Sort planned tokens in increasing order by start time
+    self.planned_tokens = sorted(planned_tokens, tokencmp, reverse=False)
 
     # Make sure this reactor is selected before we repaint it
     if self is self.trex_frame.reactors_nb.GetCurrentPage():
