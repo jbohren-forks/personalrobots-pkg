@@ -37,10 +37,9 @@
 #include <robot_msgs/Point.h>
 #include <robot_msgs/PointStamped.h>
 #include <robot_msgs/PoseStamped.h>
-//#include <tf/transform_listener.h>
-//#include <tf/message_notifier.h>
 #include "people_aware_nav/LookStraightAhead.h"
 #include "people_aware_nav/GlanceAt.h"
+#include "people_aware_nav/StartHeadTrack.h"
 
 namespace people_aware_nav
 {
@@ -51,25 +50,21 @@ using robot_msgs::PoseStamped;
 using ros::Node;
 using ros::Time;
 using ros::Duration;
-  //using tf::TransformException;
 using std::string;
-
-  //typedef tf::Stamped<tf::Pose> StampedPose;
-  //typedef tf::Stamped<tf::Point> StampedPoint;
-  //typedef tf::MessageNotifier<StampedPose> GNotifier;
-  //typedef boost::shared_ptr<GNotifier> GNotifierPtr;
 
 
 // A node that publishes head control messages for various types of high-level head actions.
 class HeadController
 {
 public:
-  HeadController() : node_("head_controller")//, tf_(node_)
+  HeadController() : node_("head_controller")
   {
 
-    node_.param("/head_control_type", head_control_type_, string("look_forward"));
-    node_.param("/default_speed", default_speed_, 1.0);
+    node_.param("~head_control_type", head_control_type_, string("look_forward"));
+    node_.param("~default_speed", default_speed_, 1.0);
     // look_forward, glance, look_at_goal
+
+    ROS_INFO_STREAM("Head exec type is " << head_control_type_);
 
     do_continuous_ = false;
     have_goal_ = false;
@@ -78,6 +73,7 @@ public:
 
     node_.advertiseService ("look_straight_ahead", &HeadController::lookStraightAhead, this);
     node_.advertiseService ("glance_at", &HeadController::glanceAt, this);
+    node_.advertiseService ("start_head_track", &HeadController::startHeadTrack, this);
 
     if (head_control_type_ == "look_forward") {
       do_continuous_ = false;
@@ -87,16 +83,13 @@ public:
     else if (head_control_type_ == "look_at_goal") {
       do_continuous_ = true;
       state_ = TRACK;
-      node_.subscribe("goal", goal_pose_, &HeadController::goalCallback, this, 1);
-
-		       //goal_notifier_ = GNotifierPtr(new GNotifier(&tf_, &node_, bind(&HeadController::goalCallback, this, _1),
-		       //			"goal", global_frame_, 50)); // Buffer size?
+      node_.subscribe("/hallway_move/goal", goal_pose_, &HeadController::goalCallback, this, 1); //goal
     }
 
       
   }
 
-  // Service callback
+  // Service callbacks
   bool lookStraightAhead(people_aware_nav::LookStraightAhead::Request &req, people_aware_nav::LookStraightAhead::Response& resp) {
 
     do_continuous_ = false;
@@ -121,6 +114,12 @@ public:
     
   }
  
+  bool startHeadTrack(people_aware_nav::StartHeadTrack::Request &req, people_aware_nav::StartHeadTrack::Response& resp) {
+    do_continuous_ = true;
+    state_ = TRACK;
+    node_.subscribe("goal", goal_pose_, &HeadController::goalCallback, this, 1); //goal                                                                              
+    return true;
+  }
 
   //void goalCallback(const GNotifier::MessagePtr& goal_message) 
   void goalCallback()
@@ -135,15 +134,16 @@ public:
     while (node_.ok()) 
     {
       if (do_continuous_ && have_goal_)
+      {
 	lookAtGoal(-1);
+	usleep(50000);	
+      }
     }
   }
 
 
 private:
   Node node_;
-  //tf::TransformListener tf_;
-  //NotifierPtr goal_notifier_;
   string head_control_type_;
   double default_speed_;
   robot_msgs::PoseStamped goal_pose_;
@@ -160,19 +160,19 @@ private:
     if (speed < 0.0) {
       // As fast as possible
       PointStamped p;
-      p.header.frame_id = "head_pan_link";
+      p.header.frame_id = "base_link";
       p.point.x = 1;
       p.point.y = 0;
-      p.point.z = 0;
+      p.point.z = 1.1;
       node_.publish("/head_controller/head_track_point",p);
     }
     else {
       // Change this to include the speed.
       PointStamped p;
-      p.header.frame_id = "head_pan_link";
+      p.header.frame_id = "base_link";
       p.point.x = 1;
       p.point.y = 0;
-      p.point.z = 0;
+      p.point.z = 1.1;
       node_.publish("/head_controller/head_track_point",p);
     }
   }

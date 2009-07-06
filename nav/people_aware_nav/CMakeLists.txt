@@ -17,3 +17,6 @@ rospack_link_boost(bin/move_base_constrained thread)
 
 rospack_add_executable(bin/head_controller src/head_controller.cpp)
 rospack_link_boost(bin/head_controller thread)
+
+rospack_add_executable(bin/test_head src/test_head.cpp)
+

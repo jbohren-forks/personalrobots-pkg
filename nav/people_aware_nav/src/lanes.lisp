@@ -1,3 +1,10 @@
+(roslisp:load-message-types "robot_msgs/PointCloud" "robot_msgs/Point" "deprecated_msgs/Pose2DFloat32" 
+				"robot_msgs/PoseStamped" "std_msgs/Empty"
+				"people_aware_nav/ConstrainedGoal" "people_aware_nav/ConstrainedMoveBaseState"
+				"robot_msgs/PointStamped" "people/PositionMeasurement"
+				)
+(roslisp:load-service-types "people_aware_nav/PersonOnPath" "people_aware_nav/GlanceAt")
+
 (defpackage :lane-following
   (:nicknames :lanes)
   (:use :roslisp :cl :transform-2d :sb-thread)
@@ -10,10 +17,12 @@
 		:z-val
 		:<Point32>
 		:<Polygon3D>
+		:<PointStamped>
 		:<PointCloud>
 		:pts-val)
   (:import-from :deprecated_msgs-msg
 		:<Pose2DFloat32>)
+  (:import-from :people-msg :<PositionMeasurement>)
   (:import-from :roslib-msg
 		:<Header>))
 
@@ -48,6 +57,7 @@
 (defvar *move-base-result* nil "Did move-base succeed?.  Set by send-move-goal and state-callback.")
 (defvar *current-goal* '(0 0) "Current nav goal.  Set by send-move-goal.")
 (defvar *new-goal* nil "A new nav goal received on the goal topic.  Set by goal-callback and (to nil) by main")
+(defvar *person-position* nil "Person's last observed position")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Main
@@ -65,8 +75,10 @@
   (subscribe "robot_pose" "deprecated_msgs/Pose2DFloat32" #'pose-callback)
   (subscribe "move_base/feedback" "people_aware_nav/ConstrainedMoveBaseState" #'state-callback)
   (subscribe "goal" "robot_msgs/PoseStamped" #'goal-callback)
+  (subscribe "people_tracker_measurements" "people/PositionMeasurement" (store-message-in *person-position*))
   (advertise "move_base/activate" "people_aware_nav/ConstrainedGoal")
   (advertise "move_base/preempt" "std_msgs/Empty")
+  (advertise "~goal" "robot_msgs/PoseStamped")
   (setq *global-frame* (get-param "global_frame_id" "/map")
 	*person-on-path-use-stub* (get-param "~person_on_path_use_stub" *person-on-path-use-stub*)))
 
@@ -77,6 +89,7 @@
        (progn
 	 ;; Initial move
 	 (send-move-goal x y theta)
+
 	 (loop-at-most-every 1
 	      (cond
 		(*move-base-result* (return-from goto *move-base-result*))
@@ -107,6 +120,13 @@
 	 (position (pose-position pose))
 	 (theta (pose-orientation pose)))
     (send-move-goal (aref position 0) (aref position 1) theta))
+  (sleep .5)
+  (with-fields ((frame (frame_id header)) (stamp (stamp header)) (pos pos)) *person-position*
+	       (call-service "glance_at" :point_stamped (make-message "robot_msgs/PointStamped" 
+								      (frame_id header) frame
+								      (stamp header) stamp
+								      point pos)))
+					  
   (loop-at-most-every .1
      (when *move-base-result* 
        (return *move-base-result*))))
@@ -166,6 +186,7 @@
 
 
 (defun goal-callback (m)
+  (publish-on-topic "~goal" m)
   (with-fields ((frame (frame_id header)) 
 		(x (x position pose)) 
 		(y (y position pose))
