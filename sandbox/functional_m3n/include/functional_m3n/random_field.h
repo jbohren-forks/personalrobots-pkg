@@ -39,15 +39,6 @@
 #include <map>
 
 #include <ros/ros.h>
-#include <robot_msgs/PointCloud.h>
-
-// 3rd party
-#include <Eigen/Core>
-
-#include <point_cloud_mapping/kdtree/kdtree.h>
-#include <point_cloud_mapping/geometry/nearest.h>
-
-#include <descriptors_3d/descriptors_3d.h>
 
 using namespace std;
 

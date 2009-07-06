@@ -7,7 +7,13 @@
 
 #include <robot_msgs/PointCloud.h>
 
+#include <Eigen/Core>
+
+#include <point_cloud_mapping/geometry/nearest.h>
+#include <point_cloud_mapping/kdtree/kdtree.h>
 #include <point_cloud_mapping/kdtree/kdtree_ann.h>
+
+#include <descriptors_3d/descriptors_3d.h>
 
 #include <functional_m3n/random_field.h>
 #include <functional_m3n/m3n_model.h>
