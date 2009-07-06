@@ -64,6 +64,8 @@ Pr2BaseController::Pr2BaseController()
 
 Pr2BaseController::~Pr2BaseController()
 {
+  ros::Node::instance()->unsubscribe("cmd_vel");
+
   //Destruct things (publishers)
   if(state_publisher_)
   {
