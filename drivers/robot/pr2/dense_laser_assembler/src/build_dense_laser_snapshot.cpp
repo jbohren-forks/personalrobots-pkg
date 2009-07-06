@@ -62,7 +62,8 @@ bool buildDenseLaserSnapshot(const vector<shared_ptr<const JointTaggedLaserScan>
     snapshot.joint_encoding = 0 ;
     snapshot.joint_names.clear() ;
     snapshot.joint_positions.clear() ;
-    //snapshot.scan_start.clear() ;
+    snapshot.joint_velocities.clear() ;
+    snapshot.scan_start.clear() ;
     return true ;
   }
 
@@ -98,9 +99,10 @@ bool buildDenseLaserSnapshot(const vector<shared_ptr<const JointTaggedLaserScan>
   snapshot.joint_names = joint_names ;
   snapshot.joint_encoding = calibration_msgs::DenseLaserSnapshot::POS_PER_ROW_START_AND_END ;
   snapshot.joint_positions.resize(num_joints*h*2) ; // 2 Positions per joint per row (beginning and end of row)
+  snapshot.joint_velocities.resize(num_joints*h*2) ;
 
   // Set up other data vectors
-  //snapshot.scan_start.resize(h) ;
+  snapshot.scan_start.resize(h) ;
   snapshot.ranges.resize(w*h) ;
   snapshot.intensities.resize(w*h) ;
 
@@ -112,18 +114,20 @@ bool buildDenseLaserSnapshot(const vector<shared_ptr<const JointTaggedLaserScan>
     memcpy(&snapshot.ranges[i*w],      &scans[i]->scan->ranges[0],      w*range_elem_size) ;
     memcpy(&snapshot.intensities[i*w], &scans[i]->scan->intensities[0], w*intensity_elem_size) ;
 
-    // Copy joint positions
+    // Copy joint positions & velocities
     for (unsigned int j=0; j<num_joints; j++)
     {
-      snapshot.joint_positions[i*j*2 + 0] = scans[i]->before->positions[j] ;
-      snapshot.joint_positions[i*j*2 + 1] = scans[i]->after->positions[j] ;
+      snapshot.joint_positions[i*j*2 + 0] = scans[i]->before->pos[j] ;
+      snapshot.joint_positions[i*j*2 + 1] = scans[i]->after->pos[j] ;
+      snapshot.joint_velocities[i*j*2 + 0] = scans[i]->before->vel[j] ;
+      snapshot.joint_velocities[i*j*2 + 1] = scans[i]->after->vel[j] ;
     }
 
     // Copy time stamp
-    //snapshot.scan_start[i] = scans[i]->header.stamp ;
+    snapshot.scan_start[i] = scans[i]->header.stamp ;
   }
 
-  ROS_INFO("Done building snapshot that is [%u rows] x [%u cols]\n", h, w) ;
+  ROS_DEBUG("Done building snapshot that is [%u rows] x [%u cols]", h, w) ;
 
   return true ;
 }

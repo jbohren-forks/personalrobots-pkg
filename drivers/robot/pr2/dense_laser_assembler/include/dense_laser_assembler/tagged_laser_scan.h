@@ -32,45 +32,23 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
-/*! \mainpage
- *  \htmlinclude manifest.html
- */
-
-#ifndef DENSE_LASER_ASSEMBLER_BUILD_DENSE_LASER_SNAPSHOT_H_
-#define DENSE_LASER_ASSEMBLER_BUILD_DENSE_LASER_SNAPSHOT_H_
-
-
-#include <vector>
-#include "dense_laser_assembler/laser_scan_tagger.h"
-#include "message_filters/cache.h"
-
-#include "dense_laser_assembler/JointPVArray.h"
-#include "dense_laser_assembler/tagged_laser_scan.h"
-
-#include "calibration_msgs/DenseLaserSnapshot.h"
+#ifndef DENSE_LASER_ASSEMBLER_TAGGED_LASER_SCAN_H_
+#define DENSE_LASER_ASSEMBLER_TAGGED_LASER_SCAN_H_
 
 
 namespace dense_laser_assembler
 {
 
-typedef LaserScanTagger<JointPVArray> LaserJointTagger ;
-typedef TaggedLaserScan<JointPVArray> JointTaggedLaserScan ;
-
-/**
- * \brief Builds a dense laser snapshot
- * Grabs all the scans between the start and end time, and composes them into one larger snapshot. This call is non-blocking.
- * Thus, if there are scans that haven't been cached yet, but occur before the end time, they won't be added to the snapshot.
- * \param start The earliest scan time to be included in the snapshot
- * \param end The latest scan time to be included in the snapshot
- * \param output: A populated snapshot message
- */
-
-bool buildDenseLaserSnapshot(const std::vector<boost::shared_ptr<const JointTaggedLaserScan> >& scans,
-                             const std::vector<std::string>& joint_names,
-                             calibration_msgs::DenseLaserSnapshot& snapshot) ;
-
+template <class T>
+struct TaggedLaserScan
+{
+  roslib::Header header ;
+  sensor_msgs::LaserScanConstPtr scan ;
+  boost::shared_ptr<const T> before ;
+  boost::shared_ptr<const T> after ;
+} ;
 
 }
 
 
-#endif // DENSE_LASER_ASSEMBLER_BUILD_DENSE_LASER_SNAPSHOT
+#endif // DENSE_LASER_ASSEMBLER_TAGGED_LASER_SCAN_H_

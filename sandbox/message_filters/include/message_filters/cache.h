@@ -36,8 +36,8 @@
  *  \htmlinclude manifest.html
  */
 
-#ifndef MESSAGE_FILTERS_MSG_CACHE_H_
-#define MESSAGE_FILTERS_MSG_CACHE_H_
+#ifndef MESSAGE_FILTERS_CACHE_H_
+#define MESSAGE_FILTERS_CACHE_H_
 
 #include <deque>
 #include "boost/thread.hpp"
@@ -55,7 +55,7 @@ namespace message_filters
  * that the messages are being received with monotonically increasing timestamps in header.stamp.
  */
 template<class M>
-class MsgCache
+class Cache
 {
 public:
   typedef boost::shared_ptr<M const> MConstPtr ;
@@ -63,22 +63,28 @@ public:
   typedef boost::signal<void(const MConstPtr&)> Signal;
 
   template<class A>
-  MsgCache(A& a, unsigned int cache_size = 1)
+  Cache(A& a, unsigned int cache_size = 1)
   {
     setCacheSize(cache_size) ;
-    incoming_connection_ = a.connect(boost::bind(&MsgCache::addToCache, this, _1));
+    subscribe(a) ;
   }
 
   /**
-   * Initializes a MsgCache without specifying a parent filter. This implies that in
+   * Initializes a Messsage Cache without specifying a parent filter. This implies that in
    * order to populate the cache, the user then has to call addToCache themselves
    */
-  MsgCache(unsigned int cache_size = 1)
+  Cache(unsigned int cache_size = 1)
   {
     setCacheSize(cache_size);
   }
 
-  ~MsgCache()
+  template<class A>
+  void subscribe(A& a)
+  {
+    incoming_connection_ = a.connect(boost::bind(&Cache::addToCache, this, _1));
+  }
+
+  ~Cache()
   {
     incoming_connection_.disconnect();
   }
@@ -235,7 +241,7 @@ public:
 
 private:
   boost::mutex cache_lock_ ;            //!< Lock for cache_
-  std::deque<MConstPtr > cache_ ;          //!< Cache for the messages
+  std::deque<MConstPtr > cache_ ;       //!< Cache for the messages
   unsigned int cache_size_ ;            //!< Maximum number of elements allowed in the cache.
 
   boost::signals::connection incoming_connection_;
@@ -246,4 +252,4 @@ private:
 }
 
 
-#endif /* MSG_CACHE_H_ */
+#endif /* MESSAGE_FILTERS_CACHE_H_ */

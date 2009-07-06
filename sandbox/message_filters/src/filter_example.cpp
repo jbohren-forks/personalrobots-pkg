@@ -36,7 +36,7 @@
 #include "std_msgs/String.h"
 #include "message_filters/subscriber.h"
 #include "message_filters/consumer.h"
-#include "message_filters/msg_cache.h"
+#include "message_filters/cache.h"
 
 using namespace std ;
 using namespace message_filters ;
@@ -57,7 +57,7 @@ int main(int argc, char** argv)
   // Define the source 'node'
   Subscriber<std_msgs::String> sub(nh, "chatter", 10);
   Consumer<std_msgs::String> consumer(sub);
-  MsgCache<std_msgs::String> cache(sub, 10);
+  Cache<std_msgs::String> cache(sub, 10);
   cache.connect(callback);
 
   ros::spin() ;

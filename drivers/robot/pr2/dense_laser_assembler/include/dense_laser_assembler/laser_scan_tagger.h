@@ -41,68 +41,108 @@
 
 #include <deque>
 #include "sensor_msgs/LaserScan.h"
-#include "message_filters/msg_cache.h"
-#include "dense_laser_assembler/joint_extractor.h"
+#include "message_filters/cache.h"
 #include "boost/shared_ptr.hpp"
+#include "dense_laser_assembler/tagged_laser_scan.h"
 
 namespace dense_laser_assembler
 {
 
+/**
+ * Listens to LaserScans and a cache of 'tag' messages. Outputs a laserScan
+ * whenever there is a tag msg that occurs before and after the scan.
+ */
 template <class T>
 class LaserScanTagger
 {
 public:
 
-  struct TaggedLaserScan
+  typedef boost::shared_ptr<const T> TConstPtr ;
+  typedef boost::shared_ptr<const TaggedLaserScan<T> > MConstPtr ;
+  typedef boost::function<void(const MConstPtr&)> Callback;
+  typedef boost::signal<void(const MConstPtr&)> Signal;
+
+
+
+  template<class A>
+  /**
+   * \brief Construct object, and also subscribe to relevant data sources
+   */
+  LaserScanTagger(A& a, message_filters::Cache<T>& tag_cache, unsigned int max_queue_size)
   {
-    roslib::Header header ;
-    sensor_msgs::LaserScanConstPtr scan ;
-    boost::shared_ptr<const T> before ;
-    boost::shared_ptr<const T> after ;
-  } ;
-
-  typedef boost::shared_ptr<const TaggedLaserScan> TaggedLaserScanConstPtr ;
-
-
-  LaserScanTagger(message_filters::MsgCache<T>& tag_cache, unsigned int max_queue_size)
-  {
+    subscribeLaserScan(a);
+    subscribeTagCache(tag_cache);
+    setMaxQueueSize(max_queue_size);
     tag_cache_ = &tag_cache ;
     max_queue_size_ = max_queue_size ;
   }
 
   LaserScanTagger()
   {
-    tag_cache_ = NULL ;
-    max_queue_size_ = 1 ;
+    tag_cache_ = NULL;
+    setMaxQueueSize(1);
   }
 
-  void setQueueSize(unsigned int max_queue_size)
+  ~LaserScanTagger()
   {
-    max_queue_size_ = max_queue_size ;
+    incoming_laser_scan_connection_.disconnect() ;
+    incoming_tag_connection_.disconnect() ;
   }
 
-  void setTagCache(message_filters::MsgCache<T>& tag_cache)
+  template<class A>
+  void subscribeLaserScan(A& a)
   {
+    boost::mutex::scoped_lock lock(signal_mutex_);
+    incoming_laser_scan_connection_ = a.connect(boost::bind(&LaserScanTagger<T>::processLaserScan, this, _1));
+  }
+
+  void subscribeTagCache(message_filters::Cache<T>& tag_cache)
+  {
+    boost::mutex::scoped_lock lock(signal_mutex_);
     tag_cache_ = &tag_cache ;
+    incoming_tag_connection_ = tag_cache.connect(boost::bind(&LaserScanTagger<T>::processTag, this, _1));
+  }
+
+  void setMaxQueueSize(unsigned int max_queue_size)
+  {
+    boost::mutex::scoped_lock lock(queue_mutex_);
+    max_queue_size_ = max_queue_size;
   }
 
   /**
-   * Adds the laser scan onto the queue of scans that need to be matched with the stamped data
+   * Adds the laser scan onto the queue of scans that need to be matched with the tags
    */
   void processLaserScan(const sensor_msgs::LaserScanConstPtr& msg)
   {
-
-    queue_lock_.lock() ;
-
-    //! \todo need to decide on overflow logic
-    if (queue_.size() < max_queue_size_)
-      queue_.push_back(msg) ;
-    else
-      ROS_WARN("Queue full, not pushing new data onto queue until queue is serviced") ;
-
-    queue_lock_.unlock() ;
+    {
+      boost::mutex::scoped_lock lock(queue_mutex_);
+      //! \todo need to more carefully decide on overflow logic
+      if (queue_.size() < max_queue_size_)
+        queue_.push_back(msg) ;
+      else
+        ROS_WARN("Queue full, not pushing new data onto queue until queue is serviced") ;
+    }
 
     update() ;
+  }
+
+
+  /**
+   * Since we just received a new tag message, we might have laser scans that we need to process
+   */
+  void processTag(const TConstPtr& msg)
+  {
+    update() ;
+  }
+
+  /**
+   * \brief Connect this message filter's output to some callback
+   * \param callback Function to call after we've tagged a LaserScan
+   */
+  boost::signals::connection connect(const Callback& callback)
+  {
+    boost::mutex::scoped_lock lock(signal_mutex_);
+    return signal_.connect(callback);
   }
 
   /**
@@ -110,18 +150,29 @@ public:
    */
   void update()
   {
+    //! \todo This is not a good enough check. We need to somehow make sure the cache hasn't been destructed
     if (!tag_cache_)
     {
-      ROS_WARN("Have a NULL pointer to TagCache. Skipping update") ;
-      return ;
+      ROS_WARN("Have a NULL pointer to TagCache. Skipping update");
+      return;
     }
-
-    queue_lock_.lock() ;
 
     bool did_something = true ;
 
-    while (did_something && queue_.size() > 0)
+    // It's possible we need to process multiple laser scans. Therefore, keep
+    // looping until we reach a scan that's a no-op
+    while (true)
     {
+      //! \todo Come up with better locking/unlocking in this loop
+      queue_mutex_.lock();
+
+      // Exit condition
+      if (!did_something || queue_.size() == 0)
+      {
+        queue_mutex_.unlock();
+        break;
+      }
+
       did_something = false ;   // Haven't done anything yet
 
       const sensor_msgs::LaserScanConstPtr& elem = queue_.front() ;
@@ -132,51 +183,45 @@ public:
       boost::shared_ptr<const T> tag_before = tag_cache_->getElemBeforeTime(scan_start) ;
       boost::shared_ptr<const T> tag_after  = tag_cache_->getElemAfterTime(scan_end) ;
 
+
       if (!tag_before)          // Can't get old enough tag. Give up
       {
         queue_.pop_front() ;
         did_something = true ;
-        ROS_WARN("Popped elem off back of queue") ;
+        queue_mutex_.unlock() ;
       }
       else if (!tag_after)      // Don't have new enough tag. Keep scan on queue until we get it
       {
         did_something = false ;
+        queue_mutex_.unlock() ;
       }
       else                      // Both tags are fine. Use the data, and push out
       {
-        did_something = true ;
-        boost::shared_ptr<TaggedLaserScan> tagged_scan(new TaggedLaserScan) ;
+        did_something = true;
+        boost::shared_ptr<TaggedLaserScan<T> > tagged_scan(new TaggedLaserScan<T> ) ;
         tagged_scan->header = elem->header ;
         tagged_scan->scan   = elem ;
         tagged_scan->before = tag_before ;
         tagged_scan->after  = tag_after ;
-
-        for (unsigned int i=0; i<output_callbacks_.size(); i++)
-          output_callbacks_[i](tagged_scan) ;
-
         queue_.pop_front() ;
+        queue_mutex_.unlock() ;
+
+        boost::mutex::scoped_lock lock(signal_mutex_);
+        signal_(tagged_scan) ;
       }
-
     }
-
-    queue_lock_.unlock() ;
   }
-
-  void addOutputCallback(const boost::function<void(const TaggedLaserScanConstPtr&)>& callback)
-  {
-    output_callbacks_.push_back(callback) ;
-  }
-
 
 private:
   std::deque<sensor_msgs::LaserScanConstPtr> queue_ ;    //!< Incoming queue of laser scans
-  boost::mutex queue_lock_ ;                            //!< Mutex for queue
-  unsigned int max_queue_size_ ;                        //!< Max # of laser scans to queue up for processing
+  boost::mutex queue_mutex_ ;                            //!< Mutex for laser scan queue
+  unsigned int max_queue_size_ ;                         //!< Max # of laser scans to queue up for processing
+  message_filters::Cache<T>* tag_cache_ ;             //!< Cache of the tags that we need to merge with laser data
 
-  message_filters::MsgCache<T>* tag_cache_ ;            //!< Cache of the tags that we need to merge with laser data
-
-  std::vector<boost::function<void(const TaggedLaserScanConstPtr&)> > output_callbacks_ ;
-
+  Signal signal_;
+  boost::signals::connection incoming_laser_scan_connection_;
+  boost::signals::connection incoming_tag_connection_;
+  boost::mutex signal_mutex_;
 } ;
 
 }

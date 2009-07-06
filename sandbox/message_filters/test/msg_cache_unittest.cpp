@@ -35,7 +35,7 @@
 #include <gtest/gtest.h>
 
 #include "ros/time.h"
-#include "message_filters/msg_cache.h"
+#include "message_filters/cache.h"
 
 using namespace std ;
 using namespace message_filters ;
@@ -55,7 +55,8 @@ struct Msg
 
 
 
-void fillCacheEasy(MsgCache<Msg>& cache, unsigned int start, unsigned int end)
+void fillCacheEasy(Cache<Msg>& cache, unsigned int start, unsigned int end)
+
 {
   for (unsigned int i=start; i < end; i++)
   {
@@ -70,7 +71,7 @@ void fillCacheEasy(MsgCache<Msg>& cache, unsigned int start, unsigned int end)
 
 TEST(Cache, easyInterval)
 {
-  MsgCache<Msg> cache(10) ;
+  Cache<Msg> cache(10) ;
   fillCacheEasy(cache, 0, 5) ;
 
   vector<boost::shared_ptr<Msg const> > interval_data = cache.getInterval(ros::Time().fromSec(5), ros::Time().fromSec(35)) ;
@@ -92,7 +93,7 @@ TEST(Cache, easyInterval)
 
 TEST(Cache, easyElemBeforeAfter)
 {
-  MsgCache<Msg> cache(10) ;
+  Cache<Msg> cache(10) ;
   boost::shared_ptr<Msg const> elem_ptr ;
 
   fillCacheEasy(cache, 5, 10) ;

@@ -36,24 +36,39 @@
  *  \htmlinclude manifest.html
  */
 
+#include <boost/signals.hpp>
+
 #include "ros/ros.h"
-#include "dense_laser_assembler/joint_extractor.h"
+#include "dense_laser_assembler/joint_pv_msg_filter.h"
+//#include "dense_laser_assembler/joint_pv_diag_msg_filter.h"
+#include "dense_laser_assembler/JointPVArray.h"
+
+#include "diagnostic_updater/diagnostic_updater.h"
 
 using namespace std ;
 //using namespace message_filters ;
 using namespace dense_laser_assembler ;
 
-
-
-void display_joints(vector<string> joint_names, const boost::shared_ptr<JointExtractor::JointArray const>& joint_array_ptr)
+void display_joints(vector<string> joint_names, const JointPVArrayConstPtr& joint_array_ptr)
 {
   printf("Joints:\n") ;
   for (unsigned int i=0; i< joint_names.size(); i++)
   {
-    printf("  %s: %f\n", joint_names[i].c_str(), joint_array_ptr->positions[i]) ;
+    printf("  %s: %f, %f\n", joint_names[i].c_str(), joint_array_ptr->pos[i], joint_array_ptr->vel[i]) ;
   }
 
 }
+
+void diagnosticsLoop(diagnostic_updater::Updater* diagnostic)
+{
+  ros::NodeHandle nh ;
+  while(nh.ok())
+  {
+    diagnostic->update() ;
+    sleep(1) ;
+  }
+}
+
 
 int main(int argc, char** argv)
 {
@@ -65,14 +80,21 @@ int main(int argc, char** argv)
   joint_names.push_back("laser_tilt_mount_joint") ;
   joint_names.push_back("torso_lift_link") ;
 
-  JointExtractor joint_extractor(joint_names) ;
+  diagnostic_updater::Updater diagnostic(nh) ;
 
-  joint_extractor.addOutputCallback(boost::bind(&display_joints, joint_names, _1) ) ;
+  JointPVMsgFilter joint_extractor(joint_names) ;
+  //JointPVDiagMsgFilter joint_extractor(diagnostic, joint_names) ;
 
-  ros::Subscriber sub = nh.subscribe("mechanism_state", 1, &JointExtractor::processMechState, &joint_extractor) ;
+  boost::signals::connection con = joint_extractor.connect( boost::bind(&display_joints, joint_names, _1) ) ;
+
+  ros::Subscriber sub = nh.subscribe("mechanism_state", 1, &JointPVMsgFilter::processMechState, &joint_extractor) ;
+
+  //boost::thread* diagnostic_thread ;
+  //diagnostic_thread = new boost::thread( boost::bind(&diagnosticsLoop, &diagnostic) );
 
   ros::spin() ;
 
+  con.disconnect() ;
 
   return 0 ;
 }

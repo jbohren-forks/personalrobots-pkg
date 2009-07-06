@@ -27,6 +27,7 @@ float32[] intensities       # (Image data)
 # Store joint information associated with each scan
 uint32 joint_encoding
 float64[] joint_positions
+float64[] joint_velocities
 string[] joint_names
 uint32 POS_PER_PIXEL             = 0
 uint32 POS_PER_ROW_START         = 1
@@ -34,5 +35,5 @@ uint32 POS_PER_ROW_START_AND_END = 2
 
 # 1D Data storing meta information for each scan/row
 # Currently in stable, time vectors are not serialized correctly
-#time[] scan_start
+time[] scan_start
 
