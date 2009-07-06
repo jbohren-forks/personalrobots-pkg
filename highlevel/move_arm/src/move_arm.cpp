@@ -194,9 +194,12 @@ namespace move_arm
 					ROS_INFO("Approximate path was found. Distance to goal is: %f", res.distance);
 				    ROS_INFO("Received path with %u states from motion planner", (unsigned int)res.path.states.size());
 				    currentPath_ = res.path;
-				    displayPathPublisher_.publish(currentPath_);
-				    feedback = pr2_robot_actions::MoveArmState::MOVING;	
-				    update(feedback);
+				    if (planningMonitor_->transformPathToFrame(currentPath_, planningMonitor_->getFrameId()))
+				    {
+					displayPathPublisher_.publish(currentPath_);
+					feedback = pr2_robot_actions::MoveArmState::MOVING;	
+					update(feedback);
+				    }
 				}
 			    }
 			}
