@@ -67,12 +67,12 @@ public:
   Cache(A& a, unsigned int cache_size = 1)
   {
     setCacheSize(cache_size) ;
-    subscribe(a) ;
+    connectTo(a) ;
   }
 
   /**
    * Initializes a Messsage Cache without specifying a parent filter. This implies that in
-   * order to populate the cache, the user then has to call addToCache themselves
+   * order to populate the cache, the user then has to call add themselves
    */
   Cache(unsigned int cache_size = 1)
   {
@@ -80,9 +80,9 @@ public:
   }
 
   template<class A>
-  void subscribe(A& a)
+  void connectTo(A& a)
   {
-    incoming_connection_ = a.connect(boost::bind(&Cache::addToCache, this, _1));
+    incoming_connection_ = a.connect(boost::bind(&Cache::add, this, _1));
   }
 
   ~Cache()
@@ -113,9 +113,9 @@ public:
 
   /**
    * Add the most recent message to the cache, and pop off any elements that are too old.
-   * This method is registered with a data provider when subscribe is called.
+   * This method is registered with a data provider when connectTo is called.
    */
-  void addToCache(const MConstPtr& msg)
+  void add(const MConstPtr& msg)
   {
     //printf("  Cache Size: %u\n", cache_.size()) ;
     {

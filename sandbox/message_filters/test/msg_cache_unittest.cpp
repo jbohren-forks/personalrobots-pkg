@@ -65,7 +65,7 @@ void fillCacheEasy(Cache<Msg>& cache, unsigned int start, unsigned int end)
     msg->header.stamp.fromSec(i*10) ;
 
     boost::shared_ptr<Msg const> msg_ptr(msg) ;
-    cache.addToCache(msg_ptr) ;
+    cache.add(msg_ptr) ;
   }
 }
 
