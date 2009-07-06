@@ -2,10 +2,6 @@
 
   <!-- Will have APC Battery drivers in here at some point -->
  
-
-  <!-- Runtime Diagnostics Logging -->
-  <node pkg="rosrecord" type="rosrecord" args="-f /hwlog/hca_runtime_automatic /diagnostics" />
-
   <!-- Disk usage monitor -->
   <node pkg="pr2_computer_monitor" type="hd_monitor.py" args="$(optenv HOME /home)" machine="realtime_root"/>
   <node pkg="pr2_computer_monitor" type="hd_monitor.py" args="$(optenv HOME /home)" machine="two_root"/> 

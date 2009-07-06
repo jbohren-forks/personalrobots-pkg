@@ -24,4 +24,7 @@
   <node pkg="runtime_monitor" type="ntp_monitor.py" args="hca2" machine="realtime" />
   <node pkg="runtime_monitor" type="ntp_monitor.py" args="fw1 7000" machine="two" /> 
 
+  <!-- Runtime Diagnostics Logging -->
+  <node pkg="rosrecord" type="rosrecord" args="-f /hwlog/hca_runtime_automatic /diagnostics" />
+
 </launch>

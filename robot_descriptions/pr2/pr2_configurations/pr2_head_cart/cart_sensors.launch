@@ -1,5 +1,5 @@
 <launch>
-  <!-- Wide is on robot right, goes to hca1 -->
+  <!-- Wide is on robot right, goes to realtime -->
   <group ns="wide_stereo">
     <node machine="realtime" pkg="dcam" type="stereodcam" name="stereodcam" respawn="false" >
       <param name="videre_mode" type="str" value="none"/>
@@ -11,7 +11,7 @@
     </node>  
   </group>
 
-  <!-- Narrow is on robot left, goes to hca2 -->
+  <!-- Narrow is on robot left, goes to two -->
   <group ns="narrow_stereo">
     <node machine="two" pkg="dcam" type="stereodcam" name="stereodcam" respawn="false" >
       <param name="videre_mode" type="str" value="none"/>

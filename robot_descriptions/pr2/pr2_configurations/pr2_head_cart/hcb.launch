@@ -15,7 +15,7 @@
   <node machine="two" pkg="robot_state_publisher" type="state_publisher" name="robot_state_publisher">
    <param name="publish_frequency" type="double" value="50.0" />
    <param name="tf_prefix" type="string" value="" />
- </node>
+  </node>
 
   <include file="$(find pr2_head_cart)/cart_sensors.launch" />
   <include file="$(find pr2_head_cart)/cart_monitors.launch" />
@@ -24,5 +24,7 @@
   <node pkg="runtime_monitor" type="ntp_monitor.py" args="hcb2" machine="realtime" />
   <node pkg="runtime_monitor" type="ntp_monitor.py" args="fw1 7000" machine="two" /> 
 
+  <!-- Runtime Diagnostics Logging -->
+  <node pkg="rosrecord" type="rosrecord" args="-f /hwlog/hcb_runtime_automatic /diagnostics" />
 
 </launch>
