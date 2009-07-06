@@ -177,6 +177,9 @@ class RosStereoCamera : public Controller
   /// \brief Put camera data somewhere
   private: void PutCameraData();
 
+  /// \brief The image formats of the cameras 
+  private: std::string left_format; 
+  private: std::string right_format; 
 };
 
 /** \} */

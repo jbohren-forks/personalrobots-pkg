@@ -213,6 +213,20 @@ void RosStereoCamera::InitChild()
   this->leftCamera->SetActive(true);
   this->rightCamera->SetActive(true);
 
+  if( leftCamera->GetImageFormat() == "L8" ) 
+      left_format = "mono"; 
+  else if ( leftCamera->GetImageFormat() == "R8G8B8" ) 
+      left_format = "rgb"; 
+  else if ( leftCamera->GetImageFormat() == "B8G8R8" ) 
+      left_format = "bgr"; 
+   
+  if( rightCamera->GetImageFormat() == "L8" ) 
+      right_format = "mono"; 
+  else if ( rightCamera->GetImageFormat() == "R8G8B8" ) 
+      right_format = "rgb"; 
+  else if ( rightCamera->GetImageFormat() == "B8G8R8" ) 
+      right_format = "bgr"; 
+
   ROS_DEBUG("stereo: set sensors active\n");
 
 }
@@ -267,7 +281,7 @@ void RosStereoCamera::PutCameraData()
                 this->leftCamera->GetImageHeight(),
                 this->leftCamera->GetImageWidth() ,
                 1,
-                "mono"            ,"uint8"     ,
+                this->left_format,"uint8",
                 (void*)left_src );
 
       // copy from src to rightImageMsg
@@ -276,7 +290,7 @@ void RosStereoCamera::PutCameraData()
                 this->rightCamera->GetImageHeight(),
                 this->rightCamera->GetImageWidth() ,
                 1,
-                "mono"            ,"uint8"     ,
+                this->right_format,"uint8",
                 (void*)right_src );
 
       // fill StereoInfo stereo_info
