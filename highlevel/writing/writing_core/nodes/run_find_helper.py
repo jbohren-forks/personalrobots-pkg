@@ -114,6 +114,24 @@ class FindHelperAction(python_actions.Action, TransformListener):
           ps1.pose.orientation.z = 0.5
           ps1.pose.orientation.w = 0.5
 
+          markerpub = rospy.Publisher("/visualization_marker", visualization_msgs.msg.Marker)
+          mrk = visualization_msgs.msg.Marker()
+
+	  m.header = ps0.header
+	  m.ns = "find_helper";
+	  m.id = 0;
+	  m.type = visualization_msgs.msg.Marker.SPHERE;
+	  m.action = visualization_msgs.msg.Marker.ADD;
+	  m.pose = ps0.pose
+	  m.scale.x = 0.2;
+	  m.scale.y = 0.2;
+	  m.scale.z = 0.2;
+	  m.color.a = 1.0;
+	  m.color.r = 1.0;
+	  m.color.g = 0.0;
+	  m.color.b = 1.0;
+          markerpub.pushlish(mrk)
+
           ps0 = tf.pose_stamped_bt_to_msg(self.transform_pose("odom_combined", tf.pose_stamped_msg_to_bt(ps0)))
           ps1 = tf.pose_stamped_bt_to_msg(self.transform_pose("odom_combined", tf.pose_stamped_msg_to_bt(ps1)))
           ps1.pose.position.z = 0# put the goal on the ground
