@@ -41,6 +41,7 @@
 #include <kdl/jntarray.hpp>
 #include <chomp_motion_planner/chomp_robot_model.h>
 #include <iostream>
+#include <Eigen/Core>
 
 namespace chomp
 {
@@ -49,12 +50,12 @@ namespace chomp
  * \brief Takes in an std::vector of joint value messages, and writes them out into the KDL joint array.
  *
  * The template typename T needs to be an std::vector of some message which has an std::string "joint_name"
- * and a double array "value".
+ * and a double array/vector "value".
  *
  * Names to KDL joint index mappings are performed using the given ChompRobotModel.
  */
 template<typename T>
-void jointMsgToArray(T& msg_vector, KDL::JntArray& joint_array, ChompRobotModel& robot_model)
+void jointMsgToArray(T& msg_vector, Eigen::MatrixXd::RowXpr joint_array, ChompRobotModel& robot_model)
 {
   for (typename T::iterator it=msg_vector.begin(); it!=msg_vector.end(); it++)
   {

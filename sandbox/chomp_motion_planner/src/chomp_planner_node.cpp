@@ -37,6 +37,8 @@
 #include <chomp_motion_planner/chomp_planner_node.h>
 #include <chomp_motion_planner/chomp_trajectory.h>
 #include <chomp_motion_planner/chomp_utils.h>
+#include <chomp_motion_planner/chomp_parameters.h>
+#include <chomp_motion_planner/chomp_optimizer.h>
 #include <kdl_parser/tree_parser.hpp>
 #include <kdl/jntarray.hpp>
 #include <angles/angles.h>
@@ -62,8 +64,8 @@ bool ChompPlannerNode::init()
     return false;
 
   // load in some default parameters
-  node_handle_.param("trajectory_duration", trajectory_duration_, 1.0);
-  node_handle_.param("trajectory_discretization", trajectory_discretization_, 0.01);
+  node_handle_.param("trajectory_duration", trajectory_duration_, 2.0);
+  node_handle_.param("trajectory_discretization", trajectory_discretization_, 0.02);
 
   // advertise the planning service
   plan_kinematic_path_service_ = node_handle_.advertiseService("plan_kinematic_path", &ChompPlannerNode::planKinematicPath, this);
@@ -85,6 +87,8 @@ int ChompPlannerNode::run()
 
 bool ChompPlannerNode::planKinematicPath(motion_planning_srvs::MotionPlan::Request &req, motion_planning_srvs::MotionPlan::Response &res)
 {
+  ros::WallTime start_time = ros::WallTime::now();
+  ROS_INFO("Received planning request...");
   // get the planning group:
   const ChompRobotModel::ChompPlanningGroup* group = chomp_robot_model_.getPlanningGroup(req.params.model_id);
 
@@ -97,13 +101,13 @@ bool ChompPlannerNode::planKinematicPath(motion_planning_srvs::MotionPlan::Reque
   ChompTrajectory trajectory(&chomp_robot_model_, trajectory_duration_, trajectory_discretization_);
 
   // set the start state:
-  jointMsgToArray(req.start_state, trajectory(0), chomp_robot_model_);
+  jointMsgToArray(req.start_state, trajectory.getTrajectoryPoint(0), chomp_robot_model_);
 
   // set the goal state equal to start state, and override the joints specified in the goal
   // joint constraints
   int goal_index = trajectory.getNumPoints()-1;
-  trajectory(goal_index) = trajectory(0);
-  jointMsgToArray(req.goal_constraints.joint_constraint, trajectory(goal_index), chomp_robot_model_);
+  trajectory.getTrajectoryPoint(goal_index) = trajectory.getTrajectoryPoint(0);
+  jointMsgToArray(req.goal_constraints.joint_constraint, trajectory.getTrajectoryPoint(goal_index), chomp_robot_model_);
 
   // fix the goal to move the shortest angular distance for wrap-around joints:
   for (int i=0; i<group->num_joints_; i++)
@@ -113,12 +117,16 @@ bool ChompPlannerNode::planKinematicPath(motion_planning_srvs::MotionPlan::Reque
       int kdl_index = group->chomp_joints_[i].kdl_joint_index_;
       double start = trajectory(0, kdl_index);
       double end = trajectory(goal_index, kdl_index);
-      trajectory(goal_index,kdl_index) = start + angles::shortest_angular_distance(start, end);
+      trajectory(goal_index, kdl_index) = start + angles::shortest_angular_distance(start, end);
     }
   }
 
   // fill in an initial quintic spline trajectory
-  trajectory.fillInMinJerk(0, goal_index);
+  trajectory.fillInMinJerk();
+
+  // optimize!
+  ChompOptimizer optimizer(&trajectory, &chomp_robot_model_, group, &chomp_parameters_);
+  optimizer.optimize();
 
   // assume that the trajectory is now optimized, fill in the output structure:
   res.distance = 0.0;
@@ -150,6 +158,7 @@ bool ChompPlannerNode::planKinematicPath(motion_planning_srvs::MotionPlan::Reque
     }
   }
 
+  ROS_INFO("Serviced planning request in %f wall-seconds.", (ros::WallTime::now() - start_time).toSec());
   return true;
 }
 

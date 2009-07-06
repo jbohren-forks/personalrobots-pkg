@@ -34,63 +34,47 @@
 
 /** \author Mrinal Kalakrishnan */
 
-#ifndef CHOMP_PLANNER_NODE_H_
-#define CHOMP_PLANNER_NODE_H_
+#ifndef CHOMP_COST_H_
+#define CHOMP_COST_H_
 
-#include <ros/ros.h>
-#include <motion_planning_srvs/MotionPlan.h>
-#include <chomp_motion_planner/chomp_robot_model.h>
-#include <chomp_motion_planner/chomp_parameters.h>
+#include <Eigen/Core>
+#include <chomp_motion_planner/chomp_trajectory.h>
+#include <vector>
 
 namespace chomp
 {
 
 /**
- * \brief ROS Node which responds to motion planning requests using the CHOMP algorithm.
+ * \brief Represents the smoothness cost for CHOMP, for a single joint
  */
-class ChompPlannerNode
+class ChompCost
 {
 public:
-  /**
-   * \brief Default constructor
-   */
-  ChompPlannerNode();
+  ChompCost(const ChompTrajectory& trajectory, int joint_number, const std::vector<double>& derivative_costs);
+  virtual ~ChompCost();
 
-  /**
-   * \brief Destructor
-   */
-  virtual ~ChompPlannerNode();
+  static const int DIFF_RULE_LENGTH = 7;
 
-  /**
-   * \brief Initialize the node
-   *
-   * \return true if successful, false if not
-   */
-  bool init();
+  static const double DIFF_RULES[3][DIFF_RULE_LENGTH];
 
-  /**
-   * \brief Runs the node
-   *
-   * \return 0 on clean exit
-   */
-  int run();
-
-  /**
-   * \brief Main entry point for motion planning (callback for the plan_kinematic_path service)
-   */
-  bool planKinematicPath(motion_planning_srvs::MotionPlan::Request &req, motion_planning_srvs::MotionPlan::Response &res);
+  template<typename Derived>
+  void getDerivative(Eigen::MatrixBase<Derived>& joint_trajectory, Eigen::MatrixBase<Derived>& derivative);
 
 private:
-  ros::NodeHandle node_handle_;                         /**< ROS Node handle */
-  ros::ServiceServer plan_kinematic_path_service_;      /**< The planning service */
+  Eigen::MatrixXd quad_cost_full_;
+  Eigen::MatrixXd quad_cost_;
+  Eigen::VectorXd linear_cost_;
+  Eigen::MatrixXd quad_cost_inv_;
 
-  ChompRobotModel chomp_robot_model_;                   /**< Chomp Robot Model */
-  ChompParameters chomp_parameters_;                    /**< Chomp Parameters */
-  double trajectory_duration_;                          /**< Default duration of the planned motion */
-  double trajectory_discretization_;                    /**< Default discretization of the planned motion */
-
+  Eigen::MatrixXd getDiffMatrix(int size, const double* diff_rule) const;
 };
+
+template<typename Derived>
+void ChompCost::getDerivative(Eigen::MatrixBase<Derived>& joint_trajectory, Eigen::MatrixBase<Derived>& derivative)
+{
+  derivative = quad_cost_full_ * (2.0 * joint_trajectory);
+}
 
 }
 
-#endif /* CHOMP_PLANNER_NODE_H_ */
+#endif /* CHOMP_COST_H_ */

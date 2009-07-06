@@ -7,7 +7,7 @@ include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
 #  Release        : w/o debug symbols, w/ optimization
 #  RelWithDebInfo : w/ debug symbols, w/ optimization
 #  MinSizeRel     : w/o debug symbols, w/ optimization, stripped binaries
-#set(ROS_BUILD_TYPE RelWithDebInfo)
+set(ROS_BUILD_TYPE RelWithDebInfo)
 
 rospack(chomp_motion_planner)
 
@@ -29,7 +29,12 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 #rospack_add_executable(example examples/example.cpp)
 #target_link_libraries(example ${PROJECT_NAME})
 
+add_definitions(-DEIGEN_NO_DEBUG)
+
 rospack_add_executable(chomp_planner_node
+	src/chomp_cost.cpp
+	src/chomp_optimizer.cpp
+	src/chomp_parameters.cpp
 	src/chomp_planner_node.cpp
 	src/chomp_robot_model.cpp
 	src/chomp_trajectory.cpp

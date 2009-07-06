@@ -34,63 +34,24 @@
 
 /** \author Mrinal Kalakrishnan */
 
-#ifndef CHOMP_PLANNER_NODE_H_
-#define CHOMP_PLANNER_NODE_H_
-
-#include <ros/ros.h>
-#include <motion_planning_srvs/MotionPlan.h>
-#include <chomp_motion_planner/chomp_robot_model.h>
 #include <chomp_motion_planner/chomp_parameters.h>
 
 namespace chomp
 {
 
-/**
- * \brief ROS Node which responds to motion planning requests using the CHOMP algorithm.
- */
-class ChompPlannerNode
+ChompParameters::ChompParameters()
 {
-public:
-  /**
-   * \brief Default constructor
-   */
-  ChompPlannerNode();
+}
 
-  /**
-   * \brief Destructor
-   */
-  virtual ~ChompPlannerNode();
+ChompParameters::~ChompParameters()
+{
+}
 
-  /**
-   * \brief Initialize the node
-   *
-   * \return true if successful, false if not
-   */
-  bool init();
-
-  /**
-   * \brief Runs the node
-   *
-   * \return 0 on clean exit
-   */
-  int run();
-
-  /**
-   * \brief Main entry point for motion planning (callback for the plan_kinematic_path service)
-   */
-  bool planKinematicPath(motion_planning_srvs::MotionPlan::Request &req, motion_planning_srvs::MotionPlan::Response &res);
-
-private:
-  ros::NodeHandle node_handle_;                         /**< ROS Node handle */
-  ros::ServiceServer plan_kinematic_path_service_;      /**< The planning service */
-
-  ChompRobotModel chomp_robot_model_;                   /**< Chomp Robot Model */
-  ChompParameters chomp_parameters_;                    /**< Chomp Parameters */
-  double trajectory_duration_;                          /**< Default duration of the planned motion */
-  double trajectory_discretization_;                    /**< Default discretization of the planned motion */
-
-};
+void ChompParameters::initFromNodeHandle()
+{
+  ros::NodeHandle node_handle;
 
 }
 
-#endif /* CHOMP_PLANNER_NODE_H_ */
+
+} // namespace chomp

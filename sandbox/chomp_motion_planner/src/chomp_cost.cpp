@@ -34,63 +34,67 @@
 
 /** \author Mrinal Kalakrishnan */
 
-#ifndef CHOMP_PLANNER_NODE_H_
-#define CHOMP_PLANNER_NODE_H_
+#include <chomp_motion_planner/chomp_cost.h>
+#include <Eigen/LU>
 
-#include <ros/ros.h>
-#include <motion_planning_srvs/MotionPlan.h>
-#include <chomp_motion_planner/chomp_robot_model.h>
-#include <chomp_motion_planner/chomp_parameters.h>
+USING_PART_OF_NAMESPACE_EIGEN
 
 namespace chomp
 {
 
-/**
- * \brief ROS Node which responds to motion planning requests using the CHOMP algorithm.
- */
-class ChompPlannerNode
-{
-public:
-  /**
-   * \brief Default constructor
-   */
-  ChompPlannerNode();
-
-  /**
-   * \brief Destructor
-   */
-  virtual ~ChompPlannerNode();
-
-  /**
-   * \brief Initialize the node
-   *
-   * \return true if successful, false if not
-   */
-  bool init();
-
-  /**
-   * \brief Runs the node
-   *
-   * \return 0 on clean exit
-   */
-  int run();
-
-  /**
-   * \brief Main entry point for motion planning (callback for the plan_kinematic_path service)
-   */
-  bool planKinematicPath(motion_planning_srvs::MotionPlan::Request &req, motion_planning_srvs::MotionPlan::Response &res);
-
-private:
-  ros::NodeHandle node_handle_;                         /**< ROS Node handle */
-  ros::ServiceServer plan_kinematic_path_service_;      /**< The planning service */
-
-  ChompRobotModel chomp_robot_model_;                   /**< Chomp Robot Model */
-  ChompParameters chomp_parameters_;                    /**< Chomp Parameters */
-  double trajectory_duration_;                          /**< Default duration of the planned motion */
-  double trajectory_discretization_;                    /**< Default discretization of the planned motion */
-
+// the differentiation rules (centered at the center)
+const double ChompCost::DIFF_RULES[3][ChompCost::DIFF_RULE_LENGTH] = {
+    {0, 0, -2/6.0, -3/6.0, 6/6.0, -1/6.0, 0},
+    {0, -1/12.0, 16/12.0, -30/12.0, 16/12.0, -1/12.0, 0},
+    {0, 1/12.0, -17/12.0, 46/12.0, -46/12.0, 17/12.0, -1/12.0}
 };
+
+ChompCost::ChompCost(const ChompTrajectory& trajectory, int joint_number, const std::vector<double>& derivative_costs)
+{
+  int num_vars_all = trajectory.getNumPoints();
+  int num_vars_free = num_vars_all - 2*(DIFF_RULE_LENGTH-1);
+  MatrixXd diff_matrix = MatrixXd::Zero(num_vars_all, num_vars_all);
+  quad_cost_full_ = MatrixXd::Zero(num_vars_all, num_vars_all);
+
+  // construct the quad cost for all variables, as a sum of squared differentiation matrices
+  double multiplier = 1.0;
+  for (unsigned int i=0; i<derivative_costs.size(); i++)
+  {
+    multiplier *= trajectory.getDiscretization();
+    diff_matrix = getDiffMatrix(num_vars_all, &DIFF_RULES[i][0]);
+    quad_cost_full_ += (derivative_costs[i] * multiplier) *
+        (diff_matrix*diff_matrix);
+  }
+
+  // extract the quad cost just for the free variables:
+  quad_cost_ = quad_cost_full_.block(DIFF_RULE_LENGTH-1, DIFF_RULE_LENGTH-1,
+      num_vars_free, num_vars_free);
+
+  // invert the matrix:
+  quad_cost_inv_ = quad_cost_.inverse();
 
 }
 
-#endif /* CHOMP_PLANNER_NODE_H_ */
+Eigen::MatrixXd ChompCost::getDiffMatrix(int size, const double* diff_rule) const
+{
+  MatrixXd matrix = MatrixXd::Zero(size,size);
+  for (int i=0; i<size; i++)
+  {
+    for (int j=-DIFF_RULE_LENGTH/2; j<=DIFF_RULE_LENGTH/2; j++)
+    {
+      int index = i+j;
+      if (index < 0)
+        continue;
+      if (index >= size)
+        continue;
+      matrix(i,index) = diff_rule[j+DIFF_RULE_LENGTH/2];
+    }
+  }
+  return matrix;
+}
+
+ChompCost::~ChompCost()
+{
+}
+
+}

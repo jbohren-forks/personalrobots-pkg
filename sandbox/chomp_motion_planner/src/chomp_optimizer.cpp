@@ -34,63 +34,46 @@
 
 /** \author Mrinal Kalakrishnan */
 
-#ifndef CHOMP_PLANNER_NODE_H_
-#define CHOMP_PLANNER_NODE_H_
-
-#include <ros/ros.h>
-#include <motion_planning_srvs/MotionPlan.h>
-#include <chomp_motion_planner/chomp_robot_model.h>
-#include <chomp_motion_planner/chomp_parameters.h>
+#include <chomp_motion_planner/chomp_optimizer.h>
 
 namespace chomp
 {
 
-/**
- * \brief ROS Node which responds to motion planning requests using the CHOMP algorithm.
- */
-class ChompPlannerNode
+ChompOptimizer::ChompOptimizer(ChompTrajectory *trajectory, const ChompRobotModel *robot_model,
+    const ChompRobotModel::ChompPlanningGroup *planning_group, const ChompParameters *parameters):
+      full_trajectory_(trajectory),
+      robot_model_(robot_model),
+      planning_group_(planning_group),
+      parameters_(parameters),
+      group_trajectory_(*full_trajectory_, planning_group_, ChompCost::DIFF_RULE_LENGTH)
 {
-public:
-  /**
-   * \brief Default constructor
-   */
-  ChompPlannerNode();
+  initialize();
+}
 
-  /**
-   * \brief Destructor
-   */
-  virtual ~ChompPlannerNode();
+void ChompOptimizer::initialize()
+{
+  // set up the joint costs:
+  joint_costs_.reserve(planning_group_->num_joints_);
 
-  /**
-   * \brief Initialize the node
-   *
-   * \return true if successful, false if not
-   */
-  bool init();
+  // @TODO hardcoded derivative costs:
+  std::vector<double> derivative_costs(3);
+  derivative_costs[0] = 1.0;
+  derivative_costs[1] = 1.0;
+  derivative_costs[2] = 1.0;
 
-  /**
-   * \brief Runs the node
-   *
-   * \return 0 on clean exit
-   */
-  int run();
+  for (int i=0; i<group_trajectory_.getNumJoints(); i++)
+  {
+    joint_costs_.push_back(ChompCost(group_trajectory_, i, derivative_costs));
+  }
+}
 
-  /**
-   * \brief Main entry point for motion planning (callback for the plan_kinematic_path service)
-   */
-  bool planKinematicPath(motion_planning_srvs::MotionPlan::Request &req, motion_planning_srvs::MotionPlan::Response &res);
+ChompOptimizer::~ChompOptimizer()
+{
+}
 
-private:
-  ros::NodeHandle node_handle_;                         /**< ROS Node handle */
-  ros::ServiceServer plan_kinematic_path_service_;      /**< The planning service */
-
-  ChompRobotModel chomp_robot_model_;                   /**< Chomp Robot Model */
-  ChompParameters chomp_parameters_;                    /**< Chomp Parameters */
-  double trajectory_duration_;                          /**< Default duration of the planned motion */
-  double trajectory_discretization_;                    /**< Default discretization of the planned motion */
-
-};
+void ChompOptimizer::optimize()
+{
 
 }
 
-#endif /* CHOMP_PLANNER_NODE_H_ */
+}

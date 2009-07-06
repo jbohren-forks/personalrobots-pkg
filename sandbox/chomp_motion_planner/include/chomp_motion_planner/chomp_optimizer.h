@@ -34,63 +34,41 @@
 
 /** \author Mrinal Kalakrishnan */
 
-#ifndef CHOMP_PLANNER_NODE_H_
-#define CHOMP_PLANNER_NODE_H_
+#ifndef CHOMP_OPTIMIZER_H_
+#define CHOMP_OPTIMIZER_H_
 
-#include <ros/ros.h>
-#include <motion_planning_srvs/MotionPlan.h>
-#include <chomp_motion_planner/chomp_robot_model.h>
 #include <chomp_motion_planner/chomp_parameters.h>
+#include <chomp_motion_planner/chomp_trajectory.h>
+#include <chomp_motion_planner/chomp_robot_model.h>
+#include <chomp_motion_planner/chomp_cost.h>
+
+#include <vector>
 
 namespace chomp
 {
 
-/**
- * \brief ROS Node which responds to motion planning requests using the CHOMP algorithm.
- */
-class ChompPlannerNode
+class ChompOptimizer
 {
 public:
-  /**
-   * \brief Default constructor
-   */
-  ChompPlannerNode();
+  ChompOptimizer(ChompTrajectory *trajectory, const ChompRobotModel *robot_model,
+      const ChompRobotModel::ChompPlanningGroup *planning_group, const ChompParameters *parameters);
+  virtual ~ChompOptimizer();
 
-  /**
-   * \brief Destructor
-   */
-  virtual ~ChompPlannerNode();
-
-  /**
-   * \brief Initialize the node
-   *
-   * \return true if successful, false if not
-   */
-  bool init();
-
-  /**
-   * \brief Runs the node
-   *
-   * \return 0 on clean exit
-   */
-  int run();
-
-  /**
-   * \brief Main entry point for motion planning (callback for the plan_kinematic_path service)
-   */
-  bool planKinematicPath(motion_planning_srvs::MotionPlan::Request &req, motion_planning_srvs::MotionPlan::Response &res);
+  void optimize();
 
 private:
-  ros::NodeHandle node_handle_;                         /**< ROS Node handle */
-  ros::ServiceServer plan_kinematic_path_service_;      /**< The planning service */
 
-  ChompRobotModel chomp_robot_model_;                   /**< Chomp Robot Model */
-  ChompParameters chomp_parameters_;                    /**< Chomp Parameters */
-  double trajectory_duration_;                          /**< Default duration of the planned motion */
-  double trajectory_discretization_;                    /**< Default discretization of the planned motion */
+  ChompTrajectory *full_trajectory_;
+  const ChompRobotModel *robot_model_;
+  const ChompRobotModel::ChompPlanningGroup *planning_group_;
+  const ChompParameters *parameters_;
+  ChompTrajectory group_trajectory_;
+  std::vector<ChompCost> joint_costs_;
+
+  void initialize();
 
 };
 
 }
 
-#endif /* CHOMP_PLANNER_NODE_H_ */
+#endif /* CHOMP_OPTIMIZER_H_ */

@@ -35,26 +35,72 @@
 /** \author Mrinal Kalakrishnan */
 
 #include <chomp_motion_planner/chomp_trajectory.h>
+#include <iostream>
 
 namespace chomp
 {
 
 ChompTrajectory::ChompTrajectory(const ChompRobotModel* robot_model, double duration, double discretization):
   robot_model_(robot_model),
+  planning_group_(NULL),
   num_points_((duration/discretization)+1),
+  num_joints_(robot_model_->getNumKDLJoints()),
   discretization_(discretization),
-  duration_(duration)
+  duration_(duration),
+  start_index_(1),
+  end_index_(num_points_-2)
 {
   init();
 }
 
 ChompTrajectory::ChompTrajectory(const ChompRobotModel* robot_model, int num_points, double discretization):
   robot_model_(robot_model),
+  planning_group_(NULL),
   num_points_(num_points),
+  num_joints_(robot_model_->getNumKDLJoints()),
   discretization_(discretization),
-  duration_((num_points-1)*discretization)
+  duration_((num_points-1)*discretization),
+  start_index_(1),
+  end_index_(num_points_-2)
 {
   init();
+}
+
+ChompTrajectory::ChompTrajectory(const ChompTrajectory& source_traj, const ChompRobotModel::ChompPlanningGroup* planning_group, int diff_rule_length):
+  robot_model_(source_traj.robot_model_),
+  planning_group_(planning_group),
+  discretization_(source_traj.discretization_)
+{
+  num_joints_ = planning_group_->num_joints_;
+
+  // figure out the num_points_:
+  // we need diff_rule_length-1 extra points on either side:
+  int start_extra = (diff_rule_length - 1) - source_traj.start_index_;
+  int end_extra = (diff_rule_length - 1) - ((source_traj.num_points_-1) - source_traj.end_index_);
+
+  num_points_ = source_traj.num_points_ + start_extra + end_extra;
+  start_index_ = start_extra;
+  end_index_ = (num_points_ - 1) - end_extra;
+  duration_ = (num_points_ - 1)*discretization_;
+
+  // allocate the memory:
+  init();
+
+  // now copy the trajectories over:
+  for (int i=0; i<num_points_; i++)
+  {
+    int source_traj_point = i - start_extra;
+    if (source_traj_point < 0)
+      source_traj_point = 0;
+    if (source_traj_point >= source_traj.num_points_)
+      source_traj_point = source_traj.num_points_-1;
+    for (int j=0; j<num_joints_; j++)
+    {
+      int source_joint = planning_group_->chomp_joints_[j].kdl_joint_index_;
+      (*this)(i,j) = source_traj(source_traj_point, source_joint);
+    }
+  }
+
 }
 
 ChompTrajectory::~ChompTrajectory()
@@ -63,15 +109,17 @@ ChompTrajectory::~ChompTrajectory()
 
 void ChompTrajectory::init()
 {
-  num_joints_ = robot_model_->getNumKDLJoints();
-  trajectory_.resize(num_points_, KDL::JntArray(num_joints_));
+  //trajectory_.resize(num_points_, Eigen::VectorXd(num_joints_));
+  trajectory_ = Eigen::MatrixXd(num_points_, num_joints_);
 }
 
-void ChompTrajectory::fillInMinJerk(int startIndex, int endIndex)
+void ChompTrajectory::fillInMinJerk()
 {
+  double start_index = start_index_-1;
+  double end_index = end_index_+1;
   double T[6]; // powers of the time duration
   T[0] = 1.0;
-  T[1] = (endIndex - startIndex)*discretization_;
+  T[1] = (end_index - start_index)*discretization_;
 
   for (int i=2; i<=5; i++)
     T[i] = T[i-1]*T[1];
@@ -81,32 +129,31 @@ void ChompTrajectory::fillInMinJerk(int startIndex, int endIndex)
   double coeff[num_joints_][6];
   for (int i=0; i<num_joints_; i++)
   {
-    double x0 = trajectory_[startIndex](i);
-    double x1 = trajectory_[endIndex](i);
+    double x0 = (*this)(start_index,i);
+    double x1 = (*this)(end_index,i);
     coeff[i][0] = x0;
     coeff[i][1] = 0;
     coeff[i][2] = 0;
     coeff[i][3] = (-20*x0 + 20*x1) / (2*T[3]);
     coeff[i][4] = (30*x0 - 30*x1) / (2*T[4]);
     coeff[i][5] = (-12*x0 + 12*x1) / (2*T[5]);
-
   }
 
   // now fill in the joint positions at each time step
-  for (int i=startIndex+1; i<endIndex; i++)
+  for (int i=start_index+1; i<end_index; i++)
   {
     double t[6]; // powers of the time index point
     t[0] = 1.0;
-    t[1] = (i - startIndex)*discretization_;
+    t[1] = (i - start_index)*discretization_;
     for (int k=2; k<=5; k++)
       t[k] = t[k-1]*t[1];
 
     for (int j=0; j<num_joints_; j++)
     {
-      trajectory_[i](j) = 0.0;
+      (*this)(i,j) = 0.0;
       for (int k=0; k<=5; k++)
       {
-        trajectory_[i](j) += t[k]*coeff[j][k];
+        (*this)(i,j) += t[k]*coeff[j][k];
       }
     }
   }
