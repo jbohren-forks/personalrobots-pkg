@@ -421,7 +421,40 @@ int M3NModel::addCliqueEnergyRobustPotts(const RandomField::Clique& clique,
   unsigned int mode2_count = 0;
 
   // -----------------------------------
-  // Compute potential if all node switch to alpha
+  // Compute the mode labels in the clique
+  list<unsigned int> dominant_node_ids;
+  if (clique.getModeLabels(mode1_label, mode1_count, mode2_label, mode2_count, &dominant_node_ids,
+      &curr_labeling) < 0)
+  {
+    return -1;
+  }
+
+  // -----------------------------------
+  // Determine if a "dominant" label exists: D > P-Q where D is the number of
+  // nodes labeled d != alpha, P = number of nodes in the clique, Q = truncation parameter
+  // (Note: it must be the mode1_label if dominant label exists).
+  // If it exists, compute the clique potential as if all nodes
+  // in the clique were assigned that label
+  bool found_dominant_label = false;
+  double gamma_dominant = -1.0;
+  double Q = 0.0;
+  if (mode1_label != alpha_label)
+  {
+    double D = static_cast<double> (mode1_count);
+    double P = static_cast<double> (clique.getOrder());
+    Q = static_cast<double> (robust_potts_params_[clique_set_idx]) * P;
+    if ((D - 1e-5) > (P - Q)) // condition if dominant label exists
+    {
+      if (computePotential(clique, clique_set_idx, mode1_label, gamma_dominant) < 0)
+      {
+        return -1;
+      }
+      found_dominant_label = true;
+    }
+  }
+
+  // -----------------------------------
+  // Compute potential if all nodes switch to alpha
   double gamma_alpha = 0.0;
   if (computePotential(clique, clique_set_idx, alpha_label, gamma_alpha) < 0)
   {
@@ -429,41 +462,11 @@ int M3NModel::addCliqueEnergyRobustPotts(const RandomField::Clique& clique,
   }
 
   // -----------------------------------
-  // Determine whether a dominant label can be found.
-  // (Note: it must be the mode1_label if it exists).
-  // If the dominant label exists, then compute the clique potential as if all nodes
-  // in the clique were assigned that label
-  list<unsigned int> dominant_node_ids;
-  if (clique.getModeLabels(mode1_label, mode1_count, mode2_label, mode2_count, &dominant_node_ids,
-      &curr_labeling) < 0)
-  {
-    return -1;
-  }
-  double D = static_cast<double> (dominant_node_ids.size());
-  double P = static_cast<double> (mode1_count);
-  double Q = static_cast<double> (robust_potts_params_[clique_set_idx]) * P;
-  bool do_dominant = false;
-  double gamma_dominant = -1.0;
-  if ((D - 1e-5) > (P - Q)) // condition if dominant label exists
-  {
-    // use precomputed value if the dominant label is the alpha label
-    if (mode1_label == alpha_label)
-    {
-      gamma_dominant = gamma_alpha;
-    }
-    else if (computePotential(clique, clique_set_idx, mode1_label, gamma_dominant) < 0)
-    {
-      return -1;
-    }
-    do_dominant = true;
-  }
-
-  // -----------------------------------
   // Create list of energy variables of the nodes in the clique.
   // Also save another list containing the variables of just the
   // dominant nodes, if indicated to.
   list<unsigned int>::iterator iter_dominant_node_ids;
-  if (do_dominant)
+  if (found_dominant_label)
   {
     iter_dominant_node_ids = dominant_node_ids.begin();
   }
@@ -492,7 +495,7 @@ int M3NModel::addCliqueEnergyRobustPotts(const RandomField::Clique& clique,
   // WARNING, this follows that ALPHA_VALUE == 0
   // max +score = min -score
   int ret_val = 0;
-  if (do_dominant)
+  if (found_dominant_label)
   {
     ret_val = energy_func.addRobustPottsDominantExpand0(node_vars, dominant_vars, -gamma_alpha,
         -gamma_dominant, 0.0, Q);

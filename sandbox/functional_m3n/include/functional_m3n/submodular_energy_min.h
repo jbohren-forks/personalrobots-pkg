@@ -158,13 +158,14 @@ class SubmodularEnergyMin
      * the same for all labels.
      *
      * This method should be called when a dominant label d in the clique can be found, that is
-     * when D > P - Q, where D is the number of nodes in the clique that take on label d,
-     * P is the number of nodes in the clique, and Q is the truncation parameter.
+     * when D > P - Q, where D is the number of nodes in the clique that take on label d != alpha,
+     * P is the number of nodes in the clique, and Q is the truncation parameter.  Call the method
+     * addRobustPottsNoDominantExpand0 if no dominant label can be found.
      *
      * IMPORTANT: this function assumes 0 represents the alpha-label and 1 represents the current
      * labeling.  Ensure to call the other energy functions appropriately.
      *
-     * \param clique_vars List of energy variables that constitute the clique
+     * \param node_vars List of energy variables that constitute the clique
      * \param dominant_vars List of energy variables that currently take on the clique's dominant labels
      * \param gamma_alpha The energy if all variables in the clique take on the alpha label (value 0)
      * \param gamma_dominant The energy if dominant variables keep their label (value 1)
@@ -175,7 +176,7 @@ class SubmodularEnergyMin
      * \return 0 on success, otherwise negative value on error
      */
     // --------------------------------------------------------------
-    int addRobustPottsDominantExpand0(const list<EnergyVar>& clique_vars,
+    int addRobustPottsDominantExpand0(const list<EnergyVar>& node_vars,
                                       const list<EnergyVar>& dominant_vars,
                                       double gamma_alpha,
                                       double gamma_dominant,
@@ -192,13 +193,13 @@ class SubmodularEnergyMin
      * the same for all labels.
      *
      * This method should be called when NO dominant label in the clique can be found, that is
-     * there is no label d such that D > P - Q, where D is the number of nodes in the clique that take
+     * there is no label d != alpha such that D > P - Q, where D is the number of nodes in the clique that take
      * on label d, P is the number of nodes in the clique, and Q is the truncation parameter.
      *
      * IMPORTANT: this function assumes 0 represents the alpha-label and 1 represents the current
      * labeling.  Ensure to call the other energy functions appropriately.
      *
-     * \param clique_vars List of energy variables that constitute the clique
+     * \param node_vars List of energy variables that constitute the clique
      * \param gamma_alpha The energy if all variables in the clique take on the alpha label (value 0)
      * \param gamma_max The max energy value the clique can have
      * \param Q The truncation parameter, it is the number of nodes that can disagree with
@@ -207,7 +208,7 @@ class SubmodularEnergyMin
      * \return 0 on success, otherwise negative value on error
      */
     // --------------------------------------------------------------
-    int addRobustPottsNoDominantExpand0(const list<EnergyVar>& clique_vars,
+    int addRobustPottsNoDominantExpand0(const list<EnergyVar>& node_vars,
                                         double gamma_alpha,
                                         double gamma_max,
                                         double Q);
@@ -491,15 +492,15 @@ inline int SubmodularEnergyMin::addPnPotts(const list<EnergyVar>& clique_vars,
                                            double Ec1,
                                            double Emax)
 {
-  if (Emax - 1e-5 > Ec0)
+  // Emax >= Ec0, Ec1
+  if (Ec0 > (Emax + 1e-5))
   {
-    ROS_ERROR("Emax %f should be less than Ec0 %f", Emax, Ec0);
+    ROS_ERROR("Emax %f should be bigger than Ec0 %f", Emax, Ec0);
     return -1;
   }
-
-  if (Emax - 1e-5 > Ec1)
+  if (Ec1 > (Emax + 1e-5))
   {
-    ROS_ERROR("Emax %f should be less than Ec1 %f", Emax, Ec1);
+    ROS_ERROR("Emax %f should be bigger than Ec1 %f", Emax, Ec1);
     return -1;
   }
 
@@ -535,17 +536,109 @@ inline int SubmodularEnergyMin::addPnPotts(const list<EnergyVar>& clique_vars,
 // --------------------------------------------------------------
 /*! See function definition */
 // --------------------------------------------------------------
-inline int SubmodularEnergyMin::addRobustPottsDominantExpand0(const list<EnergyVar>& clique_vars, const list<
+inline int SubmodularEnergyMin::addRobustPottsDominantExpand0(const list<EnergyVar>& node_vars, const list<
     EnergyVar>& dominant_vars, double gamma_alpha, double gamma_dominant, double gamma_max, double Q)
 {
-  // TODO
+  // Equations 21, 30
+  // P = W(c)
+  // P_d = W(c_d);
+  double P = static_cast<double> (node_vars.size());
+  double P_d = static_cast<double> (dominant_vars.size());
+
+  // -------------------------------------------------
+  // Double checks
+  // gamma_max >= gamma_alpha, gamma_dominant
+  if (gamma_alpha > (gamma_max + 1e-5))
+  {
+    ROS_ERROR("gamma_max %f should be bigger than gamma_alpha %f", gamma_max, gamma_alpha);
+    return -1;
+  }
+  if (gamma_dominant > (gamma_max + 1e-5))
+  {
+    ROS_ERROR("gamma_max %f should be bigger than gamma_dominant %f", gamma_max, gamma_dominant);
+    return -1;
+  }
+
+  // P > Q_a + Q_b for all labels a,b.
+  // We assumed all Q_k are equal
+  if ((2.0 * Q) > (P + 1e-5))
+  {
+    ROS_ERROR("P %f should be bigger than 2Q=%f", P, 2.0 * Q);
+    return -1;
+  }
+
+  // W(c_d) > P - Q
+  if ((P - Q) > (P_d + 1e-5))
+  {
+    ROS_ERROR("W(c_d) %f should be bigger than P-Q %f", P_d, (P - Q));
+    return -1;
+  }
+
+  // -------------------------------------------------
+  // Equation 24
+  // theta_d = (gamma_max - gamma_d) / Q_d
+  double theta_dominant = (gamma_max - gamma_dominant) / Q;
+  double theta_alpha = (gamma_max - gamma_alpha) / Q;
+
+  // -------------------------------------------------
+  // Equation 41
+  // R_d = W(c - c_d)
+  // lambda_alpha = gamma_alpha
+  // lambda_d = gamma_d + R_d * theta_d
+  // lambda_max = gamma_max
+  double R_dominant = P - P_d;
+  double lambda_alpha = gamma_alpha;
+  double lambda_dominant = gamma_dominant + R_dominant * theta_dominant;
+  double lambda_max = gamma_max;
+
+  // -------------------------------------------------
+  // Equation 43
+  // delta = lambda_max - lambda_alpha - lambda_d
+  // r0 = lambda_alpha + delta
+  // r1 = lambda_d + delta
+  double delta = lambda_max - lambda_alpha - lambda_dominant;
+  double r_0 = lambda_alpha + delta;
+  double r_1 = lambda_dominant + delta;
+
+  EnergyVar m_0 = add_vertex(graph_);
+  EnergyVar m_1 = add_vertex(graph_);
+
+  // -----------------------------------
+  // r_0 * (1-m_0)
+  addUnary(m_0, r_0, 0.0);
+
+  // -----------------------------------
+  // theta_d * m_0 * \sum(w_i*(1-t_i))
+  list<unsigned int>::const_iterator iter_vars;
+  for (iter_vars = dominant_vars.begin(); iter_vars != dominant_vars.end() ; iter_vars++)
+  {
+    // arguments: 00, 01, 10, 11
+    addPairwise(m_0, *iter_vars, 0.0, 0.0, theta_dominant, 0.0);
+  }
+
+  // -----------------------------------
+  // r1 * m1
+  addUnary(m_1, 0.0, r_1);
+
+  // -----------------------------------
+  // theta_alpha * (1 - m_1) * \sum(w_i*t_i)
+  for (iter_vars = node_vars.begin(); iter_vars != node_vars.end() ; iter_vars++)
+  {
+    // arguments: 00, 01, 10, 11
+    addPairwise(m_1, *iter_vars, 0.0, theta_alpha, 0.0, 0.0);
+  }
+
+  // -----------------------------------
+  // - delta
+  const_offset_ -= delta;
+
   return 0;
 }
 
 // --------------------------------------------------------------
 /*! See function definition */
 // --------------------------------------------------------------
-inline int SubmodularEnergyMin::addRobustPottsNoDominantExpand0(const list<EnergyVar>& clique_vars,
+inline int SubmodularEnergyMin::addRobustPottsNoDominantExpand0(const list<EnergyVar>& node_vars,
                                                                 double gamma_alpha,
                                                                 double gamma_max,
                                                                 double Q)
