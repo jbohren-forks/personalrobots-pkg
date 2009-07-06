@@ -59,12 +59,23 @@
 
 namespace tf
 {
+
+class MessageFilterBase
+{
+public:
+  virtual ~MessageFilterBase(){}
+  virtual void clear() = 0;
+  virtual void setTargetFrame(const std::string& target_frame) = 0;
+  virtual void setTargetFrame(const std::vector<std::string>& target_frames) = 0;
+  virtual void setTolerance(const ros::Duration& tolerance) = 0;
+};
+
 /**
  * \class MessageFilter
  *
  */
 template<class M>
-class MessageFilter
+class MessageFilter : public MessageFilterBase
 {
 public:
   typedef boost::shared_ptr<M const> MConstPtr;
