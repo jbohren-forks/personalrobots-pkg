@@ -43,6 +43,7 @@
 #include <pr2_robot_actions/MoveArmGoal.h>
 #include <pr2_robot_actions/MoveArmState.h>
 
+#include <boost/thread/thread.hpp>
 #include <boost/algorithm/string.hpp>
 #include <iostream>
 #include <vector>
@@ -151,6 +152,11 @@ void setConfigJoint(const unsigned int pos, const double value, pr2_robot_action
     goal.goal_constraints.joint_constraint[pos].value[0] = value;
 }
 
+void spinThread(void)
+{
+    ros::spin();
+}
+
 int main(int argc, char **argv)
 {
     ros::init(argc, argv, "cmd_line_move_arm", ros::init_options::NoSigintHandler | ros::init_options::AnonymousName);
@@ -179,6 +185,9 @@ int main(int argc, char **argv)
     planning_environment::RobotModels rm("robot_description");
     if (!rm.loadedModels())
 	return 0;
+
+    boost::thread th(&spinThread);    
+
     planning_environment::KinematicModelStateMonitor km(&rm);
     km.waitForState();
     
