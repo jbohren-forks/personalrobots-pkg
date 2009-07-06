@@ -84,7 +84,7 @@
 
   <!-- The "desk"-->
   <!-- small desks -->
-  <model:physical name="desk1_model">
+  <model:physical name="desk4_model">
     <xyz>2.28  -0.21  0</xyz>
     <rpy>0.0 0.0 0.0 </rpy>
     <include embedded="true">
@@ -94,7 +94,7 @@
   </model:physical>
 
   <!-- The second "desk"-->
-  <model:physical name="desk2_model">
+  <model:physical name="desk5_model">
     <xyz>2.25  -3.0   0</xyz>
     <rpy>0.0 0.0 0.0 </rpy>
     <include embedded="true">
@@ -104,7 +104,7 @@
 
   <!-- The small cylinder "cup" -->
   <model:physical name="cylinder1_model">
-    <xyz>   2.35   0.0    0.7115</xyz>
+    <xyz>   2.35   0.0    0.72</xyz>
     <rpy>   0.0    0.0    0.0</rpy>
     <body:cylinder name="cylinder1_body">
       <geom:cylinder name="cylinder1_geom">
@@ -136,16 +136,6 @@
       </geom:box>
     </body:cylinder>
   </model:physical>
-
-  <!-- The small box "cup" -->
-  <model:physical name="object1">
-    <xyz>1.28  -0.21  0</xyz>
-    <rpy>0.0 0.0 0.0 </rpy>
-    <include embedded="true">
-      <xi:include href="../gazebo_objects/object1.model" />
-    </include>
-  </model:physical>
-
 
 
   <!-- The small ball -->

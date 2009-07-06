@@ -1,26 +1,19 @@
 <launch>
-	<param name="/use_sim_time" value="true" />	
-
   <!-- this launch file corresponds to robot model in ros-pkg/robot_descriptions/pr2/erratic_defs/robots for full erratic -->
-  <group name="wg">
-    <!-- Create a transform sender for linking these frames. -->
-    <node pkg="tf" type="transform_sender" args="0 0 0 0 0 0 base_footprint base_link 40" />	
 
-    <!-- send pr2.xml to param server -->
-    <param name="robotdesc/erratic" command="$(find xacro)/xacro.py '$(find erratic_defs)/robots/erratic.xml'" />
+  <!-- start gazebo -->
+  <include file="$(find gazebo)/launch/simple_world.launch" />
 
-    <!-- start gazebo -->
-    <node pkg="gazebo" type="gazebo" args="$(find gazebo_robot_description)/gazebo_worlds/simple.world" respawn="false" output="screen">
-      <env name="LD_LIBRARY_PATH" value="$(find gazebo_plugin)/lib:$(find gazebo)/gazebo/lib:$(find Cg)/Cg/lib:$(optenv LD_LIBRARY_PATH)" />
-      <env name="GAZEBO_RESOURCE_PATH" value="$(find gazebo_robot_description):$(find gazebo)/gazebo/share/gazebo" />
-      <env name="OGRE_RESOURCE_PATH" value="$(find ogre)/ogre/lib/OGRE" />
-    </node>
+  <!-- Create a transform sender for linking these frames. -->
+  <node pkg="tf" type="transform_sender" args="0 0 0 0 0 0 base_footprint base_link 40" />	
 
-    <!-- push robotdesc/erratic to factory and spawn robot in gazebo -->
-    <node pkg="gazebo_plugin" type="urdf2factory" args="robotdesc/erratic" respawn="false" output="screen" /> <!-- load default arm controller -->
+  <!-- send pr2.xml to param server -->
+  <param name="robotdesc/erratic" command="$(find xacro)/xacro.py '$(find erratic_defs)/robots/erratic.xml'" />
 
-    <!-- load controllers -->
-    <node pkg="gazebo_plugin" type="ros_diffdrive" respawn="true" />
-  </group>
+  <!-- push robotdesc/erratic to factory and spawn robot in gazebo -->
+  <node pkg="gazebo_plugin" type="urdf2factory" args="robotdesc/erratic" respawn="false" output="screen" />
+
+  <!-- load controllers -->
+  <node pkg="gazebo_plugin" type="ros_diffdrive" respawn="true" />
 </launch>
 

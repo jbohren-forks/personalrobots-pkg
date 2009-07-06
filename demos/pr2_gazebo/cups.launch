@@ -1,12 +1,12 @@
 <launch>
-  <include file="$(find gazebo)/launch/empty_world.launch" />
-  <!-- send pr2.xml to param server -->
+
+  <!-- send urdf to param server -->
   <param name="ikea_cup"      textfile="$(find gazebo_robot_description)/gazebo_objects/ikea_cup.model" />
   <param name="wine"      textfile="$(find gazebo_robot_description)/gazebo_objects/000.580.67.model" />
   <param name="bowl"      textfile="$(find gazebo_robot_description)/gazebo_objects/001.327.79.model" />
   <param name="coffee_cup"      textfile="$(find gazebo_robot_description)/gazebo_objects/coffee_cup.model" />
 
-  <!-- push robotdesc/pr2 to factory and spawn robot in gazebo -->
+  <!-- push urdf to factory and spawn robot in gazebo -->
   <node pkg="gazebo_plugin" type="xml2factory" args="ikea_cup 0 -.8 0 0 0 0 ikea_cup" respawn="false" output="screen" />
   <node pkg="gazebo_plugin" type="xml2factory" args="wine 1 0.0 0 0 0 0 wine" respawn="false" output="screen" />
   <node pkg="gazebo_plugin" type="xml2factory" args="bowl 0 0.0 0 0 0 0 bowl" respawn="false" output="screen" />

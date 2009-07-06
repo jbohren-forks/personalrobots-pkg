@@ -57,7 +57,7 @@
     <visual>
       <origin xyz="0 0 0.0" rpy="0 0 0" />
       <map name="gazebo_material" flag="gazebo">
-        <elem key="material">Gazebo/Fish</elem>
+        <elem key="material">Gazebo/LightWood</elem>
       </map>
       <geometry name="floor_visual_geom">
         <mesh scale="1 1 0.05" />
@@ -239,7 +239,7 @@
     <visual>
       <origin xyz="0.0 0.0 ${object_1_height/2}" rpy="0 0 0" />
       <map name="gazebo_material" flag="gazebo">
-        <elem key="material">Gazebo/Blue</elem>
+        <elem key="material">Gazebo/BumpyMetal</elem>
       </map>
       <geometry name="object_1_visual_geom">
         <mesh scale="${object_1_radius*2} ${object_1_radius*2} ${object_1_height}" />
@@ -277,7 +277,7 @@
     <visual>
       <origin xyz="0.0 0.0 ${object_1_base_height/2}" rpy="0 0 0" />
       <map name="gazebo_material" flag="gazebo">
-        <elem key="material">Gazebo/Red</elem>
+        <elem key="material">Gazebo/RustyBarrel</elem>
       </map>
       <geometry name="object_1_base_visual_geom">
         <mesh scale="${object_1_base_width} ${object_1_base_width} ${object_1_base_height}" />

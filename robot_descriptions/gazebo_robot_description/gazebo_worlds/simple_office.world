@@ -83,7 +83,7 @@
 
   <!-- office walls -->
   <model:physical name="wall_1_model">
-    <xyz>5 0 1</xyz>
+    <xyz>0 -5 1</xyz>
     <rpy>0.0 0.0 0.0</rpy>
     <static>true</static>
     <body:box name="wall_1_body">
@@ -100,7 +100,7 @@
   </model:physical>
 
   <model:physical name="wall_2_model">
-    <xyz>5 15 1</xyz>
+    <xyz>0 10 1</xyz>
     <rpy>0.0 0.0 0.0</rpy>
     <static>true</static>
     <body:box name="wall_2_body">
@@ -117,7 +117,7 @@
   </model:physical>
 
   <model:physical name="wall_3_model">
-    <xyz>0 7.5 1</xyz>
+    <xyz>-5 2.5 1</xyz>
     <rpy>0.0 0.0 0.0</rpy>
     <static>true</static>
     <body:box name="wall_3_body">
@@ -134,7 +134,7 @@
   </model:physical>
 
   <model:physical name="wall_4_model">
-    <xyz>10 7.5 1</xyz>
+    <xyz>5 2.5 1</xyz>
     <rpy>0.0 0.0 0.0</rpy>
     <static>true</static>
     <body:box name="wall_4_body">
@@ -152,7 +152,7 @@
 
   <!-- interior walls -->
   <model:physical name="wall_5_model">
-    <xyz>3 10 1</xyz>
+    <xyz>-2 5 1</xyz>
     <rpy>0.0 0.0 0.0</rpy>
     <static>true</static>
     <body:box name="wall_5_body">
@@ -169,7 +169,7 @@
   </model:physical>
 
   <model:physical name="wall_6_model">
-    <xyz>8.5 10 1</xyz>
+    <xyz>3.5 5 1</xyz>
     <rpy>0.0 0.0 0.0</rpy>
     <static>true</static>
     <body:box name="wall_6_body">
