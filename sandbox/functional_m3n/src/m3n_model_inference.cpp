@@ -177,12 +177,15 @@ int M3NModel::inferPrivate(const RandomField& random_field,
           }
           else
           {
-            // TODO
-            /*
-             ret_val = addCliqueEnergy(curr_clique, submodenergmin, inferred_labeling, alpha_label,
-             robust_potts_params_[cs_idx]);
-             */
-            abort();
+            if (robust_potts_params_[cs_idx] > 1e-5)
+            {
+              // TODO
+            }
+            else
+            {
+              ret_val = addCliqueEnergyPotts(*curr_clique, cs_idx, *energy_func, energy_vars,
+                  inferred_labels, alpha_label);
+            }
           }
         }
       }
@@ -324,23 +327,17 @@ int M3NModel::addEdgeEnergy(const RandomField::Clique& edge,
 // --------------------------------------------------------------
 /*! See function definition */
 // --------------------------------------------------------------
-int M3NModel::addCliqueEnergy(const RandomField::Clique& clique,
-                              const unsigned int clique_set_idx,
-                              SubmodularEnergyMin& energy_func,
-                              const map<unsigned int, SubmodularEnergyMin::EnergyVar>& energy_vars,
-                              const map<unsigned int, unsigned int>& curr_labeling,
-                              const unsigned int alpha_label)
+int M3NModel::addCliqueEnergyPotts(const RandomField::Clique& clique,
+                                   const unsigned int clique_set_idx,
+                                   SubmodularEnergyMin& energy_func,
+                                   const map<unsigned int, SubmodularEnergyMin::EnergyVar>& energy_vars,
+                                   const map<unsigned int, unsigned int>& curr_labeling,
+                                   const unsigned int alpha_label)
 {
-  // TODO: assuming no robust potts for now
   unsigned int mode1_label = 0;
   unsigned int mode1_count = 0;
   unsigned int mode2_label = 0;
   unsigned int mode2_count = 0;
-
-  if (clique.getModeLabels(mode1_label, mode1_count, mode2_label, mode2_count, &curr_labeling) < 0)
-  {
-    return -1;
-  }
 
   // -----------------------------------
   // Compute potential if all node switch to alpha
@@ -352,6 +349,10 @@ int M3NModel::addCliqueEnergy(const RandomField::Clique& clique,
 
   // -----------------------------------
   // Compute potential if all nodes keep their current labeling
+  if (clique.getModeLabels(mode1_label, mode1_count, mode2_label, mode2_count, &curr_labeling) < 0)
+  {
+    return -1;
+  }
   // This will be non-zero only when all nodes are labeled the same.
   double Ec1 = 0.0;
   if (mode2_label == RandomField::UNKNOWN_LABEL)

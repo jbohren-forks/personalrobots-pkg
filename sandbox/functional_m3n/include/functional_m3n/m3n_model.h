@@ -285,7 +285,7 @@ class M3NModel
 
     // --------------------------------------------------------------
     /*!
-     * \brief Adds high-order clique energy term for alpha-expansion graph-cut inference
+     * \brief Adds Pn Potts potential term for alpha-expansion graph-cut inference
      *
      * \param clique The high-order clique containing its features
      * \param clique_set_idx The clique set that the edge belongs to
@@ -297,12 +297,12 @@ class M3NModel
      * \return 0 on success, otherwise negative value on error
      */
     // --------------------------------------------------------------
-    int addCliqueEnergy(const RandomField::Clique& clique,
-                        const unsigned int clique_set_idx,
-                        SubmodularEnergyMin& energy_func,
-                        const map<unsigned int, SubmodularEnergyMin::EnergyVar>& energy_vars,
-                        const map<unsigned int, unsigned int>& curr_labeling,
-                        const unsigned int alpha_label);
+    int addCliqueEnergyPotts(const RandomField::Clique& clique,
+                             const unsigned int clique_set_idx,
+                             SubmodularEnergyMin& energy_func,
+                             const map<unsigned int, SubmodularEnergyMin::EnergyVar>& energy_vars,
+                             const map<unsigned int, unsigned int>& curr_labeling,
+                             const unsigned int alpha_label);
     //@}
 
     bool trained_;
