@@ -37,8 +37,9 @@
 // --------------------------------------------------------------
 /*! See function definition */
 // --------------------------------------------------------------
-RandomField::RandomField()
+RandomField::RandomField(unsigned int nbr_clique_sets)
 {
+  clique_sets_.resize(nbr_clique_sets);
 }
 
 // --------------------------------------------------------------
@@ -61,13 +62,6 @@ void RandomField::clear()
     delete iter_rf_nodes->second;
   }
 
-  // Free nodes (using sensor id)
-  for (map<unsigned int, Node*>::iterator iter_sensor_nodes = sensor_nodes_.begin() ; iter_sensor_nodes
-      != sensor_nodes_.end() ; iter_sensor_nodes++)
-  {
-    delete iter_sensor_nodes->second;
-  }
-
   // Free cliques in each clique set
   for (unsigned int i = 0 ; i < clique_sets_.size() ; i++)
   {
@@ -80,25 +74,7 @@ void RandomField::clear()
 
   // Empty data structures
   rf_nodes_.clear();
-  sensor_nodes_.clear();
   clique_sets_.clear();
-}
-
-// --------------------------------------------------------------
-/*! See function definition */
-// --------------------------------------------------------------
-unsigned int RandomField::getLabelFromSensorID(const unsigned int sensor_id) const
-{
-#if ROS_DEBUG
-  // Verify sensor id exists
-  if (sensor_id == RandomField::UNKNOWN_SENSOR_ID || sensor_nodes_.count(sensor_id) == 0)
-  {
-    ROS_ERROR("Could not find sensor_id: %u", sensor_id);
-    return UNKNOWN_LABEL;
-  }
-#endif
-
-  return sensor_nodes_.find(sensor_id)->second->getLabel(); // sensor_nodes[sensor_id]->getLabel();
 }
 
 // --------------------------------------------------------------
@@ -154,10 +130,82 @@ int RandomField::updateLabelings(const map<unsigned int, unsigned int>& new_labe
 // --------------------------------------------------------------
 /*! See function definition */
 // --------------------------------------------------------------
-void RandomField::create(const robot_msgs::PointCloud& primitives, cloud_kdtree::KdTree& data_kdtree)
-
+const RandomField::Node* RandomField::createNode(float* feature_vals,
+                                                 unsigned int nbr_feature_vals,
+                                                 unsigned int label)
 {
-  createNodes(primitives, data_kdtree);
+  unsigned int unique_id = rf_nodes_.size();
+  while (rf_nodes_.count(unique_id) != 0)
+  {
+    unique_id++;
+  }
+  return createNode(unique_id, feature_vals, nbr_feature_vals, label);
+}
+
+// --------------------------------------------------------------
+/*! See function definition */
+// --------------------------------------------------------------
+const RandomField::Node* RandomField::createNode(unsigned int node_id,
+                                                 float* feature_vals,
+                                                 unsigned int nbr_feature_vals,
+                                                 unsigned int label)
+{
+  if (rf_nodes_.count(node_id) != 0)
+  {
+    ROS_ERROR("Cannot add node to random field b/c id %u already exists", node_id);
+    return NULL;
+  }
+
+  RandomField::Node* new_node = new RandomField::Node(node_id, label);
+  new_node->setFeatures(feature_vals, nbr_feature_vals);
+  rf_nodes_[node_id] = new_node;
+  return new_node;
+}
+
+// --------------------------------------------------------------
+/*! See function definition */
+// --------------------------------------------------------------
+const RandomField::Clique* RandomField::createClique(unsigned int clique_set_idx, const list<
+    RandomField::Node*>& nodes, float* feature_vals, unsigned int nbr_feature_vals)
+{
+  map<unsigned int, RandomField::Clique*>& clique_set = clique_sets_[clique_set_idx];
+
+  unsigned int unique_id = clique_set.size();
+  while (clique_set.count(unique_id) != 0)
+  {
+    unique_id++;
+  }
+  return createClique(unique_id, clique_set_idx, nodes, feature_vals, nbr_feature_vals);
+}
+
+// --------------------------------------------------------------
+/*! See function definition */
+// --------------------------------------------------------------
+const RandomField::Clique* RandomField::createClique(unsigned int clique_id,
+                                                     unsigned int clique_set_idx,
+                                                     const list<RandomField::Node*>& nodes,
+                                                     float* feature_vals,
+                                                     unsigned int nbr_feature_vals)
+{
+  map<unsigned int, RandomField::Clique*>& clique_set = clique_sets_[clique_set_idx];
+  if (clique_set.count(clique_id) != 0)
+  {
+    ROS_ERROR("Cannot add clique to cs %u b/c id %u already exists", clique_set_idx, clique_id);
+    return NULL;
+  }
+
+  // TODO need to verify that nodes are contained in this RandomField???
+
+  RandomField::Clique* new_clique = new RandomField::Clique(clique_id);
+  list<Node*>::const_iterator iter_nodes;
+  for (iter_nodes = nodes.begin(); iter_nodes != nodes.end() ; iter_nodes++)
+  {
+    new_clique->addNode(**iter_nodes);
+  }
+  new_clique->setFeatures(feature_vals, nbr_feature_vals);
+
+  clique_set[clique_id] = new_clique;
+  return new_clique;
 }
 
 // -----------------------------------------------------------------------------------------------------------
@@ -169,11 +217,7 @@ void RandomField::create(const robot_msgs::PointCloud& primitives, cloud_kdtree:
 // --------------------------------------------------------------
 RandomField::GenericClique::GenericClique()
 {
-  rf_id_ = 0;
-  x_ = 0.0;
-  y_ = 0.0;
-  z_ = 0.0;
-
+  id_ = 0;
   feature_vals_ = NULL;
   nbr_feature_vals_ = 0;
 }
@@ -183,29 +227,15 @@ RandomField::GenericClique::GenericClique()
 // --------------------------------------------------------------
 RandomField::GenericClique::~GenericClique()
 {
-  if (feature_vals_ != NULL)
-  {
-    delete feature_vals_;
-  }
 }
 
 // --------------------------------------------------------------
 /*! See function definition */
 // --------------------------------------------------------------
-RandomField::Node::Node(const double x,
-                        const double y,
-                        const double z,
-                        const unsigned int rf_id,
-                        unsigned int label,
-                        unsigned int sensor_id)
+RandomField::Node::Node(const unsigned int rf_id, unsigned int label)
 {
-  x_ = x;
-  y_ = y;
-  z_ = z;
-  rf_id_ = rf_id;
-
+  id_ = rf_id;
   label_ = label;
-  sensor_id_ = sensor_id;
 }
 
 // --------------------------------------------------------------
@@ -213,7 +243,7 @@ RandomField::Node::Node(const double x,
 // --------------------------------------------------------------
 RandomField::Clique::Clique(const unsigned int rf_id)
 {
-  rf_id_ = rf_id;
+  id_ = rf_id;
 }
 
 // --------------------------------------------------------------
@@ -221,13 +251,6 @@ RandomField::Clique::Clique(const unsigned int rf_id)
 // --------------------------------------------------------------
 void RandomField::Clique::addNode(const Node& new_node)
 {
-  // Update centroid
-  double prev_order = static_cast<double> (node_ids_.size());
-  double new_order = prev_order + 1.0;
-  x_ = (x_ * prev_order + new_node.getX()) / new_order;
-  y_ = (y_ * prev_order + new_node.getY()) / new_order;
-  z_ = (z_ * prev_order + new_node.getZ()) / new_order;
-
   // Add node id to list
   node_ids_.push_back(new_node.getRandomFieldID());
 

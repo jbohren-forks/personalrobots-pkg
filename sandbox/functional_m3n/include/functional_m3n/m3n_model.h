@@ -180,9 +180,9 @@ class M3NModel
      * \return The functional gradient residual
      */
     // --------------------------------------------------------------
-    double calcFuncGradResidual(const double truncation_param,
-                                const unsigned int clique_order,
-                                const unsigned int nbr_mode_label);
+    float calcFuncGradResidual(const double truncation_param,
+                               const unsigned int clique_order,
+                               const unsigned int nbr_mode_label);
 
     // --------------------------------------------------------------
     /*!

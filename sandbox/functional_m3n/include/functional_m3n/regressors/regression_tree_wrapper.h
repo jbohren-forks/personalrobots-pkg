@@ -114,10 +114,10 @@ class RegressionTreeWrapper: public RegressorWrapper
      * \brief See RegressorWrapper::addTrainingSample()
      */
     // --------------------------------------------------------------
-    virtual int addTrainingSample(const double* const feature_vals,
+    virtual int addTrainingSample(const float* const feature_vals,
                                   const unsigned int length,
                                   const unsigned int start_idx,
-                                  const double target);
+                                  const float target);
 
     // --------------------------------------------------------------
     /**
@@ -131,10 +131,10 @@ class RegressionTreeWrapper: public RegressorWrapper
      * \brief See RegressorWrapper::predict()
      */
     // --------------------------------------------------------------
-    virtual int predict(const double* const feature_vals,
+    virtual int predict(const float* const feature_vals,
                         const unsigned int length,
                         const unsigned int start_idx,
-                        double& predicted_val);
+                        float& predicted_val);
 
   private:
     RegressionTreeWrapperParams rtree_params_;
@@ -142,10 +142,10 @@ class RegressionTreeWrapper: public RegressorWrapper
     CvDTree* rtree_;
 
     // Intermediate containers used by addTrainingSample
-    vector<const double*> interm_feature_vals_;
+    vector<const float*> interm_feature_vals_;
     vector<unsigned int> interm_start_idx_;
     unsigned int interm_length_;
-    vector<double> interm_target_;
+    vector<float> interm_target_;
 };
 
 #endif

@@ -87,7 +87,6 @@ class RandomField
 
   public:
     const static unsigned int UNKNOWN_LABEL = 0;
-    const static unsigned int UNKNOWN_SENSOR_ID = 0;
 
     // --------------------------------------------------------------
     /** \see definition below */
@@ -102,9 +101,12 @@ class RandomField
     // --------------------------------------------------------------
     /*!
      * \brief Instantiates an empty Random Field
+     *
+     * \param nbr_clique_sets The number of clique sets this RandomField contains
+     *                        (the set of nodes is excluded)
      */
     // --------------------------------------------------------------
-    RandomField();
+    RandomField(unsigned int nbr_clique_sets);
 
     // --------------------------------------------------------------
     /*!
@@ -120,15 +122,23 @@ class RandomField
     // --------------------------------------------------------------
     void clear();
 
-    // --------------------------------------------------------------
-    /*!
-     * \brief Returns mapping of ids from the sensor to associated primitives
-     */
-    // --------------------------------------------------------------
-    inline const map<unsigned int, Node*>& getNodesSensorIDs() const
-    {
-      return sensor_nodes_;
-    }
+    const Node* createNode(float* feature_vals, unsigned int nbr_feature_vals, unsigned int label =
+        UNKNOWN_LABEL);
+    const Node* createNode(unsigned int node_id,
+                           float* feature_vals,
+                           unsigned int nbr_feature_vals,
+                           unsigned int label = UNKNOWN_LABEL);
+
+    const Clique* createClique(unsigned int clique_set_idx,
+                               const list<Node*>& nodes,
+                               float* feature_vals,
+                               unsigned int nbr_feature_vals);
+
+    const Clique* createClique(unsigned int clique_id,
+                               unsigned int clique_set_idx,
+                               const list<Node*>& nodes,
+                               float* feature_vals,
+                               unsigned int nbr_feature_vals);
 
     // --------------------------------------------------------------
     /*!
@@ -153,13 +163,6 @@ class RandomField
 
     // --------------------------------------------------------------
     /*!
-     * \brief Returns the label for a primitive for the specified sensor id
-     */
-    // --------------------------------------------------------------
-    unsigned int getLabelFromSensorID(const unsigned int sensor_id) const;
-
-    // --------------------------------------------------------------
-    /*!
      * \brief Updates the labels for the nodes in this RandomField
      *
      * \warning This is a somewhat slow call as all label information contained
@@ -172,21 +175,8 @@ class RandomField
     // --------------------------------------------------------------
     int updateLabelings(const map<unsigned int, unsigned int>& new_labeling);
 
-    // --------------------------------------------------------------
-    /*!
-     * \brief TODO: node feature params, clique construction, clique params
-     */
-    // --------------------------------------------------------------
-    void create(const robot_msgs::PointCloud& primitives, cloud_kdtree::KdTree& data_kdtree);
-
   private:
-    // ----- TODO -----------
-    void createNodes(const robot_msgs::PointCloud& points, cloud_kdtree::KdTree& data_kdtree);
-    void createCliqueSet(void* point_cloud, void* construction_params, void* feature_params);
-    // ----- TODO -----------
-
-    map<unsigned int, Node*> rf_nodes_; // using rf_id
-    map<unsigned int, Node*> sensor_nodes_; // using sensor_id
+    map<unsigned int, Node*> rf_nodes_; // using id
     vector<map<unsigned int, Clique*> > clique_sets_;
 
   public:
@@ -198,40 +188,13 @@ class RandomField
     // --------------------------------------------------------------
     class GenericClique
     {
+        // Allow RandomField to access the protected functions
+        friend class RandomField;
+
       public:
         GenericClique();
 
         virtual ~GenericClique() = 0;
-
-        // --------------------------------------------------------------
-        /*!
-         * \brief Returns the x-coordinate
-         */
-        // --------------------------------------------------------------
-        inline double getX() const
-        {
-          return x_;
-        }
-
-        // --------------------------------------------------------------
-        /*!
-         * \brief Returns the y-coordinate
-         */
-        // --------------------------------------------------------------
-        inline double getY() const
-        {
-          return y_;
-        }
-
-        // --------------------------------------------------------------
-        /*!
-         * \brief Returns the z-coordinate
-         */
-        // --------------------------------------------------------------
-        inline double getZ() const
-        {
-          return z_;
-        }
 
         // --------------------------------------------------------------
         /*!
@@ -240,7 +203,7 @@ class RandomField
         // --------------------------------------------------------------
         inline unsigned int getRandomFieldID() const
         {
-          return rf_id_;
+          return id_;
         }
 
         // --------------------------------------------------------------
@@ -248,7 +211,7 @@ class RandomField
          * \brief Returns the values of the features contained in the descriptors in vector format
          */
         // --------------------------------------------------------------
-        inline const double* getFeatureVals() const
+        inline const float* getFeatureVals() const
         {
           return feature_vals_;
         }
@@ -264,13 +227,15 @@ class RandomField
         }
 
       protected:
-        unsigned int rf_id_;
+        inline void setFeatures(float* feature_vals, unsigned int nbr_feature_vals)
+        {
+          feature_vals_ = feature_vals;
+          nbr_feature_vals_ = nbr_feature_vals;
+        }
 
-        double x_;
-        double y_;
-        double z_;
+        unsigned int id_;
 
-        double* feature_vals_;
+        float* feature_vals_;
         unsigned int nbr_feature_vals_;
     };
 
@@ -288,18 +253,16 @@ class RandomField
       public:
         // --------------------------------------------------------------
         /*!
-         * \brief Instantiate a node with the given parameters
+         * \brief Instantiates a Node with a specified id.
          *
-         * \param x The x-coordinate of the primitive
-         * \param y The y-coordinate of the primitive
-         * \param z The z-coordinate of the primitive
-         * \param rf_id The unique id assigned to this node by the RandomField
-         * \param label (Optional) The label of the primitive
-         * \param sensor_id (Optional) A unique id to the primitive assigned by the sensor
+         * \warning The Node cannot be added to a RandomField that contains another node
+         *          with same id.
+         *
+         * \param id The id of the node
+         * \param label (Optional) The label of the Node
          */
         // --------------------------------------------------------------
-        Node(const double x, const double y, const double z, const unsigned int rf_id, unsigned int label =
-            UNKNOWN_LABEL, unsigned int sensor_id = UNKNOWN_SENSOR_ID);
+        Node(unsigned int id, unsigned int label = UNKNOWN_LABEL);
 
         // --------------------------------------------------------------
         /*!
@@ -309,16 +272,6 @@ class RandomField
         inline unsigned int getLabel() const
         {
           return label_;
-        }
-
-        // --------------------------------------------------------------
-        /*!
-         * \brief Returns the unique external sensor id of the node
-         */
-        // --------------------------------------------------------------
-        inline unsigned int getSensorID() const
-        {
-          return sensor_id_;
         }
 
       protected:
@@ -338,7 +291,6 @@ class RandomField
 
       private:
         unsigned int label_;
-        unsigned int sensor_id_;
     };
 
     // --------------------------------------------------------------
@@ -355,12 +307,13 @@ class RandomField
       public:
         // --------------------------------------------------------------
         /*!
-         * \brief Instantiates a new Clique with given unique id from the RandomField
+         * \brief Instantiates a Clique with a specified id.
          *
-         * \param rf_id Unique id from the owner RandomField
+         * \warning The Clique cannot be added to a RandomField that contains another clique
+         *          with same id (within the same clique set).
          */
         // --------------------------------------------------------------
-        Clique(const unsigned int rf_id);
+        Clique(const unsigned int id);
 
         // --------------------------------------------------------------
         /*!
@@ -380,16 +333,6 @@ class RandomField
         inline const list<unsigned int>& getNodeIDs() const
         {
           return node_ids_;
-        }
-
-        // --------------------------------------------------------------
-        /*!
-         * \brief Returns the mapping of label to node ids with respective label in this Clique
-         */
-        // --------------------------------------------------------------
-        inline const map<unsigned int, list<unsigned int> >& getLabelsToNodeIDs() const
-        {
-          return labels_to_node_ids_;
         }
 
         // --------------------------------------------------------------

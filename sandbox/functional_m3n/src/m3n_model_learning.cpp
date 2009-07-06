@@ -103,8 +103,8 @@ int M3NModel::train(const vector<const RandomField*>& training_rfs, const M3NPar
   unsigned int curr_clique_infer_mode2_count = 0; // unused
   map<unsigned int, unsigned int> curr_inferred_labeling;
   double curr_step_size = 0.0;
-  double gt_residual = 0.0;
-  double infer_residual = 0.0;
+  float gt_residual = 0.0;
+  float infer_residual = 0.0;
 
   // Learn with loss-augmented inference to act as a margin
   // (currently using hamming loss only)
@@ -114,6 +114,7 @@ int M3NModel::train(const vector<const RandomField*>& training_rfs, const M3NPar
   // Train for the specified number of iterations
   for (unsigned int t = 0 ; t < nbr_iterations ; t++)
   {
+    ROS_INFO("Starting iteration %u", t);
     // ---------------------------------------------------
     // Iterate over each RandomField
     for (unsigned int i = 0 ; i < training_rfs.size() ; i++)
@@ -255,16 +256,17 @@ int M3NModel::train(const vector<const RandomField*>& training_rfs, const M3NPar
  * Invariant: truncation_params are valid
  */
 // --------------------------------------------------------------
-double M3NModel::calcFuncGradResidual(const double truncation_param,
-                                      const unsigned int clique_order,
-                                      const unsigned int nbr_mode_label)
+float M3NModel::calcFuncGradResidual(const double truncation_param,
+                                     const unsigned int clique_order,
+                                     const unsigned int nbr_mode_label)
 {
   // If using Robust Potts, determine if allowed number of disagreeing nodes is allowable
   if (truncation_param > 0.0)
   {
-    double Q = truncation_param * static_cast<double> (clique_order);
+    // TODO truncation params should be floats
+    float Q = truncation_param * static_cast<float> (clique_order);
 
-    double residual = static_cast<double> (nbr_mode_label - clique_order) / Q + 1.0;
+    float residual = static_cast<float> (nbr_mode_label - clique_order) / Q + 1.0;
     if (residual > 0.0)
     {
       return residual;
@@ -277,7 +279,7 @@ double M3NModel::calcFuncGradResidual(const double truncation_param,
   // Otherwise, a truncation param of 0.0 indicates to use Potts model
   else
   {
-    return static_cast<double> (clique_order == nbr_mode_label);
+    return static_cast<float> (clique_order == nbr_mode_label);
   }
 }
 
@@ -384,7 +386,7 @@ int M3NModel::extractVerifyLabelsFeatures(const vector<const RandomField*>& trai
     // Ensure the node feature dimensions are defined
     if (node_feature_dim_ == 0)
     {
-      ROS_ERROR("Did not find any nodes from the RandomField %u", i);
+      ROS_ERROR("Did not find any nodes from the RandomField %u  (%u)", i, nodes.size());
       return -1;
     }
 
@@ -440,6 +442,12 @@ int M3NModel::extractVerifyLabelsFeatures(const vector<const RandomField*>& trai
       }
     } // end iteration over clique sets
   } // end iteration over random fields
+
+  if (training_labels_.size() == 1)
+  {
+    ROS_ERROR("Cannot train with data containing only 1 label");
+    return -1;
+  }
 
   // ---------------------------------------------------
   // Store labels in ascending order

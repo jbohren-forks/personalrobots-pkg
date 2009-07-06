@@ -8,6 +8,9 @@ rospack_add_boost_directories()
 #rospack_add_executable (bin/test_fm3n examples/test_fm3n.cpp)
 #target_link_libraries (bin/test_fm3n fm3n)
 
+rospack_add_executable (bin/create_pt_cloud examples/create_pt_cloud.cpp)
+target_link_libraries (bin/create_pt_cloud fm3n)
+
 # ---[ Functional Max-Margin Markov Network library
 rospack_add_library (fm3n
 			src/random_field.cpp
@@ -16,7 +19,6 @@ rospack_add_library (fm3n
 			src/m3n_model_learning.cpp
 			src/regressors/regression_tree_wrapper.cpp
 			src/m3n_params.cpp
-			src/random_field_construction.cpp
                       )
 
 # check for OpenMP

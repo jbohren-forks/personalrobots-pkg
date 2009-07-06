@@ -330,7 +330,7 @@ int M3NModel::computePotential(const RandomField::Node& node, const unsigned int
 
   // Sum the scores of each regressor
   unsigned int nbr_regressors = regressors_.size();
-  double curr_predicted_val = 0.0;
+  float curr_predicted_val = 0.0;
   double curr_step_size = 0.0;
   RegressorWrapper* curr_regressor = NULL;
   for (unsigned int i = 0 ; i < nbr_regressors ; i++)
@@ -344,7 +344,7 @@ int M3NModel::computePotential(const RandomField::Node& node, const unsigned int
       return -1;
     }
 
-    potential_val += (curr_step_size * curr_predicted_val);
+    potential_val += (curr_step_size * static_cast<double> (curr_predicted_val));
   }
 
   // Exponentiated functional gradient descent
@@ -364,7 +364,7 @@ int M3NModel::computePotential(const RandomField::Clique& clique,
 
   // Sum the scores of each regressor
   unsigned int nbr_regressors = regressors_.size();
-  double curr_predicted_val = 0.0;
+  float curr_predicted_val = 0.0;
   double curr_step_size = 0.0;
   RegressorWrapper* curr_regressor = NULL;
   for (unsigned int i = 0 ; i < nbr_regressors ; i++)
@@ -378,7 +378,7 @@ int M3NModel::computePotential(const RandomField::Clique& clique,
       return -1;
     }
 
-    potential_val += (curr_step_size * curr_predicted_val);
+    potential_val += (curr_step_size * static_cast<double> (curr_predicted_val));
   }
 
   // Exponentiated functional gradient descent

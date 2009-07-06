@@ -144,10 +144,10 @@ class RegressorWrapper
      * \return 0 on success, otherwise negative value on error
      */
     // --------------------------------------------------------------
-    virtual int addTrainingSample(const double* const feature_vec,
+    virtual int addTrainingSample(const float* const feature_vec,
                                   const unsigned int length,
                                   const unsigned int start_idx,
-                                  const double target) = 0;
+                                  const float target) = 0;
 
     // --------------------------------------------------------------
     /**
@@ -177,10 +177,10 @@ class RegressorWrapper
      * \return 0 on success, otherwise negative value on error
      */
     // --------------------------------------------------------------
-    virtual int predict(const double* const feature_vec,
+    virtual int predict(const float* const feature_vec,
                         const unsigned int length,
                         const unsigned int start_idx,
-                        double& predicted_val) = 0;
+                        float& predicted_val) = 0;
 
   protected:
     algorithm_t algorithm_type_;

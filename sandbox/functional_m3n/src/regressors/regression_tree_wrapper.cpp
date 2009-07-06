@@ -221,10 +221,10 @@ int RegressionTreeWrapper::loadFromFile(const string& basename)
 // --------------------------------------------------------------
 /*! See function definition */
 // --------------------------------------------------------------
-int RegressionTreeWrapper::addTrainingSample(const double* const feature_vals,
+int RegressionTreeWrapper::addTrainingSample(const float* const feature_vals,
                                              const unsigned int length,
                                              const unsigned int start_idx,
-                                             const double target)
+                                             const float target)
 {
   // -------------------------------------------
   // Verify not already trained
@@ -291,8 +291,8 @@ int RegressionTreeWrapper::train()
 
   // -------------------------------------------
   // Create nbr_samples-by-stacked_feature_dim_ matrix to hold feature values in each row
-  double* sparse_feature_matrix = static_cast<double*> (calloc((nbr_samples * stacked_feature_dim_),
-      sizeof(double)));
+  float* sparse_feature_matrix = static_cast<float*> (calloc((nbr_samples * stacked_feature_dim_),
+      sizeof(float)));
 
   // -------------------------------------------
   // Populate target_vals and sparse_feature_matrix for each sample
@@ -303,7 +303,7 @@ int RegressionTreeWrapper::train()
 
     // Place the feature values at location sparse_feature_matrix[i][interm_start_idx_[i]
     memcpy((sparse_feature_matrix + (i * stacked_feature_dim_) + interm_start_idx_[i]),
-        (interm_feature_vals_[i]), (interm_length_ * sizeof(double)));
+        (interm_feature_vals_[i]), (interm_length_ * sizeof(float)));
   }
 
   // -------------------------------------------
@@ -352,10 +352,10 @@ int RegressionTreeWrapper::train()
 // --------------------------------------------------------------
 /*! See function definition */
 // --------------------------------------------------------------
-int RegressionTreeWrapper::predict(const double* const feature_vals,
+int RegressionTreeWrapper::predict(const float* const feature_vals,
                                    const unsigned int length,
                                    const unsigned int start_idx,
-                                   double& predicted_val)
+                                   float& predicted_val)
 {
   // TODO remove check
   if (!trained_ || (start_idx + length > stacked_feature_dim_))
@@ -365,8 +365,8 @@ int RegressionTreeWrapper::predict(const double* const feature_vals,
   }
 
   // Create feature vec
-  double* big_feature_vec = static_cast<double*> (calloc(stacked_feature_dim_, sizeof(double)));
-  memcpy((big_feature_vec + start_idx), feature_vals, (length) * sizeof(double));
+  float* big_feature_vec = static_cast<float*> (calloc(stacked_feature_dim_, sizeof(float)));
+  memcpy((big_feature_vec + start_idx), feature_vals, (length) * sizeof(float));
 
   // Wrap with OpenCV data structure
   CvMat cv_feature_vec;
