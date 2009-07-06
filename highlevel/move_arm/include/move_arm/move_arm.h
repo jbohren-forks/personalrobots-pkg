@@ -91,7 +91,6 @@ namespace move_arm
 	ros::NodeHandle          node_handle_;
 	ros::Publisher           displayPathPublisher_;
 	
-	motion_planning_msgs::KinematicPath    currentPath_;
 	planning_environment::CollisionModels *collisionModels_;
 	planning_environment::PlanningMonitor *planningMonitor_;
 

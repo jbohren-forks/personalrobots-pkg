@@ -144,10 +144,12 @@ namespace move_arm
 	ros::ServiceClient clientQuery  = node_handle_.serviceClient<pr2_mechanism_controllers::TrajectoryQuery>(CONTROL_QUERY_NAME, true);
 	ros::ServiceClient clientCancel = node_handle_.serviceClient<pr2_mechanism_controllers::TrajectoryCancel>(CONTROL_CANCEL_NAME, true);
 
-	int                trajectoryId = -1;
-	bool               approx       = false;
-	ros::Duration      eps(0.01);
-	ros::Duration      epsLong(0.1);
+	motion_planning_msgs::KinematicPath currentPath;
+	bool                                approx       = false;
+	int                                 trajectoryId = -1;
+	ros::Duration                       eps(0.01);
+	ros::Duration                       epsLong(0.1);
+
 	while (true)
 	{
 	    // if we have to stop, do so
@@ -193,10 +195,10 @@ namespace move_arm
 				    if (res.approximate)
 					ROS_INFO("Approximate path was found. Distance to goal is: %f", res.distance);
 				    ROS_INFO("Received path with %u states from motion planner", (unsigned int)res.path.states.size());
-				    currentPath_ = res.path;
-				    if (planningMonitor_->transformPathToFrame(currentPath_, planningMonitor_->getFrameId()))
+				    currentPath = res.path;
+				    if (planningMonitor_->transformPathToFrame(currentPath, planningMonitor_->getFrameId()))
 				    {
-					displayPathPublisher_.publish(currentPath_);
+					displayPathPublisher_.publish(currentPath);
 					feedback = pr2_robot_actions::MoveArmState::MOVING;	
 					update(feedback);
 				    }
@@ -225,7 +227,7 @@ namespace move_arm
 	    if (feedback == pr2_robot_actions::MoveArmState::MOVING)
 	    {
 		bool safe = planningMonitor_->isEnvironmentSafe();
-		bool valid = planningMonitor_->isPathValid(currentPath_, true);
+		bool valid = planningMonitor_->isPathValid(currentPath, true);
 		if (result == robot_actions::PREEMPTED || !safe || !valid)
 		{
 		    if (result == robot_actions::PREEMPTED)
@@ -270,7 +272,7 @@ namespace move_arm
 		    pr2_mechanism_controllers::TrajectoryStart::Request  send_traj_start_req;
 		    pr2_mechanism_controllers::TrajectoryStart::Response send_traj_start_res;
 		    
-		    fillTrajectoryPath(currentPath_, send_traj_start_req.traj);
+		    fillTrajectoryPath(currentPath, send_traj_start_req.traj);
 		    send_traj_start_req.hastiming = 0;
 		    send_traj_start_req.requesttiming = 0;
 
