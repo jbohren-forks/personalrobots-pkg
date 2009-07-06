@@ -18,7 +18,7 @@
   <depend package="planning_environment"/>
 
   <export>
-    <cpp cflags="-I${prefix}/include `rosboost-cfg --cflags`" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lnew_robot_self_filter" />
+    <cpp cflags="-I${prefix}/include `rosboost-cfg --cflags`" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lrobot_self_filter" />
   </export>
 
 </package>

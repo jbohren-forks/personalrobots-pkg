@@ -42,10 +42,17 @@ class TestSelfFilter
 {
 public:
 
-    TestSelfFilter(void) : sf_(tf_)
+    TestSelfFilter(void) : rm_("robot_description")
     {
 	id_ = 1;
 	vmPub_ = nodeHandle_.advertise<visualization_msgs::Marker>("visualization_marker", 10240);
+	std::vector<std::string> links = rm_.getCollisionCheckLinks();
+	sf_ = new robot_self_filter::SelfMask(tf_, links, 1.0, 0.0);
+    }
+
+    ~TestSelfFilter(void)
+    {
+	delete sf_;
     }
     
     void sendPoint(double x, double y, double z)
@@ -65,7 +72,7 @@ public:
 	mk.pose.position.z = z;
 	mk.pose.orientation.w = 1.0;
 
-	mk.scale.x = mk.scale.y = mk.scale.z = 0.02;
+	mk.scale.x = mk.scale.y = mk.scale.z = 0.01;
 
 	mk.color.a = 1.0;
 	mk.color.r = 1.0;
@@ -84,7 +91,7 @@ public:
 	in.chan.resize(1);
 	in.chan[0].name = "stamps";
 	
-	const unsigned int N = 100000;	
+	const unsigned int N = 500000;	
 	in.pts.resize(N);
 	in.chan[0].vals.resize(N);
 	for (unsigned int i = 0 ; i < N ; ++i)
@@ -102,18 +109,26 @@ public:
 	}
 	
 	ros::WallTime tm = ros::WallTime::now();
-	std::vector<bool> mask;
-	sf_.mask(in, mask);
+	std::vector<int> mask;
+	sf_->mask(in, mask);
 	printf("%f points per second\n", (double)N/(ros::WallTime::now() - tm).toSec());
 	
+	sf_->assumeFrame(in.header);	
+	int k = 0;
 	for (unsigned int i = 0 ; i < mask.size() ; ++i)
 	{
-	    if (!mask[i])
-		sendPoint(in.pts[i].x, in.pts[i].y, in.pts[i].z);
+	    bool v = sf_->getMask(in.pts[i].x, in.pts[i].y, in.pts[i].z);
+	    if (v != mask[i]) 
+		ROS_ERROR("Mask does not match");	    
+	    if (mask[i]) continue;
+	    sendPoint(in.pts[i].x, in.pts[i].y, in.pts[i].z);
+	    k++;
 	}
+	printf("%d points inside\n", k);
 	
 	ros::spin();	
     }
+
 protected:
     
     double uniform(double magnitude)
@@ -121,11 +136,12 @@ protected:
 	return (2.0 * drand48() - 1.0) * magnitude;
     }
 
-    tf::TransformListener       tf_;
-    robot_self_filter::SelfMask sf_;
-    ros::Publisher              vmPub_;
-    ros::NodeHandle             nodeHandle_;        
-    int                         id_;
+    tf::TransformListener             tf_;
+    robot_self_filter::SelfMask      *sf_;
+    planning_environment::RobotModels rm_;
+    ros::Publisher                    vmPub_;
+    ros::NodeHandle                   nodeHandle_;        
+    int                               id_;
 };
 
     

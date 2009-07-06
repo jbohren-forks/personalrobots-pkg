@@ -190,7 +190,7 @@ private:
 	bi_.real_maxZ =  bi_.dimensionZ + bi_.originZ;	
     }
     
-    void computeCloudMask(const robot_msgs::PointCloud &cloud, std::vector<bool> &mask)
+    void computeCloudMask(const robot_msgs::PointCloud &cloud, std::vector<int> &mask)
     {
 	if (cloud_annotation_.empty())
 	    sf_.mask(cloud, mask);
@@ -223,7 +223,7 @@ private:
 	if (!mapProcessing_.try_lock())
 	    return;
 	
-	std::vector<bool> mask;
+	std::vector<int> mask;
 	robot_msgs::PointCloud out;
 	ros::WallTime tm = ros::WallTime::now();
 
@@ -247,7 +247,7 @@ private:
 	}
 	
 	CMap obstacles;
-	constructCollisionMap(out, mask, true,  obstacles);
+	constructCollisionMap(out, mask, 1,  obstacles);
 	CMap diff;
 	set_difference(obstacles.begin(), obstacles.end(), currentMap_.begin(), currentMap_.end(),
 		       std::inserter(diff, diff.begin()), CollisionPointOrder());
@@ -260,7 +260,7 @@ private:
     {
 	mapProcessing_.lock();
 	
-	std::vector<bool> mask;
+	std::vector<int> mask;
 	robot_msgs::PointCloud out;
 	ros::WallTime tm = ros::WallTime::now();
 
@@ -292,11 +292,11 @@ private:
 	    
 #pragma omp section
 	    {
-		constructCollisionMap(out, mask, true,  obstacles);
+		constructCollisionMap(out, mask, 1,  obstacles);
 	    }
 #pragma omp section
 	    {
-		constructCollisionMap(out, mask, false, self);
+		constructCollisionMap(out, mask, 0, self);
 	    }
 #pragma omp section
 	    {
@@ -553,7 +553,7 @@ private:
     }
     
     /** Construct an axis-aligned collision map from a point cloud assumed to be in the robot frame */
-    void constructCollisionMap(const robot_msgs::PointCloud &cloud, const std::vector<bool> &mask, bool keep, CMap &map)
+    void constructCollisionMap(const robot_msgs::PointCloud &cloud, const std::vector<int> &mask, int keep, CMap &map)
     {
 	const unsigned int n = cloud.pts.size();
 	CollisionPoint c;

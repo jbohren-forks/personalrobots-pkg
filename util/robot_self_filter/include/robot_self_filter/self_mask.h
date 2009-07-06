@@ -70,6 +70,12 @@ namespace robot_self_filter
 	{
 	    configure();
 	}
+
+	/** \brief Construct the filter */
+	SelfMask(tf::TransformListener &tf, const std::vector<std::string> &links, double scale, double padd) : rm_("robot_description"), tf_(tf)
+	{
+	    configure(links, scale, padd);
+	}
 	
 	/** \brief Destructor to clean up
 	 */
@@ -83,14 +89,14 @@ namespace robot_self_filter
 	/** \brief Compute the mask for a given pointcloud. If a mask element is true, the point
 	    is outside the robot
 	 */
-	void mask(const robot_msgs::PointCloud& data_in, std::vector<bool> &mask);
+	void mask(const robot_msgs::PointCloud& data_in, std::vector<int> &mask);
 	
 	/** \brief Assume subsequent calls to getMask() will be in the frame passed to this function */
 	void assumeFrame(const roslib::Header& header);
 	
 	/** \brief Get the mask value for an individual point. No
 	    setup is performed, assumeFrame() should be called before use */
-	bool getMask(double x, double y, double z) const;
+	int  getMask(double x, double y, double z) const;
 	
 	/** \brief Get the set of frames that correspond to the links */
 	void getLinkFrames(std::vector<std::string> &frames) const;
@@ -100,11 +106,14 @@ namespace robot_self_filter
 	/** \brief Configure the filter. */
 	bool configure(void);
 
+	/** \brief Configure the filter. */
+	bool configure(const std::vector<std::string> &links, double scale, double padd);
+	
 	/** \brief Compute bounding spheres for the checked robot links. */
 	void computeBoundingSpheres(void);
 	
 	/** \brief Perform the actual mask computation. */
-	void maskSimple(const robot_msgs::PointCloud& data_in, std::vector<bool> &mask);
+	void maskAux(const robot_msgs::PointCloud& data_in, std::vector<int> &mask);
 	
 	planning_environment::RobotModels   rm_;
 	tf::TransformListener              &tf_;

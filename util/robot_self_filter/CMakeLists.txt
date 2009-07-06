@@ -12,13 +12,13 @@ set(ROS_BUILD_TYPE Release)
 
 rospack(robot_self_filter)
 
-rospack_add_library(new_robot_self_filter src/self_mask.cpp)
-rospack_add_openmp_flags(new_robot_self_filter)
+rospack_add_library(robot_self_filter src/self_mask.cpp)
+rospack_add_openmp_flags(robot_self_filter)
 
 rospack_add_executable(test_filter src/test_filter.cpp)
 rospack_add_openmp_flags(test_filter)
-target_link_libraries(test_filter new_robot_self_filter)
+target_link_libraries(test_filter robot_self_filter)
 
 rospack_add_executable(self_filter src/self_filter.cpp)
 rospack_add_openmp_flags(self_filter)
-target_link_libraries(self_filter new_robot_self_filter)
+target_link_libraries(self_filter robot_self_filter)

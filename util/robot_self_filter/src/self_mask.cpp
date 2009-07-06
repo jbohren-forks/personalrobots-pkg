@@ -32,12 +32,8 @@
 #include <climits>
 #include <ros/console.h>
 
-bool robot_self_filter::SelfMask::configure(void)
+bool robot_self_filter::SelfMask::configure(const std::vector<std::string> &links, double scale, double padd)
 {
-    std::vector<std::string> links = rm_.getSelfSeeLinks();
-    double scale = rm_.getSelfSeeScale();
-    double padd  = rm_.getSelfSeePadding();
-    
     // from the geometric model, find the shape of each link of interest
     // and create a body from it, one that knows about poses and can 
     // check for point inclusion
@@ -72,7 +68,12 @@ bool robot_self_filter::SelfMask::configure(void)
     for (unsigned int i = 0 ; i < bodies_.size() ; ++i)
 	ROS_INFO("Self mask includes link %s with volume %f", bodies_[i].name.c_str(), bodies_[i].body->computeVolume());
     
-    return true;
+    return true; 
+}
+
+bool robot_self_filter::SelfMask::configure(void)
+{
+    return configure(rm_.getSelfSeeLinks(), rm_.getSelfSeeScale(), rm_.getSelfSeePadding());
 }
 
 void robot_self_filter::SelfMask::getLinkFrames(std::vector<std::string> &frames) const
@@ -81,13 +82,13 @@ void robot_self_filter::SelfMask::getLinkFrames(std::vector<std::string> &frames
 	frames.push_back(bodies_[i].name);
 }
 
-void robot_self_filter::SelfMask::mask(const robot_msgs::PointCloud& data_in, std::vector<bool> &mask)
+void robot_self_filter::SelfMask::mask(const robot_msgs::PointCloud& data_in, std::vector<int> &mask)
 {
     mask.resize(data_in.pts.size());
     if (bodies_.empty())
 	std::fill(mask.begin(), mask.end(), true);
     else
-	maskSimple(data_in, mask);
+	maskAux(data_in, mask);
 }
 
 void robot_self_filter::SelfMask::computeBoundingSpheres(void)
@@ -123,7 +124,7 @@ void robot_self_filter::SelfMask::assumeFrame(const roslib::Header& header)
     computeBoundingSpheres();
 }
 
-void robot_self_filter::SelfMask::maskSimple(const robot_msgs::PointCloud& data_in, std::vector<bool> &mask)
+void robot_self_filter::SelfMask::maskAux(const robot_msgs::PointCloud& data_in, std::vector<int> &mask)
 {
     const unsigned int bs = bodies_.size();
     const unsigned int np = data_in.pts.size();
@@ -136,25 +137,27 @@ void robot_self_filter::SelfMask::maskSimple(const robot_msgs::PointCloud& data_
     btScalar radiusSquared = bound.radius * bound.radius;
     
     // we now decide which points we keep
-#pragma omp parallel for schedule(dynamic)
+#pragma omp parallel for schedule(dynamic) 
     for (int i = 0 ; i < (int)np ; ++i)
     {
 	btVector3 pt = btVector3(btScalar(data_in.pts[i].x), btScalar(data_in.pts[i].y), btScalar(data_in.pts[i].z));
-	bool out = true;
+	int out = 1;
 	if (bound.center.distance2(pt) < radiusSquared)
 	    for (unsigned int j = 0 ; out && j < bs ; ++j)
-		out = !bodies_[j].body->containsPoint(pt);
+		if (bodies_[j].body->containsPoint(pt))
+		    out = 0;
 	
 	mask[i] = out;
     }
 }
 
-bool robot_self_filter::SelfMask::getMask(double x, double y, double z) const
+int robot_self_filter::SelfMask::getMask(double x, double y, double z) const
 {
     btVector3 pt = btVector3(btScalar(x), btScalar(y), btScalar(z));
     const unsigned int bs = bodies_.size();
-    bool out = true;
+    int out = 1;
     for (unsigned int j = 0 ; out && j < bs ; ++j)
-	out = !bodies_[j].body->containsPoint(pt);
+	if (bodies_[j].body->containsPoint(pt))
+	    out = 0;
     return out;
 }

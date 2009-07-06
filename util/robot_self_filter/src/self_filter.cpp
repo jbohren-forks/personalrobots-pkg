@@ -58,7 +58,7 @@ private:
     void cloudCallback(const robot_msgs::PointCloudConstPtr &cloud)
     {
 	robot_msgs::PointCloud out;
-	std::vector<bool> mask;
+	std::vector<int> mask;
 	ros::WallTime tm = ros::WallTime::now();
 	sf_.mask(*cloud, mask);
 	double sec = (ros::WallTime::now() - tm).toSec();
@@ -67,7 +67,7 @@ private:
 	ROS_DEBUG("Self filter: reduced %d points to %d points in %f seconds", (int)cloud->pts.size(), (int)out.pts.size(), sec);
     }
 
-    void fillResult(const robot_msgs::PointCloud& data_in, const std::vector<bool> &keep, robot_msgs::PointCloud& data_out)
+    void fillResult(const robot_msgs::PointCloud& data_in, const std::vector<int> &keep, robot_msgs::PointCloud& data_out)
     {
 	const unsigned int np = data_in.pts.size();
 
