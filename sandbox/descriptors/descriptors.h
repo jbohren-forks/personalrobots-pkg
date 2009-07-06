@@ -39,8 +39,10 @@ class ImageDescriptor {
   IplImage* img_;
   int row_;
   int col_;
+  bool debug_;
 
-  virtual bool compute(Eigen::MatrixXf** result, bool debug) = 0;
+  void setDebug(bool debug);
+  virtual bool compute(Eigen::MatrixXf** result) = 0;
   virtual void display(const Eigen::MatrixXf& result) = 0;
   virtual void clearPointCache() = 0;
   virtual void clearImageCache() = 0;
@@ -49,6 +51,7 @@ class ImageDescriptor {
   virtual void setImage(IplImage* img);
   virtual void setPoint(int row, int col);
   virtual ~ImageDescriptor() {};
+  ImageDescriptor();
 };
 
 class IntegralImageDescriptor : public ImageDescriptor {
@@ -57,7 +60,8 @@ class IntegralImageDescriptor : public ImageDescriptor {
   IplImage* ii_tilt_;
   IplImage* gray_;
   IntegralImageDescriptor* ii_provider_;
-  
+  //! Which image - r, g, b, gray, etc.
+  IplImage* channel_;
 
   IntegralImageDescriptor(IntegralImageDescriptor* ii_provider);
   ~IntegralImageDescriptor();
@@ -73,7 +77,7 @@ class IntegralImageTexture : public IntegralImageDescriptor {
   int scale_;
 
   IntegralImageTexture(int scale = 1, IntegralImageDescriptor* ii_provider = NULL);
-  bool compute(Eigen::MatrixXf** result, bool debug);
+  bool compute(Eigen::MatrixXf** result);
   void display(const Eigen::MatrixXf& result) {}
   void clearPointCache() {}
   //void setImage(IplImage* img);
@@ -95,7 +99,7 @@ class Patch : public ImageDescriptor {
 
   Patch(int raw_size, float scale);
   //! Common patch constructor computation.
-  bool preCompute(bool debug);
+  bool preCompute();
   //virtual void display(const Eigen::MatrixXf& result) {}
   void clearPointCache();
   //virtual void clearImageCache();
@@ -108,7 +112,7 @@ class IntensityPatch : public Patch {
   bool whiten_;
 
   IntensityPatch(int raw_size, float scale, bool whiten);
-  bool compute(Eigen::MatrixXf** result, bool debug);
+  bool compute(Eigen::MatrixXf** result);
   void display(const Eigen::MatrixXf& result) {}
   void clearImageCache() {}
 };
@@ -121,7 +125,7 @@ class PatchStatistic : public ImageDescriptor {
   Patch* patch_;
 
   PatchStatistic(std::string type, Patch* patch);
-  bool compute(Eigen::MatrixXf** result, bool debug);
+  bool compute(Eigen::MatrixXf** result);
   void display(const Eigen::MatrixXf& result);
   void clearPointCache() {}
   void clearImageCache() {}
@@ -140,7 +144,7 @@ class SuperpixelStatistic : public ImageDescriptor {
 
   SuperpixelStatistic(int seed_spacing, float scale, SuperpixelStatistic* provider);
   //! Computes superpixels and puts into seg_, and computes the superpixel to pixel index.  Is called automatically, if necessary, by the compute(.) function.
-  void segment(bool debug);
+  void segment();
   IplImage* createSegmentMask(long label, CvRect* rect);
 };
 
@@ -161,7 +165,7 @@ class SuperpixelColorHistogram : public SuperpixelStatistic {
   IplImage* channel_;
 
   SuperpixelColorHistogram(int seed_spacing, float scale, int nBins, std::string type, SuperpixelStatistic* seg_provider=NULL, SuperpixelColorHistogram* hsv_provider_=NULL);
-  bool compute(Eigen::MatrixXf** result, bool debug);
+  bool compute(Eigen::MatrixXf** result);
   void display(const Eigen::MatrixXf& result) {}
   void clearPointCache() {}
   void clearImageCache();
@@ -194,7 +198,7 @@ class Hog : public ImageDescriptor {
   HOGDescriptor cvHog;
 
   Hog(Patch* patch);
-  bool compute(Eigen::MatrixXf** result, bool debug);
+  bool compute(Eigen::MatrixXf** result);
   void display(const Eigen::MatrixXf& result) {}
   void clearPointCache() {}
   void clearImageCache() {}

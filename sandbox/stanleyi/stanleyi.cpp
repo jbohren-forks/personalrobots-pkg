@@ -18,8 +18,6 @@ USING_PART_OF_NAMESPACE_EIGEN
 //using namespace NEWMAT;
 using namespace std;
 
-
-//! This is an example of how to set up the descriptors.  Using this one is ill-advised as it may change without notice.
 vector<ImageDescriptor*> setupImageDescriptors() {
   vector<ImageDescriptor*> d;
 
@@ -33,12 +31,21 @@ vector<ImageDescriptor*> setupImageDescriptors() {
   d.push_back(sch3);
   d.push_back(sch4);
 
+  d.push_back(new IntegralImageTexture());
   d.push_back(new IntensityPatch(40, .5, true));
   d.push_back(new IntensityPatch(20, 1, true));
   d.push_back(new IntensityPatch(80, .25, true));
   d.push_back(new IntensityPatch(120, 1.0/6.0, true));
   return d;
 }
+
+vector<ImageDescriptor*> setupImageDescriptorsTest() {
+  vector<ImageDescriptor*> d;
+
+  d.push_back(new IntegralImageTexture());
+  return d;
+}
+
 
 void releaseImageDescriptors(vector<ImageDescriptor*>* desc) {
   for(unsigned int i=0; i<desc->size(); i++) {
@@ -73,27 +80,25 @@ int getdir (string dir, vector<string> &files)
 }
 
 
-IplImage* findLabelMask(double stamp) 
+IplImage* findLabelMask(double stamp, string results_dir) 
 {
   vector<string> files;
   IplImage *mask = NULL;
 
-  
+  string masks_dir = results_dir + "/masks/";
   char buf[100];
   sprintf(buf, "%f", stamp); 
   string sbuf(buf);
   sbuf = sbuf.substr(0, sbuf.length()-1);   //Remove the last digit - it's been rounded.
-  string dir = string("/tmp/turk_submit_images/images/");
 
-
-  getdir(dir, files);
+  getdir(masks_dir, files);
   for(unsigned int i=0; i<files.size(); i++)
     {
       if(files[i].find(sbuf) != string::npos && 
 	 files[i].find(string(".png")) != string::npos)
 	{
 	  cout << "Found label for " << sbuf << ": " << files[i] << endl;
-	  mask = cvLoadImage((dir + files[i]).c_str());
+	  mask = cvLoadImage((masks_dir + files[i]).c_str());
 	  break;
 	}
     }
@@ -111,14 +116,21 @@ public:
   IplImage* mask_;
   vector<ImageDescriptor*> descriptor_;
 
-  object* computeFeaturesAtRandomPoint(int* row=NULL, int* col=NULL, bool debug=false);
-
+  object* computeFeaturesAtRandomPoint(int* row=NULL, int* col=NULL);
+  vector<object*> collectFeaturesFromImage(int samples_per_img);
+  void induct(string bagfile, string results_dir);
 
   Stanleyi()
     : img_(NULL), mask_(NULL)
   {
     lp_.addHandler<sensor_msgs::Image>(string("/forearm/image_rect_color"), &copyMsg<sensor_msgs::Image>, (void*)(&img_msg_));
     descriptor_ = setupImageDescriptors();
+    if(getenv("DEBUG") != NULL) {
+      for(unsigned int i=0; i<descriptor_.size(); i++) { 
+	descriptor_[i]->setDebug(true);
+      }
+    }
+    srand ( time(NULL) ); //For randomly selecting points.
   }
 
   ~Stanleyi() {
@@ -130,12 +142,12 @@ public:
       cvReleaseImage(&mask_);
   }
 
-  void collectDataset(string bagfile, int samples_per_img, string save_name);
-  void viewLabels(string bagfile);
-  void classifyVideoVis(string bagfile, Dorylus& d, int samples_per_img);
+  void collectDataset(string bagfile, int samples_per_img, string save_name, string results_dir);
+  void viewLabels(string bagfile, string results_dir);
+  void makeClassificationVideo(string bagfile, Dorylus& d, int samples_per_img, string results_dir);
 };
 
-object* Stanleyi::computeFeaturesAtRandomPoint(int* row, int* col, bool debug) {
+object* Stanleyi::computeFeaturesAtRandomPoint(int* row, int* col) {
   int r = rand() % img_->height;
   int c = rand() % img_->width;
   MatrixXf* result = NULL;
@@ -159,10 +171,13 @@ object* Stanleyi::computeFeaturesAtRandomPoint(int* row, int* col, bool debug) {
   bool success = false;
   for(unsigned int j=0; j<descriptor_.size(); j++) {
     // -- For now, only accept points for which all features are computable.
-    if(mask_ != NULL && obj->label == 1 && getenv("DEBUG_POSITIVES") != NULL) 
-      success = descriptor_[j]->compute(&result, true);
+    if(mask_ != NULL && obj->label == 1 && getenv("DEBUG_POSITIVES") != NULL)  {
+      descriptor_[j]->setDebug(true);
+      success = descriptor_[j]->compute(&result);
+      descriptor_[j]->setDebug(false);
+    }
     else
-      success = descriptor_[j]->compute(&result, debug);
+      success = descriptor_[j]->compute(&result);
 
     if(!success) {
       //ROS_WARN("Descriptor %s failed.", descriptor_[j]->name_.c_str());
@@ -182,7 +197,7 @@ object* Stanleyi::computeFeaturesAtRandomPoint(int* row, int* col, bool debug) {
   return obj;
 }
 
-void Stanleyi::collectDataset(string bagfile, int samples_per_img, string save_name) {
+void Stanleyi::collectDataset(string bagfile, int samples_per_img, string save_name, string results_dir) {
   bool debug = false;
   vector<object*> objs;
 
@@ -194,26 +209,33 @@ void Stanleyi::collectDataset(string bagfile, int samples_per_img, string save_n
   lp_.open(bagfile, ros::Time());
 
   // -- Get data for all labeled images.
+  int frame_id = 0;
   while(lp_.nextMsg()) {
+    frame_id++;
+
     // -- Get the next img with a label mask.
-    if (!img_bridge_.fromImage(img_msg_, "bgr")) 
+    if (!img_bridge_.fromImage(img_msg_, "bgr"))  {
+       ROS_ERROR("Could not convert message to ipl.");
       continue;
+    }
+
     img_ = img_bridge_.toIpl();
-    mask_ = findLabelMask(img_msg_.header.stamp.toSec());
+    mask_ = findLabelMask(img_msg_.header.stamp.toSec(), results_dir);
     if(mask_ == NULL)
       continue;
     
     ROS_ASSERT(img_ != NULL);
     
+    //image_objs = collectFeaturesFromImage(samples_per_img);
+   
     // -- Aim the descriptor functions at the new image.
     for(unsigned int j=0; j<descriptor_.size(); j++) {
       descriptor_[j]->setImage(img_);
     }
 
     // -- Randomly sample points from the image and get the features.
-    srand ( time(NULL) );
     for(int i=0; i<samples_per_img; i++) {
-      object* obj = computeFeaturesAtRandomPoint(NULL, NULL, debug);
+      object* obj = computeFeaturesAtRandomPoint(NULL, NULL);
 
       // -- Add the object to the dataset.
       if(obj != NULL) {
@@ -221,15 +243,37 @@ void Stanleyi::collectDataset(string bagfile, int samples_per_img, string save_n
       }
 	
     }
+    cvReleaseImage(&mask_);
   }
 
   DorylusDataset dd;
   dd.setObjs(objs);
   dd.save(save_name);
 }
-  
 
-void Stanleyi::classifyVideoVis(string bagfile, Dorylus& d, int samples_per_img) {
+
+
+vector<object*> Stanleyi::collectFeaturesFromImage(int samples_per_img) {
+  vector<object*> objs;
+
+  // -- Aim the descriptor functions at the new image.
+  for(unsigned int j=0; j<descriptor_.size(); j++) {
+    descriptor_[j]->setImage(img_);
+  }
+  
+  // -- Randomly sample points from the image and get the features.
+  for(int i=0; i<samples_per_img; i++) {
+    object* obj = computeFeaturesAtRandomPoint(NULL, NULL);
+    
+    // -- Add the object to the dataset.
+    if(obj != NULL) {
+      objs.push_back(obj);
+    }
+  }
+  return objs;
+}
+
+void Stanleyi::makeClassificationVideo(string bagfile, Dorylus& d, int samples_per_img, string results_dir) {
   //vector<ImageDescriptor*> desc = setupImageDescriptors();
   //d.exclude_descriptors_.push_back(desc[4]->name_);
   if(getenv("MAX_WC") != NULL)
@@ -260,8 +304,10 @@ void Stanleyi::classifyVideoVis(string bagfile, Dorylus& d, int samples_per_img)
 
   while(lp_.nextMsg()) {
     frame_num++;
-    if (!img_bridge_.fromImage(img_msg_, "bgr"))
+    if (!img_bridge_.fromImage(img_msg_, "bgr")) {
+      ROS_ERROR("Could not convert message to ipl.");
       break;
+    }
   
     img_ = img_bridge_.toIpl();
     vis = cvCloneImage(img_);
@@ -270,7 +316,7 @@ void Stanleyi::classifyVideoVis(string bagfile, Dorylus& d, int samples_per_img)
       writer = cvCreateVideoWriter("output.mpg", CV_FOURCC('P','I','M','1'), 30, cvGetSize(img_));
     }
 
-    IplImage* mask = findLabelMask(img_msg_.header.stamp.toSec());
+    IplImage* mask = findLabelMask(img_msg_.header.stamp.toSec(), results_dir);
     if(getenv("DEBUG_POSITIVES") != NULL &&  mask == NULL)
       continue;
 
@@ -323,13 +369,13 @@ void Stanleyi::classifyVideoVis(string bagfile, Dorylus& d, int samples_per_img)
 
     cout << "Showing results for frame " << frame_num << endl;
     cvShowImage("Classification Visualization", vis);
-    if(cvWaitKey(0) == 'q') {
+    if(cvWaitKey(30) == 'q') {
       break;
     }
 
-
     cvReleaseImage(&vis);
   }
+  cvReleaseVideoWriter(&writer);
 }
 
 
@@ -409,16 +455,24 @@ void test_watershed(IplImage *img) {
 }  
   
 
-void Stanleyi::viewLabels(string bagfile) {
+void Stanleyi::viewLabels(string bagfile, string results_dir) {
   cvNamedWindow("Image", CV_WINDOW_AUTOSIZE);
   cvNamedWindow("Mask", CV_WINDOW_AUTOSIZE);
   cvNamedWindow("Feature", CV_WINDOW_AUTOSIZE);
 
-  lp_.open(bagfile, ros::Time());
+  if(!lp_.open(bagfile, ros::Time())) {
+    ROS_FATAL("Failed to open bag file %s.", bagfile.c_str());
+    return;
+  }
+  else {
+    ROS_DEBUG("Opened bag file %s.",  bagfile.c_str());
+  }
+    
   while(lp_.nextMsg()) {
+    cout << "Next msg." << endl;
     if (img_bridge_.fromImage(img_msg_, "bgr")) {
       img_ = img_bridge_.toIpl();
-      mask_ = findLabelMask(img_msg_.header.stamp.toSec());
+      mask_ = findLabelMask(img_msg_.header.stamp.toSec(), results_dir);
       if(mask_ != NULL) {
 	cvShowImage("Image", img_);
 	cvShowImage("Mask", mask_);
@@ -429,42 +483,144 @@ void Stanleyi::viewLabels(string bagfile) {
   }
 }
   
+
+void Stanleyi::induct(string bagfile, string results_dir) {
+  int row = 0, col = 0;
+  IplImage* vis = NULL;
+  object* obj = NULL;
+  NEWMAT::Matrix response_nm;
+  CvVideoWriter* writer = NULL;
+  int frame_num = 0;
+
+  int samples_per_img = 3000;
+  if(getenv("NSAMPLES") != NULL) 
+    samples_per_img = atoi(getenv("NSAMPLES"));
+  int nCandidates = 10;
+  if(getenv("NCAND") != NULL) 
+    nCandidates = atoi(getenv("NCAND"));
+  int max_secs = 60;
+  if(getenv("MAX_SECS") != NULL) 
+    max_secs = atoi(getenv("MAX_SECS"));
+  int max_wcs = 0;
+  if(getenv("MAX_WCS") != NULL) 
+    max_wcs = atoi(getenv("MAX_WCS"));
+
+
+  cvNamedWindow("Inductive Classification Visualization", CV_WINDOW_AUTOSIZE);
+  lp_.open(bagfile, ros::Time());
+  
+  // -- Find first labeled frame.
+  while(lp_.nextMsg()) {
+    img_ = img_bridge_.toIpl();
+    if (!img_bridge_.fromImage(img_msg_, "bgr")) {
+      ROS_ERROR("Could not convert message to ipl.");
+      break;
+    }
+
+    mask_ = findLabelMask(img_msg_.header.stamp.toSec(), results_dir);
+    if(mask_)
+      break;
+  }
+  ROS_DEBUG("Found mask.");
+
+  // -- Collect a dataset from it and train a classifier.
+  vector<object*> objs = collectFeaturesFromImage(samples_per_img);
+
+  // -- Main loop.
+  while(lp_.nextMsg()) {
+    DorylusDataset dd;
+    dd.setObjs(objs);
+
+    // -- Train a classifier on dd.
+    Dorylus d;  
+    d.useDataset(&dd);
+    d.train(nCandidates, max_secs, max_wcs);
+
+    // -- Get the next image.
+    img_ = img_bridge_.toIpl();
+    vis = cvCloneImage(img_);
+    if (!img_bridge_.fromImage(img_msg_, "bgr"))
+      break;
+    if(writer == NULL) {
+      writer = cvCreateVideoWriter("output.mpg", CV_FOURCC('P','I','M','1'), 30, cvGetSize(img_));
+    }
+
+    // -- Aim the descriptor functions at the new image.
+    for(unsigned int j=0; j<descriptor_.size(); j++) {
+      descriptor_[j]->setImage(img_);
+    }
+
+    // -- Compute features across the image.
+    for(int i=0; i<samples_per_img; i++) {
+      obj = computeFeaturesAtRandomPoint(&row, &col);
+      if(!obj)
+	continue;
+
+      // -- Get predictions and create a dataset from them for this image.
+      response_nm = d.classify(*obj);
+      if(response_nm(1,1) > 0) 
+	obj->label = 1;
+      else
+	obj->label = 0;
+      objs.push_back(obj);
+
+      // -- Draw the visualization.
+      if(response_nm(1,1) > 0)
+	cvCircle(vis, cvPoint(col, row), 2, cvScalar(0,255,0), 2);
+      else
+	cvCircle(vis, cvPoint(col, row), 2, cvScalar(0,0,255), 2);
+    }
+
+    cvWriteFrame(writer, vis);
+
+    cout << "Showing results for frame " << frame_num << endl;
+    cvShowImage("Inductive Classification Visualization", vis);
+    if(cvWaitKey(30) == 'q') {
+      break;
+    }
+
+    cvReleaseImage(&vis);
+  }
+  cvReleaseVideoWriter(&writer);
+}
+
+
 int main(int argc, char** argv) 
 {
   Stanleyi s;
-  
+
   // -- Get env var options.
   int samples_per_img = 1000;
-  int nCandidates = 2;
-  int max_secs = 0;
-  int max_wcs = 0;
   if(getenv("NSAMPLES") != NULL) 
     samples_per_img = atoi(getenv("NSAMPLES"));
+  int nCandidates = 2;
   if(getenv("NCAND") != NULL) 
     nCandidates = atoi(getenv("NCAND"));
+  int max_secs = 0;
   if(getenv("MAX_SECS") != NULL) 
     max_secs = atoi(getenv("MAX_SECS"));
+  int max_wcs = 0;
   if(getenv("MAX_WCS") != NULL) 
     max_wcs = atoi(getenv("MAX_WCS"));
 
 
   // -- Parse args.
-  if(argc > 2 && !strcmp(argv[1], "--viewlabels"))
+  if(argc > 3 && !strcmp(argv[1], "--viewLabels"))
     {
-      cout << "Showing labels for " << argv[2] << endl;  
-      s.viewLabels(string(argv[2]));
+      cout << "Showing labels for bag " << argv[2] << " using the label masks in " << argv[3] << endl;  
+      s.viewLabels(argv[2], argv[3]);
     }
 
-  else if(argc > 3 && !strcmp(argv[1], "--collectDataset"))
+  else if(argc > 4 && !strcmp(argv[1], "--collectDataset"))
     {
-      cout << "Collecting a dataset for " << argv[2] << ", saving with name " << argv[3] << endl;  
-      s.collectDataset(string(argv[2]), samples_per_img, string(argv[3]));
+      cout << "Collecting a dataset for bag " << argv[2] << ", saving with name " << argv[4] << " using the label masks in " << argv[3] <<  endl;  
+      s.collectDataset(argv[2], samples_per_img, argv[4], argv[3]);
     }
   
-  else if(argc > 2 && !strcmp(argv[1], "--statusDataset")) {
+  else if(argc > 2 && !strcmp(argv[1], "--statusD")) {
     cout << "Examining " << argv[2] << endl;
     DorylusDataset dd;
-    dd.load(string(argv[2]));
+    dd.load(argv[2]);
     //    cout << dd.displayFeatures() << endl;
     cout << dd.status() << endl;
   }
@@ -472,7 +628,7 @@ int main(int argc, char** argv)
   else if(argc > 2 && !strcmp(argv[1], "--statusClassifier")) {
     cout << "Examining " << argv[2] << endl;
     Dorylus d;
-    d.load(string(argv[2]));
+    d.load(argv[2]);
     //    cout << dd.displayFeatures() << endl;
     cout << d.status() << endl;
   }
@@ -482,20 +638,30 @@ int main(int argc, char** argv)
     cout << "Training new classifier on " << argv[2] << ", saving with name " << argv[3] << " using " << nCandidates << " candidates, training for " << max_secs << "s or " << max_wcs << " wcs." << endl;
     Dorylus d;
     DorylusDataset dd;
-    dd.load(string(argv[2]));
+    dd.load(argv[2]);
     d.useDataset(&dd);
     d.train(nCandidates, max_secs, max_wcs);
-    d.save(string(argv[3]));
+    d.save(argv[3]);
   }
-  else if(argc > 2 && !strcmp(argv[1], "--classifyVideoVis")) {
-    cout << "Showing video classification for " << argv[2] << " on " << argv[3] << endl;
+  else if(argc > 4 && !strcmp(argv[1], "--makeClassificationVideo")) {
+    cout << "Showing video classification for classifier " << argv[2] << " on bag " << argv[3] << " using the label masks in " << argv[4] <<  endl;
     Dorylus d;
-    d.load(string(argv[2]));
-    s.classifyVideoVis(string(argv[3]), d, samples_per_img);
+    d.load(argv[2]);
+    s.makeClassificationVideo(argv[3], d, samples_per_img, argv[4]);
+  }
+  else if(argc > 3 && !strcmp(argv[1], "--induct")) {
+    cout << "Running inductive video classification on bag " << argv[2] << " using the label masks in " << argv[3] <<  endl;
+    s.induct(argv[2], argv[3]);
   }
 
   else {
     cout << "usage: " << endl;
+    cout << argv[0] << " --makeClassificationVideo CLASSIFIER BAGFILE [LABELS]" << endl;
+    cout << argv[0] << " --collectDataset BAGFILE LABELS DATASET" << endl;
+    cout << argv[0] << " --viewLabels BAGFILE LABELS" << endl;
+    cout << argv[0] << " --statusD DATASET" << endl;
+    cout << argv[0] << " --induct BAGFILE LABELS [CLASSIFIER] [DATASET]" << endl;
+    cout << "  where LABELS might take the form of `rospack find cv_mech_turk`/results/single-object-s " << endl;
   }
   
 }

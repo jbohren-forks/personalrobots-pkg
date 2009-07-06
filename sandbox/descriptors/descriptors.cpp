@@ -120,6 +120,15 @@ void inPaintNN(IplImage* img) {
 *************  ImageDescriptor
 ****************************************************************************/
 
+ImageDescriptor::ImageDescriptor() :
+  debug_(false)
+{
+}
+
+void ImageDescriptor::setDebug(bool debug) {
+  debug_ = debug;
+}
+
 void ImageDescriptor::setImage(IplImage* img) {
   img_ = img;
   clearImageCache();
@@ -143,7 +152,7 @@ void ImageDescriptor::commonDebug() {
   cvReleaseImage(&display);
 }
 
-bool ImageDescriptor::compute(MatrixXf** result, bool debug) {
+bool ImageDescriptor::compute(MatrixXf** result) {
   return false;
 }
 
@@ -172,8 +181,8 @@ Patch::Patch(int raw_size, float scale)
   name_.assign(buf);
 }
 
-bool Patch::preCompute(bool debug) {
-  if(debug)
+bool Patch::preCompute() {
+  if(debug_)
     cout << "Computing " << name_ << endl;
   
   // -- final_patch_ should have been deallocated on clearPointCache(), which must be called by the user.
@@ -220,9 +229,9 @@ IntensityPatch::IntensityPatch(int raw_size, float scale, bool whiten)
   result_size_ = size_ * size_;
 }
 
-bool IntensityPatch::compute(MatrixXf** result, bool debug) {
+bool IntensityPatch::compute(MatrixXf** result) {
   //Do common patch processing.  
-  if(!preCompute(debug))
+  if(!preCompute())
     return false;
 
 
@@ -248,7 +257,7 @@ bool IntensityPatch::compute(MatrixXf** result, bool debug) {
   *result = res;
 
   // -- Display for debugging.
-  if(debug) {
+  if(debug_) {
     cout << name_ << " dump: ";
     cout << (**result) << endl;
       
@@ -284,7 +293,7 @@ PatchStatistic::PatchStatistic(string type, Patch* patch) :
   }
 }
 
-bool PatchStatistic::compute(MatrixXf** result, bool debug) {
+bool PatchStatistic::compute(MatrixXf** result) {
 
   if(patch_ == NULL) {
     cout << "patch_ was null" << endl;
@@ -327,7 +336,7 @@ bool PatchStatistic::compute(MatrixXf** result, bool debug) {
     (**result)(0,0) = var;
   }
 
-  if(debug) {
+  if(debug_) {
     display(**result);
 //     cvNamedWindow("fp");
 //     cvShowImage("fp", fp);
@@ -400,7 +409,7 @@ IplImage* SuperpixelStatistic::createSegmentMask(long label, CvRect* rect) {
   return mask;
 }
 
-void SuperpixelStatistic::segment(bool debug) {
+void SuperpixelStatistic::segment() {
   ROS_DEBUG_COND(seg_ != NULL, "seg_ is not null, but is being recreated anyway!");
   ROS_DEBUG("Running superpixel segmentation: %s", name_.c_str());
   
@@ -491,7 +500,7 @@ void SuperpixelStatistic::segment(bool debug) {
     }
   }
 
-  if(debug) {
+  if(debug_) {
     cout << "Debugging " << name_.c_str() << endl;
     printf( "exec time = %gms\n", t/(cvGetTickFrequency()*1000.) );
   
@@ -577,11 +586,11 @@ SuperpixelColorHistogram::~SuperpixelColorHistogram() {
 }
 
 
-bool SuperpixelColorHistogram::compute(MatrixXf** result, bool debug) {
+bool SuperpixelColorHistogram::compute(MatrixXf** result) {
   // -- Make sure we have access to a segmentation.
   if(seg_provider_ == NULL && seg_ == NULL) {
     index_ = new vector< vector<CvPoint> >;
-    segment(debug);
+    segment();
   }
   else if(seg_provider_ != NULL && seg_ == NULL) {
     seg_ = seg_provider_->seg_;
@@ -650,7 +659,7 @@ bool SuperpixelColorHistogram::compute(MatrixXf** result, bool debug) {
   }
   *result = res;
 
-  if(debug) {
+  if(debug_) {
     // -- Show the mask.
 //     cvNamedWindow("Mask");
 //     cvShowImage("Mask", mask);
@@ -897,7 +906,7 @@ IntegralImageTexture::IntegralImageTexture(int scale, IntegralImageDescriptor* i
 //   ROS_DEBUG("Calling IntegralImageTexture's setImage");
 // }
 
-bool IntegralImageTexture::compute(Eigen::MatrixXf** result, bool debug) {
+bool IntegralImageTexture::compute(Eigen::MatrixXf** result) {
   if(!ii_)
     integrate();
   
@@ -1002,7 +1011,7 @@ bool IntegralImageTexture::compute(Eigen::MatrixXf** result, bool debug) {
 
 
   *result = res;
-  if(debug) {
+  if(debug_) {
     cout << name_ << " descriptor: " << res->transpose() << endl;
     commonDebug();
   }
@@ -1127,7 +1136,7 @@ void Histogram::clear() {
 
 /*
 
-EdgePatch::compute(MatrixXf** result, bool debug) {
+EdgePatch::compute(MatrixXf** result) {
   Patch::compute(IplImage* img_, row_, col_, result, debug);
   IplImage* gray = cvCreateImage(cvGetSize(img_), IPL_DEPTH_8U, 1);
   IplImage* detail_edge = cvCloneImage(gray);
@@ -1191,7 +1200,7 @@ Hog::Hog(Patch* patch) {
   cvHog = HOGDescriptor(cvGetSize(fp), cvSize(blocksz, blocksz), cvSize(8,8), cvSize(8,8), 1);
 }
 
-bool Hog::compute(MatrixXf** result, bool debug);
+bool Hog::compute(MatrixXf** result);
 */
 
 

@@ -1,9 +1,12 @@
 #include<algorithm>
 #include<dorylus.h>
+#include <signal.h>
 
 using namespace std;
 //using namespace NEWMAT;
 USING_PART_OF_NAMESPACE_EIGEN
+
+bool g_int = false;
 
 float newtonSingle(const Function &fcn, const Gradient &grad, const Hessian &hes, float minDelta) {
   float delta = 1e10;
@@ -475,7 +478,13 @@ vector<weak_classifier*>* Dorylus::findActivatedWCs(const string &descriptor, co
   return activated;
 }
 
+
+void sigint(int none) {
+  g_int = true;
+}
+
 void Dorylus::train(int nCandidates, int max_secs, int max_wcs, void (*debugHook)(weak_classifier)) {
+  signal(SIGINT,sigint);
   time_t start, end;
   time(&start);
   float obj, obj2;
@@ -504,6 +513,8 @@ void Dorylus::train(int nCandidates, int max_secs, int max_wcs, void (*debugHook
     if(difftime(end,start) > max_secs)
       break;
     if(max_wcs != 0 && wcs >= max_wcs)
+      break;
+    if(g_int)
       break;
   }
 
