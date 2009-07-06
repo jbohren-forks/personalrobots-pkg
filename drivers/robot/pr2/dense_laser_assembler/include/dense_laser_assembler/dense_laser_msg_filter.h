@@ -124,13 +124,13 @@ public:
     // Configure the joint_pv_filter and associated cache
     joint_pv_filter_.setJointNames(joint_names_) ;
     joint_cache_.setCacheSize(mech_state_cache_size) ;
-    joint_cache_.subscribe(joint_pv_filter_) ;
+    joint_cache_.connectTo(joint_pv_filter_) ;
 
     // Set up the laser tagger and associated cache
     laser_tagger_.setMaxQueueSize(laser_queue_size) ;
     laser_tagger_.subscribeTagCache(joint_cache_) ;
     tagged_laser_cache_.setCacheSize(laser_cache_size) ;
-    tagged_laser_cache_.subscribe(laser_tagger_) ;
+    tagged_laser_cache_.connectTo(laser_tagger_) ;
   }
 
   /**
