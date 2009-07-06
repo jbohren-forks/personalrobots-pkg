@@ -238,7 +238,7 @@ namespace collision_space
 	    std::vector< std::vector<unsigned int> > selfCollision;
 	};
 	
-	dGeomID createODEGeom(dSpaceID space, shapes::Shape *shape, double scale, double padding) const;
+	dGeomID createODEGeom(dSpaceID space, shapes::Shape *shape, double scale, double padding);
 	void    updateGeom(dGeomID geom, btTransform &pose) const;	
 	void    freeMemory(void);	
 	
@@ -251,6 +251,11 @@ namespace collision_space
 
 	/* This is where static geoms from the world (that are not cleared) are added; the space for this is m_spaceBasicGeoms */
 	std::vector<dGeomID> m_basicGeoms;
+	
+    private:
+	
+	/* Pointers for ODE indices; we need this around in ODE's assumed datatype */
+	std::vector<dTriIndex*> m_meshIndices;	
 	
     };
 }

@@ -50,6 +50,9 @@ void collision_space::EnvironmentModelODE::freeMemory(void)
 	dSpaceDestroy(m_space);
     if (m_spaceBasicGeoms)
 	dSpaceDestroy(m_spaceBasicGeoms);
+    for (unsigned int i = 0 ; i < m_meshIndices.size() ; ++i)
+	delete[] m_meshIndices[i];
+    m_meshIndices.clear();
 }
 
 void collision_space::EnvironmentModelODE::addRobotModel(const boost::shared_ptr<planning_models::KinematicModel> &model, const std::vector<std::string> &links, double scale, double padding)
@@ -88,7 +91,7 @@ void collision_space::EnvironmentModelODE::addRobotModel(const boost::shared_ptr
     }
 }
 
-dGeomID collision_space::EnvironmentModelODE::createODEGeom(dSpaceID space, shapes::Shape *shape, double scale, double padding) const
+dGeomID collision_space::EnvironmentModelODE::createODEGeom(dSpaceID space, shapes::Shape *shape, double scale, double padding)
 {
     dGeomID g = NULL;
     switch (shape->type)
@@ -120,6 +123,7 @@ dGeomID collision_space::EnvironmentModelODE::createODEGeom(dSpaceID space, shap
 		indices[i] = mesh->triangles[i];
 	    dGeomTriMeshDataBuildDouble(data, mesh->vertices, sizeof(double) * 3, mesh->vertexCount, indices, icount, sizeof(dTriIndex) * 3);
 	    g = dCreateTriMesh(space, data, NULL, NULL, NULL);
+	    m_meshIndices.push_back(indices);
 	}
 	
     default:
