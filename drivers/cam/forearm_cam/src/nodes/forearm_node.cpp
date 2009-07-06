@@ -605,8 +605,9 @@ public:
       return;
     }
 
+    int bin_size = width_ > 320 ? 1 : 2;
     // Set horizontal blanking
-    if ( pr2SensorWrite( camera_, MT9V_REG_HORIZONTAL_BLANKING, MT9VModes[video_mode_].hblank ) != 0)
+    if ( pr2SensorWrite( camera_, MT9V_REG_HORIZONTAL_BLANKING, MT9VModes[video_mode_].hblank * bin_size ) != 0)
     {
       ROS_WARN("Error setting horizontal blanking.");
     }
@@ -642,7 +643,7 @@ public:
     if (exposure_ != -1) // Manual exposure
     {
       uint16_t hblank = MT9VModes[video_mode_].hblank; 
-      uint16_t hpix = width_ > 320 ? width_ : width_ * 2; 
+      uint16_t hpix = width_ * bin_size; 
       double line_time = (hpix + hblank) / MT9V_CK_FREQ;
       ROS_DEBUG("Line time is %f microseconds. (hpix = %i, hblank = %i)", line_time * 1e6, hpix, hblank);
       int explines = exposure_ / line_time;
