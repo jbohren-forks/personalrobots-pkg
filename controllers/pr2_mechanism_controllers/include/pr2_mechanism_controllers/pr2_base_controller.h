@@ -38,7 +38,6 @@
 #include <ros/node.h>
 #include <realtime_tools/realtime_publisher.h>
 #include <pr2_msgs/BaseControllerState.h>
-#include <pr2_msgs/BaseCmdVelRad.h>
 #include <robot_mechanism_controllers/joint_velocity_controller.h>
 #include <pr2_mechanism_controllers/base_kinematics.h>
 #include <robot_msgs/PoseDDot.h>
@@ -264,24 +263,9 @@ namespace controller
       void CmdBaseVelReceived();
 
       /*!
-       * \brief deal with cmd_vel command from 2dnav stack
-       */
-      void CmdBaseVelRadReceived();
-
-      /*!
-       * \brief converts from a turn radius and velocity (along tangent) to velocities in vx, vy and ang_vz
-       */
-      robot_msgs::PoseDot convertBaseVel(pr2_msgs::BaseCmdVelRad cmd_vel_rad);
-
-      /*!
        * \brief callback message, used to remember where the base is commanded to go
        */
       robot_msgs::PoseDot baseVelMsg;
-
-      /*!
-       * \brief callback message, used to remember where the base is commanded to go
-       */
-        pr2_msgs::BaseCmdVelRad baseVelRadMsg;
 
       /*!
        * \brief generic epsilon value that is used as a minimum or maximum allowable input value

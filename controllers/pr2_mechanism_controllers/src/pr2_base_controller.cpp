@@ -101,17 +101,27 @@ bool Pr2BaseController::initXml(mechanism::RobotState *robot, TiXmlElement *conf
   ros::Node::instance()->param<double> (base_kin_.name_ + "/kp_wheel_steer_", kp_wheel_steer_, 2.0);
   ros::Node::instance()->param<double> (base_kin_.name_ + "/alpha_stall", alpha_stall_, 0.5);
   ros::Node::instance()->param<double> (base_kin_.name_ + "/kp_caster_steer_", kp_caster_steer_, 40.0);
-  ros::Node::instance()->param<double> (base_kin_.name_ + "/timeout", timeout_, 0.1);
+  ros::Node::instance()->param<double> (base_kin_.name_ + "/timeout", timeout_, 1.0);
   ros::Node::instance()->param<double> (base_kin_.name_ + "/eps", eps_, 1e-5);
   ros::Node::instance()->param<double> (base_kin_.name_ + "/cmd_vel_trans_eps", cmd_vel_trans_eps_, 1e-5);
   ros::Node::instance()->param<double> (base_kin_.name_ + "/cmd_vel_rot_eps", cmd_vel_rot_eps_, 1e-5);
-  ROS_INFO("timeout is %f, base_kin_.name is %s", timeout_, base_kin_.name_.c_str());
+
+  /*double kp_;
+   double ki_;
+   double kd_;
+   double ki_clamp;*/
   //casters
   caster_controller_.resize(base_kin_.num_casters_);
   for(int i = 0; i < base_kin_.num_casters_; i++)
   {
     control_toolbox::Pid p_i_d;
     state_publisher_->msg_.joint_name[i] = base_kin_.caster_[i].name_;
+    /*ros::Node::instance()->param<double>(base_kin_.caster_[i].name_ + "/p",kp_,3.0);
+     ros::Node::instance()->param<double>(base_kin_.caster_[i].name_ + "/i",ki_,0.1);
+     ros::Node::instance()->param<double>(base_kin_.caster_[i].name_ + "/d",kd_,0.0);
+     ros::Node::instance()->param<double>(base_kin_.caster_[i].name_ + "/i_clamp",ki_clamp,4.0);*/
+    //tmp.init(base_kin_.robot_state_, base_kin_.caster_[i].name_ + "joint", control_toolbox::Pid(kp_,ki_,kd_,ki_clamp));
+    //caster_controller_.push_back(tmp);//TODO::make this not copy!!!!!!!
     p_i_d.initParam(base_kin_.name_ + "/" + base_kin_.caster_[i].name_ + "/");
     caster_controller_[i] = new JointVelocityController();
     caster_controller_[i]->init(base_kin_.robot_state_, base_kin_.caster_[i].name_, p_i_d);
@@ -122,6 +132,12 @@ bool Pr2BaseController::initXml(mechanism::RobotState *robot, TiXmlElement *conf
   {
     control_toolbox::Pid p_i_d;
     state_publisher_->msg_.joint_name[j + base_kin_.num_casters_] = base_kin_.wheel_[j].name_;
+    /*ros::Node::instance()->param<double>(base_kin_.wheel_[j].name_ + "/kp",kp_,2.0);
+     ros::Node::instance()->param<double>(base_kin_.wheel_[j].name_ + "/ki",ki_,0.01);
+     ros::Node::instance()->param<double>(base_kin_.wheel_[j].name_ + "/kd",kd_,0.0);
+     ros::Node::instance()->param<double>(base_kin_.wheel_[j].name_ + "/i_clamp",ki_clamp,0.4);*/
+    //tmp.init(base_kin_.robot_state_, base_kin_.wheel_[j].name_ + "joint", control_toolbox::Pid(kp_,ki_,kd_,ki_clamp));
+    //wheel_controller_.push_back(tmp);//TODO::make this not copy!!!!!!!
     p_i_d.initParam(base_kin_.name_ + "/" + base_kin_.wheel_[j].name_ + "/");
     wheel_controller_[j] = new JointVelocityController();
     wheel_controller_[j]->init(base_kin_.robot_state_, base_kin_.wheel_[j].name_, p_i_d);
@@ -226,7 +242,6 @@ void Pr2BaseController::update()
   {
     if(!base_kin_.caster_[i].joint_->calibrated_)
     {
-      ROS_WARN("casters are not calibrated");
       return; // Casters are not calibrated
     }
   }
