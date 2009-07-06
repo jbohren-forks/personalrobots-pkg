@@ -119,7 +119,6 @@ dGeomID collision_space::EnvironmentModelODE::createODEGeom(dSpaceID space, shap
 	    for (int i = 0 ; i < icount ; ++i)
 		indices[i] = mesh->triangles[i];
 	    dGeomTriMeshDataBuildDouble(data, mesh->vertices, sizeof(double) * 3, mesh->vertexCount, indices, icount, sizeof(dTriIndex) * 3);
-	    delete[] indices;
 	    g = dCreateTriMesh(space, data, NULL, NULL, NULL);
 	}
 	
