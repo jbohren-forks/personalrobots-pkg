@@ -7,7 +7,9 @@
   <include file="$(find pr2_gripper_controller)/launch/pr2_etherCAT.launch" />
 
   <!-- Gripper Calibration -->
-  <node pkg="mechanism_bringup" type="calibrate.py"
-        args="$(find pr2_gripper_controller)/launch/gripper_cal.xml" />
+  <node pkg="mechanism_bringup" type="calibrate.py" args="$(find pr2_gripper_controller)/launch/gripper_cal.xml" />
+  
+  <!-- GUI -->
+  <include file="$(find fingertip_pressure)/demo/fingertip_demo_no_sim.launch" />
 
 </launch>
