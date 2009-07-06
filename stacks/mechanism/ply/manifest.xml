@@ -1,0 +1,14 @@
+<package>
+<description brief="PLY Mesh Converter Library">
+
+PLY Mesh Converter Library
+
+</description>
+<author>Greg Turk and Brendan Mullins</author>
+<license>N/A</license>
+<review status="3rdparty" notes=""/>
+<url>http://www.cc.gatech.edu/projects/large_models/ply.html</url>
+<export>
+  <cpp lflags="-L${prefix}/ply/lib " cflags="-I${prefix}/ply/include"/>
+</export>
+</package>
