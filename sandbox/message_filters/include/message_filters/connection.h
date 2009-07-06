@@ -42,6 +42,9 @@
 namespace message_filters
 {
 
+/**
+ * \brief Encapsulates a connection from one filter to another (or to a user-specified callback)
+ */
 class Connection
 {
 public:
@@ -52,6 +55,9 @@ public:
   Connection(const Connection& rhs);
   Connection& operator=(const Connection& rhs);
 
+  /**
+   * \brief disconnects this connection
+   */
   void disconnect();
 
   boost::signals::connection getBoostConnection() const;

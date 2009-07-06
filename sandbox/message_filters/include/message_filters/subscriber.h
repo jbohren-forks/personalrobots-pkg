@@ -51,6 +51,8 @@ namespace message_filters
  *
  * This class acts as a highest-level filter, simply passing messages from a ROS subscription through to the
  * filters which have connected to it.
+ *
+ * When this object is destroyed it will unsubscribe from the ROS subscription
  */
 template<class M>
 class Subscriber : public boost::noncopyable
@@ -110,6 +112,9 @@ public:
     sub_ = nh.subscribe(ops);
   }
 
+  /**
+   * \brief Force immediate unsubscription of this subscriber from its topic
+   */
   void unsubscribe()
   {
     sub_.shutdown();
@@ -119,7 +124,7 @@ public:
    * \brief Connect a callback to this filter.  That callback will be called whenever new data arrives.
    *
    * \param callback A function of the same form as the message callbacks used in roscpp
-   * \return A connection object that allows you to disconnect from this
+   * \return A connection object that allows you to disconnect a single connection from this subscriber
    */
   Connection connect(const Callback& callback)
   {

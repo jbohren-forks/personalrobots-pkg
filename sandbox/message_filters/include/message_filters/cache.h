@@ -32,10 +32,6 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
-/*! \mainpage
- *  \htmlinclude manifest.html
- */
-
 #ifndef MESSAGE_FILTERS_CACHE_H_
 #define MESSAGE_FILTERS_CACHE_H_
 

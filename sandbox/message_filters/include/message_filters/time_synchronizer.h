@@ -72,6 +72,30 @@ public:
   }
 };
 
+/**
+ * \brief Synchronizes up to 9 messages by their timestamps.
+ *
+ * TimeSynchronizer synchronizes up to 9 incoming channels by the timestamps contained in their messages' headers.
+ * TimeSynchronizer takes anywhere from 2 to 9 message types as template parameters, and passes them through to a
+ * callback which takes a shared pointer of each.
+ *
+ * Example usage would be:
+\verbatim
+TimeSynchronizer<sensor_msgs::CamInfo, sensor_msgs::Image, sensor_msgs::Image> sync(caminfo_sub, limage_sub, rimage_sub, 3);
+sync.connect(callback);
+\endverbatim
+
+ * The callback is then of the form:
+\verbatim
+void callback(const sensor_msgs::CamInfo::ConstPtr&, const sensor_msgs::Image::ConstPtr&, const sensor_msgs::Image::ConstPtr&);
+\endverbatim
+ *
+ * To connect this message filter to a ROS topic you use the Subscriber filter.
+ *
+ * The required queue size parameter when constructing the TimeSynchronizer tells it how many sets of messages it should
+ * store (by timestamp) while waiting for messages to arrive and complete their "set"
+ *
+ */
 template<class M0, class M1, class M2 = NullType, class M3 = NullType, class M4 = NullType,
          class M5 = NullType, class M6 = NullType, class M7 = NullType, class M8 = NullType>
 class TimeSynchronizer : public boost::noncopyable

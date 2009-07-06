@@ -1,14 +1,11 @@
 <package>
-  <description>A prototype for what the new message filtering system could look like</description>
-  <author></author>
+  <description>A set of message filters which take in messages and may output those messages at a later time, based on the conditions that filter needs met.</description>
+  <author>Josh Faust (jfaust@willowgarage.com), Vijay Pradeep (vpradeep@willowgarage.com)</author>
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
   <depend package="roscpp" />
-  <depend package="std_msgs" />
-  <depend package="robot_msgs" />
-  <depend package="sensor_msgs" />
   <export>
     <cpp cflags="-I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lmessage_filters `rosboost-cfg --lflags thread,signals`" />
   </export>
-  <url>http://pr.willowgarage.com/wiki/topic_synchronizer</url>
+  <url>http://pr.willowgarage.com/wiki/message_filters</url>
 </package>
