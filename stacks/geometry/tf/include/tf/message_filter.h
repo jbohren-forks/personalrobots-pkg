@@ -176,8 +176,6 @@ public:
 
     messages_.clear();
     message_count_ = 0;
-
-    invalidateCallbacks();
   }
 
   void enqueueMessage(const MConstPtr& message)
@@ -237,63 +235,10 @@ private:
 
   typedef std::list<MConstPtr> L_Message;
 
-  class ROSCallback : public ros::CallbackInterface
-  {
-  public:
-    ROSCallback(MessageFilter* filter, const MConstPtr& message)
-    : filter_(filter)
-    , message_(message)
-    , invalid_(false)
-    {
-    }
-
-    void invalidate()
-    {
-      boost::mutex::scoped_lock lock(mutex_);
-      invalid_ = true;
-      message_.reset();
-    }
-
-    virtual CallResult call()
-    {
-      boost::mutex::scoped_lock lock(mutex_);
-      if (invalid_)
-      {
-        return Invalid;
-      }
-
-      filter_->signal(message_);
-      filter_->callbackFinished(this);
-      return Success;
-    }
-  private:
-    MessageFilter* filter_;
-    MConstPtr message_;
-    boost::mutex mutex_;
-    bool invalid_;
-  };
-  typedef boost::shared_ptr<ROSCallback> ROSCallbackPtr;
-  typedef std::set<ROSCallback*> S_ROSCallbackDumbPtr;
-
-  void invalidateCallbacks()
-  {
-    typename S_ROSCallbackDumbPtr::iterator it = ros_callbacks_.begin();
-    typename S_ROSCallbackDumbPtr::iterator end = ros_callbacks_.end();
-    for (; it != end; ++it)
-    {
-      (*it)->invalidate();
-    }
-  }
-
   void signal(const MConstPtr& message)
   {
     boost::mutex::scoped_lock lock(signal_mutex_);
     signal_(message);
-  }
-
-  void callbackFinished(ROSCallback* cb)
-  {
-    ros_callbacks_.erase(cb);
   }
 
   bool testMessage(const MConstPtr& message)
@@ -345,14 +290,7 @@ private:
 
       ++successful_transform_count_;
 
-      ROSCallbackPtr cb(new ROSCallback(this, message));
-      ros_callbacks_.insert(cb.get());
-
-      /// \todo Use getCallbackQueue() once 0.6.2 comes out.
-      //ros::CallbackQueueInterface* queue = nh_.getCallbackQueue();
-      ros::CallbackQueueInterface* queue =  ros::getGlobalCallbackQueue();
-
-      queue->addCallback(cb);
+      signal(message);
     }
     else
     {
@@ -470,7 +408,6 @@ private:
 
   Signal signal_;
   boost::mutex signal_mutex_;
-  S_ROSCallbackDumbPtr ros_callbacks_;
 
   L_Message messages_; ///< The message list
   uint32_t message_count_; ///< The number of messages in the list.  Used because messages_.size() has linear cost

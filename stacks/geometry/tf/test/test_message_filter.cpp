@@ -75,8 +75,6 @@ TEST(MessageFilter, noTransforms)
 	msg->header.frame_id = "frame2";
 	filter.enqueueMessage(msg);
 
-	ros::spinOnce();
-
 	EXPECT_EQ(0, n.count_);
 }
 
@@ -91,8 +89,6 @@ TEST(MessageFilter, noTransformsSameFrame)
   msg->header.stamp = ros::Time::now();
   msg->header.frame_id = "frame1";
   filter.enqueueMessage(msg);
-
-  ros::spinOnce();
 
   EXPECT_EQ(1, n.count_);
 }
@@ -114,8 +110,6 @@ TEST(MessageFilter, preexistingTransforms)
 
 	filter.enqueueMessage(msg);
 
-	ros::spinOnce();
-
 	EXPECT_EQ(1, n.count_);
 }
 
@@ -134,13 +128,10 @@ TEST(MessageFilter, postTransforms)
 
   filter.enqueueMessage(msg);
 
-	ros::spinOnce();
 	EXPECT_EQ(0, n.count_);
 
 	tf::Stamped<tf::Transform> transform(btTransform(btQuaternion(0,0,0), btVector3(1,2,3)), stamp, "frame1", "frame2");
 	tf_client.setTransform(transform);
-
-	ros::spinOnce();
 
 	EXPECT_EQ(1, n.count_);
 }
@@ -163,13 +154,11 @@ TEST(MessageFilter, queueSize)
     filter.enqueueMessage(msg);
 	}
 
-	ros::spinOnce();
 	EXPECT_EQ(0, n.count_);
 
 	tf::Stamped<tf::Transform> transform(btTransform(btQuaternion(0,0,0), btVector3(1,2,3)), stamp, "frame1", "frame2");
 	tf_client.setTransform(transform);
 
-	ros::spinOnce();
 	EXPECT_EQ(10, n.count_);
 }
 
@@ -191,7 +180,6 @@ TEST(MessageFilter, setTargetFrame)
 
 	filter.enqueueMessage(msg);
 
-	ros::spinOnce();
 
 	EXPECT_EQ(1, n.count_);
 }
@@ -217,16 +205,12 @@ TEST(MessageFilter, multipleTargetFrames)
   msg->header.frame_id = "frame3";
   filter.enqueueMessage(msg);
 
-	ros::spinOnce();
-
 	EXPECT_EQ(0, n.count_); // frame1->frame3 exists, frame2->frame3 does not (yet)
 
 	ros::Time::setNow(ros::Time::now() + ros::Duration(1.0));
 
 	transform.frame_id_ = "frame2";
 	tf_client.setTransform(transform);
-
-	ros::spinOnce();
 
 	EXPECT_EQ(1, n.count_);  // frame2->frame3 now exists
 }
@@ -249,8 +233,6 @@ TEST(MessageFilter, tolerance)
   msg->header.frame_id = "frame2";
   filter.enqueueMessage(msg);
 
-	ros::spinOnce();
-
 	EXPECT_EQ(0, n.count_); //No return due to lack of space for offset
 
 	ros::Time::setNow(ros::Time::now() + ros::Duration(0.1));
@@ -258,13 +240,10 @@ TEST(MessageFilter, tolerance)
 	transform.stamp_ += offset*1.1;
 	tf_client.setTransform(transform);
 
-	ros::spinOnce();
 	EXPECT_EQ(1, n.count_); // Now have data for the message published earlier
 
 	msg->header.stamp = stamp + offset;
 	filter.enqueueMessage(msg);
-
-	ros::spinOnce();
 
 	EXPECT_EQ(1, n.count_); // Latest message is off the end of the offset
 }
@@ -286,19 +265,16 @@ TEST(MessageFilter, maxRate)
   msg->header.frame_id = "frame2";
   filter.enqueueMessage(msg);
 
-  ros::spinOnce();
   EXPECT_EQ(0, n.count_);
 
   transform.stamp_ = stamp;
   tf_client.setTransform(transform);
 
-  ros::spinOnce();
   EXPECT_EQ(0, n.count_);
 
   ros::Time::setNow(ros::Time::now() + ros::Duration(1.0));
   tf_client.setTransform(transform);
 
-  ros::spinOnce();
   EXPECT_EQ(1, n.count_);
 }
 
