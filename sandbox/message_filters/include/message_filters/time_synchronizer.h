@@ -377,45 +377,30 @@ private:
     if (!boost::is_same<M2, NullType>::value)
     {
       ++real_type_count_;
-    }
-    else
-    {
+
       if (!boost::is_same<M3, NullType>::value)
       {
         ++real_type_count_;
-      }
-      else
-      {
+
         if (!boost::is_same<M4, NullType>::value)
         {
           ++real_type_count_;
-        }
-        else
-        {
+
           if (!boost::is_same<M5, NullType>::value)
           {
             ++real_type_count_;
-          }
-          else
-          {
+
             if (!boost::is_same<M6, NullType>::value)
             {
               ++real_type_count_;
-            }
-            else
-            {
+
               if (!boost::is_same<M7, NullType>::value)
               {
                 ++real_type_count_;
-              }
-              else
-              {
+
                 if (!boost::is_same<M8, NullType>::value)
                 {
                   ++real_type_count_;
-                }
-                else
-                {
                 }
               }
             }
