@@ -1,5 +1,11 @@
 <launch>
+  <!-- Need realtime root machine for pr2_etherCAT -->
   <machine name="realtime_root" user="root" address="prf1" ros-root="$(env ROS_ROOT)" ros-package-path="$(env ROS_PACKAGE_PATH)" default="never" />
+
+  <!-- Root access to all machines for computer monitoring -->
+  <machine name="two_root" user="root" address="prf2" ros-root="$(env ROS_ROOT)" ros-package-path="$(env ROS_PACKAGE_PATH)" default="never" />
+  <machine name="three_root" user="root" address="prf3" ros-root="$(env ROS_ROOT)" ros-package-path="$(env ROS_PACKAGE_PATH)" default="never" />
+  <machine name="four_root" user="root" address="prf4" ros-root="$(env ROS_ROOT)" ros-package-path="$(env ROS_PACKAGE_PATH)" default="never" />
 
   <machine name="realtime" address="prf1" ros-root="$(env ROS_ROOT)" ros-package-path="$(env ROS_PACKAGE_PATH)" />
   <machine name="two" address="prf2" ros-root="$(env ROS_ROOT)" ros-package-path="$(env ROS_PACKAGE_PATH)"  default="true" />

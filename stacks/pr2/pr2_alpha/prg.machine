@@ -1,9 +1,16 @@
 <launch>
   <machine name="realtime_root" user="root" address="prg1" ros-root="$(env ROS_ROOT)" ros-package-path="$(env ROS_PACKAGE_PATH)" default="never" />
 
+  <!-- Root access to all machines for computer monitoring -->
+  <machine name="two_root" user="root" address="prg2" ros-root="$(env ROS_ROOT)" ros-package-path="$(env ROS_PACKAGE_PATH)" default="never" />
+  <machine name="three_root" user="root" address="prg3" ros-root="$(env ROS_ROOT)" ros-package-path="$(env ROS_PACKAGE_PATH)" default="never" />
+  <machine name="four_root" user="root" address="prg4" ros-root="$(env ROS_ROOT)" ros-package-path="$(env ROS_PACKAGE_PATH)" default="never" />
+
   <machine name="realtime" address="prg1" ros-root="$(env ROS_ROOT)" ros-package-path="$(env ROS_PACKAGE_PATH)" />
   <machine name="two"      address="prg2" ros-root="$(env ROS_ROOT)" ros-package-path="$(env ROS_PACKAGE_PATH)"  default="true"/>
   <machine name="three"    address="prg3" ros-root="$(env ROS_ROOT)" ros-package-path="$(env ROS_PACKAGE_PATH)" />
   <machine name="four"     address="prg4" ros-root="$(env ROS_ROOT)" ros-package-path="$(env ROS_PACKAGE_PATH)" />
+
+  <!-- Defines the machine that the Videre Stereocam is attached to -->
   <machine name="stereo"   address="prg4" ros-root="$(env ROS_ROOT)" ros-package-path="$(env ROS_PACKAGE_PATH)" />
 </launch>
