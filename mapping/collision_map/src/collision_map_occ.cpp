@@ -46,6 +46,7 @@
 #include <algorithm>
 #include <set>
 #include <iterator>
+#include <cstdlib>
 
 class CollisionMapperOcc
 {
@@ -413,10 +414,25 @@ private:
     {
 	// OpenMP need an int as the lookup variable, but for set,
 	// this is not possible, so we copy to a vector
-	const int n = possiblyOccluded.size();
+	int n = possiblyOccluded.size();
 	std::vector<CollisionPoint> pts(n);
-	std::copy(possiblyOccluded.begin(), possiblyOccluded.end(), pts.begin());
-	
+
+	// if we have more than twice possibly occluded points when compared to the occluding points,
+	// we start downsampling
+	if (possiblyOccluded.size() > occluding.size())
+	{
+	    double prob = (double)occluding.size() / (double)possiblyOccluded.size();
+	    pts.clear();
+	    for (CMap::const_iterator it = possiblyOccluded.begin() ; it != possiblyOccluded.end() ; ++it)
+	    {
+		if (rand() / (RAND_MAX + 1.0) < prob)
+		    pts.push_back(*it);
+	    }
+	    n = pts.size();
+	}
+	else
+	    std::copy(possiblyOccluded.begin(), possiblyOccluded.end(), pts.begin());
+		
 #pragma omp parallel for schedule(dynamic)
 	for (int i = 0 ; i < n ; ++i)
 	{
