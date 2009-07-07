@@ -14,7 +14,7 @@
   <node machine="four" pkg="safety_core" type="run_tuck_arms" output="screen" respawn="true" />
 
 <!-- writing_core actions -->
-  <include file="$(find writing_core)/launch/writing_actions.launch" />
+<!--  <include file="$(find writing_core)/launch/writing_actions.launch" />-->
 
 <!-- writing related nodes -->
 <!--  <include file="$(find writing_core)/launch/whiteboard_detector.launch" />-->

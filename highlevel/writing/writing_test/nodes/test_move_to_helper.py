@@ -172,28 +172,29 @@ if __name__ == '__main__':
 
     time.sleep(1)
 
-    sw += "laser_tilt_controller"
-    act(start_tilt_laser, Empty(), 20.0)
+    if 1:
+      sw += "laser_tilt_controller"
+      act(start_tilt_laser, Empty(), 20.0)
 
-    print "===> Started laser"
-    time.sleep(1)
+      print "===> Started laser"
+      time.sleep(1)
 
-    track_helper_thread = threading.Thread(target = lambda: track_helper.execute(helper.helper_head, 500.0))
-    track_helper_thread.start()
+      track_helper_thread = threading.Thread(target = lambda: track_helper.execute(helper.helper_head, 500.0))
+      track_helper_thread.start()
 
-    print "===> track_helper started"
-    time.sleep(1)
+      print "===> track_helper started"
+      time.sleep(1)
 
-    act(move_base_local, helper.helper_zone, 500.0)
+      act(move_base_local, helper.helper_zone, 500.0)
 
-    print "===> reached target point"
-    track_helper.preempt()
+      print "===> reached target point"
+      track_helper.preempt()
 #    track_helper_thread.join()
 
-    sw -= "r_arm_joint_trajectory_controller"
-    sw.turn_on(r_arm_cartesian_controllers)
-    sw += "r_gripper_position_controller"
-    act(ask_for_pen, Empty(), 20.0)
+      sw -= "r_arm_joint_trajectory_controller"
+      sw.turn_on(r_arm_cartesian_controllers)
+      sw += "r_gripper_position_controller"
+      act(ask_for_pen, Empty(), 20.0)
 
     if 0:
       state, path = w.execute(pr2_robot_actions.msg.TextGoal("klak", robot_msgs.msg.Point(10,20,0), 30))
