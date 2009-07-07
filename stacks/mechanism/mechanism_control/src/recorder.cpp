@@ -33,7 +33,7 @@
 
 namespace mechanism {
 
-Recorder::Recorder() : robot_(NULL) {}
+Recorder::Recorder() : robot_(NULL), is_running_(false) {}
 
 Recorder::~Recorder()
 {
