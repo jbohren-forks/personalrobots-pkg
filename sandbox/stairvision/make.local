@@ -1,7 +1,7 @@
 OPENCV_DEVEL=1
 
-WX_CFLAGS=`/u/goodfellow/wxGTK-2.8.7/buildgtk/wx-config --cflags`
-WX_LFLAGS=`/u/goodfellow/wxGTK-2.8.7/buildgtk/wx-config --libs core,base,gl`
+WX_CFLAGS=`wx-config --cflags`
+WX_LFLAGS=`wx-config --libs core,base,gl`
 
 OPENCV_LATEST_PATH=`rospack find opencv_latest`
 OPENCV_CFLAGS=-I${OPENCV_LATEST_PATH}/opencv/include/opencv #-DOPENCV_BUGSTOP
