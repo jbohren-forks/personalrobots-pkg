@@ -10,6 +10,6 @@
   <node pkg="pr2_computer_monitor" type="cpu_monitor.py" args="--no_cpu_temp" machine="realtime_root"/>
   <node pkg="pr2_computer_monitor" type="cpu_monitor.py" args="--no_cpu_temp" machine="two_root"/> 
   <node pkg="pr2_computer_monitor" type="cpu_monitor.py" args="--no_cpu_temp" machine="three_root"/> 
-  <node pkg="pr2_computer_monitor" type="cpu_monitor.py" args="--no_cpu_temp" achine="four_root"/> 
+  <node pkg="pr2_computer_monitor" type="cpu_monitor.py" args="--no_cpu_temp" machine="four_root"/> 
 
 </launch>
