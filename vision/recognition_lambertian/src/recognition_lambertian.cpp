@@ -224,7 +224,7 @@ private:
 			cvCvtScale(dbridge_.toIpl(), disp, 4.0/dispinfo_->dpp);
 		}
 
-		runRecognitionLambertian();
+//		runRecognitionLambertian();
 
 		got_images_ = true;
 	}
@@ -293,7 +293,12 @@ private:
 		findTableTopObjectPoses(resp.objects);
 
 		for (size_t i=0;i<resp.objects.size();++i) {
-			tf_.transformPose(target_frame_,resp.objects[i].pose, resp.objects[i].pose);
+			PoseStamped& pose = resp.objects[i].pose;
+	        if (!tf_.canTransform(target_frame_, pose.header.frame_id, pose.header.stamp, ros::Duration(5.0))){
+	          ROS_ERROR("Cannot transform from %s to %s", pose.header.frame_id.c_str(), target_frame_.c_str());
+	          return false;
+	        }
+			tf_.transformPose(target_frame_, pose, pose);
 		}
 
 		got_images_ = false;
