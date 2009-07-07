@@ -7,7 +7,7 @@
 
 (defpackage :lane-following
   (:nicknames :lanes)
-  (:use :roslisp :cl :transform-2d :sb-thread)
+  (:use :roslisp :cl :transform-2d :sb-thread :roslisp-queue)
   (:export :main)
   (:import-from :robot_msgs-msg
 		:<Point>
@@ -15,6 +15,7 @@
 		:x-val
 		:y-val
 		:z-val
+		:<PointStamped>
 		:<Point32>
 		:<Polygon3D>
 		:<PointStamped>
@@ -56,7 +57,8 @@
 (defvar *hallway* (make-hallway nil nil) "Configuration of the hallway we're in.  Set by hallway-callback.")
 (defvar *move-base-result* nil "Did move-base succeed?.  Set by send-move-goal and state-callback.")
 (defvar *current-goal* '(0 0) "Current nav goal.  Set by send-move-goal.")
-(defvar *new-goal* nil "A new nav goal received on the goal topic.  Set by goal-callback and (to nil) by main")
+(defvar *new-goal* (make-queue :max-size 1) "A new nav goal received on the goal topic.  Set by goal-callback and by main")
+(defvar *person-position* nil "Person's last observed position")
 (defvar *person-position* nil "Person's last observed position")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -66,8 +68,7 @@
 (defun main ()
   (with-ros-node ("lane_changer")
     (setup-node)
-    (loop-at-most-every 1
-	 (when *new-goal* (apply #'goto *new-goal*)))))
+    (loop (apply #'goto (dequeue-wait *new-goal*))))))
 
 
 (defun setup-node ()
@@ -84,7 +85,7 @@
 
 (defun goto (x y theta)
   (ros-info pan "Initiating hallway move to goal ~a ~a ~a" x y theta)
-  (setq *new-goal* nil *move-base-result* nil)
+  (setq *move-base-result* nil)
   (unwind-protect
        (progn
 	 ;; Initial move
@@ -93,7 +94,7 @@
 	 (loop-at-most-every 1
 	      (cond
 		(*move-base-result* (return-from goto *move-base-result*))
-		(*new-goal* (return-from goto :preempted))
+		((not (queue-empty *new-goal*)) (return-from goto :preempted))
 		((person-on-path) (return))))
 
 	 ;; If person is on path
@@ -102,7 +103,7 @@
 	 (loop-at-most-every 1
 	      (cond
 		(*move-base-result* (return-from goto *move-base-result*))
-		(*new-goal* (return-from goto :preempted)))))
+		((not (queue-empty *new-goal*)) (return-from goto :preempted)))))
 
     ;; Cleanup: always disable nav before exiting
     (disable-nav)))
@@ -120,6 +121,15 @@
 	 (position (pose-position pose))
 	 (theta (pose-orientation pose)))
     (send-move-goal (aref position 0) (aref position 1) theta))
+<<<<<<< .mine
+  (sleep .5)
+  (with-fields ((frame (frame_id header)) (stamp (stamp header)) (pos pos)) *person-position*
+    (call-service "glance_at" 'GlanceAt 
+		  :point_stamped (make-message "robot_msgs/PointStamped"
+					       (frame_id header) frame
+					       (stamp header) stamp
+					       point pos)))
+=======
   (sleep .5)
   (with-fields ((frame (frame_id header)) (stamp (stamp header)) (pos pos)) *person-position*
 	       (call-service "glance_at" :point_stamped (make-message "robot_msgs/PointStamped" 
@@ -127,6 +137,7 @@
 								      (stamp header) stamp
 								      point pos)))
 					  
+>>>>>>> .r18355
   (loop-at-most-every .1
      (when *move-base-result* 
        (return *move-base-result*))))
@@ -196,7 +207,7 @@
       (when (not (eql (aref frame 0) #\/))
 	(setq frame (concatenate 'string "/" frame)))
       (if (search frame *global-frame*)
-	  (setq *new-goal* (list x y theta)) 
+	  (enqueue (list x y theta) *new-goal*)
 	  (ros-error pan "Ignoring goal ~a ~a ~a as frame id ~a does not equal ~a"
 		     x y theta frame *global-frame*)))))
   
