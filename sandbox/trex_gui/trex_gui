@@ -50,6 +50,7 @@ import sys
 import time
 import wx
 import math
+import bisect
 
 ID_ABOUT=101
 ID_EXIT=110
@@ -60,10 +61,13 @@ ID_EXIT=110
 class Token():
   def __init__(self, token, timeline):
     self.name = token.name
-    self.start = token.start
-    self.end = token.end
-    self.key = token.key
+    self.start = [int(t) for t in token.start]
+    self.end = [int(t) for t in token.end]
+    self.key = int(token.key)
+
     self.timeline = timeline
+    self.active = True
+    self.tick = 0
 
 class Timeline():
   def __init__(self, name, index, color='#333333'):
@@ -80,7 +84,7 @@ class Timeline():
     self.latest_end = 0
 
 class Plan():
-  def __init__(self, name, timelines):
+  def __init__(self, name='', timelines=[]):
     self.name = name
     self.timelines = timelines
 
@@ -220,34 +224,22 @@ class TimelineTokenCanvas(wx.ScrolledWindow):
       earliest_start = 0
       latest_end = 0
 
+      for tl in self.reactor.plan.timelines:
+	tl.earliest_start = 0
+	tl.latest_end = 0
+
       font_label = wx.Font(10, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL,wx.FONTWEIGHT_NORMAL, False, 'Andale Mono')
       font_times = wx.Font(8, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL,wx.FONTWEIGHT_NORMAL, False, 'Andale Mono')
 
-      '''
-      for token in self.reactor.alltokens:
-	# Expand tokens to metric time, if set
-	if self.reactor.trex_frame.expand_metric_time.GetValue():
-	  dc.SetTextForeground(wx.Colour(255,255,255,255))
-	  for timeline in self.reactor.plan_desc.internal:
-	    self.draw_timeline(dc)
-	    dc.SetPen(wx.Pen('#CCCCCC', 0, wx.SOLID))
-	    dc.SetBrush(wx.Brush(self.reactor.color))
-	    for token in timeline.tokens:
-	      self.draw_token(dc,token)
-	    self.tl_index = self.tl_index+1
+      for key in self.reactor.started_token_keys[::-1] + self.reactor.planned_token_keys:
+	# Get token
+	token = self.reactor.all_tokens[key]
 
-	  for timeline in self.reactor.plan_desc.external:
-	    self.draw_timeline(dc)
-	    tlcolor = self.reactor.trex_frame.get_tl_color(timeline.name)
-	    dc.SetPen(wx.Pen('#CCCCCC', 0, wx.SOLID))
-	    dc.SetBrush(wx.Brush(tlcolor))
-	    # determine if this timeline belongs to another rosreactor
-	    for token in timeline.tokens:
-	      self.draw_token(dc,token)
-	    self.tl_index = self.tl_index+1
-	else:
-	'''
-      for token in self.reactor.planned_tokens + self.reactor.started_tokens:
+	if token.tick < self.reactor.plan_desc.tick-50:
+	  continue
+
+	#DEBUGprint "TICK: %d, EARLIEST_START: %d, LATEST_END: %d" % (self.reactor.plan_desc.tick, earliest_start, latest_end)
+
 	# Create the label string, and get the length of the label
 	label_str = " %s " % (token.name.split('.')[1])#, int(str(token.key)))
 	dc.SetFont(font_label)
@@ -283,6 +275,8 @@ class TimelineTokenCanvas(wx.ScrolledWindow):
 	  # Calculate the position top-right corner of the token
 	  tok_x0 = HORZ_OFFSET+math.ceil(tok_end)
 	  tok_y0 = math.ceil((self.reactor.TIMELINE_HEIGHT+self.reactor.TIMELINE_SPACE)*token.timeline.index)
+
+	  #print "TOKEN \"%s\" ADD WIDTH: %d = max( abs( %d - %d ), %d )" % (token.name,tok_width, token.timeline.earliest_start, earliest_start, tok_width_label)
 	else:
 	  # Is planned
 	  # Calculate the token pixel width
@@ -305,9 +299,16 @@ class TimelineTokenCanvas(wx.ScrolledWindow):
 	  tok_x0 = HORZ_OFFSET+math.ceil(tok_start+tok_width)
 	  tok_y0 = math.ceil((self.reactor.TIMELINE_HEIGHT+self.reactor.TIMELINE_SPACE)*token.timeline.index)
 
+
 	# Draw token
 	# Set the color for the appropriate reactors
-	dc.SetBrush(wx.Brush(token.timeline.color))
+	if token.tick < self.reactor.plan_desc.tick:
+	  color = '#BBBBBB'
+	else:
+	  color = token.timeline.color
+
+	dc.SetBrush(wx.Brush(color))
+
 	# Draw the token rectangle
 	dc.DrawRectangle(tok_x0, tok_y0, -tok_width, self.reactor.TIMELINE_HEIGHT)
 	# Draw the token label
@@ -354,6 +355,15 @@ class ReactorPanel(wx.Panel):
     self.trex_frame = trex_frame
     self.color = color
     self.plan_desc = PlanDescription()
+    self.plan = Plan('UNDEFINED',[])
+
+    # Data structures
+    self.all_tokens = dict()
+    self.started_token_keys = []
+    self.planned_token_keys = []
+
+    self.started_token_times = []
+    self.planned_token_times = []
 
     self.TIMELINE_HEIGHT = 20
     self.TIMELINE_SPACE = 20
@@ -398,7 +408,7 @@ class ReactorPanel(wx.Panel):
   def update_plan(self, plan_desc, arg):
     # Load new data
     self.plan_desc = plan_desc
-    self.plan = Plan(plan_desc.name, [])
+    self.plan = Plan(plan_desc.name, self.plan.timelines)
     
     # Get a sorted list of all token start times
     started_tokens = []
@@ -406,22 +416,64 @@ class ReactorPanel(wx.Panel):
 
     # Find latest-starting token
     for tl_desc in plan_desc.internal+plan_desc.external:
-      # Create new timeline with name and row index
-      tlcolor = self.trex_frame.get_tl_color(tl_desc.name)
-      tl = Timeline(tl_desc.name, len(self.plan.timelines), color=tlcolor)
-      for token_desc in tl_desc.tokens:
-	# Append this token to the full token list
-	if token_desc.start[0] == token_desc.start[1]:
-	  started_tokens.append(Token(token_desc,tl))
-	else:
-	  planned_tokens.insert(0,Token(token_desc,tl))
-      self.plan.timelines.append(tl)
 
-    tokencmp = lambda x,y: cmp(x.start[0], y.start[0])
-    # Sort started tokens in decreasing order by start time
-    self.started_tokens = sorted(started_tokens, tokencmp, reverse=True)
-    # Sort planned tokens in increasing order by start time
-    self.planned_tokens = sorted(planned_tokens, tokencmp, reverse=False)
+      # Find this timeline
+      tl_match = [t for t in self.plan.timelines if t.name == tl_desc.name]
+
+      # Create new timeline with name and row index
+      if len(tl_match) is 0:
+	print "NEW TIMELINE: " + tl_desc.name
+	print [t.name for t in self.plan.timelines]
+	tl = Timeline(tl_desc.name, len(self.plan.timelines), color='#FFFFFF')
+	self.plan.timelines.append(tl)
+      else:
+	tl = tl_match[0]
+      
+      tl.color = self.trex_frame.get_tl_color(tl_desc.name)
+
+      for token_desc in tl_desc.tokens:
+	# Creae a new token from this token_desc
+	new_token = Token(token_desc,tl)
+
+	if new_token.key in self.all_tokens:
+	  # Check if this token is planned from the previous tick
+	  # This means that it might have started on this one, also it's start time is not yet closed,
+	  # so we need to remove it before sorting
+	  if new_token.key in self.planned_token_keys:
+	    # Get the index in the sorted lists of this token
+	    sorted_index = self.planned_token_keys.index(new_token.key)
+	    # Remove from the sorted lists
+	    self.planned_token_times.pop(sorted_index)
+	    self.planned_token_keys.pop(sorted_index)
+	else:
+	  # Add this new token to all_tokens
+	  self.all_tokens[new_token.key] = new_token
+
+	# Update last updated tick for this token
+	self.all_tokens[new_token.key] = new_token
+	self.all_tokens[new_token.key].tick = self.plan_desc.tick
+
+	# Insort this token to the appropriate sorted token list
+	if token_desc.start[0] == token_desc.start[1]:
+	  # Check if we need to add this to started_tokens
+	  insert_index_start = bisect.bisect_left(self.started_token_times, new_token.start[0])
+	  insert_index_end = bisect.bisect_right(self.started_token_times, new_token.start[0])
+
+	  #print "LIST LENGTH: %d" % (len(self.started_token_times))
+	  #print "INSERT INDEX: %d" % (insert_index)
+	  if insert_index_start >= len(self.started_token_keys) or new_token.key not in self.started_token_keys[insert_index_start:insert_index_end]:
+	    self.started_token_keys.insert(insert_index_start,new_token.key)
+	    self.started_token_times.insert(insert_index_start,new_token.start[0])
+	else:
+	  # Check if we need to add this to planned_tokens
+	  insert_index_start = bisect.bisect_left(self.planned_token_times, new_token.start[0])
+	  insert_index_end = bisect.bisect_right(self.planned_token_times, new_token.start[0])
+
+	  #print "LIST LENGTH: %d" % (len(self.planned_token_times))
+	  #print "INSERT INDEX: %d" % (insert_index)
+	  if insert_index_start >= len(self.planned_token_keys) or new_token.key not in self.planned_token_keys[insert_index_start:insert_index_end]:
+	    self.planned_token_keys.insert(insert_index_start,new_token.key)
+	    self.planned_token_times.insert(insert_index_start,new_token.start[0])
 
     # Make sure this reactor is selected before we repaint it
     if self is self.trex_frame.reactors_nb.GetCurrentPage():
