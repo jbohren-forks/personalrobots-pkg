@@ -179,8 +179,8 @@ class ParameterGenerator:
         f.close()
         
         # Write the configuration manipulator.
-        self.mkdir(os.path.join("cfg", "cpp"))
-        f = open(os.path.join(self.pkgpath, "cfg", "cpp", self.name+"Manipulator.h"), 'w')
+        self.mkdir(os.path.join("cfg", "cpp", self.pkgname))
+        f = open(os.path.join(self.pkgpath, "cfg", "cpp", self.pkgname, self.name+"Manipulator.h"), 'w')
         readparam = []
         writeparam = []
         changelvl = []
