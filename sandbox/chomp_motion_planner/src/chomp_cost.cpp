@@ -38,6 +38,7 @@
 #include <Eigen/LU>
 
 USING_PART_OF_NAMESPACE_EIGEN
+using namespace std;
 
 namespace chomp
 {
@@ -72,6 +73,8 @@ ChompCost::ChompCost(const ChompTrajectory& trajectory, int joint_number, const 
 
   // invert the matrix:
   quad_cost_inv_ = quad_cost_.inverse();
+
+  //cout << quad_cost_inv_ << endl;
 
 }
 

@@ -52,9 +52,15 @@ public:
 
   double getPlanningTimeLimit() const;
   void setPlanningTimeLimit(double planning_time_limit);
+  int getMaxIterations() const;
+  double getSmoothnessCostWeight() const;
+  double getObstacleCostWeight() const;
 
 private:
   double planning_time_limit_;
+  int max_iterations_;
+  double smoothness_cost_weight_;
+  double obstacle_cost_weight_;
 
 };
 
@@ -68,6 +74,21 @@ inline double ChompParameters::getPlanningTimeLimit() const
 inline void ChompParameters::setPlanningTimeLimit(double planning_time_limit)
 {
   planning_time_limit_ = planning_time_limit;
+}
+
+inline int ChompParameters::getMaxIterations() const
+{
+  return max_iterations_;
+}
+
+inline double ChompParameters::getSmoothnessCostWeight() const
+{
+  return smoothness_cost_weight_;
+}
+
+inline double ChompParameters::getObstacleCostWeight() const
+{
+  return obstacle_cost_weight_;
 }
 
 } // namespace chomp

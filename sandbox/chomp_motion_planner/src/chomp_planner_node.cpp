@@ -64,11 +64,14 @@ bool ChompPlannerNode::init()
     return false;
 
   // load in some default parameters
-  node_handle_.param("trajectory_duration", trajectory_duration_, 2.0);
-  node_handle_.param("trajectory_discretization", trajectory_discretization_, 0.02);
+  node_handle_.param("~trajectory_duration", trajectory_duration_, 2.0);
+  node_handle_.param("~trajectory_discretization", trajectory_discretization_, 0.02);
 
   // advertise the planning service
   plan_kinematic_path_service_ = node_handle_.advertiseService("plan_kinematic_path", &ChompPlannerNode::planKinematicPath, this);
+
+  // load chomp parameters:
+  chomp_parameters_.initFromNodeHandle();
 
   ROS_INFO("Initalized CHOMP planning service...");
 
@@ -123,6 +126,9 @@ bool ChompPlannerNode::planKinematicPath(motion_planning_srvs::MotionPlan::Reque
 
   // fill in an initial quintic spline trajectory
   trajectory.fillInMinJerk();
+
+  // set the max planning time:
+  chomp_parameters_.setPlanningTimeLimit(req.allowed_time);
 
   // optimize!
   ChompOptimizer optimizer(&trajectory, &chomp_robot_model_, group, &chomp_parameters_);

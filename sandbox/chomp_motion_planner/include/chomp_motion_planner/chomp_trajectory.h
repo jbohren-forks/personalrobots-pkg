@@ -86,6 +86,11 @@ public:
   int getNumPoints() const;
 
   /**
+   * \brief Gets the number of points (that are free to be optimized) in the trajectory
+   */
+  int getNumFreePoints() const;
+
+  /**
    * \brief Gets the number of joints in each trajectory point
    */
   int getNumJoints() const;
@@ -119,6 +124,26 @@ public:
    * \brief Gets the end index
    */
   int getEndIndex() const;
+
+  /**
+   * \brief Gets the entire trajectory matrix
+   */
+  Eigen::MatrixXd& getTrajectory();
+
+  /**
+   * \brief Gets the block of the trajectory which can be optimized
+   */
+  Eigen::BlockReturnType<Eigen::MatrixXd>::Type getFreeTrajectoryBlock();
+
+  /**
+   * \brief Gets the block of free (optimizable) trajectory for a single joint
+   */
+  Eigen::BlockReturnType<Eigen::MatrixXd>::Type getFreeJointTrajectoryBlock(int joint);
+
+  /**
+   * \brief Updates the full trajectory (*this) from the group trajectory
+   */
+  void updateFromGroupTrajectory(const ChompTrajectory& group_trajectory);
 
 private:
 
@@ -162,6 +187,11 @@ inline int ChompTrajectory::getNumPoints() const
   return num_points_;
 }
 
+inline int ChompTrajectory::getNumFreePoints() const
+{
+  return (end_index_ - start_index_)+1;
+}
+
 inline int ChompTrajectory::getNumJoints() const
 {
   return num_joints_;
@@ -186,6 +216,21 @@ inline int ChompTrajectory::getStartIndex() const
 inline int ChompTrajectory::getEndIndex() const
 {
   return end_index_;
+}
+
+inline Eigen::MatrixXd& ChompTrajectory::getTrajectory()
+{
+  return trajectory_;
+}
+
+inline Eigen::BlockReturnType<Eigen::MatrixXd>::Type ChompTrajectory::getFreeTrajectoryBlock()
+{
+  return trajectory_.block(start_index_, 0, getNumFreePoints(), getNumJoints());
+}
+
+inline Eigen::BlockReturnType<Eigen::MatrixXd>::Type ChompTrajectory::getFreeJointTrajectoryBlock(int joint)
+{
+  return trajectory_.block(start_index_, joint, getNumFreePoints(), 1);
 }
 
 }

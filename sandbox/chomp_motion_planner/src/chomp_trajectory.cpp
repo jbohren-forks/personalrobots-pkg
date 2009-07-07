@@ -37,6 +37,8 @@
 #include <chomp_motion_planner/chomp_trajectory.h>
 #include <iostream>
 
+using namespace std;
+
 namespace chomp
 {
 
@@ -79,8 +81,8 @@ ChompTrajectory::ChompTrajectory(const ChompTrajectory& source_traj, const Chomp
   int end_extra = (diff_rule_length - 1) - ((source_traj.num_points_-1) - source_traj.end_index_);
 
   num_points_ = source_traj.num_points_ + start_extra + end_extra;
-  start_index_ = start_extra;
-  end_index_ = (num_points_ - 1) - end_extra;
+  start_index_ = diff_rule_length - 1;
+  end_index_ = (num_points_ - 1) - (diff_rule_length - 1);
   duration_ = (num_points_ - 1)*discretization_;
 
   // allocate the memory:
@@ -100,7 +102,6 @@ ChompTrajectory::ChompTrajectory(const ChompTrajectory& source_traj, const Chomp
       (*this)(i,j) = source_traj(source_traj_point, source_joint);
     }
   }
-
 }
 
 ChompTrajectory::~ChompTrajectory()
@@ -111,6 +112,17 @@ void ChompTrajectory::init()
 {
   //trajectory_.resize(num_points_, Eigen::VectorXd(num_joints_));
   trajectory_ = Eigen::MatrixXd(num_points_, num_joints_);
+}
+
+void ChompTrajectory::updateFromGroupTrajectory(const ChompTrajectory& group_trajectory)
+{
+  int num_vars_free = end_index_ - start_index_ + 1;
+  for (int i=0; i<group_trajectory.planning_group_->num_joints_; i++)
+  {
+    int target_joint = group_trajectory.planning_group_->chomp_joints_[i].kdl_joint_index_;
+    trajectory_.block(start_index_, target_joint, num_vars_free, 1)
+      = group_trajectory.trajectory_.block(group_trajectory.start_index_, i, num_vars_free, 1);
+  }
 }
 
 void ChompTrajectory::fillInMinJerk()
@@ -157,7 +169,6 @@ void ChompTrajectory::fillInMinJerk()
       }
     }
   }
-
 }
 
 }

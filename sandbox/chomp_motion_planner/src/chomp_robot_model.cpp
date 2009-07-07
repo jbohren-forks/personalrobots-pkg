@@ -79,6 +79,8 @@ bool ChompRobotModel::init()
   }
   num_kdl_joints_ = kdl_tree_.getNrOfJoints();
 
+  //std::cout << num_kdl_joints_ << " KDL joints found\n";
+
   kdl_number_to_urdf_name_.resize(num_kdl_joints_);
   // Create the inverse mapping - KDL segment to joint name
   // (at the same time) Create a mapping from KDL numbers to URDF joint names and vice versa
@@ -86,10 +88,15 @@ bool ChompRobotModel::init()
   {
     std::string joint_name = it->first;
     std::string segment_name = it->second;
+    //std::cout << joint_name << " -> " << segment_name << std::endl;
     segment_joint_mapping_.insert(make_pair(segment_name, joint_name));
     int kdl_number = kdl_tree_.getSegment(segment_name)->second.q_nr;
-    kdl_number_to_urdf_name_[kdl_number] = joint_name;
-    urdf_name_to_kdl_number_.insert(make_pair(joint_name, kdl_number));
+    if (kdl_tree_.getSegment(segment_name)->second.segment.getJoint().getType() != KDL::Joint::None)
+    {
+      //std::cout << "Kdl number is " << kdl_number << std::endl;
+      kdl_number_to_urdf_name_[kdl_number] = joint_name;
+      urdf_name_to_kdl_number_.insert(make_pair(joint_name, kdl_number));
+    }
   }
 
   // initialize the planning groups

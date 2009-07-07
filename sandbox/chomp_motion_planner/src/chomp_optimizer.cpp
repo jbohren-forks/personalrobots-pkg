@@ -35,6 +35,9 @@
 /** \author Mrinal Kalakrishnan */
 
 #include <chomp_motion_planner/chomp_optimizer.h>
+#include <ros/ros.h>
+
+using namespace std;
 
 namespace chomp
 {
@@ -52,8 +55,14 @@ ChompOptimizer::ChompOptimizer(ChompTrajectory *trajectory, const ChompRobotMode
 
 void ChompOptimizer::initialize()
 {
+
+  // init some variables:
+  num_vars_free_ = group_trajectory_.getNumFreePoints();
+  num_vars_all_ = group_trajectory_.getNumPoints();
+  num_joints_ = group_trajectory_.getNumJoints();
+
   // set up the joint costs:
-  joint_costs_.reserve(planning_group_->num_joints_);
+  joint_costs_.reserve(num_joints_);
 
   // @TODO hardcoded derivative costs:
   std::vector<double> derivative_costs(3);
@@ -61,10 +70,15 @@ void ChompOptimizer::initialize()
   derivative_costs[1] = 1.0;
   derivative_costs[2] = 1.0;
 
-  for (int i=0; i<group_trajectory_.getNumJoints(); i++)
+  for (int i=0; i<num_joints_; i++)
   {
     joint_costs_.push_back(ChompCost(group_trajectory_, i, derivative_costs));
   }
+
+  // allocate memory for matrices:
+  smoothness_increments_ = Eigen::MatrixXd::Zero(num_vars_free_, num_joints_);
+  collision_increments_ = Eigen::MatrixXd::Zero(num_vars_free_, num_joints_);
+  smoothness_derivative_ = Eigen::VectorXd::Zero(num_vars_all_);
 }
 
 ChompOptimizer::~ChompOptimizer()
@@ -73,7 +87,54 @@ ChompOptimizer::~ChompOptimizer()
 
 void ChompOptimizer::optimize()
 {
+  // iterate
+  for (int iteration=0; iteration<parameters_->getMaxIterations(); iteration++)
+  {
+    cout << "Iteration " << iteration << endl;
+    calculateSmoothnessIncrements();
+    addIncrementsToTrajectory();
+    debugCost();
+  }
+
+  updateFullTrajectory();
 
 }
+
+void ChompOptimizer::calculateSmoothnessIncrements()
+{
+  for (int i=0; i<num_joints_; i++)
+  {
+    joint_costs_[i].getDerivative(group_trajectory_.getJointTrajectory(i), smoothness_derivative_);
+    smoothness_increments_.col(i) = -smoothness_derivative_.segment(
+        group_trajectory_.getStartIndex(), num_vars_free_);
+  }
+}
+
+void ChompOptimizer::calculateCollisionIncrements()
+{
+}
+
+void ChompOptimizer::addIncrementsToTrajectory()
+{
+  for (int i=0; i<num_joints_; i++)
+  {
+    group_trajectory_.getFreeJointTrajectoryBlock(i) += parameters_->getSmoothnessCostWeight() *
+        (joint_costs_[i].getQuadraticCostInverse() * smoothness_increments_.col(i));
+  }
+}
+
+void ChompOptimizer::updateFullTrajectory()
+{
+  full_trajectory_->updateFromGroupTrajectory(group_trajectory_);
+}
+
+void ChompOptimizer::debugCost()
+{
+  double cost = 0.0;
+  for (int i=0; i<num_joints_; i++)
+    cost += joint_costs_[i].getCost(group_trajectory_.getJointTrajectory(i));
+  cout << "Cost = " << cost << endl;
+}
+
 
 }

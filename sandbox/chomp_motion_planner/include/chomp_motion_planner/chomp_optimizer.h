@@ -42,7 +42,10 @@
 #include <chomp_motion_planner/chomp_robot_model.h>
 #include <chomp_motion_planner/chomp_cost.h>
 
+#include <Eigen/Core>
+
 #include <vector>
+
 
 namespace chomp
 {
@@ -58,6 +61,9 @@ public:
 
 private:
 
+  int num_joints_;
+  int num_vars_free_;
+  int num_vars_all_;
   ChompTrajectory *full_trajectory_;
   const ChompRobotModel *robot_model_;
   const ChompRobotModel::ChompPlanningGroup *planning_group_;
@@ -65,7 +71,18 @@ private:
   ChompTrajectory group_trajectory_;
   std::vector<ChompCost> joint_costs_;
 
+  Eigen::MatrixXd smoothness_increments_;
+  Eigen::MatrixXd collision_increments_;
+
+  // temporary variables for all functions:
+  Eigen::VectorXd smoothness_derivative_;
+
   void initialize();
+  void calculateSmoothnessIncrements();
+  void calculateCollisionIncrements();
+  void addIncrementsToTrajectory();
+  void updateFullTrajectory();
+  void debugCost();
 
 };
 
