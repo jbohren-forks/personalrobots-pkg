@@ -1,3 +1,9 @@
 <launch>
-  <include file="$(find pr2_gazebo)/pr2_simple.launch"/>
+
+  <!-- start up simple world -->
+  <include file="$(find gazebo)/launch/simple_world.launch"/>
+
+  <!-- start up robot -->
+  <include file="$(find pr2_gazebo)/pr2.launch"/>
+
 </launch>
