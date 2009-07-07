@@ -1,0 +1,17 @@
+<package>
+  <description brief="planar_objects">
+
+     planar_objects
+
+  </description>
+  <author>Juergen Sturm</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://pr.willowgarage.com/wiki/planar_objects</url>
+
+
+  <depend package="point_cloud_mapping" />
+  <depend package="visualization_msgs" />
+</package>
+
+
