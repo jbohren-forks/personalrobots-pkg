@@ -1,0 +1,38 @@
+/**
+\mainpage
+\htmlinclude manifest.html
+
+\b message_filters is a set of message "filters" which take messages in, usually through a callback from somewhere else,
+and may or may not spit them out at some time in the future, depending on the conditions which need to be met for that
+filter to do so.
+
+\b message_filters also sets up a common pattern for these filters, allowing you to chain them together, even though they
+have no explicit base class.  When C++0x is more commonplace we'll be able to better define these interfaces with
+the idea of "concepts" (http://en.wikipedia.org/wiki/C%2B%2B0x#Concepts)
+
+
+\section codeapi Code API
+
+The filters currently implemented in this package are:
+- message_filters::Subscriber
+- message_filters::Cache
+- message_filters::TimeSynchronizer
+
+The Subscriber is of particular note, because it is simply a pass-through wrapper around a ROS subscription.  Most filter
+chains will begin with a Subscriber.
+
+Here's a simple example of using a Subscriber with a Cache:
+\verbatim
+void myCallback(const robot_msgs::Pose::ConstPtr& pose)
+{}
+
+ros::NodeHandle nh;
+Subscriber sub(nh, "pose_topic", 1);
+Cache<robot_msgs::Pose> cache(sub, 10);
+cache.connect(myCallback);
+\endverbatim
+
+The Subscriber here acts as the source of messages.  Each message is passed to the cache, which then passes it through to the
+user's callback (myCallback)
+
+*/
