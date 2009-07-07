@@ -49,8 +49,18 @@ namespace message_filters
 
 /**
  * \brief Stores a time history of messages
+ *
  * Given a stream of messages, the most recent N messages are cached in a ring buffer,
  * from which time intervals of the cache can then be retrieved by the client.
+ *
+ * Cache immediately passes messages through to its output connections.
+ *
+ * \section connections CONNECTIONS
+ *
+ * Cache's input and output connections are both of the same signature as roscpp subscription callbacks, ie.
+\verbatim
+void callback(const boost::shared_ptr<M const>&);
+\endverbatim
  */
 template<class M>
 class Cache : public boost::noncopyable
@@ -60,11 +70,11 @@ public:
   typedef boost::function<void(const MConstPtr&)> Callback;
   typedef boost::signal<void(const MConstPtr&)> Signal;
 
-  template<class A>
-  Cache(A& a, unsigned int cache_size = 1)
+  template<class F>
+  Cache(F& f, unsigned int cache_size = 1)
   {
     setCacheSize(cache_size) ;
-    connectTo(a) ;
+    connectTo(f) ;
   }
 
   /**
@@ -76,10 +86,10 @@ public:
     setCacheSize(cache_size);
   }
 
-  template<class A>
-  void connectTo(A& a)
+  template<class F>
+  void connectTo(F& f)
   {
-    incoming_connection_ = a.connect(boost::bind(&Cache::add, this, _1));
+    incoming_connection_ = f.connect(boost::bind(&Cache::add, this, _1));
   }
 
   ~Cache()

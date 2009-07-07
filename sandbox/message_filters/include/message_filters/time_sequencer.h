@@ -44,6 +44,34 @@
 namespace message_filters
 {
 
+/**
+ * \class TimeSequencer
+ *
+ * \brief Sequences messages based on the timestamp of their header.
+ *
+ * The TimeSequencer object is templated on the type of message being sequenced.
+ *
+ * \section behavior BEHAVIOR
+
+ * At construction, the TimeSequencer takes a ros::Duration
+ * "delay" which specifies how long to queue up messages to
+ * provide a time sequencing over them.  As messages arrive they are
+ * sorted according to their time stamps.  A callback for a message is
+ * never invoked until the messages' time stamp is out of date by at
+ * least delay.  However, for all messages which are out of date
+ * by at least delay, their callback are invoked and guaranteed
+ * to be in temporal order.  If a message arrives from a time \b prior
+ * to a message which has already had its callback invoked, it is
+ * thrown away.
+ *
+ * \section connections CONNECTIONS
+ *
+ * TimeSequencer's input and output connections are both of the same signature as roscpp subscription callbacks, ie.
+\verbatim
+void callback(const boost::shared_ptr<M const>&);
+\endverbatim
+ *
+ */
 template<class M>
 class TimeSequencer : public boost::noncopyable
 {
@@ -52,6 +80,14 @@ public:
   typedef boost::function<void(const MConstPtr&)> Callback;
   typedef boost::signal<void(const MConstPtr&)> Signal;
 
+  /**
+   * \brief Constructor
+   * \param f A filter to connect this sequencer's input to
+   * \param delay The minimum time to hold a message before passing it through.
+   * \param update_rate The rate at which to check for messages which have passed "delay"
+   * \param queue_size The number of messages to store
+   * \param nh (optional) The NodeHandle to use to create the ros::Timer that runs at update_rate
+   */
   template<class F>
   TimeSequencer(F& f, ros::Duration delay, ros::Duration update_rate, uint32_t queue_size, ros::NodeHandle nh = ros::NodeHandle())
   : delay_(delay)
@@ -63,6 +99,16 @@ public:
     connectTo(f);
   }
 
+  /**
+   * \brief Constructor
+   *
+   * This version of the constructor does not take a filter immediately.  You can connect to a filter later with the connectTo() function
+   *
+   * \param delay The minimum time to hold a message before passing it through.
+   * \param update_rate The rate at which to check for messages which have passed "delay"
+   * \param queue_size The number of messages to store
+   * \param nh (optional) The NodeHandle to use to create the ros::Timer that runs at update_rate
+   */
   TimeSequencer(ros::Duration delay, ros::Duration update_rate, uint32_t queue_size, ros::NodeHandle nh = ros::NodeHandle())
   : delay_(delay)
   , update_rate_(update_rate)
@@ -72,16 +118,19 @@ public:
     init();
   }
 
-  template<class A>
-  void connectTo(A& a)
+  /**
+   * \brief Connect this filter's input to another filter's output.
+   */
+  template<class F>
+  void connectTo(F& f)
   {
-    incoming_connection_ = a.connect(boost::bind(&TimeSequencer::cb, this, _1));
+    incoming_connection_.disconnect();
+    incoming_connection_ = f.connect(boost::bind(&TimeSequencer::cb, this, _1));
   }
 
   ~TimeSequencer()
   {
     update_timer_.stop();
-
     incoming_connection_.disconnect();
   }
 

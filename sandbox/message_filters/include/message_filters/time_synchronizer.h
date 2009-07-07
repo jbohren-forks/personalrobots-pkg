@@ -79,6 +79,21 @@ public:
  * TimeSynchronizer takes anywhere from 2 to 9 message types as template parameters, and passes them through to a
  * callback which takes a shared pointer of each.
  *
+ * The required queue size parameter when constructing the TimeSynchronizer tells it how many sets of messages it should
+ * store (by timestamp) while waiting for messages to arrive and complete their "set"
+ *
+ * \section connections CONNECTIONS
+ *
+ * The input connections for the TimeSynchronizer object is the same signature as for roscpp subscription callbacks, ie.
+\verbatim
+void callback(const boost::shared_ptr<M const>&);
+\endverbatim
+ * The output connection for the TimeSynchronizer object is dependent on the number of messages being synchronized.  For
+ * a 3-message synchronizer for example, it would be:
+\verbatim
+void callback(const boost::shared_ptr<M0 const>&, const boost::shared_ptr<M1 const>&, const boost::shared_ptr<M2 const>&);
+\endverbatim
+ * \section usage USAGE
  * Example usage would be:
 \verbatim
 TimeSynchronizer<sensor_msgs::CamInfo, sensor_msgs::Image, sensor_msgs::Image> sync(caminfo_sub, limage_sub, rimage_sub, 3);
@@ -89,11 +104,6 @@ sync.connect(callback);
 \verbatim
 void callback(const sensor_msgs::CamInfo::ConstPtr&, const sensor_msgs::Image::ConstPtr&, const sensor_msgs::Image::ConstPtr&);
 \endverbatim
- *
- * To connect this message filter to a ROS topic you use the Subscriber filter.
- *
- * The required queue size parameter when constructing the TimeSynchronizer tells it how many sets of messages it should
- * store (by timestamp) while waiting for messages to arrive and complete their "set"
  *
  */
 template<class M0, class M1, class M2 = NullType, class M3 = NullType, class M4 = NullType,

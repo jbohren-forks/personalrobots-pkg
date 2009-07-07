@@ -52,7 +52,18 @@ namespace message_filters
  * This class acts as a highest-level filter, simply passing messages from a ROS subscription through to the
  * filters which have connected to it.
  *
- * When this object is destroyed it will unsubscribe from the ROS subscription
+ * When this object is destroyed it will unsubscribe from the ROS subscription.
+ *
+ * The Subscriber object is templated on the type of message being subscribed to.
+ *
+ * \section connections CONNECTIONS
+ *
+ * Subscriber has no input connection.
+ *
+ * The output connection for the Subscriber object is the same signature as for roscpp subscription callbacks, ie.
+\verbatim
+void callback(const boost::shared_ptr<M const>&);
+\endverbatim
  */
 template<class M>
 class Subscriber : public boost::noncopyable
