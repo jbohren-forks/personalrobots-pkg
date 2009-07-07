@@ -36,13 +36,13 @@
 
 #include "planning_environment/collision_models.h"
 
-void planning_environment::CollisionModels::loadCollision(void)
+void planning_environment::CollisionModels::loadCollision(const std::vector<std::string> &links)
 {
     if (loadedModels())
     {
 	ode_collision_model_ = boost::shared_ptr<collision_space::EnvironmentModel>(new collision_space::EnvironmentModelODE());
 	ode_collision_model_->lock();
-	ode_collision_model_->addRobotModel(kmodel_, collision_check_links_, scale_, padd_);
+	ode_collision_model_->addRobotModel(kmodel_, links, scale_, padd_);
 
 	// form all pairs of links that can collide and add them as self-collision groups
 	for (unsigned int i = 0 ; i < self_collision_check_groups_.size() ; ++i)

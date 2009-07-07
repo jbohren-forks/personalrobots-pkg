@@ -51,7 +51,12 @@ namespace planning_environment
 	
 	CollisionModels(const std::string &description, double scale = 1.0, double padd = 0.0) : RobotModels(description), scale_(scale), padd_(padd)
 	{
-	    loadCollision();
+	    loadCollision(collision_check_links_);
+	}
+
+	CollisionModels(const std::string &description, const std::vector<std::string> &links, double scale = 1.0, double padd = 0.0) : RobotModels(description), scale_(scale), padd_(padd)
+	{
+	    loadCollision(links);
 	}
 	
 	virtual ~CollisionModels(void)
@@ -63,7 +68,7 @@ namespace planning_environment
 	{
 	    RobotModels::reload();
 	    ode_collision_model_.reset();
-	    loadCollision();
+	    loadCollision(collision_check_links_);
 	}
 	
 	/** \brief Return the instance of the constructed ODE collision model */
@@ -74,7 +79,7 @@ namespace planning_environment
 
     protected:
 	
-	void loadCollision(void);
+	void loadCollision(const std::vector<std::string> &links);
 	
 	boost::shared_ptr<collision_space::EnvironmentModel> ode_collision_model_;
 
