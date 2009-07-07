@@ -88,6 +88,9 @@
 
 #include "chamfer_matching/chamfer_matching.h"
 #include "recognition_lambertian/ModelFit.h"
+#include "recognition_lambertian/FindObjectPoses.h"
+#include "recognition_lambertian/TableTopObject.h"
+
 //#include "flann.h"
 
 using namespace robot_msgs;
@@ -102,16 +105,15 @@ public:
 
 	ros::NodeHandle nh_;
 
-	sensor_msgs::ImageConstPtr limage;
-	sensor_msgs::ImageConstPtr rimage;
-	sensor_msgs::ImageConstPtr dimage;
-	sensor_msgs::StereoInfoConstPtr stinfo;
-	sensor_msgs::DisparityInfoConstPtr dispinfo;
-	sensor_msgs::CamInfo rcinfo;
+	sensor_msgs::ImageConstPtr limage_;
+	sensor_msgs::ImageConstPtr rimage_;
+	sensor_msgs::ImageConstPtr dimage_;
+	sensor_msgs::StereoInfoConstPtr stinfo_;
+	sensor_msgs::DisparityInfoConstPtr dispinfo_;
 	sensor_msgs::CamInfoConstPtr lcinfo_;
-	sensor_msgs::CvBridge lbridge;
-	sensor_msgs::CvBridge rbridge;
-	sensor_msgs::CvBridge dbridge;
+	sensor_msgs::CvBridge lbridge_;
+	sensor_msgs::CvBridge rbridge_;
+	sensor_msgs::CvBridge dbridge_;
 
 
 	ros::Subscriber left_image_sub_;
@@ -125,6 +127,8 @@ public:
 	ros::Publisher object_pub_;
 	ros::Publisher objects_pub_;
 	ros::Publisher marker_pub_;
+
+	ros::ServiceServer service_;
 
 	robot_msgs::PointCloudConstPtr cloud;
 
@@ -148,11 +152,14 @@ public:
 	int max_clustering_iterations_;
 	double min_object_distance_;   // min distance between two objects
 	double min_object_height_;
+	string target_frame_;
 
 	ChamferMatching* cm;
 
+	bool got_images_;
+
 	RecognitionLambertian()
-	: left(NULL), right(NULL), disp(NULL), disp_clone(NULL), sync_(&RecognitionLambertian::syncCallback, this)
+	: left(NULL), right(NULL), disp(NULL), disp_clone(NULL), sync_(&RecognitionLambertian::syncCallback, this), got_images_(false)
 	{
 		// define node parameters
 		nh_.param("~display", display_, false);
@@ -160,7 +167,7 @@ public:
 		nh_.param("~max_clustering_iterations", max_clustering_iterations_, 7);
 		nh_.param("~min_object_distance", min_object_distance_, 0.05);
 		nh_.param("~min_object_height", min_object_height_, 0.05);
-
+		nh_.param<string>("~target_frame", target_frame_,"odom_combined");
 
 		string template_path;
 		nh_.param<string>("~template_path", template_path,"templates.txt");
@@ -191,9 +198,11 @@ public:
 //		advertise<PointCloud> ("~inliers", 1);
 		marker_pub_ = nh_.advertise<visualization_msgs::Marker>("visualization_marker",1);
 
+		service_ = nh_.advertiseService("table_top/find_object_poses", &RecognitionLambertian::findObjectPoses, this);
+
 
 		cm = new ChamferMatching();
-		loadTemplates(template_path);
+//		loadTemplates(template_path);
 
 	}
 
@@ -210,12 +219,14 @@ private:
 		if (disp!=NULL) {
 			cvReleaseImage(&disp);
 		}
-		if(dbridge.fromImage(*dimage)) {
-			disp = cvCreateImage(cvGetSize(dbridge.toIpl()), IPL_DEPTH_8U, 1);
-			cvCvtScale(dbridge.toIpl(), disp, 4.0/dispinfo->dpp);
+		if(dbridge_.fromImage(*dimage_)) {
+			disp = cvCreateImage(cvGetSize(dbridge_.toIpl()), IPL_DEPTH_8U, 1);
+			cvCvtScale(dbridge_.toIpl(), disp, 4.0/dispinfo_->dpp);
 		}
 
 		runRecognitionLambertian();
+
+		got_images_ = true;
 	}
 
 	void leftCamInfoCallback(const sensor_msgs::CamInfo::ConstPtr& info)
@@ -228,9 +239,9 @@ private:
 	{
 //		ROS_INFO("Left image callback");
 
-		limage = image;
-		if(lbridge.fromImage(*limage, "bgr")) {
-			left = lbridge.toIpl();
+		limage_ = image;
+		if(lbridge_.fromImage(*limage_, "bgr")) {
+			left = lbridge_.toIpl();
 		}
 	}
 
@@ -238,9 +249,9 @@ private:
 	{
 //		ROS_INFO("Right image callback");
 
-		rimage = image;
-		if(rbridge.fromImage(*rimage, "bgr")) {
-			right = rbridge.toIpl();
+		rimage_ = image;
+		if(rbridge_.fromImage(*rimage_, "bgr")) {
+			right = rbridge_.toIpl();
 		}
 	}
 
@@ -248,14 +259,14 @@ private:
 	{
 //		ROS_INFO("Disparity image callback");
 
-		dimage = image;
+		dimage_ = image;
 	}
 
 	void dispinfoCallback(const sensor_msgs::DisparityInfo::ConstPtr& dinfo)
 	{
 //		ROS_INFO("Disp info callback");
 
-		dispinfo = dinfo;
+		dispinfo_ = dinfo;
 	}
 
 	void cloudCallback(const robot_msgs::PointCloud::ConstPtr& point_cloud)
@@ -264,6 +275,31 @@ private:
 
 		cloud = point_cloud;
 	}
+
+
+
+
+	bool findObjectPoses(recognition_lambertian::FindObjectPoses::Request& req,
+			recognition_lambertian::FindObjectPoses::Response& resp)
+	{
+		ROS_INFO("FindObjectPoses: Service called");
+
+
+		while (!got_images_) {
+			ros::spinOnce();
+			usleep(10000);
+		}
+
+		findTableTopObjectPoses(resp.objects);
+
+		for (size_t i=0;i<resp.objects.size();++i) {
+			tf_.transformPose(target_frame_,resp.objects[i].pose, resp.objects[i].pose);
+		}
+
+		got_images_ = false;
+		return true;
+	}
+
 
 
 	void trimSpaces( string& str)
@@ -1045,14 +1081,16 @@ private:
 	}
 
 
-	void fitModels(const vector<PointCloud>& objects)
+	void fitModels(const vector<PointCloud>& clouds, vector<recognition_lambertian::TableTopObject>& objects)
 	{
 
-		for (size_t k=0;k<objects.size();++k) {
+		int count = 0;
+		objects.resize(clouds.size());
+		for (size_t k=0;k<clouds.size();++k) {
 
 			if (display_) {
 				// publish point cloud
-				object_pub_.publish(objects[k]);
+				object_pub_.publish(clouds[k]);
 			}
 
 			recognition_lambertian::ModelFit::Request req;
@@ -1062,16 +1100,63 @@ private:
 				req.reset = 1;
 			}
 
-			req.cloud = objects[k];
+			req.cloud = clouds[k];
 			if (ros::service::call("recognition_lambertian/model_fit", req, resp)) {
 				ROS_INFO("Service call succeeded");
+
+				// TODO: change this to real-world average distance error
+				if (resp.score<5.0) {
+					objects[count++] = resp.object;
+				}
 			}
 			else {
 				ROS_INFO("Service call failed");
 			}
 		}
+
+		objects.resize(count);
 	}
 
+
+	void findTableTopObjectPoses(vector<recognition_lambertian::TableTopObject>& objects)
+	{
+		// find the table plane
+		vector<double> plane;
+		PointCloud objects_pc;
+		PointCloud plane_pc;
+		filterTablePlane(plane,objects_pc,plane_pc);
+
+		// project outliers (the objects on the table) to the table plane
+		PointCloud projected_objects;
+		projectToPlane(objects_pc, plane, projected_objects);
+
+
+		// add table frame to tf
+		PointStamped table_point;
+		table_point.header.frame_id = projected_objects.header.frame_id;
+		table_point.header.stamp = projected_objects.header.stamp;
+		table_point.point.x = projected_objects.pts[0].x;
+		table_point.point.y = projected_objects.pts[0].y;
+		table_point.point.z = projected_objects.pts[0].z;
+		addTableFrame(table_point,plane);
+
+		// transform all the objects into the table frame
+		PointCloud objects_table_frame;
+		tf_.transformPointCloud("table_frame", objects_pc, objects_table_frame);
+
+		if (display_) {
+			drawTableBBox(objects_table_frame);
+		}
+
+		// cluster objects
+		vector<Point32> centers;
+		vector<PointCloud> clouds;
+		findTabletopClusters(objects_table_frame, centers, clouds);
+
+		fitModels(clouds, objects);
+
+		objects_pub_.publish(objects_table_frame);
+	}
 
 
 	void findObjectPositionsFromStereo(vector<CvPoint>& locations, vector<float>& scales)
@@ -1109,9 +1194,12 @@ private:
 		vector<PointCloud> objects;
 		findTabletopClusters(objects_table_frame, centers, objects);
 
-		fitModels(objects);
+//		vector<PoseStamped> poses;
+//		fitModels(objects, poses);
+
 
 		objects_pub_.publish(objects_table_frame);
+
 
 		// reproject bboxes in image
 //		projectClusters(objects_table_frame, clusters);
@@ -1148,7 +1236,6 @@ private:
 //			printf("Scale: %f\n", scales[i]);
 
 //			cvCircle(left, locations[i], 5, CV_RGB(0,255,0));
-
 		}
 
 

@@ -1,7 +1,5 @@
 robot_msgs/PointCloud cloud
 int32 reset
 ---
-string object
-robot_msgs/PoseStamped pose
+TableTopObject object
 float32 score
-

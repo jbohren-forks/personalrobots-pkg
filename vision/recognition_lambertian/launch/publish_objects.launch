@@ -1,0 +1,8 @@
+
+<launch>
+
+ <node pkg="recognition_lambertian" name="publish_scene" type="publish_scene" respawn="false" output="screen"/>
+ <node pkg="recognition_lambertian" type="publish_stereo_data.py" respawn="false"/>
+
+</launch>
+

@@ -6,8 +6,8 @@ set(ROS_BUILD_TYPE Debug)
 rospack(recognition_lambertian)
 rospack_add_boost_directories()
 
+genmsg()
 gensrv()
-#genmsg()
 
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 

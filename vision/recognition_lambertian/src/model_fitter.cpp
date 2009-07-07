@@ -50,8 +50,80 @@ using namespace robot_msgs;
 
 namespace model_fit {
 
+class ModelFitSet;
 
-class TemplateModel;
+class TemplateModel {
+	int x_res, y_res, z_res;
+	float x_min, y_min, z_min;
+	float x_max, y_max, z_max;
+	float x_d, y_d, z_d;
+	float truncate_value;
+
+	float *grid;
+
+	string name_;
+
+public:
+	TemplateModel()
+	{
+
+	}
+
+	~TemplateModel()
+	{
+		delete[] grid;
+	}
+
+	void load(const string& file, const string& name);
+
+	string name()
+	{
+		return name_;
+	}
+
+	Pose graspPose()
+	{
+		Pose pose;
+		pose.position.x = 0;
+		pose.position.y = 0;
+		pose.position.z = 0.05;  // TODO: fix this, models annotated with pose
+		pose.orientation.x = 0;
+		pose.orientation.y = 0;
+		pose.orientation.z = 0;
+		pose.orientation.w = 1.0;
+
+		return pose;
+	}
+
+	vector<float> extents()
+	{
+		vector<float> bbox(6);
+		Pose pose = graspPose();
+
+		bbox[0] = pose.position.x-x_min;
+		bbox[1] = x_max-pose.position.x;
+		bbox[2] = pose.position.y-y_min;
+		bbox[3] = y_max-pose.position.y;
+		bbox[4] = pose.position.z-z_min;
+		bbox[5] = z_max-pose.position.z;
+
+		return bbox;
+	}
+
+
+
+	void show(const ros::Publisher& publisher, const Point32& location, float fit_score);
+
+	bool in_bounds(int x, int y, int z)
+	{
+		return (x>=0 && x<x_res && y>=0 && y<y_res && z>=0 && z<z_res);
+	}
+
+	void fitPointCloud(const PointCloud& cloud, const Point32& location, ModelFitSet& mfs);
+
+	void findBestFit(const PointCloud& cloud, ModelFitSet& mfs);
+};
+
 
 class ModelFitSet
 {
@@ -75,6 +147,17 @@ public:
 		float score() {
 			return score_;
 		}
+
+		Pose graspPose()
+		{
+			Pose pose = model_->graspPose();
+			pose.position.x += location_.x;
+			pose.position.y += location_.y;
+			pose.position.z += location_.z;
+
+			return pose;
+		}
+
 	};
 	int size_;
 	int count_;
@@ -100,78 +183,61 @@ public:
 			}
 			best_fit_[i] = crt;
 		}
-
 	}
 
 
 };
 
-class TemplateModel {
-	int x_res, y_res, z_res;
-	float x_min, y_min, z_min;
-	float x_max, y_max, z_max;
-	float x_d, y_d, z_d;
-	float truncate_value;
 
-	float *grid;
 
-public:
-	TemplateModel()
-	{
+void TemplateModel::load(const string& file, const string& name)
+{
+	name_ = name;
 
+	FILE* f;
+	f = fopen(file.c_str(),"r");
+	if (f==NULL) {
+		ROS_ERROR("Cannot open template file: %s", file.c_str());
 	}
+	fscanf(f,"%d %d %d ", &x_res, &y_res, &z_res );
+	fscanf(f,"%g %g %g ", &x_min, &y_min, &z_min );
+	fscanf(f,"%g %g %g ", &x_max, &y_max, &z_max );
+	x_d = (x_max-x_min)/(x_res-1);
+	y_d = (y_max-y_min)/(y_res-1);
+	z_d = (z_max-z_min)/(z_res-1);
 
-	~TemplateModel()
-	{
-		delete[] grid;
-	}
+	grid = new float[x_res*y_res*z_res];
+	fread(grid, sizeof(float), x_res*y_res*z_res, f);
+	fclose(f);
 
-	void load(const string& file)
-	{
-		FILE* f;
-		f = fopen(file.c_str(),"r");
-		if (f==NULL) {
-			ROS_ERROR("Cannot open template file: %s", file.c_str());
-		}
-		fscanf(f,"%d %d %d ", &x_res, &y_res, &z_res );
-		fscanf(f,"%g %g %g ", &x_min, &y_min, &z_min );
-		fscanf(f,"%g %g %g ", &x_max, &y_max, &z_max );
-		x_d = (x_max-x_min)/(x_res-1);
-		y_d = (y_max-y_min)/(y_res-1);
-		z_d = (z_max-z_min)/(z_res-1);
-
-		grid = new float[x_res*y_res*z_res];
-		fread(grid, sizeof(float), x_res*y_res*z_res, f);
-		fclose(f);
-
-		truncate_value = *max_element(grid, grid+x_res*y_res*z_res);
-	}
+	truncate_value = *max_element(grid, grid+x_res*y_res*z_res);
+}
 
 
-	void show(const ros::Publisher& publisher, const Point32& location, float fit_score)
-	{
-		static int model_id = 0;
+void TemplateModel::show(const ros::Publisher& publisher, const Point32& location, float fit_score)
+{
+	static int model_id = 0;
 
-		visualization_msgs::Marker marker;
-		marker.header.stamp = ros::Time::now();
-		marker.header.frame_id = "table_frame";
-		marker.ns = "voxel_grid";
-		marker.id = model_id++;
-		marker.type = visualization_msgs::Marker::POINTS;
-		marker.action = visualization_msgs::Marker::ADD;
-		marker.pose.position.x = location.x;
-		marker.pose.position.y = location.y;
-		marker.pose.position.z = location.z;
-		marker.pose.orientation.x = 0.0;
-		marker.pose.orientation.y = 0.0;
-		marker.pose.orientation.z = 0.0;
-		marker.pose.orientation.w = 1.0;
-		marker.scale.x = x_d;
-		marker.scale.y = y_d;
-		marker.scale.z = z_d;
+	visualization_msgs::Marker marker;
+	marker.header.stamp = ros::Time::now();
+	marker.header.frame_id = "table_frame";
+	marker.ns = "voxel_grid";
+	marker.id = model_id++;
+	marker.type = visualization_msgs::Marker::POINTS;
+	marker.action = visualization_msgs::Marker::ADD;
+	marker.pose.position.x = location.x;
+	marker.pose.position.y = location.y;
+	marker.pose.position.z = location.z;
+	marker.pose.orientation.x = 0.0;
+	marker.pose.orientation.y = 0.0;
+	marker.pose.orientation.z = 0.0;
+	marker.pose.orientation.w = 1.0;
+	marker.scale.x = x_d;
+	marker.scale.y = y_d;
+	marker.scale.z = z_d;
 		marker.color.a = 0.7;
 
-		if (fit_score<7) {
+		if (fit_score<7.0) {
 			marker.color.r = 0.0;
 			marker.color.g = 1.0;
 			marker.color.b = 1.0;
@@ -197,12 +263,8 @@ public:
 		publisher.publish(marker);
 	}
 
-	bool in_bounds(int x, int y, int z)
-	{
-		return (x>=0 && x<x_res && y>=0 && y<y_res && z>=0 && z<z_res);
-	}
 
-	void fitPointCloud(const PointCloud& cloud, const Point32& location, ModelFitSet& mfs)
+	void TemplateModel::fitPointCloud(const PointCloud& cloud, const Point32& location, ModelFitSet& mfs)
 	{
 		float score = 0;
 		float max_dist = 0;
@@ -226,7 +288,7 @@ public:
 		mfs.add(this, location, score, max_dist);
 	}
 
-	void findBestFit(const PointCloud& cloud, ModelFitSet& mfs)
+	void TemplateModel::findBestFit(const PointCloud& cloud, ModelFitSet& mfs)
 	{
 		// compute center of point cloud
 		Point32 center;
@@ -254,7 +316,7 @@ public:
 			}
 		}
 	}
-};
+
 
 
 
@@ -287,11 +349,11 @@ public:
 	}
 
 
-	void loadTemplate(const string& filename)
+	void loadTemplate(const string& filename, const string& model_name)
 	{
 		ROS_INFO("Loading template: %s", filename.c_str());
 		TemplateModel* tpl = new TemplateModel();
-		tpl->load(filename);
+		tpl->load(filename, model_name);
 		templates.push_back(tpl);
 	}
 
@@ -306,7 +368,7 @@ public:
 		bfs::directory_iterator dir_iter(template_dir), dir_end;
 		for(;dir_iter != dir_end; ++dir_iter) {
 			if (bfs::extension(*dir_iter)==".dt") {
-				loadTemplate(dir_iter->string());
+				loadTemplate(dir_iter->string(), bfs::basename(*dir_iter));
 			}
 		}
 
@@ -334,6 +396,12 @@ public:
 		ROS_INFO("Best score: %g, time:%g", mfs.best_fit_[0].score(), duration);
 
 		mfs.best_fit_[0].model_->show(marker_pub_,  mfs.best_fit_[0].location_,  mfs.best_fit_[0].score());
+
+		resp.object.pose.pose = mfs.best_fit_[0].graspPose();
+		resp.object.extents = mfs.best_fit_[0].model_->extents();
+		resp.object.pose.header.stamp = req.cloud.header.stamp;
+		resp.object.pose.header.frame_id = req.cloud.header.frame_id;
+		resp.score = mfs.best_fit_[0].score();
 
 		return true;
 	}
