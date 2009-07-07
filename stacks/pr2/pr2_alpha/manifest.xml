@@ -15,6 +15,7 @@
   <depend package="teleop_base"/>
   <depend package="pr2_etherCAT"/>
   <depend package="pr2_power_board"/>
+  <depend package="pr2_computer_monitor" />
   <depend package="ocean_battery_driver"/>
   <depend package="joy"/>
   <depend package="hokuyo_node"/>
