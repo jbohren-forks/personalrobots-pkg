@@ -4,6 +4,7 @@
 #include <ros/common.h>
 #include <tf/tf.h>
 #include <tf/transform_listener.h>
+#include <tf/message_notifier.h>
 
 #include <robot_msgs/PointCloud.h>
 
@@ -13,8 +14,11 @@ class Follower {
   tf::TransformListener tf_client_;
   ros::NodeHandle node_;
   ros::Publisher goal_pub_;
+  ros::Publisher base_scan_goal_pub_;
   ros::Subscriber leg_detection_cloud_sub_;
+  tf::MessageNotifier<robot_msgs::PoseStamped> transformed_goal_note_;
   string global_frame_id;
+  ros::Rate goalRate;
   //boost::shared_ptr<Follower> follower_object;
 
   void cloudCallback(const robot_msgs::PointCloud::ConstPtr& cloud)
@@ -42,11 +46,21 @@ class Follower {
     setGoal(x, y, atan2(y, x));
   }
 
+  void transformedGoalCallback(const robot_msgs::PoseStamped::ConstPtr& goal)
+  {
+    robot_msgs::PoseStamped tgoal;
+    tf_client_.transformPose("/map", *goal, tgoal);
+    cout<<"Received transformed goal: "<<endl;//<<tgoal<<endl;
+    goalRate.sleep();
+    goal_pub_.publish( tgoal );
+  }
+
 public:
 
-  Follower() //: follower_object(this)
+  Follower() : transformed_goal_note_(tf_client_, boost::bind(&Follower::transformedGoalCallback, this, _1), "base_scan_goal", "/map", 1), goalRate(0.2) 
   {
-    goal_pub_ = node_.advertise<robot_msgs::PoseStamped>("goal", 10);
+    goal_pub_ = node_.advertise<robot_msgs::PoseStamped>("/move_base/activate", 1);
+    base_scan_goal_pub_ = node_.advertise<robot_msgs::PoseStamped>("base_scan_goal", 1);
     leg_detection_cloud_sub_ = node_.subscribe("particle_filt_cloud", 1, &Follower::cloudCallback, this);//follower_object);
     node_.param("/global_frame_id", global_frame_id, string("/map"));
   }
@@ -66,11 +80,11 @@ private:
 							 "/base_laser");
     
     
-    tf::Stamped<tf::Pose> p;
-    tf_client_.transformPose(global_frame_id, pRobot, p);
+    //tf::Stamped<tf::Pose> p;
+    //tf_client_.transformPose(global_frame_id, pRobot, p);
     
     robot_msgs::PoseStamped goal;
-    tf::PoseStampedTFToMsg(p, goal);
+    tf::PoseStampedTFToMsg(pRobot, goal);
     ROS_INFO("setting goal: Position(%.3f, %.3f, %.3f), Orientation(%.3f, %.3f, %.3f, %.3f) = Angle: %.3f\n", 
 	     goal.pose.position.x, 
 	     goal.pose.position.y, 
@@ -81,8 +95,8 @@ private:
 	     goal.pose.orientation.w, 
 	     angle);
     goal.header.stamp = ros::Time::now();
-    goal.header.frame_id = "/map";
-    goal_pub_.publish( goal );
+    goal.header.frame_id = "/base_laser";
+    base_scan_goal_pub_.publish( goal );
   }
 
 public:
@@ -104,7 +118,8 @@ int main(int argc, char** argv)
 
   Follower follower;
 
-  cout<<"Follower created!"<<endl;
+  cout<<"Follower created!  Waiting for some TF stuff."<<endl;
+  sleep(5);
 
   follower.run();
 
