@@ -12,5 +12,6 @@ in a way that can be managed by the ROS dependency system.
 <review status="3rdparty" notes=""/>
 <url>http://stairvision.sourceforge.net</url>
 <depend package="opencv_latest" />
+<depend package="eigen" />
 </package>
 
