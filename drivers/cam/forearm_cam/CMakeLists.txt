@@ -6,7 +6,9 @@ rospack(forearm_cam)
 
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 
-gensrv()
+find_ros_package(dynamic_reconfigure)
+include(${dynamic_reconfigure_PACKAGE_PATH}/cmake/cfgbuild.cmake)
+
 rospack_add_boost_directories()
 
 rospack_add_rostest(test/test_with_sim_hztest.xml)
