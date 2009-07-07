@@ -50,8 +50,8 @@ foreach(it ${ikea_objects_obj_files})
   add_custom_command(
     OUTPUT ${basepath}/convex/${basename}_convex.stlb
     #COMMAND /usr/bin/meshlabserver
-    COMMAND ${ivcon_PACKAGE_PATH}/bin/ivcon
     #ARGS -i ${basepath}/convex/${basename}_convex.obj -o ${basepath}/convex/${basename}_convex.stl
+    COMMAND ${ivcon_PACKAGE_PATH}/bin/ivcon
     ARGS ${basepath}/convex/${basename}_convex.obj ${basepath}/convex/${basename}_convex.stlb
     DEPENDS ${basepath}/convex/${basename}_convex.obj)
 
@@ -63,24 +63,4 @@ foreach(it ${ikea_objects_obj_files})
 endforeach(it)
 
 add_custom_target(media_files ALL DEPENDS ${ikea_objects_gen_files})
-
-#TODO; stop bin and lib from being generated
-file(GLOB convex_objects_ply_files ${CMAKE_CURRENT_SOURCE_DIR}/meshes/convex/*_convex.obj)
-set(convex_objects_gen_files "")
-
-foreach(it ${convex_objects_ply_files})
-  get_filename_component(basepath ${it} PATH)
-  get_filename_component(basename ${it} NAME)
-
-  #create convex stl files for convex decomposition obj files
-  add_custom_command(
-    OUTPUT ${basepath}/convex/${basename}.stl
-    COMMAND /usr/bin/meshlabserver
-    ARGS -i ${it} -o ${basepath}/convex/${basename}.stl
-    DEPENDS ${it})
-
-  set(convex_objects_gen_files ${convex_objects_gen_files} ${basepath}/convex/${basename}.stl)
-endforeach(it)
-
-add_custom_target(convex_media_files ALL DEPENDS ${convex_objects_gen_files})
 
