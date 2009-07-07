@@ -74,6 +74,7 @@ void DynamicLoaderController::loadLibrary(std::string &xml)
   mechanism_msgs::SpawnController::Request req;
   mechanism_msgs::SpawnController::Response resp;
 
+  req.autostart = 1;
   req.xml_config = xml;
 
   ros::service::call("spawn_controller", req, resp);
