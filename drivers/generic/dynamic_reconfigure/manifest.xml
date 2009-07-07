@@ -9,6 +9,7 @@
   <url>http://pr.willowgarage.com/wiki/dynamic_reconfigure</url>
   <depend package="rospy" />
   <depend package="roscpp" />
+  <depend package="rospack" />
 </package>
 
 
