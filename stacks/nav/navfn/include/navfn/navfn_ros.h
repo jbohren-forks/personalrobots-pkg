@@ -96,11 +96,18 @@ namespace navfn {
 
       ~NavfnROS(){}
 
+    protected:
+
+      /**
+       * @brief Store a copy of the current costmap in \a costmap.  Called by makePlan.
+       */
+      virtual void getCostmap(costmap_2d::Costmap2D& costmap); 
+      costmap_2d::Costmap2DROS& costmap_ros_;
+
     private:
       void clearRobotCell(const tf::Stamped<tf::Pose>& global_pose, unsigned int mx, unsigned int my);
       ros::NodeHandle ros_node_;
-      costmap_2d::Costmap2DROS& costmap_ros_;
-      costmap_2d::Costmap2D costmap_;
+        costmap_2d::Costmap2D costmap_;
       NavFn planner_;
       std::string global_frame_;
       double inscribed_radius_, circumscribed_radius_, inflation_radius_;

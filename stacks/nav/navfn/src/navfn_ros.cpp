@@ -41,7 +41,7 @@ namespace navfn {
   ROS_REGISTER_BGP(NavfnROS);
 
   NavfnROS::NavfnROS(std::string name, costmap_2d::Costmap2DROS& costmap_ros) 
-    : ros_node_(name), costmap_ros_(costmap_ros), planner_(costmap_ros.cellSizeX(), costmap_ros.cellSizeY()) {
+    : costmap_ros_(costmap_ros),  ros_node_(name), planner_(costmap_ros.cellSizeX(), costmap_ros.cellSizeY()) {
     //get an initial copy of the costmap
     costmap_ros_.getCostmapCopy(costmap_);
 
@@ -112,11 +112,17 @@ namespace navfn {
 
   }
 
+  void NavfnROS::getCostmap(costmap_2d::Costmap2D& costmap)
+  {
+    costmap_ros_.clearRobotFootprint();
+    costmap_ros_.getCostmapCopy(costmap);
+  }
+
   bool NavfnROS::makePlan(const robot_msgs::PoseStamped& start, 
       const robot_msgs::PoseStamped& goal, std::vector<robot_msgs::PoseStamped>& plan){
     //make sure that we have the latest copy of the costmap and that we clear the footprint of obstacles
-    costmap_ros_.clearRobotFootprint();
-    costmap_ros_.getCostmapCopy(costmap_);
+
+    getCostmap(costmap_);
 
     //get a handle to the global namespace
     ros::NodeHandle global_handle;
