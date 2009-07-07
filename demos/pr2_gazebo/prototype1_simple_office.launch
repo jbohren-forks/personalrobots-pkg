@@ -5,7 +5,7 @@
   <param name="robotdesc/pr2" command="$(find xacro)/xacro.py '$(find pr2_defs)/robots/prototype1.xacro.xml'" />
 
   <!-- push robotdesc/pr2 to factory and spawn robot in gazebo -->
-  <node pkg="gazebo_plugin" type="urdf2factory" args="robotdesc/pr2 5 5 0 0 0 0" respawn="false" output="screen" />
+  <node pkg="gazebo_plugin" type="urdf2factory" args="robotdesc/pr2 0 0 0 0 0 0" respawn="false" output="screen" />
 
   <!-- Joystick uncomment if you have joystick
   <param name="joy/deadzone" value="5000"/>
