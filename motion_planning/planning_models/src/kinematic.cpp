@@ -621,7 +621,7 @@ unsigned int planning_models::KinematicModel::getGroupCount(void) const
 
 void planning_models::KinematicModel::AttachedBody::computeTransform(btTransform &parentTrans)
 {
-    globalTrans = attachTrans * parentTrans;
+    globalTrans = parentTrans * attachTrans;
 }
 
 int planning_models::KinematicModel::getJointIndex(const std::string &name) const
