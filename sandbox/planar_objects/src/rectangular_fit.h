@@ -45,9 +45,9 @@ class PlanarFit {
 	void segmentPlanes(robot_msgs::PointCloud &points, double z_min,
 			double z_max, double support, double min_area, int n_max,
 			std::vector<std::vector<int> > &indices, std::vector<std::vector<
-					double> > &models);
+					double> > &models,int number);
 	void publishNormals(robot_msgs::PointCloud points, std::vector<robot_msgs::Vector3> coeff, float length=0.1);
-
+	void publishPolygon(robot_msgs::PointCloud pointcloud,robot_msgs::Polygon3D points,int number);
 protected:
 	ros::Node& node_;
 

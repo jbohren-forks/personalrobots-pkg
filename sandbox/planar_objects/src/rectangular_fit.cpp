@@ -9,6 +9,8 @@
 using namespace std;
 using namespace robot_msgs;
 
+#define MIN(a,b) ((a<b)?a:b)
+#define MAX(a,b) ((a>b)?a:b)
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Constructor
@@ -57,30 +59,27 @@ void PlanarFit::cloud_cb() {
 	vector<vector<int> > indices;
 	vector<vector<double> > models;
 	segmentPlanes(cloud_, z_min_, z_max_, support_, min_area_, n_max_, indices,
-			models);
+			models,1);
 
 	if ((int) indices.size() > 0) {
 		cloud_geometry::getPointCloud(cloud_, indices[0], cloud_plane_);
 		cloud_geometry::getPointCloudOutside(cloud_, indices[0],
 				cloud_outliers_);
 
+		segmentPlanes(cloud_outliers_, z_min_, z_max_, support_, min_area_, n_max_, indices,
+				models,2);
+
 
 		ROS_INFO("coeff[0] %f, %f, %f, %f; %d, %d ",models[0][0],models[0][1],models[0][2],models[0][3],models[0].size(),models.size());
 		vector<robot_msgs::Vector3> normals;
 		normals.resize(cloud_plane_.get_pts_size());
 
-		for (size_t i=0;i<cloud_plane_.get_pts_size();++i) {
-			if(i%100 == 0) {
-				normals[i].x = models[0][0];
-				normals[i].y = models[0][1];
-				normals[i].z = models[0][2];
-			} else {
-				normals[i].x = 0;
-				normals[i].y = 0;
-				normals[i].z = 0;
-			}
-		}
-		publishNormals(cloud_plane_,normals,0.1);
+//		for (size_t i=0;i<cloud_plane_.get_pts_size();++i) {
+//			normals[i].x = models[0][0];
+//			normals[i].y = models[0][1];
+//			normals[i].z = models[0][2];
+//		}
+//		publishNormals(cloud_plane_,normals,0.1);
 
 		ROS_INFO ("Planar model found with %d / %d inliers in %g seconds.\n", (int)indices[0].size (), (int)cloud_.pts.size (), (ros::Time::now () - ts).toSec ());
 	}
@@ -92,13 +91,14 @@ void PlanarFit::cloud_cb() {
 
 void PlanarFit::segmentPlanes(PointCloud &points, double z_min, double z_max,
 		double support, double min_area, int n_max,
-		vector<vector<int> > &indices, vector<vector<double> > &models) {
+		vector<vector<int> > &indices, vector<vector<double> > &models,int number) {
 	// This should be given as a parameter as well, or set global, etc
-	double sac_distance_threshold_ = 0.007; // 2cm distance threshold for inliers (point-to-plane distance)
+	double sac_distance_threshold_ = 0.02; // 2cm distance threshold for inliers (point-to-plane distance)
 
 	vector<int> indices_in_bounds;
 	// Get the point indices within z_min <-> z_max
 	getPointIndicesInZBounds(points, z_min, z_max, indices_in_bounds);
+	ROS_INFO("segmentPlanes #%d running on %d/%d points",number,points.get_pts_size(),indices_in_bounds.size());
 
 	// We need to know the viewpoint where the data was acquired
 	// For simplicity, assuming 0,0,0 for stereo data in the stereo frame - however if this is not true, use TF to get
@@ -122,17 +122,18 @@ void PlanarFit::segmentPlanes(PointCloud &points, double z_min, double z_max,
 		Polygon3D polygon;
 		cloud_geometry::areas::convexHull2D(points, indices[i], models[i],
 				polygon);
+		publishPolygon(points,polygon,number);
 
 		// Compute the area of the polygon
 		double area = cloud_geometry::areas::compute2DPolygonalArea(polygon,
 				models[i]);
 
 		// If the area is smaller, reset this planar model
-		if (area < min_area) {
-			models[i].resize(0);
-			indices[i].resize(0);
-			continue;
-		}
+//		if (area < min_area) {
+//			models[i].resize(0);
+//			indices[i].resize(0);
+//			continue;
+//		}
 	}
 
 	//    // Copy all the planar models inliers to indices
@@ -225,7 +226,6 @@ bool PlanarFit::fitSACPlanes(PointCloud *points, vector<int> &indices, vector<
 	return (true);
 }
 
-
 void PlanarFit::publishNormals(robot_msgs::PointCloud points, vector<robot_msgs::Vector3> coeff, float length)
 {
 
@@ -243,26 +243,63 @@ void PlanarFit::publishNormals(robot_msgs::PointCloud points, vector<robot_msgs:
 	marker.color.g = 0.2;
 	marker.color.b = 1.0;
 
-	size_t N = 100;
-	N = points.get_pts_size();
+	size_t N = MIN(100,points.get_pts_size());
+	if(N==0) return;
+	size_t STEP = points.get_pts_size()/N;
+//	N = points.get_pts_size();
 	marker.set_points_size(2*N);
 //	marker.set_points_size(2);
 
 	for (size_t i=0;i<N;++i) {
 
-		marker.points[2*i].x = points.pts[i].x;
-		marker.points[2*i].y = points.pts[i].y;
-		marker.points[2*i].z = points.pts[i].z;
+		marker.points[2*i].x = points.pts[i*STEP].x;
+		marker.points[2*i].y = points.pts[i*STEP].y;
+		marker.points[2*i].z = points.pts[i*STEP].z;
 
-		marker.points[2*i+1].x = points.pts[i].x+length*coeff[i].x;
-		marker.points[2*i+1].y = points.pts[i].y+length*coeff[i].y;
-		marker.points[2*i+1].z = points.pts[i].z+length*coeff[i].z;
+		marker.points[2*i+1].x = points.pts[i*STEP].x+length*coeff[i*STEP].x;
+		marker.points[2*i+1].y = points.pts[i*STEP].y+length*coeff[i*STEP].y;
+		marker.points[2*i+1].z = points.pts[i*STEP].z+length*coeff[i*STEP].z;
 //		ROS_INFO("line %f,%f,%f --> %f,%f,%f",marker.points[2*i].x,marker.points[2*i].y,marker.points[2*i].z,marker.points[2*i+1].x,marker.points[2*i+1].y,marker.points[2*i+1].z);
 	}
-	ROS_INFO("visualization_marker with n=%d points",N);
+	ROS_INFO("visualization_marker normals with n=%d points",N);
 	node_.publish( "visualization_marker", marker );
 
 }
+
+
+
+void PlanarFit::publishPolygon(robot_msgs::PointCloud pointcloud,Polygon3D points,int number)
+{
+	visualization_msgs::Marker marker;
+	marker.header.frame_id = pointcloud.header.frame_id;
+	marker.header.stamp = ros::Time((uint64_t)0ULL);
+	marker.ns = "polygon";
+	marker.id = number+1;
+	marker.type = visualization_msgs::Marker::LINE_STRIP;
+	marker.action = visualization_msgs::Marker::ADD;
+	marker.pose.orientation.w = 1.0;
+	marker.scale.x = 0.002;
+	marker.color.a = 1.0;
+	marker.color.r = (number==1)?1.0:0.2;
+	marker.color.g = (number==2)?1.0:0.2;
+
+	size_t N = MIN(100,points.get_points_size());
+	if(N==0) return;
+	size_t STEP = points.get_points_size()/N;
+	marker.set_points_size(N);
+
+	for (size_t i=0;i<N;++i) {
+
+		marker.points[i].x = points.points[i*STEP].x;
+		marker.points[i].y = points.points[i*STEP].y;
+		marker.points[i].z = points.points[i*STEP].z;
+//		ROS_INFO("line %f,%f,%f --> %f,%f,%f",marker.points[2*i].x,marker.points[2*i].y,marker.points[2*i].z,marker.points[2*i+1].x,marker.points[2*i+1].y,marker.points[2*i+1].z);
+	}
+	ROS_INFO("visualization_marker polygon with n=%d points",N);
+	node_.publish( "visualization_marker", marker );
+
+}
+
 
 /* ---[ */
 int main(int argc, char** argv) {
