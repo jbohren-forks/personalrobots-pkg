@@ -11,7 +11,7 @@ find_ros_package(convex_decomposition)
 
 #iv files
 # iterate through all the obj files and generate *.mesh and *.iv files
-file(GLOB ikea_objects_obj_files ${CMAKE_CURRENT_SOURCE_DIR}/meshes/*.obj)
+file(GLOB ikea_objects_obj_files ${CMAKE_CURRENT_SOURCE_DIR}/meshes/*.obj_dont_build)
 set(ikea_objects_gen_files "")
 
 foreach(it ${ikea_objects_obj_files})
