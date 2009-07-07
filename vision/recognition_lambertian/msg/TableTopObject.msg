@@ -1,2 +1,3 @@
 robot_msgs/PoseStamped pose
-float32[] extents
+robot_msgs/Point32 low_extent
+robot_msgs/Point32 high_extent

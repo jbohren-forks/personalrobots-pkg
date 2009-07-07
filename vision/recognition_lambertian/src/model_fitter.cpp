@@ -95,19 +95,18 @@ public:
 		return pose;
 	}
 
-	vector<float> extents()
+	void getExtents(Point32& low_extent, Point32& hight_extent)
 	{
-		vector<float> bbox(6);
 		Pose pose = graspPose();
 
-		bbox[0] = pose.position.x-x_min;
-		bbox[1] = x_max-pose.position.x;
-		bbox[2] = pose.position.y-y_min;
-		bbox[3] = y_max-pose.position.y;
-		bbox[4] = pose.position.z-z_min;
-		bbox[5] = z_max-pose.position.z;
+		low_extent.x = pose.position.x-x_min;
+		low_extent.y = pose.position.y-y_min;
+		low_extent.z = pose.position.z-z_min;
 
-		return bbox;
+		hight_extent.x = x_max-pose.position.x;
+		hight_extent.y = y_max-pose.position.y;
+		hight_extent.z = z_max-pose.position.z;
+
 	}
 
 
@@ -398,7 +397,7 @@ public:
 		mfs.best_fit_[0].model_->show(marker_pub_,  mfs.best_fit_[0].location_,  mfs.best_fit_[0].score());
 
 		resp.object.pose.pose = mfs.best_fit_[0].graspPose();
-		resp.object.extents = mfs.best_fit_[0].model_->extents();
+		mfs.best_fit_[0].model_->getExtents(resp.object.low_extent, resp.object.high_extent );
 		resp.object.pose.header.stamp = req.cloud.header.stamp;
 		resp.object.pose.header.frame_id = req.cloud.header.frame_id;
 		resp.score = mfs.best_fit_[0].score();
