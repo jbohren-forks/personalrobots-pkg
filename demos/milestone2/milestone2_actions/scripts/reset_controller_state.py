@@ -37,7 +37,7 @@ roslib.load_manifest('milestone2_actions')
 
 import rospy, sys
 from mechanism_control import mechanism
-from robot_srvs.srv import SwitchController
+from mechanism_msgs.srv import SwitchController
 
 def print_usage(exit_code = 0):
     print 'reset_controller_state.py <controller1 controller2 ...>'
