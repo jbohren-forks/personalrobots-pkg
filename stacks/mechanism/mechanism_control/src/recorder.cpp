@@ -105,9 +105,11 @@ void Recorder::publishingLoop()
   if (err)
     ROS_WARN("Unable to shadow task: %d\n", err);
 
+  ROS_DEBUG("Entering publishing loop (namespace: %s)", node_.getNamespace().c_str());
   is_running_ = true;
   while (keep_running_)
   {
+    ros::spinOnce();
     if (publishing_ == filling_)
     {
       usleep(10000);
@@ -118,6 +120,7 @@ void Recorder::publishingLoop()
       publishing_ = other(publishing_);
     }
   }
+  ROS_DEBUG("Exiting publishing loop (namespace: %s)", node_.getNamespace().c_str());
   is_running_ = false;
 
 }
