@@ -39,9 +39,9 @@
 #include <list>
 #include <vector>
 
-#include <Eigen/Core>
-
 #include <ros/console.h>
+
+#include <Eigen/Core>
 
 #include <robot_msgs/PointCloud.h>
 
@@ -54,7 +54,8 @@ class Descriptor3D
 {
   public:
     Descriptor3D() :
-      result_size_(0), data_defined_(false), data_(NULL), data_kdtree_(NULL), interest_pt_set_(false)
+      result_size_(0), data_set_(false), data_(NULL), data_kdtree_(NULL), interest_pt_set_(false),
+          interest_pt_idx_(0), interest_region_set_(false), interest_region_indices_(NULL)
     {
     }
 
@@ -69,133 +70,48 @@ class Descriptor3D
     {
       data_ = data;
       data_kdtree_ = data_kdtree;
-      data_defined_ = true;
+      data_set_ = true;
     }
 
     void setInterestPoint(unsigned int interest_pt_idx)
     {
       interest_pt_idx_ = interest_pt_idx;
       interest_pt_set_ = true;
+
+      interest_region_indices_ = NULL;
+      interest_region_set_ = false;
     }
 
-    unsigned int getResultSize()
+    // may or may not be used by descriptor
+    void setInterestRegion(const vector<int>* interest_region_indices)
+    {
+      interest_region_indices_ = interest_region_indices;
+      interest_region_set_ = true;
+
+      interest_pt_idx_ = 0;
+      interest_pt_set_ = false;
+    }
+
+    unsigned int getResultSize() const
     {
       return result_size_;
     }
 
   protected:
+    // will check whether can use either interest pt or region
     virtual bool readyToCompute() = 0;
 
     unsigned int result_size_;
 
-    bool data_defined_;
+    bool data_set_;
     const robot_msgs::PointCloud* data_;
     cloud_kdtree::KdTree* data_kdtree_;
 
     bool interest_pt_set_;
     unsigned int interest_pt_idx_;
 
-};
-
-class LocalGeometry: public Descriptor3D
-{
-  public:
-    LocalGeometry() :
-      radius_(-1.0), indices_(NULL), ref_tangent_defined_(false), ref_normal_defined_(false),
-          origin_defined_(false), use_elevation_(false), use_curvature_(false)
-    {
-    }
-
-    virtual bool compute(Eigen::MatrixXf** result, bool debug);
-
-    virtual bool readyToCompute();
-
-    // ----------------------------------------------------------
-
-    int defineNeighborhood(double radius)
-    {
-      if (radius > 0.0)
-      {
-        radius_ = radius;
-        indices_ = NULL;
-        return 0;
-      }
-      return -1;
-    }
-
-    void defineNeighborhood(vector<int>* indices)
-    {
-      indices_ = indices;
-      radius_ = -1.0;
-    }
-
-    void defineOrigin(double x, double y, double z)
-    {
-      origin_x_ = x;
-      origin_y_ = y;
-      origin_z_ = z;
-      origin_defined_ = true;
-    }
-
-    void useCurvature()
-    {
-      use_curvature_ = true;
-    }
-
-    void useElevation()
-    {
-      use_elevation_ = true;
-    }
-
-    void useTangentOrientation(double ref_x, double ref_y, double ref_z)
-    {
-      ref_tangent_[0] = ref_x;
-      ref_tangent_[1] = ref_y;
-      ref_tangent_[2] = ref_z;
-      ref_tangent_flipped_[0] = -ref_x;
-      ref_tangent_flipped_[1] = -ref_y;
-      ref_tangent_flipped_[2] = -ref_z;
-      ref_tangent_defined_ = true;
-    }
-    void useNormalOrientation(double ref_x, double ref_y, double ref_z)
-    {
-      ref_normal_[0] = ref_x;
-      ref_normal_[1] = ref_y;
-      ref_normal_[2] = ref_z;
-      ref_normal_flipped_[0] = -ref_x;
-      ref_normal_flipped_[1] = -ref_y;
-      ref_normal_flipped_[2] = -ref_z;
-      ref_normal_defined_ = true;
-    }
-
-    void useRawBoundingBox()
-    {
-      // TODO
-    }
-    void usePCABoundingBox()
-    {
-      // TODO
-    }
-
-  private:
-    double radius_;
-    vector<int>* indices_;
-
-    bool ref_tangent_defined_;
-    Eigen::Vector3d ref_tangent_;
-    Eigen::Vector3d ref_tangent_flipped_;
-
-    bool ref_normal_defined_;
-    Eigen::Vector3d ref_normal_;
-    Eigen::Vector3d ref_normal_flipped_;
-
-    bool origin_defined_;
-    double origin_x_;
-    double origin_y_;
-    double origin_z_;
-
-    bool use_elevation_;
-    bool use_curvature_;
+    bool interest_region_set_;
+    const vector<int>* interest_region_indices_;
 };
 
 #endif
