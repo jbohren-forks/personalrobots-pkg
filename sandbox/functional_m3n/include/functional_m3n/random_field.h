@@ -196,6 +196,14 @@ class RandomField
         }
 
       protected:
+        // --------------------------------------------------------------
+        /*!
+         * \brief Defines the features for this GenericClique
+         *
+         * \param feature_vals Pointer to vector of feature values
+         * \param nbr_feature_vals The number of values in feature_vals
+         */
+        // --------------------------------------------------------------
         inline void setFeatures(float* feature_vals, unsigned int nbr_feature_vals)
         {
           feature_vals_ = feature_vals;
@@ -203,7 +211,6 @@ class RandomField
         }
 
         unsigned int id_;
-
         float* feature_vals_;
         unsigned int nbr_feature_vals_;
     };

@@ -150,6 +150,14 @@ const RandomField::Node* RandomField::createNode(unsigned int node_id,
                                                  unsigned int nbr_feature_vals,
                                                  unsigned int label)
 {
+  // verify features are valid
+  if (feature_vals == NULL || nbr_feature_vals == 0)
+  {
+    ROS_ERROR("Invalid features for clique");
+    return NULL;
+  }
+
+  // verify clique id doesnt already eixt
   if (rf_nodes_.count(node_id) != 0)
   {
     ROS_ERROR("Cannot add node to random field b/c id %u already exists", node_id);
@@ -187,6 +195,14 @@ const RandomField::Clique* RandomField::createClique(unsigned int clique_id,
                                                      float* feature_vals,
                                                      unsigned int nbr_feature_vals)
 {
+  // verify features are valid
+  if (feature_vals == NULL || nbr_feature_vals == 0)
+  {
+    ROS_ERROR("Invalid features for clique");
+    return NULL;
+  }
+
+  // verify clique id doesnt already exist
   map<unsigned int, RandomField::Clique*>& clique_set = clique_sets_[clique_set_idx];
   if (clique_set.count(clique_id) != 0)
   {
@@ -194,10 +210,20 @@ const RandomField::Clique* RandomField::createClique(unsigned int clique_id,
     return NULL;
   }
 
-  // TODO need to verify that nodes are contained in this RandomField???
+  list<RandomField::Node*>::const_iterator iter_nodes;
+#if ROS_DEBUG
+  // verify node ids are contained in this RandomField
+  for (iter_nodes = nodes.begin(); iter_nodes != nodes.end(); iter_nodes++)
+  {
+    if (rf_nodes_.count((*iter_nodes)->getRandomFieldID()) == 0)
+    {
+      ROS_ERROR("Could not add clique %u that contains node %u not in random field", clique_id, (*iter_nodes)->getRandomFieldID());
+      return NULL;
+    }
+  }
+#endif
 
   RandomField::Clique* new_clique = new RandomField::Clique(clique_id);
-  list<Node*>::const_iterator iter_nodes;
   for (iter_nodes = nodes.begin(); iter_nodes != nodes.end() ; iter_nodes++)
   {
     new_clique->addNode(**iter_nodes);
