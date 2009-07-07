@@ -108,9 +108,6 @@ namespace collision_space
 	/** \brief Update the set of bodies that are attached to the robot (re-creates them) */
 	virtual void updateAttachedBodies(void);
 
-	/** \brief Add a group of links to be checked for self collision */
-	virtual void addSelfCollisionGroup(std::vector<std::string> &links);
-
 	/** \brief Enable/Disable collision checking for specific links. Return the previous value of the state (1 or 0) if succesful; -1 otherwise */
 	virtual int setCollisionCheck(const std::string &link, bool state);
 	
@@ -235,7 +232,6 @@ namespace collision_space
 	    double                                   scale;
 	    double                                   padding;
 	    dSpaceID                                 space;
-	    std::vector< std::vector<unsigned int> > selfCollision;
 	};
 	
 	dGeomID createODEGeom(dSpaceID space, shapes::Shape *shape, double scale, double padding);

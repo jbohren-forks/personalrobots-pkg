@@ -547,20 +547,6 @@ void collision_space::EnvironmentModelODE::clearObstacles(void)
     m_collide2.setup();
 }
 
-void collision_space::EnvironmentModelODE::addSelfCollisionGroup(std::vector<std::string> &links)
-{
-    EnvironmentModel::addSelfCollisionGroup(links);
-    
-    unsigned int pos = m_modelGeom.selfCollision.size();
-    m_modelGeom.selfCollision.resize(pos + 1);
-    for (unsigned int i = 0 ; i < links.size() ; ++i)
-    {
-	for (unsigned int j = 0 ; j < m_modelGeom.linkGeom.size() ; ++j)
-	    if (m_modelGeom.linkGeom[j]->link->name == links[i])
-		m_modelGeom.selfCollision[pos].push_back(j);
-    }
-}
-
 int collision_space::EnvironmentModelODE::setCollisionCheck(const std::string &link, bool state)
 { 
     int result = -1;
