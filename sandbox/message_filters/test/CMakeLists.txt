@@ -6,3 +6,10 @@ target_link_libraries(test/msg_cache_unittest message_filters)
 
 rospack_add_gtest(test/time_synchronizer_unittest time_synchronizer_unittest.cpp)
 target_link_libraries(test/time_synchronizer_unittest message_filters)
+
+# Needs to be a rostest because it spins up a node, which blocks until it hears from the master (unfortunately)
+rospack_add_executable(time_sequencer_unittest EXCLUDE_FROM_ALL time_sequencer_unittest.cpp)
+rospack_declare_test(time_sequencer_unittest)
+rospack_add_gtest_build_flags(time_sequencer_unittest)
+target_link_libraries(time_sequencer_unittest message_filters)
+rospack_add_rostest(${CMAKE_CURRENT_SOURCE_DIR}/time_sequencer_unittest.xml)
