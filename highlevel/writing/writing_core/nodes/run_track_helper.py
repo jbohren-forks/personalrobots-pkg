@@ -73,7 +73,7 @@ class TrackHelperAction(python_actions.Action):
     while not self.isPreemptRequested():
       time.sleep(0.1)
       
-     # print htp.header.frame_id, htp.point.x, htp.point.y, htp.point.z
+      #print htp.header.frame_id, htp.point.x, htp.point.y, htp.point.z
       htp.header.stamp = rospy.get_rostime()
       self.head_controller_publisher.publish(htp)
       
