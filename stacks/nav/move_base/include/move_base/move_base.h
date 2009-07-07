@@ -157,6 +157,7 @@ namespace move_base {
       double planner_patience_, controller_patience_;
       double conservative_reset_dist_, clearing_radius_;
       ros::Publisher vis_pub_, vel_pub_;
+      ros::ServiceServer make_plan_srv_;
       bool shutdown_costmaps_;
 
       MoveBaseState state_;

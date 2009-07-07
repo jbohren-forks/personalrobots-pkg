@@ -96,7 +96,7 @@ namespace move_base {
     }
 
     //advertise a service for getting a plan
-    ros_node_.advertiseService("~make_plan", &MoveBase::planService, this);
+    make_plan_srv_ = ros_node_.advertiseService("~make_plan", &MoveBase::planService, this);
 
     //initially clear any unknown space around the robot
     planner_costmap_ros_->clearNonLethalWindow(circumscribed_radius_ * 2, circumscribed_radius_ * 2);
