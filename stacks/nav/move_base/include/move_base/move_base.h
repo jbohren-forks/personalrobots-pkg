@@ -53,6 +53,19 @@
 #include <robot_msgs/PoseDot.h>
 
 namespace move_base {
+  enum MoveBaseState {
+    PLANNING,
+    CONTROLLING,
+    CLEARING
+  };
+
+  enum ClearingState {
+    CONSERVATIVE_RESET,
+    IN_PLACE_ROTATION,
+    AGGRESSIVE_RESET,
+    ABORT
+  };
+
   /**
    * @class MoveBase
    * @brief A class adhering to the robot_actions::Action interface that moves the robot base to a goal location.
@@ -91,8 +104,10 @@ namespace move_base {
       /**
        * @brief  Make a new global plan
        * @param  goal The goal to plan to
+       * @param  plan Will be filled in with the plan made by the planner
+       * @return  True if planning succeeds, false otherwise
        */
-      void makePlan(const robot_msgs::PoseStamped& goal);
+      bool makePlan(const robot_msgs::PoseStamped& goal, std::vector<robot_msgs::PoseStamped>& plan);
 
       /**
        * @brief  Publish a goal to the visualizer
@@ -101,22 +116,33 @@ namespace move_base {
       void publishGoal(const robot_msgs::PoseStamped& goal);
 
       /**
-       * @brief  Get the current pose of the robot in the specified frame
-       * @param  frame The frame to get the pose in
-       * @param  pose The pose returned
-       */
-      void getRobotPose(std::string frame, tf::Stamped<tf::Pose>& pose);
-
-      /**
        * @brief  Resets the costmaps to the static map outside a given window
+       * @param size_x The x size of the window
+       * @param size_y The y size of the window
        */
       void resetCostmaps(double size_x, double size_y);
 
+      /**
+       * @brief  Clears obstacles within a window around the robot
+       * @param size_x The x size of the window
+       * @param size_y The y size of the window
+       */
       void clearCostmapWindows(double size_x, double size_y);
 
-      void resetState();
+      /**
+       * @brief  Publishes a velocity command of zero to the base
+       */
+      void publishZeroVelocity();
 
-      bool tryPlan(robot_msgs::PoseStamped goal);
+      /**
+       * @brief  Perform an in-place rotation of the base to attempt to clear out space
+       */
+      void rotateRobot();
+
+      /**
+       * @brief  Reset the state of the move_base action and send a zero velocity command to the base
+       */
+      void resetState();
 
       ros::NodeHandle ros_node_;
       tf::TransformListener& tf_;
@@ -124,21 +150,18 @@ namespace move_base {
       costmap_2d::Costmap2DROS* planner_costmap_ros_, *controller_costmap_ros_;
 
       nav_robot_actions::BaseGlobalPlanner* planner_;
-      std::vector<robot_msgs::PoseStamped> global_plan_;
       std::string robot_base_frame_, global_frame_;
-      bool valid_plan_, new_plan_;
-      boost::recursive_mutex lock_;
-      robot_msgs::PoseStamped goal_;
 
       tf::Stamped<tf::Pose> global_pose_;
-      double controller_frequency_, inscribed_radius_, circumscribed_radius_, planner_patience_, controller_patience_, clearing_radius_;
-      bool attempted_rotation_, attempted_costmap_reset_;
-      bool done_half_rotation_, done_full_rotation_;
-      bool escaping_;
-      ros::Time last_valid_control_;
+      double controller_frequency_, inscribed_radius_, circumscribed_radius_;
+      double planner_patience_, controller_patience_;
+      double conservative_reset_dist_, clearing_radius_;
       ros::Publisher vis_pub_, vel_pub_;
       bool shutdown_costmaps_;
 
+      MoveBaseState state_;
+      ClearingState clearing_state_;
+      
   };
 };
 #endif

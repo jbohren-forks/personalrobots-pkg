@@ -46,8 +46,7 @@ namespace move_base {
   MoveBase::MoveBase(std::string name, tf::TransformListener& tf) :
     Action<robot_msgs::PoseStamped, robot_msgs::PoseStamped>(name), tf_(tf),
     tc_(NULL), planner_costmap_ros_(NULL), controller_costmap_ros_(NULL), 
-    planner_(NULL), valid_plan_(false), new_plan_(false), attempted_rotation_(false), attempted_costmap_reset_(false),
-    done_half_rotation_(false), done_full_rotation_(false), escaping_(false) {
+    planner_(NULL){
 
     //get some parameters that will be global to the move base node
     std::string global_planner, local_planner;
@@ -67,6 +66,7 @@ namespace move_base {
     ros_node_.param("~local_costmap/inscribed_radius", inscribed_radius_, 0.325);
     ros_node_.param("~local_costmap/circumscribed_radius", circumscribed_radius_, 0.46);
     ros_node_.param("~clearing_radius", clearing_radius_, circumscribed_radius_);
+    ros_node_.param("~conservative_reset_dist", conservative_reset_dist_, 3.0);
 
     ros_node_.param("~shutdown_costmaps", shutdown_costmaps_, false);
 
@@ -108,13 +108,19 @@ namespace move_base {
       controller_costmap_ros_->stop();
     }
 
+    //initially, we'll need to make a plan
+    state_ = PLANNING;
+
+    //the initial clearing state will be to conservatively clear the costmaps
+    clearing_state_ = CONSERVATIVE_RESET;
+
   }
 
   void MoveBase::clearCostmapWindows(double size_x, double size_y){
     tf::Stamped<tf::Pose> global_pose;
 
     //clear the planner's costmap
-    getRobotPose(planner_costmap_ros_->globalFrame(), global_pose);
+    planner_costmap_ros_->getRobotPose(global_pose);
 
     std::vector<robot_msgs::Point> clear_poly;
     double x = global_pose.getOrigin().x();
@@ -140,7 +146,7 @@ namespace move_base {
     planner_costmap_ros_->setConvexPolygonCost(clear_poly, costmap_2d::FREE_SPACE);
 
     //clear the controller's costmap
-    getRobotPose(controller_costmap_ros_->globalFrame(), global_pose);
+    controller_costmap_ros_->getRobotPose(global_pose);
 
     clear_poly.clear();
     x = global_pose.getOrigin().x();
@@ -255,69 +261,89 @@ namespace move_base {
     vis_pub_.publish(marker);
   }
 
-  void MoveBase::makePlan(const robot_msgs::PoseStamped& goal){
+  bool MoveBase::makePlan(const robot_msgs::PoseStamped& goal, std::vector<robot_msgs::PoseStamped>& plan){
+    //make sure to set the plan to be empty initially
+    plan.clear();
+
     //since this gets called on handle activate
     if(planner_costmap_ros_ == NULL)
-      return;
+      return false;
 
+    //get the starting pose of the robot
     tf::Stamped<tf::Pose> global_pose;
     if(!planner_costmap_ros_->getRobotPose(global_pose))
-      return;
+      return false;
 
     robot_msgs::PoseStamped start;
     tf::poseStampedTFToMsg(global_pose, start);
 
-    std::vector<robot_msgs::PoseStamped> global_plan;
-    bool valid_plan = planner_->makePlan(start, goal, global_plan);
-
-    //sometimes the planner returns zero length plans and reports success
-    if(global_plan.empty()){
-      valid_plan = false;
+    //if the planner fails or returns a zero length plan, planning failed
+    if(!planner_->makePlan(start, goal, plan) || plan.empty()){
+      ROS_DEBUG("Failed to find a  plan to point (%.2f, %.2f)", goal.pose.position.x, goal.pose.position.y);
+      return false;
     }
-
 
     //we'll also push the goal point onto the end of the plan to make sure orientation is taken into account
-    if(valid_plan){
-      robot_msgs::PoseStamped goal_copy = goal;
-      goal_copy.header.stamp = ros::Time::now();
-      global_plan.push_back(goal_copy);
+    robot_msgs::PoseStamped goal_copy = goal;
+    goal_copy.header.stamp = ros::Time::now();
+    plan.push_back(goal_copy);
 
-      //reset our flags for attempts to help create a valid plan
-      attempted_rotation_ = false;
-      attempted_costmap_reset_ = false;
-      new_plan_ = true;
-    }
-    else{
-      ROS_DEBUG("Failed to find a  plan to point (%.2f, %.2f)", goal.pose.position.x, goal.pose.position.y);
-    }
-
-    lock_.lock();
-    //copy over the new global plan
-    valid_plan_ = valid_plan;
-    global_plan_ = global_plan;
-    lock_.unlock();
+    return true;
   }
 
-  void MoveBase::getRobotPose(std::string frame, tf::Stamped<tf::Pose>& pose){
-    tf::Stamped<tf::Pose> robot_pose;
-    robot_pose.setIdentity();
-    robot_pose.frame_id_ = robot_base_frame_;
-    robot_pose.stamp_ = ros::Time();
+  void MoveBase::rotateRobot(){
+    ros::Rate r(controller_frequency_);
+    //we'll perform two 180 degree in-place rotations
+    for(unsigned int i = 0; i < 2; ++i){
+      ROS_DEBUG("180 rotation %d", i);
+      double angle = M_PI; //rotate 180 degrees
+      tf::Stamped<tf::Pose> rotate_goal = tf::Stamped<tf::Pose>(tf::Pose(tf::Quaternion(angle, 0.0, 0.0), tf::Point(0.0, 0.0, 0.0)), ros::Time(), robot_base_frame_);
+      robot_msgs::PoseStamped rotate_goal_msg;
 
-    try{
-      tf_.transformPose(frame, robot_pose, pose);
+      try{
+        tf_.transformPose(global_frame_, rotate_goal, rotate_goal);
+      }
+      catch(tf::TransformException& ex){
+        ROS_ERROR("This tf error should never happen: %s", ex.what());
+        return;
+
+      }
+
+      poseStampedTFToMsg(rotate_goal, rotate_goal_msg);
+      std::vector<robot_msgs::PoseStamped> rotate_plan;
+      rotate_plan.push_back(rotate_goal_msg);
+
+      //pass the rotation goal to the controller
+      if(!tc_->updatePlan(rotate_plan)){
+        ROS_ERROR("Failed to pass global plan to the controller, aborting in place rotation attempt.");
+        return;
+      }
+
+      robot_msgs::PoseDot cmd_vel;
+      while(!isPreemptRequested() && ros_node_.ok() && !tc_->goalReached()){
+        if(tc_->computeVelocityCommands(cmd_vel)){
+          //make sure that we send the velocity command to the base
+          vel_pub_.publish(cmd_vel);
+          ROS_DEBUG("Velocity commands produced by controller: vx: %.2f, vy: %.2f, vth: %.2f", cmd_vel.vel.vx, cmd_vel.vel.vy, cmd_vel.ang_vel.vz);
+        }
+        else{
+          //if we can't perform an in-place rotation then we'll just return 
+          return;
+        }
+        //make sure to sleep in the meantime
+        r.sleep();
+
+      }
     }
-    catch(tf::LookupException& ex) {
-      ROS_ERROR("No Transform available Error: %s\n", ex.what());
-      return;
-    }
-    catch(tf::ConnectivityException& ex) {
-      ROS_ERROR("Connectivity Error: %s\n", ex.what());
-      return;
-    }
-    catch(tf::ExtrapolationException& ex) {
-      ROS_ERROR("Extrapolation Error: %s\n", ex.what());
-    }
+  }
+
+  void MoveBase::publishZeroVelocity(){
+    robot_msgs::PoseDot cmd_vel;
+    cmd_vel.vel.vx = 0.0;
+    cmd_vel.vel.vy = 0.0;
+    cmd_vel.ang_vel.vz = 0.0;
+    vel_pub_.publish(cmd_vel);
+
   }
 
   robot_actions::ResultStatus MoveBase::execute(const robot_msgs::PoseStamped& goal, robot_msgs::PoseStamped& feedback){
@@ -333,256 +359,177 @@ namespace move_base {
     //publish the goal point to the visualizer
     publishGoal(goal);
 
-    //update the goal
-    goal_ = goal;
+    std::vector<robot_msgs::PoseStamped> global_plan;
+    robot_msgs::PoseDot cmd_vel;
+    ros::Time last_valid_plan, last_valid_control;
 
-    //first... make a plan to the goal
-    makePlan(goal_);
+    last_valid_control = ros::Time::now();
+    last_valid_plan = ros::Time::now();
 
     costmap_2d::Rate r(controller_frequency_);
-    last_valid_control_ = ros::Time::now();
-    robot_msgs::PoseDot cmd_vel;
+
+    ROS_DEBUG("move_base has received a goal of x: %.2f, y: %.2f", goal.pose.position.x, goal.pose.position.y);
+
+    //we'll loop while the node is up and while the action is not pre-empted
     while(!isPreemptRequested() && ros_node_.ok()){
+      //for timing that gives real time even in simulation
       struct timeval start, end;
       double start_t, end_t, t_diff;
       gettimeofday(&start, NULL);
 
-      //update feedback to correspond to our current position
+      //update feedback to correspond to our curent position
       tf::Stamped<tf::Pose> global_pose;
-      getRobotPose(goal_.header.frame_id, global_pose);
+      planner_costmap_ros_->getRobotPose(global_pose);
       tf::poseStampedTFToMsg(global_pose, feedback);
 
       //push the feedback out
       update(feedback);
 
-      //make sure to update the costmap we'll use for this cycle
-      controller_costmap_ros_->clearRobotFootprint();
-
-      //check that the observation buffers for the costmap are current
+      //check that the observation buffers for the costmap are current, we don't want to drive blind 
       if(!controller_costmap_ros_->isCurrent()){
         ROS_WARN("Sensor data is out of date, we're not going to allow commanding of the base for safety");
-        cmd_vel.vel.vx = 0.0;
-        cmd_vel.vel.vy = 0.0;
-        cmd_vel.ang_vel.vz = 0.0;
-        //give the base the velocity command
-        vel_pub_.publish(cmd_vel);
+        publishZeroVelocity();
         r.sleep();
         continue;
       }
 
-
-      bool valid_control = false;
-      //pass plan to controller
-      
-      if(valid_plan_){
-        //if we have a new plan... we'll update the plan for the controller
-        if(new_plan_){
-          new_plan_ = false;
-          if(!tc_->updatePlan(global_plan_)){
-            resetState();
-            ROS_WARN("move_base aborted because it failed to pass the plan from the planner to the controller");
-            //if we shutdown our costmaps when we're deactivated... we'll do that now
-            if(shutdown_costmaps_){
-              planner_costmap_ros_->stop();
-              controller_costmap_ros_->stop();
-            }
-            return robot_actions::ABORTED;
-          }
-        }
-
-        //compute velocity commands to send to the base
-        valid_control = tc_->computeVelocityCommands(cmd_vel);
-        ROS_DEBUG("Velocity commands produced by controller: vx: %.2f, vy: %.2f, vth: %.2f", cmd_vel.vel.vx, cmd_vel.vel.vy, cmd_vel.ang_vel.vz);
-
-        if(valid_control)
-          last_valid_control_ = ros::Time::now();
-
-        //check for success
-        if(tc_->goalReached()){
-          if(attempted_rotation_){
-            valid_control = false;
-            if(done_half_rotation_){
-              done_full_rotation_ = true;
-            }
-            else{
-              done_half_rotation_ = true;
-            }
-          }
-          else if(escaping_){
-            resetState();
-            valid_control = false;
-          }
-          else{
-            //if we shutdown our costmaps when we're deactivated... we'll do that now
-            if(shutdown_costmaps_){
-              planner_costmap_ros_->stop();
-              controller_costmap_ros_->stop();
-            }
-            return robot_actions::SUCCESS;
-          }
-        }
-
-        //if we can't rotate to clear out space... just say we've done them and try to reset to the static map
-        if(!valid_control && attempted_rotation_){
-          done_full_rotation_ = true;
-          done_half_rotation_ = true;
-        }
-
-      }
-      else{
-        //we don't have a valid plan... so we want to stop
-        cmd_vel.vel.vx = 0.0;
-        cmd_vel.vel.vy = 0.0;
-        cmd_vel.ang_vel.vz = 0.0;
-      }
-
-      //give the base the velocity command
-      vel_pub_.publish(cmd_vel);
-
-      //if we don't have a valid control... we need to re-plan explicitly
-      if(!valid_control){
-        ros::Duration patience = ros::Duration(controller_patience_);
-
-        //if we have a valid plan, but can't find a valid control for a certain time... abort
-        ROS_DEBUG("Last valid control was %.2f seconds ago", (ros::Time::now() - last_valid_control_).toSec());
-        if(last_valid_control_ + patience < ros::Time::now()){
-          if(attempted_rotation_){
-            ROS_INFO("Attempting aggresive reset of costmaps because we can't rotate");
-            resetCostmaps(circumscribed_radius_ * 2, circumscribed_radius_ * 2);
-            done_half_rotation_ = true;
-            done_full_rotation_ = true;
-          }
-          else{
-            resetState();
-            resetCostmaps(circumscribed_radius_ * 2, circumscribed_radius_ * 2);
-            ROS_WARN("move_base aborting because the controller could not find valid velocity commands for over %.4f seconds", patience.toSec());
-            //if we shutdown our costmaps when we're deactivated... we'll do that now
-            if(shutdown_costmaps_){
-              planner_costmap_ros_->stop();
-              controller_costmap_ros_->stop();
-            }
-            return robot_actions::ABORTED;
-          }
-        }
-
-        //try to make a plan
-        if((done_half_rotation_ && !done_full_rotation_) || !tryPlan(goal_)){
-          last_valid_control_ = ros::Time::now();
-          //if we've tried to reset our map and to rotate in place, to no avail, we'll abort the goal
-          if(attempted_costmap_reset_ && done_full_rotation_){
-            resetState();
-            ROS_WARN("move_base aborting because the planner could not find a valid plan, even after reseting the map and attempting in place rotation");
-            //if we shutdown our costmaps when we're deactivated... we'll do that now
-            if(shutdown_costmaps_){
-              planner_costmap_ros_->stop();
-              controller_costmap_ros_->stop();
-            }
-            return robot_actions::ABORTED;
-          }
-
-          if(done_full_rotation_){
-            ROS_INFO("Done one full rotation, resetting costmaps aggresively");
-            resetCostmaps(circumscribed_radius_ * 2, circumscribed_radius_ * 2);
-            attempted_rotation_ = false;
-            done_half_rotation_ = false;
-            done_full_rotation_ = false;
-            attempted_costmap_reset_ = true;
-          }
-          else{
-            ROS_INFO("Setting new rotation goal and resetting costmaps outside of 3 meter window");
-            //clear things in the static map that are really far away
-            resetCostmaps(3.0, 3.0);
-            //if planning fails... we'll try rotating in place to clear things out
-            double angle = M_PI; //rotate 180 degrees
-            tf::Stamped<tf::Pose> rotate_goal = tf::Stamped<tf::Pose>(tf::Pose(tf::Quaternion(angle, 0.0, 0.0), tf::Point(0.0, 0.0, 0.0)), ros::Time(), robot_base_frame_);
-            robot_msgs::PoseStamped rotate_goal_msg;
-
-            try{
-              tf_.transformPose(global_frame_, rotate_goal, rotate_goal);
-            }
-            catch(tf::TransformException& ex){
-              ROS_ERROR("This tf error should never happen, %s", ex.what());
-              //if we shutdown our costmaps when we're deactivated... we'll do that now
-              if(shutdown_costmaps_){
-                planner_costmap_ros_->stop();
-                controller_costmap_ros_->stop();
-              }
+      //the move_base state machine, handles the control logic for navigation
+      switch(state_){
+        //if we are in a planning state, then we'll attempt to make a plan
+        case PLANNING:
+          ROS_DEBUG("In planning state");
+          if(makePlan(goal, global_plan)){
+            if(!tc_->updatePlan(global_plan)){
+              //ABORT and SHUTDOWN COSTMAPS
+              ROS_ERROR("Failed to pass global plan to the controller, aborting.");
+              resetState();
               return robot_actions::ABORTED;
-              
             }
+            last_valid_plan = ros::Time::now();
+            state_ = CONTROLLING;
 
-            poseStampedTFToMsg(rotate_goal, rotate_goal_msg);
-            global_plan_.clear();
-            global_plan_.push_back(rotate_goal_msg);
-            valid_plan_ = true;
-            new_plan_ = true;
-            attempted_rotation_ = true;
+            //make sure to reset clearing state since we were able to find a valid plan
+            clearing_state_ = CONSERVATIVE_RESET;
+
+            publishZeroVelocity();
           }
-        }
+          else{
+            ros::Time attempt_end = last_valid_plan + ros::Duration(planner_patience_);
 
-        r.sleep();
-        continue;
+            //check if we've tried to make a plan for over our time limit 
+            if(ros::Time::now() > attempt_end){
+              //we'll move into our obstacle clearing mode
+              state_ = CLEARING;
+              publishZeroVelocity();
+            }
+          }
+          break;
+            
+        //if we're controlling, we'll attempt to find valid velocity commands
+        case CONTROLLING:
+          ROS_DEBUG("In controlling state");
+
+          //check to see if we've reached our goal
+          if(tc_->goalReached()){
+            ROS_DEBUG("Goal reached!");
+            resetState();
+            return robot_actions::SUCCESS;
+          } 
+
+          if(tc_->computeVelocityCommands(cmd_vel)){
+            last_valid_control = ros::Time::now();
+            //make sure that we send the velocity command to the base
+            vel_pub_.publish(cmd_vel);
+          }
+          else {
+            ros::Time attempt_end = last_valid_control + ros::Duration(controller_patience_);
+
+            //check if we've tried to find a valid control for longer than our time limit
+            if(ros::Time::now() > attempt_end){
+              ROS_ERROR("Aborting because of failure to find a valid control for %.2f seconds", controller_patience_);
+              resetState();
+              return robot_actions::ABORTED;
+            } 
+
+            //otherwise, if we can't find a valid control, we'll go back to planning
+            last_valid_plan = ros::Time::now();
+            state_ = PLANNING;
+            publishZeroVelocity();
+          }
+
+          break;
+
+        //we'll try to clear out space with the following actions
+        case CLEARING:
+          switch(clearing_state_){
+            //first, we'll try resetting the costmaps conservatively to see if we find a plan
+            case CONSERVATIVE_RESET:
+              ROS_DEBUG("In conservative reset state");
+              resetCostmaps(conservative_reset_dist_, conservative_reset_dist_);
+              clearing_state_ = IN_PLACE_ROTATION;
+              state_ = PLANNING;
+              break;
+            //next, we'll try an in-place rotation to try to clear out space
+            case IN_PLACE_ROTATION:
+              ROS_DEBUG("In in-place rotation state");
+              rotateRobot();
+              clearing_state_ = AGGRESSIVE_RESET;
+              state_ = PLANNING;
+              break;
+            //finally, we'll try resetting the costmaps aggresively to clear out space
+            case AGGRESSIVE_RESET:
+              ROS_DEBUG("In aggressive reset state");
+              resetCostmaps(circumscribed_radius_ * 2, circumscribed_radius_ * 2);
+              clearing_state_ = ABORT;
+              state_ = PLANNING;
+              break;
+            //if all of the above fail, we can't drive safely, so we'll abort
+            case ABORT:
+              ROS_ERROR("Aborting because a valid plan could not be found. Even after attempting to reset costmaps and rotating in place");
+              resetState();
+              return robot_actions::ABORTED;
+              break;
+            default:
+              ROS_ERROR("This case should never be reached, something is wrong, aborting");
+              resetState();
+              return robot_actions::ABORTED;
+              break;
+          }
+          break;
+        default:
+          ROS_ERROR("This case should never be reached, something is wrong, aborting");
+          resetState();
+          return robot_actions::ABORTED;
+          break;
       }
 
       gettimeofday(&end, NULL);
       start_t = start.tv_sec + double(start.tv_usec) / 1e6;
       end_t = end.tv_sec + double(end.tv_usec) / 1e6;
       t_diff = end_t - start_t;
-      ROS_DEBUG("Full control cycle: %.9f Valid control: %d, Vel Cmd (%.2f, %.2f, %.2f)", t_diff, valid_control, cmd_vel.vel.vx, cmd_vel.vel.vy, cmd_vel.ang_vel.vz);
+      ROS_DEBUG("Full control cycle time: %.9f\n", t_diff);
 
-      //sleep the remainder of the cycle
-      if(!r.sleep())
+      //make sure to sleep for the remainder of our cycle time
+      if(!r.sleep() && state_ == CONTROLLING)
         ROS_WARN("Control loop missed its desired rate of %.4fHz... the loop actually took %.4f seconds", controller_frequency_, r.cycleTime().toSec());
     }
 
-    //make sure to stop on pre-emption
-    cmd_vel.vel.vx = 0.0;
-    cmd_vel.vel.vy = 0.0;
-    cmd_vel.ang_vel.vz = 0.0;
-    //give the base the velocity command
-    vel_pub_.publish(cmd_vel);
+    //make sure to reset state and stop on pre-emption
+    resetState();
+    return robot_actions::PREEMPTED;
+
+  } 
+
+  void MoveBase::resetState(){
+    state_ = PLANNING;
+    clearing_state_ = CONSERVATIVE_RESET;
+    publishZeroVelocity();
+
     //if we shutdown our costmaps when we're deactivated... we'll do that now
     if(shutdown_costmaps_){
       planner_costmap_ros_->stop();
       controller_costmap_ros_->stop();
     }
-    return robot_actions::PREEMPTED;
-  }
-
-  void MoveBase::resetState(){
-    attempted_rotation_ = false;
-    done_half_rotation_ = false;
-    done_full_rotation_ = false;
-    attempted_costmap_reset_ = false;
-    escaping_ = false;
-  }
-
-  bool MoveBase::tryPlan(robot_msgs::PoseStamped goal){
-    ros::Duration patience = ros::Duration(planner_patience_);
-    ros::Time attempt_end = ros::Time::now() + patience;
-    costmap_2d::Rate r(controller_frequency_);
-    while(ros::Time::now() < attempt_end && !isPreemptRequested() && ros_node_.ok()){
-      makePlan(goal);
-
-      //check if we've got a valid plan
-      if(valid_plan_)
-        return true;
-
-      //for now... we'll publish zero velocity
-      robot_msgs::PoseDot cmd_vel;
-
-      last_valid_control_ = ros::Time::now();
-      cmd_vel.vel.vx = 0.0;
-      cmd_vel.vel.vy = 0.0;
-      cmd_vel.ang_vel.vz = 0.0;
-      //give the base the velocity command
-      vel_pub_.publish(cmd_vel);
-
-      r.sleep();
-    }
-
-    //if we still don't have a valid plan... then our planning attempt has failed
-    return false;
   }
 
   void MoveBase::resetCostmaps(double size_x, double size_y){
