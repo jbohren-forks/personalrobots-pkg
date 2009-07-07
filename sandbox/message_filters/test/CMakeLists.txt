@@ -8,7 +8,7 @@ rospack_add_gtest(test/time_synchronizer_unittest time_synchronizer_unittest.cpp
 target_link_libraries(test/time_synchronizer_unittest message_filters)
 
 # Needs to be a rostest because it spins up a node, which blocks until it hears from the master (unfortunately)
-rospack_add_executable(test/time_sequencer_unittest EXCLUDE_FROM_ALL test/time_sequencer_unittest.cpp)
+rospack_add_executable(test/time_sequencer_unittest EXCLUDE_FROM_ALL time_sequencer_unittest.cpp)
 rospack_declare_test(test/time_sequencer_unittest)
 rospack_add_gtest_build_flags(test/time_sequencer_unittest)
 target_link_libraries(test/time_sequencer_unittest message_filters)
