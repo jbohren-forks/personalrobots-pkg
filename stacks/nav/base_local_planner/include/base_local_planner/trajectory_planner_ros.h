@@ -208,7 +208,6 @@ namespace base_local_planner {
       double rot_stopped_velocity_, trans_stopped_velocity_;
       double xy_goal_tolerance_, yaw_goal_tolerance_, min_in_place_vel_th_;
       double inscribed_radius_, circumscribed_radius_, inflation_radius_; 
-      bool goal_reached_;
       costmap_2d::Costmap2DPublisher* costmap_publisher_;
       std::vector<robot_msgs::PoseStamped> global_plan_;
       double transform_tolerance_, update_plan_tolerance_;

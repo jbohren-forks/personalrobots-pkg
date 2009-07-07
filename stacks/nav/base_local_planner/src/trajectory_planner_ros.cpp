@@ -52,7 +52,7 @@ namespace base_local_planner {
   TrajectoryPlannerROS::TrajectoryPlannerROS(std::string name, tf::TransformListener& tf, 
       Costmap2DROS& costmap_ros) 
     : world_model_(NULL), tc_(NULL), costmap_ros_(costmap_ros), tf_(tf), ros_node_(name), 
-    rot_stopped_velocity_(1e-2), trans_stopped_velocity_(1e-2), goal_reached_(true), costmap_publisher_(NULL){
+    rot_stopped_velocity_(1e-2), trans_stopped_velocity_(1e-2), costmap_publisher_(NULL){
     double acc_lim_x, acc_lim_y, acc_lim_theta, sim_time, sim_granularity;
     int vx_samples, vtheta_samples;
     double pdist_scale, gdist_scale, occdist_scale, heading_lookahead, oscillation_reset_dist, escape_reset_dist, escape_reset_theta;
@@ -230,7 +230,67 @@ namespace base_local_planner {
   }
 
   bool TrajectoryPlannerROS::goalReached(){
-    return goal_reached_;
+    const robot_msgs::PoseStamped& plan_goal_pose = global_plan_.back();
+    tf::Stamped<tf::Pose> goal_pose;
+
+    try{
+      if (!global_plan_.size() > 0)
+      {
+        ROS_ERROR("Recieved plan with zero length");
+        return false;
+      }
+
+      tf::Stamped<tf::Transform> transform;
+      tf_.lookupTransform(global_frame_, ros::Time(), 
+          plan_goal_pose.header.frame_id, plan_goal_pose.header.stamp, 
+          plan_goal_pose.header.frame_id, transform);
+
+      poseStampedMsgToTF(plan_goal_pose, goal_pose);
+      goal_pose.setData(transform * goal_pose);
+      goal_pose.stamp_ = transform.stamp_;
+      goal_pose.frame_id_ = global_frame_;
+
+    }
+    catch(tf::LookupException& ex) {
+      ROS_ERROR("No Transform available Error: %s\n", ex.what());
+      return false;
+    }
+    catch(tf::ConnectivityException& ex) {
+      ROS_ERROR("Connectivity Error: %s\n", ex.what());
+      return false;
+    }
+    catch(tf::ExtrapolationException& ex) {
+      ROS_ERROR("Extrapolation Error: %s\n", ex.what());
+      if (global_plan_.size() > 0)
+        ROS_ERROR("Global Frame: %s Plan Frame size %d: %s\n", global_frame_.c_str(), (unsigned int)global_plan_.size(), global_plan_[0].header.frame_id.c_str());
+
+      return false;
+    }
+
+    //we assume the global goal is the last point in the global plan
+    double goal_x = goal_pose.getOrigin().getX();
+    double goal_y = goal_pose.getOrigin().getY();
+
+    double uselessPitch, uselessRoll, yaw;
+    goal_pose.getBasis().getEulerZYX(yaw, uselessPitch, uselessRoll);
+
+    double goal_th = yaw;
+
+    tf::Stamped<tf::Pose> global_pose;
+    if(!costmap_ros_.getRobotPose(global_pose))
+      return false;
+
+    //check to see if we've reached the goal position
+    if(goalPositionReached(global_pose, goal_x, goal_y)){
+      //check to see if the goal orientation has been reached
+      if(goalOrientationReached(global_pose, goal_th)){
+        //make sure that we're actually stopped before returning success
+        if(stopped())
+          return true;
+      }
+    }
+
+    return false;
   }
 
   bool TrajectoryPlannerROS::updatePlan(const std::vector<robot_msgs::PoseStamped>& orig_global_plan){
@@ -296,9 +356,6 @@ namespace base_local_planner {
   }
 
   bool TrajectoryPlannerROS::computeVelocityCommands(robot_msgs::PoseDot& cmd_vel){
-    //assume at the beginning of our control cycle that we could have a new goal
-    goal_reached_ = false;
-
     std::vector<robot_msgs::PoseStamped> local_plan;
     tf::Stamped<tf::Pose> global_pose;
     if(!costmap_ros_.getRobotPose(global_pose))
@@ -370,10 +427,6 @@ namespace base_local_planner {
         cmd_vel.vel.vx = 0.0;
         cmd_vel.vel.vy = 0.0;
         cmd_vel.ang_vel.vz = 0.0;
-
-        //make sure that we're actually stopped before returning success
-        if(stopped())
-          goal_reached_ = true;
       }
       else {
         tc_->updatePlan(transformed_plan);
