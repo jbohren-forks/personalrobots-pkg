@@ -91,6 +91,7 @@ class IncGroundRemoval
     double sac_distance_threshold_;
     double sac_fitting_distance_threshold_;
     int planar_refine_;
+    std::string robot_footprint_frame_, laser_tilt_mount_frame_;
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     IncGroundRemoval (ros::Node& anode) : node_ (anode), tf_ (anode)
@@ -103,6 +104,8 @@ class IncGroundRemoval
       node_.param ("~planar_refine", planar_refine_, 1);                        // enable a final planar refinement step?
       node_.param ("~sac_min_points_per_model", sac_min_points_per_model_, 6);  // 6 points minimum per line
       node_.param ("~sac_max_iterations", sac_max_iterations_, 200);            // maximum 200 iterations
+      node_.param ("~robot_footprint_frame", robot_footprint_frame_, std::string("base_footprint"));
+      node_.param ("~laser_tilt_mount_frame", laser_tilt_mount_frame_, std::string("laser_tilt_mount_link"));
 
       string cloud_topic ("tilt_laser_cloud_filtered");
 
@@ -268,7 +271,7 @@ class IncGroundRemoval
       getCloudViewPoint (cloud_.header.frame_id, viewpoint_cloud_, &tf_);
 
       // Transform z_threshold_ from the parameter parameter frame (parameter_frame_) into the point cloud frame
-      z_threshold_ = transformDoubleValueTF (z_threshold_, "base_footprint", cloud_.header.frame_id, cloud_.header.stamp, &tf_);
+      z_threshold_ = transformDoubleValueTF (z_threshold_, robot_footprint_frame_, cloud_.header.frame_id, cloud_.header.stamp, &tf_);
 
       // Select points whose Z dimension is close to the ground (0,0,0 in base_footprint) or under a gentle slope (allowing for pitch/roll error)
       vector<int> possible_ground_indices (cloud_.pts.size ());
@@ -401,7 +404,7 @@ class IncGroundRemoval
     {
       // Figure out the viewpoint value in the point cloud frame
       PointStamped viewpoint_laser;
-      viewpoint_laser.header.frame_id = "laser_tilt_mount_link";
+      viewpoint_laser.header.frame_id = laser_tilt_mount_frame_;
       // Set the viewpoint in the laser coordinate system to 0, 0, 0
       viewpoint_laser.point.x = viewpoint_laser.point.y = viewpoint_laser.point.z = 0.0;
 
