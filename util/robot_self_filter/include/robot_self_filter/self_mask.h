@@ -81,9 +81,7 @@ namespace robot_self_filter
 	 */
 	~SelfMask(void)
 	{
-	    for (unsigned int i = 0 ; i < bodies_.size() ; ++i)
-		if (bodies_[i].body)
-		    delete bodies_[i].body;
+	    freeMemory();
 	}
 	
 	/** \brief Compute the mask for a given pointcloud. If a mask element is true, the point
@@ -103,6 +101,9 @@ namespace robot_self_filter
 	
     private:
 
+	/** \brief Free memory. */
+	void freeMemory(void);
+	
 	/** \brief Configure the filter. */
 	bool configure(void);
 

@@ -32,28 +32,57 @@
 #include <climits>
 #include <ros/console.h>
 
+void robot_self_filter::SelfMask::freeMemory(void)
+{
+    for (unsigned int i = 0 ; i < bodies_.size() ; ++i)
+	if (bodies_[i].body)
+	    delete bodies_[i].body;
+    bodies_.clear();
+}
+
 bool robot_self_filter::SelfMask::configure(const std::vector<std::string> &links, double scale, double padd)
 {
+    // in case configure was called before, we free the memory
+    freeMemory();
+    
     // from the geometric model, find the shape of each link of interest
     // and create a body from it, one that knows about poses and can 
     // check for point inclusion
     for (unsigned int i = 0 ; i < links.size() ; ++i)
     {
 	SeeLink sl;
-	sl.body = bodies::createBodyFromShape(rm_.getKinematicModel()->getLink(links[i])->shape);
+	planning_models::KinematicModel::Link *link = rm_.getKinematicModel()->getLink(links[i]);
+	sl.body = bodies::createBodyFromShape(link->shape);
 	if (sl.body)
 	{
 	    sl.name = links[i];
 	    
 	    // collision models may have an offset, in addition to what TF gives
 	    // so we keep it around
-	    sl.constTransf = rm_.getKinematicModel()->getLink(links[i])->constGeomTrans;
+	    sl.constTransf = link->constGeomTrans;
 	    sl.body->setScale(scale);
 	    sl.body->setPadding(padd);
 	    bodies_.push_back(sl);
 	}
 	else
 	    ROS_WARN("Unable to create point inclusion body for link '%s'", links[i].c_str());
+
+	// add attached bodies
+	for (unsigned int j = 0 ; i < link->attachedBodies.size() ; ++j)
+	{
+	    SeeLink sla;
+	    sla.body = bodies::createBodyFromShape(link->attachedBodies[j]->shape);
+	    if (sla.body)
+	    {
+		sla.name = links[i];
+		sla.constTransf = link->constGeomTrans * link->attachedBodies[j]->attachTrans;
+		sla.body->setScale(scale);
+		sla.body->setPadding(padd);
+		bodies_.push_back(sla);
+	    }
+	    else
+		ROS_WARN("Unable to create point inclusion body for attached body %u on link '%s'", j, links[i].c_str());
+	}
     }
     
     if (bodies_.empty())
@@ -66,7 +95,7 @@ bool robot_self_filter::SelfMask::configure(const std::vector<std::string> &link
     bspheresRadius2_.resize(bodies_.size());
     
     for (unsigned int i = 0 ; i < bodies_.size() ; ++i)
-	ROS_INFO("Self mask includes link %s with volume %f", bodies_[i].name.c_str(), bodies_[i].body->computeVolume());
+	ROS_DEBUG("Self mask includes link %s with volume %f", bodies_[i].name.c_str(), bodies_[i].body->computeVolume());
     
     return true; 
 }
