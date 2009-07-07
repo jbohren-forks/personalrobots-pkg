@@ -61,6 +61,11 @@ class M3NLogger
     {
     }
 
+    void computeGroundTruthScore()
+    {
+      // TODO
+    }
+
     void addTimingRegressors(time_t& start, time_t& end)
     {
       timings_regressors.push_back(difftime(end, start));
