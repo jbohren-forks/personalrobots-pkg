@@ -36,6 +36,7 @@
 
 #include <chomp_motion_planner/chomp_robot_model.h>
 #include <kdl_parser/tree_parser.hpp>
+#include <ros/ros.h>
 
 using namespace std;
 
@@ -139,7 +140,7 @@ bool ChompRobotModel::init()
         }
         else
         {
-          ROS_WARN("CHOMP cannot handle floating or planar joints yet. Please redefine them as combinations of prismatic and revolute joints.");
+          ROS_WARN("CHOMP cannot handle floating or planar joints yet.");
         }
 
         group.num_joints_++;
@@ -148,6 +149,30 @@ bool ChompRobotModel::init()
     }
     planning_groups_.insert(make_pair(it->first, group));
   }
+
+  // create the fk solver:
+  fk_solver_ = new KDL::TreeFkSolverJointPosAxis(kdl_tree_);
+
+  // test it:
+/*  KDL::JntArray q_in(kdl_tree_.getNrOfJoints());
+  std::vector<KDL::Frame> segment_frames;
+  std::vector<KDL::Vector> joint_axis;
+  std::vector<KDL::Vector> joint_pos;
+
+  ros::WallTime start_time = ros::WallTime::now();
+  double q=0.0;
+  int n = kdl_tree_.getNrOfJoints();
+  for (int i=0; i<100000; i++)
+  {
+    for (int j=0; j<n; j++)
+    {
+      q_in(j) += q;
+      q+=0.1;
+    }
+    fk_solver_->JntToCart(q_in, joint_pos, joint_axis, segment_frames);
+  }
+  ROS_INFO("100000 FK calls in %f wall-seconds.", (ros::WallTime::now() - start_time).toSec());
+*/
 
   return true;
 }

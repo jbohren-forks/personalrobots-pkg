@@ -41,7 +41,7 @@
 #include <planning_environment/robot_models.h>
 #include <kdl/tree.hpp>
 #include <kdl/chain.hpp>
-
+#include <chomp_motion_planner/treefksolverjointposaxis.hpp>
 #include <map>
 #include <vector>
 #include <string>
@@ -143,6 +143,7 @@ private:
   std::vector<std::string> kdl_number_to_urdf_name_;            /**< Mapping from KDL joint number to URDF joint name */
   std::map<std::string, int> urdf_name_to_kdl_number_;          /**< Mapping from URDF joint name to KDL joint number */
   std::map<std::string, ChompPlanningGroup> planning_groups_;   /**< Planning group information */
+  KDL::TreeFkSolverJointPosAxis *fk_solver_;                    /**< Forward kinematics solver for the tree */
 };
 
 /////////////////////////////// inline functions follow ///////////////////////////////////

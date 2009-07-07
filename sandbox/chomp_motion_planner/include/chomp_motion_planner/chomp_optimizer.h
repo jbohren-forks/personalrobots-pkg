@@ -46,7 +46,6 @@
 
 #include <vector>
 
-
 namespace chomp
 {
 

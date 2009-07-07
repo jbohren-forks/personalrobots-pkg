@@ -30,7 +30,8 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 #rospack_add_executable(example examples/example.cpp)
 #target_link_libraries(example ${PROJECT_NAME})
 
-#add_definitions(-DEIGEN_NO_DEBUG)
+add_definitions(-DEIGEN_NO_DEBUG)
+add_definitions(-DNDEBUG)
 
 rospack_add_executable(chomp_planner_node
 	src/chomp_cost.cpp
@@ -39,4 +40,5 @@ rospack_add_executable(chomp_planner_node
 	src/chomp_planner_node.cpp
 	src/chomp_robot_model.cpp
 	src/chomp_trajectory.cpp
+	src/treefksolverjointposaxis.cpp
 )

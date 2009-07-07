@@ -171,4 +171,4 @@ void ChompTrajectory::fillInMinJerk()
   }
 }
 
-}
+} // namespace chomp

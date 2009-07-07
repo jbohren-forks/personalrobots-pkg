@@ -64,7 +64,7 @@ ChompCost::ChompCost(const ChompTrajectory& trajectory, int joint_number, const 
     multiplier *= trajectory.getDiscretization();
     diff_matrix = getDiffMatrix(num_vars_all, &DIFF_RULES[i][0]);
     quad_cost_full_ += (derivative_costs[i] * multiplier) *
-        (diff_matrix*diff_matrix);
+        (diff_matrix.transpose()*diff_matrix);
   }
 
   // extract the quad cost just for the free variables:
