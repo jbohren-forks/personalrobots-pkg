@@ -30,7 +30,7 @@
 #include <pcd_misc.h>
 #include <visualization_msgs/Marker.h>
 
-
+#include "object_names/Name2Float.h"
 
 using namespace std;
 using namespace robot_msgs;
@@ -42,18 +42,25 @@ using namespace labeled_object_detector;
 PlanarObjectDetector::PlanarObjectDetector()
 {
   max_link_distance_=0.2;
+
+  n_.param( std::string("~fixed_frame"), fixed_frame_, std::string("map"));
+  n_.param( std::string("~local_frame"), local_frame_, std::string("map"));
+
+  n_.param( std::string("~max_search_radius"), max_search_radius_, 0.1);
+
+  n_.param( std::string("~min_points_per_model"), min_points_per_model_, 100);
+
+  n_.param( std::string("~annotation_channel"), annotation_channel_,std::string("ann-w-env-layer-1p"));
+  n_.param( std::string("~target_object"), target_object_,std::string("whiteboard"));
+
+
+
+
   cloud_sub_ = n_.subscribe<PointCloud>("cloud",100,boost::bind(&PlanarObjectDetector::cloudCallback, this, _1));
 
   marker_pub_=n_.advertise<visualization_msgs::Marker>("visualization_marker",1);
-
-  //tf_ = new tf::TransformListener( ros::Duration(30.0));  
-  /*string topic_name;
-    nh_.param<string>("~full_cloud_topic", topic_name, "full_cloud");
-    nh_.param("~min_height", min_height_, 0.9);
-      ROS_INFO("Topic name: %s", topic_name.c_str());
-  */      
-  cloud_pub_ = n_.advertise<PointCloud>("whiteboard_cloud",100);
-
+  cloud_pub_ = n_.advertise<PointCloud>("object_cloud",100);
+  box_pub_ = n_.advertise<BoundingBox>("object_boxes",100);
 }
 
 
@@ -77,8 +84,20 @@ void PlanarObjectDetector::setup()
   unsigned int num_pts=build_cloud.response.cloud.pts.size();
   // Filter objects that are a whiteboard
   
-  int lbl_idx=cloud_geometry::getChannelIndex(build_cloud.response.cloud,"ann-willow-env-4");
-  float target_label=9;
+  int lbl_idx=cloud_geometry::getChannelIndex(build_cloud.response.cloud,annotation_channel_);
+
+
+  object_names::Name2Float::Request req;
+  object_names::Name2Float::Response resp;
+  req.name=target_object_;
+  
+  ros::service::call("name_to_float",req,resp);
+  target_label_=resp.id;
+  if(target_label_<0.1) //i.e. ==0
+  {
+    ROS_ERROR_STREAM("Unknown object " << target_object_ );
+    return;
+  }
   
   vector<int> keep_points;
   keep_points.resize(num_pts);
@@ -86,7 +105,7 @@ void PlanarObjectDetector::setup()
   for(unsigned int iPt=0;iPt<num_pts;iPt++)
   {
     float v=build_cloud.response.cloud.chan[lbl_idx].vals[iPt];
-    if(fabs(v-target_label)<0.1)
+    if(fabs(v-target_label_)<0.1)
     {
       num_keep++;
       keep_points[iPt]=1;
@@ -133,7 +152,6 @@ void PlanarObjectDetector::setup()
   plane_models_.resize(num_clusters_);
   plane_coeffs_.resize(num_clusters_);
   
-  unsigned int min_points_per_model_=100;
 
   // Fit a plane and in-plane rectangle to each of the objects.
   for(unsigned int iCluster=0;iCluster<num_clusters_;iCluster++)
@@ -150,7 +168,7 @@ void PlanarObjectDetector::setup()
 
     ROS_INFO("\tCluster %d has %d points", iCluster, clouds_by_indices_[iCluster].size() );
 
-    if( clouds_by_indices_[iCluster].size()<min_points_per_model_ )
+    if( clouds_by_indices_[iCluster].size()<(unsigned int) min_points_per_model_ )
     {
       ROS_INFO_STREAM("\tskipping model " << iCluster );
       continue;
@@ -184,35 +202,12 @@ void PlanarObjectDetector::cloudCallback(const PointCloudConstPtr& the_cloud)
   }
 }
 
-  /*
-
-
-	void filterPointCloud(const PointCloud& in, PointCloud& out)
-	{
-		out.header.stamp = in.header.stamp;
-		out.header.frame_id = in.header.frame_id;
-
-		out.chan.resize(in.chan.size());
-		for (size_t c=0;c<in.chan.size();++c) {
-			out.chan[c].name = in.chan[c].name;
-		}
-
-		for (size_t i=0;i<in.get_pts_size();++i) {
-			if (in.pts[i].z>min_height_) {
-				out.pts.push_back(in.pts[i]);
-				for (size_t c=0;c<in.chan.size();++c) {
-					out.chan[c].vals.push_back(in.chan[c].vals[i]);
-				}
-			}
-		}
-	}
-  */
 void PlanarObjectDetector::detectObject(const PointCloud& point_cloud)
 {
   PointCloud global_cloud;
-  tf_.transformPointCloud("map",point_cloud,global_cloud);
+  tf_.transformPointCloud(fixed_frame_,point_cloud,global_cloud);
 
-  double max_search_radius_=0.1;
+
 
   std::vector<std::deque<int> > model_to_observation;
   model_to_observation.resize(num_clusters_);
@@ -250,6 +245,8 @@ void PlanarObjectDetector::detectObject(const PointCloud& point_cloud)
     
   }
 }
+
+
 void PlanarObjectDetector::fitObjectModel2Cloud(const unsigned int model_id,const PointCloud& global_cloud,const PointCloud& local_cloud,const std::vector<int> observation_ids)
 {
 
@@ -300,9 +297,9 @@ void PlanarObjectDetector::fitObjectModel2Cloud(const unsigned int model_id,cons
   dir_line1.x=0;
   dir_line1.y=0;
   dir_line1.z=1;
-  offset.x=model[0]*model[3];
-  offset.y=model[1]*model[3];
-  offset.z=model[2]*model[3];
+  offset.x=-model[0]*model[3];
+  offset.y=-model[1]*model[3];
+  offset.z=-model[2]*model[3];
   
   variationAlongLine(dir_line1,offset,model_cloud_projected,full_model_indices,min_h,max_h);
 
@@ -318,9 +315,9 @@ void PlanarObjectDetector::fitObjectModel2Cloud(const unsigned int model_id,cons
   ROS_INFO_STREAM("\t ["<< min_w << "," << max_w << "," <<min_h << "," << max_h <<"]");
 
   PointStamped object_origin;
-  object_origin.point.x = offset.x-dir_line2.x*min_w;
-  object_origin.point.y = offset.y-dir_line2.y*min_w;
-  object_origin.point.z = offset.z-dir_line2.z*min_h;
+  object_origin.point.x = offset.x+dir_line2.x*min_w;
+  object_origin.point.y = offset.y+dir_line2.y*min_w;
+  object_origin.point.z = offset.z+dir_line1.z*min_h;
 
   object_origin.header.stamp = local_cloud.header.stamp;
   object_origin.header.frame_id = local_cloud.header.frame_id;
@@ -329,7 +326,7 @@ void PlanarObjectDetector::fitObjectModel2Cloud(const unsigned int model_id,cons
   PointStamped object_ul;
   object_ul.point.x = offset.x+dir_line2.x*max_w;
   object_ul.point.y = offset.y+dir_line2.y*max_w;
-  object_ul.point.z = offset.z+dir_line2.z*max_h;
+  object_ul.point.z = offset.z+dir_line1.z*max_h;
 
   object_ul.header.stamp = local_cloud.header.stamp;
   object_ul.header.frame_id = local_cloud.header.frame_id;
@@ -339,100 +336,43 @@ void PlanarObjectDetector::fitObjectModel2Cloud(const unsigned int model_id,cons
   ROS_INFO_STREAM("\t Y-range:["<<object_origin.point.y <<"," << object_ul.point.y << "]");
   ROS_INFO_STREAM("\t Z-range:["<<object_origin.point.z <<"," << object_ul.point.z << "]");
 
-  addObjectFrame(object_origin, model);
+  std::stringstream out_str;
+  out_str << "obj_" << target_object_ << model_id ;
+  std::string object_frame = out_str.str();
+  addObjectFrame(object_origin, model, object_frame);
 
-  publishObjectMarker(max_w-min_w,max_h-min_h);
+  publishObjectMarker(max_w-min_w,max_h-min_h,object_frame,model_id);
 
-  publishObjectMarker2(object_origin.point.x,object_origin.point.y,object_origin.point.z);
-
+  publishObjectMarker2(object_origin.point,object_ul.point,model_id);
 
   cloud_pub_.publish(model_cloud_projected);
 
-  /*  PointStamped laser_origin;
-  laser_origin.header.frame_id = local_cloud.header.frame_id;
-  laser_origin.header.stamp = local_cloud.header.stamp;
-  laser_origin.point.x = 0;
-  laser_origin.point.y = 0;
-  laser_origin.point.z = 0;
-  
-  
-  PointStamped odom_laser_origin;
-  tf_.transformPoint("odom_combined", laser_origin, odom_laser_origin);
-  
-  Point32 before_projection;
-  before_projection.x = odom_laser_origin.point.x;
-  before_projection.y = odom_laser_origin.point.y;
-  before_projection.z = odom_laser_origin.point.z;
-  Point32 origin_projection;
-  
-  cloud_geometry::projections::pointToPlane(before_projection, origin_projection, model);
-  
-  PointStamped origin;
-  origin.header.stamp = odom_laser_origin.header.stamp;
-  origin.header.frame_id = odom_laser_origin.header.frame_id;
-  origin.point.x = origin_projection.x;
-  origin.point.y = origin_projection.y;
-  origin.point.z = origin_projection.z;
-  */
+  BoundingBox object_box;
+  object_box.header.stamp = object_origin.header.stamp;
+  object_box.header.frame_id = object_frame;
+  object_box.object_type = (unsigned int)round(target_label_);
+  object_box.object_id = model_id;
+  object_box.pose.position.x = 0;
+  object_box.pose.position.y = 0;
+  object_box.pose.position.z = 0;
+  object_box.pose.orientation.x = 0.0;
+  object_box.pose.orientation.y = 0.0;
+  object_box.pose.orientation.z = 0.0;
+  object_box.pose.orientation.w = 1.0;
+  object_box.size.x = max_w-min_w;
+  object_box.size.y = 0;
+  object_box.size.z = max_h-min_h;
 
+  object_box.support = float(observation_ids.size());
 
-        /*
+  box_pub_.publish(object_box);
 
 
 
-		filterPointCloud(odom_cloud,cloud);
-
-		cloud_pub_.publish(cloud);
-
-		vector<int> indices(cloud.get_pts_size());
-		for (size_t i=0;i<cloud.get_pts_size();++i) {
-			indices[i] = i;
-		}
-		Point32 viewpoint;
-		viewpoint.x = viewpoint.y = viewpoint.z = 0;
-
-		// Use the entire data to estimate the plane equation.
-		vector<int> inliers;
-		inliers.clear(); //Points that are in plane
-
-		vector<double> model;
-		model.clear();  //Plane equation
-
-		fitSACPlane(cloud, indices, viewpoint, inliers, model, 0.02, 50);
-
-
-		PointStamped laser_origin;
-		laser_origin.header.frame_id = point_cloud.header.frame_id;
-		laser_origin.header.stamp = point_cloud.header.stamp;
-		laser_origin.point.x = 0;
-		laser_origin.point.y = 0;
-		laser_origin.point.z = 0;
-
-
-		PointStamped odom_laser_origin;
-		tf_.transformPoint("odom_combined", laser_origin, odom_laser_origin);
-
-		Point32 before_projection;
-		before_projection.x = odom_laser_origin.point.x;
-		before_projection.y = odom_laser_origin.point.y;
-		before_projection.z = odom_laser_origin.point.z;
-		Point32 origin_projection;
-
-		cloud_geometry::projections::pointToPlane(before_projection, origin_projection, model);
-
-		PointStamped origin;
-		origin.header.stamp = odom_laser_origin.header.stamp;
-		origin.header.frame_id = odom_laser_origin.header.frame_id;
-		origin.point.x = origin_projection.x;
-		origin.point.y = origin_projection.y;
-		origin.point.z = origin_projection.z;
-
-		addWhiteboardFrame(origin, model);
-          */
 }
 
 
-void  PlanarObjectDetector::addObjectFrame(PointStamped origin, const vector<double>& plane)
+void  PlanarObjectDetector::addObjectFrame(const PointStamped origin, const vector<double>& plane,const std::string object_frame)
 {
   
   btVector3 position(origin.point.x,origin.point.y,origin.point.z);
@@ -451,7 +391,7 @@ void  PlanarObjectDetector::addObjectFrame(PointStamped origin, const vector<dou
   tf::Transform tf_pose(orientation, position);
   
   // add wall_frame to tf
-  tf::Stamped<tf::Pose> table_pose_frame(tf_pose, origin.header.stamp, "whiteboard_frame", origin.header.frame_id);
+  tf::Stamped<tf::Pose> table_pose_frame(tf_pose, origin.header.stamp, object_frame, origin.header.frame_id);
   
   tf_.setTransform(table_pose_frame);
   
@@ -499,13 +439,13 @@ bool PlanarObjectDetector::fitSACPlane (const PointCloud& points, const vector<i
 
 
 
-void PlanarObjectDetector::publishObjectMarker(float w,float h)
+void PlanarObjectDetector::publishObjectMarker(const float w,const float h,const std::string object_frame,const unsigned int model_id)
 {
   visualization_msgs::Marker marker;
-  marker.header.frame_id = "whiteboard_frame";
+  marker.header.frame_id = object_frame;
   marker.header.stamp = ros::Time();
   marker.ns = "whiteboard";
-  marker.id = 0;
+  marker.id = model_id;
   marker.type = visualization_msgs::Marker::LINE_STRIP;
   marker.action = visualization_msgs::Marker::ADD;
 
@@ -516,7 +456,7 @@ void PlanarObjectDetector::publishObjectMarker(float w,float h)
   marker.pose.orientation.y = 0.0;
   marker.pose.orientation.z = 0.0;
   marker.pose.orientation.w = 1.0;
-  marker.scale.x = 0.005;
+  marker.scale.x = 0.05;
   marker.scale.y = 0.005;
   marker.scale.z = 0.005;
   marker.color.a = 1.0;
@@ -529,19 +469,19 @@ void PlanarObjectDetector::publishObjectMarker(float w,float h)
 
   tf::Point pt(0,0,0);
   robot_msgs::Point pt_msg;
-  tf::pointTFToMsg(pt, pt_msg);
+  tf::PointTFToMsg(pt, pt_msg);
   marker.points.push_back(pt_msg);
 
   tf::Point pt2(1,0,0);
-  tf::pointTFToMsg(pt2, pt_msg);
+  tf::PointTFToMsg(pt2, pt_msg);
   marker.points.push_back(pt_msg);
 
-  tf::Point pt3(1,1,0);
-  tf::pointTFToMsg(pt3, pt_msg);
+  tf::Point pt3(1,0,1);
+  tf::PointTFToMsg(pt3, pt_msg);
   marker.points.push_back(pt_msg);
 
-  tf::Point pt4(0,1,0);
-  tf::pointTFToMsg(pt4, pt_msg);
+  tf::Point pt4(0,0,1);
+  tf::PointTFToMsg(pt4, pt_msg);
   marker.points.push_back(pt_msg);
 
   
@@ -551,19 +491,19 @@ void PlanarObjectDetector::publishObjectMarker(float w,float h)
 
 
 
-void PlanarObjectDetector::publishObjectMarker2(float x,float y,float z)
+void PlanarObjectDetector::publishObjectMarker2(const Point pt,const Point pt2,const unsigned int model_id)
 {
   visualization_msgs::Marker marker;
-  marker.header.frame_id = "odom_combined";
+  marker.header.frame_id = local_frame_;
   marker.header.stamp = ros::Time();
   marker.ns = "whiteboard-1";
-  marker.id = 1;
+  marker.id = model_id;
   marker.type = visualization_msgs::Marker::LINE_STRIP;
   marker.action = visualization_msgs::Marker::ADD;
 
-  marker.pose.position.x = x;
-  marker.pose.position.y = y;
-  marker.pose.position.z = z;
+  marker.pose.position.x = 0;
+  marker.pose.position.y = 0;
+  marker.pose.position.z = 0;
   marker.pose.orientation.x = 0.0;
   marker.pose.orientation.y = 0.0;
   marker.pose.orientation.z = 0.0;
@@ -573,30 +513,32 @@ void PlanarObjectDetector::publishObjectMarker2(float x,float y,float z)
   marker.scale.z = 0.05;
   marker.color.a = 1.0;
   marker.color.r = 0.0;
-  marker.color.g = 1.0;
-  marker.color.b = 0.0;
+  marker.color.g = 0.0;
+  marker.color.b = 1.0;
 
   marker.lifetime = ros::Duration(10.0);
 
 
-  tf::Point pt(x+0,y+0,z+0);
+  tf::Point ptA(pt.x,pt.y,pt.z);
   robot_msgs::Point pt_msg;
-  tf::pointTFToMsg(pt, pt_msg);
+  tf::PointTFToMsg(ptA, pt_msg);
   marker.points.push_back(pt_msg);
 
-  tf::Point pt2(x+1,y+0,z+0);
-  tf::pointTFToMsg(pt2, pt_msg);
+  tf::Point ptB(pt2.x,pt2.y,pt.z);
+  tf::PointTFToMsg(ptB, pt_msg);
   marker.points.push_back(pt_msg);
 
-  tf::Point pt3(x+1,y+1,z+0);
-  tf::pointTFToMsg(pt3, pt_msg);
+  tf::Point ptC(pt2.x,pt2.y,pt2.z);
+  tf::PointTFToMsg(ptC, pt_msg);
   marker.points.push_back(pt_msg);
 
-  tf::Point pt4(0,1,0);
-  tf::pointTFToMsg(pt4, pt_msg);
+  tf::Point ptD(pt.x,pt.y,pt2.z);
+  tf::PointTFToMsg(ptD, pt_msg);
   marker.points.push_back(pt_msg);
 
-  
+  tf::PointTFToMsg(ptA, pt_msg);
+  marker.points.push_back(pt_msg);
+
   marker_pub_.publish(marker);
 }
 

@@ -67,79 +67,21 @@
 namespace labeled_object_detector
 {
 
-class PlanarObjectDetector
+class ObjectModel
 {
-protected:
-  ros::NodeHandle n_;
-  
-  robot_msgs::PointCloudConstPtr cloud_;
-  
-  ros::Subscriber cloud_sub_;
-  ros::Publisher cloud_pub_;
-  ros::Publisher box_pub_;
+};
 
-  ros::Publisher marker_pub_;
-  
-  tf::TransformListener tf_;
-  tf::TransformBroadcaster broadcaster_;
-  
-  double min_height_;
-
-  double max_link_distance_;
-  double max_search_radius_;
-  int min_points_per_model_;
-
-
-  std::string annotation_channel_;
-  std::string target_object_;
-
-  float target_label_;
-
-  robot_msgs::PointCloud full_cloud;
-
-
+class PlanarObjectModel
+{
 public:
+  Header header_;
+  BoundingBox bbox_;
+  robot_msgs::PointCloud pcd_;
 
-  std::string local_frame_;
-  std::string fixed_frame_;
+  tf::Stamped<tf::Pose> object_frame_;
 
-  robot_msgs::PointCloud filtered_cloud_;
-  
-  std::vector<int> cluster_ids_;
-  unsigned int num_clusters_;
-  
-  std::vector<std::vector<int> > clouds_by_indices_;
-  
-  std::vector<boost::shared_ptr<sample_consensus::SACModelPlane> > plane_models_; 
-  std::vector<std::vector<double> > plane_coeffs_;
-  
-  boost::shared_ptr<cloud_kdtree::KdTreeANN> object_points_kd_tree_;
+  PlanarObjectModel(){};
 
-
-  boost::mutex proc_mutex_;
-
-public:
-  PlanarObjectDetector();
-
-  void setup();
-
-  void cloudCallback(const robot_msgs::PointCloudConstPtr& the_cloud);
-  void detectObject(const robot_msgs::PointCloud& point_cloud);
-
-  void addObjectFrame(const robot_msgs::PointStamped origin, const std::vector<double>& plane, const std::string object_frame);
-
-  bool fitSACPlane (const robot_msgs::PointCloud& points, const std::vector<int> &indices, 
-                    std::vector<int> &inliers, std::vector<double> &coeff, // output
-                    boost::shared_ptr<sample_consensus::SACModelPlane> &model_output, // output
-                    double dist_thresh, int min_points_per_model);
-
-  void fitObjectModel2Cloud(const unsigned int model_id,
-                            const robot_msgs::PointCloud& global_cloud,
-                            const robot_msgs::PointCloud& local_cloud,
-                            const std::vector<int> observation_ids);
-
-  void publishObjectMarker(const float w,const float h,const std::string object_frame,const unsigned int model_id);
-  void publishObjectMarker2(const robot_msgs::Point pt1,const robot_msgs::Point pt2,const unsigned int model_id);
 };
 
 

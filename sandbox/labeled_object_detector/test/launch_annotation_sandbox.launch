@@ -1,0 +1,32 @@
+<launch>
+
+
+
+<!-- convert stereo to images or use prosilica -->
+
+<include file="$(find cv_mech_turk)/launch/stereo.launch" />
+
+
+<!-- send image to snapshotter -->
+
+<node pkg="cv_mech_turk" type="snapper.py" name="snap" output="screen">
+
+   <param name="session"  type="str" value="pre-test-w-env-L1-s" />
+   <param name="frame"  value="stereo_l_stereo_camera_frame" />
+   <param name="img_dir"  value="/tmp/turk_submit_images/" />
+
+   <param name="block_submit"  value="1" />
+
+   <remap from="image"  to="/stereo/left/image_rect" />
+
+</node>
+
+<!-- register the annotation message publisher to our rostopic -->
+<node pkg="cv_mech_turk" type="link_topic.py" name="ext_link" output="screen">
+      <param name="uri" value="http://vm6.willowgarage.com:8080/mt/rospublishers/" />
+</node>
+
+
+<node pkg="rosrecord" type="rosplay" args="$(find cv_mech_turk)/test_data/demo1.bag"/>
+
+</launch>

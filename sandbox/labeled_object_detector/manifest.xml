@@ -16,6 +16,7 @@
   <depend package="point_cloud_assembler" />
   <depend package="tf" />
   <depend package="visualization_msgs" />
+  <depend package="object_names"/>
 
   <export>
     <cpp cflags="-I${prefix}/msg/cpp -I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib"/>
