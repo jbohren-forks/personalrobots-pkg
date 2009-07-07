@@ -34,3 +34,17 @@ Index: server/physics/ode/ODEPhysics.cc
  
    Param::Begin(&this->parameters);
    this->globalCFMP = new ParamT<double>("cfm", 10e-5, 0);
+Index: server/Model.cc
+===================================================================
+--- server/Model.cc	(revision 7945)
++++ server/Model.cc	(working copy)
+@@ -260,7 +260,8 @@
+   this->SetCollideMode( **this->collideP );
+ 
+   this->SetLaserFiducialId( **this->laserFiducialP);
+-  this->SetLaserRetro( **this->laserRetroP);
++  // do not set laser retro, this is done via callback!
++  //this->SetLaserRetro( **this->laserRetroP);
+ 
+   // Create the graphics iface handler
+   this->graphicsHandler = new GraphicsIfaceHandler();
