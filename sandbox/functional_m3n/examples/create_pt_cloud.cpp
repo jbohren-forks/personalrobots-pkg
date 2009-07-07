@@ -13,7 +13,7 @@
 #include <point_cloud_mapping/kdtree/kdtree.h>
 #include <point_cloud_mapping/kdtree/kdtree_ann.h>
 
-#include <descriptors_3d/descriptors_3d.h>
+#include <descriptors_3d/local_geometry.h>
 
 #include <functional_m3n/random_field.h>
 #include <functional_m3n/m3n_model.h>
@@ -90,7 +90,7 @@ void createNodes(RandomField& rf,
   list<pair<unsigned int, Eigen::MatrixXf*> >::iterator iter_created_features;
   LocalGeometry geometric_features;
   geometric_features.setData(&pt_cloud, &pt_cloud_kdtree);
-  geometric_features.defineNeighborhood(0.15);
+  geometric_features.setInterestRadius(0.15);
   geometric_features.useElevation();
   geometric_features.useNormalOrientation(0.0, 0.0, 1.0);
   geometric_features.useTangentOrientation(0.0, 0.0, 1.0);
