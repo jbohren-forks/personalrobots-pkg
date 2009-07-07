@@ -11,6 +11,13 @@ rospack_link_boost(message_filters thread signals)
 #rospack_add_executable(filter_example src/filter_example.cpp)
 #target_link_libraries(filter_example message_filters)
 
-set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
+#set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 
 add_subdirectory(test EXCLUDE_FROM_ALL)
+
+# Needs to be a rostest because it spins up a node, which blocks until it hears from the master (unfortunately)
+rospack_add_executable(test/time_sequencer_unittest EXCLUDE_FROM_ALL test/time_sequencer_unittest.cpp)
+rospack_declare_test(test/time_sequencer_unittest)
+rospack_add_gtest_build_flags(test/time_sequencer_unittest)
+target_link_libraries(test/time_sequencer_unittest message_filters)
+rospack_add_rostest(test/time_sequencer_unittest.xml)
