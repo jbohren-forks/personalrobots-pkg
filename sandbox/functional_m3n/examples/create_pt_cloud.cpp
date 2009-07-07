@@ -23,23 +23,25 @@
 #include <fstream>
 #include <vector>
 
+unsigned int setupNodeFeatures(const robot_msgs::PointCloud& pt_cloud,
+                               cloud_kdtree::KdTree& pt_cloud_kdtree,
+                               vector<Descriptor3D*>& feature_descriptors,
+                               vector<unsigned int>& feature_descriptor_sizes);
+
 void createNodes(RandomField& rf,
                  const robot_msgs::PointCloud& pt_cloud,
                  cloud_kdtree::KdTree& pt_cloud_kdtree,
                  vector<unsigned int>& labels);
 
-int main()
+void loadPointCloud(string filename, robot_msgs::PointCloud& pt_cloud, vector<unsigned int>& labels)
 {
-  // ----------------------------------------------------------
   unsigned int nbr_samples = 90000;
-  robot_msgs::PointCloud pt_cloud;
   pt_cloud.pts.resize(nbr_samples);
-  vector<unsigned int> labels(nbr_samples);
+  labels.resize(nbr_samples);
 
   unsigned int tempo;
 
-  ROS_INFO("loading point cloud...");
-  ifstream infile("training_data.xyz_label_conf");
+  ifstream infile(filename.c_str());
   for (unsigned int i = 0 ; i < nbr_samples ; i++)
   {
     infile >> pt_cloud.pts[i].x;
@@ -49,7 +51,17 @@ int main()
     infile >> tempo;
   }
   infile.close();
+}
+
+int main()
+{
+  // ----------------------------------------------------------
+  ROS_INFO("loading point cloud...");
+  robot_msgs::PointCloud pt_cloud;
+  vector<unsigned int> labels;
+  loadPointCloud("training_data.xyz_label_conf", pt_cloud, labels);
   ROS_INFO("done");
+
   cloud_kdtree::KdTree* pt_cloud_kdtree = new cloud_kdtree::KdTreeANN(pt_cloud);
 
   // ----------------------------------------------------------
@@ -85,63 +97,102 @@ void createNodes(RandomField& rf,
                  vector<unsigned int>& labels)
 
 {
-  // Create one feature TYPE
-  list<pair<unsigned int, Eigen::MatrixXf*> > created_features;
-  list<pair<unsigned int, Eigen::MatrixXf*> >::iterator iter_created_features;
-  LocalGeometry geometric_features;
-  geometric_features.setData(&pt_cloud, &pt_cloud_kdtree);
-  geometric_features.setInterestRadius(0.15);
-  geometric_features.useElevation();
-  geometric_features.useNormalOrientation(0.0, 0.0, 1.0);
-  geometric_features.useTangentOrientation(0.0, 0.0, 1.0);
+  vector<Descriptor3D*> feature_descriptors;
+  vector<unsigned int> feature_descriptor_sizes;
+  unsigned int nbr_total_feature_vals = setupNodeFeatures(pt_cloud, pt_cloud_kdtree, feature_descriptors,
+      feature_descriptor_sizes);
 
-  Eigen::MatrixXf* curr_features = NULL;
-  float* curr_feature_vals = NULL;
-  unsigned int nbr_feature_vals = 0;
+  vector<Eigen::MatrixXf*> created_features(feature_descriptors.size());
+  float* concat_created_feature_vals = NULL;
 
+  // --------------------------------------------------
+  bool all_features_success = true;
   unsigned int nbr_primitives = pt_cloud.pts.size();
   for (unsigned int i = 0 ; i < nbr_primitives ; i++)
   {
+    all_features_success = true;
+
+    // -------------------------------
     if (i % 1000 == 0)
     {
       ROS_INFO("sample: %u / %u", i, nbr_primitives);
     }
-    created_features.clear();
-    nbr_feature_vals = 0;
 
     // -------------------------------
-    // Attempt to compute all features
-    geometric_features.setInterestPoint(i);
-    if (geometric_features.compute(&curr_features, false) == true)
+    unsigned int j = 0;
+    for (j = 0; all_features_success && j < feature_descriptors.size() ; j++)
     {
-      created_features.push_back(pair<unsigned int, Eigen::MatrixXf*> (geometric_features.getResultSize(),
-          curr_features));
-      nbr_feature_vals += geometric_features.getResultSize();
+      feature_descriptors[j]->setInterestPoint(i);
+      all_features_success = feature_descriptors[j]->compute(&(created_features[j]), false);
     }
-    else
+
+    if (!all_features_success)
     {
+      for (unsigned int k = 0 ; k < (j-1) ; k++)
+      {
+        delete created_features[k];
+      }
       continue;
     }
 
-    curr_feature_vals = static_cast<float*> (malloc(nbr_feature_vals * sizeof(float)));
+    concat_created_feature_vals = static_cast<float*> (malloc(nbr_total_feature_vals * sizeof(float)));
 
     // Copy each feature from above
     unsigned int prev_length = 0;
     unsigned int curr_length = 0;
-    for (iter_created_features = created_features.begin(); iter_created_features != created_features.end() ; iter_created_features++)
+    float* curr_feature_vals = NULL;
+    for (j = 0; j < feature_descriptors.size() ; j++)
     {
-      curr_length = iter_created_features->first;
-      memcpy(curr_feature_vals + prev_length, iter_created_features->second->data(), curr_length
-          * sizeof(float));
+      curr_length = feature_descriptor_sizes[j];
+      curr_feature_vals = (created_features[j])->data();
+
+      memcpy(concat_created_feature_vals + prev_length, curr_feature_vals, curr_length * sizeof(float));
+
       prev_length += curr_length;
-      delete iter_created_features->second;
+
+      delete created_features[j];
     }
 
     // try to create node with features
-    if (rf.createNode(curr_feature_vals, nbr_feature_vals, labels[i]) == NULL)
+    if (rf.createNode(concat_created_feature_vals, nbr_total_feature_vals, labels[i]) == NULL)
     {
       ROS_ERROR("could not create node %u", i);
       abort();
     }
   }
+}
+
+unsigned int setupNodeFeatures(const robot_msgs::PointCloud& pt_cloud,
+                               cloud_kdtree::KdTree& pt_cloud_kdtree,
+                               vector<Descriptor3D*>& feature_descriptors,
+                               vector<unsigned int>& feature_descriptor_sizes)
+{
+  for (unsigned int i = 0 ; i < feature_descriptors.size() ; i++)
+  {
+    delete feature_descriptors[i];
+  }
+
+  feature_descriptors.clear();
+  feature_descriptor_sizes.clear();
+
+  unsigned int total_result_size = 0;
+
+  // Geometry feature information
+  LocalGeometry* geometry_features = new LocalGeometry();
+  geometry_features->setData(&pt_cloud, &pt_cloud_kdtree);
+  geometry_features->setInterestRadius(0.15);
+  geometry_features->useElevation();
+  geometry_features->useNormalOrientation(0.0, 0.0, 1.0);
+  geometry_features->useTangentOrientation(0.0, 0.0, 1.0);
+
+  feature_descriptors.push_back(geometry_features);
+  feature_descriptor_sizes.push_back(geometry_features->getResultSize());
+  total_result_size += geometry_features->getResultSize();
+
+  return total_result_size;
+}
+
+void createCliques()
+{
+
 }
