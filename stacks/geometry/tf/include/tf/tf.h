@@ -232,7 +232,8 @@ public:
    * \return A boost::signals::connection object that can be used to remove this
    * listener
    */
-  boost::signals::connection addTransformChangedListener(boost::function<void(void)> callback);
+  boost::signals::connection addTransformsChangedListener(boost::function<void(void)> callback);
+  void removeTransformsChangedListener(boost::signals::connection c);
 
   /** 
    * \brief Get the tf_prefix this is running with

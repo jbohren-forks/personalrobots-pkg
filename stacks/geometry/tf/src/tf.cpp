@@ -1069,10 +1069,16 @@ void Transformer::transformPose(const std::string& target_frame, const ros::Time
   //  stamped_out.parent_id_ = stamped_in.parent_id_;//only useful for transforms
 };
 
-boost::signals::connection Transformer::addTransformChangedListener(boost::function<void(void)> callback)
+boost::signals::connection Transformer::addTransformsChangedListener(boost::function<void(void)> callback)
 {
   boost::mutex::scoped_lock lock(transforms_changed_mutex_);
   return transforms_changed_.connect(callback);
+}
+
+void Transformer::removeTransformsChangedListener(boost::signals::connection c)
+{
+  boost::mutex::scoped_lock lock(transforms_changed_mutex_);
+  transforms_changed_.disconnect(c);
 }
 
 /*

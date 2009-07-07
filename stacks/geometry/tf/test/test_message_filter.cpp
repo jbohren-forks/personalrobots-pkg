@@ -73,7 +73,7 @@ TEST(MessageFilter, noTransforms)
 	robot_msgs::PointStampedPtr msg(new robot_msgs::PointStamped);
 	msg->header.stamp = ros::Time::now();
 	msg->header.frame_id = "frame2";
-	filter.enqueueMessage(msg);
+	filter.add(msg);
 
 	EXPECT_EQ(0, n.count_);
 }
@@ -88,7 +88,7 @@ TEST(MessageFilter, noTransformsSameFrame)
   robot_msgs::PointStampedPtr msg(new robot_msgs::PointStamped);
   msg->header.stamp = ros::Time::now();
   msg->header.frame_id = "frame1";
-  filter.enqueueMessage(msg);
+  filter.add(msg);
 
   EXPECT_EQ(1, n.count_);
 }
@@ -108,7 +108,7 @@ TEST(MessageFilter, preexistingTransforms)
 	msg->header.stamp = stamp;
 	msg->header.frame_id = "frame2";
 
-	filter.enqueueMessage(msg);
+	filter.add(msg);
 
 	EXPECT_EQ(1, n.count_);
 }
@@ -126,7 +126,7 @@ TEST(MessageFilter, postTransforms)
   msg->header.stamp = stamp;
   msg->header.frame_id = "frame2";
 
-  filter.enqueueMessage(msg);
+  filter.add(msg);
 
 	EXPECT_EQ(0, n.count_);
 
@@ -151,7 +151,7 @@ TEST(MessageFilter, queueSize)
     msg->header.stamp = stamp;
     msg->header.frame_id = "frame2";
 
-    filter.enqueueMessage(msg);
+    filter.add(msg);
 	}
 
 	EXPECT_EQ(0, n.count_);
@@ -178,7 +178,7 @@ TEST(MessageFilter, setTargetFrame)
   msg->header.stamp = stamp;
   msg->header.frame_id = "frame2";
 
-	filter.enqueueMessage(msg);
+	filter.add(msg);
 
 
 	EXPECT_EQ(1, n.count_);
@@ -203,7 +203,7 @@ TEST(MessageFilter, multipleTargetFrames)
   robot_msgs::PointStampedPtr msg(new robot_msgs::PointStamped);
   msg->header.stamp = stamp;
   msg->header.frame_id = "frame3";
-  filter.enqueueMessage(msg);
+  filter.add(msg);
 
 	EXPECT_EQ(0, n.count_); // frame1->frame3 exists, frame2->frame3 does not (yet)
 
@@ -231,7 +231,7 @@ TEST(MessageFilter, tolerance)
   robot_msgs::PointStampedPtr msg(new robot_msgs::PointStamped);
   msg->header.stamp = stamp;
   msg->header.frame_id = "frame2";
-  filter.enqueueMessage(msg);
+  filter.add(msg);
 
 	EXPECT_EQ(0, n.count_); //No return due to lack of space for offset
 
@@ -243,7 +243,7 @@ TEST(MessageFilter, tolerance)
 	EXPECT_EQ(1, n.count_); // Now have data for the message published earlier
 
 	msg->header.stamp = stamp + offset;
-	filter.enqueueMessage(msg);
+	filter.add(msg);
 
 	EXPECT_EQ(1, n.count_); // Latest message is off the end of the offset
 }
@@ -263,7 +263,7 @@ TEST(MessageFilter, maxRate)
   robot_msgs::PointStampedPtr msg(new robot_msgs::PointStamped);
   msg->header.stamp = stamp;
   msg->header.frame_id = "frame2";
-  filter.enqueueMessage(msg);
+  filter.add(msg);
 
   EXPECT_EQ(0, n.count_);
 

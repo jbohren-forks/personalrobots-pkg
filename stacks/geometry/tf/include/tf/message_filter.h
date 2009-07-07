@@ -71,8 +71,11 @@ public:
 };
 
 /**
- * \class MessageFilter
+ * \brief Follows the patterns set by the message_filters package to implement a filter which only passes messages through once there is transform data available
  *
+ * The callbacks used in this class are of the same form as those used by roscpp's message callbacks.
+ *
+ * MessageFilter is templated on a message type.
  */
 template<class M>
 class MessageFilter : public MessageFilterBase
@@ -84,6 +87,16 @@ public:
   typedef boost::shared_ptr<Signal> SignalPtr;
   typedef boost::weak_ptr<Signal> SignalWPtr;
 
+  /**
+   * \brief Constructor
+   *
+   * \param tf The tf::Transformer this filter should use
+   * \param target_frame The frame this filter should attempt to transform to.  To use multiple frames, pass an empty string here and use the setTargetFrames() function.
+   * \param queue_size The number of messages to queue up before throwing away old ones.  0 means infinite (dangerous).
+   * \param nh The NodeHandle to use for any necessary operations
+   * \param max_rate The maximum rate to check for newly transformable messages
+   * \param min_rate The minimum time between checks for newly transformable messages, in case a previous check that would have succeeded was skipped because of max_rate.  A duration of 0 here means no minimum.
+   */
   MessageFilter(Transformer& tf, const std::string& target_frame, uint32_t queue_size, ros::NodeHandle nh = ros::NodeHandle(), ros::Duration max_rate = ros::Duration(0.01), ros::Duration min_rate = ros::Duration(0.1))
   : tf_(tf)
   , nh_(nh)
@@ -96,6 +109,17 @@ public:
     setTargetFrame(target_frame);
   }
 
+  /**
+   * \brief Constructor
+   *
+   * \param f The filter to connect this filter's input to.  Often will be a message_filters::Subscriber.
+   * \param tf The tf::Transformer this filter should use
+   * \param target_frame The frame this filter should attempt to transform to.  To use multiple frames, pass an empty string here and use the setTargetFrames() function.
+   * \param queue_size The number of messages to queue up before throwing away old ones.  0 means infinite (dangerous).
+   * \param nh The NodeHandle to use for any necessary operations
+   * \param max_rate The maximum rate to check for newly transformable messages
+   * \param min_rate The minimum time between checks for newly transformable messages, in case a previous check that would have succeeded was skipped because of max_rate.  A duration of 0 here means no minimum.
+   */
   template<class F>
   MessageFilter(F& f, Transformer& tf, const std::string& target_frame, uint32_t queue_size, ros::NodeHandle nh = ros::NodeHandle(), ros::Duration max_rate = ros::Duration(0.01), ros::Duration min_rate = ros::Duration(0.1))
   : tf_(tf)
@@ -108,14 +132,16 @@ public:
 
     setTargetFrame(target_frame);
 
-    subscribeTo(f);
+    connectTo(f);
   }
 
+  /**
+   * \brief Connect this filter's input to another filter's output.  If this filter is already connected, disconnects first.
+   */
   template<class F>
-  void subscribeTo(F& f)
+  void connectTo(F& f)
   {
     message_connection_.disconnect();
-
     message_connection_ = f.connect(boost::bind(&MessageFilter::incomingMessage, this, _1));
   }
 
@@ -125,7 +151,7 @@ public:
   ~MessageFilter()
   {
     message_connection_.disconnect();
-    tf_connection_.disconnect();
+    tf_.removeTransformsChangedListener(tf_connection_);
 
     clear();
 
@@ -189,7 +215,11 @@ public:
     message_count_ = 0;
   }
 
-  void enqueueMessage(const MConstPtr& message)
+  /**
+   * \brief Manually add a message into this filter.
+   * \note If the message is immediately transformable, this will immediately call through to its output callback
+   */
+  void add(const MConstPtr& message)
   {
     if (testMessage(message))
     {
@@ -216,6 +246,9 @@ public:
     ++incoming_message_count_;
   }
 
+  /**
+   * \brief Connect a callback to the output of this filter
+   */
   message_filters::Connection connect(const Callback& callback)
   {
     boost::mutex::scoped_lock lock(signal_mutex_);
@@ -236,7 +269,7 @@ private:
     dropped_message_count_ = 0;
     time_tolerance_ = ros::Duration(0.0);
 
-    tf_connection_ = tf_.addTransformChangedListener(boost::bind(&MessageFilter::transformsChanged, this));
+    tf_connection_ = tf_.addTransformsChangedListener(boost::bind(&MessageFilter::transformsChanged, this));
 
     if (min_rate_ > ros::Duration(0))
     {
@@ -355,7 +388,7 @@ private:
    */
   void incomingMessage(const MConstPtr& msg)
   {
-    enqueueMessage(msg);
+    add(msg);
   }
 
   void transformsChanged()
