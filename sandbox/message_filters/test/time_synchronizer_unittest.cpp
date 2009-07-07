@@ -60,7 +60,7 @@ public:
   : count_(0)
   {}
 
-  void cb(const MsgConstPtr&, const MsgConstPtr&)
+  void cb()
   {
     ++count_;
   }
@@ -68,59 +68,59 @@ public:
   int32_t count_;
 };
 
-TEST(TimeSynchronizer, compileTest2)
+TEST(TimeSynchronizer, compile2)
 {
   NullFilter<Msg> f0, f1;
   TimeSynchronizer<Msg, Msg> sync(f0, f1, 1);
 }
 
-TEST(TimeSynchronizer, compileTest3)
+TEST(TimeSynchronizer, compile3)
 {
   NullFilter<Msg> f0, f1, f2;
   TimeSynchronizer<Msg, Msg, Msg> sync(f0, f1, f2, 1);
 }
 
-TEST(TimeSynchronizer, compileTest4)
+TEST(TimeSynchronizer, compile4)
 {
   NullFilter<Msg> f0, f1, f2, f3;
   TimeSynchronizer<Msg, Msg, Msg, Msg> sync(f0, f1, f2, f3, 1);
 }
 
-TEST(TimeSynchronizer, compileTest5)
+TEST(TimeSynchronizer, compile5)
 {
   NullFilter<Msg> f0, f1, f2, f3, f4;
   TimeSynchronizer<Msg, Msg, Msg, Msg, Msg> sync(f0, f1, f2, f3, f4, 1);
 }
 
-TEST(TimeSynchronizer, compileTest6)
+TEST(TimeSynchronizer, compile6)
 {
   NullFilter<Msg> f0, f1, f2, f3, f4, f5;
   TimeSynchronizer<Msg, Msg, Msg, Msg, Msg, Msg> sync(f0, f1, f2, f3, f4, f5, 1);
 }
 
-TEST(TimeSynchronizer, compileTest7)
+TEST(TimeSynchronizer, compile7)
 {
   NullFilter<Msg> f0, f1, f2, f3, f4, f5, f6;
   TimeSynchronizer<Msg, Msg, Msg, Msg, Msg, Msg, Msg> sync(f0, f1, f2, f3, f4, f5, f6, 1);
 }
 
-TEST(TimeSynchronizer, compileTest8)
+TEST(TimeSynchronizer, compile8)
 {
   NullFilter<Msg> f0, f1, f2, f3, f4, f5, f6, f7;
   TimeSynchronizer<Msg, Msg, Msg, Msg, Msg, Msg, Msg, Msg> sync(f0, f1, f2, f3, f4, f5, f6, f7, 1);
 }
 
-TEST(TimeSynchronizer, compileTest9)
+TEST(TimeSynchronizer, compile9)
 {
   NullFilter<Msg> f0, f1, f2, f3, f4, f5, f6, f7, f8;
   TimeSynchronizer<Msg, Msg, Msg, Msg, Msg, Msg, Msg, Msg, Msg> sync(f0, f1, f2, f3, f4, f5, f6, f7, f8, 1);
 }
 
-TEST(TimeSynchronizer, immediate)
+TEST(TimeSynchronizer, immediate2)
 {
   TimeSynchronizer<Msg, Msg> sync(1);
   Helper h;
-  sync.connect(boost::bind(&Helper::cb, &h, _1, _2));
+  sync.connect(boost::bind(&Helper::cb, &h));
   MsgPtr m(new Msg);
   m->header.stamp = ros::Time::now();
 
@@ -130,11 +130,169 @@ TEST(TimeSynchronizer, immediate)
   ASSERT_EQ(h.count_, 1);
 }
 
+TEST(TimeSynchronizer, immediate3)
+{
+  TimeSynchronizer<Msg, Msg, Msg> sync(1);
+  Helper h;
+  sync.connect(boost::bind(&Helper::cb, &h));
+  MsgPtr m(new Msg);
+  m->header.stamp = ros::Time::now();
+
+  sync.add0(m);
+  ASSERT_EQ(h.count_, 0);
+  sync.add1(m);
+  ASSERT_EQ(h.count_, 0);
+  sync.add2(m);
+  ASSERT_EQ(h.count_, 1);
+}
+
+TEST(TimeSynchronizer, immediate4)
+{
+  TimeSynchronizer<Msg, Msg, Msg, Msg> sync(1);
+  Helper h;
+  sync.connect(boost::bind(&Helper::cb, &h));
+  MsgPtr m(new Msg);
+  m->header.stamp = ros::Time::now();
+
+  sync.add0(m);
+  ASSERT_EQ(h.count_, 0);
+  sync.add1(m);
+  ASSERT_EQ(h.count_, 0);
+  sync.add2(m);
+  ASSERT_EQ(h.count_, 0);
+  sync.add3(m);
+  ASSERT_EQ(h.count_, 1);
+}
+
+TEST(TimeSynchronizer, immediate5)
+{
+  TimeSynchronizer<Msg, Msg, Msg, Msg, Msg> sync(1);
+  Helper h;
+  sync.connect(boost::bind(&Helper::cb, &h));
+  MsgPtr m(new Msg);
+  m->header.stamp = ros::Time::now();
+
+  sync.add0(m);
+  ASSERT_EQ(h.count_, 0);
+  sync.add1(m);
+  ASSERT_EQ(h.count_, 0);
+  sync.add2(m);
+  ASSERT_EQ(h.count_, 0);
+  sync.add3(m);
+  ASSERT_EQ(h.count_, 0);
+  sync.add4(m);
+  ASSERT_EQ(h.count_, 1);
+}
+
+TEST(TimeSynchronizer, immediate6)
+{
+  TimeSynchronizer<Msg, Msg, Msg, Msg, Msg, Msg> sync(1);
+  Helper h;
+  sync.connect(boost::bind(&Helper::cb, &h));
+  MsgPtr m(new Msg);
+  m->header.stamp = ros::Time::now();
+
+  sync.add0(m);
+  ASSERT_EQ(h.count_, 0);
+  sync.add1(m);
+  ASSERT_EQ(h.count_, 0);
+  sync.add2(m);
+  ASSERT_EQ(h.count_, 0);
+  sync.add3(m);
+  ASSERT_EQ(h.count_, 0);
+  sync.add4(m);
+  ASSERT_EQ(h.count_, 0);
+  sync.add5(m);
+  ASSERT_EQ(h.count_, 1);
+}
+
+TEST(TimeSynchronizer, immediate7)
+{
+  TimeSynchronizer<Msg, Msg, Msg, Msg, Msg, Msg, Msg> sync(1);
+  Helper h;
+  sync.connect(boost::bind(&Helper::cb, &h));
+  MsgPtr m(new Msg);
+  m->header.stamp = ros::Time::now();
+
+  sync.add0(m);
+  ASSERT_EQ(h.count_, 0);
+  sync.add1(m);
+  ASSERT_EQ(h.count_, 0);
+  sync.add2(m);
+  ASSERT_EQ(h.count_, 0);
+  sync.add3(m);
+  ASSERT_EQ(h.count_, 0);
+  sync.add4(m);
+  ASSERT_EQ(h.count_, 0);
+  sync.add5(m);
+  ASSERT_EQ(h.count_, 0);
+  sync.add6(m);
+  ASSERT_EQ(h.count_, 1);
+}
+
+TEST(TimeSynchronizer, immediate8)
+{
+  TimeSynchronizer<Msg, Msg, Msg, Msg, Msg, Msg, Msg, Msg> sync(1);
+  Helper h;
+  sync.connect(boost::bind(&Helper::cb, &h));
+  MsgPtr m(new Msg);
+  m->header.stamp = ros::Time::now();
+
+  sync.add0(m);
+  ASSERT_EQ(h.count_, 0);
+  sync.add1(m);
+  ASSERT_EQ(h.count_, 0);
+  sync.add2(m);
+  ASSERT_EQ(h.count_, 0);
+  sync.add3(m);
+  ASSERT_EQ(h.count_, 0);
+  sync.add4(m);
+  ASSERT_EQ(h.count_, 0);
+  sync.add5(m);
+  ASSERT_EQ(h.count_, 0);
+  sync.add6(m);
+  ASSERT_EQ(h.count_, 0);
+  sync.add7(m);
+  ASSERT_EQ(h.count_, 1);
+}
+
+TEST(TimeSynchronizer, immediate9)
+{
+  TimeSynchronizer<Msg, Msg, Msg, Msg, Msg, Msg, Msg, Msg, Msg> sync(1);
+  Helper h;
+  sync.connect(boost::bind(&Helper::cb, &h));
+  MsgPtr m(new Msg);
+  m->header.stamp = ros::Time::now();
+
+  sync.add0(m);
+  ASSERT_EQ(h.count_, 0);
+  sync.add1(m);
+  ASSERT_EQ(h.count_, 0);
+  sync.add2(m);
+  ASSERT_EQ(h.count_, 0);
+  sync.add3(m);
+  ASSERT_EQ(h.count_, 0);
+  sync.add4(m);
+  ASSERT_EQ(h.count_, 0);
+  sync.add5(m);
+  ASSERT_EQ(h.count_, 0);
+  sync.add6(m);
+  ASSERT_EQ(h.count_, 0);
+  sync.add7(m);
+  ASSERT_EQ(h.count_, 0);
+  sync.add8(m);
+  ASSERT_EQ(h.count_, 1);
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////
+// From here on we assume that testing the 3-message version is sufficient, so as not to duplicate
+// tests for everywhere from 2-9
+//////////////////////////////////////////////////////////////////////////////////////////////////
 TEST(TimeSynchronizer, multipleTimes)
 {
-  TimeSynchronizer<Msg, Msg> sync(1);
+  TimeSynchronizer<Msg, Msg, Msg> sync(2);
   Helper h;
-  sync.connect(boost::bind(&Helper::cb, &h, _1, _2));
+  sync.connect(boost::bind(&Helper::cb, &h));
   MsgPtr m(new Msg);
   m->header.stamp = ros::Time();
 
@@ -146,7 +304,35 @@ TEST(TimeSynchronizer, multipleTimes)
   sync.add1(m);
   ASSERT_EQ(h.count_, 0);
   sync.add0(m);
+  ASSERT_EQ(h.count_, 0);
+  sync.add2(m);
   ASSERT_EQ(h.count_, 1);
+}
+
+TEST(TimeSynchronizer, queueSize)
+{
+  TimeSynchronizer<Msg, Msg, Msg> sync(1);
+  Helper h;
+  sync.connect(boost::bind(&Helper::cb, &h));
+  MsgPtr m(new Msg);
+  m->header.stamp = ros::Time();
+
+  sync.add0(m);
+  ASSERT_EQ(h.count_, 0);
+  sync.add1(m);
+  ASSERT_EQ(h.count_, 0);
+
+  m.reset(new Msg);
+  m->header.stamp = ros::Time(0.1);
+  sync.add1(m);
+  ASSERT_EQ(h.count_, 0);
+
+  m.reset(new Msg);
+  m->header.stamp = ros::Time(0);
+  sync.add1(m);
+  ASSERT_EQ(h.count_, 0);
+  sync.add2(m);
+  ASSERT_EQ(h.count_, 0);
 }
 
 int main(int argc, char **argv){
