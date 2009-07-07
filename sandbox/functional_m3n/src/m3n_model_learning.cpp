@@ -41,6 +41,9 @@ using namespace std;
 // --------------------------------------------------------------
 int M3NModel::train(const vector<const RandomField*>& training_rfs, const M3NParams& m3n_params)
 {
+  M3NLogger logger;
+  time_t start_timer, end_timer;
+
   // -------------------------------------------
   // Extract the labels to train on
   if (extractVerifyLabelsFeatures(training_rfs) < 0)
@@ -114,7 +117,7 @@ int M3NModel::train(const vector<const RandomField*>& training_rfs, const M3NPar
   // Train for the specified number of iterations
   for (unsigned int t = 0 ; t < nbr_iterations ; t++)
   {
-    ROS_INFO("Starting iteration %u", t);
+    ROS_INFO("--------\nStarting iteration %u", t);
     // ---------------------------------------------------
     // Iterate over each RandomField
     for (unsigned int i = 0 ; i < training_rfs.size() ; i++)
@@ -127,6 +130,7 @@ int M3NModel::train(const vector<const RandomField*>& training_rfs, const M3NPar
       // Perform inference with the current model.
       // If first iteration, generate a random labeling,
       // otherwise, perform inference with the current model.
+      time(&start_timer);
       if (t == 0)
       {
         // Generate random labeling
@@ -143,9 +147,13 @@ int M3NModel::train(const vector<const RandomField*>& training_rfs, const M3NPar
         curr_inferred_labeling.clear();
         inferPrivate(*curr_rf, curr_inferred_labeling);
       }
+      time(&end_timer);
+      logger.addTimingInference(start_timer, end_timer);
+      logger.printClassificationRates(nodes, curr_inferred_labeling, training_labels_);
 
       // ---------------------------------------------------
       // Instantiate new regressor
+      time(&start_timer);
       curr_regressor = instantiateRegressor(m3n_params);
       if (curr_regressor == NULL)
       {
@@ -243,6 +251,9 @@ int M3NModel::train(const vector<const RandomField*>& training_rfs, const M3NPar
       }
       curr_step_size = step_size / sqrt(static_cast<double> (t + 1));
       regressors_.push_back(pair<double, RegressorWrapper*> (curr_step_size, curr_regressor));
+
+      time(&end_timer);
+      logger.addTimingRegressors(start_timer, end_timer);
     } // end iterate over random fields
   } // end training iterations
 

@@ -34,8 +34,6 @@
 
 #include <functional_m3n/m3n_model.h>
 
-#include <functional_m3n/logging/m3n_logging.h>
-
 using namespace std;
 
 // --------------------------------------------------------------
@@ -222,8 +220,6 @@ int M3NModel::inferPrivate(const RandomField& random_field,
       delete energy_func;
     }
   }
-
-  printClassificationRates(nodes, inferred_labels, training_labels_);
   return ret_val;
 }
 

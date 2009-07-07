@@ -33,15 +33,30 @@ void createNodes(RandomField& rf,
                  cloud_kdtree::KdTree& pt_cloud_kdtree,
                  vector<unsigned int>& labels);
 
-void loadPointCloud(string filename, robot_msgs::PointCloud& pt_cloud, vector<unsigned int>& labels)
+int loadPointCloud(string filename, robot_msgs::PointCloud& pt_cloud, vector<unsigned int>& labels)
 {
-  unsigned int nbr_samples = 90000;
+  ifstream infile(filename.c_str());
+  if (infile.is_open() == false)
+  {
+    ROS_ERROR("Could not open filename: %s", filename.c_str());
+    return -1;
+  }
+
+  unsigned int nbr_samples = 0;
+  char line[256];
+  while (infile.getline(line, 256))
+  {
+    nbr_samples++;
+  }
+
+  infile.clear();
+  infile.seekg(ios::beg);
+
   pt_cloud.pts.resize(nbr_samples);
   labels.resize(nbr_samples);
 
+  // file format: x y z label 2
   unsigned int tempo;
-
-  ifstream infile(filename.c_str());
   for (unsigned int i = 0 ; i < nbr_samples ; i++)
   {
     infile >> pt_cloud.pts[i].x;
@@ -51,6 +66,7 @@ void loadPointCloud(string filename, robot_msgs::PointCloud& pt_cloud, vector<un
     infile >> tempo;
   }
   infile.close();
+  return 0;
 }
 
 int main()
@@ -59,7 +75,10 @@ int main()
   ROS_INFO("loading point cloud...");
   robot_msgs::PointCloud pt_cloud;
   vector<unsigned int> labels;
-  loadPointCloud("training_data.xyz_label_conf", pt_cloud, labels);
+  if (loadPointCloud("training_data.xyz_label_conf", pt_cloud, labels) < 0)
+  {
+    return -1;
+  }
   ROS_INFO("done");
 
   cloud_kdtree::KdTree* pt_cloud_kdtree = new cloud_kdtree::KdTreeANN(pt_cloud);
@@ -128,7 +147,7 @@ void createNodes(RandomField& rf,
 
     if (!all_features_success)
     {
-      for (unsigned int k = 0 ; k < (j-1) ; k++)
+      for (unsigned int k = 0 ; k < (j - 1) ; k++)
       {
         delete created_features[k];
       }

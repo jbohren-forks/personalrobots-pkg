@@ -34,6 +34,8 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
+#include <time.h>
+
 #include <sstream>
 #include <map>
 #include <vector>
@@ -52,59 +54,82 @@ using namespace std;
  */
 // --------------------------------------------------------------
 
-// --------------------------------------------------------------
-/**
- * \brief Prints out classification rates per label
- */
-// --------------------------------------------------------------
-void printClassificationRates(const map<unsigned int, RandomField::Node*>& nodes, const map<unsigned int,
-    unsigned int>& inferred_labels, const vector<unsigned int>& labels)
+class M3NLogger
 {
-  // Initialize counters for each label
-  // (map: label -> counter)
-  map<unsigned int, unsigned int> total_label_count; // how many nodes with gt label
-  map<unsigned int, unsigned int> correct_label_count; // how many correctly classified
-  for (unsigned int i = 0 ; i < labels.size() ; i++)
-  {
-    total_label_count[labels[i]] = 0;
-    correct_label_count[labels[i]] = 0;
-  }
-
-  // Holds the total number of nodes correctly classified
-  unsigned int nbr_correct = 0;
-
-  // Count the total and per-label number correctly classified
-  unsigned int curr_node_id = 0;
-  unsigned int curr_gt_label = 0;
-  unsigned int curr_infer_label = 0;
-  map<unsigned int, RandomField::Node*>::const_iterator iter_nodes;
-  for (iter_nodes = nodes.begin(); iter_nodes != nodes.end() ; iter_nodes++)
-  {
-    curr_node_id = iter_nodes->first;
-    curr_gt_label = iter_nodes->second->getLabel();
-    curr_infer_label = inferred_labels.find(curr_node_id)->second;
-
-    total_label_count[curr_gt_label]++;
-
-    if (curr_gt_label == curr_infer_label)
+  public:
+    M3NLogger()
     {
-      nbr_correct++;
-      correct_label_count[curr_gt_label]++;
     }
-  }
 
-  // Print statistics
-  ROS_INFO("Total correct: %u / %u = %f", nbr_correct, nodes.size(), static_cast<double>(nbr_correct)/static_cast<double>(nodes.size()));
-  stringstream ss;
-  ss << "Label distribution: ";
-  unsigned int curr_label = 0;
-  for (unsigned int i = 0 ; i < labels.size() ; i++)
-  {
-    curr_label = labels[i];
-    ss << "[" << curr_label << ": " << correct_label_count[curr_label] << "/"
-        << total_label_count[curr_label] << "]  ";
-  }
-  ROS_INFO("%s", ss.str().c_str());
-}
+    void addTimingRegressors(time_t& start, time_t& end)
+    {
+      timings_regressors.push_back(difftime(end, start));
+      ROS_INFO("Regressor time: %f", timings_regressors.back());
+    }
+
+    void addTimingInference(time_t& start, time_t& end)
+    {
+      timings_inference.push_back(difftime(end, start));
+      ROS_INFO("Inference time: %f", timings_inference.back());
+    }
+    // --------------------------------------------------------------
+    /**
+     * \brief Prints out classification rates per label
+     */
+    // --------------------------------------------------------------
+    void printClassificationRates(const map<unsigned int, RandomField::Node*>& nodes, const map<unsigned int,
+        unsigned int>& inferred_labels, const vector<unsigned int>& labels)
+    {
+      // Initialize counters for each label
+      // (map: label -> counter)
+      map<unsigned int, unsigned int> total_label_count; // how many nodes with gt label
+      map<unsigned int, unsigned int> correct_label_count; // how many correctly classified
+      for (unsigned int i = 0 ; i < labels.size() ; i++)
+      {
+        total_label_count[labels[i]] = 0;
+        correct_label_count[labels[i]] = 0;
+      }
+
+      // Holds the total number of nodes correctly classified
+      unsigned int nbr_correct = 0;
+
+      // Count the total and per-label number correctly classified
+      unsigned int curr_node_id = 0;
+      unsigned int curr_gt_label = 0;
+      unsigned int curr_infer_label = 0;
+      map<unsigned int, RandomField::Node*>::const_iterator iter_nodes;
+      for (iter_nodes = nodes.begin(); iter_nodes != nodes.end() ; iter_nodes++)
+      {
+        curr_node_id = iter_nodes->first;
+        curr_gt_label = iter_nodes->second->getLabel();
+        curr_infer_label = inferred_labels.find(curr_node_id)->second;
+
+        total_label_count[curr_gt_label]++;
+
+        if (curr_gt_label == curr_infer_label)
+        {
+          nbr_correct++;
+          correct_label_count[curr_gt_label]++;
+        }
+      }
+
+      // Print statistics
+      ROS_INFO("Total correct: %u / %u = %f", nbr_correct, nodes.size(), static_cast<double>(nbr_correct)/static_cast<double>(nodes.size()));
+      stringstream ss;
+      ss << "Label distribution: ";
+      unsigned int curr_label = 0;
+      for (unsigned int i = 0 ; i < labels.size() ; i++)
+      {
+        curr_label = labels[i];
+        ss << "[" << curr_label << ": " << correct_label_count[curr_label] << "/"
+            << total_label_count[curr_label] << "]  ";
+      }
+      ROS_INFO("%s", ss.str().c_str());
+    }
+
+    vector<double> timings_regressors;
+    vector<double> timings_inference;
+    vector<double> objective;
+};
 
 #endif
