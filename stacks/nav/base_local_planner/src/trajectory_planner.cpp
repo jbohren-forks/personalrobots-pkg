@@ -55,6 +55,7 @@ namespace base_local_planner{
       bool holonomic_robot,
       double max_vel_x, double min_vel_x,
       double max_vel_th, double min_vel_th, double min_in_place_vel_th,
+      double backup_vel,
       bool dwa, bool heading_scoring, double heading_scoring_timestep, bool simple_attractor,
       vector<double> y_vels)
     : map_(costmap.cellSizeX(), costmap.cellSizeY()), costmap_(costmap), 
@@ -70,6 +71,7 @@ namespace base_local_planner{
     escape_reset_theta_(escape_reset_theta), holonomic_robot_(holonomic_robot),
     max_vel_x_(max_vel_x), min_vel_x_(min_vel_x), 
     max_vel_th_(max_vel_th), min_vel_th_(min_vel_th), min_in_place_vel_th_(min_in_place_vel_th),
+    backup_vel_(backup_vel),
     dwa_(dwa), heading_scoring_(heading_scoring), heading_scoring_timestep_(heading_scoring_timestep),
     simple_attractor_(simple_attractor), y_vels_(y_vels)
   {
@@ -800,7 +802,7 @@ namespace base_local_planner{
 
     //and finally, if we can't do anything else, we want to generate trajectories that move backwards slowly
     vtheta_samp = 0.0;
-    vx_samp = -0.1;
+    vx_samp = backup_vel_;
     vy_samp = 0.0;
     generateTrajectory(x, y, theta, vx, vy, vtheta, vx_samp, vy_samp, vtheta_samp, 
         acc_x, acc_y, acc_theta, impossible_cost, *comp_traj);

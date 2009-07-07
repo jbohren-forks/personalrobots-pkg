@@ -98,6 +98,7 @@ namespace base_local_planner {
        * @param max_vel_th The maximum rotational velocity the controller will explore
        * @param min_vel_th The minimum rotational velocity the controller will explore
        * @param min_in_place_vel_th The absolute value of the minimum in-place rotational velocity the controller will explore
+       * @param backup_vel The velocity to use while backing up
        * @param dwa Set this to true to use the Dynamic Window Approach, false to use acceleration limits
        * @param heading_scoring Set this to true to score trajectories based on the robot's heading after 1 timestep
        * @param heading_scoring_timestep How far to look ahead in time when we score heading based trajectories
@@ -117,6 +118,7 @@ namespace base_local_planner {
           bool holonomic_robot = true,
           double max_vel_x = 0.5, double min_vel_x = 0.1, 
           double max_vel_th = 1.0, double min_vel_th = -1.0, double min_in_place_vel_th = 0.4,
+          double backup_vel = -0.1,
           bool dwa = false, bool heading_scoring = false, double heading_scoring_timestep = 0.1,
           bool simple_attractor = false,
           std::vector<double> y_vels = std::vector<double>(0));
@@ -305,6 +307,8 @@ namespace base_local_planner {
       bool holonomic_robot_; ///< @brief Is the robot holonomic or not? 
       
       double max_vel_x_, min_vel_x_, max_vel_th_, min_vel_th_, min_in_place_vel_th_; ///< @brief Velocity limits for the controller
+
+      double backup_vel_; ///< @brief The velocity to use while backing up
 
       bool dwa_;  ///< @brief Should we use the dynamic window approach?
       bool heading_scoring_; ///< @brief Should we score based on the rollout approach or the heading approach

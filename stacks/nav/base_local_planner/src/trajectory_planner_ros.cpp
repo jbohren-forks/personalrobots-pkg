@@ -59,6 +59,7 @@ namespace base_local_planner {
     bool holonomic_robot, dwa, simple_attractor, heading_scoring;
     double heading_scoring_timestep;
     double max_vel_x, min_vel_x, max_vel_th, min_vel_th;
+    double backup_vel;
     string world_model_type;
 
     //initialize the copy of the costmap the controller will use
@@ -118,6 +119,7 @@ namespace base_local_planner {
     ros_node_.param("~max_vel_th", max_vel_th, 1.0);
     ros_node_.param("~min_vel_th", min_vel_th, -1.0);
     ros_node_.param("~min_in_place_vel_th", min_in_place_vel_th_, 0.4);
+    ros_node_.param("~backup_vel", backup_vel, -0.1);
     ros_node_.param("~world_model", world_model_type, string("costmap"));
     ros_node_.param("~dwa", dwa, false);
     ros_node_.param("~heading_scoring", heading_scoring, false);
@@ -137,7 +139,7 @@ namespace base_local_planner {
     tc_ = new TrajectoryPlanner(*world_model_, costmap_, costmap_ros_.robotFootprint(), inscribed_radius_, circumscribed_radius_,
         acc_lim_x, acc_lim_y, acc_lim_theta, sim_time, sim_granularity, vx_samples, vtheta_samples, pdist_scale,
         gdist_scale, occdist_scale, heading_lookahead, oscillation_reset_dist, escape_reset_dist, escape_reset_theta, holonomic_robot,
-        max_vel_x, min_vel_x, max_vel_th, min_vel_th, min_in_place_vel_th_,
+        max_vel_x, min_vel_x, max_vel_th, min_vel_th, min_in_place_vel_th_, backup_vel,
         dwa, heading_scoring, heading_scoring_timestep, simple_attractor);
   }
 
