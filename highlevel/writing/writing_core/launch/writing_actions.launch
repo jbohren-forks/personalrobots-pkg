@@ -2,5 +2,6 @@
   <node pkg="writing_core" type="run_find_helper.py" output="screen" />
   <node pkg="writing_core" type="run_track_helper.py" output="screen" /> 
   <node pkg="writing_core" type="run_ask_for_pen.py" output="screen" />
+  <node pkg="writing_core" type="run_grip_pen.py" output="screen" />
  
 </launch>
