@@ -27,6 +27,7 @@ foreach(it ${ikea_objects_obj_files})
       OUTPUT ${basepath}/convex
       COMMAND mkdir -p
       ARGS ${basepath}/convex)
+    set(ikea_objects_gen_files ${basepath}/convex)
 
     #create stl files from obj files
     add_custom_command(
