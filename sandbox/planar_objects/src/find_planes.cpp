@@ -17,6 +17,7 @@ using namespace robot_msgs;
 #include <point_cloud_mapping/geometry/angles.h>
 #include <point_cloud_mapping/geometry/areas.h>
 
+
 bool find_planes::fitSACPlanes(PointCloud *points, vector<int> &indices, vector<vector<int> > &inliers, vector<vector<
     double> > &coeff, const robot_msgs::Point32 &viewpoint_cloud, double dist_thresh, int n_max,
                                int min_points_per_model)
@@ -142,11 +143,11 @@ void find_planes::segmentPlanes(const PointCloud &const_points, double z_min, do
   }
 }
 
-void find_planes::findPlanes(const PointCloud& cloud, int n_planes_max, vector<PointCloud>& plane_cloud, vector<vector<
+void find_planes::findPlanes(const PointCloud& cloud, int n_planes_max,
+                             std::vector<std::vector<int> >& indices,vector<PointCloud>& plane_cloud, vector<vector<
     double> >& plane_coeff, PointCloud& outside)
 {
 
-  vector<vector<int> > indices;
   double z_min = 0.3;
   double z_max = 3.0;
   double support = 0.1;
@@ -164,9 +165,3 @@ void find_planes::findPlanes(const PointCloud& cloud, int n_planes_max, vector<P
   }
 }
 
-void find_planes::visualizePlanes(std::vector<robot_msgs::PointCloud>& plane_cloud,
-                                  std::vector<std::vector<double> >& plane_coeff, robot_msgs::PointCloud& outside,
-                                  ros::Publisher &cloud_planes_pub)
-{
-
-}

@@ -8,8 +8,11 @@
 #ifndef FIND_PLANES_H_
 #define FIND_PLANES_H_
 
-#include "robot_msgs/PointCloud.h"
 #include "ros/ros.h"
+
+#include "robot_msgs/PointCloud.h"
+#include <robot_msgs/Polygon3D.h>
+#include <visualization_msgs/Marker.h>
 
 namespace find_planes
 {
@@ -27,12 +30,9 @@ void segmentPlanes(const robot_msgs::PointCloud &points, double z_min, double z_
                                 int n_max, std::vector<std::vector<int> > &indices, std::vector<std::vector<double> > &models, int number);
 
 void findPlanes(const robot_msgs::PointCloud& cloud, int n_planes_max,
+                std::vector<std::vector<int> >& indices,
                 std::vector<robot_msgs::PointCloud>& plane_cloud, std::vector<std::vector<double> >& plane_coeff,
                 robot_msgs::PointCloud& outside);
-
-void visualizePlanes(std::vector<robot_msgs::PointCloud>& plane_cloud, std::vector<std::vector<double> >& plane_coeff,
-                robot_msgs::PointCloud& outside,
-                ros::Publisher& cloud_planes_pub);
 
 }
 

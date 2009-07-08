@@ -7,6 +7,7 @@
 
 #include "planar_node.h"
 #include "find_planes.h"
+#include "vis_utils.h"
 
 #include "opencv_latest/CvBridge.h"
 #include "opencv/cxcore.h"
@@ -43,10 +44,11 @@ void PlanarNode::syncCallback()
 
   vector<PointCloud> plane_cloud;
   vector<vector<double> > plane_coeff;
+  vector<vector<int> > plane_indices;
   PointCloud outside;
 
-  find_planes::findPlanes(*cloud_, n_planes_max_, plane_cloud, plane_coeff,outside);
-  find_planes::visualizePlanes(plane_cloud,plane_coeff,outside,cloud_planes_pub_);
+  find_planes::findPlanes(*cloud_, n_planes_max_, plane_indices, plane_cloud, plane_coeff,outside);
+  vis_utils::visualizePlanes(*cloud_,plane_indices,plane_cloud,plane_coeff,outside,cloud_planes_pub_,visualization_pub_);
 }
 
 bool PlanarNode::spin()
