@@ -92,6 +92,7 @@ int main(int argc, char **argv)
   joint_max[6] = 3.14;
 
   ros::Time now = ros::Time::now();
+  srand(ros::WallTime::now().sec);
 
   goal.goal_constraints.joint_constraint.resize(names.size());
 
