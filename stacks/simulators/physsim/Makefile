@@ -4,7 +4,7 @@ INSTALL_DIR = $(shell rospack find physsim)/physsim
 
 SVN_DIR = physsim-svn
 SVN_URL = https://physsim.svn.sourceforge.net/svnroot/physsim/Physsim
-SVN_REVISION = -r 311
+SVN_REVISION = -r 312
 SVN_PATCH =  physsim_patch.diff
 
 include $(shell rospack find mk)/svn_checkout.mk

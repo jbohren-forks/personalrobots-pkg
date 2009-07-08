@@ -1,6 +1,6 @@
 Index: BUILD-OPTIONS.py
 ===================================================================
---- BUILD-OPTIONS.py	(revision 311)
+--- BUILD-OPTIONS.py	(revision 312)
 +++ BUILD-OPTIONS.py	(working copy)
 @@ -20,7 +20,7 @@
  PROFILE=0
@@ -13,7 +13,7 @@ Index: BUILD-OPTIONS.py
  QHULL_INCLUDE_PATH="/usr/include"
 Index: include/Physsim/Vector3.h
 ===================================================================
---- include/Physsim/Vector3.h	(revision 311)
+--- include/Physsim/Vector3.h	(revision 312)
 +++ include/Physsim/Vector3.h	(working copy)
 @@ -26,7 +26,8 @@
      void copy(const Vector3& source) { operator=(source); }
@@ -27,7 +27,7 @@ Index: include/Physsim/Vector3.h
      unsigned size() const { return 3; }
 Index: include/Physsim/CollisionDetection.inl
 ===================================================================
---- include/Physsim/CollisionDetection.inl	(revision 311)
+--- include/Physsim/CollisionDetection.inl	(revision 312)
 +++ include/Physsim/CollisionDetection.inl	(working copy)
 @@ -22,8 +22,10 @@
    std::list<DynamicBodyPtr> dbs;
@@ -42,9 +42,22 @@ Index: include/Physsim/CollisionDetection.inl
      DynamicBodyPtr db;
      if (ab)
        db = ab;
+Index: src/IndexedTriArray.cpp
+===================================================================
+--- src/IndexedTriArray.cpp	(revision 312)
++++ src/IndexedTriArray.cpp	(working copy)
+@@ -763,7 +763,7 @@
+       break;
+     
+     // determine whether the line describes a vertex
+-    if (id[0] == 'v' || id[0] == 'V')
++    if (id == std::string("v") || id == std::string("V"))
+     {
+       // read in the vertex and the rest of the line
+       in >> v1;
 Index: SConstruct
 ===================================================================
---- SConstruct	(revision 311)
+--- SConstruct	(revision 312)
 +++ SConstruct	(working copy)
 @@ -35,6 +35,7 @@
  DEFAULT_QHULL_LIB_PATH = '/usr/lib'
@@ -102,7 +115,7 @@ Index: SConstruct
  	SConscript(['Kinematic/SConscript'], exports=['env_copy', 'USE_INVENTOR'])
 Index: example/SConscript
 ===================================================================
---- example/SConscript	(revision 311)
+--- example/SConscript	(revision 312)
 +++ example/SConscript	(working copy)
 @@ -1,25 +1,29 @@
  # import variables from calling scripts
