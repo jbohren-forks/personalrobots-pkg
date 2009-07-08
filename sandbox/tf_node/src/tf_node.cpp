@@ -31,9 +31,13 @@
 #include "tf/tf.h"
 #include "tf/exceptions.h"
 #include "tf/transform_listener.h"
+#include "tf/transform_broadcaster.h"
 #include "tf/message_notifier.h"
 
 #include "tf/FrameGraph.h"
+
+#include "tf/tfMessage.h"
+
 
 #include "robot_msgs/PointStamped.h"
 #include "robot_msgs/PointCloud.h"
@@ -41,8 +45,11 @@
 #include "robot_msgs/QuaternionStamped.h"
 #include "robot_msgs/Vector3Stamped.h"
 
-#include "tf_node/StartTransforming.h"
-#include "tf_node/StopTransforming.h"
+#include "robot_msgs/Vector3.h"
+#include "robot_msgs/Quaternion.h"
+#include "robot_msgs/Transform.h"
+#include "robot_msgs/TransformStamped.h"
+
 
 #include "tf_node/TransformPoint.h"
 #include "tf_node/TransformPointCloud.h"
@@ -50,13 +57,24 @@
 #include "tf_node/TransformQuaternion.h"
 #include "tf_node/TransformVector.h"
 
+#include "tf_node/StartStaticTransform.h"
+#include "tf_node/StopStaticTransform.h"
+
+#include "tf_node/StartTransforming.h"
+#include "tf_node/StopTransforming.h"
+
 
 using namespace tf_node;
 
-tf::TransformListener *tl;
-tf::Transformer       *trf;
-ros::NodeHandle       *nh;
+tf::TransformListener    *tl;
+tf::TransformBroadcaster *tb;
+tf::Transformer          *trf;
+ros::NodeHandle          *nh;
 
+
+/******************************************************************************
+ *  TransformListener methods
+ ******************************************************************************/
 
 bool getFramesCallback(tf::FrameGraph::Request &req, 
 		       tf::FrameGraph::Response &res) {
@@ -139,8 +157,63 @@ bool transformVectorCallback(TransformVector::Request &req,
 }
 
 
-//template<class MessageT>
-//void doTransform(const std::string &target_frame, MessageT &in, MessageT &out);
+
+/******************************************************************************
+ *  Publishing (static) transforms
+ ******************************************************************************/
+
+void publishTransformCallback(const boost::shared_ptr<const robot_msgs::TransformStamped> &message) {
+  tf::Transform tft;
+  tf::transformMsgToTF(message->transform, tft);
+  ROS_INFO((std::string("Sending transform from parent ") + message->parent_id + " to " + message->header.frame_id).c_str());
+  tb->sendTransform(tft, message->header.stamp, message->header.frame_id, message->parent_id);
+}
+
+class TimedTransform {
+public:
+  TimedTransform(const boost::shared_ptr<const StartStaticTransform> &transform) : 
+	_transform(transform), _timer(nh->createTimer(transform->frequency, &TimedTransform::callback, this)) {
+    tf::transformMsgToTF(transform->transform, _tft);
+  }
+
+private:
+  void callback(const ros::TimerEvent &te) {
+    ROS_INFO((std::string("Sending static transform from parent ") + _transform->parent_id + " to " + _transform->frame_id).c_str());
+    tb->sendTransform(_tft, ros::Time::now(), _transform->frame_id, _transform->parent_id);
+  }
+
+  boost::shared_ptr<const StartStaticTransform> _transform;
+  tf::Transform _tft;
+  ros::Timer _timer;
+};
+
+std::map<std::pair<std::string, std::string>, boost::shared_ptr<TimedTransform> > static_transforms;
+boost::mutex static_transform_mutex;
+
+void startStaticTransformCallback(const boost::shared_ptr<const StartStaticTransform> &message) {
+  boost::mutex::scoped_lock l(static_transform_mutex);
+  if (static_transforms.erase(std::pair<std::string, std::string>(message->frame_id, message->parent_id)) > 0) {
+    ROS_INFO((std::string("Supplanting existing static transform from parent ") + message->parent_id + " to " + message->frame_id).c_str());
+  }
+  static_transforms[std::pair<std::string, std::string>(message->frame_id, message->parent_id)]
+    = boost::shared_ptr<TimedTransform>(new TimedTransform(message));
+  ROS_INFO((std::string("Added static transform from parent ") + message->parent_id + " to " + message->frame_id).c_str());
+}
+
+void stopStaticTransformCallback(const boost::shared_ptr<const StopStaticTransform> &message) {
+  boost::mutex::scoped_lock l(static_transform_mutex);
+  if (static_transforms.erase(std::pair<std::string, std::string>(message->frame_id, message->parent_id)) > 0) {
+    ROS_INFO((std::string("Stopped static transform from parent ") + message->parent_id + " to " + message->frame_id).c_str());
+  } else { 
+    ROS_INFO((std::string("Couldn't stop non-existant static transform from parent ") + message->parent_id + " to " + message->frame_id).c_str());
+  }
+}
+
+
+/******************************************************************************
+ *  Setting up standing transforms
+ ******************************************************************************/
+
 
 void doTransform(const std::string &target_frame, const robot_msgs::PointStamped &in, robot_msgs::PointStamped &out) {
   tl->transformPoint(target_frame, in, out);
@@ -204,8 +277,8 @@ private:
   
 };
 
-std::map<std::string, boost::shared_ptr<GenericTopicTransformer> > transformers;
 
+std::map<std::string, boost::shared_ptr<GenericTopicTransformer> > transformers;
 
 void startTransformingCallback(const boost::shared_ptr<StartTransforming const> &msg) {
   if (transformers.find(msg->out_topic) != transformers.end()) {
@@ -251,6 +324,9 @@ void stopTransformingCallback(const boost::shared_ptr<StopTransforming const> &m
 }
 
 
+/******************************************************************************
+ *  main; set up services and topics
+ ******************************************************************************/
 
 
 int main(int argc, char **argv)
@@ -261,8 +337,10 @@ int main(int argc, char **argv)
 
   // Use default arguments
   tl = new tf::TransformListener();
+  tb = new tf::TransformBroadcaster();
   trf = new tf::Transformer();
 
+  // Services for transforming things
   ros::ServiceServer f  = nh->advertiseService("get_tf_frames",         &getFramesCallback);
   ros::ServiceServer p  = nh->advertiseService("transform_point",       &transformPointCallback);
   ros::ServiceServer pc = nh->advertiseService("transform_point_cloud", &transformPointCloudCallback);
@@ -270,6 +348,15 @@ int main(int argc, char **argv)
   ros::ServiceServer q  = nh->advertiseService("transform_quaternion",  &transformQuaternionCallback);
   ros::ServiceServer v  = nh->advertiseService("transform_vector",      &transformVectorCallback);
 
+  // Topics for publishing transforms  
+  ros::Subscriber publishTransform     = 
+     nh->subscribe<robot_msgs::TransformStamped>("publish_transform", 20, &publishTransformCallback);
+  ros::Subscriber startStaticTransform = 
+     nh->subscribe<StartStaticTransform>("start_static_transform", 20, &startStaticTransformCallback);
+  ros::Subscriber stopStaticTransform  = 
+     nh->subscribe<StopStaticTransform>("stop_static_transform", 20, &stopStaticTransformCallback);
+
+  // Topics for setting up streaming transforms
   // These don't seem to be working right now ...
   ros::Subscriber startTransformer = nh->subscribe("start_transforming", 20, &startTransformingCallback);
   ros::Subscriber stopTransforming = nh->subscribe("stop_transforming", 20,  &stopTransformingCallback);
@@ -278,6 +365,7 @@ int main(int argc, char **argv)
 
   delete nh;
   delete tl;
+  delete tb;
   delete trf;
 
   return 0;
