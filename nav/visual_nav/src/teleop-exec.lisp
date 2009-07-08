@@ -1,5 +1,5 @@
 (defpackage :visual-nav
-  (:use :roslisp :cl :visual_nav-msg)
+  (:use :roslisp :cl :visual_nav-msg :std_msgs-msg)
   (:export :teleop-exec))
 
 (in-package :visual-nav)
@@ -11,6 +11,7 @@
 (defun teleop-exec ()
   (with-ros-node ("teleop-exec")
     (advertise "visual_nav_goal" "visual_nav/VisualNavGoal")
+    (advertise "name_node" "std_msgs/String")
     (loop
        (format t "~&Enter visual nav command: ")
        (let ((cmd (read)))
@@ -25,8 +26,13 @@
 
 
 (defun handle-goto ()
-  (publish "visual_nav_goal" (make-message "visual_nav/VisualNavGoal" :goal (read))))
+  (let ((dest (read)))
+    (publish "visual_nav_goal" 
+	     (make-message "visual_nav/VisualNavGoal" 
+			   goal (if (numberp dest) dest -1)
+			   named_goal (if (numberp dest) "" (symbol-name dest))))))
 
 (defun handle-annotate ()
-  (format t "~&Dummy annotating current node with ~a" (read)))
+  (publish "name_node" (make-message "std_msgs/String" :data (symbol-name (read))))
+  )
     

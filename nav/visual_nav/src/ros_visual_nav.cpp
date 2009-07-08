@@ -66,6 +66,7 @@
 #include <visual_nav/exceptions.h>
 #include <visual_nav/VisualNavGoal.h>
 #include <sensor_msgs/LaserScan.h>
+#include <std_msgs/String.h>
 
 using std::string;
 using std::vector;
@@ -83,6 +84,7 @@ using visual_nav::VisualNavGoal;
 using tf::MessageNotifier;
 using boost::shared_ptr;
 using boost::mutex;
+using std_msgs::String;
 
 namespace po=boost::program_options;
 
@@ -99,7 +101,7 @@ typedef map<int, NodeId> IdMap;
 typedef shared_ptr<PointSet> PointsPtr;
 typedef MessageNotifier<sensor_msgs::LaserScan> Notifier;
 typedef shared_ptr<Notifier> NotifierPtr;
-
+typedef map<string, NodeId> NodeNameMap;
 
 
 
@@ -120,6 +122,7 @@ public:
   // Callbacks
   void roadmapCallback();
   void goalCallback();
+  void nameCallback();
   void poseCallback();
   void baseScanCallback(const Notifier::MessagePtr& msg);
 
@@ -212,6 +215,10 @@ private:
   // Goal messages
   VisualNavGoal goal_message_;
 
+  // Name messages
+  String node_name_message_;
+  
+
   // Has at least one map message been received?
   bool map_received_;
 
@@ -233,7 +240,7 @@ private:
   // Goal node's (external) id
   NodeId goal_id_;
 
-  // Is there a goal right now?
+  // Is there a goal right now?  Set by goal callback and main loop.
   bool have_goal_;
 
   // Start node's (internal) id.  Access requires lock.
@@ -264,6 +271,9 @@ private:
   // How close we need to be to declare success on goal
   double goal_distance_threshold_;
 
+  // Maps names to node ids
+  NodeNameMap node_name_map_;
+
 
 };
 
@@ -281,6 +291,7 @@ RosVisualNavigator::RosVisualNavigator (double exit_point_radius, uint scan_peri
 {
   node_.subscribe("roadmap", roadmap_message_, &RosVisualNavigator::roadmapCallback, this, 1);
   node_.subscribe("visual_nav_goal", goal_message_, &RosVisualNavigator::goalCallback, this, 1);
+  node_.subscribe("name_node", node_name_message_, &RosVisualNavigator::nameCallback, this, 1);
   base_scan_notifier_ = NotifierPtr(new Notifier(&tf_listener_, ros::Node::instance(),  bind(&RosVisualNavigator::baseScanCallback, this, _1), "base_scan", "vslam", 50));
   node_.advertise<PoseStamped>("/move_base/activate", 1);
   node_.advertise<Marker>( "visualization_marker", 0 );
@@ -366,14 +377,33 @@ void RosVisualNavigator::roadmapCallback ()
 
 void RosVisualNavigator::goalCallback()
 {
-  if (goal_message_.goal>=0) {
+  have_goal_ = false;
+  if (goal_message_.named_goal.length() > 0) {
+    const NodeNameMap::const_iterator pos = node_name_map_.find(goal_message_.named_goal);
+    if (pos==node_name_map_.end()) {
+      ROS_ERROR_STREAM ("Received unknown named goal " << goal_message_.named_goal);
+    }
+    else {
+      goal_id_ = getInternalId(pos->second);
+      have_goal_ = true;
+    }
+  }
+  else if (goal_message_.goal>=0) {
     goal_id_ = getInternalId(goal_message_.goal);
     have_goal_=true;
+  }
+
+  if (have_goal_)
     ROS_INFO_STREAM ("New goal: node " << goal_id_);
-  }
-  else {
-    have_goal_=false;
-  }
+  else 
+    ROS_INFO_STREAM ("Goal cancelled");
+}
+
+
+
+void RosVisualNavigator::nameCallback()
+{
+  node_name_map_[node_name_message_.data] = start_id_;
 }
 
 

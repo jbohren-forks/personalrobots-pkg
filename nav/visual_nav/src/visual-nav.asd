@@ -9,6 +9,6 @@
   :components
   ((:file "teleop-exec"))
 
-  :depends-on (:roslisp :visual_nav-msg))
+  :depends-on (:roslisp :visual_nav-msg :std_msgs-msg))
 
 ;;;; eof
