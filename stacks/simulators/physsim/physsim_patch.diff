@@ -104,41 +104,46 @@ Index: example/SConscript
 ===================================================================
 --- example/SConscript	(revision 311)
 +++ example/SConscript	(working copy)
-@@ -1,25 +1,25 @@
+@@ -1,25 +1,29 @@
  # import variables from calling scripts
 -Import(['env_copy', 'USE_INVENTOR'])
 +Import(['env_copy', 'env_with_vars', 'USE_INVENTOR'])
  
++# setup rpath for shared libraries
++RPATH = '-Wl,-rpath,'+env_with_vars['PREFIX_PATH']+'/lib'
++print "\n",RPATH,"\n"
++
  # build utilities that don't require Physsim
  if USE_INVENTOR:
 -  env_copy.Program('view.cpp')
-+  env_copy.Program('view','view.cpp')
++  env_copy.Program('view','view.cpp',LINKFLAGS=RPATH)
  
  # add physsim libraries to libraries used by env_copyironment
  env_copy['LIBS'].append('physsim')
  
  # build utilities that do require Physsim
 -env_copy.Program('convexify.cpp')
-+env_copy.Program('convexify','convexify.cpp')
- #env_copy.Program('objwrl.cpp')
+-#env_copy.Program('objwrl.cpp')
 -env_copy.Program('conv-decomp.cpp')
 -env_copy.Program('center.cpp')
 -env_copy.Program('construct-OBB.cpp')
-+env_copy.Program('conv-decomp','conv-decomp.cpp')
-+env_copy.Program('center','center.cpp')
-+env_copy.Program('construct-OBB','construct-OBB.cpp')
++env_copy.Program('convexify','convexify.cpp',LINKFLAGS=RPATH)
++#env_copy.Program('objwrl.cpp',LINKFLAGS=RPATH)
++env_copy.Program('conv-decomp','conv-decomp.cpp',LINKFLAGS=RPATH)
++env_copy.Program('center','center.cpp',LINKFLAGS=RPATH)
++env_copy.Program('construct-OBB','construct-OBB.cpp',LINKFLAGS=RPATH)
  
  # build the symbolic output program
 -env_copy.Program('output_symbolic.cpp')
-+env_copy.Program('oubput_symbolic','output_symbolic.cpp')
++env_copy.Program('oubput_symbolic','output_symbolic.cpp',LINKFLAGS=RPATH)
  
  # build the driver program
 -env_copy.Program('driver.cpp')
-+env_copy.Program('driver','driver.cpp')
++env_copy.Program('driver','driver.cpp',LINKFLAGS=RPATH)
  
  # build controllers
  #SConscript(['mrobot/SConscript'], exports='env_copy')
-@@ -27,3 +27,10 @@
+@@ -27,3 +31,10 @@
  #SConscript(['bullet/SConscript'], exports='env_copy')
  SConscript(['banditII/SConscript'], exports='env_copy')
  
