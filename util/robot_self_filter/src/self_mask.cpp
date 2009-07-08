@@ -169,7 +169,7 @@ void robot_self_filter::SelfMask::maskAux(const robot_msgs::PointCloud& data_in,
 #pragma omp parallel for schedule(dynamic) 
     for (int i = 0 ; i < (int)np ; ++i)
     {
-	btVector3 pt = btVector3(btScalar(data_in.pts[i].x), btScalar(data_in.pts[i].y), btScalar(data_in.pts[i].z));
+	btVector3 pt = btVector3(data_in.pts[i].x, data_in.pts[i].y, data_in.pts[i].z);
 	int out = 1;
 	if (bound.center.distance2(pt) < radiusSquared)
 	    for (unsigned int j = 0 ; out && j < bs ; ++j)
@@ -182,7 +182,7 @@ void robot_self_filter::SelfMask::maskAux(const robot_msgs::PointCloud& data_in,
 
 int robot_self_filter::SelfMask::getMask(double x, double y, double z) const
 {
-    btVector3 pt = btVector3(btScalar(x), btScalar(y), btScalar(z));
+    btVector3 pt = btVector3(x, y, z);
     const unsigned int bs = bodies_.size();
     int out = 1;
     for (unsigned int j = 0 ; out && j < bs ; ++j)
