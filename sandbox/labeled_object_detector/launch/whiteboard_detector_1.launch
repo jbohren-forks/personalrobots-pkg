@@ -1,0 +1,20 @@
+<launch>
+
+
+  <node pkg="rosrecord" type="rosplay" args="-s 3 -a $(find labeled_object_detector)/test_data/whiteboards_pcd.bag"/>
+
+  <node pkg="object_names" type="simple_name_server.py" name="name_server" output="screen">
+    <param name="index_name" value="$(find object_names)/launch/names.txt"/>
+  </node>
+
+  <node pkg="annotated_planar_patch_map" type="pcd_assembler_srv" output="screen"
+        name="pcd_assembler" respawn="true"
+>
+
+    <remap from="scan" to="/annotated_cloud"/>
+    <param name="tf_cache_time_secs" type="double" value="30.0" />
+    <param name="max_scans" type="int" value="4000" />
+    <param name="fixed_frame" type="string" value="map" />
+  </node>
+
+</launch>

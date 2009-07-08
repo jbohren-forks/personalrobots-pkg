@@ -40,6 +40,9 @@ target_link_libraries(detect_nearest_object_action ${PROJECT_NAME})
 rospack_add_executable(test_nearest_action test/test_nearest_action.cpp)
 target_link_libraries(test_nearest_action ${PROJECT_NAME})
 
+rospack_add_executable(test_nearest_action2 test/test_nearest_action2.cpp)
+target_link_libraries(test_nearest_action2 ${PROJECT_NAME})
+
 
 #rospack_add_gtest(test_pcd_segmentation test/test_pcd_segmentation.cpp)
 #target_link_libraries(test_pcd_segmentation ${PROJECT_NAME})
