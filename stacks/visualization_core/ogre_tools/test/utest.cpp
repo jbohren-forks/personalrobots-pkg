@@ -34,7 +34,7 @@
 #include "../src/ogre_tools/orbit_camera.h"
 #include "../src/ogre_tools/initialization.h"
 
-#include <ros/common.h>
+#include <ros/package.h>
 
 #include <Ogre.h>
 
@@ -58,7 +58,7 @@ public:
     g_root->loadPlugin( "RenderSystem_GL" );
     g_root->loadPlugin( "Plugin_OctreeSceneManager" );
 
-    std::string ogre_tools_path = ros::getPackagePath(ROS_PACKAGE_NAME);
+    std::string ogre_tools_path = ros::package::getPath(ROS_PACKAGE_NAME);
     Ogre::ResourceGroupManager::getSingleton().addResourceLocation( ogre_tools_path + "/media", "FileSystem", ROS_PACKAGE_NAME );
     Ogre::ResourceGroupManager::getSingleton().addResourceLocation( ogre_tools_path + "/media/models", "FileSystem", ROS_PACKAGE_NAME );
     ogre_tools::initializeResources(ogre_tools::V_string());
