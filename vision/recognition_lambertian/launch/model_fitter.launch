@@ -2,7 +2,7 @@
 <launch>
     <node pkg="recognition_lambertian" name="recognition_lambertian" type="recognition_lambertian" respawn="false" output="screen">
         <param name="display" type="bool" value="false" />
-        <param name="target_frame" value="table_frame" />
+        <param name="target_frame" value="base_link" />
 
     </node>
 
