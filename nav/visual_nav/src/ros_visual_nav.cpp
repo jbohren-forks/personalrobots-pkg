@@ -113,8 +113,8 @@ class RosVisualNavigator
 {
 public:
 
-  // Constructor
   RosVisualNavigator (double exit_point_radius, uint scan_period);
+  ~RosVisualNavigator ();
 
   // Spin
   void run();
@@ -176,6 +176,9 @@ private:
 
   // Send the current map, robot position, and goal to visualizer
   void publishVisualization ();
+
+  // Get rid of existing markers
+  void deleteOldMarkers ();
 
   // Publish a sphere for a given pose and color
   void publishNodeMarker (const Pose& pose, uint r, uint g, uint b);
@@ -283,7 +286,6 @@ private:
  * top level
  ************************************************************/
 
-// Constructor
 RosVisualNavigator::RosVisualNavigator (double exit_point_radius, uint scan_period) :
   node_("visual_navigator"), tf_listener_(node_), map_received_(false),
   odom_received_(false), exit_point_radius_(exit_point_radius), have_goal_(false),
@@ -297,12 +299,17 @@ RosVisualNavigator::RosVisualNavigator (double exit_point_radius, uint scan_peri
   node_.advertise<Marker>( "visualization_marker", 0 );
   node_.advertise<Polyline> ("vslam_laser", 1);
   node_.param("~odom_frame", odom_frame_, string("odom"));
-  node_.param("~goal_distance_threshold", goal_distance_threshold_, 0.1);
+  node_.param("~goal_distance_threshold", goal_distance_threshold_, .5);
 
   ROS_INFO_STREAM ("Started RosVisualNavigator with exit_point_radius=" << exit_point_radius_ << ", goal_id=" << goal_id_ << ", odom_frame=" << odom_frame_);
 
 }
 
+
+RosVisualNavigator::~RosVisualNavigator ()
+{
+  deleteOldMarkers();
+}
 
 
 void RosVisualNavigator::run ()
@@ -310,7 +317,7 @@ void RosVisualNavigator::run ()
   Duration d(0.1);
 
   // Wait for map and odom messages
-  for (uint i=0; ; ++i) {
+  for (uint i=0; node_.ok() ; ++i) {
 
     // Wait till we have an initial value for odom and map
     updateOdom();
@@ -325,6 +332,7 @@ void RosVisualNavigator::run ()
         
         if (distance(roadmap_->nodePose(start_id_), roadmap_->nodePose(goal_id_)) < goal_distance_threshold_) {
           have_goal_ = false;
+          ROS_INFO_STREAM ("Achieved goal " << goal_id_);
         }
         else {
           publishExitPoint();
@@ -604,6 +612,21 @@ Point transformToMapFrame (tf::TransformListener* tf, const Point2D& p, const st
   return visualized_point;
 }
 
+void RosVisualNavigator::deleteOldMarkers ()
+{
+  for (uint i=0; i<num_active_markers_; ++i) {
+    Marker marker;
+    marker.ns = "visual_nav";
+    marker.id=i;
+    marker.action=Marker::DELETE;
+    node_.publish("visualization_marker", marker);
+  }
+
+  ROS_DEBUG_STREAM_NAMED ("rviz", "Deleted " << num_active_markers_ << " old markers upon node destruction");
+
+  num_active_markers_=0;
+}
+
 // Publish the full roadmap
 void RosVisualNavigator::publishVisualization ()
 {
@@ -613,15 +636,7 @@ void RosVisualNavigator::publishVisualization ()
   // Commenting out as it was inducing a cycle in transform tree when fake_localization was used
 
 
-  // First, delete the old ones
-  for (uint i=0; i<num_active_markers_; ++i) {
-    Marker marker;
-    marker.ns = "visual_nav";
-    marker.id=i;
-    marker.action=Marker::DELETE;
-    node_.publish("visualization_marker", marker);
-  }
-  num_active_markers_=0;
+  deleteOldMarkers();
 
 
   /// Now add the new ones and publish, while holding lock
