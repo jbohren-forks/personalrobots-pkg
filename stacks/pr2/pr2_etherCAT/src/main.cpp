@@ -123,8 +123,8 @@ static void publishDiagnostics(realtime_tools::RealtimePublisher<diagnostic_msgs
 
     avg_ec = extract_result<tag::mean>(g_stats.ec_acc);
     avg_mc = extract_result<tag::mean>(g_stats.mc_acc);
-    max_ec = std::max(max_ec, extract_result<tag::max>(g_stats.ec_acc)); 
-    max_mc = std::max(max_mc, extract_result<tag::max>(g_stats.mc_acc)); 
+    max_ec = std::max(max_ec, extract_result<tag::max>(g_stats.ec_acc));
+    max_mc = std::max(max_mc, extract_result<tag::max>(g_stats.mc_acc));
     g_stats.ec_acc = zero;
     g_stats.mc_acc = zero;
 
@@ -307,6 +307,8 @@ void *controlLoop(void *)
 
   publisher.stop();
   if (rtpublisher) delete rtpublisher;
+
+  ros::shutdown();
 
   return 0;
 }
@@ -548,6 +550,7 @@ int main(int argc, char *argv[])
     ROS_BREAK();
   }
 
+  ros::spin();
   pthread_join(controlThread, (void **)&rv);
 
   // Cleanup pid file
