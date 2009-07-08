@@ -1,9 +1,9 @@
 <?xml version="1.0" ?>
-<model:physical name="001_327_79">
+<model:physical name="701_330_68">
   <xyz>   0      0      0</xyz>
   <rpy>   0.0    0.0    0.0</rpy>
   <static>false</static>
-  <body:trimesh name="001_327_79_body">
+  <body:trimesh name="701_330_68_body">
 
     <massMatrix>true</massMatrix> 
     <mass>1.0</mass>
@@ -17,18 +17,18 @@
     <cy>0.0</cy>
     <cz>0.05</cz>
 
-    <geom:trimesh name="001_327_79_geom">
+    <geom:trimesh name="701_330_68_geom">
       <xyz>0 0 0</xyz>
       <laserRetro>2000.0</laserRetro>
       <kp>1000000.0</kp>
       <kd>1.0</kd>
       <scale>0.001 0.001 0.001</scale>
-      <mesh>ikea_objects/001.327.79.obj.stlb.mesh</mesh>
+      <mesh>ikea_objects/701.330.68.obj.stlb.mesh</mesh>
       <visual>
         <xyz>0 0 0.0</xyz>
-        <size>0.0816 0.0816 0.113</size>
-        <material>PR2/Green</material>
-        <mesh>ikea_objects/001.327.79.obj.stlb.mesh</mesh>
+        <size>0.09 0.09 0.206</size>
+        <material>Gazebo/Rocky</material>
+        <mesh>ikea_objects/701.330.68.obj.stlb.mesh</mesh>
       </visual>
     </geom:trimesh>
   </body:trimesh>

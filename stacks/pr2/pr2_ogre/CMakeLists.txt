@@ -52,9 +52,10 @@ add_custom_target(media_files ALL DEPENDS ${pr2_gen_files})
 
 
 find_ros_package(ikea_objects)
-if(EXISTS ikea_objects_PACKAGE_PATH)
+MESSAGE(STATUS "\nikea_objects path  ${ikea_objects_PACKAGE_PATH}\n")
+if(EXISTS ${ikea_objects_PACKAGE_PATH})
   # build the ogre mesh files from *.stl (and *.stlb from convex decomposition)
-  file(GLOB ikea_objects_stl_files ${ikea_objects_PACKAGE_PATH}/meshes/convex/*_convex.stl)
+  file(GLOB ikea_objects_stl_files ${ikea_objects_PACKAGE_PATH}/meshes/convex/*.stlb)
   set(ikea_objects_gen_files "")
 
   set(ikea_objects_out_path ${CMAKE_CURRENT_SOURCE_DIR}/Media/models/ikea_objects)
@@ -77,5 +78,5 @@ if(EXISTS ikea_objects_PACKAGE_PATH)
   endforeach(it)
 
   add_custom_target(ikea_objects_media_files ALL DEPENDS ${ikea_objects_gen_files})
-endif(EXISTS ikea_objects_PACKAGE_PATH)
+endif(EXISTS ${ikea_objects_PACKAGE_PATH})
 
