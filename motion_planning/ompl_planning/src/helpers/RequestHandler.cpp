@@ -63,7 +63,7 @@ bool ompl_planning::RequestHandler::isRequestValid(ModelMap &models, motion_plan
 		    req.params.planner_id = it->first;
 		else
 		    if (m->planners[req.params.planner_id]->priority < it->second->priority ||
-			(m->planners[req.params.planner_id]->priority == it->second->priority && random() % 2 == 1))
+			(m->planners[req.params.planner_id]->priority == it->second->priority && rand() % 2 == 1))
 			req.params.planner_id = it->first;
 	    }
     
@@ -251,7 +251,7 @@ bool ompl_planning::RequestHandler::computePlan(ModelMap &models, const planning
 	if (psetup->priority < -(int)m->planners.size())
 	    psetup->priority = -m->planners.size();
     }
-    
+    ROS_DEBUG("New motion priority for  '%s' is %d", req.params.planner_id.c_str(), psetup->priority);
     return true;
 }
 
