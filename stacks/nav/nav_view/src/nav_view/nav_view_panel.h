@@ -105,7 +105,7 @@ Publishes to (name / type):
 
 @section parameters ROS parameters
 
-- None
+- \b /global_frame_id - If set, everything is transformed to this frame.  Defaults to "/map"
 
  **/
 namespace ogre_tools
