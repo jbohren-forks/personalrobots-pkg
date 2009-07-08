@@ -117,7 +117,7 @@ int M3NModel::train(const vector<const RandomField*>& training_rfs, const M3NPar
   // Train for the specified number of iterations
   for (unsigned int t = 0 ; t < nbr_iterations ; t++)
   {
-    ROS_INFO("--------\nStarting iteration %u", t);
+    ROS_INFO("-------- Starting iteration %u --------", t);
     // ---------------------------------------------------
     // Iterate over each RandomField
     for (unsigned int i = 0 ; i < training_rfs.size() ; i++)
