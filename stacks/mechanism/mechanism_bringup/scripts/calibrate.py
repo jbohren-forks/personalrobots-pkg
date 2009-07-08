@@ -64,6 +64,7 @@ def calibrate(config):
         for i in range(len(resp.ok)):
             if resp.ok[i] == 0:
                 print "Failed: %s" % resp.name[i]
+                rospy.logerr('%s failure msg: %s' % (resp.name[i], resp.error[i]))
                 success = False
             else:
                 launched.append(resp.name[i])
@@ -110,10 +111,16 @@ def main():
 
     rospy.init_node('calibration', anonymous=True)
 
-    imustatus = calibrate_imu()
-    if not imustatus:
-        print "IMU Calibration may have failed."
-        
+    # Don't calibrate the IMU unless ordered to by user
+    cal_imu = rospy.get_param('calibrate_imu', False)
+
+    if cal_imu:
+        imustatus = calibrate_imu()
+        if not imustatus:
+            print "IMU Calibration may have failed."
+    else: 
+        imustatus = True
+
     xml = ''
 
     if len(sys.argv) > 1:

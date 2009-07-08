@@ -170,7 +170,6 @@ def calibrate_imu():
             if is_calibrated(timeout=maxtime):
                 return True
             if rospy.get_time() > endtime:
-                rospy.logerr("Timed out waiting for IMU calibration.")
                 return False
             rospy.sleep(1)
     except:
@@ -233,7 +232,6 @@ if __name__ == '__main__':
     set_controller("r_shoulder_lift_controller", float(1.0))
     set_controller("l_shoulder_lift_controller", float(1.0))
 
-    rospy.logerr('Setting torso lift controller')
     torso_pub = rospy.Publisher('torso_lift_controller/set_command', Float64)
     torso_pub.publish(Float64(float(0.0)))
     sleep(1.5)
@@ -252,7 +250,7 @@ if __name__ == '__main__':
             xmls[i+1] = xmls[i+1].replace('<controllers>', '')
         xml = "\n".join(xmls)
     else:
-        print "Reading from stdin..."
+        rospy.logout("Reading from stdin...")
         xml = sys.stdin.read()
 
     try:
@@ -268,7 +266,7 @@ if __name__ == '__main__':
                     rospy.logerr("Failed to kill controller %s on try %d" % (name, i))
 
     if not imustatus:
-        print "Mechanism calibration complete, but IMU calibration failed."
+        rospy.logerr("Mechanism calibration complete, but IMU calibration failed.")
         sys.exit(2)
 
     rospy.logout("Calibration complete")
