@@ -64,6 +64,7 @@ void printHelp(void)
     std::cout << "   - clear                   : clears all stored configs" << std::endl;
     std::cout << "   - current                 : show the values of the current configuration" << std::endl;
     std::cout << "   - current <config>        : set <config> to the current position of the arm" << std::endl;
+    std::cout << "   - rand <config>           : set <config> to a random position of the arm" << std::endl;
     std::cout << "   - diff <config>           : show the difference from current position of the arm to <config>" << std::endl;
     std::cout << "   - go <config>             : sends the command <config> to the arm" << std::endl;
     std::cout << "   - go <px> <py> <pz>       : move the end effector to pose (<px>, <py>, <pz>, 0, 0, 0, 1)" << std::endl;
@@ -274,6 +275,16 @@ int main(int argc, char **argv)
 	    std::string config = cmd.substr(8);
 	    boost::trim(config);
 	    setConfig(km.getRobotState(), names, goals[config]);
+	}
+	else
+	if (cmd.length() > 5 && cmd.substr(0, 5) == "rand ")
+	{
+	    std::string config = cmd.substr(5);
+	    boost::trim(config);
+	    planning_models::StateParams *sp = km.getKinematicModel()->newStateParams();
+	    sp->randomState();
+	    setConfig(sp, names, goals[config]);
+	    delete sp;
 	}
 	else
 	if (cmd.length() > 3 && cmd.substr(0, 3) == "go ")
