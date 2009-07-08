@@ -22,6 +22,10 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 #gensrv()
 
 rospack_add_library(${PROJECT_NAME} src/database.cpp)
+target_link_libraries(${PROJECT_NAME} db_cxx)
+
+rospack_add_executable(db_test test/db_test.cpp)
+target_link_libraries(db_test ${PROJECT_NAME})
 
 #common commands for building c++ executables and libraries
 #rospack_add_library(${PROJECT_NAME} src/example.cpp)
