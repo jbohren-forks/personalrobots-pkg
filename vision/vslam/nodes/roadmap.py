@@ -74,12 +74,13 @@ class RoadmapServer:
     self.pub = rospy.Publisher("/roadmap", vslam.msg.Roadmap)
 
     time.sleep(1)
-    self.send_map()
+    #self.send_map(rospy.time(0))
 
     rospy.Subscriber('/stereo/raw_stereo', sensor_msgs.msg.RawStereo, self.handle_raw_stereo, queue_size=2, buff_size=7000000)
 
-  def send_map(self):
+  def send_map(self, stamp):
     p = vslam.msg.Roadmap()
+    p.header.stamp = stamp
     (ns,es,lo) = self.skel.localization()
     print "ns,es,lo", ns, es, lo
     p.nodes = [ vslam.msg.Node(x,y,t) for (x,y,t) in ns ]
@@ -102,7 +103,7 @@ class RoadmapServer:
     af = SparseStereoFrame(pair[0], pair[1], feature_detector = self.fd, descriptor_scheme = self.ds)
     self.vo.handle_frame(af)
     if self.skel.add(self.vo.keyframe):
-      self.send_map()
+      self.send_map(msg.header.stamp)
 
 def dist(a,b):
   xd = a[0] - b[0]
