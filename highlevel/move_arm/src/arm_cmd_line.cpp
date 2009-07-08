@@ -34,7 +34,7 @@
  *
  *********************************************************************/
 
-/* Author: Ioan Sucan */
+/* \author: Ioan Sucan */
 
 #include <ros/ros.h>
 #include <robot_actions/action_client.h>

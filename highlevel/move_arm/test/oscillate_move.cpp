@@ -34,7 +34,7 @@
  *
  *********************************************************************/
 
-/* Author: Ioan Sucan */
+/* \author: Ioan Sucan */
 
 #include <ros/ros.h>
 #include <robot_actions/action_client.h>
@@ -55,7 +55,6 @@ int main(int argc, char **argv)
     int32_t                         feedback;
     pr2_robot_actions::MoveArmGoal  goalA;
     pr2_robot_actions::MoveArmGoal  goalB;
-    pr2_robot_actions::MoveArmState state;
     
     goalA.goal_constraints.set_pose_constraint_size(1);
     goalA.goal_constraints.pose_constraint[0].pose.header.stamp = ros::Time::now();
