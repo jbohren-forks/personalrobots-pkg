@@ -136,7 +136,7 @@ public:
   {
     boost::mutex::scoped_lock laser_lock(laser_mutex_);
     // note time when tilt laser is pointing down
-    if (laser_scanner_signal_.signal == 0){
+    if (laser_scanner_signal_.signal == 1){
       laser_time_ = laser_scanner_signal_.header.stamp;
     }
 }
