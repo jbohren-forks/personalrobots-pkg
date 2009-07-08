@@ -40,7 +40,14 @@
 
 #include <descriptors_3d/descriptors_3d.h>
 
-
+// --------------------------------------------------------------
+//* LocalGeometry
+/**
+ * \brief Implements 3-D descriptors that describe local point cloud geometry
+ *
+ *
+ */
+// --------------------------------------------------------------
 class LocalGeometry: public Descriptor3D
 {
   public:
@@ -52,8 +59,6 @@ class LocalGeometry: public Descriptor3D
     }
 
     virtual bool compute(Eigen::MatrixXf** result, bool debug);
-
-    virtual bool readyToCompute();
 
     // ----------------------------------------------------------
 
@@ -67,13 +72,13 @@ class LocalGeometry: public Descriptor3D
       return -1;
     }
 
-    void useElevation()
+    // ===================================================================
+    /*! \name Spectral analysis related */
+    // ===================================================================
+    //@{
+    void useSpectral()
     {
-      if (use_elevation_ == false)
-      {
-        use_elevation_ = true;
-        result_size_++;
-      }
+      //
     }
 
     void useTangentOrientation(double ref_x, double ref_y, double ref_z)
@@ -114,16 +119,47 @@ class LocalGeometry: public Descriptor3D
       // TODO
     }
 
-    void useRawBoundingBox()
-    {
-      // TODO
-    }
     void usePCABoundingBox()
     {
       // TODO
     }
 
+    void useSpinImageNormal()
+    {
+      // TODO
+    }
+
+    void useSpinImageTangent()
+    {
+      // TODO
+    }
+    //@}
+
+    void useSpinImage(double ref_x, double ref_y, double ref_z)
+    {
+      // TODO
+    }
+
+    void useElevation()
+    {
+      if (use_elevation_ == false)
+      {
+        use_elevation_ = true;
+        result_size_++;
+      }
+    }
+
+    void useRawBoundingBox()
+    {
+      // TODO
+    }
+
+  protected:
+    virtual bool readyToCompute();
+
   private:
+    void computeSpinImage(Eigen::Vector3d& axis);
+
     double radius_;
 
     bool ref_tangent_defined_;

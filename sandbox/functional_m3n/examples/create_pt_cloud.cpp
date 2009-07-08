@@ -33,8 +33,45 @@ unsigned int setupNodeFeatures(const robot_msgs::PointCloud& pt_cloud,
 void createNodes(RandomField& rf,
                  const robot_msgs::PointCloud& pt_cloud,
                  cloud_kdtree::KdTree& pt_cloud_kdtree,
-                 vector<unsigned int>& labels);
+                 const vector<unsigned int>& labels,
+                 set<unsigned int>& failed_indices);
 
+// --------------------------------------------------------------
+/*!
+ * \brief Instantiate and train the model
+ *
+ * You need to define parameters in this function
+ */
+// --------------------------------------------------------------
+M3NModel* trainModel(vector<const RandomField*>& training_rfs)
+{
+  // Define parameters for regressors
+  // (using default values)
+  RegressionTreeWrapperParams regression_tree_params;
+
+  // Define learning parameters
+  M3NParams m3n_params;
+  m3n_params.setLearningRate(0.1);
+  m3n_params.setNumberOfIterations(15);
+  m3n_params.setRegressorRegressionTrees(regression_tree_params);
+
+  M3NModel* m3n_model = new M3NModel();
+  if (m3n_model->train(training_rfs, m3n_params) < 0)
+  {
+    ROS_ERROR("Failed to train M3N model");
+    delete m3n_model;
+    return NULL;
+  }
+  return m3n_model;
+}
+
+// --------------------------------------------------------------
+/*!
+ * \brief Creates PointCloud datastructure from file
+ *
+ * File format: x y z label 2
+ */
+// --------------------------------------------------------------
 int loadPointCloud(string filename, robot_msgs::PointCloud& pt_cloud, vector<unsigned int>& labels)
 {
   // ----------------------------------------------
@@ -83,12 +120,12 @@ int loadPointCloud(string filename, robot_msgs::PointCloud& pt_cloud, vector<uns
 /*
  void tempo()
  {
- int n = 100000;
- //int n = 1000;
+ int n = 100000 + 5;
+ //int n = 100+5;
  int d = 6;
  float* matrix = (float*) malloc(n * d * sizeof(float));
 
- for (unsigned int i = 0 ; i < n ; i++)
+ for (unsigned int i = 0 ; i < n - 5 ; i++)
  {
  for (unsigned int j = 0 ; j < d ; j++)
  {
@@ -97,8 +134,14 @@ int loadPointCloud(string filename, robot_msgs::PointCloud& pt_cloud, vector<uns
  }
  //cout << endl;
  }
- int nbr_clusters = 0.1 * n;
-
+ for (unsigned int i = n - 5 ; i < n ; i++)
+ {
+ for (unsigned int j = 0 ; j < d ; j++)
+ {
+ matrix[i * d + j] = 99999.9;
+ }
+ }
+ int nbr_clusters = 0.01 * n;
 
  //CvMat train_data;
  //cvInitMatHeader(&train_data, n, d, CV_32F, matrix);
@@ -132,7 +175,7 @@ int loadPointCloud(string filename, robot_msgs::PointCloud& pt_cloud, vector<uns
  cout << "center: ";
  for (int j = 0 ; j < d ; j++)
  {
- cout << poop[i*d + j] << " ";
+ cout << poop[i * d + j] << " ";
  }
  cout << endl;
  }
@@ -143,7 +186,7 @@ int loadPointCloud(string filename, robot_msgs::PointCloud& pt_cloud, vector<uns
 int main()
 {
   // ----------------------------------------------------------
-  ROS_INFO("loading point cloud...");
+  ROS_INFO("Loading point cloud...");
   robot_msgs::PointCloud pt_cloud;
   vector<unsigned int> labels;
   if (loadPointCloud("training_data.xyz_label_conf", pt_cloud, labels) < 0)
@@ -155,26 +198,21 @@ int main()
   cloud_kdtree::KdTree* pt_cloud_kdtree = new cloud_kdtree::KdTreeANN(pt_cloud);
 
   // ----------------------------------------------------------
+  ROS_INFO("Creating random field...");
   RandomField rf(0);
-  createNodes(rf, pt_cloud, *pt_cloud_kdtree, labels);
+  set<unsigned int> failed_indices;
+  createNodes(rf, pt_cloud, *pt_cloud_kdtree, labels, failed_indices);
+  ROS_INFO("done");
 
   // ----------------------------------------------------------
-  ROS_INFO("Starting to train");
-  M3NParams m3n_params;
-  m3n_params.setLearningRate(0.1);
-  m3n_params.setNumberOfIterations(20);
-  RegressionTreeWrapperParams regression_tree_params;
-  m3n_params.setRegressorRegressionTrees(regression_tree_params);
-  M3NModel m3n_model;
+  ROS_INFO("Starting to train...");
   vector<const RandomField*> training_rfs(1, &rf);
-  if (m3n_model.train(training_rfs, m3n_params) < 0)
+  M3NModel* trained_model = trainModel(training_rfs);
+  if (trained_model != NULL)
   {
-    ROS_ERROR("wtf");
-    abort();
+    ROS_INFO("Successfully trained M3n model");
+    delete trained_model;
   }
-
-  ROS_INFO("SUCCESS");
-
   return 0;
 }
 
@@ -184,7 +222,8 @@ int main()
 void createNodes(RandomField& rf,
                  const robot_msgs::PointCloud& pt_cloud,
                  cloud_kdtree::KdTree& pt_cloud_kdtree,
-                 vector<unsigned int>& labels)
+                 const vector<unsigned int>& labels,
+                 set<unsigned int>& failed_indices)
 
 {
   vector<Descriptor3D*> feature_descriptors;
@@ -222,12 +261,12 @@ void createNodes(RandomField& rf,
       {
         delete created_features[k];
       }
+      failed_indices.insert(i);
       continue;
     }
 
+    // Copy each feature from above into big concatenated vector
     concat_created_feature_vals = static_cast<float*> (malloc(nbr_total_feature_vals * sizeof(float)));
-
-    // Copy each feature from above
     unsigned int prev_length = 0;
     unsigned int curr_length = 0;
     float* curr_feature_vals = NULL;
@@ -250,6 +289,8 @@ void createNodes(RandomField& rf,
       abort();
     }
   }
+
+  // TODO create vector of min,max, mean, variance values
 }
 
 unsigned int setupNodeFeatures(const robot_msgs::PointCloud& pt_cloud,
@@ -285,7 +326,103 @@ unsigned int setupNodeFeatures(const robot_msgs::PointCloud& pt_cloud,
   return total_result_size;
 }
 
-void createCliques()
+void clusterFeatures()
 {
+  // parameters: start end idx
+  // return  map<unsigned int, list<unsigned int> > cluster_to_node_indices;
+}
 
+void createCliques(RandomField& rf,
+                   const robot_msgs::PointCloud& pt_cloud,
+                   cloud_kdtree::KdTree& pt_cloud_kdtree,
+                   set<unsigned int>& failed_indices)
+{
+  // Determine which indices to cluster over
+  unsigned int feature_idx_start = 0;
+  unsigned int feature_idx_end = 3;
+  unsigned int feature_dim = feature_idx_end - feature_idx_start;
+  unsigned int feature_dim_xyz = feature_dim + 3;
+
+  float dummy_feature_vals[feature_dim_xyz];
+  memset(dummy_feature_vals, 99999.0, feature_dim_xyz * sizeof(float));
+
+  const map<unsigned int, RandomField::Node*>& nodes = rf.getNodesRandomFieldIDs();
+
+  // ----------------------------------------
+  // Create matrix for clustering
+  unsigned int nbr_pts = pt_cloud.pts.size();
+  float* feature_matrix = static_cast<float*> (malloc(nbr_pts * feature_dim_xyz * sizeof(float)));
+  const float* curr_node_features = NULL;
+  float curr_normalized_feature_val = 0.0;
+  for (unsigned int i = 0 ; i < nbr_pts ; i++)
+  {
+    if (failed_indices.count(i) != 0)
+    {
+      // copy meaningless feature vals
+      memcpy(feature_matrix + (i * feature_dim_xyz), dummy_feature_vals, feature_dim_xyz * sizeof(float));
+    }
+    else
+    {
+      for (unsigned int j = 0 ; j < 3 ; j++)
+      {
+        // normalize xyz coords TODO
+        curr_normalized_feature_val = 0.0;
+
+        feature_matrix[i * feature_dim_xyz + j] = curr_normalized_feature_val;
+      }
+
+      curr_node_features = nodes.find(i)->second->getFeatureVals();
+      for (unsigned int j = 0 ; j < feature_dim ; j++)
+      {
+        // normalize feature val TODO
+        curr_normalized_feature_val = 0.0;
+
+        feature_matrix[i * feature_dim_xyz + 3 + j] = curr_normalized_feature_val;
+      }
+    }
+  }
+
+  // ----------------------------------------
+  // Cluster matrix
+  unsigned int nbr_clusters = 10; // TODO call flann
+
+  // ----------------------------------------
+  // Find which pts belong to which cluster
+  map<unsigned int, list<unsigned int> > cluster_to_node_indices;
+  unsigned int dummy_cluster_idx = 0;
+  for (unsigned int i = 0 ; i < nbr_clusters ; i++)
+  {
+    cluster_to_node_indices[i] = list<unsigned int> ();
+
+    // update dummy_cluster_idx TODO
+    // just check if first dimension is greater than BIG_VAL-1
+  }
+
+  for (unsigned int i = 0 ; i < nbr_pts ; i++)
+  {
+    // curr feature_vals
+
+    // find closest cluster center to features
+    //unsigned int closest_cluster_dist;
+    unsigned int closest_cluster_idx;
+    for (unsigned int j = 0 ; j < nbr_clusters ; j++)
+    {
+
+    }
+
+    cluster_to_node_indices[closest_cluster_idx].push_back(i);
+  }
+
+  // ----------------------------------------
+  // Create cliques
+  for (unsigned int i = 0 ; i < nbr_clusters ; i++)
+  {
+    if (i == dummy_cluster_idx)
+    {
+      continue;
+    }
+
+    // compute features
+    // add to random field
+  }
 }
