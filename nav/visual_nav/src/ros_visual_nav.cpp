@@ -114,9 +114,6 @@ public:
   // Constructor
   RosVisualNavigator (double exit_point_radius, uint scan_period);
 
-  // Subscribe topics
-  void setupTopics();
-
   // Spin
   void run();
 
@@ -168,8 +165,6 @@ private:
     Pose pose;
   };
   typedef vector<ObservedScan> ObsScanVector;
-
-
 
 
   /******************************
@@ -266,6 +261,9 @@ private:
   // Message notifier to ensure that we only deal with scans when we can transform them
   NotifierPtr base_scan_notifier_;
 
+  // How close we need to be to declare success on goal
+  double goal_distance_threshold_;
+
 
 };
 
@@ -281,11 +279,6 @@ RosVisualNavigator::RosVisualNavigator (double exit_point_radius, uint scan_peri
   odom_received_(false), exit_point_radius_(exit_point_radius), have_goal_(false),
   num_active_markers_(0), scan_counter_(1), scan_period_(scan_period)
 {
-}
-
-
-void RosVisualNavigator::setupTopics ()
-{
   node_.subscribe("roadmap", roadmap_message_, &RosVisualNavigator::roadmapCallback, this, 1);
   node_.subscribe("visual_nav_goal", goal_message_, &RosVisualNavigator::goalCallback, this, 1);
   base_scan_notifier_ = NotifierPtr(new Notifier(&tf_listener_, ros::Node::instance(),  bind(&RosVisualNavigator::baseScanCallback, this, _1), "base_scan", "vslam", 50));
@@ -293,6 +286,7 @@ void RosVisualNavigator::setupTopics ()
   node_.advertise<Marker>( "visualization_marker", 0 );
   node_.advertise<Polyline> ("vslam_laser", 1);
   node_.param("~odom_frame", odom_frame_, string("odom"));
+  node_.param("~goal_distance_threshold", goal_distance_threshold_, 0.1);
 
   ROS_INFO_STREAM ("Started RosVisualNavigator with exit_point_radius=" << exit_point_radius_ << ", goal_id=" << goal_id_ << ", odom_frame=" << odom_frame_);
 
@@ -317,7 +311,13 @@ void RosVisualNavigator::run ()
     // Assuming odom and map received, send exit point goal if necessary, and publish visualization
     else {
       if (have_goal_) {
-        publishExitPoint();
+        
+        if (distance(roadmap_->nodePose(start_id_), roadmap_->nodePose(goal_id_)) < goal_distance_threshold_) {
+          have_goal_ = false;
+        }
+        else {
+          publishExitPoint();
+        }
       }
       publishVisualization();
     }
@@ -703,8 +703,6 @@ int main(int argc, char** argv)
   ros::init (argc, argv);
 
   RosVisualNavigator nav(radius, scan_period);
-
-  nav.setupTopics();
 
   nav.run();
 
