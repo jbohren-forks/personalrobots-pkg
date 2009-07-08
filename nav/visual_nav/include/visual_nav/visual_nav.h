@@ -133,6 +133,15 @@ typedef shared_ptr<VisualNavRoadmap> RoadmapPtr;
 RoadmapPtr readRoadmapFromFile(const string& filename);
 
 
+inline double distance (const Pose& pose1, const Pose& pose2)
+{
+  double dx=pose1.x-pose2.x;
+  double dy=pose1.y-pose2.y;
+  return sqrt(dx*dx+dy*dy);
+}
+
+
+
 } // visual_nav
 
 #endif

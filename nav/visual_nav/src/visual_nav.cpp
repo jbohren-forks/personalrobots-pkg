@@ -65,13 +65,6 @@ RoadmapEdge getEdgeBetween (const RoadmapVertex v, const RoadmapVertex w, const 
 }
    
 
-inline double distance (const Pose& pose1, const Pose& pose2)
-{
-  double dx=pose1.x-pose2.x;
-  double dy=pose1.y-pose2.y;
-  return sqrt(dx*dx+dy*dy);
-}
-
 inline double relPoseLength (const Transform2D& rel_pose)
 {
   return sqrt(rel_pose.dx*rel_pose.dx+rel_pose.dy*rel_pose.dy);
