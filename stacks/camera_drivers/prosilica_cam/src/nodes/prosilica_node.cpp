@@ -478,6 +478,7 @@ public:
     {
       usleep(100000);
       diagnostic_.update();
+      ros::spinOnce();
     }
 
     stop();
