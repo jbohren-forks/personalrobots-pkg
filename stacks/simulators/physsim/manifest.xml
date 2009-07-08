@@ -1,0 +1,28 @@
+<package>
+  <description brief="physsim">
+  This package contains PhysSim, another physics engine.
+  </description>
+  <author>Evan Drumwright</author>
+  <license>LGPL</license>
+  <review status="3rdparty" notes=""/>
+  <url>http://physsim.sourceforge.net</url>
+  <export>
+    <cpp lflags="`xml2-config --libs` `rosboost-cfg --lflags thread,signals` -Wl,-rpath,${prefix}/physsim/lib -L${prefix}/physsim/lib -lphyssim" cflags="`xml2-config --cflags` `rosboost-cfg --cflags` -I${prefix}/physsim/include"/>
+    <doxymaker external="http://physsim.sourceforge.net"/>
+  </export>
+  <versioncontrol type="svn" url="https://physsim.svn.sourceforge.net/svnroot/physsim/Physsim"/>
+  <rosdep name="scons"/>
+  <rosdep name="libtool"/>
+  <rosdep name="fltk"/>
+  <rosdep name="libxml2"/>
+  <rosdep name="coin"/>
+  <rosdep name="qhull"/>
+  <rosdep name="qt3"/> <!--ubuntu 8.04: libqt3-headers libqt3-mt libqt3-mt-dev qt3-dev-tools-->
+  <rosdep name="qwt"/> <!--ubuntu 8.04: libqwt-dev -->
+  <rosdep name="atlas"/> <!--ubuntu 8.04: libatlas3gf-base libatlas-base-dev libatlas-headers -->
+  <rosdep name="lapack"/> <!--ubuntu 8.04: libblas3gf libblas-dev liblapack3gf liblapack-dev -->
+  <rosdep name="soqt"/> <!--ubuntu 8.04: libsoqt20 libsoqt-dev -->
+  <rosdep name="pkg-config"/>
+</package>
+
+
