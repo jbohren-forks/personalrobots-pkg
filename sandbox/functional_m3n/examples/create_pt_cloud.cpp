@@ -5,23 +5,29 @@
  *      Author: dmunoz
  */
 
+#include <iostream>
+#include <fstream>
+#include <vector>
+
 #include <robot_msgs/PointCloud.h>
 
 #include <Eigen/Core>
+
+#include <opencv/cv.h>
+#include <opencv/cxcore.hpp>
+#include <opencv/cvaux.hpp>
+
+#include <flann.h>
+
+#include <descriptors_3d/local_geometry.h>
 
 #include <point_cloud_mapping/geometry/nearest.h>
 #include <point_cloud_mapping/kdtree/kdtree.h>
 #include <point_cloud_mapping/kdtree/kdtree_ann.h>
 
-#include <descriptors_3d/local_geometry.h>
-
 #include <functional_m3n/random_field.h>
 #include <functional_m3n/m3n_model.h>
 #include <functional_m3n/regressors/regressor_params.h>
-
-#include <iostream>
-#include <fstream>
-#include <vector>
 
 unsigned int setupNodeFeatures(const robot_msgs::PointCloud& pt_cloud,
                                cloud_kdtree::KdTree& pt_cloud_kdtree,
@@ -33,8 +39,11 @@ void createNodes(RandomField& rf,
                  cloud_kdtree::KdTree& pt_cloud_kdtree,
                  vector<unsigned int>& labels);
 
-int loadPointCloud(string filename, robot_msgs::PointCloud& pt_cloud, vector<unsigned int>& labels)
+int loadPointCloud(string filename, vector<cv::Point3f>* opencv_pts, robot_msgs::PointCloud* ros_pts, vector<
+    unsigned int>& labels)
 {
+  // ----------------------------------------------
+  // Open file
   ifstream infile(filename.c_str());
   if (infile.is_open() == false)
   {
@@ -42,6 +51,8 @@ int loadPointCloud(string filename, robot_msgs::PointCloud& pt_cloud, vector<uns
     return -1;
   }
 
+  // ----------------------------------------------
+  // Count number of lines in the file
   unsigned int nbr_samples = 0;
   char line[256];
   while (infile.getline(line, 256))
@@ -52,30 +63,119 @@ int loadPointCloud(string filename, robot_msgs::PointCloud& pt_cloud, vector<uns
   infile.clear();
   infile.seekg(ios::beg);
 
-  pt_cloud.pts.resize(nbr_samples);
+  // ----------------------------------------------
+  // Resize containers appropriately
+  if (opencv_pts != NULL)
+  {
+    opencv_pts->resize(nbr_samples);
+  }
+
+  if (ros_pts != NULL)
+  {
+    ros_pts->pts.resize(nbr_samples);
+  }
   labels.resize(nbr_samples);
 
+  // ----------------------------------------------
+  // Read file
   // file format: x y z label 2
+  float x, y, z;
   unsigned int tempo;
   for (unsigned int i = 0 ; i < nbr_samples ; i++)
   {
-    infile >> pt_cloud.pts[i].x;
-    infile >> pt_cloud.pts[i].y;
-    infile >> pt_cloud.pts[i].z;
+    infile >> x;
+    infile >> y;
+    infile >> z;
     infile >> labels[i];
     infile >> tempo;
+
+    if (opencv_pts != NULL)
+    {
+      (*opencv_pts)[i].x = x;
+      (*opencv_pts)[i].y = y;
+      (*opencv_pts)[i].z = z;
+    }
+
+    if (ros_pts != NULL)
+    {
+      ros_pts->pts[i].x = x;
+      ros_pts->pts[i].y = y;
+      ros_pts->pts[i].z = z;
+    }
   }
+
   infile.close();
   return 0;
 }
+
+/*
+ void tempo()
+ {
+ int n = 100000;
+ //int n = 1000;
+ int d = 6;
+ float* matrix = (float*) malloc(n * d * sizeof(float));
+
+ for (unsigned int i = 0 ; i < n ; i++)
+ {
+ for (unsigned int j = 0 ; j < d ; j++)
+ {
+ matrix[i * d + j] = 0.1 + rand() % 10;
+ //cout << matrix[i * d + j] << " ";
+ }
+ //cout << endl;
+ }
+ int nbr_clusters = 0.1 * n;
+
+
+ //CvMat train_data;
+ //cvInitMatHeader(&train_data, n, d, CV_32F, matrix);
+ //CvMat* clusters = cvCreateMat(n, 1, CV_32SC1);
+
+ //cout << "starting cluster..." << nbr_clusters;
+ //cvKMeans2(&train_data, nbr_clusters, clusters, cvTermCriteria(CV_TERMCRIT_ITER + CV_TERMCRIT_EPS, 1, 1.0));
+ //cout << "done." << endl;
+ //cvReleaseMat(&clusters);
+
+
+ FLANNParameters p;
+ p.algorithm = KMEANS;
+ p.checks = 2;
+ p.cb_index = 0.0;
+ p.trees = 2;
+ p.branching = 4;
+ p.iterations = 3;
+ p.centers_init = CENTERS_RANDOM;
+ p.target_precision = 0.8;
+ p.log_level = LOG_INFO;
+ p.log_destination = NULL;
+
+ cout << "doing clustering..." << endl;
+ float* poop = (float*) malloc(n * sizeof(float));
+ int nbr_found = flann_compute_cluster_centers(matrix, n, d, nbr_clusters, poop, &p);
+ cout << "done.   found: " << nbr_found << " (requested " << nbr_clusters << ")" << endl;
+
+ for (int i = 0 ; i < nbr_found ; i++)
+ {
+ cout << "center: ";
+ for (int j = 0 ; j < d ; j++)
+ {
+ cout << poop[i*d + j] << " ";
+ }
+ cout << endl;
+ }
+ free(poop);
+ }
+ */
 
 int main()
 {
   // ----------------------------------------------------------
   ROS_INFO("loading point cloud...");
   robot_msgs::PointCloud pt_cloud;
+  vector<cv::Point3f> opencv_pts;
   vector<unsigned int> labels;
-  if (loadPointCloud("training_data.xyz_label_conf", pt_cloud, labels) < 0)
+  if (loadPointCloud("training_data.xyz_label_conf", NULL, &pt_cloud, labels) < 0)
   {
     return -1;
   }
@@ -186,16 +286,16 @@ unsigned int setupNodeFeatures(const robot_msgs::PointCloud& pt_cloud,
                                vector<Descriptor3D*>& feature_descriptors,
                                vector<unsigned int>& feature_descriptor_sizes)
 {
+  // ----------------------------------------------
+  // Clear out any existing descriptors
   for (unsigned int i = 0 ; i < feature_descriptors.size() ; i++)
   {
     delete feature_descriptors[i];
   }
-
   feature_descriptors.clear();
   feature_descriptor_sizes.clear();
 
-  unsigned int total_result_size = 0;
-
+  // ----------------------------------------------
   // Geometry feature information
   LocalGeometry* geometry_features = new LocalGeometry();
   geometry_features->setData(&pt_cloud, &pt_cloud_kdtree);
@@ -204,6 +304,9 @@ unsigned int setupNodeFeatures(const robot_msgs::PointCloud& pt_cloud,
   geometry_features->useNormalOrientation(0.0, 0.0, 1.0);
   geometry_features->useTangentOrientation(0.0, 0.0, 1.0);
 
+  // ----------------------------------------------
+  // Pushback all descriptors from above
+  unsigned int total_result_size = 0;
   feature_descriptors.push_back(geometry_features);
   feature_descriptor_sizes.push_back(geometry_features->getResultSize());
   total_result_size += geometry_features->getResultSize();
