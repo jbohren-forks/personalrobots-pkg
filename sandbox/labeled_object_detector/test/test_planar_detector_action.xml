@@ -1,0 +1,33 @@
+<launch>
+
+  <!-- Need a stereo to get StereoInfo -->
+  <!--node pkg="rosrecord" type="rosplay" args="-s 3 -r 100 $(find labeled_object_detector)/test_data/ann_pcd_2009-07-02-08-21-40-topic.bag"-->
+
+  <node pkg="rosrecord" type="rosplay" args="-s 3 -a $(find labeled_object_detector)/test_data/whiteboards_pcd.bag"/>
+
+  <node pkg="object_names" type="simple_name_server.py" name="name_server" output="screen">
+    <param name="index_name" value="$(find object_names)/launch/names.txt"/>
+  </node>
+
+  <node pkg="annotated_planar_patch_map" type="pcd_assembler_srv" output="screen"
+        name="pcd_assembler" respawn="true"
+>
+
+    <remap from="scan" to="/annotated_cloud"/>
+    <param name="tf_cache_time_secs" type="double" value="30.0" />
+    <param name="max_scans" type="int" value="4000" />
+    <param name="fixed_frame" type="string" value="map" />
+  </node>
+
+
+  <node pkg="labeled_object_detector" type="detect_nearest_object_action" output="screen" respawn="true" name="object_detector"
+	launch-prefix="xterm -e gdb --args"
+>
+    <remap from="build_cloud" to="/pcd_assembler/build_cloud" />
+    <param name="fixed_frame" type="string" value="map" />
+    <param name="local_frame" type="string" value="odom_combined" />
+
+  </node>
+
+
+</launch>

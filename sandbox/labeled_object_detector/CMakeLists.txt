@@ -22,7 +22,7 @@ genmsg()
 #gensrv()
 
 #common commands for building c++ executables and libraries
-rospack_add_library(${PROJECT_NAME} src/pcd_misc.cpp)
+rospack_add_library(${PROJECT_NAME} src/pcd_misc.cpp src/planar_object_detector.cpp src/object_model.cpp)
 
 
 #target_link_libraries(${PROJECT_NAME} another_library)
@@ -31,8 +31,14 @@ rospack_add_library(${PROJECT_NAME} src/pcd_misc.cpp)
 #rospack_add_executable(example examples/example.cpp)
 #target_link_libraries(example ${PROJECT_NAME})
 
-rospack_add_executable(planar_object_detector src/planar_object_detector.cpp)
+rospack_add_executable(planar_object_detector  src/planar_object_detector_node.cpp)
 target_link_libraries(planar_object_detector ${PROJECT_NAME})
+
+rospack_add_executable(detect_nearest_object_action  src/detect_nearest_object_action.cpp)
+target_link_libraries(detect_nearest_object_action ${PROJECT_NAME})
+
+rospack_add_executable(test_nearest_action test/test_nearest_action.cpp)
+target_link_libraries(test_nearest_action ${PROJECT_NAME})
 
 
 #rospack_add_gtest(test_pcd_segmentation test/test_pcd_segmentation.cpp)

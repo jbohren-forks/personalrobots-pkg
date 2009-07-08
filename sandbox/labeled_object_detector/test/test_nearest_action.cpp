@@ -32,83 +32,53 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
-//! \author Alex Sorokin 
 
-#ifndef OBJDET_OBJECT_MODEL_H
-#define OBJDET_OBJECT_MODEL_H
-
-// ROS core
+//include <labeled_object_detector/planar_object_detector_action.h>
+#include <labeled_object_detector/PoseStampedState.h>
+#include <robot_actions/action_client.h>
+#include <robot_actions/action.h>
 #include <ros/ros.h>
-// ROS messages
-#include <robot_msgs/PointCloud.h>
-
-
-// Cloud kd-tree
-#include <point_cloud_mapping/kdtree/kdtree_ann.h>
-
-// Cloud geometry
-#include <point_cloud_mapping/geometry/angles.h>
-#include <point_cloud_mapping/geometry/point.h>
-#include <point_cloud_mapping/geometry/areas.h>
-
-// Sample Consensus
-#include <point_cloud_mapping/sample_consensus/sac.h>
-#include <point_cloud_mapping/sample_consensus/ransac.h>
-#include <point_cloud_mapping/sample_consensus/sac_model_plane.h>
-#include <point_cloud_mapping/geometry/projections.h>
-
-#include <angles/angles.h>
-
-// transform library
-#include <tf/transform_listener.h>
-#include <tf/transform_broadcaster.h>
-
-#include <visualization_msgs/Marker.h>
 #include <robot_msgs/PointStamped.h>
+#include <gtest/gtest.h>
 
-#include <point_cloud_assembler/BuildCloud.h>
+using namespace robot_msgs;
+using namespace labeled_object_detector;
 
-#include "labeled_object_detector/BoundingBox.h"
-
-namespace labeled_object_detector
+/* ---[ */
+int
+  main (int argc, char** argv)
 {
+  ros::init (argc, argv, "action_test");
 
-class ObjectModel
-{
-public:
-  roslib::Header header_;
-  BoundingBox bbox_;
-
-  tf::Stamped<tf::Pose> object_frame_;
-
-  visualization_msgs::Marker marker_;
-  robot_msgs::PointStamped center_;
-
-  virtual robot_msgs::PointStamped getCenter();
-  
-
-  inline robot_msgs::PoseStamped getPose(){
-    robot_msgs::PoseStamped msg;
-    poseStampedTFToMsg(object_frame_, msg);
-    return msg;
-  }
-};
+  robot_actions::ActionClient<PoseStamped, PoseStampedState, PoseStamped> client("detect_nearest_object");
+  ros::Duration duration(10);
+  duration.sleep();
 
 
-class PlanarObjectModel : public ObjectModel
-{
-public:
-  robot_msgs::PointCloud pcd_;
+  PoseStamped goal;
+  PoseStamped feedback;
+  // Start the action; it must finish in 1 second
 
-  PlanarObjectModel(){};
+  goal.header.stamp.sec=1246990627;
+  goal.header.stamp.nsec=471105000;
+  goal.header.frame_id=std::string("map");
+  goal.pose.position.x=0;
+  goal.pose.position.y=0;
+  goal.pose.position.z=0;
+  goal.pose.orientation.x=0;
+  goal.pose.orientation.y=0;
+  goal.pose.orientation.z=0;
+  goal.pose.orientation.w=1;
 
-};
+  robot_actions::ResultStatus result = client.execute(goal, feedback, ros::Duration(10));
+  //ASSERT_EQ(result, robot_actions::PREEMPTED);
 
-typedef boost::shared_ptr<PlanarObjectModel>  PlanarObjectModelPtr;
+  // Start the action; it must finish in 0.0001 second
+  /*result = client.execute(g, f, ros::Duration().fromSec(0.0001));
+  ASSERT_EQ(result, robot_actions::PREEMPTED);
+  */
 
-typedef std::deque<boost::shared_ptr<ObjectModel> > ObjectModelDeque;
-
+  return (0);
 }
+/* ]--- */
 
-
-#endif

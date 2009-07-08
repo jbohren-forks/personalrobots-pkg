@@ -32,83 +32,25 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
-//! \author Alex Sorokin 
 
-#ifndef OBJDET_OBJECT_MODEL_H
-#define OBJDET_OBJECT_MODEL_H
-
-// ROS core
-#include <ros/ros.h>
-// ROS messages
-#include <robot_msgs/PointCloud.h>
-
-
-// Cloud kd-tree
-#include <point_cloud_mapping/kdtree/kdtree_ann.h>
-
-// Cloud geometry
-#include <point_cloud_mapping/geometry/angles.h>
-#include <point_cloud_mapping/geometry/point.h>
-#include <point_cloud_mapping/geometry/areas.h>
-
-// Sample Consensus
-#include <point_cloud_mapping/sample_consensus/sac.h>
-#include <point_cloud_mapping/sample_consensus/ransac.h>
-#include <point_cloud_mapping/sample_consensus/sac_model_plane.h>
-#include <point_cloud_mapping/geometry/projections.h>
-
-#include <angles/angles.h>
-
-// transform library
-#include <tf/transform_listener.h>
-#include <tf/transform_broadcaster.h>
-
+#include <planar_object_detector_node.h>
+#include <pcd_misc.h>
 #include <visualization_msgs/Marker.h>
-#include <robot_msgs/PointStamped.h>
 
-#include <point_cloud_assembler/BuildCloud.h>
+#include "object_names/Name2Float.h"
 
-#include "labeled_object_detector/BoundingBox.h"
+using namespace std;
+using namespace robot_msgs;
+using namespace pcd_misc;
+using namespace labeled_object_detector;
 
-namespace labeled_object_detector
+
+
+robot_msgs::PointStamped ObjectModel::getCenter()
 {
-
-class ObjectModel
-{
-public:
-  roslib::Header header_;
-  BoundingBox bbox_;
-
-  tf::Stamped<tf::Pose> object_frame_;
-
-  visualization_msgs::Marker marker_;
-  robot_msgs::PointStamped center_;
-
-  virtual robot_msgs::PointStamped getCenter();
-  
-
-  inline robot_msgs::PoseStamped getPose(){
-    robot_msgs::PoseStamped msg;
-    poseStampedTFToMsg(object_frame_, msg);
-    return msg;
-  }
-};
-
-
-class PlanarObjectModel : public ObjectModel
-{
-public:
-  robot_msgs::PointCloud pcd_;
-
-  PlanarObjectModel(){};
-
-};
-
-typedef boost::shared_ptr<PlanarObjectModel>  PlanarObjectModelPtr;
-
-typedef std::deque<boost::shared_ptr<ObjectModel> > ObjectModelDeque;
-
+  return center_;
 }
 
 
-#endif
+
+

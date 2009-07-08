@@ -1,34 +1,40 @@
-/*
- * Copyright (c) 2009 Radu Bogdan Rusu <rusu -=- cs.tum.edu>
- *
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- *
- */
+/*********************************************************************
+* Software License Agreement (BSD License)
+*
+*  Copyright (c) 2008, Willow Garage, Inc.
+*  All rights reserved.
+*
+*  Redistribution and use in source and binary forms, with or without
+*  modification, are permitted provided that the following conditions
+*  are met:
+*
+*   * Redistributions of source code must retain the above copyright
+*     notice, this list of conditions and the following disclaimer.
+*   * Redistributions in binary form must reproduce the above
+*     copyright notice, this list of conditions and the following
+*     disclaimer in the documentation and/or other materials provided
+*     with the distribution.
+*   * Neither the name of the Willow Garage nor the names of its
+*     contributors may be used to endorse or promote products derived
+*     from this software without specific prior written permission.
+*
+*  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+*  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+*  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+*  FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+*  COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+*  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+*  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+*  LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+*  CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+*  LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+*  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+*  POSSIBILITY OF SUCH DAMAGE.
+*********************************************************************/
 
 #include <planar_object_detector.h>
 #include <pcd_misc.h>
-#include <visualization_msgs/Marker.h>
+
 
 #include "object_names/Name2Float.h"
 
@@ -53,14 +59,6 @@ PlanarObjectDetector::PlanarObjectDetector()
   n_.param( std::string("~annotation_channel"), annotation_channel_,std::string("ann-w-env-layer-1p"));
   n_.param( std::string("~target_object"), target_object_,std::string("whiteboard"));
 
-
-
-
-  cloud_sub_ = n_.subscribe<PointCloud>("cloud",100,boost::bind(&PlanarObjectDetector::cloudCallback, this, _1));
-
-  marker_pub_=n_.advertise<visualization_msgs::Marker>("visualization_marker",1);
-  cloud_pub_ = n_.advertise<PointCloud>("object_cloud",100);
-  box_pub_ = n_.advertise<BoundingBox>("object_boxes",100);
 }
 
 
@@ -187,27 +185,10 @@ void PlanarObjectDetector::setup()
   ROS_INFO_STREAM("Setup done.");
 }
 
-void PlanarObjectDetector::cloudCallback(const PointCloudConstPtr& the_cloud)
-{
-  boost::mutex::scoped_lock lock(proc_mutex_);
-  try{
-    ROS_INFO("Received point cloud, starting detection");
-    cloud_ = the_cloud;
-    detectObject(*cloud_);
-  }
-  catch(tf::TransformException& ex)
-  {
-    ROS_WARN("Transform Exception %s", ex.what()) ;
-    return ;
-  }
-}
-
-void PlanarObjectDetector::detectObject(const PointCloud& point_cloud)
+void PlanarObjectDetector::detectObjects(const PointCloud& point_cloud,ObjectModelDeque& objects)
 {
   PointCloud global_cloud;
-  tf_.transformPointCloud(fixed_frame_,point_cloud,global_cloud);
-
-
+  tf_->transformPointCloud(fixed_frame_,point_cloud,global_cloud);
 
   std::vector<std::deque<int> > model_to_observation;
   model_to_observation.resize(num_clusters_);
@@ -241,13 +222,17 @@ void PlanarObjectDetector::detectObject(const PointCloud& point_cloud)
     }
     
     std::vector<int> vec_observations(model_to_observation[iModel].begin(),model_to_observation[iModel].end());
-    fitObjectModel2Cloud(iModel,global_cloud,point_cloud,vec_observations);
     
+    boost::shared_ptr<PlanarObjectModel> out_object;
+    if(fitObjectModel2Cloud(iModel,global_cloud,point_cloud,vec_observations,out_object))
+    {
+      objects.push_back( out_object);
+    }    
   }
 }
 
 
-void PlanarObjectDetector::fitObjectModel2Cloud(const unsigned int model_id,const PointCloud& global_cloud,const PointCloud& local_cloud,const std::vector<int> observation_ids)
+bool PlanarObjectDetector::fitObjectModel2Cloud(const unsigned int model_id,const PointCloud& global_cloud,const PointCloud& local_cloud,const std::vector<int> observation_ids,PlanarObjectModelPtr& out_object)
 {
 
   std::string observation_frame=local_cloud.header.frame_id;
@@ -257,7 +242,7 @@ void PlanarObjectDetector::fitObjectModel2Cloud(const unsigned int model_id,cons
   cloud_geometry::getPointCloud(filtered_cloud_, clouds_by_indices_[model_id], model_cloud_global);
 
   model_cloud_global.header.stamp = local_cloud.header.stamp; //Assume that global frame is fixed.
-  tf_.transformPointCloud(observation_frame, model_cloud_global, model_cloud_local);
+  tf_->transformPointCloud(observation_frame, model_cloud_global, model_cloud_local);
 
 
   vector<int> full_model_indices;
@@ -282,10 +267,13 @@ void PlanarObjectDetector::fitObjectModel2Cloud(const unsigned int model_id,cons
   if(! is_fitting_ok)
   {
     ROS_INFO("Model fitting failed");
-    return;
+    return false;
   }
 
-  PointCloud model_cloud_projected;
+
+
+  out_object=boost::shared_ptr<PlanarObjectModel>(new PlanarObjectModel);
+  PointCloud& model_cloud_projected=out_object->pcd_;
   cloud_geometry::projections::pointsToPlane(model_cloud_local,full_model_indices,model_cloud_projected, model);
   model_cloud_projected.header=model_cloud_local.header;
 
@@ -332,22 +320,30 @@ void PlanarObjectDetector::fitObjectModel2Cloud(const unsigned int model_id,cons
   object_ul.header.frame_id = local_cloud.header.frame_id;
 
 
-  ROS_INFO_STREAM("\t X-range:["<<object_origin.point.x <<"," << object_ul.point.x << "]");
-  ROS_INFO_STREAM("\t Y-range:["<<object_origin.point.y <<"," << object_ul.point.y << "]");
-  ROS_INFO_STREAM("\t Z-range:["<<object_origin.point.z <<"," << object_ul.point.z << "]");
+  PointStamped object_c;
+  object_c.point.x = offset.x+dir_line2.x*(max_w+min_w)/2;
+  object_c.point.y = offset.y+dir_line2.y*(max_w+min_w)/2;
+  object_c.point.z = offset.z+dir_line1.z*(max_h+min_h)/2;
+
+  object_c.header.stamp = local_cloud.header.stamp;
+  object_c.header.frame_id = local_cloud.header.frame_id;
+
+  out_object->center_=object_c;
+
+
+  ROS_INFO_STREAM("\t X-range:["<< object_origin.point.x <<"," << object_ul.point.x << "]");
+  ROS_INFO_STREAM("\t Y-range:["<< object_origin.point.y <<"," << object_ul.point.y << "]");
+  ROS_INFO_STREAM("\t Z-range:["<< object_origin.point.z <<"," << object_ul.point.z << "]");
 
   std::stringstream out_str;
-  out_str << "obj_" << target_object_ << model_id ;
+  out_str << "obj_" << target_object_ << "_" <<model_id ;
   std::string object_frame = out_str.str();
-  addObjectFrame(object_origin, model, object_frame);
 
-  publishObjectMarker(max_w-min_w,max_h-min_h,object_frame,model_id);
+  makeObjectFrame(object_origin, model, object_frame, out_object);
 
-  publishObjectMarker2(object_origin.point,object_ul.point,model_id);
+  makeObjectMarker(object_origin.point,object_ul.point,model_id,out_object);
 
-  cloud_pub_.publish(model_cloud_projected);
-
-  BoundingBox object_box;
+  BoundingBox& object_box=out_object->bbox_;
   object_box.header.stamp = object_origin.header.stamp;
   object_box.header.frame_id = object_frame;
   object_box.object_type = (unsigned int)round(target_label_);
@@ -359,20 +355,17 @@ void PlanarObjectDetector::fitObjectModel2Cloud(const unsigned int model_id,cons
   object_box.pose.orientation.y = 0.0;
   object_box.pose.orientation.z = 0.0;
   object_box.pose.orientation.w = 1.0;
-  object_box.size.x = max_w-min_w;
-  object_box.size.y = 0;
+  object_box.size.x = 0;
+  object_box.size.y = max_w-min_w;
   object_box.size.z = max_h-min_h;
 
   object_box.support = float(observation_ids.size());
 
-  box_pub_.publish(object_box);
-
-
-
+  return true;
 }
 
 
-void  PlanarObjectDetector::addObjectFrame(const PointStamped origin, const vector<double>& plane,const std::string object_frame)
+void  PlanarObjectDetector::makeObjectFrame(const PointStamped origin, const vector<double>& plane,const std::string object_frame,PlanarObjectModelPtr object)
 {
   
   btVector3 position(origin.point.x,origin.point.y,origin.point.z);
@@ -392,10 +385,8 @@ void  PlanarObjectDetector::addObjectFrame(const PointStamped origin, const vect
   
   // add wall_frame to tf
   tf::Stamped<tf::Pose> table_pose_frame(tf_pose, origin.header.stamp, object_frame, origin.header.frame_id);
-  
-  tf_.setTransform(table_pose_frame);
-  
-  broadcaster_.sendTransform(table_pose_frame);
+  object->object_frame_ = table_pose_frame;
+
 }
 
 
@@ -439,61 +430,11 @@ bool PlanarObjectDetector::fitSACPlane (const PointCloud& points, const vector<i
 
 
 
-void PlanarObjectDetector::publishObjectMarker(const float w,const float h,const std::string object_frame,const unsigned int model_id)
+
+void PlanarObjectDetector::makeObjectMarker(const Point pt,const Point pt2,const unsigned int model_id, PlanarObjectModelPtr object)
 {
-  visualization_msgs::Marker marker;
-  marker.header.frame_id = object_frame;
-  marker.header.stamp = ros::Time();
-  marker.ns = "whiteboard";
-  marker.id = model_id;
-  marker.type = visualization_msgs::Marker::LINE_STRIP;
-  marker.action = visualization_msgs::Marker::ADD;
+  visualization_msgs::Marker& marker = object->marker_;
 
-  marker.pose.position.x = 0;
-  marker.pose.position.y = 0;
-  marker.pose.position.z = 0;
-  marker.pose.orientation.x = 0.0;
-  marker.pose.orientation.y = 0.0;
-  marker.pose.orientation.z = 0.0;
-  marker.pose.orientation.w = 1.0;
-  marker.scale.x = 0.05;
-  marker.scale.y = 0.005;
-  marker.scale.z = 0.005;
-  marker.color.a = 1.0;
-  marker.color.r = 0.0;
-  marker.color.g = 1.0;
-  marker.color.b = 0.0;
-
-  marker.lifetime = ros::Duration(10.0);
-
-
-  tf::Point pt(0,0,0);
-  robot_msgs::Point pt_msg;
-  tf::PointTFToMsg(pt, pt_msg);
-  marker.points.push_back(pt_msg);
-
-  tf::Point pt2(1,0,0);
-  tf::PointTFToMsg(pt2, pt_msg);
-  marker.points.push_back(pt_msg);
-
-  tf::Point pt3(1,0,1);
-  tf::PointTFToMsg(pt3, pt_msg);
-  marker.points.push_back(pt_msg);
-
-  tf::Point pt4(0,0,1);
-  tf::PointTFToMsg(pt4, pt_msg);
-  marker.points.push_back(pt_msg);
-
-  
-  marker_pub_.publish(marker);
-}
-
-
-
-
-void PlanarObjectDetector::publishObjectMarker2(const Point pt,const Point pt2,const unsigned int model_id)
-{
-  visualization_msgs::Marker marker;
   marker.header.frame_id = local_frame_;
   marker.header.stamp = ros::Time();
   marker.ns = "whiteboard-1";
@@ -521,46 +462,30 @@ void PlanarObjectDetector::publishObjectMarker2(const Point pt,const Point pt2,c
 
   tf::Point ptA(pt.x,pt.y,pt.z);
   robot_msgs::Point pt_msg;
-  tf::PointTFToMsg(ptA, pt_msg);
+  tf::pointTFToMsg(ptA, pt_msg);
   marker.points.push_back(pt_msg);
 
   tf::Point ptB(pt2.x,pt2.y,pt.z);
-  tf::PointTFToMsg(ptB, pt_msg);
+  tf::pointTFToMsg(ptB, pt_msg);
   marker.points.push_back(pt_msg);
 
   tf::Point ptC(pt2.x,pt2.y,pt2.z);
-  tf::PointTFToMsg(ptC, pt_msg);
+  tf::pointTFToMsg(ptC, pt_msg);
   marker.points.push_back(pt_msg);
 
   tf::Point ptD(pt.x,pt.y,pt2.z);
-  tf::PointTFToMsg(ptD, pt_msg);
+  tf::pointTFToMsg(ptD, pt_msg);
   marker.points.push_back(pt_msg);
 
-  tf::PointTFToMsg(ptA, pt_msg);
+  tf::pointTFToMsg(ptA, pt_msg);
   marker.points.push_back(pt_msg);
 
-  marker_pub_.publish(marker);
 }
 
-
-
-
-
-/* ---[ */
-int
-  main (int argc, char** argv)
+void PlanarObjectDetector::setTFListener(  boost::shared_ptr<tf::TransformListener> tf_listener)
 {
-  ros::init (argc, argv, "whiteboard_detector");
-
-
-  PlanarObjectDetector pod;
-
-  pod.setup();
-
-
-  ros::spin();
-
-  return (0);
+  tf_=tf_listener;
 }
-/* ]--- */
+
+
 

@@ -33,9 +33,8 @@
 *********************************************************************/
 
 //! \author Alex Sorokin 
-
-#ifndef OBJDET_PLANAR_OBJECT_DETECTOR_H
-#define OBJDET_PLANAR_OBJECT_DETECTOR_H
+#ifndef OBJDET_PLANAR_OBJECT_DETECTOR_NODE_H
+#define OBJDET_PLANAR_OBJECT_DETECTOR_NODE_H
 
 // ROS core
 #include <ros/ros.h>
@@ -66,76 +65,44 @@
 #include <point_cloud_assembler/BuildCloud.h>
 
 #include "labeled_object_detector/BoundingBox.h"
-#include "object_model.h"
+#include <planar_object_detector.h>
 
 namespace labeled_object_detector
 {
 
-class PlanarObjectDetector
+class PlanarObjectDetectorNode
 {
 protected:
+  PlanarObjectDetector detector_;
+
   ros::NodeHandle n_;
   
+  robot_msgs::PointCloudConstPtr cloud_;
+  
+  ros::Subscriber cloud_sub_;
+  ros::Publisher  cloud_pub_;
+  ros::Publisher  box_pub_;
+
+  ros::Publisher marker_pub_;
+  
   boost::shared_ptr<tf::TransformListener> tf_;
-  
-  double min_height_;
-
-  double max_link_distance_;
-  double max_search_radius_;
-  int min_points_per_model_;
+  tf::TransformBroadcaster broadcaster_;
 
 
-  std::string annotation_channel_;
-  std::string target_object_;
-
-  float target_label_;
+  robot_msgs::PointCloud full_cloud;
 
 
-  std::string local_frame_;
-  std::string fixed_frame_;
-
-  robot_msgs::PointCloud filtered_cloud_;
-  
-  std::vector<int> cluster_ids_;
-  unsigned int num_clusters_;
-  
-  std::vector<std::vector<int> > clouds_by_indices_;
-  
-  std::vector<boost::shared_ptr<sample_consensus::SACModelPlane> > plane_models_; 
-  std::vector<std::vector<double> > plane_coeffs_;
-  
-  boost::shared_ptr<cloud_kdtree::KdTreeANN> object_points_kd_tree_;
-
+public:
 
   boost::mutex proc_mutex_;
 
 public:
-  PlanarObjectDetector();
+  PlanarObjectDetectorNode();
 
   void setup();
 
-  void setTFListener(  boost::shared_ptr<tf::TransformListener> tf_listener);
+  void cloudCallback(const robot_msgs::PointCloudConstPtr& the_cloud);
 
-
-  void detectObjects(const robot_msgs::PointCloud& point_cloud,ObjectModelDeque& objects);
-
-  bool fitSACPlane (const robot_msgs::PointCloud& points, const std::vector<int> &indices, 
-                    std::vector<int> &inliers, std::vector<double> &coeff, // output
-                    boost::shared_ptr<sample_consensus::SACModelPlane> &model_output, // output
-                    double dist_thresh, int min_points_per_model);
-
-  bool fitObjectModel2Cloud(const unsigned int model_id,
-                            const robot_msgs::PointCloud& global_cloud,
-                            const robot_msgs::PointCloud& local_cloud,
-                            const std::vector<int> observation_ids,
-                            PlanarObjectModelPtr& out_object);
-
-
-
-
-  void makeObjectFrame(const robot_msgs::PointStamped origin, const std::vector<double>& plane, const std::string object_frame,PlanarObjectModelPtr object);
-
-  void makeObjectMarker(const robot_msgs::Point pt1,const robot_msgs::Point pt2,const unsigned int model_id,PlanarObjectModelPtr object);
 
 };
 

@@ -142,7 +142,7 @@ void pcd_misc::cluster_pcd_points(const robot_msgs::PointCloud& centers,
   unsigned int iPtOut=0;
   for(unsigned int iPt=0;iPt<num_pts;iPt++)
   {
-    if(cluster_ids[iPt]==iPt)
+    if(cluster_ids[iPt]==int(iPt))
     {
       cluster_ids_final[iPt]=iPtOut;
       
@@ -151,7 +151,7 @@ void pcd_misc::cluster_pcd_points(const robot_msgs::PointCloud& centers,
   }
   for(unsigned int iPt=0;iPt<num_pts;iPt++)
   {
-    if(cluster_ids[iPt]!=iPt)
+    if(cluster_ids[iPt]!=(int)iPt)
     {
       int clusterOutID=cluster_ids_final[cluster_ids[iPt]];
       cluster_ids_final[iPt]=clusterOutID;
@@ -177,7 +177,7 @@ void pcd_misc::cluster_ids_to_cluster_indices(const std::vector<int>& cluster_id
     unsigned int num_in_cluster=0;
     for(unsigned int iPt=0;iPt<num_pts;iPt++)
     {
-      if(cluster_ids[iPt]==iC)
+      if(cluster_ids[iPt]==(int)iC)
       {
         num_in_cluster++;
       }
@@ -187,7 +187,7 @@ void pcd_misc::cluster_ids_to_cluster_indices(const std::vector<int>& cluster_id
     unsigned int out_location=0;
     for(unsigned int iPt=0;iPt<num_pts;iPt++)
     {
-      if(cluster_ids[iPt]==iC)
+      if(cluster_ids[iPt]==(int)iC)
       {
         cluster_members[out_location]=iPt;
         out_location++;
