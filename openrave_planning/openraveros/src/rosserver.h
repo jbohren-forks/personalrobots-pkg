@@ -826,7 +826,7 @@ public:
                 for(size_t i = 0; i < itmanip->_vecarmjoints.size(); ++i)
                     rosmanip.armjoints[i] = itmanip->_vecarmjoints[i];
 
-                rosmanip.iksolvername = _stdwcstombs(itmanip->GetIKSolverName().c_str());
+                rosmanip.iksolvername = itmanip->GetIKSolverName();
             }
         }
         if( options & RobotInfo::Req_Sensors ) {
