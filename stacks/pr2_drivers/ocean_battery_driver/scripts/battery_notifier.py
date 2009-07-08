@@ -52,7 +52,7 @@ class BatteryNotifier:
     self.mail_sent = False
 
   def update(self, state):
-    if((state.energy_remaining / state.energy_capacity) <= self.notify_limit):
+    if(state.energy_capacity == 0 or (state.energy_remaining / state.energy_capacity) <= self.notify_limit):
       if not self.mail_sent and state.power_consumption < 0.0: 
         self.sendEmail()
         self.mail_sent = True
