@@ -23,3 +23,6 @@ rospack_link_boost(move_to_position thread)
 
 rospack_add_executable(oscillate_move test/oscillate_move.cpp)
 rospack_link_boost(oscillate_move thread)
+
+rospack_add_executable(move_joint_space_random test/move_joint_space_random.cpp)
+rospack_link_boost(move_joint_space_random thread)
