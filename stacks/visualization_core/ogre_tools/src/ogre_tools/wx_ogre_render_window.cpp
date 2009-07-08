@@ -51,6 +51,7 @@ wxOgreRenderWindow::~wxOgreRenderWindow ()
   if (render_window_)
   {
     render_window_->removeViewport( 0 );
+    render_window_->destroy();
     ogre_root_->detachRenderTarget(render_window_);
   }
 
