@@ -139,7 +139,7 @@ if __name__ == '__main__':
       controllers.append('r_arm_joint_trajectory_controller')
       controllers.append('l_arm_joint_trajectory_controller')
         
-      positions_l = [[0.4,0.0,0.0,-2.25,0.0,0.0,0.0], [0.0,1.05,1.57,-2.25,0.0,0.0,0.0]] 
+      positions_l = [[0.4,0.0,0.0,-2.25,0.0,0.0,0.0], [0.0,.90,1.57,-2.25,0.0,0.0,0.0]] 
       positions_r = [[-0.4,0.0,0.0,-2.25,0.0,0.0,0.0], [0.0,1.57,-1.57,-1.57,0.0,0.0,0.0]]
       
       go('r', positions_r)
