@@ -5,13 +5,16 @@
 
   </description>
   <author>Juergen Sturm</author>
-  <license>BSD</license>
+  <license>GPL</license>
   <review status="unreviewed" notes=""/>
   <url>http://pr.willowgarage.com/wiki/planar_objects</url>
 
 
   <depend package="point_cloud_mapping" />
   <depend package="visualization_msgs" />
+  <depend package="topic_synchronizer2" />
+  <depend package="opencv_latest"/>
+
 </package>
 
 

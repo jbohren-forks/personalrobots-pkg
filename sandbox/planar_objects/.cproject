@@ -115,6 +115,20 @@
 <stopOnError>true</stopOnError>
 <useDefaultCommand>false</useDefaultCommand>
 </target>
+<target name="planar_node" path="" targetID="org.eclipse.cdt.make.MakeTargetBuilder">
+<buildCommand>/usr/bin/make</buildCommand>
+<buildArguments/>
+<buildTarget>planar_node</buildTarget>
+<stopOnError>true</stopOnError>
+<useDefaultCommand>false</useDefaultCommand>
+</target>
+<target name="planar_node/fast" path="" targetID="org.eclipse.cdt.make.MakeTargetBuilder">
+<buildCommand>/usr/bin/make</buildCommand>
+<buildArguments/>
+<buildTarget>planar_node/fast</buildTarget>
+<stopOnError>true</stopOnError>
+<useDefaultCommand>false</useDefaultCommand>
+</target>
 <target name="rebuild_cache" path="" targetID="org.eclipse.cdt.make.MakeTargetBuilder">
 <buildCommand>/usr/bin/make</buildCommand>
 <buildArguments/>
@@ -226,13 +240,19 @@
 <pathentry include="/wg/stor5a/sturm/ros/ros-pkg/stacks/geometry/bullet/swig" kind="inc" path="" system="true"/>
 <pathentry include="/wg/stor5a/sturm/ros/ros/test/rostest/include" kind="inc" path="" system="true"/>
 <pathentry include="/wg/stor5a/sturm/ros/ros/tools/rosrecord/include" kind="inc" path="" system="true"/>
+<pathentry include="/wg/stor5a/sturm/ros/ros-pkg/stacks/semantic_mapping/ANN/build/ann_1.1.1/include" kind="inc" path="" system="true"/>
+<pathentry include="/wg/stor5a/sturm/ros/ros-pkg/stacks/semantic_mapping/FLANN/build/flann-1.2-src/build/include" kind="inc" path="" system="true"/>
+<pathentry include="/wg/stor5a/sturm/ros/ros-pkg/stacks/common_msgs/robot_msgs/msg/cpp" kind="inc" path="" system="true"/>
+<pathentry include="/wg/stor5a/sturm/ros/ros-pkg/sandbox/topic_synchronizer2/include" kind="inc" path="" system="true"/>
 <pathentry include="/wg/stor5a/sturm/ros/ros/core/roscpp/include" kind="inc" path="" system="true"/>
 <pathentry include="/wg/stor5a/sturm/ros/ros/core/roscpp/srv/cpp" kind="inc" path="" system="true"/>
 <pathentry include="/wg/stor5a/sturm/ros/ros/3rdparty/xmlrpc++/src" kind="inc" path="" system="true"/>
 <pathentry include="/wg/stor5a/sturm/ros/ros/core/rosconsole/include" kind="inc" path="" system="true"/>
-<pathentry include="/wg/stor5a/sturm/ros/ros-pkg/stacks/semantic_mapping/ANN/build/ann_1.1.1/include" kind="inc" path="" system="true"/>
-<pathentry include="/wg/stor5a/sturm/ros/ros-pkg/stacks/semantic_mapping/FLANN/build/flann-1.2-src/build/include" kind="inc" path="" system="true"/>
-<pathentry include="/wg/stor5a/sturm/ros/ros-pkg/stacks/common_msgs/robot_msgs/msg/cpp" kind="inc" path="" system="true"/>
+<pathentry include="/wg/stor5a/sturm/ros/ros-pkg/stacks/opencv/opencv_latest/opencv/include" kind="inc" path="" system="true"/>
+<pathentry include="/wg/stor5a/sturm/ros/ros-pkg/stacks/opencv/opencv_latest/opencv/include/opencv" kind="inc" path="" system="true"/>
+<pathentry include="/wg/stor5a/sturm/ros/ros-pkg/stacks/opencv/opencv_latest/include" kind="inc" path="" system="true"/>
+<pathentry include="/wg/stor5a/sturm/ros/ros-pkg/stacks/common_msgs/sensor_msgs/include" kind="inc" path="" system="true"/>
+<pathentry include="/wg/stor5a/sturm/ros/ros-pkg/stacks/common_msgs/sensor_msgs/msg/cpp" kind="inc" path="" system="true"/>
 <pathentry include="/wg/stor5a/sturm/ros/ros/std_msgs/msg/cpp" kind="inc" path="" system="true"/>
 <pathentry include="/wg/stor5a/sturm/ros/ros/core/roslib/msg/cpp" kind="inc" path="" system="true"/>
 <pathentry include="/wg/stor5a/sturm/ros/ros/core/roslib/include" kind="inc" path="" system="true"/>

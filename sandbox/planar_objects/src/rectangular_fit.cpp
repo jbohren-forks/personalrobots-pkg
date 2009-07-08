@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2009 Juergen Sturm <sturm -=- informatik.uni-freiburg.de>
  *
+ * published under GPL
  */
 
 #include "rectangular_fit.h"
