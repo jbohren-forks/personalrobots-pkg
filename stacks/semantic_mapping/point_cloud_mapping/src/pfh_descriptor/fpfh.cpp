@@ -31,7 +31,10 @@
 /** \author Radu Bogdan Rusu */
 
 #include <point_cloud_mapping/pfh_descriptor/fpfh.h>
+#include <point_cloud_mapping/geometry/point.h>
 
 namespace fpfh_descriptor
 {
+
+
 }

@@ -1,9 +1,11 @@
 <package>
   <description>
 
-    A complete package for 3D point cloud processing, oferring both generic libraries and specific purpose nodes.
+    PCML - Point Cloud Mapping Library: a complete package for 3D point
+    cloud processing, oferring both generic libraries and specific purpose
+    nodes.
 
-    The list of libraries includes:
+    To keep things modular, PCML is split into a list of smaller libraries, including:
 
     - cloud_geometry: areas, distances, intersections, 3D normals/features estimation, norms, projections, statistics,
                       transformations, etc
