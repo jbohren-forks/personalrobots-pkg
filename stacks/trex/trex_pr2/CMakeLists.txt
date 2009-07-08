@@ -20,41 +20,36 @@ set(TREX_FILES src/pr2_adapter_utilities.cpp
 	       src/pr2_adapters.cpp
 	       src/master_reactor.cpp)
 
+# build extensions into exported library
+rospack_add_library(trex_pr2 ${TREX_FILES})
+
 # trexdebug builds with a large number of run-time error checking running which is expensive
 # but gives good feedback in discovering problems.
-rospack_add_library(executive_trex_pr2_g ${TREX_FILES})
-target_link_libraries(executive_trex_pr2_g executive_trex_ros_g Utils_g TREX_g)
 rospack_add_executable(bin/trexdebug src/main.cpp)
-target_link_libraries(bin/trexdebug executive_trex_pr2_g )
 rospack_link_boost(bin/trexdebug thread)
 rospack_add_gtest_build_flags(bin/trexdebug)
+rospack_remove_link_flags(bin/trexdebug "-O3 -DEUROPA_FAST")
+rospack_remove_link_flags(bin/trexdebug "-lUtils_o -lTREX_o")
+rospack_add_link_flags(bin/trexdebug "-lUtils_g -lTREX_g")
+target_link_libraries(bin/trexdebug trex_pr2)
 
-# rospack_add_gtest_build_flags excludes the target from all, on the
-# assumption that it's only used as a unit test.  In this case that's not
-# true
-#set_target_properties(bin/trexdebug PROPERTIES EXCLUDE_FROM_ALL false)
 
 # trexfast is about an order of magnitude faster than trexdebug
-rospack_add_library(executive_trex_pr2_o ${TREX_FILES})
-target_link_libraries(executive_trex_pr2_o executive_trex_ros_o Utils_o TREX_o)
 rospack_add_executable(bin/trexfast src/main.cpp)
-target_link_libraries(bin/trexfast executive_trex_pr2_o)
 rospack_link_boost(bin/trexfast thread)
 rospack_add_gtest_build_flags(bin/trexfast)
+target_link_libraries(bin/trexfast trex_pr2)
+
 # rospack_add_gtest_build_flags excludes the target from all, on the
 # assumption that it's only used as a unit test.  In this case that's not
 # true
 set_target_properties(bin/trexfast PROPERTIES EXCLUDE_FROM_ALL false)
-rospack_add_compile_flags(bin/trexfast "-O3 -DEUROPA_FAST")
-rospack_add_compile_flags(executive_trex_pr2_o "-O3 -DEUROPA_FAST")
-
-
 
 
 
 # Test target for unit tests on topological map integration components
 rospack_add_gtest(test/topological_map_tests test/topological_map_tests.cpp)
-target_link_libraries(test/topological_map_tests executive_trex_pr2_g)
+target_link_libraries(test/topological_map_tests trex_pr2)
 
 # stub_ros__container implements stub state publishers and actions to allow easy testing of the ROS adapters for the model
 rospack_add_executable(bin/stub_ros_container src/stub_ros_container.cpp)

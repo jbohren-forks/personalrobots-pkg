@@ -1,45 +1,45 @@
 <package>
-<description brief="TREX">
+  <description brief="TREX">
 
-This package contains TREX (initially developed at the Monterey Bay Aquarium Research Institute), 
-and EUROPA from the NASA Ames Research Center. This package does not modify these 
-3rd party libraries in any way; it simply provides a convenient way to download and build the
-headers and libraries in a way that can be managed by the ROS dependency
-system.
+    This package contains TREX (initially developed at the Monterey Bay Aquarium Research Institute), 
+    and EUROPA from the NASA Ames Research Center. This package does not modify these 
+    3rd party libraries in any way; it simply provides a convenient way to download and build the
+    headers and libraries in a way that can be managed by the ROS dependency
+    system.
 
-</description>
-<author>Conor McGann, with contributions from many others. See respective projects.</author>
-<license>NOSA</license>
-<review status="3rdparty" notes=""/>
-<url>https://babelfish.arc.nasa.gov/trac/europa/wiki</url>
-<export>
-  <cpp lflags="-Wl,-rpath,${prefix}/PLASMA/build/lib -L${prefix}/PLASMA/build/lib" 
-       cflags="-I${prefix}/include/TREX -I${prefix}/include/PLASMA -I${prefix}/include/PlanWorks"/>
-  <nddl iflags="-I${prefix}/TREX/agent/base"/>
-  <doxymaker external="https://babelfish.arc.nasa.gov/trac/europa/wiki"/>
-</export>
-<versioncontrol type="svn" url="http://europa-pso.googlecode.com/svn/PLASMA/trunk"/>
-<versioncontrol type="svn" url="http://europa-pso.googlecode.com/svn/PlanWorks/trunk"/>
-<versioncontrol type="svn" url="http://trex-autonomy.googlecode.com/svn/trunk"/>
-<sysdepend os="ubuntu" version="7.04-fiesty" package="jam"/>
-<sysdepend os="ubuntu" version="7.04-fiesty" package="sun-java6-jdk"/>
-<sysdepend os="ubuntu" version="7.04-fiesty" package="ant"/>
-<sysdepend os="ubuntu" version="7.04-fiesty" package="liblog4cpp5"/>
-<sysdepend os="ubuntu" version="8.04-hardy" package="jam"/>
-<sysdepend os="ubuntu" version="8.04-hardy" package="sun-java6-jdk"/>
-<sysdepend os="ubuntu" version="8.04-hardy" package="ant"/>
-<sysdepend os="ubuntu" version="8.04-hardy" package="liblog4cpp5"/>
-<sysdepend os="ubuntu" version="9.04-jaunty" package="jam"/>
-<sysdepend os="ubuntu" version="9.04-jaunty" package="sun-java6-jdk"/>
-<sysdepend os="ubuntu" version="9.04-jaunty" package="ant"/>
-<sysdepend os="ubuntu" version="9.04-jaunty" package="liblog4cpp5"/>
-<sysdepend os="debian" version="lenny/sid" package="jam"/> 
-<sysdepend os="debian" version="lenny/sid" package="openjdk-6-jdk"/> 
-<sysdepend os="debian" version="lenny/sid" package="ant"/> 
-<sysdepend os="debian" version="lenny/sid" package="liblog4cpp5"/>
-<rosdep name="jam"/>
-<rosdep name="ant"/>
-<rosdep name="java"/>
+  </description>
+  <author>Conor McGann, with contributions from many others. See respective projects.</author>
+  <license>NOSA</license>
+  <review status="3rdparty" notes=""/>
+  <url>https://babelfish.arc.nasa.gov/trac/europa/wiki</url>
+  <export>
+    <cpp lflags="-Wl,-rpath,${prefix}/PLASMA/build/lib -L${prefix}/PLASMA/build/lib -lUtils_o -lTREX_o" 
+      cflags="-I${prefix}/include/TREX -I${prefix}/include/PLASMA -I${prefix}/include/PlanWorks -O3 -DEUROPA_FAST"/>
+    <nddl iflags="-I${prefix}/TREX/agent/base"/>
+    <doxymaker external="https://babelfish.arc.nasa.gov/trac/europa/wiki"/>
+  </export>
+  <versioncontrol type="svn" url="http://europa-pso.googlecode.com/svn/PLASMA/trunk"/>
+  <versioncontrol type="svn" url="http://europa-pso.googlecode.com/svn/PlanWorks/trunk"/>
+  <versioncontrol type="svn" url="http://trex-autonomy.googlecode.com/svn/trunk"/>
+  <sysdepend os="ubuntu" version="7.04-fiesty" package="jam"/>
+  <sysdepend os="ubuntu" version="7.04-fiesty" package="sun-java6-jdk"/>
+  <sysdepend os="ubuntu" version="7.04-fiesty" package="ant"/>
+  <sysdepend os="ubuntu" version="7.04-fiesty" package="liblog4cpp5"/>
+  <sysdepend os="ubuntu" version="8.04-hardy" package="jam"/>
+  <sysdepend os="ubuntu" version="8.04-hardy" package="sun-java6-jdk"/>
+  <sysdepend os="ubuntu" version="8.04-hardy" package="ant"/>
+  <sysdepend os="ubuntu" version="8.04-hardy" package="liblog4cpp5"/>
+  <sysdepend os="ubuntu" version="9.04-jaunty" package="jam"/>
+  <sysdepend os="ubuntu" version="9.04-jaunty" package="sun-java6-jdk"/>
+  <sysdepend os="ubuntu" version="9.04-jaunty" package="ant"/>
+  <sysdepend os="ubuntu" version="9.04-jaunty" package="liblog4cpp5"/>
+  <sysdepend os="debian" version="lenny/sid" package="jam"/> 
+  <sysdepend os="debian" version="lenny/sid" package="openjdk-6-jdk"/> 
+  <sysdepend os="debian" version="lenny/sid" package="ant"/> 
+  <sysdepend os="debian" version="lenny/sid" package="liblog4cpp5"/>
+  <rosdep name="jam"/>
+  <rosdep name="ant"/>
+  <rosdep name="java"/>
 </package>
 
 

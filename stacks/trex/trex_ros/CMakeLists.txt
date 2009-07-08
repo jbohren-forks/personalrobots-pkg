@@ -22,13 +22,7 @@ set(TREX_FILES src/main.cpp
 
 # trexdebug builds with a large number of run-time error checking running which is expensive
 # but gives good feedback in discovering problems.
-rospack_add_library(executive_trex_ros_g ${TREX_FILES})
-target_link_libraries(executive_trex_ros_g Utils_g TREX_g)
-
-# trexfast is about an order of magnitude faster than trexdebug
-rospack_add_library(executive_trex_ros_o ${TREX_FILES})
-target_link_libraries(executive_trex_ros_o Utils_o TREX_o)
-rospack_add_compile_flags(executive_trex_ros_o "-O3 -DEUROPA_FAST")
+rospack_add_library(trex_ros ${TREX_FILES})
 
 # trexwatchdog is a safety process that will monitor pings from the executive
 # and dispense shutdown commands to highlevel controllers (deactivation) if pings are
