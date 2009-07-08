@@ -1,13 +1,13 @@
 Index: RenderSystems/GL/src/GLX/OgreGLXWindow.cpp
 ===================================================================
---- RenderSystems/GL/src/GLX/OgreGLXWindow.cpp	(revision 8673)
-+++ RenderSystems/GL/src/GLX/OgreGLXWindow.cpp	(working copy)
-@@ -543,6 +543,8 @@
- 				mWidth = width;
- 				mHeight = height;
- 				
-+				XResizeWindow(mGLSupport->getXDisplay(), mWindow, width, height);
-+
- 				for (ViewportList::iterator it = mViewportList.begin();	it != mViewportList.end(); ++it)
- 					(*it).second->_updateDimensions();
+--- RenderSystems/GL/src/GLX/OgreGLXWindow.cpp	2008-06-12 07:10:57.000000000 -0700
++++ RenderSystems/GL/src/GLX/OgreGLXWindow.cpp	2009-07-01 13:37:01.000000000 -0700
+@@ -530,7 +530,7 @@ namespace Ogre
+ 		
+ 		if(width != 0 && height != 0)
+ 		{
+-			if (mIsTopLevel)
++			if (!mIsExternal)
+ 			{
+ 				XResizeWindow(mGLSupport->getXDisplay(), mWindow, width, height);
  			}
