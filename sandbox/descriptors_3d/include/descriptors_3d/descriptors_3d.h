@@ -41,12 +41,9 @@
 
 #include <ros/console.h>
 
-#include <Eigen/Core>
-
 #include <robot_msgs/PointCloud.h>
 
 #include <point_cloud_mapping/kdtree/kdtree.h>
-#include <point_cloud_mapping/geometry/nearest.h>
 
 using namespace std;
 
@@ -62,7 +59,6 @@ class Descriptor3D
     virtual ~Descriptor3D()
     {
     }
-    ;
 
     virtual bool compute(Eigen::MatrixXf** result, bool debug) = 0;
 

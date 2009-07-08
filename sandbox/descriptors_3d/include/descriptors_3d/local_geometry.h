@@ -34,9 +34,12 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
+#include <Eigen/Core>
+
+#include <point_cloud_mapping/geometry/nearest.h>
+
 #include <descriptors_3d/descriptors_3d.h>
 
-#include <Eigen/Core>
 
 class LocalGeometry: public Descriptor3D
 {

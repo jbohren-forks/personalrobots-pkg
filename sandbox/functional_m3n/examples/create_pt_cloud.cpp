@@ -13,10 +13,6 @@
 
 #include <Eigen/Core>
 
-#include <opencv/cv.h>
-#include <opencv/cxcore.hpp>
-#include <opencv/cvaux.hpp>
-
 #include <flann.h>
 
 #include <descriptors_3d/local_geometry.h>
@@ -39,8 +35,7 @@ void createNodes(RandomField& rf,
                  cloud_kdtree::KdTree& pt_cloud_kdtree,
                  vector<unsigned int>& labels);
 
-int loadPointCloud(string filename, vector<cv::Point3f>* opencv_pts, robot_msgs::PointCloud* ros_pts, vector<
-    unsigned int>& labels)
+int loadPointCloud(string filename, robot_msgs::PointCloud& pt_cloud, vector<unsigned int>& labels)
 {
   // ----------------------------------------------
   // Open file
@@ -65,43 +60,20 @@ int loadPointCloud(string filename, vector<cv::Point3f>* opencv_pts, robot_msgs:
 
   // ----------------------------------------------
   // Resize containers appropriately
-  if (opencv_pts != NULL)
-  {
-    opencv_pts->resize(nbr_samples);
-  }
-
-  if (ros_pts != NULL)
-  {
-    ros_pts->pts.resize(nbr_samples);
-  }
+  pt_cloud.pts.resize(nbr_samples);
   labels.resize(nbr_samples);
 
   // ----------------------------------------------
   // Read file
   // file format: x y z label 2
-  float x, y, z;
   unsigned int tempo;
   for (unsigned int i = 0 ; i < nbr_samples ; i++)
   {
-    infile >> x;
-    infile >> y;
-    infile >> z;
+    infile >> pt_cloud.pts[i].x;
+    infile >> pt_cloud.pts[i].y;
+    infile >> pt_cloud.pts[i].z;
     infile >> labels[i];
     infile >> tempo;
-
-    if (opencv_pts != NULL)
-    {
-      (*opencv_pts)[i].x = x;
-      (*opencv_pts)[i].y = y;
-      (*opencv_pts)[i].z = z;
-    }
-
-    if (ros_pts != NULL)
-    {
-      ros_pts->pts[i].x = x;
-      ros_pts->pts[i].y = y;
-      ros_pts->pts[i].z = z;
-    }
   }
 
   infile.close();
@@ -173,9 +145,8 @@ int main()
   // ----------------------------------------------------------
   ROS_INFO("loading point cloud...");
   robot_msgs::PointCloud pt_cloud;
-  vector<cv::Point3f> opencv_pts;
   vector<unsigned int> labels;
-  if (loadPointCloud("training_data.xyz_label_conf", NULL, &pt_cloud, labels) < 0)
+  if (loadPointCloud("training_data.xyz_label_conf", pt_cloud, labels) < 0)
   {
     return -1;
   }
