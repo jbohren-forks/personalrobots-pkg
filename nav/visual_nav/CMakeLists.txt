@@ -21,3 +21,4 @@ target_link_libraries(bin/ros_visual_nav visual_nav)
 rospack_link_boost(bin/ros_visual_nav filesystem)
 rospack_link_boost(bin/ros_visual_nav program_options)
 
+rospack_add_lisp_executable(bin/teleop_exec visual-nav visual-nav:teleop-exec)
