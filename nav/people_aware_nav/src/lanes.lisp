@@ -1,9 +1,3 @@
-(roslisp:load-message-types "robot_msgs/PointCloud" "robot_msgs/Point" "deprecated_msgs/Pose2DFloat32" 
-				"robot_msgs/PoseStamped" "std_msgs/Empty"
-				"people_aware_nav/ConstrainedGoal" "people_aware_nav/ConstrainedMoveBaseState"
-				"robot_msgs/PointStamped" "people/PositionMeasurement"
-				)
-(roslisp:load-service-types "people_aware_nav/PersonOnPath" "people_aware_nav/GlanceAt")
 
 (defpackage :lane-following
   (:nicknames :lanes)
@@ -11,7 +5,6 @@
   (:export :main)
   (:import-from :robot_msgs-msg
 		:<Point>
-		:<ControllerStatus>
 		:x-val
 		:y-val
 		:z-val
@@ -21,6 +14,7 @@
 		:<PointStamped>
 		:<PointCloud>
 		:pts-val)
+  (:import-from :people_aware_nav-srv :SetNavConstraint)
   (:import-from :deprecated_msgs-msg
 		:<Pose2DFloat32>)
   (:import-from :people-msg :<PositionMeasurement>)
@@ -68,7 +62,7 @@
 (defun main ()
   (with-ros-node ("lane_changer")
     (setup-node)
-    (loop (apply #'goto (dequeue-wait *new-goal*))))))
+    (loop (apply #'goto (dequeue-wait *new-goal*)))))
 
 
 (defun setup-node ()
@@ -121,15 +115,6 @@
 	 (position (pose-position pose))
 	 (theta (pose-orientation pose)))
     (send-move-goal (aref position 0) (aref position 1) theta))
-<<<<<<< .mine
-  (sleep .5)
-  (with-fields ((frame (frame_id header)) (stamp (stamp header)) (pos pos)) *person-position*
-    (call-service "glance_at" 'GlanceAt 
-		  :point_stamped (make-message "robot_msgs/PointStamped"
-					       (frame_id header) frame
-					       (stamp header) stamp
-					       point pos)))
-=======
   (sleep .5)
   (with-fields ((frame (frame_id header)) (stamp (stamp header)) (pos pos)) *person-position*
 	       (call-service "glance_at" :point_stamped (make-message "robot_msgs/PointStamped" 
@@ -137,7 +122,6 @@
 								      (stamp header) stamp
 								      point pos)))
 					  
->>>>>>> .r18355
   (loop-at-most-every .1
      (when *move-base-result* 
        (return *move-base-result*))))

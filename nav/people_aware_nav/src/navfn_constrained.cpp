@@ -48,7 +48,9 @@ ROS_REGISTER_BGP(NavfnROSConstrained);
 NavfnROSConstrained::NavfnROSConstrained (std::string name, costmap_2d::Costmap2DROS& cmap) :
   navfn::NavfnROS(name, cmap)
 {
+  ROS_INFO ("Adding service for set nav constraint");
   service_ = node_.advertiseService("~set_nav_constraint", &NavfnROSConstrained::setConstraint, this);
+  ROS_INFO ("Added service for set nav constraint");
 }
 
 bool NavfnROSConstrained::setConstraint (SetNavConstraint::Request& req, SetNavConstraint::Response& resp)

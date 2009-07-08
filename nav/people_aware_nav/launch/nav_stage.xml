@@ -2,31 +2,11 @@
   <master auto="start"/>
   <group>
   <param name="/use_sim_time" value="true"/>
-    <node pkg="people_aware_nav" type="move_base_constrained" respawn="false" name="move_base" output="screen">
-      
-      <param name="odom_frame" value="odom"/>
-      <param name="global_frame" value="map" />
-      <param name="robot_base_frame" value="base_link" />
-
-      <param name="inscribed_radius" value="0.325" />
-      <param name="circumscribed_radius" value="0.46" />
-      <param name="inflation_radius" value="0.55" />
-
-      <rosparam file="$(find test_nav)/config/costmap_common_params.yaml" command="load" ns="navfn" />
-      <rosparam file="$(find test_nav)/config/costmap_common_params.yaml" command="load" ns="base_local_planner" />
-      <rosparam file="$(find test_nav)/move_base/navfn_params.yaml" command="load" />
-      <rosparam file="$(find test_nav)/move_base/base_local_planner_params.yaml" command="load" />
-
-    </node>
-
-    <node pkg="map_server" type="map_server" args="$(find 2dnav_stage)/maps/willow-full-0.025.pgm 0.025" respawn="false" />
-    <node pkg="stage" type="stageros" name="stageros" args="$(optenv ROS_STAGE_GRAPHICS -g) $(find 2dnav_stage)/worlds/willow-pr2-2.5cm.world" respawn="false" >
-      <param name="base_watchdog_timeout" value="0.2"/>
-    </node>
-    <node pkg="amcl" type="amcl" respawn="false" />
-
-    <node pkg="people_aware_nav" type="person_pos_sender" output="screen" />
-    <node pkg="people_aware_nav" type="is_person_on_path" output="screen" />
+  
+  <param name="move_base/base_global_planner" value="NavfnConstrainedROSasdf"/>
+  <include file="$(find move_base_stage)/move_base_fake_localization_2.5cm.launch"/>
+  <node pkg="people_aware_nav" type="person_pos_sender" output="screen" />
+  <node pkg="people_aware_nav" type="is_person_on_path" output="screen" />
 
     <!-- node pkg="people_aware_nav" type="hallway_move" output="screen" /> -->
 
