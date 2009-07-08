@@ -116,8 +116,6 @@ def main():
 
     if cal_imu:
         imustatus = calibrate_imu()
-        if not imustatus:
-            print "IMU Calibration may have failed."
     else: 
         imustatus = True
 
@@ -135,8 +133,6 @@ def main():
     else:
         print "Reading from stdin..."
         xml = sys.stdin.read()
-
-    imustatus = calibrate_imu()
 
     if not calibrate(xml):
         sys.exit(3)
