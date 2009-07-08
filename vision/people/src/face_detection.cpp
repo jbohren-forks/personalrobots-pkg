@@ -58,6 +58,7 @@
 #include "robot_msgs/PointCloud.h"
 #include "robot_msgs/Point32.h"
 #include "people/StartDetection.h"
+#include "people/StopDetection.h"
 
 #include "opencv/cxcore.h"
 #include "opencv/cv.h"
@@ -117,7 +118,8 @@ public:
 
 
   // Service
-  ros::ServiceServer service_server_;
+  ros::ServiceServer service_server_start_;
+  ros::ServiceServer service_server_stop_;
 
   string do_display_; /**< Type of display, none/local/remote */
   IplImage *cv_image_disp_out_; /**< Display image. */
@@ -154,8 +156,8 @@ public:
     BIGDIST_M(1000000.0),
     cv_image_left_(NULL),
     cv_image_disp_(NULL),
-    cv_image_disp_out_(NULL),
     sync_(&FaceDetector::imageCBAll,this),
+    cv_image_disp_out_(NULL),
     cam_model_(0),
     people_(0),
     num_filenames_(num_filenames),
@@ -210,11 +212,12 @@ public:
       ROS_INFO_STREAM_NAMED("face_detector","Subscribed to the person filter messages.");
     }
 
-    service_server_ = nh_.advertiseService("start_detection",&FaceDetector::startDetection,this);
+    service_server_start_ = nh_.advertiseService("start_detection",&FaceDetector::startDetection,this);
+    service_server_stop_ = nh_.advertiseService("stop_detection",&FaceDetector::stopDetection,this);
 
-    //ros::MultiThreadedSpinner s(3);
-    //ros::spin(s);
-    ros::spin();
+    ros::MultiThreadedSpinner s(2);
+    ros::spin(s);
+    //ros::spin();
     
   }
 
@@ -237,8 +240,16 @@ public:
   // Start the detector running. It will automatically stop running when at least one face is found.
   bool startDetection(people::StartDetection::Request &req, people::StartDetection::Response &resp)
   {
-    ROS_DEBUG("In service call");
+    ROS_DEBUG_STREAM_NAMED("face_detector","In service call - start");
     run_detector_ = true;
+    return true;
+  }
+
+  // Stop the detector.
+  bool stopDetection(people::StopDetection::Request &req, people::StopDetection::Response &resp)
+  {
+    ROS_DEBUG_STREAM_NAMED("face_detector","In service call - stop");
+    run_detector_ = false;
     return true;
   }
 
@@ -313,7 +324,7 @@ public:
       limage = limage_;
       dimage = dimage_;
     }
-    // Only run the detector if in continuous mode or a service call was made.
+    // Only run the detector if in continuous mode or the detector was turned on through a service call.
     if (!run_detector_) 
       return;
 
@@ -604,34 +615,6 @@ public:
 
   }
 
-
-  /*!
-   *\brief Wait for completion, wait for user input, display images.
-   */
-  bool spin2() {
-
-
-    while (nh_.ok() && !quit_) {
-
-      if (do_display_ == "local") {
-	// Display all of the images.
-	boost::mutex::scoped_lock lock(cv_mutex_);
-
-	// Get user input and allow OpenCV to refresh windows.
-	int c = cvWaitKey(2);
-	c &= 0xFF;
-	// Quit on ESC, "q" or "Q"
-	if((c == 27)||(c == 'q')||(c == 'Q'))
-	  quit_ = true;
-
-	lock.unlock(); 
-      }
-      ros::spinOnce();
-      //usleep(10000);
-    }
-    return true;
-  } 
-
 }; // end class
  
 }; // end namespace people
@@ -669,8 +652,6 @@ int main(int argc, char **argv)
 
   people::FaceDetector fd(numlines, names, haar_filenames, reliabilities);
 
-  //fd.spin();
-  
   return 0;
 }
 
