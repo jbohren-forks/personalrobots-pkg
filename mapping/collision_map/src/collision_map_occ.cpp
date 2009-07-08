@@ -190,6 +190,23 @@ private:
 	bi_.real_minZ = -bi_.dimensionZ + bi_.originZ;
 	bi_.real_maxZ =  bi_.dimensionZ + bi_.originZ;	
     }
+
+    void keepCMapOutside(CMap &map)
+    {
+	CMap::iterator it = map.begin();
+	while (it != map.end())
+	{
+	    const CollisionPoint &cp = *it;
+	    if (sf_.getMask(cp.x * bi_.resolution + bi_.originX, cp.y * bi_.resolution + bi_.originY, cp.z * bi_.resolution + bi_.originZ) == 0)
+	    {
+		CMap::iterator e = it;
+		++it;
+		map.erase(e);
+	    }
+	    else
+		++it;
+	}
+    }
     
     void computeCloudMask(const robot_msgs::PointCloud &cloud, std::vector<int> &mask)
     {
@@ -359,13 +376,30 @@ private:
 	    CMap keep;
 	    findOcclusionsInMap(diff, occ, keep);
 	    
+	    sf_.assumeFrame(header_);
+
+#pragma omp parallel sections
+	    {
+
+#pragma omp section
+		{
+		    keepCMapOutside(obstacles);
+		}
+		
+#pragma omp section
+		{
+		    keepCMapOutside(keep);
+		}
+	    }
+	    
 	    // the new map is the new set of obstacles + occluded information
 	    currentMap_.clear();
+	    
 	    std::set_union(obstacles.begin(), obstacles.end(), 
 			   keep.begin(), keep.end(),
 			   std::inserter(currentMap_, currentMap_.begin()),
 			   CollisionPointOrder());
-
+	    
 	    // this can be used for debugging 
 	    if (publishOcclusion_)
 	        publishCollisionMap(keep, header_, occPublisher_);
