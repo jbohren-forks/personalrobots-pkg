@@ -64,11 +64,14 @@ end
 
 orBodySetTransform(Target.id, [0 0 0], [1 0 0 0]); % identity
 
-standoffs = [0.01];
-rolls = [0 pi/2]; % hand is symmetric
+standoffs = [0.01 0.03];
+rolls = [0 pi/4 pi/2]; % hand is symmetric
+use_noise = 0;
+stepsize = 0.02;
+add_spherenorms = 1;
 
 % start simulating grasps
-[GraspTable, GraspStats] = MakeGraspTable(robot,Target,preshapes, standoffs, rolls,0,0.02);
+[GraspTable, GraspStats] = MakeGraspTable(robot,Target,preshapes, standoffs, rolls,use_noise,stepsize,add_spherenorms);
 
 if( ~isempty(GraspTable) && ~isempty(GraspStats) )
     %% save the table
