@@ -7,7 +7,7 @@
 #include <exception>
 #include <stdexcept>
 
-#include <ros/common.h>
+#include <ros/package.h>
 
 namespace ogre_tools
 {
@@ -64,7 +64,7 @@ void initializeOgre()
 
     root->initialise( false );
 
-    std::string ogre_tools_path = ros::getPackagePath(ROS_PACKAGE_NAME);
+    std::string ogre_tools_path = ros::package::getPath(ROS_PACKAGE_NAME);
     Ogre::ResourceGroupManager::getSingleton().addResourceLocation( ogre_tools_path + "/media", "FileSystem", ROS_PACKAGE_NAME );
     Ogre::ResourceGroupManager::getSingleton().addResourceLocation( ogre_tools_path + "/media/fonts", "FileSystem", ROS_PACKAGE_NAME );
     Ogre::ResourceGroupManager::getSingleton().addResourceLocation( ogre_tools_path + "/media/models", "FileSystem", ROS_PACKAGE_NAME );
