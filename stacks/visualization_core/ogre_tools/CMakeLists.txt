@@ -122,8 +122,9 @@ set_target_properties(python_${PROJECT_NAME}
                       PROPERTIES OUTPUT_NAME _${PROJECT_NAME}
                       PREFIX "")
 
-rospack_add_executable(bin/grid_test src/test/grid_test.cpp)
+rospack_add_executable(bin/grid_test EXCLUDE_FROM_ALL src/test/grid_test.cpp)
 target_link_libraries(bin/grid_test ${PROJECT_NAME} ${wxWidgets_LIBRARIES})
+rospack_declare_test(bin/grid_test)
 
 include_directories(src)
 rospack_add_executable(bin/stl_to_mesh src/stl_to_mesh/stl_to_mesh.cpp)
