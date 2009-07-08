@@ -141,6 +141,10 @@ if __name__ == '__main__':
     ask_for_pen = python_actions.ActionClient("ask_for_pen", Empty, robot_actions.msg.NoArgumentsActionState, Empty)
     ask_for_pen.preempt()
 
+    grip_pen = python_actions.ActionClient("grip_pen", Empty, robot_actions.msg.NoArgumentsActionState, Empty)
+    grip_pen.preempt()
+
+
     generate_text_trajectory = python_actions.ActionClient("generate_text_trajectory",
                                     pr2_robot_actions.msg.TextGoal,
                                     pr2_robot_actions.msg.GenerateTextTrajectoryState,
@@ -159,42 +163,49 @@ if __name__ == '__main__':
        "r_gripper_position_controller",
        "head_controller",
        "laser_tilt_controller",
-       "r_arm_joint_trajectory_controller"]) | r_arm_cartesian_controllers
+       "r_arm_joint_trajectory_controller",
+       "r_gripper_effort_controller"]) | r_arm_cartesian_controllers
     sw = Switcher(all_controllers)
 
-    sw += "r_arm_joint_trajectory_controller"
-    act(tuck_arm, Empty(), 20.0)
+    if False:
+      sw += "r_arm_joint_trajectory_controller"
+      act(tuck_arm, Empty(), 20.0)
 
-    sw += "head_controller"
-    helper = act(find_helper, Empty(), 200.0)
+      sw += "head_controller"
+      helper = act(find_helper, Empty(), 200.0)
 
-    print "===> Found person:", helper
+      print "===> Found person:", helper
 
-    time.sleep(1)
-
-    if 1:
-      sw += "laser_tilt_controller"
-      act(start_tilt_laser, Empty(), 20.0)
-
-      print "===> Started laser"
       time.sleep(1)
 
-      track_helper_thread = threading.Thread(target = lambda: track_helper.execute(helper.helper_head, 500.0))
-      track_helper_thread.start()
+      if 1:
+        sw += "laser_tilt_controller"
+        act(start_tilt_laser, Empty(), 20.0)
 
-      print "===> track_helper started"
-      time.sleep(1)
+        print "===> Started laser"
+        time.sleep(1)
 
-      act(move_base_local, helper.helper_zone, 500.0)
+  #      track_helper_thread = threading.Thread(target = lambda: track_helper.execute(helper.helper_head, 500.0))
+  #      track_helper_thread.start()
 
-      print "===> reached target point"
-      track_helper.preempt()
-#    track_helper_thread.join()
+        print "===> track_helper started"
+        time.sleep(1)
 
-      sw -= "r_arm_joint_trajectory_controller"
-      sw.turn_on(r_arm_cartesian_controllers)
-      sw += "r_gripper_position_controller"
-      act(ask_for_pen, Empty(), 20.0)
+        act(move_base_local, helper.helper_zone, 500.0)
+
+        print "===> reached target point"
+        track_helper.preempt()
+  #    track_helper_thread.join()
+
+    sw -= "r_arm_joint_trajectory_controller"
+    sw.turn_on(r_arm_cartesian_controllers)
+    sw += "r_gripper_position_controller"
+    act(ask_for_pen, Empty(), 20.0)
+    sw -= "r_gripper_position_controller"
+    sw += "r_gripper_effort_controller"
+    act(grip_pen, Empty(), 20.0)
+
+
 
     if 0:
       state, path = w.execute(pr2_robot_actions.msg.TextGoal("klak", robot_msgs.msg.Point(10,20,0), 30))

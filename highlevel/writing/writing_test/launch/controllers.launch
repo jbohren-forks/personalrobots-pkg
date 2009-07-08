@@ -20,6 +20,10 @@
   <param name="r_gripper_position_controller/autostart" type="bool" value="false" />
   <node pkg="mechanism_control" type="spawner.py" args="--stopped $(find pr2_default_controllers)/r_gripper_position_controller.xml" />
 
+<!-- Gripper effort controller -->
+  <node pkg="mechanism_control" type="spawner.py" args="--stopped $(find pr2_default_controllers)/r_gripper_effort_controller.xml" />
+
+
 <!-- Joint Trajectory controller -->
   <group ns="r_arm_joint_trajectory_controller" clear_params="true">
     <param name="velocity_scaling_factor" value="0.50" type="double" />
