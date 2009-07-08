@@ -44,6 +44,31 @@
 
 #include <boost/thread/thread.hpp>
 #include <recognition_lambertian/FindObjectPoses.h>
+#include <visualization_msgs/Marker.h>
+
+void sendPoint(ros::Publisher &vmPub, const roslib::Header &header, double x, double y, double z)
+{
+    visualization_msgs::Marker mk;
+    
+    mk.header = header;
+    mk.ns = "test_recognition";
+    mk.id = 1;
+    mk.type = visualization_msgs::Marker::SPHERE;
+    mk.action = visualization_msgs::Marker::ADD;
+    mk.pose.position.x = x;
+    mk.pose.position.y = y;
+    mk.pose.position.z = z;
+    mk.pose.orientation.w = 1.0;
+    
+    mk.scale.x = mk.scale.y = mk.scale.z = 0.01;
+    
+    mk.color.a = 1.0;
+    mk.color.r = 1.0;
+    mk.color.g = 0.04;
+    mk.color.b = 0.04;
+    
+    vmPub.publish(mk);
+}
 
 int main(int argc, char **argv)
 {
@@ -52,6 +77,8 @@ int main(int argc, char **argv)
     ros::NodeHandle nh;
     recognition_lambertian::FindObjectPoses::Request  req;
     recognition_lambertian::FindObjectPoses::Response res;
+    
+    ros::Publisher vmPub = nh.advertise<visualization_msgs::Marker>("visualization_marker", 10240);
     
     ros::ServiceClient client = nh.serviceClient<recognition_lambertian::FindObjectPoses>("table_top/find_object_poses");
     if (client.call(req, res))
@@ -77,7 +104,9 @@ int main(int argc, char **argv)
 	    goal.goal_constraints.pose_constraint[0].type =
 		motion_planning_msgs::PoseConstraint::POSITION_XYZ + 
 		motion_planning_msgs::PoseConstraint::ORIENTATION_RPY;
-    
+	    
+	    sendPoint(vmPub, obj.pose.header, obj.pose.pose.position.x, obj.pose.pose.position.y, obj.pose.pose.position.z);
+	    
 	    if (move_arm.execute(goal, feedback, ros::Duration(10.0)) != robot_actions::SUCCESS)
 		ROS_ERROR("failed achieving goal");
 	}
