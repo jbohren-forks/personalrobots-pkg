@@ -3,7 +3,9 @@ cmake_minimum_required(VERSION 2.4.6)
 include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
 rospack(pr2_defs)
 
-rospack_add_gtest(test_update test/test_update.cpp)
+rospack_add_gtest(test_pr2_update test/test_pr2_update.cpp)
+rospack_add_gtest(test_prf_update test/test_prf_update.cpp)
+rospack_add_gtest(test_prg_update test/test_prg_update.cpp)
 
 find_ros_package(pr2_defs)
 
@@ -23,6 +25,24 @@ add_custom_command(
   COMMAND ${xacro_PACKAGE_PATH}/xacro.py
   ARGS ${pr2robot} > ${pr2robot_expanded}
   DEPENDS ${pr2robot} ${def_files})
+
+#TODO: following files are needed by openrave
+set(prfrobot "${CMAKE_CURRENT_SOURCE_DIR}/robots/prf.xacro.xml")
+set(prfrobot_expanded "${CMAKE_CURRENT_SOURCE_DIR}/robots/prf.expanded.xml")
+add_custom_command(
+  OUTPUT ${prfrobot_expanded}
+  COMMAND ${xacro_PACKAGE_PATH}/xacro.py
+  ARGS ${prfrobot} > ${prfrobot_expanded}
+  DEPENDS ${prfrobot} ${def_files})
+
+#TODO: following files are needed by openrave
+set(prgrobot "${CMAKE_CURRENT_SOURCE_DIR}/robots/prg.xacro.xml")
+set(prgrobot_expanded "${CMAKE_CURRENT_SOURCE_DIR}/robots/prg.expanded.xml")
+add_custom_command(
+  OUTPUT ${prgrobot_expanded}
+  COMMAND ${xacro_PACKAGE_PATH}/xacro.py
+  ARGS ${prgrobot} > ${prgrobot_expanded}
+  DEPENDS ${prgrobot} ${def_files})
 
 # Replace the COMMAND block with a call to a version of xacro that reads in
 # a .deps file and a xacro.xml file, determines the dependencies of the
@@ -149,6 +169,6 @@ set(pr2_gen_files ${pr2_gen_files} ${basepath}/${basename}.iv ${basepath}/convex
 
 endforeach(it)
 
-add_custom_target(media_files ALL DEPENDS ${pr2robot_expanded} ${pr2prototype1_expanded} ${pr2larm_expanded} ${pr2rarm_expanded} ${pr2lgripper_expanded} ${pr2rgripper_expanded} ${pr2_gen_files})
+add_custom_target(media_files ALL DEPENDS ${pr2robot_expanded} ${prfrobot_expanded} ${prgrobot_expanded} ${pr2prototype1_expanded} ${pr2larm_expanded} ${pr2rarm_expanded} ${pr2lgripper_expanded} ${pr2rgripper_expanded} ${pr2_gen_files})
 
 #TODO; stop bin and lib from being generated

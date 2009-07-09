@@ -39,7 +39,7 @@
   <link name="${name}_optical_frame">
     <parent name="${name}_frame" />
     <joint name="${name}_optical_fixed_joint" />
-    <origin xyz="0 0 0}"
+    <origin xyz="0 0 0"
             rpy="${-M_PI/2} 0.0 ${-M_PI/2}" />
 
     <inertial>
