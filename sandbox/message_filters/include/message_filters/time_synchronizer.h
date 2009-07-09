@@ -516,7 +516,7 @@ private:
   void disconnect(const Connection& c)
   {
     boost::mutex::scoped_lock lock(signal_mutex_);
-    signal_.disconnect(c.getBoostConnection());
+    c.getBoostConnection().disconnect();
   }
 
   uint32_t queue_size_;

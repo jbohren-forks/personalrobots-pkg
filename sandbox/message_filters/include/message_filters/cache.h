@@ -263,7 +263,7 @@ private:
   void disconnect(const Connection& c)
   {
     boost::mutex::scoped_lock lock(signal_mutex_);
-    signal_.disconnect(c.getBoostConnection());
+    c.getBoostConnection().disconnect();
   }
 
   boost::mutex cache_lock_ ;            //!< Lock for cache_
