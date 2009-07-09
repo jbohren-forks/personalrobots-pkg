@@ -52,7 +52,7 @@ class WaitForKMessagesAdapter:
     print self.state_topic_
 
     rospy.Subscriber(self.state_topic_, WaitActionState, self.update)
-    self.pub_ = rospy.Publisher(self.action_name_+"/request", WaitActionGoal)
+    self.pub_ = rospy.Publisher(self.action_name_+"/activate", WaitActionGoal)
 
     self.wait_count_=count;
 

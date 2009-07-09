@@ -58,7 +58,7 @@ class MoveHeadAction:
 
     self.nn=node_name;#HACK
 
-    self.goals_sub_ = rospy.Subscriber(rospy.resolve_name(node_name)+"/request", MoveHeadGoal, self.onGoal)
+    self.goals_sub_ = rospy.Subscriber(rospy.resolve_name(node_name)+"/activate", MoveHeadGoal, self.onGoal)
     self.preempt_sub_ = rospy.Subscriber(rospy.resolve_name(node_name)+"/preempt",Empty, self.onPreempt)
 
     self.state_pub_ = rospy.Publisher(rospy.resolve_name(node_name)+"/feedback", MoveHeadState)
@@ -149,6 +149,7 @@ class MoveHeadAction:
         self.current_config_=0;
 
   def doCycle(self):
+    print self.state;
     if self.timeUp():
       self.abort();
 

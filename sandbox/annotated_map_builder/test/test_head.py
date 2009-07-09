@@ -38,32 +38,46 @@ import roslib
 roslib.load_manifest('annotated_map_builder')
 import rospy
 import random
-import sys
-from robot_msgs.msg import PoseStamped
+from sensor_msgs.msg import RawStereo
+from std_msgs.msg import Empty
 
-class RecordGoals:
-  def __init__(self,filename):
-    #goal_t="/move_base/activate";
-    goal_t="/goal";
-    self.sub_ = rospy.Subscriber(goal_t, PoseStamped, self.onPose)
+import threading
 
+from robot_actions.msg import ActionStatus;
 
-    print filename
-    self.outF=open(filename,'w');
+from annotated_map_builder.msg import *
+from annotated_map_builder import *
+from annotated_map_builder.move_head_adapter import *
 
-  def onPose(self,pose_msg):
-    pose=pose_msg.pose;
-    print >>self.outF,"%g %g %g %g %g %g %g" %(
-      pose.position.x,pose.position.y,pose.position.z,
-      pose.orientation.x,pose.orientation.y,pose.orientation.z,pose.orientation.w)
-    print "%g %g %g %g %g %g %g" %(
-      pose.position.x,pose.position.y,pose.position.z,
-      pose.orientation.x,pose.orientation.y,pose.orientation.z,pose.orientation.w)
+from pr2_msgs.msg import BaseControllerState
+from robot_msgs.msg import PoseDot
+from robot_msgs.msg import JointCmd
 
+from python_actions import *
 
 if __name__ == '__main__':
+  try:
 
-  rospy.init_node("record_goals", anonymous=True)
-  rg=RecordGoals(sys.argv[1]);
-  rospy.spin();
-    
+    rospy.init_node("move_head_action_client")
+
+    try:
+      action=rospy.get_param("~action_name");
+    except:
+      action="/move_head_C/move_head_action";
+
+    thread0 = threading.Thread(target = rospy.spin)
+    thread0.start()
+
+    move_head_adapter2=MoveHeadAdapter("/move_head_C/move_head_action",-1);
+
+    while not rospy.is_shutdown():
+      move_head_adapter2.sendGoal();
+      rospy.sleep(50);
+      move_head_adapter2.sendPreempt();
+      rospy.sleep(3);
+
+
+
+  except KeyboardInterrupt, e:
+    pass
+  print "exiting"

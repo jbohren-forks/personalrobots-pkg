@@ -142,8 +142,9 @@ class ExecutiveDataCollector:
           print "Aborted:",self.current_goal
           self.selectNextGoal();
           self.navigator.sendGoal(self.current_goal, "/map")
-          self.move_head_adapter.sendGoal(); 
           self.move_head_adapter2.sendPreempt(); 
+          self.move_head_adapter.sendGoal(); 
+
           print "nav --> nav"
 
         elif not self.navigator.active() and self.current_goal != None:
@@ -157,8 +158,9 @@ class ExecutiveDataCollector:
           #self.capture_waiter.sendDefaultHeadConfig()
 
           self.state="nav"
-          self.move_head_adapter.sendGoal(); 
           self.move_head_adapter2.sendPreempt(); 
+          self.move_head_adapter.sendGoal(); 
+
 
           self.selectNextGoal();
           self.navigator.sendGoal(self.current_goal, "/map")

@@ -59,7 +59,7 @@ class WaitForKMessagesAction:
     #  self.message_topic_ = "/stereo/raw_stereo_throttled"
     self.message_topic_ = "/stereo/raw_stereo_throttled" #use remap
 
-    self.goals_sub_ = rospy.Subscriber(self.nn+"/request", WaitActionGoal, self.onGoal)
+    self.goals_sub_ = rospy.Subscriber(self.nn+"/activate", WaitActionGoal, self.onGoal)
     print self.goals_sub_
     self.preempt_sub_ = rospy.Subscriber(self.nn+"/preempt",Empty, self.onPreempt)
 

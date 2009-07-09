@@ -93,6 +93,7 @@ class MoveHeadAction2 (Action) :
 
   def execute(self, goal):
     count = 1
+    print count,self.state
     self.start_time_ = rospy.get_time()
     self.pursuit_time = rospy.get_time() - self.start_time_
     self.current_config_ = -1;
@@ -133,6 +134,7 @@ class MoveHeadAction2 (Action) :
 
         
   def doCycle(self):
+    print self.state
     if self.timeUp():
       self.abort();
       return;
@@ -166,9 +168,9 @@ class MoveHeadAction2 (Action) :
 
 if __name__ == '__main__':
   try:
-
     rospy.init_node("move_head_action")
-    w=MoveHeadAction2("move_head_action", MoveHeadGoal, MoveHeadState, std_msgs.Empty);
+
+    w=MoveHeadAction2("/move_head_C/move_head_action", MoveHeadGoal, MoveHeadState, Empty);
     w.run()
     
     rospy.spin();

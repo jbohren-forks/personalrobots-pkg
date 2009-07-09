@@ -49,7 +49,7 @@ class MoveHeadAdapter:
     print self.state_topic_
 
     rospy.Subscriber(self.state_topic_, MoveHeadState, self.update)
-    self.pub_ = rospy.Publisher(self.action_name_+"/request", MoveHeadGoal)
+    self.pub_ = rospy.Publisher(self.action_name_+"/activate", MoveHeadGoal)
     self.preempt_pub_ = rospy.Publisher(self.action_name_+"/preempt", Empty)
     self.time_limit_ = timeout
     self.state=None
