@@ -58,7 +58,7 @@ bool WristTransmission::initXml(TiXmlElement *elt, Robot *robot)
   }
   a->command_.enable_ = true;
   actuator_names_.push_back(actuator_name);
-  
+
   ael = elt->FirstChildElement("leftActuator");
   actuator_name = ael ? ael->Attribute("name") : NULL;
   if (!actuator_name || (a = robot->getActuator(actuator_name)) == NULL )
@@ -68,7 +68,7 @@ bool WristTransmission::initXml(TiXmlElement *elt, Robot *robot)
   }
   a->command_.enable_ = true;
   actuator_names_.push_back(actuator_name);
-    
+
   TiXmlElement *j = elt->FirstChildElement("flexJoint");
   const char *joint_name = j->Attribute("name");
   if (!joint_name || !robot->getJoint(joint_name))
@@ -84,7 +84,7 @@ bool WristTransmission::initXml(TiXmlElement *elt, Robot *robot)
     return false;
   }
   mechanical_reduction_.push_back(atof(joint_red));
-  
+
   j = elt->FirstChildElement("rollJoint");
   joint_name = j->Attribute("name");
   if (!joint_name || !robot->getJoint(joint_name))
@@ -100,7 +100,7 @@ bool WristTransmission::initXml(TiXmlElement *elt, Robot *robot)
     return false;
   }
   mechanical_reduction_.push_back(atof(joint_red));
-  
+
 
   return true;
 }
@@ -113,11 +113,11 @@ void WristTransmission::propagatePosition(
 
   js[0]->position_ = (as[0]->state_.position_ / mechanical_reduction_[0] - as[1]->state_.position_ / mechanical_reduction_[1])/2;
   js[0]->velocity_ = (as[0]->state_.velocity_ / mechanical_reduction_[0] - as[1]->state_.velocity_ / mechanical_reduction_[1])/2;
-  js[0]->applied_effort_ = (as[0]->state_.last_measured_effort_ * mechanical_reduction_[0] - as[1]->state_.last_measured_effort_ * mechanical_reduction_[1])/2;
-  
+  js[0]->applied_effort_ = as[0]->state_.last_measured_effort_ * mechanical_reduction_[0] - as[1]->state_.last_measured_effort_ * mechanical_reduction_[1];
+
   js[1]->position_ = (-as[0]->state_.position_ / mechanical_reduction_[0] - as[1]->state_.position_ / mechanical_reduction_[1])/2;
   js[1]->velocity_ = (-as[0]->state_.velocity_ / mechanical_reduction_[0] - as[1]->state_.velocity_ / mechanical_reduction_[1])/2;
-  js[1]->applied_effort_ = (-as[0]->state_.last_measured_effort_ * mechanical_reduction_[0] - as[1]->state_.last_measured_effort_ * mechanical_reduction_[1])/2;
+  js[1]->applied_effort_ = -as[0]->state_.last_measured_effort_ * mechanical_reduction_[0] - as[1]->state_.last_measured_effort_ * mechanical_reduction_[1];
 }
 
 void WristTransmission::propagatePositionBackwards(
@@ -125,11 +125,11 @@ void WristTransmission::propagatePositionBackwards(
 {
   assert(as.size() == 2);
   assert(js.size() == 2);
-  
+
   as[0]->state_.position_ = ((js[0]->position_ - js[1]->position_) * mechanical_reduction_[0]);
   as[0]->state_.velocity_ = ((js[0]->velocity_ - js[1]->velocity_) * mechanical_reduction_[0]);
   as[0]->state_.last_measured_effort_ = (js[0]->applied_effort_ - js[1]->applied_effort_) /(mechanical_reduction_[0]);
-  
+
   as[1]->state_.position_ = ((-js[0]->position_ - js[1]->position_) * mechanical_reduction_[1]);
   as[1]->state_.velocity_ = ((-js[0]->velocity_ - js[1]->velocity_) * mechanical_reduction_[1]);
   as[1]->state_.last_measured_effort_ = (-js[0]->applied_effort_ - js[1]->applied_effort_) /(mechanical_reduction_[1]);
@@ -140,7 +140,7 @@ void WristTransmission::propagateEffort(
 {
   assert(as.size() == 2);
   assert(js.size() == 2);
-  
+
   as[0]->command_.effort_ = (js[0]->commanded_effort_ - js[1]->commanded_effort_) /(mechanical_reduction_[0]);
   as[1]->command_.effort_ = (-js[0]->commanded_effort_ - js[1]->commanded_effort_) /(mechanical_reduction_[1]);
 }
@@ -150,7 +150,7 @@ void WristTransmission::propagateEffortBackwards(
 {
   assert(as.size() == 2);
   assert(js.size() == 2);
-  
+
   js[0]->commanded_effort_ = (as[0]->command_.effort_ * mechanical_reduction_[0] - as[1]->command_.effort_ * mechanical_reduction_[1])/2;
   js[1]->commanded_effort_ = (-as[0]->command_.effort_ * mechanical_reduction_[0] - as[1]->command_.effort_ * mechanical_reduction_[1])/2;
 }
