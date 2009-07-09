@@ -19,19 +19,32 @@ Index: ode/src/quickstep.cpp
  //****************************************************************************
  // special matrix multipliers
  
-@@ -340,7 +341,7 @@
+@@ -339,11 +340,20 @@
+ 
  #endif
  
++#undef JNORMALIZE_MASS
++#ifdef JNORMALIZE_MASS
  static void SOR_LCP (dxWorldProcessContext *context,
--  const int m, const int nb, dRealMutablePtr J, int *jb, dxBody * const *body,
 +  const int m, const int nb, dRealMutablePtr J, dRealMutablePtr Jorig, int *jb, dxBody * const *body,
++  dRealPtr invI, dRealMutablePtr lambda, dRealMutablePtr fc, dRealMutablePtr b,
++  dRealPtr lo, dRealPtr hi, dRealPtr cfm, const int *findex,
++  const dxQuickStepParameters *qs)
++#else
++static void SOR_LCP (dxWorldProcessContext *context,
+   const int m, const int nb, dRealMutablePtr J, int *jb, dxBody * const *body,
    dRealPtr invI, dRealMutablePtr lambda, dRealMutablePtr fc, dRealMutablePtr b,
    dRealPtr lo, dRealPtr hi, dRealPtr cfm, const int *findex,
    const dxQuickStepParameters *qs)
-@@ -357,7 +358,11 @@
++#endif
+ {
+ #ifdef WARM_STARTING
+   {
+@@ -357,7 +367,12 @@
  
    // precompute iMJ = inv(M)*J'
    dReal *iMJ = context->AllocateArray<dReal> (m*12);
++#undef JNORMALIZE_MASS
 +#ifdef JNORMALIZE_MASS
 +  compute_invM_JT (m,Jorig,iMJ,jb,body,invI);
 +#else
@@ -40,7 +53,7 @@ Index: ode/src/quickstep.cpp
  
    // compute fc=(inv(M)*J')*lambda. we will incrementally maintain fc
    // as we change lambda.
-@@ -430,6 +435,13 @@
+@@ -430,6 +445,13 @@
    dReal *last_lambda = context->AllocateArray<dReal> (m);
  #endif
  
@@ -54,7 +67,7 @@ Index: ode/src/quickstep.cpp
    const int num_iterations = qs->num_iterations;
    for (int iteration=0; iteration < num_iterations; iteration++) {
  
-@@ -471,6 +483,7 @@
+@@ -471,6 +493,7 @@
      memcpy (last_lambda,lambda,m*sizeof(dReal));
  #endif
  #ifdef RANDOMLY_REORDER_CONSTRAINTS
@@ -62,7 +75,7 @@ Index: ode/src/quickstep.cpp
      if ((iteration & 7) == 0) {
        for (int i=1; i<m; i++) {
          int swapi = dRandInt(i+1);
-@@ -481,6 +494,159 @@
+@@ -481,6 +504,159 @@
      }
  #endif
  
@@ -222,61 +235,7 @@ Index: ode/src/quickstep.cpp
      for (int i=0; i<m; i++) {
        // @@@ potential optimization: we could pre-sort J and iMJ, thereby
        //     linearizing access to those arrays. hmmm, this does not seem
-@@ -488,23 +654,70 @@
-       //     access pattern.
- 
-       int index = order[i].index;
-+      J_ptr = J + index*12;
-+      iMJ_ptr = iMJ + index*12;
- 
--      dRealMutablePtr fc_ptr1;
--      dRealMutablePtr fc_ptr2;
--      dReal delta;
-+      // set the limits for this constraint. 
-+      // this is the place where the QuickStep method differs from the
-+      // direct LCP solving method, since that method only performs this
-+      // limit adjustment once per time step, whereas this method performs
-+      // once per iteration per constraint row.
-+      // the constraints are ordered so that all lambda[] values needed have
-+      // already been computed.
-+      dReal hi_act, lo_act;
-+      if (findex[index] >= 0) {
-+              if (hi[index] == dInfinity) // for the case lambda is 0, dInfinity*0 = ???
-+                hi_act = dInfinity;
-+              else
-+                hi_act = dFabs (hi[index] * lambda[findex[index]]);
-+              lo_act = -hi_act;
-+      } else {
-+              hi_act = hi[index];
-+              lo_act = lo[index];
-+      }
- 
--      {
--        int b1 = jb[index*2];
--        int b2 = jb[index*2+1];
--        fc_ptr1 = fc + 6*b1;
--        fc_ptr2 = (b2 >= 0) ? fc + 6*b2 : NULL;
-+      int b1 = jb[index*2];
-+      int b2 = jb[index*2+1];
-+      dReal delta = b[index] - lambda[index]*Ad[index];
-+      dRealMutablePtr fc_ptr = fc + 6*b1;
-+
-+      // @@@ potential optimization: SIMD-ize this and the b2 >= 0 case
-+      delta -=fc_ptr[0] * J_ptr[0] + fc_ptr[1] * J_ptr[1] +
-+              fc_ptr[2] * J_ptr[2] + fc_ptr[3] * J_ptr[3] +
-+              fc_ptr[4] * J_ptr[4] + fc_ptr[5] * J_ptr[5];
-+      // @@@ potential optimization: handle 1-body constraints in a separate
-+      //     loop to avoid the cost of test & jump?
-+      if (b2 >= 0) {
-+              fc_ptr = fc + 6*b2;
-+              delta -=fc_ptr[0] * J_ptr[6] + fc_ptr[1] * J_ptr[7] +
-+                      fc_ptr[2] * J_ptr[8] + fc_ptr[3] * J_ptr[9] +
-+                      fc_ptr[4] * J_ptr[10] + fc_ptr[5] * J_ptr[11];
-       }
- 
-+
-       dReal old_lambda = lambda[index];
- 
+@@ -505,6 +681,24 @@
        {
          delta = b[index] - old_lambda*Ad[index];
  
@@ -301,37 +260,7 @@ Index: ode/src/quickstep.cpp
          dRealPtr J_ptr = J + index*12;
          // @@@ potential optimization: SIMD-ize this and the b2 >= 0 case
          delta -=fc_ptr1[0] * J_ptr[0] + fc_ptr1[1] * J_ptr[1] +
-@@ -519,6 +732,29 @@
-         }
-       }
- 
-+        // update fc.
-+        // @@@ potential optimization: SIMD for this and the b2 >= 0 case
-+        fc_ptr = fc + 6*b1;
-+        fc_ptr[0] += delta * iMJ_ptr[0];
-+        fc_ptr[1] += delta * iMJ_ptr[1];
-+        fc_ptr[2] += delta * iMJ_ptr[2];
-+        fc_ptr[3] += delta * iMJ_ptr[3];
-+        fc_ptr[4] += delta * iMJ_ptr[4];
-+        fc_ptr[5] += delta * iMJ_ptr[5];
-+        // @@@ potential optimization: handle 1-body constraints in a separate
-+        //     loop to avoid the cost of test & jump?
-+        if (b2 >= 0) {
-+          fc_ptr = fc + 6*b2;
-+          fc_ptr[0] += delta * iMJ_ptr[6];
-+          fc_ptr[1] += delta * iMJ_ptr[7];
-+          fc_ptr[2] += delta * iMJ_ptr[8];
-+          fc_ptr[3] += delta * iMJ_ptr[9];
-+          fc_ptr[4] += delta * iMJ_ptr[10];
-+          fc_ptr[5] += delta * iMJ_ptr[11];
-+        }
-+      }
-+	}
-+
-       {
-         dReal hi_act, lo_act;
- 
-@@ -579,6 +815,10 @@
+@@ -579,6 +773,10 @@
            fc_ptr2[5] += delta * iMJ_ptr[11];
          }
        }
@@ -342,19 +271,19 @@ Index: ode/src/quickstep.cpp
      }
    }
  }
-@@ -607,6 +847,11 @@
+@@ -607,6 +805,11 @@
    // accumulator. I and invI are a vertical stack of 3x4 matrices, one per body.
    dReal *invI = context->AllocateArray<dReal> (3*4*nb);
  
 +#undef CHECK_MASS
 +#ifdef CHECK_MASS
-+  dRealAllocaArray (tmpI,3*4*nb);
-+  dRealAllocaArray (tmpM,1*4*nb);
++  dReal *tmpI = context->AllocateArray<dReal> (3*4*nb);
++  dReal *tmpM = context->AllocateArray<dReal> (1*4*nb);
 +#endif
    {
      dReal *invIrow = invI;
      dxBody *const *const bodyend = body + nb;
-@@ -617,6 +862,13 @@
+@@ -617,6 +820,13 @@
        // compute inverse inertia tensor in global frame
        dMULTIPLY2_333 (tmp,b->invI,b->posr.R);
        dMULTIPLY0_333 (invIrow,b->posr.R,tmp);
@@ -368,7 +297,7 @@ Index: ode/src/quickstep.cpp
  
        if (b->flags & dxBodyGyroscopic) {
          dMatrix3 I;
-@@ -705,6 +957,92 @@
+@@ -705,6 +915,91 @@
      mfb = mfbcurr;
    }
  
@@ -425,7 +354,6 @@ Index: ode/src/quickstep.cpp
 +#endif
 +
 +
-+#undef JNORMALIZE_MASS
 +#ifdef JNORMALIZE_MASS
 +  // we need a copy of Jacobian for joint feedbacks
 +  // because it gets destroyed by SOR solver
@@ -441,7 +369,7 @@ Index: ode/src/quickstep.cpp
 +        mfb += info[i].m;
 +      }
 +  }
-+#else
++//#else
 +  // we need a copy of Jacobian for joint feedbacks
 +  // because it gets destroyed by SOR solver
 +  // instead of saving all Jacobian, we can save just rows
@@ -461,10 +389,11 @@ Index: ode/src/quickstep.cpp
    // if there are constraints, compute the constraint force
    dReal *J = NULL;
    int *jb = NULL;
-@@ -719,6 +1057,144 @@
+@@ -719,6 +1014,115 @@
        J = context->AllocateArray<dReal> (jelements);
        dSetZero (J,jelements);
  
++#undef JNORMALIZE_MASS2
 +#ifdef JNORMALIZE_MASS2
 +      // normalize J by smaller of two masses
 +
@@ -572,41 +501,62 @@ Index: ode/src/quickstep.cpp
 +      fclose(fJ);
 +#endif
 +
-+#define DEBUG_JOINTS
-+#ifdef DEBUG_JOINTS
-+      // do some printing for joints
-+      dRealAllocaArray (tmpJointInfo,8*nj);
-+      dRealMutablePtr tmp_Jinfo_ptr = tmpJointInfo;
-+      for (i=0;i<nj;i++) {
-+        // for every constraint i,
-+        //   get the following information
-+        //   type()   body1id body2id body1mass body2mass
-+        tmp_Jinfo_ptr[i*8+0]   = i;
-+        tmp_Jinfo_ptr[i*8+1]   = joint[i]->node[0].body->tag;
-+        tmp_Jinfo_ptr[i*8+2]   = joint[i]->node[0].body->mass.mass;
-+        if (joint[i]->node[1].body)
-+        {
-+          tmp_Jinfo_ptr[i*8+3] = joint[i]->node[1].body->tag;
-+          tmp_Jinfo_ptr[i*8+4] = joint[i]->node[1].body->mass.mass;
-+        }
-+        else
-+        {
-+          tmp_Jinfo_ptr[i*8+3] = -1;
-+          tmp_Jinfo_ptr[i*8+4] = -1;
-+        }
-+        tmp_Jinfo_ptr[i*8+5]   = i*8;
-+      }
-+
-+      FILE* fJointInfo = fopen("/tmp/JointInfo.mat","a");
-+      fprintf(fJointInfo,"\n");
-+      dPrintMatrix(tmpJointInfo,nj,8,"%15f",fJointInfo);
-+      fclose(fJointInfo);
-+#endif
 +
        // create a constraint equation right hand side vector `c', a constraint
        // force mixing vector `cfm', and LCP low and high bound vectors, and an
        // 'findex' vector.
-@@ -874,8 +1350,71 @@
+@@ -807,6 +1211,50 @@
+ 
+           ofsi += infom;
+         }
++#define DEBUG_JOINTS
++#ifdef DEBUG_JOINTS
++
++        {
++          IFTIMING (dTimerNow ("debug J"));
++
++          // do some printing for joints
++          dReal *tmpJointInfo = context->AllocateArray<dReal> (8*nj);
++          dRealMutablePtr tmp_Jinfo_ptr = tmpJointInfo;
++
++
++          int count;
++          const dJointWithInfo1 *jicurr = jointiinfos;
++          const dJointWithInfo1 *const jiend = jicurr + nj;
++          for (; jicurr != jiend; jicurr++) {
++
++            dxJoint *joint = jicurr->joint;
++
++            // for every constraint,
++            //   get the following information
++            //   type()   body1id body2id body1mass body2mass
++            tmp_Jinfo_ptr[8+0]   = count;
++            tmp_Jinfo_ptr[8+1]   = joint->node[0].body->tag;
++            tmp_Jinfo_ptr[8+2]   = joint->node[0].body->mass.mass;
++            if (joint->node[1].body)
++            {
++              tmp_Jinfo_ptr[8+3] = joint->node[1].body->tag;
++              tmp_Jinfo_ptr[8+4] = joint->node[1].body->mass.mass;
++            }
++            else
++            {
++              tmp_Jinfo_ptr[8+3] = -1;
++              tmp_Jinfo_ptr[8+4] = -1;
++            }
++            tmp_Jinfo_ptr[8+5]   = count*8;
++            tmp_Jinfo_ptr += 8;
++          }
++
++          FILE* fJointInfo = fopen("/tmp/JointInfo.mat","a");
++          fprintf(fJointInfo,"\n");
++          dPrintMatrix(tmpJointInfo,nj,8,"%15f",fJointInfo);
++          fclose(fJointInfo);
++        }
++#endif
+       }
+ 
+       {
+@@ -874,8 +1322,71 @@
      }
  #endif
  
