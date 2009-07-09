@@ -38,7 +38,7 @@
 #define PLANNING_ENVIRONMENT_COLLISION_MODELS_
 
 #include "planning_environment/robot_models.h"
-#include <collision_space/environmentODE.h>
+#include <collision_space/environment.h>
 
 namespace planning_environment
 {
@@ -68,6 +68,7 @@ namespace planning_environment
 	{
 	    RobotModels::reload();
 	    ode_collision_model_.reset();
+	    bullet_collision_model_.reset();
 	    loadCollision(collision_check_links_);
 	}
 	
@@ -77,11 +78,19 @@ namespace planning_environment
 	    return ode_collision_model_;
 	}
 
+	/** \brief Return the instance of the constructed Bullet collision model */
+	const boost::shared_ptr<collision_space::EnvironmentModel> &getBulletCollisionModel(void) const
+	{
+	    return bullet_collision_model_;
+	}
+
     protected:
 	
 	void loadCollision(const std::vector<std::string> &links);
+	void setupModel(boost::shared_ptr<collision_space::EnvironmentModel> &model, const std::vector<std::string> &links);
 	
 	boost::shared_ptr<collision_space::EnvironmentModel> ode_collision_model_;
+	boost::shared_ptr<collision_space::EnvironmentModel> bullet_collision_model_;
 
 	double                                               scale_;
 	double                                               padd_;
