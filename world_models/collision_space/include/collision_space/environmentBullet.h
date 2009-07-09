@@ -40,12 +40,6 @@
 #include "collision_space/environment.h"
 
 #include "btBulletCollisionCommon.h"
-
-#include "BulletCollision/NarrowPhaseCollision/btSimplexSolverInterface.h"
-#include "BulletCollision/NarrowPhaseCollision/btVoronoiSimplexSolver.h"
-#include "BulletCollision/NarrowPhaseCollision/btGjkPairDetector.h"
-#include "BulletCollision/NarrowPhaseCollision/btPointCollector.h"
-//#include "BulletCollision/NarrowPhaseCollision/btVoronoiSimplexSolver.h"
 #include "BulletCollision/Gimpact/btGImpactCollisionAlgorithm.h"
 
 namespace collision_space
