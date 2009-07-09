@@ -51,7 +51,7 @@ RobotStatePublisher::RobotStatePublisher(const Tree& tree)
     tree_(tree)
 {
   // get tf prefix
-  n_.param("~tf_prefix", tf_prefix_, string());
+  n_.param("tf_prefix", tf_prefix_, string());
 
   // build tree solver
   solver_.reset(new TreeFkSolverPosFull_recursive(tree_));
@@ -93,7 +93,7 @@ bool RobotStatePublisher::publishTransforms(const map<string, double>& joint_pos
       tf::TransformKDLToTF(frame, tf_frame);
       trans.header.stamp = time;
       trans.header.frame_id = tf::remap(tf_prefix_, f->first);
-      trans.parent_id = root->first;
+      trans.parent_id = tf::remap(tf_prefix_, root->first);
       tf::transformTFToMsg(tf_frame, trans.transform);
 	tf_msg_.transforms[i++] = trans;
     }
