@@ -62,6 +62,14 @@ public:
    * \param max_cache_time How long to store transform information */
   TransformListener(ros::Duration max_cache_time = ros::Duration(DEFAULT_CACHE_TIME));
 
+  /**
+   * \brief Alternate constructor for transform listener
+   * \param nh The NodeHandle to use for any ROS interaction
+   * \param max_cache_time How long to store transform information
+   */
+  TransformListener(const ros::NodeHandle& nh,
+                    ros::Duration max_cache_time = ros::Duration(DEFAULT_CACHE_TIME));
+
   
   ~TransformListener();
 
@@ -119,6 +127,9 @@ public:
   }
 
 private:
+  /// Initialize this transform listener, subscribing, advertising services, etc.
+  void init();
+
   /// Callback function for ros message subscriptoin
   void subscription_callback(const tf::tfMessageConstPtr& msg);
 
