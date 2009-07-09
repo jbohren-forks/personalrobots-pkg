@@ -1,0 +1,3 @@
+float64 start_angle
+float64 end_angle
+float64 scan_duration
