@@ -208,7 +208,41 @@ class RandomField
           return nbr_feature_vals_;
         }
 
+        inline float getX() const
+        {
+          return x_;
+        }
+
+        inline float getY() const
+        {
+          return y_;
+        }
+
+        inline float getZ() const
+        {
+          return z_;
+        }
+
       protected:
+        // --------------------------------------------------------------
+        /*!
+         * \brief Defines the x y z coordinates for the GenericClique.
+         *
+         * These coordinates are NOT used in the learning and inference
+         * procedures and are only here for convenience.
+         *
+         * \param x The x coordinate
+         * \param y The y coordinate
+         * \param z The z coordinate
+         */
+        // --------------------------------------------------------------
+        inline void setXYZ(float x, float y, float z)
+        {
+          x_ = x;
+          y_ = y;
+          z_ = z;
+        }
+
         // --------------------------------------------------------------
         /*!
          * \brief Defines the features for this GenericClique
@@ -228,6 +262,10 @@ class RandomField
         unsigned int id_;
         const float* feature_vals_;
         unsigned int nbr_feature_vals_;
+
+        float x_;
+        float y_;
+        float z_;
     };
 
     // --------------------------------------------------------------
@@ -265,40 +303,6 @@ class RandomField
           return label_;
         }
 
-        // --------------------------------------------------------------
-        /*!
-         * \brief Defines the x y z coordinates for the GenericClique.
-         *
-         * These coordinates are NOT used in the learning and inference
-         * procedures and are only here for convenience.
-         *
-         * \param x The x coordinate
-         * \param y The y coordinate
-         * \param z The z coordinate
-         */
-        // --------------------------------------------------------------
-        inline void setXYZ(float x, float y, float z)
-        {
-          x_ = x;
-          y_ = y;
-          z_ = z;
-        }
-
-        inline float getX() const
-        {
-          return x_;
-        }
-
-        inline float getY() const
-        {
-          return y_;
-        }
-
-        inline float getZ() const
-        {
-          return z_;
-        }
-
       protected:
         // --------------------------------------------------------------
         /*!
@@ -315,9 +319,6 @@ class RandomField
         }
 
       private:
-        float x_;
-        float y_;
-        float z_;
         unsigned int label_;
     };
 

@@ -165,7 +165,8 @@ void kmeansNodes(const vector<unsigned int>& cluster_feature_indices,
                  const int kmeans_max_iter,
                  const double kmeans_accuracy,
                  const map<unsigned int, RandomField::Node*>& nodes,
-                 map<unsigned int, list<RandomField::Node*> >& created_clusters)
+                 map<unsigned int, list<RandomField::Node*> >& created_clusters,
+                 map<unsigned int, vector<float> >& xyz_cluster_centroids)
 
 {
   // dimension that clustering over (features + xyz coords)
@@ -223,6 +224,8 @@ void kmeansNodes(const vector<unsigned int>& cluster_feature_indices,
   // Associate each node with its cluster label
   curr_sample_idx = 0;
   unsigned int curr_cluster_label = 0;
+  created_clusters.clear();
+  xyz_cluster_centroids.clear();
   for (iter_nodes = nodes.begin(); iter_nodes != nodes.end() ; iter_nodes++)
   {
     curr_cluster_label = static_cast<unsigned int> (cluster_labels->data.i[curr_sample_idx]);
@@ -231,13 +234,30 @@ void kmeansNodes(const vector<unsigned int>& cluster_feature_indices,
     if (created_clusters.count(curr_cluster_label) == 0)
     {
       created_clusters[curr_cluster_label] = list<RandomField::Node*> ();
+      xyz_cluster_centroids[curr_cluster_label] = vector<float> (3, 0.0);
     }
 
     // associate node with the cluster label
     created_clusters[curr_cluster_label].push_back(iter_nodes->second);
 
+    // accumulate total xyz coordinates in cluster
+    xyz_cluster_centroids[curr_cluster_label][0] += curr_node->getX();
+    xyz_cluster_centroids[curr_cluster_label][1] += curr_node->getY();
+    xyz_cluster_centroids[curr_cluster_label][2] += curr_node->getZ();
+
     // proceed to next sample
     curr_sample_idx++;
+  }
+
+  // Finalize xyz centroid for each cluster
+  map<unsigned int, vector<float> >::iterator iter_clusters;
+  float curr_cluster_nbr_nodes = 0.0;
+  for (iter_clusters = xyz_cluster_centroids.begin(); iter_clusters != xyz_cluster_centroids.end() ; iter_clusters++)
+  {
+    curr_cluster_nbr_nodes = static_cast<float> (created_clusters[iter_clusters->first].size());
+    iter_clusters->second[0] /= curr_cluster_nbr_nodes;
+    iter_clusters->second[1] /= curr_cluster_nbr_nodes;
+    iter_clusters->second[2] /= curr_cluster_nbr_nodes;
   }
 
   // ----------------------------------------------------------
@@ -313,9 +333,10 @@ void createCliqueSet0(RandomField& rf,
   int kmeans_max_iter = 5;
   double kmeans_accuracy = 1.0;
   map<unsigned int, list<RandomField::Node*> > created_clusters;
+  map<unsigned int, vector<float> > xyz_cluster_centroids;
   ROS_INFO("Clustering...");
   kmeansNodes(cluster_indices, kmeans_factor, kmeans_max_iter, kmeans_accuracy, rf.getNodesRandomFieldIDs(),
-      created_clusters);
+      created_clusters, xyz_cluster_centroids);
   ROS_INFO("done");
   save_clusters(created_clusters);
 
