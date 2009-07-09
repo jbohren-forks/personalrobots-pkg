@@ -47,11 +47,10 @@ using namespace KDL;
 namespace robot_state_publisher{
 
 RobotStatePublisher::RobotStatePublisher(const Tree& tree)
-  : n_("robot_state_publisher"),
-    tree_(tree)
+   :tree_(tree)
 {
   // get tf prefix
-  n_.param("tf_prefix", tf_prefix_, string());
+  n_.param("~tf_prefix", tf_prefix_, string());
 
   // build tree solver
   solver_.reset(new TreeFkSolverPosFull_recursive(tree_));
