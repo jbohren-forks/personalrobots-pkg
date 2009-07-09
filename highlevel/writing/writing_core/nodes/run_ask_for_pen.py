@@ -35,6 +35,7 @@
 #***********************************************************
 
 import roslib
+import roslib.msg
 roslib.load_manifest('writing_core')
 import rospy
 
@@ -78,7 +79,7 @@ class AskForPenAction(python_actions.Action):
     rospy.logdebug("%s: executing.", self.name)
 
     #open the gripper 
-    self.gripper_controller_publisher.publish(std_msgs.msg.Float64(0.3))
+    self.gripper_controller_publisher.publish(std_msgs.msg.Float64(0.03))
 
     mtp = robot_msgs.msg.PoseStamped()
     mtp.header.stamp = rospy.get_rostime()
@@ -91,6 +92,7 @@ class AskForPenAction(python_actions.Action):
     mtp.pose.orientation.z =0.412
     mtp.pose.orientation.w =-0.029
     twist = robot_msgs.msg.Twist()
+
     #move the arm 
     try:
       move_arm = rospy.ServiceProxy(self.arm_controller + "/move_to", robot_srvs.srv.MoveToPose)
@@ -123,7 +125,7 @@ if __name__ == '__main__':
 
   try:
 
-    rospy.init_node("ask_for_pen")
+    rospy.init_node("ask_for_pen", log_level=roslib.msg.Log.DEBUG)
     w = AskForPenAction("ask_for_pen", Empty, robot_actions.msg.NoArgumentsActionState, Empty)
     w.run()
     rospy.spin();

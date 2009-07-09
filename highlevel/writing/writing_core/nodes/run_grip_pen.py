@@ -35,6 +35,7 @@
 #***********************************************************
 
 import roslib
+import roslib.msg
 roslib.load_manifest('writing_core')
 import rospy
 
@@ -122,7 +123,7 @@ if __name__ == '__main__':
 
   try:
 
-    rospy.init_node("grip_pen")
+    rospy.init_node("grip_pen",  log_level=roslib.msg.Log.DEBUG)
     w = GripPenAction("grip_pen", Empty, robot_actions.msg.NoArgumentsActionState, Empty)
     w.run()
     rospy.spin();

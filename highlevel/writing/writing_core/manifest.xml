@@ -10,6 +10,7 @@
   <url>http://pr.willowgarage.com/wiki/writing_core</url>
   
   <depend package="roscpp" />
+  <depend package="roslib" />
   <depend package="robot_msgs" />
   <depend package="robot_srvs" />
   <depend package="robot_actions" />

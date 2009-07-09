@@ -35,6 +35,7 @@
 #***********************************************************
 
 import roslib
+import roslib.msg
 roslib.load_manifest('writing_core')
 import rospy
 
@@ -129,27 +130,34 @@ def traject(msg):
 
 class GenerateTextTrajectoryAction(python_actions.Action):
 
+  def __init__(self, *args):
+
+    python_actions.Action.__init__(self, args[0], args[1], args[2], args[3])
+    self.name = args[0]
+
   def execute(self, goal):
+    rospy.logdebug("%s: executing.", self.name)
 
     points = [(0, 0, 1)]
     for t in traject(goal.text):
-      points += [(t[0][0], t[0][1],1)] + [(x,y,0) for (x,y) in t] + [(t[-1][0], t[-1][1],1)]
+      points += [(t[0][0], t[0][1], 0.10)] + [(x, y, -0.05) for (x, y) in t] + [(t[-1][0], t[-1][1], 0.10)]
 
     msg = robot_msgs.msg.Path()
     msg.poses = []
-    for (x,y,z) in points:
+    for (x, y, z) in points:
       ps = robot_msgs.msg.PoseStamped()
-      ps.pose.position = robot_msgs.msg.Point(x, y, z)
+      ps.pose.position = robot_msgs.msg.Point(x/goal.scale, y/goal.scale, z)
       msg.poses.append(ps)
     self.feedback = msg
 
+    rospy.logdebug("%s: succeeded.", self.name)
     return python_actions.SUCCESS
 
 if __name__ == '__main__':
 
   try:
 
-    rospy.init_node("generate_text_trajectory")
+    rospy.init_node("generate_text_trajectory", log_level=roslib.msg.Log.DEBUG)
     w = GenerateTextTrajectoryAction("generate_text_trajectory",
                                      pr2_robot_actions.msg.TextGoal,
                                      pr2_robot_actions.msg.GenerateTextTrajectoryState,

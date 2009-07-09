@@ -44,55 +44,65 @@ import sys
 import math
 
 from std_msgs.msg import Empty
-
-import pr2_robot_actions.msg
-import robot_msgs
+from robot_actions.msg import NoArgumentsActionState
+import robot_actions.msg
+import std_msgs.msg
+import robot_msgs.msg
 import python_actions
 
-class TrackHelperAction(python_actions.Action):
+
+
+
+class WriteTrajectoryAction(python_actions.Action):
 
   def __init__(self, *args):
+
     python_actions.Action.__init__(self, args[0], args[1], args[2], args[3])
     self.name = args[0]
+    
     try:
-      self.head_controller = rospy.get_param(self.name + "/head_controller")
+      self.arm_controller = rospy.get_param(self.name + "/arm_controller")
     except KeyError:
-      self.head_controller = "head_controller"
-      rospy.set_param(self.name + "/head_controller", self.head_controller)
+      self.arm_controller = "r_arm_cartesian_pose_controller"
+      rospy.set_param(self.name + "/arm_controller", self.arm_controller)
 
-    self.head_controller_publisher = rospy.Publisher(self.head_controller + "/head_track_point", robot_msgs.msg.PointStamped)
-
+    self.arm_controller_publisher = rospy.Publisher("r_arm_cartesian_pose_controller/command",  robot_msgs.msg.PoseStamped)
+    
+    
   def execute(self, goal):
 
     rospy.logdebug("%s: executing.", self.name)
-    htp = robot_msgs.msg.PointStamped()
-    htp.header = goal.header
-    htp.point = goal.pose.position
 
-    self.head_controller_publisher.publish(htp)
+    p = PoseStamped()
+    p.header.frame_id = 'white_board_frame'
+    p.pose.orientation.x = -0.5
+    p.pose.orientation.y = -0.5
+    p.pose.orientation.z = 0.5
+    p.pose.orientation.w = -0.5 
 
-    while not self.isPreemptRequested():
-      time.sleep(0.1)
-      
-      #print htp.header.frame_id, htp.point.x, htp.point.y, htp.point.z
-      htp.header.stamp = rospy.get_rostime()
-      self.head_controller_publisher.publish(htp)
-      
-      self.update()
+    for g in goal:
+      p.header.stamp = rospy.get_rostime()
+      p.pose = g.pose
+      self.arm_controller_publisher(p)
+      if self.isPreemptRequested():
+        rospy.logdebug("%s: preempted.", self.name)
+        return python_actions.PREEMPTED
+      time.sleep(0.2)
+    
+   
+    rospy.logdebug("%s: succeeded.", self.name)
+    return python_actions.SUCCESS
 
-    rospy.logdebug("%s: preempted.", self.name)    
-    return python_actions.PREEMPTED
-
-#sys.exit()
 
 if __name__ == '__main__':
 
   try:
 
-    rospy.init_node("track_helper",  log_level=roslib.msg.Log.DEBUG)
-    w = TrackHelperAction("track_helper", robot_msgs.msg.PoseStamped, pr2_robot_actions.msg.TrackHelperState, Empty)
+    rospy.init_node("write_trajectory",  log_level=roslib.msg.Log.DEBUG)
+    w = WriteTrajectoryAction("write_trajectory", robot_msgs.msg.Path, robot_actions.msg.WriteTracjectoryState, Empty)
     w.run()
     rospy.spin();
+    
 
   except KeyboardInterrupt, e:
 

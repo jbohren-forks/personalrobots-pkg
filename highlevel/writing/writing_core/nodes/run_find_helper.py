@@ -35,6 +35,7 @@
 #***********************************************************
 
 import roslib
+import roslib.msg
 roslib.load_manifest('writing_core')
 import rospy
 
@@ -124,20 +125,19 @@ class FindHelperAction(python_actions.Action, TransformListener):
           markerpub = rospy.Publisher("/visualization_marker", visualization_msgs.msg.Marker)
           m = visualization_msgs.msg.Marker()
           for i in range(10):
-            print "publishing"
-	    m.header = ps0.header
-	    m.ns = "find_helper";
-	    m.id = i;
-	    m.type = visualization_msgs.msg.Marker.SPHERE;
-	    m.action = visualization_msgs.msg.Marker.ADD;
-	    m.pose = ps0.pose
-	    m.scale.x = 0.2;
-	    m.scale.y = 0.2;
-	    m.scale.z = 0.2;
-	    m.color.a = 0.5;
-	    m.color.r = 1.0;
-	    m.color.g = 0.0;
-	    m.color.b = 1.0;
+            m.header = ps0.header
+            m.ns = "find_helper";
+            m.id = i;
+            m.type = visualization_msgs.msg.Marker.SPHERE;
+            m.action = visualization_msgs.msg.Marker.ADD;
+            m.pose = ps0.pose
+            m.scale.x = 0.2;
+            m.scale.y = 0.2;
+            m.scale.z = 0.2;
+            m.color.a = 0.5;
+            m.color.r = 1.0;
+            m.color.g = 0.0;
+            m.color.b = 1.0;
             markerpub.publish(m)
 
           ps0 = tf.pose_stamped_bt_to_msg(self.transform_pose("odom_combined", tf.pose_stamped_msg_to_bt(ps0)))
@@ -147,7 +147,6 @@ class FindHelperAction(python_actions.Action, TransformListener):
           self.feedback.helper_zone=ps1
         
           for i in range(10):
-            print "publishing"
             m.header = ps1.header
             m.ns = "find_helper";
             m.id = 9+i;
@@ -163,8 +162,6 @@ class FindHelperAction(python_actions.Action, TransformListener):
             m.color.b = 1.0;
             markerpub.publish(m)
 
-
-
           rospy.logdebug("%s: succeeded.", self.name)
           return python_actions.SUCCESS
 
@@ -177,7 +174,7 @@ if __name__ == '__main__':
 
   try:
 
-    rospy.init_node("find_helper")
+    rospy.init_node("find_helper",  log_level=roslib.msg.Log.DEBUG)
     w = FindHelperAction("find_helper", Empty, pr2_robot_actions.msg.FindHelperState, pr2_robot_actions.msg.FindHelperResult)
     w.run()
     rospy.spin();
