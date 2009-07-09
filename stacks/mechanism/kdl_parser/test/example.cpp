@@ -46,13 +46,11 @@ using namespace std;
 int main()
 {
   Tree my_tree;
-  map<string, string> segment_joint_mapping;
-  if (!treeFromFile("pr2_desc.xml", my_tree, segment_joint_mapping)) return -1;
+  if (!treeFromFile("pr2_desc.xml", my_tree)) return -1;
 
-  vector<string> links;
   Chain chain1, chain2;
-  my_tree.getChain("l_gripper_palm_link", "r_gripper_palm_link", chain1, links);
-  my_tree.getChain("r_gripper_palm_link", "l_gripper_palm_link", chain2, links);
+  my_tree.getChain("l_gripper_palm_link", "r_gripper_palm_link", chain1);
+  my_tree.getChain("r_gripper_palm_link", "l_gripper_palm_link", chain2);
   cout << "Got chain1 with " << chain1.getNrOfJoints() << " joints and " << chain1.getNrOfSegments() << " segments" << endl;
   cout << "Got chain2 with " << chain2.getNrOfJoints() << " joints and " << chain2.getNrOfSegments() << " segments" << endl;
 
@@ -72,8 +70,5 @@ int main()
   solver2.JntToCart(jnt2, f2);
   cout << "frame 1 " << f1 << endl;
   cout << "frame 2 " << f2.Inverse() << endl;
-
-  for (map<string, string>::const_iterator it=segment_joint_mapping.begin(); it!=segment_joint_mapping.end(); it++)
-    cout << "mapping joint " << it->first << " on segment " << it->second << endl;
 }
 
