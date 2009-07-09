@@ -120,14 +120,15 @@ void planning_environment::KinematicModelStateMonitor::mechanismStateCallback(co
 
     if (includePose_)
     {
-	// use tf to figure out pose
-	if (tf_->canTransform(frame_id_, robot_frame_, mechanismState->header.stamp))
+	std::string err;
+	ros::Time tm;
+	if (tf_->getLatestCommonTime(robot_frame_, frame_id_, tm, &err) == tf::NO_ERROR)
 	{
 	    tf::Stamped<tf::Pose> transf;
 	    bool ok = true;
 	    try
 	    {
-		tf_->lookupTransform(frame_id_, robot_frame_, mechanismState->header.stamp, transf);
+		tf_->lookupTransform(frame_id_, robot_frame_, tm, transf);
 	    }
 	    catch(...)
 	    {
@@ -174,7 +175,7 @@ void planning_environment::KinematicModelStateMonitor::mechanismStateCallback(co
 		ROS_ERROR("Transforming from link '%s' to link '%s' failed", robot_frame_.c_str(), frame_id_.c_str());
 	}
 	else
-	    ROS_WARN("Unable to find transform from link '%s' to link '%s'", robot_frame_.c_str(), frame_id_.c_str());
+	    ROS_WARN("Unable to find transform from link '%s' to link '%s' (TF said: %s)", robot_frame_.c_str(), frame_id_.c_str(), err.c_str());
     }
 
     if (change && onStateUpdate_ != NULL)
