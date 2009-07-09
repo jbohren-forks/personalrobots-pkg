@@ -36,9 +36,7 @@
 
 #include <ros/ros.h>
 #include <planning_environment/collision_space_monitor.h>
-
-const int TEST_TIMES  = 3;
-const int TEST_POINTS = 100000;
+#include <visualization_msgs/Marker.h>
 
 class CollisionTestSpeed
 {
@@ -46,7 +44,9 @@ public:
 
     CollisionTestSpeed(void) 
     {
+	vmPub_ = nh_.advertise<visualization_msgs::Marker>("visualization_marker", 10240);
 	cm_ = new planning_environment::CollisionModels("robot_description", 1.0, 0.0);
+	id_ = 1;
     }
 
     virtual ~CollisionTestSpeed(void)
@@ -72,9 +72,9 @@ public:
 	    int i4 = i * 4;
 	    do 
 	    {
-		data[i4 + 0] = uniform(1.0);
-		data[i4 + 1] = uniform(1.0);
-		data[i4 + 2] = uniform(1.0);
+		data[i4 + 0] = uniform(1.5);
+		data[i4 + 1] = uniform(1.5);
+		data[i4 + 2] = uniform(1.5);
 		data[i4 + 3] = 0.02;
 		em->clearObstacles();
 		em->addPointCloud(1, data + i4);
@@ -110,7 +110,68 @@ public:
 	ROS_INFO("%f collision tests per second (only self collision checking)", (double)K/(ros::WallTime::now() - tm).toSec());
     }
 
+    void testCollision(void)
+    {
+	if (!cm_->loadedModels())
+	    return;	
+	collision_space::EnvironmentModel *em = cm_->getODECollisionModel().get();
+	em->setSelfCollision(false);
+	
+	em->updateRobotModel();
+	ROS_INFO("Collision (should be 0): %d", em->isCollision());
+	
+	const int n = 10000;
+	double *data = new double[n * 4];
+	
+	for (int i = 0 ; i < n ; ++i)
+	{
+	    int i4 = i * 4;
+	    do 
+	    {
+		data[i4 + 0] = uniform(1.5);
+		data[i4 + 1] = uniform(1.5);
+		data[i4 + 2] = uniform(1.5);
+		data[i4 + 3] = 0.02;
+		em->clearObstacles();
+		em->addPointCloud(1, data + i4);
+	    }
+	    while(!em->isCollision());
+	    sendPoint(data[i4], data[i4 + 1], data[i4 + 2]);
+	}
+	
+	ROS_INFO("Added %d points", n);
+	
+	delete[] data;
+    }
+
 protected:
+
+    void sendPoint(double x, double y, double z)
+    {
+	visualization_msgs::Marker mk;
+
+	mk.header.stamp = ros::Time::now();
+
+	mk.header.frame_id = "base_link";
+
+	mk.ns = "test_self_filter";
+	mk.id = id_++;
+	mk.type = visualization_msgs::Marker::SPHERE;
+	mk.action = visualization_msgs::Marker::ADD;
+	mk.pose.position.x = x;
+	mk.pose.position.y = y;
+	mk.pose.position.z = z;
+	mk.pose.orientation.w = 1.0;
+
+	mk.scale.x = mk.scale.y = mk.scale.z = 0.01;
+
+	mk.color.a = 1.0;
+	mk.color.r = 1.0;
+	mk.color.g = 0.04;
+	mk.color.b = 0.04;
+
+	vmPub_.publish(mk);
+    }
 
     // return a random number (uniform distribution)
     // between -magnitude and magnitude
@@ -119,7 +180,11 @@ protected:
 	return (2.0 * drand48() - 1.0) * magnitude;
     }
 
+    ros::Publisher                         vmPub_;
+    ros::NodeHandle                        nh_;
     planning_environment::CollisionModels *cm_;
+    int                                    id_;
+    
 };
 
 
@@ -128,7 +193,11 @@ int main(int argc, char **argv)
     ros::init(argc, argv, "CollisionTestSpeed");
 
     CollisionTestSpeed cts;
+    
     cts.testPointCloud();
-
+    cts.testCollision();
+    
+    ros::spin();
+    
     return 0;
 }
