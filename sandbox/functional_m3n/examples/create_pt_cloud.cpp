@@ -354,15 +354,6 @@ void createCliqueSet0(RandomField& rf,
       continue;
     }
 
-    /*
-    cout << "clique features: ";
-    for (unsigned int i = 0 ; i < nbr_total_feature_vals ; i++)
-    {
-      cout << concat_created_feature_vals[i] << " ";
-    }
-    cout << endl;
-*/
-
     // try to create node with features
     if (rf.createClique(0, curr_list, concat_created_feature_vals, nbr_total_feature_vals) == NULL)
     {
