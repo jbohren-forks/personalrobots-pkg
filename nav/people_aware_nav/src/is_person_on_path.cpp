@@ -79,7 +79,7 @@ public:
     total_dist_sqr_m_ = robot_radius_m*robot_radius_m + person_radius_m*person_radius_m;
 
     message_notifier_person_ = new tf::MessageNotifier<people::PositionMeasurement> (tf_, node_, boost::bind(&IsPersonOnPath::personPosCB, this, _1), "people_tracker_measurements", fixed_frame_, 1);
-    message_notifier_path_ = new tf::MessageNotifier<visualization_msgs::Polyline>(tf_, node_, boost::bind(&IsPersonOnPath::pathCB, this, _1), "/move_base/navfn/plan", fixed_frame_, 1);
+    message_notifier_path_ = new tf::MessageNotifier<visualization_msgs::Polyline>(tf_, node_, boost::bind(&IsPersonOnPath::pathCB, this, _1), "/move_base/NavfnROSConstrained/plan", fixed_frame_, 1);
 
     node_->advertiseService ("is_person_on_path", &IsPersonOnPath::personOnPathCB, this);
     path_mutex_.lock();

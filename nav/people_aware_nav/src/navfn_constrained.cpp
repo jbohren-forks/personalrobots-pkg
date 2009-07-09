@@ -72,6 +72,7 @@ void NavfnROSConstrained::getCostmap (costmap_2d::Costmap2D& cmap)
     p.x = iter->x;
     p.y = iter->y;
     p.z = iter->z;
+    ROS_DEBUG_STREAM("Adding constraint point " << p.x << ", " << p.y << ", " << p.z);
     polygon.push_back(p);
   }
   cmap.setConvexPolygonCost(polygon, costmap_2d::LETHAL_OBSTACLE);
