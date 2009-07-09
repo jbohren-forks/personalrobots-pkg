@@ -78,7 +78,8 @@ namespace move_base {
       planner_ = nav_robot_actions::BGPFactory::Instance().CreateObject(global_planner, global_planner, *planner_costmap_ros_);
     } catch (Loki::DefaultFactoryError<std::string, nav_robot_actions::BaseGlobalPlanner>::Exception)
     {
-      ROS_ASSERT_MSG(false, "Cannot create the desired global planner because it is not registered with the factory");
+      ROS_FATAL("Failed to create the %s planner, are you sure it is properly registered?", global_planner.c_str());
+      exit(0);
     }
 
     ROS_INFO("MAP SIZE: %d, %d", planner_costmap_ros_->cellSizeX(), planner_costmap_ros_->cellSizeY());
@@ -92,7 +93,8 @@ namespace move_base {
           local_planner, tf_, *controller_costmap_ros_);
     } catch (Loki::DefaultFactoryError<std::string, nav_robot_actions::BaseLocalPlanner>::Exception)
     {
-      ROS_ASSERT_MSG(false, "Cannot create the desired local planner because it is not registered with the factory");
+      ROS_FATAL("Failed to create the %s planner, are you sure it is properly registered?", local_planner.c_str());
+      exit(0);
     }
 
     //advertise a service for getting a plan
