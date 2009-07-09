@@ -51,7 +51,7 @@ pm_wrapper::~pm_wrapper()
   delete planning_monitor_;
 };
 
-/** \brief initialize the planning monitor - choose the links to check, set the groupID (must be called first) */
+/** \brief initialize the planning monitor - choose the links to be checked for collision, set the groupID (must be called first) */
 bool pm_wrapper::initPlanningMonitor(const std::vector<std::string> &links, tf::TransformListener * tfl)
 {
   collision_check_links_ = links;
