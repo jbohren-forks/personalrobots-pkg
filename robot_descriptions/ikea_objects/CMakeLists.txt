@@ -9,8 +9,7 @@ find_ros_package(xacro)
 find_ros_package(ivcon)
 find_ros_package(convex_decomposition)
 
-#iv files
-# iterate through all the obj files and generate *.mesh and *.iv files
+# iterate through all the obj files
 file(GLOB ikea_objects_obj_files ${CMAKE_CURRENT_SOURCE_DIR}/meshes/*.obj)
 set(ikea_objects_gen_files "")
 
@@ -27,7 +26,7 @@ foreach(it ${ikea_objects_obj_files})
       OUTPUT ${basepath}/convex
       COMMAND mkdir -p
       ARGS ${basepath}/convex)
-    set(ikea_objects_gen_files ${basepath}/convex)
+    set(ikea_objects_gen_files ${ikea_objects_gen_files} ${basepath}/convex)
 
     #create stl files from obj files
     add_custom_command(
