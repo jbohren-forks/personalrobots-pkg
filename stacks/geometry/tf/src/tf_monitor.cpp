@@ -35,6 +35,8 @@
 #include "tf/tf.h"
 #include "tf/transform_listener.h"
 #include <string>
+#include <boost/bind.hpp>
+#include <boost/thread.hpp>
 #include "ros/ros.h"
 
 using namespace tf;
@@ -143,8 +145,15 @@ public:
       while (node_.ok() && !tf_.canTransform(framea_, frameb_, Time(), Duration(1.0)))
         cout << "." << flush;
       cout << endl;
-      
-      tf_.chainAsVector(framea_, ros::Time(), frameb_, ros::Time(), frameb_, chain_);
+     
+      try{
+        tf_.chainAsVector(framea_, ros::Time(), frameb_, ros::Time(), frameb_, chain_);
+      }
+      catch(tf::TransformException& ex){
+        ROS_WARN("Transform Exception %s", ex.what());
+        return;
+      } 
+
       cout << "Chain currently is:" <<endl;
       for (unsigned int i = 0; i < chain_.size(); i++)
       {
@@ -244,6 +253,9 @@ int main(int argc, char ** argv)
 {
   //Initialize ROS
   init(argc, argv, "tf_monitor", ros::init_options::AnonymousName);
+
+  ros::NodeHandle nh;
+  boost::thread spinner( boost::bind( &ros::spin ));
 
   string framea, frameb;
   bool using_specific_chain = true;
