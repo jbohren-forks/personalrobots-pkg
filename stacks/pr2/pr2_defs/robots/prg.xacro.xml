@@ -31,17 +31,21 @@
             rpy="${cal_head_roll} ${cal_head_pitch} ${cal_head_yaw}" />
   </pr2_head>
 
+  <!-- Watts: A2 sensor suite installed 7/9/09. Has double stereo, prosilica, projector -->
   <!-- Prosilica Camera -->
   <prosilica_cam name="high_def" parent="head_plate_frame">
-    <origin xyz="${cal_high_def_x}    ${0.07+cal_high_def_y} ${0.025+cal_high_def_z}"
-            rpy="${cal_high_def_roll} ${cal_high_def_pitch} ${cal_high_def_yaw}" />
+    <!-- Center of camera is 109mm right of center screw, 35mm up -->
+    <!-- Camera is slightly recessed from front, where is camera origin? Lens? \
+-->
+    <origin xyz="0 -0.109 0.035" rpy="0 0 0" />
   </prosilica_cam>
 
   <!-- Stereocam -->
-  <stereo_camera name="stereo" parent="head_plate_frame">
-    <origin xyz="0.0 -0.0254 0.0" rpy="0 0 0" />
-  </stereo_camera>
-    
+  <double_stereo_camera name="double_stereo" parent="head_plate_frame">
+    <origin xyz="0.0 0.0 0.003" rpy="0 0 0" />
+  </double_stereo_camera>
+
+
   <pr2_tilting_laser name="laser_tilt" parent="torso_lift_link">
     <!--origin xyz="0.1 0 0.19525" rpy="0 0 0" /-->
     <origin xyz="0.1 0 0.235" rpy="0 0 0" />
