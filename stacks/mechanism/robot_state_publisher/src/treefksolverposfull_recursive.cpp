@@ -41,7 +41,7 @@ int TreeFkSolverPosFull_recursive::JntToCart(const map<string, double>& q_in, ma
   // clear output
   p_out.clear();
 
-  addFrameToMap(q_in, p_out, Frame::Identity(), tree.getSegment("root"));
+  addFrameToMap(q_in, p_out, Frame::Identity(), tree.getRootSegment());
 
   return 0;
 }

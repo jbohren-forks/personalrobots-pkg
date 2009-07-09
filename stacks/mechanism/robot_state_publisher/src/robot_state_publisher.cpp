@@ -60,7 +60,7 @@ RobotStatePublisher::RobotStatePublisher(const Tree& tree)
   tf_msg_.transforms.resize(tree.getNrOfSegments()-1);
 
   // get the 'real' root segment of the tree, which is the first child of "root"
-  SegmentMap::const_iterator root = tree.getSegment("root");
+  SegmentMap::const_iterator root = tree.getRootSegment();
   assert(root->second.children.begin() != root->second.children.end());  // every tree has root element
   root_ = (*root->second.children.begin())->first;
 }
