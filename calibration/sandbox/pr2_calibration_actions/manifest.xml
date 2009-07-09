@@ -1,0 +1,24 @@
+<package>
+  <description brief="pr2_calibration_actions">
+     Actions specific to the PR2 for collecting calibration information
+  </description>
+  <author>Vijay Pradeep / vpradeep@willowgarage.com</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://pr.willowgarage.com/wiki/calibration_msgs</url>
+
+  <depend package="std_msgs" />
+  <depend package="robot_msgs" />
+  <depend package="sensor_msgs" />
+  <depend package="calibration_msgs" />
+  <depend package="pr2_msgs" />
+
+  <depend package="robot_actions" />
+  
+  <export>
+    <cpp cflags="-I${prefix}/msg/cpp" />
+  </export>
+
+</package>
+
+

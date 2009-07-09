@@ -43,9 +43,12 @@
 #include "topic_synchronizer/topic_synchronizer.h"
 #include "visualization_msgs/Marker.h"
 
+#include "calibration_msgs/CbStereoCorners.h"
+#include "calibration_msgs/CbCamCorners.h"
 
 using namespace stereo_checkerboard_detector ;
 using namespace std ;
+using namespace calibration_msgs ;
 
 class StereoCheckerboardNode
 {
@@ -56,13 +59,16 @@ public:
         ros::Duration().fromSec(0.05),
         &StereoCheckerboardNode::msgTimeout )
   {
-    cb_helper_.setSize(6,8, .107) ;
+    num_x_ = 6 ;
+    num_y_ = 8 ;
+    cb_helper_.setSize(num_x_, num_y_, .107) ;
 
     sync_.subscribe("stereo/left/image_rect", left_image_msg_,  1) ;
     sync_.subscribe("stereo/left/cam_info",  left_info_msg_,   1) ;
     sync_.subscribe("stereo/right/image_rect",right_image_msg_, 1) ;
     sync_.subscribe("stereo/right/cam_info", right_info_msg_,  1) ;
 
+    node_->advertise<calibration_msgs::CbStereoCorners>("cb_stereo_corners", 1) ;
     node_->advertise<robot_msgs::PointCloud>("cb_corners", 1) ;
     node_->advertise<robot_msgs::PointCloud>("cb_corners_left", 1) ;
     node_->advertise<robot_msgs::PointCloud>("cb_corners_right", 1) ;
@@ -90,6 +96,30 @@ public:
     }
   }
 
+  void pointVecToCbCamCorners(const vector<robot_msgs::Point>& vec, unsigned int num_x, unsigned int num_y,
+                              calibration_msgs::CbCamCorners& corners)
+  {
+    corners.num_x = num_x ;
+    corners.num_y = num_y ;
+    if (vec.size() != num_x * num_y)
+    {
+      ROS_ERROR("vec.size()=%u, num_x=%u, num_y=%u", vec.size(), num_x, num_y) ;
+      return ;
+    }
+
+    for (unsigned int j=0; j<num_y; j++)
+    {
+      for (unsigned int i=0; i<num_x; i++)
+      {
+        const unsigned int ind = j*num_x + num_x ;
+        corners.corners[ind].x_index = i ;
+        corners.corners[ind].y_index = j ;
+        corners.corners[ind].point.x = vec[ind].x ;
+        corners.corners[ind].point.y = vec[ind].y ;
+      }
+    }
+  }
+
   void msgCallback(ros::Time t)
   {
     bool found = cb_helper_.findCheckerboard(left_image_msg_, right_image_msg_, left_info_msg_, right_info_msg_) ;
@@ -97,6 +127,13 @@ public:
     robot_msgs::PointCloud cloud ;
     cloud.header.frame_id = left_image_msg_.header.frame_id ;
     cloud.header.stamp = left_image_msg_.header.stamp ;
+
+    CbStereoCorners stereo_corners ;
+    stereo_corners.header.frame_id = left_image_msg_.header.frame_id ;
+    stereo_corners.header.stamp    = left_image_msg_.header.stamp ;
+    stereo_corners.left.header  = stereo_corners.header ;
+    stereo_corners.right.header = stereo_corners.header ;
+
     if (found)
     {
       //unsigned int N = xyz.size() ;
@@ -109,14 +146,20 @@ public:
       node_->publish("cb_corners", cloud) ;
 
       // Publish the left corners
-      cb_helper_.getCornersLeft(point_vec) ;
-      pointVecToCloud(point_vec, cloud) ;
+      vector<robot_msgs::Point> left_point_vec ;
+      cb_helper_.getCornersLeft(left_point_vec) ;
+      pointVecToCloud(left_point_vec, cloud) ;
+      pointVecToCbCamCorners(left_point_vec, num_x_, num_y_, stereo_corners.left) ;
       node_->publish("cb_corners_left", cloud) ;
 
       // Publish the right corners
-      cb_helper_.getCornersRight(point_vec) ;
-      pointVecToCloud(point_vec, cloud) ;
+      vector<robot_msgs::Point> right_point_vec ;
+      cb_helper_.getCornersRight(right_point_vec) ;
+      pointVecToCloud(right_point_vec, cloud) ;
+      pointVecToCbCamCorners(right_point_vec, num_x_, num_y_, stereo_corners.right) ;
       node_->publish("cb_corners_right", cloud) ;
+
+      node_->publish("cb_stereo_corners", stereo_corners) ;
 
       // Publish a mini-axes defining the checkerboard
       tf::Pose pose ;
@@ -136,12 +179,19 @@ public:
       cloud.pts.clear() ;
       node_->publish("cb_corners_left", cloud) ;
       node_->publish("cb_corners_right", cloud) ;
+
+      stereo_corners.left.num_x = num_x_ ;
+      stereo_corners.left.num_y = num_y_ ;
+      stereo_corners.left.corners.clear() ;
+      stereo_corners.right.num_x = num_x_ ;
+      stereo_corners.right.num_y = num_y_ ;
+      stereo_corners.left.corners.clear() ;
+      node_->publish("cb_stereo_corners", stereo_corners) ;
       printf("Not found\n") ;
     }
 
     node_->publish("left_cb_debug", cb_helper_.getLeftDebug()) ;
     node_->publish("right_cb_debug", cb_helper_.getRightDebug()) ;
-
 
   }
 
@@ -216,6 +266,9 @@ private :
   ros::Node* node_ ;
   StereoCheckerboardHelper cb_helper_ ;
   TopicSynchronizer<StereoCheckerboardNode> sync_ ;
+
+  unsigned int num_x_ ;
+  unsigned int num_y_ ;
 
   sensor_msgs::Image left_image_msg_ ;
   sensor_msgs::CamInfo left_info_msg_ ;
