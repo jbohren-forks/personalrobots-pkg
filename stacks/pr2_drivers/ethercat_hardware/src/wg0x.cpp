@@ -188,7 +188,7 @@ EthercatDevice *WG0X::configure(int &startAddress, EtherCAT_SlaveHandler *sh)
 
 int WG06::initialize(Actuator *actuator, bool allow_unprogrammed, bool motor_model)
 {
-  int retval = WG0X::initialize(actuator, motor_model);
+  int retval = WG0X::initialize(actuator, allow_unprogrammed, motor_model);
   
   if (!retval && use_ros_)
   {
