@@ -538,9 +538,9 @@ int main(int argc, char *argv[])
   // Catch if we fall back to secondary mode
   signal(SIGXCPU, warnOnSecondary);
 
-  node.advertiseService("shutdown", shutdownService);
-  node.advertiseService("reset_motors", resetMotorsService);
-  node.advertiseService("halt_motors", haltMotorsService);
+  ros::ServiceServer shutdown = node.advertiseService("shutdown", shutdownService);
+  ros::ServiceServer reset = node.advertiseService("reset_motors", resetMotorsService);
+  ros::ServiceServer halt = node.advertiseService("halt_motors", haltMotorsService);
 
   //Start thread
   int rv;
