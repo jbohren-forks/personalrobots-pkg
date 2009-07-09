@@ -74,12 +74,12 @@ Chain ModelGetter::getModel()
       break ;
 
     // Now add the data to the chain
-    Joint J(Joint::RotZ) ;
+    Joint J("Joint 1",Joint::RotZ) ;
     Vector rot_axis(model[3], model[4], model[5]) ;           // KDL doesn't need vector to be normalized. It even behaves nicely with vector=[0 0 0]
     double rot_ang = rot_axis.Norm() ;
     Rotation R(Rotation::Rot(rot_axis, rot_ang)) ;
     Vector trans(model[0], model[1], model[2]) ;
-    chain.addSegment(Segment(J, Frame(R, trans))) ;
+    chain.addSegment(Segment("Segment 1", J, Frame(R, trans))) ;
   }
 
   return chain ;

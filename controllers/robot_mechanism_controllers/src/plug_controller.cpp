@@ -339,7 +339,7 @@ void PlugController::setToolOffset(const tf::Transform &tool_offset)
 
   KDL::Frame tool_frame;
   tf::TransformTFToKDL(tool_offset, tool_frame);
-  new_kdl_chain.addSegment(KDL::Segment(KDL::Joint(KDL::Joint::None), tool_frame));
+  new_kdl_chain.addSegment(KDL::Segment("ToolOffset", KDL::Joint("ToolOffset", KDL::Joint::None), tool_frame));
 
   kdl_chain_ = new_kdl_chain;
 

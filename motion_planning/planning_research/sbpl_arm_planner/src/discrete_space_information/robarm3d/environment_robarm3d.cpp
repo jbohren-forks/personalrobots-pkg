@@ -3921,15 +3921,13 @@ void EnvironmentROBARM3D::OutputPlanningStats()
 bool EnvironmentROBARM3D::InitKDLChain(const char *fKDL)
 {
   KDL::Tree my_tree;
-  std::map<string, string> segment_joint_mapping;
-  if (!treeFromString(fKDL, my_tree, segment_joint_mapping))
+  if (!treeFromString(fKDL, my_tree))
   {
     printf("Failed to parse tree from manipulator description file.\n");
     return false;;
   }
 
-  std::vector<std::string> links;
-  if (!my_tree.getChain("torso_lift_link", "r_wrist_roll_link", EnvROBARMCfg.arm_chain, links))
+  if (!my_tree.getChain("torso_lift_link", "r_wrist_roll_link", EnvROBARMCfg.arm_chain))
   {
     printf("Error: could not fetch the KDL chain for the desired manipulator. Exiting.\n"); 
     return false;

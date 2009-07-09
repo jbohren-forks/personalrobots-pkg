@@ -111,7 +111,7 @@ public:
     mech_chain.toKDL(chain_);
 
     // Add the 'range' joint
-    chain_.addSegment(KDL::Segment(KDL::Joint(KDL::Joint::TransX))) ;
+    chain_.addSegment(KDL::Segment("RangeSegment", KDL::Joint("RangeJoint", KDL::Joint::TransX))) ;
 
     if (chain_.getNrOfJoints() != 3)
       ROS_ERROR("Num joints doesn't seem right") ;
