@@ -42,24 +42,15 @@ bool Chain::init(Robot *robot, const std::string &root, const std::string &tip)
   robot_ = robot;
 
   // Constructs the kdl chain
-  if (!robot_->tree_.getChain(root, tip, kdl_chain_, link_names_)) return false;
+  if (!robot_->tree_.getChain(root, tip, kdl_chain_)) return false;
 
   // Pulls out all the joint indices
   joint_indices_.clear();
   all_joint_indices_.clear();
-  for (size_t i=0; i<link_names_.size(); i++){
-    // find joint that matches link
-    string jnt_name = "";
-    for (map<string,string>::const_iterator it=robot_->joint_link_mapping_.begin(); 
-         it!=robot_->joint_link_mapping_.end(); it++){
-      if (it->second == link_names_[i]) jnt_name = it->first;
-    }
-    if (jnt_name == ""){
-      ROS_ERROR("Could not find joint matching to link %s",link_names_[i].c_str());
-      return false;
-    }
-    int jnt_index = robot_->getJointIndex(jnt_name);
-    ROS_DEBUG("Index of joint %s at link %s is %i", jnt_name.c_str(), link_names_[i].c_str(), jnt_index);
+  for (size_t i=0; i<kdl_chain_.getNrOfSegments(); i++){
+    int jnt_index = robot_->getJointIndex(kdl_chain_.getSegment(i).getJoint().getName());
+    ROS_DEBUG("Index of joint %s at link %s is %i", 
+              kdl_chain_.getSegment(i).getJoint().getName().c_str(), kdl_chain_.getSegment(i).getName().c_str(), jnt_index);
     if (jnt_index == -1) return false;
     all_joint_indices_.push_back(jnt_index);
     if (robot_->joints_[jnt_index]->type_ != JOINT_FIXED)

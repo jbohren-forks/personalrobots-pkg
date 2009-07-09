@@ -41,7 +41,7 @@ namespace mechanism {
 bool Robot::initXml(TiXmlElement *root)
 {
   // Constructs the kdl tree.
-  if (!treeFromXml(root, tree_, joint_link_mapping_))
+  if (!treeFromXml(root, tree_))
     return false;
 
   // Constructs the joints.

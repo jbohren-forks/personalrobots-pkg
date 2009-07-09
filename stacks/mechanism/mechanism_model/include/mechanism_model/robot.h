@@ -76,7 +76,6 @@ public:
 
   HardwareInterface *hw_;  // Holds the array of actuators
   KDL::Tree tree_;
-  std::map<std::string, std::string> joint_link_mapping_;
   std::vector<Transmission*> transmissions_;
   std::vector<Joint*> joints_;
   std::vector<Link*> links_;
