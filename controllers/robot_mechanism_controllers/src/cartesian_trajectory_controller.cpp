@@ -289,7 +289,7 @@ bool CartesianTrajectoryController::moveTo(robot_srvs::MoveToPose::Request &req,
 {
   ROS_INFO("in cartesian traj move_to service");
   if (!moveTo(req.pose, req.tolerance, 0.0)){
-    ROS_ERROR("CartesianTrajectoryController: not starting trajectory because previous one is still running");
+    ROS_ERROR("CartesianTrajectoryController: not starting trajectory because either previous one is still running or the transform frame could not be found");
     return false;
   }
 
