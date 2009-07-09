@@ -130,8 +130,8 @@ int RandomField::updateLabelings(const map<unsigned int, unsigned int>& new_labe
 // --------------------------------------------------------------
 /*! See function definition */
 // --------------------------------------------------------------
-const RandomField::Node* RandomField::createNode(float* feature_vals,
-                                                 unsigned int nbr_feature_vals,
+const RandomField::Node* RandomField::createNode(const float* feature_vals,
+                                                 const unsigned int nbr_feature_vals,
                                                  unsigned int label,
                                                  float x,
                                                  float y,
@@ -148,9 +148,9 @@ const RandomField::Node* RandomField::createNode(float* feature_vals,
 // --------------------------------------------------------------
 /*! See function definition */
 // --------------------------------------------------------------
-const RandomField::Node* RandomField::createNode(unsigned int node_id,
-                                                 float* feature_vals,
-                                                 unsigned int nbr_feature_vals,
+const RandomField::Node* RandomField::createNode(const unsigned int node_id,
+                                                 const float* feature_vals,
+                                                 const unsigned int nbr_feature_vals,
                                                  unsigned int label,
                                                  float x,
                                                  float y,
@@ -182,8 +182,8 @@ const RandomField::Node* RandomField::createNode(unsigned int node_id,
 // --------------------------------------------------------------
 /*! See function definition */
 // --------------------------------------------------------------
-const RandomField::Clique* RandomField::createClique(unsigned int clique_set_idx, const list<
-    RandomField::Node*>& nodes, float* feature_vals, unsigned int nbr_feature_vals)
+const RandomField::Clique* RandomField::createClique(const unsigned int clique_set_idx, const list<
+    RandomField::Node*>& nodes, const float* feature_vals, const unsigned int nbr_feature_vals)
 {
 #if DEBUG
   if (clique_set_idx > clique_sets_.size())
@@ -207,11 +207,11 @@ const RandomField::Clique* RandomField::createClique(unsigned int clique_set_idx
 // --------------------------------------------------------------
 /*! See function definition */
 // --------------------------------------------------------------
-const RandomField::Clique* RandomField::createClique(unsigned int clique_id,
-                                                     unsigned int clique_set_idx,
+const RandomField::Clique* RandomField::createClique(const unsigned int clique_id,
+                                                     const unsigned int clique_set_idx,
                                                      const list<RandomField::Node*>& nodes,
-                                                     float* feature_vals,
-                                                     unsigned int nbr_feature_vals)
+                                                     const float* feature_vals,
+                                                     const unsigned int nbr_feature_vals)
 {
   list<RandomField::Node*>::const_iterator iter_nodes;
 
@@ -223,6 +223,7 @@ const RandomField::Clique* RandomField::createClique(unsigned int clique_id,
     return NULL;
   }
 
+  // verify the clique set index is within bounds
   if (clique_set_idx > clique_sets_.size())
   {
     ROS_ERROR("RandomField::createClique clique_set_idx %u exceeds boundary %u", clique_set_idx, clique_sets_.size());

@@ -51,6 +51,8 @@ int M3NModel::infer(const RandomField& random_field,
     return -1;
   }
 
+  // TODO initialized inferred_labels with best scores for node potentials
+
   loss_augmented_inference_ = false; // only use during learning
   return inferPrivate(random_field, inferred_labels, max_iterations);
 }

@@ -94,27 +94,28 @@ class RandomField
     // --------------------------------------------------------------
     void clear();
 
-    const Node* createNode(float* feature_vals, unsigned int nbr_feature_vals, unsigned int label =
-        UNKNOWN_LABEL, float x = 0.0, float y = 0.0, float z = 0.0);
-
-    const Node* createNode(unsigned int node_id,
-                           float* feature_vals,
-                           unsigned int nbr_feature_vals,
+    const Node* createNode(const float* feature_vals,
+                           const unsigned int nbr_feature_vals,
                            unsigned int label = UNKNOWN_LABEL,
                            float x = 0.0,
                            float y = 0.0,
                            float z = 0.0);
 
-    const Clique* createClique(unsigned int clique_set_idx,
+    const Node* createNode(const unsigned int node_id,
+                           const float* feature_vals,
+                           const unsigned int nbr_feature_vals,
+                           unsigned int label = UNKNOWN_LABEL,
+                           float x = 0.0,
+                           float y = 0.0,
+                           float z = 0.0);
+
+    const Clique* createClique(const unsigned int clique_set_idx,
                                const list<Node*>& nodes,
-                               float* feature_vals,
+                               const float* feature_vals,
                                unsigned int nbr_feature_vals);
 
-    const Clique* createClique(unsigned int clique_id,
-                               unsigned int clique_set_idx,
-                               const list<Node*>& nodes,
-                               float* feature_vals,
-                               unsigned int nbr_feature_vals);
+    const Clique* createClique(const unsigned int clique_id, const unsigned int clique_set_idx, const list<
+        Node*>& nodes, const float* feature_vals, const unsigned int nbr_feature_vals);
 
     // --------------------------------------------------------------
     /*!
@@ -218,14 +219,14 @@ class RandomField
          * \param nbr_feature_vals The number of values in feature_vals
          */
         // --------------------------------------------------------------
-        inline void setFeatures(float* feature_vals, unsigned int nbr_feature_vals)
+        inline void setFeatures(const float* feature_vals, unsigned int nbr_feature_vals)
         {
           feature_vals_ = feature_vals;
           nbr_feature_vals_ = nbr_feature_vals;
         }
 
         unsigned int id_;
-        float* feature_vals_;
+        const float* feature_vals_;
         unsigned int nbr_feature_vals_;
     };
 
@@ -264,6 +265,18 @@ class RandomField
           return label_;
         }
 
+        // --------------------------------------------------------------
+        /*!
+         * \brief Defines the x y z coordinates for the GenericClique.
+         *
+         * These coordinates are NOT used in the learning and inference
+         * procedures and are only here for convenience.
+         *
+         * \param x The x coordinate
+         * \param y The y coordinate
+         * \param z The z coordinate
+         */
+        // --------------------------------------------------------------
         inline void setXYZ(float x, float y, float z)
         {
           x_ = x;
