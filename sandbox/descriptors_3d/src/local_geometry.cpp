@@ -42,7 +42,7 @@ using namespace std;
  *    interest point with radius OR interest region set
  */
 // --------------------------------------------------------------
-inline bool LocalGeometry::readyToCompute()
+inline bool LocalGeometry::readyToCompute() const
 {
   return data_set_ && ((interest_pt_set_ && radius_ > 0.0) || interest_region_set_);
 }
@@ -50,7 +50,7 @@ inline bool LocalGeometry::readyToCompute()
 // --------------------------------------------------------------
 /*! See function definition */
 // --------------------------------------------------------------
-bool LocalGeometry::compute(Eigen::MatrixXf** result, bool debug)
+bool LocalGeometry::compute(Eigen::MatrixXf** result) const
 {
   if (readyToCompute() == false)
   {

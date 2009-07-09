@@ -58,7 +58,7 @@ class LocalGeometry: public Descriptor3D
       result_size_ = 3;
     }
 
-    virtual bool compute(Eigen::MatrixXf** result, bool debug);
+    virtual bool compute(Eigen::MatrixXf** result) const;
 
     // ----------------------------------------------------------
 
@@ -155,7 +155,7 @@ class LocalGeometry: public Descriptor3D
     }
 
   protected:
-    virtual bool readyToCompute();
+    virtual bool readyToCompute() const;
 
   private:
     void computeSpinImage(Eigen::Vector3d& axis);

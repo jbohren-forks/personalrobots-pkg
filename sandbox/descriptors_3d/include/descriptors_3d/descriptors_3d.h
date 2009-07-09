@@ -60,7 +60,7 @@ class Descriptor3D
     {
     }
 
-    virtual bool compute(Eigen::MatrixXf** result, bool debug) = 0;
+    virtual bool compute(Eigen::MatrixXf** result) const = 0;
 
     void setData(const robot_msgs::PointCloud* data, cloud_kdtree::KdTree* data_kdtree)
     {
@@ -95,7 +95,7 @@ class Descriptor3D
 
   protected:
     // will check whether can use either interest pt or region
-    virtual bool readyToCompute() = 0;
+    virtual bool readyToCompute() const = 0;
 
     unsigned int result_size_;
 
