@@ -241,11 +241,15 @@ bool ompl_planning::RequestHandler::computePlan(ModelMap &models, const planning
     {
 	fillResult(psetup, start, res, sol);
 	delete sol.path;
-	psetup->priority++;
-	if (psetup->priority > (int)m->planners.size())
-	    psetup->priority = m->planners.size();
+	if (!sol.approximate)
+	{
+	    psetup->priority++;
+	    if (psetup->priority > (int)m->planners.size())
+	        psetup->priority = m->planners.size();
+	}
     }
-    else 
+    
+    if (!sol.path || sol.approximate)
     {
 	psetup->priority--;
 	if (psetup->priority < -(int)m->planners.size())
