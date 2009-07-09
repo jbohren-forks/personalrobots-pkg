@@ -60,11 +60,11 @@ void sendPoint(ros::Publisher &vmPub, const roslib::Header &header, double x, do
     mk.pose.position.z = z;
     mk.pose.orientation.w = 1.0;
     
-    mk.scale.x = mk.scale.y = mk.scale.z = 0.01;
+    mk.scale.x = mk.scale.y = mk.scale.z = 0.03;
     
     mk.color.a = 1.0;
-    mk.color.r = 1.0;
-    mk.color.g = 0.04;
+    mk.color.r = 0.5;
+    mk.color.g = 0.4;
     mk.color.b = 0.04;
     
     vmPub.publish(mk);
@@ -87,6 +87,7 @@ int main(int argc, char **argv)
 	if (res.objects.size() > 0)
 	{
 	    recognition_lambertian::TableTopObject obj = res.objects[0];
+	    ROS_INFO("point to grasp: %f %f %f", obj.pose.pose.position.x, obj.pose.pose.position.y, obj.pose.pose.position.z);
 	    
 	    robot_actions::ActionClient<pr2_robot_actions::MoveArmGoal, pr2_robot_actions::MoveArmState, int32_t> move_arm("move_arm");
 	    int32_t                         feedback;
@@ -97,6 +98,8 @@ int main(int argc, char **argv)
 	    
 	    goal.goal_constraints.pose_constraint[0].link_name = "r_wrist_roll_link";
 	    goal.goal_constraints.pose_constraint[0].pose.pose = obj.pose.pose;
+	    goal.goal_constraints.pose_constraint[0].pose.pose.position.z += 0.03;
+	    goal.goal_constraints.pose_constraint[0].pose.pose.position.x -= 0.15;
 
 	    goal.goal_constraints.pose_constraint[0].position_distance = 0.01;
 	    goal.goal_constraints.pose_constraint[0].orientation_distance = 0.01;
@@ -107,7 +110,7 @@ int main(int argc, char **argv)
 	    
 	    sendPoint(vmPub, obj.pose.header, obj.pose.pose.position.x, obj.pose.pose.position.y, obj.pose.pose.position.z);
 	    
-	    if (move_arm.execute(goal, feedback, ros::Duration(10.0)) != robot_actions::SUCCESS)
+	    if (move_arm.execute(goal, feedback, ros::Duration(60.0)) != robot_actions::SUCCESS)
 		ROS_ERROR("failed achieving goal");
 	}
     }
