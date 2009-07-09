@@ -1,0 +1,20 @@
+<package>
+  <description brief="A temporary wrapper for the planning monitor class">
+
+  </description>
+  <author>Benjamin Cohen /bcohen@willowgarage.com</author>
+  <license>BSD</license>
+    <depend package="roscpp"/>
+    <depend package="motion_planning_msgs" />
+    <depend package="motion_planning_srvs" />
+    <depend package="planning_environment" />
+    <depend package="planning_models" />
+    <depend package="tf" />
+  <url></url>
+
+  <export>
+    <cpp cflags="-I${prefix}/include -O3 -g" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lsbpl_pm_wrapper" />
+  </export>
+
+</package>
+
