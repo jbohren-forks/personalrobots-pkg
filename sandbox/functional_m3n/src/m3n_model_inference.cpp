@@ -112,7 +112,7 @@ int M3NModel::inferPrivate(const RandomField& random_field,
   }
 
   // -------------------------------------------
-  // Loop until hit max number of iterations and not done
+  // Loop until hit max number of iterations or converged on minimum energy
   int ret_val = 0;
   bool done = false;
   for (unsigned int t = 0 ; ret_val == 0 && !done && t < max_iterations ; t++)

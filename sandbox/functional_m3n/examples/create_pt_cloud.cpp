@@ -317,7 +317,9 @@ void createCliqueSet0(RandomField& rf,
   kmeansNodes(cluster_indices, kmeans_factor, kmeans_max_iter, kmeans_accuracy, rf.getNodesRandomFieldIDs(),
       created_clusters);
   ROS_INFO("done");
-  //save_clusters(created_clusters);
+  save_clusters(created_clusters);
+
+  // TODO compute centroid
 
   // ----------------------------------------------
   // Geometry feature information

@@ -40,6 +40,9 @@
 
 #include <ros/ros.h>
 
+// TODO
+#define DEBUG true
+
 using namespace std;
 
 // --------------------------------------------------------------
@@ -167,6 +170,11 @@ class RandomField
       public:
         GenericClique();
 
+        // --------------------------------------------------------------
+        /*!
+         * \brief Deallocates feature memory assigned to this GenericClique
+         */
+        // --------------------------------------------------------------
         virtual ~GenericClique() = 0;
 
         // --------------------------------------------------------------
@@ -203,6 +211,8 @@ class RandomField
         // --------------------------------------------------------------
         /*!
          * \brief Defines the features for this GenericClique
+         *
+         * \warning The features will be freed on destruction of this GenericClique
          *
          * \param feature_vals Pointer to vector of feature values
          * \param nbr_feature_vals The number of values in feature_vals

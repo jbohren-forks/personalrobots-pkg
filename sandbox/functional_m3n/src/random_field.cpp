@@ -84,7 +84,7 @@ int RandomField::updateLabelings(const map<unsigned int, unsigned int>& new_labe
 {
   map<unsigned int, unsigned int>::const_iterator iter_new_labeling;
 
-#if ROS_DEBUG
+#if DEBUG
   // Ensure the number of nodes equals the new labeling mapping
   if (rf_nodes_.size() != new_labeling.size())
   {
@@ -93,7 +93,7 @@ int RandomField::updateLabelings(const map<unsigned int, unsigned int>& new_labe
   }
 
   // Ensure the keys (node id) in new_labeling exist in this RandomField
-  for (iter_new_labeling = new_labeling.begin(); iter_new_labeling != new_labeling.end(); iter_new_labeling++)
+  for (iter_new_labeling = new_labeling.begin(); iter_new_labeling != new_labeling.end() ; iter_new_labeling++)
   {
     if (rf_nodes_.count(iter_new_labeling->first) == 0)
     {
@@ -156,6 +156,7 @@ const RandomField::Node* RandomField::createNode(unsigned int node_id,
                                                  float y,
                                                  float z)
 {
+#if DEBUG
   // verify features are valid
   if (feature_vals == NULL || nbr_feature_vals == 0)
   {
@@ -169,6 +170,7 @@ const RandomField::Node* RandomField::createNode(unsigned int node_id,
     ROS_ERROR("Cannot add node to random field b/c id %u already exists", node_id);
     return NULL;
   }
+#endif
 
   RandomField::Node* new_node = new RandomField::Node(node_id, label);
   new_node->setFeatures(feature_vals, nbr_feature_vals);
@@ -183,8 +185,17 @@ const RandomField::Node* RandomField::createNode(unsigned int node_id,
 const RandomField::Clique* RandomField::createClique(unsigned int clique_set_idx, const list<
     RandomField::Node*>& nodes, float* feature_vals, unsigned int nbr_feature_vals)
 {
+#if DEBUG
+  if (clique_set_idx > clique_sets_.size())
+  {
+    ROS_ERROR("RandomField::createClique clique_set_idx %u exceeds boundary %u", clique_set_idx, clique_sets_.size());
+    return NULL;
+  }
+#endif
+
   map<unsigned int, RandomField::Clique*>& clique_set = clique_sets_[clique_set_idx];
 
+  // generate unique clique id
   unsigned int unique_id = clique_set.size();
   while (clique_set.count(unique_id) != 0)
   {
@@ -202,6 +213,9 @@ const RandomField::Clique* RandomField::createClique(unsigned int clique_id,
                                                      float* feature_vals,
                                                      unsigned int nbr_feature_vals)
 {
+  list<RandomField::Node*>::const_iterator iter_nodes;
+
+#if DEBUG
   // verify features are valid
   if (feature_vals == NULL || nbr_feature_vals == 0)
   {
@@ -209,18 +223,21 @@ const RandomField::Clique* RandomField::createClique(unsigned int clique_id,
     return NULL;
   }
 
+  if (clique_set_idx > clique_sets_.size())
+  {
+    ROS_ERROR("RandomField::createClique clique_set_idx %u exceeds boundary %u", clique_set_idx, clique_sets_.size());
+    return NULL;
+  }
+
   // verify clique id doesnt already exist
-  map<unsigned int, RandomField::Clique*>& clique_set = clique_sets_[clique_set_idx];
-  if (clique_set.count(clique_id) != 0)
+  if (clique_sets_[clique_set_idx].count(clique_id) != 0)
   {
     ROS_ERROR("Cannot add clique to cs %u b/c id %u already exists", clique_set_idx, clique_id);
     return NULL;
   }
 
-  list<RandomField::Node*>::const_iterator iter_nodes;
-#if ROS_DEBUG
   // verify node ids are contained in this RandomField
-  for (iter_nodes = nodes.begin(); iter_nodes != nodes.end(); iter_nodes++)
+  for (iter_nodes = nodes.begin(); iter_nodes != nodes.end() ; iter_nodes++)
   {
     if (rf_nodes_.count((*iter_nodes)->getRandomFieldID()) == 0)
     {
@@ -230,6 +247,7 @@ const RandomField::Clique* RandomField::createClique(unsigned int clique_id,
   }
 #endif
 
+  // instantiate clique
   RandomField::Clique* new_clique = new RandomField::Clique(clique_id);
   for (iter_nodes = nodes.begin(); iter_nodes != nodes.end() ; iter_nodes++)
   {
@@ -237,6 +255,8 @@ const RandomField::Clique* RandomField::createClique(unsigned int clique_id,
   }
   new_clique->setFeatures(feature_vals, nbr_feature_vals);
 
+  // add clique to map container
+  map<unsigned int, RandomField::Clique*>& clique_set = clique_sets_[clique_set_idx];
   clique_set[clique_id] = new_clique;
   return new_clique;
 }
@@ -260,6 +280,7 @@ RandomField::GenericClique::GenericClique()
 // --------------------------------------------------------------
 RandomField::GenericClique::~GenericClique()
 {
+  delete feature_vals_;
 }
 
 // --------------------------------------------------------------
@@ -307,9 +328,9 @@ int RandomField::Clique::updateLabels(const map<unsigned int, unsigned int>& nod
   list<unsigned int>::iterator iter_node_ids;
   unsigned int curr_node_id = 0;
 
-#if ROS_DEBUG
+#if DEBUG
   // Verify labeling contains each node id contained in this Clique
-  for (iter_node_ids = node_ids_.begin(); iter_node_ids != node_ids_.end(); iter_node_ids++)
+  for (iter_node_ids = node_ids_.begin(); iter_node_ids != node_ids_.end() ; iter_node_ids++)
   {
     curr_node_id = *iter_node_ids;
     if (node_labels.count(curr_node_id) == 0)
@@ -370,11 +391,13 @@ int RandomField::Clique::getModeLabels(unsigned int& mode1_label,
 
       // ---------
       // Get the node's temporary label
+#if DEBUG
       if (tempo_labeling->count(curr_node_id) == 0)
       {
         ROS_ERROR("Could not find node id %u in the temporary labeling", curr_node_id);
         return -1;
       }
+#endif
       curr_tempo_node_label = tempo_labeling->find(curr_node_id)->second;
 
       // ---------
