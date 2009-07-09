@@ -35,6 +35,7 @@
 * Author: Eitan Marder-Eppstein
 *********************************************************************/
 #include <people_aware_nav/navfn_constrained.h>
+#include <visualization_msgs/Marker.h>
 #include <ros/ros.h>
 
 namespace people_aware_nav {
@@ -44,12 +45,16 @@ using std::vector;
 using robot_msgs::Point;
 using robot_msgs::Point32;
 
+namespace vm=visualization_msgs;
+
+
 ROS_REGISTER_BGP(NavfnROSConstrained);
 
 NavfnROSConstrained::NavfnROSConstrained (std::string name, costmap_2d::Costmap2DROS& cmap) :
   navfn::NavfnROS(name, cmap)
 {
   service_ = node_.advertiseService("~set_nav_constraint", &NavfnROSConstrained::setConstraint, this);
+  vis_pub_add_ = node_.advertise<visualization_msgs::Marker>("visualization_marker", 0);
 }
 
 bool NavfnROSConstrained::setConstraint (SetNavConstraint::Request& req, SetNavConstraint::Response& resp)
@@ -76,6 +81,22 @@ void NavfnROSConstrained::getCostmap (costmap_2d::Costmap2D& cmap)
     polygon.push_back(p);
   }
   cmap.setConvexPolygonCost(polygon, costmap_2d::LETHAL_OBSTACLE);
+
+  vm::Marker m;
+  m.header.frame_id = "map";
+  m.ns = "pan";
+  m.id = 0;
+  m.type = vm::Marker::LINE_STRIP;
+  m.action = vm::Marker::ADD;
+  copy(polygon.begin(), polygon.end(), back_inserter(m.points));
+  m.lifetime = ros::Duration(10.0);
+  m.scale.x = 0.2;
+  m.scale.y = 0.2;
+  m.scale.z = 0.2;
+  m.color.a = 1.0;
+  m.color.r = 1.0;
+  vis_pub_add_.publish(m);
+  
 
   ROS_INFO ("Modified costmap to take constraints into account");
 }

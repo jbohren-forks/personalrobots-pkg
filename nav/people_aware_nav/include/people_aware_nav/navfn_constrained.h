@@ -56,6 +56,7 @@ private:
   robot_msgs::Polygon3D forbidden_;
   ros::NodeHandle node_;
   ros::ServiceServer service_;
+  ros::Publisher vis_pub_add_;
 };
                          
 
