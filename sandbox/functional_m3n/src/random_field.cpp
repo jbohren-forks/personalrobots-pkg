@@ -132,14 +132,17 @@ int RandomField::updateLabelings(const map<unsigned int, unsigned int>& new_labe
 // --------------------------------------------------------------
 const RandomField::Node* RandomField::createNode(float* feature_vals,
                                                  unsigned int nbr_feature_vals,
-                                                 unsigned int label)
+                                                 unsigned int label,
+                                                 float x,
+                                                 float y,
+                                                 float z)
 {
   unsigned int unique_id = rf_nodes_.size();
   while (rf_nodes_.count(unique_id) != 0)
   {
     unique_id++;
   }
-  return createNode(unique_id, feature_vals, nbr_feature_vals, label);
+  return createNode(unique_id, feature_vals, nbr_feature_vals, label, x, y, z);
 }
 
 // --------------------------------------------------------------
@@ -148,7 +151,10 @@ const RandomField::Node* RandomField::createNode(float* feature_vals,
 const RandomField::Node* RandomField::createNode(unsigned int node_id,
                                                  float* feature_vals,
                                                  unsigned int nbr_feature_vals,
-                                                 unsigned int label)
+                                                 unsigned int label,
+                                                 float x,
+                                                 float y,
+                                                 float z)
 {
   // verify features are valid
   if (feature_vals == NULL || nbr_feature_vals == 0)
@@ -166,6 +172,7 @@ const RandomField::Node* RandomField::createNode(unsigned int node_id,
 
   RandomField::Node* new_node = new RandomField::Node(node_id, label);
   new_node->setFeatures(feature_vals, nbr_feature_vals);
+  new_node->setXYZ(x, y, z);
   rf_nodes_[node_id] = new_node;
   return new_node;
 }
@@ -262,6 +269,10 @@ RandomField::Node::Node(const unsigned int rf_id, unsigned int label)
 {
   id_ = rf_id;
   label_ = label;
+
+  x_ = 0.0;
+  y_ = 0.0;
+  z_ = 0.0;
 }
 
 // --------------------------------------------------------------

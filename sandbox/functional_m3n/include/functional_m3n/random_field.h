@@ -92,11 +92,15 @@ class RandomField
     void clear();
 
     const Node* createNode(float* feature_vals, unsigned int nbr_feature_vals, unsigned int label =
-        UNKNOWN_LABEL);
+        UNKNOWN_LABEL, float x = 0.0, float y = 0.0, float z = 0.0);
+
     const Node* createNode(unsigned int node_id,
                            float* feature_vals,
                            unsigned int nbr_feature_vals,
-                           unsigned int label = UNKNOWN_LABEL);
+                           unsigned int label = UNKNOWN_LABEL,
+                           float x = 0.0,
+                           float y = 0.0,
+                           float z = 0.0);
 
     const Clique* createClique(unsigned int clique_set_idx,
                                const list<Node*>& nodes,
@@ -250,6 +254,28 @@ class RandomField
           return label_;
         }
 
+        inline void setXYZ(float x, float y, float z)
+        {
+          x_ = x;
+          y_ = y;
+          z_ = z;
+        }
+
+        inline float getX() const
+        {
+          return x_;
+        }
+
+        inline float getY() const
+        {
+          return y_;
+        }
+
+        inline float getZ() const
+        {
+          return z_;
+        }
+
       protected:
         // --------------------------------------------------------------
         /*!
@@ -266,6 +292,9 @@ class RandomField
         }
 
       private:
+        float x_;
+        float y_;
+        float z_;
         unsigned int label_;
     };
 

@@ -133,6 +133,7 @@ void createNodes(RandomField& rf,
   unsigned int k = 0;
   bool all_features_success = true;
   unsigned int nbr_pts = pt_cloud.pts.size();
+  const RandomField::Node* created_node = NULL;
 
   for (unsigned int i = 0 ; i < nbr_pts ; i++)
   {
@@ -170,8 +171,8 @@ void createNodes(RandomField& rf,
 
       for (k = 0; k < curr_nbr_vals ; k++)
       {
-        concat_created_feature_vals[k + prev_total_nbr_vals] = curr_feature_vals[k];
-        feature_avgs[k + prev_total_nbr_vals] += curr_feature_vals[k];
+        concat_created_feature_vals[prev_total_nbr_vals + k] = curr_feature_vals[k];
+        feature_avgs[prev_total_nbr_vals + k] += curr_feature_vals[k];
       }
       prev_total_nbr_vals += curr_nbr_vals;
 
@@ -179,7 +180,9 @@ void createNodes(RandomField& rf,
     }
 
     // try to create node with features
-    if (rf.createNode(concat_created_feature_vals, nbr_total_feature_vals, labels[i]) == NULL)
+    created_node = rf.createNode(i, concat_created_feature_vals, nbr_total_feature_vals, labels[i],
+        pt_cloud.pts[i].x, pt_cloud.pts[i].y, pt_cloud.pts[i].z);
+    if (created_node == NULL)
     {
       ROS_ERROR("could not create node %u", i);
       abort();
@@ -189,7 +192,7 @@ void createNodes(RandomField& rf,
   // Compute average
   for (j = 0; j < nbr_total_feature_vals ; j++)
   {
-    feature_avgs[j] /= (static_cast<float> (nbr_pts / failed_indices.size()));
+    feature_avgs[j] /= (static_cast<float> (nbr_pts - failed_indices.size()));
   }
 }
 
@@ -209,7 +212,7 @@ M3NModel* trainModel(vector<const RandomField*>& training_rfs)
   // Define learning parameters
   // TODO HARDCODE
   M3NParams m3n_params;
-  m3n_params.setLearningRate(0.1);
+  m3n_params.setLearningRate(0.5);
   m3n_params.setNumberOfIterations(15);
   m3n_params.setRegressorRegressionTrees(regression_tree_params);
 
@@ -223,71 +226,215 @@ M3NModel* trainModel(vector<const RandomField*>& training_rfs)
   return m3n_model;
 }
 
-/*
- void tempo()
- {
- int n = 100000 + 5;
- //int n = 100+5;
- int d = 6;
- float* matrix = (float*) malloc(n * d * sizeof(float));
+void tempo()
+{
+  /*
+   //int n = 100000 + 5;
+   int n = 100 + 5;
+   int d = 6;
+   float* matrix = (float*) malloc(n * d * sizeof(float));
 
- for (unsigned int i = 0 ; i < n - 5 ; i++)
- {
- for (unsigned int j = 0 ; j < d ; j++)
- {
- matrix[i * d + j] = 0.1 + rand() % 10;
- //cout << matrix[i * d + j] << " ";
- }
- //cout << endl;
- }
- for (unsigned int i = n - 5 ; i < n ; i++)
- {
- for (unsigned int j = 0 ; j < d ; j++)
- {
- matrix[i * d + j] = 99999.9;
- }
- }
- int nbr_clusters = 0.01 * n;
+   for (unsigned int i = 0 ; i < n - 5 ; i++)
+   {
+   for (unsigned int j = 0 ; j < d ; j++)
+   {
+   matrix[i * d + j] = 0.1 + rand() % 10;
+   //cout << matrix[i * d + j] << " ";
+   }
+   //cout << endl;
+   }
+   for (unsigned int i = n - 5 ; i < n ; i++)
+   {
+   for (unsigned int j = 0 ; j < d ; j++)
+   {
+   matrix[i * d + j] = 99999.9;
+   }
+   }
+   int nbr_clusters = 0.1 * n;
 
- //CvMat train_data;
- //cvInitMatHeader(&train_data, n, d, CV_32F, matrix);
- //CvMat* clusters = cvCreateMat(n, 1, CV_32SC1);
+   CvMat train_data;
+   cvInitMatHeader(&train_data, n, d, CV_32F, matrix);
+   CvMat* clusters = cvCreateMat(n, 1, CV_32SC1);
 
- //cout << "starting cluster..." << nbr_clusters;
- //cvKMeans2(&train_data, nbr_clusters, clusters, cvTermCriteria(CV_TERMCRIT_ITER + CV_TERMCRIT_EPS, 1, 1.0));
- //cout << "done." << endl;
- //cvReleaseMat(&clusters);
+   cout << "starting cluster..." << nbr_clusters;
+   cvKMeans2(&train_data, nbr_clusters, clusters, cvTermCriteria(CV_TERMCRIT_ITER + CV_TERMCRIT_EPS, 5, 1.0));
+   cout << "done." << endl;
 
+   for (unsigned int i = 0 ; i < n ; i++)
+   {
+   cout << clusters->data.i[i] << endl;
+   }
+   cvReleaseMat(&clusters);
+   */
 
- FLANNParameters p;
- p.algorithm = KMEANS;
- p.checks = 2;
- p.cb_index = 0.0;
- p.trees = 2;
- p.branching = 4;
- p.iterations = 3;
- p.centers_init = CENTERS_RANDOM;
- p.target_precision = 0.8;
- p.log_level = LOG_INFO;
- p.log_destination = NULL;
+  /*
+   FLANNParameters p;
+   p.algorithm = KMEANS;
+   p.checks = 2;
+   p.cb_index = 0.0;
+   p.trees = 2;
+   p.branching = 4;
+   p.iterations = 3;
+   p.centers_init = CENTERS_RANDOM;
+   p.target_precision = 0.8;
+   p.log_level = LOG_INFO;
+   p.log_destination = NULL;
 
- cout << "doing clustering..." << endl;
- float* poop = (float*) malloc(n * sizeof(float));
- int nbr_found = flann_compute_cluster_centers(matrix, n, d, nbr_clusters, poop, &p);
- cout << "done.   found: " << nbr_found << " (requested " << nbr_clusters << ")" << endl;
+   cout << "doing clustering..." << endl;
+   float* poop = (float*) malloc(n * sizeof(float));
+   int nbr_found = flann_compute_cluster_centers(matrix, n, d, nbr_clusters, poop, &p);
+   cout << "done.   found: " << nbr_found << " (requested " << nbr_clusters << ")" << endl;
 
- for (int i = 0 ; i < nbr_found ; i++)
- {
- cout << "center: ";
- for (int j = 0 ; j < d ; j++)
- {
- cout << poop[i * d + j] << " ";
- }
- cout << endl;
- }
- free(poop);
- }
- */
+   for (int i = 0 ; i < nbr_found ; i++)
+   {
+   cout << "center: ";
+   for (int j = 0 ; j < d ; j++)
+   {
+   cout << poop[i * d + j] << " ";
+   }
+   cout << endl;
+   }
+   free(poop);
+   */
+}
+
+void clusterFeatures(unsigned int feature_idx_start,
+                     unsigned int feature_idx_end,
+                     float cluster_factor,
+                     const map<unsigned int, RandomField::Node*>& nodes,
+                     const vector<float>& feature_avgs,
+                     map<unsigned int, list<RandomField::Node*> >& created_clusters)
+
+{
+  unsigned int feature_dim = feature_idx_end - feature_idx_start;
+  unsigned int feature_dim_xyz = feature_dim + 3;
+
+  map<unsigned int, RandomField::Node*>::const_iterator iter_nodes;
+  unsigned int nbr_samples = nodes.size();
+
+  // ----------------------------------------------------------
+  // Create matrix for clustering
+  float* feature_matrix = static_cast<float*> (malloc(nbr_samples * feature_dim_xyz * sizeof(float)));
+  vector<float> cluster_feature_variances(feature_dim, 0.0);
+
+  // Zero mean the feature values
+  unsigned int curr_offset = 0;
+  const float* curr_node_features = NULL;
+  const RandomField::Node* curr_node = NULL;
+  unsigned int curr_sample_idx = 0;
+  for (iter_nodes = nodes.begin(); iter_nodes != nodes.end() ; iter_nodes++)
+  {
+    curr_offset = curr_sample_idx * feature_dim_xyz;
+    curr_node = iter_nodes->second;
+
+    // Copy xyz coordinates, unnormalized
+    feature_matrix[curr_offset] = curr_node->getX();
+    feature_matrix[curr_offset + 1] = curr_node->getY();
+    feature_matrix[curr_offset + 2] = curr_node->getZ();
+
+    curr_offset += 3;
+
+    curr_node_features = curr_node->getFeatureVals();
+    for (unsigned int j = 0 ; j < feature_dim ; j++)
+    {
+      feature_matrix[curr_offset + j] = curr_node_features[feature_idx_start + j];
+
+      /*
+       // subtract mean from features
+       feature_matrix[curr_offset + j] = curr_node_features[feature_idx_start + j]
+       - feature_avgs[feature_idx_start + j];
+
+       // accumulate variance info for each dimension to cluster over
+       cluster_feature_variances[j] += (feature_matrix[curr_offset + j] * feature_matrix[curr_offset + j]);
+       */
+    }
+
+    // proceed to next sample
+    curr_sample_idx++;
+  }
+
+  // Unit-variance the feature values (skip xyz coords)
+  curr_sample_idx = 0;
+  for (iter_nodes = nodes.begin(); iter_nodes != nodes.end() ; iter_nodes++)
+  {
+    // skip over xyz coords
+    curr_offset = curr_sample_idx * feature_dim_xyz + 3;
+
+    curr_node_features = iter_nodes->second-> getFeatureVals();
+    for (unsigned int j = 0 ; j < feature_dim ; j++)
+    {
+      /*
+      feature_matrix[curr_offset + j]
+          /= sqrt(cluster_feature_variances[j] / static_cast<float> (nbr_samples));
+*/
+      }
+    curr_sample_idx++;
+  }
+
+  // ----------------------------------------------------------
+  // TODO: use FLANN or something else faster
+  CvMat cv_feature_matrix;
+  cvInitMatHeader(&cv_feature_matrix, nbr_samples, feature_dim_xyz, CV_32F, feature_matrix);
+  CvMat* cluster_labels = cvCreateMat(nbr_samples, 1, CV_32SC1);
+
+  int nbr_clusters = static_cast<int> (nbr_samples * cluster_factor);
+  // TODO HARDCODE
+  cvKMeans2(&cv_feature_matrix, nbr_clusters, cluster_labels, cvTermCriteria(CV_TERMCRIT_ITER
+      + CV_TERMCRIT_EPS, 5, 1.0));
+
+  // Save nodes associated with each cluster
+  curr_sample_idx = 0;
+  unsigned int curr_cluster_label = 0;
+  for (iter_nodes = nodes.begin(); iter_nodes != nodes.end() ; iter_nodes++)
+  {
+    curr_cluster_label = static_cast<unsigned int> (cluster_labels->data.i[curr_sample_idx]);
+
+    // add empty list if not encountered label before
+    if (created_clusters.count(curr_cluster_label) == 0)
+    {
+      created_clusters[curr_cluster_label] = list<RandomField::Node*> ();
+    }
+
+    created_clusters[curr_cluster_label].push_back(iter_nodes->second);
+
+    curr_sample_idx++;
+  }
+
+  /*
+  // TODO delete this is debug
+  ofstream outt("features.txt");
+  for (unsigned int i = 0 ; i < nbr_samples ; i++)
+  {
+    for (unsigned int j = 0 ; j < feature_dim_xyz ; j++)
+    {
+      outt << feature_matrix[i * feature_dim_xyz + j] << " ";
+    }
+    outt << endl;
+  }
+  outt.close();
+*/
+  cvReleaseMat(&cluster_labels);
+  free(feature_matrix);
+}
+
+void save_clusters(map<unsigned int, list<RandomField::Node*> >& created_clusters)
+{
+  ofstream outt("clusters.txt");
+  map<unsigned int, list<RandomField::Node*> >::iterator iter;
+  list<RandomField::Node*>::iterator node_iter;
+  RandomField::Node* curr_node = NULL;
+  for (iter = created_clusters.begin(); iter != created_clusters.end() ; iter++)
+  {
+    list<RandomField::Node*>& curr_nodes = iter->second;
+    for (node_iter = curr_nodes.begin(); node_iter != curr_nodes.end() ; node_iter++)
+    {
+      curr_node = *node_iter;
+      outt << curr_node->getX() << " " << curr_node->getY() << " " << curr_node->getZ() << " " << iter->first
+          << endl;
+    }
+  }
+  outt.close();
+}
 
 int main()
 {
@@ -311,6 +458,11 @@ int main()
   createNodes(rf, pt_cloud, *pt_cloud_kdtree, labels, failed_indices, feature_avgs);
   ROS_INFO("done");
 
+  map<unsigned int, list<RandomField::Node*> > created_clusters;
+  // TODO HARDCODE
+  clusterFeatures(0, 3, 0.005, rf.getNodesRandomFieldIDs(), feature_avgs, created_clusters);
+  save_clusters(created_clusters);
+
   // ----------------------------------------------------------
   ROS_INFO("Starting to train...");
   vector<const RandomField*> training_rfs(1, &rf);
@@ -323,103 +475,10 @@ int main()
   return 0;
 }
 
-void clusterFeatures()
-{
-  // parameters: start end idx
-  // return  map<unsigned int, list<unsigned int> > cluster_to_node_indices;
-}
-
 void createCliques(RandomField& rf,
                    const robot_msgs::PointCloud& pt_cloud,
                    cloud_kdtree::KdTree& pt_cloud_kdtree,
                    set<unsigned int>& failed_indices)
 {
-  // Determine which indices to cluster over
-  unsigned int feature_idx_start = 0;
-  unsigned int feature_idx_end = 3;
-  unsigned int feature_dim = feature_idx_end - feature_idx_start;
-  unsigned int feature_dim_xyz = feature_dim + 3;
 
-  float dummy_feature_vals[feature_dim_xyz];
-  memset(dummy_feature_vals, 99999.0, feature_dim_xyz * sizeof(float));
-
-  const map<unsigned int, RandomField::Node*>& nodes = rf.getNodesRandomFieldIDs();
-
-  // ----------------------------------------
-  // Create matrix for clustering
-  unsigned int nbr_pts = pt_cloud.pts.size();
-  float* feature_matrix = static_cast<float*> (malloc(nbr_pts * feature_dim_xyz * sizeof(float)));
-  const float* curr_node_features = NULL;
-  float curr_normalized_feature_val = 0.0;
-  for (unsigned int i = 0 ; i < nbr_pts ; i++)
-  {
-    if (failed_indices.count(i) != 0)
-    {
-      // copy meaningless feature vals
-      memcpy(feature_matrix + (i * feature_dim_xyz), dummy_feature_vals, feature_dim_xyz * sizeof(float));
-    }
-    else
-    {
-      for (unsigned int j = 0 ; j < 3 ; j++)
-      {
-        // normalize xyz coords TODO
-        curr_normalized_feature_val = 0.0;
-
-        feature_matrix[i * feature_dim_xyz + j] = curr_normalized_feature_val;
-      }
-
-      curr_node_features = nodes.find(i)->second->getFeatureVals();
-      for (unsigned int j = 0 ; j < feature_dim ; j++)
-      {
-        // normalize feature val TODO
-        curr_normalized_feature_val = 0.0;
-
-        feature_matrix[i * feature_dim_xyz + 3 + j] = curr_normalized_feature_val;
-      }
-    }
-  }
-
-  // ----------------------------------------
-  // Cluster matrix
-  unsigned int nbr_clusters = 10; // TODO call flann
-
-  // ----------------------------------------
-  // Find which pts belong to which cluster
-  map<unsigned int, list<unsigned int> > cluster_to_node_indices;
-  unsigned int dummy_cluster_idx = 0;
-  for (unsigned int i = 0 ; i < nbr_clusters ; i++)
-  {
-    cluster_to_node_indices[i] = list<unsigned int> ();
-
-    // update dummy_cluster_idx TODO
-    // just check if first dimension is greater than BIG_VAL-1
-  }
-
-  for (unsigned int i = 0 ; i < nbr_pts ; i++)
-  {
-    // curr feature_vals
-
-    // find closest cluster center to features
-    //unsigned int closest_cluster_dist;
-    unsigned int closest_cluster_idx;
-    for (unsigned int j = 0 ; j < nbr_clusters ; j++)
-    {
-
-    }
-
-    cluster_to_node_indices[closest_cluster_idx].push_back(i);
-  }
-
-  // ----------------------------------------
-  // Create cliques
-  for (unsigned int i = 0 ; i < nbr_clusters ; i++)
-  {
-    if (i == dummy_cluster_idx)
-    {
-      continue;
-    }
-
-    // compute features
-    // add to random field
-  }
 }
