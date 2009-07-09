@@ -32,43 +32,26 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
-/** \author Wim Meeussen, Mrinal Kalakrishnan */
+/** \author Mrinal Kalakrishnan */
 
-#ifndef KDLTREEFKSOLVERJOINTPOSAXIS_HPP
-#define KDLTREEFKSOLVERJOINTPOSAXIS_HPP
+#include <chomp_motion_planner/chomp_collision_point.h>
 
-#include <kdl/tree.hpp>
-#include <kdl/jntarray.hpp>
-#include <vector>
-
-namespace KDL {
-
-class TreeFkSolverJointPosAxis
-
+namespace chomp
 {
-public:
-  TreeFkSolverJointPosAxis(const Tree& tree);
-  ~TreeFkSolverJointPosAxis();
 
-  int JntToCart(const JntArray& q_in, std::vector<Vector>& joint_pos, std::vector<Vector>& joint_axis, std::vector<Frame>& segment_frames) const;
+ChompCollisionPoint::ChompCollisionPoint(std::vector<int>& parent_joints, double radius, double clearance,
+    int segment_number, KDL::Vector& position):
+      parent_joints_(parent_joints),
+      radius_(radius),
+      clearance_(clearance),
+      segment_number_(segment_number),
+      position_(position)
+{
 
-  const std::vector<std::string> getSegmentNames() const;
-  const std::map<std::string, int> getSegmentNameToIndex() const;
+}
 
-  int segmentNameToIndex(std::string name) const;
+ChompCollisionPoint::~ChompCollisionPoint()
+{
+}
 
-private:
-  int treeRecursiveFK(const JntArray& q_in, std::vector<Vector>& joint_pos, std::vector<Vector>& joint_axis, std::vector<Frame>& segment_frames,
-      const Frame& previous_frame, const SegmentMap::const_iterator this_segment, int segment_nr) const;
-
-  std::vector<std::string> segment_names_;
-  std::map<std::string, int> segment_name_to_index_;
-  Tree tree_;
-
-  void assignSegmentNumber(const SegmentMap::const_iterator this_segment);
-
-};
-
-} // namespace KDL
-
-#endif
+}

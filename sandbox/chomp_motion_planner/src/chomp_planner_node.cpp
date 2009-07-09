@@ -65,7 +65,7 @@ bool ChompPlannerNode::init()
 
   // load in some default parameters
   node_handle_.param("~trajectory_duration", trajectory_duration_, 2.0);
-  node_handle_.param("~trajectory_discretization", trajectory_discretization_, 0.02);
+  node_handle_.param("~trajectory_discretization", trajectory_discretization_, 0.05);
 
   // advertise the planning service
   plan_kinematic_path_service_ = node_handle_.advertiseService("plan_kinematic_path", &ChompPlannerNode::planKinematicPath, this);

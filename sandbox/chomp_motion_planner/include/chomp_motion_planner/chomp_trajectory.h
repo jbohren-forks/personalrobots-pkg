@@ -78,6 +78,9 @@ public:
   double operator() (int traj_point, int joint) const;
 
   Eigen::MatrixXd::RowXpr getTrajectoryPoint(int traj_point);
+
+  void getTrajectoryPointKDL(int traj_point, KDL::JntArray& kdl_jnt_array) const;
+
   Eigen::MatrixXd::ColXpr getJointTrajectory(int joint);
 
   /**
@@ -145,6 +148,11 @@ public:
    */
   void updateFromGroupTrajectory(const ChompTrajectory& group_trajectory);
 
+  /**
+   * \brief Gets the index in the full trajectory which was copied to this group trajectory
+   */
+  int getFullTrajectoryIndex(int i) const;
+
 private:
 
   void init();                                          /**< \brief Allocates memory for the trajectory */
@@ -158,6 +166,7 @@ private:
   Eigen::MatrixXd trajectory_;                          /**< Storage for the actual trajectory */
   int start_index_;                                     /**< Start index (inclusive) of trajectory to be optimized (everything before it will not be modified) */
   int end_index_;                                       /**< End index (inclusive) of trajectory to be optimized (everything after it will not be modified) */
+  std::vector<int> full_trajectory_index_;              /**< If this is a "group" trajectory, the index from the original traj which each element here was copied */
 };
 
 ///////////////////////// inline functions follow //////////////////////
@@ -231,6 +240,17 @@ inline Eigen::BlockReturnType<Eigen::MatrixXd>::Type ChompTrajectory::getFreeTra
 inline Eigen::BlockReturnType<Eigen::MatrixXd>::Type ChompTrajectory::getFreeJointTrajectoryBlock(int joint)
 {
   return trajectory_.block(start_index_, joint, getNumFreePoints(), 1);
+}
+
+inline void ChompTrajectory::getTrajectoryPointKDL(int traj_point, KDL::JntArray& kdl_jnt_array) const
+{
+  for (int i=0; i<num_joints_; i++)
+    kdl_jnt_array(i) = trajectory_(traj_point,i);
+}
+
+inline int ChompTrajectory::getFullTrajectoryIndex(int i) const
+{
+  return full_trajectory_index_[i];
 }
 
 }

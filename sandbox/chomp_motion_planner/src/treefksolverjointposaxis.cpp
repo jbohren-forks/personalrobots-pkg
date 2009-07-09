@@ -113,4 +113,9 @@ const std::map<std::string, int> TreeFkSolverJointPosAxis::getSegmentNameToIndex
   return segment_name_to_index_;
 }
 
+int TreeFkSolverJointPosAxis::segmentNameToIndex(std::string name) const
+{
+  return segment_name_to_index_.find(name)->second;
+}
+
 } // namespace KDL

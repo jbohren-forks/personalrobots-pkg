@@ -45,6 +45,7 @@
 #include <Eigen/Core>
 
 #include <vector>
+#include <kdl/frames.hpp>
 
 namespace chomp
 {
@@ -63,6 +64,10 @@ private:
   int num_joints_;
   int num_vars_free_;
   int num_vars_all_;
+  int num_collision_points_;
+  int free_vars_start_;
+  int free_vars_end_;
+  int iteration_;
   ChompTrajectory *full_trajectory_;
   const ChompRobotModel *robot_model_;
   const ChompRobotModel::ChompPlanningGroup *planning_group_;
@@ -70,15 +75,24 @@ private:
   ChompTrajectory group_trajectory_;
   std::vector<ChompCost> joint_costs_;
 
+  std::vector<std::vector<KDL::Vector> > joint_axis_;
+  std::vector<std::vector<KDL::Vector> > joint_pos_;
+  std::vector<std::vector<KDL::Frame> > segment_frames_;
+  std::vector<std::vector<KDL::Vector> > collision_point_pos_;
+  std::vector<std::vector<KDL::Vector> > collision_point_vel_;
+  std::vector<std::vector<KDL::Vector> > collision_point_acc_;
+
   Eigen::MatrixXd smoothness_increments_;
   Eigen::MatrixXd collision_increments_;
 
   // temporary variables for all functions:
   Eigen::VectorXd smoothness_derivative_;
+  KDL::JntArray kdl_joint_array_;
 
   void initialize();
   void calculateSmoothnessIncrements();
   void calculateCollisionIncrements();
+  void performForwardKinematics();
   void addIncrementsToTrajectory();
   void updateFullTrajectory();
   void debugCost();

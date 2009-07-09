@@ -32,43 +32,64 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
-/** \author Wim Meeussen, Mrinal Kalakrishnan */
+/** \author Mrinal Kalakrishnan */
 
-#ifndef KDLTREEFKSOLVERJOINTPOSAXIS_HPP
-#define KDLTREEFKSOLVERJOINTPOSAXIS_HPP
+#ifndef CHOMP_COLLISION_POINT_H_
+#define CHOMP_COLLISION_POINT_H_
 
-#include <kdl/tree.hpp>
-#include <kdl/jntarray.hpp>
+#include <kdl/frames.hpp>
 #include <vector>
 
-namespace KDL {
+namespace chomp
+{
 
-class TreeFkSolverJointPosAxis
-
+class ChompCollisionPoint
 {
 public:
-  TreeFkSolverJointPosAxis(const Tree& tree);
-  ~TreeFkSolverJointPosAxis();
+  ChompCollisionPoint(std::vector<int>& parent_joints, double radius, double clearance,
+      int segment_number, KDL::Vector& position);
+  virtual ~ChompCollisionPoint();
 
-  int JntToCart(const JntArray& q_in, std::vector<Vector>& joint_pos, std::vector<Vector>& joint_axis, std::vector<Frame>& segment_frames) const;
-
-  const std::vector<std::string> getSegmentNames() const;
-  const std::map<std::string, int> getSegmentNameToIndex() const;
-
-  int segmentNameToIndex(std::string name) const;
+  bool isParentJoint(int joint) const;
+  double getRadius() const;
+  double getClearance() const;
+  int getSegmentNumber() const;
+  const KDL::Vector& getPosition() const;
 
 private:
-  int treeRecursiveFK(const JntArray& q_in, std::vector<Vector>& joint_pos, std::vector<Vector>& joint_axis, std::vector<Frame>& segment_frames,
-      const Frame& previous_frame, const SegmentMap::const_iterator this_segment, int segment_nr) const;
-
-  std::vector<std::string> segment_names_;
-  std::map<std::string, int> segment_name_to_index_;
-  Tree tree_;
-
-  void assignSegmentNumber(const SegmentMap::const_iterator this_segment);
-
+  std::vector<int> parent_joints_;      /**< Which joints can influence the motion of this point */
+  double radius_;                       /**< Radius of the sphere */
+  double clearance_;                    /**< Extra clearance required while optimizing */
+  int segment_number_;                  /**< Which segment does this point belong to */
+  KDL::Vector position_;                /**< Vector of this point in the frame of the above segment */
 };
 
-} // namespace KDL
+inline bool ChompCollisionPoint::isParentJoint(int joint) const
+{
+  return parent_joints_[joint]==1;
+}
 
-#endif
+inline double ChompCollisionPoint::getRadius() const
+{
+  return radius_;
+}
+
+inline double ChompCollisionPoint::getClearance() const
+{
+  return clearance_;
+}
+
+inline int ChompCollisionPoint::getSegmentNumber() const
+{
+  return segment_number_;
+}
+
+inline const KDL::Vector& ChompCollisionPoint::getPosition() const
+{
+  return position_;
+}
+
+
+}
+
+#endif /* CHOMP_COLLISION_POINT_H_ */

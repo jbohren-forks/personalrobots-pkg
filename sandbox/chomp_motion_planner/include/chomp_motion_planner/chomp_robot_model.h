@@ -37,11 +37,14 @@
 #ifndef CHOMP_ROBOT_MODEL_H_
 #define CHOMP_ROBOT_MODEL_H_
 
+
+#include <chomp_motion_planner/treefksolverjointposaxis.hpp>
+#include <chomp_motion_planner/chomp_collision_point.h>
 #include <ros/ros.h>
 #include <planning_environment/robot_models.h>
 #include <kdl/tree.hpp>
 #include <kdl/chain.hpp>
-#include <chomp_motion_planner/treefksolverjointposaxis.hpp>
+
 #include <map>
 #include <vector>
 #include <string>
@@ -81,11 +84,11 @@ public:
    */
   struct ChompPlanningGroup
   {
-
     int num_joints_;                                            /**< Number of joints used in planning */
     std::vector<ChompJoint> chomp_joints_;                  /**< Joints used in planning */
     int num_links_;                                             /**< Number of links used for collision checking */
     std::vector<std::string> link_names_;                       /**< Links used for collision checking */
+    std::vector<ChompCollisionPoint> collision_points_;         /**< Ordered list of collision checking points (from root to tip) */
   };
 
   ChompRobotModel();
@@ -132,6 +135,8 @@ public:
    */
   const std::string kdlNumberToUrdfName(int kdl_number) const;
 
+  const KDL::TreeFkSolverJointPosAxis* getForwardKinematicsSolver() const;
+
 private:
   ros::NodeHandle node_handle_;                                 /**< ROS Node handle */
   planning_environment::RobotModels *robot_models_;             /**< Robot model */
@@ -144,6 +149,9 @@ private:
   std::map<std::string, int> urdf_name_to_kdl_number_;          /**< Mapping from URDF joint name to KDL joint number */
   std::map<std::string, ChompPlanningGroup> planning_groups_;   /**< Planning group information */
   KDL::TreeFkSolverJointPosAxis *fk_solver_;                    /**< Forward kinematics solver for the tree */
+  double collision_clearance_default_;                          /**< Default clearance for all collision links */
+
+  void addCollisionPointsFromLinkRadius(ChompPlanningGroup& group, std::string link_name, double radius, double clearance);
 };
 
 /////////////////////////////// inline functions follow ///////////////////////////////////
@@ -187,6 +195,11 @@ inline const std::string ChompRobotModel::kdlNumberToUrdfName(int kdl_number) co
     return std::string("");
   else
     return kdl_number_to_urdf_name_[kdl_number];
+}
+
+inline const KDL::TreeFkSolverJointPosAxis* ChompRobotModel::getForwardKinematicsSolver() const
+{
+  return fk_solver_;
 }
 
 } // namespace chomp

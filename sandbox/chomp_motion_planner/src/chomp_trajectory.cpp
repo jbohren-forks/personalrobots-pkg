@@ -88,6 +88,8 @@ ChompTrajectory::ChompTrajectory(const ChompTrajectory& source_traj, const Chomp
   // allocate the memory:
   init();
 
+  full_trajectory_index_.resize(num_points_);
+
   // now copy the trajectories over:
   for (int i=0; i<num_points_; i++)
   {
@@ -96,6 +98,7 @@ ChompTrajectory::ChompTrajectory(const ChompTrajectory& source_traj, const Chomp
       source_traj_point = 0;
     if (source_traj_point >= source_traj.num_points_)
       source_traj_point = source_traj.num_points_-1;
+    full_trajectory_index_[i] = source_traj_point;
     for (int j=0; j<num_joints_; j++)
     {
       int source_joint = planning_group_->chomp_joints_[j].kdl_joint_index_;
