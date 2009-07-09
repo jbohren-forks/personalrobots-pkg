@@ -2,49 +2,602 @@ Index: tests/kinfamtest.cpp
 ===================================================================
 --- tests/kinfamtest.cpp	(revision 30215)
 +++ tests/kinfamtest.cpp	(working copy)
-@@ -200,8 +200,11 @@
-     CPPUNIT_ASSERT(tree1.addTree(tree2,"Tree2","Segment2"));
+@@ -24,44 +24,44 @@
+ {
+     double q;
+     Joint j;
+-    j=Joint(Joint::None);
++    j=Joint("Joint 1", Joint::None);
+     CPPUNIT_ASSERT_EQUAL(Joint::None,j.getType());
+     random(q);
+     CPPUNIT_ASSERT_EQUAL(j.pose(q),Frame::Identity());
+     random(q);
+     CPPUNIT_ASSERT_EQUAL(j.twist(q),Twist::Zero());
+     random(q);
+-    j=Joint(Joint::RotX);
++    j=Joint("Joint 2", Joint::RotX);
+     CPPUNIT_ASSERT_EQUAL(Joint::RotX,j.getType());
+     CPPUNIT_ASSERT_EQUAL(j.pose(q),Frame(Rotation::RotX(q)));
+     random(q);
+     CPPUNIT_ASSERT_EQUAL(j.twist(q),Twist(Vector::Zero(),Vector(q,0,0)));
+     random(q);
+-    j=Joint(Joint::RotY);
++    j=Joint("Joint 3", Joint::RotY);
+     CPPUNIT_ASSERT_EQUAL(Joint::RotY,j.getType());
+     CPPUNIT_ASSERT_EQUAL(j.pose(q),Frame(Rotation::RotY(q)));
+     random(q);
+     CPPUNIT_ASSERT_EQUAL(j.twist(q),Twist(Vector::Zero(),Vector(0,q,0)));
+     random(q);
+-    j=Joint(Joint::RotZ);
++    j=Joint("Joint 4", Joint::RotZ);
+     CPPUNIT_ASSERT_EQUAL(Joint::RotZ,j.getType());
+     CPPUNIT_ASSERT_EQUAL(j.pose(q),Frame(Rotation::RotZ(q)));
+     random(q);
+     CPPUNIT_ASSERT_EQUAL(j.twist(q),Twist(Vector::Zero(),Vector(0,0,q)));
+     random(q);
+-    j=Joint(Joint::TransX);
++    j=Joint("Joint 5", Joint::TransX);
+     CPPUNIT_ASSERT_EQUAL(Joint::TransX,j.getType());
+     CPPUNIT_ASSERT_EQUAL(j.pose(q),Frame(Vector(q,0,0)));
+     random(q);
+     CPPUNIT_ASSERT_EQUAL(j.twist(q),Twist(Vector(q,0,0),Vector::Zero()));
+     random(q);
+-    j=Joint(Joint::TransY);
++    j=Joint("Joint 6", Joint::TransY);
+     CPPUNIT_ASSERT_EQUAL(Joint::TransY,j.getType());
+     CPPUNIT_ASSERT_EQUAL(j.pose(q),Frame(Vector(0,q,0)));
+     random(q);
+     CPPUNIT_ASSERT_EQUAL(j.twist(q),Twist(Vector(0,q,0),Vector::Zero()));
+     random(q);
+-    j=Joint(Joint::TransZ);
++    j=Joint("Joint 7", Joint::TransZ);
+     CPPUNIT_ASSERT_EQUAL(Joint::TransZ,j.getType());
+     CPPUNIT_ASSERT_EQUAL(j.pose(q),Frame(Vector(0,0,q)));
+     random(q);
+@@ -75,49 +75,49 @@
+     double q,qdot;
+     Frame f,f1;
+     random(f);
+-    s = Segment(Joint(Joint::None),f);
++    s = Segment("Segment 0", Joint("Joint 0", Joint::None),f);
+     random(q);
+     random(qdot);
+     f1=s.getJoint().pose(q)*f;
+     CPPUNIT_ASSERT_EQUAL(f1,s.pose(q));
+     CPPUNIT_ASSERT_EQUAL(s.getJoint().twist(qdot).RefPoint(f1.p),s.twist(q,qdot));
+     random(f);
+-    s = Segment(Joint(Joint::RotX),f);
++    s = Segment("Segment 1", Joint("Joint 1", Joint::RotX),f);
+     random(q);
+     random(qdot);
+     f1=s.getJoint().pose(q)*f;
+     CPPUNIT_ASSERT_EQUAL(f1,s.pose(q));
+     CPPUNIT_ASSERT_EQUAL(s.getJoint().twist(qdot).RefPoint(f1.p),s.twist(q,qdot));
+     random(f);
+-    s = Segment(Joint(Joint::RotY),f);
++    s = Segment("Segment 3", Joint("Joint 3", Joint::RotY),f);
+     random(q);
+     random(qdot);
+     f1=s.getJoint().pose(q)*f;
+     CPPUNIT_ASSERT_EQUAL(f1,s.pose(q));
+     CPPUNIT_ASSERT_EQUAL(s.getJoint().twist(qdot).RefPoint(f1.p),s.twist(q,qdot));
+     random(f);
+-    s = Segment(Joint(Joint::RotZ),f);
++    s = Segment("Segment 4", Joint("Joint 4", Joint::RotZ),f);
+     random(q);
+     random(qdot);
+     f1=s.getJoint().pose(q)*f;
+     CPPUNIT_ASSERT_EQUAL(f1,s.pose(q));
+     CPPUNIT_ASSERT_EQUAL(s.getJoint().twist(qdot).RefPoint(f1.p),s.twist(q,qdot));
+     random(f);
+-    s = Segment(Joint(Joint::TransX),f);
++    s = Segment("Segment 5", Joint("Joint 5", Joint::TransX),f);
+     random(q);
+     random(qdot);
+     f1=s.getJoint().pose(q)*f;
+     CPPUNIT_ASSERT_EQUAL(f1,s.pose(q));
+     CPPUNIT_ASSERT_EQUAL(s.getJoint().twist(qdot).RefPoint(f1.p),s.twist(q,qdot));
+     random(f);
+-    s = Segment(Joint(Joint::TransY),f);
++    s = Segment("Segment 6", Joint("Joint 6", Joint::TransY),f);
+     random(q);
+     random(qdot);
+     f1=s.getJoint().pose(q)*f;
+     CPPUNIT_ASSERT_EQUAL(f1,s.pose(q));
+     CPPUNIT_ASSERT_EQUAL(s.getJoint().twist(qdot).RefPoint(f1.p),s.twist(q,qdot));
+     random(f);
+-    s = Segment(Joint(Joint::TransZ),f);
++    s = Segment("Segment 7", Joint("Joint 7", Joint::TransZ),f);
+     random(q);
+     random(qdot);
+     f1=s.getJoint().pose(q)*f;
+@@ -129,21 +129,21 @@
+ {
+     Chain chain1;
+ 
+-    chain1.addSegment(Segment(Joint(Joint::RotZ),
++    chain1.addSegment(Segment("Segment 0", Joint("Joint 0", Joint::RotZ),
+                               Frame(Vector(0.0,0.0,0.0))));
+-    chain1.addSegment(Segment(Joint(Joint::RotX),
++    chain1.addSegment(Segment("Segment 1", Joint("Joint 1", Joint::RotX),
+                               Frame(Vector(0.0,0.0,0.9))));
+-    chain1.addSegment(Segment(Joint(Joint::RotX),
++    chain1.addSegment(Segment("Segment 2", Joint("Joint 2", Joint::RotX),
+                               Frame(Vector(0.0,0.0,1.2))));
+-    chain1.addSegment(Segment(Joint(Joint::RotZ),
++    chain1.addSegment(Segment("Segment 3", Joint("Joint 3", Joint::RotZ),
+                               Frame(Vector(0.0,0.0,1.5))));
+-    chain1.addSegment(Segment(Joint(Joint::RotX),
++    chain1.addSegment(Segment("Segment 4", Joint("Joint 4", Joint::RotX),
+                               Frame(Vector(0.0,0.0,0.0))));
+-    chain1.addSegment(Segment(Joint(Joint::RotZ),
++    chain1.addSegment(Segment("Segment 5", Joint("Joint 5", Joint::RotZ),
+                               Frame(Vector(0.0,0.0,0.4))));
+     CPPUNIT_ASSERT_EQUAL(chain1.getNrOfJoints(),(uint)6);
+     CPPUNIT_ASSERT_EQUAL(chain1.getNrOfSegments(),(uint)6);
+-    chain1.addSegment(Segment(Joint(Joint::None),Frame(Vector(0.0,0.1,0.0))));
++    chain1.addSegment(Segment("Segment 6", Joint("Joint 6", Joint::None),Frame(Vector(0.0,0.1,0.0))));
+     CPPUNIT_ASSERT_EQUAL(chain1.getNrOfJoints(),(uint)6);
+     CPPUNIT_ASSERT_EQUAL(chain1.getNrOfSegments(),(uint)7);
+ 
+@@ -158,50 +158,56 @@
+ void KinFamTest::TreeTest()
+ {
+     Tree tree1;
+-    Segment segment1(Joint(Joint::None));
+-    Segment segment2(Joint(Joint::RotX),Frame(Vector(0.1,0.2,0.3)));
+-    Segment segment3(Joint(Joint::TransZ),Frame(Rotation::RotX(1.57)));
++    Segment segment1("Segment 1", Joint("Joint 1", Joint::None));
++    Segment segment2("Segment 2", Joint("Joint 2", Joint::RotX),Frame(Vector(0.1,0.2,0.3)));
++    Segment segment3("Segment 3", Joint("Joint 3", Joint::TransZ),Frame(Rotation::RotX(1.57)));
++    Segment segment4("Segment 4", Joint("Joint 4", Joint::RotX),Frame(Vector(0.1,0.2,0.3)));
++    Segment segment5("Segment 5", Joint("Joint 5", Joint::RotX),Frame(Vector(0.1,0.2,0.3)));
++    Segment segment6("Segment 6", Joint("Joint 6", Joint::RotX),Frame(Vector(0.1,0.2,0.3)));
++    Segment segment7("Segment 7", Joint("Joint 7", Joint::RotX),Frame(Vector(0.1,0.2,0.3)));
+ 
+     cout<<tree1<<endl;
+ 
+-    CPPUNIT_ASSERT(tree1.addSegment(segment1,"Segment1","root"));
+-    CPPUNIT_ASSERT(tree1.addSegment(segment2,"Segment2","root"));
+-    CPPUNIT_ASSERT(tree1.addSegment(segment3,"Segment3","Segment1"));
+-    CPPUNIT_ASSERT(tree1.addSegment(segment2,"Segment4","Segment3"));
+-    CPPUNIT_ASSERT(!tree1.addSegment(segment1,"Segment5","Segment6"));
+-    CPPUNIT_ASSERT(!tree1.addSegment(segment1,"Segment1","Segment4"));
++    CPPUNIT_ASSERT(tree1.addSegment(segment1,"root"));
++    CPPUNIT_ASSERT(tree1.addSegment(segment2,"root"));
++    CPPUNIT_ASSERT(tree1.addSegment(segment3,"Segment 1"));
++    CPPUNIT_ASSERT(tree1.addSegment(segment4,"Segment 3"));
++    CPPUNIT_ASSERT(!tree1.addSegment(segment1,"Segment 6"));
++    CPPUNIT_ASSERT(!tree1.addSegment(segment1,"Segment 4"));
+ 
+     cout<<tree1<<endl;
+ 
+     Tree tree2;
+-    CPPUNIT_ASSERT(tree2.addSegment(segment1,"Segment1","root"));
+-    CPPUNIT_ASSERT(tree2.addSegment(segment2,"Segment2","root"));
+-    CPPUNIT_ASSERT(tree2.addSegment(segment3,"Segment3","Segment1"));
++    CPPUNIT_ASSERT(tree2.addSegment(segment5,"root"));
++    CPPUNIT_ASSERT(tree2.addSegment(segment6,"root"));
++    CPPUNIT_ASSERT(tree2.addSegment(segment7,"Segment 6"));
+ 
+     cout<<tree2<<endl;
+ 
+     Chain chain1;
+-    chain1.addSegment(Segment(Joint(Joint::RotZ),
++    chain1.addSegment(Segment("Segment 8", Joint("Joint 8", Joint::RotZ),
+                               Frame(Vector(0.0,0.0,0.0))));
+-    chain1.addSegment(Segment(Joint(Joint::RotX),
++    chain1.addSegment(Segment("Segment 9", Joint("Joint 9", Joint::RotX),
+                               Frame(Vector(0.0,0.0,0.9))));
+-    chain1.addSegment(Segment(Joint(Joint::RotX),
++    chain1.addSegment(Segment("Segment 10", Joint("Joint 10", Joint::RotX),
+                               Frame(Vector(0.0,0.0,1.2))));
+-    chain1.addSegment(Segment(Joint(Joint::RotZ),
++    chain1.addSegment(Segment("Segment 11", Joint("Joint 11", Joint::RotZ),
+                               Frame(Vector(0.0,0.0,1.5))));
+-    chain1.addSegment(Segment(Joint(Joint::RotX),
++    chain1.addSegment(Segment("Segment 12", Joint("Joint 12", Joint::RotX),
+                               Frame(Vector(0.0,0.0,0.0))));
+-    chain1.addSegment(Segment(Joint(Joint::RotZ),
++    chain1.addSegment(Segment("Segment 13", Joint("Joint 13", Joint::RotZ),
+                               Frame(Vector(0.0,0.0,0.4))));
+ 
+ 
+-    CPPUNIT_ASSERT(tree2.addChain(chain1,"Chain1","Segment2"));
++    CPPUNIT_ASSERT(tree2.addChain(chain1, "Segment 6"));
+     cout<<tree2<<endl;
+-    CPPUNIT_ASSERT(tree1.addTree(tree2,"Tree2","Segment2"));
++    CPPUNIT_ASSERT(tree1.addTree(tree2, "Segment 2"));
      cout<<tree1<<endl;
  
 -    Chain extract_chain1 = tree1.getChain("Segment2", "Segment4");
 -    Chain extract_chain2 = tree1.getChain("Segment4", "Segment2");
-+    vector<string> links;
 +    Chain extract_chain1;
-+    CPPUNIT_ASSERT(tree1.getChain("Segment2", "Segment4", extract_chain1, links));
++    CPPUNIT_ASSERT(tree1.getChain("Segment 2", "Segment 4", extract_chain1));
 +    Chain extract_chain2; 
-+    CPPUNIT_ASSERT(tree1.getChain("Segment4", "Segment2", extract_chain2, links));
++    CPPUNIT_ASSERT(tree1.getChain("Segment 4", "Segment 2", extract_chain2));
      CPPUNIT_ASSERT(extract_chain1.getNrOfJoints()==extract_chain2.getNrOfJoints());
      CPPUNIT_ASSERT(extract_chain1.getNrOfSegments()==extract_chain2.getNrOfSegments());
      ChainFkSolverPos_recursive solver1(extract_chain1);
+Index: tests/solvertest.cpp
+===================================================================
+--- tests/solvertest.cpp	(revision 30215)
++++ tests/solvertest.cpp	(working copy)
+@@ -13,66 +13,66 @@
+ {
+     srand( (unsigned)time( NULL ));
+ 
+-    chain1.addSegment(Segment(Joint(Joint::RotZ),
++    chain1.addSegment(Segment("Segment 1", Joint("Joint 1", Joint::RotZ),
+                              Frame(Vector(0.0,0.0,0.0))));
+-    chain1.addSegment(Segment(Joint(Joint::RotX),
++    chain1.addSegment(Segment("Segment 2", Joint("Joint 2", Joint::RotX),
+                              Frame(Vector(0.0,0.0,0.9))));
+-    chain1.addSegment(Segment(Joint(Joint::None),
++    chain1.addSegment(Segment("Segment 3", Joint("Joint 3", Joint::None),
+                              Frame(Vector(-0.4,0.0,0.0))));
+-    chain1.addSegment(Segment(Joint(Joint::RotX),
++    chain1.addSegment(Segment("Segment 4", Joint("Joint 4", Joint::RotX),
+                              Frame(Vector(0.0,0.0,1.2))));
+-    chain1.addSegment(Segment(Joint(Joint::None),
++    chain1.addSegment(Segment("Segment 5", Joint("Joint 5", Joint::None),
+                              Frame(Vector(0.4,0.0,0.0))));
+-    chain1.addSegment(Segment(Joint(Joint::RotZ),
++    chain1.addSegment(Segment("Segment 6", Joint("Joint 6", Joint::RotZ),
+                              Frame(Vector(0.0,0.0,1.4))));
+-    chain1.addSegment(Segment(Joint(Joint::RotX),
++    chain1.addSegment(Segment("Segment 7", Joint("Joint 7", Joint::RotX),
+                              Frame(Vector(0.0,0.0,0.0))));
+-    chain1.addSegment(Segment(Joint(Joint::RotZ),
++    chain1.addSegment(Segment("Segment 8", Joint("Joint 8", Joint::RotZ),
+                              Frame(Vector(0.0,0.0,0.4))));
+-    chain1.addSegment(Segment(Joint(Joint::None),
++    chain1.addSegment(Segment("Segment 9", Joint("Joint 9", Joint::None),
+                              Frame(Vector(0.0,0.0,0.0))));
+ 
+-    chain2.addSegment(Segment(Joint(Joint::RotZ),
++    chain2.addSegment(Segment("Segment 1", Joint("Joint 1", Joint::RotZ),
+                               Frame(Vector(0.0,0.0,0.5))));
+-    chain2.addSegment(Segment(Joint(Joint::RotX),
++    chain2.addSegment(Segment("Segment 2", Joint("Joint 2", Joint::RotX),
+                               Frame(Vector(0.0,0.0,0.4))));
+-    chain2.addSegment(Segment(Joint(Joint::RotX),
++    chain2.addSegment(Segment("Segment 3", Joint("Joint 3", Joint::RotX),
+                               Frame(Vector(0.0,0.0,0.3))));
+-    chain2.addSegment(Segment(Joint(Joint::RotX),
++    chain2.addSegment(Segment("Segment 4", Joint("Joint 4", Joint::RotX),
+                               Frame(Vector(0.0,0.0,0.2))));
+-    chain2.addSegment(Segment(Joint(Joint::RotZ),
++    chain2.addSegment(Segment("Segment 5", Joint("Joint 5", Joint::RotZ),
+                               Frame(Vector(0.0,0.0,0.1))));
+ 
+ 
+-    chain3.addSegment(Segment(Joint(Joint::RotZ),
++    chain3.addSegment(Segment("Segment 1", Joint("Joint 1", Joint::RotZ),
+                              Frame(Vector(0.0,0.0,0.0))));
+-    chain3.addSegment(Segment(Joint(Joint::RotX),
++    chain3.addSegment(Segment("Segment 2", Joint("Joint 2", Joint::RotX),
+                              Frame(Vector(0.0,0.0,0.9))));
+-    chain3.addSegment(Segment(Joint(Joint::RotZ),
++    chain3.addSegment(Segment("Segment 3", Joint("Joint 3", Joint::RotZ),
+                              Frame(Vector(-0.4,0.0,0.0))));
+-    chain3.addSegment(Segment(Joint(Joint::RotX),
++    chain3.addSegment(Segment("Segment 4", Joint("Joint 4", Joint::RotX),
+                              Frame(Vector(0.0,0.0,1.2))));
+-    chain3.addSegment(Segment(Joint(Joint::None),
++    chain3.addSegment(Segment("Segment 5", Joint("Joint 5", Joint::None),
+                              Frame(Vector(0.4,0.0,0.0))));
+-    chain3.addSegment(Segment(Joint(Joint::RotZ),
++    chain3.addSegment(Segment("Segment 6", Joint("Joint 6", Joint::RotZ),
+                              Frame(Vector(0.0,0.0,1.4))));
+-    chain3.addSegment(Segment(Joint(Joint::RotX),
++    chain3.addSegment(Segment("Segment 7", Joint("Joint 7", Joint::RotX),
+                              Frame(Vector(0.0,0.0,0.0))));
+-    chain3.addSegment(Segment(Joint(Joint::RotZ),
++    chain3.addSegment(Segment("Segment 8", Joint("Joint 8", Joint::RotZ),
+                              Frame(Vector(0.0,0.0,0.4))));
+-    chain3.addSegment(Segment(Joint(Joint::RotY),
++    chain3.addSegment(Segment("Segment 9", Joint("Joint 9", Joint::RotY),
+                              Frame(Vector(0.0,0.0,0.0))));
+ 
+ 
+-    chain4.addSegment(Segment(Joint(Vector(10,0,0), Vector(1,0,1),Joint::RotAxis),
++    chain4.addSegment(Segment("Segment 1", Joint("Joint 1", Vector(10,0,0), Vector(1,0,1),Joint::RotAxis),
+ 			       Frame(Vector(0.0,0.0,0.5))));
+-    chain4.addSegment(Segment(Joint(Vector(0,5,0), Vector(1,0,0),Joint::RotAxis),
++    chain4.addSegment(Segment("Segment 2", Joint("Joint 2", Vector(0,5,0), Vector(1,0,0),Joint::RotAxis),
+ 			       Frame(Vector(0.0,0.0,0.4))));
+-    chain4.addSegment(Segment(Joint(Vector(0,0,5), Vector(1,0,4),Joint::RotAxis),
++    chain4.addSegment(Segment("Segment 3", Joint("Joint 3", Vector(0,0,5), Vector(1,0,4),Joint::RotAxis),
+                               Frame(Vector(0.0,0.0,0.3))));
+-    chain4.addSegment(Segment(Joint(Vector(0,0,0), Vector(1,0,0),Joint::RotAxis),
++    chain4.addSegment(Segment("Segment 4", Joint("Joint 4", Vector(0,0,0), Vector(1,0,0),Joint::RotAxis),
+                               Frame(Vector(0.0,0.0,0.2))));
+-    chain4.addSegment(Segment(Joint(Vector(0,0,0), Vector(0,0,1),Joint::RotAxis),
++    chain4.addSegment(Segment("Segment 5", Joint("Joint 5", Vector(0,0,0), Vector(0,0,1),Joint::RotAxis),
+                               Frame(Vector(0.0,0.0,0.1))));
+ 
+ }
 Index: src/tree.hpp
 ===================================================================
 --- src/tree.hpp	(revision 30215)
 +++ src/tree.hpp	(working copy)
-@@ -154,10 +154,12 @@
+@@ -69,13 +69,15 @@
+         int nrOfJoints;
+         int nrOfSegments;
+ 
+-        bool addTreeRecursive(SegmentMap::const_iterator root, const std::string& tree_name, const std::string& hook_name);
++        std::string root_name;
+ 
++        bool addTreeRecursive(SegmentMap::const_iterator root, const std::string& hook_name);
++
+     public:
+         /**
+          * The constructor of a tree, a new tree is always empty
+          */
+-        Tree();
++        Tree(const std::string& root_name="root");
+         Tree(const Tree& in);
+         Tree& operator= (const Tree& arg);
+ 
+@@ -84,39 +86,33 @@
+          * hook_name as segment_name
+          *
+          * @param segment new segment to add
+-         * @param segment_name name of the new segment
+          * @param hook_name name of the segment to connect this
+          * segment with.
+          *
+          * @return false if hook_name could not be found.
+          */
+-        bool addSegment(const Segment& segment, const std::string& segment_name, const std::string& hook_name);
++         bool addSegment(const Segment& segment, const std::string& hook_name);
+ 
+         /**
+          * Adds a complete chain to the end of the segment with
+-         * hook_name as segment_name. Segment i of
+-         * the chain will get chain_name+".Segment"+i as segment_name.
++         * hook_name as segment_name. 
+          *
+-         * @param chain Chain to add
+-         * @param chain_name name of the chain
+          * @param hook_name name of the segment to connect the chain with.
+          *
+          * @return false if hook_name could not be found.
+          */
+-        bool addChain(const Chain& chain, const std::string& chain_name, const std::string& hook_name);
++        bool addChain(const Chain& chain, const std::string& hook_name);
+ 
+         /**
+          * Adds a complete tree to the end of the segment with
+-         * hookname as segment_name. The segments of the tree will get
+-         * tree_name+segment_name as segment_name.
++         * hookname as segment_name. 
+          *
+          * @param tree Tree to add
+-         * @param tree_name name of the tree
+          * @param hook_name name of the segment to connect the tree with
+          *
+          * @return false if hook_name could not be found
+          */
+-        bool addTree(const Tree& tree, const std::string& tree_name,const std::string& hook_name);
++        bool addTree(const Tree& tree, const std::string& hook_name);
+ 
+         /**
+          * Request the total number of joints in the tree.\n
+@@ -146,18 +142,30 @@
+          */
+         SegmentMap::const_iterator getSegment(const std::string& segment_name)const
+         {
+-            return segments.find(segment_name);
++          SegmentMap::const_iterator it = segments.find(segment_name);
++          if (it == segments.end()) throw seg_name_ex;
++          else return it;
+         };
++        /**
++         * Request the root segment of the tree
++         *
++         * @return constant iterator pointing to the root segment
++         */
++        SegmentMap::const_iterator getRootSegment()const
++        {
++          return segments.find(root_name);
++        };
+ 
+         /**
+          * Request the chain of the tree between chain_root and chain_tip. The chain_root must be an ancester from chain_tip
           *
           * @param chain_root the name of the root segment of the chain
           * @param chain_tip the name of the tip segment of the chain
 +         * @param chain the resulting chain
-+         * @param links vector with the names of the links between chain_root and chain_tip
           *
 -         * @return the chain form chain_root to chain_tip, copied from the tree
 +         * @return success or failure
           */
 -        Chain getChain(const std::string& chain_root, const std::string& chain_tip)const;
-+      bool getChain(const std::string& chain_root, const std::string& chain_tip, Chain& chain, std::vector<std::string>& links)const;
++      bool getChain(const std::string& chain_root, const std::string& chain_tip, Chain& chain)const;
  
  
          const SegmentMap& getSegments()const
+@@ -166,6 +174,12 @@
+         }
+ 
+         virtual ~Tree(){};
++
++      class segment_name_exception: public std::exception{
++	virtual const char* what() const throw(){
++	  return "Segment Name excption";}
++      } seg_name_ex;
++
+     };
+ }
+ #endif
+Index: src/segment.cpp
+===================================================================
+--- src/segment.cpp	(revision 30215)
++++ src/segment.cpp	(working copy)
+@@ -21,20 +21,22 @@
+ 
+ namespace KDL {
+ 
+-    Segment::Segment(const Joint& _joint, const Frame& _f_tip, const RigidBodyInertia& _I):
++    Segment::Segment(const std::string& _name, const Joint& _joint, const Frame& _f_tip, const RigidBodyInertia& _I):
++        name(_name),
+         joint(_joint),I(_I),
+         f_tip(_joint.pose(0).Inverse() * _f_tip)
+     {
+     }
+ 
+     Segment::Segment(const Segment& in):
+-        joint(in.joint),I(in.I),
++        name(in.name),joint(in.joint),I(in.I),
+         f_tip(in.f_tip)
+     {
+     }
+ 
+     Segment& Segment::operator=(const Segment& arg)
+     {
++        name=arg.name;
+         joint=arg.joint;
+         I=arg.I;
+         f_tip=arg.f_tip;
+Index: src/joint.cpp
+===================================================================
+--- src/joint.cpp	(revision 30215)
++++ src/joint.cpp	(working copy)
+@@ -24,17 +24,17 @@
+ namespace KDL {
+ 
+     // constructor for joint along x,y or z axis, at origin of reference frame
+-    Joint::Joint(const JointType& _type, const double& _scale, const double& _offset,
++    Joint::Joint(const std::string& _name, const JointType& _type, const double& _scale, const double& _offset,
+                  const double& _inertia, const double& _damping, const double& _stiffness):
+-        type(_type),scale(_scale),offset(_offset),inertia(_inertia),damping(_damping),stiffness(_stiffness)
++      name(_name),type(_type),scale(_scale),offset(_offset),inertia(_inertia),damping(_damping),stiffness(_stiffness)
+     {
+       if (type == RotAxis || type == TransAxis) throw joint_type_ex;
+     }
+ 
+     // constructor for joint along arbitrary axis, at arbitrary origin
+-    Joint::Joint(const Vector& _origin, const Vector& _axis, const JointType& _type, const double& _scale, const double& _offset,
+-	         const double& _inertia, const double& _damping, const double& _stiffness):
+-      origin(_origin), axis(_axis / _axis.Norm()), type(_type),scale(_scale),offset(_offset),inertia(_inertia),damping(_damping),stiffness(_stiffness)
++    Joint::Joint(const std::string& _name, const Vector& _origin, const Vector& _axis, const JointType& _type, const double& _scale, 
++                 const double& _offset, const double& _inertia, const double& _damping, const double& _stiffness):
++      name(_name), origin(_origin), axis(_axis / _axis.Norm()), type(_type),scale(_scale),offset(_offset),inertia(_inertia),damping(_damping),stiffness(_stiffness)
+     {
+       if (type != RotAxis && type != TransAxis) throw joint_type_ex;
+ 
 Index: src/tree.cpp
 ===================================================================
 --- src/tree.cpp	(revision 30215)
 +++ src/tree.cpp	(working copy)
-@@ -115,22 +115,20 @@
+@@ -25,18 +25,19 @@
+ namespace KDL {
+ using namespace std;
+ 
+-Tree::Tree() :
+-    nrOfSegments(0), nrOfJoints(0) {
+-    segments.insert(make_pair("root", TreeElement::Root()));
++Tree::Tree(const std::string& _root_name) :
++  nrOfSegments(0), nrOfJoints(0),root_name(_root_name) {
++    segments.insert(make_pair(root_name, TreeElement::Root()));
+ }
+ 
+ Tree::Tree(const Tree& in) {
+     segments.clear();
+     nrOfSegments = 0;
+     nrOfJoints = 0;
++    root_name = in.root_name;
+ 
+-    segments.insert(make_pair("root", TreeElement::Root()));
+-    this->addTree(in, "", "root");
++    segments.insert(make_pair(root_name, TreeElement::Root()));
++    this->addTree(in, root_name);
+ 
+ }
+ 
+@@ -44,21 +45,21 @@
+     segments.clear();
+     nrOfSegments = 0;
+     nrOfJoints = 0;
++    root_name = in.root_name;
+ 
+-    segments.insert(make_pair("root", TreeElement::Root()));
+-    this->addTree(in, "", "root");
++    segments.insert(make_pair(in.root_name, TreeElement::Root()));
++    this->addTree(in, root_name);
+     return *this;
+ }
+ 
+-bool Tree::addSegment(const Segment& segment, const std::string& segment_name,
+-        const std::string& hook_name) {
++bool Tree::addSegment(const Segment& segment, const std::string& hook_name) {
+     SegmentMap::iterator parent = segments.find(hook_name);
+     //check if parent exists
+     if (parent == segments.end())
+         return false;
+     pair<SegmentMap::iterator, bool> retval;
+     //insert new element
+-    retval = segments.insert(make_pair(segment_name, TreeElement(segment,
++    retval = segments.insert(make_pair(segment.getName(), TreeElement(segment,
+             parent, nrOfJoints)));
+     //check if insertion succeeded
+     if (!retval.second)
+@@ -73,39 +74,31 @@
+     return true;
+ }
+ 
+-bool Tree::addChain(const Chain& chain, const std::string& chain_name,
+-        const std::string& hook_name) {
++bool Tree::addChain(const Chain& chain, const std::string& hook_name) {
+     string parent_name = hook_name;
+     for (unsigned int i = 0; i < chain.getNrOfSegments(); i++) {
+-        ostringstream segment_name;
+-        segment_name << chain_name << "Segment" << i;
+-        if (this->addSegment(chain.getSegment(i), segment_name.str(),
+-                parent_name))
+-            parent_name = segment_name.str();
++        if (this->addSegment(chain.getSegment(i), parent_name))
++          parent_name = chain.getSegment(i).getName();
+         else
+             return false;
+     }
+     return true;
+ }
+ 
+-bool Tree::addTree(const Tree& tree, const std::string& tree_name,
+-        const std::string& hook_name) {
+-    return this->addTreeRecursive(tree.getSegment("root"), tree_name, hook_name);
++bool Tree::addTree(const Tree& tree, const std::string& hook_name) {
++  return this->addTreeRecursive(tree.getRootSegment(), hook_name);
+ }
+ 
+-bool Tree::addTreeRecursive(SegmentMap::const_iterator root,
+-        const std::string& tree_name, const std::string& hook_name) {
++bool Tree::addTreeRecursive(SegmentMap::const_iterator root, const std::string& hook_name) {
+     //get iterator for root-segment
+     SegmentMap::const_iterator child;
+     //try to add all of root's children
+     for (unsigned int i = 0; i < root->second.children.size(); i++) {
+         child = root->second.children[i];
+         //Try to add the child
+-        if (this->addSegment(child->second.segment, tree_name + child->first,
+-                hook_name)) {
++        if (this->addSegment(child->second.segment, hook_name)) {
+             //if child is added, add all the child's children
+-            if (!(this->addTreeRecursive(child, tree_name, tree_name
+-                    + child->first)))
++            if (!(this->addTreeRecursive(child, child->first)))
+                 //if it didn't work, return false
+                 return false;
+         } else
+@@ -115,25 +108,23 @@
      return true;
  }
  
 -Chain Tree::getChain(const std::string& chain_root, const std::string& chain_tip)const
-+bool Tree::getChain(const std::string& chain_root, const std::string& chain_tip, Chain& chain, std::vector<std::string>& links)const
++bool Tree::getChain(const std::string& chain_root, const std::string& chain_tip, Chain& chain)const
  {
 -    Chain chain;
 -
@@ -52,32 +605,37 @@ Index: src/tree.cpp
      vector<SegmentMap::key_type> parents_chain_root, parents_chain_tip;
      for (SegmentMap::const_iterator s=getSegment(chain_root); s!=segments.end(); s=s->second.parent){
          parents_chain_root.push_back(s->first);
-         if (s->first == "root") break;
+-        if (s->first == "root") break;
++        if (s->first == root_name) break;
      }
 -    if (parents_chain_root.empty() || parents_chain_root.back() != "root") return chain;
-+    if (parents_chain_root.empty() || parents_chain_root.back() != "root") return false;
++    if (parents_chain_root.empty() || parents_chain_root.back() != root_name) return false;
      for (SegmentMap::const_iterator s=getSegment(chain_tip); s!=segments.end(); s=s->second.parent){
          parents_chain_tip.push_back(s->first);
-         if (s->first == "root") break;
+-        if (s->first == "root") break;
++        if (s->first == root_name) break;
      }
 -    if (parents_chain_tip.empty() || parents_chain_tip.back()  != "root") return chain;
-+    if (parents_chain_tip.empty() || parents_chain_tip.back()  != "root") return false;
++    if (parents_chain_tip.empty() || parents_chain_tip.back()  != root_name) return false;
  
      // remove common part of segment lists
-     SegmentMap::key_type last_segment = "root";
-@@ -144,6 +142,7 @@
- 
- 
-     // add the segments from the root to the common frame
-+    links.clear();
-     for (unsigned int s=0; s<parents_chain_root.size()-1; s++){
-         Segment seg = getSegment(parents_chain_root[s])->second.segment;
+-    SegmentMap::key_type last_segment = "root";
++    SegmentMap::key_type last_segment = root_name;
+     while (!parents_chain_root.empty() && !parents_chain_tip.empty() &&
+            parents_chain_root.back() == parents_chain_tip.back()){
+         last_segment = parents_chain_root.back();
+@@ -149,17 +140,18 @@
          Frame f_tip = seg.pose(0.0).Inverse();
-@@ -153,13 +152,15 @@
+         Joint jnt = seg.getJoint();
+         if (jnt.getType() == Joint::RotX || jnt.getType() == Joint::RotY || jnt.getType() == Joint::RotZ || jnt.getType() == Joint::RotAxis)
+-            jnt = Joint(f_tip*jnt.JointOrigin(), f_tip.M*jnt.JointAxis(), Joint::RotAxis);
++            jnt = Joint(jnt.getName(), f_tip*jnt.JointOrigin(), f_tip.M*jnt.JointAxis(), Joint::RotAxis);
          else if (jnt.getType() == Joint::TransX || jnt.getType() == Joint::TransY || jnt.getType() == Joint::TransZ || jnt.getType() == Joint::TransAxis)
-             jnt = Joint(f_tip*jnt.JointOrigin(), f_tip.M*jnt.JointAxis(), Joint::TransAxis);
-         chain.addSegment(Segment(jnt, f_tip, getSegment(parents_chain_root[s+1])->second.segment.getInertia()));
-+        links.push_back(parents_chain_root[s+1]);
+-            jnt = Joint(f_tip*jnt.JointOrigin(), f_tip.M*jnt.JointAxis(), Joint::TransAxis);
+-        chain.addSegment(Segment(jnt, f_tip, getSegment(parents_chain_root[s+1])->second.segment.getInertia()));
++            jnt = Joint(jnt.getName(),f_tip*jnt.JointOrigin(), f_tip.M*jnt.JointAxis(), Joint::TransAxis);
++        chain.addSegment(Segment(getSegment(parents_chain_root[s+1])->second.segment.getName(),
++                                 jnt, f_tip, getSegment(parents_chain_root[s+1])->second.segment.getInertia()));
      }
  
      // add the segments from the common frame to the tip frame
@@ -86,9 +644,103 @@ Index: src/tree.cpp
          chain.addSegment(getSegment(parents_chain_tip[s])->second.segment);
 -
 -    return chain;
-+        links.push_back(parents_chain_tip[s]);
 +    }
 +    return true;
  }
  
  }
+Index: src/segment.hpp
+===================================================================
+--- src/segment.hpp	(revision 30215)
++++ src/segment.hpp	(working copy)
+@@ -46,6 +46,7 @@
+     class Segment {
+         friend class Chain;
+     private:
++        std::string name;
+         Joint joint;
+         RigidBodyInertia I;
+         Frame f_tip;
+@@ -60,7 +61,7 @@
+          * the segment, default: Frame::Identity()
+          * @param M rigid body inertia of the segment, default: Inertia::Zero()
+          */
+-        Segment(const Joint& joint=Joint(Joint::None), const Frame& f_tip=Frame::Identity(),const RigidBodyInertia& I = RigidBodyInertia::Zero());
++        Segment(const std::string& name="NoName", const Joint& joint=Joint("NoName", Joint::None), const Frame& f_tip=Frame::Identity(),const RigidBodyInertia& I = RigidBodyInertia::Zero());
+         Segment(const Segment& in);
+         Segment& operator=(const Segment& arg);
+ 
+@@ -88,6 +89,16 @@
+         Twist twist(const double& q,const double& qdot)const;
+ 
+         /**
++         * Request the name of the segment
++         *
++         *
++         * @return const reference to the name of the segment
++         */
++        const std::string& getName()const
++        {
++            return name;
++        }
++        /**
+          * Request the joint of the segment
+          *
+          *
+Index: src/joint.hpp
+===================================================================
+--- src/joint.hpp	(revision 30215)
++++ src/joint.hpp	(working copy)
+@@ -48,6 +48,7 @@
+         /**
+          * Constructor of a joint.
+          *
++         * @param name of the joint
+          * @param type type of the joint, default: Joint::None
+          * @param scale scale between joint input and actual geometric
+          * movement, default: 1
+@@ -58,7 +59,7 @@
+          * @param stiffness 1D stiffness along the joint axis,
+          * default: 0
+          */
+-        Joint(const JointType& type=None,const double& scale=1,const double& offset=0,
++         Joint(const std::string& name="NoName", const JointType& type=None,const double& scale=1,const double& offset=0,
+               const double& inertia=0,const double& damping=0,const double& stiffness=0);
+         /**
+          * Constructor of a joint.
+@@ -74,7 +75,7 @@
+          * @param stiffness 1D stiffness along the joint axis,
+          * default: 0
+          */
+-        Joint(const Vector& _origin, const Vector& _axis, const JointType& type, const double& _scale=1, const double& _offset=0,
++        Joint(const std::string& name, const Vector& _origin, const Vector& _axis, const JointType& type, const double& _scale=1, const double& _offset=0,
+ 	      const double& _inertia=0, const double& _damping=0, const double& _stiffness=0);
+ 
+         /**
+@@ -108,8 +109,17 @@
+          * @return Vector
+          */
+         Vector JointOrigin() const;
+-
+         /**
++           * Request the name of the joint
++           *
++           *
++           * @return const reference to the name of the joint
++           */
++          const std::string& getName()const
++          {
++              return name;
++          }
++          /**
+          * Request the type of the joint.
+          *
+          * @return const reference to the type
+@@ -153,6 +163,7 @@
+         virtual ~Joint();
+ 
+     private:
++        std::string name;
+         Joint::JointType type;
+         double scale;
+         double offset;
