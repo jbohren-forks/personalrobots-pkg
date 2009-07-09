@@ -114,7 +114,8 @@ namespace planning_environment
 	
 	double intervalCollisionMap_;
 	double intervalState_;
-
+	double intervalPose_;
+	
     };
     
 	

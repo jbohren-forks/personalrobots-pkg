@@ -93,7 +93,7 @@ public:
 	for (unsigned int i = 0 ; i < req.goal_constraints.joint_constraint.size(); ++i)
 	{
 	    req.goal_constraints.joint_constraint[i].header.stamp = ros::Time::now();
-	    req.goal_constraints.joint_constraint[i].header.frame_id = "base_link";
+	    req.goal_constraints.joint_constraint[i].header.frame_id = "/base_link";
 	    req.goal_constraints.joint_constraint[i].joint_name = names[i];
 	    req.goal_constraints.joint_constraint[i].value.resize(1);
 	    req.goal_constraints.joint_constraint[i].toleranceAbove.resize(1);
@@ -146,7 +146,7 @@ public:
 	
 	req.goal_constraints.joint_constraint.resize(1);
 	req.goal_constraints.joint_constraint[0].header.stamp = ros::Time::now();
-	req.goal_constraints.joint_constraint[0].header.frame_id = "base_link";
+	req.goal_constraints.joint_constraint[0].header.frame_id = "/base_link";
 	req.goal_constraints.joint_constraint[0].joint_name = "base_joint";
 	req.goal_constraints.joint_constraint[0].value.resize(3);
 	req.goal_constraints.joint_constraint[0].toleranceAbove.resize(3);
@@ -166,7 +166,7 @@ public:
 
 
 	// allow 1 second computation time
-	req.allowed_time = 20.0;
+	req.allowed_time = 0.5;
 	
 	// define the service messages
 	motion_planning_srvs::MotionPlan::Response res;

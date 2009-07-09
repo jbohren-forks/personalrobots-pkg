@@ -56,7 +56,7 @@ public:
 	    planningMonitor_ = new planning_environment::PlanningMonitor(collisionModels_, frame);
 	}
 	else
-	    planningMonitor_ = new planning_environment::PlanningMonitor(collisionModels_);
+	    planningMonitor_ = new planning_environment::PlanningMonitor(collisionModels_, "torso_lift_link");
 	
 	planKinematicPathService_ = nodeHandle_.advertiseService("plan_kinematic_path", &OMPLPlanning::planToGoal, this);
     }

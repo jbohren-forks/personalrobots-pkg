@@ -42,6 +42,7 @@ void planning_environment::PlanningMonitor::loadParams(void)
 {
     nh_.param<double>("~refresh_interval_collision_map", intervalCollisionMap_, 0.0);
     nh_.param<double>("~refresh_interval_kinematic_state", intervalState_, 0.0);
+    nh_.param<double>("~refresh_interval_pose", intervalPose_, 0.0);
 }
 
 bool planning_environment::PlanningMonitor::isEnvironmentSafe(void) const
@@ -52,11 +53,18 @@ bool planning_environment::PlanningMonitor::isEnvironmentSafe(void) const
         return false;
     }
   
-    if (!isStateUpdated(intervalState_))
+    if (!isMechanismStateUpdated(intervalState_))
     {
         ROS_WARN("Planning is not safe: robot state not updated in the last %f seconds", intervalState_);
         return false;
-    }
+    }  
+
+    if (includePose_)
+	if (!isPoseUpdated(intervalPose_))
+	{
+	    ROS_WARN("Planning is not safe: robot pose not updated in the last %f seconds", intervalPose_);
+	    return false;
+	}
     return true;
 }
 

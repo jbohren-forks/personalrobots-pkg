@@ -114,7 +114,7 @@ void planning_environment::KinematicModelStateMonitor::mechanismStateCallback(co
 
     first_time = false;
 
-    lastStateUpdate_ = mechanismState->header.stamp;
+    lastMechanismStateUpdate_ = mechanismState->header.stamp;
     if (!haveMechanismState_)
 	haveMechanismState_ = robotState_->seenAll();
 
@@ -169,6 +169,7 @@ void planning_environment::KinematicModelStateMonitor::mechanismStateCallback(co
 		    change = change || this_changed;
 		}
 		
+		lastPoseUpdate_ = tm;
 		havePose_ = true;
 	    }
 	    else
@@ -188,19 +189,34 @@ void planning_environment::KinematicModelStateMonitor::waitForState(void) const
     while (nh_.ok() && !haveState())
     {
 	if (s == 0)
-	    ROS_INFO("Waiting for mechanism state ...");
+	    ROS_INFO("Waiting for robot state ...");
 	s = (s + 1) % 40;
 	ros::spinOnce();
 	ros::Duration().fromSec(0.05).sleep();
     }
     if (haveState())
-	ROS_INFO("Mechanism state received!");
+	ROS_INFO("Robot state received!");
 }
 
-bool planning_environment::KinematicModelStateMonitor::isStateUpdated(double sec) const
-{
+bool planning_environment::KinematicModelStateMonitor::isMechanismStateUpdated(double sec) const
+{  
+    if (!haveMechanismState_)
+	return false;
+    
     // less than 10us is considered 0 
-    if (sec > 1e-5 && lastStateUpdate_ < ros::Time::now() - ros::Duration(sec))
+    if (sec > 1e-5 && lastMechanismStateUpdate_ < ros::Time::now() - ros::Duration(sec))
+	return false;
+    else
+	return true;
+}
+
+bool planning_environment::KinematicModelStateMonitor::isPoseUpdated(double sec) const
+{  
+    if (!havePose_)
+	return false;
+    
+    // less than 10us is considered 0 
+    if (sec > 1e-5 && lastPoseUpdate_ < ros::Time::now() - ros::Duration(sec))
 	return false;
     else
 	return true;

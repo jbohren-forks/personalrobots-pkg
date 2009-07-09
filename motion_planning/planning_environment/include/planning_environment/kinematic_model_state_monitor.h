@@ -115,24 +115,35 @@ namespace planning_environment
 	    return robot_frame_;
 	}
 
-	/** \brief Return true if a full mechanism state has been received */
+	/** \brief Return true if a full mechanism state has been received (including pose, if pose inclusion is enabled) */
 	bool haveState(void) const
 	{
 	    return haveMechanismState_ && (!includePose_ || (includePose_ && havePose_));
 	}
-
+	
 	/** \brief Return the time of the last state update */
-	const ros::Time& lastStateUpdate(void) const
+	const ros::Time& lastMechanismStateUpdate(void) const
 	{
-	    return lastStateUpdate_;
+	    return lastMechanismStateUpdate_;
 	}
 
-	/** \brief Wait until a full mechanism state is received */
+	/** \brief Return the time of the last pose update */
+	const ros::Time& lastPoseUpdate(void) const
+	{
+	    return lastPoseUpdate_;
+	}
+	
+	/** \brief Wait until a full mechanism state is received (including pose, if pose inclusion is enabled) */
 	void waitForState(void) const;
 
-	/** \brief Return true if a full mechanism state has been received in the last sec seconds. If sec < 10us, this function always returns true. */
-	bool isStateUpdated(double sec) const;
+	/** \brief Return true if a mechanism state has been received in the last sec seconds. If sec < 10us, this function always returns true. */
+	bool isMechanismStateUpdated(double sec) const;
 
+	/** \brief Return true if a pose has been received in the last
+	    sec seconds. If sec < 10us, this function always returns
+	    true. */
+	bool isPoseUpdated(double sec) const;
+	
 	/** \brief Return true if the pose is included in the state */
 	bool isPoseIncluded(void) const
 	{
@@ -170,7 +181,8 @@ namespace planning_environment
 
 	bool                             havePose_;
 	bool                             haveMechanismState_;
-	ros::Time                        lastStateUpdate_;
+	ros::Time                        lastMechanismStateUpdate_;
+	ros::Time                        lastPoseUpdate_;
     };
 
 }

@@ -191,6 +191,8 @@ Reads the following parameters from the parameter server
 
  - @b "~refresh_interval_kinematic_state"/double : if more than this interval passes, the maintained kinematic state is considered invalid
 
+ - @b "~refresh_interval_pose"/double : if more than this interval passes, the maintained pose is considered invalid
+
  - @b "~bounding_planes"/string : a sequence of plane equations specified as "a1 b1 c1 d1 a2 b2 c2 d2 ..." where each plane is defined by the equation ax+by+cz+d=0
 
  - @b "~box_scale"/double : boxes from the collision map are approximated with spheres using the extents of the boxes. The maximum extent of the box is multiplied by the constant specified by this parameter to obtain the radius of the sphere approximating the box
