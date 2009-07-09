@@ -374,6 +374,7 @@ private:
 
   void minRateTimerCallback(const ros::TimerEvent&)
   {
+    boost::mutex::scoped_lock list_lock(messages_mutex_);
     if (new_transforms_)
     {
       testMessages();
@@ -393,6 +394,7 @@ private:
 
   void transformsChanged()
   {
+    boost::mutex::scoped_lock list_lock(messages_mutex_);
     if (ros::Time::now() - last_test_time_ >= max_rate_)
     {
       testMessages();
