@@ -68,6 +68,11 @@ int M3NModel::train(const vector<const RandomField*>& training_rfs, const M3NPar
   double step_size = m3n_params.getLearningRate();
   unsigned int nbr_iterations = m3n_params.getNumberOfIterations();
   const vector<float>& robust_potts_params = m3n_params.getRobustPottsParams();
+  if (robust_potts_params.size() != clique_set_feature_dims_.size())
+  {
+    ROS_ERROR("The robust potts params do not match the number of clique sets");
+    return -1;
+  }
 
   // -------------------------------------------
   // Ensure the Robust Potts truncation parameters are the same if doing online learning

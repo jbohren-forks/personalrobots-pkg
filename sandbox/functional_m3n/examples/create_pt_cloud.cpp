@@ -107,6 +107,7 @@ int createConcatenatedFeatures(const vector<Descriptor3D*>& feature_descriptors,
                                const vector<unsigned int>& feature_descriptor_vals,
                                const unsigned int nbr_total_feature_vals,
                                unsigned int* interest_pt_idx,
+                               vector<int>* interest_region_indices,
                                float** concat_features)
 {
   vector<Eigen::MatrixXf*> created_features_eigen(feature_descriptors.size(), NULL);
@@ -119,6 +120,14 @@ int createConcatenatedFeatures(const vector<Descriptor3D*>& feature_descriptors,
     if (interest_pt_idx != NULL)
     {
       feature_descriptors[j]->setInterestPoint(*interest_pt_idx);
+    }
+    else if (interest_region_indices != NULL)
+    {
+      feature_descriptors[j]->setInterestRegion(interest_region_indices);
+    }
+    else
+    {
+      return -1;
     }
     all_features_success = feature_descriptors[j]->compute(&(created_features_eigen[j]));
   }
@@ -148,58 +157,6 @@ int createConcatenatedFeatures(const vector<Descriptor3D*>& feature_descriptors,
   }
 
   return 0;
-}
-
-// --------------------------------------------------------------
-/*! See function definition */
-// --------------------------------------------------------------
-void createNodes(RandomField& rf,
-                 const robot_msgs::PointCloud& pt_cloud,
-                 cloud_kdtree::KdTree& pt_cloud_kdtree,
-                 const vector<unsigned int>& labels,
-                 set<unsigned int>& failed_indices)
-
-{
-  // ----------------------------------------------
-  // Geometry feature information
-  // TODO HARDCODE
-  LocalGeometry geometry_features;
-  geometry_features.setData(&pt_cloud, &pt_cloud_kdtree);
-  geometry_features.setInterestRadius(0.15);
-  geometry_features.useElevation();
-  geometry_features.useNormalOrientation(0.0, 0.0, 1.0);
-  geometry_features.useTangentOrientation(0.0, 0.0, 1.0);
-
-  vector<Descriptor3D*> feature_descriptors(1, &geometry_features);
-  vector<unsigned int> feature_descriptor_vals(1, geometry_features.getResultSize());
-  unsigned int nbr_total_feature_vals = geometry_features.getResultSize();
-
-  // --------------------------------------------------
-  unsigned int nbr_pts = pt_cloud.pts.size();
-  for (unsigned int i = 0 ; i < nbr_pts ; i++)
-  {
-    // -------------------------------
-    if (i % 1000 == 0)
-    {
-      ROS_INFO("sample: %u / %u", i, nbr_pts);
-    }
-
-    float* concat_created_feature_vals = NULL;
-    if (createConcatenatedFeatures(feature_descriptors, feature_descriptor_vals, nbr_total_feature_vals, &i,
-        &concat_created_feature_vals) < 0)
-    {
-      failed_indices.insert(i);
-      continue;
-    }
-
-    // try to create node with features
-    if (rf.createNode(i, concat_created_feature_vals, nbr_total_feature_vals, labels[i], pt_cloud.pts[i].x,
-        pt_cloud.pts[i].y, pt_cloud.pts[i].z) == NULL)
-    {
-      ROS_ERROR("could not create node %u", i);
-      abort();
-    }
-  }
 }
 
 // cluster the node features using kmeans
@@ -289,12 +246,131 @@ void kmeansNodes(const vector<unsigned int>& cluster_feature_indices,
   free(feature_matrix);
 }
 
+// --------------------------------------------------------------
+/*! See function definition */
+// --------------------------------------------------------------
+void createNodes(RandomField& rf,
+                 const robot_msgs::PointCloud& pt_cloud,
+                 cloud_kdtree::KdTree& pt_cloud_kdtree,
+                 const vector<unsigned int>& labels,
+                 set<unsigned int>& failed_indices)
+
+{
+  // ----------------------------------------------
+  // Geometry feature information
+  // TODO HARDCODE
+  LocalGeometry geometry_features;
+  geometry_features.setData(&pt_cloud, &pt_cloud_kdtree);
+  geometry_features.setInterestRadius(0.15);
+  geometry_features.useElevation();
+  geometry_features.useNormalOrientation(0.0, 0.0, 1.0);
+  geometry_features.useTangentOrientation(0.0, 0.0, 1.0);
+
+  vector<Descriptor3D*> feature_descriptors(1, &geometry_features);
+  vector<unsigned int> feature_descriptor_vals(1, geometry_features.getResultSize());
+  unsigned int nbr_total_feature_vals = geometry_features.getResultSize();
+
+  // --------------------------------------------------
+  unsigned int nbr_pts = pt_cloud.pts.size();
+  for (unsigned int i = 0 ; i < nbr_pts ; i++)
+  {
+    // -------------------------------
+    if (i % 1000 == 0)
+    {
+      ROS_INFO("sample: %u / %u", i, nbr_pts);
+    }
+
+    float* concat_created_feature_vals = NULL;
+    if (createConcatenatedFeatures(feature_descriptors, feature_descriptor_vals, nbr_total_feature_vals, &i,
+        NULL, &concat_created_feature_vals) < 0)
+    {
+      failed_indices.insert(i);
+      continue;
+    }
+
+    // try to create node with features
+    if (rf.createNode(i, concat_created_feature_vals, nbr_total_feature_vals, labels[i], pt_cloud.pts[i].x,
+        pt_cloud.pts[i].y, pt_cloud.pts[i].z) == NULL)
+    {
+      ROS_ERROR("could not create node %u", i);
+      abort();
+    }
+  }
+}
+
 void createCliqueSet0(RandomField& rf,
                       const robot_msgs::PointCloud& pt_cloud,
-                      cloud_kdtree::KdTree& pt_cloud_kdtree,
-                      set<unsigned int>& failed_indices)
+                      cloud_kdtree::KdTree& pt_cloud_kdtree)
 {
+  // ----------------------------------------------
+  // Create clusters
+  // TODO HARDCODE
+  vector<unsigned int> cluster_indices(3);
+  cluster_indices[0] = 0;
+  cluster_indices[1] = 1;
+  cluster_indices[2] = 2;
+  double kmeans_factor = 0.005;
+  int kmeans_max_iter = 5;
+  double kmeans_accuracy = 1.0;
+  map<unsigned int, list<RandomField::Node*> > created_clusters;
+  ROS_INFO("Clustering...");
+  kmeansNodes(cluster_indices, kmeans_factor, kmeans_max_iter, kmeans_accuracy, rf.getNodesRandomFieldIDs(),
+      created_clusters);
+  ROS_INFO("done");
+  //save_clusters(created_clusters);
 
+  // ----------------------------------------------
+  // Geometry feature information
+  // TODO HARDCODE
+  LocalGeometry geometry_features;
+  geometry_features.setData(&pt_cloud, &pt_cloud_kdtree);
+  //geometry_features.setInterestRadius(0.15);
+  geometry_features.useElevation();
+  geometry_features.useNormalOrientation(0.0, 0.0, 1.0);
+  geometry_features.useTangentOrientation(0.0, 0.0, 1.0);
+
+  vector<Descriptor3D*> feature_descriptors(1, &geometry_features);
+  vector<unsigned int> feature_descriptor_vals(1, geometry_features.getResultSize());
+  unsigned int nbr_total_feature_vals = geometry_features.getResultSize();
+
+  ROS_INFO("Creating cliques...");
+  vector<int> region_indices;
+  map<unsigned int, list<RandomField::Node*> >::iterator iter_created_clusters;
+  for (iter_created_clusters = created_clusters.begin(); iter_created_clusters != created_clusters.end() ; iter_created_clusters++)
+  {
+    list<RandomField::Node*>& curr_list = iter_created_clusters->second;
+    region_indices.clear();
+
+    for (list<RandomField::Node*>::iterator iter = curr_list.begin() ; iter != curr_list.end() ; iter++)
+    {
+
+      region_indices.push_back(static_cast<int> ((*iter)->getRandomFieldID()));
+    }
+
+    float* concat_created_feature_vals = NULL;
+    if (createConcatenatedFeatures(feature_descriptors, feature_descriptor_vals, nbr_total_feature_vals,
+        NULL, &region_indices, &concat_created_feature_vals) < 0)
+    {
+      continue;
+    }
+
+    /*
+    cout << "clique features: ";
+    for (unsigned int i = 0 ; i < nbr_total_feature_vals ; i++)
+    {
+      cout << concat_created_feature_vals[i] << " ";
+    }
+    cout << endl;
+*/
+
+    // try to create node with features
+    if (rf.createClique(0, curr_list, concat_created_feature_vals, nbr_total_feature_vals) == NULL)
+    {
+      ROS_ERROR("could not create clique");
+      abort();
+    }
+  }
+  ROS_INFO("done");
 }
 
 int main()
@@ -312,26 +388,15 @@ int main()
   cloud_kdtree::KdTree* pt_cloud_kdtree = new cloud_kdtree::KdTreeANN(pt_cloud);
 
   // ----------------------------------------------------------
-  ROS_INFO("Creating random field...");
-  RandomField rf(0);
+  RandomField rf(1);
   set<unsigned int> failed_indices;
+  ROS_INFO("Creating nodes...");
   createNodes(rf, pt_cloud, *pt_cloud_kdtree, labels, failed_indices);
   ROS_INFO("done");
 
-  // Cluster over spectral features
-  // TODO HARDCODE
-  map<unsigned int, list<RandomField::Node*> > created_clusters;
-  vector<unsigned int> cluster_indices(3);
-  cluster_indices[0] = 0;
-  cluster_indices[1] = 1;
-  cluster_indices[2] = 2;
-  double kmeans_factor = 0.005;
-  int kmeans_max_iter = 5;
-  double kmeans_accuracy = 1.0;
-  kmeansNodes(cluster_indices, kmeans_factor, kmeans_max_iter, kmeans_accuracy, rf.getNodesRandomFieldIDs(),
-      created_clusters);
-
-  save_clusters(created_clusters);
+  ROS_INFO("Creating clique set 0...");
+  createCliqueSet0(rf, pt_cloud, *pt_cloud_kdtree);
+  ROS_INFO("done");
 
   // ----------------------------------------------------------
   ROS_INFO("Starting to train...");
@@ -364,6 +429,8 @@ M3NModel* trainModel(vector<const RandomField*>& training_rfs)
   m3n_params.setLearningRate(0.5);
   m3n_params.setNumberOfIterations(15);
   m3n_params.setRegressorRegressionTrees(regression_tree_params);
+  vector<float> robust_potts_params(1, -1.0);
+  m3n_params.setInferenceRobustPotts(robust_potts_params);
 
   M3NModel* m3n_model = new M3NModel();
   if (m3n_model->train(training_rfs, m3n_params) < 0)
