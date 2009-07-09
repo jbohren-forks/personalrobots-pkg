@@ -20,6 +20,7 @@
  <depend package="tf"/>
  <depend package="roslib"/>
  <depend package="navfn"/>
+ <depend package="people_aware_nav"/>
  <depend package="nav_srvs"/>
 
  <export>
