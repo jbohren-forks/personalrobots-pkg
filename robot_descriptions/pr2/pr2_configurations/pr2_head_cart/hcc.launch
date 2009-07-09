@@ -1,0 +1,30 @@
+<launch>
+  <!-- Machines -->
+  <include file="$(find pr2_head_cart)/hcc.machine" />
+
+  <!-- Description and etherCAT --> 
+  <param name="robotdesc/pr2" command="$(find xacro)/xacro.py '$(find pr2_defs)/robots/hcc.xacro.xml'" />
+
+  <node machine="realtime_root" pkg="pr2_etherCAT" type="pr2_etherCAT" args="-i eth0 -x robotdesc/pr2" />
+
+  <!-- Calibration -->
+  <node pkg="mechanism_bringup" type="calibrate.py" 
+  args="$(find pr2_default_controllers)/calibration_controllers/hcc_calibration_controller.xml" output="screen" />
+
+  <!-- Robot state publisher -->
+  <node machine="two" pkg="robot_state_publisher" type="state_publisher" name="robot_state_publisher">
+   <param name="publish_frequency" type="double" value="50.0" />
+   <param name="tf_prefix" type="string" value="" />
+  </node>
+
+  <include file="$(find pr2_head_cart)/cart_sensors.launch" />
+  <include file="$(find pr2_head_cart)/cart_monitors.launch" />
+
+  <!-- NTP monitoring script Warns to console if sync error -->
+  <node pkg="runtime_monitor" type="ntp_monitor.py" args="hcc2" machine="realtime" />
+  <node pkg="runtime_monitor" type="ntp_monitor.py" args="fw1 7000" machine="two" /> 
+
+  <!-- Runtime Diagnostics Logging -->
+  <node pkg="rosrecord" type="rosrecord" args="-f /hwlog/hcc_runtime_automatic /diagnostics" />
+
+</launch>
