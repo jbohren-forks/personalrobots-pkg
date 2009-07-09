@@ -64,7 +64,7 @@ void planning_environment::CollisionModels::loadCollision(const std::vector<std:
 	ode_collision_model_ = boost::shared_ptr<collision_space::EnvironmentModel>(new collision_space::EnvironmentModelODE());
 	setupModel(ode_collision_model_, links);
 	
-	bullet_collision_model_ = boost::shared_ptr<collision_space::EnvironmentModel>(new collision_space::EnvironmentModelBullet());
-	setupModel(bullet_collision_model_, links);
+	//	bullet_collision_model_ = boost::shared_ptr<collision_space::EnvironmentModel>(new collision_space::EnvironmentModelBullet());
+	//	setupModel(bullet_collision_model_, links);
     }
 }
