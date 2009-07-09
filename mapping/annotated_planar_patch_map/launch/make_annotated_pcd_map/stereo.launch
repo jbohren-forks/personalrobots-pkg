@@ -39,6 +39,12 @@
     
     <node pkg="stereo_image_proc" type="stereoproc" respawn="false" output="screen">
       <remap from="raw_stereo" to="/stereo/raw_stereo_throttled" />
+
+          <param name="do_colorize" type="bool" value="True"/>
+	  <param name="do_rectify" type="bool" value="True"/>
+	  <param name="do_stereo" type="bool" value="False"/>
+	  <param name="do_calc_points" type="bool" value="False"/>
+	  <param name="do_keep_coords" type="bool" value="False"/>
     </node>
 
   </group>
