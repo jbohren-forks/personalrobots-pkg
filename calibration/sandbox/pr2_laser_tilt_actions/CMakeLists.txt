@@ -18,6 +18,6 @@ target_link_libraries(run_action_single_scan ${PROJECT_NAME})
 rospack_add_executable(test_single_scan src/test_single_scan.cpp)
 target_link_libraries(test_single_scan ${PROJECT_NAME})
 
-rospack_add_executable(test_spin src/test_spin.cpp)
+#rospack_add_executable(test_spin src/test_spin.cpp)
 
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
