@@ -1,0 +1,18 @@
+<package>
+  <description brief="periodic_publisher">
+
+     Given a message type, a topic name, and a rate a PeriodicPublisher will
+     publish that message at the given rate. The message sent can be changed
+     by calling setMessage.
+
+  </description>
+  <author>Eitan Marder-Eppstein</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://pr.willowgarage.com/wiki/periodic_publisher</url>
+  <depend package="roscpp"/>
+  <depend package="std_msgs"/>
+
+</package>
+
+
