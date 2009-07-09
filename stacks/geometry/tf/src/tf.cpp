@@ -1078,7 +1078,7 @@ boost::signals::connection Transformer::addTransformsChangedListener(boost::func
 void Transformer::removeTransformsChangedListener(boost::signals::connection c)
 {
   boost::mutex::scoped_lock lock(transforms_changed_mutex_);
-  transforms_changed_.disconnect(c);
+  c.disconnect();
 }
 
 /*
