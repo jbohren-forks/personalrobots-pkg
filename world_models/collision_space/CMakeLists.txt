@@ -7,5 +7,7 @@ set(ROS_BUILD_TYPE Debug)
 rospack_add_boost_directories()
 
 rospack_add_library(collision_space src/environment.cpp
-				    src/environmentODE.cpp)	
+				    src/environmentBullet.cpp
+				    src/environmentODE.cpp)
+
 rospack_link_boost(collision_space thread)

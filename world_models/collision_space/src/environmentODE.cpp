@@ -53,6 +53,9 @@ void collision_space::EnvironmentModelODE::freeMemory(void)
     for (unsigned int i = 0 ; i < m_meshIndices.size() ; ++i)
 	delete[] m_meshIndices[i];
     m_meshIndices.clear();
+    for (unsigned int i = 0 ; i < m_meshData.size() ; ++i)
+	dGeomTriMeshDataDestroy(m_meshData[i]);
+    m_meshData.clear();
 }
 
 void collision_space::EnvironmentModelODE::addRobotModel(const boost::shared_ptr<planning_models::KinematicModel> &model, const std::vector<std::string> &links, double scale, double padding)
@@ -84,7 +87,7 @@ void collision_space::EnvironmentModelODE::addRobotModel(const boost::shared_ptr
 	{
 	    dGeomID ga = createODEGeom(m_modelGeom.space, kg->link->attachedBodies[k]->shape, scale, padding);
 	    assert(ga);
-	    dGeomSetData(ga, NULL);
+	    dGeomSetData(ga, reinterpret_cast<void*>(kg));
 	    kg->geom.push_back(ga);
 	}
 	m_modelGeom.linkGeom.push_back(kg);
@@ -124,6 +127,7 @@ dGeomID collision_space::EnvironmentModelODE::createODEGeom(dSpaceID space, shap
 	    dGeomTriMeshDataBuildDouble(data, mesh->vertices, sizeof(double) * 3, mesh->vertexCount, indices, icount, sizeof(dTriIndex) * 3);
 	    g = dCreateTriMesh(space, data, NULL, NULL, NULL);
 	    m_meshIndices.push_back(indices);
+	    m_meshData.push_back(data);
 	}
 	
     default:
@@ -160,7 +164,7 @@ void collision_space::EnvironmentModelODE::updateAttachedBodies(void)
 	{
 	    dGeomID ga = createODEGeom(m_modelGeom.space, kg->link->attachedBodies[k]->shape, m_modelGeom.scale, m_modelGeom.padding);
 	    assert(ga);
-	    dGeomSetData(ga, NULL);
+	    dGeomSetData(ga, reinterpret_cast<void*>(kg));
 	    kg->geom.push_back(ga);
 	}
     }

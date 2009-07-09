@@ -251,8 +251,8 @@ namespace collision_space
     private:
 	
 	/* Pointers for ODE indices; we need this around in ODE's assumed datatype */
-	std::vector<dTriIndex*> m_meshIndices;	
-	
+	std::vector<dTriIndex*>     m_meshIndices;
+	std::vector<dTriMeshDataID> m_meshData;
     };
 }
 
