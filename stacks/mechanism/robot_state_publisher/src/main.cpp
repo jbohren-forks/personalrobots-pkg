@@ -52,12 +52,9 @@ public:
   {
     // create kinematic tree
     Tree tree;
-    if (!treeFromString(robot_desc, tree, joint_segment_mapping_))
+    if (!treeFromString(robot_desc, tree))
       ROS_ERROR("Failed to construct robot model from xml string");
     state_publisher_ = new RobotStatePublisher(tree);
-
-    for (map<string, string>::const_iterator it=joint_segment_mapping_.begin(); it!=joint_segment_mapping_.end(); it++)
-      cout << "mapping joint " << it->first << " on segment " << it->second << endl;
 
     // set publish frequency
     double publish_freq;
@@ -78,16 +75,8 @@ private:
   {
     // get joint positions from state message
     map<string, double> joint_positions;
-    for (unsigned int i=0; i<state->joint_states.size(); i++){
-      map<string, string>::const_iterator jnt = joint_segment_mapping_.find(state->joint_states[i].name);
-      if (jnt == joint_segment_mapping_.end()){
-	ROS_ERROR("did not find matching link for joint %s", state->joint_states[i].name.c_str());
-	joint_segment_mapping_[state->joint_states[i].name] = "NO MAPPING SPECIFIED";
-      }
-      else
-	joint_positions.insert(make_pair(jnt->second, state->joint_states[i].position));
-      //cout << "Joint " << tmp << " at position " << state->joint_states[i].position << endl;
-    }
+    for (unsigned int i=0; i<state->joint_states.size(); i++)
+      joint_positions.insert(make_pair(state->joint_states[i].name, state->joint_states[i].position));
     state_publisher_->publishTransforms(joint_positions, state->header.stamp);
     publish_rate_.sleep();
   }
