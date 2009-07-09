@@ -11,8 +11,8 @@ include $(shell rospack find mk)/svn_checkout.mk
 
 #build: SVN_UP_REVERT_PATCH physsim
 installed: $(SVN_DIR) patched
-	cd $(SVN_DIR) && scons PREFIX_PATH=$(INSTALL_DIR)
-	cd $(SVN_DIR) && scons PREFIX_PATH=$(INSTALL_DIR) install
+	cd $(SVN_DIR) && scons DEBUG=false PREFIX_PATH=$(INSTALL_DIR)
+	cd $(SVN_DIR) && scons DEBUG=false PREFIX_PATH=$(INSTALL_DIR) install
 
 clean:
 	-cd $(SVN_DIR) && scons --clean

@@ -79,11 +79,8 @@ Index: SConstruct
      env = Environment(CPPPATH=inc_path, LIBS=libs, LIBPATH=lib_path,
                        CCFLAGS=__CCFLAGS, LINKFLAGS=__LINKFLAGS, 
                        TOOLS=['default', 'qt'])
-@@ -274,17 +279,22 @@
- # sort the list so we know the build order
- sources.sort();
+@@ -276,15 +281,19 @@
  
-+print "\n\n",SHARED_LIBRARY,"\n\n"
  # build the Physsim library
  if SHARED_LIBRARY:
 -	env.SharedLibrary('lib/libphyssim', sources)
