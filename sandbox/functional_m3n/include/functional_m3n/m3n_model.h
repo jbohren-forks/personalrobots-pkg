@@ -327,6 +327,8 @@ class M3NModel
     bool loss_augmented_inference_;
 
     vector<float> robust_potts_params_;
+    map<unsigned int, map<unsigned int, double> > cache_node_potentials_; // node id -> label -> value
+    vector<map<unsigned int, map<unsigned int, double> > > cache_clique_set_potentials_;
 
     vector<pair<double, RegressorWrapper*> > regressors_;
 };

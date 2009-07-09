@@ -111,11 +111,15 @@ int M3NModel::inferPrivate(const RandomField& random_field,
     max_iterations = numeric_limits<unsigned int>::max();
   }
 
+  //cache_node_potentials_.clear();
+  //cache_clique_set_potentials_.clear();
+  //cache_clique_set_potentials_.resize(clique_sets.size());
   // -------------------------------------------
   // Loop until hit max number of iterations or converged on minimum energy
   int ret_val = 0;
   bool done = false;
-  for (unsigned int t = 0 ; ret_val == 0 && !done && t < max_iterations ; t++)
+  unsigned int t = 0;
+  for (t = 0; ret_val == 0 && !done && t < max_iterations ; t++)
   {
     done = true; // will be set false if energy changes
     // -------------------------------------------
@@ -220,6 +224,7 @@ int M3NModel::inferPrivate(const RandomField& random_field,
       delete energy_func;
     }
   }
+  ROS_INFO("Inference converged to energy %f after %u iterations", prev_energy, t);
   return ret_val;
 }
 
@@ -510,6 +515,21 @@ int M3NModel::computePotential(const RandomField::Node& node, const unsigned int
 {
   potential_val = 0.0;
 
+  /*
+  if (cache_node_potentials_.count(node.getRandomFieldID()) != 0)
+  {
+    if (cache_node_potentials_[node.getRandomFieldID()].count(label) != 0)
+    {
+      potential_val = cache_node_potentials_[node.getRandomFieldID()][label];
+      return 0;
+    }
+  }
+  else
+  {
+    cache_node_potentials_[node.getRandomFieldID()] = map<unsigned int, double>();
+  }
+  */
+
   // Sum the scores of each regressor
   unsigned int nbr_regressors = regressors_.size();
   float curr_predicted_val = 0.0;
@@ -531,6 +551,7 @@ int M3NModel::computePotential(const RandomField::Node& node, const unsigned int
 
   // Exponentiated functional gradient descent
   potential_val = exp(potential_val);
+  //cache_node_potentials_[node.getRandomFieldID()][label] = potential_val;
   return 0;
 }
 
@@ -543,6 +564,21 @@ int M3NModel::computePotential(const RandomField::Clique& clique,
                                double& potential_val)
 {
   potential_val = 0.0;
+
+  /*
+  if (cache_clique_set_potentials_[clique_set_idx].count(clique.getRandomFieldID()) != 0)
+  {
+    if (cache_clique_set_potentials_[clique_set_idx][clique.getRandomFieldID()].count(label) != 0)
+    {
+      potential_val = cache_clique_set_potentials_[clique_set_idx][clique.getRandomFieldID()][label];
+      return 0;
+    }
+  }
+  else
+  {
+    cache_clique_set_potentials_[clique_set_idx][clique.getRandomFieldID()] = map<unsigned int, double>();
+  }
+  */
 
   // Sum the scores of each regressor
   unsigned int nbr_regressors = regressors_.size();
@@ -565,5 +601,6 @@ int M3NModel::computePotential(const RandomField::Clique& clique,
 
   // Exponentiated functional gradient descent
   potential_val = exp(potential_val);
+  //cache_clique_set_potentials_[clique_set_idx][clique.getRandomFieldID()][label] = potential_val;
   return 0;
 }
