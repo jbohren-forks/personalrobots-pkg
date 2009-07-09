@@ -1,7 +1,7 @@
 <launch>
   <group ns="stereo">
     <node pkg="dcam" type="stereodcam" respawn="false" name="stereodcam">
-      <param name="videre_mode" type="str" value="none"/>
+      <param name="videre_mode" type="str" value="rectified"/>
       <param name="exposure" type="int" value="450"/>
       <param name="exposure_auto" type="bool" value="false"/>
       <param name="brightness" type="int" value="50"/>

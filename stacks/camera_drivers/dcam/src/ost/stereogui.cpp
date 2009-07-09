@@ -3,44 +3,44 @@
 #include "stereogui.h"
 
 Fl_Menu_Item stereogui::menu_[] = {
- {"File", 0,  0, 0, 64, FL_NORMAL_LABEL, 0, 14, 0},
- {"Load Images...", 0,  (Fl_Callback*)load_images_cb, 0, 128, FL_NORMAL_LABEL, 0, 11, 0},
- {"Save Images...", 0,  (Fl_Callback*)save_images_cb, 0, 0, FL_NORMAL_LABEL, 0, 11, 0},
- {"Save Point Cloud...", 0,  (Fl_Callback*)save_3d_cb, 0, 128, FL_NORMAL_LABEL, 0, 11, 0},
- {"Load Params...", 0,  (Fl_Callback*)load_params_cb, 0, 0, FL_NORMAL_LABEL, 0, 11, 0},
- {"Save Params...", 0,  (Fl_Callback*)save_params_cb, 0, 128, FL_NORMAL_LABEL, 0, 11, 0},
- {"Upload Params...", 0,  (Fl_Callback*)upload_params_cb, 0, 128, FL_NORMAL_LABEL, 0, 11, 0},
- {"Exit", 0,  (Fl_Callback*)do_exit_cb, 0, 0, FL_NORMAL_LABEL, 0, 11, 0},
+ {"File", 0,  0, 0, 64, FL_NORMAL_LABEL, 0, 14, 56},
+ {"Load Images...", 0,  (Fl_Callback*)load_images_cb, 0, 128, FL_NORMAL_LABEL, 0, 11, 56},
+ {"Save Images...", 0,  (Fl_Callback*)save_images_cb, 0, 0, FL_NORMAL_LABEL, 0, 11, 56},
+ {"Save Point Cloud...", 0,  (Fl_Callback*)save_3d_cb, 0, 128, FL_NORMAL_LABEL, 0, 11, 56},
+ {"Load Params...", 0,  (Fl_Callback*)load_params_cb, 0, 0, FL_NORMAL_LABEL, 0, 11, 56},
+ {"Save Params...", 0,  (Fl_Callback*)save_params_cb, 0, 128, FL_NORMAL_LABEL, 0, 11, 56},
+ {"Upload Params...", 0,  (Fl_Callback*)upload_params_cb, 0, 128, FL_NORMAL_LABEL, 0, 11, 56},
+ {"Exit", 0,  (Fl_Callback*)do_exit_cb, 0, 0, FL_NORMAL_LABEL, 0, 11, 56},
  {0,0,0,0,0,0,0,0,0},
- {"Video...", 0,  (Fl_Callback*)video_window_cb, 0, 0, FL_NORMAL_LABEL, 0, 14, 0},
- {"Stereo...", 0,  (Fl_Callback*)stereo_window_cb, 0, 0, FL_NORMAL_LABEL, 0, 14, 0},
- {"Calibrate...", 0,  (Fl_Callback*)cal_window_cb, 0, 0, FL_NORMAL_LABEL, 0, 14, 0},
- {"Debug...", 0,  (Fl_Callback*)debug_window_cb, 0, 0, FL_NORMAL_LABEL, 0, 14, 0},
+ {"Video...", 0,  (Fl_Callback*)video_window_cb, 0, 0, FL_NORMAL_LABEL, 0, 14, 56},
+ {"Stereo...", 0,  (Fl_Callback*)stereo_window_cb, 0, 0, FL_NORMAL_LABEL, 0, 14, 56},
+ {"Calibrate...", 0,  (Fl_Callback*)cal_window_cb, 0, 0, FL_NORMAL_LABEL, 0, 14, 56},
+ {"Debug...", 0,  (Fl_Callback*)debug_window_cb, 0, 0, FL_NORMAL_LABEL, 0, 14, 56},
  {0,0,0,0,0,0,0,0,0}
 };
 
 Fl_Menu_Item stereogui::menu_Stereo[] = {
- {"Normal", 0,  0, 0, 0, FL_NORMAL_LABEL, 0, 11, 0},
- {"Scanline Opt", 0,  0, 0, 0, FL_NORMAL_LABEL, 0, 11, 0},
- {"DP", 0,  0, 0, 0, FL_NORMAL_LABEL, 0, 11, 0},
- {"Multiple Windows", 0,  0, 0, 0, FL_NORMAL_LABEL, 0, 11, 0},
- {"Local Smoothness", 0,  0, 0, 0, FL_NORMAL_LABEL, 0, 11, 0},
- {"NCC", 0,  0, 0, 0, FL_NORMAL_LABEL, 0, 11, 0},
+ {"Normal", 0,  0, 0, 0, FL_NORMAL_LABEL, 0, 11, 56},
+ {"Scanline Opt", 0,  0, 0, 0, FL_NORMAL_LABEL, 0, 11, 56},
+ {"DP", 0,  0, 0, 0, FL_NORMAL_LABEL, 0, 11, 56},
+ {"Multiple Windows", 0,  0, 0, 0, FL_NORMAL_LABEL, 0, 11, 56},
+ {"Local Smoothness", 0,  0, 0, 0, FL_NORMAL_LABEL, 0, 11, 56},
+ {"NCC", 0,  0, 0, 0, FL_NORMAL_LABEL, 0, 11, 56},
  {0,0,0,0,0,0,0,0,0}
 };
 
 Fl_Menu_Item stereogui::menu_video_size[] = {
- {"320x240", 0,  0, 0, 0, FL_NORMAL_LABEL, 0, 11, 0},
- {"640x480", 0,  0, 0, 0, FL_NORMAL_LABEL, 0, 11, 0},
- {"1280x960", 0,  0, 0, 0, FL_NORMAL_LABEL, 0, 11, 0},
+ {"320x240", 0,  0, 0, 0, FL_NORMAL_LABEL, 0, 11, 56},
+ {"640x480", 0,  0, 0, 0, FL_NORMAL_LABEL, 0, 11, 56},
+ {"1280x960", 0,  0, 0, 0, FL_NORMAL_LABEL, 0, 11, 56},
  {0,0,0,0,0,0,0,0,0}
 };
 
 Fl_Menu_Item stereogui::menu_video_rate[] = {
- {"30 Hz", 0,  0, 0, 0, FL_NORMAL_LABEL, 0, 11, 0},
- {"15 Hz", 0,  0, 0, 0, FL_NORMAL_LABEL, 0, 11, 0},
- {"7.5 Hz", 0,  0, 0, 0, FL_NORMAL_LABEL, 0, 11, 0},
- {"3.75 Hz", 0,  0, 0, 0, FL_NORMAL_LABEL, 0, 11, 0},
+ {"30 Hz", 0,  0, 0, 0, FL_NORMAL_LABEL, 0, 11, 56},
+ {"15 Hz", 0,  0, 0, 0, FL_NORMAL_LABEL, 0, 11, 56},
+ {"7.5 Hz", 0,  0, 0, 0, FL_NORMAL_LABEL, 0, 11, 56},
+ {"3.75 Hz", 0,  0, 0, 0, FL_NORMAL_LABEL, 0, 11, 56},
  {0,0,0,0,0,0,0,0,0}
 };
 
@@ -72,7 +72,7 @@ stereogui::stereogui() {
           o->labeltype(FL_NO_LABEL);
           o->labelfont(0);
           o->labelsize(14);
-          o->labelcolor(FL_FOREGROUND_COLOR);
+          o->labelcolor(FL_BLACK);
           o->align(FL_ALIGN_CENTER);
           o->when(FL_WHEN_RELEASE);
         }
@@ -90,7 +90,7 @@ stereogui::stereogui() {
           o->labeltype(FL_NO_LABEL);
           o->labelfont(0);
           o->labelsize(14);
-          o->labelcolor(FL_FOREGROUND_COLOR);
+          o->labelcolor(FL_BLACK);
           o->align(FL_ALIGN_CENTER);
           o->when(FL_WHEN_RELEASE);
         }
@@ -125,7 +125,7 @@ stereogui::stereogui() {
                 o->labeltype(FL_NO_LABEL);
                 o->labelfont(0);
                 o->labelsize(14);
-                o->labelcolor(FL_FOREGROUND_COLOR);
+                o->labelcolor(FL_BLACK);
                 o->align(FL_ALIGN_CENTER);
                 o->when(FL_WHEN_RELEASE);
               }
@@ -143,7 +143,7 @@ stereogui::stereogui() {
                 o->labeltype(FL_NO_LABEL);
                 o->labelfont(0);
                 o->labelsize(14);
-                o->labelcolor(FL_FOREGROUND_COLOR);
+                o->labelcolor(FL_BLACK);
                 o->align(FL_ALIGN_CENTER);
                 o->when(FL_WHEN_RELEASE);
               }
@@ -170,7 +170,7 @@ stereogui::stereogui() {
                 o->labeltype(FL_NO_LABEL);
                 o->labelfont(0);
                 o->labelsize(14);
-                o->labelcolor(FL_FOREGROUND_COLOR);
+                o->labelcolor(FL_BLACK);
                 o->align(FL_ALIGN_CENTER);
                 o->when(FL_WHEN_RELEASE);
               }
@@ -188,7 +188,7 @@ stereogui::stereogui() {
                 o->labeltype(FL_NO_LABEL);
                 o->labelfont(0);
                 o->labelsize(14);
-                o->labelcolor(FL_FOREGROUND_COLOR);
+                o->labelcolor(FL_BLACK);
                 o->align(FL_ALIGN_CENTER);
                 o->when(FL_WHEN_RELEASE);
               }
@@ -215,7 +215,7 @@ stereogui::stereogui() {
                 o->labeltype(FL_NO_LABEL);
                 o->labelfont(0);
                 o->labelsize(14);
-                o->labelcolor(FL_FOREGROUND_COLOR);
+                o->labelcolor(FL_BLACK);
                 o->align(FL_ALIGN_CENTER);
                 o->when(FL_WHEN_RELEASE);
               }
@@ -233,7 +233,7 @@ stereogui::stereogui() {
                 o->labeltype(FL_NO_LABEL);
                 o->labelfont(0);
                 o->labelsize(14);
-                o->labelcolor(FL_FOREGROUND_COLOR);
+                o->labelcolor(FL_BLACK);
                 o->align(FL_ALIGN_CENTER);
                 o->when(FL_WHEN_RELEASE);
               }
@@ -260,7 +260,7 @@ stereogui::stereogui() {
                 o->labeltype(FL_NO_LABEL);
                 o->labelfont(0);
                 o->labelsize(14);
-                o->labelcolor(FL_FOREGROUND_COLOR);
+                o->labelcolor(FL_BLACK);
                 o->align(FL_ALIGN_CENTER);
                 o->when(FL_WHEN_RELEASE);
               }
@@ -278,7 +278,7 @@ stereogui::stereogui() {
                 o->labeltype(FL_NO_LABEL);
                 o->labelfont(0);
                 o->labelsize(14);
-                o->labelcolor(FL_FOREGROUND_COLOR);
+                o->labelcolor(FL_BLACK);
                 o->align(FL_ALIGN_CENTER);
                 o->when(FL_WHEN_RELEASE);
               }
@@ -305,7 +305,7 @@ stereogui::stereogui() {
                 o->labeltype(FL_NO_LABEL);
                 o->labelfont(0);
                 o->labelsize(14);
-                o->labelcolor(FL_FOREGROUND_COLOR);
+                o->labelcolor(FL_BLACK);
                 o->align(FL_ALIGN_CENTER);
                 o->when(FL_WHEN_RELEASE);
               }
@@ -323,7 +323,7 @@ stereogui::stereogui() {
                 o->labeltype(FL_NO_LABEL);
                 o->labelfont(0);
                 o->labelsize(14);
-                o->labelcolor(FL_FOREGROUND_COLOR);
+                o->labelcolor(FL_BLACK);
                 o->align(FL_ALIGN_CENTER);
                 o->when(FL_WHEN_RELEASE);
               }
@@ -350,7 +350,7 @@ stereogui::stereogui() {
                 o->labeltype(FL_NO_LABEL);
                 o->labelfont(0);
                 o->labelsize(14);
-                o->labelcolor(FL_FOREGROUND_COLOR);
+                o->labelcolor(FL_BLACK);
                 o->align(FL_ALIGN_CENTER);
                 o->when(FL_WHEN_RELEASE);
               }
@@ -368,7 +368,7 @@ stereogui::stereogui() {
                 o->labeltype(FL_NO_LABEL);
                 o->labelfont(0);
                 o->labelsize(14);
-                o->labelcolor(FL_FOREGROUND_COLOR);
+                o->labelcolor(FL_BLACK);
                 o->align(FL_ALIGN_CENTER);
                 o->when(FL_WHEN_RELEASE);
               }
@@ -395,7 +395,7 @@ stereogui::stereogui() {
                 o->labeltype(FL_NO_LABEL);
                 o->labelfont(0);
                 o->labelsize(14);
-                o->labelcolor(FL_FOREGROUND_COLOR);
+                o->labelcolor(FL_BLACK);
                 o->align(FL_ALIGN_CENTER);
                 o->when(FL_WHEN_RELEASE);
               }
@@ -413,7 +413,7 @@ stereogui::stereogui() {
                 o->labeltype(FL_NO_LABEL);
                 o->labelfont(0);
                 o->labelsize(14);
-                o->labelcolor(FL_FOREGROUND_COLOR);
+                o->labelcolor(FL_BLACK);
                 o->align(FL_ALIGN_CENTER);
                 o->when(FL_WHEN_RELEASE);
               }
@@ -440,7 +440,7 @@ stereogui::stereogui() {
                 o->labeltype(FL_NO_LABEL);
                 o->labelfont(0);
                 o->labelsize(14);
-                o->labelcolor(FL_FOREGROUND_COLOR);
+                o->labelcolor(FL_BLACK);
                 o->align(FL_ALIGN_CENTER);
                 o->when(FL_WHEN_RELEASE);
               }
@@ -458,7 +458,7 @@ stereogui::stereogui() {
                 o->labeltype(FL_NO_LABEL);
                 o->labelfont(0);
                 o->labelsize(14);
-                o->labelcolor(FL_FOREGROUND_COLOR);
+                o->labelcolor(FL_BLACK);
                 o->align(FL_ALIGN_CENTER);
                 o->when(FL_WHEN_RELEASE);
               }
@@ -485,7 +485,7 @@ stereogui::stereogui() {
                 o->labeltype(FL_NO_LABEL);
                 o->labelfont(0);
                 o->labelsize(14);
-                o->labelcolor(FL_FOREGROUND_COLOR);
+                o->labelcolor(FL_BLACK);
                 o->align(FL_ALIGN_CENTER);
                 o->when(FL_WHEN_RELEASE);
               }
@@ -503,7 +503,7 @@ stereogui::stereogui() {
                 o->labeltype(FL_NO_LABEL);
                 o->labelfont(0);
                 o->labelsize(14);
-                o->labelcolor(FL_FOREGROUND_COLOR);
+                o->labelcolor(FL_BLACK);
                 o->align(FL_ALIGN_CENTER);
                 o->when(FL_WHEN_RELEASE);
               }
@@ -530,7 +530,7 @@ stereogui::stereogui() {
                 o->labeltype(FL_NO_LABEL);
                 o->labelfont(0);
                 o->labelsize(14);
-                o->labelcolor(FL_FOREGROUND_COLOR);
+                o->labelcolor(FL_BLACK);
                 o->align(FL_ALIGN_CENTER);
                 o->when(FL_WHEN_RELEASE);
               }
@@ -548,7 +548,7 @@ stereogui::stereogui() {
                 o->labeltype(FL_NO_LABEL);
                 o->labelfont(0);
                 o->labelsize(14);
-                o->labelcolor(FL_FOREGROUND_COLOR);
+                o->labelcolor(FL_BLACK);
                 o->align(FL_ALIGN_CENTER);
                 o->when(FL_WHEN_RELEASE);
               }
@@ -575,7 +575,7 @@ stereogui::stereogui() {
                 o->labeltype(FL_NO_LABEL);
                 o->labelfont(0);
                 o->labelsize(14);
-                o->labelcolor(FL_FOREGROUND_COLOR);
+                o->labelcolor(FL_BLACK);
                 o->align(FL_ALIGN_CENTER);
                 o->when(FL_WHEN_RELEASE);
               }
@@ -593,7 +593,7 @@ stereogui::stereogui() {
                 o->labeltype(FL_NO_LABEL);
                 o->labelfont(0);
                 o->labelsize(14);
-                o->labelcolor(FL_FOREGROUND_COLOR);
+                o->labelcolor(FL_BLACK);
                 o->align(FL_ALIGN_CENTER);
                 o->when(FL_WHEN_RELEASE);
               }
@@ -620,7 +620,7 @@ stereogui::stereogui() {
                 o->labeltype(FL_NO_LABEL);
                 o->labelfont(0);
                 o->labelsize(14);
-                o->labelcolor(FL_FOREGROUND_COLOR);
+                o->labelcolor(FL_BLACK);
                 o->align(FL_ALIGN_CENTER);
                 o->when(FL_WHEN_RELEASE);
               }
@@ -638,7 +638,7 @@ stereogui::stereogui() {
                 o->labeltype(FL_NO_LABEL);
                 o->labelfont(0);
                 o->labelsize(14);
-                o->labelcolor(FL_FOREGROUND_COLOR);
+                o->labelcolor(FL_BLACK);
                 o->align(FL_ALIGN_CENTER);
                 o->when(FL_WHEN_RELEASE);
               }
@@ -665,7 +665,7 @@ stereogui::stereogui() {
                 o->labeltype(FL_NO_LABEL);
                 o->labelfont(0);
                 o->labelsize(14);
-                o->labelcolor(FL_FOREGROUND_COLOR);
+                o->labelcolor(FL_BLACK);
                 o->align(FL_ALIGN_CENTER);
                 o->when(FL_WHEN_RELEASE);
               }
@@ -683,7 +683,7 @@ stereogui::stereogui() {
                 o->labeltype(FL_NO_LABEL);
                 o->labelfont(0);
                 o->labelsize(14);
-                o->labelcolor(FL_FOREGROUND_COLOR);
+                o->labelcolor(FL_BLACK);
                 o->align(FL_ALIGN_CENTER);
                 o->when(FL_WHEN_RELEASE);
               }
@@ -710,7 +710,7 @@ stereogui::stereogui() {
                 o->labeltype(FL_NO_LABEL);
                 o->labelfont(0);
                 o->labelsize(14);
-                o->labelcolor(FL_FOREGROUND_COLOR);
+                o->labelcolor(FL_BLACK);
                 o->align(FL_ALIGN_CENTER);
                 o->when(FL_WHEN_RELEASE);
               }
@@ -728,7 +728,7 @@ stereogui::stereogui() {
                 o->labeltype(FL_NO_LABEL);
                 o->labelfont(0);
                 o->labelsize(14);
-                o->labelcolor(FL_FOREGROUND_COLOR);
+                o->labelcolor(FL_BLACK);
                 o->align(FL_ALIGN_CENTER);
                 o->when(FL_WHEN_RELEASE);
               }
@@ -755,7 +755,7 @@ stereogui::stereogui() {
                 o->labeltype(FL_NO_LABEL);
                 o->labelfont(0);
                 o->labelsize(14);
-                o->labelcolor(FL_FOREGROUND_COLOR);
+                o->labelcolor(FL_BLACK);
                 o->align(FL_ALIGN_CENTER);
                 o->when(FL_WHEN_RELEASE);
               }
@@ -773,7 +773,7 @@ stereogui::stereogui() {
                 o->labeltype(FL_NO_LABEL);
                 o->labelfont(0);
                 o->labelsize(14);
-                o->labelcolor(FL_FOREGROUND_COLOR);
+                o->labelcolor(FL_BLACK);
                 o->align(FL_ALIGN_CENTER);
                 o->when(FL_WHEN_RELEASE);
               }
@@ -800,7 +800,7 @@ stereogui::stereogui() {
                 o->labeltype(FL_NO_LABEL);
                 o->labelfont(0);
                 o->labelsize(14);
-                o->labelcolor(FL_FOREGROUND_COLOR);
+                o->labelcolor(FL_BLACK);
                 o->align(FL_ALIGN_CENTER);
                 o->when(FL_WHEN_RELEASE);
               }
@@ -818,7 +818,7 @@ stereogui::stereogui() {
                 o->labeltype(FL_NO_LABEL);
                 o->labelfont(0);
                 o->labelsize(14);
-                o->labelcolor(FL_FOREGROUND_COLOR);
+                o->labelcolor(FL_BLACK);
                 o->align(FL_ALIGN_CENTER);
                 o->when(FL_WHEN_RELEASE);
               }
@@ -845,7 +845,7 @@ stereogui::stereogui() {
                 o->labeltype(FL_NO_LABEL);
                 o->labelfont(0);
                 o->labelsize(14);
-                o->labelcolor(FL_FOREGROUND_COLOR);
+                o->labelcolor(FL_BLACK);
                 o->align(FL_ALIGN_CENTER);
                 o->when(FL_WHEN_RELEASE);
               }
@@ -863,7 +863,7 @@ stereogui::stereogui() {
                 o->labeltype(FL_NO_LABEL);
                 o->labelfont(0);
                 o->labelsize(14);
-                o->labelcolor(FL_FOREGROUND_COLOR);
+                o->labelcolor(FL_BLACK);
                 o->align(FL_ALIGN_CENTER);
                 o->when(FL_WHEN_RELEASE);
               }
@@ -890,7 +890,7 @@ stereogui::stereogui() {
                 o->labeltype(FL_NO_LABEL);
                 o->labelfont(0);
                 o->labelsize(14);
-                o->labelcolor(FL_FOREGROUND_COLOR);
+                o->labelcolor(FL_BLACK);
                 o->align(FL_ALIGN_CENTER);
                 o->when(FL_WHEN_RELEASE);
               }
@@ -908,7 +908,7 @@ stereogui::stereogui() {
                 o->labeltype(FL_NO_LABEL);
                 o->labelfont(0);
                 o->labelsize(14);
-                o->labelcolor(FL_FOREGROUND_COLOR);
+                o->labelcolor(FL_BLACK);
                 o->align(FL_ALIGN_CENTER);
                 o->when(FL_WHEN_RELEASE);
               }
@@ -935,7 +935,7 @@ stereogui::stereogui() {
                 o->labeltype(FL_NO_LABEL);
                 o->labelfont(0);
                 o->labelsize(14);
-                o->labelcolor(FL_FOREGROUND_COLOR);
+                o->labelcolor(FL_BLACK);
                 o->align(FL_ALIGN_CENTER);
                 o->when(FL_WHEN_RELEASE);
               }
@@ -953,7 +953,7 @@ stereogui::stereogui() {
                 o->labeltype(FL_NO_LABEL);
                 o->labelfont(0);
                 o->labelsize(14);
-                o->labelcolor(FL_FOREGROUND_COLOR);
+                o->labelcolor(FL_BLACK);
                 o->align(FL_ALIGN_CENTER);
                 o->when(FL_WHEN_RELEASE);
               }
@@ -979,7 +979,7 @@ stereogui::stereogui() {
                 o->labeltype(FL_NO_LABEL);
                 o->labelfont(0);
                 o->labelsize(14);
-                o->labelcolor(FL_FOREGROUND_COLOR);
+                o->labelcolor(FL_BLACK);
                 o->align(FL_ALIGN_CENTER);
                 o->when(FL_WHEN_RELEASE);
               }
@@ -997,7 +997,7 @@ stereogui::stereogui() {
                 o->labeltype(FL_NO_LABEL);
                 o->labelfont(0);
                 o->labelsize(14);
-                o->labelcolor(FL_FOREGROUND_COLOR);
+                o->labelcolor(FL_BLACK);
                 o->align(FL_ALIGN_CENTER);
                 o->when(FL_WHEN_RELEASE);
               }
@@ -1029,7 +1029,7 @@ stereogui::stereogui() {
         o->callback((Fl_Callback*)cal_load_cb);
         o->user_data((void *)this);
       }
-      { Fl_Button* o = save_button = new Fl_Button(10, 200, 90, 25, "Save");
+      { Fl_Button* o = save_button = new Fl_Button(10, 200, 90, 25, "Save Image");
         o->down_box(FL_DOWN_BOX);
         o->labelsize(11);
         o->callback((Fl_Callback*)cal_save_image_cb);
@@ -1119,13 +1119,7 @@ stereogui::stereogui() {
         o->callback((Fl_Callback*)cal_save_params_cb);
         o->user_data((void *)this);
       }
-      { Fl_Button* o = done_button = new Fl_Button(165, 83, 115, 25, "Transfer params");
-        o->down_box(FL_DOWN_BOX);
-        o->labelsize(12);
-        o->callback((Fl_Callback*)cal_ok_cb);
-        o->user_data((void *)this);
-      }
-      { Fl_Button* o = upload_params_button = new Fl_Button(165, 115, 115, 25, "Upload params");
+      { Fl_Button* o = upload_params_button = new Fl_Button(165, 90, 115, 25, "Upload params");
         o->down_box(FL_DOWN_BOX);
         o->labelsize(12);
         o->callback((Fl_Callback*)cal_upload_params_cb);

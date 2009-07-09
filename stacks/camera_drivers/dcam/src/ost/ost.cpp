@@ -185,6 +185,7 @@ void set_current_tab_index(int ind);
 bool parse_filename(char *fname, char **lbase, char **rbase, int *num, char **bname = NULL);
 int load_left_cal(char *fname);
 int load_right_cal(char *fname);
+char * cal_get_param_string();
 
 
 // epipolar checks
@@ -291,22 +292,32 @@ main(int argc, char **argv)	// no arguments
   //  iwin->show();
 
   // get devices
-  dcam::init();
-  numDevs = dcam::numCameras();
-  debug_message("[oST] Number of cameras: %d", numDevs);
-
-  // print out GUIDs, vendor, model; set up Video pulldown
-  Fl_Choice *devs = stg->cam_select;
-  for (int i=0; i<numDevs; i++)
+  try 
     {
-      debug_message("[oST] Camera %d GUID: %llx  Vendor: %s  Model: %s", 
-	     i, dcam::getGuid(i), dcam::getVendor(i), dcam::getModel(i));
-      char buf[1024];
-      sprintf(buf, "%s %s %llx", dcam::getVendor(i), dcam::getModel(i), dcam::getGuid(i));
-      devs->add(buf);
+      dcam::init();
+      numDevs = dcam::numCameras();
+      debug_message("[oST] Number of cameras: %d", numDevs);
+
+      // print out GUIDs, vendor, model; set up Video pulldown
+      Fl_Choice *devs = stg->cam_select;
+      for (int i=0; i<numDevs; i++)
+	{
+	  debug_message("[oST] Camera %d GUID: %llx  Vendor: %s  Model: %s", 
+			i, dcam::getGuid(i), dcam::getVendor(i), dcam::getModel(i));
+	  char buf[1024];
+	  sprintf(buf, "%s %s %llx", dcam::getVendor(i), dcam::getModel(i), dcam::getGuid(i));
+	  devs->add(buf);
+	}
+      if (numDevs > 0) 
+	devs->value(0);
+
     }
-  if (numDevs > 0) 
-    devs->value(0);
+  catch (dcam::DcamException) 
+    {
+      debug_message("[Dcam] Can't initialize libdc1394, check /dev/raw1394/, /dev/video1394/0 permissions");
+      numDevs = 0;
+    }
+
 
 #if 0
   // don't fool around, open the first device
@@ -393,6 +404,7 @@ main(int argc, char **argv)	// no arguments
 	      debug_message("[Dcam] Stopping device");
 	      isVideo = false;
 	      dev->stop();
+	      stg->video_button->value(0);
 	      stopCam = false;
 	    }
 	}
@@ -583,6 +595,7 @@ main(int argc, char **argv)	// no arguments
       debug_message("[Dcam] Stopping device");
       isVideo = false;
       dev->stop();
+      stg->video_button->value(0);
       stopCam = false;
     }
 }
@@ -1404,6 +1417,11 @@ void cal_calibrate_cb(Fl_Button*, void*)
     double err = epi_scanline_error(is_horz);
     debug_message("RMS error from scanline: %f pixels\n\n", err);
 #endif
+
+    // get calibration string and set current device with it
+    char *bb = cal_get_param_string();
+    stIm->extractParams(bb);	// set up parameters
+    if (dev) dev->putParameters(bb);	// save in device object
 }
 
 
@@ -2031,8 +2049,13 @@ void cal_upload_params_cb(Fl_Button*, void*)
       debug_message("[oST] Setting FW parameters");
       int ret = fl_choice("Really upload, erasing old camera calibration?","No","Yes",NULL);
       if (ret == 1)
-	dev->setParameters();	// set the parameters in FW firmware
-
+	{
+	  debug_message("[Dcam] Stopping device");
+	  isVideo = false;
+	  dev->stop();
+	  stopCam = false;
+	  dev->setParameters();
+	}
       return;
 
       debug_message("[oST] Setting STOC parameters");
@@ -2135,16 +2158,6 @@ void cal_upload_params_cb(Fl_Button*, void*)
     }
   else
     debug_message("[oST] No device selected");
-}
-
-
-// Done with cal, close window
-
-void cal_ok_cb(Fl_Button*, void*)
-{
-  set_current_tab_index(1);	// set to first calibration image
-  stg->cal_window->hide();	// have to request cal window
-  stg->cal_images->hide();	// have to request cal window
 }
 
 
@@ -3015,7 +3028,7 @@ save_3d_cb(Fl_Menu_ *w, void *u)
   if (fname == NULL)
     return;
 
-  fname = add_suffix(fname,"pcd");
+  fname = add_suffix(fname,(char*)"pcd");
 
   stIm->doCalcPts(true);
   FILE *fp = fopen(fname,"w");
@@ -3127,7 +3140,13 @@ void upload_params_cb(Fl_Menu_ *w, void *u)
   if (!dev) return;		// no device
   int ret = fl_choice("Really upload, erasing old camera calibration?","No","Yes",NULL);
   if (ret == 1)
-    dev->setParameters();
+    {
+      debug_message("[Dcam] Stopping device");
+      isVideo = false;
+      dev->stop();
+      stopCam = false;
+      dev->setParameters();
+    }
 }
 
 
