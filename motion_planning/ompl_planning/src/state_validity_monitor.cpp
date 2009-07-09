@@ -57,7 +57,7 @@ public:
     {
 	stateValidityPublisher_ = nh_.advertise<std_msgs::Byte>("state_validity", 1);
 	collisionModels_ = new planning_environment::CollisionModels("robot_description");
-	collisionSpaceMonitor_ = new planning_environment::CollisionSpaceMonitor(collisionModels_);
+	collisionSpaceMonitor_ = new planning_environment::CollisionSpaceMonitor(collisionModels_, &tf_);
 	if (collisionModels_->loadedModels())
 	{
 	    collisionSpaceMonitor_->setOnAfterMapUpdateCallback(boost::bind(&StateValidityMonitor::afterWorldUpdate, this, _1));
@@ -103,6 +103,7 @@ private:
     int                                          last_;
     ros::NodeHandle                              nh_;
     ros::Publisher                               stateValidityPublisher_;
+    tf::TransformListener                        tf_;
     planning_environment::CollisionModels       *collisionModels_;
     planning_environment::CollisionSpaceMonitor *collisionSpaceMonitor_;
 };

@@ -56,13 +56,13 @@ namespace planning_environment
     {
     public:
 	
-	CollisionSpaceMonitor(CollisionModels *cm, std::string frame_id) : KinematicModelStateMonitor(static_cast<RobotModels*>(cm), frame_id)
+	CollisionSpaceMonitor(CollisionModels *cm, tf::TransformListener *tf, std::string frame_id) : KinematicModelStateMonitor(static_cast<RobotModels*>(cm), tf, frame_id)
 	{
 	    cm_ = cm;
 	    setupCSM();
 	}
 	
-	CollisionSpaceMonitor(CollisionModels *cm) : KinematicModelStateMonitor(static_cast<RobotModels*>(cm))
+	CollisionSpaceMonitor(CollisionModels *cm, tf::TransformListener *tf) : KinematicModelStateMonitor(static_cast<RobotModels*>(cm), tf)
 	{
 	    cm_ = cm;
 	    setupCSM();
@@ -90,12 +90,6 @@ namespace planning_environment
 	    return cm_;
 	}
 	
-	/** \brief Return the transform listener */
-	tf::TransformListener *getTransformListener(void) const
-	{
-	    return tf_;
-	}
-
 	/** \brief Return the scaling employed when creating spheres
 	    from boxes in a collision map. The radius of a sphere is
 	    this scaling multiplied by the largest extent of the box */

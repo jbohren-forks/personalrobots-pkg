@@ -53,10 +53,10 @@ public:
 	if (nodeHandle_.hasParam("~planning_frame_id"))
 	{
 	    std::string frame; nodeHandle_.param("~planning_frame_id", frame, std::string(""));
-	    planningMonitor_ = new planning_environment::PlanningMonitor(collisionModels_, frame);
+	    planningMonitor_ = new planning_environment::PlanningMonitor(collisionModels_, &tf_, frame);
 	}
 	else
-	    planningMonitor_ = new planning_environment::PlanningMonitor(collisionModels_, "torso_lift_link");
+	    planningMonitor_ = new planning_environment::PlanningMonitor(collisionModels_, &tf_);
 	
 	planKinematicPathService_ = nodeHandle_.advertiseService("plan_kinematic_path", &OMPLPlanning::planToGoal, this);
     }
@@ -211,6 +211,7 @@ private:
     ros::NodeHandle                        nodeHandle_;
     planning_environment::CollisionModels *collisionModels_;
     planning_environment::PlanningMonitor *planningMonitor_;
+    tf::TransformListener                  tf_;
     ros::ServiceServer                     planKinematicPathService_;
 
 

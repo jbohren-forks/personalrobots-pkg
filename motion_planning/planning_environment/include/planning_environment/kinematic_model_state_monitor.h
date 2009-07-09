@@ -56,16 +56,18 @@ namespace planning_environment
     {
     public:
 
-	KinematicModelStateMonitor(RobotModels *rm)
+	KinematicModelStateMonitor(RobotModels *rm, tf::TransformListener *tf)
 	{
 	    rm_ = rm;
+	    tf_ = tf;
 	    includePose_ = false;
 	    setupRSM();
 	}
 
-	KinematicModelStateMonitor(RobotModels *rm, const std::string &frame_id)
+	KinematicModelStateMonitor(RobotModels *rm, tf::TransformListener *tf, const std::string &frame_id)
 	{
 	    rm_ = rm;
+	    tf_ = tf;
 	    includePose_ = true;
 	    frame_id_ = frame_id;
 	    setupRSM();
@@ -75,8 +77,6 @@ namespace planning_environment
 	{
 	    if (robotState_)
 		delete robotState_;
-	    if (tf_)
-		delete tf_;
 	}
 
 	/** \brief Define a callback for when the state is changed */
@@ -103,6 +103,12 @@ namespace planning_environment
 	    return robotState_;
 	}
 
+	/** \brief Return the transform listener */
+	tf::TransformListener *getTransformListener(void) const
+	{
+	    return tf_;
+	}
+	
 	/** \brief Return the frame id of the state */
 	const std::string& getFrameId(void) const
 	{

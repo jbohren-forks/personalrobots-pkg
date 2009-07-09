@@ -65,7 +65,7 @@ namespace move_arm
 	
 	// monitor robot
 	collisionModels_ = new planning_environment::CollisionModels("robot_description");
-	planningMonitor_ = new planning_environment::PlanningMonitor(collisionModels_);
+	planningMonitor_ = new planning_environment::PlanningMonitor(collisionModels_, &tf_);
 
 	if (collisionModels_->getKinematicModel()->getGroupID(arm_) < 0)
 	{

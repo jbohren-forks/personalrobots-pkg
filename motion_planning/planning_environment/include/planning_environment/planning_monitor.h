@@ -54,12 +54,12 @@ namespace planning_environment
     {
     public:
 	
-	PlanningMonitor(CollisionModels *cm, std::string frame_id) : CollisionSpaceMonitor(static_cast<CollisionModels*>(cm), frame_id)
+	PlanningMonitor(CollisionModels *cm, tf::TransformListener *tf, std::string frame_id) : CollisionSpaceMonitor(static_cast<CollisionModels*>(cm), tf, frame_id)
 	{
 	    loadParams();
 	}
 	
-	PlanningMonitor(CollisionModels *cm) : CollisionSpaceMonitor(static_cast<CollisionModels*>(cm))
+	PlanningMonitor(CollisionModels *cm, tf::TransformListener *tf) : CollisionSpaceMonitor(static_cast<CollisionModels*>(cm), tf)
 	{
 	    loadParams();
 	}

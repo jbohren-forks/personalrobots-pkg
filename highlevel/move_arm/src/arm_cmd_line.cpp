@@ -188,8 +188,8 @@ int main(int argc, char **argv)
 	return 0;
 
     boost::thread th(&spinThread);    
-
-    planning_environment::KinematicModelStateMonitor km(&rm);
+    tf::TransformListener tf;
+    planning_environment::KinematicModelStateMonitor km(&rm, &tf);
     km.waitForState();
     
     std::cout << std::endl << std::endl << "Using joints:" << std::endl;

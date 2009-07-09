@@ -93,7 +93,8 @@ namespace move_arm
 	
 	planning_environment::CollisionModels *collisionModels_;
 	planning_environment::PlanningMonitor *planningMonitor_;
-
+	tf::TransformListener                  tf_;
+	
 	bool getControlJointNames(std::vector<std::string> &joint_names);
 
 	bool fillStartState(std::vector<motion_planning_msgs::KinematicJoint> &start);	

@@ -73,7 +73,7 @@ protected:
 
 	    // create a state that can be used to monitor the
 	    // changes in the joints of the kinematic model
-	    m_stateMonitor = boost::shared_ptr<planning_environment::KinematicModelStateMonitor>(new planning_environment::KinematicModelStateMonitor(m_envModels.get()));
+	    m_stateMonitor = boost::shared_ptr<planning_environment::KinematicModelStateMonitor>(new planning_environment::KinematicModelStateMonitor(m_envModels.get(), &m_tf));
 	    m_robotState = m_stateMonitor->getRobotState();
 	    m_stateMonitor->setOnStateUpdateCallback(boost::bind(&SelfWatch::stateUpdate, this));
 
@@ -143,7 +143,8 @@ protected:
     }
 
     ros::NodeHandle                                                     m_nodeHandle;
-
+    tf::TransformListener                                               m_tf;
+    
     // we don't want to detect a collision after it happened, but this
     // is what collision checkers do, so we scale the robot up by a
     // small factor; when a collision is found between the inflated

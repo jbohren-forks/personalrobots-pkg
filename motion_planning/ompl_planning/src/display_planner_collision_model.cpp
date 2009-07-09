@@ -59,7 +59,7 @@ public:
 	id_ = 0;
 	visualizationMarkerPublisher_ = nh_.advertise<visualization_msgs::Marker>("visualization_marker", 10240);
 	collisionModels_ = new planning_environment::CollisionModels("robot_description");
-	collisionSpaceMonitor_ = new planning_environment::CollisionSpaceMonitor(collisionModels_);
+	collisionSpaceMonitor_ = new planning_environment::CollisionSpaceMonitor(collisionModels_, &tf_);
 	if (collisionModels_->loadedModels())
 	{
 	    collisionSpaceMonitor_->setOnAfterMapUpdateCallback(boost::bind(&DisplayPlannerCollisionModel::afterWorldUpdate, this, _1));
@@ -144,6 +144,7 @@ private:
     int                                          id_;
     ros::Publisher                               visualizationMarkerPublisher_;
     ros::NodeHandle                              nh_;
+    tf::TransformListener                        tf_;
     planning_environment::CollisionModels       *collisionModels_;
     planning_environment::CollisionSpaceMonitor *collisionSpaceMonitor_;
     

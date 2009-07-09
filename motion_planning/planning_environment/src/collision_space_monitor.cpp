@@ -60,9 +60,6 @@ void planning_environment::CollisionSpaceMonitor::setupCSM(void)
     
     haveMap_ = false;
 
-    if (!tf_)
-	tf_ = new tf::TransformListener();
-    
     collisionSpace_ = cm_->getODECollisionModel().get();
 
     // the factor by which a boxes maximum extent is multiplied to get the radius of the sphere to be placed in the collision space

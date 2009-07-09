@@ -43,7 +43,6 @@ void planning_environment::KinematicModelStateMonitor::setupRSM(void)
     kmodel_ = NULL;
     robotState_ = NULL;
     onStateUpdate_ = NULL;
-    tf_ = NULL;
     tfWait_ = ros::Duration(0.1);
     havePose_ = haveMechanismState_ = false;
     if (rm_->loadedModels())
@@ -68,10 +67,7 @@ void planning_environment::KinematicModelStateMonitor::setupRSM(void)
 	    ROS_DEBUG("Robot frame is '%s'", robot_frame_.c_str());
 
 	    if (includePose_)
-	    {
-		tf_ = new tf::TransformListener();
 		ROS_DEBUG("Maintaining robot pose in frame '%s'", frame_id_.c_str());
-	    }
 	    else
 		frame_id_ = robot_frame_;
 	}

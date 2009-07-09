@@ -52,7 +52,7 @@ public:
     TestExecutionPath(void)
     {
 	rm_ = new planning_environment::RobotModels("robot_description");
-	kmsm_ = new planning_environment::KinematicModelStateMonitor(rm_);
+	kmsm_ = new planning_environment::KinematicModelStateMonitor(rm_, &tf_);
 	jointCommandPublisher_ = nh_.advertise<manipulation_msgs::JointTraj>("right_arm/trajectory_controller/trajectory_command", 1);
 	sleep_duration_ = 4;
 	use_topic_ = false;
@@ -183,6 +183,8 @@ protected:
     ros::Publisher                                    jointCommandPublisher_;
     planning_environment::RobotModels                *rm_;
     planning_environment::KinematicModelStateMonitor *kmsm_;
+    tf::TransformListener                             tf_;
+    
 };
 
 
