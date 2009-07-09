@@ -1,25 +1,8 @@
-
 (defpackage :lane-following
   (:nicknames :lanes)
   (:use :roslisp :cl :transform-2d :sb-thread :roslisp-queue)
   (:export :main)
-  (:import-from :robot_msgs-msg
-		:<Point>
-		:x-val
-		:y-val
-		:z-val
-		:<PointStamped>
-		:<Point32>
-		:<Polygon3D>
-		:<PointStamped>
-		:<PointCloud>
-		:pts-val)
-  (:import-from :people_aware_nav-srv :SetNavConstraint)
-  (:import-from :deprecated_msgs-msg
-		:<Pose2DFloat32>)
-  (:import-from :people-msg :<PositionMeasurement>)
-  (:import-from :roslib-msg
-		:<Header>))
+  (:import-from :people_aware_nav-srv :SetNavConstraint))
 
 
 (in-package :lane-following)
@@ -68,10 +51,10 @@
 (defun setup-node ()
   (subscribe "hallway_points" "robot_msgs/PointCloud" #'hallway-callback)
   (subscribe "robot_pose" "deprecated_msgs/Pose2DFloat32" #'pose-callback)
-  (subscribe "move_base/feedback" "people_aware_nav/ConstrainedMoveBaseState" #'state-callback)
+  (subscribe "move_base/feedback" "nav_robot_actions/MoveBaseState" #'state-callback)
   (subscribe "goal" "robot_msgs/PoseStamped" #'goal-callback)
   (subscribe "people_tracker_measurements" "people/PositionMeasurement" (store-message-in *person-position*))
-  (advertise "move_base/activate" "people_aware_nav/ConstrainedGoal")
+  (advertise "move_base/activate" "robot_msgs/PoseStamped")
   (advertise "move_base/preempt" "std_msgs/Empty")
   (advertise "~goal" "robot_msgs/PoseStamped")
   (setq *global-frame* (get-param "global_frame_id" "/map")
@@ -131,13 +114,16 @@
   (ros-info pan "Sending nav goal ~a, ~a, ~a with constrained=~a" x y th constrained)
   (setq *current-goal* (list x y)
 	*move-base-result* nil)
+  (call-service "move_base/set_nav_constraint" 'SetNavConstraint :forbidden (make-boundary *robot-pose* constrained))
   (publish-on-topic "/move_base/activate" 
-		    (make-instance 'people_aware_nav-msg:<ConstrainedGoal>
-				   :header (make-instance '<Header> :frame_id *global-frame*)
-				   :x x :y y :th th :forbidden (make-boundary *robot-pose* constrained))))
+		    (make-message "robot_msgs/PoseStamped"
+				  (frame_id header) *global-frame*
+				  (x position pose) x
+				  (y position pose) y
+				  (w orientation pose) (cos (/ th 2)))))
 
 (defun disable-nav ()
-  (publish-on-topic "/move_base/preempt" (make-instance 'std_msgs-msg:<Empty>))
+  (publish-on-topic "/move_base/preempt" (make-message "std_msgs/Empty"))
   (ros-info pan "Disabling nav"))
 
 
@@ -169,15 +155,14 @@
   
 
 (defun hallway-callback (m)
-  (declare (<PointCloud> m))
-  (let ((points (pts-val m)))
-    (if (= (length points) 3)
+  (with-fields (pts) m
+    (if (= (length pts) 3)
 
-	(setf *hallway* (hallway-info (make-point (aref points 0))
-				      (make-point (aref points 1))
-				      (make-point (aref points 2))))
+	(setf *hallway* (hallway-info (make-point (aref pts 0))
+				      (make-point (aref pts 1))
+				      (make-point (aref pts 2))))
 
-	(ros-error pan "Hallway cloud ~a had incorrect length.  Skipping." points))))
+	(ros-error pan "Hallway cloud ~a had incorrect length.  Skipping." pts))))
 
 
 (defun goal-callback (m)
@@ -197,7 +182,6 @@
   
 
 (defun pose-callback (pose)
-  (declare (<Pose2DFloat32> pose) (values pose))
   (with-fields ((x :x) (y :y) (theta :th)) pose
     (setq *robot-pose* (make-pose (vector x y) theta))))
 
@@ -208,8 +192,8 @@
 
 
 (defun refers-to-goal (msg current-goal)
-  (with-fields (goal) msg
-    (with-fields (x y) goal
+  (with-fields ((position (position pose goal))) msg
+    (with-fields (x y) position
       (< (max (abs (- x (first current-goal))) (abs (- y (second current-goal)))) .1))))
 
 
@@ -244,10 +228,8 @@
 
     
 (defun make-point (p)
-  (declare (<Point32> p) (values point))
-  (let ((a (make-array 2 :element-type 'float :initial-element 0.0)))
-    (setf (aref a 0) (x-val p) (aref a 1) (y-val p))
-    a))
+  (with-fields (x y) p
+    (vector x y)))
 
 
 (defparameter *angle-offset* (+ (/ pi 2) .19))
@@ -257,17 +239,19 @@
   (if constrained?
       (let ((pos (pose-position pose))
 	    (theta (pose-orientation pose)))
-	(make-instance '<Polygon3D>
-		       :points (vector (get-offset-point pos (+ theta *angle-offset*))
-				       (get-offset-point pos (+ theta pi))
-				       (get-offset-point pos (- theta *angle-offset*)))))
+	(make-message "robot_msgs/Polygon3D"
+		      :points (vector (get-offset-point pos (+ theta *angle-offset*))
+				      (get-offset-point pos (+ theta pi))
+				      (get-offset-point pos (- theta *angle-offset*)))))
       ;; if not constrained, return an empty polygon
-      (make-instance '<Polygon3D>)))
+      (make-message "robot_msgs/Polygon3D")))
 
 
 
 (defun get-offset-point (pos theta)
   (let ((x (aref pos 0))
 	(y (aref pos 1)))
-    (make-instance '<Point32> :x (+ x (* *offset-length* (cos theta)))
-		   :y (+ y (* *offset-length* (sin theta))))))
+    (make-message "robot_msgs/Point32"
+		  :x (+ x (* *offset-length* (cos theta)))
+		  :y (+ y (* *offset-length* (sin theta))))))
+
