@@ -1,0 +1,14 @@
+Index: makefile
+===================================================================
+--- makefile	(revision 8299)
++++ makefile	(working copy)
+45,46c45
+< 	cc $(CFLAGS) -c convertply.c -DWRITE_ASCII
+< 	mv convertply.o ply2ascii.o
+---
+> 	cc $(CFLAGS) -c convertply.c -DWRITE_ASCII && mv convertply.o ply2ascii.o
+49,50c48
+< 	cc $(CFLAGS) -c convertply.c -DWRITE_BINARY
+< 	mv convertply.o ply2binary.o
+---
+> 	cc $(CFLAGS) -c convertply.c -DWRITE_BINARY && mv convertply.o ply2binary.o

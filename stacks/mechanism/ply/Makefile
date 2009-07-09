@@ -4,7 +4,7 @@ TARBALL = build/ply.tar.gz
 TARBALL_URL = http://www.cc.gatech.edu/projects/large_models/files/ply.tar.gz
 SOURCE_DIR = build/ply
 UNPACK_CMD = tar xvfz
-TARBALL_PATCH=
+TARBALL_PATCH= ply_patch.diff
 
 include $(shell rospack find mk)/download_unpack_build.mk
 
