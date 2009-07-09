@@ -103,9 +103,9 @@ bool LocalGeometry::compute(Eigen::MatrixXf** result, bool debug)
   *result = new Eigen::MatrixXf(result_size_, 1);
 
   unsigned int idx = 0;
-  (**result)[idx++] = eigen_values[2];
-  (**result)[idx++] = eigen_values[2] - eigen_values[1];
-  (**result)[idx++] = eigen_values[1] - eigen_values[0];
+  (**result)[idx++] = eigen_values[0]; // scatter
+  (**result)[idx++] = eigen_values[2] - eigen_values[1]; // linear
+  (**result)[idx++] = eigen_values[1] - eigen_values[0]; // surface
 
   if (ref_tangent_defined_)
   {
