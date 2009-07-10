@@ -67,13 +67,13 @@
           <elem key="material" value="PR2/Blue" />
         </map>
         <geometry name="${side}_shoulder_pan_visual">
-          <mesh filename="shoulder_yaw" />
+          <mesh filename="pr2/shoulder_yaw" />
         </geometry>
       </visual>
       <collision>
         <origin xyz="0.0 0 0.0" rpy="0 0 0" />
         <geometry name="${side}_shoulder_pan_collision">
-          <mesh filename="convex/shoulder_yaw_convex.stlb" />
+          <mesh filename="pr2/convex/shoulder_yaw_convex.stlb" />
         </geometry>
       </collision>
       <map name="${side}_shoulder_pan_sensor" flag="gazebo">
@@ -137,13 +137,13 @@
           <elem key="material" value="PR2/Grey" />
         </map>
         <geometry name="${side}_shoulder_lift_visual">
-          <mesh filename="shoulder_lift" />
+          <mesh filename="pr2/shoulder_lift" />
         </geometry>
       </visual>
       <collision>
         <origin xyz="0 0 0" rpy="0 0 0" />
         <geometry name="${side}_shoulder_lift_collision">
-          <mesh filename="convex/shoulder_lift_convex.stlb" />
+          <mesh filename="pr2/convex/shoulder_lift_convex.stlb" />
         </geometry>
       </collision>
       <map name="${side}_shoulder_lift_sensor" flag="gazebo">
@@ -208,7 +208,7 @@
           <elem key="material" value="PR2/RollLinks" />
         </map>
         <geometry name="${side}_upper_arm_roll_visual">
-          <mesh filename="upper_arm_roll" />
+          <mesh filename="pr2/upper_arm_roll" />
         </geometry>
       </visual>
       <collision> <!-- TODO: collision tag should be optional -->
@@ -262,14 +262,14 @@
           <elem key="material" value="PR2/Green" />
         </map>
         <geometry name="${side}_upper_arm_visual">
-          <mesh filename="upper_arm" />
+          <mesh filename="pr2/upper_arm" />
         </geometry>
       </visual>
 
       <collision>
         <origin xyz="0 0 0" rpy="0 0 0" />
         <geometry name="${side}_upper_arm_collision">
-          <mesh filename="convex/upper_arm_convex.stlb" />
+          <mesh filename="pr2/convex/upper_arm_convex.stlb" />
         </geometry>
       </collision>
 
@@ -329,13 +329,13 @@
           <elem key="material" value="PR2/Grey" />
         </map>
         <geometry name="${side}_elbow_flex_visual">
-          <mesh filename="elbow_flex" />
+          <mesh filename="pr2/elbow_flex" />
         </geometry>
       </visual>
       <collision>
         <origin xyz="0 0 0" rpy="0 0 0" />
         <geometry name="${side}_elbow_flex_collision">
-          <mesh filename="convex/elbow_flex_convex.stlb" />
+          <mesh filename="pr2/convex/elbow_flex_convex.stlb" />
         </geometry>
       </collision>
       <map name="${side}_elbow_flex_sensor" flag="gazebo">
@@ -439,7 +439,7 @@
           <elem key="material" value="PR2/RollLinks" />
         </map>
         <geometry name="${side}_forearm_roll_visual">
-          <mesh filename="forearm_roll" />
+          <mesh filename="pr2/forearm_roll" />
         </geometry>
       </visual>
       <collision> <!-- TODO: collision tag should be optional -->
@@ -484,13 +484,13 @@
           <elem key="material" value="PR2/Blue" />
         </map>
         <geometry name="${side}_forearm_visual">
-          <mesh filename="forearm" />
+          <mesh filename="pr2/forearm" />
         </geometry>
       </visual>
       <collision>
         <origin xyz="0 0 0" rpy="0 0 0" />
         <geometry name="${side}_forearm_collision">
-          <mesh filename="convex/forearm_convex.stlb" />
+          <mesh filename="pr2/convex/forearm_convex.stlb" />
         </geometry>
       </collision>
       <map name="${side}_forearm_sensor" flag="gazebo">
@@ -547,13 +547,13 @@
           <elem key="material" value="PR2/Grey" />
         </map>
         <geometry name="${side}_wrist_flex_visual">
-          <mesh filename="wrist_flex" />
+          <mesh filename="pr2/wrist_flex" />
         </geometry>
       </visual>
       <collision>
         <origin xyz="0 0 0" rpy="0 0 0" />
         <geometry name="${side}_wrist_flex_collision">
-          <mesh filename="convex/wrist_flex_convex.stlb" />
+          <mesh filename="pr2/convex/wrist_flex_convex.stlb" />
         </geometry>
       </collision>
       <map name="${side}_wrist_flex_sensor" flag="gazebo">
@@ -607,7 +607,7 @@
           <elem key="material" value="PR2/RollLinks" />
         </map>
         <geometry name="${side}_wrist_roll_visual">
-          <mesh filename="wrist_roll" />
+          <mesh filename="pr2/wrist_roll" />
         </geometry>
       </visual>
       <collision>

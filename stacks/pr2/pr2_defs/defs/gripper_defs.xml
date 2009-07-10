@@ -79,13 +79,13 @@
           <elem key="material" value="PR2/Grey" />
         </map>
         <geometry name="${prefix}_l_finger_visual">
-          <mesh filename="upper_finger_l" />
+          <mesh filename="pr2/upper_finger_l" />
         </geometry>
       </visual>
       <collision>
         <origin xyz="0 0 0" rpy="0 0 0" />
         <geometry name="${prefix}_l_finger_collision">
-          <mesh filename="convex/upper_finger_l_convex.stlb" />
+          <mesh filename="pr2/convex/upper_finger_l_convex.stlb" />
         </geometry>
         <verbose value="Yes" />
         <map flag="collision" name="mesh">
@@ -163,13 +163,13 @@
           <elem key="material" value="PR2/Grey" />
         </map>
         <geometry name="${prefix}_r_finger_visual">
-          <mesh filename="upper_finger_r" />
+          <mesh filename="pr2/upper_finger_r" />
         </geometry>
       </visual>
       <collision>
         <origin xyz="0 0 0" rpy="0 0 0" />
         <geometry name="${prefix}_r_finger_collision">
-          <mesh filename="convex/upper_finger_r_convex.stlb" />
+          <mesh filename="pr2/convex/upper_finger_r_convex.stlb" />
         </geometry>
         <verbose value="Yes" />
         <map flag="collision" name="mesh">
@@ -244,13 +244,13 @@
           <elem key="material" value="PR2/Green" />
         </map>
         <geometry name="${prefix}_l_finger_tip_visual">
-          <mesh filename="finger_tip_l" />
+          <mesh filename="pr2/finger_tip_l" />
         </geometry>
       </visual>
       <collision>
         <origin xyz="0 0 0" rpy="0 0 0" />
         <geometry name="${prefix}_l_finger_tip_collision">
-          <mesh filename="convex/finger_tip_l_convex.stlb" />
+          <mesh filename="pr2/convex/finger_tip_l_convex.stlb" />
         </geometry>
         <verbose value="Yes" />
         <map flag="collision" name="mesh">
@@ -326,13 +326,13 @@
           <elem key="material" value="PR2/Green" />
         </map>
         <geometry name="${prefix}_r_finger_tip_visual">
-          <mesh filename="finger_tip_r" />
+          <mesh filename="pr2/finger_tip_r" />
         </geometry>
       </visual>
       <collision>
         <origin xyz="0 0 0" rpy="0 0 0" />
         <geometry name="${prefix}_r_finger_tip_collision">
-          <mesh filename="convex/finger_tip_r_convex.stlb" />
+          <mesh filename="pr2/convex/finger_tip_r_convex.stlb" />
         </geometry>
         <verbose value="Yes" />
         <map flag="collision" name="mesh">
@@ -476,13 +476,13 @@
           <elem key="material" value="PR2/Red" />
         </map>
         <geometry name="${side}_gripper_palm_visual">
-          <mesh filename="gripper_palm" />
+          <mesh filename="pr2/gripper_palm" />
         </geometry>
       </visual>
       <collision>
         <origin xyz="0 0 0" rpy="0 0 0" />
         <geometry name="${side}_gripper_palm_collision">
-          <mesh filename="convex/gripper_palm_convex.stlb" />
+          <mesh filename="pr2/convex/gripper_palm_convex.stlb" />
         </geometry>
         <verbose value="Yes" />
         <map flag="collision" name="mesh">
@@ -701,13 +701,13 @@
           <elem key="material" value="PR2/Red" />
         </map>
         <geometry name="${side}_gripper_palm_visual">
-          <mesh filename="gripper_palm" />
+          <mesh filename="pr2/gripper_palm" />
         </geometry>
       </visual>
       <collision>
         <origin xyz="0 0 0" rpy="0 0 0" />
         <geometry name="${side}_gripper_palm_collision">
-          <mesh filename="convex/gripper_palm_convex.stlb" />
+          <mesh filename="pr2/convex/gripper_palm_convex.stlb" />
         </geometry>
         <verbose value="Yes" />
         <map flag="collision" name="mesh">

@@ -250,7 +250,7 @@ void URDF2Gazebo::convertLink(TiXmlElement *root, robot_desc::URDF::Link *link, 
                 int pos1 = mesh->filename.find(tmp_extension,0);
                 mesh->filename.replace(pos1,mesh->filename.size()-pos1+1,std::string(""));
                 // add mesh filename
-                addKeyValue(geom, "mesh", "models/pr2/" + mesh->filename + ".mesh");
+                addKeyValue(geom, "mesh", mesh->filename + ".mesh");
                 
             }
             else
@@ -294,7 +294,7 @@ void URDF2Gazebo::convertLink(TiXmlElement *root, robot_desc::URDF::Link *link, 
                     if (mesh->filename.empty())
                         addKeyValue(visual, "mesh", "unit_" + type);
                     else
-                        addKeyValue(visual, "mesh", "models/pr2/" + mesh->filename + ".mesh");
+                        addKeyValue(visual, "mesh", mesh->filename + ".mesh");
                     
                 }
                 else
