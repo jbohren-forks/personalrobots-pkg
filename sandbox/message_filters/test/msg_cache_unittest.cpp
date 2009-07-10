@@ -91,6 +91,34 @@ TEST(Cache, easyInterval)
   EXPECT_EQ(interval_data.size(), (unsigned int) 0) ;
 }
 
+TEST(Cache, easySurroundingInterval)
+{
+  Cache<Msg> cache(10);
+  fillCacheEasy(cache, 1, 6);
+
+  vector<boost::shared_ptr<Msg const> > interval_data;
+  interval_data = cache.getSurroundingInterval(ros::Time(15,0), ros::Time(35,0)) ;
+  EXPECT_EQ(interval_data.size(), (unsigned int) 4);
+  EXPECT_EQ(interval_data[0]->data, 1);
+  EXPECT_EQ(interval_data[1]->data, 2);
+  EXPECT_EQ(interval_data[2]->data, 3);
+  EXPECT_EQ(interval_data[3]->data, 4);
+
+  interval_data = cache.getSurroundingInterval(ros::Time(0,0), ros::Time(35,0)) ;
+  EXPECT_EQ(interval_data.size(), (unsigned int) 4);
+  EXPECT_EQ(interval_data[0]->data, 1);
+
+  interval_data = cache.getSurroundingInterval(ros::Time(35,0), ros::Time(35,0)) ;
+  EXPECT_EQ(interval_data.size(), (unsigned int) 2);
+  EXPECT_EQ(interval_data[0]->data, 3);
+  EXPECT_EQ(interval_data[1]->data, 4);
+
+  interval_data = cache.getSurroundingInterval(ros::Time(55,0), ros::Time(55,0)) ;
+  EXPECT_EQ(interval_data.size(), (unsigned int) 1);
+  EXPECT_EQ(interval_data[0]->data, 5);
+}
+
+
 boost::shared_ptr<Msg const> buildMsg(double time, int data)
 {
   Msg* msg = new Msg ;

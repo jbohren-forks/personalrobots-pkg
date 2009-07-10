@@ -190,6 +190,39 @@ public:
     return interval_elems ;
   }
 
+
+  /**
+   * Retrieve the smallest interval of messages that surrounds an interval from start to end.
+   * If the messages in the cache do not surround (start,end), then this will return the interval
+   * that gets closest to surrounding (start,end)
+   */
+  std::vector<MConstPtr> getSurroundingInterval(const ros::Time& start, const ros::Time& end)
+  {
+    boost::mutex::scoped_lock lock(cache_lock_);
+    // Find the starting index. (Find the first index after [or at] the start of the interval)
+    unsigned int start_index = cache_.size()-1;
+    while(start_index > 0 &&
+          cache_[start_index]->header.stamp > start)
+    {
+      start_index--;
+    }
+    unsigned int end_index = start_index;
+    while(end_index < cache_.size()-1 &&
+          cache_[end_index]->header.stamp < end)
+    {
+      end_index++;
+    }
+
+    std::vector<MConstPtr> interval_elems;
+    interval_elems.reserve(end_index - start_index + 1) ;
+    for (unsigned int i=start_index; i<=end_index; i++)
+    {
+      interval_elems.push_back(cache_[i]) ;
+    }
+
+    return interval_elems;
+  }
+
   /**
    * Grab the newest element that occurs right before the specified time.
    * \param time Time that must occur right after the returned elem
