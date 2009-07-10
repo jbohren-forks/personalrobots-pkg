@@ -9,6 +9,27 @@
   <property name="wheel_length" value="0.03" />  <!-- FIXME -->
   <property name="wheel_radius" value="0.074792" />   <!-- This is the 'effective' wheel radius. Wheel radius for uncompressed wheel is 0.079.  mp 20080801 -->
 
+  <!-- based on 090224_link_data from function engineering -->
+  <property name="base_cg_x" value="-0.061" />
+  <property name="base_cg_y" value="0.0" />
+  <property name="base_cg_z" value="0.293" />
+  <property name="base_mass" value="116.0" />
+
+  <!-- base appears "raised" from our initial geom def from function -->
+  <property name="base_height_offset" value="0.05" />
+
+  <!-- simplified box collision geometry for base -->
+  <property name="base_size_x" value="0.65" />
+  <property name="base_size_y" value="0.65" />
+  <property name="base_size_z" value="0.23" />
+  <!-- simplified box collision geometry for hokuyo laser -->
+  <property name="base_laser_x" value="0.275" />
+  <property name="base_laser_y" value="0.0" />
+  <property name="base_laser_z" value="0.252" />
+  <property name="base_laser_size_x" value="0.08" />
+  <property name="base_laser_size_y" value="0.08" />
+  <property name="base_laser_size_z" value="0.03" />
+  <property name="base_laser_collision_offset_z" value="0.03" />
 
   <macro name="pr2_wheel" params="suffix parent reflect">
     <joint name="${parent}_${suffix}_wheel_joint" type="revolute">
@@ -300,7 +321,7 @@
     <link name="base_laser" type="laser">
       <calibration filename="calib_filename" />
       <parent name="${name}_link" />
-      <origin xyz="0.275 0 ${base_height_offset+0.252}" rpy="0 0 0" />
+      <origin xyz="${base_laser_x} ${base_laser_y} ${base_height_offset+base_laser_z}" rpy="0 0 0" />
       <joint name="base_laser_joint" />
       <inertial>
         <mass value="1.0" />
@@ -309,19 +330,19 @@
       </inertial>
 
       <visual>
-        <origin xyz="0 0 0.0" rpy="0 0 0" />
+        <origin xyz="0 0 ${base_laser_collision_offset_z}" rpy="0 0 0" />
         <map name="gazebo_material" flag="gazebo">
           <elem key="material" value="PR2/Red" />
         </map>
         <geometry name="base_laser_visual">
-          <mesh scale="0.001 0.001 0.001"/>
+          <mesh scale="${base_laser_size_x} ${base_laser_size_y} ${base_laser_size_z}"/>
         </geometry>
       </visual>
 
       <collision>
-        <origin xyz="0 0 0.0" rpy="0 0 0" />
+        <origin xyz="0 0 ${base_laser_collision_offset_z}" rpy="0 0 0" />
         <geometry name="base_laser_collision">
-          <box size="0.001 0.001 0.001" />
+          <box size="${base_laser_size_x} ${base_laser_size_y} ${base_laser_size_z}"/>
         </geometry>
       </collision>
 
@@ -390,16 +411,6 @@
   <property name="caster_offset_y" value="0.2225" />
   <property name="caster_offset_z" value="0.0282" />
 
-  <!-- based on 090224_link_data from function engineering -->
-  <property name="base_cg_x" value="-0.061" />
-  <property name="base_cg_y" value="0.0" />
-  <property name="base_cg_z" value="0.293" />
-  <property name="base_mass" value="116.0" />
-
-  <!-- base appears "raised" from our initial geom def from function -->
-  <property name="base_height_offset" value="0.05" />
-
-
   <macro name="pr2_base" params="name *origin">
 
     <joint name="${name}_joint" type="planar" />
@@ -461,8 +472,9 @@
     </joint>
 
     <link name="base_laser" type="laser">
+      <calibration filename="calib_filename" />
       <parent name="${name}_link" />
-      <origin xyz="0.275 0 ${base_height_offset+0.252}" rpy="0 0 0" />
+      <origin xyz="${base_laser_x} ${base_laser_y} ${base_height_offset+base_laser_z}" rpy="0 0 0" />
       <joint name="base_laser_joint" />
       <inertial>
         <mass value="1.0" />
@@ -471,19 +483,19 @@
       </inertial>
 
       <visual>
-        <origin xyz="0 0 0.0" rpy="0 0 0" />
+        <origin xyz="0 0 ${base_laser_collision_offset_z}" rpy="0 0 0" />
         <map name="gazebo_material" flag="gazebo">
           <elem key="material" value="PR2/Red" />
         </map>
         <geometry name="base_laser_visual">
-          <mesh scale="0.001 0.001 0.001"/>
+          <mesh scale="${base_laser_size_x} ${base_laser_size_y} ${base_laser_size_z}"/>
         </geometry>
       </visual>
 
       <collision>
-        <origin xyz="0 0 0.0" rpy="0 0 0" />
+        <origin xyz="0 0 ${base_laser_collision_offset_z}" rpy="0 0 0" />
         <geometry name="base_laser_collision">
-          <box size="0.001 0.001 0.001" />
+          <box size="${base_laser_size_x} ${base_laser_size_y} ${base_laser_size_z}"/>
         </geometry>
       </collision>
 
