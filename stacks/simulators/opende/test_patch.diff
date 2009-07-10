@@ -2,15 +2,6 @@ Index: ode/src/quickstep.cpp
 ===================================================================
 --- ode/src/quickstep.cpp	(revision 1684)
 +++ ode/src/quickstep.cpp	(working copy)
-@@ -53,7 +53,7 @@
- // and the optimal order is somewhat problem dependent.
- // @@@ try the leaf->root ordering.
- 
--//#define REORDER_CONSTRAINTS 1
-+#define REORDER_CONSTRAINTS 1
- 
- 
- // for the SOR method:
 @@ -63,6 +63,7 @@
  
  #define RANDOMLY_REORDER_CONSTRAINTS 1
@@ -275,29 +266,54 @@ Index: ode/src/quickstep.cpp
    // accumulator. I and invI are a vertical stack of 3x4 matrices, one per body.
    dReal *invI = context->AllocateArray<dReal> (3*4*nb);
  
-+#undef CHECK_MASS
-+#ifdef CHECK_MASS
++#undef DEBUG_MASS
++#ifdef DEBUG_MASS
 +  dReal *tmpI = context->AllocateArray<dReal> (3*4*nb);
 +  dReal *tmpM = context->AllocateArray<dReal> (1*4*nb);
 +#endif
    {
      dReal *invIrow = invI;
      dxBody *const *const bodyend = body + nb;
-@@ -617,6 +820,13 @@
+@@ -617,6 +820,15 @@
        // compute inverse inertia tensor in global frame
        dMULTIPLY2_333 (tmp,b->invI,b->posr.R);
        dMULTIPLY0_333 (invIrow,b->posr.R,tmp);
-+#ifdef CHECK_MASS
-+      memcpy (tmpI+i*12, body[i]->mass.I,3*4*sizeof(dReal));
-+      tmpM[i*4+0] = body[i]->mass.mass;
-+      tmpM[i*4+1] = body[i]->mass.c[0];
-+      tmpM[i*4+2] = body[i]->mass.c[1];
-+      tmpM[i*4+3] = body[i]->mass.c[2];
++#ifdef DEBUG_MASS
++      memcpy (tmpI, b->mass.I,3*4*sizeof(dReal));
++      tmpI+=12;
++      tmpM[0] = b->mass.mass;
++      tmpM[1] = b->mass.c[0];
++      tmpM[2] = b->mass.c[1];
++      tmpM[3] = b->mass.c[2];
++      tmpI+=4;
 +#endif
  
        if (b->flags & dxBodyGyroscopic) {
          dMatrix3 I;
-@@ -705,6 +915,91 @@
+@@ -629,7 +841,22 @@
+       }
+     }
+   }
++#ifdef DEBUG_MASS
++  FILE* ftmpI = fopen("/tmp/tmpI.mat","a");
++  //std::cout << " tmpI " << tmpI << std::endl;
++  fprintf(ftmpI,"\n");
++  dPrintMatrix(tmpI,3*nb,4,"%10.4f",ftmpI);
++  fclose(ftmpI);
+ 
++  FILE* ftmpM = fopen("/tmp/tmpM.mat","a");
++  //std::cout << " tmpM " << tmpM << std::endl;
++  fprintf(ftmpM,"\n");
++  dPrintMatrix(tmpM,nb,4,"%10.4f",ftmpM);
++  fclose(ftmpM);
++#endif
++
++
++
+   {
+     // add the gravity force to all bodies
+     // since gravity does normally have only one component it's more efficient
+@@ -705,6 +932,76 @@
      mfb = mfbcurr;
    }
  
@@ -339,21 +355,6 @@ Index: ode/src/quickstep.cpp
 +  }
 +#endif
 +
-+#ifdef CHECK_MASS
-+  FILE* ftmpI = fopen("/tmp/tmpI.mat","a");
-+  //std::cout << " tmpI " << tmpI << std::endl;
-+  fprintf(ftmpI,"\n");
-+  dPrintMatrix(tmpI,3*nb,4,"%10.4f",ftmpI);
-+  fclose(ftmpI);
-+
-+  FILE* ftmpM = fopen("/tmp/tmpM.mat","a");
-+  //std::cout << " tmpM " << tmpM << std::endl;
-+  fprintf(ftmpM,"\n");
-+  dPrintMatrix(tmpM,nb,4,"%10.4f",ftmpM);
-+  fclose(ftmpM);
-+#endif
-+
-+
 +#ifdef JNORMALIZE_MASS
 +  // we need a copy of Jacobian for joint feedbacks
 +  // because it gets destroyed by SOR solver
@@ -389,7 +390,7 @@ Index: ode/src/quickstep.cpp
    // if there are constraints, compute the constraint force
    dReal *J = NULL;
    int *jb = NULL;
-@@ -719,6 +1014,115 @@
+@@ -719,6 +1016,115 @@
        J = context->AllocateArray<dReal> (jelements);
        dSetZero (J,jelements);
  
@@ -505,11 +506,11 @@ Index: ode/src/quickstep.cpp
        // create a constraint equation right hand side vector `c', a constraint
        // force mixing vector `cfm', and LCP low and high bound vectors, and an
        // 'findex' vector.
-@@ -807,6 +1211,50 @@
+@@ -807,6 +1213,51 @@
  
            ofsi += infom;
          }
-+#define DEBUG_JOINTS
++#undef DEBUG_JOINTS
 +#ifdef DEBUG_JOINTS
 +
 +        {
@@ -520,7 +521,7 @@ Index: ode/src/quickstep.cpp
 +          dRealMutablePtr tmp_Jinfo_ptr = tmpJointInfo;
 +
 +
-+          int count;
++          int count=0;
 +          const dJointWithInfo1 *jicurr = jointiinfos;
 +          const dJointWithInfo1 *const jiend = jicurr + nj;
 +          for (; jicurr != jiend; jicurr++) {
@@ -545,6 +546,7 @@ Index: ode/src/quickstep.cpp
 +            }
 +            tmp_Jinfo_ptr[8+5]   = count*8;
 +            tmp_Jinfo_ptr += 8;
++            count++;
 +          }
 +
 +          FILE* fJointInfo = fopen("/tmp/JointInfo.mat","a");
@@ -556,7 +558,7 @@ Index: ode/src/quickstep.cpp
        }
  
        {
-@@ -874,8 +1322,71 @@
+@@ -874,8 +1325,71 @@
      }
  #endif
  
