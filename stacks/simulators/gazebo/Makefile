@@ -5,7 +5,7 @@ TEST_INSTALL_DIR = $(shell rospack find gazebo)/test-gazebo
 
 SVN_DIR = gazebo-svn
 SVN_URL = https://playerstage.svn.sourceforge.net/svnroot/playerstage/code/gazebo/trunk
-SVN_REVISION = -r 7959
+SVN_REVISION = -r 7987
 SVN_PATCH =  gazebo_new_patch.diff
 include $(shell rospack find mk)/svn_checkout.mk
 
@@ -34,7 +34,7 @@ CMAKE_ARGS =	-D CMAKE_INSTALL_PREFIX=$(INSTALL_DIR) \
 		-D boost_include_dirs=$(BOOST_INCLUDE_DIRS) \
 		-D boost_library_dirs=$(BOOST_LIBRARY_DIRS) \
 		-D boost_libraries="$(BOOST_LIBRARIES)" \
-		-D CMAKE_BUILD_TYPE="release" \
+		-D CMAKE_BUILD_TYPE="debug" \
 		-D bullet_include_dirs=$(BULLET_INCLUDE_DIRS) \
 		-D bullet_dynamics_dirs=$(BULLET_DYNAMICS_DIRS) \
 		-D bullet_collision_dirs=$(BULLET_COLLISION_DIRS) \
@@ -50,6 +50,7 @@ installed: $(SVN_DIR) patched
 	if [ ! -d $(SVN_DIR)/build ]; then mkdir -p $(SVN_DIR)/build; fi
 	cd $(SVN_DIR)/build && $(CMAKE_CMD) ..
 	cd $(SVN_DIR)/build && $(PKG_PATHS) $(PATHS) make $(ROS_PARALLEL_JOBS) && make install
+	rm -f $(SVN_DIR)/build/server/gazebo
 
 clean:
 	-cd $(SVN_DIR) && PKG_CONFIG_PATH=${ODE_PKG}:${FI_PKG}:${PLAYER_PKG}:${OGRE_PKG}:${PKG_CONFIG_PATH} PATH=${ODE_PATH}:${PATH} make clean

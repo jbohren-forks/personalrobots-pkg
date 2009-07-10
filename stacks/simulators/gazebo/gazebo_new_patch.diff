@@ -1,6 +1,6 @@
 Index: server/physics/Geom.cc
 ===================================================================
---- server/physics/Geom.cc	(revision 7959)
+--- server/physics/Geom.cc	(revision 7987)
 +++ server/physics/Geom.cc	(working copy)
 @@ -249,12 +249,12 @@
  
@@ -19,7 +19,7 @@ Index: server/physics/Geom.cc
    else if ( dGeomGetSpace(this->geomId) == 0 )
 Index: server/physics/ode/ODEPhysics.cc
 ===================================================================
---- server/physics/ode/ODEPhysics.cc	(revision 7959)
+--- server/physics/ode/ODEPhysics.cc	(revision 7987)
 +++ server/physics/ode/ODEPhysics.cc	(working copy)
 @@ -66,10 +66,10 @@
    this->contactGroup = dJointGroupCreate(0);
@@ -36,7 +36,7 @@ Index: server/physics/ode/ODEPhysics.cc
    this->globalCFMP = new ParamT<double>("cfm", 10e-5, 0);
 Index: server/Factory.cc
 ===================================================================
---- server/Factory.cc	(revision 7959)
+--- server/Factory.cc	(revision 7987)
 +++ server/Factory.cc	(working copy)
 @@ -104,12 +104,12 @@
    }
@@ -55,7 +55,7 @@ Index: server/Factory.cc
  }
 Index: server/Model.cc
 ===================================================================
---- server/Model.cc	(revision 7959)
+--- server/Model.cc	(revision 7987)
 +++ server/Model.cc	(working copy)
 @@ -260,7 +260,8 @@
    this->SetCollideMode( **this->collideP );
