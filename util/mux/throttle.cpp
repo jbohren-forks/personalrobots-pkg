@@ -51,6 +51,7 @@ $ throttle 1.0 base_scan base_scan_throttled
 @endverbatim
 **/
 
+#include <cstdio>
 #include <stdlib.h>
 #include "ros/ros.h"
 #include "ros/console.h"

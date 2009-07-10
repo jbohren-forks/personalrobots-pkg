@@ -32,6 +32,7 @@
   @todo Document switch
 **/
 
+#include <cstdio>
 #include "ros/node.h"
 #include "deprecated_srvs/StringString.h"
 using namespace std;

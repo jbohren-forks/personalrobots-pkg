@@ -32,6 +32,7 @@
   @todo Document mux
 **/
 
+#include <cstdio>
 #include "ros/node.h"
 #include "std_msgs/String.h"
 #include "deprecated_srvs/StringString.h"
