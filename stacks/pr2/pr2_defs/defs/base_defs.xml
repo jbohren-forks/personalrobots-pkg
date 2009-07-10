@@ -253,14 +253,14 @@
       <joint name="${name}_joint" />
 
       <inertial>
-        <mass value="70.750964" />
-        <com xyz="0 0 ${base_size_z/2}" />
+        <mass value="${base_mass}" />
+        <com xyz="${base_cg_x} ${base_cg_y} ${base_cg_z}" />
         <inertia ixx="5.652232699207" ixy="-0.009719934438" ixz="1.293988226423"
                  iyy="5.669473158652" iyz="-0.007379583694" izz="3.683196351726" />
       </inertial>
 
       <visual>
-        <origin xyz="0 0 0" rpy="0 0 0" />
+        <origin xyz="0 0 ${base_height_offset}" rpy="0 0 0" />
         <map name="gazebo_material" flag="gazebo">
           <elem key="material" value="PR2/Green" />
         </map>
@@ -270,9 +270,9 @@
       </visual>
 
       <collision>
-        <origin xyz="0 0 ${base_size_z/2}" rpy="0 0 0" />
+        <origin xyz="0 0 ${base_height_offset}" rpy="0 0 0" />
         <geometry name="${name}_collision">
-          <box size="${base_size_x} ${base_size_y} ${base_size_z}" />
+          <mesh filename="pr2/base.stlb" />
         </geometry>
       </collision>
       <map name="bumper_sensor" flag="gazebo">
@@ -300,7 +300,7 @@
     <link name="base_laser" type="laser">
       <calibration filename="calib_filename" />
       <parent name="${name}_link" />
-      <origin xyz="0.275 0 0.252" rpy="0 0 0" />
+      <origin xyz="0.275 0 ${base_height_offset+0.252}" rpy="0 0 0" />
       <joint name="base_laser_joint" />
       <inertial>
         <mass value="1.0" />
@@ -321,7 +321,7 @@
       <collision>
         <origin xyz="0 0 0.0" rpy="0 0 0" />
         <geometry name="base_laser_collision">
-          <box size=".1 .1 .1" />
+          <box size="0.001 0.001 0.001" />
         </geometry>
       </collision>
 
@@ -390,9 +390,14 @@
   <property name="caster_offset_y" value="0.2225" />
   <property name="caster_offset_z" value="0.0282" />
 
-  <property name="base_size_x" value="0.65" />
-  <property name="base_size_y" value="0.65" />
-  <property name="base_size_z" value="0.23" />
+  <!-- based on 090224_link_data from function engineering -->
+  <property name="base_cg_x" value="-0.061" />
+  <property name="base_cg_y" value="0.0" />
+  <property name="base_cg_z" value="0.293" />
+  <property name="base_mass" value="116.0" />
+
+  <!-- base appears "raised" from our initial geom def from function -->
+  <property name="base_height_offset" value="0.05" />
 
 
   <macro name="pr2_base" params="name *origin">
@@ -405,14 +410,14 @@
       <joint name="${name}_joint" />
 
       <inertial>
-        <mass value="70.750964" />
-        <com xyz="0 0 ${base_size_z/2}" />
+        <mass value="${base_mass}" />
+        <com xyz="${base_cg_x} ${base_cg_y} ${base_cg_z}" />
         <inertia ixx="5.652232699207" ixy="-0.009719934438" ixz="1.293988226423"
                  iyy="5.669473158652" iyz="-0.007379583694" izz="3.683196351726" />
       </inertial>
 
       <visual>
-        <origin xyz="0 0 0" rpy="0 0 0" />
+        <origin xyz="0 0 ${base_height_offset}" rpy="0 0 0" />
         <map name="gazebo_material" flag="gazebo">
           <elem key="material" value="PR2/Green" />
         </map>
@@ -422,9 +427,9 @@
       </visual>
 
       <collision>
-        <origin xyz="0 0 ${base_size_z/2}" rpy="0 0 0" />
+        <origin xyz="0 0 ${base_height_offset}" rpy="0 0 0" />
         <geometry name="${name}_collision">
-          <box size="${base_size_x} ${base_size_y} ${base_size_z}" />
+          <mesh filename="pr2/base.stlb" />
         </geometry>
         <map name="base_collision_properties" flag="gazebo">
           <elem key="mu1" value="500.0" />
@@ -457,7 +462,7 @@
 
     <link name="base_laser" type="laser">
       <parent name="${name}_link" />
-      <origin xyz="0.275 0 0.252" rpy="0 0 0" />
+      <origin xyz="0.275 0 ${base_height_offset+0.252}" rpy="0 0 0" />
       <joint name="base_laser_joint" />
       <inertial>
         <mass value="1.0" />
@@ -478,7 +483,7 @@
       <collision>
         <origin xyz="0 0 0.0" rpy="0 0 0" />
         <geometry name="base_laser_collision">
-          <box size=".1 .1 .1" />
+          <box size="0.001 0.001 0.001" />
         </geometry>
       </collision>
 
@@ -518,7 +523,7 @@
 
     <link name="plug_magnet" type="laser">
       <parent name="${name}_link" />
-      <origin xyz="0.18 0 0.235" rpy="0 0 0" />
+      <origin xyz="0.18 0 ${base_height_offset+0.235}" rpy="0 0 0" />
       <joint name="plug_magnet_joint" />
       <inertial>
         <mass value="0.1" />
