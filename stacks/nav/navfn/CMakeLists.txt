@@ -17,6 +17,12 @@ genmsg()
 
 rospack_add_library (navfn src/navfn.cpp src/navfn_ros.cpp)
 
+rospack_add_executable(bin/navfn_node src/navfn_node.cpp)
+target_link_libraries(bin/navfn_node navfn)
+
+
+
+
 ### The problem with FindFLTK is that it only reports success if *all*
 ### fltk components are installed, but we only need the core library.
 # include (FindFLTK)

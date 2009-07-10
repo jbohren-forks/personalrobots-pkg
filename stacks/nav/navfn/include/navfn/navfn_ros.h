@@ -103,15 +103,17 @@ namespace navfn {
        */
       virtual void getCostmap(costmap_2d::Costmap2D& costmap); 
       costmap_2d::Costmap2DROS& costmap_ros_;
+      NavFn planner_;
+      double inscribed_radius_, circumscribed_radius_, inflation_radius_;
+      ros::Publisher plan_pub_;
+
 
     private:
       void clearRobotCell(const tf::Stamped<tf::Pose>& global_pose, unsigned int mx, unsigned int my);
       ros::NodeHandle ros_node_;
         costmap_2d::Costmap2D costmap_;
-      NavFn planner_;
       std::string global_frame_;
-      double inscribed_radius_, circumscribed_radius_, inflation_radius_;
-      ros::Publisher plan_pub_;
+
   };
 };
 

@@ -41,7 +41,7 @@ namespace navfn {
   ROS_REGISTER_BGP(NavfnROS);
 
   NavfnROS::NavfnROS(std::string name, costmap_2d::Costmap2DROS& costmap_ros) 
-    : costmap_ros_(costmap_ros),  ros_node_(name), planner_(costmap_ros.cellSizeX(), costmap_ros.cellSizeY()) {
+    : costmap_ros_(costmap_ros),  planner_(costmap_ros.cellSizeX(), costmap_ros.cellSizeY()), ros_node_(name) {
     //get an initial copy of the costmap
     costmap_ros_.getCostmapCopy(costmap_);
 
