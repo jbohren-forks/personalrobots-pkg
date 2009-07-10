@@ -27,6 +27,9 @@
     <!-- set the resolution (1.5 cm) -->
     <param name="resolution" type="double" value="0.015" />
 
+    <!-- the amount of time to remember an occluded point for -->
+    <param name="keep_occluded" type="double" value="30.0" />
+
     <!-- when occluded obstacles are raytraced, keep boxes from occluded space within a given radius -->
     <param name="radius" type="int" value="5" />
 

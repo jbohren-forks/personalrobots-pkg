@@ -90,6 +90,8 @@ private:
 	CollisionPoint(int _x, int _y, int _z) : x(_x), y(_y), z(_z) {}
 	
 	int x, y, z;
+	
+	ros::Time t;	
     };
 
     // define an order on points
@@ -130,6 +132,7 @@ private:
 	int maxX, maxY, maxZ;
 	double real_minX, real_minY, real_minZ;
 	double real_maxX, real_maxY, real_maxZ;
+	ros::Duration keepOccluded;
     };
     
     void loadParams(void)
@@ -160,6 +163,11 @@ private:
 
 	// when occluded obstacles are raytraced, keep boxes from occluded space within a given radius
 	nh_.param<int>("~radius", bi_.radius, 1);
+
+	// when occluded obstacles are raytraced, keep boxes from occluded space for a max amount of time
+	double v;
+	nh_.param<double>("~keep_occluded", v, 30.0);
+	bi_.keepOccluded = ros::Duration(v);
 	
 	ROS_INFO("Maintaining occlusion map in frame '%s', with origin at (%f, %f, %f) and dimension (%f, %f, %f), resolution of %f; "
 		 "sensor is at (%f, %f, %f), fixed fame is '%s', radius for raytraced occlusions is %d.",
@@ -197,7 +205,8 @@ private:
 	while (it != map.end())
 	{
 	    const CollisionPoint &cp = *it;
-	    if (sf_.getMask(cp.x * bi_.resolution + bi_.originX, cp.y * bi_.resolution + bi_.originY, cp.z * bi_.resolution + bi_.originZ) == 0)
+	    if (header_.stamp - cp.t > bi_.keepOccluded ||
+		sf_.getMask(cp.x * bi_.resolution + bi_.originX, cp.y * bi_.resolution + bi_.originY, cp.z * bi_.resolution + bi_.originZ) == 0)
 	    {
 		CMap::iterator e = it;
 		++it;
@@ -431,6 +440,7 @@ private:
 		    CollisionPoint c((int)(0.5 + (p.x() - bi_.originX) / bi_.resolution),
 				     (int)(0.5 + (p.y() - bi_.originY) / bi_.resolution),
 				     (int)(0.5 + (p.z() - bi_.originZ) / bi_.resolution));
+		    c.t = pts[i].t;
 		    map.insert(c);
 		}
 	    }
@@ -565,6 +575,7 @@ private:
 		if (*state == 8)
 		{
 		    CollisionPoint c(x, y, z);
+		    c.t = header_.stamp;
 		    lock_current->lock();
 		    occ_current->insert(c);
 		    lock_current->unlock();
@@ -591,6 +602,7 @@ private:
 			// so at least a part of the robot has moved; we will need to raytrace from this point later on
 			// and check if we are occluding anything
 			CollisionPoint c(x, y, z);
+			c.t = header_.stamp;
 			lock_moving->lock();
 			occ_moving->insert(c);
 			lock_moving->unlock();
@@ -617,6 +629,7 @@ private:
 		    c.x = (int)(0.5 + (p.x - bi_.originX) / bi_.resolution);
 		    c.y = (int)(0.5 + (p.y - bi_.originY) / bi_.resolution);
 		    c.z = (int)(0.5 + (p.z - bi_.originZ) / bi_.resolution);
+		    c.t = cloud.header.stamp;
 		    map.insert(c);		
 		}
 	    }
