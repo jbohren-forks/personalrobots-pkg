@@ -117,7 +117,7 @@ void Voxel3d::updateWorld(const robot_msgs::PointCloud &cloud)
     obs_marker.color.g = 0.0;
     obs_marker.color.b = 0.5;
     obs_marker.color.a = 0.5;
-    obs_marker.lifetime = ros::Duration(1.0);
+    obs_marker.lifetime = ros::Duration(30.0);
 
     visualization_msgs::Marker inf_marker; // Marker for the inflation
     inf_marker.header.frame_id = cloud.header.frame_id;
@@ -277,3 +277,115 @@ void Voxel3d::putWorldObstacle(double i, double j, double k)
   worldToGrid(i, j, k, x, y, z);
   putObstacle(x, y, z);
 }
+
+void Voxel3d::updateVisualizations()
+{
+//   if (visualize_ && cloud.header.stamp - last_visualized_ > ros::Duration(3.0))
+//   {
+//     last_visualized_ = cloud.header.stamp;
+// #if 1
+    std::string frame_id = "torso_lift_link";
+    visualization_msgs::Marker obs_marker;
+    obs_marker.header.frame_id = frame_id;
+    obs_marker.header.stamp = ros::Time::now();
+    obs_marker.ns = "voxel3d";
+    obs_marker.id = 0;
+    obs_marker.type = visualization_msgs::Marker::CUBE_LIST;
+    obs_marker.action = 0;
+    obs_marker.scale.x = resolution_;
+    obs_marker.scale.y = resolution_;
+    obs_marker.scale.z = resolution_;
+    obs_marker.color.r = 1.0;
+    obs_marker.color.g = 0.0;
+    obs_marker.color.b = 0.5;
+    obs_marker.color.a = 0.5;
+    obs_marker.lifetime = ros::Duration(30.0);
+
+    visualization_msgs::Marker inf_marker; // Marker for the inflation
+    inf_marker.header.frame_id = frame_id;
+    inf_marker.header.stamp = ros::Time::now();
+    inf_marker.ns = "voxel3d";
+    inf_marker.id = 1;
+    inf_marker.type = visualization_msgs::Marker::CUBE_LIST;
+    inf_marker.action = 0;
+    inf_marker.scale.x = resolution_;
+    inf_marker.scale.y = resolution_;
+    inf_marker.scale.z = resolution_;
+    inf_marker.color.r = 1.0;
+    inf_marker.color.g = 0.0;
+    inf_marker.color.b = 0.0;
+    inf_marker.color.a = 0.1;
+    inf_marker.lifetime = ros::Duration(30.0);
+
+    obs_marker.points.reserve(50000);
+    inf_marker.points.reserve(100000);
+    for (int k = 0; k < size3_; ++k) {
+      for (int j = 0; j < size2_; ++j) {
+	for (int i = 0; i < size1_; ++i) {
+	  unsigned char dist = data_[ref(i, j, k)];
+	  if (dist == 0)
+	  {
+	    int last = obs_marker.points.size();
+	    obs_marker.points.resize(last + 1);
+	    gridToWorld(i, j, k,
+			obs_marker.points[last].x,
+			obs_marker.points[last].y,
+			obs_marker.points[last].z);
+
+	  }
+	  if (dist == 8)
+	  {
+	    int last = inf_marker.points.size();
+	    inf_marker.points.resize(last + 1);
+	    gridToWorld(i, j, k,
+			inf_marker.points[last].x,
+			inf_marker.points[last].y,
+			inf_marker.points[last].z);
+
+	  }
+	}
+      }
+    }
+    ROS_INFO("Publishing a markers: %d obstacles, %d inflated",
+	     obs_marker.points.size(), inf_marker.points.size());
+    pub_viz_.publish(obs_marker);
+    pub_viz_.publish(inf_marker);
+// #else
+//     visualization_msgs::MarkerArray msg;
+//     msg.markers.reserve(300000);
+//     for (int k = 0; k < size3_; ++k) {
+//       for (int j = 0; j < size2_; ++j) {
+// 	for (int i = 0; i < size1_; ++i) {
+// 	  unsigned char dist = data_[ref(i, j, k)];
+// 	  if (dist == 8)
+// 	  {
+// 	    int last = msg.markers.size();
+// 	    msg.markers.resize(last + 1);
+// 	    msg.markers[last].header.frame_id = cloud.header.frame_id;
+// 	    msg.markers[last].header.stamp = cloud.header.stamp;
+// 	    msg.markers[last].ns = "voxel3d";
+// 	    msg.markers[last].id = last;
+// 	    msg.markers[last].type = visualization_msgs::Marker::CUBE;
+// 	    msg.markers[last].action = 0;
+// 	    gridToWorld(i, j, k,
+// 			msg.markers[last].pose.position.x,
+// 			msg.markers[last].pose.position.y,
+// 			msg.markers[last].pose.position.z);
+// 	    msg.markers[last].scale.x = resolution_;
+// 	    msg.markers[last].scale.y = resolution_;
+// 	    msg.markers[last].scale.z = resolution_;
+// 	    msg.markers[last].color.r = 1.0;
+// 	    msg.markers[last].color.g = 0.0;
+// 	    msg.markers[last].color.b = 0.0;
+// 	    msg.markers[last].color.a = 0.5;
+// 	    msg.markers[last].lifetime = ros::Duration(30.0);
+// 	  }
+// 	}
+//       }
+//     }
+//     ROS_INFO("Publishing a marker array with %d elements", msg.markers.size());
+//     pub_viz_.publish(msg);
+// #endif
+//   }
+}
+

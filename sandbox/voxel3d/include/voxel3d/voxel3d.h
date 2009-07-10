@@ -27,7 +27,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-// Author: Stuart Glaser
+/** \author Stuart Glaser */
 
 #include <vector>
 #include "ros/node_handle.h"
@@ -41,8 +41,10 @@ public:
 
   Voxel3d(int size1, int size2, int size3, double resolution, const tf::Vector3 &origin,
           bool visualize = false);
+
   ~Voxel3d();
 
+  /** \brief add the points in the point cloud to the voxel */
   void updateWorld(const robot_msgs::PointCloud &cloud);
 
   unsigned char &operator()(int i, int j, int k) {
@@ -52,10 +54,24 @@ public:
     return data_[ref(i,j,k)];
   }
 
+  /** \brief clear the voxel (set all cells to 0)*/
   void reset();
 
+  /** \brief publish the visualization markers for a specified period of time (hardcoded right now) */
+  void updateVisualizations();
+
+  /** \brief retrieve the dimensions of the voxel and the resolution (meters) */
+  void getDimensions(int *size1, int *size2, int *size3, double *resolution)  {
+    *size1 = size1_;
+    *size2 = size2_;
+    *size3 = size3_;
+    *resolution = resolution_;
+  }
+
+  /** \brief place an obstacle in the voxel defined in voxel coordinates */
   void putObstacle(int i, int j, int k);
 
+  /** \brief add an obstacle to the voxel defined in world coordinates */
   void putWorldObstacle(double i, double j, double k);
 
 private:
@@ -69,11 +85,14 @@ private:
   ros::Publisher pub_viz_;
   ros::Time last_visualized_;
 
+  /** \brief convert coordinates from world to grid */
   void worldToGrid(double wx, double wy, double wz, int &gx, int &gy, int &gz) const {
     gx = (int)((wx - origin_.x()) / resolution_);
     gy = (int)((wy - origin_.y()) / resolution_);
     gz = (int)((wz - origin_.z()) / resolution_);
   }
+
+  /** \brief convert coordinates from grid to world */
   void gridToWorld(int gx, int gy, int gz, double &wx, double &wy, double &wz) const {
     wx = gx * resolution_ + origin_.x();
     wy = gy * resolution_ + origin_.y();
@@ -82,6 +101,9 @@ private:
   inline int ref(int i, int j, int k) const {
     return k * stride2_ + j * stride1_ + i;
   }
+
+  /** \brief place an obstacle in the voxel defined in voxel coordinates */
+//   void putObstacle(int i, int j, int k);
 
   //std::vector<unsigned char> kernel_;
   unsigned char *kernel_;
