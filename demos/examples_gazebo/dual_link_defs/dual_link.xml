@@ -78,8 +78,7 @@
       <map name="gazebo_material" flag="gazebo">
         <elem key="material">Gazebo/Red</elem>
       </map>
-      <geometry name="sholder_pan_mesh_file">
-        <!--mesh filename="shoulder_yaw" /-->
+      <geometry name="link1_visual_geom">
         <mesh scale="0.1 0.1 1.0" />
       </geometry>
     </visual>
@@ -109,7 +108,7 @@
       <map name="gazebo_material" flag="gazebo">
         <elem key="material">Gazebo/Blue</elem>
       </map>
-      <geometry name="sholder_roll_mesh_file">
+      <geometry name="link2_visual_geom">
         <mesh scale="1.0 0.1 0.1" />
       </geometry>
     </visual>
