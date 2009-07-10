@@ -1,6 +1,7 @@
 #include "descriptors.h"
 
 using namespace std;
+using namespace cv;
 USING_PART_OF_NAMESPACE_EIGEN
 
 
@@ -121,7 +122,7 @@ void inPaintNN(IplImage* img) {
 ****************************************************************************/
 
 ImageDescriptor::ImageDescriptor() :
-  debug_(false)
+  img_(NULL), debug_(false)
 {
 }
 
@@ -156,9 +157,97 @@ bool ImageDescriptor::compute(MatrixXf** result) {
   return false;
 }
 
-void ImageDescriptor::display(const MatrixXf& result) {
-  cout << "Displaying..." << endl;
+//void ImageDescriptor::compute(IplImage* img, const cv::Vector<Keypoint>& points, vvf result) {}
+
+/****************************************************************************
+*************  ImageDescriptor::HogWrapper
+****************************************************************************/
+HogWrapper::HogWrapper() : ImageDescriptor(), hog_()
+{
+  char buf[400];
+  sprintf(buf, "Hog_winSize%dx%d_blockSize%dx%d_blockStride%dx%d_cellSize%dx%d_nBins%d_derivAperture%d_winSigma%lf_histNormType%d_L2HysThreshold%lf_gammaCorrection%d", 
+	  hog_.winSize.width, hog_.winSize.height, hog_.blockSize.width, hog_.blockSize.height, hog_.blockStride.width, hog_.blockStride.height, 
+	  hog_.cellSize.width, hog_.cellSize.height, hog_.nbins, hog_.derivAperture, hog_.winSigma, hog_.histogramNormType, 
+	  hog_.L2HysThreshold, hog_.gammaCorrection);
+  name_ = buf;
+  result_size_ = hog_.getDescriptorSize();
 }
+
+HogWrapper::HogWrapper(Size winSize, Size blockSize, Size blockStride, Size cellSize,
+			int nbins, int derivAperture, double winSigma,
+			int histogramNormType, double L2HysThreshold, bool gammaCorrection)
+  : ImageDescriptor(), hog_(winSize, blockSize, blockStride, nbins, derivAperture, winSigma, histogramNormType, L2HysThreshold, gammaCorrection)
+{
+  char buf[400];
+  sprintf(buf, "Hog_winSize%dx%d_blockSize%dx%d_blockStride%dx%d_cellSize%dx%d_nBins%d_derivAperture%d_winSigma%lf_histNormType%d_L2HysThreshold%lf_gammaCorrection%d", 
+	  winSize.width, winSize.height, blockSize.width, blockSize.height, blockStride.width, blockStride.height, cellSize.width, cellSize.height,
+	  nbins, derivAperture, winSigma, histogramNormType, L2HysThreshold, gammaCorrection);
+  name_ = buf;
+  hog_.cellSize = cellSize;
+  result_size_ = hog_.getDescriptorSize();
+}
+
+
+void HogWrapper::compute(IplImage* img, const cv::Vector<Keypoint>& points, vvf& results) {
+
+  // -- Translate from Keypoint to Point.
+  Vector<Point> locations;
+  locations.reserve(points.size());
+  for(unsigned int i=0; i<points.size(); i++) {
+    Point pt(round(points[i].pt.x), round(points[i].pt.y));
+    locations.push_back(pt);
+  }
+  
+  results.resize(points.size());
+  Vector<float> result;
+  
+  hog_.compute(img, result, Size(), Size(), locations); //winStride and padding are set to default
+  //cout << result.size() << " elements in hog return." << endl;
+
+  // -- Construct vvf from the long concatenation that hog_ produces.
+  //    Assume that an all 0 vector was the result of an edge case.
+  int sz = hog_.getDescriptorSize();
+  for(unsigned int i=0; i<points.size(); i++) {
+    bool valid = false;
+    for(unsigned int j=i*sz; j<(i+1)*sz; j++) {
+      if(result[j] != 0) {
+	valid = true;
+	break;
+      }
+    }
+    if(valid) {
+      //results[i] = Vector<float>(&result[i*sz], sz); //Creates a header for this data.  No copy.
+      results[i] = Vector<float>(&result[i*sz], sz, true); //Copy.
+    } 
+    //cout << results[i].size() << " elements in a single feature.  valid:" << valid << endl;
+  }
+  //cout << "returning " << results.size() << " features." << endl;
+
+  //result contains the data, and we didn't do a copy.  This prevents the data from being deallocated when result goes out of scope.
+  //The data will be deallocated when results goes out of scope (after being returned).
+  //result.addref(); 
+
+  if(debug_) {
+    cout << "debugging" << endl;
+    // -- Find first returned descriptor.
+    unsigned int i;
+    for(i=0; i<results.size(); i++) {
+      if(!results[i].empty())
+	break;
+    }
+    
+    if(i == results.size())
+      cout << "No valid " << name_ << " descriptor." << endl;
+    else {
+      Vector<float>& r = results[i];
+      cout << name_ << " descriptor: " << endl;
+      for(unsigned int j=0; j<r.size(); j++) {
+	cout << " " << r[j];
+      }
+      cout << endl;
+    }
+  }
+} 
 
 
 /****************************************************************************
@@ -337,17 +426,13 @@ bool PatchStatistic::compute(MatrixXf** result) {
   }
 
   if(debug_) {
-    display(**result);
+    cout << name_ << " is " << **result << endl;
 //     cvNamedWindow("fp");
 //     cvShowImage("fp", fp);
     commonDebug();
   }
 
   return true;
-}
-
-void PatchStatistic::display(const MatrixXf& result) {
-  cout << name_ << " is " << result << endl;
 }
 
 /***************************************************************************
@@ -358,9 +443,10 @@ void PatchStatistic::display(const MatrixXf& result) {
 SuperpixelStatistic::SuperpixelStatistic(int seed_spacing, float scale, SuperpixelStatistic* seg_provider) :
   index_(NULL), seed_spacing_(seed_spacing), scale_(scale), seg_provider_(seg_provider), seg_(NULL)
 {
-  char buf[100];
+  char buf[1000];
   sprintf(buf, "SuperpixelStatistic_seedSpacing%d_scale%g", seed_spacing_, scale_);
   name_ = string(buf);
+  cout << "name: " << name_ << endl;
 }
 
 //! Create a mask of 255 for segment number seg, and 0 for everything else.  Useful for histograms.
@@ -561,16 +647,19 @@ void SuperpixelStatistic::segment() {
 SuperpixelColorHistogram::SuperpixelColorHistogram(int seed_spacing, float scale, int nBins, string type, SuperpixelStatistic* seg_provider, SuperpixelColorHistogram* hsv_provider) :
   SuperpixelStatistic(seed_spacing, scale, seg_provider), hsv_(NULL), hue_(NULL), sat_(NULL), val_(NULL), nBins_(nBins), type_(type), hsv_provider_(hsv_provider), hists_reserved_(false), channel_(NULL)
 {
+  cout << "name (sch): " << name_ << endl;
   char buf[100];
   sprintf(buf, "_colorHistogram_type:%s_nBins%d", type_.c_str(), nBins);
+  cout << type_.c_str() << endl;
+  cout << buf << endl;
   name_.append(buf);
 
-  result_size_ = nBins_;
+  result_size_ = nBins_*nBins_;
 
-  max_val_ = 255;
-  if(type_.compare("hue") == 0) {
-    max_val_ = 180;
-  }
+//   max_val_ = 255;
+//   if(type_.compare("hue") == 0) {
+//     max_val_ = 180;
+//   }
 
   // -- Set up ranges_ for histogram computation.
 //   float* range = (float*) malloc(sizeof(float)*2);
@@ -586,7 +675,21 @@ SuperpixelColorHistogram::~SuperpixelColorHistogram() {
 }
 
 
-bool SuperpixelColorHistogram::compute(MatrixXf** result) {
+void SuperpixelColorHistogram::compute(IplImage* img, const cv::Vector<Keypoint>& points, vvf& results) {
+  clearImageCache();
+  img_ = img;
+  
+  results.clear();
+  results.resize(points.size());
+
+  for(unsigned int i=0; i<points.size(); i++) {
+    compute(img, points[i], results[i]);
+  }
+}
+void SuperpixelColorHistogram::compute(IplImage* img, const Keypoint& point, cv::Vector<float>& result) {
+//bool SuperpixelColorHistogram::compute(MatrixXf** result) {
+  result.clear();
+
   // -- Make sure we have access to a segmentation.
   if(seg_provider_ == NULL && seg_ == NULL) {
     index_ = new vector< vector<CvPoint> >;
@@ -625,39 +728,44 @@ bool SuperpixelColorHistogram::compute(MatrixXf** result) {
 
   // -- Get the label at this point.
   int label = CV_IMAGE_ELEM(seg_, long, row_, col_);
-  if(label == -1) 
-    return false;
-// -- Choose which channel we wil use.
-  channel_=NULL;
-  if(type_.compare("hue") == 0) {
-    channel_ = hue_;
+  if(label == -1)  {
+    result.clear();
+    cerr << "SEG -1.  This should not happen." << endl;
+    return;
   }
-  else if(type_.compare("sat") == 0)
-    channel_ = sat_;
-  else if(type_.compare("val") == 0)
-    channel_ = val_;
-  else 
-    ROS_ERROR("Bad SuperpixelColorHistogram type.");
+// -- Choose which channel we wil use.
+//   channel_=NULL;
+//   if(type_.compare("hue") == 0) {
+//     channel_ = hue_;
+//   }
+//   else if(type_.compare("sat") == 0)
+//     channel_ = sat_;
+//   else if(type_.compare("val") == 0)
+//     channel_ = val_;
+//   else 
+//     ROS_ERROR("Bad SuperpixelColorHistogram type.");
 
   // -- Make sure we have access to the histogram data for this point.
   if(!hists_reserved_) {
-    histograms_ = vector<Histogram*>(index_->size()+1, NULL);
+    //histograms_ = vector<Histogram*>(index_->size()+1, NULL);
     histograms_cv_ = vector<CvHistogram*>(index_->size()+1, NULL);
     hists_reserved_ = true;
   }
 
   // -- Compute the histogram by hand.
-  computeHistogram(label);
+  //computeHistogram(label);
 
   // -- Compute the histogram.
   computeHistogramCV(label);
 
   // -- Copy into result.
-  MatrixXf* res = new MatrixXf(result_size_,1);
+  int ctr = 0;
   for(int i=0; i<nBins_; i++) {
-    (*res)(i,0) = cvQueryHistValue_1D(histograms_cv_[label], i);
+    for(int j=0; j<nBins_; j++) {
+      result[ctr] = cvQueryHistValue_2D(histograms_cv_[label], i, j);
+      ctr++;
+    }
   }
-  *result = res;
 
   if(debug_) {
     // -- Show the mask.
@@ -669,33 +777,33 @@ bool SuperpixelColorHistogram::compute(MatrixXf** result) {
 //     histograms_[label]->printGraph();
     cout << "cv hist: " << endl;
     for(int i=0; i<nBins_; i++) {
-      cout << cvQueryHistValue_1D(histograms_cv_[label], i) << " ";
+      for(int j=0; j<nBins_; j++) {
+      cout << cvQueryHistValue_2D(histograms_cv_[label], i, j) << " ";
+      }
     }
     cout << endl;
     commonDebug();
   }
-
-  return true;
 }
 
-void SuperpixelColorHistogram::computeHistogram(long label) {
-  if(histograms_[label] == NULL) {
-    Histogram* h = new Histogram(nBins_, 0, max_val_);
+// void SuperpixelColorHistogram::computeHistogram(long label) {
+//   if(histograms_[label] == NULL) {
+//     Histogram* h = new Histogram(nBins_, 0, max_val_);
 
-    const vector<CvPoint>& l = (*index_)[label];
-    vector<CvPoint>::const_iterator lit;
-    for(lit = l.begin(); lit != l.end(); lit++) {
-      if(!h->insert(CV_IMAGE_ELEM(channel_, uchar, lit->y, lit->x))) {
-	ROS_FATAL("Insertion failed for %u ", CV_IMAGE_ELEM(channel_, uchar, lit->y, lit->x));
-	h->printBoundaries();
-	ROS_BREAK();
-      }
-    }
+//     const vector<CvPoint>& l = (*index_)[label];
+//     vector<CvPoint>::const_iterator lit;
+//     for(lit = l.begin(); lit != l.end(); lit++) {
+//       if(!h->insert(CV_IMAGE_ELEM(channel_, uchar, lit->y, lit->x))) {
+// 	ROS_FATAL("Insertion failed for %u ", CV_IMAGE_ELEM(channel_, uchar, lit->y, lit->x));
+// 	h->printBoundaries();
+// 	ROS_BREAK();
+//       }
+//     }
       
-    h->normalize();
-    histograms_[label] = h;
-  }
-}
+//     h->normalize();
+//     histograms_[label] = h;
+//   }
+// }
 
 void SuperpixelColorHistogram::computeHistogramCV(long label) {
   if(!hue_) 
@@ -703,10 +811,11 @@ void SuperpixelColorHistogram::computeHistogramCV(long label) {
 
   if(histograms_cv_[label] == NULL) {
     //ROS_DEBUG("Computing hist for %s for label %ld", name_.c_str(), label);
-    float range[] = {0, 180}; //hsv
-    float* ranges[] = {range};
-    int sizes[] = {nBins_};
-    CvHistogram* hist = cvCreateHist(1, sizes, CV_HIST_ARRAY, ranges, 1);
+    float huerange[] = {0, 180}; //hsv
+    float satrange[] = {0, 255}; //hsv
+    float* ranges[] = {huerange, satrange}; //hue and sat.
+    int sizes[] = {nBins_, nBins_};
+    CvHistogram* hist = cvCreateHist(2, sizes, CV_HIST_ARRAY, ranges, 1);
     //cout << "nBins " << nBins_ << "&hue_ " << &hue_ << "hue_ " << hue_ << "hist " << hist << "ranges " << ranges << "mask " << mask << endl;
     CvRect rect;
     IplImage* mask = createSegmentMask(label, &rect);
@@ -715,10 +824,13 @@ void SuperpixelColorHistogram::computeHistogramCV(long label) {
 //     cvWaitKey(0);
     //For efficiency, set the ROI's.
     cvSetImageROI(hue_, rect);
+    cvSetImageROI(sat_, rect);
     cvSetImageROI(mask, rect);
-    cvCalcHist(&hue_, hist, 0, mask);
+    IplImage* imgs[] = {hue_, sat_};
+    cvCalcHist(imgs, hist, 0, mask);
     cvReleaseImage(&mask);
     cvResetImageROI(hue_);
+    cvResetImageROI(sat_);
 
     cvNormalizeHist(hist, 1);
     histograms_cv_[label] = hist;
@@ -805,8 +917,6 @@ IntegralImageDescriptor::~IntegralImageDescriptor() {
 
 void IntegralImageDescriptor::integrate() {
   
-  if(!img_)
-    ROS_FATAL("Trying to compute integral image of null image.");
   if(!gray_) {
     gray_ = cvCreateImage(cvGetSize(img_), IPL_DEPTH_8U, 1);
     cvCvtColor(img_, gray_, CV_BGR2GRAY);
@@ -836,7 +946,7 @@ void IntegralImageDescriptor::clearImageCache() {
   }
 } 
 
-bool IntegralImageDescriptor::integrateRect(float* result, int row_offset, int col_offset, int half_height, int half_width) {
+bool IntegralImageDescriptor::integrateRect(float* result, int row_offset, int col_offset, int half_height, int half_width, float* area) {
   // -- Check that we have an integral image.
   if(!ii_) {
     return false;
@@ -864,16 +974,26 @@ bool IntegralImageDescriptor::integrateRect(float* result, int row_offset, int c
             - CV_IMAGE_ELEM(ii_, int, ur_y    , ur_x + 1) \
             - CV_IMAGE_ELEM(ii_, int, ll_y + 1, ll_x    );
 
+  if(area)
+    *area = (2*half_width+1) * (2*half_height+1);
+
   // -- Check that it's right.  
 //   int check = 0;
+//   float area2 = 0;
 //   for(int r=ul_y; r<=ll_y; r++) {
 //     for(int c=ul_x; c<=ur_x; c++) {
 //       check += CV_IMAGE_ELEM(gray_, uchar, r, c);
+//       area2++;
 //     }
 //   }
 //   if(abs(check - *result) > 0) {
 //     cout << check - *result << " difference for computing at row " << row_ << " and col " << col_ << endl;
 //     ROS_ASSERT(0);
+//   }
+//   if(area) {
+//     //  cout << "theory: " << *area;
+//     //  cout << "  integrate: " << area2 << endl;
+//     assert(abs(*area - area2) < 1e-4);
 //   }
 
   return true;
@@ -889,7 +1009,6 @@ IntegralImageTexture::IntegralImageTexture(int scale, IntegralImageDescriptor* i
   sprintf(buf, "_IntegralImageTexture_scale%d", scale_);
   name_.append(buf);
 
-  //result_size_ = 17; //TextonBoost-like texture descriptors.
   result_size_ = 21;
 }
 
@@ -906,81 +1025,97 @@ IntegralImageTexture::IntegralImageTexture(int scale, IntegralImageDescriptor* i
 //   ROS_DEBUG("Calling IntegralImageTexture's setImage");
 // }
 
-bool IntegralImageTexture::compute(Eigen::MatrixXf** result) {
-  if(!ii_)
+
+void IntegralImageTexture::compute(IplImage* img, const cv::Vector<Keypoint>& points, vvf& results) {
+  clearImageCache();
+  results.clear();
+  img_ = img;
+
+  for(unsigned int i=0; i<points.size(); i++) {
+    compute(img, points[i], results[i]);
+  }
+}
+
+void IntegralImageTexture::compute(IplImage* img, const Keypoint& point, cv::Vector<float>& result) {
+  
+  //bool IntegralImageTexture::compute(Eigen::MatrixXf** result) {
+  if(!ii_ && !ii_provider_)
     integrate();
+  if(!ii_ && ii_provider_)  {
+    ii_ = ii_provider_->ii_;
+    gray_ = ii_provider_->gray_;
+  }
   
   int szs = 8;
   vector<float> val(8,0);
   vector<float> area(8,0);
   
   bool success=true;
-  MatrixXf* res = new MatrixXf(result_size_, 1);
+  result.resize(result_size_);
   int ctr = 0;
 
   // -- 8 Center-surround
-  success &= integrateRect(&val[0], 0, 0, 1, 1);
-  area[0] = 9;
+  success &= integrateRect(&val[0], 0, 0, 1*scale_, 1*scale_, &area[0]);
   for(int i=1; i<=szs; i++) {
-    success &= integrateRect(&val[i], 0, 0, i+1, i+1); 
-    area[i] = pow((double)(2*(i+1)+1), 2);
-    (*res)(ctr,0) = (val[i-1] - val[i]) / (area[i]-area[i-1]) + val[i-1] / area[i-1];
+    success &= integrateRect(&val[i], 0, 0, (i+1)*scale_, (i+1)*scale_, &area[i]); 
+    result[ctr] = (val[i-1] - val[i]) / (area[i]-area[i-1]) + val[i-1] / area[i-1];
     ctr++;
   }
   
   //5 finer grained center-surround.
   for(unsigned int i=3; i<val.size(); i++) {
-    (*res)(ctr,0) = (2./3.) * val[i-3] / area[i-3] + (1./3.) * (val[i-2] - val[i-3]) / (area[i-2] - area[i-3]) \
+    result[ctr] = (2./3.) * val[i-3] / area[i-3] + (1./3.) * (val[i-2] - val[i-3]) / (area[i-2] - area[i-3]) \
       - (1./3.) * (val[i-1] - val[i-2]) / (area[i-1] - area[i-2]) - (2./3.) * (val[i] - val[i-1]) / (area[i] - area[i-1]);
     ctr++;
   }
 
   // -- Gabor Vert
-  success &= integrateRect(&val[0], 0, 1, 2, 0); 
-  success &= integrateRect(&val[1], 0, -1, 2, 0); 
-  (*res)(ctr,0) = (val[0] - val[1]) / 5.;
+  assert(5.*scale_ == 5*scale_);
+
+  success &= integrateRect(&val[0], 0, 1*scale_, 2*scale_, 0);
+  success &= integrateRect(&val[1], 0, -1*scale_, 2*scale_, 0, &area[0]); 
+  result[ctr] = (val[0] - val[1]) / area[0];
   ctr++;
 
-  success &= integrateRect(&val[0], 0, 1, 5, 0); 
-  success &= integrateRect(&val[1], 0, -1, 5, 0); 
-  (*res)(ctr,0) = (val[0] - val[1]) / 11.;
+  success &= integrateRect(&val[0], 0, 1*scale_, 5*scale_, 0); 
+  success &= integrateRect(&val[1], 0, -1*scale_, 5*scale_, 0, &area[0]); 
+  result[ctr] = (val[0] - val[1]) / area[0]; 
   ctr++;
 
-  success &= integrateRect(&val[0], 0, 2, 2, 1); 
-  success &= integrateRect(&val[1], 0, -2, 2, 1); 
-  (*res)(ctr,0) = (val[0] - val[1]) / 15;
+  success &= integrateRect(&val[0], 0, 2*scale_, 2*scale_, 1*scale_); 
+  success &= integrateRect(&val[1], 0, -2*scale_, 2*scale_, 1*scale_, &area[0]); 
+  result[ctr] = (val[0] - val[1]) / area[0]; 
   ctr++;
 
-  success &= integrateRect(&val[0], 0, 2, 5, 1); 
-  success &= integrateRect(&val[1], 0, -2, 5, 1); 
-  (*res)(ctr,0) = (val[0] - val[1]) / 33.;
+  success &= integrateRect(&val[0], 0, 2*scale_, 5*scale_, 1*scale_); 
+  success &= integrateRect(&val[1], 0, -2*scale_, 5*scale_, 1*scale_, &area[0]); 
+  result[ctr] = (val[0] - val[1]) / area[0]; 
   ctr++;
 
   // -- Horiz
-  success &= integrateRect(&val[0], 1, 0, 0, 2); 
-  success &= integrateRect(&val[1], -1, 0, 0, 2); 
-  (*res)(ctr,0) = (val[0] - val[1]) / 5.;
+  success &= integrateRect(&val[0], 1, 0, 0, 2*scale_); 
+  success &= integrateRect(&val[1], -1, 0, 0, 2*scale_, &area[0]); 
+  result[ctr] = (val[0] - val[1]) / area[0];
   ctr++;
   
-  success &= integrateRect(&val[0], 1, 0, 0, 5); 
-  success &= integrateRect(&val[1], -1, 0, 0, 5); 
-  (*res)(ctr,0) = (val[0] - val[1]) / 11.;
+  success &= integrateRect(&val[0], 1, 0, 0, 5*scale_); 
+  success &= integrateRect(&val[1], -1, 0, 0, 5*scale_, &area[0]); 
+  result[ctr] = (val[0] - val[1]) / area[0];
   ctr++;
   
-  success &= integrateRect(&val[0], 2, 0, 1, 2); 
-  success &= integrateRect(&val[1], -2, 0, 1, 2); 
-  (*res)(ctr,0) = (val[0] - val[1]) / 15.;
+  success &= integrateRect(&val[0], 2, 0, 1*scale_, 2*scale_); 
+  success &= integrateRect(&val[1], -2, 0, 1*scale_, 2*scale_, &area[0]); 
+  result[ctr] = (val[0] - val[1]) / area[0];
   ctr++;
 
-  success &= integrateRect(&val[0], 2, 0, 1, 5); 
-  success &= integrateRect(&val[1], -2, 0, 1, 5);
-  (*res)(ctr,0) = (val[0] - val[1]) / 33.;
+  success &= integrateRect(&val[0], 2, 0, 1*scale_, 5*scale_); 
+  success &= integrateRect(&val[1], -2, 0, 1*scale_, 5*scale_, &area[0]);
+  result[ctr] = (val[0] - val[1]) / area[0];
   ctr++;
 
 
   if(!success) {
-    delete res;
-    return false;
+    result.clear();
   }
 
 
@@ -988,11 +1123,12 @@ bool IntegralImageTexture::compute(Eigen::MatrixXf** result) {
 //   static vector<float> max(result_size_, -1e20);
 //   static vector<float> min(result_size_, 1e20);
 //   for(unsigned int i=0; i<result_size_; i++) {
-//     assert((*res)(i,0) <= 255 && (*res)(i,0) >= -255);
-//     if((*res)(i,0) > max[i])
-//       max[i] = (*res)(i,0);
-//     if((*res)(i,0) < min[i])
-//       min[i] = (*res)(i,0);
+//     //cout << i << ": " << result[i] << endl;
+//     assert(result[i] <= 255 && result[i] >= -255);
+//     if(result[i] > max[i])
+//       max[i] = result[i];
+//     if(result[i] < min[i])
+//       min[i] = result[i];
 //   }
 //   static int count = 0;
 //   count++;
@@ -1010,13 +1146,14 @@ bool IntegralImageTexture::compute(Eigen::MatrixXf** result) {
 //   }
 
 
-  *result = res;
   if(debug_) {
-    cout << name_ << " descriptor: " << res->transpose() << endl;
+    cout << name_ << " descriptor: ";
+    for(unsigned int i=0; i<result.size(); i++) {
+      cout << result[i] << " ";
+    }
+    cout << endl;
     commonDebug();
   }
-
-  return true;
 }
   
 

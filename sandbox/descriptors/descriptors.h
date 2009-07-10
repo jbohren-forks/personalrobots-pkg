@@ -12,6 +12,30 @@
 #include "ros/assert.h"
 
 
+typedef cv::Vector< cv::Vector<float> > vvf;
+
+  
+/***************************************************************************
+***********  Misc. useful classes.
+****************************************************************************/
+
+class Keypoint
+{
+ public:    
+ Keypoint() : pt(0,0), size(-1), angle(-1), response(0) {}
+  
+ Keypoint(cv::Point2f _pt, float _size=-1, float _angle=-1, float _response=0)
+   : pt(_pt), size(_size), angle(_angle), response(_response) {}
+
+ Keypoint(float x, float y, float _size=-1, float _angle=-1, float _response=0)
+   : pt(x, y), size(_size), angle(_angle), response(_response) {}
+
+  cv::Point2f pt;
+  float size;
+  float angle;
+  float response;
+};
+
 class Histogram {
 public:
   std::vector<float> bins_;
@@ -32,26 +56,58 @@ private:
   float bin_size_;
 };
 
+  
+/***************************************************************************
+***********  ImageDescriptor classes.
+****************************************************************************/
+
+
 class ImageDescriptor {
  public:
+  //! Name of descriptor.  Should be unique for any parameter setting.
   std::string name_;
+  //! Length of feature vector.
   unsigned int result_size_;
   IplImage* img_;
+  //! Deprecated.
   int row_;
+  //! Deprecated.
   int col_;
+  //! Visualize feature computation.
   bool debug_;
 
   void setDebug(bool debug);
-  virtual bool compute(Eigen::MatrixXf** result) = 0;
-  virtual void display(const Eigen::MatrixXf& result) = 0;
-  virtual void clearPointCache() = 0;
-  virtual void clearImageCache() = 0;
+  //! Deprecated.
+  virtual bool compute(Eigen::MatrixXf** result);
+  //! Vectorized feature computation call.
+  virtual void compute(IplImage* img, const cv::Vector<Keypoint>& points, vvf& results) {};
+
+  //! Clean up any data specific to computation at a point.
+  virtual void clearPointCache() {}
+  //! Clean up any data specific to computation on a particular image.
+  virtual void clearImageCache() {}
   //! Show the input image and a red + at the point at which the descriptor is being computed.
   void commonDebug();
+  //! Deprecated.
   virtual void setImage(IplImage* img);
+  //! Deprecated.
   virtual void setPoint(int row, int col);
   virtual ~ImageDescriptor() {};
   ImageDescriptor();
+};
+
+class HogWrapper : public ImageDescriptor {
+ public:
+  cv::HOGDescriptor hog_;
+  
+  HogWrapper();
+  HogWrapper(cv::Size winSize, cv::Size blockSize, cv::Size blockStride, cv::Size cellSize,
+	     int nbins, int derivAperture=1, double winSigma=-1,
+	     int histogramNormType=0, double L2HysThreshold=0.2, bool gammaCorrection=false); //0=L2Hys
+
+  void compute(IplImage* img, const cv::Vector<Keypoint>& points, vvf& results);
+  void clearImageCache() {};
+  void clearPointCache() {};
 };
 
 class IntegralImageDescriptor : public ImageDescriptor {
@@ -68,7 +124,7 @@ class IntegralImageDescriptor : public ImageDescriptor {
   void integrate();
   virtual void clearImageCache();
   virtual void clearPointCache() = 0;
-  bool integrateRect(float* result, int row_offset, int col_offset, int half_height, int half_width);
+  bool integrateRect(float* result, int row_offset, int col_offset, int half_height, int half_width, float* area = NULL);
 
 };
 
@@ -77,10 +133,10 @@ class IntegralImageTexture : public IntegralImageDescriptor {
   int scale_;
 
   IntegralImageTexture(int scale = 1, IntegralImageDescriptor* ii_provider = NULL);
-  bool compute(Eigen::MatrixXf** result);
-  void display(const Eigen::MatrixXf& result) {}
+  //bool compute(Eigen::MatrixXf** result);
+  void compute(IplImage* img, const cv::Vector<Keypoint>& points, vvf& results);
+  void compute(IplImage* img, const Keypoint& point, cv::Vector<float>& result);
   void clearPointCache() {}
-  //void setImage(IplImage* img);
 };
 
 class Patch : public ImageDescriptor {
@@ -100,7 +156,7 @@ class Patch : public ImageDescriptor {
   Patch(int raw_size, float scale);
   //! Common patch constructor computation.
   bool preCompute();
-  //virtual void display(const Eigen::MatrixXf& result) {}
+
   void clearPointCache();
   //virtual void clearImageCache();
   ~Patch() {}  
@@ -113,7 +169,6 @@ class IntensityPatch : public Patch {
 
   IntensityPatch(int raw_size, float scale, bool whiten);
   bool compute(Eigen::MatrixXf** result);
-  void display(const Eigen::MatrixXf& result) {}
   void clearImageCache() {}
 };
 
@@ -126,7 +181,7 @@ class PatchStatistic : public ImageDescriptor {
 
   PatchStatistic(std::string type, Patch* patch);
   bool compute(Eigen::MatrixXf** result);
-  void display(const Eigen::MatrixXf& result);
+
   void clearPointCache() {}
   void clearImageCache() {}
 };
@@ -155,9 +210,10 @@ class SuperpixelColorHistogram : public SuperpixelStatistic {
   IplImage* sat_;
   IplImage* val_;
   int nBins_;
+  //! Not used right now.
   std::string type_;
   SuperpixelColorHistogram* hsv_provider_;
-  //! histograms_[s] corresponds to the histogram for segment s of the segmentation. (s=0 is always left NULL).
+  //! histograms_[s] corresponds to the histogram for segment s of the segmentation. s=0 is always left NULL.  (segment numbering starts at 1).
   std::vector<Histogram*> histograms_;
   std::vector<CvHistogram*> histograms_cv_;
   bool hists_reserved_;
@@ -165,8 +221,10 @@ class SuperpixelColorHistogram : public SuperpixelStatistic {
   IplImage* channel_;
 
   SuperpixelColorHistogram(int seed_spacing, float scale, int nBins, std::string type, SuperpixelStatistic* seg_provider=NULL, SuperpixelColorHistogram* hsv_provider_=NULL);
-  bool compute(Eigen::MatrixXf** result);
-  void display(const Eigen::MatrixXf& result) {}
+  //bool compute(Eigen::MatrixXf** result);
+  void compute(IplImage* img, const cv::Vector<Keypoint>& points, vvf& results);
+  void compute(IplImage* img, const Keypoint& point, cv::Vector<float>& result);
+
   void clearPointCache() {}
   void clearImageCache();
   ~SuperpixelColorHistogram();
@@ -188,24 +246,5 @@ class EdgePatch : public Patch {
 
   EdgePatch(int raw_size, float scale, int thresh1=150, int thresh2=100);
 }
-
-
-class Hog : public ImageDescriptor {
- public:
-  //! Should be pointed to an intensity patch object.
-  Patch* patch_;
-  //! The opencv class.
-  HOGDescriptor cvHog;
-
-  Hog(Patch* patch);
-  bool compute(Eigen::MatrixXf** result);
-  void display(const Eigen::MatrixXf& result) {}
-  void clearPointCache() {}
-  void clearImageCache() {}
-  ~Hog() {}
-
- private:
-}
-
 
 */

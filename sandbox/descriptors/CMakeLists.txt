@@ -11,7 +11,9 @@ set(ROS_BUILD_TYPE Debug)
 
 rospack(descriptors)
 
+
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
 rospack_add_library(descriptors descriptors.cpp)
+rospack_add_compile_flags(descriptors "-D_GLIBCXX_DEBUG_ASSERT -D_GLIBCXX_DEBUG")
