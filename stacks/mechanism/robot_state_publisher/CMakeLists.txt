@@ -23,5 +23,14 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 #gensrv()
 
 rospack_add_library(${PROJECT_NAME} src/joint_state_listener.cpp src/robot_state_publisher.cpp src/treefksolverposfull_recursive.cpp)
-rospack_add_executable(state_publisher src/main.cpp src/joint_state_listener.cpp src/robot_state_publisher.cpp src/treefksolverposfull_recursive.cpp)
 
+rospack_add_executable(state_publisher src/state_publisher.cpp )
+target_link_libraries(state_publisher ${PROJECT_NAME})
+
+rospack_add_executable(test_publisher test/test_publisher.cpp )
+target_link_libraries(test_publisher ${PROJECT_NAME})
+
+rospack_add_rostest(${CMAKE_CURRENT_SOURCE_DIR}/test/test_publisher.launch)
+
+# Download needed data file
+rospack_download_test_data(http://pr.willowgarage.com/data/robot_state_publisher/joint_states.bag test/joint_states.bag)

@@ -37,8 +37,7 @@
 #include <kdl/tree.hpp>
 #include <ros/ros.h>
 #include <kdl_parser/tree_parser.hpp>
-#include <mechanism_msgs/JointStates.h>
-#include "robot_state_publisher/robot_state_publisher.h"
+#include <mechanism_msgs/MechanismState.h>
 #include "robot_state_publisher/joint_state_listener.h"
 
 using namespace std;
@@ -47,30 +46,26 @@ using namespace KDL;
 using namespace robot_state_publisher;
 
 
-JointStateListener::JointStateListener(const KDL::Tree& tree)
-  : publish_rate_(0.0), state_publisher_(tree)
+
+// ----------------------------------
+// ----- MAIN -----------------------
+// ----------------------------------
+int main(int argc, char** argv)
 {
-  // set publish frequency
-  double publish_freq;
-  n_.param("~publish_frequency", publish_freq, 50.0);
-  publish_rate_ = Rate(publish_freq);
-  
-  // subscribe to mechanism state
-  joint_state_sub_ = n_.subscribe("/joint_states", 1, &JointStateListener::callbackJointState, this);;
-};
+  // Initialize ros
+  ros::init(argc, argv, "robot_state_publisher");
+  NodeHandle node;
 
+  // build robot model
+  Tree tree;
+  string robot_desc;
+  node.param("/robotdesc/pr2", robot_desc, string());
+  if (!treeFromString(robot_desc, tree)){
+    ROS_ERROR("Failed to construct robot model from xml string");
+    return -1;
+  }
+  JointStateListener state_publisher(tree);
 
-JointStateListener::~JointStateListener()
-{};
-
-
-void JointStateListener::callbackJointState(const JointStateConstPtr& state)
-{
-  // get joint positions from state message
-  map<string, double> joint_positions;
-  for (unsigned int i=0; i<state->joints.size(); i++)
-    joint_positions.insert(make_pair(state->joints[i].name, state->joints[i].position));
-  state_publisher_.publishTransforms(joint_positions, state->header.stamp);
-  publish_rate_.sleep();
+  ros::spin();
+  return 0;
 }
-

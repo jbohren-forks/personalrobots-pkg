@@ -34,33 +34,78 @@
 
 /* Author: Wim Meeussen */
 
-#include <kdl/tree.hpp>
-#include <ros/ros.h>
-#include <kdl_parser/tree_parser.hpp>
-#include <mechanism_msgs/MechanismState.h>
+#include <string>
+#include <gtest/gtest.h>
+#include <ros/node.h>
+#include <tf/transform_listener.h>
+#include <boost/thread/thread.hpp>
 #include "robot_state_publisher/joint_state_listener.h"
 
-using namespace std;
+
 using namespace ros;
-using namespace KDL;
+using namespace tf;
 using namespace robot_state_publisher;
 
 
+int g_argc;
+char** g_argv;
 
-// ----------------------------------
-// ----- MAIN -----------------------
-// ----------------------------------
+
+class TestPublisher : public testing::Test
+{
+public:
+  JointStateListener* publisher;
+
+protected:
+  /// constructor
+  TestPublisher()
+  {
+    Tree tree;
+    if (g_argc == 2){
+      if (!treeFromFile(g_argv[1], tree))
+        ROS_ERROR("Failed to construct robot model from xml string");
+    }
+    else
+      ROS_ERROR("No robot model as argument given");
+
+    publisher = new JointStateListener(tree);
+  }
+
+  /// Destructor
+  ~TestPublisher()
+  {
+    delete publisher;
+  }
+};
+
+
+
+
+
+TEST_F(TestPublisher, test)
+{
+  ROS_INFO("Creating tf listener");
+  TransformListener tf;
+
+  ROS_INFO("Waiting for bag to complete");
+  Duration(15.0).sleep();
+
+  ASSERT_TRUE(tf.canTransform("base_link", "torso_lift_link", Time()));
+
+  SUCCEED();
+}
+
+
+
+
 int main(int argc, char** argv)
 {
-  // Initialize ros
-  ros::init(argc, argv, "robot_state_publisher");
-  NodeHandle node;
+  testing::InitGoogleTest(&argc, argv);
+  ros::init(argc, argv, "test_robot_state_publisher");
+  ros::NodeHandle node;
+  boost::thread ros_thread(boost::bind(&ros::spin));
 
-  // build robot model
-  string robot_desc;
-  node.param("/robotdesc/pr2", robot_desc, string());
-  JointStateListener state_publisher(robot_desc);
-
-  ros::spin();
-  return 0;
+  g_argc = argc;
+  g_argv = argv;
+  return RUN_ALL_TESTS();
 }

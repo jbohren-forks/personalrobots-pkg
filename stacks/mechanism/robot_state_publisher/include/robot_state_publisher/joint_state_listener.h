@@ -53,15 +53,15 @@ namespace robot_state_publisher{
 
 class JointStateListener{
 public:
-  JointStateListener(const string& robot_desc);
+  JointStateListener(const KDL::Tree& tree);
   ~JointStateListener();
 
 private:
   void callbackJointState(const JointStateConstPtr& state);
 
   NodeHandle n_;
-  robot_state_publisher::RobotStatePublisher* state_publisher_;
   Rate publish_rate_;
+  robot_state_publisher::RobotStatePublisher state_publisher_;
   Subscriber joint_state_sub_;
 };
 }
