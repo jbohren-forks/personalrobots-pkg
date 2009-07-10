@@ -41,12 +41,21 @@
 
 #include <ros/console.h>
 
+#include <Eigen/Core>
+
 #include <robot_msgs/PointCloud.h>
 
 #include <point_cloud_mapping/kdtree/kdtree.h>
 
 using namespace std;
 
+// --------------------------------------------------------------
+//* Descriptor3D
+/**
+ * \brief An abstract class representing a descriptor that can
+ *        compute feature values from 3-D data
+ */
+// --------------------------------------------------------------
 class Descriptor3D
 {
   public:
@@ -60,38 +69,38 @@ class Descriptor3D
     {
     }
 
+    // --------------------------------------------------------------
+    /**
+     * \brief Computes feature values using the previously set data and
+     *        interest point/region and any descriptor-specific parameters
+     *        defined in the inherited class
+     *
+     * \param result Pointer to store compute feature values. This method will
+     *               allocate memory and the caller is responsible for freeing it.
+     *
+     * \return true on success, otherwise false
+     */
+    // --------------------------------------------------------------
     virtual bool compute(Eigen::MatrixXf** result) const = 0;
 
-    void setData(const robot_msgs::PointCloud* data, cloud_kdtree::KdTree* data_kdtree)
-    {
-      data_ = data;
-      data_kdtree_ = data_kdtree;
-      data_set_ = true;
-    }
+    // --------------------------------------------------------------
+    /**
+     * \brief Sets the data this descriptor will operate on
+     *
+     * \param data Data structure of 3-d data
+     * \param data_kdtree Kd-tree version of data for efficient neighbor lookup
+     *
+     * \return true on success, otherwise false
+     */
+    // --------------------------------------------------------------
+    bool setData(const robot_msgs::PointCloud* data, cloud_kdtree::KdTree* data_kdtree);
 
-    void setInterestPoint(unsigned int interest_pt_idx)
-    {
-      interest_pt_idx_ = interest_pt_idx;
-      interest_pt_set_ = true;
-
-      interest_region_indices_ = NULL;
-      interest_region_set_ = false;
-    }
+    void setInterestPoint(unsigned int interest_pt_idx);
 
     // may or may not be used by descriptor
-    void setInterestRegion(const vector<int>* interest_region_indices)
-    {
-      interest_region_indices_ = interest_region_indices;
-      interest_region_set_ = true;
+    void setInterestRegion(const vector<int>* interest_region_indices);
 
-      interest_pt_idx_ = 0;
-      interest_pt_set_ = false;
-    }
-
-    unsigned int getResultSize() const
-    {
-      return result_size_;
-    }
+    unsigned int getResultSize() const;
 
   protected:
     // will check whether can use either interest pt or region
