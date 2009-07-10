@@ -36,6 +36,29 @@
 
 #include "collision_space/environmentBullet.h"
 
+void collision_space::EnvironmentModelBullet::freeMemory(void)
+{
+    for (unsigned int j = 0 ; j < m_modelGeom.linkGeom.size() ; ++j)
+    	delete m_modelGeom.linkGeom[j];
+    /*
+    if (m_world)
+    {
+	for(int i = m_world->getNumCollisionObjects() - 1; i >= 0; --i)
+	{
+	    btCollisionObject* obj = m_world->getCollisionObjectArray()[i];
+	    delete obj->getCollisionShape();
+	    delete obj;
+	}
+	
+	delete m_world->getBroadphase();
+	delete m_world->getDispatcher();
+	delete m_world;
+    }	
+    
+    if (m_config)
+    delete m_config; */
+}
+
 void collision_space::EnvironmentModelBullet::addRobotModel(const boost::shared_ptr<planning_models::KinematicModel> &model, const std::vector<std::string> &links, double scale, double padding)
 {
     collision_space::EnvironmentModel::addRobotModel(model, links, scale, padding);
@@ -133,8 +156,8 @@ void collision_space::EnvironmentModelBullet::updateAttachedBodies(void)
 	for (unsigned int k = 1 ; k < kg->geom.size() ; ++k)
 	{
 	    m_world->removeCollisionObject(kg->geom[k]);
-	    delete kg->geom[k]->getCollisionShape();
-	    delete kg->geom[k];
+	    //	    delete kg->geom[k]->getCollisionShape();
+	    //	    delete kg->geom[k];
 	}
 	
 	kg->geom.resize(1);
@@ -275,10 +298,10 @@ void collision_space::EnvironmentModelBullet::clearObstacles(void)
     {
 	btCollisionObject* obj = m_dynamicObstacles[i];
 	m_world->removeCollisionObject(obj);
-	delete obj->getCollisionShape();
-	delete obj;
+	//	delete obj->getCollisionShape();
+	//	delete obj;
     }
-    m_dynamicObstacles.clear();
+    m_dynamicObstacles.clear();  
 }
 
 int collision_space::EnvironmentModelBullet::setCollisionCheck(const std::string &link, bool state)

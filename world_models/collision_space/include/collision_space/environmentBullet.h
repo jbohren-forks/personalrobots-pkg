@@ -60,21 +60,8 @@ namespace collision_space
 	}
 	
 	virtual ~EnvironmentModelBullet(void)
-	{
-	    if (m_world)
-	    {
-		for(int i = m_world->getNumCollisionObjects() - 1; i >= 0; --i)
-		{
-		    btCollisionObject* obj = m_world->getCollisionObjectArray()[i];
-		    delete obj->getCollisionShape();
-		    delete obj;
-		}
-		delete m_world->getBroadphase();
-		delete m_world->getDispatcher();
-		delete m_world;
-	    }	    
-	    if (m_config)
-		delete m_config;
+	{ 
+	    freeMemory();
 	}
 	
 	/** \brief Get the list of contacts (collisions) */
@@ -235,7 +222,8 @@ namespace collision_space
 	};
 	
 	btCollisionObject* createCollisionBody(shapes::Shape *shape, double scale, double padding);
-
+	void freeMemory(void);
+	
 	SelfCollisionFilterCallback      m_selfCollisionFilterCallback;
 	GenericCollisionFilterCallback   m_genericCollisionFilterCallback;
 	
