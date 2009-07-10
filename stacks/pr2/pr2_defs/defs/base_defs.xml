@@ -291,9 +291,9 @@
       </visual>
 
       <collision>
-        <origin xyz="0 0 ${base_height_offset}" rpy="0 0 0" />
+        <origin xyz="0 0 ${base_height_offset+base_size_z/2}" rpy="0 0 0" />
         <geometry name="${name}_collision">
-          <mesh filename="pr2/base.stlb" />
+          <box size="${base_size_x} ${base_size_y} ${base_size_z}" />
         </geometry>
       </collision>
       <map name="bumper_sensor" flag="gazebo">
@@ -438,9 +438,9 @@
       </visual>
 
       <collision>
-        <origin xyz="0 0 ${base_height_offset}" rpy="0 0 0" />
+        <origin xyz="0 0 ${base_height_offset+base_size_z/2}" rpy="0 0 0" />
         <geometry name="${name}_collision">
-          <mesh filename="pr2/base.stlb" />
+          <box size="${base_size_x} ${base_size_y} ${base_size_z}" />
         </geometry>
         <map name="base_collision_properties" flag="gazebo">
           <elem key="mu1" value="500.0" />
