@@ -112,11 +112,7 @@ namespace move_arm
 	
 	req.params.model_id = arm_;              // the model to plan for (should be defined in planning.yaml)
 	req.params.distance_metric = "L2Square"; // the metric to be used in the robot's state space
-	
-	// this volume is only needed if planar or floating joints move in the space
-	req.params.volumeMin.x = req.params.volumeMin.y = req.params.volumeMin.z = 0.0;
-	req.params.volumeMax.x = req.params.volumeMax.y = req.params.volumeMax.z = 0.0;
-	
+		
 	// forward the goal & path constraints
 	req.goal_constraints = goal.goal_constraints;
 	req.path_constraints = goal.path_constraints;

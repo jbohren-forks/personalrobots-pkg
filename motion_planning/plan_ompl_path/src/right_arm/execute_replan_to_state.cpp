@@ -133,13 +133,17 @@ public:
 	req.params.distance_metric = "L2Square";
 	req.params.planner_id = "dynamic::KPIECE";
 
-	req.params.volumeMin.x = -3;
-	req.params.volumeMin.y = -3;
-	req.params.volumeMin.z = 0;
+	req.params.volumeMin.header.frame_id = "/base_link";
+	req.params.volumeMin.header.stamp = ros::Time::now();
+	req.params.volumeMax.header = req.params.volumeMin.header;
+	
+	req.params.volumeMin.point.x = -3;
+	req.params.volumeMin.point.y = -3;
+	req.params.volumeMin.point.z = 0;
 
-	req.params.volumeMax.x = 3;
-	req.params.volumeMax.y = 3;
-	req.params.volumeMax.z = 0;
+	req.params.volumeMax.point.x = 3;
+	req.params.volumeMax.point.y = 3;
+	req.params.volumeMax.point.z = 0;
 
 	req.times = 1;
 

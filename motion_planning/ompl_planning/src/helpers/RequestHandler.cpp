@@ -134,21 +134,43 @@ void ompl_planning::RequestHandler::configure(const planning_models::StateParams
     static_cast<StateValidityPredicate*>(psetup->si->getStateValidityChecker())->setConstraints(req.path_constraints);
 
     /* set the workspace volume for planning */
-    // only area or volume should go through
-    if (SpaceInformationKinematicModel *s = dynamic_cast<SpaceInformationKinematicModel*>(psetup->si))
+
+    if (psetup->model->planningMonitor->getTransformListener()->frameExists(req.params.volumeMin.header.frame_id) &&
+	psetup->model->planningMonitor->getTransformListener()->frameExists(req.params.volumeMax.header.frame_id))
     {
-	s->setPlanningArea(req.params.volumeMin.x, req.params.volumeMin.y,
-			   req.params.volumeMax.x, req.params.volumeMax.y);
-	s->setPlanningVolume(req.params.volumeMin.x, req.params.volumeMin.y, req.params.volumeMin.z,
-			     req.params.volumeMax.x, req.params.volumeMax.y, req.params.volumeMax.z);
+	bool err = false;
+	try
+	{
+	    psetup->model->planningMonitor->getTransformListener()->transformPoint(psetup->model->planningMonitor->getFrameId(), req.params.volumeMin, req.params.volumeMin);
+	    psetup->model->planningMonitor->getTransformListener()->transformPoint(psetup->model->planningMonitor->getFrameId(), req.params.volumeMax, req.params.volumeMax);
+	}
+	catch(...)
+	{
+	    err = true;
+	}
+	if (err)
+	    ROS_ERROR("Unable to transform workspace bounds to planning frame");
+	else
+	{	    
+	    // only area or volume should go through
+	    if (SpaceInformationKinematicModel *s = dynamic_cast<SpaceInformationKinematicModel*>(psetup->si))
+	    {
+		s->setPlanningArea(req.params.volumeMin.point.x, req.params.volumeMin.point.y,
+				   req.params.volumeMax.point.x, req.params.volumeMax.point.y);
+		s->setPlanningVolume(req.params.volumeMin.point.x, req.params.volumeMin.point.y, req.params.volumeMin.point.z,
+				     req.params.volumeMax.point.x, req.params.volumeMax.point.y, req.params.volumeMax.point.z);
+	    }
+	    if (SpaceInformationDynamicModel *s = dynamic_cast<SpaceInformationDynamicModel*>(psetup->si))
+	    {
+		s->setPlanningArea(req.params.volumeMin.point.x, req.params.volumeMin.point.y,
+				   req.params.volumeMax.point.x, req.params.volumeMax.point.y);
+		s->setPlanningVolume(req.params.volumeMin.point.x, req.params.volumeMin.point.y, req.params.volumeMin.point.z,
+				     req.params.volumeMax.point.x, req.params.volumeMax.point.y, req.params.volumeMax.point.z);
+	    }
+	}
     }
-    if (SpaceInformationDynamicModel *s = dynamic_cast<SpaceInformationDynamicModel*>(psetup->si))
-    {
-	s->setPlanningArea(req.params.volumeMin.x, req.params.volumeMin.y,
-			   req.params.volumeMax.x, req.params.volumeMax.y);
-	s->setPlanningVolume(req.params.volumeMin.x, req.params.volumeMin.y, req.params.volumeMin.z,
-			     req.params.volumeMax.x, req.params.volumeMax.y, req.params.volumeMax.z);
-    }
+    else
+	ROS_DEBUG("No workspace bounding volume was set");
     
     psetup->si->setStateDistanceEvaluator(psetup->sde[req.params.distance_metric]);
     
