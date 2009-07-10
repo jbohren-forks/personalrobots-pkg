@@ -63,7 +63,7 @@ void planning_environment::CollisionSpaceMonitor::setupCSM(void)
     collisionSpace_ = cm_->getODECollisionModel().get();
 
     // the factor by which a boxes maximum extent is multiplied to get the radius of the sphere to be placed in the collision space
-    nh_.param<double>("~box_scale", boxScale_, 2.0);
+    nh_.param<double>("~box_scale", boxScale_, 0.867);
     
     // a list of static planes bounding the environment
     std::string planes;
