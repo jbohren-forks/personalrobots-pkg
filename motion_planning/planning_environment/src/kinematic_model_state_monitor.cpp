@@ -35,6 +35,7 @@
 /** \author Ioan Sucan */
 
 #include "planning_environment/kinematic_model_state_monitor.h"
+#include <angles/angles.h>
 #include <sstream>
 
 void planning_environment::KinematicModelStateMonitor::setupRSM(void)
@@ -92,6 +93,10 @@ void planning_environment::KinematicModelStateMonitor::mechanismStateCallback(co
 	    if (joint->usedParams == 1)
 	    {
 		double pos = mechanismState->joint_states[i].position;
+		planning_models::KinematicModel::RevoluteJoint* rjoint = dynamic_cast<planning_models::KinematicModel::RevoluteJoint*>(joint);
+		if (rjoint)
+		    if (rjoint->continuous)
+			pos = angles::normalize_angle(pos);
 		bool this_changed = robotState_->setParamsJoint(&pos, mechanismState->joint_states[i].name);
 		change = change || this_changed;
 	    }
