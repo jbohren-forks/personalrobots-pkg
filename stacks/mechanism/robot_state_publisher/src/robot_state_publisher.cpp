@@ -61,7 +61,9 @@ RobotStatePublisher::RobotStatePublisher(const Tree& tree)
 
   // get the 'real' root segment of the tree, which is the first child of "root"
   SegmentMap::const_iterator root = tree.getRootSegment();
-  assert(root->second.children.begin() != root->second.children.end());  // every tree has root element
+  if (root->second.children.empty())
+    throw empty_tree_ex;
+
   root_ = (*root->second.children.begin())->first;
 }
 

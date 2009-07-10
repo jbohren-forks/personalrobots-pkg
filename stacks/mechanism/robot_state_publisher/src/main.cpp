@@ -38,56 +38,12 @@
 #include <ros/ros.h>
 #include <kdl_parser/tree_parser.hpp>
 #include <mechanism_msgs/MechanismState.h>
-#include "robot_state_publisher/robot_state_publisher.h"
+#include "robot_state_publisher/joint_state_listener.h"
 
 using namespace std;
 using namespace ros;
 using namespace KDL;
 using namespace robot_state_publisher;
-
-class MechStatePublisher{
-public:
-  MechStatePublisher(const string& robot_desc)
-    : publish_rate_(0.0)
-  {
-    // create kinematic tree
-    Tree tree;
-    if (!treeFromString(robot_desc, tree))
-      ROS_ERROR("Failed to construct robot model from xml string");
-    state_publisher_ = new RobotStatePublisher(tree);
-
-    // set publish frequency
-    double publish_freq;
-    n_.param("~publish_frequency", publish_freq, 50.0);
-    publish_rate_ = Rate(publish_freq);
-
-    // subscribe to mechanism state
-    mech_state_sub_ = n_.subscribe("/mechanism_state", 1, &MechStatePublisher::callbackMechState, this);;
-
-  };
-  ~MechStatePublisher()
-  {
-    delete state_publisher_;
-  };
-
-private:
-  void callbackMechState(const mechanism_msgs::MechanismStateConstPtr& state)
-  {
-    // get joint positions from state message
-    map<string, double> joint_positions;
-    for (unsigned int i=0; i<state->joint_states.size(); i++)
-      joint_positions.insert(make_pair(state->joint_states[i].name, state->joint_states[i].position));
-    state_publisher_->publishTransforms(joint_positions, state->header.stamp);
-    publish_rate_.sleep();
-  }
-
-  NodeHandle n_;
-  robot_state_publisher::RobotStatePublisher* state_publisher_;
-  Rate publish_rate_;
-  Subscriber mech_state_sub_;
-  map<string, string> joint_segment_mapping_;
-};
-
 
 
 
@@ -103,7 +59,7 @@ int main(int argc, char** argv)
   // build robot model
   string robot_desc;
   node.param("/robotdesc/pr2", robot_desc, string());
-  MechStatePublisher publisher(robot_desc);
+  JointStateListener state_publisher(robot_desc);
 
   ros::spin();
   return 0;

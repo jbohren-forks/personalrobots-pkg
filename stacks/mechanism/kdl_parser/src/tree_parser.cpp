@@ -250,8 +250,6 @@ void addChildrenToTree(const string& root, const map<string, Segment>& segments,
 bool getTree(TiXmlElement *robot_xml, Tree& tree)
 {
   if (!robot_xml) return false;
-  // empty tree
-  tree = Tree();
 
   // Constructs the joints
   TiXmlElement *joint_xml = NULL;
@@ -307,13 +305,11 @@ bool getTree(TiXmlElement *robot_xml, Tree& tree)
       if (s == --(segments.end())) root = p->first;
     }
   }
-  cout << root << " is root segment " << endl;
+  cout << parents[root] << " is root segment " << endl;
   tree = Tree(parents[root]);
 
   // add all segments to tree
   addChildrenToTree(root, segments, parents, tree);
-
-  cout << "Tree has " << tree.getNrOfJoints() << " joints and " << tree.getNrOfSegments() << " segments" << endl;
 
   return true;
 }

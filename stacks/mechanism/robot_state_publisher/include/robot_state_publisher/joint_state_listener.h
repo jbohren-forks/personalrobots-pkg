@@ -34,44 +34,37 @@
 
 /* Author: Wim Meeussen */
 
-#ifndef ROBOT_STATE_PUBLISHER_H
-#define ROBOT_STATE_PUBLISHER_H
+#ifndef JOINT_STATE_LISTENER_H
+#define JOINT_STATE_LISTENER_H
 
-#include <kdl_parser/tree_parser.hpp>
+#include <kdl/tree.hpp>
 #include <ros/ros.h>
-#include <boost/scoped_ptr.hpp>
-#include <tf/tf.h>
-#include <tf/tfMessage.h>
-#include "robot_state_publisher/treefksolverposfull_recursive.hpp"
+#include <kdl_parser/tree_parser.hpp>
+#include <mechanism_msgs/JointStates.h>
+#include "robot_state_publisher/robot_state_publisher.h"
+
+using namespace std;
+using namespace ros;
+using namespace KDL;
+
+typedef boost::shared_ptr<mechanism_msgs::JointStates const> JointStateConstPtr;
 
 namespace robot_state_publisher{
 
-class RobotStatePublisher
-{
+class JointStateListener{
 public:
-  RobotStatePublisher(const KDL::Tree& tree);
-  ~RobotStatePublisher(){};
-
-  bool publishTransforms(const std::map<std::string, double>& joint_positions, const ros::Time& time);
+  JointStateListener(const string& robot_desc);
+  ~JointStateListener();
 
 private:
-  ros::NodeHandle n_;
-  ros::Publisher tf_publisher_;
-  KDL::Tree tree_;
-  boost::scoped_ptr<KDL::TreeFkSolverPosFull_recursive> solver_;
-  std::string root_;
-  std::string tf_prefix_;
-  tf::tfMessage tf_msg_;
+  void callbackJointState(const JointStateConstPtr& state);
 
-  class empty_tree_exception: public std::exception{
-    virtual const char* what() const throw(){
-      return "Tree is empty";}
-  } empty_tree_ex;
-
+  NodeHandle n_;
+  robot_state_publisher::RobotStatePublisher* state_publisher_;
+  Rate publish_rate_;
+  Subscriber joint_state_sub_;
 };
-
-
-
 }
+
 
 #endif

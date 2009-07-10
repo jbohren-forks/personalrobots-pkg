@@ -34,44 +34,51 @@
 
 /* Author: Wim Meeussen */
 
-#ifndef ROBOT_STATE_PUBLISHER_H
-#define ROBOT_STATE_PUBLISHER_H
-
-#include <kdl_parser/tree_parser.hpp>
+#include <kdl/tree.hpp>
 #include <ros/ros.h>
-#include <boost/scoped_ptr.hpp>
-#include <tf/tf.h>
-#include <tf/tfMessage.h>
-#include "robot_state_publisher/treefksolverposfull_recursive.hpp"
+#include <kdl_parser/tree_parser.hpp>
+#include <mechanism_msgs/JointStates.h>
+#include "robot_state_publisher/robot_state_publisher.h"
+#include "robot_state_publisher/joint_state_listener.h"
 
-namespace robot_state_publisher{
+using namespace std;
+using namespace ros;
+using namespace KDL;
+using namespace robot_state_publisher;
 
-class RobotStatePublisher
+
+JointStateListener::JointStateListener(const string& robot_desc)
+  : publish_rate_(0.0)
 {
-public:
-  RobotStatePublisher(const KDL::Tree& tree);
-  ~RobotStatePublisher(){};
-
-  bool publishTransforms(const std::map<std::string, double>& joint_positions, const ros::Time& time);
-
-private:
-  ros::NodeHandle n_;
-  ros::Publisher tf_publisher_;
-  KDL::Tree tree_;
-  boost::scoped_ptr<KDL::TreeFkSolverPosFull_recursive> solver_;
-  std::string root_;
-  std::string tf_prefix_;
-  tf::tfMessage tf_msg_;
-
-  class empty_tree_exception: public std::exception{
-    virtual const char* what() const throw(){
-      return "Tree is empty";}
-  } empty_tree_ex;
-
+  // create kinematic tree
+  Tree tree;
+  if (!treeFromString(robot_desc, tree))
+    ROS_ERROR("Failed to construct robot model from xml string");
+  state_publisher_ = new RobotStatePublisher(tree);
+  
+  // set publish frequency
+  double publish_freq;
+  n_.param("~publish_frequency", publish_freq, 50.0);
+  publish_rate_ = Rate(publish_freq);
+  
+  // subscribe to mechanism state
+  joint_state_sub_ = n_.subscribe("/joint_states", 1, &JointStateListener::callbackJointState, this);;
 };
 
 
+JointStateListener::~JointStateListener()
+{
+  delete state_publisher_;
+};
 
+
+void JointStateListener::callbackJointState(const JointStateConstPtr& state)
+{
+  // get joint positions from state message
+  map<string, double> joint_positions;
+  for (unsigned int i=0; i<state->joints.size(); i++)
+    joint_positions.insert(make_pair(state->joints[i].name, state->joints[i].position));
+  state_publisher_->publishTransforms(joint_positions, state->header.stamp);
+  publish_rate_.sleep();
 }
 
-#endif

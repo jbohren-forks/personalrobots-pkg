@@ -70,5 +70,13 @@ int main()
   solver2.JntToCart(jnt2, f2);
   cout << "frame 1 " << f1 << endl;
   cout << "frame 2 " << f2.Inverse() << endl;
+
+  // copy tree
+  Tree copy = my_tree;
+  copy.getChain("l_gripper_palm_link", "r_gripper_palm_link", chain1);
+  copy.getChain("r_gripper_palm_link", "l_gripper_palm_link", chain2);
+  cout << "Got chain1 with " << chain1.getNrOfJoints() << " joints and " << chain1.getNrOfSegments() << " segments" << endl;
+  cout << "Got chain2 with " << chain2.getNrOfJoints() << " joints and " << chain2.getNrOfSegments() << " segments" << endl;
+
 }
 
