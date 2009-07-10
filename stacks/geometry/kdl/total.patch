@@ -1,6 +1,6 @@
 Index: tests/kinfamtest.cpp
 ===================================================================
---- tests/kinfamtest.cpp	(revision 30215)
+--- tests/kinfamtest.cpp	(revision 30247)
 +++ tests/kinfamtest.cpp	(working copy)
 @@ -24,44 +24,44 @@
  {
@@ -140,7 +140,7 @@ Index: tests/kinfamtest.cpp
      CPPUNIT_ASSERT_EQUAL(chain1.getNrOfJoints(),(uint)6);
      CPPUNIT_ASSERT_EQUAL(chain1.getNrOfSegments(),(uint)7);
  
-@@ -158,50 +158,56 @@
+@@ -158,50 +158,57 @@
  void KinFamTest::TreeTest()
  {
      Tree tree1;
@@ -214,6 +214,7 @@ Index: tests/kinfamtest.cpp
 -    Chain extract_chain2 = tree1.getChain("Segment4", "Segment2");
 +    Chain extract_chain1;
 +    CPPUNIT_ASSERT(tree1.getChain("Segment 2", "Segment 4", extract_chain1));
++    CPPUNIT_ASSERT(tree1.getChain("Segment 2", "Segment 4", extract_chain1)); // to make sure chain gets cleared
 +    Chain extract_chain2; 
 +    CPPUNIT_ASSERT(tree1.getChain("Segment 4", "Segment 2", extract_chain2));
      CPPUNIT_ASSERT(extract_chain1.getNrOfJoints()==extract_chain2.getNrOfJoints());
@@ -221,7 +222,7 @@ Index: tests/kinfamtest.cpp
      ChainFkSolverPos_recursive solver1(extract_chain1);
 Index: tests/solvertest.cpp
 ===================================================================
---- tests/solvertest.cpp	(revision 30215)
+--- tests/solvertest.cpp	(revision 30247)
 +++ tests/solvertest.cpp	(working copy)
 @@ -13,66 +13,66 @@
  {
@@ -320,8 +321,29 @@ Index: tests/solvertest.cpp
  }
 Index: src/tree.hpp
 ===================================================================
---- src/tree.hpp	(revision 30215)
+--- src/tree.hpp	(revision 30247)
 +++ src/tree.hpp	(working copy)
+@@ -37,7 +37,7 @@
+     class TreeElement
+     {
+     private:
+-        TreeElement():q_nr(0)
++        TreeElement(const std::string& name):segment(name), q_nr(0)
+         {};
+     public:
+         Segment segment;
+@@ -50,9 +50,9 @@
+             segment=segment_in;
+             parent=parent_in;
+         };
+-        static TreeElement Root()
++      static TreeElement Root(const std::string& root_name)
+         {
+-            return TreeElement();
++            return TreeElement(root_name);
+         };
+     };
+ 
 @@ -69,13 +69,15 @@
          int nrOfJoints;
          int nrOfSegments;
@@ -434,7 +456,7 @@ Index: src/tree.hpp
  #endif
 Index: src/segment.cpp
 ===================================================================
---- src/segment.cpp	(revision 30215)
+--- src/segment.cpp	(revision 30247)
 +++ src/segment.cpp	(working copy)
 @@ -21,20 +21,22 @@
  
@@ -463,7 +485,7 @@ Index: src/segment.cpp
          f_tip=arg.f_tip;
 Index: src/joint.cpp
 ===================================================================
---- src/joint.cpp	(revision 30215)
+--- src/joint.cpp	(revision 30247)
 +++ src/joint.cpp	(working copy)
 @@ -24,17 +24,17 @@
  namespace KDL {
@@ -490,7 +512,7 @@ Index: src/joint.cpp
  
 Index: src/tree.cpp
 ===================================================================
---- src/tree.cpp	(revision 30215)
+--- src/tree.cpp	(revision 30247)
 +++ src/tree.cpp	(working copy)
 @@ -25,18 +25,19 @@
  namespace KDL {
@@ -501,7 +523,7 @@ Index: src/tree.cpp
 -    segments.insert(make_pair("root", TreeElement::Root()));
 +Tree::Tree(const std::string& _root_name) :
 +  nrOfSegments(0), nrOfJoints(0),root_name(_root_name) {
-+    segments.insert(make_pair(root_name, TreeElement::Root()));
++    segments.insert(make_pair(root_name, TreeElement::Root(root_name)));
  }
  
  Tree::Tree(const Tree& in) {
@@ -512,7 +534,7 @@ Index: src/tree.cpp
  
 -    segments.insert(make_pair("root", TreeElement::Root()));
 -    this->addTree(in, "", "root");
-+    segments.insert(make_pair(root_name, TreeElement::Root()));
++    segments.insert(make_pair(root_name, TreeElement::Root(root_name)));
 +    this->addTree(in, root_name);
  
  }
@@ -525,7 +547,7 @@ Index: src/tree.cpp
  
 -    segments.insert(make_pair("root", TreeElement::Root()));
 -    this->addTree(in, "", "root");
-+    segments.insert(make_pair(in.root_name, TreeElement::Root()));
++    segments.insert(make_pair(in.root_name, TreeElement::Root(root_name)));
 +    this->addTree(in, root_name);
      return *this;
  }
@@ -592,7 +614,7 @@ Index: src/tree.cpp
                  //if it didn't work, return false
                  return false;
          } else
-@@ -115,25 +108,23 @@
+@@ -115,25 +108,26 @@
      return true;
  }
  
@@ -600,7 +622,9 @@ Index: src/tree.cpp
 +bool Tree::getChain(const std::string& chain_root, const std::string& chain_tip, Chain& chain)const
  {
 -    Chain chain;
--
++    // clear chain
++    chain = Chain();
+ 
      // walk down from chain_root and chain_tip to the root of the tree
      vector<SegmentMap::key_type> parents_chain_root, parents_chain_tip;
      for (SegmentMap::const_iterator s=getSegment(chain_root); s!=segments.end(); s=s->second.parent){
@@ -624,7 +648,7 @@ Index: src/tree.cpp
      while (!parents_chain_root.empty() && !parents_chain_tip.empty() &&
             parents_chain_root.back() == parents_chain_tip.back()){
          last_segment = parents_chain_root.back();
-@@ -149,17 +140,18 @@
+@@ -149,17 +143,18 @@
          Frame f_tip = seg.pose(0.0).Inverse();
          Joint jnt = seg.getJoint();
          if (jnt.getType() == Joint::RotX || jnt.getType() == Joint::RotY || jnt.getType() == Joint::RotZ || jnt.getType() == Joint::RotAxis)
@@ -651,7 +675,7 @@ Index: src/tree.cpp
  }
 Index: src/segment.hpp
 ===================================================================
---- src/segment.hpp	(revision 30215)
+--- src/segment.hpp	(revision 30247)
 +++ src/segment.hpp	(working copy)
 @@ -46,6 +46,7 @@
      class Segment {
@@ -689,7 +713,7 @@ Index: src/segment.hpp
           *
 Index: src/joint.hpp
 ===================================================================
---- src/joint.hpp	(revision 30215)
+--- src/joint.hpp	(revision 30247)
 +++ src/joint.hpp	(working copy)
 @@ -48,6 +48,7 @@
          /**
