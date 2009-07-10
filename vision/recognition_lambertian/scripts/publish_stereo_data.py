@@ -13,8 +13,33 @@ import roslib; roslib.load_manifest('recognition_lambertian')
 from std_msgs.msg import String
 import rospy
 
+from recognition_lambertian.srv import *
+
+
 # begin wxGlade: extracode
 # end wxGlade
+
+
+def call_service():
+
+    print "Waiting for service"
+    rospy.wait_for_service('table_top/find_object_poses')
+
+    try:
+        # create a handle to the add_two_ints service
+        find_object_poses = rospy.ServiceProxy('table_top/find_object_poses', FindObjectPoses)
+
+        # simplified style
+        resp = find_object_poses()
+
+
+        for p in resp.objects:
+            print p
+
+
+    except rospy.ServiceException, e:
+        print "Service call failed: %s"%e
+
 
 
 
@@ -68,7 +93,7 @@ class MyFrame(wx.Frame):
         # end wxGlade
 
     def onPublish(self, event): # wxGlade: MyFrame.<event_handler>
-        print "Event handler `onPublish' not implemented!"
+        call_service()
         event.Skip()
 
     def onClose(self, event): # wxGlade: MyFrame.<event_handler>
