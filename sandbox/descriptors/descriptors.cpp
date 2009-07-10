@@ -645,7 +645,7 @@ void SuperpixelStatistic::segment() {
 ****************************************************************************/
  
 SuperpixelColorHistogram::SuperpixelColorHistogram(int seed_spacing, float scale, int nBins, string type, SuperpixelStatistic* seg_provider, SuperpixelColorHistogram* hsv_provider) :
-  SuperpixelStatistic(seed_spacing, scale, seg_provider), hsv_(NULL), hue_(NULL), sat_(NULL), val_(NULL), nBins_(nBins), type_(type), hsv_provider_(hsv_provider), hists_reserved_(false), channel_(NULL)
+  SuperpixelStatistic(seed_spacing, scale, seg_provider), hsv_(NULL), hue_(NULL), sat_(NULL), val_(NULL), nBins_(nBins), type_(type), hsv_provider_(hsv_provider), histograms_cv_(vector<CvHistogram*>()), hists_reserved_(false), channel_(NULL)
 {
   cout << "name (sch): " << name_ << endl;
   char buf[100];
@@ -724,10 +724,11 @@ void SuperpixelColorHistogram::compute(IplImage* img, const Keypoint& point, cv:
   ROS_ASSERT(hue_ != NULL);
   ROS_ASSERT(sat_ != NULL);
   ROS_ASSERT(val_ != NULL);
+  ROS_ASSERT(seg_ != NULL);
 
 
   // -- Get the label at this point.
-  int label = CV_IMAGE_ELEM(seg_, long, row_, col_);
+  int label = CV_IMAGE_ELEM(seg_, long, (int)point.pt.y, (int)point.pt.x);
   if(label == -1)  {
     result.clear();
     cerr << "SEG -1.  This should not happen." << endl;
@@ -759,6 +760,7 @@ void SuperpixelColorHistogram::compute(IplImage* img, const Keypoint& point, cv:
   computeHistogramCV(label);
 
   // -- Copy into result.
+  result.resize(result_size_);
   int ctr = 0;
   for(int i=0; i<nBins_; i++) {
     for(int j=0; j<nBins_; j++) {
@@ -872,18 +874,18 @@ void SuperpixelColorHistogram::clearImageCache() {
 
 
   // -- Clean up histograms.
-  for(unsigned int i=0; i<histograms_.size(); i++) {
-    if(histograms_[i])
-      delete histograms_[i];
-  }
-  histograms_.clear();
+//   for(unsigned int i=0; i<histograms_.size(); i++) {
+//     if(histograms_[i])
+//       delete histograms_[i];
+//   }
+//   histograms_.clear();
 
   // -- Clean up cv histograms.
   for(unsigned int i=0; i<histograms_cv_.size(); i++) {
     if(histograms_cv_[i])
       cvReleaseHist(&histograms_cv_[i]);
   }
-  histograms_.clear();
+  histograms_cv_.clear();
 
 
   hists_reserved_ = false;

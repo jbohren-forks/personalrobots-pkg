@@ -214,7 +214,7 @@ class SuperpixelColorHistogram : public SuperpixelStatistic {
   std::string type_;
   SuperpixelColorHistogram* hsv_provider_;
   //! histograms_[s] corresponds to the histogram for segment s of the segmentation. s=0 is always left NULL.  (segment numbering starts at 1).
-  std::vector<Histogram*> histograms_;
+  //std::vector<Histogram*> histograms_;
   std::vector<CvHistogram*> histograms_cv_;
   bool hists_reserved_;
   float max_val_;
