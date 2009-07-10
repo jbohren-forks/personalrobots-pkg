@@ -42,6 +42,17 @@ using namespace std;
 namespace KDL{
 
 
+bool isNumber(const char& c)
+{
+  return (c=='1' || c=='2' ||c=='3' ||c=='4' ||c=='5' ||c=='6' ||c=='7' ||c=='8' ||c=='9' ||c=='0' ||c=='.' ||c=='-' ||c==' ');
+}
+
+bool isNumber(const std::string& s)
+{
+  for (unsigned int i=0; i<s.size(); i++)
+    if (!isNumber(s[i])) return false;
+  return true;
+}
 
 
 bool getAtribute(TiXmlElement *xml, const string& name, string& attr)
@@ -69,8 +80,11 @@ bool getVector(TiXmlElement *vector_xml, const string& field, Vector& vector)
   unsigned int pos=0;
   for (unsigned int i = 0; i < pieces.size(); ++i){
     if (pieces[i] != ""){
-      if (pos < 3)
+      if (pos < 3){
+        if (!isNumber(pieces[i]))
+        {cerr << "This is not a valid number: '" << pieces[i] << "'" << endl; return false;}
         vector(pos) = atof(pieces[i].c_str());
+      }
       pos++;
     }
   }
@@ -96,6 +110,8 @@ bool getValue(TiXmlElement *value_xml, const string& field, double& value)
   string value_str;
   if (!getAtribute(value_xml, field, value_str)) return false;
 
+  if (!isNumber(value_str))
+  {cerr << "This is not a valid number: '" << value_str << "'" << endl; return false;}
   value = atof(value_str.c_str());
 
   return true;
@@ -249,6 +265,8 @@ void addChildrenToTree(const string& root, const map<string, Segment>& segments,
 
 bool getTree(TiXmlElement *robot_xml, Tree& tree)
 {
+  cout << "Parsing robot xml" << endl;
+
   if (!robot_xml) return false;
 
   // Constructs the joints

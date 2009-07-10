@@ -36,6 +36,7 @@
 
 #include <string>
 #include <gtest/gtest.h>
+#include <ros/ros.h>
 #include "kdl_parser/tree_parser.hpp"
 
 using namespace KDL;
@@ -66,9 +67,15 @@ protected:
 
 TEST_F(TestParser, test)
 {
-  ASSERT_TRUE(treeFromFile(g_argv[1], my_tree));
+  for (unsigned int i=1; i<g_argc-2; i++){
+    ASSERT_FALSE(treeFromFile(g_argv[i], my_tree));
+  }
+
+  ASSERT_TRUE(treeFromFile(g_argv[g_argc-1], my_tree));
   ASSERT_TRUE(my_tree.getNrOfJoints() == 38);
   ASSERT_TRUE(my_tree.getNrOfSegments() == 51);
+  ASSERT_TRUE(my_tree.getSegment("world") == my_tree.getRootSegment());
+  ASSERT_TRUE(my_tree.getRootSegment()->second.children.size() == 1);
   ASSERT_TRUE(my_tree.getSegment("base_link")->second.parent == my_tree.getRootSegment());
   SUCCEED();
 }
@@ -79,6 +86,7 @@ TEST_F(TestParser, test)
 int main(int argc, char** argv)
 {
   testing::InitGoogleTest(&argc, argv);
+  ros::init(argc, argv, "test_kdl_parser");
   g_argc = argc;
   g_argv = argv;
   return RUN_ALL_TESTS();
