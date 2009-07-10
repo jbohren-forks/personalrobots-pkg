@@ -40,7 +40,7 @@ using namespace calibration_msgs ;
 
 StereoCbAction::StereoCbAction() : robot_actions::Action<CbCamCmd, CbStereoCorners>("stereo_cb_action")
 {
-  sub_ = n_.subscribe("stereo_corners", 1, &StereoCbAction::cornersCallback, this) ;
+  sub_ = n_.subscribe("cb_stereo_corners", 1, &StereoCbAction::cornersCallback, this) ;
   accumulating_ = false ;
 }
 
@@ -62,6 +62,7 @@ robot_actions::ResultStatus StereoCbAction::execute(const CbCamCmd& goal, CbSter
     {
       ROS_DEBUG("ABORTING") ;
       feedback = avg_ ;
+      accumulating_ = false ;
       return robot_actions::ABORTED ;
     }
 
@@ -69,6 +70,7 @@ robot_actions::ResultStatus StereoCbAction::execute(const CbCamCmd& goal, CbSter
     {
       ROS_DEBUG("PREEMPTED") ;
       feedback = avg_ ;
+      accumulating_ = false ;
       return robot_actions::PREEMPTED ;
     }
   }
@@ -115,10 +117,21 @@ void StereoCbAction::cornersCallback(const calibration_msgs::CbStereoCornersCons
   }
 
   // Check pixel distances. Trigger an abort if the pixel dist is too far
-  for (unsigned int i=0; i<N; i++)
+
+  bool pixels_too_far = false ;
+  if (num_samples_ > 0)
   {
-    need_to_abort_ = need_to_abort_ || pixelTooFar(avg_.left.corners[i].point,  msg->left.corners[i].point,  goal_.pixel_tol) ;
-    need_to_abort_ = need_to_abort_ || pixelTooFar(avg_.right.corners[i].point, msg->right.corners[i].point, goal_.pixel_tol) ;
+    for (unsigned int i=0; i<N; i++)
+    {
+      pixels_too_far = pixels_too_far || pixelTooFar(avg_.left.corners[i].point,  msg->left.corners[i].point,  goal_.pixel_tol) ;
+      pixels_too_far = pixels_too_far || pixelTooFar(avg_.right.corners[i].point, msg->right.corners[i].point, goal_.pixel_tol) ;
+    }
+  }
+
+  if (pixels_too_far)
+  {
+    ROS_DEBUG("Some pixels were too far.  Need to abort") ;
+    need_to_abort_ = true ;
   }
 
   for (unsigned int i=0; i<N; i++)
@@ -139,6 +152,8 @@ void StereoCbAction::cornersCallback(const calibration_msgs::CbStereoCornersCons
     avg_.right.corners[i].point.y = (avg_.right.corners[i].point.y*num_samples_ + msg->right.corners[i].point.y)/(num_samples_+1) ;
   }
   num_samples_++ ;
+
+  ROS_DEBUG("NumSamples: %u", num_samples_) ;
 
   corners_available_.notify_all() ;
 }
@@ -164,6 +179,7 @@ void resetCbCamCorners(CbCamCorners& cam, const CbCamCmd& goal)
 
 void StereoCbAction::resetStereoAvg(const CbCamCmd& goal)
 {
+  num_samples_ = 0 ;
   resetCbCamCorners(avg_.left, goal) ;
   resetCbCamCorners(avg_.right, goal) ;
 }
