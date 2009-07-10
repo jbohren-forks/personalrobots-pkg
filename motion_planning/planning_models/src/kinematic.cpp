@@ -259,7 +259,10 @@ void planning_models::KinematicModel::Link::extractInformation(const robot_desc:
 	break;
     case robot_desc::URDF::Link::Geometry::MESH:
 	{
-	    std::string filename = model.getResourceLocation() + "/" + static_cast<const robot_desc::URDF::Link::Geometry::Mesh*>(urdfLink->collision->geometry->shape)->filename;
+	    std::string filename = model.getResourceLocation();
+	    std::string nm = static_cast<const robot_desc::URDF::Link::Geometry::Mesh*>(urdfLink->collision->geometry->shape)->filename;
+	    nm.erase(0, 3); // horrible hack
+	    filename += "/" + nm;	    
 	    if (filename.rfind(".stl") == std::string::npos)
 		filename += ".stl";
 	    std::cout << "Loading '" << filename << "'" << std::endl;	    
