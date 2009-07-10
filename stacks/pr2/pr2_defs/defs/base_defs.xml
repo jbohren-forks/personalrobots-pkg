@@ -321,7 +321,7 @@
       <collision>
         <origin xyz="0 0 0.0" rpy="0 0 0" />
         <geometry name="base_laser_collision">
-          <box size=".001 .001 .001" />
+          <box size=".1 .1 .1" />
         </geometry>
       </collision>
 
@@ -478,7 +478,7 @@
       <collision>
         <origin xyz="0 0 0.0" rpy="0 0 0" />
         <geometry name="base_laser_collision">
-          <box size=".001 .001 .001" />
+          <box size=".1 .1 .1" />
         </geometry>
       </collision>
 
