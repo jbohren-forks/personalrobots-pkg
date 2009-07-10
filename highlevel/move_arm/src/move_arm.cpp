@@ -125,7 +125,7 @@ namespace move_arm
 	req.times = 1;
 
 	// do not spend more than this amount of time
-	req.allowed_time = 0.5;
+	req.allowed_time = 2.5;
 
 	if (perform_ik_)
 	    alterRequestUsingIK(req);
@@ -199,6 +199,7 @@ namespace move_arm
 				    if (planningMonitor_->transformPathToFrame(currentPath, planningMonitor_->getFrameId()))
 				    {
 					displayPathPublisher_.publish(currentPath);
+					printPath(currentPath);
 					feedback = pr2_robot_actions::MoveArmState::MOVING;	
 					update(feedback);
 				    }
@@ -351,6 +352,18 @@ namespace move_arm
 	{
 	    traj.points[i].positions = path.states[i].vals;
 	    traj.points[i].time = path.times[i];
+	}
+    }
+    
+    void MoveArm::printPath(const motion_planning_msgs::KinematicPath &path)
+    {
+	ROS_DEBUG("Received path with %d states", (int)path.states.size());
+	for (unsigned int i = 0 ; i < path.states.size() ; ++i)
+	{
+	    std::stringstream ss;
+	    for (unsigned int j = 0 ; j < path.states[i].vals.size() ; ++j)
+		ss << path.states[i].vals[j] << " ";
+	    ROS_DEBUG(ss.str().c_str());
 	}
     }
     
@@ -598,7 +611,6 @@ namespace move_arm
 int main(int argc, char** argv)
 {
     ros::init(argc, argv, "move_arm", ros::init_options::AnonymousName);  
-    ros::Node xx; // hack to get action to work
     
     move_arm::MoveArm move_arm;
     robot_actions::ActionRunner runner(20.0);

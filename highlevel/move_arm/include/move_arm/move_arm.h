@@ -78,7 +78,7 @@ namespace move_arm
 	virtual robot_actions::ResultStatus execute(const pr2_robot_actions::MoveArmGoal& goal, int32_t& feedback);
 	
     private:
-	
+
 	// the state of the action; this should be true if initialized properly
 	bool                     valid_;
 	bool                     perform_ik_;      /**< Flag that enables the option of IK */
@@ -97,6 +97,7 @@ namespace move_arm
 	
 	bool getControlJointNames(std::vector<std::string> &joint_names);
 
+	void printPath(const motion_planning_msgs::KinematicPath &path);
 	bool fillStartState(std::vector<motion_planning_msgs::KinematicJoint> &start);	
 	void fillTrajectoryPath(const motion_planning_msgs::KinematicPath &path, manipulation_msgs::JointTraj &traj);
 	bool alterRequestUsingIK(motion_planning_srvs::MotionPlan::Request &req);
