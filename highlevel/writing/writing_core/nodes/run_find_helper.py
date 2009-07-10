@@ -50,7 +50,7 @@ from people.srv import StartDetection
 import visualization_msgs.msg
 import tf
 import pr2_robot_actions.msg
-from tf.listener import TransformListener
+from tf.listenerX import TransformListener
 import robot_msgs
 import python_actions
 
@@ -140,9 +140,9 @@ class FindHelperAction(python_actions.Action, TransformListener):
             m.color.b = 1.0;
             markerpub.publish(m)
 
-          ps0 = tf.pose_stamped_bt_to_msg(self.transform_pose("odom_combined", tf.pose_stamped_msg_to_bt(ps0)))
-          ps1 = tf.pose_stamped_bt_to_msg(self.transform_pose("odom_combined", tf.pose_stamped_msg_to_bt(ps1)))
-          ps1.pose.position.z = 0# put the goal on the ground
+          ps0 = self.transformPose("odom_combined", ps0)
+          ps1 = self.transformPose("odom_combined", ps1)
+          ps1.pose.position.z = 0                             # make sure that the goal is on the ground
           self.feedback.helper_head=ps0
           self.feedback.helper_zone=ps1
         
