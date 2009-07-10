@@ -179,7 +179,8 @@ public:
 private:
   void callback(const ros::TimerEvent &te) {
     ROS_INFO((std::string("Sending static transform from parent ") + _transform->parent_id + " to " + _transform->frame_id).c_str());
-    tb->sendTransform(_tft, ros::Time::now(), _transform->frame_id, _transform->parent_id);
+    tb->sendTransform(_tft, ros::Time::now() + _transform->frequency + _transform->frequency, 
+	_transform->frame_id, _transform->parent_id);
   }
 
   boost::shared_ptr<const StartStaticTransform> _transform;
@@ -341,25 +342,25 @@ int main(int argc, char **argv)
   trf = new tf::Transformer();
 
   // Services for transforming things
-  ros::ServiceServer f  = nh->advertiseService("get_tf_frames",         &getFramesCallback);
-  ros::ServiceServer p  = nh->advertiseService("transform_point",       &transformPointCallback);
-  ros::ServiceServer pc = nh->advertiseService("transform_point_cloud", &transformPointCloudCallback);
-  ros::ServiceServer ps = nh->advertiseService("transform_pose",        &transformPoseCallback);
-  ros::ServiceServer q  = nh->advertiseService("transform_quaternion",  &transformQuaternionCallback);
-  ros::ServiceServer v  = nh->advertiseService("transform_vector",      &transformVectorCallback);
+  ros::ServiceServer f  = nh->advertiseService("~get_tf_frames",         &getFramesCallback);
+  ros::ServiceServer p  = nh->advertiseService("~transform_point",       &transformPointCallback);
+  ros::ServiceServer pc = nh->advertiseService("~transform_point_cloud", &transformPointCloudCallback);
+  ros::ServiceServer ps = nh->advertiseService("~transform_pose",        &transformPoseCallback);
+  ros::ServiceServer q  = nh->advertiseService("~transform_quaternion",  &transformQuaternionCallback);
+  ros::ServiceServer v  = nh->advertiseService("~transform_vector",      &transformVectorCallback);
 
   // Topics for publishing transforms  
   ros::Subscriber publishTransform     = 
-     nh->subscribe<robot_msgs::TransformStamped>("publish_transform", 20, &publishTransformCallback);
+     nh->subscribe<robot_msgs::TransformStamped>("~publish_transform", 20, &publishTransformCallback);
   ros::Subscriber startStaticTransform = 
-     nh->subscribe<StartStaticTransform>("start_static_transform", 20, &startStaticTransformCallback);
+     nh->subscribe<StartStaticTransform>("~start_static_transform", 20, &startStaticTransformCallback);
   ros::Subscriber stopStaticTransform  = 
-     nh->subscribe<StopStaticTransform>("stop_static_transform", 20, &stopStaticTransformCallback);
+     nh->subscribe<StopStaticTransform>("~stop_static_transform", 20, &stopStaticTransformCallback);
 
   // Topics for setting up streaming transforms
   // These don't seem to be working right now ...
-  ros::Subscriber startTransformer = nh->subscribe("start_transforming", 20, &startTransformingCallback);
-  ros::Subscriber stopTransforming = nh->subscribe("stop_transforming", 20,  &stopTransformingCallback);
+  ros::Subscriber startTransformer = nh->subscribe("~start_transforming", 20, &startTransformingCallback);
+  ros::Subscriber stopTransforming = nh->subscribe("~stop_transforming", 20,  &stopTransformingCallback);
 
   ros::spin();
 
