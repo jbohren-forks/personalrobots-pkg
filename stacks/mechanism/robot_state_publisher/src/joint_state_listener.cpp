@@ -56,7 +56,9 @@ JointStateListener::JointStateListener(const KDL::Tree& tree)
   publish_rate_ = Rate(publish_freq);
   
   // subscribe to mechanism state
-  joint_state_sub_ = n_.subscribe("/joint_states", 1, &JointStateListener::callbackJointState, this);;
+  string joint_state_topic;
+  n_.param("~joint_state_topic", joint_state_topic, string("/joint_states"));
+  joint_state_sub_ = n_.subscribe(joint_state_topic, 1, &JointStateListener::callbackJointState, this);;
 };
 
 
