@@ -40,7 +40,6 @@
 #include "collision_space/environment.h"
 
 #include "btBulletCollisionCommon.h"
-#include "BulletCollision/Gimpact/btGImpactCollisionAlgorithm.h"
 
 namespace collision_space
 {
@@ -56,7 +55,6 @@ namespace collision_space
 	{
 	    m_config = new btDefaultCollisionConfiguration();
 	    btCollisionDispatcher* dispatcher = new CollisionDispatcher(&m_selfCollisionTest, &m_selfCollision, m_config);
-	    btGImpactCollisionAlgorithm::registerAlgorithm(dispatcher);
 	    btBroadphaseInterface *broadphase = new btDbvtBroadphase();
 	    m_world = new btCollisionWorld(dispatcher, broadphase, m_config);
 	}

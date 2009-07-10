@@ -98,26 +98,14 @@ btCollisionObject* collision_space::EnvironmentModelBullet::createCollisionBody(
     case shapes::MESH:
 	{
 	    shapes::Mesh *mesh = static_cast<shapes::Mesh*>(shape);
-	    btTriangleMesh *btmesh = new btTriangleMesh();
+	    btConvexHullShape *btmesh = new btConvexHullShape();
 	    
-	    for (unsigned int i = 0 ; i < mesh->triangleCount ; ++i)
-	    {
-		unsigned int i3 = i * 3;
-		unsigned int v1 = 3 * mesh->triangles[i3];
-		unsigned int v2 = 3 * mesh->triangles[i3 + 1];
-		unsigned int v3 = 3 * mesh->triangles[i3 + 2];
-		
-		btmesh->addTriangle(btVector3(mesh->vertices[v1], mesh->vertices[v1 + 1], mesh->vertices[v1 + 2]),
-				    btVector3(mesh->vertices[v2], mesh->vertices[v2 + 1], mesh->vertices[v2 + 2]),
-				    btVector3(mesh->vertices[v3], mesh->vertices[v3 + 1], mesh->vertices[v3 + 2]),
-				    true);
-	    }
+	    for (unsigned int i = 0 ; i < mesh->vertexCount ; ++i)
+		btmesh->addPoint(btVector3(mesh->vertices[3*i], mesh->vertices[3*i + 1], mesh->vertices[3*i + 2]));
 	    
-	    btGImpactMeshShape *gshape = new btGImpactMeshShape(btmesh);
-	    gshape->setLocalScaling(btVector3(scale, scale, scale));
-	    gshape->setMargin(padding);
-	    gshape->updateBound();
-	    btshape = dynamic_cast<btCollisionShape*>(gshape);
+	    btmesh->setLocalScaling(btVector3(scale, scale, scale));
+	    btmesh->setMargin(padding);
+	    btshape = dynamic_cast<btCollisionShape*>(btmesh);
 	}
 	
     default:
