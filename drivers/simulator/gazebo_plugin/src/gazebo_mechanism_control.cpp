@@ -90,33 +90,33 @@ void GazeboMechanismControl::LoadChild(XMLConfigNode *node)
   ReadPr2Xml(node);
 
   // Initializes the fake state (for running the transmissions backwards).
-  fake_state_ = new mechanism::RobotState(&mc_.model_, &hw_);
+  this->fake_state_ = new mechanism::RobotState(&this->mc_.model_, &this->hw_);
 
   // The gazebo joints and mechanism joints should match up.
-  for (unsigned int i = 0; i < mc_.model_.joints_.size(); ++i)
+  for (unsigned int i = 0; i < this->mc_.model_.joints_.size(); ++i)
   {
-    std::string joint_name = mc_.model_.joints_[i]->name_;
+    std::string joint_name = this->mc_.model_.joints_[i]->name_;
 
     // fill in gazebo joints pointer
-    gazebo::Joint *joint = parent_model_->GetJoint(joint_name);
+    gazebo::Joint *joint = this->parent_model_->GetJoint(joint_name);
     if (joint)
     {
-      joints_.push_back(joint);
+      this->joints_.push_back(joint);
     }
     else
     {
       ROS_WARN("A joint named \"%s\" is not part of Mechanism Controlled joints.\n", joint_name.c_str());
-      joints_.push_back(NULL);
+      this->joints_.push_back(NULL);
     }
 
   }
 
-  hw_.current_time_ = Simulator::Instance()->GetSimTime();
+  this->hw_.current_time_ = Simulator::Instance()->GetSimTime();
 }
 
 void GazeboMechanismControl::InitChild()
 {
-  hw_.current_time_ = Simulator::Instance()->GetSimTime();
+  this->hw_.current_time_ = Simulator::Instance()->GetSimTime();
 }
 
 void GazeboMechanismControl::UpdateChild()
@@ -131,32 +131,32 @@ void GazeboMechanismControl::UpdateChild()
               << "  speed up: " <<  sim_elapsed / wall_elapsed
               << std::endl;
   }
-  assert(joints_.size() == fake_state_->joint_states_.size());
+  assert(this->joints_.size() == this->fake_state_->joint_states_.size());
 
   //--------------------------------------------------
   //  Pushes out simulation state
   //--------------------------------------------------
 
   // Copies the state from the gazebo joints into the mechanism joints.
-  for (unsigned int i = 0; i < joints_.size(); ++i)
+  for (unsigned int i = 0; i < this->joints_.size(); ++i)
   {
-    if (!joints_[i])
+    if (!this->joints_[i])
       continue;
 
-    fake_state_->joint_states_[i].applied_effort_ = fake_state_->joint_states_[i].commanded_effort_;
+    this->fake_state_->joint_states_[i].applied_effort_ = this->fake_state_->joint_states_[i].commanded_effort_;
 
-    switch(joints_[i]->GetType())
+    switch(this->joints_[i]->GetType())
     {
     case Joint::HINGE: {
-      HingeJoint *hj = (HingeJoint*)joints_[i];
-      fake_state_->joint_states_[i].position_ = hj->GetAngle();
-      fake_state_->joint_states_[i].velocity_ = hj->GetAngleRate();
+      HingeJoint *hj = (HingeJoint*)this->joints_[i];
+      this->fake_state_->joint_states_[i].position_ = hj->GetAngle();
+      this->fake_state_->joint_states_[i].velocity_ = hj->GetAngleRate();
       break;
     }
     case Joint::SLIDER: {
-      SliderJoint *sj = (SliderJoint*)joints_[i];
-      fake_state_->joint_states_[i].position_ = sj->GetPosition();
-      fake_state_->joint_states_[i].velocity_ = sj->GetPositionRate();
+      SliderJoint *sj = (SliderJoint*)this->joints_[i];
+      this->fake_state_->joint_states_[i].position_ = sj->GetPosition();
+      this->fake_state_->joint_states_[i].velocity_ = sj->GetPositionRate();
       break;
     }
     default:
@@ -165,15 +165,15 @@ void GazeboMechanismControl::UpdateChild()
   }
 
   // Reverses the transmissions to propagate the joint position into the actuators.
-  fake_state_->propagateStateBackwards();
+  this->fake_state_->propagateStateBackwards();
 
   //--------------------------------------------------
   //  Runs Mechanism Control
   //--------------------------------------------------
-  hw_.current_time_ = Simulator::Instance()->GetSimTime();
+  this->hw_.current_time_ = Simulator::Instance()->GetSimTime();
   try
   {
-    mcn_.update();
+    this->mcn_.update();
   }
   catch (const char* c)
   {
@@ -188,29 +188,29 @@ void GazeboMechanismControl::UpdateChild()
   //--------------------------------------------------
 
   // Reverses the transmissions to propagate the actuator commands into the joints.
-  fake_state_->propagateEffortBackwards();
+  this->fake_state_->propagateEffortBackwards();
 
   // Copies the commands from the mechanism joints into the gazebo joints.
-  for (unsigned int i = 0; i < joints_.size(); ++i)
+  for (unsigned int i = 0; i < this->joints_.size(); ++i)
   {
-    if (!joints_[i])
+    if (!this->joints_[i])
       continue;
 
     double damping_force;
-    double effort = fake_state_->joint_states_[i].commanded_effort_;
-    switch (joints_[i]->GetType())
+    double effort = this->fake_state_->joint_states_[i].commanded_effort_;
+    switch (this->joints_[i]->GetType())
     {
     case Joint::HINGE:
       //std::cout << " hinge joint name " << mc_.model_.joints_[i]->name_ << std::endl;
       //std::cout << " check damping coef " << mc_.model_.joints_[i]->joint_damping_coefficient_ << std::endl;
-      damping_force = mc_.model_.joints_[i]->joint_damping_coefficient_ * ((HingeJoint*)joints_[i])->GetAngleRate();
-      ((HingeJoint*)joints_[i])->SetTorque(effort - damping_force);
+      damping_force = this->mc_.model_.joints_[i]->joint_damping_coefficient_ * ((HingeJoint*)this->joints_[i])->GetAngleRate();
+      ((HingeJoint*)this->joints_[i])->SetTorque(effort - damping_force);
       break;
     case Joint::SLIDER:
       //std::cout << " slider joint name " << mc_.model_.joints_[i]->name_ << std::endl;
       //std::cout << " check damping coef " << mc_.model_.joints_[i]->joint_damping_coefficient_ << std::endl;
-      damping_force = mc_.model_.joints_[i]->joint_damping_coefficient_ * ((SliderJoint*)joints_[i])->GetPositionRate();
-      ((SliderJoint*)joints_[i])->SetSliderForce(effort - damping_force);
+      damping_force = this->mc_.model_.joints_[i]->joint_damping_coefficient_ * ((SliderJoint*)this->joints_[i])->GetPositionRate();
+      ((SliderJoint*)this->joints_[i])->SetSliderForce(effort - damping_force);
       break;
     default:
       abort();
@@ -222,12 +222,12 @@ void GazeboMechanismControl::FiniChild()
 {
   ROS_DEBUG("Calling FiniChild in GazeboMechanismControl");
 
-  hw_.~HardwareInterface();
-  mc_.~MechanismControl();
-  mcn_.~MechanismControlNode();
+  this->hw_.~HardwareInterface();
+  this->mc_.~MechanismControl();
+  this->mcn_.~MechanismControlNode();
 
-  deleteElements(&joints_);
-  delete fake_state_;
+  deleteElements(&this->joints_);
+  delete this->fake_state_;
 }
 
 void GazeboMechanismControl::ReadPr2Xml(XMLConfigNode *node)
@@ -281,14 +281,14 @@ void GazeboMechanismControl::ReadPr2Xml(XMLConfigNode *node)
   for (it = get_actuators.actuators.begin(); it != get_actuators.actuators.end(); ++it)
   {
     //std::cout << " adding actuator " << (*it) << std::endl;
-    hw_.actuators_.push_back(new Actuator(*it));
+    this->hw_.actuators_.push_back(new Actuator(*it));
   }
 
   // Setup mechanism control node
-  mcn_.initXml(doc.RootElement());
+  this->mcn_.initXml(doc.RootElement());
 
-  for (unsigned int i = 0; i < mc_.state_->joint_states_.size(); ++i)
-    mc_.state_->joint_states_[i].calibrated_ = true;
+  for (unsigned int i = 0; i < this->mc_.state_->joint_states_.size(); ++i)
+    this->mc_.state_->joint_states_[i].calibrated_ = true;
 }
 
 } // namespace gazebo

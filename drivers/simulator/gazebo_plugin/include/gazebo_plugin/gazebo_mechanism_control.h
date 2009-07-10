@@ -64,7 +64,6 @@ class XMLConfigNode;
       <updateRate>1000.0</updateRate>
       <robot filename="pr2.xml" /> <!-- gazebo_mechanism_control use this file to extract mechanism model -->
       <gazebo_physics filename="gazebo_joints.xml" /> <!-- for simulator/physics specific settigs, currently just damping -->
-      <interface:audio name="gazebo_mechanism_control_dummy_iface" />
     </controller:gazebo_mechanism_control>
   </model:phyiscal>
   \endverbatim
@@ -113,7 +112,6 @@ class XMLConfigNode;
       <updateRate>1000.0</updateRate>
       <robot filename="pr2.xml" /> <!-- gazebo_mechanism_control use this file to extract mechanism model -->
       <gazebo_physics filename="gazebo_joints.xml" /> <!-- for simulator/physics specific settigs, currently just damping -->
-      <interface:audio name="gazebo_mechanism_control_dummy_iface" />
     </controller:gazebo_mechanism_control>
   </model:phyiscal>
   \endverbatim
@@ -140,8 +138,6 @@ private:
   HardwareInterface hw_;
   MechanismControl mc_;
   MechanismControlNode mcn_;
-
-  TiXmlDocument config_;
 
   /// @todo The fake state helps Gazebo run the transmissions backwards, so
   ///       that it can figure out what its joints should do based on the
