@@ -182,8 +182,13 @@ const RandomField::Node* RandomField::createNode(const unsigned int node_id,
 // --------------------------------------------------------------
 /*! See function definition */
 // --------------------------------------------------------------
-const RandomField::Clique* RandomField::createClique(const unsigned int clique_set_idx, const list<
-    RandomField::Node*>& nodes, const float* feature_vals, const unsigned int nbr_feature_vals)
+const RandomField::Clique* RandomField::createClique(const unsigned int clique_set_idx,
+                                                     const list<RandomField::Node*>& nodes,
+                                                     const float* feature_vals,
+                                                     const unsigned int nbr_feature_vals,
+                                                     float x,
+                                                     float y,
+                                                     float z)
 {
 #if DEBUG
   if (clique_set_idx > clique_sets_.size())
@@ -201,7 +206,7 @@ const RandomField::Clique* RandomField::createClique(const unsigned int clique_s
   {
     unique_id++;
   }
-  return createClique(unique_id, clique_set_idx, nodes, feature_vals, nbr_feature_vals);
+  return createClique(unique_id, clique_set_idx, nodes, feature_vals, nbr_feature_vals, x, y, z);
 }
 
 // --------------------------------------------------------------
@@ -211,7 +216,10 @@ const RandomField::Clique* RandomField::createClique(const unsigned int clique_i
                                                      const unsigned int clique_set_idx,
                                                      const list<RandomField::Node*>& nodes,
                                                      const float* feature_vals,
-                                                     const unsigned int nbr_feature_vals)
+                                                     const unsigned int nbr_feature_vals,
+                                                     float x,
+                                                     float y,
+                                                     float z)
 {
   list<RandomField::Node*>::const_iterator iter_nodes;
 
@@ -255,6 +263,7 @@ const RandomField::Clique* RandomField::createClique(const unsigned int clique_i
     new_clique->addNode(**iter_nodes);
   }
   new_clique->setFeatures(feature_vals, nbr_feature_vals);
+  new_clique->setXYZ(x, y, z);
 
   // add clique to map container
   map<unsigned int, RandomField::Clique*>& clique_set = clique_sets_[clique_set_idx];

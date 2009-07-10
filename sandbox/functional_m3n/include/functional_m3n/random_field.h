@@ -112,10 +112,19 @@ class RandomField
     const Clique* createClique(const unsigned int clique_set_idx,
                                const list<Node*>& nodes,
                                const float* feature_vals,
-                               unsigned int nbr_feature_vals);
+                               unsigned int nbr_feature_vals,
+                               float x = 0.0,
+                               float y = 0.0,
+                               float z = 0.0);
 
-    const Clique* createClique(const unsigned int clique_id, const unsigned int clique_set_idx, const list<
-        Node*>& nodes, const float* feature_vals, const unsigned int nbr_feature_vals);
+    const Clique* createClique(const unsigned int clique_id,
+                               const unsigned int clique_set_idx,
+                               const list<Node*>& nodes,
+                               const float* feature_vals,
+                               const unsigned int nbr_feature_vals,
+                               float x = 0.0,
+                               float y = 0.0,
+                               float z = 0.0);
 
     // --------------------------------------------------------------
     /*!

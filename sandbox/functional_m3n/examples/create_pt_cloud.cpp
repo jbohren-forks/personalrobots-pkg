@@ -362,14 +362,15 @@ void createCliqueSet0(RandomField& rf,
   for (iter_created_clusters = created_clusters.begin(); iter_created_clusters != created_clusters.end() ; iter_created_clusters++)
   {
     list<RandomField::Node*>& curr_list = iter_created_clusters->second;
-    region_indices.clear();
 
+    // create region indices to compute features over
+    region_indices.clear();
     for (list<RandomField::Node*>::iterator iter = curr_list.begin() ; iter != curr_list.end() ; iter++)
     {
-
       region_indices.push_back(static_cast<int> ((*iter)->getRandomFieldID()));
     }
 
+    // create concatenated feature
     float* concat_created_feature_vals = NULL;
     if (createConcatenatedFeatures(feature_descriptors, feature_descriptor_vals, nbr_total_feature_vals,
         NULL, &region_indices, &concat_created_feature_vals) < 0)
@@ -378,7 +379,10 @@ void createCliqueSet0(RandomField& rf,
     }
 
     // try to create node with features
-    if (rf.createClique(0, curr_list, concat_created_feature_vals, nbr_total_feature_vals) == NULL)
+    if (rf.createClique(0, curr_list, concat_created_feature_vals, nbr_total_feature_vals,
+        xyz_cluster_centroids[iter_created_clusters->first][0],
+        xyz_cluster_centroids[iter_created_clusters->first][1],
+        xyz_cluster_centroids[iter_created_clusters->first][2]) == NULL)
     {
       ROS_ERROR("could not create clique");
       abort();
