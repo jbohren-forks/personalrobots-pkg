@@ -112,7 +112,7 @@ bool NavfnWithLocalCostmap::setCostmap(SetCostmap::Request& req, SetCostmap::Res
     for (unsigned x=0; x<req.width; x++) 
       ROS_DEBUG_NAMED ("node", "Cost of %u, %u is %u", x, y, cmap_->getCost(x,y));
 
-  planner_ = NavFn(cmap_->cellSizeX(), cmap_->cellSizeY());
+  planner_.reset(new NavFn(cmap_->cellSizeX(), cmap_->cellSizeY()));
   ROS_DEBUG_STREAM_NAMED ("node", "Resetting planner object to have size " << cmap_->cellSizeX() << ", " << cmap_->cellSizeY());
 
   return true;

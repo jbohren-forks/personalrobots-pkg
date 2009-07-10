@@ -103,7 +103,7 @@ namespace navfn {
        */
       virtual void getCostmap(costmap_2d::Costmap2D& costmap); 
       costmap_2d::Costmap2DROS& costmap_ros_;
-      NavFn planner_;
+      boost::shared_ptr<NavFn> planner_;
       double inscribed_radius_, circumscribed_radius_, inflation_radius_;
       ros::Publisher plan_pub_;
 

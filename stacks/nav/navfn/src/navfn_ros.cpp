@@ -41,7 +41,7 @@ namespace navfn {
   ROS_REGISTER_BGP(NavfnROS);
 
   NavfnROS::NavfnROS(std::string name, costmap_2d::Costmap2DROS& costmap_ros) 
-    : costmap_ros_(costmap_ros),  planner_(costmap_ros.cellSizeX(), costmap_ros.cellSizeY()), ros_node_(name) {
+    : costmap_ros_(costmap_ros),  planner_(new NavFn(costmap_ros.cellSizeX(), costmap_ros.cellSizeY())), ros_node_(name) {
     //get an initial copy of the costmap
     costmap_ros_.getCostmapCopy(costmap_);
 
@@ -66,8 +66,8 @@ namespace navfn {
     if(!costmap_.worldToMap(world_point.x, world_point.y, mx, my))
       return DBL_MAX;
 
-    unsigned int index = my * planner_.nx + mx;
-    return planner_.potarr[index];
+    unsigned int index = my * planner_->nx + mx;
+    return planner_->potarr[index];
   }
 
   bool NavfnROS::computePotential(const robot_msgs::Point& world_point){
@@ -75,7 +75,7 @@ namespace navfn {
     costmap_ros_.clearRobotFootprint();
     costmap_ros_.getCostmapCopy(costmap_);
 
-    planner_.setCostmap(costmap_.getCharMap());
+    planner_->setCostmap(costmap_.getCharMap());
 
     unsigned int mx, my;
     if(!costmap_.worldToMap(world_point.x, world_point.y, mx, my))
@@ -89,10 +89,10 @@ namespace navfn {
     map_goal[0] = mx;
     map_goal[1] = my;
 
-    planner_.setStart(map_start);
-    planner_.setGoal(map_goal);
+    planner_->setStart(map_start);
+    planner_->setGoal(map_goal);
 
-    return planner_.calcNavFnDijkstra();
+    return planner_->calcNavFnDijkstra();
   }
 
   void NavfnROS::clearRobotCell(const tf::Stamped<tf::Pose>& global_pose, unsigned int mx, unsigned int my){
@@ -152,7 +152,7 @@ namespace navfn {
     tf::poseStampedMsgToTF(start, start_pose);
     clearRobotCell(start_pose, mx, my);
 
-    planner_.setCostmap(costmap_.getCharMap());
+    planner_->setCostmap(costmap_.getCharMap());
 
     int map_start[2];
     map_start[0] = mx;
@@ -168,17 +168,17 @@ namespace navfn {
     map_goal[0] = mx;
     map_goal[1] = my;
 
-    planner_.setStart(map_start);
-    planner_.setGoal(map_goal);
+    planner_->setStart(map_start);
+    planner_->setGoal(map_goal);
 
-    //bool success = planner_.calcNavFnAstar();
-    bool success = planner_.calcNavFnDijkstra(true);
+    //bool success = planner_->calcNavFnAstar();
+    bool success = planner_->calcNavFnDijkstra(true);
 
     if(success){
       //extract the plan
-      float *x = planner_.getPathX();
-      float *y = planner_.getPathY();
-      int len = planner_.getPathLen();
+      float *x = planner_->getPathX();
+      float *y = planner_->getPathY();
+      int len = planner_->getPathLen();
       ros::Time plan_time = ros::Time::now();
       for(int i = 0; i < len; ++i){
         unsigned int cell_x, cell_y;
