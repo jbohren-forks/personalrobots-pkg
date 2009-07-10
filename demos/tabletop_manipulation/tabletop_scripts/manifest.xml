@@ -4,15 +4,14 @@
   <license>BSD</license>
   <review status="na" notes=""/>
   <url>http://pr.willowgarage.com/wiki</url>
-  <depend package="2dnav_pr2"/>
-  <depend package="pr2_gazebo"/>
+
   <depend package="laser_scan"/>
   <depend package="robot_self_filter"/>
   <depend package="point_cloud_assembler"/>
   <depend package="table_object_detector"/>
   <depend package="collision_map"/>
   <depend package="ompl_planning"/>
-  <depend package="executive_python"/>
+
   <depend package="pr2_msgs"/>
   <depend package="robot_msgs"/>
   <depend package="visualization_msgs" />
@@ -22,8 +21,15 @@
   <depend package="tabletop_msgs" />
   <depend package="tabletop_srvs" />
   <depend package="recognition_lambertian" />
-  <depend package="move_base" />
+
+<!--  <depend package="move_base" /> -->
+
   <depend package="move_arm" />
   <depend package="pr2_ik" />
+
+<!--
+  <depend package="2dnav_pr2"/>
+  <depend package="pr2_gazebo"/>
   <depend package="rviz"/>
+-->
 </package>
