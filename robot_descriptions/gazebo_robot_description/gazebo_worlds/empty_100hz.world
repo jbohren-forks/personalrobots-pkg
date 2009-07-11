@@ -30,6 +30,9 @@
     <cfm>0.0000000001</cfm>
     <erp>0.2</erp>
     <quickStep>false</quickStep>
+    <quickStepW>1.3</quickStepW>
+    <contactMaxCorrectingVel>100.0</contactMaxCorrectingVel>
+    <contactSurfaceLayer>0.001</contactSurfaceLayer>
   </physics:ode>
 
   <!-- Rendering Engine -->
