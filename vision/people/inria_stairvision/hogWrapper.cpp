@@ -22,8 +22,10 @@ void HogWrapper::extract(const vector<CvPoint> &locations,
 		       bool sparse,
 		       int outputOffset) const
 {
+  unsigned nf = _hog->getDescriptorSize();
+
   if (output.size() < locations.size())
-    output.resize(locations.size());
+    output.resize(locations.size(), vector<double>(nf));
 
   svlImageFrame * imgFrame = dynamic_cast<svlImageFrame *>(frames.at(_validChannel));
 
@@ -32,9 +34,11 @@ void HogWrapper::extract(const vector<CvPoint> &locations,
 
   IplImage * img = imgFrame->image;
 
-  cv::Mat mat;
+  cvNamedWindow("debug");
+  cvShowImage("debug",img);
+  cvWaitKey(0);
 
-  assert(false); //need to get img into mat
+  cv::Mat mat(img);
 
   cv::Vector<float> results_cv;
 
@@ -46,7 +50,9 @@ void HogWrapper::extract(const vector<CvPoint> &locations,
 
   _hog->compute(mat, results_cv, cv::Size(0,0), cv::Size(0,0), locations_cv);
 
-  unsigned nf = _hog->getDescriptorSize();
+
+  for (unsigned i = 0; i < results_cv.size(); i++)
+    cout << results_cv[i] << endl;
 
   assert(results_cv.size() == locations.size() * nf);
 
@@ -55,8 +61,12 @@ void HogWrapper::extract(const vector<CvPoint> &locations,
       unsigned start = i * nf;
       unsigned finish = (i+1) * nf;
 
+
       for (unsigned j = start; j < finish; j++)
 	{
+	  assert(j < results_cv.size());
+	  assert(i < output.size());
+	  assert(j-start < output[i].size());
 	  output[i][j-start] = results_cv[j];
 	}
     }
@@ -193,6 +203,9 @@ HogWrapper::~HogWrapper()
 
 unsigned HogWrapper::numFeatures() const
 {
+  cout << "inside numFeatures call" << endl;
+
+
   cout << _hog->winSize.width << " " << _hog->winSize.height << endl;
   cout << _hog->blockSize.width << " " << _hog->blockSize.height << endl;
   cout << _hog->cellSize.width << " " << _hog->cellSize.height << endl;
@@ -217,7 +230,8 @@ HogWrapper::HogWrapper(const HogWrapper & o)
 {
   _validChannel = o._validChannel;
 
-  _hog = new cv::HOGDescriptor(* (o._hog));
+  assert(false);  //_hog = new cv::HOGDescriptor();
+  //the cv::HOGDescriptor copy constructor doesn't seem to work
 }
 
 const HogWrapper & HogWrapper::operator=(const HogWrapper & o)

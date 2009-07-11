@@ -35,7 +35,7 @@
 **
 *****************************************************************************/
 
-#define NUM_THREADS 1
+#define NUM_THREADS 0
 
 #include "hogWrapper.h"
 #include <cstdlib>
@@ -86,6 +86,7 @@ struct ProcessFileArgs {
 void *processFile(void *voidArgs, unsigned tid) {
 
 
+
   //Copy arguments out of the helper struct
   ProcessFileArgs *args = (ProcessFileArgs*) voidArgs;
   const char *outputDir = args->outputDir;
@@ -96,7 +97,7 @@ void *processFile(void *voidArgs, unsigned tid) {
 
   vector<IplImage *> images;
 
-  if (!loader[tid]->getFrame(idx, images))
+  if (!loader.at(tid)->getFrame(idx, images))
     return NULL;
             
 
@@ -122,7 +123,11 @@ void *processFile(void *voidArgs, unsigned tid) {
 
   // process image
   vector<double> v;
-  dictionary[tid]->windowResponse(images, v);
+
+
+  dictionary.at(tid)->windowResponse(images, v);
+
+
 
   for (unsigned i = 0; i < v.size(); i++)
     {
@@ -150,14 +155,19 @@ void *processFile(void *voidArgs, unsigned tid) {
       assert(v[i] < 0.9 * FLT_MAX);
       assert(v[i] > 0.9 * - FLT_MAX);
     }
+
  
   svlWriteExampleToCache(outputDir, sample_idx, v);
                        
+
   // Free memory
   for (unsigned i = 0; i < images.size(); i++)
     cvReleaseImage(&(images[i]));
 
+
+
   delete args;
+
 
   return NULL;
 }
@@ -251,6 +261,8 @@ int main(int argc, char *argv[])
   // read dictionary
   const svlFeatureExtractor *  dictionary = svlFeatureExtractorFactory().load(extractorFilename);
     
+
+
   if (!dictionary)
     SVL_LOG(SVL_LOG_FATAL, "Could not load "<<extractorFilename);
 
@@ -280,18 +292,23 @@ int main(int argc, char *argv[])
     
     // TODO: how many threads?
     svlThreadPool threadPool(NUM_THREADS);
-    cout << "starting thread pool" << endl;
     threadPool.start();
-    cout << "thread pool returned" << endl;
     
     vector<svlImageLoader *> loaderSet;
     vector<svlFeatureExtractor *> dictionarySet;
     for (unsigned i = 0; i < NUM_THREADS; i++)
       {
+
 	loaderSet.push_back(new svlImageLoader(loader));
 	svlFeatureExtractor * clone = dictionary->clone();
 	assert(clone);
 	dictionarySet.push_back(clone);
+      }
+
+    if (NUM_THREADS == 0)
+      {
+	loaderSet.push_back(&loader);
+	dictionarySet.push_back((svlFeatureExtractor * )dictionary);
       }
     
 
@@ -312,12 +329,14 @@ int main(int argc, char *argv[])
     
     threadPool.finish();
     
-    for (unsigned i = 0; i < loaderSet.size(); i++)
+    for (unsigned i = 0; i < NUM_THREADS; i++)
       delete loaderSet[i];
-    
-    for (unsigned i = 0; i < dictionarySet.size(); i++)
+
+    for (unsigned i = 0; i < NUM_THREADS; i++)
       delete dictionarySet[i];
-    
+
+    delete dictionary;
+
   } else {
     // ------ Output binary cache file ------
     if (augment) {
