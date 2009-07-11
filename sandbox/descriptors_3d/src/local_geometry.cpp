@@ -91,7 +91,7 @@ bool LocalGeometry::compute(Eigen::MatrixXf** result) const
   Eigen::Vector3d eigen_values;
   Eigen::Vector3d tangent;
   Eigen::Vector3d normal;
-  cloud_geometry::nearest::computePatchEigen(*data_, *neighbor_indices, eigen_vectors, eigen_values);
+  cloud_geometry::nearest::computePatchEigenNormalized(*data_, *neighbor_indices, eigen_vectors, eigen_values);
   // smallest eigenvalue = index 0
   for (int i = 0 ; i < 3 ; i++)
   {
