@@ -17,7 +17,6 @@ using namespace robot_msgs;
 #include <point_cloud_mapping/geometry/angles.h>
 #include <point_cloud_mapping/geometry/areas.h>
 
-
 bool find_planes::fitSACPlanes(PointCloud *points, vector<int> &indices, vector<vector<int> > &inliers, vector<vector<
     double> > &coeff, const robot_msgs::Point32 &viewpoint_cloud, double dist_thresh, int n_max,
                                int min_points_per_model)
@@ -96,18 +95,18 @@ void find_planes::getPointIndicesInZBounds(const PointCloud &points, double z_mi
   indices.resize(nr_p);
 }
 
-void find_planes::segmentPlanes(const PointCloud &const_points, double sac_distance_threshold_, double z_min, double z_max, double support,
-                                double min_area, int n_max, vector<vector<int> > &indices,
-                                vector<vector<double> > &models, int number)
+void find_planes::segmentPlanes(const PointCloud &const_points, double sac_distance_threshold_, double z_min,
+                                double z_max, double support, double min_area, int n_max,
+                                vector<vector<int> > &indices, vector<vector<double> > &models, int number)
 {
   PointCloud points = const_points;
   // This should be given as a parameter as well, or set global, etc
-//  double sac_distance_threshold_ = 0.02; // 2cm distance threshold for inliers (point-to-plane distance)
+  //  double sac_distance_threshold_ = 0.02; // 2cm distance threshold for inliers (point-to-plane distance)
 
   vector<int> indices_in_bounds;
   // Get the point indices within z_min <-> z_max
   find_planes::getPointIndicesInZBounds(points, z_min, z_max, indices_in_bounds);
-//  ROS_INFO("segmentPlanes #%d running on %d/%d points",number,points.get_pts_size(),indices_in_bounds.size());
+  //  ROS_INFO("segmentPlanes #%d running on %d/%d points",number,points.get_pts_size(),indices_in_bounds.size());
 
   // We need to know the viewpoint where the data was acquired
   // For simplicity, assuming 0,0,0 for stereo data in the stereo frame - however if this is not true, use TF to get
@@ -143,9 +142,9 @@ void find_planes::segmentPlanes(const PointCloud &const_points, double sac_dista
   }
 }
 
-void find_planes::findPlanes(const PointCloud& cloud, int n_planes_max, double sac_distance_threshold,
-                             std::vector<std::vector<int> >& indices,vector<PointCloud>& plane_cloud, vector<vector<
-    double> >& plane_coeff, PointCloud& outside)
+void find_planes::findPlanes(const PointCloud& cloud, int n_planes_max, double sac_distance_threshold, std::vector<
+    std::vector<int> >& indices, vector<PointCloud>& plane_cloud, vector<vector<double> >& plane_coeff,
+                             PointCloud& outside)
 {
 
   double z_min = 0.3;
@@ -153,7 +152,8 @@ void find_planes::findPlanes(const PointCloud& cloud, int n_planes_max, double s
   double support = 0.2;
   double min_area = 0.00;
 
-  find_planes::segmentPlanes(cloud, sac_distance_threshold, z_min, z_max, support, min_area, n_planes_max, indices, plane_coeff, 1);
+  find_planes::segmentPlanes(cloud, sac_distance_threshold, z_min, z_max, support, min_area, n_planes_max, indices,
+                             plane_coeff, 1);
 
   outside = cloud;
   plane_cloud.resize(indices.size());
@@ -165,3 +165,8 @@ void find_planes::findPlanes(const PointCloud& cloud, int n_planes_max, double s
   }
 }
 
+void find_planes::createPlaneImage(const robot_msgs::PointCloud& cloud, std::vector<int> &inliers,
+                                   std::vector<double> &plane_coeff, IplImage *planeImage)
+{
+
+}
