@@ -163,11 +163,12 @@ namespace cloud_geometry
       * \param points the input point cloud
       * \param eigen_vectors the resultant eigenvectors
       * \param eigen_values the resultant eigenvalues
+      * \param centroid the centroid of the points
       */
     void
-      computePatchEigenNormalized (const robot_msgs::PointCloud &points, Eigen::Matrix3d &eigen_vectors, Eigen::Vector3d &eigen_values)
+      computePatchEigenNormalized (const robot_msgs::PointCloud &points, Eigen::Matrix3d &eigen_vectors, Eigen::Vector3d &eigen_values, robot_msgs::Point32& centroid)
     {
-      robot_msgs::Point32 centroid;
+      //robot_msgs::Point32 centroid;
       // Compute the 3x3 covariance matrix
       Eigen::Matrix3d covariance_matrix;
       computeCovarianceMatrix (points, covariance_matrix, centroid);
@@ -193,11 +194,12 @@ namespace cloud_geometry
       * \param indices the point cloud indices that need to be used
       * \param eigen_vectors the resultant eigenvectors
       * \param eigen_values the resultant eigenvalues
+      * \param centroid the centroid of the points
       */
     void
-      computePatchEigenNormalized (const robot_msgs::PointCloud &points, const std::vector<int> &indices, Eigen::Matrix3d &eigen_vectors, Eigen::Vector3d &eigen_values)
+      computePatchEigenNormalized (const robot_msgs::PointCloud &points, const std::vector<int> &indices, Eigen::Matrix3d &eigen_vectors, Eigen::Vector3d &eigen_values, robot_msgs::Point32& centroid)
     {
-      robot_msgs::Point32 centroid;
+      //robot_msgs::Point32 centroid;
       // Compute the 3x3 covariance matrix
       Eigen::Matrix3d covariance_matrix;
       computeCovarianceMatrix (points, indices, covariance_matrix, centroid);
