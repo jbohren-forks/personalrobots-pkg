@@ -185,6 +185,17 @@ void PlanarObjectDetector::setup()
   ROS_INFO_STREAM("Setup done.");
 }
 
+void pointNormal(const robot_msgs::PointCloud pcd,const unsigned int point_id,
+                 const unsigned int nx_idx, 
+                 const unsigned int ny_idx, 
+                 const unsigned int nz_idx, 
+                 robot_msgs::Point32 &n)
+{
+  n.x=pcd.chan[nx_idx].vals[point_id];
+  n.y=pcd.chan[ny_idx].vals[point_id];
+  n.z=pcd.chan[nz_idx].vals[point_id];
+}
+
 void PlanarObjectDetector::detectObjects(const PointCloud& point_cloud,ObjectModelDeque& objects)
 {
   PointCloud global_cloud;
@@ -193,9 +204,18 @@ void PlanarObjectDetector::detectObjects(const PointCloud& point_cloud,ObjectMod
   std::vector<std::deque<int> > model_to_observation;
   model_to_observation.resize(num_clusters_);
 
+  int pcd_nx_idx=cloud_geometry::getChannelIndex(point_cloud,"nx");
+  int pcd_ny_idx=cloud_geometry::getChannelIndex(point_cloud,"ny");
+  int pcd_nz_idx=cloud_geometry::getChannelIndex(point_cloud,"nz");
+
+  int g_nx_idx=cloud_geometry::getChannelIndex(global_cloud,"nx");
+  int g_ny_idx=cloud_geometry::getChannelIndex(global_cloud,"ny");
+  int g_nz_idx=cloud_geometry::getChannelIndex(global_cloud,"nz");
+
   unsigned int num_pts=point_cloud.pts.size();
   for(unsigned int iPt=0;iPt<num_pts;iPt++)
   {
+
     std::vector<int> k_indices;
     std::vector<float> k_distances;
     object_points_kd_tree_->radiusSearch(global_cloud, iPt, max_search_radius_, k_indices, k_distances);
@@ -206,6 +226,18 @@ void PlanarObjectDetector::detectObjects(const PointCloud& point_cloud,ObjectMod
     {
       continue;
     }
+    Point32 n1,n2;
+    pointNormal(point_cloud,iPt, pcd_nx_idx, pcd_ny_idx, pcd_nz_idx, n1);
+    
+    pointNormal(global_cloud,k_indices[iPt], g_nx_idx, g_ny_idx, g_nz_idx, n2);
+
+    double dt = cloud_geometry::dot (n1, n2);
+    
+    if( dt < 0.3 )
+    {
+      continue;
+    }
+
     unsigned int model_id=cluster_ids_[k_indices[0]];
     model_to_observation[model_id].push_back(iPt);
   }

@@ -1,0 +1,18 @@
+<launch>
+
+  <node pkg="pcd_novelty" type="novelty_estimator_node" output="screen" name="novelty_estimator">
+    <remap from="cloud_hist" to="/past/cloud" />
+    <remap from="full_cloud" to="cloud" />
+
+
+    <param name="num_required_nei_2d" value="10"/>
+    <param name="num_required_nei_3d" value="1"/>
+
+    <param name="max_2d_search_radius" value="0.1"/>
+    <param name="max_3d_search_radius" value="0.1"/>
+
+  </node>
+
+
+  
+</launch>

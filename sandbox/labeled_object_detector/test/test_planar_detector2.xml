@@ -1,0 +1,11 @@
+<launch>
+
+  <node pkg="labeled_object_detector" type="planar_object_detector" output="screen" respawn="true"
+>
+    <remap from="build_cloud" to="/pcd_assembler/build_cloud" />
+    <param name="fixed_frame" type="string" value="map" />
+    <param name="local_frame" type="string" value="odom_combined" />
+
+  </node>
+
+</launch>

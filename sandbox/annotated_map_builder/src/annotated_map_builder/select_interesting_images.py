@@ -60,6 +60,9 @@ class SelectInterestingFrames:
     self.image_list_=[];
     self.all_selections = [];
 
+    self.out_fn = rospy.get_param("~out_file");
+    self.fOut=open(self.out_fn,'w')
+
   def onState(self,state):
     #print "s"
     if state.status.value==ActionStatus.ACTIVE and (not self.prev_state_ or self.prev_state_.status.value != ActionStatus.ACTIVE):
@@ -72,6 +75,8 @@ class SelectInterestingFrames:
         selection=self.image_list_[len(self.image_list_)/2];
         self.all_selections.append(selection);
         print selection.secs,selection.nsecs
+        print >>self.fOut,selection.secs,selection.nsecs
+
     else:
       self.state="idle"
 

@@ -7,26 +7,17 @@
     <param name="tf_cache_time_secs" type="double" value="30.0" />
     <param name="max_scans" type="int" value="4000" />
     <param name="ignore_laser_skew" type="bool" value="true" />
-    <param name="fixed_frame" type="string" value="odom_combined" />
+    <param name="fixed_frame" type="string" value="/map" />
   </node>
   
   <node pkg="point_cloud_assembler" type="point_cloud_snapshotter" output="screen" name="snapshotter">
     <remap from="laser_scanner_signal" to="laser_tilt_controller/laser_scanner_signal"/>
     <remap from="build_cloud" to="laser_scan_assembler/build_cloud" />
-    <remap from="full_cloud" to="cloud_raw" />
-    <param name="fixed_frame" type="string" value="odom_combined" />
-    <param name="num_skips" type="int" value="5" />
+    <remap from="full_cloud" to="cloud" />
+    <param name="fixed_frame" type="string" value="/map" />
+    <param name="num_skips" type="int" value="1" />
   </node>
 
-  <node pkg="point_cloud_mapping" type="normal_estimation_node" output="screen" name="normal_estimator">
-    <remap from="tilt_laser_cloud" to="cloud_raw" />
-    <remap from="cloud_normals" to="cloud" />
-
-    <param name="search_radius" type="double" value="0.1" />
-    <param name="downsample" type="int" value="0" />
-
-
-  </node>
 
   
 </launch>
