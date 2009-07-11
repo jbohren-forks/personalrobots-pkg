@@ -134,6 +134,8 @@ void NoveltyEstimator::computeNovelty(const PointCloud& point_cloud,std::vector<
     {
       vector<int> k_indices;
       vector<float> k_distances;
+      vector<int> k_indices3d;
+      vector<float> k_distances3d;
       Point32 pt2d=point_cloud.pts[iPt];
       pt2d.z=0;
       (*it)->kdtree_2d_->radiusSearch (pt2d, max_2d_search_radius_, 
@@ -147,8 +149,8 @@ void NoveltyEstimator::computeNovelty(const PointCloud& point_cloud,std::vector<
       relevant_point_2d_count[iPt] ++ ;
 
       (*it)->kdtree_3d_->radiusSearch (point_cloud.pts[iPt], max_3d_search_radius_, 
-                                      k_indices, k_distances,num_required_nei_3d_);
-      if( k_distances.size()==num_required_nei_3d_ )
+                                      k_indices3d, k_distances3d,num_required_nei_3d_);
+      if( k_distances3d.size()==num_required_nei_3d_ )
       {
         relevant_point_3d_count[iPt] ++ ;
       }

@@ -32,5 +32,8 @@ rospack_add_library(${PROJECT_NAME} src/novelty_estimator.cpp)
 rospack_add_executable(novelty_estimator_node src/novelty_estimator_node.cpp)
 target_link_libraries(novelty_estimator_node ${PROJECT_NAME})
 			       
-rospack_add_gtest (test_novelty_estimator test/test_novelty_estimator.cpp)
+rospack_add_executable (test_novelty_estimator test/test_novelty_estimator.cpp)
 target_link_libraries(test_novelty_estimator ${PROJECT_NAME})
+rospack_add_gtest_build_flags(test_novelty_estimator)
+
+rospack_add_rostest(test/test_novelty_estimator.launch)

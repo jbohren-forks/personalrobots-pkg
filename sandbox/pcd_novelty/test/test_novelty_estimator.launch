@@ -1,0 +1,8 @@
+<launch>
+
+
+<test pkg="pcd_novelty" type="test_novelty_estimator" test-name="test_novelty_estimator" >
+
+</test>
+
+</launch>
