@@ -262,35 +262,38 @@ Index: ode/src/quickstep.cpp
      }
    }
  }
-@@ -607,6 +805,11 @@
+@@ -607,6 +805,14 @@
    // accumulator. I and invI are a vertical stack of 3x4 matrices, one per body.
    dReal *invI = context->AllocateArray<dReal> (3*4*nb);
  
-+#undef DEBUG_MASS
++#define DEBUG_MASS
 +#ifdef DEBUG_MASS
 +  dReal *tmpI = context->AllocateArray<dReal> (3*4*nb);
 +  dReal *tmpM = context->AllocateArray<dReal> (1*4*nb);
++  dRealMutablePtr tmpI_ptr,tmpM_ptr;
++  tmpI_ptr = tmpI;
++  tmpM_ptr = tmpM;
 +#endif
    {
      dReal *invIrow = invI;
      dxBody *const *const bodyend = body + nb;
-@@ -617,6 +820,15 @@
+@@ -617,6 +823,15 @@
        // compute inverse inertia tensor in global frame
        dMULTIPLY2_333 (tmp,b->invI,b->posr.R);
        dMULTIPLY0_333 (invIrow,b->posr.R,tmp);
 +#ifdef DEBUG_MASS
-+      memcpy (tmpI, b->mass.I,3*4*sizeof(dReal));
-+      tmpI+=12;
-+      tmpM[0] = b->mass.mass;
-+      tmpM[1] = b->mass.c[0];
-+      tmpM[2] = b->mass.c[1];
-+      tmpM[3] = b->mass.c[2];
-+      tmpI+=4;
++      memcpy (tmpI_ptr, b->mass.I,3*4*sizeof(dReal));
++      tmpI_ptr+=12;
++      tmpM_ptr[0] = b->mass.mass;
++      tmpM_ptr[1] = b->mass.c[0];
++      tmpM_ptr[2] = b->mass.c[1];
++      tmpM_ptr[3] = b->mass.c[2];
++      tmpM_ptr+=4;
 +#endif
  
        if (b->flags & dxBodyGyroscopic) {
          dMatrix3 I;
-@@ -629,7 +841,22 @@
+@@ -629,7 +844,22 @@
        }
      }
    }
@@ -313,7 +316,7 @@ Index: ode/src/quickstep.cpp
    {
      // add the gravity force to all bodies
      // since gravity does normally have only one component it's more efficient
-@@ -705,6 +932,76 @@
+@@ -705,6 +935,76 @@
      mfb = mfbcurr;
    }
  
@@ -390,7 +393,7 @@ Index: ode/src/quickstep.cpp
    // if there are constraints, compute the constraint force
    dReal *J = NULL;
    int *jb = NULL;
-@@ -719,6 +1016,115 @@
+@@ -719,6 +1019,115 @@
        J = context->AllocateArray<dReal> (jelements);
        dSetZero (J,jelements);
  
@@ -506,7 +509,7 @@ Index: ode/src/quickstep.cpp
        // create a constraint equation right hand side vector `c', a constraint
        // force mixing vector `cfm', and LCP low and high bound vectors, and an
        // 'findex' vector.
-@@ -807,6 +1213,51 @@
+@@ -807,6 +1216,51 @@
  
            ofsi += infom;
          }
@@ -558,7 +561,7 @@ Index: ode/src/quickstep.cpp
        }
  
        {
-@@ -874,8 +1325,71 @@
+@@ -874,8 +1328,71 @@
      }
  #endif
  
