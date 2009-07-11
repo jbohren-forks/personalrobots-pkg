@@ -11,19 +11,24 @@
 
 #include <robot_msgs/PointCloud.h>
 
-#include <Eigen/Core>
-
-#include <flann.h>
-
-#include <descriptors_3d/local_geometry.h>
+#include <opencv/cxcore.h>
+#include <opencv/cv.h>
+#include <opencv/cvaux.hpp>
 
 #include <point_cloud_mapping/geometry/nearest.h>
 #include <point_cloud_mapping/kdtree/kdtree.h>
 #include <point_cloud_mapping/kdtree/kdtree_ann.h>
 
+#include <descriptors_3d/local_geometry.h>
+
 #include <functional_m3n/random_field.h>
 #include <functional_m3n/m3n_model.h>
 #include <functional_m3n/regressors/regressor_params.h>
+
+void populateParameters()
+{
+
+}
 
 M3NModel* trainModel(vector<const RandomField*>& training_rfs);
 
@@ -118,70 +123,9 @@ int loadPointCloud(string filename, robot_msgs::PointCloud& pt_cloud, vector<uns
   return 0;
 }
 
-// --------------------------------------------------------------
-/*!
- * \brief Creates long vector from multiple descriptor computations
- */
-// --------------------------------------------------------------
-/*
- int createConcatenatedFeatures(const vector<Descriptor3D*>& feature_descriptors,
- const vector<unsigned int>& feature_descriptor_vals,
- const unsigned int nbr_total_feature_vals,
- unsigned int* interest_pt_idx,
- vector<int>* interest_region_indices,
- float** concat_features)
- {
- vector<Eigen::MatrixXf*> created_features_eigen(feature_descriptors.size(), NULL);
-
- // Attempt to compute multiple descriptor feature vectors
- bool all_features_success = true;
- unsigned int j = 0;
- for (j = 0; all_features_success && j < feature_descriptors.size() ; j++)
- {
- if (interest_pt_idx != NULL)
- {
- feature_descriptors[j]->setInterestPoint(*interest_pt_idx);
- }
- else if (interest_region_indices != NULL)
- {
- feature_descriptors[j]->setInterestRegion(interest_region_indices);
- }
- else
- {
- return -1;
- }
- all_features_success = feature_descriptors[j]->compute(&(created_features_eigen[j]));
- }
-
- // If one descriptor failed, deallocate previously create features and quit
- if (!all_features_success)
- {
- for (unsigned int k = 0 ; k < (j - 1) ; k++)
- {
- delete created_features_eigen[k];
- }
- return -1;
- }
-
- // Copy each feature from above into big concatenated vector
- *concat_features = static_cast<float*> (malloc(nbr_total_feature_vals * sizeof(float)));
- unsigned int prev_total_nbr_vals = 0;
- for (j = 0; j < feature_descriptors.size() ; j++)
- {
- float* curr_feature_vals = (created_features_eigen[j])->data();
- unsigned int curr_nbr_vals = feature_descriptor_vals[j];
-
- memcpy(*concat_features + prev_total_nbr_vals, curr_feature_vals, curr_nbr_vals * sizeof(float));
-
- prev_total_nbr_vals += curr_nbr_vals;
- delete created_features_eigen[j];
- }
-
- return 0;
- }
- */
-
 // cluster the node features using kmeans
+// created_clusters: cluster label -> list of nodes
+// xxxxx: cluster_label -> vector of node ids
 void kmeansNodes(const vector<unsigned int>& cluster_feature_indices,
                  const double kmeans_factor,
                  const int kmeans_max_iter,
@@ -191,6 +135,13 @@ void kmeansNodes(const vector<unsigned int>& cluster_feature_indices,
                  map<unsigned int, vector<float> >& xyz_cluster_centroids)
 
 {
+  // TODO
+  // normalize values [0,1]
+  // return map<unsigned int, vector<int> > (do NOT compute centroids)
+  // RandomField::saveNodes
+  // RandomField::saveCliques
+  // have 1 function that populate global hardcoded parameters
+
   // dimension that clustering over (features + xyz coords)
   unsigned int cluster_feature_dim_xyz = cluster_feature_indices.size() + 3;
 
@@ -299,82 +250,63 @@ void createNodes(RandomField& rf,
 
 {
   // ----------------------------------------------
-  // Geometry feature information
-  // TODO HARDCODE
+  // Augment all descriptors into a vector (just one for now)
+  // Geometry feature information TODO HARDCODE
   LocalGeometry geometry_features;
   geometry_features.useSpectral(0.15);
-  //  geometry_features.setData(&pt_cloud, &pt_cloud_kdtree);
-  // geometry_features.setInterestRadius(0.15);
   geometry_features.useNormalOrientation(0.0, 0.0, 1.0);
   geometry_features.useTangentOrientation(0.0, 0.0, 1.0);
   geometry_features.useElevation();
-
   vector<Descriptor3D*> feature_descriptors(1, &geometry_features);
-  //vector<unsigned int> feature_descriptor_vals(1, geometry_features.getResultSize());
   unsigned int nbr_descriptors = feature_descriptors.size();
   unsigned int nbr_total_feature_vals = geometry_features.getResultSize();
 
-  /*
-   // --------------------------------------------------
-   unsigned int nbr_pts = pt_cloud.pts.size();
-   for (unsigned int i = 0 ; i < nbr_pts ; i++)
-   {
-   // -------------------------------
-   if (i % 1000 == 0)
-   {
-   ROS_INFO("sample: %u / %u", i, nbr_pts);
-   }
-
-   float* concat_created_feature_vals = NULL;
-   if (createConcatenatedFeatures(feature_descriptors, feature_descriptor_vals, nbr_total_feature_vals, &i,
-   NULL, &concat_created_feature_vals) < 0)
-   {
-   failed_indices.insert(i);
-   continue;
-   }
-
-   // try to create node with features
-   if (rf.createNode(i, concat_created_feature_vals, nbr_total_feature_vals, labels[i], pt_cloud.pts[i].x,
-   pt_cloud.pts[i].y, pt_cloud.pts[i].z) == NULL)
-   {
-   ROS_ERROR("could not create node %u", i);
-   abort();
-   }
-   }
-   */
-
+  // ----------------------------------------------
+  // Iterate over each descriptor and compute features for each point in the point cloud
   vector<cv::Vector<cv::Vector<float> > > all_descriptor_results(nbr_descriptors);
   for (unsigned int i = 0 ; i < nbr_descriptors ; i++)
   {
     feature_descriptors[i]->compute(pt_cloud, pt_cloud_kdtree, all_descriptor_results[i]);
   }
 
+  // ----------------------------------------------
+  // Iterate over each point and create a node if all feature computations were successful
+  // The node's features will be the concatenation of all descriptors' values
+  float* concat_features = NULL; // concatenated features from all descriptors
+  unsigned int prev_val_idx = 0; // offset when copying into concat_features
+  unsigned int curr_nbr_feature_vals = 0; // length of current descriptor
+  bool all_features_success = true; // flag if all descriptors were computed correctly
   unsigned int nbr_pts = pt_cloud.pts.size();
-  float* concat_features = NULL;
-  unsigned int prev_val_idx = 0;
-  unsigned int curr_nbr_feature_vals = 0;
-  bool all_features_success = true;
   for (unsigned int i = 0 ; i < nbr_pts ; i++)
   {
-    // verify all features for the point were computed successfully
+    // --------------------------------
+    // Verify all features for the point were computed successfully
     all_features_success = true;
     for (unsigned int j = 0 ; all_features_success && j < nbr_descriptors ; j++)
     {
       cv::Vector<cv::Vector<float> >& curr_descriptor_for_cloud = all_descriptor_results[j];
       cv::Vector<float>& curr_feature_vals = curr_descriptor_for_cloud[i];
+
+      // non-zero descriptor length indicates computed successfully
       all_features_success = curr_feature_vals.size() != 0;
     }
 
-    // if all successful, then create node
+    // --------------------------------
+    // If all successful, then create node
     if (all_features_success)
     {
+      // --------------------------------
+      // Concatenate all descriptors into one feature vector
       concat_features = static_cast<float*> (malloc(nbr_total_feature_vals * sizeof(float)));
       prev_val_idx = 0;
       for (unsigned int j = 0 ; j < nbr_descriptors ; j++)
       {
+        // retrieve descriptor values for current point
         cv::Vector<cv::Vector<float> >& curr_descriptor_for_cloud = all_descriptor_results[j];
         cv::Vector<float>& curr_feature_vals = curr_descriptor_for_cloud[i];
         curr_nbr_feature_vals = curr_feature_vals.size();
+
+        // copy descriptor values into concatenated vector at correct location
         for (unsigned int k = 0 ; k < curr_nbr_feature_vals ; k++)
         {
           concat_features[prev_val_idx + k] = curr_feature_vals[k];
@@ -382,16 +314,19 @@ void createNodes(RandomField& rf,
         prev_val_idx += curr_nbr_feature_vals;
       }
 
-      // try to create node with features
+      // --------------------------------
+      // Try to create node with features
       if (rf.createNode(i, concat_features, nbr_total_feature_vals, labels[i], pt_cloud.pts[i].x,
           pt_cloud.pts[i].y, pt_cloud.pts[i].z) == NULL)
       {
-        ROS_ERROR("could not create node %u", i);
+        ROS_FATAL("Could not create node for point %u.  This should never happen", i);
+        free(concat_features);
         abort();
       }
     }
   }
 
+  // TODO put into RandomField
   save_node_features(rf.getNodesRandomFieldIDs());
 }
 
