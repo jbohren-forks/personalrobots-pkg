@@ -15,6 +15,7 @@ rospack_add_executable (bin/normal_estimation_node src/normal_estimation.cpp)
 target_link_libraries (bin/normal_estimation_node cloud_geometry cloud_kdtree)
 
 rospack_add_library(normal_estimation_in_proc src/normal_estimation_in_proc.cpp)
+rospack_add_openmp_flags(normal_estimation_in_proc)
 #target_link_libraries (normal_estimation_in_proc cloud_geometry cloud_kdtree)
 
 rospack_add_executable (bin/planar_fit_node src/planar_fit.cpp)
@@ -113,20 +114,20 @@ target_link_libraries (bin/planar_fit_node cloud_geometry cloud_kdtree sample_co
                        src/pfh_descriptor/fpfh.cpp
                       )
 
-# check for OpenMP
-include(CheckIncludeFile)
-include(CheckCXXCompilerFlag)
-include(CheckLibraryExists)
-
-if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
-  # check if compilers supports -fopenmp
-  check_cxx_compiler_flag (-fopenmp HAVE_OPENMP)
-  check_library_exists (gomp omp_get_num_threads "" HAS_GOMP_LIB)
-
-  if(HAVE_OPENMP AND HAS_GOMP_LIB)
-    add_definitions ("-fopenmp")
-    target_link_libraries (bin/normal_estimation_node gomp)
-    target_link_libraries (bin/planar_fit_node gomp)
-    set (OPENMP_LFLAGS "-lgomp")
-  endif(HAVE_OPENMP AND HAS_GOMP_LIB)
-endif(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
+## check for OpenMP
+#include(CheckIncludeFile)
+#include(CheckCXXCompilerFlag)
+#include(CheckLibraryExists)
+#
+#if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
+#  # check if compilers supports -fopenmp
+#  check_cxx_compiler_flag (-fopenmp HAVE_OPENMP)
+#  check_library_exists (gomp omp_get_num_threads "" HAS_GOMP_LIB)
+#
+#  if(HAVE_OPENMP AND HAS_GOMP_LIB)
+#    add_definitions ("-fopenmp")
+#    target_link_libraries (bin/normal_estimation_node gomp)
+#    target_link_libraries (bin/planar_fit_node gomp)
+#    set (OPENMP_LFLAGS "-lgomp")
+#  endif(HAVE_OPENMP AND HAS_GOMP_LIB)
+#endif(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)

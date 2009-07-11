@@ -47,6 +47,6 @@
   <depend package="FLANN" />
 
   <export>
-    <cpp cflags="-I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lcloud_geometry -lcloud_io -lsample_consensus -lcloud_kdtree -lcloud_octree" />
+    <cpp cflags="-I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lcloud_geometry -lcloud_io -lsample_consensus -lcloud_kdtree -lcloud_octree -lnormal_estimation_in_proc" />
   </export>
 </package>
