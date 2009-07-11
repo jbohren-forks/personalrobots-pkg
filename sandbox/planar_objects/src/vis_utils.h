@@ -20,6 +20,8 @@ int HSV_to_RGB( float h, float s, float v);
 
 float HSV_to_RGBf( float h, float s, float v);
 
+float mix_color( float mix, float a, float b );
+
 void visualizePlanes(const robot_msgs::PointCloud& cloud,
                      std::vector<std::vector<int> >& plane_indices,
                      std::vector<robot_msgs::PointCloud>& plane_cloud,

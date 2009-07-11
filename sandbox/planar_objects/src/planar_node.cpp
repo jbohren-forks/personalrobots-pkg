@@ -22,7 +22,8 @@ using namespace robot_msgs;
 PlanarNode::PlanarNode() :
   sync_(&PlanarNode::syncCallback, this)
 {
-  nh_.param("~n_planes_max", n_planes_max_, 3);
+  nh_.param("~n_planes_max", n_planes_max_, 4);
+  nh_.param("~point_plane_distance", point_plane_distance_, 0.015);
 
   // subscribe to topics
   cloud_sub_ = nh_.subscribe("stereo/cloud", 1, sync_.synchronize(&PlanarNode::cloudCallback, this));
@@ -47,7 +48,7 @@ void PlanarNode::syncCallback()
   vector<vector<int> > plane_indices;
   PointCloud outside;
 
-  find_planes::findPlanes(*cloud_, n_planes_max_, plane_indices, plane_cloud, plane_coeff,outside);
+  find_planes::findPlanes(*cloud_, n_planes_max_, point_plane_distance_, plane_indices, plane_cloud, plane_coeff,outside);
   vis_utils::visualizePlanes(*cloud_,plane_indices,plane_cloud,plane_coeff,outside,cloud_planes_pub_,visualization_pub_);
 }
 

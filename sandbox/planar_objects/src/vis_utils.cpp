@@ -42,13 +42,29 @@ int vis_utils::HSV_to_RGB( float h, float s, float v) {
         int rgb;
         rgb=r<<16 | g<<8 | b;
 ////        rgb=b;
-        ROS_INFO("%f %d: %f %f %f; %d %d %d => %d",h,i,v,n,m,r,g,b,rgb);
+//        ROS_INFO("%f %d: %f %f %f; %d %d %d => %d",h,i,v,n,m,r,g,b,rgb);
         return(rgb);
 }
 
 float vis_utils::HSV_to_RGBf(float h, float s, float v) {
   int rgb=HSV_to_RGB(h,s,v);
   return(*(float*)&rgb);
+}
+
+float vis_utils::mix_color( float mix, float a, float b ) {
+  int ai = *(int*)&a;
+  int bi = *(int*)&b;
+  int ar = (ai >> 16) & 0xff;
+  int ag = (ai >> 8) & 0xff;
+  int ab = (ai >> 0) & 0xff;
+  int br = (bi >> 16) & 0xff;
+  int bg = (bi >> 8) & 0xff;
+  int bb = (bi >> 0) & 0xff;
+  int mr = (int)(mix*ar + (1-mix)*br);
+  int mg = (int)(mix*ag + (1-mix)*bg);
+  int mb = (int)(mix*ab + (1-mix)*bb);
+  int mi = (mr << 16) | (mg << 8) | mb;
+  return(*(float*)&mi);
 }
 
 
@@ -69,13 +85,19 @@ void vis_utils::visualizePlanes(const robot_msgs::PointCloud& cloud,
   if(rgb_chann!=-1) {
     rgb=HSV_to_RGB(0.7,0,0.3);
     for(size_t i=0;i<cloud.pts.size();i++) {
-      colored_cloud.chan[rgb_chann].vals[i] = *(float*)&rgb;
+      colored_cloud.chan[rgb_chann].vals[i] =
+          mix_color(0.7,
+                    cloud.chan[rgb_chann].vals[i],
+                    *(float*)&rgb);
     }
 
     for(size_t i=0;i<plane_indices.size();i++) {
       rgb=HSV_to_RGB( i/(float)plane_indices.size(),0.3,1);
       for(size_t j=0;j<plane_indices[i].size();j++) {
-        colored_cloud.chan[rgb_chann].vals[plane_indices[i][j]] = *(float*)&rgb;
+        colored_cloud.chan[rgb_chann].vals[plane_indices[i][j]] =
+            mix_color(0.7,
+                      cloud.chan[rgb_chann].vals[plane_indices[i][j]],
+                      *(float*)&rgb);
       }
 
       rgb=HSV_to_RGB( i/(float)plane_indices.size(),0.5,1);
@@ -114,6 +136,6 @@ void vis_utils::visualizePolygon(const robot_msgs::PointCloud& cloud,robot_msgs:
           marker.points[i].y = polygon.points[i].y;
           marker.points[i].z = polygon.points[i].z;
   }
-  ROS_INFO("visualization_marker polygon with n=%d points",polygon.get_points_size());
+//  ROS_INFO("visualization_marker polygon with n=%d points",polygon.get_points_size());
   visualization_pub.publish(  marker );
 }

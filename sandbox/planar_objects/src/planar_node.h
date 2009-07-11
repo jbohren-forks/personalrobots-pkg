@@ -22,6 +22,7 @@ public:
 
   // PARAMETERS
   int n_planes_max_; // number of planes to be fitted
+  double point_plane_distance_; // maximally allowed point-to-plane distance
 
   // MESSAGES - INCOMING
   ros::Subscriber cloud_sub_;
