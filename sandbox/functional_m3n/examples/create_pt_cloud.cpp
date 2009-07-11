@@ -46,6 +46,26 @@ void save_clusters(map<unsigned int, list<RandomField::Node*> >& created_cluster
   outt.close();
 }
 
+void save_node_features(const map<unsigned int, RandomField::Node*>& nodes)
+{
+  ofstream outt("node_features.txt");
+  map<unsigned int, RandomField::Node*>::const_iterator iter;
+  RandomField::Node* curr_node = NULL;
+  for (iter = nodes.begin(); iter != nodes.end() ; iter++)
+  {
+    curr_node = iter->second;
+    outt << curr_node->getX() << " " << curr_node->getY() << " " << curr_node->getZ();
+    const float* curr_feats = curr_node->getFeatureVals();
+    for (unsigned int i = 0 ; i < curr_node->getNumberFeatureVals() ; i++)
+    {
+      outt << " " << curr_feats[i];
+
+    }
+    outt << endl;
+  }
+  outt.close();
+}
+
 // --------------------------------------------------------------
 /*!
  * \brief Creates PointCloud datastructure from file
@@ -103,61 +123,63 @@ int loadPointCloud(string filename, robot_msgs::PointCloud& pt_cloud, vector<uns
  * \brief Creates long vector from multiple descriptor computations
  */
 // --------------------------------------------------------------
-int createConcatenatedFeatures(const vector<Descriptor3D*>& feature_descriptors,
-                               const vector<unsigned int>& feature_descriptor_vals,
-                               const unsigned int nbr_total_feature_vals,
-                               unsigned int* interest_pt_idx,
-                               vector<int>* interest_region_indices,
-                               float** concat_features)
-{
-  vector<Eigen::MatrixXf*> created_features_eigen(feature_descriptors.size(), NULL);
+/*
+ int createConcatenatedFeatures(const vector<Descriptor3D*>& feature_descriptors,
+ const vector<unsigned int>& feature_descriptor_vals,
+ const unsigned int nbr_total_feature_vals,
+ unsigned int* interest_pt_idx,
+ vector<int>* interest_region_indices,
+ float** concat_features)
+ {
+ vector<Eigen::MatrixXf*> created_features_eigen(feature_descriptors.size(), NULL);
 
-  // Attempt to compute multiple descriptor feature vectors
-  bool all_features_success = true;
-  unsigned int j = 0;
-  for (j = 0; all_features_success && j < feature_descriptors.size() ; j++)
-  {
-    if (interest_pt_idx != NULL)
-    {
-      feature_descriptors[j]->setInterestPoint(*interest_pt_idx);
-    }
-    else if (interest_region_indices != NULL)
-    {
-      feature_descriptors[j]->setInterestRegion(interest_region_indices);
-    }
-    else
-    {
-      return -1;
-    }
-    all_features_success = feature_descriptors[j]->compute(&(created_features_eigen[j]));
-  }
+ // Attempt to compute multiple descriptor feature vectors
+ bool all_features_success = true;
+ unsigned int j = 0;
+ for (j = 0; all_features_success && j < feature_descriptors.size() ; j++)
+ {
+ if (interest_pt_idx != NULL)
+ {
+ feature_descriptors[j]->setInterestPoint(*interest_pt_idx);
+ }
+ else if (interest_region_indices != NULL)
+ {
+ feature_descriptors[j]->setInterestRegion(interest_region_indices);
+ }
+ else
+ {
+ return -1;
+ }
+ all_features_success = feature_descriptors[j]->compute(&(created_features_eigen[j]));
+ }
 
-  // If one descriptor failed, deallocate previously create features and quit
-  if (!all_features_success)
-  {
-    for (unsigned int k = 0 ; k < (j - 1) ; k++)
-    {
-      delete created_features_eigen[k];
-    }
-    return -1;
-  }
+ // If one descriptor failed, deallocate previously create features and quit
+ if (!all_features_success)
+ {
+ for (unsigned int k = 0 ; k < (j - 1) ; k++)
+ {
+ delete created_features_eigen[k];
+ }
+ return -1;
+ }
 
-  // Copy each feature from above into big concatenated vector
-  *concat_features = static_cast<float*> (malloc(nbr_total_feature_vals * sizeof(float)));
-  unsigned int prev_total_nbr_vals = 0;
-  for (j = 0; j < feature_descriptors.size() ; j++)
-  {
-    float* curr_feature_vals = (created_features_eigen[j])->data();
-    unsigned int curr_nbr_vals = feature_descriptor_vals[j];
+ // Copy each feature from above into big concatenated vector
+ *concat_features = static_cast<float*> (malloc(nbr_total_feature_vals * sizeof(float)));
+ unsigned int prev_total_nbr_vals = 0;
+ for (j = 0; j < feature_descriptors.size() ; j++)
+ {
+ float* curr_feature_vals = (created_features_eigen[j])->data();
+ unsigned int curr_nbr_vals = feature_descriptor_vals[j];
 
-    memcpy(*concat_features + prev_total_nbr_vals, curr_feature_vals, curr_nbr_vals * sizeof(float));
+ memcpy(*concat_features + prev_total_nbr_vals, curr_feature_vals, curr_nbr_vals * sizeof(float));
 
-    prev_total_nbr_vals += curr_nbr_vals;
-    delete created_features_eigen[j];
-  }
+ prev_total_nbr_vals += curr_nbr_vals;
+ delete created_features_eigen[j];
+ }
 
-  return 0;
-}
+ return 0;
+ }
+ */
 
 // cluster the node features using kmeans
 void kmeansNodes(const vector<unsigned int>& cluster_feature_indices,
@@ -280,42 +302,97 @@ void createNodes(RandomField& rf,
   // Geometry feature information
   // TODO HARDCODE
   LocalGeometry geometry_features;
-  geometry_features.setData(&pt_cloud, &pt_cloud_kdtree);
-  geometry_features.setInterestRadius(0.15);
-  geometry_features.useElevation();
+  geometry_features.useSpectral(0.15);
+  //  geometry_features.setData(&pt_cloud, &pt_cloud_kdtree);
+  // geometry_features.setInterestRadius(0.15);
   geometry_features.useNormalOrientation(0.0, 0.0, 1.0);
   geometry_features.useTangentOrientation(0.0, 0.0, 1.0);
+  geometry_features.useElevation();
 
   vector<Descriptor3D*> feature_descriptors(1, &geometry_features);
-  vector<unsigned int> feature_descriptor_vals(1, geometry_features.getResultSize());
+  //vector<unsigned int> feature_descriptor_vals(1, geometry_features.getResultSize());
+  unsigned int nbr_descriptors = feature_descriptors.size();
   unsigned int nbr_total_feature_vals = geometry_features.getResultSize();
 
-  // --------------------------------------------------
+  /*
+   // --------------------------------------------------
+   unsigned int nbr_pts = pt_cloud.pts.size();
+   for (unsigned int i = 0 ; i < nbr_pts ; i++)
+   {
+   // -------------------------------
+   if (i % 1000 == 0)
+   {
+   ROS_INFO("sample: %u / %u", i, nbr_pts);
+   }
+
+   float* concat_created_feature_vals = NULL;
+   if (createConcatenatedFeatures(feature_descriptors, feature_descriptor_vals, nbr_total_feature_vals, &i,
+   NULL, &concat_created_feature_vals) < 0)
+   {
+   failed_indices.insert(i);
+   continue;
+   }
+
+   // try to create node with features
+   if (rf.createNode(i, concat_created_feature_vals, nbr_total_feature_vals, labels[i], pt_cloud.pts[i].x,
+   pt_cloud.pts[i].y, pt_cloud.pts[i].z) == NULL)
+   {
+   ROS_ERROR("could not create node %u", i);
+   abort();
+   }
+   }
+   */
+
+  vector<cv::Vector<cv::Vector<float> > > all_descriptor_results(nbr_descriptors);
+  for (unsigned int i = 0 ; i < nbr_descriptors ; i++)
+  {
+    feature_descriptors[i]->compute(pt_cloud, pt_cloud_kdtree, all_descriptor_results[i]);
+  }
+
   unsigned int nbr_pts = pt_cloud.pts.size();
+  float* concat_features = NULL;
+  unsigned int prev_val_idx = 0;
+  unsigned int curr_nbr_feature_vals = 0;
+  bool all_features_success = true;
   for (unsigned int i = 0 ; i < nbr_pts ; i++)
   {
-    // -------------------------------
-    if (i % 1000 == 0)
+    // verify all features for the point were computed successfully
+    all_features_success = true;
+    for (unsigned int j = 0 ; all_features_success && j < nbr_descriptors ; j++)
     {
-      ROS_INFO("sample: %u / %u", i, nbr_pts);
+      cv::Vector<cv::Vector<float> >& curr_descriptor_for_cloud = all_descriptor_results[j];
+      cv::Vector<float>& curr_feature_vals = curr_descriptor_for_cloud[i];
+      all_features_success = curr_feature_vals.size() != 0;
     }
 
-    float* concat_created_feature_vals = NULL;
-    if (createConcatenatedFeatures(feature_descriptors, feature_descriptor_vals, nbr_total_feature_vals, &i,
-        NULL, &concat_created_feature_vals) < 0)
+    // if all successful, then create node
+    if (all_features_success)
     {
-      failed_indices.insert(i);
-      continue;
-    }
+      concat_features = static_cast<float*> (malloc(nbr_total_feature_vals * sizeof(float)));
+      prev_val_idx = 0;
+      for (unsigned int j = 0 ; j < nbr_descriptors ; j++)
+      {
+        cv::Vector<cv::Vector<float> >& curr_descriptor_for_cloud = all_descriptor_results[j];
+        cv::Vector<float>& curr_feature_vals = curr_descriptor_for_cloud[i];
+        curr_nbr_feature_vals = curr_feature_vals.size();
+        for (unsigned int k = 0 ; k < curr_nbr_feature_vals ; k++)
+        {
+          concat_features[prev_val_idx + k] = curr_feature_vals[k];
+        }
+        prev_val_idx += curr_nbr_feature_vals;
+      }
 
-    // try to create node with features
-    if (rf.createNode(i, concat_created_feature_vals, nbr_total_feature_vals, labels[i], pt_cloud.pts[i].x,
-        pt_cloud.pts[i].y, pt_cloud.pts[i].z) == NULL)
-    {
-      ROS_ERROR("could not create node %u", i);
-      abort();
+      // try to create node with features
+      if (rf.createNode(i, concat_features, nbr_total_feature_vals, labels[i], pt_cloud.pts[i].x,
+          pt_cloud.pts[i].y, pt_cloud.pts[i].z) == NULL)
+      {
+        ROS_ERROR("could not create node %u", i);
+        abort();
+      }
     }
   }
+
+  save_node_features(rf.getNodesRandomFieldIDs());
 }
 
 void createCliqueSet0(RandomField& rf,
@@ -339,56 +416,59 @@ void createCliqueSet0(RandomField& rf,
       created_clusters, xyz_cluster_centroids);
   ROS_INFO("done");
   save_clusters(created_clusters);
+  ROS_INFO("Kmeans found %u clusters", created_clusters.size());
 
   // TODO compute centroid
+  /*
 
-  // ----------------------------------------------
-  // Geometry feature information
-  // TODO HARDCODE
-  LocalGeometry geometry_features;
-  geometry_features.setData(&pt_cloud, &pt_cloud_kdtree);
-  //geometry_features.setInterestRadius(0.15);
-  geometry_features.useElevation();
-  geometry_features.useNormalOrientation(0.0, 0.0, 1.0);
-  geometry_features.useTangentOrientation(0.0, 0.0, 1.0);
+   // ----------------------------------------------
+   // Geometry feature information
+   // TODO HARDCODE
+   LocalGeometry geometry_features;
+   geometry_features.setData(&pt_cloud, &pt_cloud_kdtree);
+   //geometry_features.setInterestRadius(0.15);
+   geometry_features.useElevation();
+   geometry_features.useNormalOrientation(0.0, 0.0, 1.0);
+   geometry_features.useTangentOrientation(0.0, 0.0, 1.0);
 
-  vector<Descriptor3D*> feature_descriptors(1, &geometry_features);
-  vector<unsigned int> feature_descriptor_vals(1, geometry_features.getResultSize());
-  unsigned int nbr_total_feature_vals = geometry_features.getResultSize();
+   vector<Descriptor3D*> feature_descriptors(1, &geometry_features);
+   vector<unsigned int> feature_descriptor_vals(1, geometry_features.getResultSize());
+   unsigned int nbr_total_feature_vals = geometry_features.getResultSize();
 
-  ROS_INFO("Creating cliques...");
-  vector<int> region_indices;
-  map<unsigned int, list<RandomField::Node*> >::iterator iter_created_clusters;
-  for (iter_created_clusters = created_clusters.begin(); iter_created_clusters != created_clusters.end() ; iter_created_clusters++)
-  {
-    list<RandomField::Node*>& curr_list = iter_created_clusters->second;
+   ROS_INFO("Creating cliques...");
+   vector<int> region_indices;
+   map<unsigned int, list<RandomField::Node*> >::iterator iter_created_clusters;
+   for (iter_created_clusters = created_clusters.begin(); iter_created_clusters != created_clusters.end() ; iter_created_clusters++)
+   {
+   list<RandomField::Node*>& curr_list = iter_created_clusters->second;
 
-    // create region indices to compute features over
-    region_indices.clear();
-    for (list<RandomField::Node*>::iterator iter = curr_list.begin() ; iter != curr_list.end() ; iter++)
-    {
-      region_indices.push_back(static_cast<int> ((*iter)->getRandomFieldID()));
-    }
+   // create region indices to compute features over
+   region_indices.clear();
+   for (list<RandomField::Node*>::iterator iter = curr_list.begin() ; iter != curr_list.end() ; iter++)
+   {
+   region_indices.push_back(static_cast<int> ((*iter)->getRandomFieldID()));
+   }
 
-    // create concatenated feature
-    float* concat_created_feature_vals = NULL;
-    if (createConcatenatedFeatures(feature_descriptors, feature_descriptor_vals, nbr_total_feature_vals,
-        NULL, &region_indices, &concat_created_feature_vals) < 0)
-    {
-      continue;
-    }
+   // create concatenated feature
+   float* concat_created_feature_vals = NULL;
+   if (createConcatenatedFeatures(feature_descriptors, feature_descriptor_vals, nbr_total_feature_vals,
+   NULL, &region_indices, &concat_created_feature_vals) < 0)
+   {
+   continue;
+   }
 
-    // try to create node with features
-    if (rf.createClique(0, curr_list, concat_created_feature_vals, nbr_total_feature_vals,
-        xyz_cluster_centroids[iter_created_clusters->first][0],
-        xyz_cluster_centroids[iter_created_clusters->first][1],
-        xyz_cluster_centroids[iter_created_clusters->first][2]) == NULL)
-    {
-      ROS_ERROR("could not create clique");
-      abort();
-    }
-  }
-  ROS_INFO("done");
+   // try to create node with features
+   if (rf.createClique(0, curr_list, concat_created_feature_vals, nbr_total_feature_vals,
+   xyz_cluster_centroids[iter_created_clusters->first][0],
+   xyz_cluster_centroids[iter_created_clusters->first][1],
+   xyz_cluster_centroids[iter_created_clusters->first][2]) == NULL)
+   {
+   ROS_ERROR("could not create clique");
+   abort();
+   }
+   }
+   ROS_INFO("done");
+   */
 }
 
 int main()

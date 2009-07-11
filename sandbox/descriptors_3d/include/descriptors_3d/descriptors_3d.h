@@ -41,7 +41,9 @@
 
 #include <ros/console.h>
 
-#include <Eigen/Core>
+#include <opencv/cxcore.h>
+#include <opencv/cv.h>
+#include <opencv/cvaux.hpp>
 
 #include <robot_msgs/PointCloud.h>
 
@@ -60,8 +62,7 @@ class Descriptor3D
 {
   public:
     Descriptor3D() :
-      result_size_(0), data_set_(false), data_(NULL), data_kdtree_(NULL), interest_pt_set_(false),
-          interest_pt_idx_(0), interest_region_set_(false), interest_region_indices_(NULL)
+      result_size_(0)
     {
     }
 
@@ -81,42 +82,24 @@ class Descriptor3D
      * \return true on success, otherwise false
      */
     // --------------------------------------------------------------
-    virtual bool compute(Eigen::MatrixXf** result) const = 0;
 
-    // --------------------------------------------------------------
-    /**
-     * \brief Sets the data this descriptor will operate on
-     *
-     * \param data Data structure of 3-d data
-     * \param data_kdtree Kd-tree version of data for efficient neighbor lookup
-     *
-     * \return true on success, otherwise false
-     */
-    // --------------------------------------------------------------
-    bool setData(const robot_msgs::PointCloud* data, cloud_kdtree::KdTree* data_kdtree);
+    virtual void compute(const robot_msgs::PointCloud& data,
+                         cloud_kdtree::KdTree& data_kdtree,
+                         const cv::Vector<robot_msgs::Point32*>& interest_pts,
+                         cv::Vector<cv::Vector<float> >& results) = 0;
 
-    void setInterestPoint(unsigned int interest_pt_idx);
+    virtual void compute(const robot_msgs::PointCloud& data, cloud_kdtree::KdTree& data_kdtree, cv::Vector<
+        cv::Vector<float> >& results) = 0;
 
-    // may or may not be used by descriptor
-    void setInterestRegion(const vector<int>* interest_region_indices);
+    virtual void compute(const robot_msgs::PointCloud& data,
+                         cloud_kdtree::KdTree& data_kdtree,
+                         const cv::Vector<vector<int>*>& interest_region_indices,
+                         cv::Vector<cv::Vector<float> >& results) = 0;
 
     unsigned int getResultSize() const;
 
   protected:
-    // will check whether can use either interest pt or region
-    virtual bool readyToCompute() const = 0;
-
     unsigned int result_size_;
-
-    bool data_set_;
-    const robot_msgs::PointCloud* data_;
-    cloud_kdtree::KdTree* data_kdtree_;
-
-    bool interest_pt_set_;
-    unsigned int interest_pt_idx_;
-
-    bool interest_region_set_;
-    const vector<int>* interest_region_indices_;
 };
 
 #endif

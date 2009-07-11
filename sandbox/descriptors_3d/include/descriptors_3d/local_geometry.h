@@ -34,11 +34,21 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
-#include <Eigen/Core>
+#include <vector>
+
+#include <opencv/cxcore.h>
+#include <opencv/cv.h>
+#include <opencv/cvaux.hpp>
+
+#include <robot_msgs/PointCloud.h>
+
+#include <point_cloud_mapping/kdtree/kdtree.h>
 
 #include <point_cloud_mapping/geometry/nearest.h>
 
 #include <descriptors_3d/descriptors_3d.h>
+
+using namespace std;
 
 // --------------------------------------------------------------
 //* LocalGeometry
@@ -51,34 +61,46 @@
 class LocalGeometry: public Descriptor3D
 {
   public:
-    LocalGeometry() :
-      radius_(-1.0), ref_tangent_defined_(false), ref_normal_defined_(false), use_elevation_(false),
-          use_curvature_(false)
+    LocalGeometry()
     {
-      result_size_ = 3;
+      result_size_ = 0;
+
+      use_spectral_ = false;
+      spectral_radius_ = -1.0;
+
+      ref_tangent_defined_ = false;
+      ref_normal_defined_ = false;
+      use_elevation_ = false;
+      use_curvature_ = false;
     }
 
-    virtual bool compute(Eigen::MatrixXf** result) const;
+    virtual void compute(const robot_msgs::PointCloud& data,
+                         cloud_kdtree::KdTree& data_kdtree,
+                         const cv::Vector<robot_msgs::Point32*>& interest_pts,
+                         cv::Vector<cv::Vector<float> >& results);
 
-    // ----------------------------------------------------------
+    virtual void compute(const robot_msgs::PointCloud& data, cloud_kdtree::KdTree& data_kdtree, cv::Vector<
+        cv::Vector<float> >& results);
 
-    int setInterestRadius(double radius)
-    {
-      if (radius > 0.0)
-      {
-        radius_ = radius;
-        return 0;
-      }
-      return -1;
-    }
+    virtual void compute(const robot_msgs::PointCloud& data,
+                         cloud_kdtree::KdTree& data_kdtree,
+                         const cv::Vector<vector<int>*>& interest_region_indices,
+                         cv::Vector<cv::Vector<float> >& results);
 
     // ===================================================================
     /*! \name Spectral analysis related */
     // ===================================================================
     //@{
-    void useSpectral()
+    void useSpectral(double radius)
     {
-      //
+      // TODO init spec radius to -1.0
+      spectral_radius_ = radius;
+
+      if (use_spectral_ == false)
+      {
+        result_size_ += 3;
+        use_spectral_ = true;
+      }
     }
 
     void useTangentOrientation(double ref_x, double ref_y, double ref_z)
@@ -113,11 +135,7 @@ class LocalGeometry: public Descriptor3D
       ref_normal_flipped_[2] = -ref_z;
       ref_normal_defined_ = true;
     }
-
-    void useCurvature()
-    {
-      // TODO
-    }
+    //@}
 
     void usePCABoundingBox()
     {
@@ -154,13 +172,22 @@ class LocalGeometry: public Descriptor3D
       // TODO
     }
 
-  protected:
-    virtual bool readyToCompute() const;
-
   private:
+    void populateFeaturesWithSpectral(const Eigen::Vector3d& eigen_values,
+                                      const Eigen::Vector3d& tangent,
+                                      const Eigen::Vector3d& normal,
+                                      const robot_msgs::Point32& interest_pt,
+                                      const robot_msgs::PointCloud& data,
+                                      const vector<int>& neighborhood_indices,
+                                      cv::Vector<float>& result);
+    void populateFeatures(unsigned int start_idx,
+                          const robot_msgs::Point32& interest_pt,
+                          cv::Vector<float>& result);
+
     void computeSpinImage(Eigen::Vector3d& axis);
 
-    double radius_;
+    bool use_spectral_;
+    double spectral_radius_;
 
     bool ref_tangent_defined_;
     Eigen::Vector3d ref_tangent_;

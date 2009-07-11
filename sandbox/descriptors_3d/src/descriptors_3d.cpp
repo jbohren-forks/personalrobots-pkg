@@ -39,46 +39,6 @@ using namespace std;
 // --------------------------------------------------------------
 /*! See function definition */
 // --------------------------------------------------------------
-bool Descriptor3D::setData(const robot_msgs::PointCloud* data, cloud_kdtree::KdTree* data_kdtree)
-{
-  if (data == NULL || data_kdtree == NULL)
-  {
-    return false;
-  }
-
-  data_ = data;
-  data_kdtree_ = data_kdtree;
-  data_set_ = true;
-  return true;
-}
-
-// --------------------------------------------------------------
-/*! See function definition */
-// --------------------------------------------------------------
-void Descriptor3D::setInterestPoint(unsigned int interest_pt_idx)
-{
-  interest_pt_idx_ = interest_pt_idx;
-  interest_pt_set_ = true;
-
-  interest_region_indices_ = NULL;
-  interest_region_set_ = false;
-}
-
-// --------------------------------------------------------------
-/*! See function definition */
-// --------------------------------------------------------------
-void Descriptor3D::setInterestRegion(const vector<int>* interest_region_indices)
-{
-  interest_region_indices_ = interest_region_indices;
-  interest_region_set_ = true;
-
-  interest_pt_idx_ = 0;
-  interest_pt_set_ = false;
-}
-
-// --------------------------------------------------------------
-/*! See function definition */
-// --------------------------------------------------------------
 unsigned int Descriptor3D::getResultSize() const
 {
   return result_size_;

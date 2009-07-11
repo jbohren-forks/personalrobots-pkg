@@ -37,75 +37,273 @@
 using namespace std;
 
 // --------------------------------------------------------------
-/*! Ready to compute features when:
- *    data is set
- *    interest point with radius OR interest region set
- */
+/*! See function definition */
 // --------------------------------------------------------------
-inline bool LocalGeometry::readyToCompute() const
+void LocalGeometry::compute(const robot_msgs::PointCloud& data,
+                            cloud_kdtree::KdTree& data_kdtree,
+                            const cv::Vector<robot_msgs::Point32*>& interest_pts,
+                            cv::Vector<cv::Vector<float> >& results)
 {
-  return data_set_ && ((interest_pt_set_ && radius_ > 0.0) || interest_region_set_);
+  robot_msgs::Point32 centroid;
+  Eigen::Matrix3d eigen_vectors;
+  Eigen::Vector3d eigen_values;
+  Eigen::Vector3d tangent;
+  Eigen::Vector3d normal;
+
+  unsigned int nbr_pts = interest_pts.size();
+  results.resize(nbr_pts);
+
+  // If using spectral features, then crete neighborhoods
+  if (use_spectral_)
+  {
+    if (spectral_radius_ < 0.0)
+    {
+      ROS_ERROR("You should call compute() with region indices");
+      results.clear();
+      results.resize(nbr_pts);
+      return;
+    }
+
+    vector<int> neighbor_indices;
+    vector<float> neighbor_distances; // unused
+    for (unsigned int i = 0 ; i < nbr_pts ; i++)
+    {
+      // ----------------------------------------
+      // Find neighboring points within radius
+      neighbor_indices.clear();
+      neighbor_distances.clear();
+      if (data_kdtree.radiusSearch(*(interest_pts[i]), spectral_radius_, neighbor_indices, neighbor_distances)
+          == false)
+      {
+        ROS_ERROR("LocalGeometry::compute radius search failed");
+        results[i].clear();
+        continue;
+      }
+
+      // ----------------------------------------
+      // Need 3-by-3 matrix to have full rank
+      if (neighbor_indices.size() < 3)
+      {
+        ROS_ERROR("did not have enough neighbors");
+        results[i].clear();
+        continue;
+      }
+
+      // ----------------------------------------
+      // Eigen-analysis of support volume
+      // smallest eigenvalue = index 0
+      cloud_geometry::nearest::computePatchEigenNormalized(data, neighbor_indices, eigen_vectors,
+          eigen_values, centroid);
+      for (int j = 0 ; j < 3 ; j++)
+      {
+        normal[j] = eigen_vectors(j, 0);
+        tangent[j] = eigen_vectors(j, 2);
+      }
+
+      // ----------------------------------------
+      // Compute features
+      populateFeaturesWithSpectral(eigen_values, tangent, normal, *(interest_pts[i]), data, neighbor_indices,
+          results[i]);
+    }
+  }
+  // Otherwise compute features that do not require normal/tangent information
+  else
+  {
+    for (unsigned int i = 0 ; i < nbr_pts ; i++)
+    {
+      populateFeatures(0, *(interest_pts[i]), results[i]);
+    }
+  }
 }
 
 // --------------------------------------------------------------
 /*! See function definition */
 // --------------------------------------------------------------
-bool LocalGeometry::compute(Eigen::MatrixXf** result) const
+void LocalGeometry::compute(const robot_msgs::PointCloud& data,
+                            cloud_kdtree::KdTree& data_kdtree,
+                            cv::Vector<cv::Vector<float> >& results)
 {
-  if (readyToCompute() == false)
-  {
-    ROS_ERROR("LocalGeometry::compute not ready");
-    return false;
-  }
-
-  // ----------------------------------------
-  // find neighbors
-  const vector<int>* neighbor_indices = NULL;
-
-  vector<int> range_search_indices;
-  if (interest_pt_set_)
-  {
-    neighbor_indices = &range_search_indices;
-    vector<float> neighbor_distances; // unused
-    if (data_kdtree_->radiusSearch(interest_pt_idx_, radius_, range_search_indices, neighbor_distances)
-        == false)
-    {
-      ROS_ERROR("LocalGeometry::compute radius search failed");
-      return false;
-    }
-  }
-  else
-  {
-    neighbor_indices = interest_region_indices_;
-  }
-
-  // ----------------------------------------
-  if (neighbor_indices->size() < 3)
-  {
-    ROS_ERROR("did not have enough neighbors");
-    return false;
-  }
-
-  // ----------------------------------------
+  robot_msgs::Point32 centroid;
   Eigen::Matrix3d eigen_vectors;
   Eigen::Vector3d eigen_values;
   Eigen::Vector3d tangent;
   Eigen::Vector3d normal;
-  cloud_geometry::nearest::computePatchEigenNormalized(*data_, *neighbor_indices, eigen_vectors, eigen_values);
-  // smallest eigenvalue = index 0
-  for (int i = 0 ; i < 3 ; i++)
-  {
-    normal[i] = eigen_vectors(i, 0);
-    tangent[i] = eigen_vectors(i, 2);
-  }
 
-  // ----------------------------------------
-  *result = new Eigen::MatrixXf(result_size_, 1);
+  unsigned int nbr_pts = data.pts.size();
+  results.resize(nbr_pts);
+
+  // If using spectral features, then crete neighborhoods
+  if (use_spectral_)
+  {
+    if (spectral_radius_ < 0.0)
+    {
+      ROS_ERROR("You should call compute() with region indices");
+      results.clear();
+      results.resize(nbr_pts);
+      return;
+    }
+
+    vector<int> neighbor_indices;
+    vector<float> neighbor_distances; // unused
+    for (unsigned int i = 0 ; i < nbr_pts ; i++)
+    {
+      // -------------------------------
+      if (i % 1000 == 0)
+      {
+        ROS_INFO("sample: %u / %u", i, nbr_pts);
+      }
+
+      // ----------------------------------------
+      // Find neighboring points within radius
+      neighbor_indices.clear();
+      neighbor_distances.clear();
+      if (data_kdtree.radiusSearch(i, spectral_radius_, neighbor_indices, neighbor_distances) == false)
+      {
+        results[i].clear();
+        ROS_ERROR("LocalGeometry::compute radius search failed, vector has size: %u", results[i].size());
+        continue;
+      }
+
+      // ----------------------------------------
+      // Need 3-by-3 matrix to have full rank
+      if (neighbor_indices.size() < 3)
+      {
+        results[i].clear();
+        ROS_ERROR("LocalGeometry::compute not enough neighbors at pt %u, vector has size: %u", i, results[i].size());
+        continue;
+      }
+
+      // ----------------------------------------
+      // Eigen-analysis of support volume
+      // smallest eigenvalue = index 0
+      cloud_geometry::nearest::computePatchEigenNormalized(data, neighbor_indices, eigen_vectors,
+          eigen_values, centroid);
+      for (int j = 0 ; j < 3 ; j++)
+      {
+        normal[j] = eigen_vectors(j, 0);
+        tangent[j] = eigen_vectors(j, 2);
+      }
+
+      // ----------------------------------------
+      // Compute features
+      populateFeaturesWithSpectral(eigen_values, tangent, normal, data.pts[i], data, neighbor_indices,
+          results[i]);
+    }
+  }
+  // Otherwise compute features that do not require normal/tangent information
+  else
+  {
+    for (unsigned int i = 0 ; i < nbr_pts ; i++)
+    {
+      populateFeatures(0, data.pts[i], results[i]);
+    }
+  }
+}
+
+// --------------------------------------------------------------
+/*! See function definition */
+// --------------------------------------------------------------
+void LocalGeometry::compute(const robot_msgs::PointCloud& data,
+                            cloud_kdtree::KdTree& data_kdtree,
+                            const cv::Vector<vector<int>*>& interest_region_indices,
+                            cv::Vector<cv::Vector<float> >& results)
+{
+  robot_msgs::Point32 centroid;
+  Eigen::Matrix3d eigen_vectors;
+  Eigen::Vector3d eigen_values;
+  Eigen::Vector3d tangent;
+  Eigen::Vector3d normal;
+
+  unsigned int nbr_regions = interest_region_indices.size();
+  results.resize(nbr_regions);
+  vector<int>* curr_region_indices = NULL;
+
+  // used when doing range search around centroid
+  vector<int> neighbor_indices;
+  vector<float> neighbor_distances; // unused
+
+  // If using spectral features, then crete neighborhoods
+  if (use_spectral_)
+  {
+
+    for (unsigned int i = 0 ; i < nbr_regions ; i++)
+    {
+      if (spectral_radius_ < 0.0)
+      {
+        curr_region_indices = interest_region_indices[i];
+      }
+      else
+      {
+        // ----------------------------------------
+        // Find neighboring points within radius around CENTROID
+        neighbor_indices.clear();
+        neighbor_distances.clear();
+        curr_region_indices = &neighbor_indices;
+        cloud_geometry::nearest::computeCentroid(data, *(curr_region_indices), centroid);
+        if (data_kdtree.radiusSearch(centroid, spectral_radius_, neighbor_indices, neighbor_distances)
+            == false)
+        {
+          ROS_ERROR("LocalGeometry::compute radius search failed");
+          results[i].clear();
+          continue;
+        }
+      }
+
+      // ----------------------------------------
+      // Need 3-by-3 matrix to have full rank
+      if (curr_region_indices->size() < 3)
+      {
+        ROS_ERROR("did not have enough neighbors");
+        results[i].clear();
+        continue;
+      }
+
+      // ----------------------------------------
+      // Eigen-analysis of support volume
+      // smallest eigenvalue = index 0
+      cloud_geometry::nearest::computePatchEigenNormalized(data, *(curr_region_indices), eigen_vectors,
+          eigen_values, centroid);
+      for (int j = 0 ; j < 3 ; j++)
+      {
+        normal[j] = eigen_vectors(j, 0);
+        tangent[j] = eigen_vectors(j, 2);
+      }
+
+      // ----------------------------------------
+      // Compute features
+      populateFeaturesWithSpectral(eigen_values, tangent, normal, centroid, data, *curr_region_indices,
+          results[i]);
+    }
+
+  }
+  // Otherwise compute features that do not require normal/tangent information
+  else
+  {
+    for (unsigned int i = 0 ; i < nbr_regions ; i++)
+    {
+      cloud_geometry::nearest::computeCentroid(data, *(curr_region_indices), centroid);
+      populateFeatures(0, centroid, results[i]);
+    }
+  }
+}
+
+// --------------------------------------------------------------
+/*! See function definition */
+// --------------------------------------------------------------
+void LocalGeometry::populateFeaturesWithSpectral(const Eigen::Vector3d& eigen_values,
+                                                 const Eigen::Vector3d& tangent,
+                                                 const Eigen::Vector3d& normal,
+                                                 const robot_msgs::Point32& interest_pt,
+                                                 const robot_msgs::PointCloud& data,
+                                                 const vector<int>& neighborhood_indices,
+                                                 cv::Vector<float>& result)
+{
+  result.resize(result_size_);
 
   unsigned int idx = 0;
-  (**result)[idx++] = eigen_values[0]; // scatter
-  (**result)[idx++] = eigen_values[2] - eigen_values[1]; // linear
-  (**result)[idx++] = eigen_values[1] - eigen_values[0]; // surface
+  result[idx++] = eigen_values[0]; // scatter
+  result[idx++] = eigen_values[2] - eigen_values[1]; // linear
+  result[idx++] = eigen_values[1] - eigen_values[0]; // surface
 
   if (ref_tangent_defined_)
   {
@@ -114,7 +312,7 @@ bool LocalGeometry::compute(Eigen::MatrixXf** result) const
     {
       tangent_dot = tangent.dot(ref_tangent_flipped_);
     }
-    (**result)[idx++] = tangent_dot;
+    result[idx++] = tangent_dot;
   }
 
   if (ref_normal_defined_)
@@ -124,13 +322,26 @@ bool LocalGeometry::compute(Eigen::MatrixXf** result) const
     {
       normal_dot = normal.dot(ref_normal_flipped_);
     }
-    (**result)[idx++] = normal_dot;
+    result[idx++] = normal_dot;
+  }
+
+  populateFeatures(idx, interest_pt, result);
+}
+
+// --------------------------------------------------------------
+/*! See function definition */
+// --------------------------------------------------------------
+void LocalGeometry::populateFeatures(unsigned int start_idx,
+                                     const robot_msgs::Point32& interest_pt,
+                                     cv::Vector<float>& result)
+{
+  if (start_idx == 0)
+  {
+    result.resize(result_size_);
   }
 
   if (use_elevation_)
   {
-    (**result)[idx++] = data_->pts[interest_pt_idx_].z;
+    result[start_idx++] = interest_pt.z;
   }
-
-  return true;
 }
