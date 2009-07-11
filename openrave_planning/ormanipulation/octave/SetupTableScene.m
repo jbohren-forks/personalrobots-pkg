@@ -80,7 +80,7 @@ robot.testhandname = 'testhand';
 %% set the default joint values
 orBodySetJointValues (robot.id,[1.582704 1.081165 0.000000 -2.299995 -0.000000 0.000000 0.000000],robot.manips{1}.armjoints);
 orBodySetJointValues (robot.id,[-0.979114 -0.400000 0.000000 -1.535151 0.000000 0.000000 0.000000],robot.manips{2}.armjoints);
-orBodySetJointValues (robot.id,0.05,find(cellfun(@(x) strcmp('torso_lift_joint',x), robot.jointnames),1,'first'));
+orBodySetJointValues (robot.id,0.1,find(cellfun(@(x) strcmp('torso_lift_joint',x), robot.jointnames),1,'first')-1);
 
 robothome = orBodyGetJointValues(robot.id);
 

@@ -21,4 +21,4 @@ openraveros_restart('openrave_session',viewer,1);
 orEnvSetOptions('wdims 800 600');
 orEnvSetOptions('simulation timestep 0.001');
 orEnvSetOptions('collision ode');
-orEnvSetOptions('debug debug');
+#orEnvSetOptions('debug debug');
