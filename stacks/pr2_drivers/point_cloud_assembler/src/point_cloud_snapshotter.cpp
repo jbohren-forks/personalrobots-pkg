@@ -48,6 +48,9 @@ using namespace robot_msgs ;
  * params
  *  * "~target_frame_id" (string) - This is the frame that the scanned data transformed into.  The
  *                                  output clouds are also published in this frame.
+ *  * "~num_skips" (int)          - If set to N>0, then the snapshotter will skip N signals before 
+ *                                  requesting a new snapshot. This will make the snapshots be N times 
+ *                                  larger. Default 0 - no skipping.
  */
 
 namespace point_cloud_assembler
@@ -63,6 +66,9 @@ public:
 
   bool first_time_ ;
 
+  int num_skips_;
+  int num_skips_left_;
+
   std::string fixed_frame_ ;
   ros::Node node_;
 
@@ -72,6 +78,9 @@ public:
 
     ros::Node::instance()->advertise<PointCloud> ("full_cloud", 1) ;
     ros::Node::instance()->subscribe("laser_scanner_signal", cur_signal_, &PointCloudSnapshotter::scannerSignalCallback, this, 40) ;
+
+    ros::Node::instance()->param("~num_skips", num_skips_, 0) ;
+    num_skips_left_=num_skips_;
 
     first_time_ = true ;
   }
@@ -95,6 +104,19 @@ public:
     }
     else
     {
+      if(num_skips_>0)
+      {
+        if(num_skips_left_>0)
+        {
+          num_skips_left_ -= 1 ;
+          return;
+        }
+        else
+        {
+          num_skips_left_=num_skips_;
+        }
+      }
+
       BuildCloud::Request req ;
       BuildCloud::Response resp ;
 
