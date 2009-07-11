@@ -75,6 +75,8 @@
 
 #include "point_cloud_assembler/BuildCloud.h"
 
+#include "point_cloud_mapping/normal_estimation_in_proc.h"
+
 
 using namespace std;
 using namespace tf;
@@ -198,6 +200,7 @@ public:
   {
     robot_msgs::PointCloud transformed_map_3D;
     robot_msgs::PointCloud transformed_map_3D_fixed;
+    robot_msgs::PointCloud transformed_map_3D_fixed_w_normals;
     robot_msgs::PointCloud transformed_map_2D;
     robot_msgs::PointCloud map_final;
 
@@ -210,8 +213,10 @@ public:
 
     annotated_planar_patch_map::projection::projectAnyObject(*cam_info, transformed_map_3D,transformed_map_2D);
 
+    normal_estimator_.process_cloud(transformed_map_3D_fixed,transformed_map_3D_fixed_w_normals);
+
     ROS_INFO("\t cloud sizes %d/%d/%d/%d ",cloud.pts.size(),transformed_map_3D.pts.size(),transformed_map_3D.pts.size(),transformed_map_3D_fixed.pts.size());
-    bindAnnotations(annotation,transformed_map_2D,transformed_map_3D_fixed,map_final);
+    bindAnnotations(annotation,transformed_map_2D,transformed_map_3D_fixed_w_normals,map_final);
 
     if(map_final.pts.size()>0)
     {
@@ -327,7 +332,7 @@ public:
         {
           //If the point is inside the polygon, assign it to this annotation.
           num_in++;
-          overlap[iPt]=iAnnotatedPolygon;
+          overlap[iPt]=iAnnotatedPolygon+1;
         }
       }      
       cvReleaseMat( &poly_annotation );
@@ -345,7 +350,7 @@ public:
     }
     if(use_colors_)
     {
-      nCout+=3;      
+      nCout+=1;      
     }
     if(annotate_image_id_)
     {
@@ -365,9 +370,7 @@ public:
     unsigned int chan_X_id = -1;
     unsigned int chan_Y_id = -1;
     unsigned int chan_Z_id = -1;
-    unsigned int chan_R_id = -1;
-    unsigned int chan_G_id = -1;
-    unsigned int chan_B_id = -1;
+    unsigned int chan_RGB_id = -1;
     unsigned int chan_IMG_id = -1;
     if(annotate_reprojection_)
     {
@@ -380,11 +383,7 @@ public:
     }
     if(use_colors_)
     {
-       chan_R_id = free_channel;
-       free_channel++;
-       chan_G_id = free_channel;
-       free_channel++;
-       chan_B_id = free_channel;
+       chan_RGB_id = free_channel;
        free_channel++;
     }
     if(annotate_image_id_)
@@ -409,12 +408,8 @@ public:
     }
     if(use_colors_)
     {
-      map_final.chan[chan_R_id].name="r";
-      map_final.chan[chan_R_id].vals.resize(num_in);
-      map_final.chan[chan_G_id].name="g";
-      map_final.chan[chan_G_id].vals.resize(num_in);
-      map_final.chan[chan_B_id].name="b";
-      map_final.chan[chan_B_id].vals.resize(num_in);
+      map_final.chan[chan_RGB_id].name="rgb";
+      map_final.chan[chan_RGB_id].vals.resize(num_in);
     }
 
     if(annotate_image_id_)
@@ -433,7 +428,7 @@ public:
         {
           map_final.chan[iC].vals[iOut]=map_3D.chan[iC].vals[iPt];
         }        
-        map_final.chan[new_channel_id].vals[iOut] = object_labels[overlap[iPt]];
+        map_final.chan[new_channel_id].vals[iOut] = object_labels[overlap[iPt]-1];
         if(annotate_reprojection_)
         {        
           map_final.chan[chan_X_id].vals[iOut] = map_2D.pts[iPt].x;
@@ -442,10 +437,13 @@ public:
         }
         if(use_colors_)
         {
-          const std_msgs::ColorRGBA& color=object_colors[overlap[iPt]];
-          map_final.chan[chan_R_id].vals[iOut] = color.r;
-          map_final.chan[chan_G_id].vals[iOut] = color.g;
-          map_final.chan[chan_B_id].vals[iOut] = color.b;
+          const std_msgs::ColorRGBA& color=object_colors[overlap[iPt]-1];
+          int r=int(round(color.r*255));
+          int g=int(round(color.g*255));
+          int b=int(round(color.b*255));
+          int rgb = (r << 16) | (g << 8) | b;
+          map_final.chan[chan_RGB_id].vals[iOut] = *reinterpret_cast<float*>(&rgb);
+
         }
         if(annotate_image_id_)
         {
@@ -459,6 +457,7 @@ public:
 
 protected:
 
+
   ros::NodeHandle n_;
   ros::Publisher lifted_pub_;
 
@@ -467,6 +466,11 @@ protected:
   boost::shared_ptr<annotated_planar_patch_map::RollingHistory<sensor_msgs::CamInfo> > cam_hist_;
 
   boost::mutex lift_mutex_;
+
+
+
+  point_cloud_mapping::NormalEstimationInProc normal_estimator_;
+
 
   bool annotate_reprojection_;
   bool use_colors_;
