@@ -159,6 +159,66 @@ namespace cloud_geometry
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /** \brief Compute the eigenvalues and eigenvectors of a given surface patch from its normalized covariance matrix
+      * \param points the input point cloud
+      * \param eigen_vectors the resultant eigenvectors
+      * \param eigen_values the resultant eigenvalues
+      */
+    void
+      computePatchEigenNormalized (const robot_msgs::PointCloud &points, Eigen::Matrix3d &eigen_vectors, Eigen::Vector3d &eigen_values)
+    {
+      robot_msgs::Point32 centroid;
+      // Compute the 3x3 covariance matrix
+      Eigen::Matrix3d covariance_matrix;
+      computeCovarianceMatrix (points, covariance_matrix, centroid);
+
+      // Normalize the matrix by 1/N
+      for (unsigned int i = 0 ; i < 3 ; i++)
+      {
+        for (unsigned int j = 0 ; j < 3 ; j++)
+        {
+          covariance_matrix(i, j) /= static_cast<double> (points.pts.size ());
+        }
+      }
+
+      // Extract the eigenvalues and eigenvectors
+      Eigen::SelfAdjointEigenSolver<Eigen::Matrix3d> ei_symm (covariance_matrix);
+      eigen_values = ei_symm.eigenvalues ();
+      eigen_vectors = ei_symm.eigenvectors ();
+    }
+
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /** \brief Compute the eigenvalues and eigenvectors of a given surface patch from its normalized covariance matrix
+      * \param points the input point cloud
+      * \param indices the point cloud indices that need to be used
+      * \param eigen_vectors the resultant eigenvectors
+      * \param eigen_values the resultant eigenvalues
+      */
+    void
+      computePatchEigenNormalized (const robot_msgs::PointCloud &points, const std::vector<int> &indices, Eigen::Matrix3d &eigen_vectors, Eigen::Vector3d &eigen_values)
+    {
+      robot_msgs::Point32 centroid;
+      // Compute the 3x3 covariance matrix
+      Eigen::Matrix3d covariance_matrix;
+      computeCovarianceMatrix (points, indices, covariance_matrix, centroid);
+
+      // Normalize the matrix by 1/N
+      for (unsigned int i = 0 ; i < 3 ; i++)
+      {
+        for (unsigned int j = 0 ; j < 3 ; j++)
+        {
+          covariance_matrix(i, j) /= static_cast<double> (indices.size ());
+        }
+      }
+
+
+      // Extract the eigenvalues and eigenvectors
+      Eigen::SelfAdjointEigenSolver<Eigen::Matrix3d> ei_symm (covariance_matrix);
+      eigen_values = ei_symm.eigenvalues ();
+      eigen_vectors = ei_symm.eigenvectors ();
+    }
+
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     /** \brief Compute the Least-Squares plane fit for a given set of points, and return the estimated plane parameters
       * together with the surface curvature.
       * \param points the input point cloud
