@@ -5,8 +5,9 @@
   <include filename="$(find pr2_defs)/calibration/prf_cal.xml" />
   
   <!-- declare the path where all models/textures/materials are stored -->
-  <resource location="$(find pr2_defs)/meshes"/>
-  
+  <resource type="stl_meshes" location="$(find pr2_defs)/meshes"/>
+  <resource type="ogre"       location="$(find pr2_ogre)/Media/models/pr2"/>
+
   <include filename="$(find pr2_defs)/defs/arm_defs.xml" />
   <include filename="$(find pr2_defs)/defs/gripper_defs.xml" />
   <include filename="$(find pr2_defs)/defs/head_defs.xml" />
