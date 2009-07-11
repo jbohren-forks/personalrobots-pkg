@@ -1,6 +1,6 @@
 Index: server/physics/Geom.cc
 ===================================================================
---- server/physics/Geom.cc	(revision 7987)
+--- server/physics/Geom.cc	(revision 7997)
 +++ server/physics/Geom.cc	(working copy)
 @@ -249,12 +249,12 @@
  
@@ -17,53 +17,11 @@ Index: server/physics/Geom.cc
      }
    }
    else if ( dGeomGetSpace(this->geomId) == 0 )
-Index: server/physics/ode/ODEPhysics.cc
-===================================================================
---- server/physics/ode/ODEPhysics.cc	(revision 7987)
-+++ server/physics/ode/ODEPhysics.cc	(working copy)
-@@ -66,10 +66,10 @@
-   this->contactGroup = dJointGroupCreate(0);
- 
-   // Help prevent "popping of deeply embedded object
--  dWorldSetContactMaxCorrectingVel(this->worldId, 10.0);
-+  dWorldSetContactMaxCorrectingVel(this->worldId, 100.0);
- 
-   // This helps prevent jittering problems.
--  dWorldSetContactSurfaceLayer(this->worldId, 0.01);
-+  dWorldSetContactSurfaceLayer(this->worldId, 0.001);
- 
-   Param::Begin(&this->parameters);
-   this->globalCFMP = new ParamT<double>("cfm", 10e-5, 0);
-Index: server/Factory.cc
-===================================================================
---- server/Factory.cc	(revision 7987)
-+++ server/Factory.cc	(working copy)
-@@ -104,12 +104,12 @@
+@@ -272,6 +272,7 @@
    }
- 
-   // Attempt to delete a model by name, if the string is present
--  /*if (strcmp((const char*)this->factoryIface->data->deleteModel,"")!=0)
-+  if (strcmp((const char*)this->factoryIface->data->deleteModel,"")!=0)
+   else
    {
-     World::Instance()->DeleteEntity((const char*)this->factoryIface->data->deleteModel);
- 
-     strcpy((char*)this->factoryIface->data->deleteModel,"");
--  }*/
-+  }
-   this->factoryIface->Unlock();
- 
- }
-Index: server/Model.cc
-===================================================================
---- server/Model.cc	(revision 7987)
-+++ server/Model.cc	(working copy)
-@@ -260,7 +260,8 @@
-   this->SetCollideMode( **this->collideP );
- 
-   this->SetLaserFiducialId( **this->laserFiducialP);
--  this->SetLaserRetro( **this->laserRetroP);
-+  // do not set laser retro, this is done via callback!
-+  //this->SetLaserRetro( **this->laserRetroP);
- 
-   // Create the graphics iface handler
-   this->graphicsHandler = new GraphicsIfaceHandler();
++    // collide with all
+     this->SetCategoryBits(GZ_ALL_COLLIDE);
+     this->SetCollideBits(GZ_ALL_COLLIDE);
+   }
