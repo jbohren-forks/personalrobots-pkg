@@ -121,7 +121,7 @@ namespace move_arm
 	req.times = 1;
 
 	// do not spend more than this amount of time
-	req.allowed_time = 2.5;
+	req.allowed_time = 1.0;
 
 	if (perform_ik_)
 	    alterRequestUsingIK(req);

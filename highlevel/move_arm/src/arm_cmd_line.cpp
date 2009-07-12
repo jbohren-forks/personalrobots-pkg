@@ -79,6 +79,25 @@ void printJoints(const std::vector<std::string> &names)
 	std::cout << "  " << i << " = " << names[i] << std::endl;
 }
 
+void printPose(const btTransform &p)
+{
+    std::cout << "  -position [x, y, z]    = [" << p.getOrigin().x() << ", " << p.getOrigin().y() << ", " << p.getOrigin().z() << "]" << std::endl;
+    btQuaternion q = p.getRotation();
+    std::cout << "  -rotation [x, y, z, w] = [" << p.getOrigin().x() << ", " << p.getOrigin().y() << ", " << p.getOrigin().z() << ", " << p.getOrigin().w() << "]" << std::endl;
+}
+
+btTransform effPosition(const planning_environment::KinematicModelStateMonitor &km, const pr2_robot_actions::MoveArmGoal &goal)
+{
+    planning_models::StateParams sp(*km.getRobotState());
+    for (unsigned int i = 0 ; i < goal.goal_constraints.joint_constraint.size() ; ++i)
+    {
+	sp.setParamsJoint(&goal.goal_constraints.joint_constraint[i].value[0],
+			  goal.goal_constraints.joint_constraint[i].joint_name);
+    }
+    km.getKinematicModel()->computeTransforms(sp.getParams());
+    return km.getKinematicModel()->getJoint(goal.goal_constraints.joint_constraint.back().joint_name)->after->globalTrans;
+}
+
 void printConfig(const pr2_robot_actions::MoveArmGoal &goal)
 {
     for (unsigned int i = 0 ; i < goal.goal_constraints.joint_constraint.size(); ++i)
@@ -139,13 +158,26 @@ void setConfig(const planning_models::StateParams *sp, const std::vector<std::st
     }
 }
 
-void diffConfig(const planning_models::StateParams *sp, pr2_robot_actions::MoveArmGoal &goal)
+void diffConfig(const planning_environment::KinematicModelStateMonitor &km, pr2_robot_actions::MoveArmGoal &goal)
 {
+    std::vector<std::string> names;
     for (unsigned int i = 0 ; i < goal.goal_constraints.joint_constraint.size(); ++i)
     {
-	std::cout << "  " << goal.goal_constraints.joint_constraint[i].value[0] - sp->getParamsJoint(goal.goal_constraints.joint_constraint[i].joint_name)[0]
+	std::cout << "  " << goal.goal_constraints.joint_constraint[i].joint_name << " = " 
+		  << goal.goal_constraints.joint_constraint[i].value[0] - km.getRobotState()->getParamsJoint(goal.goal_constraints.joint_constraint[i].joint_name)[0]
 		  << std::endl;
+	names.push_back(goal.goal_constraints.joint_constraint[i].joint_name);	
     }
+
+    btTransform pose1 = effPosition(km, goal);
+    pr2_robot_actions::MoveArmGoal temp;
+    setConfig(km.getRobotState(), names, temp);
+    btTransform pose2 = effPosition(km, temp);
+    std::cout << std::endl;    
+    double dist = pose1.getOrigin().distance(pose2.getOrigin());
+    std::cout << "  -position distance: " << dist << std::endl;
+    double angle = pose1.getRotation().angle(pose2.getRotation());
+    std::cout << "  -rotation distance: " << angle << std::endl;
 }
 
 void setConfigJoint(const unsigned int pos, const double value, pr2_robot_actions::MoveArmGoal &goal)
@@ -228,6 +260,9 @@ int main(int argc, char **argv)
 	    pr2_robot_actions::MoveArmGoal temp;
 	    setConfig(km.getRobotState(), names, temp);
 	    printConfig(temp);
+	    std::cout << std::endl;
+	    btTransform p = effPosition(km, temp);
+	    printPose(p);
 	}
 	else
 	if (cmd == "time")
@@ -257,7 +292,7 @@ int main(int argc, char **argv)
 	    if (goals.find(config) == goals.end())
 		std::cout << "Configuration '" << config << "' not found" << std::endl;
 	    else
-		diffConfig(km.getRobotState(), goals[config]);
+		diffConfig(km, goals[config]);
 	}
 	else
 	if (cmd.length() > 5 && cmd.substr(0, 5) == "show ")
@@ -267,7 +302,12 @@ int main(int argc, char **argv)
 	    if (goals.find(config) == goals.end())
 		std::cout << "Configuration '" << config << "' not found" << std::endl;
 	    else
+	    {
 		printConfig(goals[config]);
+		std::cout << std::endl;
+		btTransform p = effPosition(km, goals[config]);
+		printPose(p);
+	    }
 	}
 	else
 	if (cmd.length() > 8 && cmd.substr(0, 8) == "current ")
@@ -381,7 +421,12 @@ int main(int argc, char **argv)
 	}
 	else
 	if (goals.find(cmd) != goals.end())
+	{
 	    printConfig(goals[cmd]);
+	    std::cout << std::endl;
+	    btTransform p = effPosition(km, goals[cmd]);
+	    printPose(p);
+	}	
 	else
 	    std::cerr << "Unknown command. Try 'help'" << std::endl;
     }
