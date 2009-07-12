@@ -14,10 +14,14 @@ rospack_add_library(planning_environment src/robot_models.cpp
 rospack_add_openmp_flags(planning_environment)
 rospack_link_boost(planning_environment thread)
  
+# Utility apps
+rospack_add_executable(view_state_validity src/view_state_validity.cpp) 
+target_link_libraries(view_state_validity planning_environment)
+
 # Tests
 
 # Create a model of the PR2
-rospack_add_executable(test_robot_models test/test_robot_models.cpp)
+rospack_add_executable(test_robot_models test/test_robot_models.cpp) 
 rospack_declare_test(test_robot_models)
 rospack_add_gtest_build_flags(test_robot_models)
 target_link_libraries(test_robot_models planning_environment)
