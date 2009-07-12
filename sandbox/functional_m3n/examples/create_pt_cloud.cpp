@@ -25,12 +25,33 @@
 #include <functional_m3n/m3n_model.h>
 #include <functional_m3n/regressors/regressor_params.h>
 
+using namespace std;
+
+vector<Descriptor3D*> node_feature_descriptors;
+M3NParams m3n_params;
+
 void populateParameters()
 {
+  // Feature for the nodes
+  LocalGeometry* geometry_features = new LocalGeometry();
+  geometry_features->useSpectral(0.15);
+  geometry_features->useNormalOrientation(0.0, 0.0, 1.0);
+  geometry_features->useTangentOrientation(0.0, 0.0, 1.0);
+  geometry_features->useElevation();
+  node_feature_descriptors.assign(1, geometry_features);
 
+  // TODO: free node_feature_descriptors
+
+  unsigned int nbr_clique_sets = 1;
+
+  // Define learning parameters
+  vector<float> robust_potts_params(nbr_clique_sets, -1.0);
+  RegressionTreeWrapperParams regression_tree_params;
+  m3n_params.setLearningRate(0.5);
+  m3n_params.setNumberOfIterations(15);
+  m3n_params.setRegressorRegressionTrees(regression_tree_params);
+  m3n_params.setInferenceRobustPotts(robust_potts_params);
 }
-
-M3NModel* trainModel(vector<const RandomField*>& training_rfs);
 
 void save_clusters(map<unsigned int, list<RandomField::Node*> >& created_clusters)
 {
@@ -159,7 +180,7 @@ void kmeansNodes(const vector<unsigned int>& cluster_feature_indices,
   unsigned int curr_sample_idx = 0;
   for (iter_nodes = nodes.begin(); iter_nodes != nodes.end() ; iter_nodes++)
   {
-    // offset previous samples
+    // offset over previous samples
     curr_offset = curr_sample_idx * cluster_feature_dim_xyz;
 
     // retrieve current sample and its features
@@ -248,25 +269,15 @@ void createNodes(RandomField& rf,
                  const vector<unsigned int>& labels,
                  set<unsigned int>& failed_indices)
 
-{
-  // ----------------------------------------------
-  // Augment all descriptors into a vector (just one for now)
-  // Geometry feature information TODO HARDCODE
-  LocalGeometry geometry_features;
-  geometry_features.useSpectral(0.15);
-  geometry_features.useNormalOrientation(0.0, 0.0, 1.0);
-  geometry_features.useTangentOrientation(0.0, 0.0, 1.0);
-  geometry_features.useElevation();
-  vector<Descriptor3D*> feature_descriptors(1, &geometry_features);
-  unsigned int nbr_descriptors = feature_descriptors.size();
-  unsigned int nbr_total_feature_vals = geometry_features.getResultSize();
-
-  // ----------------------------------------------
+{ // ----------------------------------------------
   // Iterate over each descriptor and compute features for each point in the point cloud
+  unsigned int nbr_descriptors = node_feature_descriptors.size();
+  unsigned int nbr_total_feature_vals = 0;
   vector<cv::Vector<cv::Vector<float> > > all_descriptor_results(nbr_descriptors);
   for (unsigned int i = 0 ; i < nbr_descriptors ; i++)
   {
-    feature_descriptors[i]->compute(pt_cloud, pt_cloud_kdtree, all_descriptor_results[i]);
+    node_feature_descriptors[i]->compute(pt_cloud, pt_cloud_kdtree, all_descriptor_results[i]);
+    nbr_total_feature_vals += node_feature_descriptors[i]->getResultSize();
   }
 
   // ----------------------------------------------
@@ -408,6 +419,8 @@ void createCliqueSet0(RandomField& rf,
 
 int main()
 {
+  populateParameters();
+
   // ----------------------------------------------------------
   ROS_INFO("Loading point cloud...");
   robot_msgs::PointCloud pt_cloud;
@@ -433,45 +446,15 @@ int main()
 
   // ----------------------------------------------------------
   ROS_INFO("Starting to train...");
+  M3NModel m3n_model;
   vector<const RandomField*> training_rfs(1, &rf);
-  M3NModel* trained_model = trainModel(training_rfs);
-  if (trained_model != NULL)
+  if (m3n_model.train(training_rfs, m3n_params) < 0)
+  {
+    ROS_ERROR("Failed to train M3N model");
+  }
+  else
   {
     ROS_INFO("Successfully trained M3n model");
-    delete trained_model;
   }
   return 0;
 }
-
-// --------------------------------------------------------------
-/*!
- * \brief Instantiate and train the model
- *
- * You need to define parameters in this function
- */
-// --------------------------------------------------------------
-M3NModel* trainModel(vector<const RandomField*>& training_rfs)
-{
-  // Define parameters for regressors
-  // (using default values)
-  RegressionTreeWrapperParams regression_tree_params;
-
-  // Define learning parameters
-  // TODO HARDCODE
-  M3NParams m3n_params;
-  m3n_params.setLearningRate(0.5);
-  m3n_params.setNumberOfIterations(15);
-  m3n_params.setRegressorRegressionTrees(regression_tree_params);
-  vector<float> robust_potts_params(1, -1.0);
-  m3n_params.setInferenceRobustPotts(robust_potts_params);
-
-  M3NModel* m3n_model = new M3NModel();
-  if (m3n_model->train(training_rfs, m3n_params) < 0)
-  {
-    ROS_ERROR("Failed to train M3N model");
-    delete m3n_model;
-    return NULL;
-  }
-  return m3n_model;
-}
-
