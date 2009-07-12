@@ -77,7 +77,8 @@
       <param name="videre_mode" type="str" value="none"/>
       <param name="fps" type="double" value="15.0"/>
       <param name="frame_id" type="string" value="double_stereo_narrow_optical_frame"/>
-      <param name="exposure_auto" type="bool" value="true"/>
+      <param name="exposure" type="int" value="6"/>
+      <param name="exposure_auto" type="bool" value="false"/>
       <param name="brightness_auto" type="bool" value="true"/>
       <param name="gain_auto" type="bool" value="true"/>
     </node> 
