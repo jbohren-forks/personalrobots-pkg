@@ -194,7 +194,7 @@ void HogWrapper::compute(IplImage* img, const cv::Vector<Keypoint>& points, vvf&
   Vector<Point> locations;
   locations.reserve(points.size());
   for(unsigned int i=0; i<points.size(); i++) {
-    Point pt(round(points[i].pt.x), round(points[i].pt.y));
+    Point pt(round(points[(size_t)i].pt.x), round(points[(size_t)i].pt.y));
     locations.push_back(pt);
   }
   
@@ -210,14 +210,14 @@ void HogWrapper::compute(IplImage* img, const cv::Vector<Keypoint>& points, vvf&
   for(unsigned int i=0; i<points.size(); i++) {
     bool valid = false;
     for(unsigned int j=i*sz; j<(i+1)*sz; j++) {
-      if(result[j] != 0) {
+      if(result[(size_t)j] != 0) {
 	valid = true;
 	break;
       }
     }
     if(valid) {
       //results[i] = Vector<float>(&result[i*sz], sz); //Creates a header for this data.  No copy.
-      results[i] = Vector<float>(&result[i*sz], sz, true); //Copy.
+      results[(size_t)i] = Vector<float>(&result[(size_t)(i*sz)], sz, true); //Copy.
     } 
     //cout << results[i].size() << " elements in a single feature.  valid:" << valid << endl;
   }
@@ -232,17 +232,17 @@ void HogWrapper::compute(IplImage* img, const cv::Vector<Keypoint>& points, vvf&
     // -- Find first returned descriptor.
     unsigned int i;
     for(i=0; i<results.size(); i++) {
-      if(!results[i].empty())
+      if(!results[(size_t)i].empty())
 	break;
     }
     
     if(i == results.size())
       cout << "No valid " << name_ << " descriptor." << endl;
     else {
-      Vector<float>& r = results[i];
+      Vector<float>& r = results[(size_t)i];
       cout << name_ << " descriptor: " << endl;
       for(unsigned int j=0; j<r.size(); j++) {
-	cout << " " << r[j];
+	cout << " " << r[(size_t)j];
       }
       cout << endl;
     }
@@ -260,7 +260,7 @@ Patch::Patch(int raw_size, float scale)
 {
   //Common patch constructor computation.
   cout << "Doing common constructor computation." << endl;
-  size_ = (int) ((float)raw_size * scale);
+  size_ = (size_t) ((float)raw_size * scale);
   if(size_%2==0)
     size_ -= 1;
 
@@ -683,7 +683,7 @@ void SuperpixelColorHistogram::compute(IplImage* img, const cv::Vector<Keypoint>
   results.resize(points.size());
 
   for(unsigned int i=0; i<points.size(); i++) {
-    compute(img, points[i], results[i]);
+    compute(img, points[(size_t)i], results[(size_t)i]);
   }
 }
 void SuperpixelColorHistogram::compute(IplImage* img, const Keypoint& point, cv::Vector<float>& result) {
@@ -728,7 +728,7 @@ void SuperpixelColorHistogram::compute(IplImage* img, const Keypoint& point, cv:
 
 
   // -- Get the label at this point.
-  int label = CV_IMAGE_ELEM(seg_, long, (int)point.pt.y, (int)point.pt.x);
+  int label = CV_IMAGE_ELEM(seg_, long, (size_t)point.pt.y, (size_t)point.pt.x);
   if(label == -1)  {
     result.clear();
     cerr << "SEG -1.  This should not happen." << endl;
@@ -1034,7 +1034,7 @@ void IntegralImageTexture::compute(IplImage* img, const cv::Vector<Keypoint>& po
   img_ = img;
 
   for(unsigned int i=0; i<points.size(); i++) {
-    compute(img, points[i], results[i]);
+    compute(img, points[(size_t)i], results[(size_t)i]);
   }
 }
 
@@ -1151,7 +1151,7 @@ void IntegralImageTexture::compute(IplImage* img, const Keypoint& point, cv::Vec
   if(debug_) {
     cout << name_ << " descriptor: ";
     for(unsigned int i=0; i<result.size(); i++) {
-      cout << result[i] << " ";
+      cout << result[(size_t)i] << " ";
     }
     cout << endl;
     commonDebug();
