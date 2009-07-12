@@ -203,5 +203,9 @@ Sets the following parameters on the parameter server
 
  - Sets the parameters it reads to default values
 
+\section tools Tools
+
+\b view_state_validity is a node that uses planning environment to check whether the current state of the robot is valid or not. This information is also broadcasted on the 'state_validity' topic as a Byte value (1 for collision, 0 for valid state)
+
 
 */
