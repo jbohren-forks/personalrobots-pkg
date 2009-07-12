@@ -296,7 +296,7 @@ void createNodes(RandomField& rf,
     for (unsigned int j = 0 ; all_features_success && j < nbr_descriptors ; j++)
     {
       cv::Vector<cv::Vector<float> >& curr_descriptor_for_cloud = all_descriptor_results[j];
-      cv::Vector<float>& curr_feature_vals = curr_descriptor_for_cloud[i];
+      cv::Vector<float>& curr_feature_vals = curr_descriptor_for_cloud[(size_t)i];
 
       // non-zero descriptor length indicates computed successfully
       all_features_success = curr_feature_vals.size() != 0;
@@ -314,13 +314,13 @@ void createNodes(RandomField& rf,
       {
         // retrieve descriptor values for current point
         cv::Vector<cv::Vector<float> >& curr_descriptor_for_cloud = all_descriptor_results[j];
-        cv::Vector<float>& curr_feature_vals = curr_descriptor_for_cloud[i];
+        cv::Vector<float>& curr_feature_vals = curr_descriptor_for_cloud[(size_t)i];
         curr_nbr_feature_vals = curr_feature_vals.size();
 
         // copy descriptor values into concatenated vector at correct location
         for (unsigned int k = 0 ; k < curr_nbr_feature_vals ; k++)
         {
-          concat_features[prev_val_idx + k] = curr_feature_vals[k];
+          concat_features[prev_val_idx + k] = curr_feature_vals[(size_t)k];
         }
         prev_val_idx += curr_nbr_feature_vals;
       }
