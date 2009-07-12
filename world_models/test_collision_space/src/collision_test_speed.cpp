@@ -77,13 +77,13 @@ public:
 		data[i4 + 2] = uniform(1.5);
 		data[i4 + 3] = 0.02;
 		em->clearObstacles();
-		em->addPointCloud(1, data + i4);
+		em->addPointCloudSpheres("points", 1, data + i4);
 	    }
 	    while(em->isCollision());
 	}
 	
 	em->clearObstacles();
-	em->addPointCloud(n, data);
+	em->addPointCloudSpheres("points", n, data);
 	ROS_INFO("Added %d points", n);
 	
 	delete[] data;
@@ -133,7 +133,7 @@ public:
 		data[i4 + 2] = uniform(1.5);
 		data[i4 + 3] = 0.02;
 		em->clearObstacles();
-		em->addPointCloud(1, data + i4);
+		em->addPointCloudSpheres("points", 1, data + i4);
 	    }
 	    while(!em->isCollision());
 	    sendPoint(data[i4], data[i4 + 1], data[i4 + 2]);

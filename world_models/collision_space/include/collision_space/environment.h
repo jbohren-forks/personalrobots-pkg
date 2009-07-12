@@ -49,14 +49,11 @@
 /** \brief Main namespace */
 namespace collision_space
 {
-    /** \brief   
-    A class describing an environment for a kinematic robot. This is
-    the base (abstract) definition. Different implementations are
-    possible. The class is aware of a certain set of fixed
-    (addStatic*) obstacles that never change, a set of obstacles that
-    can change (removed by clearObstacles()) and a kinematic
-    robot model. The class provides functionality for checking whether a
-    given robot is in collision. 
+    /** \brief A class describing an environment for a kinematic
+    robot. This is the base (abstract) definition. Different
+    implementations are possible. The class is aware of a set of
+    obstacles and a robot model. The obstacles are placed in different
+    namespaces so they can be added and removed selectively.
     */
     class EnvironmentModel
     {
@@ -109,7 +106,7 @@ namespace collision_space
 	    bodies (multiplicative factor). The padding can be used to
 	    increase or decrease the robot's bodies with by an
 	    additive term */
-	virtual void addRobotModel(const boost::shared_ptr<planning_models::KinematicModel> &model, const std::vector<std::string> &links, double scale = 1.0, double padding = 0.0);
+	virtual void setRobotModel(const boost::shared_ptr<planning_models::KinematicModel> &model, const std::vector<std::string> &links, double scale = 1.0, double padding = 0.0);
 
 	/** \brief Update the positions of the geometry used in collision detection */
 	virtual void updateRobotModel(void) = 0;
@@ -137,21 +134,20 @@ namespace collision_space
 
 	
 	/**********************************************************************/
-	/* Collision Bodies Definition (Dynamic)                              */
+	/* Collision Bodies                                                   */
 	/**********************************************************************/
 	
 	/** \brief Remove all obstacles from collision model */
 	virtual void clearObstacles(void) = 0;
 	
-	/** \brief Add a point cloud to the collision space */
-	virtual void addPointCloud(unsigned int n, const double* points) = 0;
+	/** \brief Remove obstacles from a specific namespace in the collision model */
+	virtual void clearObstacles(const std::string &ns) = 0;
 
-	/**********************************************************************/
-	/* Collision Bodies Definition (Static)                               */
-	/**********************************************************************/
-	
+	/** \brief Add a point cloud to the collision space */
+	virtual void addPointCloudSpheres(const std::string &ns, unsigned int n, const double* points) = 0;
+
 	/** \brief Add a plane to the collision space. Equation it satisfies is a*x+b*y+c*z = d*/
-	virtual void addStaticPlane(double a, double b, double c, double d) = 0;
+	virtual void addPlane(const std::string &ns, double a, double b, double c, double d) = 0;
 
 	/**********************************************************************/
 	/* Miscellaneous Routines                                             */

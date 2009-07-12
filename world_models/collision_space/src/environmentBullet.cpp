@@ -59,9 +59,9 @@ void collision_space::EnvironmentModelBullet::freeMemory(void)
     delete m_config; */
 }
 
-void collision_space::EnvironmentModelBullet::addRobotModel(const boost::shared_ptr<planning_models::KinematicModel> &model, const std::vector<std::string> &links, double scale, double padding)
+void collision_space::EnvironmentModelBullet::setRobotModel(const boost::shared_ptr<planning_models::KinematicModel> &model, const std::vector<std::string> &links, double scale, double padding)
 {
-    collision_space::EnvironmentModel::addRobotModel(model, links, scale, padding);
+    collision_space::EnvironmentModel::setRobotModel(model, links, scale, padding);
     m_modelGeom.scale = scale;
     m_modelGeom.padding = padding;
 
@@ -266,7 +266,7 @@ bool collision_space::EnvironmentModelBullet::isSelfCollision(void)
     return false;
 }
 
-void collision_space::EnvironmentModelBullet::addPointCloud(unsigned int n, const double *points)
+void collision_space::EnvironmentModelBullet::addPointCloudSpheres(const std::string &ns, unsigned int n, const double *points)
 {
     btTransform t;
     t.setIdentity();
@@ -280,28 +280,39 @@ void collision_space::EnvironmentModelBullet::addPointCloud(unsigned int n, cons
 	t.setOrigin(btVector3(points[i4], points[i4 + 1], points[i4 + 2]));
 	object->setWorldTransform(t);
 	m_world->addCollisionObject(object);	
-	m_dynamicObstacles.push_back(object);
+	m_obstacles[ns].push_back(object);
     }
 }
 
-void collision_space::EnvironmentModelBullet::addStaticPlane(double a, double b, double c, double d)
+void collision_space::EnvironmentModelBullet::addPlane(const std::string &ns, double a, double b, double c, double d)
 {
     btCollisionObject *object = new btCollisionObject();
     btCollisionShape *shape = new btStaticPlaneShape(btVector3(a, b, c), d);
     object->setCollisionShape(shape);
     m_world->addCollisionObject(object);
+    m_obstacles[ns].push_back(object);
+}
+
+void collision_space::EnvironmentModelBullet::clearObstacles(const std::string &ns)
+{
+    if (m_obstacles.find(ns) != m_obstacles.end())
+    {
+	unsigned int n = m_obstacles[ns].size();
+	for (unsigned int i = 0 ; i < n ; ++i)
+	{
+	    btCollisionObject* obj = m_obstacles[ns][i];
+	    m_world->removeCollisionObject(obj);
+	    //	delete obj->getCollisionShape();
+	    //	delete obj;
+	}
+	m_obstacles.erase(ns);
+    }
 }
 
 void collision_space::EnvironmentModelBullet::clearObstacles(void)
 {
-    for (unsigned int i = 0 ; i < m_dynamicObstacles.size() ; ++i)
-    {
-	btCollisionObject* obj = m_dynamicObstacles[i];
-	m_world->removeCollisionObject(obj);
-	//	delete obj->getCollisionShape();
-	//	delete obj;
-    }
-    m_dynamicObstacles.clear();  
+    for (std::map<std::string, std::vector<btCollisionObject*> >::iterator it = m_obstacles.begin() ; it != m_obstacles.end() ; ++it)
+	clearObstacles(it->first);
 }
 
 int collision_space::EnvironmentModelBullet::setCollisionCheck(const std::string &link, bool state)

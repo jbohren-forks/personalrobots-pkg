@@ -39,6 +39,7 @@
 
 #include "collision_space/environment.h"
 #include <ode/ode.h>
+#include <map>
 
 namespace collision_space
 {
@@ -54,8 +55,6 @@ namespace collision_space
         EnvironmentModelODE(void) : EnvironmentModel()
 	{
 	    dInitODE2(0);
-	    m_space = dHashSpaceCreate(0);
-	    m_spaceBasicGeoms = dHashSpaceCreate(0);
 	}
 	
 	virtual ~EnvironmentModelODE(void)
@@ -63,19 +62,7 @@ namespace collision_space
 	    freeMemory();
 	    dCloseODE();
 	}
-	
-	/** \brief The space ID for the objects that can be changed in the
-	    map. clearObstacles will invalidate this ID. Collision
-	    checking on this space is optimized for many small
-	    objects. */
-	dSpaceID getODESpace(void) const;
 
-	/** \brief Return the space ID for the space in which static objects are added */
-	dSpaceID getODEBasicGeomSpace(void) const;
-
-	/** \brief Return the space ID for the space in which the robot model is instanciated */
-	dSpaceID getModelODESpace(void) const;
-	
 	/** \brief Get the list of contacts (collisions) */
 	virtual bool getCollisionContacts(std::vector<Contact> &contacts, unsigned int max_count = 1);
 
@@ -88,19 +75,22 @@ namespace collision_space
 	/** \brief Remove all obstacles from collision model */
 	virtual void clearObstacles(void);
 
+	/** \brief Remove obstacles from a specific namespace in the collision model */
+	virtual void clearObstacles(const std::string &ns);
+
 	/** \brief Add a point cloud to the collision space */
-	virtual void addPointCloud(unsigned int n, const double *points); 
+	virtual void addPointCloudSpheres(const std::string &ns, unsigned int n, const double *points); 
 
 	/** \brief Add a plane to the collision space. Equation it satisfies is a*x+b*y+c*z = d*/
-	virtual void addStaticPlane(double a, double b, double c, double d);
-
+	virtual void addPlane(const std::string &ns, double a, double b, double c, double d);
+	
 	/** \brief Add a robot model. Ignore robot links if their name is not
 	    specified in the string vector. The scale argument can be
 	    used to increase or decrease the size of the robot's
 	    bodies (multiplicative factor). The padding can be used to
 	    increase or decrease the robot's bodies with by an
 	    additive term */
-	virtual void addRobotModel(const boost::shared_ptr<planning_models::KinematicModel> &model, const std::vector<std::string> &links, double scale = 1.0, double padding = 0.0);
+	virtual void setRobotModel(const boost::shared_ptr<planning_models::KinematicModel> &model, const std::vector<std::string> &links, double scale = 1.0, double padding = 0.0);
 
 	/** \brief Update the positions of the geometry used in collision detection */
 	virtual void updateRobotModel(void);
@@ -113,12 +103,6 @@ namespace collision_space
 	
     protected:
 	
-	/** \brief Internal function for collision detection */
-	void testCollision(void *data);
-	void testSelfCollision(void *data);
-	void testStaticBodyCollision(void *data);
-	void testDynamicBodyCollision(void *data);
-
 	class ODECollide2
 	{
 	public:
@@ -140,6 +124,7 @@ namespace collision_space
 	    void clear(void);
 	    void setup(void);
 	    void collide(dGeomID geom, void *data, dNearCallback *nearCallback);
+	    bool empty(void);
 	    
 	private:
 	    
@@ -226,33 +211,108 @@ namespace collision_space
 	    unsigned int                           index;
 	};
 
-	struct ModelInfo
-	{
-	    std::vector< kGeom* >                    linkGeom;
-	    double                                   scale;
-	    double                                   padding;
-	    dSpaceID                                 space;
+	/** \brief Structure for maintaining ODE temporary data */
+	struct ODEStorage
+	{	
+	    ~ODEStorage(void)
+	    {
+		clear();
+	    }
+	    
+	    void clear(void)
+	    {
+		for (unsigned int i = 0 ; i < meshIndices.size() ; ++i)
+		    delete[] meshIndices[i];
+		meshIndices.clear();
+		for (unsigned int i = 0 ; i < meshData.size() ; ++i)
+		    dGeomTriMeshDataDestroy(meshData[i]);
+		meshData.clear();
+	    }
+	    
+	    /* Pointers for ODE indices; we need this around in ODE's assumed datatype */
+	    std::vector<dTriIndex*>     meshIndices;
+	    std::vector<dTriMeshDataID> meshData;
 	};
 	
-	dGeomID createODEGeom(dSpaceID space, shapes::Shape *shape, double scale, double padding);
+	struct ModelInfo
+	{
+	    std::vector< kGeom* > linkGeom;
+	    double                scale;
+	    double                padding;
+	    dSpaceID              space;
+	    ODEStorage            storage;
+	};
+	
+	struct CollisionNamespace
+	{
+	    CollisionNamespace(const std::string &nm) : name(nm)
+	    {
+		space = dHashSpaceCreate(0);
+	    }
+	    
+	    virtual ~CollisionNamespace(void)
+	    {
+		if (space)
+		    dSpaceDestroy(space);
+	    }
+	    
+	    void clear(void)
+	    {
+		if (space)
+		    dSpaceDestroy(space);
+		space = dHashSpaceCreate(0);
+		geoms.clear();
+		collide2.clear();
+		storage.clear();
+	    }
+	    
+	    std::string          name;	    
+	    dSpaceID             space;
+	    std::vector<dGeomID> geoms;
+	    ODECollide2          collide2;
+	    ODEStorage           storage;
+	};
+	
+	struct CollisionData
+	{
+	    CollisionData(void)
+	    {
+		done = false;
+		collides = false;
+		max_contacts = 0;
+		contacts = NULL;
+		selfCollisionTest = NULL;
+		link1 = link2 = NULL;
+	    }
+	    
+	    bool                                       done;
+	    
+	    bool                                       collides;
+	    unsigned int                               max_contacts;
+	    std::vector<EnvironmentModelODE::Contact> *contacts;
+	    std::vector< std::vector<bool> >          *selfCollisionTest;
+	    
+	    planning_models::KinematicModel::Link     *link1;
+	    planning_models::KinematicModel::Link     *link2;
+	};
+	
+	
+	/** \brief Internal function for collision detection */
+	void testCollision(CollisionData *data);
+
+	/** \brief Internal function for collision detection */
+	void testSelfCollision(CollisionData *data);
+
+	/** \brief Internal function for collision detection */
+	void testBodyCollision(CollisionNamespace *cn, CollisionData *data);
+
+	dGeomID createODEGeom(dSpaceID space, ODEStorage &storage, shapes::Shape *shape, double scale, double padding);
 	void    updateGeom(dGeomID geom, btTransform &pose) const;	
 	void    freeMemory(void);	
 	
-	ModelInfo            m_modelGeom;
-	dSpaceID             m_space;
-	dSpaceID             m_spaceBasicGeoms;
+	ModelInfo                                   m_modelGeom;
+	std::map<std::string, CollisionNamespace*>  m_collNs;
 	
-	/* This is where geoms from the world (that can be cleared and recreated) are added; the space for this is m_space */
-	ODECollide2          m_collide2;
-
-	/* This is where static geoms from the world (that are not cleared) are added; the space for this is m_spaceBasicGeoms */
-	std::vector<dGeomID> m_basicGeoms;
-	
-    private:
-	
-	/* Pointers for ODE indices; we need this around in ODE's assumed datatype */
-	std::vector<dTriIndex*>     m_meshIndices;
-	std::vector<dTriMeshDataID> m_meshData;
     };
 }
 

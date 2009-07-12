@@ -41,7 +41,7 @@
 void planning_environment::CollisionModels::setupModel(boost::shared_ptr<collision_space::EnvironmentModel> &model, const std::vector<std::string> &links)
 {
     model->lock();
-    model->addRobotModel(kmodel_, links, scale_, padd_);
+    model->setRobotModel(kmodel_, links, scale_, padd_);
     
     // form all pairs of links that can collide and add them as self-collision groups
     for (unsigned int i = 0 ; i < self_collision_check_groups_.size() ; ++i)

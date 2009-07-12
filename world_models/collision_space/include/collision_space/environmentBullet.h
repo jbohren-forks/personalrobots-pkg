@@ -40,6 +40,7 @@
 #include "collision_space/environment.h"
 
 #include "btBulletCollisionCommon.h"
+#include <map>
 
 namespace collision_space
 {
@@ -76,11 +77,14 @@ namespace collision_space
 	/** \brief Remove all obstacles from collision model */
 	virtual void clearObstacles(void);
 
+	/** \brief Remove obstacles from a specific namespace in the collision model */
+	virtual void clearObstacles(const std::string &ns);
+
 	/** \brief Add a point cloud to the collision space */
-	virtual void addPointCloud(unsigned int n, const double *points); 
+	virtual void addPointCloudSpheres(const std::string &ns, unsigned int n, const double *points); 
 
 	/** \brief Add a plane to the collision space. Equation it satisfies is a*x+b*y+c*z = d*/
-	virtual void addStaticPlane(double a, double b, double c, double d);
+	virtual void addPlane(const std::string &ns, double a, double b, double c, double d);
 
 	/** \brief Add a robot model. Ignore robot links if their name is not
 	    specified in the string vector. The scale argument can be
@@ -88,7 +92,7 @@ namespace collision_space
 	    bodies (multiplicative factor). The padding can be used to
 	    increase or decrease the robot's bodies with by an
 	    additive term */
-	virtual void addRobotModel(const boost::shared_ptr<planning_models::KinematicModel> &model, const std::vector<std::string> &links, double scale = 1.0, double padding = 0.0);
+	virtual void setRobotModel(const boost::shared_ptr<planning_models::KinematicModel> &model, const std::vector<std::string> &links, double scale = 1.0, double padding = 0.0);
 
 	/** \brief Update the positions of the geometry used in collision detection */
 	virtual void updateRobotModel(void);
@@ -224,13 +228,14 @@ namespace collision_space
 	btCollisionObject* createCollisionBody(shapes::Shape *shape, double scale, double padding);
 	void freeMemory(void);
 	
-	SelfCollisionFilterCallback      m_selfCollisionFilterCallback;
-	GenericCollisionFilterCallback   m_genericCollisionFilterCallback;
+	SelfCollisionFilterCallback         m_selfCollisionFilterCallback;
+	GenericCollisionFilterCallback      m_genericCollisionFilterCallback;
 	
-	ModelInfo                        m_modelGeom;
-	std::vector<btCollisionObject*>  m_dynamicObstacles;
-	btCollisionWorld                *m_world;
-	btDefaultCollisionConfiguration *m_config;
+	ModelInfo                           m_modelGeom;
+	std::map<std::string, std::vector<btCollisionObject*> > 
+	                                    m_obstacles;
+	btCollisionWorld                   *m_world;
+	btDefaultCollisionConfiguration    *m_config;
 	
     };
 }

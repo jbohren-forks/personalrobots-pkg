@@ -82,7 +82,7 @@ void planning_environment::CollisionSpaceMonitor::setupCSM(void)
     else
 	for (unsigned int i = 0 ; i < planeValues.size() / 4 ; ++i)
 	{
-	    collisionSpace_->addStaticPlane(planeValues[i * 4], planeValues[i * 4 + 1], planeValues[i * 4 + 2], planeValues[i * 4 + 3]);
+	    collisionSpace_->addPlane("bounds", planeValues[i * 4], planeValues[i * 4 + 1], planeValues[i * 4 + 2], planeValues[i * 4 + 3]);
 	    ROS_INFO("Added static plane %fx + %fy + %fz + %f = 0", planeValues[i * 4], planeValues[i * 4 + 1], planeValues[i * 4 + 2], planeValues[i * 4 + 3]);
 	}
     
@@ -209,9 +209,9 @@ void planning_environment::CollisionSpaceMonitor::updateCollisionSpace(const map
     collisionSpace_->lock();
 
     if (clear)
-	collisionSpace_->clearObstacles();
+	collisionSpace_->clearObstacles("points");
     if (n > 0)
-        collisionSpace_->addPointCloud(n, data);
+        collisionSpace_->addPointCloudSpheres("points", n, data);
 
     collisionSpace_->unlock();
     

@@ -46,7 +46,7 @@ void collision_space::EnvironmentModel::setVerbose(bool verbose)
     m_verbose = verbose;
 }
 
-void collision_space::EnvironmentModel::addRobotModel(const boost::shared_ptr<planning_models::KinematicModel> &model, const std::vector<std::string> &links, double scale, double padding)
+void collision_space::EnvironmentModel::setRobotModel(const boost::shared_ptr<planning_models::KinematicModel> &model, const std::vector<std::string> &links, double scale, double padding)
 {
     m_robotModel = model;
     m_collisionLinks = links;
