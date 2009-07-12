@@ -22,14 +22,16 @@
 <include file="$(find ocean_battery_driver)/expected_batteries.launch"/>
 
 <!-- Base Laser -->
-  <node machine="two" pkg="hokuyo_node" type="hokuyo_node" name="base_hokuyo_node" args="scan:=base_scan">
+<!--  <node machine="two" pkg="hokuyo_node" type="hokuyo_node" name="base_hokuyo_node" args="scan:=base_scan">
     <param name="port" type="string" value="/dev/ttyACM0" />
     <param name="frameid" type="string" value="base_laser" />
     <param name="min_ang_degrees" type="double" value="-130.0" />
     <param name="max_ang_degrees" type="double" value="130.0" />
   </node>
+-->
 
 <!-- Tilt Laser -->
+
   <node  machine="realtime" pkg="hokuyo_node" type="hokuyo_node" name="tilt_hokuyo_node" args="scan:=tilt_scan">
     <param name="port" type="string" value="/dev/ttyACM0" />
     <param name="frameid" type="string" value="laser_tilt_link" />
@@ -62,7 +64,7 @@
     <node machine="four" pkg="dcam" type="stereodcam" name="stereodcam" respawn="false" >
       <param name="videre_mode" type="str" value="none"/>
       <param name="fps" type="double" value="15.0"/>
-      <param name="frame_id" type="string" value="stereo_optical_frame"/>
+      <param name="frame_id" type="string" value="double_stereo_wide_optical_frame"/>
       <param name="exposure_auto" type="bool" value="true"/>
       <param name="brightness_auto" type="bool" value="true"/>
       <param name="gain_auto" type="bool" value="true"/>
@@ -74,7 +76,7 @@
     <node machine="three" pkg="dcam" type="stereodcam" name="stereodcam" respawn="false" >
       <param name="videre_mode" type="str" value="none"/>
       <param name="fps" type="double" value="15.0"/>
-      <param name="frame_id" type="string" value="stereo_optical_frame"/>
+      <param name="frame_id" type="string" value="double_stereo_narrow_optical_frame"/>
       <param name="exposure_auto" type="bool" value="true"/>
       <param name="brightness_auto" type="bool" value="true"/>
       <param name="gain_auto" type="bool" value="true"/>
@@ -83,11 +85,11 @@
 
 
 <!-- Sound  -->
-  <node pkg="sound_play" type="soundplay_node.py" machine="three" />
-
+<!--  <node pkg="sound_play" type="soundplay_node.py" machine="three" />
+-->
 <!-- Runtime Diagnostics Logging -->
-  <node pkg="rosrecord" type="rosrecord" args="-f /hwlog/prg_runtime_automatic /diagnostics" />
-
+<!--  <node pkg="rosrecord" type="rosrecord" args="-f /hwlog/prg_runtime_automatic /diagnostics" />
+-->
 <!-- Joint Calibration Monitor -->
 <!--
   <node pkg="joint_calibration_monitor" type="pr2_calibration_monitor_node.py" machine="two" />
@@ -102,7 +104,8 @@
   <include file="$(find pr2_alpha)/pr2_monitors.launch" />
 
   <!-- Plug to chessboard offsets -->
-  <group ns="plug_detector">
+<!-- 
+ <group ns="plug_detector">
     <param name="plug_position_x" value="0.0065" />
     <param name="plug_position_y" value="-0.0065" />
     <param name="plug_position_z" value="0.016" />
@@ -111,7 +114,7 @@
     <param name="plug_orientation_z" value="0.00588" />
     <param name="plug_orientation_w" value="0.01906" />
   </group>
-
+-->
 
 </launch>
 
