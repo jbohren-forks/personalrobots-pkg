@@ -47,7 +47,6 @@ different settings may need to be employed.
 
 List of nodes:
 - \b motion_planner
-- \b state_validity_checker
 - \b display_planner_collision_model
 
 <!-- START: copy for each node -->
@@ -80,11 +79,6 @@ Subscribes to:
 
 - @b "plan_kinematic_path"/MotionPlan : given a robot model, starting and goal states,
   this service computes a collision free path.
-
-
-\subsection state_validity_checker
-
-Checks whether the current state of the robot is in collision
 
 
 \subsection display_planner_collision_model

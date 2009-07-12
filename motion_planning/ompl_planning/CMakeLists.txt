@@ -26,14 +26,10 @@ rospack_add_library(ompl_planning_helpers src/helpers/ompl_planner/PlannerSetup.
 rospack_link_boost(ompl_planning_helpers thread)
 
 rospack_add_executable(motion_planner src/motion_planner.cpp)
-rospack_add_executable(state_validity_monitor src/state_validity_monitor.cpp)
 rospack_add_executable(display_planner_collision_model src/display_planner_collision_model.cpp)
 
 rospack_link_boost(motion_planner thread)
-rospack_link_boost(state_validity_monitor thread)
 rospack_link_boost(display_planner_collision_model thread)
 
 target_link_libraries(motion_planner ompl_planning_helpers)
-target_link_libraries(state_validity_monitor ompl_planning_helpers)
 target_link_libraries(display_planner_collision_model ompl_planning_helpers)
-
