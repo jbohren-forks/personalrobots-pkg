@@ -95,7 +95,7 @@ void collision_space::EnvironmentModelBullet::setRobotModel(const boost::shared_
     }
 }
 
-btCollisionObject* collision_space::EnvironmentModelBullet::createCollisionBody(shapes::Shape *shape, double scale, double padding)
+btCollisionObject* collision_space::EnvironmentModelBullet::createCollisionBody(const shapes::Shape *shape, double scale, double padding)
 {
     btCollisionShape *btshape = NULL;
     
@@ -103,24 +103,24 @@ btCollisionObject* collision_space::EnvironmentModelBullet::createCollisionBody(
     {
     case shapes::SPHERE:
 	{
-	    btshape = dynamic_cast<btCollisionShape*>(new btSphereShape(static_cast<shapes::Sphere*>(shape)->radius * scale + padding));
+	    btshape = dynamic_cast<btCollisionShape*>(new btSphereShape(static_cast<const shapes::Sphere*>(shape)->radius * scale + padding));
 	}
 	break;
     case shapes::BOX:
 	{
-	    const double *size = static_cast<shapes::Box*>(shape)->size;
+	    const double *size = static_cast<const shapes::Box*>(shape)->size;
 	    btshape = dynamic_cast<btCollisionShape*>(new btBoxShape(btVector3((size[0] * scale + padding)/2.0, (size[1] * scale + padding)/2.0, (size[2] * scale + padding)/2.0)));
 	}	
 	break;
     case shapes::CYLINDER:
 	{
-	    double r2 = static_cast<shapes::Cylinder*>(shape)->radius * scale + padding / 2.0;
-	    btshape = dynamic_cast<btCollisionShape*>(new btCylinderShapeZ(btVector3(r2, r2, (static_cast<shapes::Cylinder*>(shape)->length * scale + padding)/2.0)));
+	    double r2 = static_cast<const shapes::Cylinder*>(shape)->radius * scale + padding / 2.0;
+	    btshape = dynamic_cast<btCollisionShape*>(new btCylinderShapeZ(btVector3(r2, r2, (static_cast<const shapes::Cylinder*>(shape)->length * scale + padding)/2.0)));
 	}
 	break;
     case shapes::MESH:
 	{
-	    shapes::Mesh *mesh = static_cast<shapes::Mesh*>(shape);
+	    const shapes::Mesh *mesh = static_cast<const shapes::Mesh*>(shape);
 	    btConvexHullShape *btmesh = new btConvexHullShape();
 	    
 	    for (unsigned int i = 0 ; i < mesh->vertexCount ; ++i)
@@ -291,6 +291,14 @@ void collision_space::EnvironmentModelBullet::addPlane(const std::string &ns, do
     object->setCollisionShape(shape);
     m_world->addCollisionObject(object);
     m_obstacles[ns].push_back(object);
+}
+
+void collision_space::EnvironmentModelBullet::addObject(const std::string &ns, const shapes::Shape *shape, const btTransform &pose)
+{
+    btCollisionObject *obj = createCollisionBody(shape, 1.0, 0.0);
+    obj->setWorldTransform(pose);
+    m_world->addCollisionObject(obj);
+    m_obstacles[ns].push_back(obj);
 }
 
 void collision_space::EnvironmentModelBullet::clearObstacles(const std::string &ns)

@@ -83,6 +83,9 @@ namespace collision_space
 	/** \brief Add a point cloud to the collision space */
 	virtual void addPointCloudSpheres(const std::string &ns, unsigned int n, const double *points); 
 
+	/** \brief Add a collision object to the map */
+	virtual void addObject(const std::string &ns, const shapes::Shape *shape, const btTransform &pose);
+
 	/** \brief Add a plane to the collision space. Equation it satisfies is a*x+b*y+c*z = d*/
 	virtual void addPlane(const std::string &ns, double a, double b, double c, double d);
 
@@ -225,7 +228,7 @@ namespace collision_space
 	    bool                             *m_enableSelfCollision;
 	};
 	
-	btCollisionObject* createCollisionBody(shapes::Shape *shape, double scale, double padding);
+	btCollisionObject* createCollisionBody(const shapes::Shape *shape, double scale, double padding);
 	void freeMemory(void);
 	
 	SelfCollisionFilterCallback         m_selfCollisionFilterCallback;

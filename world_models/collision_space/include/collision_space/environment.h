@@ -149,6 +149,9 @@ namespace collision_space
 	/** \brief Add a plane to the collision space. Equation it satisfies is a*x+b*y+c*z = d*/
 	virtual void addPlane(const std::string &ns, double a, double b, double c, double d) = 0;
 
+	/** \brief Add a collision object to the map */
+	virtual void addObject(const std::string &ns, const shapes::Shape *shape, const btTransform &pose) = 0;
+	
 	/**********************************************************************/
 	/* Miscellaneous Routines                                             */
 	/**********************************************************************/

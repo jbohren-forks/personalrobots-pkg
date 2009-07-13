@@ -86,32 +86,32 @@ void collision_space::EnvironmentModelODE::setRobotModel(const boost::shared_ptr
     }
 }
 
-dGeomID collision_space::EnvironmentModelODE::createODEGeom(dSpaceID space, ODEStorage &storage, shapes::Shape *shape, double scale, double padding)
+dGeomID collision_space::EnvironmentModelODE::createODEGeom(dSpaceID space, ODEStorage &storage, const shapes::Shape *shape, double scale, double padding)
 {
     dGeomID g = NULL;
     switch (shape->type)
     {
     case shapes::SPHERE:
 	{
-	    g = dCreateSphere(space, static_cast<shapes::Sphere*>(shape)->radius * scale + padding);
+	    g = dCreateSphere(space, static_cast<const shapes::Sphere*>(shape)->radius * scale + padding);
 	}
 	break;
     case shapes::BOX:
 	{
-	    const double *size = static_cast<shapes::Box*>(shape)->size;
+	    const double *size = static_cast<const shapes::Box*>(shape)->size;
 	    g = dCreateBox(space, size[0] * scale + padding, size[1] * scale + padding, size[2] * scale + padding);
 	}	
 	break;
     case shapes::CYLINDER:
 	{
-	    g = dCreateCylinder(space, static_cast<shapes::Cylinder*>(shape)->radius * scale + padding,
-				static_cast<shapes::Cylinder*>(shape)->length * scale + padding);
+	    g = dCreateCylinder(space, static_cast<const shapes::Cylinder*>(shape)->radius * scale + padding,
+				static_cast<const shapes::Cylinder*>(shape)->length * scale + padding);
 	}
 	break;
     case shapes::MESH:
 	{
 	    dTriMeshDataID data = dGeomTriMeshDataCreate();
-	    shapes::Mesh *mesh = static_cast<shapes::Mesh*>(shape);
+	    const shapes::Mesh *mesh = static_cast<const shapes::Mesh*>(shape);
 	    int icount = mesh->triangleCount * 3;
 	    dTriIndex *indices = new dTriIndex[icount];
 	    for (int i = 0 ; i < icount ; ++i)
@@ -498,6 +498,22 @@ void collision_space::EnvironmentModelODE::addPointCloudSpheres(const std::strin
 	cn->collide2.registerGeom(g);
     }
     cn->collide2.setup();
+}
+
+void collision_space::EnvironmentModelODE::addObject(const std::string &ns, const shapes::Shape *shape, const btTransform &pose)
+{
+    std::map<std::string, CollisionNamespace*>::iterator it = m_collNs.find(ns);
+    CollisionNamespace* cn = NULL;    
+    if (it == m_collNs.end())
+    {
+	cn = new CollisionNamespace(ns);
+	m_collNs[ns] = cn;
+    }
+    else
+	cn = it->second;
+    
+    dGeomID g = createODEGeom(cn->space, cn->storage, shape, 1.0, 0.0);
+    cn->geoms.push_back(g);
 }
 
 void collision_space::EnvironmentModelODE::addPlane(const std::string &ns, double a, double b, double c, double d)

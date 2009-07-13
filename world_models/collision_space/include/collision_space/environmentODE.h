@@ -81,6 +81,9 @@ namespace collision_space
 	/** \brief Add a point cloud to the collision space */
 	virtual void addPointCloudSpheres(const std::string &ns, unsigned int n, const double *points); 
 
+	/** \brief Add a collision object to the map */
+	virtual void addObject(const std::string &ns, const shapes::Shape *shape, const btTransform &pose);
+
 	/** \brief Add a plane to the collision space. Equation it satisfies is a*x+b*y+c*z = d*/
 	virtual void addPlane(const std::string &ns, double a, double b, double c, double d);
 	
@@ -306,7 +309,7 @@ namespace collision_space
 	/** \brief Internal function for collision detection */
 	void testBodyCollision(CollisionNamespace *cn, CollisionData *data);
 
-	dGeomID createODEGeom(dSpaceID space, ODEStorage &storage, shapes::Shape *shape, double scale, double padding);
+	dGeomID createODEGeom(dSpaceID space, ODEStorage &storage, const shapes::Shape *shape, double scale, double padding);
 	void    updateGeom(dGeomID geom, btTransform &pose) const;	
 	void    freeMemory(void);	
 	
