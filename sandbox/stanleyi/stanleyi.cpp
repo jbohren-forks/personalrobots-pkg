@@ -17,25 +17,38 @@
 USING_PART_OF_NAMESPACE_EIGEN
 //using namespace NEWMAT;
 using namespace std;
+using namespace cv;
 
 vector<ImageDescriptor*> setupImageDescriptors() {
   vector<ImageDescriptor*> d;
 
-  SuperpixelColorHistogram* sch1 = new SuperpixelColorHistogram(20, 0.5, 50, string("hue"));
-  SuperpixelColorHistogram* sch2 = new SuperpixelColorHistogram(5, 0.5, 50, string("hue"), NULL, sch1);
-  SuperpixelColorHistogram* sch3 = new SuperpixelColorHistogram(5, 1, 50, string("hue"), NULL, sch1);
-  SuperpixelColorHistogram* sch4 = new SuperpixelColorHistogram(5, .25, 50, string("hue"), NULL, sch1);
+// Size winSize, Size blockSize, Size blockStride, Size cellSize,
+//   int nbins, int derivAperture=1, double winSigma=-1,
+//   int histogramNormType=L2Hys, double L2HysThreshold=0.2, bool gammaCorrection=false)
+//  d.push_back(new HogWrapper());
+  d.push_back(new HogWrapper(Size(16,16), Size(16,16), Size(8,8), Size(8,8), 7, 1, -1, 0, 0.2, true));
+  d.push_back(new HogWrapper(Size(32,32), Size(16,16), Size(8,8), Size(8,8), 7, 1, -1, 0, 0.2, true));
+  d.push_back(new HogWrapper(Size(64,64), Size(32,32), Size(16,16), Size(16,16), 7, 1, -1, 0, 0.2, true));
+  d.push_back(new HogWrapper(Size(128,128), Size(64,64), Size(32,32), Size(32,32), 7, 1, -1, 0, 0.2, true));
 
+  SuperpixelColorHistogram* sch1 = new SuperpixelColorHistogram(20, 0.5, 10, string("hue"));
+  SuperpixelColorHistogram* sch2 = new SuperpixelColorHistogram(5, 0.5, 10, string("hue"), NULL, sch1);
+  SuperpixelColorHistogram* sch3 = new SuperpixelColorHistogram(5, 1, 10, string("hue"), NULL, sch1);
+  SuperpixelColorHistogram* sch4 = new SuperpixelColorHistogram(5, .25, 10, string("hue"), NULL, sch1);
   d.push_back(sch1);
   d.push_back(sch2);
   d.push_back(sch3);
   d.push_back(sch4);
 
-  d.push_back(new IntegralImageTexture());
-  d.push_back(new IntensityPatch(40, .5, true));
-  d.push_back(new IntensityPatch(20, 1, true));
-  d.push_back(new IntensityPatch(80, .25, true));
-  d.push_back(new IntensityPatch(120, 1.0/6.0, true));
+//   IntegralImageTexture* iit = new IntegralImageTexture(1);
+//   d.push_back(iit);
+//   d.push_back(new IntegralImageTexture(2, iit));
+//   d.push_back(new IntegralImageTexture(3, iit));
+
+//   d.push_back(new IntensityPatch(40, .5, true));
+//   d.push_back(new IntensityPatch(20, 1, true));
+//   d.push_back(new IntensityPatch(80, .25, true));
+//   d.push_back(new IntensityPatch(120, 1.0/6.0, true));
   return d;
 }
 
@@ -116,9 +129,11 @@ public:
   IplImage* mask_;
   vector<ImageDescriptor*> descriptor_;
 
-  object* computeFeaturesAtRandomPoint(int* row=NULL, int* col=NULL);
+  object* computeObjectAtRandomPoint(int* row=NULL, int* col=NULL);
   vector<object*> collectFeaturesFromImage(int samples_per_img);
   void induct(string bagfile, string results_dir);
+  void collectObjectsFromImageVectorized(int samples_per_img, vector<object*>* objects, Vector<Keypoint>* keypoints);
+  void sanityCheck(string bagfile, string results_dir);
 
   Stanleyi()
     : img_(NULL), mask_(NULL)
@@ -147,7 +162,7 @@ public:
   void makeClassificationVideo(string bagfile, Dorylus& d, int samples_per_img, string results_dir);
 };
 
-object* Stanleyi::computeFeaturesAtRandomPoint(int* row, int* col) {
+object* Stanleyi::computeObjectAtRandomPoint(int* row, int* col) {
   int r = rand() % img_->height;
   int c = rand() % img_->width;
   MatrixXf* result = NULL;
@@ -226,32 +241,92 @@ void Stanleyi::collectDataset(string bagfile, int samples_per_img, string save_n
     
     ROS_ASSERT(img_ != NULL);
     
-    //image_objs = collectFeaturesFromImage(samples_per_img);
-   
-    // -- Aim the descriptor functions at the new image.
-    for(unsigned int j=0; j<descriptor_.size(); j++) {
-      descriptor_[j]->setImage(img_);
-    }
+    Vector<Keypoint> keypoints;
+    collectObjectsFromImageVectorized(samples_per_img, &objs, &keypoints);
 
-    // -- Randomly sample points from the image and get the features.
-    for(int i=0; i<samples_per_img; i++) {
-      object* obj = computeFeaturesAtRandomPoint(NULL, NULL);
-
-      // -- Add the object to the dataset.
-      if(obj != NULL) {
-	objs.push_back(obj);
-      }
-	
-    }
     cvReleaseImage(&mask_);
   }
 
   DorylusDataset dd;
   dd.setObjs(objs);
+  cout << dd.status() << endl;
   dd.save(save_name);
 }
 
+MatrixXf* cvVector2Eigen(const Vector<float>& v) {
+  MatrixXf* m = new MatrixXf(v.size(), 1);
+  for(unsigned int i=0; i<v.size(); i++) {
+    (*m)(i,0) = v[i];
+  }
+  return m;
+}
 
+
+  //! Appends to objects.  If an object is invalid, a NULL pointer is used so that keypoints[i] corresponds to objects[i].
+void Stanleyi::collectObjectsFromImageVectorized(int samples_per_img, vector<object*>* objects, Vector<Keypoint>* keypoints) {
+  vector<vvf> results(descriptor_.size());
+  Vector<Keypoint> desired;
+
+  // -- Choose random locations and make keypoints.
+  keypoints->clear();
+  keypoints->reserve(samples_per_img);
+  desired.reserve(samples_per_img);
+  vector<int> labels(samples_per_img);
+  for(int i=0; i<samples_per_img; i++)  {
+    int r = rand() % img_->height;
+    int c = rand() % img_->width;
+    desired.push_back(Keypoint(c, r));
+
+    if(mask_) {
+      CvScalar s = cvGet2D(mask_, r, c);
+      labels[i] = s.val[0];
+      if(labels[i] != 0) {
+	labels[i] = 1;
+      }
+    }
+    else
+      labels[i] = -1;
+      
+  }
+  
+  // -- Call all descriptors, get vectorized results.
+  for(unsigned int i=0; i<descriptor_.size(); i++) {
+    Mat m = cvarrToMat(img_);
+    descriptor_[i]->compute(img_, desired, results[i]);
+    //cout << "Got " << results[i].size() << " features" << endl;
+    //cout << "with " << results[i][0].size() << " elements each. " << endl;
+  }
+
+
+  // -- Copy into objects.
+  for(int i=0; i<samples_per_img; i++)  {
+    object* obj = new object;
+    obj->label = labels[i];
+
+    bool success = true;
+    //cout << descriptor_.size() << " descriptors.  " << results.size() << endl;
+    for(unsigned int j=0; j<descriptor_.size(); j++) {
+      //cout << samples_per_img << " objects.  " << results[j].size() << endl;
+      //cout << descriptor_[j]->result_size_ << " elem.  " << results[j][i].size() << endl;
+
+      if(results[j][i].empty()) {
+	success = false;
+	break;
+      }
+      obj->features[descriptor_[j]->name_] = cvVector2Eigen(results[j][i]);
+    }
+    if(success) {
+      objects->push_back(obj);
+      keypoints->push_back(desired[i]);
+    }
+    else {
+      delete obj;
+    }
+  }
+
+
+  cout << "sizes: " <<  objects->size() << " " << keypoints->size() << endl;
+}
 
 vector<object*> Stanleyi::collectFeaturesFromImage(int samples_per_img) {
   vector<object*> objs;
@@ -263,7 +338,7 @@ vector<object*> Stanleyi::collectFeaturesFromImage(int samples_per_img) {
   
   // -- Randomly sample points from the image and get the features.
   for(int i=0; i<samples_per_img; i++) {
-    object* obj = computeFeaturesAtRandomPoint(NULL, NULL);
+    object* obj = computeObjectAtRandomPoint(NULL, NULL);
     
     // -- Add the object to the dataset.
     if(obj != NULL) {
@@ -271,6 +346,13 @@ vector<object*> Stanleyi::collectFeaturesFromImage(int samples_per_img) {
     }
   }
   return objs;
+}
+
+void Stanleyi::sanityCheck(string bagfile, string results_dir) {
+  // -- Find first labeled image.
+  // -- Collect dataset on that image.
+  // -- Train classifier.
+  // -- Make predictions on that image.
 }
 
 void Stanleyi::makeClassificationVideo(string bagfile, Dorylus& d, int samples_per_img, string results_dir) {
@@ -285,11 +367,10 @@ void Stanleyi::makeClassificationVideo(string bagfile, Dorylus& d, int samples_p
 
   int row = 0, col = 0;
   IplImage* vis = NULL;
-  object* obj = NULL;
   NEWMAT::Matrix response_nm;
   int frame_num = 0;
   CvVideoWriter* writer = NULL;
-
+  vector<object*> objects;
 
   int skip_frames = 184;
   if(getenv("SKIP_FRAMES") != NULL) 
@@ -320,18 +401,19 @@ void Stanleyi::makeClassificationVideo(string bagfile, Dorylus& d, int samples_p
     if(getenv("DEBUG_POSITIVES") != NULL &&  mask == NULL)
       continue;
 
-    // -- Aim the descriptor functions at the new image.
-    for(unsigned int j=0; j<descriptor_.size(); j++) {
-      descriptor_[j]->setImage(img_);
-    }
+
+    Vector<Keypoint> keypoints;
+    objects.clear();
+    collectObjectsFromImageVectorized(samples_per_img, &objects, &keypoints);
 
     int tp=0, fp=0, tn=0, fn=0;
-    for(int i=0; i<samples_per_img; i++) {
-      obj = computeFeaturesAtRandomPoint(&row, &col);
-      if(!obj)
+    for(int i=0; i<objects.size(); i++) {
+      if(objects[i] == NULL) 
 	continue;
-      response_nm = d.classify(*obj);
-      delete obj;
+      //cout << objects[i]->status(false) << endl;
+      response_nm = d.classify(*objects[i]);
+      col = keypoints[i].pt.x;
+      row = keypoints[i].pt.y;
 
       if(mask) {
 	CvScalar s = cvGet2D(mask, row, col);
@@ -346,6 +428,8 @@ void Stanleyi::makeClassificationVideo(string bagfile, Dorylus& d, int samples_p
 	else// if(label == 0 && response_nm(1,1) > 0)
 	  fn++;
       }
+
+      //cout << response_nm.Nrows() << " " << response_nm.Ncols() << endl;
 
       if(response_nm(1,1) > 0) {
 	cvCircle(vis, cvPoint(col, row), 2, cvScalar(0,255,0), 2);
@@ -552,7 +636,7 @@ void Stanleyi::induct(string bagfile, string results_dir) {
 
     // -- Compute features across the image.
     for(int i=0; i<samples_per_img; i++) {
-      obj = computeFeaturesAtRandomPoint(&row, &col);
+      obj = computeObjectAtRandomPoint(&row, &col);
       if(!obj)
 	continue;
 
@@ -583,7 +667,6 @@ void Stanleyi::induct(string bagfile, string results_dir) {
   }
   cvReleaseVideoWriter(&writer);
 }
-
 
 int main(int argc, char** argv) 
 {
