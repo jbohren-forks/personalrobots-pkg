@@ -57,7 +57,7 @@
           <elem key="material" value="PR2/${parent}_${suffix}_wheel_link" />
         </map>
         <geometry name="${parent}_${suffix}_wheel_visual">
-          <mesh filename="wheel" />
+          <mesh filename="pr2_wheel" />
         </geometry>
 
       </visual>
@@ -174,7 +174,7 @@
           <elem key="material" value="PR2/${parent}_${suffix}_wheel_link" />
         </map>
         <geometry name="${parent}_${suffix}_wheel_visual">
-          <mesh filename="wheel" />
+          <mesh filename="pr2_wheel" />
         </geometry>
 
       </visual>
