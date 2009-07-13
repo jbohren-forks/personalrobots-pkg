@@ -182,6 +182,7 @@ Subscribes to:
  - @b "mechanism_state"/MechanismState : the parameters describing the robot's current state
  - @b "collision_map"/CollisionMap : data describing the 3D environment
  - @b "collision_map_update"/CollisionMap : updates (additive) to data describing the 3D environment
+ - @b "object_in_map"/ObjectInMap : definition of an object identified in the environment (to be used for collision checking)
  - @b "attach_object"/AttachedObject : data describing an object to be attached to a link
 
 \subsection parameters ROS parameters
