@@ -20,6 +20,7 @@ In the future, I may add more sophisticated (more efficient) transport methods.
 <depend package="self_test"/>
 <sysdepend package="libcurl3-openssl-dev" os="ubuntu" version="7.04-feisty"/>
 <sysdepend package="libcurl4-openssl-dev" os="ubuntu" version="8.04-hardy"/>
+<sysdepend package="libcurl4-openssl-dev" os="ubuntu" version="9.04-jaunty"/>
 <rosdep name="curl"/>
 <export>
   <cpp cflags="-I${prefix}/include -I${prefix}/msg/cpp" lflags="-L${prefix}/lib -laxis -lcurl"/>
