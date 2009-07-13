@@ -227,12 +227,16 @@ namespace collision_space
 		for (unsigned int i = 0 ; i < meshIndices.size() ; ++i)
 		    delete[] meshIndices[i];
 		meshIndices.clear();
+		for (unsigned int i = 0 ; i < meshVertices.size() ; ++i)
+		    delete[] meshVertices[i];
+		meshVertices.clear();
 		for (unsigned int i = 0 ; i < meshData.size() ; ++i)
 		    dGeomTriMeshDataDestroy(meshData[i]);
 		meshData.clear();
 	    }
 	    
 	    /* Pointers for ODE indices; we need this around in ODE's assumed datatype */
+	    std::vector<double*>        meshVertices;
 	    std::vector<dTriIndex*>     meshIndices;
 	    std::vector<dTriMeshDataID> meshData;
 	};

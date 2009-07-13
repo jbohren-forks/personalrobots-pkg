@@ -116,8 +116,12 @@ dGeomID collision_space::EnvironmentModelODE::createODEGeom(dSpaceID space, ODES
 	    dTriIndex *indices = new dTriIndex[icount];
 	    for (int i = 0 ; i < icount ; ++i)
 		indices[i] = mesh->triangles[i];
-	    dGeomTriMeshDataBuildDouble(data, mesh->vertices, sizeof(double) * 3, mesh->vertexCount, indices, icount, sizeof(dTriIndex) * 3);
+	    double *vertices = new double[mesh->vertexCount];
+	    for (unsigned int i = 0 ; i < mesh->vertexCount ; ++i)
+		vertices[i] = mesh->vertices[i];
+	    dGeomTriMeshDataBuildDouble(data, vertices, sizeof(double) * 3, mesh->vertexCount, indices, icount, sizeof(dTriIndex) * 3);
 	    g = dCreateTriMesh(space, data, NULL, NULL, NULL);
+	    storage.meshVertices.push_back(vertices);
 	    storage.meshIndices.push_back(indices);
 	    storage.meshData.push_back(data);
 	}
