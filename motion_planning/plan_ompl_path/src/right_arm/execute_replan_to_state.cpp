@@ -39,7 +39,7 @@
     The minimum number of things to get the arm to move (and replan) is done.
  */
 
-#include <planning_environment/kinematic_model_state_monitor.h>
+#include <planning_environment/monitors/kinematic_model_state_monitor.h>
 
 // service for (re)planning to a state
 #include <motion_planning_srvs/MotionPlan.h>

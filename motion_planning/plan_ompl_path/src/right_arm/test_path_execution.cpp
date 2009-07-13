@@ -39,7 +39,7 @@
     between the defined limits. Agreement with the mechanism control
     is looked at as well.  */
 
-#include <planning_environment/kinematic_model_state_monitor.h>
+#include <planning_environment/monitors/kinematic_model_state_monitor.h>
 #include <manipulation_msgs/JointTraj.h>
 #include <pr2_mechanism_controllers/TrajectoryStart.h>
 #include <pr2_mechanism_controllers/TrajectoryQuery.h>
