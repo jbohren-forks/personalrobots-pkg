@@ -8,7 +8,8 @@ gensrv()
 
 rospack_add_boost_directories()
 
-set(TREX_FILES src/main.cpp
+set(TREX_FILES src/adapters.cpp
+	       src/main.cpp
                src/ros_reactor.cpp
 	       src/executive.cpp
 	       src/monitor.cpp
@@ -28,3 +29,6 @@ rospack_add_library(trex_ros ${TREX_FILES})
 # and dispense shutdown commands to highlevel controllers (deactivation) if pings are
 # not received in time
 rospack_add_executable(bin/trexwatchdog src/watch_dog.cpp)
+
+# Implementation of actions 
+rospack_add_executable(bin/actions src/actions.cpp)

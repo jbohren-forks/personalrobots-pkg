@@ -1,7 +1,31 @@
 /**
  * This file specifies the interface for actions in the plugs domain
- * @note Detection of the plug on the base is specified in the safety area.
  */
+
+/**
+ * @brief This is a sensing action which will be used during navigation and recharging.
+ *
+ * It should return success if it found the plug, and the plug is on the base in the expected position. 
+ * It will take as input an expected x, y, and th triple in the 'robot frame' and it will give feedback of the 
+ * actual x and y values.
+ */
+class DetectPlugOnBase extends ROSAction {
+
+  predicate Active {}
+
+  predicate Inactive {
+    float time_stamp; // A double encoding is reliable
+    string frame_id;
+    bool stowed;
+    float x;
+    float y;
+    float z;
+  }
+
+  DetectPlugOnBase(Mode _mode){ super(_mode);}
+};
+
+
 class PlugDomainAction extends ROSAction{
   predicate Active{}
   predicate Inactive{}

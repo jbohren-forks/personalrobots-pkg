@@ -1,6 +1,9 @@
 /**
  * @brief Collection of various components to use
  */
+#ifndef TREX_ROS_COMPONENTS_H_
+#define TREX_ROS_COMPONENTS_H_
+
 #include "ros/ros.h"
 
 #include "Constraint.hh"
@@ -90,3 +93,5 @@ namespace TREX {
     const TokenId _source_token;
   };
 }
+
+#endif

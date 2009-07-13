@@ -13,11 +13,6 @@
 // Mechanisms used for driving and tucking arms
 HeadMechanism head_mechanism = new HeadMechanism(External);
 
-// Controller requirements for actions
-DetectPlugOnBase::Active{
-  contained_by(laser_tilt_mechanism.use_laser_tilt_controller);
-}
-
 // Controller and laser configuration requirements
 MoveBase::Active{
   contained_by(head_mechanism.use_head_controller);

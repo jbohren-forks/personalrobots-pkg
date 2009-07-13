@@ -354,7 +354,7 @@ int main(int argc, char** argv){
 
   trex_pr2::SimpleStubAction<std_msgs::String> shell_command("shell_command");
   if (getComponentParam("/trex/enable_shell_command"))
-    runner.connect<std_msgs::String, pr2_robot_actions::ShellCommandState, std_msgs::String>(shell_command);
+    runner.connect<std_msgs::String, robot_actions::ShellCommandState, std_msgs::String>(shell_command);
 
 
   trex_pr2::SimpleStubAction<door_msgs::Door> notify_door_blocked("notify_door_blocked");

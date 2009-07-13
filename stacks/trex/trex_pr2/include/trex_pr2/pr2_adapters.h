@@ -49,12 +49,12 @@
 #include <plugs_msgs/PlugStow.h>
 #include <robot_actions/action_runner.h>
 #include <robot_actions/action.h>
+#include <robot_actions/StopActionState.h>
+#include <robot_actions/ShellCommandState.h>
 #include <robot_actions/NoArgumentsActionState.h>
 #include <pr2_robot_actions/DoorActionState.h>
 #include <pr2_robot_actions/CheckPathState.h>
 #include <pr2_robot_actions/NotifyDoorBlockedState.h>
-#include <pr2_robot_actions/ShellCommandState.h>
-#include <pr2_robot_actions/StopActionState.h>
 #include <nav_robot_actions/MoveBaseState.h>
 #include <pr2_robot_actions/RechargeState.h>
 #include <pr2_robot_actions/DetectPlugOnBaseState.h>

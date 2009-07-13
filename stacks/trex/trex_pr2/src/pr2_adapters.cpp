@@ -127,20 +127,6 @@ namespace TREX {
   // Allocate Factory
   TeleoReactor::ConcreteFactory<CheckPathAdapter> CheckPathAdapter_Factory("CheckPathAdapter");
 
-  /***********************************************************************
-   * @brief NoArgumentsAction action
-   **********************************************************************/
-  class NoArgumentsActionAdapter: public ROSActionAdapter<std_msgs::Empty, robot_actions::NoArgumentsActionState, std_msgs::Empty> {
-  public:
-
-    NoArgumentsActionAdapter(const LabelStr& agentName, const TiXmlElement& configData)
-      : ROSActionAdapter<std_msgs::Empty, robot_actions::NoArgumentsActionState,  std_msgs::Empty>(agentName, configData){
-    }
-  };
-
-  // Allocate Factory
-  TeleoReactor::ConcreteFactory<NoArgumentsActionAdapter> NoArgumentsActionAdapter_Factory("NoArgumentsActionAdapter");
-
 
   /***********************************************************************
    * @@brief Recharge action
@@ -185,58 +171,6 @@ namespace TREX {
 
   // Allocate Factory
   TeleoReactor::ConcreteFactory<PlugInAdapter> PlugInAdapter_Factory("PlugInAdapter");
-
-
-  /***********************************************************************
-   * @brief ShellCommand action will take system commands in strings and 
-   * ship them for execution.
-   **********************************************************************/
-  class ShellCommandAdapter: public ROSActionAdapter<std_msgs::String, pr2_robot_actions::ShellCommandState, std_msgs::String> {
-  public:
-
-    ShellCommandAdapter(const LabelStr& agentName, const TiXmlElement& configData)
-      : ROSActionAdapter<std_msgs::String, pr2_robot_actions::ShellCommandState, std_msgs::String>(agentName, configData){
-    }
-    
-    virtual void fillActiveObservationParameters(const std_msgs::String& msg, ObservationByValue* obs){
-      obs->push_back("request", AdapterUtilities::toStringDomain(msg));
-    }
-
-    virtual void fillInactiveObservationParameters(const std_msgs::String& msg, ObservationByValue* obs){ 
-      obs->push_back("response", AdapterUtilities::toStringDomain(msg));
-    }
-
-    void fillDispatchParameters(std_msgs::String& msg, const TokenId& goalToken){
-      const StringDomain& dom = static_cast<const StringDomain&>(goalToken->getVariable("request")->lastDomain());
-      AdapterUtilities::write(dom, msg);
-    }
-  };  
-
-  // Allocate Factory
-  TeleoReactor::ConcreteFactory<ShellCommandAdapter> ShellCommandAdapter_Factory("ShellCommandAdapter");
-
-  /***********************************************************************
-   * @brief StopAction action 
-   **********************************************************************/
-  class StopActionAdapter: public ROSActionAdapter<std_msgs::String, pr2_robot_actions::StopActionState, std_msgs::Empty> {
-  public:
-
-    StopActionAdapter(const LabelStr& agentName, const TiXmlElement& configData)
-      : ROSActionAdapter<std_msgs::String, pr2_robot_actions::StopActionState, std_msgs::Empty>(agentName, configData){
-    }
-    
-    virtual void fillActiveObservationParameters(const std_msgs::String& msg, ObservationByValue* obs){
-      obs->push_back("action_name", AdapterUtilities::toStringDomain(msg));
-    }
-
-    void fillDispatchParameters(std_msgs::String& msg, const TokenId& goalToken){
-      const StringDomain& dom = static_cast<const StringDomain&>(goalToken->getVariable("action_name")->lastDomain());
-      AdapterUtilities::write(dom, msg);
-    }
-  };  
-
-  // Allocate Factory
-  TeleoReactor::ConcreteFactory<StopActionAdapter> StopActionAdapter_Factory("StopActionAdapter");
 
 
   /***********************************************************************

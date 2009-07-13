@@ -37,5 +37,5 @@
   <param name="/trex/enable_doors_grasp_handle" value="true"/>
 
   <node pkg="trex_pr2" type="stub_ros_container" respawn="false" />
-  <node pkg="trex_pr2" type="actions" respawn="false" />
+  <node pkg="trex_ros" type="actions" respawn="false" />
 </launch>

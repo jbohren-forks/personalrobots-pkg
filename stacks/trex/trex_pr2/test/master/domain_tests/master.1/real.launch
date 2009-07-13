@@ -40,7 +40,7 @@
   <param name="/trex/enable_doors_touch_door" value="true"/>
   <param name="/trex/enable_doors_grasp_handle" value="true"/>
   <node pkg="trex_pr2" type="stub_ros_container" respawn="false" />
-  <node pkg="trex_pr2" type="actions" respawn="false" />
+  <node pkg="trex_ros" type="actions" respawn="false" />
 
   <param name="/trex/update_rate" value="1"/>
   <param name="/trex/input_file" value="master.cfg"/>
