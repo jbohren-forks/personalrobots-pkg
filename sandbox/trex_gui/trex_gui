@@ -177,7 +177,7 @@ class TimelineTokenCanvas(wx.ScrolledWindow):
   def OnScrollWin(self, event):
     # If we were close enough to the frontier, stick to it
     dist_from_edge = abs(self.GetViewStart()[0] - (self.GetVirtualSize()[0] - self.GetScrollPageSize(wx.SB_HORIZONTAL)))
-    if  dist_from_edge < self.tick_ahead:
+    if  dist_from_edge < 50:
       self.scroll_to_frontier = True
     else:
       self.scroll_to_frontier = False
@@ -187,21 +187,21 @@ class TimelineTokenCanvas(wx.ScrolledWindow):
     if self.reactor.plan_desc.name is not '':
       # Get the current tick
       self.tick = self.reactor.plan_desc.tick
-      self.reactor.trex_frame.SetStatusText("Tick %d" % (self.tick))
+      self.reactor.trex_frame.SetStatusText("Tick %d" % (self.tick),0)
+      self.reactor.trex_frame.SetStatusText("%d Tokens" % (len(self.reactor.all_tokens)),1)
 
       # Capture the control states
-      self.tick_scale = self.reactor.trex_frame.tick_scale.GetValue()/10.0
+      self.tick_scale = self.reactor.trex_frame.tick_scale.GetValue()
       self.tick_ahead = self.reactor.trex_frame.tick_ahead.GetValue()
       self.tick_behind = self.reactor.trex_frame.tick_behind.GetValue()
 
       # Update scrollbars
-      self.tick_window = (self.tick_behind+self.tick, self.tick+self.tick_ahead)
-      virtsize = (self.tick_scale*(self.tick_behind + self.tick_ahead))
+      virtsize = (self.tick_scale+self.tick_ahead)
       self.SetVirtualSize(size=(virtsize, len(self.reactor.plan.timelines)*(self.reactor.TIMELINE_HEIGHT+self.reactor.TIMELINE_SPACE)))
 
       # Scroll to the execution frontier if requested
       if self.scroll_to_frontier:
-	self.Scroll(self.tick_scale*self.tick_behind,self.GetViewStart()[1])
+	self.Scroll(self.tick_scale,self.GetViewStart()[1])
 
       # Paint
       dc = wx.BufferedPaintDC(self)
@@ -214,7 +214,7 @@ class TimelineTokenCanvas(wx.ScrolledWindow):
       # Draw execution frontier
       dc.SetPen(wx.Pen('#FFFFFF', 0, wx.TRANSPARENT))
       dc.SetBrush(wx.Brush('#AAAAAA'))
-      dc.DrawRectangle(self.tick_scale*self.tick_behind, 0, self.tick_scale*self.tick_ahead, 4000)
+      dc.DrawRectangle(self.tick_scale, 0, self.tick_ahead, 4000)
 
 
       # Draw the tokens in each timeline
@@ -235,7 +235,10 @@ class TimelineTokenCanvas(wx.ScrolledWindow):
 	# Get token
 	token = self.reactor.all_tokens[key]
 
-	if token.tick < self.reactor.plan_desc.tick-50:
+	if token.tick < self.reactor.plan_desc.tick-self.tick_behind:
+	  continue
+
+	if token.name == "BaseState.Holds":
 	  continue
 
 	#DEBUGprint "TICK: %d, EARLIEST_START: %d, LATEST_END: %d" % (self.reactor.plan_desc.tick, earliest_start, latest_end)
@@ -253,7 +256,7 @@ class TimelineTokenCanvas(wx.ScrolledWindow):
 	tok_width_label = max(w_label,w_end_str)
 
 	# Switch draw behavior if this token has started or is planned
-	HORZ_OFFSET = 2000
+	HORZ_OFFSET = self.tick_scale
 	if token.start[0] == token.start[1]:
 	  # Has started
 	  # Calculate the token pixel width
@@ -266,6 +269,9 @@ class TimelineTokenCanvas(wx.ScrolledWindow):
 	  # Calculate the token end point
 	  # This is the start of the earliest token on the timeline that this token is being drawn onto
 	  tok_end = token.timeline.earliest_start
+
+	  if tok_end < -HORZ_OFFSET:
+	    continue
 
 	  # Increment earliest start for this timelines
 	  token.timeline.earliest_start = token.timeline.earliest_start - tok_width
@@ -518,22 +524,22 @@ class TREXFrame(wx.Frame):
     controls_box = wx.BoxSizer(wx.VERTICAL)
 
     ##################
-    time_sizer = wx.StaticBoxSizer(wx.StaticBox(self.controls_panel, -1, 'Time Options'), orient=wx.VERTICAL)
+    time_sizer = wx.StaticBoxSizer(wx.StaticBox(self.controls_panel, -1, 'Window Options'), orient=wx.VERTICAL)
     self.expand_metric_time = wx.CheckBox(self.controls_panel, -1, 'Expand tokens to metric time', style=wx.RB_GROUP)
     time_sizer.Add(self.expand_metric_time)
 
     # Controls for lookahead and lookbehind 
     panel1 = wx.Panel(self.controls_panel, -1)
     grid1 = wx.GridSizer(3, 2)
-    self.tick_behind = wx.SpinCtrl(panel1, min=1, max=10000, initial=300)
-    self.tick_ahead = wx.SpinCtrl(panel1,  min=1, max=1000, initial=25)
-    self.tick_scale = wx.SpinCtrl(panel1,  min=1, max=10000, initial=20)
+    self.tick_behind = wx.SpinCtrl(panel1, min=1, max=10000, initial=50)
+    self.tick_ahead = wx.SpinCtrl(panel1,  min=1, max=10000, initial=300)
+    self.tick_scale = wx.SpinCtrl(panel1,  min=1, max=10000, initial=1200)
 
     grid1.Add(wx.StaticText(panel1, -1, 'Lookbehind: ', (5, 5)), 0,  wx.ALIGN_CENTER_VERTICAL)
     grid1.Add(self.tick_behind)
-    grid1.Add(wx.StaticText(panel1, -1, 'Lookahead: ', (5, 5)), 0, wx.ALIGN_CENTER_VERTICAL)
+    grid1.Add(wx.StaticText(panel1, -1, 'Future Width: ', (5, 5)), 0, wx.ALIGN_CENTER_VERTICAL)
     grid1.Add(self.tick_ahead)
-    grid1.Add(wx.StaticText(panel1, -1, 'Tick Size: ', (5, 5)), 0, wx.ALIGN_CENTER_VERTICAL)
+    grid1.Add(wx.StaticText(panel1, -1, 'Past Width: ', (5, 5)), 0, wx.ALIGN_CENTER_VERTICAL)
     grid1.Add(self.tick_scale)
 
     panel1.SetSizer(grid1)
