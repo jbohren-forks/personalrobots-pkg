@@ -33,7 +33,7 @@
 	  <elem key="material" value="PR2/Blue" />
         </map>
         <geometry name="${side}_ptz_pan_visual">
-          <mesh filename="pr2/ptz_base_${side}" />
+          <mesh filename="ptz_base_${side}" />
         </geometry>
       </visual>
 
@@ -71,7 +71,7 @@
 	  <elem key="material" value="PR2/Red" />
         </map>
         <geometry name="${side}_ptz_tilt_visual">
-          <mesh filename="pr2/ptz_top_${side}" />
+          <mesh filename="ptz_top_${side}" />
         </geometry>
       </visual>
 

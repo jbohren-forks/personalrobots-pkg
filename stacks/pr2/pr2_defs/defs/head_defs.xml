@@ -36,7 +36,7 @@
           <elem key="material" value="PR2/Red" />
         </map>
         <geometry name="${name}_mount_visual">
-          <mesh filename="pr2/hok_tilt" />
+          <mesh filename="hok_tilt" />
         </geometry>
       </visual>
 
@@ -417,7 +417,7 @@
           <elem key="material" value="PR2/Blue" />
         </map>
         <geometry name="${name}_visual">
-          <mesh filename="pr2/head_pan" />
+          <mesh filename="head_pan" />
         </geometry>
       </visual>
 
@@ -467,7 +467,7 @@
           <elem key="material" value="PR2/Green" />
         </map>
         <geometry name="${name}_visual">
-          <mesh filename="pr2/head_tilt" />
+          <mesh filename="head_tilt" />
         </geometry>
       </visual>
 
@@ -559,7 +559,7 @@
           <elem key="material" value="PR2/Red" />
         </map>
         <geometry name="${name}_mount_visual">
-          <mesh filename="pr2/hok_tilt" />
+          <mesh filename="hok_tilt" />
         </geometry>
       </visual>
 
@@ -677,7 +677,7 @@
           <elem key="material" value="PR2/Blue" />
         </map>
         <geometry name="${name}_visual">
-          <mesh filename="pr2/head_pan" />
+          <mesh filename="head_pan" />
         </geometry>
       </visual>
 
@@ -726,7 +726,7 @@
           <elem key="material" value="PR2/Green" />
         </map>
         <geometry name="${name}_visual">
-          <mesh filename="pr2/head_tilt" />
+          <mesh filename="head_tilt" />
         </geometry>
       </visual>
 
@@ -774,7 +774,7 @@
           <elem key="material" value="PR2/Green" />
         </map>
         <geometry name="${name}_visual">
-          <mesh filename="pr2/head_tilt" />
+          <mesh filename="head_tilt" />
         </geometry>
       </visual>
 
@@ -821,7 +821,7 @@
           <elem key="material" value="PR2/Green" />
         </map>
         <geometry name="${name}_visual">
-          <mesh filename="pr2/head_tilt" />
+          <mesh filename="head_tilt" />
         </geometry>
       </visual>
 

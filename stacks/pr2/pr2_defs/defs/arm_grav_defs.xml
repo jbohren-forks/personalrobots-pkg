@@ -49,7 +49,7 @@
           <elem key="material">PR2/Blue</elem>
         </map>
         <geometry name="${side}_shoulder_pan_visual">
-          <mesh filename="pr2/shoulder_yaw" />
+          <mesh filename="shoulder_yaw" />
         </geometry>
       </visual>
       <collision>
@@ -113,7 +113,7 @@
           <elem key="material">PR2/Grey</elem>
         </map>
         <geometry name="${side}_shoulder_lift_visual">
-          <mesh filename="pr2/shoulder_lift" />
+          <mesh filename="shoulder_lift" />
         </geometry>
       </visual>
       <collision>
@@ -180,7 +180,7 @@
           <elem key="material">PR2/Green</elem>
         </map>
         <geometry name="${side}_upper_arm_roll_visual">
-          <mesh filename="pr2/upper_arm" />
+          <mesh filename="upper_arm" />
         </geometry>
       </visual>
 
@@ -248,7 +248,7 @@
           <elem key="material">PR2/Grey</elem>
         </map>
         <geometry name="${side}_elbow_flex_visual">
-          <mesh filename="pr2/elbow_flex" />
+          <mesh filename="elbow_flex" />
         </geometry>
       </visual>
       <collision>
@@ -361,7 +361,7 @@
           <elem key="material">PR2/Blue</elem>
         </map>
         <geometry name="${side}_forearm_roll_visual">
-          <mesh filename="pr2/forearm" />
+          <mesh filename="forearm" />
         </geometry>
       </visual>
       <collision>
@@ -426,7 +426,7 @@
           <elem key="material">PR2/Grey</elem>
         </map>
         <geometry name="${side}_wrist_flex_visual">
-          <mesh filename="pr2/wrist_flex" />
+          <mesh filename="wrist_flex" />
         </geometry>
       </visual>
       <collision>
@@ -482,7 +482,7 @@
           <elem key="material">PR2/Red</elem>
         </map>
         <geometry name="${side}_wrist_roll_visual">
-          <mesh filename="pr2/wrist_roll" />
+          <mesh filename="wrist_roll" />
         </geometry>
       </visual>
       <collision>

@@ -16,7 +16,7 @@
 
   <!-- declare the path where all models/textures/materials are stored -->
   <resource type="stl_meshes" location="$(find pr2_defs)/meshes"/>
-  <resource type="ogre"       location="$(find pr2_ogre)/Media/models/pr2"/>
+  <resource type="ogre"       location="$(find pr2_ogre)/Media/models"/>
 
   <include filename="$(find pr2_defs)/calibration/default_cal.xml" />
   <include filename="$(find pr2_defs)/defs/arm_defs.xml" />

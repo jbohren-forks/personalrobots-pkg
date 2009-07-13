@@ -57,7 +57,7 @@
           <elem key="material" value="PR2/${parent}_${suffix}_wheel_link" />
         </map>
         <geometry name="${parent}_${suffix}_wheel_visual">
-          <mesh filename="pr2/wheel" />
+          <mesh filename="wheel" />
         </geometry>
 
       </visual>
@@ -123,7 +123,7 @@
           <elem key="material" value="PR2/Green" />
         </map>
         <geometry name="${suffix}_caster_rotation_visual">
-          <mesh filename="pr2/caster" scale="1 1 1"/>
+          <mesh filename="caster" scale="1 1 1"/>
         </geometry>
       </visual>
 
@@ -174,7 +174,7 @@
           <elem key="material" value="PR2/${parent}_${suffix}_wheel_link" />
         </map>
         <geometry name="${parent}_${suffix}_wheel_visual">
-          <mesh filename="pr2/wheel" />
+          <mesh filename="wheel" />
         </geometry>
 
       </visual>
@@ -240,7 +240,7 @@
           <elem key="material" value="PR2/Green" />
         </map>
         <geometry name="${suffix}_caster_rotation_visual">
-          <mesh filename="pr2/caster" scale="1 1 1"/>
+          <mesh filename="caster" scale="1 1 1"/>
         </geometry>
       </visual>
 
@@ -286,7 +286,7 @@
           <elem key="material" value="PR2/Green" />
         </map>
         <geometry name="${name}_visual">
-          <mesh filename="pr2/base" />
+          <mesh filename="base" />
         </geometry>
       </visual>
 
@@ -432,7 +432,7 @@
           <elem key="material" value="PR2/Green" />
         </map>
         <geometry name="${name}_visual">
-          <mesh filename="pr2/base" />
+          <mesh filename="base" />
         </geometry>
       </visual>
 

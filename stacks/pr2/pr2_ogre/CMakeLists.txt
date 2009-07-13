@@ -11,7 +11,7 @@ find_ros_package(ogre)
 file(GLOB pr2_stl_files ${pr2_defs_PACKAGE_PATH}/meshes/*.stl)
 set(pr2_gen_files "")
 
-set(pr2_out_path ${CMAKE_CURRENT_SOURCE_DIR}/Media/models/pr2)
+set(pr2_out_path ${CMAKE_CURRENT_SOURCE_DIR}/Media/models)
 
 MAKE_DIRECTORY(${pr2_out_path})
 
@@ -31,7 +31,7 @@ endforeach(it)
 # process convexified mesh files
 file(GLOB pr2_convex_stl_files ${pr2_defs_PACKAGE_PATH}/meshes/convex/*.stlb)
 
-set(pr2_convex_out_path ${CMAKE_CURRENT_SOURCE_DIR}/Media/models/pr2/convex)
+set(pr2_convex_out_path ${CMAKE_CURRENT_SOURCE_DIR}/Media/models/convex)
 
 MAKE_DIRECTORY(${pr2_convex_out_path})
 

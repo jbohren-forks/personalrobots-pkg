@@ -41,7 +41,7 @@
 	  <elem key="material" value="PR2/Grey2" />
         </map>
         <geometry name="${name}_visual">
-          <mesh filename="pr2/torso" />
+          <mesh filename="torso" />
         </geometry>
       </visual>
 
