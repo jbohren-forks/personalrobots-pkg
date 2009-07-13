@@ -186,7 +186,7 @@ public:
 
     // Subscribe to the images and parameters
     string stereo_namespace;
-    nh_.param("~stereo_namespace", stereo_namespace, string("stereo_wide"));
+    nh_.param("~stereo_namespace", stereo_namespace, string("wide_stereo"));
 
     limage_sub_ = nh_.subscribe(stereo_namespace + string("/left/image_rect"), 1, sync_.synchronize(&FaceDetector::leftImageCallback,this));
     dimage_sub_ = nh_.subscribe(stereo_namespace + string("/disparity"), 1, sync_.synchronize(&FaceDetector::dispImageCallback,this));
