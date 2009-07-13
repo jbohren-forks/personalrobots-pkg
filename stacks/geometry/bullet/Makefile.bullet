@@ -3,7 +3,7 @@ all: installed
 SVN_DIR = bullet_svn
 SVN_URL = http://bullet.googlecode.com/svn/trunk/
 SVN_PATCH = quaternion.patch demos.patch no_extras_build.patch
-SVN_REVISION=-r1704
+SVN_REVISION=-r1685
 
 include $(shell rospack find mk)/svn_checkout.mk
 
