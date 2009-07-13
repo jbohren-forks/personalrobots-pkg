@@ -61,6 +61,13 @@ class TransformerROS(TFX.Transformer):
 
     def asMatrix(self, target_frame, hdr):
         translation,rotation = self.lookupTransform(target_frame, hdr.frame_id, hdr.stamp)
+        return self.fromTranslationRotation(translation, rotation)
+
+    ## Returns a Numpy 4x4 matrix for a transform.
+    # @param translation  translation as (x,y,z)
+    # @param rotation     rotation as (x,y,z,w)
+
+    def fromTranslationRotation(self, translation, rotation):
         return numpy.dot(transformations.translation_matrix(translation), transformations.quaternion_matrix(rotation))
 
     ## Transforms a robot_msgs PointStamped message to frame target_frame, returns the resulting PointStamped.

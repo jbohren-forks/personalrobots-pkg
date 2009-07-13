@@ -175,7 +175,31 @@ static PyObject *lookupTransform(PyObject *self, PyObject *args, PyObject *kw)
     return NULL;
   tf::Stamped< btTransform > transform;
   t->lookupTransform(target_frame, source_frame, time, transform);
-  // return Py_BuildValue("(ddd)(dddd)", 
+  btVector3 origin = transform.getOrigin();
+  btQuaternion rotation = transform.getRotation();
+  return Py_BuildValue("(ddd)(dddd)",
+      origin.x(), origin.y(), origin.z(),
+      rotation.x(), rotation.y(), rotation.z(), rotation.w());
+}
+
+static PyObject *lookupTransformFull(PyObject *self, PyObject *args, PyObject *kw)
+{
+  tf::Transformer *t = ((transformer_t*)self)->t;
+  char *target_frame, *source_frame, *fixed_frame;
+  ros::Time target_time, source_time;
+  static char *keywords[] = { "target_frame", "target_time", "source_frame", "source_time", "fixed_frame", NULL };
+
+  if (!PyArg_ParseTupleAndKeywords(args, kw, "sO&sO&s", keywords,
+                        &target_frame,
+                        rostime_converter,
+                        &target_time,
+                        &source_frame,
+                        rostime_converter,
+                        &source_time,
+                        &fixed_frame))
+    return NULL;
+  tf::Stamped< btTransform > transform;
+  t->lookupTransform(target_frame, target_time, source_frame, source_time, fixed_frame, transform);
   btVector3 origin = transform.getOrigin();
   btQuaternion rotation = transform.getRotation();
   return Py_BuildValue("(ddd)(dddd)",
@@ -253,6 +277,7 @@ static struct PyMethodDef transformer_methods[] =
   {"getFrameStrings", (PyCFunction)getFrameStrings, METH_VARARGS},
   {"getLatestCommonTime", (PyCFunction)getLatestCommonTime, METH_VARARGS},
   {"lookupTransform", (PyCFunction)lookupTransform, METH_VARARGS},
+  {"lookupTransformFull", (PyCFunction)lookupTransformFull, METH_VARARGS},
   {NULL,          NULL}
 };
 
