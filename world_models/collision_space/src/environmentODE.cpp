@@ -409,8 +409,6 @@ void collision_space::EnvironmentModelODE::testSelfCollision(CollisionData *cdat
 
 void collision_space::EnvironmentModelODE::testBodyCollision(CollisionNamespace *cn, CollisionData *cdata)
 { 
-    cdata->link2 = NULL;
-
     if (cn->collide2.empty())
     {
 	// if there is no collide2 structure, then there is a list of geoms
@@ -471,11 +469,14 @@ void collision_space::EnvironmentModelODE::testCollision(CollisionData *cdata)
     if (m_selfCollision)
     	testSelfCollision(cdata);
     
-    /* check collision with other ode bodies */
-    for (std::map<std::string, CollisionNamespace*>::iterator it = m_collNs.begin() ; it != m_collNs.end() && !cdata->done ; ++it)
-	testBodyCollision(it->second, cdata);
-    
-    cdata->done = true;
+    if (!cdata->done)
+    {
+        cdata->link2 = NULL;
+        /* check collision with other ode bodies */
+	for (std::map<std::string, CollisionNamespace*>::iterator it = m_collNs.begin() ; it != m_collNs.end() && !cdata->done ; ++it)
+	    testBodyCollision(it->second, cdata);
+        cdata->done = true;
+    }
 }
 
 void collision_space::EnvironmentModelODE::addPointCloudSpheres(const std::string &ns, unsigned int n, const double *points)
