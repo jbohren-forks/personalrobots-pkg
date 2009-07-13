@@ -54,7 +54,8 @@ class ChompOptimizer
 {
 public:
   ChompOptimizer(ChompTrajectory *trajectory, const ChompRobotModel *robot_model,
-      const ChompRobotModel::ChompPlanningGroup *planning_group, const ChompParameters *parameters);
+      const ChompRobotModel::ChompPlanningGroup *planning_group, const ChompParameters *parameters,
+      const ros::Publisher& vis_marker_array_publisher);
   virtual ~ChompOptimizer();
 
   void optimize();
@@ -82,12 +83,20 @@ private:
   std::vector<std::vector<KDL::Vector> > collision_point_vel_;
   std::vector<std::vector<KDL::Vector> > collision_point_acc_;
 
+  std::vector<std::vector<Eigen::Map<Eigen::Vector3d> > > joint_axis_eigen_;
+  std::vector<std::vector<Eigen::Map<Eigen::Vector3d> > > joint_pos_eigen_;
+  std::vector<std::vector<Eigen::Map<Eigen::Vector3d> > > collision_point_pos_eigen_;
+  std::vector<std::vector<Eigen::Map<Eigen::Vector3d> > > collision_point_vel_eigen_;
+  std::vector<std::vector<Eigen::Map<Eigen::Vector3d> > > collision_point_acc_eigen_;
+
   Eigen::MatrixXd smoothness_increments_;
   Eigen::MatrixXd collision_increments_;
 
   // temporary variables for all functions:
   Eigen::VectorXd smoothness_derivative_;
   KDL::JntArray kdl_joint_array_;
+
+  ros::Publisher vis_pub_;
 
   void initialize();
   void calculateSmoothnessIncrements();
@@ -96,6 +105,7 @@ private:
   void addIncrementsToTrajectory();
   void updateFullTrajectory();
   void debugCost();
+  void eigenMapTest();
 
 };
 

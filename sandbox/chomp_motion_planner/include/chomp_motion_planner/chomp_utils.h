@@ -75,6 +75,40 @@ inline void debugJointArray(KDL::JntArray& joint_array)
   std::cout << std::endl;
 }
 
+/*template<typename KDLType, typename EigenType>
+void kdlToEigen(KDLType& kdl_t, Eigen::Map<EigenType>& eigen_t, int rows, int cols)
+{
+  eigen_t = Eigen::Map<EigenType>(kdl_t.data, rows, cols);
+}*/
+
+
+template<typename KDLType, typename EigenType>
+void kdlVecToEigenVec(std::vector<KDLType>& kdl_v, std::vector<Eigen::Map<EigenType> >& eigen_v, int rows, int cols)
+{
+  int size = kdl_v.size();
+  //typename Eigen::Map<EigenType>::Scalar dummy[rows*cols];
+  //eigen_v.resize(size, Eigen::Map<EigenType>(dummy, rows, cols));
+  eigen_v.clear();
+  for (int i=0; i<size; i++)
+  {
+    //kdlToEigen(kdl_v[i], eigen_v[i], rows, cols);
+    eigen_v.push_back(Eigen::Map<EigenType>(kdl_v[i].data, rows, cols));
+  }
+}
+
+
+template<typename KDLType, typename EigenType>
+void kdlVecVecToEigenVecVec(std::vector<std::vector<KDLType> >& kdl_vv, std::vector<std::vector<Eigen::Map<EigenType> > > & eigen_vv, int rows, int cols)
+{
+  int size = kdl_vv.size();
+  eigen_vv.resize(size);
+  for (int i=0; i<size; i++)
+  {
+    kdlVecToEigenVec(kdl_vv[i], eigen_vv[i], rows, cols);
+  }
+}
+
+
 } //namespace chomp
 
 #endif /* CHOMP_UTILS_H_ */

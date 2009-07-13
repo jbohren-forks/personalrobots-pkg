@@ -3,8 +3,8 @@
 	<rosparam ns="/robotdesc/pr2_planning" command="load" file="$(find pr2_defs)/planning/planning.yaml" />
 	<node pkg="chomp_motion_planner" name="chomp_motion_planner" type="chomp_planner_node" args="robot_description:=robotdesc/pr2 collision_map:=collision_map_occ" respawn="true" output="screen" clear_params="true">
 		<param name="collision_clearance" value="0.10"/>
-		<param name="collision_links/r_gripper_palm_link/link_radius" value="0.08"/>
-		<param name="collision_links/r_forearm_link/link_radius" value="0.08"/>
+		<param name="collision_links/r_gripper_palm_link/link_radius" value="0.05"/>
+		<param name="collision_links/r_forearm_link/link_radius" value="0.06"/>
 		<param name="collision_links/r_upper_arm_link/link_radius" value="0.08"/>
 	</node>
 </launch>

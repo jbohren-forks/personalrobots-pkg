@@ -77,12 +77,26 @@ bool ChompRobotModel::init()
   node_handle_.param("~collision_clearance", collision_clearance_default_, 0.10);
 
   // Construct the KDL tree
-  if (!treeFromString(urdf_string, kdl_tree_, joint_segment_mapping_))
+  if (!treeFromString(urdf_string, kdl_tree_))
   {
     ROS_ERROR("Failed to construct KDL tree from URDF.");
     return false;
   }
   num_kdl_joints_ = kdl_tree_.getNrOfJoints();
+
+  // create the joint_segment_mapping, which used to be created by the URDF -> KDL parser
+  // but not any more, but the rest of the code depends on it, so we simply generate the mapping here:
+  KDL::SegmentMap segment_map = kdl_tree_.getSegments();
+
+  for (KDL::SegmentMap::const_iterator it = segment_map.begin(); it != segment_map.end(); ++it)
+  {
+    if (it->second.segment.getJoint().getType() != KDL::Joint::None)
+    {
+      std::string joint_name = it->second.segment.getJoint().getName();
+      std::string segment_name = it->first;
+      joint_segment_mapping_.insert(make_pair(joint_name, segment_name));
+    }
+  }
 
   // create the fk solver:
   fk_solver_ = new KDL::TreeFkSolverJointPosAxis(kdl_tree_);
@@ -204,7 +218,7 @@ void ChompRobotModel::addCollisionPointsFromLinkRadius(ChompPlanningGroup& group
   KDL::SegmentMap::const_iterator segment_iter = kdl_tree_.getSegment(link_name);
 
   // go up the tree until we find the root:
-  while (segment_iter->first != "root")
+  while (segment_iter != kdl_tree_.getRootSegment())
   {
     KDL::Joint::JointType joint_type =  segment_iter->second.segment.getJoint().getType();
     if (joint_type != KDL::Joint::None)
@@ -215,8 +229,8 @@ void ChompRobotModel::addCollisionPointsFromLinkRadius(ChompPlanningGroup& group
         if (group.chomp_joints_[i].joint_name_ == segment_joint_mapping_[segment_iter->first])
         {
           active_joints[i] = 1;
-          printf("Found %s as parent of %s\n", group.chomp_joints_[i].joint_name_.c_str(),
-              link_name.c_str());
+//          printf("Found %s as parent of %s\n", group.chomp_joints_[i].joint_name_.c_str(),
+//              link_name.c_str());
         }
       }
     }
@@ -249,7 +263,7 @@ void ChompRobotModel::addCollisionPointsFromLinkRadius(ChompPlanningGroup& group
         continue;
       point_pos = joint_origin * (double)(i/(num_points-1.0));
       group.collision_points_.push_back(ChompCollisionPoint(active_joints, radius, clearance, segment_number, point_pos));
-      printf("Added %f %f %f in %s frame\n", point_pos.x(), point_pos.y(), point_pos.z(), link_name.c_str());
+      //printf("Added %f %f %f in %s frame\n", point_pos.x(), point_pos.y(), point_pos.z(), link_name.c_str());
     }
 
     first_child = 0;

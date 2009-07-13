@@ -36,6 +36,8 @@
 
 #include <chomp_motion_planner/chomp_optimizer.h>
 #include <ros/ros.h>
+#include <visualization_msgs/MarkerArray.h>
+#include <chomp_motion_planner/chomp_utils.h>
 
 using namespace std;
 
@@ -43,13 +45,15 @@ namespace chomp
 {
 
 ChompOptimizer::ChompOptimizer(ChompTrajectory *trajectory, const ChompRobotModel *robot_model,
-    const ChompRobotModel::ChompPlanningGroup *planning_group, const ChompParameters *parameters):
+    const ChompRobotModel::ChompPlanningGroup *planning_group, const ChompParameters *parameters,
+    const ros::Publisher& vis_marker_array_publisher):
       full_trajectory_(trajectory),
       robot_model_(robot_model),
       planning_group_(planning_group),
       parameters_(parameters),
       group_trajectory_(*full_trajectory_, planning_group_, ChompCost::DIFF_RULE_LENGTH),
-      kdl_joint_array_(robot_model_->getKDLTree()->getNrOfJoints())
+      kdl_joint_array_(robot_model_->getKDLTree()->getNrOfJoints()),
+      vis_pub_(vis_marker_array_publisher)
 {
   initialize();
 }
@@ -86,12 +90,17 @@ void ChompOptimizer::initialize()
   collision_increments_ = Eigen::MatrixXd::Zero(num_vars_free_, num_joints_);
   smoothness_derivative_ = Eigen::VectorXd::Zero(num_vars_all_);
 
-  joint_axis_.resize(num_vars_all_);
-  joint_pos_.resize(num_vars_all_);
-  segment_frames_.resize(num_vars_all_);
-  collision_point_pos_.resize(num_vars_all_);
-  collision_point_vel_.resize(num_vars_all_);
-  collision_point_acc_.resize(num_vars_all_);
+  joint_axis_.resize(num_vars_all_, std::vector<KDL::Vector>(robot_model_->getKDLTree()->getNrOfJoints()));
+  joint_pos_.resize(num_vars_all_, std::vector<KDL::Vector>(robot_model_->getKDLTree()->getNrOfJoints()));
+  segment_frames_.resize(num_vars_all_, std::vector<KDL::Frame>(robot_model_->getKDLTree()->getNrOfSegments()));
+  collision_point_pos_.resize(num_vars_all_, std::vector<KDL::Vector>(num_collision_points_));
+  collision_point_vel_.resize(num_vars_all_, std::vector<KDL::Vector>(num_collision_points_));
+  collision_point_acc_.resize(num_vars_all_, std::vector<KDL::Vector>(num_collision_points_));
+
+  // create the eigen maps:
+  kdlVecVecToEigenVecVec(joint_axis_, joint_axis_eigen_, 3, 1);
+  kdlVecVecToEigenVecVec(joint_pos_, joint_pos_eigen_, 3, 1);
+  kdlVecVecToEigenVecVec(collision_point_pos_, collision_point_pos_eigen_, 3, 1);
 
 }
 
@@ -106,9 +115,8 @@ void ChompOptimizer::optimize()
   {
     //cout << "Iteration " << iteration_ << endl;
     calculateSmoothnessIncrements();
-
     performForwardKinematics();
-
+    calculateCollisionIncrements();
     addIncrementsToTrajectory();
     //debugCost();
     updateFullTrajectory();
@@ -128,6 +136,14 @@ void ChompOptimizer::calculateSmoothnessIncrements()
 
 void ChompOptimizer::calculateCollisionIncrements()
 {
+  collision_increments_.setZero(num_vars_free_, num_joints_);
+  for (int i=free_vars_start_; i<=free_vars_end_; i++)
+  {
+    for (int j=0; j<num_collision_points_; j++)
+    {
+
+    }
+  }
 }
 
 void ChompOptimizer::addIncrementsToTrajectory()
@@ -154,6 +170,9 @@ void ChompOptimizer::debugCost()
 
 void ChompOptimizer::performForwardKinematics()
 {
+  double invTime = 1.0 / group_trajectory_.getDiscretization();
+  double invTimeSq = invTime*invTime;
+
   // calculate the forward kinematics for the fixed states only in the first iteration:
   int start = free_vars_start_;
   int end = free_vars_end_;
@@ -178,7 +197,90 @@ void ChompOptimizer::performForwardKinematics()
     }
   }
 
+  // now, get the vel and acc for each collision point (using finite differencing)
+  for (int i=free_vars_start_; i<=free_vars_end_; i++)
+  {
+    for (int j=0; j<num_collision_points_; j++)
+    {
+      SetToZero(collision_point_vel_[i][j]);
+      SetToZero(collision_point_acc_[i][j]);
+      for (int k=-ChompCost::DIFF_RULE_LENGTH/2; k<=ChompCost::DIFF_RULE_LENGTH/2; k++)
+      {
+        collision_point_vel_[i][j] += (invTime * ChompCost::DIFF_RULES[0][k+ChompCost::DIFF_RULE_LENGTH/2]) *
+            collision_point_pos_[i+k][j];
+        collision_point_acc_[i][j] += (invTimeSq * ChompCost::DIFF_RULES[1][k+ChompCost::DIFF_RULE_LENGTH/2]) *
+            collision_point_pos_[i+k][j];
+      }
+    }
+  }
+
+  if (iteration_==0 && false)
+  {
+    visualization_msgs::MarkerArray msg;
+    msg.markers.resize(num_collision_points_);
+    for (int i=0; i<num_collision_points_; i++)
+    {
+      msg.markers[i].header.frame_id = "base_link";
+      msg.markers[i].header.stamp = ros::Time();
+      msg.markers[i].ns = "chomp_collisions";
+      msg.markers[i].id = i;
+      msg.markers[i].type = visualization_msgs::Marker::SPHERE;
+      msg.markers[i].action = visualization_msgs::Marker::ADD;
+      msg.markers[i].pose.position.x = collision_point_pos_[0][i].x();
+      msg.markers[i].pose.position.y = collision_point_pos_[0][i].y();
+      msg.markers[i].pose.position.z = collision_point_pos_[0][i].z();
+      msg.markers[i].pose.orientation.x = 0.0;
+      msg.markers[i].pose.orientation.y = 0.0;
+      msg.markers[i].pose.orientation.z = 0.0;
+      msg.markers[i].pose.orientation.w = 1.0;
+      double scale = planning_group_->collision_points_[i].getRadius()*2;
+      msg.markers[i].scale.x = scale;
+      msg.markers[i].scale.y = scale;
+      msg.markers[i].scale.z = scale;
+      msg.markers[i].color.a = 1.0;
+      msg.markers[i].color.r = 0.5;
+      msg.markers[i].color.g = 1.0;
+      msg.markers[i].color.b = 0.3;
+    }
+    vis_pub_.publish(msg);
+  }
+
 }
 
+void ChompOptimizer::eigenMapTest()
+{
+  double foo_eigen;
+  double foo_kdl;
 
+  cout << "Eigen location: " << &(joint_axis_eigen_[free_vars_start_][0](0)) <<
+          "  KDL location: " << &(joint_axis_[free_vars_start_][0](0)) << endl;
+
+  foo_eigen = joint_axis_eigen_[free_vars_start_][0](0);
+  foo_kdl = joint_axis_[free_vars_start_][0](0);
+  printf("eigen = %f, kdl = %f\n", foo_eigen, foo_kdl);
+  ROS_ASSERT(foo_eigen==foo_kdl);
+
+  joint_axis_eigen_[free_vars_start_][0](0) = 1.0;
+  foo_eigen = joint_axis_eigen_[free_vars_start_][0](0);
+  foo_kdl = joint_axis_[free_vars_start_][0](0);
+  printf("eigen = %f, kdl = %f\n", foo_eigen, foo_kdl);
+  ROS_ASSERT(foo_kdl == foo_eigen);
+
+  joint_axis_[free_vars_start_][0](0) = 2.0;
+  foo_eigen = joint_axis_eigen_[free_vars_start_][0](0);
+  foo_kdl = joint_axis_[free_vars_start_][0](0);
+  printf("eigen = %f, kdl = %f\n", foo_eigen, foo_kdl);
+  ROS_ASSERT(foo_eigen == foo_kdl);
+
+  foo_eigen = joint_pos_eigen_[free_vars_start_][0](0);
+  foo_kdl = joint_pos_[free_vars_start_][0](0);
+  printf("eigen = %f, kdl = %f\n", foo_eigen, foo_kdl);
+  ROS_ASSERT(foo_eigen==foo_kdl);
+
+  foo_eigen = collision_point_pos_eigen_[free_vars_start_][5](0);
+  foo_kdl = collision_point_pos_[free_vars_start_][5](0);
+  printf("eigen = %f, kdl = %f\n", foo_eigen, foo_kdl);
+  ROS_ASSERT(foo_eigen==foo_kdl);
 }
+
+} // namespace chomp

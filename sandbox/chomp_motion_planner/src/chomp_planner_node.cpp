@@ -42,6 +42,7 @@
 #include <kdl_parser/tree_parser.hpp>
 #include <kdl/jntarray.hpp>
 #include <angles/angles.h>
+#include <visualization_msgs/MarkerArray.h>
 
 #include <map>
 #include <vector>
@@ -72,6 +73,9 @@ bool ChompPlannerNode::init()
 
   // load chomp parameters:
   chomp_parameters_.initFromNodeHandle();
+
+  // initialize the visualization publisher:
+  vis_marker_array_publisher_ = node_handle_.advertise<visualization_msgs::MarkerArray>( "visualization_marker_array", 0 );
 
   ROS_INFO("Initalized CHOMP planning service...");
 
@@ -131,7 +135,7 @@ bool ChompPlannerNode::planKinematicPath(motion_planning_srvs::MotionPlan::Reque
   chomp_parameters_.setPlanningTimeLimit(req.allowed_time);
 
   // optimize!
-  ChompOptimizer optimizer(&trajectory, &chomp_robot_model_, group, &chomp_parameters_);
+  ChompOptimizer optimizer(&trajectory, &chomp_robot_model_, group, &chomp_parameters_, vis_marker_array_publisher_);
   optimizer.optimize();
 
   // assume that the trajectory is now optimized, fill in the output structure:

@@ -45,7 +45,7 @@ TreeFkSolverJointPosAxis::TreeFkSolverJointPosAxis(const Tree& tree):
   tree_(tree)
 {
   segment_names_.clear();
-  assignSegmentNumber(tree_.getSegment("root"));
+  assignSegmentNumber(tree_.getRootSegment());
 }
 
 TreeFkSolverJointPosAxis::~TreeFkSolverJointPosAxis()
@@ -59,7 +59,7 @@ int TreeFkSolverJointPosAxis::JntToCart(const JntArray& q_in, std::vector<Vector
   segment_frames.resize(segment_names_.size());
 
   // start the recursion
-  treeRecursiveFK(q_in, joint_pos, joint_axis, segment_frames, Frame::Identity(), tree_.getSegment("root"), 0);
+  treeRecursiveFK(q_in, joint_pos, joint_axis, segment_frames, Frame::Identity(), tree_.getRootSegment(), 0);
 
   return 0;
 }

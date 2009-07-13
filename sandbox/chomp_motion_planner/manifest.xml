@@ -17,6 +17,7 @@
   <depend package="kdl_parser" />
   <depend package="angles" />
   <depend package="eigen" />
+  <depend package="visualization_msgs" />
 
 </package>
 

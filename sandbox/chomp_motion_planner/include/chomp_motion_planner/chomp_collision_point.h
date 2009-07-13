@@ -39,6 +39,8 @@
 
 #include <kdl/frames.hpp>
 #include <vector>
+#include <Eigen/Core>
+#include <Eigen/Geometry>
 
 namespace chomp
 {
@@ -55,6 +57,10 @@ public:
   double getClearance() const;
   int getSegmentNumber() const;
   const KDL::Vector& getPosition() const;
+
+  template<typename Derived>
+  void getJacobian(std::vector<Eigen::Map<Eigen::Vector3d> >& joint_pos, std::vector<Eigen::Map<Eigen::Vector3d> >& joint_axis,
+      Eigen::Map<Eigen::Vector3d>& collision_point_pos, Eigen::MatrixBase<Derived> jacobian);
 
 private:
   std::vector<int> parent_joints_;      /**< Which joints can influence the motion of this point */
@@ -89,7 +95,24 @@ inline const KDL::Vector& ChompCollisionPoint::getPosition() const
   return position_;
 }
 
-
+template<typename Derived>
+void ChompCollisionPoint::getJacobian(std::vector<Eigen::Map<Eigen::Vector3d> >& joint_pos, std::vector<Eigen::Map<Eigen::Vector3d> >& joint_axis,
+    Eigen::Map<Eigen::Vector3d>& collision_point_pos, Eigen::MatrixBase<Derived> jacobian)
+{
+  for (int joint=0; joint<parent_joints_.size(); joint++)
+  {
+    if (parent_joints_[joint]==0)
+    {
+      // since the joint is not active, fill the jacobian column with zeros
+      jacobian.col(joint).setZero();
+    }
+    else
+    {
+      jacobian.col(joint) = joint_axis[joint].cross(collision_point_pos - joint_pos[joint]);
+    }
+  }
 }
+
+} // namespace chomp
 
 #endif /* CHOMP_COLLISION_POINT_H_ */

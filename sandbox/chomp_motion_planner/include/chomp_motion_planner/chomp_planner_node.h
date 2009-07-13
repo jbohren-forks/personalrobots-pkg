@@ -88,6 +88,7 @@ private:
   ChompParameters chomp_parameters_;                    /**< Chomp Parameters */
   double trajectory_duration_;                          /**< Default duration of the planned motion */
   double trajectory_discretization_;                    /**< Default discretization of the planned motion */
+  ros::Publisher vis_marker_array_publisher_;           /**< Publisher for marker arrays */
 
 };
 
