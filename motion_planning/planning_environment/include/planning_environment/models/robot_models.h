@@ -34,8 +34,8 @@
 
 /** \author Ioan Sucan */
 
-#ifndef PLANNING_ENVIRONMENT_ROBOT_MODELS_
-#define PLANNING_ENVIRONMENT_ROBOT_MODELS_
+#ifndef PLANNING_ENVIRONMENT_MODELS_ROBOT_MODELS_
+#define PLANNING_ENVIRONMENT_MODELS_ROBOT_MODELS_
 
 #include <planning_models/kinematic.h>
 #include <planning_models/kinematic_state_params.h>

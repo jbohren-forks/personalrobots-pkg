@@ -41,7 +41,7 @@
 #include <chomp_motion_planner/treefksolverjointposaxis.hpp>
 #include <chomp_motion_planner/chomp_collision_point.h>
 #include <ros/ros.h>
-#include <planning_environment/robot_models.h>
+#include <planning_environment/models/robot_models.h>
 #include <kdl/tree.hpp>
 #include <kdl/chain.hpp>
 

@@ -39,7 +39,7 @@
 
 #include <ompl/base/StateValidityChecker.h>
 #include <collision_space/environment.h>
-#include <planning_environment/kinematic_state_constraint_evaluator.h>
+#include <planning_environment/util/kinematic_state_constraint_evaluator.h>
 
 #include "ompl_planning/ModelBase.h"
 #include "ompl_planning/extensions/SpaceInformation.h"

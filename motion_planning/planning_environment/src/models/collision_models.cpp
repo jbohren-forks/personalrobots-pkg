@@ -34,38 +34,37 @@
 
 /** \author Ioan Sucan */
 
-#ifndef OMPL_PLANNING_MODEL_BASE_
-#define OMPL_PLANNING_MODEL_BASE_
+#include "planning_environment/models/collision_models.h"
+#include <collision_space/environmentODE.h>
+#include <collision_space/environmentBullet.h>
 
-#include <planning_environment/monitors/planning_monitor.h>
-#include <string>
-
-namespace ompl_planning
+void planning_environment::CollisionModels::setupModel(boost::shared_ptr<collision_space::EnvironmentModel> &model, const std::vector<std::string> &links)
 {
+    model->lock();
+    model->setRobotModel(kmodel_, links, scale_, padd_);
     
-    class ModelBase
+    // form all pairs of links that can collide and add them as self-collision groups
+    for (unsigned int i = 0 ; i < self_collision_check_groups_.size() ; ++i)
+	for (unsigned int g1 = 0 ; g1 < self_collision_check_groups_[i].first.size() ; ++g1)
+	    for (unsigned int g2 = 0 ; g2 < self_collision_check_groups_[i].second.size() ; ++g2)
+	    {
+		std::vector<std::string> scg;
+		scg.push_back(self_collision_check_groups_[i].first[g1]);
+		scg.push_back(self_collision_check_groups_[i].second[g2]);
+		model->addSelfCollisionGroup(scg);
+	    }
+    model->updateRobotModel();
+    model->unlock();    
+}
+
+void planning_environment::CollisionModels::loadCollision(const std::vector<std::string> &links)
+{
+    if (loadedModels())
     {
-    public:
-	ModelBase(void)
-	{
-	    groupID = -1;
-	    kmodel = NULL;
-	    collisionSpace = NULL;
-	    planningMonitor = NULL;
-	}
+	ode_collision_model_ = boost::shared_ptr<collision_space::EnvironmentModel>(new collision_space::EnvironmentModelODE());
+	setupModel(ode_collision_model_, links);
 	
-	virtual ~ModelBase(void)
-	{
-	}
-	
-	planning_environment::PlanningMonitor *planningMonitor;
-	collision_space::EnvironmentModel     *collisionSpace;
-	planning_models::KinematicModel       *kmodel;
-	std::string                            groupName;
-	int                                    groupID;
-    };
-
-} // ompl_planning
-
-#endif
-
+	//	bullet_collision_model_ = boost::shared_ptr<collision_space::EnvironmentModel>(new collision_space::EnvironmentModelBullet());
+	//	setupModel(bullet_collision_model_, links);
+    }
+}

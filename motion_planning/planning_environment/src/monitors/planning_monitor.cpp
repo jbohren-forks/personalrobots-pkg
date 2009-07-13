@@ -34,8 +34,8 @@
 
 /** \author Ioan Sucan */
 
-#include "planning_environment/planning_monitor.h"
-#include "planning_environment/kinematic_state_constraint_evaluator.h"
+#include "planning_environment/monitors/planning_monitor.h"
+#include "planning_environment/util/kinematic_state_constraint_evaluator.h"
 #include <boost/scoped_ptr.hpp>
 
 void planning_environment::PlanningMonitor::loadParams(void)
@@ -265,6 +265,25 @@ bool planning_environment::PlanningMonitor::transformJoint(const std::string &na
     else
 	header.frame_id = target;
     return true;
+}
+
+bool planning_environment::PlanningMonitor::isStateValid(const planning_models::StateParams *state) const
+{
+    getEnvironmentModel()->lock();
+    getKinematicModel()->lock();
+    
+    // figure out the poses of the robot model
+    getKinematicModel()->computeTransforms(state->getParams());
+    // update the collision space
+    getEnvironmentModel()->updateRobotModel();
+
+    // check for collision
+    bool valid = !getEnvironmentModel()->isCollision();
+    
+    getKinematicModel()->unlock();
+    getEnvironmentModel()->unlock();
+    
+    return valid;
 }
 
 bool planning_environment::PlanningMonitor::isStateValidOnPath(const planning_models::StateParams *state) const

@@ -34,10 +34,10 @@
 
 /** \author Ioan Sucan */
 
-#ifndef PLANNING_ENVIRONMENT_KINEMATIC_MODEL_STATE_MONITOR_
-#define PLANNING_ENVIRONMENT_KINEMATIC_MODEL_STATE_MONITOR_
+#ifndef PLANNING_ENVIRONMENT_MONITORS_KINEMATIC_MODEL_STATE_MONITOR_
+#define PLANNING_ENVIRONMENT_MONITORS_KINEMATIC_MODEL_STATE_MONITOR_
 
-#include "planning_environment/robot_models.h"
+#include "planning_environment/models/robot_models.h"
 #include <tf/transform_datatypes.h>
 #include <tf/transform_listener.h>
 #include <mechanism_msgs/MechanismState.h>

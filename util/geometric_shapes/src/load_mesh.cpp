@@ -80,13 +80,40 @@ namespace shapes
 	};
     }
     
+    shapes::Mesh* create_mesh_from_vertices(const std::vector<btVector3> &vertices, const std::vector<unsigned int> &triangles)
+    {
+	unsigned int nt = triangles.size() / 3;
+	shapes::Mesh *mesh = new shapes::Mesh(vertices.size(), nt);
+	for (unsigned int i = 0 ; i < vertices.size() ; ++i)
+	{
+	    mesh->vertices[3 * i    ] = vertices[i].getX();
+	    mesh->vertices[3 * i + 1] = vertices[i].getY();
+	    mesh->vertices[3 * i + 2] = vertices[i].getZ();
+	}
+	
+	std::copy(triangles.begin(), triangles.end(), mesh->triangles);
+	
+	// compute normals 
+	for (unsigned int i = 0 ; i < nt ; ++i)
+	{
+	    btVector3 s1 = vertices[triangles[i * 3    ]] - vertices[triangles[i * 3 + 1]];
+	    btVector3 s2 = vertices[triangles[i * 3 + 1]] - vertices[triangles[i * 3 + 2]];
+	    btVector3 normal = s1.cross(s2);
+	    normal.normalize();
+	    mesh->normals[3 * i    ] = normal.getX();
+	    mesh->normals[3 * i + 1] = normal.getY();
+	    mesh->normals[3 * i + 2] = normal.getZ();
+	}
+	return mesh;
+    }
+    
     shapes::Mesh* create_mesh_from_vertices(const std::vector<btVector3> &source)
     {
 	if (source.size() < 3)
 	    return NULL;
 	
 	std::set<detail::myVertex, detail::ltVertexValue> vertices;
-	std::vector<unsigned int>         triangles;
+	std::vector<unsigned int>                         triangles;
 	
 	for (unsigned int i = 0 ; i < source.size() / 3 ; ++i)
 	{

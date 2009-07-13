@@ -38,7 +38,7 @@
 #define OMPL_PLANNING_EXTENSIONS_GOAL_DEFINITIONS_
 
 #include "ompl_planning/ModelBase.h"
-#include <planning_environment/kinematic_state_constraint_evaluator.h>
+#include <planning_environment/util/kinematic_state_constraint_evaluator.h>
 #include <ompl/extension/kinematic/SpaceInformationKinematic.h>
 
 namespace ompl_planning

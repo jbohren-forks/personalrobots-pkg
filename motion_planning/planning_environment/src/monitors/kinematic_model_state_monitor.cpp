@@ -34,7 +34,7 @@
 
 /** \author Ioan Sucan */
 
-#include "planning_environment/kinematic_model_state_monitor.h"
+#include "planning_environment/monitors/kinematic_model_state_monitor.h"
 #include <angles/angles.h>
 #include <sstream>
 

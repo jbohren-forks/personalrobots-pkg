@@ -47,7 +47,7 @@
 #include <motion_planning_srvs/MotionPlan.h>
 
 #include <ros/ros.h>
-#include <planning_environment/planning_monitor.h>
+#include <planning_environment/monitors/planning_monitor.h>
 
 namespace move_arm 
 {    

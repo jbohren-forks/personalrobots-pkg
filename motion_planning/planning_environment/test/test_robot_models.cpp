@@ -34,7 +34,7 @@
 
 /** \author Ioan Sucan */
 
-#include <planning_environment/robot_models.h>
+#include <planning_environment/models/robot_models.h>
 #include <ros/time.h>
 #include <gtest/gtest.h>
 #include <iostream>

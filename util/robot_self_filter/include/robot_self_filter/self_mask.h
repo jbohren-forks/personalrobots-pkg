@@ -31,7 +31,7 @@
 #define ROBOT_SELF_FILTER_SELF_MASK_
 
 #include <robot_msgs/PointCloud.h>
-#include <planning_environment/robot_models.h>
+#include <planning_environment/models/robot_models.h>
 #include <geometric_shapes/bodies.h>
 #include <tf/transform_listener.h>
 #include <string>

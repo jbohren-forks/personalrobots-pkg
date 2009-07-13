@@ -34,13 +34,11 @@
 
 /** \author Ioan Sucan */
 
-#ifndef PLANNING_ENVIRONMENT_KINEMATIC_STATE_CONSTRAINT_EVALUATOR_
-#define PLANNING_ENVIRONMENT_KINEMATIC_STATE_CONSTRAINT_EVALUATOR_
+#ifndef PLANNING_ENVIRONMENT_UTIL_KINEMATIC_STATE_CONSTRAINT_EVALUATOR_
+#define PLANNING_ENVIRONMENT_UTIL_KINEMATIC_STATE_CONSTRAINT_EVALUATOR_
 
 #include <planning_models/kinematic.h>
 #include <motion_planning_msgs/KinematicConstraints.h>
-#include <angles/angles.h>
-#include <boost/shared_ptr.hpp>
 #include <iostream>
 #include <vector>
 

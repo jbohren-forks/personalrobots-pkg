@@ -41,7 +41,7 @@ the robot's collision space, as seen by the planner
 
 **/
 
-#include <planning_environment/collision_space_monitor.h>
+#include <planning_environment/monitors/collision_space_monitor.h>
 #include <visualization_msgs/Marker.h>
 #include <std_msgs/Byte.h>
 

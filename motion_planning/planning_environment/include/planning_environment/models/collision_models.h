@@ -34,10 +34,10 @@
 
 /** \author Ioan Sucan */
 
-#ifndef PLANNING_ENVIRONMENT_COLLISION_MODELS_
-#define PLANNING_ENVIRONMENT_COLLISION_MODELS_
+#ifndef PLANNING_ENVIRONMENT_MODELS_COLLISION_MODELS_
+#define PLANNING_ENVIRONMENT_MODELS_COLLISION_MODELS_
 
-#include "planning_environment/robot_models.h"
+#include "planning_environment/models/robot_models.h"
 #include <collision_space/environment.h>
 
 namespace planning_environment

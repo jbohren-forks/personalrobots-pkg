@@ -34,37 +34,17 @@
 
 /** \author Ioan Sucan */
 
-#include "planning_environment/collision_models.h"
-#include <collision_space/environmentODE.h>
-#include <collision_space/environmentBullet.h>
+#ifndef PLANNING_ENVIRONMENT_UTIL_CONSTRUCT_OBJECT_
+#define PLANNING_ENVIRONMENT_UTIL_CONSTRUCT_OBJECT_
 
-void planning_environment::CollisionModels::setupModel(boost::shared_ptr<collision_space::EnvironmentModel> &model, const std::vector<std::string> &links)
+#include <mapping_msgs/Object.h>
+#include <geometric_shapes/shapes.h>
+
+namespace planning_environment
 {
-    model->lock();
-    model->setRobotModel(kmodel_, links, scale_, padd_);
     
-    // form all pairs of links that can collide and add them as self-collision groups
-    for (unsigned int i = 0 ; i < self_collision_check_groups_.size() ; ++i)
-	for (unsigned int g1 = 0 ; g1 < self_collision_check_groups_[i].first.size() ; ++g1)
-	    for (unsigned int g2 = 0 ; g2 < self_collision_check_groups_[i].second.size() ; ++g2)
-	    {
-		std::vector<std::string> scg;
-		scg.push_back(self_collision_check_groups_[i].first[g1]);
-		scg.push_back(self_collision_check_groups_[i].second[g2]);
-		model->addSelfCollisionGroup(scg);
-	    }
-    model->updateRobotModel();
-    model->unlock();    
+    shapes::Shape* construct_object(const mapping_msgs::Object &obj);
+    
 }
 
-void planning_environment::CollisionModels::loadCollision(const std::vector<std::string> &links)
-{
-    if (loadedModels())
-    {
-	ode_collision_model_ = boost::shared_ptr<collision_space::EnvironmentModel>(new collision_space::EnvironmentModelODE());
-	setupModel(ode_collision_model_, links);
-	
-	//	bullet_collision_model_ = boost::shared_ptr<collision_space::EnvironmentModel>(new collision_space::EnvironmentModelBullet());
-	//	setupModel(bullet_collision_model_, links);
-    }
-}
+#endif

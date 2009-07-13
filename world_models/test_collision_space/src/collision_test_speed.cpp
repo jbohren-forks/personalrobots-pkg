@@ -35,7 +35,7 @@
 /** \author Ioan Sucan */
 
 #include <ros/ros.h>
-#include <planning_environment/collision_space_monitor.h>
+#include <planning_environment/monitors/collision_space_monitor.h>
 #include <visualization_msgs/Marker.h>
 
 class CollisionTestSpeed

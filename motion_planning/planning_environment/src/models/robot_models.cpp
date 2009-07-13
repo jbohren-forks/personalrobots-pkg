@@ -34,7 +34,7 @@
 
 /** \author Ioan Sucan */
 
-#include "planning_environment/robot_models.h"
+#include "planning_environment/models/robot_models.h"
 #include <planning_models/output.h>
 #include <ros/console.h>
 

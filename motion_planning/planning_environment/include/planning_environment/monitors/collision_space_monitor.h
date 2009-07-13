@@ -34,15 +34,15 @@
 
 /** \author Ioan Sucan */
 
-#ifndef PLANNING_ENVIRONMENT_COLLISION_SPACE_MONITOR_
-#define PLANNING_ENVIRONMENT_COLLISION_SPACE_MONITOR_
+#ifndef PLANNING_ENVIRONMENT_MONITORS_COLLISION_SPACE_MONITOR_
+#define PLANNING_ENVIRONMENT_MONITORS_COLLISION_SPACE_MONITOR_
 
-#include "planning_environment/collision_models.h"
-#include "planning_environment/kinematic_model_state_monitor.h"
+#include "planning_environment/models/collision_models.h"
+#include "planning_environment/monitors/kinematic_model_state_monitor.h"
 
 #include <tf/message_notifier.h>
 #include <mapping_msgs/CollisionMap.h>
-#include <tabletop_msgs/AttachedObject.h>
+#include <mapping_msgs/AttachedObject.h>
 
 #include <boost/thread/mutex.hpp>
 
@@ -141,7 +141,7 @@ namespace planning_environment
 	void updateCollisionSpace(const mapping_msgs::CollisionMapConstPtr &collisionMap, bool clear);
 	void collisionMapCallback(const mapping_msgs::CollisionMapConstPtr &collisionMap);
 	void collisionMapUpdateCallback(const mapping_msgs::CollisionMapConstPtr &collisionMap);
-	void attachObjectCallback(const tabletop_msgs::AttachedObjectConstPtr &attachedObject);
+	void attachObjectCallback(const mapping_msgs::AttachedObjectConstPtr &attachedObject);
 	
 	CollisionModels                                                *cm_;
 	collision_space::EnvironmentModel                              *collisionSpace_;
@@ -152,7 +152,7 @@ namespace planning_environment
 	ros::Time                                                       lastMapUpdate_;	
 	tf::MessageNotifier<mapping_msgs::CollisionMap>                *collisionMapNotifier_;
 	tf::MessageNotifier<mapping_msgs::CollisionMap>                *collisionMapUpdateNotifier_;
-	tf::MessageNotifier<tabletop_msgs::AttachedObject>             *attachedBodyNotifier_;
+	tf::MessageNotifier<mapping_msgs::AttachedObject>              *attachedBodyNotifier_;
 	
 	boost::function<void(const mapping_msgs::CollisionMapConstPtr)> onBeforeMapUpdate_;
 	boost::function<void(const mapping_msgs::CollisionMapConstPtr)> onAfterMapUpdate_;

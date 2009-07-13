@@ -34,10 +34,10 @@
 
 /** \author Ioan Sucan */
 
-#ifndef PLANNING_ENVIRONMENT_PLANNING_MONITOR_
-#define PLANNING_ENVIRONMENT_PLANNING_MONITOR_
+#ifndef PLANNING_ENVIRONMENT_MONITORS_PLANNING_MONITOR_
+#define PLANNING_ENVIRONMENT_MONITORS_PLANNING_MONITOR_
 
-#include "planning_environment/collision_space_monitor.h"
+#include "planning_environment/monitors/collision_space_monitor.h"
 #include <motion_planning_msgs/KinematicJoint.h>
 #include <motion_planning_msgs/KinematicPath.h>
 #include <motion_planning_msgs/KinematicConstraints.h>
@@ -71,10 +71,13 @@ namespace planning_environment
 	/** \brief Return true if recent enough data is available so that planning is considered safe */
 	bool isEnvironmentSafe(void) const;
 	
-	/** \brief Check if the full state of the robot is valid */
+	/** \brief Check if the full state of the robot is valid (ignoring constraints) */
+	bool isStateValid(const planning_models::StateParams *state) const;
+
+	/** \brief Check if the full state of the robot is valid (including path constraints) */
 	bool isStateValidOnPath(const planning_models::StateParams *state) const;
 
-	/** \brief Check if the full state of the robot is valid */
+	/** \brief Check if the full state of the robot is valid (including path and goal constraints) */
 	bool isStateValidAtGoal(const planning_models::StateParams *state) const;
 	
 	/** \brief Check if the path is valid. Path constraints are considered, but goal constraints are not  */

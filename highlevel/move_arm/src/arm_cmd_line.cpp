@@ -39,7 +39,7 @@
 #include <ros/ros.h>
 #include <robot_actions/action_client.h>
 
-#include <planning_environment/kinematic_model_state_monitor.h>
+#include <planning_environment/monitors/kinematic_model_state_monitor.h>
 #include <pr2_robot_actions/MoveArmGoal.h>
 #include <pr2_robot_actions/MoveArmState.h>
 

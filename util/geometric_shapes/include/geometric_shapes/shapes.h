@@ -182,6 +182,12 @@ namespace shapes
 	double       *normals;       
     };
     
+    /** \brief Load a mesh from a set of vertices. Triangles are
+	constructed using index values from the triangles
+	vector. Triangle k has vertices at index values triangles[3k],
+	triangles[3k+1], triangles[3k+2]  */
+    Mesh* create_mesh_from_vertices(const std::vector<btVector3> &vertices, const std::vector<unsigned int> &triangles);
+    
     /** \brief Load a mesh from a set of vertices. Every 3 vertices
 	are considered a triangle. Repeating vertices are identified
 	and the set of triangle indices is constructed. The normal at

@@ -3,6 +3,6 @@
 # are attached to
 
 Header header
-string robot_name
 string link_name
-ObjectOnTable[] objects
+Object[] objects
+robot_msgs/Pose[] poses

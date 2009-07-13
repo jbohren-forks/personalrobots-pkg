@@ -34,8 +34,9 @@
 
 /** \author Ioan Sucan */
 
-#include "planning_environment/collision_space_monitor.h"
-#include <robot_msgs/PointStamped.h>
+#include "planning_environment/monitors/collision_space_monitor.h"
+#include "planning_environment/util/construct_object.h"
+#include <robot_msgs/PoseStamped.h>
 #include <boost/bind.hpp>
 #include <sstream>
 #include <climits>
@@ -94,7 +95,7 @@ void planning_environment::CollisionSpaceMonitor::setupCSM(void)
 
     if (cm_->loadedModels())
     {
-	attachedBodyNotifier_ = new tf::MessageNotifier<tabletop_msgs::AttachedObject>(*tf_, boost::bind(&CollisionSpaceMonitor::attachObjectCallback, this, _1), "attach_object", "", 1);
+	attachedBodyNotifier_ = new tf::MessageNotifier<mapping_msgs::AttachedObject>(*tf_, boost::bind(&CollisionSpaceMonitor::attachObjectCallback, this, _1), "attach_object", "", 1);
 	attachedBodyNotifier_->setTargetFrame(cm_->getCollisionCheckLinks());
 	ROS_DEBUG("Listening to attach_object using message notifier with target frame %s", attachedBodyNotifier_->getTargetFramesString().c_str());
     }
@@ -169,7 +170,7 @@ void planning_environment::CollisionSpaceMonitor::updateCollisionSpace(const map
 	    psi.point.x = collisionMap->boxes[i].center.x;
 	    psi.point.y = collisionMap->boxes[i].center.y;
 	    psi.point.z = collisionMap->boxes[i].center.z;
-
+	    
 	    robot_msgs::PointStamped pso;
 	    try
 	    {
@@ -227,59 +228,58 @@ void planning_environment::CollisionSpaceMonitor::updateCollisionSpace(const map
 	onAfterMapUpdate_(collisionMap);
 }
 
-void planning_environment::CollisionSpaceMonitor::attachObjectCallback(const tabletop_msgs::AttachedObjectConstPtr &attachedObject)
+void planning_environment::CollisionSpaceMonitor::attachObjectCallback(const mapping_msgs::AttachedObjectConstPtr &attachedObject)
 {
     collisionSpace_->lock();
     planning_models::KinematicModel::Link *link = kmodel_->getLink(attachedObject->link_name);
     
-    if (link)
-    {	
-	// clear the previously attached bodies 
-	for (unsigned int i = 0 ; i < link->attachedBodies.size() ; ++i)
-	    delete link->attachedBodies[i];
-	unsigned int n = attachedObject->get_objects_size();
-	link->attachedBodies.resize(0);
-	
-	// create the new ones
-	for (unsigned int i = 0 ; i < n ; ++i)
-	{
-	    robot_msgs::PointStamped center;
-	    robot_msgs::PointStamped centerP;
-	    center.point.x = attachedObject->objects[i].center.x;
-	    center.point.y = attachedObject->objects[i].center.y;
-	    center.point.z = attachedObject->objects[i].center.z;
-	    center.header  = attachedObject->header;
-	    bool err = false;
-	    try
-	    {
-		tf_->transformPoint(attachedObject->link_name, center, centerP);
-	    }
-	    catch(...)
-	    {
-		err = true;
-		ROS_ERROR("Unable to transform object to be attached from frame '%s' to frame '%s'", attachedObject->header.frame_id.c_str(), attachedObject->link_name.c_str());
-	    }
-	    if (err)
-		continue;
-	    
-	    unsigned int j = link->attachedBodies.size();
-	    link->attachedBodies.push_back(new planning_models::KinematicModel::AttachedBody());
-	    link->attachedBodies[j]->attachTrans.setOrigin(btVector3(centerP.point.x, centerP.point.y, centerP.point.z));
-	    
-	    // this is a HACK! we should have orientation
-	    shapes::Box *box = new shapes::Box();
-	    box->size[0] = attachedObject->objects[i].max_bound.x - attachedObject->objects[i].min_bound.x;
-	    box->size[1] = attachedObject->objects[i].max_bound.y - attachedObject->objects[i].min_bound.y;
-	    box->size[2] = attachedObject->objects[i].max_bound.z - attachedObject->objects[i].min_bound.z;
-	    link->attachedBodies[j]->shape = box;
-	}
-	
-	// update the collision model
-	collisionSpace_->updateAttachedBodies();
-	ROS_DEBUG("Link '%s' on '%s' has %d objects attached", attachedObject->link_name.c_str(), attachedObject->robot_name.c_str(), n);
-    }
+    if (attachedObject->objects.size() != attachedObject->poses.size())
+	ROS_ERROR("Number of objects to attach does not match number of poses");
     else
-	ROS_WARN("Unable to attach object to link '%s' on '%s'", attachedObject->link_name.c_str(), attachedObject->robot_name.c_str());
+	if (link)
+	{	
+	    // clear the previously attached bodies 
+	    for (unsigned int i = 0 ; i < link->attachedBodies.size() ; ++i)
+		delete link->attachedBodies[i];
+	    link->attachedBodies.resize(0);
+	    unsigned int n = attachedObject->objects.size();
+	    
+	    // create the new ones
+	    for (unsigned int i = 0 ; i < n ; ++i)
+	    {
+		robot_msgs::PoseStamped pose;
+		robot_msgs::PoseStamped poseP;
+		pose.pose = attachedObject->poses[i];
+		pose.header = attachedObject->header;
+		bool err = false;
+		try
+		{
+		    tf_->transformPose(attachedObject->link_name, pose, poseP);
+		}
+		catch(...)
+		{
+		    err = true;
+		    ROS_ERROR("Unable to transform object to be attached from frame '%s' to frame '%s'", attachedObject->header.frame_id.c_str(), attachedObject->link_name.c_str());
+		}
+		if (err)
+		    continue;
+		
+		shapes::Shape *shape = construct_object(attachedObject->objects[i]);
+		if (!shape)
+		    continue;
+		
+		unsigned int j = link->attachedBodies.size();
+		link->attachedBodies.push_back(new planning_models::KinematicModel::AttachedBody());
+		tf::poseMsgToTF(poseP.pose, link->attachedBodies[j]->attachTrans);
+		link->attachedBodies[j]->shape = shape;
+	    }
+	    
+	    // update the collision model
+	    collisionSpace_->updateAttachedBodies();
+	    ROS_DEBUG("Link '%s' has %d objects attached", attachedObject->link_name.c_str(), n);
+	}
+	else
+	    ROS_WARN("Unable to attach object to link '%s'", attachedObject->link_name.c_str());
     collisionSpace_->unlock();
     if (link && (onAfterAttachBody_ != NULL))
 	onAfterAttachBody_(link);

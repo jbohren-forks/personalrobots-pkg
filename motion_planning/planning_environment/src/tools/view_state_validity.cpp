@@ -41,7 +41,7 @@ state of the robot is valid or not.
 
 **/
 
-#include "planning_environment/collision_space_monitor.h"
+#include "planning_environment/monitors/planning_monitor.h"
 #include <std_msgs/Byte.h>
 
 #include <iostream>
@@ -59,17 +59,17 @@ public:
 	if (collisionModels_->loadedModels())
 	{	
 	    stateValidityPublisher_ = nh_.advertise<std_msgs::Byte>("state_validity", 1);
-	    collisionSpaceMonitor_ = new planning_environment::CollisionSpaceMonitor(collisionModels_, &tf_);
-	    collisionSpaceMonitor_->getEnvironmentModel()->setVerbose(true);
-	    collisionSpaceMonitor_->setOnAfterMapUpdateCallback(boost::bind(&ViewStateValidity::afterWorldUpdate, this, _1));
-	    collisionSpaceMonitor_->setOnStateUpdateCallback(boost::bind(&ViewStateValidity::stateUpdate, this));
+	    planningMonitor_ = new planning_environment::PlanningMonitor(collisionModels_, &tf_);
+	    planningMonitor_->getEnvironmentModel()->setVerbose(true);
+	    planningMonitor_->setOnAfterMapUpdateCallback(boost::bind(&ViewStateValidity::afterWorldUpdate, this, _1));
+	    planningMonitor_->setOnStateUpdateCallback(boost::bind(&ViewStateValidity::stateUpdate, this));
 	}
     }
 
     virtual ~ViewStateValidity(void)
     {
-        if (collisionSpaceMonitor_)
-	    delete collisionSpaceMonitor_;
+        if (planningMonitor_)
+	    delete planningMonitor_;
 	if (collisionModels_)
 	    delete collisionModels_;
     }
@@ -82,33 +82,29 @@ protected:
     }
     
     void stateUpdate(void)
-    {
-	collisionSpaceMonitor_->getEnvironmentModel()->lock();
-	collisionSpaceMonitor_->getKinematicModel()->computeTransforms(collisionSpaceMonitor_->getRobotState()->getParams());
-	collisionSpaceMonitor_->getEnvironmentModel()->updateRobotModel();
-	bool invalid = collisionSpaceMonitor_->getEnvironmentModel()->isCollision();
-	collisionSpaceMonitor_->getEnvironmentModel()->unlock();
+    {	
+	bool valid = planningMonitor_->isStateValid(planningMonitor_->getRobotState());
 	std_msgs::Byte msg;
-	msg.data = invalid ? 0 : 1;
+	msg.data = valid ? 1 : 0;
 	if (last_ != msg.data)
 	{
 	    last_ = msg.data;
 	    stateValidityPublisher_.publish(msg);
-	    if (invalid)
-		ROS_WARN("State is in collision");
-	    else
+	    if (valid)
 		ROS_INFO("State is valid");
+	    else
+		ROS_WARN("State is in collision");
 	}
     }
     
 private:
 
-    int                                          last_;
-    ros::NodeHandle                              nh_;
-    ros::Publisher                               stateValidityPublisher_;
-    tf::TransformListener                        tf_;
-    planning_environment::CollisionModels       *collisionModels_;
-    planning_environment::CollisionSpaceMonitor *collisionSpaceMonitor_;
+    int                                    last_;
+    ros::NodeHandle                        nh_;
+    ros::Publisher                         stateValidityPublisher_;
+    tf::TransformListener                  tf_;
+    planning_environment::CollisionModels *collisionModels_;
+    planning_environment::PlanningMonitor *planningMonitor_;
 };
 
 int main(int argc, char **argv)

@@ -47,8 +47,8 @@ This package is only temporary. I'll eventually replace it with a better solutio
 
 #include <ros/ros.h>
 #include "ros/node_handle.h"
-#include <planning_environment/planning_monitor.h>
-#include <planning_environment/collision_models.h>
+#include <planning_environment/monitors/planning_monitor.h>
+#include <planning_environment/models/collision_models.h>
 #include <motion_planning_msgs/KinematicJoint.h>
 #include <motion_planning_srvs/MotionPlan.h>
 #include <planning_models/kinematic_state_params.h>

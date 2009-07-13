@@ -34,8 +34,9 @@
 
 /** \author Ioan Sucan */
 
-#include "planning_environment/kinematic_state_constraint_evaluator.h"
+#include "planning_environment/util/kinematic_state_constraint_evaluator.h"
 #include <tf/transform_datatypes.h>
+#include <angles/angles.h>
 #include <cassert>
 
 bool planning_environment::KinematicConstraintEvaluator::decide(const double *params) const

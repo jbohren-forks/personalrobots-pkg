@@ -36,8 +36,8 @@
 
 
 #include <ros/ros.h>
-#include <planning_environment/collision_models.h>
-#include <planning_environment/kinematic_model_state_monitor.h>
+#include <planning_environment/models/collision_models.h>
+#include <planning_environment/monitors/kinematic_model_state_monitor.h>
 
 class SelfWatch
 {
