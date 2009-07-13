@@ -3,7 +3,7 @@
   <include file="$(find pr2_alpha)/$(env ROBOT).machine" />
 
   <group ns="stereo">
-  	<node pkg="stereo_image_proc" type="stereoproc" args="" output="screen" name="stereoproc">
+  	<node pkg="stereo_image_proc" machine="four" type="stereoproc" args="" output="screen" name="stereoproc">
 		<param name="do_rectify" type="bool" value="true"/>
 		<param name="do_stereo" type="bool" value="true" />
 	</node>
@@ -14,6 +14,9 @@
   	 <param name="face_detector/do_publish_faces_of_unknown_size" type="bool" value="false" />	
   	 <param name="face_detector/output" type="string" value="none" />
   </group>
-  <node pkg="people" type="face_detector" args="$(find people)/face_detection_nodes.txt" output="screen"/>
+  <node pkg="people" type="face_detector" machine="four" args="$(find people)/face_detection_nodes.txt" output="screen">
+    <param name="stereo_namespace" type="string" value="stereo_wide"/>
+  </node>
+
 
 </launch>
