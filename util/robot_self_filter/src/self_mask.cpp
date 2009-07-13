@@ -66,23 +66,6 @@ bool robot_self_filter::SelfMask::configure(const std::vector<std::string> &link
 	}
 	else
 	    ROS_WARN("Unable to create point inclusion body for link '%s'", links[i].c_str());
-
-	// add attached bodies
-	for (unsigned int j = 0 ; i < link->attachedBodies.size() ; ++j)
-	{
-	    SeeLink sla;
-	    sla.body = bodies::createBodyFromShape(link->attachedBodies[j]->shape);
-	    if (sla.body)
-	    {
-		sla.name = links[i];
-		sla.constTransf = link->constGeomTrans * link->attachedBodies[j]->attachTrans;
-		sla.body->setScale(scale);
-		sla.body->setPadding(padd);
-		bodies_.push_back(sla);
-	    }
-	    else
-		ROS_WARN("Unable to create point inclusion body for attached body %u on link '%s'", j, links[i].c_str());
-	}
     }
     
     if (bodies_.empty())
