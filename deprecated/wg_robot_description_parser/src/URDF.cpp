@@ -2344,10 +2344,13 @@ namespace robot_desc {
             {
                 const char *loc = node->ToElement()->Attribute("location");
                 const char *res_type = node->ToElement()->Attribute("type");
+                std::cout << "res_type: " << res_type << std::endl;
                 if (loc && strcmp(res_type,"stl_meshes")== 0)
                     m_resourceLocation = loc;
+                else if (loc && strcmp(res_type,"ogre")== 0)
+                    std::cout << "deprecated wg_robot_description_parser ignoring <resource type=\"ogre\"> tag, this is not an error, but will be dealt with in the new urdf parser." << std::endl;
                 else
-                    errorMessage("Attribute 'location' was not defined for <resource type=\"stl_meshes\"> tag");
+                    errorMessage("Attribute 'location' or 'type' not defined for <resource> tag.");
             }
             else if (node->ValueStr() == "map")
             loadMap(node, &m_data);
