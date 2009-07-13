@@ -2343,10 +2343,11 @@ namespace robot_desc {
             else if (node->ValueStr() == "resource")
             {
                 const char *loc = node->ToElement()->Attribute("location");
-                if (loc)
+                const char *res_type = node->ToElement()->Attribute("type");
+                if (loc && strcmp(res_type,"stl_meshes")== 0)
                     m_resourceLocation = loc;
                 else
-                    errorMessage("Attribute 'location' was not defined for <resource> tag");
+                    errorMessage("Attribute 'location' was not defined for <resource type=\"stl_meshes\"> tag");
             }
             else if (node->ValueStr() == "map")
             loadMap(node, &m_data);
