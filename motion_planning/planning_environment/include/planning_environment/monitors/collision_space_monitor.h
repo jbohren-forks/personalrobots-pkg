@@ -41,7 +41,7 @@
 #include "planning_environment/monitors/kinematic_model_state_monitor.h"
 
 #include <mapping_msgs/CollisionMap.h>
-
+#include <mapping_msgs/ObjectInMap.h>
 #include <boost/thread/mutex.hpp>
 
 namespace planning_environment
@@ -68,6 +68,8 @@ namespace planning_environment
 	
 	virtual ~CollisionSpaceMonitor(void)
 	{
+	    if (objectInMapNotifier_)
+		delete objectInMapNotifier_;
 	    if (collisionMapNotifier_)
 		delete collisionMapNotifier_;
 	    if (collisionMapUpdateNotifier_)
@@ -131,6 +133,7 @@ namespace planning_environment
 	void updateCollisionSpace(const mapping_msgs::CollisionMapConstPtr &collisionMap, bool clear);
 	void collisionMapCallback(const mapping_msgs::CollisionMapConstPtr &collisionMap);
 	void collisionMapUpdateCallback(const mapping_msgs::CollisionMapConstPtr &collisionMap);
+	void objectInMapCallback(const mapping_msgs::ObjectInMapConstPtr &objectInMap);
 	virtual bool attachObject(const mapping_msgs::AttachedObjectConstPtr &attachedObject);
 
 	CollisionModels                                                *cm_;
@@ -142,6 +145,7 @@ namespace planning_environment
 	ros::Time                                                       lastMapUpdate_;	
 	tf::MessageNotifier<mapping_msgs::CollisionMap>                *collisionMapNotifier_;
 	tf::MessageNotifier<mapping_msgs::CollisionMap>                *collisionMapUpdateNotifier_;
+	tf::MessageNotifier<mapping_msgs::ObjectInMap>                 *objectInMapNotifier_;
 	
 	boost::function<void(const mapping_msgs::CollisionMapConstPtr)> onBeforeMapUpdate_;
 	boost::function<void(const mapping_msgs::CollisionMapConstPtr)> onAfterMapUpdate_;

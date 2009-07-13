@@ -35,6 +35,8 @@
 /** \author Ioan Sucan */
 
 #include "planning_environment/monitors/collision_space_monitor.h"
+#include "planning_environment/util/construct_object.h"
+#include <robot_msgs/PointStamped.h>
 #include <robot_msgs/PoseStamped.h>
 #include <boost/bind.hpp>
 #include <sstream>
@@ -55,6 +57,8 @@ void planning_environment::CollisionSpaceMonitor::setupCSM(void)
     onAfterMapUpdate_  = NULL;
 
     collisionMapNotifier_ = NULL;
+    collisionMapUpdateNotifier_ = NULL;
+    objectInMapNotifier_ = NULL;
     
     haveMap_ = false;
 
@@ -89,6 +93,9 @@ void planning_environment::CollisionSpaceMonitor::setupCSM(void)
 
     collisionMapUpdateNotifier_ = new tf::MessageNotifier<mapping_msgs::CollisionMap>(*tf_, boost::bind(&CollisionSpaceMonitor::collisionMapUpdateCallback, this, _1), "collision_map_update", getFrameId(), 1);
     ROS_DEBUG("Listening to collision_map_update using message notifier with target frame %s", collisionMapUpdateNotifier_->getTargetFramesString().c_str());
+
+    objectInMapNotifier_ = new tf::MessageNotifier<mapping_msgs::ObjectInMap>(*tf_, boost::bind(&CollisionSpaceMonitor::objectInMapCallback, this, _1), "object_in_map", getFrameId(), 1024);
+    ROS_DEBUG("Listening to object_in_map using message notifier with target frame %s", collisionMapUpdateNotifier_->getTargetFramesString().c_str());
 }
 
 bool planning_environment::CollisionSpaceMonitor::isMapUpdated(double sec) const
@@ -216,6 +223,51 @@ void planning_environment::CollisionSpaceMonitor::updateCollisionSpace(const map
     
     if (onAfterMapUpdate_ != NULL)
 	onAfterMapUpdate_(collisionMap);
+}
+
+void planning_environment::CollisionSpaceMonitor::objectInMapCallback(const mapping_msgs::ObjectInMapConstPtr &objectInMap)
+{
+    if (objectInMap->action == mapping_msgs::ObjectInMap::ADD)
+    {
+	// add the object to the map
+	shapes::Shape *shape = construct_object(objectInMap->object);
+	if (shape)
+	{
+	    bool err = false;
+	    robot_msgs::PoseStamped psi;
+	    robot_msgs::PoseStamped pso;
+	    psi.pose = objectInMap->pose;
+	    psi.header = objectInMap->header;
+	    try
+	    {
+		tf_->transformPose(getFrameId(), psi, pso);
+	    }
+	    catch(...)
+	    {
+		err = true;
+	    }
+	    
+	    if (err)
+		ROS_ERROR("Unable to transform object '%s' in frame '%s' to frame '%s'", objectInMap->id.c_str(), objectInMap->header.frame_id.c_str(), getFrameId().c_str());
+	    else
+	    {
+		btTransform pose;
+		tf::poseMsgToTF(pso.pose, pose);
+		collisionSpace_->lock();
+		collisionSpace_->addObject(objectInMap->id, shape, pose);
+		collisionSpace_->unlock();
+		ROS_DEBUG("Added object '%s' to collision space", objectInMap->id.c_str());
+	    }
+	    delete shape;
+	}
+    }
+    else
+    {
+	// remove the object from the map
+	collisionSpace_->lock();
+	collisionSpace_->clearObstacles(objectInMap->id);
+	collisionSpace_->unlock();
+    }
 }
 
 bool planning_environment::CollisionSpaceMonitor::attachObject(const mapping_msgs::AttachedObjectConstPtr &attachedObject)
