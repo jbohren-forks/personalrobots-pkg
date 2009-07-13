@@ -301,9 +301,9 @@ void URDF2Gazebo::convertLink(TiXmlElement *root, robot_desc::URDF::Link *link, 
                 {
                     int visualGeomSize;
                     double visualSize[3];
-                    getGeometrySize(link->visual->geometry, &visualGeomSize, visualSize);
+                    std::string visual_geom_type = getGeometrySize(link->visual->geometry, &visualGeomSize, visualSize);
                     addKeyValue(visual, "size", values2str(visualGeomSize, visualSize));
-                    addKeyValue(visual, "mesh", "unit_" + link->visual->geometry->type);
+                    addKeyValue(visual, "mesh", "unit_" + visual_geom_type);
                 }
                 
                 copyGazeboMap(link->visual->data, visual);
