@@ -185,10 +185,13 @@ public:
     people_->initFaceDetection(num_filenames_, haar_filenames_);
 
     // Subscribe to the images and parameters
-    limage_sub_ = nh_.subscribe("stereo/left/image_rect", 1, sync_.synchronize(&FaceDetector::leftImageCallback,this));
-    dimage_sub_ = nh_.subscribe("stereo/disparity", 1, sync_.synchronize(&FaceDetector::dispImageCallback,this));
-    dispinfo_sub_ = nh_.subscribe("stereo/disparity_info", 1, sync_.synchronize(&FaceDetector::dispInfoCallback,this));
-    rcinfo_sub_ = nh_.subscribe("stereo/right/cam_info", 1, sync_.synchronize(&FaceDetector::rcamInfoCallback,this));
+    string stereo_namespace;
+    nh_.param("~stereo_namespace", stereo_namespace, string("stereo_wide"));
+
+    limage_sub_ = nh_.subscribe(stereo_namespace + string("/left/image_rect"), 1, sync_.synchronize(&FaceDetector::leftImageCallback,this));
+    dimage_sub_ = nh_.subscribe(stereo_namespace + string("/disparity"), 1, sync_.synchronize(&FaceDetector::dispImageCallback,this));
+    dispinfo_sub_ = nh_.subscribe(stereo_namespace + string("/disparity_info"), 1, sync_.synchronize(&FaceDetector::dispInfoCallback,this));
+    rcinfo_sub_ = nh_.subscribe(stereo_namespace + string("/right/cam_info"), 1, sync_.synchronize(&FaceDetector::rcamInfoCallback,this));
 
     ROS_INFO_STREAM_NAMED("face_detector","Subscribed to images");
 
