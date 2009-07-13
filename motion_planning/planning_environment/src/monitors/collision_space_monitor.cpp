@@ -53,9 +53,7 @@ void planning_environment::CollisionSpaceMonitor::setupCSM(void)
 {
     onBeforeMapUpdate_ = NULL;
     onAfterMapUpdate_  = NULL;
-    onAfterAttachBody_ = NULL;
-    
-    attachedBodyNotifier_   = NULL;
+
     collisionMapNotifier_ = NULL;
     
     haveMap_ = false;
@@ -91,13 +89,6 @@ void planning_environment::CollisionSpaceMonitor::setupCSM(void)
 
     collisionMapUpdateNotifier_ = new tf::MessageNotifier<mapping_msgs::CollisionMap>(*tf_, boost::bind(&CollisionSpaceMonitor::collisionMapUpdateCallback, this, _1), "collision_map_update", getFrameId(), 1);
     ROS_DEBUG("Listening to collision_map_update using message notifier with target frame %s", collisionMapUpdateNotifier_->getTargetFramesString().c_str());
-
-    if (cm_->loadedModels())
-    {
-	attachedBodyNotifier_ = new tf::MessageNotifier<mapping_msgs::AttachedObject>(*tf_, boost::bind(&CollisionSpaceMonitor::attachObjectCallback, this, _1), "attach_object", "", 1);
-	attachedBodyNotifier_->setTargetFrame(cm_->getCollisionCheckLinks());
-	ROS_DEBUG("Listening to attach_object using message notifier with target frame %s", attachedBodyNotifier_->getTargetFramesString().c_str());
-    }
 }
 
 bool planning_environment::CollisionSpaceMonitor::isMapUpdated(double sec) const

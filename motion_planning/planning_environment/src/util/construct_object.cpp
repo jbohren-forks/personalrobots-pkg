@@ -90,6 +90,9 @@ shapes::Shape* planning_environment::construct_object(const mapping_msgs::Object
 	}
     }
     
+    if (shape == NULL)
+	ROS_ERROR("Unable to construct shape corresponding to object of type %d", (int)obj.type);
+    
     return shape;
 }
 

@@ -45,6 +45,8 @@ void planning_environment::KinematicModelStateMonitor::setupRSM(void)
     kmodel_ = NULL;
     robotState_ = NULL;
     onStateUpdate_ = NULL;
+    onAfterAttachBody_ = NULL;
+    attachedBodyNotifier_ = NULL;
     tfWait_ = ros::Duration(0.1);
     havePose_ = haveMechanismState_ = false;
     if (rm_->loadedModels())
@@ -76,6 +78,10 @@ void planning_environment::KinematicModelStateMonitor::setupRSM(void)
 
 	mechanismStateSubscriber_ = nh_.subscribe("mechanism_state", 1, &KinematicModelStateMonitor::mechanismStateCallback, this);
 	ROS_DEBUG("Listening to mechanism state");
+
+	attachedBodyNotifier_ = new tf::MessageNotifier<mapping_msgs::AttachedObject>(*tf_, boost::bind(&KinematicModelStateMonitor::attachObjectCallback, this, _1), "attach_object", "", 1);
+	attachedBodyNotifier_->setTargetFrame(rm_->getCollisionCheckLinks());
+	ROS_DEBUG("Listening to attach_object using message notifier with target frame %s", attachedBodyNotifier_->getTargetFramesString().c_str());
     }
 }
 

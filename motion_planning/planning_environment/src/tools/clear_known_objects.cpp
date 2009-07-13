@@ -58,24 +58,22 @@ public:
 	cm_ = new planning_environment::CollisionModels("robot_description");
 	if (cm_->loadedModels())
 	{
+	    em_ = cm_->getODECollisionModel().get();
 	    kmsm_ = new planning_environment::KinematicModelStateMonitor(static_cast<planning_environment::RobotModels*>(cm_), &tf_);
-	
+	    kmsm_->setOnAfterAttachBodyCallback(boost::bind(&ClearKnownObjects::attachObjectEvent, this, _1));
+	    
 	    collisionMapNotifier_ = new tf::MessageNotifier<mapping_msgs::CollisionMap>(tf_, boost::bind(&ClearKnownObjects::collisionMapCallback, this, _1), "collision_map", kmsm_->getFrameId(), 1);
 	    ROS_DEBUG("Listening to collision_map using message notifier with target frame %s", collisionMapNotifier_->getTargetFramesString().c_str());
 	    
 	    collisionMapUpdateNotifier_ = new tf::MessageNotifier<mapping_msgs::CollisionMap>(tf_, boost::bind(&ClearKnownObjects::collisionMapUpdateCallback, this, _1), "collision_map_update", kmsm_->getFrameId(), 1);
 	    ROS_DEBUG("Listening to collision_map_update using message notifier with target frame %s", collisionMapUpdateNotifier_->getTargetFramesString().c_str());
-	    
-	    attachedBodyNotifier_ = new tf::MessageNotifier<mapping_msgs::AttachedObject>(tf_, boost::bind(&ClearKnownObjects::attachObjectCallback, this, _1), "attach_object", "", 1);
-	    attachedBodyNotifier_->setTargetFrame(cm_->getCollisionCheckLinks());
-	    ROS_DEBUG("Listening to attach_object using message notifier with target frame %s", attachedBodyNotifier_->getTargetFramesString().c_str());
 	}
 	else
 	{
+	    em_ = NULL;
 	    kmsm_ = NULL;
 	    collisionMapNotifier_ = NULL;
 	    collisionMapUpdateNotifier_ = NULL;
-	    attachedBodyNotifier_ = NULL;
 	}
     }
 
@@ -106,19 +104,18 @@ private:
     {
     }
     
-    void attachObjectCallback(const mapping_msgs::AttachedObjectConstPtr &attachedObject)
+    void attachObjectEvent(const planning_models::KinematicModel::Link* link)
     {
+	em_->updateAttachedBodies();
     }
     
-
-    tf::TransformListener       tf_;
+    tf::TransformListener                             tf_;
     planning_environment::CollisionModels            *cm_;
     planning_environment::KinematicModelStateMonitor *kmsm_;
-
-    tf::MessageNotifier<mapping_msgs::CollisionMap>     *collisionMapNotifier_;
-    tf::MessageNotifier<mapping_msgs::CollisionMap>     *collisionMapUpdateNotifier_;
-    tf::MessageNotifier<mapping_msgs::AttachedObject>   *attachedBodyNotifier_;
-
+    collision_space::EnvironmentModel                *em_;
+    
+    tf::MessageNotifier<mapping_msgs::CollisionMap>  *collisionMapNotifier_;
+    tf::MessageNotifier<mapping_msgs::CollisionMap>  *collisionMapUpdateNotifier_;
 };
 
 
