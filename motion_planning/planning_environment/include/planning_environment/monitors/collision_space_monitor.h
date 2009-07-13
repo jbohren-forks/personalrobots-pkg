@@ -40,9 +40,7 @@
 #include "planning_environment/models/collision_models.h"
 #include "planning_environment/monitors/kinematic_model_state_monitor.h"
 
-#include <tf/message_notifier.h>
 #include <mapping_msgs/CollisionMap.h>
-#include <mapping_msgs/AttachedObject.h>
 
 #include <boost/thread/mutex.hpp>
 
@@ -74,8 +72,6 @@ namespace planning_environment
 		delete collisionMapNotifier_;
 	    if (collisionMapUpdateNotifier_)
 		delete collisionMapUpdateNotifier_;
-	    if (attachedBodyNotifier_)
-		delete attachedBodyNotifier_;
 	}
 
 	/** \brief Return the instance of the environment model maintained */
@@ -110,12 +106,6 @@ namespace planning_environment
 	    onAfterMapUpdate_ = callback;
 	}
 
-	/** \brief Define a callback for after updating a map */
-	void setOnAfterAttachBodyCallback(const boost::function<void(planning_models::KinematicModel::Link*)> &callback)
-	{
-	    onAfterAttachBody_ = callback;
-	}
-
 	/** \brief Return true if  map has been received */
 	bool haveMap(void) const
 	{
@@ -141,8 +131,8 @@ namespace planning_environment
 	void updateCollisionSpace(const mapping_msgs::CollisionMapConstPtr &collisionMap, bool clear);
 	void collisionMapCallback(const mapping_msgs::CollisionMapConstPtr &collisionMap);
 	void collisionMapUpdateCallback(const mapping_msgs::CollisionMapConstPtr &collisionMap);
-	void attachObjectCallback(const mapping_msgs::AttachedObjectConstPtr &attachedObject);
-	
+	virtual bool attachObject(const mapping_msgs::AttachedObjectConstPtr &attachedObject);
+
 	CollisionModels                                                *cm_;
 	collision_space::EnvironmentModel                              *collisionSpace_;
 	double                                                          boxScale_;
@@ -152,11 +142,9 @@ namespace planning_environment
 	ros::Time                                                       lastMapUpdate_;	
 	tf::MessageNotifier<mapping_msgs::CollisionMap>                *collisionMapNotifier_;
 	tf::MessageNotifier<mapping_msgs::CollisionMap>                *collisionMapUpdateNotifier_;
-	tf::MessageNotifier<mapping_msgs::AttachedObject>              *attachedBodyNotifier_;
 	
 	boost::function<void(const mapping_msgs::CollisionMapConstPtr)> onBeforeMapUpdate_;
 	boost::function<void(const mapping_msgs::CollisionMapConstPtr)> onAfterMapUpdate_;
-	boost::function<void(planning_models::KinematicModel::Link*)>   onAfterAttachBody_;
     
     };
     

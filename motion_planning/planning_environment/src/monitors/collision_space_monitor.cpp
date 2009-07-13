@@ -35,7 +35,6 @@
 /** \author Ioan Sucan */
 
 #include "planning_environment/monitors/collision_space_monitor.h"
-#include "planning_environment/util/construct_object.h"
 #include <robot_msgs/PoseStamped.h>
 #include <boost/bind.hpp>
 #include <sstream>
@@ -228,59 +227,26 @@ void planning_environment::CollisionSpaceMonitor::updateCollisionSpace(const map
 	onAfterMapUpdate_(collisionMap);
 }
 
-void planning_environment::CollisionSpaceMonitor::attachObjectCallback(const mapping_msgs::AttachedObjectConstPtr &attachedObject)
+bool planning_environment::CollisionSpaceMonitor::attachObject(const mapping_msgs::AttachedObjectConstPtr &attachedObject)
 {
     collisionSpace_->lock();
-    planning_models::KinematicModel::Link *link = kmodel_->getLink(attachedObject->link_name);
-    
-    if (attachedObject->objects.size() != attachedObject->poses.size())
-	ROS_ERROR("Number of objects to attach does not match number of poses");
-    else
-	if (link)
-	{	
-	    // clear the previously attached bodies 
-	    for (unsigned int i = 0 ; i < link->attachedBodies.size() ; ++i)
-		delete link->attachedBodies[i];
-	    link->attachedBodies.resize(0);
-	    unsigned int n = attachedObject->objects.size();
-	    
-	    // create the new ones
-	    for (unsigned int i = 0 ; i < n ; ++i)
-	    {
-		robot_msgs::PoseStamped pose;
-		robot_msgs::PoseStamped poseP;
-		pose.pose = attachedObject->poses[i];
-		pose.header = attachedObject->header;
-		bool err = false;
-		try
-		{
-		    tf_->transformPose(attachedObject->link_name, pose, poseP);
-		}
-		catch(...)
-		{
-		    err = true;
-		    ROS_ERROR("Unable to transform object to be attached from frame '%s' to frame '%s'", attachedObject->header.frame_id.c_str(), attachedObject->link_name.c_str());
-		}
-		if (err)
-		    continue;
-		
-		shapes::Shape *shape = construct_object(attachedObject->objects[i]);
-		if (!shape)
-		    continue;
-		
-		unsigned int j = link->attachedBodies.size();
-		link->attachedBodies.push_back(new planning_models::KinematicModel::AttachedBody());
-		tf::poseMsgToTF(poseP.pose, link->attachedBodies[j]->attachTrans);
-		link->attachedBodies[j]->shape = shape;
-	    }
-	    
-	    // update the collision model
-	    collisionSpace_->updateAttachedBodies();
-	    ROS_DEBUG("Link '%s' has %d objects attached", attachedObject->link_name.c_str(), n);
-	}
-	else
-	    ROS_WARN("Unable to attach object to link '%s'", attachedObject->link_name.c_str());
+    // call the same code as in the kinematic model state monitor, but disable the callback
+    boost::function<void(planning_models::KinematicModel::Link*)> backup = onAfterAttachBody_;
+    onAfterAttachBody_ = NULL;
+    bool result = KinematicModelStateMonitor::attachObject(attachedObject);
+
+    // restore the callback
+    onAfterAttachBody_ = backup;
+    if (result)
+    {
+	collisionSpace_->updateAttachedBodies();
+	ROS_DEBUG("Attached bodies have been updated");
+    }
     collisionSpace_->unlock();
-    if (link && (onAfterAttachBody_ != NULL))
-	onAfterAttachBody_(link);
+    
+    // call the event, if needed
+    if (result && (onAfterAttachBody_ != NULL))
+	onAfterAttachBody_(kmodel_->getLink(attachedObject->link_name)); 
+    
+    return result;
 }

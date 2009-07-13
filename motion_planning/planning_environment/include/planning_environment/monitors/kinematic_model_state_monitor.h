@@ -40,7 +40,9 @@
 #include "planning_environment/models/robot_models.h"
 #include <tf/transform_datatypes.h>
 #include <tf/transform_listener.h>
+#include <tf/message_notifier.h>
 #include <mechanism_msgs/MechanismState.h>
+#include <mapping_msgs/AttachedObject.h>
 #include <boost/bind.hpp>
 #include <vector>
 #include <string>
@@ -77,12 +79,20 @@ namespace planning_environment
 	{
 	    if (robotState_)
 		delete robotState_;
+	    if (attachedBodyNotifier_)
+		delete attachedBodyNotifier_;
 	}
 
 	/** \brief Define a callback for when the state is changed */
 	void setOnStateUpdateCallback(const boost::function<void(void)> &callback)
 	{
 	    onStateUpdate_ = callback;
+	}
+
+	/** \brief Define a callback for after updating a map */
+	void setOnAfterAttachBodyCallback(const boost::function<void(planning_models::KinematicModel::Link*)> &callback)
+	{
+	    onAfterAttachBody_ = callback;
 	}
 
 	/** \brief Get the kinematic model that is being monitored */
@@ -163,7 +173,8 @@ namespace planning_environment
 
 	void setupRSM(void);
 	void mechanismStateCallback(const mechanism_msgs::MechanismStateConstPtr &mechanismState);
-
+	void attachObjectCallback(const mapping_msgs::AttachedObjectConstPtr &attachedObject);
+	virtual bool attachObject(const mapping_msgs::AttachedObjectConstPtr &attachedObject);
 
 	RobotModels                     *rm_;
 	bool                             includePose_;
@@ -175,6 +186,9 @@ namespace planning_environment
 	ros::Subscriber                  mechanismStateSubscriber_;
 	tf::TransformListener           *tf_;
 
+	tf::MessageNotifier<mapping_msgs::AttachedObject>
+	                                *attachedBodyNotifier_;
+
 	/** \brief How long to wait for a TF if it is not yet available, before failing */
 	ros::Duration                    tfWait_;
 
@@ -184,6 +198,8 @@ namespace planning_environment
 	std::string                      frame_id_;
 
 	boost::function<void(void)>      onStateUpdate_;
+	boost::function<void(planning_models::KinematicModel::Link*)>
+	                                 onAfterAttachBody_;
 
 	bool                             havePose_;
 	bool                             haveMechanismState_;
