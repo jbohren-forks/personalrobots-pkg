@@ -930,6 +930,11 @@ private:
     	IplImage* binary_image = cvCreateImage(cvGetSize(outlet_image), outlet_image->depth, 1);
 
     	cvCanny(gray_image, binary_image, 30,60);
+    	if (display) {
+    		cvNamedWindow("templ",1);
+    		//cvShowImage("templ", outlet_image);
+    		cvShowImage("templ", binary_image);
+    	}
 
 
     	CvMemStorage* storage = cvCreateMemStorage();
@@ -967,28 +972,28 @@ private:
 
 
     	if (candidates.size()!=4) {
+                ROS_INFO("in detectOutletInImage did not find 4 blocks\n\n\n");
     		return false;
     	}
 
     	order_tuple(candidates);
 
     	if (abs(candidates[0].y-candidates[1].y)>5 || abs(candidates[2].y-candidates[3].y)>5) {
+                ROS_INFO("in detectOutletInImage vertical alignment bad \n\n\n");
     		return false;
     	}
     	if (abs(candidates[0].x-candidates[3].x)>5 || abs(candidates[1].x-candidates[2].x)>5) {
+                ROS_INFO("in detectOutletInImage horizontal alignment bad \n\n\n");
     		return false;
     	}
 
-    	if (display) {
-    		cvNamedWindow("templ",1);
-    		cvShowImage("templ", outlet_image);
-    	}
-
     	if (abs(abs(candidates[0].x-candidates[1].x)-45*ppmm)>5 || abs(abs(candidates[2].x-candidates[3].x)-45*ppmm)>5) {
+                ROS_INFO("in detectOutletInImage horizontal size wrong \n\n\n");
     		return false;
     	}
 
     	if (abs(abs(candidates[0].y-candidates[3].y)-39*ppmm)>5 || abs(abs(candidates[1].y-candidates[2].y)-39*ppmm)>5) {
+                ROS_INFO("in detectOutletInImage vertical size wrong \n\n\n");
     		return false;
     	}
 
