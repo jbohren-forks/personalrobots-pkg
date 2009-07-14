@@ -34,76 +34,61 @@
 
 /* Author: Wim Meeussen */
 
+#ifndef RDF_PARSER_H
+#define RDF_PARSER_H
 
-#include "urdf_parser/link.h"
+#include <string>
+#include <map>
+#include <tinyxml/tinyxml.h>
+#include <boost/function.hpp>
+#include "rdf_parser/link.h"
 
 using namespace std;
 
+namespace rdf_parser{
 
-namespace urdf_parser{
-
-Link::Link(const std::string &name, 
-           Link* parent, 
-           TiXmlElement *joint, 
-           TiXmlElement *origin,
-           TiXmlElement *visual,
-           TiXmlElement *collision,
-           TiXmlElement *geometry,
-           TiXmlElement *inertia)
-  :  joint_(joint),
-     origin_(origin),
-     visual_(visual),
-     collision_(collision),
-     geometry_(geometry),
-     inertia_(inertia),
-     name_(name),
-     parent_(parent)
+class RdfParser
 {
-  if (parent_ != NULL)
-    parent_->addChild(this);
-}
+public:
+  RdfParser(){};
 
-const std::string& 
-Link::getName() const
-{
-  return name_;
-}
+  bool initXml(TiXmlElement *xml);
+  bool getRoot(Link*& root);
 
-void 
-Link::addChild(Link* child)
-{
-  children_.push_back(child);
-  cout << "added child " << child->getName() << " to " << getName() << endl;
-}
-
-
-bool
-Link::getParent(Link*& link) const
-{
-  if (parent_ != NULL){
-    link = parent_;
-    return true;
-  }
-  return false;
-}
+private:
+  bool getAtribute(TiXmlElement *xml, const string& name, string& attr);
+  bool checkNumber(const char& c);
+  bool checkNumber(const std::string& s);
+  bool checkVector(TiXmlElement *vector_xml, const string& field);
+  bool checkValue(TiXmlElement *value_xml, const string& field);
+  bool checkFrame(TiXmlElement *frame_xml);
+  bool checkRotInertia(TiXmlElement *rot_inertia_xml);
+  bool checkInertia(TiXmlElement *inertia_xml);
+  bool checkJoint(TiXmlElement *joint_xml, std::string& joint_name);
+  bool checkCollision(TiXmlElement *collision_xml);
+  bool checkGeometry(TiXmlElement *geometry_xml);
+  bool getLink(TiXmlElement *link_xml, Link& link);
+  void addChildren(Link* p);
+  bool findElements(const std::string& element_type, 
+                    TiXmlElement* robot_xml, 
+                    std::map<std::string, TiXmlElement*>& elements, 
+                    boost::function<bool (RdfParser*, TiXmlElement*, std::string&)> checkfunction);
 
 
-unsigned int 
-Link::getNrOfChildren() const
-{
-  return children_.size();
-}
+  std::map<std::string, Link*> links_;
+  std::string root_name_;
+
+  map<string, string> link_parent;
+  map<string, TiXmlElement*> link_origin;
+  map<string, TiXmlElement*> link_joint;
+  map<string, TiXmlElement*> link_visual;
+  map<string, TiXmlElement*> link_collision;
+  map<string, TiXmlElement*> link_geometry;
+  map<string, TiXmlElement*> link_inertia;
 
 
-bool 
-Link::getChild(unsigned int nr, Link*& link) const
-{
-  if ((int)nr >=0 && nr <getNrOfChildren()){
-    link = children_[nr];
-    return true;
-  }
-  return false;
-}
+};
 
 }
 
+#endif

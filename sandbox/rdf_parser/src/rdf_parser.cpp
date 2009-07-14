@@ -36,14 +36,14 @@
 
 #include <boost/algorithm/string.hpp>
 #include <vector>
-#include "urdf_parser/urdf_parser.h"
+#include "rdf_parser/rdf_parser.h"
 
 using namespace std;
 
-namespace urdf_parser{
+namespace rdf_parser{
 
 
-bool UrdfParser::getRoot(Link*& root_link)
+bool RdfParser::getRoot(Link*& root_link)
 {
   map<string, Link*>::iterator root_it = links_.find(root_name_);
   if (root_it != links_.end()){
@@ -54,14 +54,14 @@ bool UrdfParser::getRoot(Link*& root_link)
 }
 
 
-bool UrdfParser::initXml(TiXmlElement *robot_xml)
+bool RdfParser::initXml(TiXmlElement *robot_xml)
 {
   cout << "Parsing robot xml" << endl;
   if (!robot_xml) return false;
 
   // get all joints
   map<string, TiXmlElement*> joints;
-  findElements(string("joint"), robot_xml, joints, &UrdfParser::checkJoint);
+  findElements(string("joint"), robot_xml, joints, &RdfParser::checkJoint);
 
   // construct the links
   TiXmlElement *link_xml = NULL;
@@ -146,7 +146,7 @@ bool UrdfParser::initXml(TiXmlElement *robot_xml)
   return true;
 }
 
-void UrdfParser::addChildren(Link* p)
+void RdfParser::addChildren(Link* p)
 {
   // find links that have parent 'p'
   for (map<string, string>::const_iterator c=link_parent.begin(); c!=link_parent.end(); c++){
@@ -166,7 +166,7 @@ void UrdfParser::addChildren(Link* p)
 
 
 
-bool UrdfParser::getLink(TiXmlElement *link_xml, Link& link)
+bool RdfParser::getLink(TiXmlElement *link_xml, Link& link)
 {
   if (!link_xml) return false;
   // get link name
@@ -194,12 +194,12 @@ bool UrdfParser::getLink(TiXmlElement *link_xml, Link& link)
 
 
 
-bool UrdfParser::checkNumber(const char& c)
+bool RdfParser::checkNumber(const char& c)
 {
   return (c=='1' || c=='2' ||c=='3' ||c=='4' ||c=='5' ||c=='6' ||c=='7' ||c=='8' ||c=='9' ||c=='0' ||c=='.' ||c=='-' ||c==' ');
 }
 
-bool UrdfParser::checkNumber(const std::string& s)
+bool RdfParser::checkNumber(const std::string& s)
 {
   for (unsigned int i=0; i<s.size(); i++)
     if (!checkNumber(s[i])) return false;
@@ -207,7 +207,7 @@ bool UrdfParser::checkNumber(const std::string& s)
 }
 
 
-bool UrdfParser::getAtribute(TiXmlElement *xml, const string& name, string& attr)
+bool RdfParser::getAtribute(TiXmlElement *xml, const string& name, string& attr)
 {
   if (!xml) return false;
   const char *attr_char = xml->Attribute(name.c_str());
@@ -216,7 +216,7 @@ bool UrdfParser::getAtribute(TiXmlElement *xml, const string& name, string& attr
   return true;
 }
 
-bool UrdfParser::checkVector(TiXmlElement *vector_xml, const string& field)
+bool RdfParser::checkVector(TiXmlElement *vector_xml, const string& field)
 {
   if (!vector_xml) return false;
   string vector_str;
@@ -251,7 +251,7 @@ bool UrdfParser::checkVector(TiXmlElement *vector_xml, const string& field)
   return true;
 }
 
-bool UrdfParser::checkValue(TiXmlElement *value_xml, const string& field)
+bool RdfParser::checkValue(TiXmlElement *value_xml, const string& field)
 {
   if (!value_xml) return false;
   string value_str;
@@ -264,7 +264,7 @@ bool UrdfParser::checkValue(TiXmlElement *value_xml, const string& field)
 }
 
 
-bool UrdfParser::checkFrame(TiXmlElement *frame_xml)
+bool RdfParser::checkFrame(TiXmlElement *frame_xml)
 {
   if (!frame_xml) return false;
 
@@ -277,7 +277,7 @@ bool UrdfParser::checkFrame(TiXmlElement *frame_xml)
 }
 
 
-bool UrdfParser::checkRotInertia(TiXmlElement *rot_inertia_xml)
+bool RdfParser::checkRotInertia(TiXmlElement *rot_inertia_xml)
 {
   if (!rot_inertia_xml) return false;
   if (!checkValue(rot_inertia_xml, "ixx")) return false;
@@ -291,7 +291,7 @@ bool UrdfParser::checkRotInertia(TiXmlElement *rot_inertia_xml)
 }
 
 
-bool UrdfParser::checkInertia(TiXmlElement *inertia_xml)
+bool RdfParser::checkInertia(TiXmlElement *inertia_xml)
 {
   if (!inertia_xml) return false;
   if (!checkVector(inertia_xml->FirstChildElement("com"), "xyz")) 
@@ -306,7 +306,7 @@ bool UrdfParser::checkInertia(TiXmlElement *inertia_xml)
 
 
 
-bool UrdfParser::checkJoint(TiXmlElement *joint_xml, string& joint_name)
+bool RdfParser::checkJoint(TiXmlElement *joint_xml, string& joint_name)
 {
   if (!joint_xml) return false;
   // get joint name
@@ -342,7 +342,7 @@ bool UrdfParser::checkJoint(TiXmlElement *joint_xml, string& joint_name)
 
 
 
-bool UrdfParser::checkCollision(TiXmlElement *collision_xml)
+bool RdfParser::checkCollision(TiXmlElement *collision_xml)
 {
   if (!collision_xml) return false;
 
@@ -350,7 +350,7 @@ bool UrdfParser::checkCollision(TiXmlElement *collision_xml)
 }
 
 
-bool UrdfParser::checkGeometry(TiXmlElement *geometry_xml)
+bool RdfParser::checkGeometry(TiXmlElement *geometry_xml)
 {
   if (!geometry_xml) return false;
 
@@ -359,10 +359,10 @@ bool UrdfParser::checkGeometry(TiXmlElement *geometry_xml)
 
 
 
-bool UrdfParser::findElements(const string& element_type, 
+bool RdfParser::findElements(const string& element_type, 
                               TiXmlElement* robot_xml, 
                               map<string, TiXmlElement*>& elements, 
-                              boost::function<bool (UrdfParser*, TiXmlElement*, std::string&)> checkfunction)
+                              boost::function<bool (RdfParser*, TiXmlElement*, std::string&)> checkfunction)
 {
   TiXmlElement* element_xml = NULL, * link_xml = NULL;
 

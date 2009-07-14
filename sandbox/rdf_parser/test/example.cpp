@@ -34,24 +34,24 @@
 
 /* Author: Wim Meeussen */
 
-#include "urdf_parser/urdf_parser.h"
+#include "rdf_parser/rdf_parser.h"
 #include <iostream>
 
 using namespace std;
-using namespace urdf_parser;
+using namespace rdf_parser;
 
 
 int main()
 {
-  TiXmlDocument urdf_xml;
-  urdf_xml.LoadFile("pr2_desc.xml");
-  TiXmlElement *robot_xml = urdf_xml.FirstChildElement("robot");
+  TiXmlDocument rdf_xml;
+  rdf_xml.LoadFile("pr2_desc.xml");
+  TiXmlElement *robot_xml = rdf_xml.FirstChildElement("robot");
   if (!robot_xml){
     cerr << "Could not parse the xml" << endl;
     return -1;
   }
 
-  UrdfParser robot;
+  RdfParser robot;
   robot.initXml(robot_xml);
 
   // get info from parser

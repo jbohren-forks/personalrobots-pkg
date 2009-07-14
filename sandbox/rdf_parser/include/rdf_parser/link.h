@@ -34,8 +34,8 @@
 
 /* Author: Wim Meeussen */
 
-#ifndef LINK_URDF_PARSER_H
-#define LINK_URDF_PARSER_H
+#ifndef LINK_RDF_PARSER_H
+#define LINK_RDF_PARSER_H
 
 #include <string>
 #include <vector>
@@ -43,7 +43,7 @@
 
 using namespace std;
 
-namespace urdf_parser{
+namespace rdf_parser{
 
 class Link
 {
