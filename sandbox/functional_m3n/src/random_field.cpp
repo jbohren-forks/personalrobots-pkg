@@ -35,7 +35,7 @@
 #include <functional_m3n/random_field.h>
 
 // --------------------------------------------------------------
-/*! See function definition */
+/* See function definition */
 // --------------------------------------------------------------
 RandomField::RandomField(unsigned int nbr_clique_sets)
 {
@@ -43,7 +43,7 @@ RandomField::RandomField(unsigned int nbr_clique_sets)
 }
 
 // --------------------------------------------------------------
-/*! See function definition */
+/* See function definition */
 // --------------------------------------------------------------
 RandomField::~RandomField()
 {
@@ -51,7 +51,7 @@ RandomField::~RandomField()
 }
 
 // --------------------------------------------------------------
-/*! See function definition */
+/* See function definition */
 // --------------------------------------------------------------
 void RandomField::clear()
 {
@@ -78,7 +78,7 @@ void RandomField::clear()
 }
 
 // --------------------------------------------------------------
-/*! See function definition */
+/* See function definition */
 // --------------------------------------------------------------
 int RandomField::updateLabelings(const map<unsigned int, unsigned int>& new_labeling)
 {
@@ -128,7 +128,7 @@ int RandomField::updateLabelings(const map<unsigned int, unsigned int>& new_labe
 }
 
 // --------------------------------------------------------------
-/*! See function definition */
+/* See function definition */
 // --------------------------------------------------------------
 const RandomField::Node* RandomField::createNode(const float* feature_vals,
                                                  const unsigned int nbr_feature_vals,
@@ -146,7 +146,7 @@ const RandomField::Node* RandomField::createNode(const float* feature_vals,
 }
 
 // --------------------------------------------------------------
-/*! See function definition */
+/* See function definition */
 // --------------------------------------------------------------
 const RandomField::Node* RandomField::createNode(const unsigned int node_id,
                                                  const float* feature_vals,
@@ -180,7 +180,7 @@ const RandomField::Node* RandomField::createNode(const unsigned int node_id,
 }
 
 // --------------------------------------------------------------
-/*! See function definition */
+/* See function definition */
 // --------------------------------------------------------------
 const RandomField::Clique* RandomField::createClique(const unsigned int clique_set_idx,
                                                      const list<RandomField::Node*>& nodes,
@@ -210,7 +210,7 @@ const RandomField::Clique* RandomField::createClique(const unsigned int clique_s
 }
 
 // --------------------------------------------------------------
-/*! See function definition */
+/* See function definition */
 // --------------------------------------------------------------
 const RandomField::Clique* RandomField::createClique(const unsigned int clique_id,
                                                      const unsigned int clique_set_idx,
@@ -276,7 +276,7 @@ const RandomField::Clique* RandomField::createClique(const unsigned int clique_i
 // -----------------------------------------------------------------------------------------------------------
 
 // --------------------------------------------------------------
-/*! See function definition */
+/* See function definition */
 // --------------------------------------------------------------
 RandomField::GenericClique::GenericClique()
 {
@@ -286,7 +286,7 @@ RandomField::GenericClique::GenericClique()
 }
 
 // --------------------------------------------------------------
-/*! See function definition */
+/* See function definition */
 // --------------------------------------------------------------
 RandomField::GenericClique::~GenericClique()
 {
@@ -294,7 +294,7 @@ RandomField::GenericClique::~GenericClique()
 }
 
 // --------------------------------------------------------------
-/*! See function definition */
+/* See function definition */
 // --------------------------------------------------------------
 RandomField::Node::Node(const unsigned int rf_id, unsigned int label)
 {
@@ -307,7 +307,7 @@ RandomField::Node::Node(const unsigned int rf_id, unsigned int label)
 }
 
 // --------------------------------------------------------------
-/*! See function definition */
+/* See function definition */
 // --------------------------------------------------------------
 RandomField::Clique::Clique(const unsigned int rf_id)
 {
@@ -315,7 +315,7 @@ RandomField::Clique::Clique(const unsigned int rf_id)
 }
 
 // --------------------------------------------------------------
-/*! See function definition */
+/* See function definition */
 // --------------------------------------------------------------
 void RandomField::Clique::addNode(const Node& new_node)
 {
@@ -331,7 +331,7 @@ void RandomField::Clique::addNode(const Node& new_node)
 }
 
 // --------------------------------------------------------------
-/*! See function definition */
+/* See function definition */
 // --------------------------------------------------------------
 int RandomField::Clique::updateLabels(const map<unsigned int, unsigned int>& node_labels)
 {
@@ -368,7 +368,7 @@ int RandomField::Clique::updateLabels(const map<unsigned int, unsigned int>& nod
 }
 
 // --------------------------------------------------------------
-/*! See function definition */
+/* See function definition */
 // --------------------------------------------------------------
 int RandomField::Clique::getModeLabels(unsigned int& mode1_label,
                                        unsigned int& mode1_count,
