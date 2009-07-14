@@ -1,5 +1,5 @@
-#ifndef __SPECTRAL_SHAPE_H__
-#define __SPECTRAL_SHAPE_H__
+#ifndef __D3D_SPECTRAL_SHAPE_H__
+#define __D3D_SPECTRAL_SHAPE_H__
 /*********************************************************************
  * Software License Agreement (BSD License)
  *
@@ -39,10 +39,6 @@
 #include <opencv/cv.h>
 #include <opencv/cxcore.h>
 #include <opencv/cvaux.hpp>
-
-#include <robot_msgs/PointCloud.h>
-
-#include <point_cloud_mapping/kdtree/kdtree.h>
 
 #include <descriptors_3d/spectral_analysis.h>
 

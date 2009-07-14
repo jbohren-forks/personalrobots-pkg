@@ -1,5 +1,5 @@
-#ifndef __SPECTRAL_ANALYSIS_H__
-#define __SPECTRAL_ANALYSIS_H__
+#ifndef __D3D_SPECTRAL_ANALYSIS_H__
+#define __D3D_SPECTRAL_ANALYSIS_H__
 /*********************************************************************
  * Software License Agreement (BSD License)
  *

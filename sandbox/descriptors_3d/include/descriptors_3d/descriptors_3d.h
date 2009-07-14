@@ -1,5 +1,5 @@
-#ifndef __DESCRIPTORS_3D_H__
-#define __DESCRIPTORS_3D_H__
+#ifndef __D3D_DESCRIPTORS_3D_H__
+#define __D3D_DESCRIPTORS_3D_H__
 /*********************************************************************
  * Software License Agreement (BSD License)
  *

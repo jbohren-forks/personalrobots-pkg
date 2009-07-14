@@ -1,3 +1,5 @@
+#ifndef __D3D_ORIENTATION_H__
+#define __D3D_ORIENTATION_H__
 /*********************************************************************
  * Software License Agreement (BSD License)
  *
@@ -32,55 +34,50 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
-#include <descriptors_3d/spectral_shape.h>
+#include <vector>
+
+#include <Eigen/Core>
+
+#include <opencv/cv.h>
+#include <opencv/cxcore.h>
+#include <opencv/cvaux.hpp>
+
+#include <descriptors_3d/spectral_analysis.h>
 
 using namespace std;
 
 // --------------------------------------------------------------
-/* See function definition */
+//* SpectralShape
+/**
+ * \brief
+ */
 // --------------------------------------------------------------
-void SpectralShape::useCurvature()
+class Orientation: public SpectralAnalysis
 {
-  if (!use_curvature_)
-  {
-    result_size_++;
-    use_curvature_ = true;
-  }
-}
-
-// --------------------------------------------------------------
-/* See function definition */
-// --------------------------------------------------------------
-void SpectralShape::computeFeatures(cv::Vector<cv::Vector<float> >& results)
-{
-  const vector<Eigen::Vector3d*>& eigen_values = spectral_info_->getEigenValues();
-
-  unsigned int nbr_interest_pts = eigen_values.size();
-  results.resize(nbr_interest_pts);
-
-  size_t feature_idx = 0;
-  for (size_t i = 0 ; i < nbr_interest_pts ; i++)
-  {
-    feature_idx = 0;
-
-    // If the values are non-NULL, then able to compute features for the interest point
-    if (eigen_values[i] != NULL)
+  public:
+    Orientation() :
+      ref_tangent_defined_(false), ref_normal_defined_(false)
     {
-      results[i].resize(result_size_);
-
-      results[i][feature_idx++] = static_cast<float> ((*(eigen_values[i]))[0]); // scatter
-      results[i][feature_idx++] = static_cast<float> ((*(eigen_values[i]))[2] - (*(eigen_values[i]))[1]); // linear
-      results[i][feature_idx++] = static_cast<float> ((*(eigen_values[i]))[1] - (*(eigen_values[i]))[0]); // surface
-
-      if (use_curvature_)
-      {
-        results[i][feature_idx++] = static_cast<float> ((*(eigen_values[i]))[0] / ((*(eigen_values[i]))[0]
-            + (*(eigen_values[i]))[1] + (*(eigen_values[i]))[2]));
-      }
+      result_size_ = 0;
     }
-    else
-    {
-      results[i].clear();
-    }
-  }
-}
+
+    void useTangentOrientation(double ref_x, double ref_y, double ref_z);
+
+    void useNormalOrientation(double ref_x, double ref_y, double ref_z);
+
+    // TODO: use sensor location
+
+  protected:
+    virtual void computeFeatures(cv::Vector<cv::Vector<float> >& results);
+
+  private:
+    bool ref_tangent_defined_;
+    Eigen::Vector3d ref_tangent_;
+    Eigen::Vector3d ref_tangent_flipped_;
+
+    bool ref_normal_defined_;
+    Eigen::Vector3d ref_normal_;
+    Eigen::Vector3d ref_normal_flipped_;
+};
+
+#endif

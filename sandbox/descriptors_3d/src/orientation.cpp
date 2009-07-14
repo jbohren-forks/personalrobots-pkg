@@ -32,55 +32,91 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
-#include <descriptors_3d/spectral_shape.h>
+#include <descriptors_3d/orientation.h>
 
 using namespace std;
 
 // --------------------------------------------------------------
 /* See function definition */
 // --------------------------------------------------------------
-void SpectralShape::useCurvature()
+void Orientation::useTangentOrientation(double ref_x, double ref_y, double ref_z)
 {
-  if (!use_curvature_)
+  if (ref_tangent_defined_ == false)
   {
+    ref_tangent_defined_ = true;
     result_size_++;
-    use_curvature_ = true;
   }
+
+  ref_tangent_[0] = ref_x;
+  ref_tangent_[1] = ref_y;
+  ref_tangent_[2] = ref_z;
+  ref_tangent_flipped_[0] = -ref_x;
+  ref_tangent_flipped_[1] = -ref_y;
+  ref_tangent_flipped_[2] = -ref_z;
 }
 
 // --------------------------------------------------------------
 /* See function definition */
 // --------------------------------------------------------------
-void SpectralShape::computeFeatures(cv::Vector<cv::Vector<float> >& results)
+void Orientation::useNormalOrientation(double ref_x, double ref_y, double ref_z)
 {
-  const vector<Eigen::Vector3d*>& eigen_values = spectral_info_->getEigenValues();
+  if (ref_normal_defined_ == false)
+  {
+    ref_normal_defined_ = true;
+    result_size_++;
+  }
 
-  unsigned int nbr_interest_pts = eigen_values.size();
+  ref_normal_[0] = ref_x;
+  ref_normal_[1] = ref_y;
+  ref_normal_[2] = ref_z;
+  ref_normal_flipped_[0] = -ref_x;
+  ref_normal_flipped_[1] = -ref_y;
+  ref_normal_flipped_[2] = -ref_z;
+}
+
+// --------------------------------------------------------------
+/* See function definition */
+// --------------------------------------------------------------
+void Orientation::computeFeatures(cv::Vector<cv::Vector<float> >& results)
+{
+
+  const vector<Eigen::Vector3d*>& tangents = spectral_info_->getTangents();
+  const vector<Eigen::Vector3d*>& normals = spectral_info_->getNormals();
+
+  unsigned int nbr_interest_pts = tangents.size();
   results.resize(nbr_interest_pts);
 
   size_t feature_idx = 0;
+  double tangent_dot = 0.0;
+  double normal_dot = 0.0;
   for (size_t i = 0 ; i < nbr_interest_pts ; i++)
   {
     feature_idx = 0;
 
-    // If the values are non-NULL, then able to compute features for the interest point
-    if (eigen_values[i] != NULL)
-    {
-      results[i].resize(result_size_);
-
-      results[i][feature_idx++] = static_cast<float> ((*(eigen_values[i]))[0]); // scatter
-      results[i][feature_idx++] = static_cast<float> ((*(eigen_values[i]))[2] - (*(eigen_values[i]))[1]); // linear
-      results[i][feature_idx++] = static_cast<float> ((*(eigen_values[i]))[1] - (*(eigen_values[i]))[0]); // surface
-
-      if (use_curvature_)
-      {
-        results[i][feature_idx++] = static_cast<float> ((*(eigen_values[i]))[0] / ((*(eigen_values[i]))[0]
-            + (*(eigen_values[i]))[1] + (*(eigen_values[i]))[2]));
-      }
-    }
-    else
+    // Indicate couldnt compute feature
+    if (tangents[i] == NULL || normals[i] == NULL)
     {
       results[i].clear();
+    }
+
+    if (ref_tangent_defined_)
+    {
+      tangent_dot = (tangents[i])->dot(ref_tangent_);
+      if (tangent_dot < 1e-5)
+      {
+        tangent_dot = (tangents[i])->dot(ref_tangent_flipped_);
+      }
+      results[i][feature_idx++] = tangent_dot;
+    }
+
+    if (ref_normal_defined_)
+    {
+      normal_dot = (normals[i])->dot(ref_normal_);
+      if (normal_dot < 1e-5)
+      {
+        normal_dot = (normals[i])->dot(ref_normal_flipped_);
+      }
+      results[i][feature_idx++] = normal_dot;
     }
   }
 }
