@@ -25,8 +25,9 @@
   <node pkg="mux" type="throttle" args="1.0 stereo/cloud stereo/cloud_throttled" machine="four"/>
 
   <!-- Downsampled version of stereo for recording -->
-  <node pkg="mux" type="throttle" args="1.0 stereo/raw_stereo stereo/raw_stereo_throttled" machine="four"/>
   
+  <node pkg="mux" type="throttle" args="1.0 wide_stereo/raw_stereo wide_stereo/raw_stereo_throttled" machine="four"/>
+  <node pkg="mux" type="throttle" args="1.0 narrow_stereo/raw_stereo narrow_stereo/raw_stereo_throttled" machine="four"/>
 
   <node pkg="pr2_mechanism_controllers" type="send_laser_traj_cmd_ms2.py" args="laser_tilt_controller" />
 
