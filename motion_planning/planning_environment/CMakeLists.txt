@@ -5,6 +5,11 @@ rospack(planning_environment)
 
 set(ROS_BUILD_TYPE Debug)
 
+#set the default path for built executables to the "bin" directory
+set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
+#set the default path for built libraries to the "lib" directory
+set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
+
 rospack_add_library(planning_environment src/models/robot_models.cpp
 					 src/models/collision_models.cpp
 					 src/monitors/kinematic_model_state_monitor.cpp
