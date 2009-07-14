@@ -109,13 +109,13 @@ btCollisionObject* collision_space::EnvironmentModelBullet::createCollisionBody(
     case shapes::BOX:
 	{
 	    const double *size = static_cast<const shapes::Box*>(shape)->size;
-	    btshape = dynamic_cast<btCollisionShape*>(new btBoxShape(btVector3((size[0] * scale + padding)/2.0, (size[1] * scale + padding)/2.0, (size[2] * scale + padding)/2.0)));
+	    btshape = dynamic_cast<btCollisionShape*>(new btBoxShape(btVector3(size[0] * scale / 2.0 + padding, size[1] * scale / 2.0 + padding, size[2] * scale / 2.0 + padding)));
 	}	
 	break;
     case shapes::CYLINDER:
 	{
-	    double r2 = static_cast<const shapes::Cylinder*>(shape)->radius * scale + padding / 2.0;
-	    btshape = dynamic_cast<btCollisionShape*>(new btCylinderShapeZ(btVector3(r2, r2, (static_cast<const shapes::Cylinder*>(shape)->length * scale + padding)/2.0)));
+	    double r2 = static_cast<const shapes::Cylinder*>(shape)->radius * scale + padding;
+	    btshape = dynamic_cast<btCollisionShape*>(new btCylinderShapeZ(btVector3(r2, r2, static_cast<const shapes::Cylinder*>(shape)->length * scale / 2.0 + padding)));
 	}
 	break;
     case shapes::MESH:
@@ -127,7 +127,7 @@ btCollisionObject* collision_space::EnvironmentModelBullet::createCollisionBody(
 		btmesh->addPoint(btVector3(mesh->vertices[3*i], mesh->vertices[3*i + 1], mesh->vertices[3*i + 2]));
 	    
 	    btmesh->setLocalScaling(btVector3(scale, scale, scale));
-	    btmesh->setMargin(padding);
+	    btmesh->setMargin(padding + 0.0001); // we need this to be positive
 	    btshape = dynamic_cast<btCollisionShape*>(btmesh);
 	}
 	

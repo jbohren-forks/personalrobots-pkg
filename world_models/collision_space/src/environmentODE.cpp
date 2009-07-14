@@ -99,13 +99,13 @@ dGeomID collision_space::EnvironmentModelODE::createODEGeom(dSpaceID space, ODES
     case shapes::BOX:
 	{
 	    const double *size = static_cast<const shapes::Box*>(shape)->size;
-	    g = dCreateBox(space, size[0] * scale + padding, size[1] * scale + padding, size[2] * scale + padding);
+	    g = dCreateBox(space, size[0] * scale + padding * 2.0, size[1] * scale + padding * 2.0, size[2] * scale + padding * 2.0);
 	}	
 	break;
     case shapes::CYLINDER:
 	{
 	    g = dCreateCylinder(space, static_cast<const shapes::Cylinder*>(shape)->radius * scale + padding,
-				static_cast<const shapes::Cylinder*>(shape)->length * scale + padding);
+				static_cast<const shapes::Cylinder*>(shape)->length * scale + padding * 2.0);
 	}
 	break;
     case shapes::MESH:
@@ -124,6 +124,7 @@ dGeomID collision_space::EnvironmentModelODE::createODEGeom(dSpaceID space, ODES
 	    storage.meshVertices.push_back(vertices);
 	    storage.meshIndices.push_back(indices);
 	    storage.meshData.push_back(data);
+	    /// \todo : add padding & scaling for meshes
 	}
 	
     default:
