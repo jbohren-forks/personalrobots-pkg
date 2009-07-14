@@ -53,9 +53,7 @@ public:
   UrdfParser(){};
 
   bool initXml(TiXmlElement *xml);
-
-  Link& getRoot();
-  //  Link& getLink(const std::string& name);
+  Link* getRoot();
 
 private:
   bool getAtribute(TiXmlElement *xml, const string& name, string& attr);

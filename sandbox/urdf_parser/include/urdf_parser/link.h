@@ -48,13 +48,14 @@ namespace urdf_parser{
 class Link
 {
 public:
-  Link(const std::string &name, Link* parent, 
-       TiXmlElement *joint, 
-       TiXmlElement *origin,
-       TiXmlElement *visual,
-       TiXmlElement *collision,
-       TiXmlElement *geometry,
-       TiXmlElement *inertia);
+  Link(const std::string &name, 
+       Link* parent = NULL, 
+       TiXmlElement *joint = NULL, 
+       TiXmlElement *origin = NULL,
+       TiXmlElement *visual = NULL,
+       TiXmlElement *collision = NULL,
+       TiXmlElement *geometry = NULL,
+       TiXmlElement *inertia = NULL);
 
   /// returns the name of the link
   const std::string& getName();
@@ -71,11 +72,8 @@ public:
   /// the xml elements of the link
   TiXmlElement *joint_, *origin_, *visual_, *collision_, *geometry_, *inertia_;
 
-  /// Add a child to the link
-  void addChild(Link* child);
-
 private:
-
+  void addChild(Link* child);
 
   std::string name_;
   Link* parent_;

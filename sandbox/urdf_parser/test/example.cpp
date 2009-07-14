@@ -53,5 +53,11 @@ int main()
 
   UrdfParser robot;
   robot.initXml(robot_xml);
+
+  // get info from parser
+  Link* root = robot.getRoot();
+
+  cout << "root " << root->getName() << " has " << root->getNrOfChildren() << " children" << endl;
+
 }
 

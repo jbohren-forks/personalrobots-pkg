@@ -42,7 +42,8 @@ using namespace std;
 
 namespace urdf_parser{
 
-Link::Link(const std::string &name, Link* parent, 
+Link::Link(const std::string &name, 
+           Link* parent, 
            TiXmlElement *joint, 
            TiXmlElement *origin,
            TiXmlElement *visual,

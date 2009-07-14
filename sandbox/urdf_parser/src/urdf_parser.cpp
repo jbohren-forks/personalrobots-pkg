@@ -43,6 +43,14 @@ using namespace std;
 namespace urdf_parser{
 
 
+Link* UrdfParser::getRoot()
+{
+  map<string, Link>::iterator root = links_.find(root_name_);
+  if (root == links_.end()) return NULL;
+  else return &(root->second);
+}
+
+
 bool UrdfParser::initXml(TiXmlElement *robot_xml)
 {
   cout << "Parsing robot xml" << endl;
@@ -124,19 +132,12 @@ bool UrdfParser::initXml(TiXmlElement *robot_xml)
   }
   if (root_name_ == "not found")
   {cerr << "No root link found. The robot xml contains a graph instead of a tree." << endl; return false;}
-  cout << root_name_ << " is root segment " << endl;
+  cout << root_name_ << " is root link " << endl;
 
 
   // Start building tree
   links_.clear();
-  links_.insert(make_pair(root_name_, 
-                          Link(root_name_, NULL, 
-                               link_joint[root_name_],
-                               link_origin[root_name_],
-                               link_visual[root_name_],
-                               link_collision[root_name_],
-                               link_geometry[root_name_],
-                               link_inertia[root_name_])));
+  links_.insert(make_pair(root_name_, Link(root_name_)));
   addChildren(links_.find(root_name_)->second);
 
   return true;
@@ -144,18 +145,17 @@ bool UrdfParser::initXml(TiXmlElement *robot_xml)
 
 void UrdfParser::addChildren(Link& p)
 {
-  // find links that have 'p' as parent
+  // find links that have parent 'p'
   for (map<string, string>::const_iterator c=link_parent.begin(); c!=link_parent.end(); c++){
     if (c->second == p.getName()){
       links_.insert(make_pair(c->first, 
-                              Link(c->first, NULL, 
+                              Link(c->first, &p, 
                                    link_joint[c->first],
                                    link_origin[c->first],
                                    link_visual[c->first],
                                    link_collision[c->first],
                                    link_geometry[c->first],
                                    link_inertia[c->first])));
-      p.addChild(&(links_.find(c->first)->second));
       addChildren(links_.find(c->first)->second);
     }
   }
