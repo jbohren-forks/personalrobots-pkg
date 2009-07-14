@@ -1,0 +1,15 @@
+<package>
+  <description brief="urdf_parser">
+     urdf_parser
+  </description>
+  <author>Wim Meeussen</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://pr.willowgarage.com/wiki/urdf_parser</url>
+
+  <depend package="tinyxml" />
+  <depend package="gtest" />
+
+</package>
+
+
