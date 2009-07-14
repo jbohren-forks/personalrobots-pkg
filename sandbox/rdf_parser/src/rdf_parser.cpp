@@ -64,6 +64,13 @@ bool RdfParser::initXml(TiXmlElement *robot_xml)
   findElements(string("joint"), robot_xml, joints, &RdfParser::checkJoint);
 
   // construct the links
+  link_parent.clear();
+  link_origin.clear();
+  link_visual.clear();
+  link_geometry.clear();
+  link_collision.clear();
+  link_inertia.clear();
+  link_joint.clear();
   TiXmlElement *link_xml = NULL;
   for (link_xml = robot_xml->FirstChildElement("link"); link_xml; link_xml = link_xml->NextSiblingElement("link")){
     // get link name
@@ -80,7 +87,7 @@ bool RdfParser::initXml(TiXmlElement *robot_xml)
     link_parent[link_name] = parent_name;
 
     // get link origin
-    if (!checkVector(link_xml->FirstChildElement("origin"), "xyz"))
+    if (!checkOrigin(link_xml->FirstChildElement("origin")))
     {cerr << "Link " << link_name << " has invalid origin" << endl; return false;}
     link_origin[link_name] = link_xml->FirstChildElement("origin");
 
@@ -98,18 +105,18 @@ bool RdfParser::initXml(TiXmlElement *robot_xml)
       link_geometry[link_name] = link_xml->FirstChildElement("geometry");
     }
 
-    // get link collition
+    // get link collision
     if (link_xml->FirstChildElement("collision")){
       if (!checkCollision(link_xml->FirstChildElement("collision")))
       {cerr << "Link " << link_name << " has invalid collision" << endl; return false;}
-      link_geometry[link_name] = link_xml->FirstChildElement("collision");
+      link_collision[link_name] = link_xml->FirstChildElement("collision");
     }
 
     // get link inertia
     if (link_xml->FirstChildElement("inertial")){
       if (!checkInertia(link_xml->FirstChildElement("inertial")))
       {cerr << "Link " << link_name << " has invalid inertial" << endl; return false;}
-      link_geometry[link_name] = link_xml->FirstChildElement("inertial");
+      link_inertia[link_name] = link_xml->FirstChildElement("inertial");
     }
 
     // get link joint
@@ -259,6 +266,19 @@ bool RdfParser::checkValue(TiXmlElement *value_xml, const string& field)
 
   if (!checkNumber(value_str))
   {cerr << "This is not a valid number: '" << value_str << "'" << endl; return false;}
+
+  return true;
+}
+
+
+bool RdfParser::checkOrigin(TiXmlElement *origin_xml)
+{
+  if (!origin_xml) return false;
+
+  if (!checkVector(origin_xml, "xyz"))
+  {cerr << "Origin does not have xyz" << endl; return false;}
+  if (!checkVector(origin_xml, "rpy"))
+  {cerr << "Origin does not have rpy" << endl; return false;}
 
   return true;
 }

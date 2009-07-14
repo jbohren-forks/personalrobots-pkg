@@ -1,13 +1,13 @@
 /*********************************************************************
 * Software License Agreement (BSD License)
-* 
+*
 *  Copyright (c) 2008, Willow Garage, Inc.
 *  All rights reserved.
-* 
+*
 *  Redistribution and use in source and binary forms, with or without
 *  modification, are permitted provided that the following conditions
 *  are met:
-* 
+*
 *   * Redistributions of source code must retain the above copyright
 *     notice, this list of conditions and the following disclaimer.
 *   * Redistributions in binary form must reproduce the above
@@ -17,7 +17,7 @@
 *   * Neither the name of the Willow Garage nor the names of its
 *     contributors may be used to endorse or promote products derived
 *     from this software without specific prior written permission.
-* 
+*
 *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 *  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 *  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -34,46 +34,58 @@
 
 /* Author: Wim Meeussen */
 
+#include <string>
+#include <gtest/gtest.h>
 #include "rdf_parser/rdf_parser.h"
-#include <iostream>
 
-using namespace std;
 using namespace rdf_parser;
+
+int g_argc;
+char** g_argv;
+
+class TestParser : public testing::Test
+{
+public:
+  RdfParser parser;
+
+protected:
+  /// constructor
+  TestParser()
+  {
+  }
+
+
+  /// Destructor
+  ~TestParser()
+  {
+  }
+};
+
+
+
+
+TEST_F(TestParser, test)
+{
+  for (int i=1; i<g_argc-1; i++){
+    TiXmlDocument rdf_xml;
+    rdf_xml.LoadFile(g_argv[i]);
+    TiXmlElement *robot_xml = rdf_xml.FirstChildElement("robot");
+    ASSERT_TRUE(robot_xml != NULL);
+    if (i == g_argc-2)
+      ASSERT_TRUE(parser.initXml(robot_xml));
+    else
+      ASSERT_FALSE(parser.initXml(robot_xml));
+  }
+  SUCCEED();
+}
+
+
 
 
 int main(int argc, char** argv)
 {
-  if (argc < 2){
-    cerr << "Expect xml file to parse" << endl;
-    return -1;
-  }
-  TiXmlDocument rdf_xml;
-  rdf_xml.LoadFile(argv[1]);
-  TiXmlElement *robot_xml = rdf_xml.FirstChildElement("robot");
-  if (!robot_xml){
-    cerr << "Could not parse the xml" << endl;
-    return -1;
-  }
-
-  RdfParser robot;
-  if (!robot.initXml(robot_xml)){
-    cerr << "Parsing the xml failed" << endl;
-    return -1;
-  }
-
-  // get info from parser
-  Link* root=NULL;
-  if (!robot.getRoot(root)) return -1;
-  cout << "root " << root->getName() << " has " << root->getNrOfChildren() << " children" << endl;
-
-  Link* child=NULL;
-  if (!root->getChild(0, child)) return -1;
-  cout << "child " << child->getName() << " has " << child->getNrOfChildren() << " children" << endl;
-  for (unsigned int i=0; i<child->getNrOfChildren(); i++){
-    Link* grandchild=NULL;
-    if (!child->getChild(i, grandchild)) return -1;
-    cout << i << ": " << grandchild->getName() << endl;
-  }
-  return 0;
+  testing::InitGoogleTest(&argc, argv);
+  g_argc = argc;
+  g_argv = argv;
+  return RUN_ALL_TESTS();
 }
-

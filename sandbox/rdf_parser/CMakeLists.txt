@@ -26,5 +26,10 @@ rospack_add_library(${PROJECT_NAME} src/rdf_parser.cpp src/link.cpp)
 #target_link_libraries(${PROJECT_NAME} another_library)
 rospack_add_boost_directories()
 #rospack_link_boost(${PROJECT_NAME} thread)
+
 rospack_add_executable(example test/example.cpp)
 target_link_libraries(example ${PROJECT_NAME})
+
+rospack_add_executable(test_parser test/test_rdf_parser.cpp)
+target_link_libraries(test_parser ${PROJECT_NAME})
+rospack_add_rostest(${PROJECT_SOURCE_DIR}/test/test_rdf_parser.launch)

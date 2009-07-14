@@ -65,6 +65,7 @@ private:
   bool checkRotInertia(TiXmlElement *rot_inertia_xml);
   bool checkInertia(TiXmlElement *inertia_xml);
   bool checkJoint(TiXmlElement *joint_xml, std::string& joint_name);
+  bool checkOrigin(TiXmlElement *origin_xml);
   bool checkCollision(TiXmlElement *collision_xml);
   bool checkGeometry(TiXmlElement *geometry_xml);
   bool getLink(TiXmlElement *link_xml, Link& link);
