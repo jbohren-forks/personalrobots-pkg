@@ -1,0 +1,17 @@
+<package>
+  <description brief="action_tools">
+
+     action_tools
+
+  </description>
+  <author>Vijay Pradeep</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://pr.willowgarage.com/wiki/action_tools</url>
+
+  <depend package="robot_msgs" />
+  <depend package="roscpp" />
+
+</package>
+
+
