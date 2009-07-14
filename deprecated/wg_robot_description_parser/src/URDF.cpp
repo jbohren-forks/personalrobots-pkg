@@ -2344,12 +2344,16 @@ namespace robot_desc {
             {
                 const char *loc = node->ToElement()->Attribute("location");
                 const char *res_type = node->ToElement()->Attribute("type");
-                std::cout << "res_type: " << res_type << std::endl;
-                if (loc && strcmp(res_type,"stl_meshes")== 0)
-                    m_resourceLocation = loc;
-                else if (loc && strcmp(res_type,"ogre")== 0)
-                    std::cout << "deprecated wg_robot_description_parser ignoring <resource type=\"ogre\"> tag, this is not an error, but will be dealt with in the new urdf parser." << std::endl;
-                else
+		// this library is to be replaced; we currently hack things so they work temporarily
+		if (res_type && loc)
+		{
+		    std::cout << "res_type: " << res_type << std::endl;
+		    if (strcmp(res_type,"stl_meshes")== 0)
+			m_resourceLocation = loc;
+		    else if (strcmp(res_type,"ogre")== 0)
+			std::cout << "deprecated wg_robot_description_parser ignoring <resource type=\"ogre\"> tag, this is not an error, but will be dealt with in the new urdf parser." << std::endl;
+		}
+		else
                     errorMessage("Attribute 'location' or 'type' not defined for <resource> tag.");
             }
             else if (node->ValueStr() == "map")
