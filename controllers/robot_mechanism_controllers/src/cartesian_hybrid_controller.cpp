@@ -467,13 +467,13 @@ bool CartesianHybridControllerNode::initXml(mechanism::RobotState *robot, TiXmlE
 
   ros::Node *node = ros::Node::instance();
 
-  task_frame_name_ = c_.chain_.getLinkName(0);
+  task_frame_name_ = c_.kdl_chain_.getSegment(0).getName();
 
   //node->subscribe(name_ + "/command", command_msg_, &CartesianHybridControllerNode::command, this, 5);
   command_notifier_.reset(new tf::MessageNotifier<manipulation_msgs::TaskFrameFormalism>(
                             &TF, node,
                             boost::bind(&CartesianHybridControllerNode::command, this, _1),
-                                        name_ + "/command", c_.chain_.getLinkName(0), 100));
+                            name_ + "/command", c_.kdl_chain_.getSegment(0).getName(), 100));
 
   pub_state_.reset(new realtime_tools::RealtimePublisher<robot_mechanism_controllers::CartesianHybridState>(name_ + "/state", 1));
   pub_tf_.reset(new realtime_tools::RealtimePublisher<tf::tfMessage>("/tf_message", 5));
@@ -542,7 +542,7 @@ void CartesianHybridControllerNode::update()
     {
       //pub_tf_->msg_.transforms[0].header.stamp.fromSec();
       pub_tf_->msg_.transforms[0].header.frame_id = name_ + "/tool_frame";
-      pub_tf_->msg_.transforms[0].parent_id = c_.chain_.getLinkName();
+      pub_tf_->msg_.transforms[0].parent_id = c_.kdl_chain_.getSegment(c_.kdl_chain_.getNrOfSegments()-1).getName();
       tf::Transform t;
       tf::TransformKDLToTF(c_.tool_frame_offset_, t);
       tf::transformTFToMsg(t, pub_tf_->msg_.transforms[0].transform);
@@ -558,7 +558,7 @@ void CartesianHybridControllerNode::command(
   tf::Stamped<tf::Transform> task_frame;
 
   try {
-    TF.lookupTransform(c_.chain_.getLinkName(0), tff_msg->header.frame_id, tff_msg->header.stamp,
+    TF.lookupTransform(c_.kdl_chain_.getSegment(0).getName(), tff_msg->header.frame_id, tff_msg->header.stamp,
                        task_frame);
   }
   catch (tf::TransformException &ex)
@@ -597,17 +597,17 @@ bool CartesianHybridControllerNode::setToolFrame(
   robot_srvs::SetPoseStamped::Request &req,
   robot_srvs::SetPoseStamped::Response &resp)
 {
-  if (!TF.canTransform(c_.chain_.getLinkName(-1), req.p.header.frame_id,
+  if (!TF.canTransform(c_.kdl_chain_.getSegment(c_.kdl_chain_.getNrOfSegments()-1).getName(), req.p.header.frame_id,
                        req.p.header.stamp, ros::Duration(3.0)))
   {
-    ROS_ERROR("Cannot transform %s -> %s at %lf", c_.chain_.getLinkName(-1).c_str(),
+    ROS_ERROR("Cannot transform %s -> %s at %lf", c_.kdl_chain_.getSegment(c_.kdl_chain_.getNrOfSegments()-1).getName().c_str(),
               req.p.header.frame_id.c_str(), req.p.header.stamp.toSec());
     return false;
   }
 
   robot_msgs::PoseStamped tool_in_tip_msg;
   tf::Transform tool_in_tip;
-  TF.transformPose(c_.chain_.getLinkName(-1), req.p, tool_in_tip_msg);
+  TF.transformPose(c_.kdl_chain_.getSegment(c_.kdl_chain_.getNrOfSegments()-1).getName(), req.p, tool_in_tip_msg);
   tf::poseMsgToTF(tool_in_tip_msg.pose, tool_in_tip);
   tool_in_tip.setOrigin(tf::Vector3(0,0,0));
   tf::TransformTFToKDL(tool_in_tip, c_.tool_frame_offset_);

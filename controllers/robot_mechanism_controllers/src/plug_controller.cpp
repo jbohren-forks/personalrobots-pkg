@@ -481,7 +481,8 @@ bool PlugControllerNode::setToolFrame(robot_srvs::SetPoseStamped::Request &req,
   robot_msgs::PoseStamped tool_offset_msg;
   try
   {
-    TF.transformPose(controller_.chain_.getLinkName(), req.p, tool_offset_msg);
+    //TF.transformPose(controller_.chain_.getLinkName(), req.p, tool_offset_msg);
+    TF.transformPose(controller_.kdl_chain_.getSegment(controller_.kdl_chain_.getNrOfSegments()-1).getName(), req.p, tool_offset_msg);
   }
   catch(tf::TransformException& ex)
   {

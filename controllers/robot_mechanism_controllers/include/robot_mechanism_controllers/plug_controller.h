@@ -89,6 +89,7 @@ public:
   KDL::Frame desired_frame_;
 
   mechanism::Chain chain_;
+  KDL::Chain kdl_chain_;
 
   double dist_to_line_;
   double f_r_;
@@ -101,7 +102,6 @@ private:
 
   mechanism::RobotState *robot_;
   std::string controller_name_;
-  KDL::Chain kdl_chain_;
   boost::scoped_ptr<KDL::ChainJntToJacSolver> jnt_to_jac_solver_;
   boost::scoped_ptr<KDL::ChainFkSolverPos> jnt_to_pose_solver_;
 

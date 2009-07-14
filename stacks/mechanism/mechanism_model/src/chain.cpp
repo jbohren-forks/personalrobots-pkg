@@ -149,14 +149,5 @@ Joint *Chain::getJoint(unsigned int actuated_joint_i)
 }
 
 
-std::string Chain::getLinkName(int index)
-{
-  if (index == -1)
-    index = link_names_.size() - 1;
-
-  return link_names_[index];
-}
-
-
 
 }

@@ -66,7 +66,6 @@ public:
   // get KDL chain
   void toKDL(KDL::Chain &chain);
 
-  std::string getLinkName(int index = -1);
   Joint* getJoint(unsigned int actuated_joint_i);
 
 private:
@@ -75,7 +74,6 @@ private:
 
   std::vector<int> joint_indices_;  // ONLY joints that can be actuated (not fixed joints)
   std::vector<int> all_joint_indices_;  // Includes fixed joints
-  std::vector<std::string> link_names_;
 };
 
 }
