@@ -58,16 +58,16 @@ public:
        TiXmlElement *inertia = NULL);
 
   /// returns the name of the link
-  const std::string& getName();
+  const std::string& getName() const;
 
   /// returns the parent link. The root link does not have a parent
-  bool getParent(Link& link);
+  bool getParent(Link*& link) const;
 
   /// returns the number of children of the link
-  unsigned int getNrOfChildren();
+  unsigned int getNrOfChildren() const;
 
   /// retuns child 
-  bool getChild(unsigned int nr, Link& link);
+  bool getChild(unsigned int nr, Link*& link) const;
 
   /// the xml elements of the link
   TiXmlElement *joint_, *origin_, *visual_, *collision_, *geometry_, *inertia_;

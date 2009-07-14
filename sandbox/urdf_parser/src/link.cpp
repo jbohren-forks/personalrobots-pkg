@@ -64,7 +64,7 @@ Link::Link(const std::string &name,
 }
 
 const std::string& 
-Link::getName()
+Link::getName() const
 {
   return name_;
 }
@@ -78,10 +78,10 @@ Link::addChild(Link* child)
 
 
 bool
-Link::getParent(Link& link)
+Link::getParent(Link*& link) const
 {
   if (parent_ != NULL){
-    link = *parent_;
+    link = parent_;
     return true;
   }
   return false;
@@ -89,17 +89,17 @@ Link::getParent(Link& link)
 
 
 unsigned int 
-Link::getNrOfChildren()
+Link::getNrOfChildren() const
 {
   return children_.size();
 }
 
 
 bool 
-Link::getChild(unsigned int nr, Link& link)
+Link::getChild(unsigned int nr, Link*& link) const
 {
   if ((int)nr >=0 && nr <getNrOfChildren()){
-    link = *(children_[nr]);
+    link = children_[nr];
     return true;
   }
   return false;

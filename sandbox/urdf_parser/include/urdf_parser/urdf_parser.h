@@ -53,7 +53,7 @@ public:
   UrdfParser(){};
 
   bool initXml(TiXmlElement *xml);
-  Link* getRoot();
+  bool getRoot(Link*& root);
 
 private:
   bool getAtribute(TiXmlElement *xml, const string& name, string& attr);
@@ -68,14 +68,14 @@ private:
   bool checkCollision(TiXmlElement *collision_xml);
   bool checkGeometry(TiXmlElement *geometry_xml);
   bool getLink(TiXmlElement *link_xml, Link& link);
-  void addChildren(Link& p);
+  void addChildren(Link* p);
   bool findElements(const std::string& element_type, 
                     TiXmlElement* robot_xml, 
                     std::map<std::string, TiXmlElement*>& elements, 
                     boost::function<bool (UrdfParser*, TiXmlElement*, std::string&)> checkfunction);
 
 
-  std::map<std::string, Link> links_;
+  std::map<std::string, Link*> links_;
   std::string root_name_;
 
   map<string, string> link_parent;

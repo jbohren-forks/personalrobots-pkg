@@ -43,11 +43,14 @@ using namespace std;
 namespace urdf_parser{
 
 
-Link* UrdfParser::getRoot()
+bool UrdfParser::getRoot(Link*& root_link)
 {
-  map<string, Link>::iterator root = links_.find(root_name_);
-  if (root == links_.end()) return NULL;
-  else return &(root->second);
+  map<string, Link*>::iterator root_it = links_.find(root_name_);
+  if (root_it != links_.end()){
+    root_link = root_it->second;
+    return true;
+  }
+  return false;
 }
 
 
@@ -137,25 +140,25 @@ bool UrdfParser::initXml(TiXmlElement *robot_xml)
 
   // Start building tree
   links_.clear();
-  links_.insert(make_pair(root_name_, Link(root_name_)));
+  links_.insert(make_pair(root_name_, new Link(root_name_)));
   addChildren(links_.find(root_name_)->second);
 
   return true;
 }
 
-void UrdfParser::addChildren(Link& p)
+void UrdfParser::addChildren(Link* p)
 {
   // find links that have parent 'p'
   for (map<string, string>::const_iterator c=link_parent.begin(); c!=link_parent.end(); c++){
-    if (c->second == p.getName()){
+    if (c->second == p->getName()){
       links_.insert(make_pair(c->first, 
-                              Link(c->first, &p, 
-                                   link_joint[c->first],
-                                   link_origin[c->first],
-                                   link_visual[c->first],
-                                   link_collision[c->first],
-                                   link_geometry[c->first],
-                                   link_inertia[c->first])));
+                              new Link(c->first, p, 
+                                       link_joint[c->first],
+                                       link_origin[c->first],
+                                       link_visual[c->first],
+                                       link_collision[c->first],
+                                       link_geometry[c->first],
+                                       link_inertia[c->first])));
       addChildren(links_.find(c->first)->second);
     }
   }

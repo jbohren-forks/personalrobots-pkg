@@ -55,9 +55,18 @@ int main()
   robot.initXml(robot_xml);
 
   // get info from parser
-  Link* root = robot.getRoot();
-
+  Link* root=NULL;
+  if (!robot.getRoot(root)) return -1;
   cout << "root " << root->getName() << " has " << root->getNrOfChildren() << " children" << endl;
 
+  Link* child=NULL;
+  if (!root->getChild(0, child)) return -1;
+  cout << "child " << child->getName() << " has " << child->getNrOfChildren() << " children" << endl;
+  for (unsigned int i=0; i<child->getNrOfChildren(); i++){
+    Link* grandchild=NULL;
+    if (!child->getChild(i, grandchild)) return -1;
+    cout << i << ": " << grandchild->getName() << endl;
+  }
+  return 0;
 }
 
