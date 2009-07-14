@@ -28,3 +28,5 @@ genmsg()
 #rospack_link_boost(${PROJECT_NAME} thread)
 #rospack_add_executable(example examples/example.cpp)
 #target_link_libraries(example ${PROJECT_NAME})
+  
+rospack_add_executable(move_base_test src/move_base_test.cpp)
