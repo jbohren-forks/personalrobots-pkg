@@ -240,7 +240,7 @@ namespace planning_models
 	    friend class Link;
 	public:
 	    
-	    AttachedBody(void)
+	    AttachedBody(Link *own) : owner(own)
 	    {
 		attachTrans.setIdentity();
 		shape = NULL;
@@ -256,11 +256,14 @@ namespace planning_models
 	    btTransform         attachTrans;
 
 	    /** \brief The geometry of the attached body */
-	    shapes::Shape*      shape;
+	    shapes::Shape      *shape;
 
 	    /** \brief The global transform for this link (computed by forward kinematics) */
 	    btTransform         globalTrans;
 	    
+	    /** \brief The link that owns this attached body */
+	    Link               *owner;
+
 	protected:
 	    /** \brief recompute globalTrans */
 	    void computeTransform(btTransform &parentTrans);
