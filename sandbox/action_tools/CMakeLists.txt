@@ -30,3 +30,4 @@ genmsg()
 #target_link_libraries(example ${PROJECT_NAME})
   
 rospack_add_executable(move_base_test src/move_base_test.cpp)
+rospack_add_executable(move_base_client src/move_base_client.cpp)
