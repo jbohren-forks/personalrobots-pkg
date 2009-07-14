@@ -49,8 +49,10 @@ endmacro(trex_declare_fast)
 
 # Create a TREX library using files as args. The name of the targets created are {target}_o and {target}_g
 macro(create_trex_lib target files)
-  rospack_add_library(${target}_g ${TREX_FILES})
-  trex_declare_debug(${target}_g)
+  if($ENV{ROS_TREX_DEBUG} MATCHES 1)
+    rospack_add_library(${target}_g ${TREX_FILES})
+    trex_declare_debug(${target}_g)
+  endif($ENV{ROS_TREX_DEBUG} MATCHES 1)
   rospack_add_library(${target}_o ${TREX_FILES})
   trex_declare_fast(${target}_o)
 endmacro(create_trex_lib)
@@ -58,12 +60,19 @@ endmacro(create_trex_lib)
 
 # Create trex executables
 macro(create_trex_executables fast debug file)
-  # trexdebug builds with a large number of run-time error checking running which is expensive
-  # but gives good feedback in discovering problems.
-  rospack_add_executable(${debug} ${file})
-  rospack_link_boost(${debug} thread)
-  rospack_add_gtest_build_flags(${debug})
-  trex_declare_debug(${debug})
+  if($ENV{ROS_TREX_DEBUG} MATCHES 1)
+    message("BUILDING TREX DEBUG")
+    # trexdebug builds with a large number of run-time error checking running which is expensive
+    # but gives good feedback in discovering problems.
+    rospack_add_executable(${debug} ${file})
+    rospack_link_boost(${debug} thread)
+    rospack_add_gtest_build_flags(${debug})
+    trex_declare_debug(${debug})
+  else ($ENV{ROS_TREX_DEBUG} MATCHES 1)
+    message("NO TREX DEBUG")
+  endif($ENV{ROS_TREX_DEBUG} MATCHES 1)
+
+
 
 
   # trexfast is about an order of magnitude faster than trexdebug
