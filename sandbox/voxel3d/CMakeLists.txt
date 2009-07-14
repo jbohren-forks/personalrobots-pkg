@@ -4,6 +4,9 @@ rospack(voxel3d)
 
 ADD_DEFINITIONS(-msse -msse2)
 
+genmsg()
+gensrv()
+
 rospack_add_library(voxel3d
   src/voxel3d.cpp
 )

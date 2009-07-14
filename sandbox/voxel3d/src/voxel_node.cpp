@@ -37,6 +37,8 @@
 
 #include "robot_msgs/PointCloud.h"
 
+#include <voxel3d/GetDistanceField.h>
+
 int world_to_voxel(double x)
 {
   return (int)(x * 100.0) + 100;
@@ -52,9 +54,28 @@ public:
 
     bool visualize;
     node_.param("~visualize", visualize, false);
-    voxel_.reset(new Voxel3d(200,200,200, 0.01, tf::Vector3(-1,-1,-1), visualize));
 
-    sub_cloud_ = node_.subscribe("cloud", 1, &VoxelNode::cloudCB, this);
+    node_.param("~size_x", size_[0], 2.0);
+    node_.param("~size_y", size_[1], 2.0);
+    node_.param("~size_z", size_[2], 2.0);
+    node_.param("~resolution", resolution_, 0.01);
+
+    for (int i=0; i<3; i++)
+      num_cells_[i] = (int)(size_[i]/resolution_);
+
+    double origin[3];
+    node_.param("~origin_x", origin[0], -1.0);
+    node_.param("~origin_y", origin[1], -1.0);
+    node_.param("~origin_z", origin[2], -1.0);
+
+    voxel_.reset(new Voxel3d(num_cells_[0], num_cells_[1], num_cells_[2], resolution_,
+        tf::Vector3(origin[0], origin[1], origin[2]), visualize));
+
+    sub_cloud_ = node_.subscribe("point_cloud", 1, &VoxelNode::cloudCB, this);
+
+    // advertise the GetDistanceField service:
+    get_distance_field_service_ = node_.advertiseService("get_distance_field", &VoxelNode::getDistanceField, this);
+
   }
 
   ~VoxelNode()
@@ -62,11 +83,31 @@ public:
     sub_cloud_.shutdown();
   }
 
+  /**
+   * \brief Callback for the GetDistanceField service
+   */
+  bool getDistanceField(voxel3d::GetDistanceField::Request &req, voxel3d::GetDistanceField::Response &res)
+  {
+    ros::WallTime start = ros::WallTime::now();
+
+    voxel_->toDistanceFieldMsg(res.field);
+    res.field.header.frame_id = frame_;
+
+    ROS_INFO("Service call response took %lf seconds", (ros::WallTime::now() - start).toSec());
+    return true;
+  }
+
 private:
   ros::NodeHandle node_;
   std::string frame_;
   tf::TransformListener TF;
   ros::Subscriber sub_cloud_;
+  ros::ServiceServer get_distance_field_service_;      /**< The distance field service */
+
+  int num_cells_[3];
+  double size_[3];
+  double resolution_;
+  tf::Vector3 origin_;
 
   boost::scoped_ptr<Voxel3d> voxel_;
 
@@ -74,18 +115,18 @@ private:
   {
     try
     {
-      ros::Time start = ros::Time::now();
+      ros::WallTime start = ros::WallTime::now();
 
       robot_msgs::PointCloud msg;
       TF.transformPointCloud(frame_, *msg_orig, msg);
-      ROS_INFO("Transform took %lf seconds", (ros::Time::now() - start).toSec());
-      start = ros::Time::now();
+      ROS_INFO("TF Transform took %lf seconds", (ros::WallTime::now() - start).toSec());
+      printf("%d points\n", msg.pts.size());
+      start = ros::WallTime::now();
 
       voxel_->reset();
       voxel_->updateWorld(msg);
 
-      ros::Duration d = ros::Time::now() - start;
-      ROS_INFO("Took %lf seconds", (ros::Time::now() - start).toSec());
+      ROS_INFO("Distance transform took %lf seconds", (ros::WallTime::now() - start).toSec());
     }
     catch (tf::TransformException ex)
     {

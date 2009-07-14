@@ -1,0 +1,8 @@
+# Gets a distance field from the distance field node
+
+# If true, publishes a visualization for rviz
+uint8 visualize
+
+---
+# The returned distance field message
+DistanceField field

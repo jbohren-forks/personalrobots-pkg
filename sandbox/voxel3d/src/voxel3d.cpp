@@ -389,3 +389,47 @@ void Voxel3d::updateVisualizations()
 //   }
 }
 
+void Voxel3d::toDistanceFieldMsg(voxel3d::DistanceField& msg)
+{
+  msg.max_expansion = 8*resolution_;
+  msg.resolution = resolution_;
+  msg.size.resize(3);
+  msg.size[0] = size1_;
+  msg.size[1] = size2_;
+  msg.size[2] = size3_;
+  msg.origin.x = origin_.x();
+  msg.origin.y = origin_.y();
+  msg.origin.z = origin_.z();
+
+  // count the number of non-free voxels in a first pass, to avoid memory reallocations
+  unsigned int num_voxels = 0;
+  ROS_INFO("Number of total voxels is %d", data_.size());
+  for (unsigned int i=0; i<data_.size(); ++i)
+  {
+    if (data_[i] < Voxel3d::CLEAR)
+      ++num_voxels;
+  }
+
+  ROS_INFO("Number of non-free voxels is %d", num_voxels);
+
+  // allocate the memory and assign the voxels:
+  msg.voxels.clear();
+  msg.voxels.reserve(num_voxels);
+
+  for (int k = 0; k < size3_; ++k) {
+    for (int j = 0; j < size2_; ++j) {
+      for (int i = 0; i < size1_; ++i) {
+        unsigned char dist = data_[ref(i, j, k)];
+        if (dist == Voxel3d::CLEAR)
+          continue;
+        voxel3d::Voxel voxel;
+        voxel.x = i;
+        voxel.y = j;
+        voxel.z = k;
+        voxel.distance = resolution_*dist;
+        msg.voxels.push_back(voxel);
+      }
+    }
+  }
+
+}

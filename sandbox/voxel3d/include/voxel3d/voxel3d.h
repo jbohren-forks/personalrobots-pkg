@@ -33,6 +33,7 @@
 #include "ros/node_handle.h"
 #include "tf/transform_datatypes.h"
 #include "robot_msgs/PointCloud.h"
+#include "voxel3d/DistanceField.h"
 
 class Voxel3d
 {
@@ -73,6 +74,9 @@ public:
 
   /** \brief add an obstacle to the voxel defined in world coordinates */
   void putWorldObstacle(double i, double j, double k);
+
+  /** \brief Converts this voxel3d to a DistanceField message */
+  void toDistanceFieldMsg(voxel3d::DistanceField& msg);
 
 private:
   std::vector<unsigned char> data_;
