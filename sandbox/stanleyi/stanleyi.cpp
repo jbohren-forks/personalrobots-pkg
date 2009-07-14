@@ -700,7 +700,8 @@ int main(int argc, char** argv)
   else if(argc > 2 && !strcmp(argv[1], "--statusD")) {
     cout << "Examining " << argv[2] << endl;
     DorylusDataset dd;
-    dd.load(argv[2]);
+    if(!dd.load(argv[2]))
+      return 1;
     //    cout << dd.displayFeatures() << endl;
     cout << dd.status() << endl;
   }
@@ -708,7 +709,8 @@ int main(int argc, char** argv)
   else if(argc > 2 && !strcmp(argv[1], "--statusClassifier")) {
     cout << "Examining " << argv[2] << endl;
     Dorylus d;
-    d.load(argv[2]);
+    if(!d.load(argv[2]))
+      return 1;
     //    cout << dd.displayFeatures() << endl;
     cout << d.status() << endl;
   }
@@ -718,7 +720,8 @@ int main(int argc, char** argv)
     cout << "Training new classifier on " << argv[2] << ", saving with name " << argv[3] << " using " << nCandidates << " candidates, training for " << max_secs << "s or " << max_wcs << " wcs." << endl;
     Dorylus d;
     DorylusDataset dd;
-    dd.load(argv[2]);
+    if(!dd.load(argv[2])) 
+      return 1;
     d.useDataset(&dd);
     d.train(nCandidates, max_secs, max_wcs);
     d.save(argv[3]);
@@ -726,7 +729,8 @@ int main(int argc, char** argv)
   else if(argc > 4 && !strcmp(argv[1], "--makeClassificationVideo")) {
     cout << "Showing video classification for classifier " << argv[2] << " on bag " << argv[3] << " using the label masks in " << argv[4] <<  endl;
     Dorylus d;
-    d.load(argv[2]);
+    if(!d.load(argv[2]))
+      return 1;
     s.makeClassificationVideo(argv[3], d, samples_per_img, argv[4]);
   }
   else if(argc > 3 && !strcmp(argv[1], "--induct")) {
