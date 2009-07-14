@@ -118,7 +118,7 @@ bool getValue(TiXmlElement *value_xml, const string& field, double& value)
 }
 
 
-static bool getFrame(TiXmlElement *frame_xml, Frame& frame)
+bool getFrame(TiXmlElement *frame_xml, Frame& frame)
 {
   if (!frame_xml) return false;
 
@@ -317,12 +317,9 @@ bool getTree(TiXmlElement *robot_xml, Tree& tree)
   
   // find the root segment: the parent segment that does not exist
   string root;
-  for (map<string, string>::const_iterator p=parents.begin(); p!=parents.end(); p++){
-    for (map<string, Segment>::const_iterator s=segments.begin(); s!=segments.end(); s++){
-      if (p->second == s->first) break;
-      if (s == --(segments.end())) root = p->first;
-    }
-  }
+  for (map<string, string>::const_iterator p=parents.begin(); p!=parents.end(); p++)
+    if (segments.find(p->second) == segments.end())
+      root = p->first;
   cout << parents[root] << " is root segment " << endl;
   tree = Tree(parents[root]);
 
