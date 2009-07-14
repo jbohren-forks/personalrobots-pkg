@@ -21,6 +21,8 @@ target_link_libraries(view_state_validity planning_environment)
 
 rospack_add_executable(clear_known_objects src/tools/clear_known_objects.cpp) 
 target_link_libraries(clear_known_objects planning_environment)
+rospack_link_boost(clear_known_objects thread)
+rospack_add_openmp_flags(clear_known_objects)
 
 # Tests
 

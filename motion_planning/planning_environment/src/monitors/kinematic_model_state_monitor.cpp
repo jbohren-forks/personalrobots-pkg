@@ -232,7 +232,7 @@ bool planning_environment::KinematicModelStateMonitor::attachObject(const mappin
 		    continue;
 		
 		unsigned int j = link->attachedBodies.size();
-		link->attachedBodies.push_back(new planning_models::KinematicModel::AttachedBody());
+		link->attachedBodies.push_back(new planning_models::KinematicModel::AttachedBody(link));
 		tf::poseMsgToTF(poseP.pose, link->attachedBodies[j]->attachTrans);
 		link->attachedBodies[j]->shape = shape;
 	    }
