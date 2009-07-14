@@ -50,13 +50,39 @@
   <!-- Videre Stereo cam -->
   <include file="$(find pr2_alpha)/stereo.launch" />
 
-  <!-- Prosilica camera setup -->
+  <!-- Prosilica camera setup, 7/14/09 -->
   <group ns="prosilica">
     <include file="$(find prosilica_cam)/cam_settings.xml"/>
     <param name="acquisition_mode" type="str" value="Triggered"/>
     <param name="ip_address" type="str" value="10.68.0.20"/>
   </group>
   <node machine="three" name="prosilica" pkg="prosilica_cam" type="prosilica_node" output="screen" respawn="true"/>
+
+<!-- Double stereo setup, 7/14/09 -->
+  <!-- Wide is on robot right, goes to four -->
+  <group ns="wide_stereo">
+    <node machine="four" pkg="dcam" type="stereodcam" name="stereodcam" respawn="false" >
+      <param name="videre_mode" type="str" value="none"/>
+      <param name="fps" type="double" value="15.0"/>
+      <param name="frame_id" type="string" value="double_stereo_wide_optical_frame"/>
+      <param name="exposure_auto" type="bool" value="true"/>
+      <param name="brightness_auto" type="bool" value="true"/>
+      <param name="gain_auto" type="bool" value="true"/>
+    </node>  
+  </group>
+
+  <!-- Narrow is on robot left, goes to three -->
+  <group ns="narrow_stereo">
+    <node machine="three" pkg="dcam" type="stereodcam" name="stereodcam" respawn="false" >
+      <param name="videre_mode" type="str" value="none"/>
+      <param name="fps" type="double" value="15.0"/>
+      <param name="frame_id" type="string" value="double_stereo_narrow_optical_frame"/>
+      <param name="exposure" type="int" value="6"/>
+      <param name="exposure_auto" type="bool" value="false"/>
+      <param name="brightness_auto" type="bool" value="true"/>
+      <param name="gain_auto" type="bool" value="true"/>
+    </node> 
+  </group>
 
 <!-- Forearm Camera -->
   <include file="$(find forearm_cam)/prf_forearm_cam_config.launch"/>
