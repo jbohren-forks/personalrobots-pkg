@@ -17,8 +17,6 @@
   <depend package="opencv_latest" />
 
   <!-- For example programs only -->
-  <depend package="eigen" />
-  <depend package="FLANN" />
   <depend package="ANN" />
   <depend package="opencv_latest" />
   <depend package="point_cloud_mapping" />
