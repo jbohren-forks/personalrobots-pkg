@@ -32,13 +32,13 @@ vector<ImageDescriptor*> setupImageDescriptors() {
   d.push_back(new HogWrapper(Size(128,128), Size(64,64), Size(32,32), Size(32,32), 7, 1, -1, 0, 0.2, true));
 
   SuperpixelColorHistogram* sch1 = new SuperpixelColorHistogram(20, 0.5, 10, string("hue"));
-  SuperpixelColorHistogram* sch2 = new SuperpixelColorHistogram(5, 0.5, 10, string("hue"), NULL, sch1);
-  SuperpixelColorHistogram* sch3 = new SuperpixelColorHistogram(5, 1, 10, string("hue"), NULL, sch1);
-  SuperpixelColorHistogram* sch4 = new SuperpixelColorHistogram(5, .25, 10, string("hue"), NULL, sch1);
+//   SuperpixelColorHistogram* sch2 = new SuperpixelColorHistogram(5, 0.5, 10, string("hue"), NULL, sch1);
+//   SuperpixelColorHistogram* sch3 = new SuperpixelColorHistogram(5, 1, 10, string("hue"), NULL, sch1);
+//   SuperpixelColorHistogram* sch4 = new SuperpixelColorHistogram(5, .25, 10, string("hue"), NULL, sch1);
   d.push_back(sch1);
-  d.push_back(sch2);
-  d.push_back(sch3);
-  d.push_back(sch4);
+//   d.push_back(sch2);
+//   d.push_back(sch3);
+//   d.push_back(sch4);
 
 //   IntegralImageTexture* iit = new IntegralImageTexture(1);
 //   d.push_back(iit);
@@ -61,7 +61,7 @@ vector<ImageDescriptor*> setupImageDescriptorsTest() {
 
 
 void releaseImageDescriptors(vector<ImageDescriptor*>* desc) {
-  for(unsigned int i=0; i<desc->size(); i++) {
+  for(size_t i=0; i<desc->size(); i++) {
     delete (*desc)[i];
   }
   desc->clear();
@@ -105,7 +105,7 @@ IplImage* findLabelMask(double stamp, string results_dir)
   sbuf = sbuf.substr(0, sbuf.length()-1);   //Remove the last digit - it's been rounded.
 
   getdir(masks_dir, files);
-  for(unsigned int i=0; i<files.size(); i++)
+  for(size_t i=0; i<files.size(); i++)
     {
       if(files[i].find(sbuf) != string::npos && 
 	 files[i].find(string(".png")) != string::npos)
@@ -141,7 +141,7 @@ public:
     lp_.addHandler<sensor_msgs::Image>(string("/forearm/image_rect_color"), &copyMsg<sensor_msgs::Image>, (void*)(&img_msg_));
     descriptor_ = setupImageDescriptors();
     if(getenv("DEBUG") != NULL) {
-      for(unsigned int i=0; i<descriptor_.size(); i++) { 
+      for(size_t i=0; i<descriptor_.size(); i++) { 
 	descriptor_[i]->setDebug(true);
       }
     }
@@ -169,7 +169,7 @@ object* Stanleyi::computeObjectAtRandomPoint(int* row, int* col) {
   object* obj = new object;
 
   // -- Aim the descriptor functions at the new point.
-  for(unsigned int j=0; j<descriptor_.size(); j++) {
+  for(size_t j=0; j<descriptor_.size(); j++) {
     descriptor_[j]->setPoint(r, c);
   }
 
@@ -184,7 +184,7 @@ object* Stanleyi::computeObjectAtRandomPoint(int* row, int* col) {
 
   // -- Compute all the descriptors.
   bool success = false;
-  for(unsigned int j=0; j<descriptor_.size(); j++) {
+  for(size_t j=0; j<descriptor_.size(); j++) {
     // -- For now, only accept points for which all features are computable.
     if(mask_ != NULL && obj->label == 1 && getenv("DEBUG_POSITIVES") != NULL)  {
       descriptor_[j]->setDebug(true);
@@ -255,8 +255,8 @@ void Stanleyi::collectDataset(string bagfile, int samples_per_img, string save_n
 
 MatrixXf* cvVector2Eigen(const Vector<float>& v) {
   MatrixXf* m = new MatrixXf(v.size(), 1);
-  for(unsigned int i=0; i<v.size(); i++) {
-    (*m)(i,0) = v[i];
+  for(size_t i=0; i<v.size(); i++) {
+    (*m)(i,0) = v[(size_t)i];
   }
   return m;
 }
@@ -290,8 +290,8 @@ void Stanleyi::collectObjectsFromImageVectorized(int samples_per_img, vector<obj
   }
   
   // -- Call all descriptors, get vectorized results.
-  for(unsigned int i=0; i<descriptor_.size(); i++) {
-    Mat m = cvarrToMat(img_);
+  for(size_t i=0; i<descriptor_.size(); i++) {
+    //Mat m = cvarrToMat(img_);
     descriptor_[i]->compute(img_, desired, results[i]);
     //cout << "Got " << results[i].size() << " features" << endl;
     //cout << "with " << results[i][0].size() << " elements each. " << endl;
@@ -305,7 +305,7 @@ void Stanleyi::collectObjectsFromImageVectorized(int samples_per_img, vector<obj
 
     bool success = true;
     //cout << descriptor_.size() << " descriptors.  " << results.size() << endl;
-    for(unsigned int j=0; j<descriptor_.size(); j++) {
+    for(size_t j=0; j<descriptor_.size(); j++) {
       //cout << samples_per_img << " objects.  " << results[j].size() << endl;
       //cout << descriptor_[j]->result_size_ << " elem.  " << results[j][i].size() << endl;
 
@@ -332,7 +332,7 @@ vector<object*> Stanleyi::collectFeaturesFromImage(int samples_per_img) {
   vector<object*> objs;
 
   // -- Aim the descriptor functions at the new image.
-  for(unsigned int j=0; j<descriptor_.size(); j++) {
+  for(size_t j=0; j<descriptor_.size(); j++) {
     descriptor_[j]->setImage(img_);
   }
   
@@ -407,7 +407,7 @@ void Stanleyi::makeClassificationVideo(string bagfile, Dorylus& d, int samples_p
     collectObjectsFromImageVectorized(samples_per_img, &objects, &keypoints);
 
     int tp=0, fp=0, tn=0, fn=0;
-    for(int i=0; i<objects.size(); i++) {
+    for(size_t i=0; i<objects.size(); i++) {
       if(objects[i] == NULL) 
 	continue;
       //cout << objects[i]->status(false) << endl;
@@ -630,7 +630,7 @@ void Stanleyi::induct(string bagfile, string results_dir) {
     }
 
     // -- Aim the descriptor functions at the new image.
-    for(unsigned int j=0; j<descriptor_.size(); j++) {
+    for(size_t j=0; j<descriptor_.size(); j++) {
       descriptor_[j]->setImage(img_);
     }
 
@@ -671,6 +671,12 @@ void Stanleyi::induct(string bagfile, string results_dir) {
 int main(int argc, char** argv) 
 {
   Stanleyi s;
+
+  cout << sizeof(size_t) << endl;
+  std::cout << std::numeric_limits<int>::max()    << std::endl;
+  std::cout << std::numeric_limits<unsigned int>::max()    << std::endl;
+  std::cout << std::numeric_limits<size_t>::max()    << std::endl;
+
 
   // -- Get env var options.
   int samples_per_img = 1000;
