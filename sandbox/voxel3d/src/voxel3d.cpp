@@ -414,20 +414,20 @@ void Voxel3d::toDistanceFieldMsg(voxel3d::DistanceField& msg)
 
   // allocate the memory and assign the voxels:
   msg.voxels.clear();
-  msg.voxels.reserve(num_voxels);
+  msg.voxels.resize(num_voxels);
 
+  int size=0;
   for (int k = 0; k < size3_; ++k) {
     for (int j = 0; j < size2_; ++j) {
       for (int i = 0; i < size1_; ++i) {
         unsigned char dist = data_[ref(i, j, k)];
         if (dist == Voxel3d::CLEAR)
           continue;
-        voxel3d::Voxel voxel;
-        voxel.x = i;
-        voxel.y = j;
-        voxel.z = k;
-        voxel.distance = resolution_*dist;
-        msg.voxels.push_back(voxel);
+        msg.voxels[size].x = i;
+        msg.voxels[size].y = j;
+        msg.voxels[size].z = k;
+        msg.voxels[size].distance = resolution_*dist;
+        ++size;
       }
     }
   }
