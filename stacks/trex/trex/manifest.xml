@@ -13,10 +13,11 @@
   <review status="3rdparty" notes=""/>
   <url>https://babelfish.arc.nasa.gov/trac/europa/wiki</url>
   <export>
-    <!--cpp lflags="-Wl,-rpath,${prefix}/PLASMA/build/lib -L${prefix}/PLASMA/build/lib -lUtils_g -lTREX_g" 
+    <!--cpp lflags="-Wl,-rpath,${prefix}/PLASMA/build/lib -L${prefix}/PLASMA/build/lib" 
       cflags="-I${prefix}/include/TREX -I${prefix}/include/PLASMA -I${prefix}/include/PlanWorks"/-->
-    <cpp lflags="-Wl,-rpath,${prefix}/PLASMA/build/lib -L${prefix}/PLASMA/build/lib -lUtils_o -lTREX_o" 
+    <cpp lflags="-Wl,-rpath,${prefix}/PLASMA/build/lib -L${prefix}/PLASMA/build/lib" 
       cflags="-I${prefix}/include/TREX -I${prefix}/include/PLASMA -I${prefix}/include/PlanWorks -O3 -DEUROPA_FAST"/>
+    <trex_libs libs="Utils TREX"/>
     <nddl iflags="-I${prefix}/TREX/agent/base"/>
     <doxymaker external="https://babelfish.arc.nasa.gov/trac/europa/wiki"/>
   </export>

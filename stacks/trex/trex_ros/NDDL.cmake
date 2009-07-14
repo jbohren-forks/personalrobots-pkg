@@ -15,4 +15,33 @@ macro(create_nddl_config)
 	       "</configuration>\n")
 endmacro(create_nddl_config)
 
+# set _TREX_LINK_LIBS
+macro(_get_trex_link_libs ender)
+    _rospack_invoke(${PROJECT_NAME} ${_prefix} ROSPACK_TREX_LIBS export --lang=trex_libs --attrib=libs)
+    set(_TREX_LINK_LIBS_LIST ${${_prefix}_ROSPACK_TREX_LIBS})
+    separate_arguments(_TREX_LINK_LIBS_LIST)
+
+    set(_TREX_LINK_LIBS "")
+    foreach(_TREX_LIB ${_TREX_LINK_LIBS_LIST})
+        set(_TREX_LINK_LIBS "${_TREX_LINK_LIBS} ${_TREX_LIB}${ender}")
+    endforeach(_TREX_LIB)
+
+    separate_arguments(_TREX_LINK_LIBS)
+    message(${_TREX_LINK_LIBS})
+endmacro(_get_trex_link_libs)
+
+
+# Declares the referenced executable as debug
+macro(trex_declare_debug target)
+  rospack_remove_link_flags(${target} "-O3 -DEUROPA_FAST")
+  _get_trex_link_libs("_g")
+  target_link_libraries(${target} ${_TREX_LINK_LIBS})
+endmacro(trex_declare_debug)
+
+
+# Declares the referenced executable as fast
+macro(trex_declare_fast target)
+  _get_trex_link_libs("_o")
+  target_link_libraries(${target} ${_TREX_LINK_LIBS})
+endmacro(trex_declare_fast)
 

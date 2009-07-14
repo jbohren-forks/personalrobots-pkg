@@ -28,17 +28,16 @@ rospack_add_library(trex_pr2 ${TREX_FILES})
 rospack_add_executable(bin/trexdebug src/main.cpp)
 rospack_link_boost(bin/trexdebug thread)
 rospack_add_gtest_build_flags(bin/trexdebug)
-rospack_remove_link_flags(bin/trexdebug "-O3 -DEUROPA_FAST")
-rospack_remove_link_flags(bin/trexdebug "-lUtils_o -lTREX_o")
-rospack_add_link_flags(bin/trexdebug "-lUtils_g -lTREX_g")
-target_link_libraries(bin/trexdebug trex_pr2)
+trex_declare_debug(bin/trexdebug)
+target_link_libraries(bin/trexdebug trex_ros trex_pr2)
 
 
 # trexfast is about an order of magnitude faster than trexdebug
 rospack_add_executable(bin/trexfast src/main.cpp)
 rospack_link_boost(bin/trexfast thread)
 rospack_add_gtest_build_flags(bin/trexfast)
-target_link_libraries(bin/trexfast trex_pr2)
+trex_declare_fast(bin/trexfast)
+target_link_libraries(bin/trexfast trex_ros trex_pr2)
 
 # rospack_add_gtest_build_flags excludes the target from all, on the
 # assumption that it's only used as a unit test.  In this case that's not
