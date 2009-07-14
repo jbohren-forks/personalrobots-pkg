@@ -14,7 +14,7 @@ rospack_add_boost_directories()
 
 # This generates the NDDL inclue configuration file
 find_ros_package(trex_ros)
-include(${trex_ros_PACKAGE_PATH}/NDDL.cmake)
+include(${trex_ros_PACKAGE_PATH}/trex_build.cmake)
 create_nddl_config()
 
 ###############################################################################
@@ -27,33 +27,17 @@ set(TREX_TEMP_PROJ_FILES src/adapter_utilities.cpp
 			 src/master_reactor.cpp)
 
 ###############################################################################
+# Source library
+###############################################################################
+
+# build extensions into exported library
+create_trex_lib(trex_temp_proj ${TREX_TEMP_PROJ_FILES})
+
+###############################################################################
 # Executables & Tests
 ###############################################################################
 
-# trexdebug builds with a large number of run-time error checking running which is expensive
-# but gives good feedback in discovering problems.
-rospack_add_library(executive_trex_temp_proj_g ${TREX_TEMP_PROJ_FILES})
-target_link_libraries(executive_trex_temp_proj_g executive_trex_pr2_g Utils_g TREX_g)
-rospack_add_executable(bin/trexdebug src/main.cpp)
-target_link_libraries(bin/trexdebug executive_trex_temp_proj_g )
-rospack_link_boost(bin/trexdebug thread)
-rospack_add_gtest_build_flags(bin/trexdebug)
-
-# trexfast is about an order of magnitude faster than trexdebug
-rospack_add_library(executive_trex_temp_proj_o ${TREX_TEMP_PROJ_FILES})
-target_link_libraries(executive_trex_temp_proj_o executive_trex_pr2_o Utils_o TREX_o)
-rospack_add_executable(bin/trexfast src/main.cpp)
-target_link_libraries(bin/trexfast executive_trex_temp_proj_o)
-rospack_link_boost(bin/trexfast thread)
-rospack_add_gtest_build_flags(bin/trexfast)
-
-# rospack_add_gtest_build_flags excludes the target from all, on the
-# assumption that it's only used as a unit test.  In this case that's not
-# true
-set_target_properties(bin/trexfast PROPERTIES EXCLUDE_FROM_ALL false)
-rospack_add_compile_flags(bin/trexfast "-O3 -DEUROPA_FAST")
-rospack_add_compile_flags(executive_trex_temp_proj_o "-O3 -DEUROPA_FAST")
-
+create_trex_executables(bin/trexfast bin/trexdebug src/main.cpp)
 
 # stub_ros__container implements stub state publishers and actions to allow easy testing of the ROS adapters for the model
 rospack_add_executable(bin/stub_ros_container src/stub_ros_container.cpp)
