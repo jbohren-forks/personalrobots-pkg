@@ -35,6 +35,7 @@
 #include <ros/ros.h>
 #include <sensor_msgs/Image.h>
 #include <diagnostic_updater/publisher.h>
+#include <stdio.h>
 
 #define BASESIZE 1000000
 int oldwidth = 0;
@@ -42,6 +43,8 @@ int oldheight = 0;
 uint8_t base[BASESIZE];
 
 #define NUMSKIP 400
+
+FILE *gnuplotfile;
 
 inline void insert(int *max, int val)
 {
@@ -135,9 +138,9 @@ void callback2(const sensor_msgs::ImageConstPtr& msg)
     if (base[i] > msg->uint8_data.data[i])
       base[i] = msg->uint8_data.data[i];
   */
-  printf("set yrange [0:255]\n");
-  printf("set terminal x11\n");
-  printf("plot \"-\" using 0:1 with lines\n");
+  fprintf(gnuplotfile, "set yrange [0:255]\n");
+  fprintf(gnuplotfile, "set terminal x11\n");
+  fprintf(gnuplotfile, "plot \"-\" using 0:1 with lines\n");
   for (int y = 0; y < height - 1; y++)
   {
     int max = 0;
@@ -162,15 +165,23 @@ void callback2(const sensor_msgs::ImageConstPtr& msg)
       if (d1 > max) max = d1;
       if (d2 > max) max = d2;
     }
-    printf("%i\n", max);
+    fprintf(gnuplotfile, "%i\n", max);
   }
-  printf("e\n\n");
-  fflush(stdout);
+  fprintf(gnuplotfile, "e\n\n");
+  fflush(gnuplotfile);
 }
 
 int main(int argc, char **argv)
 {
-  ros::init(argc, argv, "forearm_node");
+  gnuplotfile = popen("gnuplot", "w");
+
+  if (!gnuplotfile)
+  {
+    perror("popen call failed");
+    return -1;
+  }
+
+  ros::init(argc, argv, "forearm_focus");
   ros::NodeHandle nh;
   ros::Subscriber sub = nh.subscribe("image", 1, callback2);
   ros::spin();
