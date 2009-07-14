@@ -1,0 +1,16 @@
+<package>
+  <description brief="camera_focus">
+
+     camera_focus
+
+  </description>
+  <author>Blaise Gassend</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://pr.willowgarage.com/wiki/camera_focus</url>
+  <depend package="forearm_cam"/>
+  <depend package="dcam"/>
+
+</package>
+
+
