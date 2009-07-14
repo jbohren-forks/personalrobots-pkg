@@ -319,7 +319,7 @@ unsigned int createConcatenatedFeatures(const robot_msgs::PointCloud& pt_cloud,
     for (unsigned int j = 0 ; all_features_success && j < nbr_descriptors ; j++)
     {
       cv::Vector<cv::Vector<float> >& curr_descriptor_for_cloud = all_descriptor_results[j];
-      cv::Vector<float>& curr_feature_vals = curr_descriptor_for_cloud[i];
+      cv::Vector<float>& curr_feature_vals = curr_descriptor_for_cloud[(size_t)i];
 
       // non-zero descriptor length indicates computed successfully
       all_features_success = curr_feature_vals.size() != 0;
@@ -331,20 +331,18 @@ unsigned int createConcatenatedFeatures(const robot_msgs::PointCloud& pt_cloud,
     {
       // --------------------------------
       // Concatenate all descriptors into one feature vector
-      curr_concat_feats = static_cast<float*> (malloc(nbr_concatenated_vals * sizeof(float)));
+      curr_concat_feats = static_cast<float*> (malloc(sizeof(float) * nbr_concatenated_vals));
       prev_val_idx = 0;
       for (unsigned int j = 0 ; j < nbr_descriptors ; j++)
       {
         // retrieve descriptor values for current point
         cv::Vector<cv::Vector<float> >& curr_descriptor_for_cloud = all_descriptor_results[j];
-        cv::Vector<float>& curr_feature_vals = curr_descriptor_for_cloud[i];
+        cv::Vector<float>& curr_feature_vals = curr_descriptor_for_cloud[(size_t)i];
         curr_nbr_feature_vals = curr_feature_vals.size();
 
         // copy descriptor values into concatenated vector at correct location
-        for (unsigned int k = 0 ; k < curr_nbr_feature_vals ; k++)
-        {
-          curr_concat_feats[prev_val_idx + k] = curr_feature_vals[k];
-        }
+        memcpy(curr_concat_feats + prev_val_idx, curr_feature_vals.begin(), sizeof(float)
+            * curr_nbr_feature_vals);
 
         // skip over all computed features so far
         prev_val_idx += curr_nbr_feature_vals;
@@ -380,7 +378,7 @@ void createNodes(RandomField& rf,
   cv::Vector<robot_msgs::Point32*> interest_pts(nbr_pts, NULL);
   for (unsigned int i = 0 ; i < nbr_pts ; i++)
   {
-    interest_pts[i] = &(pt_cloud.pts[i]);
+    interest_pts[(size_t)i] = &(pt_cloud.pts[i]);
   }
 
   // ----------------------------------------------

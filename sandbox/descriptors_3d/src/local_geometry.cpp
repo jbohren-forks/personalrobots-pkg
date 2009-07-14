@@ -72,11 +72,11 @@ void LocalGeometry::compute(const robot_msgs::PointCloud& data,
       // Find neighboring points within radius
       neighbor_indices.clear();
       neighbor_distances.clear();
-      if (data_kdtree.radiusSearch(*(interest_pts[i]), spectral_radius_, neighbor_indices, neighbor_distances)
+      if (data_kdtree.radiusSearch(*(interest_pts[(size_t)i]), spectral_radius_, neighbor_indices, neighbor_distances)
           == false)
       {
         ROS_ERROR("LocalGeometry::compute radius search failed");
-        results[i].clear();
+        results[(size_t)i].clear();
         continue;
       }
 
@@ -85,7 +85,7 @@ void LocalGeometry::compute(const robot_msgs::PointCloud& data,
       if (neighbor_indices.size() < 3)
       {
         ROS_ERROR("did not have enough neighbors");
-        results[i].clear();
+        results[(size_t)i].clear();
         continue;
       }
 
@@ -102,8 +102,8 @@ void LocalGeometry::compute(const robot_msgs::PointCloud& data,
 
       // ----------------------------------------
       // Compute features
-      populateFeaturesWithSpectral(eigen_values, tangent, normal, *(interest_pts[i]), data, neighbor_indices,
-          results[i]);
+      populateFeaturesWithSpectral(eigen_values, tangent, normal, *(interest_pts[(size_t)i]), data, neighbor_indices,
+          results[(size_t)i]);
     }
   }
   // Otherwise compute features that do not require normal/tangent information
@@ -111,7 +111,7 @@ void LocalGeometry::compute(const robot_msgs::PointCloud& data,
   {
     for (unsigned int i = 0 ; i < nbr_pts ; i++)
     {
-      populateFeatures(0, *(interest_pts[i]), results[i]);
+      populateFeatures(0, *(interest_pts[(size_t)i]), results[(size_t)i]);
     }
   }
 }
@@ -232,7 +232,7 @@ void LocalGeometry::compute(const robot_msgs::PointCloud& data,
     {
       if (spectral_radius_ < 0.0)
       {
-        curr_region_indices = interest_region_indices[i];
+        curr_region_indices = interest_region_indices[(size_t)i];
       }
       else
       {
@@ -246,7 +246,7 @@ void LocalGeometry::compute(const robot_msgs::PointCloud& data,
             == false)
         {
           ROS_ERROR("LocalGeometry::compute radius search failed");
-          results[i].clear();
+          results[(size_t)i].clear();
           continue;
         }
       }
@@ -256,7 +256,7 @@ void LocalGeometry::compute(const robot_msgs::PointCloud& data,
       if (curr_region_indices->size() < 3)
       {
         ROS_ERROR("did not have enough neighbors");
-        results[i].clear();
+        results[(size_t)i].clear();
         continue;
       }
 
@@ -274,7 +274,7 @@ void LocalGeometry::compute(const robot_msgs::PointCloud& data,
       // ----------------------------------------
       // Compute features
       populateFeaturesWithSpectral(eigen_values, tangent, normal, centroid, data, *curr_region_indices,
-          results[i]);
+          results[(size_t)i]);
     }
 
   }
@@ -284,7 +284,7 @@ void LocalGeometry::compute(const robot_msgs::PointCloud& data,
     for (unsigned int i = 0 ; i < nbr_regions ; i++)
     {
       cloud_geometry::nearest::computeCentroid(data, *(curr_region_indices), centroid);
-      populateFeatures(0, centroid, results[i]);
+      populateFeatures(0, centroid, results[(size_t)i]);
     }
   }
 }
@@ -303,9 +303,9 @@ void LocalGeometry::populateFeaturesWithSpectral(const Eigen::Vector3d& eigen_va
   result.resize(result_size_);
 
   unsigned int idx = 0;
-  result[idx++] = eigen_values[0]; // scatter
-  result[idx++] = eigen_values[2] - eigen_values[1]; // linear
-  result[idx++] = eigen_values[1] - eigen_values[0]; // surface
+  result[(size_t)idx++] = eigen_values[0]; // scatter
+  result[(size_t)idx++] = eigen_values[2] - eigen_values[1]; // linear
+  result[(size_t)idx++] = eigen_values[1] - eigen_values[0]; // surface
 
   if (ref_tangent_defined_)
   {
@@ -314,7 +314,7 @@ void LocalGeometry::populateFeaturesWithSpectral(const Eigen::Vector3d& eigen_va
     {
       tangent_dot = tangent.dot(ref_tangent_flipped_);
     }
-    result[idx++] = tangent_dot;
+    result[(size_t)idx++] = tangent_dot;
   }
 
   if (ref_normal_defined_)
@@ -324,7 +324,7 @@ void LocalGeometry::populateFeaturesWithSpectral(const Eigen::Vector3d& eigen_va
     {
       normal_dot = normal.dot(ref_normal_flipped_);
     }
-    result[idx++] = normal_dot;
+    result[(size_t)idx++] = normal_dot;
   }
 
   populateFeatures(idx, interest_pt, result);
@@ -344,6 +344,6 @@ void LocalGeometry::populateFeatures(unsigned int start_idx,
 
   if (use_elevation_)
   {
-    result[start_idx++] = interest_pt.z;
+    result[(size_t)start_idx++] = interest_pt.z;
   }
 }
