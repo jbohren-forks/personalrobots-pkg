@@ -37,56 +37,74 @@
 #include <list>
 #include <vector>
 #include <map>
+#include <fstream>
 
 #include <ros/ros.h>
 
-// TODO
+// TODO turn this off when on the robot
 #define DEBUG true
 
 using namespace std;
 
 // --------------------------------------------------------------
+/*!
+ * \file random_field.h
+ *
+ * \brief A class representing primitives and their features to
+ *        contextually classify.
+ */
+// --------------------------------------------------------------
+
+// --------------------------------------------------------------
 //* RandomField
-/**
- * \brief Class representing a random field of primitives to classify
+/*!
+ * \brief A class that represents a random field of nodes and cliques
  *
  * Conceptually, nodes are the primitives things you wish to classify and
- * cliques describe regions/groups of interacting primitives.
+ * cliques describe regions/groups of interacting primitives.  Example:
+ * for image segmentation, pixels are the nodes, cliques of size 2 (edges)
+ * are usually created among neighboring pixels, and high-order cliques over
+ * segments of pixels.
  */
 // --------------------------------------------------------------
 class RandomField
 {
 
   public:
+    /*! \brief A constant value used when a Node has an unknown label */
     const static unsigned int UNKNOWN_LABEL = 0;
 
     // --------------------------------------------------------------
-    /** \see definition below */
+    /*! \see Node definition below */
     // --------------------------------------------------------------
     class Node;
 
     // --------------------------------------------------------------
-    /** \see definition below */
+    /*! \see Clique definition below */
     // --------------------------------------------------------------
     class Clique;
 
     // --------------------------------------------------------------
     /*!
-     * \brief Instantiates an empty Random Field
+     * \brief Instantiates an empty RandomField
      *
-     * \param nbr_clique_sets The number of clique sets this RandomField contains
-     *                        (the set of nodes is excluded)
+     * \param nbr_clique_sets The number of clique sets this RandomField will contain
+     *                        (the set of nodes is EXCLUDED)
      */
     // --------------------------------------------------------------
     RandomField(unsigned int nbr_clique_sets);
 
     // --------------------------------------------------------------
     /*!
-     * \brief Destroys this Random Field
+     * \brief Destroys this RandomField
      */
     // --------------------------------------------------------------
     ~RandomField();
 
+    // ===================================================================
+    /*! \name Mutators  */
+    // ===================================================================
+    //@{
     // --------------------------------------------------------------
     /*!
      * \brief Clears all nodes and cliques contained in this random field.
@@ -94,6 +112,26 @@ class RandomField
     // --------------------------------------------------------------
     void clear();
 
+    // --------------------------------------------------------------
+    /*!
+     * \brief Creates a new Node with the given features and adds it to this RandomField
+     *
+     * This RandomField will generate a unique id for the Node.
+     * The coordinates of the Node are not used in any way by this library.
+     *
+     * \warning This RandomField will free all features upon its destruction
+     *
+     * \param feature_vals An array of feature values that describe the node
+     * \param nbr_feature_vals The number of values in the feature array
+     * \param label (Optional) The label of the node
+     * \param x (Optional) The x-coordinate the node
+     * \param y (Optional) The y-coordinate the node
+     * \param z (Optional) The z-coordinate the node
+     *
+     * \return a pointer to the newly created Node on success, otherwise NULL
+     *         on failure
+     */
+    // --------------------------------------------------------------
     const Node* createNode(const float* feature_vals,
                            const unsigned int nbr_feature_vals,
                            unsigned int label = UNKNOWN_LABEL,
@@ -101,6 +139,27 @@ class RandomField
                            float y = 0.0,
                            float z = 0.0);
 
+    // --------------------------------------------------------------
+    /*!
+     * \brief Creates a new Node with the given features and id and adds it to this RandomField
+     *
+     * This call will fail if there exists another Node in this RandomField with the requested id.
+     * The coordinates of the Node are not used in any way by this library.
+     *
+     * \warning This RandomField will free all features upon its destruction
+     *
+     * \param node_id The desired id for the Node
+     * \param feature_vals An array of feature values that describe the node
+     * \param nbr_feature_vals The number of values in the feature array
+     * \param label (Optional) The label of the node
+     * \param x (Optional) The x-coordinate the node
+     * \param y (Optional) The y-coordinate the node
+     * \param z (Optional) The z-coordinate the node
+     *
+     * \return a pointer to the newly created Node on success, otherwise NULL
+     *         on failure
+     */
+    // --------------------------------------------------------------
     const Node* createNode(const unsigned int node_id,
                            const float* feature_vals,
                            const unsigned int nbr_feature_vals,
@@ -109,6 +168,7 @@ class RandomField
                            float y = 0.0,
                            float z = 0.0);
 
+    // TODO comment this
     const Clique* createClique(const unsigned int clique_set_idx,
                                const list<Node*>& nodes,
                                const float* feature_vals,
@@ -117,6 +177,7 @@ class RandomField
                                float y = 0.0,
                                float z = 0.0);
 
+    // TODO comment this
     const Clique* createClique(const unsigned int clique_id,
                                const unsigned int clique_set_idx,
                                const list<Node*>& nodes,
@@ -126,6 +187,27 @@ class RandomField
                                float y = 0.0,
                                float z = 0.0);
 
+    // --------------------------------------------------------------
+    /*!
+     * \brief Updates the labels for each Node contained in this RandomField.
+     *
+     * This method would be called after performing inference.
+     *
+     * \warning This is a somewhat slow call as all label information contained
+     * in the cliques also need to be updated
+     *
+     * \param new_labeling Mapping of node ids to their new labels
+     *
+     * \return 0 on success, otherwise negative value on error
+     */
+    // --------------------------------------------------------------
+    int updateLabelings(const map<unsigned int, unsigned int>& new_labeling);
+    //@}
+
+    // ===================================================================
+    /*! \name Accessors  */
+    // ===================================================================
+    //@{
     // --------------------------------------------------------------
     /*!
      * \brief Returns mapping of ids assigned from this RandomField to associated primitives
@@ -146,23 +228,32 @@ class RandomField
     {
       return clique_sets_;
     }
+    //@}
 
+    // ===================================================================
+    /*! \name File I/O  */
+    // ===================================================================
+    //@{
     // --------------------------------------------------------------
     /*!
-     * \brief Updates the labels for the nodes in this RandomField
+     * \brief Saves the features of all Nodes in this RandomField to file
      *
-     * \warning This is a somewhat slow call as all label information contained
-     * in the cliques also need to be updated
+     * File format: x y z node_id label [features]
      *
-     * \param new_labeling Mapping of node ids to their new labels
+     * \param filename The filename to save to
      *
      * \return 0 on success, otherwise negative value on error
      */
     // --------------------------------------------------------------
-    int updateLabelings(const map<unsigned int, unsigned int>& new_labeling);
+    int saveNodeFeatures(string filename);
+    //@}
 
   private:
-    map<unsigned int, Node*> rf_nodes_; // using id
+    /*! \brief Mapping from a Node's id in this RandomField to its instance */
+    map<unsigned int, Node*> rf_nodes_;
+
+    /*! \brief Vector of containers for each clique set.  Each container is
+     *         a mapping from a Clique's id wrt the clique set to its instance */
     vector<map<unsigned int, Clique*> > clique_sets_;
 
   public:
@@ -217,16 +308,31 @@ class RandomField
           return nbr_feature_vals_;
         }
 
+        // --------------------------------------------------------------
+        /*!
+         * \brief Returns the x coordinate of this Node or Clique
+         */
+        // --------------------------------------------------------------
         inline float getX() const
         {
           return x_;
         }
 
+        // --------------------------------------------------------------
+        /*!
+         * \brief Returns the y coordinate of this Node or Clique
+         */
+        // --------------------------------------------------------------
         inline float getY() const
         {
           return y_;
         }
 
+        // --------------------------------------------------------------
+        /*!
+         * \brief Returns the z coordinate of this Node or Clique
+         */
+        // --------------------------------------------------------------
         inline float getZ() const
         {
           return z_;

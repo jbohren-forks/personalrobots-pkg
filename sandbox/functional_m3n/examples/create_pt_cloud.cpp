@@ -86,29 +86,6 @@ void save_clusters(const map<unsigned int, vector<unsigned int> >& cluster_centr
   outt.close();
 }
 
-// TODO
-// RandomField::saveNodes
-// RandomField::saveCliques
-void save_node_features(const map<unsigned int, RandomField::Node*>& nodes)
-{
-  ofstream outt("node_features.txt");
-  map<unsigned int, RandomField::Node*>::const_iterator iter;
-  RandomField::Node* curr_node = NULL;
-  for (iter = nodes.begin(); iter != nodes.end() ; iter++)
-  {
-    curr_node = iter->second;
-    outt << curr_node->getX() << " " << curr_node->getY() << " " << curr_node->getZ();
-    const float* curr_feats = curr_node->getFeatureVals();
-    for (unsigned int i = 0 ; i < curr_node->getNumberFeatureVals() ; i++)
-    {
-      outt << " " << curr_feats[i];
-
-    }
-    outt << endl;
-  }
-  outt.close();
-}
-
 // --------------------------------------------------------------
 /*!
  * \brief Creates PointCloud datastructure from file
@@ -428,9 +405,6 @@ void createNodes(RandomField& rf,
       }
     }
   }
-
-  // TODO put into RandomField
-  save_node_features(rf.getNodesRandomFieldIDs());
 }
 
 void createCliqueSet0(RandomField& rf,
@@ -523,6 +497,7 @@ int main()
   set<unsigned int> failed_indices;
   ROS_INFO("Creating nodes...");
   createNodes(rf, pt_cloud, *pt_cloud_kdtree, labels, failed_indices);
+  rf.saveNodeFeatures("node_features.txt");
   ROS_INFO("done");
 
   ROS_INFO("Creating clique set 0...");

@@ -271,6 +271,41 @@ const RandomField::Clique* RandomField::createClique(const unsigned int clique_i
   return new_clique;
 }
 
+// --------------------------------------------------------------
+/* See function definition */
+// --------------------------------------------------------------
+int RandomField::saveNodeFeatures(string filename)
+{
+  ofstream file_out(filename.c_str());
+  if (file_out.is_open() == false)
+  {
+    ROS_ERROR("Could not open requested %s to save node features to", filename.c_str());
+    return -1;
+  }
+
+  map<unsigned int, RandomField::Node*>::iterator iter_nodes;
+  RandomField::Node* curr_node = NULL;
+  for (iter_nodes = rf_nodes_.begin(); iter_nodes != rf_nodes_.end() ; iter_nodes++)
+  {
+    curr_node = iter_nodes->second;
+
+    // x y z node_id label
+    file_out << curr_node->getX() << " " << curr_node->getY() << " " << curr_node->getZ() << " "
+        << curr_node->getRandomFieldID() << " " << curr_node->getLabel();
+
+    // [features]
+    const float* curr_feats = curr_node->getFeatureVals();
+    for (unsigned int i = 0 ; i < curr_node->getNumberFeatureVals() ; i++)
+    {
+      file_out << " " << curr_feats[i];
+
+    }
+    file_out << endl;
+  }
+  file_out.close();
+  return 0;
+}
+
 // -----------------------------------------------------------------------------------------------------------
 // RandomField::GenericClique, RandomField::Node, RandomField::Clique definitions below
 // -----------------------------------------------------------------------------------------------------------
