@@ -9,6 +9,7 @@
 
 #include "outlet_detection/one_way_outlets.h"
 #include "outlet_detection/one_way_descriptor.h"
+#include "outlet_detection/one_way_descriptor_base.h"
 #include "outlet_detection/constellation.h"
 
 #include <highgui.h>

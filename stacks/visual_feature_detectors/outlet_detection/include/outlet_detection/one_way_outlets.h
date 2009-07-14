@@ -16,6 +16,7 @@ using namespace std;
 #include <cv.h>
 #include "features.h"
 #include "one_way_descriptor.h"
+#include "one_way_descriptor_base.h"
 
 void detect_outlets_2x1_one_way(IplImage* img, const CvOneWayDescriptorBase* descriptors, 
                                 vector<feature_t>& features, IplImage* color, 

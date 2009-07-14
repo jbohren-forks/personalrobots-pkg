@@ -20,6 +20,7 @@
 using namespace std;
 
 #include "one_way_descriptor.h"
+#include "one_way_descriptor_base.h"
 
 inline CvPoint cvPoint(CvPoint2D32f point)
 {

@@ -18,6 +18,10 @@ using namespace std;
 
 #include "outlet_detection/features.h"
 
+static int pca_dim = 20;
+static int pca_dim_small = 20;
+
+
 /*
 inline CvRect fit_rect_roi(CvRect rect, CvRect roi)
 {
@@ -42,7 +46,7 @@ inline CvRect double_rect(CvRect small_rect)
 	return cvRect(small_rect.x - small_rect.width/2, small_rect.y - small_rect.height/2,
 				  small_rect.width*2, small_rect.height*2);
 }*/
-
+CvMat* ConvertImageToMatrix(IplImage* patch);
 
 class CvCameraPose
 {
@@ -73,6 +77,10 @@ protected:
     CvMat* m_translation;
 };
 
+// CvAffinePose: defines a parameterized affine transformation of an image patch. 
+// An image patch is rotated on angle phi (in degrees), then scaled lambda1 times
+// along horizontal and lambda2 times along vertical direction, and then rotated again 
+// on angle (theta - phi).
 class CvAffinePose
 {
 public:
@@ -82,112 +90,143 @@ public:
     float lambda2;
 };
 
+// AffineTransformPatch: generates an affine transformed image patch. 
+// - src: source image (roi is supported)
+// - dst: output image. ROI of dst image should be 2 times smaller than ROI of src. 
+// - pose: parameters of an affine transformation
 void AffineTransformPatch(IplImage* src, IplImage* dst, CvAffinePose pose);
+
+// GenerateAffineTransformFromPose: generates an affine transformation matrix from CvAffinePose instance
+// - size: the size of image patch
+// - pose: affine transformation
+// - transform: 2x3 transformation matrix
 void GenerateAffineTransformFromPose(CvSize size, CvAffinePose pose, CvMat* transform);
-void generate_mean_transform(CvSize size, CvAffinePose pose, int num_samples, float noise, CvMat* transform);
+
+// Generates a random affine pose
+CvAffinePose GenRandomAffinePose();
+
 
 const static int num_mean_components = 500;
 const static float noise_intensity = 0.15f;
 
+// CvOneWayDescriptor: incapsulates a descriptor for a single point 
 class CvOneWayDescriptor
 {
 public:
     CvOneWayDescriptor();
     ~CvOneWayDescriptor();
     
-    void Allocate(int num_samples, CvSize size, int nChannels);
-    void GenerateSamples(int num_samples, IplImage* frontal, int norm = 0);
-    void GenerateSamplesWithTransforms(int num_samples, IplImage* frontal);
+    // allocates memory for given descriptor parameters
+    void Allocate(int pose_count, CvSize size, int nChannels);
+    
+    // GenerateSamples: generates affine transformed patches with averaging them over small transformation variations.
+    // If external poses and transforms were specified, uses them instead of generating random ones
+    // - pose_count: the number of poses to be generated
+    // - frontal: the input patch (can be a roi in a larger image)
+    // - norm: if nonzero, normalizes the output patch so that the sum of pixel intensities is 1
+    void GenerateSamples(int pose_count, IplImage* frontal, int norm = 0);
+
+    // GenerateSamplesFast: generates affine transformed patches with averaging them over small transformation variations.
+    // Uses precalculated transformed pca components.
+    // - frontal: the input patch (can be a roi in a larger image)
+    // - pca_hr_avg: pca average vector
+    // - pca_hr_eigenvectors: pca eigenvectors
+    // - pca_descriptors: an array of precomputed descriptors of pca components containing their affine transformations
+    //   pca_descriptors[0] corresponds to the average, pca_descriptors[1]-pca_descriptors[pca_dim] correspond to eigenvectors
     void GenerateSamplesFast(IplImage* frontal, CvMat* pca_hr_avg, 
                                                  CvMat* pca_hr_eigenvectors, CvOneWayDescriptor* pca_descriptors);
+    
+    // sets the poses and corresponding transforms
     void SetTransforms(CvAffinePose* poses, CvMat** transforms);
-    void CalcInitialPose(CvRect roi);
-    void Initialize(int num_samples, IplImage* frontal, const char* image_name = 0, CvPoint center = cvPoint(0, 0), int norm = 0);
-    void InitializeFast(int num_samples, IplImage* frontal, const char* image_name, CvPoint center,
+    
+    // Initialize: builds a descriptor. 
+    // - pose_count: the number of poses to build. If poses were set externally, uses them rather than generating random ones
+    // - frontal: input patch. Can be a roi in a larger image
+    // - feature_name: the feature name to be associated with the descriptor
+    // - norm: if 1, the affine transformed patches are normalized so that their sum is 1 
+    void Initialize(int pose_count, IplImage* frontal, const char* feature_name = 0, int norm = 0);
+    
+    // InitializeFast: builds a descriptor using precomputed descriptors of pca components
+    // - pose_count: the number of poses to build
+    // - frontal: input patch. Can be a roi in a larger image
+    // - feature_name: the feature name to be associated with the descriptor
+    // - pca_hr_avg: average vector for PCA
+    // - pca_hr_eigenvectors: PCA eigenvectors (one vector per row)
+    // - pca_descriptors: precomputed descriptors of PCA components, the first descriptor for the average vector
+    // followed by the descriptors for eigenvectors
+    void InitializeFast(int pose_count, IplImage* frontal, const char* feature_name, 
                                             CvMat* pca_hr_avg, CvMat* pca_hr_eigenvectors, CvOneWayDescriptor* pca_descriptors);
+    
+    // ProjectPCASample: unwarps an image patch into a vector and projects it into PCA space
+    // - patch: input image patch
+    // - avg: PCA average vector
+    // - eigenvectors: PCA eigenvectors, one per row
+    // - pca_coeffs: output PCA coefficients
     void ProjectPCASample(IplImage* patch, CvMat* avg, CvMat* eigenvectors, CvMat* pca_coeffs);
+    
+    // InitializePCACoeffs: projects all warped patches into PCA space
+    // - avg: PCA average vector
+    // - eigenvectors: PCA eigenvectors, one per row    
     void InitializePCACoeffs(CvMat* avg, CvMat* eigenvectors);
-    void EstimatePosePCA(IplImage* patch, int& pose_idx, float& distance, CvMat* avg = 0, CvMat* eigenvalues = 0);
-
     
-    IplImage* GetPatch(int index);
-    CvAffinePose GetPose(int index) const;
-
-    void CalcInitialPose();
-    
-    void Save(const char* path);
-    int ReadByName(CvFileStorage* fs, CvFileNode* parent, const char* name);
-    void Write(CvFileStorage* fs, const char* name);
-
-    // returns the index of the closest patch
+    // EstimatePose: finds the closest match between an input patch and a set of patches with different poses
+    // - patch: input image patch
+    // - pose_idx: the output index of the closest pose
+    // - distance: the distance to the closest pose (L2 distance)
     void EstimatePose(IplImage* patch, int& pose_idx, float& distance);
     
-    const char* GetImageName() const;
+    // EstimatePosePCA: finds the closest match between an input patch and a set of patches with different poses. 
+    // The distance between patches is computed in PCA space
+    // - patch: input image patch
+    // - pose_idx: the output index of the closest pose
+    // - distance: distance to the closest pose (L2 distance in PCA space)
+    // - avg: PCA average vector. If 0, matching without PCA is used
+    // - eigenvectors: PCA eigenvectors, one per row
+    void EstimatePosePCA(IplImage* patch, int& pose_idx, float& distance, CvMat* avg, CvMat* eigenvalues);
+
+    // GetPatch: returns a patch corresponding to specified pose index
+    // - index: pose index
+    // - return value: the patch corresponding to specified pose index
+    IplImage* GetPatch(int index);
+    
+    // GetPose: returns a pose corresponding to specified pose index
+    // - index: pose index
+    // - return value: the pose corresponding to specified pose index
+    CvAffinePose GetPose(int index) const;
+    
+    // Save: saves all patches with different poses to a specified path
+    void Save(const char* path);
+    
+    // ReadByName: reads a descriptor from a file storage
+    // - fs: file storage
+    // - parent: parent node
+    // - name: node name
+    // - return value: 1 if succeeded, 0 otherwise
+    int ReadByName(CvFileStorage* fs, CvFileNode* parent, const char* name);
+    
+    // Write: writes a descriptor into a file storage
+    // - fs: file storage
+    // - name: node name
+    void Write(CvFileStorage* fs, const char* name);
+
+    // GetFeatureName: returns a name corresponding to a feature
+    const char* GetFeatureName() const;
+    
+    // GetCenter: returns the center of the feature
     CvPoint GetCenter() const;
 
 protected:
-    int m_num_samples;
-    IplImage** m_samples;
-    CvMat** m_pca_coeffs;
-    CvAffinePose* m_affine_poses;
-    CvMat** m_transforms;
+    int m_pose_count; // the number of poses
+    IplImage** m_samples; // an array of length m_pose_count containing the patch in different poses 
+    CvMat** m_pca_coeffs; // an array of length m_pose_count containing pca decomposition of the patch in different poses
+    CvAffinePose* m_affine_poses; // an array of poses
+    CvMat** m_transforms; // an array of affine transforms corresponding to poses
     
-    string m_image_name;
-    CvPoint m_center;
+    string m_feature_name; // the name of the feature associated with the descriptor
+    CvPoint m_center; // the coordinates of the feature (the center of the input image ROI)
 };
-
-class CvOneWayDescriptorBase
-{
-public:
-    CvOneWayDescriptorBase(CvSize patch_size, int pose_count, const char* train_path, const char* train_config, 
-                           const char* pca_config, const char* pca_hr_config = 0, const char* pca_desc_config = 0);
-    ~CvOneWayDescriptorBase();
-    
-    CvSize GetPatchSize() const {return m_patch_size;};
-    int GetPoseCount() const {return m_pose_count;};
-    
-    void LoadTrainingFeatures(const char* train_image_filename, const char* train_image_filename1);
-    void CreatePCADescriptors();
-    
-    const CvOneWayDescriptor* GetDescriptor(int desc_idx) const {return &m_descriptors[desc_idx];};
-    void FindDescriptor(IplImage* patch, int& desc_idx, int& pose_idx, float& distance) const;
-    void InitializePoseTransforms();
-    void InitializeTransformsFromPoses();
-    void InitializePoses();
-    
-    int IsDescriptorObject(int desc_idx) const;
-    int MatchPointToPart(CvPoint pt) const;
-    int GetDescriptorPart(int desc_idx) const;
-    const vector<feature_t>& GetTrainFeatures() const {return m_train_features;};
-    
-    int LoadPCADescriptors(const char* filename);
-    void SavePCADescriptors(const char* filename);
-
-    
-    
-protected:
-    CvSize m_patch_size;
-    int m_pose_count;
-    int m_train_feature_count;
-    int m_object_feature_count;
-    CvOneWayDescriptor* m_descriptors;
-    CvMat* m_pca_avg;
-    CvMat* m_pca_eigenvectors;
-    CvMat* m_pca_hr_avg;
-    CvMat* m_pca_hr_eigenvectors;
-    CvOneWayDescriptor* m_pca_descriptors;
-    vector<feature_t> m_train_features;
-    
-    CvMat** m_transforms;
-    CvAffinePose* m_poses;
-};
-
-void readTrainingBase(const char* config_filename, char* outlet_filename, 
-                      char* nonoutlet_filename, vector<feature_t>& train_features);
-void readCvPointByName(CvFileStorage* fs, CvFileNode* parent, const char* name, CvPoint& pt);
 
 void FindOneWayDescriptor(int desc_count, CvOneWayDescriptor* descriptors, IplImage* patch, int& desc_idx, int& pose_idx, float& distance, 
                           CvMat* avg = 0, CvMat* eigenvalues = 0);
-CvMat* ConvertImageToMatrix(IplImage* patch);
 
 #endif //_ONE_WAY_DESCRIPTOR
