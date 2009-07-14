@@ -15,5 +15,6 @@
     <nddl iflags="-I${prefix}/nddl -I${prefix}/deprecated -I${prefix}"/>
     <cpp cflags="-I${prefix}/srv/cpp -I${prefix}/msg/cpp -I${prefix}/include/"
 	 lflags="-L${prefix}/lib -Wl,-rpath,${prefix}/lib"/>
+    <trex_libs libs="trex_ros"/>
   </export>
 </package>

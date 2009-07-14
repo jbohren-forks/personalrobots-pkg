@@ -15,7 +15,7 @@ macro(create_nddl_config)
 	       "</configuration>\n")
 endmacro(create_nddl_config)
 
-# set _TREX_LINK_LIBS
+# Set _TREX_LINK_LIBS to be the result of using rospack and splice the ends with "ender"
 macro(_get_trex_link_libs ender)
     _rospack_invoke(${PROJECT_NAME} ${_prefix} ROSPACK_TREX_LIBS export --lang=trex_libs --attrib=libs)
     set(_TREX_LINK_LIBS_LIST ${${_prefix}_ROSPACK_TREX_LIBS})
@@ -44,4 +44,12 @@ macro(trex_declare_fast target)
   _get_trex_link_libs("_o")
   target_link_libraries(${target} ${_TREX_LINK_LIBS})
 endmacro(trex_declare_fast)
+
+# Create a TREX library using files as args. The name of the targets created are {target}_o and {target}_g
+macro(create_trex_lib target files)
+  rospack_add_library(${target}_g ${TREX_FILES})
+  trex_declare_debug(${target}_g)
+  rospack_add_library(${target}_o ${TREX_FILES})
+  trex_declare_fast(${target}_o)
+endmacro(create_trex_lib)
 

@@ -8,6 +8,12 @@ gensrv()
 
 rospack_add_boost_directories()
 
+find_ros_package(trex_ros)
+include(${trex_ros_PACKAGE_PATH}/trex_build.cmake)
+create_nddl_config()
+
+
+
 set(TREX_FILES src/adapters.cpp
 	       src/main.cpp
                src/ros_reactor.cpp
@@ -21,9 +27,7 @@ set(TREX_FILES src/adapters.cpp
 	       src/components.cpp
 	       src/adapter_utilities.cpp)
 
-# trexdebug builds with a large number of run-time error checking running which is expensive
-# but gives good feedback in discovering problems.
-rospack_add_library(trex_ros ${TREX_FILES})
+create_trex_lib(trex_ros ${TREX_FILES})
 
 # trexwatchdog is a safety process that will monitor pings from the executive
 # and dispense shutdown commands to highlevel controllers (deactivation) if pings are

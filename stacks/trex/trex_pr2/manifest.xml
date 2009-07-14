@@ -27,7 +27,8 @@
   <export>
     <nddl iflags="-I${prefix}/nddl  -I${prefix}/deprecated  -I${prefix}"/>
     <cpp cflags=" -I${prefix}/include -I${prefix}/srv/cpp"
-	 lflags="-L${prefix}/lib -Wl,-rpath,${prefix}/lib -ltrex_pr2"  />
+	 lflags="-L${prefix}/lib -Wl,-rpath,${prefix}/lib"  />
+    <trex_libs libs="trex_pr2"/>
   </export>
 
 </package>
