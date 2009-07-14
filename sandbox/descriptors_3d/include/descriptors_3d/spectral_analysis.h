@@ -90,6 +90,16 @@ class SpectralAnalysis: public Descriptor3D
       spectral_info_ = spectral_info;
     }
 
+    virtual void compute(const robot_msgs::PointCloud& data,
+                         cloud_kdtree::KdTree& data_kdtree,
+                         const cv::Vector<robot_msgs::Point32*>& interest_pts,
+                         cv::Vector<cv::Vector<float> >& results);
+
+    virtual void compute(const robot_msgs::PointCloud& data,
+                         cloud_kdtree::KdTree& data_kdtree,
+                         const cv::Vector<vector<int>*>& interest_region_indices,
+                         cv::Vector<cv::Vector<float> >& results);
+
     // --------------------------------------------------------------
     /*!
      * \brief
@@ -121,23 +131,7 @@ class SpectralAnalysis: public Descriptor3D
     }
 
   protected:
-    // --------------------------------------------------------------
-    /*!
-     * \brief
-     */
-    // --------------------------------------------------------------
-    int computeSpectralFeatures(const robot_msgs::PointCloud& data,
-                                cloud_kdtree::KdTree& data_kdtree,
-                                const cv::Vector<robot_msgs::Point32*>& interest_pts);
-
-    // --------------------------------------------------------------
-    /*!
-     * \brief
-     */
-    // --------------------------------------------------------------
-    void computeSpectralFeatures(const robot_msgs::PointCloud& data,
-                                 cloud_kdtree::KdTree& data_kdtree,
-                                 const cv::Vector<vector<int>*>& interest_region_indices);
+    virtual void computeFeatures(cv::Vector<cv::Vector<float> >& results) = 0;
 
     SpectralAnalysis* spectral_info_;
 
@@ -156,7 +150,7 @@ class SpectralAnalysis: public Descriptor3D
     // --------------------------------------------------------------
     void clear();
 
-    int populateContainers(const robot_msgs::PointCloud& data, vector<int>& curr_region_indices, size_t idx);
+    void populateContainers(const robot_msgs::PointCloud& data, vector<int>& curr_region_indices, size_t idx);
 };
 
 #endif

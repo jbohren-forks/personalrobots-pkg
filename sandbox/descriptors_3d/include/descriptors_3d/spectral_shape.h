@@ -63,21 +63,12 @@ class SpectralShape: public SpectralAnalysis
       result_size_ = 3;
     }
 
-    virtual void compute(const robot_msgs::PointCloud& data,
-                         cloud_kdtree::KdTree& data_kdtree,
-                         const cv::Vector<robot_msgs::Point32*>& interest_pts,
-                         cv::Vector<cv::Vector<float> >& results);
-
-    virtual void compute(const robot_msgs::PointCloud& data,
-                         cloud_kdtree::KdTree& data_kdtree,
-                         const cv::Vector<vector<int>*>& interest_region_indices,
-                         cv::Vector<cv::Vector<float> >& results);
-
     void useCurvature();
 
-  private:
-    void populateResults(cv::Vector<cv::Vector<float> >& results);
+  protected:
+    virtual void computeFeatures(cv::Vector<cv::Vector<float> >& results);
 
+  private:
     bool use_curvature_;
 };
 

@@ -51,48 +51,7 @@ void SpectralShape::useCurvature()
 // --------------------------------------------------------------
 /* See function definition */
 // --------------------------------------------------------------
-void SpectralShape::compute(const robot_msgs::PointCloud& data,
-                            cloud_kdtree::KdTree& data_kdtree,
-                            const cv::Vector<robot_msgs::Point32*>& interest_pts,
-                            cv::Vector<cv::Vector<float> >& results)
-{
-  // If spectral information is not available, then compute it
-  if (spectral_info_ == NULL)
-  {
-    if (support_radius_ < 1e-5)
-    {
-      ROS_ERROR("SpectralShape::compute() support radius must be first set");
-      results.resize(interest_pts.size());
-      return;
-    }
-    computeSpectralFeatures(data, data_kdtree, interest_pts);
-    spectral_info_ = this;
-  }
-
-  populateResults(results);
-}
-
-// --------------------------------------------------------------
-/* See function definition */
-// --------------------------------------------------------------
-void SpectralShape::compute(const robot_msgs::PointCloud& data,
-                            cloud_kdtree::KdTree& data_kdtree,
-                            const cv::Vector<vector<int>*>& interest_region_indices,
-                            cv::Vector<cv::Vector<float> >& results)
-{
-  // If spectral information is not available, then compute it
-  if (spectral_info_ == NULL)
-  {
-    computeSpectralFeatures(data, data_kdtree, interest_region_indices);
-    spectral_info_ = this;
-  }
-  populateResults(results);
-}
-
-// --------------------------------------------------------------
-/* See function definition */
-// --------------------------------------------------------------
-void SpectralShape::populateResults(cv::Vector<cv::Vector<float> >& results)
+void SpectralShape::computeFeatures(cv::Vector<cv::Vector<float> >& results)
 {
   const vector<Eigen::Vector3d*>& eigen_values = spectral_info_->getEigenValues();
 
