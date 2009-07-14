@@ -51,15 +51,15 @@ namespace action_tools {
 
   //TODO: LOCK THINGS
 
-  template <class Goal, class Result>
+  template <class ActionGoal, class ActionResult>
   class ActionServer {
     public: 
       ActionServer(ros::NodeHandle n, std::string name, double status_frequency)
         : node_(n, name), new_goal_(false), preempt_request_(false) {
           status_pub_ = node_.advertise<action_tools::GoalStatus>("~status", 1);
-          result_pub_ = node_.advertise<Result>("~result", 1);
+          result_pub_ = node_.advertise<ActionResult>("~result", 1);
 
-          goal_sub_ = node_.subscribe<Goal>("~goal", 1,
+          goal_sub_ = node_.subscribe<ActionGoal>("~goal", 1,
               boost::bind(&ActionServer::goalCallback, this, _1));
 
           preempt_sub_ = node_.subscribe<action_tools::Preempt>("~preempt", 1,  
@@ -71,12 +71,12 @@ namespace action_tools {
           state_ = IDLE;
       }
 
-      bool newGoal(){
+      bool isNewGoalAvailable(){
         return new_goal_;
       }
       
-      template <class ResultType> void sendResult(ResultType result){
-        Result r;
+      template <class Result> void sendResult(Result result){
+        ActionResult r;
         r.header.stamp = ros::Time::now();
 
         lock_.lock();
@@ -87,9 +87,9 @@ namespace action_tools {
         result_pub_.publish(r);
       }
 
-      template <class GoalType> GoalType getNextGoal(){
+      template <class Goal> Goal getNextGoal(){
         lock_.lock();
-        GoalType ret = next_goal_.goal;
+        Goal ret = next_goal_.goal;
         lock_.unlock();
         return ret;
       }
@@ -142,8 +142,20 @@ namespace action_tools {
         publishStatus();
       }
 
+      void registerGoalCallback(boost::function<void ()> cb){
+        lock_.lock();
+        goal_callback_ = cb;
+        lock_.unlock();
+      }
+
+      void registerPreemptCallback(boost::function<void ()> cb){
+        lock_.lock();
+        preempt_callback_ = cb;
+        lock_.unlock();
+      }
+
     private:
-      void goalCallback(const boost::shared_ptr<const Goal>& goal){
+      void goalCallback(const boost::shared_ptr<const ActionGoal>& goal){
         lock_.lock();
         //check that the timestamp is past that of the current goal, the next goal, and past that of the last preempt
         if(goal->header.stamp > current_goal_.header.stamp
@@ -151,6 +163,10 @@ namespace action_tools {
             && goal->header.stamp > last_preempt_.header.stamp){
           next_goal_ = *goal;
           new_goal_ = true;
+
+          //if the user has registered a goal callback, we'll call it now
+          if(goal_callback_)
+            goal_callback_();
         }
         else{
           //reject goal?
@@ -166,6 +182,10 @@ namespace action_tools {
             && preempt->header.stamp > last_preempt_.header.stamp){
           preempt_request_ = true;
           last_preempt_ = *preempt;
+
+          //if the user has registered a preempt callback, we'll call it now
+          if(preempt_callback_)
+            preempt_callback_();
         }
         else {
           //send something about a preempt failing?
@@ -190,8 +210,8 @@ namespace action_tools {
       ros::Publisher status_pub_, result_pub_;
 
       ActionServerState state_;
-      Goal current_goal_;
-      Goal next_goal_;
+      ActionGoal current_goal_;
+      ActionGoal next_goal_;
       action_tools::GoalStatus status_;
       action_tools::Preempt last_preempt_;
 
@@ -200,6 +220,9 @@ namespace action_tools {
       boost::recursive_mutex lock_;
 
       ros::Timer status_timer_;
+
+      boost::function<void ()> goal_callback_;
+      boost::function<void ()> preempt_callback_;
 
 
   };

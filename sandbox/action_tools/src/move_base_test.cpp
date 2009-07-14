@@ -41,6 +41,14 @@
 #include <action_tools/MoveBaseGoal.h>
 #include <action_tools/MoveBaseResult.h>
 
+void goalCB(){
+  ROS_INFO("In goal callback");
+}
+
+void preemptCB(){
+  ROS_INFO("In preempt callback");
+}
+
 void updateLoop(double freq){
   ros::NodeHandle n;
   action_tools::ActionServer<action_tools::MoveBaseGoal, action_tools::MoveBaseResult> as(n, "move_base", 10);
@@ -48,12 +56,16 @@ void updateLoop(double freq){
   robot_msgs::PoseStamped goal;
 
   ros::Publisher pub = n.advertise<robot_msgs::PoseStamped>("~current_goal", 1);
+
+  as.registerGoalCallback(boost::bind(&goalCB));
+
+  as.registerPreemptCallback(boost::bind(&preemptCB));
   
   ros::Rate r(freq);
   while(n.ok()){
     if(as.isActive()){
       if(!as.isPreempted()){
-        if(as.newGoal()){
+        if(as.isNewGoalAvailable()){
           ROS_INFO("This action has received a new goal");
           goal = as.getNextGoal<robot_msgs::PoseStamped>();
           as.acceptNextGoal();
