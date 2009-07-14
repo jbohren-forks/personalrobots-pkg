@@ -9,7 +9,7 @@ gensrv()
 rospack_add_boost_directories()
 
 find_ros_package(trex_ros)
-include(${trex_ros_PACKAGE_PATH}/NDDL.cmake)
+include(${trex_ros_PACKAGE_PATH}/trex_build.cmake)
 create_nddl_config()
 
 
