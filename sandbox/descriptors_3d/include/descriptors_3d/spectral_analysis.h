@@ -135,14 +135,14 @@ class SpectralAnalysis: public Descriptor3D
 
     SpectralAnalysis* spectral_info_;
 
-    double support_radius_;
-
     vector<Eigen::Vector3d*> normals_;
     vector<Eigen::Vector3d*> tangents_;
     vector<Eigen::Vector3d*> eigen_values_;
     vector<Eigen::Vector3d*> centroids_;
 
   private:
+    double support_radius_;
+
     // --------------------------------------------------------------
     /*!
      * \brief

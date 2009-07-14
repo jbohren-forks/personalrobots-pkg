@@ -1,5 +1,5 @@
-#ifndef __D3D_ORIENTATION_H__
-#define __D3D_ORIENTATION_H__
+#ifndef __D3D_POSITION_H__
+#define __D3D_POSITION_H__
 /*********************************************************************
  * Software License Agreement (BSD License)
  *
@@ -34,50 +34,46 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
-#include <vector>
-
-#include <Eigen/Core>
-
 #include <opencv/cv.h>
 #include <opencv/cxcore.h>
 #include <opencv/cvaux.hpp>
 
-#include <descriptors_3d/spectral_analysis.h>
+#include <robot_msgs/PointCloud.h>
+
+#include <point_cloud_mapping/kdtree/kdtree.h>
+#include <point_cloud_mapping/geometry/nearest.h>
+
+#include <descriptors_3d/descriptors_3d.h>
 
 using namespace std;
 
 // --------------------------------------------------------------
-//* Orientation
+//* Position
 /**
  * \brief
  */
 // --------------------------------------------------------------
-class Orientation: public SpectralAnalysis
+class Position: public Descriptor3D
 {
   public:
-    Orientation() :
-      ref_tangent_defined_(false), ref_normal_defined_(false)
+    Position()
     {
-      result_size_ = 0;
+      result_size_ = 1;
     }
 
-    void useTangentOrientation(double ref_x, double ref_y, double ref_z);
-
-    void useNormalOrientation(double ref_x, double ref_y, double ref_z);
-
     // TODO: use sensor location
+    // TODO: incorporate map information
 
-  protected:
-    virtual void computeFeatures(cv::Vector<cv::Vector<float> >& results);
 
-  private:
-    bool ref_tangent_defined_;
-    Eigen::Vector3d ref_tangent_;
-    Eigen::Vector3d ref_tangent_flipped_;
+    virtual void compute(const robot_msgs::PointCloud& data,
+                         cloud_kdtree::KdTree& data_kdtree,
+                         const cv::Vector<robot_msgs::Point32*>& interest_pts,
+                         cv::Vector<cv::Vector<float> >& results);
 
-    bool ref_normal_defined_;
-    Eigen::Vector3d ref_normal_;
-    Eigen::Vector3d ref_normal_flipped_;
+    virtual void compute(const robot_msgs::PointCloud& data,
+                         cloud_kdtree::KdTree& data_kdtree,
+                         const cv::Vector<vector<int>*>& interest_region_indices,
+                         cv::Vector<cv::Vector<float> >& results);
 };
 
 #endif

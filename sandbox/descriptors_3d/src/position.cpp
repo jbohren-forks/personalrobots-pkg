@@ -1,5 +1,3 @@
-#ifndef __D3D_ORIENTATION_H__
-#define __D3D_ORIENTATION_H__
 /*********************************************************************
  * Software License Agreement (BSD License)
  *
@@ -34,50 +32,43 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
-#include <vector>
-
-#include <Eigen/Core>
-
-#include <opencv/cv.h>
-#include <opencv/cxcore.h>
-#include <opencv/cvaux.hpp>
-
-#include <descriptors_3d/spectral_analysis.h>
+#include <descriptors_3d/position.h>
 
 using namespace std;
 
 // --------------------------------------------------------------
-//* Orientation
-/**
- * \brief
- */
+/* See function definition */
 // --------------------------------------------------------------
-class Orientation: public SpectralAnalysis
+void Position::compute(const robot_msgs::PointCloud& data,
+                       cloud_kdtree::KdTree& data_kdtree,
+                       const cv::Vector<robot_msgs::Point32*>& interest_pts,
+                       cv::Vector<cv::Vector<float> >& results)
 {
-  public:
-    Orientation() :
-      ref_tangent_defined_(false), ref_normal_defined_(false)
-    {
-      result_size_ = 0;
-    }
+  size_t nbr_interest_pts = interest_pts.size();
+  results.resize(nbr_interest_pts);
+  for (size_t i = 0 ; i < nbr_interest_pts ; i++)
+  {
+    results[i].resize(1);
+    results[i][0] = (interest_pts[i])->z;
+  }
+}
 
-    void useTangentOrientation(double ref_x, double ref_y, double ref_z);
+// --------------------------------------------------------------
+/* See function definition */
+// --------------------------------------------------------------
+void Position::compute(const robot_msgs::PointCloud& data,
+                       cloud_kdtree::KdTree& data_kdtree,
+                       const cv::Vector<vector<int>*>& interest_region_indices,
+                       cv::Vector<cv::Vector<float> >& results)
+{
+  size_t nbr_interest_regions = interest_region_indices.size();
+  results.resize(nbr_interest_regions);
 
-    void useNormalOrientation(double ref_x, double ref_y, double ref_z);
-
-    // TODO: use sensor location
-
-  protected:
-    virtual void computeFeatures(cv::Vector<cv::Vector<float> >& results);
-
-  private:
-    bool ref_tangent_defined_;
-    Eigen::Vector3d ref_tangent_;
-    Eigen::Vector3d ref_tangent_flipped_;
-
-    bool ref_normal_defined_;
-    Eigen::Vector3d ref_normal_;
-    Eigen::Vector3d ref_normal_flipped_;
-};
-
-#endif
+  robot_msgs::Point32 region_centroid;
+  for (size_t i = 0 ; i < nbr_interest_regions ; i++)
+  {
+    cloud_geometry::nearest::computeCentroid(data, *(interest_region_indices[i]), region_centroid);
+    results[i].resize(1);
+    results[i][0] = region_centroid.z;
+  }
+}
