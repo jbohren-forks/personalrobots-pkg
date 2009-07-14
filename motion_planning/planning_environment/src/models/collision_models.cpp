@@ -57,6 +57,12 @@ void planning_environment::CollisionModels::setupModel(boost::shared_ptr<collisi
     model->unlock();    
 }
 
+void planning_environment::CollisionModels::loadParams(void)
+{
+    nh_.param(description_ + "_collision/robot_padd", padd_, 0.01);
+    nh_.param(description_ + "_collision/robot_scale", scale_, 1.0);
+}
+
 void planning_environment::CollisionModels::loadCollision(const std::vector<std::string> &links)
 {
     if (loadedModels())

@@ -88,14 +88,6 @@ namespace planning_environment
 	    return cm_;
 	}
 	
-	/** \brief Return the scaling employed when creating spheres
-	    from boxes in a collision map. The radius of a sphere is
-	    this scaling multiplied by the largest extent of the box */
-	double getBoxScale(void) const
-	{
-	    return boxScale_;
-	}
-	
 	/** \brief Define a callback for before updating a map */
 	void setOnBeforeMapUpdateCallback(const boost::function<void(const mapping_msgs::CollisionMapConstPtr)> &callback)
 	{
@@ -138,7 +130,6 @@ namespace planning_environment
 
 	CollisionModels                                                *cm_;
 	collision_space::EnvironmentModel                              *collisionSpace_;
-	double                                                          boxScale_;
 	boost::mutex                                                    mapUpdateLock_;
 	
 	bool                                                            haveMap_;

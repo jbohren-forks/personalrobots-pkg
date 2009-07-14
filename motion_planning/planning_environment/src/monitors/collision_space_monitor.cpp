@@ -63,9 +63,6 @@ void planning_environment::CollisionSpaceMonitor::setupCSM(void)
     haveMap_ = false;
 
     collisionSpace_ = cm_->getODECollisionModel().get();
-
-    // the factor by which a boxes maximum extent is multiplied to get the radius of the sphere to be placed in the collision space
-    nh_.param<double>("~box_scale", boxScale_, 0.867);
     
     // a list of static planes bounding the environment
     std::string planes;
@@ -183,7 +180,7 @@ void planning_environment::CollisionSpaceMonitor::updateCollisionSpace(const map
 	    data[i4 + 1] = pso.point.y;
 	    data[i4 + 2] = pso.point.z;
 	    
-	    data[i4 + 3] = maxCoord(collisionMap->boxes[i].extents) * boxScale_;
+	    data[i4 + 3] = maxCoord(collisionMap->boxes[i].extents) * 0.867;
 	}
 	
 	if (err)
@@ -200,7 +197,7 @@ void planning_environment::CollisionSpaceMonitor::updateCollisionSpace(const map
 	    data[i4 + 1] = collisionMap->boxes[i].center.y;
 	    data[i4 + 2] = collisionMap->boxes[i].center.z;
 	    
-	    data[i4 + 3] = maxCoord(collisionMap->boxes[i].extents) * boxScale_;
+	    data[i4 + 3] = maxCoord(collisionMap->boxes[i].extents) * 0.867;
 	}
     }
     

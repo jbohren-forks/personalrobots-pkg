@@ -59,18 +59,22 @@ public:
 	id_ = 0;
 	visualizationMarkerPublisher_ = nh_.advertise<visualization_msgs::Marker>("visualization_marker", 10240);
 	collisionModels_ = new planning_environment::CollisionModels("robot_description");
-	collisionSpaceMonitor_ = new planning_environment::CollisionSpaceMonitor(collisionModels_, &tf_);
 	if (collisionModels_->loadedModels())
 	{
+	    collisionSpaceMonitor_ = new planning_environment::CollisionSpaceMonitor(collisionModels_, &tf_);
 	    collisionSpaceMonitor_->setOnAfterMapUpdateCallback(boost::bind(&DisplayPlannerCollisionModel::afterWorldUpdate, this, _1));
 	    collisionSpaceMonitor_->setOnAfterAttachBodyCallback(boost::bind(&DisplayPlannerCollisionModel::afterAttachBody, this, _1));
 	}
+	else
+	    collisionSpaceMonitor_ = NULL;
     }
 
     virtual ~DisplayPlannerCollisionModel(void)
     {
-	delete collisionSpaceMonitor_;
-	delete collisionModels_;
+	if (collisionSpaceMonitor_)
+	    delete collisionSpaceMonitor_;
+	if (collisionModels_)
+	    delete collisionModels_;
     }
 
 protected:
@@ -83,7 +87,7 @@ protected:
 	    const robot_msgs::Point32 &point = collisionMap->boxes[i].center;
 	    const robot_msgs::Point32 &extents = collisionMap->boxes[i].extents;
 	    sendPoint(point.x, point.y, point.z,
-		      std::max(std::max(extents.x, extents.y), extents.z) * collisionSpaceMonitor_->getBoxScale(),
+		      std::max(std::max(extents.x, extents.y), extents.z) * 0.867,
 		      collisionMap->header, 1);
 	}
     }

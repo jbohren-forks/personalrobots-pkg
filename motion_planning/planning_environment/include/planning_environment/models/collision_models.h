@@ -49,13 +49,25 @@ namespace planning_environment
     {
     public:
 	
-	CollisionModels(const std::string &description, double scale = 1.0, double padd = 0.0) : RobotModels(description), scale_(scale), padd_(padd)
+	CollisionModels(const std::string &description, double scale, double padd) : RobotModels(description), scale_(scale), padd_(padd)
 	{
 	    loadCollision(collision_check_links_);
 	}
 
-	CollisionModels(const std::string &description, const std::vector<std::string> &links, double scale = 1.0, double padd = 0.0) : RobotModels(description), scale_(scale), padd_(padd)
+	CollisionModels(const std::string &description, const std::vector<std::string> &links, double scale, double padd) : RobotModels(description), scale_(scale), padd_(padd)
 	{
+	    loadCollision(links);
+	}
+	
+	CollisionModels(const std::string &description) : RobotModels(description)
+	{
+	    loadParams();
+	    loadCollision(collision_check_links_);
+	}
+
+	CollisionModels(const std::string &description, const std::vector<std::string> &links) : RobotModels(description)
+	{
+	    loadParams();
 	    loadCollision(links);
 	}
 	
@@ -84,8 +96,19 @@ namespace planning_environment
 	    return bullet_collision_model_;
 	}
 
+	double getScale(void)
+	{
+	    return scale_;
+	}
+	
+	double getPadding(void)
+	{
+	    return padd_;
+	}
+	
     protected:
 	
+	void loadParams();
 	void loadCollision(const std::vector<std::string> &links);
 	void setupModel(boost::shared_ptr<collision_space::EnvironmentModel> &model, const std::vector<std::string> &links);
 	

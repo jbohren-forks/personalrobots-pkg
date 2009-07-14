@@ -143,10 +143,10 @@ namespace planning_environment
 	    return loaded_models_;
 	}
 	
-	/** \brief Get the amount of padding to be used for links when cleaning sensor data */
+	/** \brief Get the amount of padding to be used for links when cleaning sensor data (of points on self) */
 	double getSelfSeePadding(void);
 
-	/** \brief Get the amount of scaling to be used for links when cleaning sensor data */
+	/** \brief Get the amount of scaling to be used for links when cleaning sensor data (of points on self) */
 	double getSelfSeeScale(void);
 	
 	/** \breif Get the list of planner configurations available for a specific planning group */

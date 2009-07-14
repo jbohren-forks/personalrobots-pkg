@@ -20,7 +20,7 @@ description.
 
 The collision.yaml file should define the follwing:
 
- - the robot links (same names as in the URDF description) that should be considered for collision checking under @b collision_links
+ - the robot links (same names as in the URDF description) that should be considered for collision checking under @b collision_links ; (padding and scaling for these links is defined by @b robot_padd and @b robot_scale)
 
  - the self collision groups under @b self_collision_groups
 
@@ -69,6 +69,12 @@ self_see_padd: 0.1
 
 ## The scaling to be considered for the body parts the robot can see
 self_see_scale: 1.0
+
+## The padding for the robot body parts to be considered when collision checking with the environment
+robot_padd: 0.01
+
+## The scaling for the robot body parts to be considered when collision checking with the environment
+robot_scale: 1.0
 
 @endverbatim
 
@@ -171,7 +177,7 @@ The model classes are:
 
 The monitor classes are:
 - \b planning_environment::KinematicModelStateMonitor : monitors the kinematic state of the robot. Optionally, monitors the base location. It uses the 'mechanism_state' topic.
-- \b planning_environment::CollisionSpaceMonitor : same as \b planning_environment::KinematicModelStateMonitor except it also monitors the state of the collision environment. It uses the 'collision_map' topic to receive new full maps and the 'collision_map_update' to receive updates. Attaching objects to robot links is possible using the 'attach_object' topic. The '~box_scale' parameter is used as the constant that gets multiplied to a box's maximum extent to obtain the radius of the sphere used in collision checking.
+- \b planning_environment::CollisionSpaceMonitor : same as \b planning_environment::KinematicModelStateMonitor except it also monitors the state of the collision environment. It uses the 'collision_map' topic to receive new full maps and the 'collision_map_update' to receive updates. Attaching objects to robot links is possible using the 'attach_object' topic. 
 - \b planning_environment::PlanningMonitor : same as \b planning_environment::CollisionSpaceMonitor except it also offers the ability to evaluate kinematic constraints and check paths and states for validity.
 
 \section rosapi ROS API
@@ -195,8 +201,6 @@ Reads the following parameters from the parameter server
  - @b "~refresh_interval_pose"/double : if more than this interval passes, the maintained pose is considered invalid
 
  - @b "~bounding_planes"/string : a sequence of plane equations specified as "a1 b1 c1 d1 a2 b2 c2 d2 ..." where each plane is defined by the equation ax+by+cz+d=0
-
- - @b "~box_scale"/double : boxes from the collision map are approximated with spheres using the extents of the boxes. The maximum extent of the box is multiplied by the constant specified by this parameter to obtain the radius of the sphere approximating the box
 
 A robot description and its corresponding planning and collision descriptions are assumed to be loaded on the parameter server as well.
 

@@ -49,6 +49,7 @@ void planning_environment::KinematicModelStateMonitor::setupRSM(void)
     attachedBodyNotifier_ = NULL;
     tfWait_ = ros::Duration(0.1);
     havePose_ = haveMechanismState_ = false;
+
     if (rm_->loadedModels())
     {
 	kmodel_ = rm_->getKinematicModel().get();
