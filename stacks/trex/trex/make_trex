@@ -26,6 +26,7 @@ fi
 # Build function takes:
 # 1. library name
 # 2. jam flags
+# 3. return error code
 function run_jam {
   echo "Running jam with command" $1 " and options" $2
   if [ `uname` = Darwin ]; then
@@ -54,7 +55,9 @@ if [ "$1" = "test" ] ; then
   fi
 
 else
-  run_jam "libTREX_g" " " 1
+  if [ "$ROS_TREX_DEBUG" = "1" ] ; then
+      run_jam "libTREX_g" " " 1
+  fi
   run_jam "libTREX_o" "-sVARIANTS=OPTIMIZED -sLIBRARIES=SHARED" 2
 fi
 
