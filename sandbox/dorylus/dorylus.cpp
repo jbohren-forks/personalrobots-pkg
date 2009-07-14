@@ -109,18 +109,43 @@ std::string Dorylus::status()
   st.append(tmp);
 
   st.append("  nWeakClassifier: ");
-  sprintf(tmp, "%d \n", pwcs_.size());
+  sprintf(tmp, "%zd \n", pwcs_.size());
   st.append(tmp);
 
-  if(pwcs_.size() > 0) {
-    map<string, vector<weak_classifier> >::iterator it;
-    
-    for(it=battery_.begin(); it != battery_.end(); it++) {
-      sprintf(tmp, "  %s: %d\n", it->first.c_str(), it->second.size());  
-      st.append(tmp);
+  if(pwcs_.size() == 0)
+    return st;
+
+  // -- Compute utilities for each descriptor space.
+  map<string, float> utilities;
+  map<string, vector<weak_classifier> >::iterator it;
+  for(it=battery_.begin(); it != battery_.end(); it++) {
+    vector<weak_classifier>& vwc = it->second;
+    for(size_t i=0; i<vwc.size(); i++) {
+      utilities[it->first] += vwc[i].utility;
     }
   }
-  
+
+  sprintf(tmp, "  nWeakClassifiers \t Utility \t Name \n");
+  st.append(tmp);
+
+  // -- Print in order of best utility.
+  while(utilities.size() > 0) {
+    // -- Find the descriptor space with the best util.
+    map<string, float>::iterator uit;
+    float max = 0;
+    string name = "";
+    for(uit=utilities.begin(); uit != utilities.end(); uit++) {
+      if(uit->second > max) {
+	max = uit->second;
+	name = uit->first;
+      }
+    }
+      
+    sprintf(tmp, "  %zd \t\t\t %02.5f \t %s \n", battery_[name].size(), utilities[name], name.c_str());  
+    st.append(tmp);
+    utilities.erase(name);
+  }
+ 
   return st;
 }
 
@@ -154,6 +179,12 @@ std::string DorylusDataset::status()
   for(pit = nPts.begin(); pit != nPts.end(); pit++) {
     oss << "    nPts in " << pit->first << " (" << dim[pit->first] << "-dimensional) space: " << pit->second << "\n";
   }
+
+  // -- Show example features.
+  for(fit = objs_[0]->features.begin(); fit != objs_[0]->features.end(); fit++) {
+    cout << "   " << fit->first << ": " << endl << fit->second->transpose() << endl;
+  }
+
 
   return oss.str();
 }
@@ -198,16 +229,14 @@ bool DorylusDataset::load(string filename, bool quiet)
   ifstream f;
   f.open(filename.c_str());
   if(f.fail()) {
-    if(!quiet)
-      cerr << "Failed to open file " << filename << endl;
+    cerr << "Failed to open file " << filename << endl;
     return false;
   }
 
   string line;
   getline(f, line);
   if(line.compare(version_string_) != 0) {
-    if(!quiet)
-      cerr << "Log " << filename << " is of the wrong type!" << endl;
+    cerr << "Log " << filename << " is of the wrong type!" << endl;
     return false;
   }
 
@@ -303,6 +332,7 @@ bool Dorylus::save(string filename, string *user_data_str)
       f << "ID" << endl << wcs[t].id << endl;
       f << bit->first << endl;
       f << "Theta" << endl << wcs[t].theta << endl;
+      f << "Utility" << endl << wcs[t].utility << endl;
       f << "Center" << endl << wcs[t].center.rows() << endl;
       for(int i=0; i<wcs[t].center.rows(); i++) {
 	buf = wcs[t].center(i,0);
@@ -332,18 +362,15 @@ bool Dorylus::load(string filename, bool quiet, string *user_data_str)
   ifstream f;
   f.open(filename.c_str());
   if(f.fail()) {
-    if(!quiet)
-      cerr << "Failed to open file " << filename << endl;
+    cerr << "Failed to open file " << filename << endl;
     return false;
   }
 
   string line;
   getline(f, line);
   if(line.compare(version_string_) != 0) {
-    if(!quiet) {
-      cerr << "Log " << filename << " is of the wrong type!" << endl;
-      cerr << "First line is: " << line << " instead of " << version_string_ << endl;
-    }
+    cerr << "Log " << filename << " is of the wrong type!" << endl;
+    cerr << "First line is: " << line << " instead of " << version_string_ << endl;
     return false;
   }
 
@@ -414,6 +441,12 @@ bool Dorylus::load(string filename, bool quiet, string *user_data_str)
       getline(f, line);
       istringstream iss_theta(line);
       iss_theta >> pwc->theta;
+
+      getline(f, line);
+      assert(line.compare("Utility") == 0);
+      getline(f, line);
+      istringstream iss_util(line);
+      iss_util >> pwc->utility;
 
       getline(f, line);
       assert(line.compare("Center") == 0);
@@ -726,6 +759,7 @@ bool Dorylus::learnWC(int nCandidates, map<string, float> max_thetas, vector<str
 	found_better = true;
 	max_util = util;
 	best = *cand[i];
+	best.utility = util;
 	//best_weights = **ppweights;
 	best_mmt = mmt;
       }

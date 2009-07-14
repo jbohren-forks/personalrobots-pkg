@@ -49,6 +49,7 @@ typedef struct
   int id;
   //! For centroid voting, boundary fragments, etc.  Not yet fully supported.
   map<string, void*> user_data;
+  float utility;
 } weak_classifier;
 
 string displayWeakClassifier(const weak_classifier &wc);
@@ -183,7 +184,7 @@ class Dorylus {
 
  Dorylus() : dd_(NULL), nClasses_(0), max_wc_(0)
     {
-      version_string_ = std::string("#DORYLUS CLASSIFIER LOG v0.1");
+      version_string_ = std::string("#DORYLUS CLASSIFIER LOG v0.2");
     }
 
 };
