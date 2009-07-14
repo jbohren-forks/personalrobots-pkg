@@ -109,6 +109,7 @@ WG0X::~WG0X()
 WG06::~WG06()
 {
   if (pressure_publisher_) delete pressure_publisher_;
+  if (accel_publisher_) delete accel_publisher_;
 }
 
 
@@ -116,10 +117,13 @@ EthercatDevice *WG0X::configure(int &startAddress, EtherCAT_SlaveHandler *sh)
 {
   sh_ = sh;
   bool isWG06 = sh->get_product_code() == WG06::PRODUCT_CODE;
+  int board_revision = ((sh->get_revision() >> 24) & 0xff) - 1;
+  bool hasAccel = isWG06 && board_revision >= 3;
 
   EtherCAT_FMMU_Config *fmmu = new EtherCAT_FMMU_Config(isWG06 ? 3 : 2);
+  status_size_ = hasAccel ? sizeof(WG06StatusWithAccel) : sizeof(WG0XStatus);
   (*fmmu)[0] = EC_FMMU(startAddress, // Logical start address
-                       sizeof(WG0XStatus), // Logical length
+                       status_size_, // Logical length
                        0x00, // Logical StartBit
                        0x07, // Logical EndBit
                        STATUS_PHY_ADDR, // Physical Start address
@@ -128,10 +132,10 @@ EthercatDevice *WG0X::configure(int &startAddress, EtherCAT_SlaveHandler *sh)
                        false, // Write Enable
                        true); // Enable
 
-  startAddress += sizeof(WG0XStatus);
+  startAddress += status_size_;
 
   (*fmmu)[1] = EC_FMMU(startAddress, // Logical start address
-                       sizeof(WG0XCommand),// Logical length
+                       command_size_,// Logical length
                        0x00, // Logical StartBit
                        0x07, // Logical EndBit
                        COMMAND_PHY_ADDR, // Physical Start address
@@ -140,7 +144,7 @@ EthercatDevice *WG0X::configure(int &startAddress, EtherCAT_SlaveHandler *sh)
                        true, // Write Enable
                        true); // Enable
 
-  startAddress += sizeof(WG0XCommand);
+  startAddress += command_size_;
 
   if (isWG06)
   {
@@ -161,11 +165,11 @@ EthercatDevice *WG0X::configure(int &startAddress, EtherCAT_SlaveHandler *sh)
   EtherCAT_PD_Config *pd = new EtherCAT_PD_Config(isWG06 ? 5 : 4);
 
   // Sync managers
-  (*pd)[0] = EC_SyncMan(COMMAND_PHY_ADDR, sizeof(WG0XCommand), EC_BUFFERED, EC_WRITTEN_FROM_MASTER);
+  (*pd)[0] = EC_SyncMan(COMMAND_PHY_ADDR, command_size_, EC_BUFFERED, EC_WRITTEN_FROM_MASTER);
   (*pd)[0].ChannelEnable = true;
   (*pd)[0].ALEventEnable = true;
 
-  (*pd)[1] = EC_SyncMan(STATUS_PHY_ADDR, sizeof(WG0XStatus));
+  (*pd)[1] = EC_SyncMan(STATUS_PHY_ADDR, status_size_);
   (*pd)[1].ChannelEnable = true;
 
   (*pd)[2] = EC_SyncMan(MBX_COMMAND_PHY_ADDR, MBX_COMMAND_SIZE, EC_QUEUED, EC_WRITTEN_FROM_MASTER);
@@ -195,7 +199,16 @@ int WG06::initialize(Actuator *actuator, bool allow_unprogrammed, bool motor_mod
     string topic = "pressure";
     if (!actuator->name_.empty())
       topic = topic + "/" + string(actuator->name_);
-    pressure_publisher_ = new realtime_tools::RealtimePublisher<ethercat_hardware::PressureState>(topic, 1);
+    pressure_publisher_ = new realtime_tools::RealtimePublisher<ethercat_hardware::PressureState>(ros::NodeHandle(), topic, 1);
+    unsigned int revision = sh_->get_revision();
+    unsigned int board_major = ((revision >> 24) & 0xff) - 1;
+    if (board_major >= 3)
+    {
+      topic = "/accelerometer/";
+      if (!actuator->name_.empty())
+        topic += actuator->name_;
+      accel_publisher_ = new realtime_tools::RealtimePublisher<ethercat_hardware::AccelerometerState>(ros::NodeHandle(), topic, 1);
+    }
   }
 
   return retval;
@@ -206,13 +219,16 @@ int WG0X::initialize(Actuator *actuator, bool allow_unprogrammed, bool motor_mod
   unsigned int revision = sh_->get_revision();
   unsigned int major = (revision >> 8) & 0xff;
   unsigned int minor = revision & 0xff;
+  unsigned int board_major = ((revision >> 24) & 0xff) - 1;
+  unsigned int board_minor = ((revision >> 16) & 0xff);
+  unsigned int product = sh_->get_product_code();
 
   ROS_DEBUG("Device #%02d: WG0%d (%#08x) Firmware Revision %d.%02d, PCB Revision %c.%02d", sh_->get_ring_position(),
-         sh_->get_product_code() == WG05::PRODUCT_CODE ? 5 : 6,
-         sh_->get_product_code(), major, minor,
-         'A' + ((revision >> 24) & 0xff) - 1, (revision >> 16) & 0xff);
+         product == WG05::PRODUCT_CODE ? 5 : 6,
+         product, major, minor,
+         'A' + board_major, board_minor);
 
-  if (sh_->get_product_code() == WG05::PRODUCT_CODE)
+  if (product == WG05::PRODUCT_CODE)
   {
     if (major != 1 || minor < 7)
     {
@@ -266,21 +282,7 @@ int WG0X::initialize(Actuator *actuator, bool allow_unprogrammed, bool motor_mod
     backemf_constant_ = 1.0 / (actuator_info_.speed_constant_ * 2 * M_PI * 1.0/60);
     ROS_DEBUG("            Name: %s", actuator_info_.name_);
     string topic = "/motor_model/" + string(actuator_info_.name_);
-    motor_publisher_ = motor_model ? new realtime_tools::RealtimePublisher<ethercat_hardware::MotorModel>(topic, 1) : 0;
-#if 0
-    ROS_DEBUG("            major: %d", actuator_info_.major_);              // Major revision
-    ROS_DEBUG("            minor: %d", actuator_info_.minor_);              // Minor revision
-    ROS_DEBUG("            id: %d", actuator_info_.id_);                 // Actuator ID
-    ROS_DEBUG("            robot: %s", actuator_info_.robot_name_);         // Robot name
-    ROS_DEBUG("            motor: %s", actuator_info_.motor_make_);         // Motor manufacturer
-    ROS_DEBUG("            motor: %s", actuator_info_.motor_model_);        // Motor model #
-    ROS_DEBUG("            max: %f", actuator_info_.max_current_);          // Maximum current
-    ROS_DEBUG("            speed: %f", actuator_info_.speed_constant_);       // Speed constant
-    ROS_DEBUG("            resistance: %f", actuator_info_.resistance_);           // Resistance
-    ROS_DEBUG("            motor torque: %f", actuator_info_.motor_torque_constant_); // Motor torque constant
-    ROS_DEBUG("            encoder reduction: %f", actuator_info_.encoder_reduction_);    // Reduction and sign between motor and encoder
-    ROS_DEBUG("            pulses per revolution: %d", actuator_info_.pulses_per_revolution_); // # of encoder ticks per revolution
-#endif
+    motor_publisher_ = motor_model ? new realtime_tools::RealtimePublisher<ethercat_hardware::MotorModel>(ros::NodeHandle(), topic, 1) : 0;
   }
   else if (allow_unprogrammed)
   {
@@ -333,13 +335,13 @@ void WG0X::initXml(TiXmlElement *elt)
 
 void WG0X::convertCommand(ActuatorCommand &command, unsigned char *buffer)
 {
-  WG0XCommand *c = (WG0XCommand *)(buffer + sizeof(WG0XStatus));
+  WG0XCommand *c = (WG0XCommand *)(buffer + status_size_);
 
-  memset(c, 0, sizeof(WG0XCommand));
+  memset(c, 0, command_size_);
 
   c->programmed_current_ = int(command.current_ / config_info_.nominal_current_scale_);
   c->mode_ = command.enable_ ? (MODE_ENABLE | MODE_CURRENT | MODE_SAFETY_RESET) : MODE_OFF;
-  c->checksum_ = rotateRight8(computeChecksum(c, sizeof(WG0XCommand) - 1));
+  c->checksum_ = rotateRight8(computeChecksum(c, command_size_ - 1));
   c->digital_out_ = command.digital_out_;
 }
 
@@ -355,7 +357,7 @@ void WG0X::truncateCurrent(ActuatorCommand &command)
   
 void WG06::convertState(ActuatorState &state, unsigned char *current_buffer, unsigned char *last_buffer)
 {
-  WG06Pressure *p = (WG06Pressure *)(current_buffer + sizeof(WG0XCommand) + sizeof(WG0XStatus));
+  WG06Pressure *p = (WG06Pressure *)(current_buffer + command_size_ + status_size_);
 
   if (p->timestamp_ != last_pressure_time_)
   {
@@ -370,6 +372,27 @@ void WG06::convertState(ActuatorState &state, unsigned char *current_buffer, uns
       }
       pressure_publisher_->unlockAndPublish();
     }
+  }
+
+  if (accel_publisher_ && accel_publisher_->trylock())
+  {
+    WG06StatusWithAccel *status = (WG06StatusWithAccel *)current_buffer;
+    WG06StatusWithAccel *last_status = (WG06StatusWithAccel *)last_buffer;
+    int count = min(uint8_t(4), uint8_t(status->accel_count_ - last_status->accel_count_));
+
+    accel_publisher_->msg_.set_x_size(count);
+    accel_publisher_->msg_.set_y_size(count);
+    accel_publisher_->msg_.set_z_size(count);
+    for (int i = 0; i < count; ++i)
+    {
+      int32_t acc = status->accel_[count - i - 1];
+      int range = (acc >> 30) & 3;
+      float d = 1 << (8 - range);
+      accel_publisher_->msg_.x[i] = ((((acc >>  0) & 0x3ff) << 22) >> 22) / d;
+      accel_publisher_->msg_.y[i] = ((((acc >> 10) & 0x3ff) << 22) >> 22) / d;
+      accel_publisher_->msg_.z[i] = ((((acc >> 20) & 0x3ff) << 22) >> 22) / d;
+    }
+    accel_publisher_->unlockAndPublish();
   }
 
   WG0X::convertState(state, current_buffer, last_buffer);
@@ -876,7 +899,6 @@ void WG0X::diagnostics(diagnostic_msgs::DiagnosticStatus &d, unsigned char *buff
 {
   diagnostic_msgs::DiagnosticValue v;
   diagnostic_msgs::DiagnosticString s;
-  //WG0XCommand *cmd = (WG0XCommand *)(buffer + sizeof(WG0XStatus));
   WG0XStatus *status = (WG0XStatus *)buffer;
 
   strings_.clear();
@@ -892,13 +914,15 @@ void WG0X::diagnostics(diagnostic_msgs::DiagnosticStatus &d, unsigned char *buff
   ADD_STRING("Name", actuator_info_.name_);
   ADD_STRING_FMT("Position", "%02d", sh_->get_ring_position());
   unsigned int revision = sh_->get_revision();
+  unsigned int board_major = ((revision >> 24) & 0xff) - 1;
+  unsigned int board_minor = ((revision >> 16) & 0xff);
   unsigned int major = (revision >> 8) & 0xff;
   unsigned int minor = revision & 0xff;
   ADD_STRING_FMT("Product code",
         "WG0%d (%d) Firmware Revision %d.%02d, PCB Revision %c.%02d",
         sh_->get_product_code() == WG05::PRODUCT_CODE ? 5 : 6,
         sh_->get_product_code(), major, minor,
-        'A' + ((revision >> 24) & 0xff) - 1, (revision >> 16) & 0xff);
+        'A' + board_major, board_minor);
 
   ADD_STRING("Robot", actuator_info_.robot_name_);
   ADD_STRING_FMT("Motor", "%s %s", actuator_info_.motor_make_, actuator_info_.motor_model_);

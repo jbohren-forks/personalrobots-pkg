@@ -40,6 +40,7 @@
 #include <realtime_tools/realtime_publisher.h>
 #include <ethercat_hardware/PressureState.h>
 #include <ethercat_hardware/MotorModel.h>
+#include <ethercat_hardware/AccelerometerState.h>
 
 struct WG0XMbxHdr
 {
@@ -183,6 +184,32 @@ struct WG0XStatus
   int16_t motor_voltage_;
   uint16_t packet_count_;
   uint8_t pad_;
+  uint8_t checksum_;
+}__attribute__ ((__packed__));
+
+struct WG06StatusWithAccel
+{
+  uint8_t mode_;
+  uint8_t digital_out_;
+  int16_t programmed_pwm_value_;
+  int16_t programmed_current_;
+  int16_t measured_current_;
+  uint32_t timestamp_;
+  int32_t encoder_count_;
+  int32_t encoder_index_pos_;
+  uint16_t num_encoder_errors_;
+  uint8_t encoder_status_;
+  uint8_t unused1;
+  int32_t unused2;
+  int32_t unused3;
+  uint16_t board_temperature_;
+  uint16_t bridge_temperature_;
+  uint16_t supply_voltage_;
+  int16_t motor_voltage_;
+  uint16_t packet_count_;
+  uint8_t pad_;
+  uint8_t accel_count_;
+  uint32_t accel_[4];
   uint8_t checksum_;
 }__attribute__ ((__packed__));
 
@@ -332,7 +359,7 @@ struct WG06Pressure
 class WG06 : public WG0X
 {
 public:
-  WG06() : WG0X(true, sizeof(WG0XCommand), sizeof(WG0XStatus)+sizeof(WG06Pressure)), use_ros_(true), last_pressure_time_(0) {}
+  WG06() : WG0X(true, sizeof(WG0XCommand), sizeof(WG0XStatus)+sizeof(WG06Pressure)), use_ros_(true), last_pressure_time_(0), pressure_publisher_(0), accel_publisher_(0) {}
   ~WG06();
   int initialize(Actuator *, bool allow_unprogrammed=true, bool motor_model=false);
   void convertState(ActuatorState &state, unsigned char *current_buffer, unsigned char *last_buffer);
@@ -344,6 +371,7 @@ public:
 private:
   uint32_t last_pressure_time_;
   realtime_tools::RealtimePublisher<ethercat_hardware::PressureState> *pressure_publisher_;
+  realtime_tools::RealtimePublisher<ethercat_hardware::AccelerometerState> *accel_publisher_;
 };
 
 #endif /* WG0X_H */
