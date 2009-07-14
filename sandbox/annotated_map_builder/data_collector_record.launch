@@ -3,8 +3,10 @@
 
 
   <node pkg="rosrecord" type="rosrecord" machine="four" args="-f /bags/annotated_maps/wide_stereo_ /wide_stereo/raw_stereo_throttled"/>
-
   <node pkg="rosrecord" type="rosrecord" machine="four" args="-f /bags/annotated_maps/narrow_stereo_ /narrow_stereo/raw_stereo_throttled"/>
+  
+<node pkg="rosrecord" type="rosrecord" machine="two" args="-f /bags/annotated_maps/tf_ /tf_message"/>
+
 
   <node pkg="rosrecord" type="rosrecord" machine="two" args="-f /bags/annotated_maps/tf_ /tf_message"/>
 
