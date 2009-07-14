@@ -27,8 +27,17 @@
 
 using namespace std;
 
+typedef struct kmeans_params
+{
+    double factor;
+    double accuracy;
+    int max_iter;
+    vector<unsigned int> channel_indices;
+} kmeans_params_t;
+
 vector<Descriptor3D*> node_feature_descriptors;
 M3NParams m3n_params;
+kmeans_params_t cs0_kmeans_params;
 
 void populateParameters()
 {
@@ -44,6 +53,12 @@ void populateParameters()
 
   unsigned int nbr_clique_sets = 1;
 
+  // kmeans parameters for constructing cliques
+  cs0_kmeans_params.factor = 0.003;
+  cs0_kmeans_params.accuracy = 1.0;
+  cs0_kmeans_params.max_iter = 10;
+  cs0_kmeans_params.channel_indices.clear();
+
   // Define learning parameters
   vector<float> robust_potts_params(nbr_clique_sets, -1.0);
   RegressionTreeWrapperParams regression_tree_params;
@@ -51,25 +66,6 @@ void populateParameters()
   m3n_params.setNumberOfIterations(15);
   m3n_params.setRegressorRegressionTrees(regression_tree_params);
   m3n_params.setInferenceRobustPotts(robust_potts_params);
-}
-
-void save_clusters(map<unsigned int, list<RandomField::Node*> >& created_clusters)
-{
-  ofstream outt("clusters.txt");
-  map<unsigned int, list<RandomField::Node*> >::iterator iter;
-  list<RandomField::Node*>::iterator node_iter;
-  RandomField::Node* curr_node = NULL;
-  for (iter = created_clusters.begin(); iter != created_clusters.end() ; iter++)
-  {
-    list<RandomField::Node*>& curr_nodes = iter->second;
-    for (node_iter = curr_nodes.begin(); node_iter != curr_nodes.end() ; node_iter++)
-    {
-      curr_node = *node_iter;
-      outt << curr_node->getX() << " " << curr_node->getY() << " " << curr_node->getZ() << " " << iter->first
-          << endl;
-    }
-  }
-  outt.close();
 }
 
 void save_clusters(const map<unsigned int, vector<unsigned int> >& cluster_centroids_indices,
@@ -90,6 +86,9 @@ void save_clusters(const map<unsigned int, vector<unsigned int> >& cluster_centr
   outt.close();
 }
 
+// TODO
+// RandomField::saveNodes
+// RandomField::saveCliques
 void save_node_features(const map<unsigned int, RandomField::Node*>& nodes)
 {
   ofstream outt("node_features.txt");
@@ -162,29 +161,33 @@ int loadPointCloud(string filename, robot_msgs::PointCloud& pt_cloud, vector<uns
   return 0;
 }
 
-// cluster the node features using kmeans
-// created_clusters: cluster label -> list of nodes
-// xxxxx: cluster_label -> vector of node ids
-// note: using vector<uint> b/c that is what point_cloud_mapping needs
-void kmeansPtCloud(const robot_msgs::PointCloud& pt_cloud,
-                   const vector<unsigned int> channel_indices,
-                   const set<unsigned int>& skip_indices,
-                   const double kmeans_factor,
-                   const int kmeans_max_iter,
-                   const double kmeans_accuracy,
-                   map<unsigned int, vector<float> >& cluster_centroids_xyz,
-                   map<unsigned int, vector<unsigned int> >& cluster_centroids_indices)
+int kmeansPtCloud(const robot_msgs::PointCloud& pt_cloud,
+                  const set<unsigned int>& ignore_indices,
+                  kmeans_params_t& kmeans_params,
+                  map<unsigned int, vector<float> >& cluster_centroids_xyz,
+                  map<unsigned int, vector<unsigned int> >& cluster_centroids_indices)
 
 {
-  // TODO
-  // RandomField::saveNodes
-  // RandomField::saveCliques
+  double kmeans_factor = kmeans_params.factor;
+  double kmeans_accuracy = kmeans_params.accuracy;
+  int kmeans_max_iter = kmeans_params.max_iter;
+  vector<unsigned int> kmeans_channel_indices = kmeans_params.channel_indices;
 
-  // xyz + channel dimensions
-  // TODO need to normalize channels?
-  unsigned int cluster_feature_dim = 3 + channel_indices.size();
+  // ----------------------------------------------------------
+  // Cluster of xyz coordinates and the specified channel dimensions
+  unsigned int cluster_feature_dim = 3;
+  for (unsigned int i = 0 ; i < kmeans_channel_indices.size() ; i++)
+  {
+    if (kmeans_channel_indices[i] >= pt_cloud.chan.size())
+    {
+      ROS_ERROR("Channel index %u exceeds number of channels %u", kmeans_channel_indices[i], pt_cloud.chan.size());
+      return -1;
+    }
+    cluster_feature_dim += pt_cloud.chan[kmeans_channel_indices[i]].vals.size();
+  }
+
   unsigned int nbr_total_pts = pt_cloud.pts.size();
-  unsigned int nbr_cluster_samples = nbr_total_pts - skip_indices.size();
+  unsigned int nbr_cluster_samples = nbr_total_pts - ignore_indices.size();
 
   // ----------------------------------------------------------
   // Create matrix for clustering
@@ -197,7 +200,7 @@ void kmeansPtCloud(const robot_msgs::PointCloud& pt_cloud,
   unsigned int curr_sample_idx = 0;
   for (unsigned int i = 0 ; i < nbr_total_pts ; i++)
   {
-    if (skip_indices.count(i) != 0)
+    if (ignore_indices.count(i) != 0)
     {
       nbr_skipped++;
       continue;
@@ -213,14 +216,19 @@ void kmeansPtCloud(const robot_msgs::PointCloud& pt_cloud,
     feature_matrix[curr_offset + 1] = pt_cloud.pts[i].y;
     feature_matrix[curr_offset + 2] = pt_cloud.pts[i].z;
 
-    // offset past coordinates
+    // offset past xyz coordinates
     curr_offset += 3;
 
-    // cluster of channels as well
-    // TODO normalize?
-    for (unsigned int j = 0 ; j < channel_indices.size() ; j++)
+    // cluster the channel values
+    // TODO normalize these values?
+    for (unsigned int j = 0 ; j < kmeans_channel_indices.size() ; j++)
     {
-      //feature_matrix[curr_offset + j] = pt_cloud.chan[channel_indices[j]];
+      const vector<float>& chan_vals = pt_cloud.chan[kmeans_channel_indices[j]].vals;
+      for (unsigned int k = 0 ; k < chan_vals.size() ; k++)
+      {
+        feature_matrix[curr_offset + k] = chan_vals[k];
+      }
+      curr_offset += chan_vals.size();
     }
   }
 
@@ -241,7 +249,7 @@ void kmeansPtCloud(const robot_msgs::PointCloud& pt_cloud,
   unsigned int curr_cluster_label = 0;
   for (unsigned int i = 0 ; i < nbr_total_pts ; i++)
   {
-    if (skip_indices.count(i) != 0)
+    if (ignore_indices.count(i) != 0)
     {
       nbr_skipped++;
       continue;
@@ -288,6 +296,8 @@ void kmeansPtCloud(const robot_msgs::PointCloud& pt_cloud,
   // Cleanup
   cvReleaseMat(&cluster_labels);
   free(feature_matrix);
+
+  return 0;
 }
 
 unsigned int createConcatenatedFeatures(const robot_msgs::PointCloud& pt_cloud,
@@ -301,8 +311,8 @@ unsigned int createConcatenatedFeatures(const robot_msgs::PointCloud& pt_cloud,
   failed_indices.clear();
 
   // Allocate results for each INTEREST point
-  unsigned int nbr_pts = interest_pts.size();
-  concatenated_features.assign(nbr_pts, NULL);
+  unsigned int nbr_interest_pts = interest_pts.size();
+  concatenated_features.assign(nbr_interest_pts, NULL);
 
   // Allocate feature computation for each descriptor
   unsigned int nbr_descriptors = descriptors_3d.size();
@@ -318,13 +328,13 @@ unsigned int createConcatenatedFeatures(const robot_msgs::PointCloud& pt_cloud,
   }
 
   // ----------------------------------------------
-  // Iterate over each point and create a node if all feature computations were successful
-  // The node's features will be the concatenation of all descriptors' values
+  // Iterate over each interest point and compute all feature descriptors
+  // If all descriptor computations are successful, then concatenate all values into 1 array
   float* curr_concat_feats = NULL; // concatenated features from all descriptors
   unsigned int prev_val_idx = 0; // offset when copying into concat_features
   unsigned int curr_nbr_feature_vals = 0; // length of current descriptor
   bool all_features_success = true; // flag if all descriptors were computed correctly
-  for (unsigned int i = 0 ; i < nbr_pts ; i++)
+  for (unsigned int i = 0 ; i < nbr_interest_pts ; i++)
   {
     // --------------------------------
     // Verify all features for the point were computed successfully
@@ -389,7 +399,7 @@ void createNodes(RandomField& rf,
   unsigned int nbr_pts = pt_cloud.pts.size();
 
   // ----------------------------------------------
-  // create interests points over the whole point cloud
+  // Create interests points over the whole point cloud
   cv::Vector<robot_msgs::Point32*> interest_pts(nbr_pts, NULL);
   for (unsigned int i = 0 ; i < nbr_pts ; i++)
   {
@@ -397,7 +407,7 @@ void createNodes(RandomField& rf,
   }
 
   // ----------------------------------------------
-  // compute features over all point cloud
+  // Compute features over all point cloud
   vector<float*> concatenated_features(nbr_pts, NULL);
   unsigned int nbr_concatenated_vals = createConcatenatedFeatures(pt_cloud, pt_cloud_kdtree, interest_pts,
       node_feature_descriptors, concatenated_features, failed_indices);
@@ -430,30 +440,12 @@ void createCliqueSet0(RandomField& rf,
 {
   // ----------------------------------------------
   // Create clusters
-  // TODO HARDCODE
-  //  vector<unsigned int> cluster_indices(3);
-  //  cluster_indices[0] = 0;
-  //cluster_indices[1] = 1;
-  //cluster_indices[2] = 2;
-  //cluster_indices.clear();
-  //double kmeans_factor = 0.005;
-  double kmeans_factor = 0.003;
-  int kmeans_max_iter = 10; // was 5
-  double kmeans_accuracy = 1.0;
-  //map<unsigned int, list<RandomField::Node*> > created_clusters;
-  //map<unsigned int, vector<float> > xyz_cluster_centroids;
-  ROS_INFO("Clustering...");
-  //kmeansNodes(cluster_indices, kmeans_factor, kmeans_max_iter, kmeans_accuracy, rf.getNodesRandomFieldIDs(),
-  //   created_clusters, xyz_cluster_centroids);
-
-  vector<unsigned int> no_channel_indices;
   map<unsigned int, vector<float> > cluster_centroids_xyz;
   map<unsigned int, vector<unsigned int> > cluster_centroids_indices;
-
-  kmeansPtCloud(pt_cloud, no_channel_indices, skip_indices, kmeans_factor, kmeans_max_iter, kmeans_accuracy,
-      cluster_centroids_xyz, cluster_centroids_indices);
-
+  ROS_INFO("Clustering...");
+  kmeansPtCloud(pt_cloud, skip_indices, cs0_kmeans_params, cluster_centroids_xyz, cluster_centroids_indices);
   ROS_INFO("done");
+
   save_clusters(cluster_centroids_indices, pt_cloud);
   ROS_INFO("Kmeans found %u clusters", cluster_centroids_indices.size());
 
