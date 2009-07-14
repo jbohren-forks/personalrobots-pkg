@@ -30,7 +30,7 @@ create_trex_executables(bin/trexfast bin/trexdebug src/main.cpp)
 
 # Test target for unit tests on topological map integration components
 rospack_add_gtest(test/topological_map_tests test/topological_map_tests.cpp)
-target_link_libraries(test/topological_map_tests trex_pr2)
+target_link_libraries(test/topological_map_tests trex_pr2_o)
 
 # stub_ros__container implements stub state publishers and actions to allow easy testing of the ROS adapters for the model
 rospack_add_executable(bin/stub_ros_container src/stub_ros_container.cpp)
