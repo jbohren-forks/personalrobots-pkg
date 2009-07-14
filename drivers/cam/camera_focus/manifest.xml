@@ -1,8 +1,7 @@
 <package>
   <description brief="camera_focus">
-
-     camera_focus
-
+    This package is used to output a signal indicating how well a camera is
+    focused. It is used during production to focus the cameras.
   </description>
   <author>Blaise Gassend</author>
   <license>BSD</license>
@@ -10,7 +9,8 @@
   <url>http://pr.willowgarage.com/wiki/camera_focus</url>
   <depend package="forearm_cam"/>
   <depend package="dcam"/>
-
+  <sysdepend os="ubuntu" version="8.04-hardy" package="gnuplot"/>
+  <sysdepend os="ubuntu" version="8.10-hardy" package="gnuplot"/>
 </package>
 
 
