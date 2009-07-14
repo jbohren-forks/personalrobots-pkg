@@ -51,11 +51,11 @@ static const double epsilon = 1e-6 ;
 TEST(KINEMATIC_CALIBRATION_error_vec, marker_3d_easy1)
 {
   KDL::Chain chain ;
-  chain.addSegment(KDL::Segment(KDL::Joint(KDL::Joint::RotZ),
+  chain.addSegment(KDL::Segment("NoName",KDL::Joint("NoName",KDL::Joint::RotZ),
                                 KDL::Frame(KDL::Rotation(), KDL::Vector(1,0,0) )
                                ) ) ;
 
-  chain.addSegment(KDL::Segment(KDL::Joint(KDL::Joint::RotZ),
+  chain.addSegment(KDL::Segment("NoName",KDL::Joint("NoName",KDL::Joint::RotZ),
                                 KDL::Frame(KDL::Rotation(), KDL::Vector(1,0,0) )
                                ) ) ;
 
