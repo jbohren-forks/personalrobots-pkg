@@ -23,25 +23,9 @@ set(TREX_FILES src/pr2_adapter_utilities.cpp
 # build extensions into exported library
 create_trex_lib(trex_pr2 ${TREX_FILES})
 
-# trexdebug builds with a large number of run-time error checking running which is expensive
-# but gives good feedback in discovering problems.
-rospack_add_executable(bin/trexdebug src/main.cpp)
-rospack_link_boost(bin/trexdebug thread)
-rospack_add_gtest_build_flags(bin/trexdebug)
-trex_declare_debug(bin/trexdebug)
 
-
-# trexfast is about an order of magnitude faster than trexdebug
-rospack_add_executable(bin/trexfast src/main.cpp)
-rospack_link_boost(bin/trexfast thread)
-rospack_add_gtest_build_flags(bin/trexfast)
-trex_declare_fast(bin/trexfast)
-
-# rospack_add_gtest_build_flags excludes the target from all, on the
-# assumption that it's only used as a unit test.  In this case that's not
-# true
-set_target_properties(bin/trexfast PROPERTIES EXCLUDE_FROM_ALL false)
-
+# build executables
+create_trex_executables(bin/trexfast bin/trexdebug src/main.cpp)
 
 
 # Test target for unit tests on topological map integration components

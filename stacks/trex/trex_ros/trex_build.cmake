@@ -55,3 +55,25 @@ macro(create_trex_lib target files)
   trex_declare_fast(${target}_o)
 endmacro(create_trex_lib)
 
+
+# Create trex executables
+macro(create_trex_executables fast debug file)
+  # trexdebug builds with a large number of run-time error checking running which is expensive
+  # but gives good feedback in discovering problems.
+  rospack_add_executable(${debug} ${file})
+  rospack_link_boost(${debug} thread)
+  rospack_add_gtest_build_flags(${debug})
+  trex_declare_debug(${debug})
+
+
+  # trexfast is about an order of magnitude faster than trexdebug
+  rospack_add_executable(${fast} ${file})
+  rospack_link_boost(${fast} thread)
+  rospack_add_gtest_build_flags(${fast})
+  trex_declare_fast(${fast})
+
+  # rospack_add_gtest_build_flags excludes the target from all, on the
+  # assumption that it's only used as a unit test.  In this case that's not
+  # true
+  set_target_properties(${fast} PROPERTIES EXCLUDE_FROM_ALL false)
+endmacro(create_trex_executables)
