@@ -768,3 +768,287 @@ Index: src/joint.hpp
          Joint::JointType type;
          double scale;
          double offset;
+Index: src/bindings/python/frames.sip
+===================================================================
+--- src/bindings/python/frames.sip	(revision 30248)
++++ src/bindings/python/frames.sip	(working copy)
+@@ -137,9 +137,11 @@
+     static Rotation RotY(double angle)/Factory/;
+     static Rotation RotZ(double angle)/Factory/;
+     static Rotation Rot(const Vector& vec,double angle)/Factory/;
++    static Rotation Rot2(const Vector& vec,double angle)/Factory/;
+     static Rotation EulerZYZ(double Alfa,double Beta,double Gamma)/Factory/;
+     static Rotation RPY(double roll,double pitch,double yaw)/Factory/;
+     static Rotation EulerZYX(double Alfa,double Beta,double Gamma)/Factory/;
++    static Rotation Quaternion(double x, double y, double z, double w)/Factory/;
+     
+ 
+     void DoRotX(double angle);
+@@ -151,6 +153,8 @@
+     void GetEulerZYZ(double& alfa /Out/,double& beta /Out/,double& gamma /Out/) const;
+     void GetRPY(double& roll /Out/,double& pitch /Out/,double& yaw /Out/) const;
+     void GetEulerZYX(double& Alfa /Out/,double& Beta /Out/,double& Gamma /Out/) const;
++    void GetQuaternion(double& x /Out/,double& y /Out/,double& z /Out/, double& w) const;
++
+     
+     Vector operator*(const Vector& v) const /Numeric,Factory/;
+     Twist operator*(const Twist& arg) const /Numeric,Factory/;
+@@ -159,6 +163,11 @@
+     Vector UnitX() const /Factory/;
+     Vector UnitY() const /Factory/;
+     Vector UnitZ() const /Factory/;
++
++    void UnitX(const Vector& X);
++    void UnitY(const Vector& X);
++    void UnitZ(const Vector& X);
++
+     
+ };
+ bool Equal(const Rotation& a,const Rotation& b,double eps=epsilon);
+Index: src/bindings/python/kinfam.sip
+===================================================================
+--- src/bindings/python/kinfam.sip	(revision 30247)
++++ src/bindings/python/kinfam.sip	(working copy)
+@@ -329,39 +329,74 @@
+     ChainIkSolverVel_wdls(const Chain& chain,double eps=0.00001,int maxiter=150);
+         
+     virtual int CartToJnt(const JntArray& q_in, const Twist& v_in, JntArray& qdot_out);
+-    void setWeightTS(SIP_PYTUPLE);
++    void setWeightTS(SIP_PYLIST);
+ %MethodCode
+-    //void setWeightTS(const ublas::symmetric_matrix<double> Mx);
++    //void setWeightTS(const Eigen::MatrixXd& Mx);
+     //Mx has to be a 6x6 Matrix
+-    double arr[6];
+-    PyArg_ParseTuple(a0, "dddddd", &arr[0], &arr[1], &arr[2], &arr[3], &arr[4], &arr[5]);
+-    ublas::symmetric_matrix<double> Wts(ublas::identity_matrix<double>(6));
+-    Wts(0,0) = arr[0];
+-    Wts(1,1) = arr[1];
+-    Wts(2,2) = arr[2];
+-    Wts(3,3) = arr[3];
+-    Wts(4,5) = arr[4];
+-    Wts(5,5) = arr[5];
+ 
+-    sipCpp->setWeightTS(Wts);
+-
++    Py_ssize_t numRows,numCols;
++    double c_item;
++    PyObject *list=a0;
++    numRows=PyList_Size(list);
++    PyObject *temp1;
++    temp1=PyList_GetItem(list,0);
++    numCols=PyList_Size(temp1);
++    if (numRows!=numCols) {
++       sipIsErr=1; //todo: raise exception
++    }
++    if (numRows!=6) {
++       sipIsErr=1; //todo: raise exception
++    }
++    Eigen::MatrixXd Mx;
++    Mx=Eigen::MatrixXd::Identity(numRows,numCols);
++    
++    for (Py_ssize_t r=0;r<numRows;r++) {
++        PyObject *row;
++        row=PyList_GetItem(list,r);
++        if (numCols!=PyList_Size(row)) {
++           sipIsErr=1; //todo: raise exception
++        }
++        for (Py_ssize_t c=0;c<numCols;c++) {
++            PyObject *item;
++            item=PyList_GetItem(row,c);
++            c_item=PyFloat_AsDouble(item);
++            Mx(r,c)= c_item;
++        }
++    }
++    sipCpp->setWeightTS(Mx);
+ %End
+ 
+-    void setWeightJS(SIP_PYTUPLE);
++    void setWeightJS(SIP_PYLIST);
+ %MethodCode
+-    //void setWeightJS(const ublas::symmetric_matrix<double> Mx);
+-    //Mx has to be a 6x6 Matrix
+-    double arr[6];
+-    PyArg_ParseTuple(a0, "dddddd", &arr[0], &arr[1], &arr[2], &arr[3], &arr[4], &arr[5]);
+-    ublas::symmetric_matrix<double> Wts(ublas::identity_matrix<double>(6));
+-    Wts(0,0) = arr[0];
+-    Wts(1,1) = arr[1];
+-    Wts(2,2) = arr[2];
+-    Wts(3,3) = arr[3];
+-    Wts(4,5) = arr[4];
+-    Wts(5,5) = arr[5];
+-
+-    sipCpp->setWeightJS(Wts);
++    //void setWeightJS(const Eigen::MatrixXd& Mx);
++    //Mx has to be a simetric positive definite Matrix
++    //unsigned int nOfJoints=sipCpp->chain.getNrOfJoints(); //To check that we are receiving valid data dimensions. This doesn't work, chain is a private member. todo: How can we check for this?
++    Py_ssize_t numRows,numCols;
++    double c_item;
++    PyObject *list=a0;
++    numRows=PyList_Size(list);
++    PyObject *temp1;
++    temp1=PyList_GetItem(list,0);
++    numCols=PyList_Size(temp1);
++    if (numRows!=numCols) {
++       sipIsErr=1; //todo: raise exception
++    }
++    Eigen::MatrixXd Mq;
++    Mq=Eigen::MatrixXd::Identity(numRows,numCols);
++    for (Py_ssize_t r=0;r<numRows;r++) {
++        PyObject *row;
++        row=PyList_GetItem(list,r);
++        if (numCols!=PyList_Size(row)) {
++           sipIsErr=1; //todo: raise exception
++        }
++        for (Py_ssize_t c=0;c<numCols;c++) {
++            PyObject *item;
++            item=PyList_GetItem(row,c);
++            c_item=PyFloat_AsDouble(item);
++            Mq(r,c)= c_item;
++        }
++    }
++    sipCpp->setWeightJS(Mq);
+ %End
+ 
+     void setLambda(const double& lambda);
+Index: config/FindEigen2.cmake
+===================================================================
+--- config/FindEigen2.cmake	2009-07-13 21:23:42.827620408 +0200
++++ config/FindEigen2.cmake	2009-07-13 21:21:43.260158060 +0200
+@@ -1,7 +1,7 @@
+-FIND_PATH(EIGEN2_INCLUDE_DIR Eigen/Core  )
++FIND_PATH(EIGEN2_INCLUDE_DIR Eigen/Core /usr/include /usr/include/eigen2)
+ IF ( EIGEN2_INCLUDE_DIR )
+     MESSAGE(STATUS "-- Looking for Eigen2 - found")
+     SET(KDL_CFLAGS "${KDL_CFLAGS} -I${EIGEN2_INCLUDE_DIR}" CACHE INTERNAL "")
+ ELSE ( EIGEN2_INCLUDE_DIR )
+     MESSAGE(FATAL_ERROR "-- Looking for Eigen2 - not found")
+-ENDIF ( EIGEN2_INCLUDE_DIR )
+\ No newline at end of file
++ENDIF ( EIGEN2_INCLUDE_DIR )
+Index: src/bindings/python/kinfam.sip
+===================================================================
+--- src/bindings/python/kinfam.sip	2009-07-13 21:23:48.117644375 +0200
++++ src/bindings/python/kinfam.sip	2009-07-13 21:21:44.124157407 +0200
+@@ -30,7 +87,7 @@
+ 
+ public:
+     enum JointType {RotX,RotY,RotZ,TransX,TransY,TransZ,None};
+-    Joint(JointType type=None,double scale=1,double offset=0,
++    Joint(std::string name=std::string("NoName"), JointType type=None,double scale=1,double offset=0,
+           double inertia=0,const double damping=0,double stiffness=0);
+     Joint(const Joint& in);
+     
+@@ -52,10 +109,11 @@
+     
+ %TypeHeaderCode
+ #include <segment.hpp>
++#include <string>
+ using namespace KDL;
+ %End
+ public:
+-    Segment(const Joint& joint=Joint::None, const Frame& f_from_parent=Frame::Identity());
++    Segment( const std::string name = std::string("NoName"), const Joint& joint=Joint("NoName",Joint::None), const Frame& f_from_parent=Frame::Identity());
+     Segment(const Segment& in);
+ 
+     const char* __repr__();
+     
+Index: src/bindings/python/configure.py.in
+===================================================================
+--- src/bindings/python/configure.py.in	2009-07-13 22:29:03.949893050 +0200
++++ src/bindings/python/configure.py.in	2009-07-13 22:27:42.019080711 +0200
+@@ -7,6 +7,8 @@
+ build_path = '@PROJ_BINARY_DIR@/src'
+ python_path = src_path + '/bindings/python'
+ kdl_cflags ='@KDL_CFLAGS@'
++install_path = '@CMAKE_INSTALL_PREFIX@'
++
+ # create paths for temporary files if don't exist
+ if not os.path.isdir("./sip"):
+     os.mkdir("./sip")
+@@ -62,6 +64,8 @@
+ makefile.extra_lib_dirs = [build_path]
+ makefile.extra_include_dirs = [src_path,build_path]
+ makefile.extra_cxxflags=[kdl_cflags]
++#Give the linker a hint about where to look for the libraries
++makefile.LFLAGS.append("-Wl,-rpath," + install_path + "/lib")
+ # Generate the Makefile itself.
+ makefile.generate()
+ 
+Index: src/bindings/python/kinfam.sip
+===================================================================
+--- src/bindings/python/kinfam.sip	2009-07-13 22:49:45.136464058 +0200
++++ src/bindings/python/kinfam.sip	2009-07-13 22:44:16.159832886 +0200
+@@ -19,6 +19,7 @@
+ //License along with this library; if not, write to the Free Software
+ //Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+ 
++%Include std_string.sip 
+ 
+ class Joint{
+ 
+Index: src/bindings/python/std_string.sip
+===================================================================
+--- src/bindings/python/std_string.sip	1970-01-01 01:00:00.000000000 +0100
++++ src/bindings/python/std_string.sip	2009-07-13 22:43:11.610296410 +0200
+@@ -0,0 +1,60 @@
++//Copyright  (C)  2005  Torsten Marek <shlomme at gmx.net>
++//
++//This library is free software; you can redistribute it and/or
++//modify it under the terms of the GNU Lesser General Public
++//License as published by the Free Software Foundation; either
++//version 2.1 of the License, or (at your option) any later version.
++//
++//This library is distributed in the hope that it will be useful,
++//but WITHOUT ANY WARRANTY; without even the implied warranty of
++//MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++//Lesser General Public License for more details.
++//
++//You should have received a copy of the GNU Lesser General Public
++//License along with this library; if not, write to the Free Software
++//Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++
++
++%MappedType std::string
++{
++%TypeHeaderCode
++#include <string>
++%End
++
++%ConvertFromTypeCode
++    // convert an std::string to a Python (unicode) string
++    PyObject* newstring;
++    newstring = PyUnicode_DecodeUTF8(sipCpp->c_str(), sipCpp->length(), NULL);
++    if(newstring == NULL) {
++        PyErr_Clear();
++        newstring = PyString_FromString(sipCpp->c_str());
++    }
++    return newstring;
++%End
++
++%ConvertToTypeCode
++     // Allow a Python string (or a unicode string) whenever a string is
++     // expected.
++    // If argument is a Unicode string, just decode it to UTF-8
++    // If argument is a Python string, assume it's UTF-8
++     if (sipIsErr == NULL)
++        return (PyString_Check(sipPy) || PyUnicode_Check(sipPy));
++     if (sipPy == Py_None) {
++        *sipCppPtr = new std::string;
++         return 1;
++     }
++     if (PyUnicode_Check(sipPy)) {
++        PyObject* s = PyUnicode_AsEncodedString(sipPy, "UTF-8", "");
++        *sipCppPtr = new std::string(PyString_AS_STRING(s));
++        Py_DECREF(s);
++        return 1;
++     }
++     if (PyString_Check(sipPy)) {
++        *sipCppPtr = new std::string(PyString_AS_STRING(sipPy));
++        return 1;
++     }
++
++     return 0;
++%End
++};
++
