@@ -122,7 +122,7 @@ void inPaintNN(IplImage* img) {
 ****************************************************************************/
 
 ImageDescriptor::ImageDescriptor() :
-  img_(NULL), debug_(false)
+  name_(string()), result_size_(0), img_(NULL), row_(-1), col_(-1), debug_(false)
 {
 }
 
@@ -141,12 +141,12 @@ void ImageDescriptor::setPoint(int row, int col) {
   clearPointCache();
 }
 
-void ImageDescriptor::commonDebug() {
+void ImageDescriptor::commonDebug(int row, int col) {
   IplImage* display = cvCloneImage(img_);
   cvResetImageROI(display);
   CvFont* numbFont = new CvFont();
   cvInitFont( numbFont, CV_FONT_VECTOR0, 1.0f, 1.0f, 0, 1);
-  cvPutText(display, "+", cvPoint(col_,row_), numbFont, cvScalar(0,0,255));
+  cvPutText(display, "+", cvPoint(col,row), numbFont, cvScalar(0,0,255));
   cvNamedWindow("Input Image");
   cvShowImage("Input Image", display);
   cvWaitKey(0);
@@ -157,7 +157,7 @@ bool ImageDescriptor::compute(MatrixXf** result) {
   return false;
 }
 
-//void ImageDescriptor::compute(IplImage* img, const cv::Vector<Keypoint>& points, vvf result) {}
+//void ImageDescriptor::compute(IplImage* img, const Vector<Keypoint>& points, vvf result) {}
 
 /****************************************************************************
 *************  ImageDescriptor::HogWrapper
@@ -165,11 +165,11 @@ bool ImageDescriptor::compute(MatrixXf** result) {
 HogWrapper::HogWrapper() : ImageDescriptor(), hog_()
 {
   char buf[400];
-  sprintf(buf, "Hog_winSize%dx%d_blockSize%dx%d_blockStride%dx%d_cellSize%dx%d_nBins%d_derivAperture%d_winSigma%lf_histNormType%d_L2HysThreshold%lf_gammaCorrection%d", 
+  sprintf(buf, "Hog_winSize%dx%d_blockSize%dx%d_blockStride%dx%d_cellSize%dx%d_nBins%d_derivAperture%d_winSigma%g_histNormType%d_L2HysThreshold%g_gammaCorrection%d", 
 	  hog_.winSize.width, hog_.winSize.height, hog_.blockSize.width, hog_.blockSize.height, hog_.blockStride.width, hog_.blockStride.height, 
 	  hog_.cellSize.width, hog_.cellSize.height, hog_.nbins, hog_.derivAperture, hog_.winSigma, hog_.histogramNormType, 
 	  hog_.L2HysThreshold, hog_.gammaCorrection);
-  name_ = buf;
+  name_.assign(buf);
   result_size_ = hog_.getDescriptorSize();
 }
 
@@ -179,49 +179,56 @@ HogWrapper::HogWrapper(Size winSize, Size blockSize, Size blockStride, Size cell
   : ImageDescriptor(), hog_(winSize, blockSize, blockStride, nbins, derivAperture, winSigma, histogramNormType, L2HysThreshold, gammaCorrection)
 {
   char buf[400];
-  sprintf(buf, "Hog_winSize%dx%d_blockSize%dx%d_blockStride%dx%d_cellSize%dx%d_nBins%d_derivAperture%d_winSigma%lf_histNormType%d_L2HysThreshold%lf_gammaCorrection%d", 
+  sprintf(buf, "Hog_winSize%dx%d_blockSize%dx%d_blockStride%dx%d_cellSize%dx%d_nBins%d_derivAperture%d_winSigma%g_histNormType%d_L2HysThreshold%g_gammaCorrection%d", 
 	  winSize.width, winSize.height, blockSize.width, blockSize.height, blockStride.width, blockStride.height, cellSize.width, cellSize.height,
 	  nbins, derivAperture, winSigma, histogramNormType, L2HysThreshold, gammaCorrection);
-  name_ = buf;
+  name_.assign(buf);
   hog_.cellSize = cellSize;
   result_size_ = hog_.getDescriptorSize();
 }
 
 
-void HogWrapper::compute(IplImage* img, const cv::Vector<Keypoint>& points, vvf& results) {
+void HogWrapper::compute(IplImage* img, const Vector<Keypoint>& points, vvf& results) {
+  setImage(img);
 
   // -- Translate from Keypoint to Point.
   Vector<Point> locations;
   locations.reserve(points.size());
-  for(unsigned int i=0; i<points.size(); i++) {
-    Point pt(round(points[(size_t)i].pt.x), round(points[(size_t)i].pt.y));
+  for(size_t i=0; i<points.size(); i++) {
+    Point pt(round(points[i].pt.x), round(points[i].pt.y));
     locations.push_back(pt);
+    //cout << points[i].pt.x << " " << points[i].pt.y << " " << pt.x << " " << pt.y << endl;
   }
   
-  results.resize(points.size());
   Vector<float> result;
   
   hog_.compute(img, result, Size(), Size(), locations); //winStride and padding are set to default
-  //cout << result.size() << " elements in hog return." << endl;
+  cout << result.size() << " elements in hog return.  Expected: " << points.size() * hog_.getDescriptorSize() << endl;
+
+
 
   // -- Construct vvf from the long concatenation that hog_ produces.
   //    Assume that an all 0 vector was the result of an edge case.
-  int sz = hog_.getDescriptorSize();
-  for(unsigned int i=0; i<points.size(); i++) {
+  size_t sz = hog_.getDescriptorSize();
+  int nValid = 0;
+  results.resize(points.size());
+  for(size_t i=0; i<points.size(); i++) {
     bool valid = false;
-    for(unsigned int j=i*sz; j<(i+1)*sz; j++) {
-      if(result[(size_t)j] != 0) {
+    for(size_t j=i*sz; j<(i+1)*sz; j++) {
+      if(result[j] != 0) {
 	valid = true;
 	break;
       }
     }
     if(valid) {
       //results[i] = Vector<float>(&result[i*sz], sz); //Creates a header for this data.  No copy.
-      results[(size_t)i] = Vector<float>(&result[(size_t)(i*sz)], sz, true); //Copy.
+      results[i] = Vector<float>(&result[(i*sz)], sz, true); //Copy.
+      nValid++; 
+
     } 
     //cout << results[i].size() << " elements in a single feature.  valid:" << valid << endl;
   }
-  //cout << "returning " << results.size() << " features." << endl;
+  cout << "returning " << results.size() << " features, " << nValid << " of which were valid" << endl;
 
   //result contains the data, and we didn't do a copy.  This prevents the data from being deallocated when result goes out of scope.
   //The data will be deallocated when results goes out of scope (after being returned).
@@ -230,21 +237,29 @@ void HogWrapper::compute(IplImage* img, const cv::Vector<Keypoint>& points, vvf&
   if(debug_) {
     cout << "debugging" << endl;
     // -- Find first returned descriptor.
-    unsigned int i;
+    size_t i;
     for(i=0; i<results.size(); i++) {
-      if(!results[(size_t)i].empty())
+      if(!results[i].empty())
 	break;
     }
     
     if(i == results.size())
       cout << "No valid " << name_ << " descriptor." << endl;
     else {
-      Vector<float>& r = results[(size_t)i];
+      Vector<float>& r = results[i];
       cout << name_ << " descriptor: " << endl;
-      for(unsigned int j=0; j<r.size(); j++) {
-	cout << " " << r[(size_t)j];
+      for(size_t j=0; j<r.size(); j++) {
+	cout << " " << r[j];
       }
       cout << endl;
+
+//       cout << name_ << " descriptor: " << endl;
+//       for(size_t j=0; j<r.size(); j++) {
+// 	cout << " " << result[i*sz+j];
+//       }
+//       cout << endl;
+
+      commonDebug(locations[i].y, locations[i].x);
     }
   }
 } 
@@ -354,7 +369,7 @@ bool IntensityPatch::compute(MatrixXf** result) {
     cvResize(final_patch_, final_patch_rescaled, CV_INTER_NN);
     cvNamedWindow(name_.c_str());
     cvShowImage(name_.c_str(), final_patch_rescaled);
-    commonDebug();
+    commonDebug(row_, col_);
 
     cvReleaseImage(&final_patch_rescaled);
   }
@@ -429,7 +444,7 @@ bool PatchStatistic::compute(MatrixXf** result) {
     cout << name_ << " is " << **result << endl;
 //     cvNamedWindow("fp");
 //     cvShowImage("fp", fp);
-    commonDebug();
+    commonDebug(row_, col_);
   }
 
   return true;
@@ -441,11 +456,12 @@ bool PatchStatistic::compute(MatrixXf** result) {
 
 
 SuperpixelStatistic::SuperpixelStatistic(int seed_spacing, float scale, SuperpixelStatistic* seg_provider) :
-  index_(NULL), seed_spacing_(seed_spacing), scale_(scale), seg_provider_(seg_provider), seg_(NULL)
+  ImageDescriptor(), index_(NULL), seed_spacing_(seed_spacing), scale_(scale), seg_provider_(seg_provider), seg_(NULL)
 {
   char buf[1000];
   sprintf(buf, "SuperpixelStatistic_seedSpacing%d_scale%g", seed_spacing_, scale_);
   name_ = string(buf);
+  //name_.assign(buf);
   cout << "name: " << name_ << endl;
 }
 
@@ -569,7 +585,7 @@ void SuperpixelStatistic::segment() {
   // -- Reserve space for the index.
   int nPixels = seg_->height * seg_->width;
   index_->resize(label+1);
-  for(unsigned int i=0; i<index_->size(); i++) {
+  for(size_t i=0; i<index_->size(); i++) {
     (*index_)[i].reserve((nPixels / label) * 2);
   }
 
@@ -644,9 +660,21 @@ void SuperpixelStatistic::segment() {
 ***********  ImageDescriptor::SuperpixelStatistic::SuperpixelColorHistogram
 ****************************************************************************/
  
-SuperpixelColorHistogram::SuperpixelColorHistogram(int seed_spacing, float scale, int nBins, string type, SuperpixelStatistic* seg_provider, SuperpixelColorHistogram* hsv_provider) :
-  SuperpixelStatistic(seed_spacing, scale, seg_provider), hsv_(NULL), hue_(NULL), sat_(NULL), val_(NULL), nBins_(nBins), type_(type), hsv_provider_(hsv_provider), histograms_cv_(vector<CvHistogram*>()), hists_reserved_(false), channel_(NULL)
+SuperpixelColorHistogram::SuperpixelColorHistogram(int seed_spacing, float scale, int nBins, string type, SuperpixelStatistic* seg_provider, 
+						   SuperpixelColorHistogram* hsv_provider) : 
+  SuperpixelStatistic(seed_spacing, scale, seg_provider), 
+  hsv_(NULL), 
+  hue_(NULL), 
+  sat_(NULL), 
+  val_(NULL), 
+  nBins_(nBins), 
+  type_(type), 
+  hsv_provider_(hsv_provider), 
+  max_val_(0), 
+  channel_(NULL),
+  hists_reserved_(false)
 {
+  printf("SuperpixelColorHistogram internal: %d\n", sizeof(SuperpixelColorHistogram));
   cout << "name (sch): " << name_ << endl;
   char buf[100];
   sprintf(buf, "_colorHistogram_type:%s_nBins%d", type_.c_str(), nBins);
@@ -675,18 +703,18 @@ SuperpixelColorHistogram::~SuperpixelColorHistogram() {
 }
 
 
-void SuperpixelColorHistogram::compute(IplImage* img, const cv::Vector<Keypoint>& points, vvf& results) {
+void SuperpixelColorHistogram::compute(IplImage* img, const Vector<Keypoint>& points, vvf& results) {
   clearImageCache();
   img_ = img;
   
   results.clear();
   results.resize(points.size());
 
-  for(unsigned int i=0; i<points.size(); i++) {
-    compute(img, points[(size_t)i], results[(size_t)i]);
+  for(size_t i=0; i<points.size(); i++) {
+    compute(img, points[i], results[i]);
   }
 }
-void SuperpixelColorHistogram::compute(IplImage* img, const Keypoint& point, cv::Vector<float>& result) {
+void SuperpixelColorHistogram::compute(IplImage* img, const Keypoint& point, Vector<float>& result) {
 //bool SuperpixelColorHistogram::compute(MatrixXf** result) {
   result.clear();
 
@@ -784,7 +812,7 @@ void SuperpixelColorHistogram::compute(IplImage* img, const Keypoint& point, cv:
       }
     }
     cout << endl;
-    commonDebug();
+    commonDebug(row_, col_);
   }
 }
 
@@ -874,14 +902,14 @@ void SuperpixelColorHistogram::clearImageCache() {
 
 
   // -- Clean up histograms.
-//   for(unsigned int i=0; i<histograms_.size(); i++) {
+//   for(size_t i=0; i<histograms_.size(); i++) {
 //     if(histograms_[i])
 //       delete histograms_[i];
 //   }
 //   histograms_.clear();
 
   // -- Clean up cv histograms.
-  for(unsigned int i=0; i<histograms_cv_.size(); i++) {
+  for(size_t i=0; i<histograms_cv_.size(); i++) {
     if(histograms_cv_[i])
       cvReleaseHist(&histograms_cv_[i]);
   }
@@ -1028,17 +1056,18 @@ IntegralImageTexture::IntegralImageTexture(int scale, IntegralImageDescriptor* i
 // }
 
 
-void IntegralImageTexture::compute(IplImage* img, const cv::Vector<Keypoint>& points, vvf& results) {
+void IntegralImageTexture::compute(IplImage* img, const Vector<Keypoint>& points, vvf& results) {
   clearImageCache();
   results.clear();
   img_ = img;
 
-  for(unsigned int i=0; i<points.size(); i++) {
-    compute(img, points[(size_t)i], results[(size_t)i]);
+  for(size_t i=0; i<points.size(); i++) {
+    compute(img, points[i], results[i]);
   }
 }
 
-void IntegralImageTexture::compute(IplImage* img, const Keypoint& point, cv::Vector<float>& result) {
+void IntegralImageTexture::compute(IplImage* img, const Keypoint& point, Vector<float>& result) {
+  img_ = img;
   
   //bool IntegralImageTexture::compute(Eigen::MatrixXf** result) {
   if(!ii_ && !ii_provider_)
@@ -1065,7 +1094,7 @@ void IntegralImageTexture::compute(IplImage* img, const Keypoint& point, cv::Vec
   }
   
   //5 finer grained center-surround.
-  for(unsigned int i=3; i<val.size(); i++) {
+  for(size_t i=3; i<val.size(); i++) {
     result[ctr] = (2./3.) * val[i-3] / area[i-3] + (1./3.) * (val[i-2] - val[i-3]) / (area[i-2] - area[i-3]) \
       - (1./3.) * (val[i-1] - val[i-2]) / (area[i-1] - area[i-2]) - (2./3.) * (val[i] - val[i-1]) / (area[i] - area[i-1]);
     ctr++;
@@ -1124,7 +1153,7 @@ void IntegralImageTexture::compute(IplImage* img, const Keypoint& point, cv::Vec
   // -- Check that the scaling is between -255 and 255.
 //   static vector<float> max(result_size_, -1e20);
 //   static vector<float> min(result_size_, 1e20);
-//   for(unsigned int i=0; i<result_size_; i++) {
+//   for(size_t i=0; i<result_size_; i++) {
 //     //cout << i << ": " << result[i] << endl;
 //     assert(result[i] <= 255 && result[i] >= -255);
 //     if(result[i] > max[i])
@@ -1136,12 +1165,12 @@ void IntegralImageTexture::compute(IplImage* img, const Keypoint& point, cv::Vec
 //   count++;
 //   if(count % 1000 == 0) {
 //     cout << "Max: ";
-//     for(unsigned int i=0; i<result_size_; i++) {
+//     for(size_t i=0; i<result_size_; i++) {
 //       cout << max[i] << " ";
 //     }
 //     cout << endl;
 //     cout << "Min: ";
-//     for(unsigned int i=0; i<result_size_; i++) {
+//     for(size_t i=0; i<result_size_; i++) {
 //       cout << min[i] << " ";
 //     }
 //     cout << endl;
@@ -1150,11 +1179,11 @@ void IntegralImageTexture::compute(IplImage* img, const Keypoint& point, cv::Vec
 
   if(debug_) {
     cout << name_ << " descriptor: ";
-    for(unsigned int i=0; i<result.size(); i++) {
-      cout << result[(size_t)i] << " ";
+    for(size_t i=0; i<result.size(); i++) {
+      cout << result[i] << " ";
     }
     cout << endl;
-    commonDebug();
+    commonDebug(row_, col_);
   }
 }
   
@@ -1185,7 +1214,7 @@ Histogram::Histogram(int nBins, float min, float max)
   }
 
 //   cout << "Boundaries: ";
-//   for(unsigned int i=0; i<boundaries_.size(); i++) {
+//   for(size_t i=0; i<boundaries_.size(); i++) {
 //     cout << boundaries_[i] << " ";
 //   }
 //   cout << endl;
@@ -1194,7 +1223,7 @@ Histogram::Histogram(int nBins, float min, float max)
 //! Temporary, slow version.
 bool Histogram::insert(float val) {
   nInsertions_++;
-  for(unsigned int i=0; i<boundaries_.size() - 1; i++) {
+  for(size_t i=0; i<boundaries_.size() - 1; i++) {
     if (boundaries_[i] <= val && boundaries_[i+1] + .001 >= val) {
       bins_[i]++;
       return true;
@@ -1205,21 +1234,21 @@ bool Histogram::insert(float val) {
 
 void Histogram::normalize() {
   float total = 0;
-  for(unsigned int i=0; i<bins_.size(); i++) {
+  for(size_t i=0; i<bins_.size(); i++) {
     total += bins_[i];
   }
   if(total == 0) {
     ROS_WARN("Empty histogram!");
     return;
   }
-  for(unsigned int i=0; i<bins_.size(); i++) {
+  for(size_t i=0; i<bins_.size(); i++) {
     bins_[i] /= total;
   }
 }
 
 void Histogram::print() {
   cout << "Histogram (" << nInsertions_ << " insertions): " << endl;
-  for(unsigned int i=0; i<bins_.size(); i++) {
+  for(size_t i=0; i<bins_.size(); i++) {
     cout << bins_[i] << " ";
   }
   cout << endl;
@@ -1231,7 +1260,7 @@ void Histogram::printGraph() {
 
   cout << "Histogram (" << nInsertions_ << " insertions) graph: " << endl;
   for(float row=1; row >= 0; row=row-.1) {
-    for(unsigned int i=0; i<h2.bins_.size(); i++) {
+    for(size_t i=0; i<h2.bins_.size(); i++) {
       if(h2.bins_[i] >= row)
 	cout << "*";
       else
@@ -1239,7 +1268,7 @@ void Histogram::printGraph() {
     }
     cout << endl;
   }
-  for(unsigned int i=0; i<h2.bins_.size(); i++) {
+  for(size_t i=0; i<h2.bins_.size(); i++) {
     cout << "-";
   }
   cout << endl;
@@ -1248,14 +1277,14 @@ void Histogram::printGraph() {
 
 void Histogram::printBoundaries() {
   cout << "Histogram Boundaries: " << endl;
-  for(unsigned int i=0; i<boundaries_.size(); i++) {
+  for(size_t i=0; i<boundaries_.size(); i++) {
     cout << boundaries_[i] << " ";
   }
   cout << endl;
 }
 
 void Histogram::clear() {
-  for(unsigned int i=0; i<bins_.size(); i++) {
+  for(size_t i=0; i<bins_.size(); i++) {
     bins_[i] = 0;
   }
   nInsertions_ = 0;

@@ -87,7 +87,7 @@ class ImageDescriptor {
   //! Clean up any data specific to computation on a particular image.
   virtual void clearImageCache() {}
   //! Show the input image and a red + at the point at which the descriptor is being computed.
-  void commonDebug();
+  void commonDebug(int row, int col);
   //! Deprecated.
   virtual void setImage(IplImage* img);
   //! Deprecated.
@@ -205,6 +205,7 @@ class SuperpixelStatistic : public ImageDescriptor {
 
 class SuperpixelColorHistogram : public SuperpixelStatistic {
  public:
+  std::vector<CvHistogram*> histograms_cv_;
   IplImage* hsv_;
   IplImage* hue_;
   IplImage* sat_;
@@ -215,10 +216,9 @@ class SuperpixelColorHistogram : public SuperpixelStatistic {
   SuperpixelColorHistogram* hsv_provider_;
   //! histograms_[s] corresponds to the histogram for segment s of the segmentation. s=0 is always left NULL.  (segment numbering starts at 1).
   //std::vector<Histogram*> histograms_;
-  std::vector<CvHistogram*> histograms_cv_;
-  bool hists_reserved_;
   float max_val_;
   IplImage* channel_;
+  bool hists_reserved_;
 
   SuperpixelColorHistogram(int seed_spacing, float scale, int nBins, std::string type, SuperpixelStatistic* seg_provider=NULL, SuperpixelColorHistogram* hsv_provider_=NULL);
   //bool compute(Eigen::MatrixXf** result);
