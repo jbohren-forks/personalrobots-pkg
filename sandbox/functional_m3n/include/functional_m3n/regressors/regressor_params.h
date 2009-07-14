@@ -47,11 +47,13 @@ class RegressionTreeWrapperParams
     /**
      * \brief Default parameters for regression tree.
      *
-     * See CvDTreeParams in OpenCV
-     * max_tree_depth_factor
-     * min_sample_count
-     * regression_accuracy
-     * nbr_xvalidation_folds
+     * See CvDTreeParams in OpenCV: \n
+     * http://opencv.willowgarage.com/wiki/MachineLearning#DecisionTrees \n
+     *
+     * max_tree_depth_factor \n
+     * min_sample_count \n
+     * regression_accuracy \n
+     * nbr_xvalidation_folds \n
      */
     // --------------------------------------------------------------
     RegressionTreeWrapperParams() :

@@ -43,31 +43,31 @@ using namespace std;
  * \brief Generic wrapper around various regressor/classification algorithms.
  *
  * Multi-class regression/classification can be handled by creating a "stacked"
- * sparse feature vector representation.
- *
+ * sparse feature vector representation. \n
+ * \n
  * Example: 3-class (A,B,C) 1-vs-all classification.
  * Assume the feature x has dimension 1 with ground truth label B.
  * Instead of training 3 classifiers f_A, f_B, f_C, where
- * the training samples for each classifier are
- *   (x,-1) -> f_A
- *   (x,+1) -> f_B
- *   (x,-1) -> f_C
+ * the training samples for each classifier are \n
+ *   (x,-1) -> f_A \n
+ *   (x,+1) -> f_B \n
+ *   (x,-1) -> f_C \n
  * we will use 1 classifier g with "stacked" feature vectors
  * that encapsulates this idea.  In this example, we create a
  * 3-dimensional vector (dim(x)=1) for each label, i.e.
  * non-zero in the dimension of the desired label.  So in the
- * above example, we train g with the features
- *   ([x,0,0], -1)
- *   ([0,x,0], +1)
- *   ([0,0,x], -1)
- * When predicting the class of a new feature y, we would evaluate
- *   g([y,0,0])  (score for class A)
- *   g([0,y,0])  (score for class B)
- *   g([0,0,y])  (score for class C)
- * and pick the class that had the biggest value.
- *
+ * above example, we train g with the features \n
+ *   ([x,0,0], -1) \n
+ *   ([0,x,0], +1) \n
+ *   ([0,0,x], -1) \n
+ * When predicting the class of a new feature y, we would evaluate \n
+ *   g([y,0,0])  (score for class A) \n
+ *   g([0,y,0])  (score for class B) \n
+ *   g([0,0,y])  (score for class C) \n
+ * and pick the class that had the biggest value. \n
+ * \n
  * The stacked feature dimension is defined when instantiating
- * the inherited class.
+ * the inherited class. \n
  * This stacked feature representation is OPTIONAL.  Define stacked_feature_dim_
  * and the parameters in addTrainingSample() and predict() accordingly.
  */

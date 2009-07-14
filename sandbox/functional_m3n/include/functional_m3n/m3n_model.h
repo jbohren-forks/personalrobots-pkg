@@ -62,15 +62,14 @@ using namespace std;
 /**
  * \brief Implements training and inference with a Max-Margin Markov Network.
  *
- * This class implements/heavily uses techniques/ideas described in the following publications:
- *
- * [1] D. Munoz, J. A. Bagnell, N. Vandapel, and M. Hebert, "Contextual Classification with Functional Max-Margin Markov Networks", CVPR 2009.
- * [2] B. Taskar, C. Guestrin, and D. Koller, "Max-Margin Markov Networks", NIPS 2003
- * [3] N. Ratliff, D. Silver, and J. A. Bagnell, "Learning to Search: Functional Gradient Techniques for Imitation Learning", Autonomous Robots 2009
- * [4] P. Kohli, L. Ladicky, and P. H. S. Torr, "Robust Higher Order Potentials for Enforcing Label Consistency", CVPR 2008
- * [5] P. Kohli, M. P. Kumar, and P. H. S. Torr, "P3 & Beyond: Solving Energies with Higher Order Cliques", CVPR 2007
- * [6] V. Kolmogorov and R. Zabih, "What Energy Functions can be Minimized via Graph Cuts?", PAMI 2002
- * [7] Y. Boykov, O. Veksler, and R. Zabih, "Fast Approximate Energy Minimization via Graph Cuts", PAMI 2001
+ * This class implements/heavily uses techniques/ideas described in the following publications: \n
+ * [1] D. Munoz, J. A. Bagnell, N. Vandapel, and M. Hebert, "Contextual Classification with Functional Max-Margin Markov Networks", CVPR 2009. \n
+ * [2] B. Taskar, C. Guestrin, and D. Koller, "Max-Margin Markov Networks", NIPS 2003 \n
+ * [3] N. Ratliff, D. Silver, and J. A. Bagnell, "Learning to Search: Functional Gradient Techniques for Imitation Learning", Autonomous Robots 2009 \n
+ * [4] P. Kohli, L. Ladicky, and P. H. S. Torr, "Robust Higher Order Potentials for Enforcing Label Consistency", CVPR 2008 \n
+ * [5] P. Kohli, M. P. Kumar, and P. H. S. Torr, "P3 & Beyond: Solving Energies with Higher Order Cliques", CVPR 2007 \n
+ * [6] V. Kolmogorov and R. Zabih, "What Energy Functions can be Minimized via Graph Cuts?", PAMI 2002 \n
+ * [7] Y. Boykov, O. Veksler, and R. Zabih, "Fast Approximate Energy Minimization via Graph Cuts", PAMI 2001 \n
  *
  */
 // --------------------------------------------------------------
