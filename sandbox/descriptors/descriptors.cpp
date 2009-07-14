@@ -69,9 +69,8 @@ void whiten(MatrixXf* m) {
 }
 
 
-
+//! Remove -1 (boundary) entries by nearest neighbor.
 void inPaintNN(IplImage* img) {
-  // -- Remove -1 (boundary) entries by nearest neighbor.
   bool all_assigned = false;
   while(!all_assigned) {
     all_assigned = true;
@@ -157,7 +156,6 @@ bool ImageDescriptor::compute(MatrixXf** result) {
   return false;
 }
 
-//void ImageDescriptor::compute(IplImage* img, const Vector<Keypoint>& points, vvf result) {}
 
 /****************************************************************************
 *************  ImageDescriptor::HogWrapper
@@ -197,14 +195,12 @@ void HogWrapper::compute(IplImage* img, const Vector<Keypoint>& points, vvf& res
   for(size_t i=0; i<points.size(); i++) {
     Point pt(round(points[i].pt.x), round(points[i].pt.y));
     locations.push_back(pt);
-    //cout << points[i].pt.x << " " << points[i].pt.y << " " << pt.x << " " << pt.y << endl;
   }
   
   Vector<float> result;
   
   hog_.compute(img, result, Size(), Size(), locations); //winStride and padding are set to default
   
-
   // -- Construct vvf from the long concatenation that hog_ produces.
   //    Assume that an all 0 vector was the result of an edge case.
   size_t sz = hog_.getDescriptorSize();
@@ -219,18 +215,10 @@ void HogWrapper::compute(IplImage* img, const Vector<Keypoint>& points, vvf& res
       }
     }
     if(valid) {
-      //results[i] = Vector<float>(&result[i*sz], sz); //Creates a header for this data.  No copy.
-      results[i] = Vector<float>(&result[(i*sz)], sz, true); //Copy.
+      results[i] = Vector<float>(&result[(i*sz)], sz, true); //Copy.  TODO: Just create a header around the data.
       nValid++; 
-
     } 
-    //cout << results[i].size() << " elements in a single feature.  valid:" << valid << endl;
   }
-  //cout << "returning " << results.size() << " features, " << nValid << " of which were valid" << endl;
-
-  //result contains the data, and we didn't do a copy.  This prevents the data from being deallocated when result goes out of scope.
-  //The data will be deallocated when results goes out of scope (after being returned).
-  //result.addref(); 
 
   if(debug_) {
     cout << "debugging" << endl;
@@ -250,12 +238,6 @@ void HogWrapper::compute(IplImage* img, const Vector<Keypoint>& points, vvf& res
 	cout << " " << r[j];
       }
       cout << endl;
-
-//       cout << name_ << " descriptor: " << endl;
-//       for(size_t j=0; j<r.size(); j++) {
-// 	cout << " " << result[i*sz+j];
-//       }
-//       cout << endl;
 
       commonDebug(locations[i].y, locations[i].x);
     }
@@ -508,8 +490,7 @@ IplImage* SuperpixelStatistic::createSegmentMask(int label, CvRect* rect) {
 }
 
 void SuperpixelStatistic::segment() {
-  ROS_DEBUG_COND(seg_ != NULL, "seg_ is not null, but is being recreated anyway!");
-  ROS_DEBUG("Running superpixel segmentation: %s", name_.c_str());
+  assert(!seg_); //Should be null if this is called.
   
   // -- Downsample image.
   IplImage* img_small = cvCreateImage(cvSize(((float)img_->width)*scale_, ((float)img_->height)*scale_), img_->depth, img_->nChannels);
@@ -537,16 +518,11 @@ void SuperpixelStatistic::segment() {
   inPaintNN(seg_small);
 
   // -- Check.
-//   cout << "char " << sizeof(char) << endl;
-//   cout << "long " << sizeof(long) << endl;
-//   cout << "int " << sizeof(int) << endl;
-
   for(int r=0; r<seg_small->height; r++) {
     int* ptr = (int*)(seg_small->imageData + r * seg_small->widthStep);
     for(int c=0; c<seg_small->width; c++) {
-      ROS_DEBUG_COND(*ptr >= label, "%d, max label %d, for row %d and col %d\n", *ptr, label, r, c);
-      ROS_ASSERT(*ptr >= 1);
-      ROS_ASSERT(*ptr < label);
+      assert(*ptr >= 1);
+      assert(*ptr < label);
     }
   }
 
@@ -577,8 +553,8 @@ void SuperpixelStatistic::segment() {
   for(int r=0; r<seg_->height; r++) {
     int* ptr = (int*)(seg_->imageData + r * seg_->widthStep);
     for(int c=0; c<seg_->width; c++) {
-      ROS_ASSERT(*ptr >= 1);
-      ROS_ASSERT(*ptr < label);
+      assert(*ptr >= 1);
+      assert(*ptr < label);
     }
   }
 
@@ -593,10 +569,7 @@ void SuperpixelStatistic::segment() {
   for(int r=0; r<seg_->height; r++) {
     int* ptr = (int*)(seg_->imageData + r * seg_->widthStep);
     for(int c=0; c<seg_->width; c++) {
-      if(*ptr == -1) {
-	ROS_FATAL("Some boundary points have still not been eliminated!");
-	continue;
-      }
+      assert(*ptr != -1);
       (*index_)[*ptr].push_back(cvPoint(c,r));
       ptr++;
     }
@@ -730,44 +703,21 @@ void SuperpixelColorHistogram::compute(IplImage* img, const Keypoint& point, Vec
     cvSplit(hsv_, hue_, sat_, val_, 0);
   }
 
-  //  ROS_DEBUG("hsv_ for %s is %p", name_.c_str(), hsv_);
-  //  ROS_DEBUG("hsv_provider_ for %s is %p", name_.c_str(), hsv_provider_);
-
-  ROS_ASSERT(hsv_ != NULL);
-  ROS_ASSERT(hue_ != NULL);
-  ROS_ASSERT(sat_ != NULL);
-  ROS_ASSERT(val_ != NULL);
-  ROS_ASSERT(seg_ != NULL);
-
+  assert(hsv_ != NULL);
+  assert(hue_ != NULL);
+  assert(sat_ != NULL);
+  assert(val_ != NULL);
+  assert(seg_ != NULL);
 
   // -- Get the label at this point.
   int label = CV_IMAGE_ELEM(seg_, int, (size_t)point.pt.y, (size_t)point.pt.x);
-  if(label == -1)  {
-    result.clear();
-    cerr << "SEG -1.  This should not happen." << endl;
-    return;
-  }
-// -- Choose which channel we wil use.
-//   channel_=NULL;
-//   if(type_.compare("hue") == 0) {
-//     channel_ = hue_;
-//   }
-//   else if(type_.compare("sat") == 0)
-//     channel_ = sat_;
-//   else if(type_.compare("val") == 0)
-//     channel_ = val_;
-//   else 
-//     ROS_ERROR("Bad SuperpixelColorHistogram type.");
+  assert(label != -1);
 
   // -- Make sure we have access to the histogram data for this point.
   if(!hists_reserved_) {
-    //histograms_ = vector<Histogram*>(index_->size()+1, NULL);
     histograms_cv_ = vector<CvHistogram*>(index_->size()+1, NULL);
     hists_reserved_ = true;
   }
-
-  // -- Compute the histogram by hand.
-  //computeHistogram(label);
 
   // -- Compute the histogram.
   computeHistogramCV(label);
@@ -783,13 +733,7 @@ void SuperpixelColorHistogram::compute(IplImage* img, const Keypoint& point, Vec
   }
 
   if(debug_) {
-    // -- Show the mask.
-//     cvNamedWindow("Mask");
-//     cvShowImage("Mask", mask);
     cout << name_ << endl;;
-//     histograms_[label]->printBoundaries();
-//     histograms_[label]->print();
-//     histograms_[label]->printGraph();
     cout << "cv hist: " << endl;
     for(int i=0; i<nBins_; i++) {
       for(int j=0; j<nBins_; j++) {
@@ -801,43 +745,20 @@ void SuperpixelColorHistogram::compute(IplImage* img, const Keypoint& point, Vec
   }
 }
 
-// void SuperpixelColorHistogram::computeHistogram(int label) {
-//   if(histograms_[label] == NULL) {
-//     Histogram* h = new Histogram(nBins_, 0, max_val_);
-
-//     const vector<CvPoint>& l = (*index_)[label];
-//     vector<CvPoint>::const_iterator lit;
-//     for(lit = l.begin(); lit != l.end(); lit++) {
-//       if(!h->insert(CV_IMAGE_ELEM(channel_, uchar, lit->y, lit->x))) {
-// 	ROS_FATAL("Insertion failed for %u ", CV_IMAGE_ELEM(channel_, uchar, lit->y, lit->x));
-// 	h->printBoundaries();
-// 	ROS_BREAK();
-//       }
-//     }
-      
-//     h->normalize();
-//     histograms_[label] = h;
-//   }
-// }
-
 void SuperpixelColorHistogram::computeHistogramCV(int label) {
   if(!hue_) 
     ROS_FATAL("Trying to compute cv hist when hue_ is null");
 
   if(histograms_cv_[label] == NULL) {
-    //ROS_DEBUG("Computing hist for %s for label %ld", name_.c_str(), label);
     float huerange[] = {0, 180}; //hsv
     float satrange[] = {0, 255}; //hsv
     float* ranges[] = {huerange, satrange}; //hue and sat.
     int sizes[] = {nBins_, nBins_};
     CvHistogram* hist = cvCreateHist(2, sizes, CV_HIST_ARRAY, ranges, 1);
-    //cout << "nBins " << nBins_ << "&hue_ " << &hue_ << "hue_ " << hue_ << "hist " << hist << "ranges " << ranges << "mask " << mask << endl;
     CvRect rect;
     IplImage* mask = createSegmentMask(label, &rect);
-//     cvNamedWindow("m");
-//     cvShowImage("m", mask);
-//     cvWaitKey(0);
-    //For efficiency, set the ROI's.
+
+    //For efficiency, set the ROI's and compute the histogram.
     cvSetImageROI(hue_, rect);
     cvSetImageROI(sat_, rect);
     cvSetImageROI(mask, rect);
@@ -850,15 +771,10 @@ void SuperpixelColorHistogram::computeHistogramCV(int label) {
     cvNormalizeHist(hist, 1);
     histograms_cv_[label] = hist;
   }
-  else {
-    //ROS_DEBUG("hist already cached for %s for label %ld", name_.c_str(), label);
-  }
 }
 
 //! Release seg_, etc., if this object is the one that computes them; otherwise, just nullify the pointers.
 void SuperpixelColorHistogram::clearImageCache() {
-  ROS_DEBUG("Clearing the image cache for %s", name_.c_str());
-  
   if(hsv_provider_ == NULL) {
     cvReleaseImage(&hsv_);
     cvReleaseImage(&hue_);
@@ -962,10 +878,7 @@ void IntegralImageDescriptor::clearImageCache() {
 
 bool IntegralImageDescriptor::integrateRect(float* result, int row_offset, int col_offset, int half_height, int half_width, float* area) {
   // -- Check that we have an integral image.
-  if(!ii_) {
-    return false;
-    ROS_WARN("No integral image.");
-  }
+  assert(ii_);
 
   // -- Check bounds.
   int ul_x = col_ + col_offset - half_width; 
@@ -978,7 +891,6 @@ bool IntegralImageDescriptor::integrateRect(float* result, int row_offset, int c
   int lr_y = ll_y;
   
   if(ul_x < 0 || ul_y < 0 || lr_y >= img_->height || lr_x >= img_->width)  {
-    //    ROS_DEBUG("Out of bounds. %d %d, %d %d", ul_x, ul_y, lr_x, lr_y);
     return false;
   }
 
@@ -1002,7 +914,7 @@ bool IntegralImageDescriptor::integrateRect(float* result, int row_offset, int c
 //   }
 //   if(abs(check - *result) > 0) {
 //     cout << check - *result << " difference for computing at row " << row_ << " and col " << col_ << endl;
-//     ROS_ASSERT(0);
+//     assert(0);
 //   }
 //   if(area) {
 //     //  cout << "theory: " << *area;
@@ -1025,20 +937,6 @@ IntegralImageTexture::IntegralImageTexture(int scale, IntegralImageDescriptor* i
 
   result_size_ = 21;
 }
-
-// How do I make this get called when I am calling setImage on a IntegralImageDescriptor* ?
-// void IntegralImageTexture::setImage(IplImage* img) {
-//   cvNamedWindow("x");
-//   cvShowImage("x", img);
-//   cvWaitKey(0);
-//   cvGetSize(img);
-//   ImageDescriptor::setImage(img);
-//   if(!img_)
-//     ROS_FATAL("Img is NULL in %s", name_.c_str());
- 
-//   ROS_DEBUG("Calling IntegralImageTexture's setImage");
-// }
-
 
 void IntegralImageTexture::compute(IplImage* img, const Vector<Keypoint>& points, vvf& results) {
   clearImageCache();
@@ -1222,7 +1120,6 @@ void Histogram::normalize() {
     total += bins_[i];
   }
   if(total == 0) {
-    ROS_WARN("Empty histogram!");
     return;
   }
   for(size_t i=0; i<bins_.size(); i++) {
@@ -1275,12 +1172,6 @@ void Histogram::clear() {
 }
   
   
-
-      
-    
-  
-  
-
 
 /***************************************************************************
 ***********  ImageDescriptor::Patch::EdgePatch
@@ -1336,23 +1227,5 @@ EdgePatch::compute(MatrixXf** result) {
   return true;
 }
 
+
 */
-
-
-/****************************************************************************
-*************  ImageDescriptor::Hog
-****************************************************************************/
-
-/*
-
-Hog::Hog(Patch* patch) {
-  int blocksz = 16;
-  p_ = patch->final_patch_;
-  ROS_DEBUG_COND((fp->height % blocksz != 0 || fp->width % blocksz != 0), "Hog patch must be divisible by blocksize.");
-  cvHog = HOGDescriptor(cvGetSize(fp), cvSize(blocksz, blocksz), cvSize(8,8), cvSize(8,8), 1);
-}
-
-bool Hog::compute(MatrixXf** result);
-*/
-
-
