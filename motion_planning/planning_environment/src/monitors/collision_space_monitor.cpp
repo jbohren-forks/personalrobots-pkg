@@ -275,7 +275,7 @@ bool planning_environment::CollisionSpaceMonitor::attachObject(const mapping_msg
 {
     collisionSpace_->lock();
     // call the same code as in the kinematic model state monitor, but disable the callback
-    boost::function<void(planning_models::KinematicModel::Link*)> backup = onAfterAttachBody_;
+    boost::function<void(planning_models::KinematicModel::Link*, const mapping_msgs::AttachedObjectConstPtr &attachedObject)> backup = onAfterAttachBody_;
     onAfterAttachBody_ = NULL;
     bool result = KinematicModelStateMonitor::attachObject(attachedObject);
 
@@ -290,7 +290,7 @@ bool planning_environment::CollisionSpaceMonitor::attachObject(const mapping_msg
     
     // call the event, if needed
     if (result && (onAfterAttachBody_ != NULL))
-	onAfterAttachBody_(kmodel_->getLink(attachedObject->link_name)); 
+	onAfterAttachBody_(kmodel_->getLink(attachedObject->link_name), attachedObject); 
     
     return result;
 }

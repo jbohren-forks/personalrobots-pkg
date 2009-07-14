@@ -18,11 +18,18 @@ rospack_link_boost(planning_environment thread)
 # Utility apps
 rospack_add_executable(view_state_validity src/tools/view_state_validity.cpp) 
 target_link_libraries(view_state_validity planning_environment)
+rospack_link_boost(view_state_validity thread)
+rospack_add_openmp_flags(view_state_validity)
 
 rospack_add_executable(clear_known_objects src/tools/clear_known_objects.cpp) 
 target_link_libraries(clear_known_objects planning_environment)
 rospack_link_boost(clear_known_objects thread)
 rospack_add_openmp_flags(clear_known_objects)
+
+rospack_add_executable(display_planner_collision_model src/tools/display_planner_collision_model.cpp) 
+target_link_libraries(display_planner_collision_model planning_environment)
+rospack_link_boost(display_planner_collision_model thread)
+rospack_add_openmp_flags(display_planner_collision_model)
 
 # Tests
 

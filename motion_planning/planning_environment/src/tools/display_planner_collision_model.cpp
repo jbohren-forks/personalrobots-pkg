@@ -43,7 +43,6 @@ the robot's collision space, as seen by the planner
 
 #include <planning_environment/monitors/collision_space_monitor.h>
 #include <visualization_msgs/Marker.h>
-#include <std_msgs/Byte.h>
 
 #include <iostream>
 #include <sstream>
@@ -56,14 +55,14 @@ public:
 
     DisplayPlannerCollisionModel(void)
     {
-	id_ = 0;
 	visualizationMarkerPublisher_ = nh_.advertise<visualization_msgs::Marker>("visualization_marker", 10240);
 	collisionModels_ = new planning_environment::CollisionModels("robot_description");
 	if (collisionModels_->loadedModels())
 	{
 	    collisionSpaceMonitor_ = new planning_environment::CollisionSpaceMonitor(collisionModels_, &tf_);
 	    collisionSpaceMonitor_->setOnAfterMapUpdateCallback(boost::bind(&DisplayPlannerCollisionModel::afterWorldUpdate, this, _1));
-	    collisionSpaceMonitor_->setOnAfterAttachBodyCallback(boost::bind(&DisplayPlannerCollisionModel::afterAttachBody, this, _1));
+	    collisionSpaceMonitor_->setOnAfterAttachBodyCallback(boost::bind(&DisplayPlannerCollisionModel::afterAttachBody, this, _1, _2));
+	    collisionSpaceMonitor_->setOnObjectInMapUpdateCallback(boost::bind(&DisplayPlannerCollisionModel::objectInMapUpdate, this, _1));
 	}
 	else
 	    collisionSpaceMonitor_ = NULL;
@@ -79,6 +78,28 @@ public:
 
 protected:
 
+    void objectInMapUpdate(const mapping_msgs::ObjectInMapConstPtr &objectInMap)
+    {
+	visualization_msgs::Marker mk;
+	mk.ns = nh_.getName() + "_" + objectInMap->id;
+	mk.id = 0;
+	mk.header = objectInMap->header;
+	
+	if (objectInMap->action == mapping_msgs::ObjectInMap::ADD)
+	{
+	    mk.action = visualization_msgs::Marker::ADD;
+	    setObject(objectInMap->object, mk);
+	    mk.pose = objectInMap->pose;
+	}
+	else
+	    mk.action = visualization_msgs::Marker::DELETE;
+	mk.color.a = 0.5;
+	mk.color.r = 0.1;
+	mk.color.g = 0.8;
+	mk.color.b = 0.3;
+	visualizationMarkerPublisher_.publish(mk);
+    }
+    
     void afterWorldUpdate(const mapping_msgs::CollisionMapConstPtr &collisionMap)
     {
 	unsigned int n = collisionMap->get_boxes_size();
@@ -86,15 +107,15 @@ protected:
 	{
 	    const robot_msgs::Point32 &point = collisionMap->boxes[i].center;
 	    const robot_msgs::Point32 &extents = collisionMap->boxes[i].extents;
-	    sendPoint(point.x, point.y, point.z,
+	    sendPoint(i, nh_.getName(), point.x, point.y, point.z,
 		      std::max(std::max(extents.x, extents.y), extents.z) * 0.867,
-		      collisionMap->header, 1);
+		      collisionMap->header);
 	}
     }
-
-    void afterAttachBody(planning_models::KinematicModel::Link *link)
+    
+    void afterAttachBody(planning_models::KinematicModel::Link *link, const mapping_msgs::AttachedObjectConstPtr &attachedObject)
     {
-	roslib::Header header;
+	/*	roslib::Header header;
 	header.stamp = ros::Time::now();
 	header.frame_id = link->name;
 	for (unsigned int i = 0 ; i < link->attachedBodies.size() ; ++i)
@@ -105,18 +126,64 @@ protected:
                 btVector3 &v = link->attachedBodies[i]->attachTrans.getOrigin();
                 sendPoint(v.x(), v.y(), v.z(), std::max(std::max(box->size[0], box->size[1]), box->size[2] / 2.0), header, 0);
             }
-        }
+	    } */
+	ROS_INFO("should display attached body");	
     }
 
 private:
 
-    void sendPoint(double x, double y, double z, double radius, const roslib::Header &header, int color)
+    void setObject(const mapping_msgs::Object &obj, visualization_msgs::Marker &mk)
+    {
+	switch (obj.type)
+	{
+	case mapping_msgs::Object::SPHERE:
+	    mk.type = visualization_msgs::Marker::SPHERE;
+	    mk.scale.x = mk.scale.y = mk.scale.z = obj.dimensions[0];
+	    break;
+	    
+	case mapping_msgs::Object::BOX:
+	    mk.type = visualization_msgs::Marker::CUBE;
+	    mk.scale.x = obj.dimensions[0];
+	    mk.scale.y = obj.dimensions[1];
+	    mk.scale.z = obj.dimensions[2];
+	    break;
+
+	case mapping_msgs::Object::CYLINDER:
+	    mk.type = visualization_msgs::Marker::CYLINDER;
+	    mk.scale.x = obj.dimensions[0] * 2.0;
+	    mk.scale.y = obj.dimensions[0] * 2.0;
+	    mk.scale.z = obj.dimensions[1];
+	    break;
+
+	case mapping_msgs::Object::MESH:
+	    mk.type = visualization_msgs::Marker::LINE_LIST;
+	    {
+		unsigned int nt = obj.triangles.size() / 3;
+		for (unsigned int i = 0 ; i < nt ; ++i)
+		{
+		    mk.points.push_back(obj.vertices[obj.triangles[3*i]]);
+		    mk.points.push_back(obj.vertices[obj.triangles[3*i+1]]);
+		    mk.points.push_back(obj.vertices[obj.triangles[3*i]]);
+		    mk.points.push_back(obj.vertices[obj.triangles[3*i+2]]);
+		    mk.points.push_back(obj.vertices[obj.triangles[3*i+1]]);
+		    mk.points.push_back(obj.vertices[obj.triangles[3*i+2]]);
+		}
+	    }
+	    
+	    break;
+	    
+	default:
+	    ROS_ERROR("Unknown object type: %d", (int)obj.type);
+	}
+    }
+    
+    void sendPoint(int id, const std::string &ns, double x, double y, double z, double radius, const roslib::Header &header)
     {
 	visualization_msgs::Marker mk;
 	mk.header = header;
 
-	mk.ns = "display_planner_collision_model";
-	mk.id = id_++;
+	mk.ns = ns;
+	mk.id = id;
 	mk.type = visualization_msgs::Marker::SPHERE;
 	mk.action = visualization_msgs::Marker::ADD;
 
@@ -128,24 +195,14 @@ private:
 	mk.scale.x = mk.scale.y = mk.scale.z = radius * 2.0;
 
 	mk.color.a = 1.0;
-
-	if (color == 0)
-	{
-	    mk.color.r = 1.0;
-	    mk.color.g = 0.04;
-	    mk.color.b = 0.04;
-	}
-	else
-	{
-	    mk.color.r = 0.04;
-	    mk.color.g = 1.0;
-	    mk.color.b = 0.04;
-	}
+	mk.color.r = 0.9;
+	mk.color.g = 0.1;
+	mk.color.b = 0.1;
+	mk.lifetime = ros::Duration(10.0);
 	
 	visualizationMarkerPublisher_.publish(mk);
     }
 
-    int                                          id_;
     ros::Publisher                               visualizationMarkerPublisher_;
     ros::NodeHandle                              nh_;
     tf::TransformListener                        tf_;

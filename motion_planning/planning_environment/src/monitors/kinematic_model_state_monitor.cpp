@@ -245,7 +245,7 @@ bool planning_environment::KinematicModelStateMonitor::attachObject(const mappin
 	    ROS_WARN("Unable to attach object to link '%s'", attachedObject->link_name.c_str());
 
     if (result && (onAfterAttachBody_ != NULL))
-	onAfterAttachBody_(link); 
+	onAfterAttachBody_(link, attachedObject); 
     
     return result;
 }

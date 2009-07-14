@@ -90,7 +90,7 @@ namespace planning_environment
 	}
 
 	/** \brief Define a callback for after updating a map */
-	void setOnAfterAttachBodyCallback(const boost::function<void(planning_models::KinematicModel::Link*)> &callback)
+	void setOnAfterAttachBodyCallback(const boost::function<void(planning_models::KinematicModel::Link*, const mapping_msgs::AttachedObjectConstPtr &attachedObject)> &callback)
 	{
 	    onAfterAttachBody_ = callback;
 	}
@@ -198,7 +198,7 @@ namespace planning_environment
 	std::string                      frame_id_;
 
 	boost::function<void(void)>      onStateUpdate_;
-	boost::function<void(planning_models::KinematicModel::Link*)>
+	boost::function<void(planning_models::KinematicModel::Link*, const mapping_msgs::AttachedObjectConstPtr &attachedObject)>
 	                                 onAfterAttachBody_;
 
 	bool                             havePose_;
