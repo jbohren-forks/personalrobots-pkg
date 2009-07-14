@@ -131,17 +131,25 @@ IplImage* loadImageRed(const char* filename)
     cvCopy(temp, red);
     cvReleaseImage(&temp);
     
+#if defined(_SCALE_IMAGE_2)
     IplImage* red2 = cvCreateImage(cvSize(red->width/2, red->height/2), IPL_DEPTH_8U, 1);
     cvResize(red, red2);
     cvReleaseImage(&red);
+    red = red2;
+#endif //_SCALE_IMAGE_2
     
-    return red2;
+    return red;
 }
 
 void readPCAFeatures(const char* filename, CvMat** avg, CvMat** eigenvectors)
 {
     CvMemStorage* storage = cvCreateMemStorage();
     CvFileStorage* fs = cvOpenFileStorage(filename, storage, CV_STORAGE_READ);
+    if(!fs)
+    {
+        printf("Cannot open file %s! Exiting!", filename);
+        cvReleaseMemStorage(&storage);
+    }
     
     CvFileNode* node = cvGetFileNodeByName(fs, 0, "avg");
     CvMat* _avg = (CvMat*)cvRead(fs, node);

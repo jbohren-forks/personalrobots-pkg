@@ -49,6 +49,8 @@ int detect_outlet_tuple(IplImage* src, CvMat* intrinsic_matrix, CvMat* distortio
     }
     
     int ret = 0;
+    vector<feature_t> holes;
+#if !defined(_GHT)
     if(outlet_templ.get_color() == outletOrange && outlet_templ.get_count() == 4)
     {
         ret = detect_outlet_tuple_2x2_orange(src, intrinsic_matrix, distortion_params, outlets, outlet_templ, output_path, filename);
@@ -57,6 +59,15 @@ int detect_outlet_tuple(IplImage* src, CvMat* intrinsic_matrix, CvMat* distortio
     {
         ret = detect_outlet_tuple_2x1(src, intrinsic_matrix, distortion_params, outlets, outlet_templ, output_path, filename);
     }
+#else
+    IplImage* red = cvCreateImage(cvSize(src->width, src->height), IPL_DEPTH_8U, 1);
+    cvSetImageCOI(src, 3);
+    cvCopy(src, red);
+    cvSetImageCOI(src, 0);
+    
+    detect_outlets_one_way(red, outlet_templ.get_one_way_descriptor_base(), holes, src, output_path, filename);
+    cvReleaseImage(&red);
+#endif
     
     if(ret == 1)
     {

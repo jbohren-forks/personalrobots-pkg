@@ -22,5 +22,8 @@ void detect_outlets_2x1_one_way(IplImage* img, const CvOneWayDescriptorBase* des
                                 vector<feature_t>& features, IplImage* color, 
                                 const char* output_path = 0, const char* output_filename = 0);
 
+void detect_outlets_one_way(IplImage* test_image, const CvOneWayDescriptorBase* descriptors, 
+                            vector<feature_t>& holes, IplImage* color_image, 
+                            const char* output_path, const char* output_filename);
 
 #endif //_ONE_WAY_OUTLET
