@@ -98,25 +98,29 @@ void Orientation::computeFeatures(cv::Vector<cv::Vector<float> >& results)
     {
       results[i].clear();
     }
-
-    if (ref_tangent_defined_)
+    else
     {
-      tangent_dot = (tangents[i])->dot(ref_tangent_);
-      if (tangent_dot < 1e-5)
-      {
-        tangent_dot = (tangents[i])->dot(ref_tangent_flipped_);
-      }
-      results[i][feature_idx++] = tangent_dot;
-    }
+      results[i].resize(result_size_);
 
-    if (ref_normal_defined_)
-    {
-      normal_dot = (normals[i])->dot(ref_normal_);
-      if (normal_dot < 1e-5)
+      if (ref_tangent_defined_)
       {
-        normal_dot = (normals[i])->dot(ref_normal_flipped_);
+        tangent_dot = (tangents[i])->dot(ref_tangent_);
+        if (tangent_dot < 0.0)
+        {
+          tangent_dot = (tangents[i])->dot(ref_tangent_flipped_);
+        }
+        results[i][feature_idx++] = tangent_dot;
       }
-      results[i][feature_idx++] = normal_dot;
+
+      if (ref_normal_defined_)
+      {
+        normal_dot = (normals[i])->dot(ref_normal_);
+        if (normal_dot < 0.0)
+        {
+          normal_dot = (normals[i])->dot(ref_normal_flipped_);
+        }
+        results[i][feature_idx++] = normal_dot;
+      }
     }
   }
 }

@@ -70,16 +70,19 @@ void SpectralAnalysis::compute(const robot_msgs::PointCloud& data,
                                const cv::Vector<robot_msgs::Point32*>& interest_pts,
                                cv::Vector<cv::Vector<float> >& results)
 {
-  if (support_radius_ < 1e-5)
-  {
-    ROS_ERROR("SpectralShape::compute() support radius must be first set");
-    results.resize(interest_pts.size());
-    return;
-  }
-
   // If spectral information is not available, then compute it
   if (spectral_info_ == NULL)
   {
+
+    // ----------------------------------------
+    // Ensure radius is valid
+    if (support_radius_ < 1e-5)
+    {
+      ROS_ERROR("SpectralShape::compute() support radius must be first set");
+      results.resize(interest_pts.size());
+      return;
+    }
+
     // ----------------------------------------
     // Clear out any previous computations
     clear();

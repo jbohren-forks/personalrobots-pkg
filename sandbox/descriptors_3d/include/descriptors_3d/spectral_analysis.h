@@ -69,7 +69,7 @@ class SpectralAnalysis: public Descriptor3D
      */
     // --------------------------------------------------------------
     SpectralAnalysis() :
-      spectral_info_(NULL), support_radius_(-1.0)
+      spectral_info_(NULL), support_radius_(-1.0), support_radius_defined_(false)
     {
     }
 
@@ -85,9 +85,18 @@ class SpectralAnalysis: public Descriptor3D
      * \brief
      */
     // --------------------------------------------------------------
-    inline void useSpectralInformation(SpectralAnalysis* spectral_info)
+    inline int useSpectralInformation(SpectralAnalysis* spectral_info)
     {
-      spectral_info_ = spectral_info;
+      if (support_radius_defined_)
+      {
+        ROS_ERROR("cannot use spectral information after the radius had been defined");
+        return -1;
+      }
+      else
+      {
+        spectral_info_ = spectral_info;
+        return 0;
+      }
     }
 
     virtual void compute(const robot_msgs::PointCloud& data,
@@ -105,9 +114,20 @@ class SpectralAnalysis: public Descriptor3D
      * \brief
      */
     // --------------------------------------------------------------
-    inline void setSupportRadius(double support_radius)
+    inline int setSupportRadius(double support_radius)
     {
-      support_radius_ = support_radius;
+      if (spectral_info_ == NULL)
+      {
+        support_radius_ = support_radius;
+        support_radius_defined_ = true;
+        return 0;
+      }
+      else
+      {
+        ROS_ERROR("Cannot change support radius when spectral info defined");
+        return -1;
+      }
+      // TODO put same check for setting spectral info?
     }
 
     inline const vector<Eigen::Vector3d*>& getNormals()
@@ -142,6 +162,7 @@ class SpectralAnalysis: public Descriptor3D
 
   private:
     double support_radius_;
+    bool support_radius_defined_;
 
     // --------------------------------------------------------------
     /*!

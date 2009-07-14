@@ -21,6 +21,10 @@
 
 #include <descriptors_3d/local_geometry.h>
 
+#include <descriptors_3d/spectral_shape.h>
+#include <descriptors_3d/orientation.h>
+#include <descriptors_3d/position.h>
+
 #include <functional_m3n/random_field.h>
 #include <functional_m3n/m3n_model.h>
 #include <functional_m3n/regressors/regressor_params.h>
@@ -48,6 +52,21 @@ void populateParameters()
   geometry_features->useTangentOrientation(0.0, 0.0, 1.0);
   geometry_features->useElevation();
   node_feature_descriptors.assign(1, geometry_features);
+
+  SpectralShape* spectral_shape = new SpectralShape();
+  spectral_shape->setSupportRadius(0.15);
+  Orientation* orientation = new Orientation();
+  if (orientation->useSpectralInformation(spectral_shape) < 0)
+  {
+    abort();
+  }
+  orientation->useNormalOrientation(0.0,0.0,1.0);
+  orientation->useTangentOrientation(0.0,0.0,1.0);
+  Position* position = new Position();
+  node_feature_descriptors.assign(3, spectral_shape);
+  node_feature_descriptors[0] = spectral_shape;
+  node_feature_descriptors[1] = orientation;
+  node_feature_descriptors[2] = position;
 
   // TODO: free node_feature_descriptors
 
@@ -165,6 +184,13 @@ int kmeansPtCloud(const robot_msgs::PointCloud& pt_cloud,
 
   unsigned int nbr_total_pts = pt_cloud.pts.size();
   unsigned int nbr_cluster_samples = nbr_total_pts - ignore_indices.size();
+
+  if (nbr_cluster_samples == 0 || nbr_total_pts == 0)
+  {
+    ROS_ERROR("There are no samples to cluster on");
+    return -1;
+  }
+
 
   // ----------------------------------------------------------
   // Create matrix for clustering
@@ -302,6 +328,7 @@ unsigned int createConcatenatedFeatures(const robot_msgs::PointCloud& pt_cloud,
   {
     descriptors_3d[i]->compute(pt_cloud, pt_cloud_kdtree, interest_pts, all_descriptor_results[i]);
     nbr_concatenated_vals += node_feature_descriptors[i]->getResultSize();
+    ROS_INFO("Descriptor will have this many features: %u", node_feature_descriptors[i]->getResultSize());
   }
 
   // ----------------------------------------------
@@ -354,6 +381,7 @@ unsigned int createConcatenatedFeatures(const robot_msgs::PointCloud& pt_cloud,
     // Otherwise features not successful, so note them
     else
     {
+      ROS_WARN("skipping concatenation of sample %u", i);
       failed_indices.insert(i);
     }
   }
