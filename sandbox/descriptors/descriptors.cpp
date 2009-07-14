@@ -76,7 +76,7 @@ void inPaintNN(IplImage* img) {
   while(!all_assigned) {
     all_assigned = true;
     for(int r=0; r<img->height; r++) {
-      long* ptr = (long*)(img->imageData + r * img->widthStep);
+      int* ptr = (int*)(img->imageData + r * img->widthStep);
       for(int c=0; c<img->width; c++) {
 	if(*ptr >= 1) {
 	  ptr++;
@@ -94,7 +94,7 @@ void inPaintNN(IplImage* img) {
 	  continue;
 	}
 	if(r>0) {
-	  long* ptr2 = (long*)(img->imageData + (r-1) * img->widthStep);
+	  int* ptr2 = (int*)(img->imageData + (r-1) * img->widthStep);
 	  if(ptr2[c] > 0) {
 	    *ptr = ptr2[c];
 	    ptr++; 
@@ -102,7 +102,7 @@ void inPaintNN(IplImage* img) {
 	  }
 	}
 	if(r<img->height-1) {
-	  long* ptr2 = (long*)(img->imageData + (r+1) * img->widthStep);
+	  int* ptr2 = (int*)(img->imageData + (r+1) * img->widthStep);
 	  if(ptr2[c] > 0) {
 	    *ptr = ptr2[c];
 	    ptr++; 
@@ -203,9 +203,7 @@ void HogWrapper::compute(IplImage* img, const Vector<Keypoint>& points, vvf& res
   Vector<float> result;
   
   hog_.compute(img, result, Size(), Size(), locations); //winStride and padding are set to default
-  cout << result.size() << " elements in hog return.  Expected: " << points.size() * hog_.getDescriptorSize() << endl;
-
-
+  
 
   // -- Construct vvf from the long concatenation that hog_ produces.
   //    Assume that an all 0 vector was the result of an edge case.
@@ -228,7 +226,7 @@ void HogWrapper::compute(IplImage* img, const Vector<Keypoint>& points, vvf& res
     } 
     //cout << results[i].size() << " elements in a single feature.  valid:" << valid << endl;
   }
-  cout << "returning " << results.size() << " features, " << nValid << " of which were valid" << endl;
+  //cout << "returning " << results.size() << " features, " << nValid << " of which were valid" << endl;
 
   //result contains the data, and we didn't do a copy.  This prevents the data from being deallocated when result goes out of scope.
   //The data will be deallocated when results goes out of scope (after being returned).
@@ -461,12 +459,10 @@ SuperpixelStatistic::SuperpixelStatistic(int seed_spacing, float scale, Superpix
   char buf[1000];
   sprintf(buf, "SuperpixelStatistic_seedSpacing%d_scale%g", seed_spacing_, scale_);
   name_ = string(buf);
-  //name_.assign(buf);
-  cout << "name: " << name_ << endl;
 }
 
 //! Create a mask of 255 for segment number seg, and 0 for everything else.  Useful for histograms.
-IplImage* SuperpixelStatistic::createSegmentMask(long label, CvRect* rect) {
+IplImage* SuperpixelStatistic::createSegmentMask(int label, CvRect* rect) {
   if(!img_ || !seg_) {
     cerr << "Trying to create mask when segmentation does not exist." << endl;
     return NULL;
@@ -498,7 +494,7 @@ IplImage* SuperpixelStatistic::createSegmentMask(long label, CvRect* rect) {
   //Slow.
 //   for(int r=0; r<mask->height; r++) {
 //     uchar* mask_ptr = (uchar*)(mask->imageData + r * mask->widthStep);
-//     long* seg_ptr = (long*)(seg_->imageData + r * seg_->widthStep);
+//     int* seg_ptr = (int*)(seg_->imageData + r * seg_->widthStep);
 //     for(int c=0; c<mask->width; c++) {
 //       if(*seg_ptr == label)
 // 	*mask_ptr = 255;
@@ -522,9 +518,9 @@ void SuperpixelStatistic::segment() {
   // -- Create a grid of seed points.
   IplImage* seg_small = cvCreateImage( cvGetSize(img_small), IPL_DEPTH_32S, 1 );
   cvZero(seg_small);
-  long label = 1;
+  int label = 1;
   for(int r=0; r<seg_small->height; r++) {
-    long* ptr = (long*)(seg_small->imageData + r * seg_small->widthStep);
+    int* ptr = (int*)(seg_small->imageData + r * seg_small->widthStep);
     for(int c=0; c<seg_small->width; c++) {
       if(c%seed_spacing_==0 && r%seed_spacing_==0) {
 	*ptr = label;
@@ -541,10 +537,14 @@ void SuperpixelStatistic::segment() {
   inPaintNN(seg_small);
 
   // -- Check.
+//   cout << "char " << sizeof(char) << endl;
+//   cout << "long " << sizeof(long) << endl;
+//   cout << "int " << sizeof(int) << endl;
+
   for(int r=0; r<seg_small->height; r++) {
-    long* ptr = (long*)(seg_small->imageData + r * seg_small->widthStep);
+    int* ptr = (int*)(seg_small->imageData + r * seg_small->widthStep);
     for(int c=0; c<seg_small->width; c++) {
-      ROS_DEBUG_COND(*ptr >= label, "%ld, max label %ld, for row %d and col %d\n", *ptr, label, r, c);
+      ROS_DEBUG_COND(*ptr >= label, "%d, max label %d, for row %d and col %d\n", *ptr, label, r, c);
       ROS_ASSERT(*ptr >= 1);
       ROS_ASSERT(*ptr < label);
     }
@@ -560,7 +560,7 @@ void SuperpixelStatistic::segment() {
   // -- Check. 
 //   IplImage* negs = cvCreateImage( cvGetSize(seg_), 8, 1 );
 //   for(int r=0; r<seg_->height; r++) {
-//     long* ptr = (long*)(seg_->imageData + r * seg_->widthStep);
+//     int* ptr = (int*)(seg_->imageData + r * seg_->widthStep);
 //     uchar* negs_ptr = (uchar*)(negs->imageData + r * negs->widthStep);
 //     for(int c=0; c<seg_->width; c++) {
 //       if(*ptr == -1)
@@ -575,7 +575,7 @@ void SuperpixelStatistic::segment() {
 //   cvWaitKey(0);
 
   for(int r=0; r<seg_->height; r++) {
-    long* ptr = (long*)(seg_->imageData + r * seg_->widthStep);
+    int* ptr = (int*)(seg_->imageData + r * seg_->widthStep);
     for(int c=0; c<seg_->width; c++) {
       ROS_ASSERT(*ptr >= 1);
       ROS_ASSERT(*ptr < label);
@@ -591,7 +591,7 @@ void SuperpixelStatistic::segment() {
 
   // -- Compute the index.
   for(int r=0; r<seg_->height; r++) {
-    long* ptr = (long*)(seg_->imageData + r * seg_->widthStep);
+    int* ptr = (int*)(seg_->imageData + r * seg_->widthStep);
     for(int c=0; c<seg_->width; c++) {
       if(*ptr == -1) {
 	ROS_FATAL("Some boundary points have still not been eliminated!");
@@ -674,30 +674,15 @@ SuperpixelColorHistogram::SuperpixelColorHistogram(int seed_spacing, float scale
   channel_(NULL),
   hists_reserved_(false)
 {
-  printf("SuperpixelColorHistogram internal: %d\n", sizeof(SuperpixelColorHistogram));
-  cout << "name (sch): " << name_ << endl;
+  //printf("SuperpixelColorHistogram internal: %d\n", sizeof(SuperpixelColorHistogram));
   char buf[100];
   sprintf(buf, "_colorHistogram_type:%s_nBins%d", type_.c_str(), nBins);
-  cout << type_.c_str() << endl;
-  cout << buf << endl;
   name_.append(buf);
 
   result_size_ = nBins_*nBins_;
-
-//   max_val_ = 255;
-//   if(type_.compare("hue") == 0) {
-//     max_val_ = 180;
-//   }
-
-  // -- Set up ranges_ for histogram computation.
-//   float* range = (float*) malloc(sizeof(float)*2);
-//   range[0] = 0;   
-//   range[1] = 255;
-//   ranges_ = &range;
 }
 
 SuperpixelColorHistogram::~SuperpixelColorHistogram() {
-  cout << "Destroying SuperpixelColorHistogram" << endl;
   clearPointCache();
   clearImageCache();
 }
@@ -756,7 +741,7 @@ void SuperpixelColorHistogram::compute(IplImage* img, const Keypoint& point, Vec
 
 
   // -- Get the label at this point.
-  int label = CV_IMAGE_ELEM(seg_, long, (size_t)point.pt.y, (size_t)point.pt.x);
+  int label = CV_IMAGE_ELEM(seg_, int, (size_t)point.pt.y, (size_t)point.pt.x);
   if(label == -1)  {
     result.clear();
     cerr << "SEG -1.  This should not happen." << endl;
@@ -816,7 +801,7 @@ void SuperpixelColorHistogram::compute(IplImage* img, const Keypoint& point, Vec
   }
 }
 
-// void SuperpixelColorHistogram::computeHistogram(long label) {
+// void SuperpixelColorHistogram::computeHistogram(int label) {
 //   if(histograms_[label] == NULL) {
 //     Histogram* h = new Histogram(nBins_, 0, max_val_);
 
@@ -835,7 +820,7 @@ void SuperpixelColorHistogram::compute(IplImage* img, const Keypoint& point, Vec
 //   }
 // }
 
-void SuperpixelColorHistogram::computeHistogramCV(long label) {
+void SuperpixelColorHistogram::computeHistogramCV(int label) {
   if(!hue_) 
     ROS_FATAL("Trying to compute cv hist when hue_ is null");
 
@@ -891,7 +876,6 @@ void SuperpixelColorHistogram::clearImageCache() {
   if(seg_provider_ == NULL) {
     cvReleaseImage(&seg_);
     if(index_) {
-      cout << "Deleting index in " << name_ << endl;
       delete index_;
     }
   }

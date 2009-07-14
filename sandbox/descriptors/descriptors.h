@@ -200,7 +200,7 @@ class SuperpixelStatistic : public ImageDescriptor {
   SuperpixelStatistic(int seed_spacing, float scale, SuperpixelStatistic* provider);
   //! Computes superpixels and puts into seg_, and computes the superpixel to pixel index.  Is called automatically, if necessary, by the compute(.) function.
   void segment();
-  IplImage* createSegmentMask(long label, CvRect* rect);
+  IplImage* createSegmentMask(int label, CvRect* rect);
 };
 
 class SuperpixelColorHistogram : public SuperpixelStatistic {
@@ -228,8 +228,8 @@ class SuperpixelColorHistogram : public SuperpixelStatistic {
   void clearPointCache() {}
   void clearImageCache();
   ~SuperpixelColorHistogram();
-  void computeHistogram(long label);
-  void computeHistogramCV(long label); 
+  void computeHistogram(int label);
+  void computeHistogramCV(int label); 
 };
 
 std::vector<ImageDescriptor*> setupImageDescriptors();

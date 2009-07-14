@@ -32,13 +32,13 @@ vector<ImageDescriptor*> setupImageDescriptors() {
   d.push_back(new HogWrapper(Size(128,128), Size(64,64), Size(32,32), Size(32,32), 7, 1, -1, 0, 0.2, true));
 
   SuperpixelColorHistogram* sch1 = new SuperpixelColorHistogram(20, 0.5, 10, string("hue"));
-//   SuperpixelColorHistogram* sch2 = new SuperpixelColorHistogram(5, 0.5, 10, string("hue"), NULL, sch1);
-//   SuperpixelColorHistogram* sch3 = new SuperpixelColorHistogram(5, 1, 10, string("hue"), NULL, sch1);
-//   SuperpixelColorHistogram* sch4 = new SuperpixelColorHistogram(5, .25, 10, string("hue"), NULL, sch1);
+  SuperpixelColorHistogram* sch2 = new SuperpixelColorHistogram(5, 0.5, 10, string("hue"), NULL, sch1);
+  SuperpixelColorHistogram* sch3 = new SuperpixelColorHistogram(5, 1, 10, string("hue"), NULL, sch1);
+  SuperpixelColorHistogram* sch4 = new SuperpixelColorHistogram(5, .25, 10, string("hue"), NULL, sch1);
   d.push_back(sch1);
-//   d.push_back(sch2);
-//   d.push_back(sch3);
-//   d.push_back(sch4);
+  d.push_back(sch2);
+  d.push_back(sch3);
+  d.push_back(sch4);
 
 //   IntegralImageTexture* iit = new IntegralImageTexture(1);
 //   d.push_back(iit);
@@ -256,7 +256,7 @@ void Stanleyi::collectDataset(string bagfile, int samples_per_img, string save_n
 MatrixXf* cvVector2Eigen(const Vector<float>& v) {
   MatrixXf* m = new MatrixXf(v.size(), 1);
   for(size_t i=0; i<v.size(); i++) {
-    (*m)(i,0) = v[(size_t)i];
+    (*m)(i,0) = v[i];
   }
   return m;
 }
@@ -323,9 +323,6 @@ void Stanleyi::collectObjectsFromImageVectorized(int samples_per_img, vector<obj
       delete obj;
     }
   }
-
-
-  cout << "sizes: " <<  objects->size() << " " << keypoints->size() << endl;
 }
 
 vector<object*> Stanleyi::collectFeaturesFromImage(int samples_per_img) {
@@ -671,12 +668,6 @@ void Stanleyi::induct(string bagfile, string results_dir) {
 int main(int argc, char** argv) 
 {
   Stanleyi s;
-
-  cout << sizeof(size_t) << endl;
-  std::cout << std::numeric_limits<int>::max()    << std::endl;
-  std::cout << std::numeric_limits<unsigned int>::max()    << std::endl;
-  std::cout << std::numeric_limits<size_t>::max()    << std::endl;
-
 
   // -- Get env var options.
   int samples_per_img = 1000;
