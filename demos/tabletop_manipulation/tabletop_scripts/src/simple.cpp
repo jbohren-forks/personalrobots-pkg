@@ -38,7 +38,7 @@
 
 #include <ros/ros.h>
 #include <robot_actions/action_client.h>
-
+#include <mapping_msgs/ObjectInMap.h>
 #include <pr2_robot_actions/MoveArmGoal.h>
 #include <pr2_robot_actions/MoveArmState.h>
 
@@ -70,11 +70,21 @@ void sendPoint(ros::Publisher &vmPub, const roslib::Header &header, double x, do
     vmPub.publish(mk);
 }
 
+void spinThread(void)
+{
+    ros::spin();
+}
+
 int main(int argc, char **argv)
 {
     ros::init(argc, argv, "test_recognition_planning");
-
     ros::NodeHandle nh;
+    sleep(1);
+
+    boost::thread th(&spinThread);
+    
+    ros::Publisher pub = nh.advertise<mapping_msgs::ObjectInMap>("object_in_map", 1);
+    
     recognition_lambertian::FindObjectPoses::Request  req;
     recognition_lambertian::FindObjectPoses::Response res;
     
@@ -89,6 +99,27 @@ int main(int argc, char **argv)
 	    recognition_lambertian::TableTopObject obj = res.objects[0];
 	    ROS_INFO("point to grasp: %f %f %f", obj.pose.pose.position.x, obj.pose.pose.position.y, obj.pose.pose.position.z);
 	    
+	    mapping_msgs::ObjectInMap o1;
+	    o1.header = obj.pose.header;
+	    o1.id = "Part1";
+	    o1.object.type = mapping_msgs::Object::CYLINDER;
+	    o1.object.dimensions.resize(2);
+	    o1.object.dimensions[0] = 0.01;
+	    o1.object.dimensions[1] = 0.1;
+	    o1.pose = obj.pose.pose;
+	    pub.publish(o1);
+
+	    mapping_msgs::ObjectInMap o2;
+	    o2.header = obj.pose.header;
+	    o2.id = "Part2";
+	    o2.object.type = mapping_msgs::Object::SPHERE;
+	    o2.object.dimensions.resize(1);
+	    o2.object.dimensions[0] = 0.05;
+	    o2.pose = obj.pose.pose;
+	    o2.pose.position.z += 0.05;
+	    pub.publish(o2);
+	    
+
 	    robot_actions::ActionClient<pr2_robot_actions::MoveArmGoal, pr2_robot_actions::MoveArmState, int32_t> move_arm("move_arm");
 	    int32_t                         feedback;
 	    pr2_robot_actions::MoveArmGoal  goal;
