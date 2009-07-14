@@ -49,6 +49,7 @@
 #include "opencv/highgui.h"
 
 #include "ros/ros.h"
+#include "ros/callback_queue.h"
 #include "sensor_msgs/StereoInfo.h"
 #include "sensor_msgs/DisparityInfo.h"
 #include "sensor_msgs/CamInfo.h"
@@ -68,6 +69,7 @@
 
 #include <topic_synchronizer2/topic_synchronizer.h>
 
+#include <boost/thread.hpp>
 
 using namespace std;
 using namespace robot_msgs;
@@ -165,6 +167,11 @@ public:
 	ros::Time start_image_wait_;
 
 
+	ros::CallbackQueue service_queue_;
+	boost::thread* service_thread_;
+	boost::mutex data_lock_;
+	boost::condition_variable data_cv_;
+
 	CvHaarClassifierCascade* cascade;
 	CvMemStorage* storage;
 
@@ -195,13 +202,22 @@ public:
         // invalid location until we get a detection
 
 		marker_pub_ = nh_.advertise<visualization_msgs::Marker>("visualization_marker",1);
-        detect_service_ = nh_.advertiseService("door_handle_vision_detector", &HandleDetector::detectHandleSrv, this);
+
+		ros::AdvertiseServiceOptions service_opts = ros::AdvertiseServiceOptions::create<door_handle_detector::DoorsDetector>("door_handle_vision_detector",
+							boost::bind(&HandleDetector::detectHandleSrv, this, _1, _2),ros::VoidPtr(), &service_queue_);
+
+//        detect_service_ = nh_.advertiseService("door_handle_vision_detector", &HandleDetector::detectHandleSrv, this);
+		detect_service_ = nh_.advertiseService(service_opts);
         preempt_service_ = nh_.advertiseService("door_handle_vision_preempt", &HandleDetector::preempt, this);
         got_images_ = false;
+
+        service_thread_ = new boost::thread(boost::bind(&HandleDetector::serviceThread, this));
     }
 
     ~HandleDetector()
     {
+    	service_thread_->join();
+    	delete service_thread_;
     }
 
 private:
@@ -251,6 +267,7 @@ private:
 		}
 
 		got_images_ = true;
+		data_cv_.notify_all();
 
 //		ROS_INFO("got sync callback");
 	}
@@ -263,6 +280,7 @@ private:
 	void leftImageCallback(const sensor_msgs::Image::ConstPtr& image)
 	{
 //		ROS_INFO("got left image callback");
+		boost::unique_lock<boost::mutex> lock(data_lock_);
 
 		limage_ = image;
 		if(lbridge_.fromImage(*limage_, "bgr")) {
@@ -272,12 +290,14 @@ private:
 
 	void disparityImageCallback(const sensor_msgs::Image::ConstPtr& image)
 	{
+		boost::unique_lock<boost::mutex> lock(data_lock_);
 //		ROS_INFO("got disparity callback");
 		dimage_ = image;
 	}
 
 	void dispinfoCallback(const sensor_msgs::DisparityInfo::ConstPtr& dinfo)
 	{
+		boost::unique_lock<boost::mutex> lock(data_lock_);
 //		ROS_INFO("got dispinfo callback");
 		dispinfo_ = dinfo;
 	}
@@ -289,7 +309,8 @@ private:
 
 	void cloudCallback(const robot_msgs::PointCloud::ConstPtr& point_cloud)
 	{
-		ROS_INFO("got cloud callback");
+		boost::unique_lock<boost::mutex> lock(data_lock_);
+//		ROS_INFO("got cloud callback");
 		cloud_ = point_cloud;
 	}
 
@@ -805,14 +826,15 @@ private:
     	vector<CvRect> handle_rect;
 
         // acquire cv_mutex lock
+    	boost::unique_lock<boost::mutex> lock(data_lock_);
+
         for (int i=0;i<frames_no_;++i) {
 
 //        	printf("Waiting for images\n");
         	// block until images are available to process
         	start_image_wait_ = ros::Time::now();
         	while (!got_images_ && !preempted_) {
-        		usleep(10000);
-        		ros::spinOnce();
+        		data_cv_.wait(lock);
         	}
         	if (preempted_) break;
 
@@ -845,6 +867,8 @@ private:
      */
     bool detectHandleSrv(door_handle_detector::DoorsDetector::Request & req, door_handle_detector::DoorsDetector::Response & resp)
     {
+
+    	ROS_INFO_STREAM("detectHandleSrv thread id=" << boost::this_thread::get_id());
     	preempted_ = false;
 
     	ROS_INFO("door_handle_detector_vision: Service called");
@@ -973,29 +997,46 @@ private:
 
 
 public:
+
 	/**
 	* Needed for OpenCV event loop, to show images
 	* @return
 	*/
 	bool spin()
 	{
+		ros::Rate r(10);
 		while (nh_.ok())
 		{
 			if (display_) {
 				int key = cvWaitKey(10)&0x00FF;
 				if(key == 27) //ESC
-					break;
+					nh_.shutdown();
 			}
 			else {
-				usleep(10000);
+				r.sleep();
 			}
 			ros::spinOnce();
-
 		}
 
 		return true;
 	}
+
+
+	void serviceThread()
+	{
+//		ROS_INFO_STREAM("Starting thread " << boost::this_thread::get_id());
+		ros::NodeHandle n;
+
+		ros::Rate r(10);
+		while (n.ok()) {
+			service_queue_.callAvailable();
+			r.sleep();
+		}
+	}
+
 };
+
+
 
 int main(int argc, char **argv)
 {
