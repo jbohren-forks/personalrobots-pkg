@@ -14,4 +14,4 @@ rospack(descriptors_3d)
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
-rospack_add_library(descriptors_3d src/descriptors_3d.cpp src/local_geometry.cpp)
+rospack_add_library(descriptors_3d src/local_geometry.cpp)

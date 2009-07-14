@@ -88,15 +88,15 @@ class Descriptor3D
                          const cv::Vector<robot_msgs::Point32*>& interest_pts,
                          cv::Vector<cv::Vector<float> >& results) = 0;
 
-  //  virtual void compute(const robot_msgs::PointCloud& data, cloud_kdtree::KdTree& data_kdtree, cv::Vector<
-    //    cv::Vector<float> >& results) = 0;
-
     virtual void compute(const robot_msgs::PointCloud& data,
                          cloud_kdtree::KdTree& data_kdtree,
                          const cv::Vector<vector<int>*>& interest_region_indices,
                          cv::Vector<cv::Vector<float> >& results) = 0;
 
-    unsigned int getResultSize() const;
+    unsigned int getResultSize() const
+    {
+      return result_size_;
+    }
 
   protected:
     unsigned int result_size_;
