@@ -1,0 +1,32 @@
+<launch>
+  <include file="$(find pr2_alpha)/$(env ROBOT).machine" />
+
+
+<!-- perception-->
+  <include file="$(find annotated_map_builder)/config/perception.xml" />
+
+  
+<!-- Safety -->
+  <node machine="four" pkg="safety_core" type="run_detect_plug_on_base" output="screen" respawn="false" />
+  <node machine="four" pkg="safety_core" type="run_tuck_arms" output="screen" respawn="true" />
+
+
+
+
+<!-- Robot pose ekf -->
+  <node pkg="robot_pose_ekf" type="robot_pose_ekf" args="robot_pose_ekf" machine="four" name="robot_pose_ekf">
+    <param name="freq" value="30.0"/>
+    <param name="sensor_timeout" value="1.0"/>
+    <param name="odom_used" value="true"/>
+    <param name="imu_used" value="true"/>
+    <param name="vo_used" value="false"/>
+  </node>
+
+  <node pkg="tf" machine="two" type="change_notifier"/>
+
+
+
+
+
+
+</launch>
