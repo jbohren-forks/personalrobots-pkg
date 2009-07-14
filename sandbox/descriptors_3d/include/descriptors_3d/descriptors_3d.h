@@ -34,16 +34,11 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
-#include <iostream>
-#include <string>
-#include <list>
-#include <vector>
-
-#include <ros/console.h>
-
 #include <opencv/cxcore.h>
 #include <opencv/cv.h>
 #include <opencv/cvaux.hpp>
+
+#include <ros/console.h>
 
 #include <robot_msgs/PointCloud.h>
 
@@ -53,7 +48,7 @@ using namespace std;
 
 // --------------------------------------------------------------
 //* Descriptor3D
-/**
+/*!
  * \brief An abstract class representing a descriptor that can
  *        compute feature values from 3-D data
  */
@@ -61,6 +56,11 @@ using namespace std;
 class Descriptor3D
 {
   public:
+    // --------------------------------------------------------------
+    /*!
+     * \brief Instantiates a descriptor with 0 feature values
+     */
+    // --------------------------------------------------------------
     Descriptor3D() :
       result_size_(0)
     {
@@ -71,29 +71,47 @@ class Descriptor3D
     }
 
     // --------------------------------------------------------------
-    /**
-     * \brief Computes feature values using the previously set data and
-     *        interest point/region and any descriptor-specific parameters
-     *        defined in the inherited class
+    /*!
+     * \brief Computes feature values for each specified interest point
      *
-     * \param result Pointer to store compute feature values. This method will
-     *               allocate memory and the caller is responsible for freeing it.
-     *
-     * \return true on success, otherwise false
+     * \param data Point cloud of the data
+     * \param data_kdtree K-D tree representation of data
+     * \param interest_pts List of points to compute features for
+     * \param results Vector to hold computed vector of features for each interest point.
+     *                If the features could not be computed for an interest point i, then
+     *                results[i].size() = 0
      */
     // --------------------------------------------------------------
-
     virtual void compute(const robot_msgs::PointCloud& data,
                          cloud_kdtree::KdTree& data_kdtree,
                          const cv::Vector<robot_msgs::Point32*>& interest_pts,
                          cv::Vector<cv::Vector<float> >& results) = 0;
 
+    // --------------------------------------------------------------
+    /*!
+     * \brief Computes feature values for each interest region of points
+     *
+     * \param data Point cloud of the data
+     * \param data_kdtree K-D tree representation of data
+     * \param interest_region_indices List of groups of indices into data that represent an interest region
+     * \param results Vector to hold computed vector of features for each interest point.
+     *                If the features could not be computed for an interest point i, then
+     *                results[i].size() = 0
+     */
+    // --------------------------------------------------------------
     virtual void compute(const robot_msgs::PointCloud& data,
                          cloud_kdtree::KdTree& data_kdtree,
                          const cv::Vector<vector<int>*>& interest_region_indices,
                          cv::Vector<cv::Vector<float> >& results) = 0;
 
-    unsigned int getResultSize() const
+    // --------------------------------------------------------------
+    /*!
+     * \brief Returns the number of feature values this descriptor computes on success
+     *
+     * \return the number of feature values this descriptor computes on success
+     */
+    // --------------------------------------------------------------
+    inline unsigned int getResultSize() const
     {
       return result_size_;
     }
