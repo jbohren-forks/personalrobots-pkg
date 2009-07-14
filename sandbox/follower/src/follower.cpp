@@ -26,11 +26,11 @@ class Follower {
   ros::Subscriber voxel_sub_;
   tf::MessageNotifier<robot_msgs::PoseStamped> transformed_goal_note_;
   tf::MessageNotifier<robot_msgs::PointCloud> transformed_cloud_note_;
-  tf::MessageNotifier<robot_msgs::PointCloud> transformed_scan_note_;
+  //tf::MessageNotifier<robot_msgs::PointCloud> transformed_scan_note_;
   string global_frame_id;
   ros::Rate goalRate;
   //boost::shared_ptr<Follower> follower_object;
-  costmap_2d::Costmap2DROS cmROS;
+  //costmap_2d::Costmap2DROS cmROS;
 
   //Adds or modifies a visualization marker for the goal pose
   void visualizeGoalPose(const robot_msgs::PoseStamped* const  msg)
@@ -86,12 +86,15 @@ class Follower {
 	const double &y = robotRelativeCloud.pts[i].y;
         if(true)//!isBelowFreeSpace(x,y))
         {
-            boost::mutex::scoped_lock lock(tiltMutex);
-            for(unsigned int j=0; j<lastTiltScan.pts.size(); j++)
-            {
-                if(pointLineDist(0,0,lastTiltScan.pts[j].x,lastTiltScan.pts[j].y,x,y) < freeSpaceThresh)
-                    goto continueOuter; //As a rule GOTO considered harmful, however I like the ability to continue to arbitrary loops like java, since c++ lacks this syntax, I have this slight ugliness
-            }
+	    if(receivedTiltCloud)
+	      {
+		boost::mutex::scoped_lock lock(tiltMutex);
+		for(unsigned int j=0; j<lastTiltScan.pts.size(); j++)
+		  {
+		    if(pointLineDist(0,0,lastTiltScan.pts[j].x,lastTiltScan.pts[j].y,x,y) < freeSpaceThresh)
+		      goto continueOuter; //As a rule GOTO considered harmful, however I like the ability to continue to arbitrary loops like java, since c++ lacks this syntax, I have this slight ugliness
+		  }
+	      }
 
             if(closestIdx == -1 || closestDistSq > x*x+y*y)
               {
@@ -136,9 +139,9 @@ class Follower {
   {
       boost::mutex::scoped_lock lock(tiltMutex);
 
-      receivedTiltCloud = true;
+      //receivedTiltCloud = true;
       laser_scan::LaserProjection proj;
-      proj.transformLaserScanToPointCloud("/base_footprint", *scan, lastTiltScan);
+      //proj.transformLaserScanToPointCloud("/base_footprint", *scan, lastTiltScan);
   }
 
   void updateFreeSpaceVoxels()
@@ -159,12 +162,12 @@ public:
 
   Follower() :
           transformed_goal_note_(tf_client_, boost::bind(&Follower::transformedGoalCallback, this, _1), "base_scan_goal", "/odom_combined", 1),
-          transformed_cloud_note_(tf_client_, boost::bind(&Follower::cloudCallback, this, _1), "particle_filt_cloud", "/base_footprint", 1),
-          transformed_scan_note_(tf_client_, boost::bind(&Follower::tiltCloudCallback, this, _1), "tilt_scan", "/base_footprint", 1),
-          goalRate(0.2),
-          cmROS("follower_costmap", tf_client_)
+          transformed_cloud_note_(tf_client_, boost::bind(&Follower::cloudCallback, this, _1), "kalman_filt_cloud", "/base_footprint", 1),
+          //transformed_scan_note_(tf_client_, boost::bind(&Follower::tiltCloudCallback, this, _1), "tilt_scan", "/base_footprint", 1),
+          goalRate(0.1)//,
+	  //          cmROS("follower_costmap", tf_client_)
   {
-    goal_pub_ = node_.advertise<robot_msgs::PoseStamped>("/move_base/activate", 1);
+    goal_pub_ = node_.advertise<robot_msgs::PoseStamped>("/move_base_local/activate", 1);
     base_scan_goal_pub_ = node_.advertise<robot_msgs::PoseStamped>("base_scan_goal", 1);
     vis_pub_ = node_.advertise<visualization_msgs::Marker>( "visualization_marker", 0 );
     receivedVoxels = false;
@@ -182,17 +185,26 @@ private:
     
   void setGoal(double X, double Y, double angle, ros::Time captureTime)
   {
-    tf::Stamped<tf::Pose> pRobot = tf::Stamped<tf::Pose>(tf::Pose(tf::Quaternion(angle, 0.0, 0.0), 
-								  tf::Point(X, Y, 0.0)), 
-							 captureTime,
-							 "/odom_combined");
+    //    tf::Stamped<tf::Pose> pRobot = tf::Stamped<tf::Pose>(tf::Pose(tf::Quaternion(angle, 0.0, 0.0), 
+    //								  tf::Point(X, Y, 0.0)), 
+    //							 captureTime,
+    //							 "/odom_combined");
     
+    tf::Pose posRobot = tf::Pose(tf::Quaternion(angle, 0.0, 0.0), tf::Point(X, Y, 0.0));
     
     //tf::Stamped<tf::Pose> p;
     //tf_client_.transformPose(global_frame_id, pRobot, p);
     
     robot_msgs::PoseStamped goal;
-    tf::PoseStampedTFToMsg(pRobot, goal);
+    //goal.header.frame_id = "/odom_combined";
+    goal.pose.position.x = posRobot.getOrigin().getX();
+    goal.pose.position.y = posRobot.getOrigin().getY();
+    goal.pose.position.z = posRobot.getOrigin().getZ();
+    goal.pose.orientation.x = posRobot.getRotation().x();
+    goal.pose.orientation.y = posRobot.getRotation().y();
+    goal.pose.orientation.z = posRobot.getRotation().z();
+    goal.pose.orientation.w = posRobot.getRotation().w();    
+
     ROS_INFO("setting goal: Position(%.3f, %.3f, %.3f), Orientation(%.3f, %.3f, %.3f, %.3f) = Angle: %.3f\n", 
 	     goal.pose.position.x, 
 	     goal.pose.position.y, 
