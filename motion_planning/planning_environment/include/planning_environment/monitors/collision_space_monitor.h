@@ -100,6 +100,12 @@ namespace planning_environment
 	    onAfterMapUpdate_ = callback;
 	}
 
+	/** \brief Define a callback for updates to the objects in the map */
+	void setOnObjectInMapUpdateCallback(const boost::function<void(const mapping_msgs::ObjectInMapConstPtr)> &callback)
+	{
+	    onObjectInMapUpdate_ = callback;
+	}
+
 	/** \brief Return true if  map has been received */
 	bool haveMap(void) const
 	{
@@ -140,6 +146,7 @@ namespace planning_environment
 	
 	boost::function<void(const mapping_msgs::CollisionMapConstPtr)> onBeforeMapUpdate_;
 	boost::function<void(const mapping_msgs::CollisionMapConstPtr)> onAfterMapUpdate_;
+	boost::function<void(const mapping_msgs::ObjectInMapConstPtr)>  onObjectInMapUpdate_;
     
     };
     

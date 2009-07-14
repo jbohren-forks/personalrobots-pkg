@@ -55,7 +55,8 @@ void planning_environment::CollisionSpaceMonitor::setupCSM(void)
 {
     onBeforeMapUpdate_ = NULL;
     onAfterMapUpdate_  = NULL;
-
+    onObjectInMapUpdate_ = NULL;
+    
     collisionMapNotifier_ = NULL;
     collisionMapUpdateNotifier_ = NULL;
     objectInMapNotifier_ = NULL;
@@ -265,6 +266,9 @@ void planning_environment::CollisionSpaceMonitor::objectInMapCallback(const mapp
 	collisionSpace_->clearObstacles(objectInMap->id);
 	collisionSpace_->unlock();
     }
+    
+    if (onObjectInMapUpdate_)
+	onObjectInMapUpdate_(objectInMap);
 }
 
 bool planning_environment::CollisionSpaceMonitor::attachObject(const mapping_msgs::AttachedObjectConstPtr &attachedObject)
