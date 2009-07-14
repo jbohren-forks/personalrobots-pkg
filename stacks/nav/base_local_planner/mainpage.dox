@@ -24,5 +24,4 @@ costmap_2D::Costmap2DROS, and a reference to a tf::TransformListener.
 #include "costmap_2d/costmap_2d_ros.h"
 #include "base_local_planner/trajectory_planner_ros.h"
 
- 
 */

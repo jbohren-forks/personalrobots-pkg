@@ -208,9 +208,7 @@ namespace base_local_planner {
       double rot_stopped_velocity_, trans_stopped_velocity_;
       double xy_goal_tolerance_, yaw_goal_tolerance_, min_in_place_vel_th_;
       double inscribed_radius_, circumscribed_radius_, inflation_radius_; 
-      costmap_2d::Costmap2DPublisher* costmap_publisher_;
       std::vector<robot_msgs::PoseStamped> global_plan_;
-      double transform_tolerance_, update_plan_tolerance_;
       bool prune_plan_;
       ros::Publisher footprint_pub_, g_plan_pub_, l_plan_pub_;
       ros::Subscriber odom_sub_;

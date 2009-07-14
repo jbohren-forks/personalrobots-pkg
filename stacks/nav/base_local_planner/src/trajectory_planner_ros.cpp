@@ -52,7 +52,7 @@ namespace base_local_planner {
   TrajectoryPlannerROS::TrajectoryPlannerROS(std::string name, tf::TransformListener& tf, 
       Costmap2DROS& costmap_ros) 
     : world_model_(NULL), tc_(NULL), costmap_ros_(costmap_ros), tf_(tf), ros_node_(name), 
-    rot_stopped_velocity_(1e-2), trans_stopped_velocity_(1e-2), costmap_publisher_(NULL){
+    rot_stopped_velocity_(1e-2), trans_stopped_velocity_(1e-2){
     double acc_lim_x, acc_lim_y, acc_lim_theta, sim_time, sim_granularity;
     int vx_samples, vtheta_samples;
     double pdist_scale, gdist_scale, occdist_scale, heading_lookahead, oscillation_reset_dist, escape_reset_dist, escape_reset_theta;
@@ -72,16 +72,7 @@ namespace base_local_planner {
 
     global_frame_ = costmap_ros_.globalFrame();
     robot_base_frame_ = costmap_ros_.baseFrame();
-    ros_node_.param("~transform_tolerance", transform_tolerance_, 0.2);
-    ros_node_.param("~update_plan_tolerance", update_plan_tolerance_, 1.0);
     ros_node_.param("~prune_plan", prune_plan_, true);
-
-    double map_publish_frequency;
-    ros_node_.param("~costmap_visualization_rate", map_publish_frequency, 2.0);
-    costmap_publisher_ = new costmap_2d::Costmap2DPublisher(ros_node_, map_publish_frequency, global_frame_);
-
-    if(costmap_publisher_->active())
-      costmap_publisher_->updateCostmapData(costmap_);
 
     ros_node_.param("~yaw_goal_tolerance", yaw_goal_tolerance_, 0.05);
     ros_node_.param("~xy_goal_tolerance", xy_goal_tolerance_, 0.10);
@@ -104,7 +95,7 @@ namespace base_local_planner {
     ros_node_.param("~acc_lim_th", acc_lim_theta, 3.2);
     ros_node_.param("~sim_time", sim_time, 1.0);
     ros_node_.param("~sim_granularity", sim_granularity, 0.025);
-    ros_node_.param("~vx_samples", vx_samples, 20);
+    ros_node_.param("~vx_samples", vx_samples, 3);
     ros_node_.param("~vtheta_samples", vtheta_samples, 20);
     ros_node_.param("~path_distance_bias", pdist_scale, 0.6);
     ros_node_.param("~goal_distance_bias", gdist_scale, 0.8);
@@ -121,7 +112,7 @@ namespace base_local_planner {
     ros_node_.param("~min_in_place_vel_th", min_in_place_vel_th_, 0.4);
     ros_node_.param("~backup_vel", backup_vel, -0.1);
     ros_node_.param("~world_model", world_model_type, string("costmap"));
-    ros_node_.param("~dwa", dwa, false);
+    ros_node_.param("~dwa", dwa, true);
     ros_node_.param("~heading_scoring", heading_scoring, false);
     ros_node_.param("~heading_scoring_timestep", heading_scoring_timestep, 0.1);
     ros_node_.param("~simple_attractor", simple_attractor, false);
@@ -144,9 +135,6 @@ namespace base_local_planner {
   }
 
   TrajectoryPlannerROS::~TrajectoryPlannerROS(){
-    if(costmap_publisher_ != NULL)
-      delete costmap_publisher_;
-
     if(tc_ != NULL)
       delete tc_;
 
@@ -380,10 +368,6 @@ namespace base_local_planner {
 
     //make sure to update the costmap we'll use for this cycle
     costmap_ros_.getCostmapCopy(costmap_);
-
-    //after clearing the footprint... we want to push the changes to the costmap publisher
-    if(costmap_publisher_->active())
-      costmap_publisher_->updateCostmapData(costmap_);
 
     // Set current velocities from odometry
     robot_msgs::PoseDot global_vel;
