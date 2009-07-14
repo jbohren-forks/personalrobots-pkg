@@ -982,11 +982,15 @@ public:
 		while (nh_.ok())
 		{
 			if (display_) {
-				int key = cvWaitKey(100)&0x00FF;
+				int key = cvWaitKey(10)&0x00FF;
 				if(key == 27) //ESC
 					break;
 			}
+			else {
+				usleep(10000);
+			}
 			ros::spinOnce();
+
 		}
 
 		return true;
