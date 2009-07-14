@@ -49,8 +49,6 @@ namespace action_tools {
     RUNNING
   };
 
-  //TODO: LOCK THINGS
-
   template <class ActionGoal, class ActionResult>
   class ActionServer {
     public: 
@@ -100,6 +98,8 @@ namespace action_tools {
         if(next_goal_.header.stamp > last_preempt_.header.stamp){
           current_goal_ = next_goal_;
           new_goal_ = false;
+          state_ = RUNNING;
+          status_.status = status_.ACTIVE;
         }
         else{
           //report the goal preempted even though it never started?
