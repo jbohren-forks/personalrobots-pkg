@@ -251,7 +251,7 @@ namespace TREX{
       REGISTER_CONSTRAINT(constraintEngine->getCESchema(), TREX::CalcOrConstraint, "calc_or", "Default");
       REGISTER_CONSTRAINT(constraintEngine->getCESchema(), TREX::SubsetOfConstraint, "in", "Default");
       REGISTER_CONSTRAINT(constraintEngine->getCESchema(), TREX::CalcDistanceConstraint, "calcDistance", "Default");
-      REGISTER_CONSTRAINT(constraintEngine->getCESchema(), FloorFunction, "calcFloor", "Default");
+      REGISTER_CONSTRAINT(constraintEngine->getCESchema(), TREX::FloorFunction, "calcFloor", "Default");
       
       REGISTER_CONSTRAINT(constraintEngine->getCESchema(), TREX::NearestLocation, "nearestReachableLocation", "Default");
       REGISTER_CONSTRAINT(constraintEngine->getCESchema(), TREX::RandomSelection, "randomSelect", "Default");

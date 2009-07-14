@@ -33,8 +33,9 @@ endmacro(_get_trex_link_libs)
 
 # Declares the referenced executable as debug
 macro(trex_declare_debug target)
-  rospack_remove_link_flags(${target} "-O3 -DEUROPA_FAST")
+  rospack_remove_compile_flags(${target} "-O3 -DEUROPA_FAST")
   _get_trex_link_libs("_g")
+  message("Link debug target " ${target} " with " ${_TREX_LINK_LIBS})
   target_link_libraries(${target} ${_TREX_LINK_LIBS})
 endmacro(trex_declare_debug)
 
@@ -42,6 +43,7 @@ endmacro(trex_declare_debug)
 # Declares the referenced executable as fast
 macro(trex_declare_fast target)
   _get_trex_link_libs("_o")
+  message("Link fast target " ${target} " with " ${_TREX_LINK_LIBS})
   target_link_libraries(${target} ${_TREX_LINK_LIBS})
 endmacro(trex_declare_fast)
 
