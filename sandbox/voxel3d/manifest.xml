@@ -9,6 +9,6 @@
   <depend package="visualization_msgs" />
   <depend package="tf" />
   <export>
-    <cpp cflags="-I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lvoxel3d"/>
+    <cpp cflags="-I${prefix}/include -I${prefix}/msg/cpp -I${prefix}/srv/cpp" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lvoxel3d"/>
   </export>
 </package>
