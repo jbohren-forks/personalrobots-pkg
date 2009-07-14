@@ -87,22 +87,27 @@ string DorylusDataset::displayObjects() {
   return oss.str();
 }
 
-string object::status() {
+string object::status(bool showFeatures) {
   map<string, MatrixXf*>::const_iterator it;
   ostringstream oss (ostringstream::out);
   oss << "Object with label " << label << ":" << endl;
   for(it = features.begin(); it!=features.end(); it++) {
     MatrixXf* v = it->second;
-    oss << it->first << " descriptor " << endl;
-    oss << *v << endl;
+    oss << it->first << " descriptor (" << v->rows() << " dimensions) " << endl;
+    if(showFeatures)
+      oss << v->transpose() << endl;
   }
   return oss.str();
 }
 
 std::string Dorylus::status()
 {
-  char tmp[100];
+  char tmp[1000];
   string st("Classifier Status: \n");
+  st.append("  nClasses: ");
+  sprintf(tmp, "%d \n", nClasses_);
+  st.append(tmp);
+
   st.append("  nWeakClassifier: ");
   sprintf(tmp, "%d \n", pwcs_.size());
   st.append(tmp);
@@ -135,17 +140,19 @@ std::string DorylusDataset::status()
   }
 
   map<string, MatrixXf*>::iterator fit;
-  map<string, int> nPts;
+  map<string, int> nPts, dim;
   for(unsigned int m=0; m<objs_.size(); m++) {
     for(fit = objs_[m]->features.begin(); fit != objs_[m]->features.end(); fit++) {
       nPts[fit->first] += fit->second->cols();
+      if(fit->second->rows() != 0)
+	dim[fit->first] = fit->second->rows();
     }
   }
 
   oss << "  nPts: " << endl;
   map<string, int>::iterator pit;
   for(pit = nPts.begin(); pit != nPts.end(); pit++) {
-    oss << "    nPts in " << pit->first << " space: " << pit->second << "\n";
+    oss << "    nPts in " << pit->first << " (" << dim[pit->first] << "-dimensional) space: " << pit->second << "\n";
   }
 
   return oss.str();
@@ -949,6 +956,7 @@ float Dorylus::computeUtility(const weak_classifier& wc, const NEWMAT::Matrix& m
 // }
 
 NEWMAT::Matrix Dorylus::classify(object &obj, NEWMAT::Matrix **confidence) {
+  assert(nClasses_ > 0);
   NEWMAT::Matrix response(nClasses_, 1); response = 0.0;
   if(battery_.size() == 0)
     return response;
@@ -956,8 +964,10 @@ NEWMAT::Matrix Dorylus::classify(object &obj, NEWMAT::Matrix **confidence) {
   map<string, vector<weak_classifier> >::iterator bit = battery_.begin();
   for(bit = battery_.begin(); bit != battery_.end(); bit++) {
     string descriptor = bit->first;
+    //cout << obj.status(false) << endl;
+    //cout << descriptor << endl;
     if(obj.features.find(descriptor) == obj.features.end()) {
-      //cout << "Skipping " << descriptor << " descriptor, as the object has no feature of that type." << endl;
+      cout << "Skipping " << descriptor << " descriptor, as the object has no feature of that type." << endl;
       continue;
     }
     if(find(exclude_descriptors_.begin(), exclude_descriptors_.end(), descriptor) != exclude_descriptors_.end()) {

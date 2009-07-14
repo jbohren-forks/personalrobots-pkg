@@ -60,7 +60,7 @@ class object {
   map<string, Eigen::MatrixXf*> features;
 
 
-  string status();
+  string status(bool showFeatures=true);
   object() {}
   ~object() {
     map<string, Eigen::MatrixXf*>::iterator fit;
