@@ -60,7 +60,8 @@
 #include <boost/thread.hpp>
 
 // ros & ros messages & ros services
-#include "ros/node.h"
+#include "ros/ros.h"
+#include "ros/callback_queue.h"
 #include "sensor_msgs/StereoInfo.h"
 #include "sensor_msgs/DisparityInfo.h"
 #include "sensor_msgs/CamInfo.h"
@@ -75,7 +76,7 @@
 
 #include <point_cloud_mapping/geometry/point.h>
 #include "tf/transform_listener.h"
-#include "topic_synchronizer/topic_synchronizer.h"
+#include "topic_synchronizer2/topic_synchronizer.h"
 
 using namespace std;
 using namespace robot_msgs;
@@ -87,43 +88,62 @@ using namespace robot_msgs;
 static const double scan_speed  = 0.1; // [m/sec]
 static const double scan_height = 0.4; //[m]
 
-class OutletSpotting : public ros::Node
+class OutletSpotting
 {
 public:
+	// node handle
+	ros::NodeHandle nh_;
+	// tf
+	tf::TransformListener tf_;
 
-	sensor_msgs::Image limage;
-//	sensor_msgs::Image rimage;
-	sensor_msgs::Image dimage;
-	sensor_msgs::StereoInfo stinfo;
-	sensor_msgs::DisparityInfo dispinfo;
-	sensor_msgs::CamInfo lcinfo;
-	sensor_msgs::CamInfo rcinfo;
+	// messages
+	sensor_msgs::ImageConstPtr limage_;
+	sensor_msgs::ImageConstPtr dimage_;
+	sensor_msgs::DisparityInfoConstPtr dispinfo_;
+	sensor_msgs::CamInfoConstPtr lcinfo_;
+	robot_msgs::PointCloudConstPtr cloud_;
+	robot_msgs::PointCloudConstPtr base_cloud_;
 
-	sensor_msgs::CvBridge lbridge;
-//	sensor_msgs::CvBridge rbridge;
-	sensor_msgs::CvBridge dbridge;
+	sensor_msgs::CvBridge lbridge_;
+	sensor_msgs::CvBridge dbridge_;
 
-	robot_msgs::PointCloud cloud;
-	robot_msgs::PointCloud cloud_fetch;
+	// subscribers
+	ros::Subscriber left_image_sub_;
+	ros::Subscriber left_caminfo_sub_;
+	ros::Subscriber disparity_sub_;
+	ros::Subscriber dispinfo_sub_;
+	ros::Subscriber cloud_sub_;
+	ros::Subscriber base_scan_sub_;
 
-	robot_msgs::PointCloud base_cloud_;
-	robot_msgs::PointCloud base_cloud_fetch_;
+	// publishers
+	ros::Publisher marker_pub_;
+	ros::Publisher head_pub_;
 
-//	robot_msgs::PoseStamped outlet_pose;
+	// services
+	ros::ServiceServer detect_service_;
 
-	IplImage* left;
-//	IplImage* right;
-	IplImage* disp;
-	IplImage* disp_clone;
+	// parameters
+	bool display_;
+	bool save_patches_;
+	int frames_number_;
+	string target_frame_;
+	string base_scan_topic_;
+	string head_controller_;
+	double min_outlet_height_;
+	double max_outlet_height_;
+	string patch_path_;
+	double timeout_;
 
-	bool display;
-	bool save_patches;
 
-	TopicSynchronizer<OutletSpotting> sync;
+	IplImage* left_;
+	IplImage* disp_;
+	IplImage* disp_clone_;
 
 
-//	boost::mutex clound_point_mutex;
-//	boost::condition_variable cloud_point_cv;
+	TopicSynchronizer sync_;
+
+	ros::CallbackQueue service_queue_;
+	boost::thread* service_thread_;
 
 	boost::mutex data_lock_;
 	boost::condition_variable data_cv_;
@@ -131,55 +151,39 @@ public:
 	bool have_images_;
 	bool preempt_;
 
-	double timeout_;
 	ros::Time start_image_wait_;
 
-	tf::TransformListener* tf_;
-
-	int frames_number_;
-	string target_frame_;
-	string base_scan_topic_;
-	string head_controller_;
-
-	double min_outlet_height_;
-	double max_outlet_height_;
-
-	string patch_path;
-
-	double ppmm;		// pixels per millimeter
+	double ppmm_;		// pixels per millimeter
 
 
-	typedef list<IplImage*> image_list_t;
-	typedef map<string,image_list_t> template_dict_t;
+//	typedef list<IplImage*> image_list_t;
+//	typedef map<string,image_list_t> template_dict_t;
+//
+//	template_dict_t templates_;
+//
+//	vector<IplImage*> positive_templates_;
+//	vector<IplImage*> negative_templates_;
 
-	template_dict_t templates;
-
-	vector<IplImage*> positive_templates;
-	vector<IplImage*> negative_templates;
-
-	OutletSpotting() : ros::Node("outlet_spotting"),left(NULL), disp(NULL), disp_clone(NULL),
-		sync(this, &OutletSpotting::image_cb_all, ros::Duration().fromSec(0.1), &OutletSpotting::image_cb_timeout), have_cloud_point_(true), have_images_(true), ppmm(0.5)
+	OutletSpotting() : left_(NULL), disp_(NULL), disp_clone_(NULL),
+	sync_(&OutletSpotting::syncCallback, this), have_cloud_point_(true), have_images_(true), ppmm_(0.5)
 
 	{
-        tf_ = new tf::TransformListener(*this);
+		tf_.setExtrapolationLimit(ros::Duration(2.0));
 
-        // TODO: remove this after finished testing
-        tf_->setExtrapolationLimit(ros::Duration(10.0));
-
-		param ("~display", display, false);
-		param ("~save_patches", save_patches, false);
-		param ("~frames_number", frames_number_, 5);
-		param<string> ("~target_frame", target_frame_, "odom_combined");
-		param<string> ("~base_scan_topic", base_scan_topic_, "base_scan_marking");
-		param<string>("~head_controller", head_controller_, "head_controller");
-		param ("~min_outlet_height", min_outlet_height_, 0.1);
-		param ("~max_outlet_height", max_outlet_height_, 0.7);
-		param<string>("~patch_path", patch_path, "data");
-		param("~timeout", timeout_, 3.0);
+		nh_.param ("~display", display_, false);
+		nh_.param ("~save_patches", save_patches_, false);
+		nh_.param ("~frames_number", frames_number_, 5);
+		nh_.param<string> ("~target_frame", target_frame_, "odom_combined");
+		nh_.param<string> ("~base_scan_topic", base_scan_topic_, "base_scan_marking");
+		nh_.param<string>("~head_controller", head_controller_, "head_controller");
+		nh_.param ("~min_outlet_height", min_outlet_height_, 0.1);
+		nh_.param ("~max_outlet_height", max_outlet_height_, 0.7);
+		nh_.param<string>("~patch_path", patch_path_, "data");
+		nh_.param("~timeout", timeout_, 3.0);
 //		string template_path;
 //        param<string>("~template_path", template_path,"templates");
 
-		if (display) {
+		if (display_) {
 			ROS_INFO("Displaying images\n");
 			cvNamedWindow("left", CV_WINDOW_AUTOSIZE);
 			//cvNamedWindow("right", CV_WINDOW_AUTOSIZE);
@@ -187,112 +191,180 @@ public:
 			cvNamedWindow("disparity", CV_WINDOW_AUTOSIZE);
 		}
 
-        advertise<visualization_msgs::Marker>("visualization_marker", 1);
-    	advertise<robot_msgs::PointStamped>(head_controller_ + "/head_track_point",10);
-        advertiseService("~coarse_outlet_detect", &OutletSpotting::outletSpottingService, this);
+		marker_pub_ = nh_.advertise<visualization_msgs::Marker>("visualization_marker",1);
+    	head_pub_ = nh_.advertise<robot_msgs::PointStamped>(head_controller_ + "/head_track_point",10);
+
+
+		ros::AdvertiseServiceOptions service_opts = ros::AdvertiseServiceOptions::create<outlet_detection::OutletDetection>("~coarse_outlet_detect",
+							boost::bind(&OutletSpotting::outletSpottingService, this, _1, _2),ros::VoidPtr(), &service_queue_);
+
+
+    	detect_service_ = nh_.advertiseService(service_opts);
 
 //        loadTemplates(template_path);
-
+    	service_thread_ = new boost::thread(boost::bind(&OutletSpotting::serviceThread, this));
 	}
 
 	~OutletSpotting()
 	{
-		if (left)
-			cvReleaseImage(&left);
-//		if (right)
-//			cvReleaseImage(&right);
-		if (disp)
-			cvReleaseImage(&disp);
-
-		unadvertise("visualization_marker");
-		unadvertiseService("~coarse_outlet_detect");
+    	service_thread_->join();
+    	delete service_thread_;
 	}
 
 private:
 
-    void trimSpaces( string& str)
-    {
-    	size_t startpos = str.find_first_not_of(" \t\n"); // Find the first character position after excluding leading blank spaces
-    	size_t endpos = str.find_last_not_of(" \t\n"); // Find the first character position from reverse af
+//    void trimSpaces( string& str)
+//    {
+//    	size_t startpos = str.find_first_not_of(" \t\n"); // Find the first character position after excluding leading blank spaces
+//    	size_t endpos = str.find_last_not_of(" \t\n"); // Find the first character position from reverse af
+//
+//    	// if all spaces or empty return an empty string
+//    	if(( string::npos == startpos ) || ( string::npos == endpos)) {
+//    		str = "";
+//    	}
+//    	else {
+//    		str = str.substr( startpos, endpos-startpos+1 );
+//    	}
+//    }
 
-    	// if all spaces or empty return an empty string
-    	if(( string::npos == startpos ) || ( string::npos == endpos)) {
-    		str = "";
-    	}
-    	else {
-    		str = str.substr( startpos, endpos-startpos+1 );
-    	}
-    }
-
-    void loadTemplates(string path)
-    {
-
-    	string template_file = path + "/templates.txt";
-    	FILE* f = fopen( template_file.c_str(), "r" );
-
-    	if (!f) {
-    		ROS_ERROR("Cannot open templates file: %s", template_file.c_str());
-    	}
-
-    	char buffer[1024];
-
-    	while (fgets(buffer,1024,f)) {
-    		string line = buffer;
-    		trimSpaces(line);
-    		if (line.empty()) continue;
-    		int pos = line.find_first_of(" ");
-    		string filename = line.substr(0,pos);
-    		string category = line.substr(pos+1);
-    		ROS_INFO("Loading template %s for category %s", filename.c_str(), category.c_str());
-    		IplImage* outlet_template = cvLoadImage((path + "/" + filename).c_str(), CV_LOAD_IMAGE_GRAYSCALE);
-    		if (!outlet_template) {
-    			ROS_ERROR("Cannot load template from file: %s", (path + "/" + filename).c_str());
-    		}
-    		templates[category].push_back(outlet_template);
-    	}
-
-    	fclose(f);
-	}
+//    void loadTemplates(string path)
+//    {
+//
+//    	string template_file = path + "/templates.txt";
+//    	FILE* f = fopen( template_file.c_str(), "r" );
+//
+//    	if (!f) {
+//    		ROS_ERROR("Cannot open templates file: %s", template_file.c_str());
+//    	}
+//
+//    	char buffer[1024];
+//
+//    	while (fgets(buffer,1024,f)) {
+//    		string line = buffer;
+//    		trimSpaces(line);
+//    		if (line.empty()) continue;
+//    		int pos = line.find_first_of(" ");
+//    		string filename = line.substr(0,pos);
+//    		string category = line.substr(pos+1);
+//    		ROS_INFO("Loading template %s for category %s", filename.c_str(), category.c_str());
+//    		IplImage* outlet_template = cvLoadImage((path + "/" + filename).c_str(), CV_LOAD_IMAGE_GRAYSCALE);
+//    		if (!outlet_template) {
+//    			ROS_ERROR("Cannot load template from file: %s", (path + "/" + filename).c_str());
+//    		}
+//    		templates_[category].push_back(outlet_template);
+//    	}
+//
+//    	fclose(f);
+//	}
 
 
     void subscribeToData()
     {
 
-    	sync.reset();
-		std::list<std::string> left_list;
-		left_list.push_back(std::string("stereo/left/image_rect_color"));
-		left_list.push_back(std::string("stereo/left/image_rect"));
-		sync.subscribe(left_list,  limage, 1);
 
-//		std::list<std::string> right_list;
-//		right_list.push_back(std::string("stereo/right/image_rect_color"));
-//		right_list.push_back(std::string("stereo/right/image_rect"));
-//		sync.subscribe(right_list, rimage, 1);
+		left_image_sub_ = nh_.subscribe("stereo/left/image_rect", 1, sync_.synchronize(&OutletSpotting::leftImageCallback, this));
+		left_caminfo_sub_ = nh_.subscribe("stereo/left/cam_info", 1, sync_.synchronize(&OutletSpotting::leftCamInfoCallback, this));
+		disparity_sub_ = nh_.subscribe("stereo/disparity", 1, sync_.synchronize(&OutletSpotting::disparityImageCallback, this));
+		cloud_sub_ = nh_.subscribe("stereo/cloud", 1, sync_.synchronize(&OutletSpotting::cloudCallback, this));
+		dispinfo_sub_ = nh_.subscribe("stereo/disparity_info", 1, sync_.synchronize(&OutletSpotting::dispinfoCallback, this));
 
-		sync.subscribe("stereo/disparity", dimage, 1);
-		sync.subscribe("stereo/stereo_info", stinfo, 1);
-		sync.subscribe("stereo/disparity_info", dispinfo, 1);
-		sync.subscribe("stereo/left/cam_info", lcinfo, 1);
-		sync.subscribe("stereo/right/cam_info", rcinfo, 1);
-
-		sync.subscribe("stereo/cloud", cloud_fetch, 1);
-
-		sync.ready();
-
-		subscribe(base_scan_topic_, base_cloud_fetch_, &OutletSpotting::laser_callback, 1);
+		base_scan_sub_ = nh_.subscribe(base_scan_topic_, 1, &OutletSpotting::baseScanCallback, this);
     }
 
     void unsubscribeFromData()
     {
-        unsubscribe("stereo/left/image_rect_color");
-        unsubscribe("stereo/left/image_rect");
-        unsubscribe("stereo/disparity");
-        unsubscribe("stereo/stereo_info");
-        unsubscribe("stereo/disparity_info");
-        unsubscribe("stereo/left/cam_info");
-        unsubscribe("stereo/right/cam_info");
-        unsubscribe("stereo/cloud");
+
+    	left_image_sub_.shutdown();
+    	left_caminfo_sub_.shutdown();
+    	disparity_sub_.shutdown();
+    	cloud_sub_.shutdown();
+    	dispinfo_sub_.shutdown();
+
+    	base_scan_sub_.shutdown();
+
+    	sync_.reset();
     }
+
+
+
+
+
+	void syncCallback()
+	{
+		if (disp_!=NULL) {
+			cvReleaseImage(&disp_);
+		}
+		if(dbridge_.fromImage(*dimage_)) {
+			disp_ = cvCreateImage(cvGetSize(dbridge_.toIpl()), IPL_DEPTH_8U, 1);
+			cvCvtScale(dbridge_.toIpl(), disp_, 4.0/dispinfo_->dpp);
+		}
+
+		have_images_ = true;
+		data_cv_.notify_all();
+
+//		ROS_INFO("got sync callback");
+	}
+
+	void leftCamInfoCallback(const sensor_msgs::CamInfo::ConstPtr& info)
+	{
+		boost::unique_lock<boost::mutex> lock(data_lock_);
+		lcinfo_ = info;
+	}
+
+	void leftImageCallback(const sensor_msgs::Image::ConstPtr& image)
+	{
+//		ROS_INFO("got left image callback");
+		boost::unique_lock<boost::mutex> lock(data_lock_);
+
+		limage_ = image;
+		if(lbridge_.fromImage(*limage_, "bgr")) {
+			left_ = lbridge_.toIpl();
+		}
+	}
+
+	void disparityImageCallback(const sensor_msgs::Image::ConstPtr& image)
+	{
+		boost::unique_lock<boost::mutex> lock(data_lock_);
+//		ROS_INFO("got disparity callback");
+		dimage_ = image;
+	}
+
+	void dispinfoCallback(const sensor_msgs::DisparityInfo::ConstPtr& dinfo)
+	{
+		boost::unique_lock<boost::mutex> lock(data_lock_);
+//		ROS_INFO("got dispinfo callback");
+		dispinfo_ = dinfo;
+	}
+
+	void cloudCallback(const robot_msgs::PointCloud::ConstPtr& point_cloud)
+	{
+		boost::unique_lock<boost::mutex> lock(data_lock_);
+//		ROS_INFO("got cloud callback");
+		cloud_ = point_cloud;
+	}
+
+
+
+	void baseScanCallback(const robot_msgs::PointCloud::ConstPtr& point_cloud)
+	{
+		boost::lock_guard<boost::mutex> lock(data_lock_);
+		base_cloud_ = point_cloud;
+		have_cloud_point_ = true;
+		data_cv_.notify_all();
+	}
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 #define CVCONTOUR_APPROX_LEVEL 2   // Approx.threshold - the bigger it is, the simpler is the boundary
@@ -400,7 +472,7 @@ private:
 		static int patch_cnt = 1;
 
 		char name[100];
-		sprintf(name,"%s/%s_%.3d.png", patch_path.c_str() , prefix, patch_cnt++);
+		sprintf(name,"%s/%s_%.3d.png", patch_path_.c_str() , prefix, patch_cnt++);
 		printf("Saving patch %s\n",name);
 		cvSetImageROI(img,R);
 		cvSaveImage(name, img);
@@ -429,7 +501,7 @@ private:
         marker.color.a = 1.0;
         marker.color.g = 1.0;
 
-        publish("visualization_marker", marker);
+        marker_pub_.publish(marker);
 
 
         tf::Pose tf_pose;
@@ -460,7 +532,7 @@ private:
         marker.color.g = 1.0;
         marker.color.b = 0.0;
 
-        publish("visualization_marker", marker);
+        marker_pub_.publish(marker);
     }
 
 
@@ -487,7 +559,7 @@ private:
         marker.color.a = 1.0;
         marker.color.g = 1.0;
 
-        publish("visualization_marker", marker);
+        marker_pub_.publish(marker);
     }
 
 
@@ -528,7 +600,7 @@ private:
     void showLineMarker(const vector<Point32>& line_segment)
     {
     	visualization_msgs::Marker marker;
-    	marker.header.frame_id = base_cloud_.header.frame_id;
+    	marker.header.frame_id = base_cloud_->header.frame_id;
     	marker.header.stamp = ros::Time((uint64_t)0ULL);
     	marker.ns = "outlet_spotting";
     	marker.id = 102;
@@ -548,7 +620,7 @@ private:
     	marker.points[1].y = line_segment[1].y;
     	marker.points[1].z = line_segment[1].z;
 
-    	publish( "visualization_marker", marker );
+        marker_pub_.publish(marker);
 
     }
 
@@ -628,7 +700,7 @@ private:
 	Point project3DPointIntoImage(const sensor_msgs::CamInfo& cam_info, PointStamped point)
 	{
 		PointStamped image_point;
-		tf_->transformPoint(cam_info.header.frame_id, point, image_point);
+		tf_.transformPoint(cam_info.header.frame_id, point, image_point);
 		Point pp; // projected point
 
 		pp.x = cam_info.P[0]*image_point.point.x+
@@ -662,32 +734,32 @@ private:
 
 		tf_point = tf::Point(0,extent,extent);
 		tf_point = tf_pose*tf_point;
-		base_p1.header.stamp = base_cloud_.header.stamp;
-		base_p1.header.frame_id = base_cloud_.header.frame_id;
+		base_p1.header.stamp = base_cloud_->header.stamp;
+		base_p1.header.frame_id = base_cloud_->header.frame_id;
 		tf::pointTFToMsg(tf_point,base_p1.point);
 
 		tf_point = tf::Point(0,-extent,extent);
 		tf_point = tf_pose*tf_point;
-		base_p2.header.stamp = base_cloud_.header.stamp;
-		base_p2.header.frame_id = base_cloud_.header.frame_id;
+		base_p2.header.stamp = base_cloud_->header.stamp;
+		base_p2.header.frame_id = base_cloud_->header.frame_id;
 		tf::pointTFToMsg(tf_point,base_p2.point);
 
 		tf_point = tf::Point(0,extent,-extent);
 		tf_point = tf_pose*tf_point;
-		base_p3.header.stamp = base_cloud_.header.stamp;
-		base_p3.header.frame_id = base_cloud_.header.frame_id;
+		base_p3.header.stamp = base_cloud_->header.stamp;
+		base_p3.header.frame_id = base_cloud_->header.frame_id;
 		tf::pointTFToMsg(tf_point,base_p3.point);
 
 		tf_point = tf::Point(0,-extent,-extent);
 		tf_point = tf_pose*tf_point;
-		base_p4.header.stamp = base_cloud_.header.stamp;
-		base_p4.header.frame_id = base_cloud_.header.frame_id;
+		base_p4.header.stamp = base_cloud_->header.stamp;
+		base_p4.header.frame_id = base_cloud_->header.frame_id;
 		tf::pointTFToMsg(tf_point,base_p4.point);
 
-		Point p1 = project3DPointIntoImage(lcinfo, base_p1);
-		Point p2 = project3DPointIntoImage(lcinfo, base_p2);
-		Point p3 = project3DPointIntoImage(lcinfo, base_p3);
-		Point p4 = project3DPointIntoImage(lcinfo, base_p4);
+		Point p1 = project3DPointIntoImage(*lcinfo_, base_p1);
+		Point p2 = project3DPointIntoImage(*lcinfo_, base_p2);
+		Point p3 = project3DPointIntoImage(*lcinfo_, base_p3);
+		Point p4 = project3DPointIntoImage(*lcinfo_, base_p4);
 
 		int width = patch->width;
 		int height = patch->height;
@@ -706,7 +778,7 @@ private:
 		// compute perspective transformation
 //		CvMat *H = cvCreateMat(3,3,CV_32F);
 		cvGetPerspectiveTransform(objPts,imgPts,homography);
-		cvWarpPerspective(left,patch, homography, CV_INTER_LINEAR | CV_WARP_INVERSE_MAP | CV_WARP_FILL_OUTLIERS );
+		cvWarpPerspective(left_,patch, homography, CV_INTER_LINEAR | CV_WARP_INVERSE_MAP | CV_WARP_FILL_OUTLIERS );
 
 //		cvReleaseMat(&H);
 
@@ -723,7 +795,7 @@ private:
     void filterByHeight(PointCloud stereo_cloud, IplImage* disparity, double min_height, double max_height)
     {
         robot_msgs::PointCloud base_cloud;
-        tf_->transformPointCloud("base_footprint", stereo_cloud, base_cloud);
+        tf_.transformPointCloud("base_footprint", stereo_cloud, base_cloud);
 
         // find original image coordinates channels
         int xchan = -1;
@@ -930,7 +1002,7 @@ private:
     	IplImage* binary_image = cvCreateImage(cvGetSize(outlet_image), outlet_image->depth, 1);
 
     	cvCanny(gray_image, binary_image, 30,60);
-    	if (display) {
+    	if (display_) {
     		cvNamedWindow("templ",1);
     		//cvShowImage("templ", outlet_image);
     		cvShowImage("templ", binary_image);
@@ -987,12 +1059,12 @@ private:
     		return false;
     	}
 
-    	if (abs(abs(candidates[0].x-candidates[1].x)-45*ppmm)>5 || abs(abs(candidates[2].x-candidates[3].x)-45*ppmm)>5) {
+    	if (abs(abs(candidates[0].x-candidates[1].x)-45*ppmm_)>5 || abs(abs(candidates[2].x-candidates[3].x)-45*ppmm_)>5) {
                 ROS_INFO("in detectOutletInImage horizontal size wrong \n\n\n");
     		return false;
     	}
 
-    	if (abs(abs(candidates[0].y-candidates[3].y)-39*ppmm)>5 || abs(abs(candidates[1].y-candidates[2].y)-39*ppmm)>5) {
+    	if (abs(abs(candidates[0].y-candidates[3].y)-39*ppmm_)>5 || abs(abs(candidates[1].y-candidates[2].y)-39*ppmm_)>5) {
                 ROS_INFO("in detectOutletInImage vertical size wrong \n\n\n");
     		return false;
     	}
@@ -1137,14 +1209,14 @@ private:
 		CvRect bbs[num];
 		CvPoint centers[num];
 
-		disp_clone = cvCloneImage(disp);
+		disp_clone_ = cvCloneImage(disp_);
 
 		// smooth out the blobs in the disparity image
 		// TODO: commented out due to bug in OpenCV
 //		morphologicSmoothing(disp);
 
 		// find connected components (blobs) in the disparity image
-		findConnectedComponents(disp, 1, areaTooSmall*areaTooSmall,
+		findConnectedComponents(disp_, 1, areaTooSmall*areaTooSmall,
 				areaTooLarge*areaTooLarge,(float)(aspectLimit)/100.0, &num, bbs, centers);
 
 		Stats x_stats;
@@ -1155,7 +1227,7 @@ private:
 		for(int i=0; i<num; ++i) {
 
 			// get outlet candidate point cloud
-			PointCloud blob_cloud = filterPointCloud(cloud, bbs[i]);
+			PointCloud blob_cloud = filterPointCloud(*cloud_, bbs[i]);
 
 			pointCloudStatistics(blob_cloud, x_stats, y_stats, z_stats);
 			// center of outlet candidate cloud
@@ -1168,16 +1240,16 @@ private:
 
 			// check the center of the blob is at a reasonable height in "base_footprint" frame
 			PointStamped center_in_base_footprint;
-			tf_->transformPoint("base_footprint", center_in_stereo_frame, center_in_base_footprint);
+			tf_.transformPoint("base_footprint", center_in_stereo_frame, center_in_base_footprint);
 			if (center_in_base_footprint.point.z<min_outlet_height_ || center_in_base_footprint.point.z>max_outlet_height_) {
 				continue;
 			}
 
 			PointStamped center_in_base_laser_frame;
-			tf_->transformPoint(base_cloud_.header.frame_id, center_in_stereo_frame, center_in_base_laser_frame);
+			tf_.transformPoint(base_cloud_->header.frame_id, center_in_stereo_frame, center_in_base_laser_frame);
 			PoseStamped wall_pose;
 			ROS_INFO("Getting wall pose");
-			if (!getWallPoseFromBaseLaser(base_cloud_, center_in_base_laser_frame, 0.4, wall_pose)) {
+			if (!getWallPoseFromBaseLaser(*base_cloud_, center_in_base_laser_frame, 0.4, wall_pose)) {
 				ROS_INFO("OutletSpotter: Cannot compute wal pose, skipping outlet candidate");
 				continue;
 			}
@@ -1186,13 +1258,13 @@ private:
 			tf::Pose tf_wall_pose;
 			tf::poseMsgToTF(wall_pose.pose, tf_wall_pose);
 			tf::Stamped<tf::Pose> wall_pose_frame(tf_wall_pose, wall_pose.header.stamp, "wall_frame", wall_pose.header.frame_id);
-			tf_->setTransform(wall_pose_frame);
+			tf_.setTransform(wall_pose_frame);
 
 //			tf::TransformBroadcaster broadcaster(*this);
 //			broadcaster.sendTransform(wall_pose_frame);
 
 			PointCloud blob_in_wall_frame;
-			tf_->transformPointCloud("wall_frame", blob_cloud, blob_in_wall_frame);
+			tf_.transformPointCloud("wall_frame", blob_cloud, blob_in_wall_frame);
 
 			PointCloud outlet_plane;
 			vector<double> plane_coefficients_wall_frame;
@@ -1216,9 +1288,9 @@ private:
 			origin_in_wall_frame.point.z = z_stats.mean;
 
 			PointStamped origin_in_base_laser_frame;
-			tf_->transformPoint(base_cloud_.header.frame_id, origin_in_wall_frame, origin_in_base_laser_frame);
+			tf_.transformPoint(base_cloud_->header.frame_id, origin_in_wall_frame, origin_in_base_laser_frame);
 			// find the nearest base_laser_point
-			wall_pose.pose.position = nearestPoint(base_cloud_, origin_in_base_laser_frame.point);
+			wall_pose.pose.position = nearestPoint(*base_cloud_, origin_in_base_laser_frame.point);
 
 //			tf::poseMsgToTF(wall_pose.pose, tf_wall_pose);
 //			tf::Stamped<tf::Pose> wall_pose_frame2(tf_wall_pose, wall_pose.header.stamp, "wall_frame", wall_pose.header.frame_id);
@@ -1229,7 +1301,7 @@ private:
 			int patch_size = int(wall_region_size*1000*ppm);
 
 			ROS_INFO("Computing rectified patch");
-			IplImage* patch = cvCreateImage(cvSize(patch_size,patch_size),left->depth, left->nChannels);
+			IplImage* patch = cvCreateImage(cvSize(patch_size,patch_size),left_->depth, left_->nChannels);
 			CvMat *homography = cvCreateMat(3,3,CV_32F);
 			getRectifiedPatch(wall_pose, patch, wall_region_size/2, homography);
 
@@ -1262,7 +1334,7 @@ private:
 //			projectToWallPlane(outlet_center, )
 
 			for (int k = 0;k<4;++k) {
-				if (outlet_bbox[k].x<0 || outlet_bbox[k].x>left->width || outlet_bbox[k].y<0 || outlet_bbox[k].y>left->height) {
+				if (outlet_bbox[k].x<0 || outlet_bbox[k].x>left_->width || outlet_bbox[k].y<0 || outlet_bbox[k].y>left_->height) {
 					continue;
 				}
 			}
@@ -1270,25 +1342,25 @@ private:
 
 			// update wall pose origin to the outlet center
 
-			if (display) {
+			if (display_) {
 				// draw bounding box
-				cvLine(left,outlet_bbox[0],outlet_bbox[1],CV_RGB(0,255,0));
-				cvLine(left,outlet_bbox[1],outlet_bbox[2],CV_RGB(0,255,0));
-				cvLine(left,outlet_bbox[2],outlet_bbox[3],CV_RGB(0,255,0));
-				cvLine(left,outlet_bbox[3],outlet_bbox[0],CV_RGB(0,255,0));
+				cvLine(left_,outlet_bbox[0],outlet_bbox[1],CV_RGB(0,255,0));
+				cvLine(left_,outlet_bbox[1],outlet_bbox[2],CV_RGB(0,255,0));
+				cvLine(left_,outlet_bbox[2],outlet_bbox[3],CV_RGB(0,255,0));
+				cvLine(left_,outlet_bbox[3],outlet_bbox[0],CV_RGB(0,255,0));
 
-				cvCircle(left, outlet_center, 5, CV_RGB(0,255,0));
+				cvCircle(left_, outlet_center, 5, CV_RGB(0,255,0));
 			}
 
 			cvReleaseMat(&homography);
 
 
-			if (save_patches) savePatch(left,bbs[i],"outlet_match");
+			if (save_patches_) savePatch(left_,bbs[i],"outlet_match");
 			cvReleaseImage(&patch);
 
 			// if we got here, we found an outlet
 
-			tf_->transformPose(target_frame_, wall_pose, pose);
+			tf_.transformPose(target_frame_, wall_pose, pose);
 			return true;
 		}
 
@@ -1349,73 +1421,6 @@ private:
     	return found;
     }
 
-    /**
-     *
-     */
-	void laser_callback()
-	{
-		boost::lock_guard<boost::mutex> lock(data_lock_);
-		base_cloud_ = base_cloud_fetch_;
-		have_cloud_point_ = true;
-		data_cv_.notify_all();
-	}
-
-
-	void image_cb_all(ros::Time t)
-	{
-        boost::lock_guard<boost::mutex> lock(data_lock_);
-
-		if (lbridge.fromImage(limage, "bgr"))
-		{
-			if(left != NULL)
-				cvReleaseImage(&left);
-			left = cvCloneImage(lbridge.toIpl());
-		}
-
-//		if (rbridge.fromImage(rimage, "bgr"))
-//		{
-//			if(right != NULL)
-//				cvReleaseImage(&right);
-//
-//			right = cvCloneImage(rbridge.toIpl());
-//		}
-
-		if (dbridge.fromImage(dimage))
-		{
-			if(disp != NULL)
-				cvReleaseImage(&disp);
-
-			disp = cvCreateImage(cvGetSize(dbridge.toIpl()), IPL_DEPTH_8U, 1);
-			cvCvtScale(dbridge.toIpl(), disp, 4.0/dispinfo.dpp);
-		}
-
-		cloud = cloud_fetch;
-
-		if (disp_clone!=NULL)
-			cvReleaseImage(&disp_clone);
-
-		have_images_ = true;
-		data_cv_.notify_all();
-	}
-
-	void image_cb_timeout(ros::Time t)
-	{
-		if (limage.header.stamp != t)
-			printf("Timed out waiting for left image\n");
-
-//		if (rimage.header.stamp != t)
-//			printf("Timed out waiting for right image\n");
-
-		if (dimage.header.stamp != t)
-			printf("Timed out waiting for disparity image\n");
-
-		if (stinfo.header.stamp != t)
-			printf("Timed out waiting for stereo info\n");
-
-		if (cloud_fetch.header.stamp != t)
-			printf("Timed out waiting for point cloud\n");
-
-	}
 
 
 	void turnHead(float horizontalAngle, float verticalAngle)
@@ -1431,7 +1436,7 @@ private:
 		point.point.y = tan(M_PI*horizontalAngle/180);
 		point.point.z = tan(M_PI*verticalAngle/180);
 
-		publish(head_controller_ + "/head_track_point", point);
+		head_pub_.publish(point);
 		ros::Duration(1.0).sleep();
 	}
 
@@ -1461,11 +1466,11 @@ private:
 
 			showMarkers(pose);
 
-			if (display) {
-				cvShowImage("left", left);
+			if (display_) {
+				cvShowImage("left", left_);
 				//cvShowImage("right", right);
-				cvShowImage("contours", disp);
-				cvShowImage("disparity", disp_clone);
+				cvShowImage("contours", disp_);
+				cvShowImage("disparity", disp_clone_);
 			}
 
 			if (found) {
@@ -1488,29 +1493,46 @@ public:
 
 	bool spin()
 	{
-		while (ok())
+		ros::Rate r(10);
+		while (nh_.ok())
 		{
 			data_lock_.lock();
-
 			if (!have_images_ && !have_cloud_point_) {
 				if ((ros::Time::now()-start_image_wait_) > ros::Duration(timeout_)) {
 					preempt_ = true;
 					data_cv_.notify_all();
 				}
 			}
-
-			int key = cvWaitKey(3)&0x00FF;
 			data_lock_.unlock();
-			if(key == 27) //ESC
-				break;
 
-			if (key=='s')
-				save_patches ^= true;
-
-			usleep(10000);
+			if (display_) {
+				int key = cvWaitKey(10)&0x00FF;
+				if(key == 27) { // ESC
+					nh_.shutdown();
+				}
+				if (key=='s') {
+					save_patches_ ^= true;
+				}
+			} else {
+				r.sleep();
+			}
+			ros::spinOnce();
 		}
 
 		return true;
+	}
+
+
+	void serviceThread()
+	{
+		ROS_INFO_STREAM("Starting thread " << boost::this_thread::get_id());
+		ros::NodeHandle n;
+
+		ros::Rate r(10);
+		while (n.ok()) {
+			service_queue_.callAvailable();
+			r.sleep();
+		}
 	}
 
 
@@ -1554,10 +1576,8 @@ public:
 
 int main(int argc, char **argv)
 {
-	ros::init(argc, argv);
+	ros::init(argc, argv,"outlet_spotting");
 	OutletSpotting spotter;
-
-
 	spotter.spin();
 
 	return 0;

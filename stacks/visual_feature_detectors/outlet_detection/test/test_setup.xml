@@ -2,15 +2,15 @@
 <launch>
 
 <!-- Stereo image processing -->
-  <group ns="stereo">
-    <param name="videre_mode" type="str" value="none"/>
-    <param name="do_colorize" type="bool" value="True"/>
-    <param name="do_rectify" type="bool" value="True"/>
-    <param name="do_stereo" type="bool" value="True"/>
-    <param name="do_calc_points" type="bool" value="True"/>
-    <param name="do_keep_coords" type="bool" value="True"/>
-  </group>
-  <node pkg="stereo_image_proc" type="stereoproc" respawn="false" />
+<group ns="stereo">
+    <node pkg="stereo_image_proc" type="stereoproc" respawn="false">
+        <param name="do_colorize" type="bool" value="True"/>
+        <param name="do_rectify" type="bool" value="True"/>
+        <param name="do_stereo" type="bool" value="True"/>
+        <param name="do_calc_points" type="bool" value="True"/>
+        <param name="do_keep_coords" type="bool" value="True"/>
+    </node>
+</group>
 
 <!-- detectors -->
 <node pkg="outlet_detection" name="outlet_spotting" type="outlet_spotting2" output="screen">

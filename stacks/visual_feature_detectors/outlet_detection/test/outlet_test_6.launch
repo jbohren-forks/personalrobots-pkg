@@ -2,7 +2,7 @@
     <include file="$(find outlet_detection)/test/test_setup.xml"/>
 
     <!-- play bag file -->
-    <node pkg="rosrecord" type="rosplay" args="-b 100  $(find outlet_detection)/test/outlet_test_6.bag"/>
+    <node pkg="rosrecord" type="rosplay" args="  $(find outlet_detection)/test/outlet_test_6.bag"/>
 
     <!-- run test  -->
     <test test-name="outlet_test_6" pkg="outlet_detection" type="detect_outlet_from_bag.py" args="$(find outlet_detection)/test/outlet_test_6.pose" />
