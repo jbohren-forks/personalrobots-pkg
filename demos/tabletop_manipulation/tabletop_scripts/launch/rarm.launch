@@ -1,7 +1,7 @@
 <launch>
   <include file="$(find pr2_defs)/pr2_planning_environment.launch" />
   <include file="$(find pr2_ik)/pr2_ik_rarm_node.launch"/>
-  <include file="$(find move_arm)/move_rarm.launch"/> 
+  <include file="$(find move_arm)/launch/move_rarm.launch"/> 
 
   <param name="r_arm_joint_trajectory_controller/r_shoulder_pan_joint/goal_reached_threshold" value="0.001" />
   <param name="r_arm_joint_trajectory_controller/r_shoulder_lift_joint/goal_reached_threshold" value="0.001" />
