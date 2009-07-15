@@ -1,7 +1,7 @@
 /*********************************************************************
  * Software License Agreement (BSD License)
  *
- *  Copyright (c) 2009, Daniel Munoz
+ *  Copyright (c) 2009, Willow Garage
  *  All rights reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
@@ -46,6 +46,46 @@ void SpectralShape::useCurvature()
     result_size_++;
     use_curvature_ = true;
   }
+}
+
+// --------------------------------------------------------------
+/* See function definition */
+// --------------------------------------------------------------
+void SpectralShape::compute(const robot_msgs::PointCloud& data,
+                            cloud_kdtree::KdTree& data_kdtree,
+                            const cv::Vector<robot_msgs::Point32*>& interest_pts,
+                            cv::Vector<cv::Vector<float> >& results)
+{
+  if (spectral_info_ == NULL)
+  {
+    if (analyzeInterestPoints(data, data_kdtree, interest_pts) < 0)
+    {
+      results.resize(interest_pts.size());
+      return;
+    }
+  }
+
+  computeFeatures(results);
+}
+
+// --------------------------------------------------------------
+/* See function definition */
+// --------------------------------------------------------------
+void SpectralShape::compute(const robot_msgs::PointCloud& data,
+                            cloud_kdtree::KdTree& data_kdtree,
+                            const cv::Vector<vector<int>*>& interest_region_indices,
+                            cv::Vector<cv::Vector<float> >& results)
+{
+  if (spectral_info_ == NULL)
+  {
+    if (analyzeInterestRegions(data, data_kdtree, interest_region_indices) < 0)
+    {
+      results.resize(interest_region_indices.size());
+      return;
+    }
+  }
+
+  computeFeatures(results);
 }
 
 // --------------------------------------------------------------

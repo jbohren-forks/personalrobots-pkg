@@ -77,6 +77,46 @@ void Orientation::useNormalOrientation(double ref_x, double ref_y, double ref_z)
 // --------------------------------------------------------------
 /* See function definition */
 // --------------------------------------------------------------
+void Orientation::compute(const robot_msgs::PointCloud& data,
+                          cloud_kdtree::KdTree& data_kdtree,
+                          const cv::Vector<robot_msgs::Point32*>& interest_pts,
+                          cv::Vector<cv::Vector<float> >& results)
+{
+  if (spectral_info_ == NULL)
+  {
+    if (analyzeInterestPoints(data, data_kdtree, interest_pts) < 0)
+    {
+      results.resize(interest_pts.size());
+      return;
+    }
+  }
+
+  computeFeatures(results);
+}
+
+// --------------------------------------------------------------
+/* See function definition */
+// --------------------------------------------------------------
+void Orientation::compute(const robot_msgs::PointCloud& data,
+                          cloud_kdtree::KdTree& data_kdtree,
+                          const cv::Vector<vector<int>*>& interest_region_indices,
+                          cv::Vector<cv::Vector<float> >& results)
+{
+  if (spectral_info_ == NULL)
+  {
+    if (analyzeInterestRegions(data, data_kdtree, interest_region_indices) < 0)
+    {
+      results.resize(interest_region_indices.size());
+      return;
+    }
+  }
+
+  computeFeatures(results);
+}
+
+// --------------------------------------------------------------
+/* See function definition */
+// --------------------------------------------------------------
 void Orientation::computeFeatures(cv::Vector<cv::Vector<float> >& results)
 {
 

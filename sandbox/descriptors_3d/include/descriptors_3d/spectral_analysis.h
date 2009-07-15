@@ -150,18 +150,14 @@ class SpectralAnalysis: public Descriptor3D
       return centroids_;
     }
 
-    virtual void compute(const robot_msgs::PointCloud& data,
-                         cloud_kdtree::KdTree& data_kdtree,
-                         const cv::Vector<robot_msgs::Point32*>& interest_pts,
-                         cv::Vector<cv::Vector<float> >& results);
-
-    virtual void compute(const robot_msgs::PointCloud& data,
-                         cloud_kdtree::KdTree& data_kdtree,
-                         const cv::Vector<vector<int>*>& interest_region_indices,
-                         cv::Vector<cv::Vector<float> >& results);
-
   protected:
-    virtual void computeFeatures(cv::Vector<cv::Vector<float> >& results) = 0;
+    int analyzeInterestPoints(const robot_msgs::PointCloud& data,
+                              cloud_kdtree::KdTree& data_kdtree,
+                              const cv::Vector<robot_msgs::Point32*>& interest_pts);
+
+    int analyzeInterestRegions(const robot_msgs::PointCloud& data,
+                               cloud_kdtree::KdTree& data_kdtree,
+                               const cv::Vector<vector<int>*>& interest_region_indices);
 
     SpectralAnalysis* spectral_info_;
 

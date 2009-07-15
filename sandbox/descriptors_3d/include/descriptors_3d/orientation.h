@@ -67,8 +67,18 @@ class Orientation: public SpectralAnalysis
 
     // TODO: use sensor location
 
+    virtual void compute(const robot_msgs::PointCloud& data,
+                         cloud_kdtree::KdTree& data_kdtree,
+                         const cv::Vector<robot_msgs::Point32*>& interest_pts,
+                         cv::Vector<cv::Vector<float> >& results);
+
+    virtual void compute(const robot_msgs::PointCloud& data,
+                         cloud_kdtree::KdTree& data_kdtree,
+                         const cv::Vector<vector<int>*>& interest_region_indices,
+                         cv::Vector<cv::Vector<float> >& results);
+
   protected:
-    virtual void computeFeatures(cv::Vector<cv::Vector<float> >& results);
+    void computeFeatures(cv::Vector<cv::Vector<float> >& results);
 
   private:
     bool ref_tangent_defined_;
