@@ -102,7 +102,7 @@ if __name__ == '__main__':
 
         query_srv = rospy.ServiceProxy(arm_query_topic, TrajectoryQuery)
         query_resp = query_srv.call(TrajectoryQueryRequest(0))
-	head_publisher = rospy.Publisher('head_controller/set_command_array', JointCmd)
+	head_publisher = rospy.Publisher('head_controller/command', JointStates)
 
 	print "Headers"
 	print headers

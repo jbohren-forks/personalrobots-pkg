@@ -8,6 +8,7 @@ from std_msgs.msg import Empty
 from pr2_mechanism_controllers.srv import *
 from pr2_mechanism_controllers.msg import *
 from robot_msgs.msg import *
+from mechanism_msgs import JointState, JointStates
 
 cmd_count = 0
 
@@ -36,7 +37,17 @@ def goto_next_callback(data, callback_args):
 
 		print "  ***  Head Command ***"		
 		print head_cmd[cmd_count]
-		head_pub.publish(JointCmd(['head_pan_joint', 'head_tilt_joint'],[0.0,0.0],head_cmd[cmd_count],[0.0, 0.0],[0.0, 0.0]))
+    ps = JointState()
+    ps.name = 'head_pan_joint'
+    ps.position = head_cmd[cmd_count][0]
+    ts = JointState()
+    ts.name ='head_tilt_joint'
+    ts.position = head_cmd[cmd_count][1]
+    js = JointStates()
+    js.joints = [ps, ts]
+    head_angles.publish(js)
+
+		#head_pub.publish(JointCmd(['head_pan_joint', 'head_tilt_joint'],[0.0,0.0],head_cmd[cmd_count],[0.0, 0.0],[0.0, 0.0]))
 
 	else :
 		print "No More Commands left in queue!"
@@ -72,7 +83,7 @@ if __name__ == '__main__':
 
         query_srv = rospy.ServiceProxy(arm_query_topic, TrajectoryQuery)
         query_resp = query_srv.call(TrajectoryQueryRequest(0))
-	head_publisher = rospy.Publisher('head_controller/set_command_array', JointCmd)
+	head_publisher = rospy.Publisher('head_controller/command', JointStates)
 
 	print "Headers"
 	print headers
