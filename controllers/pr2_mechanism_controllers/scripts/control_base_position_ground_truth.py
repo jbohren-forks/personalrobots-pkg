@@ -40,7 +40,7 @@ from time import sleep
 
 import rospy
 from robot_msgs.msg import PointStamped, Point
-from robot_msgs.msg import JointCmd
+
 
 def control_base_pose_odom_frame(x,y,w):
     head_angles = rospy.Publisher('ground_truth_controller/set_cmd', Point)
