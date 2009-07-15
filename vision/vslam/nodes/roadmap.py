@@ -39,6 +39,8 @@ import time
 import getopt
 
 from math import *
+import matplotlib
+matplotlib.use('cairo.pdf')
 import networkx as nx
 
 from stereo_utils.stereo import DenseStereoFrame, SparseStereoFrame
@@ -60,8 +62,6 @@ import time
 import math
 
 import vslam.msg
-
-import networkx as nx
 
 class RoadmapServer:
     def __init__(self, args):
