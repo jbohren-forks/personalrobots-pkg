@@ -15,7 +15,7 @@ def joy_callback(data, pub):
 
 if __name__ == '__main__':
     rospy.init_node('joy_head_commander', anonymous=False)
-    head_publisher = rospy.Publisher('head_controller/head_track_point', PointStamped)
+    head_publisher = rospy.Publisher('head_controller/point_head', PointStamped)
 
 
     sub = rospy.Subscriber("/joy", Joy, joy_callback,
