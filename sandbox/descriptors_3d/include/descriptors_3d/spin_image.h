@@ -37,6 +37,7 @@
 #include <vector>
 
 #include <Eigen/Core>
+#include <Eigen/Geometry>
 
 #include <opencv/cv.h>
 #include <opencv/cxcore.h>
