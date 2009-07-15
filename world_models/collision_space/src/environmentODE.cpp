@@ -37,6 +37,7 @@
 #include "collision_space/environmentODE.h"
 #include <cassert>
 #include <cstdio>
+#include <cmath>
 #include <algorithm>
 #include <map>
 
@@ -110,21 +111,60 @@ dGeomID collision_space::EnvironmentModelODE::createODEGeom(dSpaceID space, ODES
 	break;
     case shapes::MESH:
 	{
-	    dTriMeshDataID data = dGeomTriMeshDataCreate();
 	    const shapes::Mesh *mesh = static_cast<const shapes::Mesh*>(shape);
-	    int icount = mesh->triangleCount * 3;
-	    dTriIndex *indices = new dTriIndex[icount];
-	    for (int i = 0 ; i < icount ; ++i)
-		indices[i] = mesh->triangles[i];
-	    double *vertices = new double[mesh->vertexCount];
-	    for (unsigned int i = 0 ; i < mesh->vertexCount ; ++i)
-		vertices[i] = mesh->vertices[i];
-	    dGeomTriMeshDataBuildDouble(data, vertices, sizeof(double) * 3, mesh->vertexCount, indices, icount, sizeof(dTriIndex) * 3);
-	    g = dCreateTriMesh(space, data, NULL, NULL, NULL);
-	    storage.meshVertices.push_back(vertices);
-	    storage.meshIndices.push_back(indices);
-	    storage.meshData.push_back(data);
-	    /// \todo : add padding & scaling for meshes
+	    if (mesh->vertexCount > 0 && mesh->triangleCount > 0)
+	    {		
+		// copy indices for ODE
+		int icount = mesh->triangleCount * 3;
+		dTriIndex *indices = new dTriIndex[icount];
+		for (int i = 0 ; i < icount ; ++i)
+		    indices[i] = mesh->triangles[i];
+		
+		// copt vertices for ODE
+		double *vertices = new double[mesh->vertexCount* 3];
+		double sx = 0.0, sy = 0.0, sz = 0.0;
+		for (unsigned int i = 0 ; i < mesh->vertexCount ; ++i)
+		{
+		    unsigned int i3 = i * 3;
+		    vertices[i3] = mesh->vertices[i3];
+		    vertices[i3 + 1] = mesh->vertices[i3 + 1];
+		    vertices[i3 + 2] = mesh->vertices[i3 + 2];
+		    sx += vertices[i3];
+		    sy += vertices[i3 + 1];
+		    sz += vertices[i3 + 2];
+		}
+		// the center of the mesh
+		sx /= (double)mesh->vertexCount;
+		sy /= (double)mesh->vertexCount;
+		sz /= (double)mesh->vertexCount;
+
+		// scale the mesh
+		for (unsigned int i = 0 ; i < mesh->vertexCount ; ++i)
+		{
+		    unsigned int i3 = i * 3;
+		    
+		    // vector from center to the vertex
+		    double dx = vertices[i3] - sx;
+		    double dy = vertices[i3 + 1] - sy;
+		    double dz = vertices[i3 + 2] - sz;
+		    
+		    // length of vector
+		    double norm = sqrt(dx * dx + dy * dy + dz * dz);
+		    
+		    // the new distance of the vertex from the center
+		    double fact = scale + padding/norm;
+		    vertices[i3] = sx + dx * fact;
+		    vertices[i3 + 1] = sy + dy * fact;
+		    vertices[i3 + 2] = sz + dz * fact;		    
+		}
+		
+		dTriMeshDataID data = dGeomTriMeshDataCreate();
+		dGeomTriMeshDataBuildDouble(data, vertices, sizeof(double) * 3, mesh->vertexCount, indices, icount, sizeof(dTriIndex) * 3);
+		g = dCreateTriMesh(space, data, NULL, NULL, NULL);
+		storage.meshVertices.push_back(vertices);
+		storage.meshIndices.push_back(indices);
+		storage.meshData.push_back(data);
+	    }
 	}
 	
     default:

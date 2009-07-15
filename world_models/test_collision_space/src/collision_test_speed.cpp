@@ -45,7 +45,7 @@ public:
     CollisionTestSpeed(void) 
     {
 	vmPub_ = nh_.advertise<visualization_msgs::Marker>("visualization_marker", 10240);
-	cm_ = new planning_environment::CollisionModels("robot_description", 1.0, 0.0);
+	cm_ = new planning_environment::CollisionModels("robot_description", 1.0, 0.02);
 	id_ = 1;
     }
 
