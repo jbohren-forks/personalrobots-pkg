@@ -82,8 +82,7 @@ int main(int argc,char** argv)
     sprintf(pathname, "mkdir %s", output_path);
     system(pathname);
     
-    if(outlet_template.get_count() == 4 && outlet_template.get_color() == outletOrange)
-    {
+#if !defined(_GHT)
         sprintf(pathname, "mkdir %s/output_filt", output_path);
         system(pathname);
         
@@ -98,9 +97,7 @@ int main(int argc,char** argv)
         
         sprintf(pathname, "mkdir %s/warped", output_path);
         system(pathname);
-    }
-    else
-    {
+#else
         sprintf(pathname, "mkdir %s/output_filt", output_path);
         system(pathname);
 
@@ -112,7 +109,7 @@ int main(int argc,char** argv)
         
         sprintf(pathname, "mkdir %s/features_filtered", output_path);
         system(pathname);
-    }
+#endif
 #endif //_VERBOSE
 		
 	printf("Reading config file...\n");
