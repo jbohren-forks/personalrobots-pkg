@@ -9,7 +9,19 @@ fi
 cd `rospack find trex`
 
 # PLASMA_HOME is required to build the PLASMA NDDL.jar
-source `rospack find trex`/devConfig
+if [ "$ROS_TREX_PLASMA_WILLOW" = "1" ] ; then
+    echo "Using willow PLASMA..."
+    if [ -a PLASMA_WILLOW ] ; then
+	echo "PLASMA Willow exists."
+	svn up PLASMA_WILLOW
+    else
+	echo "Download plasma willow"
+	./checkout_willow_plasma
+    fi
+    source `rospack find trex`/devConfigPlasmaWillow
+else
+    source `rospack find trex`/devConfig
+fi
 
 cd `rospack find trex`/TREX
 
