@@ -1,0 +1,4 @@
+lifelong_mapping/TopicInfo[] topics
+uint32[]                     node_ids
+---
+lifelong_mapping/TopicHistory[] matches

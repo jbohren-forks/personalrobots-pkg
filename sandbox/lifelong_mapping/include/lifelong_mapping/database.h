@@ -21,6 +21,8 @@ public:
   uint32_t nextId();
 
   bool get(ros::Message& msg, uint32_t item_id, std::string& topic, uint32_t& node_id);
+
+  // query
   
 private:
   typedef boost::scoped_ptr<Db> DbPtr;
