@@ -132,6 +132,11 @@ void JointPDController::getCommand(robot_msgs::JointCmd & cmd)
   pthread_mutex_unlock(&joint_pd_controller_lock_);
 }
 
+void JointPDController::reset()
+{
+  pid_controller_.reset();
+}
+
 void JointPDController::update()
 {
   double error(0), error_dot(0);

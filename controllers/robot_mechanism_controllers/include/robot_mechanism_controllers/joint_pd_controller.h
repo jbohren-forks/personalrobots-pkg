@@ -108,6 +108,11 @@ namespace controller
     std::string getJointName();
     mechanism::JointState *joint_state_;        /**< Joint we're controlling. */
 
+    /*!
+     * \brief Reset the internal PID controllers
+     */
+    void reset(); 
+
   private:
 
     mechanism::RobotState *robot_;             /**< Pointer to robot structure. */
