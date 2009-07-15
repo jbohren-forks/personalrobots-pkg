@@ -2,7 +2,17 @@
   <include file="$(find pr2_alpha)/$(env ROBOT).machine" />
   <include file="$(find door_demos_gazebo)/launch/pr2_and_door.launch" />
   <include file="$(find milestone2_actions)/milestone2.launch" />
+
+  <!-- assign localization for amcl -->
   <node pkg="test_2dnav_gazebo" type="set_goal.py" args="-amcl 14.75 22.125 -3.142 -x 14.75 -y 22.125 -t -3.142" output="screen" />
-  <include file="$(find milestone2_executive)/door_domain_executive.launch" />
+
+  <!-- visualization
   <include file="$(find 2dnav_pr2)/rviz/rviz_move_base.launch" />
+  -->
+
+  <!-- use one of the following executives
+  <include file="$(find milestone2_executive)/door_domain_executive.launch" />
+  <node pkg="trex_pr2" type="trexfast" output="screen" />
+  -->
+  <node pkg="doors_core" type="test_executive" output="screen" />
 </launch>
