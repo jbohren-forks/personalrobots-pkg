@@ -73,10 +73,15 @@ void printHelp(void)
     std::cout << "   - <config>                : same as show(<config>)" << std::endl;
 }
 
-void printJoints(const std::vector<std::string> &names)
+void printJoints(const planning_environment::KinematicModelStateMonitor &km, const std::vector<std::string> &names)
 {
+    const planning_models::KinematicModel::ModelInfo &mi = km.getKinematicModel()->getModelInfo();
+    
     for (unsigned int i = 0 ; i < names.size(); ++i)
-	std::cout << "  " << i << " = " << names[i] << std::endl;
+    {
+	int idx = km.getKinematicModel()->getJointIndex(names[i]);
+	std::cout << "  " << i << " = " << names[i] << "  [" << mi.stateBounds[idx * 2] << ", " << mi.stateBounds[idx * 2 + 1] << "]" << std::endl;
+    }
 }
 
 void printPose(const btTransform &p)
@@ -225,7 +230,7 @@ int main(int argc, char **argv)
     km.waitForState();
     
     std::cout << std::endl << std::endl << "Using joints:" << std::endl;
-    printJoints(names);
+    printJoints(km, names);
     std::cout << std::endl;
     double allowed_time = 10.0;
 
@@ -247,7 +252,7 @@ int main(int argc, char **argv)
 	    printHelp();
 	else
 	if (cmd == "list")
-	    printJoints(names);
+	    printJoints(km, names);
 	else
 	if (cmd == "quit")
 	    break;

@@ -18,8 +18,5 @@ rospack_link_boost(arm_cmd_line thread)
 
 
 # simple tests
-rospack_add_executable(move_to_position test/move_to_position.cpp)
-rospack_link_boost(move_to_position thread)
-
 rospack_add_executable(oscillate_move test/oscillate_move.cpp)
 rospack_link_boost(oscillate_move thread)
