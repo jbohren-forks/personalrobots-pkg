@@ -58,13 +58,70 @@ macro(create_trex_lib target files)
 endmacro(create_trex_lib)
 
 
+
+
+
+# A wrapper around add_executable(), using info from the rospack
+# invocation to set up compiling and linking.
+macro(rospack_add_executable_trex_mod exe)
+  add_executable(${ARGV})
+
+  # Add explicit dependency of each file on our manifest.xml and those of
+  # our dependencies.
+  # The SOURCES property seems to be available only since 2.6.  Yar.
+  #get_target_property(_srclist ${exe} SOURCES) 
+  set(_srclist ${ARGN})
+  foreach(_src ${_srclist}) 
+    # Handle the case where the second argument is EXCLUDE_FROM_ALL, not a
+    # source file.  Only have to do this because we can't get the SOURCES
+    # property.
+    if(NOT _src STREQUAL EXCLUDE_FROM_ALL)
+      find_file(file_name ${_src} ${CMAKE_CURRENT_SOURCE_DIR} /)
+      add_file_dependencies(${file_name} ${ROS_MANIFEST_LIST}) 
+    endif(NOT _src STREQUAL EXCLUDE_FROM_ALL)
+  endforeach(_src)
+
+  rospack_add_compile_flags(${exe} ${${PROJECT_NAME}_CFLAGS_OTHER})
+  rospack_add_link_flags(${exe} ${${PROJECT_NAME}_LDFLAGS_OTHER})
+
+  if(ROS_BUILD_STATIC_EXES AND ${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
+    # This will probably only work on Linux.  The LINK_SEARCH_END_STATIC
+    # property should be sufficient, but it doesn't appear to work
+    # properly.
+    rospack_add_link_flags(${exe} -static-libgcc -Wl,-Bstatic)
+  endif(ROS_BUILD_STATIC_EXES AND ${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
+
+  target_link_libraries(${exe} ${${PROJECT_NAME}_LIBRARIES})
+
+  # Add ROS-wide compile and link flags (usually things like -Wall).  These
+  # are set in rosconfig.cmake.
+  rospack_add_compile_flags(${exe} ${ROS_COMPILE_FLAGS})
+  rospack_add_link_flags(${exe} ${ROS_LINK_FLAGS})
+
+  # Make sure that any messages get generated prior to building this target
+  add_dependencies(${exe} rospack_genmsg)
+  add_dependencies(${exe} rospack_gensrv)
+
+  # If we're linking boost statically, we have to force allow multiple definitions because
+  # rospack does not remove duplicates
+  if ("$ENV{ROS_BOOST_LINK}" STREQUAL "static")
+    rospack_add_link_flags(${exe} "-Wl,--allow-multiple-definition")
+  endif("$ENV{ROS_BOOST_LINK}" STREQUAL "static")
+
+endmacro(rospack_add_executable_trex_mod)
+
+
+
 # Create trex executables
-macro(create_trex_executables fast debug file)
+macro(create_trex_executables fast debug)
+  find_ros_package(trex_ros)
+  set(file ${trex_ros_PACKAGE_PATH}/src/executable_main.cpp)
+
   if($ENV{ROS_TREX_DEBUG} MATCHES 1)
     message("BUILDING TREX DEBUG")
     # trexdebug builds with a large number of run-time error checking running which is expensive
     # but gives good feedback in discovering problems.
-    rospack_add_executable(${debug} ${file})
+    rospack_add_executable_trex_mod(${debug} ${file})
     rospack_link_boost(${debug} thread)
     rospack_add_gtest_build_flags(${debug})
     trex_declare_debug(${debug})
@@ -76,7 +133,7 @@ macro(create_trex_executables fast debug file)
 
 
   # trexfast is about an order of magnitude faster than trexdebug
-  rospack_add_executable(${fast} ${file})
+  rospack_add_executable_trex_mod(${fast} ${file})
   rospack_link_boost(${fast} thread)
   rospack_add_gtest_build_flags(${fast})
   trex_declare_fast(${fast})
