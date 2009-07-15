@@ -153,7 +153,7 @@ private:
     AddEdgeToRoadmap (RosVisualNavigator* nav): nav(nav) {}
     void operator() (Edge e)
     {
-      nav->roadmap_->addEdge(nav->getInternalId(e.node0), nav->getInternalId(e.node1));
+      nav->roadmap_->addEdge(nav->getInternalId(e.node0), nav->getInternalId(e.node1), e.length);
     }
     RosVisualNavigator* nav;
   };

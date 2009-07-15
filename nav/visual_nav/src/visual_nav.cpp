@@ -70,7 +70,8 @@ inline double relPoseLength (const Transform2D& rel_pose)
   return sqrt(rel_pose.dx*rel_pose.dx+rel_pose.dy*rel_pose.dy);
 }
 
-EdgeInfo::EdgeInfo (const Pose& p1, const Pose& p2) : length(distance(p1,p2))
+
+EdgeInfo::EdgeInfo (const double length) : length(length)
 {
 }
 
@@ -93,7 +94,7 @@ NodeId VisualNavRoadmap::RoadmapImpl::addNode (const Pose& pose)
   return next_node_id_++;
 }
 
-void VisualNavRoadmap::RoadmapImpl::addEdge (const NodeId i, const NodeId j)
+void VisualNavRoadmap::RoadmapImpl::addEdge (const NodeId i, const NodeId j, const double length)
 {
   // Lookup nodes
   RoadmapVertex v = idVertex(i);
@@ -108,7 +109,7 @@ void VisualNavRoadmap::RoadmapImpl::addEdge (const NodeId i, const NodeId j)
   }
 
   // Add
-  add_edge (v, w, EdgeInfo(graph_[v].pose, graph_[w].pose), graph_);
+  add_edge (v, w, EdgeInfo(length), graph_);
   ROS_DEBUG_STREAM_NAMED("api", "Added edge between nodes " << i << " and " << j);
 }
 
@@ -284,9 +285,9 @@ NodeId VisualNavRoadmap::addNode (const double x, const double y, const double t
   return roadmap_impl_->addNode(Pose(x,y,theta));
 }
 
-void VisualNavRoadmap::addEdge (const NodeId i, const NodeId j)
+void VisualNavRoadmap::addEdge (const NodeId i, const NodeId j, const double length)
 {
-  roadmap_impl_->addEdge(i, j);
+  roadmap_impl_->addEdge(i, j, length);
 }
 
 void VisualNavRoadmap::attachScan (const NodeId i, const PointSet& scan, const Pose& pose_when_scanned)
@@ -355,8 +356,9 @@ RoadmapPtr readRoadmapFromFile (const string& filename)
     stream >> num_edges;
     for (uint j=0; j<num_edges; ++j) {
       NodeId neighbor;
-      stream >> neighbor;
-      roadmap->addEdge (i, neighbor);
+      double length;
+      stream >> neighbor >> length;
+      roadmap->addEdge (i, neighbor, length);
       ROS_DEBUG_STREAM_NAMED ("file", " Adding edge between " << i << " and " << neighbor);
     }
   }

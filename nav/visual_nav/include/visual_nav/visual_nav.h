@@ -77,11 +77,11 @@ public:
   /// \return The id of the new node.  It is guaranteed the id returns 0 on the first call to addNode, and increases by 1 on each call.
   NodeId addNode (double x, double y, double theta=0.0);
 
-  /// \post There is an edge between nodes \a i and \a j with no label
+  /// \post There is an edge between nodes \a i and \a j with length \a length
   /// \throws UnknownNodeId
   /// \throws SelfEdgeException
   /// \throws ExistingEdgeException
-  void addEdge (NodeId i, NodeId j);
+  void addEdge (NodeId i, NodeId j, double length);
 
   /// \post \a scan is attached to node \a i.  Any existing scan is overwritten.
   /// \param scan A vector of points

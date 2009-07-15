@@ -65,7 +65,7 @@ struct NodeInfo
 
 struct EdgeInfo
 {
-  EdgeInfo(const Pose& p1, const Pose& p2);
+  EdgeInfo(double length);
   double length;
 };
 
@@ -108,7 +108,7 @@ public:
   RoadmapImpl();
 
   NodeId addNode (const Pose& pos);
-  void addEdge (NodeId i, NodeId j);
+  void addEdge (NodeId i, NodeId j, double length);
   void attachScan (NodeId i, const PointSet& scan, const Pose& pose_when_scanned);
   PathPtr pathToGoal (NodeId start_id, NodeId goal_id);
   Pose pathExitPoint (PathPtr p, double r) const;

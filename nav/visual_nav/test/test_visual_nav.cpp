@@ -77,15 +77,15 @@ TEST(VisualNav, BasicAPI)
   EXPECT_EQ(0u, points.size());
   
 
-  r.addEdge(2,1);
-  r.addEdge(0,2);
+  r.addEdge(2,1,3.606);
+  r.addEdge(0,2,2.7);
   r.addNode(1,2.5);
-  r.addEdge(4,2);
-  r.addEdge(1,4);
+  r.addEdge(4,2,3.04);
+  r.addEdge(1,4,3.64);
   EXPECT_EQ(r.addNode(4,7), 5);
   
 
-  r.addEdge(1,5);
+  r.addEdge(1,5,2.234);
   PathPtr path1 = r.pathToGoal(0,5);
   int expected_path[4] = {0, 2, 1, 5};
   EXPECT_TRUE(*path1==Path(expected_path, expected_path+4));
@@ -94,7 +94,7 @@ TEST(VisualNav, BasicAPI)
   EXPECT_EQ(r.pathExitPoint(path1, 3.0), Pose(2,6,0));
   EXPECT_EQ(r.pathExitPoint(path1, 4.7), Pose(2,6,0));
 
-  r.addEdge(0,4);
+  r.addEdge(0,4,1.64);
   PathPtr path2 = r.pathToGoal(0,5);
   int expected_path2[4] = {0, 4, 1, 5};
   EXPECT_TRUE(*path2==Path(expected_path2, expected_path2+4));
