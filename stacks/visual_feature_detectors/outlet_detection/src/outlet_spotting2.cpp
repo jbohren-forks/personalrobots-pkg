@@ -192,7 +192,7 @@ public:
 		}
 
 		marker_pub_ = nh_.advertise<visualization_msgs::Marker>("visualization_marker",1);
-    	head_pub_ = nh_.advertise<robot_msgs::PointStamped>(head_controller_ + "/head_track_point",10);
+    	head_pub_ = nh_.advertise<robot_msgs::PointStamped>(head_controller_ + "/point_head",10);
 
 
 		ros::AdvertiseServiceOptions service_opts = ros::AdvertiseServiceOptions::create<outlet_detection::OutletDetection>("~coarse_outlet_detect",

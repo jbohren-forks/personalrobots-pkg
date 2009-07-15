@@ -58,8 +58,7 @@
 #include "robot_msgs/Point32.h"
 #include "robot_msgs/PoseStamped.h"
 #include "visualization_msgs/Marker.h"
-#include <robot_msgs/JointCmd.h>
-#include <robot_srvs/GetJointCmd.h>
+
 
 #include <point_cloud_mapping/geometry/angles.h>
 #include <point_cloud_mapping/sample_consensus/sac_model_plane.h>
@@ -205,7 +204,7 @@ public:
 		}
 
         advertise<visualization_msgs::Marker>("visualization_marker", 1);
-    	  advertise<robot_msgs::JointCmd>(head_controller_ + "/set_command_array",10);
+    	  advertise<robot_msgs::PointStamped>(head_controller_ + "/point_head",10);
         advertiseService("~coarse_outlet_detect", &OutletSpotting::outletSpottingService, this);
 
         if (debug) {
@@ -1242,24 +1241,20 @@ public:
 	}
 
 
-	void turnHead(double panAngle, double tiltAngle)
+	void turnHead(float horizontalAngle, float verticalAngle)
 	{
+    //	if (horizontalAngle==0 && verticalAngle==0) return;
+		PointStamped point;
 
-          robot_msgs::JointCmd joint_cmds;
-          joint_cmds.set_names_size(2);
-          joint_cmds.set_positions_size(2);
-          joint_cmds.names[0] = "head_pan_joint";
-          joint_cmds.names[1] = "head_tilt_joint";
+		point.header.stamp = ros::Time::now();
+		point.header.frame_id = "torso_lift_link";
 
-          joint_cmds.positions[0]=panAngle;
-          joint_cmds.positions[1]=tiltAngle;
+		point.point.x = 1;
+		point.point.y = tan(M_PI*horizontalAngle/180);
+		point.point.z = tan(M_PI*verticalAngle/180);
 
-          for(int i=0; i<10; i++)
-            {
-
-              publish(head_controller_ + "/set_command_array", joint_cmds);
-            }
-          ros::Duration(1.0).sleep();
+		publish(head_controller_ + "/point_head", point);
+		ros::Duration(1.0).sleep();
 	}
 
 
@@ -1293,62 +1288,31 @@ public:
 
 
 	bool runOutletSpotter(const robot_msgs::PointStamped& request, robot_msgs::PoseStamped& pose)
-    {
-        bool found = false;
-        bool turning_head = true;
-        subscribeToData();
-        robot_srvs::GetJointCmd::Request req_cmd;
-        robot_srvs::GetJointCmd::Response res_cmd;
+  {
+    bool found = false;
+    subscribeToData();
 
-        if (!ros::service::call(head_controller_ + "/get_command_array", req_cmd, res_cmd))
-        {
-            ROS_ERROR("Outlet Spotting failed to get last commanded head positions.");
-            turning_head = false;
-                //return found;
-        }
+		//		float directions[][2] = { {0,0}, {-15,-10}, {0,-10}, {15,-10}, {15,0}, {0,0}, {-15,0,},{-15,10}, {0,10},{15,10} };
+		float directions[][2] = {{0, 0},{0, -10},{0, 10},{0, -20},{0, 20},{-10, 0},{-10, -10},
+					 {-10, 10},{-10, -20},{-10, 20},{10, 0},{10, -10},{10, 10},{10, -20},
+					 {10, 20},{-20, 0},{-20, -10},{-20, 10},{-20, -20},{-20, 20},{20, 0},
+					 {20, -10},{20, 10},{20, -20},{20, 20}};
 
 
+		for (size_t k=0; k<sizeof(directions)/sizeof(directions[0]); ++k)
+		{
+			turnHead(directions[k][0],directions[k][1]);
+			found = runDetectLoop(pose);
 
-        double panOrig, tiltOrig;
-        if (turning_head) {
-            if(res_cmd.command.names[0]=="head_pan_joint")
-            {
-                panOrig=res_cmd.command.positions[0];
-                tiltOrig=res_cmd.command.positions[1];
-            }
-            else
-            {
-                panOrig=res_cmd.command.positions[1];
-                tiltOrig=res_cmd.command.positions[0];
-            }
-        }
+			if (found) break;
+		}
 
-        double directions[][2] = { {0,0}, {-15,-10}, {0,-10}, {15,-10}, {15,0}, {0,0}, {-15,0},{-15,10}, {0,10},{15,10} };
+		unsubscribeFromData();
 
-        for (size_t k=0; k<sizeof(directions)/sizeof(directions[0]); ++k)
-        {
+//		showMarkers(pose);
 
-            double panAngle = panOrig + directions[k][0]*M_PI/180.0;
-            double tiltAngle = tiltOrig + directions[k][1]*M_PI/180.0;
-
-            if (turning_head) {
-                turnHead(panAngle,tiltAngle);
-            }
-            found = runDetectLoop(pose);
-
-            if (found){
-
-                break;
-            }
-
-        }
-
-        unsubscribeFromData();
-
-        showMarkers(pose);
-
-        return found;
-    }
+		return found;
+  }
 
 
 
