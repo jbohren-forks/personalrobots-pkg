@@ -11,7 +11,7 @@ BOOST_INCLUDE =$(shell rosboost-cfg --include_dirs)
 EIGEN2_INCLUDE_DIR=`rospack find eigen`/build/eigen2/
 TINYXML_INCLUDE_DIR=`rospack find tinyxml`/include/
 CMAKE_ARGS = -DCMAKE_INSTALL_PREFIX=$(PWD)/$(INSTALL_DIR)/ \
-		-DPYTHON_BINDINGS=OFF \
+		-DPYTHON_BINDINGS=ON \
 		-DBUILD_MODELS=OFF \
 		-DENABLE_TESTS=ON \
 		-DBOOST:STRING=$(BOOST_INCLUDE)\
@@ -21,18 +21,18 @@ CMAKE_ARGS = -DCMAKE_INSTALL_PREFIX=$(PWD)/$(INSTALL_DIR)/ \
 
 include $(shell rospack find mk)/svn_checkout.mk
 
-installed: $(SVN_DIR) patched Makefile
+installed: wiped $(SVN_DIR) Makefile
 	-mkdir -p $(SVN_DIR)/build
 	cd $(SVN_DIR)/build && $(CMAKE) $(CMAKE_ARGS) ..
 	cd $(SVN_DIR)/build && make $(ROS_PARALLEL_JOBS) && make install
 	if [ `uname` = Darwin ]; then \
 		install_name_tool -id `rospack find kdl`/kdl/lib/liborocos-kdl.1.0.dylib kdl/lib/liborocos-kdl.1.0.dylib; \
 	fi
+	ln -s `rospack find kdl`/kdl/lib/`readlink \`which python\`` `rospack find kdl`/kdl/lib/python; \
 	touch installed
 
-wiped: Makefile
+wiped: Makefile $(SVN_PATCH)
 	make wipe
-	touch wiped
 
 clean:
 	rm -rf $(INSTALL_DIR)
@@ -42,3 +42,4 @@ clean:
 wipe: 	clean
 	rm -rf $(SVN_DIR)
 	rm -rf $(OLD_SVN_DIR)
+	touch wiped

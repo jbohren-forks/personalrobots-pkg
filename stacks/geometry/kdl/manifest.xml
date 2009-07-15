@@ -12,6 +12,7 @@ in a way that can be managed by the ROS dependency system.
 <export>
   <cpp cflags="-I${prefix}/kdl/include" lflags="-Wl,-rpath,${prefix}/kdl/lib  -L${prefix}/kdl/lib -lorocos-kdl"/>
   <doxymaker external="http://www.orocos.org/kdl" />
+  <python path="${prefix}/kdl/lib/python/site-packages"  />
 </export>
 <sysdepend os="ubuntu" version="7.04-feisty" package="subversion"/>
 <sysdepend os="ubuntu" version="8.04-hardy" package="subversion"/>
