@@ -125,7 +125,7 @@ void PR2GripperTransmission::computeGapStates(
   arg                 = arg > TOL ? arg : TOL; //LIMIT: CAP u at TOL artificially
 
   double du_dMR       = -(L0_ * screw_reduction_)/(gear_ratio_*coef_a_*coef_b_) // d(arg)/d(MR)
-                               -screw_reduction_*MR*pow(screw_reduction_/gear_ratio_,2);
+                        -MR/(coef_a_*coef_b_)*pow(screw_reduction_/gear_ratio_,2);
 
   dtheta_dMR          = -1.0/sqrt(arg) * du_dMR; // derivative of acos
 
