@@ -34,8 +34,9 @@
 #include <kdl/jntarray.hpp>
 #include <kdl/chainfksolverpos_recursive.hpp>
 #include <voxel3d/voxel3d.h>
-#include "boost/scoped_ptr.hpp"
 #include "boost/shared_ptr.hpp"
+// #include <yaml-cpp/yaml.h>
+#include <sbpl_pm_wrapper/pm_wrapper.h>
 
 #ifndef __ENVIRONMENT_ROBARM3D_H_
 #define __ENVIRONMENT_ROBARM3D_H_
@@ -44,14 +45,14 @@
 
 #define UNIFORM_COST 1      // all the joint actions have the same costs when set
 
-#define NUM_TRANS_MATRICES 1440 //precomputed matrices
+#define NUM_TRANS_MATRICES 360 //precomputed matrices
 
 
 /**
 
 @mainpage
 
-Motion planner for Robotic Arm based on the SBPL. It is capable of finding the shortest path to multiple 6 DoF destinations.
+A motion planner for a manipulator based on the SBPL. It is capable of finding the shortest path to multiple 6 DoF destinations or a joint configuration.
 
 
 @htmlinclude manifest.html
@@ -100,6 +101,22 @@ typedef struct GOAL_CONFIGURATION
   std::vector <double> tolerance_below;
 } GoalConfig;
 
+typedef struct ARM_LINK
+{
+  short unsigned int joint1;
+  short unsigned int joint2;
+  double radius;
+} arm_link;
+
+typedef struct JOINT
+{
+  std::string name;
+  double positive_limit;
+  double negative_limit;
+  bool cont;
+  double axis[3];
+} joint;
+
 /** struct that contains robot arm physical configuration & description of the environment */
 typedef struct ENV_ROBARM_CONFIG
 {
@@ -134,7 +151,6 @@ typedef struct ENV_ROBARM_CONFIG
 
     //flag determines if the environment has been initialized or not
     bool bInitialized;
-
     /*------------- Heuristic & Collision Checking -------------*/
     char*** Grid3D;
     char*** LowResGrid3D;
@@ -180,6 +196,8 @@ typedef struct ENV_ROBARM_CONFIG
     double PosMotorLimits[NUMOFLINKS];
     double NegMotorLimits[NUMOFLINKS]; //must be negative values
 
+    std::vector <joint> joints;
+
     //joint angle discretization
     double angledelta[NUMOFLINKS];
     int anglevals[NUMOFLINKS];
@@ -187,6 +205,12 @@ typedef struct ENV_ROBARM_CONFIG
     // temporary hack
     int arm_length;
 
+    std::vector <double> link_radius;
+
+    int gripper_radius;
+    int forearm_radius;
+    int upper_arm_radius;
+	
     //for kinematic library use
     KDL::JntArray jnt_pos_in;
     KDL::Frame p_out;
@@ -198,6 +222,7 @@ typedef struct ENV_ROBARM_CONFIG
     //goals
     bool bGoalIsSet;
     bool PlanInJointSpace;
+    std::vector <bool> uselessActions;
     std::vector <GoalPos> EndEffGoals;
     std::vector <GoalConfig> JointSpaceGoals;
     std::vector <std::vector <double> > ParsedGoals;
@@ -226,8 +251,10 @@ typedef struct ENV_ROBARM_CONFIG
     double smoothing_weight;
     double gripper_orientation_moe; //gripper orientation margin of error
     double grasped_object_length_m;
-    bool default_collision_checker;
+    bool use_voxel3d_occupancy_grid;
     double ApplyRPYCost_m;
+    bool use_selective_actions;
+    bool exact_gripper_collision_checking;
 
 /* Motion Primitives */
     //successor actions
@@ -236,6 +263,7 @@ typedef struct ENV_ROBARM_CONFIG
     int nLowResActions;
     int ** ActiontoActionCosts;
     int HighResActionsThreshold_c;
+    double HighResActionsThreshold_r;
 
 /* Costs */
     //action costs - TODO change them to integers
@@ -302,10 +330,10 @@ class EnvironmentROBARM3D: public DiscreteSpaceInformation
     bool InitializeMDPCfg(MDPConfig *MDPCfg);
     /*!
      * @brief SetEnvParameter allows you to change parameters before the environment is initialized.
-     * @param parameter name of parameter to change
+     * @param param name of parameter to change
      * @param value value to set parameter to
      */
-    bool SetEnvParameter(char* parameter, double value);
+    bool SetEnvParameter(std::string param, double value);
 
     /*!
      * @brief Set the starting joint configuration of the manipulator.
@@ -374,12 +402,14 @@ class EnvironmentROBARM3D: public DiscreteSpaceInformation
     void SetGoalConfigurationTolerance(const std::vector<std::vector<double> > &tolerance_above, const std::vector<std::vector<double> > &tolerance_below);
 
     bool updateVoxelGrid(const boost::shared_ptr<Voxel3d> envgrid, const boost::shared_ptr<Voxel3d> lowres_envgrid);
-
+    void initPlanningMonitor(sbpl_arm_planner_node::pm_wrapper * pm);
   private:
 
     /** member data */
     EnvROBARMConfig_t EnvROBARMCfg;          /**< environment configuration struct (stores environment details)> */
     EnvironmentROBARM3D_t EnvROBARM;
+
+    sbpl_arm_planner_node::pm_wrapper *planning_monitor;
 
     /** hash table */
     unsigned int GETHASHBIN(short unsigned int* coord, int numofcoord);
@@ -411,6 +441,7 @@ class EnvironmentROBARM3D: public DiscreteSpaceInformation
     int IsValidCoord(const short unsigned int coord[], const std::vector<std::vector<short unsigned int> > &joints, double orientation[3][3], char ***Grid, const short unsigned int grid_dims[]);
     int IsValidLineSegment(short unsigned int x0, short unsigned int y0, short unsigned int z0, short unsigned int x1, short unsigned int y1, short unsigned int z1, char ***Grid3D, vector<CELLV>* pTestedCells);
     int IsValidLineSegment(const short unsigned int xyz0[], const short unsigned int xyz1[], const int &radius, char*** Grid3D, const int grid_dims[], vector<CELLV>* pTestedCells);
+    int IsValidLineSegment(const short unsigned int a[], const short unsigned int b[], int radius, vector<CELLV>* pTestedCells, char *** Grid3D,const  boost::shared_ptr<Voxel3d> vGrid);
     void UpdateEnvironment();
     void AddObstacleToGrid(double* obstacle, int type, char*** grid, double gridcell_m);
     double distanceBetween3DLineSegments(const short unsigned int l1a[],const short unsigned int l1b[],
@@ -464,12 +495,14 @@ class EnvironmentROBARM3D: public DiscreteSpaceInformation
 
     /** forward kinematics */
     void ComputeDHTransformations();
-    bool InitKDLChain(const char *fKDL);
+    bool InitKDLChain(const string &fKDL);
     int ComputeEndEffectorPos(const double angles[], double endeff_m[3]);
     int ComputeEndEffectorPos(const double angles[], short unsigned int endeff[3]);
     int ComputeEndEffectorPos(const double angles[], short unsigned int endeff[3], short unsigned int wrist[3], short unsigned int elbow[3], double orientation[3][3]);
     void ComputeForwardKinematics_DH(const double angles[]);
     void ComputeForwardKinematics_ROS(const double angles[], int f_num, double *x, double *y, double *z);
+
+    double getDistanceToGoal(const double angles[]);
 };
 
 #endif
