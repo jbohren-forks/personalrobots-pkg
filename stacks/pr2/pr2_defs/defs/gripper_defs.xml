@@ -30,7 +30,6 @@
   <property name="finger_joint_effort_limit"  value="100.0" />
 
   <macro name="pr2_finger_limits" params="reflect">
-    <!-- IMPORTANT: k_velocity and k_position of 1 will induce instability on the acutal joint -->
     <limit effort="${finger_joint_effort_limit}" velocity="0.5"
            min="${gripper_min_angle}" max="${gripper_max_angle}"
            k_velocity="100.0" k_position="100.0"
@@ -79,14 +78,20 @@
           <elem key="material" value="PR2/Grey" />
         </map>
         <geometry name="${prefix}_l_finger_visual">
-          <mesh filename="upper_finger_l" />
+          <mesh filename="upper_finger_l.stlb" />
         </geometry>
+        <map name="${prefix}_l_finger_visual_mesh" flag="ogre">
+          <elem key="mesh" value="upper_finger_l.mesh" />
+        </map>
       </visual>
       <collision>
         <origin xyz="0 0 0" rpy="0 0 0" />
         <geometry name="${prefix}_l_finger_collision">
           <mesh filename="convex/upper_finger_l_convex.stlb" />
         </geometry>
+        <map name="${prefix}_l_finger_collision_mesh" flag="ogre">
+          <elem key="mesh" value="convex/upper_finger_l_convex.mesh" />
+        </map>
         <verbose value="Yes" />
         <map flag="collision" name="mesh">
           <elem key="type" value="visual"/>
@@ -163,14 +168,20 @@
           <elem key="material" value="PR2/Grey" />
         </map>
         <geometry name="${prefix}_r_finger_visual">
-          <mesh filename="upper_finger_r" />
+          <mesh filename="upper_finger_r.stlb" />
         </geometry>
+        <map name="${prefix}_r_finger_visual_mesh" flag="ogre">
+          <elem key="mesh" value="upper_finger_r.mesh" />
+        </map>
       </visual>
       <collision>
         <origin xyz="0 0 0" rpy="0 0 0" />
         <geometry name="${prefix}_r_finger_collision">
           <mesh filename="convex/upper_finger_r_convex.stlb" />
         </geometry>
+        <map name="${prefix}_r_finger_collision_mesh" flag="ogre">
+          <elem key="mesh" value="convex/upper_finger_r_convex.mesh" />
+        </map>
         <verbose value="Yes" />
         <map flag="collision" name="mesh">
           <elem key="type" value="visual"/>
@@ -244,14 +255,20 @@
           <elem key="material" value="PR2/Green" />
         </map>
         <geometry name="${prefix}_l_finger_tip_visual">
-          <mesh filename="finger_tip_l" />
+          <mesh filename="finger_tip_l.stlb" />
         </geometry>
+        <map name="${prefix}_l_finger_tip_visual_mesh" flag="ogre">
+          <elem key="mesh" value="finger_tip_l.mesh" />
+        </map>
       </visual>
       <collision>
         <origin xyz="0 0 0" rpy="0 0 0" />
         <geometry name="${prefix}_l_finger_tip_collision">
           <mesh filename="convex/finger_tip_l_convex.stlb" />
         </geometry>
+        <map name="${prefix}_l_finger_tip_collision_mesh" flag="ogre">
+          <elem key="mesh" value="convex/finger_tip_l_convex.mesh" />
+        </map>
         <verbose value="Yes" />
         <map flag="collision" name="mesh">
           <elem key="type" value="visual"/>
@@ -326,14 +343,20 @@
           <elem key="material" value="PR2/Green" />
         </map>
         <geometry name="${prefix}_r_finger_tip_visual">
-          <mesh filename="finger_tip_r" />
+          <mesh filename="finger_tip_r.stlb" />
         </geometry>
+        <map name="${prefix}_r_finger_tip_visual_mesh" flag="ogre">
+          <elem key="mesh" value="finger_tip_r.mesh" />
+        </map>
       </visual>
       <collision>
         <origin xyz="0 0 0" rpy="0 0 0" />
         <geometry name="${prefix}_r_finger_tip_collision">
           <mesh filename="convex/finger_tip_r_convex.stlb" />
         </geometry>
+        <map name="${prefix}_r_finger_tip_collision_mesh" flag="ogre">
+          <elem key="mesh" value="convex/finger_tip_r_convex.mesh" />
+        </map>
         <verbose value="Yes" />
         <map flag="collision" name="mesh">
           <elem key="type" value="visual"/>
@@ -476,14 +499,20 @@
           <elem key="material" value="PR2/Red" />
         </map>
         <geometry name="${side}_gripper_palm_visual">
-          <mesh filename="gripper_palm" />
+          <mesh filename="gripper_palm.stlb" />
         </geometry>
+        <map name="${side}_gripper_palm_visual_mesh" flag="ogre">
+          <elem key="mesh" value="gripper_palm.mesh" />
+        </map>
       </visual>
       <collision>
         <origin xyz="0 0 0" rpy="0 0 0" />
         <geometry name="${side}_gripper_palm_collision">
           <mesh filename="convex/gripper_palm_convex.stlb" />
         </geometry>
+        <map name="${side}_gripper_palm_collision_mesh" flag="ogre">
+          <elem key="mesh" value="convex/gripper_palm_convex.mesh" />
+        </map>
         <verbose value="Yes" />
         <map flag="collision" name="mesh">
           <elem key="type" value="visual"/>
@@ -701,14 +730,20 @@
           <elem key="material" value="PR2/Red" />
         </map>
         <geometry name="${side}_gripper_palm_visual">
-          <mesh filename="gripper_palm" />
+          <mesh filename="gripper_palm.stlb" />
         </geometry>
+        <map name="${side}_gripper_palm_visual_mesh" flag="ogre">
+          <elem key="mesh" value="gripper_palm.mesh" />
+        </map>
       </visual>
       <collision>
         <origin xyz="0 0 0" rpy="0 0 0" />
         <geometry name="${side}_gripper_palm_collision">
           <mesh filename="convex/gripper_palm_convex.stlb" />
         </geometry>
+        <map name="${side}_gripper_palm_collision_mesh" flag="ogre">
+          <elem key="mesh" value="convex/gripper_palm_convex.mesh" />
+        </map>
         <verbose value="Yes" />
         <map flag="collision" name="mesh">
           <elem key="type" value="visual"/>

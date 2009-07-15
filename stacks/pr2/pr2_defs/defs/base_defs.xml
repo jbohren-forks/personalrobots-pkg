@@ -57,8 +57,11 @@
           <elem key="material" value="PR2/${parent}_${suffix}_wheel_link" />
         </map>
         <geometry name="${parent}_${suffix}_wheel_visual">
-          <mesh filename="pr2_wheel" />
+          <mesh filename="pr2_wheel.stlb" />
         </geometry>
+        <map name="${parent}_${suffix}_wheel_visual_mesh" flag="ogre">
+          <elem key="mesh" value="pr2_wheel.mesh" />
+        </map>
 
       </visual>
       <collision>
@@ -123,8 +126,11 @@
           <elem key="material" value="PR2/Green" />
         </map>
         <geometry name="${suffix}_caster_rotation_visual">
-          <mesh filename="caster" scale="1 1 1"/>
+          <mesh filename="caster.stlb" />
         </geometry>
+        <map name="${suffix}_caster_rotation_visual_mesh" flag="ogre">
+          <elem key="mesh" value="caster.mesh" />
+        </map>
       </visual>
 
       <collision>
@@ -174,8 +180,11 @@
           <elem key="material" value="PR2/${parent}_${suffix}_wheel_link" />
         </map>
         <geometry name="${parent}_${suffix}_wheel_visual">
-          <mesh filename="pr2_wheel" />
+          <mesh filename="pr2_wheel.stlb" />
         </geometry>
+        <map name="${parent}_${suffix}_wheel_visual_mesh" flag="ogre">
+          <elem key="mesh" value="pr2_wheel.mesh" />
+        </map>
 
       </visual>
       <collision>
@@ -240,8 +249,11 @@
           <elem key="material" value="PR2/Green" />
         </map>
         <geometry name="${suffix}_caster_rotation_visual">
-          <mesh filename="caster" scale="1 1 1"/>
+          <mesh filename="caster.stlb" />
         </geometry>
+        <map name="${suffix}_caster_rotation_visual_mesh" flag="ogre">
+          <elem key="mesh" value="caster.mesh" />
+        </map>
       </visual>
 
       <collision>
@@ -286,8 +298,11 @@
           <elem key="material" value="PR2/Green" />
         </map>
         <geometry name="${name}_visual">
-          <mesh filename="base" />
+          <mesh filename="base.stlb" />
         </geometry>
+        <map name="${name}_visual_mesh" flag="ogre" >
+          <elem key="mesh" value="base.mesh" />
+        </map>
       </visual>
 
       <collision>
@@ -432,8 +447,11 @@
           <elem key="material" value="PR2/Green" />
         </map>
         <geometry name="${name}_visual">
-          <mesh filename="base" />
+          <mesh filename="base.stlb" />
         </geometry>
+        <map name="${name}_visual_mesh" flag="ogre">
+          <elem key="mesh" value="base.mesh" />
+        </map>
       </visual>
 
       <collision>

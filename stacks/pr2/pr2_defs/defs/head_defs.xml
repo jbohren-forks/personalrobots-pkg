@@ -36,8 +36,11 @@
           <elem key="material" value="PR2/Red" />
         </map>
         <geometry name="${name}_mount_visual">
-          <mesh filename="hok_tilt" />
+          <mesh filename="hok_tilt.stlb" />
         </geometry>
+        <map name="${name}_mount_visual_mesh" flag="ogre">
+          <elem key="mesh" value="hok_tilt.mesh" />
+        </map>
       </visual>
 
       <collision>
@@ -417,8 +420,11 @@
           <elem key="material" value="PR2/Blue" />
         </map>
         <geometry name="${name}_visual">
-          <mesh filename="head_pan" />
+          <mesh filename="head_pan.stlb" />
         </geometry>
+        <map name="${name}_visual_mesh" flag="ogre">
+          <elem key="mesh" value="head_pan.mesh" />
+        </map>
       </visual>
 
       <collision>
@@ -467,8 +473,11 @@
           <elem key="material" value="PR2/Green" />
         </map>
         <geometry name="${name}_visual">
-          <mesh filename="head_tilt" />
+          <mesh filename="head_tilt.stlb" />
         </geometry>
+        <map name="${name}_visual_mesh" flag="ogre">
+          <elem key="mesh" value="head_tilt.mesh" />
+        </map>
       </visual>
 
       <collision>
@@ -559,8 +568,11 @@
           <elem key="material" value="PR2/Red" />
         </map>
         <geometry name="${name}_mount_visual">
-          <mesh filename="hok_tilt" />
+          <mesh filename="hok_tilt.stlb" />
         </geometry>
+        <map name="${name}_mount_visual_mesh" flag="ogre">
+          <elem key="mesh" value="hok_tilt.mesh" />
+        </map>
       </visual>
 
       <collision>
@@ -677,8 +689,11 @@
           <elem key="material" value="PR2/Blue" />
         </map>
         <geometry name="${name}_visual">
-          <mesh filename="head_pan" />
+          <mesh filename="head_pan.stlb" />
         </geometry>
+        <map name="${name}_visual_mesh" flag="ogre">
+          <elem key="mesh" value="head_pan.mesh" />
+        </map>
       </visual>
 
       <collision>
@@ -726,8 +741,11 @@
           <elem key="material" value="PR2/Green" />
         </map>
         <geometry name="${name}_visual">
-          <mesh filename="head_tilt" />
+          <mesh filename="head_tilt.stlb" />
         </geometry>
+        <map name="${name}_visual_mesh" flag="ogre">
+          <elem key="mesh" value="head_tilt.mesh" />
+        </map>
       </visual>
 
       <collision>
@@ -774,8 +792,11 @@
           <elem key="material" value="PR2/Green" />
         </map>
         <geometry name="${name}_visual">
-          <mesh filename="head_tilt" />
+          <mesh filename="head_tilt.stlb" />
         </geometry>
+        <map name="${name}_visual_mesh" flag="ogre">
+          <elem key="mesh" value="head_tilt.mesh" />
+        </map>
       </visual>
 
       <collision>
@@ -821,8 +842,11 @@
           <elem key="material" value="PR2/Green" />
         </map>
         <geometry name="${name}_visual">
-          <mesh filename="head_tilt" />
+          <mesh filename="head_tilt.stlb" />
         </geometry>
+        <map name="${name}_visual_mesh" flag="ogre">
+          <elem key="mesh" value="head_tilt.mesh" />
+        </map>
       </visual>
 
       <collision>
@@ -874,6 +898,9 @@
         <geometry name="${name}_plate_frame_collision">
           <box size="0.01 0.01 0.01" />
         </geometry>
+        <map name="${name}_plate_frame_collision_mesh" flag="gazebo">
+          <elem key="mesh">unit_box</elem>
+        </map>
       </collision>
     </link>
 

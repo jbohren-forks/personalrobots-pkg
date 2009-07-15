@@ -118,6 +118,33 @@ void URDF2Gazebo::copyGazeboMap(const robot_desc::URDF::Map& data, TiXmlElement 
     }
 }
 
+void URDF2Gazebo::copyOgreMap(const robot_desc::URDF::Map& data, TiXmlElement *elem, const std::vector<std::string> *tags = NULL)
+{
+    std::vector<std::string> ogre_names;
+    data.getMapTagNames("ogre", ogre_names);
+    for (unsigned int k = 0 ; k < ogre_names.size() ; ++k)
+    {
+        std::map<std::string, std::string> m = data.getMapTagValues("ogre", ogre_names[k]);
+        std::vector<std::string> accepted_tags;
+        if (tags)
+            accepted_tags = *tags;
+        else
+            for (std::map<std::string, std::string>::iterator it = m.begin() ; it != m.end() ; it++)
+                accepted_tags.push_back(it->first);
+        
+        for (unsigned int i = 0 ; i < accepted_tags.size() ; ++i)
+            if (m.find(accepted_tags[i]) != m.end())
+                addKeyValue(elem, accepted_tags[i], m[accepted_tags[i]]);
+        
+        std::map<std::string, const TiXmlElement*> x = data.getMapTagXML("ogre", ogre_names[k]);
+        for (std::map<std::string, const TiXmlElement*>::iterator it = x.begin() ; it != x.end() ; it++)
+        {
+            for (const TiXmlNode *child = it->second->FirstChild() ; child ; child = child->NextSibling())
+                elem->LinkEndChild(child->Clone());
+        }              
+    }
+}
+
 std::string URDF2Gazebo::getGeometrySize(robot_desc::URDF::Link::Geometry* geometry, int *sizeCount, double *sizeVals)
 {
     std::string type;
@@ -294,7 +321,15 @@ void URDF2Gazebo::convertLink(TiXmlElement *root, robot_desc::URDF::Link *link, 
                     if (mesh->filename.empty())
                         addKeyValue(visual, "mesh", "unit_" + type);
                     else
-                        addKeyValue(visual, "mesh", mesh->filename + ".mesh");
+                    {
+                       //  skipping this block as we test the copyOgreMap function
+                       //  // strip extension from filename
+                       //  std::string tmp_extension(".stl");
+                       //  int pos1 = mesh->filename.find(tmp_extension,0);
+                       //  mesh->filename.replace(pos1,mesh->filename.size()-pos1+1,std::string(""));
+                       //  // add mesh filename
+                       //  addKeyValue(visual, "mesh", mesh->filename + ".mesh");
+                    }
                     
                 }
                 else
@@ -307,6 +342,9 @@ void URDF2Gazebo::convertLink(TiXmlElement *root, robot_desc::URDF::Link *link, 
                 }
                 
                 copyGazeboMap(link->visual->data, visual);
+
+                // ogre mesh map for all trimeshes visualized
+                copyOgreMap(link->visual->data, visual);
             }
             /* end create visual node */
             

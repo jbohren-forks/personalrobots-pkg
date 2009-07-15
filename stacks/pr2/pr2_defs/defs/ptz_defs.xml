@@ -33,8 +33,11 @@
 	  <elem key="material" value="PR2/Blue" />
         </map>
         <geometry name="${side}_ptz_pan_visual">
-          <mesh filename="ptz_base_${side}" />
+          <mesh filename="ptz_base_${side}.stlb" />
         </geometry>
+        <map name="${side}_ptz_pan_visual_mesh" flag="ogre">
+          <elem key="mesh" value="ptz_base_${side}.mesh" />
+        </map>
       </visual>
 
       <collision>
@@ -71,8 +74,11 @@
 	  <elem key="material" value="PR2/Red" />
         </map>
         <geometry name="${side}_ptz_tilt_visual">
-          <mesh filename="ptz_top_${side}" />
+          <mesh filename="ptz_top_${side}.stlb" />
         </geometry>
+        <map name="${side}_ptz_tilt_visual_mesh" flag="ogre">
+          <elem key="mesh" value="ptz_top_${side}.mesh" />
+        </map>
       </visual>
 
       <collision>

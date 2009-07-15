@@ -41,8 +41,11 @@
 	  <elem key="material" value="PR2/Grey2" />
         </map>
         <geometry name="${name}_visual">
-          <mesh filename="torso" />
+          <mesh filename="torso.stlb" />
         </geometry>
+        <map name="${name}_visual_mesh" flag="ogre">
+          <elem key="mesh" value="torso.mesh" />
+        </map>
       </visual>
 
       <collision>
