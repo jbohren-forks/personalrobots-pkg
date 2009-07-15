@@ -20,6 +20,7 @@
   <depend package="mechanism_msgs" />
   <depend package="message_filters" />
   <depend package="calibration_msgs" />
+  <depend package="rospy" />
 
   <depend package="diagnostic_updater" />
   <depend package="diagnostic_msgs" />
