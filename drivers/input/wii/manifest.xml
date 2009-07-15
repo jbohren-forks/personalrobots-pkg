@@ -1,0 +1,15 @@
+<package>
+	<description brief="Drivers for the wiimote/wiimotion">
+
+		This package contains drivers for the wiimote/wiimotion. Nothing much
+		here yet, mostly just a sandbox to test cwiid.
+	
+	</description>
+  <author>Blaise Gassend</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://pr.willowgarage.com/wiki/wii</url>
+
+</package>
+
+
