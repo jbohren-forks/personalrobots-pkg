@@ -11,6 +11,7 @@
     <param name="cloud_annotation" type="string" value="on_self" />
 
     <!-- a frame that does not change as the robot moves -->
+<!--    <param name="fixed_frame" type="string" value="/odom_combined" /> -->
     <param name="fixed_frame" type="string" value="base_link" />
 
     <!-- define a box of size 2x3x4 around (1.1,  0, 0) in the robot frame -->

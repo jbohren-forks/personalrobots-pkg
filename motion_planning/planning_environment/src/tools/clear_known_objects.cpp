@@ -66,6 +66,8 @@ public:
 	    nh_.param<double>("~object_scale", scale_, 1.0);
 	    nh_.param<double>("~object_padd", padd_, 0.02);
 	    
+	    ROS_INFO("Clearing points on known objects using '%s' as fixed frame, %f padding and %f scaling", fixed_frame_.c_str(), padd_, scale_);
+	    
 	    cloudPublisher_ = nh_.advertise<robot_msgs::PointCloud>("cloud_out", 1);	    
 	    kmsm_->setOnAfterAttachBodyCallback(boost::bind(&ClearKnownObjects::attachObjectEvent, this, _1));
 	    cloudNotifier_ = new tf::MessageNotifier<robot_msgs::PointCloud>(tf_, boost::bind(&ClearKnownObjects::cloudCallback, this, _1), "cloud_in", fixed_frame_, 1);
@@ -125,10 +127,8 @@ private:
 	double                  rsquare;
     };
     
-    void cloudCallback(const robot_msgs::PointCloudConstPtr &cloud)
+    void computeMask(const robot_msgs::PointCloud &cloud, std::vector<int> &mask)
     {
-	updateObjects_.lock();
-
 	// check if we have attached bodies
 	if (attachedObjects_.size() > 0)
 	{
@@ -174,18 +174,23 @@ private:
 	    kmsm_->getKinematicModel()->unlock();
 	}
 	
-	// transform pointcloud into fixed frame
-	robot_msgs::PointCloud cloudTransf;
-	tf_.transformPointCloud(fixed_frame_, *cloud, cloudTransf);
+	// transform pointcloud into fixed frame, if needed
+	robot_msgs::PointCloud temp;
+	const robot_msgs::PointCloud *cloudTransf = &cloud;
+	if (fixed_frame_ != cloud.header.frame_id)
+	{
+	    tf_.transformPointCloud(fixed_frame_, cloud, temp);
+	    cloudTransf = &temp;
+	}
 	
 	// compute mask for cloud
-	int n = cloud->pts.size();
-	std::vector<int> mask(n);
+	int n = cloud.pts.size();
+	mask.resize(n);
 	
 #pragma omp parallel for
 	for (int i = 0 ; i < n ; ++i)
 	{
-	    btVector3 pt = btVector3(cloudTransf.pts[i].x, cloudTransf.pts[i].y, cloudTransf.pts[i].z);
+	    btVector3 pt = btVector3(cloudTransf->pts[i].x, cloudTransf->pts[i].y, cloudTransf->pts[i].z);
 	    int out = 1;
 	    
 	    for (unsigned int j = 0 ; out && j < attachedObjects_.size() ; ++j)
@@ -200,38 +205,61 @@ private:
 	    
 	    mask[i] = out;
 	}
+    }
+    
+    void cloudCallback(const robot_msgs::PointCloudConstPtr &cloud)
+    {
+	std::vector<int> mask;
+	bool filter = false;
+	
+	updateObjects_.lock();
+
+	if  (attachedObjects_.size() > 0 || objectsInMap_.size() > 0)
+	{
+	    computeMask(*cloud, mask);
+	    filter = true;
+	}
 	
 	updateObjects_.unlock();
 
-	// publish new cloud
-	const unsigned int np = cloud->pts.size();
-	robot_msgs::PointCloud data_out;
-	
-	// fill in output data with points that are NOT in the known objects
-	data_out.header = cloud->header;	  
-	
-	data_out.pts.resize(0);
-	data_out.pts.reserve(np);
-	
-	data_out.chan.resize(cloud->chan.size());
-	for (unsigned int i = 0 ; i < data_out.chan.size() ; ++i)
+	if (filter)
 	{
-	    ROS_ASSERT(cloud->chan[i].vals.size() == cloud->pts.size());
-	    data_out.chan[i].name = cloud->chan[i].name;
-	    data_out.chan[i].vals.reserve(cloud->chan[i].vals.size());
-	}
-	
-	for (unsigned int i = 0 ; i < np ; ++i)
-	    if (mask[i])
+	    // publish new cloud
+	    const unsigned int np = cloud->pts.size();
+	    robot_msgs::PointCloud data_out;
+	    
+	    // fill in output data with points that are NOT in the known objects
+	    data_out.header = cloud->header;	  
+	    
+	    data_out.pts.resize(0);
+	    data_out.pts.reserve(np);
+	    
+	    data_out.chan.resize(cloud->chan.size());
+	    for (unsigned int i = 0 ; i < data_out.chan.size() ; ++i)
 	    {
-		data_out.pts.push_back(cloud->pts[i]);
-		for (unsigned int j = 0 ; j < data_out.chan.size() ; ++j)
-		    data_out.chan[j].vals.push_back(cloud->chan[j].vals[i]);
+		ROS_ASSERT(cloud->chan[i].vals.size() == cloud->pts.size());
+		data_out.chan[i].name = cloud->chan[i].name;
+		data_out.chan[i].vals.reserve(cloud->chan[i].vals.size());
 	    }
-	
-	cloudPublisher_.publish(data_out);	
+	    
+	    for (unsigned int i = 0 ; i < np ; ++i)
+		if (mask[i])
+		{
+		    data_out.pts.push_back(cloud->pts[i]);
+		    for (unsigned int j = 0 ; j < data_out.chan.size() ; ++j)
+			data_out.chan[j].vals.push_back(cloud->chan[j].vals[i]);
+		}
+
+	    ROS_DEBUG("Published filtered cloud (%d points out of %d)", data_out.pts.size(), cloud->pts.size());
+	    cloudPublisher_.publish(data_out);
+	}
+	else
+	{
+	    cloudPublisher_.publish(*cloud);
+	    ROS_DEBUG("Republished unchanged cloud");
+	}
     }
-    
+       
     void objectInMapCallback(const mapping_msgs::ObjectInMapConstPtr &objectInMap)
     {
 	updateObjects_.lock();

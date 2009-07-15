@@ -138,7 +138,7 @@ private:
 	{
 	case mapping_msgs::Object::SPHERE:
 	    mk.type = visualization_msgs::Marker::SPHERE;
-	    mk.scale.x = mk.scale.y = mk.scale.z = obj.dimensions[0];
+	    mk.scale.x = mk.scale.y = mk.scale.z = obj.dimensions[0] * 2.0;
 	    break;
 	    
 	case mapping_msgs::Object::BOX:
