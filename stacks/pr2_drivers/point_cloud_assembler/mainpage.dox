@@ -56,5 +56,38 @@ This launch file is performing two separate tasks
 
 \endverbatim
 
+@subsection merge Merging Pointclouds
+
+@b merge_clouds is a node that can take two other clouds as input, merge them and publish again.
+A sample launch file is:
+
+\verbatim
+<launch>
+
+  <node pkg="point_cloud_assembler" type="merge_clouds" output="screen">
+
+    <!-- first input cloud -->
+    <remap from="cloud_in1" to="laser_scan_cloud"/>
+
+    <!-- second input cloud -->
+    <remap from="cloud_in2" to="stereo_scan_cloud"/>
+
+    <!-- output cloud -->
+    <remap from="cloud_out" to="merged_clouds"/>
+
+    <!-- the frame in which the output cloud should be published; this parameter must ALWAYS be specified  -->
+    <param name="output_frame" type="string" value="base_link"/>
+
+    <!-- The upper bound (in Hz) of how often the merged should be published -->
+    <!-- If the value is 0.0, the cloud is published whenever updates from the input clouds are available -->
+    <param name="max_frequency" type="double" value="100.0"/>
+
+  </node>
+
+</launch>
+
+
+\endverbatim
+
 
 */

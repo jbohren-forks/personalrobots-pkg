@@ -10,6 +10,8 @@ rospack_add_executable(point_cloud_assembler_srv src/point_cloud_assembler_srv.c
 rospack_add_executable(grab_cloud_data src/grab_cloud_data.cpp)
 rospack_add_executable(point_cloud_snapshotter src/point_cloud_snapshotter.cpp)
 rospack_add_executable(point_cloud_srv src/point_cloud_srv.cpp)
+rospack_add_executable(merge_clouds src/merge_clouds.cpp)
+rospack_link_boost(merge_clouds thread)
 
 rospack_add_executable(test_assembler 
                        test/test_assembler.cpp)
