@@ -180,6 +180,7 @@ class RoadmapServer:
 
         msg = vslam.msg.Roadmap()
         msg.header.stamp = stamp
+        msg.header.frame_id = "base_link"
         msg.nodes = [vslam.msg.Node(*roadmap_nodes[n]) for n in nl]
         print "(p,n)", [ (p,n) for (p,n,l) in roadmap_edges ]
         msg.edges = [vslam.msg.Edge(nl.index(p), nl.index(n), l) for (p, n, l) in roadmap_edges]
