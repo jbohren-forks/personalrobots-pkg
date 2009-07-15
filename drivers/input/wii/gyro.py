@@ -64,11 +64,11 @@ class Gyro:
         for j in range(0, 3):
             delta[j] = newdat[j] - self.mean[j]
             self.pos[j] = self.pos[j] + delta[j]
-        print delta
-        if self.count >= 200:
-#            print "Pos: ", self.pos
+        #print delta
+        if self.count >= 10:
+            print "Pos: %15.3f %15.3f %15.3f"%tuple(self.pos)
             self.count = 0
-            self.pos = [0., 0., 0.]
+#            self.pos = [0., 0., 0.]
 
     def integrate(self):
         self.pos = [0., 0., 0.]
@@ -86,15 +86,19 @@ class Gyro:
 
 
 g = Gyro()
-#g.dump()
-while True:
-  g.zero()
-  for i in range(0, 3):
-      print g.mean[i],
-  print
-  sys.stdout.flush()
+g.zero()
 g.integrate()
 
 while True:
     time.sleep(.2)
+
+#g.dump()
+#while True:
+#  g.zero()
+#  for i in range(0, 3):
+#      print g.mean[i],
+#  print
+#  sys.stdout.flush()
+#g.integrate()
+
 
