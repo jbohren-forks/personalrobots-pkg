@@ -84,6 +84,7 @@ class RoadmapServer:
 
         time.sleep(1)
         #self.send_map(rospy.time(0))
+        self.wheel_odom_edges = set()
 
         rospy.Subscriber('/stereo/raw_stereo', sensor_msgs.msg.RawStereo, self.handle_raw_stereo, queue_size=2, buff_size=7000000)
 
@@ -95,7 +96,7 @@ class RoadmapServer:
         TG = nx.MultiDiGraph()
         for i in self.skel.nodes:
             TG.add_node(i)
-        for (a,b,p,c) in self.skel.every_edge:
+        for (a,b,p,c) in self.skel.every_edge + list(self.wheel_odom_edges):
             TG.add_edge(a, b, (p, c))
         here = max(self.skel.nodes)
 
@@ -212,6 +213,7 @@ class RoadmapServer:
         af = SparseStereoFrame(pair[0], pair[1], feature_detector = self.fd, descriptor_scheme = self.ds)
         self.vo.handle_frame(af)
         self.frame_timestamps[af.id] = msg.header.stamp
+        
         if self.skel.add(self.vo.keyframe):
           print "====>", self.vo.keyframe.id, self.frame_timestamps[self.vo.keyframe.id]
           #print self.tf.getFrameStrings()
@@ -224,8 +226,9 @@ class RoadmapServer:
               t1 = self.frame_timestamps[b]
               if self.tf.canTransformFull("stereo_optical_frame", t0, "stereo_optical_frame", t1, "odom_combined"):
                 t,r = self.tf.lookupTransformFull("stereo_optical_frame", t0, "stereo_optical_frame", t1, "odom_combined")
-                _ = self.tf.fromTranslationRotation(t, r)
-                print a, b, t
+                relpose = Pose()
+                relpose.fromlist(self.tf.fromTranslationRotation(t,r))
+                self.wheel_odom_edges.add((a, b, relpose, 1.0))
           self.send_map(msg.header.stamp)
 
 def dist(a,b):
