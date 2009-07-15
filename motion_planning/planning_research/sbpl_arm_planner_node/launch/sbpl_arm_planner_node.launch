@@ -1,24 +1,42 @@
 <launch>
 
-  <param name="right_arm/sbpl_planner/env_config" textfile="$(find sbpl_arm_planner)/env_examples/robarm3d/r_arm.cfg" />
-  <param name="right_arm/sbpl_planner/planner_config" textfile="$(find sbpl_arm_planner)/params.cfg" />
+  <!-- planner -->
+  <node pkg="sbpl_arm_planner_node" type="sbpl_arm_planner_node" name="right_arm/sbpl_planner" output="screen" respawn="false">
+  <!--   <node launch-prefix="gdb" pkg="sbpl_arm_planner_node" type="sbpl_arm_planner_node" name="right_arm/sbpl_planner" output="screen" respawn="false"/> -->
 
-  <param name="right_arm/sbpl_planner/allocated_time" value="5.0" />
-  <param name="right_arm/sbpl_planner/forward_search" value="true" />
-  <param name="right_arm/sbpl_planner/search_mode" value="true" />
-  <param name="right_arm/sbpl_planner/num_joints" value="7" />
-  <param name="right_arm/sbpl_planner/planner_type" value="cartesian" />
+    <param name="env_config" textfile="$(find sbpl_arm_planner)/env_examples/robarm3d/r_arm.cfg" />
+    <param name="planner_config" textfile="$(find sbpl_arm_planner)/params.cfg" />
 
-  <param name="right_arm/sbpl_planner/torso_arm_offset_x" value="0.0" />
-  <param name="right_arm/sbpl_planner/torso_arm_offset_y" value="-0.188" />
-  <param name="right_arm/sbpl_planner/torso_arm_offset_z" value="0.0" />
+    <param name="allocated_time" value="20.0" />
+    <param name="forward_search" value="true" />
+    <param name="search_mode" value="true" />
+    <param name="num_joints" value="7" />
+    <param name="planner_type" value="cartesian" />
+    <param name="use_dijkstra_heuristic" value="true" />
 
-  <param name="right_arm/sbpl_planner/collision_map_topic" value="collision_map_buffer" />
-  <param name="right_arm/sbpl_planner/arm_name" value="right_arm" />
+    <param name="torso_arm_offset_x" value="0.0" />
+    <param name="torso_arm_offset_y" value="-0.188" />
+    <param name="torso_arm_offset_z" value="0.0" />
 
-  <param name="right_arm/sbpl_planner/use_collision_map" value="true" />
+    <param name="collision_map_topic" value="collision_map_occ" />
+    <param name="arm_name" value="right_arm" />
+    <param name="lowres_cc" value="true" />
+    <param name="use_collision_map" value="true" />
+    <param name="use_collision_map_occ_to_update_voxel" value="false" />
+    <param name="use_exact_gripper_collision_checking" value="true" />
+    <param name="use_voxel3d_grid" value="false" />
 
-  <!-- node launch-prefix="gdb" pkg="sbpl_arm_planner_node" type="sbpl_arm_planner_node" name="right_arm/sbpl_planner" output="screen" respawn="false"/ -->
-  <node pkg="sbpl_arm_planner_node" type="sbpl_arm_planner_node" name="right_arm/sbpl_planner" output="screen" respawn="false"/>
+    <!-- planning monitor -->
+    <remap from="robot_description" to="robotdesc/pr2" />
+    <remap from="collision_map" to="collision_map_occ" />
+    <remap from="collision_map_update" to="collision_map_occ_update" />
+
+    <param name="arm" type="string" value="right_arm" />
+    <param name="planning_frame_id" type="string" value="base_link" />
+    <param name="refresh_interval_collision_map" type="double" value="5.0" />
+    <param name="refresh_interval_kinematic_state" type="double" value="1.0" />
+    <param name="bounding_planes" type="string" value="0 0 1 -0.01" />
+
+  </node>
 
 </launch>

@@ -2,7 +2,7 @@
   <description brief="A node to use the sbpl arm planner for the PR2 arm">
 
   </description>
-  <author>Sachin Chitta /sachinc@willowgarage.com</author>
+  <author>Benjamin Cohen /bcohen@willowgarage.com, Sachin Chitta /sachinc@willowgarage.com</author>
   <license>BSD</license>
     <depend package="roscpp"/>
     <depend package="sbpl_arm_planner" />
@@ -12,15 +12,20 @@
     <depend package="manipulation_msgs" />
     <depend package="motion_planning_msgs" />
     <depend package="motion_planning_srvs" />
+    <depend package="planning_environment" />
+    <depend package="visualization_msgs" />
+    <depend package="mechanism_msgs" />
     <depend package="tf" />
-    <depend package="tf_conversions" />
+<!--     <depend package="gtest" /> -->
+<!--     <depend package="pr2_ik" /> -->
     <depend package="kdl"/>
-    <depend package="pr2_ik"/>
+    <depend package="voxel3d"/>
+    <depend package="sbpl_pm_wrapper"/>
   <url></url>
 
   <export>
-    <cpp cflags="-I${prefix}/include -I${prefix}/srv/cpp -O3 -g  -lsbpl_dh_regression_test" />
+    <cpp cflags="-I${prefix}/include -I${prefix}/srv/cpp -O3 -g" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lsbpl_arm_planner_node_lib" />
+<!--     <cpp cflags="-I${prefix}/include -I${prefix}/srv/cpp -O3 -g  -lsbpl_dh_regression_test" /> -->
   </export>
 
 </package>
-

@@ -26,16 +26,19 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
+
+ /** \author Benjamin Cohen, Sachin Chitta  */
+
 #ifndef __SBPL_ARM_PLANNER_NODE_H_
 #define __SBPL_ARM_PLANNER_NODE_H_
 
 #include <iostream>
 
 /** ROS **/
-#include <ros/node.h>
+#include <ros/ros.h>
+#include "ros/node_handle.h"
 
 /** TF **/
-#include <tf/tf.h>
 #include <tf/tf.h>
 #include <tf/transform_listener.h>
 #include <tf/message_notifier.h>
@@ -49,6 +52,9 @@
 #include <motion_planning_msgs/KinematicPath.h>
 #include <motion_planning_msgs/KinematicState.h>
 #include <motion_planning_msgs/PoseConstraint.h>
+#include <mechanism_msgs/MechanismState.h>
+#include <visualization_msgs/Marker.h>
+#include <visualization_msgs/MarkerArray.h>
 
 /** sbpl planner include files **/
 #include <sbpl_arm_planner/headers.h>
@@ -57,23 +63,41 @@
 #include <sbpl_arm_planner_node/PlanPathSrv.h>
 #include <motion_planning_srvs/MotionPlan.h>
 
+#include <boost/thread/mutex.hpp>
+#include "boost/shared_ptr.hpp"
+
+// #include <sbpl_pm_wrapper/pm_wrapper.h>
+
 namespace sbpl_arm_planner_node
 {
 #define VERBOSE 1
 #define MAX_RUNTIME 60.0
 
-   class SBPLArmPlannerNode : public ros::Node
-   {
-     public:
+class SBPLArmPlannerNode
+  {
+    public:
 
-      SBPLArmPlannerNode(std::string node_name);
+      SBPLArmPlannerNode();
 
       ~SBPLArmPlannerNode();
 
+      bool init();
+
+      int run();
+
       bool planKinematicPath(motion_planning_srvs::MotionPlan::Request &req, motion_planning_srvs::MotionPlan::Response &res);
 
+      void getCurrentJointAngles(const std::vector <std::string> &joint_names, std::vector <double> *joint_angles);
 
-     private:
+    private:
+
+      ros::NodeHandle node_;
+      ros::Publisher marker_publisher_;
+      ros::Publisher sbpl_map_publisher_;
+      ros::ServiceServer planning_service_;
+      ros::Subscriber mechanism_subscriber_;
+      ros::Subscriber col_map_subscriber_;
+      ros::Subscriber point_cloud_subscriber_;
 
       std::string planner_type_;
 
@@ -87,17 +111,45 @@ namespace sbpl_arm_planner_node
 
       double allocated_time_;
 
+      bool lowres_cc_;
+
+      bool dijkstra_heuristic_;
+
+      bool use_cm_for_voxel_;
+
+      int env_width_;
+
+      int env_height_;
+
+      int env_depth_;
+
+      double env_resolution_;
+
       bool forward_search_;
 
       bool search_mode_;
 
+      bool use_voxel3d_grid_;
+
       bool use_collision_map_;
+
+      bool visualize_goal_;
+
+      bool planner_initialized_;
+
+      bool use_multires_primitives_;
+
+      bool enable_pm_;
 
       int num_joints_;
 
       std::string collision_map_topic_;
 
+      std::string point_cloud_topic_;
+
       std::string node_name_;
+
+      std::string planning_frame_;
 
       std::string arm_name_;
 
@@ -107,15 +159,45 @@ namespace sbpl_arm_planner_node
 
       mapping_msgs::CollisionMap sbpl_collision_map_;
 
+      mechanism_msgs::MechanismState mechanism_state_;
+
+      std::vector<motion_planning_msgs::PoseConstraint> goal_pose_constraint_;
+
       MDPConfig mdp_cfg_;
 
-      EnvironmentROBARM3D pr2_arm_env_;
+      EnvironmentROBARM3D sbpl_arm_env_;
 
       ARAPlanner *planner_;
 
       FILE *env_config_fp_;
 
       FILE *planner_config_fp_;
+
+      boost::mutex mPlanning_;
+
+      bool bPlanning_;
+
+      sbpl_arm_planner_node::pm_wrapper *pm_;
+
+      tf::TransformListener tf_;
+
+      boost::shared_ptr<Voxel3d> env_grid_;
+
+      boost::shared_ptr<Voxel3d> planning_grid_;
+
+      boost::shared_ptr<Voxel3d> lowres_env_grid_;
+
+      boost::shared_ptr<Voxel3d> lowres_planning_grid_;
+
+      robot_msgs::PointCloud point_cloud_;
+
+      robot_msgs::PointCloud tf_point_cloud_;
+
+      boost::mutex mCopyingVoxel_;
+
+      visualization_msgs::Marker goal_marker_;
+
+      visualization_msgs::MarkerArray goal_marker_array_;
 
       bool initializePlannerAndEnvironment();
 
@@ -126,15 +208,29 @@ namespace sbpl_arm_planner_node
       bool setGoalState(const std::vector<motion_planning_msgs::JointConstraint> &joint_constraint);
 
       bool planToState(motion_planning_srvs::MotionPlan::Request &req, motion_planning_srvs::MotionPlan::Response &res);
+
       bool planToPosition(motion_planning_srvs::MotionPlan::Request &req, motion_planning_srvs::MotionPlan::Response &res);
 
       bool plan(motion_planning_msgs::KinematicPath &arm_path);
 
       void getSBPLCollisionMap();
 
-      void collisionMapCallback();
+      void collisionMapCallback(const mapping_msgs::CollisionMapConstPtr &collision_map);
 
-   };
+      void pointCloudCallback(const robot_msgs::PointCloudConstPtr &point_cloud);
+
+      void dummyCallback(const mechanism_msgs::MechanismStateConstPtr &mechanism_state);
+
+      void createOccupancyGrid();
+
+      void visualizeGoalPosition(robot_msgs::PoseStamped pose);
+
+      void initializePM();
+
+      bool updateOccupancyGrid();
+
+      void updatePMWrapper(motion_planning_srvs::MotionPlan::Request &req);
+  };
 }
 
 #endif
