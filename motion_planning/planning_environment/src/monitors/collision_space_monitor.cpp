@@ -265,6 +265,7 @@ void planning_environment::CollisionSpaceMonitor::objectInMapCallback(const mapp
 	collisionSpace_->lock();
 	collisionSpace_->clearObstacles(objectInMap->id);
 	collisionSpace_->unlock();
+	ROS_DEBUG("Removed object '%s' from collision space", objectInMap->id.c_str());
     }
     
     if (onObjectInMapUpdate_)
