@@ -199,14 +199,13 @@ private:
 	bi_.real_maxZ =  bi_.dimensionZ + bi_.originZ;	
     }
 
-    void keepCMapOutside(CMap &map)
+    void keepCMapLatest(CMap &map)
     {
 	CMap::iterator it = map.begin();
 	while (it != map.end())
 	{
 	    const CollisionPoint &cp = *it;
-	    if (header_.stamp - cp.t > bi_.keepOccluded ||
-		sf_.getMask(cp.x * bi_.resolution + bi_.originX, cp.y * bi_.resolution + bi_.originY, cp.z * bi_.resolution + bi_.originZ) == 0)
+	    if (header_.stamp - cp.t > bi_.keepOccluded)
 	    {
 		CMap::iterator e = it;
 		++it;
@@ -392,12 +391,12 @@ private:
 
 #pragma omp section
 		{
-		    keepCMapOutside(obstacles);
+		    keepCMapLatest(obstacles);
 		}
 		
 #pragma omp section
 		{
-		    keepCMapOutside(keep);
+		    keepCMapLatest(keep);
 		}
 	    }
 	    
@@ -460,22 +459,7 @@ private:
 	// this is not possible, so we copy to a vector
 	int n = possiblyOccluded.size();
 	std::vector<CollisionPoint> pts(n);
-
-	// if we have more than twice possibly occluded points when compared to the occluding points,
-	// we start downsampling
-	if (possiblyOccluded.size() > occluding.size())
-	{
-	    double prob = (double)occluding.size() / (double)possiblyOccluded.size();
-	    pts.clear();
-	    for (CMap::const_iterator it = possiblyOccluded.begin() ; it != possiblyOccluded.end() ; ++it)
-	    {
-		if (rand() / (RAND_MAX + 1.0) < prob)
-		    pts.push_back(*it);
-	    }
-	    n = pts.size();
-	}
-	else
-	    std::copy(possiblyOccluded.begin(), possiblyOccluded.end(), pts.begin());
+	std::copy(possiblyOccluded.begin(), possiblyOccluded.end(), pts.begin());
 		
 #pragma omp parallel for schedule(dynamic)
 	for (int i = 0 ; i < n ; ++i)
