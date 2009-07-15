@@ -44,6 +44,9 @@ from robot_msgs.msg import *
 from std_msgs.msg import *
 from robot_msgs.msg import *
 from image_msgs.msg import RawStereo
+from mechanism_msgs.msg import JointStates, JointState
+
+
 
 import tf
 from battery_monitor_adapter import *
@@ -266,16 +269,21 @@ if __name__ == '__main__':
     move_head_adapter=MoveHeadAdapter("/move_head/move_head_action",-1);
     move_head_adapter2=MoveHeadAdapter("/move_head2/move_head_action",-1);
 
-    hc_goal_topic_ = "/head_controller/set_command_array"
-    hc_pub = rospy.Publisher(hc_goal_topic_, JointCmd)
+    hc_goal_topic_ = "/head_controller/command"
+    hc_pub = rospy.Publisher(hc_goal_topic_, JointStates)
 
-    joint_cmds=JointCmd();
-    joint_cmds.names=[ "head_pan_joint", "head_tilt_joint"];
-    joint_cmds.positions=[0.0,0.3];
+    ps = JointState()
+    ps.name = 'head_pan_joint'
+    ps.position = 0.0
+    ts = JointState()
+    ts.name ='head_tilt_joint'
+    ts.position = 0.3
+    js = JointStates()
+    js.joints = [ps, ts]
 
-    hc_pub.publish(joint_cmds);
+    hc_pub.publish(js);
     rospy.sleep(0.1);
-    hc_pub.publish(joint_cmds);
+    hc_pub.publish(js);
 
     chrg_stations = [
     [[18.098, 21.015, 0.000], [0.000, 0.000, 0.713, 0.701]]
