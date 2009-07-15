@@ -9,12 +9,14 @@ int main(int argc, char** argv)
   msg.data = 42.0;
 
   lifelong_mapping::Database db("database");
-  db.insert(0, msg);
+  uint32_t id = db.insert(msg, "/test/topic", 6);
 
   std_msgs::Float32 msg2;
-  db.get(0, msg2);
+  std::string topic;
+  uint32_t node_id;
+  db.get(msg2, id, topic, node_id);
 
-  printf("Data = %f\n", msg2.data);
+  printf("ID = %u, topic = %s, node ID = %u, Data = %f\n", id, topic.c_str(), node_id, msg2.data);
 
   return 0;
 }
