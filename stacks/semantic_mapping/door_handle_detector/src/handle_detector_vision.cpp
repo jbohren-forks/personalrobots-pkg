@@ -234,12 +234,12 @@ private:
 
     void subscribeStereoData()
     {
-		left_image_sub_ = nh_.subscribe("stereo/left/image_rect", 1, sync_.synchronize(&HandleDetector::leftImageCallback, this));
-//		right_caminfo_sub_ = nh_.subscribe("stereo/right/cam_info", 1, sync_.synchronize(&HandleDetector::rightCamInfoCallback, this));
-		disparity_sub_ = nh_.subscribe("stereo/disparity", 1, sync_.synchronize(&HandleDetector::disparityImageCallback, this));
-		cloud_sub_ = nh_.subscribe("stereo/cloud", 1, sync_.synchronize(&HandleDetector::cloudCallback, this));
-		dispinfo_sub_ = nh_.subscribe("stereo/disparity_info", 1, sync_.synchronize(&HandleDetector::dispinfoCallback, this));
-//		stereoinfo_sub_ = nh_.subscribe("stereo/stereo_info", 1, sync_.synchronize(&HandleDetector::stereoinfoCallback, this));
+		left_image_sub_ = nh_.subscribe(nh_.resolveName("stereo")+"/left/image_rect", 1, sync_.synchronize(&HandleDetector::leftImageCallback, this));
+//		right_caminfo_sub_ = nh_.subscribe(nh_.resolveName("stereo")+"/right/cam_info", 1, sync_.synchronize(&HandleDetector::rightCamInfoCallback, this));
+		disparity_sub_ = nh_.subscribe(nh_.resolveName("stereo")+"/disparity", 1, sync_.synchronize(&HandleDetector::disparityImageCallback, this));
+		cloud_sub_ = nh_.subscribe(nh_.resolveName("stereo")+"/cloud", 1, sync_.synchronize(&HandleDetector::cloudCallback, this));
+		dispinfo_sub_ = nh_.subscribe(nh_.resolveName("stereo")+"/disparity_info", 1, sync_.synchronize(&HandleDetector::dispinfoCallback, this));
+//		stereoinfo_sub_ = nh_.subscribe(nh_.resolveName("stereo")+"/stereo_info", 1, sync_.synchronize(&HandleDetector::stereoinfoCallback, this));
     }
 
 

@@ -262,11 +262,11 @@ private:
     {
 
 
-		left_image_sub_ = nh_.subscribe("stereo/left/image_rect", 1, sync_.synchronize(&OutletSpotting::leftImageCallback, this));
-		left_caminfo_sub_ = nh_.subscribe("stereo/left/cam_info", 1, sync_.synchronize(&OutletSpotting::leftCamInfoCallback, this));
-		disparity_sub_ = nh_.subscribe("stereo/disparity", 1, sync_.synchronize(&OutletSpotting::disparityImageCallback, this));
-		cloud_sub_ = nh_.subscribe("stereo/cloud", 1, sync_.synchronize(&OutletSpotting::cloudCallback, this));
-		dispinfo_sub_ = nh_.subscribe("stereo/disparity_info", 1, sync_.synchronize(&OutletSpotting::dispinfoCallback, this));
+		left_image_sub_ = nh_.subscribe(nh_.resolveName("stereo")+"/left/image_rect", 1, sync_.synchronize(&OutletSpotting::leftImageCallback, this));
+		left_caminfo_sub_ = nh_.subscribe(nh_.resolveName("stereo")+"/left/cam_info", 1, sync_.synchronize(&OutletSpotting::leftCamInfoCallback, this));
+		disparity_sub_ = nh_.subscribe(nh_.resolveName("stereo")+"/disparity", 1, sync_.synchronize(&OutletSpotting::disparityImageCallback, this));
+		cloud_sub_ = nh_.subscribe(nh_.resolveName("stereo")+"/cloud", 1, sync_.synchronize(&OutletSpotting::cloudCallback, this));
+		dispinfo_sub_ = nh_.subscribe(nh_.resolveName("stereo")+"/disparity_info", 1, sync_.synchronize(&OutletSpotting::dispinfoCallback, this));
 
 		base_scan_sub_ = nh_.subscribe(base_scan_topic_, 1, &OutletSpotting::baseScanCallback, this);
     }
