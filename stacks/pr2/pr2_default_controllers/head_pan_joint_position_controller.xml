@@ -1,0 +1,5 @@
+<controller name="head_pan_joint_position_controller" type="JointPositionController">
+  <joint name="head_pan_joint" >
+    <pid p="10.0" d="0.5" i="12.0" iClamp="0.5" />
+  </joint>
+</controller>
