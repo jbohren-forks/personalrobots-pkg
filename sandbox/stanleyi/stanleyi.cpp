@@ -15,108 +15,21 @@
 
 
 USING_PART_OF_NAMESPACE_EIGEN
-//using namespace NEWMAT;
 using namespace std;
 using namespace cv;
 
-vector<ImageDescriptor*> setupImageDescriptors() {
-  vector<ImageDescriptor*> d;
-
-// Size winSize, Size blockSize, Size blockStride, Size cellSize,
-//   int nbins, int derivAperture=1, double winSigma=-1,
-//   int histogramNormType=L2Hys, double L2HysThreshold=0.2, bool gammaCorrection=false)
-//  d.push_back(new HogWrapper());
-  d.push_back(new HogWrapper(Size(16,16), Size(16,16), Size(8,8), Size(8,8), 7, 1, -1, 0, 0.2, true));
-  d.push_back(new HogWrapper(Size(32,32), Size(16,16), Size(8,8), Size(8,8), 7, 1, -1, 0, 0.2, true));
-  d.push_back(new HogWrapper(Size(64,64), Size(32,32), Size(16,16), Size(16,16), 7, 1, -1, 0, 0.2, true));
-  d.push_back(new HogWrapper(Size(128,128), Size(64,64), Size(32,32), Size(32,32), 7, 1, -1, 0, 0.2, true));
-
-  SuperpixelColorHistogram* sch1 = new SuperpixelColorHistogram(20, 0.5, 10, string("hue"));
-  SuperpixelColorHistogram* sch2 = new SuperpixelColorHistogram(5, 0.5, 10, string("hue"), NULL, sch1);
-  SuperpixelColorHistogram* sch3 = new SuperpixelColorHistogram(5, 1, 10, string("hue"), NULL, sch1);
-  SuperpixelColorHistogram* sch4 = new SuperpixelColorHistogram(5, .25, 10, string("hue"), NULL, sch1);
-  d.push_back(sch1);
-  d.push_back(sch2);
-  d.push_back(sch3);
-  d.push_back(sch4);
-
-//   IntegralImageTexture* iit = new IntegralImageTexture(1);
-//   d.push_back(iit);
-//   d.push_back(new IntegralImageTexture(2, iit));
-//   d.push_back(new IntegralImageTexture(3, iit));
-
-//   d.push_back(new IntensityPatch(40, .5, true));
-//   d.push_back(new IntensityPatch(20, 1, true));
-//   d.push_back(new IntensityPatch(80, .25, true));
-//   d.push_back(new IntensityPatch(120, 1.0/6.0, true));
-  return d;
-}
-
-vector<ImageDescriptor*> setupImageDescriptorsTest() {
-  vector<ImageDescriptor*> d;
-
-  d.push_back(new IntegralImageTexture());
-  return d;
-}
+// -- Utility functions.
+vector<ImageDescriptor*> setupImageDescriptors();
+void releaseImageDescriptors(vector<ImageDescriptor*>* desc);
+template <class T> void copyMsg(string name, T* m, ros::Time t, ros::Time t_no_use, void* n);
+int getdir (string dir, vector<string> &files);
+IplImage* findLabelMask(double stamp, string results_dir);
 
 
-void releaseImageDescriptors(vector<ImageDescriptor*>* desc) {
-  for(size_t i=0; i<desc->size(); i++) {
-    delete (*desc)[i];
-  }
-  desc->clear();
-}
-
-template <class T>
-void copyMsg(string name, T* m, ros::Time t, ros::Time t_no_use, void* n)
-{
-  if (m != 0) {
-    *((T*)(n)) = *((T*)(m));
-  }
-}
   
-
-int getdir (string dir, vector<string> &files)
-{
-  DIR *dp;
-  struct dirent *dirp;
-  if((dp  = opendir(dir.c_str())) == NULL) {
-    cout << "Error(" << errno << ") opening " << dir << endl;
-    return errno;
-  }
-
-  while ((dirp = readdir(dp)) != NULL) {
-    files.push_back(string(dirp->d_name));
-  }
-  closedir(dp);
-  return 0;
-}
-
-
-IplImage* findLabelMask(double stamp, string results_dir) 
-{
-  vector<string> files;
-  IplImage *mask = NULL;
-
-  string masks_dir = results_dir + "/masks/";
-  char buf[100];
-  sprintf(buf, "%f", stamp); 
-  string sbuf(buf);
-  sbuf = sbuf.substr(0, sbuf.length()-1);   //Remove the last digit - it's been rounded.
-
-  getdir(masks_dir, files);
-  for(size_t i=0; i<files.size(); i++)
-    {
-      if(files[i].find(sbuf) != string::npos && 
-	 files[i].find(string(".png")) != string::npos)
-	{
-	  cout << "Found label for " << sbuf << ": " << files[i] << endl;
-	  mask = cvLoadImage((masks_dir + files[i]).c_str());
-	  break;
-	}
-    }
-  return mask;
-}
+/***************************************************************************
+***********  Stanleyi
+****************************************************************************/
 
 
 class Stanleyi
@@ -129,90 +42,36 @@ public:
   IplImage* mask_;
   vector<ImageDescriptor*> descriptor_;
 
-  object* computeObjectAtRandomPoint(int* row=NULL, int* col=NULL);
-  vector<object*> collectFeaturesFromImage(int samples_per_img);
-  void induct(string bagfile, string results_dir);
   void collectObjectsFromImageVectorized(int samples_per_img, vector<object*>* objects, Vector<Keypoint>* keypoints);
   void sanityCheck(string bagfile, string results_dir);
-
-  Stanleyi()
-    : img_(NULL), mask_(NULL)
-  {
-    lp_.addHandler<sensor_msgs::Image>(string("/forearm/image_rect_color"), &copyMsg<sensor_msgs::Image>, (void*)(&img_msg_));
-    descriptor_ = setupImageDescriptors();
-    if(getenv("DEBUG") != NULL) {
-      for(size_t i=0; i<descriptor_.size(); i++) { 
-	descriptor_[i]->setDebug(true);
-      }
-    }
-    srand ( time(NULL) ); //For randomly selecting points.
-  }
-
-  ~Stanleyi() {
-    cout << "Destroying stanleyi." << endl;
-    releaseImageDescriptors(&descriptor_);
-//     if(img_)
-//       cvReleaseImage(&img_);
-    if(mask_)
-      cvReleaseImage(&mask_);
-  }
-
-  void collectDataset(string bagfile, int samples_per_img, string save_name, string results_dir);
+  DorylusDataset* collectDataset(string bagfile, int samples_per_img, string results_dir);
   void viewLabels(string bagfile, string results_dir);
   void makeClassificationVideo(string bagfile, Dorylus& d, int samples_per_img, string results_dir);
+  Stanleyi();
+  ~Stanleyi();
 };
 
-object* Stanleyi::computeObjectAtRandomPoint(int* row, int* col) {
-  int r = rand() % img_->height;
-  int c = rand() % img_->width;
-  MatrixXf* result = NULL;
-  object* obj = new object;
-
-  // -- Aim the descriptor functions at the new point.
-  for(size_t j=0; j<descriptor_.size(); j++) {
-    descriptor_[j]->setPoint(r, c);
-  }
-
-  // -- Set the label.
-  if(mask_ != NULL) {
-    CvScalar s = cvGet2D(mask_, r, c);
-    obj->label = s.val[0];
-    if(obj->label != 0) {
-      obj->label = 1;
+Stanleyi::Stanleyi()
+  : img_(NULL), mask_(NULL)
+{
+  lp_.addHandler<sensor_msgs::Image>(string("/forearm/image_rect_color"), &copyMsg<sensor_msgs::Image>, (void*)(&img_msg_));
+  descriptor_ = setupImageDescriptors();
+  if(getenv("DEBUG") != NULL) {
+    for(size_t i=0; i<descriptor_.size(); i++) { 
+      descriptor_[i]->setDebug(true);
     }
   }
-
-  // -- Compute all the descriptors.
-  bool success = false;
-  for(size_t j=0; j<descriptor_.size(); j++) {
-    // -- For now, only accept points for which all features are computable.
-    if(mask_ != NULL && obj->label == 1 && getenv("DEBUG_POSITIVES") != NULL)  {
-      descriptor_[j]->setDebug(true);
-      success = descriptor_[j]->compute(&result);
-      descriptor_[j]->setDebug(false);
-    }
-    else
-      success = descriptor_[j]->compute(&result);
-
-    if(!success) {
-      //ROS_WARN("Descriptor %s failed.", descriptor_[j]->name_.c_str());
-      delete obj;
-      return NULL;
-    }
-
-    ROS_ASSERT(result != NULL);
-    obj->features[descriptor_[j]->name_] = result;
-  }
-
-
-  if(row!=NULL && col!=NULL) {
-    *row = r;
-    *col = c;
-  }
-  return obj;
+  srand ( time(NULL) ); //For randomly selecting points.
 }
 
-void Stanleyi::collectDataset(string bagfile, int samples_per_img, string save_name, string results_dir) {
+Stanleyi::~Stanleyi() {
+  releaseImageDescriptors(&descriptor_);
+  if(mask_)
+    cvReleaseImage(&mask_);
+  //img_ is released by the CvBridge.
+}
+
+DorylusDataset* Stanleyi::collectDataset(string bagfile, int samples_per_img, string results_dir) {
   bool debug = false;
   vector<object*> objs;
 
@@ -247,10 +106,9 @@ void Stanleyi::collectDataset(string bagfile, int samples_per_img, string save_n
     cvReleaseImage(&mask_);
   }
 
-  DorylusDataset dd;
-  dd.setObjs(objs);
-  cout << dd.status() << endl;
-  dd.save(save_name);
+  DorylusDataset* dd = new DorylusDataset();
+  dd->setObjs(objs);
+  return dd;
 }
 
 MatrixXf* cvVector2Eigen(const Vector<float>& v) {
@@ -323,26 +181,6 @@ void Stanleyi::collectObjectsFromImageVectorized(int samples_per_img, vector<obj
       delete obj;
     }
   }
-}
-
-vector<object*> Stanleyi::collectFeaturesFromImage(int samples_per_img) {
-  vector<object*> objs;
-
-  // -- Aim the descriptor functions at the new image.
-  for(size_t j=0; j<descriptor_.size(); j++) {
-    descriptor_[j]->setImage(img_);
-  }
-  
-  // -- Randomly sample points from the image and get the features.
-  for(int i=0; i<samples_per_img; i++) {
-    object* obj = computeObjectAtRandomPoint(NULL, NULL);
-    
-    // -- Add the object to the dataset.
-    if(obj != NULL) {
-      objs.push_back(obj);
-    }
-  }
-  return objs;
 }
 
 void Stanleyi::sanityCheck(string bagfile, string results_dir) {
@@ -564,107 +402,6 @@ void Stanleyi::viewLabels(string bagfile, string results_dir) {
   }
 }
   
-
-void Stanleyi::induct(string bagfile, string results_dir) {
-  int row = 0, col = 0;
-  IplImage* vis = NULL;
-  object* obj = NULL;
-  NEWMAT::Matrix response_nm;
-  CvVideoWriter* writer = NULL;
-  int frame_num = 0;
-
-  int samples_per_img = 3000;
-  if(getenv("NSAMPLES") != NULL) 
-    samples_per_img = atoi(getenv("NSAMPLES"));
-  int nCandidates = 10;
-  if(getenv("NCAND") != NULL) 
-    nCandidates = atoi(getenv("NCAND"));
-  int max_secs = 60;
-  if(getenv("MAX_SECS") != NULL) 
-    max_secs = atoi(getenv("MAX_SECS"));
-  int max_wcs = 0;
-  if(getenv("MAX_WCS") != NULL) 
-    max_wcs = atoi(getenv("MAX_WCS"));
-
-
-  cvNamedWindow("Inductive Classification Visualization", CV_WINDOW_AUTOSIZE);
-  lp_.open(bagfile, ros::Time());
-  
-  // -- Find first labeled frame.
-  while(lp_.nextMsg()) {
-    img_ = img_bridge_.toIpl();
-    if (!img_bridge_.fromImage(img_msg_, "bgr")) {
-      ROS_ERROR("Could not convert message to ipl.");
-      break;
-    }
-
-    mask_ = findLabelMask(img_msg_.header.stamp.toSec(), results_dir);
-    if(mask_)
-      break;
-  }
-  ROS_DEBUG("Found mask.");
-
-  // -- Collect a dataset from it and train a classifier.
-  vector<object*> objs = collectFeaturesFromImage(samples_per_img);
-
-  // -- Main loop.
-  while(lp_.nextMsg()) {
-    DorylusDataset dd;
-    dd.setObjs(objs);
-
-    // -- Train a classifier on dd.
-    Dorylus d;  
-    d.useDataset(&dd);
-    d.train(nCandidates, max_secs, max_wcs);
-
-    // -- Get the next image.
-    img_ = img_bridge_.toIpl();
-    vis = cvCloneImage(img_);
-    if (!img_bridge_.fromImage(img_msg_, "bgr"))
-      break;
-    if(writer == NULL) {
-      writer = cvCreateVideoWriter("output.mpg", CV_FOURCC('P','I','M','1'), 30, cvGetSize(img_));
-    }
-
-    // -- Aim the descriptor functions at the new image.
-    for(size_t j=0; j<descriptor_.size(); j++) {
-      descriptor_[j]->setImage(img_);
-    }
-
-    // -- Compute features across the image.
-    for(int i=0; i<samples_per_img; i++) {
-      obj = computeObjectAtRandomPoint(&row, &col);
-      if(!obj)
-	continue;
-
-      // -- Get predictions and create a dataset from them for this image.
-      response_nm = d.classify(*obj);
-      if(response_nm(1,1) > 0) 
-	obj->label = 1;
-      else
-	obj->label = 0;
-      objs.push_back(obj);
-
-      // -- Draw the visualization.
-      if(response_nm(1,1) > 0)
-	cvCircle(vis, cvPoint(col, row), 2, cvScalar(0,255,0), 2);
-      else
-	cvCircle(vis, cvPoint(col, row), 2, cvScalar(0,0,255), 2);
-    }
-
-    cvWriteFrame(writer, vis);
-
-    cout << "Showing results for frame " << frame_num << endl;
-    cvShowImage("Inductive Classification Visualization", vis);
-    if(cvWaitKey(30) == 'q') {
-      break;
-    }
-
-    cvReleaseImage(&vis);
-  }
-  cvReleaseVideoWriter(&writer);
-}
-
 int main(int argc, char** argv) 
 {
   Stanleyi s;
@@ -694,7 +431,10 @@ int main(int argc, char** argv)
   else if(argc > 4 && !strcmp(argv[1], "--collectDataset"))
     {
       cout << "Collecting a dataset for bag " << argv[2] << ", saving with name " << argv[4] << " using the label masks in " << argv[3] <<  endl;  
-      s.collectDataset(argv[2], samples_per_img, argv[4], argv[3]);
+      DorylusDataset* dd = s.collectDataset(argv[2], samples_per_img, argv[3]);
+      cout << dd->status() << endl;
+      dd->save(argv[4]);
+      delete dd;
     }
   
   else if(argc > 2 && !strcmp(argv[1], "--statusD")) {
@@ -726,6 +466,16 @@ int main(int argc, char** argv)
     d.train(nCandidates, max_secs, max_wcs);
     d.save(argv[3]);
   }
+
+  else if(argc > 4 && !strcmp(argv[1], "--collectAndTrain")) {
+    cout << "Collecting a dataset for bag " << argv[2]  << " using the label masks in " << argv[3] << " then training with " << 
+      samples_per_img << "samples per image and saving in " << argv[4] << endl;  
+    DorylusDataset* dd = s.collectDataset(argv[2], samples_per_img, argv[3]);
+    Dorylus d;
+    d.useDataset(dd);
+    d.train(nCandidates, max_secs, max_wcs);
+    d.save(argv[4]);
+  }
   else if(argc > 4 && !strcmp(argv[1], "--makeClassificationVideo")) {
     cout << "Showing video classification for classifier " << argv[2] << " on bag " << argv[3] << " using the label masks in " << argv[4] <<  endl;
     Dorylus d;
@@ -733,20 +483,102 @@ int main(int argc, char** argv)
       return 1;
     s.makeClassificationVideo(argv[3], d, samples_per_img, argv[4]);
   }
-  else if(argc > 3 && !strcmp(argv[1], "--induct")) {
-    cout << "Running inductive video classification on bag " << argv[2] << " using the label masks in " << argv[3] <<  endl;
-    s.induct(argv[2], argv[3]);
-  }
 
   else {
     cout << "usage: " << endl;
     cout << argv[0] << " --makeClassificationVideo CLASSIFIER BAGFILE [LABELS]" << endl;
     cout << argv[0] << " --collectDataset BAGFILE LABELS DATASET" << endl;
+    cout << argv[0] << " --collectAndTrain BAGFILE LABELS CLASSIFIER" << endl;
     cout << argv[0] << " --viewLabels BAGFILE LABELS" << endl;
     cout << argv[0] << " --statusD DATASET" << endl;
-    cout << argv[0] << " --induct BAGFILE LABELS [CLASSIFIER] [DATASET]" << endl;
     cout << "  where LABELS might take the form of `rospack find cv_mech_turk`/results/single-object-s " << endl;
+    cout << "Environment variable options: " << endl;
   }
   
 }
 
+vector<ImageDescriptor*> setupImageDescriptors() {
+  vector<ImageDescriptor*> d;
+
+// Size winSize, Size blockSize, Size blockStride, Size cellSize,
+//   int nbins, int derivAperture=1, double winSigma=-1,
+//   int histogramNormType=L2Hys, double L2HysThreshold=0.2, bool gammaCorrection=false)
+//  d.push_back(new HogWrapper());
+  d.push_back(new HogWrapper(Size(16,16), Size(16,16), Size(8,8), Size(8,8), 7, 1, -1, 0, 0.2, true));
+  d.push_back(new HogWrapper(Size(32,32), Size(16,16), Size(8,8), Size(8,8), 7, 1, -1, 0, 0.2, true));
+  d.push_back(new HogWrapper(Size(64,64), Size(32,32), Size(16,16), Size(16,16), 7, 1, -1, 0, 0.2, true));
+  d.push_back(new HogWrapper(Size(128,128), Size(64,64), Size(32,32), Size(32,32), 7, 1, -1, 0, 0.2, true));
+
+  SuperpixelColorHistogram* sch1 = new SuperpixelColorHistogram(20, 0.5, 10, string("hue"));
+  SuperpixelColorHistogram* sch2 = new SuperpixelColorHistogram(5, 0.5, 10, string("hue"), NULL, sch1);
+  SuperpixelColorHistogram* sch3 = new SuperpixelColorHistogram(5, 1, 10, string("hue"), NULL, sch1);
+  SuperpixelColorHistogram* sch4 = new SuperpixelColorHistogram(5, .25, 10, string("hue"), NULL, sch1);
+  d.push_back(sch1);
+  d.push_back(sch2);
+  d.push_back(sch3);
+  d.push_back(sch4);
+
+//   IntegralImageTexture* iit = new IntegralImageTexture(1);
+//   d.push_back(iit);
+//   d.push_back(new IntegralImageTexture(2, iit));
+//   d.push_back(new IntegralImageTexture(3, iit));
+
+  return d;
+}
+
+void releaseImageDescriptors(vector<ImageDescriptor*>* desc) {
+  for(size_t i=0; i<desc->size(); i++) {
+    delete (*desc)[i];
+  }
+  desc->clear();
+}
+
+template <class T>
+void copyMsg(string name, T* m, ros::Time t, ros::Time t_no_use, void* n)
+{
+  if (m != 0) {
+    *((T*)(n)) = *((T*)(m));
+  }
+}
+
+int getdir (string dir, vector<string> &files)
+{
+  DIR *dp;
+  struct dirent *dirp;
+  if((dp  = opendir(dir.c_str())) == NULL) {
+    cout << "Error(" << errno << ") opening " << dir << endl;
+    return errno;
+  }
+
+  while ((dirp = readdir(dp)) != NULL) {
+    files.push_back(string(dirp->d_name));
+  }
+  closedir(dp);
+  return 0;
+}
+
+
+IplImage* findLabelMask(double stamp, string results_dir)
+{
+  vector<string> files;
+  IplImage *mask = NULL;
+
+  string masks_dir = results_dir + "/masks/";
+  char buf[100];
+  sprintf(buf, "%f", stamp); 
+  string sbuf(buf);
+  sbuf = sbuf.substr(0, sbuf.length()-1);   //Remove the last digit - it's been rounded.
+
+  getdir(masks_dir, files);
+  for(size_t i=0; i<files.size(); i++)
+    {
+      if(files[i].find(sbuf) != string::npos && 
+	 files[i].find(string(".png")) != string::npos)
+	{
+	  cout << "Found label for " << sbuf << ": " << files[i] << endl;
+	  mask = cvLoadImage((masks_dir + files[i]).c_str());
+	  break;
+	}
+    }
+  return mask;
+}

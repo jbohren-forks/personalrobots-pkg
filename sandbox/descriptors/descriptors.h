@@ -58,7 +58,7 @@ private:
 
   
 /***************************************************************************
-***********  ImageDescriptor classes.
+***********  ImageDescriptor
 ****************************************************************************/
 
 
@@ -76,25 +76,25 @@ class ImageDescriptor {
   //! Visualize feature computation.
   bool debug_;
 
+
   void setDebug(bool debug);
-  //! Deprecated.
-  virtual bool compute(Eigen::MatrixXf** result);
   //! Vectorized feature computation call.
   virtual void compute(IplImage* img, const cv::Vector<Keypoint>& points, vvf& results) {};
-
   //! Clean up any data specific to computation at a point.
   virtual void clearPointCache() {}
   //! Clean up any data specific to computation on a particular image.
   virtual void clearImageCache() {}
   //! Show the input image and a red + at the point at which the descriptor is being computed.
   void commonDebug(int row, int col);
-  //! Deprecated.
+  //! Sets the img_ pointer and clears the image cache.
   virtual void setImage(IplImage* img);
-  //! Deprecated.
-  virtual void setPoint(int row, int col);
   virtual ~ImageDescriptor() {};
   ImageDescriptor();
 };
+
+/***************************************************************************
+***********  Hog
+****************************************************************************/
 
 class HogWrapper : public ImageDescriptor {
  public:
@@ -109,6 +109,12 @@ class HogWrapper : public ImageDescriptor {
   void clearImageCache() {};
   void clearPointCache() {};
 };
+
+
+/***************************************************************************
+***********  Integral Image-based descriptors.
+****************************************************************************/
+
 
 class IntegralImageDescriptor : public ImageDescriptor {
  public:
@@ -139,52 +145,11 @@ class IntegralImageTexture : public IntegralImageDescriptor {
   void clearPointCache() {}
 };
 
-class Patch : public ImageDescriptor {
- public:
-  //! Length of the sides of the patch, before scaling.
-  int raw_size_;
-  //! Scaling to apply to the raw patch before computing the feature.
-  float scale_;
-  //! The final patch, made available for other descriptors to re-use computation.
-  IplImage* final_patch_;
-  //! Length of the sides of the patch, after scaling.
-  int size_;
-  //! The scaled color image patch.
-  IplImage* scaled_patch_;
 
+/***************************************************************************
+***********  Superpixel Statistics
+****************************************************************************/
 
-  Patch(int raw_size, float scale);
-  //! Common patch constructor computation.
-  bool preCompute();
-
-  void clearPointCache();
-  //virtual void clearImageCache();
-  ~Patch() {}  
-};
-
-class IntensityPatch : public Patch {
- public:
-  //! If true, the resulting feature vector has its mean set to 0 and variance set to 1.  This might give some lighting invariance for intensity patches, for example.
-  bool whiten_;
-
-  IntensityPatch(int raw_size, float scale, bool whiten);
-  bool compute(Eigen::MatrixXf** result);
-  void clearImageCache() {}
-};
-
-class PatchStatistic : public ImageDescriptor {
- public:
-  //! "variance"
-  std::string type_;
-  //! Pointer to Patch object which will contain the final_patch_ to compute the statistic on.
-  Patch* patch_;
-
-  PatchStatistic(std::string type, Patch* patch);
-  bool compute(Eigen::MatrixXf** result);
-
-  void clearPointCache() {}
-  void clearImageCache() {}
-};
 
 class SuperpixelStatistic : public ImageDescriptor {
  public:
@@ -236,15 +201,54 @@ std::vector<ImageDescriptor*> setupImageDescriptors();
 void whiten(Eigen::MatrixXf* m);
 
 
-/*
-class EdgePatch : public Patch {
- public:
-  //! Threshold 1 for canny edge detector.
-  int thresh1_;
-  //! Threshold 2 for canny edge detector.
-  int thresh2_;
+/***************************************************************************
+***********  Patch-based.  
+****************************************************************************/
+//Not converted to standard yet.  Only will be if wanted.
 
-  EdgePatch(int raw_size, float scale, int thresh1=150, int thresh2=100);
-}
+/* class Patch : public ImageDescriptor { */
+/*  public: */
+/*   //! Length of the sides of the patch, before scaling. */
+/*   int raw_size_; */
+/*   //! Scaling to apply to the raw patch before computing the feature. */
+/*   float scale_; */
+/*   //! The final patch, made available for other descriptors to re-use computation. */
+/*   IplImage* final_patch_; */
+/*   //! Length of the sides of the patch, after scaling. */
+/*   int size_; */
+/*   //! The scaled color image patch. */
+/*   IplImage* scaled_patch_; */
 
-*/
+
+/*   Patch(int raw_size, float scale); */
+/*   //! Common patch constructor computation. */
+/*   bool preCompute(); */
+
+/*   void clearPointCache(); */
+/*   ~Patch() {}   */
+/* }; */
+
+/* class IntensityPatch : public Patch { */
+/*  public: */
+/*   //! If true, the resulting feature vector has its mean set to 0 and variance set to 1.  This might give some lighting invariance for intensity patches, for example. */
+/*   bool whiten_; */
+
+/*   IntensityPatch(int raw_size, float scale, bool whiten); */
+/*   bool compute(Eigen::MatrixXf** result); */
+/*   void compute(IplImage* img, const cv::Vector<Keypoint>& points, vvf& results); */
+/*   void clearImageCache() {} */
+/* }; */
+
+/* class PatchStatistic : public ImageDescriptor { */
+/*  public: */
+/*   //! "variance" */
+/*   std::string type_; */
+/*   //! Pointer to Patch object which will contain the final_patch_ to compute the statistic on. */
+/*   Patch* patch_; */
+
+/*   PatchStatistic(std::string type, Patch* patch); */
+/*   bool compute(Eigen::MatrixXf** result); */
+
+/*   void clearPointCache() {} */
+/*   void clearImageCache() {} */
+/* }; */

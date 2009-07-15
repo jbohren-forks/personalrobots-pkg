@@ -24,52 +24,50 @@ vector<ImageDescriptor*> setupImageDescriptorsExample() {
   d.push_back(sch3);
   d.push_back(sch4);
 
-  d.push_back(new IntensityPatch(50, 1, true));
-  d.push_back(new PatchStatistic(string("variance"), (Patch*)d.back()));
-  d.push_back(new IntensityPatch(40, .5, true));
-  d.push_back(new IntensityPatch(20, 1, true));
-  d.push_back(new IntensityPatch(80, .25, true));
-  d.push_back(new IntensityPatch(120, 1.0/6.0, true));
   return d;
 }
 
+//! Transate and scale a vector to have mean of 0 and variance of 1.
+void whiten(Vector<float>& m) {
+  // -- Get sum and mean.
+  float sum = 0;
+  for(size_t i=0; i<m.size(); i++) { 
+    sum += m[i];
+  }
+  float mean = sum / m.size();
 
-void whiten(MatrixXf* m) {
+  // -- Translate and get variance.
   float var=0.0;
-  float mean = m->sum() / m->rows();
-
-  for(int i=0; i<m->rows(); i++) {
-    (*m)(i,0) = (*m)(i,0) - mean;
-    var += pow((*m)(i,0), 2);
+  for(size_t i=0; i<m.size(); i++) {
+    m[i] = m[i] - mean;
+    var += pow(m[i], 2);
   }
-  var /= m->rows();
-  if(abs(m->sum() / m->rows()) > 1e-2) {
-    cout << "mean: " << m->sum() / m->rows() << endl;
-    cout << m->transpose() << endl;
-    assert(abs(m->sum() / m->rows()) <= 1e-3);
-  }
+  var /= m.size();
 
+  // -- Scale.
   if(var != 0.0) { 
-    *m = *m / sqrt(var);
-    
-    // -- Check.
-//     var = 0;
-//     for(int i=0; i<m->rows(); i++) {
-//       (*m)(i,0) = (*m)(i,0);
-//       var += pow((*m)(i,0), 2);
-//     }
-//     var /= m->rows();
-//     if(abs(var-1) >= 1e-3) {
-//       cout << "var " << var << endl;
-//       assert(abs(var-1) < 1e-3);
-//     }
+    float std = sqrt(var);
+    for(size_t i=0; i<m.size(); i++) {
+      m[i] = m[i] / std;
+    }
   }
 
-  assert(!isnan((*m)(0,0)));
+  // -- Check.
+  mean = 0;
+  var = 0;
+  for(size_t i=0; i<m.size(); i++) {
+    assert(!isnan(m[i]));
+    mean += m[i];
+    var += pow(m[i], 2);
+  }
+  var /= m.size();
+  mean /= m.size();
+  assert(abs(mean) < 1e-3);
+  assert(abs(var - 1) < 1e-3);
 }
 
 
-//! Remove -1 (boundary) entries by nearest neighbor.
+//! Remove -1 (boundary) entries by nearest neighbor.  Designed for 32S images.
 void inPaintNN(IplImage* img) {
   bool all_assigned = false;
   while(!all_assigned) {
@@ -134,12 +132,6 @@ void ImageDescriptor::setImage(IplImage* img) {
   clearImageCache();
 }
 
-void ImageDescriptor::setPoint(int row, int col) {
-  row_ = row;
-  col_ = col;
-  clearPointCache();
-}
-
 void ImageDescriptor::commonDebug(int row, int col) {
   IplImage* display = cvCloneImage(img_);
   cvResetImageROI(display);
@@ -150,10 +142,6 @@ void ImageDescriptor::commonDebug(int row, int col) {
   cvShowImage("Input Image", display);
   cvWaitKey(0);
   cvReleaseImage(&display);
-}
-
-bool ImageDescriptor::compute(MatrixXf** result) {
-  return false;
 }
 
 
@@ -187,7 +175,6 @@ HogWrapper::HogWrapper(Size winSize, Size blockSize, Size blockStride, Size cell
 
 
 void HogWrapper::compute(IplImage* img, const Vector<Keypoint>& points, vvf& results) {
-  setImage(img);
 
   // -- Translate from Keypoint to Point.
   Vector<Point> locations;
@@ -197,8 +184,8 @@ void HogWrapper::compute(IplImage* img, const Vector<Keypoint>& points, vvf& res
     locations.push_back(pt);
   }
   
-  Vector<float> result;
-  
+  // -- Call opencv.
+  Vector<float> result;  
   hog_.compute(img, result, Size(), Size(), locations); //winStride and padding are set to default
   
   // -- Construct vvf from the long concatenation that hog_ produces.
@@ -244,191 +231,6 @@ void HogWrapper::compute(IplImage* img, const Vector<Keypoint>& points, vvf& res
   }
 } 
 
-
-/****************************************************************************
-*************  ImageDescriptor::Patch
-****************************************************************************/
-
-
-Patch::Patch(int raw_size, float scale) 
-  : raw_size_(raw_size), scale_(scale), final_patch_(NULL), scaled_patch_(NULL)
-{
-  //Common patch constructor computation.
-  cout << "Doing common constructor computation." << endl;
-  size_ = (size_t) ((float)raw_size * scale);
-  if(size_%2==0)
-    size_ -= 1;
-
-  
-  char buf[100];
-  sprintf(buf, "Patch_sz%d_scale%g", raw_size_, scale_);
-  name_.assign(buf);
-}
-
-bool Patch::preCompute() {
-  if(debug_)
-    cout << "Computing " << name_ << endl;
-  
-  // -- final_patch_ should have been deallocated on clearPointCache(), which must be called by the user.
-  if(final_patch_ != NULL || scaled_patch_ != NULL)
-    cout << "WARNING: final_patch_  or scaled_patch_ has not been deallocated.  Have you called clearPointCache()?" << endl;
-
-  // -- Catch edge cases.
-  int half = ceil((float)raw_size_ / 2.0);
-  if(row_-half < 0 || row_+half >= img_->height || col_-half < 0 || col_+half >= img_->width) {
-    //cout << "Out of bounds; size: " << raw_size_ << ", row: " << row_ << ", col_: " << col_ << endl;
-    return false;
-  }
-  
-  // -- Get the scaled patch.
-  //cout << "Setting roi to " << row_-half << " " << col_-half << " " << raw_size_ << endl;
-  cvSetImageROI(img_, cvRect(col_-half, row_-half, raw_size_, raw_size_));
-  scaled_patch_ = cvCreateImage(cvSize(size_, size_), img_->depth, img_->nChannels);
-  cvResize(img_, scaled_patch_,CV_INTER_AREA);
-  
-  return true;
-}
-     
-void Patch::clearPointCache() {
-  cvReleaseImage(&scaled_patch_);
-  cvReleaseImage(&final_patch_);
-  final_patch_ = NULL;
-  scaled_patch_ = NULL;
-}
-
-//void Patch::clearImageCache() {}
-
-/****************************************************************************
-*************  ImageDescriptor::Patch::IntensityPatch
-****************************************************************************/
-
-IntensityPatch::IntensityPatch(int raw_size, float scale, bool whiten)
-  : Patch(raw_size, scale), whiten_(whiten)
-{
-  char buf[100];
-  sprintf(buf, "_whiten%d_Intensity", whiten_);
-  name_.append(buf);
-  cout << "Creating " << name_ << endl;
-
-  result_size_ = size_ * size_;
-}
-
-bool IntensityPatch::compute(MatrixXf** result) {
-  //Do common patch processing.  
-  if(!preCompute())
-    return false;
-
-
-  final_patch_ = cvCreateImage(cvSize(size_, size_), IPL_DEPTH_8U, 1);
-  cvCvtColor(scaled_patch_, final_patch_, CV_BGR2GRAY);
-  MatrixXf* res = new MatrixXf(result_size_,1);
-
-  // -- Convert ipl to Newmat.
-  int idx=0;
-  for(int r=0; r<final_patch_->height; r++) {
-    uchar* ptr = (uchar*)(final_patch_->imageData + r * final_patch_->widthStep);
-    for(int c=0; c<final_patch_->width; c++) {
-      (*res)(idx, 0) = *ptr;
-      ptr++;
-      idx++;
-    }
-  }
-
-  // -- Set mean to 0, variance to 1 if appropriate and desired.
-  if(whiten_)
-    whiten(res);
-  
-  *result = res;
-
-  // -- Display for debugging.
-  if(debug_) {
-    cout << name_ << " dump: ";
-    cout << (**result) << endl;
-      
-    IplImage* final_patch_rescaled = cvCreateImage(cvSize(500,500), IPL_DEPTH_8U, 1);
-    cvResize(final_patch_, final_patch_rescaled, CV_INTER_NN);
-    cvNamedWindow(name_.c_str());
-    cvShowImage(name_.c_str(), final_patch_rescaled);
-    commonDebug(row_, col_);
-
-    cvReleaseImage(&final_patch_rescaled);
-  }
-   
-  // -- Clean up.
-  cvResetImageROI(img_);
-  return true;
-}
-
-     
-/****************************************************************************
-*************  ImageDescriptor::PatchStatistic
-****************************************************************************/
-
-PatchStatistic::PatchStatistic(string type, Patch* patch) :
-  type_(type), patch_(patch)
-{
-  char buf[200];
-  sprintf(buf, "%s_PatchStatistic_%s", patch_->name_.c_str(), type_.c_str());
-  name_.assign(buf);
-  cout << "Creating " << name_ << endl;
-
-  if(type_.compare("variance") == 0) {  
-    result_size_ = 1;
-  }
-}
-
-bool PatchStatistic::compute(MatrixXf** result) {
-
-  if(patch_ == NULL) {
-    cout << "patch_ was null" << endl;
-    return false; 
-  }
-  if(patch_->final_patch_ == NULL) {
-    cout << "final_patch_ was null" << endl;
-    return false; 
-  }
-
-  IplImage* fp = patch_->final_patch_;
-  if(type_.compare("variance") == 0) {  
-    (*result) = new MatrixXf(1,1);
-
-    // -- Get the mean.
-    double mean = 0.0;
-    for(int r=0; r<fp->height; r++) {
-      uchar* ptr = (uchar*)(fp->imageData + r * fp->widthStep);
-      for(int c=0; c<fp->width; c++) {
-	mean += (double)*ptr;
-      }
-    }
-    mean /= (double)(fp->height * fp->width);
-    //cout << "Mean is " << mean << endl;    
-
-    // -- Compute variance.
-    double var = 0.0;
-    double tmp = 0.0;
-    for(int r=0; r<fp->height; r++) {
-      uchar* ptr = (uchar*)(fp->imageData + r * fp->widthStep);
-      for(int c=0; c<fp->width; c++) {
-	tmp = (double)(*ptr) - mean;
-	var += tmp * tmp;
-	//cout << "tmp " << tmp << " var " << var << endl;
-      }
-    }
-    //cout << "Total pts " << (double)(fp->height * fp->width) << endl;
-    var /= (double)(fp->height * fp->width);
-    
-    (**result)(0,0) = var;
-  }
-
-  if(debug_) {
-    cout << name_ << " is " << **result << endl;
-//     cvNamedWindow("fp");
-//     cvShowImage("fp", fp);
-    commonDebug(row_, col_);
-  }
-
-  return true;
-}
 
 /***************************************************************************
 ***********  ImageDescriptor::SuperpixelStatistic
@@ -656,25 +458,15 @@ SuperpixelColorHistogram::SuperpixelColorHistogram(int seed_spacing, float scale
 }
 
 SuperpixelColorHistogram::~SuperpixelColorHistogram() {
-  clearPointCache();
   clearImageCache();
 }
 
 
 void SuperpixelColorHistogram::compute(IplImage* img, const Vector<Keypoint>& points, vvf& results) {
-  clearImageCache();
-  img_ = img;
-  
+  // -- Set up.
+  setImage(img);
   results.clear();
   results.resize(points.size());
-
-  for(size_t i=0; i<points.size(); i++) {
-    compute(img, points[i], results[i]);
-  }
-}
-void SuperpixelColorHistogram::compute(IplImage* img, const Keypoint& point, Vector<float>& result) {
-//bool SuperpixelColorHistogram::compute(MatrixXf** result) {
-  result.clear();
 
   // -- Make sure we have access to a segmentation.
   if(seg_provider_ == NULL && seg_ == NULL) {
@@ -709,15 +501,25 @@ void SuperpixelColorHistogram::compute(IplImage* img, const Keypoint& point, Vec
   assert(val_ != NULL);
   assert(seg_ != NULL);
 
-  // -- Get the label at this point.
-  int label = CV_IMAGE_ELEM(seg_, int, (size_t)point.pt.y, (size_t)point.pt.x);
-  assert(label != -1);
-
-  // -- Make sure we have access to the histogram data for this point.
+  // -- Make sure we have set up the histograms.
   if(!hists_reserved_) {
     histograms_cv_ = vector<CvHistogram*>(index_->size()+1, NULL);
     hists_reserved_ = true;
   }
+
+  // -- Compute at each point.
+  for(size_t i=0; i<points.size(); i++) {
+    compute(img, points[i], results[i]);
+  }
+}
+
+
+void SuperpixelColorHistogram::compute(IplImage* img, const Keypoint& point, Vector<float>& result) {
+  result.clear();
+
+  // -- Get the label at this point.
+  int label = CV_IMAGE_ELEM(seg_, int, (size_t)point.pt.y, (size_t)point.pt.x);
+  assert(label != -1);
 
   // -- Compute the histogram.
   computeHistogramCV(label);
@@ -775,6 +577,7 @@ void SuperpixelColorHistogram::computeHistogramCV(int label) {
 
 //! Release seg_, etc., if this object is the one that computes them; otherwise, just nullify the pointers.
 void SuperpixelColorHistogram::clearImageCache() {
+  // -- Clean up images.
   if(hsv_provider_ == NULL) {
     cvReleaseImage(&hsv_);
     cvReleaseImage(&hue_);
@@ -800,23 +603,14 @@ void SuperpixelColorHistogram::clearImageCache() {
     index_ = NULL;
   }
 
-
-  // -- Clean up histograms.
-//   for(size_t i=0; i<histograms_.size(); i++) {
-//     if(histograms_[i])
-//       delete histograms_[i];
-//   }
-//   histograms_.clear();
-
   // -- Clean up cv histograms.
   for(size_t i=0; i<histograms_cv_.size(); i++) {
     if(histograms_cv_[i])
       cvReleaseHist(&histograms_cv_[i]);
   }
   histograms_cv_.clear();
-
-
   hists_reserved_ = false;
+
 }
 
 
@@ -1227,5 +1021,192 @@ EdgePatch::compute(MatrixXf** result) {
   return true;
 }
 
+*/
 
+/****************************************************************************
+*************  ImageDescriptor::Patch
+****************************************************************************/
+
+/*
+
+Patch::Patch(int raw_size, float scale) 
+  : raw_size_(raw_size), scale_(scale), final_patch_(NULL), scaled_patch_(NULL)
+{
+  //Common patch constructor computation.
+  cout << "Doing common constructor computation." << endl;
+  size_ = (size_t) ((float)raw_size * scale);
+  if(size_%2==0)
+    size_ -= 1;
+
+  
+  char buf[100];
+  sprintf(buf, "Patch_sz%d_scale%g", raw_size_, scale_);
+  name_.assign(buf);
+}
+
+bool Patch::preCompute() {
+  if(debug_)
+    cout << "Computing " << name_ << endl;
+  
+  // -- final_patch_ should have been deallocated on clearPointCache(), which must be called by the user.
+  if(final_patch_ != NULL || scaled_patch_ != NULL)
+    cout << "WARNING: final_patch_  or scaled_patch_ has not been deallocated.  Have you called clearPointCache()?" << endl;
+
+  // -- Catch edge cases.
+  int half = ceil((float)raw_size_ / 2.0);
+  if(row_-half < 0 || row_+half >= img_->height || col_-half < 0 || col_+half >= img_->width) {
+    //cout << "Out of bounds; size: " << raw_size_ << ", row: " << row_ << ", col_: " << col_ << endl;
+    return false;
+  }
+  
+  // -- Get the scaled patch.
+  //cout << "Setting roi to " << row_-half << " " << col_-half << " " << raw_size_ << endl;
+  cvSetImageROI(img_, cvRect(col_-half, row_-half, raw_size_, raw_size_));
+  scaled_patch_ = cvCreateImage(cvSize(size_, size_), img_->depth, img_->nChannels);
+  cvResize(img_, scaled_patch_,CV_INTER_AREA);
+  
+  return true;
+}
+     
+void Patch::clearPointCache() {
+  cvReleaseImage(&scaled_patch_);
+  cvReleaseImage(&final_patch_);
+  final_patch_ = NULL;
+  scaled_patch_ = NULL;
+}
+
+//void Patch::clearImageCache() {}
+*/
+/****************************************************************************
+*************  ImageDescriptor::Patch::IntensityPatch
+****************************************************************************/
+/*
+IntensityPatch::IntensityPatch(int raw_size, float scale, bool whiten)
+  : Patch(raw_size, scale), whiten_(whiten)
+{
+  char buf[100];
+  sprintf(buf, "_whiten%d_Intensity", whiten_);
+  name_.append(buf);
+  cout << "Creating " << name_ << endl;
+
+  result_size_ = size_ * size_;
+}
+
+
+bool IntensityPatch::compute(MatrixXf** result) {
+  //Do common patch processing.  
+  if(!preCompute())
+    return false;
+
+
+  final_patch_ = cvCreateImage(cvSize(size_, size_), IPL_DEPTH_8U, 1);
+  cvCvtColor(scaled_patch_, final_patch_, CV_BGR2GRAY);
+  MatrixXf* res = new MatrixXf(result_size_,1);
+
+  // -- Convert ipl to Newmat.
+  int idx=0;
+  for(int r=0; r<final_patch_->height; r++) {
+    uchar* ptr = (uchar*)(final_patch_->imageData + r * final_patch_->widthStep);
+    for(int c=0; c<final_patch_->width; c++) {
+      (*res)(idx, 0) = *ptr;
+      ptr++;
+      idx++;
+    }
+  }
+
+  // -- Set mean to 0, variance to 1 if appropriate and desired.
+  if(whiten_)
+    whiten(res);
+  
+  *result = res;
+
+  // -- Display for debugging.
+  if(debug_) {
+    cout << name_ << " dump: ";
+    cout << (**result) << endl;
+      
+    IplImage* final_patch_rescaled = cvCreateImage(cvSize(500,500), IPL_DEPTH_8U, 1);
+    cvResize(final_patch_, final_patch_rescaled, CV_INTER_NN);
+    cvNamedWindow(name_.c_str());
+    cvShowImage(name_.c_str(), final_patch_rescaled);
+    commonDebug(row_, col_);
+
+    cvReleaseImage(&final_patch_rescaled);
+  }
+   
+  // -- Clean up.
+  cvResetImageROI(img_);
+  return true;
+}
+
+  */   
+/****************************************************************************
+*************  ImageDescriptor::PatchStatistic
+****************************************************************************/
+/*
+PatchStatistic::PatchStatistic(string type, Patch* patch) :
+  type_(type), patch_(patch)
+{
+  char buf[200];
+  sprintf(buf, "%s_PatchStatistic_%s", patch_->name_.c_str(), type_.c_str());
+  name_.assign(buf);
+  cout << "Creating " << name_ << endl;
+
+  if(type_.compare("variance") == 0) {  
+    result_size_ = 1;
+  }
+}
+
+bool PatchStatistic::compute(MatrixXf** result) {
+
+  if(patch_ == NULL) {
+    cout << "patch_ was null" << endl;
+    return false; 
+  }
+  if(patch_->final_patch_ == NULL) {
+    cout << "final_patch_ was null" << endl;
+    return false; 
+  }
+
+  IplImage* fp = patch_->final_patch_;
+  if(type_.compare("variance") == 0) {  
+    (*result) = new MatrixXf(1,1);
+
+    // -- Get the mean.
+    double mean = 0.0;
+    for(int r=0; r<fp->height; r++) {
+      uchar* ptr = (uchar*)(fp->imageData + r * fp->widthStep);
+      for(int c=0; c<fp->width; c++) {
+	mean += (double)*ptr;
+      }
+    }
+    mean /= (double)(fp->height * fp->width);
+    //cout << "Mean is " << mean << endl;    
+
+    // -- Compute variance.
+    double var = 0.0;
+    double tmp = 0.0;
+    for(int r=0; r<fp->height; r++) {
+      uchar* ptr = (uchar*)(fp->imageData + r * fp->widthStep);
+      for(int c=0; c<fp->width; c++) {
+	tmp = (double)(*ptr) - mean;
+	var += tmp * tmp;
+	//cout << "tmp " << tmp << " var " << var << endl;
+      }
+    }
+    //cout << "Total pts " << (double)(fp->height * fp->width) << endl;
+    var /= (double)(fp->height * fp->width);
+    
+    (**result)(0,0) = var;
+  }
+
+  if(debug_) {
+    cout << name_ << " is " << **result << endl;
+//     cvNamedWindow("fp");
+//     cvShowImage("fp", fp);
+    commonDebug(row_, col_);
+  }
+
+  return true;
+}
 */
