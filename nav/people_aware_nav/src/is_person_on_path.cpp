@@ -73,9 +73,9 @@ public:
     got_path_ = false;
 
     double robot_radius_m, person_radius_m;
-    node_->param("~/fixed_frame", fixed_frame_, std::string("map"));
+    node_->param("~fixed_frame", fixed_frame_, std::string("map"));
     node_->param("~costmap_2d/circumscribed_radius", robot_radius_m, 0.46);
-    node_->param("~/person_radius", person_radius_m, 0.8); 
+    node_->param("~person_radius", person_radius_m, 0.8); 
     total_dist_sqr_m_ = robot_radius_m*robot_radius_m + person_radius_m*person_radius_m;
 
     message_notifier_person_ = new tf::MessageNotifier<people::PositionMeasurement> (tf_, node_, boost::bind(&IsPersonOnPath::personPosCB, this, _1), "people_tracker_measurements", fixed_frame_, 1);

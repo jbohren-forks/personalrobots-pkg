@@ -1,8 +1,7 @@
 (defpackage :lane-following
   (:nicknames :lanes)
-  (:use :roslisp :cl :transform-2d :sb-thread :roslisp-queue)
-  (:export :main)
-  (:import-from :people_aware_nav-srv :SetNavConstraint))
+  (:use :roslisp :cl :transform-2d :sb-thread :roslisp-queue :people_aware_nav-srv)
+  (:export :main))
 
 
 (in-package :lane-following)
@@ -98,9 +97,9 @@
 	 (position (pose-position pose))
 	 (theta (pose-orientation pose)))
     (send-move-goal (aref position 0) (aref position 1) theta))
-  (sleep .5)
+  (sleep 5)
   (with-fields ((frame (frame_id header)) (stamp (stamp header)) (pos pos)) *person-position*
-	       (call-service "glance_at" :point_stamped (make-message "robot_msgs/PointStamped" 
+	       (call-service "glance_at" 'glanceat :point_stamped (make-message "robot_msgs/PointStamped" 
 								      (frame_id header) frame
 								      (stamp header) stamp
 								      point pos)))
@@ -120,6 +119,7 @@
 				  (frame_id header) *global-frame*
 				  (x position pose) x
 				  (y position pose) y
+				  (z orientation pose) (sin (/ th 2))
 				  (w orientation pose) (cos (/ th 2)))))
 
 (defun disable-nav ()
