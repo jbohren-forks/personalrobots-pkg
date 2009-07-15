@@ -76,7 +76,7 @@ public:
   void stateCB(const robot_msgs::TwistConstPtr &msg)
   {
     robot_msgs::PoseDot base_vel;
-    //ROS_INFO("%lf  %lf  %lf -- %lf  %lf", msg->vel.x, dead_zone, apply_dead_zone(msg->vel.x, dead_zone), k_trans, k_trans * apply_dead_zone(msg->vel.x, dead_zone));
+    //ROS_ERROR("%lf  %lf  %lf -- %lf  %lf", msg->vel.x, dead_zone, apply_dead_zone(msg->vel.x, dead_zone), k_trans, k_trans * apply_dead_zone(msg->vel.x, dead_zone));
     base_vel.vel.vx = k_trans * apply_dead_zone(msg->vel.x, dead_zone);
     base_vel.vel.vy = k_trans * apply_dead_zone(msg->vel.y, dead_zone);
     base_vel.ang_vel.vz = k_rot * apply_dead_zone(msg->rot.z, dead_zone);
@@ -101,21 +101,27 @@ int main(int argc, char** argv)
 
   robot_msgs::PoseStamped cmd;
   node.param("~pose_frame", cmd.header.frame_id, std::string("base_link"));
-  node.param("~pose_x", cmd.pose.position.x, 0.4);
-  node.param("~pose_y", cmd.pose.position.y, -0.3);
-  node.param("~pose_z", cmd.pose.position.z, 0.7);
+  node.param("~pose_x", cmd.pose.position.x, 0.6);
+  node.param("~pose_y", cmd.pose.position.y, -0.1);
+  node.param("~pose_z", cmd.pose.position.z, 1.0);
   node.param("~pose_qx", cmd.pose.orientation.x, 0.0);
   node.param("~pose_qy", cmd.pose.orientation.y, 0.0);
   node.param("~pose_qz", cmd.pose.orientation.z, 0.0);
   node.param("~pose_qw", cmd.pose.orientation.w, 1.0);
+
   ros::Publisher pub_cmd = node.advertise<robot_msgs::PoseStamped>(CONTROLLER + "/command", 2);
-  for (int i = 0; i < 30; ++i) {
+  ROS_ERROR("Publishing to controller on %s (%d)", pub_cmd.getTopic().c_str(), (void*)pub_cmd);
+
+  X x(node);
+
+  //for (int i = 0; i < 30; ++i) {
+  while (node.ok()) {
     pub_cmd.publish(cmd);
+    ros::spinOnce();
     ros::Duration(0.1).sleep();
   }
   pub_cmd.shutdown();
 
-  X x(node);
   ros::spin();
 
   return 0;
