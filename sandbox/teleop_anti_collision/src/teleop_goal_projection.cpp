@@ -44,9 +44,12 @@
 #include "joy/Joy.h"
 #include <ros/time.h>
 #include "tf/transform_listener.h"
-#include "robot_msgs/JointCmd.h"
+
+#include "mechanism_msgs/JointState.h"
+#include "mechanism_msgs/JointStates.h"
+
 #define TORSO_TOPIC "/torso_lift_controller/set_command"
-#define HEAD_TOPIC "/head_controller/set_command_array"
+#define HEAD_TOPIC "/head_controller/command"
 
 class TeleopGoalProjection: public ros::Node
 {
@@ -151,7 +154,7 @@ class TeleopGoalProjection: public ros::Node
       if(torso_dn_button != 0)
         ros::Node::instance()->advertise<std_msgs::Float64> (TORSO_TOPIC, 1);
       if(head_button != 0)
-        ros::Node::instance()->advertise<robot_msgs::JointCmd> (HEAD_TOPIC, 1);
+        ros::Node::instance()->advertise<mechanism_msgs::JointStates> (HEAD_TOPIC, 1);
       ros::Node::instance()->advertise<robot_msgs::PoseStamped> ("goal", 1);
       ros::Node::instance()->subscribe("joy", joy, &TeleopGoalProjection::joy_cb, 1);
       ROS_DEBUG("done with ctor\n");
@@ -265,15 +268,15 @@ class TeleopGoalProjection: public ros::Node
           // Head
           if(head_button != 0)
           {
-            robot_msgs::JointCmd joint_cmds;
-            joint_cmds.positions.push_back(req_pan);
-            joint_cmds.positions.push_back(req_tilt);
-            joint_cmds.velocity.push_back(0.0);
-            joint_cmds.velocity.push_back(0.0);
-            joint_cmds.acc.push_back(0.0);
-            joint_cmds.acc.push_back(0.0);
-            joint_cmds.names.push_back("head_pan_joint");
-            joint_cmds.names.push_back("head_tilt_joint");
+	    mechanism_msgs::JointState joint_cmd ;
+	    mechanism_msgs::JointStates joint_cmds;
+
+	    joint_cmd.name ="head_pan_joint";
+	    joint_cmd.position = req_pan;
+	    joint_cmds.joints.push_back(joint_cmd);
+	    joint_cmd.name="head_tilt_joint";
+	    joint_cmd.position = req_tilt;
+	    joint_cmds.joints.push_back(joint_cmd);
             ros::Node::instance()->publish(HEAD_TOPIC, joint_cmds);
           }
 
@@ -310,15 +313,15 @@ class TeleopGoalProjection: public ros::Node
             // Publish head
             if(head_button != 0)
             {
-              robot_msgs::JointCmd joint_cmds;
-              joint_cmds.positions.push_back(req_pan);
-              joint_cmds.positions.push_back(req_tilt);
-              joint_cmds.velocity.push_back(0.0);
-              joint_cmds.velocity.push_back(0.0);
-              joint_cmds.acc.push_back(0.0);
-              joint_cmds.acc.push_back(0.0);
-              joint_cmds.names.push_back("head_pan_joint");
-              joint_cmds.names.push_back("head_tilt_joint");
+	      mechanism_msgs::JointState joint_cmd ;
+	      mechanism_msgs::JointStates joint_cmds;
+
+	      joint_cmd.name ="head_pan_joint";
+	      joint_cmd.position = req_pan;
+	      joint_cmds.joints.push_back(joint_cmd);
+	      joint_cmd.name="head_tilt_joint";
+	      joint_cmd.position = req_tilt;
+	      joint_cmds.joints.push_back(joint_cmd);
               ros::Node::instance()->publish(HEAD_TOPIC, joint_cmds);
             }
 
