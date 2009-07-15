@@ -84,7 +84,27 @@ int main(int argc, char **argv)
     boost::thread th(&spinThread);
     
     ros::Publisher pub = nh.advertise<mapping_msgs::ObjectInMap>("object_in_map", 1);
-    
+
+	    
+	    mapping_msgs::ObjectInMap o1;
+	    o1.header.frame_id = "/base_link";
+	    o1.header.stamp = ros::Time::now();
+	    o1.id = "Part1";
+	    o1.object.type = mapping_msgs::Object::SPHERE;
+	    o1.object.dimensions.resize(1);
+	    o1.object.dimensions[0] = 0.32;
+	    //	    o1.object.dimensions[1] = 0.32;
+	    //	    o1.object.dimensions[2] = 0.32;
+	    o1.pose.position.x = 0.7;
+	    o1.pose.position.z = 0.6;
+
+	    while(1){
+	      pub.publish(o1); sleep(1);
+	    }
+	    th.join();
+
+    return 0;
+
     recognition_lambertian::FindObjectPoses::Request  req;
     recognition_lambertian::FindObjectPoses::Response res;
     

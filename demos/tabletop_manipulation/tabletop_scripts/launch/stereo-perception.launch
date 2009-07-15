@@ -1,11 +1,11 @@
 <launch>
   
   <include file="$(find pr2_defs)/pr2_planning_environment.launch" />
-  <include file="$(find stereo_image_proc)/stereoproc.launch" />
+  <include file="$(find stereo_image_proc)/narrow_stereoproc.launch" />
   
   <node pkg="robot_self_filter" type="self_filter" respawn="true" output="screen">
     <remap from="robot_description" to="robotdesc/pr2" />
-    <remap from="cloud_in" to="stereo/cloud" />
+    <remap from="cloud_in" to="/narrow_stereo/cloud" />
     <remap from="cloud_out" to="full_cloud_annotated" />
     <param name="annotate" type="string" value="on_self" />
   </node>
