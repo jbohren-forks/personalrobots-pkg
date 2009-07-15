@@ -81,10 +81,11 @@ int main(int argc, char** argv)
   ros::Duration sleep_duration(2,0);
 
   sleep_duration.sleep();
-  MoveBaseClient ac("move_base");
+  MoveBaseClient ac("/test_action/move_base");
   sleep_duration.sleep();
 
   PoseStamped goal_pose;
+  goal_pose.pose.position.x = 200;
 
   ac.execute(goal_pose, &callback);
 

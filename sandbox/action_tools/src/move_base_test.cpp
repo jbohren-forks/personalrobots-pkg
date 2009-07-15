@@ -51,7 +51,7 @@ void preemptCB(){
 
 void updateLoop(double freq){
   ros::NodeHandle n;
-  action_tools::ActionServer<action_tools::MoveBaseGoal, action_tools::MoveBaseResult> as(n, "move_base", 10);
+  action_tools::ActionServer<action_tools::MoveBaseGoal, action_tools::MoveBaseResult> as(n, "move_base", 2);
 
   robot_msgs::PoseStamped goal;
 
@@ -60,7 +60,7 @@ void updateLoop(double freq){
   as.registerGoalCallback(boost::bind(&goalCB));
 
   as.registerPreemptCallback(boost::bind(&preemptCB));
-  
+
   ros::Rate r(freq);
   while(n.ok()){
     if(as.isActive()){
@@ -82,7 +82,7 @@ void updateLoop(double freq){
           as.succeeded();
           continue;
         }
-        
+
         pub.publish(goal);
       }
       else {
@@ -90,6 +90,12 @@ void updateLoop(double freq){
         as.preempted();
       }
     }
+    else if(as.isNewGoalAvailable()){
+      ROS_INFO("This action has received a new goal");
+      goal = as.getNextGoal<robot_msgs::PoseStamped>();
+      as.acceptNextGoal();
+    }
+
     r.sleep();
   }
 }

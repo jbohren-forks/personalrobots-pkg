@@ -100,20 +100,24 @@ private:
   void status_callback(const GoalStatusConstPtr& status)
   {
     // Check error condition: See if we're pursuing a goal in the future
-    if (status->goal_id.id > cur_goal_.header.stamp)
+    if (client_state_  != IDLE &&
+        status->goal_id.id > cur_goal_.header.stamp)
     {
-      if (status->status == GoalStatus::PREEMPTED ||
-          status->status == GoalStatus::SUCCEEDED ||
-          status->status == GoalStatus::ABORTED)
+      if (status->status != cur_status_.status &&
+           (status->status == GoalStatus::PREEMPTED ||
+            status->status == GoalStatus::SUCCEEDED ||
+            status->status == GoalStatus::ABORTED) )
       {
         ROS_INFO("Action has moved on to a new goal");
+        ROS_INFO("ClientState: Setting to IDLE");
+        client_state_ = IDLE;
       }
       else
       {
         ROS_WARN("Switched to a new goal without giving feedback");
+        ROS_INFO("ClientState: Setting to IDLE");
+        client_state_ = IDLE;
       }
-      ROS_INFO("ClientState: Setting to IDLE");
-      client_state_ = IDLE;
       return;
     }
 

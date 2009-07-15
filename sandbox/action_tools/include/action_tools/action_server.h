@@ -51,7 +51,7 @@ namespace action_tools {
 
   template <class ActionGoal, class ActionResult>
   class ActionServer {
-    public: 
+    public:
       ActionServer(ros::NodeHandle n, std::string name, double status_frequency)
         : node_(n, name), new_goal_(false), preempt_request_(false) {
           status_pub_ = node_.advertise<action_tools::GoalStatus>("~status", 1);
@@ -60,7 +60,7 @@ namespace action_tools {
           goal_sub_ = node_.subscribe<ActionGoal>("~goal", 1,
               boost::bind(&ActionServer::goalCallback, this, _1));
 
-          preempt_sub_ = node_.subscribe<action_tools::Preempt>("~preempt", 1,  
+          preempt_sub_ = node_.subscribe<action_tools::Preempt>("~preempt", 1,
               boost::bind(&ActionServer::preemptCallback, this, _1));
 
           status_timer_ = node_.createTimer(ros::Duration(1.0 / status_frequency),
@@ -72,7 +72,7 @@ namespace action_tools {
       bool isNewGoalAvailable(){
         return new_goal_;
       }
-      
+
       template <class Result> void sendResult(Result result){
         ActionResult r;
         r.header.stamp = ros::Time::now();
@@ -99,6 +99,7 @@ namespace action_tools {
           current_goal_ = next_goal_;
           new_goal_ = false;
           state_ = RUNNING;
+          status_.goal_id.id = current_goal_.goal_id.id;
           status_.status = status_.ACTIVE;
         }
         else{
@@ -203,7 +204,7 @@ namespace action_tools {
         status_pub_.publish(status_);
         lock_.unlock();
       }
-      
+
       ros::NodeHandle node_;
 
       ros::Subscriber goal_sub_, preempt_sub_;
