@@ -293,6 +293,8 @@ void SpinImage::computeSpinImage(const robot_msgs::PointCloud& data,
   int signed_row_nbr = 0;
   int curr_row = 0;
   unsigned int curr_col = 0;
+  float max_bin_count = 1.0; // init to 1.0 so avoid divide by 0 if no neighbor points
+  size_t curr_spin_img_idx = 0;
   for (unsigned int i = 0 ; i < neighbor_indices.size() ; i++)
   {
     // Create vector from center point to neighboring point
@@ -321,7 +323,17 @@ void SpinImage::computeSpinImage(const robot_msgs::PointCloud& data,
     // Increment appropriate spin image cell
     if (curr_row >= 0 && static_cast<unsigned int> (curr_row) < nbr_rows_ && curr_col < nbr_cols_)
     {
-      spin_image[curr_row * nbr_cols_ + curr_col] += 1.0;
+      curr_spin_img_idx = static_cast<size_t> (curr_row * nbr_cols_ + curr_col);
+      spin_image[curr_spin_img_idx] += 1.0;
+      if (spin_image[curr_spin_img_idx] > max_bin_count)
+      {
+        max_bin_count = spin_image[curr_spin_img_idx];
+      }
     }
+  }
+
+  for (size_t i = 0 ; i < result_size_ ; i++)
+  {
+    spin_image[i] /= max_bin_count;
   }
 }
