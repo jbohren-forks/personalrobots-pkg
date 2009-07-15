@@ -10,6 +10,8 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 rospack_add_executable(move_arm src/move_arm.cpp)
 rospack_link_boost(move_arm thread)
 
+# actuate gripper action
+rospack_add_executable(actuate_gripper_action src/actuate_gripper_action.cpp)
 
 # debugging tools
 
@@ -20,3 +22,6 @@ rospack_link_boost(arm_cmd_line thread)
 # simple tests
 rospack_add_executable(oscillate_move test/oscillate_move.cpp)
 rospack_link_boost(oscillate_move thread)
+
+# actuate gripper action test
+rospack_add_executable(actuate_gripper_action_test test/test_actuate_gripper.cpp)
