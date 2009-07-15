@@ -64,13 +64,14 @@ int
   Duration timeout_long = Duration().fromSec(40.0);
 
   robot_actions::ActionClient<std_msgs::Float64, pr2_robot_actions::ActuateGripperState, std_msgs::Float64> actuate_gripper("actuate_gripper");
-  robot_actions::ActionClient<pr2_robot_actions::SwitchControllers, pr2_robot_actions::SwitchControllersState,  std_msgs::Empty> switch_controllers("switch_controllers");
+
+  //  robot_actions::ActionClient<pr2_robot_actions::SwitchControllers, pr2_robot_actions::SwitchControllersState,  std_msgs::Empty> switch_controllers("switch_controllers");
 
 
   // tuck arm
-  switchlist.start_controllers.clear();  switchlist.stop_controllers.clear();
-    switchlist.start_controllers.push_back("r_gripper_effort_controller");
-  if (switch_controllers.execute(switchlist, empty, timeout_medium) != robot_actions::SUCCESS) return -1;
+  //  switchlist.start_controllers.clear();  switchlist.stop_controllers.clear();
+  //  switchlist.start_controllers.push_back("r_gripper_effort_controller");
+  //  if (switch_controllers.execute(switchlist, empty, timeout_medium) != robot_actions::SUCCESS) return -1;
 
   std_msgs::Float64 cmd, fb;
   cmd.data = -20;

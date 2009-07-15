@@ -1,0 +1,7 @@
+<launch>
+
+<!-- Gripper effort controller -->
+  <node pkg="mechanism_control" type="spawner.py" args="$(find pr2_default_controllers)/r_gripper_effort_controller.xml" />
+
+ <node pkg="move_arm" type="actuate_gripper_action" name="actuate_gripper_action"/>
+</launch>
