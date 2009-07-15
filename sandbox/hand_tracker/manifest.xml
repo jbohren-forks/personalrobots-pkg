@@ -1,0 +1,17 @@
+<package>
+  <description brief="hand_tracker">
+
+     hand_tracker
+
+  </description>
+  <author>Romain Thibaux</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://pr.willowgarage.com/wiki/hand_tracker</url>
+  <depend package="roscpp"/>
+  <depend package="opencv_latest"/>
+  <depend package="mux"/>
+
+</package>
+
+

@@ -1,0 +1,5 @@
+<launch>
+
+  <node pkg="mux" type="throttle" args="2.0 /narrow_stereo/left/image_color /narrow_stereo/left/image_color_throttled" />
+
+</launch>
