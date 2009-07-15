@@ -36,6 +36,7 @@ class Skeleton:
   def __init__(self, cam, **kwargs):
     self.nodes = set()
     self.edges = set()
+    self.every_edge = []
     self.weak_edges = []
     self.link_thresh = 100              # how many inliers needed to add in a long-range link
     if 1:
@@ -286,16 +287,19 @@ class Skeleton:
         relpose = ~self.prev_pose * this.pose
         inf = strong
         print "LINK: Strong from obs", relpose.xform(0,0,0)
+        self.every_edge.append((previd, this.id, relpose, 1.0))
       else:
         if self.fills and (connected == 0):
           print "Strong link from %d to %d" % (previd, this.id)
           relpose = self.gt(self.prev_id, this.id)
+          self.every_edge.append((previd, this.id, relpose, 1.0))
           inf = strong
           print "LINK: Strong from fill", relpose.xform(0,0,0)
         else:
           self.weak_edges.append((previd, this.id))
           print "Weak link from %d to %d" % (previd, this.id)
           relpose = Pose(numpy.identity(3), [ 0, 0, 0 ])
+          self.every_edge.append((previd, this.id, relpose, 0.0))
           inf = weak
           print "LINK: Weak"
 
@@ -328,6 +332,7 @@ class Skeleton:
     return r
 
   def addConstraint(self, prev, this, relpose):
+    self.every_edge.append((prev, this, relpose, 1.0))
     self.edges.add((prev, this))
     self.timer['toro add'].start()
     self.pg.addIncrementalEdge(prev, this, relpose.xform(0,0,0), relpose.euler(), strong)
@@ -366,7 +371,6 @@ class Skeleton:
     elif duration:
       started = time.time()
       while (time.time() - started) < duration:
-        print "optimizing"
         self.pg.iterate()
     print "Error changed from", starting_error, "to", self.pg.error()
     self.pg.recomputeAllTransformations()

@@ -91,6 +91,7 @@ keys = set()
 import getopt
 
 skel_load_filename = None
+skel_fill_filename = None
 optlist, args = getopt.getopt(sys.argv[1:], "l:f:")
 print optlist, args
 for o,a in optlist:
@@ -137,7 +138,7 @@ for cam,l_image,r_image,label in playlist(args):
     # skel.fill("/u/prdata/vslam_data/FtCarson/2007.08/2007.08.29/course3-DTED5-run1/traj.txt", 13916)
     if skel_fill_filename:
       skel.fill(skel_fill_filename)
-    skel.node_vdist = 15
+    skel.node_vdist = 1
     oe_x = []
     oe_y = []
     oe_home = None
