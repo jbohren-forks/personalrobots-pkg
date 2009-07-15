@@ -50,6 +50,7 @@
 #include "svlBase.h"
 #include "svlML.h"
 #include "svlVision.h"
+#include "hogWrapper.h"
 
 using namespace std;
 
@@ -355,3 +356,4 @@ int main(int argc, char *argv[])
 
 
 
+SVL_AUTOREGISTER_CPP( HogWrapper , svlFeatureExtractor, HogWrapper);

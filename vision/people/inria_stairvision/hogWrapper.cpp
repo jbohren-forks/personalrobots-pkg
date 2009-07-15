@@ -34,9 +34,6 @@ void HogWrapper::extract(const vector<CvPoint> &locations,
 
   IplImage * img = imgFrame->image;
 
-  cvNamedWindow("debug");
-  cvShowImage("debug",img);
-  cvWaitKey(0);
 
   cv::Mat mat(img);
 
@@ -51,8 +48,84 @@ void HogWrapper::extract(const vector<CvPoint> &locations,
   _hog->compute(mat, results_cv, cv::Size(0,0), cv::Size(0,0), locations_cv);
 
 
+
+  //<debug>
+  /*
+  cv::HOGDescriptor hog(cv::Size(64,128), cv::Size(16,16), cv::Size(8,8), cv::Size(8,8), 9);
+
+
+  char * hogp = (char *) & hog;
+  char * _hogp = (char *) &(*_hog);
+
+  cout << "Side by side: " << endl;
+  for (unsigned i = 0; i < sizeof(cv::HOGDescriptor); i++)
+    {
+      cout << (int) hogp[i] << " " << (int) _hogp[i];
+      if ((int) hogp[i] != (int) _hogp[i])
+	cout << " !!!!!!!!";
+      cout << endl;
+    }
+
+assert(hog.winSize == _hog->winSize);
+  assert(hog.blockSize == _hog->blockSize);
+  assert(hog.blockStride == _hog->blockStride);
+  assert(hog.cellSize == _hog->cellSize);
+  assert(hog.nbins == _hog->nbins);
+  assert(hog.derivAperture == _hog->derivAperture);
+  assert(hog.winSigma == _hog->winSigma);
+  assert(hog.histogramNormType == _hog->histogramNormType);
+  assert(hog.L2HysThreshold == _hog->L2HysThreshold);
+  assert(hog.gammaCorrection == _hog->gammaCorrection);
+  assert(hog.svmDetector.size() == _hog->svmDetector.size());
+  for (unsigned i = 0; i < hog.svmDetector.size(); i++)
+    assert(hog.svmDetector[i] == _hog->svmDetector[i]);
+
+  char * p;
+#define PRINT(x) cout << #x << endl; p = (char *) & x;		\
+					    for (unsigned i = 0; i < sizeof(x); i++) \
+					      cout << (int) p[i] << endl; \ 
+
+  PRINT(hog.winSize);
+  PRINT(hog.blockSize);
+  PRINT(hog.blockStride);
+  PRINT(hog.cellSize);
+  PRINT(hog.nbins);
+  PRINT(hog.derivAperture);
+  PRINT(hog.winSigma);
+  PRINT(hog.histogramNormType);
+  PRINT(hog.L2HysThreshold);
+  PRINT(hog.gammaCorrection);
+  PRINT(hog.svmDetector);
+
+
+
+
+  cv::Mat rimg(128,64,CV_8U);
+  
+  cv::Vector<cv::Point> locations2;
+
+  cv::RNG rng = cv::theRNG() ;
+
+  rng.fill(rimg, cv::RNG::UNIFORM, cv::Scalar::all(0), cv::Scalar::all(256));
+
+  locations2.push_back(cv::Point(0,0));
+
+  cv::Vector<float> descriptors;
+
+  //_hog->compute(mat, results_cv, cv::Size(), cv::Size(), locations2);
+
+  */
+
+  /*
+  cout  << "Nonzero feature values: " << endl;
   for (unsigned i = 0; i < results_cv.size(); i++)
-    cout << results_cv[i] << endl;
+    {
+      if (results_cv[i] != 0)
+	cout << results_cv[i] << endl;
+    }
+
+  */
+  //exit(-1);
 
   assert(results_cv.size() == locations.size() * nf);
 
@@ -161,7 +234,46 @@ bool HogWrapper::load(XMLNode &root)
 
   _hog = new cv::HOGDescriptor(windowSize, blockSize, cellSize, blockStride, nbins, derivAperture, winSigma, histogramNormType, L2HysThreshold, gammaCorrection);
 
+  _hog = new cv::HOGDescriptor(windowSize, blockSize, cellSize, blockStride, nbins);
+
+  cv::HOGDescriptor hog2(windowSize, blockSize, cellSize, blockStride, nbins);
+
   assert(_hog);
+
+
+  cv::HOGDescriptor hog(cv::Size(64,128), cv::Size(16,16), cv::Size(8,8), cv::Size(8,8), 9);
+  
+  /*
+  
+  char * hogp = (char *) & hog;
+  char * _hogp = (char *) &(*_hog);
+  
+  cout << "Side by side: " << endl;
+  for (unsigned i = 0; i < sizeof(cv::HOGDescriptor); i++)
+    {
+      cout << (int) hogp[i] << " " << (int) _hogp[i];
+      if ((int) hogp[i] != (int) _hogp[i])
+	cout << " !!!!!!!!";
+      cout << endl;
+    }
+
+
+  assert(hog.winSize == _hog->winSize);
+  assert(hog.blockSize == _hog->blockSize);
+  assert(hog.blockStride == _hog->blockStride);
+  assert(hog.cellSize == _hog->cellSize);
+  assert(hog.nbins == _hog->nbins);
+  assert(hog.derivAperture == _hog->derivAperture);
+  assert(hog.winSigma == _hog->winSigma);
+  assert(hog.histogramNormType == _hog->histogramNormType);
+  assert(hog.L2HysThreshold == _hog->L2HysThreshold);
+  assert(hog.gammaCorrection == _hog->gammaCorrection);
+  assert(hog.svmDetector.size() == _hog->svmDetector.size());
+  for (unsigned i = 0; i < hog.svmDetector.size(); i++)
+    assert(hog.svmDetector[i] == _hog->svmDetector[i]);
+
+  cout << "(right after construction)" << endl;
+  */
 
   return true;
 }
@@ -203,6 +315,7 @@ HogWrapper::~HogWrapper()
 
 unsigned HogWrapper::numFeatures() const
 {
+  /*
   cout << "inside numFeatures call" << endl;
 
 
@@ -222,6 +335,8 @@ unsigned HogWrapper::numFeatures() const
   for (unsigned i = 0; i < _hog->svmDetector.size(); i++)
     cout << _hog->svmDetector[i] << endl;
   cout << "/svm" << endl;
+  */
+
 
   return _hog->getDescriptorSize();
 }

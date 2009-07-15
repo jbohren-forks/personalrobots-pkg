@@ -17,7 +17,7 @@ MY_BIN_PATH=$(shell pwd)/bin
 #######################################################################
 SVL_CLONED_APPS = buildPatchResponseCache.cpp classifyImages.cpp \
  extractorCat.cpp 
-APP_SRC = ${SVL_CLONED_APPS} defaultHOG.cpp svl2inria.cpp
+APP_SRC = ${SVL_CLONED_APPS} cvtest.cpp defaultHOG.cpp svl2inria.cpp
 
 OTHER_SRC = hogWrapper.cpp
 
@@ -32,7 +32,7 @@ EXT_CFLAGS = -I$(EXT_PATH)/xmlParser -I$(EXT_PATH)
 EXT_LFLAGS = $(EXT_PATH)/xmlParser/xmlParser.a  $(EXT_PATH)/lbfgs/lbfgs.a
 
 CFLAGS += $(WX_CFLAGS) $(EXT_CFLAGS) $(LIB_CFLAGS)
-LFLAGS += $(WX_LFLAGS) $(EXT_LFLAGS) $(LIBSVL)  -lboost_filesystem-gcc42-mt-d-1_34_1 `rospack find opencv_svn`/build/opencv-svn/opencv/build/lib/libcvaux.so.1.1.0
+LFLAGS += $(WX_LFLAGS) $(EXT_LFLAGS) $(LIBSVL)  `rospack find opencv_svn`/build/opencv-svn/opencv/build/lib/libcvaux-new.so.1.1.0
 #`rospack find opencv_latest`/build/opencv-svn/build/lib/libcvaux.so.1.1.0
 
 .PHONY: clean

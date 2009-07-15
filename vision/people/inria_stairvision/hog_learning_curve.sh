@@ -36,6 +36,7 @@ mkdir -p ${TEST_NEG_EXAMPLES}
 ${BIN}/buildTrainingImageDataset -set svlVision.svlImageLoader channels "${DATA_CHANNELS}" -set svlVision.svlImageLoader defaultExtension ${BASE_EXTENSION} -set svlVision.svlTrainingDatasetBuilder objects ${OBJ_TYPE} -set svlVision.svlTrainingDatasetBuilder resizeWidth ${OBJ_WIDTH} -set svlVision.svlTrainingDatasetBuilder resizeHeight ${OBJ_HEIGHT} -set svlVision.svlTrainingDatasetBuilder baseDir ${TEST_EXAMPLES_DIR} ${TEST_SEQ} ${TEST_LAB} 
 
 cat learning_curve_points.txt | while read line; do
+#export line=-0.1
 #export line=-1.0
     echo "At learning curve point $line"
 
@@ -78,8 +79,10 @@ cat learning_curve_points.txt | while read line; do
     echo "Building patch response cache..."
     rm -r -f ${POS_CACHE}
     rm -r -f ${NEG_CACHE}
-    mkdir ${POS_CACHE}
-    mkdir ${NEG_CACHE}
+    mkdir -p ${POS_CACHE}
+	echo "Making ${NEG_CACHE}"
+    mkdir -p ${NEG_CACHE}
+	
 
     #Build the patch response cache. I have taken out the limit on the number of images. first arg used to be -maxImages 1000
 echo "First call to buildPatchResponseCache"
@@ -89,6 +92,9 @@ echo "Second call to buildPatchResponseCache"
 
 export MODEL_NAME=models/${OBJ_TYPE}${NAME}${line}
 export MODEL=${MODEL_NAME}.model
+
+mkdir -p model
+mkdir -p experiments
 
     #Train the boosted detector
 echo "Training boosted detector"
