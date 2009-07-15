@@ -60,7 +60,7 @@ class TrackHelperAction(python_actions.Action):
       self.head_controller = "head_controller"
       rospy.set_param(self.name + "/head_controller", self.head_controller)
 
-    self.head_controller_publisher = rospy.Publisher(self.head_controller + "/head_track_point", robot_msgs.msg.PointStamped)
+    self.head_controller_publisher = rospy.Publisher(self.head_controller + "/point_head", robot_msgs.msg.PointStamped)
 
   def execute(self, goal):
 
