@@ -6,7 +6,9 @@
 
 <node pkg="mechanism_control" type="spawner.py" args="$(find pr2_default_controllers)/torso_lift_vel_controller.xml" output="screen" />
 
-<node pkg="mechanism_control" type="spawner.py" args="$(find pr2_default_controllers)/head_pan_tilt_controller.xml" output="screen" />
+
+<include file="$(find pr2_default_controllers)/head_position_controller.launch" />
+
 
 <!-- The robot pose EKF is launched with the base controller-->
 <include file="$(find robot_pose_ekf)/robot_pose_ekf.launch" />
