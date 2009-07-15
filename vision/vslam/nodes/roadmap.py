@@ -86,7 +86,7 @@ class RoadmapServer:
         #self.send_map(rospy.time(0))
         self.wheel_odom_edges = set()
 
-        rospy.Subscriber('/stereo/raw_stereo', sensor_msgs.msg.RawStereo, self.handle_raw_stereo, queue_size=2, buff_size=7000000)
+        rospy.Subscriber('/wide_stereo/raw_stereo', sensor_msgs.msg.RawStereo, self.handle_raw_stereo, queue_size=2, buff_size=7000000)
 
     def send_map(self, stamp):
 
@@ -105,7 +105,7 @@ class RoadmapServer:
         uTG = TG.to_undirected()
         print "uTG", uTG.nodes(), uTG.edges()
         close = set([here])
-        for i in range(3):
+        for i in range(10):
             close |= set(nx.node_boundary(uTG, close))
         print "close", close
 
@@ -155,8 +155,8 @@ class RoadmapServer:
         pg.recomputeAllTransformations()
         print self.tf.getFrameStrings()
         target_frame = "base_link"
-        t = self.tf.getLatestCommonTime("stereo_optical_frame", target_frame)
-        trans,rot = self.tf.lookupTransform(target_frame, "stereo_optical_frame", t)
+        t = self.tf.getLatestCommonTime("double_stereo_wide_optical_frame", target_frame)
+        trans,rot = self.tf.lookupTransform(target_frame, "double_stereo_wide_optical_frame", t)
         xp = Pose()
         xp.fromlist(self.tf.fromTranslationRotation(trans,rot))
 
@@ -217,15 +217,15 @@ class RoadmapServer:
         if self.skel.add(self.vo.keyframe):
           print "====>", self.vo.keyframe.id, self.frame_timestamps[self.vo.keyframe.id]
           #print self.tf.getFrameStrings()
-          #assert self.tf.frameExists("stereo_optical_frame")
+          #assert self.tf.frameExists("double_stereo_wide_optical_frame")
           #assert self.tf.frameExists("odom_combined")
           N = sorted(self.skel.nodes)
           for a,b in zip(N, N[1:]):
             if (a,b) in self.skel.edges:
               t0 = self.frame_timestamps[a]
               t1 = self.frame_timestamps[b]
-              if self.tf.canTransformFull("stereo_optical_frame", t0, "stereo_optical_frame", t1, "odom_combined"):
-                t,r = self.tf.lookupTransformFull("stereo_optical_frame", t0, "stereo_optical_frame", t1, "odom_combined")
+              if self.tf.canTransformFull("double_stereo_wide_optical_frame", t0, "double_stereo_wide_optical_frame", t1, "odom_combined"):
+                t,r = self.tf.lookupTransformFull("double_stereo_wide_optical_frame", t0, "double_stereo_wide_optical_frame", t1, "odom_combined")
                 relpose = Pose()
                 relpose.fromlist(self.tf.fromTranslationRotation(t,r))
                 self.wheel_odom_edges.add((a, b, relpose, 1.0))
