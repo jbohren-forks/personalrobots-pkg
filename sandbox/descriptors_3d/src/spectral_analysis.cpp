@@ -1,7 +1,7 @@
 /*********************************************************************
  * Software License Agreement (BSD License)
  *
- *  Copyright (c) 2009, Daniel Munoz
+ *  Copyright (c) 2009, Willow Garage
  *  All rights reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
@@ -65,6 +65,41 @@ void SpectralAnalysis::clear()
 // --------------------------------------------------------------
 /* See function definition */
 // --------------------------------------------------------------
+int SpectralAnalysis::useSpectralInformation(SpectralAnalysis* spectral_info)
+{
+  if (support_radius_defined_)
+  {
+    ROS_ERROR("Cannot use spectral information after the radius had been defined");
+    return -1;
+  }
+  else
+  {
+    spectral_info_ = spectral_info;
+    return 0;
+  }
+}
+
+// --------------------------------------------------------------
+/* See function definition */
+// --------------------------------------------------------------
+int SpectralAnalysis::setSupportRadius(double support_radius)
+{
+  if (spectral_info_ == NULL)
+  {
+    support_radius_ = support_radius;
+    support_radius_defined_ = true;
+    return 0;
+  }
+  else
+  {
+    ROS_ERROR("Cannot change support radius when spectral information has been defined");
+    return -1;
+  }
+}
+
+// --------------------------------------------------------------
+/* See function definition */
+// --------------------------------------------------------------
 void SpectralAnalysis::compute(const robot_msgs::PointCloud& data,
                                cloud_kdtree::KdTree& data_kdtree,
                                const cv::Vector<robot_msgs::Point32*>& interest_pts,
@@ -76,9 +111,9 @@ void SpectralAnalysis::compute(const robot_msgs::PointCloud& data,
 
     // ----------------------------------------
     // Ensure radius is valid
-    if (support_radius_ < 1e-5)
+    if (support_radius_defined_ == false || support_radius_ < 1e-5)
     {
-      ROS_ERROR("SpectralShape::compute() support radius must be first set");
+      ROS_ERROR("SpectralShape::compute() support radius must be set to a positive value");
       results.resize(interest_pts.size());
       return;
     }
@@ -130,6 +165,15 @@ void SpectralAnalysis::compute(const robot_msgs::PointCloud& data,
   // If spectral information is not available, then compute it
   if (spectral_info_ == NULL)
   {
+    // ----------------------------------------
+    // Ensure radius has been defined (negative value is okay if using regions)
+    if (support_radius_defined_ == false)
+    {
+      ROS_ERROR("SpectralShape::compute() support radius must be set");
+      results.resize(interest_region_indices.size());
+      return;
+    }
+
     // ----------------------------------------
     // Clear out any previous computations
     clear();

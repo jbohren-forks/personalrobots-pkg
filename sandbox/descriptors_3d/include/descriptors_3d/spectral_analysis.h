@@ -3,7 +3,7 @@
 /*********************************************************************
  * Software License Agreement (BSD License)
  *
- *  Copyright (c) 2009, Daniel Munoz
+ *  Copyright (c) 2009, Willow Garage
  *  All rights reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
@@ -73,30 +73,81 @@ class SpectralAnalysis: public Descriptor3D
     {
     }
 
-    // --------------------------------------------------------------
-    /*!
-     * \brief
-     */
-    // --------------------------------------------------------------
     virtual ~SpectralAnalysis() = 0;
 
     // --------------------------------------------------------------
     /*!
      * \brief
+     *
+     * \warning This method cannot be called if setSupportRadius has already
+     *          been called.
+     *
+     * \return 0 on success, otherwise negative value on error
      */
     // --------------------------------------------------------------
-    inline int useSpectralInformation(SpectralAnalysis* spectral_info)
+    int useSpectralInformation(SpectralAnalysis* spectral_info);
+
+    // --------------------------------------------------------------
+    /*!
+     * \brief Defines the neighborhood radius when doing spectral analysis
+     *
+     * The radius must be positive when computing features for interest
+     * points.  However, the value can be negative when giving interest
+     * REGIONs to indicate to use only the points within the interest region
+     * for spectral analysis
+     *
+     * \warning This method cannot be called if useSpectralInformation has already
+     *          been called.
+     *
+     * \param support_radius The radius value
+     *
+     * \return 0 on success, otherwise negative value on error
+     */
+    // --------------------------------------------------------------
+    int setSupportRadius(double support_radius);
+
+    // --------------------------------------------------------------
+    /*!
+     * \brief Returns the saved normals estimated for each interest point/region
+     *        that was passed to compute()
+     */
+    // --------------------------------------------------------------
+    inline const vector<Eigen::Vector3d*>& getNormals()
     {
-      if (support_radius_defined_)
-      {
-        ROS_ERROR("cannot use spectral information after the radius had been defined");
-        return -1;
-      }
-      else
-      {
-        spectral_info_ = spectral_info;
-        return 0;
-      }
+      return normals_;
+    }
+
+    // --------------------------------------------------------------
+    /*!
+     * \brief Returns the saved tangents estimated for each interest point/region
+     *        that was passed to compute()
+     */
+    // --------------------------------------------------------------
+    inline const vector<Eigen::Vector3d*>& getTangents()
+    {
+      return tangents_;
+    }
+
+    // --------------------------------------------------------------
+    /*!
+     * \brief Returns the saved eigen values of the covariance matrix for each
+     *        interest point/region that was passed to compute()
+     */
+    // --------------------------------------------------------------
+    inline const vector<Eigen::Vector3d*>& getEigenValues()
+    {
+      return eigen_values_;
+    }
+
+    // --------------------------------------------------------------
+    /*!
+     * \brief Returns the saved centroids for each interest point/region
+     *        that was passed to compute()
+     */
+    // --------------------------------------------------------------
+    inline const vector<Eigen::Vector3d*>& getCentroids()
+    {
+      return centroids_;
     }
 
     virtual void compute(const robot_msgs::PointCloud& data,
@@ -108,47 +159,6 @@ class SpectralAnalysis: public Descriptor3D
                          cloud_kdtree::KdTree& data_kdtree,
                          const cv::Vector<vector<int>*>& interest_region_indices,
                          cv::Vector<cv::Vector<float> >& results);
-
-    // --------------------------------------------------------------
-    /*!
-     * \brief
-     */
-    // --------------------------------------------------------------
-    inline int setSupportRadius(double support_radius)
-    {
-      if (spectral_info_ == NULL)
-      {
-        support_radius_ = support_radius;
-        support_radius_defined_ = true;
-        return 0;
-      }
-      else
-      {
-        ROS_ERROR("Cannot change support radius when spectral info defined");
-        return -1;
-      }
-      // TODO put same check for setting spectral info?
-    }
-
-    inline const vector<Eigen::Vector3d*>& getNormals()
-    {
-      return normals_;
-    }
-
-    inline const vector<Eigen::Vector3d*>& getTangents()
-    {
-      return tangents_;
-    }
-
-    inline const vector<Eigen::Vector3d*>& getEigenValues()
-    {
-      return eigen_values_;
-    }
-
-    inline const vector<Eigen::Vector3d*>& getCentroids()
-    {
-      return centroids_;
-    }
 
   protected:
     virtual void computeFeatures(cv::Vector<cv::Vector<float> >& results) = 0;
