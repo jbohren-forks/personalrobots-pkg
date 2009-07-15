@@ -135,9 +135,9 @@ void PR2GripperTransmission::computeGapStates(
 
   //
   // get the effort at the gripper gap based on torque at the motor
-  // gap effort = motor torque * dtheta/dt
-  //            = I * theta_ddot       * dtheta_dt
-  //            = I * MR_ddot * (2*pi) * dtheta_dt
+  // gap effort = motor torque         * dmotor_theta/dt
+  //            = I * motor_theta_ddot * dmotor_theta_dt
+  //            = I * MR_ddot * (2*pi) * dmotor_theta_dt
   //            = I * MR_ddot * (2*pi) * dMR_dt / (2*pi)
   //            = MT                   / dt_dMR
   //
