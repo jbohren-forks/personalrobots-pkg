@@ -130,6 +130,16 @@ class SpectralAnalysis: public Descriptor3D
 
     // --------------------------------------------------------------
     /*!
+     * \brief Returns the saved middle component direction
+     */
+    // --------------------------------------------------------------
+    inline const vector<Eigen::Vector3d*>& getMiddleEigenVectors()
+    {
+      return middle_eig_vecs_;
+    }
+
+    // --------------------------------------------------------------
+    /*!
      * \brief Returns the saved eigen values of the covariance matrix for each
      *        interest point/region that was passed to compute()
      */
@@ -163,7 +173,7 @@ class SpectralAnalysis: public Descriptor3D
 
     vector<Eigen::Vector3d*> normals_;
     vector<Eigen::Vector3d*> tangents_;
-    vector<Eigen::Vector3d*> eigen_vecs2_;
+    vector<Eigen::Vector3d*> middle_eig_vecs_;
     vector<Eigen::Vector3d*> eigen_values_;
     vector<Eigen::Vector3d*> centroids_;
 

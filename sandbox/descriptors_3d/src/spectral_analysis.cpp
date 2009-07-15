@@ -55,7 +55,7 @@ void SpectralAnalysis::clear()
     if (normals_[i] != NULL)
     {
       delete normals_[i];
-      delete eigen_vecs2_[i];
+      delete middle_eig_vecs_[i];
       delete tangents_[i];
       delete eigen_values_[i];
       delete centroids_[i];
@@ -106,6 +106,15 @@ int SpectralAnalysis::analyzeInterestPoints(const robot_msgs::PointCloud& data,
                                             const cv::Vector<robot_msgs::Point32*>& interest_pts)
 {
   // ----------------------------------------
+  // Ensure some regions are provided
+  unsigned int nbr_interest_pts = interest_pts.size();
+  if (nbr_interest_pts == 0)
+  {
+    ROS_ERROR("SpectralAnalysis::analyzeInterestPoints() no interest points to analyze");
+    return -1;
+  }
+
+  // ----------------------------------------
   // Ensure radius is valid
   if (support_radius_defined_ == false || support_radius_ < 1e-5)
   {
@@ -119,9 +128,8 @@ int SpectralAnalysis::analyzeInterestPoints(const robot_msgs::PointCloud& data,
 
   // ----------------------------------------
   // Allocate accordingly
-  unsigned int nbr_interest_pts = interest_pts.size();
   normals_.assign(nbr_interest_pts, NULL);
-  eigen_vecs2_.assign(nbr_interest_pts, NULL);
+  middle_eig_vecs_.assign(nbr_interest_pts, NULL);
   tangents_.assign(nbr_interest_pts, NULL);
   eigen_values_.assign(nbr_interest_pts, NULL);
   centroids_.assign(nbr_interest_pts, NULL);
@@ -156,6 +164,15 @@ int SpectralAnalysis::analyzeInterestRegions(const robot_msgs::PointCloud& data,
                                              const cv::Vector<vector<int>*>& interest_region_indices)
 {
   // ----------------------------------------
+  // Ensure some regions are provided
+  unsigned int nbr_regions = interest_region_indices.size();
+  if (nbr_regions == 0)
+  {
+    ROS_ERROR("SpectralAnalysis::analyzeInterestRegions() no regions to analyze");
+    return -1;
+  }
+
+  // ----------------------------------------
   // Ensure radius has been defined (negative value is okay if using regions)
   if (support_radius_defined_ == false)
   {
@@ -169,9 +186,8 @@ int SpectralAnalysis::analyzeInterestRegions(const robot_msgs::PointCloud& data,
 
   // ----------------------------------------
   // Allocate accordingly
-  unsigned int nbr_regions = interest_region_indices.size();
   normals_.assign(nbr_regions, NULL);
-  eigen_vecs2_.assign(nbr_regions, NULL);
+  middle_eig_vecs_.assign(nbr_regions, NULL);
   tangents_.assign(nbr_regions, NULL);
   eigen_values_.assign(nbr_regions, NULL);
   centroids_.assign(nbr_regions, NULL);
@@ -232,7 +248,7 @@ void SpectralAnalysis::populateContainers(const robot_msgs::PointCloud& data,
   // ----------------------------------------
   // Allocate for new data
   normals_[idx] = new Eigen::Vector3d();
-  eigen_vecs2_[idx] = new Eigen::Vector3d();
+  middle_eig_vecs_[idx] = new Eigen::Vector3d();
   tangents_[idx] = new Eigen::Vector3d();
   eigen_values_[idx] = new Eigen::Vector3d();
   centroids_[idx] = new Eigen::Vector3d();
@@ -250,7 +266,7 @@ void SpectralAnalysis::populateContainers(const robot_msgs::PointCloud& data,
   for (unsigned int j = 0 ; j < 3 ; j++)
   {
     (*(normals_[idx]))[j] = eigen_vectors(j, 0);
-    (*(eigen_vecs2_[idx]))[j] = eigen_vectors(j, 1);
+    (*(middle_eig_vecs_[idx]))[j] = eigen_vectors(j, 1);
     (*(tangents_[idx]))[j] = eigen_vectors(j, 2);
   }
 
