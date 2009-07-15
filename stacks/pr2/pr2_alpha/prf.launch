@@ -48,7 +48,7 @@
   <node machine="four" pkg="imu_node" type="imu_node" output="screen"/>
 
   <!-- Videre Stereo cam -->
-  <include file="$(find pr2_alpha)/stereo.launch" />
+  <!-- DEPRECATED include file="$(find pr2_alpha)/stereo.launch" /-->
 
   <!-- Prosilica camera setup, 7/14/09 -->
   <group ns="prosilica">
