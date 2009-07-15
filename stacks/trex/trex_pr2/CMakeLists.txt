@@ -21,7 +21,7 @@ set(TREX_FILES src/pr2_adapter_utilities.cpp
 	       src/master_reactor.cpp)
 
 # build extensions into exported library
-create_trex_lib(trex_pr2 ${TREX_FILES})
+create_trex_lib(trex_pr2 TREX_FILES)
 
 
 # build executables

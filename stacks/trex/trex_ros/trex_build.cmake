@@ -50,10 +50,10 @@ endmacro(trex_declare_fast)
 # Create a TREX library using files as args. The name of the targets created are {target}_o and {target}_g
 macro(create_trex_lib target files)
   if($ENV{ROS_TREX_DEBUG} MATCHES 1)
-    rospack_add_library(${target}_g ${TREX_FILES})
+    rospack_add_library(${target}_g ${${files}})
     trex_declare_debug(${target}_g)
   endif($ENV{ROS_TREX_DEBUG} MATCHES 1)
-  rospack_add_library(${target}_o ${TREX_FILES})
+  rospack_add_library(${target}_o ${${files}})
   trex_declare_fast(${target}_o)
 endmacro(create_trex_lib)
 

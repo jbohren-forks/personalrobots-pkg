@@ -27,7 +27,7 @@ set(TREX_FILES src/adapters.cpp
 	       src/components.cpp
 	       src/adapter_utilities.cpp)
 
-create_trex_lib(trex_ros ${TREX_FILES})
+create_trex_lib(trex_ros TREX_FILES)
 
 # trexwatchdog is a safety process that will monitor pings from the executive
 # and dispense shutdown commands to highlevel controllers (deactivation) if pings are
