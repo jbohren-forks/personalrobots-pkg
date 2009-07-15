@@ -1,0 +1,5 @@
+<launch>
+  <node pkg="move_arm" type="arm_cmd_line" output="screen" args="right">    
+    <remap from="robot_description" to="robotdesc/pr2" />
+  </node>
+</launch>
