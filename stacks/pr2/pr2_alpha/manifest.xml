@@ -11,6 +11,7 @@
   <review status="na" notes=""/>
   
   <depend package="pr2_defs" />
+  <depend package="pr2_ogre" />
   <depend package="pr2_default_controllers" />
   <depend package="teleop_base"/>
   <depend package="pr2_etherCAT"/>
