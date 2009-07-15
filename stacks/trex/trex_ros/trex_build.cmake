@@ -62,7 +62,7 @@ endmacro(create_trex_lib)
 
 
 # A wrapper around add_executable(), using info from the rospack
-# invocation to set up compiling and linking.
+# invocation to set up compiling and linking. This macro is a workaround for ros issue 1381
 macro(rospack_add_executable_trex_mod exe)
   add_executable(${ARGV})
 
