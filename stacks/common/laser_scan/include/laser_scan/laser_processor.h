@@ -70,7 +70,7 @@ namespace laser_scan
     float x;
     float y;
 
-    static Sample* Extract(int ind, sensor_msgs::LaserScan& scan);
+    static Sample* Extract(int ind, const sensor_msgs::LaserScan& scan);
 
   private:
     Sample() {};
@@ -132,7 +132,7 @@ namespace laser_scan
 
     std::list<SampleSet*>& getClusters() { return clusters_; }
 
-    ScanProcessor(sensor_msgs::LaserScan& scan, ScanMask& mask_, float mask_threshold = 0.03);
+    ScanProcessor(const sensor_msgs::LaserScan& scan, ScanMask& mask_, float mask_threshold = 0.03);
 
     ~ScanProcessor();
 

@@ -40,7 +40,7 @@ using namespace ros;
 using namespace std;
 using namespace laser_scan;
 
-Sample* Sample::Extract(int ind, sensor_msgs::LaserScan& scan)
+Sample* Sample::Extract(int ind, const sensor_msgs::LaserScan& scan)
 {
   Sample* s = new Sample;
 
@@ -169,7 +169,7 @@ bool ScanMask::hasSample(Sample* s, float thresh)
 
 
 
-ScanProcessor::ScanProcessor(sensor_msgs::LaserScan& scan, ScanMask& mask_, float mask_threshold)
+ScanProcessor::ScanProcessor(const sensor_msgs::LaserScan& scan, ScanMask& mask_, float mask_threshold)
 {
   scan_ = scan;
 
