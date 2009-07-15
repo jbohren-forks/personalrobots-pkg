@@ -9,7 +9,7 @@ fi
 cd `rospack find trex`
 
 # PLASMA_HOME is required to build the PLASMA NDDL.jar
-source `rospack find trex`/TREX/devConfig
+source `rospack find trex`/devConfig
 
 cd `rospack find trex`/TREX
 
