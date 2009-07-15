@@ -311,14 +311,15 @@ void SpinImage::computeSpinImage(const robot_msgs::PointCloud& data,
 
     // ----------------------------------------
     // Two vectors a and b originating from the same point form a parallelogram
-    // |a x b| is the area of a parallelogram with length |a| and height h
+    // |a x b| is the area Q of a parallelogram with base |a| and height h (Q = |a|h)
     // http://en.wikipedia.org/wiki/Cross_product
     // a = spin axis (unit length)
-    // h = area / |a| = |a x b| / |a| = |a x b|
+    // b = neighbor_vec
+    // h = Q / |a| = |a x b| / |a| = |a x b|
     curr_col = static_cast<unsigned int> (floor((spin_axis_.cross(neighbor_vec)).norm() / col_res_));
 
     // Increment appropriate spin image cell
-    if (curr_row >= 0 && static_cast<unsigned int>(curr_row) < nbr_rows_ && curr_col < nbr_cols_)
+    if (curr_row >= 0 && static_cast<unsigned int> (curr_row) < nbr_rows_ && curr_col < nbr_cols_)
     {
       spin_image[curr_row * nbr_cols_ + curr_col] += 1.0;
     }
