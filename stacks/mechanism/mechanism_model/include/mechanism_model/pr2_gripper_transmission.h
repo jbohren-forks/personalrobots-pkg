@@ -47,7 +47,6 @@
 #include "tinyxml/tinyxml.h"
 #include "mechanism_model/transmission.h"
 #include "mechanism_model/robot.h"
-#include "control_toolbox/pid.h"
 
 namespace mechanism {
 
@@ -73,16 +72,12 @@ public:
 
   // store name for passive joints.
   std::vector<std::string> passive_joints_;
-  std::vector<control_toolbox::Pid*> pids_;  // For keeping the joint angles aligned in Gazebo
-  double current_time_, last_time_;
 
 private:
   /// \brief compute gap position, velocity and applied effort from actuator states
-  void computeGapStates(std::vector<Actuator*>& as, std::vector<JointState*>& js,
-                        double MR,double MR_dot,double MT,
+  void computeGapStates(double MR,double MR_dot,double MT,
                         double &theta,double &dtheta_dMR,double &dt_dtheta,double &dt_dMR,double &gap_size,double &gap_velocity,double &gap_effort);
-  void inverseGapStates(std::vector<Actuator*>& as, std::vector<JointState*>& js,
-                        double theta,double &MR, double &dMR_dtheta,double &dtheta_dt,double &dMR_dt);
+  void inverseGapStates(double theta,double &MR, double &dMR_dtheta,double &dtheta_dt,double &dMR_dt);
 
   void getRateFromMaxRateJoint(
     std::vector<JointState*>& js, std::vector<Actuator*>& as,
