@@ -18,6 +18,7 @@ rospack_add_library( pr2_mechanism_controllers
   src/laser_scanner_controller.cpp
   src/laser_scanner_traj_controller.cpp 
   src/head_pan_tilt_controller.cpp
+  src/head_position_controller.cpp
   src/head_servoing_controller.cpp
   src/caster_controller.cpp
   src/caster_controller_effort.cpp
@@ -35,6 +36,7 @@ rospack_add_library( pr2_mechanism_controllers
   src/Pose3D.cpp
   )
 rospack_link_boost(pr2_mechanism_controllers thread)
+rospack_remove_compile_flags(pr2_mechanism_controllers -W)
 
 
 rospack_add_executable(base_trajectory_controller src/base_trajectory_controller.cpp)
