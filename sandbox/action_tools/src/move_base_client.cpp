@@ -42,28 +42,29 @@
 using namespace action_tools;
 using namespace robot_msgs;
 
-typedef ActionClient<MoveBaseGoal, MoveBaseResult> MoveBaseClient;
+typedef ActionClient<MoveBaseGoal, PoseStamped, MoveBaseResult, PoseStamped> MoveBaseClient;
 
-void callback(const GoalStatus& status, MoveBaseClient& ac)
+void callback(const TerminalStatuses::TerminalStatus& status, const PoseStamped& result)
 {
   ROS_INFO("In ActionClient Callback");
-  switch (status.status)
+  switch (status)
   {
-    case GoalStatus::IDLE:
-      ROS_INFO("IDLE"); break;
-    case GoalStatus::ACTIVE:
-      ROS_INFO("ACTIVE"); break;
-    case GoalStatus::PREEMPTED:
+    case TerminalStatuses::REJECTED:
+      ROS_INFO("REJECTED"); break;
+    case TerminalStatuses::PREEMPTED:
       ROS_INFO("PREEMPTED"); break;
-    case GoalStatus::SUCCEEDED:
+    case TerminalStatuses::SUCCEEDED:
       ROS_INFO("SUCCEEDED"); break;
-    case GoalStatus::ABORTED:
+    case TerminalStatuses::ABORTED:
       ROS_INFO("ABORTED"); break;
+    case TerminalStatuses::TIMED_OUT:
+      ROS_INFO("TIMED_OUT"); break;
+    case TerminalStatuses::UNKNOWN_STATE:
+      ROS_INFO("UNKNOWN_STATE"); break;
     default:
-      ROS_INFO("UNKNOWN STATUS");
+      ROS_INFO("BAD STATUS"); break;
   }
 
-  PoseStamped result = ac.getResult<PoseStamped>();
   ROS_INFO("Got Result: [xyz]=(%5.2f, %5.2f, %5.2f)",
            result.pose.position.x,
            result.pose.position.y,
@@ -75,11 +76,17 @@ int main(int argc, char** argv)
 {
   ros::init(argc, argv, "move_base_action_client");
 
+  ros::NodeHandle n;
+
+  ros::Duration sleep_duration(2,0);
+
+  sleep_duration.sleep();
   MoveBaseClient ac("move_base");
+  sleep_duration.sleep();
 
   PoseStamped goal_pose;
 
-  ac.execute(goal_pose, boost::bind(&callback, _1, ac));
+  ac.execute(goal_pose, &callback);
 
   ros::spin();
 

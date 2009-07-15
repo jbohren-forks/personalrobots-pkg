@@ -41,11 +41,17 @@
 namespace action_tools
 {
 
-template <class ActionGoal, class ActionResult>
+
+namespace TerminalStatuses
+{
+  enum TerminalStatus  { REJECTED, PREEMPTED, SUCCEEDED, ABORTED, TIMED_OUT, UNKNOWN_STATE } ;
+}
+
+template <class ActionGoal, class Goal, class ActionResult, class Result>
 class ActionClient
 {
 public:
-  typedef boost::function<void (const GoalStatus&)> ResultCallback;
+  typedef boost::function<void (const TerminalStatuses::TerminalStatus&, const Result&)> ResultCallback;
 
   ActionClient(std::string name, ros::NodeHandle nh = ros::NodeHandle()) : nh_(nh, name)
   {
@@ -55,32 +61,22 @@ public:
     goal_pub_    = nh_.advertise<ActionGoal> ("goal", 1);
     preempt_pub_ = nh_.advertise<Preempt> ("preempt", 1);
 
-    status_sub_  = nh_.subscribe("status", 1, &ActionClient<ActionGoal, ActionResult>::status_callback, this);
-    result_sub_  = nh_.subscribe("result", 1, &ActionClient<ActionGoal, ActionResult>::result_callback, this);
+    status_sub_  = nh_.subscribe("status", 1, &ActionClient<ActionGoal, Goal, ActionResult, Result>::status_callback, this);
+    result_sub_  = nh_.subscribe("result", 1, &ActionClient<ActionGoal, Goal, ActionResult, Result>::result_callback, this);
   }
 
-  template<class Goal>
   void execute(const Goal& goal, ResultCallback result_callback)
   {
-    if(client_state_ == IDLE ||
-       client_state_ == PURSUING_GOAL)
-    {
-      cur_goal_.goal_id.id = ros::Time::now();
-      cur_goal_.goal = goal;
-      goal_pub_.publish(cur_goal_);
-      ROS_INFO("ClientState: Setting to PURSUING_GOAL");
-      client_state_ = PURSUING_GOAL;
-      result_callback_ = result_callback;
-      cur_status_.status = GoalStatus::IDLE;
-      cur_status_.goal_id.id = cur_goal_.goal_id.id;
-    }
-    else
-    {
-      ROS_INFO("In a funny state");
-    }
+    cur_goal_.goal_id.id = ros::Time::now();
+    cur_goal_.goal = goal;
+    goal_pub_.publish(cur_goal_);
+    ROS_INFO("ClientState: Setting to PURSUING_GOAL");
+    client_state_ = PURSUING_GOAL;
+    result_callback_ = result_callback;
+    cur_status_.status = GoalStatus::IDLE;
+    cur_status_.goal_id.id = cur_goal_.goal_id.id;
   }
 
-  template<class Result>
   Result getResult()
   {
     return latest_result_->result;
@@ -104,7 +100,7 @@ private:
   void status_callback(const GoalStatusConstPtr& status)
   {
     // Check error condition: See if we're pursuing a goal in the future
-    if (status->goal_id.id > cur_goal_.goal_id.id)
+    if (status->goal_id.id > cur_goal_.header.stamp)
     {
       if (status->status == GoalStatus::PREEMPTED ||
           status->status == GoalStatus::SUCCEEDED ||
@@ -139,7 +135,7 @@ private:
           else if(client_state_ == WAITING_FOR_TERMINAL_STATE)
           {
             ROS_INFO("Calling Result Callback");
-            result_callback_(*status);
+            result_callback_(goalStatusToTerminalStatus(*status), latest_result_->result);
             ROS_INFO("ClientState: Setting to IDLE");
             client_state_ = IDLE;
           }
@@ -176,13 +172,27 @@ private:
       {
         latest_result_ = result;
         ROS_INFO("Calling Result Callback");
-        result_callback_(cur_status_);
+        result_callback_(goalStatusToTerminalStatus(cur_status_), latest_result_->result);
         ROS_INFO("ClientState: Setting to IDLE");
         client_state_ = IDLE;
       }
     }
     else
       ROS_INFO("Got result for a different goal");
+  }
+
+  TerminalStatuses::TerminalStatus goalStatusToTerminalStatus(const GoalStatus& goal_status)
+  {
+    switch(goal_status.status)
+    {
+      case GoalStatus::IDLE:   ROS_WARN("IDLE is not terminal"); return TerminalStatuses::UNKNOWN_STATE;
+      case GoalStatus::ACTIVE: ROS_WARN("ACTIVE is not terminal"); return TerminalStatuses::UNKNOWN_STATE;
+      case GoalStatus::PREEMPTED: return TerminalStatuses::PREEMPTED;
+      case GoalStatus::SUCCEEDED: return TerminalStatuses::SUCCEEDED;
+      case GoalStatus::ABORTED:   return TerminalStatuses::ABORTED;
+      default: ROS_WARN("Got a weird GoalStatus"); return TerminalStatuses::UNKNOWN_STATE;
+    }
+    return TerminalStatuses::UNKNOWN_STATE;
   }
 };
 
