@@ -2,6 +2,7 @@
 <launch>
 
   <node pkg="outlet_detection" name="outlet_spotting" type="outlet_spotting2" respawn="true" output="screen">
+    <remap from="stereo" to="narrow_stereo" />
     <param name="display" type="bool" value="False"/>
     <param name="save_patches" type="bool" value="False"/>
     <param name="base_scan_topic" value="base_scan_marking" />
