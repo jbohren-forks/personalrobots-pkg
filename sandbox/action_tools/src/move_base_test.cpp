@@ -41,7 +41,12 @@
 #include <action_tools/MoveBaseGoal.h>
 #include <action_tools/MoveBaseResult.h>
 
-void goalCB(){
+typedef action_tools::ActionServer<action_tools::MoveBaseGoal, robot_msgs::PoseStamped, 
+        action_tools::MoveBaseResult, robot_msgs::PoseStamped> MoveBaseActionServer;
+
+typedef MoveBaseActionServer::GoalHandle GoalHandle;
+
+void goalCB(GoalHandle goal_handle){
   ROS_INFO("In goal callback");
 }
 
@@ -51,39 +56,40 @@ void preemptCB(){
 
 void updateLoop(double freq){
   ros::NodeHandle n;
-  action_tools::ActionServer<action_tools::MoveBaseGoal, action_tools::MoveBaseResult> as(n, "move_base", 2);
+  MoveBaseActionServer as(n, "move_base", 10);
 
-  robot_msgs::PoseStamped goal;
+  GoalHandle goal_handle;
 
   ros::Publisher pub = n.advertise<robot_msgs::PoseStamped>("~current_goal", 1);
 
-  as.registerGoalCallback(boost::bind(&goalCB));
+  as.registerGoalCallback(boost::bind(&goalCB, _1));
 
   as.registerPreemptCallback(boost::bind(&preemptCB));
-
+  
   ros::Rate r(freq);
   while(n.ok()){
     if(as.isActive()){
       if(!as.isPreempted()){
         if(as.isNewGoalAvailable()){
           ROS_INFO("This action has received a new goal");
-          goal = as.getNextGoal<robot_msgs::PoseStamped>();
-          as.acceptNextGoal();
+          goal_handle = as.acceptNextGoal();
         }
 
-        if(goal.pose.position.x > 100.0){
+        boost::shared_ptr<const robot_msgs::PoseStamped> goal = goal_handle.getGoal();
+
+        if(goal->pose.position.x > 100.0){
           ROS_INFO("This action aborted");
           as.aborted();
           continue;
         }
 
-        if(goal.pose.position.y > 100.0){
+        if(goal->pose.position.y > 100.0){
           ROS_INFO("This action succeeded");
           as.succeeded();
           continue;
         }
-
-        pub.publish(goal);
+        
+        pub.publish(*goal);
       }
       else {
         ROS_INFO("This action has been preempted");
@@ -92,10 +98,8 @@ void updateLoop(double freq){
     }
     else if(as.isNewGoalAvailable()){
       ROS_INFO("This action has received a new goal");
-      goal = as.getNextGoal<robot_msgs::PoseStamped>();
-      as.acceptNextGoal();
+      goal_handle = as.acceptNextGoal();
     }
-
     r.sleep();
   }
 }
