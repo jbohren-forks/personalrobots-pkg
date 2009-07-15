@@ -147,6 +147,13 @@ namespace action_tools {
 
       GoalHandle acceptNextGoal(){
         lock_.lock();
+
+        //check if we need to send a preempted message for the goal that we're currently pursuing
+        if(isActive() && current_goal_->goal_id.id != next_goal_->goal_id.id){
+          status_.status = status_.PREEMPTED;
+          publishStatus();
+        }
+
         //accept the next goal
         current_goal_ = next_goal_;
         new_goal_ = false;
@@ -157,9 +164,10 @@ namespace action_tools {
         status_.goal_id = current_goal_->goal_id;
         status_.status = status_.ACTIVE;
         state_ = RUNNING;
+        publishStatus();
+
         lock_.unlock();
 
-        publishStatus();
 
         return ret;
       }
@@ -171,20 +179,26 @@ namespace action_tools {
         }
 
         lock_.lock();
+        //check if we need to send a preempted message for the goal that we're currently pursuing
+        if(isActive() && current_goal_->goal_id.id != goal_handle.action_goal_->goal_id.id){
+          status_.status = status_.PREEMPTED;
+          publishStatus();
+        }
+
         current_goal_ = goal_handle.action_goal_;
 
         //if we are accepting the same goal that is stored in next_goal then we'll set new_goal to false
-        if(current_goal_->goal_id == next_goal_->goal_id){
+        if(current_goal_->goal_id.id == next_goal_->goal_id.id){
           new_goal_ = false;
         }
 
         status_.goal_id = current_goal_->goal_id;
         status_.status = status_.ACTIVE;
         state_ = RUNNING;
+        publishStatus();
 
         lock_.unlock();
 
-        publishStatus();
         return true;
       }
 
@@ -200,27 +214,24 @@ namespace action_tools {
         lock_.lock();
         status_.status = status_.SUCCEEDED;
         state_ = IDLE;
-        lock_.unlock();
-
         publishStatus();
+        lock_.unlock();
       }
 
       void aborted(){
         lock_.lock();
         status_.status = status_.ABORTED;
         state_ = IDLE;
-        lock_.unlock();
-
         publishStatus();
+        lock_.unlock();
       }
 
       void preempted(){
         lock_.lock();
         status_.status = status_.PREEMPTED;
         state_ = IDLE;
-        lock_.unlock();
-
         publishStatus();
+        lock_.unlock();
       }
 
       void registerGoalCallback(boost::function<void (GoalHandle)> cb){
@@ -295,13 +306,17 @@ namespace action_tools {
       }
 
       void publishStatus(const ros::TimerEvent& e){
+        lock_.lock();
         publishStatus();
+        lock_.unlock();
       }
 
       void publishStatus(){
-        lock_.lock();
         status_pub_.publish(status_);
-        lock_.unlock();
+      }
+
+      void publishGoalStatus(const ActionGoal& goal, const GoalStatus& status){
+        status_pub_.publish(status_);
       }
       
       ros::NodeHandle node_;

@@ -56,7 +56,7 @@ void preemptCB(){
 
 void updateLoop(double freq){
   ros::NodeHandle n;
-  MoveBaseActionServer as(n, "move_base", 10);
+  MoveBaseActionServer as(n, "move_base", 0.5);
 
   GoalHandle goal_handle;
 
