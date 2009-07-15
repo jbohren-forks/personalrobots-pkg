@@ -55,6 +55,7 @@ void SpectralAnalysis::clear()
     if (normals_[i] != NULL)
     {
       delete normals_[i];
+      delete eigen_vecs2_[i];
       delete tangents_[i];
       delete eigen_values_[i];
       delete centroids_[i];
@@ -120,6 +121,7 @@ int SpectralAnalysis::analyzeInterestPoints(const robot_msgs::PointCloud& data,
   // Allocate accordingly
   unsigned int nbr_interest_pts = interest_pts.size();
   normals_.assign(nbr_interest_pts, NULL);
+  eigen_vecs2_.assign(nbr_interest_pts, NULL);
   tangents_.assign(nbr_interest_pts, NULL);
   eigen_values_.assign(nbr_interest_pts, NULL);
   centroids_.assign(nbr_interest_pts, NULL);
@@ -169,6 +171,7 @@ int SpectralAnalysis::analyzeInterestRegions(const robot_msgs::PointCloud& data,
   // Allocate accordingly
   unsigned int nbr_regions = interest_region_indices.size();
   normals_.assign(nbr_regions, NULL);
+  eigen_vecs2_.assign(nbr_regions, NULL);
   tangents_.assign(nbr_regions, NULL);
   eigen_values_.assign(nbr_regions, NULL);
   centroids_.assign(nbr_regions, NULL);
@@ -229,6 +232,7 @@ void SpectralAnalysis::populateContainers(const robot_msgs::PointCloud& data,
   // ----------------------------------------
   // Allocate for new data
   normals_[idx] = new Eigen::Vector3d();
+  eigen_vecs2_[idx] = new Eigen::Vector3d();
   tangents_[idx] = new Eigen::Vector3d();
   eigen_values_[idx] = new Eigen::Vector3d();
   centroids_[idx] = new Eigen::Vector3d();
@@ -246,6 +250,7 @@ void SpectralAnalysis::populateContainers(const robot_msgs::PointCloud& data,
   for (unsigned int j = 0 ; j < 3 ; j++)
   {
     (*(normals_[idx]))[j] = eigen_vectors(j, 0);
+    (*(eigen_vecs2_[idx]))[j] = eigen_vectors(j, 1);
     (*(tangents_[idx]))[j] = eigen_vectors(j, 2);
   }
 

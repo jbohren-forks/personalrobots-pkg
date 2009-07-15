@@ -163,6 +163,7 @@ class SpectralAnalysis: public Descriptor3D
 
     vector<Eigen::Vector3d*> normals_;
     vector<Eigen::Vector3d*> tangents_;
+    vector<Eigen::Vector3d*> eigen_vecs2_;
     vector<Eigen::Vector3d*> eigen_values_;
     vector<Eigen::Vector3d*> centroids_;
 
