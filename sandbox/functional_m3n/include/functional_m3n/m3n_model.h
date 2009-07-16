@@ -212,8 +212,29 @@ class M3NModel
                      map<unsigned int, unsigned int>& inferred_labels,
                      unsigned int max_iterations = 0);
 
+    // --------------------------------------------------------------
+    /*!
+     * \brief Computes and saves all the potential values for assigning all
+     *        possible training labels to each Node and Clique in the given
+     *        RandomField
+     *
+     * \param random_field The RandomField to compute all potentials for
+     *
+     * \return 0 on success, otherwise negative value on error
+     */
+    // --------------------------------------------------------------
     int cachePotentials(const RandomField& random_field);
 
+    // --------------------------------------------------------------
+    /*!
+     * \brief Generates an arbitrary initial labeling for alpha-expansion
+     *
+     * See code for current implementation
+     *
+     * \param random_field The RandomField that will be performing inference on
+     * \param inferred_labels Mapping of node ids to initial label value
+     */
+    // --------------------------------------------------------------
     void generateInitialLabeling(const RandomField& random_field,
                                  map<unsigned int, unsigned int>& inferred_labels);
 
