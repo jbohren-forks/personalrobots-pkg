@@ -33,13 +33,13 @@
 #include "tf/transform_datatypes.h"
 #include "kdl/frames.hpp"
 
-namespace tf 
+namespace tf
 {
-  void VectorTFToKDL(const tf::Vector3& t, KDL::Vector& k);
-  void RotationTFToKDL(const tf::Quaternion& t, KDL::Rotation& k);
-  void TransformTFToKDL(const tf::Transform &t, KDL::Frame &k);
-  void TransformKDLToTF(const KDL::Frame &k, tf::Transform &t);
-  void PoseTFToKDL(const tf::Pose& pose, KDL::Frame& frame);
+void VectorTFToKDL(const tf::Vector3& t, KDL::Vector& k);
+void RotationTFToKDL(const tf::Quaternion& t, KDL::Rotation& k);
+void TransformTFToKDL(const tf::Transform &t, KDL::Frame &k);
+void TransformKDLToTF(const KDL::Frame &k, tf::Transform &t);
+void PoseTFToKDL(const tf::Pose& pose, KDL::Frame& frame);
 }
 
 #endif
