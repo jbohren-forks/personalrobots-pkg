@@ -35,7 +35,7 @@
 #include <map>
 #include <string>
 #include <vector>
-#include "ros/node.h"
+#include "ros/ros.h"
 #include "roslib/Time.h"
 #include <tinyxml/tinyxml.h>
 #include <hardware_interface/hardware_interface.h>
@@ -82,6 +82,7 @@ public:
   void getControllerNames(std::vector<std::string> &v);
   bool spawnController(const std::string &xml_string,
                        std::vector<int8_t>& ok, std::vector<std::string>& name);
+  bool spawnController(TiXmlElement *config, std::string& name);
   bool killController(const std::string &name);
   bool switchController(const std::vector<std::string>& start_controllers,
                         const std::vector<std::string>& stop_controllers);
@@ -103,27 +104,13 @@ public:
     return true;
   };
 
-  struct AddReq
-  {
-    std::string name;
-    std::string type;
-    TiXmlElement *config;
-    bool success;  // Response
-  };
-  struct RemoveReq
-  {
-    std::string name;
-    bool success;  // Response
-  };
-
   mechanism::Robot model_;
   mechanism::RobotState *state_;
   HardwareInterface *hw_;
 
 private:
+  ros::NodeHandle node_;
   static MechanismControl* mechanism_control_;
-
-  bool initialized_, switch_success_;
 
   typedef boost::accumulators::accumulator_set<
     double, boost::accumulators::stats<boost::accumulators::tag::max,
@@ -146,65 +133,45 @@ private:
       : name(spec.name), c(spec.c), stats(spec.stats) {}
   };
 
+  // for controller switching
+  std::vector<controller::Controller*> start_request_, stop_request_;
+  bool please_switch_, switch_success_;
+
+  // controller lists
   boost::mutex controllers_lock_;
   std::vector<ControllerSpec> controllers_lists_[2];
   int current_controllers_list_, used_by_realtime_;
 
+  // for controller statistics
   Statistics pre_update_stats_;
   Statistics update_stats_;
   Statistics post_update_stats_;
-  realtime_tools::RealtimePublisher<diagnostic_msgs::DiagnosticMessage> publisher_;
+
+  // for publishing constroller state/diagnostics
   void publishDiagnostics();
-  bool spawnController(TiXmlElement *config, std::string& name);
-  std::vector<controller::Controller*> start_request_, stop_request_;
-  bool please_switch_;
-
-  double last_published_;
-};
-
-/*
- * Exposes MechanismControl's interface over ROS
- */
-class MechanismControlNode
-{
-public:
-  MechanismControlNode(MechanismControl *mc);
-  virtual ~MechanismControlNode();
-
-  bool initXml(TiXmlElement *config);
-
-  void update();  // Must be realtime safe
-
-  bool listControllerTypes(mechanism_msgs::ListControllerTypes::Request &req,
-                           mechanism_msgs::ListControllerTypes::Response &resp);
-  bool listControllers(mechanism_msgs::ListControllers::Request &req,
-                       mechanism_msgs::ListControllers::Response &resp);
-  bool killAndSpawnControllers(mechanism_msgs::KillAndSpawnControllers::Request &req,
-                               mechanism_msgs::KillAndSpawnControllers::Response &resp);
-  bool switchController(mechanism_msgs::SwitchController::Request &req,
-                        mechanism_msgs::SwitchController::Response &resp);
-
-private:
-  ros::Node *node_;
-
-  bool spawnController(mechanism_msgs::SpawnController::Request &req,
-                       mechanism_msgs::SpawnController::Response &resp);
-
-  bool killController(mechanism_msgs::KillController::Request &req,
-                      mechanism_msgs::KillController::Response &resp);
-
-  bool getController(const std::string& name, int& id);
-
-  MechanismControl *mc_;
-  double publish_period_, last_publish_;
-  const char* const mechanism_state_topic_;
-  realtime_tools::RealtimePublisher<mechanism_msgs::MechanismState> publisher_;
+  void publishState();
+  realtime_tools::RealtimePublisher<diagnostic_msgs::DiagnosticMessage> pub_diagnostics_;
   realtime_tools::RealtimePublisher<mechanism_msgs::JointStates> pub_joints_;
+  realtime_tools::RealtimePublisher<mechanism_msgs::MechanismState> pub_mech_state_;
+  double publish_period_state_, last_published_state_;
+  double publish_period_diagnostics_, last_published_diagnostics_;
 
-  boost::mutex services_lock_;
-  AdvertisedServiceGuard list_controllers_guard_, list_controller_types_guard_,
-    spawn_controller_guard_, kill_controller_guard_, switch_controller_guard_,
-    kill_and_spawn_controllers_guard_;
+  // services to work with controllers
+  bool listControllerTypesSrv(mechanism_msgs::ListControllerTypes::Request &req,
+                              mechanism_msgs::ListControllerTypes::Response &resp);
+  bool listControllersSrv(mechanism_msgs::ListControllers::Request &req,
+                          mechanism_msgs::ListControllers::Response &resp);
+  bool killAndSpawnControllersSrv(mechanism_msgs::KillAndSpawnControllers::Request &req,
+                                  mechanism_msgs::KillAndSpawnControllers::Response &resp);
+  bool switchControllerSrv(mechanism_msgs::SwitchController::Request &req,
+                           mechanism_msgs::SwitchController::Response &resp);
+  bool spawnControllerSrv(mechanism_msgs::SpawnController::Request &req,
+                          mechanism_msgs::SpawnController::Response &resp);
+  bool killControllerSrv(mechanism_msgs::KillController::Request &req,
+                         mechanism_msgs::KillController::Response &resp);
+  boost::mutex services_lock_; 
+  ros::ServiceServer srv_list_controllers_, srv_list_controller_types_, srv_spawn_controller_;
+  ros::ServiceServer srv_kill_controller_, srv_switch_controller_, srv_kill_and_spawn_controller_;
 };
 
 #endif /* MECHANISM_CONTROL_H */

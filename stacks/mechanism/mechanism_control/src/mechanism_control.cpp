@@ -47,13 +47,18 @@ Loki::Factory< controller::Controller, std::string >& getControllerFactoryInstan
 }
 
 MechanismControl::MechanismControl(HardwareInterface *hw) :
-  state_(NULL), hw_(hw), initialized_(0),
-  switch_success_(false),
-  current_controllers_list_(0), used_by_realtime_(-1), publisher_("/diagnostics", 1),
+  state_(NULL), hw_(hw), 
   start_request_(0),
   stop_request_(0),
   please_switch_(false),
-  last_published_(realtime_gettime())
+  switch_success_(false),
+  current_controllers_list_(0), 
+  used_by_realtime_(-1), 
+  pub_diagnostics_(node_, "/diagnostics", 1),
+  pub_joints_(node_, "/joint_states", 1),
+  pub_mech_state_(node_, "/mechanism_state", 1),
+  last_published_state_(realtime_gettime()),
+  last_published_diagnostics_(realtime_gettime())
 {
   model_.hw_ = hw;
   mechanism_control_ = this;
@@ -78,7 +83,35 @@ bool MechanismControl::initXml(TiXmlElement* config)
   model_.initXml(config);
   state_ = new RobotState(&model_, hw_);
 
-  initialized_ = true;
+  // pre-allocate for realtime publishing
+  pub_mech_state_.msg_.set_actuator_states_size(hw_->actuators_.size());
+  int joints_size = 0;
+  for (unsigned int i = 0; i < model_.joints_.size(); ++i)
+  {
+    int type = state_->joint_states_[i].joint_->type_;
+    if (type == JOINT_ROTARY || type == JOINT_CONTINUOUS || type == JOINT_PRISMATIC)
+      ++joints_size;
+  }
+  pub_joints_.msg_.set_joints_size(joints_size);
+  pub_mech_state_.msg_.set_joint_states_size(joints_size);
+
+  // Advertise services
+  srv_list_controllers_ = node_.advertiseService("list_controllers", &MechanismControl::listControllersSrv, this);
+  srv_list_controller_types_ = node_.advertiseService("list_controller_types", &MechanismControl::listControllerTypesSrv, this);
+  srv_spawn_controller_ = node_.advertiseService("spawn_controller", &MechanismControl::spawnControllerSrv, this);
+  srv_kill_controller_ = node_.advertiseService("kill_controller", &MechanismControl::killControllerSrv, this);
+  srv_switch_controller_ = node_.advertiseService("switch_controller", &MechanismControl::switchControllerSrv, this);
+  srv_kill_and_spawn_controller_ = node_.advertiseService("kill_and_spawn_controllers", &MechanismControl::killAndSpawnControllersSrv, this);
+
+
+
+  // get the publish rate for mechanism state and diagnostics
+  double publish_rate_state, publish_rate_diagnostics;
+  node_.param("~publish_rate_mechanism_state", publish_rate_state, 100.0);
+  node_.param("~publish_rate_diagnostics", publish_rate_diagnostics, 1.0);
+  publish_period_state_ = 1.0/fmax(0.000001, publish_rate_state);
+  publish_period_diagnostics_ = 1.0/fmax(0.000001, publish_rate_diagnostics);
+
   return true;
 }
 
@@ -90,76 +123,6 @@ bool MechanismControl::initXml(TiXmlElement* config)
   } \
   strings.push_back(s)
 
-void MechanismControl::publishDiagnostics()
-{
-  if (publisher_.trylock())
-  {
-    std::vector<ControllerSpec> &controllers = controllers_lists_[used_by_realtime_];
-    int active = 0;
-    TimeStatistics blank_statistics;
-
-    std::vector<diagnostic_msgs::DiagnosticStatus> statuses;
-    std::vector<diagnostic_msgs::DiagnosticValue> values;
-    std::vector<diagnostic_msgs::DiagnosticString> strings;
-    diagnostic_msgs::DiagnosticStatus status;
-    diagnostic_msgs::DiagnosticValue v;
-    diagnostic_msgs::DiagnosticString s;
-
-    status.name = "Mechanism Control";
-    status.level = 0;
-    status.message = "OK";
-
-    for (size_t i = 0; i < controllers.size(); ++i)
-    {
-      ++active;
-      double m = extract_result<tag::max>(controllers[i].stats->acc);
-      controllers[i].stats->max1.push_back(m);
-      controllers[i].stats->max = std::max(m, controllers[i].stats->max);
-      std::string state;
-      if (controllers[i].c->isRunning())
-        state = "Running";
-      else
-        state = "Stopped";
-      ADD_STRING_FMT(controllers[i].name,
-                     "%.4f (avg) %.4f (stdev) %.4f (max) %.4f (1-min max) %.4f (life max) %s (state)",
-                     mean(controllers[i].stats->acc)*1e6,
-                     sqrt(variance(controllers[i].stats->acc))*1e6,
-                     m*1e6,
-                     *std::max_element(controllers[i].stats->max1.begin(), controllers[i].stats->max1.end())*1e6,
-                     controllers[i].stats->max*1e6,
-                     state.c_str());
-
-      controllers[i].stats->acc = blank_statistics;  // clear
-    }
-
-#define REPORT_STATS(stats_, label) \
-    { \
-    double m = extract_result<tag::max>(stats_.acc); \
-    stats_.max1.push_back(m); \
-    stats_.max = std::max(m, stats_.max); \
-    ADD_STRING_FMT(label, "%.4f (avg) %.4f (stdev) %.4f (max) %.4f (1-min max) %.4f (life max)", \
-                   mean(stats_.acc)*1e6, \
-                   sqrt(variance(stats_.acc))*1e6, \
-                   m*1e6, \
-                   *std::max_element(stats_.max1.begin(), stats_.max1.end())*1e6, \
-                   stats_.max*1e6); \
-    stats_.acc = blank_statistics;  \
-    }
-
-    REPORT_STATS(pre_update_stats_, "Before Update");
-    REPORT_STATS(update_stats_, "Update");
-    REPORT_STATS(post_update_stats_, "After Update");
-
-    ADD_STRING_FMT("Active controllers", "%d", active);
-
-    status.set_values_vec(values);
-    status.set_strings_vec(strings);
-    statuses.push_back(status);
-    publisher_.msg_.set_status_vec(statuses);
-    publisher_.unlockAndPublish();
-
-  }
-}
 
 // Must be realtime safe.
 void MechanismControl::update()
@@ -190,13 +153,11 @@ void MechanismControl::update()
   double end = realtime_gettime();
   post_update_stats_.acc(end - end_update);
 
-  if ((end - last_published_) > 1.0)
-  {
-    publishDiagnostics();
-    last_published_ = end;
-  }
+  // publish diagnostics and state 
+  //publishDiagnostics();
+  //publishState();
 
-  // there are controllers to start/stop
+  // there are controllers to atomically start/stop
   if (please_switch_)
   {
     // try to start controllers
@@ -381,7 +342,6 @@ bool MechanismControl::spawnController(TiXmlElement *config, std::string& name)
       return false;
     }
   }
-
   // Adds the controller to the new list
   to.resize(to.size() + 1);
   to[to.size()-1].name = name;
@@ -493,94 +453,98 @@ bool MechanismControl::switchController(const std::vector<std::string>& start_co
 
 
 
-
-
-
-
-
-
-
-// -----------------------------
-// -------- NODE ---------------
-// -----------------------------
-
-MechanismControlNode::MechanismControlNode(MechanismControl *mc)
-  : mc_(mc),
-    mechanism_state_topic_("mechanism_state"),
-    publisher_(mechanism_state_topic_, 1),
-    pub_joints_("joint_states", 1)
+void MechanismControl::publishDiagnostics()
 {
-  assert(mc != NULL);
-  assert(mechanism_state_topic_);
-  if ((node_ = ros::Node::instance()) == NULL) {
-    int argc = 0;
-    char** argv = NULL;
-    ros::init(argc, argv);
-    node_ = new ros::Node("mechanism_control", ros::Node::DONT_HANDLE_SIGINT);
+  if (round ((realtime_gettime() - last_published_diagnostics_ - publish_period_diagnostics_)/ (0.000001)) >= 0)
+  {
+    last_published_diagnostics_ = realtime_gettime();
+    if (pub_diagnostics_.trylock())
+    {
+      std::vector<ControllerSpec> &controllers = controllers_lists_[used_by_realtime_];
+      int active = 0;
+      TimeStatistics blank_statistics;
+      
+      std::vector<diagnostic_msgs::DiagnosticStatus> statuses;
+      std::vector<diagnostic_msgs::DiagnosticValue> values;
+      std::vector<diagnostic_msgs::DiagnosticString> strings;
+      diagnostic_msgs::DiagnosticStatus status;
+      diagnostic_msgs::DiagnosticValue v;
+      diagnostic_msgs::DiagnosticString s;
+      
+      status.name = "Mechanism Control";
+      status.level = 0;
+      status.message = "OK";
+      
+      for (size_t i = 0; i < controllers.size(); ++i)
+      {
+        ++active;
+        double m = extract_result<tag::max>(controllers[i].stats->acc);
+        controllers[i].stats->max1.push_back(m);
+        controllers[i].stats->max = std::max(m, controllers[i].stats->max);
+        std::string state;
+        if (controllers[i].c->isRunning())
+          state = "Running";
+        else
+          state = "Stopped";
+        ADD_STRING_FMT(controllers[i].name,
+                       "%.4f (avg) %.4f (stdev) %.4f (max) %.4f (1-min max) %.4f (life max) %s (state)",
+                       mean(controllers[i].stats->acc)*1e6,
+                       sqrt(variance(controllers[i].stats->acc))*1e6,
+                       m*1e6,
+                       *std::max_element(controllers[i].stats->max1.begin(), controllers[i].stats->max1.end())*1e6,
+                       controllers[i].stats->max*1e6,
+                       state.c_str());
+        
+        controllers[i].stats->acc = blank_statistics;  // clear
+      }
+      
+#define REPORT_STATS(stats_, label)             \
+      {                                              \
+        double m = extract_result<tag::max>(stats_.acc);        \
+        stats_.max1.push_back(m);                               \
+        stats_.max = std::max(m, stats_.max);                           \
+        ADD_STRING_FMT(label, "%.4f (avg) %.4f (stdev) %.4f (max) %.4f (1-min max) %.4f (life max)", \
+                       mean(stats_.acc)*1e6,                            \
+                       sqrt(variance(stats_.acc))*1e6,                  \
+                       m*1e6,                                           \
+                       *std::max_element(stats_.max1.begin(), stats_.max1.end())*1e6, \
+                       stats_.max*1e6);                                 \
+        stats_.acc = blank_statistics;                                  \
+      }
+      
+      REPORT_STATS(pre_update_stats_, "Before Update");
+      REPORT_STATS(update_stats_, "Update");
+      REPORT_STATS(post_update_stats_, "After Update");
+      
+      ADD_STRING_FMT("Active controllers", "%d", active);
+      
+      status.set_values_vec(values);
+      status.set_strings_vec(strings);
+      statuses.push_back(status);
+      pub_diagnostics_.msg_.set_status_vec(statuses);
+      pub_diagnostics_.unlockAndPublish();
+    }
   }
 }
 
-MechanismControlNode::~MechanismControlNode()
-{
-}
 
-bool MechanismControlNode::initXml(TiXmlElement *config)
+void MechanismControl::publishState()
 {
-  if (!mc_->initXml(config))
-    return false;
-  publisher_.msg_.set_actuator_states_size(mc_->hw_->actuators_.size());
-  int joints_size = 0;
-  for (unsigned int i = 0; i < mc_->model_.joints_.size(); ++i)
+  if (round ((realtime_gettime() - last_published_state_ - publish_period_state_)/ (0.000001)) >= 0)
   {
-    int type = mc_->state_->joint_states_[i].joint_->type_;
-    if (type == JOINT_ROTARY || type == JOINT_CONTINUOUS || type == JOINT_PRISMATIC)
-      ++joints_size;
-  }
-  pub_joints_.msg_.set_joints_size(joints_size);
-  publisher_.msg_.set_joint_states_size(joints_size);
-
-  // Advertise services
-  node_->advertiseService("list_controllers", &MechanismControlNode::listControllers, this);
-  list_controllers_guard_.set("list_controllers");
-  node_->advertiseService("list_controller_types", &MechanismControlNode::listControllerTypes, this);
-  list_controller_types_guard_.set("list_controller_types");
-  node_->advertiseService("spawn_controller", &MechanismControlNode::spawnController, this);
-  spawn_controller_guard_.set("spawn_controller");
-  node_->advertiseService("kill_controller", &MechanismControlNode::killController, this);
-  kill_controller_guard_.set("kill_controller");
-  node_->advertiseService("switch_controller", &MechanismControlNode::switchController, this);
-  switch_controller_guard_.set("switch_controller");
-  node_->advertiseService("kill_and_spawn_controllers", &MechanismControlNode::killAndSpawnControllers, this);
-  kill_and_spawn_controllers_guard_.set("kill_and_spawn_controllers");
-
-
-  // get the publish rate for mechanism state
-  double publish_rate;
-  node_->param("~publish_rate_mechanism_state", publish_rate, 100.0);
-  publish_period_ = 1.0/fmax(0.000001,publish_rate);
-  last_publish_ = realtime_gettime();
-  return true;
-}
-
-void MechanismControlNode::update()
-{
-  mc_->update();
-
-  if (round ((realtime_gettime() - last_publish_ - publish_period_)/ (0.000001)) >= 0)
-  {
-    last_publish_ = realtime_gettime();
-    if (publisher_.trylock())
+    last_published_state_ = realtime_gettime();
+    if (pub_mech_state_.trylock())
     {
       unsigned int j = 0;
-      for (unsigned int i = 0; i < mc_->model_.joints_.size(); ++i)
+      for (unsigned int i = 0; i < model_.joints_.size(); ++i)
       {
-        int type = mc_->state_->joint_states_[i].joint_->type_;
+        int type = state_->joint_states_[i].joint_->type_;
         if (type == JOINT_ROTARY || type == JOINT_CONTINUOUS || type == JOINT_PRISMATIC)
         {
-          assert(j < publisher_.msg_.get_joint_states_size());
-          mechanism_msgs::JointState *out = &publisher_.msg_.joint_states[j++];
-          mechanism::JointState *in = &mc_->state_->joint_states_[i];
-          out->name = mc_->model_.joints_[i]->name_;
+          assert(j < pub_mech_state_.msg_.get_joint_states_size());
+          mechanism_msgs::JointState *out = &pub_mech_state_.msg_.joint_states[j++];
+          mechanism::JointState *in = &state_->joint_states_[i];
+          out->name = model_.joints_[i]->name_;
           out->position = in->position_;
           out->velocity = in->velocity_;
           out->applied_effort = in->applied_effort_;
@@ -589,11 +553,11 @@ void MechanismControlNode::update()
         }
       }
 
-      for (unsigned int i = 0; i < mc_->hw_->actuators_.size(); ++i)
+      for (unsigned int i = 0; i < hw_->actuators_.size(); ++i)
       {
-        mechanism_msgs::ActuatorState *out = &publisher_.msg_.actuator_states[i];
-        ActuatorState *in = &mc_->hw_->actuators_[i]->state_;
-        out->name = mc_->hw_->actuators_[i]->name_;
+        mechanism_msgs::ActuatorState *out = &pub_mech_state_.msg_.actuator_states[i];
+        ActuatorState *in = &hw_->actuators_[i]->state_;
+        out->name = hw_->actuators_[i]->name_;
         out->encoder_count = in->encoder_count_;
         out->position = in->position_;
         out->timestamp = in->timestamp_;
@@ -616,24 +580,24 @@ void MechanismControlNode::update()
         out->motor_voltage = in->motor_voltage_;
         out->num_encoder_errors = in->num_encoder_errors_;
       }
-      publisher_.msg_.header.stamp.fromSec(realtime_gettime());
-      publisher_.msg_.time = realtime_gettime();
+      pub_mech_state_.msg_.header.stamp.fromSec(realtime_gettime());
+      pub_mech_state_.msg_.time = realtime_gettime();
 
-      publisher_.unlockAndPublish();
+      pub_mech_state_.unlockAndPublish();
     }
 
     if (pub_joints_.trylock())
     {
       unsigned int j = 0;
-      for (unsigned int i = 0; i < mc_->model_.joints_.size(); ++i)
+      for (unsigned int i = 0; i < model_.joints_.size(); ++i)
       {
-        int type = mc_->state_->joint_states_[i].joint_->type_;
+        int type = state_->joint_states_[i].joint_->type_;
         if (type == JOINT_ROTARY || type == JOINT_CONTINUOUS || type == JOINT_PRISMATIC)
         {
           assert(j < pub_joints_.msg_.get_joints_size());
           mechanism_msgs::JointState *out = &pub_joints_.msg_.joints[j++];
-          mechanism::JointState *in = &mc_->state_->joint_states_[i];
-          out->name = mc_->model_.joints_[i]->name_;
+          mechanism::JointState *in = &state_->joint_states_[i];
+          out->name = model_.joints_[i]->name_;
           out->position = in->position_;
           out->velocity = in->velocity_;
           out->applied_effort = in->applied_effort_;
@@ -649,7 +613,8 @@ void MechanismControlNode::update()
   }
 }
 
-bool MechanismControlNode::listControllerTypes(
+
+bool MechanismControl::listControllerTypesSrv(
   mechanism_msgs::ListControllerTypes::Request &req,
   mechanism_msgs::ListControllerTypes::Response &resp)
 {
@@ -660,7 +625,7 @@ bool MechanismControlNode::listControllerTypes(
 }
 
 
-bool MechanismControlNode::listControllers(
+bool MechanismControl::listControllersSrv(
   mechanism_msgs::ListControllers::Request &req,
   mechanism_msgs::ListControllers::Response &resp)
 {
@@ -669,10 +634,10 @@ bool MechanismControlNode::listControllers(
   std::vector<std::string> controllers;
 
   (void) req;
-  mc_->getControllerNames(controllers);
+  getControllerNames(controllers);
 
   for (size_t i=0; i<controllers.size(); i++){
-    if (mc_->getControllerByName(controllers[i])->isRunning())
+    if (getControllerByName(controllers[i])->isRunning())
       controllers[i] += "  --> Running";
     else
       controllers[i] += "  --> Stopped";
@@ -682,7 +647,7 @@ bool MechanismControlNode::listControllers(
 }
 
 
-bool MechanismControlNode::spawnController(
+bool MechanismControl::spawnControllerSrv(
   mechanism_msgs::SpawnController::Request &req,
   mechanism_msgs::SpawnController::Response &resp)
 {
@@ -690,7 +655,7 @@ bool MechanismControlNode::spawnController(
   boost::mutex::scoped_lock guard(services_lock_);
 
   // spawn controllers
-  if (!mc_->spawnController(req.xml_config, resp.ok, resp.name))
+  if (!spawnController(req.xml_config, resp.ok, resp.name))
     return false;
 
   // start controllers if autostart true
@@ -699,34 +664,34 @@ bool MechanismControlNode::spawnController(
     for (size_t i=0; i<resp.ok.size(); i++)
       if (resp.ok[i]) start_list.push_back(resp.name[i]);
     if (!start_list.empty())
-      return mc_->switchController(start_list, stop_list);
+      return switchController(start_list, stop_list);
   }
   return true;
 }
 
-bool MechanismControlNode::killController(
+bool MechanismControl::killControllerSrv(
   mechanism_msgs::KillController::Request &req,
   mechanism_msgs::KillController::Response &resp)
 {
   // lock services
   boost::mutex::scoped_lock guard(services_lock_);
-  resp.ok = mc_->killController(req.name);
+  resp.ok = killController(req.name);
   return true;
 }
 
-bool MechanismControlNode::switchController(
+bool MechanismControl::switchControllerSrv(
   mechanism_msgs::SwitchController::Request &req,
   mechanism_msgs::SwitchController::Response &resp)
 {
   // lock services
   boost::mutex::scoped_lock guard(services_lock_);
 
-  resp.ok = mc_->switchController(req.start_controllers, req.stop_controllers);
+  resp.ok = switchController(req.start_controllers, req.stop_controllers);
   return true;
 }
 
-bool MechanismControlNode::killAndSpawnControllers(mechanism_msgs::KillAndSpawnControllers::Request &req,
-                                                   mechanism_msgs::KillAndSpawnControllers::Response &res)
+bool MechanismControl::killAndSpawnControllersSrv(mechanism_msgs::KillAndSpawnControllers::Request &req,
+                                                  mechanism_msgs::KillAndSpawnControllers::Response &res)
 {
   // lock services
   boost::mutex::scoped_lock guard(services_lock_);
@@ -734,28 +699,28 @@ bool MechanismControlNode::killAndSpawnControllers(mechanism_msgs::KillAndSpawnC
   // spawn controllers
   std::vector<std::string> spawn_name;
   std::vector<int8_t> spawn_ok;
-  if (!mc_->spawnController(req.add_config, spawn_ok, spawn_name))
+  if (!spawnController(req.add_config, spawn_ok, spawn_name))
     return false;
   bool spawn_success = true;
   for (size_t i=0; i<spawn_ok.size(); i++){
     if (!spawn_ok[i]){
       spawn_success = false;
-      mc_->killController(spawn_name[i]);
+      killController(spawn_name[i]);
     }
   }
   if (!spawn_success) return false;
 
   // switch controllers
-  if (!mc_->switchController(spawn_name, req.kill_name)){
+  if (!switchController(spawn_name, req.kill_name)){
     // kill controllers that were spawned
     for (size_t i=0; i<spawn_name.size(); i++)
-      mc_->killController(spawn_name[i]);
+      killController(spawn_name[i]);
     return false;
   }
 
   // kill controllers
   for (size_t i=0; i<req.kill_name.size(); i++)
-    mc_->killController(req.kill_name[i]);
+    killController(req.kill_name[i]);
 
   return true;
 }
