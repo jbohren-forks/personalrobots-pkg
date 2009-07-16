@@ -12,7 +12,7 @@
 #include <vector>
 #include <string>
 #include "descriptors.h"
-
+#include <fstream>
 
 USING_PART_OF_NAMESPACE_EIGEN
 using namespace std;
@@ -42,6 +42,7 @@ public:
   IplImage* mask_;
   vector<ImageDescriptor*> descriptor_;
 
+  void testContours(string bagfile, string label_dir);
   void collectObjectsFromImageVectorized(int samples_per_img, vector<object*>* objects, Vector<Keypoint>* keypoints);
   void sanityCheck(string bagfile, string results_dir);
   DorylusDataset* collectDataset(string bagfile, int samples_per_img, string results_dir);
@@ -401,6 +402,28 @@ void Stanleyi::viewLabels(string bagfile, string results_dir) {
     }
   }
 }
+
+void Stanleyi::testContours(string bagfile, string label_dir) {
+  lp_.open(bagfile, ros::Time());
+  while(lp_.nextMsg()) {
+    if (!img_bridge_.fromImage(img_msg_, "bgr")) {
+      ROS_ERROR("Could not convert message to ipl.");
+      break;
+    }
+    img_ = img_bridge_.toIpl();
+
+    IplImage* mask = findLabelMask(img_msg_.header.stamp.toSec(), label_dir);
+    if(!mask)
+      continue;
+
+    vector<IplImage*> masks;
+    masks.push_back(mask);
+    vector<IplImage*> imgs;
+    imgs.push_back(img_);
+    ContourFragment cf(30, 0.01);
+    cf.learnContours(imgs, masks);
+  }
+}
   
 int main(int argc, char** argv) 
 {
@@ -437,22 +460,31 @@ int main(int argc, char** argv)
       delete dd;
     }
   
-  else if(argc > 2 && !strcmp(argv[1], "--statusD")) {
+  else if(argc > 2 && !strcmp(argv[1], "--status")) {
     cout << "Examining " << argv[2] << endl;
-    DorylusDataset dd;
-    if(!dd.load(argv[2]))
-      return 1;
-    //    cout << dd.displayFeatures() << endl;
-    cout << dd.status() << endl;
-  }
 
-  else if(argc > 2 && !strcmp(argv[1], "--statusClassifier")) {
-    cout << "Examining " << argv[2] << endl;
-    Dorylus d;
-    if(!d.load(argv[2]))
+    // -- Figure out what it is.
+    ifstream file(argv[2]);
+    if(!file.is_open()) {
+      cout << "Could not open " << argv[2] << endl;
       return 1;
-    //    cout << dd.displayFeatures() << endl;
-    cout << d.status() << endl;
+    }
+    string line;
+    getline(file, line);
+
+    if(line.find("#DORYLUS CLASSIFIER LOG") != string::npos) {
+      Dorylus d;
+      if(!d.load(argv[2]))
+	return 1;
+      cout << d.status() << endl;
+    }
+
+    if(line.find("#DORYLUS DATASET LOG") != string::npos) {
+      DorylusDataset dd;
+      if(!dd.load(argv[2]))
+	return 1;
+      cout << dd.status() << endl;
+    }
   }
 
   else if(argc > 2 && !strcmp(argv[1], "--train")) {
@@ -483,6 +515,11 @@ int main(int argc, char** argv)
       return 1;
     s.makeClassificationVideo(argv[3], d, samples_per_img, argv[4]);
   }
+  else if(argc > 3 && !strcmp(argv[1], "--cf")) {
+    cout << "Learning contour fragments for bagfile " << argv[2] << " and labels in " << argv[3] << endl;
+    s.testContours(argv[2], argv[3]);
+  }
+
 
   else {
     cout << "usage: " << endl;
@@ -490,7 +527,9 @@ int main(int argc, char** argv)
     cout << argv[0] << " --collectDataset BAGFILE LABELS DATASET" << endl;
     cout << argv[0] << " --collectAndTrain BAGFILE LABELS CLASSIFIER" << endl;
     cout << argv[0] << " --viewLabels BAGFILE LABELS" << endl;
-    cout << argv[0] << " --statusD DATASET" << endl;
+    cout << argv[0] << " --status DATASET" << endl;
+    cout << argv[0] << " --status CLASSIFIER" << endl;
+    cout << argv[0] << " --cf BAGFILE LABELS" << endl;
     cout << "  where LABELS might take the form of `rospack find cv_mech_turk`/results/single-object-s " << endl;
     cout << "Environment variable options: " << endl;
   }
