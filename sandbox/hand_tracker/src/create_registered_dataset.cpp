@@ -74,10 +74,11 @@ bool getdir (string dir, vector<string> &files) {
   }
 
   while ((dirp = readdir(dp)) != NULL) {
-    if(image_files[i].compare(".") == 0 || image_files[i].compare("..") == 0) {
+    string file_name(dirp->d_name);
+    if(file_name.compare(".") == 0 || file_name.compare("..") == 0) {
       continue;
     }
-    files.push_back(string(dirp->d_name));
+    files.push_back(file_name);
   }
   closedir(dp);
   return true;
@@ -193,7 +194,7 @@ int main(int argc, char* argv[])
     // Load image
     string image_file_name = image_dir + "/" + image_files[i];
     IplImage *image = cvLoadImage(image_file_name.c_str());
-    CvSize image_size = csGetSize(image);
+    CvSize image_size = cvGetSize(image);
 
     // W-by-H patch we will save to files
     IplImage *output = cvCreateImage(cvSize(W,H), image->depth, image->nChannels);
@@ -221,9 +222,9 @@ int main(int argc, char* argv[])
       cvSaveImage(output_file_name.str().c_str(), output);
 
       // Collect negative examples
-      for (int j=1; j<3; j++) {
-	int x = rand() % (rectangle.width
-      }
+      //for (int j=1; j<3; j++) {
+      //int x = rand() % (rectangle.width
+      //}
       cvReleaseImage(&patch);	
     }
     cvReleaseImage(&output);
