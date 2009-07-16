@@ -22,9 +22,9 @@
     <param name="arm_name" value="right_arm" />
     <param name="lowres_cc" value="true" />
     <param name="use_collision_map" value="true" />
-    <param name="use_collision_map_occ_to_update_voxel" value="false" />
+    <param name="use_collision_map_occ_to_update_voxel" value="true" />
     <param name="use_exact_gripper_collision_checking" value="true" />
-    <param name="use_voxel3d_grid" value="false" />
+    <param name="use_voxel3d_grid" value="true" />
 
     <!-- planning monitor -->
     <remap from="robot_description" to="robotdesc/pr2" />

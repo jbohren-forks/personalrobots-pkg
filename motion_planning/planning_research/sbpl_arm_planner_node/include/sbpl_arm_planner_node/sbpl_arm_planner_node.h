@@ -68,6 +68,11 @@
 
 // #include <sbpl_pm_wrapper/pm_wrapper.h>
 
+#include <kdl/chain.hpp>
+#include <kdl/frames.hpp>
+#include <kdl/chainjnttojacsolver.hpp>
+#include <robot_msgs/Wrench.h>
+
 namespace sbpl_arm_planner_node
 {
 #define VERBOSE 1
@@ -230,6 +235,8 @@ class SBPLArmPlannerNode
       bool updateOccupancyGrid();
 
       void updatePMWrapper(motion_planning_srvs::MotionPlan::Request &req);
+
+//       void finishPath(motion_planning_msgs::KinematicPath &arm_path);
   };
 }
 

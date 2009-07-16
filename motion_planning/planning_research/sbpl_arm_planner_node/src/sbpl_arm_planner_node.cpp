@@ -4,7 +4,7 @@
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- *W
+ *
  *     * Redistributions of source code must retain the above copyright
  *       notice, this list of conditions and the following disclaimer.
  *     * Redistributions in binary form must reproduce the above copyright
@@ -186,12 +186,19 @@ bool SBPLArmPlannerNode::initializePlannerAndEnvironment()
   env_config_fp_ = fopen("sbpl_env_cfg_tmp.txt","rt");
   planner_config_fp_ = fopen("sbpl_planner_cfg_tmp.txt","rt");
 
-  // check if the robot 
+  // check if the robot
   if(pr2_desc_.empty())
   {
     ROS_ERROR("Robot description file is empty.");
     return false;
   }
+
+  // set environment parameters
+  sbpl_arm_env_.SetEnvParameter("useDijkstraHeuristic", dijkstra_heuristic_);
+  sbpl_arm_env_.SetEnvParameter("useFastCollisionChecking", lowres_cc_);
+  sbpl_arm_env_.SetEnvParameter("exactGripperCollisionChecking", enable_pm_);
+  sbpl_arm_env_.SetEnvParameter("useVoxel3dForOccupancyGrid", use_voxel3d_grid_);
+  sbpl_arm_env_.SetEnvParameter("useMultiResolutionMotionPrimitives", use_multires_primitives_);
 
   if(!sbpl_arm_env_.InitEnvFromFilePtr(env_config_fp_, planner_config_fp_, pr2_desc_))
   {
@@ -1073,6 +1080,50 @@ void SBPLArmPlannerNode::updatePMWrapper(motion_planning_srvs::MotionPlan::Reque
 {
   pm_->updatePM(req);
 }
+
+// void SBPLArmPlannerNode::finishPath(motion_planning_msgs::KinematicPath &arm_path)
+// {
+//   KDL::Twist twist_error;
+//   KDL::JntArray jnt_pos;
+//   KDL::Jacobian jacobian;
+//   double xyz_m[3], rpy_r[3];
+// 
+//   jnt_to_jac_solver_.reset(new ChainJntToJacSolver(kdl_chain_));
+//   jnt_pos.resize(kdl_chain_.getNrOfJoints());
+//   jnt_eff.resize(kdl_chain_.getNrOfJoints());
+//   jacobian.resize(kdl_chain_.getNrOfJoints());
+// 
+//   // get cartesian twist error
+// //   FrameVel twist;
+// //   jnt_to_twist_solver_->JntToCart(jnt_posvel_, twist);
+// //   twist_meas_ = twist.deriv();
+// //   Twist error = twist_meas_ - twist_desi_;
+// 
+// //   * This class represents a twist.  A twist is the combination of translational
+// //       * velocity and rotational velocity applied at one point.
+// //   A Wrench is the force and torque applied at a point
+// 
+//   for (unsigned int p = 0; p < (unsigned int) num_joints_; p++)
+//   {
+//     jnt_pos(p) = arm_path.states[arm_path.states.end()].vals[p];
+//     ROS_INFO("%f", jnt_pos(p));
+//   }
+// 
+//   sbpl_arm_env_.ComputeEndEffectorPos(angles_r, xyz_m, rpy_r);
+// 
+//   // pose feedback into twist
+//   twist_error = diff(pose_desi, pose_meas);
+// 
+//   // get the chain jacobian
+//   jnt_to_jac_solver_->JntToJac(jnt_pos, jacobian);
+// 
+//   // convert the wrench into joint efforts
+// //   for (unsigned int i = 0; i < kdl_chain_.getNrOfJoints(); i++){
+// //     jnt_eff_(i) = 0;
+// //     for (unsigned int j=0; j<6; j++)
+// //       jnt_eff_(i) += (jacobian_(j,i) * wrench_desi_(j));
+// //  }
+// }
 
 
 int main(int argc, char *argv[])
