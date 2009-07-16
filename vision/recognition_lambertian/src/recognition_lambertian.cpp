@@ -245,12 +245,14 @@ private:
 
 	void leftCamInfoCallback(const sensor_msgs::CamInfo::ConstPtr& info)
 	{
+		if (got_images_) return;
 //		ROS_INFO("Left caminfo callback");
 		lcinfo_ = info;
 	}
 
 	void leftImageCallback(const sensor_msgs::Image::ConstPtr& image)
 	{
+		if (got_images_) return;
 //		ROS_INFO("Left image callback");
 
 		limage_ = image;
@@ -261,6 +263,7 @@ private:
 
 	void rightImageCallback(const sensor_msgs::Image::ConstPtr& image)
 	{
+		if (got_images_) return;
 //		ROS_INFO("Right image callback");
 
 		rimage_ = image;
@@ -271,13 +274,15 @@ private:
 
 	void disparityImageCallback(const sensor_msgs::Image::ConstPtr& image)
 	{
-//		ROS_INFO("Disparity image callback");
+		if (got_images_) return;
+		//		ROS_INFO("Disparity image callback");
 
 		dimage_ = image;
 	}
 
 	void dispinfoCallback(const sensor_msgs::DisparityInfo::ConstPtr& dinfo)
 	{
+		if (got_images_) return;
 //		ROS_INFO("Disp info callback");
 
 		dispinfo_ = dinfo;
@@ -285,6 +290,8 @@ private:
 
 	void cloudCallback(const robot_msgs::PointCloud::ConstPtr& point_cloud)
 	{
+		if (got_images_) return;
+		boost::unique_lock<boost::mutex> lock(data_lock_);
 //		ROS_INFO("Cloud callback");
 
 		cloud = point_cloud;
@@ -426,8 +433,8 @@ private:
 	void filterByZBounds(const PointCloud& pc, double zmin, double zmax, PointCloud& filtered_pc, PointCloud& filtered_outside)
 	{
 		vector<int> indices_remove;
-		for (size_t i = 0;i<cloud->get_pts_size();++i) {
-			if (cloud->pts[i].z>zmax || cloud->pts[i].z<zmin) {
+		for (size_t i = 0;i<pc.get_pts_size();++i) {
+			if (pc.pts[i].z>zmax || pc.pts[i].z<zmin) {
 				indices_remove.push_back(i);
 			}
 		}
@@ -464,7 +471,7 @@ private:
 	}
 
 
-	void filterTablePlane(vector<double>& coefficients, PointCloud& object_cloud, PointCloud& plane_cloud)
+	void filterTablePlane(const PointCloud& pc, vector<double>& coefficients, PointCloud& object_cloud, PointCloud& plane_cloud)
 	{
 
 		disp_clone = cvCloneImage(disp);
@@ -472,7 +479,7 @@ private:
 		PointCloud filtered_cloud;
 		PointCloud filtered_outside;
 
-		filterByZBounds(*cloud,0.1, 1.2 , filtered_cloud, filtered_outside );
+		filterByZBounds(pc, 0.1, 1.2 , filtered_cloud, filtered_outside );
 
 		clearFromImage(disp, filtered_outside);
 
@@ -1144,7 +1151,7 @@ private:
 		vector<double> plane;
 		PointCloud objects_pc;
 		PointCloud plane_pc;
-		filterTablePlane(plane,objects_pc,plane_pc);
+		filterTablePlane(*cloud, plane,objects_pc,plane_pc);
 
 		// project outliers (the objects on the table) to the table plane
 		PointCloud projected_objects;
@@ -1197,7 +1204,7 @@ private:
 		vector<double> plane;
 		PointCloud objects_pc;
 		PointCloud plane_pc;
-		filterTablePlane(plane,objects_pc,plane_pc);
+		filterTablePlane(*cloud, plane,objects_pc,plane_pc);
 
 		// project outliers (the object on teh table) to the table plane
 		PointCloud projected_objects;
