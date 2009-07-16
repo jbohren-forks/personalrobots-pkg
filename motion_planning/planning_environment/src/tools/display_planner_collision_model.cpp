@@ -121,21 +121,31 @@ protected:
     
     void afterAttachBody(planning_models::KinematicModel::Link *link, const mapping_msgs::AttachedObjectConstPtr &attachedObject)
     {
-	/*	roslib::Header header;
-	header.stamp = ros::Time::now();
+	roslib::Header header;
+	header.stamp = collisionSpaceMonitor_->lastMechanismStateUpdate();
 	header.frame_id = link->name;
 	for (unsigned int i = 0 ; i < link->attachedBodies.size() ; ++i)
         {
-            shapes::Box *box = dynamic_cast<shapes::Box*>(link->attachedBodies[i]->shape);
-            if (box)
-            {
-                btVector3 &v = link->attachedBodies[i]->attachTrans.getOrigin();
-                sendPoint(v.x(), v.y(), v.z(), std::max(std::max(box->size[0], box->size[1]), box->size[2] / 2.0), header, 0);
-            }
-	    } */
-	ROS_INFO("should display attached body");	
-    }
+	    visualization_msgs::Marker mk;
+	    mk.ns = nh_.getName() + "_attached_" + link->name;
+	    mk.id = i;
+	    mk.header = header;
+	    
+	    mk.action = visualization_msgs::Marker::ADD;
+	    setObject(link->attachedBodies[i]->shape, mk);
+	    tf::poseTFToMsg(link->attachedBodies[i]->attachTrans, mk.pose);
 
+	    mk.lifetime = ros::Duration(30.0);
+	    
+	    mk.color.a = 0.5;
+	    mk.color.r = 0.6;
+	    mk.color.g = 0.4;
+	    mk.color.b = 0.3;
+	    visualizationMarkerPublisher_.publish(mk);
+	} 
+	
+    }
+    
 private:
 
     void setObject(const mapping_msgs::Object &obj, visualization_msgs::Marker &mk)
@@ -168,7 +178,7 @@ private:
 		for (unsigned int i = 0 ; i < nt ; ++i)
 		{
 		    mk.points.push_back(obj.vertices[obj.triangles[3*i]]);
-		    mk.points.push_back(obj.vertices[obj.triangles[3*i+1]]);
+		    mk.points.push_back(obj.vertices[obj.triangles[3*i+ 1]]);
 		    mk.points.push_back(obj.vertices[obj.triangles[3*i]]);
 		    mk.points.push_back(obj.vertices[obj.triangles[3*i+2]]);
 		    mk.points.push_back(obj.vertices[obj.triangles[3*i+1]]);
@@ -180,6 +190,74 @@ private:
 	    
 	default:
 	    ROS_ERROR("Unknown object type: %d", (int)obj.type);
+	}
+    }
+
+    void setObject(const shapes::Shape *obj, visualization_msgs::Marker &mk)
+    {
+	switch (obj->type)
+	{
+	case shapes::SPHERE:
+	    mk.type = visualization_msgs::Marker::SPHERE;
+	    mk.scale.x = mk.scale.y = mk.scale.z = static_cast<const shapes::Sphere*>(obj)->radius * 2.0;
+	    break;
+	    
+	case shapes::BOX:
+	    mk.type = visualization_msgs::Marker::CUBE;
+	    {
+		const double *size = static_cast<const shapes::Box*>(obj)->size;
+		mk.scale.x = size[0];
+		mk.scale.y = size[1];
+		mk.scale.z = size[2];
+	    }
+	    break;
+
+	case shapes::CYLINDER:
+	    mk.type = visualization_msgs::Marker::CYLINDER;
+	    mk.scale.x = static_cast<const shapes::Cylinder*>(obj)->radius * 2.0;
+	    mk.scale.y = mk.scale.x;
+	    mk.scale.z = static_cast<const shapes::Cylinder*>(obj)->length;
+	    break;
+
+	case shapes::MESH:
+	    mk.type = visualization_msgs::Marker::LINE_LIST;
+	    {	   
+		const shapes::Mesh *mesh = static_cast<const shapes::Mesh*>(obj);
+		unsigned int nt = mesh->triangleCount / 3;
+		for (unsigned int i = 0 ; i < nt ; ++i)
+		{
+		    unsigned int v = mesh->triangles[3*i];
+		    robot_msgs::Point pt1;
+		    pt1.x = mesh->vertices[v];
+		    pt1.y = mesh->vertices[v+1];
+		    pt1.z = mesh->vertices[v+2];
+		    mk.points.push_back(pt1);
+
+		    v = mesh->triangles[3*i + 1];
+		    robot_msgs::Point pt2;
+		    pt2.x = mesh->vertices[v];
+		    pt2.y = mesh->vertices[v+1];
+		    pt2.z = mesh->vertices[v+2];
+		    mk.points.push_back(pt2);
+
+		    mk.points.push_back(pt1);
+
+		    v = mesh->triangles[3*i + 2];
+		    robot_msgs::Point pt3;
+		    pt3.x = mesh->vertices[v];
+		    pt3.y = mesh->vertices[v+1];
+		    pt3.z = mesh->vertices[v+2];
+		    mk.points.push_back(pt3);
+
+		    mk.points.push_back(pt2);
+		    mk.points.push_back(pt3);
+		}
+	    }
+	    
+	    break;
+	    
+	default:
+	    ROS_ERROR("Unknown object type: %d", (int)obj->type);
 	}
     }
     
