@@ -37,6 +37,7 @@
 #include <vector>
 #include <string>
 #include "ros/node.h"
+#include "ros/node_handle.h"
 #include "control_toolbox/pid.h"
 #include "control_toolbox/SetPidGains.h"
 
@@ -50,13 +51,15 @@ public:
 
   PidGainsSetter& add(Pid *pid);
 
-  void advertise(const std::string &ns);
+  void advertise(const std::string &ns) { advertise(ros::NodeHandle(ns)); }
+  void advertise(const ros::NodeHandle &n);
 
   bool setGains(control_toolbox::SetPidGains::Request &req,
                 control_toolbox::SetPidGains::Response &resp);
 
 private:
-  std::string ns_; // namespace
+  ros::NodeHandle node_;
+  ros::ServiceServer serve_set_gains_;
   std::vector<Pid*> pids_;
 };
 

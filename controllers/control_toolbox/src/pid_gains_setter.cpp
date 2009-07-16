@@ -33,11 +33,7 @@ namespace control_toolbox {
 
 PidGainsSetter::~PidGainsSetter()
 {
-  if (!ns_.empty())
-  {
-    ros::Node *node = ros::Node::instance();
-    node->unadvertiseService(ns_ + "/set_gains");
-  }
+  serve_set_gains_.shutdown();
 }
 
 PidGainsSetter& PidGainsSetter::add(Pid *pid)
@@ -47,13 +43,10 @@ PidGainsSetter& PidGainsSetter::add(Pid *pid)
   return *this;
 }
 
-void PidGainsSetter::advertise(const std::string &ns)
+void PidGainsSetter::advertise(const ros::NodeHandle &n)
 {
-  ns_ = ns;
-  ros::Node *node = ros::Node::instance();
-  assert(node);
-
-  node->advertiseService(ns_ + "/set_gains", &PidGainsSetter::setGains, this);
+  node_ = n;
+  serve_set_gains_ = node_.advertiseService("set_gains", &PidGainsSetter::setGains, this);
 }
 
 bool PidGainsSetter::setGains(control_toolbox::SetPidGains::Request &req,
@@ -61,6 +54,10 @@ bool PidGainsSetter::setGains(control_toolbox::SetPidGains::Request &req,
 {
   for (size_t i = 0; i < pids_.size(); ++i)
     pids_[i]->setGains(req.p, req.i, req.d, req.i_clamp, -req.i_clamp);
+  node_.setParam("p", req.p);
+  node_.setParam("i", req.i);
+  node_.setParam("d", req.d);
+  node_.setParam("i_clamp", req.i_clamp);
   return true;
 }
 
