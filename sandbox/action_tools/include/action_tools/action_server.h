@@ -244,6 +244,7 @@ namespace action_tools {
 
     private:
       void goalCallback(const boost::shared_ptr<const ActionGoal>& goal){
+        ROS_DEBUG("The action server is in the ROS goal callback");
         boost::mutex::scoped_lock(lock_);
         //check that the timestamp is past that of the current goal, the next goal, and past that of the last preempt
         if(goal->header.stamp > current_goal_->header.stamp
@@ -252,8 +253,9 @@ namespace action_tools {
           next_goal_ = goal;
           new_goal_ = true;
 
-          //we'll call the callback outside of our global lock to prevent deadlock
-          goal_callback_(GoalHandle(next_goal_, this));
+          //if the user has defined a goal callback, we'll call it now
+          if(goal_callback_)
+            goal_callback_(GoalHandle(next_goal_, this));
         }
         else{
           //reject goal?
@@ -272,7 +274,8 @@ namespace action_tools {
           last_preempt_ = *preempt;
 
           //if the user has registered a preempt callback, we'll call it now
-          preempt_callback_();
+          if(preempt_callback_)
+            preempt_callback_();
         }
       }
 
