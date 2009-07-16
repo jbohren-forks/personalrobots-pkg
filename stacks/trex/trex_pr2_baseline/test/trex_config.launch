@@ -1,0 +1,7 @@
+<launch>
+  <master auto="start"/>
+  <param name="/trex/update_rate" value="10"/>
+  <param name="/trex/path" value="$(find trex_pr2)/cfg:$(find trex_ros)/cfg"/>
+  <param name="/trex/log_dir" value="$(find trex_pr2)/logs"/>
+  <param name="/trex/play_back" value="0"/>
+</launch>

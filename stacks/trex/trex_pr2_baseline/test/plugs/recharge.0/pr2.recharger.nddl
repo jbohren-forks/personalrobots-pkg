@@ -1,0 +1,7 @@
+#include "plugs/recharge_controller.nddl"
+
+close();
+
+rejectable(recharge_controller.Positioning g);
+g.start = 2;
+

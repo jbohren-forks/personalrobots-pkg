@@ -1,0 +1,26 @@
+/**
+ * This test case will execute the open door action to get through sachins doorway. It tests:
+ * - Basic Topological Map Integration
+ * - Door domain actions
+ * - Door domain constraints
+ */
+#include "doors/imports.nddl"
+#include "test/doors/actions.nddl"
+#include "world_model/topological_map.nddl"
+
+Location sachins_doorway = new Location(13.15, 25.25, 0.0, 0.0, 0.0, 0.0, 0.0);
+
+close();
+
+// Load a topological map
+map_initialize_from_file("willow.tmap");
+
+// The goal is to execute an OpenDoor action, where we give it the door data
+rejectable(door_actions.OpenDoorById cmd_open_door);
+
+// Get the door id based on position data
+map_get_region_from_position(cmd_open_door.doorway_id, sachins_doorway.x, sachins_doorway.y);
+
+
+
+

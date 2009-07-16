@@ -1,0 +1,58 @@
+#include "TREX.nddl"
+#include "rcs/exports.nddl"
+#include "rcs/mechanism_control/exports.nddl"
+#include "mechanism_control/exports.nddl"
+
+// Actual mechanisms
+HeadMechanism head_mechanism = new HeadMechanism(Internal);
+TiltLaserMechanism laser_tilt_mechanism = new TiltLaserMechanism(Internal);
+RightArmMechanism right_arm_mechanism = new RightArmMechanism(Internal);
+RightGripperMechanism right_gripper_mechanism = new RightGripperMechanism(Internal);
+
+AgentActions actions = new AgentActions();
+
+HeadMechanism::use_head_controller{
+ contains_start(actions.startEvent);
+}
+
+RightArmMechanism::use_cartesian_trajectory_controller{
+ contains_start(actions.startEvent);
+}
+
+RightArmMechanism::use_joint_trajectory_controller{
+ contains_start(actions.startEvent);
+}
+
+RightArmMechanism::use_constraint_composite_cartesian_pose_controller{
+ contains_start(actions.startEvent);
+}
+
+RightArmMechanism::use_composite_cartesian_trajectory_controller{
+ contains_start(actions.startEvent);
+}
+ 
+RightArmMechanism::use_constraint_composite_cartesian_trajectory_controller{
+ contains_start(actions.startEvent);
+}
+ 
+RightArmMechanism::use_composite_tff_controller{
+ contains_start(actions.startEvent);
+}
+ 
+RightArmMechanism::use_hybrid_controller{
+ contains_start(actions.startEvent);
+}
+
+RightGripperMechanism::use_position_controller{
+ contains_start(actions.startEvent);
+}
+
+RightGripperMechanism::use_effort_controller{
+ contains_start(actions.startEvent);
+}
+
+TiltLaserMechanism::use_laser_tilt_controller{
+ contains_start(actions.startEvent);
+}
+
+close();

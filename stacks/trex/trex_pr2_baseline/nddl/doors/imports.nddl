@@ -1,0 +1,85 @@
+#include "nav/imports.nddl"
+#include "rcs/doors/exports.nddl"
+
+/** External Functions to be integrated **/
+
+/**
+ * @brief Obtain the base pose at a given distance normal to the door frame. The token object has all the parameters
+ * of a door message.
+ */
+constraint  door_get_robot_pose_for_door(x, y, z, qx, qy, qz, qw, token_object, distance){
+  x <: numeric && y <: x && z <: x && 
+  qx <: x && qy <: x && qz <: x && qw <: x &&
+  token_object <: Object && distance <: x
+}
+
+// Control constants for distances from door for detection, grasping and moving through the doorway
+float DETECTION_RANGE = -1.0;
+float GRASP_RANGE = -0.6;
+float DOORWAY_CLEARANCE_RANGE = 0.4;
+
+// Additional actions for the doro domain
+StopAction stop_action = new StopAction(External);
+ReleaseHandle release_handle = new ReleaseHandle(External);
+OpenDoor open_door = new OpenDoor(External);
+GraspHandle grasp_handle = new GraspHandle(External);
+UnlatchHandle unlatch_handle = new UnlatchHandle(External);
+DetectHandle detect_handle = new DetectHandle(External);
+DetectDoor detect_door = new DetectDoor(External);
+TouchDoor touch_door = new TouchDoor(External);
+PushDoor push_door = new PushDoor(External);
+CheckPath check_path = new CheckPath(External);
+MoveBase move_base = new MoveBase(External);
+MoveBase move_base_local = new MoveBase(External);
+MoveBaseDoor move_base_door = new MoveBaseDoor(External);
+
+DetectDoor::Active{
+  contained_by(laser_tilt_mechanism.use_laser_tilt_controller);
+  contained_by(right_arm_mechanism.use_joint_trajectory_controller);
+  contained_by(arms_tucked.True);
+}
+
+DetectHandle::Active{
+  contained_by(laser_tilt_mechanism.use_laser_tilt_controller);
+  contained_by(head_mechanism.use_head_controller);
+  contained_by(right_arm_mechanism.use_joint_trajectory_controller);
+  contained_by(arms_tucked.True);
+}
+
+GraspHandle::Active{
+  contained_by(right_arm_mechanism.use_constraint_composite_cartesian_trajectory_controller);
+  contained_by(right_gripper_mechanism.use_effort_controller);
+}
+
+UnlatchHandle::Active{
+  contained_by(right_arm_mechanism.use_composite_tff_controller);
+  contained_by(right_gripper_mechanism.use_effort_controller);
+}
+
+OpenDoor::Active{
+  contained_by(right_arm_mechanism.use_composite_tff_controller);
+  contained_by(right_gripper_mechanism.use_effort_controller);
+}
+
+TouchDoor::Active{
+  contained_by(right_arm_mechanism.use_constraint_composite_cartesian_trajectory_controller);
+  contained_by(right_gripper_mechanism.use_effort_controller);
+}
+
+PushDoor::Active{
+  contained_by(right_arm_mechanism.use_constraint_composite_cartesian_pose_controller);
+  contained_by(right_gripper_mechanism.use_effort_controller);
+}
+
+// Controller requirements
+MoveBaseDoor::Active{
+  contained_by(head_mechanism.use_head_controller);
+  contained_by(laser_tilt_mechanism.use_laser_tilt_controller);
+}
+
+ReleaseHandle::Active{
+  contained_by(right_arm_mechanism.use_constraint_composite_cartesian_trajectory_controller);
+  contained_by(right_gripper_mechanism.use_effort_controller);
+}
+
+

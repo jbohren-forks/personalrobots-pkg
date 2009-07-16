@@ -1,0 +1,5 @@
+<launch>
+  <master auto="start"/>
+  <param name="/trex/start_dir" value="$(find trex_pr2)/test/master/m2/no_arms"/>
+  <include file="$(find trex_pr2)/test/master/stubs.launch" />
+</launch>

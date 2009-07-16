@@ -1,0 +1,108 @@
+
+/**
+ * This file defines actions and state variables utilized in navigation. It will include
+ * @author Conor McGann
+ */
+
+float BASE_POSITION_ERROR = 1.0;
+float ANGLE_ERROR = 0.2;
+
+typedef float [0.0 1.0] UNIT_FLOAT;
+
+/**
+ * BaseState will capture position and orientation.
+ */
+class BaseState extends ROSStateVariable {
+  predicate Holds{
+    float time_stamp;
+    string frame_id;
+    float x;
+    float y;
+    float z;
+    float qx;
+    float qy;
+    float qz;
+    float qw;
+  }
+
+  BaseState(Mode _mode){
+    super(_mode, "Holds", true);
+  }
+};
+
+/**
+ * @brief Common base class for navigation behaviors which will impose similar requirements
+ */
+class NavigationBehavior extends ROSAction{
+  predicate Inactive{}
+  predicate Active{}
+  NavigationBehavior(Mode _mode){
+    super(_mode);
+  }
+};
+
+/**
+ * MoveBase behavior will handle active control of vehicle to accomplish 
+ * a waypoint. Takes a pose.
+ */
+class MoveBase extends NavigationBehavior{
+
+  predicate Inactive{
+    float time_stamp;
+    string frame_id;
+    float x;
+    float y;
+    float z;
+    float qx;
+    float qy;
+    float qz;
+    float qw;
+  }
+
+  // Parameters to get to the target
+  predicate Active {
+    float time_stamp;
+    string frame_id;
+    float x;
+    float y;
+    float z;
+    float qx;
+    float qy;
+    float qz;
+    float qw;
+  }
+
+  MoveBase(Mode _mode){
+    super(_mode);
+  }
+};
+
+
+/**
+ * This is a sensing action to see if there is a path to the goal.
+ */
+class CheckPath extends NavigationBehavior {
+
+  /**
+   * The parameters here 
+   */
+  predicate Active{
+    float time_stamp;
+    string frame_id;
+    float x;
+    float y;
+    float z;
+    float qx;
+    float qy;
+    float qz;
+    float qw;
+  }
+
+  predicate Inactive{    
+    bool is_clear; // True if there is a clear path, otherwise false
+  }
+
+  CheckPath(Mode _mode){
+    super(_mode);
+  }
+};

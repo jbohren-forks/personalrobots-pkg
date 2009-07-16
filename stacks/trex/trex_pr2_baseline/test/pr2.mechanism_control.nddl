@@ -1,0 +1,3 @@
+#include "mechanism_control/mechanism_control.nddl"
+
+close();

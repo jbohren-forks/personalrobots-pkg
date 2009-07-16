@@ -1,0 +1,53 @@
+/**
+ * Provides full functionality of the doorman. Here we integrate with the topological map.
+ */
+#include "world_model/topological_map.nddl"
+#include "doors/door_controller.nddl"
+
+// Use base state to obtain current pose for computing travel direction
+BaseState base_state = new BaseState(External);
+
+MoveBehavior::Inactive {
+  // If it has been aborted, send an update with current the current current and target positions
+  if(status == ABORTED){
+    met_by(Active p);
+    MAP_KEY doorway_id;
+    neq(doorway_id, NO_KEY);
+    map_get_doorway_from_points(doorway_id, 0.0, 0.0, p.x, p.y);
+    map_notify_door_blocked(doorway_id);
+  }
+}
+
+MoveBehavior::Active {
+  starts(door_controller.CheckingDoorway dc);
+
+  // Compute the deadline in ticks
+  float elapsedTicks;
+  mulEq(elapsedTicks, TICK_DURATION, max_duration);
+  float deadline;
+  addEq(start, elapsedTicks, deadline);
+
+  // Initialize door message from the topological map
+  MAP_KEY doorway_id;
+  neq(doorway_id, NO_KEY);
+
+  // Only using the second point, since that point should be coming from the topological
+  // map. The doorway is derived from a connector whose approach pose is closest to this
+  map_get_doorway_from_points(doorway_id, 0.0, 0.0, x, y);
+  starts(door_state.Holds ds);
+  map_get_door_state(ds.object, doorway_id);
+  eq(ds.frame_id, frame_id);
+
+  // Set travel direction based on deltas
+  any(base_state.Holds bs);
+  temporalDistance(start, [0, +inf], bs.end);
+  precedes(bs.start, start);
+  addEq(bs.x, ds.travel_dir_x, x);
+  addEq(bs.y, ds.travel_dir_y, y);
+  eq(ds.travel_dir_z, 0.0);
+
+  // Set start connect by default if not set
+  MAP_KEY connector_default;
+  map_get_nearest_connector(connector_default, bs.x, bs.y, x, y);
+  defaultOnCommit(start_connector, connector_default);
+}

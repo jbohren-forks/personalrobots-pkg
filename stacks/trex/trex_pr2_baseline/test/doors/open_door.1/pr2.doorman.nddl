@@ -1,0 +1,13 @@
+#include "doors/doorman.nddl"
+#include "test/locations.nddl"
+
+close();
+
+// Load the topological map
+map_initialize_from_file("willow.tmap");
+
+// Assume the robot is located just near Sachins office. On the outside. We will set the navigation target to just inside sachins office.
+rejectable(doorman.Active g0);
+eq_map_pose_msg(g0.object, inside_sachins_office);
+eq(g0.max_duration, 100.0);
+eq(g0.start_connector, 60);

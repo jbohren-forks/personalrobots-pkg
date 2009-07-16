@@ -1,0 +1,57 @@
+/**
+ * An error bound for time when preempting or when terminating.
+ */
+typedef int [-1, 1] TIME_ERROR_BOUND;
+
+/**
+ * Defines core interfaces for ROS integration
+ */
+
+/**
+ * Specialize to mark all ROS State Variables
+ */
+class ROSStateVariable extends AgentTimeline {
+
+  predicate Holds{}
+
+  ROSStateVariable(Mode _mode){
+    super(_mode, "Holds");
+  }
+};
+
+/**
+ * A StateMachine control structure
+ */
+class StateMachine extends AgentTimeline {
+
+  // The controller is in an inactive state. Basically idle.
+  predicate Inactive{
+    ResultStatus status;
+    // Be default will be UNDEFINED
+    defaultOnCommit(status, UNDEFINED);
+    // Should always be integrated in the mission profile
+    temporalDistance(start, [1, +inf], missionEnd);
+  }
+  
+  StateMachine(){ super(Internal, "Inactive"); }
+};
+
+/**
+ * Specialize to mark all ROS Actions
+ */
+class ROSAction extends Behavior {
+
+  predicate Active{}
+
+  predicate Inactive {}
+
+  ROSAction(Mode _mode){
+    super(_mode);
+  }
+};
+
+ROSAction::Active{
+  int time_since_dispatch;
+  addEq(dispatch_time, time_since_dispatch, start);
+  leq(time_since_dispatch, 100);
+}

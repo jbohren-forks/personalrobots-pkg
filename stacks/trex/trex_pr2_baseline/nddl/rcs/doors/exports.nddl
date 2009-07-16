@@ -1,0 +1,267 @@
+/**
+ * This file defines the classes that are specific to the integration with the high level controllers
+ * and state variables of the door domain.
+ */
+
+/** CONSTANTS and TYPEDEFS **/
+
+int UNKNOWN = 0;
+
+int FRAME_P1 = 1;
+int FRAME_P2 = 2;
+typedef int [0, 2] HINGE_FRAME;
+
+int ROT_DIR_CLOCKWISE = 1;
+int ROT_DIR_COUNTERCLOCKWISE = 2;
+typedef int [0, 2] ROTATION_DIRECTION;
+
+
+// Derived from the door message
+typedef int [0 3] LatchState;
+int LATCH_STATE_LOCKED = 1;
+int LATCH_STATE_LATCHED = 2;
+int LATCH_STATE_UNLATCHED = 3;
+
+/**
+ * @brief This is a general utility for tucking arms.
+ */
+class StopAction extends  ROSAction {
+
+  predicate Active {
+    string action_name;
+  }
+
+  predicate Inactive {}
+
+  StopAction(Mode _mode){ super(_mode);}
+};
+
+class DoorManipulationBehavior extends ROSAction {
+  bool update_controller; // If true, will force an update on successful termination
+
+  /**
+   * The parameters here 
+   */
+  predicate Active{
+    float time_stamp; // A double encoding is reliable
+    string frame_id;
+
+    // Overall latched state
+    LatchState latch_state;
+
+    // Points for the door frame
+    float frame_p1_x;
+    float frame_p1_y;
+    float frame_p1_z;
+    float frame_p2_x;
+    float frame_p2_y;
+    float frame_p2_z;
+
+    // Additional Frame information
+    float height;
+    HINGE_FRAME hinge;
+    ROTATION_DIRECTION rot_dir;
+
+    // Points for the door
+    float door_p1_x;
+    float door_p1_y;
+    float door_p1_z;
+    float door_p2_x;
+    float door_p2_y;
+    float door_p2_z;
+
+    // Handle data
+    float handle_x;
+    float handle_y;
+    float handle_z;
+
+    // Travel direction
+    float travel_dir_x;
+    float travel_dir_y;
+    float travel_dir_z;
+  }
+
+  predicate Inactive{
+    float time_stamp; // A double encoding is reliable
+    string frame_id;
+
+    // Overall latched state
+    LatchState latch_state;
+
+    // Points for the door frame
+    float frame_p1_x;
+    float frame_p1_y;
+    float frame_p1_z;
+    float frame_p2_x;
+    float frame_p2_y;
+    float frame_p2_z;
+
+    // Additional Frame information
+    float height;
+    HINGE_FRAME hinge;
+    ROTATION_DIRECTION rot_dir;
+
+    // Points for the door
+    float door_p1_x;
+    float door_p1_y;
+    float door_p1_z;
+    float door_p2_x;
+    float door_p2_y;
+    float door_p2_z;
+
+    // Handle data
+    float handle_x;
+    float handle_y;
+    float handle_z;
+
+    // Travel directions
+    float travel_dir_x;
+    float travel_dir_y;
+    float travel_dir_z;
+
+    // Commit to unknown values if nothing set
+    defaultOnCommit(hinge, UNKNOWN);
+    defaultOnCommit(rot_dir, UNKNOWN);
+  }
+
+  DoorManipulationBehavior(Mode _mode){
+    super(_mode);
+    update_controller = true;
+  }
+
+  DoorManipulationBehavior(Mode _mode, bool _update_controller){
+    super(_mode);
+    update_controller = _update_controller;
+  }
+}
+
+/**
+ * Behavior to grasp the handle once in a position to do so
+ */
+class GraspHandle extends DoorManipulationBehavior {
+
+  // Redeclare because of bug in parser
+  predicate Active{}
+  predicate Inactive{}
+
+  GraspHandle(Mode _mode){
+    super(_mode);
+  }
+};
+
+
+/**
+ * Behavior to grasp the handle once in a position to do so
+ */
+class UnlatchHandle extends DoorManipulationBehavior {
+
+  // Redeclare because of bug in parser
+  predicate Active{}
+  predicate Inactive{}
+
+  UnlatchHandle(Mode _mode){
+    super(_mode);
+  }
+};
+
+/**
+ * Behavior to extract the gripper from a grasp on the handle
+ */
+class ReleaseHandle extends DoorManipulationBehavior {
+
+  // Redeclare because of bug in parser
+  predicate Active{}
+  predicate Inactive{}
+
+  ReleaseHandle(Mode _mode){
+    super(_mode);
+  }
+};
+
+/**
+ * DetectDoor is activated to search for the door. It will assume it is in a suitable observation position facing the door
+ */
+class DetectDoor extends DoorManipulationBehavior {
+
+  // Redeclare because of bug in parser
+  predicate Active{}
+  predicate Inactive{}
+
+  DetectDoor(Mode _mode){
+    super(_mode);
+  }
+};
+
+/**
+ * DetectHandle is activated to search for the door. It will assume it is in a suitable observation position facing the door
+ */
+class DetectHandle extends DoorManipulationBehavior {
+
+  // Redeclare because of bug in parser
+  predicate Active{}
+  predicate Inactive{}
+
+  DetectHandle(Mode _mode){
+    super(_mode);
+  }
+};
+
+
+/**
+ * 
+ */
+class MoveBaseDoor extends DoorManipulationBehavior {
+
+  // Redeclare because of bug in parser
+  predicate Active{}
+  predicate Inactive{}
+
+  MoveBaseDoor(Mode _mode){
+    super(_mode);
+  }
+
+};
+
+/**
+ * Use this to make contact with the door prior to pushing
+ */
+class TouchDoor extends DoorManipulationBehavior {
+
+  // Redeclare because of bug in parser
+  predicate Active{}
+  predicate Inactive{}
+
+  TouchDoor(Mode _mode){
+    super(_mode, false);
+  }
+};
+
+/**
+ * Use this to push a door open while moving. Does not require the handle to be grasped
+ */
+class PushDoor extends DoorManipulationBehavior {
+
+  // Redeclare because of bug in parser
+  predicate Active{}
+  predicate Inactive{}
+
+  PushDoor(Mode _mode){
+    super(_mode, false);
+  }
+};
+
+/**
+ * Behavior to open the door, assuming it is ajar, and assuming it has a grasp on the handle
+ */
+class OpenDoor extends DoorManipulationBehavior {
+
+  // Redeclare because of bug in parser
+  predicate Active{
+  }
+
+  predicate Inactive{}
+
+  OpenDoor(Mode _mode){
+    super(_mode, false);
+  }
+};

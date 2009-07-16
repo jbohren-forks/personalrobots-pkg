@@ -1,0 +1,17 @@
+/**
+ * Execute a single external action
+ */
+#include "TREX.nddl"
+#include "rcs/exports.nddl"
+#include "rcs/mechanism_control/exports.nddl"
+#include "test/actions.nddl"
+
+Behavior::Active{
+  starts(TestActions.StartEvent);
+  eq(status, SUCCESS);
+}
+
+// Swap Command
+SwitchControllers switch_controllers = new SwitchControllers(Internal);
+
+close();

@@ -1,0 +1,122 @@
+/**
+ * Interface for arm interaction primitives
+ */
+
+/**
+ * Timeline structure for End Effector state
+ */
+class EndEffectorState extends ROSTFStateVariable {
+  bool isLeft;
+
+  predicate Holds{
+    float rot1_1;
+    float rot1_2;
+    float rot1_3;
+    float rot2_1;
+    float rot2_2;
+    float rot2_3;
+    float rot3_1;
+    float rot3_2;
+    float rot3_3;
+    float x;
+    float y;
+    float z;
+  }
+
+  EndEffectorState(Mode _mode, bool _isLeft){
+    super(_mode, "Holds", true);
+    isLeft = _isLeft;
+  }
+};
+
+/**
+ * ArmState will capture position and orientation.
+ */
+class ArmState extends ROSTFStateVariable {
+
+  bool isLeft; // true if the left arm
+
+  predicate Holds{
+    float shoulder_pan;
+    float shoulder_pitch;
+    float upperarm_roll;
+    float elbow_flex;
+    float forearm_roll;
+    float wrist_flex;
+    float gripper_roll;
+  }
+
+  ArmState(Mode _mode, bool _isLeft){
+    super(_mode, "Holds", true);
+    isLeft = _isLeft;
+  }
+};
+
+/**
+ * MoveArm behavior will handle active control to move the arm to a desired joint configuration
+ */
+class MoveArm extends  ROSTFAction {
+
+  bool isLeft; // True if this is for the left arm, else false.
+  
+  predicate Inactive{
+    float shoulder_pan;
+    float shoulder_pitch;
+    float upperarm_roll;
+    float elbow_flex;
+    float forearm_roll;
+    float wrist_flex;
+    float gripper_roll;
+  }
+
+  predicate Active {
+    float shoulder_pan;
+    float shoulder_pitch;
+    float upperarm_roll;
+    float elbow_flex;
+    float forearm_roll;
+    float wrist_flex;
+    float gripper_roll;
+
+  }
+  
+  MoveArm(Mode _mode, bool _isLeft){
+    super(_mode);
+    isLeft = _isLeft;
+  }
+};
+
+
+/**
+ * MoveEndEffector behavior will handle active control to move the end effector of the arm to a desired position
+ */
+class MoveEndEffector extends ROSTFAction {
+
+  bool isLeft; // True if this is for the left arm, else false.
+  
+  predicate Inactive{
+    float shoulder_pan;
+    float shoulder_pitch;
+    float upperarm_roll;
+    float elbow_flex;
+    float forearm_roll;
+    float wrist_flex;
+    float gripper_roll;
+  }
+
+  predicate Active {
+    float shoulder_pan;
+    float shoulder_pitch;
+    float upperarm_roll;
+    float elbow_flex;
+    float forearm_roll;
+    float wrist_flex;
+    float gripper_roll;
+
+  }
+  
+  MoveEndEffector(Mode _mode, bool _isLeft){
+    super(_mode);
+    isLeft = _isLeft;
+  }
+};

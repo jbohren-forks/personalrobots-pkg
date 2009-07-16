@@ -1,0 +1,93 @@
+/***********************************************************************
+ * External functions and relations for working with the topological map
+ ***********************************************************************/
+
+// Define a MAP_KEY type to give positive integer id's for keys in the topological mapp
+typedef int [0 100000] MAP_KEY;
+
+// A 0 key value indicates no key, and thus no map entity
+MAP_KEY NO_KEY = 0;
+
+// A function that will be executed to load the topological map
+constraint map_initialize_from_file(fileName) { fileName <: string }
+
+// A relation: given a connector, bind the x, y the values. Given x, and y, bind the connector
+constraint map_connector(connection_id, x, y, th) { connection_id <: MAP_KEY && x <: numeric && y <: numeric && th <: numeric }
+
+// A function: given an x,y position, bind a region.
+constraint map_get_region_from_position(region_id, x, y){ region_id <: MAP_KEY && x <: numeric && y <: numeric }
+
+// A function: given a pair of 2d points, return the doorway containing their mid-point. If not a doorway, then
+// it will return a NO_KEY
+constraint map_get_doorway_from_points(region_id, x1, y1, x2, y2){ region_id <: MAP_KEY && x1 <: numeric && y1 <: numeric && x2 <: numeric && y2 <: numeric }
+
+// A function to query if a region is a doorway
+constraint map_is_doorway(result, region_id) { result <: bool && region_id <: MAP_KEY }
+
+// A function to get all door state data (a full door message) and fill it into the parameters if a token. If I had structured
+// data types I would not have to do it like this!
+constraint map_get_door_state(object, door_id) {object <: Object && door_id <: MAP_KEY}
+
+// A function to get all outlet state - evnetually perhaps an outlet message
+constraint map_get_outlet_state(x, y, z, qx, qy, qz, qw, outlet_id) { x <: numeric && y <: x && z <: x && qx <:x && qy <: x && qz <: x && qw <: x && outlet_id <: MAP_KEY}
+
+// A function to get an approach pose for an outlet
+constraint map_get_outlet_approach_pose(x, y, z, qx, qy, qz, qw, outlet_id) { x <: numeric && y <: x && z <: x && qx <:x && qy <: x && qz <: x && qw <: x && outlet_id <: MAP_KEY}
+
+// A call to indicate the outlet is blocked
+constraint map_notify_outlet_blocked(outlet_id){ outlet_id <: MAP_KEY }
+
+// A call to indicate the door is blocked
+constraint map_notify_door_blocked(door_id){ door_id <: MAP_KEY }
+
+// A function to get the nearest outlet given a 2D point
+constraint map_get_nearest_outlet(outlet_id, x, y){ outlet_id <: MAP_KEY && x <: numeric && y <: numeric }
+
+// A function to get the nearest connector based on a current position and the target position. It will result on the connector that
+// is nearest to both
+constraint map_get_nearest_connector(connector_id, current_x, current_y, next_x, next_y){ connector_id <: MAP_KEY && current_x <: numeric && current_y <: numeric && next_x <: numeric && next_y <: numeric }
+
+/***********************************************************************
+ * Types related to a semantic view of the map
+ ***********************************************************************/
+
+/**
+ * A predefined location to go to
+ */
+class Location {
+  string frame_id;
+  float x;
+  float y;
+  float z;
+  float qx;
+  float qy;
+  float qz;
+  float qw;
+
+  Location(float x_, float y_, float z_, float qx_, float qy_, float qz_, float qw_){
+    frame_id = "map";
+    x = x_;
+    y = y_;
+    z = z_;
+    qx = qx_;
+    qy = qy_;
+    qz = qz_;
+    qw = qw_;
+  }
+};
+
+class Waypoint extends Location {
+  Waypoint(float x_, float y_, float z_, float qx_, float qy_, float qz_, float qw_){
+    super(x_, y_, z_, qx_, qy_, qz_, qw_);
+  }
+};
+
+
+/**
+ * @brief Charging Stations
+ */
+class ChargingStation extends Location {
+  ChargingStation(float x_, float y_, float z_, float qx_, float qy_, float qz_, float qw_){
+    super(x_, y_, z_, qx_, qy_, qz_, qw_);
+  }
+};

@@ -1,0 +1,29 @@
+/**
+ * Go to a set of goals. We are not going to engage the recharger, but we should be mixing driver and doorman based on outlet approach points.
+ * All goals are of equal priority
+ */
+#include "master/master.nddl"
+#include "test/locations.nddl"
+
+close();
+
+map_initialize_from_file("willow.tmap");
+
+rejectable(m2_goals.Active g0);
+eq_map_pose_msg(g0.object, inside_sachins_office);
+g0.outlet_id = NO_KEY;
+
+rejectable(m2_goals.Active g1);
+map_get_outlet_approach_pose(g1.x, g1.y, g1.z, g1.qx, g1.qy, g1.qz, g1.qw, outlet_in_melonees_office);
+g1.outlet_id = NO_KEY;
+
+rejectable(m2_goals.Active g2);
+map_get_outlet_approach_pose(g2.x, g2.y, g2.z, g2.qx, g2.qy, g2.qz, g2.qw, outlet_in_green_room);
+g2.outlet_id = NO_KEY;
+
+g0 before g1;
+g1 before g2;
+
+
+
+

@@ -1,0 +1,21 @@
+#include "TREX.nddl"
+#include "rcs/exports.nddl"
+#include "rcs/mechanism_control/exports.nddl"
+#include "rcs/nav/exports.nddl"
+#include "world_model/topological_map.nddl"
+#include "rcs/plugs/exports.nddl"
+#include "test/sim/rcs.nddl"
+#include "test/sim/mechanism_control.nddl"
+#include "test/sim/safety.nddl"
+#include "test/sim/plugs.nddl"
+#include "test/sim/doors.nddl"
+#include "test/sim/nav.nddl"
+
+Behavior::Active{
+  eq(duration, 1);
+  temporalDistance(dispatch_time, 1, start);
+
+  // Handle always free at the end
+  meets(Inactive s);
+  eq(s.status, SUCCESS);
+}

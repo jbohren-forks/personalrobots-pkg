@@ -1,0 +1,66 @@
+#include "nav/imports.nddl"
+#include "world_model/topological_map.nddl"
+#include "rcs/plugs/exports.nddl"
+#include "plugs/exports.nddl"
+#include "mechanism_control/exports.nddl"
+
+// Actions
+MoveBase move_base = new MoveBase(External);
+MoveBase move_base_local = new MoveBase(External);
+PlugsUntuckArms plugs_untuck_arms = new PlugsUntuckArms(External);
+MoveAndGraspPlug move_and_grasp_plug = new MoveAndGraspPlug(External);
+LocalizePlugInGripper localize_plug_in_gripper = new LocalizePlugInGripper(External);
+StowPlug stow_plug = new StowPlug(External);
+Unplug unplug = new Unplug(External);
+PlugIn plug_in = new PlugIn(External);
+DetectOutletFine detect_outlet_fine = new DetectOutletFine(External);
+DetectOutletCoarse detect_outlet_coarse = new DetectOutletCoarse(External);
+
+/******************************
+ * Resource Requirements
+ *****************************/
+DetectPlugOnBase::Active{
+  contained_by(laser_tilt_mechanism.use_laser_tilt_controller);
+}
+
+DetectOutletCoarse::Active{
+  contained_by(head_mechanism.use_head_controller);
+  contained_by(laser_tilt_mechanism.use_laser_tilt_controller);
+  contained_by(arms_tucked.True);
+}
+
+DetectOutletFine::Active{
+  contained_by(head_mechanism.use_head_controller);
+  contained_by(arms_tucked.True);
+}
+
+PlugsUntuckArms::Active{
+  contained_by(right_arm_mechanism.use_joint_trajectory_controller);
+}
+
+PlugsTuckArms::Active{
+  contained_by(right_arm_mechanism.use_joint_trajectory_controller);
+}
+
+MoveAndGraspPlug::Active{
+  contained_by(right_arm_mechanism.use_composite_cartesian_trajectory_controller);
+  contained_by(right_gripper_mechanism.use_position_controller);
+}
+
+LocalizePlugInGripper::Active{
+  contained_by(right_arm_mechanism.use_composite_cartesian_trajectory_controller);
+  contained_by(right_gripper_mechanism.use_position_controller);
+}
+
+PlugIn::Active{
+  contained_by(right_arm_mechanism.use_hybrid_controller);
+}
+
+Unplug::Active{
+  contained_by(right_arm_mechanism.use_hybrid_controller);
+}
+
+StowPlug::Active{
+  contained_by(right_arm_mechanism.use_composite_cartesian_trajectory_controller);
+  contained_by(right_gripper_mechanism.use_position_controller);
+}
