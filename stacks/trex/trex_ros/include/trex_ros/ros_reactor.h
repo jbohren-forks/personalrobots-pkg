@@ -9,6 +9,7 @@
 #include "ros/ros.h"
 #include "ros/node.h"
 
+#include "trex_ros/ros_db_listener.h"
 #include "trex_ros/executive.h"
 #include "trex_ros/PlanDescription.h"
 
@@ -68,6 +69,7 @@ namespace trex_ros {
     ros::NodeHandle node_handle_;
     ros::Publisher plan_pub_;
     boost::recursive_mutex lock_;
+    trex_ros::ROSDbListener db_listener_;
 
     /**
      * @brief Populate a TimelineDescription message

@@ -15,8 +15,9 @@ create_nddl_config()
 
 
 set(TREX_FILES src/adapters.cpp
-	       src/main.cpp
+               src/main.cpp
                src/ros_reactor.cpp
+               src/ros_db_listener.cpp
 	       src/executive.cpp
 	       src/monitor.cpp
 	       src/ros_adapter.cpp 

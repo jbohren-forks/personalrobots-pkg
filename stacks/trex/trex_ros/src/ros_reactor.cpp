@@ -10,6 +10,7 @@
 #include "Domains.hh"
 #include "ConstrainedVariable.hh"
 
+
 using namespace TREX;
 using namespace EUROPA;
 
@@ -20,11 +21,14 @@ namespace trex_ros{
    * base class constructor
    */
   ROSReactor::ROSReactor(const LabelStr& agentName, const TiXmlElement& configData) :
-    DbCore(agentName, configData)
+    DbCore(agentName, configData),
+    db_listener_()
   {
     // Advertise publisher to broadcast plan 
     // We want to use a publisher instead of a service call so that the plans are all sent out on the same tick.
     plan_pub_ = node_handle_.advertise<trex_ros::PlanDescription>(TeleoReactor::getName().toString()+"/plan",10);
+
+    DbCore::addDbListener(db_listener_);
   }
 
   ROSReactor::~ROSReactor() {}
