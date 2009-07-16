@@ -19,8 +19,11 @@ def list_controllers():
     rospy.wait_for_service('list_controllers')
     s = rospy.ServiceProxy('list_controllers', ListControllers)
     resp = s.call(ListControllersRequest())
-    for c in resp.controllers:
-        print c
+    if len(resp.controllers) == 0:
+        print "No controllers are loaded in mechanism control"
+    else:
+        for c in resp.controllers:
+            print c
 
 def spawn_controller(xml, autostart):
     rospy.wait_for_service('spawn_controller')
