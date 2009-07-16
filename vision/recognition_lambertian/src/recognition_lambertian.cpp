@@ -64,7 +64,7 @@
 
 
 #include "ros/ros.h"
-//#include "ros/node.h"
+#include "ros/callback_queue.h"
 #include "sensor_msgs/StereoInfo.h"
 #include "sensor_msgs/DisparityInfo.h"
 #include "sensor_msgs/CamInfo.h"
@@ -156,6 +156,11 @@ public:
 
 	ChamferMatching* cm;
 
+	ros::CallbackQueue service_queue_;
+	boost::thread* service_thread_;
+
+	boost::mutex data_lock_;
+	boost::condition_variable data_cv_;
 	bool got_images_;
 
 	RecognitionLambertian()
@@ -198,16 +203,25 @@ public:
 //		advertise<PointCloud> ("~inliers", 1);
 		marker_pub_ = nh_.advertise<visualization_msgs::Marker>("visualization_marker",1);
 
-		service_ = nh_.advertiseService("table_top/find_object_poses", &RecognitionLambertian::findObjectPoses, this);
 
+
+		ros::AdvertiseServiceOptions service_opts = ros::AdvertiseServiceOptions::create<recognition_lambertian::FindObjectPoses>("table_top/find_object_poses",
+							boost::bind(&RecognitionLambertian::findObjectPoses, this, _1, _2),ros::VoidPtr(), &service_queue_);
+
+		service_ = nh_.advertiseService(service_opts);
+		//		service_ = nh_.advertiseService("table_top/find_object_poses", &RecognitionLambertian::findObjectPoses, this);
+
+//        loadTemplates(template_path);
+    	service_thread_ = new boost::thread(boost::bind(&RecognitionLambertian::serviceThread, this));
 
 		cm = new ChamferMatching();
-//		loadTemplates(template_path);
-
 	}
 
 	~RecognitionLambertian()
 	{
+
+		service_thread_->join();
+		delete service_thread_;
 		delete cm;
 	}
 
@@ -225,8 +239,8 @@ private:
 		}
 
 //		runRecognitionLambertian();
-
 		got_images_ = true;
+		data_cv_.notify_all();
 	}
 
 	void leftCamInfoCallback(const sensor_msgs::CamInfo::ConstPtr& info)
@@ -283,11 +297,11 @@ private:
 			recognition_lambertian::FindObjectPoses::Response& resp)
 	{
 		ROS_INFO("FindObjectPoses: Service called");
-
+		boost::unique_lock<boost::mutex> lock(data_lock_);
 
 		while (!got_images_) {
-			ros::spinOnce();
-			usleep(10000);
+			ROS_INFO("FindObjectPoses: Waiting for data");
+			data_cv_.wait(lock);
 		}
 
 		findTableTopObjectPoses(resp.objects);
@@ -1268,6 +1282,21 @@ private:
 
 
 public:
+
+	void serviceThread()
+	{
+		ROS_INFO_STREAM("Starting thread " << boost::this_thread::get_id());
+		ros::NodeHandle n;
+
+		ros::Rate r(10);
+		while (n.ok()) {
+			service_queue_.callAvailable();
+			r.sleep();
+		}
+	}
+
+
+
 	/**
 	* Needed for OpenCV event loop, to show images
 	* @return
