@@ -96,26 +96,26 @@
 
   <link name="link2">
     <parent name="link1" />
-    <origin xyz="0.0 0 0" rpy="0 0 0" />
+    <origin xyz="0 0 0" rpy="0 90 0" />
     <joint name="link2_joint" />
     <inertial >
       <mass value="1.0" />
-      <com xyz="0.5 0 0" /> 
+      <com xyz="0 0 0.5" /> 
       <inertia  ixx="1.0" ixy="0.0"  ixz="0.0"  iyy="1.0"  iyz="0.0"  izz="1.0" />
     </inertial>
     <visual >
-      <origin xyz="0.5 0 0" rpy="0 0 0" />
+      <origin xyz="0 0 0.5" rpy="0 0 0" />
       <map name="gazebo_material" flag="gazebo">
         <elem key="material">Gazebo/Blue</elem>
       </map>
       <geometry name="link2_visual_geom">
-        <mesh scale="1.0 0.1 0.1" />
+        <mesh scale="0.1 0.1 1.0" />
       </geometry>
     </visual>
     <collision >
-      <origin xyz="0.5 0 0" rpy="0.0 0.0 0.0 " />
+      <origin xyz="0 0 0.5" rpy="0 0 0 " />
       <geometry name="link2_collision_geom">
-        <box size="1.0 0.1 0.1" />
+        <cylinder radius="0.05" length="1.0" />
       </geometry>
     </collision>
     <map name="link2_gravity" flag="gazebo">
