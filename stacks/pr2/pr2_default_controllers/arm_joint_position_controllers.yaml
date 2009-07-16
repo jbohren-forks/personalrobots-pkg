@@ -1,0 +1,94 @@
+shoulder_pan_position_gains: &shoulder_pan_position_gains
+  p: 140.0
+  d: 30.0
+  i: 0.0
+  i_clamp: 0.0
+shoulder_lift_position_gains: &shoulder_lift_position_gains
+  p: 170.0
+  d: 30.0
+  i: 0.0
+  i_clamp: 0.0
+upper_arm_roll_position_gains: &upper_arm_roll_position_gains
+  p: 300.0
+  d: 7.0
+  i: 0.0
+  i_clamp: 0.0
+elbow_flex_position_gains: &elbow_flex_position_gains
+  p: 100.0
+  d: 5.0
+  i: 0.0
+  i_clamp: 0.0
+forearm_roll_position_gains: &forearm_roll_position_gains
+  p: 300.0
+  d: 20.0
+  i: 0.0
+  i_clamp: 0.0
+wrist_flex_position_gains: &wrist_flex_position_gains
+  p: 200
+  i: 0.0
+  d: 8.0
+  i_clamp: 0.0
+wrist_roll_position_gains: &wrist_roll_position_gains
+  p: 200
+  i: 0.0
+  d: 8.0
+  i_clamp: 0.0
+
+r_shoulder_pan_position_controller:
+  type: JointPositionController
+  joint: r_shouler_pan_joint
+  pid: *shoulder_pan_position_gains
+r_shoulder_lift_position_controller:
+  type: JointPositionController
+  joint: r_shoulder_lift_joint
+  pid: *shoulder_lift_position_gains
+r_upper_arm_roll_position_controller:
+  type: JointPositionController
+  joint: r_upper_arm_roll_joint
+  pid: *upper_arm_roll_position_gains
+r_elbow_flex_position_controller:
+  type: JointPositionController
+  joint: r_elbow_flex_joint
+  pid: *elbow_flex_position_gains
+r_forearm_roll_position_controller:
+  type: JointPositionController
+  joint: r_forearm_roll_joint
+  pid: *forearm_roll_position_gains
+r_wrist_flex_position_controller:
+  type: JointPositionController
+  joint: r_wrist_flex_joint
+  pid: *wrist_flex_position_gains
+r_wrist_roll_position_controller:
+  type: JointPositionController
+  joint: r_wrist_roll_joint
+  pid: *wrist_roll_position_gains
+
+l_shoulder_pan_position_controller:
+  type: JointPositionController
+  joint: l_shouler_pan_joint
+  pid: *shoulder_pan_position_gains
+l_shoulder_lift_position_controller:
+  type: JointPositionController
+  joint: l_shoulder_lift_joint
+  pid: *shoulder_lift_position_gains
+l_upper_arm_roll_position_controller:
+  type: JointPositionController
+  joint: l_upper_arm_roll_joint
+  pid: *upper_arm_roll_position_gains
+l_elbow_flex_position_controller:
+  type: JointPositionController
+  joint: l_elbow_flex_joint
+  pid: *elbow_flex_position_gains
+l_forearm_roll_position_controller:
+  type: JointPositionController
+  joint: l_forearm_roll_joint
+  pid: *forearm_roll_position_gains
+l_wrist_flex_position_controller:
+  type: JointPositionController
+  joint: l_wrist_flex_joint
+  pid: *wrist_flex_position_gains
+l_wrist_roll_position_controller:
+  type: JointPositionController
+  joint: l_wrist_roll_joint
+  pid: *wrist_roll_position_gains
+
