@@ -313,6 +313,8 @@ class M3NModel
     /*!
      * \brief Adds Pn Potts potential term for alpha-expansion graph-cut inference
      *
+     * See [5] for description of Pn Potts potential
+     *
      * \param clique The high-order clique containing its features
      * \param clique_set_idx The clique set that the edge belongs to
      * \param energy_func The submodular energy function minimizer
@@ -330,6 +332,22 @@ class M3NModel
                              const map<unsigned int, unsigned int>& curr_labeling,
                              const unsigned int alpha_label);
 
+    // --------------------------------------------------------------
+    /*!
+     * \brief Adds Robust Pn Potts potential term for alpha-expansion graph-cut inference
+     *
+     * See [4] for description of Robust Pn Potts potential
+     *
+     * \param clique The high-order clique containing its features
+     * \param clique_set_idx The clique set that the edge belongs to
+     * \param energy_func The submodular energy function minimizer
+     * \param energy_vars All variables in the energy minimizer that represents the RandomField
+     * \param curr_labeling The RandomField's current labeling
+     * \param alpha_label The alpha label to potentially expand to
+     *
+     * \return 0 on success, otherwise negative value on error
+     */
+    // --------------------------------------------------------------
     int addCliqueEnergyRobustPotts(const RandomField::Clique& clique,
                                    const unsigned int clique_set_idx,
                                    SubmodularEnergyMin& energy_func,
