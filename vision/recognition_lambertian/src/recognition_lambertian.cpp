@@ -501,8 +501,8 @@ private:
 			object_indices[i] = i;
 		}
 
-		projected_objects.header.stamp = cloud->header.stamp;
-		projected_objects.header.frame_id = cloud->header.frame_id;
+		projected_objects.header.stamp = objects.header.stamp;
+		projected_objects.header.frame_id = objects.header.frame_id;
 
 		cloud_geometry::projections::pointsToPlane(objects, object_indices, projected_objects, plane);
 
