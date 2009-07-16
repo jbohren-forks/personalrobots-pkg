@@ -48,7 +48,6 @@ void controlLoop()
 {
   NullHardware hw;
   MechanismControl mc(hw.hw_);
-  MechanismControlNode mcn(&mc);
 
 
   // Load robot description
@@ -83,13 +82,13 @@ void controlLoop()
   hw.initXml(root);
 
   //Initialize mechanism control from robot description
-  mcn.initXml(root);
+  mc.initXml(root);
 
   //Start running controller updates (and measure update time)
   int count = 0;
   while(1){
     hw.hw_->current_time_ = count / 1.0e-3;
-    mcn.update();
+    mc.update();
     if(count % 1000000 == 0)
       printf("%d seconds simulated \n", count / 1000);
     count++;
