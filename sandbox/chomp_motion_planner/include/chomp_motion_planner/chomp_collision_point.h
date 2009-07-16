@@ -54,18 +54,22 @@ public:
 
   bool isParentJoint(int joint) const;
   double getRadius() const;
+  double getVolume() const;
   double getClearance() const;
+  double getInvClearance() const;
   int getSegmentNumber() const;
   const KDL::Vector& getPosition() const;
 
   template<typename Derived>
   void getJacobian(std::vector<Eigen::Map<Eigen::Vector3d> >& joint_pos, std::vector<Eigen::Map<Eigen::Vector3d> >& joint_axis,
-      Eigen::Map<Eigen::Vector3d>& collision_point_pos, Eigen::MatrixBase<Derived> jacobian);
+      Eigen::Map<Eigen::Vector3d>& collision_point_pos, Eigen::MatrixBase<Derived>& jacobian) const;
 
 private:
   std::vector<int> parent_joints_;      /**< Which joints can influence the motion of this point */
   double radius_;                       /**< Radius of the sphere */
+  double volume_;                       /**< Volume of the sphere */
   double clearance_;                    /**< Extra clearance required while optimizing */
+  double inv_clearance_;                /**< 1/clearance_ pre-computed */
   int segment_number_;                  /**< Which segment does this point belong to */
   KDL::Vector position_;                /**< Vector of this point in the frame of the above segment */
 };
@@ -80,9 +84,19 @@ inline double ChompCollisionPoint::getRadius() const
   return radius_;
 }
 
+inline double ChompCollisionPoint::getVolume() const
+{
+  return volume_;
+}
+
 inline double ChompCollisionPoint::getClearance() const
 {
   return clearance_;
+}
+
+inline double ChompCollisionPoint::getInvClearance() const
+{
+  return inv_clearance_;
 }
 
 inline int ChompCollisionPoint::getSegmentNumber() const
@@ -97,9 +111,9 @@ inline const KDL::Vector& ChompCollisionPoint::getPosition() const
 
 template<typename Derived>
 void ChompCollisionPoint::getJacobian(std::vector<Eigen::Map<Eigen::Vector3d> >& joint_pos, std::vector<Eigen::Map<Eigen::Vector3d> >& joint_axis,
-    Eigen::Map<Eigen::Vector3d>& collision_point_pos, Eigen::MatrixBase<Derived> jacobian)
+    Eigen::Map<Eigen::Vector3d>& collision_point_pos, Eigen::MatrixBase<Derived>& jacobian) const
 {
-  for (int joint=0; joint<parent_joints_.size(); joint++)
+  for (unsigned int joint=0; joint<parent_joints_.size(); joint++)
   {
     if (parent_joints_[joint]==0)
     {

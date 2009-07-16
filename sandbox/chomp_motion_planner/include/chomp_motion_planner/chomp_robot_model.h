@@ -73,10 +73,10 @@ public:
     int chomp_joint_index_;                                     /** Joint index for CHOMP */
     std::string joint_name_;                                    /** Name of the joint */
     std::string link_name_;                                     /** Name of the corresponding link (from planning.yaml) */
-    bool wrap_around;                                           /** Does this joint wrap-around? */
-    bool has_joint_limits;                                      /** Are there joint limits? */
-    double joint_limit_min;                                     /** Minimum joint angle value */
-    double joint_limit_max;                                     /** Maximum joint angle value */
+    bool wrap_around_;                                          /** Does this joint wrap-around? */
+    bool has_joint_limits_;                                     /** Are there joint limits? */
+    double joint_limit_min_;                                    /** Minimum joint angle value */
+    double joint_limit_max_;                                    /** Maximum joint angle value */
   };
 
   /**
@@ -137,6 +137,8 @@ public:
 
   const KDL::TreeFkSolverJointPosAxis* getForwardKinematicsSolver() const;
 
+  const std::string& getReferenceFrame() const;
+
 private:
   ros::NodeHandle node_handle_;                                 /**< ROS Node handle */
   planning_environment::RobotModels *robot_models_;             /**< Robot model */
@@ -150,6 +152,7 @@ private:
   std::map<std::string, ChompPlanningGroup> planning_groups_;   /**< Planning group information */
   KDL::TreeFkSolverJointPosAxis *fk_solver_;                    /**< Forward kinematics solver for the tree */
   double collision_clearance_default_;                          /**< Default clearance for all collision links */
+  std::string reference_frame_;                                 /**< Reference frame for all kinematics operations */
 
   void addCollisionPointsFromLinkRadius(ChompPlanningGroup& group, std::string link_name, double radius, double clearance);
 };
@@ -200,6 +203,11 @@ inline const std::string ChompRobotModel::kdlNumberToUrdfName(int kdl_number) co
 inline const KDL::TreeFkSolverJointPosAxis* ChompRobotModel::getForwardKinematicsSolver() const
 {
   return fk_solver_;
+}
+
+inline const std::string& ChompRobotModel::getReferenceFrame() const
+{
+  return reference_frame_;
 }
 
 } // namespace chomp

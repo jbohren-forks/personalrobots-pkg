@@ -41,6 +41,7 @@
 #include <chomp_motion_planner/chomp_trajectory.h>
 #include <chomp_motion_planner/chomp_robot_model.h>
 #include <chomp_motion_planner/chomp_cost.h>
+#include <chomp_motion_planner/chomp_collision_space.h>
 
 #include <Eigen/Core>
 
@@ -55,7 +56,7 @@ class ChompOptimizer
 public:
   ChompOptimizer(ChompTrajectory *trajectory, const ChompRobotModel *robot_model,
       const ChompRobotModel::ChompPlanningGroup *planning_group, const ChompParameters *parameters,
-      const ros::Publisher& vis_marker_array_publisher);
+      const ros::Publisher& vis_marker_array_publisher, ChompCollisionSpace *collision_space);
   virtual ~ChompOptimizer();
 
   void optimize();
@@ -73,6 +74,7 @@ private:
   const ChompRobotModel *robot_model_;
   const ChompRobotModel::ChompPlanningGroup *planning_group_;
   const ChompParameters *parameters_;
+  ChompCollisionSpace *collision_space_;
   ChompTrajectory group_trajectory_;
   std::vector<ChompCost> joint_costs_;
 
@@ -95,6 +97,7 @@ private:
   // temporary variables for all functions:
   Eigen::VectorXd smoothness_derivative_;
   KDL::JntArray kdl_joint_array_;
+  Eigen::MatrixXd jacobian_;
 
   ros::Publisher vis_pub_;
 
@@ -106,6 +109,13 @@ private:
   void updateFullTrajectory();
   void debugCost();
   void eigenMapTest();
+  void handleJointLimits();
+  void animatePath();
+  void visualizeState(int index);
+
+  template<typename Derived, typename DerivedOther>
+  bool getCollisionPointPotentialGradient(const ChompCollisionPoint& collision_point, const Eigen::MatrixBase<Derived>& collision_point_pos,
+      double& potential, Eigen::MatrixBase<DerivedOther>& gradient) const;
 
 };
 

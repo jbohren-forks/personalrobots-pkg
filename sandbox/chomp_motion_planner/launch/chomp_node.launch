@@ -2,9 +2,29 @@
 <launch> 
 	<rosparam ns="/robotdesc/pr2_planning" command="load" file="$(find pr2_defs)/planning/planning.yaml" />
 	<node pkg="chomp_motion_planner" name="chomp_motion_planner" type="chomp_planner_node" args="robot_description:=robotdesc/pr2 collision_map:=collision_map_occ" respawn="true" output="screen" clear_params="true">
-		<param name="collision_clearance" value="0.10"/>
+		<param name="collision_clearance" value="0.07"/>
+		<param name="collision_links/r_gripper_l_finger_link/link_radius" value="0.02"/>
+		<param name="collision_links/r_gripper_r_finger_link/link_radius" value="0.02"/>
 		<param name="collision_links/r_gripper_palm_link/link_radius" value="0.05"/>
-		<param name="collision_links/r_forearm_link/link_radius" value="0.06"/>
+		<param name="collision_links/r_forearm_link/link_radius" value="0.055"/>
 		<param name="collision_links/r_upper_arm_link/link_radius" value="0.08"/>
+		
+		<param name="animate_path" value="true"/>
+		<param name="reference_frame" value="base_link"/>
+	
+		<param name="collision_space/size_x" value="2.0" />
+		<param name="collision_space/size_y" value="3.0" />
+		<param name="collision_space/size_z" value="4.0" />
+		<param name="collision_space/origin_x" value="0.1" />
+		<param name="collision_space/origin_y" value="-1.5" />
+		<param name="collision_space/origin_z" value="-2.0" />
+		<param name="collision_space/resolution" value="0.02" />
+		
+		<param name="trajectory_duration" value="3.0"/>
+		<param name="trajectory_discretization" value="0.03"/>
+		<param name="learning_rate" value="0.000002" />
+		<param name="max_iterations" value="200" />
+		<param name="smoothness_cost_weight" value="0.05" />
+		<param name="obstacle_cost_weight" value="1.0" />
 	</node>
 </launch>

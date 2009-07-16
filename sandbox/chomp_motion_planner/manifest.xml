@@ -18,6 +18,8 @@
   <depend package="angles" />
   <depend package="eigen" />
   <depend package="visualization_msgs" />
+  <depend package="voxel3d" />
+  <depend package="tf" />
 
 </package>
 

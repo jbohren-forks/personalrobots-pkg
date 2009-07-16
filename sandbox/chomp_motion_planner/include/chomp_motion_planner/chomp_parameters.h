@@ -55,12 +55,16 @@ public:
   int getMaxIterations() const;
   double getSmoothnessCostWeight() const;
   double getObstacleCostWeight() const;
+  bool getAnimatePath() const;
+  double getLearningRate() const;
 
 private:
   double planning_time_limit_;
   int max_iterations_;
   double smoothness_cost_weight_;
   double obstacle_cost_weight_;
+  double learning_rate_;
+  bool animate_path_;
 
 };
 
@@ -89,6 +93,16 @@ inline double ChompParameters::getSmoothnessCostWeight() const
 inline double ChompParameters::getObstacleCostWeight() const
 {
   return obstacle_cost_weight_;
+}
+
+inline double ChompParameters::getLearningRate() const
+{
+  return learning_rate_;
+}
+
+inline bool ChompParameters::getAnimatePath() const
+{
+  return animate_path_;
 }
 
 } // namespace chomp

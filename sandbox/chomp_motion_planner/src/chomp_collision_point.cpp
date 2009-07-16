@@ -35,6 +35,8 @@
 /** \author Mrinal Kalakrishnan */
 
 #include <chomp_motion_planner/chomp_collision_point.h>
+#include <cmath>
+
 
 namespace chomp
 {
@@ -43,7 +45,9 @@ ChompCollisionPoint::ChompCollisionPoint(std::vector<int>& parent_joints, double
     int segment_number, KDL::Vector& position):
       parent_joints_(parent_joints),
       radius_(radius),
+      volume_((4.0/3.0)*M_PI*radius*radius*radius),
       clearance_(clearance),
+      inv_clearance_(1.0/clearance_),
       segment_number_(segment_number),
       position_(position)
 {

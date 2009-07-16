@@ -60,19 +60,23 @@ ChompPlannerNode::ChompPlannerNode()
 
 bool ChompPlannerNode::init()
 {
+  // load in some default parameters
+  node_handle_.param("~trajectory_duration", trajectory_duration_, 3.0);
+  node_handle_.param("~trajectory_discretization", trajectory_discretization_, 0.03);
+
   // build the robot model
   if (!chomp_robot_model_.init())
     return false;
-
-  // load in some default parameters
-  node_handle_.param("~trajectory_duration", trajectory_duration_, 2.0);
-  node_handle_.param("~trajectory_discretization", trajectory_discretization_, 0.05);
 
   // advertise the planning service
   plan_kinematic_path_service_ = node_handle_.advertiseService("plan_kinematic_path", &ChompPlannerNode::planKinematicPath, this);
 
   // load chomp parameters:
   chomp_parameters_.initFromNodeHandle();
+
+  // initialize the collision space
+  if (!chomp_collision_space_.init())
+    return false;
 
   // initialize the visualization publisher:
   vis_marker_array_publisher_ = node_handle_.advertise<visualization_msgs::MarkerArray>( "visualization_marker_array", 0 );
@@ -119,7 +123,7 @@ bool ChompPlannerNode::planKinematicPath(motion_planning_srvs::MotionPlan::Reque
   // fix the goal to move the shortest angular distance for wrap-around joints:
   for (int i=0; i<group->num_joints_; i++)
   {
-    if (group->chomp_joints_[i].wrap_around)
+    if (group->chomp_joints_[i].wrap_around_)
     {
       int kdl_index = group->chomp_joints_[i].kdl_joint_index_;
       double start = trajectory(0, kdl_index);
@@ -135,7 +139,8 @@ bool ChompPlannerNode::planKinematicPath(motion_planning_srvs::MotionPlan::Reque
   chomp_parameters_.setPlanningTimeLimit(req.allowed_time);
 
   // optimize!
-  ChompOptimizer optimizer(&trajectory, &chomp_robot_model_, group, &chomp_parameters_, vis_marker_array_publisher_);
+  ChompOptimizer optimizer(&trajectory, &chomp_robot_model_, group, &chomp_parameters_,
+      vis_marker_array_publisher_, &chomp_collision_space_);
   optimizer.optimize();
 
   // assume that the trajectory is now optimized, fill in the output structure:

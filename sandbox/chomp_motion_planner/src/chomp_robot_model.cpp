@@ -57,6 +57,8 @@ ChompRobotModel::~ChompRobotModel()
 
 bool ChompRobotModel::init()
 {
+  node_handle_.param("~reference_frame", reference_frame_, std::string("base_link"));
+
   // create the robot model
   robot_models_ = new planning_environment::RobotModels("robot_description");
 
@@ -99,7 +101,7 @@ bool ChompRobotModel::init()
   }
 
   // create the fk solver:
-  fk_solver_ = new KDL::TreeFkSolverJointPosAxis(kdl_tree_);
+  fk_solver_ = new KDL::TreeFkSolverJointPosAxis(kdl_tree_, reference_frame_);
 
   kdl_number_to_urdf_name_.resize(num_kdl_joints_);
   // Create the inverse mapping - KDL segment to joint name
@@ -145,17 +147,17 @@ bool ChompRobotModel::init()
         planning_models::KinematicModel::Joint* kin_model_joint = robot_models_->getKinematicModel()->getJoint(joint.joint_name_);
         if (planning_models::KinematicModel::RevoluteJoint* revolute_joint = dynamic_cast<planning_models::KinematicModel::RevoluteJoint*>(kin_model_joint))
         {
-          joint.wrap_around = revolute_joint->continuous;
-          joint.has_joint_limits = !(joint.wrap_around);
-          joint.joint_limit_min = revolute_joint->limit[0];
-          joint.joint_limit_max = revolute_joint->limit[1];
+          joint.wrap_around_ = revolute_joint->continuous;
+          joint.has_joint_limits_ = !(joint.wrap_around_);
+          joint.joint_limit_min_ = revolute_joint->limit[0];
+          joint.joint_limit_max_ = revolute_joint->limit[1];
         }
         else if (planning_models::KinematicModel::PrismaticJoint* prismatic_joint = dynamic_cast<planning_models::KinematicModel::PrismaticJoint*>(kin_model_joint))
         {
-          joint.wrap_around = false;
-          joint.has_joint_limits = true;
-          joint.joint_limit_min = prismatic_joint->limit[0];
-          joint.joint_limit_max = prismatic_joint->limit[1];
+          joint.wrap_around_ = false;
+          joint.has_joint_limits_ = true;
+          joint.joint_limit_min_ = prismatic_joint->limit[0];
+          joint.joint_limit_max_ = prismatic_joint->limit[1];
         }
         else
         {
@@ -186,6 +188,8 @@ bool ChompRobotModel::init()
 
     planning_groups_.insert(make_pair(it->first, group));
   }
+
+  cout << kdl_tree_.getRootSegment()->second.children[0]->second.segment.getFrameToTip().p[2];
 
   // test it:
 /*  KDL::JntArray q_in(kdl_tree_.getNrOfJoints());

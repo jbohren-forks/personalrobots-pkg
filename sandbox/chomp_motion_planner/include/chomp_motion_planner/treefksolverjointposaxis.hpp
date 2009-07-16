@@ -47,7 +47,7 @@ class TreeFkSolverJointPosAxis
 
 {
 public:
-  TreeFkSolverJointPosAxis(const Tree& tree);
+  TreeFkSolverJointPosAxis(const Tree& tree, const std::string& reference_frame);
   ~TreeFkSolverJointPosAxis();
 
   int JntToCart(const JntArray& q_in, std::vector<Vector>& joint_pos, std::vector<Vector>& joint_axis, std::vector<Frame>& segment_frames) const;
@@ -64,6 +64,10 @@ private:
   std::vector<std::string> segment_names_;
   std::map<std::string, int> segment_name_to_index_;
   Tree tree_;
+  std::string reference_frame_;
+  int reference_frame_index_;
+  int num_joints_;
+  int num_segments_;
 
   void assignSegmentNumber(const SegmentMap::const_iterator this_segment);
 

@@ -34,30 +34,78 @@
 
 /** \author Mrinal Kalakrishnan */
 
-#include <chomp_motion_planner/chomp_parameters.h>
+#ifndef CHOMP_COLLISION_SPACE_H_
+#define CHOMP_COLLISION_SPACE_H_
+
+#include <voxel3d/voxel3d.h>
+#include <mapping_msgs/CollisionMap.h>
+#include <tf/message_notifier.h>
+#include <tf/transform_listener.h>
+#include <ros/ros.h>
+#include <boost/thread/mutex.hpp>
 
 namespace chomp
 {
 
-ChompParameters::ChompParameters()
+class ChompCollisionSpace
 {
+public:
+  ChompCollisionSpace();
+  virtual ~ChompCollisionSpace();
+
+  /**
+   * \brief Callback for CollisionMap messages
+   */
+  void collisionMapCallback(const mapping_msgs::CollisionMapConstPtr& collision_map);
+
+  /**
+   * \brief Initializes the collision space, listens for messages, etc
+   *
+   * \return false if not successful
+   */
+  bool init();
+
+  /**
+   * \brief Lock the collision space from updating/reading
+   */
+  void lock();
+
+  /**
+   * \brief Unlock the collision space for updating/reading
+   */
+  void unlock();
+
+  double getDistanceGradient(double x, double y, double z,
+      double& gradient_x, double& gradient_y, double& gradient_z) const;
+
+private:
+  Voxel3d* voxel3d_;
+  tf::TransformListener tf_;
+  tf::MessageNotifier<mapping_msgs::CollisionMap> *collision_map_notifier_;
+  //tf::MessageNotifier<mapping_msgs::CollisionMap> *collision_map_update_notifier_;
+  std::string reference_frame_;
+  ros::NodeHandle node_handle_;
+  boost::mutex mutex_;
+};
+
+///////////////////////////// inline functions follow ///////////////////////////////////
+
+inline void ChompCollisionSpace::lock()
+{
+  mutex_.lock();
 }
 
-ChompParameters::~ChompParameters()
+inline void ChompCollisionSpace::unlock()
 {
+  mutex_.unlock();
 }
 
-void ChompParameters::initFromNodeHandle()
+inline double ChompCollisionSpace::getDistanceGradient(double x, double y, double z,
+    double& gradient_x, double& gradient_y, double& gradient_z) const
 {
-  ros::NodeHandle node_handle;
-  node_handle.param("~planning_time_limit", planning_time_limit_, 1.0);
-  node_handle.param("~max_iterations", max_iterations_, 500);
-  node_handle.param("~smoothness_cost_weight", smoothness_cost_weight_, 0.1);
-  node_handle.param("~obstacle_cost_weight", obstacle_cost_weight_, 1.0);
-  node_handle.param("~learning_rate", learning_rate_, 0.01);
-  node_handle.param("~animate_path", animate_path_, false);
-
+  return voxel3d_->getDistanceGradient(x, y, z, gradient_x, gradient_y, gradient_z);
 }
-
 
 } // namespace chomp
+
+#endif /* CHOMP_COLLISION_SPACE_H_ */

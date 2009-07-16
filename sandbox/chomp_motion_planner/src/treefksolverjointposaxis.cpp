@@ -41,11 +41,23 @@ using namespace std;
 
 namespace KDL {
 
-TreeFkSolverJointPosAxis::TreeFkSolverJointPosAxis(const Tree& tree):
-  tree_(tree)
+TreeFkSolverJointPosAxis::TreeFkSolverJointPosAxis(const Tree& tree, const std::string& reference_frame):
+  tree_(tree),
+  reference_frame_(reference_frame)
 {
   segment_names_.clear();
   assignSegmentNumber(tree_.getRootSegment());
+  std::map<std::string, int>::iterator reference_frame_it = segment_name_to_index_.find(reference_frame);
+  if (reference_frame_it == segment_name_to_index_.end())
+  {
+    cout << "TreeFkSolverJointPosAxis: Reference frame " << reference_frame << " could not be found! Forward kinematics will be performed in world frame.";
+  }
+  else
+  {
+    reference_frame_index_ = reference_frame_it->second;
+  }
+  num_segments_ = segment_names_.size();
+  num_joints_ = tree_.getNrOfJoints();
 }
 
 TreeFkSolverJointPosAxis::~TreeFkSolverJointPosAxis()
@@ -54,12 +66,28 @@ TreeFkSolverJointPosAxis::~TreeFkSolverJointPosAxis()
 
 int TreeFkSolverJointPosAxis::JntToCart(const JntArray& q_in, std::vector<Vector>& joint_pos, std::vector<Vector>& joint_axis, std::vector<Frame>& segment_frames) const
 {
-  joint_pos.resize(tree_.getNrOfJoints());
-  joint_axis.resize(tree_.getNrOfJoints());
-  segment_frames.resize(segment_names_.size());
+  joint_pos.resize(num_joints_);
+  joint_axis.resize(num_joints_);
+  segment_frames.resize(num_segments_);
 
   // start the recursion
   treeRecursiveFK(q_in, joint_pos, joint_axis, segment_frames, Frame::Identity(), tree_.getRootSegment(), 0);
+
+  // get the inverse reference frame:
+  Frame inv_ref_frame = segment_frames[reference_frame_index_].Inverse();
+
+  // convert all the frames into the reference frame:
+  for (int i=0; i<num_segments_; i++)
+  {
+    segment_frames[i] = inv_ref_frame * segment_frames[i];
+  }
+
+  // convert all joint positions and axes into reference frame:
+  for (int i=0; i<num_joints_; i++)
+  {
+    joint_axis[i] = inv_ref_frame * joint_axis[i];
+    joint_pos[i] = inv_ref_frame * joint_pos[i];
+  }
 
   return 0;
 }
