@@ -51,6 +51,7 @@ JointEffortController::~JointEffortController()
 bool JointEffortController::init(mechanism::RobotState *robot, const ros::NodeHandle &n)
 {
   node_ = n;
+  robot_ = robot;
 
   std::string joint_name;
   if (!node_.getParam("joint", joint_name)) {
