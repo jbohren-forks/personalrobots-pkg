@@ -64,7 +64,8 @@ def calibrate(config):
         for i in range(len(resp.ok)):
             if resp.ok[i] == 0:
                 print "Failed: %s" % resp.name[i]
-                rospy.logerr('%s failure msg: %s' % (resp.name[i], resp.error[i]))
+                if len(resp.error) > i - 1:
+                    rospy.logerr('%s failure msg: %s' % (resp.name[i], resp.error[i]))
                 success = False
             else:
                 launched.append(resp.name[i])
