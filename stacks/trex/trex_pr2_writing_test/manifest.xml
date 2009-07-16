@@ -1,5 +1,5 @@
 <package>
-  <description brief="writing_test">
+  <description brief="trex_pr2_writing_test">
 
      writing_test
 
@@ -20,8 +20,8 @@
   <depend package="nav_robot_actions"/>
   <depend package="point_cloud_assembler"/>
   <depend package="2dnav_pr2"/>
-  
 
+  <depend package="trex_pr2_writing_core"/>
 </package>
 
 

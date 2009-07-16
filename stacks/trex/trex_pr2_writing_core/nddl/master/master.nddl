@@ -1,0 +1,317 @@
+/*
+ * Copyright (c) 2008, Willow Garage, Inc.
+ * All rights reserved.
+ * 
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ * 
+ *     * Redistributions of source code must retain the above copyright
+ *       notice, this list of conditions and the following disclaimer.
+ *     * Redistributions in binary form must reproduce the above copyright
+ *       notice, this list of conditions and the following disclaimer in the
+ *       documentation and/or other materials provided with the distribution.
+ *     * Neither the name of the <ORGANIZATION> nor the names of its
+ *       contributors may be used to endorse or promote products derived from
+ *       this software without specific prior written permission.
+ * 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ */
+
+#include "TREX.nddl"
+#include "world_model/topological_map.nddl"
+#include "rcs/exports.nddl"
+#include "rcs/nav/exports.nddl"
+#include "rcs/plugs/exports.nddl"
+#include "nav/exports.nddl"
+#include "plugs/exports.nddl"
+
+// Priority for goals
+typedef int [0 5] PRIORITY;
+
+// Time Bounds For top level components
+float RECHARGER_DURATION_BOUND = 600.0;
+float DOORMAN_DURATION_BOUND = 600.0;
+float DRIVER_DURATION_BOUND = 600.0;
+
+// Create a behavior timeline class to contain high-level goals
+// Each goal is composed of an Active / Inactive sequence
+class M2Goals extends Behavior {
+  
+  // Each goal is composed of an outlet_id, and then a pose in a given frame
+  predicate Active{
+    MAP_KEY outlet_id;
+    string frame_id;
+    float time_stamp;
+    float x;
+    float y;
+    float z;
+    float qx;
+    float qy;
+    float qz;
+    float qw;
+
+    // Constraint must be defined here to allow x and y values to be accessible for planning.
+    map_get_outlet_approach_pose(x, y, z, qx, qy, qz, qw, outlet_id);
+    defaultOnCommit(frame_id, "map");
+  }
+
+  predicate Inactive{}
+
+  M2Goals(){
+    // Call Behavior's constructor
+    // - designating this as an internal timeline
+    super(Internal);
+  }
+};
+
+// Create a timeline class to 
+class M2Controller extends AgentTimeline {
+  predicate Holds {
+    bool active;
+    bool recharge_required;
+    bool recharged;
+    bool finished;
+    float x;
+    float y;
+  }
+
+  M2Controller(){
+    // Call AgentTimeline's constructor,
+    //  - designating this as an internal timeline
+    //  - designating "Holds" as the default predicate
+    super(Internal, "Holds");
+  }
+};
+
+// Instantiate timelines
+
+// Internal Timelines
+M2Goals m2_goals = new M2Goals();
+M2Controller m2_controller = new M2Controller();
+
+// External timelines
+MoveBehavior driver = new MoveBehavior(External, false);
+MoveBehavior doorman = new MoveBehavior(External, true);
+Recharger recharger = new Recharger(External);
+BaseState base_state = new BaseState(External);
+
+M2Goals::Active{
+  // Guard on the built-in variable "start"
+  // This guard will be active when "start" has been closed to a singleton
+  // In other words, it will require nothing until it has been started
+  if(start){
+    // Introduce slave tokens
+    // These temporal constraints allocate new slave tokens:
+    //  - m2_controller.Holds "mc"
+    //  - base_state.Holds "bs"
+    // "starts" requires that m2_controller.Holds starts at the same time as m2_goals.Active
+    // "starts_during" requires that base_state.Holds starts after m2_goals.Active starts, but before it finishes
+    starts(m2_controller.Holds mc);
+    starts_during(base_state.Holds bs);
+
+    // Impose requirements on mc
+    eq(mc.active, true);
+    // While this goal is active, we should neither be recharged nor finished
+    eq(mc.recharged, false);
+    eq(mc.finished, false);	
+
+    // Always synchronize the m2_controler state with basestate
+    eq(mc.x, bs.x);
+    eq(mc.y, bs.y);
+
+    // If the outlet_id for this goal is NO_KEY, then we don't require a recharge
+    if(outlet_id == NO_KEY){
+      eq(mc.recharge_required, false);
+    }
+    else {
+      eq(mc.recharge_required, true);
+    }
+  }
+}
+
+/**
+ * If a goal aborts then we should regenerate it for later
+ */
+M2Goals::Inactive{
+  // Set requirements when the m2_goals.Inactive token is created with status ABORTED
+  if(status == ABORTED){
+    // Allocate slave tokens
+    // An Active token that meets this Inactive token
+    // (the token that has just aborted)
+    met_by(Active p);
+    // An active token that follows this Inactive token
+    // (sometime down the line, not necessary immediately after)
+    before (Active g);
+
+    // Set the token that just failed and the later token to have the same goal
+    eq(g.outlet_id, p.outlet_id);
+    // Set the two slave tokens to have the same pose
+    // This is a hackish thing to account for the lack of struct / user-defined type support in NDDL
+    eq_pose_msg(g.object, p.object);
+  }
+}
+
+/**
+ * The loop for master level control.
+ * It uses the doorman, driver and recharger. 
+ */
+M2Controller::Holds{
+  // If the controller is inactive, require that it occurs
+  // at the same time as an Inactive token on the m2_goals timeline
+  if(active == false){
+    equals(m2_goals.Inactive);
+  }
+
+  // Default based on predecessors
+  met_by(Holds p);
+  defaultOnCommit(active, p.active);
+  defaultOnCommit(recharge_required, p.recharge_required);
+  defaultOnCommit(recharged, p.recharged);
+  defaultOnCommit(finished, p.finished);
+  defaultOnCommit(x, p.x);
+  defaultOnCommit(y, p.y);
+
+  // If the controller is active
+  if(active == true){
+    // Allocate a slave token m2_controler.Holds to follow this Holds immediately
+    meets(Holds s);
+    // Allocate a slave token m2_active
+    contained_by(m2_goals.Active m2_active);
+
+    // Test if we are at the goal or not
+    // Declare a local variable distance
+    float distance;
+    // Here x,y are local to m2_controler.Holds, and have been synchronized
+    // with the base_state (the external pose)
+    //
+    // This uses a constraint to close "distance" and calculates the euclidean 
+    // distance between the goal m2_active.* and the stored location
+    calcDistance(distance, x, y, m2_active.x, m2_active.y);
+    // Declare a local boolean variable at_goal, and leave it open on [true, false]
+    bool at_goal;
+    // This constrains at_goal to either true or false if distance is less than some proximity
+    testLEQ(at_goal, distance, 0.2);
+
+    // If the controller is active and has finished
+    if(finished == true){
+      // Allocate a slave token m2_inactive to immediately follow this m2_controler.Holds token
+      meets(m2_goals.Inactive m2_inactive);
+      // Require the slave m2_controller.Holds that follows this m2_controller.Holds s.active = false
+      eq(s.active, false);
+      // Require this only lasts for one more tick
+      eq(duration, 1);
+
+      // This sets the following m2_goals slave token to either SUCCESS or ABORTED
+      // Based on whether it achived a required recharge or not
+      if(recharge_required == true){
+	if(recharged == true){
+	  eq(m2_inactive.status, SUCCESS);
+	}
+	else {
+	  eq(m2_inactive.status, ABORTED);
+	}
+      }
+      else {
+	if(at_goal == true){
+	  eq(m2_inactive.status, SUCCESS);
+	}
+	else {
+	  eq(m2_inactive.status, ABORTED);
+	}
+      }
+    }
+    // If the controller is active and has not yet finished
+    else {
+      // If we are at the goal pose as estimated above
+      if(at_goal == true){
+	// If a recharge is required
+	if(recharge_required == true){ 
+	  // Allocate a new slave recharger.Active token
+	  contains_start(recharger.Active cmd);
+	  // Require that this m2_controller.Holds token does not end until recharger.Active has ended
+	  concurrent(cmd.end, end);
+	  // Require the maximum duration of this delegated action cmd
+	  eq(cmd.max_duration, RECHARGER_DURATION_BOUND);
+	  // Require the outlet_id of the recharge command is the same as the currently active m2_goals token
+	  eq(cmd.outlet_id, m2_active.outlet_id);
+	}
+	// If a recharge is not required
+	else {
+	  // Create a new slave token and require that it succeeds like above
+	  meets(m2_goals.Inactive m2_inactive);
+	  eq(m2_inactive.status, SUCCESS);
+	  eq(s.active, false);
+	  eq(duration, 1);
+	}
+      }
+      // If we are not at the goal pose as estimated above
+      else{
+	// Take the next step towards the goal. This will either navigate to the goal, or navigate to the
+	// next connector along the way. It would be ideal to be able to specify for the nav stack that
+	// we do not care about orientation, and that we want to get as close as possible to the goal, but the criteria
+	// for success is based on a given error bound. Thus we could get close if possible, but permit a successful termination
+	// when we cannot get any closer but are within that bound. This is desirable since the precise approach is based
+	// on cacluations that deal with position of approach and location of the socket or door and these are encoded internally
+	// in the domains
+	contains_start(MoveBehavior.Active cmd);
+	concurrent(cmd.end, end);
+	eq(cmd.frame_id, m2_active.frame_id);
+
+	// Determine the next map point to go for. It will either be the outlet
+	// or it will be a doorway en-route to the outlet. This function calls a topological planner.
+	bool thru_doorway;
+	map_get_next_move(cmd.x, cmd.y, cmd.z, cmd.qx, cmd.qy, cmd.qz, cmd.qw, thru_doorway, x, y, 
+			  m2_active.x, m2_active.y, m2_active.z, m2_active.qx, m2_active.qy, m2_active.qz, m2_active.qw);
+
+	map_get_nearest_connector(cmd.start_connector, x, y, m2_active.x, m2_active.y);
+
+	if(thru_doorway == true){
+	  // take no more than 10 minutes trying to get thru a doorway
+	  eq(cmd.object, doorman);
+	  eq(cmd.max_duration, DOORMAN_DURATION_BOUND);
+	}
+	else{
+	  eq(cmd.object, driver);
+	  eq(cmd.max_duration, DRIVER_DURATION_BOUND);
+	}
+      }
+    }
+  }
+}
+
+/**
+ * The update does not change control states unless it is aborted. Instead, it updates with the new position data
+ */
+MoveBehavior::Inactive{
+  starts(m2_controller.Holds mc);
+  if(status == SUCCESS){
+    eq(mc.x, x);
+    eq(mc.y, y);
+  }
+  else {
+    eq(mc.finished, true);
+  }
+}
+
+Recharger::Inactive{
+  starts(m2_controller.Holds mc);
+  if(status == SUCCESS){
+    eq(mc.finished, true);
+    eq(mc.recharged, true);
+  }
+  else {
+    eq(mc.finished, true);
+    eq(mc.recharged, false);
+  }
+}
+
