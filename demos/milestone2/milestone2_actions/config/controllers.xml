@@ -17,7 +17,7 @@
   <node pkg="mechanism_control" type="spawner.py" args="--stopped $(find pr2_experimental_controllers)/laser_tilt/laser_tilt_controller.xml" />
 
 <!-- Head controller -->
-<!--  <node pkg="mechanism_control" type="spawner.py" args="--stopped $(find pr2_default_controllers)/head_pan_tilt_controller.xml" />-->
+<!--  <node pkg="mechanism_control" type="spawner.py" args="stopped $(find pr2_default_controllers)/head_pan_tilt_controller.xml" />-->
  <group ns="head_controller" clear_params="true">
     <param name="pan_link_name" type="string" value="head_pan_link" />
     <param name="tilt_link_name" type="string" value="head_tilt_link" />
