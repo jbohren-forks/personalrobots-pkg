@@ -36,6 +36,7 @@
  */
 
 #include <pr2_mechanism_controllers/pr2_gripper_controller.h>
+#define pi 3.1415926
 
 using namespace controller;
 ROS_REGISTER_CONTROLLER(Pr2GripperController)
@@ -58,7 +59,14 @@ bool Pr2GripperController::initXml(mechanism::RobotState *robot_state, TiXmlElem
   joint_controller_.init(robot_state_, name_ + "_joint");
   ros::Node::instance()->param<double>(name_ + "/default_speed",default_speed_,joint_->joint_->effort_limit_);
   ros::Node::instance()->param<double>(name_ + "/timeout", timeout_, 0.0);
+  ros::Node::instance()->param<double>(name_ + "/break_stiction_amplitude", break_stiction_amplitude_, 0.0);
+  ros::Node::instance()->param<double>(name_ + "/break_stiction_period", break_stiction_period_, 0.0);
+  ros::Node::instance()->param<double>(name_ + "/break_stiction_velocity", break_stiction_velocity_, 0.005);
+  ros::Node::instance()->param<double>(name_ + "/proportional_offset", proportional_offset_, 0.01);
+  ros::Node::instance()->param<std::string>(name_ + "/break_stiction_type", break_stiction_type_, "none");
+  ros::Node::instance()->param<std::string>(name_ + "/fingertip_sensor_topic", fingertip_sensor_topic_, "pressure/" + name_ + "_motor");
   ros::Node::instance()->subscribe(name_+"_cmd", grasp_cmd, &Pr2GripperController::command_callback, this,1);
+  ros::Node::instance()->subscribe(fingertip_sensor_topic_, pressure_state, &Pr2GripperController::pressure_state_callback, this, 1);
   if (state_publisher_ != NULL)// Make sure that we don't memory leak if initXml gets called twice
     delete state_publisher_;
   state_publisher_ = new realtime_tools::RealtimePublisher <pr2_msgs::GripperControllerState> (name_ + "/state", 1);
@@ -87,18 +95,40 @@ void Pr2GripperController::update()
         grasp_cmd_desired_.end = grasp_cmd_.end;
         grasp_cmd_desired_.time = grasp_cmd_.time;
         grasp_cmd_desired_.val = grasp_cmd_.val;
+        ROS_INFO("Copying command, val is %f", grasp_cmd_desired_.val);
       }
       new_cmd_available_ = false;
       pthread_mutex_unlock(&pr2_gripper_controller_lock_);
-      if(grasp_cmd_desired_.cmd.compare("step") == 0)
+      if(grasp_cmd_desired_.cmd.compare("step") == 0) //in here because it depends on former joint_controller_.command_, can't be changing with every update
+      {
         joint_controller_.command_ = effortLimit(stepMove(grasp_cmd_desired_.val));
+        last_commanded_command = joint_controller_.command_;
+      }
     }
   }
 
   //check for timeout
   if((current_time - cmd_received_timestamp_) <= timeout_ || timeout_ == 0.0) //continue with what you were doing
   {
-    joint_controller_.command_ = effortLimit(parseMessage(grasp_cmd_desired_)); //set value
+    double direction = 1.0;
+    last_commanded_command = effortLimit(parseMessage(grasp_cmd_desired_)); //set value
+    if(last_commanded_command < 0.0)
+    {
+      direction = -1.0;
+    }
+    if(break_stiction_type_.compare("sine") == 0 && fabs(joint_->velocity_) < break_stiction_velocity_ && last_commanded_command != 0.0)
+    {
+      joint_controller_.command_ = last_commanded_command + direction*(sin(2.0*pi*(current_time - cmd_received_timestamp_)/break_stiction_period_)*break_stiction_amplitude_ + break_stiction_amplitude_);
+    }
+    else if(break_stiction_type_.compare("ramp") == 0 && fabs(joint_->velocity_) < break_stiction_velocity_ && last_commanded_command != 0.0)
+    {
+      joint_controller_.command_ = last_commanded_command + direction*rampMove(0.0, break_stiction_amplitude_, break_stiction_period_, 0.0);
+    }
+    else
+    {
+      joint_controller_.command_ = last_commanded_command;
+    }
+
     joint_controller_.update(); //update value
   }
   else //if timed out, don't do anything
@@ -106,6 +136,7 @@ void Pr2GripperController::update()
     //stop motor
     //set value
     joint_controller_.command_ = 0.0;
+    last_commanded_command = 0.0;
     //update value
     joint_controller_.update();
   }
@@ -120,7 +151,6 @@ void Pr2GripperController::update()
     state_publisher_->msg_.joint_position = joint_->position_;
     state_publisher_->unlockAndPublish() ;
   }
-
   last_time_ = current_time;
 }
 
@@ -141,18 +171,18 @@ bool Pr2GripperController::stopping()
   return true;
 }
 
-double Pr2GripperController::rampMove(double start_force, double end_force, double time)
+double Pr2GripperController::rampMove(double start_force, double end_force, double time, double hold)
 {
   double del_force = end_force - start_force;
   double del_time = robot_state_->hw_->current_time_ - cmd_received_timestamp_;
   if(del_time > time)
-  	return 0.0;
+  	return hold;
   return start_force + del_time/time*del_force;
 }
 
 double Pr2GripperController::stepMove(double step_size)
 {
-  return joint_controller_.command_ + step_size;
+  return last_commanded_command + step_size;
 }
 
 double Pr2GripperController::grasp()
@@ -179,13 +209,23 @@ double Pr2GripperController::parseMessage(pr2_mechanism_controllers::GripperCont
   {
     return desired_msg.val;
   }
+  else if(desired_msg.cmd.compare("moveTo") == 0)
+  {
+    double direction = 1.0;
+    if(joint_->position_ > desired_msg.val)
+      direction = -1.0;
+    if(proportional_offset_ > fabs(joint_->position_-desired_msg.val))
+      return default_speed_*direction*fabs(joint_->position_-desired_msg.val)/proportional_offset_;
+    return default_speed_*direction;
+  }
+  //This is calculated elsewhere
   else if(desired_msg.cmd.compare("step") == 0)
   {
-    return joint_controller_.command_;
+    return last_commanded_command;
   }
   else if(desired_msg.cmd.compare("ramp") == 0)
   {
-    return rampMove(desired_msg.start, desired_msg.end, desired_msg.time);
+    return rampMove(desired_msg.start, desired_msg.end, desired_msg.time, desired_msg.end);
   }
   else if(desired_msg.cmd.compare("open") == 0)
   {
@@ -195,7 +235,10 @@ double Pr2GripperController::parseMessage(pr2_mechanism_controllers::GripperCont
   {
     return -1.0*default_speed_;
   }
-  return 0.0;
+  else
+  {
+    return 0.0;
+  }
 }
 
 double Pr2GripperController::effortLimit(double desiredEffort)
@@ -221,6 +264,9 @@ void Pr2GripperController::command_callback()
   pthread_mutex_unlock(&pr2_gripper_controller_lock_);
 }
 
+void Pr2GripperController::pressure_state_callback()
+{
 
+}
 
 

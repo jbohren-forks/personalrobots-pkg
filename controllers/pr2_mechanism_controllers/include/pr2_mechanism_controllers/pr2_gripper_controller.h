@@ -41,6 +41,7 @@
 #include <robot_mechanism_controllers/joint_effort_controller.h>
 #include <pr2_mechanism_controllers/GripperControllerCmd.h>
 #include <pr2_msgs/GripperControllerState.h>
+#include <ethercat_hardware/PressureState.h>
 #include <realtime_tools/realtime_publisher.h>
 
 namespace controller
@@ -68,7 +69,7 @@ namespace controller
 
       bool stopping();
 
-      double rampMove(double start_force, double end_force, double time);
+      double rampMove(double start_force, double end_force, double time, double hold);
 
       double stepMove(double step_size);
 
@@ -77,15 +78,23 @@ namespace controller
     private:
       std::string name_;
 
+      std::string fingertip_sensor_topic_;
+
       double default_speed_;
 
       void command_callback();
+
+      void pressure_state_callback();
 
       pr2_mechanism_controllers::GripperControllerCmd grasp_cmd_desired_;
 
       pr2_mechanism_controllers::GripperControllerCmd grasp_cmd_;
 
       pr2_mechanism_controllers::GripperControllerCmd grasp_cmd;
+
+      //ethercat_hardware::PressureState pressure_state_;  //TODO::Do I need to copy this one to make it thread safe?
+
+      ethercat_hardware::PressureState pressure_state;
 
       /*!
        * \brief mutex lock for setting and getting commands
@@ -107,7 +116,40 @@ namespace controller
        */
       double last_time_;
 
+      /*!
+      * \brief timestamp remembering when the last command was received
+      */
       double cmd_received_timestamp_;
+
+      /*!
+      * \brief amplitude in joint effort values used to break stiction
+      */
+      double break_stiction_amplitude_;
+
+      /*!
+       * \brief duration in seconds used to increment effort or period of effort's overlaid sine wave
+       */
+      double break_stiction_period_;
+
+      /*!
+       * \brief velocity at which stiction is consitered broken
+       */
+      double break_stiction_velocity_;
+
+      /*!
+       * \brief type of stiction breaking: none, sine, ramp
+       */
+      std::string break_stiction_type_;
+
+      /*!
+       * \brief last commanded command stripped of any break stiction forces
+       */
+      double last_commanded_command;
+
+      /*!
+       * \brief offset from desired value where the moveTo command goes from full force to linear
+       */
+      double proportional_offset_;
 
       /*!
        * \brief remembers everything about the state of the robot

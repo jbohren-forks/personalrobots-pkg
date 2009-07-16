@@ -29,7 +29,7 @@ rospack_add_library( pr2_mechanism_controllers
   src/whole_body_trajectory_controller.cpp
   src/joint_trajectory_controller.cpp
   src/base_kinematics.cpp
-  src/pr2_gripper_controller.cpp
+  #src/pr2_gripper_controller.cpp
   src/pr2_odometry.cpp
   src/pr2_base_controller.cpp
   src/Pose3D.cpp
