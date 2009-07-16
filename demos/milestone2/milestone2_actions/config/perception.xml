@@ -6,18 +6,20 @@
 
 
   <!-- Stereo image processing -->
-  <group ns="stereo">
-    <node pkg="stereo_image_proc" type="stereoproc" respawn="false" machine="four" name="stereoproc">
+  <group ns="narrow_stereo">
+    <node pkg="stereo_image_proc" type="stereoproc" respawn="false" machine="three" name="stereoproc">
       <param name="do_colorize"    type="bool" value="True"/>
       <param name="do_rectify"     type="bool" value="True"/>
       <param name="do_stereo"      type="bool" value="True"/>
       <param name="do_calc_points" type="bool" value="True"/>
       <param name="do_keep_coords" type="bool" value="True"/>
+      <param name="num_disp" type="int" value="128"/>
     </node>
   </group>
 
   <!-- Downsampled version for remove viewing -->
   <node pkg="mux" type="throttle" args="1.0 stereo/cloud stereo/cloud_throttled" machine="four"/>
+  
 
   <!-- Filter for tilt laser shadowing/veiling -->
   <node pkg="laser_scan" type="scan_to_cloud" respawn="true" machine="three" name="tilt_shadow_filter">
