@@ -307,7 +307,7 @@ DoorController::DetectingHandle{
 DoorController::ApproachingDoor{
   contained_by(doorman.Active);
   // Action that does all the work
-  contains_start(move_base_local.Active cmd);
+  contains_start(move_base.Active cmd);
   ends cmd;
   leq(cmd.max_duration, MOVE_BASE_LOCAL_APPROACH_DURATION_BOUND);
   // target pose derived from the door state, and assuming a desired grasp range

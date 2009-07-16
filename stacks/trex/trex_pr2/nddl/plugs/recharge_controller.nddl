@@ -141,7 +141,7 @@ RechargeController::FindingOutlet{
 
 RechargeController::Approaching{
   contained_by(recharger.Active);
-  contains_start(move_base_local.Active cmd);
+  contains_start(move_base.Active cmd);
   ends cmd;
   leq(cmd.max_duration, MOVE_BASE_LOCAL_DURATION_BOUND);
 

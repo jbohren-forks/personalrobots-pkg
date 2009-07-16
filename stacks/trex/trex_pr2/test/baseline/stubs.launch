@@ -5,7 +5,6 @@
   <param name="/trex/enable_switch_controllers" value="true"/>
   <param name="/trex/enable_safety_tuck_arms" value="true"/>
   <param name="/trex/enable_move_base" value="true"/>
-  <param name="/trex/enable_move_base_local" value="true"/>
   <param name="/trex/enable_set_laser_tilt" value="true"/>
   <param name="/trex/enable_base_state_publisher" value="true"/>
 
@@ -29,7 +28,6 @@
   <param name="/trex/enable_stow_plug" value="true"/>
   <param name="/trex/enable_unplug" value="true"/>
   <param name="/trex/enable_plug_in" value="true"/>
-  <param name="/trex/enable_move_base_local" value="true"/>
   <param name="/trex/enable_detect_outlet_coarse" value="true"/>
   <param name="/trex/enable_detect_outlet_fine" value="true"/>
   <param name="/trex/enable_doors_tuck_arms" value="true"/>

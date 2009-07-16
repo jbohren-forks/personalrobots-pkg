@@ -343,10 +343,6 @@ int main(int argc, char** argv){
   if (getComponentParam("/trex/enable_move_base"))
     runner.connect<robot_msgs::PoseStamped, nav_robot_actions::MoveBaseState, robot_msgs::PoseStamped>(move_base);
 
-  trex_pr2::SimpleStubAction<robot_msgs::PoseStamped> move_base_local("move_base_local");
-  if (getComponentParam("/trex/enable_move_base_local"))
-    runner.connect<robot_msgs::PoseStamped, nav_robot_actions::MoveBaseState, robot_msgs::PoseStamped>(move_base_local);
-
   // Misc.
   trex_pr2::SimpleStubAction<std_msgs::Float32> recharge("recharge_controller");
   if (getComponentParam("/trex/enable_recharge"))
