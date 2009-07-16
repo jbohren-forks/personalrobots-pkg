@@ -19,6 +19,7 @@
 #include <point_cloud_mapping/kdtree/kdtree.h>
 #include <point_cloud_mapping/kdtree/kdtree_ann.h>
 
+#include <descriptors_3d/descriptors_3d.h>
 #include <descriptors_3d/spectral_shape.h>
 #include <descriptors_3d/orientation.h>
 #include <descriptors_3d/position.h>
@@ -43,14 +44,8 @@ kmeans_params_t cs0_kmeans_params;
 
 void populateParameters()
 {
-  // Feature for the nodes
-  //LocalGeometry* geometry_features = new LocalGeometry();
-  //geometry_features->useSpectral(0.15);
-  //geometry_features->useNormalOrientation(0.0, 0.0, 1.0);
-  //geometry_features->useTangentOrientation(0.0, 0.0, 1.0);
-  //geometry_features->useElevation();
-  //node_feature_descriptors.assign(1, geometry_features);
-
+  // ----------------------------------------------
+  // Node features
   SpectralShape* spectral_shape = new SpectralShape();
   spectral_shape->setSupportRadius(0.15);
   Orientation* orientation = new Orientation();
@@ -65,16 +60,16 @@ void populateParameters()
   node_feature_descriptors[1] = orientation;
   node_feature_descriptors[2] = position;
 
-  // TODO: free node_feature_descriptors
-
   unsigned int nbr_clique_sets = 1;
-
+  // ----------------------------------------------
+  // Clique set 0
   // kmeans parameters for constructing cliques
   cs0_kmeans_params.factor = 0.003;
   cs0_kmeans_params.accuracy = 1.0;
   cs0_kmeans_params.max_iter = 10;
   cs0_kmeans_params.channel_indices.clear();
 
+  // ----------------------------------------------
   // Define learning parameters
   vector<float> robust_potts_params(nbr_clique_sets, -1.0);
   RegressionTreeWrapperParams regression_tree_params;
@@ -82,6 +77,8 @@ void populateParameters()
   m3n_params.setNumberOfIterations(15);
   m3n_params.setRegressorRegressionTrees(regression_tree_params);
   m3n_params.setInferenceRobustPotts(robust_potts_params);
+
+  // TODO: free node_feature_descriptors
 }
 
 void save_clusters(const map<unsigned int, vector<unsigned int> >& cluster_centroids_indices,
@@ -154,6 +151,11 @@ int loadPointCloud(string filename, robot_msgs::PointCloud& pt_cloud, vector<uns
   return 0;
 }
 
+// --------------------------------------------------------------
+/*!
+ * \brief Performs k-means on a point cloud
+ */
+// --------------------------------------------------------------
 int kmeansPtCloud(const robot_msgs::PointCloud& pt_cloud,
                   const set<unsigned int>& ignore_indices,
                   kmeans_params_t& kmeans_params,
@@ -299,94 +301,10 @@ int kmeansPtCloud(const robot_msgs::PointCloud& pt_cloud,
   return 0;
 }
 
-unsigned int createConcatenatedFeatures(const robot_msgs::PointCloud& pt_cloud,
-                                        cloud_kdtree::KdTree& pt_cloud_kdtree,
-                                        const cv::Vector<robot_msgs::Point32*>& interest_pts,
-                                        vector<Descriptor3D*>& descriptors_3d,
-                                        vector<float*>& concatenated_features,
-                                        set<unsigned int>& failed_indices)
-
-{
-  failed_indices.clear();
-
-  // Allocate results for each INTEREST point
-  unsigned int nbr_interest_pts = interest_pts.size();
-  concatenated_features.assign(nbr_interest_pts, NULL);
-
-  // Allocate feature computation for each descriptor
-  unsigned int nbr_descriptors = descriptors_3d.size();
-  vector<cv::Vector<cv::Vector<float> > > all_descriptor_results(nbr_descriptors);
-
-  // ----------------------------------------------
-  // Iterate over each descriptor and compute features for each point in the point cloud
-  unsigned int nbr_concatenated_vals = 0;
-  for (unsigned int i = 0 ; i < nbr_descriptors ; i++)
-  {
-    descriptors_3d[i]->compute(pt_cloud, pt_cloud_kdtree, interest_pts, all_descriptor_results[i]);
-    nbr_concatenated_vals += node_feature_descriptors[i]->getResultSize();
-    ROS_INFO("Descriptor will have this many features: %u", node_feature_descriptors[i]->getResultSize());
-  }
-
-  // ----------------------------------------------
-  // Iterate over each interest point and compute all feature descriptors
-  // If all descriptor computations are successful, then concatenate all values into 1 array
-  float* curr_concat_feats = NULL; // concatenated features from all descriptors
-  unsigned int prev_val_idx = 0; // offset when copying into concat_features
-  unsigned int curr_nbr_feature_vals = 0; // length of current descriptor
-  bool all_features_success = true; // flag if all descriptors were computed correctly
-  for (unsigned int i = 0 ; i < nbr_interest_pts ; i++)
-  {
-    // --------------------------------
-    // Verify all features for the point were computed successfully
-    all_features_success = true;
-    for (unsigned int j = 0 ; all_features_success && j < nbr_descriptors ; j++)
-    {
-      cv::Vector<cv::Vector<float> >& curr_descriptor_for_cloud = all_descriptor_results[j];
-      cv::Vector<float>& curr_feature_vals = curr_descriptor_for_cloud[(size_t) i];
-
-      // non-zero descriptor length indicates computed successfully
-      all_features_success = curr_feature_vals.size() != 0;
-    }
-
-    // --------------------------------
-    // If all successful, then concatenate feature values
-    if (all_features_success)
-    {
-      // --------------------------------
-      // Concatenate all descriptors into one feature vector
-      curr_concat_feats = static_cast<float*> (malloc(sizeof(float) * nbr_concatenated_vals));
-      prev_val_idx = 0;
-      for (unsigned int j = 0 ; j < nbr_descriptors ; j++)
-      {
-        // retrieve descriptor values for current point
-        cv::Vector<cv::Vector<float> >& curr_descriptor_for_cloud = all_descriptor_results[j];
-        cv::Vector<float>& curr_feature_vals = curr_descriptor_for_cloud[(size_t) i];
-        curr_nbr_feature_vals = curr_feature_vals.size();
-
-        // copy descriptor values into concatenated vector at correct location
-        memcpy(curr_concat_feats + prev_val_idx, curr_feature_vals.begin(), sizeof(float)
-            * curr_nbr_feature_vals);
-
-        // skip over all computed features so far
-        prev_val_idx += curr_nbr_feature_vals;
-      }
-
-      // Save it
-      concatenated_features[i] = curr_concat_feats;
-    }
-    // Otherwise features not successful, so note them
-    else
-    {
-      ROS_WARN("skipping concatenation of sample %u", i);
-      failed_indices.insert(i);
-    }
-  }
-
-  return nbr_concatenated_vals;
-}
-
 // --------------------------------------------------------------
-/*! See function definition */
+/*!
+ * \brief Create nodes in the random field
+ */
 // --------------------------------------------------------------
 void createNodes(RandomField& rf,
                  robot_msgs::PointCloud& pt_cloud,
@@ -408,19 +326,21 @@ void createNodes(RandomField& rf,
   // ----------------------------------------------
   // Compute features over all point cloud
   vector<float*> concatenated_features(nbr_pts, NULL);
-  //  unsigned int nbr_concatenated_vals = createConcatenatedFeatures(pt_cloud, pt_cloud_kdtree, interest_pts,
-  //      node_feature_descriptors, concatenated_features, failed_indices);
   unsigned int nbr_concatenated_vals = Descriptor3D::computeAndConcatFeatures(pt_cloud, pt_cloud_kdtree,
       interest_pts, node_feature_descriptors, concatenated_features, failed_indices);
+  if (nbr_concatenated_vals == 0)
+  {
+    ROS_FATAL("Could not compute node features at all. This should never happen");
+    abort();
+  }
 
   // ----------------------------------------------
   // Create nodes for features that were okay
   for (unsigned int i = 0 ; i < nbr_pts ; i++)
   {
+    // NULL indicates couldnt compute features for interest point
     if (concatenated_features[i] != NULL)
     {
-      // --------------------------------
-      // Try to create node with features
       if (rf.createNode(i, concatenated_features[i], nbr_concatenated_vals, labels[i], pt_cloud.pts[i].x,
           pt_cloud.pts[i].y, pt_cloud.pts[i].z) == NULL)
       {
@@ -431,6 +351,11 @@ void createNodes(RandomField& rf,
   }
 }
 
+// --------------------------------------------------------------
+/*!
+ * \brief Create clique set 0
+ */
+// --------------------------------------------------------------
 void createCliqueSet0(RandomField& rf,
                       const robot_msgs::PointCloud& pt_cloud,
                       cloud_kdtree::KdTree& pt_cloud_kdtree,
@@ -499,11 +424,17 @@ void createCliqueSet0(RandomField& rf,
    */
 }
 
+// --------------------------------------------------------------
+/*!
+ * \brief Create nodes in the random field
+ */
+// --------------------------------------------------------------
 int main()
 {
   populateParameters();
 
   // ----------------------------------------------------------
+  // Load point cloud from file
   ROS_INFO("Loading point cloud...");
   robot_msgs::PointCloud pt_cloud;
   vector<unsigned int> labels;
@@ -516,6 +447,7 @@ int main()
   cloud_kdtree::KdTree* pt_cloud_kdtree = new cloud_kdtree::KdTreeANN(pt_cloud);
 
   // ----------------------------------------------------------
+  // Create RandomField
   RandomField rf(1);
   set<unsigned int> failed_indices;
   ROS_INFO("Creating nodes...");
@@ -528,6 +460,7 @@ int main()
   ROS_INFO("done");
 
   // ----------------------------------------------------------
+  // Train M3N model
   ROS_INFO("Starting to train...");
   M3NModel m3n_model;
   vector<const RandomField*> training_rfs(1, &rf);
