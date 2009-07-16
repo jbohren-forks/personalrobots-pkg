@@ -56,8 +56,12 @@ using namespace std;
 // --------------------------------------------------------------
 //* SpectralAnalysis
 /**
- * \brief An abstract class for descriptors that require computing
- *        spectral information from spectral/pca analysis
+ * \brief An abstract class for descriptors that require the results
+ *        from spectral analysis of a given volume of points
+ *
+ * This class is meant to hold intermediate results needed for the
+ * computation of other descriptors so that computation is not
+ * unnecessarily repeated.
  */
 // --------------------------------------------------------------
 class SpectralAnalysis: public Descriptor3D
@@ -65,7 +69,8 @@ class SpectralAnalysis: public Descriptor3D
   public:
     // --------------------------------------------------------------
     /*!
-     * \brief
+     * \brief Instantiates the class indicating no spectral information
+     *        or parameters have been defined
      */
     // --------------------------------------------------------------
     SpectralAnalysis() :

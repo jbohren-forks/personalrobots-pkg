@@ -74,6 +74,8 @@ class Descriptor3D
     /*!
      * \brief Computes feature values for each specified interest point
      *
+     * See the inherited class for the type of features computed
+     *
      * \param data Point cloud of the data
      * \param data_kdtree K-D tree representation of data
      * \param interest_pts List of points to compute features for
@@ -90,6 +92,8 @@ class Descriptor3D
     // --------------------------------------------------------------
     /*!
      * \brief Computes feature values for each interest region of points
+     *
+     * See the inherited class for the type of features computed
      *
      * \param data Point cloud of the data
      * \param data_kdtree K-D tree representation of data

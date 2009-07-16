@@ -48,24 +48,49 @@ using namespace std;
 
 // --------------------------------------------------------------
 //* BoundingBox
-/**
- * \brief
+/*!
+ * \brief Computes the dimensions of the bounding box for ONLY a given
+ *        REGION of points.
  */
 // --------------------------------------------------------------
 class BoundingBox: public SpectralAnalysis
 {
   public:
+    // --------------------------------------------------------------
+    /*!
+     * \brief Instantiates the bounding box descriptor with parameters
+     *
+     * \param use_pca_bbox Flag to compute the bounding box in the principle
+     *                     component space
+     * \param use_raw_bbox Flag to compute the bounding box in the given
+     *                     x-y-z point cloud space
+     */
+    // --------------------------------------------------------------
     BoundingBox(bool use_pca_bbox, bool use_raw_bbox);
-
-    virtual void compute(const robot_msgs::PointCloud& data,
-                         cloud_kdtree::KdTree& data_kdtree,
-                         const cv::Vector<robot_msgs::Point32*>& interest_pts,
-                         cv::Vector<cv::Vector<float> >& results);
 
     // ===================================================================
     /*! \name Interest region related  */
     // ===================================================================
     //@{
+    // --------------------------------------------------------------
+    /*!
+     * \brief This descriptor does NOT work with only interest points so
+     *        calling this method will do nothing
+     *
+     * \warning This call does nothing
+     */
+    // --------------------------------------------------------------
+    virtual void compute(const robot_msgs::PointCloud& data,
+                         cloud_kdtree::KdTree& data_kdtree,
+                         const cv::Vector<robot_msgs::Point32*>& interest_pts,
+                         cv::Vector<cv::Vector<float> >& results);
+    //@}
+
+    // ===================================================================
+    /*! \name Interest region related  */
+    // ===================================================================
+    //@{
+    // \warning Requires calling setSupportRadius or useSpectralInformation
     virtual void compute(const robot_msgs::PointCloud& data,
                          cloud_kdtree::KdTree& data_kdtree,
                          const cv::Vector<vector<int>*>& interest_region_indices,
