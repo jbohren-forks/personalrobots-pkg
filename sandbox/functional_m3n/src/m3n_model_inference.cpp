@@ -37,7 +37,7 @@
 using namespace std;
 
 // --------------------------------------------------------------
-/*! See function definition */
+/* See function definition */
 // --------------------------------------------------------------
 int M3NModel::infer(const RandomField& random_field,
                     map<unsigned int, unsigned int>& inferred_labels,
@@ -55,6 +55,77 @@ int M3NModel::infer(const RandomField& random_field,
 
   loss_augmented_inference_ = false; // only use during learning
   return inferPrivate(random_field, inferred_labels, max_iterations);
+}
+
+// --------------------------------------------------------------
+/* See function definition TODO: use this in the code */
+// --------------------------------------------------------------
+int M3NModel::cachePotentials(const RandomField& random_field)
+{
+  // -------------------------------------------
+  // Clear out old values
+  cache_node_potentials_.clear();
+  cache_clique_set_potentials_.clear();
+  cache_clique_set_potentials_.resize(clique_set_feature_dims_.size());
+
+  // -------------------------------------------
+  // Populate node scores
+  const map<unsigned int, RandomField::Node*>& nodes = random_field.getNodesRandomFieldIDs();
+  for (map<unsigned int, RandomField::Node*>::const_iterator iter_nodes = nodes.begin() ; iter_nodes
+      != nodes.end() ; iter_nodes++)
+  {
+    // Retrieve current node info
+    unsigned int curr_node_id = iter_nodes->first;
+    const RandomField::Node* curr_node = iter_nodes->second;
+
+    // Compute scores for each label
+    for (unsigned int i = 0 ; i < training_labels_.size() ; i++)
+    {
+      unsigned int curr_label = training_labels_[i];
+
+      double potential_value = 0.0;
+      if (computePotential(*curr_node, curr_label, potential_value) < 0)
+      {
+        return -1;
+      }
+
+      cache_node_potentials_[curr_node_id][curr_label] = potential_value;
+    }
+  }
+
+  // -------------------------------------------
+  // Populate clique scores
+  const vector<map<unsigned int, RandomField::Clique*> >& clique_sets = random_field.getCliqueSets();
+  unsigned int nbr_clique_sets = clique_sets.size();
+  for (unsigned int cs_idx = 0 ; cs_idx < nbr_clique_sets ; cs_idx++)
+  {
+    // Iterate over the cliques in each clique set
+    const map<unsigned int, RandomField::Clique*>& curr_clique_set = clique_sets[cs_idx];
+    for (map<unsigned int, RandomField::Clique*>::const_iterator iter_cliques = curr_clique_set.begin() ; iter_cliques
+        != curr_clique_set.end() ; iter_cliques++)
+    {
+      // Retrieve current clique info
+      unsigned int curr_clique_id = iter_cliques->first;
+      const RandomField::Clique* curr_clique = iter_cliques->second;
+
+      // Compute scores for each label
+      for (unsigned int i = 0 ; i < training_labels_.size() ; i++)
+      {
+        unsigned int curr_label = training_labels_[i];
+
+        double potential_value = 0.0;
+        if (computePotential(*curr_clique, cs_idx, curr_label, potential_value) < 0)
+        {
+          return -1;
+        }
+
+        cache_clique_set_potentials_[cs_idx][curr_clique_id][curr_label] = potential_value;
+      }
+    }
+  }
+
+  ROS_INFO("finished caching");
+  return 0;
 }
 
 // --------------------------------------------------------------
@@ -93,9 +164,13 @@ int M3NModel::inferPrivate(const RandomField& random_field,
     inferred_labels.clear();
   }
 
-  //cache_node_potentials_.clear();
-  //cache_clique_set_potentials_.clear();
-  //cache_clique_set_potentials_.resize(clique_sets.size());
+  // -------------------------------------------
+  // Cache potentials
+  if (cachePotentials(random_field) < 0)
+  {
+    return -1;
+  }
+
   // -------------------------------------------
   // Loop until hit max number of iterations or converged on minimum energy
   if (max_iterations == 0)
@@ -502,21 +577,6 @@ int M3NModel::computePotential(const RandomField::Node& node, const unsigned int
 {
   potential_val = 0.0;
 
-  /*
-   if (cache_node_potentials_.count(node.getRandomFieldID()) != 0)
-   {
-   if (cache_node_potentials_[node.getRandomFieldID()].count(label) != 0)
-   {
-   potential_val = cache_node_potentials_[node.getRandomFieldID()][label];
-   return 0;
-   }
-   }
-   else
-   {
-   cache_node_potentials_[node.getRandomFieldID()] = map<unsigned int, double>();
-   }
-   */
-
   // Sum the scores of each regressor
   unsigned int nbr_regressors = regressors_.size();
   for (unsigned int i = 0 ; i < nbr_regressors ; i++)
@@ -536,7 +596,6 @@ int M3NModel::computePotential(const RandomField::Node& node, const unsigned int
 
   // Exponentiated functional gradient descent
   potential_val = exp(potential_val);
-  //cache_node_potentials_[node.getRandomFieldID()][label] = potential_val;
   return 0;
 }
 
@@ -549,21 +608,6 @@ int M3NModel::computePotential(const RandomField::Clique& clique,
                                double& potential_val)
 {
   potential_val = 0.0;
-
-  /*
-   if (cache_clique_set_potentials_[clique_set_idx].count(clique.getRandomFieldID()) != 0)
-   {
-   if (cache_clique_set_potentials_[clique_set_idx][clique.getRandomFieldID()].count(label) != 0)
-   {
-   potential_val = cache_clique_set_potentials_[clique_set_idx][clique.getRandomFieldID()][label];
-   return 0;
-   }
-   }
-   else
-   {
-   cache_clique_set_potentials_[clique_set_idx][clique.getRandomFieldID()] = map<unsigned int, double>();
-   }
-   */
 
   // Sum the scores of each regressor
   unsigned int nbr_regressors = regressors_.size();
@@ -584,6 +628,5 @@ int M3NModel::computePotential(const RandomField::Clique& clique,
 
   // Exponentiated functional gradient descent
   potential_val = exp(potential_val);
-  //cache_clique_set_potentials_[clique_set_idx][clique.getRandomFieldID()][label] = potential_val;
   return 0;
 }

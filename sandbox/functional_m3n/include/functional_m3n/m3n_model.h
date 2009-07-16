@@ -213,6 +213,8 @@ class M3NModel
                      map<unsigned int, unsigned int>& inferred_labels,
                      unsigned int max_iterations = 0);
 
+    int cachePotentials(const RandomField& random_field);
+
     // --------------------------------------------------------------
     /*!
      * \brief Computes the potential value for assigning the node the specified label
