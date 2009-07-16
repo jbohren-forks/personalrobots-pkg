@@ -189,12 +189,12 @@ public:
 		}
 
 		// subscribe to topics
-		left_image_sub_ = nh_.subscribe("stereo/left/image_rect", 1, sync_.synchronize(&RecognitionLambertian::leftImageCallback, this));
-		left_caminfo_image_sub_ = nh_.subscribe("stereo/left/cam_info", 1, sync_.synchronize(&RecognitionLambertian::leftCamInfoCallback, this));
-		right_image_sub_ = nh_.subscribe("stereo/right/image_rect", 1, sync_.synchronize(&RecognitionLambertian::rightImageCallback, this));
-		disparity_sub_ = nh_.subscribe("stereo/disparity", 1, sync_.synchronize(&RecognitionLambertian::disparityImageCallback, this));
-		cloud_sub_ = nh_.subscribe("stereo/cloud", 1, sync_.synchronize(&RecognitionLambertian::cloudCallback, this));
-		dispinfo_sub_ = nh_.subscribe("stereo/disparity_info", 1, sync_.synchronize(&RecognitionLambertian::dispinfoCallback, this));
+		left_image_sub_ = nh_.subscribe("narrow_stereo/left/image_rect", 1, sync_.synchronize(&RecognitionLambertian::leftImageCallback, this));
+		left_caminfo_image_sub_ = nh_.subscribe("narrow_stereo/left/cam_info", 1, sync_.synchronize(&RecognitionLambertian::leftCamInfoCallback, this));
+		right_image_sub_ = nh_.subscribe("narrow_stereo/right/image_rect", 1, sync_.synchronize(&RecognitionLambertian::rightImageCallback, this));
+		disparity_sub_ = nh_.subscribe("narrow_stereo/disparity", 1, sync_.synchronize(&RecognitionLambertian::disparityImageCallback, this));
+		cloud_sub_ = nh_.subscribe("narrow_stereo/cloud", 1, sync_.synchronize(&RecognitionLambertian::cloudCallback, this));
+		dispinfo_sub_ = nh_.subscribe("narrow_stereo/disparity_info", 1, sync_.synchronize(&RecognitionLambertian::dispinfoCallback, this));
 
 		// advertise topics
 		objects_pub_ = nh_.advertise<PointCloud> ("~objects", 1);
@@ -580,6 +580,7 @@ private:
 
 		// add wall_frame to tf
 		tf::Stamped<tf::Pose> table_pose_frame(tf_pose, origin.header.stamp, "table_frame", origin.header.frame_id);
+		ROS_INFO("Adding pose with stamp: %0.15f", origin.header.stamp.toSec());
 
 		tf_.setTransform(table_pose_frame);
 
@@ -1159,6 +1160,18 @@ private:
 		table_point.point.z = projected_objects.pts[0].z;
 		addTableFrame(table_point,plane);
 
+		sleep(1);
+		for (int i=0;i<1000;++i) {
+			ros::spinOnce();
+		}
+
+/*	        if (!tf_.canTransform("table_frame", objects_pc.header.frame_id, objects_pc.header.stamp, ros::Duration(5.0))){
+	          ROS_ERROR("Cannot transform from %s to %s",  objects_pc.header.frame_id.c_str(), "table_frame");
+	          return;
+	        }
+*/
+
+		ROS_INFO("Calling transformCloud with stamp: %0.15f", objects_pc.header.stamp.toSec());
 		// transform all the objects into the table frame
 		PointCloud objects_table_frame;
 		tf_.transformPointCloud("table_frame", objects_pc, objects_table_frame);
