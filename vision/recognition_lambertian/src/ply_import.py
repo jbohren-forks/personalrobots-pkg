@@ -207,6 +207,8 @@ def read(filename):
 def main():
     import sys
     obj_spec, obj = read(sys.argv[1])
+    print len(obj['vertex'])
+    print len(obj['face'])
 
 if __name__=='__main__':
     main()

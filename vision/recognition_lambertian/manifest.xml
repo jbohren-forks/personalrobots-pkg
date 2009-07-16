@@ -28,6 +28,7 @@
   <depend package="eigen"/>
   <depend package="chamfer_matching"/>
   <depend package="FLANN"/>
+  <depend package="mapping_msgs"/>
 
 
  <export>

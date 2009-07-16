@@ -34,21 +34,199 @@
 
 // Author: Marius Muja
 
-#include<boost/filesystem.hpp>
+#include <boost/filesystem.hpp>
 
+#include <ply.h>
 
 #include <ros/ros.h>
 #include "recognition_lambertian/ModelFit.h"
 
 #include "robot_msgs/Point.h"
 #include "visualization_msgs/Marker.h"
-
+#include "mapping_msgs/Object.h"
 
 namespace bfs = boost::filesystem;
 using namespace std;
 using namespace robot_msgs;
 
 namespace model_fit {
+
+
+typedef struct Vertex {
+  float x,y,z;
+  float nx,ny,nz;
+  void *other_props;       /* other properties */
+} Vertex;
+
+typedef struct Face {
+  unsigned char nverts;    /* number of vertex indices in list */
+  int *verts;              /* vertex index list */
+  void *other_props;       /* other properties */
+} Face;
+
+const char *elem_names[] = { /* list of the kinds of elements in the user's object */
+  "vertex", "face"
+};
+
+PlyProperty vert_props[] = { /* list of property information for a vertex */
+  {"x", Float32, Float32, offsetof(Vertex,x), 0, 0, 0, 0},
+  {"y", Float32, Float32, offsetof(Vertex,y), 0, 0, 0, 0},
+  {"z", Float32, Float32, offsetof(Vertex,z), 0, 0, 0, 0},
+};
+
+PlyProperty face_props[] = { /* list of property information for a face */
+  {"vertex_indices", Int32, Int32, offsetof(Face,verts),
+   1, Uint8, Uint8, offsetof(Face,nverts)},
+};
+
+
+class PLYMesh
+{
+	/*** the PLY object ***/
+
+	PlyFile *in_ply;
+	int nverts,nfaces;
+	Vertex vertex;
+	Face face;
+	PlyOtherProp *vert_other,*face_other;
+
+public:
+
+	inline void endian_swap(void* p)
+	{
+		unsigned int* x = (unsigned int*)p;
+
+	    *x = (*x>>24) |
+	        ((*x<<8) & 0x00FF0000) |
+	        ((*x>>8) & 0x0000FF00) |
+	        (*x<<24);
+	}
+
+
+	void readFromFile(const string& filename, mapping_msgs::Object& mesh)
+	{
+		int i,j;
+		int elem_count;
+		char *elem_name;
+
+		/*** Read in the original PLY object ***/
+
+		FILE* fin = fopen(filename.c_str(), "rb");
+
+		if (fin==NULL)  {
+			ROS_ERROR("Cannot read file: %s", filename.c_str());
+			return;
+		}
+
+		in_ply = read_ply (fin);
+
+		float version;
+		int file_type;
+		get_info_ply(in_ply, &version, &file_type);
+
+		/* examine each element type that is in the file (vertex, face) */
+
+		for (i = 0; i < in_ply->num_elem_types; i++) {
+
+			/* prepare to read the i'th list of elements */
+			elem_name = setup_element_read_ply (in_ply, i, &elem_count);
+
+			if (equal_strings ((char*)"vertex", elem_name)) {
+				nverts = elem_count;
+				mesh.vertices.resize(nverts);
+
+				/* set up for getting vertex elements */
+				/* (we want x,y,z) */
+
+				setup_property_ply (in_ply, &vert_props[0]);
+				setup_property_ply (in_ply, &vert_props[1]);
+				setup_property_ply (in_ply, &vert_props[2]);
+
+				/* we also want normal information if it is there (nx,ny,nz) */
+
+				//		      for (j = 0; j < in_ply->elems[i]->nprops; j++) {
+				//			PlyProperty *prop;
+				//			prop = in_ply->elems[i]->props[j];
+				//			if (equal_strings ("nx", prop->name)) {
+				//			  setup_property_ply (in_ply, &vert_props[3]);
+				//			  has_nx = 1;
+				//			}
+				//			if (equal_strings ("ny", prop->name)) {
+				//			  setup_property_ply (in_ply, &vert_props[4]);
+				//			  has_ny = 1;
+				//			}
+				//			if (equal_strings ("nz", prop->name)) {
+				//			  setup_property_ply (in_ply, &vert_props[5]);
+				//			  has_nz = 1;
+				//			}
+				//		      }
+
+				/* also grab anything else that we don't need to know about */
+
+				vert_other = get_other_properties_ply (in_ply,
+						offsetof(Vertex,other_props));
+
+				/* grab the vertex elements*/
+				for (j = 0; j < elem_count; j++) {
+					get_element_ply (in_ply, (void *) &vertex);
+					if (file_type==PLY_BINARY_BE) {
+						endian_swap(&vertex.x);
+						endian_swap(&vertex.y);
+						endian_swap(&vertex.z);
+					}
+
+					mesh.vertices[j].x = vertex.x / 1000;
+					mesh.vertices[j].y = vertex.y / 1000;
+					mesh.vertices[j].z = vertex.z / 1000;
+				}
+			}
+			else if (equal_strings ((char*)"face", elem_name)) {
+
+				nfaces = elem_count;
+				mesh.triangles.resize(nfaces*3);
+
+				/* set up for getting face elements */
+				/* (all we need are vertex indices) */
+
+				setup_property_ply (in_ply, &face_props[0]);
+				face_other = get_other_properties_ply (in_ply,
+						offsetof(Face,other_props));
+
+				/* grab all the face elements and place them in our list */
+
+				for (j = 0; j < elem_count; j++) {
+					get_element_ply (in_ply, (void *) &face);
+					if (file_type==PLY_BINARY_BE) {
+						for (int k=0;k<face.nverts;++k) {
+							endian_swap(&face.verts[k]);
+						}
+					}
+
+
+					if (face.nverts!=3) {
+						ROS_WARN("Mesh contains non triangle faces");
+					}
+					else {
+						mesh.triangles[3*j] = face.verts[0];
+						mesh.triangles[3*j+1] = face.verts[1];
+						mesh.triangles[3*j+2] = face.verts[2];
+					}
+				}
+			}
+			else  /* all non-vertex and non-face elements are grabbed here */
+				get_other_element_ply (in_ply);
+		}
+
+		close_ply (in_ply);
+
+		ROS_INFO("File contains %d vertices and %d faces", nverts, nfaces);
+	}
+
+
+};
+
+
+
 
 class ModelFitSet;
 
@@ -60,6 +238,7 @@ class TemplateModel {
 	float truncate_value;
 
 	float *grid;
+	mapping_msgs::Object mesh;
 
 	string name_;
 
@@ -95,7 +274,7 @@ public:
 		return pose;
 	}
 
-	void getExtents(Point32& low_extent, Point32& hight_extent)
+	void getExtents(Point32& low_extent, Point32& high_extent)
 	{
 		Pose pose = graspPose();
 
@@ -103,12 +282,16 @@ public:
 		low_extent.y = pose.position.y-y_min;
 		low_extent.z = pose.position.z-z_min;
 
-		hight_extent.x = x_max-pose.position.x;
-		hight_extent.y = y_max-pose.position.y;
-		hight_extent.z = z_max-pose.position.z;
+		high_extent.x = x_max-pose.position.x;
+		high_extent.y = y_max-pose.position.y;
+		high_extent.z = z_max-pose.position.z;
 
 	}
 
+	mapping_msgs::Object objectMesh()
+	{
+		return mesh;
+	}
 
 
 	void show(const ros::Publisher& publisher, const Point32& location, float fit_score);
@@ -210,6 +393,11 @@ void TemplateModel::load(const string& file, const string& name)
 	fclose(f);
 
 	truncate_value = *max_element(grid, grid+x_res*y_res*z_res);
+
+
+	bfs::path ply_file = bfs::change_extension(bfs::path(file), ".ply");
+	PLYMesh ply_mesh;
+	ply_mesh.readFromFile(ply_file.string(),mesh);
 }
 
 
@@ -234,87 +422,87 @@ void TemplateModel::show(const ros::Publisher& publisher, const Point32& locatio
 	marker.scale.x = x_d;
 	marker.scale.y = y_d;
 	marker.scale.z = z_d;
-		marker.color.a = 0.7;
+	marker.color.a = 0.7;
 
-		if (fit_score<7.0) {
-			marker.color.r = 0.0;
-			marker.color.g = 1.0;
-			marker.color.b = 1.0;
-		} else {
-			marker.color.r = 1.0;
-			marker.color.g = 0.0;
-			marker.color.b = 0.0;
-		}
+	if (fit_score<7.0) {
+		marker.color.r = 0.0;
+		marker.color.g = 1.0;
+		marker.color.b = 1.0;
+	} else {
+		marker.color.r = 1.0;
+		marker.color.g = 0.0;
+		marker.color.b = 0.0;
+	}
 
-		for (int i=0;i<x_res;++i) {
-			for (int j=0;j<y_res;++j) {
-				for (int k=0;k<z_res;++k) {
-					if (grid[((i*y_res)+j)*z_res+k]==0) {
-						Point p;
-						p.x = i*x_d+x_min;
-						p.y = j*y_d+y_min;
-						p.z = k*z_d+z_min;
-                        marker.points.push_back(p);
-					}
+	for (int i=0;i<x_res;++i) {
+		for (int j=0;j<y_res;++j) {
+			for (int k=0;k<z_res;++k) {
+				if (grid[((i*y_res)+j)*z_res+k]==0) {
+					Point p;
+					p.x = i*x_d+x_min;
+					p.y = j*y_d+y_min;
+					p.z = k*z_d+z_min;
+					marker.points.push_back(p);
 				}
 			}
 		}
-		publisher.publish(marker);
+	}
+	publisher.publish(marker);
+}
+
+
+void TemplateModel::fitPointCloud(const PointCloud& cloud, const Point32& location, ModelFitSet& mfs)
+{
+	float score = 0;
+	float max_dist = 0;
+	for (size_t i=0;i<cloud.pts.size();i++) {
+		int x = int(((cloud.pts[i].x-location.x)-x_min)/x_d);
+		int y = int(((cloud.pts[i].y-location.y)-y_min)/y_d);
+		int z = int(((cloud.pts[i].z-location.z)-z_min)/z_d);
+
+		float val;
+		if (in_bounds(x,y,z)) {
+			val = grid[((x*y_res)+y)*z_res+z];
+		}
+		else {
+			val = truncate_value;
+		}
+		max_dist = max(max_dist,val);
+		score += val;
+	}
+	score /= (cloud.pts.size());
+
+	mfs.add(this, location, score, max_dist);
+}
+
+void TemplateModel::findBestFit(const PointCloud& cloud, ModelFitSet& mfs)
+{
+	// compute center of point cloud
+	Point32 center;
+	center.x =0; center.y = 0; center.z = 0;
+	int count = cloud.pts.size();
+
+	for (int i=0;i<count;++i) {
+		center.x += cloud.pts[i].x;
+		center.y += cloud.pts[i].y;
+		//			center.z += cloud.pts[i].z;
 	}
 
+	center.x /=count;
+	center.y /=count;
+	//		center.z /=count;
 
-	void TemplateModel::fitPointCloud(const PointCloud& cloud, const Point32& location, ModelFitSet& mfs)
-	{
-		float score = 0;
-		float max_dist = 0;
-		for (size_t i=0;i<cloud.pts.size();i++) {
-			int x = int(((cloud.pts[i].x-location.x)-x_min)/x_d);
-			int y = int(((cloud.pts[i].y-location.y)-y_min)/y_d);
-			int z = int(((cloud.pts[i].z-location.z)-z_min)/z_d);
+	Point32 location = center;
 
-			float val;
-			if (in_bounds(x,y,z)) {
-				val = grid[((x*y_res)+y)*z_res+z];
-			}
-			else {
-				val = truncate_value;
-			}
-			max_dist = max(max_dist,val);
-			score += val;
-		}
-		score /= (cloud.pts.size());
+	for (float dx=-0.02; dx<=0.02; dx+=0.01) {
+		for (float dy=-0.02; dy<=0.02; dy+=0.01) {
+			location.x = center.x + dx;
+			location.y = center.y + dy;
 
-		mfs.add(this, location, score, max_dist);
-	}
-
-	void TemplateModel::findBestFit(const PointCloud& cloud, ModelFitSet& mfs)
-	{
-		// compute center of point cloud
-		Point32 center;
-		center.x =0; center.y = 0; center.z = 0;
-		int count = cloud.pts.size();
-
-		for (int i=0;i<count;++i) {
-			center.x += cloud.pts[i].x;
-			center.y += cloud.pts[i].y;
-//			center.z += cloud.pts[i].z;
-		}
-
-		center.x /=count;
-		center.y /=count;
-//		center.z /=count;
-
-		Point32 location = center;
-
-		for (float dx=-0.02; dx<=0.02; dx+=0.01) {
-			for (float dy=-0.02; dy<=0.02; dy+=0.01) {
-				location.x = center.x + dx;
-				location.y = center.y + dy;
-
-				fitPointCloud(cloud, location, mfs);
-			}
+			fitPointCloud(cloud, location, mfs);
 		}
 	}
+}
 
 
 
@@ -397,9 +585,9 @@ public:
 		mfs.best_fit_[0].model_->show(marker_pub_,  mfs.best_fit_[0].location_,  mfs.best_fit_[0].score());
 
 		resp.object.pose.pose = mfs.best_fit_[0].graspPose();
-		mfs.best_fit_[0].model_->getExtents(resp.object.low_extent, resp.object.high_extent );
 		resp.object.pose.header.stamp = req.cloud.header.stamp;
 		resp.object.pose.header.frame_id = req.cloud.header.frame_id;
+		resp.object.object = mfs.best_fit_[0].model_->objectMesh();
 		resp.score = mfs.best_fit_[0].score();
 
 		return true;

@@ -1,3 +1,2 @@
 robot_msgs/PoseStamped pose
-robot_msgs/Point32 low_extent
-robot_msgs/Point32 high_extent
+mapping_msgs/Object object
