@@ -20,4 +20,5 @@ rospack_add_library(descriptors_3d
 			src/spectral_shape.cpp 
 			src/orientation.cpp
 			src/position.cpp
-			src/spin_image.cpp)
+			src/spin_image.cpp
+			src/bounding_box.cpp)
