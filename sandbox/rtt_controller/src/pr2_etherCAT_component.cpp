@@ -19,7 +19,6 @@ private:
     WriteDataPort<std::vector<double> > joint_vel_port;
     EthercatHardware ec;
     MechanismControl* mc;
-    MechanismControlNode* mcn;
     std::vector<double> joint_pos,joint_vel,joint_eff;
     std::vector<mechanism::JointState*> joints;
     
@@ -74,9 +73,8 @@ public:
         ec.initXml(root, allow_override);
         // Create mechanism control
         mc = new MechanismControl(ec.hw_);
-        mcn = new MechanismControlNode(mc);
         // Initialize mechanism control from robot description
-        mcn->initXml(root);
+        mc->initXml(root);
 
         for(unsigned int i=0;i<joint_names.rvalue().size();i++)
             joints.push_back(mc->state_->getJointState(joint_names.rvalue()[i]));
@@ -111,7 +109,7 @@ public:
         joint_pos_port.Set(joint_pos);
         joint_vel_port.Set(joint_vel);
         //Set joint efforts
-        mcn->update();
+        mc->update();
     }
 
     void stopHook(){
@@ -125,8 +123,6 @@ public:
     
     
     void cleanupHook(){
-        if(!mcn)
-            delete mcn;
         if(!mc)
             delete mc;
     }
