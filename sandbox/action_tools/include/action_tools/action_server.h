@@ -103,7 +103,7 @@ namespace action_tools {
         return new_goal_;
       }
 
-      void sendResult(Result result){
+      void sendResult(const Result& result){
         ActionResult r;
         r.header.stamp = ros::Time::now();
 
@@ -181,6 +181,12 @@ namespace action_tools {
         return state_ == RUNNING;
       }
 
+      void succeeded(const Result& result){
+        boost::mutex::scoped_lock(lock_);
+        sendResult(result);
+        succeeded();
+      }
+
       void succeeded(){
         boost::mutex::scoped_lock(lock_);
         if(state_ == IDLE){
@@ -192,6 +198,12 @@ namespace action_tools {
         publishStatus();
       }
 
+      void aborted(const Result& result){
+        boost::mutex::scoped_lock(lock_);
+        sendResult(result);
+        aborted();
+      }
+
       void aborted(){
         boost::mutex::scoped_lock(lock_);
         if(state_ == IDLE){
@@ -201,6 +213,12 @@ namespace action_tools {
         status_.status = status_.ABORTED;
         state_ = IDLE;
         publishStatus();
+      }
+
+      void preempted(const Result& result){
+        boost::mutex::scoped_lock(lock_);
+        sendResult(result);
+        preempted();
       }
 
       void preempted(){
