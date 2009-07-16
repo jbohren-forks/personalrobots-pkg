@@ -173,7 +173,7 @@ dGeomID collision_space::EnvironmentModelODE::createODEGeom(dSpaceID space, ODES
     return g;
 }
 
-void collision_space::EnvironmentModelODE::updateGeom(dGeomID geom, btTransform &pose) const
+void collision_space::EnvironmentModelODE::updateGeom(dGeomID geom,  const btTransform &pose) const
 {
     btVector3 pos = pose.getOrigin();
     dGeomSetPosition(geom, pos.getX(), pos.getY(), pos.getZ());
@@ -558,6 +558,7 @@ void collision_space::EnvironmentModelODE::addObject(const std::string &ns, cons
 	cn = it->second;
     
     dGeomID g = createODEGeom(cn->space, cn->storage, shape, 1.0, 0.0);
+    updateGeom(g, pose);
     cn->geoms.push_back(g);
 }
 

@@ -314,7 +314,7 @@ namespace collision_space
 	void testBodyCollision(CollisionNamespace *cn, CollisionData *data);
 
 	dGeomID createODEGeom(dSpaceID space, ODEStorage &storage, const shapes::Shape *shape, double scale, double padding);
-	void    updateGeom(dGeomID geom, btTransform &pose) const;	
+	void    updateGeom(dGeomID geom, const btTransform &pose) const;	
 	void    freeMemory(void);	
 	
 	ModelInfo                                   m_modelGeom;
