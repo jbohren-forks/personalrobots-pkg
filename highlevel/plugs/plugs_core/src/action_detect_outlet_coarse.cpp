@@ -55,12 +55,12 @@ DetectOutletCoarseAction::DetectOutletCoarseAction()
       return;
     }
 
-	node_->advertise<robot_msgs::PointStamped>(head_controller_ + "/head_track_point",10);
+	node_->advertise<robot_msgs::PointStamped>(head_controller_ + "/point_head",10);
 }
 
 DetectOutletCoarseAction::~DetectOutletCoarseAction()
 {
-	node_->unadvertise(head_controller_ + "/head_track_point");
+	node_->unadvertise(head_controller_ + "/point_head");
 }
 
 
@@ -96,7 +96,7 @@ robot_actions::ResultStatus DetectOutletCoarseAction::execute(const robot_msgs::
 bool DetectOutletCoarseAction::spotOutlet(const robot_msgs::PointStamped& outlet_estimate, robot_msgs::PoseStamped& pose)
 {
 	// turn head to face outlet
-	node_->publish(head_controller_ + "/head_track_point", outlet_estimate);
+	node_->publish(head_controller_ + "/point_head", outlet_estimate);
 
 	outlet_detection::OutletDetection::Request req;
 	outlet_detection::OutletDetection::Response resp;
@@ -111,7 +111,7 @@ bool DetectOutletCoarseAction::spotOutlet(const robot_msgs::PointStamped& outlet
         outlet_final_position.header.stamp = pose.header.stamp;
         outlet_final_position.point = pose.pose.position;
 
-        node_->publish(head_controller_ + "/head_track_point", outlet_final_position);
+        node_->publish(head_controller_ + "/point_head", outlet_final_position);
 		return true;
 	}
 	else {

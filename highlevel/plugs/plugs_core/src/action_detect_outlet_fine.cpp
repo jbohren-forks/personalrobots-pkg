@@ -53,7 +53,7 @@ DetectOutletFineAction::DetectOutletFineAction(ros::Node& node)
       terminate();
       return;
     }
-  node_.advertise<robot_msgs::PointStamped>(head_controller_ + "/head_track_point",10);
+  node_.advertise<robot_msgs::PointStamped>(head_controller_ + "/point_head",10);
   node_.setParam("~save_failures", 1);
   detector_ = new OutletTracker::OutletTracker(node);
   detector_->deactivate();  
@@ -64,7 +64,7 @@ DetectOutletFineAction::DetectOutletFineAction(ros::Node& node)
 DetectOutletFineAction::~DetectOutletFineAction()
 {
   if(detector_) delete detector_;
-  node_.unadvertise(head_controller_ + "/head_track_point");
+  node_.unadvertise(head_controller_ + "/point_head");
 };
 
 robot_actions::ResultStatus DetectOutletFineAction::execute(const robot_msgs::PointStamped& outlet_estimate, robot_msgs::PoseStamped& feedback)
@@ -72,8 +72,8 @@ robot_actions::ResultStatus DetectOutletFineAction::execute(const robot_msgs::Po
   ros::Time started = ros::Time::now();
   ROS_DEBUG("%s: executing.", action_name_.c_str());
   // point the head at the outlet
-  node_.publish(head_controller_ + "/head_track_point", outlet_estimate);
-  node_.publish(head_controller_ + "/head_track_point", outlet_estimate);
+  node_.publish(head_controller_ + "/point_head", outlet_estimate);
+  node_.publish(head_controller_ + "/point_head", outlet_estimate);
   ros::Duration(3.0).sleep();
 
   finished_detecting_ = false;
