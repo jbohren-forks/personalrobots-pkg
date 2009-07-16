@@ -35,6 +35,7 @@
 #define CARTESIAN_POSE_CONTROLLER_H
 
 #include <vector>
+#include <control_toolbox/pid_gains_setter.h>
 #include <kdl/chain.hpp>
 #include <kdl/frames.hpp>
 #include <tf/transform_listener.h>
@@ -82,6 +83,8 @@ private:
 
   // pid controllers
   std::vector<control_toolbox::Pid> pids_;
+  control_toolbox::PidGainsSetter trans_pid_tuner_;
+  control_toolbox::PidGainsSetter rot_pid_tuner_;
 
   // kdl stuff for kinematics
   KDL::Chain             kdl_chain_;

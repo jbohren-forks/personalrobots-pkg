@@ -107,13 +107,19 @@ bool CartesianPoseController::init(mechanism::RobotState *robot_state, const ros
 
   if (!temp_pid.init(ros::NodeHandle(node_, "fb_trans")))
     return false;
-  for (size_t i = 0; i < 3; ++i)
+  for (size_t i = 0; i < 3; ++i) {
     pids_[i] = temp_pid;
+    trans_pid_tuner_.add(&pids_[i]);
+  }
+  trans_pid_tuner_.advertise(node_.getNamespace() + "/fb_trans");
 
   if (!temp_pid.init(ros::NodeHandle(node_, "fb_rot")))
     return false;
-  for (size_t i = 3; i < 6; ++i)
+  for (size_t i = 3; i < 6; ++i) {
     pids_[i] = temp_pid;
+    rot_pid_tuner_.add(&pids_[i]);
+  }
+  rot_pid_tuner_.advertise(node_.getNamespace() + "/fb_rot");
 
   // Gets a pointer to the wrench controller
   MechanismControl* mc;
