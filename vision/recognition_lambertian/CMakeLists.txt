@@ -12,6 +12,24 @@ gensrv()
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 
 
+add_custom_command(
+    OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/build/Ikea_meshes.tar.gz
+    COMMAND wget
+    ARGS pr.willowgarage.com/downloads/Ikea_meshes.tar.gz
+    DEPENDS )
+
+#un tar Ikea mesh files
+add_custom_command(
+  OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/meshes
+  COMMAND mkdir -p
+  ARGS ${CMAKE_CURRENT_SOURCE_DIR}/meshes
+  COMMAND tar
+  ARGS -xvzf ${CMAKE_CURRENT_SOURCE_DIR}/build/Ikea_meshes.tar.gz -C ${CMAKE_CURRENT_SOURCE_DIR}/meshes
+  DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/build/Ikea_meshes.tar.gz)
+
+add_custom_target(media_files ALL DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/meshes)
+
+
 rospack_add_executable(recognition_lambertian src/recognition_lambertian.cpp) 
 rospack_add_executable (plane_fit src/plane_fit.cpp)
 rospack_add_executable (publish_scene src/publish_scene.cpp)

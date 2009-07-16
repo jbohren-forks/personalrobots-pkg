@@ -8,7 +8,7 @@
 
     <node pkg="recognition_lambertian" name="model_fitter" type="model_fitter" respawn="false" output="screen">
         <param name="display" type="bool" value="true" />
-        <param name="template_path"  value="$(find recognition_lambertian)/templates" />
+        <param name="template_path"  value="$(find recognition_lambertian)/meshes" />
     </node>
 
 </launch>
