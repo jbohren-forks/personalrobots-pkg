@@ -99,11 +99,11 @@ set_target_properties(python_${PROJECT_NAME}
 # MacPorts version of Python won't find _foo.dylib for 'import _foo'
 include(CMakeDetermineSystem)
 if(CMAKE_SYSTEM_NAME MATCHES "Darwin")
-  add_custom_command(OUTPUT ${LIBRARY_OUTPUT_PATH}/_${PROJECT_NAME}.so
-                     COMMAND cmake -E create_symlink  ${LIBRARY_OUTPUT_PATH}/_${PROJECT_NAME}.dylib ${LIBRARY_OUTPUT_PATH}/_${PROJECT_NAME}.so
+  add_custom_command(OUTPUT ${LIBRARY_OUTPUT_PATH}/_${PROJECT_NAME}_swig.so
+                     COMMAND cmake -E create_symlink  ${LIBRARY_OUTPUT_PATH}/_${PROJECT_NAME}_swig.dylib ${LIBRARY_OUTPUT_PATH}/_${PROJECT_NAME}_swig.so
                      DEPENDS python_${PROJECT_NAME})
   add_custom_target(symlink_darwin_lib ALL
-                    DEPENDS ${LIBRARY_OUTPUT_PATH}/_${PROJECT_NAME}.so)
+                    DEPENDS ${LIBRARY_OUTPUT_PATH}/_${PROJECT_NAME}_swig.so)
 endif(CMAKE_SYSTEM_NAME MATCHES "Darwin")
 
 
