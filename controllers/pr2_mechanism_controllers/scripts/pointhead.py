@@ -39,19 +39,27 @@ from time import sleep
 
 import rospy
 from robot_msgs.msg import PointStamped, Point
-from robot_msgs.msg import JointCmd
+from mechanism_msgs.msg import JointStates, JointState
 
 def point_head_client(pan, tilt):
 
-    head_angles = rospy.Publisher('head_controller/set_command_array', JointCmd)
+    head_angles = rospy.Publisher('head_controller/command', JointStates)
     rospy.init_node('head_commander', anonymous=True)
     sleep(1)
-    head_angles.publish(JointCmd(['head_pan_joint', 'head_tilt_joint'],[0.0,0.0],[pan, tilt],[0.0, 0.0],[0.0, 0.0]))
+    ps = JointState()
+    ps.name = 'head_pan_joint'
+    ps.position = pan
+    ts = JointState()
+    ts.name ='head_tilt_joint'
+    ts.position = tilt
+    js = JointStates()
+    js.joints = [ps, ts]
+    head_angles.publish(js)
     sleep(1)
 
 def point_head_cart_client(x,y,z,frame):
 
-    head_angles = rospy.Publisher('head_controller/head_track_point', PointStamped)
+    head_angles = rospy.Publisher('head_controller/point_frame_on_head', PointStamped)
     rospy.init_node('head_commander', anonymous=True)
     sleep(1)
     head_angles.publish(PointStamped(rospy.Header(None, rospy.get_rostime(), frame), Point(x, y, z)))
