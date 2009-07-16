@@ -71,17 +71,10 @@ int M3NModel::inferPrivate(const RandomField& random_field,
   // Retrieve random field information
   const map<unsigned int, RandomField::Node*>& nodes = random_field.getNodesRandomFieldIDs();
   const vector<map<unsigned int, RandomField::Clique*> >& clique_sets = random_field.getCliqueSets();
-  map<unsigned int, RandomField::Node*>::const_iterator iter_nodes;
-  map<unsigned int, RandomField::Clique*>::const_iterator iter_cliques;
-  unsigned int nbr_clique_sets = clique_sets.size();
-  const RandomField::Node* curr_node = NULL;
-  const RandomField::Clique* curr_clique = NULL;
-  unsigned int curr_clique_order = 0;
-  unsigned int curr_node_id = 0;
-  //unsigned int curr_clique_id = 0;
 
   // -------------------------------------------
   // Verify clique interaction parameters agree
+  unsigned int nbr_clique_sets = clique_sets.size();
   if (clique_sets.size() != robust_potts_params_.size())
   {
     ROS_ERROR("Number of clique sets in random field (%u) does not match the model (%u)",
@@ -100,24 +93,16 @@ int M3NModel::inferPrivate(const RandomField& random_field,
     inferred_labels.clear();
   }
 
-  // -------------------------------------------
-  // Setup alpha-expansion information
-  map<unsigned int, SubmodularEnergyMin::EnergyVar> energy_vars;
-  map<unsigned int, SubmodularEnergyMin::EnergyVar>::iterator iter_energy_vars;
-  SubmodularEnergyMin* energy_func = NULL;
-  unsigned int alpha_label = RandomField::UNKNOWN_LABEL;
-  double prev_energy = 0.0;
-  double curr_energy = 0.0;
-  if (max_iterations == 0)
-  {
-    max_iterations = numeric_limits<unsigned int>::max();
-  }
-
   //cache_node_potentials_.clear();
   //cache_clique_set_potentials_.clear();
   //cache_clique_set_potentials_.resize(clique_sets.size());
   // -------------------------------------------
   // Loop until hit max number of iterations or converged on minimum energy
+  if (max_iterations == 0)
+  {
+    max_iterations = numeric_limits<unsigned int>::max();
+  }
+  double prev_energy = 0.0;
   int ret_val = 0;
   bool done = false;
   unsigned int t = 0;
@@ -128,19 +113,20 @@ int M3NModel::inferPrivate(const RandomField& random_field,
     // Alpha-expand over each label
     for (unsigned int label_idx = 0 ; ret_val == 0 && label_idx < nbr_labels ; label_idx++)
     {
-      alpha_label = training_labels_[label_idx];
+      unsigned int alpha_label = training_labels_[label_idx];
 
       // -------------------------------------------
       // Create new energy function
-      energy_func = new SubmodularEnergyMin();
-      energy_vars.clear();
+      SubmodularEnergyMin* energy_func = new SubmodularEnergyMin();
+      map<unsigned int, SubmodularEnergyMin::EnergyVar> energy_vars;
 
       // -------------------------------------------
       // Create energy variables and Compute node scores
-      for (iter_nodes = nodes.begin(); ret_val == 0 && iter_nodes != nodes.end() ; iter_nodes++)
+      for (map<unsigned int, RandomField::Node*>::const_iterator iter_nodes = nodes.begin() ; ret_val == 0
+          && iter_nodes != nodes.end() ; iter_nodes++)
       {
-        curr_node_id = iter_nodes->first;
-        curr_node = iter_nodes->second;
+        unsigned int curr_node_id = iter_nodes->first;
+        const RandomField::Node* curr_node = iter_nodes->second;
 
         // ------------------------
         // If passed empty labeling, the generate random labeling on very first pass
@@ -164,10 +150,11 @@ int M3NModel::inferPrivate(const RandomField& random_field,
         // -------------------------------------------
         // Iterate over clique scores
         const map<unsigned int, RandomField::Clique*>& curr_clique_set = clique_sets[cs_idx];
-        for (iter_cliques = curr_clique_set.begin(); ret_val == 0 && iter_cliques != curr_clique_set.end() ; iter_cliques++)
+        for (map<unsigned int, RandomField::Clique*>::const_iterator iter_cliques = curr_clique_set.begin() ; ret_val
+            == 0 && iter_cliques != curr_clique_set.end() ; iter_cliques++)
         {
-          curr_clique = iter_cliques->second;
-          curr_clique_order = curr_clique->getOrder();
+          const RandomField::Clique* curr_clique = iter_cliques->second;
+          unsigned int curr_clique_order = curr_clique->getOrder();
           if (curr_clique_order < 2)
           {
             ROS_WARN("Clique with id %u in clique-set %u has order %u. This should not happen...skipping it",
@@ -203,13 +190,14 @@ int M3NModel::inferPrivate(const RandomField& random_field,
       // Minimize function if there are no errors
       if (ret_val == 0)
       {
-        curr_energy = energy_func->minimize();
+        double curr_energy = energy_func->minimize();
 
         // Update labeling if: first iteration OR energy decreases with expansion move
         if ((t == 0 && label_idx == 0) || (curr_energy + 0.0001 < prev_energy))
         {
           // Change respective labels to the alpha label
-          for (iter_energy_vars = energy_vars.begin(); iter_energy_vars != energy_vars.end() ; iter_energy_vars++)
+          for (map<unsigned int, SubmodularEnergyMin::EnergyVar>::iterator iter_energy_vars =
+              energy_vars.begin() ; iter_energy_vars != energy_vars.end() ; iter_energy_vars++)
           {
             if (energy_func->getValue(iter_energy_vars->second) == ALPHA_VALUE)
             {
@@ -354,11 +342,6 @@ int M3NModel::addCliqueEnergyPotts(const RandomField::Clique& clique,
                                    const map<unsigned int, unsigned int>& curr_labeling,
                                    const unsigned int alpha_label)
 {
-  unsigned int mode1_label = 0;
-  unsigned int mode1_count = 0;
-  unsigned int mode2_label = 0;
-  unsigned int mode2_count = 0;
-
   // -----------------------------------
   // Compute potential if all node switch to alpha
   double Ec0 = 0.0;
@@ -369,11 +352,16 @@ int M3NModel::addCliqueEnergyPotts(const RandomField::Clique& clique,
 
   // -----------------------------------
   // Compute potential if all nodes keep their current labeling
+  unsigned int mode1_label = 0;
+  unsigned int mode1_count = 0;
+  unsigned int mode2_label = 0;
+  unsigned int mode2_count = 0;
   if (clique.getModeLabels(mode1_label, mode1_count, mode2_label, mode2_count, NULL, &curr_labeling) < 0)
   {
     return -1;
   }
-  // This will be non-zero only when all nodes are labeled the same.
+
+  // Ec1 will be non-zero only when all nodes are labeled the same.
   double Ec1 = 0.0;
   if (mode2_label == RandomField::UNKNOWN_LABEL)
   {
@@ -392,8 +380,7 @@ int M3NModel::addCliqueEnergyPotts(const RandomField::Clique& clique,
   // Create list of energy variables that represent the nodes in this clique
   list<SubmodularEnergyMin::EnergyVar> node_vars;
   const list<unsigned int>& node_ids = clique.getNodeIDs();
-  list<unsigned int>::const_iterator iter_node_ids;
-  for (iter_node_ids = node_ids.begin(); iter_node_ids != node_ids.end() ; iter_node_ids++)
+  for (list<unsigned int>::const_iterator iter_node_ids = node_ids.begin() ; iter_node_ids != node_ids.end() ; iter_node_ids++)
   {
     node_vars.push_back(energy_vars.find(*iter_node_ids)->second);
   }
@@ -418,13 +405,12 @@ int M3NModel::addCliqueEnergyRobustPotts(const RandomField::Clique& clique,
                                          const map<unsigned int, unsigned int>& curr_labeling,
                                          const unsigned int alpha_label)
 {
+  // -----------------------------------
+  // Compute the mode labels in the clique
   unsigned int mode1_label = 0;
   unsigned int mode1_count = 0;
   unsigned int mode2_label = 0;
   unsigned int mode2_count = 0;
-
-  // -----------------------------------
-  // Compute the mode labels in the clique
   list<unsigned int> dominant_node_ids;
   if (clique.getModeLabels(mode1_label, mode1_count, mode2_label, mode2_count, &dominant_node_ids,
       &curr_labeling) < 0)
@@ -480,8 +466,7 @@ int M3NModel::addCliqueEnergyRobustPotts(const RandomField::Clique& clique,
   list<SubmodularEnergyMin::EnergyVar> node_vars;
   list<SubmodularEnergyMin::EnergyVar> dominant_vars;
   const list<unsigned int>& node_ids = clique.getNodeIDs();
-  list<unsigned int>::const_iterator iter_node_ids;
-  for (iter_node_ids = node_ids.begin(); iter_node_ids != node_ids.end() ; iter_node_ids++)
+  for (list<unsigned int>::const_iterator iter_node_ids = node_ids.begin() ; iter_node_ids != node_ids.end() ; iter_node_ids++)
   {
     // save energy variable of all nodes in the clique
     node_vars.push_back(energy_vars.find(*iter_node_ids)->second);
@@ -518,30 +503,28 @@ int M3NModel::computePotential(const RandomField::Node& node, const unsigned int
   potential_val = 0.0;
 
   /*
-  if (cache_node_potentials_.count(node.getRandomFieldID()) != 0)
-  {
-    if (cache_node_potentials_[node.getRandomFieldID()].count(label) != 0)
-    {
-      potential_val = cache_node_potentials_[node.getRandomFieldID()][label];
-      return 0;
-    }
-  }
-  else
-  {
-    cache_node_potentials_[node.getRandomFieldID()] = map<unsigned int, double>();
-  }
-  */
+   if (cache_node_potentials_.count(node.getRandomFieldID()) != 0)
+   {
+   if (cache_node_potentials_[node.getRandomFieldID()].count(label) != 0)
+   {
+   potential_val = cache_node_potentials_[node.getRandomFieldID()][label];
+   return 0;
+   }
+   }
+   else
+   {
+   cache_node_potentials_[node.getRandomFieldID()] = map<unsigned int, double>();
+   }
+   */
 
   // Sum the scores of each regressor
   unsigned int nbr_regressors = regressors_.size();
-  float curr_predicted_val = 0.0;
-  double curr_step_size = 0.0;
-  RegressorWrapper* curr_regressor = NULL;
   for (unsigned int i = 0 ; i < nbr_regressors ; i++)
   {
-    curr_step_size = regressors_[i].first;
-    curr_regressor = regressors_[i].second;
+    double curr_step_size = regressors_[i].first;
+    RegressorWrapper* curr_regressor = regressors_[i].second;
 
+    float curr_predicted_val = 0.0;
     if (curr_regressor->predict(node.getFeatureVals(), node_feature_dim_,
         node_stacked_feature_start_idx_[label], curr_predicted_val) < 0)
     {
@@ -568,30 +551,28 @@ int M3NModel::computePotential(const RandomField::Clique& clique,
   potential_val = 0.0;
 
   /*
-  if (cache_clique_set_potentials_[clique_set_idx].count(clique.getRandomFieldID()) != 0)
-  {
-    if (cache_clique_set_potentials_[clique_set_idx][clique.getRandomFieldID()].count(label) != 0)
-    {
-      potential_val = cache_clique_set_potentials_[clique_set_idx][clique.getRandomFieldID()][label];
-      return 0;
-    }
-  }
-  else
-  {
-    cache_clique_set_potentials_[clique_set_idx][clique.getRandomFieldID()] = map<unsigned int, double>();
-  }
-  */
+   if (cache_clique_set_potentials_[clique_set_idx].count(clique.getRandomFieldID()) != 0)
+   {
+   if (cache_clique_set_potentials_[clique_set_idx][clique.getRandomFieldID()].count(label) != 0)
+   {
+   potential_val = cache_clique_set_potentials_[clique_set_idx][clique.getRandomFieldID()][label];
+   return 0;
+   }
+   }
+   else
+   {
+   cache_clique_set_potentials_[clique_set_idx][clique.getRandomFieldID()] = map<unsigned int, double>();
+   }
+   */
 
   // Sum the scores of each regressor
   unsigned int nbr_regressors = regressors_.size();
-  float curr_predicted_val = 0.0;
-  double curr_step_size = 0.0;
-  RegressorWrapper* curr_regressor = NULL;
   for (unsigned int i = 0 ; i < nbr_regressors ; i++)
   {
-    curr_step_size = regressors_[i].first;
-    curr_regressor = regressors_[i].second;
+    double curr_step_size = regressors_[i].first;
+    RegressorWrapper* curr_regressor = regressors_[i].second;
 
+    float curr_predicted_val = 0.0;
     if (curr_regressor->predict(clique.getFeatureVals(), clique_set_feature_dims_[clique_set_idx],
         clique_set_stacked_feature_start_idx_[clique_set_idx][label], curr_predicted_val) < 0)
     {
