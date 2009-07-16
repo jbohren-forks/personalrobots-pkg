@@ -1,6 +1,6 @@
 <package>
   <description brief="Anti collision during teleoperation toolbox">The control toolbox contains modules that are useful for collision avoidance during teleoperation.</description>
-  <author>Matthew Piccoli</author>
+  <author>Matthew Piccoli, Sachin Chitta</author>
   <license>BSD</license>
   <review status="unreviewed" notes="None"/>
   <url>http://pr.willowgarage.com</url>
@@ -8,6 +8,14 @@
   <depend package="roscpp" />
   <depend package="roslib" />
   <depend package="mechanism_model" />
+  <depend package="costmap_2d" />
+  <depend package="base_local_planner" />
+  <depend package="pr2_robot_actions" />
+  <depend package="robot_actions" />
+  <depend package="robot_msgs" />
+  <depend package="deprecated_msgs" />
+  <depend package="tf" />
+
   <depend package="mechanism_msgs" />
   <depend package="std_msgs" /><depend package="joy"></depend>
  <export>
