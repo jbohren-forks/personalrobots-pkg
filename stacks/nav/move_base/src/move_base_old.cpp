@@ -34,7 +34,7 @@
 *
 * Author: Eitan Marder-Eppstein
 *********************************************************************/
-#include <move_base/move_base.h>
+#include <move_base/move_base_old.h>
 #include <cstdlib>
 #include <ctime>
 

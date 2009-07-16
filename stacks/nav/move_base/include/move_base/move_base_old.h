@@ -34,8 +34,8 @@
 *
 * Author: Eitan Marder-Eppstein
 *********************************************************************/
-#ifndef NAV_MOVE_BASE_ACTION_H_
-#define NAV_MOVE_BASE_ACTION_H_
+#ifndef NAV_MOVE_BASE_OLD_ACTION_H_
+#define NAV_MOVE_BASE_OLD_ACTION_H_
 #include <robot_actions/action.h>
 #include <robot_actions/action_runner.h>
 #include <nav_robot_actions/MoveBaseState.h>
