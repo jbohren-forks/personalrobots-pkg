@@ -84,32 +84,55 @@ int main(int argc, char **argv)
     boost::thread th(&spinThread);
     
     ros::Publisher pub = nh.advertise<mapping_msgs::ObjectInMap>("object_in_map", 1);
+    
+    /*
+    mapping_msgs::ObjectInMap o1;
+    o1.header.frame_id = "/base_link";
+    o1.header.stamp = ros::Time::now();
+    o1.id = "Part2";
+    o1.action = mapping_msgs::ObjectInMap::ADD;
+    o1.object.type = mapping_msgs::Object::MESH;
+    //    o1.object.dimensions.resize(3);
+    //    o1.object.dimensions[0] = 0.3;
+    //    o1.object.dimensions[1] = 0.3;
+    //    o1.object.dimensions[2] = 0.3;
+    o1.pose.position.x = 0.8;
+    o1.pose.position.y = -0.4;
+    o1.pose.position.z = 0.6;
+    
+    o1.pose.orientation.x = 0.0;
+    o1.pose.orientation.y = 0.0;
+    o1.pose.orientation.z = 0.0;
+    o1.pose.orientation.w = 1.0;
+    
+    o1.object.vertices.resize(3);
+    o1.object.vertices[0].x = 0;
+    o1.object.vertices[0].y = 0;
+    o1.object.vertices[0].z = 0;
 
-	    
-	    mapping_msgs::ObjectInMap o1;
-	    o1.header.frame_id = "/base_link";
-	    o1.header.stamp = ros::Time::now();
-	    o1.id = "Part1";
-	    o1.object.type = mapping_msgs::Object::BOX;
-	    o1.object.dimensions.resize(3);
-	    o1.object.dimensions[0] = 0.3;
-	    o1.object.dimensions[1] = 0.3;
-	    o1.object.dimensions[2] = 0.3;
-	    o1.pose.position.x = 1.4;
-	    o1.pose.position.y = 0.0;
-	    o1.pose.position.z = 0.0;
+    o1.object.vertices[1].x = 1;
+    o1.object.vertices[1].y = 0;
+    o1.object.vertices[1].z = 0;
 
-	    o1.pose.orientation.x = 0.0;
-	    o1.pose.orientation.y = 0.0;
-	    o1.pose.orientation.z = 0.0;
-	    o1.pose.orientation.w = 1.0;
-	    
-	    while(1){
-	      pub.publish(o1); sleep(1);
-	    }
-	    th.join();
+    o1.object.vertices[2].x = 0;
+    o1.object.vertices[2].y = 1;
+    o1.object.vertices[2].z = 0;
 
+    o1.object.triangles.resize(3);
+    o1.object.triangles[0] = 0;
+    o1.object.triangles[1] = 1;
+    o1.object.triangles[2] = 2;
+
+    sleep(1);
+    
+    //    while(1){
+    pub.publish(o1); 
+
+	//    }
+    th.join();
+    
     return 0;
+    */
 
     recognition_lambertian::FindObjectPoses::Request  req;
     recognition_lambertian::FindObjectPoses::Response res;
@@ -128,24 +151,11 @@ int main(int argc, char **argv)
 	    mapping_msgs::ObjectInMap o1;
 	    o1.header = obj.pose.header;
 	    o1.id = "Part1";
-	    o1.object.type = mapping_msgs::Object::CYLINDER;
-	    o1.object.dimensions.resize(2);
-	    o1.object.dimensions[0] = 0.01;
-	    o1.object.dimensions[1] = 0.1;
+	    o1.action = mapping_msgs::ObjectInMap::ADD;
+	    o1.object = obj.object;
 	    o1.pose = obj.pose.pose;
 	    pub.publish(o1);
-
-	    mapping_msgs::ObjectInMap o2;
-	    o2.header = obj.pose.header;
-	    o2.id = "Part2";
-	    o2.object.type = mapping_msgs::Object::SPHERE;
-	    o2.object.dimensions.resize(1);
-	    o2.object.dimensions[0] = 0.05;
-	    o2.pose = obj.pose.pose;
-	    o2.pose.position.z += 0.05;
-	    pub.publish(o2);
 	    
-
 	    robot_actions::ActionClient<pr2_robot_actions::MoveArmGoal, pr2_robot_actions::MoveArmState, int32_t> move_arm("move_arm");
 	    int32_t                         feedback;
 	    pr2_robot_actions::MoveArmGoal  goal;
