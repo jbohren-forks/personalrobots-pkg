@@ -71,6 +71,8 @@ namespace urdf2gazebo
       void copyOgreMap(const robot_desc::URDF::Map& data, TiXmlElement *elem, const std::vector<std::string> *tags);
 
       std::string getGeometrySize(robot_desc::URDF::Link::Geometry* geometry, int *sizeCount, double *sizeVals);
+      
+      std::string getGeometryBoundingBox(robot_desc::URDF::Link::Geometry* geometry, double *sizeVals);
 
       void convertLink(TiXmlElement *root, robot_desc::URDF::Link *link, const btTransform &transform, bool enforce_limits);
 

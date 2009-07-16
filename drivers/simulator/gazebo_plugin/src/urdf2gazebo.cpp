@@ -194,6 +194,52 @@ std::string URDF2Gazebo::getGeometrySize(robot_desc::URDF::Link::Geometry* geome
     return type;
 }
 
+std::string URDF2Gazebo::getGeometryBoundingBox(robot_desc::URDF::Link::Geometry* geometry, double *sizeVals)
+{
+    std::string type;
+    
+    switch (geometry->type)
+    {
+    case robot_desc::URDF::Link::Geometry::BOX:
+        type = "box";
+        {
+            robot_desc::URDF::Link::Geometry::Box* box = static_cast<robot_desc::URDF::Link::Geometry::Box*>(geometry->shape);
+            sizeVals[0] = box->size[0];
+            sizeVals[1] = box->size[1];
+            sizeVals[2] = box->size[2];
+        }
+        break;
+    case robot_desc::URDF::Link::Geometry::CYLINDER:
+        type = "cylinder";
+        {
+            robot_desc::URDF::Link::Geometry::Cylinder* cylinder = static_cast<robot_desc::URDF::Link::Geometry::Cylinder*>(geometry->shape);
+            sizeVals[0] = cylinder->radius * 2;
+            sizeVals[1] = cylinder->radius * 2;
+            sizeVals[2] = cylinder->length;
+        }
+        break;
+    case robot_desc::URDF::Link::Geometry::SPHERE:
+        type = "sphere";
+        sizeVals[0] = sizeVals[1] = sizeVals[2] = static_cast<robot_desc::URDF::Link::Geometry::Sphere*>(geometry->shape)->radius * 2;
+        break;
+    case robot_desc::URDF::Link::Geometry::MESH:
+        type = "trimesh";
+        {
+          robot_desc::URDF::Link::Geometry::Mesh* mesh = static_cast<robot_desc::URDF::Link::Geometry::Mesh*>(geometry->shape);
+          sizeVals[0] = mesh->scale[0];
+          sizeVals[1] = mesh->scale[1];
+          sizeVals[2] = mesh->scale[2];
+        }
+        break;
+    default:
+        sizeVals[0] = sizeVals[1] = sizeVals[2] = 0;
+        printf("Unknown body type: %d in geometry '%s'\n", geometry->type, geometry->name.c_str());
+        break;
+    }
+    
+    return type;
+}
+
 void URDF2Gazebo::convertLink(TiXmlElement *root, robot_desc::URDF::Link *link, const btTransform &transform, bool enforce_limits)
 {
     btTransform currentTransform = transform;
@@ -334,10 +380,9 @@ void URDF2Gazebo::convertLink(TiXmlElement *root, robot_desc::URDF::Link *link, 
                 }
                 else
                 {
-                    int visualGeomSize;
                     double visualSize[3];
-                    std::string visual_geom_type = getGeometrySize(link->visual->geometry, &visualGeomSize, visualSize);
-                    addKeyValue(visual, "size", values2str(visualGeomSize, visualSize));
+                    std::string visual_geom_type = getGeometryBoundingBox(link->visual->geometry, visualSize);
+                    addKeyValue(visual, "scale", values2str(3, visualSize));
                     addKeyValue(visual, "mesh", "unit_" + visual_geom_type);
                 }
                 
