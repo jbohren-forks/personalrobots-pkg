@@ -7,6 +7,25 @@
 
 namespace lifelong_mapping {
 
+struct DbQueryRaw
+{
+  std::string topic;
+  std::string md5;
+  std::string data_type;
+  std::vector<uint32_t> node_ids;
+
+  std::vector<uint8_t*> records;
+};
+
+template <typename M>
+struct DbQuery
+{
+  std::string topic;
+  std::vector<uint32_t> node_ids;
+
+  std::vector<typename M::Ptr> records;
+};
+
 class Database
 {
 public:

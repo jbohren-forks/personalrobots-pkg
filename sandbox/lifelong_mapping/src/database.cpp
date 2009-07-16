@@ -4,6 +4,7 @@
 
 namespace lifelong_mapping {
 
+// Little-endian integers do not sort well as byte strings
 int compare_int(Db *dbp, const Dbt *a, const Dbt *b)
 {
   uint32_t ai, bi;
@@ -34,22 +35,31 @@ int get_node_id(Db *sdbp, const Dbt *pkey, const Dbt *pdata, Dbt *skey)
 Database::Database(const std::string& path)
   : env_(0)
 {
+  static const u_int32_t ENV_OPEN_FLAGS =
+    DB_CREATE     | // If the env does not exist, create it
+    DB_INIT_LOCK  | // Initialize locking
+    DB_INIT_LOG   | // Initialize logging
+    DB_INIT_MPOOL | // Initialize the cache
+    DB_INIT_TXN;    // Initialize transactions
+
+  // FIXME: revisit transaction durability question
   static const u_int32_t ENV_FLAGS =
-    DB_CREATE    | // If the env does not exist, create it
-    DB_INIT_CDB  | // Use concurrent data store
-    DB_INIT_MPOOL; // Initialize the cache
-  
-  static const u_int32_t DB_FLAGS = DB_CREATE;
+    DB_AUTO_COMMIT | // Use auto commit on single operations
+    DB_TXN_NOSYNC;   // Do not force log data to disk on transaction commit
+
+  // FIXME: use DB_READ_[UN]COMMITTED?
+  static const u_int32_t DB_FLAGS = DB_CREATE | DB_AUTO_COMMIT;
   static const char DB_FILE_NAME[] = "data.db";
 
   static const u_int32_t SEQ_FLAGS = DB_CREATE | DB_THREAD;
 
   // Open environment
-  env_.open(path.c_str(), ENV_FLAGS, 0); //throws
+  env_.open(path.c_str(), ENV_OPEN_FLAGS, 0); //throws
+  env_.set_flags(ENV_FLAGS, 1);
 
   // Open primary database
   db_.reset(new Db(&env_, 0));
-  db_->set_bt_compare(compare_int); // Use efficient integer compare
+  db_->set_bt_compare(compare_int);
   db_->open(NULL,         // Transaction pointer
             DB_FILE_NAME, // File name
             "messages",   // Logical db name
@@ -72,7 +82,7 @@ Database::Database(const std::string& path)
   topic_index_->set_flags(DB_DUPSORT);
   topic_index_->set_dup_compare(compare_int);
   topic_index_->open(NULL, DB_FILE_NAME, "topic_index", DB_BTREE, DB_FLAGS, 0);
-  db_->associate(NULL, topic_index_.get(), get_topic, 0);
+  db_->associate(NULL, topic_index_.get(), get_topic, DB_AUTO_COMMIT);
   
   // Open node ID secondary index
   node_index_.reset(new Db(&env_, 0));
@@ -80,13 +90,14 @@ Database::Database(const std::string& path)
   node_index_->set_flags(DB_DUPSORT);
   node_index_->set_dup_compare(compare_int);
   node_index_->open(NULL, DB_FILE_NAME, "node_index", DB_BTREE, DB_FLAGS, 0);
-  db_->associate(NULL, node_index_.get(), get_node_id, 0);
+  db_->associate(NULL, node_index_.get(), get_node_id, DB_AUTO_COMMIT);
 
   // FIXME: Open timestamp secondary index
 }
 
 Database::~Database()
 {
+  // FIXME: make sure no transactions are open
   // these all throw
   node_index_->close(0);
   topic_index_->close(0);
@@ -118,7 +129,7 @@ void Database::insert(const ros::Message& msg, const std::string& topic, uint32_
   // Put in database
   Dbt key(&item_id, sizeof(uint32_t));
   Dbt data(buffer.get(), length);
-  db_->put(NULL, &key, &data, 0);
+  db_->put(NULL, &key, &data, 0); // uses auto commit
 }
 
 bool Database::get(ros::Message& msg, uint32_t item_id, std::string& topic, uint32_t& node_id)
@@ -126,7 +137,10 @@ bool Database::get(ros::Message& msg, uint32_t item_id, std::string& topic, uint
   // FIXME: type-safety, maybe check data type and MD5 sum?
 
   Dbt key(&item_id, sizeof(uint32_t)), data;
-  int ret = db_->get(NULL, &key, &data, 0);
+
+  DbTxn *txn = NULL;
+  env_.txn_begin(NULL, &txn, 0);
+  int ret = db_->get(txn, &key, &data, 0); //throws
   if (ret != 0)
     return false;
 
@@ -137,6 +151,8 @@ bool Database::get(ros::Message& msg, uint32_t item_id, std::string& topic, uint
   topic.assign((char*)read_ptr, topic_len);
   read_ptr += topic_len;
   msg.deserialize(read_ptr);
+
+  txn->commit(0);
   return true;
 }
 
