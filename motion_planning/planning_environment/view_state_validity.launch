@@ -1,4 +1,3 @@
-
 <launch> 
   <node pkg="planning_environment" type="view_state_validity" respawn="false" output="screen">
     <remap from="robot_description" to="robotdesc/pr2" />
