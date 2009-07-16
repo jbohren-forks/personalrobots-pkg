@@ -15,6 +15,7 @@ set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
 rospack_add_library(descriptors_3d 
+			src/descriptor_3d.cpp
 			src/spectral_analysis.cpp 
 			src/spectral_shape.cpp 
 			src/orientation.cpp
