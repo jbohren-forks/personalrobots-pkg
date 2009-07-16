@@ -80,6 +80,7 @@ public:
   // Non real-time functions
   bool initXml(TiXmlElement* config);
   void getControllerNames(std::vector<std::string> &v);
+  bool spawnController(const std::string& name);
   bool spawnController(const std::string &xml_string,
                        std::vector<int8_t>& ok, std::vector<std::string>& name);
   bool spawnController(TiXmlElement *config, std::string& name);

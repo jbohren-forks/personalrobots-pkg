@@ -35,6 +35,7 @@
 
 using namespace mechanism;
 using namespace boost::accumulators;
+using namespace ros;
 
 
 MechanismControl* MechanismControl::mechanism_control_ = NULL;
@@ -154,8 +155,8 @@ void MechanismControl::update()
   post_update_stats_.acc(end - end_update);
 
   // publish diagnostics and state 
-  //publishDiagnostics();
-  //publishState();
+  publishDiagnostics();
+  publishState();
 
   // there are controllers to atomically start/stop
   if (please_switch_)
@@ -358,6 +359,84 @@ bool MechanismControl::spawnController(TiXmlElement *config, std::string& name)
 
   return true;
 }
+
+
+
+bool MechanismControl::spawnController(const std::string& name)
+{
+  // lock controllers
+  boost::mutex::scoped_lock guard(controllers_lock_);
+
+  // get reference to controller list
+  int free_controllers_list = (current_controllers_list_ + 1) % 2;
+  while (free_controllers_list == used_by_realtime_)
+    usleep(200);
+  std::vector<ControllerSpec>
+    &from = controllers_lists_[current_controllers_list_],
+    &to = controllers_lists_[free_controllers_list];
+  to.clear();
+
+  // Copy the running controllers from the 'from' list to the 'to' list
+  for (size_t i = 0; i < from.size(); ++i)
+    to.push_back(from[i]);
+
+  // Checks that we're not duplicating controllers
+  for (size_t j = 0; j < to.size(); ++j)
+  {
+    if (to[j].name == name)
+    {
+      to.clear();
+      ROS_ERROR("A controller named \"%s\" already exists", name.c_str());
+      return false;
+    }
+  }
+
+  // Constructs the controller
+  NodeHandle c_node(node_, name);
+  controller::Controller *c = NULL;
+  std::string type;
+  if (c_node.getParam("type", type))
+  {
+    try {c = controller::ControllerFactory::Instance().CreateObject(type);} 
+    catch(Loki::DefaultFactoryError<std::string, controller::Controller>::Exception){}
+  }
+
+  // checks if controller was constructed
+  if (c == NULL)
+  {
+    to.clear();
+    ROS_ERROR("Could not spawn controller '%s' because controller type '%s' does not exist",
+              name.c_str(), type.c_str());
+    return false;
+  }
+
+  // Initializes the controller
+  bool initialized = c->initRequest(state_, c_node);
+  if (!initialized)
+  {
+    to.clear();
+    delete c;
+    ROS_ERROR("Initializing controller '%s' failed", name.c_str());
+    return false;
+  }
+
+  // Adds the controller to the new list
+  to.resize(to.size() + 1);
+  to[to.size()-1].name = name;
+  to[to.size()-1].c.reset(c);
+
+  // Success!  Swaps in the new set of controllers.
+  int former_current_controllers_list_ = current_controllers_list_;
+  current_controllers_list_ = free_controllers_list;
+
+  // Destroys the old controllers list when the realtime thread is finished with it.
+  while (used_by_realtime_ == former_current_controllers_list_)
+    usleep(200);
+  from.clear();
+
+  return true;
+}
+
 
 
 
