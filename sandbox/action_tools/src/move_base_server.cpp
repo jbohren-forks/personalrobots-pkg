@@ -41,7 +41,7 @@
 #include <action_tools/MoveBaseGoal.h>
 #include <action_tools/MoveBaseResult.h>
 
-typedef action_tools::ActionServer<action_tools::MoveBaseGoal, robot_msgs::PoseStamped, 
+typedef action_tools::ActionServer<action_tools::MoveBaseGoal, robot_msgs::PoseStamped,
         action_tools::MoveBaseResult, robot_msgs::PoseStamped> MoveBaseActionServer;
 
 typedef MoveBaseActionServer::GoalHandle GoalHandle;
@@ -65,9 +65,10 @@ void updateLoop(double freq){
   as.registerGoalCallback(boost::bind(&goalCB, _1));
 
   as.registerPreemptCallback(boost::bind(&preemptCB));
-  
+
   ros::Rate r(freq);
   while(n.ok()){
+    r.sleep();
     if(as.isActive()){
       if(!as.isPreempted()){
         if(as.isNewGoalAvailable()){
@@ -88,7 +89,7 @@ void updateLoop(double freq){
           as.succeeded();
           continue;
         }
-        
+
         pub.publish(*goal);
       }
       else {
@@ -100,7 +101,6 @@ void updateLoop(double freq){
       ROS_INFO("This action has received a new goal");
       goal_handle = as.acceptNextGoal();
     }
-    r.sleep();
   }
 }
 

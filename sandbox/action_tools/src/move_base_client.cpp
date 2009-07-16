@@ -101,6 +101,7 @@ int main(int argc, char** argv)
   ros::Duration runtime_timeout(10,0);
   ros::Duration ack_timeout(3,0);
 
+  ROS_INFO("Call Execute #1");
   ac.execute(goal_pose, &callback);
 
   sleep(3);
@@ -108,12 +109,15 @@ int main(int argc, char** argv)
   goal_pose.pose.position.x = 50;
   goal_pose.pose.position.y = 50;
 
+  ROS_INFO("Call Execute #2");
   ac.execute(goal_pose, &callback, runtime_timeout, ack_timeout);
 
   sleep(3);
   goal_pose.pose.position.x = 25;
   goal_pose.pose.position.y = 25;
   ros::Duration preempt_timeout(3,0);
+
+  ROS_INFO("Call Execute #3");
   ac.execute(goal_pose, &callback, runtime_timeout, ack_timeout, preempt_timeout);
 
   while(n.ok())

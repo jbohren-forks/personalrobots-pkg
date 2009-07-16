@@ -116,15 +116,13 @@ namespace action_tools {
       }
 
       GoalHandle getNextGoal(){
-        lock_.lock();
+        boost::mutex::scoped_lock(lock_);
         //create a GoalHandle for the current goal to pass to the user
-        GoalHandle ret(current_goal_, this);
-        lock_.unlock();
-        return ret;
+        return GoalHandle(current_goal_, this);
       }
 
       GoalHandle acceptNextGoal(){
-        lock_.lock();
+        boost::mutex::scoped_lock(lock_);
 
         //check if we need to send a preempted message for the goal that we're currently pursuing
         if(isActive() && current_goal_->goal_id.id != next_goal_->goal_id.id){
@@ -144,9 +142,6 @@ namespace action_tools {
         state_ = RUNNING;
         publishStatus();
 
-        lock_.unlock();
-
-
         return ret;
       }
 
@@ -156,7 +151,7 @@ namespace action_tools {
           return false;
         }
 
-        lock_.lock();
+        boost::mutex::scoped_lock(lock_);
         //check if we need to send a preempted message for the goal that we're currently pursuing
         if(isActive() && current_goal_->goal_id.id != goal_handle.action_goal_->goal_id.id){
           status_.status = status_.PREEMPTED;
@@ -175,8 +170,6 @@ namespace action_tools {
         state_ = RUNNING;
         publishStatus();
 
-        lock_.unlock();
-
         return true;
       }
 
@@ -189,39 +182,46 @@ namespace action_tools {
       }
 
       void succeeded(){
-        lock_.lock();
+        boost::mutex::scoped_lock(lock_);
+        if(state_ == IDLE){
+          ROS_WARN("Trying to succeed on a goal that is already in a terminal state... doing nothing");
+          return;
+        }
         status_.status = status_.SUCCEEDED;
         state_ = IDLE;
         publishStatus();
-        lock_.unlock();
       }
 
       void aborted(){
-        lock_.lock();
+        boost::mutex::scoped_lock(lock_);
+        if(state_ == IDLE){
+          ROS_WARN("Trying to abort on a goal that is already in a terminal state... doing nothing");
+          return;
+        }
         status_.status = status_.ABORTED;
         state_ = IDLE;
         publishStatus();
-        lock_.unlock();
       }
 
       void preempted(){
-        lock_.lock();
+        boost::mutex::scoped_lock(lock_);
+        if(state_ == IDLE){
+          ROS_WARN("Trying to preempt on a goal that is already in a terminal state... doing nothing");
+          return;
+        }
         status_.status = status_.PREEMPTED;
         state_ = IDLE;
         publishStatus();
-        lock_.unlock();
       }
 
       void registerGoalCallback(boost::function<void (GoalHandle)> cb){
-        goal_cb_lock_.lock();
+        boost::mutex::scoped_lock(goal_cb_lock_);
         goal_callback_ = cb;
-        goal_cb_lock_.unlock();
       }
 
       void registerPreemptCallback(boost::function<void ()> cb){
-        preempt_cb_lock_.lock();
+        boost::mutex::scoped_lock(preempt_cb_lock_);
         preempt_callback_ = cb;
-        preempt_cb_lock_.unlock();
       }
 
     private:

@@ -118,6 +118,7 @@ public:
     ack_timer_.registerOneShotCb(boost::bind(&ActionClientT::ackTimeoutCallback, this, _1));
     runtime_timer_.registerOneShotCb(boost::bind(&ActionClientT::runtimeTimeoutCallback, this, _1));
     wait_for_preempted_timer_.registerOneShotCb(boost::bind(&ActionClientT::waitForPreemptedTimeoutCallback, this, _1));
+    //comm_sync_timer_.registerOneShotCb(boost::bind(&ActionClientT::commSyncTimeoutCallback, this, _1));
 
     setState(IDLE);
     expecting_result_ = expecting_result;
@@ -126,7 +127,7 @@ public:
     preempt_pub_ = nh_.advertise<Preempt> ("preempt", 1);
 
     status_sub_  = nh_.subscribe("status", 1, &ActionClientT::statusCallback, this);
-    //result_sub_  = nh_.subscribe("result", 1, &ActionClient<ActionGoal, Goal, ActionResult, Result>::result_callback, this);
+    //result_sub_  = nh_.subscribe("result", 1, &ActionClientT::resultCallback, this);
   }
 
   void execute(const Goal& goal, CompletionCallback completion_callback,
@@ -185,6 +186,7 @@ private:
   OneShotTimer ack_timer_;
   OneShotTimer runtime_timer_;
   OneShotTimer wait_for_preempted_timer_;
+  OneShotTimer comm_sync_timer_;
 
   CompletionCallback completion_callback_;
 
@@ -258,6 +260,25 @@ private:
     }
     else
       ROS_DEBUG("Not in a preemptable state (ClientState=%u)", client_state_);
+  }
+
+  void resultCallback(const ResultConstPtr& msg)
+  {
+    FilledCompletionCallback callback;
+    /*{
+      boost::mutex::scoped_lock(client_state_mutex_);
+      if (isCurrentGoal(msg->goal_id))
+      {
+        if (client_state_ == WAITING_FOR_ACK)
+        {
+
+        }
+      }
+    }
+
+    if (callback)
+      callback();
+    */
   }
 
   void statusCallback(const GoalStatusConstPtr& msg)
@@ -401,7 +422,8 @@ private:
         case GoalStatus::ABORTED:
         case GoalStatus::REJECTED:
           setState(WAITING_FOR_RESULT);
-          // *********** ADD TIMER HERE **************
+          ROS_DEBUG("Starting the [(%.2fs] timer for the WAITING_FOR_RESULT (CommunicationSync) timeout", comm_sync_timeout_.toSec());
+          comm_sync_timer_ = nh_.createTimer(comm_sync_timeout_, comm_sync_timer_.getCb());
           break;
         default:
           ROS_WARN("BUG: Tried to go to a terminal status without receiving a terminal status. [GoalStatus.status==%u]", status);
