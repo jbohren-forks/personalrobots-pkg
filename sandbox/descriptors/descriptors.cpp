@@ -233,6 +233,153 @@ void HogWrapper::compute(IplImage* img, const Vector<Keypoint>& points, vvf& res
 
 
 /***************************************************************************
+***********  ImageDescriptor::ContourFragment
+****************************************************************************/
+#define CVSHOW(name, img) cvNamedWindow(name); cvShowImage(name, img)
+
+
+void ContourFragment::learnContours(vector<IplImage*> imgs, vector<IplImage*> masks) {
+  for(size_t i=0; i<masks.size(); i++) {
+
+    IplImage* mask_gray = cvCreateImage(cvGetSize(masks[i]), IPL_DEPTH_8U, 1);
+    cvCvtColor( masks[i], mask_gray, CV_BGR2GRAY );
+
+    IplImage* mask_edge = cvCloneImage(mask_gray);
+    cvCanny(mask_gray, mask_edge, 80, 160);
+
+    IplImage* img_gray = cvCreateImage(cvGetSize(imgs[i]), IPL_DEPTH_8U, 1);
+    cvCvtColor( imgs[i], img_gray, CV_BGR2GRAY );
+    IplImage* img_edge = cvCloneImage(img_gray);
+    cvCanny(img_gray, img_edge, 80, 160);
+
+    CVSHOW("mask", mask_gray);
+    CVSHOW("mask_edge", mask_edge);
+    CVSHOW("img", imgs[i]);
+
+    // -- Get bounding box of label.
+    CvPoint tl = cvPoint(mask_edge->width, mask_edge->height);
+    CvPoint br = cvPoint(0,0);
+    for(int r=0; r<mask_edge->height; r++) {
+      uchar* ptr = (uchar*)(mask_edge->imageData + r * mask_edge->widthStep);
+      for(int c=0; c<mask_edge->width; c++) {
+	assert(*ptr == 0 || *ptr == 255);
+	if(*ptr == 255) {
+	  if(r>br.y)
+	    br.y = r;
+	  if(r<tl.y)
+	    tl.y = r;
+	  if(c>br.x)
+	    br.x = c;
+	  if(c<tl.x)
+	    tl.x = c;
+	}
+
+	ptr++;
+      }
+    }
+    cout << "tl: " << tl.x << " " << tl.y << endl;
+    cout << "br: " << br.x << " " << br.y << endl;
+   
+    
+    // -- Choose random rectangles in the bounding box.
+    int num = 0;
+    int nTemplates = 20;
+    while(num < nTemplates) {
+      int x1 = rand() % (br.x - tl.x) + tl.x;
+      int x2 = rand() % (br.x - tl.x) + tl.x;
+      int y1 = rand() % (br.y - tl.y) + tl.y;
+      int y2 = rand() % (br.y - tl.y) + tl.y;
+      CvRect rect = cvRect(min(x1, x2), min(y1, y2), max(x1, x2) - min(x1, x2) + 1, max(y1, y2) - min(y1, y2) + 1);
+      cvRectangle(img_edge, cvPoint(rect.x, rect.y), cvPoint(rect.x + rect.width, rect.y + rect.height), cvScalar(255, 255, 255));
+      cout << "checking " << rect.x << " " << rect.y << " " << rect.width << " " << rect.height << endl;
+      CVSHOW("img_edge", img_edge);
+      cvWaitKey(50);
+      // -- Create random perturbations of the edge.
+      // -- Set the ROI.
+      cvSetImageROI(mask_edge, rect);
+
+      // -- Check that it's large enough and well populated enough.  
+      if(!contourTest(mask_edge))
+	continue;
+      
+      num++;
+      
+      int scale = 5;
+      CvSize sz = cvSize(rect.width*scale, rect.height*scale);
+      IplImage* big = cvCreateImage(sz, IPL_DEPTH_8U, 1);
+      cvResize(mask_edge, big, CV_INTER_NN);
+
+      CVSHOW("mask_template_big", big);
+      CVSHOW("mask_template", mask_edge);
+      cvWaitKey(0);    
+    }
+  
+    cvResetImageROI(mask_edge);
+
+    cvReleaseImage(&mask_gray);
+    cvReleaseImage(&mask_edge);
+    cvReleaseImage(&img_gray);
+    cvReleaseImage(&img_edge);
+  }
+}
+
+bool ContourFragment::contourTest(IplImage* img) {
+  cout << img->roi->width << " " << img->roi->height << endl;
+
+  // -- Enforce minimum size.
+  int area = img->roi->height * img->roi->width;
+  if(area < min_area_)
+    return false;
+  if(img->roi->height < min_side_ || img->roi->width < min_side_)
+    return false;
+
+  // -- Get statistics.
+  int nEdgePix = 0;
+  for(int r=img->roi->yOffset; r<img->roi->yOffset + img->roi->height; r++) {
+    uchar* ptr = (uchar*)(img->imageData + r * img->widthStep + img->roi->xOffset);
+    for(int c=img->roi->xOffset; c<img->roi->width + img->roi->xOffset; c++) {
+      assert(*ptr == 0 || *ptr == 255);
+      if(*ptr == 255)
+	nEdgePix++;
+
+      ptr++;
+    }
+  }
+  
+  min_edge_pix_ = 20;
+  if(nEdgePix < min_edge_pix_) {
+    cout << "not enough pix: " << nEdgePix << endl;
+    return false;
+  }
+
+  // -- Enforce minimum density.
+  if((float)nEdgePix / (float)area < min_density_) {
+    cout << "too sparse" << endl;
+    return false;
+  }
+  
+  return true;
+}
+
+ContourFragment::ContourFragment(int min_area, float min_density, ContourFragment* chamfer_provider) : 
+  min_area_(min_area), 
+  min_density_(min_density),
+  min_side_(3),
+  chamfer_provider_(chamfer_provider)
+{
+}
+
+void ContourFragment::saveContours(string dir) {
+}
+
+void ContourFragment::loadContours(string dir){
+}
+
+void ContourFragment::compute(IplImage* img, const cv::Vector<Keypoint>& points, vvf& results){
+}
+
+
+/***************************************************************************
 ***********  ImageDescriptor::SuperpixelStatistic
 ****************************************************************************/
 

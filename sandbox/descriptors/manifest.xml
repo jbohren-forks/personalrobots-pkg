@@ -11,6 +11,7 @@
   <depend package="eigen"/>
   <depend package="opencv_latest"/>
   <depend package="rosconsole"/>
+  <depend package="chamfer_matching"/>
   <export>
     <cpp cflags="-I${prefix}" lflags="-L${prefix}/lib -ldescriptors"/>
   </export>

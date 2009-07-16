@@ -10,7 +10,7 @@
 #include <vector>
 #include "ros/console.h"
 #include "ros/assert.h"
-
+#include <chamfer_matching/chamfer_matching.h>
 
 typedef cv::Vector< cv::Vector<float> > vvf;
 
@@ -144,6 +144,31 @@ class IntegralImageTexture : public IntegralImageDescriptor {
   void compute(IplImage* img, const Keypoint& point, cv::Vector<float>& result);
   void clearPointCache() {}
 };
+
+
+/***************************************************************************
+***********  Contour Fragments
+****************************************************************************/
+
+class ContourFragment : public ImageDescriptor {
+ public:
+  int min_area_;
+  float min_density_;
+  int min_side_;
+  int min_edge_pix_; 
+  ContourFragment* chamfer_provider_;
+
+  ChamferMatching* cm_;
+  ChamferMatch* matches_;
+
+  ContourFragment(int min_area, float min_density, ContourFragment* chamfer_provider = NULL);
+  bool contourTest(IplImage* cf);
+  void learnContours(std::vector<IplImage*> imgs, std::vector<IplImage*> masks = std::vector<IplImage*>());
+  void saveContours(string dir);
+  void loadContours(string dir);
+  void compute(IplImage* img, const cv::Vector<Keypoint>& points, vvf& results);
+};
+
 
 
 /***************************************************************************
