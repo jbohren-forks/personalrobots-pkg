@@ -76,7 +76,7 @@ add_dependencies(orrosik pr2leftik pr2rightik)
 #rospack_link_boost(orrosik thread)
 
 # add the test package
-rospack_add_gtest(test_or_robots test/test_robots.cpp)
+rospack_add_gtest_future(test_or_robots test/test_robots.cpp)
 target_link_libraries (test_or_robots openrave-core)
 
 string(REGEX REPLACE ";" ":" robot_test_files "${robot_files}")
