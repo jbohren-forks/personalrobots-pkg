@@ -1,0 +1,2 @@
+Header header
+SplineTrajSegment[] segments
