@@ -19,8 +19,6 @@
 #include <point_cloud_mapping/kdtree/kdtree.h>
 #include <point_cloud_mapping/kdtree/kdtree_ann.h>
 
-#include <descriptors_3d/local_geometry.h>
-
 #include <descriptors_3d/spectral_shape.h>
 #include <descriptors_3d/orientation.h>
 #include <descriptors_3d/position.h>
@@ -46,12 +44,12 @@ kmeans_params_t cs0_kmeans_params;
 void populateParameters()
 {
   // Feature for the nodes
-  LocalGeometry* geometry_features = new LocalGeometry();
-  geometry_features->useSpectral(0.15);
-  geometry_features->useNormalOrientation(0.0, 0.0, 1.0);
-  geometry_features->useTangentOrientation(0.0, 0.0, 1.0);
-  geometry_features->useElevation();
-  node_feature_descriptors.assign(1, geometry_features);
+  //LocalGeometry* geometry_features = new LocalGeometry();
+  //geometry_features->useSpectral(0.15);
+  //geometry_features->useNormalOrientation(0.0, 0.0, 1.0);
+  //geometry_features->useTangentOrientation(0.0, 0.0, 1.0);
+  //geometry_features->useElevation();
+  //node_feature_descriptors.assign(1, geometry_features);
 
   SpectralShape* spectral_shape = new SpectralShape();
   spectral_shape->setSupportRadius(0.15);
@@ -60,8 +58,8 @@ void populateParameters()
   {
     abort();
   }
-  orientation->useNormalOrientation(0.0,0.0,1.0);
-  orientation->useTangentOrientation(0.0,0.0,1.0);
+  orientation->useNormalOrientation(0.0, 0.0, 1.0);
+  orientation->useTangentOrientation(0.0, 0.0, 1.0);
   Position* position = new Position();
   node_feature_descriptors.assign(3, spectral_shape);
   node_feature_descriptors[0] = spectral_shape;
@@ -190,7 +188,6 @@ int kmeansPtCloud(const robot_msgs::PointCloud& pt_cloud,
     ROS_ERROR("There are no samples to cluster on");
     return -1;
   }
-
 
   // ----------------------------------------------------------
   // Create matrix for clustering
@@ -346,7 +343,7 @@ unsigned int createConcatenatedFeatures(const robot_msgs::PointCloud& pt_cloud,
     for (unsigned int j = 0 ; all_features_success && j < nbr_descriptors ; j++)
     {
       cv::Vector<cv::Vector<float> >& curr_descriptor_for_cloud = all_descriptor_results[j];
-      cv::Vector<float>& curr_feature_vals = curr_descriptor_for_cloud[(size_t)i];
+      cv::Vector<float>& curr_feature_vals = curr_descriptor_for_cloud[(size_t) i];
 
       // non-zero descriptor length indicates computed successfully
       all_features_success = curr_feature_vals.size() != 0;
@@ -364,7 +361,7 @@ unsigned int createConcatenatedFeatures(const robot_msgs::PointCloud& pt_cloud,
       {
         // retrieve descriptor values for current point
         cv::Vector<cv::Vector<float> >& curr_descriptor_for_cloud = all_descriptor_results[j];
-        cv::Vector<float>& curr_feature_vals = curr_descriptor_for_cloud[(size_t)i];
+        cv::Vector<float>& curr_feature_vals = curr_descriptor_for_cloud[(size_t) i];
         curr_nbr_feature_vals = curr_feature_vals.size();
 
         // copy descriptor values into concatenated vector at correct location
@@ -406,7 +403,7 @@ void createNodes(RandomField& rf,
   cv::Vector<robot_msgs::Point32*> interest_pts(nbr_pts, NULL);
   for (unsigned int i = 0 ; i < nbr_pts ; i++)
   {
-    interest_pts[(size_t)i] = &(pt_cloud.pts[i]);
+    interest_pts[(size_t) i] = &(pt_cloud.pts[i]);
   }
 
   // ----------------------------------------------
@@ -445,7 +442,6 @@ void createCliqueSet0(RandomField& rf,
   ROS_INFO("Clustering...");
   kmeansPtCloud(pt_cloud, skip_indices, cs0_kmeans_params, cluster_centroids_xyz, cluster_centroids_indices);
   ROS_INFO("done");
-
   save_clusters(cluster_centroids_indices, pt_cloud);
   ROS_INFO("Kmeans found %u clusters", cluster_centroids_indices.size());
 
