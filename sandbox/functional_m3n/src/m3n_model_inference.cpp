@@ -142,8 +142,27 @@ void M3NModel::generateInitialLabeling(const RandomField& random_field,
   {
     unsigned int curr_node_id = iter_nodes->first;
 
+    // ---------------
     // Use random labeling
-    inferred_labels[curr_node_id] = training_labels_[rand() % nbr_labels];
+    //inferred_labels[curr_node_id] = training_labels_[rand() % nbr_labels];
+    // ---------------
+
+    // ---------------
+    // Initialize to best node label
+    unsigned int curr_best_label = training_labels_[0];
+    double curr_best_score = cache_node_potentials_[curr_node_id][curr_best_label];
+    for (unsigned int i = 1 ; i < nbr_labels ; i++)
+    {
+      unsigned int next_label = training_labels_[i];
+      double next_score = cache_node_potentials_[curr_node_id][next_label];
+      if (next_score > curr_best_score)
+      {
+        curr_best_label = next_label;
+        curr_best_score = next_score;
+      }
+    }
+    inferred_labels[curr_node_id] = curr_best_label;
+    // ---------------
   }
 }
 
@@ -278,7 +297,7 @@ int M3NModel::inferPrivate(const RandomField& random_field,
         double curr_energy = energy_func->minimize();
 
         // Update labeling if: first iteration OR energy decreases with expansion move
-        if ((t == 0 && label_idx == 0) || (curr_energy + 0.0001 < prev_energy))
+        if ((t == 0 && label_idx == 0) || (curr_energy + 1e-5 < prev_energy))
         {
           // Change respective labels to the alpha label
           for (map<unsigned int, SubmodularEnergyMin::EnergyVar>::iterator iter_energy_vars =
