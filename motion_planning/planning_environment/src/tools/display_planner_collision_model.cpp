@@ -57,10 +57,13 @@ public:
     {
 	visualizationMarkerPublisher_ = nh_.advertise<visualization_msgs::Marker>("visualization_marker", 10240);
 	collisionModels_ = new planning_environment::CollisionModels("robot_description");
+	nh_.param<bool>("~skip_collision_map", skip_collision_map_, false);
+	
 	if (collisionModels_->loadedModels())
 	{
 	    collisionSpaceMonitor_ = new planning_environment::CollisionSpaceMonitor(collisionModels_, &tf_);
-	    collisionSpaceMonitor_->setOnAfterMapUpdateCallback(boost::bind(&DisplayPlannerCollisionModel::afterWorldUpdate, this, _1));
+	    if (!skip_collision_map_)
+		collisionSpaceMonitor_->setOnAfterMapUpdateCallback(boost::bind(&DisplayPlannerCollisionModel::afterWorldUpdate, this, _1, _2));
 	    collisionSpaceMonitor_->setOnAfterAttachBodyCallback(boost::bind(&DisplayPlannerCollisionModel::afterAttachBody, this, _1, _2));
 	    collisionSpaceMonitor_->setOnObjectInMapUpdateCallback(boost::bind(&DisplayPlannerCollisionModel::objectInMapUpdate, this, _1));
 	}
@@ -100,8 +103,11 @@ protected:
 	visualizationMarkerPublisher_.publish(mk);
     }
     
-    void afterWorldUpdate(const mapping_msgs::CollisionMapConstPtr &collisionMap)
+    void afterWorldUpdate(const mapping_msgs::CollisionMapConstPtr &collisionMap, bool clear)
     {
+	if (!clear)
+	    return;
+	
 	unsigned int n = collisionMap->get_boxes_size();
 	for (unsigned int i = 0 ; i < n ; ++i)
 	{
@@ -203,11 +209,13 @@ private:
 	visualizationMarkerPublisher_.publish(mk);
     }
 
-    ros::Publisher                               visualizationMarkerPublisher_;
     ros::NodeHandle                              nh_;
     tf::TransformListener                        tf_;
     planning_environment::CollisionModels       *collisionModels_;
     planning_environment::CollisionSpaceMonitor *collisionSpaceMonitor_;
+    ros::Publisher                               visualizationMarkerPublisher_;
+    bool                                         skip_collision_map_;
+
     
 };
 

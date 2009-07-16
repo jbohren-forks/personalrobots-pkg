@@ -89,13 +89,13 @@ namespace planning_environment
 	}
 	
 	/** \brief Define a callback for before updating a map */
-	void setOnBeforeMapUpdateCallback(const boost::function<void(const mapping_msgs::CollisionMapConstPtr)> &callback)
+	void setOnBeforeMapUpdateCallback(const boost::function<void(const mapping_msgs::CollisionMapConstPtr, bool)> &callback)
 	{
 	    onBeforeMapUpdate_ = callback;
 	}
 
 	/** \brief Define a callback for after updating a map */
-	void setOnAfterMapUpdateCallback(const boost::function<void(const mapping_msgs::CollisionMapConstPtr)> &callback)
+	void setOnAfterMapUpdateCallback(const boost::function<void(const mapping_msgs::CollisionMapConstPtr, bool)> &callback)
 	{
 	    onAfterMapUpdate_ = callback;
 	}
@@ -144,9 +144,9 @@ namespace planning_environment
 	tf::MessageNotifier<mapping_msgs::CollisionMap>                *collisionMapUpdateNotifier_;
 	tf::MessageNotifier<mapping_msgs::ObjectInMap>                 *objectInMapNotifier_;
 	
-	boost::function<void(const mapping_msgs::CollisionMapConstPtr)> onBeforeMapUpdate_;
-	boost::function<void(const mapping_msgs::CollisionMapConstPtr)> onAfterMapUpdate_;
-	boost::function<void(const mapping_msgs::ObjectInMapConstPtr)>  onObjectInMapUpdate_;
+	boost::function<void(const mapping_msgs::CollisionMapConstPtr, bool)> onBeforeMapUpdate_;
+	boost::function<void(const mapping_msgs::CollisionMapConstPtr, bool)> onAfterMapUpdate_;
+	boost::function<void(const mapping_msgs::ObjectInMapConstPtr)>        onObjectInMapUpdate_;
     
     };
     

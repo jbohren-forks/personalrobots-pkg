@@ -143,7 +143,7 @@ void planning_environment::CollisionSpaceMonitor::updateCollisionSpace(const map
     ROS_DEBUG("Received %d points (collision map)", n);
     
     if (onBeforeMapUpdate_ != NULL)
-	onBeforeMapUpdate_(collisionMap);
+	onBeforeMapUpdate_(collisionMap, clear);
 
     // we want to make sure the frame the robot model is kept in is the same as the frame of the collisionMap
     bool transform = !frame_id_.empty() && collisionMap->header.frame_id != frame_id_;
@@ -220,7 +220,7 @@ void planning_environment::CollisionSpaceMonitor::updateCollisionSpace(const map
     haveMap_ = true;
     
     if (onAfterMapUpdate_ != NULL)
-	onAfterMapUpdate_(collisionMap);
+	onAfterMapUpdate_(collisionMap, clear);
 }
 
 void planning_environment::CollisionSpaceMonitor::objectInMapCallback(const mapping_msgs::ObjectInMapConstPtr &objectInMap)

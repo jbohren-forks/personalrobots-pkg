@@ -61,7 +61,7 @@ public:
 	    stateValidityPublisher_ = nh_.advertise<std_msgs::Byte>("state_validity", 1);
 	    planningMonitor_ = new planning_environment::PlanningMonitor(collisionModels_, &tf_);
 	    planningMonitor_->getEnvironmentModel()->setVerbose(true);
-	    planningMonitor_->setOnAfterMapUpdateCallback(boost::bind(&ViewStateValidity::afterWorldUpdate, this, _1));
+	    planningMonitor_->setOnAfterMapUpdateCallback(boost::bind(&ViewStateValidity::afterWorldUpdate, this, _1, _2));
 	    planningMonitor_->setOnStateUpdateCallback(boost::bind(&ViewStateValidity::stateUpdate, this));
 	}
     }
@@ -76,7 +76,7 @@ public:
 
 protected:
 
-    void afterWorldUpdate(const mapping_msgs::CollisionMapConstPtr &collisionMap)
+    void afterWorldUpdate(const mapping_msgs::CollisionMapConstPtr &collisionMap, bool clear)
     {
 	last_ = -1;
     }
