@@ -220,7 +220,7 @@ void collision_space::EnvironmentModelODE::updateRobotModel(void)
     }    
 }
 
-bool collision_space::EnvironmentModelODE::ODECollide2::empty(void)
+bool collision_space::EnvironmentModelODE::ODECollide2::empty(void) const
 {
     return m_geomsX.empty();
 }
@@ -264,8 +264,8 @@ void collision_space::EnvironmentModelODE::ODECollide2::setup(void)
     }	    
 }
 
-void collision_space::EnvironmentModelODE::ODECollide2::checkColl(std::vector<Geom*>::iterator posStart, std::vector<Geom*>::iterator posEnd,
-								  Geom *g, void *data, dNearCallback *nearCallback)
+void collision_space::EnvironmentModelODE::ODECollide2::checkColl(std::vector<Geom*>::const_iterator posStart, std::vector<Geom*>::const_iterator posEnd,
+								  Geom *g, void *data, dNearCallback *nearCallback) const
 {
     /* posStart now identifies the first geom which has an AABB
        that could overlap the AABB of geom on the X axis. posEnd
@@ -283,7 +283,7 @@ void collision_space::EnvironmentModelODE::ODECollide2::checkColl(std::vector<Ge
     }
 }
 
-void collision_space::EnvironmentModelODE::ODECollide2::collide(dGeomID geom, void *data, dNearCallback *nearCallback)
+void collision_space::EnvironmentModelODE::ODECollide2::collide(dGeomID geom, void *data, dNearCallback *nearCallback) const
 {
     static const int CUTOFF = 100;
 
@@ -293,11 +293,11 @@ void collision_space::EnvironmentModelODE::ODECollide2::collide(dGeomID geom, vo
     g.id = geom;
     dGeomGetAABB(geom, g.aabb);
     
-    std::vector<Geom*>::iterator posStart1 = std::lower_bound(m_geomsX.begin(), m_geomsX.end(), &g, SortByXTest());
+    std::vector<Geom*>::const_iterator posStart1 = std::lower_bound(m_geomsX.begin(), m_geomsX.end(), &g, SortByXTest());
     if (posStart1 != m_geomsX.end())
     {
-	std::vector<Geom*>::iterator posEnd1 = std::upper_bound(posStart1, m_geomsX.end(), &g, SortByXTest());
-	int                          d1      = posEnd1 - posStart1;
+	std::vector<Geom*>::const_iterator posEnd1 = std::upper_bound(posStart1, m_geomsX.end(), &g, SortByXTest());
+	int                                d1      = posEnd1 - posStart1;
 	
 	/* Doing two binary searches on the sorted-by-y array takes
 	   log(n) time, which should be around 12 steps. Each step
@@ -305,19 +305,19 @@ void collision_space::EnvironmentModelODE::ODECollide2::collide(dGeomID geom, vo
 	   appropriate. */
 	if (d1 > CUTOFF)
 	{
-	    std::vector<Geom*>::iterator posStart2 = std::lower_bound(m_geomsY.begin(), m_geomsY.end(), &g, SortByYTest());
+	    std::vector<Geom*>::const_iterator posStart2 = std::lower_bound(m_geomsY.begin(), m_geomsY.end(), &g, SortByYTest());
 	    if (posStart2 != m_geomsY.end())
 	    {
-		std::vector<Geom*>::iterator posEnd2 = std::upper_bound(posStart2, m_geomsY.end(), &g, SortByYTest());
-		int                          d2      = posEnd2 - posStart2;
+		std::vector<Geom*>::const_iterator posEnd2 = std::upper_bound(posStart2, m_geomsY.end(), &g, SortByYTest());
+		int                                d2      = posEnd2 - posStart2;
 		
 		if (d2 > CUTOFF)
 		{
-		    std::vector<Geom*>::iterator posStart3 = std::lower_bound(m_geomsZ.begin(), m_geomsZ.end(), &g, SortByZTest());
+		    std::vector<Geom*>::const_iterator posStart3 = std::lower_bound(m_geomsZ.begin(), m_geomsZ.end(), &g, SortByZTest());
 		    if (posStart3 != m_geomsZ.end())
 		    {
-			std::vector<Geom*>::iterator posEnd3 = std::upper_bound(posStart3, m_geomsZ.end(), &g, SortByZTest());
-			int                          d3      = posEnd3 - posStart3;
+			std::vector<Geom*>::const_iterator posEnd3 = std::upper_bound(posStart3, m_geomsZ.end(), &g, SortByZTest());
+			int                                d3      = posEnd3 - posStart3;
 			if (d3 > CUTOFF)
 			{
 			    if (d3 <= d2 && d3 <= d1)

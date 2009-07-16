@@ -126,8 +126,8 @@ namespace collision_space
 	    void registerGeom(dGeomID geom);
 	    void clear(void);
 	    void setup(void);
-	    void collide(dGeomID geom, void *data, dNearCallback *nearCallback);
-	    bool empty(void);
+	    void collide(dGeomID geom, void *data, dNearCallback *nearCallback) const;
+	    bool empty(void) const;
 	    
 	private:
 	    
@@ -202,8 +202,8 @@ namespace collision_space
 	    std::vector<Geom*> m_geomsY;
 	    std::vector<Geom*> m_geomsZ;
 	    
-	    void checkColl(std::vector<Geom*>::iterator posStart, std::vector<Geom*>::iterator posEnd,
-			   Geom *g, void *data, dNearCallback *nearCallback);
+	    void checkColl(std::vector<Geom*>::const_iterator posStart, std::vector<Geom*>::const_iterator posEnd,
+			   Geom *g, void *data, dNearCallback *nearCallback) const;
 	};
 
 	struct kGeom
