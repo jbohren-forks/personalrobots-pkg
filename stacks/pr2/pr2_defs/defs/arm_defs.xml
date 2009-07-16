@@ -390,49 +390,6 @@
       <mechanicalReduction>-36.17</mechanicalReduction>
     </transmission>
 
-    <map name="sensor" flag="gazebo">
-      <verbatim key="p3d_${side}_upper_arm">
-        <!--
-        <controller:ros_p3d name="p3d_${side}_shoulder_pan_controller" plugin="libros_p3d.so">
-          <alwaysOn>true</alwaysOn>
-          <updateRate>100.0</updateRate>
-          <bodyName>${side}_shoulder_pan_link</bodyName>
-          <topicName>${side}_shoulder_pan_pose_ground_truth</topicName>
-          <gaussianNoise>0.0</gaussianNoise>
-          <frameName>map</frameName>
-          <interface:position name="p3d_${side}_shoulder_pan_position_iface" />
-        </controller:ros_p3d>
-        <controller:ros_p3d name="p3d_${side}_shoulder_lift_controller" plugin="libros_p3d.so">
-          <alwaysOn>true</alwaysOn>
-          <updateRate>100.0</updateRate>
-          <bodyName>${side}_shoulder_lift_link</bodyName>
-          <topicName>${side}_shoulder_lift_pose_ground_truth</topicName>
-          <gaussianNoise>0.0</gaussianNoise>
-          <frameName>map</frameName>
-          <interface:position name="p3d_${side}_shoulder_lift_position_iface" />
-        </controller:ros_p3d>
-        <controller:ros_p3d name="p3d_${side}_upper_arm_controller" plugin="libros_p3d.so">
-          <alwaysOn>true</alwaysOn>
-          <updateRate>100.0</updateRate>
-          <bodyName>${side}_upper_arm_link</bodyName>
-          <topicName>${side}_upper_arm_pose_ground_truth</topicName>
-          <gaussianNoise>0.0</gaussianNoise>
-          <frameName>map</frameName>
-          <interface:position name="p3d_${side}_upper_arm_position_iface" />
-        </controller:ros_p3d>
-        <controller:ros_p3d name="p3d_${side}_elbow_flex_controller" plugin="libros_p3d.so">
-          <alwaysOn>true</alwaysOn>
-          <updateRate>100.0</updateRate>
-          <bodyName>${side}_elbow_flex_link</bodyName>
-          <topicName>${side}_elbow_flex_pose_ground_truth</topicName>
-          <gaussianNoise>0.0</gaussianNoise>
-          <frameName>map</frameName>
-          <interface:position name="p3d_${side}_elbow_flex_position_iface" />
-        </controller:ros_p3d>
-        -->
-      </verbatim>
-    </map>
-
     <!-- Forearm roll -->
 
     <joint name="${side}_forearm_roll_joint" type="revolute">
@@ -687,40 +644,6 @@
       <flexJoint name="${side}_wrist_flex_joint" mechanicalReduction="${624/35*54/16}" />
       <rollJoint name="${side}_wrist_roll_joint" mechanicalReduction="${624/35*54/16}" />
     </transmission>
-
-    <map name="sensor" flag="gazebo">
-      <verbatim key="p3d_${side}_forearm">
-        <!--
-        <controller:ros_p3d name="p3d_${side}_forearm_controller" plugin="libros_p3d.so">
-          <alwaysOn>true</alwaysOn>
-          <updateRate>100.0</updateRate>
-          <bodyName>${side}_forearm_link</bodyName>
-          <topicName>${side}_forearm_pose_ground_truth</topicName>
-          <gaussianNoise>0.0</gaussianNoise>
-          <frameName>map</frameName>
-          <interface:position name="p3d_${side}_forearm_position_iface" />
-        </controller:ros_p3d>
-        <controller:ros_p3d name="p3d_${side}_wrist_flex_controller" plugin="libros_p3d.so">
-          <alwaysOn>true</alwaysOn>
-          <updateRate>100.0</updateRate>
-          <bodyName>${side}_wrist_flex_link</bodyName>
-          <topicName>${side}_wrist_flex_pose_ground_truth</topicName>
-          <gaussianNoise>0.0</gaussianNoise>
-          <frameName>map</frameName>
-          <interface:position name="p3d_${side}_wrist_flex_position_iface" />
-        </controller:ros_p3d>
-        <controller:ros_p3d name="p3d_${side}_wrist_roll_controller" plugin="libros_p3d.so">
-          <alwaysOn>true</alwaysOn>
-          <updateRate>100.0</updateRate>
-          <bodyName>${side}_wrist_roll_link</bodyName>
-          <topicName>${side}_wrist_roll_pose_ground_truth</topicName>
-          <gaussianNoise>0.0</gaussianNoise>
-          <frameName>map</frameName>
-          <interface:position name="p3d_${side}_wrist_roll_position_iface" />
-        </controller:ros_p3d>
-        -->
-      </verbatim>
-    </map>
 
   </macro>
 

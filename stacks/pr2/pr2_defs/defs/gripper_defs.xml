@@ -410,69 +410,6 @@
       </verbatim>
     </map>
 
-    <map name="sensor" flag="gazebo">
-      <verbatim key="p3d_${prefix}_l_finger_tip">
-        <!--
-        <controller:ros_p3d name="p3d_${prefix}_l_finger_tip_controller" plugin="libros_p3d.so">
-          <alwaysOn>true</alwaysOn>
-          <updateRate>100.0</updateRate>
-          <bodyName>${prefix}_l_finger_tip_link</bodyName>
-          <topicName>${prefix}_l_finger_tip_pose_ground_truth</topicName>
-          <gaussianNoise>0.0</gaussianNoise>
-          <frameName>map</frameName>
-          <interface:position name="p3d_${prefix}_l_finger_tip_position_iface" />
-        </controller:ros_p3d>
-        <controller:ros_p3d name="f3d_${prefix}_l_finger_tip_controller" plugin="libros_p3d.so">
-          <alwaysOn>true</alwaysOn>
-          <updateRate>100.0</updateRate>
-          <bodyName>${prefix}_l_finger_tip_link</bodyName>
-          <topicName>${prefix}_l_finger_tip_force_ground_truth</topicName>
-          <frameName>map</frameName>
-          <interface:position name="f3d_${prefix}_l_finger_tip_position_iface" />
-        </controller:ros_p3d>
-        -->
-      </verbatim>
-    </map>
-
-    <map name="sensor" flag="gazebo">
-      <verbatim key="p3d_${prefix}_r_finger">
-        <!--
-        <controller:ros_p3d name="p3d_${prefix}_r_finger_controller" plugin="libros_p3d.so">
-          <alwaysOn>true</alwaysOn>
-          <updateRate>100.0</updateRate>
-          <bodyName>${prefix}_r_finger_link</bodyName>
-          <topicName>${prefix}_r_finger_pose_ground_truth</topicName>
-          <gaussianNoise>0.0</gaussianNoise>
-          <frameName>map</frameName>
-          <interface:position name="p3d_${prefix}_r_finger_position_iface" />
-        </controller:ros_p3d>
-        -->
-      </verbatim>
-    </map>
-
-    <map name="sensor" flag="gazebo">
-      <verbatim key="p3d_${prefix}_r_finger_tip">
-        <!--
-        <controller:ros_p3d name="p3d_${prefix}_r_finger_tip_controller" plugin="libros_p3d.so">
-          <alwaysOn>true</alwaysOn>
-          <updateRate>100.0</updateRate>
-          <bodyName>${prefix}_r_finger_tip_link</bodyName>
-          <topicName>${prefix}_r_finger_tip_pose_ground_truth</topicName>
-          <gaussianNoise>0.0</gaussianNoise>
-          <frameName>map</frameName>
-          <interface:position name="p3d_${prefix}_r_finger_tip_position_iface" />
-        </controller:ros_p3d>
-        <controller:ros_p3d name="f3d_${prefix}_r_finger_tip_controller" plugin="libros_p3d.so">
-          <alwaysOn>true</alwaysOn>
-          <updateRate>100.0</updateRate>
-          <bodyName>${prefix}_r_finger_tip_link</bodyName>
-          <topicName>${prefix}_r_finger_tip_force_ground_truth</topicName>
-          <frameName>map</frameName>
-          <interface:position name="f3d_${prefix}_r_finger_tip_position_iface" />
-        </controller:ros_p3d>
-        -->
-      </verbatim>
-    </map>
 
   </macro>
 
