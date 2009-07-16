@@ -175,6 +175,8 @@ public:
 	    planningMonitor_->getEnvironmentModel()->setVerbose(true);
 	    ROS_WARN("Verbose collisions is enabled");
 	}
+	else
+	    planningMonitor_->getEnvironmentModel()->setVerbose(false);
 	
 	ROS_DEBUG("=======================================");	
 	std::stringstream ss;

@@ -196,9 +196,26 @@ void ompl_planning::RequestHandler::configure(const planning_models::StateParams
     /* add goal state */
     psetup->si->setGoal(computeGoalFromConstraints(psetup->si, psetup->model, req.goal_constraints));
 
+    /* fix invalid input states, if we have any */
+    fixInputStates(psetup, 0.02, 50);
+    fixInputStates(psetup, 0.05, 50);
+    
+    /* print some information */
+    ROS_DEBUG("=======================================");
+    std::stringstream ss;
+    psetup->si->printSettings(ss);
+    ss << "Path constraints:" << std::endl;
+    static_cast<StateValidityPredicate*>(psetup->si->getStateValidityChecker())->getKinematicConstraintEvaluatorSet().print(ss);
+    ROS_DEBUG("%s", ss.str().c_str());
+    ROS_DEBUG("=======================================");	
+}
+
+bool ompl_planning::RequestHandler::fixInputStates(PlannerSetup *psetup, double value, unsigned int count)
+{
     /* add bounds for automatic state fixing (in case a state is invalid) */
-    std::vector<double> rhoStart(psetup->si->getStateDimension(), 0.05);
+    std::vector<double> rhoStart(psetup->si->getStateDimension(), value);
     std::vector<double> rhoGoal(rhoStart);
+    
     // in case we have large bounds, we may have a larger area to sample,
     // so we increase it if we can
     GoalToState *gs = dynamic_cast<GoalToState*>(psetup->si->getGoal());
@@ -212,17 +229,12 @@ void ompl_planning::RequestHandler::configure(const planning_models::StateParams
 		rhoGoal[i] = dif;
 	}
     }
-
-    psetup->si->fixInvalidInputStates(rhoStart, rhoGoal, 100);
     
-    /* print some information */
-    ROS_DEBUG("=======================================");
-    std::stringstream ss;
-    psetup->si->printSettings(ss);
-    ss << "Path constraints:" << std::endl;
-    static_cast<StateValidityPredicate*>(psetup->si->getStateValidityChecker())->getKinematicConstraintEvaluatorSet().print(ss);
-    ROS_DEBUG("%s", ss.str().c_str());
-    ROS_DEBUG("=======================================");	
+    psetup->model->collisionSpace->setVerbose(true);
+    bool result = psetup->si->fixInvalidInputStates(rhoStart, rhoGoal, count);
+    psetup->model->collisionSpace->setVerbose(false);
+    
+    return result;
 }
 
 bool ompl_planning::RequestHandler::computePlan(ModelMap &models, const planning_models::StateParams *start, 

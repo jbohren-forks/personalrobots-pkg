@@ -106,6 +106,9 @@ namespace ompl_planning
 	/** \brief Fill the response with solution data */
 	void fillResult(PlannerSetup *psetup, const planning_models::StateParams *start, motion_planning_srvs::MotionPlan::Response &res, const Solution &sol);
 
+	/** \brief Fix the input states, if they are not valid */
+	bool fixInputStates(PlannerSetup *psetup, double value, unsigned int count);
+	
 	/** \brief Send visualization markers */
 	void display(PlannerSetup *psetup);
 	
