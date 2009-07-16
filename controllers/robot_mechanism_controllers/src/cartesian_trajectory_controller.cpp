@@ -239,7 +239,7 @@ void CartesianTrajectoryController::update()
 
     // check tolerance
     for (unsigned int i=0; i<6; i++){
-      if (tolerance_[i] != 0 && pose_controller_->twist_error_[i] > tolerance_[i]){
+      if (tolerance_[i] != 0 && pose_controller_->pose_error_[i] > tolerance_[i]){
 	exceed_tolerance_ = true;
 	is_moving_ = false;
       }

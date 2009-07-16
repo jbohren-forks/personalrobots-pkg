@@ -66,16 +66,11 @@ public:
 
   // input of the controller
   KDL::Frame pose_desi_, pose_meas_;
+  KDL::Twist pose_error_;
   KDL::Twist twist_ff_;
-
-  // state output
-  KDL::Twist twist_error_;
 
 private:
   KDL::Frame getPose();
-
-  void poseToFrame(const tf::Pose& pose, KDL::Frame& frame);
-  void frameToPose(const KDL::Frame& frame, tf::Pose& pose);
 
   ros::NodeHandle node_;
   std::string controller_name_, root_name_;
@@ -86,12 +81,15 @@ private:
   mechanism::Chain chain_;
 
   // pid controllers
-  std::vector<control_toolbox::Pid> pid_controller_;
+  std::vector<control_toolbox::Pid> pids_;
 
   // kdl stuff for kinematics
   KDL::Chain             kdl_chain_;
-  boost::scoped_ptr<KDL::ChainFkSolverPos> jnt_to_pose_solver_;
-  KDL::JntArray          jnt_pos_;
+  boost::scoped_ptr<KDL::ChainFkSolverVel> jnt_to_posevel_solver_;
+
+  // Only used locally, but defined class-wide in order to avoid allocation in realtime.
+  KDL::JntArrayVel jnt_vel;
+
 
   // reatltime publisher
   boost::scoped_ptr<realtime_tools::RealtimePublisher<robot_msgs::Twist> > state_error_publisher_;
@@ -101,8 +99,7 @@ private:
   tf::TransformListener tf_;
   boost::scoped_ptr<tf::MessageNotifier<robot_msgs::PoseStamped> > command_notifier_;
 
-  // twist controller
-  CartesianTwistController* twist_controller_;
+  CartesianWrenchController* wrench_controller_;
 };
 
 } // namespace
