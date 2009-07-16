@@ -105,6 +105,7 @@ public:
 
 	void readFromFile(const string& filename, mapping_msgs::Object& mesh)
 	{
+		ROS_INFO("Loading mesh file: %s", filename.c_str());
 		int i,j;
 		int elem_count;
 		char *elem_name;
@@ -395,9 +396,11 @@ void TemplateModel::load(const string& file, const string& name)
 	truncate_value = *max_element(grid, grid+x_res*y_res*z_res);
 
 
-	bfs::path ply_file = bfs::change_extension(bfs::path(file), ".ply");
+	bfs::path file_path(file);
+	bfs::path ply_file = bfs::change_extension(file_path, ".ply").leaf();
+	bfs::path reduced_path = file_path.parent_path() / "reduced" / ply_file;
 	PLYMesh ply_mesh;
-	ply_mesh.readFromFile(ply_file.string(),mesh);
+	ply_mesh.readFromFile(reduced_path.string(),mesh);
 }
 
 
@@ -424,11 +427,13 @@ void TemplateModel::show(const ros::Publisher& publisher, const Point32& locatio
 	marker.scale.z = z_d;
 	marker.color.a = 0.7;
 
+
 	if (fit_score<7.0) {
 		marker.color.r = 0.0;
 		marker.color.g = 1.0;
 		marker.color.b = 1.0;
 	} else {
+		return;
 		marker.color.r = 1.0;
 		marker.color.g = 0.0;
 		marker.color.b = 0.0;
