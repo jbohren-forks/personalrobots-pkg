@@ -53,6 +53,9 @@ Voxel3d::Voxel3d(int size1, int size2, int size3, double resolution, const tf::V
     resolution_(resolution), origin_(origin),
     visualize_(visualize)
 {
+  inv_resolution_ = 1.0 / resolution_;
+  max_distance_ = 8.0 * resolution_;
+
   data_.resize(size1_*size2_*size3_);
   reset();
 

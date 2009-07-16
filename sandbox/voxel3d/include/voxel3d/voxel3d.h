@@ -35,6 +35,7 @@
 #include "robot_msgs/PointCloud.h"
 #include "mapping_msgs/CollisionMap.h"
 #include "voxel3d/DistanceField.h"
+#include <limits>
 
 class Voxel3d
 {
@@ -82,6 +83,13 @@ public:
   /** \brief Converts this voxel3d to a DistanceField message */
   void toDistanceFieldMsg(voxel3d::DistanceField& msg);
 
+  /**
+   * \brief Gets the distance field value at a point (in m) and its gradient (unit-less)
+   * \return the value of the distance field
+   */
+  double getDistanceGradient(double x, double y, double z,
+      double& gradient_x, double& gradient_y, double& gradient_z) const;
+
 private:
   std::vector<unsigned char> data_;
   int size1_, size2_, size3_;
@@ -93,11 +101,14 @@ private:
   ros::Publisher pub_viz_;
   ros::Time last_visualized_;
 
+  double inv_resolution_; /**< 1/resolution_ pre-calculated */
+  double max_distance_; /** max achievable distance in the distance field*/
+
   /** \brief convert coordinates from world to grid */
   void worldToGrid(double wx, double wy, double wz, int &gx, int &gy, int &gz) const {
-    gx = (int)((wx - origin_.x()) / resolution_);
-    gy = (int)((wy - origin_.y()) / resolution_);
-    gz = (int)((wz - origin_.z()) / resolution_);
+    gx = (int)((wx - origin_.x()) * inv_resolution_);
+    gy = (int)((wy - origin_.y()) * inv_resolution_);
+    gz = (int)((wz - origin_.z()) * inv_resolution_);
   }
 
   /** \brief convert coordinates from grid to world */
@@ -116,3 +127,44 @@ private:
   //std::vector<unsigned char> kernel_;
   unsigned char *kernel_;
 };
+
+//////////////////////////////////// inline functions follow ///////////////////////////////
+
+inline double Voxel3d::getDistanceGradient(double x, double y, double z,
+    double& gradient_x, double& gradient_y, double& gradient_z) const
+{
+  int gx, gy, gz;
+  int int_grad[3];
+
+  worldToGrid(x, y, z, gx, gy, gz);
+
+  // if out of bounds, return max distance, and 0 gradient
+  // we need extra padding of 1 to get gradients
+  if (gx<1 || gy<1 || gz<1 || gx>=size1_-1 || gy>=size2_-1 || gz>=size3_-1)
+  {
+    gradient_x = 0.0;
+    gradient_y = 0.0;
+    gradient_z = 0.0;
+    return max_distance_;
+  }
+
+  int_grad[0] = ((int)((*this)(gx+1,gy,gz)) - (int)((*this)(gx-1,gy,gz)));
+  int_grad[1] = ((int)((*this)(gx,gy+1,gz)) - (int)((*this)(gx,gy-1,gz)));
+  int_grad[2] = ((int)((*this)(gx,gy,gz+1)) - (int)((*this)(gx,gy,gz-1)));
+
+  // clamp the gradients:
+  for (int i=0; i<3; i++)
+  {
+    if (int_grad[i]<-2)
+      int_grad[i] = -2;
+    else if (int_grad[i]>2)
+      int_grad[i] = 2;
+  }
+
+  gradient_x = 0.5 * int_grad[0];
+  gradient_y = 0.5 * int_grad[1];
+  gradient_z = 0.5 * int_grad[2];
+
+  unsigned char dist = (*this)(gx,gy,gz);
+  return (dist > 8) ? max_distance_ : dist*resolution_;
+}
