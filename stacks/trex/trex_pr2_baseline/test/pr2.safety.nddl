@@ -1,6 +1,0 @@
-#include "safety/safety.nddl"
-
-close();
-
-fact(arms_tucked.False);
-fact(tilt_laser_ready.False);
