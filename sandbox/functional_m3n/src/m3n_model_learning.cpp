@@ -59,13 +59,13 @@ int M3NModel::train(const vector<const RandomField*>& training_rfs, const M3NPar
 
   // -------------------------------------------
   // Extract training parameters
-  // INVARIANT: M3NParams ensures defined parameters are valid
+  // INVARIANT: parametersDefined() ensures parameters are valid
   if (m3n_params.parametersDefined() == false)
   {
     ROS_ERROR("Training parameters are not all defined");
     return -1;
   }
-  double step_size = m3n_params.getLearningRate();
+  double learning_rate = m3n_params.getLearningRate();
   unsigned int nbr_iterations = m3n_params.getNumberOfIterations();
   const vector<float>& robust_potts_params = m3n_params.getRobustPottsParams();
   if (robust_potts_params.size() != clique_set_feature_dims_.size())
@@ -90,30 +90,6 @@ int M3NModel::train(const vector<const RandomField*>& training_rfs, const M3NPar
   robust_potts_params_ = robust_potts_params;
 
   // -------------------------------------------
-  // RandomField related
-  const RandomField* curr_rf = NULL;
-  map<unsigned int, RandomField::Node*>::const_iterator iter_nodes;
-  map<unsigned int, RandomField::Clique*>::const_iterator iter_cliques;
-  unsigned int curr_node_id = 0;
-
-  // -------------------------------------------
-  // Functional gradient information
-  RegressorWrapper* curr_regressor = NULL;
-  unsigned int curr_node_gt_label = 0;
-  unsigned int curr_node_infer_label = 0;
-  unsigned int curr_clique_gt_mode1_label = 0;
-  unsigned int curr_clique_gt_mode1_count = 0;
-  unsigned int curr_clique_infer_mode1_label = 0;
-  unsigned int curr_clique_infer_mode1_count = 0;
-  unsigned int curr_clique_gt_mode2_label = 0; // unused
-  unsigned int curr_clique_gt_mode2_count = 0; // unused
-  unsigned int curr_clique_infer_mode2_label = 0; // unused
-  unsigned int curr_clique_infer_mode2_count = 0; // unused
-  map<unsigned int, unsigned int> curr_inferred_labeling;
-  double curr_step_size = 0.0;
-  float gt_residual = 0.0;
-  float infer_residual = 0.0;
-
   // Learn with loss-augmented inference to act as a margin
   // (currently using hamming loss only)
   loss_augmented_inference_ = true;
@@ -127,7 +103,7 @@ int M3NModel::train(const vector<const RandomField*>& training_rfs, const M3NPar
     // Iterate over each RandomField
     for (unsigned int i = 0 ; i < training_rfs.size() ; i++)
     {
-      curr_rf = training_rfs[i];
+      const RandomField* curr_rf = training_rfs[i];
       const map<unsigned int, RandomField::Node*>& nodes = curr_rf->getNodesRandomFieldIDs();
       const vector<map<unsigned int, RandomField::Clique*> >& clique_sets = curr_rf->getCliqueSets();
 
@@ -135,13 +111,15 @@ int M3NModel::train(const vector<const RandomField*>& training_rfs, const M3NPar
       // Perform inference with the current model.
       // If first iteration, generate a random labeling,
       // otherwise, perform inference with the current model.
+      map<unsigned int, unsigned int> curr_inferred_labeling;
       time(&start_timer);
       if (t == 0)
       {
         // Generate random labeling
         unsigned int nbr_labels = training_labels_.size();
         unsigned int random_label = 0;
-        for (iter_nodes = nodes.begin(); iter_nodes != nodes.end() ; iter_nodes++)
+        for (map<unsigned int, RandomField::Node*>::const_iterator iter_nodes = nodes.begin() ; iter_nodes
+            != nodes.end() ; iter_nodes++)
         {
           random_label = training_labels_[rand() % nbr_labels];
           curr_inferred_labeling[iter_nodes->first] = random_label;
@@ -149,7 +127,6 @@ int M3NModel::train(const vector<const RandomField*>& training_rfs, const M3NPar
       }
       else
       {
-        curr_inferred_labeling.clear();
         inferPrivate(*curr_rf, curr_inferred_labeling);
       }
       time(&end_timer);
@@ -159,7 +136,7 @@ int M3NModel::train(const vector<const RandomField*>& training_rfs, const M3NPar
       // ---------------------------------------------------
       // Instantiate new regressor
       time(&start_timer);
-      curr_regressor = instantiateRegressor(m3n_params);
+      RegressorWrapper* curr_regressor = instantiateRegressor(m3n_params);
       if (curr_regressor == NULL)
       {
         ROS_ERROR("Could not create new regressor at iteration %u", t);
@@ -172,11 +149,12 @@ int M3NModel::train(const vector<const RandomField*>& training_rfs, const M3NPar
 
       // ------------------------
       // Node features
-      for (iter_nodes = nodes.begin(); iter_nodes != nodes.end() ; iter_nodes++)
+      for (map<unsigned int, RandomField::Node*>::const_iterator iter_nodes = nodes.begin() ; iter_nodes
+          != nodes.end() ; iter_nodes++)
       {
-        curr_node_id = iter_nodes->first;
-        curr_node_gt_label = iter_nodes->second->getLabel();
-        curr_node_infer_label = curr_inferred_labeling[curr_node_id];
+        unsigned int curr_node_id = iter_nodes->first;
+        unsigned int curr_node_gt_label = iter_nodes->second->getLabel();
+        unsigned int curr_node_infer_label = curr_inferred_labeling[curr_node_id];
         if (curr_node_gt_label != curr_node_infer_label)
         {
           // +1 features with ground truth label
@@ -196,13 +174,23 @@ int M3NModel::train(const vector<const RandomField*>& training_rfs, const M3NPar
         // ------------------------
         // Iterate over cliques
         const map<unsigned int, RandomField::Clique*>& curr_cliques = clique_sets[clique_set_idx];
-        for (iter_cliques = curr_cliques.begin(); iter_cliques != curr_cliques.end() ; iter_cliques++)
+        for (map<unsigned int, RandomField::Clique*>::const_iterator iter_cliques = curr_cliques.begin() ; iter_cliques
+            != curr_cliques.end() ; iter_cliques++)
         {
+          unsigned int curr_clique_gt_mode1_label = 0;
+          unsigned int curr_clique_gt_mode1_count = 0;
+          unsigned int curr_clique_gt_mode2_label = 0; // unused
+          unsigned int curr_clique_gt_mode2_count = 0; // unused
           if (iter_cliques->second->getModeLabels(curr_clique_gt_mode1_label, curr_clique_gt_mode1_count,
               curr_clique_gt_mode2_label, curr_clique_gt_mode2_count) < 0)
           {
             return -1;
           }
+
+          unsigned int curr_clique_infer_mode1_label = 0;
+          unsigned int curr_clique_infer_mode1_count = 0;
+          unsigned int curr_clique_infer_mode2_label = 0; // unused
+          unsigned int curr_clique_infer_mode2_count = 0; // unused
           if (iter_cliques->second->getModeLabels(curr_clique_infer_mode1_label,
               curr_clique_infer_mode1_count, curr_clique_infer_mode2_label, curr_clique_infer_mode2_count,
               NULL, &curr_inferred_labeling) < 0)
@@ -220,7 +208,7 @@ int M3NModel::train(const vector<const RandomField*>& training_rfs, const M3NPar
           {
             // ------------------------
             // Compute functional gradient residual from ground truth label (gt_residual)
-            gt_residual = calcFuncGradResidual(robust_potts_params_[clique_set_idx],
+            float gt_residual = calcFuncGradResidual(robust_potts_params_[clique_set_idx],
                 iter_cliques->second->getOrder(), curr_clique_gt_mode1_label);
 
             if (gt_residual > 0.0)
@@ -234,7 +222,7 @@ int M3NModel::train(const vector<const RandomField*>& training_rfs, const M3NPar
 
             // ------------------------
             // Compute functional gradient residual from inferred label (gt_infer)
-            infer_residual = calcFuncGradResidual(robust_potts_params_[clique_set_idx],
+            float infer_residual = calcFuncGradResidual(robust_potts_params_[clique_set_idx],
                 iter_cliques->second->getOrder(), curr_clique_infer_mode1_count);
 
             if (infer_residual > 0.0)
@@ -254,7 +242,7 @@ int M3NModel::train(const vector<const RandomField*>& training_rfs, const M3NPar
       {
         return -1;
       }
-      curr_step_size = step_size / sqrt(static_cast<double> (t + 1));
+      double curr_step_size = learning_rate / sqrt(static_cast<double> (t + 1));
       regressors_.push_back(pair<double, RegressorWrapper*> (curr_step_size, curr_regressor));
 
       time(&end_timer);
@@ -311,6 +299,7 @@ RegressorWrapper* M3NModel::instantiateRegressor(const M3NParams& m3n_params)
     created_regressor = new RegressionTreeWrapper(total_stack_feature_dim_,
         m3n_params.getRegressionTreeParams());
   }
+
   return created_regressor;
 }
 
@@ -319,9 +308,6 @@ RegressorWrapper* M3NModel::instantiateRegressor(const M3NParams& m3n_params)
 // --------------------------------------------------------------
 int M3NModel::extractVerifyLabelsFeatures(const vector<const RandomField*>& training_rfs)
 {
-  map<unsigned int, RandomField::Node*>::const_iterator iter_nodes;
-  map<unsigned int, RandomField::Clique*>::const_iterator iter_cliques;
-
   // ---------------------------------------------------
   // Extract and verify the feature dimensions and labels for each random field
   for (unsigned int i = 0 ; i < training_rfs.size() ; i++)
@@ -330,6 +316,7 @@ int M3NModel::extractVerifyLabelsFeatures(const vector<const RandomField*>& trai
     // Check for NULL pointers to random fields
     if (training_rfs[i] == NULL)
     {
+      ROS_ERROR("M3NModel::extractVerifyLabelsFeatures() passed NULL random field %u", i);
       return -1;
     }
 
@@ -340,7 +327,8 @@ int M3NModel::extractVerifyLabelsFeatures(const vector<const RandomField*>& trai
     // ---------------------------------------------------
     // Nodes: extract/verify feature dimension and labels
     const map<unsigned int, RandomField::Node*>& nodes = (training_rfs[i])->getNodesRandomFieldIDs();
-    for (iter_nodes = nodes.begin(); iter_nodes != nodes.end() ; iter_nodes++)
+    for (map<unsigned int, RandomField::Node*>::const_iterator iter_nodes = nodes.begin() ; iter_nodes
+        != nodes.end() ; iter_nodes++)
     {
       unsigned int curr_label = iter_nodes->second->getLabel();
       unsigned int curr_feature_dim = iter_nodes->second->getNumberFeatureVals();
@@ -422,7 +410,8 @@ int M3NModel::extractVerifyLabelsFeatures(const vector<const RandomField*>& trai
 
       // --------------------------
       // Iterate over the cliques in the current clique-set
-      for (iter_cliques = clique_sets[j].begin(); iter_cliques != clique_sets[j].end() ; iter_cliques++)
+      for (map<unsigned int, RandomField::Clique*>::const_iterator iter_cliques = clique_sets[j].begin() ; iter_cliques
+          != clique_sets[j].end() ; iter_cliques++)
       {
         unsigned int curr_feature_dim = iter_cliques->second->getNumberFeatureVals();
 
