@@ -58,7 +58,7 @@ DetectHandleNoCameraAction::DetectHandleNoCameraAction(tf::TransformListener& tf
   tf_(tf)
 {
   NodeHandle node;
-  pub_ = node.advertise<robot_msgs::PointStamped>("head_controller/head_track_point",10);
+  pub_ = node.advertise<robot_msgs::PointStamped>("head_controller/point_head",10);
 };
 
 
