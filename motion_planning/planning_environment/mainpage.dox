@@ -210,7 +210,39 @@ Sets the following parameters on the parameter server
 
 \section tools Tools
 
-\b view_state_validity is a node that uses planning environment to check whether the current state of the robot is valid or not. This information is also broadcasted on the 'state_validity' topic as a Byte value (1 for collision, 0 for valid state)
+\subsection view_state_validity View State Validity
+
+\b view_state_validity is a node that uses planning environment to check whether the current state of the robot is valid or not. This information is also broadcasted on the 'state_validity' topic as a Byte value (1 for collision, 0 for valid state). Verbosity is enabled, so one should be able to see which robot parts cause collision (if any).
+
+ROS topics and parameters are as above. 
+
+\subsection display_planner_collision_model Display Planner Collision Model
+
+\b display_planner_collision_model is a node that monitors the collision space maintained by the planning environment and broadcasts it as visualization markers. Bodies attached to the robot are also displayed. An additional boolean parameter "~skip_collision_map" can be used tp disable sending markers produced by the collision map. This is useful if the use wants to only see what other objects are in the map (on the 'object_in_map' topic, for instance).
+
+ROS topics and parameters are as above. 
+
+\subsection clear_known_objects Clear Known Objects
+
+\b clear_known_objects is a node that filters robot_msgs::PointCloud clouds. The purpose is to remove points in the cloud that correspond to objects that have already been identified. 
+
+\subsubsection cko_topics ROS Topics
+
+ - @b "cloud_in"/PointCloud : the input cloud
+
+ - @b "object_in_map"/ObjectInMap : definition of an object identified in the environment
+
+ - @b "cloud_out"/PointCloud : the output cloud (publishes to)
+
+\subsubsection cko_params ROS Parameters
+
+ - @b "~fixed_frame"/string : a frame that stays fixed for the objects identified in the map
+
+ - @b "~object_scale"/double : the scaling to use for the known object when clearing the point cloud
+
+ - @b "~object_padd"/double : the padding to use for the known object when clearing the point cloud
+
+ A robot description and its corresponding planning and collision descriptions are assumed to be loaded on the parameter server as well.
 
 
 */
