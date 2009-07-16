@@ -53,18 +53,26 @@ public:
   double getPlanningTimeLimit() const;
   void setPlanningTimeLimit(double planning_time_limit);
   int getMaxIterations() const;
+  int getMaxIterationsAfterCollisionFree() const;
   double getSmoothnessCostWeight() const;
   double getObstacleCostWeight() const;
   bool getAnimatePath() const;
   double getLearningRate() const;
+  double getSmoothnessCostVelocity() const;
+  double getSmoothnessCostAcceleration() const;
+  double getSmoothnessCostJerk() const;
 
 private:
   double planning_time_limit_;
   int max_iterations_;
+  int max_iterations_after_collision_free_;
   double smoothness_cost_weight_;
   double obstacle_cost_weight_;
   double learning_rate_;
   bool animate_path_;
+  double smoothness_cost_velocity_;
+  double smoothness_cost_acceleration_;
+  double smoothness_cost_jerk_;
 
 };
 
@@ -85,6 +93,11 @@ inline int ChompParameters::getMaxIterations() const
   return max_iterations_;
 }
 
+inline int ChompParameters::getMaxIterationsAfterCollisionFree() const
+{
+  return max_iterations_after_collision_free_;
+}
+
 inline double ChompParameters::getSmoothnessCostWeight() const
 {
   return smoothness_cost_weight_;
@@ -103,6 +116,21 @@ inline double ChompParameters::getLearningRate() const
 inline bool ChompParameters::getAnimatePath() const
 {
   return animate_path_;
+}
+
+inline double ChompParameters::getSmoothnessCostVelocity() const
+{
+  return smoothness_cost_velocity_;
+}
+
+inline double ChompParameters::getSmoothnessCostAcceleration() const
+{
+  return smoothness_cost_acceleration_;
+}
+
+inline double ChompParameters::getSmoothnessCostJerk() const
+{
+  return smoothness_cost_jerk_;
 }
 
 } // namespace chomp

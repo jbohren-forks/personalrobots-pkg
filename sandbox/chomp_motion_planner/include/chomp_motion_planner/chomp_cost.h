@@ -64,10 +64,14 @@ public:
 
   double getCost(Eigen::MatrixXd::ColXpr joint_trajectory) const;
 
+  double getMaxQuadCostInvValue() const;
+
+  void scale(double scale);
+
 private:
   Eigen::MatrixXd quad_cost_full_;
   Eigen::MatrixXd quad_cost_;
-  Eigen::VectorXd linear_cost_;
+  //Eigen::VectorXd linear_cost_;
   Eigen::MatrixXd quad_cost_inv_;
 
   Eigen::MatrixXd getDiffMatrix(int size, const double* diff_rule) const;
@@ -90,6 +94,6 @@ inline double ChompCost::getCost(Eigen::MatrixXd::ColXpr joint_trajectory) const
   return joint_trajectory.dot(quad_cost_full_ * joint_trajectory);
 }
 
-}
+} // namespace chomp
 
 #endif /* CHOMP_COST_H_ */

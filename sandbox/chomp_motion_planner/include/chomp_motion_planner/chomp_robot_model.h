@@ -68,15 +68,16 @@ public:
    */
   struct ChompJoint
   {
-    const KDL::Joint* kdl_joint_;                               /** Pointer to the KDL joint in the tree */
-    int kdl_joint_index_;                                       /** Index for use in a KDL joint array */
-    int chomp_joint_index_;                                     /** Joint index for CHOMP */
-    std::string joint_name_;                                    /** Name of the joint */
-    std::string link_name_;                                     /** Name of the corresponding link (from planning.yaml) */
-    bool wrap_around_;                                          /** Does this joint wrap-around? */
-    bool has_joint_limits_;                                     /** Are there joint limits? */
-    double joint_limit_min_;                                    /** Minimum joint angle value */
-    double joint_limit_max_;                                    /** Maximum joint angle value */
+    const KDL::Joint* kdl_joint_;                               /**< Pointer to the KDL joint in the tree */
+    int kdl_joint_index_;                                       /**< Index for use in a KDL joint array */
+    int chomp_joint_index_;                                     /**< Joint index for CHOMP */
+    std::string joint_name_;                                    /**< Name of the joint */
+    std::string link_name_;                                     /**< Name of the corresponding link (from planning.yaml) */
+    bool wrap_around_;                                          /**< Does this joint wrap-around? */
+    bool has_joint_limits_;                                     /**< Are there joint limits? */
+    double joint_limit_min_;                                    /**< Minimum joint angle value */
+    double joint_limit_max_;                                    /**< Maximum joint angle value */
+    double joint_update_limit_;                                 /**< Maximum amount the joint value can be updated in an iteration */
   };
 
   /**
@@ -85,7 +86,7 @@ public:
   struct ChompPlanningGroup
   {
     int num_joints_;                                            /**< Number of joints used in planning */
-    std::vector<ChompJoint> chomp_joints_;                  /**< Joints used in planning */
+    std::vector<ChompJoint> chomp_joints_;                      /**< Joints used in planning */
     int num_links_;                                             /**< Number of links used for collision checking */
     std::vector<std::string> link_names_;                       /**< Links used for collision checking */
     std::vector<ChompCollisionPoint> collision_points_;         /**< Ordered list of collision checking points (from root to tip) */

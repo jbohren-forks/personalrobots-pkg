@@ -76,7 +76,9 @@ bool ChompRobotModel::init()
   }
 
   // get some other params:
+  double joint_update_limit;
   node_handle_.param("~collision_clearance", collision_clearance_default_, 0.10);
+  node_handle_.param("~joint_update_limit", joint_update_limit, 0.05);
 
   // Construct the KDL tree
   if (!treeFromString(urdf_string, kdl_tree_))
@@ -143,7 +145,7 @@ bool ChompRobotModel::init()
         joint.kdl_joint_ = &(segment->getJoint());
         joint.link_name_ = link_name;
         joint.joint_name_ = segment_joint_mapping_[link_name];
-
+        joint.joint_update_limit_ = joint_update_limit;
         planning_models::KinematicModel::Joint* kin_model_joint = robot_models_->getKinematicModel()->getJoint(joint.joint_name_);
         if (planning_models::KinematicModel::RevoluteJoint* revolute_joint = dynamic_cast<planning_models::KinematicModel::RevoluteJoint*>(kin_model_joint))
         {

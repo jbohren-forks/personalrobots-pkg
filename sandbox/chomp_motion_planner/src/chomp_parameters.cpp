@@ -52,10 +52,14 @@ void ChompParameters::initFromNodeHandle()
   ros::NodeHandle node_handle;
   node_handle.param("~planning_time_limit", planning_time_limit_, 1.0);
   node_handle.param("~max_iterations", max_iterations_, 500);
+  node_handle.param("~max_iterations_after_collision_free", max_iterations_after_collision_free_, 100);
   node_handle.param("~smoothness_cost_weight", smoothness_cost_weight_, 0.1);
   node_handle.param("~obstacle_cost_weight", obstacle_cost_weight_, 1.0);
   node_handle.param("~learning_rate", learning_rate_, 0.01);
   node_handle.param("~animate_path", animate_path_, false);
+  node_handle.param("~smoothness_cost_velocity", smoothness_cost_velocity_, 0.0);
+  node_handle.param("~smoothness_cost_acceleration", smoothness_cost_acceleration_, 1.0);
+  node_handle.param("~smoothness_cost_jerk", smoothness_cost_jerk_, 0.0);
 
 }
 

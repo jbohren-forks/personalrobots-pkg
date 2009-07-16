@@ -76,20 +76,30 @@ void ChompOptimizer::initialize()
   // set up the joint costs:
   joint_costs_.reserve(num_joints_);
 
-  // @TODO hardcoded derivative costs:
   std::vector<double> derivative_costs(3);
-  derivative_costs[0] = 0.0;
-  derivative_costs[1] = 1.0;
-  derivative_costs[2] = 1.0;
+  derivative_costs[0] = parameters_->getSmoothnessCostVelocity();
+  derivative_costs[1] = parameters_->getSmoothnessCostAcceleration();
+  derivative_costs[2] = parameters_->getSmoothnessCostJerk();
 
+  double max_cost_scale = 0.0;
   for (int i=0; i<num_joints_; i++)
   {
     joint_costs_.push_back(ChompCost(group_trajectory_, i, derivative_costs));
+    double cost_scale = joint_costs_[i].getMaxQuadCostInvValue();
+    if (max_cost_scale < cost_scale)
+      max_cost_scale = cost_scale;
+  }
+
+  // scale the smoothness costs
+  for (int i=0; i<num_joints_; i++)
+  {
+    joint_costs_[i].scale(max_cost_scale);
   }
 
   // allocate memory for matrices:
   smoothness_increments_ = Eigen::MatrixXd::Zero(num_vars_free_, num_joints_);
   collision_increments_ = Eigen::MatrixXd::Zero(num_vars_free_, num_joints_);
+  final_increments_ = Eigen::MatrixXd::Zero(num_vars_free_, num_joints_);
   smoothness_derivative_ = Eigen::VectorXd::Zero(num_vars_all_);
   jacobian_ = Eigen::MatrixXd::Zero(3, num_joints_);
 
@@ -107,6 +117,7 @@ void ChompOptimizer::initialize()
   kdlVecVecToEigenVecVec(collision_point_vel_, collision_point_vel_eigen_, 3, 1);
   kdlVecVecToEigenVecVec(collision_point_acc_, collision_point_acc_eigen_, 3, 1);
 
+  collision_free_iteration_ = 0;
 }
 
 ChompOptimizer::~ChompOptimizer()
@@ -128,6 +139,11 @@ void ChompOptimizer::optimize()
     addIncrementsToTrajectory();
     handleJointLimits();
     updateFullTrajectory();
+    if (collision_free_iteration_ >= parameters_->getMaxIterationsAfterCollisionFree())
+    {
+      ROS_INFO("Terminated after %d iterations", iteration_+1);
+      break;
+    }
   }
   ROS_INFO("Optimization core finished in %f sec", (ros::WallTime::now() - start_time).toSec());
 
@@ -158,6 +174,7 @@ void ChompOptimizer::calculateCollisionIncrements()
   Vector3d cartesian_gradient;
 
   collision_increments_.setZero(num_vars_free_, num_joints_);
+  is_collision_free_ = true;
   for (int i=free_vars_start_; i<=free_vars_end_; i++)
   {
     for (int j=0; j<num_collision_points_; j++)
@@ -184,17 +201,24 @@ void ChompOptimizer::calculateCollisionIncrements()
           jacobian_.transpose() * cartesian_gradient;
 
       if (colliding)
+      {
+        is_collision_free_ = false;
+        collision_free_iteration_ = 0;
         break;
+      }
     }
   }
+  if (is_collision_free_)
+    collision_free_iteration_++;
   //cout << collision_increments_ << endl;
 }
 
 void ChompOptimizer::addIncrementsToTrajectory()
 {
+  double scale = 1.0;
   for (int i=0; i<num_joints_; i++)
   {
-    group_trajectory_.getFreeJointTrajectoryBlock(i) += parameters_->getLearningRate() *
+    final_increments_.col(i) = parameters_->getLearningRate() *
         (
             joint_costs_[i].getQuadraticCostInverse() *
             (
@@ -202,6 +226,18 @@ void ChompOptimizer::addIncrementsToTrajectory()
                 parameters_->getObstacleCostWeight() * collision_increments_.col(i)
             )
         );
+    double max = final_increments_.col(i).maxCoeff();
+    double min = final_increments_.col(i).minCoeff();
+    double max_scale = planning_group_->chomp_joints_[i].joint_update_limit_ / fabs(max);
+    double min_scale = planning_group_->chomp_joints_[i].joint_update_limit_ / fabs(min);
+    if (max_scale < scale)
+      scale = max_scale;
+    if (min_scale < scale)
+      scale = min_scale;
+  }
+  for (int i=0; i<num_joints_; i++)
+  {
+    group_trajectory_.getFreeJointTrajectoryBlock(i) += scale * final_increments_.col(i);
   }
 }
 

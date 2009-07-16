@@ -70,6 +70,7 @@ private:
   int free_vars_start_;
   int free_vars_end_;
   int iteration_;
+  int collision_free_iteration_;
   ChompTrajectory *full_trajectory_;
   const ChompRobotModel *robot_model_;
   const ChompRobotModel::ChompPlanningGroup *planning_group_;
@@ -77,6 +78,8 @@ private:
   ChompCollisionSpace *collision_space_;
   ChompTrajectory group_trajectory_;
   std::vector<ChompCost> joint_costs_;
+
+  bool is_collision_free_;
 
   std::vector<std::vector<KDL::Vector> > joint_axis_;
   std::vector<std::vector<KDL::Vector> > joint_pos_;
@@ -93,6 +96,7 @@ private:
 
   Eigen::MatrixXd smoothness_increments_;
   Eigen::MatrixXd collision_increments_;
+  Eigen::MatrixXd final_increments_;
 
   // temporary variables for all functions:
   Eigen::VectorXd smoothness_derivative_;

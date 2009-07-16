@@ -96,6 +96,19 @@ Eigen::MatrixXd ChompCost::getDiffMatrix(int size, const double* diff_rule) cons
   return matrix;
 }
 
+double ChompCost::getMaxQuadCostInvValue() const
+{
+  return quad_cost_inv_.maxCoeff();
+}
+
+void ChompCost::scale(double scale)
+{
+  double inv_scale = 1.0/scale;
+  quad_cost_inv_ *= inv_scale;
+  quad_cost_ *= scale;
+  quad_cost_full_ *= scale;
+}
+
 ChompCost::~ChompCost()
 {
 }
