@@ -42,6 +42,8 @@ vector<Descriptor3D*> node_feature_descriptors;
 M3NParams m3n_params;
 kmeans_params_t cs0_kmeans_params;
 
+unsigned int nbr_clique_sets = 0;
+
 void populateParameters()
 {
   // ----------------------------------------------
@@ -60,7 +62,8 @@ void populateParameters()
   node_feature_descriptors[1] = orientation;
   node_feature_descriptors[2] = position;
 
-  unsigned int nbr_clique_sets = 1;
+  nbr_clique_sets = 0;
+
   // ----------------------------------------------
   // Clique set 0
   // kmeans parameters for constructing cliques
@@ -448,7 +451,7 @@ int main()
 
   // ----------------------------------------------------------
   // Create RandomField
-  RandomField rf(1);
+  RandomField rf(nbr_clique_sets);
   set<unsigned int> failed_indices;
   ROS_INFO("Creating nodes...");
   createNodes(rf, pt_cloud, *pt_cloud_kdtree, labels, failed_indices);

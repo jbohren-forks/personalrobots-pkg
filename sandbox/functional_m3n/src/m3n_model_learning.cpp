@@ -322,12 +322,6 @@ int M3NModel::extractVerifyLabelsFeatures(const vector<const RandomField*>& trai
   map<unsigned int, RandomField::Node*>::const_iterator iter_nodes;
   map<unsigned int, RandomField::Clique*>::const_iterator iter_cliques;
 
-  // flag indicating if its the first time encountering node/clique in random field/clique-set
-  bool is_first = true;
-
-  unsigned int curr_label = 0;
-  unsigned int curr_feature_dim = 0;
-
   // ---------------------------------------------------
   // Extract and verify the feature dimensions and labels for each random field
   for (unsigned int i = 0 ; i < training_rfs.size() ; i++)
@@ -340,16 +334,16 @@ int M3NModel::extractVerifyLabelsFeatures(const vector<const RandomField*>& trai
     }
 
     // ---------------------------------------------------
-    // Reset flag for encountering first node in the random field
-    is_first = true;
+    // Flag indicating if its the first time encountering node/clique in random field/clique-set
+    bool is_first = true;
 
     // ---------------------------------------------------
     // Nodes: extract/verify feature dimension and labels
     const map<unsigned int, RandomField::Node*>& nodes = (training_rfs[i])->getNodesRandomFieldIDs();
     for (iter_nodes = nodes.begin(); iter_nodes != nodes.end() ; iter_nodes++)
     {
-      curr_label = iter_nodes->second->getLabel();
-      curr_feature_dim = iter_nodes->second->getNumberFeatureVals();
+      unsigned int curr_label = iter_nodes->second->getLabel();
+      unsigned int curr_feature_dim = iter_nodes->second->getNumberFeatureVals();
 
       // --------------------------
       // Extract or verify the node feature dimension to be used by this model
@@ -430,7 +424,7 @@ int M3NModel::extractVerifyLabelsFeatures(const vector<const RandomField*>& trai
       // Iterate over the cliques in the current clique-set
       for (iter_cliques = clique_sets[j].begin(); iter_cliques != clique_sets[j].end() ; iter_cliques++)
       {
-        curr_feature_dim = iter_cliques->second->getNumberFeatureVals();
+        unsigned int curr_feature_dim = iter_cliques->second->getNumberFeatureVals();
 
         // --------------------------
         // If never trained before and is the first clique in the clique set, then record the feature dimensions
