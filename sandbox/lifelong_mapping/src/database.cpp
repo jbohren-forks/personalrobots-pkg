@@ -1,5 +1,6 @@
 #include "lifelong_mapping/database.h"
 
+#include <ros/console.h>
 #include <boost/scoped_array.hpp>
 
 namespace lifelong_mapping {
@@ -35,6 +36,8 @@ int get_node_id(Db *sdbp, const Dbt *pkey, const Dbt *pdata, Dbt *skey)
 Database::Database(const std::string& path)
   : env_(0)
 {
+  // FIXME: deadlock handling
+  
   static const u_int32_t ENV_OPEN_FLAGS =
     DB_CREATE     | // If the env does not exist, create it
     DB_INIT_LOCK  | // Initialize locking
@@ -151,6 +154,40 @@ bool Database::get(ros::Message& msg, uint32_t item_id, std::string& topic, uint
   topic.assign((char*)read_ptr, topic_len);
   read_ptr += topic_len;
   msg.deserialize(read_ptr);
+
+  txn->commit(0);
+  return true;
+}
+
+bool Database::query(DbQueryRaw& query, DbTxn* parent_txn)
+{
+  DbTxn *txn = NULL;
+  env_.txn_begin(parent_txn, &txn, 0);
+
+  // FIXME: verify MD5
+
+  // Search for the topic
+  Dbc *topic_cursor;
+  topic_index_->cursor(txn, &topic_cursor, 0);
+  Dbt key(&query.topic[0], query.topic.length());
+  Dbt data;
+  int ret = topic_cursor->get(&key, &data, DB_SET);
+  query.records.clear();
+  while (ret != DB_NOTFOUND) {
+    // Extract the serialized message data
+    uint8_t *read_ptr = (uint8_t*)data.get_data() + sizeof(uint32_t);
+    uint32_t topic_len;
+    SROS_DESERIALIZE_PRIMITIVE(read_ptr, topic_len);
+    read_ptr += topic_len;
+    query.records.push_back(read_ptr);
+
+    ret = topic_cursor->get(&key, &data, DB_NEXT_DUP);
+  }
+
+  // FIXME: filter on node ids
+
+  if (topic_cursor != NULL)
+    topic_cursor->close();
 
   txn->commit(0);
   return true;
