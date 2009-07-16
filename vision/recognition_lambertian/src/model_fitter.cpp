@@ -593,6 +593,7 @@ public:
 		resp.object.pose.header.stamp = req.cloud.header.stamp;
 		resp.object.pose.header.frame_id = req.cloud.header.frame_id;
 		resp.object.object = mfs.best_fit_[0].model_->objectMesh();
+		resp.object.object.type = resp.object.object.MESH;
 		resp.score = mfs.best_fit_[0].score();
 
 		return true;
