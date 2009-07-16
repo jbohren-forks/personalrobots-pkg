@@ -50,7 +50,7 @@ namespace gazebo {
 GZ_REGISTER_DYNAMIC_CONTROLLER("gazebo_mechanism_control", GazeboMechanismControl);
 
 GazeboMechanismControl::GazeboMechanismControl(Entity *parent)
-  : Controller(parent), hw_(0), mc_(&hw_), mcn_(&mc_), fake_state_(NULL)
+  : Controller(parent), hw_(0), mc_(&hw_), fake_state_(NULL)
 {
   this->parent_model_ = dynamic_cast<Model*>(this->parent);
 
@@ -173,7 +173,7 @@ void GazeboMechanismControl::UpdateChild()
   this->hw_.current_time_ = Simulator::Instance()->GetSimTime();
   try
   {
-    this->mcn_.update();
+    this->mc_.update();
   }
   catch (const char* c)
   {
@@ -224,7 +224,6 @@ void GazeboMechanismControl::FiniChild()
 
   this->hw_.~HardwareInterface();
   this->mc_.~MechanismControl();
-  this->mcn_.~MechanismControlNode();
 
   deleteElements(&this->joints_);
   delete this->fake_state_;
@@ -285,7 +284,7 @@ void GazeboMechanismControl::ReadPr2Xml(XMLConfigNode *node)
   }
 
   // Setup mechanism control node
-  this->mcn_.initXml(doc.RootElement());
+  this->mc_.initXml(doc.RootElement());
 
   for (unsigned int i = 0; i < this->mc_.state_->joint_states_.size(); ++i)
     this->mc_.state_->joint_states_[i].calibrated_ = true;
