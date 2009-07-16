@@ -210,6 +210,7 @@ void ImagePublisher::publishCompressedImage(sensor_msgs::CompressedImage& compre
 
   compressed.uint8_data.data.resize(buf->width);
   memcpy(&compressed.uint8_data.data[0], buf->data.ptr, buf->width);
+  cvReleaseMat(&buf);
 
   compressed_pub_.publish(compressed);
 }
