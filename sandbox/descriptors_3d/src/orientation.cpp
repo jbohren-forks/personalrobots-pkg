@@ -126,12 +126,9 @@ void Orientation::computeFeatures(cv::Vector<cv::Vector<float> >& results)
   unsigned int nbr_interest_pts = tangents.size();
   results.resize(nbr_interest_pts);
 
-  size_t feature_idx = 0;
-  double tangent_dot = 0.0;
-  double normal_dot = 0.0;
   for (size_t i = 0 ; i < nbr_interest_pts ; i++)
   {
-    feature_idx = 0;
+    size_t feature_idx = 0;
 
     // Indicate couldnt compute feature
     if (tangents[i] == NULL || normals[i] == NULL)
@@ -144,7 +141,7 @@ void Orientation::computeFeatures(cv::Vector<cv::Vector<float> >& results)
 
       if (ref_tangent_defined_)
       {
-        tangent_dot = (tangents[i])->dot(ref_tangent_);
+        double tangent_dot = (tangents[i])->dot(ref_tangent_);
         if (tangent_dot < 0.0)
         {
           tangent_dot = (tangents[i])->dot(ref_tangent_flipped_);
@@ -154,7 +151,7 @@ void Orientation::computeFeatures(cv::Vector<cv::Vector<float> >& results)
 
       if (ref_normal_defined_)
       {
-        normal_dot = (normals[i])->dot(ref_normal_);
+        double normal_dot = (normals[i])->dot(ref_normal_);
         if (normal_dot < 0.0)
         {
           normal_dot = (normals[i])->dot(ref_normal_flipped_);

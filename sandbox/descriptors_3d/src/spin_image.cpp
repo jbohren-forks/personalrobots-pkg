@@ -288,29 +288,23 @@ void SpinImage::computeSpinImage(const robot_msgs::PointCloud& data,
   unsigned int row_offset = nbr_rows_ / 2;
   //static_cast<unsigned int> (floor(0.5 * static_cast<double> (nbr_rows_)));
 
-  Eigen::Vector3d neighbor_vec; // vector from center to neighbor point
-  double neighbor_vec_norm = 0.0;
-  double axis_projection = 0.0;
-  int signed_row_nbr = 0;
-  int curr_row = 0;
-  unsigned int curr_col = 0;
   float max_bin_count = 1.0; // init to 1.0 so avoid divide by 0 if no neighbor points
-  size_t curr_spin_img_idx = 0;
   for (unsigned int i = 0 ; i < neighbor_indices.size() ; i++)
   {
     // Create vector from center point to neighboring point
+    Eigen::Vector3d neighbor_vec;
     neighbor_vec[0] = data.pts[neighbor_indices[i]].x - center_pt[0];
     neighbor_vec[1] = data.pts[neighbor_indices[i]].y - center_pt[1];
     neighbor_vec[2] = data.pts[neighbor_indices[i]].z - center_pt[2];
-    neighbor_vec_norm = neighbor_vec.norm();
+    double neighbor_vec_norm = neighbor_vec.norm();
 
     // ----------------------------------------
     // Scalar projection of neighbor_vec onto spin axis (unit length)
-    axis_projection = neighbor_vec_norm * neighbor_vec.dot(spin_axis_);
+    double axis_projection = neighbor_vec_norm * neighbor_vec.dot(spin_axis_);
     // Computed signed bin along the axis
-    signed_row_nbr = static_cast<int> (floor(axis_projection / row_res_));
+    int signed_row_nbr = static_cast<int> (floor(axis_projection / row_res_));
     // Offset the bin
-    curr_row = signed_row_nbr + row_offset;
+    int curr_row = signed_row_nbr + row_offset;
 
     // ----------------------------------------
     // Two vectors a and b originating from the same point form a parallelogram
@@ -319,12 +313,12 @@ void SpinImage::computeSpinImage(const robot_msgs::PointCloud& data,
     // a = spin axis (unit length)
     // b = neighbor_vec
     // h = Q / |a| = |a x b| / |a| = |a x b|
-    curr_col = static_cast<unsigned int> (floor((spin_axis_.cross(neighbor_vec)).norm() / col_res_));
+    unsigned int curr_col = static_cast<unsigned int> (floor((spin_axis_.cross(neighbor_vec)).norm() / col_res_));
 
     // Increment appropriate spin image cell
     if (curr_row >= 0 && static_cast<unsigned int> (curr_row) < nbr_rows_ && curr_col < nbr_cols_)
     {
-      curr_spin_img_idx = static_cast<size_t> (curr_row * nbr_cols_ + curr_col);
+      size_t curr_spin_img_idx = static_cast<size_t> (curr_row * nbr_cols_ + curr_col);
       spin_image[curr_spin_img_idx] += 1.0;
       if (spin_image[curr_spin_img_idx] > max_bin_count)
       {
@@ -333,6 +327,7 @@ void SpinImage::computeSpinImage(const robot_msgs::PointCloud& data,
     }
   }
 
+  // Normalize counts between 0 and 1
   for (size_t i = 0 ; i < result_size_ ; i++)
   {
     spin_image[i] /= max_bin_count;

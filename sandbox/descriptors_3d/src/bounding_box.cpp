@@ -101,28 +101,19 @@ void BoundingBox::compute(const robot_msgs::PointCloud& data,
 
   // ----------------------------------------
   // For each interest region, compute its bounding box
-  float min_x = 0.0;
-  float min_y = 0.0;
-  float min_z = 0.0;
-  float max_x = 0.0;
-  float max_y = 0.0;
-  float max_z = 0.0;
-  float curr_coord = 0.0;
-  size_t results_idx = 0;
-  Eigen::Vector3d curr_pt;
-  const vector<int>* curr_indices = NULL;
   for (size_t i = 0 ; i < nbr_interest_regions ; i++)
   {
     // --------------------------
-    curr_indices = interest_region_indices[i];
+    const vector<int>* curr_indices = interest_region_indices[i];
     if (curr_indices == NULL || curr_indices->size() == 0)
     {
+      ROS_ERROR("BoudningBox::compute() Passed NULL or empty region indices");
       continue;
     }
 
     // --------------------------
-    // Reset and allocate for current region's features
-    results_idx = 0;
+    // Allocate for current region's features
+    size_t results_idx = 0;
     results[i].resize(result_size_);
 
     // --------------------------
@@ -130,18 +121,18 @@ void BoundingBox::compute(const robot_msgs::PointCloud& data,
     if (use_raw_bbox_)
     {
       // Initialize extrema values to the first coordinate in the interest region
-      min_x = data.pts[(*curr_indices)[0]].x;
-      min_y = data.pts[(*curr_indices)[0]].y;
-      min_z = data.pts[(*curr_indices)[0]].z;
-      max_x = min_x;
-      max_y = min_y;
-      max_z = min_z;
+      float min_x = data.pts[(*curr_indices)[0]].x;
+      float min_y = data.pts[(*curr_indices)[0]].y;
+      float min_z = data.pts[(*curr_indices)[0]].z;
+      float max_x = min_x;
+      float max_y = min_y;
+      float max_z = min_z;
 
       // Loop over remaining points in region and update extremas
       for (unsigned int j = 1 ; j < curr_indices->size() ; j++)
       {
         // x
-        curr_coord = data.pts[(*curr_indices)[j]].x;
+        float curr_coord = data.pts[(*curr_indices)[j]].x;
         if (curr_coord < min_x)
         {
           min_x = curr_coord;
@@ -183,15 +174,16 @@ void BoundingBox::compute(const robot_msgs::PointCloud& data,
     if (use_pca_bbox_)
     {
       // Initialize extrema values to the first coordinate in the interest region
+      Eigen::Vector3d curr_pt;
       curr_pt[0] = data.pts[(*curr_indices)[0]].x;
       curr_pt[1] = data.pts[(*curr_indices)[0]].y;
       curr_pt[2] = data.pts[(*curr_indices)[0]].z;
-      min_x = curr_pt.dot(*((*eig_vec_max)[0]));
-      min_y = curr_pt.dot(*((*eig_vec_mid)[0]));
-      min_z = curr_pt.dot(*((*eig_vec_min)[0]));
-      max_x = min_x;
-      max_y = min_y;
-      max_z = min_z;
+      float min_x = curr_pt.dot(*((*eig_vec_max)[0]));
+      float min_y = curr_pt.dot(*((*eig_vec_mid)[0]));
+      float min_z = curr_pt.dot(*((*eig_vec_min)[0]));
+      float max_x = min_x;
+      float max_y = min_y;
+      float max_z = min_z;
 
       // Loop over remaining points in region and update extremas
       for (unsigned int j = 1 ; j < curr_indices->size() ; j++)
@@ -201,7 +193,7 @@ void BoundingBox::compute(const robot_msgs::PointCloud& data,
         curr_pt[2] = data.pts[(*curr_indices)[j]].z;
 
         // biggest eigenvector
-        curr_coord = curr_pt.dot(*((*eig_vec_max)[j]));
+        float curr_coord = curr_pt.dot(*((*eig_vec_max)[j]));
         if (curr_coord < min_x)
         {
           min_x = curr_coord;

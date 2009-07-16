@@ -98,10 +98,9 @@ void SpectralShape::computeFeatures(cv::Vector<cv::Vector<float> >& results)
   unsigned int nbr_interest_pts = eigen_values.size();
   results.resize(nbr_interest_pts);
 
-  size_t feature_idx = 0;
   for (size_t i = 0 ; i < nbr_interest_pts ; i++)
   {
-    feature_idx = 0;
+    size_t feature_idx = 0;
 
     // If the values are non-NULL, then able to compute features for the interest point
     if (eigen_values[i] != NULL)
