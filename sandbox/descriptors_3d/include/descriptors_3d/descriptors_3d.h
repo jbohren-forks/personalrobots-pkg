@@ -34,6 +34,9 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
+#include <vector>
+#include <set>
+
 #include <opencv/cxcore.h>
 #include <opencv/cv.h>
 #include <opencv/cvaux.hpp>
@@ -68,6 +71,97 @@ class Descriptor3D
 
     virtual ~Descriptor3D()
     {
+    }
+
+    static unsigned int computeAndConcatFeatures(const robot_msgs::PointCloud& pt_cloud,
+                                                 cloud_kdtree::KdTree& pt_cloud_kdtree,
+                                                 const cv::Vector<robot_msgs::Point32*>& interest_pts,
+                                                 vector<Descriptor3D*>& descriptors_3d,
+                                                 vector<float*>& concatenated_features,
+                                                 set<unsigned int>& failed_indices)
+
+    {
+      failed_indices.clear();
+
+      // Allocate results for each INTEREST point
+      unsigned int nbr_interest_pts = interest_pts.size();
+      concatenated_features.assign(nbr_interest_pts, NULL);
+
+      // Allocate feature computation for each descriptor
+      unsigned int nbr_descriptors = descriptors_3d.size();
+      vector<cv::Vector<cv::Vector<float> > > all_descriptor_results(nbr_descriptors);
+
+      // ----------------------------------------------
+      // Iterate over each descriptor and compute features for each point in the point cloud
+      unsigned int nbr_concatenated_vals = 0;
+      for (unsigned int i = 0 ; i < nbr_descriptors ; i++)
+      {
+        if (descriptors_3d[i] == NULL)
+        {
+          return 0;
+        }
+
+        descriptors_3d[i]->compute(pt_cloud, pt_cloud_kdtree, interest_pts, all_descriptor_results[i]);
+        nbr_concatenated_vals += descriptors_3d[i]->getResultSize();
+        ROS_INFO("Descriptor will have this many features: %u", descriptors_3d[i]->getResultSize());
+      }
+
+      // ----------------------------------------------
+      // Iterate over each interest point and compute all feature descriptors
+      // If all descriptor computations are successful, then concatenate all values into 1 array
+      float* curr_concat_feats = NULL; // concatenated features from all descriptors
+      unsigned int prev_val_idx = 0; // offset when copying into concat_features
+      unsigned int curr_nbr_feature_vals = 0; // length of current descriptor
+      bool all_features_success = true; // flag if all descriptors were computed correctly
+      for (unsigned int i = 0 ; i < nbr_interest_pts ; i++)
+      {
+        // --------------------------------
+        // Verify all features for the point were computed successfully
+        all_features_success = true;
+        for (unsigned int j = 0 ; all_features_success && j < nbr_descriptors ; j++)
+        {
+          cv::Vector<cv::Vector<float> >& curr_descriptor_for_cloud = all_descriptor_results[j];
+          cv::Vector<float>& curr_feature_vals = curr_descriptor_for_cloud[(size_t) i];
+
+          // non-zero descriptor length indicates computed successfully
+          all_features_success = curr_feature_vals.size() != 0;
+        }
+
+        // --------------------------------
+        // If all successful, then concatenate feature values
+        if (all_features_success)
+        {
+          // --------------------------------
+          // Concatenate all descriptors into one feature vector
+          curr_concat_feats = static_cast<float*> (malloc(sizeof(float) * nbr_concatenated_vals));
+          prev_val_idx = 0;
+          for (unsigned int j = 0 ; j < nbr_descriptors ; j++)
+          {
+            // retrieve descriptor values for current point
+            cv::Vector<cv::Vector<float> >& curr_descriptor_for_cloud = all_descriptor_results[j];
+            cv::Vector<float>& curr_feature_vals = curr_descriptor_for_cloud[(size_t) i];
+            curr_nbr_feature_vals = curr_feature_vals.size();
+
+            // copy descriptor values into concatenated vector at correct location
+            memcpy(curr_concat_feats + prev_val_idx, curr_feature_vals.begin(), sizeof(float)
+                * curr_nbr_feature_vals);
+
+            // skip over all computed features so far
+            prev_val_idx += curr_nbr_feature_vals;
+          }
+
+          // Save it
+          concatenated_features[i] = curr_concat_feats;
+        }
+        // Otherwise features not successful, so note them
+        else
+        {
+          ROS_WARN("skipping concatenation of sample %u", i);
+          failed_indices.insert(i);
+        }
+      }
+
+      return nbr_concatenated_vals;
     }
 
     // --------------------------------------------------------------

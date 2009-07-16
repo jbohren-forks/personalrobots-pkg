@@ -62,7 +62,6 @@ void populateParameters()
   orientation->useTangentOrientation(0.0, 0.0, 1.0);
   Position* position = new Position();
   node_feature_descriptors.assign(3, spectral_shape);
-  node_feature_descriptors[0] = spectral_shape;
   node_feature_descriptors[1] = orientation;
   node_feature_descriptors[2] = position;
 
@@ -409,8 +408,10 @@ void createNodes(RandomField& rf,
   // ----------------------------------------------
   // Compute features over all point cloud
   vector<float*> concatenated_features(nbr_pts, NULL);
-  unsigned int nbr_concatenated_vals = createConcatenatedFeatures(pt_cloud, pt_cloud_kdtree, interest_pts,
-      node_feature_descriptors, concatenated_features, failed_indices);
+  //  unsigned int nbr_concatenated_vals = createConcatenatedFeatures(pt_cloud, pt_cloud_kdtree, interest_pts,
+  //      node_feature_descriptors, concatenated_features, failed_indices);
+  unsigned int nbr_concatenated_vals = Descriptor3D::computeAndConcatFeatures(pt_cloud, pt_cloud_kdtree,
+      interest_pts, node_feature_descriptors, concatenated_features, failed_indices);
 
   // ----------------------------------------------
   // Create nodes for features that were okay
