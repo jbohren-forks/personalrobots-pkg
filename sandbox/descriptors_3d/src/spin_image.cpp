@@ -313,7 +313,8 @@ void SpinImage::computeSpinImage(const robot_msgs::PointCloud& data,
     // a = spin axis (unit length)
     // b = neighbor_vec
     // h = Q / |a| = |a x b| / |a| = |a x b|
-    unsigned int curr_col = static_cast<unsigned int> (floor((spin_axis_.cross(neighbor_vec)).norm() / col_res_));
+    unsigned int curr_col = static_cast<unsigned int> (floor((spin_axis_.cross(neighbor_vec)).norm()
+        / col_res_));
 
     // Increment appropriate spin image cell
     if (curr_row >= 0 && static_cast<unsigned int> (curr_row) < nbr_rows_ && curr_col < nbr_cols_)
