@@ -78,7 +78,16 @@ public:
 	if (collisionModels_)
 	    delete collisionModels_;
     }
-
+    
+    void run(void)
+    {
+	if (collisionModels_->loadedModels())
+	{
+	    ROS_INFO("Listening for objects to display...");
+	    ros::spin();
+	}
+    }
+    
 protected:
 
     void objectInMapUpdate(const mapping_msgs::ObjectInMapConstPtr &objectInMap)
@@ -173,6 +182,7 @@ private:
 
 	case mapping_msgs::Object::MESH:
 	    mk.type = visualization_msgs::Marker::LINE_LIST;
+	    mk.scale.x = mk.scale.y = mk.scale.z = 0.02;
 	    {
 		unsigned int nt = obj.triangles.size() / 3;
 		for (unsigned int i = 0 ; i < nt ; ++i)
@@ -221,6 +231,7 @@ private:
 
 	case shapes::MESH:
 	    mk.type = visualization_msgs::Marker::LINE_LIST;
+	    mk.scale.x = mk.scale.y = mk.scale.z = 0.02;
 	    {	   
 		const shapes::Mesh *mesh = static_cast<const shapes::Mesh*>(obj);
 		unsigned int nt = mesh->triangleCount / 3;
@@ -302,7 +313,7 @@ int main(int argc, char **argv)
     ros::init(argc, argv, "display_planner_collision_model");
 
     DisplayPlannerCollisionModel disp;
-    ros::spin();
+    disp.run();
     
     return 0;
 }
