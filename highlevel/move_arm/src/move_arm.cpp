@@ -80,6 +80,7 @@ namespace move_arm
 	
 	if (valid_)
 	{
+	    planningMonitor_->getEnvironmentModel()->setVerbose(true);
 	    planningMonitor_->waitForState();
 	    planningMonitor_->waitForMap();
 	    valid_ = getControlJointNames(arm_joint_names_);
@@ -432,7 +433,8 @@ namespace move_arm
 	// if the state is not valid, we try to fix it
 	if (!planningMonitor_->isStateValidOnPath(&st))
 	{
-            ROS_INFO("Start state not valid, fixing it!");
+            ROS_DEBUG("Start state not valid, fixing it!");
+	    
 	    // try 2% change in each component
 	    planning_models::StateParams temp(st);
 	    int count = 0;
