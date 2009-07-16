@@ -226,11 +226,7 @@ namespace action_tools {
 
     private:
       void goalCallback(const boost::shared_ptr<const ActionGoal>& goal){
-        bool call_cb = false;
-
-        boost::shared_ptr<const ActionGoal> cb_action_goal;
-
-        lock_.lock();
+        boost::mutex::scoped_lock(lock_);
         //check that the timestamp is past that of the current goal, the next goal, and past that of the last preempt
         if(goal->header.stamp > current_goal_->header.stamp
             && goal->header.stamp > next_goal_->header.stamp
@@ -239,28 +235,17 @@ namespace action_tools {
           new_goal_ = true;
 
           //we'll call the callback outside of our global lock to prevent deadlock
-          call_cb = true;
-          cb_action_goal = next_goal_;
+          goal_callback_(GoalHandle(next_goal_, this));
         }
         else{
           //reject goal?
         }
-        lock_.unlock();
-
-        //if the user has registered a goal callback, we'll call it now
-        goal_cb_lock_.lock();
-        if(goal_callback_ && call_cb){
-          goal_callback_(GoalHandle(cb_action_goal, this));
-        }
-        goal_cb_lock_.unlock();
-
       }
 
       void preemptCallback(const boost::shared_ptr<const action_tools::Preempt>& preempt){
+        boost::mutex::scoped_lock(lock_);
         ROS_DEBUG("In Preempt Callback");
-        bool call_cb = false;
 
-        lock_.lock();
         //check that the timestamp is past that of the current goal and the last preempt
         if(preempt->header.stamp >= current_goal_->header.stamp
             && preempt->header.stamp > last_preempt_.header.stamp){
@@ -268,27 +253,14 @@ namespace action_tools {
           preempt_request_ = true;
           last_preempt_ = *preempt;
 
-          //we'll call the callback outside of our global lock to prevent deadlock
-          call_cb = true;
-        }
-        else {
-          //send something about a preempt failing?
-        }
-        lock_.unlock();
-
-        //if the user has registered a preempt callback, we'll call it now
-        preempt_cb_lock_.lock();
-        if(preempt_callback_ && call_cb){
+          //if the user has registered a preempt callback, we'll call it now
           preempt_callback_();
         }
-        preempt_cb_lock_.unlock();
-
       }
 
       void publishStatus(const ros::TimerEvent& e){
-        lock_.lock();
+        boost::mutex::scoped_lock(lock_);
         publishStatus();
-        lock_.unlock();
       }
 
       void publishStatus(){
@@ -312,7 +284,7 @@ namespace action_tools {
 
       bool new_goal_, preempt_request_;
 
-      boost::recursive_mutex lock_, goal_cb_lock_, preempt_cb_lock_;
+      boost::recursive_mutex lock_;
 
       ros::Timer status_timer_;
 
