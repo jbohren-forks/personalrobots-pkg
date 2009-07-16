@@ -50,7 +50,7 @@ namespace gazebo {
 GZ_REGISTER_DYNAMIC_CONTROLLER("gazebo_mechanism_control", GazeboMechanismControl);
 
 GazeboMechanismControl::GazeboMechanismControl(Entity *parent)
-  : Controller(parent), hw_(0), mc_(&hw_), fake_state_(NULL)
+  : Controller(parent), hw_(0), mc_(0), fake_state_(NULL)
 {
   this->parent_model_ = dynamic_cast<Model*>(this->parent);
 
@@ -71,11 +71,14 @@ GazeboMechanismControl::GazeboMechanismControl(Entity *parent)
   char** argv = NULL;
   ros::init(argc,argv,"gazebo");
   this->rosnode_ = new ros::NodeHandle();
+
+  this->mc_ = new MechanismControl(&hw_);
 }
 
 GazeboMechanismControl::~GazeboMechanismControl()
 {
   delete this->robotParamP;
+  delete this->mc_; 
   delete this->rosnode_;
 }
 
@@ -90,12 +93,12 @@ void GazeboMechanismControl::LoadChild(XMLConfigNode *node)
   ReadPr2Xml(node);
 
   // Initializes the fake state (for running the transmissions backwards).
-  this->fake_state_ = new mechanism::RobotState(&this->mc_.model_, &this->hw_);
+  this->fake_state_ = new mechanism::RobotState(&this->mc_->model_, &this->hw_);
 
   // The gazebo joints and mechanism joints should match up.
-  for (unsigned int i = 0; i < this->mc_.model_.joints_.size(); ++i)
+  for (unsigned int i = 0; i < this->mc_->model_.joints_.size(); ++i)
   {
-    std::string joint_name = this->mc_.model_.joints_[i]->name_;
+    std::string joint_name = this->mc_->model_.joints_[i]->name_;
 
     // fill in gazebo joints pointer
     gazebo::Joint *joint = this->parent_model_->GetJoint(joint_name);
@@ -173,7 +176,7 @@ void GazeboMechanismControl::UpdateChild()
   this->hw_.current_time_ = Simulator::Instance()->GetSimTime();
   try
   {
-    this->mc_.update();
+    this->mc_->update();
   }
   catch (const char* c)
   {
@@ -201,15 +204,15 @@ void GazeboMechanismControl::UpdateChild()
     switch (this->joints_[i]->GetType())
     {
     case Joint::HINGE:
-      //std::cout << " hinge joint name " << mc_.model_.joints_[i]->name_ << std::endl;
-      //std::cout << " check damping coef " << mc_.model_.joints_[i]->joint_damping_coefficient_ << std::endl;
-      damping_force = this->mc_.model_.joints_[i]->joint_damping_coefficient_ * ((HingeJoint*)this->joints_[i])->GetAngleRate();
+      //std::cout << " hinge joint name " << mc_->model_.joints_[i]->name_ << std::endl;
+      //std::cout << " check damping coef " << mc_->model_.joints_[i]->joint_damping_coefficient_ << std::endl;
+      damping_force = this->mc_->model_.joints_[i]->joint_damping_coefficient_ * ((HingeJoint*)this->joints_[i])->GetAngleRate();
       ((HingeJoint*)this->joints_[i])->SetTorque(effort - damping_force);
       break;
     case Joint::SLIDER:
-      //std::cout << " slider joint name " << mc_.model_.joints_[i]->name_ << std::endl;
-      //std::cout << " check damping coef " << mc_.model_.joints_[i]->joint_damping_coefficient_ << std::endl;
-      damping_force = this->mc_.model_.joints_[i]->joint_damping_coefficient_ * ((SliderJoint*)this->joints_[i])->GetPositionRate();
+      //std::cout << " slider joint name " << mc_->model_.joints_[i]->name_ << std::endl;
+      //std::cout << " check damping coef " << mc_->model_.joints_[i]->joint_damping_coefficient_ << std::endl;
+      damping_force = this->mc_->model_.joints_[i]->joint_damping_coefficient_ * ((SliderJoint*)this->joints_[i])->GetPositionRate();
       ((SliderJoint*)this->joints_[i])->SetSliderForce(effort - damping_force);
       break;
     default:
@@ -223,7 +226,7 @@ void GazeboMechanismControl::FiniChild()
   ROS_DEBUG("Calling FiniChild in GazeboMechanismControl");
 
   this->hw_.~HardwareInterface();
-  this->mc_.~MechanismControl();
+  this->mc_->~MechanismControl();
 
   deleteElements(&this->joints_);
   delete this->fake_state_;
@@ -284,10 +287,10 @@ void GazeboMechanismControl::ReadPr2Xml(XMLConfigNode *node)
   }
 
   // Setup mechanism control node
-  this->mc_.initXml(doc.RootElement());
+  this->mc_->initXml(doc.RootElement());
 
-  for (unsigned int i = 0; i < this->mc_.state_->joint_states_.size(); ++i)
-    this->mc_.state_->joint_states_[i].calibrated_ = true;
+  for (unsigned int i = 0; i < this->mc_->state_->joint_states_.size(); ++i)
+    this->mc_->state_->joint_states_[i].calibrated_ = true;
 }
 
 } // namespace gazebo
