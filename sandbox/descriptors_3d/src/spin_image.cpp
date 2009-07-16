@@ -1,7 +1,7 @@
 /*********************************************************************
  * Software License Agreement (BSD License)
  *
- *  Copyright (c) 2009, Daniel Munoz
+ *  Copyright (c) 2009, Willow Garage
  *  All rights reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
@@ -285,7 +285,8 @@ void SpinImage::computeSpinImage(const robot_msgs::PointCloud& data,
                                  cv::Vector<float>& spin_image)
 {
   spin_image.resize(result_size_);
-  unsigned int row_offset = static_cast<unsigned int> (floor(0.5 * static_cast<double> (nbr_rows_)));
+  unsigned int row_offset = nbr_rows_ / 2;
+  //static_cast<unsigned int> (floor(0.5 * static_cast<double> (nbr_rows_)));
 
   Eigen::Vector3d neighbor_vec; // vector from center to neighbor point
   double neighbor_vec_norm = 0.0;
