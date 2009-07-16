@@ -176,9 +176,14 @@ void convertLink(TiXmlElement *root, robot_desc::URDF::Link *link, const btTrans
                 setupTransform(vis, link->collision->xyz, link->collision->rpy);
             }
             else {
+                // strip .stlb
+                std::cout << "name : " << mesh->filename << std::endl;
+                mesh->filename.replace(mesh->filename.find(std::string(".stl"),0),
+                  mesh->filename.size()-mesh->filename.find(std::string(".stl"),0)+1,std::string(""));
+
                 type = "trimesh";
                 stringstream ss;
-            
+
                 s_listResourceNames.push_back(mesh->filename + ".iv");
             
                 string collisionfilename;
