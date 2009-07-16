@@ -36,7 +36,7 @@
 
 namespace controller {
 
-//ROS_REGISTER_CONTROLLER(JointEffortController)
+ROS_REGISTER_CONTROLLER(JointEffortController)
 
 JointEffortController::JointEffortController()
 : joint_state_(NULL), command_(0), robot_(NULL)
@@ -45,7 +45,32 @@ JointEffortController::JointEffortController()
 
 JointEffortController::~JointEffortController()
 {
+  sub_command_.shutdown();
 }
+
+bool JointEffortController::init(mechanism::RobotState *robot, const ros::NodeHandle &n)
+{
+  node_ = n;
+
+  std::string joint_name;
+  if (!node_.getParam("joint", joint_name)) {
+    ROS_ERROR("No joint given.  (namespace: %s)", n.getNamespace().c_str());
+    return false;
+  }
+
+  joint_state_ = robot_->getJointState(joint_name);
+  if (!joint_state_)
+  {
+    ROS_ERROR("JointEffortController could not find joint named \"%s\"\n",
+              joint_name.c_str());
+    return false;
+  }
+
+  sub_command_ = node_.subscribe("command", 1, &JointEffortController::command, this);
+
+  return true;
+}
+
 bool JointEffortController::init(mechanism::RobotState *robot, const std::string &joint_name)
 {
   if (!robot)
@@ -93,6 +118,10 @@ void JointEffortController::update()
   joint_state_->commanded_effort_ += command_;
 }
 
+void JointEffortController::command(const std_msgs::Float64ConstPtr& msg)
+{
+  command_ = msg->data;
+}
 
 //------ Joint Effort controller node --------
 ROS_REGISTER_CONTROLLER(JointEffortControllerNode)

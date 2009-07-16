@@ -73,6 +73,7 @@ public:
 
   bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
   bool init(mechanism::RobotState *robot, const std::string &joint_name);
+  bool init(mechanism::RobotState *robot, const ros::NodeHandle &n);
 
   virtual bool starting() { command_ = 0.0; return true; }
   virtual void update();
@@ -83,6 +84,11 @@ public:
 
 private:
   mechanism::RobotState *robot_;
+
+  ros::NodeHandle node_;
+  ros::Subscriber sub_command_;
+
+  void command(const std_msgs::Float64ConstPtr& msg);
 };
 
 /***************************************************/
