@@ -108,7 +108,8 @@ void PR2GripperTransmission::computeGapStates(
   //
   // below transforms from encoder value to gap size, based on 090224_link_data.xls provided by Functions Engineering
   //
-  double u            = (coef_a_*coef_a_+coef_b_*coef_b_-pow(L0_+MR*screw_reduction_/gear_ratio_,2))/(2.0*coef_a_*coef_b_);
+  double u            = (coef_a_*coef_a_+coef_b_*coef_b_-coef_h_*coef_h_
+                         -pow(L0_+MR*screw_reduction_/gear_ratio_,2))/(2.0*coef_a_*coef_b_);
   u                   = u < -1.0 ? -1.0 : u > 1.0 ? 1.0 : u;
   theta               = theta0_ - phi0_ + acos(u);
   // limit theta
