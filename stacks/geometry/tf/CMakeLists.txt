@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 2.4.6)
 include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
-set(ROS_BUILD_TYPE Release)
+set(ROS_BUILD_TYPE Debug)
 rospack(tf)
 
 rospack_add_boost_directories()
@@ -112,9 +112,10 @@ rospack_add_pyunit_future(test/test_datatype_conversion.py)
 
 # New Python bindings
 
+# Dynamic linking with tf worked OK, except for exception propagation, which failed in the unit test.
 link_libraries(${PYTHON_LIBRARIES})
-rospack_add_library(pytfX_py src/pytf.cpp)
+rospack_add_library(pytfX_py src/pytf.cpp src/tf.cpp src/transform_listener.cpp src/cache.cpp)
 find_package(PythonLibs REQUIRED)
 set_target_properties(pytfX_py PROPERTIES OUTPUT_NAME tfX PREFIX "_" SUFFIX ".so")
-target_link_libraries(pytfX_py tf)
+# target_link_libraries(pytfX_py tf)
 rospack_add_compile_flags(pytfX_py -g -Wno-missing-field-initializers -msse3)

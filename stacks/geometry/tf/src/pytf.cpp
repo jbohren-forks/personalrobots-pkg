@@ -174,7 +174,15 @@ static PyObject *lookupTransform(PyObject *self, PyObject *args, PyObject *kw)
   if (!PyArg_ParseTupleAndKeywords(args, kw, "ssO&", keywords, &target_frame, &source_frame, rostime_converter, &time))
     return NULL;
   tf::Stamped< btTransform > transform;
-  t->lookupTransform(target_frame, source_frame, time, transform);
+  try
+  {
+    t->lookupTransform(target_frame, source_frame, time, transform);
+  } 
+  catch (const tf::LookupException &e)
+  {
+    PyErr_SetString(tf_error, e.what());
+    return NULL;
+  }
   btVector3 origin = transform.getOrigin();
   btQuaternion rotation = transform.getRotation();
   return Py_BuildValue("(ddd)(dddd)",
@@ -199,7 +207,15 @@ static PyObject *lookupTransformFull(PyObject *self, PyObject *args, PyObject *k
                         &fixed_frame))
     return NULL;
   tf::Stamped< btTransform > transform;
-  t->lookupTransform(target_frame, target_time, source_frame, source_time, fixed_frame, transform);
+  try
+  {
+    t->lookupTransform(target_frame, target_time, source_frame, source_time, fixed_frame, transform);
+  } 
+  catch (const tf::LookupException &e)
+  {
+    PyErr_SetString(tf_error, e.what());
+    return NULL;
+  }
   btVector3 origin = transform.getOrigin();
   btQuaternion rotation = transform.getRotation();
   return Py_BuildValue("(ddd)(dddd)",
