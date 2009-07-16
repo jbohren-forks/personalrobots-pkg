@@ -18,8 +18,8 @@ using namespace std;
 
 #include "outlet_detection/features.h"
 
-static int pca_dim = 20;
-static int pca_dim_small = 20;
+static int pca_dim = 100;
+static int pca_dim_small = 100;
 
 
 /*
