@@ -50,18 +50,16 @@ ROS_REGISTER_CONTROLLER(CartesianTrajectoryController)
 
 
 CartesianTrajectoryController::CartesianTrajectoryController()
-: node_(ros::Node::instance()),
-  jnt_to_pose_solver_(NULL),
+: jnt_to_pose_solver_(NULL),
   motion_profile_(6, VelocityProfile_Trap(0,0)),
-  tf_(*node_, true),
   command_notifier_(NULL)
 {}
 
 CartesianTrajectoryController::~CartesianTrajectoryController()
 {
   if (command_notifier_) delete command_notifier_;
-  node_->unadvertiseService(controller_name_+"/move_to");
-  node_->unadvertiseService(controller_name_+"/preempt");
+  serve_move_to.shutdown();
+  serve_preempt.shutdown();
 }
 
 
@@ -69,19 +67,26 @@ CartesianTrajectoryController::~CartesianTrajectoryController()
 bool CartesianTrajectoryController::initXml(mechanism::RobotState *robot_state, TiXmlElement *config)
 {
   // get the controller name from xml file
-  controller_name_ = config->Attribute("name") ? config->Attribute("name") : "";
-  if (controller_name_ == ""){
+  std::string controller_name = config->Attribute("name") ? config->Attribute("name") : "";
+  if (controller_name == ""){
     ROS_ERROR("CartesianTrajectoryController: No controller name given in xml file");
     return false;
   }
 
+  return init(robot_state, ros::NodeHandle(controller_name));
+}
+
+bool CartesianTrajectoryController::init(mechanism::RobotState *robot_state, const ros::NodeHandle &n)
+{
+  node_ = n;
+
   // get name of root and tip from the parameter server
   std::string tip_name;
-  if (!node_->getParam(controller_name_+"/root_name", root_name_)){
+  if (!node_.getParam("root_name", root_name_)){
     ROS_ERROR("CartesianTrajectoryController: No root name found on parameter server");
     return false;
   }
-  if (!node_->getParam(controller_name_+"/tip_name", tip_name)){
+  if (!node_.getParam("tip_name", tip_name)){
     ROS_ERROR("CartesianTrajectoryController: No tip name found on parameter server");
     return false;
   }
@@ -101,10 +106,10 @@ bool CartesianTrajectoryController::initXml(mechanism::RobotState *robot_state, 
 
   // initialize motion profile
   double max_vel_trans, max_vel_rot, max_acc_trans, max_acc_rot;
-  node_->param(controller_name_+"/max_vel_trans", max_vel_trans, 0.0) ;
-  node_->param(controller_name_+"/max_vel_rot", max_vel_rot, 0.0) ;
-  node_->param(controller_name_+"/max_acc_trans", max_acc_trans, 0.0) ;
-  node_->param(controller_name_+"/max_acc_rot", max_acc_rot, 0.0) ;
+  node_.param("max_vel_trans", max_vel_trans, 0.0) ;
+  node_.param("max_vel_rot", max_vel_rot, 0.0) ;
+  node_.param("max_acc_trans", max_acc_trans, 0.0) ;
+  node_.param("max_acc_rot", max_acc_rot, 0.0) ;
   for (unsigned int i=0; i<3; i++){
     motion_profile_[i  ].SetMax(max_vel_trans, max_acc_trans);
     motion_profile_[i+3].SetMax(max_vel_rot,   max_acc_rot);
@@ -117,7 +122,7 @@ bool CartesianTrajectoryController::initXml(mechanism::RobotState *robot_state, 
     return false;
   }
   std::string output;
-  if (!node_->getParam(controller_name_+"/output", output)){
+  if (!node_.getParam("output", output)){
     ROS_ERROR("CartesianTrajectoryController: No ouptut name found on parameter server");
     return false;
   }
@@ -127,17 +132,16 @@ bool CartesianTrajectoryController::initXml(mechanism::RobotState *robot_state, 
   }
 
   // subscribe to pose commands
-  command_notifier_ = new MessageNotifier<robot_msgs::PoseStamped>(&tf_, node_,
-								 boost::bind(&CartesianTrajectoryController::command, this, _1),
-								 controller_name_ + "/command", root_name_, 1);
+  command_notifier_ = new MessageNotifier<robot_msgs::PoseStamped>(
+    tf_, boost::bind(&CartesianTrajectoryController::command, this, _1),
+    node_.getNamespace() + "/command", root_name_, 1);
+
   // advertise services
-  node_->advertiseService(controller_name_+"/move_to", &CartesianTrajectoryController::moveTo, this);
-  node_->advertiseService(controller_name_+"/preempt", &CartesianTrajectoryController::preempt, this);
+  serve_move_to = node_.advertiseService("move_to", &CartesianTrajectoryController::moveTo, this);
+  serve_preempt = node_.advertiseService("preempt", &CartesianTrajectoryController::preempt, this);
 
   return true;
 }
-
-
 
 
 bool CartesianTrajectoryController::moveTo(const robot_msgs::PoseStamped& pose, const robot_msgs::Twist& tolerance, double duration)
@@ -189,7 +193,8 @@ bool CartesianTrajectoryController::moveTo(const robot_msgs::PoseStamped& pose, 
   request_preempt_ = false;
   is_moving_ = true;
 
-  ROS_INFO("CartesianTrajectoryController: %s will move to new pose in %f seconds", controller_name_.c_str(), max_duration_);
+  ROS_INFO("CartesianTrajectoryController: %s will move to new pose in %f seconds",
+           node_.getNamespace().c_str(), max_duration_);
 
   return true;
 }
