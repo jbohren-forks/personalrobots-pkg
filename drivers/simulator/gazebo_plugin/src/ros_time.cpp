@@ -38,6 +38,9 @@
 #include <gazebo/GazeboError.hh>
 #include <gazebo/ControllerFactory.hh>
 
+#include <boost/thread.hpp>
+#include <boost/bind.hpp>
+
 using namespace gazebo;
 
 GZ_REGISTER_DYNAMIC_CONTROLLER("ros_time", RosTime);
@@ -59,6 +62,11 @@ RosTime::RosTime(Entity *parent)
 
   // broadcasting sim time, so set parameter, this should really be in the launch script param tag, so it's set before nodes start
   this->rosnode_->setParam("/use_sim_time", true);
+
+  // spawn 2 threads by default, ///@todo: make this a parameter
+  ros::MultiThreadedSpinner s(2);
+  boost::thread spinner_thread( boost::bind( &ros::spin, s ) );
+
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -98,8 +106,6 @@ void RosTime::UpdateChild()
     timeMsg.rostime.fromSec(currentTime);
     this->pub_.publish(timeMsg);
     this->lock.unlock();
-
-    ros::spinOnce();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
