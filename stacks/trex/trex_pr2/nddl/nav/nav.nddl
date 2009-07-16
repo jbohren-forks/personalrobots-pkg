@@ -1,6 +1,0 @@
-#include "safety/exports.nddl"
-
-// Navigation specific
-MoveBase move_base = new MoveBase(External);
-ArmsTucked arms_tucked = new ArmsTucked(External);
-TiltLaserReady tilt_laser_ready = new TiltLaserReady(External);
