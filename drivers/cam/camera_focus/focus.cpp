@@ -36,6 +36,7 @@
 #include <sensor_msgs/Image.h>
 #include <diagnostic_updater/publisher.h>
 #include <stdio.h>
+#include <limits.h>
 
 #define BASESIZE 1000000
 int oldwidth = 0;
@@ -118,10 +119,27 @@ void callback(const sensor_msgs::ImageConstPtr& msg)
   fflush(stdout);
 }
 
+int startx, starty, endx, endy;
+
+int bound(int x, int min, int max)
+{
+  if (x < min)
+    return min;
+  if (x > max)
+    return max;
+  return x;
+}
+
 void callback2(const sensor_msgs::ImageConstPtr& msg)
 {
   int width = msg->uint8_data.layout.dim[1].size;
   int height = msg->uint8_data.layout.dim[0].size;
+  int sx = bound(startx, 0, width - 3);
+  int sy = bound(starty, 0, height - 3);
+  int ex = bound(endx, sx + 3, width);
+  int ey = bound(endy, sy + 3, height);
+
+//  printf("%i %i %i %i %i %i %i %i\n", startx, sx, starty, sy, endx, ex, endy, ey);
 
   if (oldwidth != width || oldheight != height)
   {
@@ -141,11 +159,11 @@ void callback2(const sensor_msgs::ImageConstPtr& msg)
   fprintf(gnuplotfile, "set yrange [0:255]\n");
   fprintf(gnuplotfile, "set terminal x11\n");
   fprintf(gnuplotfile, "plot \"-\" using 0:1 with lines\n");
-  for (int y = 0; y < height - 1; y++)
+  for (int y = sy + 1; y < ey - 1; y++)
   {
     int max = 0;
 
-    for (int x = 1; x < width - 1; x++)
+    for (int x = sx + 1; x < ex - 1; x++)
     {                
       int a = (x + y) & 1;
 
@@ -180,9 +198,15 @@ int main(int argc, char **argv)
     perror("popen call failed");
     return -1;
   }
-
+  
   ros::init(argc, argv, "forearm_focus");
   ros::NodeHandle nh;
+
+  nh.param("~startx", startx, -1);
+  nh.param("~starty", starty, -1);
+  nh.param("~endx", endx, INT_MAX);
+  nh.param("~endy", endy, INT_MAX);
+
   ros::Subscriber sub = nh.subscribe("image", 1, callback2);
   ros::spin();
   return 0;

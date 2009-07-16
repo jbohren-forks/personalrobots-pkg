@@ -15,6 +15,10 @@
   <node name="forearm" pkg="forearm_cam" type="forearm_node" respawn="false" output="screen"/>
   <node name="forearm_focus" pkg="camera_focus" type="focus" respawn="false" output="screen">
     <remap from="image" to="forearm/image_raw"/>
+    <param name="startx" type="int" value="160"/>
+    <param name="starty" type="int" value="120"/>
+    <param name="endx" type="int" value="420"/>
+    <param name="endy" type="int" value="280"/>
   </node>
   <node name="forearm_proc" pkg="stereo_image_proc" type="imageproc" respawn="false" output="screen">
     <remap from="camera" to="forearm"/>

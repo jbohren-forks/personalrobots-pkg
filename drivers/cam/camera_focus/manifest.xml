@@ -1,5 +1,5 @@
 <package>
-  <description brief="camera_focus">
+  <description brief="Tools for camera focusing.">
     This package is used to output a signal indicating how well a camera is
     focused. It is used during production to focus the cameras.
   </description>
