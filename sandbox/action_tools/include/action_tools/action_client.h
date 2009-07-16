@@ -109,6 +109,7 @@ public:
   typedef boost::function<void (const TerminalStatuses::TerminalStatus&, const boost::shared_ptr<const Result>&)> CompletionCallback;
   typedef ActionClient<ActionGoal, Goal, ActionResult, Result> ActionClientT;
   typedef boost::function<void (void)> FilledCompletionCallback;
+  typedef boost::shared_ptr<const ActionResult> ActionResultConstPtr;
   typedef boost::shared_ptr<const Result> ResultConstPtr;
   //typedef boost::function<void (const ros::TimerEvent& e)> AckTimeoutCallback;
 
@@ -118,7 +119,7 @@ public:
     ack_timer_.registerOneShotCb(boost::bind(&ActionClientT::ackTimeoutCallback, this, _1));
     runtime_timer_.registerOneShotCb(boost::bind(&ActionClientT::runtimeTimeoutCallback, this, _1));
     wait_for_preempted_timer_.registerOneShotCb(boost::bind(&ActionClientT::waitForPreemptedTimeoutCallback, this, _1));
-    //comm_sync_timer_.registerOneShotCb(boost::bind(&ActionClientT::commSyncTimeoutCallback, this, _1));
+    comm_sync_timer_.registerOneShotCb(boost::bind(&ActionClientT::commSyncTimeoutCallback, this, _1));
 
     setState(IDLE);
     expecting_result_ = expecting_result;
@@ -127,28 +128,28 @@ public:
     preempt_pub_ = nh_.advertise<Preempt> ("preempt", 1);
 
     status_sub_  = nh_.subscribe("status", 1, &ActionClientT::statusCallback, this);
-    //result_sub_  = nh_.subscribe("result", 1, &ActionClientT::resultCallback, this);
+    result_sub_  = nh_.subscribe("result", 1, &ActionClientT::resultCallback, this);
   }
 
-  void execute(const Goal& goal, CompletionCallback completion_callback,
+  void execute(const Goal& goal,
+               CompletionCallback completion_callback          = CompletionCallback(),
                const ros::Duration& runtime_timeout            = ros::Duration(0,0),
                const ros::Duration& ack_timeout                = ros::Duration(5,0),
                const ros::Duration& wait_for_preempted_timeout = ros::Duration(5,0),
                const ros::Duration& comm_sync_timeout          = ros::Duration(5,0))
   {
+    ROS_DEBUG("Got call the execute()");
     boost::mutex::scoped_lock(client_state_mutex_);
-    completion_callback_ = completion_callback;
     cur_goal_.header.stamp = ros::Time::now();
     cur_goal_.goal_id.id  = cur_goal_.header.stamp;
     cur_goal_.goal = goal;
-    got_terminal_status_ = false;
     result_.reset();
     goal_pub_.publish(cur_goal_);
     setState(WAITING_FOR_ACK);
     runtime_timeout_ = runtime_timeout;
     wait_for_preempted_timeout_ = wait_for_preempted_timeout;
     comm_sync_timeout_ = comm_sync_timeout;
-
+    completion_callback_ = completion_callback;
 
     // don't set an ACK timeout for the special case: duration==0
     if (ack_timeout == ros::Duration(0,0))
@@ -170,17 +171,17 @@ private:
   ClientState client_state_;
   bool server_active_;
   ActionGoal cur_goal_;
-  uint8_t terminal_status_;
-  bool got_terminal_status_;
+  TerminalStatuses::TerminalStatus terminal_status_;
   ros::Duration runtime_timeout_;            // Maximum time we're willing to stay in {PURSUING_GOAL, WAITING_FOR_TERMINAL_STATE, WAITING_FOR_RESULT} before Preempting
   ros::Duration wait_for_preempted_timeout_; // Maximum time we're willing to stay in WAITING_FOR_PREEMPTED until we release the goal as TIMED_OUT
   ros::Duration comm_sync_timeout_;          // Maximum time we're willing to stay in WAITING_FOR_TERMINAL_STATE or WAITING_FOR_RESULT until we release the goal as TIMED_OUT
   bool expecting_result_;
   boost::shared_ptr<const ActionResult> result_;
+  CompletionCallback completion_callback_;
 
   // *******************************************
 
-  //boost::recursive_mutex result_mutex_;
+  //boost::recursive_mutex completion_cb_mutex_;
 
   // Various Timers
   OneShotTimer ack_timer_;
@@ -188,7 +189,6 @@ private:
   OneShotTimer wait_for_preempted_timer_;
   OneShotTimer comm_sync_timer_;
 
-  CompletionCallback completion_callback_;
 
   ros::NodeHandle nh_;
   ros::Publisher goal_pub_;
@@ -198,19 +198,14 @@ private:
 
   void ackTimeoutCallback(const ros::TimerEvent& e)
   {
-    FilledCompletionCallback callback;
+    boost::mutex::scoped_lock(client_state_mutex_);
+    if ( client_state_ == WAITING_FOR_ACK )
     {
-      boost::mutex::scoped_lock(client_state_mutex_);
-      if ( client_state_ == WAITING_FOR_ACK )
-      {
-        ROS_WARN("Timed out waiting for ACK");
-        callback = boost::bind(completion_callback_, TerminalStatuses::IGNORED, ResultConstPtr());
-        setState(IDLE);
-      }
+      ROS_WARN("Timed out waiting for ACK");
+      if (completion_callback_)
+        completion_callback_(TerminalStatuses::IGNORED, ResultConstPtr());
+      setState(IDLE);
     }
-
-    if (callback)
-      callback();
   }
 
   void runtimeTimeoutCallback(const ros::TimerEvent& e)
@@ -225,23 +220,46 @@ private:
 
   void waitForPreemptedTimeoutCallback(const ros::TimerEvent& e)
   {
-    FilledCompletionCallback callback;
+    boost::mutex::scoped_lock(client_state_mutex_);
+    if ( client_state_ == WAITING_FOR_PREEMPTED )
     {
-      boost::mutex::scoped_lock(client_state_mutex_);
-      if ( client_state_ == WAITING_FOR_PREEMPTED )
+      ROS_WARN("Timed out waiting to finish WAITING_FOR_PREEMPTED");
+      setState(IDLE);
+      if (completion_callback_)
+        completion_callback_(TerminalStatuses::TIMED_OUT, ResultConstPtr());
+    }
+  }
+
+  /**
+   * Handle the case when we've spent too much time in WAITING_FOR_RESULT or
+   * WAITING_FOR_TERMINAL_STATE. We've timed out, but at least call the
+   * completion callback with as much information as we've got.
+   */
+  void commSyncTimeoutCallback(const ros::TimerEvent& e)
+  {
+    boost::mutex::scoped_lock(client_state_mutex_);
+    if (client_state_ == WAITING_FOR_TERMINAL_STATE)
+    {
+      if (!result_)
+        ROS_ERROR("BUG: If we're waiting for a terminal state, then result_ MUST exist");
+
+      if (completion_callback_)
       {
-        ROS_WARN("Timed out waiting to finish WAITING_FOR_PREEMPTED");
-        setState(IDLE);
-        callback = boost::bind(completion_callback_, TerminalStatuses::TIMED_OUT, boost::shared_ptr<Result>());
+        EnclosureDeleter<const ActionResult> d(result_);
+        completion_callback_(TerminalStatuses::TIMED_OUT, ResultConstPtr(&(result_->result), d));
       }
     }
-
-    if (callback)
-      callback();
+    else if (client_state_ == WAITING_FOR_RESULT)
+    {
+      if (completion_callback_)
+        completion_callback_(TerminalStatuses::TIMED_OUT, ResultConstPtr());
+    }
   }
+
 
   void preemptGoal()
   {
+    ROS_DEBUG("About to preemptGoal()");
     boost::mutex::scoped_lock(client_state_mutex_);
     if (client_state_ == PURSUING_GOAL || client_state_ == WAITING_FOR_ACK)
     {
@@ -262,27 +280,67 @@ private:
       ROS_DEBUG("Not in a preemptable state (ClientState=%u)", client_state_);
   }
 
-  void resultCallback(const ResultConstPtr& msg)
+  void resultCallback(const ActionResultConstPtr& msg)
   {
-    FilledCompletionCallback callback;
-    /*{
-      boost::mutex::scoped_lock(client_state_mutex_);
-      if (isCurrentGoal(msg->goal_id))
-      {
-        if (client_state_ == WAITING_FOR_ACK)
-        {
+    boost::mutex::scoped_lock(client_state_mutex_);
 
-        }
+    if (client_state_ == IDLE || client_state_ == SERVER_INACTIVE)
+      return;
+
+    if (isCurrentGoal(msg->goal_id))
+    {
+      ROS_DEBUG("Got a result msg for this goal id");
+      if (!expecting_result_)
+      {
+        ROS_WARN("ActionClient was told to not expect result msgs, yet we still got one");
+        return;
+      }
+
+      switch(client_state_)
+      {
+        case WAITING_FOR_ACK:
+          ack_timer_.stop();
+          goToWaitingForTerminalState(msg);
+          break;
+        case PURSUING_GOAL:
+          runtime_timer_.stop();
+          goToWaitingForTerminalState(msg);
+          break;
+        case WAITING_FOR_PREEMPTED:
+          wait_for_preempted_timer_.stop();
+          goToWaitingForTerminalState(msg);
+          break;
+        case WAITING_FOR_RESULT:
+          setState(IDLE);
+          if (completion_callback_)
+          {
+            EnclosureDeleter<const ActionResult> d(msg);
+            completion_callback_(terminal_status_, ResultConstPtr(&(msg->result), d));
+          }
+          break;
+        case WAITING_FOR_TERMINAL_STATE:
+          ROS_WARN("BUG: Got a 2nd ActionResult for the same goal");
+          break;
+        default:
+          ROS_WARN("BUG: Should not ever get to this code");
+          break;
       }
     }
+  }
 
-    if (callback)
-      callback();
-    */
+  void goToWaitingForTerminalState(const ActionResultConstPtr& result)
+  {
+    boost::mutex::scoped_lock(client_state_mutex_);
+    setState(WAITING_FOR_TERMINAL_STATE);
+    result_ = result;
+    ROS_DEBUG("Starting the [%.2fs] timer for the WAITING_FOR_TERMINAL_STATE (CommunicationSync) timeout", comm_sync_timeout_.toSec());
+    comm_sync_timer_ = nh_.createTimer(comm_sync_timeout_, comm_sync_timer_.getCb());
   }
 
   void statusCallback(const GoalStatusConstPtr& msg)
   {
+    boost::mutex::scoped_lock(client_state_mutex_);
+
     // ***** ADD STATUS PING ****
     //gotStatusPing();
 
@@ -294,105 +352,102 @@ private:
     if (client_state_ == IDLE || client_state_ == SERVER_INACTIVE )
       return;
 
-    // Used to call callback outside the locks
-    FilledCompletionCallback callback;
+    if ( isFutureGoal(msg->goal_id) )
     {
-      boost::mutex::scoped_lock(client_state_mutex_);
-      if ( isFutureGoal(msg->goal_id) )
+      if (msg->status != GoalStatus::REJECTED)
       {
-        if (msg->status != GoalStatus::REJECTED)
-        {
-          ROS_DEBUG("Saw a future goal. Therefore, our goal somehow got lost during execution");
-          setState(IDLE);
-          // Save the callback that we want to call, and call it later (outside the lock).
-          callback = boost::bind(completion_callback_, TerminalStatuses::LOST, boost::shared_ptr<Result>());
-        }
-        else
-        {
-          ROS_DEBUG("Saw a future goal be Rejected. Ignoring it, since we're ok with rejected future goals");
-        }
+        ROS_DEBUG("Saw a future goal. Therefore, our goal somehow got lost during execution");
+        setState(IDLE);
+        // Save the callback that we want to call, and call it later (outside the lock).
+        if (completion_callback_)
+          completion_callback_(TerminalStatuses::LOST, ResultConstPtr());
       }
-      else if( isCurrentGoal(msg->goal_id) )
+      else
       {
-        if (client_state_ == WAITING_FOR_ACK)
-        {
-          switch (msg->status)
-          {
-            case GoalStatus::ACTIVE :
-              ack_timer_.stop();
-              setState(PURSUING_GOAL);
-              if (runtime_timeout_ != ros::Duration(0,0))
-              {
-                ROS_DEBUG("Starting the [(%.2fs] timer for the PURSUING_GOAL timeout", runtime_timeout_.toSec());
-                runtime_timer_ = nh_.createTimer(runtime_timeout_, runtime_timer_.getCb());
-              }
-              else
-                ROS_DEBUG("Infinte timeout for PURSUING_GOAL timeout");
-              break;
-            case GoalStatus::PREEMPTED :
-            case GoalStatus::SUCCEEDED :
-            case GoalStatus::ABORTED :
-            case GoalStatus::REJECTED :
-              callback = transitionToTerminalState(msg->status); break;
-            default:
-              ROS_DEBUG("Not sure how to handle State: %u", msg->status); break;
-          }
-        }
-        else if (client_state_ == PURSUING_GOAL)
-        {
-          switch (msg->status)
-          {
-            case GoalStatus::ACTIVE :
-              break;
-            case GoalStatus::PREEMPTED :
-            case GoalStatus::SUCCEEDED :
-            case GoalStatus::ABORTED :
-            case GoalStatus::REJECTED :
-              runtime_timer_.stop();
-              callback = transitionToTerminalState(msg->status); break;
-            default:
-              ROS_DEBUG("Not sure how to handle State: %u", msg->status); break;
-          }
-        }
-        else if (client_state_ == WAITING_FOR_PREEMPTED)
-        {
-          switch (msg->status)
-          {
-            case GoalStatus::ACTIVE :
-              break;
-            case GoalStatus::PREEMPTED :
-            case GoalStatus::SUCCEEDED :
-            case GoalStatus::ABORTED :
-            case GoalStatus::REJECTED :
-              wait_for_preempted_timer_.stop();
-              callback = transitionToTerminalState(msg->status); break;
-            default:
-              ROS_DEBUG("Not sure how to handle State: %u", msg->status); break;
-          }
-        }
-        else if (client_state_ == WAITING_FOR_TERMINAL_STATE)
-        {
-          switch (msg->status)
-          {
-            case GoalStatus::PREEMPTED :
-            case GoalStatus::SUCCEEDED :
-            case GoalStatus::ABORTED :
-            case GoalStatus::REJECTED :
-              callback = transitionToTerminalState(msg->status); break;
-            case GoalStatus::ACTIVE : break;
-            default:
-              ROS_DEBUG("Not sure how to handle State: %u", msg->status); break;
-          }
-        }
-        else
-        {
-          ROS_DEBUG("In ClientState [%u]. Got goal status [%u], Ignoring it", client_state_, msg->status);
-        }
+        ROS_DEBUG("Saw a future goal be Rejected. Ignoring it, since we're ok with rejected future goals");
       }
     }
-    // Call the completion callback if we need to
-    if (callback)
-      callback();
+    else if( isCurrentGoal(msg->goal_id) )
+    {
+      if (client_state_ == WAITING_FOR_ACK)
+      {
+        switch (msg->status)
+        {
+          case GoalStatus::ACTIVE :
+            ack_timer_.stop();
+            setState(PURSUING_GOAL);
+            if (runtime_timeout_ != ros::Duration(0,0))
+            {
+              ROS_DEBUG("Starting the [(%.2fs] timer for the PURSUING_GOAL timeout", runtime_timeout_.toSec());
+              runtime_timer_ = nh_.createTimer(runtime_timeout_, runtime_timer_.getCb());
+            }
+            else
+              ROS_DEBUG("Infinte timeout for PURSUING_GOAL timeout");
+            break;
+          case GoalStatus::PREEMPTED :
+          case GoalStatus::SUCCEEDED :
+          case GoalStatus::ABORTED :
+          case GoalStatus::REJECTED :
+            goToTerminalState(msg->status); break;
+          default:
+            ROS_DEBUG("Not sure how to handle State: %u", msg->status); break;
+        }
+      }
+      else if (client_state_ == PURSUING_GOAL)
+      {
+        switch (msg->status)
+        {
+          case GoalStatus::ACTIVE :
+            break;
+          case GoalStatus::PREEMPTED :
+          case GoalStatus::SUCCEEDED :
+          case GoalStatus::ABORTED :
+          case GoalStatus::REJECTED :
+            runtime_timer_.stop();
+            goToTerminalState(msg->status); break;
+          default:
+            ROS_DEBUG("Not sure how to handle State: %u", msg->status); break;
+        }
+      }
+      else if (client_state_ == WAITING_FOR_PREEMPTED)
+      {
+        switch (msg->status)
+        {
+          case GoalStatus::ACTIVE :
+            break;
+          case GoalStatus::PREEMPTED :
+          case GoalStatus::SUCCEEDED :
+          case GoalStatus::ABORTED :
+          case GoalStatus::REJECTED :
+            wait_for_preempted_timer_.stop();
+            goToTerminalState(msg->status); break;
+          default:
+            ROS_DEBUG("Not sure how to handle State: %u", msg->status); break;
+        }
+      }
+      else if (client_state_ == WAITING_FOR_TERMINAL_STATE)
+      {
+        switch (msg->status)
+        {
+          case GoalStatus::PREEMPTED :
+          case GoalStatus::SUCCEEDED :
+          case GoalStatus::ABORTED :
+          case GoalStatus::REJECTED :
+            goToTerminalState(msg->status); break;
+          case GoalStatus::ACTIVE : break;
+          default:
+            ROS_DEBUG("Not sure how to handle State: %u", msg->status); break;
+        }
+      }
+      else if (client_state_ == WAITING_FOR_RESULT)
+      {
+        // Do nothing if we're already waiting for the result
+      }
+      else
+      {
+        ROS_DEBUG("In ClientState [%u]. Got goal status [%u], Ignoring it", client_state_, msg->status);
+      }
+    }
   }
 
   bool isFutureGoal(const GoalID& goal_id)
@@ -407,23 +462,30 @@ private:
     return goal_id.id == cur_goal_.goal_id.id;
   }
 
-  FilledCompletionCallback transitionToTerminalState(uint8_t status)
+  void goToTerminalState(uint8_t status)
   {
     boost::mutex::scoped_lock(client_state_mutex_);
-    got_terminal_status_ = true;
-    terminal_status_ = status;
 
     if(expecting_result_ && !result_)
     {
       switch(status)
       {
         case GoalStatus::PREEMPTED:
+          terminal_status_ = TerminalStatuses::PREEMPTED;
+          goToWaitingForResult();
+          break;
         case GoalStatus::SUCCEEDED:
+          terminal_status_ = TerminalStatuses::SUCCEEDED;
+          goToWaitingForResult();
+          break;
         case GoalStatus::ABORTED:
+          terminal_status_ = TerminalStatuses::ABORTED;
+          goToWaitingForResult();
+          break;
         case GoalStatus::REJECTED:
-          setState(WAITING_FOR_RESULT);
-          ROS_DEBUG("Starting the [(%.2fs] timer for the WAITING_FOR_RESULT (CommunicationSync) timeout", comm_sync_timeout_.toSec());
-          comm_sync_timer_ = nh_.createTimer(comm_sync_timeout_, comm_sync_timer_.getCb());
+          setState(IDLE);
+          if (completion_callback_)
+            completion_callback_(TerminalStatuses::REJECTED, ResultConstPtr());
           break;
         default:
           ROS_WARN("BUG: Tried to go to a terminal status without receiving a terminal status. [GoalStatus.status==%u]", status);
@@ -445,22 +507,38 @@ private:
       {
         case GoalStatus::PREEMPTED:
           setState(IDLE);
-          return boost::bind(completion_callback_, TerminalStatuses::PREEMPTED, unwrapped_result);
+          if (completion_callback_)
+            completion_callback_(TerminalStatuses::PREEMPTED, unwrapped_result);
+          break;
         case GoalStatus::SUCCEEDED:
           setState(IDLE);
-          return boost::bind(completion_callback_, TerminalStatuses::SUCCEEDED, unwrapped_result);
+          if (completion_callback_)
+            completion_callback_(TerminalStatuses::SUCCEEDED, unwrapped_result);
+          break;
         case GoalStatus::ABORTED:
           setState(IDLE);
-          return boost::bind(completion_callback_, TerminalStatuses::ABORTED, unwrapped_result);
+          if (completion_callback_)
+            completion_callback_(TerminalStatuses::ABORTED, unwrapped_result);
+          break;
         case GoalStatus::REJECTED:
           setState(IDLE);
-          return boost::bind(completion_callback_, TerminalStatuses::REJECTED, unwrapped_result);
+          if (completion_callback_)
+            completion_callback_(TerminalStatuses::REJECTED, unwrapped_result);
+          break;
         default:
           ROS_WARN("BUG: Tried to go to a terminal status without receiving a terminal status. [GoalStatus.status==%u]", status);
           break;
       }
     }
-    return FilledCompletionCallback(); // Null callback
+    return;
+  }
+
+  void goToWaitingForResult()
+  {
+    boost::mutex::scoped_lock(client_state_mutex_);
+    setState(WAITING_FOR_RESULT);
+    ROS_DEBUG("Starting the [%.2fs] timer for the WAITING_FOR_RESULT (CommunicationSync) timeout", comm_sync_timeout_.toSec());
+    comm_sync_timer_ = nh_.createTimer(comm_sync_timeout_, comm_sync_timer_.getCb());
   }
 
 };
