@@ -41,7 +41,7 @@ planworks:
 	@if [ ! -n "`svn info PlanWorks | grep 'Revision: $(PLANWORKS_REVISION)'`" ]; then cd PlanWorks && $(SVN_CMDLINE) up -r $(PLANWORKS_REVISION) ; cd ../ && ./copyIncludes.sh ; fi;
 
 # Get TREX
-TREX_REVISION=150
+TREX_REVISION=151
 trex: plasma
 	@if [ ! -d TREX ]; then $(SVN_CMDLINE) co -r $(TREX_REVISION) http://trex-autonomy.googlecode.com/svn/trunk TREX; ./copyIncludes.sh ; fi ;
 	@if [ ! -n "`svn info TREX | grep 'Revision: $(TREX_REVISION)'`" ]; then cd TREX && $(SVN_CMDLINE) up -r $(TREX_REVISION); cd ../ && ./copyIncludes.sh ; fi;
