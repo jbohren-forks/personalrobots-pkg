@@ -30,11 +30,17 @@ public:
   ros::NodeHandle n_;
   ros::Subscriber img_to_display_sub_; //On key, we'll move from display to annotation
   ros::Publisher img_to_annotate_pub_;
+  string image_topic_;
 
 
   MTManualSelectNode() : image_counter_(0)
   { 
     cvNamedWindow("mt_manual_select", CV_WINDOW_AUTOSIZE);
+    image_topic_ = n_.resolveName("image");
+    if (image_topic_ == "/image") {
+      image_topic_ = string("/wide_stereo/left/image");  // By default
+    }
+    ROS_INFO_STREAM("Sending to topic " << image_topic_);
   }
 
   void init()
@@ -42,7 +48,7 @@ public:
     // Advertise the Images for annotation
     img_to_annotate_pub_ = n_.advertise<sensor_msgs::Image>("image_to_annotate",0);
     // Subscribe to the Images that we display
-    img_to_display_sub_ = n_.subscribe(std::string("/stereo/left/image"),  (unsigned int)10, &MTManualSelectNode::onImage,this);
+    img_to_display_sub_ = n_.subscribe(image_topic_,  (unsigned int)10, &MTManualSelectNode::onImage,this);
     // Retrieve internal message parameter, or else set default to 'pong! '
   }
 
@@ -50,7 +56,7 @@ public:
 
   void help()
   {
-	printf("\nUsage:\n  ./mt_manual_select  image:=/stereo/left/image [or whatever your camera name is]\n\n"
+	printf("\nUsage:\n  ./mt_manual_select  image:=/wide_stereo/left/image [or whatever your camera name is]\n\n"
 	"   Takes keyboard input:\n"
 	"\tESQ,q,Q:   Quit\n"
 	"\th,H:       Print this help\n"
@@ -67,39 +73,41 @@ public:
     const sensor_msgs::Image& image_msg=*msg;
     IplImage *cv_img_to_label;
 
-    cv_bridge.fromImage(image_msg);
-    cv_img_to_label = cv_bridge.toIpl();
-
-    if (cv_img_to_label)
-    {
-      //VIEW THE IMAGE
-      cvShowImage("cv_mturk", cv_img_to_label);
-
-      //HANDLE KEYBOARD INPUT
-      int c = cvWaitKey(100)&0xFF;
-      switch(c)
-      { 
-      	case 27:  //ESQ -- exit
-	case 'q': // or quit
-        case 'Q':    
-		printf("Bye bye\n");
-		cvReleaseImage(&cv_img_to_label);
-		n_.shutdown();
-		break;
-	case 'h': //Help
-	case 'H':
-		help();
-		break;
-	case 'm': //Invoke Mechanical Turk submission
-	case 'M':
-
-	  image_counter_+= 1;		
-	  printf("Sending\n");
-	  ROS_INFO_STREAM("Sending msg " << image_counter_ );
-	  img_to_annotate_pub_.publish(image_msg);
-
-	  break;
+    if (cv_bridge.fromImage(image_msg)) {
+      cv_img_to_label = cv_bridge.toIpl();
+      
+      if (cv_img_to_label) {
+	//VIEW THE IMAGE
+	cvShowImage("mt_manual_select", cv_img_to_label);
+	
+	//HANDLE KEYBOARD INPUT
+	int c = cvWaitKey(100)&0xFF;
+	switch(c)
+	  { 
+	  case 27:  //ESQ -- exit
+	  case 'q': // or quit
+	  case 'Q':    
+	    printf("Bye bye\n");
+	    cvReleaseImage(&cv_img_to_label);
+	    n_.shutdown();
+	    break;
+	  case 'h': //Help
+	  case 'H':
+	    help();
+	    break;
+	  case 'm': //Invoke Mechanical Turk submission
+	  case 'M':
+	    
+	    image_counter_+= 1;		
+	    printf("Sending\n");
+	    ROS_INFO_STREAM("Sending msg " << image_counter_ );
+	    img_to_annotate_pub_.publish(image_msg);
+	    
+	    break;
+	  }
       }
+    } else {
+      ROS_ERROR("Unable to convert from %s to bgr", msg->encoding.c_str());
     }
   }
 };
