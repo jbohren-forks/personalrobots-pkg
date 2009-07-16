@@ -51,8 +51,6 @@ int M3NModel::infer(const RandomField& random_field,
     return -1;
   }
 
-  // TODO initialized inferred_labels with best scores for node potentials
-
   loss_augmented_inference_ = false; // only use during learning
   return inferPrivate(random_field, inferred_labels, max_iterations);
 }
@@ -96,7 +94,7 @@ int M3NModel::cachePotentials(const RandomField& random_field)
   // -------------------------------------------
   // Populate clique scores
   const vector<map<unsigned int, RandomField::Clique*> >& clique_sets = random_field.getCliqueSets();
-  unsigned int nbr_clique_sets = clique_sets.size();
+  const unsigned int nbr_clique_sets = clique_sets.size();
   for (unsigned int cs_idx = 0 ; cs_idx < nbr_clique_sets ; cs_idx++)
   {
     // Iterate over the cliques in each clique set
@@ -129,7 +127,28 @@ int M3NModel::cachePotentials(const RandomField& random_field)
 }
 
 // --------------------------------------------------------------
-/*! See function definition */
+/* See function definition */
+// --------------------------------------------------------------
+void M3NModel::generateInitialLabeling(const RandomField& random_field,
+                                       map<unsigned int, unsigned int>& inferred_labels)
+{
+  inferred_labels.clear();
+
+  const unsigned int nbr_labels = training_labels_.size();
+
+  const map<unsigned int, RandomField::Node*>& nodes = random_field.getNodesRandomFieldIDs();
+  for (map<unsigned int, RandomField::Node*>::const_iterator iter_nodes = nodes.begin() ; iter_nodes
+      != nodes.end() ; iter_nodes++)
+  {
+    unsigned int curr_node_id = iter_nodes->first;
+
+    // Use random labeling
+    inferred_labels[curr_node_id] = training_labels_[rand() % nbr_labels];
+  }
+}
+
+// --------------------------------------------------------------
+/* See function definition */
 // --------------------------------------------------------------
 int M3NModel::inferPrivate(const RandomField& random_field,
                            map<unsigned int, unsigned int>& inferred_labels,
@@ -145,7 +164,7 @@ int M3NModel::inferPrivate(const RandomField& random_field,
 
   // -------------------------------------------
   // Verify clique interaction parameters agree
-  unsigned int nbr_clique_sets = clique_sets.size();
+  const unsigned int nbr_clique_sets = clique_sets.size();
   if (clique_sets.size() != robust_potts_params_.size())
   {
     ROS_ERROR("Number of clique sets in random field (%u) does not match the model (%u)",
@@ -156,12 +175,11 @@ int M3NModel::inferPrivate(const RandomField& random_field,
   // -------------------------------------------
   // Setup label information.
   // Generate random initializing labeling if passed empty labeling
-  unsigned int nbr_labels = training_labels_.size();
-  bool use_random_init_labeling = inferred_labels.size() != nodes.size();
-  if (use_random_init_labeling)
+  const unsigned int nbr_labels = training_labels_.size();
+  const bool use_given_labeling = inferred_labels.size() == nodes.size();
+  if (use_given_labeling == false)
   {
-    // This will be populated on first iteration below
-    inferred_labels.clear();
+    generateInitialLabeling(random_field, inferred_labels);
   }
 
   // -------------------------------------------
@@ -203,20 +221,12 @@ int M3NModel::inferPrivate(const RandomField& random_field,
         unsigned int curr_node_id = iter_nodes->first;
         const RandomField::Node* curr_node = iter_nodes->second;
 
-        // ------------------------
-        // If passed empty labeling, the generate random labeling on very first pass
-        if (use_random_init_labeling)
-        {
-          inferred_labels[iter_nodes->first] = training_labels_[rand() % nbr_labels];
-        }
-
         // Add new energy variable
         energy_vars[curr_node_id] = energy_func->addVariable();
 
         ret_val = addNodeEnergy(*curr_node, *energy_func, energy_vars[curr_node_id],
             inferred_labels[curr_node_id], alpha_label);
       }
-      use_random_init_labeling = false;
 
       // -------------------------------------------
       // Iterate over clique sets to compute cliques' scores
@@ -351,12 +361,12 @@ int M3NModel::addEdgeEnergy(const RandomField::Clique& edge,
 {
   // Retrieve the ids of the node in the edge
   const list<unsigned int>& node_ids = edge.getNodeIDs();
-  unsigned int node1_id = node_ids.front();
-  unsigned int node2_id = node_ids.back();
+  const unsigned int node1_id = node_ids.front();
+  const unsigned int node2_id = node_ids.back();
 
   // Retrieve the nodes current labels
-  unsigned int node1_label = curr_labeling.find(node1_id)->second;
-  unsigned int node2_label = curr_labeling.find(node2_id)->second;
+  const unsigned int node1_label = curr_labeling.find(node1_id)->second;
+  const unsigned int node2_label = curr_labeling.find(node2_id)->second;
 
   double E00 = 0.0;
   double E01 = 0.0;
@@ -578,7 +588,7 @@ int M3NModel::computePotential(const RandomField::Node& node, const unsigned int
   potential_val = 0.0;
 
   // Sum the scores of each regressor
-  unsigned int nbr_regressors = regressors_.size();
+  const unsigned int nbr_regressors = regressors_.size();
   for (unsigned int i = 0 ; i < nbr_regressors ; i++)
   {
     double curr_step_size = regressors_[i].first;
@@ -610,7 +620,7 @@ int M3NModel::computePotential(const RandomField::Clique& clique,
   potential_val = 0.0;
 
   // Sum the scores of each regressor
-  unsigned int nbr_regressors = regressors_.size();
+  const unsigned int nbr_regressors = regressors_.size();
   for (unsigned int i = 0 ; i < nbr_regressors ; i++)
   {
     double curr_step_size = regressors_[i].first;

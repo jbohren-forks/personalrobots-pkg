@@ -54,7 +54,6 @@
 #include <functional_m3n/regressors/regressor_includes.h>
 #include <functional_m3n/logging/m3n_logging.h>
 
-
 using namespace std;
 
 // --------------------------------------------------------------
@@ -214,6 +213,9 @@ class M3NModel
                      unsigned int max_iterations = 0);
 
     int cachePotentials(const RandomField& random_field);
+
+    void generateInitialLabeling(const RandomField& random_field,
+                                 map<unsigned int, unsigned int>& inferred_labels);
 
     // --------------------------------------------------------------
     /*!
