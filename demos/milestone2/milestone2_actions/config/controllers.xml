@@ -18,7 +18,16 @@
 
 <!-- Head controller -->
 <!--  <node pkg="mechanism_control" type="spawner.py" args="--stopped $(find pr2_default_controllers)/head_pan_tilt_controller.xml" />-->
-<include file="$(find pr2_default_controllers)/head_position_controller.launch" />
+ <group ns="head_controller" clear_params="true">
+    <param name="pan_link_name" type="string" value="head_pan_link" />
+    <param name="tilt_link_name" type="string" value="head_tilt_link" />
+    <param name="pan_output" type="string" value="head_pan_joint_position_controller" />
+    <param name="tilt_output" type="string" value="head_tilt_joint_position_controller" />
+ </group>
+
+
+  <node pkg="mechanism_control" type="spawner.py" args="--stopped $(find pr2_default_controllers)/head_pan_joint_position_controller.xml $(find pr2_default_controllers)/head_tilt_joint_position_controller.xml $(find pr2_default_controllers)/head_position_controller.xml" output="screen" />
+
 
 
 <!-- Torso controller -->
