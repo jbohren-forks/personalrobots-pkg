@@ -65,4 +65,33 @@ void PoseTFToKDL(const tf::Pose& t, KDL::Frame& k)
     k.M.data[i] = t.getBasis()[i/3][i%3];
 }
 
+void PoseKDLToTF(const KDL::Frame& k, tf::Pose& t)
+{
+  t.getOrigin()[0] = k.p.data[0];
+  t.getOrigin()[1] = k.p.data[1];
+  t.getOrigin()[2] = k.p.data[2];
+  for (unsigned int i = 0; i < 9; ++i)
+    t.getBasis()[i/3][i%3] = k.M.data[i];
+}
+
+void TwistKDLToMsg(const KDL::Twist &t, robot_msgs::Twist &m)
+{
+  m.vel.x = t.vel.data[0];
+  m.vel.y = t.vel.data[1];
+  m.vel.z = t.vel.data[2];
+  m.rot.x = t.rot.data[0];
+  m.rot.y = t.rot.data[1];
+  m.rot.z = t.rot.data[2];
+}
+
+void TwistMsgToKDL(const robot_msgs::Twist &m, KDL::Twist &t)
+{
+  t.vel.data[0] = m.vel.x;
+  t.vel.data[1] = m.vel.y;
+  t.vel.data[2] = m.vel.z;
+  t.rot.data[0] = m.rot.x;
+  t.rot.data[1] = m.rot.y;
+  t.rot.data[2] = m.rot.z;
+}
+
 }
