@@ -42,6 +42,7 @@
 #include <boost/shared_ptr.hpp>
 #include <action_tools/Preempt.h>
 #include <action_tools/GoalStatus.h>
+#include <action_tools/EnclosureDeleter.h>
 
 namespace action_tools {
   enum ActionServerState {
@@ -49,32 +50,9 @@ namespace action_tools {
     RUNNING
   };
 
-  /*
-   * This allows the creation of a shared pointer to a section
-   * of an already reference counted structure. For example,
-   * if in the following picture Enclosure is reference counted with
-   * a boost::shared_ptr and you want to return a boost::shared_ptr
-   * to the Member that is referenced counted along with Enclosure objects
-   *
-   * Enclosure ---------------  <--- Already reference counted
-   * -----Member <------- A member of enclosure objects, eg. Enclosure.Member
-   */
-  template <class Enclosure> class EnclosureDeleter {
-    public:
-      EnclosureDeleter(const boost::shared_ptr<Enclosure>& enc_ptr) : enc_ptr_(enc_ptr){}
-
-      template<class Member> void operator()(Member* member_ptr){
-        enc_ptr_.reset();
-      }
-
-    private:
-      boost::shared_ptr<Enclosure> enc_ptr_;
-  };
-
-
   template <class ActionGoal, class Goal, class ActionResult, class Result>
   class ActionServer {
-    public: 
+    public:
       //we need to create a GoalHandle class for this ActionServer
       class GoalHandle{
         public:
@@ -107,7 +85,7 @@ namespace action_tools {
           goal_sub_ = node_.subscribe<ActionGoal>("~goal", 1,
               boost::bind(&ActionServer::goalCallback, this, _1));
 
-          preempt_sub_ = node_.subscribe<action_tools::Preempt>("~preempt", 1,  
+          preempt_sub_ = node_.subscribe<action_tools::Preempt>("~preempt", 1,
               boost::bind(&ActionServer::preemptCallback, this, _1));
 
           status_timer_ = node_.createTimer(ros::Duration(1.0 / status_frequency),
@@ -124,7 +102,7 @@ namespace action_tools {
       bool isNewGoalAvailable(){
         return new_goal_;
       }
-      
+
       void sendResult(Result result){
         ActionResult r;
         r.header.stamp = ros::Time::now();
@@ -279,12 +257,14 @@ namespace action_tools {
       }
 
       void preemptCallback(const boost::shared_ptr<const action_tools::Preempt>& preempt){
+        ROS_DEBUG("In Preempt Callback");
         bool call_cb = false;
 
         lock_.lock();
         //check that the timestamp is past that of the current goal and the last preempt
-        if(preempt->header.stamp > current_goal_->header.stamp
+        if(preempt->header.stamp >= current_goal_->header.stamp
             && preempt->header.stamp > last_preempt_.header.stamp){
+          ROS_DEBUG("Setting preempt_request bit to TRUE");
           preempt_request_ = true;
           last_preempt_ = *preempt;
 
@@ -318,7 +298,7 @@ namespace action_tools {
       void publishGoalStatus(const ActionGoal& goal, const GoalStatus& status){
         status_pub_.publish(status_);
       }
-      
+
       ros::NodeHandle node_;
 
       ros::Subscriber goal_sub_, preempt_sub_;

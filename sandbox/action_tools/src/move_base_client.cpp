@@ -44,7 +44,7 @@ using namespace robot_msgs;
 
 typedef ActionClient<MoveBaseGoal, PoseStamped, MoveBaseResult, PoseStamped> MoveBaseClient;
 
-void callback(const TerminalStatuses::TerminalStatus& status, const PoseStamped& result)
+void callback(const TerminalStatuses::TerminalStatus& status, const boost::shared_ptr<const PoseStamped>& result)
 {
   ROS_INFO("In ActionClient Callback");
   switch (status)
@@ -59,24 +59,35 @@ void callback(const TerminalStatuses::TerminalStatus& status, const PoseStamped&
       ROS_INFO("ABORTED"); break;
     case TerminalStatuses::TIMED_OUT:
       ROS_INFO("TIMED_OUT"); break;
-    case TerminalStatuses::UNKNOWN_STATE:
-      ROS_INFO("UNKNOWN_STATE"); break;
+    case TerminalStatuses::LOST:
+      ROS_INFO("LOST"); break;
+    case TerminalStatuses::IGNORED:
+      ROS_INFO("IGNORED"); break;
     default:
       ROS_INFO("BAD STATUS"); break;
   }
 
-  ROS_INFO("Got Result: [xyz]=(%5.2f, %5.2f, %5.2f)",
-           result.pose.position.x,
-           result.pose.position.y,
-           result.pose.position.z);
+  if (result)
+  {
+    ROS_INFO("Got Result: [xyz]=(%5.2f, %5.2f, %5.2f)",
+             result->pose.position.x,
+             result->pose.position.y,
+             result->pose.position.z);
+  }
 }
 
+void spinThread()
+{
+  ros::spin();
+}
 
 int main(int argc, char** argv)
 {
   ros::init(argc, argv, "move_base_action_client");
 
   ros::NodeHandle n;
+
+  boost::thread spinthread = boost::thread(boost::bind(&spinThread)) ;
 
   ros::Duration sleep_duration(2,0);
 
@@ -87,9 +98,26 @@ int main(int argc, char** argv)
   PoseStamped goal_pose;
   goal_pose.pose.position.x = 200;
 
+  ros::Duration runtime_timeout(10,0);
+  ros::Duration ack_timeout(3,0);
+
   ac.execute(goal_pose, &callback);
 
-  ros::spin();
+  sleep(3);
+
+  goal_pose.pose.position.x = 50;
+  goal_pose.pose.position.y = 50;
+
+  ac.execute(goal_pose, &callback, runtime_timeout, ack_timeout);
+
+  sleep(3);
+  goal_pose.pose.position.x = 25;
+  goal_pose.pose.position.y = 25;
+  ros::Duration preempt_timeout(3,0);
+  ac.execute(goal_pose, &callback, runtime_timeout, ack_timeout, preempt_timeout);
+
+  while(n.ok())
+    sleep(1);
 
   return 0;
 }
