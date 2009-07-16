@@ -1,0 +1,55 @@
+cartesian_twist_gains: &cartesian_twist_gains
+  ff_trans: 0.0
+  fb_trans:
+    p: 20.0
+    i: 0.5
+    d: 0.0
+    i_clamp: 1.0
+  ff_rot: 0.0
+  fb_rot:
+    p: 0.5
+    i: 0.1
+    d: 0.0
+    i_clamp: 0.2
+
+cartesian_pose_gains: &cartesian_pose_gains
+  fb_trans:
+    p: 400
+    d: 30
+  fb_rot:
+    p: 5
+    
+r_arm_cartesian_wrench_controller:
+  type: CartesianWrenchController
+  root_name: torso_lift_link
+  tip_name: r_wrist_roll_link
+r_arm_cartesian_twist_controller:
+  type: CartesianTwistController
+  root_name: torso_lift_link
+  tip_name: r_wrist_roll_link
+  output: r_arm_cartesian_wrench_controller
+  <<: *cartesian_twist_gains
+r_arm_cartesian_pose_controller:
+  type: CartesianPoseController
+  root_name: torso_lift_link
+  tip_name: r_wrist_roll_link
+  output: r_arm_cartesian_wrench_controller
+  <<: *cartesian_pose_gains
+
+l_arm_cartesian_wrench_controller:
+  type: CartesianWrenchController
+  root_name: torso_lift_link
+  tip_name: l_wrist_roll_link
+l_arm_cartesian_twist_controller:
+  type: CartesianTwistController
+  root_name: torso_lift_link
+  tip_name: l_wrist_roll_link
+  output: l_arm_cartesian_wrench_controller
+  <<: *cartesian_twist_gains
+l_arm_cartesian_pose_controller:
+  type: CartesianPoseController
+  root_name: torso_lift_link
+  tip_name: l_wrist_roll_link
+  output: l_arm_cartesian_wrench_controller
+  <<: *cartesian_pose_gains
+
