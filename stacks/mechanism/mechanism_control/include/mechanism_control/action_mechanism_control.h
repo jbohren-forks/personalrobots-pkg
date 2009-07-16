@@ -50,10 +50,15 @@ namespace mechanism_control{
 class ActionMechanismControl: public robot_actions::Action<pr2_robot_actions::SwitchControllers, std_msgs::Empty>{
 
 public:
-  ActionMechanismControl(ros::Node& node);
+  ActionMechanismControl();
   ~ActionMechanismControl();
 
   virtual robot_actions::ResultStatus execute(const pr2_robot_actions::SwitchControllers& c, std_msgs::Empty&);
+
+
+private:
+  ros::ServiceClient switch_controller_srv_;
+
 
 
 };// class

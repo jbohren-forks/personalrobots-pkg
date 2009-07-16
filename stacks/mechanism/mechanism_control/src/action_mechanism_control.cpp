@@ -41,9 +41,12 @@ using namespace std;
 
 namespace mechanism_control{
 
-ActionMechanismControl::ActionMechanismControl(Node& node):
+ActionMechanismControl::ActionMechanismControl():
   robot_actions::Action<pr2_robot_actions::SwitchControllers, std_msgs::Empty>("switch_controllers")
-{};
+{
+  NodeHandle node;
+  switch_controller_srv_ = node.serviceClient<mechanism_msgs::SwitchController>("switch_controller");
+};
 
 
 ActionMechanismControl::~ActionMechanismControl(){};
@@ -61,8 +64,8 @@ robot_actions::ResultStatus ActionMechanismControl::execute(const pr2_robot_acti
   mechanism_msgs::SwitchController::Response resp;
   req.start_controllers = c.start_controllers;
   req.stop_controllers  = c.stop_controllers;
-  if (!ros::service::call("switch_controller", req, resp)){
-    ROS_ERROR("ActionMechanismControl: failed to communicate with switch controllers");
+  if (!switch_controller_srv_.call(req, resp)){
+    ROS_ERROR("ActionMechanismControl: failed to communicate with mechanism control to switch controllers");
     return robot_actions::ABORTED;
   }
   else{
