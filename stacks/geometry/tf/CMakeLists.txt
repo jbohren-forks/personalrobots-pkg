@@ -95,6 +95,16 @@ target_link_libraries(python_${PROJECT_NAME} tf ${PYTHON_LIBRARIES})
 set_target_properties(python_${PROJECT_NAME}
                       PROPERTIES OUTPUT_NAME _${PROJECT_NAME}_swig
                       PREFIX "")
+# If on Darwin, create a symlink _foo.so -> _foo.dylib, because the
+# MacPorts version of Python won't find _foo.dylib for 'import _foo'
+include(CMakeDetermineSystem)
+if(CMAKE_SYSTEM_NAME MATCHES "Darwin")
+  add_custom_command(OUTPUT ${LIBRARY_OUTPUT_PATH}/_${PROJECT_NAME}.so
+                     COMMAND cmake -E create_symlink  ${LIBRARY_OUTPUT_PATH}/_${PROJECT_NAME}.dylib ${LIBRARY_OUTPUT_PATH}/_${PROJECT_NAME}.so
+                     DEPENDS python_${PROJECT_NAME})
+  add_custom_target(symlink_darwin_lib ALL
+                    DEPENDS ${LIBRARY_OUTPUT_PATH}/_${PROJECT_NAME}.so)
+endif(CMAKE_SYSTEM_NAME MATCHES "Darwin")
 
 
 # Tests for swig
