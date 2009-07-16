@@ -196,7 +196,6 @@ void *controlLoop(void *)
 
   // Create mechanism control
   MechanismControl mc(ec.hw_);
-  MechanismControlNode mcn(&mc);
 
   // Load robot description
   TiXmlDocument xml;
@@ -229,7 +228,7 @@ void *controlLoop(void *)
   ec.initXml(root, g_options.allow_override_);
 
   // Initialize mechanism control from robot description
-  mcn.initXml(root);
+  mc.initXml(root);
 
   // Publish one-time before entering real-time to pre-allocate message vectors
   publishDiagnostics(publisher);
@@ -261,7 +260,7 @@ void *controlLoop(void *)
     }
     g_halt_motors = false;
     double after_ec = now();
-    mcn.update();
+    mc.update();
     double end = now();
 
     g_stats.ec_acc(after_ec - start);
