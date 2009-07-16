@@ -19,10 +19,10 @@ namespace trex_ros {
   }
 
   void ROSDbListener::notifyAdded(const ObjectId& object, const TokenId& token) {
-    ROS_INFO("ADDED TOKEN (%d) \"%s\" TO OBJECT \"%s\"",
-	token->getKey(),
-	token->getName().c_str(),
-	object->getName().c_str());
+   // ROS_INFO("ADDED TOKEN (%d) \"%s\" TO OBJECT \"%s\"",
+   //	token->getKey(),
+   //	token->getName().c_str(),
+   //	object->getName().c_str());
   }
 
   void ROSDbListener::notifyMerged(const TokenId& token) {
@@ -33,7 +33,7 @@ namespace trex_ros {
   }
 
   void ROSDbListener::notifyRemoved(const TokenId& token) {
-    ROS_INFO("REMOVED TOKEN (%d) \"%s\"",token->getKey(),token->getName().c_str());
+    //ROS_INFO("REMOVED TOKEN (%d) \"%s\"",token->getKey(),token->getName().c_str());
   }
 
   void ROSDbListener::notifyCommitted(const TokenId& token) {
