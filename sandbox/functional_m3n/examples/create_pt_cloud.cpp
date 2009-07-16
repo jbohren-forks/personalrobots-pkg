@@ -19,7 +19,7 @@
 #include <point_cloud_mapping/kdtree/kdtree.h>
 #include <point_cloud_mapping/kdtree/kdtree_ann.h>
 
-#include <descriptors_3d/descriptors_3d.h>
+#include <descriptors_3d/descriptor_3d.h>
 #include <descriptors_3d/spectral_shape.h>
 #include <descriptors_3d/orientation.h>
 #include <descriptors_3d/position.h>
@@ -368,8 +368,8 @@ void createCliqueSet0(RandomField& rf,
   ROS_INFO("Clustering...");
   kmeansPtCloud(pt_cloud, skip_indices, cs0_kmeans_params, cluster_centroids_xyz, cluster_centroids_indices);
   ROS_INFO("done");
-  save_clusters(cluster_centroids_indices, pt_cloud);
   ROS_INFO("Kmeans found %u clusters", cluster_centroids_indices.size());
+  save_clusters(cluster_centroids_indices, pt_cloud);
 
   // TODO compute centroid
   /*
