@@ -40,7 +40,8 @@ import rospy
 import random
 from pr2_msgs.msg import BaseControllerState
 from robot_msgs.msg import PoseDot
-from robot_msgs.msg import JointCmd
+from mechanism_msgs.msg import JointStates, JointState
+
 
 class WaitForMultipleHeadConfigsAdapter:
   def __init__(self, head_configs, single_config_waiter,timeout=10):
@@ -51,7 +52,7 @@ class WaitForMultipleHeadConfigsAdapter:
 
     self.waiter_=single_config_waiter;
 
-    self.goal_topic_ = "/head_controller/set_command_array"
+    self.goal_topic_ = "/head_controller/command"
 
     self.pub = rospy.Publisher(self.goal_topic_, JointCmd)
 
@@ -69,19 +70,31 @@ class WaitForMultipleHeadConfigsAdapter:
 
   def sendHeadConfig(self):
     
-      joint_cmds=JointCmd();
-      joint_cmds.names=[ "head_pan_joint", "head_tilt_joint"];
-      joint_cmds.positions=self.configs_[self.current_config_];
+      ps = JointState()
+      ps.name = 'head_pan_joint'
+      ps.position = self.configs_[self.current_config_][0]
+      ts = JointState()
+      ts.name ='head_tilt_joint'
+      ts.position = self.configs_[self.current_config_][1]
+      js = JointStates()
+      js.joints = [ps, ts]
 
-      self.pub.publish(joint_cmds);
+      self.pub.publish(js);
+
 
   def sendDefaultHeadConfig(self):
     
-      joint_cmds=JointCmd();
-      joint_cmds.names=[ "head_pan_joint", "head_tilt_joint"];
-      joint_cmds.positions=[0.0,0.0];
+      ps = JointState()
+      ps.name = 'head_pan_joint'
+      ps.position = 0.0
+      ts = JointState()
+      ts.name ='head_tilt_joint'
+      ts.position = 0.0
+      js = JointStates()
+      js.joints = [ps, ts]
 
-      self.pub.publish(joint_cmds);
+      self.pub.publish(js);
+
 
 
   def timeUp(self):

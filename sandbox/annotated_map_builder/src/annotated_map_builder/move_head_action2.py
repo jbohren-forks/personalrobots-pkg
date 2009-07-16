@@ -51,7 +51,8 @@ from annotated_map_builder.wait_for_k_messages_adapter import WaitForKMessagesAd
 
 from pr2_msgs.msg import BaseControllerState
 from robot_msgs.msg import PoseDot
-from robot_msgs.msg import JointCmd
+from mechanism_msgs.msg import JointStates, JointState
+
 
 from python_actions import *
 
@@ -61,7 +62,7 @@ class MoveHeadAction2 (Action) :
   def __init__(self,node_name, goalmsg, statemsg, feedbackmsg, rate = 10.0):
     Action.__init__(self, node_name, goalmsg, statemsg, feedbackmsg, rate);
 
-    self.head_goal_topic_ = "/head_controller/set_command_array"
+    self.head_goal_topic_ = "/head_controller/command"
     self.head_pub_ = rospy.Publisher(self.head_goal_topic_, JointCmd)
 
     try:
@@ -159,10 +160,17 @@ class MoveHeadAction2 (Action) :
   def sendHeadConfig(self):
     if self.status.value!=robot_actions.msg.ActionStatus.ACTIVE:
       return
-    joint_cmds=JointCmd();
-    joint_cmds.names=[ "head_pan_joint", "head_tilt_joint"];
-    joint_cmds.positions=self.head_configs_[self.current_config_];
-    self.head_pub_.publish(joint_cmds);
+    ps = JointState()
+    ps.name = 'head_pan_joint'
+    ps.position = self.configs_[self.current_config_][0]
+    ts = JointState()
+    ts.name ='head_tilt_joint'
+    ts.position = self.configs_[self.current_config_][1]
+    js = JointStates()
+    js.joints = [ps, ts]
+
+    self.pub.publish(js);
+
 
 
 
