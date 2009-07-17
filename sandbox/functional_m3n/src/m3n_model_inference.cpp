@@ -428,7 +428,7 @@ int M3NModel::addEdgeEnergy(const RandomField::Clique& edge,
 
   // WARNING, this follows that ALPHA_VALUE == 0
   // max +score = min -score
-  if (energy_func.addPairwise(energy_vars.find(node1_id)->first, energy_vars.find(node2_id)->first, -E00,
+  if (energy_func.addPairwise(energy_vars.find(node1_id)->second, energy_vars.find(node2_id)->second, -E00,
       -E01, -E10, -E11) < 0)
   {
     return -1;
