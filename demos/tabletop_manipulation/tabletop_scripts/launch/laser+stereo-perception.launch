@@ -24,6 +24,8 @@
 
     <remap from="cloud_in" to="tilt_scan_cloud" />
     <remap from="cloud_out" to="tilt_scan_cloud_without_known_objects" />
+    <param name="object_scale" type="double" value="1.0" />
+    <param name="object_padd" type="double" value="0.05" />
   </node>
   
   <!-- add a channel that marks points that are on the robot -->
