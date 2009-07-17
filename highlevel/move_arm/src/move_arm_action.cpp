@@ -552,7 +552,7 @@ namespace move_arm
 		sp = new planning_models::StateParams(*planningMonitor_->getRobotState());
 	    else
 	    {
-		sp = new planning_models::StateParams(planningMonitor_->getKinematicModel());
+		sp = planningMonitor_->getKinematicModel()->newStateParams();
 		sp->randomState();
 	    }
 	    ikSteps++;
