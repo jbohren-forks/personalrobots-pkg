@@ -138,7 +138,8 @@ int main(int argc, char **argv)
     recognition_lambertian::FindObjectPoses::Response res;
     
     ros::Publisher vmPub = nh.advertise<visualization_msgs::Marker>("visualization_marker", 10240);
-    
+    robot_actions::ActionClient<pr2_robot_actions::MoveArmGoal, pr2_robot_actions::MoveArmState, int32_t> move_arm("move_arm");
+
     ros::ServiceClient client = nh.serviceClient<recognition_lambertian::FindObjectPoses>("table_top/find_object_poses");
     if (client.call(req, res))
     {
@@ -147,6 +148,10 @@ int main(int argc, char **argv)
 	{
 	    recognition_lambertian::TableTopObject obj = res.objects[0];
 	    ROS_INFO("point to grasp: %f %f %f", obj.pose.pose.position.x, obj.pose.pose.position.y, obj.pose.pose.position.z);
+	    obj.pose.pose.orientation.x = 0;
+	    obj.pose.pose.orientation.y = 0;
+	    obj.pose.pose.orientation.z = 0;
+	    obj.pose.pose.orientation.w = 1;
 	    
 	    mapping_msgs::ObjectInMap o1;
 	    o1.header = obj.pose.header;
@@ -157,8 +162,10 @@ int main(int argc, char **argv)
 	    pub.publish(o1);
 	    
 	    //	    sleep(10);
+	    obj.pose.pose.position.x -= 0.15;
+	    obj.pose.pose.position.z += 0.05;
 	    
-	    robot_actions::ActionClient<pr2_robot_actions::MoveArmGoal, pr2_robot_actions::MoveArmState, int32_t> move_arm("move_arm");
+	    
 	    int32_t                         feedback;
 	    pr2_robot_actions::MoveArmGoal  goal;
 	    
@@ -168,11 +175,23 @@ int main(int argc, char **argv)
 	    
 	    goal.goal_constraints.pose_constraint[0].link_name = "r_wrist_roll_link";
 	    goal.goal_constraints.pose_constraint[0].pose.pose = obj.pose.pose;
-	    //	    goal.goal_constraints.pose_constraint[0].pose.pose.position.z += 0.03;
-	    goal.goal_constraints.pose_constraint[0].pose.pose.position.x -= 0.05;
 
-	    goal.goal_constraints.pose_constraint[0].position_distance = 0.01;
-	    goal.goal_constraints.pose_constraint[0].orientation_distance = 0.01;
+	    goal.goal_constraints.pose_constraint[0].position_tolerance_above.x = 0.02;
+	    goal.goal_constraints.pose_constraint[0].position_tolerance_below.x = 0.02;
+
+	    goal.goal_constraints.pose_constraint[0].position_tolerance_above.y = 0.01;
+	    goal.goal_constraints.pose_constraint[0].position_tolerance_below.y = 0.01;
+
+	    goal.goal_constraints.pose_constraint[0].position_tolerance_above.z = 0.02;
+	    goal.goal_constraints.pose_constraint[0].position_tolerance_below.z = 0.02;
+
+	    goal.goal_constraints.pose_constraint[0].orientation_tolerance_above.x = 0.01;
+	    goal.goal_constraints.pose_constraint[0].orientation_tolerance_below.x = 0.01;
+	    goal.goal_constraints.pose_constraint[0].orientation_tolerance_above.y = 0.01;
+	    goal.goal_constraints.pose_constraint[0].orientation_tolerance_below.y = 0.01;
+	    goal.goal_constraints.pose_constraint[0].orientation_tolerance_above.z = 0.01;
+	    goal.goal_constraints.pose_constraint[0].orientation_tolerance_below.z = 0.01;
+
 	    goal.goal_constraints.pose_constraint[0].orientation_importance = 0.1;
 	    goal.goal_constraints.pose_constraint[0].type =
 		motion_planning_msgs::PoseConstraint::POSITION_XYZ + 
