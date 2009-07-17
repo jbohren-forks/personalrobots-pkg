@@ -315,7 +315,7 @@ int RandomField::saveCliqueFeatures(string basename)
   {
     // Generate filename for current clique set's features
     stringstream ss_curr_filename;
-    ss_curr_filename << "_cs_" << i << ".features";
+    ss_curr_filename << basename << "_cs_" << i << ".features";
     string curr_filename = ss_curr_filename.str();
 
     // Open file
