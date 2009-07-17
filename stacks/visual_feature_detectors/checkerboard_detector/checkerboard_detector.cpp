@@ -25,6 +25,7 @@
 // author: Rosen Diankov
 #include <cstdio>
 #include <vector>
+#include <sstream>
 #include <ros/node.h>
 
 #include <boost/thread/mutex.hpp>
@@ -47,12 +48,27 @@ boost::shared_ptr<ros::Node> s_pmasternode;
 
 class CheckerboardDetector
 {
+    vector<float> tokenizevector(const string& s)
+    {
+        vector<float> v;
+        stringstream ss(s);
+        while(!ss.eof()) {
+            float f;
+            ss >> f;
+            if( !ss )
+                break;
+            v.push_back(f);
+        }
+        return v;
+    }
+
 public:
     struct CHECKERBOARD
     {
         CvSize griddims; ///< number of squares
         vector<Vector> grid3d;
         vector<CvPoint2D32f> corners;
+        TransformMatrix tlocaltrans;
     };
 
     sensor_msgs::CamInfo _caminfomsg;
@@ -103,6 +119,14 @@ public:
                 type = str;
             }
 
+            string strtranslation,strrotation;
+            sprintf(str,"translation%d",index);
+            s_pmasternode->param(str,strtranslation,string());
+            vector<float> vtranslation = tokenizevector(strtranslation);
+            sprintf(str,"rotation%d",index);
+            s_pmasternode->param(str,strrotation,string());
+            vector<float> vrotation = tokenizevector(strrotation);
+
             CHECKERBOARD cb;
             cb.griddims = cvSize(dimx,dimy);
 
@@ -112,8 +136,17 @@ public:
                 for(int x=0; x<dimx; ++x)
                     cb.grid3d[j++] = Vector(x*fRectSize[0], y*fRectSize[1], 0);
 
-            vcheckers.push_back(cb);
+            if( vtranslation.size() == 3 )
+                cb.tlocaltrans.trans = Vector(vtranslation[0],vtranslation[1],vtranslation[2]);
+            if( vrotation.size() == 9 ) {
+                for(int k = 0; k < 3; ++k) {
+                    cb.tlocaltrans.m[4*k+0] = vrotation[3*k+0];
+                    cb.tlocaltrans.m[4*k+1] = vrotation[3*k+1];
+                    cb.tlocaltrans.m[4*k+2] = vrotation[3*k+2];
+                }
+            }
 
+            vcheckers.push_back(cb);
             vstrtypes.push_back(type);
             maptypes[vstrtypes.back()] = index;
             index++;
@@ -230,11 +263,9 @@ public:
                 }
 
                 if( allfound ) {
-                    
                     cvFindCornerSubPix(pimggray, &cb.corners[0], cb.corners.size(), cvSize(5,5),cvSize(-1,-1),
                                        cvTermCriteria(CV_TERMCRIT_ITER,20,1e-2));
-                    
-                    objpose.pose = FindTransformation(cb.corners, cb.grid3d);
+                    objpose.pose = FindTransformation(cb.corners, cb.grid3d, cb.tlocaltrans);
                 }
 
                 #pragma omp critical
@@ -253,7 +284,11 @@ public:
         }
         
         _objdetmsg.set_objects_vec(vobjects);
-        _objdetmsg.header.frame_id = frame_id;
+        if( frame_id.size() > 0 )
+            _objdetmsg.header.frame_id = frame_id;
+        else
+            _objdetmsg.header.frame_id = _imagemsg.header.frame_id;
+
         s_pmasternode->publish("ObjectDetection", _objdetmsg);
 
         ROS_INFO("checkerboard: image: %ux%u (size=%u), num: %u, total: %.3fs",_caminfomsg.width,_caminfomsg.height,
@@ -267,17 +302,21 @@ public:
             for(size_t i = 0; i < vobjects.size(); ++i) {
                 int itype = maptypes[vobjects[i].type];
                 CHECKERBOARD& cb = vcheckers[itype];
-                CvSize& s = cb.griddims;
-                Transform tlocal;
-                tlocal.trans = Vector(vobjects[i].pose.position.x,vobjects[i].pose.position.y,vobjects[i].pose.position.z);
-                tlocal.rot = Vector(vobjects[i].pose.orientation.w,vobjects[i].pose.orientation.x,vobjects[i].pose.orientation.y, vobjects[i].pose.orientation.z);
+                Transform tglobal;
+                tglobal.trans = Vector(vobjects[i].pose.position.x,vobjects[i].pose.position.y,vobjects[i].pose.position.z);
+                tglobal.rot = Vector(vobjects[i].pose.orientation.w,vobjects[i].pose.orientation.x,vobjects[i].pose.orientation.y, vobjects[i].pose.orientation.z);
+                Transform tlocal = tglobal * cb.tlocaltrans.inverse();
 
                 CvPoint X[4];
                 
-                int inds[4] = {0, s.width-1, s.width*(s.height-1), s.width*s.height-1 };
+                Vector vaxes[4];
+                vaxes[0] = Vector(0,0,0);
+                vaxes[1] = Vector(0.05f,0,0);
+                vaxes[2] = Vector(0,0.05f,0);
+                vaxes[3] = Vector(0,0,0.05f);
 
                 for(int i = 0; i < 4; ++i) {
-                    Vector p = tlocal * cb.grid3d[inds[i]];
+                    Vector p = tglobal*vaxes[i];
                     dReal fx = p.x*_caminfomsg.P[0] + p.y*_caminfomsg.P[1] + p.z*_caminfomsg.P[2] + _caminfomsg.P[3];
                     dReal fy = p.x*_caminfomsg.P[4] + p.y*_caminfomsg.P[5] + p.z*_caminfomsg.P[6] + _caminfomsg.P[7];
                     dReal fz = p.x*_caminfomsg.P[8] + p.y*_caminfomsg.P[9] + p.z*_caminfomsg.P[10] + _caminfomsg.P[11];
@@ -285,11 +324,13 @@ public:
                     X[i].y = (int)(fy/fz);
                 }
 
-                // draw two lines
+                // draw three lines
                 CvScalar col0 = CV_RGB(255,0,(64*itype)%256);
                 CvScalar col1 = CV_RGB(0,255,(64*itype)%256);
+                CvScalar col2 = CV_RGB((64*itype)%256,(64*itype)%256,255);
                 cvLine(frame, X[0], X[1], col0, 1);
                 cvLine(frame, X[0], X[2], col1, 1);
+                cvLine(frame, X[0], X[3], col2, 1);
 
                 // draw all the points
                 for(size_t i = 0; i < cb.grid3d.size(); ++i) {
@@ -311,7 +352,7 @@ public:
         }
     }
 
-    robot_msgs::Pose FindTransformation(const vector<CvPoint2D32f> &imgpts, const vector<Vector> &objpts)
+    robot_msgs::Pose FindTransformation(const vector<CvPoint2D32f> &imgpts, const vector<Vector> &objpts, const Transform& tlocal)
     {
         CvMat *objpoints = cvCreateMat(3,objpts.size(),CV_32FC1);
         for(size_t i=0; i<objpts.size(); ++i) {
@@ -321,11 +362,13 @@ public:
         }
         
         robot_msgs::Pose pose;
+        Transform tchecker;
+        assert(sizeof(tchecker.trans.x)==sizeof(float));
         float fR3[3];
         CvMat R3, T3;
         assert(sizeof(pose.position.x) == sizeof(double));
         cvInitMatHeader(&R3, 3, 1, CV_32FC1, fR3);
-        cvInitMatHeader(&T3, 3, 1, CV_64FC1, &pose.position.x);
+        cvInitMatHeader(&T3, 3, 1, CV_32FC1, &tchecker.trans.x);
         
         float kc[4] = {0};
         CvMat kcmat;
@@ -338,20 +381,19 @@ public:
         cvReleaseMat(&objpoints);
         
         double fang = sqrt(fR3[0]*fR3[0] + fR3[1]*fR3[1] + fR3[2]*fR3[2]);
-        if( fang < 1e-6 ) {
-            pose.orientation.w = 1;
-            pose.orientation.x = 0;
-            pose.orientation.y = 0;
-            pose.orientation.z = 0;
-        }
-        else {
+        if( fang >= 1e-6 ) {
             double fmult = sin(fang/2)/fang;
-            pose.orientation.w = cos(fang/2);
-            pose.orientation.x = fR3[0]*fmult;
-            pose.orientation.y = fR3[1]*fmult;
-            pose.orientation.z = fR3[2]*fmult;
+            tchecker.rot = Vector(cos(fang/2),fR3[0]*fmult, fR3[1]*fmult, fR3[2]*fmult);
         }
 
+        Transform tglobal = tchecker*tlocal;
+        pose.position.x = tglobal.trans.x;
+        pose.position.y = tglobal.trans.y;
+        pose.position.z = tglobal.trans.z;
+        pose.orientation.x = tglobal.rot.y;
+        pose.orientation.y = tglobal.rot.z;
+        pose.orientation.z = tglobal.rot.w;
+        pose.orientation.w = tglobal.rot.x;
         return pose;
     }
 };
