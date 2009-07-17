@@ -1,0 +1,17 @@
+<package>
+  <description brief="spline_smoother">
+
+This package takes in position trajectories (with times), and can fill in
+velocities and accelerations at the knot points using various schemes, like
+natural cubic splines, clamped cubic splines, or other general optimization-
+based criteria.
+
+  </description>
+  <author>Mrinal Kalakrishnan / kalakris@willowgarage.com</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://pr.willowgarage.com/wiki/spline_smoother</url>
+
+</package>
+
+
