@@ -1,6 +1,4 @@
-string xml_config
+string name
 uint8 autostart
 ---
-int8[] ok
-string[] name
-string[] error
+byte ok
