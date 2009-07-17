@@ -27,7 +27,7 @@ void myCallback(const robot_msgs::Pose::ConstPtr& pose)
 ros::NodeHandle nh;
 message_filters::Subscriber<robot_msgs::Pose> sub(nh, "pose_topic", 1);
 message_filters::Cache<robot_msgs::Pose> cache(sub, 10);
-cache.connect(myCallback);
+cache.registerCallback(myCallback);
 \endverbatim
 
 The Subscriber here acts as the source of messages.  Each message is passed to the cache, which then passes it through to the
@@ -41,5 +41,15 @@ have output connections, whereas most other filters have both input and output c
 The two connection types do not have to be identical.  For example, message_filters::TimeSynchronizer's input connection takes one
 parameter, but its output connection has somewhere between 2 and 9 parameters, depending on the number of connections being
 synchronized.
+
+Input connections are registered either in the filter's constructor, or by calling connectInput() on the filter. For example:
+\verbatim
+message_filters::Cache<robot_msgs::Pose> cache(10);
+cache.connectInput(sub);
+\endverbatim 
+
+This connects cache's input to sub's output.
+
+Output connections are registered through the registerCallback() function.
 
 */

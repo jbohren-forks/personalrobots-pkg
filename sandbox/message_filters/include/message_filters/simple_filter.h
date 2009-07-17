@@ -44,6 +44,13 @@
 namespace message_filters
 {
 
+/**
+ * \brief Convenience base-class for simple filters which output a single message
+ *
+ * SimpleFilter provides some of the "tricky" callback registering functionality, so that
+ * simple filters do not have to duplicate it.  It also provides getName()/setName() for debugging
+ * purposes.
+ */
 template<class M>
 class SimpleFilter : public boost::noncopyable
 {
@@ -52,16 +59,29 @@ public:
   typedef boost::function<void(const MConstPtr&)> Callback;
   typedef boost::signal<void(const MConstPtr&)> Signal;
 
+  /**
+   * \brief Register a callback to be called when this filter has passed
+   * \param callback The callback to call
+   */
   Connection registerCallback(const Callback& callback)
   {
     boost::mutex::scoped_lock lock(signal_mutex_);
     return Connection(boost::bind(&SimpleFilter::disconnect, this, _1), signal_.connect(callback));
   }
 
+  /**
+   * \brief Set the name of this filter.  For debugging use.
+   */
   void setName(const std::string& name) { name_ = name; }
+  /**
+   * \brief Get the name of this filter.  For debugging use.
+   */
   const std::string& getName() { return name_; }
 
 protected:
+  /**
+   * \brief Call all registered callbacks, passing them the specified message
+   */
   void signalMessage(const MConstPtr& msg)
   {
     boost::mutex::scoped_lock lock(signal_mutex_);
