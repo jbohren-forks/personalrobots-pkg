@@ -39,10 +39,10 @@
 #include "boost/thread.hpp"
 #include "boost/shared_ptr.hpp"
 #include <boost/signals.hpp>
-#include <boost/noncopyable.hpp>
 #include "ros/time.h"
 
 #include "connection.h"
+#include "simple_filter.h"
 
 namespace message_filters
 {
@@ -63,18 +63,16 @@ void callback(const boost::shared_ptr<M const>&);
 \endverbatim
  */
 template<class M>
-class Cache : public boost::noncopyable
+class Cache : public SimpleFilter<M>
 {
 public:
-  typedef boost::shared_ptr<M const> MConstPtr ;
-  typedef boost::function<void(const MConstPtr&)> Callback;
-  typedef boost::signal<void(const MConstPtr&)> Signal;
+  typedef boost::shared_ptr<M const> MConstPtr;
 
   template<class F>
   Cache(F& f, unsigned int cache_size = 1)
   {
     setCacheSize(cache_size) ;
-    connectTo(f) ;
+    connectInput(f) ;
   }
 
   /**
@@ -87,9 +85,9 @@ public:
   }
 
   template<class F>
-  void connectTo(F& f)
+  void connectInput(F& f)
   {
-    incoming_connection_ = f.connect(boost::bind(&Cache::add, this, _1));
+    incoming_connection_ = f.registerCallback(boost::bind(&Cache::add, this, _1));
   }
 
   ~Cache()
@@ -110,12 +108,6 @@ public:
     }
 
     cache_size_ = cache_size ;
-  }
-
-  Connection connect(const Callback& callback)
-  {
-    boost::mutex::scoped_lock lock(signal_mutex_);
-    return Connection(boost::bind(&Cache::disconnect, this, _1), signal_.connect(callback));
   }
 
   /**
@@ -146,11 +138,7 @@ public:
 
     }
 
-    {
-      boost::mutex::scoped_lock lock(signal_mutex_);
-      // Sequentially call each registered call
-      signal_(msg);
-    }
+    signalMessage(msg);
   }
 
   /**
@@ -293,19 +281,11 @@ public:
   }
 
 private:
-  void disconnect(const Connection& c)
-  {
-    boost::mutex::scoped_lock lock(signal_mutex_);
-    c.getBoostConnection().disconnect();
-  }
-
   boost::mutex cache_lock_ ;            //!< Lock for cache_
   std::deque<MConstPtr > cache_ ;       //!< Cache for the messages
   unsigned int cache_size_ ;            //!< Maximum number of elements allowed in the cache.
 
   Connection incoming_connection_;
-  Signal signal_;
-  boost::mutex signal_mutex_;
 };
 
 }

@@ -66,7 +66,7 @@ class NullFilter
 public:
   typedef boost::shared_ptr<M const> MConstPtr;
   typedef boost::function<void(const MConstPtr&)> Callback;
-  Connection connect(const Callback& cb)
+  Connection registerCallback(const Callback& cb)
   {
     return Connection();
   }
@@ -97,7 +97,7 @@ void callback(const boost::shared_ptr<M0 const>&, const boost::shared_ptr<M1 con
  * Example usage would be:
 \verbatim
 TimeSynchronizer<sensor_msgs::CamInfo, sensor_msgs::Image, sensor_msgs::Image> sync(caminfo_sub, limage_sub, rimage_sub, 3);
-sync.connect(callback);
+sync.registerCallback(callback);
 \endverbatim
 
  * The callback is then of the form:
@@ -128,7 +128,7 @@ public:
   : queue_size_(queue_size)
   {
     determineRealTypeCount();
-    connectTo(f0, f1);
+    connectInput(f0, f1);
   }
 
   template<class F0, class F1, class F2>
@@ -136,7 +136,7 @@ public:
   : queue_size_(queue_size)
   {
     determineRealTypeCount();
-    connectTo(f0, f1, f2);
+    connectInput(f0, f1, f2);
   }
 
   template<class F0, class F1, class F2, class F3>
@@ -144,7 +144,7 @@ public:
   : queue_size_(queue_size)
   {
     determineRealTypeCount();
-    connectTo(f0, f1, f2, f3);
+    connectInput(f0, f1, f2, f3);
   }
 
   template<class F0, class F1, class F2, class F3, class F4>
@@ -152,7 +152,7 @@ public:
   : queue_size_(queue_size)
   {
     determineRealTypeCount();
-    connectTo(f0, f1, f2, f3, f4);
+    connectInput(f0, f1, f2, f3, f4);
   }
 
   template<class F0, class F1, class F2, class F3, class F4, class F5>
@@ -160,7 +160,7 @@ public:
   : queue_size_(queue_size)
   {
     determineRealTypeCount();
-    connectTo(f0, f1, f2, f3, f4, f5);
+    connectInput(f0, f1, f2, f3, f4, f5);
   }
 
   template<class F0, class F1, class F2, class F3, class F4, class F5, class F6>
@@ -168,7 +168,7 @@ public:
   : queue_size_(queue_size)
   {
     determineRealTypeCount();
-    connectTo(f0, f1, f2, f3, f4, f5, f6);
+    connectInput(f0, f1, f2, f3, f4, f5, f6);
   }
 
   template<class F0, class F1, class F2, class F3, class F4, class F5, class F6, class F7>
@@ -176,7 +176,7 @@ public:
   : queue_size_(queue_size)
   {
     determineRealTypeCount();
-    connectTo(f0, f1, f2, f3, f4, f5, f6, f7);
+    connectInput(f0, f1, f2, f3, f4, f5, f6, f7);
   }
 
   template<class F0, class F1, class F2, class F3, class F4, class F5, class F6, class F7, class F8>
@@ -184,7 +184,7 @@ public:
   : queue_size_(queue_size)
   {
     determineRealTypeCount();
-    connectTo(f0, f1, f2, f3, f4, f5, f6, f7, f8);
+    connectInput(f0, f1, f2, f3, f4, f5, f6, f7, f8);
   }
 
   TimeSynchronizer(uint32_t queue_size)
@@ -199,72 +199,72 @@ public:
   }
 
   template<class F0, class F1>
-  void connectTo(F0& f0, F1& f1)
+  void connectInput(F0& f0, F1& f1)
   {
     NullFilter<M2> f2;
-    connectTo(f0, f1, f2);
+    connectInput(f0, f1, f2);
   }
 
   template<class F0, class F1, class F2>
-  void connectTo(F0& f0, F1& f1, F2& f2)
+  void connectInput(F0& f0, F1& f1, F2& f2)
   {
     NullFilter<M3> f3;
-    connectTo(f0, f1, f2, f3);
+    connectInput(f0, f1, f2, f3);
   }
 
   template<class F0, class F1, class F2, class F3>
-  void connectTo(F0& f0, F1& f1, F2& f2, F3& f3)
+  void connectInput(F0& f0, F1& f1, F2& f2, F3& f3)
   {
     NullFilter<M4> f4;
-    connectTo(f0, f1, f2, f3, f4);
+    connectInput(f0, f1, f2, f3, f4);
   }
 
   template<class F0, class F1, class F2, class F3, class F4>
-  void connectTo(F0& f0, F1& f1, F2& f2, F3& f3, F4& f4)
+  void connectInput(F0& f0, F1& f1, F2& f2, F3& f3, F4& f4)
   {
     NullFilter<M5> f5;
-    connectTo(f0, f1, f2, f3, f4, f5);
+    connectInput(f0, f1, f2, f3, f4, f5);
   }
 
   template<class F0, class F1, class F2, class F3, class F4, class F5>
-  void connectTo(F0& f0, F1& f1, F2& f2, F3& f3, F4& f4, F5& f5)
+  void connectInput(F0& f0, F1& f1, F2& f2, F3& f3, F4& f4, F5& f5)
   {
     NullFilter<M6> f6;
-    connectTo(f0, f1, f2, f3, f4, f5, f6);
+    connectInput(f0, f1, f2, f3, f4, f5, f6);
   }
 
   template<class F0, class F1, class F2, class F3, class F4, class F5, class F6>
-  void connectTo(F0& f0, F1& f1, F2& f2, F3& f3, F4& f4, F5& f5, F6& f6)
+  void connectInput(F0& f0, F1& f1, F2& f2, F3& f3, F4& f4, F5& f5, F6& f6)
   {
     NullFilter<M7> f7;
-    connectTo(f0, f1, f2, f3, f4, f5, f6, f7);
+    connectInput(f0, f1, f2, f3, f4, f5, f6, f7);
   }
 
   template<class F0, class F1, class F2, class F3, class F4, class F5, class F6, class F7>
-  void connectTo(F0& f0, F1& f1, F2& f2, F3& f3, F4& f4, F5& f5, F6& f6, F7& f7)
+  void connectInput(F0& f0, F1& f1, F2& f2, F3& f3, F4& f4, F5& f5, F6& f6, F7& f7)
   {
     NullFilter<M8> f8;
-    connectTo(f0, f1, f2, f3, f4, f5, f6, f7, f8);
+    connectInput(f0, f1, f2, f3, f4, f5, f6, f7, f8);
   }
 
   template<class F0, class F1, class F2, class F3, class F4, class F5, class F6, class F7, class F8>
-  void connectTo(F0& f0, F1& f1, F2& f2, F3& f3, F4& f4, F5& f5, F6& f6, F7& f7, F8& f8)
+  void connectInput(F0& f0, F1& f1, F2& f2, F3& f3, F4& f4, F5& f5, F6& f6, F7& f7, F8& f8)
   {
     disconnectAll();
 
-    input_connections_[0] = f0.connect(boost::bind(&TimeSynchronizer::cb0, this, _1));
-    input_connections_[1] = f1.connect(boost::bind(&TimeSynchronizer::cb1, this, _1));
-    input_connections_[2] = f2.connect(boost::bind(&TimeSynchronizer::cb2, this, _1));
-    input_connections_[3] = f3.connect(boost::bind(&TimeSynchronizer::cb3, this, _1));
-    input_connections_[4] = f4.connect(boost::bind(&TimeSynchronizer::cb4, this, _1));
-    input_connections_[5] = f5.connect(boost::bind(&TimeSynchronizer::cb5, this, _1));
-    input_connections_[6] = f6.connect(boost::bind(&TimeSynchronizer::cb6, this, _1));
-    input_connections_[7] = f7.connect(boost::bind(&TimeSynchronizer::cb7, this, _1));
-    input_connections_[8] = f8.connect(boost::bind(&TimeSynchronizer::cb8, this, _1));
+    input_connections_[0] = f0.registerCallback(boost::bind(&TimeSynchronizer::cb0, this, _1));
+    input_connections_[1] = f1.registerCallback(boost::bind(&TimeSynchronizer::cb1, this, _1));
+    input_connections_[2] = f2.registerCallback(boost::bind(&TimeSynchronizer::cb2, this, _1));
+    input_connections_[3] = f3.registerCallback(boost::bind(&TimeSynchronizer::cb3, this, _1));
+    input_connections_[4] = f4.registerCallback(boost::bind(&TimeSynchronizer::cb4, this, _1));
+    input_connections_[5] = f5.registerCallback(boost::bind(&TimeSynchronizer::cb5, this, _1));
+    input_connections_[6] = f6.registerCallback(boost::bind(&TimeSynchronizer::cb6, this, _1));
+    input_connections_[7] = f7.registerCallback(boost::bind(&TimeSynchronizer::cb7, this, _1));
+    input_connections_[8] = f8.registerCallback(boost::bind(&TimeSynchronizer::cb8, this, _1));
   }
 
   template<class C>
-  Connection connect(const C& callback)
+  Connection registerCallback(const C& callback)
   {
     boost::mutex::scoped_lock lock(signal_mutex_);
     return Connection(boost::bind(&TimeSynchronizer::disconnect, this, _1), signal_.connect(boost::bind(callback, _1, _2, _3, _4, _5, _6, _7, _8, _9)));

@@ -111,12 +111,12 @@ NavViewPanel::NavViewPanel( wxWindow* parent )
   raw_obs_filter_ = PolylineFilterPtr(new PolylineFilter(raw_obs_sub_, *tf_client_, global_frame_id_, 2));
   gui_laser_filter_ = PolylineFilterPtr(new PolylineFilter(gui_laser_sub_, *tf_client_, global_frame_id_, 2));
 
-  gui_path_filter_->connect(boost::bind(&NavViewPanel::incomingGuiPath, this, _1));
-  local_path_filter_->connect(boost::bind(&NavViewPanel::incomingLocalPath, this, _1));
-  robot_footprint_filter_->connect(boost::bind(&NavViewPanel::incomingRobotFootprint, this, _1));
-  inflated_obs_filter_->connect(boost::bind(&NavViewPanel::incomingInflatedObstacles, this, _1));
-  raw_obs_filter_->connect(boost::bind(&NavViewPanel::incomingRawObstacles, this, _1));
-  gui_laser_filter_->connect(boost::bind(&NavViewPanel::incomingGuiLaser, this, _1));
+  gui_path_filter_->registerCallback(boost::bind(&NavViewPanel::incomingGuiPath, this, _1));
+  local_path_filter_->registerCallback(boost::bind(&NavViewPanel::incomingLocalPath, this, _1));
+  robot_footprint_filter_->registerCallback(boost::bind(&NavViewPanel::incomingRobotFootprint, this, _1));
+  inflated_obs_filter_->registerCallback(boost::bind(&NavViewPanel::incomingInflatedObstacles, this, _1));
+  raw_obs_filter_->registerCallback(boost::bind(&NavViewPanel::incomingRawObstacles, this, _1));
+  gui_laser_filter_->registerCallback(boost::bind(&NavViewPanel::incomingGuiLaser, this, _1));
 
   render_panel_->Connect( wxEVT_LEFT_DOWN, wxMouseEventHandler( NavViewPanel::onRenderWindowMouseEvents ), NULL, this );
   render_panel_->Connect( wxEVT_MIDDLE_DOWN, wxMouseEventHandler( NavViewPanel::onRenderWindowMouseEvents ), NULL, this );

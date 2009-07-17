@@ -35,11 +35,10 @@
 #ifndef MESSAGE_FILTERS_TIME_SEQUENCER_H
 #define MESSAGE_FILTERS_TIME_SEQUENCER_H
 
-#include <boost/noncopyable.hpp>
-
 #include <ros/ros.h>
 
 #include "connection.h"
+#include "simple_filter.h"
 
 namespace message_filters
 {
@@ -73,12 +72,10 @@ void callback(const boost::shared_ptr<M const>&);
  *
  */
 template<class M>
-class TimeSequencer : public boost::noncopyable
+class TimeSequencer : public SimpleFilter<M>
 {
 public:
-  typedef boost::shared_ptr<M const> MConstPtr ;
-  typedef boost::function<void(const MConstPtr&)> Callback;
-  typedef boost::signal<void(const MConstPtr&)> Signal;
+  typedef boost::shared_ptr<M const> MConstPtr;
 
   /**
    * \brief Constructor
@@ -96,13 +93,13 @@ public:
   , nh_(nh)
   {
     init();
-    connectTo(f);
+    connectInput(f);
   }
 
   /**
    * \brief Constructor
    *
-   * This version of the constructor does not take a filter immediately.  You can connect to a filter later with the connectTo() function
+   * This version of the constructor does not take a filter immediately.  You can connect to a filter later with the connectInput() function
    *
    * \param delay The minimum time to hold a message before passing it through.
    * \param update_rate The rate at which to check for messages which have passed "delay"
@@ -122,7 +119,7 @@ public:
    * \brief Connect this filter's input to another filter's output.
    */
   template<class F>
-  void connectTo(F& f)
+  void connectInput(F& f)
   {
     incoming_connection_.disconnect();
     incoming_connection_ = f.connect(boost::bind(&TimeSequencer::cb, this, _1));
@@ -132,12 +129,6 @@ public:
   {
     update_timer_.stop();
     incoming_connection_.disconnect();
-  }
-
-  Connection connect(const Callback& callback)
-  {
-    boost::mutex::scoped_lock lock(signal_mutex_);
-    return Connection(boost::bind(&TimeSequencer::disconnect, this, _1), signal_.connect(callback));
   }
 
   void add(const MConstPtr& msg)
@@ -173,12 +164,6 @@ private:
     add(msg);
   }
 
-  void disconnect(const Connection& c)
-  {
-    boost::mutex::scoped_lock lock(signal_mutex_);
-    c.getBoostConnection().disconnect();
-  }
-
   void dispatch()
   {
     V_Message to_call;
@@ -203,13 +188,11 @@ private:
     }
 
     {
-      boost::mutex::scoped_lock lock(signal_mutex_);
-
       typename V_Message::iterator it = to_call.begin();
       typename V_Message::iterator end = to_call.end();
       for (; it != end; ++it)
       {
-        signal_(*it);
+        signalMessage(*it);
       }
     }
   }
@@ -234,8 +217,6 @@ private:
   ros::Timer update_timer_;
 
   Connection incoming_connection_;
-  Signal signal_;
-  boost::mutex signal_mutex_;
 
 
   S_Message messages_;

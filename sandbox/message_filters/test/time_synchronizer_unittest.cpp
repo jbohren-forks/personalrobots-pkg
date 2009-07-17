@@ -120,7 +120,7 @@ TEST(TimeSynchronizer, immediate2)
 {
   TimeSynchronizer<Msg, Msg> sync(1);
   Helper h;
-  sync.connect(boost::bind(&Helper::cb, &h));
+  sync.registerCallback(boost::bind(&Helper::cb, &h));
   MsgPtr m(new Msg);
   m->header.stamp = ros::Time::now();
 
@@ -134,7 +134,7 @@ TEST(TimeSynchronizer, immediate3)
 {
   TimeSynchronizer<Msg, Msg, Msg> sync(1);
   Helper h;
-  sync.connect(boost::bind(&Helper::cb, &h));
+  sync.registerCallback(boost::bind(&Helper::cb, &h));
   MsgPtr m(new Msg);
   m->header.stamp = ros::Time::now();
 
@@ -150,7 +150,7 @@ TEST(TimeSynchronizer, immediate4)
 {
   TimeSynchronizer<Msg, Msg, Msg, Msg> sync(1);
   Helper h;
-  sync.connect(boost::bind(&Helper::cb, &h));
+  sync.registerCallback(boost::bind(&Helper::cb, &h));
   MsgPtr m(new Msg);
   m->header.stamp = ros::Time::now();
 
@@ -168,7 +168,7 @@ TEST(TimeSynchronizer, immediate5)
 {
   TimeSynchronizer<Msg, Msg, Msg, Msg, Msg> sync(1);
   Helper h;
-  sync.connect(boost::bind(&Helper::cb, &h));
+  sync.registerCallback(boost::bind(&Helper::cb, &h));
   MsgPtr m(new Msg);
   m->header.stamp = ros::Time::now();
 
@@ -188,7 +188,7 @@ TEST(TimeSynchronizer, immediate6)
 {
   TimeSynchronizer<Msg, Msg, Msg, Msg, Msg, Msg> sync(1);
   Helper h;
-  sync.connect(boost::bind(&Helper::cb, &h));
+  sync.registerCallback(boost::bind(&Helper::cb, &h));
   MsgPtr m(new Msg);
   m->header.stamp = ros::Time::now();
 
@@ -210,7 +210,7 @@ TEST(TimeSynchronizer, immediate7)
 {
   TimeSynchronizer<Msg, Msg, Msg, Msg, Msg, Msg, Msg> sync(1);
   Helper h;
-  sync.connect(boost::bind(&Helper::cb, &h));
+  sync.registerCallback(boost::bind(&Helper::cb, &h));
   MsgPtr m(new Msg);
   m->header.stamp = ros::Time::now();
 
@@ -234,7 +234,7 @@ TEST(TimeSynchronizer, immediate8)
 {
   TimeSynchronizer<Msg, Msg, Msg, Msg, Msg, Msg, Msg, Msg> sync(1);
   Helper h;
-  sync.connect(boost::bind(&Helper::cb, &h));
+  sync.registerCallback(boost::bind(&Helper::cb, &h));
   MsgPtr m(new Msg);
   m->header.stamp = ros::Time::now();
 
@@ -260,7 +260,7 @@ TEST(TimeSynchronizer, immediate9)
 {
   TimeSynchronizer<Msg, Msg, Msg, Msg, Msg, Msg, Msg, Msg, Msg> sync(1);
   Helper h;
-  sync.connect(boost::bind(&Helper::cb, &h));
+  sync.registerCallback(boost::bind(&Helper::cb, &h));
   MsgPtr m(new Msg);
   m->header.stamp = ros::Time::now();
 
@@ -292,7 +292,7 @@ TEST(TimeSynchronizer, multipleTimes)
 {
   TimeSynchronizer<Msg, Msg, Msg> sync(2);
   Helper h;
-  sync.connect(boost::bind(&Helper::cb, &h));
+  sync.registerCallback(boost::bind(&Helper::cb, &h));
   MsgPtr m(new Msg);
   m->header.stamp = ros::Time();
 
@@ -313,7 +313,7 @@ TEST(TimeSynchronizer, queueSize)
 {
   TimeSynchronizer<Msg, Msg, Msg> sync(1);
   Helper h;
-  sync.connect(boost::bind(&Helper::cb, &h));
+  sync.registerCallback(boost::bind(&Helper::cb, &h));
   MsgPtr m(new Msg);
   m->header.stamp = ros::Time();
 

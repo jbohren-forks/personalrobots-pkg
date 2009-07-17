@@ -50,6 +50,7 @@
 #include <ros/callback_queue.h>
 
 #include <message_filters/connection.h>
+#include <message_filters/simple_filter.h>
 
 #define TF_MESSAGEFILTER_DEBUG(fmt, ...) \
   ROS_DEBUG_NAMED("message_filter", "MessageFilter [target=%s]: "fmt, getTargetFramesString().c_str(), __VA_ARGS__)
@@ -78,14 +79,10 @@ public:
  * MessageFilter is templated on a message type.
  */
 template<class M>
-class MessageFilter : public MessageFilterBase
+class MessageFilter : public MessageFilterBase, public message_filters::SimpleFilter<M>
 {
 public:
   typedef boost::shared_ptr<M const> MConstPtr;
-  typedef boost::function<void (const MConstPtr&)> Callback;
-  typedef boost::signal<void (const MConstPtr&)> Signal;
-  typedef boost::shared_ptr<Signal> SignalPtr;
-  typedef boost::weak_ptr<Signal> SignalWPtr;
 
   /**
    * \brief Constructor
@@ -132,17 +129,17 @@ public:
 
     setTargetFrame(target_frame);
 
-    connectTo(f);
+    connectInput(f);
   }
 
   /**
    * \brief Connect this filter's input to another filter's output.  If this filter is already connected, disconnects first.
    */
   template<class F>
-  void connectTo(F& f)
+  void connectInput(F& f)
   {
     message_connection_.disconnect();
-    message_connection_ = f.connect(boost::bind(&MessageFilter::incomingMessage, this, _1));
+    message_connection_ = f.registerCallback(boost::bind(&MessageFilter::incomingMessage, this, _1));
   }
 
   /**
@@ -246,15 +243,6 @@ public:
     ++incoming_message_count_;
   }
 
-  /**
-   * \brief Connect a callback to the output of this filter
-   */
-  message_filters::Connection connect(const Callback& callback)
-  {
-    boost::mutex::scoped_lock lock(signal_mutex_);
-    return message_filters::Connection(boost::bind(&MessageFilter::disconnect, this, _1), signal_.connect(callback));
-  }
-
 private:
 
   void init()
@@ -278,12 +266,6 @@ private:
   }
 
   typedef std::list<MConstPtr> L_Message;
-
-  void signal(const MConstPtr& message)
-  {
-    boost::mutex::scoped_lock lock(signal_mutex_);
-    signal_(message);
-  }
 
   bool testMessage(const MConstPtr& message)
   {
@@ -334,7 +316,7 @@ private:
 
       ++successful_transform_count_;
 
-      signal(message);
+      signalMessage(message);
     }
     else
     {
@@ -435,12 +417,6 @@ private:
     }
   }
 
-  void disconnect(const message_filters::Connection& c)
-  {
-    boost::mutex::scoped_lock lock(signal_mutex_);
-    signal_.disconnect(c.getBoostConnection());
-  }
-
   Transformer& tf_; ///< The Transformer used to determine if transformation data is available
   ros::NodeHandle nh_; ///< The node used to subscribe to the topic
   ros::Duration min_rate_;
@@ -451,9 +427,6 @@ private:
   std::string target_frames_string_;
   boost::mutex target_frames_string_mutex_;
   uint32_t queue_size_; ///< The maximum number of messages we queue up
-
-  Signal signal_;
-  boost::mutex signal_mutex_;
 
   L_Message messages_; ///< The message list
   uint32_t message_count_; ///< The number of messages in the list.  Used because messages_.size() has linear cost

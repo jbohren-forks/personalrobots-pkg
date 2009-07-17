@@ -68,7 +68,7 @@ TEST(MessageFilter, noTransforms)
   tf::TransformListener tf_client;
 	Notification n(1);
 	MessageFilter<robot_msgs::PointStamped> filter(tf_client, "frame1", 1);
-	filter.connect(boost::bind(&Notification::notify, &n, _1));
+	filter.registerCallback(boost::bind(&Notification::notify, &n, _1));
 
 	robot_msgs::PointStampedPtr msg(new robot_msgs::PointStamped);
 	msg->header.stamp = ros::Time::now();
@@ -83,7 +83,7 @@ TEST(MessageFilter, noTransformsSameFrame)
   tf::TransformListener tf_client;
   Notification n(1);
   MessageFilter<robot_msgs::PointStamped> filter(tf_client, "frame1", 1);
-  filter.connect(boost::bind(&Notification::notify, &n, _1));
+  filter.registerCallback(boost::bind(&Notification::notify, &n, _1));
 
   robot_msgs::PointStampedPtr msg(new robot_msgs::PointStamped);
   msg->header.stamp = ros::Time::now();
@@ -98,7 +98,7 @@ TEST(MessageFilter, preexistingTransforms)
   tf::TransformListener tf_client;
   Notification n(1);
   MessageFilter<robot_msgs::PointStamped> filter(tf_client, "frame1", 1);
-  filter.connect(boost::bind(&Notification::notify, &n, _1));
+  filter.registerCallback(boost::bind(&Notification::notify, &n, _1));
 
 	ros::Time stamp = ros::Time::now();
 	tf::Stamped<tf::Transform> transform(btTransform(btQuaternion(0,0,0), btVector3(1,2,3)), stamp, "frame1", "frame2");
@@ -118,7 +118,7 @@ TEST(MessageFilter, postTransforms)
   tf::TransformListener tf_client;
   Notification n(1);
   MessageFilter<robot_msgs::PointStamped> filter(tf_client, "frame1", 1);
-  filter.connect(boost::bind(&Notification::notify, &n, _1));
+  filter.registerCallback(boost::bind(&Notification::notify, &n, _1));
 
 	ros::Time stamp = ros::Time::now();
 
@@ -141,7 +141,7 @@ TEST(MessageFilter, queueSize)
   tf::TransformListener tf_client;
   Notification n(10);
   MessageFilter<robot_msgs::PointStamped> filter(tf_client, "frame1", 10);
-  filter.connect(boost::bind(&Notification::notify, &n, _1));
+  filter.registerCallback(boost::bind(&Notification::notify, &n, _1));
 
 	ros::Time stamp = ros::Time::now();
 
@@ -167,7 +167,7 @@ TEST(MessageFilter, setTargetFrame)
   tf::TransformListener tf_client;
   Notification n(1);
   MessageFilter<robot_msgs::PointStamped> filter(tf_client, "frame1", 1);
-  filter.connect(boost::bind(&Notification::notify, &n, _1));
+  filter.registerCallback(boost::bind(&Notification::notify, &n, _1));
 	filter.setTargetFrame("frame1000");
 
 	ros::Time stamp = ros::Time::now();
@@ -189,7 +189,7 @@ TEST(MessageFilter, multipleTargetFrames)
   tf::TransformListener tf_client;
   Notification n(1);
   MessageFilter<robot_msgs::PointStamped> filter(tf_client, "", 1);
-  filter.connect(boost::bind(&Notification::notify, &n, _1));
+  filter.registerCallback(boost::bind(&Notification::notify, &n, _1));
 
   std::vector<std::string> target_frames;
   target_frames.push_back("frame1");
@@ -221,7 +221,7 @@ TEST(MessageFilter, tolerance)
   tf::TransformListener tf_client;
   Notification n(1);
   MessageFilter<robot_msgs::PointStamped> filter(tf_client, "frame1", 1);
-  filter.connect(boost::bind(&Notification::notify, &n, _1));
+  filter.registerCallback(boost::bind(&Notification::notify, &n, _1));
   filter.setTolerance(offset);
 
 	ros::Time stamp = ros::Time::now();
@@ -253,7 +253,7 @@ TEST(MessageFilter, maxRate)
   tf::TransformListener tf_client;
   Notification n(1);
   MessageFilter<robot_msgs::PointStamped> filter(tf_client, "frame1", 1, ros::NodeHandle(), ros::Duration(1.0), ros::Duration());
-  filter.connect(boost::bind(&Notification::notify, &n, _1));
+  filter.registerCallback(boost::bind(&Notification::notify, &n, _1));
 
   ros::Time stamp = ros::Time::now();
   tf::Stamped<tf::Transform> transform(btTransform(btQuaternion(0,0,0), btVector3(1,2,3)), stamp, "frame1", "frame2");

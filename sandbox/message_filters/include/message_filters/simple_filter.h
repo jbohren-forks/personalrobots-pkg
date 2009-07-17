@@ -32,71 +32,51 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
-#include <gtest/gtest.h>
+#ifndef MESSAGE_FILTERS_SIMPLE_FILTER_H
+#define MESSAGE_FILTERS_SIMPLE_FILTER_H
 
-#include "ros/time.h"
-#include "message_filters/time_sequencer.h"
+#include <boost/noncopyable.hpp>
 
-using namespace message_filters;
+#include <ros/ros.h>
 
-struct Header
+#include "connection.h"
+
+namespace message_filters
 {
-  ros::Time stamp;
-};
 
-
-struct Msg
-{
-  Header header;
-  int data;
-};
-typedef boost::shared_ptr<Msg> MsgPtr;
-typedef boost::shared_ptr<Msg const> MsgConstPtr;
-
-class Helper
+template<class M>
+class SimpleFilter : public boost::noncopyable
 {
 public:
-  Helper()
-  : count_(0)
-  {}
+  typedef boost::shared_ptr<M const> MConstPtr;
+  typedef boost::function<void(const MConstPtr&)> Callback;
+  typedef boost::signal<void(const MConstPtr&)> Signal;
 
-  void cb(const MsgConstPtr&)
+  Connection registerCallback(const Callback& callback)
   {
-    ++count_;
+    boost::mutex::scoped_lock lock(signal_mutex_);
+    return Connection(boost::bind(&SimpleFilter::disconnect, this, _1), signal_.connect(callback));
   }
 
-  int32_t count_;
+protected:
+  void signalMessage(const MConstPtr& msg)
+  {
+    boost::mutex::scoped_lock lock(signal_mutex_);
+    signal_(msg);
+  }
+
+private:
+  void disconnect(const Connection& c)
+  {
+    boost::mutex::scoped_lock lock(signal_mutex_);
+    c.getBoostConnection().disconnect();
+  }
+
+  Signal signal_;
+  boost::mutex signal_mutex_;
 };
 
-TEST(TimeSequencer, simple)
-{
-  TimeSequencer<Msg> seq(ros::Duration(1.0), ros::Duration(0.01), 10);
-  Helper h;
-  seq.registerCallback(boost::bind(&Helper::cb, &h, _1));
-  MsgPtr msg(new Msg);
-  msg->header.stamp = ros::Time::now();
-  seq.add(msg);
-
-  ros::WallDuration(0.1).sleep();
-  ros::spinOnce();
-  ASSERT_EQ(h.count_, 0);
-
-  ros::Time::setNow(ros::Time::now() + ros::Duration(2.0));
-
-  ros::WallDuration(0.1).sleep();
-  ros::spinOnce();
-
-  ASSERT_EQ(h.count_, 1);
 }
 
-int main(int argc, char **argv){
-  testing::InitGoogleTest(&argc, argv);
-
-  ros::init(argc, argv, "time_sequencer_test");
-  ros::NodeHandle nh;
-  ros::Time::setNow(ros::Time());
-
-  return RUN_ALL_TESTS();
-}
-
+#endif
 

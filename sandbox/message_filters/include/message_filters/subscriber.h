@@ -39,9 +39,9 @@
 
 #include <boost/signals.hpp>
 #include <boost/thread/mutex.hpp>
-#include <boost/noncopyable.hpp>
 
 #include "connection.h"
+#include "simple_filter.h"
 
 namespace message_filters
 {
@@ -66,12 +66,10 @@ void callback(const boost::shared_ptr<M const>&);
 \endverbatim
  */
 template<class M>
-class Subscriber : public boost::noncopyable
+class Subscriber : public SimpleFilter<M>
 {
 public:
   typedef boost::shared_ptr<M const> MConstPtr;
-  typedef boost::function<void(const MConstPtr&)> Callback;
-  typedef boost::signal<void(const MConstPtr&)> Signal;
 
   /**
    * \brief Constructor
@@ -134,34 +132,14 @@ public:
     sub_.shutdown();
   }
 
-  /**
-   * \brief Connect a callback to this filter.  That callback will be called whenever new data arrives.
-   *
-   * \param callback A function of the same form as the message callbacks used in roscpp
-   * \return A connection object that allows you to disconnect a single connection from this subscriber
-   */
-  Connection connect(const Callback& callback)
-  {
-    boost::mutex::scoped_lock lock(signal_mutex_);
-    return Connection(boost::bind(&Subscriber::disconnect, this, _1), signal_.connect(callback));
-  }
-
 private:
-  void disconnect(const Connection& c)
-  {
-    boost::mutex::scoped_lock lock(signal_mutex_);
-    c.getBoostConnection().disconnect();
-  }
 
   void cb(const MConstPtr& m)
   {
-    boost::mutex::scoped_lock lock(signal_mutex_);
-    signal_(m);
+    signalMessage(m);
   }
 
   ros::Subscriber sub_;
-  Signal signal_;
-  boost::mutex signal_mutex_;
 };
 
 }

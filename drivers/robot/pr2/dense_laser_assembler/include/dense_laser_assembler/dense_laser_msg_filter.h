@@ -43,6 +43,7 @@
 #include "dense_laser_assembler/laser_scan_tagger.h"
 #include "message_filters/cache.h"
 #include "message_filters/connection.h"
+#include "message_filters/simple_filter.h"
 
 
 // Messages
@@ -68,13 +69,11 @@ namespace dense_laser_assembler
 /**
  * \brief Listens to LaserScan and MechanismState messages, and builds DenseLaserSnapshots
  */
-class DenseLaserMsgFilter
+class DenseLaserMsgFilter : public message_filters::SimpleFilter<TaggedLaserScan<JointPVArray> >
 {
 public:
 
   typedef boost::shared_ptr<const TaggedLaserScan<JointPVArray> > MConstPtr ;
-  typedef boost::function<void(const MConstPtr&)> Callback;
-  typedef boost::signal<void(const MConstPtr&)> Signal;
 
   //! \brief Not yet implemented
   template<class A, class B>
@@ -125,20 +124,14 @@ public:
     // Configure the joint_pv_filter and associated cache
     joint_pv_filter_.setJointNames(joint_names_) ;
     joint_cache_.setCacheSize(mech_state_cache_size) ;
-    joint_cache_.connectTo(joint_pv_filter_) ;
+    joint_cache_.connectInput(joint_pv_filter_) ;
 
     // Set up the laser tagger and associated cache
     laser_tagger_.setMaxQueueSize(laser_queue_size) ;
     laser_tagger_.subscribeTagCache(joint_cache_) ;
     tagged_laser_cache_.setCacheSize(laser_cache_size) ;
-    tagged_laser_cache_.connectTo(laser_tagger_) ;
+    tagged_laser_cache_.connectInput(laser_tagger_) ;
   }
-
-  /**
-   * \brief Used to connect this MessageFilter to a callback
-   * \param callback Function to be called whenever a new TaggedLaserScan message is available
-   */
-  message_filters::Connection connect(const Callback& callback) ;
 
   //! \brief Not yet implemented
   void processLaserScan(const sensor_msgs::LaserScanConstPtr& msg) ;
@@ -183,7 +176,7 @@ private:
   template<class B>
   void subscribeMechState(B& b)
   {
-    joint_pv_filter_.subscribe(b) ;
+    joint_pv_filter_.connectInput(b) ;
   }
 
   //! Extracts positions data for a subset of joints in MechanismState

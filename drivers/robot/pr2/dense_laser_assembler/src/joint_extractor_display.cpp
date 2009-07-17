@@ -85,7 +85,7 @@ int main(int argc, char** argv)
   JointPVMsgFilter joint_extractor(joint_names) ;
   //JointPVDiagMsgFilter joint_extractor(diagnostic, joint_names) ;
 
-  message_filters::Connection con = joint_extractor.connect( boost::bind(&display_joints, joint_names, _1) ) ;
+  joint_extractor.registerCallback( boost::bind(&display_joints, joint_names, _1) ) ;
 
   ros::Subscriber sub = nh.subscribe("mechanism_state", 1, &JointPVMsgFilter::processMechState, &joint_extractor) ;
 
@@ -93,8 +93,6 @@ int main(int argc, char** argv)
   //diagnostic_thread = new boost::thread( boost::bind(&diagnosticsLoop, &diagnostic) );
 
   ros::spin() ;
-
-  con.disconnect() ;
 
   return 0 ;
 }

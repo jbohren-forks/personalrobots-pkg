@@ -45,6 +45,8 @@
 #include "boost/shared_ptr.hpp"
 #include "dense_laser_assembler/tagged_laser_scan.h"
 
+#include <message_filters/simple_filter.h>
+
 namespace dense_laser_assembler
 {
 
@@ -53,14 +55,12 @@ namespace dense_laser_assembler
  * whenever there is a tag msg that occurs before and after the scan.
  */
 template <class T>
-class LaserScanTagger
+class LaserScanTagger : public message_filters::SimpleFilter<TaggedLaserScan<T> >
 {
 public:
 
   typedef boost::shared_ptr<const T> TConstPtr ;
   typedef boost::shared_ptr<const TaggedLaserScan<T> > MConstPtr ;
-  typedef boost::function<void(const MConstPtr&)> Callback;
-  typedef boost::signal<void(const MConstPtr&)> Signal;
 
 
 
@@ -92,15 +92,13 @@ public:
   template<class A>
   void subscribeLaserScan(A& a)
   {
-    boost::mutex::scoped_lock lock(signal_mutex_);
-    incoming_laser_scan_connection_ = a.connect(boost::bind(&LaserScanTagger<T>::processLaserScan, this, _1));
+    incoming_laser_scan_connection_ = a.registerCallback(boost::bind(&LaserScanTagger<T>::processLaserScan, this, _1));
   }
 
   void subscribeTagCache(message_filters::Cache<T>& tag_cache)
   {
-    boost::mutex::scoped_lock lock(signal_mutex_);
     tag_cache_ = &tag_cache ;
-    incoming_tag_connection_ = tag_cache.connect(boost::bind(&LaserScanTagger<T>::processTag, this, _1));
+    incoming_tag_connection_ = tag_cache.registerCallback(boost::bind(&LaserScanTagger<T>::processTag, this, _1));
   }
 
   void setMaxQueueSize(unsigned int max_queue_size)
@@ -133,16 +131,6 @@ public:
   void processTag(const TConstPtr& msg)
   {
     update() ;
-  }
-
-  /**
-   * \brief Connect this message filter's output to some callback
-   * \param callback Function to call after we've tagged a LaserScan
-   */
-  message_filters::Connection connect(const Callback& callback)
-  {
-    boost::mutex::scoped_lock lock(signal_mutex_);
-    return message_filters::Connection(boost::bind(&LaserScanTagger::disconnect, this, _1), signal_.connect(callback));
   }
 
   /**
@@ -206,28 +194,20 @@ public:
         queue_.pop_front() ;
         queue_mutex_.unlock() ;
 
-        boost::mutex::scoped_lock lock(signal_mutex_);
-        signal_(tagged_scan) ;
+        signalMessage(tagged_scan) ;
       }
     }
   }
 
 private:
-  void disconnect(const message_filters::Connection& c)
-  {
-    boost::mutex::scoped_lock lock(signal_mutex_);
-    signal_.disconnect(c.getBoostConnection());
-  }
 
   std::deque<sensor_msgs::LaserScanConstPtr> queue_ ;    //!< Incoming queue of laser scans
   boost::mutex queue_mutex_ ;                            //!< Mutex for laser scan queue
   unsigned int max_queue_size_ ;                         //!< Max # of laser scans to queue up for processing
   message_filters::Cache<T>* tag_cache_ ;             //!< Cache of the tags that we need to merge with laser data
 
-  Signal signal_;
   message_filters::Connection incoming_laser_scan_connection_;
   message_filters::Connection incoming_tag_connection_;
-  boost::mutex signal_mutex_;
 } ;
 
 }

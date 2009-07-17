@@ -46,6 +46,7 @@
 #include <boost/signals.hpp>
 #include <boost/bind.hpp>
 #include <message_filters/connection.h>
+#include <message_filters/simple_filter.h>
 
 // Messages
 #include "dense_laser_assembler/JointPVArray.h"
@@ -58,12 +59,9 @@ namespace dense_laser_assembler
  * Streams an array of joint positions and velocities from MechanismState,
  * given a mapping from joint_names to array indices
  */
-class JointPVMsgFilter
+class JointPVMsgFilter : public message_filters::SimpleFilter<JointPVArray>
 {
 public:
-  typedef boost::function<void(const JointPVArrayConstPtr&)> Callback;
-  typedef boost::signal<void(const JointPVArrayConstPtr&)> Signal;
-
   /**
    * \brief Subscribe to another MessageFilter at construction time
    * \param a The parent message filter
@@ -92,20 +90,9 @@ public:
    * \param a The MsgFilter that this MsgFilter should get data from
    */
   template<class A>
-  void subscribe(A& a)
+  void connectInput(A& a)
   {
-    boost::mutex::scoped_lock lock(signal_mutex_);
-    incoming_connection_ = a.connect(boost::bind(&JointPVMsgFilter::processMechState, this, _1));
-  }
-
-  /**
-   * \brief Called by user wants they want to connect this MessageFilter to their own code
-   * \param callback Function to be called whenever a JointPVArray message is available
-   */
-  message_filters::Connection connect(const Callback& callback)
-  {
-    boost::mutex::scoped_lock lock(signal_mutex_);
-    return message_filters::Connection(boost::bind(&JointPVMsgFilter::disconnect, this, _1), signal_.connect(callback));
+    incoming_connection_ = a.registerCallback(boost::bind(&JointPVMsgFilter::processMechState, this, _1));
   }
 
   /**
@@ -152,23 +139,15 @@ public:
     }
 
     // Call all connected callbacks
-    signal_(joint_array_ptr) ;
+    signalMessage(joint_array_ptr) ;
   }
 
 protected:
-  void disconnect(const message_filters::Connection& c)
-  {
-    boost::mutex::scoped_lock lock(signal_mutex_);
-    signal_.disconnect(c.getBoostConnection());
-  }
-
   boost::mutex joint_mapping_mutex_ ;
   std::vector<std::string> joint_names_ ;
 
   // Filter Connection Stuff
   message_filters::Connection incoming_connection_;
-  Signal signal_;
-  boost::mutex signal_mutex_;
 } ;
 
 }
