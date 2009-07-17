@@ -72,6 +72,10 @@
 #include <kdl/frames.hpp>
 #include <kdl/chainjnttojacsolver.hpp>
 #include <robot_msgs/Wrench.h>
+#include <motion_planning_srvs/MotionPlan.h>
+#include <manipulation_msgs/IKRequest.h>
+#include <manipulation_srvs/IKService.h>
+#include <manipulation_srvs/IKQuery.h>
 
 namespace sbpl_arm_planner_node
 {
@@ -146,6 +150,8 @@ class SBPLArmPlannerNode
 
       bool enable_pm_;
 
+      bool bCartesianPlanner_;
+
       int num_joints_;
 
       std::string collision_map_topic_;
@@ -166,7 +172,9 @@ class SBPLArmPlannerNode
 
       mechanism_msgs::MechanismState mechanism_state_;
 
-      std::vector<motion_planning_msgs::PoseConstraint> goal_pose_constraint_;
+      std::vector<motion_planning_msgs::PoseConstraint> goal_pose_constraint_; //in planning frame
+
+      std::vector<motion_planning_msgs::JointConstraint> goal_joint_constraint_; //in planning frame
 
       MDPConfig mdp_cfg_;
 
@@ -184,6 +192,10 @@ class SBPLArmPlannerNode
 
       sbpl_arm_planner_node::pm_wrapper *pm_;
 
+      boost::scoped_ptr<KDL::ChainJntToJacSolver> jnt_to_jac_solver_;
+
+      boost::scoped_ptr<KDL::ChainFkSolverPos_recursive> jnt_to_pose_solver_;
+
       tf::TransformListener tf_;
 
       boost::shared_ptr<Voxel3d> env_grid_;
@@ -200,9 +212,14 @@ class SBPLArmPlannerNode
 
       boost::mutex mCopyingVoxel_;
 
+      KDL::Chain arm_chain_;
+
+      KDL::JntArray jnt_pos_;
+
       visualization_msgs::Marker goal_marker_;
 
       visualization_msgs::MarkerArray goal_marker_array_;
+
 
       bool initializePlannerAndEnvironment();
 
@@ -236,7 +253,12 @@ class SBPLArmPlannerNode
 
       void updatePMWrapper(motion_planning_srvs::MotionPlan::Request &req);
 
-//       void finishPath(motion_planning_msgs::KinematicPath &arm_path);
+      void finishPath(motion_planning_msgs::KinematicPath &arm_path, motion_planning_msgs::PoseConstraint &goal_pose);
+
+      bool computeIK(const robot_msgs::PoseStamped &pose_stamped_msg, std::vector<double> jnt_pos, std::vector<double> &solution);
+
+      bool initChain(std::string robot_description);
+
   };
 }
 
