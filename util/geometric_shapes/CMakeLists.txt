@@ -19,6 +19,7 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
 
 rospack_add_library(${PROJECT_NAME} src/load_mesh.cpp
+				    src/shapes.cpp
 				    src/bodies.cpp)
 
 

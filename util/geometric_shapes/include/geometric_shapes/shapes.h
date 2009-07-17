@@ -64,7 +64,7 @@ namespace shapes
 	virtual ~Shape(void)
 	{
 	}
-	
+
 	ShapeType type;
     };
     
@@ -197,6 +197,10 @@ namespace shapes
     /** \brief Load a mesh from a binary STL file. Normals are
 	recomputed and repeating vertices are identified. */
     Mesh* create_mesh_from_binary_stl(const char *filename);
+
+    /** \brief Create a copy of a shape */
+    Shape* clone_shape(const Shape *shape);
+    
 }
 
 #endif
