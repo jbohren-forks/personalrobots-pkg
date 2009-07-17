@@ -887,8 +887,6 @@ bool EnvironmentROBARM3D::InitEnvFromFilePtr(FILE* eCfg, FILE* pCfg, const std::
       printf("robot description file is empty.\n");
       return false;
     }
-    else
-      std::cout << robot_desc << std::endl;
 
     //parse the parameter file
     ReadParamsFile(pCfg);
