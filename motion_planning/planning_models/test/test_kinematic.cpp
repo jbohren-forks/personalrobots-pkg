@@ -126,61 +126,8 @@ TEST(LoadingAndFK, SimpleRobot)
 	"    <elem key=\"my_key\" value=\"my_key_val\"/>"
 	"  </map>"
 	"</link>"
-	"<group name=\"base\" flags=\"planning\">"
-	"base_link"
-	"</group>"
 	"</robot>";
     
-    static const std::string MODEL1_PARSED = 
-	"\n"
-	"List of root links in robot 'one_robot' (1) :\n"
-	"  Link [base_link]:\n"
-	"    - parent link: world\n"
-	"    - rpy: (0, 0, 1)\n"
-	"    - xyz: (0.1, 0, 0)\n"
-	"    Joint [base_link_joint]:\n"
-	"      - type: 4\n"
-	"      - axis: (0, 0, 0)\n"
-	"      - anchor: (0, 0, 0)\n"
-	"      - limit: (0, 0)\n"
-	"      - effortLimit: 0\n"
-	"      - velocityLimit: 0\n"
-	"      - calibration: \n"
-	"    Collision [my_collision]:\n"
-	"      - verbose: No\n"
-	"      - rpy: (0, 0, -1)\n"
-	"      - xyz: (-0.1, 0, 0)\n"
-	"      Geometry [my_collision_geom]:\n"
-	"        - type: 2\n"
-	"        - size: (1, 2, 1)\n"
-	"    Inertial [base_link_inertial]:\n"
-	"      - mass: 2.81\n"
-	"      - com: (0, 0.099, 0)\n"
-	"      - inertia: (0.1, -0.2, 0.5, -0.09, 1, 0.101)\n"
-	"    Visual [base_link_visual]:\n"
-	"      - rpy: (0, 0, 0)\n"
-	"      - xyz: (0, 0, 0)\n"
-	"      Geometry [base_link_visual_geom]:\n"
-	"        - type: 2\n"
-	"        - size: (1, 2, 1)\n"
-	"    - groups: base ( planning ) \n"
-	"    - children links: \n"
-	"    Data flagged as '':\n"
-	"      []\n"
-	"        my_key = my_key_val\n"
-	"\n"
-	"Frames:\n"
-	"\n"
-	"Groups:\n"
-	"  Group [base]:\n"
-	"    - links: base_link \n"
-	"    - frames: \n"
-        "    - flags: planning \n"
-	"\n"
-	"Chains:\n"
-	"\n"
-	"Data types:\n";
-
     static const std::string MODEL1_INFO = 
 	"Number of robots = 1\n"
 	"Complete model state dimension = 3\n"
@@ -216,10 +163,6 @@ TEST(LoadingAndFK, SimpleRobot)
 
     EXPECT_EQ((unsigned int)1, model->getModelInfo().planarJoints.size());
     EXPECT_EQ(0, model->getModelInfo().planarJoints[0]);
-
-    std::stringstream ssp;
-    file->print(ssp);
-    EXPECT_EQ(MODEL1_PARSED, ssp.str());
     
     std::stringstream ssi;
     model->printModelInfo(ssi);
@@ -339,12 +282,6 @@ TEST(FK, OneRobot)
 	"    </geometry>"
 	"  </visual>"
 	"</link>"
-	"<group name=\"base\" flags=\"planning\">"
-	"base_link "
-	"link_a "
-	"link_b "
-	"link_c "
-	"</group>"	
 	"</robot>";
 
     static const std::string MODEL2_INFO = 
@@ -671,37 +608,7 @@ TEST(FK, MoreRobots)
 	"      <box size=\"1 2 1\" />"
 	"    </geometry>"
 	"  </visual>"
-	"</link>"
-	"<group name=\"r1\" flags=\"planning\">"
-	"base_link1 "
-	"link_a "
-	"link_b "
-	"link_c "
-	"</group>"	
-	"<group name=\"r2\" flags=\"planning\">"
-	"base_link2 "
-	"link_d "
-	"link_e "
-	"link_f "
-	"</group>"	
-	"<group name=\"r1r2\" flags=\"planning\">"
-	"base_link1 "
-	"link_a "
-	"link_b "
-	"link_c "
-	"base_link2 "
-	"link_d "
-	"link_e "
-	"link_f "
-	"</group>"
-	"<group name=\"parts\" flags=\"planning\">"
-	"base_link1 "
-	"link_a "
-	"link_b "
-	"link_e "
-	"link_f "
-	"base_link3 "
-	"</group>"	
+	"</link>"	
 	"</robot>";
 
     static const std::string MODEL3_INFO = 
@@ -774,16 +681,19 @@ TEST(FK, MoreRobots)
     model->reduceToRobotFrame();
     EXPECT_EQ((unsigned int)13, model->getModelInfo().stateDimension);
     
-    //    planning_models::KinematicModel *clone = model->clone();
-    //    delete model;
-    //    model = clone;
+    planning_models::KinematicModel *clone = model->clone();
+    delete model;
+    model = clone;
     
     std::stringstream ss;
     model->printModelInfo(ss);
-    printf("%s\n", ss.str().c_str());
     
     double param[8] = { -1, -1, 0, 1.57, 0.0, 5, 5, 0 };
     model->computeTransformsGroup(param, model->getGroupID("parts"));    
+    
+    clone = model->clone();
+    delete model;
+    model = clone; 
     
     EXPECT_TRUE(sameStringIgnoringWS(MODEL3_INFO, ss.str()));
 

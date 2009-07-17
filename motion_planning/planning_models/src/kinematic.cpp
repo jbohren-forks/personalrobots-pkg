@@ -547,17 +547,23 @@ void planning_models::KinematicModel::buildChainJ(Robot *robot, Link *parent, Jo
     // for each group, keep track of the indices from the robot state that correspond to it
     for (unsigned int i = 0 ; i < joint->inGroup.size() ; ++i)
 	if (joint->inGroup[i])
+	{
 	    for (unsigned int j = 0 ; j < joint->usedParams ; ++j)
 		robot->groupStateIndexList[i].push_back(j + robot->stateDimension);
-    
-    // check if the current link has parents in this group
-    // if it does not, it is a root link, so we keep track of it
-    for (unsigned int k = 0 ; k < urdfLink->groups.size() ; ++k)
-	if (urdfLink->groups[k]->isRoot(urdfLink))
-	{
-	    std::string gname = urdfLink->groups[k]->name;
-	    if (m_groupsMap.find(gname) != m_groupsMap.end())
-		robot->groupChainStart[m_groupsMap[gname]].push_back(joint);
+
+	    // if we have a parent link, check if that link is in the same group as we are
+	    bool found = false;
+	    if (parent)
+	    {
+		for (unsigned int j = 0 ; j < m_groupContent[m_groups[i]].size() ; ++j)
+		    if (parent->name == m_groupContent[m_groups[i]][j])
+		    {
+			found = true;
+			break;
+		    }
+	    }
+	    if (!found)
+		robot->groupChainStart[i].push_back(joint);
 	}
     
     if (m_verbose && joint->usedParams > 0)
@@ -802,6 +808,7 @@ planning_models::KinematicModel::Joint* planning_models::KinematicModel::copyJoi
     
     if (newJoint)
     {
+	newJoint->name = joint->name;
 	newJoint->usedParams = joint->usedParams;
 	newJoint->inGroup = joint->inGroup;
 	newJoint->varTrans = joint->varTrans;
@@ -855,8 +862,7 @@ planning_models::KinematicModel* planning_models::KinematicModel::clone(void)
     km->m_built = m_built;
     km->m_verbose = m_verbose;
     km->m_name = m_name;
-    km->m_mi = m_mi;
-    
+  
     for (unsigned int i = 0 ; i < m_robots.size() ; ++i)
     {
 	Robot *r = new Robot(km);
