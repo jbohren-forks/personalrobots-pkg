@@ -93,8 +93,11 @@ bool CartesianPoseController::init(mechanism::RobotState *robot_state, const ros
   robot_state_ = robot_state;
 
   // create robot chain from root to tip
-  if (!chain_.init(robot_state_->model_, root_name_, tip_name))
+  if (!chain_.init(robot_state_->model_, root_name_, tip_name)){
+    ROS_ERROR("CartesianPoseController: Could not construct chain from %s to %s",
+              root_name_.c_str(), tip_name.c_str());
     return false;
+  }
   chain_.toKDL(kdl_chain_);
 
   // create solver
@@ -102,19 +105,22 @@ bool CartesianPoseController::init(mechanism::RobotState *robot_state, const ros
   jnt_vel.resize(kdl_chain_.getNrOfJoints());
 
   // Pids
-
   control_toolbox::Pid temp_pid;
 
-  if (!temp_pid.init(ros::NodeHandle(node_, "fb_trans")))
+  if (!temp_pid.init(ros::NodeHandle(node_, "fb_trans"))){
+    ROS_ERROR("CartesianPoseController: Could not initialize pid controller fb_trans");
     return false;
+  }
   for (size_t i = 0; i < 3; ++i) {
     pids_[i] = temp_pid;
     trans_pid_tuner_.add(&pids_[i]);
   }
   trans_pid_tuner_.advertise(node_.getNamespace() + "/fb_trans");
 
-  if (!temp_pid.init(ros::NodeHandle(node_, "fb_rot")))
+  if (!temp_pid.init(ros::NodeHandle(node_, "fb_rot"))){
+    ROS_ERROR("CartesianPoseController: Could not initialize pid controller fb_rot");
     return false;
+  }
   for (size_t i = 3; i < 6; ++i) {
     pids_[i] = temp_pid;
     rot_pid_tuner_.add(&pids_[i]);

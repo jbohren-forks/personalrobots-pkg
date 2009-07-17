@@ -96,8 +96,11 @@ bool CartesianTrajectoryController::init(mechanism::RobotState *robot_state, con
   robot_state_ = robot_state;
 
   // create robot chain from root to tip
-  if (!chain_.init(robot_state->model_, root_name_, tip_name))
+  if (!chain_.init(robot_state->model_, root_name_, tip_name)){
+    ROS_ERROR("CartesianTrajectoryController: Could not construct chain from %s to %s",
+              root_name_.c_str(), tip_name.c_str());
     return false;
+  }
   chain_.toKDL(kdl_chain_);
 
   // create solver
