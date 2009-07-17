@@ -120,6 +120,9 @@ namespace navfn {
 
   bool NavfnROS::makePlan(const robot_msgs::PoseStamped& start, 
       const robot_msgs::PoseStamped& goal, std::vector<robot_msgs::PoseStamped>& plan){
+    //clear the plan, just in case
+    plan.clear();
+
     //make sure that we have the latest copy of the costmap and that we clear the footprint of obstacles
 
     getCostmap(costmap_);
@@ -195,6 +198,14 @@ namespace navfn {
         pose.pose.position.x = world_x;
         pose.pose.position.y = world_y;
         plan.push_back(pose);
+      }
+      
+      //also make sure that we push the goal pose onto the end of the plan if its not empty
+      if(!plan.empty()){
+        //make sure the goal we push on has the same timestamp as the rest of the plan
+        robot_msgs::PoseStamped goal_copy = goal;
+        goal_copy.header.stamp = plan_time;
+        plan.push_back(goal_copy);
       }
     }
 
