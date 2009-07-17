@@ -62,7 +62,7 @@ bool JointEffortController::init(mechanism::RobotState *robot, const ros::NodeHa
   joint_state_ = robot_->getJointState(joint_name);
   if (!joint_state_)
   {
-    ROS_ERROR("JointEffortController could not find joint named \"%s\"\n",
+    ROS_ERROR("JointEffortController could not find joint named \"%s\"",
               joint_name.c_str());
     return false;
   }
