@@ -5,8 +5,8 @@
     <remap from="collision_map" to="collision_map_occ" />
     <remap from="collision_map_update" to="collision_map_occ_update" />
 
-    <remap from="arm_ik" to="pr2_ik_node/ik_service" />	
-    <remap from="arm_ik_query" to="pr2_ik_node/ik_query" />
+    <remap from="arm_ik" to="pr2_ik_right_arm/ik_service" />	
+    <remap from="arm_ik_query" to="pr2_ik_right_arm/ik_query" />
     
     <remap from="controller_start"  to="r_arm_joint_trajectory_controller/TrajectoryStart" />
     <remap from="controller_query"  to="r_arm_joint_trajectory_controller/TrajectoryQuery" />
