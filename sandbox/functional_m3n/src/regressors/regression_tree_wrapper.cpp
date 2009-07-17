@@ -48,7 +48,6 @@ RegressionTreeWrapper::RegressionTreeWrapper(unsigned int stacked_feature_dim)
 
   trained_ = false;
   rtree_ = NULL;
-  //interm_length_ = 0;
 }
 
 // --------------------------------------------------------------
@@ -67,7 +66,6 @@ RegressionTreeWrapper::RegressionTreeWrapper(unsigned int stacked_feature_dim,
 
   trained_ = false;
   rtree_ = NULL;
-  //interm_length_ = 0;
 }
 
 // --------------------------------------------------------------
@@ -93,7 +91,6 @@ void RegressionTreeWrapper::clear()
 
   interm_feature_vals_.clear();
   interm_start_idx_.clear();
-  //interm_length_ = 0;
   interm_lengths_.clear();
   interm_target_.clear();
 
@@ -245,20 +242,6 @@ int RegressionTreeWrapper::addTrainingSample(const float* const feature_vals,
   }
 
   // -------------------------------------------
-  // Verify the number of features is consistent
-  /*
-  if (interm_length_ == 0)
-  {
-    interm_length_ = length;
-  }
-  else if (interm_length_ != length)
-  {
-    ROS_ERROR("length is not consistent: %u, %u", interm_length_, length);
-    return -1;
-  }
-  */
-
-  // -------------------------------------------
   // Save value for training stage
   interm_feature_vals_.push_back(feature_vals);
   interm_lengths_.push_back(length);
@@ -306,8 +289,6 @@ int RegressionTreeWrapper::train()
     cvmSet(target_vals, i, 0, interm_target_[i]);
 
     // Place the feature values at location sparse_feature_matrix[i][interm_start_idx_[i]
-    //memcpy((sparse_feature_matrix + (i * stacked_feature_dim_) + interm_start_idx_[i]),
-    //    (interm_feature_vals_[i]), (interm_length_ * sizeof(float)));
     memcpy((sparse_feature_matrix + (i * stacked_feature_dim_) + interm_start_idx_[i]),
         (interm_feature_vals_[i]), (interm_lengths_[i] * sizeof(float)));
   }
@@ -342,7 +323,6 @@ int RegressionTreeWrapper::train()
   interm_feature_vals_.clear();
   interm_start_idx_.clear();
   interm_lengths_.clear();
-  //interm_length_ = 0;
   interm_target_.clear();
 
   if (train_success)
