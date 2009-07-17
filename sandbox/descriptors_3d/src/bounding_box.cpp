@@ -173,6 +173,12 @@ void BoundingBox::compute(const robot_msgs::PointCloud& data,
     // Compute bounding box in the principle components of the point cloud
     if (use_pca_bbox_)
     {
+      if ((*eig_vec_max)[i] == NULL)
+      {
+        ROS_WARN("No spectral information for interest region %u...skipping it", i);
+        continue;
+      }
+
       // Initialize extrema values to the first coordinate in the interest region
       Eigen::Vector3d curr_pt;
       curr_pt[0] = data.pts[(*curr_indices)[0]].x;
@@ -193,7 +199,7 @@ void BoundingBox::compute(const robot_msgs::PointCloud& data,
         curr_pt[2] = data.pts[(*curr_indices)[j]].z;
 
         // biggest eigenvector
-        float curr_coord = curr_pt.dot(*((*eig_vec_max)[j]));
+        float curr_coord = curr_pt.dot(*((*eig_vec_max)[i]));
         if (curr_coord < min_x)
         {
           min_x = curr_coord;
@@ -203,7 +209,7 @@ void BoundingBox::compute(const robot_msgs::PointCloud& data,
           max_x = curr_coord;
         }
         // middle eigenvector
-        curr_coord = curr_pt.dot(*((*eig_vec_mid)[j]));
+        curr_coord = curr_pt.dot(*((*eig_vec_mid)[i]));
         if (curr_coord < min_y)
         {
           min_y = curr_coord;
@@ -213,7 +219,7 @@ void BoundingBox::compute(const robot_msgs::PointCloud& data,
           max_y = curr_coord;
         }
         // smallest eigenvector
-        curr_coord = curr_pt.dot(*((*eig_vec_min)[j]));
+        curr_coord = curr_pt.dot(*((*eig_vec_min)[i]));
         if (curr_coord < min_z)
         {
           min_z = curr_coord;

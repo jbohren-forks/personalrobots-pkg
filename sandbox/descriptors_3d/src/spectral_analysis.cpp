@@ -218,6 +218,7 @@ int SpectralAnalysis::analyzeInterestRegions(const robot_msgs::PointCloud& data,
       if (!data_kdtree.radiusSearch(region_centroid, support_radius_, neighbor_indices, neighbor_distances))
       {
         ROS_WARN("SpectralAnalysis::computeSpectralFeatures() radius search failed");
+        ROS_WARN("The centroid was: %f %f %f", region_centroid.x, region_centroid.y, region_centroid.z);
         continue;
       }
     }
