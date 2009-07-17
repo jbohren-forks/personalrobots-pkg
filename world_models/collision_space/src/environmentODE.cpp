@@ -606,3 +606,8 @@ int collision_space::EnvironmentModelODE::setCollisionCheck(const std::string &l
 
     return result;    
 }
+
+collision_space::EnvironmentModel* collision_space::EnvironmentModelODE::clone(void)
+{
+    return NULL;    
+}

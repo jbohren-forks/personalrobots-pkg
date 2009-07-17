@@ -338,3 +338,8 @@ int collision_space::EnvironmentModelBullet::setCollisionCheck(const std::string
 
     return result;    
 }
+
+collision_space::EnvironmentModel* collision_space::EnvironmentModelBullet::clone(void)
+{
+    return NULL;    
+}

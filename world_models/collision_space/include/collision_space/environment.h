@@ -168,6 +168,9 @@ namespace collision_space
 	/** \brief Check the state of verbosity */
 	bool getVerbose(void) const;
 	
+	/** \brief Clone the environment */
+	virtual EnvironmentModel* clone(void) = 0;
+	
     protected:
         
 	boost::mutex                                       m_lock;

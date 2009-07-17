@@ -103,7 +103,10 @@ namespace collision_space
 
 	/** \brief Enable/Disable collision checking for specific links. Return the previous value of the state (1 or 0) if succesful; -1 otherwise */
 	virtual int setCollisionCheck(const std::string &link, bool state);
-	
+
+	/** \brief Clone the environment */
+	virtual EnvironmentModel* clone(void);
+
     protected:
 	
 	class ODECollide2
