@@ -278,10 +278,15 @@ bool planning_environment::PlanningMonitor::isStateValid(const planning_models::
     getEnvironmentModel()->updateRobotModel();
 
     // check for collision
-    bool valid = !getEnvironmentModel()->isCollision();
+    std::vector<collision_space::EnvironmentModel::Contact> contacts;
+    bool valid = !getEnvironmentModel()->getCollisionContacts(contacts, 1);
     
     getKinematicModel()->unlock();
     getEnvironmentModel()->unlock();
+    
+    if (onCollisionContact_)
+	for (unsigned int i = 0 ; i < contacts.size() ; ++i)
+	    onCollisionContact_(contacts[i]);
     
     return valid;
 }
@@ -297,7 +302,8 @@ bool planning_environment::PlanningMonitor::isStateValidOnPath(const planning_mo
     getEnvironmentModel()->updateRobotModel();
 
     // check for collision
-    bool valid = !getEnvironmentModel()->isCollision();
+    std::vector<collision_space::EnvironmentModel::Contact> contacts;
+    bool valid = !getEnvironmentModel()->getCollisionContacts(contacts, 1);
     
     if (valid)
     {	    
@@ -309,7 +315,11 @@ bool planning_environment::PlanningMonitor::isStateValidOnPath(const planning_mo
     
     getKinematicModel()->unlock();
     getEnvironmentModel()->unlock();
-    
+
+    if (onCollisionContact_)
+	for (unsigned int i = 0 ; i < contacts.size() ; ++i)
+	    onCollisionContact_(contacts[i]);
+
     return valid;
 }
 
@@ -324,7 +334,8 @@ bool planning_environment::PlanningMonitor::isStateValidAtGoal(const planning_mo
     getEnvironmentModel()->updateRobotModel();
     
     // check for collision
-    bool valid = !getEnvironmentModel()->isCollision();
+    std::vector<collision_space::EnvironmentModel::Contact> contacts;
+    bool valid = !getEnvironmentModel()->getCollisionContacts(contacts, 1);
     
     if (valid)
     {	    
@@ -338,6 +349,10 @@ bool planning_environment::PlanningMonitor::isStateValidAtGoal(const planning_mo
     
     getKinematicModel()->unlock();
     getEnvironmentModel()->unlock();
+    
+    if (onCollisionContact_)
+	for (unsigned int i = 0 ; i < contacts.size() ; ++i)
+	    onCollisionContact_(contacts[i]);
     
     return valid;    
 }
@@ -425,8 +440,13 @@ bool planning_environment::PlanningMonitor::isPathValidAux(const motion_planning
 	getEnvironmentModel()->updateRobotModel();
 	
 	// check for collision
-	valid = !getEnvironmentModel()->isCollision();
-
+	std::vector<collision_space::EnvironmentModel::Contact> contacts;
+	valid = !getEnvironmentModel()->getCollisionContacts(contacts, 1);
+	
+	if (onCollisionContact_)
+	    for (unsigned int i = 0 ; i < contacts.size() ; ++i)
+		onCollisionContact_(contacts[i]);
+	
 	if (verbose && !valid)
 	    ROS_INFO("isPathValid: State %d is in collision", i);
 

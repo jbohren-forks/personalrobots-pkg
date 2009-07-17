@@ -56,11 +56,13 @@ namespace planning_environment
 	
 	PlanningMonitor(CollisionModels *cm, tf::TransformListener *tf, std::string frame_id) : CollisionSpaceMonitor(static_cast<CollisionModels*>(cm), tf, frame_id)
 	{
+	    onCollisionContact_ = NULL;	    
 	    loadParams();
 	}
 	
 	PlanningMonitor(CollisionModels *cm, tf::TransformListener *tf) : CollisionSpaceMonitor(static_cast<CollisionModels*>(cm), tf)
 	{
+	    onCollisionContact_ = NULL;	    
 	    loadParams();
 	}
 	
@@ -101,6 +103,12 @@ namespace planning_environment
 	/** \brief Transform the kinematic joint to the frame requested */
 	bool transformJointToFrame(motion_planning_msgs::KinematicJoint &kj, const std::string &target) const;
 	
+	/** \brief Set a callback to be called when a collision is found */
+	void setOnCollisionContactCallback(const boost::function<void(collision_space::EnvironmentModel::Contact&)> &callback) 
+	{
+	    onCollisionContact_ = callback;
+	}
+	
     protected:
 
 	/** \brief Load ROS parameters */
@@ -111,6 +119,9 @@ namespace planning_environment
 	
 	/** \brief Check the path assuming it is in the frame of the model */
 	bool isPathValidAux(const motion_planning_msgs::KinematicPath &path, bool verbose) const;
+
+	/** \brief User callback when a collision is found */
+	boost::function<void(collision_space::EnvironmentModel::Contact&)> onCollisionContact_;
 	
 	motion_planning_msgs::KinematicConstraints kcPath_;
 	motion_planning_msgs::KinematicConstraints kcGoal_;
