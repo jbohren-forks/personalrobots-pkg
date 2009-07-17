@@ -105,7 +105,7 @@ namespace collision_space
 	virtual int setCollisionCheck(const std::string &link, bool state);
 
 	/** \brief Clone the environment */
-	virtual EnvironmentModel* clone(void);
+	virtual EnvironmentModel* clone(void) const;
 
     protected:
 	
@@ -131,6 +131,7 @@ namespace collision_space
 	    void setup(void);
 	    void collide(dGeomID geom, void *data, dNearCallback *nearCallback) const;
 	    bool empty(void) const;
+	    void getGeoms(std::vector<dGeomID> &geoms) const;
 	    
 	private:
 	    
@@ -247,8 +248,6 @@ namespace collision_space
 	struct ModelInfo
 	{
 	    std::vector< kGeom* > linkGeom;
-	    double                scale;
-	    double                padding;
 	    dSpaceID              space;
 	    ODEStorage            storage;
 	};
@@ -316,6 +315,8 @@ namespace collision_space
 	/** \brief Internal function for collision detection */
 	void testBodyCollision(CollisionNamespace *cn, CollisionData *data);
 
+	dGeomID copyGeom(dSpaceID space, ODEStorage &storage, dGeomID geom) const;
+	void    createODERobotModel(void);	
 	dGeomID createODEGeom(dSpaceID space, ODEStorage &storage, const shapes::Shape *shape, double scale, double padding);
 	void    updateGeom(dGeomID geom, const btTransform &pose) const;	
 	void    freeMemory(void);	

@@ -108,6 +108,18 @@ namespace collision_space
 	    additive term */
 	virtual void setRobotModel(const boost::shared_ptr<planning_models::KinematicModel> &model, const std::vector<std::string> &links, double scale = 1.0, double padding = 0.0);
 
+	/** \brief Get robot scale */
+	double getRobotScale(void) const
+	{
+	    return m_robotScale;
+	}
+
+	/** \brief Get robot padding */
+	double getRobotPadding(void) const
+	{
+	    return m_robotPadd;
+	}
+	
 	/** \brief Update the positions of the geometry used in collision detection */
 	virtual void updateRobotModel(void) = 0;
 
@@ -169,7 +181,7 @@ namespace collision_space
 	bool getVerbose(void) const;
 	
 	/** \brief Clone the environment */
-	virtual EnvironmentModel* clone(void) = 0;
+	virtual EnvironmentModel* clone(void) const = 0;
 	
     protected:
         
@@ -184,6 +196,8 @@ namespace collision_space
 	
 	/** \brief List of loaded robot models */	
 	boost::shared_ptr<planning_models::KinematicModel> m_robotModel;
+	double                                             m_robotScale;
+	double                                             m_robotPadd;	
 	
     };
 }

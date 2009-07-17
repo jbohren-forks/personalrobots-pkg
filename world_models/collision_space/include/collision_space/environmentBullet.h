@@ -107,7 +107,7 @@ namespace collision_space
 	virtual int setCollisionCheck(const std::string &link, bool state);
 
 	/** \brief Clone the environment */
-	virtual EnvironmentModel* clone(void);
+	virtual EnvironmentModel* clone(void) const;
 	
     protected:
 

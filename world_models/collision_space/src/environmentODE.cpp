@@ -54,17 +54,19 @@ void collision_space::EnvironmentModelODE::freeMemory(void)
 void collision_space::EnvironmentModelODE::setRobotModel(const boost::shared_ptr<planning_models::KinematicModel> &model, const std::vector<std::string> &links, double scale, double padding)
 {
     collision_space::EnvironmentModel::setRobotModel(model, links, scale, padding);
-    
-    m_modelGeom.space = dSweepAndPruneSpaceCreate(0, dSAP_AXES_XZY);
-    m_modelGeom.scale = scale;
-    m_modelGeom.padding = padding;
+    createODERobotModel();
+}
 
-    for (unsigned int i = 0 ; i < links.size() ; ++i)
+void collision_space::EnvironmentModelODE::createODERobotModel(void)
+{
+    m_modelGeom.space = dSweepAndPruneSpaceCreate(0, dSAP_AXES_XZY);
+
+    for (unsigned int i = 0 ; i < m_collisionLinks.size() ; ++i)
     {
 	/* skip this link if we have no geometry or if the link
 	   name is not specified as enabled for collision
 	   checking */
-	planning_models::KinematicModel::Link *link = m_robotModel->getLink(links[i]);
+	planning_models::KinematicModel::Link *link = m_robotModel->getLink(m_collisionLinks[i]);
 	if (!link || !link->shape)
 	    continue;
 	
@@ -72,19 +74,19 @@ void collision_space::EnvironmentModelODE::setRobotModel(const boost::shared_ptr
 	kg->link = link;
 	kg->enabled = true;
 	kg->index = i;
-	dGeomID g = createODEGeom(m_modelGeom.space, m_modelGeom.storage, link->shape, scale, padding);
+	dGeomID g = createODEGeom(m_modelGeom.space, m_modelGeom.storage, link->shape, m_robotScale, m_robotPadd);
 	assert(g);
 	dGeomSetData(g, reinterpret_cast<void*>(kg));
 	kg->geom.push_back(g);
 	for (unsigned int k = 0 ; k < kg->link->attachedBodies.size() ; ++k)
 	{
-	    dGeomID ga = createODEGeom(m_modelGeom.space, m_modelGeom.storage, kg->link->attachedBodies[k]->shape, scale, padding);
+	    dGeomID ga = createODEGeom(m_modelGeom.space, m_modelGeom.storage, kg->link->attachedBodies[k]->shape, m_robotScale, m_robotPadd);
 	    assert(ga);
 	    dGeomSetData(ga, reinterpret_cast<void*>(kg));
 	    kg->geom.push_back(ga);
 	}
 	m_modelGeom.linkGeom.push_back(kg);
-    }
+    } 
 }
 
 dGeomID collision_space::EnvironmentModelODE::createODEGeom(dSpaceID space, ODEStorage &storage, const shapes::Shape *shape, double scale, double padding)
@@ -199,7 +201,7 @@ void collision_space::EnvironmentModelODE::updateAttachedBodies(void)
 	const unsigned int nab = kg->link->attachedBodies.size();
 	for (unsigned int k = 0 ; k < nab ; ++k)
 	{
-	    dGeomID ga = createODEGeom(m_modelGeom.space, m_modelGeom.storage, kg->link->attachedBodies[k]->shape, m_modelGeom.scale, m_modelGeom.padding);
+	    dGeomID ga = createODEGeom(m_modelGeom.space, m_modelGeom.storage, kg->link->attachedBodies[k]->shape, m_robotScale, m_robotPadd);
 	    assert(ga);
 	    dGeomSetData(ga, reinterpret_cast<void*>(kg));
 	    kg->geom.push_back(ga);
@@ -262,6 +264,13 @@ void collision_space::EnvironmentModelODE::ODECollide2::setup(void)
 	std::sort(m_geomsZ.begin(), m_geomsZ.end(), SortByZLow());
 	m_setup = true;
     }	    
+}
+
+void collision_space::EnvironmentModelODE::ODECollide2::getGeoms(std::vector<dGeomID> &geoms) const
+{
+    geoms.resize(m_geomsX.size());
+    for (unsigned int i = 0 ; i < geoms.size() ; ++i)
+	geoms[i] = m_geomsX[i]->id;
 }
 
 void collision_space::EnvironmentModelODE::ODECollide2::checkColl(std::vector<Geom*>::const_iterator posStart, std::vector<Geom*>::const_iterator posEnd,
@@ -607,7 +616,38 @@ int collision_space::EnvironmentModelODE::setCollisionCheck(const std::string &l
     return result;    
 }
 
-collision_space::EnvironmentModel* collision_space::EnvironmentModelODE::clone(void)
+dGeomID collision_space::EnvironmentModelODE::copyGeom(dSpaceID space, ODEStorage &storage, dGeomID geom) const
 {
-    return NULL;    
+    return NULL;
+}
+
+collision_space::EnvironmentModel* collision_space::EnvironmentModelODE::clone(void) const
+{
+    EnvironmentModelODE *env = new EnvironmentModelODE();
+    env->m_collisionLinks = m_collisionLinks;
+    env->m_collisionLinkIndex = m_collisionLinkIndex;
+    env->m_selfCollisionTest = m_selfCollisionTest;	
+    env->m_selfCollision = m_selfCollision;
+    env->m_verbose = m_verbose;
+    env->m_robotScale = m_robotScale;
+    env->m_robotPadd = m_robotPadd;
+    env->m_robotModel = boost::shared_ptr<planning_models::KinematicModel>(m_robotModel->clone());
+    env->createODERobotModel();
+    for (unsigned int j = 0 ; j < m_modelGeom.linkGeom.size() ; ++j)
+	env->m_modelGeom.linkGeom[j]->enabled = m_modelGeom.linkGeom[j]->enabled;
+    for (std::map<std::string, CollisionNamespace*>::const_iterator it = m_collNs.begin() ; it != m_collNs.end() ; ++it)
+    {
+	CollisionNamespace *cn = new CollisionNamespace(it->first);
+	env->m_collNs[it->first] = cn;
+	unsigned int n = it->second->geoms.size();
+	cn->geoms.reserve(n);
+	for (unsigned int i = 0 ; i < n ; ++i)
+	    cn->geoms.push_back(copyGeom(cn->space, cn->storage, it->second->geoms[i]));
+	std::vector<dGeomID> geoms;
+	it->second->collide2.getGeoms(geoms);
+	for (unsigned int i = 0 ; i < n ; ++i)
+	    cn->collide2.registerGeom(copyGeom(cn->space, cn->storage, geoms[i]));
+    }
+    
+    return env;    
 }

@@ -56,6 +56,8 @@ void collision_space::EnvironmentModel::setRobotModel(const boost::shared_ptr<pl
 	m_selfCollisionTest[i].resize(links.size(), false);
 	m_collisionLinkIndex[links[i]] = i;
     }
+    m_robotScale = scale;
+    m_robotPadd = padding;
 }
 
 void collision_space::EnvironmentModel::addSelfCollisionGroup(std::vector<std::string> &links)
