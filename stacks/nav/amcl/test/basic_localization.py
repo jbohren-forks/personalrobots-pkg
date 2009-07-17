@@ -24,7 +24,7 @@ class TestBasicLocalization(unittest.TestCase):
 
   def tf_cb(self, msg):
     for t in msg.transforms:
-      if t.parent_id == 'map':
+      if t.parent_id == '/map':
         self.tf = t.transform
         print 'Curr:\t %16.6f %16.6f' % (self.tf.translation.x, self.tf.translation.y)
         print 'Target:\t %16.6f %16.6f' % (self.target_x, self.target_y)
