@@ -342,7 +342,7 @@ bool TrackerBase::waitForService(const std::string &service)
   std::string host;
   int port;
   while (node_.ok() && !boost::this_thread::interruption_requested()) {
-    if (node_.lookupService(service, host, port))
+    if (ros::service::exists(service, false))
       return true;
     usleep(100000);
   }
