@@ -80,6 +80,8 @@ bool robot_self_filter::SelfMask::configure(const std::vector<std::string> &link
     for (unsigned int i = 0 ; i < bodies_.size() ; ++i)
 	ROS_DEBUG("Self mask includes link %s with volume %f", bodies_[i].name.c_str(), bodies_[i].body->computeVolume());
     
+    ROS_INFO("Self filter using %f padding and %f scaling", padd, scale);
+    
     return true; 
 }
 
