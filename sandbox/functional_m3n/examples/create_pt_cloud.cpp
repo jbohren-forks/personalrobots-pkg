@@ -390,15 +390,20 @@ void createNodes(RandomField& rf,
   }
 }
 
+// --------------------------------------------------------------
+/*!
+ * \brief Create clique set in the RandomField using kmeans clustering
+ */
+// --------------------------------------------------------------
 void createCliqueSetKmeans(RandomField& rf,
                            const robot_msgs::PointCloud& pt_cloud,
                            cloud_kdtree::KdTree& pt_cloud_kdtree,
                            set<unsigned int>& skip_indices,
                            kmeans_params_t& kmeans_params,
-                           vector<Descriptor3D*>& descriptors)
+                           vector<Descriptor3D*>& clique_descriptors)
 {
   // ----------------------------------------------
-  // clustering
+  // Create clusters
   map<unsigned int, vector<float> > cluster_centroids_xyz;
   map<unsigned int, vector<int> > cluster_centroids_indices;
   ROS_INFO("Clustering...");
@@ -412,23 +417,41 @@ void createCliqueSetKmeans(RandomField& rf,
   unsigned int nbr_clusters = cluster_centroids_indices.size();
   cv::Vector<vector<int>*> interest_region_indices(nbr_clusters, NULL);
   map<unsigned int, vector<int> >::iterator iter_cluster_centroids_indices;
+  size_t cluster_idx = 0;
   for (iter_cluster_centroids_indices = cluster_centroids_indices.begin(); iter_cluster_centroids_indices
       != cluster_centroids_indices.end() ; iter_cluster_centroids_indices++)
   {
-
+    interest_region_indices[cluster_idx++] = (&iter_cluster_centroids_indices->second);
   }
 
-  /*
-   // features
-   vector<float*> concatenated_features(nbr_pts, NULL);
-   unsigned int nbr_concatenated_vals = Descriptor3D::computeAndConcatFeatures(pt_cloud, pt_cloud_kdtree,
-   interest_pts, node_feature_descriptors, concatenated_features, failed_indices);
-   if (nbr_concatenated_vals == 0)
-   {
-   ROS_FATAL("Could not compute clique set features at all. This should never happen");
-   abort();
-   }
-   */
+  // ----------------------------------------------
+  // Compute features over clusters
+  vector<float*> concatenated_features(nbr_clusters, NULL);
+  unsigned int nbr_concatenated_vals = Descriptor3D::computeAndConcatFeatures(pt_cloud, pt_cloud_kdtree,
+      interest_region_indices, clique_descriptors, concatenated_features, skip_indices);
+  if (nbr_concatenated_vals == 0)
+  {
+    ROS_FATAL("Could not compute clique set features at all. This should never happen");
+    abort();
+  }
+
+  // ----------------------------------------------
+  // Create cliques for features that were okay
+  for (unsigned int i = 0 ; i < nbr_clusters ; i++)
+  {
+    // NULL indicates couldnt compute features for interest point
+    if (concatenated_features[i] != NULL)
+    {
+      /*
+      if (rf.createNode(i, concatenated_features[i], nbr_concatenated_vals, labels[i], pt_cloud.pts[i].x,
+          pt_cloud.pts[i].y, pt_cloud.pts[i].z) == NULL)
+      {
+        ROS_FATAL("Could not create node for point %u.  This should never happen", i);
+        abort();
+      }
+      */
+    }
+  }
 }
 
 // --------------------------------------------------------------
