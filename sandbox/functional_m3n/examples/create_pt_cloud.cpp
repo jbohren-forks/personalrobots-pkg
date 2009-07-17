@@ -124,15 +124,15 @@ void populateParameters()
   // TODO: free node_feature_descriptors
 }
 
-void save_clusters(const map<unsigned int, vector<unsigned int> >& cluster_centroids_indices,
+void save_clusters(const map<unsigned int, vector<int> >& cluster_centroids_indices,
                    const robot_msgs::PointCloud& pt_cloud)
 {
   ofstream outt("clusters.txt");
 
-  map<unsigned int, vector<unsigned int> >::const_iterator iter;
+  map<unsigned int, vector<int> >::const_iterator iter;
   for (iter = cluster_centroids_indices.begin(); iter != cluster_centroids_indices.end() ; iter++)
   {
-    const vector<unsigned int>& curr_indices = iter->second;
+    const vector<int>& curr_indices = iter->second;
     for (unsigned int i = 0 ; i < curr_indices.size() ; i++)
     {
       outt << pt_cloud.pts[curr_indices[i]].x << " " << pt_cloud.pts[curr_indices[i]].y << " "
@@ -203,7 +203,7 @@ int kmeansPtCloud(const robot_msgs::PointCloud& pt_cloud,
                   const set<unsigned int>& ignore_indices,
                   kmeans_params_t& kmeans_params,
                   map<unsigned int, vector<float> >& cluster_centroids_xyz,
-                  map<unsigned int, vector<unsigned int> >& cluster_centroids_indices)
+                  map<unsigned int, vector<int> >& cluster_centroids_indices)
 
 {
   double kmeans_factor = kmeans_params.factor;
@@ -239,9 +239,7 @@ int kmeansPtCloud(const robot_msgs::PointCloud& pt_cloud,
   // and save the min and max extremas for each dimension
   float* feature_matrix = static_cast<float*> (malloc(nbr_cluster_samples * cluster_feature_dim
       * sizeof(float)));
-  unsigned int curr_offset = 0; // offset into feature_matrix
   unsigned int nbr_skipped = 0;
-  unsigned int curr_sample_idx = 0;
   for (unsigned int i = 0 ; i < nbr_total_pts ; i++)
   {
     if (ignore_indices.count(i) != 0)
@@ -250,10 +248,10 @@ int kmeansPtCloud(const robot_msgs::PointCloud& pt_cloud,
       continue;
     }
 
-    curr_sample_idx = i - nbr_skipped;
+    unsigned int curr_sample_idx = i - nbr_skipped;
 
-    // offset over previous samples
-    curr_offset = curr_sample_idx * cluster_feature_dim;
+    // offset over previous samples in feature_matrix
+    unsigned int curr_offset = curr_sample_idx * cluster_feature_dim;
 
     // copy xyz coordinates
     feature_matrix[curr_offset] = pt_cloud.pts[i].x;
@@ -290,7 +288,6 @@ int kmeansPtCloud(const robot_msgs::PointCloud& pt_cloud,
   cluster_centroids_xyz.clear();
   cluster_centroids_indices.clear();
   nbr_skipped = 0;
-  unsigned int curr_cluster_label = 0;
   for (unsigned int i = 0 ; i < nbr_total_pts ; i++)
   {
     if (ignore_indices.count(i) != 0)
@@ -301,16 +298,16 @@ int kmeansPtCloud(const robot_msgs::PointCloud& pt_cloud,
 
     // Important: Some points may have been skipped when creating matrix for clustering,
     // so we need to adjust the index appropriately
-    curr_sample_idx = i - nbr_skipped;
+    unsigned int curr_sample_idx = i - nbr_skipped;
 
     // Get the cluster label of the current point
-    curr_cluster_label = static_cast<unsigned int> (cluster_labels->data.i[curr_sample_idx]);
+    unsigned int curr_cluster_label = static_cast<unsigned int> (cluster_labels->data.i[curr_sample_idx]);
 
     // Instantiate container if never encountered label before
     if (cluster_centroids_xyz.count(curr_cluster_label) == 0)
     {
       cluster_centroids_xyz[curr_cluster_label] = vector<float> (3, 0.0);
-      cluster_centroids_indices[curr_cluster_label] = vector<unsigned int> ();
+      cluster_centroids_indices[curr_cluster_label] = vector<int> ();
     }
 
     // accumulate total xyz coordinates in cluster
@@ -319,18 +316,17 @@ int kmeansPtCloud(const robot_msgs::PointCloud& pt_cloud,
     cluster_centroids_xyz[curr_cluster_label][2] += pt_cloud.pts[i].z;
 
     // associate node with the cluster label
-    cluster_centroids_indices[curr_cluster_label].push_back(i);
+    cluster_centroids_indices[curr_cluster_label].push_back(static_cast<int> (i));
   }
 
   // ----------------------------------------------------------
   // Finalize xyz centroid for each cluster
   map<unsigned int, vector<float> >::iterator iter_cluster_centroids_xyz;
-  float curr_cluster_nbr_pts = 0.0;
   for (iter_cluster_centroids_xyz = cluster_centroids_xyz.begin(); iter_cluster_centroids_xyz
       != cluster_centroids_xyz.end() ; iter_cluster_centroids_xyz++)
   {
-    curr_cluster_nbr_pts
-        = static_cast<float> (cluster_centroids_indices[iter_cluster_centroids_xyz->first].size());
+    float curr_cluster_nbr_pts =
+        static_cast<float> (cluster_centroids_indices[iter_cluster_centroids_xyz->first].size());
     iter_cluster_centroids_xyz->second[0] /= curr_cluster_nbr_pts;
     iter_cluster_centroids_xyz->second[1] /= curr_cluster_nbr_pts;
     iter_cluster_centroids_xyz->second[2] /= curr_cluster_nbr_pts;
@@ -404,7 +400,7 @@ void createCliqueSetKmeans(RandomField& rf,
   // ----------------------------------------------
   // clustering
   map<unsigned int, vector<float> > cluster_centroids_xyz;
-  map<unsigned int, vector<unsigned int> > cluster_centroids_indices;
+  map<unsigned int, vector<int> > cluster_centroids_indices;
   ROS_INFO("Clustering...");
   kmeansPtCloud(pt_cloud, skip_indices, cs0_kmeans_params, cluster_centroids_xyz, cluster_centroids_indices);
   ROS_INFO("done");
@@ -415,7 +411,7 @@ void createCliqueSetKmeans(RandomField& rf,
   // Create interests regions from the clustering
   unsigned int nbr_clusters = cluster_centroids_indices.size();
   cv::Vector<vector<int>*> interest_region_indices(nbr_clusters, NULL);
-  map<unsigned int, vector<unsigned int> >::iterator iter_cluster_centroids_indices;
+  map<unsigned int, vector<int> >::iterator iter_cluster_centroids_indices;
   for (iter_cluster_centroids_indices = cluster_centroids_indices.begin(); iter_cluster_centroids_indices
       != cluster_centroids_indices.end() ; iter_cluster_centroids_indices++)
   {
@@ -423,16 +419,16 @@ void createCliqueSetKmeans(RandomField& rf,
   }
 
   /*
-  // features
-  vector<float*> concatenated_features(nbr_pts, NULL);
-  unsigned int nbr_concatenated_vals = Descriptor3D::computeAndConcatFeatures(pt_cloud, pt_cloud_kdtree,
-      interest_pts, node_feature_descriptors, concatenated_features, failed_indices);
-  if (nbr_concatenated_vals == 0)
-  {
-    ROS_FATAL("Could not compute clique set features at all. This should never happen");
-    abort();
-  }
-  */
+   // features
+   vector<float*> concatenated_features(nbr_pts, NULL);
+   unsigned int nbr_concatenated_vals = Descriptor3D::computeAndConcatFeatures(pt_cloud, pt_cloud_kdtree,
+   interest_pts, node_feature_descriptors, concatenated_features, failed_indices);
+   if (nbr_concatenated_vals == 0)
+   {
+   ROS_FATAL("Could not compute clique set features at all. This should never happen");
+   abort();
+   }
+   */
 }
 
 // --------------------------------------------------------------
@@ -448,7 +444,7 @@ void createCliqueSet0(RandomField& rf,
   // ----------------------------------------------
   // Create clusters
   map<unsigned int, vector<float> > cluster_centroids_xyz;
-  map<unsigned int, vector<unsigned int> > cluster_centroids_indices;
+  map<unsigned int, vector<int> > cluster_centroids_indices;
   ROS_INFO("Clustering...");
   kmeansPtCloud(pt_cloud, skip_indices, cs0_kmeans_params, cluster_centroids_xyz, cluster_centroids_indices);
   ROS_INFO("done");
@@ -544,12 +540,12 @@ int main()
   ROS_INFO("done");
 
   /*
-  for (unsigned int i = 0 ; i < nbr_clique_sets ; i++)
-  {
-    createCliqueSetKmeans(rf, pt_cloud, *pt_cloud_kdtree, failed_indices, cs_kmeans_params[i],
-        cs_feature_params[i]);
-  }
-  */
+   for (unsigned int i = 0 ; i < nbr_clique_sets ; i++)
+   {
+   createCliqueSetKmeans(rf, pt_cloud, *pt_cloud_kdtree, failed_indices, cs_kmeans_params[i],
+   cs_feature_params[i]);
+   }
+   */
 
   // ----------------------------------------------------------
   // Train M3N model
