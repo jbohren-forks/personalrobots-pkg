@@ -49,15 +49,12 @@ public:
     
     ActuateGripperAction(const std::string &arm) : robot_actions::Action<std_msgs::Float64, std_msgs::Float64>("actuate_gripper_" + arm)
     {
-	if (arm[0] == 'r')
-	    pub_ = nh_.advertise<std_msgs::Float64>("r_gripper_effort_controller/command", 10);
-	else
-	    pub_ = nh_.advertise<std_msgs::Float64>("l_gripper_effort_controller/command", 10);
-    };
+	pub_ = nh_.advertise<std_msgs::Float64>("gripper_command", 10);
+    }
     
-    
-    ~ActuateGripperAction()
-    {};
+    ~ActuateGripperAction(void)
+    {
+    }
     
     robot_actions::ResultStatus execute(const std_msgs::Float64& goal, std_msgs::Float64& feedback)
     {

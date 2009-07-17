@@ -4,6 +4,7 @@
   <node pkg="mechanism_control" type="spawner.py" args="$(find pr2_default_controllers)/r_gripper_effort_controller.xml" />
 
   <node pkg="move_arm" type="actuate_gripper_action">
+    <remap from="gripper_command" to="r_gripper_effort_controller/command" />
     <param name="arm" type="string" value="right_arm" />
   </node>
 
