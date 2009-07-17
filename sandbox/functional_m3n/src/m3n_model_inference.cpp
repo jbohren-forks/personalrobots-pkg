@@ -331,22 +331,35 @@ int M3NModel::addNodeEnergy(const RandomField::Node& node,
                             const unsigned int curr_label,
                             const unsigned int alpha_label)
 {
-  // Compute scores for assigning specified labels
-  double curr_score = 0.0;
-  double alpha_score = 0.0;
-  if (computePotential(node, alpha_label, alpha_score) < 0)
-  {
-    return -1;
+  /*
+   // Compute scores for assigning specified labels
+   double curr_score = 0.0;
+   double alpha_score = 0.0;
+   if (computePotential(node, alpha_label, alpha_score) < 0)
+   {
+   return -1;
 
-  }
+   }
+   if (curr_label == alpha_label)
+   {
+   // reuse computation
+   curr_score = alpha_score;
+   }
+   else if (computePotential(node, curr_label, curr_score) < 0)
+   {
+   return -1;
+   }
+   */
+
+  double alpha_score = cache_node_potentials_[node.getRandomFieldID()][alpha_label];
+  double curr_score = 0.0;
   if (curr_label == alpha_label)
   {
-    // reuse computation
     curr_score = alpha_score;
   }
-  else if (computePotential(node, curr_label, curr_score) < 0)
+  else
   {
-    return -1;
+    curr_score = cache_node_potentials_[node.getRandomFieldID()][curr_label];
   }
 
   // Implement hamming loss margin (during training only)
@@ -392,12 +405,14 @@ int M3NModel::addEdgeEnergy(const RandomField::Clique& edge,
   double E10 = 0.0;
   double E11 = 0.0;
 
-  // Compute score if both nodes switch to alpha (0)
-  if (computePotential(edge, clique_set_idx, alpha_label, E00) < 0)
-  {
-    return -1;
-  }
-
+  E00 = cache_clique_set_potentials_[clique_set_idx][edge.getRandomFieldID()][alpha_label];
+  /*
+   // Compute score if both nodes switch to alpha (0)
+   if (computePotential(edge, clique_set_idx, alpha_label, E00) < 0)
+   {
+   return -1;
+   }
+   */
   // Compute score if node1 switches to alpha (0) & node2 stays the same (1)
   if (node2_label == alpha_label)
   {
@@ -420,10 +435,16 @@ int M3NModel::addEdgeEnergy(const RandomField::Clique& edge,
       // reuse computation
       E11 = E00;
     }
-    else if (computePotential(edge, clique_set_idx, node1_label, E11) < 0)
+    else
     {
-      return -1;
+      E11 = cache_clique_set_potentials_[clique_set_idx][edge.getRandomFieldID()][node1_label];
     }
+    /*
+     else if (computePotential(edge, clique_set_idx, node1_label, E11) < 0)
+     {
+     return -1;
+     }
+     */
   }
 
   // WARNING, this follows that ALPHA_VALUE == 0
@@ -448,11 +469,14 @@ int M3NModel::addCliqueEnergyPotts(const RandomField::Clique& clique,
 {
   // -----------------------------------
   // Compute potential if all node switch to alpha
-  double Ec0 = 0.0;
-  if (computePotential(clique, clique_set_idx, alpha_label, Ec0) < 0)
-  {
-    return -1;
-  }
+  double Ec0 = cache_clique_set_potentials_[clique_set_idx][clique.getRandomFieldID()][alpha_label];
+  /*
+   double Ec0 = 0.0;
+   if (computePotential(clique, clique_set_idx, alpha_label, Ec0) < 0)
+   {
+   return -1;
+   }
+   */
 
   // -----------------------------------
   // Compute potential if all nodes keep their current labeling
@@ -474,10 +498,16 @@ int M3NModel::addCliqueEnergyPotts(const RandomField::Clique& clique,
       // use precomputed value
       Ec1 = Ec0;
     }
-    else if (computePotential(clique, clique_set_idx, mode1_label, Ec1) < 0)
+    else
     {
-      return -1;
+      Ec1 = cache_clique_set_potentials_[clique_set_idx][clique.getRandomFieldID()][mode1_label];
     }
+    /*
+     else if (computePotential(clique, clique_set_idx, mode1_label, Ec1) < 0)
+     {
+     return -1;
+     }
+     */
   }
 
   // -----------------------------------
@@ -538,21 +568,26 @@ int M3NModel::addCliqueEnergyRobustPotts(const RandomField::Clique& clique,
     Q = static_cast<double> (robust_potts_params_[clique_set_idx]) * P;
     if ((D - 1e-5) > (P - Q)) // condition if dominant label exists
     {
-      if (computePotential(clique, clique_set_idx, mode1_label, gamma_dominant) < 0)
-      {
-        return -1;
-      }
+      gamma_dominant = cache_clique_set_potentials_[clique_set_idx][clique.getRandomFieldID()][mode1_label];
+      /*
+       if (computePotential(clique, clique_set_idx, mode1_label, gamma_dominant) < 0)
+       {
+       return -1;
+       }
+       */
       found_dominant_label = true;
     }
   }
 
   // -----------------------------------
   // Compute potential if all nodes switch to alpha
-  double gamma_alpha = 0.0;
-  if (computePotential(clique, clique_set_idx, alpha_label, gamma_alpha) < 0)
-  {
-    return -1;
-  }
+  double gamma_alpha = cache_clique_set_potentials_[clique_set_idx][clique.getRandomFieldID()][alpha_label];
+  /*
+   if (computePotential(clique, clique_set_idx, alpha_label, gamma_alpha) < 0)
+   {
+   return -1;
+   }
+   */
 
   // -----------------------------------
   // Create list of energy variables of the nodes in the clique.
