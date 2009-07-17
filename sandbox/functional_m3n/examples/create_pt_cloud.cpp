@@ -394,28 +394,22 @@ void createNodes(RandomField& rf,
   }
 }
 
-// --------------------------------------------------------------
-/*!
- * \brief Create clique set in the RandomField using kmeans clustering
- */
-// --------------------------------------------------------------
-void createCliqueSet(RandomField& rf,
-                     const robot_msgs::PointCloud& pt_cloud,
-                     cloud_kdtree::KdTree& pt_cloud_kdtree,
-                     map<unsigned int, vector<float> > cluster_centroids_xyz,
-                     map<unsigned int, vector<int> > cluster_centroids_indices, // TODO: change to const vector<int>
-                     const unsigned int clique_set_idx,
-                     vector<Descriptor3D*>& clique_descriptors)
+unsigned int createClusterFeatures(const robot_msgs::PointCloud& pt_cloud,
+                                   cloud_kdtree::KdTree& pt_cloud_kdtree,
+                                   map<unsigned int, vector<int> >& cluster_indices, // TODO: change to const vector<int>
+                                   vector<Descriptor3D*>& feature_descriptors,
+                                   map<unsigned int, float*>& cluster_features)
 {
+  unsigned int nbr_clusters = cluster_indices.size();
+
   // ----------------------------------------------
   // Create interests regions from the clustering
-  unsigned int nbr_clusters = cluster_centroids_indices.size();
   cv::Vector<vector<int>*> interest_region_indices(nbr_clusters, NULL);
   size_t cluster_idx = 0;
-  for (map<unsigned int, vector<int> >::iterator iter_cluster_centroids_indices =
-      cluster_centroids_indices.begin() ; iter_cluster_centroids_indices != cluster_centroids_indices.end() ; iter_cluster_centroids_indices++)
+  for (map<unsigned int, vector<int> >::iterator iter_cluster_indices = cluster_indices.begin() ; iter_cluster_indices
+      != cluster_indices.end() ; iter_cluster_indices++)
   {
-    interest_region_indices[cluster_idx++] = (&iter_cluster_centroids_indices->second);
+    interest_region_indices[cluster_idx++] = (&iter_cluster_indices->second);
   }
 
   // ----------------------------------------------
@@ -423,43 +417,65 @@ void createCliqueSet(RandomField& rf,
   vector<float*> concatenated_features(nbr_clusters, NULL);
   set<unsigned int> failed_region_indices; // unused
   unsigned int nbr_concatenated_vals = Descriptor3D::computeAndConcatFeatures(pt_cloud, pt_cloud_kdtree,
-      interest_region_indices, clique_descriptors, concatenated_features, failed_region_indices);
+      interest_region_indices, feature_descriptors, concatenated_features, failed_region_indices);
   if (nbr_concatenated_vals == 0)
   {
-    ROS_FATAL("Could not compute clique set features at all. This should never happen");
+    ROS_FATAL("Could not compute cluster features at all. This should never happen");
     abort();
   }
 
   // ----------------------------------------------
-  // Create cliques for features that were okay
+  // Create mapping cluster_label -> features
+  cluster_features.clear();
   cluster_idx = 0;
-  const map<unsigned int, RandomField::Node*>& rf_nodes = rf.getNodesRandomFieldIDs();
-  for (map<unsigned int, vector<int> >::iterator iter_cluster_centroids_indices =
-      cluster_centroids_indices.begin() ; iter_cluster_centroids_indices != cluster_centroids_indices.end() ; iter_cluster_centroids_indices++)
+  for (map<unsigned int, vector<int> >::iterator iter_cluster_indices = cluster_indices.begin() ; iter_cluster_indices
+      != cluster_indices.end() ; iter_cluster_indices++)
   {
-    if (concatenated_features[cluster_idx] != NULL)
+    cluster_features[iter_cluster_indices->first] = concatenated_features[cluster_idx++];
+  }
+
+  return nbr_concatenated_vals;
+}
+
+// --------------------------------------------------------------
+/*!
+ * \brief Create clique set in the RandomField using kmeans clustering
+ */
+// --------------------------------------------------------------
+void createCliqueSet(RandomField& rf,
+                     const unsigned int clique_set_idx,
+                     const map<unsigned int, vector<int> >& cluster_node_ids,
+                     const map<unsigned int, float*>& cluster_features,
+                     const map<unsigned int, vector<float> >& cluster_centroids_xyz,
+                     const unsigned int nbr_feature_vals)
+{
+  const map<unsigned int, RandomField::Node*>& rf_nodes = rf.getNodesRandomFieldIDs();
+
+  // ----------------------------------------------
+  // Create cliques for features that were okay
+  for (map<unsigned int, float*>::const_iterator iter_cluster_features = cluster_features.begin() ; iter_cluster_features
+      != cluster_features.end() ; iter_cluster_features++)
+  {
+    if (iter_cluster_features->second != NULL)
     {
-      unsigned int curr_cluster_label = iter_cluster_centroids_indices->first;
+      unsigned int curr_cluster_label = iter_cluster_features->first;
 
       // crate list of nodes from the indices
       list<const RandomField::Node*> clique_nodes;
-      vector<int>& curr_indices = iter_cluster_centroids_indices->second;
+      const vector<int>& curr_indices = cluster_node_ids.find(curr_cluster_label)->second;
       for (unsigned int i = 0 ; i < curr_indices.size() ; i++)
       {
         clique_nodes.push_back(rf_nodes.find(curr_indices[i])->second);
       }
 
-      // create clique with curr_cluster_label
-      if (rf.createClique(curr_cluster_label, clique_set_idx, clique_nodes,
-          concatenated_features[cluster_idx], nbr_concatenated_vals,
-          cluster_centroids_xyz[curr_cluster_label][0], cluster_centroids_xyz[curr_cluster_label][1],
-          cluster_centroids_xyz[curr_cluster_label][2]) == NULL)
+      // create the clique
+      const vector<float>& xyz = cluster_centroids_xyz.find(curr_cluster_label)->second;
+      if (rf.createClique(curr_cluster_label, clique_set_idx, clique_nodes, iter_cluster_features->second,
+          nbr_feature_vals, xyz[0], xyz[1], xyz[2]) == NULL)
       {
         abort();
       }
     }
-
-    cluster_idx++;
   }
 }
 
@@ -501,28 +517,35 @@ int main()
   for (unsigned int i = 0 ; i < nbr_clique_sets ; i++)
   {
     ROS_INFO("Creating clique set %u...", i);
+
     // Create clusters
-    map<unsigned int, vector<float> > cluster_centroids_xyz;
-    map<unsigned int, vector<int> > cluster_centroids_indices;
+    map<unsigned int, vector<float> > cluster_xyz_centroids;
+    map<unsigned int, vector<int> > cluster_pt_indices;
     ROS_INFO("Clustering...");
-    kmeansPtCloud(pt_cloud, skip_indices_for_clustering, GLOBAL_cs_kmeans_params[i], cluster_centroids_xyz,
-        cluster_centroids_indices);
-    ROS_INFO("Kmeans found %u clusters", cluster_centroids_indices.size());
+    kmeansPtCloud(pt_cloud, skip_indices_for_clustering, GLOBAL_cs_kmeans_params[i], cluster_xyz_centroids,
+        cluster_pt_indices);
+    //ROS_INFO("Kmeans found %u clusters", cluster_pt_indices.size());
     ROS_INFO("done");
 
-    save_clusters(cluster_centroids_indices, pt_cloud);
-    abort();
+    save_clusters(cluster_pt_indices, pt_cloud);
 
-    // Compute features for cliques
+    // Create features over clusters
     ROS_INFO("Creating features...");
-    createCliqueSet(rf, pt_cloud, *pt_cloud_kdtree, cluster_centroids_xyz, cluster_centroids_indices, i,
-        GLOBAL_cs_feature_descriptors[i]);
+    map<unsigned int, float*> cluster_features;
+    unsigned int nbr_feature_vals = createClusterFeatures(pt_cloud, *pt_cloud_kdtree, cluster_pt_indices,
+        GLOBAL_cs_feature_descriptors[i], cluster_features);
     ROS_INFO("done");
 
+    // Create cliques
+    ROS_INFO("Creating features...");
+    createCliqueSet(rf, i, cluster_pt_indices, cluster_features, cluster_xyz_centroids, nbr_feature_vals);
     ROS_INFO("done");
+
+    ROS_INFO("finished clique set %u", i);
   }
 
-  //rf.saveCliqueFeatures("poop");
+  rf.saveCliqueFeatures("ss_o_p_si");
+  abort();
 
   // ----------------------------------------------------------
   // Train M3N model
