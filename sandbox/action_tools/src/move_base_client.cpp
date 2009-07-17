@@ -81,6 +81,18 @@ void spinThread()
   ros::spin();
 }
 
+
+void preemptTimeoutCb()
+{
+  ROS_INFO("In the preempt timeout CB");
+}
+
+void ackTimeoutCb()
+{
+  ROS_INFO("In the ack timeout CB");
+}
+
+
 int main(int argc, char** argv)
 {
   ros::init(argc, argv, "move_base_action_client");
@@ -92,7 +104,7 @@ int main(int argc, char** argv)
   ros::Duration sleep_duration(2,0);
 
   sleep_duration.sleep();
-  MoveBaseClient ac("move_base", n, true);
+  MoveBaseClient ac("move_base", n, false);
   sleep_duration = ros::Duration(10,0);
   sleep_duration.sleep();
 
@@ -112,7 +124,7 @@ int main(int argc, char** argv)
   goal_pose.pose.position.y = 50;
 
   ROS_INFO("Call Execute #2");
-  ac.execute(goal_pose, &callback, runtime_timeout, ack_timeout);
+  ac.execute(goal_pose, &callback, runtime_timeout, &ackTimeoutCb, &preemptTimeoutCb, ack_timeout);
 
   ROS_INFO("Waiting until done");
   PoseStampedConstPtr result_ptr;
@@ -125,7 +137,7 @@ int main(int argc, char** argv)
   ros::Duration preempt_timeout(3,0);
 
   ROS_INFO("Call Execute #3");
-  ac.execute(goal_pose, &callback, runtime_timeout, ack_timeout, preempt_timeout);
+  ac.execute(goal_pose, &callback, runtime_timeout, &ackTimeoutCb, &preemptTimeoutCb, ack_timeout, preempt_timeout);
 
   while(n.ok())
     sleep(1);

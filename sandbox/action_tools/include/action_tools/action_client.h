@@ -64,6 +64,8 @@ class ActionClient
 {
 public:
   typedef boost::function<void (const TerminalStatuses::TerminalStatus&, const boost::shared_ptr<const Result>&)> CompletionCallback;
+  typedef boost::function<void ()> AckTimeoutCallback;
+  typedef boost::function<void ()> PreemptTimeoutCallback;
   typedef ActionClient<ActionGoal, Goal, ActionResult, Result> ActionClientT;
   typedef boost::function<void (void)> FilledCompletionCallback;
   typedef boost::shared_ptr<const ActionResult> ActionResultConstPtr;
@@ -95,6 +97,8 @@ public:
   void execute(const Goal& goal,
                CompletionCallback completion_callback          = CompletionCallback(),
                const ros::Duration& runtime_timeout            = ros::Duration(0,0),
+               AckTimeoutCallback ack_timeout_callback         = AckTimeoutCallback(),
+               PreemptTimeoutCallback preempt_timeout_callback = PreemptTimeoutCallback(),
                const ros::Duration& ack_timeout                = ros::Duration(5,0),
                const ros::Duration& wait_for_preempted_timeout = ros::Duration(5,0),
                const ros::Duration& comm_sync_timeout          = ros::Duration(5,0))
@@ -119,6 +123,8 @@ public:
     wait_for_preempted_timeout_ = wait_for_preempted_timeout;
     comm_sync_timeout_ = comm_sync_timeout;
     completion_callback_ = completion_callback;
+    ack_timeout_callback_ = ack_timeout_callback;
+    preempt_timeout_callback_ = preempt_timeout_callback;
 
     // don't set an ACK timeout for the special case: duration==0
     if (ack_timeout == ros::Duration(0,0))
@@ -181,6 +187,8 @@ private:
   bool expecting_result_;
   boost::shared_ptr<const ActionResult> result_;
   CompletionCallback completion_callback_;
+  AckTimeoutCallback ack_timeout_callback_;
+  PreemptTimeoutCallback preempt_timeout_callback_;
 
   // *******************************************
 
@@ -207,9 +215,10 @@ private:
     {
       ROS_WARN("Timed out waiting for ACK");
       terminal_status_ = TerminalStatuses::IGNORED;
-      if (completion_callback_)
-        completion_callback_(TerminalStatuses::IGNORED, ResultConstPtr());
-      setState(IDLE);
+      if (ack_timeout_callback_)
+        ack_timeout_callback_();
+      //completion_callback_(TerminalStatuses::IGNORED, ResultConstPtr());
+      //setState(IDLE);
     }
   }
 
@@ -231,8 +240,10 @@ private:
       ROS_WARN("Timed out waiting to finish WAITING_FOR_PREEMPTED");
       setState(IDLE);
       terminal_status_ = TerminalStatuses::TIMED_OUT;
-      if (completion_callback_)
-        completion_callback_(TerminalStatuses::TIMED_OUT, ResultConstPtr());
+      if (preempt_timeout_callback_)
+        preempt_timeout_callback_();
+      //if (completion_callback_)
+      //  completion_callback_(TerminalStatuses::TIMED_OUT, ResultConstPtr());
     }
   }
 
