@@ -1,3 +1,3 @@
 Header header
 GoalID goal_id
-robot_msgs/PoseStamped goal
+TestGoal goal

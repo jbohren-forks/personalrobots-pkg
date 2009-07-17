@@ -36,9 +36,12 @@
 #define ACTION_TOOLS_ROBUST_ACTION_CLIENT_H_
 
 #include <boost/thread.hpp>
+#include "ros/ros.h"
 #include "action_tools/GoalStatus.h"
 #include "action_tools/Preempt.h"
 #include "action_tools/EnclosureDeleter.h"
+
+#include "action_tools/one_shot_timer.h"
 
 #define setState(next_state) \
 { \
@@ -55,52 +58,6 @@ namespace TerminalStatuses
   enum TerminalStatus  { REJECTED, PREEMPTED, SUCCEEDED, ABORTED, TIMED_OUT, IGNORED, LOST } ;
 }
 
-//! Horrible hack until ROS Supports this (ROS Trac #1387)
-class OneShotTimer
-{
-public:
-  OneShotTimer() : active_(false)  { }
-
-  void cb(const ros::TimerEvent& e)
-  {
-    if (active_)
-    {
-      active_ = false;
-
-      if (callback_)
-        callback_(e);
-      else
-        ROS_ERROR("Got a NULL Timer OneShotTimer Callback");
-    }
-  }
-
-  boost::function<void (const ros::TimerEvent& e)> getCb()
-  {
-    return boost::bind(&OneShotTimer::cb, this, _1);
-  }
-
-  void registerOneShotCb(boost::function<void (const ros::TimerEvent& e)> callback)
-  {
-    callback_ = callback;
-  }
-
-  void stop()
-  {
-    //timer_.stop();
-    active_ = false;
-  }
-
-  const ros::Timer& operator=(const ros::Timer& rhs)
-  {
-    active_ = true;
-    timer_ = rhs;
-    return timer_;
-  }
-private:
-  ros::Timer timer_;
-  bool active_;
-  boost::function<void (const ros::TimerEvent& e)> callback_;
-};
 
 template <class ActionGoal, class Goal, class ActionResult, class Result>
 class ActionClient
