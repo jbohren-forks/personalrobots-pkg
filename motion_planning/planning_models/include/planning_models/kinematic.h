@@ -452,7 +452,7 @@ namespace planning_models
 	}
 	
 	/** \brief Return a new instance of the same model */
-	KinematicModel* clone(void);
+	KinematicModel* clone(void) const;
 	
 	/** \brief Construct a kinematic model from a string description and a list of planning groups */
 	void         build(const std::string &description, const std::map< std::string, std::vector<std::string> > &groups);
@@ -601,13 +601,13 @@ namespace planning_models
 	Joint* createJoint(const robot_desc::URDF::Link* urdfLink);
 
 	/** \brief Create a new joint instance (a copy) */
-	Joint* copyJoint(const Joint *joint);
+	Joint* copyJoint(const Joint *joint) const;
 	
 	/** \brief Recursive copy of data after a joint */
-	void cloneAfterJoint(Robot *rb, Joint *dest, const Joint *src);
+	void cloneAfterJoint(Robot *rb, Joint *dest, const Joint *src) const;
 
 	/** \brief Recursive copy of data after a link */
-	void cloneAfterLink(Robot *rb, Link *dest, const Link *src);
+	void cloneAfterLink(Robot *rb, Link *dest, const Link *src) const;
 	
     };
 

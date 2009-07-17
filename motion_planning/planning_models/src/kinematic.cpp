@@ -763,7 +763,7 @@ void planning_models::KinematicModel::printLinkPoses(std::ostream &out) const
     }    
 }
 
-planning_models::KinematicModel::Joint* planning_models::KinematicModel::copyJoint(const Joint *joint)
+planning_models::KinematicModel::Joint* planning_models::KinematicModel::copyJoint(const Joint *joint) const
 {
     Joint *newJoint = NULL;
     
@@ -817,7 +817,7 @@ planning_models::KinematicModel::Joint* planning_models::KinematicModel::copyJoi
     return newJoint;
 }
 
-void planning_models::KinematicModel::cloneAfterJoint(Robot *rb, Joint *dest, const Joint *src)
+void planning_models::KinematicModel::cloneAfterJoint(Robot *rb, Joint *dest, const Joint *src) const
 {
     rb->joints.push_back(dest);
     dest->owner = rb;
@@ -829,7 +829,7 @@ void planning_models::KinematicModel::cloneAfterJoint(Robot *rb, Joint *dest, co
     }
 }
 
-void planning_models::KinematicModel::cloneAfterLink(Robot *rb, Link *dest, const Link *src)
+void planning_models::KinematicModel::cloneAfterLink(Robot *rb, Link *dest, const Link *src) const
 {
     rb->links.push_back(dest);
     dest->owner = rb;
@@ -856,7 +856,7 @@ void planning_models::KinematicModel::cloneAfterLink(Robot *rb, Link *dest, cons
     }
 }
 
-planning_models::KinematicModel* planning_models::KinematicModel::clone(void)
+planning_models::KinematicModel* planning_models::KinematicModel::clone(void) const
 {
     KinematicModel *km = new KinematicModel();
     km->m_built = m_built;
