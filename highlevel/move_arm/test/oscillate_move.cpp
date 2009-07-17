@@ -47,10 +47,10 @@
 
 int main(int argc, char **argv)
 {
-    ros::init(argc, argv, "test_move_arm");
+    ros::init(argc, argv, "test_move_right_arm");
     ros::NodeHandle nh;
 
-    robot_actions::ActionClient<pr2_robot_actions::MoveArmGoal, pr2_robot_actions::MoveArmState, int32_t> move_arm("move_arm");
+    robot_actions::ActionClient<pr2_robot_actions::MoveArmGoal, pr2_robot_actions::MoveArmState, int32_t> move_arm("move_right_arm");
     
     int32_t                         feedback;
     pr2_robot_actions::MoveArmGoal  goalA;

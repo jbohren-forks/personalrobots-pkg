@@ -62,7 +62,7 @@ namespace move_arm
 	/**
 	 * @brief  Constructor for the actions
 	 */
-	MoveArm(void);
+	MoveArm(const std::string &arm_name);
 	
 	/**
 	 * @brief  Destructor - Cleans up

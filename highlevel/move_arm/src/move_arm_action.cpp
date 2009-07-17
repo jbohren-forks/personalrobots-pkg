@@ -58,13 +58,13 @@ namespace move_arm
     static const std::string ARM_IK_NAME         = "arm_ik";
     static const std::string ARM_IK_QUERY_NAME   = "arm_ik_query";
 
-    MoveArm::MoveArm(void) : Action<pr2_robot_actions::MoveArmGoal, int32_t>("move_arm")
+    MoveArm::MoveArm(const::std::string &arm_name) : Action<pr2_robot_actions::MoveArmGoal, int32_t>("move_" + arm_name)
     {	
 	valid_ = true;
+	arm_ = arm_name;
 	
-	node_handle_.param<std::string>("~arm", arm_, std::string());
 	node_handle_.param<bool>("~perform_ik", perform_ik_, true);
-	
+
 	// monitor robot
 	collisionModels_ = new planning_environment::CollisionModels("robot_description");
 	planningMonitor_ = new planning_environment::PlanningMonitor(collisionModels_, &tf_);
@@ -613,10 +613,20 @@ int main(int argc, char** argv)
 {
     ros::init(argc, argv, "move_arm", ros::init_options::AnonymousName);  
     
-    move_arm::MoveArm move_arm;
-    robot_actions::ActionRunner runner(20.0);
-    runner.connect<pr2_robot_actions::MoveArmGoal, pr2_robot_actions::MoveArmState, int32_t>(move_arm);
-    runner.run();
-    ros::spin();
+    ros::NodeHandle nh;
+    std::string arm_name;    
+    nh.param<std::string>("~arm", arm_name, std::string());
+    
+    if (arm_name.empty())
+	ROS_ERROR("No 'arm' specified");
+    else
+    {
+	move_arm::MoveArm move_arm(arm_name);
+	robot_actions::ActionRunner runner(20.0);
+	runner.connect<pr2_robot_actions::MoveArmGoal, pr2_robot_actions::MoveArmState, int32_t>(move_arm);
+	runner.run();
+	ros::spin();
+    }
+    
     return 0;
 }

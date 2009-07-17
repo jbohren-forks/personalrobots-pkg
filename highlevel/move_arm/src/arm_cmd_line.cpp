@@ -205,7 +205,7 @@ int main(int argc, char **argv)
 	    arm = "l";
     
     ros::NodeHandle nh;
-    robot_actions::ActionClient<pr2_robot_actions::MoveArmGoal, pr2_robot_actions::MoveArmState, int32_t> move_arm("move_arm");
+    robot_actions::ActionClient<pr2_robot_actions::MoveArmGoal, pr2_robot_actions::MoveArmState, int32_t> move_arm(arm == "r" ? "move_right_arm" : "move_left_arm");
     
     int32_t                                               feedback;
     std::map<std::string, pr2_robot_actions::MoveArmGoal> goals;
