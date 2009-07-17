@@ -399,27 +399,14 @@ void createNodes(RandomField& rf,
  * \brief Create clique set in the RandomField using kmeans clustering
  */
 // --------------------------------------------------------------
-void createCliqueSetKmeans(RandomField& rf,
-                           const robot_msgs::PointCloud& pt_cloud,
-                           cloud_kdtree::KdTree& pt_cloud_kdtree,
-                           const set<unsigned int>& skip_indices_for_clustering,
-                           const kmeans_params_t& kmeans_params,
-                           const unsigned int clique_set_idx,
-                           vector<Descriptor3D*>& clique_descriptors)
+void createCliqueSet(RandomField& rf,
+                     const robot_msgs::PointCloud& pt_cloud,
+                     cloud_kdtree::KdTree& pt_cloud_kdtree,
+                     map<unsigned int, vector<float> > cluster_centroids_xyz,
+                     map<unsigned int, vector<int> > cluster_centroids_indices, // TODO: change to const vector<int>
+                     const unsigned int clique_set_idx,
+                     vector<Descriptor3D*>& clique_descriptors)
 {
-  // ----------------------------------------------
-  // Create clusters
-  map<unsigned int, vector<float> > cluster_centroids_xyz;
-  map<unsigned int, vector<int> > cluster_centroids_indices;
-  ROS_INFO("Clustering...");
-  kmeansPtCloud(pt_cloud, skip_indices_for_clustering, kmeans_params, cluster_centroids_xyz,
-      cluster_centroids_indices);
-  ROS_INFO("done");
-  ROS_INFO("Kmeans found %u clusters", cluster_centroids_indices.size());
-  save_clusters(cluster_centroids_indices, pt_cloud);
-
-  //return;
-
   // ----------------------------------------------
   // Create interests regions from the clustering
   unsigned int nbr_clusters = cluster_centroids_indices.size();
@@ -434,7 +421,7 @@ void createCliqueSetKmeans(RandomField& rf,
   // ----------------------------------------------
   // Compute features over clusters
   vector<float*> concatenated_features(nbr_clusters, NULL);
-  set<unsigned int> failed_region_indices;
+  set<unsigned int> failed_region_indices; // unused
   unsigned int nbr_concatenated_vals = Descriptor3D::computeAndConcatFeatures(pt_cloud, pt_cloud_kdtree,
       interest_region_indices, clique_descriptors, concatenated_features, failed_region_indices);
   if (nbr_concatenated_vals == 0)
@@ -501,20 +488,41 @@ int main()
   // ----------------------------------------------------------
   // Create RandomField
   RandomField rf(nbr_clique_sets);
-  set<unsigned int> failed_indices;
+
+  // Create nodes
+  set<unsigned int> skip_indices_for_clustering;
   ROS_INFO("Creating nodes...");
-  createNodes(rf, pt_cloud, *pt_cloud_kdtree, labels, failed_indices);
+  createNodes(rf, pt_cloud, *pt_cloud_kdtree, labels, skip_indices_for_clustering);
   ROS_INFO("done");
 
+  rf.saveNodeFeatures("node_features.txt");
+
+  // Create clique sets
   for (unsigned int i = 0 ; i < nbr_clique_sets ; i++)
   {
     ROS_INFO("Creating clique set %u...", i);
-    createCliqueSetKmeans(rf, pt_cloud, *pt_cloud_kdtree, failed_indices, GLOBAL_cs_kmeans_params[i], i,
+    // Create clusters
+    map<unsigned int, vector<float> > cluster_centroids_xyz;
+    map<unsigned int, vector<int> > cluster_centroids_indices;
+    ROS_INFO("Clustering...");
+    kmeansPtCloud(pt_cloud, skip_indices_for_clustering, GLOBAL_cs_kmeans_params[i], cluster_centroids_xyz,
+        cluster_centroids_indices);
+    ROS_INFO("Kmeans found %u clusters", cluster_centroids_indices.size());
+    ROS_INFO("done");
+
+    save_clusters(cluster_centroids_indices, pt_cloud);
+    abort();
+
+    // Compute features for cliques
+    ROS_INFO("Creating features...");
+    createCliqueSet(rf, pt_cloud, *pt_cloud_kdtree, cluster_centroids_xyz, cluster_centroids_indices, i,
         GLOBAL_cs_feature_descriptors[i]);
+    ROS_INFO("done");
+
     ROS_INFO("done");
   }
 
-  rf.saveNodeFeatures("node_features.txt");
+  //rf.saveCliqueFeatures("poop");
 
   // ----------------------------------------------------------
   // Train M3N model
