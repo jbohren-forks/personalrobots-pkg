@@ -161,10 +161,10 @@ public:
 
 	boost::mutex data_lock_;
 	boost::condition_variable data_cv_;
-	bool got_images_;
+	bool got_data_;
 
 	RecognitionLambertian()
-	: left(NULL), right(NULL), disp(NULL), disp_clone(NULL), sync_(&RecognitionLambertian::syncCallback, this), got_images_(false)
+	: left(NULL), right(NULL), disp(NULL), disp_clone(NULL), sync_(&RecognitionLambertian::syncCallback, this), got_data_(false)
 	{
 		// define node parameters
 		nh_.param("~display", display_, false);
@@ -189,12 +189,12 @@ public:
 		}
 
 		// subscribe to topics
-		left_image_sub_ = nh_.subscribe("narrow_stereo/left/image_rect", 1, sync_.synchronize(&RecognitionLambertian::leftImageCallback, this));
-		left_caminfo_image_sub_ = nh_.subscribe("narrow_stereo/left/cam_info", 1, sync_.synchronize(&RecognitionLambertian::leftCamInfoCallback, this));
-		right_image_sub_ = nh_.subscribe("narrow_stereo/right/image_rect", 1, sync_.synchronize(&RecognitionLambertian::rightImageCallback, this));
-		disparity_sub_ = nh_.subscribe("narrow_stereo/disparity", 1, sync_.synchronize(&RecognitionLambertian::disparityImageCallback, this));
-		cloud_sub_ = nh_.subscribe("narrow_stereo/cloud", 1, sync_.synchronize(&RecognitionLambertian::cloudCallback, this));
-		dispinfo_sub_ = nh_.subscribe("narrow_stereo/disparity_info", 1, sync_.synchronize(&RecognitionLambertian::dispinfoCallback, this));
+		left_image_sub_ = nh_.subscribe(nh_.resolveName("stereo")+"/left/image_rect", 1, sync_.synchronize(&RecognitionLambertian::leftImageCallback, this));
+		left_caminfo_image_sub_ = nh_.subscribe(nh_.resolveName("stereo")+"/left/cam_info", 1, sync_.synchronize(&RecognitionLambertian::leftCamInfoCallback, this));
+		right_image_sub_ = nh_.subscribe(nh_.resolveName("stereo")+"/right/image_rect", 1, sync_.synchronize(&RecognitionLambertian::rightImageCallback, this));
+		disparity_sub_ = nh_.subscribe(nh_.resolveName("stereo")+"/disparity", 1, sync_.synchronize(&RecognitionLambertian::disparityImageCallback, this));
+		cloud_sub_ = nh_.subscribe(nh_.resolveName("stereo")+"/cloud", 1, sync_.synchronize(&RecognitionLambertian::cloudCallback, this));
+		dispinfo_sub_ = nh_.subscribe(nh_.resolveName("stereo")+"/disparity_info", 1, sync_.synchronize(&RecognitionLambertian::dispinfoCallback, this));
 
 		// advertise topics
 		objects_pub_ = nh_.advertise<PointCloud> ("~objects", 1);
@@ -239,20 +239,20 @@ private:
 		}
 
 //		runRecognitionLambertian();
-		got_images_ = true;
+		got_data_ = true;
 		data_cv_.notify_all();
 	}
 
 	void leftCamInfoCallback(const sensor_msgs::CamInfo::ConstPtr& info)
 	{
-		if (got_images_) return;
+		if (got_data_) return;
 //		ROS_INFO("Left caminfo callback");
 		lcinfo_ = info;
 	}
 
 	void leftImageCallback(const sensor_msgs::Image::ConstPtr& image)
 	{
-		if (got_images_) return;
+		if (got_data_) return;
 //		ROS_INFO("Left image callback");
 
 		limage_ = image;
@@ -263,7 +263,7 @@ private:
 
 	void rightImageCallback(const sensor_msgs::Image::ConstPtr& image)
 	{
-		if (got_images_) return;
+		if (got_data_) return;
 //		ROS_INFO("Right image callback");
 
 		rimage_ = image;
@@ -274,7 +274,7 @@ private:
 
 	void disparityImageCallback(const sensor_msgs::Image::ConstPtr& image)
 	{
-		if (got_images_) return;
+		if (got_data_) return;
 		//		ROS_INFO("Disparity image callback");
 
 		dimage_ = image;
@@ -282,7 +282,7 @@ private:
 
 	void dispinfoCallback(const sensor_msgs::DisparityInfo::ConstPtr& dinfo)
 	{
-		if (got_images_) return;
+		if (got_data_) return;
 //		ROS_INFO("Disp info callback");
 
 		dispinfo_ = dinfo;
@@ -290,9 +290,12 @@ private:
 
 	void cloudCallback(const robot_msgs::PointCloud::ConstPtr& point_cloud)
 	{
-		if (got_images_) return;
-		boost::unique_lock<boost::mutex> lock(data_lock_);
-//		ROS_INFO("Cloud callback");
+		ROS_INFO("Cloud callback");
+		if (got_data_) {
+			ROS_INFO("Discarding point cloud");
+			return;
+		}
+
 
 		cloud = point_cloud;
 	}
@@ -303,10 +306,11 @@ private:
 	bool findObjectPoses(recognition_lambertian::FindObjectPoses::Request& req,
 			recognition_lambertian::FindObjectPoses::Response& resp)
 	{
+		got_data_ = false;
 		ROS_INFO("FindObjectPoses: Service called");
 		boost::unique_lock<boost::mutex> lock(data_lock_);
 
-		while (!got_images_) {
+		while (!got_data_) {
 			ROS_INFO("FindObjectPoses: Waiting for data");
 			data_cv_.wait(lock);
 		}
@@ -321,8 +325,6 @@ private:
 	        }
 			tf_.transformPose(target_frame_, pose, pose);
 		}
-
-		got_images_ = false;
 		return true;
 	}
 
