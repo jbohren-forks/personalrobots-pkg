@@ -40,6 +40,7 @@ namespace TREX {
     static void* threadRunner(void* clk);
 
   protected:
+    virtual double getSleepDelay() const;
 
   private:
     unsigned int m_gets;
@@ -69,7 +70,6 @@ namespace TREX {
      * @brief Retrieve the tick
      */
     TICK getNextTick();
-
   private:
 
     unsigned int m_gets;

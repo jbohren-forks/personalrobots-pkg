@@ -13,7 +13,7 @@ namespace TREX {
    * Real Time Clock
    */
   LogClock::LogClock(double secondsPerTick, bool stats)
-    : Clock(secondsPerTick/1000, stats),
+    : Clock(secondsPerTick, stats),
       m_gets(0), m_tick(0),
       m_secondsPerTick(secondsPerTick),
       m_file(LogManager::instance().file_name("clock.log").c_str()),
@@ -67,6 +67,11 @@ namespace TREX {
     }
 
     return NULL;
+  }
+
+  double LogClock::getSleepDelay() const {
+    //ROS_INFO("LOG CLOCK SLEEP DELAY %f", m_secondsPerTick);
+    return m_secondsPerTick;
   }
 
   /**

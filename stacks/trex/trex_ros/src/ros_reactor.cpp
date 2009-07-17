@@ -28,7 +28,7 @@ namespace trex_ros{
     // We want to use a publisher instead of a service call so that the plans are all sent out on the same tick.
     plan_pub_ = node_handle_.advertise<trex_ros::PlanDescription>(TeleoReactor::getName().toString()+"/plan",10);
 
-    DbCore::addDbListener(db_listener_);
+    //DbCore::addDbListener(db_listener_);
   }
 
   ROSReactor::~ROSReactor() {}
