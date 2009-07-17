@@ -34,109 +34,40 @@ struct dcam_t {
 
 static void dcam_dealloc(PyObject *self)
 {
+  // dcam::fini();
   dcam_t *pc = (dcam_t*)self;
   delete pc->dev;
   PyObject_Del(self);
 }
 
-#if 0
-static PyObject *dcam_repr(PyObject *self)
+static uint8_t *getdata(ImageData *id)
 {
-  dcam_t *cva = (dcam_t*)self;
-  IplImage* ipl = (IplImage*)(cva->a);
-  char str[1000];
-  sprintf(str, "<dcam(");
-  char *d = str + strlen(str);
-  sprintf(d, "nChannels=%d ", ipl->nChannels);
-  d += strlen(d);
-  sprintf(d, "width=%d ", ipl->width);
-  d += strlen(d);
-  sprintf(d, "height=%d ", ipl->height);
-  d += strlen(d);
-  sprintf(d, "widthStep=%d ", ipl->widthStep);
-  d += strlen(d);
-  sprintf(d, ")>");
-  return PyString_FromString(str);
+  // left window display, try rect, then raw
+  if (id->imRectColorType != COLOR_CODING_NONE)
+      return id->imRectColor;
+  else if (id->imRectType != COLOR_CODING_NONE)
+      return id->imRect;
+  else if (id->imColorType != COLOR_CODING_NONE)
+      return id->imColor;
+  else if (id->imType != COLOR_CODING_NONE)
+      return id->im;
+  else
+      return NULL;
 }
-
-static PyObject *dcam_tostring(PyObject *self, PyObject *args)
+static size_t getdatasize(ImageData *id)
 {
-  IplImage *i;
-  if (!convert_to_IplImage(self, &i, "self"))
-    return NULL;
-  if (i == NULL)
-    return NULL;
-  int bps;
-  switch (i->depth) {
-  case IPL_DEPTH_8U:
-  case IPL_DEPTH_8S:
-    bps = 1;
-    break;
-  case IPL_DEPTH_16U:
-  case IPL_DEPTH_16S:
-    bps = 2;
-    break;
-  case IPL_DEPTH_32S:
-  case IPL_DEPTH_32F:
-    bps = 4;
-    break;
-  case IPL_DEPTH_64F:
-    bps = 8;
-    break;
-  default:
-    bps = 0;
-    assert(0);
-  }
-  int bpl = i->width * i->nChannels * bps;
-  int l = bpl * i->height;
-  char *s = new char[l];
-  int y;
-  for (y = 0; y < i->height; y++) {
-    memcpy(s + y * bpl, i->imageData + y * i->widthStep, bpl);
-  }
-  return PyString_FromStringAndSize(s, l);
+  // left window display, try rect, then raw
+  if (id->imRectColorType != COLOR_CODING_NONE)
+      return id->imRectColorSize;
+  else if (id->imRectType != COLOR_CODING_NONE)
+      return id->imRectSize;
+  else if (id->imColorType != COLOR_CODING_NONE)
+      return id->imColorSize;
+  else if (id->imType != COLOR_CODING_NONE)
+      return id->imSize;
+  else
+      return 0;
 }
-
-static PyObject *dcam_getnChannels(dcam_t *cva)
-{
-  return PyInt_FromLong(((IplImage*)(cva->a))->nChannels);
-}
-static PyObject *dcam_getwidth(dcam_t *cva)
-{
-  return PyInt_FromLong(((IplImage*)(cva->a))->width);
-}
-static PyObject *dcam_getheight(dcam_t *cva)
-{
-  return PyInt_FromLong(((IplImage*)(cva->a))->height);
-}
-static PyObject *dcam_getdepth(dcam_t *cva)
-{
-  return PyInt_FromLong(((IplImage*)(cva->a))->depth);
-}
-static PyObject *dcam_getorigin(dcam_t *cva)
-{
-  return PyInt_FromLong(((IplImage*)(cva->a))->origin);
-}
-static void dcam_setorigin(dcam_t *cva, PyObject *v)
-{
-  ((IplImage*)(cva->a))->origin = PyInt_AsLong(v);
-}
-
-static PyGetSetDef dcam_getseters[] = {
-  {(char*)"nChannels", (getter)dcam_getnChannels, (setter)NULL, (char*)"nChannels", NULL},
-  {(char*)"width", (getter)dcam_getwidth, (setter)NULL, (char*)"width", NULL},
-  {(char*)"height", (getter)dcam_getheight, (setter)NULL, (char*)"height", NULL},
-  {(char*)"depth", (getter)dcam_getdepth, (setter)NULL, (char*)"depth", NULL},
-  {(char*)"origin", (getter)dcam_getorigin, (setter)dcam_setorigin, (char*)"origin", NULL},
-  {NULL}  /* Sentinel */
-};
-
-static PyMappingMethods dcam_as_map = {
-  NULL,
-  &cvarr_GetItem,
-  &cvarr_SetItem,
-};
-#endif
 
 static PyObject *dcam_getImage(PyObject *self, PyObject *args)
 {
@@ -151,14 +82,19 @@ static PyObject *dcam_getImage(PyObject *self, PyObject *args)
       int w = stIm->imWidth;
       int h = stIm->imHeight;
 
-    assert(stIm->imLeft->imRect != NULL);
-    assert(stIm->imRight->imRect != NULL);
+    uint8_t *Ld = NULL, *Rd = NULL;   // left data, right data
+
+    Ld = getdata(stIm->imLeft);
+    Rd = getdata(stIm->imRight);
+
+    assert(Ld != NULL);
+    assert(Rd != NULL);
 
     return Py_BuildValue("iiNN",
                          w,
                          h,
-                         PyBuffer_FromMemory(stIm->imLeft->imRect, w * h),
-                         PyBuffer_FromMemory(stIm->imRight->imRect, w * h));
+                         PyBuffer_FromMemory(Ld, getdatasize(stIm->imLeft)),
+                         PyBuffer_FromMemory(Rd, getdatasize(stIm->imRight)));
   }
 #if 0
   printf("%p\n", stIm->imLeft->imRaw);
@@ -207,6 +143,12 @@ static void dcam_specials(void)
 static PyObject *make_dcam(PyObject *self, PyObject *args)
 {
   dcam_t *ps = PyObject_NEW(dcam_t, &dcam_Type);
+  char *str_pmode;
+
+  if (!PyArg_ParseTuple(args, "s", &str_pmode))
+    return NULL;
+
+  dcam::init();
 
   // This code copied from ost.cpp - it is the initialization sequence
   // for the camera.
@@ -215,7 +157,17 @@ static PyObject *make_dcam(PyObject *self, PyObject *args)
   ps->dev = new dcam::StereoDcam(dcam::getGuid(devIndex));
   ps->dev->setRangeMax(4.0);	// in meters
   ps->dev->setRangeMin(0.5);	// in meters
-  static videre_proc_mode_t pmode = PROC_MODE_RECTIFIED;
+  videre_proc_mode_t pmode = PROC_MODE_RECTIFIED;
+  if (strcmp(str_pmode, "rectified") == 0)
+    pmode = PROC_MODE_RECTIFIED;
+  else if (strcmp(str_pmode, "none") == 0)
+    pmode = PROC_MODE_NONE;
+  else if (strcmp(str_pmode, "test") == 0)
+    pmode = PROC_MODE_TEST;
+  else {
+    PyErr_SetString(PyExc_TypeError, "mode must be none/test/rectified ");
+    return NULL;
+  }
   dc1394video_mode_t videoMode;	// current video mode
   dc1394framerate_t videoRate;	// current video rate
   videoMode = VIDERE_STEREO_640x480;
@@ -238,8 +190,6 @@ static PyMethodDef methods[] = {
 
 extern "C" void initdcam()
 {
-  dcam::init();
-
   dcam_Type.tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE;
   dcam_specials();
   if (PyType_Ready(&dcam_Type) < 0)

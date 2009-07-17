@@ -11,7 +11,11 @@
   <depend package="rospy"/>
   <depend package="sensor_msgs"/>
   <depend package="robot_msgs"/>
+  <depend package="robot_actions"/>
+  <depend package="python_actions"/>
+  <depend package="tf"/>
   <depend package="opencvpython"/>
+  <depend package="dcam"/>
 
   <url>http://pr.willowgarage.com/wiki/vision_tests</url>
 

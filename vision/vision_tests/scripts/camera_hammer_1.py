@@ -43,13 +43,46 @@ from math import *
 import cv
 import dcam
 
-self.dc = dcam.dcam()
+def runTest(mode):
+    print mode
+    dc = dcam.dcam(mode)
+    paramstr = dc.retParameters()
 
-paramstr = self.dc.retParameters()
+    for i in range(50):
+        print i
+        w,h,l,r = dc.getImage()
+    cv_l = cv.CreateImageHeader((w, h), cv.IPL_DEPTH_8U, 1)
+    cv.SetData(cv_l, str(l), w)
+    cv_r = cv.CreateImageHeader((w, h), cv.IPL_DEPTH_8U, 1)
+    cv.SetData(cv_r, str(r), w)
+    return (cv_l, cv_r)
 
-w,h,l,r = self.dc.getImage()
-sz = (w, h)
-print sz
-#li = Im(sz, l)
-#ri = Im(sz, r)
+def compose(a, b):
+    w,h = cv.GetSize(a)
+    r = cv.CreateImage((w*2, h), cv.IPL_DEPTH_8U, 1)
+    cv.SetImageROI(r, (0, 0, w, h))
+    cv.Copy(a, r)
+    cv.SetImageROI(r, (w, 0, w, h))
+    cv.Copy(b, r)
+    cv.ResetImageROI(r)
+    return r
 
+i = int(sys.argv[1])
+m = sys.argv[2]
+l,r = runTest(m)
+comp = compose(l, r)
+cv.SaveImage("cam-%s-%06d.png" % (m, i), compose(l, r))
+
+## Collect goldens
+#modes = ('none', 'test')
+#goldens = {}
+#for m in modes:
+#    goldens[m] = runTest(m)
+#
+#modes = ('test',)
+#for i in range(10):
+#    for m in modes:
+#        gl,gr = goldens[m]
+#        l,r = runTest(m)
+#        comp = compose(l, r)
+#        cv.SaveImage("cam-%s-%06d.png" % (m, i), compose(l, r))
