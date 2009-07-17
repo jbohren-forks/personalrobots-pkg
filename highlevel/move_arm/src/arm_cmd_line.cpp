@@ -42,6 +42,8 @@
 #include <planning_environment/monitors/kinematic_model_state_monitor.h>
 #include <pr2_robot_actions/MoveArmGoal.h>
 #include <pr2_robot_actions/MoveArmState.h>
+#include <pr2_robot_actions/ActuateGripperState.h>
+#include <std_msgs/Float64.h>
 
 #include <boost/thread/thread.hpp>
 #include <boost/algorithm/string.hpp>
@@ -68,6 +70,7 @@ void printHelp(void)
     std::cout << "   - diff <config>           : show the difference from current position of the arm to <config>" << std::endl;
     std::cout << "   - go <config>             : sends the command <config> to the arm" << std::endl;
     std::cout << "   - go <px> <py> <pz>       : move the end effector to pose (<px>, <py>, <pz>, 0, 0, 0, 1)" << std::endl;
+    std::cout << "   - grip <value>            : sends a command to the gripper of the arm" << std::endl;
     std::cout << "   - <config>[<idx>] = <val> : sets the joint specified by <idx> to <val> in <config>" << std::endl;
     std::cout << "   - <config2> = <config1>   : copy <config1> to <config2>" << std::endl;
     std::cout << "   - <config>                : same as show(<config>)" << std::endl;
@@ -206,7 +209,8 @@ int main(int argc, char **argv)
     
     ros::NodeHandle nh;
     robot_actions::ActionClient<pr2_robot_actions::MoveArmGoal, pr2_robot_actions::MoveArmState, int32_t> move_arm(arm == "r" ? "move_right_arm" : "move_left_arm");
-    
+    robot_actions::ActionClient<std_msgs::Float64, pr2_robot_actions::ActuateGripperState, std_msgs::Float64> gripper(arm == "r" ? "actuate_gripper_right_arm" : "actuate_gripper_left_arm");
+
     int32_t                                               feedback;
     std::map<std::string, pr2_robot_actions::MoveArmGoal> goals;
     
@@ -423,6 +427,22 @@ int main(int argc, char **argv)
 		goals[c1] = goals[c2];
 	    else
 		std::cout << "Configuration '" << c2 << "' not found" << std::endl;
+	}
+	else
+	if (cmd.length() > 5 && cmd.substr(0, 5) == "grip ")
+	{
+	    std::stringstream ss(cmd.substr(5));
+	    if (ss.good() && !ss.eof())
+	    {
+		std_msgs::Float64 g, fb;
+		ss >> g.data;
+		if (gripper.execute(g, fb, ros::Duration(allowed_time)) != robot_actions::SUCCESS)
+		    std::cerr << "Failed achieving goal" << std::endl;
+		else
+		    std::cout << "Success!" << std::endl;
+	    }
+	    else
+		std::cerr << "A floating point value expected but '" << cmd.substr(5) << "' was given" << std::endl;
 	}
 	else
 	if (goals.find(cmd) != goals.end())

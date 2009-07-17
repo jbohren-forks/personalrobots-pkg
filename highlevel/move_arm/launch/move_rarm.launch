@@ -19,4 +19,7 @@
     <param name="refresh_interval_kinematic_state" type="double" value="1.0" />
     <param name="bounding_planes" type="string" value="0 0 1 -0.01" />
   </node>
+
+  <include file="$(find move_arm)/launch/gripper_rarm.launch" />
+  
 </launch>
