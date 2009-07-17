@@ -83,10 +83,10 @@ public:
     setState(IDLE);
     expecting_result_ = expecting_result;
 
-    goal_pub_    = nh_.advertise<ActionGoal> ("~goal", 1);
-    preempt_pub_ = nh_.advertise<Preempt> ("~preempt", 1);
-    status_sub_  = nh_.subscribe("~status", 1, &ActionClientT::statusCallback, this);
-    result_sub_  = nh_.subscribe("~result", 1, &ActionClientT::resultCallback, this);
+    goal_pub_    = nh_.advertise<ActionGoal> ("goal", 1);
+    preempt_pub_ = nh_.advertise<Preempt> ("preempt", 1);
+    status_sub_  = nh_.subscribe("status", 1, &ActionClientT::statusCallback, this);
+    result_sub_  = nh_.subscribe("result", 1, &ActionClientT::resultCallback, this);
 
     server_status_timeout_ = server_status_timeout;
     startServerStatusTimer();

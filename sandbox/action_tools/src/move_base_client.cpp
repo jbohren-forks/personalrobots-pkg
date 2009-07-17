@@ -92,7 +92,7 @@ int main(int argc, char** argv)
   ros::Duration sleep_duration(2,0);
 
   sleep_duration.sleep();
-  MoveBaseClient ac("/test_action/move_base", n, true);
+  MoveBaseClient ac("move_base", n, true);
   sleep_duration = ros::Duration(10,0);
   sleep_duration.sleep();
 

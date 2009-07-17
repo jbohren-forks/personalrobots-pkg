@@ -79,13 +79,13 @@ namespace action_tools {
 
       ActionServer(ros::NodeHandle n, std::string name, double status_frequency)
         : node_(n, name), new_goal_(false), preempt_request_(false) {
-          status_pub_ = node_.advertise<action_tools::GoalStatus>("~status", 1);
-          result_pub_ = node_.advertise<ActionResult>("~result", 1);
+          status_pub_ = node_.advertise<action_tools::GoalStatus>("status", 1);
+          result_pub_ = node_.advertise<ActionResult>("result", 1);
 
-          goal_sub_ = node_.subscribe<ActionGoal>("~goal", 1,
+          goal_sub_ = node_.subscribe<ActionGoal>("goal", 1,
               boost::bind(&ActionServer::goalCallback, this, _1));
 
-          preempt_sub_ = node_.subscribe<action_tools::Preempt>("~preempt", 1,
+          preempt_sub_ = node_.subscribe<action_tools::Preempt>("preempt", 1,
               boost::bind(&ActionServer::preemptCallback, this, _1));
 
           status_timer_ = node_.createTimer(ros::Duration(1.0 / status_frequency),
