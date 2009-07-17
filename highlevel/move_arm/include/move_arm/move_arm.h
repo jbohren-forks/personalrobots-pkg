@@ -82,6 +82,7 @@ namespace move_arm
 	// the state of the action; this should be true if initialized properly
 	bool                     valid_;
 	bool                     perform_ik_;      /**< Flag that enables the option of IK */
+	bool                     show_collisions_; // enable showing collisions as visualization markers
 	
 	// the arm we are planning for
 	std::string              arm_;
@@ -90,13 +91,14 @@ namespace move_arm
 	
 	ros::NodeHandle          node_handle_;
 	ros::Publisher           displayPathPublisher_;
+	ros::Publisher           visMarkerPublisher_;
 	
 	planning_environment::CollisionModels *collisionModels_;
 	planning_environment::PlanningMonitor *planningMonitor_;
 	tf::TransformListener                  tf_;
 	
 	bool getControlJointNames(std::vector<std::string> &joint_names);
-
+	void contactFound(collision_space::EnvironmentModel::Contact &contact);
 	void printPath(const motion_planning_msgs::KinematicPath &path);
 	bool fillStartState(std::vector<motion_planning_msgs::KinematicJoint> &start);	
 	void fillTrajectoryPath(const motion_planning_msgs::KinematicPath &path, manipulation_msgs::JointTraj &traj);

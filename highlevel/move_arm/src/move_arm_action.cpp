@@ -43,6 +43,8 @@
 
 #include <manipulation_srvs/IKService.h>
 #include <manipulation_srvs/IKQuery.h>
+
+#include <visualization_msgs/Marker.h>
 #include <cstdlib>
 
 using namespace robot_actions;
@@ -65,7 +67,8 @@ namespace move_arm
 	arm_ = arm_name;
 	
 	node_handle_.param<bool>("~perform_ik", perform_ik_, true);
-
+	node_handle_.param<bool>("~show_collisions", show_collisions_, false);
+	
 	// monitor robot
 	collisionModels_ = new planning_environment::CollisionModels("robot_description");
 	planningMonitor_ = new planning_environment::PlanningMonitor(collisionModels_, &tf_);
@@ -83,6 +86,12 @@ namespace move_arm
 	
 	if (valid_)
 	{
+	    if (show_collisions_)
+	    {
+		ROS_INFO("Found collisions will be displayed as visualization markers");
+		visMarkerPublisher_ = node_handle_.advertise<visualization_msgs::Marker>("visualization_marker", 128);
+		planningMonitor_->setOnCollisionContactCallback(boost::bind(&MoveArm::contactFound, this, _1));
+	    }
 	    planningMonitor_->getEnvironmentModel()->setVerbose(true);
 	    planningMonitor_->waitForState();
 	    planningMonitor_->waitForMap();
@@ -365,6 +374,33 @@ namespace move_arm
 		ss << path.states[i].vals[j] << " ";
 	    ROS_DEBUG(ss.str().c_str());
 	}
+    }
+    
+    void MoveArm::contactFound(collision_space::EnvironmentModel::Contact &contact)
+    {
+	static int count = 0;
+	visualization_msgs::Marker mk;
+	mk.header.stamp = planningMonitor_->lastMapUpdate();
+	mk.header.frame_id = planningMonitor_->getFrameId();
+	mk.ns = node_handle_.getName();
+	mk.id = count++;
+	mk.type = visualization_msgs::Marker::SPHERE;
+	mk.action = visualization_msgs::Marker::ADD;
+	mk.pose.position.x = contact.pos.x();
+	mk.pose.position.y = contact.pos.y();
+	mk.pose.position.z = contact.pos.z();
+	mk.pose.orientation.w = 1.0;
+	
+	mk.scale.x = mk.scale.y = mk.scale.z = 0.03;
+
+	mk.color.a = 0.6;
+	mk.color.r = 1.0;
+	mk.color.g = 0.04;
+	mk.color.b = 0.04;
+	
+	mk.lifetime = ros::Duration(30.0);
+	
+	visMarkerPublisher_.publish(mk);
     }
     
     bool MoveArm::getControlJointNames(std::vector<std::string> &joint_names)
