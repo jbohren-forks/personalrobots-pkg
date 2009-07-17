@@ -1,1 +1,1 @@
-byte[] serialized_data
+string serialized_data

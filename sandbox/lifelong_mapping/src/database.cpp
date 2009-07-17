@@ -159,7 +159,7 @@ bool Database::get(ros::Message& msg, uint32_t item_id, std::string& topic, uint
   return true;
 }
 
-bool Database::query(DbQueryRaw& query, DbTxn* parent_txn)
+bool Database::select(DbQueryRaw& query, DbTxn* parent_txn)
 {
   DbTxn *txn = NULL;
   env_.txn_begin(parent_txn, &txn, 0);
@@ -179,7 +179,8 @@ bool Database::query(DbQueryRaw& query, DbTxn* parent_txn)
     uint32_t topic_len;
     SROS_DESERIALIZE_PRIMITIVE(read_ptr, topic_len);
     read_ptr += topic_len;
-    query.records.push_back(read_ptr);
+    uint32_t data_len = data.get_size() - topic_len - 2*sizeof(uint32_t);
+    query.records.push_back(DbQueryRaw::Record(read_ptr, data_len));
 
     ret = topic_cursor->get(&key, &data, DB_NEXT_DUP);
   }

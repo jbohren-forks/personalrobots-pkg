@@ -24,7 +24,7 @@ int main(int argc, char** argv)
 
   DbQuery<std_msgs::Float32> query;
   query.topic = TOPIC;
-  db.query(query);
+  db.select(query);
   printf("Queried for %s, results:\n", TOPIC);
   BOOST_FOREACH(std_msgs::Float32::Ptr &record, query.records)
     printf("\tData = %f\n", record->data);

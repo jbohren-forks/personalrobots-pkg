@@ -19,11 +19,16 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 genmsg()
 gensrv()
 
-rospack_add_library(${PROJECT_NAME} src/database.cpp)
+rospack_add_library(${PROJECT_NAME} src/database.cpp src/graph_server.cpp)
 target_link_libraries(${PROJECT_NAME} db_cxx)
+
+rospack_add_executable(graph_server src/graph_server_node.cpp)
+target_link_libraries(graph_server ${PROJECT_NAME})
 
 rospack_add_executable(db_test test/db_test.cpp)
 target_link_libraries(db_test ${PROJECT_NAME})
+
+rospack_add_executable(query_test test/query_test.cpp)
 
 #common commands for building c++ executables and libraries
 #rospack_add_library(${PROJECT_NAME} src/example.cpp)
