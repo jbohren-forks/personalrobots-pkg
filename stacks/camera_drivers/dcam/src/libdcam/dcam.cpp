@@ -96,7 +96,12 @@ dcam::init()
         throw DcamException(msg);
       }
       
+      printf("[dcam] Reset bus\n");
       dc1394_reset_bus(camera);
+
+      printf("[dcam] Initializing camera, turning off ISO\n");
+      dc1394_video_set_transmission(camera, DC1394_OFF);
+
       dc1394_camera_free(camera);
       dc1394_free((dc1394_t *)dcam::dcRef);
 
@@ -553,7 +558,7 @@ void
 dcam::Dcam::stop()
 {
   if (camFrame)
-    CHECK_ERR_CLEAN( dc1394_capture_enqueue(dcCam, camFrame), "Could not release frame");    
+    CHECK_ERR_CLEAN( dc1394_capture_enqueue(dcCam, camFrame), "Could not release frame");
 
   camFrame = NULL;
   CHECK_READY();
