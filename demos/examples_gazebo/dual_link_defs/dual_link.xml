@@ -14,7 +14,7 @@
        xmlns:physics="http://playerstage.sourceforge.net/gazebo/xmlschema/#physics">
 
   <!-- joint blocks -->
-  <joint name="base_block_joint" type="planar" /> 
+  <joint name="base_block_joint" type="floating" /> 
 
   <!-- joint blocks -->
   <joint name="link1_joint" type="revolute" >
