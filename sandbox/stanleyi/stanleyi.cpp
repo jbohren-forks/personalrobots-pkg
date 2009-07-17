@@ -404,6 +404,9 @@ void Stanleyi::viewLabels(string bagfile, string results_dir) {
 }
 
 void Stanleyi::testContours(string bagfile, string label_dir) {
+  vector<IplImage*> masks;
+  vector<IplImage*> imgs;
+
   lp_.open(bagfile, ros::Time());
   while(lp_.nextMsg()) {
     if (!img_bridge_.fromImage(img_msg_, "bgr")) {
@@ -416,13 +419,12 @@ void Stanleyi::testContours(string bagfile, string label_dir) {
     if(!mask)
       continue;
 
-    vector<IplImage*> masks;
     masks.push_back(mask);
-    vector<IplImage*> imgs;
-    imgs.push_back(img_);
-    ContourFragment cf(30, 0.01);
-    cf.learnContours(imgs, masks);
+    imgs.push_back(cvCloneImage(img_));
   }
+  ContourFragmentCollector cfc(10);
+  cfc.learnContours(imgs, masks);
+  cfc.saveContours("contour_fragments");
 }
   
 int main(int argc, char** argv) 
@@ -543,20 +545,22 @@ vector<ImageDescriptor*> setupImageDescriptors() {
 //   int nbins, int derivAperture=1, double winSigma=-1,
 //   int histogramNormType=L2Hys, double L2HysThreshold=0.2, bool gammaCorrection=false)
 //  d.push_back(new HogWrapper());
-  d.push_back(new HogWrapper(Size(16,16), Size(16,16), Size(8,8), Size(8,8), 7, 1, -1, 0, 0.2, true));
-  d.push_back(new HogWrapper(Size(32,32), Size(16,16), Size(8,8), Size(8,8), 7, 1, -1, 0, 0.2, true));
-  d.push_back(new HogWrapper(Size(64,64), Size(32,32), Size(16,16), Size(16,16), 7, 1, -1, 0, 0.2, true));
-  d.push_back(new HogWrapper(Size(128,128), Size(64,64), Size(32,32), Size(32,32), 7, 1, -1, 0, 0.2, true));
+//   d.push_back(new HogWrapper(Size(16,16), Size(16,16), Size(8,8), Size(8,8), 7, 1, -1, 0, 0.2, true));
+//   d.push_back(new HogWrapper(Size(32,32), Size(16,16), Size(8,8), Size(8,8), 7, 1, -1, 0, 0.2, true));
+//   d.push_back(new HogWrapper(Size(64,64), Size(32,32), Size(16,16), Size(16,16), 7, 1, -1, 0, 0.2, true));
+//   d.push_back(new HogWrapper(Size(128,128), Size(64,64), Size(32,32), Size(32,32), 7, 1, -1, 0, 0.2, true));
 
-  SuperpixelColorHistogram* sch1 = new SuperpixelColorHistogram(20, 0.5, 10, string("hue"));
-  SuperpixelColorHistogram* sch2 = new SuperpixelColorHistogram(5, 0.5, 10, string("hue"), NULL, sch1);
-  SuperpixelColorHistogram* sch3 = new SuperpixelColorHistogram(5, 1, 10, string("hue"), NULL, sch1);
-  SuperpixelColorHistogram* sch4 = new SuperpixelColorHistogram(5, .25, 10, string("hue"), NULL, sch1);
-  d.push_back(sch1);
-  d.push_back(sch2);
-  d.push_back(sch3);
-  d.push_back(sch4);
+//   SuperpixelColorHistogram* sch1 = new SuperpixelColorHistogram(20, 0.5, 10, string("hue"));
+//   SuperpixelColorHistogram* sch2 = new SuperpixelColorHistogram(5, 0.5, 10, string("hue"), NULL, sch1);
+//   SuperpixelColorHistogram* sch3 = new SuperpixelColorHistogram(5, 1, 10, string("hue"), NULL, sch1);
+//   SuperpixelColorHistogram* sch4 = new SuperpixelColorHistogram(5, .25, 10, string("hue"), NULL, sch1);
+//   d.push_back(sch1);
+//   d.push_back(sch2);
+//   d.push_back(sch3);
+//   d.push_back(sch4);
 
+
+  d.push_back(new ContourFragmentDescriptor(0, "contour_fragments"));
 //   IntegralImageTexture* iit = new IntegralImageTexture(1);
 //   d.push_back(iit);
 //   d.push_back(new IntegralImageTexture(2, iit));
@@ -579,23 +583,6 @@ void copyMsg(string name, T* m, ros::Time t, ros::Time t_no_use, void* n)
     *((T*)(n)) = *((T*)(m));
   }
 }
-
-int getdir (string dir, vector<string> &files)
-{
-  DIR *dp;
-  struct dirent *dirp;
-  if((dp  = opendir(dir.c_str())) == NULL) {
-    cout << "Error(" << errno << ") opening " << dir << endl;
-    return errno;
-  }
-
-  while ((dirp = readdir(dp)) != NULL) {
-    files.push_back(string(dirp->d_name));
-  }
-  closedir(dp);
-  return 0;
-}
-
 
 IplImage* findLabelMask(double stamp, string results_dir)
 {
