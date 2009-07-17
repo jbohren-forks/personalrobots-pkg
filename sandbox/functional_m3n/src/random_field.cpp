@@ -183,7 +183,7 @@ const RandomField::Node* RandomField::createNode(const unsigned int node_id,
 /* See function definition */
 // --------------------------------------------------------------
 const RandomField::Clique* RandomField::createClique(const unsigned int clique_set_idx,
-                                                     const list<RandomField::Node*>& nodes,
+                                                     const list<const RandomField::Node*>& nodes,
                                                      const float* feature_vals,
                                                      const unsigned int nbr_feature_vals,
                                                      float x,
@@ -214,14 +214,14 @@ const RandomField::Clique* RandomField::createClique(const unsigned int clique_s
 // --------------------------------------------------------------
 const RandomField::Clique* RandomField::createClique(const unsigned int clique_id,
                                                      const unsigned int clique_set_idx,
-                                                     const list<RandomField::Node*>& nodes,
+                                                     const list<const RandomField::Node*>& nodes,
                                                      const float* feature_vals,
                                                      const unsigned int nbr_feature_vals,
                                                      float x,
                                                      float y,
                                                      float z)
 {
-  list<RandomField::Node*>::const_iterator iter_nodes;
+  list<const RandomField::Node*>::const_iterator iter_nodes;
 
 #if DEBUG
   // verify features are valid

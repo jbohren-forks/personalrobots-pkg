@@ -170,7 +170,7 @@ class RandomField
 
     // TODO comment this
     const Clique* createClique(const unsigned int clique_set_idx,
-                               const list<Node*>& nodes,
+                               const list<const Node*>& nodes,
                                const float* feature_vals,
                                unsigned int nbr_feature_vals,
                                float x = 0.0,
@@ -180,7 +180,7 @@ class RandomField
     // TODO comment this
     const Clique* createClique(const unsigned int clique_id,
                                const unsigned int clique_set_idx,
-                               const list<Node*>& nodes,
+                               const list<const Node*>& nodes,
                                const float* feature_vals,
                                const unsigned int nbr_feature_vals,
                                float x = 0.0,

@@ -398,7 +398,7 @@ void createNodes(RandomField& rf,
 void createCliqueSetKmeans(RandomField& rf,
                            const robot_msgs::PointCloud& pt_cloud,
                            cloud_kdtree::KdTree& pt_cloud_kdtree,
-                           set<unsigned int>& skip_indices,
+                           set<unsigned int>& skip_indices_for_clustering,
                            kmeans_params_t& kmeans_params,
                            vector<Descriptor3D*>& clique_descriptors)
 {
@@ -407,7 +407,8 @@ void createCliqueSetKmeans(RandomField& rf,
   map<unsigned int, vector<float> > cluster_centroids_xyz;
   map<unsigned int, vector<int> > cluster_centroids_indices;
   ROS_INFO("Clustering...");
-  kmeansPtCloud(pt_cloud, skip_indices, cs0_kmeans_params, cluster_centroids_xyz, cluster_centroids_indices);
+  kmeansPtCloud(pt_cloud, skip_indices_for_clustering, kmeans_params, cluster_centroids_xyz,
+      cluster_centroids_indices);
   ROS_INFO("done");
   ROS_INFO("Kmeans found %u clusters", cluster_centroids_indices.size());
   save_clusters(cluster_centroids_indices, pt_cloud);
@@ -416,10 +417,9 @@ void createCliqueSetKmeans(RandomField& rf,
   // Create interests regions from the clustering
   unsigned int nbr_clusters = cluster_centroids_indices.size();
   cv::Vector<vector<int>*> interest_region_indices(nbr_clusters, NULL);
-  map<unsigned int, vector<int> >::iterator iter_cluster_centroids_indices;
   size_t cluster_idx = 0;
-  for (iter_cluster_centroids_indices = cluster_centroids_indices.begin(); iter_cluster_centroids_indices
-      != cluster_centroids_indices.end() ; iter_cluster_centroids_indices++)
+  for (map<unsigned int, vector<int> >::iterator iter_cluster_centroids_indices =
+      cluster_centroids_indices.begin() ; iter_cluster_centroids_indices != cluster_centroids_indices.end() ; iter_cluster_centroids_indices++)
   {
     interest_region_indices[cluster_idx++] = (&iter_cluster_centroids_indices->second);
   }
@@ -427,8 +427,9 @@ void createCliqueSetKmeans(RandomField& rf,
   // ----------------------------------------------
   // Compute features over clusters
   vector<float*> concatenated_features(nbr_clusters, NULL);
+  set<unsigned int> failed_region_indices;
   unsigned int nbr_concatenated_vals = Descriptor3D::computeAndConcatFeatures(pt_cloud, pt_cloud_kdtree,
-      interest_region_indices, clique_descriptors, concatenated_features, skip_indices);
+      interest_region_indices, clique_descriptors, concatenated_features, failed_region_indices);
   if (nbr_concatenated_vals == 0)
   {
     ROS_FATAL("Could not compute clique set features at all. This should never happen");
@@ -437,20 +438,21 @@ void createCliqueSetKmeans(RandomField& rf,
 
   // ----------------------------------------------
   // Create cliques for features that were okay
-  for (unsigned int i = 0 ; i < nbr_clusters ; i++)
+  cluster_idx = 0;
+  for (map<unsigned int, vector<int> >::iterator iter_cluster_centroids_indices =
+      cluster_centroids_indices.begin() ; iter_cluster_centroids_indices != cluster_centroids_indices.end() ; iter_cluster_centroids_indices++)
   {
-    // NULL indicates couldnt compute features for interest point
-    if (concatenated_features[i] != NULL)
+    if (concatenated_features[cluster_idx] != NULL)
     {
-      /*
-      if (rf.createNode(i, concatenated_features[i], nbr_concatenated_vals, labels[i], pt_cloud.pts[i].x,
-          pt_cloud.pts[i].y, pt_cloud.pts[i].z) == NULL)
-      {
-        ROS_FATAL("Could not create node for point %u.  This should never happen", i);
-        abort();
-      }
-      */
+      unsigned int curr_cluster_label = iter_cluster_centroids_indices->first;
+
+      // crate list of nodes from the indices
+      vector<int>& curr_indices = iter_cluster_centroids_indices->second;
+
+      // create clique with curr_cluster_label
     }
+
+    cluster_idx++;
   }
 }
 
