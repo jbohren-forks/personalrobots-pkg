@@ -25,7 +25,8 @@ RightArmController all_right_arm_controllers;
 
 // Head Controllers
 class HeadController extends MechanismController{};
-HeadController head_controller = new HeadController();
+HeadController head_tilt_joint_position_controller = new HeadController();
+HeadController head_pan_joint_position_controller = new HeadController();
 HeadController no_controller_head = new HeadController();
 HeadController all_head_controllers;
 
@@ -60,7 +61,8 @@ HeadMechanism::use_head_controller{
   eq(cmd.status, SUCCESS);
   subsetOf(cmd.up_list, all_head_controllers);
   subsetOf(cmd.down_list, all_head_controllers);
-  neq(head_controller, cmd.down_list);
+  neq(head_pan_joint_position_controller, cmd.down_list);
+  neq(head_tilt_joint_position_controller, cmd.down_list);
 }
 
 TiltLaserMechanism::use_laser_tilt_controller{ 
