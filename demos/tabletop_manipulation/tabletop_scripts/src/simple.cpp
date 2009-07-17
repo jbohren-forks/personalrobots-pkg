@@ -156,17 +156,20 @@ int main(int argc, char **argv)
 	    o1.pose = obj.pose.pose;
 	    pub.publish(o1);
 	    
+	    //	    sleep(10);
+	    
 	    robot_actions::ActionClient<pr2_robot_actions::MoveArmGoal, pr2_robot_actions::MoveArmState, int32_t> move_arm("move_arm");
 	    int32_t                         feedback;
 	    pr2_robot_actions::MoveArmGoal  goal;
 	    
 	    goal.goal_constraints.set_pose_constraint_size(1);
+	    obj.pose.header.stamp = ros::Time::now();
 	    goal.goal_constraints.pose_constraint[0].pose.header = obj.pose.header;
 	    
 	    goal.goal_constraints.pose_constraint[0].link_name = "r_wrist_roll_link";
 	    goal.goal_constraints.pose_constraint[0].pose.pose = obj.pose.pose;
-	    goal.goal_constraints.pose_constraint[0].pose.pose.position.z += 0.03;
-	    goal.goal_constraints.pose_constraint[0].pose.pose.position.x -= 0.15;
+	    //	    goal.goal_constraints.pose_constraint[0].pose.pose.position.z += 0.03;
+	    goal.goal_constraints.pose_constraint[0].pose.pose.position.x -= 0.05;
 
 	    goal.goal_constraints.pose_constraint[0].position_distance = 0.01;
 	    goal.goal_constraints.pose_constraint[0].orientation_distance = 0.01;
@@ -184,6 +187,9 @@ int main(int argc, char **argv)
     else
 	ROS_ERROR("Unable to call find_object_poses service");
     
+    ROS_INFO("Done");
+    
+    th.join();
     
     return 0;
 }
