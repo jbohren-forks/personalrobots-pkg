@@ -1,1 +1,0 @@
-JointTrajPosVelAccPoint[] points
