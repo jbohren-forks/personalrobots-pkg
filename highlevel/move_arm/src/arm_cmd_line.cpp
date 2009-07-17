@@ -40,6 +40,7 @@
 #include <robot_actions/action_client.h>
 
 #include <planning_environment/monitors/kinematic_model_state_monitor.h>
+#include <motion_planning_msgs/KinematicPath.h>
 #include <pr2_robot_actions/MoveArmGoal.h>
 #include <pr2_robot_actions/MoveArmState.h>
 #include <pr2_robot_actions/ActuateGripperState.h>
@@ -63,7 +64,10 @@ void printHelp(void)
     std::cout << "Arm configuration commands:" << std::endl;
     std::cout << "   - show                    : shows the available configs" << std::endl;
     std::cout << "   - show <config>           : shows the values in <config>" << std::endl;
+    std::cout << "   - view                    : shows the current config in the visualizer" << std::endl;
+    std::cout << "   - view <config>           : shows <config> in the visualizer" << std::endl;
     std::cout << "   - clear                   : clears all stored configs" << std::endl;
+    std::cout << "   - clear <config>          : remove stored <config>" << std::endl;
     std::cout << "   - current                 : show the values of the current configuration" << std::endl;
     std::cout << "   - current <config>        : set <config> to the current position of the arm" << std::endl;
     std::cout << "   - rand <config>           : set <config> to a random position of the arm" << std::endl;
@@ -94,14 +98,19 @@ void printPose(const btTransform &p)
     std::cout << "  -rotation [x, y, z, w] = [" << p.getOrigin().x() << ", " << p.getOrigin().y() << ", " << p.getOrigin().z() << ", " << p.getOrigin().w() << "]" << std::endl;
 }
 
-btTransform effPosition(const planning_environment::KinematicModelStateMonitor &km, const pr2_robot_actions::MoveArmGoal &goal)
-{
-    planning_models::StateParams sp(*km.getRobotState());
+void goalToState(const pr2_robot_actions::MoveArmGoal &goal, planning_models::StateParams &sp)
+{  
     for (unsigned int i = 0 ; i < goal.goal_constraints.joint_constraint.size() ; ++i)
     {
 	sp.setParamsJoint(&goal.goal_constraints.joint_constraint[i].value[0],
 			  goal.goal_constraints.joint_constraint[i].joint_name);
     }
+}
+
+btTransform effPosition(const planning_environment::KinematicModelStateMonitor &km, const pr2_robot_actions::MoveArmGoal &goal)
+{
+    planning_models::StateParams sp(*km.getRobotState());
+    goalToState(goal, sp);
     km.getKinematicModel()->computeTransforms(sp.getParams());
     return km.getKinematicModel()->getJoint(goal.goal_constraints.joint_constraint.back().joint_name)->after->globalTrans;
 }
@@ -199,6 +208,28 @@ void diffConfig(const planning_environment::KinematicModelStateMonitor &km, pr2_
     double angle = pose1.getRotation().angle(pose2.getRotation());
     std::cout << "  -rotation distance: " << angle << std::endl;
 }
+	
+void viewState(ros::Publisher &view, const planning_environment::KinematicModelStateMonitor &km, const planning_models::StateParams &st)
+{
+    motion_planning_msgs::KinematicPath kp;	
+    
+    kp.header.frame_id = km.getFrameId();
+    kp.header.stamp = km.lastMechanismStateUpdate();
+    
+    // fill in start state with current one
+    std::vector<planning_models::KinematicModel::Joint*> joints;
+    km.getKinematicModel()->getJoints(joints);
+    
+    kp.start_state.resize(joints.size());
+    for (unsigned int i = 0 ; i < joints.size() ; ++i)
+    {
+	kp.start_state[i].header.frame_id = km.getFrameId();
+	kp.start_state[i].header.stamp = km.lastMechanismStateUpdate();
+	kp.start_state[i].joint_name = joints[i]->name;
+	st.copyParamsJoint(kp.start_state[i].value, joints[i]->name);
+    }
+    view.publish(kp);
+}
 
 void setConfigJoint(const unsigned int pos, const double value, pr2_robot_actions::MoveArmGoal &goal)
 {
@@ -222,7 +253,8 @@ int main(int argc, char **argv)
     ros::NodeHandle nh;
     robot_actions::ActionClient<pr2_robot_actions::MoveArmGoal, pr2_robot_actions::MoveArmState, int32_t> move_arm(arm == "r" ? "move_right_arm" : "move_left_arm");
     robot_actions::ActionClient<std_msgs::Float64, pr2_robot_actions::ActuateGripperState, std_msgs::Float64> gripper(arm == "r" ? "actuate_gripper_right_arm" : "actuate_gripper_left_arm");
-
+    ros::Publisher view = nh.advertise<motion_planning_msgs::KinematicPath>("display_kinematic_path", 1);
+    
     int32_t                                               feedback;
     std::map<std::string, pr2_robot_actions::MoveArmGoal> goals;
     
@@ -305,6 +337,36 @@ int main(int argc, char **argv)
 	else
 	if (cmd == "clear")
 	    goals.clear();
+	else
+	if (cmd.length() > 6 && cmd.substr(0, 6) == "clear ")
+	{
+	    std::string config = cmd.substr(6);
+	    boost::trim(config);
+	    if (goals.find(config) == goals.end())
+		std::cout << "Configuration '" << config << "' not found" << std::endl;
+	    else
+		goals.erase(config);  
+	}
+	else
+	if (cmd == "view")
+	{
+	    planning_models::StateParams st(*km.getRobotState());		
+	    viewState(view, km, st);
+	}
+	else
+	if (cmd.length() > 5 && cmd.substr(0, 5) == "view ")
+	{
+	    std::string config = cmd.substr(5);
+	    boost::trim(config);
+	    if (goals.find(config) == goals.end())
+		std::cout << "Configuration '" << config << "' not found" << std::endl;
+	    else
+	    {
+		planning_models::StateParams st(*km.getRobotState());		
+		goalToState(goals[config], st);
+		viewState(view, km, st);
+	    }
+	}
 	else
 	if (cmd.length() > 5 && cmd.substr(0, 5) == "diff ")
 	{
