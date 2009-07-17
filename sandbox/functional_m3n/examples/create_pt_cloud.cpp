@@ -394,6 +394,47 @@ void createNodes(RandomField& rf,
   }
 }
 
+void createCliqueSetKmeans(RandomField& rf,
+                           const robot_msgs::PointCloud& pt_cloud,
+                           cloud_kdtree::KdTree& pt_cloud_kdtree,
+                           set<unsigned int>& skip_indices,
+                           kmeans_params_t& kmeans_params,
+                           vector<Descriptor3D*>& descriptors)
+{
+  // ----------------------------------------------
+  // clustering
+  map<unsigned int, vector<float> > cluster_centroids_xyz;
+  map<unsigned int, vector<unsigned int> > cluster_centroids_indices;
+  ROS_INFO("Clustering...");
+  kmeansPtCloud(pt_cloud, skip_indices, cs0_kmeans_params, cluster_centroids_xyz, cluster_centroids_indices);
+  ROS_INFO("done");
+  ROS_INFO("Kmeans found %u clusters", cluster_centroids_indices.size());
+  save_clusters(cluster_centroids_indices, pt_cloud);
+
+  // ----------------------------------------------
+  // Create interests regions from the clustering
+  unsigned int nbr_clusters = cluster_centroids_indices.size();
+  cv::Vector<vector<int>*> interest_region_indices(nbr_clusters, NULL);
+  map<unsigned int, vector<unsigned int> >::iterator iter_cluster_centroids_indices;
+  for (iter_cluster_centroids_indices = cluster_centroids_indices.begin(); iter_cluster_centroids_indices
+      != cluster_centroids_indices.end() ; iter_cluster_centroids_indices++)
+  {
+
+  }
+
+  /*
+  // features
+  vector<float*> concatenated_features(nbr_pts, NULL);
+  unsigned int nbr_concatenated_vals = Descriptor3D::computeAndConcatFeatures(pt_cloud, pt_cloud_kdtree,
+      interest_pts, node_feature_descriptors, concatenated_features, failed_indices);
+  if (nbr_concatenated_vals == 0)
+  {
+    ROS_FATAL("Could not compute clique set features at all. This should never happen");
+    abort();
+  }
+  */
+}
+
 // --------------------------------------------------------------
 /*!
  * \brief Create clique set 0
@@ -501,6 +542,14 @@ int main()
   ROS_INFO("Creating clique set 0...");
   createCliqueSet0(rf, pt_cloud, *pt_cloud_kdtree, failed_indices);
   ROS_INFO("done");
+
+  /*
+  for (unsigned int i = 0 ; i < nbr_clique_sets ; i++)
+  {
+    createCliqueSetKmeans(rf, pt_cloud, *pt_cloud_kdtree, failed_indices, cs_kmeans_params[i],
+        cs_feature_params[i]);
+  }
+  */
 
   // ----------------------------------------------------------
   // Train M3N model
