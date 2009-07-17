@@ -39,14 +39,10 @@ typedef struct kmeans_params
     vector<unsigned int> channel_indices;
 } kmeans_params_t;
 
-vector<Descriptor3D*> node_feature_descriptors;
-
-vector<kmeans_params_t> cs_kmeans_params;
-vector<vector<Descriptor3D*> > cs_feature_descriptors;
-
-M3NParams m3n_params;
-
-unsigned int nbr_clique_sets = 0;
+vector<Descriptor3D*> GLOBAL_node_feature_descriptors;
+vector<kmeans_params_t> GLOBAL_cs_kmeans_params;
+vector<vector<Descriptor3D*> > GLOBAL_cs_feature_descriptors;
+M3NParams GLOBAL_m3n_params;
 
 void initNodeParams()
 {
@@ -64,9 +60,9 @@ void initNodeParams()
   Position* position = new Position();
 
   // ---------------
-  node_feature_descriptors.push_back(spectral_shape);
-  node_feature_descriptors.push_back(orientation);
-  node_feature_descriptors.push_back(position);
+  GLOBAL_node_feature_descriptors.push_back(spectral_shape);
+  GLOBAL_node_feature_descriptors.push_back(orientation);
+  GLOBAL_node_feature_descriptors.push_back(position);
 }
 
 void initCS0Params()
@@ -107,30 +103,31 @@ void initCS0Params()
   cs0_feature_descriptors.push_back(spin_image);
 
   // ---------------
-  cs_kmeans_params.push_back(cs0_kmeans_params);
-  cs_feature_descriptors.push_back(cs0_feature_descriptors);
+  GLOBAL_cs_kmeans_params.push_back(cs0_kmeans_params);
+  GLOBAL_cs_feature_descriptors.push_back(cs0_feature_descriptors);
 }
 
-void populateParameters()
+unsigned int populateParameters()
 {
   initNodeParams();
 
+  unsigned int nbr_clique_sets = 1;
   initCS0Params();
-
-  nbr_clique_sets = 0;
 
   // ----------------------------------------------
   // Define learning parameters
   vector<float> robust_potts_params(nbr_clique_sets, -1.0);
   RegressionTreeWrapperParams regression_tree_params;
-  m3n_params.setLearningRate(0.5);
-  m3n_params.setNumberOfIterations(15);
-  m3n_params.setRegressorRegressionTrees(regression_tree_params);
-  m3n_params.setInferenceRobustPotts(robust_potts_params);
+  GLOBAL_m3n_params.setLearningRate(0.5);
+  GLOBAL_m3n_params.setNumberOfIterations(15);
+  GLOBAL_m3n_params.setRegressorRegressionTrees(regression_tree_params);
+  GLOBAL_m3n_params.setInferenceRobustPotts(robust_potts_params);
 
-  // TODO: free node_feature_descriptors
+  // TODO: free descriptors
+  return nbr_clique_sets;
 }
 
+// TODO: delete this
 void save_clusters(const map<unsigned int, vector<int> >& cluster_centroids_indices,
                    const robot_msgs::PointCloud& pt_cloud)
 {
@@ -373,7 +370,7 @@ void createNodes(RandomField& rf,
   // Compute features over all point cloud
   vector<float*> concatenated_features(nbr_pts, NULL);
   unsigned int nbr_concatenated_vals = Descriptor3D::computeAndConcatFeatures(pt_cloud, pt_cloud_kdtree,
-      interest_pts, node_feature_descriptors, concatenated_features, failed_indices);
+      interest_pts, GLOBAL_node_feature_descriptors, concatenated_features, failed_indices);
   if (nbr_concatenated_vals == 0)
   {
     ROS_FATAL("Could not compute node features at all. This should never happen");
@@ -421,7 +418,7 @@ void createCliqueSetKmeans(RandomField& rf,
   ROS_INFO("Kmeans found %u clusters", cluster_centroids_indices.size());
   save_clusters(cluster_centroids_indices, pt_cloud);
 
-  return;
+  //return;
 
   // ----------------------------------------------
   // Create interests regions from the clustering
@@ -486,8 +483,6 @@ void createCliqueSetKmeans(RandomField& rf,
 // --------------------------------------------------------------
 int main()
 {
-  populateParameters();
-
   // ----------------------------------------------------------
   // Load point cloud from file
   ROS_INFO("Loading point cloud...");
@@ -501,32 +496,32 @@ int main()
 
   cloud_kdtree::KdTree* pt_cloud_kdtree = new cloud_kdtree::KdTreeANN(pt_cloud);
 
+  unsigned int nbr_clique_sets = populateParameters();
+
   // ----------------------------------------------------------
   // Create RandomField
   RandomField rf(nbr_clique_sets);
   set<unsigned int> failed_indices;
   ROS_INFO("Creating nodes...");
   createNodes(rf, pt_cloud, *pt_cloud_kdtree, labels, failed_indices);
-  rf.saveNodeFeatures("node_features.txt");
   ROS_INFO("done");
 
-  //ROS_INFO("Creating clique set 0...");
-  //createCliqueSet0(rf, pt_cloud, *pt_cloud_kdtree, failed_indices);
-  //ROS_INFO("done");
-
-
-  for (unsigned int i = 0 ; i < 1 ; i++)
+  for (unsigned int i = 0 ; i < nbr_clique_sets ; i++)
   {
-    createCliqueSetKmeans(rf, pt_cloud, *pt_cloud_kdtree, failed_indices, cs_kmeans_params[i], i,
-        cs_feature_descriptors[i]);
+    ROS_INFO("Creating clique set %u...", i);
+    createCliqueSetKmeans(rf, pt_cloud, *pt_cloud_kdtree, failed_indices, GLOBAL_cs_kmeans_params[i], i,
+        GLOBAL_cs_feature_descriptors[i]);
+    ROS_INFO("done");
   }
+
+  rf.saveNodeFeatures("node_features.txt");
 
   // ----------------------------------------------------------
   // Train M3N model
   ROS_INFO("Starting to train...");
   M3NModel m3n_model;
   vector<const RandomField*> training_rfs(1, &rf);
-  if (m3n_model.train(training_rfs, m3n_params) < 0)
+  if (m3n_model.train(training_rfs, GLOBAL_m3n_params) < 0)
   {
     ROS_ERROR("Failed to train M3N model");
   }
