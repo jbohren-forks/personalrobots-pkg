@@ -58,6 +58,9 @@ public:
     return Connection(boost::bind(&SimpleFilter::disconnect, this, _1), signal_.connect(callback));
   }
 
+  void setName(const std::string& name) { name_ = name; }
+  const std::string& getName() { return name_; }
+
 protected:
   void signalMessage(const MConstPtr& msg)
   {
@@ -74,6 +77,8 @@ private:
 
   Signal signal_;
   boost::mutex signal_mutex_;
+
+  std::string name_;
 };
 
 }

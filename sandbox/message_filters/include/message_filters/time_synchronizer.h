@@ -360,6 +360,9 @@ public:
     checkTuple(t);
   }
 
+  void setName(const std::string& name) { name_ = name; }
+  const std::string& getName() { return name_; }
+
 private:
 
   void disconnectAll()
@@ -532,6 +535,8 @@ private:
   Connection input_connections_[TIME_SYNCHRONIZER_MAX_MESSAGES];
 
   uint32_t real_type_count_;
+
+  std::string name_;
 };
 
 }
