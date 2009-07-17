@@ -48,6 +48,23 @@ int main()
   Tree my_tree;
   if (!treeFromFile("pr2_desc.xml", my_tree)) return -1;
 
+  // walk through tree
+  SegmentMap::const_iterator root = my_tree.getRootSegment();
+  cout << "Found root " << root->second.segment.getName() << " with " << root->second.children.size() << " children" << endl;
+  for (unsigned int i=0; i<root->second.children.size(); i++){
+    SegmentMap::const_iterator child = root->second.children[i];
+    cout << " - child " << i+1 << ": " << child->second.segment.getName() << " has joint " << child->second.segment.getJoint().getName() 
+         << " and " << child->second.children.size() << " children" << endl;
+
+    for (unsigned int j=0; j<child->second.children.size(); j++){
+      SegmentMap::const_iterator grandchild = child->second.children[j];
+      cout << "   - grandchild " << j+1 << ": " << grandchild->second.segment.getName() << " has joint " << grandchild->second.segment.getJoint().getName() 
+           << " and " << grandchild->second.children.size() << " children" << endl;
+
+    }
+  }
+
+  // extract chains from tree
   Chain chain1, chain2;
   my_tree.getChain("l_gripper_palm_link", "r_gripper_palm_link", chain1);
   my_tree.getChain("r_gripper_palm_link", "l_gripper_palm_link", chain2);
