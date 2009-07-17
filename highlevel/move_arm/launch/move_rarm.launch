@@ -1,5 +1,5 @@
 <launch>
-  <node pkg="move_arm" type="move_arm" output="screen">    
+  <node pkg="move_arm" type="move_arm_action" output="screen">    
 
     <remap from="robot_description" to="robotdesc/pr2" />
     <remap from="collision_map" to="collision_map_occ" />

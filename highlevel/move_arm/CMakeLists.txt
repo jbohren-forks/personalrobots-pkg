@@ -7,8 +7,8 @@ set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
 # main executable 
-rospack_add_executable(move_arm src/move_arm.cpp)
-rospack_link_boost(move_arm thread)
+rospack_add_executable(move_arm_action src/move_arm_action.cpp)
+rospack_link_boost(move_arm_action thread)
 
 # actuate gripper action
 rospack_add_executable(actuate_gripper_action src/actuate_gripper_action.cpp)
