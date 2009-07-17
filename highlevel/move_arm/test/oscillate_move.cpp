@@ -69,8 +69,21 @@ int main(int argc, char **argv)
     goalA.goal_constraints.pose_constraint[0].pose.pose.orientation.y = 0;
     goalA.goal_constraints.pose_constraint[0].pose.pose.orientation.z = 0;
     goalA.goal_constraints.pose_constraint[0].pose.pose.orientation.w = 1;
-    goalA.goal_constraints.pose_constraint[0].position_distance = 0.01;
-    goalA.goal_constraints.pose_constraint[0].orientation_distance = 0.01;
+
+    goalA.goal_constraints.pose_constraint[0].position_tolerance_above.x = 0.003;
+    goalA.goal_constraints.pose_constraint[0].position_tolerance_above.y = 0.003;
+    goalA.goal_constraints.pose_constraint[0].position_tolerance_above.z = 0.003;
+    goalA.goal_constraints.pose_constraint[0].position_tolerance_below.x = 0.003;
+    goalA.goal_constraints.pose_constraint[0].position_tolerance_below.y = 0.003;
+    goalA.goal_constraints.pose_constraint[0].position_tolerance_below.z = 0.003;
+    
+    goalA.goal_constraints.pose_constraint[0].orientation_tolerance_above.x = 0.005;
+    goalA.goal_constraints.pose_constraint[0].orientation_tolerance_above.y = 0.005;
+    goalA.goal_constraints.pose_constraint[0].orientation_tolerance_above.z = 0.005;
+    goalA.goal_constraints.pose_constraint[0].orientation_tolerance_below.x = 0.005;
+    goalA.goal_constraints.pose_constraint[0].orientation_tolerance_below.y = 0.005;
+    goalA.goal_constraints.pose_constraint[0].orientation_tolerance_below.z = 0.005;  
+
     goalA.goal_constraints.pose_constraint[0].orientation_importance = 0.1;
     goalA.goal_constraints.pose_constraint[0].type =
 	motion_planning_msgs::PoseConstraint::POSITION_XYZ + 
@@ -93,11 +106,11 @@ int main(int argc, char **argv)
 	goalB.goal_constraints.joint_constraint[i].header.frame_id = "base_link";
 	goalB.goal_constraints.joint_constraint[i].joint_name = names[i];
 	goalB.goal_constraints.joint_constraint[i].value.resize(1);
-	goalB.goal_constraints.joint_constraint[i].toleranceAbove.resize(1);
-	goalB.goal_constraints.joint_constraint[i].toleranceBelow.resize(1);
+	goalB.goal_constraints.joint_constraint[i].tolerance_above.resize(1);
+	goalB.goal_constraints.joint_constraint[i].tolerance_below.resize(1);
 	goalB.goal_constraints.joint_constraint[i].value[0] = 0.0;
-	goalB.goal_constraints.joint_constraint[i].toleranceBelow[0] = 0.0;
-	goalB.goal_constraints.joint_constraint[i].toleranceAbove[0] = 0.0;
+	goalB.goal_constraints.joint_constraint[i].tolerance_below[0] = 0.0;
+	goalB.goal_constraints.joint_constraint[i].tolerance_above[0] = 0.0;
     }
     
     goalB.goal_constraints.joint_constraint[0].value[0] = -2.0;

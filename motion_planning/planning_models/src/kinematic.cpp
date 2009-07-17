@@ -87,6 +87,7 @@ void planning_models::KinematicModel::computeTransformsGroup(const double *param
 void planning_models::KinematicModel::computeParameterNames(void)
 {
     m_mi.parameterIndex.clear();
+    m_mi.parameterName.clear();
     unsigned int pos = 0;
     for (unsigned int i = 0 ; i < m_robots.size(); ++i)
     {
@@ -379,6 +380,13 @@ void planning_models::KinematicModel::build(const robot_desc::URDF &model, const
 	m_robots.push_back(rb);
     }
     
+    constructModelInfo();
+    
+    defaultState();
+}
+
+void planning_models::KinematicModel::constructModelInfo(void)
+{    
     for (unsigned int i = 0 ; i < m_robots.size() ; ++i)
     {
 	/* copy state bounds */
@@ -419,7 +427,6 @@ void planning_models::KinematicModel::build(const robot_desc::URDF &model, const
 	    for (int i = 0 ; i < (int)m_groups.size() ; ++i)
 		m_jointIndexGroup[it->first][i] = getJointIndexInGroupSlow(it->first, i);
     
-    defaultState();
 }
 
 int planning_models::KinematicModel::getGroupID(const std::string &group) const
@@ -748,4 +755,139 @@ void planning_models::KinematicModel::printLinkPoses(std::ostream &out) const
 	out << "  quaternion: " << q.x() << ", " << q.y() << ", " << q.z() << ", " << q.w() << std::endl;
 	out << std::endl;
     }    
+}
+
+planning_models::KinematicModel::Joint* planning_models::KinematicModel::copyJoint(const Joint *joint)
+{
+    Joint *newJoint = NULL;
+    
+    if (dynamic_cast<const FixedJoint*>(joint))
+    {
+	newJoint = new FixedJoint();
+    }
+    else
+    if (dynamic_cast<const FloatingJoint*>(joint))
+    {
+	newJoint = new FloatingJoint();
+    }
+    else
+    if (dynamic_cast<const PlanarJoint*>(joint))
+    {
+	newJoint = new PlanarJoint();
+    }
+    else
+    if (dynamic_cast<const PrismaticJoint*>(joint))
+    {
+	PrismaticJoint *pj = new PrismaticJoint();
+	const PrismaticJoint *src = static_cast<const PrismaticJoint*>(joint);
+	pj->axis = src->axis;
+	pj->limit[0] = src->limit[0];
+	pj->limit[1] = src->limit[1];
+	newJoint = pj;
+    }
+    else
+    if (dynamic_cast<const RevoluteJoint*>(joint))
+    {
+	RevoluteJoint *pj = new RevoluteJoint();
+	const RevoluteJoint *src = static_cast<const RevoluteJoint*>(joint);
+	pj->axis = src->axis;
+	pj->anchor = src->anchor;
+	pj->continuous = src->continuous;
+	pj->limit[0] = src->limit[0];
+	pj->limit[1] = src->limit[1];
+	newJoint = pj;
+    }
+    else
+	assert(0);
+    
+    if (newJoint)
+    {
+	newJoint->usedParams = joint->usedParams;
+	newJoint->inGroup = joint->inGroup;
+	newJoint->varTrans = joint->varTrans;
+    }
+    
+    return newJoint;
+}
+
+void planning_models::KinematicModel::cloneAfterJoint(Robot *rb, Joint *dest, const Joint *src)
+{
+    rb->joints.push_back(dest);
+    dest->owner = rb;
+    if (src->after)
+    {
+	dest->after = new Link();
+	dest->after->before = dest;
+	cloneAfterLink(rb, dest->after, src->after);
+    }
+}
+
+void planning_models::KinematicModel::cloneAfterLink(Robot *rb, Link *dest, const Link *src)
+{
+    rb->links.push_back(dest);
+    dest->owner = rb;
+    dest->name = src->name;
+    dest->constTrans = src->constTrans;
+    dest->constGeomTrans = src->constGeomTrans;
+    dest->globalTransFwd = src->globalTransFwd;
+    dest->globalTrans = src->globalTrans;
+    dest->shape = shapes::clone_shape(src->shape);
+    for (unsigned int i = 0 ; i < src->attachedBodies.size() ; ++i)
+    {
+	AttachedBody *ab = new AttachedBody(dest);
+	ab->attachTrans = src->attachedBodies[i]->attachTrans;
+	ab->shape = shapes::clone_shape(src->attachedBodies[i]->shape);
+	ab->globalTrans = src->attachedBodies[i]->globalTrans;
+	dest->attachedBodies.push_back(ab);
+    }
+    for (unsigned int i = 0 ; i < src->after.size() ; ++i)
+    {
+	Joint *aft = copyJoint(src->after[i]);
+	aft->before = dest;
+	dest->after.push_back(aft);	
+	cloneAfterJoint(rb, aft, src->after[i]);
+    }
+}
+
+planning_models::KinematicModel* planning_models::KinematicModel::clone(void)
+{
+    KinematicModel *km = new KinematicModel();
+    km->m_built = m_built;
+    km->m_verbose = m_verbose;
+    km->m_name = m_name;
+    km->m_mi = m_mi;
+    
+    for (unsigned int i = 0 ; i < m_robots.size() ; ++i)
+    {
+	Robot *r = new Robot(km);
+	km->m_robots.push_back(r);
+	r->rootTransform = m_robots[i]->rootTransform;
+	r->chain = copyJoint(m_robots[i]->chain);
+	r->chain->before = NULL;
+	cloneAfterJoint(r, r->chain, m_robots[i]->chain);
+	r->stateDimension = m_robots[i]->stateDimension;
+	r->stateBounds = m_robots[i]->stateBounds;
+	r->floatingJoints = m_robots[i]->floatingJoints;
+	r->planarJoints = m_robots[i]->planarJoints;
+	r->groupStateIndexList = m_robots[i]->groupStateIndexList;
+	r->groupChainStart.resize(m_robots[i]->groupChainStart.size());
+	for (unsigned int j = 0 ; j < r->groupChainStart.size() ; ++j)
+	    for (unsigned int k = 0 ; k < m_robots[i]->groupChainStart[j].size() ; ++k)
+		for (unsigned int u = 0 ; u < r->joints.size() ; ++u)
+		    if (r->joints[u]->name == m_robots[i]->groupChainStart[j][k]->name)
+			r->groupChainStart[j].push_back(r->joints[u]);
+	
+    }
+    
+    km->m_groups = m_groups;
+    km->m_groupsMap = m_groupsMap;
+    km->m_groupContent = m_groupContent;
+    
+    km->m_mi.inRobotFrame = m_mi.inRobotFrame;
+    km->m_mi.groupStateIndexList.resize(m_groups.size());
+    km->m_mi.groupChainStart.resize(m_groups.size());
+    
+    km->constructModelInfo();
+    
+    return km;
 }

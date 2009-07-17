@@ -166,17 +166,17 @@ void ompl_planning::SpaceInformationKinematicModel::setJointConstraints(const st
 	{
 	    unsigned int usedParams = kmodel_->getJoint(jc[i].joint_name)->usedParams;
 	    
-	    if (jc[i].toleranceAbove.size() != jc[i].toleranceBelow.size() || jc[i].value.size() != jc[i].toleranceBelow.size() || jc[i].value.size() != usedParams)
+	    if (jc[i].tolerance_above.size() != jc[i].tolerance_below.size() || jc[i].value.size() != jc[i].tolerance_below.size() || jc[i].value.size() != usedParams)
 		ROS_ERROR("Constraint on joint %s has incorrect number of parameters. Expected %u", jc[i].joint_name.c_str(), usedParams);
 	    else
 	    {
 		for (unsigned int j = 0 ; j < usedParams ; ++j)
 		{
 
-		    if (m_stateComponent[idx + j].minValue < jc[i].value[j] - jc[i].toleranceBelow[j])
-			m_stateComponent[idx + j].minValue = jc[i].value[j] - jc[i].toleranceBelow[j];
-		    if (m_stateComponent[idx + j].maxValue > jc[i].value[j] + jc[i].toleranceAbove[j])
-			m_stateComponent[idx + j].maxValue = jc[i].value[j] + jc[i].toleranceAbove[j];
+		    if (m_stateComponent[idx + j].minValue < jc[i].value[j] - jc[i].tolerance_below[j])
+			m_stateComponent[idx + j].minValue = jc[i].value[j] - jc[i].tolerance_below[j];
+		    if (m_stateComponent[idx + j].maxValue > jc[i].value[j] + jc[i].tolerance_above[j])
+			m_stateComponent[idx + j].maxValue = jc[i].value[j] + jc[i].tolerance_above[j];
 		}
 	    }
 	}
@@ -305,17 +305,17 @@ void ompl_planning::SpaceInformationDynamicModel::setJointConstraints(const std:
 	{
 	    unsigned int usedParams = kmodel_->getJoint(jc[i].joint_name)->usedParams;
 	    
-	    if (jc[i].toleranceAbove.size() != jc[i].toleranceBelow.size() || jc[i].value.size() != jc[i].toleranceBelow.size() || jc[i].value.size() != usedParams)
+	    if (jc[i].tolerance_above.size() != jc[i].tolerance_below.size() || jc[i].value.size() != jc[i].tolerance_below.size() || jc[i].value.size() != usedParams)
 		ROS_ERROR("Constraint on joint %s has incorrect number of parameters. Expected %u", jc[i].joint_name.c_str(), usedParams);
 	    else
 	    {
 		for (unsigned int j = 0 ; j < usedParams ; ++j)
 		{
 
-		    if (m_stateComponent[idx + j].minValue < jc[i].value[j] - jc[i].toleranceBelow[j])
-			m_stateComponent[idx + j].minValue = jc[i].value[j] - jc[i].toleranceBelow[j];
-		    if (m_stateComponent[idx + j].maxValue > jc[i].value[j] + jc[i].toleranceAbove[j])
-			m_stateComponent[idx + j].maxValue = jc[i].value[j] + jc[i].toleranceAbove[j];
+		    if (m_stateComponent[idx + j].minValue < jc[i].value[j] - jc[i].tolerance_below[j])
+			m_stateComponent[idx + j].minValue = jc[i].value[j] - jc[i].tolerance_below[j];
+		    if (m_stateComponent[idx + j].maxValue > jc[i].value[j] + jc[i].tolerance_above[j])
+			m_stateComponent[idx + j].maxValue = jc[i].value[j] + jc[i].tolerance_above[j];
 		}
 	    }
 	}

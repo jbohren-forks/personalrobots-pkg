@@ -32,13 +32,20 @@ string link_name
 # The desired pose of the robot link
 robot_msgs/PoseStamped pose
 
-# the allowed difference (square of euclidian distance) for position
-float64 position_distance
+# The acceptable tolerance
+robot_msgs/Point position_tolerance_above
+robot_msgs/Point position_tolerance_below
 
-# the allowed difference (shortest angular distance, in radians) for orientation
-float64 orientation_distance
+# The acceptable tolerance (roll pitch yaw)
+robot_msgs/Point orientation_tolerance_above
+robot_msgs/Point orientation_tolerance_below
 
-# a factor that gets multiplied to the orientation when computing the
-# distance to the goal.
-# Distance_to_goal = position_distance + orientation_importance * orientation_distance
+# The planner may internally compute a distance from current state to goal pose.
+# This is done with a weighted sum such as:
+# Distance_to_goal = position_distance + orientation_importance * orientation_distance;
+# orientation_importance can be used to tell the planner which component is more important
+# (this only makes a difference when approximate solutions are found)
+# If you do not care about this value, simply set it to 1.0
+# Planners should use square of 2-norm for position distance and shortest angular distance
+# for orientations (roll, pitch yaw)
 float64 orientation_importance

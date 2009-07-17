@@ -28,7 +28,8 @@ float64 allowed_time
 # A solution path, if found
 motion_planning_msgs/KinematicPath path
 
-# distance to goal as computed by the heuristic
+# distance to goal as computed by internal planning heuristic
+# this should be 0.0 if the solution was achieved exaclty
 float64 distance
 
 # set to 1 if the computed path was approximate

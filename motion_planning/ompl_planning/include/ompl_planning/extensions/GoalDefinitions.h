@@ -85,14 +85,7 @@ namespace ompl_planning
 		planning_environment::PoseConstraintEvaluator *pce = new planning_environment::PoseConstraintEvaluator();
 		pce->use(model_->kmodel, pc[i]);
 		pce_.push_back(pce);
-		
-		// if we have position constraints
-		if (pc[i].type & 0xFF)
-		    threshold += pc[i].position_distance;
-		
-		// if we have orientation constraints
-		if (pc[i].type & (~0xFF))
-		    threshold += ((pc[i].type & 0xFF) ? pc[i].orientation_importance : 1.0) * pc[i].orientation_distance;
+		threshold = ompl::STATE_EPSILON;
 	    }
 	}
 	

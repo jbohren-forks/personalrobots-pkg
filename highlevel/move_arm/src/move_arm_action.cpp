@@ -492,9 +492,7 @@ namespace move_arm
 	if (req.goal_constraints.joint_constraint.empty() &&         // we have no joint constraints on the goal,
 	    req.goal_constraints.pose_constraint.size() == 1 &&      // we have a single pose constraint on the goal
 	    req.goal_constraints.pose_constraint[0].type == motion_planning_msgs::PoseConstraint::POSITION_XYZ +
-	    motion_planning_msgs::PoseConstraint::ORIENTATION_RPY && // that is active on all 6 DOFs
-	    req.goal_constraints.pose_constraint[0].position_distance < 0.1 && // and the desired position and
-	    req.goal_constraints.pose_constraint[0].orientation_distance < 0.1) // orientation distances are small
+	    motion_planning_msgs::PoseConstraint::ORIENTATION_RPY)  // that is active on all 6 DOFs
 	{
 	    planning_models::KinematicModel::Link *link = planningMonitor_->getKinematicModel()->getLink(req.goal_constraints.pose_constraint[0].link_name);
 	    if (link && link->before && link->before->name == arm_joint_names_.back())
@@ -516,8 +514,8 @@ namespace move_arm
 			for (unsigned int j = 0 ; j < u ; ++j)
 			{
 			    jc.value.push_back(solution[n + j]);
-			    jc.toleranceAbove.push_back(0.0);
-			    jc.toleranceBelow.push_back(0.0);
+			    jc.tolerance_above.push_back(0.0);
+			    jc.tolerance_below.push_back(0.0);
 			}
 			n += u;			
 			req.goal_constraints.joint_constraint.push_back(jc);

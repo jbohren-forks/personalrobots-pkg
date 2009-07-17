@@ -148,12 +148,8 @@ namespace planning_environment
     protected:
 	
 	motion_planning_msgs::PoseConstraint   m_pc;
-	double                                 m_x;
-	double                                 m_y;
-	double                                 m_z;	
-	double                                 m_yaw;
-	double                                 m_pitch;
-	double                                 m_roll;	
+	double                                 m_x, m_y, m_z;
+	double                                 m_roll, m_pitch, m_yaw;
 	planning_models::KinematicModel::Link *m_link;    
 	
     };

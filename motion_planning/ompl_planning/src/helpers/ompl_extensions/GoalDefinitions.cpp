@@ -88,16 +88,16 @@ void ompl_planning::GoalToState::setup(ompl::base::SpaceInformation *si, ModelBa
 	{
 	    unsigned int usedParams = model->kmodel->getJoint(jc[i].joint_name)->usedParams;
 	    
-	    if (jc[i].toleranceAbove.size() != jc[i].toleranceBelow.size() || jc[i].value.size() != jc[i].toleranceBelow.size() || jc[i].value.size() != usedParams)
+	    if (jc[i].tolerance_above.size() != jc[i].tolerance_below.size() || jc[i].value.size() != jc[i].tolerance_below.size() || jc[i].value.size() != usedParams)
 		ROS_ERROR("Constraint on joint %s has incorrect number of parameters. Expected %u", jc[i].joint_name.c_str(), usedParams);
 	    else
 	    {
 		for (unsigned int j = 0 ; j < usedParams ; ++j)
 		{
-		    if (bounds_[idx + j].first < jc[i].value[j] - jc[i].toleranceBelow[j])
-			bounds_[idx + j].first = jc[i].value[j] - jc[i].toleranceBelow[j];
-		    if (bounds_[idx + j].second > jc[i].value[j] + jc[i].toleranceAbove[j])
-			bounds_[idx + j].second = jc[i].value[j] + jc[i].toleranceAbove[j];
+		    if (bounds_[idx + j].first < jc[i].value[j] - jc[i].tolerance_below[j])
+			bounds_[idx + j].first = jc[i].value[j] - jc[i].tolerance_below[j];
+		    if (bounds_[idx + j].second > jc[i].value[j] + jc[i].tolerance_above[j])
+			bounds_[idx + j].second = jc[i].value[j] + jc[i].tolerance_above[j];
 		    desiredValueCount[idx + j]++;
 		    desiredValue[idx + j] = jc[i].value[j];
 		}

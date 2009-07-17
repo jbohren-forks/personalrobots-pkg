@@ -52,9 +52,13 @@ namespace planning_models
     /** \brief A class that can hold the named parameters of this planning model */
     class StateParams
     {
-    public:
+	friend class KinematicModel;
 	
+    protected:
+	// we want users to construct states using newStateParams()
 	StateParams(KinematicModel *model);
+
+    public:
 	StateParams(const StateParams &sp);
 	virtual ~StateParams(void);
 	

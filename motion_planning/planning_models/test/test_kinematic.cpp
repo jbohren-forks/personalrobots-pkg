@@ -774,8 +774,14 @@ TEST(FK, MoreRobots)
     model->reduceToRobotFrame();
     EXPECT_EQ((unsigned int)13, model->getModelInfo().stateDimension);
     
+    //    planning_models::KinematicModel *clone = model->clone();
+    //    delete model;
+    //    model = clone;
+    
     std::stringstream ss;
     model->printModelInfo(ss);
+    printf("%s\n", ss.str().c_str());
+    
     double param[8] = { -1, -1, 0, 1.57, 0.0, 5, 5, 0 };
     model->computeTransformsGroup(param, model->getGroupID("parts"));    
     

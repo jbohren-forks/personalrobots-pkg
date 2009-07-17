@@ -451,11 +451,22 @@ namespace planning_models
 		delete m_robots[i];
 	}
 	
+	/** \brief Return a new instance of the same model */
+	KinematicModel* clone(void);
+	
+	/** \brief Construct a kinematic model from a string description and a list of planning groups */
 	void         build(const std::string &description, const std::map< std::string, std::vector<std::string> > &groups);
+
+	/** \brief Construct a kinematic model from a parsed description and a list of planning groups */
 	virtual void build(const robot_desc::URDF &model, const std::map< std::string, std::vector<std::string> > &groups);
+	
+	/** \brief Check if the kinematic model has been built */
 	bool         isBuilt(void) const;
+
+	/** \brief Construct a new instance of state parameters */
 	StateParams* newStateParams(void);
 	
+	/** \brief Turn verbosity on. Useful to see how the model is being constructed */
 	void         setVerbose(bool verbose);	
 	
 
@@ -580,11 +591,23 @@ namespace planning_models
 	/* compute the parameter names  */
 	void computeParameterNames(void);
 
+	/* construct the model info */
+	void constructModelInfo(void);
+	
 	/** \brief Get the index for the parameter of a joint in a given group */
 	int getJointIndexInGroupSlow(const std::string &name, int groupID) const;
 	
 	/** \brief Allocate a joint of appropriate type, depending on the loaded link */
 	Joint* createJoint(const robot_desc::URDF::Link* urdfLink);
+
+	/** \brief Create a new joint instance (a copy) */
+	Joint* copyJoint(const Joint *joint);
+	
+	/** \brief Recursive copy of data after a joint */
+	void cloneAfterJoint(Robot *rb, Joint *dest, const Joint *src);
+
+	/** \brief Recursive copy of data after a link */
+	void cloneAfterLink(Robot *rb, Link *dest, const Link *src);
 	
     };
 
