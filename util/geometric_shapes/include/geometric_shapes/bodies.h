@@ -321,6 +321,7 @@ namespace bodies
 	btVector3                 m_center;
 	btVector3                 m_meshCenter;
 	double                    m_radiusB;
+	double                    m_meshRadiusB;
     };
     
     

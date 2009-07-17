@@ -245,7 +245,7 @@ void bodies::ConvexMesh::useDimensions(const shapes::Shape *shape)
     m_planes.clear();
     m_triangles.clear();
     m_vertices.clear();
-    m_radiusB = 0.0;
+    m_meshRadiusB = 0.0;
     m_meshCenter.setValue(btScalar(0), btScalar(0), btScalar(0));
 
     btVector3 *vertices = new btVector3[mesh->vertexCount];
@@ -275,10 +275,10 @@ void bodies::ConvexMesh::useDimensions(const shapes::Shape *shape)
 	for (unsigned int j = 0 ; j < m_vertices.size() ; ++j)
 	{
 	    double dist = m_vertices[j].distance2(m_meshCenter);
-	    if (dist > m_radiusB)
-		m_radiusB = dist;
+	    if (dist > m_meshRadiusB)
+		m_meshRadiusB = dist;
 	}
-	m_radiusB = sqrt(m_radiusB) * m_scale + m_padding;
+	m_meshRadiusB = sqrt(m_meshRadiusB);
 	
 	m_triangles.reserve(hr.m_Indices.size());
 	for (int j = 0 ; j < hr.m_Indices.size() ; ++j)
@@ -333,6 +333,7 @@ void bodies::ConvexMesh::updateInternalData(void)
 {
     m_iPose = m_pose.inverse();
     m_center = m_pose.getOrigin() + m_meshCenter;
+    m_radiusB = m_meshRadiusB * m_scale + m_padding;
 }
 
 void bodies::ConvexMesh::computeBoundingSphere(BoundingSphere &sphere) const
@@ -347,7 +348,7 @@ bool bodies::ConvexMesh::isPointInsidePlanes(const btVector3& point) const
     for (unsigned int i = 0 ; i < numplanes ; ++i)
     {
 	const btVector4& plane = m_planes[i];
-	btScalar dist = btScalar(plane.dot(point)) + plane.getW() - btScalar(m_padding) - btScalar(1e-6);
+	btScalar dist = plane.dot(point) + plane.getW() - m_padding - btScalar(1e-6);
 	if (dist > btScalar(0))
 	    return false;
     }
@@ -360,7 +361,7 @@ unsigned int bodies::ConvexMesh::countVerticesBehindPlane(const btVector4& plane
     unsigned int result = 0;
     for (unsigned int i = 0 ; i < numvertices ; ++i)
     {
-	btScalar dist = btScalar(planeNormal.dot(m_vertices[i])) + btScalar(planeNormal.getW()) - btScalar(1e-6);
+	btScalar dist = planeNormal.dot(m_vertices[i]) + planeNormal.getW() - btScalar(1e-6);
 	if (dist > btScalar(0))
 	    result++;
     }
