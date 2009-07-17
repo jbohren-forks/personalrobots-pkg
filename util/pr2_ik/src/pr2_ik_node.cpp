@@ -52,7 +52,8 @@ namespace pr2_ik {
     node_handle_.param<int>("~dimension",dimension_,7);
     node_handle_.param<std::string>("~ik_service_name",ik_service_name_,"~ik_service");
     node_handle_.param<std::string>("~ik_query_name",ik_query_name_,"~ik_query");
-
+    root_name_ = "/" + root_name_;
+    
     if(free_angle_constraint_)
     {
       double free_angle_constraint_min, free_angle_constraint_max;
@@ -114,15 +115,28 @@ namespace pr2_ik {
     ROS_DEBUG("Got pose command");
     poseStampedMsgToTF(request.data.pose_stamped, pose_stamped);
     ROS_DEBUG("Converted pose command to tf");
+    
     // convert to reference frame of root link of the chain
-
-    if (!tf_.canTransform(root_name_,pose_stamped.frame_id_,pose_stamped.stamp_)) 
+    if (!tf_.canTransform(root_name_, pose_stamped.frame_id_, pose_stamped.stamp_))
     {
-      ROS_ERROR("pr2_ik:: Cannot transform from %s to %s",pose_stamped.frame_id_.c_str(),root_name_.c_str());
-      return false;
+	std::string err;    
+	if (tf_.getLatestCommonTime(pose_stamped.frame_id_, root_name_, pose_stamped.stamp_, &err) != tf::NO_ERROR)
+	{
+	    ROS_ERROR("pr2_ik:: Cannot transform from '%s' to '%s'. TF said: %s",pose_stamped.frame_id_.c_str(),root_name_.c_str(), err.c_str());
+	    return false;
+	}
     }
- 
-    tf_.transformPose(root_name_, pose_stamped, pose_stamped);
+    
+    try
+    {
+	tf_.transformPose(root_name_, pose_stamped, pose_stamped);
+    }
+    catch(...)
+    {
+	ROS_ERROR("pr2_ik:: Cannot transform from '%s' to '%s'",pose_stamped.frame_id_.c_str(),root_name_.c_str());
+	return false;
+    }
+    
     ROS_DEBUG("Converted tf command to root name");
     PoseTFToKDL(pose_stamped, pose_desired_);
     ROS_DEBUG("Converted tf command to KDL");
