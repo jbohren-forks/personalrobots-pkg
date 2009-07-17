@@ -166,7 +166,7 @@ namespace pr2_ik {
 } // namespace
 
 int main(int argc, char** argv){
-  ros::init(argc, argv, "pr2_ik_node");
+    ros::init(argc, argv, "pr2_ik_node", ros::init_options::AnonymousName);
   pr2_ik::PR2IKNode pr2_ik_node;
   ros::spin();
   return(0);
