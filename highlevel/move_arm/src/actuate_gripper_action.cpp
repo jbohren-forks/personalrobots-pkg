@@ -45,57 +45,73 @@
 
 class ActuateGripperAction : public robot_actions::Action<std_msgs::Float64, std_msgs::Float64>
 {
-  public: 
-
-    ros::Publisher pub_;
-
-
-    ActuateGripperAction() : robot_actions::Action<std_msgs::Float64, std_msgs::Float64>("actuate_gripper")
+public: 
+    
+    ActuateGripperAction(const std::string &arm) : robot_actions::Action<std_msgs::Float64, std_msgs::Float64>("actuate_gripper_" + arm)
     {
-      ros::NodeHandle node;
-      pub_ = node.advertise<std_msgs::Float64>("r_gripper_effort_controller/command",10);
+	if (arm[0] == 'r')
+	    pub_ = nh_.advertise<std_msgs::Float64>("r_gripper_effort_controller/command", 10);
+	else
+	    pub_ = nh_.advertise<std_msgs::Float64>("l_gripper_effort_controller/command", 10);
     };
-
-
+    
+    
     ~ActuateGripperAction()
     {};
-
+    
     robot_actions::ResultStatus execute(const std_msgs::Float64& goal, std_msgs::Float64& feedback)
     {
-      ROS_INFO("ActuateGripperAction: execute");
-
-      // set default feedback
-      feedback.data = goal.data;
-
-      std_msgs::Float64 gripper_msg;
-      gripper_msg.data = goal.data;
-      pub_.publish(gripper_msg);
-
-      ros::Rate r(10.0);
-      ros::Time start = ros::Time::now();
-
-      while(ros::Time::now()-start < ros::Duration(10.0))
-      {
-        if (isPreemptRequested()) {
-          gripper_msg.data = 0.0;
-          pub_.publish(gripper_msg);
-          ROS_INFO("ActuateGripperAction: preempted");
-          return robot_actions::PREEMPTED;
-        }
-        r.sleep();
-      }
-      ROS_INFO("ActuateGripperAction: Done");
-      return robot_actions::SUCCESS;
+	ROS_INFO("ActuateGripperAction: execute");
+	
+	// set default feedback
+	feedback.data = goal.data;
+	
+	std_msgs::Float64 gripper_msg;
+	gripper_msg.data = goal.data;
+	pub_.publish(gripper_msg);
+	
+	ros::Rate r(10.0);
+	ros::Time start = ros::Time::now();
+	
+	while(ros::Time::now()-start < ros::Duration(10.0))
+	{
+	    if (isPreemptRequested()) {
+		gripper_msg.data = 0.0;
+		pub_.publish(gripper_msg);
+		ROS_INFO("ActuateGripperAction: preempted");
+		return robot_actions::PREEMPTED;
+	    }
+	    r.sleep();
+	}
+	ROS_INFO("ActuateGripperAction: Done");
+	return robot_actions::SUCCESS;
     }
+
+protected:
+    
+    ros::Publisher pub_;
+    ros::NodeHandle nh_;
+    
 };
 
 int main(int argc, char** argv)
 {
-    ros::init(argc, argv, "actuate_gripper", ros::init_options::AnonymousName);  
-    ActuateGripperAction actuate_gripper;
-    robot_actions::ActionRunner runner(20.0);
-    runner.connect<std_msgs::Float64, pr2_robot_actions::ActuateGripperState,std_msgs::Float64>(actuate_gripper);
-    runner.run();
-    ros::spin();
+    ros::init(argc, argv, "actuate_gripper", ros::init_options::AnonymousName);
+
+    ros::NodeHandle node;
+    std::string arm_name;
+    node.param<std::string>("~arm", arm_name, std::string());
+    
+    if (arm_name.empty())
+	ROS_ERROR("No '~arm' parameter specified");
+    else
+    {
+	ActuateGripperAction actuate_gripper(arm_name);
+	robot_actions::ActionRunner runner(20.0);
+	runner.connect<std_msgs::Float64, pr2_robot_actions::ActuateGripperState, std_msgs::Float64>(actuate_gripper);
+	runner.run();
+	ros::spin();
+    }
+    
     return 0;
 }

@@ -618,7 +618,7 @@ int main(int argc, char** argv)
     nh.param<std::string>("~arm", arm_name, std::string());
     
     if (arm_name.empty())
-	ROS_ERROR("No 'arm' specified");
+	ROS_ERROR("No '~arm' parameter specified");
     else
     {
 	move_arm::MoveArm move_arm(arm_name);
