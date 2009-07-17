@@ -93,6 +93,7 @@ int main(int argc, char** argv)
 
   sleep_duration.sleep();
   MoveBaseClient ac("/test_action/move_base", n, true);
+  sleep_duration = ros::Duration(10,0);
   sleep_duration.sleep();
 
   PoseStamped goal_pose;
@@ -102,7 +103,8 @@ int main(int argc, char** argv)
   ros::Duration ack_timeout(3,0);
 
   ROS_INFO("Call Execute #1");
-  ac.execute(goal_pose, &callback);
+  //ac.execute(goal_pose, &callback);
+  ac.execute(goal_pose);
 
   sleep(10);
 
@@ -111,6 +113,11 @@ int main(int argc, char** argv)
 
   ROS_INFO("Call Execute #2");
   ac.execute(goal_pose, &callback, runtime_timeout, ack_timeout);
+
+  ROS_INFO("Waiting until done");
+  PoseStampedConstPtr result_ptr;
+  ac.waitUntilDone(result_ptr);
+  ROS_INFO("Done waiting");
 
   sleep(3);
   goal_pose.pose.position.x = 25;
