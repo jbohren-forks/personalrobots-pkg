@@ -69,19 +69,19 @@ void DynamicLoaderController::unloadLibrary(std::vector<std::string> names, lt_d
   lt_dlclose(handle);
 }
 
-void DynamicLoaderController::loadLibrary(std::string &name)
+void DynamicLoaderController::loadLibrary(std::string &xml)
 {
   mechanism_msgs::SpawnController::Request req;
   mechanism_msgs::SpawnController::Response resp;
 
   req.autostart = 1;
-  req.name = name;
+  req.xml_config = xml;
 
   ros::service::call("spawn_controller", req, resp);
 
-  names_.clear();
-  if (resp.ok) 
-    names_.push_back(name);
+  if (resp.ok[0]) {
+    names_ = resp.name;
+  }
 }
 
 bool DynamicLoaderController::initXml(mechanism::RobotState *robot, TiXmlElement *config)
