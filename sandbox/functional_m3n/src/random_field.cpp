@@ -283,11 +283,10 @@ int RandomField::saveNodeFeatures(string filename)
     return -1;
   }
 
-  map<unsigned int, RandomField::Node*>::iterator iter_nodes;
-  RandomField::Node* curr_node = NULL;
-  for (iter_nodes = rf_nodes_.begin(); iter_nodes != rf_nodes_.end() ; iter_nodes++)
+  for (map<unsigned int, RandomField::Node*>::iterator iter_nodes = rf_nodes_.begin() ; iter_nodes
+      != rf_nodes_.end() ; iter_nodes++)
   {
-    curr_node = iter_nodes->second;
+    RandomField::Node* curr_node = iter_nodes->second;
 
     // x y z node_id label
     file_out << curr_node->getX() << " " << curr_node->getY() << " " << curr_node->getZ() << " "
@@ -303,6 +302,54 @@ int RandomField::saveNodeFeatures(string filename)
     file_out << endl;
   }
   file_out.close();
+  return 0;
+}
+
+// --------------------------------------------------------------
+/* See function definition */
+// --------------------------------------------------------------
+int RandomField::saveCliqueFeatures(string basename)
+{
+  const unsigned int nbr_clique_sets = clique_sets_.size();
+  for (unsigned int i = 0 ; i < nbr_clique_sets ; i++)
+  {
+    // Generate filename for current clique set's features
+    stringstream ss_curr_filename;
+    ss_curr_filename << "_cs_" << i << ".features";
+    string curr_filename = ss_curr_filename.str();
+
+    // Open file
+    ofstream file_out(curr_filename.c_str());
+    if (file_out.is_open() == false)
+    {
+      ROS_ERROR("Could not open requested %s to save clique features to", curr_filename.c_str());
+      return -1;
+    }
+
+    // Write to file: x y z clique_set_idx clique_id [features]
+    const map<unsigned int, Clique*>& cliques = clique_sets_[i];
+    for (map<unsigned int, Clique*>::const_iterator iter_cliques = cliques.begin() ; iter_cliques
+        != cliques.end() ; iter_cliques++)
+    {
+      const unsigned int curr_clique_id = iter_cliques->first;
+      const RandomField::Clique* curr_clique = iter_cliques->second;
+
+      // x y z clique_set_idx clique_id
+      file_out << curr_clique->getX() << " " << curr_clique->getY() << " " << curr_clique->getZ() << " " << i
+          << " " << curr_clique_id;
+
+      // [features]
+      const float* curr_feats = curr_clique->getFeatureVals();
+      for (unsigned int i = 0 ; i < curr_clique->getNumberFeatureVals() ; i++)
+      {
+        file_out << " " << curr_feats[i];
+
+      }
+      file_out << endl;
+    }
+
+    file_out.close();
+  }
   return 0;
 }
 

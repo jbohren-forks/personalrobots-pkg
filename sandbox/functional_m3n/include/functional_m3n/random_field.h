@@ -246,6 +246,22 @@ class RandomField
      */
     // --------------------------------------------------------------
     int saveNodeFeatures(string filename);
+
+    // --------------------------------------------------------------
+    /*!
+     * \brief Saves the features of all Cliques in this RandomField to file
+     *
+     * The Cliques from clique-set i written in separate files with filename
+     * suffix <basename>_cs_i.features
+     *
+     * File format: x y z clique_set_idx clique_id [features]
+     *
+     * \param The basename of the output files
+     *
+     * \return 0 on success, otherwise negative value on error
+     */
+    // --------------------------------------------------------------
+    int saveCliqueFeatures(string basename);
     //@}
 
   private:
