@@ -261,21 +261,22 @@ class StereoParameters(wx.Frame):
         kwds["style"] = wx.DEFAULT_FRAME_STYLE
         wx.Frame.__init__(self, *args, **kwds)
 
+        namespace = rospy.resolve_name("stereo")
         self.widgets = []
-        self.widgets.append(RangeParameterWidget(self, "Exposure", "stereo/stereodcam/exposure", has_auto = True, update_callback = self.update_stereo_params))
-        self.widgets.append(RangeParameterWidget(self, "Gain", "stereo/stereodcam/gain", has_auto = True, update_callback = self.update_stereo_params))
-        self.widgets.append(RangeParameterWidget(self, "Brightness", "stereo/stereodcam/brightness", has_auto = True, update_callback = self.update_stereo_params))
-        self.widgets.append(BoolParameterWidget(self, "Companding", "stereo/stereodcam/companding", update_callback = self.update_stereo_params))
-        self.widgets.append(BoolParameterWidget(self, "HDR", "stereo/streodcam/hdr", update_callback = self.update_stereo_params))
-        self.widgets.append(BoolParameterWidget(self, "Unique Check", "stereo/streodcam/unique_check", update_callback = self.update_stereo_params))
-        self.widgets.append(IntParameterWidget(self, "Texture Threshold", "stereo/streoproc/texture_thresh", update_callback = self.update_stereo_params))
-        self.widgets.append(IntParameterWidget(self, "Unique Threshold", "stereo/streoproc/unique_thresh", update_callback = self.update_stereo_params))
-        self.widgets.append(IntParameterWidget(self, "Smoothness Threshold", "stereo/streoproc/smoothness_thresh", update_callback = self.update_stereo_params))
-        self.widgets.append(IntParameterWidget(self, "Horopter", "stereo/streoproc/horopter", update_callback = self.update_stereo_params))
-        self.widgets.append(IntParameterWidget(self, "Speckle Size", "stereo/stereoproc/speckle_size", update_callback = self.update_stereo_params))
-        self.widgets.append(IntParameterWidget(self, "Speckle Diff", "stereo/streoproc/speckle_diff", update_callback = self.update_stereo_params))
-        self.widgets.append(IntParameterWidget(self, "Corr Size", "stereo/streoproc/corr_size", update_callback = self.update_stereo_params))
-        self.widgets.append(IntParameterWidget(self, "Num Disp", "stereo/stereoproc/num_disp", update_callback = self.update_stereo_params))
+        self.widgets.append(RangeParameterWidget(self, "Exposure", namespace+"/stereodcam/exposure", has_auto = True, update_callback = self.update_stereo_params))
+        self.widgets.append(RangeParameterWidget(self, "Gain", namespace+"/stereodcam/gain", has_auto = True, update_callback = self.update_stereo_params))
+        self.widgets.append(RangeParameterWidget(self, "Brightness", namespace+"/stereodcam/brightness", has_auto = True, update_callback = self.update_stereo_params))
+        self.widgets.append(BoolParameterWidget(self, "Companding", namespace+"/stereodcam/companding", update_callback = self.update_stereo_params))
+        self.widgets.append(BoolParameterWidget(self, "HDR", namespace+"/streodcam/hdr", update_callback = self.update_stereo_params))
+        self.widgets.append(BoolParameterWidget(self, "Unique Check", namespace+"/streodcam/unique_check", update_callback = self.update_stereo_params))
+        self.widgets.append(IntParameterWidget(self, "Texture Threshold", namespace+"/streoproc/texture_thresh", update_callback = self.update_stereo_params))
+        self.widgets.append(IntParameterWidget(self, "Unique Threshold", namespace+"/streoproc/unique_thresh", update_callback = self.update_stereo_params))
+        self.widgets.append(IntParameterWidget(self, "Smoothness Threshold", namespace+"/streoproc/smoothness_thresh", update_callback = self.update_stereo_params))
+        self.widgets.append(IntParameterWidget(self, "Horopter", namespace+"/streoproc/horopter", update_callback = self.update_stereo_params))
+        self.widgets.append(IntParameterWidget(self, "Speckle Size", namespace+"/stereoproc/speckle_size", update_callback = self.update_stereo_params))
+        self.widgets.append(IntParameterWidget(self, "Speckle Diff", namespace+"/streoproc/speckle_diff", update_callback = self.update_stereo_params))
+        self.widgets.append(IntParameterWidget(self, "Corr Size", namespace+"/streoproc/corr_size", update_callback = self.update_stereo_params))
+        self.widgets.append(IntParameterWidget(self, "Num Disp", namespace+"/stereoproc/num_disp", update_callback = self.update_stereo_params))
                                                         
         self.close_button = wx.Button(self, -1, "Close")
 
@@ -284,7 +285,7 @@ class StereoParameters(wx.Frame):
     
         self.Bind(wx.EVT_BUTTON, self.onClose, self.close_button)
     
-        self.check_params = rospy.Publisher('stereo/check_params', Empty)
+        self.check_params = rospy.Publisher(namespace+'/check_params', Empty)
         rospy.init_node('stereodcam_params', anonymous=True)
 
         
