@@ -206,8 +206,8 @@ int loadPointCloud(string filename, robot_msgs::PointCloud& pt_cloud, vector<uns
 int kmeansPtCloud(const robot_msgs::PointCloud& pt_cloud,
                   const set<unsigned int>& ignore_indices,
                   const kmeans_params_t& kmeans_params,
-                  map<unsigned int, vector<float> >& cluster_centroids_xyz,
-                  map<unsigned int, vector<int> >& cluster_centroids_indices)
+                  map<unsigned int, vector<float> >& cluster_xyz_centroids,
+                  map<unsigned int, vector<int> >& cluster_pt_indices)
 
 {
   double kmeans_factor = kmeans_params.factor;
@@ -289,8 +289,8 @@ int kmeansPtCloud(const robot_msgs::PointCloud& pt_cloud,
 
   // ----------------------------------------------------------
   // Associate each point with its cluster label
-  cluster_centroids_xyz.clear();
-  cluster_centroids_indices.clear();
+  cluster_xyz_centroids.clear();
+  cluster_pt_indices.clear();
   nbr_skipped = 0;
   for (unsigned int i = 0 ; i < nbr_total_pts ; i++)
   {
@@ -308,32 +308,32 @@ int kmeansPtCloud(const robot_msgs::PointCloud& pt_cloud,
     unsigned int curr_cluster_label = static_cast<unsigned int> (cluster_labels->data.i[curr_sample_idx]);
 
     // Instantiate container if never encountered label before
-    if (cluster_centroids_xyz.count(curr_cluster_label) == 0)
+    if (cluster_xyz_centroids.count(curr_cluster_label) == 0)
     {
-      cluster_centroids_xyz[curr_cluster_label] = vector<float> (3, 0.0);
-      cluster_centroids_indices[curr_cluster_label] = vector<int> ();
+      cluster_xyz_centroids[curr_cluster_label] = vector<float> (3, 0.0);
+      cluster_pt_indices[curr_cluster_label] = vector<int> ();
     }
 
     // accumulate total xyz coordinates in cluster
-    cluster_centroids_xyz[curr_cluster_label][0] += pt_cloud.pts[i].x;
-    cluster_centroids_xyz[curr_cluster_label][1] += pt_cloud.pts[i].y;
-    cluster_centroids_xyz[curr_cluster_label][2] += pt_cloud.pts[i].z;
+    cluster_xyz_centroids[curr_cluster_label][0] += pt_cloud.pts[i].x;
+    cluster_xyz_centroids[curr_cluster_label][1] += pt_cloud.pts[i].y;
+    cluster_xyz_centroids[curr_cluster_label][2] += pt_cloud.pts[i].z;
 
     // associate node with the cluster label
-    cluster_centroids_indices[curr_cluster_label].push_back(static_cast<int> (i));
+    cluster_pt_indices[curr_cluster_label].push_back(static_cast<int> (i));
   }
 
   // ----------------------------------------------------------
   // Finalize xyz centroid for each cluster
-  map<unsigned int, vector<float> >::iterator iter_cluster_centroids_xyz;
-  for (iter_cluster_centroids_xyz = cluster_centroids_xyz.begin(); iter_cluster_centroids_xyz
-      != cluster_centroids_xyz.end() ; iter_cluster_centroids_xyz++)
+  map<unsigned int, vector<float> >::iterator iter_cluster_xyz_centroids;
+  for (iter_cluster_xyz_centroids = cluster_xyz_centroids.begin(); iter_cluster_xyz_centroids
+      != cluster_xyz_centroids.end() ; iter_cluster_xyz_centroids++)
   {
     float curr_cluster_nbr_pts =
-        static_cast<float> (cluster_centroids_indices[iter_cluster_centroids_xyz->first].size());
-    iter_cluster_centroids_xyz->second[0] /= curr_cluster_nbr_pts;
-    iter_cluster_centroids_xyz->second[1] /= curr_cluster_nbr_pts;
-    iter_cluster_centroids_xyz->second[2] /= curr_cluster_nbr_pts;
+        static_cast<float> (cluster_pt_indices[iter_cluster_xyz_centroids->first].size());
+    iter_cluster_xyz_centroids->second[0] /= curr_cluster_nbr_pts;
+    iter_cluster_xyz_centroids->second[1] /= curr_cluster_nbr_pts;
+    iter_cluster_xyz_centroids->second[2] /= curr_cluster_nbr_pts;
   }
 
   // ----------------------------------------------------------
@@ -545,7 +545,6 @@ int main()
   }
 
   rf.saveCliqueFeatures("ss_o_p_si");
-  abort();
 
   // ----------------------------------------------------------
   // Train M3N model
@@ -555,10 +554,8 @@ int main()
   if (m3n_model.train(training_rfs, GLOBAL_m3n_params) < 0)
   {
     ROS_ERROR("Failed to train M3N model");
+    return -1;
   }
-  else
-  {
-    ROS_INFO("Successfully trained M3n model");
-  }
+  ROS_INFO("Successfully trained M3n model");
   return 0;
 }
