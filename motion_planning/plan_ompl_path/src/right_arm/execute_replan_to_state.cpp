@@ -96,11 +96,11 @@ public:
 	    req.goal_constraints.joint_constraint[i].header.frame_id = "/base_link";
 	    req.goal_constraints.joint_constraint[i].joint_name = names[i];
 	    req.goal_constraints.joint_constraint[i].value.resize(1);
-	    req.goal_constraints.joint_constraint[i].toleranceAbove.resize(1);
-	    req.goal_constraints.joint_constraint[i].toleranceBelow.resize(1);
+	    req.goal_constraints.joint_constraint[i].tolerance_above.resize(1);
+	    req.goal_constraints.joint_constraint[i].tolerance_below.resize(1);
 	    req.goal_constraints.joint_constraint[i].value[0] = 0.0;
-	    req.goal_constraints.joint_constraint[i].toleranceBelow[0] = 0.0;
-	    req.goal_constraints.joint_constraint[i].toleranceAbove[0] = 0.0;
+	    req.goal_constraints.joint_constraint[i].tolerance_below[0] = 0.0;
+	    req.goal_constraints.joint_constraint[i].tolerance_above[0] = 0.0;
 	}
 	
 	req.goal_constraints.joint_constraint[0].value[0] = -1.0;
@@ -153,20 +153,20 @@ public:
 	req.goal_constraints.joint_constraint[0].header.frame_id = "/base_link";
 	req.goal_constraints.joint_constraint[0].joint_name = "base_joint";
 	req.goal_constraints.joint_constraint[0].value.resize(3);
-	req.goal_constraints.joint_constraint[0].toleranceAbove.resize(3);
-	req.goal_constraints.joint_constraint[0].toleranceBelow.resize(3);
+	req.goal_constraints.joint_constraint[0].tolerance_above.resize(3);
+	req.goal_constraints.joint_constraint[0].tolerance_below.resize(3);
 
 	req.goal_constraints.joint_constraint[0].value[0] = 0.0;
-	req.goal_constraints.joint_constraint[0].toleranceBelow[0] = 0.05;
-	req.goal_constraints.joint_constraint[0].toleranceAbove[0] = 0.05;
+	req.goal_constraints.joint_constraint[0].tolerance_below[0] = 0.05;
+	req.goal_constraints.joint_constraint[0].tolerance_above[0] = 0.05;
 
 	req.goal_constraints.joint_constraint[0].value[1] = 1.0;
-	req.goal_constraints.joint_constraint[0].toleranceBelow[1] = 0.05;
-	req.goal_constraints.joint_constraint[0].toleranceAbove[1] = 0.05;
+	req.goal_constraints.joint_constraint[0].tolerance_below[1] = 0.05;
+	req.goal_constraints.joint_constraint[0].tolerance_above[1] = 0.05;
 
 	req.goal_constraints.joint_constraint[0].value[2] = 0.0;
-	req.goal_constraints.joint_constraint[0].toleranceBelow[2] = 0.1;
-	req.goal_constraints.joint_constraint[0].toleranceAbove[2] = 0.1;
+	req.goal_constraints.joint_constraint[0].tolerance_below[2] = 0.1;
+	req.goal_constraints.joint_constraint[0].tolerance_above[2] = 0.1;
 
 
 	// allow 1 second computation time
