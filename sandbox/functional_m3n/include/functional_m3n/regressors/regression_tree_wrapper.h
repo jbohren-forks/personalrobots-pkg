@@ -144,7 +144,7 @@ class RegressionTreeWrapper: public RegressorWrapper
     // Intermediate containers used by addTrainingSample
     vector<const float*> interm_feature_vals_;
     vector<unsigned int> interm_start_idx_;
-    unsigned int interm_length_;
+    vector<unsigned int> interm_lengths_;
     vector<float> interm_target_;
 };
 
