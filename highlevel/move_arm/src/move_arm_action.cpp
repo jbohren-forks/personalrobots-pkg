@@ -43,6 +43,7 @@
 
 #include <manipulation_srvs/IKService.h>
 #include <manipulation_srvs/IKQuery.h>
+#include <cstdlib>
 
 using namespace robot_actions;
 
@@ -483,6 +484,11 @@ namespace move_arm
 	
 	return result;
     }
+
+    inline double uniformDouble(double lower_bound, double upper_bound)
+    {
+	return (upper_bound - lower_bound) * drand48() + lower_bound;     
+    }
     
     bool MoveArm::alterRequestUsingIK(motion_planning_srvs::MotionPlan::Request &req)
     {
@@ -499,38 +505,51 @@ namespace move_arm
 	    {
 		// we can do ik can turn the pose constraint into a joint one
 		ROS_INFO("Converting pose constraint to joint constraint using IK...");
-		
-		std::vector<double> solution;
-		if (computeIK(req.goal_constraints.pose_constraint[0].pose, solution))
+		ros::ServiceClient client = node_handle_.serviceClient<manipulation_srvs::IKService>(ARM_IK_NAME, true);
+		for (int t = 0 ; t < 5 ; ++t)
 		{
-		    unsigned int n = 0;
-		    for (unsigned int i = 0 ; i < arm_joint_names_.size() ; ++i)
+		    robot_msgs::PoseStamped tpose = req.goal_constraints.pose_constraint[0].pose;
+		    if (t > 0)
 		    {
-			motion_planning_msgs::JointConstraint jc;
-			jc.joint_name = arm_joint_names_[i];
-			jc.header.frame_id = req.goal_constraints.pose_constraint[0].pose.header.frame_id;
-			jc.header.stamp = planningMonitor_->lastMechanismStateUpdate();
-			unsigned int u = planningMonitor_->getKinematicModel()->getJoint(arm_joint_names_[i])->usedParams;
-			for (unsigned int j = 0 ; j < u ; ++j)
-			{
-			    jc.value.push_back(solution[n + j]);
-			    jc.tolerance_above.push_back(0.0);
-			    jc.tolerance_below.push_back(0.0);
-			}
-			n += u;			
-			req.goal_constraints.joint_constraint.push_back(jc);
+			tpose.pose.position.x = uniformDouble(tpose.pose.position.x - req.goal_constraints.pose_constraint[0].position_tolerance_below.x,
+							      tpose.pose.position.x + req.goal_constraints.pose_constraint[0].position_tolerance_above.x);
+			tpose.pose.position.y = uniformDouble(tpose.pose.position.y - req.goal_constraints.pose_constraint[0].position_tolerance_below.y,
+							      tpose.pose.position.y + req.goal_constraints.pose_constraint[0].position_tolerance_above.y);
+			tpose.pose.position.z = uniformDouble(tpose.pose.position.z - req.goal_constraints.pose_constraint[0].position_tolerance_below.z,
+							      tpose.pose.position.z + req.goal_constraints.pose_constraint[0].position_tolerance_above.z);
 		    }
-		    req.goal_constraints.pose_constraint.clear();
-		    result = true;
+		    std::vector<double> solution;
+		    if (computeIK(client, tpose, 2, solution))
+		    {
+			unsigned int n = 0;
+			for (unsigned int i = 0 ; i < arm_joint_names_.size() ; ++i)
+			{
+			    motion_planning_msgs::JointConstraint jc;
+			    jc.joint_name = arm_joint_names_[i];
+			    jc.header.frame_id = tpose.header.frame_id;
+			    jc.header.stamp = planningMonitor_->lastMechanismStateUpdate();
+			    unsigned int u = planningMonitor_->getKinematicModel()->getJoint(arm_joint_names_[i])->usedParams;
+			    for (unsigned int j = 0 ; j < u ; ++j)
+			    {
+				jc.value.push_back(solution[n + j]);
+				jc.tolerance_above.push_back(0.0);
+				jc.tolerance_below.push_back(0.0);
+			    }
+			    n += u;			
+			    req.goal_constraints.joint_constraint.push_back(jc);
+			}
+			req.goal_constraints.pose_constraint.clear();
+			result = true;
+		    }
 		}
-		else
+		if (!result)
 		    ROS_WARN("Unable to compute IK");
 	    }
 	}
 	return result;
     }
-    
-    bool MoveArm::computeIK(const robot_msgs::PoseStamped &pose_stamped_msg, std::vector<double> &solution)
+
+    bool MoveArm::computeIK(ros::ServiceClient &client, const robot_msgs::PoseStamped &pose_stamped_msg, int attempts, std::vector<double> &solution)
     {
 	// define the service messages
 	manipulation_srvs::IKService::Request request;
@@ -539,10 +558,9 @@ namespace move_arm
 	request.data.pose_stamped = pose_stamped_msg;
 	request.data.joint_names = arm_joint_names_;
 
-	ros::ServiceClient client = node_handle_.serviceClient<manipulation_srvs::IKService>(ARM_IK_NAME, true);
 	bool validSolution = false;
 	int ikSteps = 0;
-	while (ikSteps < 5 && !validSolution)
+	while (ikSteps < attempts && !validSolution)
 	{
 	    request.data.positions.clear();
 	    planning_models::StateParams *sp = NULL;
