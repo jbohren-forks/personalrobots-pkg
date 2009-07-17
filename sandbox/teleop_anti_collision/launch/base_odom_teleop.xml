@@ -2,7 +2,7 @@
  <param name="base_controller/autostart" value="true"/>
  <!--node pkg="mechanism_control" type="spawner.py" args="$(find pr2_default_controllers)/base_controller.xml" output="screen"/-->
  <param name="base_controller/odom_publish_rate" value="10" />
- <param name="pr2_base_controller/timeout" value="0.2" />
+ <param name="pr2_base_controller/timeout" value="0.4" />
  <param name="pr2_base_controller/fl_caster_rotation_joint/p" value="3.0" />
  <param name="pr2_base_controller/fr_caster_rotation_joint/p" value="3.0" />
  <param name="pr2_base_controller/br_caster_rotation_joint/p" value="3.0" />
@@ -85,11 +85,14 @@
  <param name="torso_dn_button" value="1" type="int" />
  <param name="torso_up_button" value="3" type="int" />
  
- <param name="send_cmd_hz" value = "10.0" type="double" />
+ <param name="send_cmd_hz" value = "3.0" type="double" />
  <param name="joy_msg_timeout" value="-1.0"/>
  <param name="deadman_button" value="4" type="int"/>
- <node pkg="teleop_anti_collision" type="teleop_goal_projection" output="screen" args="--deadman_no_publish" respawn="true" machine="four">
-  <remap from="goal" to="/move_base/activate" />
+
+
+ <node pkg="teleop_anti_collision" name="teleop_goal_projection" type="teleop_goal_projection" output="screen" args="--deadman_no_publish" respawn="true" machine="four">
+  <remap from="goal" to="/move_base_local/activate" />
+  <param name="global_frame" value="odom_combined" />
  </node>
 
 </launch>

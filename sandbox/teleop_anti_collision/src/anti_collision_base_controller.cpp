@@ -44,10 +44,10 @@ using namespace base_local_planner;
 
 namespace anti_collision_base_controller
 {
-  AntiCollisionBaseController::AntiCollisionBaseController(tf::TransformListener &tf): tf_(tf)
+  AntiCollisionBaseController::AntiCollisionBaseController()
   {   
     //create the ros wrapper for the controller's costmap... and initialize a pointer we'll use with the underlying map
-    costmap_ros_ = new costmap_2d::Costmap2DROS("local_costmap", tf_);
+    costmap_ros_ = new costmap_2d::Costmap2DROS("", tf_);
 
     //we'll get the parameters for the robot radius from the costmap we're associated with
     inscribed_radius_ = costmap_ros_->inscribedRadius();
@@ -57,7 +57,7 @@ namespace anti_collision_base_controller
     robot_base_frame_ = costmap_ros_->baseFrame();
     footprint_spec_ = costmap_ros_->robotFootprint();
 
-    ros_node_.param("~controller_frequency", controller_frequency_, 20.0);
+    ros_node_.param("~controller_frequency", controller_frequency_, 10.0);
 
     ros_node_.param("~acc_lim_x", acc_lim_x_, 2.5);
     ros_node_.param("~acc_lim_y", acc_lim_y_, 2.5);
@@ -82,6 +82,7 @@ namespace anti_collision_base_controller
     ros_node_.param("~joy_listen_topic", joy_listen_topic, string("joy_cmd_vel"));
     ros_node_.param("~base_cmd_topic", base_cmd_topic, string("cmd_vel"));
     ros_node_.param("~world_model", world_model_type, string("costmap"));
+    ros_node_.param("~timeout", timeout_, 0.2);
 
     ROS_ASSERT_MSG(world_model_type == "costmap", "At this time, only costmap world models are supported by this controller");
     world_model_ = new CostmapModel(costmap_); 
@@ -89,6 +90,8 @@ namespace anti_collision_base_controller
     joy_sub_ = ros_node_.subscribe(joy_listen_topic, 1, &AntiCollisionBaseController::joyCallBack, this);
     odom_sub_ = ros_node_.subscribe(odom_topic, 1, &AntiCollisionBaseController::odomCallback, this);
     base_cmd_pub_ = ros_node_.advertise<robot_msgs::PoseDot>(base_cmd_topic,1);
+
+    last_cmd_received_ = ros::Time();
   }
 
   AntiCollisionBaseController::~AntiCollisionBaseController()
@@ -233,6 +236,7 @@ namespace anti_collision_base_controller
 
   void AntiCollisionBaseController::joyCallBack(const robot_msgs::PoseDotConstPtr& msg)
   {
+    last_cmd_received_ = ros::Time::now();
     vel_desired_.lock();
     vel_desired_ = *msg;
     vel_desired_.unlock();
@@ -279,15 +283,16 @@ namespace anti_collision_base_controller
     return true;
   }
 
-  bool AntiCollisionBaseController::execute()
+  void AntiCollisionBaseController::spin()
   {
     ros::Rate r(controller_frequency_);
     while(ros_node_.ok())
     {
+      ros::spinOnce();
       double vx_desired, vy_desired, vt_desired;
       vel_desired_.lock();
       vx_desired = vel_desired_.vel.vx;
-      vy_desired = vel_desired_.vel.vx;
+      vy_desired = vel_desired_.vel.vy;
       vt_desired = vel_desired_.ang_vel.vz;
       vel_desired_.unlock();
 
@@ -313,6 +318,14 @@ namespace anti_collision_base_controller
       double vx_result, vy_result, vt_result;
       computeSafeVelocity(x,y,theta,vx_current,vy_current,vt_current,vx_desired,vy_desired,vt_desired,vx_result,vy_result,vt_result);
 
+      if(ros::Time::now() - last_cmd_received_ > ros::Duration(timeout_))
+      {
+        ROS_WARN("Last command was received too far back, setting current velocity to 0 for safety");
+        vx_result = 0.0;
+        vy_result = 0.0;
+        vt_result = 0.0;
+      }
+
       PoseDot cmd;
       cmd.vel.vx = vx_result;
       cmd.vel.vy = vy_result;
@@ -321,16 +334,27 @@ namespace anti_collision_base_controller
 
       r.sleep();
     }
-    return false;
+    return;
   }
 }
 
 using namespace anti_collision_base_controller;
 
-int main(int argc, char** argv){
+int main(int argc, char** argv)
+{
   ros::init(argc, argv, "anti_collision_base_controller");
-  tf::TransformListener tf(ros::Duration(10));
-  AntiCollisionBaseController anti_collision(tf);
-  ros::spin();
+  ros::spinOnce();
+  AntiCollisionBaseController anti_collision;
+  anti_collision.spin();
   return(0);
 }
+
+/*
+int main(int argc, char** argv){
+  ros::init(argc, argv);
+  ros::Node ros_node("anti_collision_base_controller");
+  AntiCollisionBaseController anti_collision;
+  anti_collision.spin();
+  return(0);
+}
+*/

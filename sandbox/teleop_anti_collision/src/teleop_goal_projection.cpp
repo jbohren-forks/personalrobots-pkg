@@ -257,7 +257,7 @@ class TeleopGoalProjection: public ros::Node
           local_cmd.header.frame_id = base_frame_;
           local_cmd.header.stamp = ros::Time();
           tf.transformPose(global_frame_, local_cmd, cmd_);
-
+          cmd_.header.stamp = ros::Time::now();
           ros::Node::instance()->publish("goal", cmd_);
 
           // Torso

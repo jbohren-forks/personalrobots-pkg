@@ -6,6 +6,6 @@ genmsg()
 
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 
-#rospack_add_boost_directories()
-
+rospack_add_boost_directories()
 rospack_add_executable(teleop_goal_projection src/teleop_goal_projection.cpp)
+rospack_add_executable(anti_collision_base_controller src/anti_collision_base_controller.cpp)

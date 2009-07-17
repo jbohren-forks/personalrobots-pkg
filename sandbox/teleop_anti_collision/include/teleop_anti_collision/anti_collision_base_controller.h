@@ -72,18 +72,20 @@ namespace anti_collision_base_controller {
       /**
        * @brief  Constructs an anti-collision base controller
        */
-      AntiCollisionBaseController(tf::TransformListener &tf);
+      AntiCollisionBaseController();
 
       /**
        * @brief  Destructs a trajectory controller
        */
       ~AntiCollisionBaseController();
 
-      tf::TransformListener &tf_;
+      tf::TransformListener tf_;
 
       void joyCallBack(const robot_msgs::PoseDotConstPtr& msg);
 
       void odomCallback(const deprecated_msgs::RobotBase2DOdomConstPtr& msg);
+
+      void spin();
 
     private:
 
@@ -206,7 +208,9 @@ namespace anti_collision_base_controller {
 
       bool getRobotPose(double &x, double &y, double &theta);
 
-      bool execute();
+      ros::Time last_cmd_received_;
+
+      double timeout_;
   };
 };
 

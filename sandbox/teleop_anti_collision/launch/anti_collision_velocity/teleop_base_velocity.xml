@@ -1,0 +1,16 @@
+<launch>
+  <include file="$(find pr2_alpha)/$(env ROBOT).machine" />
+
+  <rosparam file="$(find 2dnav_pr2)/config/costmap_common_params.yaml" command="load" ns="anti_collision_base_controller" />
+  <rosparam file="$(find teleop_anti_collision)/launch/anti_collision_velocity/costmap_params.yaml" command="load" ns="anti_collision_base_controller" />
+  <rosparam file="$(find teleop_anti_collision)/launch/anti_collision_velocity/anti_collision_base_controller_params.yaml" command="load" />
+
+  <include file="$(find teleop_anti_collision)/launch/anti_collision_velocity/anti_collision_velocity_base_odom_teleop.xml" />
+  <include file="$(find 2dnav_pr2)/config/lasers_and_filters.xml" />
+  <include file="$(find 2dnav_pr2)/config/ground_plane.xml" />
+
+<node pkg="mux" type="throttle" args="3.0 /move_base_local/local_costmap/voxel_grid /move_base_local/local_costmap/voxel_grid_throttled" />
+
+<node pkg="teleop_anti_collision" name="anti_collision_base_controller" type="anti_collision_base_controller" />
+
+</launch>
