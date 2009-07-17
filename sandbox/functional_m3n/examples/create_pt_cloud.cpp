@@ -23,6 +23,7 @@
 #include <descriptors_3d/spectral_shape.h>
 #include <descriptors_3d/orientation.h>
 #include <descriptors_3d/position.h>
+#include <descriptors_3d/spin_image.h>
 
 #include <functional_m3n/random_field.h>
 #include <functional_m3n/m3n_model.h>
@@ -39,17 +40,19 @@ typedef struct kmeans_params
 } kmeans_params_t;
 
 vector<Descriptor3D*> node_feature_descriptors;
-M3NParams m3n_params;
+
+vector<Descriptor3D*> cs0_feature_descriptors;
 kmeans_params_t cs0_kmeans_params;
+
+M3NParams m3n_params;
 
 unsigned int nbr_clique_sets = 0;
 
-void populateParameters()
+void initNodeParams()
 {
-  // ----------------------------------------------
-  // Node features
   SpectralShape* spectral_shape = new SpectralShape();
   spectral_shape->setSupportRadius(0.15);
+
   Orientation* orientation = new Orientation();
   if (orientation->useSpectralInformation(spectral_shape) < 0)
   {
@@ -57,20 +60,57 @@ void populateParameters()
   }
   orientation->useNormalOrientation(0.0, 0.0, 1.0);
   orientation->useTangentOrientation(0.0, 0.0, 1.0);
+
   Position* position = new Position();
-  node_feature_descriptors.assign(3, spectral_shape);
-  node_feature_descriptors[1] = orientation;
-  node_feature_descriptors[2] = position;
 
-  nbr_clique_sets = 0;
+  // ---------------
+  node_feature_descriptors.push_back(spectral_shape);
+  node_feature_descriptors.push_back(orientation);
+  node_feature_descriptors.push_back(position);
+}
 
-  // ----------------------------------------------
-  // Clique set 0
+void initCS0Params()
+{
+  // ---------------
   // kmeans parameters for constructing cliques
   cs0_kmeans_params.factor = 0.003;
   cs0_kmeans_params.accuracy = 1.0;
   cs0_kmeans_params.max_iter = 10;
   cs0_kmeans_params.channel_indices.clear();
+
+  // ---------------
+  // Features
+  SpectralShape* spectral_shape = new SpectralShape();
+  spectral_shape->setSupportRadius(0.2286);
+
+  Orientation* orientation = new Orientation();
+  if (orientation->useSpectralInformation(spectral_shape) < 0)
+  {
+    abort();
+  }
+  orientation->useNormalOrientation(0.0, 0.0, 1.0);
+  orientation->useTangentOrientation(0.0, 0.0, 1.0);
+
+  Position* position = new Position();
+
+  SpinImage* spin_image = new SpinImage();
+  spin_image->setAxisCustom(0.0, 0.0, 1.0);
+  spin_image->setImageDimensions(0.0762, 0.0762, 5, 4);
+
+  // ---------------
+  cs0_feature_descriptors.push_back(spectral_shape);
+  cs0_feature_descriptors.push_back(orientation);
+  cs0_feature_descriptors.push_back(position);
+  cs0_feature_descriptors.push_back(spin_image);
+}
+
+void populateParameters()
+{
+  initNodeParams();
+
+  initCS0Params();
+
+  nbr_clique_sets = 0;
 
   // ----------------------------------------------
   // Define learning parameters
