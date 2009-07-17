@@ -45,6 +45,11 @@
 #include "visualization_msgs/Marker.h"
 #include "mapping_msgs/Object.h"
 
+#include "tf/transform_datatypes.h"
+#ifdef PUBLISH_GRASH_POSE
+#include <tf/transform_broadcaster.h>
+#endif
+
 namespace bfs = boost::filesystem;
 using namespace std;
 using namespace robot_msgs;
@@ -239,7 +244,7 @@ class TemplateModel {
 	float truncate_value;
 
 	float *grid;
-	mapping_msgs::Object mesh;
+	mapping_msgs::Object mesh_;
 
 	string name_;
 
@@ -263,14 +268,23 @@ public:
 
 	Pose graspPose()
 	{
+		// TODO: fix this, models annotated with pose
 		Pose pose;
 		pose.position.x = 0;
 		pose.position.y = 0;
-		pose.position.z = 0.05;  // TODO: fix this, models annotated with pose
-		pose.orientation.x = 0;
-		pose.orientation.y = 0;
-		pose.orientation.z = 0;
-		pose.orientation.w = 1.0;
+		pose.position.z = 0.05;
+
+
+		btMatrix3x3 rotation;
+		rotation.setIdentity();
+		rotation.setEulerZYX(M_PI/2,0,0);
+		btQuaternion orientation;
+		rotation.getRotation(orientation);
+
+		pose.orientation.x = orientation.x();
+		pose.orientation.y = orientation.y();
+		pose.orientation.z = orientation.z();
+		pose.orientation.w = orientation.w();
 
 		return pose;
 	}
@@ -291,7 +305,7 @@ public:
 
 	mapping_msgs::Object objectMesh()
 	{
-		return mesh;
+		return mesh_;
 	}
 
 
@@ -333,10 +347,34 @@ public:
 
 		Pose graspPose()
 		{
-			Pose pose = model_->graspPose();
-			pose.position.x += location_.x;
-			pose.position.y += location_.y;
-			pose.position.z += location_.z;
+			Pose object_pose = objectPose();
+			Pose model_grasp_pose = model_->graspPose();
+			tf::Pose tf_object_pose;
+			tf::Pose tf_model_grasp_pose;
+
+			tf::poseMsgToTF(object_pose, tf_object_pose);
+			tf::poseMsgToTF(model_grasp_pose, tf_model_grasp_pose);
+
+			tf::Pose tf_grasp_pose = tf_object_pose*tf_model_grasp_pose;
+			Pose grasp_pose;
+
+			tf::poseTFToMsg(tf_grasp_pose, grasp_pose);
+
+
+			return grasp_pose;
+		}
+
+		Pose objectPose()
+		{
+			Pose pose;
+			pose.position.x = location_.x;
+			pose.position.y = location_.y;
+			pose.position.z = location_.z;
+
+			pose.orientation.x = 0;
+			pose.orientation.y = 0;
+			pose.orientation.z = 0;
+			pose.orientation.w = 1.0;
 
 			return pose;
 		}
@@ -400,7 +438,8 @@ void TemplateModel::load(const string& file, const string& name)
 	bfs::path ply_file = bfs::change_extension(file_path, ".ply").leaf();
 	bfs::path reduced_path = file_path.parent_path() / "reduced" / ply_file;
 	PLYMesh ply_mesh;
-	ply_mesh.readFromFile(reduced_path.string(),mesh);
+	ply_mesh.readFromFile(reduced_path.string(),mesh_);
+	mesh_.type = mesh_.MESH;
 }
 
 
@@ -512,6 +551,7 @@ void TemplateModel::findBestFit(const PointCloud& cloud, ModelFitSet& mfs)
 
 
 
+
 class ModelFitter
 {
 	ros::NodeHandle nh_;
@@ -521,6 +561,10 @@ class ModelFitter
 	string template_path;
 
 	vector<TemplateModel*> templates;
+
+#ifdef PUBLISH_GRASH_POSE
+	tf::TransformBroadcaster tfb_;
+#endif
 
 public:
 	ModelFitter()
@@ -589,12 +633,24 @@ public:
 
 		mfs.best_fit_[0].model_->show(marker_pub_,  mfs.best_fit_[0].location_,  mfs.best_fit_[0].score());
 
-		resp.object.pose.pose = mfs.best_fit_[0].graspPose();
-		resp.object.pose.header.stamp = req.cloud.header.stamp;
-		resp.object.pose.header.frame_id = req.cloud.header.frame_id;
+		resp.object.grasp_pose.pose = mfs.best_fit_[0].graspPose();
+		resp.object.grasp_pose.header.stamp = req.cloud.header.stamp;
+		resp.object.grasp_pose.header.frame_id = req.cloud.header.frame_id;
+		resp.object.object_pose.pose = mfs.best_fit_[0].objectPose();
+		resp.object.object_pose.header.stamp = req.cloud.header.stamp;
+		resp.object.object_pose.header.frame_id = req.cloud.header.frame_id;
 		resp.object.object = mfs.best_fit_[0].model_->objectMesh();
-		resp.object.object.type = resp.object.object.MESH;
 		resp.score = mfs.best_fit_[0].score();
+
+
+#ifdef PUBLISH_GRASH_POSE
+		tf::Pose tf_pose;
+		tf::poseMsgToTF(mfs.best_fit_[0].graspPose(), tf_pose);
+		tf::Stamped<tf::Pose> grasp_frame(tf_pose, req.cloud.header.stamp, "grasp_frame", req.cloud.header.frame_id);
+		tfb_.sendTransform(grasp_frame);
+#endif
+
+
 
 		return true;
 	}

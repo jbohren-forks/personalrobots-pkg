@@ -317,13 +317,20 @@ private:
 
 		findTableTopObjectPoses(resp.objects);
 
+		// transform all poses to the target frame
 		for (size_t i=0;i<resp.objects.size();++i) {
-			PoseStamped& pose = resp.objects[i].pose;
-	        if (!tf_.canTransform(target_frame_, pose.header.frame_id, pose.header.stamp, ros::Duration(5.0))){
-	          ROS_ERROR("Cannot transform from %s to %s", pose.header.frame_id.c_str(), target_frame_.c_str());
+			PoseStamped& object_pose = resp.objects[i].object_pose;
+	        if (!tf_.canTransform(target_frame_, object_pose.header.frame_id, object_pose.header.stamp, ros::Duration(5.0))){
+	          ROS_ERROR("Cannot transform from %s to %s", object_pose.header.frame_id.c_str(), target_frame_.c_str());
 	          return false;
 	        }
-			tf_.transformPose(target_frame_, pose, pose);
+			tf_.transformPose(target_frame_, object_pose, object_pose);
+			PoseStamped& grasp_pose = resp.objects[i].grasp_pose;
+	        if (!tf_.canTransform(target_frame_, grasp_pose.header.frame_id, grasp_pose.header.stamp, ros::Duration(5.0))){
+	          ROS_ERROR("Cannot transform from %s to %s", grasp_pose.header.frame_id.c_str(), target_frame_.c_str());
+	          return false;
+	        }
+			tf_.transformPose(target_frame_, grasp_pose, grasp_pose);
 		}
 		return true;
 	}

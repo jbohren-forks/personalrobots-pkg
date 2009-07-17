@@ -7,6 +7,7 @@ import sys
 import os
 import string
 import re
+from threading import Thread
 
 import roslib; roslib.load_manifest('recognition_lambertian')
 
@@ -33,14 +34,23 @@ def call_service():
         resp = find_object_poses()
 
 
-        for p in resp.objects:
-            print p
-
+#        for p in resp.objects:
+#            print p
 
     except rospy.ServiceException, e:
         print "Service call failed: %s"%e
 
 
+class PublishThread(Thread):
+
+    def __init__(self,publisher,value):
+        Thread.__init__(self)
+        self.publisher = publisher
+        self.value = value
+
+    def run(self):
+        rospy.sleep(.5)
+        self.publisher.publish(self.value)
 
 
 class MyFrame(wx.Frame):
@@ -100,10 +110,19 @@ class MyFrame(wx.Frame):
         sys.exit(0)
         event.Skip()
 
+
+
     def onListSelected(self, event): # wxGlade: MyFrame.<event_handler>
         dir = str(self.dir_picker.GetPath())
         prefix =  str(event.GetText())
-        self.pub.publish(String(dir+"/"+prefix))
+        value = String(dir+"/"+prefix)
+
+        thread = PublishThread(self.pub,value)
+        thread.start()
+
+        print "Calling service"
+        call_service()
+        print "Service returned"
         event.Skip()
 
     def onLoad(self, event): # wxGlade: MyFrame.<event_handler>
