@@ -4,6 +4,7 @@ using namespace std;
 using namespace cv;
 USING_PART_OF_NAMESPACE_EIGEN
 
+#define CVSHOW(name, img) cvNamedWindow(name); cvShowImage(name, img)
 
 /****************************************************************************
 *************  Generally Useful Functions
@@ -113,13 +114,32 @@ void inPaintNN(IplImage* img) {
   }
 }
 
+int getdir (string dir, vector<string> &files) {
+  DIR *dp;
+  struct dirent *dirp;
+  if((dp  = opendir(dir.c_str())) == NULL) {
+    cout << "Error(" << errno << ") opening " << dir << endl;
+    return errno;
+  }
+
+  while ((dirp = readdir(dp)) != NULL) {
+    files.push_back(string(dirp->d_name));
+  }
+  closedir(dp);
+  return 0;
+}
 
 /****************************************************************************
 *************  ImageDescriptor
 ****************************************************************************/
 
 ImageDescriptor::ImageDescriptor() :
-  name_(string()), result_size_(0), img_(NULL), row_(-1), col_(-1), debug_(false)
+  name_(string()), 
+  result_size_(0), 
+  img_(NULL), 
+  row_(-1), 
+  col_(-1), 
+  debug_(false)
 {
 }
 
@@ -148,7 +168,9 @@ void ImageDescriptor::commonDebug(int row, int col) {
 /****************************************************************************
 *************  ImageDescriptor::HogWrapper
 ****************************************************************************/
-HogWrapper::HogWrapper() : ImageDescriptor(), hog_()
+HogWrapper::HogWrapper() : 
+  ImageDescriptor(), 
+  hog_()
 {
   char buf[400];
   sprintf(buf, "Hog_winSize%dx%d_blockSize%dx%d_blockStride%dx%d_cellSize%dx%d_nBins%d_derivAperture%d_winSigma%g_histNormType%d_L2HysThreshold%g_gammaCorrection%d", 
@@ -161,8 +183,9 @@ HogWrapper::HogWrapper() : ImageDescriptor(), hog_()
 
 HogWrapper::HogWrapper(Size winSize, Size blockSize, Size blockStride, Size cellSize,
 			int nbins, int derivAperture, double winSigma,
-			int histogramNormType, double L2HysThreshold, bool gammaCorrection)
-  : ImageDescriptor(), hog_(winSize, blockSize, blockStride, nbins, derivAperture, winSigma, histogramNormType, L2HysThreshold, gammaCorrection)
+			int histogramNormType, double L2HysThreshold, bool gammaCorrection) : 
+  ImageDescriptor(), 
+  hog_(winSize, blockSize, blockStride, nbins, derivAperture, winSigma, histogramNormType, L2HysThreshold, gammaCorrection)
 {
   char buf[400];
   sprintf(buf, "Hog_winSize%dx%d_blockSize%dx%d_blockStride%dx%d_cellSize%dx%d_nBins%d_derivAperture%d_winSigma%g_histNormType%d_L2HysThreshold%g_gammaCorrection%d", 
@@ -233,12 +256,29 @@ void HogWrapper::compute(IplImage* img, const Vector<Keypoint>& points, vvf& res
 
 
 /***************************************************************************
-***********  ImageDescriptor::ContourFragment
+***********  ContourFragmentCollector
 ****************************************************************************/
-#define CVSHOW(name, img) cvNamedWindow(name); cvShowImage(name, img)
 
+ContourFragmentCollector::ContourFragmentCollector(int num_templates_per_label, bool debug, int min_area, 
+						   float min_density, int min_side, int min_edge_pix, int min_edge_pix_besides_line) : 
+  num_templates_per_label_(num_templates_per_label),
+  debug_(debug),
+  min_area_(min_area), 
+  min_density_(min_density),
+  min_side_(min_side), 
+  min_edge_pix_(min_edge_pix),
+  min_edge_pix_besides_line_(min_edge_pix_besides_line)
+{
+}
 
-void ContourFragment::learnContours(vector<IplImage*> imgs, vector<IplImage*> masks) {
+ContourFragmentCollector::~ContourFragmentCollector() {
+  // -- Deallocate the contours.
+  for(size_t i=0; i<contours_.size(); i++) {
+    cvReleaseImage(&contours_[i]);
+  }
+}
+
+void ContourFragmentCollector::learnContours(vector<IplImage*> imgs, vector<IplImage*> masks) {
   for(size_t i=0; i<masks.size(); i++) {
 
     IplImage* mask_gray = cvCreateImage(cvGetSize(masks[i]), IPL_DEPTH_8U, 1);
@@ -252,17 +292,12 @@ void ContourFragment::learnContours(vector<IplImage*> imgs, vector<IplImage*> ma
     IplImage* img_edge = cvCloneImage(img_gray);
     cvCanny(img_gray, img_edge, 80, 160);
 
-    CVSHOW("mask", mask_gray);
-    CVSHOW("mask_edge", mask_edge);
-    CVSHOW("img", imgs[i]);
-
     // -- Get bounding box of label.
     CvPoint tl = cvPoint(mask_edge->width, mask_edge->height);
     CvPoint br = cvPoint(0,0);
     for(int r=0; r<mask_edge->height; r++) {
       uchar* ptr = (uchar*)(mask_edge->imageData + r * mask_edge->widthStep);
       for(int c=0; c<mask_edge->width; c++) {
-	assert(*ptr == 0 || *ptr == 255);
 	if(*ptr == 255) {
 	  if(r>br.y)
 	    br.y = r;
@@ -277,41 +312,54 @@ void ContourFragment::learnContours(vector<IplImage*> imgs, vector<IplImage*> ma
 	ptr++;
       }
     }
-    cout << "tl: " << tl.x << " " << tl.y << endl;
-    cout << "br: " << br.x << " " << br.y << endl;
-   
+
+    // -- Display things.
+    if(debug_) {
+      CVSHOW("mask", mask_gray);
+      CVSHOW("mask_edge", mask_edge);
+      CVSHOW("img", imgs[i]);
+    }
     
     // -- Choose random rectangles in the bounding box.
     int num = 0;
-    int nTemplates = 20;
-    while(num < nTemplates) {
+    while(num < num_templates_per_label_) {
       int x1 = rand() % (br.x - tl.x) + tl.x;
       int x2 = rand() % (br.x - tl.x) + tl.x;
       int y1 = rand() % (br.y - tl.y) + tl.y;
       int y2 = rand() % (br.y - tl.y) + tl.y;
       CvRect rect = cvRect(min(x1, x2), min(y1, y2), max(x1, x2) - min(x1, x2) + 1, max(y1, y2) - min(y1, y2) + 1);
       cvRectangle(img_edge, cvPoint(rect.x, rect.y), cvPoint(rect.x + rect.width, rect.y + rect.height), cvScalar(255, 255, 255));
-      cout << "checking " << rect.x << " " << rect.y << " " << rect.width << " " << rect.height << endl;
-      CVSHOW("img_edge", img_edge);
-      cvWaitKey(50);
-      // -- Create random perturbations of the edge.
-      // -- Set the ROI.
       cvSetImageROI(mask_edge, rect);
+     
+      // -- Show the rects we are checking.
+      if(debug_) {
+	CVSHOW("img_edge", img_edge);
+	cvWaitKey(50);
+      }
+
+      // -- Create random perturbations of the edge.
 
       // -- Check that it's large enough and well populated enough.  
       if(!contourTest(mask_edge))
 	continue;
       
       num++;
-      
-      int scale = 5;
-      CvSize sz = cvSize(rect.width*scale, rect.height*scale);
-      IplImage* big = cvCreateImage(sz, IPL_DEPTH_8U, 1);
-      cvResize(mask_edge, big, CV_INTER_NN);
+      IplImage* mask_edge_cropped = cvCreateImage(cvSize(rect.width, rect.height), 8, 1);
+      cvCopy(mask_edge, mask_edge_cropped);
+      contours_.push_back(mask_edge_cropped);
+      assert(contours_.back()->height != mask_edge->height);
 
-      CVSHOW("mask_template_big", big);
-      CVSHOW("mask_template", mask_edge);
-      cvWaitKey(0);    
+      if(debug_) {
+	int scale = 5;
+	CvSize sz = cvSize(rect.width*scale, rect.height*scale);
+	IplImage* big = cvCreateImage(sz, IPL_DEPTH_8U, 1);
+	cvResize(mask_edge, big, CV_INTER_NN);
+
+	CVSHOW("mask_template_big", big);
+	CVSHOW("mask_template", mask_edge);
+	cvWaitKey(0);    
+	cvReleaseImage(&big);
+      }
     }
   
     cvResetImageROI(mask_edge);
@@ -323,8 +371,7 @@ void ContourFragment::learnContours(vector<IplImage*> imgs, vector<IplImage*> ma
   }
 }
 
-bool ContourFragment::contourTest(IplImage* img) {
-  cout << img->roi->width << " " << img->roi->height << endl;
+bool ContourFragmentCollector::contourTest(IplImage* img) {
 
   // -- Enforce minimum size.
   int area = img->roi->height * img->roi->width;
@@ -346,36 +393,148 @@ bool ContourFragment::contourTest(IplImage* img) {
     }
   }
   
-  min_edge_pix_ = 20;
-  if(nEdgePix < min_edge_pix_) {
-    cout << "not enough pix: " << nEdgePix << endl;
+  // -- Enforce minimum density.
+  if((float)nEdgePix / (float)area < min_density_) {
     return false;
   }
 
-  // -- Enforce minimum density.
-  if((float)nEdgePix / (float)area < min_density_) {
-    cout << "too sparse" << endl;
+  // -- Enforce minimum num edge points.
+  if(nEdgePix < min_edge_pix_) {
     return false;
   }
-  
+
+  // -- Get lines.
+  CvMemStorage* storage = cvCreateMemStorage(0);
+  CvSeq* lines = cvHoughLines2(img,
+			 storage,
+			 CV_HOUGH_STANDARD,
+			 1,
+			 CV_PI/180,
+			 3,
+			 0,
+			 0 );
+
+  if(lines->total > 0) {
+    // -- Black out the line.
+    IplImage* color_dst = cvCreateImage( cvGetSize(img), 8, 3 );
+    cvCvtColor( img, color_dst, CV_GRAY2BGR );
+
+    assert(color_dst->width > 0);
+    assert(color_dst->height > 0);
+    float* line = (float*)cvGetSeqElem(lines,1);
+    float rho = line[0];
+    float theta = line[1];
+    CvPoint pt1, pt2;
+    double a = cos(theta), b = sin(theta);
+    double x0 = a*rho, y0 = b*rho;
+    pt1.x = cvRound(x0 + 1000*(-b));
+    pt1.y = cvRound(y0 + 1000*(a));
+    pt2.x = cvRound(x0 - 1000*(-b));
+    pt2.y = cvRound(y0 - 1000*(a));
+    cvLine( color_dst, pt1, pt2, CV_RGB(0,0,0), 4, 8 );
+    if(debug_)
+      CVSHOW("line", color_dst);
+
+
+    // -- Get the number of pixels that are not the primary line.
+    nEdgePix = 0;
+    float mean = 0;
+    for(int r=0; r<color_dst->height; r++) {
+      uchar* ptr = (uchar*)(color_dst->imageData + r * color_dst->widthStep);
+      for(int c=0; c<color_dst->width; c++) {
+	if(*ptr != 0) {
+	  nEdgePix++;
+	  mean += *ptr;
+	}
+	ptr+=3; //3chan
+      }
+    }
+    assert(mean / area == mean / (float)area);
+    mean /= area;
+    //cout << "nEdgePix " << nEdgePix << " mean " << mean << endl;
+    //-- Make sure that the contour is more than just a single line.
+    if(nEdgePix < min_edge_pix_besides_line_) {
+      return false;
+    }
+  }
+  else
+    cout << "no line found" << endl;
+
   return true;
 }
 
-ContourFragment::ContourFragment(int min_area, float min_density, ContourFragment* chamfer_provider) : 
-  min_area_(min_area), 
-  min_density_(min_density),
-  min_side_(3),
-  chamfer_provider_(chamfer_provider)
+void ContourFragmentCollector::saveContours(string dir) {
+  // -- See if the dir exists. 
+  DIR *dp;
+  if((dp  = opendir(dir.c_str())) != NULL) {
+    cout << "Dir " << dir << " already exists." << endl;
+    return;
+  }
+
+  mkdir(dir.c_str(), S_IRWXG | S_IRWXU | S_IRWXO);
+  for(size_t i=0; i<contours_.size(); i++) {
+    ostringstream oss (ostringstream::out);
+    oss << dir <<  "/contour" << i << ".png";
+    cvSaveImage(oss.str().c_str(), contours_[i]);
+  } 
+}
+
+void ContourFragmentCollector::loadContours(string dir) {
+  vector<string> files;
+  getdir(dir, files);
+  for(size_t i=0; i<files.size(); i++) {
+    if(files[i].find(string(".png")) != string::npos) {
+      string name = dir + "/" + files[i];
+      contours_.push_back(cvLoadImage(name.c_str(), CV_LOAD_IMAGE_GRAYSCALE));
+    }
+  }
+}
+
+
+/***************************************************************************
+***********  ImageDescriptor::ContourFragmentDescriptor
+****************************************************************************/
+
+
+ContourFragmentDescriptor::ContourFragmentDescriptor(int cf_id, string dir) :
+  ImageDescriptor(),
+  chamfer_provider_(NULL),
+  cf_id_(cf_id),
+  cfc_(),
+  chamfer_(new ChamferMatching()),
+  matches_(new ChamferMatch())
 {
+
+  // -- Load the contours and put into chamfer matcher.
+  cfc_.loadContours(dir);
+  for(size_t i=0; i<cfc_.contours_.size(); i++) {
+//     CVSHOW("test", cfc_.contours_[i]);
+//     cvWaitKey(0);
+    chamfer_->addTemplateFromImage(cfc_.contours_[i]);
+  }
 }
 
-void ContourFragment::saveContours(string dir) {
+ContourFragmentDescriptor::ContourFragmentDescriptor(int cf_id, ContourFragmentDescriptor* chamfer_provider) :
+  ImageDescriptor(),
+  chamfer_provider_(chamfer_provider),
+  cf_id_(cf_id),
+  cfc_(),
+  chamfer_(NULL),
+  matches_(NULL)
+{
+
 }
 
-void ContourFragment::loadContours(string dir){
-}
 
-void ContourFragment::compute(IplImage* img, const cv::Vector<Keypoint>& points, vvf& results){
+void ContourFragmentDescriptor::compute(IplImage* img, const cv::Vector<Keypoint>& points, vvf& results) {
+  *matches_ = chamfer_->matchImage(img);
+
+  if(debug_) {
+    matches_->show(img, 100000);
+    CVSHOW("test", img);
+    cvWaitKey(0);
+  }
+  
 }
 
 
@@ -385,7 +544,12 @@ void ContourFragment::compute(IplImage* img, const cv::Vector<Keypoint>& points,
 
 
 SuperpixelStatistic::SuperpixelStatistic(int seed_spacing, float scale, SuperpixelStatistic* seg_provider) :
-  ImageDescriptor(), index_(NULL), seed_spacing_(seed_spacing), scale_(scale), seg_provider_(seg_provider), seg_(NULL)
+  ImageDescriptor(), 
+  index_(NULL), 
+  seed_spacing_(seed_spacing), 
+  scale_(scale), 
+  seg_provider_(seg_provider), 
+  seg_(NULL)
 {
   char buf[1000];
   sprintf(buf, "SuperpixelStatistic_seedSpacing%d_scale%g", seed_spacing_, scale_);
@@ -767,8 +931,12 @@ void SuperpixelColorHistogram::clearImageCache() {
 ****************************************************************************/
  
 
-IntegralImageDescriptor::IntegralImageDescriptor(IntegralImageDescriptor* ii_provider) 
-  : ImageDescriptor(), ii_(NULL), ii_tilt_(NULL), gray_(NULL), ii_provider_(ii_provider)
+IntegralImageDescriptor::IntegralImageDescriptor(IntegralImageDescriptor* ii_provider) : 
+  ImageDescriptor(), 
+  ii_(NULL), 
+  ii_tilt_(NULL), 
+  gray_(NULL), 
+  ii_provider_(ii_provider)
 {
   char buf[100];
   sprintf(buf, "IntegralImageDescriptor");
@@ -869,8 +1037,9 @@ bool IntegralImageDescriptor::integrateRect(float* result, int row_offset, int c
 /***************************************************************************
 ***********  ImageDescriptor::IntegralImageDescriptor::IntegralImageTexture
 ****************************************************************************/
-IntegralImageTexture::IntegralImageTexture(int scale, IntegralImageDescriptor* ii_provider)
-  : IntegralImageDescriptor(ii_provider), scale_(scale) 
+IntegralImageTexture::IntegralImageTexture(int scale, IntegralImageDescriptor* ii_provider) : 
+  IntegralImageDescriptor(ii_provider), 
+  scale_(scale) 
 {
   char buf[100];
   sprintf(buf, "_IntegralImageTexture_scale%d", scale_);
@@ -1018,8 +1187,11 @@ void IntegralImageTexture::compute(IplImage* img, const Keypoint& point, Vector<
 ****************************************************************************/
  
 
-Histogram::Histogram(int nBins, float min, float max) 
-  : nInsertions_(0), nBins_(nBins), min_(min), max_(max)
+Histogram::Histogram(int nBins, float min, float max) : 
+  nInsertions_(0), 
+  nBins_(nBins), 
+  min_(min), 
+  max_(max)
 {
   bin_size_ = (max_ - min_) / (float)nBins_;
   boundaries_.reserve(nBins_+1);

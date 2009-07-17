@@ -11,6 +11,9 @@
 #include "ros/console.h"
 #include "ros/assert.h"
 #include <chamfer_matching/chamfer_matching.h>
+#include <dirent.h>
+#include <errno.h>
+#include <sys/stat.h>
 
 typedef cv::Vector< cv::Vector<float> > vvf;
 
@@ -150,23 +153,47 @@ class IntegralImageTexture : public IntegralImageDescriptor {
 ***********  Contour Fragments
 ****************************************************************************/
 
-class ContourFragment : public ImageDescriptor {
+class ContourFragmentCollector {
  public:
+  ContourFragmentCollector(int num_templates_per_label = 10, bool debug = false, int min_area = 30, 
+			   float min_density = 0.01, int min_side = 5, int min_edge_pix = 10, int min_edge_pix_besides_line = 5);
+  ~ContourFragmentCollector();
+  void learnContours(std::vector<IplImage*> imgs, std::vector<IplImage*> masks);
+  void saveContours(string dir);
+  void loadContours(string dir);
+  
+  std::vector<IplImage*> contours_;
+  
+
+ private:
+  int num_templates_per_label_;
+  bool debug_;
   int min_area_;
   float min_density_;
   int min_side_;
-  int min_edge_pix_; 
-  ContourFragment* chamfer_provider_;
+  int min_edge_pix_;
+  //! Min number of edge pixels AFTER removing the primary line from the template.
+  int min_edge_pix_besides_line_; 
 
-  ChamferMatching* cm_;
-  ChamferMatch* matches_;
-
-  ContourFragment(int min_area, float min_density, ContourFragment* chamfer_provider = NULL);
+  
   bool contourTest(IplImage* cf);
-  void learnContours(std::vector<IplImage*> imgs, std::vector<IplImage*> masks = std::vector<IplImage*>());
-  void saveContours(string dir);
-  void loadContours(string dir);
+};
+
+class ContourFragmentDescriptor : public ImageDescriptor {
+ public:
+  ContourFragmentDescriptor* chamfer_provider_;
+  
+  //! Loads contours from a dir.
+  ContourFragmentDescriptor(int cf_id, string dir);
+  //! Uses another ContourFragmentDescriptor object to get its data.  
+  ContourFragmentDescriptor(int cf_id, ContourFragmentDescriptor* chamfer_provider);
   void compute(IplImage* img, const cv::Vector<Keypoint>& points, vvf& results);
+
+ private:
+  int cf_id_;
+  ContourFragmentCollector cfc_;
+  ChamferMatching* chamfer_;
+  ChamferMatch* matches_;
 };
 
 
@@ -224,6 +251,7 @@ class SuperpixelColorHistogram : public SuperpixelStatistic {
 
 std::vector<ImageDescriptor*> setupImageDescriptors();
 void whiten(Eigen::MatrixXf* m);
+int getdir (string dir, vector<string> &files);
 
 
 /***************************************************************************
