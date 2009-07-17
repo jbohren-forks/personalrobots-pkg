@@ -254,7 +254,7 @@ void planning_environment::CollisionSpaceMonitor::objectInMapCallback(const mapp
 		collisionSpace_->lock();
 		collisionSpace_->addObject(objectInMap->id, shape, pose);
 		collisionSpace_->unlock();
-		ROS_DEBUG("Added object '%s' to collision space", objectInMap->id.c_str());
+		ROS_INFO("Added object '%s' to collision space", objectInMap->id.c_str());
 	    }
 	    delete shape;
 	}
@@ -265,7 +265,7 @@ void planning_environment::CollisionSpaceMonitor::objectInMapCallback(const mapp
 	collisionSpace_->lock();
 	collisionSpace_->clearObstacles(objectInMap->id);
 	collisionSpace_->unlock();
-	ROS_DEBUG("Removed object '%s' from collision space", objectInMap->id.c_str());
+	ROS_INFO("Removed object '%s' from collision space", objectInMap->id.c_str());
     }
     
     if (onObjectInMapUpdate_)
@@ -285,7 +285,7 @@ bool planning_environment::CollisionSpaceMonitor::attachObject(const mapping_msg
     if (result)
     {
 	collisionSpace_->updateAttachedBodies();
-	ROS_DEBUG("Attached bodies have been updated");
+	ROS_INFO("Attached bodies have been updated");
     }
     collisionSpace_->unlock();
     
