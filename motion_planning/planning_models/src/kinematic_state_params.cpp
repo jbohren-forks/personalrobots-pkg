@@ -104,12 +104,46 @@ void planning_models::StateParams::defaultState(void)
     }
 }
 
+void planning_models::StateParams::randomStateGroup(const std::string &group)
+{
+    randomStateGroup(m_owner->getGroupID(group));
+}
+
+
+void planning_models::StateParams::randomStateGroup(int groupID)
+{
+    assert(groupID >= 0 && groupID < (int)m_owner->getGroupCount());
+    for (unsigned int i = 0 ; i < m_mi.groupStateIndexList[groupID].size() ; ++i)
+    {
+	unsigned int j = m_mi.groupStateIndexList[groupID][i];
+	m_params[j] = (m_mi.stateBounds[2 * j + 1] - m_mi.stateBounds[2 * j]) * ((double)rand() / (RAND_MAX + 1.0)) +  m_mi.stateBounds[2 * j];
+	m_seen[j] = true;
+    }
+}
+    
 void planning_models::StateParams::randomState(void)
 {   
     for (unsigned int i = 0 ; i < m_mi.stateDimension ; ++i)
     {
 	m_params[i] = (m_mi.stateBounds[2 * i + 1] - m_mi.stateBounds[2 * i]) * ((double)rand() / (RAND_MAX + 1.0)) +  m_mi.stateBounds[2 * i];
 	m_seen[i] = true;
+    }
+}
+
+void planning_models::StateParams::perturbStateGroup(double factor, const std::string &group)    
+{   
+    perturbStateGroup(factor, m_owner->getGroupID(group));
+}
+
+
+void planning_models::StateParams::perturbStateGroup(double factor, int groupID)    
+{   
+    assert(groupID >= 0 && groupID < (int)m_owner->getGroupCount());
+    for (unsigned int i = 0 ; i < m_mi.groupStateIndexList[groupID].size() ; ++i)
+    {
+	unsigned int j = m_mi.groupStateIndexList[groupID][i];
+	m_params[j] += factor * (m_mi.stateBounds[2 * j + 1] - m_mi.stateBounds[2 * j]) * (2.0 * ((double)rand() / (RAND_MAX + 1.0)) - 1.0);
+	m_seen[j] = true;
     }
 }
 

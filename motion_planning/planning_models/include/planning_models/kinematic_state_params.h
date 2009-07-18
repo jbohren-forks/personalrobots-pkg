@@ -73,8 +73,20 @@ namespace planning_models
 	/** \brief Construct a random state */
 	void randomState(void);
 
+	/** \brief Construct a random state for a group */
+	void randomStateGroup(const std::string &group);
+
+	/** \brief Construct a random state for a group */
+	void randomStateGroup(int groupID);
+
 	/** \brief Perturb state. Each dimension is perturbed by a factor of its range */
 	void perturbState(double factor);
+
+	/** \brief Perturb state of a group. Each dimension is perturbed by a factor of its range */
+	void perturbStateGroup(double factor, const std::string &group);
+
+	/** \brief Perturb state of a group. Each dimension is perturbed by a factor of its range */
+	void perturbStateGroup(double factor, int groupID);
 	
 	/** \brief Update parameters so that they are within the specified bounds */
 	void enforceBounds(void);
