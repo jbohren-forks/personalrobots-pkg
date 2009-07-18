@@ -150,12 +150,8 @@ void Stanleyi::collectObjectsFromImageVectorized(int samples_per_img, vector<obj
   
   // -- Call all descriptors, get vectorized results.
   for(size_t i=0; i<descriptor_.size(); i++) {
-    //Mat m = cvarrToMat(img_);
     descriptor_[i]->compute(img_, desired, results[i]);
-    //cout << "Got " << results[i].size() << " features" << endl;
-    //cout << "with " << results[i][0].size() << " elements each. " << endl;
   }
-
 
   // -- Copy into objects.
   for(int i=0; i<samples_per_img; i++)  {
@@ -422,7 +418,7 @@ void Stanleyi::testContours(string bagfile, string label_dir) {
     masks.push_back(mask);
     imgs.push_back(cvCloneImage(img_));
   }
-  ContourFragmentCollector cfc(10);
+  ContourFragmentManager cfc(10);
   cfc.learnContours(imgs, masks);
   cfc.saveContours("contour_fragments");
 }
