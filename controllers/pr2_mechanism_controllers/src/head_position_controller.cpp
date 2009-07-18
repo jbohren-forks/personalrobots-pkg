@@ -74,7 +74,7 @@ bool HeadPositionController::init(mechanism::RobotState *robot_state, const ros:
 {
   node_ = n;
 
-  // get name link names from the param server
+// get name link names from the param server
   if (!node_.getParam("pan_link_name", pan_link_name_)){
     ROS_ERROR("HeadPositionController: No pan link name found on parameter server (namespace: %s)",
               node_.getNamespace().c_str());
@@ -193,12 +193,12 @@ void HeadPositionController::pointHead(const tf::MessageNotifier<robot_msgs::Poi
 
   pan_out_ = atan2(pan_point.y(), pan_point.x());
 
-  if(pan_point.x()>0)
-    tilt_out_ = atan2(-pan_point.z(), pan_point.x());
-  else if (pan_point.x()>0 && -pan_point.z()>=0)
-    tilt_out_ = atan2(-pan_point.z(), pan_point.x())+M_PI;
-  else
-    tilt_out_ = atan2(-pan_point.z(), pan_point.x())-M_PI;
+  Stamped<Point> tilt_point;
+  pointStampedMsgToTF(*point_msg, tilt_point);
+  tf_.transformPoint(pan_link_name_, tilt_point, tilt_point);
+
+  tilt_out_ = atan2(-tilt_point.z(), tilt_point.x());
+
 }
 
 void HeadPositionController::pointFrameOnHead(const tf::MessageNotifier<robot_msgs::PointStamped>::MessagePtr& point_msg)
