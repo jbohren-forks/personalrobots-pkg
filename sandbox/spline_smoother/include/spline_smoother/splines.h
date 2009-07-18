@@ -81,17 +81,11 @@ void sampleQuinticSpline(std::vector<double>& coefficients, double time,
 void sampleCubicSpline(std::vector<double>& coefficients, double time,
     double& position, double& velocity, double& acceleration);
 
-/**
- * \brief Generates powers of 'x' upto n (0 to n) and puts them in 'powers'
- *
- * powers must be an array of size n+1
- */
-void generatePowers(int n, double x, double* powers);
 
 /////////////////////////// inline implementations follow //////////////////////////////
 
 
-inline void generatePowers(int n, double x, double* powers)
+static inline void generatePowers(int n, double x, double* powers)
 {
   powers[0] = 1.0;
   for (int i=1; i<=n; i++)
@@ -99,7 +93,6 @@ inline void generatePowers(int n, double x, double* powers)
     powers[i] = powers[i-1]*x;
   }
 }
-
 
 inline void getQuinticSplineCoefficients(double start_pos, double start_vel, double start_acc,
     double end_pos, double end_vel, double end_acc, double time, std::vector<double>& coefficients)
