@@ -115,7 +115,6 @@ namespace planning_environment
 	/** \brief Return true if a map update has been received in the last sec seconds. If sec < 10us, this function always returns true. */
 	bool isMapUpdated(double sec) const;
 	
-
 	/** \brief Wait until a map is received */
 	void waitForMap(void) const;	
 
@@ -123,6 +122,12 @@ namespace planning_environment
 	const ros::Time& lastMapUpdate(void) const
 	{
 	    return lastMapUpdate_;
+	}
+	
+	/** \brief Returns the padding used for pointclouds (for collision checking) */
+	double getPointCloudPadd(void) const
+	{
+	    return pointcloud_padd_;
 	}
 	
     protected:
@@ -137,6 +142,7 @@ namespace planning_environment
 	CollisionModels                                                *cm_;
 	collision_space::EnvironmentModel                              *collisionSpace_;
 	boost::mutex                                                    mapUpdateLock_;
+	double                                                          pointcloud_padd_;
 	
 	bool                                                            haveMap_;
 	ros::Time                                                       lastMapUpdate_;	

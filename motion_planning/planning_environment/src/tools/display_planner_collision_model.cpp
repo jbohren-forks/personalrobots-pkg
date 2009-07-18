@@ -123,7 +123,7 @@ protected:
 	    const robot_msgs::Point32 &point = collisionMap->boxes[i].center;
 	    const robot_msgs::Point32 &extents = collisionMap->boxes[i].extents;
 	    sendPoint(i, nh_.getName(), point.x, point.y, point.z,
-		      std::max(std::max(extents.x, extents.y), extents.z) * 0.867,
+		      std::max(std::max(extents.x, extents.y), extents.z) * 0.867 + collisionSpaceMonitor_->getPointCloudPadd(),
 		      collisionMap->header);
 	}
     }
@@ -182,7 +182,7 @@ private:
 
 	case mapping_msgs::Object::MESH:
 	    mk.type = visualization_msgs::Marker::LINE_LIST;
-	    mk.scale.x = mk.scale.y = mk.scale.z = 0.02;
+	    mk.scale.x = mk.scale.y = mk.scale.z = 0.01;
 	    {
 		unsigned int nt = obj.triangles.size() / 3;
 		for (unsigned int i = 0 ; i < nt ; ++i)

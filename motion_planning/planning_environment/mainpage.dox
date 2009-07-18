@@ -202,6 +202,8 @@ Reads the following parameters from the parameter server
 
  - @b "~bounding_planes"/string : a sequence of plane equations specified as "a1 b1 c1 d1 a2 b2 c2 d2 ..." where each plane is defined by the equation ax+by+cz+d=0
 
+ - @b "~pointcloud_padd"/double : additional padding to be used when collision checking agains pointclouds (the padding for the robot will still be used)
+
 A robot description and its corresponding planning and collision descriptions are assumed to be loaded on the parameter server as well.
 
 Sets the following parameters on the parameter server

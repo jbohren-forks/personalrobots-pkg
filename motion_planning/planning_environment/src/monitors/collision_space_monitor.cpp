@@ -68,6 +68,8 @@ void planning_environment::CollisionSpaceMonitor::setupCSM(void)
     // a list of static planes bounding the environment
     std::string planes;
     nh_.param<std::string>("~bounding_planes", planes, std::string());
+    nh_.param<double>("~pointcloud_padd", pointcloud_padd_, 0.01);
+
     std::stringstream ss(planes);
     std::vector<double> planeValues;
     if (!planes.empty())
@@ -181,7 +183,7 @@ void planning_environment::CollisionSpaceMonitor::updateCollisionSpace(const map
 	    data[i4 + 1] = pso.point.y;
 	    data[i4 + 2] = pso.point.z;
 	    
-	    data[i4 + 3] = maxCoord(collisionMap->boxes[i].extents) * 0.867;
+	    data[i4 + 3] = maxCoord(collisionMap->boxes[i].extents) * 0.867 + pointcloud_padd_;
 	}
 	
 	if (err)
@@ -198,7 +200,7 @@ void planning_environment::CollisionSpaceMonitor::updateCollisionSpace(const map
 	    data[i4 + 1] = collisionMap->boxes[i].center.y;
 	    data[i4 + 2] = collisionMap->boxes[i].center.z;
 	    
-	    data[i4 + 3] = maxCoord(collisionMap->boxes[i].extents) * 0.867;
+	    data[i4 + 3] = maxCoord(collisionMap->boxes[i].extents) * 0.867 + pointcloud_padd_;
 	}
     }
     
