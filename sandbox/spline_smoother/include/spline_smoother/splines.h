@@ -53,18 +53,61 @@ namespace spline_smoother
  * be sampled as:
  * x = coefficients[0]*t^0 + coefficients[1]*t^1 ... coefficients[5]*t^5
  */
+void getQuinticSplineCoefficients(double start_pos, double start_vel, double start_acc,
+    double end_pos, double end_vel, double end_acc, double time, std::vector<double>& coefficients);
+
+/**
+ * \brief Calculates cubic spline coefficients given the start and end way-points
+ *
+ * The input to this function is the start and end way-point, with position, velocity
+ * and the duration of the spline segment. (assumes that the spline runs from 0 to time)
+ *
+ * Returns 4 coefficients of the quintic polynomial in the "coefficients" vector. The spline can then
+ * be sampled as:
+ * x = coefficients[0]*t^0 + coefficients[1]*t^1 ... coefficients[3]*t^3
+ */
+void getCubicSplineCoefficients(double start_pos, double start_vel,
+    double end_pos, double end_vel, double time, std::vector<double>& coefficients);
+
+/**
+ * \brief Samples a quintic spline segment at a particular time
+ */
+void sampleQuinticSpline(std::vector<double>& coefficients, double time,
+    double& position, double& velocity, double& acceleration);
+
+/**
+ * \brief Samples a cubic spline segment at a particular time
+ */
+void sampleCubicSpline(std::vector<double>& coefficients, double time,
+    double& position, double& velocity, double& acceleration);
+
+/**
+ * \brief Generates powers of 'x' upto n (0 to n) and puts them in 'powers'
+ *
+ * powers must be an array of size n+1
+ */
+void generatePowers(int n, double x, double* powers);
+
+/////////////////////////// inline implementations follow //////////////////////////////
+
+
+inline void generatePowers(int n, double x, double* powers)
+{
+  powers[0] = 1.0;
+  for (int i=1; i<=n; i++)
+  {
+    powers[i] = powers[i-1]*x;
+  }
+}
+
+
 inline void getQuinticSplineCoefficients(double start_pos, double start_vel, double start_acc,
     double end_pos, double end_vel, double end_acc, double time, std::vector<double>& coefficients)
 {
   coefficients.resize(6);
 
-  // create powers of time:
   double T[6];
-  T[0] = 1.0;
-  for (int i=1; i<=5; i++)
-  {
-    T[i] = T[i-1]*time;
-  }
+  generatePowers(5, time, T);
 
   coefficients[0] = start_pos;
   coefficients[1] = start_vel;
@@ -86,11 +129,7 @@ inline void sampleQuinticSpline(std::vector<double>& coefficients, double time,
 {
   // create powers of time:
   double t[6];
-  t[0] = 1.0;
-  for (int i=1; i<=5; i++)
-  {
-    t[i] = t[i-1]*time;
-  }
+  generatePowers(5, time, t);
 
   position = t[0]*coefficients[0] +
       t[1]*coefficients[1] +
@@ -109,6 +148,39 @@ inline void sampleQuinticSpline(std::vector<double>& coefficients, double time,
       6.0*t[1]*coefficients[3] +
       12.0*t[2]*coefficients[4] +
       20.0*t[3]*coefficients[5];
+}
+
+inline void getCubicSplineCoefficients(double start_pos, double start_vel,
+    double end_pos, double end_vel, double time, std::vector<double>& coefficients)
+{
+  coefficients.resize(4);
+
+  double T[4];
+  generatePowers(3, time, T);
+
+  coefficients[0] = start_pos;
+  coefficients[1] = start_vel;
+  coefficients[2] = (-3.0*start_pos + 3.0*end_pos - 2.0*start_vel*T[1] - end_vel*T[1]) / T[2];
+  coefficients[3] = (2.0*start_pos - 2.0*end_pos + start_vel*T[1] + end_vel*T[1]) / T[3];
+}
+
+inline void sampleCubicSpline(std::vector<double>& coefficients, double time,
+    double& position, double& velocity, double& acceleration)
+{
+  double t[4];
+  generatePowers(3, time, t);
+
+  position = t[0]*coefficients[0] +
+      t[1]*coefficients[1] +
+      t[2]*coefficients[2] +
+      t[3]*coefficients[3];
+
+  velocity = t[0]*coefficients[1] +
+      2.0*t[1]*coefficients[2] +
+      3.0*t[2]*coefficients[3];
+
+  acceleration = 2.0*t[0]*coefficients[2] +
+      6.0*t[1]*coefficients[3];
 }
 
 } // namespace spline_smoother

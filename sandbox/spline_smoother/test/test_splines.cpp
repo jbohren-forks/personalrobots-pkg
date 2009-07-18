@@ -74,6 +74,34 @@ TEST(TestSplines, testQuinticCoefficients)
   EXPECT_NEAR(bc[5], test_bc[5], tolerance);
 }
 
+TEST(TestSplines, testCubicCoefficients)
+{
+  // generate random boundary conditions:
+  double bc[4];
+  for (int i=0; i<4; i++)
+    bc[i] = getRandomNumber(-1.0, 1.0);
+
+  // and a random time:
+  double time = getRandomNumber(0.5,10.0);
+
+  // get the spline coefficients:
+  std::vector<double> coeffs;
+  getCubicSplineCoefficients(bc[0], bc[1], bc[2], bc[3], time, coeffs);
+
+  // now sample the spline at t=0 and t=time to cross-check
+  double test_bc[4];
+  double dummy;
+  sampleCubicSpline(coeffs, 0, test_bc[0], test_bc[1], dummy);
+  sampleCubicSpline(coeffs, time, test_bc[2], test_bc[3], dummy);
+
+  double tolerance=1e-10;
+
+  EXPECT_NEAR(bc[0], test_bc[0], tolerance);
+  EXPECT_NEAR(bc[1], test_bc[1], tolerance);
+  EXPECT_NEAR(bc[2], test_bc[2], tolerance);
+  EXPECT_NEAR(bc[3], test_bc[3], tolerance);
+}
+
 int main(int argc, char** argv)
 {
  testing::InitGoogleTest(&argc, argv);
