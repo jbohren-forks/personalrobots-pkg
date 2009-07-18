@@ -147,35 +147,25 @@ int main(int argc, char **argv)
 	if (res.objects.size() > 0)
 	{
 	    recognition_lambertian::TableTopObject obj = res.objects[0];
-	    ROS_INFO("point to grasp: %f %f %f", obj.pose.pose.position.x, obj.pose.pose.position.y, obj.pose.pose.position.z);
-	    obj.pose.pose.orientation.x = 0;
-	    obj.pose.pose.orientation.y = 0;
-	    obj.pose.pose.orientation.z = 0;
-	    obj.pose.pose.orientation.w = 1;
+	    ROS_INFO("point to grasp: %f %f %f", obj.object_pose.pose.position.x, obj.object_pose.pose.position.y, obj.object_pose.pose.position.z);
 	    
 	    mapping_msgs::ObjectInMap o1;
-	    o1.header = obj.pose.header;
+	    o1.header = obj.object_pose.header;
 	    o1.id = "Part1";
 	    o1.action = mapping_msgs::ObjectInMap::ADD;
 	    o1.object = obj.object;
-	    o1.pose = obj.pose.pose;
+	    o1.pose = obj.object_pose.pose;
 	    pub.publish(o1);
 	    
-	    //	    sleep(10);
-	    obj.pose.pose.position.x -= 0.15;
-	    obj.pose.pose.position.z += 0.05;
 	    
 	    
 	    int32_t                         feedback;
 	    pr2_robot_actions::MoveArmGoal  goal;
 	    
 	    goal.goal_constraints.set_pose_constraint_size(1);
-	    obj.pose.header.stamp = ros::Time::now();
-	    goal.goal_constraints.pose_constraint[0].pose.header = obj.pose.header;
-	    
+	    goal.goal_constraints.pose_constraint[0].pose = obj.grasp_pose;
 	    goal.goal_constraints.pose_constraint[0].link_name = "r_wrist_roll_link";
-	    goal.goal_constraints.pose_constraint[0].pose.pose = obj.pose.pose;
-
+	    
 	    goal.goal_constraints.pose_constraint[0].position_tolerance_above.x = 0.02;
 	    goal.goal_constraints.pose_constraint[0].position_tolerance_below.x = 0.02;
 
@@ -197,7 +187,7 @@ int main(int argc, char **argv)
 		motion_planning_msgs::PoseConstraint::POSITION_XYZ + 
 		motion_planning_msgs::PoseConstraint::ORIENTATION_RPY;
 	    
-	    sendPoint(vmPub, obj.pose.header, obj.pose.pose.position.x, obj.pose.pose.position.y, obj.pose.pose.position.z);
+	    sendPoint(vmPub, obj.grasp_pose.header, obj.grasp_pose.pose.position.x, obj.grasp_pose.pose.position.y, obj.grasp_pose.pose.position.z);
 	    
 	    if (move_arm.execute(goal, feedback, ros::Duration(60.0)) != robot_actions::SUCCESS)
 		ROS_ERROR("failed achieving goal");
