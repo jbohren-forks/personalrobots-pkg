@@ -78,6 +78,14 @@ public:
 		data[i4 + 3] = 0.02;
 		em->clearObstacles();
 		em->addPointCloudSpheres("points", 1, data + i4);
+		if (n < 100)
+		{
+		    collision_space::EnvironmentModel *clone = em->clone();
+		    clone->updateRobotModel();
+		    if (clone->isCollision() != em->isCollision())
+			ROS_ERROR("Error in cloning");
+		    delete clone;
+		}
 	    }
 	    while(em->isCollision());
 	}
@@ -89,8 +97,7 @@ public:
 	delete[] data;
 
 	ROS_INFO("Collision (should be 0): %d", em->isCollision());
-
-
+	
 	const unsigned int K = 10000;
 	
 	ros::WallTime tm = ros::WallTime::now();
@@ -108,6 +115,18 @@ public:
 	for (unsigned int i = 0 ; i < K ; ++i)
 	    em->isSelfCollision();
 	ROS_INFO("%f collision tests per second (only self collision checking)", (double)K/(ros::WallTime::now() - tm).toSec());
+
+	const unsigned int C = 100;
+	tm = ros::WallTime::now();
+	for (unsigned int i = 0 ; i < C ; ++i)
+	{
+	    collision_space::EnvironmentModel *clone = em->clone();
+	    clone->updateRobotModel();
+	    if (em->isCollision() != clone->isCollision())
+		ROS_ERROR("Cloning is problematic");
+	    delete clone;
+	}	
+	ROS_INFO("%f collision tests + clones per second", (double)C/(ros::WallTime::now() - tm).toSec());
     }
 
     void testCollision(void)

@@ -163,9 +163,13 @@ dGeomID collision_space::EnvironmentModelODE::createODEGeom(dSpaceID space, ODES
 		dTriMeshDataID data = dGeomTriMeshDataCreate();
 		dGeomTriMeshDataBuildDouble(data, vertices, sizeof(double) * 3, mesh->vertexCount, indices, icount, sizeof(dTriIndex) * 3);
 		g = dCreateTriMesh(space, data, NULL, NULL, NULL);
-		storage.meshVertices.push_back(vertices);
-		storage.meshIndices.push_back(indices);
-		storage.meshData.push_back(data);
+		unsigned int p = storage.mesh.size();
+		storage.mesh.resize(p + 1);
+		storage.mesh[p].vertices = vertices;
+		storage.mesh[p].indices = indices;
+		storage.mesh[p].data = data;
+		storage.mesh[p].nVertices = mesh->vertexCount;
+		storage.mesh[p].nIndices = icount;
 	    }
 	}
 	
@@ -529,7 +533,7 @@ void collision_space::EnvironmentModelODE::testCollision(CollisionData *cdata)
         /* check collision with other ode bodies */
 	for (std::map<std::string, CollisionNamespace*>::iterator it = m_collNs.begin() ; it != m_collNs.end() && !cdata->done ; ++it)
 	    testBodyCollision(it->second, cdata);
-        cdata->done = true;
+	cdata->done = true;
     }
 }
 
@@ -616,9 +620,77 @@ int collision_space::EnvironmentModelODE::setCollisionCheck(const std::string &l
     return result;    
 }
 
-dGeomID collision_space::EnvironmentModelODE::copyGeom(dSpaceID space, ODEStorage &storage, dGeomID geom) const
+dGeomID collision_space::EnvironmentModelODE::copyGeom(dSpaceID space, ODEStorage &storage, dGeomID geom, ODEStorage &sourceStorage) const
 {
-    return NULL;
+    int c = dGeomGetClass(geom);
+    dGeomID ng = NULL;
+    bool location = true;
+    switch (c)
+    {
+    case dSphereClass:
+	ng = dCreateSphere(space, dGeomSphereGetRadius(geom));
+	break;
+    case dBoxClass:
+	{
+	    dVector3 r;
+	    dGeomBoxGetLengths(geom, r);
+	    ng = dCreateBox(space, r[0], r[1], r[2]);
+	}
+	break;
+    case dCylinderClass:
+	{
+	    dReal r, l;
+	    dGeomCylinderGetParams(geom, &r, &l);
+	    ng = dCreateCylinder(space, r, l);
+	}
+	break;
+    case dPlaneClass:
+	{
+	    dVector4 p;
+	    dGeomPlaneGetParams(geom, p);
+	    ng = dCreatePlane(space, p[0], p[1], p[2], p[3]);
+	    location = false;
+	}
+	break;
+    case dTriMeshClass:
+	{
+	    dTriMeshDataID tdata = dGeomTriMeshGetData(geom);
+	    dTriMeshDataID cdata = dGeomTriMeshDataCreate();
+	    for (unsigned int i = 0 ; i < sourceStorage.mesh.size() ; ++i)
+		if (sourceStorage.mesh[i].data == tdata)
+		{
+		    unsigned int p = storage.mesh.size();
+		    storage.mesh.resize(p + 1);
+		    storage.mesh[p].nVertices = sourceStorage.mesh[i].nVertices;
+		    storage.mesh[p].nIndices = sourceStorage.mesh[i].nIndices;
+		    storage.mesh[p].indices = new dTriIndex[storage.mesh[p].nIndices];
+		    for (int j = 0 ; j < storage.mesh[p].nIndices ; ++j)
+			storage.mesh[p].indices[j] = sourceStorage.mesh[i].indices[j];
+		    storage.mesh[p].vertices = new double[storage.mesh[p].nVertices];
+		    for (int j = 0 ; j < storage.mesh[p].nVertices ; ++j)
+			storage.mesh[p].vertices[j] = sourceStorage.mesh[i].vertices[j];
+		    dGeomTriMeshDataBuildDouble(cdata, storage.mesh[p].vertices, sizeof(double) * 3, storage.mesh[p].nVertices, storage.mesh[p].indices, storage.mesh[p].nIndices, sizeof(dTriIndex) * 3);
+		    storage.mesh[p].data = cdata;
+		    break;
+		}
+	    ng = dCreateTriMesh(space, cdata, NULL, NULL, NULL);
+	}
+	break;
+    default:
+	assert(0); // this should never happen
+	break;
+    }
+    
+    if (ng && location)
+    {
+	const dReal *pos = dGeomGetPosition(geom);
+	dGeomSetPosition(ng, pos[0], pos[1], pos[2]);
+	dQuaternion q;
+	dGeomGetQuaternion(geom, q);
+	dGeomSetQuaternion(ng, q);
+    }
+    
+    return ng;
 }
 
 collision_space::EnvironmentModel* collision_space::EnvironmentModelODE::clone(void) const
@@ -642,11 +714,12 @@ collision_space::EnvironmentModel* collision_space::EnvironmentModelODE::clone(v
 	unsigned int n = it->second->geoms.size();
 	cn->geoms.reserve(n);
 	for (unsigned int i = 0 ; i < n ; ++i)
-	    cn->geoms.push_back(copyGeom(cn->space, cn->storage, it->second->geoms[i]));
+	    cn->geoms.push_back(copyGeom(cn->space, cn->storage, it->second->geoms[i], it->second->storage));
 	std::vector<dGeomID> geoms;
 	it->second->collide2.getGeoms(geoms);
+	n = geoms.size();
 	for (unsigned int i = 0 ; i < n ; ++i)
-	    cn->collide2.registerGeom(copyGeom(cn->space, cn->storage, geoms[i]));
+	    cn->collide2.registerGeom(copyGeom(cn->space, cn->storage, geoms[i], it->second->storage));
     }
     
     return env;    

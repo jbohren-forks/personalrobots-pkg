@@ -221,6 +221,15 @@ namespace collision_space
 	/** \brief Structure for maintaining ODE temporary data */
 	struct ODEStorage
 	{	
+	    struct Element
+	    {
+		double         *vertices;
+		dTriIndex      *indices;
+		dTriMeshDataID  data;
+		int             nIndices;
+		int             nVertices;
+	    };
+	    
 	    ~ODEStorage(void)
 	    {
 		clear();
@@ -228,21 +237,17 @@ namespace collision_space
 	    
 	    void clear(void)
 	    {
-		for (unsigned int i = 0 ; i < meshIndices.size() ; ++i)
-		    delete[] meshIndices[i];
-		meshIndices.clear();
-		for (unsigned int i = 0 ; i < meshVertices.size() ; ++i)
-		    delete[] meshVertices[i];
-		meshVertices.clear();
-		for (unsigned int i = 0 ; i < meshData.size() ; ++i)
-		    dGeomTriMeshDataDestroy(meshData[i]);
-		meshData.clear();
+		for (unsigned int i = 0 ; i < mesh.size() ; ++i)
+		{
+		    delete[] mesh[i].indices;
+		    delete[] mesh[i].vertices;
+		    dGeomTriMeshDataDestroy(mesh[i].data);
+		}
+		mesh.clear();
 	    }
 	    
 	    /* Pointers for ODE indices; we need this around in ODE's assumed datatype */
-	    std::vector<double*>        meshVertices;
-	    std::vector<dTriIndex*>     meshIndices;
-	    std::vector<dTriMeshDataID> meshData;
+	    std::vector<Element> mesh;
 	};
 	
 	struct ModelInfo
@@ -315,7 +320,7 @@ namespace collision_space
 	/** \brief Internal function for collision detection */
 	void testBodyCollision(CollisionNamespace *cn, CollisionData *data);
 
-	dGeomID copyGeom(dSpaceID space, ODEStorage &storage, dGeomID geom) const;
+	dGeomID copyGeom(dSpaceID space, ODEStorage &storage, dGeomID geom, ODEStorage &sourceStorage) const;
 	void    createODERobotModel(void);	
 	dGeomID createODEGeom(dSpaceID space, ODEStorage &storage, const shapes::Shape *shape, double scale, double padding);
 	void    updateGeom(dGeomID geom, const btTransform &pose) const;	
