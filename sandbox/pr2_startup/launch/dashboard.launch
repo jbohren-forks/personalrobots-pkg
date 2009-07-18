@@ -1,0 +1,3 @@
+<launch>
+  <node pkg="pr2_dashboard" type="pr2_dashboard" />
+</launch>

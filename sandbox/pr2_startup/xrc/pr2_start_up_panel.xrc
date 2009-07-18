@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<resource xmlns="http://www.wxwindows.org/wxxrc" version="2.3.0.1">
+	<object class="wxPanel" name="PR2StartUpPanel">
+		<style>wxTAB_TRAVERSAL</style>
+		<size>410,318</size>
+		<object class="wxBoxSizer">
+			<orient>wxVERTICAL</orient>
+			<object class="sizeritem">
+				<option>1</option>
+				<flag>wxEXPAND</flag>
+				<border>5</border>
+				<object class="wxStaticBoxSizer">
+					<orient>wxVERTICAL</orient>
+					<label>PR-2 Start Up</label>
+					<object class="sizeritem">
+						<option>0</option>
+						<flag>wxEXPAND</flag>
+						<border>5</border>
+						<object class="wxStaticBoxSizer">
+							<orient>wxHORIZONTAL</orient>
+							<label>Status</label>
+							<object class="sizeritem">
+								<option>1</option>
+								<flag>wxALL</flag>
+								<border>5</border>
+								<object class="wxTextCtrl" name="m_textCtrl4">
+									<value>roscore</value>
+									<maxlength>0</maxlength>
+								</object>
+							</object>
+							<object class="sizeritem">
+								<option>1</option>
+								<flag>wxALL</flag>
+								<border>5</border>
+								<object class="wxTextCtrl" name="m_textCtrl5">
+									<value>robot</value>
+									<maxlength>0</maxlength>
+								</object>
+							</object>
+							<object class="sizeritem">
+								<option>1</option>
+								<flag>wxALL</flag>
+								<border>5</border>
+								<object class="wxTextCtrl" name="m_textCtrl6">
+									<value>joystick</value>
+									<maxlength>0</maxlength>
+								</object>
+							</object>
+						</object>
+					</object>
+					<object class="sizeritem">
+						<option>1</option>
+						<flag>wxEXPAND</flag>
+						<border>5</border>
+						<object class="wxStaticBoxSizer">
+							<orient>wxVERTICAL</orient>
+							<label>Launch</label>
+							<object class="sizeritem">
+								<option>0</option>
+								<flag>wxALL|wxEXPAND</flag>
+								<border>5</border>
+								<object class="wxButton" name="m_button7">
+									<label>roscore</label>
+									<default>0</default>
+								</object>
+							</object>
+							<object class="sizeritem">
+								<option>0</option>
+								<flag>wxALL|wxEXPAND</flag>
+								<border>5</border>
+								<object class="wxButton" name="m_button8">
+									<label>robot</label>
+									<default>0</default>
+								</object>
+							</object>
+							<object class="sizeritem">
+								<option>0</option>
+								<flag>wxALL|wxEXPAND</flag>
+								<border>5</border>
+								<object class="wxButton" name="m_button9">
+									<label>joystick</label>
+									<default>0</default>
+								</object>
+							</object>
+						</object>
+					</object>
+					<object class="sizeritem">
+						<option>0</option>
+						<flag>wxEXPAND</flag>
+						<border>5</border>
+						<object class="wxStaticBoxSizer">
+							<orient>wxHORIZONTAL</orient>
+							<label>Visualize</label>
+							<object class="sizeritem">
+								<option>1</option>
+								<flag>wxALL</flag>
+								<border>5</border>
+								<object class="wxButton" name="m_button10">
+									<label>dashboard</label>
+									<default>0</default>
+								</object>
+							</object>
+							<object class="sizeritem">
+								<option>1</option>
+								<flag>wxALL</flag>
+								<border>5</border>
+								<object class="wxButton" name="m_button11">
+									<label>rviz</label>
+									<default>0</default>
+								</object>
+							</object>
+							<object class="sizeritem">
+								<option>1</option>
+								<flag>wxALL</flag>
+								<border>5</border>
+								<object class="wxButton" name="m_button12">
+									<label>rxgraph</label>
+									<default>0</default>
+								</object>
+							</object>
+						</object>
+					</object>
+				</object>
+			</object>
+		</object>
+	</object>
+</resource>
