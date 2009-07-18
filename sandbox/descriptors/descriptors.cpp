@@ -539,7 +539,7 @@ void ContourFragmentDescriptor::compute(IplImage* img, const cv::Vector<Keypoint
     //IplImage* vis = cvCloneImage(edge_img);
     IplImage* vis = cvCreateImage(cvGetSize(img), IPL_DEPTH_8U, 3);
     cvCvtColor(edge_img, vis, CV_GRAY2BGR);
-    matches_->show(vis, 100000, .7);
+    matches_->show(vis, 100000);
     CVSHOW("vis", vis);
     CVSHOW("edge", edge_img);
     cvWaitKey(0);
