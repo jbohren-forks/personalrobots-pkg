@@ -98,6 +98,7 @@ class ImageDescriptor {
   virtual void clearImageCache() {}
   //! Show the input image and a red + at the point at which the descriptor is being computed.
   void commonDebug(int row, int col);
+  void commonDebug(Keypoint kp, IplImage* vis = NULL);
   //! Sets the img_ pointer and clears the image cache.
   virtual void setImage(IplImage* img);
   virtual ~ImageDescriptor() {};
@@ -146,23 +147,36 @@ class IntegralImageDescriptor : public ImageDescriptor {
   ~IntegralImageDescriptor();
   void integrate();
   virtual void clearImageCache();
-  virtual void clearPointCache() = 0;
   bool integrateRect(float* result, int row_offset, int col_offset, int half_height, int half_width, float* area = NULL);
-
+  bool integrateRect(float* result, const Keypoint& kp, const CvRect& rect);
 };
 
 /**
- * Experimental texture descriptor based on integral images.  
+ * Haar descriptor like those from Viola-Jones.
+ */
+class HaarDescriptor : public IntegralImageDescriptor {
+ public:
+  cv::Vector<CvRect> rects_;
+  //! e.g. weights_[i] == -1 if the sum of values in rects_[i] should be subtracted.
+  cv::Vector<int> weights_;
+
+  HaarDescriptor(cv::Vector<CvRect> rects, cv::Vector<int> weights, IntegralImageDescriptor* ii_provider = NULL);
+  //! Scale of the window is determined by Keypoint.
+  void compute(IplImage* img, const cv::Vector<Keypoint>& points, vvf& results);
+};
+
+vector<ImageDescriptor*> setupDefaultHaarDescriptors();
+
+/**
+ * Experimental texture descriptor based on integral images.  TODO: Add more textures, make scale be determined by keypoint.
  */
 class IntegralImageTexture : public IntegralImageDescriptor {
  public:
   int scale_;
 
   IntegralImageTexture(int scale = 1, IntegralImageDescriptor* ii_provider = NULL);
-  //bool compute(Eigen::MatrixXf** result);
   void compute(IplImage* img, const cv::Vector<Keypoint>& points, vvf& results);
   void compute(IplImage* img, const Keypoint& point, cv::Vector<float>& result);
-  void clearPointCache() {}
 };
 
 
@@ -171,7 +185,7 @@ class IntegralImageTexture : public IntegralImageDescriptor {
 ****************************************************************************/
 
 /**
- * 
+ * Class to load, save, and extract contour fragments. 
  */
 class ContourFragmentManager {
  public:
@@ -199,6 +213,9 @@ class ContourFragmentManager {
   bool contourTest(IplImage* cf);
 };
 
+/**
+ * Descriptor based on chamfer matching of contour fragments.  Under construction.
+ */
 class ContourFragmentDescriptor : public ImageDescriptor {
  public:
   ContourFragmentDescriptor* chamfer_provider_;
@@ -222,7 +239,9 @@ class ContourFragmentDescriptor : public ImageDescriptor {
 ***********  Superpixel Statistics
 ****************************************************************************/
 
-
+/**
+ * Abstract base class for all descriptors based on superpixels.
+ */
 class SuperpixelStatistic : public ImageDescriptor {
  public:
   //! (*index_)[i] returns the vector of CvPoints for segment i of the image.

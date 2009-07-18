@@ -134,7 +134,8 @@ void Stanleyi::collectObjectsFromImageVectorized(int samples_per_img, vector<obj
   for(int i=0; i<samples_per_img; i++)  {
     int r = rand() % img_->height;
     int c = rand() % img_->width;
-    desired.push_back(Keypoint(c, r));
+    int size = 1;
+    desired.push_back(Keypoint(c, r, size));
 
     if(mask_) {
       CvScalar s = cvGet2D(mask_, r, c);
@@ -555,12 +556,15 @@ vector<ImageDescriptor*> setupImageDescriptors() {
 //   d.push_back(sch3);
 //   d.push_back(sch4);
 
-
-  d.push_back(new ContourFragmentDescriptor(0, "contour_fragments"));
+  
+//  d.push_back(new ContourFragmentDescriptor(0, "contour_fragments"));
 //   IntegralImageTexture* iit = new IntegralImageTexture(1);
 //   d.push_back(iit);
 //   d.push_back(new IntegralImageTexture(2, iit));
 //   d.push_back(new IntegralImageTexture(3, iit));
+
+  vector<ImageDescriptor*> haar = setupDefaultHaarDescriptors();
+  d.insert(d.end(), haar.begin(), haar.end());
 
   return d;
 }

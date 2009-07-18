@@ -153,6 +153,7 @@ void ImageDescriptor::setImage(IplImage* img) {
 }
 
 void ImageDescriptor::commonDebug(int row, int col) {
+  cout << "commonDebug(int row, int col) is deprecated." << endl;
   IplImage* display = cvCloneImage(img_);
   cvResetImageROI(display);
   CvFont* numbFont = new CvFont();
@@ -162,6 +163,27 @@ void ImageDescriptor::commonDebug(int row, int col) {
   cvShowImage("Input Image", display);
   cvWaitKey(0);
   cvReleaseImage(&display);
+}
+
+void ImageDescriptor::commonDebug(Keypoint kp, IplImage* vis) {
+  int row = (int)kp.pt.y;
+  int col = (int)kp.pt.x;
+
+  bool cleanup = false;
+  if(!vis) {
+    cleanup = true;
+    vis = cvCloneImage(img_);
+    cvResetImageROI(vis);
+  }
+
+  CvFont* numbFont = new CvFont();
+  cvInitFont( numbFont, CV_FONT_VECTOR0, 1.0f, 1.0f, 0, 1);
+  cvPutText(vis, "+", cvPoint(col,row), numbFont, cvScalar(0,0,255));
+  CVSHOW("Input Image", vis);
+  cvWaitKey(0);
+
+  if(cleanup)
+    cvReleaseImage(&vis);
 }
 
 
@@ -1051,9 +1073,169 @@ bool IntegralImageDescriptor::integrateRect(float* result, int row_offset, int c
   return true;
 }
 
+
+bool IntegralImageDescriptor::integrateRect(float* result, const Keypoint& kp, const CvRect& rect) {
+  // -- Check that we have an integral image.
+  assert(ii_);
+
+  // -- Make sure that keypoint sizes are being used, and round to nearest int.
+  int multiplier = (int)kp.size;
+  assert(multiplier > 0);
+  
+
+  // -- Check bounds.
+  int ul_x = kp.pt.x + (rect.x * multiplier);
+  int ul_y = kp.pt.y + (rect.y * multiplier);
+  int ll_x = ul_x;
+  int ll_y = kp.pt.y + (rect.y * multiplier) + (rect.height * multiplier);
+  int ur_x = kp.pt.x + (rect.x * multiplier) + (rect.width * multiplier);
+  int ur_y = ul_y;
+  int lr_x = ur_x;
+  int lr_y = ll_y;
+  
+  if(ul_x < 0 || ul_y < 0 || lr_y >= img_->height || lr_x >= img_->width)  {
+    return false;
+  }
+
+  // -- Compute the rectangle sum.  +1 is because of ii_ dfn
+  *result =   CV_IMAGE_ELEM(ii_, int, ul_y    , ul_x    ) \
+            + CV_IMAGE_ELEM(ii_, int, lr_y + 1, lr_x + 1) \
+            - CV_IMAGE_ELEM(ii_, int, ur_y    , ur_x + 1) \
+            - CV_IMAGE_ELEM(ii_, int, ll_y + 1, ll_x    );
+
+  // -- Check that it's right.  
+//   int check = 0;
+//   float area2 = 0;
+//   for(int r=ul_y; r<=ll_y; r++) {
+//     for(int c=ul_x; c<=ur_x; c++) {
+//       check += CV_IMAGE_ELEM(gray_, uchar, r, c);
+//       area2++;
+//     }
+//   }
+//   if(abs(check - *result) > 0) {
+//     cout << check - *result << " difference for computing at row " << row_ << " and col " << col_ << endl;
+//     assert(0);
+//   }
+//   if(area) {
+//     //  cout << "theory: " << *area;
+//     //  cout << "  integrate: " << area2 << endl;
+//     assert(abs(*area - area2) < 1e-4);
+//   }
+
+  return true;
+}
+
+
+/***************************************************************************
+***********  ImageDescriptor::IntegralImageDescriptor::HaarDescriptor
+****************************************************************************/
+
+
+
+HaarDescriptor::HaarDescriptor(Vector<CvRect> rects, Vector<int> weights, IntegralImageDescriptor* ii_provider) :
+  IntegralImageDescriptor(ii_provider),
+  rects_(rects),
+  weights_(weights)
+{
+  assert(rects_.size() == weights_.size());
+  
+  char buf[100];
+  sprintf(buf, "_HaarDescriptor");
+  name_.append(buf);
+
+  for(size_t i=0; i<rects_.size(); ++i) {
+    CvRect& r = rects[i];
+    sprintf(buf, "_rect%d_weight%d_x%d_y%d_w%d_h%d", i, weights_[i], r.x, r.y, r.width, r.height);
+    name_.append(buf);
+  }
+
+  result_size_ = 1;
+}
+
+
+void HaarDescriptor::compute(IplImage* img, const cv::Vector<Keypoint>& points, vvf& results) {
+  img_ = img;
+  
+  // -- Get the integral image.
+  if(!ii_ && !ii_provider_)
+    integrate();
+  if(!ii_ && ii_provider_)  {
+    ii_ = ii_provider_->ii_;
+    gray_ = ii_provider_->gray_;
+  }
+  
+  // -- Setup results.
+  results.clear();
+  results.reserve(points.size());
+  float val = 0;
+
+  // -- Compute feature at all keypoints.
+  for(size_t i=0; i<points.size(); ++i) {
+    bool success = true;
+    results[i].reserve(result_size_);
+
+    for(size_t j=0; j<rects_.size(); ++j) {
+      success &= integrateRect(&val, points[i], rects_[j]); 
+      if(!success) {
+	results[i].clear();
+	break;
+      }
+      results[i][0] += val * weights_[j];
+    }
+  }
+
+  // -- Draw the rectangles for debugging.
+  if(debug_) {
+    cout << name_ << " descriptor: " << results[0][0] << endl;
+    IplImage* vis = cvCloneImage(img);
+    for(size_t i=0; i<rects_.size(); ++i) {
+      CvRect& r = rects_[i];
+      const Point2f& pt = points[0].pt;
+
+      CvScalar color;
+      if(weights_[i] > 0) 
+	color = cvScalar(0, 255, 0);
+      else 
+	color = cvScalar(0, 0, 255);
+
+      cvRectangle(vis, 
+		  cvPoint((int)pt.x + r.x, (int)pt.y + r.y), 
+		  cvPoint((int)pt.x + r.x + r.width, (int)pt.y + r.y + r.height), 
+		  color);
+    }
+    CVSHOW("Input Image", vis);
+    cvWaitKey(0);
+    //commonDebug(points[0], vis);
+    cvReleaseImage(&vis);
+  }
+}
+
+vector<ImageDescriptor*> setupDefaultHaarDescriptors() {
+  vector<ImageDescriptor*> haar;
+
+  
+  for(int scale = 1; scale < 11; scale+=2) {
+    Vector<CvRect> rects;
+    Vector<int> weights;
+
+    rects.push_back(cvRect(-4*scale, -4*scale, 4*scale, 8*scale));
+    weights.push_back(1);
+    rects.push_back(cvRect(0*scale, -4*scale, 4*scale, 8*scale));
+    weights.push_back(-1);
+    if(haar.size() == 0)
+      haar.push_back(new HaarDescriptor(rects, weights));
+    else
+      haar.push_back(new HaarDescriptor(rects, weights, (IntegralImageDescriptor*)haar[0]));
+  }
+
+  return haar;
+}
+
+
 /***************************************************************************
 ***********  ImageDescriptor::IntegralImageDescriptor::IntegralImageTexture
 ****************************************************************************/
+
 IntegralImageTexture::IntegralImageTexture(int scale, IntegralImageDescriptor* ii_provider) : 
   IntegralImageDescriptor(ii_provider), 
   scale_(scale) 
