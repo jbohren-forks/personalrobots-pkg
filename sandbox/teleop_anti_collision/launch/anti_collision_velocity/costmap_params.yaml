@@ -9,5 +9,5 @@ rolling_window: true
 width: 10.0
 height: 10.0
 resolution: 0.025
-origin_x: 0.0
-origin_y: 0.0
+origin_x: -5.0
+origin_y: -5.0

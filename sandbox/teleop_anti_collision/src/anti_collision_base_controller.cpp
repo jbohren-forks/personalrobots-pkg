@@ -92,6 +92,16 @@ namespace anti_collision_base_controller
     base_cmd_pub_ = ros_node_.advertise<robot_msgs::PoseDot>(base_cmd_topic,1);
 
     last_cmd_received_ = ros::Time();
+
+    std::vector<double> max_accns;
+    max_accns.push_back(acc_lim_x_);
+    max_accns.push_back(acc_lim_y_);
+    max_accns.push_back(acc_lim_theta_);
+
+    sim_trajectory_ = new trajectory::Trajectory(3);
+    sim_trajectory_->setMaxRates(max_accns);
+    sim_trajectory_->setInterpolationMethod("linear");
+    sim_trajectory_->autocalc_timing_ = true;
   }
 
   AntiCollisionBaseController::~AntiCollisionBaseController()
@@ -104,7 +114,7 @@ namespace anti_collision_base_controller
 						       double vx, double vy, double vtheta, 
 						       double vx_samp, double vy_samp, double vtheta_samp, 
                                                        double acc_x, double acc_y, double acc_theta, 
-						       base_local_planner::Trajectory& traj)
+						       base_local_planner::Trajectory& traj, double sim_time_local)
   {
     double x_i = x;
     double y_i = y;
@@ -120,9 +130,9 @@ namespace anti_collision_base_controller
     double vmag = sqrt(vx_samp * vx_samp + vy_samp * vy_samp);
 
     //compute the number of steps we must take along this trajectory to be "safe"
-    int num_steps = int(max((vmag * sim_time_) / sim_granularity_, abs(vtheta_samp) / sim_granularity_) + 0.5);
+    int num_steps = int(max((vmag * sim_time_local) / sim_granularity_, abs(vtheta_samp) / sim_granularity_) + 0.5);
 
-    double dt = sim_time_ / num_steps;
+    double dt = sim_time_local / num_steps;
     double time = 0.0;
 
     //create a potential trajectory
@@ -135,6 +145,38 @@ namespace anti_collision_base_controller
     if(num_steps == 0)
       return false;
 
+    std::vector<trajectory::Trajectory::TPoint> sim_point;
+    sim_point.resize(4);
+    for(int i=0; i < 4; i++)
+    {
+      sim_point[i].setDimension(3);
+    }
+    sim_point[0].q_[0] = vx;
+    sim_point[0].q_[1] = vy;
+    sim_point[0].q_[2] = vtheta;
+    sim_point[0].time_ = 0.0;
+
+    sim_point[1].q_[0] = vx_samp;
+    sim_point[1].q_[1] = vy_samp;
+    sim_point[1].q_[2] = vtheta_samp;
+    sim_point[1].time_ = 0.01;
+
+    sim_point[2].q_[0] = vx_samp;
+    sim_point[2].q_[1] = vy_samp;
+    sim_point[2].q_[2] = vtheta_samp;
+    sim_point[2].time_ = 0.5;
+
+    sim_point[3].q_[0] = 0.0;
+    sim_point[3].q_[1] = 0.0;
+    sim_point[3].q_[2] = 0.0;
+    sim_point[3].time_ = 0.51;
+    sim_trajectory_->setTrajectory(sim_point);
+
+    trajectory::Trajectory::TPoint sim_current_vel;
+    sim_current_vel.setDimension(3);
+
+    double total_time = sim_trajectory_->getTotalTime();
+    ROS_DEBUG("Total time for velocity transition: %f",total_time);
     for(int i = 0; i < num_steps; ++i)
     {
       //get map coordinates of a point
@@ -160,16 +202,24 @@ namespace anti_collision_base_controller
       //the point is legal... add it to the trajectory
       traj.addPoint(x_i, y_i, theta_i);
 
+
+      sim_trajectory_->sample(sim_current_vel,time);
+      vx_i = sim_current_vel.q_[0];
+      vy_i = sim_current_vel.q_[1];
+      vtheta_i = sim_current_vel.q_[2];
+
       //calculate velocities
-      vx_i = computeNewVelocity(vx_samp, vx_i, acc_x, dt);
-      vy_i = computeNewVelocity(vy_samp, vy_i, acc_y, dt);
-      vtheta_i = computeNewVelocity(vtheta_samp, vtheta_i, acc_theta, dt);
+//      vx_i = computeNewVelocity(vx_samp, vx_i, acc_x, dt);
+//      vy_i = computeNewVelocity(vy_samp, vy_i, acc_y, dt);
+//      vtheta_i = computeNewVelocity(vtheta_samp, vtheta_i, acc_theta, dt);
 
       //calculate positions
       x_i = computeNewXPosition(x_i, vx_i, vy_i, theta_i, dt);
       y_i = computeNewYPosition(y_i, vx_i, vy_i, theta_i, dt);
       theta_i = computeNewThetaPosition(theta_i, vtheta_i, dt);
 
+      if(time > std::max(0.2,total_time))
+        break;
     }
     double cost = -1.0;
     traj.cost_ = cost;
@@ -212,21 +262,24 @@ namespace anti_collision_base_controller
     double dScale = 0.1;
     double vx_tmp, vy_tmp, vtheta_tmp;
 
-    Trajectory traj;
-
+    base_local_planner::Trajectory traj;
+    double sim_time_local = sim_time_;
     while(not_done)
     {
       vx_tmp = vx_desired * scale;
       vy_tmp = vy_desired * scale;
       vtheta_tmp = vtheta_desired * scale;
-      if(generateTrajectory(x,y,theta,vx_current,vy_current,vtheta_current,vx_tmp,vy_tmp,vtheta_tmp,acc_lim_x_,acc_lim_y_,acc_lim_theta_,traj))
+      if(generateTrajectory(x,y,theta,vx_current,vy_current,vtheta_current,vx_tmp,vy_tmp,vtheta_tmp,acc_lim_x_,acc_lim_y_,acc_lim_theta_,traj,sim_time_local))
       {
         not_done = false;
       }
       scale -= dScale;
       if(scale < 0)
       {
-        not_done = false;
+          vx_tmp = 0.0;
+          vy_tmp = 0.0;
+          vtheta_tmp = 0.0;
+          not_done = false;
       }
     }
     vx_result = vx_tmp;
@@ -320,7 +373,7 @@ namespace anti_collision_base_controller
 
       if(ros::Time::now() - last_cmd_received_ > ros::Duration(timeout_))
       {
-        ROS_WARN("Last command was received too far back, setting current velocity to 0 for safety");
+        ROS_DEBUG("Last command was received too far back, setting current velocity to 0 for safety");
         vx_result = 0.0;
         vy_result = 0.0;
         vt_result = 0.0;

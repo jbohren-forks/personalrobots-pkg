@@ -61,6 +61,8 @@
 #include <tf/transform_listener.h>
 #include <tf/tf.h>
 
+#include <trajectory/trajectory.h>
+
 namespace anti_collision_base_controller {
   /**
    * @class AntiCollisionBaseController
@@ -104,12 +106,13 @@ namespace anti_collision_base_controller {
        * @param acc_y The y acceleration limit of the robot
        * @param acc_theta The theta acceleration limit of the robot
        * @param traj Will be set to the generated trajectory with its associated score 
+       * @param sim_time_local The time to simulate forward for 
        */
       bool generateTrajectory(double x, double y, double theta, 
 			      double vx, double vy, double vtheta, 
 			      double vx_samp, double vy_samp, double vtheta_samp, 
 			      double acc_x, double acc_y, double acc_theta, 
-			      base_local_planner::Trajectory& traj);
+			      base_local_planner::Trajectory& traj, double sim_time_local);
       /**
        * @brief  Checks the legality of the robot footprint at a position and orientation using the world model
        * @param x_i The x position of the robot 
@@ -211,6 +214,8 @@ namespace anti_collision_base_controller {
       ros::Time last_cmd_received_;
 
       double timeout_;
+
+      trajectory::Trajectory *sim_trajectory_;
   };
 };
 
