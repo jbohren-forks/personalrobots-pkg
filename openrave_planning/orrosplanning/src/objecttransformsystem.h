@@ -241,7 +241,7 @@ private:
                 }
 
                 b->tnew = itobj->second;
-
+                b->lastupdated = ros::Time::now();
                 // put somewhere at infinity until UpdateBodies thread gets to it
                 pbody->SetTransform(Transform(Vector(1,0,0,0), Vector(10000,10000,10000)));
             }

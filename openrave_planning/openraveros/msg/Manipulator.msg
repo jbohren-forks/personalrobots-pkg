@@ -17,3 +17,6 @@ uint8[] armjoints
 
 # name of ik solver using
 string iksolvername
+
+# manipulator name
+string name

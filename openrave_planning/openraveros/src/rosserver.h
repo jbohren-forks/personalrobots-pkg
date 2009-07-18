@@ -827,13 +827,14 @@ public:
                     rosmanip.armjoints[i] = itmanip->_vecarmjoints[i];
 
                 rosmanip.iksolvername = itmanip->GetIKSolverName();
+                rosmanip.name = itmanip->GetName();
             }
         }
         if( options & RobotInfo::Req_Sensors ) {
             info.sensors.resize(probot->GetSensors().size()); int index = 0;
             FOREACHC(its, probot->GetSensors()) {
                 openraveros::AttachedSensor& rossensor = info.sensors[index++];
-                rossensor.name = _stdwcstombs(its->GetName());
+                rossensor.name = its->GetName();
                 rossensor.attachedlink = its->GetAttachingLink()->GetIndex();
                 rossensor.trelative = GetAffineTransform(its->GetRelativeTransform());
 
@@ -1312,12 +1313,12 @@ public:
         boost::shared_ptr<SensorBase::SensorData> pdata(psensor->CreateSensorData());
 
         if( !pdata ) {
-            RAVELOG_ERRORA("Robot %S, failed to create sensor %S data\n", probot->GetName(), probot->GetSensors()[req.sensorindex].GetName());
+            RAVELOG_ERRORA("Robot %S, failed to create sensor %s data\n", probot->GetName(), probot->GetSensors()[req.sensorindex].GetName());
             return false;
         }
 
         if( !psensor->GetSensorData(pdata.get()) ) {
-            RAVELOG_ERRORA("Robot %S, failed to get sensor %S data\n", probot->GetName(), probot->GetSensors()[req.sensorindex].GetName());
+            RAVELOG_ERRORA("Robot %S, failed to get sensor %s data\n", probot->GetName(), probot->GetSensors()[req.sensorindex].GetName());
             return false;
         }
 
@@ -1398,7 +1399,7 @@ public:
 
             res.camimage.header.stamp = ros::Time::now();
             res.camimage.header.seq = pcameradata->id;
-            res.camimage.label = _stdwcstombs(probot->GetSensors()[req.sensorindex].GetName());
+            res.camimage.label = probot->GetSensors()[req.sensorindex].GetName();
             res.camimage.encoding = "rgb";
             res.camimage.depth = "uint8";
             std_msgs::MultiArrayLayout& layout = res.camimage.uint8_data.layout;

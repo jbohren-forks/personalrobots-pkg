@@ -4,6 +4,9 @@
   </description>
   <author>Rosen Diankov (rdiankov@cs.cmu.edu)</author>
   <license>BSD</license>
+  <export>
+    <cpp cflags="-I${prefix}/msg/cpp -I${prefix}/srv/cpp"/>
+  </export>
   <depend package="roscpp"/>
   <depend package="roscpp_sessions"/>
   <depend package="openrave"/>
