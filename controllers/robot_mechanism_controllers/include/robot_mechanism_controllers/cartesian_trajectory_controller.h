@@ -59,7 +59,6 @@ public:
   ~CartesianTrajectoryController();
 
   bool initXml(mechanism::RobotState *robot_state, TiXmlElement *config);
-  bool init(mechanism::RobotState *robot_state, const ros::NodeHandle &n);
 
   bool starting();
   void update();
@@ -70,14 +69,15 @@ private:
   KDL::Frame getPose();
   void TransformToFrame(const tf::Transform& trans, KDL::Frame& frame);
 
-  ros::NodeHandle node_;
-  ros::ServiceServer serve_move_to, serve_preempt;
-
+  // topic
   void command(const tf::MessageNotifier<robot_msgs::PoseStamped>::MessagePtr& pose_msg);
 
+  // service calls
   bool moveTo(robot_srvs::MoveToPose::Request &req, robot_srvs::MoveToPose::Response &resp);
   bool preempt(std_srvs::Empty::Request &req, std_srvs::Empty::Response &resp);
 
+  ros::Node* node_;
+  std::string controller_name_;
   double last_time_, time_started_, time_passed_, max_duration_;
   bool is_moving_, request_preempt_, exceed_tolerance_;
 
@@ -85,7 +85,7 @@ private:
   KDL::Twist twist_current_, tolerance_;
 
   // robot structure
-  mechanism::RobotState *robot_state_;
+  mechanism::RobotState *robot_state_;       
   mechanism::Chain chain_;
 
   // kdl stuff for kinematics
