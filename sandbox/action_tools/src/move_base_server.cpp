@@ -46,7 +46,7 @@ typedef action_tools::ActionServer<action_tools::MoveBaseGoal, robot_msgs::PoseS
 
 typedef MoveBaseActionServer::GoalHandle GoalHandle;
 
-void goalCB(GoalHandle goal_handle){
+void goalCB(){
   ROS_INFO("In goal callback");
 }
 
@@ -62,7 +62,7 @@ void updateLoop(double freq){
 
   ros::Publisher pub = n.advertise<robot_msgs::PoseStamped>("~current_goal", 1);
 
-  as.registerGoalCallback(boost::bind(&goalCB, _1));
+  as.registerGoalCallback(boost::bind(&goalCB));
 
   as.registerPreemptCallback(boost::bind(&preemptCB));
 
