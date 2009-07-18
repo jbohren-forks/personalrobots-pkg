@@ -22,6 +22,9 @@ typedef cv::Vector< cv::Vector<float> > vvf;
 ***********  Misc. useful classes.
 ****************************************************************************/
 
+/**
+ * Temporary class representing image keypoint.  This should be in opencv soon.
+ */
 class Keypoint
 {
  public:    
@@ -39,6 +42,10 @@ class Keypoint
   float response;
 };
 
+
+/**
+ * 1D histogram class.  Deprecated.  
+ */
 class Histogram {
 public:
   std::vector<float> bins_;
@@ -64,7 +71,9 @@ private:
 ***********  ImageDescriptor
 ****************************************************************************/
 
-
+/**
+ * Abstract base class for all descriptors.
+ */
 class ImageDescriptor {
  public:
   //! Name of descriptor.  Should be unique for any parameter setting.
@@ -99,6 +108,9 @@ class ImageDescriptor {
 ***********  Hog
 ****************************************************************************/
 
+/**
+ * Histogram of oriented gradients.  Wraps the opencv descriptor.
+ */
 class HogWrapper : public ImageDescriptor {
  public:
   cv::HOGDescriptor hog_;
@@ -118,7 +130,9 @@ class HogWrapper : public ImageDescriptor {
 ***********  Integral Image-based descriptors.
 ****************************************************************************/
 
-
+/**
+ * Abstract base class for descriptors that use integral images.
+ */
 class IntegralImageDescriptor : public ImageDescriptor {
  public:
   IplImage* ii_;
@@ -137,6 +151,9 @@ class IntegralImageDescriptor : public ImageDescriptor {
 
 };
 
+/**
+ * Experimental texture descriptor based on integral images.  
+ */
 class IntegralImageTexture : public IntegralImageDescriptor {
  public:
   int scale_;
@@ -153,11 +170,14 @@ class IntegralImageTexture : public IntegralImageDescriptor {
 ***********  Contour Fragments
 ****************************************************************************/
 
-class ContourFragmentCollector {
+/**
+ * 
+ */
+class ContourFragmentManager {
  public:
-  ContourFragmentCollector(int num_templates_per_label = 10, bool debug = false, int min_area = 30, 
+  ContourFragmentManager(int num_templates_per_label = 10, bool debug = false, int min_area = 30, 
 			   float min_density = 0.01, int min_side = 5, int min_edge_pix = 10, int min_edge_pix_besides_line = 5);
-  ~ContourFragmentCollector();
+  ~ContourFragmentManager();
   void learnContours(std::vector<IplImage*> imgs, std::vector<IplImage*> masks);
   void saveContours(string dir);
   void loadContours(string dir);
@@ -191,7 +211,7 @@ class ContourFragmentDescriptor : public ImageDescriptor {
 
  private:
   int cf_id_;
-  ContourFragmentCollector cfc_;
+  ContourFragmentManager cfc_;
   ChamferMatching* chamfer_;
   ChamferMatch* matches_;
 };

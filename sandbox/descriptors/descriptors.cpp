@@ -256,10 +256,10 @@ void HogWrapper::compute(IplImage* img, const Vector<Keypoint>& points, vvf& res
 
 
 /***************************************************************************
-***********  ContourFragmentCollector
+***********  ContourFragmentManager
 ****************************************************************************/
 
-ContourFragmentCollector::ContourFragmentCollector(int num_templates_per_label, bool debug, int min_area, 
+ContourFragmentManager::ContourFragmentManager(int num_templates_per_label, bool debug, int min_area, 
 						   float min_density, int min_side, int min_edge_pix, int min_edge_pix_besides_line) : 
   num_templates_per_label_(num_templates_per_label),
   debug_(debug),
@@ -271,14 +271,14 @@ ContourFragmentCollector::ContourFragmentCollector(int num_templates_per_label, 
 {
 }
 
-ContourFragmentCollector::~ContourFragmentCollector() {
+ContourFragmentManager::~ContourFragmentManager() {
   // -- Deallocate the contours.
   for(size_t i=0; i<contours_.size(); i++) {
     cvReleaseImage(&contours_[i]);
   }
 }
 
-void ContourFragmentCollector::learnContours(vector<IplImage*> imgs, vector<IplImage*> masks) {
+void ContourFragmentManager::learnContours(vector<IplImage*> imgs, vector<IplImage*> masks) {
   for(size_t i=0; i<masks.size(); i++) {
 
     IplImage* mask_gray = cvCreateImage(cvGetSize(masks[i]), IPL_DEPTH_8U, 1);
@@ -371,7 +371,7 @@ void ContourFragmentCollector::learnContours(vector<IplImage*> imgs, vector<IplI
   }
 }
 
-bool ContourFragmentCollector::contourTest(IplImage* img) {
+bool ContourFragmentManager::contourTest(IplImage* img) {
 
   // -- Enforce minimum size.
   int area = img->roi->height * img->roi->width;
@@ -431,7 +431,8 @@ bool ContourFragmentCollector::contourTest(IplImage* img) {
     pt1.y = cvRound(y0 + 1000*(a));
     pt2.x = cvRound(x0 - 1000*(-b));
     pt2.y = cvRound(y0 - 1000*(a));
-    cvLine( color_dst, pt1, pt2, CV_RGB(0,0,0), 4, 8 );
+    int thickness = 8;
+    cvLine( color_dst, pt1, pt2, CV_RGB(0,0,0), thickness, 8 );
     if(debug_)
       CVSHOW("line", color_dst);
 
@@ -463,7 +464,7 @@ bool ContourFragmentCollector::contourTest(IplImage* img) {
   return true;
 }
 
-void ContourFragmentCollector::saveContours(string dir) {
+void ContourFragmentManager::saveContours(string dir) {
   // -- See if the dir exists. 
   DIR *dp;
   if((dp  = opendir(dir.c_str())) != NULL) {
@@ -479,7 +480,7 @@ void ContourFragmentCollector::saveContours(string dir) {
   } 
 }
 
-void ContourFragmentCollector::loadContours(string dir) {
+void ContourFragmentManager::loadContours(string dir) {
   vector<string> files;
   getdir(dir, files);
   for(size_t i=0; i<files.size(); i++) {
@@ -501,7 +502,7 @@ ContourFragmentDescriptor::ContourFragmentDescriptor(int cf_id, string dir) :
   chamfer_provider_(NULL),
   cf_id_(cf_id),
   cfc_(),
-  chamfer_(new ChamferMatching()),
+  chamfer_(new ChamferMatching(true)),
   matches_(new ChamferMatch())
 {
 
@@ -527,14 +528,30 @@ ContourFragmentDescriptor::ContourFragmentDescriptor(int cf_id, ContourFragmentD
 
 
 void ContourFragmentDescriptor::compute(IplImage* img, const cv::Vector<Keypoint>& points, vvf& results) {
-  *matches_ = chamfer_->matchImage(img);
+  results.clear();
+
+  IplImage *edge_img = cvCreateImage(cvGetSize(img), IPL_DEPTH_8U, 1);
+  cvCvtColor(img, edge_img, CV_BGR2GRAY);
+  cvCanny(edge_img, edge_img, 80, 160);
+  *matches_ = chamfer_->matchEdgeImage(edge_img);
 
   if(debug_) {
-    matches_->show(img, 100000);
-    CVSHOW("test", img);
+    //IplImage* vis = cvCloneImage(edge_img);
+    IplImage* vis = cvCreateImage(cvGetSize(img), IPL_DEPTH_8U, 3);
+    cvCvtColor(edge_img, vis, CV_GRAY2BGR);
+    matches_->show(vis, 100000, .7);
+    CVSHOW("vis", vis);
+    CVSHOW("edge", edge_img);
     cvWaitKey(0);
+    cvReleaseImage(&vis);
+  }
+
+  results.reserve(points.size());
+  for(size_t i=0; i<points.size(); i++) {
+    results.push_back(Vector<float>());
   }
   
+  cvReleaseImage(&edge_img);
 }
 
 
