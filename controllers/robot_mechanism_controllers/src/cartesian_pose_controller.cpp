@@ -35,9 +35,8 @@
 
 #include <algorithm>
 #include <mechanism_control/mechanism_control.h>
-#include "kdl/chainfksolvervel_recursive.hpp"
+#include "kdl/chainfksolverpos_recursive.hpp"
 #include "robot_mechanism_controllers/cartesian_pose_controller.h"
-#include "tf_conversions/tf_kdl.h"
 
 
 using namespace KDL;
@@ -51,8 +50,11 @@ ROS_REGISTER_CONTROLLER(CartesianPoseController)
 
 CartesianPoseController::CartesianPoseController()
 : robot_state_(NULL),
-  pids_(6),
-  tf_(*ros::Node::instance())
+  jnt_to_pose_solver_(NULL),
+  state_error_publisher_(NULL),
+  state_pose_publisher_(NULL),
+  tf_(*ros::Node::instance()),
+  command_notifier_(NULL)
 {}
 
 CartesianPoseController::~CartesianPoseController()
@@ -93,41 +95,21 @@ bool CartesianPoseController::init(mechanism::RobotState *robot_state, const ros
   robot_state_ = robot_state;
 
   // create robot chain from root to tip
-  if (!chain_.init(robot_state_->model_, root_name_, tip_name)){
-    ROS_ERROR("CartesianPoseController: Could not construct chain from %s to %s",
-              root_name_.c_str(), tip_name.c_str());
+  if (!chain_.init(robot_state_->model_, root_name_, tip_name))
     return false;
-  }
   chain_.toKDL(kdl_chain_);
 
   // create solver
-  jnt_to_posevel_solver_.reset(new ChainFkSolverVel_recursive(kdl_chain_));
-  jnt_vel.resize(kdl_chain_.getNrOfJoints());
+  jnt_to_pose_solver_.reset(new ChainFkSolverPos_recursive(kdl_chain_));
+  jnt_pos_.resize(kdl_chain_.getNrOfJoints());
 
-  // Pids
-  control_toolbox::Pid temp_pid;
+  // create 6 identical pid controllers for x, y and z translation, and x, y, z rotation
+  control_toolbox::Pid pid_controller;
+  if (!pid_controller.init(node_)) return false;
+  for (unsigned int i=0; i<6; i++)
+    pid_controller_.push_back(pid_controller);
 
-  if (!temp_pid.init(ros::NodeHandle(node_, "fb_trans"))){
-    ROS_ERROR("CartesianPoseController: Could not initialize pid controller fb_trans");
-    return false;
-  }
-  for (size_t i = 0; i < 3; ++i) {
-    pids_[i] = temp_pid;
-    trans_pid_tuner_.add(&pids_[i]);
-  }
-  trans_pid_tuner_.advertise(node_.getNamespace() + "/fb_trans");
-
-  if (!temp_pid.init(ros::NodeHandle(node_, "fb_rot"))){
-    ROS_ERROR("CartesianPoseController: Could not initialize pid controller fb_rot");
-    return false;
-  }
-  for (size_t i = 3; i < 6; ++i) {
-    pids_[i] = temp_pid;
-    rot_pid_tuner_.add(&pids_[i]);
-  }
-  rot_pid_tuner_.advertise(node_.getNamespace() + "/fb_rot");
-
-  // Gets a pointer to the wrench controller
+  // get a pointer to the twist controller
   MechanismControl* mc;
   if (!MechanismControl::Instance(mc)){
     ROS_ERROR("CartesianPoseController: could not get instance to mechanism control");
@@ -138,8 +120,8 @@ bool CartesianPoseController::init(mechanism::RobotState *robot_state, const ros
     ROS_ERROR("No ouptut name found on parameter server (namespace: %s)", node_.getNamespace().c_str());
     return false;
   }
-  if (!mc->getControllerByName<CartesianWrenchController>(output, wrench_controller_)){
-    ROS_ERROR("Could not connect to wrench controller \"%s\"", output.c_str());
+  if (!mc->getControllerByName<CartesianTwistController>(output, twist_controller_)){
+    ROS_ERROR("Could not connect to twist controller \"%s\"", output.c_str());
     return false;
   }
 
@@ -158,7 +140,7 @@ bool CartesianPoseController::starting()
 {
   // reset pid controllers
   for (unsigned int i=0; i<6; i++)
-    pids_[i].reset();
+    pid_controller_[i].reset();
 
   // initialize desired pose/twist
   twist_ff_ = Twist::Zero();
@@ -178,41 +160,35 @@ void CartesianPoseController::update()
   double dt = time - last_time_;
   last_time_ = time;
 
-  // Gets the current pose and twist of the tip
-  KDL::JntArrayVel jnt_vel(kdl_chain_.getNrOfJoints());
-  chain_.getVelocities(robot_state_->joint_states_, jnt_vel);
-  KDL::FrameVel tip_framevel;
-  jnt_to_posevel_solver_->JntToCart(jnt_vel, tip_framevel);
-  pose_meas_ = tip_framevel.GetFrame();
-  KDL::Twist twist_meas_ = tip_framevel.GetTwist();
+  // get current pose
+  pose_meas_ = getPose();
 
-  // Filters the measured twist.
-  KDL::Twist twist_meas_filtered_ = twist_meas_;
+  // pose feedback into twist
+  twist_error_ = diff(pose_desi_, pose_meas_);
+  Twist twist_fb;
+  for (unsigned int i=0; i<6; i++)
+    twist_fb(i) = pid_controller_[i].updatePid(twist_error_(i), dt);
 
-  pose_error_ = diff(pose_desi_, pose_meas_);
-
-  // Determines the desired wrench from the pose error.
-  KDL::Wrench wrench_desi;
-  for (size_t i = 0; i < pids_.size(); ++i)
-    wrench_desi(i) = pids_[i].updatePid(pose_error_(i), twist_meas_filtered_(i), dt);
-
-  // Passes the desired wrench onto the wrench controller.
-  wrench_controller_->wrench_desi_ = wrench_desi;
+  // send feedback twist and feedforward twist to twist controller
+  twist_controller_->twist_desi_ = twist_fb + twist_ff_;
 
   if (++loop_count_ % 100 == 0){
     if (state_error_publisher_){
       if (state_error_publisher_->trylock()){
-        tf::TwistKDLToMsg(pose_error_, state_error_publisher_->msg_);
+        state_error_publisher_->msg_.vel.x = twist_error_.vel(0);
+        state_error_publisher_->msg_.vel.y = twist_error_.vel(1);
+        state_error_publisher_->msg_.vel.z = twist_error_.vel(2);
+        state_error_publisher_->msg_.rot.x = twist_error_.rot(0);
+	state_error_publisher_->msg_.rot.y = twist_error_.rot(1);
+        state_error_publisher_->msg_.rot.z = twist_error_.rot(2);
         state_error_publisher_->unlockAndPublish();
       }
     }
     if (state_pose_publisher_){
       if (state_pose_publisher_->trylock()){
-        Stamped<Pose> tmp;
-        tf::PoseKDLToTF(pose_meas_, tmp);
-        tmp.stamp_ = ros::Time::now();
-        tmp.frame_id_ = root_name_;
-        tf::poseStampedTFToMsg(tmp, state_pose_publisher_->msg_);
+	Pose tmp;
+	frameToPose(pose_meas_, tmp);
+	poseStampedTFToMsg(Stamped<Pose>(tmp, ros::Time::now(), root_name_), state_pose_publisher_->msg_);
         state_pose_publisher_->unlockAndPublish();
       }
     }
@@ -224,13 +200,13 @@ void CartesianPoseController::update()
 Frame CartesianPoseController::getPose()
 {
   // get the joint positions and velocities
-  chain_.getVelocities(robot_state_->joint_states_, jnt_vel);
+  chain_.getPositions(robot_state_->joint_states_, jnt_pos_);
 
   // get cartesian pose
-  FrameVel result;
-  jnt_to_posevel_solver_->JntToCart(jnt_vel, result);
+  Frame result;
+  jnt_to_pose_solver_->JntToCart(jnt_pos_, result);
 
-  return result.GetFrame();
+  return result;
 }
 
 void CartesianPoseController::command(const tf::MessageNotifier<robot_msgs::PoseStamped>::MessagePtr& pose_msg)
@@ -241,8 +217,35 @@ void CartesianPoseController::command(const tf::MessageNotifier<robot_msgs::Pose
 
   // convert to reference frame of root link of the controller chain
   tf_.transformPose(root_name_, pose_stamped, pose_stamped);
-  tf::PoseTFToKDL(pose_stamped, pose_desi_);
+  poseToFrame(pose_stamped, pose_desi_);
 }
+
+
+void CartesianPoseController::poseToFrame(const Pose& pose, Frame& frame)
+{
+  frame.p(0) = pose.getOrigin().x();
+  frame.p(1) = pose.getOrigin().y();
+  frame.p(2) = pose.getOrigin().z();
+
+  double Rz, Ry, Rx;
+  pose.getBasis().getEulerZYX(Rz, Ry, Rx);
+  frame.M = Rotation::EulerZYX(Rz, Ry, Rx);
+}
+
+
+void CartesianPoseController::frameToPose(const Frame& frame, Pose& pose)
+{
+  pose.getOrigin()[0] = frame.p(0);
+  pose.getOrigin()[1] = frame.p(1);
+  pose.getOrigin()[2] = frame.p(2);
+
+  double Rz, Ry, Rx;
+  frame.M.GetEulerZYX(Rz, Ry, Rx);
+  pose.setRotation( Quaternion(Rz, Ry, Rx));
+}
+
+
+
 
 } // namespace
 
