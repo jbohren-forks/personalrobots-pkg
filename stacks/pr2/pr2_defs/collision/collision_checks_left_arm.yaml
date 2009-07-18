@@ -58,3 +58,10 @@ self_see_padd: 0.1
 
 ## The scaling to be considered for the body parts the robot can see
 self_see_scale: 1.0
+
+
+## The padding for the robot body parts to be considered when collision checking with the environment
+robot_padd: 0.005
+
+## The scaling for the robot body parts to be considered when collision checking with the environment
+robot_scale: 1.1
