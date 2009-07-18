@@ -526,10 +526,13 @@ namespace planning_models
 	/** \brief Bring the robot to a default state */
 	void defaultState(void);
 
-	/** \brief Apply the transforms to a group, based on the params */
+	/** \brief Perform forward kinematics starting at the roots
+	    within a group. Links that are not in the group are also
+	    updated, but transforms for joints that are not in the
+	    group are not recomputed.  */
 	void computeTransformsGroup(const double *params, int groupID);
 
-	/** \brief Apply the transforms to the entire robot, based on the params */
+	/** \brief Perform forward kinematics for the entire robot */
 	void computeTransforms(const double *params);
 	
 	/** \brief Add transforms to the rootTransform such that the robot is in its planar/floating link frame.
