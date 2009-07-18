@@ -480,7 +480,7 @@ namespace move_arm
 	    do 
 	    {
 		temp = st;
-		temp.perturbState(0.02);
+		temp.perturbStateGroup(0.02, arm_);
 		count++;
 	    } while (!planningMonitor_->isStateValidOnPath(&temp) && count < 50);
 	    
@@ -491,7 +491,7 @@ namespace move_arm
 		do 
 		{
 		    temp = st;
-		    temp.perturbState(0.1);
+		    temp.perturbStateGroup(0.1, arm_);
 		    count++;
 		} while (!planningMonitor_->isStateValidOnPath(&temp) && count < 50);
 	    }
@@ -605,7 +605,7 @@ namespace move_arm
 	    else
 	    {
 		sp = planningMonitor_->getKinematicModel()->newStateParams();
-		sp->randomState();
+		sp->randomStateGroup(arm_);
 	    }
 	    ikSteps++;
 	    
