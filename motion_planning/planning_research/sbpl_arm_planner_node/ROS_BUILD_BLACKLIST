@@ -1,0 +1,16 @@
+make[3]: Entering directory `/home/rosbuild/.hudson/jobs/personalrobots-stable-update/workspace/personalrobots/motion_planning/planning_research/sbpl_arm_planner_node/build'
+[1100%] Building CXX object CMakeFiles/sbpl_arm_planner_node.dir/src/sbpl_arm_planner_node.o
+/home/rosbuild/.hudson/jobs/personalrobots-stable-update/workspace/personalrobots/motion_planning/planning_research/sbpl_arm_planner_node/src/sbpl_arm_planner_node.cpp: In member function 'bool
+sbpl_arm_planner_node::SBPLArmPlannerNode::setGoalPosition(const std::vector<motion_planning_msgs::PoseConstraint, std::allocator<motion_planning_msgs::PoseConstraint> >&)':
+/home/rosbuild/.hudson/jobs/personalrobots-stable-update/workspace/personalrobots/motion_planning/planning_research/sbpl_arm_planner_node/src/sbpl_arm_planner_node.cpp:538: error: 'const class
+motion_planning_msgs::PoseConstraint' has no member named 'position_distance'
+/home/rosbuild/.hudson/jobs/personalrobots-stable-update/workspace/personalrobots/motion_planning/planning_research/sbpl_arm_planner_node/src/sbpl_arm_planner_node.cpp:539: error: 'const class
+motion_planning_msgs::PoseConstraint' has no member named 'orientation_distance'
+/home/rosbuild/.hudson/jobs/personalrobots-stable-update/workspace/personalrobots/motion_planning/planning_research/sbpl_arm_planner_node/src/sbpl_arm_planner_node.cpp: In member function 'bool
+sbpl_arm_planner_node::SBPLArmPlannerNode::setGoalState(const std::vector<motion_planning_msgs::JointConstraint, std::allocator<motion_planning_msgs::JointConstraint> >&)':
+/home/rosbuild/.hudson/jobs/personalrobots-stable-update/workspace/personalrobots/motion_planning/planning_research/sbpl_arm_planner_node/src/sbpl_arm_planner_node.cpp:597: error: 'const class
+motion_planning_msgs::JointConstraint' has no member named 'toleranceAbove'
+/home/rosbuild/.hudson/jobs/personalrobots-stable-update/workspace/personalrobots/motion_planning/planning_research/sbpl_arm_planner_node/src/sbpl_arm_planner_node.cpp:598: error: 'const class
+motion_planning_msgs::JointConstraint' has no member named 'toleranceBelow'
+make[3]: *** [CMakeFiles/sbpl_arm_planner_node.dir/src/sbpl_arm_planner_node.o] Error 1
+
