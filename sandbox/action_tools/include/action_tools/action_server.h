@@ -219,12 +219,22 @@ namespace action_tools {
           next_goal_ = goal;
           new_goal_ = true;
 
+          //if next_goal has not been accepted already... its going to get bumped, but we need to let the client know we're preempting
+          if(next_goal_->goal_id.id != current_goal_->goal_id.id){
+            GoalStatus status;
+            status.status = status.PREEMPTED;
+            publishGoalStatus(*next_goal_, status);
+          }
+
           //if the user has defined a goal callback, we'll call it now
           if(goal_callback_)
             goal_callback_();
         }
         else{
-          //reject goal?
+          //the goal requested has already been preempted, so we're not going to execute it
+          GoalStatus status;
+          status.status = status.PREEMPTED;
+          publishGoalStatus(*goal, status);
         }
       }
 
@@ -238,6 +248,19 @@ namespace action_tools {
           ROS_DEBUG("Setting preempt_request bit to TRUE");
           preempt_request_ = true;
           last_preempt_ = *preempt;
+
+          //if the preempt also applies to the next goal, then we need to preempt it too
+          //makes sure that the current and next goals are different
+          //also makes sure to set new_goal_ to false if it had been set to true
+          if(preempt->header.stamp >= next_goal_->header.stamp
+              && next_goal_->goal_id.id != current_goal_->goal_id.id){
+            GoalStatus status;
+            status.status = status.PREEMPTED;
+            publishGoalStatus(*next_goal_, status);
+
+            if(new_goal_)
+              new_goal_ = false;
+          }
 
           //if the user has registered a preempt callback, we'll call it now
           if(preempt_callback_)
@@ -254,8 +277,11 @@ namespace action_tools {
         status_pub_.publish(status_);
       }
 
-      void publishGoalStatus(const ActionGoal& goal, const GoalStatus& status){
-        status_pub_.publish(status_);
+      void publishGoalStatus(const ActionGoal& goal, GoalStatus& status){
+        //make sure that the status is published with the correct id and stamp 
+        status.header.stamp = ros::Time::now();  
+        status.goal_id = goal.goal_id;
+        status_pub_.publish(status);
       }
 
       ros::NodeHandle node_;
