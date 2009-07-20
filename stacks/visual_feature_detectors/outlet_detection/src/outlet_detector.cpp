@@ -49,7 +49,7 @@ int detect_outlet_tuple(IplImage* src, CvMat* intrinsic_matrix, CvMat* distortio
     }
     
     int ret = 0;
-    vector<feature_t> holes;
+    vector<outlet_t> holes;
 #if !defined(_GHT)
     if(outlet_templ.get_color() == outletOrange && outlet_templ.get_count() == 4)
     {
