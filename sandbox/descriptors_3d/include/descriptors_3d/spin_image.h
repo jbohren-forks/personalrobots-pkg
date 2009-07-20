@@ -60,7 +60,7 @@ class SpinImage: public SpectralAnalysis
   public:
     typedef enum spin_axis
     {
-      UNDEFINED = 0, NORMAL = 0, TANGENT = 1, CUSTOM = 2
+      UNDEFINED = 0, NORMAL = 1, TANGENT = 2, CUSTOM = 3
     } spin_axis_type_t;
 
     SpinImage() :
