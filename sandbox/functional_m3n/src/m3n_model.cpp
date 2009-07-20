@@ -132,6 +132,7 @@ int M3NModel::loadFromFile(const string& basename)
   // ------------------------
   // read feature dimensions
   infile >> node_feature_dim_;
+  clique_set_feature_dims_.assign(nbr_clique_sets, -1.0);
   for (unsigned int i = 0 ; i < nbr_clique_sets ; i++)
   {
     infile >> clique_set_feature_dims_[i];
