@@ -49,6 +49,8 @@ namespace controller
   class Pr2GripperController: public Controller
   {
     public:
+      enum grasp_state {unstarted, open0, close0_closing, close0_contact, open1, close1_closing, close1_contact, complete, failed};
+
       Pr2GripperController();
 
       /*!
@@ -152,6 +154,26 @@ namespace controller
       double proportional_offset_;
 
       /*!
+       * \brief remembers last impact time
+       */
+      double grasp_impact_timestamp;
+
+      /*!
+       * \brief remembers last time it was commanded to close or open
+       */
+      ros::Time grasp_open_close_timestamp;
+
+      /*!
+       * \brief remembers last time it was commanded to close or open
+       */
+      ros::Duration timeout_duration;
+
+      /*!
+       * \brief remembers the state of the closed loop grasp
+       */
+      grasp_state closed_loop_grasp_state;
+
+      /*!
        * \brief remembers everything about the state of the robot
        */
       mechanism::RobotState *robot_state_;
@@ -163,6 +185,11 @@ namespace controller
 
       JointEffortController joint_controller_;
 
+      /*!
+       * \brief The maximum value that can be counted as stopped for closed loop grasping
+       */
+      double stopped_threshold_;
+
       double parseMessage(pr2_mechanism_controllers::GripperControllerCmd desired_msg);
 
       double effortLimit(double desiredEffort);
@@ -171,6 +198,31 @@ namespace controller
        * \brief publishes information about the caster and wheel controllers
        */
       realtime_tools::RealtimePublisher<pr2_msgs::GripperControllerState>* state_publisher_;
+
+      int fingertip_sensor_start0[15];
+      int fingertip_sensor_start1[15];
+      int fingertip_sensor_first_peak0[15];
+      int fingertip_sensor_first_peak1[15];
+      int fingertip_sensor_first_steady0[15];
+      int fingertip_sensor_first_steady1[15];
+      int fingertip_sensor_second_peak0[15];
+      int fingertip_sensor_second_peak1[15];
+      int fingertip_sensor_second_steady0[15];
+      int fingertip_sensor_second_steady1[15];
+
+      double position_first_contact;
+      double position_second_contact;
+      double position_first_compression;
+      double position_second_compression;
+      int peak_force_first_grasp;
+      int peak_force_second_grasp;
+
+      double low_force_;
+      double high_force_;
+
+      double spring_const;
+
+      int contact_threshold_;
   };
 }
 

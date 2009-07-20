@@ -36,6 +36,7 @@
  */
 
 #include <pr2_mechanism_controllers/pr2_gripper_controller.h>
+#include <fstream> //TODO:do something better with the data
 #define pi 3.1415926
 
 using namespace controller;
@@ -48,6 +49,7 @@ Pr2GripperController::Pr2GripperController()
 
 bool Pr2GripperController::initXml(mechanism::RobotState *robot_state, TiXmlElement *config)
 {
+  double timeout_duration_double;
   pthread_mutex_init(&pr2_gripper_controller_lock_,NULL);
   grasp_cmd_.cmd = "move";
   grasp_cmd_.val = 0.0;
@@ -63,10 +65,16 @@ bool Pr2GripperController::initXml(mechanism::RobotState *robot_state, TiXmlElem
   ros::Node::instance()->param<double>(name_ + "/break_stiction_period", break_stiction_period_, 0.0);
   ros::Node::instance()->param<double>(name_ + "/break_stiction_velocity", break_stiction_velocity_, 0.005);
   ros::Node::instance()->param<double>(name_ + "/proportional_offset", proportional_offset_, 0.01);
+  ros::Node::instance()->param<double>(name_ + "/stopped_threshold", stopped_threshold_, 0.001);
+  ros::Node::instance()->param<double>(name_ + "/timeout_duration", timeout_duration_double, 3.0);
+  ros::Node::instance()->param<double>(name_ + "/low_force", low_force_, 1.0);
+  ros::Node::instance()->param<double>(name_ + "/high_force", high_force_, 2.0);
+  ros::Node::instance()->param<int>(name_ + "/contact_threshold", contact_threshold_, 1000);
   ros::Node::instance()->param<std::string>(name_ + "/break_stiction_type", break_stiction_type_, "none");
   ros::Node::instance()->param<std::string>(name_ + "/fingertip_sensor_topic", fingertip_sensor_topic_, "pressure/" + name_ + "_motor");
   ros::Node::instance()->subscribe(name_+"_cmd", grasp_cmd, &Pr2GripperController::command_callback, this,1);
   ros::Node::instance()->subscribe(fingertip_sensor_topic_, pressure_state, &Pr2GripperController::pressure_state_callback, this, 1);
+  timeout_duration = ros::Duration().fromSec(timeout_duration_double);
   if (state_publisher_ != NULL)// Make sure that we don't memory leak if initXml gets called twice
     delete state_publisher_;
   state_publisher_ = new realtime_tools::RealtimePublisher <pr2_msgs::GripperControllerState> (name_ + "/state", 1);
@@ -95,6 +103,7 @@ void Pr2GripperController::update()
         grasp_cmd_desired_.end = grasp_cmd_.end;
         grasp_cmd_desired_.time = grasp_cmd_.time;
         grasp_cmd_desired_.val = grasp_cmd_.val;
+        closed_loop_grasp_state = unstarted;
         ROS_INFO("Copying command, val is %f", grasp_cmd_desired_.val);
       }
       new_cmd_available_ = false;
@@ -188,13 +197,324 @@ double Pr2GripperController::stepMove(double step_size)
 double Pr2GripperController::grasp()
 {
   //TODO::make a closed loop grasp
+  //starting grasp
+  if(closed_loop_grasp_state == unstarted)
+  {
+    //reset variables
+    for(int i = 0; i < 15; i++)
+    {
+      fingertip_sensor_start0[i]=0;
+      fingertip_sensor_start1[i]=0;
+      fingertip_sensor_first_peak0[i]=0;
+      fingertip_sensor_first_peak1[i]=0;
+      fingertip_sensor_first_steady0[i]=0;
+      fingertip_sensor_first_steady1[i]=0;
+      fingertip_sensor_second_peak0[i]=0;
+      fingertip_sensor_second_peak1[i]=0;
+      fingertip_sensor_second_steady0[i]=0;
+      fingertip_sensor_second_steady1[i]=0;
+    }
+    position_first_contact=-1;
+    position_second_contact=-1;
+    position_first_compression=-1;
+    position_second_compression=-1;
+    spring_const=-1;
+    peak_force_first_grasp = 0;
+    peak_force_second_grasp = 0;
+    //TODO::remember values from edges of fingertips
+    grasp_open_close_timestamp = ros::Time::now();
+    closed_loop_grasp_state = open0;
+    return default_speed_;
+  }
+
+  //open
+  else if(closed_loop_grasp_state == open0)
+  {
+    //check for any timeouts
+    if(grasp_open_close_timestamp + timeout_duration < ros::Time::now())
+    {
+      ROS_WARN("grasp failed due to a timeout");
+      closed_loop_grasp_state = failed;
+      return 0.0; //timeout occured
+    }
+    //if the gripper is done opening
+    else if(joint_->velocity_ < stopped_threshold_ && grasp_open_close_timestamp.toSec() + .1 < ros::Time::now().toSec())
+    {
+      //read the gripper pads to zero them
+      for(int i = 0; i < 15; i++) //the front pads are 7-21
+      {
+        fingertip_sensor_start0[i] = pressure_state.data0[i+7];
+        fingertip_sensor_start1[i] = pressure_state.data1[i+7];
+      }
+      //chage state
+      closed_loop_grasp_state = close0_closing;
+      grasp_open_close_timestamp = ros::Time::now();
+      return -1.0*low_force_;
+    }
+    else
+    {
+      return default_speed_;
+    }
+  }
+
+  //close with low force
+  else if(closed_loop_grasp_state == close0_closing)
+  {
+    double starting_force_sum = 0;
+    double current_force_sum = 0;
+    for(int i = 0; i < 15; i++)
+    {
+      current_force_sum += pressure_state.data0[i+7];
+      current_force_sum += pressure_state.data1[i+7];
+      starting_force_sum += fingertip_sensor_start0[i];
+      starting_force_sum += fingertip_sensor_start1[i];
+    }
+    //TODO::break if there is contact on edges of fingertips before first contact
+    //check for any timeouts
+    if(grasp_open_close_timestamp + timeout_duration < ros::Time::now())
+    {
+      ROS_WARN("grasp failed due to a timeout");
+      closed_loop_grasp_state = failed;
+      return 0.0; //timeout occured
+    }
+    //record first contact info
+    else if(current_force_sum > starting_force_sum + contact_threshold_)
+    {
+      position_first_contact = joint_->position_;
+      closed_loop_grasp_state = close0_contact;
+      grasp_open_close_timestamp = ros::Time::now();
+    }
+    return -1.0*low_force_;
+  }
+
+  //continue closing
+  else if(closed_loop_grasp_state == close0_contact)
+  {
+    double starting_force_sum = 0;
+    double current_force_sum = 0;
+    for(int i = 0; i < 15; i++)
+    {
+      current_force_sum += pressure_state.data0[i+7];
+      current_force_sum += pressure_state.data1[i+7];
+      starting_force_sum += fingertip_sensor_start0[i];
+      starting_force_sum += fingertip_sensor_start1[i];
+    }
+    //record peak contact info
+    if(peak_force_first_grasp < current_force_sum - starting_force_sum)
+    {
+      peak_force_first_grasp = current_force_sum - starting_force_sum;
+      for(int i = 0; i < 15; i++)
+      {
+        fingertip_sensor_first_peak0[i] = pressure_state.data0[i+7];
+        fingertip_sensor_first_peak1[i] = pressure_state.data1[i+7];
+      }
+    }
+    //record final contact info
+    if(grasp_open_close_timestamp + timeout_duration < ros::Time::now())
+    {
+      for(int i = 0; i < 15; i++)
+      {
+        fingertip_sensor_first_steady0[i] = pressure_state.data0[i+7];
+        fingertip_sensor_first_steady1[i] = pressure_state.data1[i+7];
+      }
+      position_first_compression = joint_->position_;
+      closed_loop_grasp_state = open1;
+      grasp_open_close_timestamp = ros::Time::now();
+    }
+    return -1.0*low_force_;
+  }
+
+  //open
+  else if(closed_loop_grasp_state == open1)
+  {
+    //if I'm done opening
+    if(ros::Time::now().toSec() > grasp_open_close_timestamp.toSec() + break_stiction_period_)
+    {
+      closed_loop_grasp_state = close1_closing;
+      grasp_open_close_timestamp = ros::Time::now();
+      return -1.0*high_force_;
+    }
+    //else open
+    else
+    {
+      return default_speed_;
+    }
+  }
+
+  //close with higher force
+  //TODO::is this necessary?
+  else if(closed_loop_grasp_state == close1_closing)
+  {
+    double starting_force_sum = 0;
+    double current_force_sum = 0;
+    for(int i = 0; i < 15; i++)
+    {
+      current_force_sum += pressure_state.data0[i+7];
+      current_force_sum += pressure_state.data1[i+7];
+      starting_force_sum += fingertip_sensor_start0[i];
+      starting_force_sum += fingertip_sensor_start1[i];
+    }
+    //TODO::break if there is contact on edges of fingertips before first contact
+    //check for any timeouts
+    if(grasp_open_close_timestamp + timeout_duration < ros::Time::now())
+    {
+      ROS_WARN("grasp failed due to a timeout");
+      closed_loop_grasp_state = failed;
+      return 0.0; //timeout occured
+    }
+    //record first contact info
+    else if(current_force_sum > starting_force_sum + contact_threshold_)
+    {
+      position_second_contact = joint_->position_;
+      closed_loop_grasp_state = close1_contact;
+      grasp_open_close_timestamp = ros::Time::now();
+    }
+    return -1.0*high_force_;
+  }
+
+  //continue closing
+  else if(closed_loop_grasp_state == close1_contact)
+  {
+    double starting_force_sum = 0;
+    double current_force_sum = 0;
+    for(int i = 0; i < 15; i++)
+    {
+      current_force_sum += pressure_state.data0[i+7];
+      current_force_sum += pressure_state.data1[i+7];
+      starting_force_sum += fingertip_sensor_start0[i];
+      starting_force_sum += fingertip_sensor_start1[i];
+    }
+    //record peak contact info
+    if(peak_force_second_grasp < current_force_sum - starting_force_sum)
+    {
+      peak_force_second_grasp = current_force_sum - starting_force_sum;
+      for(int i = 0; i < 15; i++)
+      {
+        fingertip_sensor_second_peak0[i] = pressure_state.data0[i+7];
+        fingertip_sensor_second_peak1[i] = pressure_state.data1[i+7];
+      }
+    }
+    //record final contact info
+    if(grasp_open_close_timestamp + timeout_duration < ros::Time::now())
+    {
+      for(int i = 0; i < 15; i++)
+      {
+        fingertip_sensor_second_steady0[i] = pressure_state.data0[i+7];
+        fingertip_sensor_second_steady1[i] = pressure_state.data1[i+7];
+      }
+      position_second_compression = joint_->position_;
+      closed_loop_grasp_state = complete;
+      grasp_open_close_timestamp = ros::Time::now();
+      //compute k
+      spring_const = (high_force_-low_force_)/(position_second_compression - position_first_compression);
+
+      //publish finding
+      //if the grasp was of an unknown object, and want to identify it
+      //if the grasp was of a known object, and want to compare for accuracy
+      int peak_sum = 0;
+      int steady_sum = 0;
+      std::ofstream myfile;
+      myfile.open("grasp_data.txt");
+      for(int i = 0; i < 15; i++)
+      {
+        peak_sum += fingertip_sensor_first_peak0[i] - fingertip_sensor_start0[i];
+        if(i%3 == 0)
+        {
+          myfile << "\n";
+        }
+        myfile << fingertip_sensor_first_peak0[i] - fingertip_sensor_start0[i] << " ";
+      }
+      myfile << "\n";
+      for(int i = 0; i < 15; i++)
+      {
+
+        if(i%3 == 0)
+        {
+          myfile << "\n";
+        }
+        myfile << fingertip_sensor_first_peak1[i] - fingertip_sensor_start1[i] << " ";
+      }
+      myfile << "\n";
+      for(int i = 0; i < 15; i++)
+      {
+        steady_sum += fingertip_sensor_first_steady0[i] - fingertip_sensor_start0[i];
+        if(i%3 == 0)
+        {
+          myfile << "\n";
+        }
+        myfile << fingertip_sensor_first_steady0[i] - fingertip_sensor_start0[i] << " ";
+      }
+      myfile << "\n";
+      for(int i = 0; i < 15; i++)
+      {
+
+        if(i%3 == 0)
+        {
+          myfile << "\n";
+        }
+        myfile << fingertip_sensor_first_steady1[i] - fingertip_sensor_start0[i] << " ";
+      }
+      myfile << "\n";
+      for(int i = 0; i < 15; i++)
+      {
+
+        if(i%3 == 0)
+        {
+          myfile << "\n";
+        }
+        myfile << fingertip_sensor_second_peak0[i] - fingertip_sensor_start0[i] << " ";
+      }
+      myfile << "\n";
+      for(int i = 0; i < 15; i++)
+      {
+
+        if(i%3 == 0)
+        {
+          myfile << "\n";
+        }
+        myfile << fingertip_sensor_second_peak1[i] - fingertip_sensor_start1[i] << " ";
+      }
+      myfile << "\n";
+      for(int i = 0; i < 15; i++)
+      {
+
+        if(i%3 == 0)
+        {
+          myfile << "\n";
+        }
+        myfile << fingertip_sensor_second_steady0[i] - fingertip_sensor_start0[i] << " ";
+      }
+      myfile << "\n";
+      for(int i = 0; i < 15; i++)
+      {
+
+        if(i%3 == 0)
+        {
+          myfile << "\n";
+        }
+        myfile << fingertip_sensor_second_steady1[i] - fingertip_sensor_start0[i] << " ";
+      }
+      myfile << "\n";
+      myfile << "\n";
+      myfile << spring_const << "\n" << position_first_contact << "\n" <<position_first_compression << "\n" << position_second_contact << "\n" << position_second_compression;
+      myfile << "\n";
+      myfile << "\n";
+      myfile << peak_sum << "\n" << steady_sum;
+      myfile.close();
+      ROS_INFO("Grasp complete!");
+    }
+    return -1.0*high_force_;
+  }
+
+  //finishing the grasp
+  else if(closed_loop_grasp_state == complete)
+  {
+    //TODO::determine a good output force
+    return -1.0*high_force_;  //because we're done
+  }
+
+
   return 0.0;
-
-  //TODO::get position and velocity from the gripper motor
-  //use joint_->position and joint_->velocity
-
-  //TODO::get info from tactile sensors
-
 
 }
 
