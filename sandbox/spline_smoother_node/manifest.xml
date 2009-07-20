@@ -1,0 +1,16 @@
+<package>
+  <description brief="spline_smoother_node">
+
+     spline_smoother_node
+
+  </description>
+  <author>Mrinal Kalakrishnan / kalakris@willowgarage.com</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://pr.willowgarage.com/wiki/spline_smoother_node</url>
+
+  <depend package="spline_smoother" />
+
+</package>
+
+
