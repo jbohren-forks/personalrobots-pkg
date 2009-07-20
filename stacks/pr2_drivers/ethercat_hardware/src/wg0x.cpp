@@ -244,7 +244,7 @@ int WG0X::initialize(Actuator *actuator, bool allow_unprogrammed, bool motor_mod
   }
   else
   {
-    if (major != 0 || minor < 4)
+    if ((major == 0 && minor < 4) || (major == 1 && minor < 0))
     {
       ROS_FATAL("Unsupported firmware revision %d.%02d\n", major, minor);
       ROS_BREAK();
