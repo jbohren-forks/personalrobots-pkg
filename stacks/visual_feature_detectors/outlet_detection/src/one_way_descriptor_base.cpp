@@ -66,6 +66,7 @@ CvOneWayDescriptorBase::CvOneWayDescriptorBase(CvSize patch_size, int pose_count
     
     m_pca_descriptors = new CvOneWayDescriptor[pca_dim + 1];
     if(pca_desc_config && strlen(pca_desc_config) > 0)
+//    if(0)
     {
         printf("Loading the descriptors...\n");
         char pca_desc_config_filename[1024];
@@ -77,6 +78,7 @@ CvOneWayDescriptorBase::CvOneWayDescriptorBase(CvSize patch_size, int pose_count
         printf("Initializing the descriptors...\n");
         InitializePoseTransforms();
         CreatePCADescriptors();
+        SavePCADescriptors("pca_descriptors.yml");
     }
     
     char outlet_filename[1024];
@@ -92,7 +94,7 @@ CvOneWayDescriptorBase::CvOneWayDescriptorBase(CvSize patch_size, int pose_count
     
     LoadTrainingFeatures(train_image_filename, train_image_filename1);
     
-    SavePCADescriptors("./pca_descriptors.yml");
+//    SavePCADescriptors("./pca_descriptors.yml");
     
 }
 
@@ -157,7 +159,7 @@ void CvOneWayDescriptorBase::LoadTrainingFeatures(const char* train_image_filena
     IplImage* train_image = loadImageRed(train_image_filename);
     IplImage* train_image1 = loadImageRed(train_image_filename1);
     //#endif // _ORANGE_OUTLET
-    
+   
     vector<feature_t> outlet_features;
     GetHoleFeatures(train_image, outlet_features);
     //    FilterFeatures(features, min_scale, max_scale);

@@ -65,9 +65,14 @@ int detect_outlet_tuple(IplImage* src, CvMat* intrinsic_matrix, CvMat* distortio
     cvCopy(src, red);
     cvSetImageCOI(src, 0);
     
-    detect_outlets_one_way(red, outlet_templ.get_one_way_descriptor_base(), holes, src, output_path, filename);
+    detect_outlets_one_way(red, outlet_templ, holes, src, output_path, filename);
     cvReleaseImage(&red);
 #endif
+    
+    // now find 3d coordinates of the outlet in the camera reference frame
+    // first, calculate the origin
+    
+//    map_point_homography(outlets[0], <#CvMat * homography#>, <#CvPoint2D32f result#>)
     
     if(ret == 1)
     {

@@ -44,7 +44,7 @@ struct feature_t
 void GetSURFFeatures(IplImage* src, vector<feature_t>& features);
 void GetStarFeatures(IplImage* src, vector<feature_t>& features);
 void GetHarrisFeatures(IplImage* src, vector<feature_t>& features);
-void GetHoleFeatures(IplImage* src, vector<feature_t>& features);
+void GetHoleFeatures(IplImage* src, vector<feature_t>& features, float hole_contrast = 1.1f);
 
 void DrawFeatures(IplImage* img, const vector<feature_t>& features);
 void FilterFeatures(vector<feature_t>& features, float min_scale, float max_scale);

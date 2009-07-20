@@ -378,7 +378,7 @@ void map_features(const vector<feature_t>& src_features, CvMat* homography, vect
     vector<CvPoint2D32f> src_points, dst_points;
     
     features2points(src_features, src_points);
-    map_vector(src_points, homography, dst_points);
+    map_vector_homography(src_points, homography, dst_points);
     dst_features = src_features;
     points2features(dst_points, dst_features);
 }

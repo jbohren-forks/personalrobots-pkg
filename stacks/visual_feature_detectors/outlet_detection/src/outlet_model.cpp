@@ -43,7 +43,7 @@ void DrawKeypoints(IplImage* img, std::vector<outlet_feature_t> keypts)
 	}
 }
 
-void find_hole_candidates(IplImage* grey, IplImage* mask, CvSeq* socket, vector<CvSeq*>& holes)
+void find_hole_candidates(IplImage* grey, IplImage* mask, CvSeq* socket, float hole_contrast, vector<CvSeq*>& holes)
 {
 	cvSetZero(mask);
 	
@@ -169,7 +169,7 @@ void find_hole_candidates(IplImage* grey, IplImage* mask, CvSeq* socket, vector<
 			continue;
 		}
 #else
-		if(contrast < 1.1f)// /*|| variation > 0.7f*/ || avg_outside.val[0] < avg_inside*1.0f)
+		if(contrast < hole_contrast)// /*|| variation > 0.7f*/ || avg_outside.val[0] < avg_inside*1.0f)
 		{
 			continue;
 		}
@@ -548,7 +548,8 @@ void find_outlet_features(IplImage* src, vector<outlet_feature_t>& features, con
 			
 			
 			vector<CvSeq*> holes;
-			find_hole_candidates(grey, mask, outlet, holes);
+            const float default_hole_contrast = 1.1f;
+			find_hole_candidates(grey, mask, outlet, default_hole_contrast, holes);
 			
 			for(vector<CvSeq*>::iterator it = holes.begin(); it != holes.end(); it++)
 			{
@@ -663,7 +664,8 @@ void detect_outlets(IplImage* src, vector<outlet_feature_t>& features, vector<ou
 	cvWaitKey(0);
 #endif
 	
-	find_outlet_features_fast(grey, features, output_path, filename);
+    const float default_hole_contrast = 1.1f;
+	find_outlet_features_fast(grey, features, default_hole_contrast, output_path, filename);
 	
 	move_features(features, cvPoint(roi.x, roi.y));
 	
@@ -1093,7 +1095,8 @@ void keypointarr2outletfarr(const vector<Keypoint>& keypoints, vector<outlet_fea
 	}
 }
 
-void find_outlet_features_fast(IplImage* src, vector<outlet_feature_t>& features, const char* output_path, const char* filename)
+void find_outlet_features_fast(IplImage* src, vector<outlet_feature_t>& features, float hole_contrast, 
+                               const char* output_path, const char* filename)
 {
 	const float min_intersect = 1;//0.2;
 	
@@ -1206,7 +1209,7 @@ void find_outlet_features_fast(IplImage* src, vector<outlet_feature_t>& features
 			
 			
 			vector<CvSeq*> holes;
-			find_hole_candidates(grey, mask, outlet, holes);
+			find_hole_candidates(grey, mask, outlet, hole_contrast, holes);
 			
 			for(vector<CvSeq*>::iterator it = holes.begin(); it != holes.end(); it++)
 			{
@@ -1724,7 +1727,7 @@ int filter_outlets_templ(vector<outlet_t>& outlets, const char* filename)
 	return 1;
 }
 
-CvPoint3D32f map_point(CvPoint3D32f point, CvMat* rotation_mat, CvMat* translation_vector)
+CvPoint3D32f map_point_rt(CvPoint3D32f point, CvMat* rotation_mat, CvMat* translation_vector)
 {
 	CvMat* _point = cvCreateMat(3, 1, CV_32FC1);
 	cvmSet(_point, 0, 0, point.x);
@@ -1779,9 +1782,9 @@ int calc_outlet_coords(vector<outlet_t>& outlets, CvMat* map_matrix, CvPoint3D32
             it->ground_hole = cvPoint(floor(dst->data.fl[0]), floor(dst->data.fl[1]));
         }
 		
-		it->coord_hole1 = map_point(it->coord_hole1, rotation_mat, translation_vector);
-		it->coord_hole2 = map_point(it->coord_hole2, rotation_mat, translation_vector);
-		it->coord_hole_ground = map_point(it->coord_hole_ground, rotation_mat, translation_vector);
+		it->coord_hole1 = map_point_rt(it->coord_hole1, rotation_mat, translation_vector);
+		it->coord_hole2 = map_point_rt(it->coord_hole2, rotation_mat, translation_vector);
+		it->coord_hole_ground = map_point_rt(it->coord_hole_ground, rotation_mat, translation_vector);
 	}
 	
 	cvReleaseMat(&src);

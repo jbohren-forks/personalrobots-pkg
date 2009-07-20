@@ -81,16 +81,20 @@ typedef enum
     outletOrange = 1
 } outlet_color_t;
 
+const float default_hole_contrast = 1.1f;
+
 class outlet_template_t
 {
 public:
 	outlet_template_t(int count = 4, const CvPoint2D32f* templ = 0)
 	{
+        m_hole_contrast = default_hole_contrast;
 		initialize(count, templ);
 	};
 	
 	outlet_template_t(const outlet_template_t& outlet_templ)
 	{
+        m_hole_contrast = default_hole_contrast;
 		initialize(outlet_templ.get_count(), outlet_templ.get_template());
 	};
 	
@@ -121,7 +125,7 @@ public:
         m_pose_count = 500;
         m_patch_size = cvSize(24, 24);
         m_outlet_color = outlet_color;
-	};
+};
 	
 	int get_count() const
 	{
@@ -161,9 +165,12 @@ public:
     const CvOneWayDescriptorBase* get_one_way_descriptor_base() const {return m_base;};
     
     outlet_color_t get_color() const {return m_outlet_color;};
+    void get_holes_3d(CvPoint3D32f* holes);
     
     void save(const char* filename);
-    int load(const char* filename);
+    int load(const char* path);
+    
+    float GetHoleContrast() const {return m_hole_contrast;}
 	
 protected:
 	int outlet_count;
@@ -178,6 +185,8 @@ protected:
     CvSize m_patch_size;
     int m_pose_count;
     outlet_color_t m_outlet_color;
+    
+    float m_hole_contrast; // hole minimum contrast
 };
 
 typedef struct 
@@ -194,7 +203,8 @@ int find_dir(const CvPoint2D32f* dir, int xsign, int ysign);
 int order_tuple(CvPoint2D32f* centers);
 int order_tuple2(vector<outlet_elem_t>& tuple);
 
-void map_vector(const vector<CvPoint2D32f>& points, CvMat* homography, vector<CvPoint2D32f>& result);
+void map_point_homography(CvPoint2D32f point, CvMat* homography, CvPoint2D32f& result);
+void map_vector_homography(const vector<CvPoint2D32f>& points, CvMat* homography, vector<CvPoint2D32f>& result);
 CvPoint2D32f calc_center(const vector<CvPoint2D32f>& points);
 
 

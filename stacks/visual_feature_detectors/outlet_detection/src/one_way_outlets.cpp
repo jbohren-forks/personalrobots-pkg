@@ -12,6 +12,7 @@
 #include "outlet_detection/one_way_descriptor_base.h"
 #include "outlet_detection/constellation.h"
 #include "outlet_detection/generalized_hough.h"
+#include "outlet_detection/outlet_tuple.h"
 
 #include <highgui.h>
 
@@ -34,6 +35,7 @@ void detect_outlets_2x1_one_way(IplImage* test_image, const CvOneWayDescriptorBa
     int64 time1 = cvGetTickCount();
     
     vector<feature_t> features;
+    const float default_hole_contrast = 1.1f;
     GetHoleFeatures(test_image, features);
     
     int64 time2 = cvGetTickCount();
@@ -246,11 +248,10 @@ void detect_outlets_2x1_one_way(IplImage* test_image, const CvOneWayDescriptorBa
     cvReleaseImage(&image2);
 }
 
-void detect_outlets_one_way(IplImage* test_image, const CvOneWayDescriptorBase* descriptors, 
+void detect_outlets_one_way(IplImage* test_image, const outlet_template_t& outlet_template, 
                             vector<feature_t>& holes, IplImage* color_image, 
                             const char* output_path, const char* output_filename)
 {
-    
     IplImage* image = cvCreateImage(cvSize(test_image->width, test_image->height), IPL_DEPTH_8U, 3);
     cvCvtColor(test_image, image, CV_GRAY2RGB);
     IplImage* image1 = cvCloneImage(color_image);
@@ -259,7 +260,7 @@ void detect_outlets_one_way(IplImage* test_image, const CvOneWayDescriptorBase* 
     int64 time1 = cvGetTickCount();
     
     vector<feature_t> features;
-    GetHoleFeatures(test_image, features);
+    GetHoleFeatures(test_image, features, outlet_template.GetHoleContrast());
     
     int64 time2 = cvGetTickCount();
     
@@ -269,6 +270,7 @@ void detect_outlets_one_way(IplImage* test_image, const CvOneWayDescriptorBase* 
     cvCvtColor(test_image, test_image_features, CV_GRAY2RGB);
     DrawFeatures(test_image_features, features);
     
+    const CvOneWayDescriptorBase* descriptors = outlet_template.get_one_way_descriptor_base();
     vector<feature_t> hole_candidates;
     int patch_width = descriptors->GetPatchSize().width/2;
     int patch_height = descriptors->GetPatchSize().height/2; 

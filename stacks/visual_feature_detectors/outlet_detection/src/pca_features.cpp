@@ -93,6 +93,7 @@ void loadPCAFeatures(const char* path, vector<IplImage*>& patches)
         IplImage* img = loadImageRed(buf);
         
         vector<feature_t> features;
+        const float default_hole_contrast = 1.1f;
         GetHoleFeatures(img, features);
         
         for(int j = 0; j < (int)features.size(); j++)

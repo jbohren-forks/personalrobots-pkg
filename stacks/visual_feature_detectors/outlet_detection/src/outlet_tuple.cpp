@@ -26,6 +26,8 @@ using namespace std;
 #include "outlet_detection/one_way_descriptor.h"
 
 const float pi = 3.1415926f;
+static const char template_filename[] = "outlet_template.yml";
+
 
 CvPoint2D32f calc_center(CvSeq* seq)
 {
@@ -584,6 +586,8 @@ const int outlet_height = 25;
 
 const float xsize = 46.1f;
 const float ysize = 38.7f;
+const float outlet_xsize = 12.37; // mm, the distance between the holes
+const float outlet_ysize = 11.5; // mm, the distance from the ground hole to the power holes
 
 void calc_outlet_homography(const CvPoint2D32f* centers, CvMat* map_matrix, 
 							outlet_template_t templ, CvMat* inverse_map_matrix)
@@ -607,7 +611,24 @@ void calc_outlet_homography(const CvPoint2D32f* centers, CvMat* map_matrix,
 	}
 }
 
-void map_vector(const vector<CvPoint2D32f>& points, CvMat* homography, vector<CvPoint2D32f>& result)
+void map_point_homography(CvPoint2D32f point, CvMat* homography, CvPoint2D32f& result)
+{
+	CvMat* src = cvCreateMat(1, 1, CV_32FC2);
+	CvMat* dst = cvCreateMat(1, 1, CV_32FC2);
+    
+    src->data.fl[0] = point.x;
+    src->data.fl[1] = point.y;
+    
+    cvPerspectiveTransform(src, dst, homography);
+    
+    result.x = dst->data.fl[0];
+    result.y = dst->data.fl[1];
+    
+    cvReleaseMat(&src);
+    cvReleaseMat(&dst);
+}
+
+void map_vector_homography(const vector<CvPoint2D32f>& points, CvMat* homography, vector<CvPoint2D32f>& result)
 {
 	int points_count = points.size();
 	CvMat* src = cvCreateMat(1, points_count, CV_32FC2);
@@ -959,14 +980,21 @@ void outlet_template_t::save(const char* filename)
         cvWriteString(fs, "outlet color", "orange");
     }
     
+    cvWriteReal(fs, "hole contrast", m_hole_contrast);
+    
     cvReleaseFileStorage(&fs);
     cvReleaseMemStorage(&storage);
 }
 
-int outlet_template_t::load(const char* filename)
+int outlet_template_t::load(const char* path)
 {
+    m_train_path = string(path);
+    
+    char buf[1024];
+    sprintf(buf, "%s/%s", path, template_filename);
+    
     CvMemStorage* storage = cvCreateMemStorage();
-    CvFileStorage* fs = cvOpenFileStorage(filename, storage, CV_STORAGE_READ);
+    CvFileStorage* fs = cvOpenFileStorage(buf, storage, CV_STORAGE_READ);
     
     CvFileNode* node = cvGetFileNodeByName(fs, 0, "outlet count");
     if(!node)
@@ -992,14 +1020,7 @@ int outlet_template_t::load(const char* filename)
         node = cvGetFileNodeByName(fs, 0, buf);
         _outlet_centers[i].y = cvReadReal(node);
     }
-    
-    node = cvGetFileNodeByName(fs, 0, "train path");
-    if(node)
-    {
-        const char* train_path = cvReadString(node);
-        m_train_path = string(train_path);
-    }
-    
+        
     node = cvGetFileNodeByName(fs, 0, "train config");
     if(node)
     {
@@ -1060,6 +1081,13 @@ int outlet_template_t::load(const char* filename)
         }
     }
     
+    node = cvGetFileNodeByName(fs, 0, "hole contrast");
+    if(node)
+    {
+        m_hole_contrast = (float)cvReadReal(node);
+    }
+    
+    
     cvReleaseFileStorage(&fs);
     cvReleaseMemStorage(&storage);
     
@@ -1069,4 +1097,17 @@ int outlet_template_t::load(const char* filename)
     delete [] _outlet_centers;
     
     return 1;
+}
+
+void outlet_template_t::get_holes_3d(CvPoint3D32f* holes)
+{
+    const CvPoint2D32f* centers = get_template();
+    
+    for(int i = 0; i < get_count(); i++)
+    {
+        CvPoint2D32f center = centers[i];
+        holes[3*i] = cvPoint3D32f(center.x - outlet_xsize/2, center.y, 0.0f);
+        holes[3*i + 1] = cvPoint3D32f(center.x + outlet_xsize/2, center.y, 0.0f);
+        holes[3*i + 2] = cvPoint3D32f(center.x, center.y - outlet_ysize, 0.0f);
+    }
 }

@@ -137,7 +137,8 @@ void outletfarr2keypointarr(const vector<outlet_feature_t>& features, vector<Key
 void keypointarr2outletfarr(const vector<Keypoint>& keypoints, vector<outlet_feature_t>& features);
 
 void find_outlet_features(IplImage* src, vector<outlet_feature_t>& features, const char* filename);
-void find_outlet_features_fast(IplImage* src, vector<outlet_feature_t>& features, const char* output_path, const char* filename);
+void find_outlet_features_fast(IplImage* src, vector<outlet_feature_t>& features, float hole_contrast, 
+                               const char* output_path, const char* filename);
 
 // generates several perspective distortions of the original outlet and 
 // extracts intensity values into CvMat format for subsequent learning of a classifier

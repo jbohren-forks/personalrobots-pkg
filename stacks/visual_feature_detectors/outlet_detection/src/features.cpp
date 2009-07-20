@@ -72,10 +72,10 @@ void GetHarrisFeatures(IplImage* src, vector<feature_t>& features)
     cvReleaseImage(&temp_img);
 }
 
-void GetHoleFeatures(IplImage* src, vector<feature_t>& features)
+void GetHoleFeatures(IplImage* src, vector<feature_t>& features, float hole_contrast)
 {
     vector<outlet_feature_t> outlet_features;
-    find_outlet_features_fast(src, outlet_features, 0, 0);
+    find_outlet_features_fast(src, outlet_features, hole_contrast, 0, 0);
     for(int i = 0; i < outlet_features.size(); i++)
     {
         features.push_back(feature_t(feature_center(outlet_features[i]), outlet_features[i].bbox.width));

@@ -47,7 +47,7 @@ int main(int argc,char** argv)
 	if(argc != 5 && argc != 6)
 	{
 		printf("Usage: outlet_model <path_to_images> <config_filename> <camera_config> <output_path>\n");
-        printf("Usage: outlet_model <path_to_images> <config_filename> <camera_config> <train_config> <output_path>\n");
+        printf("Usage: outlet_model <path_to_images> <config_filename> <camera_config> <train_config_path> <output_path>\n");
 		return(0);
 	}
     
@@ -99,7 +99,7 @@ int main(int argc,char** argv)
         system(pathname);
 #else
         sprintf(pathname, "mkdir %s/output_filt", output_path);
-        system(pathname);
+	system(pathname);
 
         sprintf(pathname, "mkdir %s/outlets", output_path);
         system(pathname);
