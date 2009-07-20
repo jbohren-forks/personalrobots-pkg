@@ -107,11 +107,6 @@ bool HeadPositionController::init(mechanism::RobotState *robot_state, const ros:
   {
     ROS_ERROR("HeadPositionController: could not connect to the pan joint controller %s (namespace: %s)",
               pan_output.c_str(), node_.getNamespace().c_str());
-    ROS_DEBUG("Existing controllers:");
-    std::vector<std::string> existing;
-    mc->getControllerNames(existing);
-    for (size_t i = 0; i < existing.size(); ++i)
-      ROS_DEBUG("  %s", existing[i].c_str());
     return false;
   }
 
@@ -126,11 +121,6 @@ bool HeadPositionController::init(mechanism::RobotState *robot_state, const ros:
   {
     ROS_ERROR("HeadPositionController: could not connect to the tilt joint controller %s (namespace: %s)",
               tilt_output.c_str(), node_.getNamespace().c_str());
-    ROS_DEBUG("Existing controllers:");
-    std::vector<std::string> existing;
-    mc->getControllerNames(existing);
-    for (size_t i = 0; i < existing.size(); ++i)
-      ROS_DEBUG("  %s", existing[i].c_str());
     return false;
   }
 
