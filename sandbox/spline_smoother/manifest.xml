@@ -12,6 +12,10 @@ based criteria.
   <review status="unreviewed" notes=""/>
   <url>http://pr.willowgarage.com/wiki/spline_smoother</url>
 
+  <export>
+    <cpp cflags="-I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lspline_smoother"/>
+  </export>
+
 </package>
 
 
