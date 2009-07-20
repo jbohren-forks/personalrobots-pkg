@@ -29,5 +29,14 @@ rospack(spline_smoother)
 #rospack_add_executable(example examples/example.cpp)
 #target_link_libraries(example ${PROJECT_NAME})
 
-rospack_add_gtest(test/test_splines test/test_splines.cpp)
+rospack_add_library(spline_smoother
+	src/clamped_cubic_spline_smoother.cpp
+	src/numerical_differentiation_spline_smoother.cpp
+)
 
+rospack_add_gtest(test/test_spline_smoother
+	test/test_clamped_cubic_spline_smoother.cpp
+	test/test_splines.cpp
+	test/test_utils.cpp
+)
+target_link_libraries(test/test_spline_smoother spline_smoother)

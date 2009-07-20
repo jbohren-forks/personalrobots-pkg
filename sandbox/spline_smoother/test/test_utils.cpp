@@ -35,81 +35,102 @@
 /** \author Mrinal Kalakrishnan */
 
 #include <gtest/gtest.h>
-#include <spline_smoother/splines.h>
+#include <spline_smoother/spline_smoother_utils.h>
 #include <stdlib.h>
-
-using namespace spline_smoother;
 
 static double getRandomNumber(double min, double max)
 {
   return ((double)rand() / RAND_MAX)*(max-min) + min;
 }
 
-TEST(TestSplines, testQuinticCoefficients)
+TEST(TestUtils, testTridiagonalSolver)
 {
   // seed the random number generator:
-  srand(0);
+  srand(2);
 
-  // generate random boundary conditions:
-  double bc[6];
-  for (int i=0; i<6; i++)
-    bc[i] = getRandomNumber(-1.0, 1.0);
+  // generate a random tridiagonal matrix:
+  int n=10;
 
-  // and a random time:
-  double time = getRandomNumber(0.5,10.0);
+  std::vector<double> a(n);
+  std::vector<double> b(n);
+  std::vector<double> c(n);
+  std::vector<double> d(n);
+  std::vector<double> x(n);
+  std::vector<double> solved_x(n);
 
-  // get the spline coefficients:
-  std::vector<double> coeffs;
-  getQuinticSplineCoefficients(bc[0], bc[1], bc[2], bc[3], bc[4], bc[5], time, coeffs);
+  for (int i=0; i<n; i++)
+  {
+    a[i] = getRandomNumber(10.0, 20.0);
+    b[i] = getRandomNumber(1.0, 4.0);
+    c[i] = getRandomNumber(1.0, 4.0);
+    x[i] = getRandomNumber(-1.0, 1.0);
+  }
+  a[0] = 0.0;
+  c[n-1] = 0.0;
 
-  // now sample the spline at t=0 and t=time to cross-check
-  double test_bc[6];
-  sampleQuinticSpline(coeffs, 0, test_bc[0], test_bc[1], test_bc[2]);
-  sampleQuinticSpline(coeffs, time, test_bc[3], test_bc[4], test_bc[5]);
+  // multiply to get values for d:
+  for (int i=1; i<n-1; i++)
+  {
+    d[i] = a[i]*x[i-1] + b[i]*x[i] + c[i]*x[i+1];
+  }
+  d[0] = b[0]*x[0] + c[0]*x[1];
+  d[n-1] = a[n-1]*x[n-2] + b[n-1]*x[n-1];
 
-  double tolerance=1e-10;
+  // solve it:
+  spline_smoother::tridiagonalSolve(a, b, c, d, solved_x);
 
-  EXPECT_NEAR(bc[0], test_bc[0], tolerance);
-  EXPECT_NEAR(bc[1], test_bc[1], tolerance);
-  EXPECT_NEAR(bc[2], test_bc[2], tolerance);
-  EXPECT_NEAR(bc[3], test_bc[3], tolerance);
-  EXPECT_NEAR(bc[4], test_bc[4], tolerance);
-  EXPECT_NEAR(bc[5], test_bc[5], tolerance);
+  double tolerance = 1e-8;
+
+  // check it:
+  for (int i=0; i<n; i++)
+  {
+    EXPECT_NEAR(x[i], solved_x[i], tolerance);
+  }
 }
 
-TEST(TestSplines, testCubicCoefficients)
+TEST(TestUtils, testTridiagonalSolver2)
 {
   // seed the random number generator:
-  srand(1);
+  srand(2);
 
-  // generate random boundary conditions:
-  double bc[4];
-  for (int i=0; i<4; i++)
-    bc[i] = getRandomNumber(-1.0, 1.0);
+  // generate a tridiagonal matrix for cubic splines
+  int n=10;
 
-  // and a random time:
-  double time = getRandomNumber(0.5,10.0);
+  std::vector<double> a(n);
+  std::vector<double> b(n);
+  std::vector<double> c(n);
+  std::vector<double> d(n);
+  std::vector<double> x(n);
+  std::vector<double> solved_x(n);
 
-  // get the spline coefficients:
-  std::vector<double> coeffs;
-  getCubicSplineCoefficients(bc[0], bc[1], bc[2], bc[3], time, coeffs);
+  for (int i=0; i<n; i++)
+  {
+    a[i] = 4.0;
+    b[i] = 1.0;
+    c[i] = 1.0;
+    x[i] = getRandomNumber(-1.0, 1.0);
+  }
+  a[0] = 0.0;
+  c[n-1] = 0.0;
+  b[0] = 2.0;
+  b[n-1] = 2.0;
 
-  // now sample the spline at t=0 and t=time to cross-check
-  double test_bc[4];
-  double dummy;
-  sampleCubicSpline(coeffs, 0, test_bc[0], test_bc[1], dummy);
-  sampleCubicSpline(coeffs, time, test_bc[2], test_bc[3], dummy);
+  // multiply to get values for d:
+  for (int i=1; i<n-1; i++)
+  {
+    d[i] = a[i]*x[i-1] + b[i]*x[i] + c[i]*x[i+1];
+  }
+  d[0] = b[0]*x[0] + c[0]*x[1];
+  d[n-1] = a[n-1]*x[n-2] + b[n-1]*x[n-1];
 
-  double tolerance=1e-10;
+  // solve it:
+  spline_smoother::tridiagonalSolve(a, b, c, d, solved_x);
 
-  EXPECT_NEAR(bc[0], test_bc[0], tolerance);
-  EXPECT_NEAR(bc[1], test_bc[1], tolerance);
-  EXPECT_NEAR(bc[2], test_bc[2], tolerance);
-  EXPECT_NEAR(bc[3], test_bc[3], tolerance);
-}
+  double tolerance = 1e-8;
 
-int main(int argc, char** argv)
-{
- testing::InitGoogleTest(&argc, argv);
- return RUN_ALL_TESTS();
+  // check it:
+  for (int i=0; i<n; i++)
+  {
+    EXPECT_NEAR(x[i], solved_x[i], tolerance);
+  }
 }
