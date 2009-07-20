@@ -87,14 +87,31 @@ static PyObject *dcam_getImage(PyObject *self, PyObject *args)
     Ld = getdata(stIm->imLeft);
     Rd = getdata(stIm->imRight);
 
-    assert(Ld != NULL);
-    assert(Rd != NULL);
-
-    return Py_BuildValue("iiNN",
+    PyObject *left, *right, *disparity;
+    if (Ld != NULL) {
+      left = PyBuffer_FromMemory(Ld, getdatasize(stIm->imLeft));
+    } else {
+      left = Py_None;
+      Py_INCREF(left);
+    }
+    if (Rd != NULL) {
+      right = PyBuffer_FromMemory(Rd, getdatasize(stIm->imRight));
+    } else {
+      right = Py_None;
+      Py_INCREF(right);
+    }
+    if (stIm->hasDisparity) {
+      disparity = Py_BuildValue("Nii", PyBuffer_FromMemory(stIm->imDisp, stIm->imDispSize), stIm->dpp, stIm->numDisp);
+    } else {
+      disparity = Py_None;
+      Py_INCREF(disparity);
+    }
+    return Py_BuildValue("iiNNN",
                          w,
                          h,
-                         PyBuffer_FromMemory(Ld, getdatasize(stIm->imLeft)),
-                         PyBuffer_FromMemory(Rd, getdatasize(stIm->imRight)));
+                         left,
+                         right,
+                         disparity);
   }
 #if 0
   printf("%p\n", stIm->imLeft->imRaw);
@@ -158,7 +175,11 @@ static PyObject *make_dcam(PyObject *self, PyObject *args)
   ps->dev->setRangeMax(4.0);	// in meters
   ps->dev->setRangeMin(0.5);	// in meters
   videre_proc_mode_t pmode = PROC_MODE_RECTIFIED;
-  if (strcmp(str_pmode, "rectified") == 0)
+  if (strcmp(str_pmode, "disparity") == 0)
+    pmode = PROC_MODE_DISPARITY;
+  else if (strcmp(str_pmode, "disparity_raw") == 0)
+    pmode = PROC_MODE_DISPARITY_RAW;
+  else if (strcmp(str_pmode, "rectified") == 0)
     pmode = PROC_MODE_RECTIFIED;
   else if (strcmp(str_pmode, "none") == 0)
     pmode = PROC_MODE_NONE;
