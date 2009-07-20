@@ -83,7 +83,8 @@ namespace move_arm
 	bool                     valid_;
 	bool                     perform_ik_;      /**< Flag that enables the option of IK */
 	bool                     show_collisions_; // enable showing collisions as visualization markers
-	
+	bool                     unsafe_paths_;    // flag to enable execution of paths without monitoring them for collision	 
+
 	// the arm we are planning for
 	std::string              arm_;
 	std::vector<std::string> arm_joint_names_;	

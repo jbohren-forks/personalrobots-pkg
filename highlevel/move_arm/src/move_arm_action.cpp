@@ -68,6 +68,7 @@ namespace move_arm
 	
 	node_handle_.param<bool>("~perform_ik", perform_ik_, true);
 	node_handle_.param<bool>("~show_collisions", show_collisions_, false);
+	node_handle_.param<bool>("~unsafe_paths", unsafe_paths_, false);
 	
 	// monitor robot
 	collisionModels_ = new planning_environment::CollisionModels("robot_description");
@@ -237,7 +238,8 @@ namespace move_arm
 	    if (feedback == pr2_robot_actions::MoveArmState::MOVING)
 	    {
 		bool safe = planningMonitor_->isEnvironmentSafe();
-		bool valid = planningMonitor_->isPathValid(currentPath, true);
+		bool valid = unsafe_paths_ ? (trajectoryId == -1 ? planningMonitor_->isPathValid(currentPath, true) : true) : planningMonitor_->isPathValid(currentPath, true);
+
 		if (result == robot_actions::PREEMPTED || !safe || !valid)
 		{
 		    if (result == robot_actions::PREEMPTED)
