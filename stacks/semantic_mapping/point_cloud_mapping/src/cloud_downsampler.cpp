@@ -81,7 +81,7 @@ class CloudDownsampler
 
       ROS_INFO ("Using a default leaf of size: %g,%g,%g.", leaf_width_.x, leaf_width_.y, leaf_width_.z);
 
-      nh_.param ("~cut_distance", cut_distance_, 10.0);         // 10m by default
+      nh_.param ("~cut_distance", cut_distance_, 10.0);       // 10m by default
 
       string cloud_topic ("tilt_laser_cloud");
 
@@ -102,22 +102,20 @@ class CloudDownsampler
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Callback
-    void cloud_cb (const PointCloudConstPtr& cloud)
+    void
+      cloud_cb (const PointCloudConstPtr& cloud)
     {
       ROS_INFO ("Received %d data points.", (int)cloud->pts.size ());
       if (cloud->pts.size () == 0)
         return;
       PointCloudConstPtr cloud_in = cloud;
 
-      timeval t1, t2;
-      gettimeofday (&t1, NULL);
+      ros::Time ts = ros::Time::now ();
 
       int d_idx = cloud_geometry::getChannelIndex (cloud_in, "distances");
       cloud_geometry::downsamplePointCloud (cloud_in, cloud_down_, leaf_width_, leaves_, d_idx, cut_distance_);
 
-      gettimeofday (&t2, NULL);
-      double time_spent = t2.tv_sec + (double)t2.tv_usec / 1000000.0 - (t1.tv_sec + (double)t1.tv_usec / 1000000.0);
-      ROS_INFO ("Cloud downsampled in %g seconds. Number of points left: %d.", time_spent, (int)cloud_down_.pts.size ());
+      ROS_INFO ("Cloud downsampled in %g seconds. Number of points left: %d.", (ros::Time::now () - ts).toSec (), (int)cloud_down_.pts.size ());
 
       cloud_down_pub_.publish (cloud_down_);
     }

@@ -149,14 +149,14 @@ class PlanarFit
       bool topic_found = false;
       for (vector<pair<string, string> >::iterator it = t_list.begin (); it != t_list.end (); it++)
       {
-        if (it->first.find (node_.mapName (cloud_topic)) != string::npos)
+        if (it->first.find (node_.resolveName (cloud_topic)) != string::npos)
         {
           topic_found = true;
           break;
         }
       }
       if (!topic_found)
-        ROS_WARN ("Trying to subscribe to %s, but the topic doesn't exist!", node_.mapName (cloud_topic).c_str ());
+        ROS_WARN ("Trying to subscribe to %s, but the topic doesn't exist!", node_.resolveName (cloud_topic).c_str ());
 
       node_.subscribe (cloud_topic, cloud_, &PlanarFit::cloud_cb, this, 1);
       node_.advertise<PointCloud> ("~normals", 1);
