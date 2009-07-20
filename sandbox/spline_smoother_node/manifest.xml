@@ -10,6 +10,7 @@
   <url>http://pr.willowgarage.com/wiki/spline_smoother_node</url>
 
   <depend package="spline_smoother" />
+  <depend package="roscpp" />
 
 </package>
 
