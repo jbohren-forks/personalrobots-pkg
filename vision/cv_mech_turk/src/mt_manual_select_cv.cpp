@@ -18,6 +18,7 @@
 using namespace std;
 using namespace ros;
 
+/** \brief Node to select images manually */
 class MTManualSelectNode 
 {
 public:
@@ -30,42 +31,50 @@ public:
   ros::NodeHandle n_;
   ros::Subscriber img_to_display_sub_; //On key, we'll move from display to annotation
   ros::Publisher img_to_annotate_pub_;
-  string image_topic_;
 
+  string image_topic_in_;
+  string image_topic_out_;
 
+  int key_wait_time_;
+
+  /** \brief Clears and deallocates the entire Octree. */
   MTManualSelectNode() : image_counter_(0)
   { 
     cvNamedWindow("mt_manual_select", CV_WINDOW_AUTOSIZE);
-    image_topic_ = n_.resolveName("image");
-    if (image_topic_ == "/image") {
-      image_topic_ = string("/wide_stereo/left/image");  // By default
-    }
-    ROS_INFO_STREAM("Sending to topic " << image_topic_);
+
+    n_.param( std::string("~key_wait"), key_wait_time_, 300);
+
+    n_.param( std::string("~image_in"), image_topic_in_, std::string("/wide_stereo/left/image"));
+    n_.param( std::string("~image_out"), image_topic_out_, std::string("image_to_annotate"));
+
+    ROS_INFO_STREAM("Listening topic " << image_topic_in_ << "(" << n_.resolveName(image_topic_in_) << ")");
+    ROS_INFO_STREAM("Sending to topic " << image_topic_out_ << "("<< n_.resolveName(image_topic_out_) <<")");
   }
 
+  /** \brief Create subscriptions and publishers. */
   void init()
   {
     // Advertise the Images for annotation
-    img_to_annotate_pub_ = n_.advertise<sensor_msgs::Image>("image_to_annotate",0);
-    // Subscribe to the Images that we display
-    img_to_display_sub_ = n_.subscribe(image_topic_,  (unsigned int)10, &MTManualSelectNode::onImage,this);
-    // Retrieve internal message parameter, or else set default to 'pong! '
+    img_to_annotate_pub_ = n_.advertise<sensor_msgs::Image>(image_topic_out_,0);
+
+    // Subscribe to the Images that we display and re-publish
+    img_to_display_sub_ = n_.subscribe(image_topic_in_,  (unsigned int)1, &MTManualSelectNode::onImage,this);
   }
 
 
-
+  /** \brief Print the help/usage message. */
   void help()
   {
-	printf("\nUsage:\n  ./mt_manual_select  image:=/wide_stereo/left/image [or whatever your camera name is]\n\n"
+	printf("\nUsage:\n  ./select_image  _image_in:=/wide_stereo/left/image [or whatever your camera name is]\n\n"
 	"   Takes keyboard input:\n"
 	"\tESQ,q,Q:   Quit\n"
 	"\th,H:       Print this help\n"
-	"\tm,M:       Submit to Mechanical Turk (actually just send out on image_to_annotate. Run snapper.py node for the actual submission)\n\n" 
+	"\tm,M,s,S:       (S)ubmit to (M)echanical Turk (actually just send out on image_to_annotate. Run snapper.py node for the actual submission)\n\n" 
 	);
   }
 
 
-
+  /** \brief Handle image. Wait for user key and republish the messages.*/
   void onImage(const sensor_msgs::ImageConstPtr& msg)
   {
     printf("On Image\n");
@@ -81,7 +90,7 @@ public:
 	cvShowImage("mt_manual_select", cv_img_to_label);
 	
 	//HANDLE KEYBOARD INPUT
-	int c = cvWaitKey(100)&0xFF;
+	int c = cvWaitKey(key_wait_time_)&0xFF;
 	switch(c)
 	  { 
 	  case 27:  //ESQ -- exit
@@ -97,6 +106,8 @@ public:
 	    break;
 	  case 'm': //Invoke Mechanical Turk submission
 	  case 'M':
+	  case 's': //Invoke Mechanical Turk submission
+	  case 'S':
 	    
 	    image_counter_+= 1;		
 	    printf("Sending\n");
@@ -111,6 +122,7 @@ public:
     }
   }
 };
+
 
 int main(int argc, char **argv)
 {

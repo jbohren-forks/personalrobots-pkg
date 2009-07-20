@@ -2,8 +2,9 @@
   <description>
   A wrapper around the OpenCV HighGUI cv_mech_turk viewer. 
   </description>
-  <author>Gary Bradski</author>
+  <author>Alexander Sorokin,Gary Bradski,Alex Teichman</author>
   <license>BSD</license>
+
   <review status="unreviewed" notes=""/>
   <depend package="opencv_latest"/>
   <depend package="std_srvs"/>

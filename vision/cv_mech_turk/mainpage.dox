@@ -1,0 +1,253 @@
+/**
+\mainpage
+\htmlinclude manifest.html
+
+\b Interface to mechanical turk for image annotation
+
+
+The package contains tools to upload images in bulk to mechanical turk and get the annotations back. The annotations can be retrieved as messages or as XML files/segmentation masks. The images can be manually selected using interactive tool.
+
+
+<!-- 
+In addition to providing an overview of your package,
+this is the section where the specification and design/architecture 
+should be detailed. While the original specification may be done on the
+wiki, it should be transferred here once your package starts to take shape.
+You can then link to this documentation page from the Wiki. 
+-->
+
+
+\section codeapi Code API
+
+<!--
+Provide links to specific auto-generated API documentation within your
+package that is of particular interest to a reader. Doxygen will
+document pretty much every part of your code, so do your best here to
+point the reader to the actual API.
+
+If your codebase is fairly large or has different sets of APIs, you
+should use the doxygen 'group' tag to keep these APIs together. For
+example, the roscpp documentation has 'libros' group.
+-->
+
+\section rosapi ROS API
+
+
+use to document each node separately.
+
+List of nodes:
+- \b snapper.py
+- \b select_images
+
+
+
+
+<hr>
+
+\subsection snapper.py snapper.py
+
+snapper.py listens to an image topic and uploads the image to the annotation server
+
+\subsubsection Usage
+\verbatim
+$   rosrun cv_mech_turk snapper.py [parameters/overrides]
+\endverbatim
+
+\par Example
+
+\verbatim
+$ rosrun cv_mech_turk snapper.py image:=image_to_annotate
+\endverbatim
+
+
+\subsubsection topics ROS topics
+
+Subscribes to:
+- \b "imgae": [sensor_msgs/Image] the image to submit
+
+
+
+\subsubsection parameters ROS parameters
+
+Reads the following parameters from the parameter server
+
+- \b "~server" : \b [string] the server name to submit to.
+- \b "~session" : \b [string] the session on the server.
+- \b "~submission_mode" : \b [string] the mode of the snapper ('submit' - to submit to the server, 'blocked' (default)- to block submission - for debug)
+- \b "~img_dir" : \b [string] Root folder to store temporary data. The images will be saved in <img_dir>/images/<session> folder.
+- \b "~image_mode" : \b [string] Grayscale ('gray') or color images (otherwise). 
+- \b "~frame" : \b [string] The frame ID of the image. The annotations will be tagged with the frame ID to simplify subsequent lifting to 3D.
+
+
+<hr>
+
+\subsection link_topic.py link_topic.py
+
+Registers remote publisher in the current master. The publisher information is obtained via HTTP and updated periodically. 
+
+
+
+
+<hr>
+
+\subsection select_images select_images
+
+select_images  listens to an image topic, shows the image and republishes the image when key (s/S/m/M) is pressed
+
+\subsubsection Usage
+\verbatim
+$   rosrun cv_mech_turk snapper.py [parameters/overrides]
+\endverbatim
+
+\par Example
+
+\verbatim
+$ rosrun cv_mech_turk snapper.py image:=image_to_annotate
+\endverbatim
+
+
+\subsubsection topics ROS topics
+
+Subscribes to:
+- \b "image": [sensor_msgs/Image] the image to submit
+
+Publishes:
+- \b "imgae": [sensor_msgs/Image] the image to submit
+
+
+
+\subsubsection parameters ROS parameters
+
+Reads the following parameters from the parameter server
+
+- \b "~image_in" : \b [string] the topic name to listen to. Defaults to /wide_stereo/left/image.
+- \b "~image_out" : \b [string] the topic name to publish selected frames. Defaults to image_to_annotate.
+- \b "~key_wait" : \b [int] How many milliseconds to wait for the key press (depends on required frame rate).
+
+
+
+<!-- START: Uncomment if you have any command-line tools -->
+
+\section commandline Command-line tools
+
+The package contains tools to download the annotations from the server and convert them to useful types (message/files)
+
+<!--
+- tools/scripts (e.g. rospack, roscd)
+- roslaunch .launch files
+- xmlparam files
+
+-->
+
+\subsection convert_session_results_to_mask convert_session_results_to_mask
+
+Converts XML annotations to segmentation masks.
+
+\subsubsection Usage
+\verbatim
+$ ./convert_session_results_to_mask_name [args]
+\endverbatim
+
+\par Example
+
+\verbatim
+$ ./convert_session_results_to_mask_name foo bar
+\endverbatim
+
+
+\subsection session_2_messages.py session_2_messages.py
+
+Downloads annotations from the server and published them as messages.
+
+\subsubsection Usage
+\verbatim
+$ ./session_2_messages.py [args]
+\endverbatim
+
+\par Example
+
+\verbatim
+$ ./session_2_messages.py foo bar
+\endverbatim
+
+\subsection session_results.py session_results.py
+
+Downloads images and annotations from the server (jpg/xml).
+
+\subsubsection Usage
+\verbatim
+$ ./session_results.py [args]
+\endverbatim
+
+\par Example
+
+\verbatim
+$ ./session_results.py foo bar
+\endverbatim
+
+\subsection session_2_messages.py session_2_messages.py
+
+Description of what this script/file does.
+
+\subsubsection Usage
+\verbatim
+$ ./session_2_messages.py [args]
+\endverbatim
+
+\par Example
+
+\verbatim
+$ ./session_2_messages.py foo bar
+\endverbatim
+
+
+
+<!-- END: Command-Line Tools Section -->
+
+
+
+
+\section Old notes
+
+@verbatim
+//SET UP ROS (assuming you've previously downlaoded it)
+0.1. svn up in  .../ros/ros  and .../ros/ros-pkg  just to be sure.
+0.2. in .../ros/ros, rosmake roscpp_demo (that  will rebuild all kinds of crap hat you might need)
+
+//TO GET THE NODE RUNNING:
+  //  -- Do everything all at once:
+roslaunch mt.launch   [this will run roscore, start the camera with dc1394 and then run ./cv_mturk image:=dc
+am/image
+
+  //  -- Do it piece by piece:
+1 RUNNING THE MASTER NDOE: 
+        run roscore.  You just open a window and type roscore. [This is the master node]
+2 RUNNING A 1394 CAMERA: 
+        Open another window.
+
+   2.1. Type "roscd dcam".
+     2.1a. If not made, then make it by typing: rosmake. 
+   2.2. Then run camera capture by: ./bin/dcam [This reads from the camera and publishes images]
+   2.3 IF THE CAMERA BOMBS OUT WITH ERRORS, TRY SETTING PERMISSIONS
+          [ You might have to: sudo chmod 666 /dev  and /dev/video1394 ]
+
+
+3 RUNNING THE MTURK NODE: 
+        roscd cv_mech_turk   [If you svn up in ros-pkg, you will get this new package]
+
+   3.1. IF YOU NEED TO MAKE THE NODE: rosmake
+     3.1a. If things don't work, you might have to try "rosapt-get cv_view" and or struggle with loading any
+ number of dependencies and lots of make cleans in the appropriate packages.  Once it builds:
+   3.2 RUN THE NODE: ./cv_mturk image:=dcam/image     [This will run the camera viewer]
+
+4 OTHER NEEDED FILES
+    When you type "m", cv_mturk will invoke: submit_img.py which in turn depends on:
+        * id_rsa_SIU  [These are access keys]
+        * id_rsa_SIU.pub
+        * Needs an image storage subdirectory called: "/images"
+
+5 put id_rsa_SIU and id_rsa_SIU.pub in src/.  Note: id_rsa_SIU need to have permission 600 for scp and subse
+quent http request to work properly.
+
+
+@endverbatim
