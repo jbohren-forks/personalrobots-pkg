@@ -2,7 +2,7 @@
 <resource xmlns="http://www.wxwindows.org/wxxrc" version="2.3.0.1">
 	<object class="wxPanel" name="PR2StartUpPanel">
 		<style>wxTAB_TRAVERSAL</style>
-		<size>410,318</size>
+		<size>375,366</size>
 		<object class="wxBoxSizer">
 			<orient>wxVERTICAL</orient>
 			<object class="sizeritem">
@@ -44,6 +44,24 @@
 								<object class="wxTextCtrl" name="m_textCtrl6">
 									<value>joystick</value>
 									<maxlength>0</maxlength>
+								</object>
+							</object>
+						</object>
+					</object>
+					<object class="sizeritem">
+						<option>0</option>
+						<flag>wxEXPAND</flag>
+						<border>5</border>
+						<object class="wxStaticBoxSizer">
+							<orient>wxVERTICAL</orient>
+							<label>Robot</label>
+							<object class="sizeritem">
+								<option>0</option>
+								<flag>wxALL|wxEXPAND</flag>
+								<border>5</border>
+								<object class="wxChoice" name="m_choice1">
+									<selection>0</selection>
+									<content />
 								</object>
 							</object>
 						</object>
