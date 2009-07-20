@@ -1,4 +1,4 @@
-<package>
+
 
   <description brief="The scripts to run the PR2 Alpha base">
     
@@ -23,7 +23,6 @@
   <depend package="imu_node"/>
   <depend package="dcam"/>
   <depend package="robot_pose_ekf"/>
-  <depend package="runtime_monitor"/>
   <depend package="sound_play"/>
   <depend package="joint_calibration_monitor" />
   <depend package="forearm_cam" />
