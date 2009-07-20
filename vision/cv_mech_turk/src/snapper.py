@@ -115,16 +115,30 @@ class Snapper:
   def handle_image(self, msg):
     rospy.loginfo("Snapper image")
 
+    if msg.encoding=="mono":
+      image_mode="gray"
+    elif  msg.encoding=="rgb":
+      image_mode="RGB";
+    else:
+      rospy.logerror("Image encoding is not supported %s",msg.encoding);
+      return
+
+
     ma = msg.uint8_data # MultiArray
     dim = dict([ (d.label,d.size) for d in ma.layout.dim ])
     (w,h) = (dim['width'], dim['height'])
     print dim
     image = msg.uint8_data.data
     image_sz = (w,h);
-    if self.image_mode=="gray":
+
+
+    if image_mode=="gray":
       i = Image.fromstring("L", image_sz, image)
-    else:
+    elif image_mode=="RGB":
       i = Image.fromstring("RGB", image_sz, image)
+    else:
+      rospy.logerror("Unknown image mode");
+      return
 
     ref_time = "%d.%09d" % (msg.header.stamp.secs, msg.header.stamp.nsecs)
     fn = "foo-%d.%09d.jpg" % (msg.header.stamp.secs, msg.header.stamp.nsecs)

@@ -63,7 +63,7 @@ $ rosrun cv_mech_turk snapper.py image:=image_to_annotate
 \subsubsection topics ROS topics
 
 Subscribes to:
-- \b "imgae": [sensor_msgs/Image] the image to submit
+- \b "image": [sensor_msgs/Image] the image to submit
 
 
 
@@ -74,7 +74,7 @@ Reads the following parameters from the parameter server
 - \b "~server" : \b [string] the server name to submit to.
 - \b "~session" : \b [string] the session on the server.
 - \b "~submission_mode" : \b [string] the mode of the snapper ('submit' - to submit to the server, 'blocked' (default)- to block submission - for debug)
-- \b "~img_dir" : \b [string] Root folder to store temporary data. The images will be saved in <img_dir>/images/<session> folder.
+- \b "~img_dir" : \b [string] Root folder to store temporary data. The images will be saved in img_dir/images/session folder.
 - \b "~image_mode" : \b [string] Grayscale ('gray') or color images (otherwise). 
 - \b "~frame" : \b [string] The frame ID of the image. The annotations will be tagged with the frame ID to simplify subsequent lifting to 3D.
 
@@ -83,9 +83,14 @@ Reads the following parameters from the parameter server
 
 \subsection link_topic.py link_topic.py
 
-Registers remote publisher in the current master. The publisher information is obtained via HTTP and updated periodically. 
+Registers remote publisher in the current master. The publisher information is obtained via HTTP and is updated periodically. 
 
 
+\subsubsection parameters ROS parameters
+
+Reads the following parameters from the parameter server
+
+- \b "~uri" : \b [string] The URL of the HTTP topic information server.
 
 
 <hr>
@@ -96,23 +101,23 @@ select_images  listens to an image topic, shows the image and republishes the im
 
 \subsubsection Usage
 \verbatim
-$   rosrun cv_mech_turk snapper.py [parameters/overrides]
+$   rosrun cv_mech_turk select_images [parameters/overrides]
 \endverbatim
 
 \par Example
 
 \verbatim
-$ rosrun cv_mech_turk snapper.py image:=image_to_annotate
+$ rosrun cv_mech_turk select_images  _image_in:=/forearm/image_rect_color
 \endverbatim
 
 
 \subsubsection topics ROS topics
 
 Subscribes to:
-- \b "image": [sensor_msgs/Image] the image to submit
+- \b "image_in": [sensor_msgs/Image] the images to display and republish
 
 Publishes:
-- \b "imgae": [sensor_msgs/Image] the image to submit
+- \b "image_out": [sensor_msgs/Image] republished images
 
 
 
@@ -176,28 +181,28 @@ Downloads images and annotations from the server (jpg/xml).
 
 \subsubsection Usage
 \verbatim
-$ ./session_results.py [args]
+$ ./session_results.py --session=session_name --server=server_name --saveto=path_to_save_data [--size=img_widthXimg_height]
 \endverbatim
 
 \par Example
 
 \verbatim
-$ ./session_results.py foo bar
+$ ./session_results.py --session=prf-jul-08-L1p --server=vm6.willowgarage.com --saveto=./results/ 
 \endverbatim
 
 \subsection session_2_messages.py session_2_messages.py
 
-Description of what this script/file does.
+Publishes the annotations as messages cv_mech_turk/ExternalAnnotation. The messages are published on /annotations_2d topic.
 
 \subsubsection Usage
 \verbatim
-$ ./session_2_messages.py [args]
+$ ./session_2_messages.py --session=session_name --server=server_name
 \endverbatim
 
 \par Example
 
 \verbatim
-$ ./session_2_messages.py foo bar
+$ ./session_2_messages.py --session=prf-jul-08-L1p --server=vm6.willowgarage.com 
 \endverbatim
 
 
@@ -251,3 +256,5 @@ quent http request to work properly.
 
 
 @endverbatim
+
+*/

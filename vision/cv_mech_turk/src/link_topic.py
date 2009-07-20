@@ -60,8 +60,14 @@ class TopicLinkNode:
       rospy.sleep(10.0);
 
 class HttpTopicLinkNode:
-  def __init__(self,http_info):
-    self.ref=http_info
+  def __init__(self):
+    try:
+      print "FIX get_param!!!"
+      remote_publisher_uri=rospy.get_param("~uri","http://vm6.willowgarage.com:8080/mt/rospublishers/");
+    except:
+      remote_publisher_uri="http://vm6.willowgarage.com:8080/mt/rospublishers/"
+
+    self.ref=remote_publisher_uri
 
   def link(self):
     self.cj = cookielib.CookieJar()
@@ -90,13 +96,7 @@ if __name__ == '__main__':
 
   rospy.init_node("topic_link", anonymous=True)
 
-  try:
-    print "FIX get_param!!!"
-    remote_publisher_uri=rospy.get_param("~uri","http://vm6.willowgarage.com:8080/mt/rospublishers/");
-  except:
-    remote_publisher_uri="http://vm6.willowgarage.com:8080/mt/rospublishers/"
-
-  tl=HttpTopicLinkNode(remote_publisher_uri)
+  tl=HttpTopicLinkNode()
   tl.spin();
 
     
