@@ -292,7 +292,7 @@ private:
 	{
 		ROS_INFO("Cloud callback");
 		if (got_data_) {
-			ROS_INFO("Discarding point cloud");
+//			ROS_INFO("Discarding point cloud");
 			return;
 		}
 
