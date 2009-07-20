@@ -1,0 +1,7 @@
+string[] joint_names
+float64[] joint_positions
+---
+string[] link_names
+Pose[] link_poses
+string base_frame
+bool in_collision
