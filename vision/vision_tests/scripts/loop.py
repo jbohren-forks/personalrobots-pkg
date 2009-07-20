@@ -34,12 +34,12 @@
 import random
 import os
 
-modes = ('none', 'test', 'rectified')
+modes = ('none', 'test', 'rectified', 'disparity', 'disparity_raw')
 
 schedule = [(i,m) for i in range(100) for m in modes ]
 
 random.seed(0)
-#random.shuffle(schedule)
+random.shuffle(schedule)
 
 for (i,m) in schedule:
     os.system("scripts/camera_hammer_1.py %d %s" % (i, m))

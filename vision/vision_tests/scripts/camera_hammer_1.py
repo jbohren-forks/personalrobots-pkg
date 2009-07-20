@@ -43,13 +43,20 @@ from math import *
 import cv
 import dcam
 
-def compose(a, b):
-    w,h = cv.GetSize(a)
-    r = cv.CreateImage((w*2, h), cv.IPL_DEPTH_8U, a.nChannels)
-    cv.SetImageROI(r, (0, 0, w, h))
-    cv.Copy(a, r)
-    cv.SetImageROI(r, (w, 0, w, h))
-    cv.Copy(b, r)
+def compose(a, b, d):
+    w,h = (640,480)
+    r = cv.CreateImage((w*3, h), cv.IPL_DEPTH_8U, 3)
+    cv.SetZero(r)
+    
+    for (i, src) in enumerate([a, b, d]):
+        if src != None:
+          cv.SetImageROI(r, (w*i, 0, w, h))
+          if src.nChannels == 1:
+            deep = cv.CreateImage((w, h), cv.IPL_DEPTH_8U, 3)
+            cv.CvtColor(src, deep, cv.CV_GRAY2BGR)
+            cv.Copy(deep, r)
+          else:
+            cv.Copy(src, r)
     cv.ResetImageROI(r)
     return r
 
@@ -60,16 +67,35 @@ def runTest(seq, mode):
 
     for i in range(50):
         print i
-        w,h,l,r = dc.getImage()
-        channels = len(l) / (w * h)
-        cv_l = cv.CreateImageHeader((w, h), cv.IPL_DEPTH_8U, channels)
-        cv.SetData(cv_l, str(l), w * channels)
-        cv_r = cv.CreateImageHeader((w, h), cv.IPL_DEPTH_8U, channels)
-        cv.SetData(cv_r, str(r), w * channels)
-        if channels == 3:
-          cv.CvtColor(cv_l, cv_l, cv.CV_BGR2RGB)
-          cv.CvtColor(cv_r, cv_r, cv.CV_BGR2RGB)
-        comp = compose(cv_l, cv_r)
+        w,h,l,r,d = dc.getImage()
+
+        cv_l = None
+        cv_r = None
+        cv_d = None
+
+        if l != None:
+          channels = len(l) / (w * h)
+          cv_l = cv.CreateImageHeader((w, h), cv.IPL_DEPTH_8U, channels)
+          cv.SetData(cv_l, str(l), w * channels)
+          if channels == 3:
+            cv.CvtColor(cv_l, cv_l, cv.CV_BGR2RGB)
+
+        if r != None:
+          channels = len(r) / (w * h)
+          cv_r = cv.CreateImageHeader((w, h), cv.IPL_DEPTH_8U, channels)
+          cv.SetData(cv_r, str(r), w * channels)
+          if channels == 3:
+            cv.CvtColor(cv_r, cv_r, cv.CV_BGR2RGB)
+
+        if d != None:
+          (dimg, dpp, numDisp) = d
+          max_disparity = (dpp * numDisp) - 1
+          d16 = cv.CreateImageHeader((w, h), cv.IPL_DEPTH_16U, 1)
+          cv.SetData(d16, str(dimg), w * 2)
+          cv_d = cv.CreateImage((w, h), cv.IPL_DEPTH_8U, 1)
+          cv.CvtScale(d16, cv_d, 255.0 / max_disparity)
+
+        comp = compose(cv_l, cv_r, cv_d)
         cv.SaveImage("cam-%s-%04d-%03d.png" % (m, seq, i), comp)
 
 seq = int(sys.argv[1])
