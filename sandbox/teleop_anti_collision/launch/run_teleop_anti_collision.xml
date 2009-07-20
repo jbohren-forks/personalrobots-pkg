@@ -11,6 +11,17 @@
     <include file="$(find 2dnav_pr2)/config/ground_plane.xml" />
 
     <!-- The naviagtion stack and associated parameters -->
-    <include file="$(find 2dnav_pr2)/move_base_local/move_base_local.xml" />
+    <!--include file="$(find 2dnav_pr2)/move_base_local/move_base_local.xml" /-->
+    <node pkg="mux" type="throttle" args="3.0 /move_base_local/local_costmap/voxel_grid /move_base_local/local_costmap/voxel_grid_throttled" />
+    <node pkg="move_base" type="move_base_new" respawn="false" name="move_base_local" output="screen" machine="three">
+      <param name="controller_frequency" value="10.0" />
+      <param name="base_global_planner" value="CarrotPlanner" />
+
+      <rosparam file="$(find 2dnav_pr2)/config/costmap_common_params.yaml" command="load" ns="global_costmap" />
+      <rosparam file="$(find 2dnav_pr2)/config/costmap_common_params.yaml" command="load" ns="local_costmap" />
+      <rosparam file="$(find 2dnav_pr2)/move_base_local/costmap_params.yaml" command="load"  ns="global_costmap" />
+      <rosparam file="$(find 2dnav_pr2)/move_base_local/costmap_params.yaml" command="load"  ns="local_costmap" />
+      <rosparam file="$(find 2dnav_pr2)/move_base_local/base_local_planner_params.yaml" command="load" />
+    </node>
   </group>
 </launch>
