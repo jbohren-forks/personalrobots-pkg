@@ -127,7 +127,7 @@ bool ClampedCubicSplineSmoother::smoothSegment(const std::vector<double>& positi
             (intervals[i+1]*intervals[i+1])*(positions[i+1]-positions[i]));
   }
   d[0] -= velocities[0]*intervals[1];
-  d[length-3] -= velocities[length-1]*times[length-3];
+  d[length-3] -= velocities[length-1]*intervals[length-3];
 
   tridiagonalSolve(a, b, c, d, x);
   for (int i=0; i<length-2; i++)

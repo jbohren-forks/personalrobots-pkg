@@ -42,6 +42,30 @@
 
 using namespace spline_smoother;
 
+TEST(TestClampedCubicSplineSmoother, TestZeroPositionsSmall)
+{
+  int length = ClampedCubicSplineSmoother::MAX_TRIDIAGONAL_SOLVER_ELEMENTS - 2;
+
+  std::vector<double> positions(length);
+  std::vector<double> times(length);
+  std::vector<double> velocities(length);
+  std::vector<double> accelerations(length);
+  for (int i=0; i<length; i++)
+  {
+    positions[i] = 0.0;
+    times[i] = i;
+  }
+
+  ClampedCubicSplineSmoother ccss;
+  ccss.smooth(positions, velocities, accelerations, times);
+
+  // verify that velocities are 0:
+  for (int i=0; i<length; i++)
+  {
+    EXPECT_NEAR(velocities[i], 0.0, 1e-8);
+  }
+}
+
 TEST(TestClampedCubicSplineSmoother, TestZeroPositionsLarge)
 {
   int length = ClampedCubicSplineSmoother::MAX_TRIDIAGONAL_SOLVER_ELEMENTS*10;
@@ -89,31 +113,6 @@ TEST(TestClampedCubicSplineSmoother, TestStraightLineLarge)
   for (int i=0; i<length; i++)
   {
     //printf("%d = %f\n", i, velocities[i]);
-    EXPECT_NEAR(velocities[i], 1.0, 0.1);
+    EXPECT_NEAR(velocities[i], 1.0, 1e-8);
   }
 }
-
-TEST(TestClampedCubicSplineSmoother, TestZeroPositionsSmall)
-{
-  int length = ClampedCubicSplineSmoother::MAX_TRIDIAGONAL_SOLVER_ELEMENTS - 2;
-
-  std::vector<double> positions(length);
-  std::vector<double> times(length);
-  std::vector<double> velocities(length);
-  std::vector<double> accelerations(length);
-  for (int i=0; i<length; i++)
-  {
-    positions[i] = 0.0;
-    times[i] = i;
-  }
-
-  ClampedCubicSplineSmoother ccss;
-  ccss.smooth(positions, velocities, accelerations, times);
-
-  // verify that velocities are 0:
-  for (int i=0; i<length; i++)
-  {
-    EXPECT_NEAR(velocities[i], 0.0, 1e-8);
-  }
-}
-
