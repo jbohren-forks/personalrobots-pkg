@@ -11,7 +11,7 @@ rejectable(detect_door.Active cmd_detect_door);
 rejectable(detect_door.Inactive feedback_detect_door);
 rejectable(detect_handle.Active cmd_detect_handle);
 rejectable(detect_handle.Inactive feedback_detect_handle);
-rejectable(move_base.Active cmd_move_to_grasp);
+rejectable(move_base_local.Active cmd_move_to_grasp);
 rejectable(grasp_handle.Active cmd_grasp_handle);
 rejectable(unlatch_handle.Active cmd_unlatch_handle);
 rejectable(open_door.Active cmd_open_door);

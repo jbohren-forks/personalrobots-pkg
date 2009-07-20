@@ -29,6 +29,7 @@ UnlatchHandle unlatch_handle = new UnlatchHandle(Internal);
 DetectDoor detect_door = new DetectDoor(Internal);
 DetectHandle detect_handle = new DetectHandle(Internal);
 CheckPath check_path = new CheckPath(Internal);
+MoveBase move_base_local = new MoveBase(Internal);
 MoveBaseDoor move_base_door = new MoveBaseDoor(Internal);
 StopAction stop_action = new StopAction(Internal);
 

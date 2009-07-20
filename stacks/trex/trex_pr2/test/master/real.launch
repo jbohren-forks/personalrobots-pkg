@@ -1,7 +1,6 @@
 <launch>
 
   <!-- Reset controllers to their original state -->
-  <include file="$(find milestone2_actions)/reset_controllers.launch" />
 
   <master auto="start"/>
 
@@ -9,6 +8,7 @@
   <param name="/trex/enable_switch_controllers" value="false"/>
   <param name="/trex/enable_safety_tuck_arms" value="false"/>
   <param name="/trex/enable_move_base" value="false"/>
+  <param name="/trex/enable_move_base_local" value="false"/>
   <param name="/trex/enable_set_laser_tilt" value="false"/>
   <param name="/trex/enable_base_state_publisher" value="false"/>
 
@@ -34,6 +34,7 @@
   <param name="/trex/enable_stow_plug" value="false"/>
   <param name="/trex/enable_unplug" value="false"/>
   <param name="/trex/enable_plug_in" value="false"/>
+  <param name="/trex/enable_move_base_local" value="false"/>
   <param name="/trex/enable_detect_outlet_coarse" value="false"/>
   <param name="/trex/enable_detect_outlet_fine" value="false"/>
   <param name="/trex/enable_doors_tuck_arms" value="false"/>
