@@ -27,8 +27,8 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef POLYGON_HPP
-#define POLYGON_HPP
+#ifndef SHAPE_HPP
+#define SHAPE_HPP
 
 #include <string>
 #include <set>
@@ -38,20 +38,20 @@
 #include "boost/algorithm/string.hpp"
 
 template<class T>
-class base_polygon
+class base_shape
 {
 public:
-  base_polygon(): side_length_(0) {};
+  base_shape(): side_length_(0) {};
 protected:
   T side_length_;
 };
 
-class polygon : public base_polygon<double>{
+class shape : public base_shape<double>{
 
 public:
-  polygon(){}
+  shape(){}
 
-  virtual ~polygon() {}
+  virtual ~shape() {}
 
   void set_side_length(double side_length) {
     side_length_ = side_length;
@@ -59,8 +59,6 @@ public:
 
   virtual double area() const = 0;
 };
-
-
 
 
 

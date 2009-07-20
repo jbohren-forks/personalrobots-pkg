@@ -28,51 +28,53 @@
  */
 
 #include "polygon.hpp"
+#include "shape.hpp"
 #include <iostream>
 
 #include "Poco/ClassLoader.h"
 #include "ros/package.h"
 
+#include "class_loader.h"
 
 int main() {
-  using std::cout;
-  using std::cerr;
-
-  std::set<std::string> paths = findPlugins("plugin_user", "plugin");
-  Poco::ClassLoader<polygon> cl;
-
-  for (std::set<std::string>::iterator it = paths.begin(); it != paths.end(); ++it)
-  {
-
-
-    std::string path = *it;
   
-  path.append(Poco::SharedLibrary::suffix());
-  //  path = ros::package::command();
-  //  paths = ros::package::command("export --lang=filter --attrib=plugin plugin_provider");
+  ros::ClassLoader<polygon> cl("plugin_user", "filters", "polygon");
 
-  std::cout << path << std::endl;
-
-  
-  
-  cl.loadLibrary(path);
-  
-  poco_assert (cl.isLibraryLoaded(path));
-  
-  poco_check_ptr (cl.findManifest(path)); 
+  std::cout << "Created" << std::endl;
+  if (cl.canCreate("square"))
+  { 
+    std::cout << "Can create square";
+    polygon * poly = cl.create("square");
+    // use the class
+    poly->set_side_length(7);
+    std::cout << "The square area is: " << poly->area() << '\n';
   }
-  polygon * poly = cl.create("square");
-
-  // use the class
-  poly->set_side_length(7);
-  cout << "The square area is: " << poly->area() << '\n';
-
-  polygon * tri = cl.create("triangle");
+  else std::cout << "Square Plugin not loaded" << std::endl;
+  
+  std::cout << "Created square, trying triangle next" << std::endl;
+  if (cl.canCreate("triangle"))
+  { 
+    polygon * tri = cl.create("triangle");
 
   // use the class
   tri->set_side_length(7);
-  cout << "The triangle area is: " << tri->area() << '\n';
-
+  std::cout << "The triangle area is: " << tri->area() << '\n';
+  }
+  else std::cout << "Triangle Plugin not loaded" << std::endl;
   
+  
+  ros::ClassLoader<shape> ph("plugin_user", "filters", "shape");
 
+
+  if ( ph.canCreate("line"))
+    {
+      shape * sh = ph.create("line");
+      // use the class
+      sh->set_side_length(7);
+      std::cout << "The line area is: " << sh->area() << '\n';
+    }
+    else
+      std::cerr << "Cloudn't find line lib" << std::endl;
+
+  return 0;
 }

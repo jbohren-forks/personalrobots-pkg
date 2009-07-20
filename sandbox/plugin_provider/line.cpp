@@ -27,41 +27,21 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef POLYGON_HPP
-#define POLYGON_HPP
+#include "shape.hpp"
+#include "Poco/ClassLibrary.h"
 
-#include <string>
-#include <set>
-#include <vector>
-#include <iostream>
+#include <cmath>
 
-#include "boost/algorithm/string.hpp"
-
-template<class T>
-class base_polygon
-{
+class line : public shape {
 public:
-  base_polygon(): side_length_(0) {};
-protected:
-  T side_length_;
-};
-
-class polygon : public base_polygon<double>{
-
-public:
-  polygon(){}
-
-  virtual ~polygon() {}
-
-  void set_side_length(double side_length) {
-    side_length_ = side_length;
+  virtual double area() const {
+    return 0;
   }
-
-  virtual double area() const = 0;
 };
 
 
+POCO_BEGIN_MANIFEST(shape)
 
+POCO_EXPORT_CLASS(line)
 
-
-#endif
+POCO_END_MANIFEST 

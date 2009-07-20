@@ -11,7 +11,7 @@
   <depend package="plugin_user"/>
 
   <export>
-    <filter plugin="${prefix}/lib/libsquare"/>
+    <filters polygon="${prefix}/lib/libsquare" shape="${prefix}/lib/libline"/>
   </export>
 
 </package>
