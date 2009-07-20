@@ -393,6 +393,7 @@ namespace cloud_geometry
   }
 
   std::string getAvailableChannels (const robot_msgs::PointCloud &cloud);
+  std::string getAvailableChannels (const robot_msgs::PointCloudConstPtr& cloud);
 
   void getPointCloud (const robot_msgs::PointCloud &input, const std::vector<int> &indices, robot_msgs::PointCloud &output);
   void getPointCloudOutside (const robot_msgs::PointCloud &input, std::vector<int> indices, robot_msgs::PointCloud &output);

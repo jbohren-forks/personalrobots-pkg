@@ -49,15 +49,16 @@
 #include <tf/transform_broadcaster.h>
 
 using namespace std;
+using namespace robot_msgs;
 
 class PCDGenerator
 {
   protected:
     string tf_frame_;
-    ros::Node& node_;
+    ros::NodeHandle nh_;
     tf::TransformBroadcaster broadcaster_;
     tf::Stamped<tf::Transform> transform_;
-    
+
   public:
 
     // ROS messages
@@ -66,13 +67,15 @@ class PCDGenerator
     string file_name_, cloud_topic_;
     double rate_;
 
-    PCDGenerator (ros::Node& anode) : tf_frame_ ("base_link"), node_ (anode), 
-                                      transform_ (btTransform (btQuaternion (0, 0, 0), btVector3 (0, 0, 0)), ros::Time::now (), tf_frame_, tf_frame_)
+    ros::Publisher cloud_pub_;
+
+    PCDGenerator () : tf_frame_ ("base_link"),
+                      transform_ (btTransform (btQuaternion (0, 0, 0), btVector3 (0, 0, 0)), ros::Time::now (), tf_frame_, tf_frame_)
     {
       // Maximum number of outgoing messages to be queued for delivery to subscribers = 1
       cloud_topic_ = "cloud_pcd";
-      node_.advertise<robot_msgs::PointCloud> (cloud_topic_.c_str (), 1);
-      ROS_INFO ("Publishing data on topic %s.", node_.mapName (cloud_topic_).c_str ());
+      cloud_pub_ = nh_.advertise<PointCloud> (cloud_topic_.c_str (), 1);
+      ROS_INFO ("Publishing data on topic %s.", nh_.resolveName (cloud_topic_).c_str ());
     }
 
     ////////////////////////////////////////////////////////////////////////////////
@@ -91,18 +94,19 @@ class PCDGenerator
     bool spin ()
     {
       double interval = rate_ * 1e+6;
-      while (node_.ok ())
+      while (nh_.ok ())
       {
         transform_.stamp_ = ros::Time::now ();
         broadcaster_.sendTransform (transform_);
 
-        ROS_INFO ("Publishing data (%d points) on topic %s in frame %s.", (int)msg_cloud_.pts.size (), node_.mapName (cloud_topic_).c_str (), msg_cloud_.header.frame_id.c_str ());
+        ROS_INFO ("Publishing data (%d points) on topic %s in frame %s.", (int)msg_cloud_.pts.size (), nh_.resolveName (cloud_topic_).c_str (), msg_cloud_.header.frame_id.c_str ());
         msg_cloud_.header.stamp = ros::Time::now ();
-        node_.publish ("cloud_pcd", msg_cloud_);
-        
+        cloud_pub_.publish (msg_cloud_);
+
         if (interval == 0)                      // We only publish once if a 0 seconds interval is given
           break;
         usleep (interval);
+        ros::spinOnce ();
       }
 
       return (true);
@@ -121,11 +125,9 @@ int
     return (-1);
   }
 
-  ros::init (argc, argv);
+  ros::init (argc, argv, "pcd_generator");
 
-  ros::Node ros_node ("pcd_generator");
-
-  PCDGenerator c (ros_node);
+  PCDGenerator c;
   c.file_name_ = string (argv[1]);
   c.rate_      = atof (argv[2]);
   ROS_INFO ("Loading file %s...", c.file_name_.c_str ());

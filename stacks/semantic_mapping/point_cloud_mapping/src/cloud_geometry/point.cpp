@@ -87,6 +87,27 @@ namespace cloud_geometry
     return (result);
   }
 
+  ////////////////////////////////////////////////////////////////////////////////
+  /** \brief Get the available dimensions as a space separated string
+    * \param cloud a pointer to the point cloud data message
+    */
+  std::string
+    getAvailableChannels (const robot_msgs::PointCloudConstPtr& cloud)
+  {
+    std::string result;
+    if (cloud->chan.size () == 0)
+      return (result);
+    unsigned int i;
+    for (i = 0; i < cloud->chan.size () - 1; i++)
+    {
+      std::string index = cloud->chan[i].name + " ";
+      result += index;
+    }
+    std::string index = cloud->chan[i].name;
+    result += index;
+    return (result);
+  }
+
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   /** \brief Get the point indices from a cloud, whose normals are close to parallel with a given axis direction.
     * \param points the point cloud message

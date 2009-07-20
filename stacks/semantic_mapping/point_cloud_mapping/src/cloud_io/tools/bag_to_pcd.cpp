@@ -40,7 +40,7 @@
  **/
 
 // ROS core
-#include <ros/node.h>
+#include <ros/ros.h>
 
 #include <tf/transform_listener.h>
 
@@ -57,12 +57,9 @@ using namespace robot_msgs;
 class BagToPcd
 {
   protected:
-    ros::Node& node_;
+    ros::NodeHandle nh_;
 
   public:
-
-    // ROS messages
-    PointCloud cloud_;
 
     // Save data to disk ?
     char fn_[80];
@@ -71,17 +68,20 @@ class BagToPcd
     tf::TransformListener tf_;
     std::string cloud_topic_;
 
+    ros::Subscriber cloud_sub_;
+
     ////////////////////////////////////////////////////////////////////////////////
-    BagToPcd (ros::Node& anode) : node_ (anode), dump_to_disk_ (false), tf_ (anode)
+    BagToPcd () : dump_to_disk_ (false)
     {
       cloud_topic_ = "tilt_laser_cloud";
-      node_.subscribe (cloud_topic_, cloud_, &BagToPcd::cloud_cb, this, 1);
-      ROS_INFO ("Listening for incoming data on topic %s", node_.mapName (cloud_topic_).c_str ());
+      cloud_sub_ = nh_.subscribe (cloud_topic_, 1, &BagToPcd::cloud_cb, this);
+      ROS_INFO ("Listening for incoming data on topic %s", nh_.resolveName (cloud_topic_).c_str ());
     }
 
     ////////////////////////////////////////////////////////////////////////////////
     // Callback
-    void cloud_cb ()
+    void
+      cloud_cb (const PointCloudConstPtr& cloud)
     {
       PointStamped pin, pout;
       pin.header.frame_id = "laser_tilt_mount_link";
@@ -89,35 +89,39 @@ class BagToPcd
 
       try
       {
-        tf_.transformPoint (cloud_.header.frame_id, pin, pout);
+        tf_.transformPoint (cloud->header.frame_id, pin, pout);
       }
       catch (tf::ConnectivityException)
       {
-        ROS_ERROR ("TF::ConectivityException caught while trying to transform a point from frame %s into %s!", cloud_.header.frame_id.c_str (), pin.header.frame_id.c_str ());
+        ROS_ERROR ("TF::ConectivityException caught while trying to transform a point from frame %s into %s!", cloud->header.frame_id.c_str (), pin.header.frame_id.c_str ());
       }
-      ROS_INFO ("Received %d data points in frame %s with %d channels (%s). Viewpoint is <%.3f, %.3f, %.3f>", (int)cloud_.pts.size (), cloud_.header.frame_id.c_str (),
-                (int)cloud_.chan.size (), cloud_geometry::getAvailableChannels (cloud_).c_str (), pout.point.x, pout.point.y, pout.point.z);
+      ROS_INFO ("Received %d data points in frame %s with %d channels (%s). Viewpoint is <%.3f, %.3f, %.3f>", (int)cloud->pts.size (), cloud->header.frame_id.c_str (),
+                (int)cloud->chan.size (), cloud_geometry::getAvailableChannels (cloud).c_str (), pout.point.x, pout.point.y, pout.point.z);
 
-      double c_time = cloud_.header.stamp.sec * 1e3 + cloud_.header.stamp.nsec;
+      double c_time = cloud->header.stamp.sec * 1e3 + cloud->header.stamp.nsec;
       sprintf (fn_, "%.0f.pcd", c_time);
       if (dump_to_disk_)
       {
         {
+          PointCloud cloud_out;
+          cloud_out.header = cloud->header;
+          cloud_out.pts    = cloud->pts;
+          cloud_out.chan   = cloud->chan;
           // Add information about the viewpoint - rudimentary stuff
-          cloud_.chan.resize (cloud_.chan.size () + 3);
-          cloud_.chan[cloud_.chan.size () - 3].name = "vx";
-          cloud_.chan[cloud_.chan.size () - 2].name = "vy";
-          cloud_.chan[cloud_.chan.size () - 1].name = "vz";
-          cloud_.chan[cloud_.chan.size () - 3].vals.resize (cloud_.pts.size ());
-          cloud_.chan[cloud_.chan.size () - 2].vals.resize (cloud_.pts.size ());
-          cloud_.chan[cloud_.chan.size () - 1].vals.resize (cloud_.pts.size ());
-          for (unsigned int i = 0; i < cloud_.pts.size (); i++)
+          cloud_out.chan.resize (cloud->chan.size () + 3);
+          cloud_out.chan[cloud->chan.size () - 3].name = "vx";
+          cloud_out.chan[cloud->chan.size () - 2].name = "vy";
+          cloud_out.chan[cloud->chan.size () - 1].name = "vz";
+          cloud_out.chan[cloud->chan.size () - 3].vals.resize (cloud->pts.size ());
+          cloud_out.chan[cloud->chan.size () - 2].vals.resize (cloud->pts.size ());
+          cloud_out.chan[cloud->chan.size () - 1].vals.resize (cloud->pts.size ());
+          for (unsigned int i = 0; i < cloud->pts.size (); i++)
           {
-            cloud_.chan[cloud_.chan.size () - 3].vals[i] = pout.point.x;
-            cloud_.chan[cloud_.chan.size () - 2].vals[i] = pout.point.y;
-            cloud_.chan[cloud_.chan.size () - 1].vals[i] = pout.point.z;
+            cloud_out.chan[cloud->chan.size () - 3].vals[i] = pout.point.x;
+            cloud_out.chan[cloud->chan.size () - 2].vals[i] = pout.point.y;
+            cloud_out.chan[cloud->chan.size () - 1].vals[i] = pout.point.z;
           }
-          cloud_io::savePCDFile (fn_, cloud_, 5);
+          cloud_io::savePCDFile (fn_, cloud_out, 5);
         }
         ROS_INFO ("Data saved to %s (%f).", fn_, c_time);
       }
@@ -128,13 +132,11 @@ class BagToPcd
 int
   main (int argc, char** argv)
 {
-  ros::init (argc, argv);
+  ros::init (argc, argv, "bag_pcd");
 
-  ros::Node ros_node ("bag_pcd");
-  BagToPcd b (ros_node);
+  BagToPcd b;
   b.dump_to_disk_ = true;
-
-  ros_node.spin ();
+  ros::spin ();
 
   return (0);
 }

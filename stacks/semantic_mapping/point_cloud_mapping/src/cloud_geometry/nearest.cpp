@@ -873,15 +873,15 @@ namespace cloud_geometry
             double angle = getAngleWithViewpoint (points.pts[i].x, points.pts[i].y, points.pts[i].z,
                                                   points.pts[idx].x, points.pts[idx].y, points.pts[idx].z,
                                                   viewpoint.x, viewpoint.y, viewpoint.z);
-;            if (angle < min_angle || angle > max_angle)
+            if (angle < min_angle || angle > max_angle)
             {
               valid_point = false;
               break;
             }
-              
+
           }
         }
-        
+
         if (valid_point)
         {
           // Copy the data

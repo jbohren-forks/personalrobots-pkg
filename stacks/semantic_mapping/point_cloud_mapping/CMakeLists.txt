@@ -13,13 +13,16 @@ target_link_libraries (bin/cloud_downsampler_node cloud_geometry cloud_kdtree)
 
 rospack_add_executable (bin/normal_estimation_node src/normal_estimation.cpp)
 target_link_libraries (bin/normal_estimation_node cloud_geometry cloud_kdtree)
+rospack_add_openmp_flags (bin/normal_estimation_node)
 
-rospack_add_library(normal_estimation_in_proc src/normal_estimation_in_proc.cpp)
-rospack_add_openmp_flags(normal_estimation_in_proc)
-#target_link_libraries (normal_estimation_in_proc cloud_geometry cloud_kdtree)
+rospack_add_library (normal_estimation_in_proc src/normal_estimation_in_proc.cpp)
+rospack_add_openmp_flags (normal_estimation_in_proc)
 
 rospack_add_executable (bin/planar_fit_node src/planar_fit.cpp)
 target_link_libraries (bin/planar_fit_node cloud_geometry cloud_kdtree sample_consensus)
+
+rospack_add_executable (bin/player_log_to_msg src/player_log_to_msg.cpp)
+target_link_libraries (bin/player_log_to_msg cloud_geometry)
 
 # ---[ Cloud Geometry library
   rospack_add_library (cloud_geometry
@@ -34,10 +37,10 @@ target_link_libraries (bin/planar_fit_node cloud_geometry cloud_kdtree sample_co
                        src/cloud_geometry/transforms.cpp
                       )
   target_link_libraries (cloud_geometry cloud_kdtree)
-  rospack_add_gtest (bin/test_geometry_statistics test/cloud_geometry/test_geometry_statistics.cpp)
-  rospack_add_gtest (bin/test_geometry_angles     test/cloud_geometry/test_geometry_angles.cpp)
-  rospack_add_gtest (bin/test_geometry_areas      test/cloud_geometry/test_geometry_areas.cpp)
-  target_link_libraries (bin/test_geometry_areas cloud_geometry cloud_kdtree)
+  rospack_add_gtest (test_geometry_statistics test/cloud_geometry/test_geometry_statistics.cpp)
+  rospack_add_gtest (test_geometry_angles     test/cloud_geometry/test_geometry_angles.cpp)
+  rospack_add_gtest (test_geometry_areas      test/cloud_geometry/test_geometry_areas.cpp)
+  target_link_libraries (test_geometry_areas cloud_geometry cloud_kdtree)
 
 # ---[ Cloud I/O library
   rospack_add_library (cloud_io
@@ -58,8 +61,8 @@ target_link_libraries (bin/planar_fit_node cloud_geometry cloud_kdtree sample_co
   target_link_libraries (bin/convert_pcd_ascii_binary cloud_io)
 
 
-  rospack_add_gtest (bin/test_cloud_io test/cloud_io/test_io.cpp)
-  target_link_libraries (bin/test_cloud_io cloud_io)
+  rospack_add_gtest (test_cloud_io test/cloud_io/test_io.cpp)
+  target_link_libraries (test_cloud_io cloud_io)
 
 # ---[ Cloud Kd-Tree library
   rospack_add_library (cloud_kdtree
@@ -67,8 +70,8 @@ target_link_libraries (bin/planar_fit_node cloud_geometry cloud_kdtree sample_co
                        src/cloud_kdtree/kdtree_flann.cpp
                       )
 
-  rospack_add_gtest (bin/test_cloud_kdtree test/cloud_kdtree/test_kdtree.cpp)
-  target_link_libraries (bin/test_cloud_kdtree cloud_kdtree)
+  rospack_add_gtest (test_cloud_kdtree test/cloud_kdtree/test_kdtree.cpp)
+  target_link_libraries (test_cloud_kdtree cloud_kdtree)
 
 # ---[ Cloud Octree library
   rospack_add_library (cloud_octree
@@ -96,17 +99,17 @@ target_link_libraries (bin/planar_fit_node cloud_geometry cloud_kdtree sample_co
                        src/sample_consensus/sac_model_parallel_lines.cpp
                       )
   target_link_libraries(sample_consensus cloud_geometry)
-  rospack_add_gtest (bin/test_sample_consensus_line_fit test/sample_consensus/test_line_fit.cpp)
-  rospack_add_gtest (bin/test_sample_consensus_plane_fit test/sample_consensus/test_plane_fit.cpp)
-  rospack_add_gtest (bin/test_sample_consensus_circle_fit test/sample_consensus/test_circle_fit.cpp)
-  rospack_add_gtest (bin/test_sample_consensus_sphere_fit test/sample_consensus/test_sphere_fit.cpp)
-  rospack_add_gtest (bin/test_sample_consensus_cylinder_fit test/sample_consensus/test_cylinder_fit.cpp)
+  rospack_add_gtest (test_sample_consensus_line_fit test/sample_consensus/test_line_fit.cpp)
+  rospack_add_gtest (test_sample_consensus_plane_fit test/sample_consensus/test_plane_fit.cpp)
+  rospack_add_gtest (test_sample_consensus_circle_fit test/sample_consensus/test_circle_fit.cpp)
+  rospack_add_gtest (test_sample_consensus_sphere_fit test/sample_consensus/test_sphere_fit.cpp)
+  rospack_add_gtest (test_sample_consensus_cylinder_fit test/sample_consensus/test_cylinder_fit.cpp)
 
-  target_link_libraries (bin/test_sample_consensus_line_fit sample_consensus cloud_geometry cloud_kdtree)
-  target_link_libraries (bin/test_sample_consensus_plane_fit sample_consensus cloud_geometry cloud_kdtree)
-  target_link_libraries (bin/test_sample_consensus_circle_fit sample_consensus cloud_geometry cloud_kdtree)
-  target_link_libraries (bin/test_sample_consensus_sphere_fit sample_consensus cloud_geometry cloud_kdtree)
-  target_link_libraries (bin/test_sample_consensus_cylinder_fit sample_consensus cloud_geometry cloud_kdtree)
+  target_link_libraries (test_sample_consensus_line_fit sample_consensus cloud_geometry cloud_kdtree)
+  target_link_libraries (test_sample_consensus_plane_fit sample_consensus cloud_geometry cloud_kdtree)
+  target_link_libraries (test_sample_consensus_circle_fit sample_consensus cloud_geometry cloud_kdtree)
+  target_link_libraries (test_sample_consensus_sphere_fit sample_consensus cloud_geometry cloud_kdtree)
+  target_link_libraries (test_sample_consensus_cylinder_fit sample_consensus cloud_geometry cloud_kdtree)
 
 # ---[ Fast/Point Feature Histograms 3D descriptors
   rospack_add_library (pfh_descriptor
@@ -114,20 +117,3 @@ target_link_libraries (bin/planar_fit_node cloud_geometry cloud_kdtree sample_co
                        src/pfh_descriptor/fpfh.cpp
                       )
 
-## check for OpenMP
-#include(CheckIncludeFile)
-#include(CheckCXXCompilerFlag)
-#include(CheckLibraryExists)
-#
-#if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
-#  # check if compilers supports -fopenmp
-#  check_cxx_compiler_flag (-fopenmp HAVE_OPENMP)
-#  check_library_exists (gomp omp_get_num_threads "" HAS_GOMP_LIB)
-#
-#  if(HAVE_OPENMP AND HAS_GOMP_LIB)
-#    add_definitions ("-fopenmp")
-#    target_link_libraries (bin/normal_estimation_node gomp)
-#    target_link_libraries (bin/planar_fit_node gomp)
-#    set (OPENMP_LFLAGS "-lgomp")
-#  endif(HAVE_OPENMP AND HAS_GOMP_LIB)
-#endif(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)

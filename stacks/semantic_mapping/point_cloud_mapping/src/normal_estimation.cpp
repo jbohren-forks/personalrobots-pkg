@@ -35,13 +35,13 @@
 
 \author Radu Bogdan Rusu
 
-@b normal_estimation_omp estimates local surface properties at each 3D point, such as surface normals, curvature estimates,
-moment invariants, etc.
+@b normal_estimation estimates basic local surface properties at each 3D point, such as surface normals, curvatures,
+                     and moment invariants.
 
  **/
 
 // ROS core
-#include <ros/node.h>
+#include <ros/ros.h>
 // ROS messages
 #include <robot_msgs/PointCloud.h>
 #include <robot_msgs/PointStamped.h>
@@ -67,12 +67,12 @@ using namespace robot_msgs;
 class NormalEstimation
 {
   protected:
-    ros::Node& node_;
+    ros::NodeHandle nh_;
 
   public:
 
     // ROS messages
-    PointCloud cloud_, cloud_down_, cloud_normals_;
+    PointCloud cloud_down_, cloud_normals_;
 
     tf::TransformListener tf_;
 
@@ -91,27 +91,29 @@ class NormalEstimation
 
     vector<cloud_geometry::Leaf> leaves_;
 
+    ros::Subscriber cloud_sub_;
+    ros::Publisher cloud_norm_pub_;
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    NormalEstimation (ros::Node& anode) : node_ (anode),  tf_ (anode)
+    NormalEstimation ()
     {
-      node_.param ("~search_radius", radius_, 0.02);      // 2cm radius by default
-      node_.param ("~search_k_closest", k_, 25);          // 25 k-neighbors by default
-      node_.param ("~compute_moments", compute_moments_, false);  // Do not compute moment invariants by default
+      nh_.param ("~search_radius", radius_, 0.02);      // 2cm radius by default
+      nh_.param ("~search_k_closest", k_, 25);          // 25 k-neighbors by default
+      nh_.param ("~compute_moments", compute_moments_, false);  // Do not compute moment invariants by default
 
-      node_.param ("~downsample", downsample_, 1);                        // Downsample cloud before normal estimation
-      node_.param ("~downsample_leaf_width_x", leaf_width_.x, 0.05);      // 5cm radius by default
-      node_.param ("~downsample_leaf_width_y", leaf_width_.y, 0.05);      // 5cm radius by default
-      node_.param ("~downsample_leaf_width_z", leaf_width_.z, 0.05);      // 5cm radius by default
-      node_.param ("~cut_distance", cut_distance_, 10.0);   // 10m by default
+      nh_.param ("~downsample", downsample_, 1);                        // Downsample cloud before normal estimation
+      nh_.param ("~downsample_leaf_width_x", leaf_width_.x, 0.05);      // 5cm radius by default
+      nh_.param ("~downsample_leaf_width_y", leaf_width_.y, 0.05);      // 5cm radius by default
+      nh_.param ("~downsample_leaf_width_z", leaf_width_.z, 0.05);      // 5cm radius by default
+      nh_.param ("~cut_distance", cut_distance_, 10.0);   // 10m by default
 
       if (downsample_ != 0)
         k_ = 10;          // Reduce the size of K significantly
 
       string cloud_topic ("tilt_laser_cloud");
 
-      vector<pair<string, string> > t_list;
-      node_.getPublishedTopics (&t_list);
+      ros::VP_string t_list;
+      nh_.getPublishedTopics (t_list);
       bool topic_found = false;
       for (vector<pair<string, string> >::iterator it = t_list.begin (); it != t_list.end (); it++)
       {
@@ -124,8 +126,8 @@ class NormalEstimation
       if (!topic_found)
         ROS_WARN ("Trying to subscribe to %s, but the topic doesn't exist!", cloud_topic.c_str ());
 
-      node_.subscribe (cloud_topic, cloud_, &NormalEstimation::cloud_cb, this, 1);
-      node_.advertise<PointCloud> ("cloud_normals", 1);
+      cloud_sub_ = nh_.subscribe (cloud_topic, 1, &NormalEstimation::cloud_cb, this);
+      cloud_norm_pub_ = nh_.advertise<PointCloud> ("cloud_normals", 1);
 
 #ifdef DEBUG
       cloud_normals_.chan.resize (1);
@@ -140,21 +142,26 @@ class NormalEstimation
     void
       updateParametersFromServer ()
     {
-      if (node_.hasParam ("~downsample")) node_.getParam ("~downsample", downsample_);
+      int downsample = -1, cut_distance = -1;
+      nh_.getParam ("~downsample", downsample);
+      if (downsample != downsample_)
+        downsample_ = downsample;
+
       if (downsample_ != 0)
         k_ = 10;
       else
         k_ = 25;
 
-      if (node_.hasParam ("~downsample_leaf_width_x")) node_.getParam ("~downsample_leaf_width_x", leaf_width_.x);
-      if (node_.hasParam ("~downsample_leaf_width_y")) node_.getParam ("~downsample_leaf_width_y", leaf_width_.y);
-      if (node_.hasParam ("~downsample_leaf_width_z")) node_.getParam ("~downsample_leaf_width_z", leaf_width_.z);
+      nh_.getParam ("~downsample_leaf_width_x", leaf_width_.x);
+      nh_.getParam ("~downsample_leaf_width_y", leaf_width_.y);
+      nh_.getParam ("~downsample_leaf_width_z", leaf_width_.z);
 
-      if (node_.hasParam ("~cut_distance"))
+      nh_.getParam ("~cut_distance", cut_distance);
+      if (cut_distance != cut_distance_)
       {
-        node_.getParam ("~cut_distance", cut_distance_);
         leaves_.resize (0);
         ROS_INFO ("Done clearing leaves.");
+        cut_distance_ = cut_distance;
       }
     }
 
@@ -191,13 +198,14 @@ class NormalEstimation
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Callback
-    void cloud_cb ()
+    void
+      cloud_cb (const PointCloudConstPtr& cloud)
     {
       updateParametersFromServer ();
 
-      ROS_INFO ("Received %d data points in frame %s with %d channels (%s).", (int)cloud_.pts.size (), cloud_.header.frame_id.c_str (),
-                (int)cloud_.chan.size (), cloud_geometry::getAvailableChannels (cloud_).c_str ());
-      if (cloud_.pts.size () == 0)
+      ROS_INFO ("Received %d data points in frame %s with %d channels (%s).", (int)cloud->pts.size (), cloud->header.frame_id.c_str (),
+                (int)cloud->chan.size (), cloud_geometry::getAvailableChannels (cloud).c_str ());
+      if (cloud->pts.size () == 0)
       {
         ROS_ERROR ("No data points found. Exiting...");
         return;
@@ -205,7 +213,7 @@ class NormalEstimation
 
       // Figure out the viewpoint value in the cloud_frame frame
       PointStamped viewpoint_cloud;
-      getCloudViewPoint (cloud_.header.frame_id, viewpoint_cloud, tf_);
+      getCloudViewPoint (cloud->header.frame_id, viewpoint_cloud, tf_);
 
       ros::Time ts = ros::Time::now ();
 
@@ -213,24 +221,25 @@ class NormalEstimation
       if (downsample_ != 0)
       {
         ros::Time ts1 = ros::Time::now ();
-        int d_idx = cloud_geometry::getChannelIndex (cloud_, "distances");
+        int d_idx = cloud_geometry::getChannelIndex (cloud, "distances");
         try
         {
-          cloud_geometry::downsamplePointCloud (cloud_, cloud_down_, leaf_width_, leaves_, d_idx, cut_distance_);
+          cloud_geometry::downsamplePointCloud (cloud, cloud_down_, leaf_width_, leaves_, d_idx, cut_distance_);
         }
         catch (std::bad_alloc)
         {
-//          cloud_geometry::downsamplePointCloudSet (cloud_, cloud_down_, leaf_width_, d_idx, cut_distance_);
+          ROS_ERROR ("Could not downsample dataset! Exiting...");
+          return;
         }
 
-        ROS_INFO ("Downsampling enabled. Number of points left: %d / %d in %g seconds.", (int)cloud_down_.pts.size (), (int)cloud_.pts.size (), (ros::Time::now () - ts1).toSec ());
+        ROS_INFO ("Downsampling enabled. Number of points left: %d / %d in %g seconds.", (int)cloud_down_.pts.size (), (int)cloud->pts.size (), (ros::Time::now () - ts1).toSec ());
       }
 
       // Resize
 #ifdef DEBUG
-      cloud_normals_.header = cloud_.header;
-      cloud_normals_.pts.resize (cloud_.pts.size ());
-      cloud_normals_.chan[0].vals.resize (cloud_.pts.size ());
+      cloud_normals_.header = cloud->header;
+      cloud_normals_.pts.resize (cloud->pts.size ());
+      cloud_normals_.chan[0].vals.resize (cloud->pts.size ());
 #else
       // We need to copy the original point cloud data, and this looks like a good way to do it
       int original_chan_size;
@@ -242,8 +251,10 @@ class NormalEstimation
       }
       else
       {
-        cloud_normals_ = cloud_;
-        original_chan_size = cloud_.chan.size ();
+        cloud_normals_.header = cloud->header;
+        cloud_normals_.pts    = cloud->pts;
+        cloud_normals_.chan   = cloud->chan;
+        original_chan_size = cloud->chan.size ();
       }
 
       // Allocate the extra needed channels
@@ -266,7 +277,7 @@ class NormalEstimation
         if (downsample_ != 0)
           cloud_normals_.chan[d].vals.resize (cloud_down_.pts.size ());
         else
-          cloud_normals_.chan[d].vals.resize (cloud_.pts.size ());
+          cloud_normals_.chan[d].vals.resize (cloud->pts.size ());
       }
 #endif
 
@@ -323,7 +334,7 @@ class NormalEstimation
 
       ROS_INFO ("Local features estimated in %g seconds.\n", (ros::Time::now () - ts).toSec ());
 
-      node_.publish ("cloud_normals", cloud_normals_);
+      cloud_norm_pub_.publish (cloud_normals_);
 
       delete kdtree_;
     }
@@ -333,12 +344,10 @@ class NormalEstimation
 int
   main (int argc, char** argv)
 {
-  ros::init (argc, argv);
+  ros::init (argc, argv, "normal_estimation_node");
 
-  ros::Node ros_node ("normal_estimation_node");
-
-  NormalEstimation p (ros_node);
-  ros_node.spin ();
+  NormalEstimation p;
+  ros::spin ();
 
   return (0);
 }
