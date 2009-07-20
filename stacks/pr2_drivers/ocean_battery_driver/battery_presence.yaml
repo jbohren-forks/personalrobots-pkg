@@ -22,3 +22,6 @@ expected_present: [
 
 desired_present: []
 
+name: Batteries
+
+timeout: 5
