@@ -64,6 +64,7 @@ void BoundingBox::compute(const robot_msgs::PointCloud& data,
                           cv::Vector<cv::Vector<float> >& results)
 {
   ROS_ERROR("BoundingBox can only be used on a region of points");
+  // TODO have setBoundingBoxRadius???
   results.resize(interest_pts.size());
 }
 
@@ -179,19 +180,26 @@ void BoundingBox::compute(const robot_msgs::PointCloud& data,
         continue;
       }
 
-      // Initialize extrema values to the first coordinate in the interest region
+      // Get the norms of the current principle component vectors in order to
+      // compute scalar projections
+      double norm_ev_max = ((*eig_vec_max)[i])->norm();
+      double norm_ev_mid = ((*eig_vec_mid)[i])->norm();
+      double norm_ev_min = ((*eig_vec_min)[i])->norm();
+
+      // Initialize extrema values of the first point's scalar projections
+      // onto the principle components
       Eigen::Vector3d curr_pt;
       curr_pt[0] = data.pts[(*curr_indices)[0]].x;
       curr_pt[1] = data.pts[(*curr_indices)[0]].y;
       curr_pt[2] = data.pts[(*curr_indices)[0]].z;
-      float min_x = curr_pt.dot(*((*eig_vec_max)[0]));
-      float min_y = curr_pt.dot(*((*eig_vec_mid)[0]));
-      float min_z = curr_pt.dot(*((*eig_vec_min)[0]));
-      float max_x = min_x;
-      float max_y = min_y;
-      float max_z = min_z;
+      float min_v1 = curr_pt.dot(*((*eig_vec_max)[0])) / norm_ev_max;
+      float min_v2 = curr_pt.dot(*((*eig_vec_mid)[0])) / norm_ev_mid;
+      float min_v3 = curr_pt.dot(*((*eig_vec_min)[0])) / norm_ev_min;
+      float max_v1 = min_v1;
+      float max_v2 = min_v2;
+      float max_v3 = min_v3;
 
-      // Loop over remaining points in region and update extremas
+      // Loop over remaining points in region and update projection extremas
       for (unsigned int j = 1 ; j < curr_indices->size() ; j++)
       {
         curr_pt[0] = data.pts[(*curr_indices)[j]].x;
@@ -199,41 +207,41 @@ void BoundingBox::compute(const robot_msgs::PointCloud& data,
         curr_pt[2] = data.pts[(*curr_indices)[j]].z;
 
         // biggest eigenvector
-        float curr_coord = curr_pt.dot(*((*eig_vec_max)[i]));
-        if (curr_coord < min_x)
+        float curr_projection = curr_pt.dot(*((*eig_vec_max)[i])) / norm_ev_max;
+        if (curr_projection < min_v1)
         {
-          min_x = curr_coord;
+          min_v1 = curr_projection;
         }
-        if (curr_coord > max_x)
+        if (curr_projection > max_v1)
         {
-          max_x = curr_coord;
+          max_v1 = curr_projection;
         }
         // middle eigenvector
-        curr_coord = curr_pt.dot(*((*eig_vec_mid)[i]));
-        if (curr_coord < min_y)
+        curr_projection = curr_pt.dot(*((*eig_vec_mid)[i])) / norm_ev_mid;
+        if (curr_projection < min_v2)
         {
-          min_y = curr_coord;
+          min_v2 = curr_projection;
         }
-        if (curr_coord > max_y)
+        if (curr_projection > max_v2)
         {
-          max_y = curr_coord;
+          max_v2 = curr_projection;
         }
         // smallest eigenvector
-        curr_coord = curr_pt.dot(*((*eig_vec_min)[i]));
-        if (curr_coord < min_z)
+        curr_projection = curr_pt.dot(*((*eig_vec_min)[i])) / norm_ev_min;
+        if (curr_projection < min_v3)
         {
-          min_z = curr_coord;
+          min_v3 = curr_projection;
         }
-        if (curr_coord > max_z)
+        if (curr_projection > max_v3)
         {
-          max_z = curr_coord;
+          max_v3 = curr_projection;
         }
       }
 
       // --------------------------
-      results[i][results_idx++] = max_x - min_x;
-      results[i][results_idx++] = max_y - min_y;
-      results[i][results_idx++] = max_z - min_z;
+      results[i][results_idx++] = max_v1 - min_v1;
+      results[i][results_idx++] = max_v2 - min_v2;
+      results[i][results_idx++] = max_v3 - min_v3;
     }
   }
 }
