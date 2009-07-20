@@ -31,9 +31,15 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
+import random
 import os
 
-modes = ('none', 'test')
-for i in range(10):
-    for m in modes:
-        os.system("scripts/camera_hammer_1.py %d %s" % (i, m))
+modes = ('none', 'test', 'rectified')
+
+schedule = [(i,m) for i in range(100) for m in modes ]
+
+random.seed(0)
+#random.shuffle(schedule)
+
+for (i,m) in schedule:
+    os.system("scripts/camera_hammer_1.py %d %s" % (i, m))

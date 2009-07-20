@@ -43,23 +43,9 @@ from math import *
 import cv
 import dcam
 
-def runTest(mode):
-    print mode
-    dc = dcam.dcam(mode)
-    paramstr = dc.retParameters()
-
-    for i in range(50):
-        print i
-        w,h,l,r = dc.getImage()
-    cv_l = cv.CreateImageHeader((w, h), cv.IPL_DEPTH_8U, 1)
-    cv.SetData(cv_l, str(l), w)
-    cv_r = cv.CreateImageHeader((w, h), cv.IPL_DEPTH_8U, 1)
-    cv.SetData(cv_r, str(r), w)
-    return (cv_l, cv_r)
-
 def compose(a, b):
     w,h = cv.GetSize(a)
-    r = cv.CreateImage((w*2, h), cv.IPL_DEPTH_8U, 1)
+    r = cv.CreateImage((w*2, h), cv.IPL_DEPTH_8U, a.nChannels)
     cv.SetImageROI(r, (0, 0, w, h))
     cv.Copy(a, r)
     cv.SetImageROI(r, (w, 0, w, h))
@@ -67,11 +53,28 @@ def compose(a, b):
     cv.ResetImageROI(r)
     return r
 
-i = int(sys.argv[1])
+def runTest(seq, mode):
+    print mode
+    dc = dcam.dcam(mode)
+    paramstr = dc.retParameters()
+
+    for i in range(50):
+        print i
+        w,h,l,r = dc.getImage()
+        channels = len(l) / (w * h)
+        cv_l = cv.CreateImageHeader((w, h), cv.IPL_DEPTH_8U, channels)
+        cv.SetData(cv_l, str(l), w * channels)
+        cv_r = cv.CreateImageHeader((w, h), cv.IPL_DEPTH_8U, channels)
+        cv.SetData(cv_r, str(r), w * channels)
+        if channels == 3:
+          cv.CvtColor(cv_l, cv_l, cv.CV_BGR2RGB)
+          cv.CvtColor(cv_r, cv_r, cv.CV_BGR2RGB)
+        comp = compose(cv_l, cv_r)
+        cv.SaveImage("cam-%s-%04d-%03d.png" % (m, seq, i), comp)
+
+seq = int(sys.argv[1])
 m = sys.argv[2]
-l,r = runTest(m)
-comp = compose(l, r)
-cv.SaveImage("cam-%s-%06d.png" % (m, i), compose(l, r))
+runTest(seq, m)
 
 ## Collect goldens
 #modes = ('none', 'test')
