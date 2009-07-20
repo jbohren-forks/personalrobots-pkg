@@ -3,7 +3,7 @@
      Allows functionality similar to python's logplayer in rosrecord.
      Allows users to get specific batches of message from a bagfile.
   </description>
-  <author>Vijay Pradeep & John Eaton</author>
+  <author>Vijay Pradeep and John Eaton</author>
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
   <url>http://pr.willowgarage.com/wiki/octave_bag_player</url>
