@@ -280,6 +280,11 @@ int RegressionTreeWrapper::train()
   // Create nbr_samples-by-stacked_feature_dim_ matrix to hold feature values in each row
   float* sparse_feature_matrix = static_cast<float*> (calloc((nbr_samples * stacked_feature_dim_),
       sizeof(float)));
+  if (sparse_feature_matrix == NULL)
+  {
+    ROS_ERROR("RegressionTreeWrapper::train() calloc failed to return memory block");
+    return -1;
+  }
 
   // -------------------------------------------
   // Populate target_vals and sparse_feature_matrix for each sample
@@ -352,8 +357,9 @@ int RegressionTreeWrapper::predict(const float* const feature_vals,
   }
 
   // Create feature vec
-  float* big_feature_vec = static_cast<float*> (calloc(stacked_feature_dim_, sizeof(float)));
-  memcpy((big_feature_vec + start_idx), feature_vals, (length) * sizeof(float));
+  float big_feature_vec[stacked_feature_dim_];
+  memset(big_feature_vec, 0.0, sizeof(float) * stacked_feature_dim_);
+  memcpy((big_feature_vec + start_idx), feature_vals, sizeof(float) * length);
 
   // Wrap with OpenCV data structure
   CvMat cv_feature_vec;
@@ -362,7 +368,5 @@ int RegressionTreeWrapper::predict(const float* const feature_vals,
   // Predict with regression tree
   predicted_val = rtree_->predict(&cv_feature_vec, NULL)->value;
 
-  // Cleanup
-  free(big_feature_vec);
   return 0;
 }
