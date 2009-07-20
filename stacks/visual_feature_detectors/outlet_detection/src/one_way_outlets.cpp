@@ -8,11 +8,13 @@
  */
 
 #include "outlet_detection/one_way_outlets.h"
+#include "outlet_detection/outlet_model.h"
 #include "outlet_detection/one_way_descriptor.h"
 #include "outlet_detection/one_way_descriptor_base.h"
 #include "outlet_detection/constellation.h"
 #include "outlet_detection/generalized_hough.h"
 #include "outlet_detection/outlet_tuple.h"
+
 
 #include <highgui.h>
 
@@ -249,9 +251,10 @@ void detect_outlets_2x1_one_way(IplImage* test_image, const CvOneWayDescriptorBa
 }
 
 void detect_outlets_one_way(IplImage* test_image, const outlet_template_t& outlet_template, 
-                            vector<feature_t>& holes, IplImage* color_image, 
+                            vector<outlet_t>& holes, IplImage* color_image, 
                             const char* output_path, const char* output_filename)
 {
+	holes.clear();
     IplImage* image = cvCreateImage(cvSize(test_image->width, test_image->height), IPL_DEPTH_8U, 3);
     cvCvtColor(test_image, image, CV_GRAY2RGB);
     IplImage* image1 = cvCloneImage(color_image);
@@ -440,17 +443,27 @@ void detect_outlets_one_way(IplImage* test_image, const outlet_template_t& outle
 		}
         
 	}
-    
+   // int outlet_holes_count = 3;
 	if ((int)(res_features.size()) > 0)
 	{
 		holes.clear();
+		outlet_t outlet;
 		for(int i = 0; i < (int)res_features.size(); i++)
 		{
+			
 			CvScalar pointColor = res_features[i].part_id == 0 ? cvScalar(0,255,50) : cvScalar(255,0,50);	
 			cvLine(image1, cvPoint(res_features[i].center.x+7, res_features[i].center.y), cvPoint(res_features[i].center.x-7, res_features[i].center.y),pointColor,2); 
 			cvLine(image1, cvPoint(res_features[i].center.x, res_features[i].center.y+7), cvPoint(res_features[i].center.x, res_features[i].center.y-7),pointColor,2); 
-			holes.push_back(res_features[i]);
 		}
+
+		for (int i=0;i<(int)res_features.size()/3;i++)
+		{
+			outlet.hole1 = res_features[2*i].center;
+			outlet.hole2 = res_features[2*i+1].center;
+			outlet.ground_hole = res_features[2*(int)res_features.size()/3+i].center;
+			holes.push_back(outlet);
+		}
+
 	}
     
 	
