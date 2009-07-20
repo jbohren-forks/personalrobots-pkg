@@ -24,6 +24,7 @@
 #include <descriptors_3d/orientation.h>
 #include <descriptors_3d/position.h>
 #include <descriptors_3d/spin_image.h>
+#include <descriptors_3d/bounding_box.h>
 
 #include <functional_m3n/random_field.h>
 #include <functional_m3n/m3n_model.h>
@@ -96,30 +97,85 @@ void initCS0Params()
   spin_image->setAxisCustom(0.0, 0.0, 1.0);
   spin_image->setImageDimensions(0.0762, 0.0762, 5, 4);
 
+  BoundingBox* bounding_box = new BoundingBox(true, false);
+  bounding_box->useSpectralInformation(spectral_shape);
+
   // ---------------
   cs0_feature_descriptors.push_back(spectral_shape);
   cs0_feature_descriptors.push_back(orientation);
   cs0_feature_descriptors.push_back(position);
   cs0_feature_descriptors.push_back(spin_image);
+  cs0_feature_descriptors.push_back(bounding_box);
 
   // ---------------
   GLOBAL_cs_kmeans_params.push_back(cs0_kmeans_params);
   GLOBAL_cs_feature_descriptors.push_back(cs0_feature_descriptors);
 }
 
+void initCS1Params()
+{
+  kmeans_params_t cs1_kmeans_params;
+  vector<Descriptor3D*> cs1_feature_descriptors;
+
+  // ---------------
+  // kmeans parameters for constructing cliques
+  cs1_kmeans_params.factor = 0.001;
+  cs1_kmeans_params.accuracy = 1.0;
+  cs1_kmeans_params.max_iter = 10;
+  cs1_kmeans_params.channel_indices.clear();
+
+  // ---------------
+  // Features
+  SpectralShape* spectral_shape = new SpectralShape();
+  spectral_shape->setSupportRadius(-1);
+
+  Orientation* orientation = new Orientation();
+  if (orientation->useSpectralInformation(spectral_shape) < 0)
+  {
+    abort();
+  }
+  orientation->useNormalOrientation(0.0, 0.0, 1.0);
+  orientation->useTangentOrientation(0.0, 0.0, 1.0);
+
+  Position* position = new Position();
+
+  SpinImage* spin_image = new SpinImage();
+  spin_image->useSpectralInformation(spectral_shape);
+  spin_image->setAxisNormal();
+  spin_image->setImageDimensions(0.0762, 0.0762, 7, 5);
+
+  BoundingBox* bounding_box = new BoundingBox(true, false);
+  bounding_box->useSpectralInformation(spectral_shape);
+
+  // ---------------
+  cs1_feature_descriptors.push_back(spectral_shape);
+  cs1_feature_descriptors.push_back(orientation);
+  cs1_feature_descriptors.push_back(position);
+  cs1_feature_descriptors.push_back(spin_image);
+  cs1_feature_descriptors.push_back(bounding_box);
+
+  // ---------------
+  GLOBAL_cs_kmeans_params.push_back(cs1_kmeans_params);
+  GLOBAL_cs_feature_descriptors.push_back(cs1_feature_descriptors);
+}
+
 unsigned int populateParameters()
 {
   initNodeParams();
 
-  unsigned int nbr_clique_sets = 1;
+  unsigned int nbr_clique_sets = 2;
   initCS0Params();
+  initCS1Params();
+  vector<float> robust_potts_params(nbr_clique_sets, -1.0);
+  //robust_potts_params[0] = 0.13;
+  //robust_potts_params[1] = 0.20;
 
   // ----------------------------------------------
   // Define learning parameters
-  vector<float> robust_potts_params(nbr_clique_sets, -1.0);
   RegressionTreeWrapperParams regression_tree_params;
-  GLOBAL_m3n_params.setLearningRate(0.5);
-  GLOBAL_m3n_params.setNumberOfIterations(15);
+  regression_tree_params.max_tree_depth_factor = 0.2; // was 0.4
+  GLOBAL_m3n_params.setLearningRate(0.4);
+  GLOBAL_m3n_params.setNumberOfIterations(6);
   GLOBAL_m3n_params.setRegressorRegressionTrees(regression_tree_params);
   GLOBAL_m3n_params.setInferenceRobustPotts(robust_potts_params);
 
