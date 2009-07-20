@@ -41,6 +41,7 @@
 
 #include <planning_environment/monitors/kinematic_model_state_monitor.h>
 #include <motion_planning_msgs/KinematicPath.h>
+#include <manipulation_srvs/IKService.h>
 #include <pr2_robot_actions/MoveArmGoal.h>
 #include <pr2_robot_actions/MoveArmState.h>
 #include <pr2_robot_actions/ActuateGripperState.h>
@@ -72,8 +73,9 @@ void printHelp(void)
     std::cout << "   - current <config>        : set <config> to the current position of the arm" << std::endl;
     std::cout << "   - rand <config>           : set <config> to a random position of the arm" << std::endl;
     std::cout << "   - diff <config>           : show the difference from current position of the arm to <config>" << std::endl;
+    std::cout << "   - ik <config> <x> <y> <z> : perform IK for the pose (<x>, <y>, <z>, 0, 0, 0, 1) and store it in <config>" << std::endl;
     std::cout << "   - go <config>             : sends the command <config> to the arm" << std::endl;
-    std::cout << "   - go <px> <py> <pz>       : move the end effector to pose (<px>, <py>, <pz>, 0, 0, 0, 1)" << std::endl;
+    std::cout << "   - go <x> <y> <z>          : move the end effector to pose (<x>, <y>, <z>, 0, 0, 0, 1)" << std::endl;
     std::cout << "   - grip <value>            : sends a command to the gripper of the arm" << std::endl;
     std::cout << "   - <config>[<idx>] = <val> : sets the joint specified by <idx> to <val> in <config>" << std::endl;
     std::cout << "   - <config2> = <config1>   : copy <config1> to <config2>" << std::endl;
@@ -408,6 +410,81 @@ int main(int argc, char **argv)
 	    sp->randomState();
 	    setConfig(sp, names, goals[config]);
 	    delete sp;
+	}
+	else
+	if (cmd.length() > 3 && cmd.substr(0, 3) == "ik ")
+	{
+	    std::stringstream ss(cmd.substr(3));
+	    std::string config;
+	    
+	    if (ss.good() && !ss.eof())
+		ss >> config;
+	    
+	    if (config.empty())
+		std::cerr << "Configuration name required. See 'help'" << std::endl;
+	    else
+	    {
+		double x, y, z;
+		bool err = true;
+		
+		if (ss.good() && !ss.eof())
+		{
+		    ss >> x;
+		    if (ss.good() && !ss.eof())
+		    {
+			ss >> y;
+			if (ss.good() && !ss.eof())
+			{
+			    ss >> z;
+			    err = false;
+			    std::cout << "Performing IK to" << x << ", " << y << ", " << z << ", 0, 0, 0, 1..." << std::endl;
+			    
+			    ros::ServiceClient client = nh.serviceClient<manipulation_srvs::IKService>("arm_ik");
+			    manipulation_srvs::IKService::Request request;
+			    manipulation_srvs::IKService::Response response;
+			    request.data.pose_stamped.header.stamp = ros::Time::now();
+			    request.data.pose_stamped.header.frame_id = km.getFrameId();
+			    request.data.pose_stamped.pose.position.x = x;
+			    request.data.pose_stamped.pose.position.y = y;
+			    request.data.pose_stamped.pose.position.z = z;
+			    request.data.pose_stamped.pose.orientation.x = 0;
+			    request.data.pose_stamped.pose.orientation.y = 0;
+			    request.data.pose_stamped.pose.orientation.z = 0;
+			    request.data.pose_stamped.pose.orientation.w = 1;
+			    request.data.joint_names = names;
+			    
+			    for(unsigned int i = 0; i < names.size() ; ++i)
+			    {
+				const double *params = km.getRobotState()->getParamsJoint(names[i]);
+				const unsigned int u = km.getKinematicModel()->getJoint(names[i])->usedParams;
+				for (unsigned int j = 0 ; j < u ; ++j)
+				    request.data.positions.push_back(params[j]);
+			    }
+			    if (client.call(request, response))
+			    { 
+				planning_models::StateParams sp(*km.getRobotState());
+				unsigned int n = 0;		    
+				for (unsigned int i = 0 ; i < names.size() ; ++i)
+				{
+				    unsigned int u = km.getKinematicModel()->getJoint(names[i])->usedParams;
+				    for (unsigned int j = 0 ; j < u ; ++j)
+				    {
+					std::vector<double> params(response.solution.begin() + n, response.solution.begin() + n + u);
+					sp.setParamsJoint(params, names[i]);
+				    }
+				    n += u;			
+				}
+				setConfig(&sp, names, goals[config]);
+				std::cout << "Success!" << std::endl;
+			    }
+			    else
+				std::cerr << "IK Failed" << std::endl;
+			}
+		    }
+		}
+		if (err)
+		    std::cerr << "Unable to parse IK position" << std::endl;
+	    }
 	}
 	else
 	if (cmd.length() > 3 && cmd.substr(0, 3) == "go ")
