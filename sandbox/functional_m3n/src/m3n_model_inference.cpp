@@ -229,7 +229,7 @@ int M3NModel::inferPrivate(const RandomField& random_field,
 
       // -------------------------------------------
       // Create new energy function
-      SubmodularEnergyMin* energy_func = new SubmodularEnergyMin();
+      SubmodularEnergyMin energy_func;
       map<unsigned int, SubmodularEnergyMin::EnergyVar> energy_vars;
 
       // -------------------------------------------
@@ -241,9 +241,9 @@ int M3NModel::inferPrivate(const RandomField& random_field,
         const RandomField::Node* curr_node = iter_nodes->second;
 
         // Add new energy variable
-        energy_vars[curr_node_id] = energy_func->addVariable();
+        energy_vars[curr_node_id] = energy_func.addVariable();
 
-        ret_val = addNodeEnergy(*curr_node, *energy_func, energy_vars[curr_node_id],
+        ret_val = addNodeEnergy(*curr_node, energy_func, energy_vars[curr_node_id],
             inferred_labels[curr_node_id], alpha_label);
       }
 
@@ -268,7 +268,7 @@ int M3NModel::inferPrivate(const RandomField& random_field,
           // add edge potential (assuming all edges are associative)
           else if (curr_clique_order == 2)
           {
-            ret_val = addEdgeEnergy(*curr_clique, cs_idx, *energy_func, energy_vars, inferred_labels,
+            ret_val = addEdgeEnergy(*curr_clique, cs_idx, energy_func, energy_vars, inferred_labels,
                 alpha_label);
           }
           // add high-order clique potential
@@ -277,13 +277,13 @@ int M3NModel::inferPrivate(const RandomField& random_field,
             // add Robust Pn Potts
             if (robust_potts_params_[cs_idx] > 1e-5)
             {
-              ret_val = addCliqueEnergyRobustPotts(*curr_clique, cs_idx, *energy_func, energy_vars,
+              ret_val = addCliqueEnergyRobustPotts(*curr_clique, cs_idx, energy_func, energy_vars,
                   inferred_labels, alpha_label);
             }
             // add Pn Potts
             else
             {
-              ret_val = addCliqueEnergyPotts(*curr_clique, cs_idx, *energy_func, energy_vars,
+              ret_val = addCliqueEnergyPotts(*curr_clique, cs_idx, energy_func, energy_vars,
                   inferred_labels, alpha_label);
             }
           }
@@ -294,7 +294,7 @@ int M3NModel::inferPrivate(const RandomField& random_field,
       // Minimize function if there are no errors
       if (ret_val == 0)
       {
-        double curr_energy = energy_func->minimize();
+        double curr_energy = energy_func.minimize();
 
         // Update labeling if: first iteration OR energy decreases with expansion move
         if ((t == 0 && label_idx == 0) || (curr_energy + 1e-5 < prev_energy))
@@ -303,7 +303,7 @@ int M3NModel::inferPrivate(const RandomField& random_field,
           for (map<unsigned int, SubmodularEnergyMin::EnergyVar>::iterator iter_energy_vars =
               energy_vars.begin() ; iter_energy_vars != energy_vars.end() ; iter_energy_vars++)
           {
-            if (energy_func->getValue(iter_energy_vars->second) == ALPHA_VALUE)
+            if (energy_func.getValue(iter_energy_vars->second) == ALPHA_VALUE)
             {
               inferred_labels[iter_energy_vars->first] = alpha_label;
             }
@@ -314,8 +314,6 @@ int M3NModel::inferPrivate(const RandomField& random_field,
           done = false;
         }
       }
-
-      delete energy_func;
     }
   }
   ROS_INFO("Inference converged to energy %f after %u iterations", prev_energy, t);
