@@ -560,12 +560,11 @@ int M3NModel::addCliqueEnergyRobustPotts(const RandomField::Clique& clique,
   // in the clique were assigned that label
   bool found_dominant_label = false;
   double gamma_dominant = -1.0;
-  double Q = 0.0;
+  double P = static_cast<double> (clique.getOrder());
+  double Q = static_cast<double> (robust_potts_params_[clique_set_idx]) * P;
   if (mode1_label != alpha_label)
   {
     double D = static_cast<double> (mode1_count);
-    double P = static_cast<double> (clique.getOrder());
-    Q = static_cast<double> (robust_potts_params_[clique_set_idx]) * P;
     if ((D - 1e-5) > (P - Q)) // condition if dominant label exists
     {
       gamma_dominant = cache_clique_set_potentials_[clique_set_idx][clique.getRandomFieldID()][mode1_label];

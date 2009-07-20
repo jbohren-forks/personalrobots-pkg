@@ -210,14 +210,14 @@ int M3NModel::train(const vector<const RandomField*>& training_rfs, const M3NPar
           // Otherwise, need to determine if the labeling has non-zero potential based on interaction model
           // (all labels must agree if using Potts model), this is done in calcFuncGradResidual().
           // Only contribute if the residual is non-zero.
-          if (curr_clique_gt_mode1_label != curr_clique_infer_mode1_count)
+          if (curr_clique_gt_mode1_label != curr_clique_infer_mode1_label)
           {
             // ------------------------
             // Compute functional gradient residual from ground truth label (gt_residual)
             float gt_residual = calcFuncGradResidual(robust_potts_params_[clique_set_idx],
-                iter_cliques->second->getOrder(), curr_clique_gt_mode1_label);
+                iter_cliques->second->getOrder(), curr_clique_gt_mode1_count);
 
-            if (gt_residual > 0.0)
+            if (gt_residual > 1e-5)
             {
               // +features with ground truth label
               if (curr_regressor->addTrainingSample(iter_cliques->second->getFeatureVals(),
@@ -234,7 +234,7 @@ int M3NModel::train(const vector<const RandomField*>& training_rfs, const M3NPar
             float infer_residual = calcFuncGradResidual(robust_potts_params_[clique_set_idx],
                 iter_cliques->second->getOrder(), curr_clique_infer_mode1_count);
 
-            if (infer_residual > 0.0)
+            if (infer_residual > 1e-5)
             {
               if (curr_regressor->addTrainingSample(iter_cliques->second->getFeatureVals(),
                   clique_set_feature_dims_[clique_set_idx],
@@ -279,11 +279,13 @@ float M3NModel::calcFuncGradResidual(const float truncation_param,
   // If using Robust Potts, determine if allowed number of disagreeing nodes is allowable
   if (truncation_param > 0.0)
   {
-    float Q = truncation_param * static_cast<float> (clique_order);
-
-    float residual = static_cast<float> (nbr_mode_label - clique_order) / Q + 1.0;
+    float float_nbr_mode_label = static_cast<float> (nbr_mode_label);
+    float float_clique_order = static_cast<float> (clique_order);
+    float Q = truncation_param * float_clique_order;
+    float residual = ((float_nbr_mode_label - float_clique_order) / Q) + 1.0;
     if (residual > 0.0)
     {
+      //ROS_INFO("nbr_model_label: %u,  order: %u,  Q: %f, ==> residual: %f", nbr_mode_label, clique_order, Q, residual);
       return residual;
     }
     else
