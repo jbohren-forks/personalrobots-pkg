@@ -214,17 +214,17 @@ int detect_outlet_tuple_2x1(IplImage* src, CvMat* intrinsic_matrix, CvMat* disto
 {
     vector<feature_t> holes;
     
-    IplImage* small = cvCreateImage(cvSize(src->width/2, src->height/2), IPL_DEPTH_8U, 3); 
-    cvResize(src, small);
+    IplImage* img_small = cvCreateImage(cvSize(src->width/2, src->height/2), IPL_DEPTH_8U, 3); 
+    cvResize(src, img_small);
     
-    IplImage* red = cvCreateImage(cvSize(small->width, small->height), IPL_DEPTH_8U, 1);
-    cvSetImageCOI(small, 3);
-    cvCopy(small, red);
-    cvSetImageCOI(small, 0);
+    IplImage* red = cvCreateImage(cvSize(img_small->width, img_small->height), IPL_DEPTH_8U, 1);
+    cvSetImageCOI(img_small, 3);
+    cvCopy(img_small, red);
+    cvSetImageCOI(img_small, 0);
         
-    detect_outlets_2x1_one_way(red, outlet_templ.get_one_way_descriptor_base(), holes, small, output_path, filename);
+    detect_outlets_2x1_one_way(red, outlet_templ.get_one_way_descriptor_base(), holes, img_small, output_path, filename);
     cvReleaseImage(&red);
-    cvReleaseImage(&small);
+    cvReleaseImage(&img_small);
     
     if(holes.size() == 6)
     {
