@@ -1,4 +1,4 @@
-(in-package follower)
+(in-package follower-msg)
 (export '(HEADER-VAL
           STATUS-VAL
           GOAL-VAL

@@ -88,12 +88,12 @@ class Follower {
         {
 	    if(receivedTiltCloud)
 	      {
-		boost::mutex::scoped_lock lock(tiltMutex);
-		for(unsigned int j=0; j<lastTiltScan.pts.size(); j++)
-		  {
-		    if(pointLineDist(0,0,lastTiltScan.pts[j].x,lastTiltScan.pts[j].y,x,y) < freeSpaceThresh)
-		      goto continueOuter; //As a rule GOTO considered harmful, however I like the ability to continue to arbitrary loops like java, since c++ lacks this syntax, I have this slight ugliness
-		  }
+			boost::mutex::scoped_lock lock(tiltMutex);
+			for(unsigned int j=0; j<lastTiltScan.pts.size(); j++)
+			  {
+				if(pointLineDist(0,0,lastTiltScan.pts[j].x,lastTiltScan.pts[j].y,x,y) < freeSpaceThresh)
+				  goto continueOuter; //As a rule GOTO considered harmful, however I like the ability to continue to arbitrary loops like java, since c++ lacks this syntax, I have this slight ugliness
+			  }
 	      }
 
             if(closestIdx == -1 || closestDistSq > x*x+y*y)
@@ -103,8 +103,9 @@ class Follower {
               }
         }
         else
-            cout<<"\tFREE SPACE PT:";
-	cout<<"\t["<<cloud->pts[i].x<<","<<cloud->pts[i].y<<","<<cloud->pts[i].z<<"]"<<endl;
+
+        cout<<"\tFREE SPACE PT:";
+        cout<<"\t["<<cloud->pts[i].x<<","<<cloud->pts[i].y<<","<<cloud->pts[i].z<<"]"<<endl;
 
         continueOuter: ;
       }
@@ -139,9 +140,9 @@ class Follower {
   {
       boost::mutex::scoped_lock lock(tiltMutex);
 
-      //receivedTiltCloud = true;
+      receivedTiltCloud = true;
       laser_scan::LaserProjection proj;
-      //proj.transformLaserScanToPointCloud("/base_footprint", *scan, lastTiltScan);
+      proj.transformLaserScanToPointCloud("/base_footprint", lastTiltScan, *scan, tf_client_, 0, false);
   }
 
   void updateFreeSpaceVoxels()
@@ -203,7 +204,8 @@ private:
     goal.pose.orientation.x = posRobot.getRotation().x();
     goal.pose.orientation.y = posRobot.getRotation().y();
     goal.pose.orientation.z = posRobot.getRotation().z();
-    goal.pose.orientation.w = posRobot.getRotation().w();    
+    goal.pose.orientation.w = posRobot.getRotation().w();
+
 
     ROS_INFO("setting goal: Position(%.3f, %.3f, %.3f), Orientation(%.3f, %.3f, %.3f, %.3f) = Angle: %.3f\n", 
 	     goal.pose.position.x, 

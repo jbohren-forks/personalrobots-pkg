@@ -1,4 +1,4 @@
-(defpackage follower
+(defpackage follower-msg
   (:use cl
         roslisp)
   (:export

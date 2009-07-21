@@ -6,7 +6,7 @@
 (roslisp:load-if-necessary "/u/ethand/ros/ros-pkg/sandbox/follower/msg/lisp/follower/WaitActionGoal.lisp")
 (roslisp:load-if-necessary "/u/ethand/ros/ros/std_msgs/msg/lisp/std_msgs/Empty.lisp")
 
-(in-package follower)
+(in-package follower-msg)
 
 
 ;//! \htmlinclude WaitActionState.msg.html
@@ -15,19 +15,19 @@
   ((header
     :accessor header-val
     :initarg :header
-    :initform (make-instance 'roslib:<Header>))
+    :initform (make-instance 'roslib-msg:<Header>))
    (status
     :accessor status-val
     :initarg :status
-    :initform (make-instance 'robot_actions:<ActionStatus>))
+    :initform (make-instance 'robot_actions-msg:<ActionStatus>))
    (goal
     :accessor goal-val
     :initarg :goal
-    :initform (make-instance 'follower:<WaitActionGoal>))
+    :initform (make-instance 'follower-msg:<WaitActionGoal>))
    (feedback
     :accessor feedback-val
     :initarg :feedback
-    :initform (make-instance 'std_msgs:<Empty>)))
+    :initform (make-instance 'std_msgs-msg:<Empty>)))
 )
 (defmethod serialize ((msg <WaitActionState>) ostream)
   "Serializes a message object of type '<WaitActionState>"

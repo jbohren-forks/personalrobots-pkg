@@ -2,7 +2,7 @@
 
 (roslisp:load-if-necessary "/u/ethand/ros/ros-pkg/sandbox/follower/msg/lisp/follower/_package.lisp")
 
-(in-package follower)
+(in-package follower-msg)
 
 
 ;//! \htmlinclude MoveHeadGoal.msg.html
