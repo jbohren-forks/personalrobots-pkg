@@ -134,17 +134,19 @@ int getdir (string dir, vector<string> &files) {
 ****************************************************************************/
 
 ImageDescriptor::ImageDescriptor() :
+  debug_(false),
   name_(string()), 
   result_size_(0), 
-  img_(NULL), 
-  row_(-1), 
-  col_(-1), 
-  debug_(false)
+  img_(NULL)
 {
 }
 
-void ImageDescriptor::setDebug(bool debug) {
-  debug_ = debug;
+string ImageDescriptor::getName() {
+  return name_;
+}
+
+unsigned int ImageDescriptor::getSize() {
+  return result_size_;
 }
 
 void ImageDescriptor::setImage(IplImage* img) {
@@ -176,9 +178,8 @@ void ImageDescriptor::commonDebug(Keypoint kp, IplImage* vis) {
     cvResetImageROI(vis);
   }
 
-  CvFont* numbFont = new CvFont();
-  cvInitFont( numbFont, CV_FONT_VECTOR0, 1.0f, 1.0f, 0, 1);
-  cvPutText(vis, "+", cvPoint(col,row), numbFont, cvScalar(0,0,255));
+  cvLine(vis, cvPoint(col-10, row), cvPoint(col+10, row), cvScalar(0,0,255));
+  cvLine(vis, cvPoint(col, row-10), cvPoint(col, row+10), cvScalar(0,0,255));
   CVSHOW("Input Image", vis);
   cvWaitKey(0);
 
@@ -271,7 +272,7 @@ void HogWrapper::compute(IplImage* img, const Vector<Keypoint>& points, vvf& res
       }
       cout << endl;
 
-      commonDebug(locations[i].y, locations[i].x);
+      commonDebug(points[i]);
     }
   }
 } 
@@ -893,7 +894,7 @@ void SuperpixelColorHistogram::compute(IplImage* img, const Keypoint& point, Vec
       }
     }
     cout << endl;
-    commonDebug(row_, col_);
+    commonDebug(point);
   }
 }
 
@@ -1024,16 +1025,19 @@ void IntegralImageDescriptor::clearImageCache() {
   }
 } 
 
-bool IntegralImageDescriptor::integrateRect(float* result, int row_offset, int col_offset, int half_height, int half_width, float* area) {
+bool IntegralImageDescriptor::integrateRect(float* result, int row_offset, int col_offset, int half_height, int half_width, const Keypoint& kp, float* area) {
   // -- Check that we have an integral image.
   assert(ii_);
 
   // -- Check bounds.
-  int ul_x = col_ + col_offset - half_width; 
-  int ul_y = row_ + row_offset - half_height;
+  int col = kp.pt.x;
+  int row = kp.pt.y;
+    
+  int ul_x = col + col_offset - half_width; 
+  int ul_y = row + row_offset - half_height;
   int ll_x = ul_x;
-  int ll_y = row_ + row_offset + half_height;
-  int ur_x = col_ + col_offset + half_width;
+  int ll_y = row + row_offset + half_height;
+  int ur_x = col + col_offset + half_width;
   int ur_y = ul_y;
   int lr_x = ur_x;
   int lr_y = ll_y;
@@ -1173,7 +1177,8 @@ void HaarDescriptor::compute(IplImage* img, const cv::Vector<Keypoint>& points, 
   for(size_t i=0; i<points.size(); ++i) {
     bool success = true;
     results[i].reserve(result_size_);
-
+    results[i].push_back(0);
+    assert(!results[i].empty());
     for(size_t j=0; j<rects_.size(); ++j) {
       success &= integrateRect(&val, points[i], rects_[j]); 
       if(!success) {
@@ -1194,9 +1199,9 @@ void HaarDescriptor::compute(IplImage* img, const cv::Vector<Keypoint>& points, 
 
       CvScalar color;
       if(weights_[i] > 0) 
-	color = cvScalar(0, 255, 0);
+	color = cvScalar(255, 255, 255);
       else 
-	color = cvScalar(0, 0, 255);
+	color = cvScalar(0, 0, 0);
 
       cvRectangle(vis, 
 		  cvPoint((int)pt.x + r.x, (int)pt.y + r.y), 
@@ -1204,8 +1209,7 @@ void HaarDescriptor::compute(IplImage* img, const cv::Vector<Keypoint>& points, 
 		  color);
     }
     CVSHOW("Input Image", vis);
-    cvWaitKey(0);
-    //commonDebug(points[0], vis);
+    commonDebug(points[0], vis);
     cvReleaseImage(&vis);
   }
 }
@@ -1214,18 +1218,73 @@ vector<ImageDescriptor*> setupDefaultHaarDescriptors() {
   vector<ImageDescriptor*> haar;
 
   
-  for(int scale = 1; scale < 11; scale+=2) {
-    Vector<CvRect> rects;
-    Vector<int> weights;
+  // -- Many translations of all wavelets.
+  for(int tx=-50; tx <= 50; tx+=25) {
+    for(int ty=-50; ty <= 50; ty+=25) {
+      // -- Many scales of all wavelets.
+      for(int scale = 1; scale < 7; scale+=2) {
 
-    rects.push_back(cvRect(-4*scale, -4*scale, 4*scale, 8*scale));
-    weights.push_back(1);
-    rects.push_back(cvRect(0*scale, -4*scale, 4*scale, 8*scale));
-    weights.push_back(-1);
-    if(haar.size() == 0)
-      haar.push_back(new HaarDescriptor(rects, weights));
-    else
-      haar.push_back(new HaarDescriptor(rects, weights, (IntegralImageDescriptor*)haar[0]));
+
+	// -- Vertical edges.
+	{ // These { }'s are here for the cv::Vector header-only copy.
+	  Vector<CvRect> rects;
+	  Vector<int> weights;
+
+	  rects.push_back(cvRect(-4*scale + tx, -4*scale + ty, 4*scale, 8*scale));
+	  weights.push_back(1);
+	  rects.push_back(cvRect(0*scale + tx, -4*scale + ty, 4*scale, 8*scale));
+	  weights.push_back(-1);
+	  if(haar.size() == 0)
+	    haar.push_back(new HaarDescriptor(rects, weights));
+	  else
+	    haar.push_back(new HaarDescriptor(rects, weights, (IntegralImageDescriptor*)haar[0]));
+	}
+      
+
+	// -- Vertical lines.
+	{
+	  Vector<CvRect> rects;
+	  Vector<int> weights;
+	  
+	  rects.push_back(cvRect(-2*scale + tx, -8*scale + ty, 2*scale, 16*scale));
+	  weights.push_back(-1);
+	  rects.push_back(cvRect(0*scale + tx, -8*scale + ty, 2*scale, 16*scale));
+	  weights.push_back(1);
+	  rects.push_back(cvRect(2*scale + tx, -8*scale + ty, 2*scale, 16*scale));
+	  weights.push_back(-1);
+	  haar.push_back(new HaarDescriptor(rects, weights, (IntegralImageDescriptor*)haar[0]));
+	}
+
+	
+	// -- Horizontal edges.
+	{
+	  Vector<CvRect> rects;
+	  Vector<int> weights;
+	  
+	  rects.push_back(cvRect(-4*scale + tx, -4*scale + ty, 8*scale, 4*scale));
+	  weights.push_back(1);
+	  rects.push_back(cvRect(-4*scale + tx, 0*scale + ty, 8*scale, 4*scale));
+	  weights.push_back(-1);
+	  haar.push_back(new HaarDescriptor(rects, weights, (IntegralImageDescriptor*)haar[0]));
+	}
+
+
+	// -- Horizontal lines.
+	{
+	  Vector<CvRect> rects;
+	  Vector<int> weights;
+	  
+	  rects.push_back(cvRect(-8*scale + tx, -2*scale + ty, 16*scale, 2*scale));
+	  weights.push_back(-1);
+	  rects.push_back(cvRect(-8*scale + tx, 0*scale + ty, 16*scale, 2*scale));
+	  weights.push_back(1);
+	  rects.push_back(cvRect(-8*scale + tx, 2*scale + ty, 16*scale, 2*scale));
+	  weights.push_back(-1);
+	  haar.push_back(new HaarDescriptor(rects, weights, (IntegralImageDescriptor*)haar[0]));
+	}
+
+      }
+    }
   }
 
   return haar;
@@ -1277,9 +1336,9 @@ void IntegralImageTexture::compute(IplImage* img, const Keypoint& point, Vector<
   int ctr = 0;
 
   // -- 8 Center-surround
-  success &= integrateRect(&val[0], 0, 0, 1*scale_, 1*scale_, &area[0]);
+  success &= integrateRect(&val[0], 0, 0, 1*scale_, 1*scale_, point, &area[0]);
   for(int i=1; i<=szs; i++) {
-    success &= integrateRect(&val[i], 0, 0, (i+1)*scale_, (i+1)*scale_, &area[i]); 
+    success &= integrateRect(&val[i], 0, 0, (i+1)*scale_, (i+1)*scale_, point, &area[i]); 
     result[ctr] = (val[i-1] - val[i]) / (area[i]-area[i-1]) + val[i-1] / area[i-1];
     ctr++;
   }
@@ -1294,44 +1353,44 @@ void IntegralImageTexture::compute(IplImage* img, const Keypoint& point, Vector<
   // -- Gabor Vert
   assert(5.*scale_ == 5*scale_);
 
-  success &= integrateRect(&val[0], 0, 1*scale_, 2*scale_, 0);
-  success &= integrateRect(&val[1], 0, -1*scale_, 2*scale_, 0, &area[0]); 
+  success &= integrateRect(&val[0], 0, 1*scale_, 2*scale_, 0, point);
+  success &= integrateRect(&val[1], 0, -1*scale_, 2*scale_, 0, point, &area[0]); 
   result[ctr] = (val[0] - val[1]) / area[0];
   ctr++;
 
-  success &= integrateRect(&val[0], 0, 1*scale_, 5*scale_, 0); 
-  success &= integrateRect(&val[1], 0, -1*scale_, 5*scale_, 0, &area[0]); 
+  success &= integrateRect(&val[0], 0, 1*scale_, 5*scale_, 0, point); 
+  success &= integrateRect(&val[1], 0, -1*scale_, 5*scale_, 0, point, &area[0]); 
   result[ctr] = (val[0] - val[1]) / area[0]; 
   ctr++;
 
-  success &= integrateRect(&val[0], 0, 2*scale_, 2*scale_, 1*scale_); 
-  success &= integrateRect(&val[1], 0, -2*scale_, 2*scale_, 1*scale_, &area[0]); 
+  success &= integrateRect(&val[0], 0, 2*scale_, 2*scale_, 1*scale_, point); 
+  success &= integrateRect(&val[1], 0, -2*scale_, 2*scale_, 1*scale_, point, &area[0]); 
   result[ctr] = (val[0] - val[1]) / area[0]; 
   ctr++;
 
-  success &= integrateRect(&val[0], 0, 2*scale_, 5*scale_, 1*scale_); 
-  success &= integrateRect(&val[1], 0, -2*scale_, 5*scale_, 1*scale_, &area[0]); 
+  success &= integrateRect(&val[0], 0, 2*scale_, 5*scale_, 1*scale_, point); 
+  success &= integrateRect(&val[1], 0, -2*scale_, 5*scale_, 1*scale_, point, &area[0]); 
   result[ctr] = (val[0] - val[1]) / area[0]; 
   ctr++;
 
   // -- Horiz
-  success &= integrateRect(&val[0], 1, 0, 0, 2*scale_); 
-  success &= integrateRect(&val[1], -1, 0, 0, 2*scale_, &area[0]); 
+  success &= integrateRect(&val[0], 1, 0, 0, 2*scale_, point); 
+  success &= integrateRect(&val[1], -1, 0, 0, 2*scale_, point, &area[0]); 
   result[ctr] = (val[0] - val[1]) / area[0];
   ctr++;
   
-  success &= integrateRect(&val[0], 1, 0, 0, 5*scale_); 
-  success &= integrateRect(&val[1], -1, 0, 0, 5*scale_, &area[0]); 
+  success &= integrateRect(&val[0], 1, 0, 0, 5*scale_, point); 
+  success &= integrateRect(&val[1], -1, 0, 0, 5*scale_, point, &area[0]); 
   result[ctr] = (val[0] - val[1]) / area[0];
   ctr++;
   
-  success &= integrateRect(&val[0], 2, 0, 1*scale_, 2*scale_); 
-  success &= integrateRect(&val[1], -2, 0, 1*scale_, 2*scale_, &area[0]); 
+  success &= integrateRect(&val[0], 2, 0, 1*scale_, 2*scale_, point); 
+  success &= integrateRect(&val[1], -2, 0, 1*scale_, 2*scale_, point, &area[0]); 
   result[ctr] = (val[0] - val[1]) / area[0];
   ctr++;
 
-  success &= integrateRect(&val[0], 2, 0, 1*scale_, 5*scale_); 
-  success &= integrateRect(&val[1], -2, 0, 1*scale_, 5*scale_, &area[0]);
+  success &= integrateRect(&val[0], 2, 0, 1*scale_, 5*scale_, point); 
+  success &= integrateRect(&val[1], -2, 0, 1*scale_, 5*scale_, point, &area[0]);
   result[ctr] = (val[0] - val[1]) / area[0];
   ctr++;
 
@@ -1374,7 +1433,7 @@ void IntegralImageTexture::compute(IplImage* img, const Keypoint& point, Vector<
       cout << result[i] << " ";
     }
     cout << endl;
-    commonDebug(row_, col_);
+    commonDebug(point);
   }
 }
   

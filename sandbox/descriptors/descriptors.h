@@ -76,22 +76,25 @@ private:
  */
 class ImageDescriptor {
  public:
-  //! Name of descriptor.  Should be unique for any parameter setting.
-  std::string name_;
-  //! Length of feature vector.
-  unsigned int result_size_;
-  IplImage* img_;
-  //! Deprecated.
-  int row_;
-  //! Deprecated.
-  int col_;
-  //! Visualize feature computation.
+  //! Whether to visualize feature computation.
   bool debug_;
 
-
-  void setDebug(bool debug);
+  ImageDescriptor();
+  virtual ~ImageDescriptor() {};
+  std::string getName();
+  //! Returns result_size_.
+  unsigned int getSize();
   //! Vectorized feature computation call.
   virtual void compute(IplImage* img, const cv::Vector<Keypoint>& points, vvf& results) {};
+
+ protected:
+  //! Name of the descriptor.  Should be unique for any parameter setting.
+  std::string name_;
+  //! Length of the vector that results from computing the feature at a point.
+  unsigned int result_size_;
+  //! The image that we are computing descriptors on.
+  IplImage* img_;
+
   //! Clean up any data specific to computation at a point.
   virtual void clearPointCache() {}
   //! Clean up any data specific to computation on a particular image.
@@ -101,9 +104,21 @@ class ImageDescriptor {
   void commonDebug(Keypoint kp, IplImage* vis = NULL);
   //! Sets the img_ pointer and clears the image cache.
   virtual void setImage(IplImage* img);
-  virtual ~ImageDescriptor() {};
-  ImageDescriptor();
 };
+
+
+/***************************************************************************
+***********  SURF (Not yet implemented.)
+****************************************************************************/
+
+/* class SurfWrapper : public ImageDescriptor { */
+/*  public: */
+/*   bool extended_; */
+
+/*   SurfWrapper(bool extended); */
+/*   ~SurfWrapper(); */
+/*   virtual void compute(IplImage* img, const cv::Vector<Keypoint>& points, vvf& results) {}; */
+/* } */
 
 /***************************************************************************
 ***********  Hog
@@ -147,7 +162,7 @@ class IntegralImageDescriptor : public ImageDescriptor {
   ~IntegralImageDescriptor();
   void integrate();
   virtual void clearImageCache();
-  bool integrateRect(float* result, int row_offset, int col_offset, int half_height, int half_width, float* area = NULL);
+  bool integrateRect(float* result, int row_offset, int col_offset, int half_height, int half_width, const Keypoint& kp, float* area = NULL);
   bool integrateRect(float* result, const Keypoint& kp, const CvRect& rect);
 };
 
