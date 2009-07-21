@@ -4,6 +4,5 @@
   <machine name="realtime" address="pre1" ros-root="$(env ROS_ROOT)" ros-package-path="$(env ROS_PACKAGE_PATH)" default="true"/>
   <machine name="two"      address="pre2" ros-root="$(env ROS_ROOT)" ros-package-path="$(env ROS_PACKAGE_PATH)" />
 
-  <machine name="two_root"      user="root" address="pre2" ros-root="$(env ROS_ROOT)" ros-package-path="$(env ROS_PACKAGE_PATH)" />
   <machine name="stereo"   address="pre2" ros-root="$(env ROS_ROOT)" ros-package-path="$(env ROS_PACKAGE_PATH)" />
 </launch>

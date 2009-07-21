@@ -8,15 +8,15 @@
   <param name="enforce_clock_speed" value="False" />
 
   <!-- Disk usage monitor -->
-  <node pkg="pr2_computer_monitor" type="hd_monitor.py" machine="realtime_root"/>
-  <node pkg="pr2_computer_monitor" type="hd_monitor.py" args="$(optenv HOME /home)" machine="two_root"/> 
-  <node pkg="pr2_computer_monitor" type="hd_monitor.py" machine="three_root"/> 
-  <node pkg="pr2_computer_monitor" type="hd_monitor.py" machine="four_root"/> 
+  <node pkg="pr2_computer_monitor" type="hd_monitor.py" machine="realtime"/>
+  <node pkg="pr2_computer_monitor" type="hd_monitor.py" args="$(optenv HOME /home)" machine="two"/> 
+  <node pkg="pr2_computer_monitor" type="hd_monitor.py" machine="three"/> 
+  <node pkg="pr2_computer_monitor" type="hd_monitor.py" machine="four"/> 
 
   <!-- CPU monitors -->
-  <node pkg="pr2_computer_monitor" type="cpu_monitor.py" machine="realtime_root"/>
-  <node pkg="pr2_computer_monitor" type="cpu_monitor.py" machine="two_root"/> 
-  <node pkg="pr2_computer_monitor" type="cpu_monitor.py" machine="three_root"/> 
-  <node pkg="pr2_computer_monitor" type="cpu_monitor.py" machine="four_root"/> 
+  <node pkg="pr2_computer_monitor" type="cpu_monitor.py" machine="realtime"/>
+  <node pkg="pr2_computer_monitor" type="cpu_monitor.py" machine="two"/> 
+  <node pkg="pr2_computer_monitor" type="cpu_monitor.py" machine="three"/> 
+  <node pkg="pr2_computer_monitor" type="cpu_monitor.py" machine="four"/> 
 
 </launch>
