@@ -161,8 +161,9 @@ static PyObject *make_dcam(PyObject *self, PyObject *args)
 {
   dcam_t *ps = PyObject_NEW(dcam_t, &dcam_Type);
   char *str_pmode;
+  int fps = 30;
 
-  if (!PyArg_ParseTuple(args, "s", &str_pmode))
+  if (!PyArg_ParseTuple(args, "s|i", &str_pmode, &fps))
     return NULL;
 
   dcam::init();
@@ -192,7 +193,11 @@ static PyObject *make_dcam(PyObject *self, PyObject *args)
   dc1394video_mode_t videoMode;	// current video mode
   dc1394framerate_t videoRate;	// current video rate
   videoMode = VIDERE_STEREO_640x480;
-  videoRate = DC1394_FRAMERATE_15;
+  if (fps == 15) {
+    videoRate = DC1394_FRAMERATE_15;
+  } else {
+    videoRate = DC1394_FRAMERATE_30;
+  }
   ps->dev->setFormat(videoMode, videoRate); 
   ps->dev->setMaxAutoVals(100,48);
   ps->dev->setGain(0,true);
