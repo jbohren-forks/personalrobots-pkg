@@ -19,9 +19,9 @@ using namespace std;
 // Read a file into a vector
 void help(char *program) {
   cout << "\n" << program << " <session_results_dir> " << " <widthxheight>" << " [scale_factor]" << endl;
-  cout << "     session_results_dir      e.g. results/single-object-s\n" << endl;
-  cout << "     widthxheight  for example: 640x480\n" << endl;
-  cout << "     scale_factor  If images was downsampled prior to submit_img.py, upsample with this, DEFAULT: 1.0\n\n" << endl;
+  cout << "     session_results_dir \t e.g. results/single-object-s" << endl;
+  cout << "     widthxheight \t\t for example: 640x480" << endl;
+  cout << "     scale_factor \t\t If images was downsampled prior to submit_img.py, upsample with this, DEFAULT: 1.0" << endl;
 }
 
 //SUPPORT FUNCTIONS
@@ -129,9 +129,7 @@ int main(int argc, char* argv[])
   //Get the list of xml files ...
   getdir(xml_dir, xml_files);
 
-  //Parse into directories and files by looking for the "__" separator
   vector<string> img_dir,img_file;
-  string::size_type beg1,len1,beg2,len2;
   int i;
   for(i=0; i<(int)xml_files.size(); ++i)
     {
@@ -142,16 +140,6 @@ int main(int argc, char* argv[])
 	continue;
 
       cout << "Found annotation for " << base_name << endl;
-
-      //   		beg1 = 0;
-      //   		if((len1 = xml_files[i].find("__")) == string::npos) break; //protect against not finding anything
-      //   		len1 -= beg1;
-      //   		beg2 = len1 + beg1 + 2;
-      //   		if((len2 = xml_files[i].find(".xml")) == string::npos) break;
-      //   		len2 -= beg2;
-      //   		img_dir.push_back(xml_files[i].substr(beg1,len1));
-      //   		img_file.push_back(xml_files[i].substr(beg2,len2));
-      //   		cout << img_dir[i] << ", " << img_file[i] << endl;
 
       //Now attack the xml files themselves
       string::size_type idx1,idx2,idxlen;

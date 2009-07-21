@@ -146,18 +146,25 @@ The package contains tools to download the annotations from the server and conve
 
 \subsection convert_session_results_to_mask convert_session_results_to_mask
 
-Converts XML annotations to segmentation masks.
-
 \subsubsection Usage
 \verbatim
-$ ./convert_session_results_to_mask_name [args]
+$ ./convert_session_results_to_mask_name <session_results_dir> <widthxheight> [scale_factor]
 \endverbatim
+
+Converts XML annotations to segmentation masks.  The following directories will be created to hold the results of the session:
+\verbatim
+<session_results_dir>/CvRects/ 
+<session_results_dir>/masks/
+<session_results_dir>/annotations/
+\endverbatim
+
 
 \par Example
 
 \verbatim
-$ ./convert_session_results_to_mask_name foo bar
+$ ./bin/convert_session_results_to_mask results/single-object-s 640x480
 \endverbatim
+
 
 
 \subsection session_2_messages.py session_2_messages.py
