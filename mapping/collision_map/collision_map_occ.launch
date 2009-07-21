@@ -26,8 +26,8 @@
     <param name="dimension_y" type="double" value="1.5" />
     <param name="dimension_z" type="double" value="2.0" />
 
-    <!-- set the resolution (1.5 cm) -->
-    <param name="resolution" type="double" value="0.015" />
+    <!-- set the resolution (1.0 cm) -->
+    <param name="resolution" type="double" value="0.01" />
 
     <!-- the amount of time to remember an occluded point for -->
     <param name="keep_occluded" type="double" value="30.0" />
