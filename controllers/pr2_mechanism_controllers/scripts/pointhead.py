@@ -59,7 +59,7 @@ def point_head_client(pan, tilt):
 
 def point_head_cart_client(x,y,z,frame):
 
-    head_angles = rospy.Publisher('head_controller/point_frame_on_head', PointStamped)
+    head_angles = rospy.Publisher('head_controller/point_head', PointStamped)
     rospy.init_node('head_commander', anonymous=True)
     sleep(1)
     head_angles.publish(PointStamped(rospy.Header(None, rospy.get_rostime(), frame), Point(x, y, z)))

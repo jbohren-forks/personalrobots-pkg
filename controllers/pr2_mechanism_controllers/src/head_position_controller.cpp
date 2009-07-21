@@ -154,7 +154,7 @@ void HeadPositionController::update()
 
 void HeadPositionController::command(const mechanism_msgs::JointStatesConstPtr& command_msg)
 {
-  ROS_INFO("recieved command_msg");
+
   assert(command_msg->joints.size() == 2); 
   if(command_msg->joints[0].name == head_pan_controller_->joint_state_->joint_->name_)
   {
