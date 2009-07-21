@@ -49,7 +49,19 @@ using namespace std;
 // --------------------------------------------------------------
 //* BoundingBox
 /*!
- * \brief Computes the dimensions of the bounding box
+ * \brief A BoundingBox feature computes the dimensions of the
+ *        3-D box that encloses a group of points.
+ *
+ * When computing the feature for an interest point, the bounding box
+ * is defined by the neighboring points within some specified radius.
+ *
+ * When computing the feature for an interest region of points, the
+ * bounding box can either be the box that encloses the given region of
+ * points, or from the neighboring points within some specified radius
+ * from the region's centroid.
+ *
+ * The bounding box can be computed in the given coordinate frame
+ * and/or in the projected principle component space.
  */
 // --------------------------------------------------------------
 class BoundingBox: public SpectralAnalysis
@@ -57,54 +69,93 @@ class BoundingBox: public SpectralAnalysis
   public:
     // --------------------------------------------------------------
     /*!
-     * \brief Instantiates the bounding box descriptor with parameters
+     * \brief Instantiates the BoundingBox descriptor with specified parameters
+     *
+     * If computing the bounding box in principle component space, then features are
+     * in order: [a,b,c] where a is the length along the principle eigenvector, b
+     * is the length along the middle eigenvector, and c is the length along the
+     * smallest eigenvector.
+     *
+     * If computing the bounding box in the given coordinate frame, then the
+     * features are in order: [x,y,z] where x is the length along the first dimension,
+     * y is the length along the second dimension, z is the length along the third
+     * dimension.
+     *
+     * If computing both bounding boxes, the values are in order: [a b c x y z]
      *
      * \param use_pca_bbox Flag to compute the bounding box in the principle
      *                     component space
      * \param use_raw_bbox Flag to compute the bounding box in the given
-     *                     x-y-z point cloud space
+     *                     coordinate xyz space
      */
     // --------------------------------------------------------------
     BoundingBox(bool use_pca_bbox, bool use_raw_bbox);
 
-    // --------------------------------------------------------------
-    /*!
-     * \brief Defines the radius of the bounding box to examine
-     *
-     * REQUIRED
-     */
-    // --------------------------------------------------------------
-    void setBoundingBoxRadius(float bbox_radius);
-
     // ===================================================================
-    /*! \name Interest region related  */
+    /*! \name Required settings  */
     // ===================================================================
     //@{
     // --------------------------------------------------------------
     /*!
-     * \brief This descriptor does NOT use pre-computed information
+     * \brief Sets the radius that defines the neighboring points within the
+     *        bounding box.
      *
-     * \warning This call is slow
+     * If using this descriptor for interest points, then bbox_radius must be
+     * positive.
+     *
+     * If using this descriptor for interest regions, then a negative bbox_radius
+     * indicates to compute the bounding box for the given region of points.
+     * Otherwise, a positive value indicates to find the neighboring points within
+     * the specified radius from the region's centroid.
+     *
+     * \param bbox_radius The radius from the interest point/region that
+     *        defines the bounding box
+     */
+    // --------------------------------------------------------------
+    void setBoundingBoxRadius(float bbox_radius);
+    //@}
+
+    // --------------------------------------------------------------
+    /*!
+     * \brief Computes the bounding box dimensions around each interest point
+     *
+     * \warning setBoundingBoxRadius() must be called first
+     * \warning If computing the bounding box in principle component space, then
+     *          setSpectralRadius() or useSpectralInformation() must be called first
      */
     // --------------------------------------------------------------
     virtual void compute(const robot_msgs::PointCloud& data,
                          cloud_kdtree::KdTree& data_kdtree,
                          const cv::Vector<robot_msgs::Point32*>& interest_pts,
                          cv::Vector<cv::Vector<float> >& results);
-    //@}
 
-    // ===================================================================
-    /*! \name Interest region related  */
-    // ===================================================================
-    //@{
-    // \warning Requires calling setSupportRadius or useSpectralInformation
+    // --------------------------------------------------------------
+    /*!
+     * \brief Computes the bounding box dimensions around/for each interest region
+     *
+     * \warning setBoundingBoxRadius() must be called first
+     * \warning If computing the bounding box in principle component space, then
+     *          setSpectralRadius() or useSpectralInformation() must be called first
+     */
+    // --------------------------------------------------------------
     virtual void compute(const robot_msgs::PointCloud& data,
                          cloud_kdtree::KdTree& data_kdtree,
                          const cv::Vector<vector<int>*>& interest_region_indices,
                          cv::Vector<cv::Vector<float> >& results);
-    //@}
 
   private:
+    // --------------------------------------------------------------
+    /*!
+     * \brief Computes the bounding box information of the given neighborhood
+     *
+     * \param data The overall point cloud data
+     * \param neighbor_indices List of indices in data that constitute the neighborhood
+     * \param eig_vec_max The eigenvector corresponding to the biggest eigenvalue
+     * \param eig_vec_max The eigenvector corresponding to the middle eigenvalue
+     * \param eig_vec_max The eigenvector corresponding to the smallest eigenvalue
+     * \param result The vector to hold the computed bounding box dimensions
+     */
+    // --------------------------------------------------------------
     void computeBoundingBoxFeatures(const robot_msgs::PointCloud& data,
                                     const vector<int>& neighbor_indices,
                                     const Eigen::Vector3d* eig_vec_max,
@@ -112,10 +163,14 @@ class BoundingBox: public SpectralAnalysis
                                     const Eigen::Vector3d* eig_vec_min,
                                     cv::Vector<float>& result);
 
+    /*! \brief The radius to define the bounding box */
     float bbox_radius_;
+    /*! \brief Flag if setBoundingBoxRadius has been called */
     bool bbox_radius_set_;
 
+    /*! \brief Flag if to compute bounding box in principle component space */
     bool use_pca_bbox_;
+    /*! \brief Flag if to compute bounding box in given coordinate frame */
     bool use_raw_bbox_;
 };
 
