@@ -39,15 +39,15 @@
 namespace spline_smoother
 {
 
-NumericalDifferentationSplineSmoother::NumericalDifferentationSplineSmoother()
+NumericalDifferentiationSplineSmoother::NumericalDifferentiationSplineSmoother()
 {
 }
 
-NumericalDifferentationSplineSmoother::~NumericalDifferentationSplineSmoother()
+NumericalDifferentiationSplineSmoother::~NumericalDifferentiationSplineSmoother()
 {
 }
 
-bool NumericalDifferentationSplineSmoother::smooth(const std::vector<double>& positions,
+bool NumericalDifferentiationSplineSmoother::smooth(const std::vector<double>& positions,
     std::vector<double>& velocities,
     std::vector<double>& accelerations,
     const std::vector<double>& times) const

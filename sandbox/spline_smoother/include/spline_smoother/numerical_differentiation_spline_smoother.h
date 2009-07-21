@@ -42,11 +42,11 @@
 namespace spline_smoother
 {
 
-class NumericalDifferentationSplineSmoother: public SplineSmoother
+class NumericalDifferentiationSplineSmoother: public SplineSmoother
 {
 public:
-  NumericalDifferentationSplineSmoother();
-  virtual ~NumericalDifferentationSplineSmoother();
+  NumericalDifferentiationSplineSmoother();
+  virtual ~NumericalDifferentiationSplineSmoother();
 
   virtual bool smooth(const std::vector<double>& positions,
       std::vector<double>& velocities,

@@ -67,7 +67,7 @@ public:
       const std::vector<double>& times) const;
 
 private:
-  NumericalDifferentationSplineSmoother num_diff_spline_smoother_;
+  NumericalDifferentiationSplineSmoother num_diff_spline_smoother_;
   bool smoothSegment(const std::vector<double>& positions,
       std::vector<double>& velocities,
       std::vector<double>& accelerations,
