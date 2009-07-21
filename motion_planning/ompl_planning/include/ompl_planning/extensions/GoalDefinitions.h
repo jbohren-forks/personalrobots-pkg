@@ -128,15 +128,17 @@ namespace ompl_planning
 	
 	virtual double distanceGoal(const ompl::base::State *s) const;
 	virtual bool isSatisfied(const ompl::base::State *state, double *dist = NULL) const;
-	virtual void sampleNearGoal(ompl::base::State *s);
+	virtual void sampleNearGoal(ompl::base::State *s) const;
 	virtual void print(std::ostream &out = std::cout) const;
 	
     protected:
 	
-	ompl::base::SpaceInformation::StateSamplingCore sCore_;
-	GoalToPosition                                  gp_;
-	GoalToState                                     gs_;
-	std::vector<double>                             rho_;
+	mutable ompl::base::SpaceInformation::StateSamplingCore sCore_;
+	mutable boost::mutex                                    lock_;
+	
+	GoalToPosition      gp_;
+	GoalToState         gs_;
+	std::vector<double> rho_;
     };
     
     ompl::base::Goal* computeGoalFromConstraints(ompl::base::SpaceInformation *si, ModelBase *model, const motion_planning_msgs::KinematicConstraints &kc);

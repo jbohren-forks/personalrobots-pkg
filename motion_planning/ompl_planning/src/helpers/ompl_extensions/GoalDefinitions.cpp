@@ -210,9 +210,11 @@ bool ompl_planning::GoalToMultipleConstraints::isSatisfied(const ompl::base::Sta
 	return gs_.isSatisfied(state) && gp_.isSatisfied(state);
 }
 
-void ompl_planning::GoalToMultipleConstraints::sampleNearGoal(ompl::base::State *s)
+void ompl_planning::GoalToMultipleConstraints::sampleNearGoal(ompl::base::State *s) const
 {
+    lock_.lock();
     sCore_.sampleNear(s, gs_.state, rho_);
+    lock_.unlock();
 }
 
 void ompl_planning::GoalToMultipleConstraints::print(std::ostream &out) const
