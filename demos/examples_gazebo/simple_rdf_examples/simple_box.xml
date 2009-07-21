@@ -1,9 +1,9 @@
-<robot name="simple_cylinder">
-  <link name="my_cylinder">
+<robot name="simple_box">
+  <link name="my_box">
     <parent name="world" />
-    <!-- initial pose of my_cylinder in the parent frame coordiantes -->
-    <origin xyz="0 0 2" rpy="0 1.57 0" />
-    <joint name="my_cylinder_joint" type="revolute" >
+    <!-- initial pose of my_box in the parent frame coordiantes -->
+    <origin xyz="0 0 2" rpy="0 0 0" />
+    <joint name="my_box_joint" type="revolute" >
       <!-- axis is in the parent link frame coordintates -->
       <axis xyz="0 1 0" />
       <anchor xyz="0 0 0" />
@@ -11,27 +11,27 @@
     <inertial>
       <mass value="1.0" />
       <!-- center of mass (com) is defined w.r.t. link local coordinate system -->
-      <com xyz="0 0 0.5" /> 
+      <com xyz="1 0 0" /> 
       <inertia  ixx="1.0" ixy="0.0"  ixz="0.0"  iyy="100.0"  iyz="0.0"  izz="1.0" />
     </inertial>
     <visual>
       <!-- visual origin is defined w.r.t. link local coordinate system -->
-      <origin xyz="0 0 0.5" rpy="0 0 0" />
+      <origin xyz="1 0 0" rpy="0 0 0" />
       <map name="gazebo_material" flag="gazebo">
         <elem key="material">Gazebo/Blue</elem>
       </map>
-      <geometry name="my_cylinder_visual_geom">
-        <mesh scale="0.1 0.1 1.0" />
+      <geometry name="my_box_visual_geom">
+        <mesh scale="0.05 0.05 0.10" />
       </geometry>
     </visual>
     <collision>
       <!-- collision origin is defined w.r.t. link local coordinate system -->
-      <origin xyz="0 0 0.5" rpy="0 0 0 " />
-      <geometry name="my_cylinder_collision_geom">
-        <cylinder radius="0.05" length="1.0" />
+      <origin xyz="1 0 0" rpy="0 0 0 " />
+      <geometry name="my_box_collision_geom">
+        <box size="0.05 0.05 0.10" />
       </geometry>
     </collision>
-    <map name="my_cylinder_gravity" flag="gazebo">
+    <map name="my_box_gravity" flag="gazebo">
       <elem key="turnGravityOff">false</elem>
     </map>
   </link>
