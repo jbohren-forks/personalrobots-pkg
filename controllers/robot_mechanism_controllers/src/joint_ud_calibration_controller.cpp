@@ -38,10 +38,11 @@
 using namespace std;
 using namespace controller;
 
-//ROS_REGISTER_CONTROLLER(JointUDCalibrationController)
+ROS_REGISTER_CONTROLLER(JointUDCalibrationController)
 
 JointUDCalibrationController::JointUDCalibrationController()
-  : state_(INITIALIZED), actuator_(NULL), joint_(NULL), transmission_(NULL)
+: robot_(NULL), last_publish_time_(0), state_(INITIALIZED),
+  actuator_(NULL), joint_(NULL), transmission_(NULL)
 {
 }
 
@@ -110,6 +111,75 @@ bool JointUDCalibrationController::initXml(mechanism::RobotState *robot, TiXmlEl
   return true;
 }
 
+bool JointUDCalibrationController::init(mechanism::RobotState *robot, const ros::NodeHandle &n)
+{
+  robot_ = robot;
+  node_ = n;
+
+  // Joint
+
+  std::string joint_name;
+  if (!node_.getParam("joint", joint_name))
+  {
+    ROS_ERROR("No joint given (namespace: %s)", node_.getNamespace().c_str());
+    return false;
+  }
+  if (!(joint_ = robot->getJointState(joint_name)))
+  {
+    ROS_ERROR("Could not find joint %s (namespace: %s)",
+              joint_name.c_str(), node_.getNamespace().c_str());
+    return false;
+  }
+
+  // Actuator
+
+  std::string actuator_name;
+  if (!node_.getParam("actuator", actuator_name))
+  {
+    ROS_ERROR("No actuator given (namespace: %s)", node_.getNamespace().c_str());
+    return false;
+  }
+  if (!(actuator_ = robot->model_->getActuator(actuator_name)))
+  {
+    ROS_ERROR("Could not find actuator %s (namespace: %s)",
+              actuator_name.c_str(), node_.getNamespace().c_str());
+    return false;
+  }
+
+  // Transmission
+
+  std::string transmission_name;
+  if (!node_.getParam("transmission", transmission_name))
+  {
+    ROS_ERROR("No transmission given (namespace: %s)", node_.getNamespace().c_str());
+    return false;
+  }
+  if (!(transmission_ = robot->model_->getTransmission(transmission_name)))
+  {
+    ROS_ERROR("Could not find transmission %s (namespace: %s)",
+              transmission_name.c_str(), node_.getNamespace().c_str());
+    return false;
+  }
+
+  if (!node_.getParam("velocity", search_velocity_))
+  {
+    ROS_ERROR("Velocity value was not specified (namespace: %s)", node_.getNamespace().c_str());
+    return false;
+  }
+
+  // Contained velocity controller
+
+  if (!vc_.init(robot, node_))
+    return false;
+
+  // "Calibrated" topic
+  pub_calibrated_.reset(
+    new realtime_tools::RealtimePublisher<std_msgs::Empty>(node_, "calibrated", 1));
+
+  return true;
+}
+
+
 void JointUDCalibrationController::update()
 {
   assert(joint_);
@@ -171,6 +241,18 @@ void JointUDCalibrationController::update()
     break;
   }
   case CALIBRATED:
+    if (pub_calibrated_)
+    {
+      if (last_publish_time_ + 0.5 < robot_->hw_->current_time_)
+      {
+        assert(pub_calibrated_);
+        if (pub_calibrated_->trylock())
+        {
+          last_publish_time_ = robot_->hw_->current_time_;
+          pub_calibrated_->unlockAndPublish();
+        }
+      }
+    }
     break;
   }
 

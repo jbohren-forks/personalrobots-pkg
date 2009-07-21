@@ -2,7 +2,7 @@ cal_torso_lift:
   type: JointUDCalibrationController
   joint: torso_lift_joint
   actuator: torso_lift_motor
-  transmision: torso_lift_trans
+  transmission: torso_lift_trans
   velocity: -10.0
   pid:
     p: 2000000
@@ -20,7 +20,7 @@ cal_r_shoulder_pan:
     i: 0.5
     d: 0
     i_clamp: 1.0
-call_shoulder_pan:
+cal_l_shoulder_pan:
   type: JointUDCalibrationController
   joint: l_shoulder_pan_joint
   actuator: l_shoulder_pan_motor
@@ -188,7 +188,7 @@ caster_calibration: &caster_calibration
 
 cal_caster_fl:
   type: CasterCalibrationController
-  <<: caster_calibration
+  <<: *caster_calibration
   actuator: fl_caster_rotation_motor
   joint: fl_caster_rotation_joint
   transmission: fl_caster_rotation_trans
@@ -198,7 +198,7 @@ cal_caster_fl:
     wheel_r: fl_caster_r_wheel_joint
 cal_caster_fr:
   type: CasterCalibrationController
-  <<: caster_calibration
+  <<: *caster_calibration
   actuator: fr_caster_rotation_motor
   joint: fr_caster_rotation_joint
   transmission: fr_caster_rotation_trans
@@ -208,7 +208,7 @@ cal_caster_fr:
     wheel_r: fr_caster_r_wheel_joint
 cal_caster_bl:
   type: CasterCalibrationController
-  <<: caster_calibration
+  <<: *caster_calibration
   actuator: bl_caster_rotation_motor
   joint: bl_caster_rotation_joint
   transmission: bl_caster_rotation_trans
@@ -218,7 +218,7 @@ cal_caster_bl:
     wheel_r: bl_caster_r_wheel_joint
 cal_caster_br:
   type: CasterCalibrationController
-  <<: caster_calibration
+  <<: *caster_calibration
   actuator: br_caster_rotation_motor
   joint: br_caster_rotation_joint
   transmission: br_caster_rotation_trans
