@@ -1,0 +1,24 @@
+On 64-bit:
+
+home/rosbuild/hudson/workspace/personalrobots-update-64/personalrobots/stacks/visual_feature_detectors/outlet_detection/src/generalized_hough.cpp:327: warning: unused variable 'time0'
+/home/rosbuild/hudson/workspace/personalrobots-update-64/personalrobots/stacks/visual_feature_detectors/outlet_detection/src/generalized_hough.cpp:343: warning: unused variable 'time1'
+/home/rosbuild/hudson/workspace/personalrobots-update-64/personalrobots/stacks/visual_feature_detectors/outlet_detection/src/generalized_hough.cpp: In function 'void calcExactLocation1(std::vector<feature_t, std::allocator<feature_t> >&, std::vector<feature_t, std::allocator<feature_t> >&)':
+/home/rosbuild/hudson/workspace/personalrobots-update-64/personalrobots/stacks/visual_feature_detectors/outlet_detection/src/generalized_hough.cpp:797: warning: unused variable 'angle'
+/home/rosbuild/hudson/workspace/personalrobots-update-64/personalrobots/stacks/visual_feature_detectors/outlet_detection/src/generalized_hough.cpp:809: warning: unused variable 'index'
+/home/rosbuild/hudson/workspace/personalrobots-update-64/personalrobots/stacks/visual_feature_detectors/outlet_detection/src/generalized_hough.cpp:906: warning: unused variable 'maxindex'
+/home/rosbuild/hudson/workspace/personalrobots-update-64/personalrobots/stacks/visual_feature_detectors/outlet_detection/src/generalized_hough.cpp: In function 'void calcExactLocation4(std::vector<feature_t, std::allocator<feature_t> >&, std::vector<feature_t, std::allocator<feature_t> >&)':
+/home/rosbuild/hudson/workspace/personalrobots-update-64/personalrobots/stacks/visual_feature_detectors/outlet_detection/src/generalized_hough.cpp:1132: warning: unused variable 'angle'
+/home/rosbuild/hudson/workspace/personalrobots-update-64/personalrobots/stacks/visual_feature_detectors/outlet_detection/src/generalized_hough.cpp:1144: warning: unused variable 'index'
+/home/rosbuild/hudson/workspace/personalrobots-update-64/personalrobots/stacks/visual_feature_detectors/outlet_detection/src/generalized_hough.cpp:1241: warning: unused variable 'maxindex'
+/home/rosbuild/hudson/workspace/personalrobots-update-64/personalrobots/stacks/visual_feature_detectors/outlet_detection/src/generalized_hough.cpp: In function 'void calcExactLocation_(std::vector<feature_t, std::allocator<feature_t> >&, const std::vector<feature_t, std::allocator<feature_t> >&, std::vector<feature_t, std::allocator<feature_t> >&, std::vector<feature_t, std::allocator<feature_t> >&, float&, int)':
+/home/rosbuild/hudson/workspace/personalrobots-update-64/personalrobots/stacks/visual_feature_detectors/outlet_detection/src/generalized_hough.cpp:1437: warning: comparison between signed and unsigned integer expressions
+/home/rosbuild/hudson/workspace/personalrobots-update-64/personalrobots/stacks/visual_feature_detectors/outlet_detection/src/generalized_hough.cpp:1432: warning: unused variable 'total'
+make[3]: *** [CMakeFiles/outlet.dir/src/generalized_hough.o] Error 1
+make[3]: Leaving directory `/home/rosbuild/hudson/workspace/personalrobots-update-64/personalrobots/stacks/visual_feature_detectors/outlet_detection/build'
+make[2]: Leaving directory `/home/rosbuild/hudson/workspace/personalrobots-update-64/personalrobots/stacks/visual_feature_detectors/outlet_detection/build'
+make[1]: Leaving directory `/home/rosbuild/hudson/workspace/personalrobots-update-64/personalrobots/stacks/visual_feature_detectors/outlet_detection/build'
+make[2]: *** [CMakeFiles/outlet.dir/all] Error 2
+make[1]: *** [all] Error 2
+make: *** [all] Error 2
+[rosmakeall-buildfail] Build of outlet_detection failed
+
