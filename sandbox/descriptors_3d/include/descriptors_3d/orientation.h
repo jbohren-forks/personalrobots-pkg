@@ -68,6 +68,9 @@ class Orientation: public SpectralAnalysis
      * The computed feature is the cosine of the angle between the extracted
      * tangent/normal vector against the specified reference directions.
      *
+     * \warning Since the sign of the extracted vectors have no meaning, the
+     *          computed feature is always between 0 and 1
+     *
      * If computing using both tangent and normal vectors, the feature vector
      * format is: [a b] where a is the projection of the tangent vector and b
      * is the projection of the normal vector
@@ -158,12 +161,18 @@ class Orientation: public SpectralAnalysis
     void computeFeatures(cv::Vector<cv::Vector<float> >& results);
 
   private:
+    /*! \brief Flag if useTangentOrientation() has been called */
     bool ref_tangent_defined_;
+    /*! \brief Reference vector to compare extracted tangent vectors */
     Eigen::Vector3d ref_tangent_;
+    /*! \brief The negative of ref_tangent_ */
     Eigen::Vector3d ref_tangent_flipped_;
 
+    /*! \brief Flag if useNormalOrientation() has been called */
     bool ref_normal_defined_;
+    /*! \brief Reference vector to compare extracted normal vectors */
     Eigen::Vector3d ref_normal_;
+    /*! \brief The negative of ref_normal_ */
     Eigen::Vector3d ref_normal_flipped_;
 };
 

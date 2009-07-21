@@ -169,7 +169,7 @@ class BoundingBox: public SpectralAnalysis
 
     /*! \brief The radius to define the bounding box */
     float bbox_radius_;
-    /*! \brief Flag if setBoundingBoxRadius has been called */
+    /*! \brief Flag if setBoundingBoxRadius() has been called */
     bool bbox_radius_set_;
 
     /*! \brief Flag if to compute bounding box in principle component space */

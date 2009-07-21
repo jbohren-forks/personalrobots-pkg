@@ -74,6 +74,7 @@ class Position: public Descriptor3D
     //void useSensorLocation();
 
     // TODO: use map information such as distance from known walls
+    //void useMapInformation(void* mapData);
 
     // --------------------------------------------------------------
     /**
