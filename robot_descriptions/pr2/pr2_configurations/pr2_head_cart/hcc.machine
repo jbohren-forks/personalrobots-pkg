@@ -8,8 +8,5 @@ ros-root="$(env ROS_ROOT)" ros-package-path="$(env ROS_PACKAGE_PATH)" default="n
   
   <machine name="two" address="hcc2" ros-root="$(env ROS_ROOT)" 
 ros-package-path="$(env ROS_PACKAGE_PATH)" default="true" />
-
-  <machine name="two_root" address="hcc2" ros-root="$(env ROS_ROOT)" 
-ros-package-path="$(env ROS_PACKAGE_PATH)" user="root" default="never" />
 			
 </launch>
