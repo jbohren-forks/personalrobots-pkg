@@ -41,9 +41,9 @@ using namespace std;
 #include <sys/time.h>
 #include <sys/resource.h>
 #include <fstream>
-#include <limits> // provides std::numeric_limits
+#include <limits>
+#include <map>
 
-using sfl::to_string;
 using namespace boost;
 using namespace std;
 
@@ -110,13 +110,13 @@ namespace mpglue {
       os << title << "\n";
     os << prefix << "goal pose:                 " << goal_x << "  " << goal_y << "  " << goal_th
        << "\n"
-       << prefix << "goal costmap:                 " << goal_ix << "  " << goal_iy << "\n"
+       << prefix << "goal costmap:              " << goal_ix << "  " << goal_iy << "\n"
        << prefix << "start pose:                " << start_x << "  " << start_y << "  " << start_th
        << "\n"
-       << prefix << "start costmap:                " << start_ix << "  " << start_iy << "\n"
-       << prefix << "plan_from_scratch:         " << to_string(plan_from_scratch) << "\n"
-       << prefix << "flush_cost_changes:        " << to_string(flush_cost_changes) << "\n"
-       << prefix << "success:                   " << to_string(success) << "\n"
+       << prefix << "start costmap:             " << start_ix << "  " << start_iy << "\n"
+       << prefix << "plan_from_scratch:         " << sfl::to_string(plan_from_scratch) << "\n"
+       << prefix << "flush_cost_changes:        " << sfl::to_string(flush_cost_changes) << "\n"
+       << prefix << "success:                   " << sfl::to_string(success) << "\n"
        << prefix << "time actual (wall) [ms]:   " << 1.0e3 * actual_time_wall << "\n"
        << prefix << "time actual (user) [ms]:   " << 1.0e3 * actual_time_user << "\n"
        << prefix << "plan_length [m]:           " << plan_length << "\n"
@@ -139,11 +139,11 @@ namespace mpglue {
        << prefix << "    <global>" << start_x << "  " << start_y << "  " << start_th << "</global>\n"
        << prefix << "    <costmap>" << start_ix << "  " << start_iy << "</costmap>\n"
        << prefix << "  </start>\n"
-       << prefix << "  <plan_from_scratch>" << to_string(plan_from_scratch)
+       << prefix << "  <plan_from_scratch>" << sfl::to_string(plan_from_scratch)
        << "</plan_from_scratch>\n"
-       << prefix << "  <flush_cost_changes>" << to_string(flush_cost_changes)
+       << prefix << "  <flush_cost_changes>" << sfl::to_string(flush_cost_changes)
        << "</flush_cost_changes>\n"
-       << prefix << "  <success>" << to_string(success) << "</success>\n"
+       << prefix << "  <success>" << sfl::to_string(success) << "</success>\n"
        << prefix << "  <actual_time_wall unit=\"s\">" << actual_time_wall
        << "</actual_time_wall>\n"
        << prefix << "  <actual_time_user unit=\"s\">" << actual_time_user
@@ -347,7 +347,7 @@ namespace mpglue {
 	    std::string const & prefix) const
   {
     CostmapPlannerStats::logStream(os, title, prefix);
-    os << prefix << "stop_at_first_solution:    " << to_string(stop_at_first_solution) << "\n"
+    os << prefix << "stop_at_first_solution:    " << sfl::to_string(stop_at_first_solution) << "\n"
        << prefix << "time allocated [ms]:       " << 1.0e3 * allocated_time << "\n";
   }
   
@@ -364,7 +364,7 @@ namespace mpglue {
 		  std::string const & prefix) const
   {
     CostmapPlannerStats::dumpSubclassXML(os, prefix);
-    os << prefix << "  <stop_at_first_solution>" << to_string(stop_at_first_solution)
+    os << prefix << "  <stop_at_first_solution>" << sfl::to_string(stop_at_first_solution)
        << "</stop_at_first_solution>\n"
        << prefix << "  <allocated_time unit=\"s\">" << allocated_time << "</allocated_time>\n";
   }
@@ -404,6 +404,36 @@ namespace mpglue {
     stop_at_first_solution_changed_ = false;
     allocated_time_changed_ = false;
   }
-
+  
+  
+  std::string canonicalPlannerName(std::string const & name_or_alias)
+  {
+    static map<string, string> planner_alias;
+    if (planner_alias.empty()) {
+      planner_alias.insert(make_pair("ARAStar",      "ARAStar"));
+      planner_alias.insert(make_pair("ara",          "ARAStar"));
+      planner_alias.insert(make_pair("ARA",          "ARAStar"));
+      planner_alias.insert(make_pair("arastar",      "ARAStar"));
+    
+      planner_alias.insert(make_pair("ADStar",       "ADStar"));
+      planner_alias.insert(make_pair("ad",           "ADStar"));
+      planner_alias.insert(make_pair("AD",           "ADStar"));
+      planner_alias.insert(make_pair("adstar",       "ADStar"));
+      
+      planner_alias.insert(make_pair("NavFn",        "NavFn"));
+      planner_alias.insert(make_pair("navfn",        "NavFn"));
+      planner_alias.insert(make_pair("nf",           "NavFn"));
+      planner_alias.insert(make_pair("NF",           "NavFn"));
+      
+      planner_alias.insert(make_pair("EStar",        "EStar"));
+      planner_alias.insert(make_pair("estar",        "EStar"));
+      planner_alias.insert(make_pair("Estar",        "EStar"));
+    }
+    
+    map<string, string>::const_iterator is(planner_alias.find(name_or_alias));
+    if (planner_alias.end() == is)
+      return "";
+    return is->second;
+  }
   
 }

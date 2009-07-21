@@ -44,6 +44,9 @@
 namespace mpglue {
   
   
+  std::string canonicalPlannerName(std::string const & name_or_alias);
+  
+  
   class CostmapAccessor;
   class IndexTransform;
   

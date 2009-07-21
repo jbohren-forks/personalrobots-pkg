@@ -665,7 +665,7 @@ namespace {
       glPopMatrix();
     }
     
-    episode::startspec const & start(result.start);
+    mpglue::startspec const & start(result.start);
     glPushMatrix();
     glTranslated(start.px, start.py, 0);
     if (animated) {
@@ -680,7 +680,7 @@ namespace {
     drawFootprint();
     glPopMatrix();
     
-    episode::goalspec const & goal(result.goal);
+    mpglue::goalspec const & goal(result.goal);
     glPushMatrix();
     glTranslated(goal.px, goal.py, 0);
     glColor3d(1, 0.5, 0);

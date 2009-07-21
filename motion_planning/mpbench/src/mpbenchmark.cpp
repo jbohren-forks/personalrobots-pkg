@@ -342,8 +342,8 @@ void create_setup()
 
 
 static void plan_iteratively(size_t task_id, size_t episode_id,
-			     episode::startspec const & start, episode::goalspec const & goal,
-			     boost::shared_ptr<episode::doorspec> door,
+			     mpglue::startspec const & start, mpglue::goalspec const & goal,
+			     boost::shared_ptr<mpglue::doorspec> door,
 			     SBPLPlannerWrap & planner_ref)
 {
   double prev_epsilon(-1);
@@ -428,8 +428,8 @@ static void plan_iteratively(size_t task_id, size_t episode_id,
 
 
 static void plan_once(size_t task_id, size_t episode_id,
-		      episode::startspec const & start, episode::goalspec const & goal,
-		      boost::shared_ptr<episode::doorspec> door,
+		      mpglue::startspec const & start, mpglue::goalspec const & goal,
+		      boost::shared_ptr<mpglue::doorspec> door,
 		      CostmapPlanner & planner_ref)
 {
   shared_ptr<waypoint_plan_t> plan;
@@ -476,7 +476,7 @@ void run_tasks()
       
       for (size_t episode_id(0); episode_id < task.start.size(); ++episode_id) {
 	bool const costs_changed(setup->getWorld()->select(task_id, episode_id));
-	episode::startspec const & start(task.start[episode_id]);
+	mpglue::startspec const & start(task.start[episode_id]);
 	
 	planner->setStart(start.px, start.py, start.pth);
 	planner->forcePlanningFromScratch(start.from_scratch);

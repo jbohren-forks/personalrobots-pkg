@@ -414,7 +414,7 @@ void end_element_handler(void * user_data,
        >> sp->tmp_angle_range;
     if ( ! is)
       throwme(sp, "could not read door spec from \"" + sp->buffer->GetString() + "\"");
-    sp->tmp_task.door = episode::doorspec::convert(sp->tmp_hinge_x,
+    sp->tmp_task.door = mpglue::doorspec::convert(sp->tmp_hinge_x,
 						   sp->tmp_hinge_y,
 						   sp->tmp_door_x,
 						   sp->tmp_door_y,

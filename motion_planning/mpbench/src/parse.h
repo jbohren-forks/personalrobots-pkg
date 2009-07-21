@@ -104,10 +104,10 @@ namespace mpbench {
     World * world;
     std::ostream * progress_os;
     std::ostream * debug_os;
-    episode::startspec def_start;
-    episode::goalspec def_goal;
-    episode::startspec tmp_start;
-    episode::goalspec tmp_goal;
+    mpglue::startspec def_start;
+    mpglue::goalspec def_goal;
+    mpglue::startspec tmp_start;
+    mpglue::goalspec tmp_goal;
     episode::taskspec tmp_task;
     ssize_t tmp_episode;
     double tmp_hinge_x;

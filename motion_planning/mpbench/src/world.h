@@ -38,6 +38,8 @@
 #define MPBENCH_WORLD_HPP
 
 #include <mpbench/setup.h>
+#include <mpglue/costmapper.h>
+#include <sfl/gplan/GridFrame.hpp>
 
 namespace mpbench {
   

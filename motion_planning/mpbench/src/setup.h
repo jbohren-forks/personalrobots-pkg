@@ -37,15 +37,19 @@
 #ifndef MPBENCH_BENCHMARK_SETUP_HPP
 #define MPBENCH_BENCHMARK_SETUP_HPP
 
-#include <mpglue/costmapper.h>
-#include <mpglue/plan.h>
+#include <mpglue/setup.h>
+
+// #include <mpglue/costmapper.h>
+// #include <mpglue/plan.h>
 #include <mpglue/planner.h>
 #include <mpglue/footprint.h>
-#include <sfl/gplan/GridFrame.hpp>
-#include <boost/shared_ptr.hpp>
-#include <string>
-#include <vector>
-#include <set>
+// #include <sfl/gplan/GridFrame.hpp>
+// #include <boost/shared_ptr.hpp>
+// #include <string>
+// #include <vector>
+// #include <set>
+
+#include <stdexcept>
 
 namespace mpbench {
   
@@ -53,77 +57,23 @@ namespace mpbench {
   
   namespace episode {
     
-    struct startspec {
-      startspec(bool from_scratch,
- 		bool use_initial_solution,
- 		bool allow_iteration,
- 		double alloc_time,
-		double start_x,
-		double start_y,
-		double start_th);
-      
-      bool from_scratch;
-      bool use_initial_solution;
-      bool allow_iteration;
-      double alloc_time;
-      double px;
-      double py;
-      double pth;
-    };
-    
-    struct goalspec {
-      goalspec(double goal_x,
-	       double goal_y,
-	       double goal_th, 
-	       double goal_tol_xy,
-	       double goal_tol_th);
-      
-      double px;
-      double py;
-      double pth;
-      double tol_xy;
-      double tol_th;
-    };
-    
-    struct doorspec {
-      doorspec(doorspec const & orig);
-      doorspec(double px,
-	       double py,
-	       double th_shut,
-	       double th_open,
-	       double width,
-	       double dhandle);
-      
-      static boost::shared_ptr<doorspec> convert(double hinge_x, double hinge_y,
-						 double door_x, double door_y,
-						 double handle_distance,
-						 double angle_range);
-      
-      double px;		/**< x-coordinate of hinge */
-      double py;		/**< y-coordinate of hinge */
-      double th_shut;		/**< angle between global X and door when fully shut */
-      double th_open;		/**< angle between global X and door when fully open */
-      double width;		/**< distance from hinge to extremity of door */
-      double dhandle;		/**< distance from hinge to handle */
-    };
-    
     struct taskspec {
-      taskspec(std::string const & description, goalspec const & goal);
-      taskspec(std::string const & description, goalspec const & goal, doorspec const & door);
+      taskspec(std::string const & description, mpglue::goalspec const & goal);
+      taskspec(std::string const & description, mpglue::goalspec const & goal, mpglue::doorspec const & door);
       taskspec(taskspec const & orig);
       
       std::string description;
-      goalspec goal;
-      std::vector<startspec> start; // per episode
-      boost::shared_ptr<doorspec> door; /**< only used by door planner (for now, anyway) */
+      mpglue::goalspec goal;
+      std::vector<mpglue::startspec> start; // per episode
+      boost::shared_ptr<mpglue::doorspec> door; /**< only used by door planner (for now, anyway) */
     };
     
   }
   
   
-  typedef std::vector<std::string> tokenlist_t;
-  
-  struct SetupOptions {    
+  struct SetupOptions
+    : public mpglue::requestspec
+  {    
     SetupOptions(std::string const & world_spec,
 		 std::string const & planner_spec,
 		 std::string const & robot_spec,
@@ -150,27 +100,8 @@ namespace mpbench {
 	      std::string const & prefix) const;
     
     std::string const world_spec;
-    std::string const planner_spec;
-    std::string const robot_spec;
-    std::string const costmap_spec;
     
-    tokenlist_t world_tok;
-    tokenlist_t planner_tok;
-    tokenlist_t robot_tok;
-    tokenlist_t costmap_tok;
-    
-    std::string robot_name;
-    double robot_inscribed_radius;
-    double robot_circumscribed_radius;
-    double robot_nominal_forward_speed;
-    double robot_nominal_rotation_speed;
-    
-    std::string costmap_name;
-    double costmap_resolution;	/**< cell size [m] (square cells) */
-    double costmap_inscribed_radius; /**< radius [m] of CSpace "lethal" inflation */
-    double costmap_circumscribed_radius; /**< radius [m] of "non-lethal" inflation */
-    double costmap_inflation_radius; /**< distance [m] of freespace cells from obstacles */
-    int costmap_obstacle_cost;
+    mpglue::tokenlist_t world_tok;
   };
   
   typedef std::vector<boost::shared_ptr<episode::taskspec> > tasklist_t;

@@ -43,12 +43,8 @@
 #include <mpglue/estar_planner.h>
 #include <costmap_2d/cost_values.h>
 #include <sbpl/headers.h>
-// #include <sfl/gplan/Mapper2d.hpp>
 #include <sfl/util/numeric.hpp>
 #include <sfl/util/strutil.hpp>
-// #include <errno.h>
-// #include <cstring>
-// #include <err.h>
 #include <door_msgs/Door.h>
 
 #ifdef MPBENCH_HAVE_NETPGM
@@ -61,45 +57,12 @@ extern "C" {
 }
 #endif // MPBENCH_HAVE_NETPGM
 
-// using sfl::minval;
-// using sfl::maxval;
 using sfl::to_string;
 using namespace boost;
 using namespace std;
 
 
 namespace {  
-  
-  std::string canonicalPlannerName(std::string const & name_or_alias)
-  {
-    static map<string, string> planner_alias;
-    if (planner_alias.empty()) {
-      planner_alias.insert(make_pair("ARAStar",      "ARAStar"));
-      planner_alias.insert(make_pair("ara",          "ARAStar"));
-      planner_alias.insert(make_pair("ARA",          "ARAStar"));
-      planner_alias.insert(make_pair("arastar",      "ARAStar"));
-    
-      planner_alias.insert(make_pair("ADStar",       "ADStar"));
-      planner_alias.insert(make_pair("ad",           "ADStar"));
-      planner_alias.insert(make_pair("AD",           "ADStar"));
-      planner_alias.insert(make_pair("adstar",       "ADStar"));
-      
-      planner_alias.insert(make_pair("NavFn",        "NavFn"));
-      planner_alias.insert(make_pair("navfn",        "NavFn"));
-      planner_alias.insert(make_pair("nf",           "NavFn"));
-      planner_alias.insert(make_pair("NF",           "NavFn"));
-      
-      planner_alias.insert(make_pair("EStar",        "EStar"));
-      planner_alias.insert(make_pair("estar",        "EStar"));
-      planner_alias.insert(make_pair("Estar",        "EStar"));
-    }
-    
-    map<string, string>::const_iterator is(planner_alias.find(name_or_alias));
-    if (planner_alias.end() == is)
-      return "";
-    return is->second;
-  }
-  
   
   void drawDots(mpbench::Setup & setup,
 		double hall, double door)
@@ -257,11 +220,11 @@ namespace {
       os << "from hall to cubicle " << ii;
       if (incremental) {
 	mpbench::episode::taskspec foo(os.str(),
-				       mpbench::episode::goalspec((R0 + hall / 2) * cos(ii * alpha),
+				       mpglue::goalspec((R0 + hall / 2) * cos(ii * alpha),
 								  (R0 + hall / 2) * sin(ii * alpha) + yoff,
 								  0, tol_xy, tol_th));
-	foo.start.push_back(mpbench::episode::startspec(true, true, false, 3600, gx, gy, 0));
-	foo.start.push_back(mpbench::episode::startspec(false, false, true, alloc_time, gx, gy, 0));
+	foo.start.push_back(mpglue::startspec(true, true, false, 3600, gx, gy, 0));
+	foo.start.push_back(mpglue::startspec(false, false, true, alloc_time, gx, gy, 0));
 	setup.addTask(foo);
       }
       else
@@ -274,12 +237,12 @@ namespace {
       os << ", return trip";
       if (incremental) {
 	mpbench::episode::taskspec foo(os.str(),
-				       mpbench::episode::goalspec(gx, gy, 0, tol_xy, tol_th));
-	foo.start.push_back(mpbench::episode::startspec(true, true, false, 3600,
+				       mpglue::goalspec(gx, gy, 0, tol_xy, tol_th));
+	foo.start.push_back(mpglue::startspec(true, true, false, 3600,
 							(R0 + hall / 2) * cos(ii * alpha),
 							(R0 + hall / 2) * sin(ii * alpha) + yoff,
 							0));
-	foo.start.push_back(mpbench::episode::startspec(false, false, true, alloc_time,
+	foo.start.push_back(mpglue::startspec(false, false, true, alloc_time,
 							(R0 + hall / 2) * cos(ii * alpha),
 							(R0 + hall / 2) * sin(ii * alpha) + yoff,
 							0));
@@ -406,9 +369,9 @@ namespace mpbench {
 		double goal_tol_xy, double goal_tol_th)
   {
     shared_ptr<episode::taskspec>
-      setup(new episode::taskspec(description, episode::goalspec(goal_x, goal_y, goal_th,
+      setup(new episode::taskspec(description, mpglue::goalspec(goal_x, goal_y, goal_th,
 								 goal_tol_xy, goal_tol_th)));
-    setup->start.push_back(episode::startspec(from_scratch,
+    setup->start.push_back(mpglue::startspec(from_scratch,
 					      false, false, numeric_limits<double>::max(),
 					      start_x, start_y, start_th));
     tasklist_.push_back(setup);
@@ -506,21 +469,8 @@ namespace mpbench {
   {
     if ( ! title.empty())
       os << title << "\n";
-    os << prefix << "world spec:                   " << world_spec << "\n"
-       << prefix << "planner spec:                 " << planner_spec << "\n"
-       << prefix << "robot spec:                   " << robot_spec << "\n"
-       << prefix << "costmap spec:                 " << costmap_spec << "\n"
-       << prefix << "robot_name:                   " << robot_name << "\n"
-       << prefix << "robot_inscribed_radius:       " << robot_inscribed_radius << "\n"
-       << prefix << "robot_circumscribed_radius:   " << robot_circumscribed_radius << "\n"
-       << prefix << "robot_nominal_forward_speed:  " << robot_nominal_forward_speed << "\n"
-       << prefix << "robot_nominal_rotation_speed: " << robot_nominal_rotation_speed << "\n"
-       << prefix << "costmap_name:                 " << costmap_name << "\n"
-       << prefix << "costmap_resolution:           " << costmap_resolution << "\n"
-       << prefix << "costmap_inscribed_radius:     " << costmap_inscribed_radius << "\n"
-       << prefix << "costmap_circumscribed_radius: " << costmap_circumscribed_radius << "\n"
-       << prefix << "costmap_inflation_radius:     " << costmap_inflation_radius << "\n"
-       << prefix << "costmap_obstacle_cost:        " << costmap_obstacle_cost << "\n";
+    os << prefix << "world spec:                   " << world_spec << "\n";
+    mpglue::requestspec::dump(os, "", prefix);
   }
   
   
@@ -540,7 +490,7 @@ namespace mpbench {
 	os << prefix << " (" << (*it)->start.size() << " episodes)\n";
       os << prefix << "    goal " << (*it)->goal.px << "  " << (*it)->goal.py << "  "
 	 << (*it)->goal.pth << "  " << (*it)->goal.tol_xy << "  " << (*it)->goal.tol_th << "\n";
-      for (vector<episode::startspec>::const_iterator is((*it)->start.begin());
+      for (vector<mpglue::startspec>::const_iterator is((*it)->start.begin());
 	   is != (*it)->start.end(); ++is)
 	os << prefix << "    start " << to_string(is->from_scratch)
 	   << " " << to_string(is->use_initial_solution)
@@ -567,87 +517,9 @@ namespace mpbench {
   
   namespace episode {
     
-    startspec::
-    startspec(bool _from_scratch,
-	      bool _use_initial_solution,
-	      bool _allow_iteration,
-	      double _alloc_time,
-	      double start_x,
-	      double start_y,
-	      double start_th)
-      : from_scratch(_from_scratch),
-	use_initial_solution(_use_initial_solution),
-	allow_iteration(_allow_iteration),
-	alloc_time(_alloc_time),
-	px(start_x),
-	py(start_y),
-	pth(start_th)
-    {
-    }
-    
-    goalspec::
-    goalspec(double goal_x,
-	     double goal_y,
-	     double goal_th, 
-	     double goal_tol_xy,
-	     double goal_tol_th)
-      : px(goal_x),
-	py(goal_y),
-	pth(goal_th),
-	tol_xy(goal_tol_xy),
-	tol_th(goal_tol_th)
-    {
-    }
-    
-    
-    doorspec::
-    doorspec(doorspec const & orig)
-      : px(orig.px),
-	py(orig.py),
-	th_shut(orig.th_shut),
-	th_open(orig.th_open),
-	width(orig.width),
-	dhandle(orig.dhandle)
-    {
-    }
-    
-    
-    doorspec::
-    doorspec(double _px,
-	     double _py,
-	     double _th_shut,
-	     double _th_open,
-	     double _width,
-	     double _dhandle)
-      : px(_px),
-	py(_py),
-	th_shut(_th_shut),
-	th_open(_th_open),
-	width(_width),
-	dhandle(_dhandle)
-    {
-    }
-    
-    
-    boost::shared_ptr<doorspec> doorspec::
-    convert(double hinge_x, double hinge_y,
-	    double door_x, double door_y,
-	    double handle_distance,
-	    double angle_range)
-    {
-      double const dx(door_x - hinge_x);
-      double const dy(door_y - hinge_y);
-      double const th_shut(atan2(dy, dx));
-      boost::shared_ptr<doorspec> door(new doorspec(hinge_x, hinge_y,
-						    th_shut, th_shut + angle_range,
-						    sqrt(pow(dx, 2) + pow(dy, 2)),
-						    handle_distance));
-      return door;
-    }
-    
     
     taskspec::
-    taskspec(std::string const & _description, goalspec const & _goal)
+    taskspec(std::string const & _description, mpglue::goalspec const & _goal)
       : description(_description),
 	goal(_goal)
     {
@@ -655,10 +527,10 @@ namespace mpbench {
     
     
     taskspec::
-    taskspec(std::string const & _description, goalspec const & _goal, doorspec const & _door)
+    taskspec(std::string const & _description, mpglue::goalspec const & _goal, mpglue::doorspec const & _door)
       : description(_description),
 	goal(_goal),
-	door(new doorspec(_door))
+	door(new mpglue::doorspec(_door))
     {
     }
     
@@ -670,7 +542,7 @@ namespace mpbench {
 	start(orig.start)
     {
       if (orig.door)
-	door.reset(new doorspec(*orig.door));
+	door.reset(new mpglue::doorspec(*orig.door));
     }
     
   }
@@ -695,7 +567,7 @@ namespace mpbench {
     
     if (opt_.planner_tok.empty())
       throw runtime_error("mpbench::Setup::create(): no planner tokens");
-    string const planner_name(canonicalPlannerName(opt_.planner_tok[0]));
+    string const planner_name(mpglue::canonicalPlannerName(opt_.planner_tok[0]));
     boost::shared_ptr<World> world(getWorld());
     
     if ("NavFn" == planner_name) {
@@ -906,50 +778,13 @@ namespace mpbench {
   
   SetupOptions::
   SetupOptions(std::string const & _world_spec,
-	       std::string const & _planner_spec,
-	       std::string const & _robot_spec,
-	       std::string const & _costmap_spec)
-    : world_spec(_world_spec),
-      planner_spec(_planner_spec),
-      robot_spec(_robot_spec),
-      costmap_spec(_costmap_spec),
-      robot_name("pr2"),
-      robot_inscribed_radius(0.325),
-      robot_circumscribed_radius(0.46),
-      robot_nominal_forward_speed(0.6),	// approx human walking speed
-      robot_nominal_rotation_speed(0.6), // XXXX guesstimate
-      costmap_name("sfl"),
-      costmap_resolution(0.05),
-      costmap_inscribed_radius(0.325),
-      costmap_circumscribed_radius(0.46),
-      costmap_inflation_radius(0.55),
-      costmap_obstacle_cost(costmap_2d::INSCRIBED_INFLATED_OBSTACLE)
+	       std::string const & planner_spec,
+	       std::string const & robot_spec,
+	       std::string const & costmap_spec)
+    : mpglue::requestspec(planner_spec, robot_spec, costmap_spec),
+      world_spec(_world_spec)
   {
     sfl::tokenize(world_spec, ':', world_tok);
-    sfl::tokenize(planner_spec, ':', planner_tok);
-    sfl::tokenize(robot_spec, ':', robot_tok);
-    sfl::tokenize(costmap_spec, ':', costmap_tok);
-    
-    sfl::token_to(robot_tok, 0, robot_name);
-    if (sfl::token_to(robot_tok, 1, robot_inscribed_radius))
-      robot_inscribed_radius *= 1e-3;
-    if (sfl::token_to(robot_tok, 2, robot_circumscribed_radius))
-      robot_circumscribed_radius *= 1e-3;
-    if (sfl::token_to(robot_tok, 3, robot_nominal_forward_speed))
-      robot_nominal_forward_speed *= 1e-3;
-    if (sfl::token_to(robot_tok, 4, robot_nominal_rotation_speed))
-      robot_nominal_rotation_speed *= 1e-3;
-    
-    sfl::token_to(costmap_tok, 0, costmap_name);
-    if (sfl::token_to(costmap_tok, 1, costmap_resolution))
-      costmap_resolution *= 1e-3;
-    if (sfl::token_to(costmap_tok, 2, costmap_inscribed_radius))
-      costmap_inscribed_radius *= 1e-3;
-    if (sfl::token_to(costmap_tok, 3, costmap_circumscribed_radius))
-      costmap_circumscribed_radius *= 1e-3;
-    if (sfl::token_to(costmap_tok, 4, costmap_inflation_radius))
-      costmap_inflation_radius *= 1e-3;
-    sfl::token_to(costmap_tok, 5, costmap_obstacle_cost);
   }
 
 
@@ -966,32 +801,8 @@ namespace mpbench {
        << prefix << "        obst_gray is the gray level at which obstacles get inserted\n"
        << prefix << "            default is 64, use negative numbers to invert the scale\n"
        << prefix << "        xml_filename is optional, but needed to define tasks etc\n"
-       << prefix << "  xml : xml_filename\n"
-       << prefix << "\navailable planner specs (can use registered aliases instead):\n"
-       << prefix << "  NavFn [: int | dsc ]\n"
-       << prefix << "        int = interpolate path (default)\n"
-       << prefix << "        dsc = use discretized path instead\n"
-       << prefix << "  ADStar | ARAStar [: 2d | 3dkin | xythetalat [: custom [: bwd | fwd ]]]\n"
-       << prefix << "        2d = use 2D environment (default)\n"
-       << prefix << "        3dkin = use 3DKIN environment\n"
-       << prefix << "        xythetalat = use XYTHETALAT environment\n"
-       << prefix << "        xythetadoor = use DOOR environment\n"
-       << prefix << "        custom = uses by XYTHETALAT to specify the motion primitive file\n"
-       << prefix << "                 defaults to data/pr2.mprim\n"
-       << prefix << "        bwd = use backward search (default)\n"
-       << prefix << "        fwd = use forward search\n"
-       << prefix << "  EStar\n"
-       << prefix << "        (no further options yet)\n"
-       << prefix << "\navailable robot specs:\n"
-       << prefix << "  pr2 [: inscribed [: circumscribed [: fwd_speed [: rot_speed ]]]]\n"
-       << prefix << "        inscribed radius (millimeters), default 325mm\n"
-       << prefix << "        circumscribed radius (millimeters), default 460mm\n"
-       << prefix << "        nominal forward speed (millimeters per second), default 600mm/s\n"
-       << prefix << "        nominal rotation speed (milliradians per second), default 600mrad/s\n"
-       << prefix << "\navailable costmap specs:\n"
-       << prefix << "  sfl | ros [: resolution [: inscribed [: circumscribed [: inflation ]]]]\n"
-       << prefix << "        all lengths and radii in millimeters\n"
-       << prefix << "        defaults: resol. 50mm, inscr. 325mm, circ. 460mm, infl. 550mm\n";
+       << prefix << "  xml : xml_filename\n";
+    mpglue::requestspec::help(os, "", prefix);
   }
   
   
