@@ -6,6 +6,7 @@
     <remap from="robot_description" to="robotdesc/pr2" />
     
     <param name="publish_occlusion" type="bool" value="true" />
+    <param name="mark_self_occlusion" type="bool" value="false" />
 
     <!-- tell the collision map there may be an annotation channel telling which points are on the robot -->
     <param name="cloud_annotation" type="string" value="on_self" />

@@ -137,6 +137,9 @@ private:
     
     void loadParams(void)
     {
+	// flag that indicates whether obstacles should be added for self occlusion
+	nh_.param<bool>("~mark_self_occlusion", markSelfOcclusion_, true);
+	
 	// a frame that does not move with the robot
 	nh_.param<std::string>("~fixed_frame", fixedFrame_, "odom");
 
@@ -350,13 +353,19 @@ private:
 	{
 	    // if we have no previous information, the map is simply what we see + we assume space hidden by self is obstructed
 	    // we ignore points that were previously occluded by robot but are now free due to motion
-	    CMap occ_self;
-	    CMap dummy;
-	    findSelfOcclusion(self, occ_self, dummy);
-	    std::set_union(obstacles.begin(), obstacles.end(), 
-			   occ_self.begin(), occ_self.end(),
-			   std::inserter(currentMap_, currentMap_.begin()),
-			   CollisionPointOrder());
+
+	    if (markSelfOcclusion_)
+	    {
+		CMap occ_self;
+		CMap dummy;
+		findSelfOcclusion(self, occ_self, dummy);
+		std::set_union(obstacles.begin(), obstacles.end(), 
+			       occ_self.begin(), occ_self.end(),
+			       std::inserter(currentMap_, currentMap_.begin()),
+			       CollisionPointOrder());
+	    }
+	    else
+		currentMap_ = obstacles;
 	}
 	else
 	{
@@ -800,7 +809,8 @@ private:
     roslib::Header                               header_;
     std::string                                  cloud_annotation_;
     bool                                         publishOcclusion_;
-
+    bool                                         markSelfOcclusion_;
+    
     boost::mutex                                 mapProcessing_;
     CMap                                         currentMap_;
     
