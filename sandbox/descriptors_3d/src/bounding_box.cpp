@@ -75,6 +75,8 @@ void BoundingBox::compute(const robot_msgs::PointCloud& data,
                           const cv::Vector<robot_msgs::Point32*>& interest_pts,
                           cv::Vector<cv::Vector<float> >& results)
 {
+  // ----------------------------------------
+  // Allocate the results to be 0 vectors for each interest point
   unsigned int nbr_interest_pts = interest_pts.size();
   results.resize(nbr_interest_pts);
 
@@ -85,10 +87,29 @@ void BoundingBox::compute(const robot_msgs::PointCloud& data,
     ROS_ERROR("BoundingBox::compute() the bounding box radius not set");
     return;
   }
-  if (bbox_radius_ < 1e-6)
+  if (bbox_radius_ < 0.0)
   {
     ROS_ERROR("BoundingBox::compute() the radius %f is invalid", bbox_radius_);
     return;
+  }
+
+  // ----------------------------------------
+  // Extract principle components if specified
+  const vector<Eigen::Vector3d*>* eig_vecs_max = NULL;
+  const vector<Eigen::Vector3d*>* eig_vecs_mid = NULL;
+  const vector<Eigen::Vector3d*>* eig_vecs_min = NULL;
+  if (use_pca_bbox_)
+  {
+    if (spectral_info_ == NULL)
+    {
+      if (analyzeInterestPoints(data, data_kdtree, interest_pts) < 0)
+      {
+        return;
+      }
+    }
+    eig_vecs_max = &(spectral_info_->getTangents());
+    eig_vecs_mid = &(spectral_info_->getMiddleEigenVectors());
+    eig_vecs_min = &(spectral_info_->getNormals());
   }
 
   // ----------------------------------------
@@ -96,6 +117,7 @@ void BoundingBox::compute(const robot_msgs::PointCloud& data,
   // then compute bounding box
   for (size_t i = 0 ; i < nbr_interest_pts ; i++)
   {
+    // Retrieve interest point
     const robot_msgs::Point32* curr_interest_pt = interest_pts[i];
     if (curr_interest_pt == NULL)
     {
@@ -103,7 +125,22 @@ void BoundingBox::compute(const robot_msgs::PointCloud& data,
       continue;
     }
 
-    // TODO range search
+    // Grab neighbors around interest point
+    vector<int> neighbor_indices;
+    vector<float> neighbor_distances; // unused
+    // radiusSearch returning false (0 points) is handled by computeBoundingBoxFeatures
+    data_kdtree.radiusSearch(*curr_interest_pt, bbox_radius_, neighbor_indices, neighbor_distances);
+
+    // Compute features
+    if (use_pca_bbox_)
+    {
+      computeBoundingBoxFeatures(data, neighbor_indices, (*eig_vecs_max)[i], (*eig_vecs_mid)[i],
+          (*eig_vecs_min)[i], results[i]);
+    }
+    else
+    {
+      computeBoundingBoxFeatures(data, neighbor_indices, NULL, NULL, NULL, results[i]);
+    }
   }
 }
 
@@ -119,6 +156,14 @@ void BoundingBox::compute(const robot_msgs::PointCloud& data,
   // Allocate the results to be 0 vectors for each interest region
   unsigned int nbr_interest_regions = interest_region_indices.size();
   results.resize(nbr_interest_regions);
+
+  // ----------------------------------------
+  // Verify valid radius has been set
+  if (bbox_radius_set_ == false)
+  {
+    ROS_ERROR("BoundingBox::compute() the bounding box radius not set");
+    return;
+  }
 
   // ----------------------------------------
   // Extract principle components if specified
@@ -139,24 +184,43 @@ void BoundingBox::compute(const robot_msgs::PointCloud& data,
     eig_vecs_min = &(spectral_info_->getNormals());
   }
 
-  // TODO check bbox_radius_set
-  // TODO check for NULL in interest_region_indices[i]
-
   // ----------------------------------------
   // Compute the dimensions of the bounding box around the points
   for (size_t i = 0 ; i < nbr_interest_regions ; i++)
   {
+    // Retrieve interest region
+    const vector<int>* curr_interest_region = interest_region_indices[i];
+    if (curr_interest_region == NULL)
+    {
+      ROS_WARN("BoundingBox::compute() passed NULL interest region");
+      continue;
+    }
+
+    // Point curr_interest_region to neighboring points if indicated to
+    vector<int> neighbor_indices;
+    if (bbox_radius_ > 1e-6)
+    {
+      robot_msgs::Point32 region_centroid;
+      cloud_geometry::nearest::computeCentroid(data, *curr_interest_region, region_centroid);
+
+      curr_interest_region = &neighbor_indices;
+      vector<float> neighbor_distances; // unused
+      // radiusSearch returning false (0 points) is handled by computeBoundingBoxFeatures
+      data_kdtree.radiusSearch(region_centroid, bbox_radius_, neighbor_indices, neighbor_distances);
+    }
+
+    // Compute features
     if (use_pca_bbox_)
     {
-      computeBoundingBoxFeatures(data, *(interest_region_indices[i]), (*eig_vecs_max)[i], (*eig_vecs_mid)[i],
+      computeBoundingBoxFeatures(data, *curr_interest_region, (*eig_vecs_max)[i], (*eig_vecs_mid)[i],
           (*eig_vecs_min)[i], results[i]);
     }
     else
     {
-      computeBoundingBoxFeatures(data, *(interest_region_indices[i]), NULL, NULL, NULL, results[i]);
+      computeBoundingBoxFeatures(data, *curr_interest_region, NULL, NULL, NULL, results[i]);
     }
-  }
 
+  }
 }
 
 // --------------------------------------------------------------
@@ -170,7 +234,6 @@ void BoundingBox::computeBoundingBoxFeatures(const robot_msgs::PointCloud& data,
                                              cv::Vector<float>& result)
 {
   result.resize(result_size_);
-
   unsigned int nbr_pts = neighbor_indices.size();
 
   // --------------------------
@@ -318,4 +381,5 @@ void BoundingBox::computeBoundingBoxFeatures(const robot_msgs::PointCloud& data,
     result[result_idx++] = max_v2 - min_v2;
     result[result_idx++] = max_v3 - min_v3;
   }
+
 }

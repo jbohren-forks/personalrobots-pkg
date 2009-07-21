@@ -49,8 +49,7 @@ using namespace std;
 // --------------------------------------------------------------
 //* BoundingBox
 /*!
- * \brief Computes the dimensions of the bounding box for ONLY a given
- *        REGION of points.
+ * \brief Computes the dimensions of the bounding box
  */
 // --------------------------------------------------------------
 class BoundingBox: public SpectralAnalysis
@@ -71,6 +70,8 @@ class BoundingBox: public SpectralAnalysis
     // --------------------------------------------------------------
     /*!
      * \brief Defines the radius of the bounding box to examine
+     *
+     * REQUIRED
      */
     // --------------------------------------------------------------
     void setBoundingBoxRadius(float bbox_radius);
