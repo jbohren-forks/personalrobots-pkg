@@ -66,7 +66,7 @@ std::string URDF2Gazebo::values2str(unsigned int count, const double *values, do
 void URDF2Gazebo::setupTransform(btTransform &transform, const double *xyz, const double *rpy)
 {
     btMatrix3x3 mat;
-    mat.setEulerZYX(rpy[0],rpy[1],rpy[2]);
+    mat.setEulerZYX(rpy[2],rpy[1],rpy[0]);
     transform = btTransform(mat,btVector3(xyz[0],xyz[1],xyz[2]));
 }
 
@@ -84,7 +84,7 @@ void URDF2Gazebo::addTransform(TiXmlElement *elem, const::btTransform& transform
     double cpos[3] = { pz.x(), pz.y(), pz.z() };
     btMatrix3x3 mat = transform.getBasis();
     double crot[3];
-    mat.getEulerZYX(crot[0],crot[1],crot[2]);
+    mat.getEulerZYX(crot[2],crot[1],crot[0]);
     
     /* set geometry transform */
     addKeyValue(elem, "xyz", values2str(3, cpos));
