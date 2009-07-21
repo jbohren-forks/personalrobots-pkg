@@ -176,9 +176,16 @@ int main(int argc,char** argv)
 			
 			printf("Ground1: (%f, %f, %f)\n", outlets[1].coord_hole_ground.x, outlets[1].coord_hole_ground.y,
 				   outlets[1].coord_hole_ground.z);
-			printf("Ground2: (%f, %f, %f)\n", outlets[2].coord_hole_ground.x, outlets[2].coord_hole_ground.y,
+            if(outlets.size() > 2)
+            {
+                printf("Ground2: (%f, %f, %f)\n", outlets[2].coord_hole_ground.x, outlets[2].coord_hole_ground.y,
 				   outlets[2].coord_hole_ground.z);
+            }
 			
+            printf("The horizontal distance between ground holes is %f\n", 
+                   length(outlets[0].coord_hole_ground - outlets[1].coord_hole_ground));
+            printf("The vertical distance between ground holes is %f\n", 
+                   length(outlets[0].coord_hole_ground - outlets[2].coord_hole_ground));
 			printf(" found %d outlets\n", (int)outlets.size());
 #endif
 		}

@@ -590,7 +590,7 @@ const float outlet_xsize = 12.37; // mm, the distance between the holes
 const float outlet_ysize = 11.5; // mm, the distance from the ground hole to the power holes
 
 void calc_outlet_homography(const CvPoint2D32f* centers, CvMat* map_matrix, 
-							outlet_template_t templ, CvMat* inverse_map_matrix)
+							const outlet_template_t& templ, CvMat* inverse_map_matrix)
 {
 	CvPoint2D32f rectified[4];
 
@@ -1099,15 +1099,28 @@ int outlet_template_t::load(const char* path)
     return 1;
 }
 
-void outlet_template_t::get_holes_3d(CvPoint3D32f* holes)
+void outlet_template_t::get_holes_3d(CvPoint3D32f* holes) const
 {
     const CvPoint2D32f* centers = get_template();
     
     for(int i = 0; i < get_count(); i++)
     {
         CvPoint2D32f center = centers[i];
-        holes[3*i] = cvPoint3D32f(center.x - outlet_xsize/2, center.y, 0.0f);
-        holes[3*i + 1] = cvPoint3D32f(center.x + outlet_xsize/2, center.y, 0.0f);
-        holes[3*i + 2] = cvPoint3D32f(center.x, center.y - outlet_ysize, 0.0f);
+        holes[3*i] = cvPoint3D32f(center.x - outlet_xsize/2, center.y, 0.0f); // power left
+        holes[3*i + 1] = cvPoint3D32f(center.x + outlet_xsize/2, center.y, 0.0f); // power right
+        holes[3*i + 2] = cvPoint3D32f(center.x, center.y - outlet_ysize, 0.0f); // ground
+    }
+}
+
+void outlet_template_t::get_holes_2d(CvPoint2D32f* holes) const
+{
+    const CvPoint2D32f* centers = get_template();
+    
+    for(int i = 0; i < get_count(); i++)
+    {
+        CvPoint2D32f center = centers[i];
+        holes[3*i] = cvPoint2D32f(center.x - outlet_xsize/2, center.y); // power left
+        holes[3*i + 1] = cvPoint2D32f(center.x + outlet_xsize/2, center.y); // power right
+        holes[3*i + 2] = cvPoint2D32f(center.x, center.y - outlet_ysize); // ground
     }
 }

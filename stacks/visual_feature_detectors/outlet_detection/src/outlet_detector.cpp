@@ -48,8 +48,6 @@ int detect_outlet_tuple(IplImage* src, CvMat* intrinsic_matrix, CvMat* distortio
         cvReleaseImage(&_img);
     }
     
-    int ret = 0;
-    vector<outlet_t> holes;
 #if !defined(_GHT)
     if(outlet_templ.get_color() == outletOrange && outlet_templ.get_count() == 4)
     {
@@ -65,39 +63,106 @@ int detect_outlet_tuple(IplImage* src, CvMat* intrinsic_matrix, CvMat* distortio
     cvCopy(src, red);
     cvSetImageCOI(src, 0);
     
-    detect_outlets_one_way(red, outlet_templ, holes, src, output_path, filename);
+    detect_outlets_one_way(red, outlet_templ, outlets, src, output_path, filename);
     cvReleaseImage(&red);
 #endif
     
-    // now find 3d coordinates of the outlet in the camera reference frame
-    // first, calculate the origin
-    
-//    map_point_homography(outlets[0], <#CvMat * homography#>, <#CvPoint2D32f result#>)
-    
-    if(ret == 1)
+    if(outlets.size() != outlet_templ.get_count())
     {
-#if defined(_VERBOSE)
-        PRINTF("Coordinate of the first hole: %f,%f,%f\n", outlets[0].coord_hole1.x, 
-               outlets[0].coord_hole1.y, outlets[0].coord_hole1.z);
-        PRINTF("The distance between upper holes: %f\n", length(outlets[0].coord_hole1 - outlets[0].coord_hole2));
-        PRINTF("The distance between lower holes: %f\n", length(outlets[1].coord_hole1 - outlets[1].coord_hole2));
-        /*
-		float mean, stddev;
-		calc_outlet_dist_stat(outlets, mean, stddev);
-		PRINTF("Distance between holes: Mean = %f, stddev = %f\n", mean, stddev);
-		
-		float ground_dist_x1, ground_dist_x2, ground_dist_y;
-		calc_outlet_tuple_dist_stat(outlets, ground_dist_x1, ground_dist_x2, ground_dist_y);
-		PRINTF("Horizontal distance between ground holes: top %f, bottom %f\n", 
-			   ground_dist_x1, ground_dist_x2);
-		PRINTF("Vertical distance between ground holes: %f\n", ground_dist_y);
-         */
-#endif // _VERBOSE
+        // template not found
+        return 0;
     }
     
-    return ret;
+#if 0
+    calc_outlet_3d_coord_2x2(intrinsic_matrix, outlet_templ, outlets);
+#else
+    // now find 3d coordinates of the outlet in the camera reference frame
+    // first, calculate homography
+    CvPoint3D32f* object_holes_3d = new CvPoint3D32f[outlet_templ.get_count()*3];
+    CvPoint2D32f* object_holes_2d = new CvPoint2D32f[outlet_templ.get_count()*3];
+    CvPoint2D32f* image_holes = new CvPoint2D32f[outlet_templ.get_count()*3];
+
+    outlet_templ.get_holes_2d(object_holes_2d);
+    outlet_templ.get_holes_3d(object_holes_3d);
+    for(size_t i = 0; i < outlets.size(); i++)
+    {
+        image_holes[3*i] = cvPoint2D32f(outlets[i].hole1.x, outlets[i].hole1.y); // power left
+        image_holes[3*i + 1] = cvPoint2D32f(outlets[i].hole2.x, outlets[i].hole2.y); // power right
+        image_holes[3*i + 2] = cvPoint2D32f(outlets[i].ground_hole.x, outlets[i].ground_hole.y); // ground hole
+    }
+    
+    CvMat* homography = cvCreateMat(3, 3, CV_32FC1);
+    CvMat* inv_homography = cvCreateMat(3, 3, CV_32FC1);
+    
+    CvMat* image_holes_mat = cvCreateMat(outlet_templ.get_count()*3, 2, CV_32FC1);
+    CvMat* object_holes_mat = cvCreateMat(outlet_templ.get_count()*3, 2, CV_32FC1);
+    for(int i = 0; i < outlet_templ.get_count()*3; i++)
+    {
+        cvmSet(image_holes_mat, i, 0, image_holes[i].x);
+        cvmSet(image_holes_mat, i, 1, image_holes[i].y);
+        cvmSet(object_holes_mat, i, 0, object_holes_2d[i].x);
+        cvmSet(object_holes_mat, i, 1, object_holes_2d[i].y);
+    }
+    cvFindHomography(image_holes_mat, object_holes_mat, homography);
+    cvFindHomography(object_holes_mat, image_holes_mat, inv_homography);
+    cvReleaseMat(&image_holes_mat);
+    cvReleaseMat(&object_holes_mat);
+    
+    CvPoint3D32f origin;
+    CvPoint2D32f origin_2d;
+    map_point_homography(image_holes[0], homography, origin_2d);
+    origin = cvPoint3D32f(origin_2d.x, origin_2d.y, 0.0);
+    CvPoint2D32f scale = cvPoint2D32f(1.0, 1.0);
+
+	CvMat* rotation_vector = cvCreateMat(3, 1, CV_32FC1);
+	CvMat* translation_vector = cvCreateMat(3, 1, CV_32FC1);
+    calc_camera_pose(intrinsic_matrix, 0, outlet_templ.get_count()*3, object_holes_3d, image_holes, 
+                     rotation_vector, translation_vector);
+    calc_outlet_coords(outlets, homography, origin, scale, rotation_vector, translation_vector, inv_homography);
+    
+    delete object_holes_2d;
+    delete object_holes_3d;
+    delete image_holes;
+    cvReleaseMat(&rotation_vector);
+    cvReleaseMat(&translation_vector);
+    cvReleaseMat(&homography);
+    cvReleaseMat(&inv_homography);
+#endif
+    
+    return 1;
 }
 	
+void calc_outlet_3d_coord_2x2(CvMat* intrinsic_matrix, const outlet_template_t& outlet_templ, vector<outlet_t>& outlets)
+{
+	// filter outlets using template match
+	CvMat* homography = 0;
+	CvPoint3D32f origin;
+	CvPoint2D32f scale;
+	
+	homography = cvCreateMat(3, 3, CV_32FC1);
+	CvMat* inv_homography = cvCreateMat(3, 3, CV_32FC1);
+    
+    CvPoint2D32f centers[4];
+    for(int i = 0; i < 4; i++)
+    {
+        centers[i] = cvPoint2D32f((outlets[i].hole1.x + outlets[i].hole2.x)*0.5, 
+                                  (outlets[i].hole1.y + outlets[i].hole2.y)*0.5);
+    }
+	
+    calc_outlet_homography(centers, homography, 
+                           outlet_templ, inv_homography);
+        
+    
+	calc_origin_scale(centers, homography, &origin, &scale);
+    
+	CvMat* rotation_vector = cvCreateMat(3, 1, CV_32FC1);
+	CvMat* translation_vector = cvCreateMat(3, 1, CV_32FC1);
+	calc_camera_outlet_pose(intrinsic_matrix, 0, outlet_templ, centers, rotation_vector, translation_vector);
+	calc_outlet_coords(outlets, homography, origin, scale, rotation_vector, translation_vector, inv_homography);
+	cvReleaseMat(&rotation_vector);
+	cvReleaseMat(&translation_vector);
+	cvReleaseMat(&inv_homography);
+}
 
 int detect_outlet_tuple_2x2_orange(IplImage* src, CvMat* intrinsic_matrix, CvMat* distortion_params, 
                             vector<outlet_t>& outlets, const outlet_template_t& outlet_templ,

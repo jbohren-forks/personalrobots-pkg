@@ -43,4 +43,7 @@ int detect_outlet_tuple_2x1_orange(IplImage* src, CvMat* intrinsic_matrix, CvMat
 
 void features2outlets_2x1(const vector<feature_t>& features, vector<outlet_t>& outlets);
 
+void calc_outlet_3d_coord_2x2(CvMat* intrinsic_matrix, const outlet_template_t& outlet_templ, vector<outlet_t>& outlets);
+
+
 #endif //_OUTLET_DETECTOR_H

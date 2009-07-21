@@ -165,7 +165,8 @@ public:
     const CvOneWayDescriptorBase* get_one_way_descriptor_base() const {return m_base;};
     
     outlet_color_t get_color() const {return m_outlet_color;};
-    void get_holes_3d(CvPoint3D32f* holes);
+    void get_holes_3d(CvPoint3D32f* holes) const;
+    void get_holes_2d(CvPoint2D32f* holes) const;
     
     void save(const char* filename);
     int load(const char* path);
@@ -238,7 +239,7 @@ void calc_origin_scale(const CvPoint2D32f* centers, CvMat* map_matrix, CvPoint3D
 //  templ: outlet template
 //	inverse_map_matrix: optional inverse homography matrix
 void calc_outlet_homography(const CvPoint2D32f* centers, CvMat* map_matrix, 
-							outlet_template_t templ = outlet_template_t(), 
+							const outlet_template_t& templ = outlet_template_t(), 
 							CvMat* inverse_map_matrix = 0);
 
 void calc_outlet_homography(const CvPoint2D32f* centers, CvSize src_size, CvMat* map_matrix, CvSize* dst_size);
