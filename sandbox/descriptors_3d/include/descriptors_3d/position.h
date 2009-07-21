@@ -50,26 +50,50 @@ using namespace std;
 // --------------------------------------------------------------
 //* Position
 /**
- * \brief
+ * \brief A Position feature simply uses the 3rd coordinate (z) of the
+ *        interest point/region
  */
 // --------------------------------------------------------------
 class Position: public Descriptor3D
 {
   public:
+    // --------------------------------------------------------------
+    /*!
+     * \brief Instantiates the Position descriptor
+     *
+     * The computed feature is the z-coordinate of the given interest point
+     * or of the centroid from the given interest region
+     */
+    // --------------------------------------------------------------
     Position()
     {
       result_size_ = 1;
     }
 
-    // TODO: use sensor location
-    // TODO: incorporate map information
+    // TODO use sensor location so height is relative and dont assume flat ground
+    //void useSensorLocation();
 
+    // TODO: use map information such as distance from known walls
 
+    // --------------------------------------------------------------
+    /**
+     * \brief Extract the z-coordinate of the interest points
+     *
+     * \see Descriptor3D::compute
+     */
+    // --------------------------------------------------------------
     virtual void compute(const robot_msgs::PointCloud& data,
                          cloud_kdtree::KdTree& data_kdtree,
                          const cv::Vector<robot_msgs::Point32*>& interest_pts,
                          cv::Vector<cv::Vector<float> >& results);
 
+    // --------------------------------------------------------------
+    /**
+     * \brief Extract the z-coordinate of the interest regions' centroids
+     *
+     * \see Descriptor3D::compute
+     */
+    // --------------------------------------------------------------
     virtual void compute(const robot_msgs::PointCloud& data,
                          cloud_kdtree::KdTree& data_kdtree,
                          const cv::Vector<vector<int>*>& interest_region_indices,

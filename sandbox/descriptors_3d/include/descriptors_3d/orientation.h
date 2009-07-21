@@ -122,6 +122,8 @@ class Orientation: public SpectralAnalysis
      *
      * \warning useTangentOrientation() and/or useNormalOrientation() must be called first
      * \warning setSpectralRadius() or useSpectralInformation() must be called first
+     *
+     * \see Descriptor3D::compute
      */
     // --------------------------------------------------------------
     virtual void compute(const robot_msgs::PointCloud& data,
@@ -136,6 +138,8 @@ class Orientation: public SpectralAnalysis
      *
      * \warning useTangentOrientation() and/or useNormalOrientation() must be called first
      * \warning setSpectralRadius() or useSpectralInformation() must be called first
+     *
+     * \see Descriptor3D::compute
      */
     // --------------------------------------------------------------
     virtual void compute(const robot_msgs::PointCloud& data,

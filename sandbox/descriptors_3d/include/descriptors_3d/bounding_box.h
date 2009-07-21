@@ -122,6 +122,8 @@ class BoundingBox: public SpectralAnalysis
      * \warning setBoundingBoxRadius() must be called first
      * \warning If computing the bounding box in principle component space, then
      *          setSpectralRadius() or useSpectralInformation() must be called first
+     *
+     * \see Descriptor3D::compute
      */
     // --------------------------------------------------------------
     virtual void compute(const robot_msgs::PointCloud& data,
@@ -136,6 +138,8 @@ class BoundingBox: public SpectralAnalysis
      * \warning setBoundingBoxRadius() must be called first
      * \warning If computing the bounding box in principle component space, then
      *          setSpectralRadius() or useSpectralInformation() must be called first
+     *
+     * \see Descriptor3D::compute
      */
     // --------------------------------------------------------------
     virtual void compute(const robot_msgs::PointCloud& data,
