@@ -35,8 +35,10 @@
 
 namespace controller {
 
+ROS_REGISTER_CONTROLLER(WristCalibrationController)
+
 WristCalibrationController::WristCalibrationController()
-  : state_(INITIALIZED)
+: state_(INITIALIZED), robot_(NULL), last_publish_time_(0)
 {
 }
 
@@ -123,6 +125,114 @@ bool WristCalibrationController::initXml(mechanism::RobotState *robot, TiXmlElem
     return false;
 
   fprintf(stderr, "WristCalibrationController initialized!\n");
+
+  return true;
+}
+
+bool WristCalibrationController::init(mechanism::RobotState *robot,
+                                      const ros::NodeHandle &n)
+{
+  assert(robot);
+  node_ = n;
+  robot_ = robot;
+
+  if (!node_.getParam("velocity", search_velocity_))
+  {
+    ROS_ERROR("No velocity given (namespace: %s)", node_.getNamespace().c_str());
+    return false;
+  }
+
+  // Joints
+
+  std::string flex_joint_name;
+  if (!node_.getParam("flex_joint", flex_joint_name))
+  {
+    ROS_ERROR("No flex joint given (namespace: %s)", node_.getNamespace().c_str());
+    return false;
+  }
+  if (!(flex_joint_ = robot->getJointState(flex_joint_name)))
+  {
+    ROS_ERROR("Could not find flex joint \"%s\" (namespace: %s)",
+              flex_joint_name.c_str(), node_.getNamespace().c_str());
+    return false;
+  }
+
+  std::string roll_joint_name;
+  if (!node_.getParam("roll_joint", roll_joint_name))
+  {
+    ROS_ERROR("No roll joint given (namespace: %s)", node_.getNamespace().c_str());
+    return false;
+  }
+  if (!(roll_joint_ = robot->getJointState(roll_joint_name)))
+  {
+    ROS_ERROR("Could not find roll joint \"%s\" (namespace: %s)",
+              roll_joint_name.c_str(), node_.getNamespace().c_str());
+    return false;
+  }
+
+  // Actuators
+
+  std::string actuator_l_name;
+  if (!node_.getParam("actuator_l", actuator_l_name))
+  {
+    ROS_ERROR("No actuator_l given (namespace: %s)", node_.getNamespace().c_str());
+    return false;
+  }
+  if (!(actuator_l_ = robot->model_->getActuator(actuator_l_name)))
+  {
+    ROS_ERROR("Could not find actuator \"%s\" (namespace: %s)",
+              actuator_l_name.c_str(), node_.getNamespace().c_str());
+    return false;
+  }
+
+  std::string actuator_r_name;
+  if (!node_.getParam("actuator_r", actuator_r_name))
+  {
+    ROS_ERROR("No actuator_r given (namespace: %s)", node_.getNamespace().c_str());
+    return false;
+  }
+  if (!(actuator_r_ = robot->model_->getActuator(actuator_r_name)))
+  {
+    ROS_ERROR("Could not find actuator \"%s\" (namespace: %s)",
+              actuator_r_name.c_str(), node_.getNamespace().c_str());
+    return false;
+  }
+
+  // Transmission
+
+  std::string transmission_name;
+  if (!node_.getParam("transmission", transmission_name))
+  {
+    ROS_ERROR("No transmission given (namespace: %s)", node_.getNamespace().c_str());
+    return false;
+  }
+  if (!(transmission_ = robot->model_->getTransmission(transmission_name)))
+  {
+    ROS_ERROR("Could not find transmission \"%s\" (namespace: %s)",
+              transmission_name.c_str(), node_.getNamespace().c_str());
+    return false;
+  }
+
+  // Prepares the namespaces for the velocity controllers
+
+  XmlRpc::XmlRpcValue pid;
+  node_.getParam("pid", pid);
+
+  ros::NodeHandle roll_node(node_, "roll_velocity");
+  roll_node.setParam("type", std::string("JointVelocityController"));
+  roll_node.setParam("joint", roll_joint_name);
+  roll_node.setParam("pid", pid);
+
+  ros::NodeHandle flex_node(node_, "flex_velocity");
+  flex_node.setParam("type", std::string("JointVelocityController"));
+  flex_node.setParam("joint", flex_joint_name);
+  flex_node.setParam("pid", pid);
+
+  if (!vc_roll_.init(robot_, roll_node)) return false;
+  if (!vc_flex_.init(robot_, flex_node)) return false;
+
+  pub_calibrated_.reset(
+    new realtime_tools::RealtimePublisher<std_msgs::Empty>(node_, "calibrated", 1));
 
   return true;
 }
@@ -247,6 +357,19 @@ void WristCalibrationController::update()
     break;
   }
   case CALIBRATED:
+
+    if (pub_calibrated_)
+    {
+      if (last_publish_time_ + 0.5 < robot_->hw_->current_time_)
+      {
+        assert(pub_calibrated_);
+        if (pub_calibrated_->trylock())
+        {
+          last_publish_time_ = robot_->hw_->current_time_;
+          pub_calibrated_->unlockAndPublish();
+        }
+      }
+    }
     break;
   }
 
