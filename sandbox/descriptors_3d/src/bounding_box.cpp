@@ -196,14 +196,18 @@ void BoundingBox::compute(const robot_msgs::PointCloud& data,
       continue;
     }
 
-    // Point curr_interest_region to neighboring points if indicated to
+    // Find the neighborhood around the region's centroid if indicated to.
     vector<int> neighbor_indices;
     if (bbox_radius_ > 1e-6)
     {
+      // Change curr_interest_region to point to where the neighboring indices
+      // from radiusSearch will be stored to
+      curr_interest_region = &neighbor_indices;
+
+      // Compute centroid of interest region
       robot_msgs::Point32 region_centroid;
       cloud_geometry::nearest::computeCentroid(data, *curr_interest_region, region_centroid);
 
-      curr_interest_region = &neighbor_indices;
       vector<float> neighbor_distances; // unused
       // radiusSearch returning false (0 points) is handled by computeBoundingBoxFeatures
       data_kdtree.radiusSearch(region_centroid, bbox_radius_, neighbor_indices, neighbor_distances);
@@ -219,7 +223,6 @@ void BoundingBox::compute(const robot_msgs::PointCloud& data,
     {
       computeBoundingBoxFeatures(data, *curr_interest_region, NULL, NULL, NULL, results[i]);
     }
-
   }
 }
 
@@ -241,7 +244,7 @@ void BoundingBox::computeBoundingBoxFeatures(const robot_msgs::PointCloud& data,
   // the min/max extremas using the first point below
   if (nbr_pts == 0)
   {
-    ROS_WARN("BoundingBox::computeBoundingBoxFeatures() Passed empty bounding box indices");
+    ROS_WARN("BoundingBox::computeBoundingBoxFeatures() No points to form bounding box");
     for (size_t i = 0 ; i < result_size_ ; i++)
     {
       result[i] = 0.0;
