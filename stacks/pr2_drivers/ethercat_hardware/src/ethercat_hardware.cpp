@@ -38,7 +38,7 @@
 #include <dll/ethercat_dll.h>
 
 EthercatHardware::EthercatHardware() :
-  hw_(0), ni_(0), current_buffer_(0), last_buffer_(0), buffer_size_(0), halt_motors_(true), reset_state_(0), publisher_("/diagnostics", 1)
+  hw_(0), ni_(0), current_buffer_(0), last_buffer_(0), buffer_size_(0), halt_motors_(true), reset_state_(0), publisher_(ros::NodeHandle(), "/diagnostics", 1)
 {
   diagnostics_.max_roundtrip_ = 0;
   diagnostics_.txandrx_errors_ = 0;
@@ -82,14 +82,6 @@ void EthercatHardware::init(char *interface, bool allow_unprogrammed, bool motor
     ROS_BREAK();
   }
 
-#if 0
-  if (set_socket_timeout(ni_, 1000*500))
-  {
-    ROS_FATAL("Unable to change socket timeout");
-    ROS_BREAK();
-  }
-#endif
-
   // Initialize Application Layer (AL)
   EtherCAT_DataLinkLayer::instance()->attach(ni_);
   if ((al_ = EtherCAT_AL::instance()) == NULL)
@@ -104,14 +96,6 @@ void EthercatHardware::init(char *interface, bool allow_unprogrammed, bool motor
     ROS_FATAL("Unable to locate any slaves");
     ROS_BREAK();
   }
-
-#if 0
-  if (set_socket_timeout(ni_, 1000*(num_slaves_*10 + 100)))
-  {
-    ROS_FATAL("Unable to change socket timeout");
-    ROS_BREAK();
-  }
-#endif
 
   // Initialize Master
   if ((em_ = EtherCAT_Master::instance()) == NULL)
@@ -403,11 +387,9 @@ EthercatHardware::configSlave(EtherCAT_SlaveHandler *sh)
   EthercatDevice *p = NULL;
   try
   {
-    p = DeviceFactory::Instance().CreateObject(sh->get_product_code());
-    p = p->configure(startAddress, sh);
+    p = DeviceFactory::Instance().CreateObject(sh->get_product_code(), sh, startAddress);
   }
   catch (Loki::DefaultFactoryError<unsigned int, EthercatDevice>::Exception)
-  {
-  }
+  {}
   return p;
 }

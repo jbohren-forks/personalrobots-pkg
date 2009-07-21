@@ -39,18 +39,16 @@
 
 static bool reg = DeviceFactory::Instance().Register(WG014::PRODUCT_CODE, deviceCreator<WG014>);
 
+WG014::WG014(EtherCAT_SlaveHandler *sh, int &start_address) : EthercatDevice(sh)
+{
+  sh->set_fmmu_config( new EtherCAT_FMMU_Config(0) );
+  sh->set_pd_config( new EtherCAT_PD_Config(0) );
+}
+
 WG014::~WG014()
 {
   delete sh_->get_fmmu_config();
   delete sh_->get_pd_config();
-}
-
-EthercatDevice *WG014::configure(int &startAddress, EtherCAT_SlaveHandler *sh)
-{
-  sh_ = sh;
-  sh->set_fmmu_config( new EtherCAT_FMMU_Config(0) );
-  sh->set_pd_config( new EtherCAT_PD_Config(0) );
-  return this;
 }
 
 int WG014::initialize(Actuator *, bool, bool)
