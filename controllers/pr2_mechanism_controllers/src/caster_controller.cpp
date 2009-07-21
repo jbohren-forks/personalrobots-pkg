@@ -119,6 +119,67 @@ bool CasterController::initXml(mechanism::RobotState *robot, TiXmlElement *confi
   return init(robot, caster_joint, wheel_l_joint, wheel_r_joint, caster_pid, wheel_pid);
 }
 
+bool CasterController::init(mechanism::RobotState *robot, const ros::NodeHandle &n)
+{
+  node_ = n;
+  assert(robot);
+
+  // Reads in the joints to control
+
+  std::string caster_joint_name, wheel_l_joint_name, wheel_r_joint_name;
+  if (!node_.getParam("joints/caster", caster_joint_name))
+  {
+    ROS_ERROR("No caster joint given (namespace: %s)", node_.getNamespace().c_str());
+    return false;
+  }
+  if (!node_.getParam("joints/wheel_l", wheel_l_joint_name))
+  {
+    ROS_ERROR("No wheel_l joint given (namespace: %s)", node_.getNamespace().c_str());
+    return false;
+  }
+  if (!node_.getParam("joints/wheel_r", wheel_r_joint_name))
+  {
+    ROS_ERROR("No wheel_r joint given (namespace: %s)", node_.getNamespace().c_str());
+    return false;
+  }
+  if (!(caster_ = robot->getJointState(caster_joint_name)))
+  {
+    ROS_ERROR("Caster joint \"%s\" does not exist (namespace: %s)",
+              caster_joint_name.c_str(), node_.getNamespace().c_str());
+    return false;
+  }
+
+  // Prepares the namespaces for the velocity controllers
+
+  XmlRpc::XmlRpcValue caster_pid, wheel_pid;
+  node_.getParam("caster_pid", caster_pid);
+  node_.getParam("wheel_pid", wheel_pid);
+
+  ros::NodeHandle
+    caster_node(n, "caster"),
+    wheel_l_node(n, "wheel_l"),
+    wheel_r_node(n, "wheel_r");
+
+  caster_node.setParam("type", std::string("JointVelocityController"));
+  caster_node.setParam("joint", caster_joint_name);
+  caster_node.setParam("pid", caster_pid);
+
+  wheel_l_node.setParam("type", std::string("JointVelocityController"));
+  wheel_l_node.setParam("joint", wheel_l_joint_name);
+  wheel_l_node.setParam("pid", wheel_pid);
+
+  wheel_r_node.setParam("type", std::string("JointVelocityController"));
+  wheel_r_node.setParam("joint", wheel_r_joint_name);
+  wheel_r_node.setParam("pid", wheel_pid);
+
+  assert(robot);
+  if (!caster_vel_.init(robot, caster_node)) return false;
+  if (!wheel_l_vel_.init(robot, wheel_l_node)) return false;
+  if (!wheel_r_vel_.init(robot, wheel_r_node)) return false;
+
+  return true;
+}
+
 void CasterController::update()
 {
   caster_vel_.setCommand(steer_velocity_);

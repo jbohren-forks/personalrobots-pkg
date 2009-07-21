@@ -41,6 +41,8 @@
 #ifndef CASTER_CONTROLLER_H
 #define CASTER_CONTROLLER_H
 
+#include "ros/node_handle.h"
+
 #include "mechanism_model/controller.h"
 #include "mechanism_model/robot.h"
 #include "control_toolbox/pid.h"
@@ -64,6 +66,7 @@ public:
             const std::string &wheel_l_joint, const std::string &wheel_r_joint,
             const control_toolbox::Pid &caster_pid, const control_toolbox::Pid &wheel_pid);
   bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
+  bool init(mechanism::RobotState *robot, const ros::NodeHandle &n);
 
   void update();
 
@@ -76,6 +79,7 @@ public:
   mechanism::JointState *caster_;
 
 private:
+  ros::NodeHandle node_;
   JointVelocityController caster_vel_, wheel_l_vel_, wheel_r_vel_;
 };
 

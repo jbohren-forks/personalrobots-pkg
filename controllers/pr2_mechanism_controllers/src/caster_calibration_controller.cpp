@@ -35,8 +35,10 @@
 
 namespace controller {
 
+ROS_REGISTER_CONTROLLER(CasterCalibrationController)
+
 CasterCalibrationController::CasterCalibrationController()
-  : state_(INITIALIZED)
+  : robot_(NULL), state_(INITIALIZED), last_publish_time_(0)
 {
 }
 
@@ -69,7 +71,7 @@ bool CasterCalibrationController::initXml(mechanism::RobotState *robot, TiXmlEle
   if (!joint_)
   {
     ROS_ERROR("Error: CasterCalibrationController could not find joint \"%s\"\n",
-            joint_name);
+              joint_name);
     return false;
   }
 
@@ -78,7 +80,7 @@ bool CasterCalibrationController::initXml(mechanism::RobotState *robot, TiXmlEle
   if (!actuator_)
   {
     ROS_ERROR("Error: CasterCalibrationController could not find actuator \"%s\"\n",
-            actuator_name);
+              actuator_name);
     return false;
   }
 
@@ -92,6 +94,77 @@ bool CasterCalibrationController::initXml(mechanism::RobotState *robot, TiXmlEle
   }
 
   if (!cc_.initXml(robot, config))
+    return false;
+
+  return true;
+}
+
+bool CasterCalibrationController::init(mechanism::RobotState *robot, const ros::NodeHandle &n)
+{
+  node_ = n;
+  robot_ = robot;
+
+  if (!node_.getParam("velocity", search_velocity_))
+  {
+    ROS_ERROR("No velocity given (namespace: %s)", node_.getNamespace().c_str());
+    return false;
+  }
+
+  // Joint
+
+  std::string joint_name;
+  if (!node_.getParam("joints/caster", joint_name))
+  {
+    ROS_ERROR("No joint given (namespace: %s)", node_.getNamespace().c_str());
+    return false;
+  }
+  if (!(joint_ = robot->getJointState(joint_name)))
+  {
+    ROS_ERROR("Could not find joint %s (namespace: %s)",
+              joint_name.c_str(), node_.getNamespace().c_str());
+    return false;
+  }
+
+  // Actuator
+
+  std::string actuator_name;
+  if (!node_.getParam("actuator", actuator_name))
+  {
+    ROS_ERROR("No actuator given (namespace: %s)", node_.getNamespace().c_str());
+    return false;
+  }
+  if (!(actuator_ = robot->model_->getActuator(actuator_name)))
+  {
+    ROS_ERROR("Could not find actuator %s (namespace: %s)",
+              actuator_name.c_str(), node_.getNamespace().c_str());
+    return false;
+  }
+
+  // Transmission
+
+  std::string transmission_name;
+  if (!node_.getParam("transmission", transmission_name))
+  {
+    ROS_ERROR("No transmission given (namespace: %s)", node_.getNamespace().c_str());
+    return false;
+  }
+  if (!(transmission_ = robot->model_->getTransmission(transmission_name)))
+  {
+    ROS_ERROR("Could not find transmission %s (namespace: %s)",
+              transmission_name.c_str(), node_.getNamespace().c_str());
+    return false;
+  }
+
+  if (!node_.getParam("velocity", search_velocity_))
+  {
+    ROS_ERROR("Velocity value was not specified (namespace: %s)", node_.getNamespace().c_str());
+    return false;
+  }
+
+  pub_calibrated_.reset(
+    new realtime_tools::RealtimePublisher<std_msgs::Empty>(node_, "calibrated", 1));
+
+  if (!cc_.init(robot_, node_))
     return false;
 
   return true;
@@ -145,6 +218,18 @@ void CasterCalibrationController::update()
   }
   case CALIBRATED:
     cc_.steer_velocity_ = 0.0;
+
+    if (pub_calibrated_)
+    {
+      if (last_publish_time_ + 0.5 < robot_->hw_->current_time_)
+      {
+        if (pub_calibrated_->trylock())
+        {
+          last_publish_time_ = robot_->hw_->current_time_;
+          pub_calibrated_->unlockAndPublish();
+        }
+      }
+    }
     break;
   }
 

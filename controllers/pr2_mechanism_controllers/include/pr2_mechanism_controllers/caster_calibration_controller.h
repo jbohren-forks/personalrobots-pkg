@@ -34,6 +34,7 @@
 #ifndef CASTER_CALIBRATION_CONTROLLER_H
 #define CASTER_CALIBRATION_CONTROLLER_H
 
+#include "ros/node_handle.h"
 #include "pr2_mechanism_controllers/caster_controller.h"
 #include "realtime_tools/realtime_publisher.h"
 #include "std_msgs/Empty.h"
@@ -48,6 +49,7 @@ public:
   ~CasterCalibrationController();
 
   virtual bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
+  virtual bool init(mechanism::RobotState *robot, const ros::NodeHandle &n);
 
 
   /*!
@@ -64,6 +66,9 @@ public:
 
 protected:
 
+  ros::NodeHandle node_;
+  mechanism::RobotState *robot_;
+
   enum { INITIALIZED, BEGINNING, MOVING, CALIBRATED };
   int state_;
 
@@ -75,6 +80,9 @@ protected:
   mechanism::Transmission *transmission_;
 
   controller::CasterController cc_;
+
+  double last_publish_time_;
+  boost::scoped_ptr<realtime_tools::RealtimePublisher<std_msgs::Empty> > pub_calibrated_;
 };
 
 
