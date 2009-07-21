@@ -362,11 +362,11 @@ bool Transformer::getParent(const std::string& frame_id, ros::Time time, std::st
 
   TransformStorage temp;
   if (! cache->getData(time, temp)) {
-    ROS_ERROR("Transformer::getParent: No data for parent of %s", mapped_frame_id.c_str());
+    ROS_DEBUG("Transformer::getParent: No data for parent of %s", mapped_frame_id.c_str());
     return false;
   }
   if (temp.parent_id_ == "NO_PARENT") {
-    ROS_ERROR("Transformer::getParent: No parent for %s", mapped_frame_id.c_str());
+    ROS_DEBUG("Transformer::getParent: No parent for %s", mapped_frame_id.c_str());
     return false;
   }
   parent= temp.parent_id_;
