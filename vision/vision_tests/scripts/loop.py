@@ -34,13 +34,15 @@
 import random
 import os
 
-modes = ('none', 'test', 'rectified') # , 'disparity', 'disparity_raw')
+# For now, run 200 iterations in mode 'none' at 30Hz
 
-schedule = [(i,m,random.choice([15,30])) for i in range(200) for m in modes ]
-print schedule
-
-#random.seed(0)
-#random.shuffle(schedule)
+if 1:
+    schedule = [(i, 'none', 30) for i in range(200)]
+else:
+    modes = ('none', 'test', 'rectified') # , 'disparity', 'disparity_raw')
+    schedule = [(i,m,random.choice([15,30])) for i in range(200) for m in modes ]
+    random.seed(0)
+    #random.shuffle(schedule)
 
 for (i,m, fps) in schedule:
     os.system("scripts/camera_hammer_1.py %d %s %d" % (i, m, fps))
