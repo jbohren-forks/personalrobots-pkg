@@ -1054,7 +1054,7 @@ int pr2VidReceive( const char *ifName, uint16_t port, size_t height, size_t widt
 	 * Note that the Linux system command 'sysctl -w net.core.rmem_max=8388608' must be used to enable
 	 * receive buffers larger than the kernel default.
 	 */
-	size_t bufsize = 8*1024*1024;	// 8MB receive buffer.
+	size_t bufsize = 16*1024*1024;	// 8MB receive buffer.
 
 	if( setsockopt(s, SOL_SOCKET,SO_RCVBUF, &bufsize, sizeof(bufsize)) == -1) {
 		perror("Can't set rcvbuf option");
