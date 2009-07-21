@@ -437,7 +437,7 @@ int main(int argc, char **argv)
 			{
 			    ss >> z;
 			    err = false;
-			    std::cout << "Performing IK to" << x << ", " << y << ", " << z << ", 0, 0, 0, 1..." << std::endl;
+			    std::cout << "Performing IK to " << x << ", " << y << ", " << z << ", 0, 0, 0, 1..." << std::endl;
 			    
 			    ros::ServiceClient client = nh.serviceClient<manipulation_srvs::IKService>("arm_ik");
 			    manipulation_srvs::IKService::Request request;
@@ -453,9 +453,12 @@ int main(int argc, char **argv)
 			    request.data.pose_stamped.pose.orientation.w = 1;
 			    request.data.joint_names = names;
 			    
+			    planning_models::StateParams rs(*km.getRobotState());
+			    rs.randomState();
+			    
 			    for(unsigned int i = 0; i < names.size() ; ++i)
 			    {
-				const double *params = km.getRobotState()->getParamsJoint(names[i]);
+				const double *params = rs.getParamsJoint(names[i]);
 				const unsigned int u = km.getKinematicModel()->getJoint(names[i])->usedParams;
 				for (unsigned int j = 0 ; j < u ; ++j)
 				    request.data.positions.push_back(params[j]);
