@@ -14,6 +14,7 @@
 #include "outlet_detection/constellation.h"
 #include "outlet_detection/generalized_hough.h"
 #include "outlet_detection/outlet_tuple.h"
+//using namespace cv;
 
 
 #include <highgui.h>
@@ -394,25 +395,28 @@ void detect_outlets_one_way(IplImage* test_image, const outlet_template_t& outle
     //}
     //	cvSaveImage("d:/1.jpg",image2);
 #if defined(_GHT) // Test histogram calculating
-	int x_size = test_image->width/5;//100;
-	int y_size = test_image->height/5;//100;
+	int x_size = test_image->width/5;
+	int y_size = test_image->height/5;
 	int x_scale_size = 15;
 	int y_scale_size = 15;
 	int angle1_size = 10;
 	int angle2_size = 10;
 	int hist_size[] = {x_size, y_size, angle1_size, x_scale_size, y_scale_size, angle2_size};
-	float x_ranges[] = { 0, test_image->width }; 
+	float x_ranges[] ={ 0, test_image->width }; 
 	float y_ranges[] = { 0, test_image->height };
 	float angle1_ranges[] = { -CV_PI/4, CV_PI/4 };
 	float angle2_ranges[] = { -CV_PI/4, CV_PI/4 };
 	float x_scale_ranges[] = { 0.6, 1.2 };
 	float y_scale_ranges[] = { 0.6, 1.2 };
 	float* ranges[] ={ x_ranges, y_ranges, angle1_ranges, x_scale_ranges, y_scale_ranges, angle2_ranges};
-	CvHistogram* hist = buildHoughHist(hole_candidates, descriptors->GetTrainFeatures(),hist_size,ranges);
+	CvSparseMat* hist = buildHoughHist(hole_candidates, descriptors->GetTrainFeatures(),hist_size,ranges);
+	//CvMatND* hist = buildHoughHistSparse(hole_candidates, descriptors->GetTrainFeatures(),hist_size,ranges);
 	float** values = new float*[1];// = getMaxHistValues(hist,hist_size);
 	int count = 1;
-	getMaxHistValues(hist,hist_size,values,count);
-	cvReleaseHist(&hist);
+	getMaxHistValues(hist,hist_size,ranges,values,count);
+	//getMaxSparseHistValues(hist,hist_size,ranges,values,count);
+	cvReleaseSparseMat(&hist);
+	//releaseHistMat(&hist,hist_size);
     
 	vector<feature_t> hole_features;
 	vector<feature_t> hole_features_corrected;
@@ -433,6 +437,7 @@ void detect_outlets_one_way(IplImage* test_image, const outlet_template_t& outle
             
 		}
 		calcExactLocation(hole_candidates,descriptors->GetTrainFeatures(),hole_features,hole_features_corrected,currError,image->width/x_size*2+1);
+		//calcExactLocation_(hole_candidates,descriptors->GetTrainFeatures(),hole_features,hole_features_corrected,currError,image->width/x_size+1);
 		if (currError < error)
 		{
 			index = j;

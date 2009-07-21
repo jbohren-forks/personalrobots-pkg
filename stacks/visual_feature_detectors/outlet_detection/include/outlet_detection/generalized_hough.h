@@ -9,15 +9,24 @@
 #include "outlet_detection/affine_transform.h"
 
 // Builds 6-dimension histogram [center x, center y, rotation angle1, x scale, y scale, rotation angle 2]
-CvHistogram* buildHoughHist(vector<feature_t>& input, const vector<feature_t>& train_features, int* hist_size, float** ranges);
+CvSparseMat* buildHoughHist(vector<feature_t>& input, const vector<feature_t>& train_features, int* hist_size, float** ranges);
+CvMatND* buildHoughHistSparse(vector<feature_t>& input, const vector<feature_t>& train_features, int* hist_size, float** ranges);
+
+void releaseHistMat(CvMatND** hist, int* hist_size);
+
+//// Calculates maximums of histogram. 
+//// Returns one of the maximums
+//float** getMaxHistValues(const CvSparseMat* hist, int* hist_size);
+////Returns all maximums with >= MIN_VOTES
+void getMaxHistValues(const CvSparseMat* hist, int* hist_size, float** ranges, float**& maxs, int& count, int MIN_VOTES);
+////Returns all maximums (count number)
+void getMaxHistValues(const CvSparseMat* hist, int* hist_size, float** ranges, float**& maxs, int& count);
 
 // Calculates maximums of histogram. 
-// Returns one of the maximums
-float** getMaxHistValues(const CvHistogram* hist, int* hist_size);
 //Returns all maximums with >= MIN_VOTES
-void getMaxHistValues(const CvHistogram* hist, int* hist_size, float**& maxs, int& count, int MIN_VOTES);
+void getMaxSparseHistValues(const CvMatND* hist, int* hist_size, float** ranges, float**& maxs, int& count, int MIN_VOTES);
 //Returns all maximums (count number)
-void getMaxHistValues(const CvHistogram* hist, int* hist_size, float**& maxs, int& count);
+void getMaxSparseHistValues(const CvMatND* hist, int* hist_size, float** ranges, float**& maxs, int& count);
 
 // Calculates outlet features from given train outlet and affine transform
 // Affine transform is array [center x, center y, rotation angle1, x scale, y scale, rotation angle 2]
@@ -49,6 +58,6 @@ void calcExactLocation4(vector<feature_t>& features, vector<feature_t>& outlet);
 // OUTPUT: dst_outlet
 //		   reprojectionError - reprojection error for affine transform
 void calcExactLocation(vector<feature_t>& features,const vector<feature_t>& train_features, vector<feature_t>& src_outlet, vector<feature_t>& dst_outlet, float& reprojectionError, int accuracy = 10);
-
+void calcExactLocation_(vector<feature_t>& features,const vector<feature_t>& train_features, vector<feature_t>& src_outlet, vector<feature_t>& dst_outlet, float& reprojectionError, int accuracy = 10);
 
 #endif
