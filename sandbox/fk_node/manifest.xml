@@ -7,6 +7,8 @@
   <review status="experimental" notes=""/>
   <url>http://pr.willowgarage.com/wiki/tf_node</url>
   <depend package="planning_environment"/>
+  <depend package="robot_msgs"/>
+  <depend package="motion_planning_msgs"/>
   <depend package="planning_models" />
   <depend package="roscpp"/>
   <depend package="rosconsole"/>

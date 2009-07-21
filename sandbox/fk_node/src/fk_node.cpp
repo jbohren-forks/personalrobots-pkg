@@ -25,38 +25,114 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 #include <map>
-
+#include <boost/shared_ptr.hpp>
 #include <ros/ros.h>
-
 #include <planning_environment/monitors/planning_monitor.h>
+#include <planning_models/kinematic.h>
+#include <boost/foreach.hpp>
+#include <boost/scoped_array.hpp>
+#include <tf/tf.h>
+#include <fk_node/ForwardKinematics.h>
 
-namespace fk_node {
+
+#define foreach BOOST_FOREACH
+
+
+namespace fk_node
+{
+
+using std::string;
+using std::vector;
+using std::copy;
+
+
+namespace pe=planning_environment;
+namespace pm=planning_models;
+namespace mpm=motion_planning_msgs;
+
+typedef boost::shared_ptr<pm::StateParams> State;
+typedef boost::shared_ptr<pm::KinematicModel> KinModelPtr;
+typedef pm::KinematicModel::Link* LinkPtr;
+typedef boost::scoped_array<double> DoubleArray;
+
+class ForwardKinematicsNode
+{
+public:
+
+  ForwardKinematicsNode();
+  bool computeForwardKinematics(ForwardKinematics::Request& req, ForwardKinematics::Response& resp);
+
+private:
+
+  ros::NodeHandle node_;
+  tf::TransformListener tf_;
+  pe::CollisionModels collision_models_;
+  pe::PlanningMonitor monitor_;
+  KinModelPtr kinematic_model_;
+  ros::ServiceServer fk_service_;
+};
+
+
+unsigned getDimension(const KinModelPtr& model)
+{
+  State state(model->newStateParams());
+  vector<double> params;
+  state->copyParams(params);
+  return params.size();
+}
+
+
+
+ForwardKinematicsNode::ForwardKinematicsNode () :
+  collision_models_("robot_description"), monitor_(&collision_models_, &tf_),
+  kinematic_model_(collision_models_.getKinematicModel())
+{
+  if (collision_models_.loadedModels()) {
+    monitor_.getEnvironmentModel()->setVerbose(true);
+    // monitor.waitForState();
+    // monitor.waitForMap();
+  }
+
+  fk_service_ = node_.advertiseService("~forward_kinematics", &ForwardKinematicsNode::computeForwardKinematics, this);
+  
+}
+
+  
+
+
+
+bool ForwardKinematicsNode::computeForwardKinematics(ForwardKinematics::Request& req, ForwardKinematics::Response& resp)
+{
+  State state(kinematic_model_->newStateParams());
+  state->defaultState();
+  
+  foreach (mpm::KinematicJoint joint, req.joints) {
+    DoubleArray value_array(new double[joint.value.size()]);
+    copy(joint.value.begin(), joint.value.end(), value_array.get());
+    state->setParamsJoint(value_array.get(), joint.joint_name);
+  }
+
+  kinematic_model_->computeTransforms(state->getParams());
+  vector<LinkPtr> links; 
+  kinematic_model_->getLinks(links);
+  foreach (LinkPtr link, links) {
+    resp.link_names.push_back(link->name);
+    robot_msgs::Pose pose;
+    tf::poseTFToMsg(link->globalTrans, pose);
+    resp.link_poses.push_back(pose);
+  }
+
+  return true;
+}
+
+
+} // namespace
 
 
 int main(int argc, char **argv)
 {
-	ros::init(argc, argv, "fk_node");
-	ros::NodeHandle nh;
+  ros::init(argc, argv, "fk_node");
+  fk_node::ForwardKinematicsNode fk;
+  ros::spin();
+} 
 
-	tf::TransformListener                  tf;
-	planning_environment::CollisionModels *collisionModels = new planning_environment::CollisionModels("robot_description");
-	planning_environment::PlanningMonitor *planningMonitor = new planning_environment::PlanningMonitor(collisionModels, &tf);
-
-	if (collisionModels_->loadedModels()) {
-	    planningMonitor_->getEnvironmentModel()->setVerbose(true);
-	    planningMonitor_->waitForState();
-	    planningMonitor_->waitForMap();
-
-		std::vector<std::string> arm_joint_names;
-	    if(getControlJointNames(arm_joint_names)) {
-
-	    	return 0;
-	    }
-	}
-
-	ROS_ERROR("fk_node is invalid; quitting");
-	return 1;
-}
-
-
-};
