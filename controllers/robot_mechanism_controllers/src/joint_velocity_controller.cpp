@@ -74,6 +74,7 @@ bool JointVelocityController::init(mechanism::RobotState *robot, const std::stri
 bool JointVelocityController::initXml(mechanism::RobotState *robot, TiXmlElement *config)
 {
   assert(robot);
+  robot_ = robot;
 
   TiXmlElement *j = config->FirstChildElement("joint");
   if (!j)
@@ -101,15 +102,21 @@ bool JointVelocityController::init(mechanism::RobotState *robot, const ros::Node
 {
   assert(robot);
   node_ = n;
+  robot_ = robot;
 
   std::string joint_name;
   if (!node_.getParam("joint", joint_name)) {
     ROS_ERROR("No joint given (namespace: %s)", node_.getNamespace().c_str());
     return false;
   }
+  if (!(joint_state_ = robot->getJointState(joint_name)))
+  {
+    ROS_ERROR("Could not find joint \"%s\" (namespace: %s)",
+              joint_name.c_str(), node_.getNamespace().c_str());
+    return false;
+  }
 
-  control_toolbox::Pid pid;
-  if (!pid.init(ros::NodeHandle(node_, "pid")))
+  if (!pid_controller_.init(ros::NodeHandle(node_, "pid")))
     return false;
 
   controller_state_publisher_.reset(
@@ -118,7 +125,7 @@ bool JointVelocityController::init(mechanism::RobotState *robot, const ros::Node
 
   sub_command_ = node_.subscribe<std_msgs::Float64>("set_command", 1, &JointVelocityController::setCommandCB, this);
 
-  return init(robot, joint_name, pid);
+  return true;
 }
 
 
