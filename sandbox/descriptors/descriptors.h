@@ -101,6 +101,7 @@ class ImageDescriptor {
   virtual void clearImageCache() {}
   //! Show the input image and a red + at the point at which the descriptor is being computed.
   void commonDebug(int row, int col);
+  //! Show the input image and a red + at the point at which the descriptor is being computed.
   void commonDebug(Keypoint kp, IplImage* vis = NULL);
   //! Sets the img_ pointer and clears the image cache.
   virtual void setImage(IplImage* img);
@@ -129,16 +130,14 @@ class ImageDescriptor {
  */
 class HogWrapper : public ImageDescriptor {
  public:
-  cv::HOGDescriptor hog_;
-  
   HogWrapper();
   HogWrapper(cv::Size winSize, cv::Size blockSize, cv::Size blockStride, cv::Size cellSize,
 	     int nbins, int derivAperture=1, double winSigma=-1,
 	     int histogramNormType=0, double L2HysThreshold=0.2, bool gammaCorrection=false); //0=L2Hys
-
   void compute(IplImage* img, const cv::Vector<Keypoint>& points, vvf& results);
-  void clearImageCache() {};
-  void clearPointCache() {};
+  
+ protected:
+  cv::HOGDescriptor hog_;
 };
 
 
@@ -150,20 +149,25 @@ class HogWrapper : public ImageDescriptor {
  * Abstract base class for descriptors that use integral images.
  */
 class IntegralImageDescriptor : public ImageDescriptor {
+  
  public:
+  //! The integral image.
   IplImage* ii_;
+  //! The 45 degree tilt integral image.
   IplImage* ii_tilt_;
+  //! The grayscale image used to compute the integral images.
   IplImage* gray_;
-  IntegralImageDescriptor* ii_provider_;
-  //! Which image - r, g, b, gray, etc.
-  IplImage* channel_;
 
   IntegralImageDescriptor(IntegralImageDescriptor* ii_provider);
   ~IntegralImageDescriptor();
-  void integrate();
-  virtual void clearImageCache();
+
+ protected:
+  IntegralImageDescriptor* ii_provider_;
+
   bool integrateRect(float* result, int row_offset, int col_offset, int half_height, int half_width, const Keypoint& kp, float* area = NULL);
   bool integrateRect(float* result, const Keypoint& kp, const CvRect& rect);
+  void integrate();
+  virtual void clearImageCache();
 };
 
 /**
@@ -171,13 +175,14 @@ class IntegralImageDescriptor : public ImageDescriptor {
  */
 class HaarDescriptor : public IntegralImageDescriptor {
  public:
-  cv::Vector<CvRect> rects_;
-  //! e.g. weights_[i] == -1 if the sum of values in rects_[i] should be subtracted.
-  cv::Vector<int> weights_;
-
   HaarDescriptor(cv::Vector<CvRect> rects, cv::Vector<int> weights, IntegralImageDescriptor* ii_provider = NULL);
   //! Scale of the window is determined by Keypoint.
   void compute(IplImage* img, const cv::Vector<Keypoint>& points, vvf& results);
+
+ protected:
+  cv::Vector<CvRect> rects_;
+  //! e.g. weights_[i] == -1 if the sum of values in rects_[i] should be subtracted.
+  cv::Vector<int> weights_;
 };
 
 vector<ImageDescriptor*> setupDefaultHaarDescriptors();
@@ -187,11 +192,12 @@ vector<ImageDescriptor*> setupDefaultHaarDescriptors();
  */
 class IntegralImageTexture : public IntegralImageDescriptor {
  public:
-  int scale_;
-
   IntegralImageTexture(int scale = 1, IntegralImageDescriptor* ii_provider = NULL);
   void compute(IplImage* img, const cv::Vector<Keypoint>& points, vvf& results);
   void compute(IplImage* img, const Keypoint& point, cv::Vector<float>& result);
+
+ protected:
+  int scale_;
 };
 
 
@@ -261,14 +267,18 @@ class SuperpixelStatistic : public ImageDescriptor {
  public:
   //! (*index_)[i] returns the vector of CvPoints for segment i of the image.
   std::vector< std::vector<CvPoint> > *index_;
+  //! The segmentation.
+  IplImage* seg_;
+
+  SuperpixelStatistic(int seed_spacing, float scale, SuperpixelStatistic* provider);
+
+ protected:
   int seed_spacing_;
   //! Scaling factor to apply to the image when computing the segmentation.
   float scale_;
   //! Pointer to an object from which the segmentation can be gotten.  
-  SuperpixelStatistic* seg_provider_;
-  IplImage* seg_;
+  SuperpixelStatistic* seg_provider_;  
 
-  SuperpixelStatistic(int seed_spacing, float scale, SuperpixelStatistic* provider);
   //! Computes superpixels and puts into seg_, and computes the superpixel to pixel index.  Is called automatically, if necessary, by the compute(.) function.
   void segment();
   IplImage* createSegmentMask(int label, CvRect* rect);
@@ -281,26 +291,24 @@ class SuperpixelColorHistogram : public SuperpixelStatistic {
   IplImage* hue_;
   IplImage* sat_;
   IplImage* val_;
+  IplImage* channel_;
+
+  SuperpixelColorHistogram(int seed_spacing, float scale, int nBins, std::string type, SuperpixelStatistic* seg_provider=NULL, SuperpixelColorHistogram* hsv_provider_=NULL);
+  ~SuperpixelColorHistogram();
+  void compute(IplImage* img, const cv::Vector<Keypoint>& points, vvf& results);
+
+ protected:
   int nBins_;
   //! Not used right now.
   std::string type_;
   SuperpixelColorHistogram* hsv_provider_;
-  //! histograms_[s] corresponds to the histogram for segment s of the segmentation. s=0 is always left NULL.  (segment numbering starts at 1).
-  //std::vector<Histogram*> histograms_;
   float max_val_;
-  IplImage* channel_;
   bool hists_reserved_;
 
-  SuperpixelColorHistogram(int seed_spacing, float scale, int nBins, std::string type, SuperpixelStatistic* seg_provider=NULL, SuperpixelColorHistogram* hsv_provider_=NULL);
-  //bool compute(Eigen::MatrixXf** result);
-  void compute(IplImage* img, const cv::Vector<Keypoint>& points, vvf& results);
-  void compute(IplImage* img, const Keypoint& point, cv::Vector<float>& result);
-
-  void clearPointCache() {}
-  void clearImageCache();
-  ~SuperpixelColorHistogram();
   void computeHistogram(int label);
   void computeHistogramCV(int label); 
+  void compute(IplImage* img, const Keypoint& point, cv::Vector<float>& result);
+  void clearImageCache();
 };
 
 std::vector<ImageDescriptor*> setupImageDescriptors();

@@ -586,10 +586,11 @@ void ContourFragmentDescriptor::compute(IplImage* img, const cv::Vector<Keypoint
 SuperpixelStatistic::SuperpixelStatistic(int seed_spacing, float scale, SuperpixelStatistic* seg_provider) :
   ImageDescriptor(), 
   index_(NULL), 
+  seg_(NULL),
   seed_spacing_(seed_spacing), 
   scale_(scale), 
-  seg_provider_(seg_provider), 
-  seg_(NULL)
+  seg_provider_(seg_provider)
+
 {
   char buf[1000];
   sprintf(buf, "SuperpixelStatistic_seedSpacing%d_scale%g", seed_spacing_, scale_);
@@ -797,7 +798,6 @@ SuperpixelColorHistogram::SuperpixelColorHistogram(int seed_spacing, float scale
   type_(type), 
   hsv_provider_(hsv_provider), 
   max_val_(0), 
-  channel_(NULL),
   hists_reserved_(false)
 {
   //printf("SuperpixelColorHistogram internal: %d\n", sizeof(SuperpixelColorHistogram));
