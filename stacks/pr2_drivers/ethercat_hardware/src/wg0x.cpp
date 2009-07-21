@@ -228,9 +228,9 @@ int WG06::initialize(Actuator *actuator, bool allow_unprogrammed, bool motor_mod
 
     if (fw_major_ >= 1)
     {
-      topic = "/accelerometer/";
+      topic = "accelerometer";
       if (!actuator->name_.empty())
-        topic += actuator->name_;
+        topic += "/" + actuator->name_;
       accel_publisher_ = new realtime_tools::RealtimePublisher<ethercat_hardware::AccelerometerState>(ros::NodeHandle(), topic, 1);
     }
 

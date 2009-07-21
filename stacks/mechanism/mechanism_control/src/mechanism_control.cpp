@@ -56,8 +56,8 @@ MechanismControl::MechanismControl(HardwareInterface *hw) :
   current_controllers_list_(0), 
   used_by_realtime_(-1), 
   pub_diagnostics_(node_, "/diagnostics", 1),
-  pub_joints_(node_, "/joint_states", 1),
-  pub_mech_state_(node_, "/mechanism_state", 1),
+  pub_joints_(node_, "joint_states", 1),
+  pub_mech_state_(node_, "mechanism_state", 1),
   last_published_state_(realtime_gettime()),
   last_published_diagnostics_(realtime_gettime())
 {
