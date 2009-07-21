@@ -155,6 +155,7 @@ namespace move_arm
 	ros::ServiceClient clientCancel = node_handle_.serviceClient<pr2_mechanism_controllers::TrajectoryCancel>(CONTROL_CANCEL_NAME, true);
 
 	motion_planning_msgs::KinematicPath currentPath;
+	int                                 currentPos   = 0;
 	bool                                approx       = false;
 	int                                 trajectoryId = -1;
 	ros::Duration                       eps(0.01);
@@ -206,6 +207,7 @@ namespace move_arm
 					ROS_INFO("Approximate path was found. Distance to goal is: %f", res.distance);
 				    ROS_INFO("Received path with %u states from motion planner", (unsigned int)res.path.states.size());
 				    currentPath = res.path;
+				    currentPos = 0;
 				    if (planningMonitor_->transformPathToFrame(currentPath, planningMonitor_->getFrameId()))
 				    {
 					displayPathPublisher_.publish(currentPath);
@@ -238,8 +240,20 @@ namespace move_arm
 	    if (feedback == pr2_robot_actions::MoveArmState::MOVING)
 	    {
 		bool safe = planningMonitor_->isEnvironmentSafe();
-		bool valid = unsafe_paths_ ? (trajectoryId == -1 ? planningMonitor_->isPathValid(currentPath, true) : true) : planningMonitor_->isPathValid(currentPath, true);
-
+		bool valid = true;
+		// we need to check if the path is still valid
+		if (!unsafe_paths_ || (unsafe_paths_ && trajectoryId == -1))
+		{
+		    // we don't want to check the part of the path that was already executed
+		    currentPos = planningMonitor_->closestStateOnPath(currentPath, currentPos, currentPath.states.size() - 1, planningMonitor_->getRobotState());
+		    if (currentPos < 0)
+		    {
+			ROS_WARN("Unable to identify current state in path");
+			currentPos = 0;
+		    }
+		    valid = planningMonitor_->isPathValid(currentPath, currentPos, currentPath.states.size() - 1, true);
+		}
+		
 		if (result == robot_actions::PREEMPTED || !safe || !valid)
 		{
 		    if (result == robot_actions::PREEMPTED)
