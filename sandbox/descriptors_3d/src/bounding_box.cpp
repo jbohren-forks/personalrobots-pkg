@@ -242,7 +242,7 @@ void BoundingBox::computeBoundingBoxFeatures(const robot_msgs::PointCloud& data,
   if (nbr_pts == 0)
   {
     ROS_WARN("BoundingBox::computeBoundingBoxFeatures() Passed empty bounding box indices");
-    for (unsigned int i = 0 ; i < result_size_ ; i++)
+    for (size_t i = 0 ; i < result_size_ ; i++)
     {
       result[i] = 0.0;
     }
