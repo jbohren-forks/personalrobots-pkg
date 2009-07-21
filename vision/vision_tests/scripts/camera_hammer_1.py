@@ -60,47 +60,61 @@ def compose(a, b, d):
     cv.ResetImageROI(r)
     return r
 
-def runTest(seq, mode):
+def saveImage(dcim, filename):
+    w,h,l,r,d = dcim
+
+    cv_l = None
+    cv_r = None
+    cv_d = None
+
+    if l != None:
+      channels = len(l) / (w * h)
+      cv_l = cv.CreateImageHeader((w, h), cv.IPL_DEPTH_8U, channels)
+      cv.SetData(cv_l, str(l), w * channels)
+      if channels == 3:
+        cv.CvtColor(cv_l, cv_l, cv.CV_BGR2RGB)
+
+    if r != None:
+      channels = len(r) / (w * h)
+      cv_r = cv.CreateImageHeader((w, h), cv.IPL_DEPTH_8U, channels)
+      cv.SetData(cv_r, str(r), w * channels)
+      if channels == 3:
+        cv.CvtColor(cv_r, cv_r, cv.CV_BGR2RGB)
+
+    if d != None:
+      (dimg, dpp, numDisp) = d
+      max_disparity = (dpp * numDisp) - 1
+      d16 = cv.CreateImageHeader((w, h), cv.IPL_DEPTH_16U, 1)
+      cv.SetData(d16, str(dimg), w * 2)
+      cv_d = cv.CreateImage((w, h), cv.IPL_DEPTH_8U, 1)
+      cv.CvtScale(d16, cv_d, 255.0 / max_disparity)
+
+    cv.SaveImage(filename, compose(cv_l, cv_r, cv_d))
+
+def runTest(seq, mode, fps):
     print mode
-    dc = dcam.dcam(mode)
+    dc = dcam.dcam(mode, fps)
     paramstr = dc.retParameters()
 
-    for i in range(50):
+    stamp = []
+    for i in range(35):
         print i
-        w,h,l,r,d = dc.getImage()
+        dcim = dc.getImage()
+        stamp.append(time.time())
+        #saveImage(dcim, "cam-%s-%04d-%03d.png" % (mode, seq, i))
+    saveImage(dcim, "cam-%s-%04d.png" % (mode, seq))
 
-        cv_l = None
-        cv_r = None
-        cv_d = None
-
-        if l != None:
-          channels = len(l) / (w * h)
-          cv_l = cv.CreateImageHeader((w, h), cv.IPL_DEPTH_8U, channels)
-          cv.SetData(cv_l, str(l), w * channels)
-          if channels == 3:
-            cv.CvtColor(cv_l, cv_l, cv.CV_BGR2RGB)
-
-        if r != None:
-          channels = len(r) / (w * h)
-          cv_r = cv.CreateImageHeader((w, h), cv.IPL_DEPTH_8U, channels)
-          cv.SetData(cv_r, str(r), w * channels)
-          if channels == 3:
-            cv.CvtColor(cv_r, cv_r, cv.CV_BGR2RGB)
-
-        if d != None:
-          (dimg, dpp, numDisp) = d
-          max_disparity = (dpp * numDisp) - 1
-          d16 = cv.CreateImageHeader((w, h), cv.IPL_DEPTH_16U, 1)
-          cv.SetData(d16, str(dimg), w * 2)
-          cv_d = cv.CreateImage((w, h), cv.IPL_DEPTH_8U, 1)
-          cv.CvtScale(d16, cv_d, 255.0 / max_disparity)
-
-        comp = compose(cv_l, cv_r, cv_d)
-        cv.SaveImage("cam-%s-%04d-%03d.png" % (m, seq, i), comp)
+    # Might be some warmup, so only consider the last 15 frames for frame rate calc
+    stamp = stamp[-15:]
+    actual_fps = (len(stamp) - 1) / (stamp[-1] - stamp[0])
+    if abs(fps - actual_fps) > 1.0:
+        print 'ERROR', 'fps', fps, 'actual_fps', actual_fps
 
 seq = int(sys.argv[1])
 m = sys.argv[2]
-runTest(seq, m)
+fps = int(sys.argv[3])
+
+runTest(seq, m, fps)
 
 ## Collect goldens
 #modes = ('none', 'test')

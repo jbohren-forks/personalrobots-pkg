@@ -34,12 +34,13 @@
 import random
 import os
 
-modes = ('none', 'test', 'rectified', 'disparity', 'disparity_raw')
+modes = ('none', 'test', 'rectified') # , 'disparity', 'disparity_raw')
 
-schedule = [(i,m) for i in range(100) for m in modes ]
+schedule = [(i,m,random.choice([15,30])) for i in range(200) for m in modes ]
+print schedule
 
-random.seed(0)
-random.shuffle(schedule)
+#random.seed(0)
+#random.shuffle(schedule)
 
-for (i,m) in schedule:
-    os.system("scripts/camera_hammer_1.py %d %s" % (i, m))
+for (i,m, fps) in schedule:
+    os.system("scripts/camera_hammer_1.py %d %s %d" % (i, m, fps))
