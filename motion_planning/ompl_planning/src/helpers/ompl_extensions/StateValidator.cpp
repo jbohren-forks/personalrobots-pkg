@@ -45,14 +45,35 @@ bool ompl_planning::StateValidityPredicate::operator()(const ompl::base::State *
 	    return false;
     }
     
-    const Clone &c = clones_[position_];
-    return check(s, c.em, c.km, c.kce);	    
+    lock_.lock();
+    int p = position_++;
+    
+    // if this is a new thread, we create an additional clone
+    if (p == (int)clones_.size())
+    {
+	clones_.resize(p + 1);
+	clones_[p].em = clones_[0].em->clone();
+	clones_[p].km = clones_[p].em->getRobotModel().get();
+	clones_[p].kce = new planning_environment::KinematicConstraintEvaluatorSet();
+	useConstraints(clones_[p].kce, clones_[p].km);
+    }
+    
+    lock_.unlock();
+    
+    const Clone &c = clones_[p];
+    bool res = check(s, c.em, c.km, c.kce);
+    
+    lock_.lock();
+    --position_;
+    lock_.unlock();
+    
+    return res;
 }
 
 void ompl_planning::StateValidityPredicate::setConstraints(const motion_planning_msgs::KinematicConstraints &kc)
 {
-    kce_.clear();
-    kce_.add(model_->kmodel, kc.pose_constraint);
+    kc_ = kc;
+    useConstraints(&kce_, model_->kmodel);
     
     // joint constraints simply update the state space bounds
     if (ksi_)
@@ -65,6 +86,12 @@ void ompl_planning::StateValidityPredicate::setConstraints(const motion_planning
 	dsi_->clearJointConstraints();
 	dsi_->setJointConstraints(kc.joint_constraint);
     }
+}
+
+void ompl_planning::StateValidityPredicate::useConstraints(planning_environment::KinematicConstraintEvaluatorSet *kce, planning_models::KinematicModel *km) const
+{
+    kce->clear();
+    kce->add(km, kc_.pose_constraint);
 }
 
 void ompl_planning::StateValidityPredicate::clearConstraints(void)

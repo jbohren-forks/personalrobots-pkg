@@ -83,6 +83,7 @@ namespace ompl_planning
 	
 	bool check(const ompl::base::State *s, collision_space::EnvironmentModel *em, planning_models::KinematicModel *km,
 		   planning_environment::KinematicConstraintEvaluatorSet *kce) const;
+	void useConstraints(planning_environment::KinematicConstraintEvaluatorSet *kce, planning_models::KinematicModel *km) const;
 	void setupModel(void);
 	void clearClones(void);
 	
@@ -92,6 +93,7 @@ namespace ompl_planning
 	// one of the next two will be instantiated
 	SpaceInformationKinematicModel                        *ksi_;
 	SpaceInformationDynamicModel                          *dsi_;
+	motion_planning_msgs::KinematicConstraints             kc_;
 	
 	planning_environment::KinematicConstraintEvaluatorSet  kce_;
 
@@ -103,7 +105,7 @@ namespace ompl_planning
 	    planning_environment::KinematicConstraintEvaluatorSet *kce;
 	};
 	
-	std::vector<Clone>                                     clones_;
+	mutable std::vector<Clone>                             clones_;
 	mutable int                                            position_;
 	mutable boost::mutex                                   lock_;
 	
