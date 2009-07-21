@@ -50,9 +50,11 @@ void Orientation::useTangentOrientation(double ref_x, double ref_y, double ref_z
   ref_tangent_[0] = ref_x;
   ref_tangent_[1] = ref_y;
   ref_tangent_[2] = ref_z;
-  ref_tangent_flipped_[0] = -ref_x;
-  ref_tangent_flipped_[1] = -ref_y;
-  ref_tangent_flipped_[2] = -ref_z;
+  ref_tangent_.normalize();
+
+  ref_tangent_flipped_[0] = -ref_tangent_[0];
+  ref_tangent_flipped_[1] = -ref_tangent_[1];
+  ref_tangent_flipped_[2] = -ref_tangent_[2];
 }
 
 // --------------------------------------------------------------
@@ -69,9 +71,11 @@ void Orientation::useNormalOrientation(double ref_x, double ref_y, double ref_z)
   ref_normal_[0] = ref_x;
   ref_normal_[1] = ref_y;
   ref_normal_[2] = ref_z;
-  ref_normal_flipped_[0] = -ref_x;
-  ref_normal_flipped_[1] = -ref_y;
-  ref_normal_flipped_[2] = -ref_z;
+  ref_normal_.normalize();
+
+  ref_normal_flipped_[0] = -ref_normal_[0];
+  ref_normal_flipped_[1] = -ref_normal_[1];
+  ref_normal_flipped_[2] = -ref_normal_[2];
 }
 
 // --------------------------------------------------------------

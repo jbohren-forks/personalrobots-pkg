@@ -271,6 +271,11 @@ void SpectralAnalysis::populateContainers(const robot_msgs::PointCloud& data,
     (*(tangents_[idx]))[j] = eigen_vectors(j, 2);
   }
 
+  // Make unit length
+  (normals_[idx])->normalize();
+  (middle_eig_vecs_[idx])->normalize();
+  (tangents_[idx])->normalize();
+
   (*(centroids_[idx]))[0] = centroid.x;
   (*(centroids_[idx]))[1] = centroid.y;
   (*(centroids_[idx]))[2] = centroid.z;
