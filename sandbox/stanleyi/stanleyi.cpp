@@ -35,6 +35,15 @@ IplImage* findLabelMask(double stamp, string results_dir);
 class Stanleyi
 {
 public:
+  Stanleyi();
+  ~Stanleyi();
+  void testContours(string bagfile, string label_dir);
+  void sanityCheck(string bagfile, string results_dir);
+  DorylusDataset* collectDataset(string bagfile, int samples_per_img, string results_dir);
+  void viewLabels(string bagfile, string results_dir);
+  void makeClassificationVideo(string bagfile, Dorylus& d, int samples_per_img, string results_dir);
+
+private:
   ros::record::Player lp_;
   sensor_msgs::Image img_msg_;
   sensor_msgs::CvBridge img_bridge_;
@@ -42,14 +51,8 @@ public:
   IplImage* mask_;
   vector<ImageDescriptor*> descriptor_;
 
-  void testContours(string bagfile, string label_dir);
+  void drawResponse(IplImage* img, float response, CvPoint pt);
   void collectObjectsFromImageVectorized(int samples_per_img, vector<object*>* objects, Vector<Keypoint>* keypoints);
-  void sanityCheck(string bagfile, string results_dir);
-  DorylusDataset* collectDataset(string bagfile, int samples_per_img, string results_dir);
-  void viewLabels(string bagfile, string results_dir);
-  void makeClassificationVideo(string bagfile, Dorylus& d, int samples_per_img, string results_dir);
-  Stanleyi();
-  ~Stanleyi();
 };
 
 Stanleyi::Stanleyi()
@@ -182,10 +185,93 @@ void Stanleyi::collectObjectsFromImageVectorized(int samples_per_img, vector<obj
 }
 
 void Stanleyi::sanityCheck(string bagfile, string results_dir) {
-  // -- Find first labeled image.
+
+  int samples_per_img = 1000;
+  if(getenv("NSAMPLES") != NULL) 
+    samples_per_img = atoi(getenv("NSAMPLES"));
+
+  int skip_frames = 184;
+  if(getenv("SKIP_FRAMES") != NULL) 
+    skip_frames = atoi(getenv("SKIP_FRAMES"));
+
+  // -- Skip frames.
+  lp_.open(bagfile, ros::Time());
+  for(int i=0; i<skip_frames; i++) {
+    lp_.nextMsg();
+  }
+
+  while(lp_.nextMsg()) {
+    // -- Get next image from the bag.
+    if (!img_bridge_.fromImage(img_msg_, "bgr")) {
+      ROS_ERROR("Could not convert message to ipl.");
+      break;
+    }  
+    img_ = img_bridge_.toIpl();
+
+    // -- Stop at the first labeled image.
+    mask_ = findLabelMask(img_msg_.header.stamp.toSec(), results_dir);
+    if(mask_)
+      break;
+  }
+
   // -- Collect dataset on that image.
+  Vector<Keypoint> keypoints;
+  vector<object*> objs;
+  collectObjectsFromImageVectorized(samples_per_img, &objs, &keypoints);
+  DorylusDataset dd;
+  dd.setObjs(objs);
+  cout << dd.status() << endl;
+
   // -- Train classifier.
+  Dorylus d;
+  d.useDataset(&dd);
+  int nCandidates = 10;
+  int max_secs = 60*5;
+  int max_wcs = 1000;
+  d.train(nCandidates, max_secs, max_wcs);
+
   // -- Make predictions on that image.
+  while(true) {
+    IplImage* vis_img = cvCloneImage(img_);
+    IplImage* vis_mask = cvCloneImage(mask_);
+
+    // -- Draw predictions.
+    objs.clear();
+    keypoints.clear();
+    collectObjectsFromImageVectorized(samples_per_img, &objs, &keypoints);
+    for(size_t i=0; i<objs.size(); i++) {
+      if(objs[i] == NULL) 
+	continue;
+
+      NEWMAT::Matrix response_nm = d.classify(*objs[i]);
+      int col = keypoints[i].pt.x;
+      int row = keypoints[i].pt.y;
+
+      drawResponse(vis_img, response_nm(1,1), cvPoint(col, row));
+      drawResponse(vis_mask, response_nm(1,1), cvPoint(col, row));
+    }
+
+    // -- Display
+    CVSHOW("Image", vis_img);
+    CVSHOW("Mask", vis_mask);
+    if(cvWaitKey(33) == 'q') 
+      break;
+
+    // -- Clean up.
+    cvReleaseImage(&vis_img);
+    cvReleaseImage(&vis_mask);
+  }
+}
+
+void Stanleyi::drawResponse(IplImage* img, float response, CvPoint pt) {
+  int size = 1;
+  if(response != 0)
+    size = ceil(log(ceil(abs(response))));
+
+  if(response > 0)
+    cvCircle(img, pt, size, cvScalar(0,255,0), -1);
+  else 
+    cvCircle(img, pt, size, cvScalar(0,0,255), -1);
 }
 
 void Stanleyi::makeClassificationVideo(string bagfile, Dorylus& d, int samples_per_img, string results_dir) {
@@ -218,11 +304,12 @@ void Stanleyi::makeClassificationVideo(string bagfile, Dorylus& d, int samples_p
 
   while(lp_.nextMsg()) {
     frame_num++;
+
+    // -- Get next image from the bag.
     if (!img_bridge_.fromImage(img_msg_, "bgr")) {
       ROS_ERROR("Could not convert message to ipl.");
       break;
-    }
-  
+    }  
     img_ = img_bridge_.toIpl();
     vis = cvCloneImage(img_);
 
@@ -503,6 +590,7 @@ int main(int argc, char** argv)
     cout << "Collecting a dataset for bag " << argv[2]  << " using the label masks in " << argv[3] << " then training with " << 
       samples_per_img << "samples per image and saving in " << argv[4] << endl;  
     DorylusDataset* dd = s.collectDataset(argv[2], samples_per_img, argv[3]);
+    cout << dd->status() << endl;
     Dorylus d;
     d.useDataset(dd);
     d.train(nCandidates, max_secs, max_wcs);
@@ -519,6 +607,10 @@ int main(int argc, char** argv)
     cout << "Learning contour fragments for bagfile " << argv[2] << " and labels in " << argv[3] << endl;
     s.testContours(argv[2], argv[3]);
   }
+  else if(argc > 3 && !strcmp(argv[1], "--sanityCheck")) {
+    cout << "Doing sanity check on " << argv[2] << " with labels in " << argv[3] << endl;
+    s.sanityCheck(argv[2], argv[3]);
+  }
 
 
   else {
@@ -530,6 +622,7 @@ int main(int argc, char** argv)
     cout << argv[0] << " --status DATASET" << endl;
     cout << argv[0] << " --status CLASSIFIER" << endl;
     cout << argv[0] << " --cf BAGFILE LABELS" << endl;
+    cout << argv[0] << " --sanityCheck BAGFILE LABELS" << endl;
     cout << "  where LABELS might take the form of `rospack find cv_mech_turk`/results/single-object-s " << endl;
     cout << "Environment variable options: " << endl;
   }
@@ -543,10 +636,10 @@ vector<ImageDescriptor*> setupImageDescriptors() {
 //   int nbins, int derivAperture=1, double winSigma=-1,
 //   int histogramNormType=L2Hys, double L2HysThreshold=0.2, bool gammaCorrection=false)
 //  d.push_back(new HogWrapper());
-//   d.push_back(new HogWrapper(Size(16,16), Size(16,16), Size(8,8), Size(8,8), 7, 1, -1, 0, 0.2, true));
+//  d.push_back(new HogWrapper(Size(16,16), Size(16,16), Size(8,8), Size(8,8), 7, 1, -1, 0, 0.2, true));
 //   d.push_back(new HogWrapper(Size(32,32), Size(16,16), Size(8,8), Size(8,8), 7, 1, -1, 0, 0.2, true));
 //   d.push_back(new HogWrapper(Size(64,64), Size(32,32), Size(16,16), Size(16,16), 7, 1, -1, 0, 0.2, true));
-//   d.push_back(new HogWrapper(Size(128,128), Size(64,64), Size(32,32), Size(32,32), 7, 1, -1, 0, 0.2, true));
+   d.push_back(new HogWrapper(Size(128,128), Size(64,64), Size(32,32), Size(32,32), 7, 1, -1, 0, 0.2, true));
 
 //   SuperpixelColorHistogram* sch1 = new SuperpixelColorHistogram(20, 0.5, 10, string("hue"));
 //   SuperpixelColorHistogram* sch2 = new SuperpixelColorHistogram(5, 0.5, 10, string("hue"), NULL, sch1);
@@ -556,7 +649,7 @@ vector<ImageDescriptor*> setupImageDescriptors() {
 //   d.push_back(sch2);
 //   d.push_back(sch3);
 //   d.push_back(sch4);
-
+ 
   
 //  d.push_back(new ContourFragmentDescriptor(0, "contour_fragments"));
 //   IntegralImageTexture* iit = new IntegralImageTexture(1);
@@ -564,8 +657,13 @@ vector<ImageDescriptor*> setupImageDescriptors() {
 //   d.push_back(new IntegralImageTexture(2, iit));
 //   d.push_back(new IntegralImageTexture(3, iit));
 
-  vector<ImageDescriptor*> haar = setupDefaultHaarDescriptors();
-  d.insert(d.end(), haar.begin(), haar.end());
+// -- SURF.
+//   SurfWrapper* sw1 = new SurfWrapper(true);
+//   d.push_back(sw1);
+
+// -- Haar.
+//   vector<ImageDescriptor*> haar = setupDefaultHaarDescriptors();
+//   d.insert(d.end(), haar.begin(), haar.end());
 
   return d;
 }
