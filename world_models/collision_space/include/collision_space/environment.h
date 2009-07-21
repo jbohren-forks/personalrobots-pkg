@@ -127,7 +127,10 @@ namespace collision_space
 	virtual void updateAttachedBodies(void) = 0;
 		
 	/** \brief Get the robot model */
-	boost::shared_ptr<planning_models::KinematicModel> getRobotModel(void) const;
+	boost::shared_ptr<planning_models::KinematicModel> getRobotModel(void) const
+	{
+	    return m_robotModel;
+	}	
 	
 
 	/**********************************************************************/
