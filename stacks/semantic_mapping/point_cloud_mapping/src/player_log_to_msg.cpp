@@ -24,7 +24,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * $Id: player_log_to_msg.cpp 17763 2009-06-26 20:11:38Z veedee $
+ * $Id$
  *
  */
 
