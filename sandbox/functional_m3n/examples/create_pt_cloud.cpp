@@ -161,6 +161,10 @@ void initCS1Params()
 
 unsigned int populateParameters()
 {
+  GLOBAL_node_feature_descriptors.clear();
+  GLOBAL_cs_kmeans_params.clear();
+  GLOBAL_cs_feature_descriptors.clear();
+
   initNodeParams();
 
   unsigned int nbr_clique_sets = 2;
@@ -537,81 +541,119 @@ void createCliqueSet(RandomField& rf,
 
 // --------------------------------------------------------------
 /*!
- * \brief Create nodes in the random field
+ * \brief
  */
 // --------------------------------------------------------------
-int main()
+void constructRandomField(string pt_cloud_filename, RandomField& rf)
 {
   // ----------------------------------------------------------
   // Load point cloud from file
   ROS_INFO("Loading point cloud...");
   robot_msgs::PointCloud pt_cloud;
   vector<unsigned int> labels;
-  if (loadPointCloud("training_data.xyz_label_conf", pt_cloud, labels) < 0)
+  if (loadPointCloud(pt_cloud_filename, pt_cloud, labels) < 0)
   {
-    return -1;
+    return;
   }
   ROS_INFO("done");
 
-  cloud_kdtree::KdTree* pt_cloud_kdtree = new cloud_kdtree::KdTreeANN(pt_cloud);
-
-  unsigned int nbr_clique_sets = populateParameters();
+  cloud_kdtree::KdTreeANN pt_cloud_kdtree(pt_cloud);
 
   // ----------------------------------------------------------
-  // Create RandomField
-  RandomField rf(nbr_clique_sets);
-
   // Create nodes
   set<unsigned int> skip_indices_for_clustering;
-  ROS_INFO("Creating nodes...");
-  createNodes(rf, pt_cloud, *pt_cloud_kdtree, labels, skip_indices_for_clustering);
-  ROS_INFO("done");
+  ROS_INFO("--------- Creating nodes... -------------");
+  createNodes(rf, pt_cloud, pt_cloud_kdtree, labels, skip_indices_for_clustering);
+  ROS_INFO("--------- done ---------");
 
-  rf.saveNodeFeatures("node_features.txt");
-
+  // ----------------------------------------------------------
   // Create clique sets
-  for (unsigned int i = 0 ; i < nbr_clique_sets ; i++)
+  for (unsigned int i = 0 ; i < rf.getCliqueSets().size() ; i++)
   {
-    ROS_INFO("Creating clique set %u...", i);
+    ROS_INFO("--------- Creating clique set %u... -----------", i);
 
     // Create clusters
     map<unsigned int, vector<float> > cluster_xyz_centroids;
     map<unsigned int, vector<int> > cluster_pt_indices;
-    ROS_INFO("Clustering...");
+    ROS_INFO("   -- Clustering... --");
     kmeansPtCloud(pt_cloud, skip_indices_for_clustering, GLOBAL_cs_kmeans_params[i], cluster_xyz_centroids,
         cluster_pt_indices);
-    //ROS_INFO("Kmeans found %u clusters", cluster_pt_indices.size());
-    ROS_INFO("done");
+    ROS_INFO("   -- done --");
 
-    save_clusters(cluster_pt_indices, pt_cloud);
+    //save_clusters(cluster_pt_indices, pt_cloud);
 
     // Create features over clusters
-    ROS_INFO("Creating features...");
+    ROS_INFO("   -- Creating features... --");
     map<unsigned int, float*> cluster_features;
-    unsigned int nbr_feature_vals = createClusterFeatures(pt_cloud, *pt_cloud_kdtree, cluster_pt_indices,
+    unsigned int nbr_feature_vals = createClusterFeatures(pt_cloud, pt_cloud_kdtree, cluster_pt_indices,
         GLOBAL_cs_feature_descriptors[i], cluster_features);
-    ROS_INFO("done");
+    ROS_INFO("  -- done --");
 
     // Create cliques
-    ROS_INFO("Creating features...");
+    ROS_INFO("  -- Creating cliques... --");
     createCliqueSet(rf, i, cluster_pt_indices, cluster_features, cluster_xyz_centroids, nbr_feature_vals);
-    ROS_INFO("done");
+    ROS_INFO("  -- done --");
 
-    ROS_INFO("finished clique set %u", i);
+    ROS_INFO("-------- Completed clique set %u ----------", i);
   }
 
-  rf.saveCliqueFeatures("ss_o_p_si");
+  //delete pt_cloud_kdtree;
+}
+
+// --------------------------------------------------------------
+/*!
+ * \brief
+ */
+// --------------------------------------------------------------
+int main()
+{
+
+  unsigned int nbr_clique_sets = populateParameters();
 
   // ----------------------------------------------------------
-  // Train M3N model
-  ROS_INFO("Starting to train...");
-  M3NModel m3n_model;
-  vector<const RandomField*> training_rfs(1, &rf);
-  if (m3n_model.train(training_rfs, GLOBAL_m3n_params) < 0)
+
+  RandomField training_rf(nbr_clique_sets);
+  constructRandomField("training_data.xyz_label_conf", training_rf);
+  training_rf.saveNodeFeatures("tempo/train_node_unknown.txt");
+  training_rf.saveCliqueFeatures("tempo/train_rf_unknown");
+  /*
+   // ----------------------------------------------------------
+   // Train M3N model
+   ROS_INFO("Starting to train...");
+   M3NModel m3n_model;
+   vector<const RandomField*> training_rfs(1, &training_rf);
+   if (m3n_model.train(training_rfs, GLOBAL_m3n_params) < 0)
+   {
+   ROS_ERROR("Failed to train M3N model");
+   return -1;
+   }
+   ROS_INFO("Successfully trained M3n model");
+   m3n_model.saveToFile("m3n_models/jul20_1pm/2cs_pn_potts");
+   */
+
+  // ----------------------------------------------------------
+  // Load M3N model
+  M3NModel m3n_model2;
+  if (m3n_model2.loadFromFile("m3n_models/jul20_1pm/2cs_pn_potts") < 0)
   {
-    ROS_ERROR("Failed to train M3N model");
+    ROS_ERROR("couldnt load model");
     return -1;
   }
-  ROS_INFO("Successfully trained M3n model");
+
+  populateParameters();
+
+  // ----------------------------------------------------------
+  RandomField testing_rf(nbr_clique_sets);
+  constructRandomField("pt_cloud_260.xyz_label_conf", testing_rf);
+  testing_rf.saveNodeFeatures("tempo/test_node_BAD.txt");
+  testing_rf.saveCliqueFeatures("tempo/test_rf_BAD");
+  map<unsigned int, unsigned int> inferred_labels;
+  if (m3n_model2.infer(testing_rf, inferred_labels) < 0)
+  {
+    ROS_ERROR("could not do inference");
+    return -1;
+  }
+  testing_rf.updateLabelings(inferred_labels);
+  testing_rf.saveNodeFeatures("classified_results.node_features");
   return 0;
 }
