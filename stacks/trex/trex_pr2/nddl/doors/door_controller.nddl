@@ -315,13 +315,9 @@ DoorController::ApproachingDoor{
   eq(cmd.frame_id, ds.frame_id);
   door_get_robot_pose_for_door(cmd.x, cmd.y, cmd.z, cmd.qx, cmd.qy, cmd.qz, cmd.qw, ds.object, GRASP_RANGE);
 
-  // Workaround for remaining bug in migration of constraint connecting internally in a rule
-  bool use_handle;
-  testEQ(use_handle, ds.latch_state, LATCH_STATE_LATCHED);
-
   // If we succed, then based on the latch state we will open the door or have to grasp the handle first. On failure we restart!
   if(cmd.status == SUCCESS){
-    if(use_handle == true){
+    if(ds.latch_state == LATCH_STATE_LATCHED){
       meets(GraspingHandle);
     }
     else{
@@ -412,10 +408,7 @@ DoorController::OpenDoor{
   precedes(end_time, cmd_rh.start);
   eq(cmd_rh.status, SUCCESS);
 
-  // Workaround
-  ResultStatus status_copy;
-  eq(cmd_move_base_door.status, status_copy);
-  if(status_copy == SUCCESS){
+  if(cmd_move_base_door.status == SUCCESS){
     // Transition to completion
     meets(Inactive s);
     eq(s.status, SUCCESS);

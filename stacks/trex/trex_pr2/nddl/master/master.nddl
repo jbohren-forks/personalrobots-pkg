@@ -196,7 +196,7 @@ M2Controller::Holds{
 	// we do not care about orientation, and that we want to get as close as possible to the goal, but the criteria
 	// for success is based on a given error bound. Thus we could get close if possible, but permit a successful termination
 	// when we cannot get any closer but are within that bound. This is desirable since the precise approach is based
-	// on cacluations that deal with position of approach and location of the socket or door and these are encoded internally
+	// on calculations that deal with position of approach and location of the socket or door and these are encoded internally
 	// in the domains
 	contains_start(MoveBehavior.Active cmd);
 	concurrent(cmd.end, end);

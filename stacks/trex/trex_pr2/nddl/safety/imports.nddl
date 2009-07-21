@@ -11,6 +11,7 @@ SafetyTuckArms::Inactive{
     starts_during(ArmsTucked.True);
   }
 }
+
 TouchDoor::Inactive{
   starts_during(ArmsTucked.False);
 }
