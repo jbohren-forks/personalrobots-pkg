@@ -1,8 +1,13 @@
 <robot name="simple_cylinder">
   <link name="my_cylinder">
     <parent name="world" />
-    <origin xyz="0 0 2" rpy="0 0 0" />
-    <joint name="my_cylinder_joint" />
+    <!-- initial pose of my_cylinder in the parent frame coordiantes -->
+    <origin xyz="0 0 2" rpy="0 1.57 0" />
+    <joint name="my_cylinder_joint" type="revolute" >
+      <!-- axis is in the parent link frame coordintates -->
+      <axis xyz="0 1 0" />
+      <anchor xyz="0 0 0" />
+    </joint>
     <inertial >
       <mass value="1.0" />
       <com xyz="0 0 0.5" /> 
@@ -24,13 +29,8 @@
       </geometry>
     </collision>
     <map name="my_cylinder_gravity" flag="gazebo">
-      <elem key="turnGravityOff">true</elem>
+      <elem key="turnGravityOff">false</elem>
     </map>
   </link>
 
-  <!-- joint blocks -->
-  <joint name="my_cylinder_joint" type="revolute" >
-    <axis xyz="0 1 0" />
-    <anchor xyz="0 0 0" />
-  </joint>
 </robot>
