@@ -1,0 +1,38 @@
+<robot name="simple_sphere">
+  <link name="my_sphere">
+    <parent name="world" />
+    <!-- initial pose of my_sphere in the parent frame coordiantes -->
+    <origin xyz="0 0 2" rpy="0 0 0" />
+    <joint name="my_sphere_joint" type="revolute" >
+      <!-- axis is in the parent link frame coordintates -->
+      <axis xyz="0 1 0" />
+      <anchor xyz="0 0 0" />
+    </joint>
+    <inertial>
+      <mass value="1.0" />
+      <!-- center of mass (com) is defined w.r.t. link local coordinate system -->
+      <com xyz="1 0 0" /> 
+      <inertia  ixx="1.0" ixy="0.0"  ixz="0.0"  iyy="100.0"  iyz="0.0"  izz="1.0" />
+    </inertial>
+    <visual>
+      <!-- visual origin is defined w.r.t. link local coordinate system -->
+      <origin xyz="1 0 0" rpy="0 0 0" />
+      <map name="gazebo_material" flag="gazebo">
+        <elem key="material">Gazebo/Blue</elem>
+      </map>
+      <geometry name="my_sphere_visual_geom">
+        <mesh scale="0.05 0.05 0.05" />
+      </geometry>
+    </visual>
+    <collision>
+      <!-- collision origin is defined w.r.t. link local coordinate system -->
+      <origin xyz="1 0 0" rpy="0 0 0 " />
+      <geometry name="my_sphere_collision_geom">
+        <sphere radius="0.25" />
+      </geometry>
+    </collision>
+    <map name="my_sphere_gravity" flag="gazebo">
+      <elem key="turnGravityOff">false</elem>
+    </map>
+  </link>
+</robot>
