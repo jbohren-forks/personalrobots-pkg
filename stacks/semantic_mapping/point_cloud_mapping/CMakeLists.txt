@@ -21,8 +21,8 @@ rospack_add_openmp_flags (normal_estimation_in_proc)
 rospack_add_executable (bin/planar_fit_node src/planar_fit.cpp)
 target_link_libraries (bin/planar_fit_node cloud_geometry cloud_kdtree sample_consensus)
 
-rospack_add_executable (bin/player_log_to_msg src/player_log_to_msg.cpp)
-target_link_libraries (bin/player_log_to_msg cloud_geometry)
+rospack_add_executable (bin/player_laser_log_to_msg src/player_laser_log_to_msg.cpp)
+target_link_libraries (bin/player_laser_log_to_msg cloud_geometry)
 
 # ---[ Cloud Geometry library
   rospack_add_library (cloud_geometry

@@ -35,7 +35,7 @@
 
 \author Radu Bogdan Rusu
 
-@b player_log_to_msg converts Player (http://player.sf.net) laser logs to valid laser scans in ROS format.
+@b player_laser_log_to_msg converts Player (http://player.sf.net) laser logs to valid laser scans in ROS format.
 
  **/
 
@@ -197,7 +197,7 @@ int
     return (-1);
   }
 
-  init (argc, argv, "player_log_to_msg");
+  init (argc, argv, "player_laser_log_to_msg");
 
   PlayerLogToMsg p;
   p.file_name_ = string (argv[1]);
