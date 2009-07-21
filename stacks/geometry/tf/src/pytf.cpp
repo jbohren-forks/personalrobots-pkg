@@ -13,7 +13,7 @@ struct transformer_t {
 static PyTypeObject transformer_Type = {
   PyObject_HEAD_INIT(&PyType_Type)
   0,                               /*size*/
-  "_tfX.Transformer",                /*name*/
+  "_tf.Transformer",                /*name*/
   sizeof(transformer_t),           /*basicsize*/
 };
 
@@ -302,7 +302,7 @@ static PyMethodDef module_methods[] = {
   {NULL, NULL, NULL},
 };
 
-extern "C" void init_tfX()
+extern "C" void init_tf()
 {
   PyObject *item, *m, *d;
 
@@ -322,7 +322,7 @@ extern "C" void init_tfX()
   if (PyType_Ready(&transformer_Type) != 0)
     return;
 
-  m = Py_InitModule("_tfX", module_methods);
+  m = Py_InitModule("_tf", module_methods);
   PyModule_AddObject(m, "Transformer", (PyObject *)&transformer_Type);
   d = PyModule_GetDict(m);
   PyDict_SetItemString(d, "error", tf_error);

@@ -25,8 +25,9 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-
-## Author Tully Foote tfoote@willowgarage.com
+## Python utility for iterating over messages in a ROS .bag file
+## See http://pr.willowgarage.com/wiki/ROS/LogFormat
+# authors: jamesb, kwc
 
 PKG = 'tf'
 import roslib
@@ -35,122 +36,117 @@ roslib.load_manifest(PKG)
 import sys, os
 
 import rospy
-import tf
+import tf as TFX
 from tf import transformations
 import numpy
 
-import bullet
-
 from tf.msg import tfMessage
-from robot_msgs.msg import TransformStamped
+import robot_msgs.msg
 from tf.srv import FrameGraph,FrameGraphResponse
 
-class NumpyTransformStamped:
-    def __init__(self):
-        self.mat = numpy.identity(4, dtype=numpy.float64)
-        self.stamp = rospy.Time()
-        self.frame_id = None
-        self.parent_id = None
+def xyz_to_mat44(pos):
+    return transformations.translation_matrix((pos.x, pos.y, pos.z))
 
-    def as_transform_stamped(self):
-        return transform_stamped_from_numpy_transform_stamped(self)
+def xyzw_to_mat44(ori):
+    return transformations.quaternion_matrix((ori.x, ori.y, ori.z, ori.w))
 
-def transform_stamped_msg_to_numpy(transform):
-    quat = numpy.array([transform.transform.rotation.x, transform.transform.rotation.y, transform.transform.rotation.z, transform.transform.rotation.w],dtype=numpy.float64)
-    rot_mat = transformations.rotation_matrix_from_quaternion(quat)
-    #print "Quat: \n", quat
-    #print "Rotation: \n", rot_mat
-    trans = numpy.array([transform.transform.translation.x, transform.transform.translation.y, transform.transform.translation.z])
-    trans_mat = transformations.translation_matrix(trans)
-    #print "Trans: \n", trans
-    #print "Translation: \n", trans_mat
-    net_tr = transformations.concatenate_transforms(trans_mat, rot_mat)
-    #print "Net:\n",  net_tr
-    return net_tr
+## Extends tf's Transformer, adding transform methods for ROS message
+## types PointStamped, QuaternionStamped and PoseStamped.
+class TransformerROS(TFX.Transformer):
 
-def transform_stamped_numpy_to_msg(numpy_transform):
-    ts = TransformStamped()
-    ts.header.stamp = numpy_transform.stamp
-    ts.header.frame_id = numpy_transform.frame_id
-    ts.parent_id = numpy_transform.parent_id
-    temp_quat = transformations.quaternion_from_rotation_matrix(numpy_transform.mat)
-    ts.transform.rot.x = temp_quat[0]
-    ts.transform.rot.y = temp_quat[1]
-    ts.transform.rot.z = temp_quat[2]
-    ts.transform.rot.w = temp_quat[3]
-    ###\todo check quaternion order
-    ts.transform.translation.x = numpy_transform.mat[0,3]
-    ts.transform.translation.y = numpy_transform.mat[1,3]
-    ts.transform.translation.z = numpy_transform.mat[2,3]
-    return ts
+    ## Looks up the transform for ROS message header hdr to frame
+    ## target_frame, and returns the transform as a Numpy 4x4 matrix.
+    # @param target_frame The target frame
+    # @param hdr          A ROS message header object
 
-class TransformListener:
-    def __init__(self):
+    def asMatrix(self, target_frame, hdr):
+        translation,rotation = self.lookupTransform(target_frame, hdr.frame_id, hdr.stamp)
+        return self.fromTranslationRotation(translation, rotation)
+
+    ## Returns a Numpy 4x4 matrix for a transform.
+    # @param translation  translation as (x,y,z)
+    # @param rotation     rotation as (x,y,z,w)
+
+    def fromTranslationRotation(self, translation, rotation):
+        return numpy.dot(transformations.translation_matrix(translation), transformations.quaternion_matrix(rotation))
+
+    ## Transforms a robot_msgs PointStamped message to frame target_frame, returns the resulting PointStamped.
+    # @param target_frame The target frame
+    # @param ps           robot_msgs.msg.PointStamped object
+
+    def transformPoint(self, target_frame, ps):
+        mat44 = self.asMatrix(target_frame, ps.header)
+        xyz = tuple(numpy.dot(mat44, numpy.array([ps.point.x, ps.point.y, ps.point.z, 1.0])))[:3]
+        r = robot_msgs.msg.PointStamped()
+        r.header.stamp = ps.header.stamp
+        r.header.frame_id = target_frame
+        r.point = robot_msgs.msg.Point(*xyz)
+        return r
+
+    ## Transforms a robot_msgs QuaternionStamped message to frame target_frame, returns the resulting QuaternionStamped.
+    # @param target_frame The target frame
+    # @param ps           robot_msgs.msg.QuaternionStamped object
+
+    def transformQuaternion(self, target_frame, ps):
+        # mat44 is frame-to-frame transform as a 4x4
+        mat44 = self.asMatrix(target_frame, ps.header)
+
+        # pose44 is the given quat as a 4x4
+        pose44 = xyzw_to_mat44(ps.quaternion)
+
+        # txpose is the new pose in target_frame as a 4x4
+        txpose = numpy.dot(mat44, pose44)
+
+        # quat is orientation of txpose
+        quat = tuple(transformations.quaternion_from_matrix(txpose))
+
+        # assemble return value QuaternionStamped
+        r = robot_msgs.msg.QuaternionStamped()
+        r.header.stamp = ps.header.stamp
+        r.header.frame_id = target_frame
+        r.quaternion = robot_msgs.msg.Quaternion(*quat)
+        return r
+
+    ## Transforms a robot_msgs PoseStamped message to frame target_frame, returns the resulting PoseStamped.
+    # @param target_frame The target frame
+    # @param ps           robot_msgs.msg.PoseStamped object
+
+    def transformPose(self, target_frame, ps):
+        # mat44 is frame-to-frame transform as a 4x4
+        mat44 = self.asMatrix(target_frame, ps.header)
+
+        # pose44 is the given pose as a 4x4
+        pose44 = numpy.dot(xyz_to_mat44(ps.pose.position), xyzw_to_mat44(ps.pose.orientation))
+
+        # txpose is the new pose in target_frame as a 4x4
+        txpose = numpy.dot(mat44, pose44)
+
+        # xyz and quat are txpose's position and orientation
+        xyz = tuple(transformations.translation_from_matrix(txpose))[:3]
+        quat = tuple(transformations.quaternion_from_matrix(txpose))
+
+        # assemble return value PoseStamped
+        r = robot_msgs.msg.PoseStamped()
+        r.header.stamp = ps.header.stamp
+        r.header.frame_id = target_frame
+        r.pose = robot_msgs.msg.Pose(robot_msgs.msg.Point(*xyz), robot_msgs.msg.Quaternion(*quat))
+        return r
+
+## Extends TransformerROS, subscribes to the /tf_message topic and
+## updates the Transformer with the messages.
+
+class TransformListener(TransformerROS):
+
+    def __init__(self, *args):
         print "Transform Listener initing"
-        self.transformer = tf.Transformer()
-        #assuming rospy is inited
-        rospy.Subscriber("/tf_message", tfMessage, self.callback)
+        super(TransformListener, self).__init__()
+        rospy.Subscriber("/tf_message", tfMessage, self.transformlistener_callback)
         self.frame_graph_server = rospy.Service('~tf_frames', FrameGraph, self.frame_graph_service)
 
-    def callback(self, data):
+    def transformlistener_callback(self, data):
         for transform in data.transforms:
-            #print "Got data:", transform.header.frame_id
-            self.set_transform(tf.transform_stamped_msg_to_bt(transform),data._connection_header["callerid"])
+            self.setTransform(transform)
+        #print self.allFramesAsString()
 
     def frame_graph_service(self, req):
-        return FrameGraphResponse(self.all_frames_as_dot())
-        
-    def set_transform(self, transform_stamped, default_authority="Default Authority"):
-        self.transformer.setTransform(transform_stamped, default_authority)
-
-    def get_transform(self, frame_id, parent_id, time):
-        return self.transformer.getTransform(frame_id, parent_id, time.to_seconds())
-
-    def get_transform_full(self, target_frame, target_time, source_frame, source_time, fixed_frame):
-        return self.transformer.getTransform(target_frame, target_time.to_seconds(), source_frame, source_time.to_seconds(), fixed_frame)
-
-    def can_transform(self, target_frame, source_frame, time):
-        return self.transformer.canTransform(target_frame, source_frame, time.to_seconds())
-
-    def can_transform_in_time(self, target_frame, target_time, source_frame, source_time, fixed_frame):
-        return self.transformer.canTransform(target_frame, target_time.to_seconds(), source_frame, source_time.to_seconds(), fixed_frame)
-
-    def get_latest_common_time(self, source_frame, target_frame):
-        return self.transformer.getLatestCommonTime(source_frame, target_frame)
-
-    def get_chain_as_string(self, target_frame, target_time, source_frame, source_time, fixed_frame):
-        return self.transformer.chainAsString(target_frame, target_time, source_frame, source_time, fixed_frame)
-
-    def all_frames_as_string(self):
-        return self.transformer.allFramesAsString()
-
-    def all_frames_as_dot(self):
-        return self.transformer.allFramesAsDot()
-
-    def set_extrapolation_limit(self, limit):
-        self.transformer.setExtrapolationLimit(limit.to_seconds())
-
-    def transform_pose(self, target_frame, pose):
-        return self.transformer.transformPose(target_frame, pose)
-    
-    def transform_pose_in_time(self, target_frame, target_time, fixed_frame, pose):
-        return self.transformer.transformPose(target_frame, target_time, pose, fixed_frame)
-
-    def transform_point(self, target_frame, point):
-        return self.transformer.transformPoint(target_frame, point)
-
-    def transform_point_in_time(self, target_frame, target_time, fixed_frame, point):
-        return self.transformer.transformPoint(target_frame, target_time, point, fixed_frame)
-
-    def transform_vector(self, target_frame, vector):
-        return self.transformer.transformVector(target_frame, vector)
-
-    def transform_vector_in_time(self, target_frame, target_time, fixed_frame, vector):
-        return self.transformer.transformVector(target_frame, target_time, vector, fixed_frame)
-
-    def transform_quaternion(self, target_frame, quaternion):
-        return self.transformer.transformQuaternion(target_frame, quaternion)
-
-    def transform_quaternion_in_time(self, target_frame, target_time, fixed_frame, quaternion):
-        return self.transformer.transformQuaternion(target_frame, target_time, quaternion, fixed_frame)
-
+        return FrameGraphResponse(self.allFramesAsDot())
