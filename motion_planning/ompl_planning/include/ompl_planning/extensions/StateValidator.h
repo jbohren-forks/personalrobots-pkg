@@ -44,6 +44,8 @@
 #include "ompl_planning/ModelBase.h"
 #include "ompl_planning/extensions/SpaceInformation.h"
 
+#include <iostream>
+
 namespace ompl_planning
 {
     
@@ -55,6 +57,7 @@ namespace ompl_planning
 	    ksi_ = si;
 	    dsi_ = NULL;
 	    model_ = model;
+	    setupModel();
 	}
 	
         StateValidityPredicate(SpaceInformationDynamicModel *si, ModelBase *model) : ompl::base::StateValidityChecker()
@@ -62,71 +65,50 @@ namespace ompl_planning
 	    dsi_ = si;
 	    ksi_ = NULL;
 	    model_ = model;
+	    setupModel();
 	}
-	
-	virtual bool operator()(const ompl::base::State *s) const
-	{
-	    // for dynamic state spaces, we may get outside bounds
-	    if (dsi_)
-	    {
-		if (!dsi_->satisfiesBounds(s))
-		    return false;
-	    }
-	    
-	    model_->kmodel->computeTransformsGroup(s->values, model_->groupID);
-	    
-	    bool valid = kce_.decide(s->values, model_->groupID);
-	    if (valid)
-	    {
-		model_->collisionSpace->updateRobotModel();
-		valid = !model_->collisionSpace->isCollision();
-	    }
-	    
-	    return valid;
-	}
-	
-	void setConstraints(const motion_planning_msgs::KinematicConstraints &kc)
-	{
-	    kce_.clear();
-	    kce_.add(model_->kmodel, kc.pose_constraint);
 
-	    // joint constraints simply update the state space bounds
-	    if (ksi_)
-	    {
-		ksi_->clearJointConstraints();
-		ksi_->setJointConstraints(kc.joint_constraint);
-	    }
-	    if (dsi_)
-	    {
-		dsi_->clearJointConstraints();
-		dsi_->setJointConstraints(kc.joint_constraint);
-	    }
+	virtual ~StateValidityPredicate(void)
+	{
+	    clearClones();
 	}
 	
-	void clearConstraints(void)
-	{
-	    kce_.clear();
-	    if (ksi_)
-		ksi_->clearJointConstraints();
-	    if (dsi_)
-		dsi_->clearJointConstraints();
-	}
-	
-	const planning_environment::KinematicConstraintEvaluatorSet& getKinematicConstraintEvaluatorSet(void) const
-	{
-	    return kce_;
-	}
+	virtual bool operator()(const ompl::base::State *s) const;
+	void setConstraints(const motion_planning_msgs::KinematicConstraints &kc);
+	void clearConstraints(void);
+	void clear(void);
+	void printSettings(std::ostream &out) const;
 	
     protected:
 	
+	bool check(const ompl::base::State *s, collision_space::EnvironmentModel *em, planning_models::KinematicModel *km,
+		   planning_environment::KinematicConstraintEvaluatorSet *kce) const;
+	void setupModel(void);
+	void clearClones(void);
+	
+
 	ModelBase                                             *model_;
 	
 	// one of the next two will be instantiated
 	SpaceInformationKinematicModel                        *ksi_;
 	SpaceInformationDynamicModel                          *dsi_;
-
+	
 	planning_environment::KinematicConstraintEvaluatorSet  kce_;
-    };  
+
+	
+	struct Clone
+	{
+	    collision_space::EnvironmentModel                     *em;
+	    planning_models::KinematicModel                       *km;
+	    planning_environment::KinematicConstraintEvaluatorSet *kce;
+	};
+	
+	std::vector<Clone>                                     clones_;
+	mutable int                                            position_;
+	mutable boost::mutex                                   lock_;
+	
+	
+    };
     
 } // ompl_planning
 

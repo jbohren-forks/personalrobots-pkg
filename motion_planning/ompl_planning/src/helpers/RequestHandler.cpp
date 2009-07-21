@@ -129,7 +129,8 @@ void ompl_planning::RequestHandler::configure(const planning_models::StateParams
     /* clear memory */
     psetup->si->clearGoal();
     psetup->si->clearStartStates();	
-
+    static_cast<StateValidityPredicate*>(psetup->si->getStateValidityChecker())->clear();
+    
     /* before configuring, we may need to update bounds on the state space */
     static_cast<StateValidityPredicate*>(psetup->si->getStateValidityChecker())->setConstraints(req.path_constraints);
 
@@ -201,11 +202,15 @@ void ompl_planning::RequestHandler::configure(const planning_models::StateParams
     fixInputStates(psetup, 0.05, 50);
     
     /* print some information */
+    printSettings(psetup);
+}
+
+void ompl_planning::RequestHandler::printSettings(PlannerSetup *psetup)
+{
     ROS_DEBUG("=======================================");
     std::stringstream ss;
     psetup->si->printSettings(ss);
-    ss << "Path constraints:" << std::endl;
-    static_cast<StateValidityPredicate*>(psetup->si->getStateValidityChecker())->getKinematicConstraintEvaluatorSet().print(ss);
+    static_cast<StateValidityPredicate*>(psetup->si->getStateValidityChecker())->printSettings(ss);
     ROS_DEBUG("%s", ss.str().c_str());
     ROS_DEBUG("=======================================");	
 }

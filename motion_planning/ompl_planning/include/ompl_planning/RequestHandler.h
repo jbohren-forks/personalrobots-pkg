@@ -85,7 +85,9 @@ namespace ompl_planning
 
 	/** \brief Check and compute a motion plan. Return true if the plan was succesfully computed */
 	bool computePlan(ModelMap &models, const planning_models::StateParams *start, motion_planning_srvs::MotionPlan::Request &req, motion_planning_srvs::MotionPlan::Response &res);
-	
+
+	/** \brief Print the planner setup settings as debug messages */
+	void printSettings(PlannerSetup *psetup);	
 	
     private:
 

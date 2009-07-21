@@ -18,6 +18,7 @@ rospack_add_library(ompl_planning_helpers src/helpers/ompl_planner/PlannerSetup.
                                           src/helpers/ompl_planner/dynamicKPIECESetup.cpp
                                           src/helpers/ompl_extensions/GoalDefinitions.cpp
                                           src/helpers/ompl_extensions/SpaceInformation.cpp
+                                          src/helpers/ompl_extensions/StateValidator.cpp
                                           src/helpers/ompl_extensions/ForwardPropagationModels.cpp
 					  src/helpers/RequestHandler.cpp
 					  src/helpers/Model.cpp
