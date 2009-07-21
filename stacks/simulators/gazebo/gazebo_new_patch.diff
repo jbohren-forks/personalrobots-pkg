@@ -1,6 +1,6 @@
 Index: server/physics/Geom.cc
 ===================================================================
---- server/physics/Geom.cc	(revision 7997)
+--- server/physics/Geom.cc	(revision 8059)
 +++ server/physics/Geom.cc	(working copy)
 @@ -249,12 +249,12 @@
  
