@@ -19,7 +19,7 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 genmsg()
 gensrv()
 
-rospack_add_library(${PROJECT_NAME} src/database.cpp src/graph_server.cpp)
+rospack_add_library(${PROJECT_NAME} src/database.cpp src/pose_graph.cpp src/graph_server.cpp)
 target_link_libraries(${PROJECT_NAME} db_cxx)
 
 rospack_add_executable(graph_server src/graph_server_node.cpp)
