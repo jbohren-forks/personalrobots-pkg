@@ -82,7 +82,11 @@ bool JointTrajectoryController::initXml(mechanism::RobotState * robot, TiXmlElem
 
   getParams();
 
-  loadXmlFile(robot,config);
+  if(!loadXmlFile(robot,config))
+    {
+      ROS_ERROR("Could not load controller from XML file. Check joint names");
+      return false;
+    }
 
   joint_trajectory_vector_.resize(max_trajectory_queue_size_);
   joint_trajectory_id_.resize(max_trajectory_queue_size_);
