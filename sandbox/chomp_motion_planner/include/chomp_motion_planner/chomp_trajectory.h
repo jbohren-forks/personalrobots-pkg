@@ -38,6 +38,7 @@
 #define CHOMP_TRAJECTORY_H_
 
 #include <chomp_motion_planner/chomp_robot_model.h>
+#include <chomp_motion_planner/chomp_utils.h>
 
 #include <vector>
 #include <kdl/jntarray.hpp>
@@ -153,6 +154,12 @@ public:
    */
   int getFullTrajectoryIndex(int i) const;
 
+  /**
+   * \brief Gets the joint velocities at the given trajectory point
+   */
+  template <typename Derived>
+  void getJointVelocities(int traj_point, Eigen::MatrixBase<Derived>& velocities);
+
 private:
 
   void init();                                          /**< \brief Allocates memory for the trajectory */
@@ -252,6 +259,19 @@ inline int ChompTrajectory::getFullTrajectoryIndex(int i) const
 {
   return full_trajectory_index_[i];
 }
+
+template <typename Derived>
+void ChompTrajectory::getJointVelocities(int traj_point, Eigen::MatrixBase<Derived>& velocities)
+{
+  velocities.setZero();
+  double invTime = 1.0 / discretization_;
+
+  for (int k=-DIFF_RULE_LENGTH/2; k<=DIFF_RULE_LENGTH/2; k++)
+  {
+    velocities += (invTime * DIFF_RULES[0][k+DIFF_RULE_LENGTH/2]) * trajectory_.row(traj_point+k).transpose();
+  }
+}
+
 
 }
 

@@ -79,8 +79,6 @@ private:
   ChompTrajectory group_trajectory_;
   std::vector<ChompCost> joint_costs_;
 
-  bool is_collision_free_;
-
   std::vector<std::vector<KDL::Vector> > joint_axis_;
   std::vector<std::vector<KDL::Vector> > joint_pos_;
   std::vector<std::vector<KDL::Frame> > segment_frames_;
@@ -93,6 +91,13 @@ private:
   std::vector<std::vector<Eigen::Map<Eigen::Vector3d> > > collision_point_pos_eigen_;
   std::vector<std::vector<Eigen::Map<Eigen::Vector3d> > > collision_point_vel_eigen_;
   std::vector<std::vector<Eigen::Map<Eigen::Vector3d> > > collision_point_acc_eigen_;
+  std::vector<std::vector<double> > collision_point_potential_;
+  std::vector<std::vector<double> > collision_point_vel_mag_;
+  std::vector<std::vector<Eigen::Vector3d> > collision_point_potential_gradient_;
+  Eigen::MatrixXd group_trajectory_backup_;
+
+  std::vector<int> state_is_in_collision_;      /**< Array containing a boolean about collision info for each point in the trajectory */
+  bool is_collision_free_;
 
   Eigen::MatrixXd smoothness_increments_;
   Eigen::MatrixXd collision_increments_;
@@ -102,6 +107,8 @@ private:
   Eigen::VectorXd smoothness_derivative_;
   KDL::JntArray kdl_joint_array_;
   Eigen::MatrixXd jacobian_;
+  Eigen::VectorXd random_state_;
+  Eigen::VectorXd joint_state_velocities_;
 
   ros::Publisher vis_pub_;
 
@@ -116,6 +123,10 @@ private:
   void handleJointLimits();
   void animatePath();
   void visualizeState(int index);
+  double getTrajectoryCost();
+  double getSmoothnessCost();
+  double getCollisionCost();
+  void perturbTrajectory();
 
   template<typename Derived, typename DerivedOther>
   bool getCollisionPointPotentialGradient(const ChompCollisionPoint& collision_point, const Eigen::MatrixBase<Derived>& collision_point_pos,

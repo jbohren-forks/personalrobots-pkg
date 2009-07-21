@@ -48,6 +48,8 @@
 #include <map>
 #include <vector>
 #include <string>
+#include <Eigen/Core>
+#include <cstdlib>
 
 namespace chomp
 {
@@ -90,6 +92,12 @@ public:
     int num_links_;                                             /**< Number of links used for collision checking */
     std::vector<std::string> link_names_;                       /**< Links used for collision checking */
     std::vector<ChompCollisionPoint> collision_points_;         /**< Ordered list of collision checking points (from root to tip) */
+
+    /**
+     * Gets a random state vector within the joint limits
+     */
+    template <typename Derived>
+    void getRandomState(Eigen::MatrixBase<Derived>& state_vec) const;
   };
 
   ChompRobotModel();
@@ -210,6 +218,23 @@ inline const std::string& ChompRobotModel::getReferenceFrame() const
 {
   return reference_frame_;
 }
+
+template <typename Derived>
+void ChompRobotModel::ChompPlanningGroup::getRandomState(Eigen::MatrixBase<Derived>& state_vec) const
+{
+  for (int i=0; i<num_joints_; i++)
+  {
+    double min = chomp_joints_[i].joint_limit_min_;
+    double max = chomp_joints_[i].joint_limit_max_;
+    if (!chomp_joints_[i].has_joint_limits_)
+    {
+      min = -M_PI/2.0;
+      max = M_PI/2.0;
+    }
+    state_vec(i) = ((((double)rand())/RAND_MAX) * (max-min)) + min;
+  }
+}
+
 
 } // namespace chomp
 #endif /* CHOMP_ROBOT_MODEL_H_ */

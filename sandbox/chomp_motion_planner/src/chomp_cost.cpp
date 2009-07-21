@@ -35,6 +35,7 @@
 /** \author Mrinal Kalakrishnan */
 
 #include <chomp_motion_planner/chomp_cost.h>
+#include <chomp_motion_planner/chomp_utils.h>
 #include <Eigen/LU>
 
 USING_PART_OF_NAMESPACE_EIGEN
@@ -42,13 +43,6 @@ using namespace std;
 
 namespace chomp
 {
-
-// the differentiation rules (centered at the center)
-const double ChompCost::DIFF_RULES[3][ChompCost::DIFF_RULE_LENGTH] = {
-    {0, 0, -2/6.0, -3/6.0, 6/6.0, -1/6.0, 0},
-    {0, -1/12.0, 16/12.0, -30/12.0, 16/12.0, -1/12.0, 0},
-    {0, 1/12.0, -17/12.0, 46/12.0, -46/12.0, 17/12.0, -1/12.0}
-};
 
 ChompCost::ChompCost(const ChompTrajectory& trajectory, int joint_number, const std::vector<double>& derivative_costs)
 {

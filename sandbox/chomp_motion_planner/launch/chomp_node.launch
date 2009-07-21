@@ -29,8 +29,8 @@
 		
 		<param name="trajectory_duration" value="3.0"/>
 		<param name="trajectory_discretization" value="0.03"/>
-		<param name="learning_rate" value="10.0" />
-		<param name="max_iterations" value="700" />
+		<param name="learning_rate" value="100000.0" />
+		<param name="max_iterations" value="500" />
 		<param name="max_iterations_after_collision_free" value="100" />
 		<param name="smoothness_cost_weight" value="0.00001" />
 		<param name="obstacle_cost_weight" value="1.0" />

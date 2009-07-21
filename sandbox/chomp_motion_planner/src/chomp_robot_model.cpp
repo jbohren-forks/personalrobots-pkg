@@ -191,8 +191,6 @@ bool ChompRobotModel::init()
     planning_groups_.insert(make_pair(it->first, group));
   }
 
-  cout << kdl_tree_.getRootSegment()->second.children[0]->second.segment.getFrameToTip().p[2];
-
   // test it:
 /*  KDL::JntArray q_in(kdl_tree_.getNrOfJoints());
   std::vector<KDL::Frame> segment_frames;
@@ -276,5 +274,6 @@ void ChompRobotModel::addCollisionPointsFromLinkRadius(ChompPlanningGroup& group
   }
 
 }
+
 
 } // namespace chomp

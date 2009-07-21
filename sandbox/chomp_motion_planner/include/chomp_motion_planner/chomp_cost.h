@@ -53,10 +53,6 @@ public:
   ChompCost(const ChompTrajectory& trajectory, int joint_number, const std::vector<double>& derivative_costs);
   virtual ~ChompCost();
 
-  static const int DIFF_RULE_LENGTH = 7;
-
-  static const double DIFF_RULES[3][DIFF_RULE_LENGTH];
-
   template<typename Derived>
   void getDerivative(Eigen::MatrixXd::ColXpr joint_trajectory, Eigen::MatrixBase<Derived>& derivative) const;
 
