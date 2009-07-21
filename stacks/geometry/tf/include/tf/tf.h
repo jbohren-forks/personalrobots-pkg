@@ -205,17 +205,7 @@ public:
 
   /**@brief Check if a frame exists in the tree
    * @param frame_id_str The frame id in question  */
-  bool frameExists(const std::string& frame_id_str) const
-  {
-    boost::mutex::scoped_lock(frame_mutex_);
-    std::map<std::string, unsigned int>::const_iterator map_it = frameIDs_.find(frame_id_str);
-    if (map_it == frameIDs_.end())
-    {
-      return false;
-    }
-    else
-      return true;
-  }
+  bool frameExists(const std::string& frame_id_str) const;
 
   /**@brief Set the distance which tf is allow to extrapolate
    * \param distance How far to extrapolate before throwing an exception

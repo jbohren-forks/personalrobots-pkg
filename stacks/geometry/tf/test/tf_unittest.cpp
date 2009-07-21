@@ -1270,24 +1270,45 @@ TEST(tf, frameExists)
 {
   Transformer mTR;
 
+  // test with fully qualified name
   EXPECT_FALSE(mTR.frameExists("/b"));;
   EXPECT_FALSE(mTR.frameExists("/parent"));
   EXPECT_FALSE(mTR.frameExists("/other"));
   EXPECT_FALSE(mTR.frameExists("/frame"));
+
+  //test with remapping
+  EXPECT_FALSE(mTR.frameExists("b"));;
+  EXPECT_FALSE(mTR.frameExists("parent"));
+  EXPECT_FALSE(mTR.frameExists("other"));
+  EXPECT_FALSE(mTR.frameExists("frame"));
+
   mTR.setTransform(  Stamped<btTransform> (btTransform(btQuaternion(1,0,0), btVector3(0,0,0)), ros::Time().fromNSec(4000), "/b",  "/parent"));
 
+  // test with fully qualified name
   EXPECT_TRUE(mTR.frameExists("/b"));
   EXPECT_TRUE(mTR.frameExists("/parent"));
   EXPECT_FALSE(mTR.frameExists("/other"));
   EXPECT_FALSE(mTR.frameExists("/frame"));
 
+  //Test with remapping
+  EXPECT_TRUE(mTR.frameExists("b"));
+  EXPECT_TRUE(mTR.frameExists("parent"));
+  EXPECT_FALSE(mTR.frameExists("other"));
+  EXPECT_FALSE(mTR.frameExists("frame"));
+
   mTR.setTransform(  Stamped<btTransform> (btTransform(btQuaternion(1,1,0), btVector3(0,0,0)), ros::Time().fromNSec(4000), "/other",  "/frame"));
 
+  // test with fully qualified name
   EXPECT_TRUE(mTR.frameExists("/b"));
   EXPECT_TRUE(mTR.frameExists("/parent"));
   EXPECT_TRUE(mTR.frameExists("/other"));
   EXPECT_TRUE(mTR.frameExists("/frame"));
   
+  //Test with remapping
+  EXPECT_TRUE(mTR.frameExists("b"));
+  EXPECT_TRUE(mTR.frameExists("parent"));
+  EXPECT_TRUE(mTR.frameExists("other"));
+  EXPECT_TRUE(mTR.frameExists("frame"));
 
 }
 

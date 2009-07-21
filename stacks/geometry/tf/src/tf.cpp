@@ -374,6 +374,21 @@ bool Transformer::getParent(const std::string& frame_id, ros::Time time, std::st
 
 };
 
+
+bool Transformer::frameExists(const std::string& frame_id_str) const
+{
+  boost::mutex::scoped_lock(frame_mutex_);
+  std::string frame_id_remapped = tf::remap(tf_prefix_, frame_id_str);
+  
+  std::map<std::string, unsigned int>::const_iterator map_it = frameIDs_.find(frame_id_remapped);
+  if (map_it == frameIDs_.end())
+  {
+      return false;
+  }
+  else
+    return true;
+}
+
 void Transformer::setExtrapolationLimit(const ros::Duration& distance)
 {
   max_extrapolation_distance_ = distance;
