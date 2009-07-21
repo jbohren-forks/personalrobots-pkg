@@ -357,21 +357,102 @@ bool planning_environment::PlanningMonitor::isStateValidAtGoal(const planning_mo
     return valid;    
 }
 
-bool planning_environment::PlanningMonitor::isPathValid(const motion_planning_msgs::KinematicPath &path, bool verbose) const
+int planning_environment::PlanningMonitor::closestStateOnPath(const motion_planning_msgs::KinematicPath &path, const planning_models::StateParams *state) const
 {
+    return closestStateOnPath(path, 0, path.states.size() - 1, state);
+}
+
+int planning_environment::PlanningMonitor::closestStateOnPath(const motion_planning_msgs::KinematicPath &path, unsigned int start, unsigned int end, const planning_models::StateParams *state) const
+{
+    if (end >= path.states.size())
+	end = path.states.size() - 1;
+    if (start > end)
+	return -1;
+    
     if (path.header.frame_id != getFrameId())
     {
 	motion_planning_msgs::KinematicPath pathT = path;
 	if (transformPathToFrame(pathT, getFrameId()))
-	  return isPathValidAux(pathT, verbose);
+	    return closestStateOnPathAux(pathT, start, end, state);
+	else
+	    return -1;
+    }
+    else
+	return closestStateOnPathAux(path, start, end, state);  
+}
+
+int planning_environment::PlanningMonitor::closestStateOnPathAux(const motion_planning_msgs::KinematicPath &path, unsigned int start, unsigned int end, const planning_models::StateParams *state) const
+{
+    double dist = 0.0;
+    int    pos  = -1;
+
+    // get the joints this path is for
+    std::vector<planning_models::KinematicModel::Joint*> joints(path.names.size());
+    for (unsigned int j = 0 ; j < joints.size() ; ++j)
+    {
+	joints[j] = getKinematicModel()->getJoint(path.names[j]);
+	if (joints[j] == NULL)
+	{
+	    ROS_ERROR("Unknown joint '%s' found on path", path.names[j].c_str());
+	    return -1;
+	}
+    }
+    
+    for (unsigned int i = start ; i <= end ; ++i)
+    {
+	unsigned int u = 0;
+	double       d = 0.0;
+	for (unsigned int j = 0 ; j < joints.size() ; ++j)
+	{
+	    if (path.states[i].vals.size() < u + joints[j]->usedParams)
+	    {
+		ROS_ERROR("Incorrect state specification on path");
+		return -1;
+	    }
+	    
+	    const double *jparams = state->getParamsJoint(joints[j]->name);	    
+	    for (unsigned int k = 0 ; k < joints[j]->usedParams ; ++k)
+	    {
+		double diff = fabs(path.states[i].vals[u + k] - jparams[k]);
+		d += diff * diff;
+	    }
+	    u += joints[j]->usedParams;
+	}
+	
+	if (pos < 0 || d < dist)
+	{
+	    pos = i;
+	    dist = d;
+	}
+    }
+    
+    return pos;
+}
+
+bool planning_environment::PlanningMonitor::isPathValid(const motion_planning_msgs::KinematicPath &path, bool verbose) const
+{
+    return isPathValid(path, 0, path.states.size() - 1, verbose);
+}
+
+bool planning_environment::PlanningMonitor::isPathValid(const motion_planning_msgs::KinematicPath &path, unsigned int start, unsigned int end, bool verbose) const
+{
+    if (end >= path.states.size())
+	end = path.states.size() - 1;
+    if (start > end)
+	return true;
+    if (path.header.frame_id != getFrameId())
+    {
+	motion_planning_msgs::KinematicPath pathT = path;
+	if (transformPathToFrame(pathT, getFrameId()))
+	    return isPathValidAux(pathT, start, end, verbose);
 	else
 	    return false;
     }
     else
-      return isPathValidAux(path, verbose);
+	return isPathValidAux(path, start, end, verbose); 
 }
 
-bool planning_environment::PlanningMonitor::isPathValidAux(const motion_planning_msgs::KinematicPath &path, bool verbose) const
+bool planning_environment::PlanningMonitor::isPathValidAux(const motion_planning_msgs::KinematicPath &path, unsigned int start, unsigned int end, bool verbose) const
 {    
     boost::scoped_ptr<planning_models::StateParams> sp(getKinematicModel()->newStateParams());
     
@@ -415,7 +496,7 @@ bool planning_environment::PlanningMonitor::isPathValidAux(const motion_planning
     }
     
     // check every state
-    for (unsigned int i = 0 ; valid && i < path.states.size() ; ++i)
+    for (unsigned int i = start ; valid && i <= end ; ++i)
     {
 	unsigned int u = 0;
 	for (unsigned int j = 0 ; j < joints.size() ; ++j)

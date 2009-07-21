@@ -83,6 +83,15 @@ namespace planning_environment
 	
 	/** \brief Check if the path is valid. Path constraints are considered, but goal constraints are not  */
 	bool isPathValid(const motion_planning_msgs::KinematicPath &path, bool verbose) const;
+
+	/** \brief Check if a segment of the path is valid. Path constraints are considered, but goal constraints are not  */
+	bool isPathValid(const motion_planning_msgs::KinematicPath &path, unsigned int start, unsigned int end, bool verbose) const;
+	
+	/** \brief Find the index of the state on the path that is closest to a given state */
+	int  closestStateOnPath(const motion_planning_msgs::KinematicPath &path, const planning_models::StateParams *state) const;
+
+	/** \brief Find the index of the state on the path segment that is closest to a given state */
+	int  closestStateOnPath(const motion_planning_msgs::KinematicPath &path, unsigned int start, unsigned int end, const planning_models::StateParams *state) const;
 	
 	/** \brief Set the kinematic constraints the monitor should use when checking a path */
 	void setPathConstraints(const motion_planning_msgs::KinematicConstraints &kc);
@@ -117,8 +126,11 @@ namespace planning_environment
 	bool transformJoint(const std::string &name, unsigned int index, std::vector<double> &params, roslib::Header &header, const std::string& target) const;
 	
 	/** \brief Check the path assuming it is in the frame of the model */
-	bool isPathValidAux(const motion_planning_msgs::KinematicPath &path, bool verbose) const;
+	bool isPathValidAux(const motion_planning_msgs::KinematicPath &path, unsigned int start, unsigned int end, bool verbose) const;
 
+	/** \brief Find the index of the state on the path that is closest to a given state assuming the path is in the frame of the model */
+	int closestStateOnPathAux(const motion_planning_msgs::KinematicPath &path, unsigned int start, unsigned int end, const planning_models::StateParams *state) const;
+	
 	/** \brief User callback when a collision is found */
 	boost::function<void(collision_space::EnvironmentModel::Contact&)> onCollisionContact_;
 	
