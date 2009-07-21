@@ -48,6 +48,8 @@ int detect_outlet_tuple(IplImage* src, CvMat* intrinsic_matrix, CvMat* distortio
         cvReleaseImage(&_img);
     }
     
+    int ret = 1;
+    
 #if !defined(_GHT)
     if(outlet_templ.get_color() == outletOrange && outlet_templ.get_count() == 4)
     {
@@ -129,7 +131,7 @@ int detect_outlet_tuple(IplImage* src, CvMat* intrinsic_matrix, CvMat* distortio
     cvReleaseMat(&inv_homography);
 #endif
     
-    return 1;
+    return ret;
 }
 	
 void calc_outlet_3d_coord_2x2(CvMat* intrinsic_matrix, const outlet_template_t& outlet_templ, vector<outlet_t>& outlets)
