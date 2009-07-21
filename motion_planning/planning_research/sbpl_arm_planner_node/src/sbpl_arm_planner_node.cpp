@@ -274,8 +274,7 @@ void SBPLArmPlannerNode::collisionMapCallback(const mapping_msgs::CollisionMapCo
       sbpl_boxes[i][3] = collision_map->boxes[i].extents.x;
       sbpl_boxes[i][4] = collision_map->boxes[i].extents.y;
       sbpl_boxes[i][5] = collision_map->boxes[i].extents.z;
-      ROS_DEBUG("[SBPLArmPlannerNode] obstacle %i: %.3f %.3f %.3f %.3f %.3f %.3f",i,sbpl_boxes[i][0],sbpl_boxes[i][1],
-		      sbpl_boxes[i][2],sbpl_boxes[i][3],sbpl_boxes[i][4],sbpl_boxes[i][5]);
+      ROS_DEBUG("[SBPLArmPlannerNode] obstacle %i: %.3f %.3f %.3f %.3f %.3f %.3f",i,sbpl_boxes[i][0],sbpl_boxes[i][1],sbpl_boxes[i][2],sbpl_boxes[i][3],sbpl_boxes[i][4],sbpl_boxes[i][5]);
     }
 
     //a quick hack to send the robot base as a big obstacle to the planner
@@ -290,12 +289,12 @@ void SBPLArmPlannerNode::collisionMapCallback(const mapping_msgs::CollisionMapCo
     for(double x = .2; x < .3; x += .01)
       for(double y = -.3; y < .3; y += .02)
 	for(double z = -.5; z > -.75; z -= .04)
-    {
-      robot_base[0] = x;
-      robot_base[1] = y;
-      robot_base[2] = z;
-      sbpl_boxes.push_back(robot_base);
-    }
+	{
+	  robot_base[0] = x;
+	  robot_base[1] = y;
+	  robot_base[2] = z;
+	  sbpl_boxes.push_back(robot_base);
+	}
 
     // clear old map
     sbpl_arm_env_.ClearEnv();
@@ -318,42 +317,43 @@ void SBPLArmPlannerNode::collisionMapCallback(const mapping_msgs::CollisionMapCo
 
     if(mCopyingVoxel_.try_lock())
     {
-      //for now add robot base as a cubic obstacle
+      //for now add base laser as a cubic obstacle
       for(double y = -.02; y < .02; y = y + .01)
       {
-	for(double x = 0.32; x < 0.35; x = x + .01)
-	{
-	  env_grid_->putWorldObstacle(x,y,-0.45);
-	  if(lowres_cc_)
-	    env_grid_->putWorldObstacle(x,y,-0.45);
-	}
+				for(double x = 0.32; x < 0.35; x = x + .01)
+				{
+					env_grid_->putWorldObstacle(x,y,-0.45);
+					if(lowres_cc_)
+						env_grid_->putWorldObstacle(x,y,-0.45);
+				}
       }
 
-      //for now add base as a cubic obstacle
+      //for now add robot base as a cubic obstacle
       for(double y = -.3; y < .3; y = y + .02)
       {
-	for(double x = 0.18; x < 0.38; x = x + .02)
-	{
-	  env_grid_->putWorldObstacle(x,y,-0.5);
-	  if(lowres_cc_)
-	    env_grid_->putWorldObstacle(x,y,-0.5);
-	}
+				for(double x = 0.18; x < 0.38; x = x + .02)
+				{
+					env_grid_->putWorldObstacle(x,y,-0.5);
+					if(lowres_cc_)
+						env_grid_->putWorldObstacle(x,y,-0.5);
+				}
       }
 
-      ROS_INFO("collision_map_occ is in %s", collision_map->header.frame_id.c_str());
+      ROS_DEBUG("collision_map_occ is in %s", collision_map->header.frame_id.c_str());
       for(unsigned int i=0; i < collision_map->boxes.size(); i++)
       {
-	env_grid_->putWorldObstacle(collision_map->boxes[i].center.x,collision_map->boxes[i].center.y,collision_map->boxes[i].center.z);
-	if(lowres_cc_)
-	  lowres_env_grid_->putWorldObstacle(collision_map->boxes[i].center.x,collision_map->boxes[i].center.y,collision_map->boxes[i].center.z);
-      }
+				env_grid_->putWorldObstacle(collision_map->boxes[i].center.x,collision_map->boxes[i].center.y,collision_map->boxes[i].center.z);
+				if(lowres_cc_)
+					lowres_env_grid_->putWorldObstacle(collision_map->boxes[i].center.x,collision_map->boxes[i].center.y,collision_map->boxes[i].center.z);
+			}
 //       if(visualize_)
-        env_grid_->updateVisualizations();
+      env_grid_->updateVisualizations();
+
       mCopyingVoxel_.unlock();
     }
   }
 
-  ROS_INFO("collisionMapCallback took %lf seconds", (ros::Time::now() - start).toSec());
+  ROS_DEBUG("collisionMapCallback took %lf seconds", (ros::Time::now() - start).toSec());
 }
 
 /** \brief Callback function that updates the voxel when a new point cloud is published */
@@ -535,8 +535,16 @@ bool SBPLArmPlannerNode::setGoalPosition(const std::vector<motion_planning_msgs:
     sbpl_goal[i][4] = pitch;
     sbpl_goal[i][5] = yaw;
 
-    sbpl_tolerance[i][0]  = goals[i].position_distance;
-    sbpl_tolerance[i][1]  = goals[i].orientation_distance;
+// # The acceptable tolerance
+// robot_msgs/Point position_tolerance_above
+// robot_msgs/Point position_tolerance_below
+// 
+// # The acceptable tolerance (roll pitch yaw)
+// robot_msgs/Point orientation_tolerance_above
+// robot_msgs/Point orientation_tolerance_below
+
+    sbpl_tolerance[i][0]  = goals[i].position_tolerance_above.x;
+    sbpl_tolerance[i][1]  = goals[i].orientation_tolerance_above.x;
     sbpl_type[i] = goals[i].type;
 
     ROS_INFO("goal %d: xyz: %.2f %.2f %.2f  (tol: %.3f) rpy: %.2f %.2f %.2f  (tol: %.3f)",
@@ -594,8 +602,8 @@ bool SBPLArmPlannerNode::setGoalState(const std::vector<motion_planning_msgs::Jo
     {
 //       ROS_INFO("%i: %s",i,joint_constraint[i].joint_name.c_str());
       sbpl_goal[0][nind] = joint_constraint[i].value[0];
-      sbpl_tolerance_above[0][nind] = joint_constraint[i].toleranceAbove[0];
-      sbpl_tolerance_below[0][nind] = joint_constraint[i].toleranceBelow[0];
+      sbpl_tolerance_above[0][nind] = joint_constraint[i].tolerance_above[0];
+      sbpl_tolerance_below[0][nind] = joint_constraint[i].tolerance_below[0];
 
       angles[nind] =  joint_constraint[i].value[0];
 
@@ -759,8 +767,8 @@ bool SBPLArmPlannerNode::planToPosition(motion_planning_srvs::MotionPlan::Reques
 
   goal_pose_constraint_.resize(req.goal_constraints.get_pose_constraint_size());
 
-  ROS_INFO("goal pose has %i poses",goal_pose_constraint_.size());
-  
+//   ROS_INFO("goal pose has %i poses",goal_pose_constraint_.size());
+
   //check for an empty start state
   if(req.get_start_state_size() <= 0)
   {
@@ -777,8 +785,6 @@ bool SBPLArmPlannerNode::planToPosition(motion_planning_srvs::MotionPlan::Reques
 
   // update the planning monitor's starting position
   updatePMWrapper(req);
-
-
 
   //transform goal into planning_frame_
   for(i = 0; i < req.goal_constraints.get_pose_constraint_size(); i++)
@@ -832,40 +838,40 @@ bool SBPLArmPlannerNode::planToPosition(motion_planning_srvs::MotionPlan::Reques
       ROS_INFO("[planToPosition] successfully sent goal constraints");
       if(plan(arm_path))
       {
-	ROS_INFO("Planning took %lf seconds",(clock() - starttime) / (double)CLOCKS_PER_SEC);
-	bPlanning_ = false;
-	mPlanning_.unlock();
-	pm_->unlockPM();
-	ROS_INFO("[planToPosition] Planning successful.");
-		
-	res.path = arm_path;
-	res.path.model_id = req.params.model_id;
-	res.path.header.stamp = ros::Time::now();
+				ROS_INFO("Planning took %lf seconds",(clock() - starttime) / (double)CLOCKS_PER_SEC);
+				bPlanning_ = false;
+				mPlanning_.unlock();
+				pm_->unlockPM();
+				ROS_INFO("[planToPosition] Planning successful.");
+					
+				res.path = arm_path;
+				res.path.model_id = req.params.model_id;
+				res.path.header.stamp = ros::Time::now();
+			
+				if(!req.start_state[0].header.frame_id.empty())
+					res.path.header.frame_id = req.start_state[0].header.frame_id;
+				else
+					res.path.header.frame_id = planning_frame_;
+			
+				res.path.set_times_size(res.path.get_states_size());
+				res.path.times[0] = 0;
+				for(i = 1; i < res.path.get_states_size(); i++)
+					res.path.times[i] = res.path.times[i-1] + 0.001;
+			
+				res.path.set_names_size(num_joints_);
+				for(i = 0; i < (unsigned int)num_joints_; i++)
+					res.path.names[i] = joint_names_[i];
+			
+				res.path.start_state = req.start_state;
+				res.unsafe = 0;
+				res.approximate = 0;
+				res.distance = 0;
 
-	if(!req.start_state[0].header.frame_id.empty())
-	  res.path.header.frame_id = req.start_state[0].header.frame_id;
-	else
-	  res.path.header.frame_id = planning_frame_;
-
-	res.path.set_times_size(res.path.get_states_size());
-	res.path.times[0] = 0;
-	for(i = 1; i < res.path.get_states_size(); i++)
-	  res.path.times[i] = res.path.times[i-1] + 0.001;
-
-	res.path.set_names_size(num_joints_);
-	for(i = 0; i < (unsigned int)num_joints_; i++)
-	  res.path.names[i] = joint_names_[i];
-
-	res.path.start_state = req.start_state;
-	res.unsafe = 0;
-	res.approximate = 0;
-	res.distance = 0;
-
-	return true;
+			return true;
       }
       else
       {
-	ROS_INFO("[planToPosition] Planning unsuccessful.");
+				ROS_INFO("[planToPosition] Planning unsuccessful.");
       }
     }
     else
@@ -994,6 +1000,15 @@ bool SBPLArmPlannerNode::plan(motion_planning_msgs::KinematicPath &arm_path)
 
       if(!computeIK(goal_pose_constraint_[0].pose,jnt_pos,final_waypoint))
 	return false;
+
+      for(int j=0; j<num_joints_; ++j)
+	angles_r[j] = final_waypoint[j];
+
+      if(!sbpl_arm_env_.isValidJointConfiguration(angles_r))
+      {
+	ROS_INFO("IK solution is invalid.");
+	return false;
+      }
     }
     else
     {
@@ -1081,13 +1096,13 @@ void SBPLArmPlannerNode::createOccupancyGrid()
 {
   bool visualize = true;
   mCopyingVoxel_.lock();
-  env_grid_.reset(new Voxel3d(env_width_,env_height_,env_depth_, env_resolution_, tf::Vector3(-.2, -1, -1), visualize));
-  planning_grid_.reset(new Voxel3d(env_width_,env_height_,env_depth_, env_resolution_, tf::Vector3(0, -1, -1), visualize));
+  env_grid_.reset(new Voxel3d(env_width_,env_height_,env_depth_, env_resolution_, tf::Vector3(-.1, -1, -1), visualize));
+  planning_grid_.reset(new Voxel3d(env_width_,env_height_,env_depth_, env_resolution_, tf::Vector3(-.1, -1, -1), visualize));
 
   if(lowres_cc_)
   {
-    lowres_env_grid_.reset(new Voxel3d(env_width_/2,env_height_/2,env_depth_/2, env_resolution_*2, tf::Vector3(-.2, -1, -1), false));
-    lowres_planning_grid_.reset(new Voxel3d(env_width_/2,env_height_/2,env_depth_/2, env_resolution_*2, tf::Vector3(-.2, -1, -1), false));
+    lowres_env_grid_.reset(new Voxel3d(env_width_/2,env_height_/2,env_depth_/2, env_resolution_*2, tf::Vector3(-.1, -1, -1), false));
+    lowres_planning_grid_.reset(new Voxel3d(env_width_/2,env_height_/2,env_depth_/2, env_resolution_*2, tf::Vector3(-.1, -1, -1), false));
   }
 
   if(!point_cloud_.header.frame_id.empty())
@@ -1169,6 +1184,7 @@ bool SBPLArmPlannerNode::updateOccupancyGrid()
   planning_grid_.swap(env_grid_);
   if(lowres_cc_)
     lowres_planning_grid_.swap(lowres_env_grid_);
+
   if(!sbpl_arm_env_.updateVoxelGrid(planning_grid_, lowres_planning_grid_))
   {
     ROS_INFO("Unable to update the planner's occupancy grid");
@@ -1277,7 +1293,7 @@ void SBPLArmPlannerNode::finishPath(motion_planning_msgs::KinematicPath &arm_pat
 
 }
 
-
+/** \brief Compute IK using pr2_ik service */
 bool SBPLArmPlannerNode::computeIK(const robot_msgs::PoseStamped &pose_stamped_msg, std::vector<double> jnt_pos, std::vector<double> &solution)
 {
   manipulation_srvs::IKService::Request request;
@@ -1316,7 +1332,7 @@ bool SBPLArmPlannerNode::computeIK(const robot_msgs::PoseStamped &pose_stamped_m
   return true;
 }
 
-
+/** \brief Initialize KDL Chain for using FK */
 bool SBPLArmPlannerNode::initChain(std::string robot_description)
 {
   KDL::Tree my_tree;

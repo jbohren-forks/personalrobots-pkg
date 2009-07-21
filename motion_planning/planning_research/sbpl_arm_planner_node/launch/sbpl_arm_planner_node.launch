@@ -12,7 +12,7 @@
     <param name="search_mode" value="true" />
     <param name="num_joints" value="7" />
     <param name="planner_type" value="cartesian" />
-    <param name="use_dijkstra_heuristic" value="true" />
+    <param name="use_dijkstra_heuristic" value="false" />
 
     <param name="torso_arm_offset_x" value="0.0" />
     <param name="torso_arm_offset_y" value="-0.188" />
