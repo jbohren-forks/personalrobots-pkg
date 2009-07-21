@@ -62,6 +62,7 @@ public:
   ~GripperCalibrationController();
 
   virtual bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
+  virtual bool init(mechanism::RobotState *robot, const ros::NodeHandle &n);
 
   virtual void update();
 
@@ -76,6 +77,11 @@ protected:
   enum { INITIALIZED, BEGINNING, STARTING, CLOSING, CALIBRATED };
   int state_;
   int count_;
+
+  ros::NodeHandle node_;
+  mechanism::RobotState *robot_;
+  double last_publish_time_;
+  boost::scoped_ptr<realtime_tools::RealtimePublisher<std_msgs::Empty> > pub_calibrated_;
 
   double search_velocity_;
   Actuator *actuator_;

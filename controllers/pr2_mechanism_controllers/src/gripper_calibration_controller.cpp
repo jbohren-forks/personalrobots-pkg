@@ -38,8 +38,13 @@
 using namespace std;
 using namespace controller;
 
+namespace controller
+{
+
+ROS_REGISTER_CONTROLLER(GripperCalibrationController)
+
 GripperCalibrationController::GripperCalibrationController()
-: state_(INITIALIZED), joint_(NULL)
+: state_(INITIALIZED), last_publish_time_(0), joint_(NULL)
 {
 }
 
@@ -51,6 +56,7 @@ bool GripperCalibrationController::initXml(mechanism::RobotState *robot, TiXmlEl
 {
   assert(robot);
   assert(config);
+  robot_ = robot;
 
   TiXmlElement *cal = config->FirstChildElement("calibrate");
   if (!cal)
@@ -99,6 +105,54 @@ bool GripperCalibrationController::initXml(mechanism::RobotState *robot, TiXmlEl
   return true;
 }
 
+bool GripperCalibrationController::init(mechanism::RobotState *robot,
+                                        const ros::NodeHandle &n)
+{
+  assert(robot);
+  robot_ = robot;
+  node_ = n;
+
+  if (!node_.getParam("velocity", search_velocity_))
+  {
+    ROS_ERROR("No velocity given (namespace: %s)", node_.getNamespace().c_str());
+    return false;
+  }
+
+  std::string joint_name;
+  if (!node_.getParam("joint", joint_name))
+  {
+    ROS_ERROR("No joint given (namespace: %s)", node_.getNamespace().c_str());
+    return false;
+  }
+  if (!(joint_ = robot->getJointState(joint_name)))
+  {
+    ROS_ERROR("Could not find joint \"%s\" (namespace: %s)",
+              joint_name.c_str(), node_.getNamespace().c_str());
+    return false;
+  }
+
+  std::string actuator_name;
+  if (!node_.getParam("actuator", actuator_name))
+  {
+    ROS_ERROR("No actuator given (namespace: %s)", node_.getNamespace().c_str());
+    return false;
+  }
+  if (!(actuator_ = robot->model_->getActuator(actuator_name)))
+  {
+    ROS_ERROR("Could not find actuator \"%s\" (namespace: %s)",
+              actuator_name.c_str(), node_.getNamespace().c_str());
+    return false;
+  }
+
+  if (!vc_.init(robot, node_))
+    return false;
+
+  pub_calibrated_.reset(
+    new realtime_tools::RealtimePublisher<std_msgs::Empty>(node_, "calibrated", 1));
+
+  return true;
+}
+
 void GripperCalibrationController::update()
 {
   assert(joint_);
@@ -134,6 +188,17 @@ void GripperCalibrationController::update()
     }
     break;
   case CALIBRATED:
+    if (pub_calibrated_)
+    {
+      if (last_publish_time_ + 0.5 < robot_->hw_->current_time_)
+      {
+        if (pub_calibrated_->trylock())
+        {
+          last_publish_time_ = robot_->hw_->current_time_;
+          pub_calibrated_->unlockAndPublish();
+        }
+      }
+    }
     break;
   }
 
@@ -188,4 +253,6 @@ bool GripperCalibrationControllerNode::initXml(mechanism::RobotState *robot, TiX
   pub_calibrated_ = new realtime_tools::RealtimePublisher<std_msgs::Empty>(topic + "/calibrated", 1);
 
   return true;
+}
+
 }
