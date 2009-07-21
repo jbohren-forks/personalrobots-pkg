@@ -68,16 +68,22 @@ class BoundingBox: public SpectralAnalysis
     // --------------------------------------------------------------
     BoundingBox(bool use_pca_bbox, bool use_raw_bbox);
 
+    // --------------------------------------------------------------
+    /*!
+     * \brief Defines the radius of the bounding box to examine
+     */
+    // --------------------------------------------------------------
+    void setBoundingBoxRadius(float bbox_radius);
+
     // ===================================================================
     /*! \name Interest region related  */
     // ===================================================================
     //@{
     // --------------------------------------------------------------
     /*!
-     * \brief This descriptor does NOT work with only interest points so
-     *        calling this method will do nothing
+     * \brief This descriptor does NOT use pre-computed information
      *
-     * \warning This call does nothing
+     * \warning This call is slow
      */
     // --------------------------------------------------------------
     virtual void compute(const robot_msgs::PointCloud& data,
@@ -98,6 +104,16 @@ class BoundingBox: public SpectralAnalysis
     //@}
 
   private:
+    void computeBoundingBoxFeatures(const robot_msgs::PointCloud& data,
+                                    const vector<int>& neighbor_indices,
+                                    const Eigen::Vector3d* eig_vec_max,
+                                    const Eigen::Vector3d* eig_vec_mid,
+                                    const Eigen::Vector3d* eig_vec_min,
+                                    cv::Vector<float>& result);
+
+    float bbox_radius_;
+    bool bbox_radius_set_;
+
     bool use_pca_bbox_;
     bool use_raw_bbox_;
 };

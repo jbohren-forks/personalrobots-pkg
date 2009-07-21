@@ -53,6 +53,18 @@ BoundingBox::BoundingBox(bool use_pca_bbox, bool use_raw_bbox)
   {
     result_size_ += 3;
   }
+
+  bbox_radius_ = -1.0;
+  bbox_radius_set_ = false;
+}
+
+// --------------------------------------------------------------
+/* See function definition */
+// --------------------------------------------------------------
+void BoundingBox::setBoundingBoxRadius(float bbox_radius)
+{
+  bbox_radius_ = bbox_radius;
+  bbox_radius_set_ = true;
 }
 
 // --------------------------------------------------------------
@@ -63,9 +75,36 @@ void BoundingBox::compute(const robot_msgs::PointCloud& data,
                           const cv::Vector<robot_msgs::Point32*>& interest_pts,
                           cv::Vector<cv::Vector<float> >& results)
 {
-  ROS_ERROR("BoundingBox can only be used on a region of points");
-  // TODO have setBoundingBoxRadius???
-  results.resize(interest_pts.size());
+  unsigned int nbr_interest_pts = interest_pts.size();
+  results.resize(nbr_interest_pts);
+
+  // ----------------------------------------
+  // Verify valid radius has been set
+  if (bbox_radius_set_ == false)
+  {
+    ROS_ERROR("BoundingBox::compute() the bounding box radius not set");
+    return;
+  }
+  if (bbox_radius_ < 1e-6)
+  {
+    ROS_ERROR("BoundingBox::compute() the radius %f is invalid", bbox_radius_);
+    return;
+  }
+
+  // ----------------------------------------
+  // Iterate over each interest point, grab neighbors within bbox radius,
+  // then compute bounding box
+  for (size_t i = 0 ; i < nbr_interest_pts ; i++)
+  {
+    const robot_msgs::Point32* curr_interest_pt = interest_pts[i];
+    if (curr_interest_pt == NULL)
+    {
+      ROS_WARN("BoundingBox::compute() passed NULL interest point");
+      continue;
+    }
+
+    // TODO range search
+  }
 }
 
 // --------------------------------------------------------------
@@ -83,9 +122,9 @@ void BoundingBox::compute(const robot_msgs::PointCloud& data,
 
   // ----------------------------------------
   // Extract principle components if specified
-  const vector<Eigen::Vector3d*>* eig_vec_max = NULL;
-  const vector<Eigen::Vector3d*>* eig_vec_mid = NULL;
-  const vector<Eigen::Vector3d*>* eig_vec_min = NULL;
+  const vector<Eigen::Vector3d*>* eig_vecs_max = NULL;
+  const vector<Eigen::Vector3d*>* eig_vecs_mid = NULL;
+  const vector<Eigen::Vector3d*>* eig_vecs_min = NULL;
   if (use_pca_bbox_)
   {
     if (spectral_info_ == NULL)
@@ -95,153 +134,188 @@ void BoundingBox::compute(const robot_msgs::PointCloud& data,
         return;
       }
     }
-    eig_vec_max = &(spectral_info_->getTangents());
-    eig_vec_mid = &(spectral_info_->getMiddleEigenVectors());
-    eig_vec_min = &(spectral_info_->getNormals());
+    eig_vecs_max = &(spectral_info_->getTangents());
+    eig_vecs_mid = &(spectral_info_->getMiddleEigenVectors());
+    eig_vecs_min = &(spectral_info_->getNormals());
   }
 
+  // TODO check bbox_radius_set
+  // TODO check for NULL in interest_region_indices[i]
+
   // ----------------------------------------
-  // For each interest region, compute its bounding box
+  // Compute the dimensions of the bounding box around the points
   for (size_t i = 0 ; i < nbr_interest_regions ; i++)
   {
-    // --------------------------
-    const vector<int>* curr_indices = interest_region_indices[i];
-    if (curr_indices == NULL || curr_indices->size() == 0)
-    {
-      ROS_ERROR("BoudningBox::compute() Passed NULL or empty region indices");
-      continue;
-    }
-
-    // --------------------------
-    // Allocate for current region's features
-    size_t results_idx = 0;
-    results[i].resize(result_size_);
-
-    // --------------------------
-    // Compute bounding box of the xyz point cloud
-    if (use_raw_bbox_)
-    {
-      // Initialize extrema values to the first coordinate in the interest region
-      float min_x = data.pts[(*curr_indices)[0]].x;
-      float min_y = data.pts[(*curr_indices)[0]].y;
-      float min_z = data.pts[(*curr_indices)[0]].z;
-      float max_x = min_x;
-      float max_y = min_y;
-      float max_z = min_z;
-
-      // Loop over remaining points in region and update extremas
-      for (unsigned int j = 1 ; j < curr_indices->size() ; j++)
-      {
-        // x
-        float curr_coord = data.pts[(*curr_indices)[j]].x;
-        if (curr_coord < min_x)
-        {
-          min_x = curr_coord;
-        }
-        if (curr_coord > max_x)
-        {
-          max_x = curr_coord;
-        }
-        // y
-        curr_coord = data.pts[(*curr_indices)[j]].y;
-        if (curr_coord < min_y)
-        {
-          min_y = curr_coord;
-        }
-        if (curr_coord > max_y)
-        {
-          max_y = curr_coord;
-        }
-        // z
-        curr_coord = data.pts[(*curr_indices)[j]].z;
-        if (curr_coord < min_z)
-        {
-          min_z = curr_coord;
-        }
-        if (curr_coord > max_z)
-        {
-          max_z = curr_coord;
-        }
-      }
-
-      // --------------------------
-      results[i][results_idx++] = max_x - min_x;
-      results[i][results_idx++] = max_y - min_y;
-      results[i][results_idx++] = max_z - min_z;
-    }
-
-    // --------------------------
-    // Compute bounding box in the principle components of the point cloud
     if (use_pca_bbox_)
     {
-      if ((*eig_vec_max)[i] == NULL)
-      {
-        ROS_WARN("No spectral information for interest region %u...skipping it", i);
-        continue;
-      }
-
-      // Get the norms of the current principle component vectors in order to
-      // compute scalar projections
-      double norm_ev_max = ((*eig_vec_max)[i])->norm();
-      double norm_ev_mid = ((*eig_vec_mid)[i])->norm();
-      double norm_ev_min = ((*eig_vec_min)[i])->norm();
-
-      // Initialize extrema values of the first point's scalar projections
-      // onto the principle components
-      Eigen::Vector3d curr_pt;
-      curr_pt[0] = data.pts[(*curr_indices)[0]].x;
-      curr_pt[1] = data.pts[(*curr_indices)[0]].y;
-      curr_pt[2] = data.pts[(*curr_indices)[0]].z;
-      float min_v1 = curr_pt.dot(*((*eig_vec_max)[0])) / norm_ev_max;
-      float min_v2 = curr_pt.dot(*((*eig_vec_mid)[0])) / norm_ev_mid;
-      float min_v3 = curr_pt.dot(*((*eig_vec_min)[0])) / norm_ev_min;
-      float max_v1 = min_v1;
-      float max_v2 = min_v2;
-      float max_v3 = min_v3;
-
-      // Loop over remaining points in region and update projection extremas
-      for (unsigned int j = 1 ; j < curr_indices->size() ; j++)
-      {
-        curr_pt[0] = data.pts[(*curr_indices)[j]].x;
-        curr_pt[1] = data.pts[(*curr_indices)[j]].y;
-        curr_pt[2] = data.pts[(*curr_indices)[j]].z;
-
-        // biggest eigenvector
-        float curr_projection = curr_pt.dot(*((*eig_vec_max)[i])) / norm_ev_max;
-        if (curr_projection < min_v1)
-        {
-          min_v1 = curr_projection;
-        }
-        if (curr_projection > max_v1)
-        {
-          max_v1 = curr_projection;
-        }
-        // middle eigenvector
-        curr_projection = curr_pt.dot(*((*eig_vec_mid)[i])) / norm_ev_mid;
-        if (curr_projection < min_v2)
-        {
-          min_v2 = curr_projection;
-        }
-        if (curr_projection > max_v2)
-        {
-          max_v2 = curr_projection;
-        }
-        // smallest eigenvector
-        curr_projection = curr_pt.dot(*((*eig_vec_min)[i])) / norm_ev_min;
-        if (curr_projection < min_v3)
-        {
-          min_v3 = curr_projection;
-        }
-        if (curr_projection > max_v3)
-        {
-          max_v3 = curr_projection;
-        }
-      }
-
-      // --------------------------
-      results[i][results_idx++] = max_v1 - min_v1;
-      results[i][results_idx++] = max_v2 - min_v2;
-      results[i][results_idx++] = max_v3 - min_v3;
+      computeBoundingBoxFeatures(data, *(interest_region_indices[i]), (*eig_vecs_max)[i], (*eig_vecs_mid)[i],
+          (*eig_vecs_min)[i], results[i]);
     }
+    else
+    {
+      computeBoundingBoxFeatures(data, *(interest_region_indices[i]), NULL, NULL, NULL, results[i]);
+    }
+  }
+
+}
+
+// --------------------------------------------------------------
+/* See function definition */
+// --------------------------------------------------------------
+void BoundingBox::computeBoundingBoxFeatures(const robot_msgs::PointCloud& data,
+                                             const vector<int>& neighbor_indices,
+                                             const Eigen::Vector3d* eig_vec_max,
+                                             const Eigen::Vector3d* eig_vec_mid,
+                                             const Eigen::Vector3d* eig_vec_min,
+                                             cv::Vector<float>& result)
+{
+  result.resize(result_size_);
+
+  unsigned int nbr_pts = neighbor_indices.size();
+
+  // --------------------------
+  // Check for special case when no points in the bounding box as will initialize
+  // the min/max extremas using the first point below
+  if (nbr_pts == 0)
+  {
+    ROS_WARN("BoundingBox::computeBoundingBoxFeatures() Passed empty bounding box indices");
+    for (unsigned int i = 0 ; i < result_size_ ; i++)
+    {
+      result[i] = 0.0;
+    }
+    return;
+  }
+
+  // --------------------------
+  // Index into result
+  size_t result_idx = 0;
+
+  // --------------------------
+  // Compute bounding box of the xyz point cloud
+  if (use_raw_bbox_)
+  {
+    // Initialize extrema values to the first coordinate in the interest region
+    float min_x = data.pts[neighbor_indices[0]].x;
+    float min_y = data.pts[neighbor_indices[0]].y;
+    float min_z = data.pts[neighbor_indices[0]].z;
+    float max_x = min_x;
+    float max_y = min_y;
+    float max_z = min_z;
+
+    // Loop over remaining points in region and update extremas
+    for (unsigned int i = 1 ; i < nbr_pts ; i++)
+    {
+      // x
+      float curr_coord = data.pts[neighbor_indices[i]].x;
+      if (curr_coord < min_x)
+      {
+        min_x = curr_coord;
+      }
+      if (curr_coord > max_x)
+      {
+        max_x = curr_coord;
+      }
+      // y
+      curr_coord = data.pts[neighbor_indices[i]].y;
+      if (curr_coord < min_y)
+      {
+        min_y = curr_coord;
+      }
+      if (curr_coord > max_y)
+      {
+        max_y = curr_coord;
+      }
+      // z
+      curr_coord = data.pts[neighbor_indices[i]].z;
+      if (curr_coord < min_z)
+      {
+        min_z = curr_coord;
+      }
+      if (curr_coord > max_z)
+      {
+        max_z = curr_coord;
+      }
+    }
+
+    // --------------------------
+    result[result_idx++] = max_x - min_x;
+    result[result_idx++] = max_y - min_y;
+    result[result_idx++] = max_z - min_z;
+  }
+
+  // --------------------------
+  // Compute bounding box in the principle components of the point cloud
+  if (use_pca_bbox_)
+  {
+    // NULL indicates no eigenvector could be extracted
+    if (eig_vec_max == NULL)
+    {
+      ROS_WARN("BoundingBox::computeBoundingBoxFeatures() No spectral information...skipping it");
+      result.clear();
+      return;
+    }
+
+    // Get the norms of the current principle component vectors in order to
+    // compute scalar projections
+    double norm_ev_max = eig_vec_max->norm();
+    double norm_ev_mid = eig_vec_mid->norm();
+    double norm_ev_min = eig_vec_min->norm();
+
+    // Initialize extrema values of the first point's scalar projections
+    // onto the principle components
+    Eigen::Vector3d curr_pt;
+    curr_pt[0] = data.pts[neighbor_indices[0]].x;
+    curr_pt[1] = data.pts[neighbor_indices[0]].y;
+    curr_pt[2] = data.pts[neighbor_indices[0]].z;
+    float min_v1 = curr_pt.dot(*eig_vec_max) / norm_ev_max;
+    float min_v2 = curr_pt.dot(*eig_vec_mid) / norm_ev_mid;
+    float min_v3 = curr_pt.dot(*eig_vec_min) / norm_ev_min;
+    float max_v1 = min_v1;
+    float max_v2 = min_v2;
+    float max_v3 = min_v3;
+
+    // Loop over remaining points in region and update projection extremas
+    for (unsigned int i = 1 ; i < nbr_pts ; i++)
+    {
+      curr_pt[0] = data.pts[neighbor_indices[i]].x;
+      curr_pt[1] = data.pts[neighbor_indices[i]].y;
+      curr_pt[2] = data.pts[neighbor_indices[i]].z;
+
+      // biggest eigenvector
+      float curr_projection = curr_pt.dot(*eig_vec_max) / norm_ev_max;
+      if (curr_projection < min_v1)
+      {
+        min_v1 = curr_projection;
+      }
+      if (curr_projection > max_v1)
+      {
+        max_v1 = curr_projection;
+      }
+      // middle eigenvector
+      curr_projection = curr_pt.dot(*eig_vec_mid) / norm_ev_mid;
+      if (curr_projection < min_v2)
+      {
+        min_v2 = curr_projection;
+      }
+      if (curr_projection > max_v2)
+      {
+        max_v2 = curr_projection;
+      }
+      // smallest eigenvector
+      curr_projection = curr_pt.dot(*eig_vec_min) / norm_ev_min;
+      if (curr_projection < min_v3)
+      {
+        min_v3 = curr_projection;
+      }
+      if (curr_projection > max_v3)
+      {
+        max_v3 = curr_projection;
+      }
+    }
+
+    // --------------------------
+    result[result_idx++] = max_v1 - min_v1;
+    result[result_idx++] = max_v2 - min_v2;
+    result[result_idx++] = max_v3 - min_v3;
   }
 }
