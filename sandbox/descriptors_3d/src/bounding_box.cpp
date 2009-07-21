@@ -254,59 +254,6 @@ void BoundingBox::computeBoundingBoxFeatures(const robot_msgs::PointCloud& data,
   size_t result_idx = 0;
 
   // --------------------------
-  // Compute bounding box of the xyz point cloud
-  if (use_raw_bbox_)
-  {
-    // Initialize extrema values to the first coordinate in the interest region
-    float min_x = data.pts[neighbor_indices[0]].x;
-    float min_y = data.pts[neighbor_indices[0]].y;
-    float min_z = data.pts[neighbor_indices[0]].z;
-    float max_x = min_x;
-    float max_y = min_y;
-    float max_z = min_z;
-
-    // Loop over remaining points in region and update extremas
-    for (unsigned int i = 1 ; i < nbr_pts ; i++)
-    {
-      // x
-      float curr_coord = data.pts[neighbor_indices[i]].x;
-      if (curr_coord < min_x)
-      {
-        min_x = curr_coord;
-      }
-      if (curr_coord > max_x)
-      {
-        max_x = curr_coord;
-      }
-      // y
-      curr_coord = data.pts[neighbor_indices[i]].y;
-      if (curr_coord < min_y)
-      {
-        min_y = curr_coord;
-      }
-      if (curr_coord > max_y)
-      {
-        max_y = curr_coord;
-      }
-      // z
-      curr_coord = data.pts[neighbor_indices[i]].z;
-      if (curr_coord < min_z)
-      {
-        min_z = curr_coord;
-      }
-      if (curr_coord > max_z)
-      {
-        max_z = curr_coord;
-      }
-    }
-
-    // --------------------------
-    result[result_idx++] = max_x - min_x;
-    result[result_idx++] = max_y - min_y;
-    result[result_idx++] = max_z - min_z;
-  }
-
-  // --------------------------
   // Compute bounding box in the principle components of the point cloud
   if (use_pca_bbox_)
   {
@@ -382,4 +329,56 @@ void BoundingBox::computeBoundingBoxFeatures(const robot_msgs::PointCloud& data,
     result[result_idx++] = max_v3 - min_v3;
   }
 
+  // --------------------------
+  // Compute bounding box of the xyz point cloud
+  if (use_raw_bbox_)
+  {
+    // Initialize extrema values to the first coordinate in the interest region
+    float min_x = data.pts[neighbor_indices[0]].x;
+    float min_y = data.pts[neighbor_indices[0]].y;
+    float min_z = data.pts[neighbor_indices[0]].z;
+    float max_x = min_x;
+    float max_y = min_y;
+    float max_z = min_z;
+
+    // Loop over remaining points in region and update extremas
+    for (unsigned int i = 1 ; i < nbr_pts ; i++)
+    {
+      // x
+      float curr_coord = data.pts[neighbor_indices[i]].x;
+      if (curr_coord < min_x)
+      {
+        min_x = curr_coord;
+      }
+      if (curr_coord > max_x)
+      {
+        max_x = curr_coord;
+      }
+      // y
+      curr_coord = data.pts[neighbor_indices[i]].y;
+      if (curr_coord < min_y)
+      {
+        min_y = curr_coord;
+      }
+      if (curr_coord > max_y)
+      {
+        max_y = curr_coord;
+      }
+      // z
+      curr_coord = data.pts[neighbor_indices[i]].z;
+      if (curr_coord < min_z)
+      {
+        min_z = curr_coord;
+      }
+      if (curr_coord > max_z)
+      {
+        max_z = curr_coord;
+      }
+    }
+
+    // --------------------------
+    result[result_idx++] = max_x - min_x;
+    result[result_idx++] = max_y - min_y;
+    result[result_idx++] = max_z - min_z;
+  }
 }
