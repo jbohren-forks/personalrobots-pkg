@@ -86,7 +86,7 @@ namespace cloud_io
       if (line_type.substr (0, 7) == "COLUMNS")
       {
         int remaining_tokens = st.size () - (1 + 3);
-	specified_channel_count = st.size() - 1; // need this to make ARRAY work
+        specified_channel_count = st.size () - 1; // need this to make ARRAY work
         points.set_chan_size (remaining_tokens);
         for (int i = 0; i < remaining_tokens; i++)
         {
@@ -123,16 +123,16 @@ namespace cloud_io
       // this assumes that you will already have seen the "real" channel names
       if (line_type.substr (0, 5) == "ARRAY")
       {
-	array_width = atoi (st.at(1).c_str());
-	array_height = atoi (st.at(2).c_str());
-	points.set_chan_size (specified_channel_count + 2);
-	points.chan[specified_channel_count].name = "array_width";
-	points.chan[specified_channel_count+1].name = "array_height";
-	points.chan[specified_channel_count].set_vals_size(1);
-	points.chan[specified_channel_count+1].set_vals_size(1);
-	points.chan[specified_channel_count].vals[0] = array_width;
-	points.chan[specified_channel_count+1].vals[0] = array_height;
-	continue;
+        array_width = atoi (st.at (1).c_str ());
+        array_height = atoi (st.at (2).c_str ());
+        points.set_chan_size (specified_channel_count + 2);
+        points.chan[specified_channel_count].name = "array_width";
+        points.chan[specified_channel_count+1].name = "array_height";
+        points.chan[specified_channel_count].set_vals_size (1);
+        points.chan[specified_channel_count+1].set_vals_size (1);
+        points.chan[specified_channel_count].vals[0] = array_width;
+        points.chan[specified_channel_count+1].vals[0] = array_height;
+        continue;
       }
 
       // Nothing of the above? We must have points then
@@ -149,7 +149,7 @@ namespace cloud_io
       points.pts[idx].z = atof (st.at (2).c_str ());
       for (int i = 0; i < specified_channel_count-3; i++)
         points.chan[i].vals[idx] = atof (st.at (i+3).c_str ());
-      
+
       idx++;
     }
     // Close file

@@ -62,7 +62,7 @@ class PCDGenerator
   public:
 
     // ROS messages
-    robot_msgs::PointCloud msg_cloud_;
+    PointCloud msg_cloud_;
 
     string file_name_, cloud_topic_;
     double rate_;
