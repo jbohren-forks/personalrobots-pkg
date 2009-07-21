@@ -99,6 +99,7 @@ void initCS0Params()
 
   BoundingBox* bounding_box = new BoundingBox(true, false);
   bounding_box->useSpectralInformation(spectral_shape);
+  bounding_box->setBoundingBoxRadius(-1.0);
 
   // ---------------
   cs0_feature_descriptors.push_back(spectral_shape);
@@ -146,6 +147,7 @@ void initCS1Params()
 
   BoundingBox* bounding_box = new BoundingBox(true, false);
   bounding_box->useSpectralInformation(spectral_shape);
+  bounding_box->setBoundingBoxRadius(-1.0);
 
   // ---------------
   cs1_feature_descriptors.push_back(spectral_shape);
