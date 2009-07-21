@@ -73,7 +73,7 @@ namespace planning_environment
 	bool isEnvironmentSafe(void) const;
 	
 	/** \brief Check if the full state of the robot is valid (ignoring constraints) */
-	bool isStateValid(const planning_models::StateParams *state) const;
+	bool isStateCollisionFree(const planning_models::StateParams *state) const;
 
 	/** \brief Check if the full state of the robot is valid (including path constraints) */
 	bool isStateValidOnPath(const planning_models::StateParams *state) const;

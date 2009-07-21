@@ -83,7 +83,7 @@ protected:
     
     void stateUpdate(void)
     {	
-	bool valid = planningMonitor_->isStateValid(planningMonitor_->getRobotState());
+	bool valid = planningMonitor_->isStateCollisionFree(planningMonitor_->getRobotState());
 	std_msgs::Byte msg;
 	msg.data = valid ? 1 : 0;
 	if (last_ != msg.data)

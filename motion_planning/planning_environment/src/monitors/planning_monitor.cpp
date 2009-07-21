@@ -267,7 +267,7 @@ bool planning_environment::PlanningMonitor::transformJoint(const std::string &na
     return true;
 }
 
-bool planning_environment::PlanningMonitor::isStateValid(const planning_models::StateParams *state) const
+bool planning_environment::PlanningMonitor::isStateCollisionFree(const planning_models::StateParams *state) const
 {
     getEnvironmentModel()->lock();
     getKinematicModel()->lock();
