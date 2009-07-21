@@ -59,7 +59,7 @@ Stanleyi::Stanleyi()
   descriptor_ = setupImageDescriptors();
   if(getenv("DEBUG") != NULL) {
     for(size_t i=0; i<descriptor_.size(); i++) { 
-      descriptor_[i]->setDebug(true);
+      descriptor_[i]->debug_ = true;
     }
   }
   srand ( time(NULL) ); //For randomly selecting points.
@@ -169,7 +169,7 @@ void Stanleyi::collectObjectsFromImageVectorized(int samples_per_img, vector<obj
 	success = false;
 	break;
       }
-      obj->features[descriptor_[j]->name_] = cvVector2Eigen(results[j][i]);
+      obj->features[descriptor_[j]->getName()] = cvVector2Eigen(results[j][i]);
     }
     if(success) {
       objects->push_back(obj);
@@ -264,15 +264,16 @@ void Stanleyi::makeClassificationVideo(string bagfile, Dorylus& d, int samples_p
 
       //cout << response_nm.Nrows() << " " << response_nm.Ncols() << endl;
 
+      int size = ceil(log(ceil(abs(response_nm(1,1)))));
       if(response_nm(1,1) > 0) {
-	cvCircle(vis, cvPoint(col, row), 2, cvScalar(0,255,0), 2);
+	cvCircle(vis, cvPoint(col, row), size, cvScalar(0,255,0), -1);
 	if(mask)
-	  cvCircle(mask, cvPoint(col, row), 2, cvScalar(0,255,0), 2);
+	  cvCircle(mask, cvPoint(col, row), size, cvScalar(0,255,0), -1);
       }
       else {
-	cvCircle(vis, cvPoint(col, row), 2, cvScalar(0,0,255), 2);
+	cvCircle(vis, cvPoint(col, row), size, cvScalar(0,0,255), -1);
 	if(mask)
-	  cvCircle(mask, cvPoint(col, row), 2, cvScalar(0,0,255), 2);
+	  cvCircle(mask, cvPoint(col, row), size, cvScalar(0,0,255), -1);
       }
     }
 
