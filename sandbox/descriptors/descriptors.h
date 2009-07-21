@@ -23,7 +23,8 @@ typedef cv::Vector< cv::Vector<float> > vvf;
 ****************************************************************************/
 
 /**
- * Temporary class representing image keypoint.  This should be in opencv soon.
+ * @class Keypoint
+ * @brief Temporary class representing image keypoint.  This should be in opencv soon.
  */
 class Keypoint
 {
@@ -44,7 +45,8 @@ class Keypoint
 
 
 /**
- * 1D histogram class.  Deprecated.  
+ * @class Histogram
+ * @brief 1D histogram class.  Deprecated.  
  */
 class Histogram {
 public:
@@ -72,7 +74,8 @@ private:
 ****************************************************************************/
 
 /**
- * Abstract base class for all descriptors.
+ * @class ImageDescriptor
+ * @brief Abstract base class for all descriptors.
  */
 class ImageDescriptor {
  public:
@@ -100,8 +103,6 @@ class ImageDescriptor {
   //! Clean up any data specific to computation on a particular image.
   virtual void clearImageCache() {}
   //! Show the input image and a red + at the point at which the descriptor is being computed.
-  void commonDebug(int row, int col);
-  //! Show the input image and a red + at the point at which the descriptor is being computed.
   void commonDebug(Keypoint kp, IplImage* vis = NULL);
   //! Sets the img_ pointer and clears the image cache.
   virtual void setImage(IplImage* img);
@@ -126,7 +127,8 @@ class ImageDescriptor {
 ****************************************************************************/
 
 /**
- * Histogram of oriented gradients.  Wraps the opencv descriptor.
+ * @class HogWrapper
+ * @brief Histogram of oriented gradients.  Wraps the opencv descriptor.
  */
 class HogWrapper : public ImageDescriptor {
  public:
@@ -146,7 +148,8 @@ class HogWrapper : public ImageDescriptor {
 ****************************************************************************/
 
 /**
- * Abstract base class for descriptors that use integral images.
+ * @class IntegralImageDescriptor
+ * @brief Abstract base class for descriptors that use integral images.
  */
 class IntegralImageDescriptor : public ImageDescriptor {
   
@@ -171,7 +174,8 @@ class IntegralImageDescriptor : public ImageDescriptor {
 };
 
 /**
- * Haar descriptor like those from Viola-Jones.
+ * @class HaarDescriptor
+ * @brief Haar descriptor like those from Viola-Jones.
  */
 class HaarDescriptor : public IntegralImageDescriptor {
  public:
@@ -188,7 +192,8 @@ class HaarDescriptor : public IntegralImageDescriptor {
 vector<ImageDescriptor*> setupDefaultHaarDescriptors();
 
 /**
- * Experimental texture descriptor based on integral images.  TODO: Add more textures, make scale be determined by keypoint.
+ * @class IntegralImageTexture
+ * @brief Experimental texture descriptor based on integral images.  TODO: Add more textures, make scale be determined by keypoint.
  */
 class IntegralImageTexture : public IntegralImageDescriptor {
  public:
@@ -206,7 +211,8 @@ class IntegralImageTexture : public IntegralImageDescriptor {
 ****************************************************************************/
 
 /**
- * Class to load, save, and extract contour fragments. 
+ * @class ContourFragmentManager
+ * @brief Class to load, save, and extract contour fragments. 
  */
 class ContourFragmentManager {
  public:
@@ -235,7 +241,8 @@ class ContourFragmentManager {
 };
 
 /**
- * Descriptor based on chamfer matching of contour fragments.  Under construction.
+ * @class ContourFragmentDescriptor
+ * @brief Descriptor based on chamfer matching of contour fragments.  Under construction.
  */
 class ContourFragmentDescriptor : public ImageDescriptor {
  public:
@@ -261,7 +268,8 @@ class ContourFragmentDescriptor : public ImageDescriptor {
 ****************************************************************************/
 
 /**
- * Abstract base class for all descriptors based on superpixels.
+ * @class SuperpixelStatistic
+ * @brief Abstract base class for all descriptors based on superpixels.
  */
 class SuperpixelStatistic : public ImageDescriptor {
  public:
@@ -284,6 +292,10 @@ class SuperpixelStatistic : public ImageDescriptor {
   IplImage* createSegmentMask(int label, CvRect* rect);
 };
 
+/**
+ * @class SuperpixelColorHistogram
+ * @brief Descriptor that segments the image, then computes a histogram of hue and saturation values for each segment.
+ */
 class SuperpixelColorHistogram : public SuperpixelStatistic {
  public:
   std::vector<CvHistogram*> histograms_cv_;
