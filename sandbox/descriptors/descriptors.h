@@ -16,7 +16,7 @@
 #include <sys/stat.h>
 
 typedef cv::Vector< cv::Vector<float> > vvf;
-
+#define CVSHOW(name, img) cvNamedWindow(name); cvShowImage(name, img)
   
 /***************************************************************************
 ***********  Misc. useful classes.
@@ -113,14 +113,14 @@ class ImageDescriptor {
 ***********  SURF (Not yet implemented.)
 ****************************************************************************/
 
-/* class SurfWrapper : public ImageDescriptor { */
-/*  public: */
-/*   bool extended_; */
+class SurfWrapper : public ImageDescriptor {
+ public:
+  bool extended_;
 
-/*   SurfWrapper(bool extended); */
-/*   ~SurfWrapper(); */
-/*   virtual void compute(IplImage* img, const cv::Vector<Keypoint>& points, vvf& results) {}; */
-/* } */
+  SurfWrapper(bool extended);
+  ~SurfWrapper();
+  void compute(IplImage* img, const cv::Vector<Keypoint>& points, vvf& results);
+};
 
 /***************************************************************************
 ***********  Hog

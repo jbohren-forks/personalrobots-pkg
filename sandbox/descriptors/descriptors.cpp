@@ -42,8 +42,6 @@ using namespace std;
 using namespace cv;
 USING_PART_OF_NAMESPACE_EIGEN
 
-#define CVSHOW(name, img) cvNamedWindow(name); cvShowImage(name, img)
-
 /****************************************************************************
 *************  Generally Useful Functions
 *****************************************************************************/
@@ -215,8 +213,106 @@ void ImageDescriptor::commonDebug(Keypoint kp, IplImage* vis) {
 
 
 /****************************************************************************
+*************  ImageDescriptor::SurfWrapper
+****************************************************************************/
+
+SurfWrapper::SurfWrapper(bool extended) :
+  ImageDescriptor(), 
+  extended_(extended)
+{
+  char buf[100];
+  sprintf(buf, "SURF_extended%d", extended_);
+  name_.assign(buf);
+
+  if(extended_)
+    result_size_ = 128;
+  else
+    result_size_ = 64;
+}
+
+SurfWrapper::~SurfWrapper() {
+}
+
+//! Currently the size param of the descriptor is set by the keypoint size.  This should maybe be a descriptor level param.
+void SurfWrapper::compute(IplImage* img, const cv::Vector<Keypoint>& points, vvf& results) {
+  setImage(img);
+
+  // -- Get params.
+  int threshold = 500; // For keypoint detection; we aren't using this.
+  CvSURFParams params;
+  if(extended_)
+    params = cvSURFParams(threshold, 1);
+  else
+    params = cvSURFParams(threshold, 0);
+
+  // -- Construct keypoints.
+  CvMemStorage* kp_storage = cvCreateMemStorage(0);
+  CvSeq* surf_kp = cvCreateSeq(0, sizeof(CvSeq), sizeof(CvSURFPoint), kp_storage);
+  for(size_t i=0; i<points.size(); i++) { 
+    assert(points[i].size > 0);
+    assert(points[i].size == 1); // Make sure I am testing things right.  TODO: remove this.
+
+    int laplacian = 1; //Not used for dense SURF computation.  Only involved in faster matching.
+    int direction = 0; //Filled in by extractSURF.  We don't use it anyway. 
+    int hessian = threshold+1; //We want all the points to be evaluated, so we make the hessian be larger than the threshold.
+    CvSURFPoint point = cvSURFPoint(cvPoint2D32f(points[i].pt.x, points[i].pt.y), 
+				    laplacian, points[i].size, direction, hessian);
+    cvSeqPush(surf_kp, &point);
+  }
+
+  // -- Get SURF features.
+  CvMemStorage* feature_storage = cvCreateMemStorage(0);
+  CvSeq* features = NULL;
+  IplImage* gray = cvCreateImage(cvGetSize(img), IPL_DEPTH_8U, 1);
+  cvCvtColor(img, gray, CV_BGR2GRAY);
+  cvExtractSURF(gray, NULL, &surf_kp, &features, feature_storage, params);
+
+
+  // -- Put into vvf results.
+  CvSeqReader reader;
+  cvStartReadSeq(features, &reader);
+  results.reserve(points.size());
+  for(size_t i=0; i<points.size(); ++i) {
+    // -- Get the feature.
+    CV_NEXT_SEQ_ELEM(reader.seq->elem_size, reader);
+    const float* feature = (const float*)reader.ptr;
+
+    // -- Check length.
+    int length = (int)(features->elem_size/sizeof(float));
+    assert(length == (int)result_size_);
+
+    // -- Copy into result.
+    results.push_back(Vector<float>());
+    results[i] = Vector<float>(result_size_, 0);
+    for(size_t j=0; j<result_size_; ++j) {
+      results[i][j] = feature[j];
+    }
+  }
+
+  // -- Display for debugging.
+  if(debug_) {
+    cout << "Debugging " << name_ << endl;
+    cout << "Vector: ";
+    for(size_t i=0; i<results[0].size(); ++i) {
+      cout << results[0][i] << " ";
+    }
+    cout << endl;
+    commonDebug(points[0]);
+  }
+
+  // -- Cleanup.
+  cvClearSeq(surf_kp);
+  cvClearMemStorage(kp_storage);
+  cvClearSeq(features);
+  cvClearMemStorage(feature_storage);
+}
+
+
+
+/****************************************************************************
 *************  ImageDescriptor::HogWrapper
 ****************************************************************************/
+
 HogWrapper::HogWrapper() : 
   ImageDescriptor(), 
   hog_()
@@ -252,7 +348,9 @@ void HogWrapper::compute(IplImage* img, const Vector<Keypoint>& points, vvf& res
   Vector<Point> locations;
   locations.reserve(points.size());
   for(size_t i=0; i<points.size(); i++) {
-    Point pt(round(points[i].pt.x), round(points[i].pt.y));
+    //Subtracting off half winSize since the feature is computed in a window where location[i] is 
+    //the upper left corner.  points[i] is the center of the window.
+    Point pt(round(points[i].pt.x) - hog_.winSize.width/2, round(points[i].pt.y) - hog_.winSize.height/2); 
     locations.push_back(pt);
   }
   
@@ -853,6 +951,7 @@ void SuperpixelColorHistogram::compute(IplImage* img, const Vector<Keypoint>& po
   else if(seg_provider_ != NULL && seg_ == NULL) {
     seg_ = seg_provider_->seg_;
     index_ = seg_provider_->index_;
+
   }
 
   // -- Make sure we have access to HSV image.
@@ -1333,9 +1432,8 @@ IntegralImageTexture::IntegralImageTexture(int scale, IntegralImageDescriptor* i
 }
 
 void IntegralImageTexture::compute(IplImage* img, const Vector<Keypoint>& points, vvf& results) {
-  clearImageCache();
+  setImage(img);
   results.clear();
-  img_ = img;
 
   for(size_t i=0; i<points.size(); i++) {
     compute(img, points[i], results[i]);
