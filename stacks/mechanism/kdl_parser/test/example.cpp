@@ -49,7 +49,8 @@ int main()
   if (!treeFromFile("pr2_desc.xml", my_tree)) return -1;
 
   // walk through tree
-  SegmentMap::const_iterator root = my_tree.getRootSegment();
+  //SegmentMap::const_iterator root = my_tree.getRootSegment();
+  SegmentMap::const_iterator root = my_tree.getSegment("base_link");
   cout << "Found root " << root->second.segment.getName() << " with " << root->second.children.size() << " children" << endl;
   for (unsigned int i=0; i<root->second.children.size(); i++){
     SegmentMap::const_iterator child = root->second.children[i];
