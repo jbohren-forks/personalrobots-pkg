@@ -132,6 +132,55 @@
   <property name="stereo_ry" value="0.00" />
   <property name="stereo_rz" value="0.00" />
 
+  <!-- Made by Kevin for A2 sensor package -->
+  <!-- Origin is center mount screw on sensor plate mount -->
+  <!-- When mounted properly, should have same origin as head plate frame -->
+  <macro name="pr2_head_sensor_package" params="name hd_name stereo_name parent *origin">
+    <joint name="${name}_fixed_joint" type="fixed" />
+    <link name="${name}_link" >
+      <parent name="${parent}" />
+      <insert_block name="origin" />
+      <joint name="${name}_fixed_joint" />
+      <inertial>
+	<!-- Needs verification with CAD -->	
+	<mass value="0.05" />
+	<com xyz="0 0 0" />
+	<inertia ixx="0.001" ixy="0.0" ixz="0.0"
+		 iyy="0.001" iyz="0.0" izz="0.01" />
+      </inertial>
+
+      <!-- Should probably get real visuals here at some point -->
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <map name="gazebo_material" flag="gazebo">
+          <elem key="material" value="PR2/Blue" />
+        </map>
+        <geometry name="${name}_sensor_visual">
+          <mesh scale="0.01 0.01 0.01" />
+        </geometry>
+      </visual>
+
+      <collision>
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <geometry name="${name}_sensor_collision">
+          <box size="0.01 0.01 0.01" />
+        </geometry>
+      </collision>
+    </link>
+
+    <!-- Prosilica Camera -->
+    <prosilica_cam name="${hd_name}" parent="${name}_link" >
+    <!-- Center of camera is 109mm right of center screw, 35mm up -->
+    <!-- Camera is slightly recessed from front, where is camera origin? Lens? -->
+      <origin xyz="0 -0.109 0.035" rpy="0 0 0" />        
+    </prosilica_cam>
+
+    <!-- Stereocam -->
+    <double_stereo_camera name="${stereo_name}" parent="${name}_link" >
+      <origin xyz="0.0 0.0 0.003" rpy="0 0 0" />
+    </double_stereo_camera>
+  </macro>
+
   <!-- Made by Kevin for double stereo camera for PR-2 Beta. -->
   <!-- Needs calibration verification, and CAD check. -->
   <macro name="double_stereo_camera" params="name parent *origin">
@@ -143,7 +192,7 @@
       <joint name="${name}_fixed_joint" />
       <inertial>
 	<!-- Needs verification with CAD -->	
-	<mass value="0.05" />
+	<mass value="0.1" />
 	<com xyz="0 0 0" />
 	<inertia ixx="0.001" ixy="0.0" ixz="0.0"
 		 iyy="0.001" iyz="0.0" izz="0.01" />

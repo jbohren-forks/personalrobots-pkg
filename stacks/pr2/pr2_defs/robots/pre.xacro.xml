@@ -44,15 +44,12 @@
     <origin xyz="0.1 0 0.235" rpy="0 0 0" />
   </pr2_tilting_laser_alpha2>
 
-  <!-- Prosilica Camera -->
-  <prosilica_cam name="high_def" parent="head_plate_frame">
-    <origin xyz="0 0.0275 0.025" rpy="0 0 0" />        
-  </prosilica_cam>
-
-  <!-- Stereocam -->
-  <stereo_camera name="stereo" parent="head_plate_frame">
-    <origin xyz="0.0 -0.0254 0.0" rpy="0 0 0" />
-  </stereo_camera>
+  <!-- Camera package: double stereo, prosilica -->
+  <pr2_head_sensor_package name="sensor_mount" hd_name="high_def" 
+			   stereo_name="double_stereo" 
+			   parent="head_plate_frame">
+    <origin xyz="0.0 0.0 0.0" rpy="0 0 0" />
+  </pr2_head_sensor_package>
 
   <pr2_arm side="r" reflect="-1" parent="torso_lift_link">
     <origin xyz="0 -0.188 0.0" rpy="0 0 0" />
