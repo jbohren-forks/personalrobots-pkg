@@ -3,7 +3,7 @@
  */
 rejectable(m2_goals.Active g_9);
 g_9.outlet_id = 4;
-/*
+
 rejectable(m2_goals.Active g_8);
 g_8.outlet_id = 38;
 
