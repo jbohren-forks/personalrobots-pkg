@@ -108,7 +108,7 @@ bool Pr2BaseController::init(mechanism::RobotState *robot, const ros::NodeHandle
   node_.param<double> ("eps", eps_, 1e-5);
   node_.param<double> ("cmd_vel_trans_eps", cmd_vel_trans_eps_, 1e-5);
   node_.param<double> ("cmd_vel_rot_eps", cmd_vel_rot_eps_, 1e-5);
-  node_.param<std::string> ("cmd_topic", cmd_topic_, "cmd_vel");
+  node_.param<std::string> ("cmd_topic", cmd_topic_, "/cmd_vel");
   cmd_sub_ = node_.subscribe<robot_msgs::PoseDot>(cmd_topic_, 1, &Pr2BaseController::CmdBaseVelReceived, this);
 
   //casters
