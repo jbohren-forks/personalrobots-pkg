@@ -36,6 +36,7 @@
 
 #include "ompl_planning/Model.h"
 #include "ompl_planning/planners/kinematicRRTSetup.h"
+#include "ompl_planning/planners/kinematicpRRTSetup.h"
 #include "ompl_planning/planners/kinematicLazyRRTSetup.h"
 #include "ompl_planning/planners/kinematicSBLSetup.h"
 #include "ompl_planning/planners/kinematicESTSetup.h"
@@ -56,6 +57,9 @@ void ompl_planning::Model::createMotionPlanningInstances(std::vector< boost::sha
 	
 	if (type == "kinematic::RRT")
 	    add_planner<kinematicRRTSetup>(cfgs[i]);
+	else
+	if (type == "kinematic::pRRT")
+	    add_planner<kinematicpRRTSetup>(cfgs[i]);
 	else
 	if (type == "kinematic::LazyRRT")
 	    add_planner<kinematicLazyRRTSetup>(cfgs[i]);

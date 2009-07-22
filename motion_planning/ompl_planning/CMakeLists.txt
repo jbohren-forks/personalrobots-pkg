@@ -11,6 +11,7 @@ rospack_add_library(ompl_planning_helpers src/helpers/ompl_planner/PlannerSetup.
                                           src/helpers/ompl_planner/kinematicIKSBLSetup.cpp
                                           src/helpers/ompl_planner/kinematicLazyRRTSetup.cpp
                                           src/helpers/ompl_planner/kinematicRRTSetup.cpp
+                                          src/helpers/ompl_planner/kinematicpRRTSetup.cpp
                                           src/helpers/ompl_planner/kinematicKPIECESetup.cpp
                                           src/helpers/ompl_planner/kinematicLBKPIECESetup.cpp
                                           src/helpers/ompl_planner/kinematicSBLSetup.cpp
