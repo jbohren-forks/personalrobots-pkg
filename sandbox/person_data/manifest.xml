@@ -1,0 +1,17 @@
+<package>
+  <description brief="person_data">
+
+     person_data
+
+  </description>
+  <author>Ian Goodfellow/ goodfellow@willowgarage.com</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://pr.willowgarage.com/wiki/person_data</url>
+  <depend package="roscpp"/>
+  <depend package="std_msgs"/>
+  <depend package="joy" />
+
+</package>
+
+

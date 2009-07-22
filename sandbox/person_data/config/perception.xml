@@ -1,0 +1,106 @@
+<launch>
+  <include file="$(find pr2_alpha)/$(env ROBOT).machine" />
+
+  <node pkg="mux" type="throttle" args="3.0 base_scan base_scan_throttled" />
+  <node pkg="mux" type="throttle" args="3.0 tilt_scan tilt_scan_throttled" />
+
+
+  <!-- Stereo image processing -->
+  <group ns="stereo">
+
+
+    <param name="fps" type="int" value="30"/> 
+    <param name="exposure" type="int" value="6"/>
+
+    <param name="do_colorize" type="bool" value="True"/>
+    <param name="do_rectify" type="bool" value="True"/>
+    <param name="do_stereo" type="bool" value="True"/>
+    <param name="do_calc_points" type="bool" value="True"/>
+    <param name="do_keep_coords" type="bool" value="True"/>
+  </group>
+
+<!--  node pkg="stereo_image_proc" type="stereoproc" respawn="false" machine="four" -->
+
+  <!-- Downsampled version for remove viewing -->
+  <!-- node pkg="mux" type="throttle" args="1.0 stereo/cloud stereo/cloud_throttled" machine="four" -->
+
+  <!-- Downsampled version of stereo for recording -->
+  
+  <node pkg="mux" type="throttle" args="1.0 wide_stereo/raw_stereo wide_stereo/raw_stereo_throttled" machine="four"/>
+  <node pkg="mux" type="throttle" args="1.0 narrow_stereo/raw_stereo narrow_stereo/raw_stereo_throttled" machine="three"/>
+
+  <node pkg="pr2_mechanism_controllers" type="send_laser_traj_cmd_ms2.py" args="laser_tilt_controller" />
+
+
+  <!-- Filter for tilt laser shadowing/veiling -->
+  <node pkg="laser_scan" type="scan_to_cloud" respawn="true" machine="three" name="tilt_shadow_filter">
+    <param name="scan_filters" textfile="$(find laser_scan)/default_scan_shadows.xml" />
+    <param name="cloud_filters" textfile="$(find laser_scan)/point_cloud_footprint.filters.xml" />
+    <param name="scan_topic" value="tilt_scan" />
+    <param name="cloud_topic" value="tilt_scan_filtered" />  
+    <param name="high_fidelity" value="true" />
+  </node>
+
+  <!-- Filter for base laser shadowing/veiling -->
+  <node pkg="laser_scan" type="scan_to_cloud" respawn="true" machine="three" name="base_shadow_filter" >
+    <param name="scan_filters" textfile="$(find laser_scan)/default_scan_shadows.xml" />
+    <param name="cloud_filters" textfile="$(find laser_scan)/point_cloud_footprint.filters.xml" />
+    <param name="scan_topic" value="base_scan" />
+    <param name="cloud_topic" value="base_scan_marking" />
+  </node>
+
+  <!-- Laser scan assembler for tilt laser -->
+  <node pkg="point_cloud_assembler" type="laser_scan_assembler_srv" output="screen" name="laser_scan_assembler" respawn="true">
+    <remap from="scan_in" to="tilt_scan"/>
+    <param name="filters" textfile="$(find laser_scan)/default_scan_shadows.xml" />
+    <param name="tf_cache_time_secs" type="double" value="10.0" />
+    <param name="max_scans" type="int" value="1000" />
+    <param name="ignore_laser_skew" type="bool" value="true" />
+    <param name="fixed_frame" type="string" value="odom_combined" />
+    <param name="downsample_factor" type="int" value="1" />
+  </node>
+
+   <!-- Setup for detecting the plug on the base -->
+  <node pkg="point_cloud_assembler" type="laser_scan_assembler_srv" output="screen"  name="plugs_laser_scan_assembler" respawn="true">
+    <remap from="scan_in" to="tilt_scan"/>
+    <param name="tf_cache_time_secs" type="double" value="10.0" />
+    <param name="max_scans" type="int" value="400" />
+    <param name="ignore_laser_skew" type="bool" value="true" />
+    <param name="fixed_frame" type="string" value="torso_lift_link" />
+    <param name="downsample_factor" type="int" value="2" />
+  </node>
+
+  <node pkg="point_cloud_assembler" type="point_cloud_snapshotter" output="screen" name="plugs_snapshotter" respawn="true">
+    <remap from="laser_scanner_signal" to="laser_tilt_controller/laser_scanner_signal"/>
+    <remap from="build_cloud" to="plugs_laser_scan_assembler/build_cloud" />
+    <remap from="full_cloud" to="plug_snapshot_cloud" />
+  </node>
+
+  <!-- Plug in hand tracker -->
+  <group ns="plug_detector" clear_params="true">
+    <param name="display" type="int" value="0"/>
+    <param name="stay_active" type="bool" value="false" />
+
+    <!-- ROI settings -->
+    <param name="roi_policy" type="str" value="TargetFrame"/>
+    <param name="target_frame_id" type="str" value="r_gripper_tool_frame" />
+    <param name="resize_factor_found" type="double" value="3.0"/>
+    <param name="resize_factor_failed" type="double" value="1.2"/>
+    <param name="target_roi_size" type="int" value="800"/>
+
+    <!-- Plug checkerboard -->
+    <param name="square_size" type="double" value="0.0042"/>
+    <param name="board_width" type="int" value="4"/>
+    <param name="board_height" type="int" value="5"/>
+
+  </group>
+  <node pkg="outlet_detection" type="plug_node" respawn="false" output="screen" machine="four"/>
+
+
+  <!-- Generate single sweep scan -->
+  <node pkg="point_cloud_assembler" type="point_cloud_srv" output="screen" name="point_cloud_srv" />
+
+
+
+
+</launch>
