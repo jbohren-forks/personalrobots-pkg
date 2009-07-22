@@ -102,7 +102,7 @@ void SpectralShape::computeFeatures(cv::Vector<cv::Vector<float> >& results)
   const vector<Eigen::Vector3d*>& eigen_values = spectral_info_->getEigenValues();
   if (eigen_values.size() != nbr_interest_pts)
   {
-    ROS_ERROR("SpectralShape::computeFeatures spectral information doesnt match number of samples");
+    ROS_ERROR("SpectralShape::computeFeatures inconsistent spectral information");
     return;
   }
 

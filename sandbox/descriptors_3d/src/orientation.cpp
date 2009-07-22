@@ -86,11 +86,12 @@ void Orientation::compute(const robot_msgs::PointCloud& data,
                           const cv::Vector<robot_msgs::Point32*>& interest_pts,
                           cv::Vector<cv::Vector<float> >& results)
 {
+  results.resize(interest_pts.size());
+
   if (spectral_info_ == NULL)
   {
     if (analyzeInterestPoints(data, data_kdtree, interest_pts) < 0)
     {
-      results.resize(interest_pts.size());
       return;
     }
   }
@@ -106,11 +107,12 @@ void Orientation::compute(const robot_msgs::PointCloud& data,
                           const cv::Vector<vector<int>*>& interest_region_indices,
                           cv::Vector<cv::Vector<float> >& results)
 {
+  results.resize(interest_region_indices.size());
+
   if (spectral_info_ == NULL)
   {
     if (analyzeInterestRegions(data, data_kdtree, interest_region_indices) < 0)
     {
-      results.resize(interest_region_indices.size());
       return;
     }
   }
@@ -123,14 +125,18 @@ void Orientation::compute(const robot_msgs::PointCloud& data,
 // --------------------------------------------------------------
 void Orientation::computeFeatures(cv::Vector<cv::Vector<float> >& results)
 {
+  // Assumes it has been correctly resized in compute() above
+  unsigned int nbr_interest_samples = results.size();
 
   const vector<Eigen::Vector3d*>& tangents = spectral_info_->getTangents();
   const vector<Eigen::Vector3d*>& normals = spectral_info_->getNormals();
+  if (nbr_interest_samples != tangents.size())
+  {
+    ROS_ERROR("Orientation::computeFeatures inconsistent spectral information");
+    return;
+  }
 
-  unsigned int nbr_interest_pts = tangents.size();
-  results.resize(nbr_interest_pts);
-
-  for (size_t i = 0 ; i < nbr_interest_pts ; i++)
+  for (size_t i = 0 ; i < nbr_interest_samples ; i++)
   {
     size_t feature_idx = 0;
 

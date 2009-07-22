@@ -110,6 +110,11 @@ void BoundingBox::compute(const robot_msgs::PointCloud& data,
     eig_vecs_max = &(spectral_info_->getTangents());
     eig_vecs_mid = &(spectral_info_->getMiddleEigenVectors());
     eig_vecs_min = &(spectral_info_->getNormals());
+    if (eig_vecs_max->size() != nbr_interest_pts)
+    {
+      ROS_ERROR("BoundingBox::compute inconsistent spectral information");
+      return;
+    }
   }
 
   // ----------------------------------------
@@ -182,6 +187,11 @@ void BoundingBox::compute(const robot_msgs::PointCloud& data,
     eig_vecs_max = &(spectral_info_->getTangents());
     eig_vecs_mid = &(spectral_info_->getMiddleEigenVectors());
     eig_vecs_min = &(spectral_info_->getNormals());
+    if (eig_vecs_max->size() != nbr_interest_regions)
+    {
+      ROS_ERROR("BoundingBox::compute inconsistent spectral information");
+      return;
+    }
   }
 
   // ----------------------------------------
