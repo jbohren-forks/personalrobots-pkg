@@ -1,5 +1,5 @@
 <launch>
-   <!-- send head_cart.xml to param server -->
+  <!-- send head_cart.xml to param server -->
   <param name="robot_description" command="$(find xacro)/xacro.py '$(find pr2_defs)/robots/hca.xacro.xml'" />
 
   <!-- push robot_description to factory and spawn robot in gazebo -->

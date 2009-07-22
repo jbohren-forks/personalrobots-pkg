@@ -1,6 +1,6 @@
 <launch>
 
-  <!-- send pr2.xml to parameter server as a string, allow retrieval by various components whe needs it (Mechanism Control, BaseControllerNode, etc...) -->
+  <!-- send urdf to param server -->
   <param name="robot_description" command="$(find xacro)/xacro.py '$(find pr2_defs)/robots/prototype1.xacro.xml'" />
 
   <!-- push robot_description to factory and spawn robot in gazebo -->

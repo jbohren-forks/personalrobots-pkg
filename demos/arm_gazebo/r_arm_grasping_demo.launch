@@ -39,6 +39,6 @@
   <param name="table_description" command="$(find xacro)/xacro.py '$(find examples_gazebo)/table_defs/table_defs.xml'" />
   <node pkg="gazebo_plugin" type="urdf2factory" args="table_description 0 0 0.01 0 0 0 table_model" respawn="false" output="screen" />
 
-  <include file="$(find pr2_gazebo)/coffee_cup.launch" />
+  <include file="$(find examples_gazebo)/coffee_cup.launch" />
 </launch>
 
