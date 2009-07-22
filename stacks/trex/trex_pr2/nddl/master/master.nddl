@@ -189,14 +189,7 @@ M2Controller::Holds{
 	}
       }
       else{
-	// Take the next step towards the goal. This will either navigate to the goal, or navigate to the
-	// next connector along the way. It would be ideal to be able to specify for the nav stack that
-	// we do not care about orientation, and that we want to get as close as possible to the goal, but the criteria
-	// for success is based on a given error bound. Thus we could get close if possible, but permit a successful termination
-	// when we cannot get any closer but are within that bound. This is desirable since the precise approach is based
-	// on calculations that deal with position of approach and location of the socket or door and these are encoded internally
-	// in the domains
-	contains_start(MoveBehavior.Active cmd);
+	contains_start(navigator.Active cmd);
 	concurrent(cmd.end, end);
 	eq_pose_msg(cmd.object, m2_active.object);
       }
