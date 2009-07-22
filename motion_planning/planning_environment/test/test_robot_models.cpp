@@ -42,14 +42,14 @@
 
 TEST(Loading, Simple)
 {
-    planning_environment::RobotModels m("robotdesc/pr2");
+    planning_environment::RobotModels m("robot_description");
 
     EXPECT_TRUE(m.getKinematicModel().get() != NULL);
 }
 
 TEST(ForwardKinematics, RuntimeArm)
 {
-    planning_environment::RobotModels m("robotdesc/pr2");
+    planning_environment::RobotModels m("robot_description");
     planning_models::KinematicModel* kmodel = m.getKinematicModel().get();
     
     int gid = kmodel->getGroupID("right_arm");
