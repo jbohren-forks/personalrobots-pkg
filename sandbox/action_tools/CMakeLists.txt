@@ -19,7 +19,7 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
 genmsg()
 
-#rospack_add_executable(move_base_server src/move_base_server.cpp)
-rospack_add_executable(move_base_client src/move_base_client.cpp)
+rospack_add_executable(move_base_server src/move_base_server.cpp)
+#rospack_add_executable(move_base_client src/move_base_client.cpp)
 
 #add_subdirectory(test)
