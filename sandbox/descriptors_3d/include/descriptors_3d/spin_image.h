@@ -92,17 +92,25 @@ class SpinImage: public SpectralAnalysis
     /*!
      * \brief Sets the dimensions of the spin image
      *
-     * The spin image is defined
-     *  beta                 \n
-     *   ^                   \n
-     *   |_ _ _ _            \n
-     *   |_|_|_|_|           \n
-     *   x_|_|_|_|           \n
-     *   |_|_|_|_|           \n
-     *   -----------> alpha  \n
-     *   (x = center point of spin image)
+     * Example spin image definition with 3 rows and 4 cols, using notation
+     * described in [1]: \n
+     *   beta                 \n
+     *    ^                   \n
+     *    |_ _ _ _            \n
+     *    |_|_|_|_|           \n
+     *    x_|_|_|_|           \n
+     *    |_|_|_|_|           \n
+     *    -----------> alpha  \n
+     * (x = center point of spin image)
+     *
+     * \param row_res The cell resolution along the beta axis
+     * \param col_res The cell resolution along the alpha axis
+     * \param nbr_rows The number of cells along the beta axis
+     * \param nbr_cols The number of cells along the alpha axis
      *
      * \warning nbr_rows must be odd
+     *
+     * \return 0 on success, otherwise negative value on error
      */
     // --------------------------------------------------------------
     int setImageDimensions(double row_res, double col_res, unsigned int nbr_rows, unsigned int nbr_cols);
@@ -209,15 +217,23 @@ class SpinImage: public SpectralAnalysis
                           const Eigen::Vector3d& center_pt,
                           cv::Vector<float>& spin_image);
 
+    /*! \brief The axis that the spin image revolves around */
     Eigen::Vector3d spin_axis_;
+    /*! \brief The type of the spinning axis */
     spin_axis_type_t spin_axis_type_;
 
+    /*! \brief Flag if useInterestRegionOnly() has been called */
     bool use_interest_region_only_;
 
+    /*! \brief Flag if setImageDimensions() has been called */
     bool dimensions_defined_;
+    /*! \brief The cell resolution along the beta axis */
     double row_res_;
+    /*! \brief The cell resolution along the alpha axis */
     double col_res_;
+    /*! \brief The number of cells along the beta axis */
     unsigned int nbr_rows_;
+    /*! \brief The number of cells along the alpha axis */
     unsigned int nbr_cols_;
 };
 
