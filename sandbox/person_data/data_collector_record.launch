@@ -18,7 +18,7 @@
   <node pkg="topic_tools" type="mux" machine="two" args="/laser_tilt_controller/laser_scanner_signal_muxed /laser_tilt_controller/laser_scanner_signal"/> 
   <node pkg="rosrecord" type="rosrecord" machine="two" args="-f /bags/person_data/laser_ /base_scan_muxed /tilt_scan_muxed /laser_tilt_controller/laser_scanner_signal"/>
 
-  <node pkg="topic_tools" type="mux" machine="two" args="/odom_muxed /odom">
+  <node pkg="topic_tools" type="mux" machine="two" args="/odom_muxed /odom"/>
   <node pkg="rosrecord" type="rosrecord" machine="two" args="-f /bags/person_data/state_ /odom_muxed "/>
 
 </launch>

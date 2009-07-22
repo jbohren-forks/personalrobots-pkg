@@ -1,1 +1,1 @@
-echo "startRecording.sh doesn't do anything yet"
+roslaunch start_recording.launch

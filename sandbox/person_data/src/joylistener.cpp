@@ -6,6 +6,7 @@
 #include <ros/ros.h>
 #include <std_msgs/String.h>
 #include "joy/Joy.h"
+#include <string>
 
 const static int headButton = 6;
 const static int deadmanButton = 4;
@@ -16,6 +17,15 @@ static bool recording = true;
 static bool headButtonPressed = false;
 static bool deadmanButtonPressed = false;
 
+ros::Publisher debug_pub;
+
+void IA3N_INFO(const char * msg)
+{
+  std_msgs::String rmsg;
+  rmsg.data = std::string(msg);
+  debug_pub.publish(rmsg);
+  ROS_INFO(msg);
+}
 
 void startRecording()
 {
@@ -31,43 +41,43 @@ void stopRecording()
 	recording = false;
 }
 
+
+
 void joyCallback(const joy::Joy::ConstPtr & msg)
 {
+        IA3N_INFO("Received joystick message!");
+
 	int n = msg->get_buttons_size();
 	
-	if (headButton >= n || deadmanButton >= n || recordButton >= n || stopButton >= n)
-	{
-		ROS_INFO("Received message with too few buttons");
-		return;
-	}
+	//messages are sized so that they are just long enough to include the last 1
 
 	
-	if (msg->buttons[headButton])
+	if (headButton < n && msg->buttons[headButton])
 	{
-		ROS_INFO("Head button pushed down");
+		IA3N_INFO("Head button pushed down");
 		headButtonPressed = true;
 	}
 	else
 	{
-		ROS_INFO("Head button released");
+		IA3N_INFO("Head button released");
 		headButtonPressed = false;
 	}
 
-	if (msg->buttons[deadmanButton])
+	if (deadmanButton < n && msg->buttons[deadmanButton])
 	{
-		ROS_INFO("Deadman button pushed down");
+		IA3N_INFO("Deadman button pushed down");
 		deadmanButtonPressed = true;
 	}
 	else
 	{
-		ROS_INFO("Deadman button released");
+		IA3N_INFO("Deadman button released");
 		deadmanButtonPressed = false;
 	}
 
 
 	if (headButtonPressed && ! deadmanButtonPressed)
 	{
-		if (msg->buttons[recordButton])
+		if (recordButton < n && msg->buttons[recordButton])
 		{
 			if (!recording)
 			{
@@ -75,11 +85,11 @@ void joyCallback(const joy::Joy::ConstPtr & msg)
 			}
 			else
 			{
-				ROS_INFO("You are already recording!");
+				IA3N_INFO("You are already recording!");
 			}
 		}
 
-		if (msg->buttons[stopButton])
+		if (stopButton < n && msg->buttons[stopButton])
 		{
 			if (recording)
 			{
@@ -87,7 +97,7 @@ void joyCallback(const joy::Joy::ConstPtr & msg)
 			}
 			else
 			{
-				ROS_INFO("You have already stopped recording");
+				IA3N_INFO("You have already stopped recording");
 			}
 		}
 	}
@@ -96,7 +106,7 @@ void joyCallback(const joy::Joy::ConstPtr & msg)
 	//for ( int i = 0; i < n; i++)
 	//{
 	//	if (msg->buttons[i])
-	//		ROS_INFO("Button %d pressed",i);
+	//		IA3N_INFO("Button %d pressed",i);
 	//}
 }
 
@@ -104,6 +114,8 @@ int main(int argc, char ** argv)
 {
 	ros::init(argc, argv, "joylistener");
 	ros::NodeHandle n;
+	debug_pub = n.advertise<std_msgs::String>("ia3n_debug",100);
 	ros::Subscriber chatter_sub = n.subscribe("joy",100,joyCallback);
+	IA3N_INFO("joylistener subscribed to joy");
 	ros::spin();
 }
