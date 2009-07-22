@@ -61,7 +61,7 @@ def listen(duration):
     print "Listening to /tf_message for %f seconds"%duration
     time.sleep(duration)
     print "Done Listening"
-    return tf_listener.all_frames_as_dot()
+    return tf_listener.allFramesAsDot()
     
 
 def poll(node_name):
