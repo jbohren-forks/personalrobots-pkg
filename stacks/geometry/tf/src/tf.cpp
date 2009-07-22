@@ -927,8 +927,8 @@ std::string Transformer::allFramesAsDot() const
 
       mstream << std::fixed; //fixed point notation
       mstream.precision(3); //3 decimal places
-      mstream << "\"" << frameIDs_reverse[counter]   << "\"" << " -> "
-              << "\"" << frameIDs_reverse[parent_id] << "\"" << "[label=\""
+      mstream << "\"" << frameIDs_reverse[parent_id]   << "\"" << " -> "
+              << "\"" << frameIDs_reverse[counter] << "\"" << "[label=\""
               << "Authority: " << authority << "\\n"
               << getFrame(counter)->getListLength() << " Readings averaging " << rate <<" Hz\\n"
               << " Latest reading: \\n" << getFrame(counter)->getLatestTimestamp().toSec()
