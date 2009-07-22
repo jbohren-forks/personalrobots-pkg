@@ -446,8 +446,12 @@ void URDF2Gazebo::convertLink(TiXmlElement *root, robot_desc::URDF::Link *link, 
                 addKeyValue(joint, "axis", "1 0 0");
             }
             else
-            {        
-                addKeyValue(joint, "axis", values2str(3, link->joint->axis));
+            {
+                btTransform currentTransformCopy( transform );
+                currentTransformCopy.setOrigin( btVector3(0, 0, 0) );
+                btVector3 rotatedJointAxis = currentTransformCopy * btVector3( link->joint->axis[0], link->joint->axis[1], link->joint->axis[2] );
+                double rotatedJointAxisArray[3] = { rotatedJointAxis.x(), rotatedJointAxis.y(), rotatedJointAxis.z() };
+                addKeyValue(joint, "axis", values2str(3, rotatedJointAxisArray));
                 
                 double tmpAnchor[3];
                 
