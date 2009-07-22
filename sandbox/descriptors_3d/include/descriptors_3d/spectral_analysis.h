@@ -95,7 +95,7 @@ class SpectralAnalysis: public Descriptor3D
     /*!
      * \brief
      *
-     * \warning This method cannot be called if setSupportRadius has already
+     * \warning This method cannot be called if setSpectralRadius has already
      *          been called.
      *
      * \return 0 on success, otherwise negative value on error
@@ -120,7 +120,7 @@ class SpectralAnalysis: public Descriptor3D
      * \return 0 on success, otherwise negative value on error
      */
     // --------------------------------------------------------------
-    int setSupportRadius(double support_radius);
+    int setSpectralRadius(double support_radius);
     //@}
 
     // ===================================================================

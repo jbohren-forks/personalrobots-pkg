@@ -48,7 +48,7 @@ M3NParams GLOBAL_m3n_params;
 void initNodeParams()
 {
   SpectralShape* spectral_shape = new SpectralShape();
-  spectral_shape->setSupportRadius(0.15);
+  spectral_shape->setSpectralRadius(0.15);
 
   Orientation* orientation = new Orientation();
   if (orientation->useSpectralInformation(spectral_shape) < 0)
@@ -81,7 +81,7 @@ void initCS0Params()
   // ---------------
   // Features
   SpectralShape* spectral_shape = new SpectralShape();
-  spectral_shape->setSupportRadius(0.2286);
+  spectral_shape->setSpectralRadius(0.2286);
 
   Orientation* orientation = new Orientation();
   if (orientation->useSpectralInformation(spectral_shape) < 0)
@@ -128,7 +128,7 @@ void initCS1Params()
   // ---------------
   // Features
   SpectralShape* spectral_shape = new SpectralShape();
-  spectral_shape->setSupportRadius(-1);
+  spectral_shape->setSpectralRadius(-1);
 
   Orientation* orientation = new Orientation();
   if (orientation->useSpectralInformation(spectral_shape) < 0)
@@ -618,7 +618,6 @@ int main()
   constructRandomField("training_data.xyz_label_conf", training_rf);
   training_rf.saveNodeFeatures("tempo/train_node_unknown.txt");
   training_rf.saveCliqueFeatures("tempo/train_rf_unknown");
-  /*
    // ----------------------------------------------------------
    // Train M3N model
    ROS_INFO("Starting to train...");
@@ -630,17 +629,18 @@ int main()
    return -1;
    }
    ROS_INFO("Successfully trained M3n model");
-   m3n_model.saveToFile("m3n_models/jul20_1pm/2cs_pn_potts");
-   */
+   m3n_model.saveToFile("m3n_models/2cs_pn_potts");
 
   // ----------------------------------------------------------
   // Load M3N model
+
   M3NModel m3n_model2;
-  if (m3n_model2.loadFromFile("m3n_models/jul20_1pm/2cs_pn_potts") < 0)
+  if (m3n_model2.loadFromFile("m3n_models/2cs_pn_potts") < 0)
   {
     ROS_ERROR("couldnt load model");
     return -1;
   }
+
 
   populateParameters();
 

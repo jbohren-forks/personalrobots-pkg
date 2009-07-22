@@ -91,7 +91,7 @@ int SpectralAnalysis::useSpectralInformation(SpectralAnalysis* spectral_info)
 // --------------------------------------------------------------
 /* See function definition */
 // --------------------------------------------------------------
-int SpectralAnalysis::setSupportRadius(double support_radius)
+int SpectralAnalysis::setSpectralRadius(double support_radius)
 {
   if (spectral_info_ == NULL)
   {
