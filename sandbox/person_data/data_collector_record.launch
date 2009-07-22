@@ -1,22 +1,24 @@
 <launch>
   <include file="$(find pr2_alpha)/$(env ROBOT).machine" />
 
-
+  <node pkg="topic_tools" type="mux" args="/wide_stereo/raw_stereo_muxed /wide_stereo/raw_stereo" machine="four"/>
   <node pkg="rosrecord" type="rosrecord" machine="four" args="-f /bags/person_data/wide_stereo_ /wide_stereo/raw_stereo_muxed"/>
+
+  <node pkg="topic_tools" type="mux" args="/narrow_stereo/raw_stereo_muxed /narrow_stereo/raw_stereo" machine="four"/>
   <node pkg="rosrecord" type="rosrecord" machine="four" args="-f /bags/person_data/narrow_stereo_ /narrow_stereo/raw_stereo_muxed"/>
   
+<node pkg="topic_tools" type="mux" args="/tf_message_muxed /tf_message" machine="two"/>
 <node pkg="rosrecord" type="rosrecord" machine="two" args="-f /bags/person_data/tf_ /tf_message_muxed"/>
 
-
-  <node pkg="rosrecord" type="rosrecord" machine="two" args="-f /bags/person_data/tf_ /tf_message_muxed"/>
-
+  <node pkg="topic_tools" type="mux" machine="two" args="/mechanism_state_muxed /mechanism_state"/>
   <node pkg="rosrecord" type="rosrecord" machine="two" args="-f /bags/person_data/mech_state /mechanism_state_muxed"/>
 
-  <node pkg="rosrecord" type="rosrecord" machine="two" args="-f /bags/person_data/laser_ /base_scan_muxed /tilt_scan_muxed /laser_tilt_controller/laser_scanner_signal_muxed "/>
+  <node pkg="topic_tools" type="mux" machine="two" args="/base_scan_muxed  /base_scan"/>
+  <node pkg="topic_tools" type="mux" machine="two" args="/tilt_scan_muxed /tilt_scan"/>
+  <node pkg="topic_tools" type="mux" machine="two" args="/laser_tilt_controller/laser_scanner_signal_muxed /laser_tilt_controller/laser_scanner_signal"/> 
+  <node pkg="rosrecord" type="rosrecord" machine="two" args="-f /bags/person_data/laser_ /base_scan_muxed /tilt_scan_muxed /laser_tilt_controller/laser_scanner_signal"/>
 
+  <node pkg="topic_tools" type="mux" machine="two" args="/odom_muxed /odom">
   <node pkg="rosrecord" type="rosrecord" machine="two" args="-f /bags/person_data/state_ /odom_muxed "/>
-
-  <node pkg="rosrecord" type="rosrecord" machine="two" args="-f /bags/person_data/actionstate /wait_k_messages_action/feedback_muxed  /move_head2/wait_k_messages_action/feedback_muxed /move_head/wait_k_messages_action/feedback_muxed /head_controller/set_command_array_muxed "/>
-
 
 </launch>

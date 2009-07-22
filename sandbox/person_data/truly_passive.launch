@@ -1,6 +1,8 @@
 <launch>
   <include file="$(find pr2_alpha)/$(env ROBOT).machine" />
 
+<!-- controllers-->
+  <include file="$(find person_data)/config/controllers.xml" />
 
 <!-- perception-->
   <include file="$(find person_data)/config/perception.xml" />
