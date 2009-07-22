@@ -187,8 +187,8 @@ class TestCameras(unittest.TestCase):
         print " wait ",TEST_INIT_WAIT," sec for objects and head tilt to settle."
         time.sleep(TEST_INIT_WAIT)
         print " subscribe stereo left image from ROS "
-        rospy.Subscriber("/stereo/left/image", image_msg, self.imageInput) # this is a camera mounted on PR2 head (left stereo camera)
-        rospy.Subscriber("/stereo/left/cam_info", caminfo_msg, self.caminfoInput) # this is a camera mounted on PR2 head (left stereo camera)
+        rospy.Subscriber("/wide_stereo/left/image", image_msg, self.imageInput) # this is a camera mounted on PR2 head (left stereo camera)
+        rospy.Subscriber("/wide_stereo/left/cam_info", caminfo_msg, self.caminfoInput) # this is a camera mounted on PR2 head (left stereo camera)
         rospy.init_node(NAME, anonymous=True)
         timeout_t = time.time() + TEST_DURATION
         while not rospy.is_shutdown() and not self.success and time.time() < timeout_t:
