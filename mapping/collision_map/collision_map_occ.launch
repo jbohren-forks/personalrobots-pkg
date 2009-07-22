@@ -3,8 +3,6 @@
     <remap from="cloud_in" to="full_cloud_annotated" />
     <remap from="cloud_incremental_in" to="tilt_scan_cloud_annotated" />
 
-    <remap from="robot_description" to="robotdesc/pr2" />
-    
     <param name="publish_occlusion" type="bool" value="true" />
     <param name="mark_self_occlusion" type="bool" value="false" />
 
