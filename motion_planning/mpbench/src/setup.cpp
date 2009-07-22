@@ -469,7 +469,14 @@ namespace mpbench {
   {
     if ( ! title.empty())
       os << title << "\n";
-    os << prefix << "world spec:                   " << world_spec << "\n";
+    os << prefix << "world spec:                   " << world_spec << "\n"
+       << prefix << "costmap spec:                 " << costmap_spec << "\n"
+       << prefix << "costmap_name:                 " << costmap_name << "\n"
+       << prefix << "costmap_resolution:           " << costmap_resolution << "\n"
+       << prefix << "costmap_inscribed_radius:     " << costmap_inscribed_radius << "\n"
+       << prefix << "costmap_circumscribed_radius: " << costmap_circumscribed_radius << "\n"
+       << prefix << "costmap_inflation_radius:     " << costmap_inflation_radius << "\n"
+       << prefix << "costmap_obstacle_cost:        " << costmap_obstacle_cost << "\n";
     mpglue::requestspec::dump(os, "", prefix);
   }
   
@@ -780,11 +787,30 @@ namespace mpbench {
   SetupOptions(std::string const & _world_spec,
 	       std::string const & planner_spec,
 	       std::string const & robot_spec,
-	       std::string const & costmap_spec)
-    : mpglue::requestspec(planner_spec, robot_spec, costmap_spec),
-      world_spec(_world_spec)
+	       std::string const & _costmap_spec)
+    : mpglue::requestspec(planner_spec, robot_spec),
+      world_spec(_world_spec),
+      costmap_spec(_costmap_spec),
+      costmap_name("sfl"),
+      costmap_resolution(0.05),
+      costmap_inscribed_radius(0.325),
+      costmap_circumscribed_radius(0.46),
+      costmap_inflation_radius(0.55),
+      costmap_obstacle_cost(costmap_2d::INSCRIBED_INFLATED_OBSTACLE)
   {
     sfl::tokenize(world_spec, ':', world_tok);
+    sfl::tokenize(costmap_spec, ':', costmap_tok);
+    
+    sfl::token_to(costmap_tok, 0, costmap_name);
+    if (sfl::token_to(costmap_tok, 1, costmap_resolution))
+      costmap_resolution *= 1e-3;
+    if (sfl::token_to(costmap_tok, 2, costmap_inscribed_radius))
+      costmap_inscribed_radius *= 1e-3;
+    if (sfl::token_to(costmap_tok, 3, costmap_circumscribed_radius))
+      costmap_circumscribed_radius *= 1e-3;
+    if (sfl::token_to(costmap_tok, 4, costmap_inflation_radius))
+      costmap_inflation_radius *= 1e-3;
+    sfl::token_to(costmap_tok, 5, costmap_obstacle_cost);
   }
 
 
@@ -801,7 +827,11 @@ namespace mpbench {
        << prefix << "        obst_gray is the gray level at which obstacles get inserted\n"
        << prefix << "            default is 64, use negative numbers to invert the scale\n"
        << prefix << "        xml_filename is optional, but needed to define tasks etc\n"
-       << prefix << "  xml : xml_filename\n";
+       << prefix << "  xml : xml_filename\n"
+       << prefix << "\navailable costmap specs:\n"
+       << prefix << "  sfl | ros [: resolution [: inscribed [: circumscribed [: inflation ]]]]\n"
+       << prefix << "        all lengths and radii in millimeters\n"
+       << prefix << "        defaults: resol. 50mm, inscr. 325mm, circ. 460mm, infl. 550mm\n";
     mpglue::requestspec::help(os, "", prefix);
   }
   

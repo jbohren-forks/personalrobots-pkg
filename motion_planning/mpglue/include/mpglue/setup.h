@@ -119,12 +119,11 @@ namespace mpglue {
   
   
   /**
-     All parameters required for initializing a planning request from .
+     All parameters required for initializing a planning request.
   */
   struct requestspec {    
     requestspec(std::string const & planner_spec,
-		std::string const & robot_spec,
-		std::string const & costmap_spec);
+		std::string const & robot_spec);
     
     static void help(/** The stream to write the help to. */
 		     std::ostream & os,
@@ -148,24 +147,15 @@ namespace mpglue {
     
     std::string const planner_spec;
     std::string const robot_spec;
-    std::string const costmap_spec;
     
     tokenlist_t planner_tok;
     tokenlist_t robot_tok;
-    tokenlist_t costmap_tok;
     
     std::string robot_name;
     double robot_inscribed_radius;
     double robot_circumscribed_radius;
     double robot_nominal_forward_speed;
     double robot_nominal_rotation_speed;
-    
-    std::string costmap_name;
-    double costmap_resolution;	         /**< cell size [m] (square cells) */
-    double costmap_inscribed_radius;     /**< radius [m] of CSpace "lethal" inflation */
-    double costmap_circumscribed_radius; /**< radius [m] of "non-lethal" inflation */
-    double costmap_inflation_radius;     /**< distance [m] of freespace cells from obstacles */
-    int costmap_obstacle_cost;
   };
   
 }

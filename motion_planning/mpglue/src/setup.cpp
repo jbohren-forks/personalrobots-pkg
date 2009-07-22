@@ -62,18 +62,11 @@ namespace mpglue {
       os << title << "\n";
     os << prefix << "planner spec:                 " << planner_spec << "\n"
        << prefix << "robot spec:                   " << robot_spec << "\n"
-       << prefix << "costmap spec:                 " << costmap_spec << "\n"
        << prefix << "robot_name:                   " << robot_name << "\n"
        << prefix << "robot_inscribed_radius:       " << robot_inscribed_radius << "\n"
        << prefix << "robot_circumscribed_radius:   " << robot_circumscribed_radius << "\n"
        << prefix << "robot_nominal_forward_speed:  " << robot_nominal_forward_speed << "\n"
-       << prefix << "robot_nominal_rotation_speed: " << robot_nominal_rotation_speed << "\n"
-       << prefix << "costmap_name:                 " << costmap_name << "\n"
-       << prefix << "costmap_resolution:           " << costmap_resolution << "\n"
-       << prefix << "costmap_inscribed_radius:     " << costmap_inscribed_radius << "\n"
-       << prefix << "costmap_circumscribed_radius: " << costmap_circumscribed_radius << "\n"
-       << prefix << "costmap_inflation_radius:     " << costmap_inflation_radius << "\n"
-       << prefix << "costmap_obstacle_cost:        " << costmap_obstacle_cost << "\n";
+       << prefix << "robot_nominal_rotation_speed: " << robot_nominal_rotation_speed << "\n";
   }
   
   
@@ -159,26 +152,17 @@ namespace mpglue {
   
   requestspec::
   requestspec(std::string const & _planner_spec,
-	      std::string const & _robot_spec,
-	      std::string const & _costmap_spec)
+	      std::string const & _robot_spec)
     : planner_spec(_planner_spec),
       robot_spec(_robot_spec),
-      costmap_spec(_costmap_spec),
       robot_name("pr2"),
       robot_inscribed_radius(0.325),
       robot_circumscribed_radius(0.46),
       robot_nominal_forward_speed(0.6),	// approx human walking speed
-      robot_nominal_rotation_speed(0.6), // XXXX guesstimate
-      costmap_name("sfl"),
-      costmap_resolution(0.05),
-      costmap_inscribed_radius(0.325),
-      costmap_circumscribed_radius(0.46),
-      costmap_inflation_radius(0.55),
-      costmap_obstacle_cost(costmap_2d::INSCRIBED_INFLATED_OBSTACLE)
+      robot_nominal_rotation_speed(0.6) // XXXX guesstimate
   {
     sfl::tokenize(planner_spec, ':', planner_tok);
     sfl::tokenize(robot_spec, ':', robot_tok);
-    sfl::tokenize(costmap_spec, ':', costmap_tok);
     
     sfl::token_to(robot_tok, 0, robot_name);
     if (sfl::token_to(robot_tok, 1, robot_inscribed_radius))
@@ -189,17 +173,6 @@ namespace mpglue {
       robot_nominal_forward_speed *= 1e-3;
     if (sfl::token_to(robot_tok, 4, robot_nominal_rotation_speed))
       robot_nominal_rotation_speed *= 1e-3;
-    
-    sfl::token_to(costmap_tok, 0, costmap_name);
-    if (sfl::token_to(costmap_tok, 1, costmap_resolution))
-      costmap_resolution *= 1e-3;
-    if (sfl::token_to(costmap_tok, 2, costmap_inscribed_radius))
-      costmap_inscribed_radius *= 1e-3;
-    if (sfl::token_to(costmap_tok, 3, costmap_circumscribed_radius))
-      costmap_circumscribed_radius *= 1e-3;
-    if (sfl::token_to(costmap_tok, 4, costmap_inflation_radius))
-      costmap_inflation_radius *= 1e-3;
-    sfl::token_to(costmap_tok, 5, costmap_obstacle_cost);
   }
   
   
@@ -228,11 +201,7 @@ namespace mpglue {
        << prefix << "        inscribed radius (millimeters), default 325mm\n"
        << prefix << "        circumscribed radius (millimeters), default 460mm\n"
        << prefix << "        nominal forward speed (millimeters per second), default 600mm/s\n"
-       << prefix << "        nominal rotation speed (milliradians per second), default 600mrad/s\n"
-       << prefix << "\navailable costmap specs:\n"
-       << prefix << "  sfl | ros [: resolution [: inscribed [: circumscribed [: inflation ]]]]\n"
-       << prefix << "        all lengths and radii in millimeters\n"
-       << prefix << "        defaults: resol. 50mm, inscr. 325mm, circ. 460mm, infl. 550mm\n";
+       << prefix << "        nominal rotation speed (milliradians per second), default 600mrad/s\n";
   }
-
+  
 }

@@ -100,8 +100,17 @@ namespace mpbench {
 	      std::string const & prefix) const;
     
     std::string const world_spec;
+    std::string const costmap_spec;
     
     mpglue::tokenlist_t world_tok;
+    mpglue::tokenlist_t costmap_tok;
+    
+    std::string costmap_name;
+    double costmap_resolution;	         /**< cell size [m] (square cells) */
+    double costmap_inscribed_radius;     /**< radius [m] of CSpace "lethal" inflation */
+    double costmap_circumscribed_radius; /**< radius [m] of "non-lethal" inflation */
+    double costmap_inflation_radius;     /**< distance [m] of freespace cells from obstacles */
+    int costmap_obstacle_cost;
   };
   
   typedef std::vector<boost::shared_ptr<episode::taskspec> > tasklist_t;
