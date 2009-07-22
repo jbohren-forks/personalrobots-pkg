@@ -114,7 +114,7 @@ void SpinImage::compute(const robot_msgs::PointCloud& data,
   else
   {
     // must be CUSTOM
-    spin_axis_.normalize();
+    //spin_axis_.normalize();
   }
 
   // ----------------------------------------
@@ -149,7 +149,7 @@ void SpinImage::compute(const robot_msgs::PointCloud& data,
       {
         spin_axis_[j] = (*((*normals)[i]))[j];
       }
-      spin_axis_.normalize();
+      //spin_axis_.normalize();
     }
     else if (spin_axis_type_ == TANGENT)
     {
@@ -157,7 +157,7 @@ void SpinImage::compute(const robot_msgs::PointCloud& data,
       {
         spin_axis_[j] = (*((*tangents)[i]))[j];
       }
-      spin_axis_.normalize();
+      //spin_axis_.normalize();
     }
 
     computeSpinImage(data, neighbor_indices, center_pt, results[i]);
@@ -208,7 +208,7 @@ void SpinImage::compute(const robot_msgs::PointCloud& data,
   else
   {
     // must be CUSTOM
-    spin_axis_.normalize();
+    //spin_axis_.normalize();
   }
 
   // ----------------------------------------
@@ -258,7 +258,7 @@ void SpinImage::compute(const robot_msgs::PointCloud& data,
       {
         spin_axis_[j] = (*((*normals)[i]))[j];
       }
-      spin_axis_.normalize();
+      //spin_axis_.normalize();
     }
     else if (spin_axis_type_ == TANGENT)
     {
@@ -266,7 +266,7 @@ void SpinImage::compute(const robot_msgs::PointCloud& data,
       {
         spin_axis_[j] = (*((*tangents)[i]))[j];
       }
-      spin_axis_.normalize();
+      //spin_axis_.normalize();
     }
 
     computeSpinImage(data, *neighbors_for_spin_img, center_pt, results[i]);
