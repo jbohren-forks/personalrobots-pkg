@@ -475,9 +475,7 @@ void EnvironmentROBARM3D::DiscretizeAngles()
 void EnvironmentROBARM3D::ComputeContAngles(const short unsigned int coord[NUMOFLINKS], double angle[NUMOFLINKS])
 {
     for(int i = 0; i < EnvROBARMCfg.num_joints; i++)
-    {
-      angle[i] = coord[i]*EnvROBARMCfg.angledelta[i];
-    }
+		  angle[i] = coord[i]*EnvROBARMCfg.angledelta[i];
 }
 
 void EnvironmentROBARM3D::ComputeCoord(const double angle[], short unsigned int coord[NUMOFLINKS])
@@ -486,30 +484,21 @@ void EnvironmentROBARM3D::ComputeCoord(const double angle[], short unsigned int 
 
     for(int i = 0; i < EnvROBARMCfg.num_joints; i++)
     {
-        //NOTE: Added 3/1/09
-        pos_angle = angle[i];
-        if(pos_angle < 0.0)
-            pos_angle += 2*PI_CONST;
+			//NOTE: Added 3/1/09
+			pos_angle = angle[i];
+			if(pos_angle < 0.0)
+					pos_angle += 2*PI_CONST;
 
-        coord[i] = (int)((pos_angle + EnvROBARMCfg.angledelta[i]*0.5)/EnvROBARMCfg.angledelta[i]);
+			coord[i] = (int)((pos_angle + EnvROBARMCfg.angledelta[i]*0.5)/EnvROBARMCfg.angledelta[i]);
 
-	if(coord[i] == EnvROBARMCfg.anglevals[i])
-	  coord[i] = 0;
+			if(coord[i] == EnvROBARMCfg.anglevals[i])
+				coord[i] = 0;
     }
 }
 
 // convert a cell in the occupancy grid to point in real world 
 void EnvironmentROBARM3D::Cell2ContXYZ(int x, int y, int z, double *pX, double *pY, double *pZ)
 {
-//     // offset the arm in the map so that it is placed in the middle of the world 
-//     int xoffset_c = EnvROBARMCfg.EnvWidth_c-1 - ARM_WORKSPACE/EnvROBARMCfg.GridCellWidth;  //arm can't reach that far behind it, so offset X by arm length
-//     int yoffset_c = (EnvROBARMCfg.EnvHeight_c-1) / 2;
-//     int zoffset_c = (EnvROBARMCfg.EnvDepth_c-1) / 2;
-// 
-//     *pX = (x - xoffset_c) * EnvROBARMCfg.GridCellWidth + EnvROBARMCfg.GridCellWidth*0.5;
-//     *pY = (y - yoffset_c) * EnvROBARMCfg.GridCellWidth + EnvROBARMCfg.GridCellWidth*0.5;
-//     *pZ = (z - zoffset_c) *EnvROBARMCfg.GridCellWidth + EnvROBARMCfg.GridCellWidth*0.5;
-
     *pX = x * EnvROBARMCfg.GridCellWidth + EnvROBARMCfg.origin_m[0];
     *pY = y * EnvROBARMCfg.GridCellWidth + EnvROBARMCfg.origin_m[1];
     *pZ = z * EnvROBARMCfg.GridCellWidth + EnvROBARMCfg.origin_m[2];
@@ -518,15 +507,6 @@ void EnvironmentROBARM3D::Cell2ContXYZ(int x, int y, int z, double *pX, double *
 // convert a cell in the occupancy grid to point in real world
 void EnvironmentROBARM3D::Cell2ContXYZ(int x, int y, int z, double *pX, double *pY, double *pZ, double gridcell_m)
 {
-//     // offset the arm in the map so that it is placed in the middle of the world 
-//     int xoffset_c = ((EnvROBARMCfg.EnvWidth_m/gridcell_m)-1) - ARM_WORKSPACE/gridcell_m;  //arm can't reach that far behind it, so offset X by arm length
-//     int yoffset_c = ((EnvROBARMCfg.EnvHeight_m/gridcell_m)-1) / 2;
-//     int zoffset_c = ((EnvROBARMCfg.EnvDepth_m/gridcell_m-1)) / 2;
-// 
-//     *pX = (x - xoffset_c) * gridcell_m + gridcell_m*0.5;
-//     *pY = (y - yoffset_c) * gridcell_m + gridcell_m*0.5;
-//     *pZ = (z - zoffset_c) * gridcell_m + gridcell_m*0.5;
-
     *pX = x * gridcell_m + EnvROBARMCfg.origin_m[0];
     *pY = y * gridcell_m + EnvROBARMCfg.origin_m[1];
     *pZ = z * gridcell_m + EnvROBARMCfg.origin_m[2];
@@ -535,24 +515,6 @@ void EnvironmentROBARM3D::Cell2ContXYZ(int x, int y, int z, double *pX, double *
 // convert a point in real world to a cell in occupancy grid 
 void EnvironmentROBARM3D::ContXYZ2Cell(double x, double y, double z, short unsigned int *pX, short unsigned int *pY, short unsigned int *pZ)
 {
-    // offset the arm in the map so that it is placed in the middle of the world
-//     int xoffset_c = EnvROBARMCfg.EnvWidth_c-1  - ARM_WORKSPACE/EnvROBARMCfg.GridCellWidth;  //arm can't reach that far behind it, so offset X by arm length
-//     int yoffset_c = (EnvROBARMCfg.EnvHeight_c-1) / 2;
-//     int zoffset_c = (EnvROBARMCfg.EnvDepth_c-1) / 2;
-
-    //take the nearest cell
-//     *pX = (int)((x/EnvROBARMCfg.GridCellWidth) + xoffset_c);
-//     if(x + (xoffset_c*EnvROBARMCfg.GridCellWidth) < 0) *pX = 0;
-//     if(*pX >= EnvROBARMCfg.EnvWidth_c) *pX = EnvROBARMCfg.EnvWidth_c-1;
-// 
-//     *pY = (int)((y/EnvROBARMCfg.GridCellWidth) + yoffset_c);
-//     if(y + (yoffset_c*EnvROBARMCfg.GridCellWidth) < 0) *pY = 0;
-//     if(*pY >= EnvROBARMCfg.EnvHeight_c) *pY = EnvROBARMCfg.EnvHeight_c-1;
-// 
-//     *pZ = (int)((z/EnvROBARMCfg.GridCellWidth) + zoffset_c);
-//     if(z + (zoffset_c*EnvROBARMCfg.GridCellWidth) < 0) *pZ = 0;
-//     if(*pZ >= EnvROBARMCfg.EnvDepth_c) *pZ = EnvROBARMCfg.EnvDepth_c-1;
-
     *pX = (int)((x - EnvROBARMCfg.origin_m[0]) / EnvROBARMCfg.GridCellWidth);
     if(*pX >= EnvROBARMCfg.EnvWidth_c) *pX = EnvROBARMCfg.EnvWidth_c-1;
 
@@ -565,30 +527,6 @@ void EnvironmentROBARM3D::ContXYZ2Cell(double x, double y, double z, short unsig
 
 void EnvironmentROBARM3D::ContXYZ2Cell(double* xyz, double gridcellwidth, int dims_c[3], short unsigned int *pXYZ)
 {
-    // offset the arm in the map so that it is placed in the middle of the world
-//     int xoffset_c = dims_c[0]-1 - ARM_WORKSPACE/gridcellwidth;
-//     int yoffset_c = (dims_c[1]-1) / 2;
-//     int zoffset_c = (dims_c[2]-1) / 2;
-// 
-//     //take the nearest cell
-//     pXYZ[0] = (int)(xyz[0]/gridcellwidth + xoffset_c);
-//     if(xyz[0] + (xoffset_c * gridcellwidth) < 0)
-//         pXYZ[0] = 0;
-//     if(pXYZ[0] >= dims_c[0])
-//         pXYZ[0] = dims_c[0]-1;
-// 
-//     pXYZ[1] = (int)((xyz[1]/gridcellwidth) + yoffset_c);
-//     if(xyz[1] + (yoffset_c * gridcellwidth) < 0)
-//         pXYZ[1] = 0;
-//     if(pXYZ[1] >= dims_c[1])
-//         pXYZ[1] = dims_c[1]-1;
-// 
-//     pXYZ[2] = (int)((xyz[2]/gridcellwidth) + zoffset_c);
-//     if(xyz[2] + (zoffset_c * gridcellwidth) < 0) 
-//         pXYZ[2] = 0;
-//     if(pXYZ[2] >= dims_c[2]) 
-//         pXYZ[2] = dims_c[2]-1;
-
     pXYZ[0] = (int)((xyz[0] - EnvROBARMCfg.origin_m[0]) / gridcellwidth);
     if(pXYZ[0] >= dims_c[0])
       pXYZ[0] = dims_c[0]-1;
@@ -4885,7 +4823,7 @@ int EnvironmentROBARM3D::IsValidCoord(short unsigned int coord[NUMOFLINKS], shor
   else
   {
     int num = 0;
-    if(GetDistToClosestGoal(endeff_pos, &num) <= 1.25/EnvROBARMCfg.GridCellWidth)
+    if(GetDistToClosestGoal(endeff_pos, &num) <= .35/EnvROBARMCfg.GridCellWidth)
     { 
 //       printf("planning monitor: distance of endeff(%u %u %u) to goal #%i is %i\n", endeff_pos[0],endeff_pos[1],endeff_pos[2], num, GetDistToClosestGoal(endeff_pos, &num));
       // printf("checking %.3f %.3f %.3f %.3f %.3f %.3f %.3f\n",angles[0],angles[1],angles[2],angles[3],angles[4],angles[5],angles[6]);
