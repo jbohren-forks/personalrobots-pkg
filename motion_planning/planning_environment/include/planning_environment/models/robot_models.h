@@ -72,7 +72,8 @@ namespace planning_environment
 	    bool        hasParam(const std::string &param);
 	    std::string getParamString(const std::string &param, const std::string &def = "");
 	    double      getParamDouble(const std::string &param, double def);
-	    
+	    int         getParamInt(const std::string &param, int def);
+
 	private:
 	    
 	    std::string     description_;

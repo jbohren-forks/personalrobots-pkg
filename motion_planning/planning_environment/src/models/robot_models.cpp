@@ -185,6 +185,13 @@ double planning_environment::RobotModels::PlannerConfig::getParamDouble(const st
     return value;
 }
 
+int planning_environment::RobotModels::PlannerConfig::getParamInt(const std::string &param, int def)
+{
+    int value;
+    nh_.param(description_ + "_planning/planner_configs/" + config_ + "/" + param, value, def);
+    return value;
+}
+
 std::vector< boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> > planning_environment::RobotModels::getGroupPlannersConfig(const std::string &group)
 {
     std::string configs_list;
