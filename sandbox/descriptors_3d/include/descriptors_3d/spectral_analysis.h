@@ -82,6 +82,17 @@ class SpectralAnalysis: public Descriptor3D
 
     // --------------------------------------------------------------
     /*!
+     * \brief Clears out all computed spectral information.
+     */
+    // --------------------------------------------------------------
+    void clear();
+
+    // ===================================================================
+    /*! \name Required settings (one or the other) */
+    // ===================================================================
+    //@{
+    // --------------------------------------------------------------
+    /*!
      * \brief
      *
      * \warning This method cannot be called if setSupportRadius has already
@@ -110,7 +121,12 @@ class SpectralAnalysis: public Descriptor3D
      */
     // --------------------------------------------------------------
     int setSupportRadius(double support_radius);
+    //@}
 
+    // ===================================================================
+    /*! \name Accessors */
+    // ===================================================================
+    //@{
     // --------------------------------------------------------------
     /*!
      * \brief Returns the saved normals estimated for each interest point/region
@@ -164,6 +180,7 @@ class SpectralAnalysis: public Descriptor3D
     {
       return centroids_;
     }
+    //@}
 
   protected:
     int analyzeInterestPoints(const robot_msgs::PointCloud& data,
@@ -185,13 +202,6 @@ class SpectralAnalysis: public Descriptor3D
   private:
     double support_radius_;
     bool support_radius_defined_;
-
-    // --------------------------------------------------------------
-    /*!
-     * \brief
-     */
-    // --------------------------------------------------------------
-    void clear();
 
     void populateContainers(const robot_msgs::PointCloud& data, vector<int>& curr_region_indices, size_t idx);
 };

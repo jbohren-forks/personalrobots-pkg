@@ -73,6 +73,8 @@ class SpinImage: public SpectralAnalysis
     // --------------------------------------------------------------
     /*!
      * \brief Instantiates the SpinImage descriptor
+     *
+     * The feature vector format is: [row_1 ... row_n]
      */
     // --------------------------------------------------------------
     SpinImage() :
@@ -86,15 +88,19 @@ class SpinImage: public SpectralAnalysis
     /*! \name Required settings  */
     // ===================================================================
     //@{
-    // ^
-    // |_ _ _ _
-    // |_|_|_|_|
-    // x_|_|_|_|
-    // |_|_|_|_|
-    // 3 rows, 4 cols
     // --------------------------------------------------------------
     /*!
      * \brief Sets the dimensions of the spin image
+     *
+     * The spin image is defined
+     *  beta                 \n
+     *   ^                   \n
+     *   |_ _ _ _            \n
+     *   |_|_|_|_|           \n
+     *   x_|_|_|_|           \n
+     *   |_|_|_|_|           \n
+     *   -----------> alpha  \n
+     *   (x = center point of spin image)
      *
      * \warning nbr_rows must be odd
      */
@@ -103,7 +109,7 @@ class SpinImage: public SpectralAnalysis
     //@}
 
     // ===================================================================
-    /*! \name Optional settings  */
+    /*! \name Optional settings */
     // ===================================================================
     //@{
     // --------------------------------------------------------------
@@ -111,7 +117,7 @@ class SpinImage: public SpectralAnalysis
      * \brief Sets the spin axis (Beta axis as defined in [1]) to be the
      *        locally extracted normal
      *
-     * \warning setSpectralRadius() or useSpectralInformation() should also be called
+     * \warning setSpectralRadius() or useSpectralInformation() must also be called before compute()
      */
     // --------------------------------------------------------------
     inline void setAxisNormal()
@@ -124,7 +130,7 @@ class SpinImage: public SpectralAnalysis
      * \brief Sets the spin axis (Beta axis as defined in [1]) to be the
      *        locally extracted tangent
      *
-     * \warning setSpectralRadius() or useSpectralInformation() should also be called
+     * \warning setSpectralRadius() or useSpectralInformation() must also be called before compute()
      */
     // --------------------------------------------------------------
     inline void setAxisTangent()
@@ -149,7 +155,7 @@ class SpinImage: public SpectralAnalysis
      * \brief Indicates to compute the spin image with only points contained
      *        within given interest regions
      *
-     * \warning Only relevant when calling compute() with interest regions
+     * \warning This method is only relevant when calling compute() with interest regions
      */
     // --------------------------------------------------------------
     inline void useInterestRegionOnly()
@@ -158,11 +164,30 @@ class SpinImage: public SpectralAnalysis
     }
     //@}
 
+    // --------------------------------------------------------------
+    /*!
+     * \brief Computes the spin image descriptor, centered at each interest point
+     *
+     * \warning setImageDimensions and setAxisNormal/setAxisTangent/setAxisCustom must be called first
+     *
+     * \see Descriptor3D::compute
+     */
+    // --------------------------------------------------------------
     virtual void compute(const robot_msgs::PointCloud& data,
                          cloud_kdtree::KdTree& data_kdtree,
                          const cv::Vector<robot_msgs::Point32*>& interest_pts,
                          cv::Vector<cv::Vector<float> >& results);
 
+    // --------------------------------------------------------------
+    /*!
+     * \brief Computes the spin image descriptor, centered at the centroid
+     *        of each interest region
+     *
+     * \warning setImageDimensions and setAxisNormal/setAxisTangent/setAxisCustom must be called first
+     *
+     * \see Descriptor3D::compute
+     */
+    // --------------------------------------------------------------
     virtual void compute(const robot_msgs::PointCloud& data,
                          cloud_kdtree::KdTree& data_kdtree,
                          const cv::Vector<vector<int>*>& interest_region_indices,
@@ -173,12 +198,17 @@ class SpinImage: public SpectralAnalysis
     /*!
      * \brief Computes a spin image of the neighboring points around center_pt
      *
+     * \param data The overall point cloud
+     * \param neighbor_indices The indices in data to compute the spin image with
+     * \param center_pt The center point of the spin image
+     * \param spin_image The resulting spin image feature
      */
     // --------------------------------------------------------------
     void computeSpinImage(const robot_msgs::PointCloud& data,
                           const vector<int>& neighbor_indices,
                           const Eigen::Vector3d& center_pt,
                           cv::Vector<float>& spin_image);
+
     Eigen::Vector3d spin_axis_;
     spin_axis_type_t spin_axis_type_;
 

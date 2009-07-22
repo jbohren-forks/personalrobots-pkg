@@ -61,6 +61,14 @@ void SpectralAnalysis::clear()
       delete centroids_[i];
     }
   }
+  normals_.clear();
+  middle_eig_vecs_.clear();
+  tangents_.clear();
+  eigen_values_.clear();
+  centroids_.clear();
+
+  support_radius_defined_ = false;
+  spectral_info_ = NULL;
 }
 
 // --------------------------------------------------------------
