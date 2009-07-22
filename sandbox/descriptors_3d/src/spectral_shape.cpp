@@ -56,11 +56,12 @@ void SpectralShape::compute(const robot_msgs::PointCloud& data,
                             const cv::Vector<robot_msgs::Point32*>& interest_pts,
                             cv::Vector<cv::Vector<float> >& results)
 {
+  results.resize(interest_pts.size());
+
   if (spectral_info_ == NULL)
   {
     if (analyzeInterestPoints(data, data_kdtree, interest_pts) < 0)
     {
-      results.resize(interest_pts.size());
       return;
     }
   }
@@ -76,11 +77,12 @@ void SpectralShape::compute(const robot_msgs::PointCloud& data,
                             const cv::Vector<vector<int>*>& interest_region_indices,
                             cv::Vector<cv::Vector<float> >& results)
 {
+  results.resize(interest_region_indices.size());
+
   if (spectral_info_ == NULL)
   {
     if (analyzeInterestRegions(data, data_kdtree, interest_region_indices) < 0)
     {
-      results.resize(interest_region_indices.size());
       return;
     }
   }
@@ -93,16 +95,23 @@ void SpectralShape::compute(const robot_msgs::PointCloud& data,
 // --------------------------------------------------------------
 void SpectralShape::computeFeatures(cv::Vector<cv::Vector<float> >& results)
 {
+  // Assumes it has been correctly resized in compute() above
+  unsigned int nbr_interest_pts = results.size();
+
+  // Verify the retrieved spectral information contains the same number of interest points/regions
   const vector<Eigen::Vector3d*>& eigen_values = spectral_info_->getEigenValues();
+  if (eigen_values.size() != nbr_interest_pts)
+  {
+    ROS_ERROR("SpectralShape::computeFeatures spectral information doesnt match number of samples");
+    return;
+  }
 
-  unsigned int nbr_interest_pts = eigen_values.size();
-  results.resize(nbr_interest_pts);
-
+  // Iterate over each interest sample and compute its features
   for (size_t i = 0 ; i < nbr_interest_pts ; i++)
   {
     size_t feature_idx = 0;
 
-    // If the values are non-NULL, then able to compute features for the interest point
+    // NULL indicates couldnt compute spectral information for interest sample
     if (eigen_values[i] != NULL)
     {
       results[i].resize(result_size_);
@@ -116,10 +125,6 @@ void SpectralShape::computeFeatures(cv::Vector<cv::Vector<float> >& results)
         results[i][feature_idx++] = static_cast<float> ((*(eigen_values[i]))[0] / ((*(eigen_values[i]))[0]
             + (*(eigen_values[i]))[1] + (*(eigen_values[i]))[2]));
       }
-    }
-    else
-    {
-      results[i].clear();
     }
   }
 }

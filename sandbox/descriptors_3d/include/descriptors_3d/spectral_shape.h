@@ -47,34 +47,87 @@ using namespace std;
 // --------------------------------------------------------------
 //* SpectralShape
 /**
- * \brief
+ * \brief A SpectralShape descriptor computes features that describe
+ *        the local shape of a neighborhood of points
  */
 // --------------------------------------------------------------
 class SpectralShape: public SpectralAnalysis
 {
   public:
+    // --------------------------------------------------------------
+    /**
+     * \brief Instantiates the SpectralShape descriptor
+     *
+     * The features indicate the flat-ness (F), linear-ness (L), and
+     * scattered-ness (S) of a local neighborhood around an interest point/region.
+     * The features are based on the eigenvalues from the scatter matrix
+     * constructed from the neighborhood of points.
+     *
+     * A curvature (C) feature can optionally be computed
+     *
+     * The feature vector format is: [S L F (C)]
+     */
+    // --------------------------------------------------------------
     SpectralShape() :
       use_curvature_(false)
     {
       result_size_ = 3;
     }
 
+    // ===================================================================
+    /*! \name Optional settings  */
+    // ===================================================================
+    //@{
+    // --------------------------------------------------------------
+    /**
+     * \brief Indicates to compute the curvature feature
+     */
+    // --------------------------------------------------------------
     void useCurvature();
+    //@}
 
+    // --------------------------------------------------------------
+    /**
+     * \brief Computes the saliency features that describe the local
+     *        shape around the interest points
+     *
+     * \warning setSpectralRadius() or useSpectralInformation() must be called first
+     *
+     * \see Descriptor3D::compute
+     */
+    // --------------------------------------------------------------
     virtual void compute(const robot_msgs::PointCloud& data,
                          cloud_kdtree::KdTree& data_kdtree,
                          const cv::Vector<robot_msgs::Point32*>& interest_pts,
                          cv::Vector<cv::Vector<float> >& results);
 
+    // --------------------------------------------------------------
+    /**
+     * \brief Computes the saliency features that describe the local
+     *        shape around/in the interest regions
+     *
+     * \warning setSpectralRadius() or useSpectralInformation() must be called first
+     *
+     * \see Descriptor3D::compute
+     */
+    // --------------------------------------------------------------
     virtual void compute(const robot_msgs::PointCloud& data,
                          cloud_kdtree::KdTree& data_kdtree,
                          const cv::Vector<vector<int>*>& interest_region_indices,
                          cv::Vector<cv::Vector<float> >& results);
 
   protected:
+    // --------------------------------------------------------------
+    /**
+     * \brief Computes the spectral features
+     *
+     * \param results Container to hold computed features for each interest sample
+     */
+    // --------------------------------------------------------------
     void computeFeatures(cv::Vector<cv::Vector<float> >& results);
 
   private:
+    /*! \brief Flag if useCurvature() has been called */
     bool use_curvature_;
 };
 
