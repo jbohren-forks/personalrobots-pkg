@@ -63,12 +63,16 @@ class Snapper:
     except:
       self.server_name="vm6.willowgarage.com:8080"
 
+    print "SERVER:",self.server_name
+
     #target_session="prf-2009-05-21-22-29-00"
 
     try:
       self.target_session=rospy.get_param("~session")
     except:
       self.target_session="demo-session-L1s"
+
+    print "SESSION:",self.target_session
 
     try:
       self.submission_mode=rospy.get_param("~submission_mode")

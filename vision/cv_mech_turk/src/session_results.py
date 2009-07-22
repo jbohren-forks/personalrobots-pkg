@@ -97,25 +97,40 @@ class MechFetchResults:
     if not os.path.exists(self.output_dir):
         os.makedirs(self.output_dir)
 
+    full_annotation_path=self.output_dir;
+    if not os.path.exists(full_annotation_path):
+      os.makedirs(full_annotation_path)
+    
+    server_image_names_fn=os.path.join(full_annotation_path,'server_names.txt');
+    server_names=open(server_image_names_fn,'w');
+
+
+
     print "Starting to download %d results" %(len(results))
     nOk=0;
     nFail=0;
-    for idx,(server,annotation_path,session,image_id,image_frame_id,image_time,image_topic) in enumerate(results):
+    for idx,(server,annotation_path,session,image_id,image_frame_id,image_time,image_topic,original_name) in enumerate(results):
         if idx % 20 ==0:
             print "%d of %d" % (idx,len(results))
 
-        #full_annotation_path=os.path.join(self.output_dir,session);
-        full_annotation_path=self.output_dir;
-        if not os.path.exists(full_annotation_path):
-          os.makedirs(full_annotation_path)
+            
+        if image_time=="n/a":
+          image_name=original_name.split("/")[-1];
+          name= ".".join(image_name.split(".")[0:-1])
+        else:
+          name=image_time
 
-        full_annotation_filename=os.path.join(full_annotation_path,image_time+'.xml');
+        print >>server_names,image_id,name
+        print image_id,name
+        #full_annotation_path=os.path.join(self.output_dir,session);
+
+        full_annotation_filename=os.path.join(full_annotation_path,name+'.xml');
 
         #image_output_path=os.path.join(self.image_output_dir,session);
         image_output_path=self.image_output_dir;
         if not os.path.exists(image_output_path):
           os.makedirs(image_output_path);
-        image_filename=os.path.join(image_output_path,image_time+'.jpg');
+        image_filename=os.path.join(image_output_path,name+'.jpg');
 
         #Maybe add this later
         #if os.path.exists(full_annotation_filename):
@@ -130,6 +145,7 @@ class MechFetchResults:
             if annotation_path[0]=='/':
               annotation_path=annotation_path[1:]
             url= server + annotation_path
+            print url
             fp = urllib2.urlopen(url)
             response = fp.read()
             fp.close();
@@ -153,7 +169,8 @@ class MechFetchResults:
         except urllib2.URLError, reason:
           print image_id,reason
           nFail=nFail+1
-            
+
+    server_names.close();
     print "%d annotations retreived, %d failed" % (nOk,nFail)
 
 
