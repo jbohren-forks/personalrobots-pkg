@@ -709,7 +709,7 @@
       <limit min="-2.92" max="2.92"
              effort="2.645"
              velocity="100" k_velocity="1.5"
-             safety_length_min="0.05" safety_length_max="0.05" k_position="100" />
+             safety_length_min="0.15" safety_length_max="0.15" k_position="100" />
       <calibration reference_position="${0.0+cal_head_pan_flag_alpha2}" values="0 0" />
       <joint_properties damping="1.0" />
     </joint>
