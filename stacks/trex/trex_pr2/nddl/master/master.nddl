@@ -88,8 +88,7 @@ M2Goals m2_goals = new M2Goals();
 M2Controller m2_controller = new M2Controller();
 
 // External timelines
-MoveBehavior driver = new MoveBehavior(External, false);
-MoveBehavior doorman = new MoveBehavior(External, true);
+Navigator navigator = new Navigator(External);
 Recharger recharger = new Recharger(External);
 BaseState base_state = new BaseState(External);
 
@@ -175,7 +174,6 @@ M2Controller::Holds{
       }
     }
     else {
-
       if(at_goal == true){
 	if(recharge_required == true){ 
 	  contains_start(recharger.Active cmd);
@@ -200,34 +198,17 @@ M2Controller::Holds{
 	// in the domains
 	contains_start(MoveBehavior.Active cmd);
 	concurrent(cmd.end, end);
-	eq(cmd.frame_id, m2_active.frame_id);
-
-	// Determine the next map point to go for. It will either be the outlet
-	// or it will be a doorway en-route to the outlet. This function calls a topological planner.
-	bool thru_doorway;
-	map_get_next_move(cmd.x, cmd.y, cmd.z, cmd.qx, cmd.qy, cmd.qz, cmd.qw, thru_doorway, x, y, 
-			  m2_active.x, m2_active.y, m2_active.z, m2_active.qx, m2_active.qy, m2_active.qz, m2_active.qw);
-
-	map_get_nearest_connector(cmd.start_connector, x, y, m2_active.x, m2_active.y);
-
-	if(thru_doorway == true){
-	  // take no more than 10 minutes trying to get thru a doorway
-	  eq(cmd.object, doorman);
-	  eq(cmd.max_duration, DOORMAN_DURATION_BOUND);
-	}
-	else{
-	  eq(cmd.object, driver);
-	  eq(cmd.max_duration, DRIVER_DURATION_BOUND);
-	}
+	eq_pose_msg(cmd.object, m2_active.object);
       }
     }
   }
 }
 
 /**
- * The update does not change control states unless it is aborted. Instead, it updates with the new position data
+ * The update does not change control states unless it is aborted. Instead, it
+ * updates with the new position data
  */
-MoveBehavior::Inactive{
+Navigator::Inactive{
   starts(m2_controller.Holds mc);
   if(status == SUCCESS){
     eq(mc.x, x);

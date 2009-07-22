@@ -1,0 +1,149 @@
+
+
+class NavGoals extends Behavior {
+  predicate Active{
+    string frame_id;
+    float time_stamp;
+    float x;
+    float y;
+    float z;
+    float qx;
+    float qy;
+    float qz;
+    float qw;
+
+    // Constraint must be defined here to allow x and y values to be accessible for planning.
+    defaultOnCommit(frame_id, "map");
+  }
+
+  predicate Inactive{}
+
+  NavGoals(){
+    super(Internal);
+  }
+};
+
+class NavController extends AgentTimeline {
+  predicate Holds {
+    bool active;
+    bool finished;
+    float x;
+    float y;
+  }
+
+  NavController(){
+    super(Internal, "Holds");
+  }
+};
+
+// Internal Timelines
+NavGoals nav_goals = new NavGoals();
+NavController nav_controller = new NavController();
+
+// External timelines
+MoveBehavior driver = new MoveBehavior(External, false);
+MoveBehavior doorman = new MoveBehavior(External, true);
+BaseState base_state = new BaseState(External);
+
+NavGoals::Active{
+  if(start){
+    starts(nav_controller.Holds nc);
+    starts_during(base_state.Holds bs);
+
+    eq(nc.active, true);
+    eq(nc.finished, false);	
+    eq(nc.x, bs.x);
+    eq(nc.y, bs.y);
+  }
+}
+
+NavController::Holds{
+  if(active == false){
+    equals(nav_goals.Inactive);
+  }
+
+  // Default based on predecessors
+  met_by(Holds p);
+  defaultOnCommit(active, p.active);
+  defaultOnCommit(finished, p.finished);
+  defaultOnCommit(x, p.x);
+  defaultOnCommit(y, p.y);
+  defaultOnCommit(nav_mode, p.nav_mode);
+
+  if(active == true){
+    meets(Holds s);
+
+    contained_by(nav_goals.Active ng_active);
+
+    // Are we at the goal?
+    float distance;
+    calcDistance(distance, x, y, ng_active.x, ng_active.y);
+    bool at_goal;
+    testLEQ(at_goal, distance, 0.2);
+
+    if(finished == true){
+      meets(nav_goals.Inactive ng_inactive);
+      eq(s.active, false);
+      eq(duration, 1);
+
+      if(at_goal == true){
+	eq(ng_inactive.status, SUCCESS);
+      }
+      else {
+	eq(ng_inactive.status, ABORTED);
+      }
+    }
+    else {
+      if(at_goal == true){
+	meets(nav_goals.Inactive ng_inactive);
+	eq(ng_inactive.status, SUCCESS);
+	eq(s.active, false);
+	eq(duration, 1);
+      }
+      else{
+	// Take the next step towards the goal. This will either navigate to the
+	// goal, or navigate to the next connector along the way.
+	
+	// It would be ideal to be able to specify for the nav stack that we do
+	// not care about orientation, and that we want to get as close as
+	// possible to the goal, but the criteria for success is based on a
+	// given error bound. Thus we could get close if possible, but permit a
+	// successful termination when we cannot get any closer but are within that bound.
+
+	// This is desirable since the precise approach is based on cacluations
+	// that deal with position of approach and location of the socket or
+	// door and these are encoded internally  in the domains
+
+	// Spawn a MoveBehavior command
+	contains_start(MoveBehavior.Active cmd);
+	concurrent(cmd.end, end);
+	eq(cmd.frame_id, ng_active.frame_id);
+
+	// Determine the next map point to go for.
+	// It will either be an arbitrary point on the map, or a connector for
+	// a doorway en-route to that point
+
+	// This function calls a topological planner.
+	bool thru_doorway;
+	map_get_next_move(cmd.x, cmd.y, cmd.z,
+			  cmd.qx, cmd.qy, cmd.qz, cmd.qw,
+			  thru_doorway, x, y, 
+			  ng_active.x, ng_active.y, ng_active.z,
+			  ng_active.qx, ng_active.qy, ng_active.qz, ng_active.qw);
+
+	map_get_nearest_connector(cmd.start_connector, x, y, ng_active.x, ng_active.y);
+
+	// Dispatch the move command to either the driver or the doorman
+	if(thru_doorway == false) {
+	  eq(cmd.object, driver);
+	  eq(cmd.max_duration, DRIVER_DURATION_BOUND);
+	}
+
+	if(thru_doorway == true){
+	  eq(cmd.object, doorman);
+	  eq(cmd.max_duration, DOORMAN_DURATION_BOUND);
+	}
+      }
+    }
+  }
+}

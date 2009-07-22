@@ -15,6 +15,7 @@ Unplug unplug = new Unplug(External);
 PlugIn plug_in = new PlugIn(External);
 DetectOutletFine detect_outlet_fine = new DetectOutletFine(External);
 DetectOutletCoarse detect_outlet_coarse = new DetectOutletCoarse(External);
+DetectPlugOnBase detect_plug_on_base = new DetectPlugOnBase(External);
 
 /******************************
  * Resource Requirements

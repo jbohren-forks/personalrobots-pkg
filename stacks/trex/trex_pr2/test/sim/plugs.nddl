@@ -9,6 +9,7 @@ PlugIn plug_in = new PlugIn(Internal);
 DetectOutletFine detect_outlet_fine = new DetectOutletFine(Internal);
 DetectOutletCoarse detect_outlet_coarse = new DetectOutletCoarse(Internal);
 PlugsUntuckArms plugs_untuck_arms = new PlugsUntuckArms(Internal);
+DetectPlugOnBase detect_plug_on_base = new DetectPlugOnBase(Internal);
 
 PlugDomainAction::Active{
   eq(duration, 1);

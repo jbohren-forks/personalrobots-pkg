@@ -1,6 +1,4 @@
 #include "nav/imports.nddl"
-#include "nav/exports.nddl"
-
 
 float MOVE_BASE_DURATION_BOUND = 600.0;
 
@@ -16,19 +14,13 @@ class DriverController extends AgentTimeline{
   }
 };
 
-MoveBehavior driver = new MoveBehavior(Internal);
+MoveBehavior driver = new MoveBehavior(Internal, false);
 DriverController driver_controller = new DriverController();
 MoveBase move_base = new MoveBase(External);
 
 // Initialize
 fact(driver_controller.Holds nc_initial_value);
 nc_initial_value.active = false;
-
-MoveBehavior::Active{
-  starts(DriverController.Holds nc);
-  eq(nc.active, true);
-  eq(nc.finished, false);
-}
 
 DriverController::Holds{
   if(active == false){

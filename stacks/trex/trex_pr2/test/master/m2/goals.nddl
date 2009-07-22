@@ -1,7 +1,9 @@
 /*
  *Auto-generated goals file, created at Fri May 29 09:09:24 2009
  */
-
+rejectable(m2_goals.Active g_9);
+g_9.outlet_id = 4;
+/*
 rejectable(m2_goals.Active g_8);
 g_8.outlet_id = 38;
 
@@ -9,6 +11,7 @@ rejectable(m2_goals.Active g_0);
 g_0.outlet_id = 1;
 rejectable(m2_goals.Active g_1);
 g_1.outlet_id = 4;
+
 rejectable(m2_goals.Active g_2);
 g_2.outlet_id = 6;
 rejectable(m2_goals.Active g_3);
