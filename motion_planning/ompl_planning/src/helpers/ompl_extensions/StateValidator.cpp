@@ -51,6 +51,7 @@ bool ompl_planning::StateValidityPredicate::operator()(const ompl::base::State *
     // if this is a new thread, we create an additional clone
     if (p == (int)clones_.size())
     {
+	ROS_DEBUG("Cloning collision environment (index %d)", p);
 	clones_.resize(p + 1);
 	clones_[p].em = clones_[0].em->clone();
 	clones_[p].km = clones_[p].em->getRobotModel().get();

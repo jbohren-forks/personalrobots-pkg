@@ -179,7 +179,9 @@ namespace move_arm
 		}
 		
 		fillStartState(req.start_state);
-
+		
+		ROS_DEBUG("Issued request for motion planning");
+		
 		// call the planner and decide whether to use the path 
 		if (clientPlan.call(req, res))
 		{
