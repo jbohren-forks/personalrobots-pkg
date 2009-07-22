@@ -97,11 +97,15 @@ TransformListener::~TransformListener()
 void TransformListener::init()
 {
   message_subscriber_ = node_.subscribe<tf::tfMessage>("/tf_message", 100, boost::bind(&TransformListener::subscription_callback, this, _1)); ///\todo magic number
-
+  
   reset_time_subscriber_ = node_.subscribe<std_msgs::Empty>("/reset_time", 100, boost::bind(&TransformListener::reset_callback, this, _1)); ///\todo magic number
   
-  tf_frames_srv_ = node_.advertiseService("~tf_frames", &TransformListener::getFrames, this);
-  node_.param(std::string("~tf_prefix"), tf_prefix_, std::string(""));
+  if (! ros::service::exists("~tf_frames", false))  // Avoid doublely advertizing if multiple instances of this library
+    {
+      tf_frames_srv_ = node_.advertiseService("~tf_frames", &TransformListener::getFrames, this);
+    }
+    
+    node_.param(std::string("~tf_prefix"), tf_prefix_, std::string(""));
 }
 
 
