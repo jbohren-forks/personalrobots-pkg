@@ -23,7 +23,7 @@ includes: trex plasma planworks
 	@if [ ! -d include ]; then echo "Try to make" ; fi
 
 # GET plasma
-PLASMA_REVISION=5497
+PLASMA_REVISION=5498
 plasma:
 	@if [ ! -d PLASMA ]; then $(SVN_CMDLINE) co -r $(PLASMA_REVISION) http://europa-pso.googlecode.com/svn/PLASMA/trunk PLASMA; ./copyIncludes.sh ; fi ;
 	@if [ ! -n "`svn info PLASMA | grep 'Revision: $(PLASMA_REVISION)'`" ]; then cd PLASMA && $(SVN_CMDLINE) up -r $(PLASMA_REVISION) ; cd ../ && ./copyIncludes.sh ; fi;
