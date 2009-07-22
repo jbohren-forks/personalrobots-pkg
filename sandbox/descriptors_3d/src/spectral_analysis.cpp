@@ -226,7 +226,7 @@ int SpectralAnalysis::analyzeInterestRegions(const robot_msgs::PointCloud& data,
       // radiusSearch returning false (0 neighbors) is okay
       data_kdtree.radiusSearch(region_centroid, support_radius_, neighbor_indices, neighbor_distances);
 
-      // Now point to the neighboring points from radiusSearch,
+      // Now point to the neighboring points from radiusSearch
       curr_interest_region = &neighbor_indices;
     }
 
