@@ -106,15 +106,20 @@ void SpinImage::compute(const robot_msgs::PointCloud& data,
   if (spin_axis_type_ == NORMAL)
   {
     normals = &(spectral_info_->getNormals());
+    if (normals->size() != nbr_interest_pts)
+    {
+      ROS_ERROR("SpinImage::compute inconsistent spectral information");
+      return;
+    }
   }
   else if (spin_axis_type_ == TANGENT)
   {
     tangents = &(spectral_info_->getTangents());
-  }
-  else
-  {
-    // must be CUSTOM
-    //spin_axis_.normalize();
+    if (tangents->size() != nbr_interest_pts)
+    {
+      ROS_ERROR("SpinImage::compute inconsistent spectral information");
+      return;
+    }
   }
 
   // ----------------------------------------
@@ -124,42 +129,58 @@ void SpinImage::compute(const robot_msgs::PointCloud& data,
   // ----------------------------------------
   // For each interest point, look at neighbors and compute the spin image
   Eigen::Vector3d center_pt;
-  vector<int> neighbor_indices;
-  vector<float> neighbor_distances; // unused
   for (size_t i = 0 ; i < nbr_interest_pts ; i++)
   {
-    // Spin around the interest point
-    center_pt[0] = (*(interest_pts[i])).x;
-    center_pt[1] = (*(interest_pts[i])).y;
-    center_pt[2] = (*(interest_pts[i])).z;
-
-    // Find neighboring points
-    neighbor_indices.clear();
-    neighbor_distances.clear();
-    if (!data_kdtree.radiusSearch(*(interest_pts[i]), spin_radius, neighbor_indices, neighbor_distances))
+    // ---------------------
+    // Retrieve next interest point
+    const robot_msgs::Point32* curr_interest_pt = interest_pts[i];
+    if (curr_interest_pt == NULL)
     {
-      ROS_WARN("SpinImage::compute() radius search failed.  This should not happen.");
+      ROS_WARN("SpinImage::compute given NULL interest point");
       continue;
     }
 
-    // Make spin axis be unit
+    // ---------------------
+    // Define the spin axis if using the normal/tangent vectors
     if (spin_axis_type_ == NORMAL)
     {
+      const Eigen::Vector3d* curr_normal = (*normals)[i];
+      if (curr_normal == NULL)
+      {
+        ROS_WARN("SpinImage::compute could not extract normal for interest pt %u", i);
+        continue;
+      }
       for (unsigned int j = 0 ; j < 3 ; j++)
       {
-        spin_axis_[j] = (*((*normals)[i]))[j];
+        spin_axis_[j] = (*curr_normal)[j];
       }
-      //spin_axis_.normalize();
     }
     else if (spin_axis_type_ == TANGENT)
     {
+      const Eigen::Vector3d* curr_tangent = (*tangents)[i];
+      if (curr_tangent == NULL)
+      {
+        ROS_WARN("SpinImage::compute could not extract tangent for interest pt %u", i);
+        continue;
+      }
       for (unsigned int j = 0 ; j < 3 ; j++)
       {
-        spin_axis_[j] = (*((*tangents)[i]))[j];
+        spin_axis_[j] = (*curr_tangent)[j];
       }
-      //spin_axis_.normalize();
     }
 
+    // ---------------------
+    // Find the points to use that constitute the spin image
+    vector<int> neighbor_indices;
+    vector<float> neighbor_distances; // unused
+    // radiusSearch returning false (0 neighbors) is okay
+    data_kdtree.radiusSearch(*curr_interest_pt, spin_radius, neighbor_indices, neighbor_distances);
+
+    // ---------------------
+    // Spin around the interest point
+    center_pt[0] = curr_interest_pt->x;
+    center_pt[1] = curr_interest_pt->y;
+    center_pt[2] = curr_interest_pt->z;
     computeSpinImage(data, neighbor_indices, center_pt, results[i]);
   }
 }
@@ -205,11 +226,6 @@ void SpinImage::compute(const robot_msgs::PointCloud& data,
   {
     tangents = &(spectral_info_->getTangents());
   }
-  else
-  {
-    // must be CUSTOM
-    //spin_axis_.normalize();
-  }
 
   // ----------------------------------------
   // Compute the radius to the corner square that will be needed for radius search
@@ -223,52 +239,72 @@ void SpinImage::compute(const robot_msgs::PointCloud& data,
   // For each region, compute centroid as the center of spin image, then
   // look at neighbors and compute the spin image
   Eigen::Vector3d center_pt;
-  robot_msgs::Point32 region_centroid;
-  vector<int> radius_search_neighbors;
-  vector<float> neighbor_distances; // unused
-  vector<int>* neighbors_for_spin_img = &radius_search_neighbors;
   for (size_t i = 0 ; i < nbr_interest_regions ; i++)
   {
-    // Spin around the centroid of the interest region
-    cloud_geometry::nearest::computeCentroid(data, *(interest_region_indices[i]), region_centroid);
-    center_pt[0] = region_centroid.x;
-    center_pt[1] = region_centroid.y;
-    center_pt[2] = region_centroid.z;
-
-    // Find neighboring points
-    if (use_interest_region_only_)
+    // ---------------------
+    // Retrieve next interest region
+    const vector<int>* curr_interest_region = interest_region_indices[i];
+    if (curr_interest_region == NULL)
     {
-      neighbors_for_spin_img = interest_region_indices[i];
-    }
-    else
-    {
-      radius_search_neighbors.clear();
-      neighbor_distances.clear();
-      if (!data_kdtree.radiusSearch(region_centroid, spin_radius, radius_search_neighbors, neighbor_distances))
-      {
-        ROS_WARN("SpinImage::compute() radius search failed.  This should not happen.");
-        continue;
-      }
+      ROS_WARN("SpinImage::compute given NULL interest region");
+      continue;
     }
 
-    // Make spin axis be unit
+    // ---------------------
+    // Define the spin axis if using the normal/tangent vectors
     if (spin_axis_type_ == NORMAL)
     {
+      const Eigen::Vector3d* curr_normal = (*normals)[i];
+      if (curr_normal == NULL)
+      {
+        ROS_WARN("SpinImage::compute could not extract normal for interest region %u", i);
+        continue;
+      }
       for (unsigned int j = 0 ; j < 3 ; j++)
       {
-        spin_axis_[j] = (*((*normals)[i]))[j];
+        spin_axis_[j] = (*curr_normal)[j];
       }
-      //spin_axis_.normalize();
     }
     else if (spin_axis_type_ == TANGENT)
     {
+      const Eigen::Vector3d* curr_tangent = (*tangents)[i];
+      if (curr_tangent == NULL)
+      {
+        ROS_WARN("SpinImage::compute could not extract tangent for interest region %u", i);
+        continue;
+      }
       for (unsigned int j = 0 ; j < 3 ; j++)
       {
-        spin_axis_[j] = (*((*tangents)[i]))[j];
+        spin_axis_[j] = (*curr_tangent)[j];
       }
-      //spin_axis_.normalize();
     }
 
+    // ---------------------
+    // Compute centroid of interest region to be used
+    robot_msgs::Point32 region_centroid;
+    cloud_geometry::nearest::computeCentroid(data, *curr_interest_region, region_centroid);
+
+    // ---------------------
+    // Find the points that will constitute the spin image.
+    vector<int> radius_search_neighbors;
+    const vector<int>* neighbors_for_spin_img = &radius_search_neighbors;
+    if (use_interest_region_only_)
+    {
+      neighbors_for_spin_img = curr_interest_region;
+    }
+    else
+    {
+      vector<float> radius_search_neighbor_indices; // unused
+      // radiusSearch returning false (0 neighbors) is okay
+      data_kdtree.radiusSearch(region_centroid, spin_radius, radius_search_neighbors,
+          radius_search_neighbor_indices);
+    }
+
+    // ---------------------
+    // Spin around the centroid of the interest region
+    center_pt[0] = region_centroid.x;
+    center_pt[1] = region_centroid.y;
+    center_pt[2] = region_centroid.z;
     computeSpinImage(data, *neighbors_for_spin_img, center_pt, results[i]);
   }
 }
@@ -286,7 +322,6 @@ void SpinImage::computeSpinImage(const robot_msgs::PointCloud& data,
 {
   spin_image.resize(result_size_);
   unsigned int row_offset = nbr_rows_ / 2;
-  //static_cast<unsigned int> (floor(0.5 * static_cast<double> (nbr_rows_)));
 
   float max_bin_count = 1.0; // init to 1.0 so avoid divide by 0 if no neighbor points
   for (unsigned int i = 0 ; i < neighbor_indices.size() ; i++)
