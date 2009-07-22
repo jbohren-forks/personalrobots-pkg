@@ -70,8 +70,6 @@ if(EXISTS ${ikea_objects_PACKAGE_PATH})
       OUTPUT ${ikea_objects_out_path}/${basename}.mesh
       COMMAND rosrun 
       ARGS ogre_tools stl_to_mesh ${it} ${ikea_objects_out_path}/${basename}.mesh
-      COMMAND ${ogre_PACKAGE_PATH}/ogre/bin/OgreMeshUpgrade 
-      ARGS ${ikea_objects_out_path}/${basename}.mesh
       DEPENDS ${it})
     
     set(ikea_objects_gen_files ${ikea_objects_gen_files} ${ikea_objects_out_path}/${basename}.mesh)
