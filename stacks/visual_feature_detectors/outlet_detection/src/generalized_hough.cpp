@@ -225,7 +225,7 @@ CvMatND* buildHoughHistSparse(vector<feature_t>& input, const vector<feature_t>&
 					idx_[3] = i4;
 					sparse = cvCreateSparseMat(2,sizesxy,CV_32FC1);
 					CvScalar s;
-					s.val[0] = (int)sparse;
+					s.val[0] = (size_t)sparse;
 					cvSetND(mat,idx_,s);
 				}
 				int64 time1 = cvGetTickCount();
