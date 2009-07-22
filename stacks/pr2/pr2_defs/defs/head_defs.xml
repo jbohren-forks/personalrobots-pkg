@@ -220,11 +220,11 @@
     
     <!-- Wide camera is on robot right (hca1), narrow on left (hca2)? -->
     <!-- 15mm offset from center needs check with CAD -->
-    <stereo_camera parent="${name}_link" name="${name}_wide" >
+    <stereo_camera parent="${name}_link" name="wide_stereo" >
       <origin xyz="0 -0.015 0" rpy="0 0 0" />
     </stereo_camera>
 
-    <stereo_camera parent="${name}_link" name="${name}_narrow" >
+    <stereo_camera parent="${name}_link" name="narrow_stereo" >
       <origin xyz="0 0.015 0" rpy="0 0 0" />
     </stereo_camera>
   </macro>
