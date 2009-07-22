@@ -56,3 +56,5 @@ max_vel:
  vy: 0.5 
  omegaz: 10.0
 
+cmd_topic:
+ /cmd_vel
