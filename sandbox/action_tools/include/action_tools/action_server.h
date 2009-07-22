@@ -218,7 +218,8 @@ namespace action_tools {
           }
         }
         else{
-          //someone sent a goal with an unsupported status... we'll probably reject it by default.. and throw an error
+          //someone sent a goal with an unsupported status... we'll throw an error
+          ROS_ERROR("A goal was sent to this action server with an undefined request_type! This goal will not be processed");
         }
 
       }
@@ -230,7 +231,17 @@ namespace action_tools {
 
       void publishStatus(){
         boost::mutex::scoped_lock(lock_);
-        //status_pub_.publish(status_);
+        //build a status array
+        GoalStatusArray status_array;
+
+        status_array.set_status_list_size(status_list_.size());
+
+        unsigned int i = 0;
+        for(typename std::list<StatusTracker>::iterator it = status_list_.begin(); it != status_list_.end(); ++it){
+          status_array.status_list[i] = (*it).status_;
+          ++i;
+        }
+        status_pub_.publish(status_array);
       }
 
       ros::NodeHandle node_;
