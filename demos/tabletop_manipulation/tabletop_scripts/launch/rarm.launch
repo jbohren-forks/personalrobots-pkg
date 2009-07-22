@@ -1,5 +1,6 @@
 <launch>
-  <include file="$(find pr2_defs)/pr2_planning_environment.launch" />
+
+  <include file="$(find 3dnav_pr2)/launch/pr2_planning_environment.launch" />
   <include file="$(find pr2_ik)/pr2_ik_rarm_node.launch"/>
   <include file="$(find move_arm)/launch/move_rarm.launch"/> 
 

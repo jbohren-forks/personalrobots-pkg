@@ -1,6 +1,6 @@
 <launch>
   
-  <include file="$(find pr2_defs)/pr2_planning_environment.launch" />
+  <include file="$(find 3dnav_pr2)/launch/pr2_planning_environment.launch" />
   <include file="$(find stereo_image_proc)/narrow_stereoproc.launch" />
   
   <!-- remove points corresponding to known objects -->

@@ -138,7 +138,7 @@ int main(int argc, char **argv)
     recognition_lambertian::FindObjectPoses::Response res;
     
     ros::Publisher vmPub = nh.advertise<visualization_msgs::Marker>("visualization_marker", 10240);
-    robot_actions::ActionClient<pr2_robot_actions::MoveArmGoal, pr2_robot_actions::MoveArmState, int32_t> move_arm("move_arm");
+    robot_actions::ActionClient<pr2_robot_actions::MoveArmGoal, pr2_robot_actions::MoveArmState, int32_t> move_arm("move_right_arm");
 
     ros::ServiceClient client = nh.serviceClient<recognition_lambertian::FindObjectPoses>("table_top/find_object_poses");
     if (client.call(req, res))
@@ -147,7 +147,10 @@ int main(int argc, char **argv)
 	if (res.objects.size() > 0)
 	{
 	    recognition_lambertian::TableTopObject obj = res.objects[0];
-	    ROS_INFO("point to grasp: %f %f %f", obj.object_pose.pose.position.x, obj.object_pose.pose.position.y, obj.object_pose.pose.position.z);
+	    obj.grasp_pose.pose.position.x -= 0.16;
+	    
+	    ROS_INFO("pose of object: %f %f %f", obj.object_pose.pose.position.x, obj.object_pose.pose.position.y, obj.object_pose.pose.position.z);
+	    ROS_INFO("point to grasp: %f %f %f", obj.grasp_pose.pose.position.x, obj.grasp_pose.pose.position.y, obj.grasp_pose.pose.position.z);
 	    
 	    mapping_msgs::ObjectInMap o1;
 	    o1.header = obj.object_pose.header;
@@ -189,8 +192,8 @@ int main(int argc, char **argv)
 	    
 	    sendPoint(vmPub, obj.grasp_pose.header, obj.grasp_pose.pose.position.x, obj.grasp_pose.pose.position.y, obj.grasp_pose.pose.position.z);
 	    
-	    if (move_arm.execute(goal, feedback, ros::Duration(60.0)) != robot_actions::SUCCESS)
-		ROS_ERROR("failed achieving goal");
+	    //	    if (move_arm.execute(goal, feedback, ros::Duration(60.0)) != robot_actions::SUCCESS)
+	    //		ROS_ERROR("failed achieving goal");
 	}
     }
     else

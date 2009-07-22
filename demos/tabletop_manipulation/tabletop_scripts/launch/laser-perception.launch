@@ -1,7 +1,7 @@
 <launch>
   
   <!-- send additional description parameters -->
-  <include file="$(find pr2_defs)/pr2_planning_environment.launch" />
+  <include file="$(find 3dnav_pr2)/launch/pr2_planning_environment.launch" />
 
   <!-- start controller -->		   
   <node pkg="mechanism_control" type="spawner.py" args="$(find pr2_default_controllers)/laser_tilt_controller.xml" />
