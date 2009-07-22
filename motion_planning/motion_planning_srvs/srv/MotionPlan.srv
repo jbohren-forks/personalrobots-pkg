@@ -34,6 +34,3 @@ float64 distance
 
 # set to 1 if the computed path was approximate
 byte approximate
-
-# if state information was not up to date when planning, this is set to 1
-byte unsafe

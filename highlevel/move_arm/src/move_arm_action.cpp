@@ -190,31 +190,26 @@ namespace move_arm
 		    }
 		    else
 		    {
-			if (res.unsafe)
-			    ROS_WARN("Received path is unsafe (planning data was out of date). Ignoring");
+			if (res.path.model_id != req.params.model_id)
+			    ROS_ERROR("Received path for incorrect model: expected '%s', received '%s'", req.params.model_id.c_str(), res.path.model_id.c_str());
 			else
 			{
-			    if (res.path.model_id != req.params.model_id)
-				ROS_ERROR("Received path for incorrect model: expected '%s', received '%s'", req.params.model_id.c_str(), res.path.model_id.c_str());
+			    if (!planningMonitor_->getTransformListener()->frameExists(res.path.header.frame_id))
+				ROS_ERROR("Received path in unknown frame: '%s'", res.path.header.frame_id.c_str());
 			    else
 			    {
-				if (!planningMonitor_->getTransformListener()->frameExists(res.path.header.frame_id))
-				    ROS_ERROR("Received path in unknown frame: '%s'", res.path.header.frame_id.c_str());
-				else
+				approx = res.approximate;
+				if (res.approximate)
+				    ROS_INFO("Approximate path was found. Distance to goal is: %f", res.distance);
+				ROS_INFO("Received path with %u states from motion planner", (unsigned int)res.path.states.size());
+				currentPath = res.path;
+				currentPos = 0;
+				if (planningMonitor_->transformPathToFrame(currentPath, planningMonitor_->getFrameId()))
 				{
-				    approx = res.approximate;
-				    if (res.approximate)
-					ROS_INFO("Approximate path was found. Distance to goal is: %f", res.distance);
-				    ROS_INFO("Received path with %u states from motion planner", (unsigned int)res.path.states.size());
-				    currentPath = res.path;
-				    currentPos = 0;
-				    if (planningMonitor_->transformPathToFrame(currentPath, planningMonitor_->getFrameId()))
-				    {
-					displayPathPublisher_.publish(currentPath);
-					printPath(currentPath);
-					feedback = pr2_robot_actions::MoveArmState::MOVING;	
-					update(feedback);
-				    }
+				    displayPathPublisher_.publish(currentPath);
+				    printPath(currentPath);
+				    feedback = pr2_robot_actions::MoveArmState::MOVING;	
+				    update(feedback);
 				}
 			    }
 			}
