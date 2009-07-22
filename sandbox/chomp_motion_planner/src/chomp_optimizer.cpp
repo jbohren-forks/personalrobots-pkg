@@ -169,11 +169,11 @@ void ChompOptimizer::optimize()
       double new_cost = getTrajectoryCost();
       if (new_cost < original_cost)
       {
-        printf("Random jump improved cost from %.10f to %.10f!\n", original_cost, new_cost);
+        //printf("Random jump improved cost from %.10f to %.10f!\n", original_cost, new_cost);
       }
       else
       {
-        printf("Random jump worsened cost from %.10f to %.10f!\n", original_cost, new_cost);
+        //printf("Random jump worsened cost from %.10f to %.10f!\n", original_cost, new_cost);
         group_trajectory_.getTrajectory() = group_trajectory_backup_;
         updateFullTrajectory();
       }
@@ -247,6 +247,7 @@ void ChompOptimizer::addIncrementsToTrajectory()
   double scale = 1.0;
   for (int i=0; i<num_joints_; i++)
   {
+    scale = 1.0;
     final_increments_.col(i) = parameters_->getLearningRate() *
         (
             joint_costs_[i].getQuadraticCostInverse() *
@@ -263,10 +264,12 @@ void ChompOptimizer::addIncrementsToTrajectory()
       scale = max_scale;
     if (min_scale < scale)
       scale = min_scale;
+
+    group_trajectory_.getFreeJointTrajectoryBlock(i) += scale * final_increments_.col(i);
   }
   for (int i=0; i<num_joints_; i++)
   {
-    group_trajectory_.getFreeJointTrajectoryBlock(i) += scale * final_increments_.col(i);
+    //group_trajectory_.getFreeJointTrajectoryBlock(i) += scale * final_increments_.col(i);
   }
 }
 

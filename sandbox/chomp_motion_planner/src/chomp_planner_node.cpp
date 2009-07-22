@@ -146,7 +146,6 @@ bool ChompPlannerNode::planKinematicPath(motion_planning_srvs::MotionPlan::Reque
   // assume that the trajectory is now optimized, fill in the output structure:
   res.distance = 0.0;
   res.path.model_id = req.params.model_id;
-  res.unsafe = 0;
   res.approximate = 0;
   res.path.start_state = req.start_state;
 
