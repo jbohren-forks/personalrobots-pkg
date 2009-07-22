@@ -39,6 +39,10 @@
 #include <boost/weak_ptr.hpp>
 #include "action_tools/one_shot_timer.h"
 
+// Messages
+#include "action_tools/ActionHeader.h"
+#include "action_tools/GoalStatus.h"
+
 namespace action_tools
 {
 
@@ -46,26 +50,38 @@ template<class Goal, class Feedback, class Result>
 class ActionClient
 {
 public:
+  class GoalHandle
+  {
+
+  };
+
   typedef ActionClient<Goal, Feedback, Result> ActionClientT;
   typedef boost::shared_ptr<const Goal> GoalConstPtr;
   typedef boost::shared_ptr<const Feedback> FeedbackConstPtr;
   typedef boost::shared_ptr<const Result> ResultConstPtr;
-  typedef boost::function<void (const GoalHandle&)> CompletionCallback;
+  typedef boost::function<void (const GoalHandle&) > CompletionCallback;
 
-  enum GoalState  { PENDING, ACTIVE, PREEMPTED, SUCCEEDED, ABORTED, LOST } ;
+  class GoalStates
+  {
+  public:
+    enum GoalState  { PENDING, ACTIVE, PREEMPTED, SUCCEEDED, ABORTED, LOST } ;
+  };
 
   class GoalStatus
   {
     public:
-      GoalStatus(const &
+      GoalStatus(const ros::Time& stamp, const GoalID& id)
+      {
+        comm_state_ = IDLE;
 
-      void update(const ActionStatus& status_msg);
-
+      }
+      void update(const GoalStatus& status_msg);
 
     private:
-      enum CommState {WAITING_FOR_ACK, PURSUING_GOAL, WAITING_FOR_PREEMPTED, WAITING_FOR_TERMINAL_STATE, WAITING_FOR_RESULT, LOST};
+      enum CommState {IDLE, WAITING_FOR_ACK, PURSUING_GOAL, WAITING_FOR_PREEMPTED, WAITING_FOR_TERMINAL_STATE, WAITING_FOR_RESULT, LOST};
       CommState comm_state_;
-      ActionHeader header_;
+      ros::Time stamp;
+
       boost::weak_ptr<void> handle_tracker_;
   };
 
@@ -88,7 +104,7 @@ public:
 
   GoalHandle sendGoal(const Goal& goal, CompletionCallback cb)
   {
-
+    goal_status = GoalStatus(goal->action_header.goal_id);
   }
 
 
@@ -101,13 +117,20 @@ private:
 
   // *************** Implementation ***************
 
-  void statusCb(const ActionStatusConstPtr& status)
+  void statusCb(const GoalStatusConstPtr& status)
   {
 
 
 
 
   }
+
+  void feedbackCb(const FeedbackConstPtr& status)
+  {
+
+  }
+
+
 };
 
 
