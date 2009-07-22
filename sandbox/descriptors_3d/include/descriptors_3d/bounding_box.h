@@ -49,7 +49,7 @@ using namespace std;
 // --------------------------------------------------------------
 //* BoundingBox
 /*!
- * \brief A BoundingBox feature computes the dimensions of the
+ * \brief A BoundingBox descriptor computes the dimensions of the
  *        3-D box that encloses a group of points.
  *
  * When computing the feature for an interest point, the bounding box

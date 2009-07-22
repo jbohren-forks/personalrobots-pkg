@@ -51,18 +51,30 @@ using namespace std;
 
 // --------------------------------------------------------------
 //* SpinImage
-/**
- * \brief
+/*!
+ * \brief A SpinImage descriptor implements the feature described in
+ *        [1] Johnson and Hebert, "Using Spin-Images for Efficient Object
+ *        Recognition in Cluttered 3-D Scenes", PAMI 1999.
  */
 // --------------------------------------------------------------
 class SpinImage: public SpectralAnalysis
 {
   public:
+    // --------------------------------------------------------------
+    /*!
+     * \brief Type representing the spinning axis (Beta axis as described in [1])
+     */
+    // --------------------------------------------------------------
     typedef enum spin_axis
     {
       UNDEFINED = 0, NORMAL = 1, TANGENT = 2, CUSTOM = 3
     } spin_axis_type_t;
 
+    // --------------------------------------------------------------
+    /*!
+     * \brief Instantiates the SpinImage descriptor
+     */
+    // --------------------------------------------------------------
     SpinImage() :
       spin_axis_type_(SpinImage::UNDEFINED), use_interest_region_only_(false), dimensions_defined_(false),
           row_res_(-1.0), col_res_(-1.0), nbr_rows_(0), nbr_cols_(0)
@@ -70,47 +82,91 @@ class SpinImage: public SpectralAnalysis
       result_size_ = 0;
     }
 
-    inline void setAxisNormal()
-    {
-      spin_axis_type_ = SpinImage::NORMAL;
-    }
-
-    inline void setAxisTangent()
-    {
-      spin_axis_type_ = SpinImage::TANGENT;
-    }
-
-    void setAxisCustom(double ref_x, double ref_y, double ref_z);
-
+    // ===================================================================
+    /*! \name Required settings  */
+    // ===================================================================
+    //@{
     // ^
     // |_ _ _ _
     // |_|_|_|_|
     // x_|_|_|_|
     // |_|_|_|_|
     // 3 rows, 4 cols
+    // --------------------------------------------------------------
+    /*!
+     * \brief Sets the dimensions of the spin image
+     *
+     * \warning nbr_rows must be odd
+     */
+    // --------------------------------------------------------------
     int setImageDimensions(double row_res, double col_res, unsigned int nbr_rows, unsigned int nbr_cols);
+    //@}
+
+    // ===================================================================
+    /*! \name Optional settings  */
+    // ===================================================================
+    //@{
+    // --------------------------------------------------------------
+    /*!
+     * \brief Sets the spin axis (Beta axis as defined in [1]) to be the
+     *        locally extracted normal
+     *
+     * \warning setSpectralRadius() or useSpectralInformation() should also be called
+     */
+    // --------------------------------------------------------------
+    inline void setAxisNormal()
+    {
+      spin_axis_type_ = SpinImage::NORMAL;
+    }
+
+    // --------------------------------------------------------------
+    /*!
+     * \brief Sets the spin axis (Beta axis as defined in [1]) to be the
+     *        locally extracted tangent
+     *
+     * \warning setSpectralRadius() or useSpectralInformation() should also be called
+     */
+    // --------------------------------------------------------------
+    inline void setAxisTangent()
+    {
+      spin_axis_type_ = SpinImage::TANGENT;
+    }
+
+    // --------------------------------------------------------------
+    /*!
+     * \brief Sets the spin axis (Beta axis as defined in [1]) to be an
+     *        arbitrary vector.  (E.g. the vertical [0,0,1])
+     *
+     * \param ref_x The x-coordinate of the spinning axis
+     * \param ref_y The y-coordinate of the spinning axis
+     * \param ref_z The z-coordinate of the spinning axis
+     */
+    // --------------------------------------------------------------
+    void setAxisCustom(double ref_x, double ref_y, double ref_z);
+
+    // --------------------------------------------------------------
+    /*!
+     * \brief Indicates to compute the spin image with only points contained
+     *        within given interest regions
+     *
+     * \warning Only relevant when calling compute() with interest regions
+     */
+    // --------------------------------------------------------------
+    inline void useInterestRegionOnly()
+    {
+      use_interest_region_only_ = true;
+    }
+    //@}
 
     virtual void compute(const robot_msgs::PointCloud& data,
                          cloud_kdtree::KdTree& data_kdtree,
                          const cv::Vector<robot_msgs::Point32*>& interest_pts,
                          cv::Vector<cv::Vector<float> >& results);
 
-    // ===================================================================
-    /*! \name Interest region related  */
-    // ===================================================================
-    //@{
-
     virtual void compute(const robot_msgs::PointCloud& data,
                          cloud_kdtree::KdTree& data_kdtree,
                          const cv::Vector<vector<int>*>& interest_region_indices,
                          cv::Vector<cv::Vector<float> >& results);
-
-    inline void useInterestRegionOnly()
-    {
-      use_interest_region_only_ = true;
-    }
-
-    //@}
 
   private:
     // --------------------------------------------------------------

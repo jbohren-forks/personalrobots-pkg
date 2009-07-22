@@ -49,7 +49,7 @@ using namespace std;
 // --------------------------------------------------------------
 //* Orientation
 /*!
- * \brief An Orientation feature looks at the angle of an interest
+ * \brief An Orientation descriptor looks at the angle of an interest
  *        point/region's neighborhood principle directions with respect
  *        to a given reference direction.
  *
@@ -87,7 +87,7 @@ class Orientation: public SpectralAnalysis
     // ===================================================================
     //@{
     // --------------------------------------------------------------
-    /**
+    /*!
      * \brief Sets this descriptor to compare extracted tangent vectors against
      *        the specified reference direction
      *
@@ -101,7 +101,7 @@ class Orientation: public SpectralAnalysis
     void useTangentOrientation(double ref_x, double ref_y, double ref_z);
 
     // --------------------------------------------------------------
-    /**
+    /*!
      * \brief Sets this descriptor to compare extracted normal vectors against
      *        the specified reference direction
      *

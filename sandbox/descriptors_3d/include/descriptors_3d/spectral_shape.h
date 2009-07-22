@@ -46,16 +46,19 @@ using namespace std;
 
 // --------------------------------------------------------------
 //* SpectralShape
-/**
+/*!
  * \brief A SpectralShape descriptor computes features that describe
- *        the local shape of a neighborhood of points
+ *        the local shape of a neighborhood of points.
+ *
+ * It is based from the Tensor Voting framework from Medioni et al.,
+ * "A Computational Framework for Segmentation and Grouping", Elsevier 2000.
  */
 // --------------------------------------------------------------
 class SpectralShape: public SpectralAnalysis
 {
   public:
     // --------------------------------------------------------------
-    /**
+    /*!
      * \brief Instantiates the SpectralShape descriptor
      *
      * The features indicate the flat-ness (F), linear-ness (L), and
@@ -79,7 +82,7 @@ class SpectralShape: public SpectralAnalysis
     // ===================================================================
     //@{
     // --------------------------------------------------------------
-    /**
+    /*!
      * \brief Indicates to compute the curvature feature
      */
     // --------------------------------------------------------------
@@ -87,7 +90,7 @@ class SpectralShape: public SpectralAnalysis
     //@}
 
     // --------------------------------------------------------------
-    /**
+    /*!
      * \brief Computes the saliency features that describe the local
      *        shape around the interest points
      *
@@ -102,7 +105,7 @@ class SpectralShape: public SpectralAnalysis
                          cv::Vector<cv::Vector<float> >& results);
 
     // --------------------------------------------------------------
-    /**
+    /*!
      * \brief Computes the saliency features that describe the local
      *        shape around/in the interest regions
      *
@@ -118,7 +121,7 @@ class SpectralShape: public SpectralAnalysis
 
   protected:
     // --------------------------------------------------------------
-    /**
+    /*!
      * \brief Computes the spectral features
      *
      * \param results Container to hold computed features for each interest sample

@@ -49,9 +49,9 @@ using namespace std;
 
 // --------------------------------------------------------------
 //* Position
-/**
- * \brief A Position feature simply uses the 3rd coordinate (z) of the
- *        interest point/region
+/*!
+ * \brief A Position descriptor simply uses the 3rd coordinate (z) of the
+ *        interest point/region, for now.
  */
 // --------------------------------------------------------------
 class Position: public Descriptor3D
@@ -77,7 +77,7 @@ class Position: public Descriptor3D
     //void useMapInformation(void* mapData);
 
     // --------------------------------------------------------------
-    /**
+    /*!
      * \brief Extract the z-coordinate of the interest points
      *
      * \see Descriptor3D::compute
@@ -89,7 +89,7 @@ class Position: public Descriptor3D
                          cv::Vector<cv::Vector<float> >& results);
 
     // --------------------------------------------------------------
-    /**
+    /*!
      * \brief Extract the z-coordinate of the interest regions' centroids
      *
      * \see Descriptor3D::compute
