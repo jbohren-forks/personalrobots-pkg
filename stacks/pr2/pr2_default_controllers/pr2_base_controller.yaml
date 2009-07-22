@@ -1,0 +1,58 @@
+caster_names: fr_caster_rotation_link fl_caster_rotation_link bl_caster_rotation_link br_caster_rotation_link
+
+caster_pid_gains: &caster_pid_gains
+  p: 3.0
+  d: 0.0
+  i: 0.1
+  i_clamp: 4.0
+wheel_pid_gains: &wheel_pid_gains
+  p: 2.0
+  d: 0.0
+  i: 0.01
+  i_clamp: 0.4
+
+fl_caster_l_wheel_joint:
+ *wheel_pid_gains
+fl_caster_r_wheel_joint:
+ *wheel_pid_gains
+fr_caster_l_wheel_joint:
+ *wheel_pid_gains
+fr_caster_r_wheel_joint:
+ *wheel_pid_gains
+bl_caster_l_wheel_joint:
+ *wheel_pid_gains
+bl_caster_r_wheel_joint:
+ *wheel_pid_gains
+br_caster_l_wheel_joint:
+ *wheel_pid_gains
+br_caster_r_wheel_joint:
+ *wheel_pid_gains
+
+fr_caster_rotation_joint:
+ *caster_pid_gains
+fl_caster_rotation_joint:
+ *caster_pid_gains
+bl_caster_rotation_joint:
+ *caster_pid_gains
+br_caster_rotation_joint:
+ *caster_pid_gains
+
+caster_speed_threshold: 0.2
+caster_position_error_threshold: 0.05
+wheel_speed_threshold: 0.2
+caster_effort_threshold: 3.45
+wheel_effort_threshold: 3.45
+kp_wheel_steer: 2.0
+alpha_stall: 0.5
+kp_caster_steer: 40.0
+timeout: 0.4
+max_accel: 
+ ax: 2.0
+ ay: 2.0 
+ alphaz: 2.0
+
+max_vel: 
+ vx: 0.5
+ vy: 0.5 
+ omegaz: 10.0
+
