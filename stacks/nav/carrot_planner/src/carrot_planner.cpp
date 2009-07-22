@@ -32,7 +32,7 @@
 *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 *
-* Author: Eitan Marder-Eppstein
+* Authors: Eitan Marder-Eppstein, Sachin Chitta
 *********************************************************************/
 #include <carrot_planner/carrot_planner.h>
 
@@ -44,7 +44,44 @@ namespace carrot_planner {
     ros::NodeHandle n(name);
     n.param("~step_size", step_size_, costmap_ros_.resolution());
     n.param("~min_dist_from_robot", min_dist_from_robot_, 0.10);
+    costmap_ros_.getCostmapCopy(costmap_);
+    world_model_ = new base_local_planner::CostmapModel(costmap_); 
+    //we'll get the parameters for the robot radius from the costmap we're associated with
+    inscribed_radius_ = costmap_ros_.inscribedRadius();
+    circumscribed_radius_ = costmap_ros_.circumscribedRadius();
+    footprint_spec_ = costmap_ros_.robotFootprint();
   }
+
+
+
+
+
+  //we need to take the footprint of the robot into account when we calculate cost to obstacles
+  double CarrotPlanner::footprintCost(double x_i, double y_i, double theta_i){
+    //if we have no footprint... do nothing
+    if(footprint_spec_.size() < 3)
+      return -1.0;
+
+    //build the oriented footprint
+    double cos_th = cos(theta_i);
+    double sin_th = sin(theta_i);
+    std::vector<robot_msgs::Point> oriented_footprint;
+    for(unsigned int i = 0; i < footprint_spec_.size(); ++i){
+      robot_msgs::Point new_pt;
+      new_pt.x = x_i + (footprint_spec_[i].x * cos_th - footprint_spec_[i].y * sin_th);
+      new_pt.y = y_i + (footprint_spec_[i].x * sin_th + footprint_spec_[i].y * cos_th);
+      oriented_footprint.push_back(new_pt);
+    }
+
+    robot_msgs::Point robot_position;
+    robot_position.x = x_i;
+    robot_position.y = y_i;
+
+    //check if the footprint is legal
+    double footprint_cost = world_model_->footprintCost(robot_position, oriented_footprint, inscribed_radius_, circumscribed_radius_);
+    return footprint_cost;
+  }
+
 
   bool CarrotPlanner::makePlan(const robot_msgs::PoseStamped& start, 
       const robot_msgs::PoseStamped& goal, std::vector<robot_msgs::PoseStamped>& plan){
@@ -52,8 +89,7 @@ namespace carrot_planner {
     ROS_DEBUG("Got a start: %.2f, %.2f, and a goal: %.2f, %.2f", start.pose.position.x, start.pose.position.y, goal.pose.position.x, goal.pose.position.y);
 
     plan.clear();
-    costmap_2d::Costmap2D costmap;
-    costmap_ros_.getCostmapCopy(costmap);
+    costmap_ros_.getCostmapCopy(costmap_);
 
     if(goal.header.frame_id != costmap_ros_.globalFrame()){
       ROS_ERROR("This planner as configured will only accept goals in the %s frame, but a goal was sent in the %s frame.", 
@@ -61,51 +97,70 @@ namespace carrot_planner {
       return false;
     }
 
+    tf::Stamped<tf::Pose> goal_tf;
+    tf::Stamped<tf::Pose> start_tf;
+
+    poseStampedMsgToTF(goal,goal_tf);
+    poseStampedMsgToTF(start,start_tf);
+
+    double useless_pitch, useless_roll, goal_yaw, start_yaw;
+    start_tf.getBasis().getEulerZYX(start_yaw, useless_pitch, useless_roll);
+    goal_tf.getBasis().getEulerZYX(goal_yaw, useless_pitch, useless_roll);
 
     //we want to step back along the vector created by the robot's position and the goal pose until we find a legal cell
-    double goal_point_x = goal.pose.position.x;
-    double goal_point_y = goal.pose.position.y;
+    double goal_x = goal.pose.position.x;
+    double goal_y = goal.pose.position.y;
+    double start_x = start.pose.position.x;
+    double start_y = start.pose.position.y;
 
-    double robot_point_x = start.pose.position.x;
-    double robot_point_y = start.pose.position.y;
-    
-    double distance = sqrt((robot_point_x - goal_point_x) * (robot_point_x - goal_point_x)
-        + (robot_point_y - goal_point_y) * (robot_point_y - goal_point_y));
+    double diff_x = goal_x - start_x;
+    double diff_y = goal_y - start_y;
+    double diff_yaw = angles::normalize_angle(goal_yaw-start_yaw);
 
-    double scaling_fact = std::min(1.0, step_size_ / distance);
-    double step_x = scaling_fact * (robot_point_x - goal_point_x);
-    double step_y = scaling_fact * (robot_point_y - goal_point_y);
-    double sign_step_x = step_x > 0 ? 1 : -1;
-    double sign_step_y = step_y > 0 ? 1 : -1;
+    double target_x = goal_x;
+    double target_y = goal_y;
+    double target_yaw = goal_yaw;
 
-    double x = goal_point_x;
-    double y = goal_point_y;
+    bool done = false;
+    double scale = 1.0;
+    double dScale = 0.01;
 
-    //while we haven't made it back to the robot's position
-    while(sign_step_x * x <= robot_point_x && sign_step_y * y <= robot_point_y){
-      unsigned int cell_x, cell_y;
-      if(costmap.worldToMap(x, y, cell_x, cell_y)){
-        unsigned char cost = costmap.getCost(cell_x, cell_y);
-        ROS_DEBUG("Cost for point %.2f, %.2f is %d", x, y, cost);
-        if(cost < costmap_2d::INSCRIBED_INFLATED_OBSTACLE){
-          //push the current position of the robot onto the plan
-          plan.push_back(start);
-
-          robot_msgs::PoseStamped new_goal = goal;
-          new_goal.pose.position.x = x;
-          new_goal.pose.position.y = y;
-          plan.push_back(new_goal);
-
-          return true;
-        }
-        x += step_x;
-        y += step_y;
+    while(!done)
+    {
+      if(scale < 0)
+      {
+        target_x = start_x;
+        target_y = start_y;
+        target_yaw = start_yaw;
+        ROS_WARN("The carrot planner could not find a valid plan for this goal");
+        break;
       }
+      target_x = start_x + scale * diff_x;
+      target_y = start_y + scale * diff_y;
+      target_yaw = angles::normalize_angle(start_yaw + scale * diff_yaw);
+      
+      double footprint_cost = footprintCost(target_x, target_y, target_yaw);
+      if(footprint_cost >= 0)
+      {
+          done = true;
+      }
+      scale -=dScale;
     }
 
-    ROS_WARN("The carrot planner could not find a valid plan for this goal");
+    plan.push_back(start);
+    robot_msgs::PoseStamped new_goal = goal;
+    tf::Quaternion goal_quat = tf::Quaternion(target_yaw,0,0);
 
-    return false;
+    new_goal.pose.position.x = target_x;
+    new_goal.pose.position.y = target_y;
+
+    new_goal.pose.orientation.x = goal_quat.x();
+    new_goal.pose.orientation.y = goal_quat.y();
+    new_goal.pose.orientation.z = goal_quat.z();
+    new_goal.pose.orientation.w = goal_quat.w();
+
+    plan.push_back(new_goal);
+    return (done);
   }
 
 };
