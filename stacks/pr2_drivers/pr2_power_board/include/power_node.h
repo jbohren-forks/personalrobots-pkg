@@ -2,7 +2,7 @@
 #pragma once
 
 #include <time.h>
-#include "ros/node.h"
+#include "ros/ros.h"
 #include "pr2_power_board/PowerBoardCommand.h"
 #include "boost/thread/mutex.hpp"
 
@@ -51,13 +51,14 @@ class Device
 };
 
 
-class PowerBoard : public ros::Node
+class PowerBoard
 {
   public:
-    PowerBoard( unsigned int serial_number = 0 );
+    PowerBoard( const ros::NodeHandle node_handle, unsigned int serial_number = 0 );
     bool commandCallback( pr2_power_board::PowerBoardCommand::Request &req_,
                           pr2_power_board::PowerBoardCommand::Response &res_);
 
+    void init();
     void collectMessages();
     void sendDiagnostic();
     int collect_messages();
@@ -69,6 +70,10 @@ class PowerBoard : public ros::Node
     int send_command(unsigned int serial_number, int circuit_breaker, const std::string &command, unsigned flags);
 
   private:
+    ros::NodeHandle node_handle;
+    ros::ServiceServer service;
+    ros::Publisher pub;
+
     pr2_power_board::PowerBoardCommand::Request req_;
     pr2_power_board::PowerBoardCommand::Response res_;
     boost::mutex library_lock_;

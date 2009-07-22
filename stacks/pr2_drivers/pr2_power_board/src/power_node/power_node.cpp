@@ -56,7 +56,7 @@
 #include "power_node.h"
 #include "diagnostic_msgs/DiagnosticMessage.h"
 #include "rosconsole/macros_generated.h"
-#include "ros/console.h"
+#include "ros/ros.h"
 
 using namespace std;
 namespace po = boost::program_options;
@@ -594,9 +594,8 @@ int PowerBoard::collect_messages()
   return 0;
 }
 
-PowerBoard::PowerBoard( unsigned int serial_number ): ros::Node ("pr2_power_board")
+PowerBoard::PowerBoard( const ros::NodeHandle node_handle, unsigned int serial_number ) : node_handle(node_handle)
 {
-
   ROSCONSOLE_AUTOINIT;
   log4cxx::LoggerPtr my_logger = log4cxx::Logger::getLogger(ROSCONSOLE_DEFAULT_NAME);
 
@@ -607,6 +606,10 @@ PowerBoard::PowerBoard( unsigned int serial_number ): ros::Node ("pr2_power_boar
   }
 
   this->serial_number = serial_number;
+}
+
+void PowerBoard::init()
+{
   if(serial_number != 0)
   {
     ROS_INFO("PowerBoard: created with serial number = %d", serial_number);
@@ -614,8 +617,9 @@ PowerBoard::PowerBoard( unsigned int serial_number ): ros::Node ("pr2_power_boar
     Devices.push_back(newDevice);
   }
 
-  advertiseService("power_board_control", &PowerBoard::commandCallback);
-  advertise<diagnostic_msgs::DiagnosticMessage>("/diagnostics", 2);
+  service = node_handle.advertiseService("power_board_control", &PowerBoard::commandCallback, this);
+
+  pub = node_handle.advertise<diagnostic_msgs::DiagnosticMessage>("/diagnostics", 2);
 }
 
 bool PowerBoard::commandCallback(pr2_power_board::PowerBoardCommand::Request &req_,
@@ -628,7 +632,7 @@ bool PowerBoard::commandCallback(pr2_power_board::PowerBoardCommand::Request &re
 
 void PowerBoard::collectMessages()
 {
-  while(ok())
+  while(node_handle.ok())
   {
     collect_messages();
     //ROS_DEBUG("*");
@@ -642,9 +646,10 @@ void PowerBoard::sendDiagnostic()
   diagnostic_msgs::DiagnosticValue val;
   diagnostic_msgs::DiagnosticString strval;
 
-  while(ok())
+  ros::Rate r(1);
+  while(node_handle.ok())
   {
-    ros::Duration(1,0).sleep();
+    r.sleep();
     //ROS_DEBUG("-");
     boost::mutex::scoped_lock(library_lock_);
   
@@ -859,7 +864,7 @@ void PowerBoard::sendDiagnostic()
       msg_out.status.push_back(stat);
 
       //ROS_DEBUG("Publishing ");
-      publish("/diagnostics", msg_out);
+      pub.publish(msg_out);
     }
 
   }
@@ -1009,16 +1014,18 @@ int main(int argc, char** argv)
     return 1;
   }
 
-  ros::init(argc, argv);
+  ros::init(argc, argv, "PowerBoard");
 
   CreateAllInterfaces();
 
-  myBoard = new PowerBoard(serial_option);
+  ros::NodeHandle handle;
+  myBoard = new PowerBoard( handle, serial_option);
+  myBoard->init();
 
   boost::thread getThread( &getMessages );
   boost::thread sendThread( &sendMessages );
 
-  myBoard->spin(); //wait for ros to shut us down
+  ros::spin(); //wait for ros to shut us down
 
   sendThread.join();
   getThread.join();
