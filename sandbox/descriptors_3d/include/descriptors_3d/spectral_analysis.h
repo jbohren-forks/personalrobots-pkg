@@ -93,10 +93,13 @@ class SpectralAnalysis: public Descriptor3D
     //@{
     // --------------------------------------------------------------
     /*!
-     * \brief
+     * \brief Indicates for this Descriptor3D to use the given spectral information
      *
      * \warning This method cannot be called if setSpectralRadius has already
      *          been called.
+     *
+     * \param spectral_info Pointer to another SpectralAnalysis that contains
+     *                      computed information
      *
      * \return 0 on success, otherwise negative value on error
      */
@@ -203,7 +206,9 @@ class SpectralAnalysis: public Descriptor3D
     double support_radius_;
     bool support_radius_defined_;
 
-    void populateContainers(const robot_msgs::PointCloud& data, vector<int>& curr_region_indices, size_t idx);
+    void computeSpectralInfo(const robot_msgs::PointCloud& data,
+                             const vector<int>& curr_region_indices,
+                             size_t idx);
 };
 
 #endif

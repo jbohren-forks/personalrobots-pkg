@@ -210,6 +210,7 @@ void BoundingBox::compute(const robot_msgs::PointCloud& data,
     vector<int> neighbor_indices;
     if (bbox_radius_ > 1e-6)
     {
+      // TODO BUG: move this below
       // Change curr_interest_region to point to where the neighboring indices
       // from radiusSearch will be stored to
       curr_interest_region = &neighbor_indices;

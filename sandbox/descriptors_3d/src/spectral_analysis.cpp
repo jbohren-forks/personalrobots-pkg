@@ -116,15 +116,10 @@ int SpectralAnalysis::analyzeInterestPoints(const robot_msgs::PointCloud& data,
   // ----------------------------------------
   // Ensure some regions are provided
   unsigned int nbr_interest_pts = interest_pts.size();
-  if (nbr_interest_pts == 0)
-  {
-    ROS_ERROR("SpectralAnalysis::analyzeInterestPoints() no interest points to analyze");
-    return -1;
-  }
 
   // ----------------------------------------
   // Ensure radius is valid
-  if (support_radius_defined_ == false || support_radius_ < 1e-5)
+  if (support_radius_defined_ == false || support_radius_ < 1e-6)
   {
     ROS_ERROR("SpectralShape::compute() support radius must be set to a positive value");
     return -1;
@@ -144,19 +139,27 @@ int SpectralAnalysis::analyzeInterestPoints(const robot_msgs::PointCloud& data,
 
   // ----------------------------------------
   // Find neighboring points within radius for each interest point
-  vector<int> neighbor_indices;
-  vector<float> neighbor_distances; // unused
   for (size_t i = 0 ; i < nbr_interest_pts ; i++)
   {
-    neighbor_indices.clear();
-    neighbor_distances.clear();
-    if (!data_kdtree.radiusSearch(*(interest_pts[i]), support_radius_, neighbor_indices, neighbor_distances))
+    // ---------------------
+    // Retrieve next interest point
+    const robot_msgs::Point32* curr_interest_pt = interest_pts[i];
+    if (curr_interest_pt == NULL)
     {
-      ROS_WARN("SpectralAnalysis::computeSpectralFeatures() radius search failed");
+      ROS_WARN("SpectralAnalysis::analyzeInterestPoints() passed NULL interest point");
       continue;
     }
 
-    populateContainers(data, neighbor_indices, i);
+    // ---------------------
+    // Retrieve neighboring points around the interest point
+    vector<int> neighbor_indices;
+    vector<float> neighbor_distances; // unused
+    // radiusSearch returning false (0 neighbors) is okay
+    data_kdtree.radiusSearch(*curr_interest_pt, support_radius_, neighbor_indices, neighbor_distances);
+
+    // ---------------------
+    // Compute spectral information for interest point
+    computeSpectralInfo(data, neighbor_indices, i);
   }
 
   // ----------------------------------------
@@ -174,11 +177,6 @@ int SpectralAnalysis::analyzeInterestRegions(const robot_msgs::PointCloud& data,
   // ----------------------------------------
   // Ensure some regions are provided
   unsigned int nbr_regions = interest_region_indices.size();
-  if (nbr_regions == 0)
-  {
-    ROS_ERROR("SpectralAnalysis::analyzeInterestRegions() no regions to analyze");
-    return -1;
-  }
 
   // ----------------------------------------
   // Ensure radius has been defined (negative value is okay if using regions)
@@ -205,33 +203,36 @@ int SpectralAnalysis::analyzeInterestRegions(const robot_msgs::PointCloud& data,
   //   Use the region itself as the support volume
   //   Find a support volume within a radius from the region's centroid
   robot_msgs::Point32 region_centroid;
-  vector<int> neighbor_indices;
-  vector<float> neighbor_distances; // unused
-  vector<int>* curr_region_indices = &neighbor_indices; // curr_region_indices points to result from radiusSearch()
   for (size_t i = 0 ; i < nbr_regions ; i++)
   {
-    // Use the interest region as the support volume
-    if (support_radius_ < 0.0)
+    // ---------------------
+    // Retrieve next interest region
+    // (By default, use the interest region as the support volume)
+    const vector<int>* curr_interest_region = interest_region_indices[i];
+    if (curr_interest_region == NULL)
     {
-      curr_region_indices = interest_region_indices[i];
-    }
-    // Otherwise, do a range search around the interest region's CENTROID
-    else
-    {
-      // centroid of interest region
-      cloud_geometry::nearest::computeCentroid(data, *(interest_region_indices[i]), region_centroid);
-
-      neighbor_indices.clear();
-      neighbor_distances.clear();
-      if (!data_kdtree.radiusSearch(region_centroid, support_radius_, neighbor_indices, neighbor_distances))
-      {
-        ROS_WARN("SpectralAnalysis::computeSpectralFeatures() no points within radius for region %u", i);
-        ROS_WARN("The centroid was: %f %f %f", region_centroid.x, region_centroid.y, region_centroid.z);
-        continue;
-      }
+      ROS_WARN("SpectralAnalysis::analyzeInterestPoints() passed NULL interest region");
+      continue;
     }
 
-    populateContainers(data, *curr_region_indices, i);
+    // Do a range search around the interest region's CENTROID if indicated
+    vector<int> neighbor_indices;
+    if (support_radius_ > 1e-6)
+    {
+      // Compute centroid of interest region
+      cloud_geometry::nearest::computeCentroid(data, *curr_interest_region, region_centroid);
+
+      vector<float> neighbor_distances; // unused
+      // radiusSearch returning false (0 neighbors) is okay
+      data_kdtree.radiusSearch(region_centroid, support_radius_, neighbor_indices, neighbor_distances);
+
+      // Now point to the neighboring points from radiusSearch,
+      curr_interest_region = &neighbor_indices;
+    }
+
+    // ---------------------
+    // Compute spectral information for interest region
+    computeSpectralInfo(data, *curr_interest_region, i);
   }
 
   // ----------------------------------------
@@ -242,15 +243,15 @@ int SpectralAnalysis::analyzeInterestRegions(const robot_msgs::PointCloud& data,
 // --------------------------------------------------------------
 /* See function definition */
 // --------------------------------------------------------------
-void SpectralAnalysis::populateContainers(const robot_msgs::PointCloud& data,
-                                          vector<int>& support_volume_indices,
-                                          size_t idx)
+void SpectralAnalysis::computeSpectralInfo(const robot_msgs::PointCloud& data,
+                                           const vector<int>& support_volume_indices,
+                                           size_t idx)
 {
   // ----------------------------------------
   // Need 3-by-3 matrix to have full rank
   if (support_volume_indices.size() < 3)
   {
-    ROS_WARN("SpectralAnalysis::populateContainers() not enough neighbors for interest pt %u", idx);
+    ROS_WARN("SpectralAnalysis::computeSpectralInfo() not enough neighbors for interest sample %u", idx);
     return;
   }
 
