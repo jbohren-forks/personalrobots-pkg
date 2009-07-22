@@ -514,6 +514,11 @@ void Stanleyi::testContours(string bagfile, string label_dir) {
   
 int main(int argc, char** argv) 
 {
+  // int numCPU = sysconf( _SC_NPROCESSORS_ONLN );
+//   cout << numCPU << endl;
+//   cvSetNumThreads(numCPU);
+  //  cout << cvGetNumThreads() << endl;
+
   Stanleyi s;
 
   // -- Get env var options.
@@ -639,7 +644,7 @@ vector<ImageDescriptor*> setupImageDescriptors() {
 //  d.push_back(new HogWrapper(Size(16,16), Size(16,16), Size(8,8), Size(8,8), 7, 1, -1, 0, 0.2, true));
 //   d.push_back(new HogWrapper(Size(32,32), Size(16,16), Size(8,8), Size(8,8), 7, 1, -1, 0, 0.2, true));
 //   d.push_back(new HogWrapper(Size(64,64), Size(32,32), Size(16,16), Size(16,16), 7, 1, -1, 0, 0.2, true));
-   d.push_back(new HogWrapper(Size(128,128), Size(64,64), Size(32,32), Size(32,32), 7, 1, -1, 0, 0.2, true));
+//   d.push_back(new HogWrapper(Size(128,128), Size(64,64), Size(32,32), Size(32,32), 7, 1, -1, 0, 0.2, true));
 
 //   SuperpixelColorHistogram* sch1 = new SuperpixelColorHistogram(20, 0.5, 10, string("hue"));
 //   SuperpixelColorHistogram* sch2 = new SuperpixelColorHistogram(5, 0.5, 10, string("hue"), NULL, sch1);
@@ -658,8 +663,11 @@ vector<ImageDescriptor*> setupImageDescriptors() {
 //   d.push_back(new IntegralImageTexture(3, iit));
 
 // -- SURF.
-//   SurfWrapper* sw1 = new SurfWrapper(true);
-//   d.push_back(sw1);
+  d.push_back(new SurfWrapper(true, 150));
+  d.push_back(new SurfWrapper(true, 100));
+  d.push_back(new SurfWrapper(true, 50));
+  d.push_back(new SurfWrapper(true, 25));
+  d.push_back(new SurfWrapper(true, 10));
 
 // -- Haar.
 //   vector<ImageDescriptor*> haar = setupDefaultHaarDescriptors();

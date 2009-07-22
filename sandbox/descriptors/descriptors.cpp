@@ -216,12 +216,13 @@ void ImageDescriptor::commonDebug(Keypoint kp, IplImage* vis) {
 *************  ImageDescriptor::SurfWrapper
 ****************************************************************************/
 
-SurfWrapper::SurfWrapper(bool extended) :
+SurfWrapper::SurfWrapper(bool extended, int size) :
   ImageDescriptor(), 
-  extended_(extended)
+  extended_(extended),
+  size_(size)
 {
   char buf[100];
-  sprintf(buf, "SURF_extended%d", extended_);
+  sprintf(buf, "SURF_extended%d_size%d", extended_, size_);
   name_.assign(buf);
 
   if(extended_)
@@ -233,7 +234,6 @@ SurfWrapper::SurfWrapper(bool extended) :
 SurfWrapper::~SurfWrapper() {
 }
 
-//! Currently the size param of the descriptor is set by the keypoint size.  This should maybe be a descriptor level param.
 void SurfWrapper::compute(IplImage* img, const cv::Vector<Keypoint>& points, vvf& results) {
   setImage(img);
 
@@ -256,7 +256,9 @@ void SurfWrapper::compute(IplImage* img, const cv::Vector<Keypoint>& points, vvf
     int direction = 0; //Filled in by extractSURF.  We don't use it anyway. 
     int hessian = threshold+1; //We want all the points to be evaluated, so we make the hessian be larger than the threshold.
     CvSURFPoint point = cvSURFPoint(cvPoint2D32f(points[i].pt.x, points[i].pt.y), 
-				    laplacian, points[i].size, direction, hessian);
+				    laplacian, size_, direction, hessian);
+    assert(point.pt.x == points[i].pt.x);
+    assert(point.pt.y == points[i].pt.y);
     cvSeqPush(surf_kp, &point);
   }
 
@@ -265,17 +267,36 @@ void SurfWrapper::compute(IplImage* img, const cv::Vector<Keypoint>& points, vvf
   CvSeq* features = NULL;
   IplImage* gray = cvCreateImage(cvGetSize(img), IPL_DEPTH_8U, 1);
   cvCvtColor(img, gray, CV_BGR2GRAY);
-  cvExtractSURF(gray, NULL, &surf_kp, &features, feature_storage, params);
-
+  int useProvidedKeypoints = 1; //Otherwise it will find its own keypoints.
+  cvExtractSURF(gray, NULL, &surf_kp, &features, feature_storage, params, useProvidedKeypoints);
+  assert(features->total == surf_kp->total);
 
   // -- Put into vvf results.
   CvSeqReader reader;
+  CvSeqReader kp_reader;
   cvStartReadSeq(features, &reader);
+  cvStartReadSeq(surf_kp, &kp_reader);
   results.reserve(points.size());
+  int matches = 0;
   for(size_t i=0; i<points.size(); ++i) {
     // -- Get the feature.
-    CV_NEXT_SEQ_ELEM(reader.seq->elem_size, reader);
     const float* feature = (const float*)reader.ptr;
+    const CvSURFPoint* kp = (const CvSURFPoint*)kp_reader.ptr;
+
+    // -- See if this feature is for the point we are on.
+    if(kp->pt.x != points[i].pt.x ||
+       kp->pt.y != points[i].pt.y) {
+      
+      results.push_back(Vector<float>());
+      assert(results[i].empty());
+      cout << "Skipped" << endl;
+      continue;
+    }
+
+    // -- Advance the readers.
+    CV_NEXT_SEQ_ELEM(kp_reader.seq->elem_size, kp_reader);
+    CV_NEXT_SEQ_ELEM(reader.seq->elem_size, reader);
+    matches++;
 
     // -- Check length.
     int length = (int)(features->elem_size/sizeof(float));
@@ -293,10 +314,15 @@ void SurfWrapper::compute(IplImage* img, const cv::Vector<Keypoint>& points, vvf
   if(debug_) {
     cout << "Debugging " << name_ << endl;
     cout << "Vector: ";
+    float l2 = 0;
     for(size_t i=0; i<results[0].size(); ++i) {
       cout << results[0][i] << " ";
+      l2 += results[0][i] * results[0][i];
     }
     cout << endl;
+
+    l2 = sqrt(l2);
+    cout << "L2 norm: " << l2 << endl;
     commonDebug(points[0]);
   }
 
@@ -343,6 +369,7 @@ HogWrapper::HogWrapper(Size winSize, Size blockSize, Size blockStride, Size cell
 
 
 void HogWrapper::compute(IplImage* img, const Vector<Keypoint>& points, vvf& results) {
+  setImage(img);
 
   // -- Translate from Keypoint to Point.
   Vector<Point> locations;

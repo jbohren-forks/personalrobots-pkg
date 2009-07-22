@@ -116,8 +116,9 @@ class ImageDescriptor {
 class SurfWrapper : public ImageDescriptor {
  public:
   bool extended_;
+  int size_;
 
-  SurfWrapper(bool extended);
+  SurfWrapper(bool extended = true, int size = 100);
   ~SurfWrapper();
   void compute(IplImage* img, const cv::Vector<Keypoint>& points, vvf& results);
 };

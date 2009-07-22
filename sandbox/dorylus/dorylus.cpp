@@ -156,6 +156,11 @@ std::string DorylusDataset::status()
   ostringstream oss (ostringstream::out);
 
   oss << "DorylusDataset status: \n";
+  if(objs_.size() < 1) {
+    oss << "No objects!" << "\n";
+    return oss.str();
+  }
+  
   oss << "  nClasses: " << nClasses_ << "\n";
   oss << "  nObjects: " << objs_.size() << "\n";
   oss << "  nDescriptors: " << objs_[0]->features.size() << "\n";
