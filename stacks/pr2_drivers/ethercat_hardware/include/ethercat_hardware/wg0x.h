@@ -226,29 +226,9 @@ struct WG0XCommand
 class WG0X : public EthercatDevice
 {
 public:
-  WG0X(bool has_actuator = true, int command_size = sizeof(WG0XCommand), int status_size = sizeof(WG0XStatus)) : EthercatDevice(has_actuator, command_size, status_size)
-  {
-    strings_.reserve(10);
-    values_.reserve(10);
-    reason_ = "OK";
-    level_ = 0;
-
-    voltage_error_ = max_voltage_error_ = 0;
-    filtered_voltage_error_ = max_filtered_voltage_error_ = 0;
-    current_error_ = max_current_error_ = 0;
-    filtered_current_error_ = max_filtered_current_error_ = 0;
-    voltage_estimate_ = 0;
-    last_timestamp_ = 0;
-    last_last_timestamp_ = 0;
-    drops_ = 0;
-    consecutive_drops_ = 0;
-    max_consecutive_drops_ = 0;
-    in_lockout_ = false;
-    motor_publisher_ = 0;
-  }
+  WG0X(EtherCAT_SlaveHandler *sh, int &start_address);
   virtual ~WG0X();
 
-  EthercatDevice *configure(int &start_address, EtherCAT_SlaveHandler *sh);
   virtual int initialize(Actuator *, bool allow_unprogrammed=true, bool motor_model=false);
   void initXml(TiXmlElement *);
 
@@ -263,6 +243,12 @@ public:
   bool isProgrammed() { return actuator_info_.crc32_ != 0;}
 
   void diagnostics(diagnostic_msgs::DiagnosticStatus &d, unsigned char *);
+
+protected:
+  uint8_t fw_major_;
+  uint8_t fw_minor_;
+  uint8_t board_major_;
+  uint8_t board_minor_;
 
 private:
   string safetyDisableString(uint8_t status);
@@ -336,11 +322,13 @@ private:
   bool in_lockout_;
 
   realtime_tools::RealtimePublisher<ethercat_hardware::MotorModel> *motor_publisher_;
+
 };
 
 class WG05 : public WG0X
 {
 public:
+  WG05(EtherCAT_SlaveHandler *sh, int &addr) : WG0X(sh, addr) {}
   enum
   {
     PRODUCT_CODE = 6805005
@@ -359,7 +347,7 @@ struct WG06Pressure
 class WG06 : public WG0X
 {
 public:
-  WG06() : WG0X(true, sizeof(WG0XCommand), sizeof(WG0XStatus)+sizeof(WG06Pressure)), use_ros_(true), last_pressure_time_(0), pressure_publisher_(0), accel_publisher_(0) {}
+  WG06(EtherCAT_SlaveHandler *sh, int &addr) : WG0X(sh, addr), use_ros_(true), last_pressure_time_(0), pressure_publisher_(0), accel_publisher_(0) {}
   ~WG06();
   int initialize(Actuator *, bool allow_unprogrammed=true, bool motor_model=false);
   void convertState(ActuatorState &state, unsigned char *current_buffer, unsigned char *last_buffer);

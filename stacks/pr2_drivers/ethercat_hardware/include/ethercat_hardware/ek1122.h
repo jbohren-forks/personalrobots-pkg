@@ -40,8 +40,8 @@
 class EK1122 : public EthercatDevice
 {
 public:
-  EK1122() : EthercatDevice() {}
-  EthercatDevice *configure(int &start_address, EtherCAT_SlaveHandler *sh);
+  EK1122(EtherCAT_SlaveHandler *sh, int &start_address);
+  ~EK1122();
   int initialize(Actuator *, bool, bool);
   void convertCommand(ActuatorCommand &command, unsigned char *buffer) {}
   void convertState(ActuatorState &state, unsigned char *current_buffer, unsigned char *last_buffer) {}

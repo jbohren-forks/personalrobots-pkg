@@ -46,8 +46,8 @@
 
 #include <boost/crc.hpp>
 
-static bool reg05 = DeviceFactory::Instance().Register(WG05::PRODUCT_CODE, deviceCreator<WG05> );
-static bool reg06 = DeviceFactory::Instance().Register(WG06::PRODUCT_CODE, deviceCreator<WG06> );
+bool reg05 = DeviceFactory::Instance().Register(WG05::PRODUCT_CODE, deviceCreator<WG05> );
+bool reg06 = DeviceFactory::Instance().Register(WG06::PRODUCT_CODE, deviceCreator<WG06> );
 
 static unsigned int rotateRight8(unsigned in)
 {
@@ -113,35 +113,44 @@ WG06::~WG06()
 }
 
 
-EthercatDevice *WG0X::configure(int &startAddress, EtherCAT_SlaveHandler *sh)
+WG0X::WG0X(EtherCAT_SlaveHandler *sh, int &startAddress) : EthercatDevice(sh, true)
 {
-  sh_ = sh;
-  bool isWG06 = sh->get_product_code() == WG06::PRODUCT_CODE;
-  int board_revision = ((sh->get_revision() >> 24) & 0xff) - 1;
-  bool hasAccel = isWG06 && board_revision >= 3;
-  int status_bytes = sizeof(WG0XStatus);
+  reason_ = "OK";
+  level_ = 0;
 
-  if (hasAccel)
+  voltage_error_ = max_voltage_error_ = 0;
+  filtered_voltage_error_ = max_filtered_voltage_error_ = 0;
+  current_error_ = max_current_error_ = 0;
+  filtered_current_error_ = max_filtered_current_error_ = 0;
+  voltage_estimate_ = 0;
+  last_timestamp_ = 0;
+  last_last_timestamp_ = 0;
+  drops_ = 0;
+  consecutive_drops_ = 0;
+  max_consecutive_drops_ = 0;
+  in_lockout_ = false;
+  motor_publisher_ = 0;
+
+  fw_major_ = (sh->get_revision() >> 8) & 0xff;
+  fw_minor_ = sh->get_revision() & 0xff;
+  board_major_ = ((sh->get_revision() >> 24) & 0xff) - 1;
+  board_minor_ = (sh->get_revision() >> 16) & 0xff;
+
+  bool isWG06 = sh_->get_product_code() == WG06::PRODUCT_CODE;
+  unsigned int base_status = sizeof(WG0XStatus);
+
+  command_size_ = sizeof(WG0XCommand);
+  status_size_ = sizeof(WG0XStatus);
+  if (isWG06)
   {
-    status_size_ = sizeof(WG06StatusWithAccel) + sizeof(WG06Pressure);
-    status_bytes = sizeof(WG06StatusWithAccel);
+    if (fw_major_ >= 1)
+      status_size_ = base_status = sizeof(WG06StatusWithAccel);
+    status_size_ += sizeof(WG06Pressure);
   }
 
   EtherCAT_FMMU_Config *fmmu = new EtherCAT_FMMU_Config(isWG06 ? 3 : 2);
   (*fmmu)[0] = EC_FMMU(startAddress, // Logical start address
-                       status_bytes, // Logical length
-                       0x00, // Logical StartBit
-                       0x07, // Logical EndBit
-                       STATUS_PHY_ADDR, // Physical Start address
-                       0x00, // Physical StartBit
-                       true, // Read Enable
-                       false, // Write Enable
-                       true); // Enable
-
-  startAddress += status_bytes;
-
-  (*fmmu)[1] = EC_FMMU(startAddress, // Logical start address
-                       sizeof(WG0XCommand),// Logical length
+                       command_size_,// Logical length
                        0x00, // Logical StartBit
                        0x07, // Logical EndBit
                        COMMAND_PHY_ADDR, // Physical Start address
@@ -150,7 +159,19 @@ EthercatDevice *WG0X::configure(int &startAddress, EtherCAT_SlaveHandler *sh)
                        true, // Write Enable
                        true); // Enable
 
-  startAddress += sizeof(WG0XCommand);
+  startAddress += command_size_;
+
+  (*fmmu)[1] = EC_FMMU(startAddress, // Logical start address
+                       base_status, // Logical length
+                       0x00, // Logical StartBit
+                       0x07, // Logical EndBit
+                       STATUS_PHY_ADDR, // Physical Start address
+                       0x00, // Physical StartBit
+                       true, // Read Enable
+                       false, // Write Enable
+                       true); // Enable
+
+  startAddress += base_status;
 
   if (isWG06)
   {
@@ -171,11 +192,11 @@ EthercatDevice *WG0X::configure(int &startAddress, EtherCAT_SlaveHandler *sh)
   EtherCAT_PD_Config *pd = new EtherCAT_PD_Config(isWG06 ? 5 : 4);
 
   // Sync managers
-  (*pd)[0] = EC_SyncMan(COMMAND_PHY_ADDR, sizeof(WG0XCommand), EC_BUFFERED, EC_WRITTEN_FROM_MASTER);
+  (*pd)[0] = EC_SyncMan(COMMAND_PHY_ADDR, command_size_, EC_BUFFERED, EC_WRITTEN_FROM_MASTER);
   (*pd)[0].ChannelEnable = true;
   (*pd)[0].ALEventEnable = true;
 
-  (*pd)[1] = EC_SyncMan(STATUS_PHY_ADDR, status_bytes);
+  (*pd)[1] = EC_SyncMan(STATUS_PHY_ADDR, base_status);
   (*pd)[1].ChannelEnable = true;
 
   (*pd)[2] = EC_SyncMan(MBX_COMMAND_PHY_ADDR, MBX_COMMAND_SIZE, EC_QUEUED, EC_WRITTEN_FROM_MASTER);
@@ -192,8 +213,6 @@ EthercatDevice *WG0X::configure(int &startAddress, EtherCAT_SlaveHandler *sh)
   }
 
   sh->set_pd_config(pd);
-
-  return this;
 }
 
 int WG06::initialize(Actuator *actuator, bool allow_unprogrammed, bool motor_model)
@@ -207,9 +226,7 @@ int WG06::initialize(Actuator *actuator, bool allow_unprogrammed, bool motor_mod
       topic = topic + "/" + string(actuator->name_);
     pressure_publisher_ = new realtime_tools::RealtimePublisher<ethercat_hardware::PressureState>(ros::NodeHandle(), topic, 1);
 
-    unsigned int revision = sh_->get_revision();
-    unsigned int board_major = ((revision >> 24) & 0xff) - 1;
-    if (board_major >= 3)
+    if (fw_major_ >= 1)
     {
       topic = "/accelerometer/";
       if (!actuator->name_.empty())
@@ -224,29 +241,25 @@ int WG06::initialize(Actuator *actuator, bool allow_unprogrammed, bool motor_mod
 
 int WG0X::initialize(Actuator *actuator, bool allow_unprogrammed, bool motor_model)
 {
-  unsigned int revision = sh_->get_revision();
-  unsigned int major = (revision >> 8) & 0xff;
-  unsigned int minor = revision & 0xff;
-
   ROS_DEBUG("Device #%02d: WG0%d (%#08x) Firmware Revision %d.%02d, PCB Revision %c.%02d", sh_->get_ring_position(),
          sh_->get_product_code() == WG05::PRODUCT_CODE ? 5 : 6,
-         sh_->get_product_code(), major, minor,
-         'A' + ((revision >> 24) & 0xff) - 1, (revision >> 16) & 0xff);
+         sh_->get_product_code(), fw_major_, fw_minor_,
+         'A' + board_major_, board_minor_);
 
   if (sh_->get_product_code() == WG05::PRODUCT_CODE)
   {
-    if (major != 1 || minor < 7)
+    if (fw_major_ != 1 || fw_minor_ < 7)
     {
-      ROS_FATAL("Unsupported firmware revision %d.%02d\n", major, minor);
+      ROS_FATAL("Unsupported firmware revision %d.%02d\n", fw_major_, fw_minor_);
       ROS_BREAK();
       return -1;
     }
   }
   else
   {
-    if ((major == 0 && minor < 4) || (major == 1 && minor < 0))
+    if ((fw_major_ == 0 && fw_minor_ < 4) || (fw_major_ == 1 && fw_minor_ < 0))
     {
-      ROS_FATAL("Unsupported firmware revision %d.%02d\n", major, minor);
+      ROS_FATAL("Unsupported firmware revision %d.%02d\n", fw_major_, fw_minor_);
       ROS_BREAK();
       return -1;
     }
@@ -340,17 +353,13 @@ void WG0X::initXml(TiXmlElement *elt)
 
 void WG0X::convertCommand(ActuatorCommand &command, unsigned char *buffer)
 {
-  bool isWG06 = sh_->get_product_code() == WG06::PRODUCT_CODE;
-  int board_revision = ((sh_->get_revision() >> 24) & 0xff) - 1;
-  bool hasAccel = isWG06 && board_revision >= 3;
-  int status_bytes = hasAccel ? sizeof(WG06StatusWithAccel) : sizeof(WG0XStatus);
-  WG0XCommand *c = (WG0XCommand *)(buffer + status_bytes);
+  WG0XCommand *c = (WG0XCommand *)buffer;
 
-  memset(c, 0, sizeof(WG0XCommand));
+  memset(c, 0, command_size_);
 
   c->programmed_current_ = int(command.current_ / config_info_.nominal_current_scale_);
   c->mode_ = command.enable_ ? (MODE_ENABLE | MODE_CURRENT | MODE_SAFETY_RESET) : MODE_OFF;
-  c->checksum_ = rotateRight8(computeChecksum(c, sizeof(WG0XCommand) - 1));
+  c->checksum_ = rotateRight8(computeChecksum(c, command_size_ - 1));
   c->digital_out_ = command.digital_out_;
 }
 
@@ -366,11 +375,9 @@ void WG0X::truncateCurrent(ActuatorCommand &command)
   
 void WG06::convertState(ActuatorState &state, unsigned char *current_buffer, unsigned char *last_buffer)
 {
-  bool isWG06 = sh_->get_product_code() == WG06::PRODUCT_CODE;
-  int board_revision = ((sh_->get_revision() >> 24) & 0xff) - 1;
-  bool hasAccel = isWG06 && board_revision >= 3;
-  int status_bytes = hasAccel ? sizeof(WG06StatusWithAccel) : sizeof(WG0XStatus);
-  WG06Pressure *p = (WG06Pressure *)(current_buffer + sizeof(WG0XCommand) + status_bytes);
+  int status_bytes = accel_publisher_ ? sizeof(WG06StatusWithAccel) : sizeof(WG0XStatus);
+
+  WG06Pressure *p = (WG06Pressure *)(current_buffer + command_size_ + status_bytes);
 
   if (p->timestamp_ != last_pressure_time_)
   {
@@ -389,8 +396,8 @@ void WG06::convertState(ActuatorState &state, unsigned char *current_buffer, uns
 
   if (accel_publisher_ && accel_publisher_->trylock())
   {
-    WG06StatusWithAccel *status = (WG06StatusWithAccel *)current_buffer;
-    WG06StatusWithAccel *last_status = (WG06StatusWithAccel *)last_buffer;
+    WG06StatusWithAccel *status = (WG06StatusWithAccel *)(current_buffer + command_size_);
+    WG06StatusWithAccel *last_status = (WG06StatusWithAccel *)(last_buffer + command_size_);
     int count = min(uint8_t(4), uint8_t(status->accel_count_ - last_status->accel_count_));
 
     accel_publisher_->msg_.set_x_size(count);
@@ -416,8 +423,8 @@ void WG0X::convertState(ActuatorState &state, unsigned char *this_buffer, unsign
 {
   WG0XStatus *this_status, *prev_status;
 
-  this_status = (WG0XStatus *)this_buffer;
-  prev_status = (WG0XStatus *)prev_buffer;
+  this_status = (WG0XStatus *)(this_buffer + command_size_);
+  prev_status = (WG0XStatus *)(prev_buffer + command_size_);
 
   state.timestamp_ = this_status->timestamp_ / 1e+6;
   state.device_id_ = sh_->get_ring_position();
@@ -460,8 +467,8 @@ bool WG0X::verifyState(ActuatorState &state, unsigned char *this_buffer, unsigne
 
   expected_voltage = state.last_measured_current_ * actuator_info_.resistance_ + state.velocity_ * actuator_info_.encoder_reduction_ * backemf_constant_;
 
-  this_status = (WG0XStatus *)this_buffer;
-  prev_status = (WG0XStatus *)prev_buffer;
+  this_status = (WG0XStatus *)(this_buffer + command_size_);
+  prev_status = (WG0XStatus *)(prev_buffer + command_size_);
 
   if (this_status->timestamp_ == last_timestamp_ ||
       this_status->timestamp_ == last_last_timestamp_) {
@@ -912,7 +919,7 @@ void WG0X::diagnostics(diagnostic_msgs::DiagnosticStatus &d, unsigned char *buff
 {
   diagnostic_msgs::DiagnosticValue v;
   diagnostic_msgs::DiagnosticString s;
-  WG0XStatus *status = (WG0XStatus *)buffer;
+  WG0XStatus *status = (WG0XStatus *)(buffer + command_size_);
 
   strings_.clear();
   values_.clear();
