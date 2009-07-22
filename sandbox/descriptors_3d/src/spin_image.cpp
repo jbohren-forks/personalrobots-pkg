@@ -286,18 +286,15 @@ void SpinImage::compute(const robot_msgs::PointCloud& data,
 
     // ---------------------
     // Find the points that will constitute the spin image.
-    vector<int> radius_search_neighbors;
-    const vector<int>* neighbors_for_spin_img = &radius_search_neighbors;
-    if (use_interest_region_only_)
+    vector<int> neighbor_indices;
+    if (use_interest_region_only_ == false)
     {
-      neighbors_for_spin_img = curr_interest_region;
-    }
-    else
-    {
-      vector<float> radius_search_neighbor_indices; // unused
+      vector<float> neighbor_distances; // unused
       // radiusSearch returning false (0 neighbors) is okay
-      data_kdtree.radiusSearch(region_centroid, spin_radius, radius_search_neighbors,
-          radius_search_neighbor_indices);
+      data_kdtree.radiusSearch(region_centroid, spin_radius, neighbor_indices, neighbor_distances);
+
+      // Now point to the neighboring points from radiusSearch
+      curr_interest_region = &neighbor_indices;
     }
 
     // ---------------------
@@ -305,7 +302,7 @@ void SpinImage::compute(const robot_msgs::PointCloud& data,
     center_pt[0] = region_centroid.x;
     center_pt[1] = region_centroid.y;
     center_pt[2] = region_centroid.z;
-    computeSpinImage(data, *neighbors_for_spin_img, center_pt, results[i]);
+    computeSpinImage(data, *curr_interest_region, center_pt, results[i]);
   }
 }
 
