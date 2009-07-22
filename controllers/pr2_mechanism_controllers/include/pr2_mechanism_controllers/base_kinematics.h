@@ -66,7 +66,14 @@ namespace controller
       /*!
        * \brief name of the joint
        */
-      std::string name_;
+      std::string joint_name_;
+
+      /*!
+       * \brief name of the link
+       */
+      std::string link_name_;
+
+
       /*!
        * \brief offset_ after rotation transformation from the parent caster's position
        */
@@ -117,7 +124,8 @@ namespace controller
        * @param robot_state The robot's current state
        * @param config Tiny xml element pointing to this wheel
        */
-      void initXml(mechanism::RobotState *robot_state, TiXmlElement *config);
+//      void initXml(mechanism::RobotState *robot_state, TiXmlElement *config);
+      bool init(mechanism::RobotState *robot_state, const ros::NodeHandle &node, std::string link_name);
 
       /*!
        * \brief Computes 2d postion of the wheel relative to the center of the base
@@ -143,9 +151,15 @@ namespace controller
       robot_msgs::Point offset_;
 
       /*!
+       * \brief name of the link
+       */
+      std::string link_name_;
+
+      /*!
        * \brief name of the joint
        */
-      std::string name_;
+      std::string joint_name_;
+
       //robot_msgs::Point position_;
 
       /*!
@@ -203,7 +217,8 @@ namespace controller
        * @param robot_state The robot's current state
        * @param config Tiny xml element pointing to this caster
        */
-      void initXml(mechanism::RobotState *robot_state, TiXmlElement *config);
+//      void initXml(mechanism::RobotState *robot_state, TiXmlElement *config);
+      bool init(mechanism::RobotState *robot_state,  const ros::NodeHandle &node, std::string link_name);
   };
 
   /*! \class
@@ -219,7 +234,8 @@ namespace controller
        * @param config Tiny xml element pointing to its controller
        * @return Successful init
        */
-      bool initXml(mechanism::RobotState *robot_state, TiXmlElement *config);
+//      bool initXml(mechanism::RobotState *robot_state, TiXmlElement *config);
+    bool init(mechanism::RobotState *robot_state, const ros::NodeHandle &node);
 
       /*!
        * \brief Computes 2d postion of every wheel relative to the center of the base
@@ -283,5 +299,10 @@ namespace controller
        * \brief maximum dT used in computation of interpolated velocity command
        */
       double MAX_DT_;
+
+      /*!
+       * \brief Name(string id) of the robot base frame 
+       */
+      std::string robot_base_id_;
   };
 }

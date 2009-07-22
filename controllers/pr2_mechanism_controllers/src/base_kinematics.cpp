@@ -39,7 +39,8 @@
 
 using namespace controller;
 
-void Wheel::initXml(mechanism::RobotState *robot_state, TiXmlElement *config)
+
+bool Wheel::init(mechanism::RobotState *robot_state, const ros::NodeHandle &node, std::string link_name)
 {
   wheel_stuck_ = 0;
   direction_multiplier_ = 1;
@@ -48,19 +49,28 @@ void Wheel::initXml(mechanism::RobotState *robot_state, TiXmlElement *config)
   wheel_speed_cmd_ = 0;
   wheel_speed_actual_ = 0;
 
-  mechanism::Link *link = robot_state->model_->getLink(config->Attribute("name"));
-  name_ = link->joint_name_;
-  joint_ = robot_state->getJointState(name_);
+  mechanism::Link *link = robot_state->model_->getLink(link_name);
+  if(!link)
+  {
+    ROS_ERROR("Could not find link with name %s",link_name.c_str());
+    return false;
+  }
+  ROS_DEBUG("wheel name: %s",link_name.c_str());
+  link_name_ = link_name;
+  joint_name_ = link->joint_name_;
+
+  joint_ = robot_state->getJointState(joint_name_);
   tf::Transform offset = link->getOffset();
   offset_.x = offset.getOrigin().x();
   offset_.y = offset.getOrigin().y();
   offset_.z = offset.getOrigin().z();
-  ros::Node::instance()->param<double> (name_ + "/wheel_radius_scaler", wheel_radius_scaler_, 1.0);
-  ROS_DEBUG("Loading wheel: %s",name_.c_str());
+  node.param<double> ("wheel_radius_scaler", wheel_radius_scaler_, 1.0);
+  ROS_DEBUG("Loading wheel: %s",link_name_.c_str());
   ROS_DEBUG("offset_.x: %f, offset_.y: %f, offset_.z: %f", offset_.x, offset_.y, offset_.z);
+  return true;
 }
 
-void Caster::initXml(mechanism::RobotState *robot_state, TiXmlElement *config)
+bool Caster::init(mechanism::RobotState *robot_state,  const ros::NodeHandle &node, std::string link_name)
 {
   caster_stuck_ = 0;
   caster_speed_ = 0;
@@ -72,53 +82,72 @@ void Caster::initXml(mechanism::RobotState *robot_state, TiXmlElement *config)
   steer_angle_actual_ = 0;
   num_children_ = 0;
 
-  mechanism::Link *link = robot_state->model_->getLink(config->Attribute("name"));
-  name_ = link->joint_name_;
-  joint_ = robot_state->getJointState(name_);
+  ROS_DEBUG("caster name: %s",link_name.c_str());
+  link_name_ = link_name;
+  mechanism::Link *link = robot_state->model_->getLink(link_name);
+  if(!link)
+  {
+    ROS_ERROR("Could not find link with name %s",link_name.c_str());
+    return false;
+  }
+  joint_name_ = link->joint_name_;
+  joint_ = robot_state->getJointState(joint_name_);
   tf::Transform offset = link->getOffset();
   offset_.x = offset.getOrigin().x();
   offset_.y = offset.getOrigin().y();
   offset_.z = offset.getOrigin().z();
-  TiXmlElement *elt = config->FirstChildElement(parent_->xml_wheel_name_);
-  ROS_DEBUG("Loading caster: %s: my parent is: %s",name_.c_str(), parent_->name_.c_str());
-  ROS_DEBUG("offset_.x: %f, offset_.y: %f, offset_.z: %f", offset_.x, offset_.y, offset_.z);
-  
-  while(elt)
+
+  KDL::SegmentMap::const_iterator root = robot_state->model_->tree_.getSegment(link_name); 
+
+  for(unsigned int i=0; i < root->second.children.size(); i++)
   {
+    KDL::SegmentMap::const_iterator child = root->second.children[i];
     Wheel tmp;
     parent_->wheel_.push_back(tmp);
-    parent_->wheel_[parent_->num_wheels_].initXml(robot_state, elt);
-    elt = elt->NextSiblingElement(parent_->xml_wheel_name_);
+    if(!parent_->wheel_[parent_->num_wheels_].init(robot_state, node.getNamespace(), child->second.segment.getName()))
+    {
+      ROS_ERROR("Could not initialize caster %s",link_name.c_str());
+      return false;
+    }
     parent_->num_wheels_++;
     num_children_++;
   }
+  return true;
 }
 
-bool BaseKinematics::initXml(mechanism::RobotState *robot_state, TiXmlElement *config)
+bool BaseKinematics::init(mechanism::RobotState *robot_state, const ros::NodeHandle &node)
 {
-  name_ = config->Attribute("name");
+  std::string caster_names_string;
+  std::vector<std::string> caster_names;
+  name_ = node.getNamespace();
   //Initialize stuff
   MAX_DT_ = 0.01;
   num_wheels_ = 0;
   num_casters_ = 0;
 
-  //Add parameters
-  ros::Node::instance()->param<std::string> ("~xml_wheel_name", xml_wheel_name_, "wheel");
-  ros::Node::instance()->param<std::string> ("~xml_caster_name", xml_caster_name_, "caster");
-  ros::Node::instance()->param<double> ("~wheel_radius", wheel_radius_, 0.074792);
-  double multiplier;
-  ros::Node::instance()->param<double> (name_ + "/wheel_radius_multiplier", multiplier, 1.0);
-  wheel_radius_ = wheel_radius_ * multiplier;
+  robot_state_ = robot_state;
 
-  TiXmlElement *elt = config->FirstChildElement(xml_caster_name_);
-  
-  while(elt)
+  node.param<std::string> ("caster_names",caster_names_string,"");
+  std::stringstream ss(caster_names_string);
+  std::string tmp;
+  while(ss >> tmp)
+  {
+    caster_names.push_back(tmp);
+  }
+
+
+
+  for(unsigned int i=0; i < caster_names.size(); i++)
   {
     Caster tmp;
     caster_.push_back(tmp);
     caster_[num_casters_].parent_ = this;
-    caster_[num_casters_].initXml(robot_state, elt);
-    elt = elt->NextSiblingElement(xml_caster_name_);
+    ROS_DEBUG("caster name: %s",caster_names[i].c_str());
+    if(!caster_[num_casters_].init(robot_state, name_, caster_names[i]))
+    {
+      ROS_ERROR("Could not initialize base kinematics");
+      return false;
+    }
     num_casters_++;
   }
   int wheel_counter = 0;
@@ -130,7 +159,12 @@ bool BaseKinematics::initXml(mechanism::RobotState *robot_state, TiXmlElement *c
       wheel_counter++;
     }
   }
-  robot_state_ = robot_state;
+
+  node.param<double> ("wheel_radius", wheel_radius_, 0.074792);
+  double multiplier;
+  node.param<double> ("wheel_radius_multiplier", multiplier, 1.0);
+  wheel_radius_ = wheel_radius_ * multiplier;
+
   return true;
 }
 

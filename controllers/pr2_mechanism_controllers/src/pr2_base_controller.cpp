@@ -64,8 +64,6 @@ Pr2BaseController::Pr2BaseController()
 
 Pr2BaseController::~Pr2BaseController()
 {
-  ros::Node::instance()->unsubscribe("cmd_vel");
-
   //Destruct things (publishers)
   if(state_publisher_)
   {
@@ -74,9 +72,10 @@ Pr2BaseController::~Pr2BaseController()
   }
 }
 
-bool Pr2BaseController::initXml(mechanism::RobotState *robot, TiXmlElement *config)
+bool Pr2BaseController::init(mechanism::RobotState *robot, const ros::NodeHandle &n)
 {
-  base_kin_.initXml(robot, config);
+  base_kin_.init(robot,n);
+  node_ = n;
   if(state_publisher_ != NULL)// Make sure that we don't memory leak if initXml gets called twice
     delete state_publisher_;
   state_publisher_ = new realtime_tools::RealtimePublisher<pr2_msgs::BaseControllerState>(base_kin_.name_ + "/state", 1);
@@ -87,64 +86,59 @@ bool Pr2BaseController::initXml(mechanism::RobotState *robot, TiXmlElement *conf
   state_publisher_->msg_.set_joint_speed_filtered_size(base_kin_.num_wheels_ + base_kin_.num_casters_);
   state_publisher_->msg_.set_joint_commanded_effort_size(base_kin_.num_wheels_ + base_kin_.num_casters_);
   state_publisher_->msg_.set_joint_applied_effort_size(base_kin_.num_wheels_ + base_kin_.num_casters_);
-  ros::Node::instance()->subscribe("cmd_vel", baseVelMsg, &Pr2BaseController::CmdBaseVelReceived, this, 1);
-  //Get params from param server
-  ros::Node::instance()->param<double> (base_kin_.name_ + "/max_vel_.vel.vx", max_vel_.vel.vx, .5);
-  ros::Node::instance()->param<double> (base_kin_.name_ + "/max_vel_.vel.vy", max_vel_.vel.vy, .5);
-  ros::Node::instance()->param<double> (base_kin_.name_ + "/max_vel_.ang_vel.vz", max_vel_.ang_vel.vz, 10.0); //0.5
-  ros::Node::instance()->param<double> (base_kin_.name_ + "/max_accel_.acc.ax", max_accel_.acc.ax, .2);
-  ros::Node::instance()->param<double> (base_kin_.name_ + "/max_accel_.acc.ay", max_accel_.acc.ay, .2);
-  ros::Node::instance()->param<double> (base_kin_.name_ + "/max_accel_.ang_acc.az", max_accel_.ang_acc.az, 10.0); //0.2
-  ros::Node::instance()->param<double> (base_kin_.name_ + "/caster_speed_threshold", caster_speed_threshold_, 0.2);
-  ros::Node::instance()->param<double> (base_kin_.name_ + "/caster_position_error_threshold", caster_position_error_threshold_, 0.05);
-  ros::Node::instance()->param<double> (base_kin_.name_ + "/wheel_speed_threshold", wheel_speed_threshold_, 0.2);
-  ros::Node::instance()->param<double> (base_kin_.name_ + "/caster_effort_threshold", caster_effort_threshold_, 3.45);
-  ros::Node::instance()->param<double> (base_kin_.name_ + "/wheel_effort_threshold", wheel_effort_threshold_, 3.45);
-  ros::Node::instance()->param<double> (base_kin_.name_ + "/kp_wheel_steer_", kp_wheel_steer_, 2.0);
-  ros::Node::instance()->param<double> (base_kin_.name_ + "/alpha_stall", alpha_stall_, 0.5);
-  ros::Node::instance()->param<double> (base_kin_.name_ + "/kp_caster_steer_", kp_caster_steer_, 40.0);
-  ros::Node::instance()->param<double> (base_kin_.name_ + "/timeout", timeout_, 1.0);
-  ros::Node::instance()->param<double> (base_kin_.name_ + "/eps", eps_, 1e-5);
-  ros::Node::instance()->param<double> (base_kin_.name_ + "/cmd_vel_trans_eps", cmd_vel_trans_eps_, 1e-5);
-  ros::Node::instance()->param<double> (base_kin_.name_ + "/cmd_vel_rot_eps", cmd_vel_rot_eps_, 1e-5);
 
-  /*double kp_;
-   double ki_;
-   double kd_;
-   double ki_clamp;*/
+//    joy_sub_ = ros_node_.subscribe(joy_listen_topic, 1, &AntiCollisionBaseController::joyCallBack, this);
+
+  //Get params from param server
+  node_.param<double> ("max_vel/vx", max_vel_.vel.vx, .5);
+  node_.param<double> ("max_vel/vy", max_vel_.vel.vy, .5);
+  node_.param<double> ("max_vel/omegaz", max_vel_.ang_vel.vz, 10.0); //0.5
+  node_.param<double> ("max_accel/ax", max_accel_.acc.ax, .2);
+  node_.param<double> ("max_accel/ay", max_accel_.acc.ay, .2);
+  node_.param<double> ("max_accel/alphaz", max_accel_.ang_acc.az, 10.0); //0.2
+  node_.param<double> ("caster_speed_threshold", caster_speed_threshold_, 0.2);
+  node_.param<double> ("caster_position_error_threshold", caster_position_error_threshold_, 0.05);
+  node_.param<double> ("wheel_speed_threshold", wheel_speed_threshold_, 0.2);
+  node_.param<double> ("caster_effort_threshold", caster_effort_threshold_, 3.45);
+  node_.param<double> ("wheel_effort_threshold", wheel_effort_threshold_, 3.45);
+  node_.param<double> ("kp_wheel_steer_", kp_wheel_steer_, 2.0);
+  node_.param<double> ("alpha_stall", alpha_stall_, 0.5);
+  node_.param<double> ("kp_caster_steer_", kp_caster_steer_, 40.0);
+  node_.param<double> ("timeout", timeout_, 1.0);
+  node_.param<double> ("eps", eps_, 1e-5);
+  node_.param<double> ("cmd_vel_trans_eps", cmd_vel_trans_eps_, 1e-5);
+  node_.param<double> ("cmd_vel_rot_eps", cmd_vel_rot_eps_, 1e-5);
+  node_.param<std::string> ("cmd_topic", cmd_topic_, "cmd_vel");
+  cmd_sub_ = node_.subscribe<robot_msgs::PoseDot>(cmd_topic_, 1, &Pr2BaseController::CmdBaseVelReceived, this);
+
   //casters
   caster_controller_.resize(base_kin_.num_casters_);
   for(int i = 0; i < base_kin_.num_casters_; i++)
   {
     control_toolbox::Pid p_i_d;
-    state_publisher_->msg_.joint_name[i] = base_kin_.caster_[i].name_;
-    /*ros::Node::instance()->param<double>(base_kin_.caster_[i].name_ + "/p",kp_,3.0);
-     ros::Node::instance()->param<double>(base_kin_.caster_[i].name_ + "/i",ki_,0.1);
-     ros::Node::instance()->param<double>(base_kin_.caster_[i].name_ + "/d",kd_,0.0);
-     ros::Node::instance()->param<double>(base_kin_.caster_[i].name_ + "/i_clamp",ki_clamp,4.0);*/
-    //tmp.init(base_kin_.robot_state_, base_kin_.caster_[i].name_ + "joint", control_toolbox::Pid(kp_,ki_,kd_,ki_clamp));
-    //caster_controller_.push_back(tmp);//TODO::make this not copy!!!!!!!
-    p_i_d.initParam(base_kin_.name_ + "/" + base_kin_.caster_[i].name_ + "/");
+    state_publisher_->msg_.joint_name[i] = base_kin_.caster_[i].joint_name_;
+    p_i_d.init(ros::NodeHandle(node_, base_kin_.caster_[i].joint_name_));
     caster_controller_[i] = new JointVelocityController();
-    caster_controller_[i]->init(base_kin_.robot_state_, base_kin_.caster_[i].name_, p_i_d);
+    caster_controller_[i]->init(base_kin_.robot_state_, base_kin_.caster_[i].joint_name_, p_i_d);
   }
   //wheels
   wheel_controller_.resize(base_kin_.num_wheels_);
   for(int j = 0; j < base_kin_.num_wheels_; j++)
   {
     control_toolbox::Pid p_i_d;
-    state_publisher_->msg_.joint_name[j + base_kin_.num_casters_] = base_kin_.wheel_[j].name_;
-    /*ros::Node::instance()->param<double>(base_kin_.wheel_[j].name_ + "/kp",kp_,2.0);
-     ros::Node::instance()->param<double>(base_kin_.wheel_[j].name_ + "/ki",ki_,0.01);
-     ros::Node::instance()->param<double>(base_kin_.wheel_[j].name_ + "/kd",kd_,0.0);
-     ros::Node::instance()->param<double>(base_kin_.wheel_[j].name_ + "/i_clamp",ki_clamp,0.4);*/
-    //tmp.init(base_kin_.robot_state_, base_kin_.wheel_[j].name_ + "joint", control_toolbox::Pid(kp_,ki_,kd_,ki_clamp));
-    //wheel_controller_.push_back(tmp);//TODO::make this not copy!!!!!!!
-    p_i_d.initParam(base_kin_.name_ + "/" + base_kin_.wheel_[j].name_ + "/");
+    state_publisher_->msg_.joint_name[j + base_kin_.num_casters_] = base_kin_.wheel_[j].joint_name_;
+    p_i_d.init(ros::NodeHandle(node_,base_kin_.wheel_[j].joint_name_));
     wheel_controller_[j] = new JointVelocityController();
-    wheel_controller_[j]->init(base_kin_.robot_state_, base_kin_.wheel_[j].name_, p_i_d);
+    wheel_controller_[j]->init(base_kin_.robot_state_, base_kin_.wheel_[j].joint_name_, p_i_d);
   }
+  ROS_INFO("PR2 base controller initialized");
   return true;
+}
+
+bool Pr2BaseController::initXml(mechanism::RobotState *robot, TiXmlElement *config)
+{
+//  base_kin_.initXml(robot, config);
+  return init(robot, ros::NodeHandle(config->Attribute("name")));
 }
 
 // Set the base velocity command
@@ -244,6 +238,7 @@ void Pr2BaseController::update()
   {
     if(!base_kin_.caster_[i].joint_->calibrated_)
     {
+      ROS_ERROR("Joints are not calibrated");
       return; // Casters are not calibrated
     }
   }
@@ -446,9 +441,10 @@ void Pr2BaseController::computeStall()
   }
 }
 
-void Pr2BaseController::CmdBaseVelReceived()
+void Pr2BaseController::CmdBaseVelReceived(const robot_msgs::PoseDotConstPtr& msg)
 {
   pthread_mutex_lock(&pr2_base_controller_lock_);
-  this->setCommand(baseVelMsg);
+  base_vel_msg_ = *msg;
+  this->setCommand(base_vel_msg_);
   pthread_mutex_unlock(&pr2_base_controller_lock_);
 }

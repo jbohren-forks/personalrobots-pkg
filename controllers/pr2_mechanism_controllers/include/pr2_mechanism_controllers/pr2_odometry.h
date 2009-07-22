@@ -73,6 +73,14 @@ namespace controller
     */
     bool initXml(mechanism::RobotState *robot_state, TiXmlElement *config);
 
+    /*!
+    * \brief Initializes and loads odometry information from the param server
+    * @param robot_state The robot's current state
+    * @param config Tiny xml element pointing to this controller
+    * @return Successful init
+    */
+    bool init(mechanism::RobotState *robot_state, const ros::NodeHandle &node);
+
     /*
     * \brief  The starting method is called by the realtime thread just before
     * the first call to update.  Overrides Controller.staring().
@@ -91,12 +99,13 @@ namespace controller
     */
     void publish();
 
+
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
     private:
 
-    void init();
-    
+    ros::NodeHandle node_;
+
     /*!
     * \brief class where the robot's information is computed and stored
     */

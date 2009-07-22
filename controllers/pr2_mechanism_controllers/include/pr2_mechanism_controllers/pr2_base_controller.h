@@ -70,6 +70,8 @@ namespace controller
        */
       bool starting();
 
+      bool init(mechanism::RobotState *robot, const ros::NodeHandle &n);
+
       /*!
        * \brief Loads controller's information from the xml description file and param server
        * @param robot_state The robot's current state
@@ -119,7 +121,14 @@ namespace controller
 
     private:
 
-      double timeout_; /** timeout specifying time that the controller waits before setting the current velocity command to zero */
+      ros::NodeHandle node_;
+
+      ros::Subscriber cmd_sub_;
+
+      /*!
+       * \brief timeout specifying time that the controller waits before setting the current velocity command to zero
+       */
+      double timeout_;
 
       /*!
        * \brief true when new command received by node
@@ -260,12 +269,12 @@ namespace controller
       /*!
        * \brief deal with cmd_vel command from 2dnav stack
        */
-      void CmdBaseVelReceived();
+      void CmdBaseVelReceived(const robot_msgs::PoseDotConstPtr& msg);
 
       /*!
        * \brief callback message, used to remember where the base is commanded to go
        */
-      robot_msgs::PoseDot baseVelMsg;
+      robot_msgs::PoseDot base_vel_msg_;
 
       /*!
        * \brief generic epsilon value that is used as a minimum or maximum allowable input value
@@ -281,6 +290,11 @@ namespace controller
        * \brief minimum tranlational velocity value allowable
        */
       double cmd_vel_trans_eps_;
+
+      /*!
+       * \brief The name of the topic on which commands are sent to the base controller (default is "cmd_vel")
+       */
+      std::string cmd_topic_;
   };
 
 }

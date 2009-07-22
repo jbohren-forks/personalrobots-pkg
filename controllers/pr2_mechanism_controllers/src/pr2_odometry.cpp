@@ -67,20 +67,21 @@ Pr2Odometry::~Pr2Odometry()
   }
 }
 
-bool Pr2Odometry::initXml(mechanism::RobotState *robot_state, TiXmlElement *config)
+bool Pr2Odometry::init(mechanism::RobotState *robot_state, const ros::NodeHandle &node)
 {
-  ros::Node::instance()->param("~odometer/distance", odometer_distance_, 0.0);
-  ros::Node::instance()->param("~odometer/angle", odometer_angle_, 0.0);
-  ros::Node::instance()->param("~odom/x", odom_.x, 0.0);
-  ros::Node::instance()->param("~odom/y", odom_.y, 0.0);
-  ros::Node::instance()->param("~odom/z", odom_.z, 0.0);
+  node_ = node;
+  node.param("odometer/distance", odometer_distance_, 0.0);
+  node.param("odometer/angle", odometer_angle_, 0.0);
+  node.param("odom/x", odom_.x, 0.0);
+  node.param("odom/y", odom_.y, 0.0);
+  node.param("odom/z", odom_.z, 0.0);
 
-  ros::Node::instance()->param<std::string> ("~ils_weight_type", ils_weight_type_, "Gaussian");
-  ros::Node::instance()->param<int> ("~ils_max_iterations", ils_max_iterations_, 3);
-  ros::Node::instance()->param<std::string> ("~odom_frame", odom_frame_, "odom");
-  ros::Node::instance()->param("~expected_publish_time", expected_publish_time_, 0.03);
+  node.param<std::string> ("ils_weight_type", ils_weight_type_, "Gaussian");
+  node.param<int> ("ils_max_iterations", ils_max_iterations_, 3);
+  node.param<std::string> ("odom_frame", odom_frame_, "odom");
+  node.param("expected_publish_time", expected_publish_time_, 0.03);
 
-  if(!base_kin_.initXml(robot_state, config))
+  if(!base_kin_.init(robot_state, node_))
     return false;
 
   cbv_lhs_ = Eigen::MatrixXf::Zero(16, 3);
@@ -95,6 +96,7 @@ bool Pr2Odometry::initXml(mechanism::RobotState *robot_state, TiXmlElement *conf
   odometry_residual_ = Eigen::MatrixXf::Zero(16, 1);
   
   weight_matrix_ = Eigen::MatrixXf::Identity(16, 16);
+
   if(odometry_publisher_ != NULL)// Make sure that we don't memory leak if initXml gets called twice
     delete odometry_publisher_;
   odometry_publisher_ = new realtime_tools::RealtimePublisher<pr2_msgs::Odometry>("/base/" + odom_frame_, 1);
@@ -107,6 +109,11 @@ bool Pr2Odometry::initXml(mechanism::RobotState *robot_state, TiXmlElement *conf
   transform_publisher_->msg_.set_transforms_size(2);
 
   return true;
+}
+
+bool Pr2Odometry::initXml(mechanism::RobotState *robot_state, TiXmlElement *config)
+{
+  return init(robot_state,ros::NodeHandle(config->Attribute("name")));
 }
 
 bool Pr2Odometry::starting()
