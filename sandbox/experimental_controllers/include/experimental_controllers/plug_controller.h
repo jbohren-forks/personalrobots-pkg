@@ -44,7 +44,7 @@
 #include "robot_msgs/Wrench.h"
 #include "robot_msgs/PoseStamped.h"
 #include "robot_msgs/Transform.h"
-#include "robot_mechanism_controllers/PlugInternalState.h"
+#include "experimental_controllers/PlugInternalState.h"
 #include "robot_srvs/SetPoseStamped.h"
 #include "control_toolbox/pid.h"
 #include "misc_utils/subscription_guard.h"
@@ -172,7 +172,7 @@ class PlugControllerNode : public Controller
 
   tf::TransformListener TF;                    /**< The transform for converting from point to head and tilt frames. */
   realtime_tools::RealtimePublisher <robot_msgs::Transform>* current_frame_publisher_;
-  realtime_tools::RealtimePublisher <robot_mechanism_controllers::PlugInternalState>* internal_state_publisher_;
+  realtime_tools::RealtimePublisher <experimental_controllers::PlugInternalState>* internal_state_publisher_;
 
 };
 

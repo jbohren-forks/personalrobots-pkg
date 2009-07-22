@@ -30,7 +30,7 @@
 /*
  * Author: Melonee Wise
  */
-#include "robot_mechanism_controllers/plug_controller.h"
+#include "experimental_controllers/plug_controller.h"
 #include <algorithm>
 #include "angles/angles.h"
 #include "urdf/parser.h"
@@ -397,7 +397,7 @@ bool PlugControllerNode::initXml(mechanism::RobotState *robot, TiXmlElement *con
 
   if (internal_state_publisher_ != NULL)// Make sure that we don't memory leak if initXml gets called twice
     delete internal_state_publisher_ ;
-  internal_state_publisher_ = new realtime_tools::RealtimePublisher <robot_mechanism_controllers::PlugInternalState> (topic_ + "/internal_state", 1) ;
+  internal_state_publisher_ = new realtime_tools::RealtimePublisher <experimental_controllers::PlugInternalState> (topic_ + "/internal_state", 1) ;
 
   node_->advertiseService(topic_ + "/set_tool_frame", &PlugControllerNode::setToolFrame, this);
   guard_set_tool_frame_.set(topic_ + "/set_tool_frame");
