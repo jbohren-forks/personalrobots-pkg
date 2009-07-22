@@ -1,0 +1,43 @@
+<package>
+  <description brief="3dnav_pr2">
+
+     3dnav_pr2
+
+  </description>
+  <author>Ioan Sucan</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://pr.willowgarage.com/wiki/3dnav_pr2</url>
+
+
+  <depend package="pr2_defs" />
+
+  <!-- messages -->
+  <depend package="std_msgs"/>
+  <depend package="robot_msgs"/>
+  <depend package="mapping_msgs"/>
+  <depend package="motion_planning_msgs" />
+  <depend package="motion_planning_srvs" />
+  <depend package="manipulation_msgs" />
+  <depend package="visualization_msgs" />
+  
+  <!-- mapping -->
+  <depend package="laser_scan"/>
+  <depend package="point_cloud_assembler"/>
+  <depend package="robot_self_filter"/>
+  <depend package="collision_map"/>
+
+
+  <!-- object recognition -->
+  <depend package="table_object_detector"/>
+  <depend package="recognition_lambertian" />
+
+  
+  <!-- planning -->
+
+  <depend package="planning_environment" />
+  <depend package="ompl_planning" />
+  <depend package="pr2_ik" />
+  <depend package="move_arm" />
+  
+</package>
