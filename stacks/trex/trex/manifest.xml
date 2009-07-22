@@ -22,22 +22,6 @@
   <versioncontrol type="svn" url="http://europa-pso.googlecode.com/svn/PLASMA/trunk"/>
   <versioncontrol type="svn" url="http://europa-pso.googlecode.com/svn/PlanWorks/trunk"/>
   <versioncontrol type="svn" url="http://trex-autonomy.googlecode.com/svn/trunk"/>
-  <sysdepend os="ubuntu" version="7.04-fiesty" package="jam"/>
-  <sysdepend os="ubuntu" version="7.04-fiesty" package="sun-java6-jdk"/>
-  <sysdepend os="ubuntu" version="7.04-fiesty" package="ant"/>
-  <sysdepend os="ubuntu" version="7.04-fiesty" package="liblog4cpp5"/>
-  <sysdepend os="ubuntu" version="8.04-hardy" package="jam"/>
-  <sysdepend os="ubuntu" version="8.04-hardy" package="sun-java6-jdk"/>
-  <sysdepend os="ubuntu" version="8.04-hardy" package="ant"/>
-  <sysdepend os="ubuntu" version="8.04-hardy" package="liblog4cpp5"/>
-  <sysdepend os="ubuntu" version="9.04-jaunty" package="jam"/>
-  <sysdepend os="ubuntu" version="9.04-jaunty" package="sun-java6-jdk"/>
-  <sysdepend os="ubuntu" version="9.04-jaunty" package="ant"/>
-  <sysdepend os="ubuntu" version="9.04-jaunty" package="liblog4cpp5"/>
-  <sysdepend os="debian" version="lenny/sid" package="jam"/> 
-  <sysdepend os="debian" version="lenny/sid" package="openjdk-6-jdk"/> 
-  <sysdepend os="debian" version="lenny/sid" package="ant"/> 
-  <sysdepend os="debian" version="lenny/sid" package="liblog4cpp5"/>
   <rosdep name="jam"/>
   <rosdep name="ant"/>
   <rosdep name="java"/>

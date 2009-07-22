@@ -13,12 +13,6 @@
   <export>
     <cpp cflags="-I${prefix}/include `rosboost-cfg --cflags`" lflags=" -L${prefix}/lib -lcalonder"/>
   </export>
-  <sysdepend os="ubuntu" version="7.04-feisty" package="python-imaging"/>
-  <sysdepend os="ubuntu" version="8.04-hardy" package="python-imaging"/>
-  <!--sysdepend os="ubuntu" version="7.04-feisty" package="atlas3-sse2-dev"/ Not required determined buy Tully by running make test fixing amd64 install-->
-  <!--sysdepend os="ubuntu" version="8.04-hardy" package="libatlas-sse2-dev"/ Not required determined buy Tully by running make test fixing amd64 install-->
-  <sysdepend os="ubuntu" version="7.04-feisty" package="atlas3-base-dev"/>
-  <sysdepend os="ubuntu" version="8.04-hardy" package="libatlas-base-dev"/>
   <rosdep name="python-imaging"/>
   <rosdep name="atlas"/>
 </package>

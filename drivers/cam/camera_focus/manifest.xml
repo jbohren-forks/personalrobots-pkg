@@ -9,8 +9,6 @@
   <url>http://pr.willowgarage.com/wiki/camera_focus</url>
   <depend package="forearm_cam"/>
   <depend package="dcam"/>
-  <sysdepend os="ubuntu" version="8.04-hardy" package="gnuplot"/>
-  <sysdepend os="ubuntu" version="8.10-hardy" package="gnuplot"/>
 </package>
 
 

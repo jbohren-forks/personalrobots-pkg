@@ -13,6 +13,5 @@
   <depend package="place_recognition"/>
   <depend package="visual_odometry"/>
 
-  <sysdepend os="ubuntu" version="8.04-hardy" package="libdb4.6++-dev"/>
 
 </package>

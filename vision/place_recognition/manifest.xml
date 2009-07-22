@@ -14,8 +14,6 @@
   <depend package="visual_odometry"/>
 
   <!-- pylab, from matplotlib, is used in tests -->
-  <sysdepend os="ubuntu" version="8.04-hardy" package="python-matplotlib" />
-  <sysdepend os="ubuntu" version="7.10-gutsy" package="python-matplotlib" />
   <rosdep name="python-matplotlib"/>  
   <export>
     <cpp cflags="-I${prefix}/include" lflags=" -L${prefix}/lib -lstarfeature"/>

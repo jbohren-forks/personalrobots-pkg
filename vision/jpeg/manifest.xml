@@ -20,8 +20,5 @@
   <depend package="sensor_msgs"/>
   <depend package="sensor_msgs"/>
 
-  <sysdepend os="ubuntu" version="9.04-jaunty" package="libjpeg62-dev"/>
-  <sysdepend os="ubuntu" version="8.10-intrepid" package="libjpeg62-dev"/>
-  <sysdepend os="ubuntu" version="8.04-hardy" package="libjpeg62-dev"/>
   <rosdep name="libjpeg"/>
 </package>

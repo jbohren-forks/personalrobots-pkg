@@ -15,24 +15,6 @@
     <doxymaker external="http://playerstage.sourceforge.net/doc/Gazebo-manual-svn-html/"/>
   </export>
   <versioncontrol type="svn" url="https://playerstage.svn.sourceforge.net/svnroot/playerstage/code/gazebo/trunk"/>
-  <sysdepend os="ubuntu" version="9.04-jaunty" package="scons"/>
-  <sysdepend os="ubuntu" version="9.04-jaunty" package="pkg-config"/>
-  <sysdepend os="ubuntu" version="9.04-jaunty" package="libxml2-dev"/>
-  <sysdepend os="ubuntu" version="9.04-jaunty" package="libltdl3-dev"/>
-  <sysdepend os="ubuntu" version="9.04-jaunty" package="libfltk1.1"/>
-  <sysdepend os="ubuntu" version="9.04-jaunty" package="libfltk1.1-dev"/>
-  <sysdepend os="ubuntu" version="8.10-intrepid" package="scons"/>
-  <sysdepend os="ubuntu" version="8.10-intrepid" package="pkg-config"/>
-  <sysdepend os="ubuntu" version="8.10-intrepid" package="libxml2-dev"/>
-  <sysdepend os="ubuntu" version="8.10-intrepid" package="libltdl3-dev"/>
-  <sysdepend os="ubuntu" version="8.10-intrepid" package="libfltk1.1"/>
-  <sysdepend os="ubuntu" version="8.10-intrepid" package="libfltk1.1-dev"/>
-  <sysdepend os="ubuntu" version="8.04-hardy" package="scons"/>
-  <sysdepend os="ubuntu" version="8.04-hardy" package="pkg-config"/>
-  <sysdepend os="ubuntu" version="8.04-hardy" package="libxml2-dev"/>
-  <sysdepend os="ubuntu" version="8.04-hardy" package="libltdl3-dev"/>
-  <sysdepend os="ubuntu" version="8.04-hardy" package="libfltk1.1"/>
-  <sysdepend os="ubuntu" version="8.04-hardy" package="libfltk1.1-dev"/>
   <rosdep name="scons"/>
   <rosdep name="libtool"/>
   <rosdep name="fltk"/>

@@ -21,13 +21,6 @@ way.  This package also provides stageros, a ROS node that uses Stage.
   <depend package="sensor_msgs" />
   <depend package="tf" />
 
-<sysdepend os="ubuntu" version="8.04-hardy" package="autoconf"/>
-<sysdepend os="ubuntu" version="8.04-hardy" package="automake"/>
-<sysdepend os="ubuntu" version="8.04-hardy" package="libtool"/>
-<sysdepend os="ubuntu" version="8.04-hardy" package="libgtk2.0-dev"/>
-<sysdepend os="ubuntu" version="8.04-hardy" package="libfltk1.1-dev"/>
-<sysdepend os="ubuntu" version="8.04-hardy" package="libltdl3-dev"/>
-<sysdepend os="ubuntu" version="8.04-hardy" package="pkg-config"/>
 <rosdep name="autoconf"/>
 <rosdep name="automake"/>
 <rosdep name="libtool"/>

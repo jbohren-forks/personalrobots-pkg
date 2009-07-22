@@ -26,10 +26,6 @@
   <depend package="visualization_msgs" />
 
 
-  <sysdepend os="ubuntu" version="8.04-hardy" package="libatlas3gf-sse2" />
-  <sysdepend os="ubuntu" version="8.04-hardy" package="python-matplotlib" />
-  <sysdepend os="ubuntu" version="7.10-gutsy" package="python-matplotlib" />
-  <sysdepend os="centos" version="5.2" package="python-matplotlib" />
   
   <!--depend package="fast_detector"/>
   <depend package="calonder_descriptor"/>
@@ -38,9 +34,6 @@
   <export>
     <cpp cflags="-I${prefix}/include -I${prefix}/srv/cpp" lflags=" -L${prefix}/lib -loutlet -lplug"/>
   </export>
-  <sysdepend os="ubuntu" version="7.04-feisty" package="python-imaging"/>
-  <sysdepend os="ubuntu" version="8.04-hardy" package="python-imaging"/>
-  <sysdepend os="ubuntu" version="8.10-intrepid" package="python-imaging"/>
   <rosdep name="python-imaging"/>
   <rosdep name="python-matplotlib"/>
   <rosdep name="atlas"/>

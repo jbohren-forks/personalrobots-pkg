@@ -23,16 +23,6 @@
   <export>
     <cpp cflags="-I${prefix}/include -I${prefix}/msg/cpp" lflags="-L${prefix}/lib -Wl,-rpath,${prefix}/lib" />
   </export>
-  <sysdepend os="ubuntu" version="7.04-feisty" package="python-imaging"/>
-  <sysdepend os="ubuntu" version="8.04-hardy" package="python-imaging"/>
-  <sysdepend os="ubuntu" version="7.04-feisty" package="python-numpy"/>
-  <sysdepend os="ubuntu" version="8.04-hardy" package="python-numpy"/>
-  <sysdepend os="ubuntu" version="7.04-feisty" package="python-matplotlib"/>
-  <sysdepend os="ubuntu" version="8.04-hardy" package="python-matplotlib"/>
-  <sysdepend os="ubuntu" version="7.04-feisty" package="libfltk-dev"/>
-  <sysdepend os="ubuntu" version="8.04-hardy" package="libfltk-dev"/>
-  <sysdepend os="ubuntu" version="7.04-feisty" package="python-scipy"/>
-  <sysdepend os="ubuntu" version="8.04-hardy" package="python-scipy"/>
   <rosdep name="python-imaging"/>
   <rosdep name="python-numpy"/>
   <rosdep name="python-scipy"/>

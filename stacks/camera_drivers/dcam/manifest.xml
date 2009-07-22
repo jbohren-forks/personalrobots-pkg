@@ -3,8 +3,6 @@
   <author>Kurt Konolige, Jeremy Leibs</author>
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
-  <sysdepend os="ubuntu" package="libfltk-dev"/>
-  <sysdepend os="ubuntu" package="libglut-dev"/>
   <export>
     <cpp cflags="-g -I${prefix}/include" lflags="-L${prefix}/lib -ldcam"/>
   </export>
@@ -18,8 +16,6 @@
   <depend package="diagnostic_updater"/>
   <depend package="rospy"/>
 
-  <sysdepend os="ubuntu" version="7.04-feisty" package="libfltk1.1-dev"/>
-  <sysdepend os="ubuntu" version="8.04-hardy" package="libfltk1.1-dev"/>
   <rosdep name="fltk"/>
   <url></url>
 </package>
