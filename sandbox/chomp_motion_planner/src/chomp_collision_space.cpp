@@ -59,7 +59,7 @@ void ChompCollisionSpace::collisionMapCallback(const mapping_msgs::CollisionMapC
     voxel3d_->reset();
     voxel3d_->updateWorld(*collision_map);
     mutex_.unlock();
-    ROS_INFO("Updated distance field in %f sec\n", (ros::WallTime::now() - start).toSec());
+    ROS_INFO("Updated distance field in %f sec", (ros::WallTime::now() - start).toSec());
   }
   else
   {
