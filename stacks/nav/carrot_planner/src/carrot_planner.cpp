@@ -72,7 +72,7 @@ namespace carrot_planner {
     double distance = sqrt((robot_point_x - goal_point_x) * (robot_point_x - goal_point_x)
         + (robot_point_y - goal_point_y) * (robot_point_y - goal_point_y));
 
-    double scaling_fact = step_size_ / distance;
+    double scaling_fact = std::min(1.0, step_size_ / distance);
     double step_x = scaling_fact * (robot_point_x - goal_point_x);
     double step_y = scaling_fact * (robot_point_y - goal_point_y);
     double sign_step_x = step_x > 0 ? 1 : -1;
@@ -82,25 +82,20 @@ namespace carrot_planner {
     double y = goal_point_y;
 
     //while we haven't made it back to the robot's position
-    while(sign_step_x * x < robot_point_x && sign_step_y * y < robot_point_y){
+    while(sign_step_x * x <= robot_point_x && sign_step_y * y <= robot_point_y){
       unsigned int cell_x, cell_y;
       if(costmap.worldToMap(x, y, cell_x, cell_y)){
         unsigned char cost = costmap.getCost(cell_x, cell_y);
         ROS_DEBUG("Cost for point %.2f, %.2f is %d", x, y, cost);
         if(cost < costmap_2d::INSCRIBED_INFLATED_OBSTACLE){
-          double current_distance = sqrt((robot_point_x - x) * (robot_point_x - x)
-              + (robot_point_y - y) * (robot_point_y - y));
-
           //push the current position of the robot onto the plan
           plan.push_back(start);
 
-          //we've found a valid point, but if it is super close to us, we don't want to move
-          if(current_distance > min_dist_from_robot_){
-            robot_msgs::PoseStamped new_goal = goal;
-            new_goal.pose.position.x = x;
-            new_goal.pose.position.y = y;
-            plan.push_back(new_goal);
-          }
+          robot_msgs::PoseStamped new_goal = goal;
+          new_goal.pose.position.x = x;
+          new_goal.pose.position.y = y;
+          plan.push_back(new_goal);
+
           return true;
         }
         x += step_x;
